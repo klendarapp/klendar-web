@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Abrir en Klendar</title>
+<meta name="description" content="Abre este enlace en la app Klendar.">
+<meta property="og:title" content="Abrir en Klendar">
+<meta property="og:description" content="Abre este enlace en la app Klendar.">
+<meta property="og:image" content="https://klendar.app/assets/icon-512.png">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#0C1220">
+<link rel="icon" href="/assets/favicon.png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="/"><img src="/assets/symbol.png" alt=""> Klendar</a>
+  <nav class="main"><a href="/#como">Cómo funciona</a><a href="/negocios/">Negocios</a><a href="/soporte/">Soporte</a></nav>
+</div></header>
+
+<div class="open"><div class="card">
+  <img class="logo" src="/assets/symbol.png" alt="Klendar">
+  <h1 id="t">Abrir en Klendar</h1>
+  <p id="d">Si tienes la app instalada, se abrirá sola. Si no, descárgala y vuelve a abrir el enlace.</p>
+  <a id="open" class="pill accent" href="#">Abrir en la app</a>
+  <a class="pill" href="#" aria-disabled="true">Descargar en Google Play · próximamente</a>
+  <a class="pill" href="#" aria-disabled="true">Descargar en App Store · próximamente</a>
+  <p style="margin-top:16px;font-size:13px"><a href="/">Ir a klendar.app</a></p>
+</div></div>
+<script>
+(function () {
+  var path = location.pathname.replace(/\/+$/, '');
+  var m = path.match(/^\/(o|b|r)\/([A-Za-z0-9-]+)$/);
+  var t = document.getElementById('t'), d = document.getElementById('d'), a = document.getElementById('open');
+  if (!m) { t.textContent = 'Página no encontrada'; d.textContent = 'El enlace no es válido.'; a.style.display = 'none'; return; }
+  var kind = m[1], id = m[2];
+  if (kind === 'o') t.textContent = 'Ver esta oferta en Klendar';
+  if (kind === 'b') t.textContent = 'Ver este negocio en Klendar';
+  if (kind === 'r') { t.textContent = 'Validar código en Klendar'; d.textContent = 'Este enlace es para el negocio: abre Klendar y valida el canjeo.'; }
+  var ua = navigator.userAgent || '';
+  var appLink = 'https://klendar.app' + path;
+  // Android: intent con fallback; iOS: Universal Link (mismo https) o esquema propio.
+  var intent = 'intent://klendar.app' + path + '#Intent;scheme=https;package=app.klendar;S.browser_fallback_url=' + encodeURIComponent('https://klendar.app/') + ';end';
+  a.href = /Android/i.test(ua) ? intent : appLink;
+  // Intento automático (una vez); si la app no está, el usuario ve los botones.
+  setTimeout(function () { if (/Android|iPhone|iPad/i.test(ua)) location.href = a.href; }, 400);
+})();
+</script>
+</body></html>

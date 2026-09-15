@@ -1,0 +1,62 @@
+/* Klendar — identidad "Cristal dual" (misma que la app) */
+:root {
+  --accent: #4FD1FF; --on-accent: #0C1220; --accent-text: #0B8FC4;
+  --surface: #F4F7FB; --elevated: #FFFFFF; --ink: #101828; --ink-2: #5B6B82;
+  --glass: rgba(255,255,255,.62); --glass-border: rgba(255,255,255,.85);
+  --radius: 28px;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --accent-text: #4FD1FF; --surface: #0C1220; --elevated: #141C30; --ink: #FFFFFF; --ink-2: #B3B9C6;
+    --glass: rgba(255,255,255,.08); --glass-border: rgba(255,255,255,.18); }
+}
+* { box-sizing: border-box; }
+html { color-scheme: light dark; }
+body { margin: 0; font-family: Onest, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--surface); color: var(--ink);
+  line-height: 1.55; -webkit-font-smoothing: antialiased; }
+a { color: var(--accent-text); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.wrap { max-width: 1040px; margin: 0 auto; padding: 0 20px; }
+header.top { position: sticky; top: 0; z-index: 10; backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+  background: var(--glass); border-bottom: 1px solid var(--glass-border); }
+header.top .wrap { display: flex; align-items: center; gap: 14px; height: 64px; }
+.brand { display: flex; align-items: center; gap: 10px; color: var(--ink); font-weight: 800; font-size: 20px; letter-spacing: -.6px; }
+.brand img { width: 30px; height: 30px; border-radius: 9px; }
+nav.main { margin-left: auto; display: flex; gap: 18px; font-weight: 600; font-size: 14px; }
+nav.main a { color: var(--ink-2); }
+.pill { display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 999px; font-weight: 700; font-size: 15px;
+  border: 1px solid var(--glass-border); background: var(--glass); color: var(--ink); backdrop-filter: blur(12px); }
+.pill.accent { background: var(--accent); color: var(--on-accent); border-color: transparent; }
+.pill.ink { background: var(--ink); color: var(--surface); border-color: transparent; }
+.hero { padding: 72px 0 40px; position: relative; overflow: hidden; }
+.hero::before { content: ""; position: absolute; inset: -20% -10% auto; height: 70%; z-index: -1; filter: blur(80px); opacity: .55;
+  background: radial-gradient(circle at 20% 30%, #4FD1FF 0, transparent 45%), radial-gradient(circle at 80% 20%, #7A5AFF 0, transparent 45%); }
+.hero h1 { font-size: clamp(36px, 6vw, 60px); line-height: 1.02; letter-spacing: -1.8px; margin: 0 0 16px; font-weight: 800; }
+.hero p.lead { font-size: 19px; color: var(--ink-2); max-width: 600px; margin: 0 0 26px; }
+.stores { display: flex; gap: 10px; flex-wrap: wrap; }
+.grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.card { background: var(--glass); border: 1px solid var(--glass-border); border-radius: var(--radius); padding: 22px; backdrop-filter: blur(18px); }
+.card h3 { margin: 6px 0 6px; font-size: 18px; letter-spacing: -.3px; }
+.card p { margin: 0; color: var(--ink-2); font-size: 15px; }
+.card .ic { width: 40px; height: 40px; border-radius: 14px; background: rgba(79,209,255,.18); display: grid; place-items: center; color: var(--accent-text); font-size: 20px; }
+section { padding: 36px 0; }
+h2 { font-size: 30px; letter-spacing: -.8px; margin: 0 0 18px; }
+footer { padding: 40px 0 60px; color: var(--ink-2); font-size: 14px; border-top: 1px solid var(--glass-border); margin-top: 40px; }
+footer .links { display: flex; flex-wrap: wrap; gap: 14px 22px; margin-bottom: 14px; }
+/* Documentos legales */
+.doc { max-width: 780px; margin: 0 auto; padding: 40px 20px 80px; }
+.doc h1 { font-size: 34px; letter-spacing: -1px; margin: 0 0 6px; }
+.doc .meta { color: var(--ink-2); margin-bottom: 28px; }
+.doc h2 { font-size: 22px; margin: 34px 0 10px; }
+.doc h3 { font-size: 17px; margin: 22px 0 6px; }
+.doc p, .doc li { font-size: 16px; }
+.doc table { border-collapse: collapse; width: 100%; font-size: 15px; margin: 12px 0; }
+.doc th, .doc td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--glass-border); vertical-align: top; }
+.doc .todo { background: rgba(245,176,65,.18); border-left: 4px solid #F5B041; padding: 10px 14px; border-radius: 10px; font-size: 14px; }
+mark.tbd { background: rgba(245,176,65,.35); color: inherit; padding: 0 4px; border-radius: 4px; }
+/* Página de enlace (/o, /b, /r) */
+.open { min-height: 100dvh; display: grid; place-items: center; text-align: center; padding: 24px; }
+.open .card { max-width: 420px; width: 100%; padding: 30px 26px; }
+.open img.logo { width: 72px; height: 72px; border-radius: 22px; }
+.open h1 { font-size: 26px; letter-spacing: -.6px; margin: 16px 0 6px; }
+.open p { color: var(--ink-2); margin: 0 0 20px; }
+.open .pill { width: 100%; justify-content: center; margin-bottom: 10px; }

@@ -1,0 +1,11 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "TEAMID.app.klendar",
+        "paths": ["/o/*", "/b/*", "/r/*"]
+      }
+    ]
+  }
+}
