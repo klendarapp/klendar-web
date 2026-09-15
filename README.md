@@ -7,3 +7,18 @@ Web pública de Klendar: landing, páginas legales y páginas de enlace (`/o/<id
 - `.well-known/assetlinks.json` — App Links de Android. Contiene las huellas del certificado de **debug** y del de **release** (`android/keys/klendar-release.jks` en el repo de la app, fuera de git).
 - `.well-known/apple-app-site-association` — Universal Links de iOS. Sustituir `TEAMID` por el Team ID de Apple Developer.
 - Las páginas legales se generan con `python build_legal.py` a partir de los textos en ese archivo (no editar los `index.html` a mano). Los datos marcados en amarillo (titular, NIF, domicilio) están pendientes de la forma jurídica.
+
+## Panel de administración (`/admin/`)
+
+`admin/index.html` es una página estática con supabase-js que llama a las RPC
+`admin_*` del proyecto (migración `20260916100000_admin.sql` en el repo de la
+app). Solo funciona para cuentas dadas de alta en `public.admin_users`:
+
+```sql
+insert into public.admin_users (user_id)
+select id from auth.users where email = 'tu@email';
+```
+
+Permite: KPIs, verificar/rechazar negocios, moderar publicaciones, resolver
+denuncias (retirando o no el contenido) y buscar usuarios. La clave que lleva
+embebida es la *publishable* (pública); la seguridad la ponen `is_admin()` y RLS.

@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Klendar · Administración</title>
+<link rel="icon" href="/assets/symbol.png">
+<link rel="stylesheet" href="/assets/site.css">
+<style>
+  [hidden] { display: none !important; }
+  .admin { max-width: 1100px; margin: 0 auto; padding: 24px 20px 80px; }
+  .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin: 18px 0; }
+  .tabs button { border: 1px solid var(--glass-border); background: var(--glass); color: var(--ink); padding: 9px 16px; border-radius: 999px; font: inherit; font-weight: 700; cursor: pointer; }
+  .tabs button.on { background: var(--accent); color: var(--on-accent); border-color: transparent; }
+  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
+  .kpis { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+  .kpi { background: var(--glass); border: 1px solid var(--glass-border); border-radius: 20px; padding: 16px 18px; }
+  .kpi b { display: block; font-size: 28px; letter-spacing: -1px; }
+  .kpi span { color: var(--ink-2); font-size: 13px; }
+  .item { background: var(--glass); border: 1px solid var(--glass-border); border-radius: 20px; padding: 16px 18px; margin-bottom: 10px; display: grid; grid-template-columns: 64px 1fr; gap: 14px; }
+  .item img { width: 64px; height: 64px; border-radius: 16px; object-fit: cover; background: rgba(79,209,255,.15); }
+  .item .ph { width: 64px; height: 64px; border-radius: 16px; background: rgba(79,209,255,.15); display: grid; place-items: center; font-size: 26px; }
+  .item h3 { margin: 0 0 2px; font-size: 17px; }
+  .item .meta { color: var(--ink-2); font-size: 13px; }
+  .item p { margin: 8px 0; font-size: 14px; }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .btn { border: 1px solid var(--glass-border); background: var(--elevated); color: var(--ink); padding: 8px 14px; border-radius: 999px; font: inherit; font-weight: 700; font-size: 14px; cursor: pointer; }
+  .btn.ok { background: #2ECC71; color: #072; border-color: transparent; }
+  .btn.bad { background: #FF5C5C; color: #fff; border-color: transparent; }
+  .btn.ghost { background: transparent; }
+  .btn:disabled { opacity: .5; cursor: default; }
+  .tag { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 700; background: rgba(79,209,255,.18); color: var(--accent-text); }
+  .tag.st-pending { background: rgba(245,176,65,.25); color: #9a6200; }
+  .tag.st-rejected, .tag.st-open { background: rgba(255,92,92,.2); color: #b3261e; }
+  .tag.st-verified, .tag.st-resolved { background: rgba(46,204,113,.2); color: #146c3a; }
+  input, select, textarea { font: inherit; padding: 9px 12px; border-radius: 12px; border: 1px solid var(--glass-border); background: var(--elevated); color: var(--ink); }
+  .login { max-width: 380px; margin: 60px auto; display: grid; gap: 10px; }
+  .muted { color: var(--ink-2); font-size: 14px; }
+  .err { color: #b3261e; font-size: 14px; }
+  .bar { height: 8px; border-radius: 4px; background: var(--accent); }
+  .chart { display: grid; grid-template-columns: repeat(30, 1fr); gap: 3px; align-items: end; height: 80px; margin-top: 8px; }
+  .chart div { background: var(--accent); border-radius: 3px 3px 0 0; min-height: 2px; }
+  pre { white-space: pre-wrap; font-size: 13px; }
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="/"><img src="/assets/symbol.png" alt=""> Klendar <span class="muted" style="font-weight:600">· admin</span></a>
+  <nav class="main"><span id="who" class="muted"></span><a href="#" id="logout" hidden>Salir</a></nav>
+</div></header>
+
+<main class="admin">
+  <div id="login" class="login" hidden>
+    <h2 style="margin:0">Entrar</h2>
+    <p class="muted">Solo cuentas dadas de alta en <code>admin_users</code>.</p>
+    <input id="email" type="email" placeholder="Email" autocomplete="username">
+    <input id="password" type="password" placeholder="Contraseña" autocomplete="current-password">
+    <button class="btn ok" id="doLogin">Entrar</button>
+    <div id="loginErr" class="err"></div>
+  </div>
+
+  <div id="app" hidden>
+    <div class="tabs" id="tabs">
+      <button data-tab="kpis" class="on">Resumen</button>
+      <button data-tab="businesses">Negocios</button>
+      <button data-tab="offers">Moderación</button>
+      <button data-tab="reports">Denuncias</button>
+      <button data-tab="users">Usuarios</button>
+    </div>
+    <div id="view"></div>
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+// Claves públicas (anon/publishable): la seguridad la ponen RLS e is_admin().
+const SUPABASE_URL = 'https://dpbbtgwxrlqlplbrtjuq.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_gNwxFIJGW_o_lGhv3si6IQ_35xHCq30';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtDate = (s) => s ? new Date(s).toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
+let tab = 'kpis';
+
+async function rpc(fn, args = {}) {
+  const { data, error } = await sb.rpc(fn, args);
+  if (error) {
+    if (/not_admin|42501/.test(error.message + error.code)) throw new Error('Esta cuenta no es administradora.');
+    throw new Error(error.message);
+  }
+  return data;
+}
+
+// ── Sesión ──────────────────────────────────────────────────────────────────
+async function boot() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) return showLogin();
+  $('#who').textContent = session.user.email;
+  $('#logout').hidden = false;
+  $('#login').hidden = true; $('#app').hidden = false;
+  render();
+}
+function showLogin() { $('#login').hidden = false; $('#app').hidden = true; $('#logout').hidden = true; $('#who').textContent = ''; }
+$('#doLogin').onclick = async () => {
+  $('#loginErr').textContent = '';
+  const { error } = await sb.auth.signInWithPassword({ email: $('#email').value.trim(), password: $('#password').value });
+  if (error) { $('#loginErr').textContent = error.message; return; }
+  boot();
+};
+$('#password').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('#doLogin').click(); });
+$('#logout').onclick = async (e) => { e.preventDefault(); await sb.auth.signOut(); showLogin(); };
+$('#tabs').onclick = (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  tab = b.dataset.tab;
+  document.querySelectorAll('#tabs button').forEach((x) => x.classList.toggle('on', x === b));
+  render();
+};
+
+// ── Vistas ──────────────────────────────────────────────────────────────────
+async function render() {
+  const v = $('#view');
+  v.innerHTML = '<p class="muted">Cargando…</p>';
+  try {
+    if (tab === 'kpis') await renderKpis(v);
+    if (tab === 'businesses') await renderBusinesses(v);
+    if (tab === 'offers') await renderOffers(v);
+    if (tab === 'reports') await renderReports(v);
+    if (tab === 'users') renderUsers(v);
+  } catch (e) { v.innerHTML = `<p class="err">${esc(e.message)}</p>`; }
+}
+
+async function renderKpis(v) {
+  const k = await rpc('admin_kpis');
+  const days = [...Array(30)].map((_, i) => { const d = new Date(); d.setDate(d.getDate() - 29 + i); return d.toISOString().slice(0, 10); });
+  const byDay = Object.fromEntries((k.redemptions_by_day || []).map((r) => [r.day, r.n]));
+  const max = Math.max(1, ...days.map((d) => byDay[d] || 0));
+  const kpi = (n, label) => `<div class="kpi"><b>${n}</b><span>${label}</span></div>`;
+  v.innerHTML = `
+    <div class="kpis">
+      ${kpi(k.users_total, 'usuarios')} ${kpi(k.users_7d, 'nuevos (7 d)')} ${kpi(k.users_30d, 'nuevos (30 d)')}
+      ${kpi(k.businesses_verified, 'negocios verificados')} ${kpi(k.businesses_pending, 'negocios pendientes')}
+      ${kpi(k.offers_active, 'ofertas activas')} ${kpi(k.offers_7d, 'publicadas (7 d)')} ${kpi(k.offers_pending, 'ofertas por moderar')}
+      ${kpi(k.redemptions_7d, 'canjeos (7 d)')} ${kpi(k.redemptions_30d, 'canjeos (30 d)')}
+      ${kpi(k.reviews_total, 'reseñas')} ${kpi(k.reports_open, 'denuncias abiertas')} ${kpi(k.push_queue, 'push en cola')}
+    </div>
+    <div class="kpi" style="margin-top:14px"><span>Canjeos por día (30 d)</span>
+      <div class="chart">${days.map((d) => `<div title="${d}: ${byDay[d] || 0}" style="height:${Math.round((byDay[d] || 0) / max * 100)}%"></div>`).join('')}</div>
+    </div>`;
+}
+
+async function renderBusinesses(v) {
+  const status = v.dataset.status || 'pending';
+  const list = await rpc('admin_businesses', { p_status: status });
+  v.innerHTML = `
+    <div class="row">
+      <select id="bstatus">${['pending', 'verified', 'rejected', 'all'].map((s) => `<option ${s === status ? 'selected' : ''}>${s}</option>`).join('')}</select>
+      <span class="muted">${list.length} negocios</span>
+    </div>
+    ${list.length ? '' : '<p class="muted">Nada por aquí.</p>'}
+    ${list.map((b) => `
+      <div class="item">
+        ${b.logo_url ? `<img src="${esc(b.logo_url)}" alt="">` : '<div class="ph">🏪</div>'}
+        <div>
+          <h3>${esc(b.name)} <span class="tag st-${b.verification_status}">${b.verification_status}</span> ${b.is_active ? '' : '<span class="tag st-rejected">inactivo</span>'}</h3>
+          <div class="meta">${esc(b.category || '—')} · ${esc([b.address, b.city].filter(Boolean).join(', '))} · alta ${fmtDate(b.created_at)}</div>
+          <div class="meta">Dueño: ${esc(b.owner_name || '—')} &lt;${esc(b.owner_email || '—')}&gt; · ${esc(b.phone || '')} ${b.website ? `· <a href="${esc(b.website)}" target="_blank" rel="noopener">web</a>` : ''}</div>
+          <p>${esc(b.description || '')}</p>
+          <div class="meta">${b.offers_count} publicaciones · ${b.redemptions_count} canjeos ${b.rejection_reason ? `· motivo rechazo: ${esc(b.rejection_reason)}` : ''}</div>
+          <div class="actions">
+            ${b.verification_status !== 'verified' ? `<button class="btn ok" data-verify="${b.id}">Verificar</button>` : ''}
+            ${b.verification_status !== 'rejected' ? `<button class="btn bad" data-reject="${b.id}">Rechazar…</button>` : ''}
+            <button class="btn ghost" data-active="${b.id}" data-val="${!b.is_active}">${b.is_active ? 'Desactivar' : 'Activar'}</button>
+            <a class="btn ghost" href="https://klendar.app/b/${b.id}" target="_blank" rel="noopener">Ver en la app</a>
+          </div>
+        </div>
+      </div>`).join('')}`;
+  $('#bstatus').onchange = (e) => { v.dataset.status = e.target.value; render(); };
+  v.onclick = async (e) => {
+    const t = e.target;
+    try {
+      if (t.dataset.verify) { await rpc('admin_set_verification', { p_id: t.dataset.verify, p_status: 'verified' }); render(); }
+      if (t.dataset.reject) {
+        const reason = prompt('Motivo del rechazo (lo verá el negocio):');
+        if (reason === null) return;
+        await rpc('admin_set_verification', { p_id: t.dataset.reject, p_status: 'rejected', p_reason: reason }); render();
+      }
+      if (t.dataset.active) { await rpc('admin_set_business_active', { p_id: t.dataset.active, p_active: t.dataset.val === 'true' }); render(); }
+    } catch (err) { alert(err.message); }
+  };
+}
+
+async function renderOffers(v) {
+  const mod = v.dataset.mod || 'pending';
+  const list = await rpc('admin_offers', { p_moderation: mod });
+  v.innerHTML = `
+    <div class="row">
+      <select id="omod">${['pending', 'approved', 'rejected', 'all'].map((s) => `<option ${s === mod ? 'selected' : ''}>${s}</option>`).join('')}</select>
+      <span class="muted">${list.length} publicaciones</span>
+    </div>
+    ${list.length ? '' : '<p class="muted">Nada por moderar.</p>'}
+    ${list.map((o) => `
+      <div class="item">
+        ${o.images && o.images[0] ? `<img src="${esc(o.images[0])}" alt="">` : '<div class="ph">⚡</div>'}
+        <div>
+          <h3>${esc(o.title)} <span class="tag st-${o.moderation_status}">${o.moderation_status}</span> <span class="tag">${o.kind === 'flash_offer' ? 'flash' : 'evento'}</span> ${o.adults_only ? '<span class="tag st-rejected">+18</span>' : ''}</h3>
+          <div class="meta">${esc(o.business_name)} (${o.verification_status}) · estado ${o.status} · ${fmtDate(o.created_at)}</div>
+          <p>${esc(o.description || '')}</p>
+          ${o.terms ? `<div class="meta">Condiciones: ${esc(o.terms)}</div>` : ''}
+          <div class="meta">${o.kind === 'flash_offer' ? `Canjeo ${fmtDate(o.redeem_start_at)} → ${fmtDate(o.redeem_end_at)}` : `Evento ${fmtDate(o.event_at)}`}
+            ${o.discount ? ` · descuento ${esc(JSON.stringify(o.discount))}` : ''} ${o.price_cents != null ? ` · ${(o.price_cents / 100).toFixed(2)} ${o.currency || 'EUR'}` : ''}</div>
+          <div class="actions">
+            ${o.moderation_status !== 'approved' ? `<button class="btn ok" data-mod="${o.id}" data-val="approved">Aprobar</button>` : ''}
+            ${o.moderation_status !== 'rejected' ? `<button class="btn bad" data-mod="${o.id}" data-val="rejected">Retirar</button>` : ''}
+            <a class="btn ghost" href="https://klendar.app/o/${o.id}" target="_blank" rel="noopener">Ver en la app</a>
+          </div>
+        </div>
+      </div>`).join('')}`;
+  $('#omod').onchange = (e) => { v.dataset.mod = e.target.value; render(); };
+  v.onclick = async (e) => {
+    const t = e.target;
+    if (!t.dataset.mod) return;
+    try { await rpc('admin_set_offer_moderation', { p_id: t.dataset.mod, p_status: t.dataset.val }); render(); } catch (err) { alert(err.message); }
+  };
+}
+
+async function renderReports(v) {
+  const status = v.dataset.status || 'open';
+  const list = await rpc('admin_reports', { p_status: status });
+  const target = (r) => {
+    const t = r.target || {};
+    if (!r.target) return '<span class="tag st-rejected">contenido ya eliminado</span>';
+    if (r.target_type === 'offer') return `Oferta «${esc(t.title)}» de ${esc(t.business)} (moderación: ${t.moderation}, estado: ${t.status})`;
+    if (r.target_type === 'business') return `Negocio «${esc(t.name)}» (${esc(t.city || '')}; ${t.active ? 'activo' : 'inactivo'}, ${t.verification})`;
+    if (r.target_type === 'review') return `Reseña ${'★'.repeat(t.rating)} en ${esc(t.business)}: «${esc(t.comment || '')}»`;
+    if (r.target_type === 'post') return `Post de ${esc(t.business)}: «${esc(t.body || '')}»`;
+    return '';
+  };
+  v.innerHTML = `
+    <div class="row">
+      <select id="rstatus">${['open', 'resolved', 'dismissed', 'all'].map((s) => `<option ${s === status ? 'selected' : ''}>${s}</option>`).join('')}</select>
+      <span class="muted">${list.length} denuncias</span>
+    </div>
+    ${list.length ? '' : '<p class="muted">Sin denuncias.</p>'}
+    ${list.map((r) => `
+      <div class="item">
+        <div class="ph">🚩</div>
+        <div>
+          <h3>${esc(r.reason)} <span class="tag st-${r.status}">${r.status}</span> <span class="tag">${r.target_type}</span></h3>
+          <div class="meta">${fmtDate(r.created_at)} · por ${esc(r.reporter_email || 'anónimo')}</div>
+          <p>${target(r)}</p>
+          ${r.details ? `<div class="meta">Detalles: ${esc(r.details)}</div>` : ''}
+          ${r.status === 'open' || r.status === 'reviewing' ? `
+          <div class="actions">
+            <button class="btn bad" data-res="${r.id}" data-status="resolved" data-action="hide">Retirar contenido y cerrar</button>
+            <button class="btn ok" data-res="${r.id}" data-status="resolved" data-action="none">Cerrar sin retirar</button>
+            <button class="btn ghost" data-res="${r.id}" data-status="dismissed" data-action="none">Desestimar</button>
+            ${r.target_type === 'offer' ? `<a class="btn ghost" href="https://klendar.app/o/${r.target_id}" target="_blank" rel="noopener">Ver</a>` : ''}
+            ${r.target_type === 'business' ? `<a class="btn ghost" href="https://klendar.app/b/${r.target_id}" target="_blank" rel="noopener">Ver</a>` : ''}
+          </div>` : ''}
+        </div>
+      </div>`).join('')}`;
+  $('#rstatus').onchange = (e) => { v.dataset.status = e.target.value; render(); };
+  v.onclick = async (e) => {
+    const t = e.target;
+    if (!t.dataset.res) return;
+    if (t.dataset.action === 'hide' && !confirm('¿Retirar el contenido denunciado? (ofertas: se rechazan; negocios: se desactivan; reseñas y posts: se borran)')) return;
+    try { await rpc('admin_resolve_report', { p_id: t.dataset.res, p_status: t.dataset.status, p_action: t.dataset.action }); render(); } catch (err) { alert(err.message); }
+  };
+}
+
+function renderUsers(v) {
+  v.innerHTML = `
+    <div class="row"><input id="uq" placeholder="Email o nombre" style="min-width:260px"><button class="btn" id="ugo">Buscar</button></div>
+    <div id="ures"></div>`;
+  const go = async () => {
+    const q = $('#uq').value.trim(); if (q.length < 2) return;
+    $('#ures').innerHTML = '<p class="muted">Buscando…</p>';
+    try {
+      const list = await rpc('admin_find_user', { p_query: q });
+      $('#ures').innerHTML = list.length ? list.map((u) => `
+        <div class="item"><div class="ph">👤</div><div>
+          <h3>${esc(u.display_name || '—')} <span class="tag">${u.user_type}</span></h3>
+          <div class="meta">${esc(u.email)} · alta ${fmtDate(u.created_at)} · último acceso ${fmtDate(u.last_sign_in_at)} · idioma ${esc(u.locale || '—')}</div>
+          <div class="meta">${u.redemptions} canjeos · ${u.memberships} negocios</div>
+          <div class="meta">id <code>${u.id}</code></div>
+        </div></div>`).join('') : '<p class="muted">Sin resultados.</p>';
+    } catch (e) { $('#ures').innerHTML = `<p class="err">${esc(e.message)}</p>`; }
+  };
+  $('#ugo').onclick = go;
+  $('#uq').addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
+}
+
+sb.auth.onAuthStateChange((ev) => { if (ev === 'SIGNED_OUT') showLogin(); });
+boot();
+</script>
+</body>
+</html>
