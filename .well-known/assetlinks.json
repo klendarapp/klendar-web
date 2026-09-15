@@ -1,11 +1,14 @@
 [
   {
-    "relation": ["delegate_permission/common.handle_all_urls"],
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
     "target": {
       "namespace": "android_app",
       "package_name": "app.klendar",
       "sha256_cert_fingerprints": [
-        "F4:BE:F7:8A:F7:F1:44:64:92:F9:57:B6:5E:DF:42:A5:80:9D:2A:97:8A:F4:17:00:0E:7E:9D:B5:3E:13:69:45"
+        "F4:BE:F7:8A:F7:F1:44:64:92:F9:57:B6:5E:DF:42:A5:80:9D:2A:97:8A:F4:17:00:0E:7E:9D:B5:3E:13:69:45",
+        "9A:68:44:32:77:E7:B6:1D:96:0F:55:B3:F7:6D:D6:7C:21:F6:B5:5B:B2:96:64:B4:6E:CB:FD:A7:09:77:3F:B0"
       ]
     }
   }
