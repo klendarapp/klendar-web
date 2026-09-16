@@ -174,11 +174,14 @@ async function renderBusinesses(v) {
           <div class="meta">${esc(b.category || '—')} · ${esc([b.address, b.city].filter(Boolean).join(', '))} · alta ${fmtDate(b.created_at)}</div>
           <div class="meta">Dueño: ${esc(b.owner_name || '—')} &lt;${esc(b.owner_email || '—')}&gt; · ${esc(b.phone || '')} ${b.website ? `· <a href="${esc(b.website)}" target="_blank" rel="noopener">web</a>` : ''}</div>
           <p>${esc(b.description || '')}</p>
-          <div class="meta">${b.offers_count} publicaciones · ${b.redemptions_count} canjeos ${b.rejection_reason ? `· motivo rechazo: ${esc(b.rejection_reason)}` : ''}</div>
+          <div class="meta">${b.offers_count} publicaciones (${b.active_offers} activas) · ${b.redemptions_count} canjeos ${b.rejection_reason ? `· motivo rechazo: ${esc(b.rejection_reason)}` : ''}</div>
+          <div class="meta">Plan <span class="tag">${esc(b.plan_slug || 'free')}</span> ${b.sub_status ? `<span class="tag st-${b.sub_status === 'trial' ? 'pending' : 'verified'}">${b.sub_status}</span>` : '<span class="tag st-rejected">sin suscripción</span>'} ${b.sub_period_end ? `· hasta ${esc(b.sub_period_end)}` : ''}</div>
           <div class="actions">
             ${b.verification_status !== 'verified' ? `<button class="btn ok" data-verify="${b.id}">Verificar</button>` : ''}
             ${b.verification_status !== 'rejected' ? `<button class="btn bad" data-reject="${b.id}">Rechazar…</button>` : ''}
             <button class="btn ghost" data-active="${b.id}" data-val="${!b.is_active}">${b.is_active ? 'Desactivar' : 'Activar'}</button>
+            <button class="btn ghost" data-plan="${b.id}" data-name="${esc(b.name)}">Cambiar plan…</button>
+            <button class="btn ghost" data-pay="${b.id}" data-name="${esc(b.name)}">Registrar pago…</button>
             <a class="btn ghost" href="https://klendar.app/b/${b.id}" target="_blank" rel="noopener">Ver en la app</a>
           </div>
         </div>
@@ -194,6 +197,22 @@ async function renderBusinesses(v) {
         await rpc('admin_set_verification', { p_id: t.dataset.reject, p_status: 'rejected', p_reason: reason }); render();
       }
       if (t.dataset.active) { await rpc('admin_set_business_active', { p_id: t.dataset.active, p_active: t.dataset.val === 'true' }); render(); }
+      if (t.dataset.plan) {
+        const slug = prompt(`Plan para «${t.dataset.name}» (free / basic / pro):`, 'basic'); if (!slug) return;
+        const status = prompt('Estado (trial / active / past_due / cancelled):', 'active'); if (!status) return;
+        const end = prompt('Fin del periodo (AAAA-MM-DD, vacío = sin fin):', ''); if (end === null) return;
+        const method = prompt('Forma de pago (transfer / cash / card / none):', 'transfer'); if (method === null) return;
+        await rpc('admin_set_subscription', { p_business: t.dataset.plan, p_plan_slug: slug.trim(), p_status: status.trim(), p_period_end: end.trim() || null, p_payment_method: method.trim() || null }); render();
+      }
+      if (t.dataset.pay) {
+        const amount = prompt(`Importe cobrado a «${t.dataset.name}» en euros (p. ej. 19):`); if (!amount) return;
+        const method = prompt('Forma de pago (transfer / cash / card):', 'transfer'); if (!method) return;
+        const start = prompt('Inicio del periodo pagado (AAAA-MM-DD):', new Date().toISOString().slice(0, 10)); if (!start) return;
+        const d = new Date(start); d.setMonth(d.getMonth() + 1);
+        const end = prompt('Fin del periodo pagado (AAAA-MM-DD):', d.toISOString().slice(0, 10)); if (!end) return;
+        const notes = prompt('Notas (opcional):', '') ?? '';
+        await rpc('admin_record_payment', { p_business: t.dataset.pay, p_amount_cents: Math.round(parseFloat(amount.replace(',', '.')) * 100), p_method: method.trim(), p_period_start: start, p_period_end: end, p_notes: notes || null }); render();
+      }
     } catch (err) { alert(err.message); }
   };
 }
