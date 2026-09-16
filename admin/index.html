@@ -94,6 +94,13 @@ async function rpc(fn, args = {}) {
 }
 
 // ── Sesión ──────────────────────────────────────────────────────────────────
+// Nunca iniciar sesión por HTTP plano (la sesión viajaría sin cifrar).
+const insecure = location.protocol === 'http:' && !/^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+if (insecure) {
+  document.querySelector('main').innerHTML = '<div class="login"><h2 style="margin:0">Conexión no segura</h2><p class="muted">Este panel solo funciona por HTTPS. Espera a que el certificado de klendar.app esté emitido y entra por <a href="https://klendar.app/admin/">https://klendar.app/admin/</a>.</p></div>';
+  throw new Error('insecure');
+}
+
 async function boot() {
   const { data: { session } } = await sb.auth.getSession();
   if (!session) return showLogin();
