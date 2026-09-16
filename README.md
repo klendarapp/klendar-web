@@ -8,6 +8,15 @@ Web pública de Klendar: landing, páginas legales y páginas de enlace (`/o/<id
 - `.well-known/apple-app-site-association` — Universal Links de iOS. Sustituir `TEAMID` por el Team ID de Apple Developer.
 - Las páginas legales se generan con `python build_legal.py` a partir de los textos en ese archivo (no editar los `index.html` a mano). Los datos marcados en amarillo (titular, NIF, domicilio) están pendientes de la forma jurídica.
 
+## Hosting
+
+Desde 2026-09-16 la web se sirve con **Cloudflare Pages** (proyecto `klendar-web`,
+cuenta dev@klendar.app), conectado a este repo: cada push a `main` despliega.
+El DNS de klendar.app también está en Cloudflare (nameservers `chase`/`nelly`);
+el dominio y el correo siguen en IONOS. GitHub Pages quedó desactivado (su
+certificado nunca se emitió). `_redirects` manda www → apex; `_headers` añade
+cabeceras de seguridad y `noindex` en `/admin/`.
+
 ## Panel de administración (`/admin/`)
 
 `admin/index.html` es una página estática con supabase-js que llama a las RPC
