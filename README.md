@@ -8,6 +8,13 @@ Web pública de Klendar: landing, páginas legales y páginas de enlace (`/o/<id
 - `.well-known/apple-app-site-association` — Universal Links de iOS. Sustituir `TEAMID` por el Team ID de Apple Developer.
 - Las páginas legales se generan con `python build_legal.py` a partir de los textos en ese archivo (no editar los `index.html` a mano). Los datos marcados en amarillo (titular, NIF, domicilio) están pendientes de la forma jurídica.
 
+## Generar las páginas
+
+- `python build_site.py` → landing ES (`index.html`), EN (`en/index.html`) y soporte EN (`en/support/`). Textos en el dict `T` del script.
+- `python build_legal.py` → páginas legales (solo ES, idioma que prevalece); usan la misma cabecera/pie.
+- Capturas de la app en `assets/screens/*.webp` (540 px de ancho, sacadas del emulador en español).
+- Idioma: `/` es ES; en la primera visita, si el navegador está en inglés, redirige a `/en/` y se recuerda la elección del selector ES/EN (`localStorage.klendar_lang`). `hreflang` en todas las páginas.
+
 ## Hosting
 
 Desde 2026-09-16 la web se sirve con **Cloudflare Pages** (proyecto `klendar-web`,

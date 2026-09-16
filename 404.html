@@ -27,20 +27,30 @@
   <h1 id="t">Abrir en Klendar</h1>
   <p id="d">Si tienes la app instalada, se abrirá sola. Si no, descárgala y vuelve a abrir el enlace.</p>
   <a id="open" class="pill accent" href="#">Abrir en la app</a>
-  <a class="pill" href="#" aria-disabled="true">Descargar en Google Play · próximamente</a>
-  <a class="pill" href="#" aria-disabled="true">Descargar en App Store · próximamente</a>
-  <p style="margin-top:16px;font-size:13px"><a href="/">Ir a klendar.app</a></p>
+  <a id="gp" class="pill" href="#" aria-disabled="true">Google Play · próximamente</a>
+  <a id="as" class="pill" href="#" aria-disabled="true">App Store · próximamente</a>
+  <p style="margin-top:16px;font-size:13px"><a id="home" href="/">Ir a klendar.app</a></p>
 </div></div>
 <script>
 (function () {
   var path = location.pathname.replace(/\/+$/, '');
   var m = path.match(/^\/(o|b|r)\/([A-Za-z0-9-]+)$/);
   var t = document.getElementById('t'), d = document.getElementById('d'), a = document.getElementById('open');
-  if (!m) { t.textContent = 'Página no encontrada'; d.textContent = 'El enlace no es válido.'; a.style.display = 'none'; return; }
+  // Idioma: elección guardada o el del navegador (ES por defecto).
+  var en = false; try { var s = localStorage.getItem('klendar_lang'); en = s ? s === 'en' : /^en/i.test(navigator.language || ''); } catch (e) {}
+  var S = en ? { nf: 'Page not found', inv: 'This link is not valid.', o: 'View this deal in Klendar', b: 'View this business in Klendar', r: 'Validate code in Klendar',
+                 rd: 'This link is for the business: open Klendar and validate the redemption.', d: 'If you have the app installed it will open on its own. If not, download it and open the link again.',
+                 open: 'Open in the app', gp: 'Google Play · coming soon', as: 'App Store · coming soon', home: 'Go to klendar.app', title: 'Open in Klendar' }
+             : { nf: 'Página no encontrada', inv: 'El enlace no es válido.', o: 'Ver esta oferta en Klendar', b: 'Ver este negocio en Klendar', r: 'Validar código en Klendar',
+                 rd: 'Este enlace es para el negocio: abre Klendar y valida el canjeo.', d: 'Si tienes la app instalada, se abrirá sola. Si no, descárgala y vuelve a abrir el enlace.',
+                 open: 'Abrir en la app', gp: 'Google Play · próximamente', as: 'App Store · próximamente', home: 'Ir a klendar.app', title: 'Abrir en Klendar' };
+  document.documentElement.lang = en ? 'en' : 'es'; document.title = S.title; t.textContent = S.title; d.textContent = S.d; a.textContent = S.open;
+  document.getElementById('gp').textContent = S.gp; document.getElementById('as').textContent = S.as; document.getElementById('home').textContent = S.home;
+  if (!m) { t.textContent = S.nf; d.textContent = S.inv; a.style.display = 'none'; return; }
   var kind = m[1], id = m[2];
-  if (kind === 'o') t.textContent = 'Ver esta oferta en Klendar';
-  if (kind === 'b') t.textContent = 'Ver este negocio en Klendar';
-  if (kind === 'r') { t.textContent = 'Validar código en Klendar'; d.textContent = 'Este enlace es para el negocio: abre Klendar y valida el canjeo.'; }
+  if (kind === 'o') t.textContent = S.o;
+  if (kind === 'b') t.textContent = S.b;
+  if (kind === 'r') { t.textContent = S.r; d.textContent = S.rd; }
   var ua = navigator.userAgent || '';
   var appLink = 'https://klendar.app' + path;
   // Android: intent con fallback; iOS: Universal Link (mismo https) o esquema propio.

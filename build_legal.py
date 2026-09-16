@@ -2,42 +2,8 @@
 # Ejecutar: python build_legal.py   (desde la raíz de klendar-web)
 import io
 
-HEAD = '''<!doctype html>
-<html lang="es">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{title} · Klendar</title>
-<meta name="description" content="{desc}">
-<meta name="robots" content="index,follow">
-<meta name="theme-color" content="#0C1220">
-<link rel="icon" href="/assets/favicon.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/site.css">
-</head>
-<body>
-<header class="top"><div class="wrap">
-  <a class="brand" href="/"><img src="/assets/symbol.png" alt=""> Klendar</a>
-  <nav class="main"><a href="/#como">Cómo funciona</a><a href="/negocios/">Negocios</a><a href="/soporte/">Soporte</a></nav>
-</div></header>
-<main class="doc">
-<h1>{title}</h1>
-<div class="meta">Última actualización: {date} · Versión {version}</div>
-{todo}
-'''
-FOOT = '''
-</main>
-<footer><div class="wrap">
-  <div class="links">
-    <a href="/aviso-legal/">Aviso legal</a><a href="/privacidad/">Privacidad</a><a href="/terminos/">Términos de uso</a>
-    <a href="/negocios/">Condiciones para negocios</a><a href="/cookies/">Cookies</a><a href="/normas/">Normas de la comunidad</a>
-    <a href="/eliminar-cuenta/">Eliminar cuenta</a><a href="/soporte/">Soporte</a>
-  </div>
-  <div>© 2026 Klendar · <a href="mailto:info@klendar.app">info@klendar.app</a></div>
-</div></footer>
-</body></html>
-'''
+from build_site import head, footer, T
+
 TODO = '''<p class="todo"><strong>Pendiente de completar antes del lanzamiento:</strong> los datos marcados en <mark class="tbd">amarillo</mark> (titular, NIF, domicilio) dependen de la forma jurídica que se elija. Este texto es un borrador profesional; conviene que lo revise un abogado antes de publicar la app.</p>'''
 
 TITULAR = '<mark class="tbd">[Nombre del titular / razón social]</mark>'
@@ -271,7 +237,10 @@ PAGES['soporte'] = ('Soporte', 'Contacto y ayuda de Klendar.', '''
 ''')
 
 for slug, (title, desc, body) in PAGES.items():
-    io.open(f'{slug}/index.html', 'w', encoding='utf-8', newline='\n').write(
-        HEAD.format(title=title, desc=desc, date=DATE, version=VERSION, todo=TODO if slug in ('aviso-legal','privacidad','terminos','negocios') else '')
-        + body + FOOT)
+    todo = TODO if slug in ('aviso-legal', 'privacidad', 'terminos', 'negocios') else ''
+    html = (head(T['es'], f'/{slug}/', f'{title} · Klendar', desc)
+            + '<main class="doc">\n<h1>' + title + '</h1>\n'
+            + f'<div class="meta">Última actualización: {DATE} · Versión {VERSION}</div>\n' + todo + '\n'
+            + body + '\n</main>\n' + footer(T['es']))
+    io.open(f'{slug}/index.html', 'w', encoding='utf-8', newline='\n').write(html)
 print('ok', list(PAGES))
