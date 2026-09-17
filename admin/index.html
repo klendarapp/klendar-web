@@ -247,7 +247,12 @@ async function renderOffers(v) {
   v.onclick = async (e) => {
     const t = e.target;
     if (!t.dataset.mod) return;
-    try { await rpc('admin_set_offer_moderation', { p_id: t.dataset.mod, p_status: t.dataset.val }); render(); } catch (err) { alert(err.message); }
+    let reason = null;
+    if (t.dataset.val === 'rejected') {
+      reason = prompt('Motivo (se envía al negocio junto con la vía de recurso). Ej.: «foto que no es del local», «oferta engañosa».');
+      if (reason === null) return;
+    }
+    try { await rpc('admin_set_offer_moderation', { p_id: t.dataset.mod, p_status: t.dataset.val, p_reason: reason }); render(); } catch (err) { alert(err.message); }
   };
 }
 
@@ -291,8 +296,14 @@ async function renderReports(v) {
   v.onclick = async (e) => {
     const t = e.target;
     if (!t.dataset.res) return;
-    if (t.dataset.action === 'hide' && !confirm('¿Retirar el contenido denunciado? (ofertas: se rechazan; negocios: se desactivan; reseñas y posts: se borran)')) return;
-    try { await rpc('admin_resolve_report', { p_id: t.dataset.res, p_status: t.dataset.status, p_action: t.dataset.action }); render(); } catch (err) { alert(err.message); }
+    let reason = null;
+    if (t.dataset.action === 'hide') {
+      reason = prompt('¿Retirar el contenido denunciado? (ofertas: se rechazan; negocios: se desactivan; reseñas y posts: se borran)
+
+Motivo que verá quien lo publicó (obligatorio por el DSA):');
+      if (reason === null || !reason.trim()) return;
+    }
+    try { await rpc('admin_resolve_report', { p_id: t.dataset.res, p_status: t.dataset.status, p_action: t.dataset.action, p_reason: reason }); render(); } catch (err) { alert(err.message); }
   };
 }
 
