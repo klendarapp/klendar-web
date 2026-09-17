@@ -55,6 +55,7 @@ T = {
     biz_sub='Publica una oferta flash cuando tengas un hueco, anuncia tus eventos y valida los canjeos con la cámara del móvil. Sin comisiones por venta: una cuota mensual fija.',
     biz_points=['Alta en 2 minutos desde la app; verificamos tu negocio en 24–48 h.', 'Ofertas con cuenta atrás y aforo: tú decides cuántas y hasta cuándo.', 'Estadísticas de vistas, favoritos y canjeos por publicación.', 'Equipo: añade encargados y empleados para validar códigos.'],
     biz_cta='Escríbenos', biz_terms='Ver condiciones', biz_note='Las primeras semanas en cada ciudad, gratis.',
+    biz_kit='Kit para tu local: <a href="/assets/kit/klendar-guia-negocios.pdf">guía de 1 página (PDF)</a> · <a href="/assets/kit/klendar-cartel.pdf">cartel con QR (PDF)</a>',
     biz_stats=[('0 %', 'comisión por venta'), ('2 min', 'para publicar'), ('24–48 h', 'verificación'), ('QR', 'de un solo uso')],
     faq_eyebrow='Preguntas frecuentes', faq_h2='Dudas habituales',
     faqs=[('¿Klendar es gratis?', 'Sí, para las personas usuarias es gratis y sin anuncios. Los negocios pagan una cuota mensual fija por publicar.'),
@@ -95,7 +96,8 @@ T = {
     biz_eyebrow='For businesses', biz_h2='Got a bar, a shop, a venue?',
     biz_sub='Post a flash deal when you have a quiet hour, announce your events and validate redemptions with your phone camera. No sales commission: one flat monthly fee.',
     biz_points=['Sign up in 2 minutes from the app; we verify your business in 24–48 h.', 'Deals with a countdown and capacity: you decide how many and until when.', 'Stats for views, favourites and redemptions per post.', 'Team: add managers and staff to validate codes.'],
-    biz_cta='Email us', biz_terms='Business terms (Spanish)', biz_note='The first weeks in each city are free.',
+    biz_cta='Email us', biz_terms='Business terms', biz_note='The first weeks in each city are free.',
+    biz_kit='Kit for your venue (Spanish): <a href="/assets/kit/klendar-guia-negocios.pdf">one-page guide (PDF)</a> · <a href="/assets/kit/klendar-cartel.pdf">poster with QR (PDF)</a>',
     biz_stats=[('0 %', 'sales commission'), ('2 min', 'to publish'), ('24–48 h', 'verification'), ('QR', 'single-use')],
     faq_eyebrow='FAQ', faq_h2='Common questions',
     faqs=[('Is Klendar free?', 'Yes, for users it\'s free and ad-free. Businesses pay a flat monthly fee to publish.'),
@@ -276,6 +278,7 @@ def landing(t):
       <ul>{points}</ul>
       <p style="margin:0;display:flex;gap:10px;flex-wrap:wrap"><a class="pill accent" href="{mail}">{t['biz_cta']}</a> <a class="pill ghost" href="{t['biz_terms_url']}">{t['biz_terms']}</a></p>
       <p class="note" style="color:inherit;opacity:.7">{t['biz_note']}</p>
+      <p class="note" style="color:inherit;opacity:.85">{t['biz_kit']}</p>
     </div>
     <aside><div class="row">{stats}</div></aside>
   </div>

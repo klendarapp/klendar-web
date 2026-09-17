@@ -38,3 +38,4 @@ select id from auth.users where email = 'tu@email';
 Permite: KPIs, verificar/rechazar negocios, moderar publicaciones, resolver
 denuncias (retirando o no el contenido) y buscar usuarios. La clave que lleva
 embebida es la *publishable* (pública); la seguridad la ponen `is_admin()` y RLS.
+- `python tools/build_kit.py` → kit para negocios en `assets/kit/` (guía de 1 página y cartel A4 con QR; reportlab + qrcode; fuente Onest en `tools/fonts/`).
