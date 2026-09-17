@@ -11,7 +11,7 @@ Web pública de Klendar: landing, páginas legales y páginas de enlace (`/o/<id
 ## Generar las páginas
 
 - `python build_site.py` → landing ES (`index.html`), EN (`en/index.html`) y soporte EN (`en/support/`). Textos en el dict `T` del script.
-- `python build_legal.py` → páginas legales (solo ES, idioma que prevalece); usan la misma cabecera/pie.
+- `python build_legal.py` → páginas legales en ES (idioma que prevalece) y su traducción informativa en `/en/{legal-notice,privacy,terms,business-terms,cookies,community-guidelines,delete-account}/` con aviso de cortesía; el mapa de rutas ES↔EN está en `ALT` (`build_site.py`) y alimenta hreflang y el selector de idioma.
 - Capturas de la app en `assets/screens/*.webp` (540 px de ancho, sacadas del emulador en español).
 - Idioma: `/` es ES; en la primera visita, si el navegador está en inglés, redirige a `/en/` y se recuerda la elección del selector ES/EN (`localStorage.klendar_lang`). `hreflang` en todas las páginas.
 

@@ -150,6 +150,7 @@ footer .bottom { display: flex; flex-wrap: wrap; gap: 10px 20px; justify-content
 .doc p, .doc li { font-size: 16px; }
 .doc table { border-collapse: collapse; width: 100%; font-size: 15px; margin: 12px 0; display: block; overflow-x: auto; }
 .doc th, .doc td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--glass-border); vertical-align: top; }
+.doc .notice { background: var(--accent-soft); border-left: 4px solid var(--accent); padding: 10px 14px; border-radius: 10px; font-size: 14px; margin-bottom: 12px; }
 .doc .todo { background: rgba(245,176,65,.18); border-left: 4px solid #F5B041; padding: 10px 14px; border-radius: 10px; font-size: 14px; }
 .doc .lang-note { background: var(--accent-soft); border-radius: 12px; padding: 10px 14px; font-size: 14px; margin-bottom: 20px; }
 mark.tbd { background: rgba(245,176,65,.35); color: inherit; padding: 0 4px; border-radius: 4px; }

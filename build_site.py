@@ -1,10 +1,31 @@
 # Genera la landing y las páginas de marketing en ES (/) y EN (/en/).
 # Ejecutar: python build_site.py   (desde la raíz de klendar-web)
-# Las páginas legales las genera build_legal.py (solo ES: versión que prevalece).
+# Las páginas legales las genera build_legal.py (ES prevalece; EN informativa).
 import io, os
 
 YEAR = '2026'
 BASE = 'https://klendar.app'
+
+# Ruta ES → ruta EN equivalente (hreflang, selector de idioma).
+ALT = {
+    '/': '/en/',
+    '/soporte/': '/en/support/',
+    '/aviso-legal/': '/en/legal-notice/',
+    '/privacidad/': '/en/privacy/',
+    '/terminos/': '/en/terms/',
+    '/negocios/': '/en/business-terms/',
+    '/cookies/': '/en/cookies/',
+    '/normas/': '/en/community-guidelines/',
+    '/eliminar-cuenta/': '/en/delete-account/',
+}
+ALT_EN = {en: es for es, en in ALT.items()}
+
+
+def alternates(path):
+    """(ruta ES, ruta EN) de cualquier página del sitio."""
+    if path in ALT: return path, ALT[path]
+    if path in ALT_EN: return ALT_EN[path], path
+    return '/', '/en/'
 
 T = {
   'es': dict(
@@ -85,9 +106,9 @@ T = {
     cta_h2='What\'s happening nearby, in your pocket', cta_sub='Coming soon to Google Play and the App Store.',
     foot_product='Product', foot_legal='Legal', foot_contact='Contact',
     foot_links_product=[('/en/#como', 'How it works'), ('/en/#negocios', 'For businesses'), ('/en/support/', 'Support'), ('/', 'Español')],
-    foot_links_legal=[('/aviso-legal/', 'Legal notice (ES)'), ('/privacidad/', 'Privacy policy (ES)'), ('/terminos/', 'Terms of use (ES)'), ('/negocios/', 'Business terms (ES)'), ('/cookies/', 'Cookies (ES)'), ('/normas/', 'Community guidelines (ES)'), ('/eliminar-cuenta/', 'Delete account (ES)')],
+    foot_links_legal=[('/en/legal-notice/', 'Legal notice'), ('/en/privacy/', 'Privacy policy'), ('/en/terms/', 'Terms of use'), ('/en/business-terms/', 'Business terms'), ('/en/cookies/', 'Cookies'), ('/en/community-guidelines/', 'Community guidelines'), ('/en/delete-account/', 'Delete account')],
     foot_rights=f'© {YEAR} Klendar. All rights reserved.', foot_made='Made in Spain',
-    support_url='/en/support/', biz_terms_url='/negocios/',
+    support_url='/en/support/', biz_terms_url='/en/business-terms/',
   ),
 }
 
@@ -106,15 +127,15 @@ SUPPORT_EN = ('Support', 'Klendar help and contact.', '''
 <h3>I run a business and want to sign up</h3>
 <p>In the app: Profile → "Got a business? Register it". We review it within 24–48 h. You can also email us.</p>
 <h2>Legal documents</h2>
-<p>Our legal documents (privacy policy, terms of use, business terms, cookies, community guidelines, account deletion) are published in Spanish, which is the governing language: <a href="/privacidad/">Privacy</a> · <a href="/terminos/">Terms</a> · <a href="/negocios/">Business terms</a> · <a href="/eliminar-cuenta/">Delete your account</a>.</p>
+<p><a href="/en/privacy/">Privacy policy</a> · <a href="/en/terms/">Terms of use</a> · <a href="/en/business-terms/">Business terms</a> · <a href="/en/community-guidelines/">Community guidelines</a> · <a href="/en/delete-account/">Delete your account</a>. English versions are courtesy translations; the Spanish originals are the governing text.</p>
 ''')
 
 
 def head(t, path, page_title=None, page_desc=None, extra=''):
     title = page_title or t['title']; desc = page_desc or t['desc']
     canonical = BASE + path
-    alt_es = BASE + ('/' if path in ('/', '/en/') else path.replace('/en/support/', '/soporte/'))
-    alt_en = BASE + ('/en/' if path in ('/', '/en/') else path.replace('/soporte/', '/en/support/'))
+    es_path, en_path = alternates(path)
+    alt_es, alt_en = BASE + es_path, BASE + en_path
     return f'''<!doctype html>
 <html lang="{t['lang']}">
 <head>
@@ -153,8 +174,8 @@ def head(t, path, page_title=None, page_desc=None, extra=''):
     <a href="/{t['dir']}#faq">{t['nav_faq']}</a>
     <a href="{t['support_url']}">{t['nav_support']}</a>
     <span class="lang" aria-label="Idioma / Language">
-      <a href="/" class="{'on' if t['lang']=='es' else ''}" data-lang="es" hreflang="es">ES</a>
-      <a href="/en/" class="{'on' if t['lang']=='en' else ''}" data-lang="en" hreflang="en">EN</a>
+      <a href="{es_path}" class="{'on' if t['lang']=='es' else ''}" data-lang="es" hreflang="es">ES</a>
+      <a href="{en_path}" class="{'on' if t['lang']=='en' else ''}" data-lang="en" hreflang="en">EN</a>
     </span>
   </nav>
 </div></header>
