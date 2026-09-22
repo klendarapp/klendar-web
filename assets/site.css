@@ -1,23 +1,26 @@
-/* Klendar — identidad "Cristal dual" (misma que la app) */
+/* Klendar — identidad «Pulso» (misma que la app): coral sobre tinta, marfil en claro.
+   Sora en titulares, Manrope en todo lo demás. */
 :root {
-  --accent: #4FD1FF; --on-accent: #0C1220; --accent-text: #0B8FC4; --accent-soft: rgba(79,209,255,.16);
-  --surface: #F4F7FB; --elevated: #FFFFFF; --ink: #101828; --ink-2: #5B6B82;
-  --glass: rgba(255,255,255,.66); --glass-border: rgba(16,24,40,.08);
-  --radius: 28px; --shadow: 0 20px 60px -30px rgba(16,24,40,.35);
+  --accent: #FF4D6D; --on-accent: #FFFFFF; --accent-text: #D9264A; --accent-soft: rgba(255,77,109,.14);
+  --amber: #FFB84D;
+  --surface: #F7F3EE; --elevated: #FFFFFF; --ink: #12151C; --ink-2: #5A6170;
+  --glass: rgba(255,255,255,.66); --glass-border: rgba(18,21,28,.08);
+  --radius: 28px; --shadow: 0 20px 60px -30px rgba(18,21,28,.35);
+  --display: Sora, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 @media (prefers-color-scheme: dark) {
-  :root { --accent-text: #4FD1FF; --surface: #0C1220; --elevated: #141C30; --ink: #FFFFFF; --ink-2: #B3B9C6;
+  :root { --accent-text: #FF4D6D; --surface: #0B0F1A; --elevated: #151A2A; --ink: #FFFFFF; --ink-2: #A7AEC0;
     --glass: rgba(255,255,255,.07); --glass-border: rgba(255,255,255,.14); --shadow: 0 30px 80px -30px rgba(0,0,0,.7); }
 }
 * { box-sizing: border-box; }
 html { color-scheme: light dark; scroll-behavior: smooth; }
-body { margin: 0; font-family: Onest, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--surface); color: var(--ink);
+body { margin: 0; font-family: Manrope, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--surface); color: var(--ink);
   line-height: 1.55; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
 img { max-width: 100%; display: block; }
 a { color: var(--accent-text); text-decoration: none; }
 a:hover { text-decoration: underline; }
 .wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
-h1, h2, h3 { margin: 0; letter-spacing: -.02em; }
+h1, h2, h3 { margin: 0; letter-spacing: -.02em; font-family: var(--display); }
 .eyebrow { display: inline-block; font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent-text); margin-bottom: 10px; }
 section { padding: 72px 0; }
 section h2 { font-size: clamp(28px, 4vw, 40px); line-height: 1.1; font-weight: 800; margin-bottom: 14px; }
@@ -27,7 +30,7 @@ section h2 { font-size: clamp(28px, 4vw, 40px); line-height: 1.1; font-weight: 8
 header.top { position: sticky; top: 0; z-index: 20; backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
   background: var(--glass); border-bottom: 1px solid var(--glass-border); }
 header.top .wrap { display: flex; align-items: center; gap: 14px; height: 64px; position: relative; }
-.brand { display: flex; align-items: center; gap: 10px; color: var(--ink); font-weight: 800; font-size: 20px; letter-spacing: -.6px; }
+.brand { display: flex; align-items: center; gap: 10px; color: var(--ink); font-family: var(--display); font-weight: 800; font-size: 20px; letter-spacing: -.6px; }
 .brand:hover { text-decoration: none; }
 .brand img { width: 30px; height: 30px; border-radius: 9px; }
 nav.main { margin-left: auto; display: flex; align-items: center; gap: 22px; font-weight: 600; font-size: 14px; }
@@ -62,8 +65,10 @@ nav.main a:hover { color: var(--ink); text-decoration: none; }
 
 /* ── Hero ─────────────────────────────────────────────────────────────── */
 .hero { padding: 64px 0 40px; position: relative; overflow: hidden; }
-.hero::before { content: ""; position: absolute; inset: -30% -10% auto; height: 90%; z-index: -1; filter: blur(90px); opacity: .5;
-  background: radial-gradient(circle at 15% 30%, #4FD1FF 0, transparent 40%), radial-gradient(circle at 85% 15%, #7A5AFF 0, transparent 40%); }
+.hero::before { content: ""; position: absolute; inset: -30% -10% auto; height: 90%; z-index: -1; filter: blur(90px); opacity: .28;
+  background: radial-gradient(circle at 15% 30%, #FF4D6D 0, transparent 40%), radial-gradient(circle at 85% 15%, #FFB84D 0, transparent 40%); }
+.hero::after { content: ""; position: absolute; right: -120px; top: -140px; width: 420px; height: 420px; border-radius: 50%; z-index: -1;
+  border: 34px solid var(--accent); border-right-color: transparent; opacity: .14; transform: rotate(-30deg); pointer-events: none; }
 .hero .wrap { display: grid; grid-template-columns: 1.1fr .9fr; gap: 40px; align-items: center; }
 .hero h1 { font-size: clamp(38px, 6vw, 64px); line-height: 1.02; letter-spacing: -.035em; margin: 0 0 18px; font-weight: 800; }
 .hero h1 em { font-style: normal; color: var(--accent-text); }
@@ -118,7 +123,7 @@ nav.main a:hover { color: var(--ink); text-decoration: none; }
 .biz .pill { border-color: transparent; }
 .biz .pill.ghost { background: transparent; color: var(--surface); border: 1px solid color-mix(in srgb, var(--surface) 30%, transparent); }
 .biz aside { background: color-mix(in srgb, var(--surface) 8%, transparent); border: 1px solid color-mix(in srgb, var(--surface) 14%, transparent); border-radius: 22px; padding: 22px; }
-.biz aside b { display: block; font-size: 34px; letter-spacing: -1px; }
+.biz aside b { display: block; font-size: 34px; letter-spacing: -1px; font-family: var(--display); }
 .biz aside span { color: color-mix(in srgb, var(--surface) 70%, transparent); font-size: 14px; }
 .biz aside .row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 @media (max-width: 860px) { .biz { grid-template-columns: 1fr; padding: 30px 24px; } }
@@ -151,9 +156,9 @@ footer .bottom { display: flex; flex-wrap: wrap; gap: 10px 20px; justify-content
 .doc table { border-collapse: collapse; width: 100%; font-size: 15px; margin: 12px 0; display: block; overflow-x: auto; }
 .doc th, .doc td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--glass-border); vertical-align: top; }
 .doc .notice { background: var(--accent-soft); border-left: 4px solid var(--accent); padding: 10px 14px; border-radius: 10px; font-size: 14px; margin-bottom: 12px; }
-.doc .todo { background: rgba(245,176,65,.18); border-left: 4px solid #F5B041; padding: 10px 14px; border-radius: 10px; font-size: 14px; }
+.doc .todo { background: rgba(255,184,77,.18); border-left: 4px solid var(--amber); padding: 10px 14px; border-radius: 10px; font-size: 14px; }
 .doc .lang-note { background: var(--accent-soft); border-radius: 12px; padding: 10px 14px; font-size: 14px; margin-bottom: 20px; }
-mark.tbd { background: rgba(245,176,65,.35); color: inherit; padding: 0 4px; border-radius: 4px; }
+mark.tbd { background: rgba(255,184,77,.35); color: inherit; padding: 0 4px; border-radius: 4px; }
 
 /* ── Página de enlace (/o, /b, /r) ───────────────────────────────────── */
 .open { min-height: 100dvh; display: grid; place-items: center; text-align: center; padding: 24px; }

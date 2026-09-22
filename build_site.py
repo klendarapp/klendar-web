@@ -33,8 +33,8 @@ T = {
     title='Klendar — Lo que pasa cerca de ti, ahora mismo',
     desc='Ofertas flash con cuenta atrás y eventos de los negocios de tu barrio, ordenados por cercanía. Guarda tus sitios, recibe avisos y canjea con un QR.',
     nav_how='Cómo funciona', nav_biz='Para negocios', nav_faq='Preguntas', nav_support='Soporte',
-    h1='Lo que pasa cerca de ti, <em>ahora mismo</em>.',
-    lead='Ofertas flash con cuenta atrás y eventos de los negocios de tu zona, ordenados por cercanía. Guarda tus sitios, recibe avisos y canjea enseñando un QR.',
+    h1='Ofertas que se acaban. <em>Planes que empiezan.</em>',
+    lead='Lo que pasa cerca de ti, ahora mismo: ofertas flash con cuenta atrás y eventos de tu barrio, ordenados por cercanía. Guarda tus sitios, recibe avisos y canjea con un QR de un solo uso.',
     play='Google Play · próximamente', appstore='App Store · próximamente',
     note='Lanzamiento ciudad a ciudad en España. Gratis y sin anuncios.',
     float_a=('⚡ 1 h 31 min', 'para canjear'), float_b=('📍 262 m', 'a pie desde ti'),
@@ -75,8 +75,8 @@ T = {
     title='Klendar — What\'s happening near you, right now',
     desc='Flash deals with a countdown and events from the businesses around you, sorted by distance. Save your places, get alerts and redeem with a QR code.',
     nav_how='How it works', nav_biz='For businesses', nav_faq='FAQ', nav_support='Support',
-    h1='What\'s happening near you, <em>right now</em>.',
-    lead='Flash deals with a countdown and events from the businesses around you, sorted by distance. Save your places, get alerts and redeem by showing a QR code.',
+    h1='Deals that run out. <em>Plans that begin.</em>',
+    lead='What\'s happening near you, right now: flash deals with a countdown and events from your neighbourhood, sorted by distance. Save your places, get alerts and redeem with a single-use QR code.',
     play='Google Play · coming soon', appstore='App Store · coming soon',
     note='Launching city by city in Spain. Free, no ads.',
     float_a=('⚡ 1 h 31 min', 'left to redeem'), float_b=('📍 262 m', 'walk from you'),
@@ -156,12 +156,12 @@ def head(t, path, page_title=None, page_desc=None, extra=''):
 <meta property="og:type" content="website">
 <meta property="og:locale" content="{'es_ES' if t['lang']=='es' else 'en_GB'}">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="theme-color" content="#0C1220">
+<meta name="theme-color" content="#0B0F1A">
 <link rel="icon" href="/assets/favicon.png">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/site.css">
 {extra}
 </head>

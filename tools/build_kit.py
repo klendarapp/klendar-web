@@ -1,6 +1,6 @@
 # Kit para negocios: guía de 1 página + cartel A4 con QR.
 # Ejecutar: python tools/build_kit.py   (desde la raíz de klendar-web)
-# Requiere: pip install reportlab qrcode[pil]   y la fuente Onest en tools/fonts/
+# Requiere: pip install reportlab qrcode[pil]   y las fuentes Sora/Manrope en tools/fonts/ (copiadas de la app)
 import io, os
 import qrcode
 from reportlab.lib.pagesizes import A4
@@ -18,13 +18,14 @@ FONTS = os.path.join(ROOT, 'tools', 'fonts')
 OUT = os.path.join(ROOT, 'assets', 'kit')
 os.makedirs(OUT, exist_ok=True)
 
-pdfmetrics.registerFont(TTFont('Onest', os.path.join(FONTS, 'Onest-Regular.ttf')))
-pdfmetrics.registerFont(TTFont('Onest-Bold', os.path.join(FONTS, 'Onest-Bold.ttf')))
-pdfmetrics.registerFont(TTFont('Onest-Black', os.path.join(FONTS, 'Onest-ExtraBold.ttf')))
+# «Onest» = texto (Manrope); «Onest-Bold» = negrita (Manrope Bold); «Onest-Black» = titulares (Sora ExtraBold).
+pdfmetrics.registerFont(TTFont('Onest', os.path.join(FONTS, 'Manrope-Regular.ttf')))
+pdfmetrics.registerFont(TTFont('Onest-Bold', os.path.join(FONTS, 'Manrope-Bold.ttf')))
+pdfmetrics.registerFont(TTFont('Onest-Black', os.path.join(FONTS, 'Sora-ExtraBold.ttf')))
 pdfmetrics.registerFontFamily('Onest', normal='Onest', bold='Onest-Bold', italic='Onest', boldItalic='Onest-Bold')
 
-BG = HexColor('#0C1220'); CARD = HexColor('#141C30'); ACCENT = HexColor('#4FD1FF')
-INK = white; INK2 = HexColor('#B3B9C6'); LINE = HexColor('#2A3450')
+BG = HexColor('#0B0F1A'); CARD = HexColor('#151A2A'); ACCENT = HexColor('#FF4D6D')
+INK = white; INK2 = HexColor('#A7AEC0'); LINE = HexColor('#2A3145')
 W, H = A4
 SYMBOL = os.path.join(ROOT, 'assets', 'symbol.png')
 
@@ -38,7 +39,7 @@ def brand(c, x, y, size=9 * mm, text_size=20):
 def qr_image(url):
     q = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_Q, box_size=10, border=1)
     q.add_data(url); q.make(fit=True)
-    img = q.make_image(fill_color='#0C1220', back_color='white').convert('RGB')
+    img = q.make_image(fill_color='#0B0F1A', back_color='white').convert('RGB')
     buf = io.BytesIO(); img.save(buf, format='PNG'); buf.seek(0)
     return ImageReader(buf)
 
@@ -104,7 +105,7 @@ def guide():
     x2 = M + colw + 6 * mm
     c.setFillColor(CARD); c.roundRect(x2, y - 52 * mm, colw, 58 * mm, 4 * mm, fill=1, stroke=0)
     c.setFillColor(INK); c.setFont('Onest-Bold', 12.5); c.drawString(x2 + 6 * mm, y - 2 * mm, 'Planes y precio')
-    para(c, '<b><font color="#4FD1FF">Prueba gratis de 8 semanas</font></b> con todo incluido al darte de alta. '
+    para(c, '<b><font color="#FF4D6D">Prueba gratis de 8 semanas</font></b> con todo incluido al darte de alta. '
             'Después, plan <b>Gratis</b> (hasta 2 publicaciones activas) o un plan de pago con <b>cuota mensual fija</b> y sin comisiones. '
             'Cambias o te das de baja cuando quieras.<br/><br/>'
             'Condiciones completas en <b>klendar.app/negocios</b>.',
@@ -126,7 +127,7 @@ def poster():
     c.setTitle('Klendar · Cartel para el local'); c.setAuthor('Klendar')
     c.setFillColor(BG); c.rect(0, 0, W, H, fill=1, stroke=0)
     # Resplandor de acento arriba
-    c.setFillColor(HexColor('#123A4C')); c.circle(W * 0.85, H * 0.95, 70 * mm, fill=1, stroke=0)
+    c.setFillColor(HexColor('#3A1B2A')); c.circle(W * 0.85, H * 0.95, 70 * mm, fill=1, stroke=0)
     c.setFillColor(BG); c.circle(W * 0.85, H * 0.95, 40 * mm, fill=1, stroke=0)
     M = 18 * mm
     brand(c, M, H - M - 12 * mm, size=12 * mm, text_size=28)
@@ -148,7 +149,7 @@ def poster():
     tx = M + 13 * mm + qs + 12 * mm
     c.setFillColor(INK); c.setFont('Onest-Black', 22); c.drawString(tx, cy + ch - 26 * mm, 'Escanea y descarga')
     para(c, 'Gratis, sin anuncios.<br/>Google Play y App Store.<br/><br/>'
-            '<font color="#4FD1FF"><b>klendar.app</b></font>', tx, cy + ch - 32 * mm, cw - (tx - M) - 10 * mm, size=14, leading=20, color=INK2)
+            '<font color="#FF4D6D"><b>klendar.app</b></font>', tx, cy + ch - 32 * mm, cw - (tx - M) - 10 * mm, size=14, leading=20, color=INK2)
 
     c.setFillColor(INK2); c.setFont('Onest', 11)
     c.drawString(M, 30 * mm, 'Cada oferta se canjea una vez por persona con un código de un solo uso, válido 5 minutos.')
