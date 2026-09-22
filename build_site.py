@@ -34,6 +34,7 @@ T = {
     title='Klendar — Lo que pasa cerca de ti, ahora mismo',
     desc='Ofertas flash con cuenta atrás y eventos de los negocios de tu barrio, ordenados por cercanía. Guarda tus sitios, recibe avisos y canjea con un QR.',
     nav_how='Cómo funciona', nav_biz='Para negocios', nav_faq='Preguntas', nav_support='Soporte',
+    a_how='como', a_feat='funciones', a_screens='pantallas', a_biz='negocios', a_faq='preguntas',
     h1='Ofertas que se acaban. <em>Planes que empiezan.</em>',
     lead='Lo que pasa cerca de ti, ahora mismo: ofertas flash con cuenta atrás y eventos de tu barrio, ordenados por cercanía. Guarda tus sitios, recibe avisos y canjea con un QR de un solo uso.',
     play='Google Play · próximamente', appstore='App Store · próximamente',
@@ -76,6 +77,7 @@ T = {
     title='Klendar — What\'s happening near you, right now',
     desc='Flash deals with a countdown and events from the businesses around you, sorted by distance. Save your places, get alerts and redeem with a QR code.',
     nav_how='How it works', nav_biz='For businesses', nav_faq='FAQ', nav_support='Support',
+    a_how='how-it-works', a_feat='features', a_screens='screenshots', a_biz='businesses', a_faq='faq',
     h1='Deals that run out. <em>Plans that begin.</em>',
     lead='What\'s happening near you, right now: flash deals with a countdown and events from your neighbourhood, sorted by distance. Save your places, get alerts and redeem with a single-use QR code.',
     play='Google Play · coming soon', appstore='App Store · coming soon',
@@ -108,7 +110,7 @@ T = {
           ('Which cities?', 'We\'re starting city by city in Spain. If yours is still quiet, help us: tell your local bar.')],
     cta_h2='What\'s happening nearby, in your pocket', cta_sub='Coming soon to Google Play and the App Store.',
     foot_product='Product', foot_legal='Legal', foot_contact='Contact',
-    foot_links_product=[('/en/#como', 'How it works'), ('/en/#negocios', 'For businesses'), ('/en/support/', 'Support'), ('/', 'Español')],
+    foot_links_product=[('/en/#how-it-works', 'How it works'), ('/en/#businesses', 'For businesses'), ('/en/support/', 'Support'), ('/', 'Español')],
     foot_links_legal=[('/en/legal-notice/', 'Legal notice'), ('/en/privacy/', 'Privacy policy'), ('/en/terms/', 'Terms of use'), ('/en/business-terms/', 'Business terms'), ('/en/cookies/', 'Cookies'), ('/en/community-guidelines/', 'Community guidelines'), ('/en/delete-account/', 'Delete account')],
     foot_rights=f'© {YEAR} Klendar. All rights reserved.', foot_made='Made in Spain',
     support_url='/en/support/', biz_terms_url='/en/business-terms/',
@@ -172,9 +174,9 @@ def head(t, path, page_title=None, page_desc=None, extra=''):
   <input type="checkbox" id="menu" aria-hidden="true">
   <label class="menu-toggle" for="menu" aria-label="Menú"><span></span><span></span><span></span></label>
   <nav class="main">
-    <a href="/{t['dir']}#como">{t['nav_how']}</a>
-    <a href="/{t['dir']}#negocios">{t['nav_biz']}</a>
-    <a href="/{t['dir']}#faq">{t['nav_faq']}</a>
+    <a href="/{t['dir']}#{t['a_how']}">{t['nav_how']}</a>
+    <a href="/{t['dir']}#{t['a_biz']}">{t['nav_biz']}</a>
+    <a href="/{t['dir']}#{t['a_faq']}">{t['nav_faq']}</a>
     <a href="{t['support_url']}">{t['nav_support']}</a>
     <span class="lang" aria-label="Idioma / Language">
       <a href="{es_path}" class="{'on' if t['lang']=='es' else ''}" data-lang="es" hreflang="es">ES</a>
@@ -252,25 +254,25 @@ def landing(t):
   </div>
 </div></section>
 
-<section id="como"><div class="wrap">
+<section id="{t['a_how']}"><div class="wrap">
   <span class="eyebrow">{t['how_eyebrow']}</span>
   <h2>{t['how_h2']}</h2>
   <div class="steps">{steps}</div>
 </div></section>
 
-<section id="funciones"><div class="wrap">
+<section id="{t['a_feat']}"><div class="wrap">
   <span class="eyebrow">{t['feat_eyebrow']}</span>
   <h2>{t['feat_h2']}</h2>
   <div class="grid">{feats}</div>
 </div></section>
 
-<section id="pantallas"><div class="wrap">
+<section id="{t['a_screens']}"><div class="wrap">
   <span class="eyebrow">{t['screens_eyebrow']}</span>
   <h2>{t['screens_h2']}</h2>
   <div class="screens">{screens}</div>
 </div></section>
 
-<section id="negocios"><div class="wrap">
+<section id="{t['a_biz']}"><div class="wrap">
   <div class="biz">
     <div>
       <span class="eyebrow">{t['biz_eyebrow']}</span>
@@ -285,7 +287,7 @@ def landing(t):
   </div>
 </div></section>
 
-<section id="faq"><div class="wrap">
+<section id="{t['a_faq']}"><div class="wrap">
   <span class="eyebrow">{t['faq_eyebrow']}</span>
   <h2>{t['faq_h2']}</h2>
   <div class="faq">{faqs}</div>

@@ -85,7 +85,7 @@ ${head}
 <body>
 <header class="top"><div class="wrap">
   <a class="brand" href="/"><img src="/assets/symbol.png" alt=""> Klendar</a>
-  <nav class="main"><a href="/#como">${S.how}</a><a href="/negocios/">${S.biz}</a><a href="/soporte/">${S.sup}</a></nav>
+  <nav class="main"><a href="${en ? '/en/#how-it-works' : '/#como'}">${S.how}</a><a href="${en ? '/en/business-terms/' : '/negocios/'}">${S.biz}</a><a href="${en ? '/en/support/' : '/soporte/'}">${S.sup}</a></nav>
 </div></header>
 <div class="open"><div class="card">
   ${hero}

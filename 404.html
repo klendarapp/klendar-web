@@ -19,7 +19,7 @@
 <body>
 <header class="top"><div class="wrap">
   <a class="brand" href="/"><img src="/assets/symbol.png" alt=""> Klendar</a>
-  <nav class="main"><a href="/#como">Cómo funciona</a><a href="/negocios/">Negocios</a><a href="/soporte/">Soporte</a></nav>
+  <nav class="main" id="nav"><a href="/#como">Cómo funciona</a><a href="/negocios/">Negocios</a><a href="/soporte/">Soporte</a></nav>
 </div></header>
 
 <div class="open"><div class="card">
@@ -44,6 +44,9 @@
              : { nf: 'Página no encontrada', inv: 'El enlace no es válido.', o: 'Ver esta oferta en Klendar', b: 'Ver este negocio en Klendar', r: 'Validar código en Klendar',
                  rd: 'Este enlace es para el negocio: abre Klendar y valida el canjeo.', d: 'Si tienes la app instalada, se abrirá sola. Si no, descárgala y vuelve a abrir el enlace.',
                  open: 'Abrir en la app', gp: 'Google Play · próximamente', as: 'App Store · próximamente', home: 'Ir a klendar.app', title: 'Abrir en Klendar' };
+  // Cabecera en el idioma del visitante.
+  var nav = document.getElementById('nav');
+  if (nav && en) nav.innerHTML = '<a href="/en/#how-it-works">How it works</a><a href="/en/business-terms/">Businesses</a><a href="/en/support/">Support</a>';
   document.documentElement.lang = en ? 'en' : 'es'; document.title = S.title; t.textContent = S.title; d.textContent = S.d; a.textContent = S.open;
   document.getElementById('gp').textContent = S.gp; document.getElementById('as').textContent = S.as; document.getElementById('home').textContent = S.home;
   if (!m) { t.textContent = S.nf; d.textContent = S.inv; a.style.display = 'none'; return; }
