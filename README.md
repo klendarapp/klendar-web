@@ -38,5 +38,5 @@ select id from auth.users where email = 'tu@email';
 Permite: KPIs, verificar/rechazar negocios, moderar publicaciones, resolver
 denuncias (retirando o no el contenido) y buscar usuarios. La clave que lleva
 embebida es la *publishable* (pública); la seguridad la ponen `is_admin()` y RLS.
-- `python tools/build_kit.py` → kit para negocios en `assets/kit/` (guía de 1 página y cartel A4 con QR; reportlab + qrcode; fuentes Sora y Manrope en `tools/fonts/`, copiadas de la app)..
+- `python tools/build_kit.py` → kit para negocios en `assets/kit/` (guía de 1 página y cartel A4 con QR; reportlab + qrcode; fuentes Sora y Manrope en `tools/fonts/`, copiadas de la app).
 - `python tools/build_brand.py` → símbolo, favicon, apple-touch-icon, icon-512 y `og.png` a partir del símbolo «Pulso» (misma geometría que `tool/brand/make_brand.py` de la app).
