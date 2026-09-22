@@ -335,13 +335,13 @@ EN['negocios'] = ('business-terms', 'Business terms', 'Terms of service of Klend
 ''')
 
 # ── Cookies ─────────────────────────────────────────────────────────────────
-ES['cookies'] = ('Política de cookies', 'Uso de cookies en klendar.app.', '''
+ES['cookies'] = ('Política de cookies', 'Klendar no usa cookies de seguimiento ni publicidad: solo las técnicas imprescindibles y tu preferencia de idioma. Qué se guarda, por qué y cómo borrarlo.', '''
 <p><strong>klendar.app</strong> no utiliza cookies de seguimiento ni publicidad. Solo se utilizan, en su caso, cookies técnicas estrictamente necesarias para el funcionamiento del sitio y el almacenamiento local de tu preferencia de idioma, que no requieren consentimiento según el art. 22.2 de la LSSI-CE.</p>
 <p>Las fuentes tipográficas se cargan desde Google Fonts, lo que implica una petición a servidores de Google con tu dirección IP; si en el futuro se incorporan cookies analíticas o de terceros, actualizaremos esta política y solicitaremos tu consentimiento previo.</p>
 <p>La <strong>app móvil</strong> no usa cookies. Usa identificadores de dispositivo para notificaciones y diagnóstico, descritos en la <a href="/privacidad/">Política de privacidad</a>.</p>
 ''')
 
-EN['cookies'] = ('cookies', 'Cookie policy', 'Use of cookies on klendar.app.', '''
+EN['cookies'] = ('cookies', 'Cookie policy', 'Klendar uses no tracking or advertising cookies: only strictly necessary ones and your language preference. What is stored, why, and how to delete it.', '''
 <p><strong>klendar.app</strong> does not use tracking or advertising cookies. Only strictly necessary technical cookies, if any, and local storage of your language preference are used, which do not require consent under art. 22.2 of the Spanish LSSI-CE.</p>
 <p>Fonts are loaded from Google Fonts, which involves a request to Google's servers including your IP address; if analytics or third-party cookies are added in the future, we will update this policy and ask for your prior consent.</p>
 <p>The <strong>mobile app</strong> does not use cookies. It uses device identifiers for notifications and diagnostics, described in the <a href="/en/privacy/">Privacy policy</a>.</p>
@@ -448,7 +448,7 @@ EN['eliminar-cuenta'] = ('delete-account', 'Delete your account', 'How to delete
 ''')
 
 # ── Soporte (ES; la versión EN vive en build_site.py como /en/support/) ─────
-ES['soporte'] = ('Soporte', 'Contacto y ayuda de Klendar.', '''
+ES['soporte'] = ('Soporte', 'Ayuda de Klendar: cómo canjear una oferta, dar de alta tu negocio, recuperar la cuenta o denunciar contenido. Respondemos en 2 días laborables.', '''
 <h2>Contacto</h2>
 <p>Escríbenos a <a href="mailto:info@klendar.app">info@klendar.app</a>. Respondemos en un máximo de 2 días laborables.</p>
 <h2>Preguntas frecuentes</h2>

@@ -115,7 +115,7 @@ T = {
   ),
 }
 
-SUPPORT_EN = ('Support', 'Klendar help and contact.', '''
+SUPPORT_EN = ('Support', 'Klendar help: how to redeem a deal, list your business, recover your account or report content. We reply within 2 working days.', '''
 <h2>Contact</h2>
 <p>Email us at <a href="mailto:info@klendar.app">info@klendar.app</a>. We reply within 2 working days.</p>
 <h2>Frequently asked questions</h2>
