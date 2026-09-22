@@ -49,3 +49,13 @@ la ponen `is_admin()` y RLS. Al cambiar `admin.js`/`admin.css`, sube el `?v=` en
 `admin/index.html` para saltar la caché.
 - `python tools/build_kit.py` → kit para negocios en `assets/kit/` (guía de 1 página y cartel A4 con QR; reportlab + qrcode; fuentes Sora y Manrope en `tools/fonts/`, copiadas de la app).
 - `python tools/build_brand.py` → símbolo, favicon, apple-touch-icon, icon-512 y `og.png` a partir del símbolo «Pulso» (misma geometría que `tool/brand/make_brand.py` de la app).
+
+## Enlaces compartidos (`/o/<id>`, `/b/<id>`)
+
+`functions/o/[id].js` y `functions/b/[id].js` (Cloudflare Pages Functions) leen
+la ficha pública de Supabase (`offer_detail` / `business_profile`, clave
+publishable) y devuelven la página «Abrir en Klendar» con Open Graph, Twitter
+Card y JSON-LD (Offer/Event/LocalBusiness) del contenido real, para que las
+vistas previas de WhatsApp, Telegram, X, etc. muestren título, texto e imagen.
+Ids que no existen → 404 `noindex`. `/r/<código>` sigue en `404.html` (solo
+tiene sentido dentro de la app). Prueba local: `npx wrangler@3 pages dev .`.
