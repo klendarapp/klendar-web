@@ -108,7 +108,7 @@ ES['privacidad'] = ('Política de privacidad', 'Cómo trata Klendar tus datos pe
 <p>La edad mínima para usar Klendar es de <strong>14 años</strong>. Los contenidos marcados como "+18" (locales de ocio nocturno, alcohol) solo se muestran a personas que han acreditado ser mayores de 18 años mediante su fecha de nacimiento. Si detectamos una cuenta de un menor de 14 años, la eliminaremos.</p>
 
 <h2>5. Tus derechos</h2>
-<p>Puedes ejercer los derechos de acceso, rectificación, supresión, oposición, limitación y portabilidad, y retirar el consentimiento en cualquier momento, escribiendo a <a href="mailto:info@klendar.app">info@klendar.app</a> desde el email de tu cuenta. Además, desde la app puedes: editar tu perfil, gestionar permisos de ubicación y notificaciones, y <a href="/eliminar-cuenta/">eliminar tu cuenta</a> por completo. Si consideras que no hemos atendido correctamente tu solicitud, puedes reclamar ante la Agencia Española de Protección de Datos (<a href="https://www.aepd.es" rel="noopener">www.aepd.es</a>).</p>
+<p>Puedes ejercer los derechos de acceso, rectificación, supresión, oposición, limitación y portabilidad, y retirar el consentimiento en cualquier momento, escribiendo a <a href="mailto:info@klendar.app">info@klendar.app</a> desde el email de tu cuenta. Además, desde la app (Perfil → Ajustes → Privacidad y datos) puedes: ver qué has consentido y cuándo, retirar por separado el consentimiento de ubicación, notificaciones push y comunicaciones comerciales, descargar todos tus datos en un archivo (acceso y portabilidad), y <a href="/eliminar-cuenta/">eliminar tu cuenta</a> por completo. Si consideras que no hemos atendido correctamente tu solicitud, puedes reclamar ante la Agencia Española de Protección de Datos (<a href="https://www.aepd.es" rel="noopener">www.aepd.es</a>).</p>
 
 <h2>6. Seguridad</h2>
 <p>Los datos se transmiten cifrados (TLS), las contraseñas se almacenan con hash, el acceso a la base de datos está restringido por políticas de seguridad a nivel de fila (cada persona solo accede a lo suyo) y los proveedores citados cuentan con certificaciones de seguridad reconocidas.</p>
@@ -157,7 +157,7 @@ EN['privacidad'] = ('privacy', 'Privacy policy', 'How Klendar handles your perso
 <p>The minimum age to use Klendar is <strong>14</strong>. Content marked "18+" (nightlife venues, alcohol) is only shown to people who have confirmed they are over 18 through their date of birth. If we detect an account belonging to someone under 14, we will delete it.</p>
 
 <h2>5. Your rights</h2>
-<p>You may exercise your rights of access, rectification, erasure, objection, restriction and portability, and withdraw consent at any time, by writing to <a href="mailto:info@klendar.app">info@klendar.app</a> from your account email. From the app you can also edit your profile, manage location and notification permissions, and <a href="/en/delete-account/">delete your account</a> entirely. If you believe we have not handled your request properly, you may lodge a complaint with the Spanish Data Protection Agency (<a href="https://www.aepd.es" rel="noopener">www.aepd.es</a>).</p>
+<p>You may exercise your rights of access, rectification, erasure, objection, restriction and portability, and withdraw consent at any time, by writing to <a href="mailto:info@klendar.app">info@klendar.app</a> from your account email. From the app (Profile → Settings → Privacy and data) you can also see what you have consented to and when, withdraw location, push and marketing consent separately, download all your data as a file (access and portability), and <a href="/en/delete-account/">delete your account</a> entirely. If you believe we have not handled your request properly, you may lodge a complaint with the Spanish Data Protection Agency (<a href="https://www.aepd.es" rel="noopener">www.aepd.es</a>).</p>
 
 <h2>6. Security</h2>
 <p>Data is transmitted encrypted (TLS), passwords are stored hashed, database access is restricted by row-level security policies (each person only reaches their own data), and the providers listed hold recognised security certifications.</p>
@@ -360,7 +360,8 @@ ES['normas'] = ('Normas de la comunidad', 'Qué se puede y qué no se puede publ
 <ul>
   <li>Publica solo ofertas que vayas a honrar, con condiciones claras (horario, aforo, requisitos).</li>
   <li>Fotos reales de tu local y productos, de las que tengas derechos.</li>
-  <li>Alcohol y ocio nocturno: marca el negocio o la oferta como "+18". No se permite incitar al consumo excesivo ni dirigirse a menores.</li>
+  <li>Alcohol y ocio nocturno: marca el negocio o la oferta como "+18". No se permite incitar al consumo excesivo ni dirigirse a menores (Ley 34/1988). Las publicaciones que mencionan bebidas alcohólicas se marcan +18 automáticamente y se revisan antes de publicarse.</li>
+  <li>No se admite publicidad de tabaco, productos de vapeo ni juegos de azar o apuestas.</li>
   <li>No manipules reseñas ni canjeos (cuentas propias, incentivos por valoraciones).</li>
 </ul>
 <h2>Cómo denunciar</h2>
@@ -386,7 +387,8 @@ EN['normas'] = ('community-guidelines', 'Community guidelines', 'What you can an
 <ul>
   <li>Only publish deals you will honour, with clear conditions (hours, capacity, requirements).</li>
   <li>Real photos of your venue and products that you hold the rights to.</li>
-  <li>Alcohol and nightlife: mark the business or the deal as "18+". Encouraging excessive drinking or targeting minors is not allowed.</li>
+  <li>Alcohol and nightlife: mark the business or the deal as "18+". Encouraging excessive drinking or targeting minors is not allowed (Spanish Law 34/1988). Posts that mention alcoholic drinks are marked 18+ automatically and reviewed before going live.</li>
+  <li>Advertising of tobacco, vaping products, gambling or betting is not accepted.</li>
   <li>Do not manipulate reviews or redemptions (own accounts, incentives for ratings).</li>
 </ul>
 <h2>How to report</h2>

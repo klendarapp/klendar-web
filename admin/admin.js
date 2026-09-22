@@ -34,6 +34,8 @@ const LABELS = {
   owner: 'propietario', manager: 'encargado', staff: 'empleado', free: 'Gratis', basic: 'Básico', pro: 'Pro',
 };
 const KIND_ICON = { flash_offer: '⚡', future_event: '📅' };
+const FLAGS = { alcohol: '🍺 alcohol', tobacco: '🚬 tabaco/vapeo', gambling: '🎰 apuestas' };
+const flagTags = (o) => (o.moderation_flags || []).map((f) => `<span class="tag warn" title="Detectado automáticamente en el texto">${esc(FLAGS[f] || f)}</span>`).join(' ');
 const debounce = (fn, ms = 350) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
 const qs = (o) => Object.entries(o).filter(([, v]) => v != null && v !== '').map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&');
 
@@ -493,7 +495,7 @@ PAGES.publicaciones = async (v, id) => {
   if (p.business) s.business = p.business;
   v.innerHTML = `
     <div class="page-head"><h1>Publicaciones</h1><span class="spacer"></span><button class="btn sm ghost" id="csv">Exportar CSV</button></div>
-    ${helpBox('¿Qué hago aquí?', '<p>Ofertas flash y eventos de todos los negocios. Las <b>pendientes de moderar</b> son de negocios que aún no han sido verificados o que han sido marcadas para revisión: si cumplen las <a class="link" href="/normas/" target="_blank">Normas de la comunidad</a> (sin contenido engañoso, fotos propias, sin alcohol a menores…) pulsa <b>Aprobar</b>; si no, <b>Retirar</b> con un motivo, que el negocio recibe junto con la vía de recurso (obligatorio por el DSA).</p>')}
+    ${helpBox('¿Qué hago aquí?', '<p>Ofertas flash y eventos de todos los negocios. Las <b>pendientes de moderar</b> son de negocios que aún no han sido verificados o que han sido marcadas para revisión: si cumplen las <a class="link" href="/normas/" target="_blank">Normas de la comunidad</a> (sin contenido engañoso, fotos propias, sin alcohol a menores…) pulsa <b>Aprobar</b>; si no, <b>Retirar</b> con un motivo, que el negocio recibe junto con la vía de recurso (obligatorio por el DSA). El sistema pone en revisión automáticamente las que mencionan <b>alcohol</b> (además las marca +18: solo las ven mayores), <b>tabaco/vapeo</b> (publicidad prohibida: retirar) o <b>apuestas</b>; verás la etiqueta del motivo.</p>')}
     <div class="toolbar">
       <input id="q" class="grow" placeholder="Buscar por título, negocio o id…" value="${esc(s.q || '')}">
       <select id="moderation">${[['all', 'Toda moderación'], ['pending', 'Por moderar'], ['approved', 'Aprobadas'], ['rejected', 'Retiradas']].map((o) => `<option value="${o[0]}" ${s.moderation === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
@@ -510,7 +512,7 @@ PAGES.publicaciones = async (v, id) => {
     $('#list').innerHTML = table({
       cols: [
         { h: 'Publicación', r: (o) => `${img(o.images?.[0], KIND_ICON[o.kind])}<span class="title">${esc(o.title)}<span class="sub">${LABELS[o.kind]} · <a class="link" href="#/negocios/${o.business_id}" onclick="event.stopPropagation()">${esc(o.business_name)}</a> ${o.verification_status !== 'verified' ? tag(o.verification_status) : ''}</span></span>` },
-        { h: 'Estado', r: (o) => `${tag(o.status)} ${tag(o.moderation_status)} ${o.adults_only ? '<span class="tag bad">+18</span>' : ''} ${o.is_boosted ? '<span class="tag">boost</span>' : ''} ${o.open_reports ? `<span class="tag bad">🚩 ${o.open_reports}</span>` : ''}` },
+        { h: 'Estado', r: (o) => `${tag(o.status)} ${tag(o.moderation_status)} ${flagTags(o)} ${o.adults_only ? '<span class="tag bad">+18</span>' : ''} ${o.is_boosted ? '<span class="tag">boost</span>' : ''} ${o.open_reports ? `<span class="tag bad">🚩 ${o.open_reports}</span>` : ''}` },
         { h: 'Cuándo', r: (o) => `<span class="nowrap">${o.kind === 'flash_offer' ? `${fmtDate(o.redeem_start_at)}<span class="sub">→ ${fmtDate(o.redeem_end_at)}</span>` : fmtDate(o.event_at)}</span>` },
         { h: 'Precio', r: (o) => `${o.discount ? `<span class="tag">${esc(discountLabel(o.discount))}</span> ` : ''}${o.price_cents != null ? fmtMoney(o.price_cents, o.currency) : ''}` },
         { h: 'Vistas', num: true, r: (o) => fmtNum(o.views_count) },
@@ -552,7 +554,7 @@ async function offerDetail(v, id) {
     <div class="page-head"><a class="btn sm ghost" href="#/publicaciones">← Publicaciones</a></div>
     <div class="detail-head">
       ${o.images?.[0] ? `<img src="${esc(o.images[0])}" alt="">` : `<div class="ph">${KIND_ICON[o.kind]}</div>`}
-      <div><h1>${esc(o.title)}</h1><div class="tags">${tag(o.kind, 'dim')} ${tag(o.status)} ${tag(o.moderation_status)} ${o.adults_only ? '<span class="tag bad">+18</span>' : ''} ${o.is_boosted ? `<span class="tag">boost hasta ${fmtDate(o.boosted_until)}</span>` : ''}</div>
+      <div><h1>${esc(o.title)}</h1><div class="tags">${tag(o.kind, 'dim')} ${tag(o.status)} ${tag(o.moderation_status)} ${flagTags(o)} ${o.adults_only ? '<span class="tag bad">+18</span>' : ''} ${o.is_boosted ? `<span class="tag">boost hasta ${fmtDate(o.boosted_until)}</span>` : ''}</div>
         <div class="muted small" style="margin-top:4px"><a class="link" href="#/negocios/${o.business_id}">${esc(o.business_name)}</a> ${o.verification_status !== 'verified' ? tag(o.verification_status) : ''} · ${esc(o.city || '')}</div></div>
       <span class="spacer"></span>
       <div class="actions">
