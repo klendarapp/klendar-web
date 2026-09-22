@@ -1,6 +1,7 @@
 # Genera la landing y las páginas de marketing en ES (/) y EN (/en/).
 # Ejecutar: python build_site.py   (desde la raíz de klendar-web)
 # Las páginas legales las genera build_legal.py (ES prevalece; EN informativa).
+import datetime
 import io, os
 
 YEAR = '2026'
@@ -317,9 +318,60 @@ def doc_page(t, path, title, desc, body):
 ''' + footer(t)
 
 
+# ── robots.txt y sitemap.xml ────────────────────────────────────────────────
+# Solo se indexan las páginas estáticas: /admin/ es privado y /o/, /b/ y /r/
+# son enlaces profundos que se generan al vuelo (ya llevan su propio canonical).
+SITEMAP_ES = ['/', '/negocios/', '/soporte/', '/privacidad/', '/terminos/', '/aviso-legal/', '/cookies/', '/normas/', '/eliminar-cuenta/']
+SITEMAP_EN = ['/en/', '/en/business-terms/', '/en/support/', '/en/privacy/', '/en/terms/', '/en/legal-notice/', '/en/cookies/', '/en/community-guidelines/', '/en/delete-account/']
+ALT_PAIRS = dict(zip(SITEMAP_ES, SITEMAP_EN))
+
+
+def robots():
+    nl = chr(10)
+    return nl.join([
+        'User-agent: *',
+        'Allow: /',
+        'Disallow: /admin/',
+        'Disallow: /r/',
+        '',
+        f'Sitemap: {BASE}/sitemap.xml',
+        '',
+    ])
+
+
+def sitemap():
+    today = datetime.date.today().isoformat()
+    nl = chr(10)
+    urls = []
+    for path in SITEMAP_ES + SITEMAP_EN:
+        es_path = path if path in ALT_PAIRS else next((k for k, v in ALT_PAIRS.items() if v == path), None)
+        en_path = ALT_PAIRS.get(path) or (path if path.startswith('/en/') else None)
+        alts = ''
+        if es_path and en_path:
+            alts = nl.join([
+                '',
+                f'    <xhtml:link rel="alternate" hreflang="es" href="{BASE}{es_path}"/>',
+                f'    <xhtml:link rel="alternate" hreflang="en" href="{BASE}{en_path}"/>',
+                f'    <xhtml:link rel="alternate" hreflang="x-default" href="{BASE}{es_path}"/>',
+            ])
+        prio = '1.0' if path in ('/', '/en/') else ('0.8' if 'negocios' in path or 'business-terms' in path else '0.5')
+        urls.append(nl.join([
+            '  <url>',
+            f'    <loc>{BASE}{path}</loc>',
+            f'    <lastmod>{today}</lastmod>',
+            f'    <priority>{prio}</priority>{alts}',
+            '  </url>',
+        ]))
+    head = ['<?xml version="1.0" encoding="UTF-8"?>',
+            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">']
+    return nl.join(head + urls + ['</urlset>', ''])
+
+
 if __name__ == '__main__':
     os.makedirs('en/support', exist_ok=True)
     io.open('index.html', 'w', encoding='utf-8', newline='\n').write(landing(T['es']))
     io.open('en/index.html', 'w', encoding='utf-8', newline='\n').write(landing(T['en']))
     io.open('en/support/index.html', 'w', encoding='utf-8', newline='\n').write(doc_page(T['en'], '/en/support/', *SUPPORT_EN))
-    print('ok: index.html, en/index.html, en/support/index.html')
+    io.open('robots.txt', 'w', encoding='utf-8', newline=chr(10)).write(robots())
+    io.open('sitemap.xml', 'w', encoding='utf-8', newline=chr(10)).write(sitemap())
+    print('ok: index.html, en/index.html, en/support/index.html, robots.txt, sitemap.xml')
