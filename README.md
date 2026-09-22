@@ -26,17 +26,26 @@ cabeceras de seguridad y `noindex` en `/admin/`.
 
 ## Panel de administración (`/admin/`)
 
-`admin/index.html` es una página estática con supabase-js que llama a las RPC
-`admin_*` del proyecto (migración `20260916100000_admin.sql` en el repo de la
-app). Solo funciona para cuentas dadas de alta en `public.admin_users`:
+SPA estática (`admin/index.html` + `admin.css` + `admin.js`, sin build) con
+supabase-js que llama a las RPC `admin_*` del proyecto (migraciones
+`20260916100000_admin.sql` y `20260922100000_admin_v2.sql` en el repo de la
+app). Solo funciona para cuentas dadas de alta en `public.admin_users`; el primer
+administrador se crea por SQL y los siguientes desde el propio panel
+(Administradores):
 
 ```sql
 insert into public.admin_users (user_id)
 select id from auth.users where email = 'tu@email';
 ```
 
-Permite: KPIs, verificar/rechazar negocios, moderar publicaciones, resolver
-denuncias (retirando o no el contenido) y buscar usuarios. La clave que lleva
-embebida es la *publishable* (pública); la seguridad la ponen `is_admin()` y RLS.
+Secciones: Resumen (KPIs, pendientes, series de 30 días), Negocios (ficha
+completa: verificar, rechazar, editar, equipo, plan, pagos, aviso), Publicaciones
+(moderación, estado, boost, canjeos), Canjeos, Usuarios (consentimientos RGPD,
+suspender, premium, borrar cuenta), Reseñas y posts, Denuncias (DSA), Planes y
+pagos, Avisos y push, Categorías, Configuración, Administradores, Registro de
+actividad y Ayuda. Todo listado se exporta a CSV y toda acción queda en
+`admin_audit_log`. La clave embebida es la *publishable* (pública); la seguridad
+la ponen `is_admin()` y RLS. Al cambiar `admin.js`/`admin.css`, sube el `?v=` en
+`admin/index.html` para saltar la caché.
 - `python tools/build_kit.py` → kit para negocios en `assets/kit/` (guía de 1 página y cartel A4 con QR; reportlab + qrcode; fuentes Sora y Manrope en `tools/fonts/`, copiadas de la app).
 - `python tools/build_brand.py` → símbolo, favicon, apple-touch-icon, icon-512 y `og.png` a partir del símbolo «Pulso» (misma geometría que `tool/brand/make_brand.py` de la app).
