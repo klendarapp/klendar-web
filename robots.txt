@@ -2,5 +2,6 @@ User-agent: *
 Allow: /
 Disallow: /admin/
 Disallow: /r/
+Disallow: /legal/
 
 Sitemap: https://klendar.app/sitemap.xml

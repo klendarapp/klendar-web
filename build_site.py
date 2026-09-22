@@ -333,6 +333,7 @@ def robots():
         'Allow: /',
         'Disallow: /admin/',
         'Disallow: /r/',
+        'Disallow: /legal/',
         '',
         f'Sitemap: {BASE}/sitemap.xml',
         '',

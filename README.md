@@ -59,3 +59,24 @@ Card y JSON-LD (Offer/Event/LocalBusiness) del contenido real, para que las
 vistas previas de WhatsApp, Telegram, X, etc. muestren título, texto e imagen.
 Ids que no existen → 404 `noindex`. `/r/<código>` sigue en `404.html` (solo
 tiene sentido dentro de la app). Prueba local: `npx wrangler@3 pages dev .`.
+
+## URLs legales para terceros (`/legal/...`)
+
+`functions/legal/[doc].js` redirige a la versión en el idioma del visitante
+(`Accept-Language`, o `?lang=es|en` para forzarla). Son las direcciones que se
+dan a Google, Apple, las tiendas o en un contrato, para no atar el documento a
+un idioma:
+
+| URL | Documento |
+|---|---|
+| `/legal/privacy` | Política de privacidad |
+| `/legal/terms` | Términos de uso |
+| `/legal/business-terms` | Condiciones para negocios |
+| `/legal/cookies` | Cookies |
+| `/legal/guidelines` | Normas de la comunidad |
+| `/legal/legal-notice` | Aviso legal |
+| `/legal/delete-account` | Eliminar cuenta |
+| `/legal/support` | Soporte |
+
+No se indexan (robots.txt las excluye): lo indexable son las páginas por idioma,
+que ya llevan canonical y hreflang.
