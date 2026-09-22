@@ -1,7 +1,7 @@
 /* Klendar — identidad «Pulso» (misma que la app): coral sobre tinta, marfil en claro.
    Sora en titulares, Manrope en todo lo demás. */
 :root {
-  --accent: #FF4D6D; --on-accent: #FFFFFF; --accent-text: #D9264A; --accent-soft: rgba(255,77,109,.14);
+  --accent: #FF4D6D; --on-accent: #0B0F1A; --accent-text: #C81E42; --accent-soft: rgba(255,77,109,.14);
   --amber: #FFB84D;
   --surface: #F7F3EE; --elevated: #FFFFFF; --ink: #12151C; --ink-2: #5A6170;
   --glass: rgba(255,255,255,.66); --glass-border: rgba(18,21,28,.08);
