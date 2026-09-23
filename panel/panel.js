@@ -330,8 +330,8 @@ async function offerForm(v, id, kindDefault) {
         <label class="f full"><span>Condiciones (letra pequeña)</span><textarea name="terms" maxlength="400">${esc(o.terms || '')}</textarea></label>
         <label class="f full"><span>Enlace externo (entradas, reservas…)</span><input name="external_url" value="${esc(o.external_url || '')}" placeholder="https://"></label>
       </div>
-      <h3 style="margin-top:16px">Fotos</h3>
-      <p class="hint">Si no pones ninguna, se usa la foto del local.</p>
+      <h3 style="margin-top:16px">Fotos y vídeo</h3>
+      <p class="hint">La primera es la portada; muévelas con las flechas. Si no pones ninguna, se usa la foto del local. Los vídeos se ven al abrir la publicación (en el feed van las fotos).</p>
       <div class="photos" id="photos"></div>
       <div class="actions" style="margin-top:18px">
         <button class="btn primary" type="submit">${id ? 'Guardar cambios' : 'Publicar'}</button>
@@ -355,14 +355,37 @@ async function offerForm(v, id, kindDefault) {
 
   // Fotos
   let images = [...(o.images || [])];
+  const isVideo = (u) => /\.(mp4|mov|webm)(\?|$)/i.test(u);
   const renderPhotos = () => {
-    $('#photos').innerHTML = images.map((u, i) => `<div class="ph-item"><img src="${esc(u)}" alt=""><button class="rm" type="button" data-i="${i}">×</button></div>`).join('')
-      + `<label class="add">+ Añadir foto<input type="file" accept="image/*" multiple></label>`;
+    // El orden manda: la primera es la portada. Se mueve con las flechas.
+    $('#photos').innerHTML = images.map((u, i) => `
+      <div class="ph-item">
+        ${isVideo(u) ? `<div class="ph-video">▶</div>` : `<img src="${esc(u)}" alt="">`}
+        ${i === 0 ? '<span class="ph-cover">Portada</span>' : ''}
+        <button class="rm" type="button" data-i="${i}" title="Quitar">×</button>
+        <div class="ph-move">
+          <button type="button" data-mv="${i}:-1" ${i === 0 ? 'disabled' : ''} title="Mover antes">←</button>
+          <button type="button" data-mv="${i}:1" ${i === images.length - 1 ? 'disabled' : ''} title="Mover después">→</button>
+        </div>
+      </div>`).join('')
+      + `<label class="add">+ Añadir foto o vídeo<input type="file" accept="image/*,video/mp4,video/quicktime" multiple></label>`;
     $$('#photos .rm').forEach((b) => { b.onclick = () => { images.splice(+b.dataset.i, 1); renderPhotos(); }; });
+    $$('#photos [data-mv]').forEach((b) => {
+      b.onclick = () => {
+        const [i, d] = b.dataset.mv.split(':').map(Number);
+        const j = i + d;
+        if (j < 0 || j >= images.length) return;
+        [images[i], images[j]] = [images[j], images[i]];
+        renderPhotos();
+      };
+    });
     $('#photos input[type=file]').onchange = async (e) => {
-      for (const file of [...e.target.files].slice(0, 5)) {
-        if (file.size > 5 * 1024 * 1024) { toast('Esa foto pesa más de 5 MB.', true); continue; }
-        const path = `${BIZ.id}/${crypto.randomUUID()}.${(file.name.split('.').pop() || 'jpg').toLowerCase()}`;
+      for (const file of [...e.target.files].slice(0, 6)) {
+        const video = /^video\//.test(file.type);
+        const max = video ? 60 * 1024 * 1024 : 5 * 1024 * 1024;
+        if (file.size > max) { toast(video ? 'Ese vídeo pesa más de 60 MB.' : 'Esa foto pesa más de 5 MB.', true); continue; }
+        const ext = video ? 'mp4' : (file.name.split('.').pop() || 'jpg').toLowerCase();
+        const path = `${BIZ.id}/${crypto.randomUUID()}.${ext}`;
         const { error } = await sb.storage.from(BUCKET).upload(path, file, { contentType: file.type });
         if (error) { toast(error.message, true); continue; }
         images.push(sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl);
