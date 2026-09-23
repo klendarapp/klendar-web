@@ -321,6 +321,7 @@ async function offerForm(v, id, kindDefault) {
         <label class="f"><span>Descuento</span><select name="discount_type">
           ${[['', 'Sin descuento'], ['percent', 'Porcentaje'], ['fixed', 'Precio fijo'], ['2x1', '2x1'], ['free', 'Gratis']].map((d) => `<option value="${d[0]}" ${disc.type === d[0] ? 'selected' : ''}>${d[1]}</option>`).join('')}</select></label>
         <label class="f"><span>Valor del descuento</span><input name="discount_value" value="${esc(disc.value ?? '')}" placeholder="20"></label>
+        <label class="f full"><span>Precio anterior <small>(obligatorio si pones un % o un precio rebajado; ha de ser el más bajo de los últimos 30 días)</small></span><input name="prior_price" inputmode="decimal" value="${disc.compare_at_cents != null ? (disc.compare_at_cents / 100).toFixed(2).replace('.', ',') : ''}" placeholder="12,00"></label>
         <label class="f"><span>¿Cuánto vale el código QR?</span><select name="code_ttl_minutes">
           ${[[5, '5 minutos'], [30, '30 minutos'], [180, '3 horas'], [1440, '1 día'], ['', 'Sin caducidad']].map((t) => `<option value="${t[0]}" ${String(o.code_ttl_minutes ?? '') === String(t[0]) ? 'selected' : ''}>${t[1]}</option>`).join('')}</select></label>
         <label class="f"><span>Canjes por persona</span><input name="max_per_user" type="number" min="1" max="20" value="${o.max_per_user ?? 1}"></label>
@@ -379,6 +380,12 @@ async function offerForm(v, id, kindDefault) {
     const price = (f.get('price') || '').toString().replace(',', '.');
     const dType = f.get('discount_type');
     const dValue = (f.get('discount_value') || '').toString().replace(',', '.');
+    const priorRaw = (f.get('prior_price') || '').toString().replace(',', '.');
+    const prior = priorRaw ? Math.round(parseFloat(priorRaw) * 100) : null;
+    if (['percent', 'fixed'].includes(dType) && !prior) {
+      $('#formErr').textContent = 'Pon el precio anterior: la ley obliga a enseñarlo junto al descuento.';
+      return;
+    }
     const data = {
       business_id: BIZ.id,
       kind: f.get('kind'),
@@ -389,7 +396,12 @@ async function offerForm(v, id, kindDefault) {
       external_url: f.get('external_url') || null,
       price_cents: price ? Math.round(parseFloat(price) * 100) : null,
       currency: 'EUR',
-      discount: dType ? { type: dType, value: dValue ? Number(dValue) : null, currency: 'EUR' } : null,
+      discount: dType ? {
+        type: dType,
+        value: dValue ? Number(dValue) : null,
+        currency: 'EUR',
+        ...(prior ? { compare_at_cents: prior } : {}),
+      } : null,
       redeem_start_at: flash ? fromLocalInput(f.get('start')) : null,
       redeem_end_at: flash ? fromLocalInput(f.get('end')) : null,
       event_at: flash ? null : fromLocalInput(f.get('start')),
@@ -425,8 +437,11 @@ async function offerForm(v, id, kindDefault) {
       location.hash = '#/publicaciones';
     } catch (err) {
       const m = err.message || '';
-      $('#formErr').textContent = /plan_limit_reached/.test(m)
-        ? 'Has llegado al límite de publicaciones activas de tu plan. Pausa alguna o cambia de plan.'
+      $('#formErr').textContent =
+        /plan_limit_reached/.test(m) ? 'Has llegado al límite de publicaciones activas de tu plan. Pausa alguna o cambia de plan.'
+        : /prior_price_required/.test(m) ? 'Pon el precio anterior: la ley obliga a enseñarlo junto al descuento.'
+        : /prior_price_not_lower/.test(m) ? 'El precio anterior tiene que ser mayor que el de ahora.'
+        : /no_2x1_alcohol/.test(m) ? 'No se pueden anunciar promociones 2x1 en bebidas alcohólicas. Prueba con un precio especial.'
         : m;
     }
   };
