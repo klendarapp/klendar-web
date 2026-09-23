@@ -32,6 +32,8 @@ const LABELS = {
   trial: 'prueba', past_due: 'impagada', validated: 'validado', failed: 'fallido', sent: 'enviado', skipped: 'omitido',
   flash_offer: 'oferta flash', future_event: 'evento', user: 'usuario', business: 'negocio', offer: 'publicación', review: 'reseña', post: 'post',
   owner: 'propietario', manager: 'encargado', staff: 'empleado', free: 'Gratis', basic: 'Básico', pro: 'Pro',
+  new: 'sin leer', planned: 'la haremos', done: 'hecho', declined: 'descartada',
+  suggestion: 'sugerencia', bug: 'fallo',
 };
 const KIND_ICON = { flash_offer: '⚡', future_event: '📅' };
 const FLAGS = { alcohol: '🍺 alcohol', tobacco: '🚬 tabaco/vapeo', gambling: '🎰 apuestas' };
@@ -173,7 +175,7 @@ const NAV = [
   ['group', 'Actividad'],
   ['resumen', '📊', 'Resumen'], ['negocios', '🏪', 'Negocios'], ['publicaciones', '⚡', 'Publicaciones'], ['canjeos', '🎟', 'Canjeos'], ['usuarios', '👤', 'Usuarios'],
   ['group', 'Moderación'],
-  ['denuncias', '🚩', 'Denuncias'], ['resenas', '💬', 'Reseñas y posts'],
+  ['denuncias', '🚩', 'Denuncias'], ['resenas', '💬', 'Reseñas y posts'], ['sugerencias', '💡', 'Sugerencias'],
   ['group', 'Negocio'],
   ['planes', '💳', 'Planes y pagos'], ['avisos', '🔔', 'Avisos y push'],
   ['group', 'Sistema'],
@@ -187,7 +189,9 @@ function renderNav(current) {
 async function refreshBadges() {
   try {
     const k = await rpc('admin_kpis');
-    BADGES = { negocios: k.businesses_pending || 0, publicaciones: k.offers_pending || 0, denuncias: k.reports_open || 0 };
+    let sug = 0;
+    try { sug = (await rpc('admin_feedback', { p_status: 'new', p_limit: 1 })).counts?.new || 0; } catch { /* sin permisos */ }
+    BADGES = { negocios: k.businesses_pending || 0, publicaciones: k.offers_pending || 0, denuncias: k.reports_open || 0, sugerencias: sug };
     Object.keys(BADGES).forEach((x) => { if (!BADGES[x]) delete BADGES[x]; });
     renderNav(currentRoute()[0]);
     return k;
@@ -221,12 +225,13 @@ PAGES.resumen = async (v) => {
   const series = k.series || [];
   v.innerHTML = `
     <div class="page-head"><h1>Resumen</h1><span class="spacer"></span><span class="muted">${new Date().toLocaleString('es-ES', { dateStyle: 'full', timeStyle: 'short' })}</span></div>
-    ${(k.businesses_pending || k.offers_pending || k.reports_open) ? `<div class="card"><h2>Pendiente de ti</h2><div class="actions">
+    ${(k.businesses_pending || k.offers_pending || k.reports_open || BADGES.sugerencias) ? `<div class="card"><h2>Pendiente de ti</h2><div class="actions">
       ${k.businesses_pending ? `<a class="btn" href="#/negocios?status=pending">🏪 ${k.businesses_pending} negocio(s) por verificar</a>` : ''}
       ${k.offers_pending ? `<a class="btn" href="#/publicaciones?moderation=pending">⚡ ${k.offers_pending} publicación(es) por moderar</a>` : ''}
       ${k.reports_open ? `<a class="btn" href="#/denuncias">🚩 ${k.reports_open} denuncia(s) abiertas</a>` : ''}
       ${k.subs_expiring_7d ? `<a class="btn" href="#/planes">💳 ${k.subs_expiring_7d} suscripción(es) vencen en 7 días</a>` : ''}
       ${k.push_failed_7d ? `<a class="btn" href="#/avisos?tab=push">🔔 ${k.push_failed_7d} push fallidos (7 d)</a>` : ''}
+      ${BADGES.sugerencias ? `<a class="btn" href="#/sugerencias">💡 ${BADGES.sugerencias} sugerencia(s) sin leer</a>` : ''}
     </div></div>` : '<div class="card"><h2>Todo al día</h2><p class="muted" style="margin:0">No hay negocios por verificar, publicaciones por moderar ni denuncias abiertas.</p></div>'}
     <div class="grid2">
       <div class="card"><h2>Usuarios</h2><div class="kpis">
@@ -268,7 +273,7 @@ PAGES.resumen = async (v) => {
 
 // ── Negocios ────────────────────────────────────────────────────────────────
 const params = () => Object.fromEntries(new URLSearchParams((location.hash.split('?')[1] || '')));
-const st = { negocios: { limit: 50, offset: 0 }, publicaciones: { limit: 50, offset: 0 }, canjeos: { limit: 50, offset: 0 }, usuarios: { limit: 50, offset: 0 }, resenas: { limit: 50, offset: 0 }, posts: { limit: 50, offset: 0 }, denuncias: { limit: 50, offset: 0 }, actividad: { limit: 100, offset: 0 }, pagos: { limit: 100, offset: 0 }, subs: { limit: 100, offset: 0 } };
+const st = { sugerencias: { limit: 50, offset: 0 }, negocios: { limit: 50, offset: 0 }, publicaciones: { limit: 50, offset: 0 }, canjeos: { limit: 50, offset: 0 }, usuarios: { limit: 50, offset: 0 }, resenas: { limit: 50, offset: 0 }, posts: { limit: 50, offset: 0 }, denuncias: { limit: 50, offset: 0 }, actividad: { limit: 100, offset: 0 }, pagos: { limit: 100, offset: 0 }, subs: { limit: 100, offset: 0 } };
 
 PAGES.negocios = async (v, id) => {
   if (id) return businessDetail(v, id);
@@ -856,6 +861,77 @@ PAGES.denuncias = async (v) => {
   await load();
 };
 
+// ── Sugerencias y fallos ────────────────────────────────────────────────────
+PAGES.sugerencias = async (v) => {
+  const s = st.sugerencias;
+  s.status = s.status || 'open';
+  v.innerHTML = `
+    <div class="page-head"><h1>Sugerencias</h1><span class="spacer"></span><button class="btn sm ghost" id="csv">Exportar CSV</button></div>
+    ${helpBox('¿Qué hago aquí?', '<p>Lo que la gente escribe desde la app (Perfil → «Sugerencias y mejoras»): ideas, fallos y mensajes de negocios. Los <b>fallos</b> te llegan además como aviso al móvil. Marca cada una con lo que vas a hacer —<b>la estamos viendo</b>, <b>la haremos</b>, <b>hecho</b> o <b>de momento no</b>— y, si quieres, <b>responde</b>: la persona recibe tu respuesta como notificación. Las notas internas no las ve nadie de fuera.</p>')}
+    <div id="counts"></div>
+    <div class="toolbar">
+      <input id="q" class="grow" placeholder="Buscar en el texto o por email…" value="${esc(s.q || '')}">
+      <select id="status">${[['open', 'Sin resolver'], ['new', 'Sin leer'], ['reviewing', 'En revisión'], ['planned', 'Las haremos'], ['done', 'Hechas'], ['declined', 'Descartadas'], ['all', 'Todas']].map((o) => `<option value="${o[0]}" ${s.status === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
+      <select id="kind">${[['all', 'De todo'], ['suggestion', 'Sugerencias'], ['bug', 'Fallos'], ['business', 'De negocios'], ['other', 'Otros']].map((o) => `<option value="${o[0]}" ${(s.kind || 'all') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
+    </div>
+    <div id="list"><div class="loading">Cargando…</div></div>`;
+  let rows = [];
+  const kindIcon = { suggestion: '💡', bug: '🐞', business: '🏪', other: '💬' };
+  const load = async () => {
+    const r = await rpc('admin_feedback', { p_status: s.status, p_kind: s.kind || 'all', p_query: s.q || null, p_limit: s.limit, p_offset: s.offset });
+    rows = r.rows;
+    const c = r.counts || {};
+    $('#counts').innerHTML = `<div class="kpis" style="margin-bottom:14px">
+      <div class="kpi ${c.new ? 'accent' : ''}"><b>${fmtNum(c.new)}</b><span>sin leer</span></div>
+      <div class="kpi ${c.bugs ? 'accent' : ''}"><b>${fmtNum(c.bugs)}</b><span>fallos abiertos</span></div>
+      <div class="kpi"><b>${fmtNum(c.planned)}</b><span>las haremos</span></div>
+      <div class="kpi"><b>${fmtNum(c.done)}</b><span>hechas</span></div></div>`;
+    const pg = pager(s, r.total, load);
+    $('#list').innerHTML = (rows.length ? rows.map((f) => `
+      <div class="item"><div class="ph">${kindIcon[f.kind] || '💬'}</div><div>
+        <h3>${tag(f.kind, 'dim')} ${tag(f.status)} ${f.replied_at ? '<span class="tag ok">respondida</span>' : ''}</h3>
+        <div class="meta">${fmtDate(f.created_at)} · ${f.user_id ? `<a class="link" href="#/usuarios/${f.user_id}">${esc(f.user_email || f.user_name || 'usuario')}</a>` : 'sin cuenta'}${f.from_same_user > 1 ? ` · ${f.from_same_user} mensajes suyos` : ''} · ${esc(f.app_version || '?')} · ${esc(f.platform || '?')}${f.locale ? ' · ' + esc(f.locale) : ''}</div>
+        <p style="white-space:pre-wrap">${esc(f.message)}</p>
+        ${f.admin_note ? `<div class="meta"><b>Nota interna:</b> ${esc(f.admin_note)}</div>` : ''}
+        <div class="actions">
+          <button class="btn sm" data-set="${f.id}" data-status="reviewing">La estoy viendo</button>
+          <button class="btn sm ok" data-set="${f.id}" data-status="planned">La haremos</button>
+          <button class="btn sm ok" data-set="${f.id}" data-status="done">Hecho</button>
+          <button class="btn sm ghost" data-set="${f.id}" data-status="declined">De momento no</button>
+          <button class="btn sm primary" data-reply="${f.id}">Responder…</button>
+          <button class="btn sm ghost" data-note="${f.id}">Nota interna…</button>
+          <button class="btn sm bad ghost" data-del="${f.id}">Borrar</button>
+        </div>
+      </div></div>`).join('') : '<div class="tbl-wrap"><div class="empty">Nada por aquí.</div></div>') + pg.html;
+    pg.bind($('#list'));
+    $$('#list [data-set]').forEach((b) => { b.onclick = async () => {
+      try { await rpc('admin_set_feedback', { p_id: b.dataset.set, p_status: b.dataset.status }); toast('Actualizada'); refreshBadges(); load(); } catch (e) { toast(e.message, true); }
+    }; });
+    $$('#list [data-reply]').forEach((b) => { b.onclick = async () => {
+      const r2 = await modal({ title: 'Responder', intro: 'Le llega como aviso en la app (y push si lo tiene activado). Sé concreto y breve.', fields: [
+        { name: 'reply', label: 'Tu respuesta', type: 'textarea', required: true },
+        { name: 'status', label: 'Y marcarla como', type: 'select', value: 'reviewing', options: [['reviewing', 'La estamos viendo'], ['planned', 'La haremos'], ['done', 'Hecho'], ['declined', 'De momento no'], ['new', 'Dejar sin leer']] },
+      ], submit: 'Responder' });
+      if (!r2) return;
+      try { await rpc('admin_set_feedback', { p_id: b.dataset.reply, p_status: r2.status, p_reply: r2.reply }); toast('Respuesta enviada'); refreshBadges(); load(); } catch (e) { toast(e.message, true); }
+    }; });
+    $$('#list [data-note]').forEach((b) => { b.onclick = async () => {
+      const f = rows.find((x) => x.id === b.dataset.note);
+      const r2 = await modal({ title: 'Nota interna', intro: 'Solo la veis los administradores.', fields: [{ name: 'note', label: 'Nota', type: 'textarea', value: f?.admin_note || '' }] });
+      if (!r2) return;
+      try { await rpc('admin_set_feedback', { p_id: b.dataset.note, p_note: r2.note }); toast('Guardada'); load(); } catch (e) { toast(e.message, true); }
+    }; });
+    $$('#list [data-del]').forEach((b) => { b.onclick = async () => {
+      if (!await confirmDlg('Borrar mensaje', 'Se borra para siempre. Úsalo solo con spam o duplicados.', { danger: true, submit: 'Borrar' })) return;
+      try { await rpc('admin_delete_feedback', { p_id: b.dataset.del }); toast('Borrado'); refreshBadges(); load(); } catch (e) { toast(e.message, true); }
+    }; });
+  };
+  $('#q').oninput = debounce(() => { s.q = $('#q').value.trim(); s.offset = 0; load(); });
+  ['status', 'kind'].forEach((k) => { $('#' + k).onchange = () => { s[k] = $('#' + k).value; s.offset = 0; load(); }; });
+  $('#csv').onclick = () => downloadCsv('sugerencias', rows, [['created_at', 'fecha'], ['kind', 'tipo'], ['status', 'estado'], ['message', 'mensaje'], ['user_email', 'usuario'], ['app_version', 'versión'], ['platform', 'plataforma'], ['locale', 'idioma'], ['admin_note', 'nota interna'], ['replied_at', 'respondida']]);
+  await load();
+};
+
 // ── Planes y pagos ──────────────────────────────────────────────────────────
 PAGES.planes = async (v) => {
   const p = params(); let tab = p.tab || 'subs';
@@ -1075,7 +1151,7 @@ PAGES.ayuda = async (v) => {
     <div class="card"><h2>Cómo funciona Klendar (en 1 minuto)</h2><p>Los <b>negocios</b> se dan de alta desde la app y quedan <b>pendientes</b> hasta que un administrador los verifica. Una vez verificados publican <b>ofertas flash</b> (con cuenta atrás y aforo) y <b>eventos</b>. Los <b>usuarios</b> las ven en Descubre y el mapa, las guardan en Mis planes y las canjean enseñando un <b>código QR de un solo uso</b> que el negocio escanea. Los negocios tienen un <b>plan</b> (Gratis / Básico / Pro) con una prueba inicial; por ahora los cobros se hacen por transferencia y se anotan aquí.</p></div>
     <div class="grid2">
       <div class="card"><h2>Rutina diaria (5 minutos)</h2><ol style="margin:0;padding-left:18px"><li><b>Resumen</b>: mira «Pendiente de ti».</li><li><b>Negocios pendientes</b>: comprueba que existen (web, teléfono, Google Maps) y verifica o rechaza con motivo.</li><li><b>Publicaciones por moderar</b>: aprueba o retira con motivo.</li><li><b>Denuncias abiertas</b>: revisa y resuelve (siempre con motivo si retiras algo).</li><li><b>Push fallidos</b>: si hay muchos, algo pasa con Firebase.</li></ol></div>
-      <div class="card"><h2>Rutina semanal</h2><ul style="margin:0;padding-left:18px"><li><b>Planes y pagos</b>: suscripciones que vencen en 7 días → contacta con el negocio; registra las transferencias recibidas.</li><li><b>Usuarios</b>: atiende peticiones de acceso o supresión recibidas por email (info@klendar.app).</li><li><b>Registro de actividad</b>: repasa que todo lo hecho tenga sentido.</li></ul></div>
+      <div class="card"><h2>Rutina semanal</h2><ul style="margin:0;padding-left:18px"><li><b>Planes y pagos</b>: suscripciones que vencen en 7 días → contacta con el negocio; registra las transferencias recibidas.</li><li><b>Usuarios</b>: atiende peticiones de acceso o supresión recibidas por email (info@klendar.app).</li><li><b>Sugerencias</b>: lee lo que ha entrado, marca estado y responde lo que merezca respuesta.</li><li><b>Registro de actividad</b>: repasa que todo lo hecho tenga sentido.</li></ul></div>
       <div class="card"><h2>Criterios de moderación</h2><ul style="margin:0;padding-left:18px"><li>Fotos propias del local o del producto; nada de imágenes de terceros sin permiso.</li><li>Oferta clara y cumplible: precio, condiciones, aforo, horario. Nada engañoso.</li><li>Alcohol: solo negocios +18 marcados, sin incitar al consumo (Ley 34/1988).</li><li>Sin datos personales de terceros, insultos, discriminación ni contenido sexual.</li><li>Ante la duda, marca «en revisión» y pide más información al negocio con «Enviar aviso».</li></ul><p class="muted small" style="margin:8px 0 0">Referencia: <a class="link" href="/normas/" target="_blank">Normas de la comunidad</a> · <a class="link" href="/negocios/" target="_blank">Condiciones para negocios</a>.</p></div>
       <div class="card"><h2>Obligaciones legales que cubre el panel</h2><ul style="margin:0;padding-left:18px"><li><b>DSA</b> (Reglamento de Servicios Digitales): toda retirada de contenido lleva motivo y vía de recurso (15 días, info@klendar.app); las denuncias se gestionan con diligencia.</li><li><b>RGPD</b>: consentimientos visibles en la ficha del usuario; supresión con «Borrar cuenta»; acceso con «Exportar CSV».</li><li><b>Registro</b>: cada acción administrativa queda registrada con autor y fecha.</li></ul></div>
     </div>
