@@ -57,6 +57,8 @@ T = {
     biz_sub='Publica una oferta flash cuando tengas un hueco, anuncia tus eventos y valida los canjeos con la cámara del móvil. Sin comisiones por venta: una cuota mensual fija.',
     biz_points=['Alta en 2 minutos desde la app; verificamos tu negocio en 24–48 h.', 'Ofertas con cuenta atrás y aforo: tú decides cuántas y hasta cuándo.', 'Estadísticas de vistas, favoritos y canjeos por publicación.', 'Equipo: añade encargados y empleados para validar códigos.'],
     biz_cta='Escríbenos', biz_terms='Ver condiciones', biz_note='Las primeras semanas en cada ciudad, gratis.',
+    biz_panel='Acceso para negocios', biz_panel_url='/panel/',
+    biz_panel_note='¿Ya tienes tu negocio en Klendar? Entra en tu panel para publicar, ver cómo va y validar códigos desde el ordenador.',
     biz_kit='Kit para tu local: <a href="/assets/kit/klendar-guia-negocios.pdf">guía de 1 página (PDF)</a> · <a href="/assets/kit/klendar-cartel.pdf">cartel con QR (PDF)</a>',
     biz_stats=[('0 %', 'comisión por venta'), ('2 min', 'para publicar'), ('24–48 h', 'verificación'), ('QR', 'de un solo uso')],
     faq_eyebrow='Preguntas frecuentes', faq_h2='Dudas habituales',
@@ -67,7 +69,7 @@ T = {
           ('¿En qué ciudades está?', 'Empezamos ciudad a ciudad en España. Si en la tuya todavía hay poco, ayúdanos: díselo a tu bar de siempre.')],
     cta_h2='Lo que pasa cerca, en tu bolsillo', cta_sub='Muy pronto en Google Play y App Store.',
     foot_product='Producto', foot_legal='Legal', foot_contact='Contacto',
-    foot_links_product=[('/#como', 'Cómo funciona'), ('/#negocios', 'Para negocios'), ('/soporte/', 'Soporte'), ('/en/', 'English')],
+    foot_links_product=[('/#como', 'Cómo funciona'), ('/#negocios', 'Para negocios'), ('/panel/', 'Acceso para negocios'), ('/soporte/', 'Soporte'), ('/en/', 'English')],
     foot_links_legal=[('/aviso-legal/', 'Aviso legal'), ('/privacidad/', 'Privacidad'), ('/terminos/', 'Términos de uso'), ('/negocios/', 'Condiciones para negocios'), ('/cookies/', 'Cookies'), ('/normas/', 'Normas de la comunidad'), ('/eliminar-cuenta/', 'Eliminar cuenta')],
     foot_rights=f'© {YEAR} Klendar. Todos los derechos reservados.', foot_made='Hecho en España',
     support_url='/soporte/', biz_terms_url='/negocios/',
@@ -100,6 +102,8 @@ T = {
     biz_sub='Post a flash deal when you have a quiet hour, announce your events and validate redemptions with your phone camera. No sales commission: one flat monthly fee.',
     biz_points=['Sign up in 2 minutes from the app; we verify your business in 24–48 h.', 'Deals with a countdown and capacity: you decide how many and until when.', 'Stats for views, favourites and redemptions per post.', 'Team: add managers and staff to validate codes.'],
     biz_cta='Email us', biz_terms='Business terms', biz_note='The first weeks in each city are free.',
+    biz_panel='Business sign in', biz_panel_url='/panel/',
+    biz_panel_note='Already on Klendar? Sign in to your dashboard to publish, see how it is going and validate codes from your computer.',
     biz_kit='Kit for your venue (Spanish): <a href="/assets/kit/klendar-guia-negocios.pdf">one-page guide (PDF)</a> · <a href="/assets/kit/klendar-cartel.pdf">poster with QR (PDF)</a>',
     biz_stats=[('0 %', 'sales commission'), ('2 min', 'to publish'), ('24–48 h', 'verification'), ('QR', 'single-use')],
     faq_eyebrow='FAQ', faq_h2='Common questions',
@@ -110,7 +114,7 @@ T = {
           ('Which cities?', 'We\'re starting city by city in Spain. If yours is still quiet, help us: tell your local bar.')],
     cta_h2='What\'s happening nearby, in your pocket', cta_sub='Coming soon to Google Play and the App Store.',
     foot_product='Product', foot_legal='Legal', foot_contact='Contact',
-    foot_links_product=[('/en/#how-it-works', 'How it works'), ('/en/#businesses', 'For businesses'), ('/en/support/', 'Support'), ('/', 'Español')],
+    foot_links_product=[('/en/#how-it-works', 'How it works'), ('/en/#businesses', 'For businesses'), ('/panel/', 'Business sign in'), ('/en/support/', 'Support'), ('/', 'Español')],
     foot_links_legal=[('/en/legal-notice/', 'Legal notice'), ('/en/privacy/', 'Privacy policy'), ('/en/terms/', 'Terms of use'), ('/en/business-terms/', 'Business terms'), ('/en/cookies/', 'Cookies'), ('/en/community-guidelines/', 'Community guidelines'), ('/en/delete-account/', 'Delete account')],
     foot_rights=f'© {YEAR} Klendar. All rights reserved.', foot_made='Made in Spain',
     support_url='/en/support/', biz_terms_url='/en/business-terms/',
@@ -178,6 +182,7 @@ def head(t, path, page_title=None, page_desc=None, extra=''):
     <a href="/{t['dir']}#{t['a_biz']}">{t['nav_biz']}</a>
     <a href="/{t['dir']}#{t['a_faq']}">{t['nav_faq']}</a>
     <a href="{t['support_url']}">{t['nav_support']}</a>
+    <a href="{t['biz_panel_url']}" class="nav-panel">{t['biz_panel']}</a>
     <span class="lang" aria-label="Idioma / Language">
       <a href="{es_path}" class="{'on' if t['lang']=='es' else ''}" data-lang="es" hreflang="es">ES</a>
       <a href="{en_path}" class="{'on' if t['lang']=='en' else ''}" data-lang="en" hreflang="en">EN</a>
@@ -279,7 +284,8 @@ def landing(t):
       <h2>{t['biz_h2']}</h2>
       <p class="sub">{t['biz_sub']}</p>
       <ul>{points}</ul>
-      <p style="margin:0;display:flex;gap:10px;flex-wrap:wrap"><a class="pill accent" href="{mail}">{t['biz_cta']}</a> <a class="pill ghost" href="{t['biz_terms_url']}">{t['biz_terms']}</a></p>
+      <p style="margin:0;display:flex;gap:10px;flex-wrap:wrap"><a class="pill accent" href="{mail}">{t['biz_cta']}</a> <a class="pill ghost" href="{t['biz_panel_url']}">{t['biz_panel']}</a> <a class="pill ghost" href="{t['biz_terms_url']}">{t['biz_terms']}</a></p>
+      <p class="note" style="color:inherit;opacity:.7">{t['biz_panel_note']}</p>
       <p class="note" style="color:inherit;opacity:.7">{t['biz_note']}</p>
       <p class="note" style="color:inherit;opacity:.85">{t['biz_kit']}</p>
     </div>

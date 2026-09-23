@@ -167,3 +167,12 @@ mark.tbd { background: rgba(255,184,77,.35); color: inherit; padding: 0 4px; bor
 .open h1 { font-size: 26px; letter-spacing: -.6px; margin: 16px 0 6px; }
 
 @media (prefers-reduced-motion: reduce) { .float { animation: none; } html { scroll-behavior: auto; } }
+
+/* Acceso al panel del negocio: se distingue del resto del menú sin gritar. */
+nav.main a.nav-panel {
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-weight: 700;
+}
+nav.main a.nav-panel:hover { background: var(--glass); text-decoration: none; }
