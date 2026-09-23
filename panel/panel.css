@@ -1,0 +1,82 @@
+/* Panel del negocio: reutiliza casi todo el estilo del panel de administración
+   (admin.css) y añade lo que aquí es distinto. */
+
+/* Selector de negocio en la barra lateral */
+.bizpick { margin: 0 8px 12px; }
+.bizpick select {
+  width: 100%;
+  background: rgba(255, 255, 255, .08);
+  color: inherit;
+  border-color: rgba(255, 255, 255, .18);
+  font-weight: 700;
+}
+.bizpick select option { color: #12151C; }
+
+/* Acciones grandes de la portada del panel */
+.quick { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+.quick button {
+  border: 1px solid var(--glass-border);
+  background: var(--elevated);
+  color: var(--ink);
+  border-radius: 18px;
+  padding: 16px;
+  font: inherit;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+  display: grid;
+  gap: 4px;
+}
+.quick button:hover { filter: brightness(1.04); }
+.quick button .ic { font-size: 22px; }
+.quick button small { font-weight: 500; color: var(--ink-2); }
+.quick button.primary { background: var(--accent); color: #fff; border-color: transparent; }
+.quick button.primary small { color: rgba(255, 255, 255, .85); }
+
+/* Formulario de publicación */
+.form-grid { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; }
+@media (max-width: 800px) { .form-grid { grid-template-columns: 1fr; } }
+.form-grid .full { grid-column: 1 / -1; }
+.pills { display: flex; gap: 8px; flex-wrap: wrap; }
+.pills button {
+  border: 1px solid var(--glass-border);
+  background: var(--glass);
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 7px 14px;
+  font: inherit;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+}
+.pills button.on { background: var(--accent); color: #fff; border-color: transparent; }
+.hint { color: var(--ink-2); font-size: 13px; margin: 2px 0 0; }
+
+/* Fotos de la publicación */
+.photos { display: flex; gap: 10px; flex-wrap: wrap; }
+.photos .ph-item { position: relative; }
+.photos img { width: 104px; height: 104px; object-fit: cover; border-radius: 14px; }
+.photos .rm {
+  position: absolute; top: -6px; right: -6px;
+  border: 0; border-radius: 999px; width: 26px; height: 26px;
+  background: #b3261e; color: #fff; font-weight: 800; cursor: pointer;
+}
+.photos label.add {
+  width: 104px; height: 104px; border-radius: 14px;
+  border: 1px dashed var(--glass-border);
+  display: grid; place-items: center; cursor: pointer; color: var(--ink-2);
+  font-size: 13px; text-align: center; padding: 8px;
+}
+.photos label.add input { display: none; }
+
+/* Validación de códigos */
+.scan-box { display: grid; gap: 12px; max-width: 460px; }
+.scan-box input { font-size: 18px; letter-spacing: 2px; text-align: center; font-family: ui-monospace, Menlo, Consolas, monospace; }
+.scan-result { border-radius: 18px; padding: 16px 18px; font-weight: 700; }
+.scan-result.ok { background: rgba(46, 204, 113, .18); color: #146c3a; }
+.scan-result.bad { background: rgba(255, 92, 92, .18); color: #b3261e; }
+@media (prefers-color-scheme: dark) {
+  .scan-result.ok { color: #8AE8B0; }
+  .scan-result.bad { color: #FF9B9B; }
+}
+.scan-result small { display: block; font-weight: 500; margin-top: 4px; opacity: .85; }

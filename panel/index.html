@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0B0F1A">
+<title>Klendar · Panel del negocio</title>
+<link rel="icon" href="/assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/admin/admin.css?v=4">
+<link rel="stylesheet" href="/panel/panel.css?v=1">
+</head>
+<body class="admin-body">
+
+<!-- Acceso -->
+<div id="login" class="login" hidden>
+  <a class="brand" href="/"><img src="/assets/symbol.png" alt="" width="30" height="30"> Klendar <small class="muted">· negocios</small></a>
+  <h2 style="margin:0">Entra en tu panel</h2>
+  <p class="muted" style="margin:0">Con la misma cuenta que usas en la app. Si tu negocio todavía no está dado de alta, hazlo desde la app: Perfil → Dar de alta mi negocio.</p>
+  <label class="f"><span>Email</span><input id="email" type="email" autocomplete="username"></label>
+  <label class="f"><span>Contraseña</span><input id="password" type="password" autocomplete="current-password"></label>
+  <button class="btn primary" id="doLogin">Entrar</button>
+  <button class="btn sm ghost" id="doReset" type="button">He olvidado la contraseña</button>
+  <div id="loginErr" class="err"></div>
+</div>
+
+<!-- Panel -->
+<div id="app" class="layout" hidden>
+  <aside class="side" id="side">
+    <a class="brand" href="#/resumen"><img src="/assets/symbol.png" alt=""> Klendar <small>negocios</small></a>
+    <div class="bizpick"><select id="bizSelect" aria-label="Negocio"></select></div>
+    <nav id="nav"></nav>
+    <div class="me"><span style="opacity:.6">Sesión</span><b id="who"></b><a href="#" id="logout">Salir</a></div>
+  </aside>
+  <div>
+    <div class="topbar">
+      <a class="brand" href="#/resumen"><img src="/assets/symbol.png" alt=""> Klendar</a>
+      <button class="btn sm" id="menuBtn" aria-label="Menú">☰ Menú</button>
+    </div>
+    <main class="content" id="view"></main>
+  </div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+<dialog class="modal" id="modal"></dialog>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/panel/panel.js?v=1"></script>
+</body>
+</html>
