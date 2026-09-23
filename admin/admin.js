@@ -179,7 +179,7 @@ const NAV = [
   ['group', 'Negocio'],
   ['planes', '💳', 'Planes y pagos'], ['avisos', '🔔', 'Avisos y push'],
   ['group', 'Sistema'],
-  ['categorias', '🗂', 'Categorías'], ['configuracion', '⚙️', 'Configuración'], ['administradores', '🛡', 'Administradores'], ['actividad', '📜', 'Registro de actividad'], ['ayuda', '❓', 'Ayuda'],
+  ['colecciones', '✨', 'Colecciones'], ['categorias', '🗂', 'Categorías'], ['configuracion', '⚙️', 'Configuración'], ['administradores', '🛡', 'Administradores'], ['actividad', '📜', 'Registro de actividad'], ['ayuda', '❓', 'Ayuda'],
 ];
 let BADGES = {};
 function renderNav(current) {
@@ -1081,6 +1081,76 @@ PAGES.categorias = async (v) => {
   $('#new').onclick = () => edit(null);
   $$('[data-edit]').forEach((b) => { b.onclick = () => edit(byId[b.dataset.edit]); });
   $$('[data-del]').forEach((b) => { b.onclick = async () => { if (!await confirmDlg('Borrar categoría', 'Solo se puede si no la usa ningún negocio ni publicación.', { danger: true, submit: 'Borrar' })) return; try { await rpc('admin_delete_category', { p_id: b.dataset.del }); toast('Borrada'); route(); } catch (e) { toast(e.message, true); } }; });
+};
+
+// ── Colecciones ─────────────────────────────────────────────────────────────
+PAGES.colecciones = async (v) => {
+  const cols = await rpc('admin_collections');
+  const cats = await rpc('admin_categories').catch(() => []);
+  const byId = Object.fromEntries(cols.map((c) => [c.id, c]));
+  const ruleText = (r = {}) => [
+    r.kind === 'flash_offer' ? 'ofertas' : r.kind === 'future_event' ? 'eventos' : null,
+    r.when === 'today' ? 'hoy' : r.when === 'weekend' ? 'fin de semana' : r.when === 'next7' ? 'próximos 7 días' : null,
+    r.max_price_cents != null ? `hasta ${fmtMoney(r.max_price_cents)}` : null,
+    r.discount_only ? 'solo con descuento' : null,
+    r.new_days ? `publicado en ${r.new_days} días` : null,
+    r.categories?.length ? `${r.categories.length} categoría(s)` : null,
+  ].filter(Boolean).join(' · ') || 'todo lo que haya cerca';
+  v.innerHTML = `
+    <div class="page-head"><h1>Colecciones</h1><span class="spacer"></span><button class="btn primary sm" id="new">Nueva colección…</button></div>
+    ${helpBox('¿Qué es esto?', '<p>Selecciones con nombre que aparecen en Descubre («Planes para el finde», «Barato y bueno»). No se eligen una a una: se define una <b>regla</b> y la app enseña lo que encaje cerca de cada persona. Si una colección se queda sin nada cerca, no se enseña.</p><p>Puedes limitarlas a una <b>ciudad</b> y ponerles <b>fechas</b>: una colección de feria aparece y desaparece sola.</p>')}
+    ${table({ cols: [
+      { h: 'Colección', r: (c) => `<span class="title">${esc(c.title?.es || c.slug)}<span class="sub">${esc(c.slug)}${c.city ? ' · ' + esc(c.city) : ''} · ${esc(ruleText(c.rules))}</span></span>` },
+      { h: 'Estado', r: (c) => c.is_active ? tag('active') : tag('draft') },
+      { h: 'Vigencia', r: (c) => (c.active_from || c.active_until) ? `<span class="small nowrap">${c.active_from ? fmtDay(c.active_from) : '—'} → ${c.active_until ? fmtDay(c.active_until) : '—'}</span>` : 'siempre' },
+      { h: 'Orden', num: true, r: (c) => c.position },
+      { h: '', r: (c) => `<span class="actions"><button class="btn sm" data-edit="${c.id}">Editar…</button><button class="btn sm bad ghost" data-del="${c.id}">Borrar</button></span>` },
+    ], rows: cols, empty: 'Todavía no hay colecciones.' })}`;
+  const edit = async (c) => {
+    const r = await modal({ title: c ? 'Editar colección' : 'Nueva colección', fields: [
+      { name: 'slug', label: 'Slug (identificador)', value: c?.slug, required: true, placeholder: 'planes-finde' },
+      { name: 'es', label: 'Título (ES)', value: c?.title?.es, required: true },
+      { name: 'en', label: 'Título (EN)', value: c?.title?.en },
+      { name: 'sub_es', label: 'Subtítulo (ES)', value: c?.subtitle?.es },
+      { name: 'sub_en', label: 'Subtítulo (EN)', value: c?.subtitle?.en },
+      { name: 'kind', label: 'Qué incluye', type: 'select', value: c?.rules?.kind || '', options: [['', 'Ofertas y eventos'], ['flash_offer', 'Solo ofertas relámpago'], ['future_event', 'Solo eventos']] },
+      { name: 'when', label: 'Cuándo', type: 'select', value: c?.rules?.when || '', options: [['', 'Cualquier momento'], ['today', 'Hoy'], ['weekend', 'Fin de semana'], ['next7', 'Próximos 7 días']] },
+      { name: 'max_price', label: 'Precio máximo (€, opcional)', value: c?.rules?.max_price_cents != null ? (c.rules.max_price_cents / 100).toFixed(2) : '' },
+      { name: 'discount_only', label: 'Solo con descuento', type: 'checkbox', value: !!c?.rules?.discount_only },
+      { name: 'new_days', label: 'Publicado en los últimos N días (opcional)', type: 'number', value: c?.rules?.new_days ?? '' },
+      { name: 'category_id', label: 'Categoría (opcional)', type: 'select', value: c?.rules?.categories?.[0] || '', options: [['', '— todas'], ...cats.map((x) => [x.id, x.names?.es || x.slug])] },
+      { name: 'city', label: 'Ciudad (opcional)', value: c?.city || '' },
+      { name: 'position', label: 'Orden', type: 'number', value: c?.position ?? 50 },
+      { name: 'active_from', label: 'Desde (opcional)', type: 'date', value: c?.active_from ? c.active_from.slice(0, 10) : '' },
+      { name: 'active_until', label: 'Hasta (opcional)', type: 'date', value: c?.active_until ? c.active_until.slice(0, 10) : '' },
+      { name: 'is_active', label: 'Activa', type: 'checkbox', value: c ? c.is_active : true },
+    ] });
+    if (!r) return;
+    const rules = {};
+    if (r.kind) rules.kind = r.kind;
+    if (r.when) rules.when = r.when;
+    if (r.max_price) rules.max_price_cents = Math.round(parseFloat(r.max_price.replace(',', '.')) * 100);
+    if (r.discount_only) rules.discount_only = true;
+    if (r.new_days) rules.new_days = +r.new_days;
+    if (r.category_id) rules.categories = [r.category_id];
+    try {
+      await rpc('admin_save_collection', {
+        p_id: c?.id || null, p_slug: r.slug,
+        p_title: { es: r.es, en: r.en || r.es },
+        p_subtitle: (r.sub_es || r.sub_en) ? { es: r.sub_es || '', en: r.sub_en || r.sub_es || '' } : null,
+        p_rules: rules, p_city: r.city || null, p_position: +r.position || 50,
+        p_is_active: r.is_active,
+        p_active_from: r.active_from || null, p_active_until: r.active_until || null,
+      });
+      toast('Colección guardada'); route();
+    } catch (e) { toast(e.message, true); }
+  };
+  $('#new').onclick = () => edit(null);
+  $$('[data-edit]').forEach((b) => { b.onclick = () => edit(byId[b.dataset.edit]); });
+  $$('[data-del]').forEach((b) => { b.onclick = async () => {
+    if (!await confirmDlg('Borrar colección', 'Deja de aparecer en Descubre. Las publicaciones no se tocan.', { danger: true, submit: 'Borrar' })) return;
+    try { await rpc('admin_delete_collection', { p_id: b.dataset.del }); toast('Borrada'); route(); } catch (e) { toast(e.message, true); }
+  }; });
 };
 
 // ── Configuración ───────────────────────────────────────────────────────────
