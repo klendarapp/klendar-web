@@ -181,7 +181,7 @@ document.addEventListener('keydown', (e) => { if (e.key === '/' && !/input|texta
 // ── Navegación ──────────────────────────────────────────────────────────────
 const NAV = [
   ['group', 'Actividad'],
-  ['resumen', '📊', 'Resumen'], ['negocios', '🏪', 'Negocios'], ['publicaciones', '⚡', 'Publicaciones'], ['canjeos', '🎟', 'Canjeos'], ['usuarios', '👤', 'Usuarios'],
+  ['resumen', '📊', 'Resumen'], ['ciudades', '🗺', 'Ciudades'], ['negocios', '🏪', 'Negocios'], ['publicaciones', '⚡', 'Publicaciones'], ['canjeos', '🎟', 'Canjeos'], ['usuarios', '👤', 'Usuarios'],
   ['group', 'Moderación'],
   ['denuncias', '🚩', 'Denuncias'], ['resenas', '💬', 'Reseñas y posts'], ['sugerencias', '💡', 'Sugerencias'],
   ['group', 'Negocio'],
@@ -1090,6 +1090,61 @@ PAGES.categorias = async (v) => {
   $$('[data-edit]').forEach((b) => { b.onclick = () => edit(byId[b.dataset.edit]); });
   $$('[data-del]').forEach((b) => { b.onclick = async () => { if (!await confirmDlg('Borrar categoría', 'Solo se puede si no la usa ningún negocio ni publicación.', { danger: true, submit: 'Borrar' })) return; try { await rpc('admin_delete_category', { p_id: b.dataset.del }); toast('Borrada'); route(); } catch (e) { toast(e.message, true); } }; });
 };
+
+// ── Ciudades ────────────────────────────────────────────────────────────────
+// Los números globales no dicen dónde hay que arrimar el hombro. Esto sí:
+// ciudad por ciudad, y dentro de una ciudad, negocio por negocio.
+PAGES.ciudades = async (v, param) => {
+  const days = 30;
+  if (param) return cityDetail(v, decodeURIComponent(param), days);
+  const rows = await rpc('admin_cities', { p_days: days });
+  const ratio = (a, b) => (!b ? '—' : (a / b).toFixed(1).replace('.', ','));
+  v.innerHTML = `
+    <div class="page-head"><h1>Ciudades</h1><span class="muted small">últimos ${days} días</span></div>
+    <div class="card">${table({
+      cols: [
+        { h: 'Ciudad', r: (c) => `<a class="link" href="#/ciudades/${encodeURIComponent(c.city)}"><b>${esc(c.city)}</b></a>` },
+        { h: 'Negocios', num: true, r: (c) => `${fmtNum(c.negocios)} <span class="muted small">(${fmtNum(c.verificados)} verif.)</span>` },
+        { h: 'Publicaciones', num: true, r: (c) => fmtNum(c.publicaciones) },
+        { h: 'Activas ahora', num: true, r: (c) => fmtNum(c.activas) },
+        { h: 'Vistas', num: true, r: (c) => fmtNum(c.vistas) },
+        { h: 'Canjes', num: true, r: (c) => fmtNum(c.canjes) },
+        { h: 'Publicaciones por negocio', num: true, r: (c) => ratio(c.publicaciones, c.negocios) },
+      ],
+      rows,
+      empty: 'Todavía no hay ningún negocio con ciudad.',
+    })}</div>
+    <p class="muted small">«Publicaciones por negocio» es la cifra que más dice: por debajo de 1 al mes, esa ciudad está dada de alta pero no viva.</p>`;
+};
+
+async function cityDetail(v, city, days) {
+  const d = await rpc('admin_city_detail', { p_city: city, p_days: days }) || {};
+  const biz = d.businesses || [];
+  const weeks = d.weekly || [];
+  const max = Math.max(1, ...weeks.map((w) => w.published));
+  const dormidos = biz.filter((b) => b.published === 0).length;
+  v.innerHTML = `
+    <div class="page-head"><a class="btn sm ghost" href="#/ciudades">← Ciudades</a><h1>${esc(city)}</h1>
+      <span class="muted small">últimos ${days} días</span></div>
+    <div class="card"><h2>Publicaciones por semana</h2>
+      <div class="spark">${weeks.map((w) => `<i title="Semana del ${w.week}: ${w.published}" style="height:${Math.round((w.published / max) * 100)}%"></i>`).join('')}</div>
+      <p class="muted small" style="margin:8px 0 0">Doce semanas. Si baja y no sube, es que los negocios se han enfriado.</p>
+    </div>
+    <div class="card"><h2>Negocios</h2>
+      ${dormidos ? `<p class="muted" style="margin:0 0 10px"><b>${dormidos}</b> no han publicado nada en este periodo: son los que hay que llamar.</p>` : ''}
+      ${table({
+        cols: [
+          { h: 'Negocio', r: (b) => `<a class="link" href="#/negocios/${esc(b.id)}"><b>${esc(b.name)}</b></a><span class="sub">alta ${fmtDate(b.created_at)}</span>` },
+          { h: 'Estado', r: (b) => tag(b.status) },
+          { h: 'Activas', num: true, r: (b) => fmtNum(b.active) },
+          { h: 'Publicadas', num: true, r: (b) => (b.published ? fmtNum(b.published) : '<span class="muted">0</span>') },
+          { h: 'Canjes', num: true, r: (b) => fmtNum(b.redeemed) },
+        ],
+        rows: biz,
+        empty: 'Ningún negocio en esta ciudad.',
+      })}
+    </div>`;
+}
 
 // ── Colecciones ─────────────────────────────────────────────────────────────
 PAGES.colecciones = async (v) => {

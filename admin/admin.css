@@ -157,3 +157,8 @@ a.link { color: var(--accent-text); font-weight: 600; }
 .stars { color: #FFB84D; letter-spacing: 1px; }
 .json { font-size: 12px; }
 .nowrap { white-space: nowrap; }
+
+/* Barras sencillas (publicaciones por semana). No es un gráfico de verdad y
+   no lo pretende: es para ver la forma de un vistazo. */
+.spark { display: flex; align-items: flex-end; gap: 4px; height: 110px; padding: 4px 0; }
+.spark i { flex: 1 1 0; min-width: 3px; min-height: 2px; background: var(--accent); border-radius: 3px 3px 0 0; opacity: .85; }
