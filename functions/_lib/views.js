@@ -9,8 +9,8 @@
 
 import { esc, html, isUuid, render, rpc, rpcAll } from './page.js';
 import {
-  BASE, benefit, firstPhoto, fmtLong, fmtTime, isVideo, media, money,
-  offerCard, openInApp, priorPrice, publicPage,
+  agendaBase, BASE, benefit, firstPhoto, fmtLong, fmtTime, isVideo, media,
+  money, offerCard, openInApp, priorPrice, publicPage,
 } from './public.js';
 
 const pre = (lang) => (lang === 'en' ? '/en' : '');
@@ -29,8 +29,8 @@ export async function offerPage(id, lang) {
   const soldOut = o.status === 'sold_out' || (o.seats_left != null && o.seats_left <= 0);
   const over = new Date(o.redeem_end_at || o.event_end_at || o.event_at || 0) < new Date();
   const availability = soldOut ? 'https://schema.org/SoldOut' : 'https://schema.org/InStock';
-  const tag = benefit(o.discount, o.price_cents, o.currency);
-  const prior = priorPrice(o.discount);
+  const tag = benefit(o.discount, o.price_cents, o.currency, lang);
+  const prior = priorPrice(o.discount, lang);
   const cover = firstPhoto(o.images);
   const pieces = (o.images || []).slice(0, 4);
   const where = [o.business_address, o.business_city].filter(Boolean).join(', ');
@@ -76,7 +76,7 @@ export async function offerPage(id, lang) {
       <h1>${esc(o.title)}</h1>
       <p class="muted">${esc(o.business_name)}${where ? ` · ${esc(where)}` : ''}</p>
       ${tag || o.price_cents != null ? `<div class="price">
-        <b>${esc(tag || money(o.price_cents, o.currency))}</b>
+        <b>${esc(tag || money(o.price_cents, o.currency, lang))}</b>
         ${prior ? `<s>${esc(prior)}</s><span class="rule">${S.prior}</span>` : ''}
       </div>` : ''}
     </div>
@@ -167,7 +167,9 @@ export async function businessPage(id, lang) {
         .format(new Date(b.member_since))
     : '';
   const maps = b.lat ? `https://www.google.com/maps/search/?api=1&query=${b.lat},${b.lng}` : null;
-  const city = b.city ? `${pre(lang)}/agenda/${encodeURIComponent(String(b.city).toLowerCase())}/` : null;
+  const city = b.city
+    ? `${agendaBase(lang)}/${encodeURIComponent(String(b.city).toLowerCase())}/`
+    : null;
 
   const body = `
   <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a>${city ? ` · <a href="${city}">${esc(b.city)}</a>` : ''}</p>
@@ -234,7 +236,7 @@ const PRETTY = (s) => String(s || '').replace(/(^|[\s-])(\p{L})/gu, (m, a, b) =>
 export async function agendaPage(rawCity, lang) {
   const en = lang === 'en';
   const raw = decodeURIComponent(rawCity || '').replace(/\/+$/, '');
-  const path = `${pre(lang)}/agenda/${encodeURIComponent(raw.toLowerCase())}/`;
+  const path = `${agendaBase(lang)}/${encodeURIComponent(raw.toLowerCase())}/`;
   if (!raw || raw.length > 60) return notFound(lang, path, 'o');
 
   const offers = await rpcAll('public_city_agenda', { p_city: raw, p_limit: 60 });
@@ -245,7 +247,7 @@ export async function agendaPage(rawCity, lang) {
         h1: `What's on in ${city}`,
         lead: 'Flash deals and local events for the next few days. No account needed to look; the app is only for getting the code.',
         none: `Nothing published in ${city} yet. If you run a business here, you can be the first.`,
-        biz: 'Publish your business', all: 'Other cities', app: 'Get the app', agenda: 'Agenda',
+        biz: 'Publish your business', all: 'Other cities', app: 'Get the app', agenda: "What's on",
         note: 'Updated as businesses publish. Times are local (Europe/Madrid).',
         plans: 'plans and deals',
       }
@@ -270,7 +272,7 @@ export async function agendaPage(rawCity, lang) {
   }).format(new Date(`${iso}T12:00:00Z`));
 
   const body = `
-  <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a> · <a href="${pre(lang)}/agenda/">${S.agenda}</a></p>
+  <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a> · <a href="${agendaBase(lang)}/">${S.agenda}</a></p>
   <h1>${esc(S.h1)}</h1>
   <p class="muted" style="max-width:620px">${esc(S.lead)}</p>
   ${offers.length
@@ -281,7 +283,7 @@ export async function agendaPage(rawCity, lang) {
     : `<p class="empty">${esc(S.none)}</p>`}
   <p class="muted" style="font-size:13px">${esc(S.note)}</p>
   <p><a class="pill accent" href="/${en ? 'en/' : ''}">${S.app}</a> <a class="pill" href="${en ? '/en/business-terms/' : '/negocios/'}">${S.biz}</a></p>
-  <p><a href="${pre(lang)}/agenda/">${S.all} →</a></p>`;
+  <p><a href="${agendaBase(lang)}/">${S.all} →</a></p>`;
 
   const jsonLd = offers.length
     ? {
@@ -313,8 +315,8 @@ export async function citiesPage(lang) {
 
   const S = en
     ? {
-        h1: 'Local agenda',
-        lead: 'What is on in each city: flash deals and plans for the next few days. No account needed.',
+        h1: "What's on near you",
+        lead: 'Flash deals and plans for the next few days, city by city. No account needed.',
         none: 'No city has anything published yet.', biz: 'Publish your business',
       }
     : {
@@ -328,11 +330,11 @@ export async function citiesPage(lang) {
   <h1>${S.h1}</h1>
   <p class="muted" style="max-width:620px">${S.lead}</p>
   ${cities.length
-    ? `<div class="cities">${cities.map((c) => `<a href="${pre(lang)}/agenda/${encodeURIComponent(String(c.city).toLowerCase())}/">${esc(c.city)} <span class="muted">${c.n}</span></a>`).join('')}</div>`
+    ? `<div class="cities">${cities.map((c) => `<a href="${agendaBase(lang)}/${encodeURIComponent(String(c.city).toLowerCase())}/">${esc(c.city)} <span class="muted">${c.n}</span></a>`).join('')}</div>`
     : `<p class="empty">${S.none}</p>`}
   <p><a class="pill" href="${en ? '/en/business-terms/' : '/negocios/'}">${S.biz}</a></p>`;
 
   return html(publicPage({
-    lang, path: `${pre(lang)}/agenda/`, body, title: S.h1, description: S.lead,
+    lang, path: `${agendaBase(lang)}/`, body, title: S.h1, description: S.lead,
   }), 200, 'public, max-age=600, s-maxage=1800');
 }

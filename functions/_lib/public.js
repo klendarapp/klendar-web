@@ -10,8 +10,13 @@ import { esc } from './page.js';
 
 export const BASE = 'https://klendar.app';
 
-export const money = (cents, currency = 'EUR') =>
-  cents == null ? '' : (cents / 100).toLocaleString('es-ES', { style: 'currency', currency });
+export const money = (cents, currency = 'EUR', lang = 'es') =>
+  cents == null
+    ? ''
+    : (cents / 100).toLocaleString(lang === 'en' ? 'en-IE' : 'es-ES', {
+        style: 'currency',
+        currency,
+      });
 
 /** «sábado 4 de octubre, 11:00» */
 export function fmtLong(iso, lang = 'es') {
@@ -44,20 +49,24 @@ export function fmtTime(iso, lang = 'es') {
 }
 
 /** El beneficio en una etiqueta: «−20 %», «2x1», «12 €». */
-export function benefit(d, priceCents, currency) {
+export function benefit(d, priceCents, currency, lang = 'es') {
   if (d) {
     if (d.type === 'percent') return `−${d.value} %`;
-    if (d.type === 'fixed') return money(Math.round(Number(d.value) * 100), d.currency || currency);
+    if (d.type === 'fixed') {
+      return money(Math.round(Number(d.value) * 100), d.currency || currency, lang);
+    }
     if (d.type === '2x1') return '2x1';
-    if (d.type === 'free') return 'Gratis';
+    if (d.type === 'free') return lang === 'en' ? 'Free' : 'Gratis';
+    // «Segunda unidad al 50 %» lo escribe el negocio: se enseña tal cual, sin
+    // traducciones inventadas.
     if (d.type === 'other' && d.value) return String(d.value);
   }
-  return priceCents == null ? '' : money(priceCents, currency);
+  return priceCents == null ? '' : money(priceCents, currency, lang);
 }
 
 /** Precio anterior tachado (obligatorio cuando se anuncia una rebaja). */
-export const priorPrice = (d) =>
-  d?.compare_at_cents ? money(d.compare_at_cents, d.currency || 'EUR') : '';
+export const priorPrice = (d, lang = 'es') =>
+  d?.compare_at_cents ? money(d.compare_at_cents, d.currency || 'EUR', lang) : '';
 
 export const isVideo = (u) => /\.(mp4|mov|webm)(\?|$)/i.test(u || '');
 
@@ -77,9 +86,15 @@ export function media(url, poster) {
     controls playsinline preload="metadata" muted></video>`;
 }
 
-/** La misma página en el otro idioma: /o/x ⇄ /en/o/x. */
+/** Dónde vive la cartelera en cada idioma. En inglés «agenda» es el orden
+ * del día de una reunión, no lo que hay esta semana en la ciudad. */
+export const agendaBase = (lang) => (lang === 'en' ? '/en/whats-on' : '/agenda');
+
+/** La misma página en el otro idioma: /o/x ⇄ /en/o/x, /agenda/x ⇄ /en/whats-on/x. */
 export const altPath = (path, lang) =>
-  lang === 'en' ? path.replace(/^\/en/, '') || '/' : `/en${path}`;
+  lang === 'en'
+    ? (path.replace(/^\/en\/whats-on/, '/agenda').replace(/^\/en/, '') || '/')
+    : `/en${path.replace(/^\/agenda/, '/whats-on')}`;
 
 /**
  * Página pública completa: cabecera del sitio, contenido y pie sencillo.
@@ -92,7 +107,7 @@ export const altPath = (path, lang) =>
 export function publicPage({ lang, path, title, description, head = '', body, image }) {
   const en = lang === 'en';
   const S = en
-    ? { how: 'How it works', biz: 'Businesses', sup: 'Support', agenda: 'Local agenda' }
+    ? { how: 'How it works', biz: 'Businesses', sup: 'Support', agenda: "What's on" }
     : { how: 'Cómo funciona', biz: 'Negocios', sup: 'Soporte', agenda: 'Agenda local' };
   const og = image || `${BASE}/assets/og.png`;
   const es = en ? altPath(path, 'en') : path;
@@ -131,7 +146,7 @@ ${head}
 <header class="top"><div class="wrap">
   <a class="brand" href="/${en ? 'en/' : ''}"><img src="/assets/symbol.png" alt=""> Klendar</a>
   <nav class="main">
-    <a href="${en ? '/en/agenda/' : '/agenda/'}">${S.agenda}</a>
+    <a href="${agendaBase(lang)}/">${S.agenda}</a>
     <a href="${en ? '/en/#how-it-works' : '/#como'}">${S.how}</a>
     <a href="${en ? '/en/business-terms/' : '/negocios/'}">${S.biz}</a>
     <a href="${en ? '/en/support/' : '/soporte/'}">${S.sup}</a>
@@ -166,8 +181,8 @@ export function offerCard(o, lang = 'es') {
   const when = o.kind === 'future_event'
     ? fmtLong(o.event_at || o.starts_at, lang)
     : `${fmtDay(o.redeem_start_at || o.starts_at, lang)} · ${fmtTime(o.redeem_start_at || o.starts_at, lang)}–${fmtTime(o.redeem_end_at, lang)}`;
-  const tag = benefit(o.discount, o.price_cents, o.currency);
-  const prior = priorPrice(o.discount);
+  const tag = benefit(o.discount, o.price_cents, o.currency, lang);
+  const prior = priorPrice(o.discount, lang);
   return `<a class="ocard" href="${en ? '/en' : ''}/o/${esc(o.id)}">
     ${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : '<span class="ph">✦</span>'}
     <span class="ocard-body">

@@ -114,7 +114,7 @@ T = {
           ('Which cities?', 'We\'re starting city by city in Spain. If yours is still quiet, help us: tell your local bar.')],
     cta_h2='What\'s happening nearby, in your pocket', cta_sub='Coming soon to Google Play and the App Store.',
     foot_product='Product', foot_legal='Legal', foot_contact='Contact',
-    foot_links_product=[('/en/#how-it-works', 'How it works'), ('/agenda/', 'Local agenda'), ('/en/#businesses', 'For businesses'), ('/panel/', 'Business sign in'), ('/en/support/', 'Support'), ('/', 'Español')],
+    foot_links_product=[('/en/#how-it-works', 'How it works'), ('/en/whats-on/', "What's on"), ('/en/#businesses', 'For businesses'), ('/panel/', 'Business sign in'), ('/en/support/', 'Support'), ('/', 'Español')],
     foot_links_legal=[('/en/legal-notice/', 'Legal notice'), ('/en/privacy/', 'Privacy policy'), ('/en/terms/', 'Terms of use'), ('/en/business-terms/', 'Business terms'), ('/en/cookies/', 'Cookies'), ('/en/community-guidelines/', 'Community guidelines'), ('/en/delete-account/', 'Delete account')],
     foot_rights=f'© {YEAR} Klendar. All rights reserved.', foot_made='Made in Spain',
     support_url='/en/support/', biz_terms_url='/en/business-terms/',
@@ -330,7 +330,7 @@ def doc_page(t, path, title, desc, body):
 # Solo se indexan las páginas estáticas: /admin/ es privado y /o/, /b/ y /r/
 # son enlaces profundos que se generan al vuelo (ya llevan su propio canonical).
 SITEMAP_ES = ['/', '/agenda/', '/negocios/', '/soporte/', '/privacidad/', '/terminos/', '/aviso-legal/', '/cookies/', '/normas/', '/eliminar-cuenta/']
-SITEMAP_EN = ['/en/', '/en/agenda/', '/en/business-terms/', '/en/support/', '/en/privacy/', '/en/terms/', '/en/legal-notice/', '/en/cookies/', '/en/community-guidelines/', '/en/delete-account/']
+SITEMAP_EN = ['/en/', '/en/whats-on/', '/en/business-terms/', '/en/support/', '/en/privacy/', '/en/terms/', '/en/legal-notice/', '/en/cookies/', '/en/community-guidelines/', '/en/delete-account/']
 ALT_PAIRS = dict(zip(SITEMAP_ES, SITEMAP_EN))
 
 

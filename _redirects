@@ -1,1 +1,4 @@
 https://www.klendar.app/* https://klendar.app/:splat 301
+# «Agenda» en inglés es el orden del día de una reunión; la
+# cartelera es «what's on». Lo de antes estuvo publicado un rato.
+/en/agenda/* /en/whats-on/:splat 301

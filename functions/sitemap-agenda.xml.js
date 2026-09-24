@@ -16,7 +16,7 @@ export async function onRequestGet(ctx) {
     <xhtml:link rel="alternate" hreflang="en" href="${en}"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="${es}"/>`;
     const es = `${BASE}/agenda/${slug}/`;
-    const en = `${BASE}/en/agenda/${slug}/`;
+    const en = `${BASE}/en/whats-on/${slug}/`;
     return [es, en].map((loc) => `  <url>
     <loc>${loc}</loc>
     <lastmod>${today}</lastmod>
