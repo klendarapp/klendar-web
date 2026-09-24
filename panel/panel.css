@@ -97,3 +97,10 @@
   border-radius: 8px; width: 46px; cursor: pointer; font: inherit; font-size: 13px;
 }
 .photos .ph-move button:disabled { opacity: .4; cursor: default; }
+
+/* Día a día del informe: una barra por día, con la parte de canjes marcada.
+   No es un gráfico de verdad y no lo pretende: es para ver la forma. */
+.spark { display: flex; align-items: flex-end; gap: 3px; height: 120px; padding: 4px 0; }
+.spark i { flex: 1 1 0; min-width: 2px; background: var(--glass-border); border-radius: 3px 3px 0 0;
+  display: flex; align-items: flex-end; min-height: 2px; }
+.spark i u { display: block; width: 100%; background: var(--accent); border-radius: 3px 3px 0 0; }

@@ -166,6 +166,7 @@ const NAV = [
   ['resumen', '📊', 'Resumen'],
   ['publicaciones', '⚡', 'Publicaciones'],
   ['validar', '🎟', 'Validar códigos'],
+  ['informe', '📈', 'Informe'],
   ['equipo', '👥', 'Equipo'],
   ['ayuda', '❓', 'Ayuda'],
 ];
@@ -322,7 +323,7 @@ async function offerForm(v, id, kindDefault) {
           ${[['', 'Sin descuento'], ['percent', 'Porcentaje'], ['fixed', 'Precio fijo'], ['2x1', '2x1'], ['free', 'Gratis'], ['other', 'Otro (lo escribes tú)']].map((d) => `<option value="${d[0]}" ${disc.type === d[0] ? 'selected' : ''}>${d[1]}</option>`).join('')}</select></label>
         <label class="f"><span>Valor del descuento</span><input name="discount_value" value="${esc(disc.value ?? '')}" placeholder="20"></label>
         <label class="f full"><span>Precio anterior <small>(obligatorio si pones un % o un precio rebajado; ha de ser el más bajo de los últimos 30 días)</small></span><input name="prior_price" inputmode="decimal" value="${disc.compare_at_cents != null ? (disc.compare_at_cents / 100).toFixed(2).replace('.', ',') : ''}" placeholder="12,00"></label>
-        <label class="f full" id="alcRow" hidden><span>¿El 2x1 incluye bebidas alcohólicas? <small>(hay que responder: varias comunidades prohíben el 2x1 en alcohol y la sanción es para el negocio)</small></span><select name="alcohol">
+        <label class="f full" id="alcRow" hidden><span>¿El 2x1 incluye bebidas alcohólicas? <small>(hay que responder; si dices que sí, la publicación solo la verán mayores de 18 y tendrás que comprobar que tu comunidad lo permite: la sanción sería para tu negocio)</small></span><select name="alcohol">
           ${[['', 'Elige una opción'], ['no', 'No lleva alcohol'], ['yes', 'Sí, lleva alcohol']].map((a) => `<option value="${a[0]}" ${(disc.alcohol === true ? 'yes' : disc.alcohol === false ? 'no' : '') === a[0] ? 'selected' : ''}>${a[1]}</option>`).join('')}</select></label>
         <label class="f"><span>¿Cuánto vale el código QR?</span><select name="code_ttl_minutes">
           ${[[5, '5 minutos'], [30, '30 minutos'], [180, '3 horas'], [1440, '1 día'], ['', 'Sin caducidad']].map((t) => `<option value="${t[0]}" ${String(o.code_ttl_minutes ?? '') === String(t[0]) ? 'selected' : ''}>${t[1]}</option>`).join('')}</select></label>
@@ -425,10 +426,20 @@ async function offerForm(v, id, kindDefault) {
       $('#formErr').textContent = 'Di si el 2x1 incluye bebidas alcohólicas.';
       return;
     }
-    if (dType === '2x1' && alcohol === 'yes') {
-      $('#formErr').textContent = 'No se pueden anunciar promociones 2x1 en bebidas alcohólicas. Prueba con un precio especial.';
-      return;
+    // Bajar el precio con códigos sin usar no es gratis: quien los tenga
+    // pagará el nuevo. El negocio lo decide sabiéndolo.
+    const newCents = price ? Math.round(parseFloat(price) * 100) : null;
+    if (id && o.price_cents != null && newCents != null && newCents < o.price_cents) {
+      const codes = await rpc('offer_pending_codes', { p_offer: id });
+      const eur = (c) => (c / 100).toFixed(2).replace('.', ',') + ' €';
+      if (codes > 0 && !confirm(
+        `Hay ${codes} código(s) sin usar de ${eur(o.price_cents)}. Si lo dejas en `
+        + `${eur(newCents)}, esas personas pagarán ${eur(newCents)} en el local. `
+        + 'A quien ya canjeó no se le avisa.')) {
+        return;
+      }
     }
+
     const data = {
       business_id: BIZ.id,
       kind: f.get('kind'),
@@ -437,7 +448,7 @@ async function offerForm(v, id, kindDefault) {
       terms: f.get('terms') || null,
       category_id: f.get('category_id') || null,
       external_url: f.get('external_url') || null,
-      price_cents: price ? Math.round(parseFloat(price) * 100) : null,
+      price_cents: newCents,
       currency: 'EUR',
       discount: dType ? {
         type: dType,
@@ -489,7 +500,6 @@ async function offerForm(v, id, kindDefault) {
         : /prior_price_required/.test(m) ? 'Pon el precio anterior: la ley obliga a enseñarlo junto al descuento.'
         : /prior_price_not_lower/.test(m) ? 'El precio anterior tiene que ser mayor que el de ahora.'
         : /alcohol_declaration_required/.test(m) ? 'Di si el 2x1 incluye bebidas alcohólicas.'
-        : /no_2x1_alcohol/.test(m) ? 'No se pueden anunciar promociones 2x1 en bebidas alcohólicas. Prueba con un precio especial.'
         : m;
     }
   };
@@ -668,6 +678,78 @@ PAGES.equipo = async (v) => {
       };
     });
   }
+};
+
+// ── Informe ─────────────────────────────────────────────────────────────────
+// Todo junto y exportable: es lo que el negocio le pasa a su gestor y lo que
+// mira cuando quiere saber si esto le sirve para algo.
+PAGES.informe = async (v, param) => {
+  const days = Number(param) || 30;
+  const r = await rpc('business_report', { p_id: BIZ.id, p_days: days }) || {};
+  const t = r.totals || {};
+  const eur = (c) => (c == null ? '—' : (c / 100).toFixed(2).replace('.', ',') + ' €');
+  const pct = (a, b) => (!b ? '—' : Math.round((a * 100) / b) + ' %');
+  const hours = r.by_hour || [];
+  const best = hours.slice().sort((a, b) => b.redeemed - a.redeemed)[0];
+  const maxDay = Math.max(1, ...(r.daily || []).map((d) => Math.max(d.views, d.codes)));
+
+  v.innerHTML = `
+    <div class="page-head"><h1>Informe</h1><span class="spacer"></span>
+      ${[7, 30, 90, 365].map((d) => `<a class="btn sm ${d === days ? '' : 'ghost'}" href="#/informe/${d}">${d === 365 ? '1 año' : d + ' días'}</a>`).join(' ')}
+    </div>
+    <div class="card"><h2>El periodo en cuatro cifras</h2>
+      <div class="kpis">
+        <div class="kpi"><b>${fmtNum(t.views)}</b><span>Vistas</span></div>
+        <div class="kpi"><b>${fmtNum(t.codes)}</b><span>Códigos generados</span></div>
+        <div class="kpi accent"><b>${fmtNum(t.redeemed)}</b><span>Canjes validados</span></div>
+        <div class="kpi"><b>${pct(t.redeemed, t.codes)}</b><span>De código a canje</span></div>
+      </div>
+      <p class="muted" style="margin:10px 0 0">${fmtNum(t.unused)} código(s) se quedaron sin usar.${best ? ` La hora a la que más se canjea es a las <b>${best.hour}:00</b>.` : ''}</p>
+    </div>
+
+    <div class="card"><h2>Día a día</h2>
+      <div class="spark">${(r.daily || []).map((d) => `<i title="${d.day}: ${d.views} vistas, ${d.redeemed} canjes" style="height:${Math.round((d.views / maxDay) * 100)}%"><u style="height:${d.views ? Math.round((d.redeemed / Math.max(d.views, 1)) * 100) : 0}%"></u></i>`).join('')}</div>
+      <p class="muted" style="margin:8px 0 0">Cada barra es un día: la altura son las vistas y la parte de color, los canjes.</p>
+    </div>
+
+    <div class="card"><h2>Por publicación</h2><div class="actions" style="margin-bottom:10px"><button class="btn sm" id="csvOffers">Descargar CSV</button></div>
+      ${table({
+        cols: [
+          { h: 'Publicación', r: (o) => `<b class="title">${esc(o.title)}</b><span class="sub">${esc(LABELS[o.kind] || o.kind)} · ${fmtDate(o.starts_at)}</span>` },
+          { h: 'Precio', r: (o) => eur(o.price_cents) },
+          { h: 'Vistas', num: true, r: (o) => fmtNum(o.views) },
+          { h: 'Códigos', num: true, r: (o) => fmtNum(o.codes) },
+          { h: 'Canjes', num: true, r: (o) => fmtNum(o.redeemed) },
+          { h: 'Aforo', num: true, r: (o) => (o.max_redemptions == null ? '—' : `${o.seats_left}/${o.max_redemptions}`) },
+        ],
+        rows: r.offers || [],
+        empty: 'No hay publicaciones en este periodo.',
+      })}
+    </div>
+
+    <div class="card"><h2>Canjes validados</h2><div class="actions" style="margin-bottom:10px"><button class="btn sm" id="csvRed">Descargar CSV</button></div>
+      <p class="muted" style="margin:0 0 10px">Cada línea es un código validado en el local, con quién lo validó. Sirve de justificante.</p>
+      ${table({
+        cols: [
+          { h: 'Cuándo', r: (x) => fmtDate(x.at) },
+          { h: 'Publicación', r: (x) => esc(x.title) },
+          { h: 'Código', r: (x) => `<code>${esc(x.code)}</code>` },
+          { h: 'Validado por', r: (x) => esc(x.by) },
+        ],
+        rows: r.redemptions || [],
+        empty: 'Todavía no se ha validado ningún código en este periodo.',
+      })}
+    </div>`;
+
+  $('#csvOffers').onclick = () => downloadCsv(`informe-${BIZ.name}`, r.offers || [], [
+    ['title', 'Publicación'], ['kind', 'Tipo'], ['starts_at', 'Fecha'],
+    [(o) => (o.price_cents == null ? '' : (o.price_cents / 100).toFixed(2)), 'Precio'],
+    ['views', 'Vistas'], ['codes', 'Códigos'], ['redeemed', 'Canjes'],
+    ['max_redemptions', 'Aforo'], ['seats_left', 'Plazas libres'],
+  ]);
+  $('#csvRed').onclick = () => downloadCsv(`canjes-${BIZ.name}`, r.redemptions || [], [
+    ['at', 'Fecha y hora'], ['title', 'Publicación'], ['code', 'Código'], ['by', 'Validado por'],
+  ]);
 };
 
 // ── Ayuda ───────────────────────────────────────────────────────────────────
