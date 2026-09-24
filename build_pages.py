@@ -51,6 +51,40 @@ PAGINAS['para-negocios'] = (
 <h2>Lo que cuesta</h2>
 <p>Ahora mismo es <strong>gratis</strong> mientras arrancamos en tu ciudad. Después, un solo plan de 19,90 € al mes sin límites, y precio de fundador si entras al principio. <a href="/precios/">Ver precios</a>.</p>
 
+<h2>Echa la cuenta</h2>
+<p>Con tus números, no con los nuestros. Es una estimación para ver si sale a cuenta, no una promesa.</p>
+<div class="calc" id="calc">
+  <label>Ticket medio <input type="number" id="c-ticket" value="12" min="1" step="0.5"> €</label>
+  <label>Descuento <input type="number" id="c-desc" value="20" min="0" max="90" step="5"> %</label>
+  <label>Personas al mes <input type="number" id="c-gente" value="25" min="1" step="1"></label>
+  <label>Margen sobre el ticket <input type="number" id="c-margen" value="60" min="5" max="100" step="5"> %</label>
+  <output id="c-out"></output>
+</div>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var eur = function (n) { return n.toLocaleString('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }); };
+  function calc() {
+    var t = +$('c-ticket').value || 0, d = +$('c-desc').value || 0;
+    var g = +$('c-gente').value || 0, m = +$('c-margen').value || 0;
+    var cobras = t * (1 - d / 100);
+    var ingresos = cobras * g;
+    var margen = ingresos * m / 100;
+    var plan = 19.9;
+    var paraPagarlo = cobras * m / 100 > 0 ? Math.ceil(plan / (cobras * m / 100)) : 0;
+    $('c-out').innerHTML = '<b>' + eur(ingresos) + ' al mes</b> de caja con esa oferta, '
+      + eur(margen) + ' de margen. El plan cuesta ' + eur(plan) + ': lo pagas con '
+      + '<b>' + paraPagarlo + (paraPagarlo === 1 ? ' canje' : ' canjes') + '</b> al mes.'
+      + '<br><span class="mu">Cada persona te paga ' + eur(cobras) + ' en vez de ' + eur(t) + '. '
+      + 'Si esa gente iba a venir igual, el descuento te cuesta ' + eur(t * d / 100 * g) + '.</span>';
+  }
+  ['c-ticket', 'c-desc', 'c-gente', 'c-margen'].forEach(function (id) {
+    $(id).addEventListener('input', calc);
+  });
+  calc();
+})();
+</script>
+
 <h2>Lo que no hacemos</h2>
 <p>No vendemos tus datos ni los de tus clientes, no cobramos por canje y no ponemos tu oferta por delante de otra porque pagues más: <a href="/preguntas/">en la app el orden lo elige la persona</a> (cerca de ti, empieza antes o nuevas). Se pueden destacar publicaciones, y cuando pasa <strong>se dice</strong>.</p>
 
@@ -84,6 +118,40 @@ PAGINAS['para-negocios'] = (
 
 <h2>What it costs</h2>
 <p>Right now it is <strong>free</strong> while we are starting in your city. After that, one plan at €19.90 a month with no limits, and a founder price if you come in early. <a href="/en/pricing/">See pricing</a>.</p>
+
+<h2>Do the maths</h2>
+<p>With your numbers, not ours. It is an estimate to see whether it adds up, not a promise.</p>
+<div class="calc" id="calc">
+  <label>Average ticket <input type="number" id="c-ticket" value="12" min="1" step="0.5"> €</label>
+  <label>Discount <input type="number" id="c-desc" value="20" min="0" max="90" step="5"> %</label>
+  <label>People per month <input type="number" id="c-gente" value="25" min="1" step="1"></label>
+  <label>Margin on the ticket <input type="number" id="c-margen" value="60" min="5" max="100" step="5"> %</label>
+  <output id="c-out"></output>
+</div>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var eur = function (n) { return n.toLocaleString('en-GB', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }); };
+  function calc() {
+    var t = +$('c-ticket').value || 0, d = +$('c-desc').value || 0;
+    var g = +$('c-gente').value || 0, m = +$('c-margen').value || 0;
+    var cobras = t * (1 - d / 100);
+    var ingresos = cobras * g;
+    var margen = ingresos * m / 100;
+    var plan = 19.9;
+    var paraPagarlo = cobras * m / 100 > 0 ? Math.ceil(plan / (cobras * m / 100)) : 0;
+    $('c-out').innerHTML = '<b>' + eur(ingresos) + ' a month</b> through the till from that offer, '
+      + eur(margen) + ' of margin. The plan costs ' + eur(plan) + ': '
+      + '<b>' + paraPagarlo + (paraPagarlo === 1 ? ' redemption' : ' redemptions') + '</b> a month pays for it.'
+      + '<br><span class="mu">Each person pays you ' + eur(cobras) + ' instead of ' + eur(t) + '. '
+      + 'If they were coming anyway, the discount costs you ' + eur(t * d / 100 * g) + '.</span>';
+  }
+  ['c-ticket', 'c-desc', 'c-gente', 'c-margen'].forEach(function (id) {
+    $(id).addEventListener('input', calc);
+  });
+  calc();
+})();
+</script>
 
 <h2>What we do not do</h2>
 <p>We do not sell your data or your customers' data, we do not charge per redemption, and we do not put your deal ahead of another because you pay more: <a href="/en/faq/">in the app the order is chosen by the person</a> (near you, starting soonest or newest). Publications can be featured, and when that happens <strong>we say so</strong>.</p>

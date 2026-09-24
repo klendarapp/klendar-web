@@ -182,6 +182,7 @@ const NAV = [
   ['publicaciones', '⚡', 'Publicaciones'],
   ['validar', '🎟', 'Validar códigos'],
   ['informe', '📈', 'Informe'],
+  ['sellos', '🎫', 'Tarjeta de sellos'],
   ['equipo', '👥', 'Equipo'],
   ['ayuda', '❓', 'Ayuda'],
 ];
@@ -728,6 +729,52 @@ PAGES.asistentes = async (v, offerId) => {
 };
 
 // ── Equipo ──────────────────────────────────────────────────────────────────
+PAGES.sellos = async (v) => {
+  const info = await rpc('business_stamp_card', { p_business: BIZ.id });
+  const c = info?.card || null;
+  const canManage = ['owner', 'manager'].includes(BIZ.role);
+  const meta = Number(c?.goal || 10);
+
+  v.innerHTML = `
+    <div class="page-head"><h1>Tarjeta de sellos</h1></div>
+    ${helpBox('¿Cómo funciona?', `<p>La de toda la vida, la de cartón, pero sin cartón: cada vez que validas un código de esta persona, cae un sello. Al llegar a la meta, se lleva el premio, y el premio es otro código que validas igual que los demás.</p>
+      <p>Como mucho <b>un sello al día por persona</b>, para que no valga con pedir tres cafés seguidos. Si la apagas, dejas de dar sellos nuevos, pero <b>nadie pierde los que tiene</b>: al encenderla otra vez siguen ahí.</p>`)}
+
+    <div class="card"><h2>${c ? 'Tu tarjeta' : 'Enciende tu tarjeta'}</h2>
+      <form id="f" class="form">
+        <label class="f"><span>Sellos para el premio</span><select name="goal" ${canManage ? '' : 'disabled'}>
+          ${Array.from({ length: 19 }, (_, i) => i + 2).map((n) => `<option value="${n}" ${meta === n ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
+        <label class="f full"><span>Premio <small>(lo que se lleva; sé concreto)</small></span>
+          <input name="reward" maxlength="80" required placeholder="Un café con leche gratis" value="${esc(c?.reward || '')}" ${canManage ? '' : 'disabled'}></label>
+        <label class="f full" style="grid-template-columns:auto 1fr;align-items:center">
+          <input type="checkbox" name="is_active" ${c === null || c.is_active ? 'checked' : ''} ${canManage ? '' : 'disabled'}>
+          <span>Encendida: se dan sellos nuevos</span></label>
+        ${canManage ? '<div class="full"><button class="btn primary" type="submit">Guardar</button> <span id="msg" class="muted"></span></div>' : ''}
+      </form></div>
+
+    ${c ? `<div class="card"><h2>Cómo va</h2>
+      <div class="kpis">
+        <div class="kpi"><b>${fmtNum(info.people)}</b><span>Con sellos ahora</span></div>
+        <div class="kpi"><b>${fmtNum(info.stamps)}</b><span>Sellos dados</span></div>
+        <div class="kpi"><b>${fmtNum(info.rewards_given)}</b><span>Premios entregados</span></div>
+        <div class="kpi"><b>${fmtNum(info.rewards_pending)}</b><span>Premios por recoger</span></div>
+      </div></div>` : ''}`;
+
+  if (!canManage) return;
+  $('#f', v).onsubmit = async (e) => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    const r = await rpc('set_stamp_card', {
+      p_business: BIZ.id,
+      p_goal: Number(f.get('goal')),
+      p_reward: String(f.get('reward') || '').trim(),
+      p_active: $('[name=is_active]', v).checked,
+    }).catch(() => null);
+    $('#msg', v).textContent = r?.ok ? 'Guardado' : 'No se ha podido guardar';
+    if (r?.ok) setTimeout(() => route(), 600);
+  };
+};
+
 PAGES.equipo = async (v) => {
   const [team, invites] = await Promise.all([
     rpc('business_team', { p_id: BIZ.id }),

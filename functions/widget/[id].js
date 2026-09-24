@@ -100,8 +100,8 @@ export async function onRequestGet(ctx) {
       'content-type': 'text/html; charset=utf-8',
       'cache-control': 'public, max-age=300, s-maxage=600',
       // Este es el único sitio del dominio que se deja meter en un iframe:
-      // es justo para lo que está hecho.
-      'x-frame-options': 'ALLOWALL',
+      // es justo para lo que está hecho. Manda `frame-ancestors`; el
+      // X-Frame-Options del resto del sitio lo quita `_headers`.
       'content-security-policy': 'frame-ancestors *',
     },
   });

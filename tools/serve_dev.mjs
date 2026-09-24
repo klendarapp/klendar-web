@@ -35,6 +35,7 @@ createServer(async (req, res) => {
     else if ((m = rest.match(/^\/(agenda|whats-on)\/([^/]+)\/([^/]+)\/?$/))) { mod = await load(`functions/${en}${en ? 'whats-on' : 'agenda'}/[city]/[category].js`); params = { city: m[2], category: m[3] }; }
     else if ((m = rest.match(/^\/(coleccion|collection)\/([^/]+)\/([^/]+)\/?$/))) { mod = await load(`functions/${en}${en ? 'collection' : 'coleccion'}/[slug]/[city].js`); params = { slug: m[2], city: m[3] }; }
     else if ((m = rest.match(/^\/(coleccion|collection)\/([^/]+)\/?$/))) { mod = await load(`functions/${en}${en ? 'collection' : 'coleccion'}/[slug].js`); params = { slug: m[2] }; }
+    else if ((m = path.match(/^\/baja\/([^/]+)\/?$/))) { mod = await load('functions/baja/[token].js'); params = { token: m[1] }; }
     else if ((m = path.match(/^\/widget\/([^/]+)\/?$/))) { mod = await load('functions/widget/[id].js'); params = { id: m[1] }; }
     else if (path === '/sitemap-agenda.xml') { mod = await load('functions/sitemap-agenda.xml.js'); }
 
