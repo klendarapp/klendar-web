@@ -426,6 +426,8 @@ async function offerForm(v, id, kindDefault) {
           ${[[5, '5 minutos'], [30, '30 minutos'], [180, '3 horas'], [1440, '1 día'], ['', 'Sin caducidad']].map((t) => `<option value="${t[0]}" ${String(o.code_ttl_minutes ?? '') === String(t[0]) ? 'selected' : ''}>${t[1]}</option>`).join('')}</select></label>
         <label class="f"><span>Canjes por persona</span><input name="max_per_user" type="number" min="1" max="20" value="${o.max_per_user ?? 1}"></label>
         <label class="f full" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="reservations_enabled" ${o.reservations_enabled ? 'checked' : ''}><span>Evento con <b>reserva de plaza</b> (sin pago): la gente reserva desde la app y enseña su código en la puerta</span></label>
+        <label class="f" id="seatsRow" hidden><span>Plazas por persona <small>(a un evento no se va solo; un código vale por todas)</small></span><select name="max_seats">
+          ${[1, 2, 3, 4, 5, 6].map((n) => `<option value="${n}" ${Number(o.max_seats || 1) === n ? 'selected' : ''}>${n === 1 ? '1 (solo quien reserva)' : n + ' personas'}</option>`).join('')}</select></label>
         <label class="f full" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="adults_only" ${o.adults_only ? 'checked' : ''}><span>Solo para mayores de 18</span></label>
         <label class="f full"><span>Condiciones (letra pequeña)</span><textarea name="terms" maxlength="400">${esc(o.terms || '')}</textarea></label>
         <label class="f full"><span>Enlace externo (entradas, reservas…)</span><input name="external_url" value="${esc(o.external_url || '')}" placeholder="https://"></label>
@@ -445,12 +447,17 @@ async function offerForm(v, id, kindDefault) {
     const flash = $('[name=kind]', v).value === 'flash_offer';
     const resRow = $('[name=reservations_enabled]', v).closest('label');
     resRow.style.display = flash ? 'none' : '';
+    // Solo tiene sentido si hay reserva: en una oferta de barra, cada uno
+    // enseña la suya.
+    const conReserva = !flash && $('[name=reservations_enabled]', v).checked;
+    $('#seatsRow', v).hidden = !conReserva;
     $('[name=end]', v).closest('label').querySelector('span').textContent =
       flash ? 'Termina (obligatorio)' : 'Termina (opcional)';
     $('[name=start]', v).closest('label').querySelector('span').textContent =
       flash ? 'Empieza' : 'Día y hora del evento';
   };
   $('[name=kind]', v).onchange = syncKind;
+  $('[name=reservations_enabled]', v).onchange = syncKind;
   syncKind();
 
   // La pregunta del alcohol solo aparece si el descuento es un 2x1.
@@ -565,6 +572,8 @@ async function offerForm(v, id, kindDefault) {
       max_per_user: Number(f.get('max_per_user') || 1),
       code_ttl_minutes: f.get('code_ttl_minutes') ? Number(f.get('code_ttl_minutes')) : null,
       reservations_enabled: !flash && $('[name=reservations_enabled]').checked,
+      max_seats: !flash && $('[name=reservations_enabled]').checked
+        ? Number(f.get('max_seats') || 1) : 1,
       adults_only: $('[name=adults_only]').checked,
       status: $('[name=publish]').checked ? 'active' : 'draft',
     };
@@ -857,6 +866,7 @@ PAGES.informe = async (v, param) => {
           { h: 'Cuándo', r: (x) => fmtDate(x.at) },
           { h: 'Publicación', r: (x) => esc(x.title) },
           { h: 'Código', r: (x) => `<code>${esc(x.code)}</code>` },
+        { h: 'Plazas', num: true, r: (x) => fmtNum(x.seats || 1) },
           { h: 'Validado por', r: (x) => esc(x.by) },
         ],
         rows: r.redemptions || [],
