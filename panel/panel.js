@@ -319,7 +319,7 @@ async function offerForm(v, id, kindDefault) {
         <label class="f"><span>Precio (opcional)</span><input name="price" inputmode="decimal" value="${o.price_cents == null ? '' : (o.price_cents / 100).toFixed(2).replace('.', ',')}" placeholder="12,00"></label>
         <label class="f"><span>Aforo / unidades</span><input name="max_redemptions" type="number" min="1" value="${o.max_redemptions ?? ''}" placeholder="vacío = sin límite"></label>
         <label class="f"><span>Descuento</span><select name="discount_type">
-          ${[['', 'Sin descuento'], ['percent', 'Porcentaje'], ['fixed', 'Precio fijo'], ['2x1', '2x1'], ['free', 'Gratis']].map((d) => `<option value="${d[0]}" ${disc.type === d[0] ? 'selected' : ''}>${d[1]}</option>`).join('')}</select></label>
+          ${[['', 'Sin descuento'], ['percent', 'Porcentaje'], ['fixed', 'Precio fijo'], ['2x1', '2x1'], ['free', 'Gratis'], ['other', 'Otro (lo escribes tú)']].map((d) => `<option value="${d[0]}" ${disc.type === d[0] ? 'selected' : ''}>${d[1]}</option>`).join('')}</select></label>
         <label class="f"><span>Valor del descuento</span><input name="discount_value" value="${esc(disc.value ?? '')}" placeholder="20"></label>
         <label class="f full"><span>Precio anterior <small>(obligatorio si pones un % o un precio rebajado; ha de ser el más bajo de los últimos 30 días)</small></span><input name="prior_price" inputmode="decimal" value="${disc.compare_at_cents != null ? (disc.compare_at_cents / 100).toFixed(2).replace('.', ',') : ''}" placeholder="12,00"></label>
         <label class="f"><span>¿Cuánto vale el código QR?</span><select name="code_ttl_minutes">
@@ -421,7 +421,10 @@ async function offerForm(v, id, kindDefault) {
       currency: 'EUR',
       discount: dType ? {
         type: dType,
-        value: dValue ? Number(dValue) : null,
+        // «Otro» es texto libre: «2ª unidad −50 %», «Menú 9,90».
+        value: dType === 'other'
+          ? ((f.get('discount_value') || '').toString().trim() || null)
+          : (dValue ? Number(dValue) : null),
         currency: 'EUR',
         ...(prior ? { compare_at_cents: prior } : {}),
       } : null,
