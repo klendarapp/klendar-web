@@ -23,6 +23,18 @@ export async function rpc(fn, args) {
   return Array.isArray(data) ? data[0] || null : data;
 }
 
+/** Igual que `rpc`, pero para funciones que devuelven una lista. */
+export async function rpcAll(fn, args) {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+    method: 'POST',
+    headers: { apikey: SUPABASE_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify(args),
+  });
+  if (!r.ok) return [];
+  const data = await r.json();
+  return Array.isArray(data) ? data : [];
+}
+
 export function fmtWhen(iso, lang) {
   if (!iso) return '';
   try {

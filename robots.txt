@@ -5,3 +5,4 @@ Disallow: /r/
 Disallow: /legal/
 
 Sitemap: https://klendar.app/sitemap.xml
+Sitemap: https://klendar.app/sitemap-agenda.xml

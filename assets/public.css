@@ -1,0 +1,93 @@
+/* Páginas públicas de contenido: /o/<id>, /b/<id> y /agenda/<ciudad>.
+   Misma identidad que el resto del sitio; aquí manda el contenido, no el
+   escaparate, así que menos aire y más densidad que en la portada. */
+
+main.pub { padding: 34px 20px 72px; }
+.pub a { color: var(--accent-text); }
+.pub .muted { color: var(--ink-2); }
+.pub .crumbs { font-size: 13px; color: var(--ink-2); margin-bottom: 14px; }
+.pub .crumbs a { color: var(--ink-2); font-weight: 600; }
+
+/* ── Cabecera de ficha ─────────────────────────────────────────────────── */
+.pub h1 { font-size: clamp(26px, 4.2vw, 40px); line-height: 1.08; font-weight: 800; margin-bottom: 10px; }
+.pub h2 { font-size: 20px; font-weight: 800; margin: 34px 0 14px; font-family: var(--display); }
+.pub p { margin: 0 0 14px; }
+
+.detail { display: grid; gap: 34px; align-items: start;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  grid-template-areas: "head side" "body side"; }
+.d-head { grid-area: head; min-width: 0; }
+.d-body { grid-area: body; min-width: 0; }
+.side { grid-area: side; }
+/* En el móvil el botón sube: lo primero que quieres saber es qué es y cuándo,
+   y lo segundo cómo conseguirlo. Leer el texto entero antes de ver el botón
+   sobra. */
+@media (max-width: 860px) {
+  .detail { grid-template-columns: 1fr; gap: 22px; grid-template-areas: "head" "side" "body"; }
+}
+
+.gallery { display: grid; gap: 8px; grid-template-columns: repeat(2, 1fr); border-radius: var(--radius); overflow: hidden; }
+.gallery img { width: 100%; height: 100%; object-fit: cover; aspect-ratio: 4/3; background: var(--glass); }
+.gallery img:first-child:nth-last-child(1) { grid-column: span 2; aspect-ratio: 16/9; }
+.gallery img:first-child:nth-last-child(n+2) { grid-column: span 2; aspect-ratio: 16/9; }
+/* Si el número de fotos deja una suelta al final, que ocupe toda la fila. */
+.gallery img:last-child:nth-child(even) { grid-column: span 2; aspect-ratio: 16/9; }
+.gallery.solo { grid-template-columns: 1fr; }
+
+.badges { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; }
+.badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px;
+  font-size: 13px; font-weight: 700; background: var(--glass); border: 1px solid var(--glass-border); color: var(--ink); }
+.badge.hot { background: var(--accent-soft); border-color: transparent; color: var(--accent-text); }
+.badge.off { background: rgba(120,120,120,.18); color: var(--ink-2); }
+.badge.ok { background: rgba(60,180,120,.16); color: var(--ink); }
+
+.price { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin: 0 0 6px; }
+.price b { font-family: var(--display); font-size: 32px; font-weight: 800; letter-spacing: -.02em; }
+.price s { color: var(--ink-2); font-size: 18px; }
+.price .rule { font-size: 12px; color: var(--ink-2); flex-basis: 100%; }
+
+/* ── Tarjeta lateral (cuándo, dónde, abrir en la app) ──────────────────── */
+.side { position: sticky; top: 84px; background: var(--elevated); border: 1px solid var(--glass-border);
+  border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); }
+@media (max-width: 860px) { .side { position: static; } }
+.side dl { margin: 0 0 16px; display: grid; gap: 12px; }
+.side dt { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); }
+.side dd { margin: 2px 0 0; font-weight: 600; }
+.side .pill.big { display: block; text-align: center; margin: 0 0 8px; }
+.side .note { font-size: 13px; color: var(--ink-2); margin: 0; }
+
+.pill.big { padding: 14px 20px; font-size: 16px; font-weight: 800; }
+
+/* ── Listados de publicaciones ─────────────────────────────────────────── */
+.olist { display: grid; gap: 10px; margin: 0 0 10px; }
+.pub .ocard { color: var(--ink); }
+.ocard { display: flex; gap: 14px; align-items: center; padding: 10px; border-radius: 20px;
+  background: var(--elevated); border: 1px solid var(--glass-border); color: var(--ink); }
+.ocard:hover { text-decoration: none; border-color: var(--accent); }
+.ocard img, .ocard .ph { width: 96px; height: 78px; border-radius: 14px; object-fit: cover; flex: none;
+  background: var(--glass); display: grid; place-items: center; color: var(--ink-2); }
+.ocard-body { display: grid; gap: 3px; min-width: 0; }
+.ocard-body b { font-size: 16px; font-weight: 700; }
+.ocard-body .muted { font-size: 13px; }
+.ocard-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; }
+.tag { padding: 3px 9px; border-radius: 999px; background: var(--accent-soft); color: var(--accent-text); font-weight: 800; font-size: 12px; }
+
+.daygroup { margin: 0 0 26px; }
+.daygroup h3 { font-family: var(--display); font-size: 15px; font-weight: 800;
+  margin: 0 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--glass-border); }
+/* «jueves, 24 de septiembre» -> «Jueves, 24 de septiembre»: solo la primera. */
+.daygroup h3::first-letter { text-transform: uppercase; }
+
+.cities { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 24px; }
+.cities a { padding: 8px 14px; border-radius: 999px; background: var(--glass); border: 1px solid var(--glass-border);
+  color: var(--ink); font-weight: 700; font-size: 14px; }
+.cities a:hover { text-decoration: none; border-color: var(--accent); }
+
+.empty { padding: 28px; border-radius: var(--radius); border: 1px dashed var(--glass-border); color: var(--ink-2); text-align: center; }
+
+.info { display: grid; gap: 10px; margin: 0 0 18px; font-size: 15px; }
+.info div { display: flex; gap: 10px; }
+.info span:first-child { width: 22px; flex: none; }
+
+footer.pub-foot { border-top: 1px solid var(--glass-border); padding: 22px 0; font-size: 13px; color: var(--ink-2); }
+footer.pub-foot a { color: var(--ink-2); }

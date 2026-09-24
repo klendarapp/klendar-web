@@ -9,6 +9,11 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://klendar.app/"/>
   </url>
   <url>
+    <loc>https://klendar.app/agenda/</loc>
+    <lastmod>2026-09-24</lastmod>
+    <priority>0.5</priority>
+  </url>
+  <url>
     <loc>https://klendar.app/negocios/</loc>
     <lastmod>2026-09-24</lastmod>
     <priority>0.8</priority>

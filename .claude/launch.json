@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "klendar-web",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["tools/serve_dev.mjs"],
+      "port": 8788
+    }
+  ]
+}

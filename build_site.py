@@ -69,7 +69,7 @@ T = {
           ('¿En qué ciudades está?', 'Empezamos ciudad a ciudad en España. Si en la tuya todavía hay poco, ayúdanos: díselo a tu bar de siempre.')],
     cta_h2='Lo que pasa cerca, en tu bolsillo', cta_sub='Muy pronto en Google Play y App Store.',
     foot_product='Producto', foot_legal='Legal', foot_contact='Contacto',
-    foot_links_product=[('/#como', 'Cómo funciona'), ('/#negocios', 'Para negocios'), ('/panel/', 'Acceso para negocios'), ('/soporte/', 'Soporte'), ('/en/', 'English')],
+    foot_links_product=[('/#como', 'Cómo funciona'), ('/agenda/', 'Agenda local'), ('/#negocios', 'Para negocios'), ('/panel/', 'Acceso para negocios'), ('/soporte/', 'Soporte'), ('/en/', 'English')],
     foot_links_legal=[('/aviso-legal/', 'Aviso legal'), ('/privacidad/', 'Privacidad'), ('/terminos/', 'Términos de uso'), ('/negocios/', 'Condiciones para negocios'), ('/cookies/', 'Cookies'), ('/normas/', 'Normas de la comunidad'), ('/eliminar-cuenta/', 'Eliminar cuenta')],
     foot_rights=f'© {YEAR} Klendar. Todos los derechos reservados.', foot_made='Hecho en España',
     support_url='/soporte/', biz_terms_url='/negocios/',
@@ -114,7 +114,7 @@ T = {
           ('Which cities?', 'We\'re starting city by city in Spain. If yours is still quiet, help us: tell your local bar.')],
     cta_h2='What\'s happening nearby, in your pocket', cta_sub='Coming soon to Google Play and the App Store.',
     foot_product='Product', foot_legal='Legal', foot_contact='Contact',
-    foot_links_product=[('/en/#how-it-works', 'How it works'), ('/en/#businesses', 'For businesses'), ('/panel/', 'Business sign in'), ('/en/support/', 'Support'), ('/', 'Español')],
+    foot_links_product=[('/en/#how-it-works', 'How it works'), ('/agenda/', 'Local agenda'), ('/en/#businesses', 'For businesses'), ('/panel/', 'Business sign in'), ('/en/support/', 'Support'), ('/', 'Español')],
     foot_links_legal=[('/en/legal-notice/', 'Legal notice'), ('/en/privacy/', 'Privacy policy'), ('/en/terms/', 'Terms of use'), ('/en/business-terms/', 'Business terms'), ('/en/cookies/', 'Cookies'), ('/en/community-guidelines/', 'Community guidelines'), ('/en/delete-account/', 'Delete account')],
     foot_rights=f'© {YEAR} Klendar. All rights reserved.', foot_made='Made in Spain',
     support_url='/en/support/', biz_terms_url='/en/business-terms/',
@@ -329,9 +329,9 @@ def doc_page(t, path, title, desc, body):
 # ── robots.txt y sitemap.xml ────────────────────────────────────────────────
 # Solo se indexan las páginas estáticas: /admin/ es privado y /o/, /b/ y /r/
 # son enlaces profundos que se generan al vuelo (ya llevan su propio canonical).
-SITEMAP_ES = ['/', '/negocios/', '/soporte/', '/privacidad/', '/terminos/', '/aviso-legal/', '/cookies/', '/normas/', '/eliminar-cuenta/']
+SITEMAP_ES = ['/', '/agenda/', '/negocios/', '/soporte/', '/privacidad/', '/terminos/', '/aviso-legal/', '/cookies/', '/normas/', '/eliminar-cuenta/']
 SITEMAP_EN = ['/en/', '/en/business-terms/', '/en/support/', '/en/privacy/', '/en/terms/', '/en/legal-notice/', '/en/cookies/', '/en/community-guidelines/', '/en/delete-account/']
-ALT_PAIRS = dict(zip(SITEMAP_ES, SITEMAP_EN))
+ALT_PAIRS = dict(zip([p for p in SITEMAP_ES if p != '/agenda/'], SITEMAP_EN))
 
 
 def robots():
@@ -344,6 +344,7 @@ def robots():
         'Disallow: /legal/',
         '',
         f'Sitemap: {BASE}/sitemap.xml',
+        f'Sitemap: {BASE}/sitemap-agenda.xml',
         '',
     ])
 
