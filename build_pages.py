@@ -233,7 +233,7 @@ PAGINAS['prensa'] = (
 <h2>Material</h2>
 <ul>
   <li><a href="/assets/icon-512.png">Icono (PNG 512)</a> · <a href="/assets/symbol.png">Símbolo</a> · <a href="/assets/og.png">Imagen social</a></li>
-  <li>Capturas: <a href="/assets/screens/feed.webp">descubrir</a> · <a href="/assets/screens/detail.webp">ficha</a> · <a href="/assets/screens/agenda.webp">agenda</a> · <a href="/assets/screens/map.webp">mapa</a></li>
+  <li>Capturas: <a href="/assets/screens/feed.webp?v=20260924">descubrir</a> · <a href="/assets/screens/detail.webp?v=20260924">ficha</a> · <a href="/assets/screens/agenda.webp?v=20260924">agenda</a> · <a href="/assets/screens/map.webp?v=20260924">mapa</a></li>
   <li><a href="/assets/kit/klendar-guia-negocios.pdf">Guía para negocios (PDF)</a> · <a href="/assets/kit/klendar-cartel.pdf">Cartel con QR (PDF)</a></li>
 </ul>
 <p class="note">El nombre se escribe <strong>Klendar</strong>, con K y sin acentos. El color de marca es el coral <code>#FF4D6D</code> sobre fondo tinta <code>#0B0F1A</code>. Se puede usar el logotipo tal cual, sin deformarlo ni cambiarle el color.</p>
@@ -253,7 +253,7 @@ PAGINAS['prensa'] = (
 <h2>Assets</h2>
 <ul>
   <li><a href="/assets/icon-512.png">Icon (PNG 512)</a> · <a href="/assets/symbol.png">Symbol</a> · <a href="/assets/og.png">Social image</a></li>
-  <li>Screenshots: <a href="/assets/screens/feed.webp">discover</a> · <a href="/assets/screens/detail.webp">detail</a> · <a href="/assets/screens/agenda.webp">agenda</a> · <a href="/assets/screens/map.webp">map</a></li>
+  <li>Screenshots: <a href="/assets/screens/feed.webp?v=20260924">discover</a> · <a href="/assets/screens/detail.webp?v=20260924">detail</a> · <a href="/assets/screens/agenda.webp?v=20260924">agenda</a> · <a href="/assets/screens/map.webp?v=20260924">map</a></li>
   <li><a href="/assets/kit/klendar-guia-negocios.pdf">Business guide (PDF, Spanish)</a> · <a href="/assets/kit/klendar-cartel.pdf">Poster with QR (PDF)</a></li>
 </ul>
 <p class="note">The name is written <strong>Klendar</strong>, with a K. The brand colour is coral <code>#FF4D6D</code> on ink <code>#0B0F1A</code>. The logo can be used as it is, without stretching it or changing its colour.</p>
