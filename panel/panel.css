@@ -104,3 +104,15 @@
 .spark i { flex: 1 1 0; min-width: 2px; background: var(--glass-border); border-radius: 3px 3px 0 0;
   display: flex; align-items: flex-end; min-height: 2px; }
 .spark i u { display: block; width: 100%; background: var(--accent); border-radius: 3px 3px 0 0; }
+
+/* Selector de idioma: en la barra de arriba y en la caja de acceso. */
+.topbar .spacer { flex: 1; }
+.topbar .lang, .login .lang { display: inline-flex; border: 1px solid var(--glass-border);
+  border-radius: 999px; overflow: hidden; font-size: 12px; font-weight: 700; align-self: center; }
+.topbar .lang a, .login .lang a { padding: 5px 10px; color: var(--ink-2); text-decoration: none; }
+.topbar .lang a.on, .login .lang a.on { background: var(--accent); color: var(--on-accent); }
+.login .lang { margin: 0 auto; }
+.me .lang { display: inline-flex; border: 1px solid var(--glass-border); border-radius: 999px;
+  overflow: hidden; font-size: 11px; font-weight: 700; margin-top: 8px; width: fit-content; }
+.me .lang a { padding: 4px 9px; color: var(--ink-2); text-decoration: none; }
+.me .lang a.on { background: var(--accent); color: var(--on-accent); }

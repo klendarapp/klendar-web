@@ -22,8 +22,9 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const fmtDate = (s) => s ? new Date(s).toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
-const fmtMoney = (c) => (c == null ? '—' : (c / 100).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' }));
+const LOC = () => (I18N.lang === 'en' ? 'en-GB' : 'es-ES');
+const fmtDate = (s) => s ? new Date(s).toLocaleString(LOC(), { dateStyle: 'medium', timeStyle: 'short' }) : '—';
+const fmtMoney = (c) => (c == null ? '—' : (c / 100).toLocaleString(I18N.lang === 'en' ? 'en-IE' : 'es-ES', { style: 'currency', currency: 'EUR' }));
 const fmtNum = (n) => (n ?? 0).toLocaleString('es-ES');
 const LABELS = {
   active: 'activa', draft: 'borrador', expired: 'terminada', sold_out: 'agotada', cancelled: 'cancelada',
@@ -35,7 +36,7 @@ const LABELS = {
 const tag = (v, cls) => v ? `<span class="tag ${cls || 'st-' + esc(v)}">${esc(LABELS[v] || v)}</span>` : '';
 const toast = (msg, bad = false) => {
   const t = document.createElement('div');
-  t.className = 'toast' + (bad ? ' bad' : ''); t.textContent = msg;
+  t.className = 'toast' + (bad ? ' bad' : ''); t.textContent = I18N.t(msg);
   $('#toasts').appendChild(t);
   setTimeout(() => t.remove(), bad ? 6000 : 3500);
 };
@@ -169,6 +170,21 @@ $('#logout').onclick = async (e) => { e.preventDefault(); await sb.auth.signOut(
 sb.auth.onAuthStateChange((ev) => { if (ev === 'SIGNED_OUT') showLogin(); });
 $('#menuBtn').onclick = () => $('#side').classList.toggle('open');
 
+// ── Idioma ──────────────────────────────────────────────────────────────────
+// El panel se escribió en español; la versión inglesa se pinta encima (ver
+// i18n.js). Lo que no esté traducido se queda en español, nunca en blanco.
+function renderLangPicker() {
+  const html = ['es', 'en'].map((l) => `<a href="#" data-lang="${l}" class="${I18N.lang === l ? 'on' : ''}">${l.toUpperCase()}</a>`).join('');
+  for (const id of ['#lang', '#langLogin', '#langSide']) {
+    const el = $(id);
+    if (!el) continue;
+    el.innerHTML = html;
+    $$('a', el).forEach((a) => { a.onclick = (e) => { e.preventDefault(); I18N.setLang(a.dataset.lang); }; });
+  }
+}
+renderLangPicker();
+I18N.translate(document.body);
+
 // ── Navegación ──────────────────────────────────────────────────────────────
 const NAV = [
   ['resumen', '📊', 'Resumen'],
@@ -180,6 +196,7 @@ const NAV = [
 ];
 function renderNav(current) {
   $('#nav').innerHTML = NAV.map((n) => `<a class="nav ${current === n[0] ? 'on' : ''}" href="#/${n[0]}"><span class="ic">${n[1]}</span>${n[2]}</a>`).join('');
+  I18N.translate($('#nav'));
 }
 const currentRoute = () => (location.hash.replace(/^#\/?/, '').split('?')[0] || 'resumen').split('/');
 const PAGES = {};
@@ -192,6 +209,7 @@ async function route() {
   v.innerHTML = '<div class="loading">Cargando…</div>';
   try {
     await (PAGES[page] || PAGES.resumen)(v, param);
+    I18N.translate(v);
   } catch (e) {
     v.innerHTML = `<div class="card"><h2>Algo ha fallado</h2><p class="err">${esc(e.message)}</p><button class="btn" onclick="location.reload()">Reintentar</button></div>`;
   }
@@ -712,7 +730,7 @@ PAGES.informe = async (v, param) => {
         <div class="kpi accent"><b>${fmtNum(t.redeemed)}</b><span>Canjes validados</span></div>
         <div class="kpi"><b>${pct(t.redeemed, t.codes)}</b><span>De código a canje</span></div>
       </div>
-      <p class="muted" style="margin:10px 0 0">${fmtNum(t.unused)} código(s) se quedaron sin usar.${best ? ` La hora a la que más se canjea es a las <b>${best.hour}:00</b>.` : ''}</p>
+      <p class="muted" style="margin:10px 0 0"><b>${fmtNum(t.unused)}</b> código(s) se quedaron sin usar.${best ? ` La hora a la que más se canjea es a las <b>${best.hour}:00</b>.` : ''}</p>
     </div>
 
     <div class="card"><h2>Día a día</h2>
