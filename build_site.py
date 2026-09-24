@@ -330,8 +330,8 @@ def doc_page(t, path, title, desc, body):
 # Solo se indexan las páginas estáticas: /admin/ es privado y /o/, /b/ y /r/
 # son enlaces profundos que se generan al vuelo (ya llevan su propio canonical).
 SITEMAP_ES = ['/', '/agenda/', '/negocios/', '/soporte/', '/privacidad/', '/terminos/', '/aviso-legal/', '/cookies/', '/normas/', '/eliminar-cuenta/']
-SITEMAP_EN = ['/en/', '/en/business-terms/', '/en/support/', '/en/privacy/', '/en/terms/', '/en/legal-notice/', '/en/cookies/', '/en/community-guidelines/', '/en/delete-account/']
-ALT_PAIRS = dict(zip([p for p in SITEMAP_ES if p != '/agenda/'], SITEMAP_EN))
+SITEMAP_EN = ['/en/', '/en/agenda/', '/en/business-terms/', '/en/support/', '/en/privacy/', '/en/terms/', '/en/legal-notice/', '/en/cookies/', '/en/community-guidelines/', '/en/delete-account/']
+ALT_PAIRS = dict(zip(SITEMAP_ES, SITEMAP_EN))
 
 
 def robots():

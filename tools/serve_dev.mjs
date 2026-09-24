@@ -22,10 +22,13 @@ createServer(async (req, res) => {
   try {
     let mod = null; let params = {};
     let m;
-    if ((m = path.match(/^\/o\/([^/]+)\/?$/))) { mod = await load('functions/o/[id].js'); params = { id: m[1] }; }
-    else if ((m = path.match(/^\/b\/([^/]+)\/?$/))) { mod = await load('functions/b/[id].js'); params = { id: m[1] }; }
-    else if ((m = path.match(/^\/agenda\/([^/]+)\/?$/))) { mod = await load('functions/agenda/[city].js'); params = { city: m[1] }; }
-    else if (path === '/agenda' || path === '/agenda/') { mod = await load('functions/agenda/index.js'); }
+    // El prefijo /en/ elige la versión inglesa de la misma página.
+    const en = path.startsWith('/en/') ? 'en/' : '';
+    const rest = en ? path.slice(3) : path;
+    if ((m = rest.match(/^\/o\/([^/]+)\/?$/))) { mod = await load(`functions/${en}o/[id].js`); params = { id: m[1] }; }
+    else if ((m = rest.match(/^\/b\/([^/]+)\/?$/))) { mod = await load(`functions/${en}b/[id].js`); params = { id: m[1] }; }
+    else if ((m = rest.match(/^\/agenda\/([^/]+)\/?$/))) { mod = await load(`functions/${en}agenda/[city].js`); params = { city: m[1] }; }
+    else if (rest === '/agenda' || rest === '/agenda/') { mod = await load(`functions/${en}agenda/index.js`); }
     else if (path === '/sitemap-agenda.xml') { mod = await load('functions/sitemap-agenda.xml.js'); }
 
     if (mod) {

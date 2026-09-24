@@ -1,6 +1,6 @@
-import { businessPage } from '../_lib/views.js';
+import { agendaPage } from '../../_lib/views.js';
 
 // Punto de entrada: la página la arma `_lib/views.js`, aquí solo se dice
 // cuál y en qué idioma. La versión en el otro idioma vive en la ruta gemela.
 
-export const onRequestGet = ({ params }) => businessPage(params.id, 'es');
+export const onRequestGet = ({ params }) => agendaPage(params.city, 'en');

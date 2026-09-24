@@ -322,6 +322,8 @@ async function offerForm(v, id, kindDefault) {
           ${[['', 'Sin descuento'], ['percent', 'Porcentaje'], ['fixed', 'Precio fijo'], ['2x1', '2x1'], ['free', 'Gratis'], ['other', 'Otro (lo escribes tú)']].map((d) => `<option value="${d[0]}" ${disc.type === d[0] ? 'selected' : ''}>${d[1]}</option>`).join('')}</select></label>
         <label class="f"><span>Valor del descuento</span><input name="discount_value" value="${esc(disc.value ?? '')}" placeholder="20"></label>
         <label class="f full"><span>Precio anterior <small>(obligatorio si pones un % o un precio rebajado; ha de ser el más bajo de los últimos 30 días)</small></span><input name="prior_price" inputmode="decimal" value="${disc.compare_at_cents != null ? (disc.compare_at_cents / 100).toFixed(2).replace('.', ',') : ''}" placeholder="12,00"></label>
+        <label class="f full" id="alcRow" hidden><span>¿El 2x1 incluye bebidas alcohólicas? <small>(hay que responder: varias comunidades prohíben el 2x1 en alcohol y la sanción es para el negocio)</small></span><select name="alcohol">
+          ${[['', 'Elige una opción'], ['no', 'No lleva alcohol'], ['yes', 'Sí, lleva alcohol']].map((a) => `<option value="${a[0]}" ${(disc.alcohol === true ? 'yes' : disc.alcohol === false ? 'no' : '') === a[0] ? 'selected' : ''}>${a[1]}</option>`).join('')}</select></label>
         <label class="f"><span>¿Cuánto vale el código QR?</span><select name="code_ttl_minutes">
           ${[[5, '5 minutos'], [30, '30 minutos'], [180, '3 horas'], [1440, '1 día'], ['', 'Sin caducidad']].map((t) => `<option value="${t[0]}" ${String(o.code_ttl_minutes ?? '') === String(t[0]) ? 'selected' : ''}>${t[1]}</option>`).join('')}</select></label>
         <label class="f"><span>Canjes por persona</span><input name="max_per_user" type="number" min="1" max="20" value="${o.max_per_user ?? 1}"></label>
@@ -352,6 +354,13 @@ async function offerForm(v, id, kindDefault) {
   };
   $('[name=kind]', v).onchange = syncKind;
   syncKind();
+
+  // La pregunta del alcohol solo aparece si el descuento es un 2x1.
+  const syncDiscount = () => {
+    $('#alcRow', v).hidden = $('[name=discount_type]', v).value !== '2x1';
+  };
+  $('[name=discount_type]', v).onchange = syncDiscount;
+  syncDiscount();
 
   // Fotos
   let images = [...(o.images || [])];
@@ -409,6 +418,17 @@ async function offerForm(v, id, kindDefault) {
       $('#formErr').textContent = 'Pon el precio anterior: la ley obliga a enseñarlo junto al descuento.';
       return;
     }
+    // El 2x1 obliga a declarar si hay alcohol: por el texto no se sabe
+    // («2x1 en bebidas» no dice nada) y la multa se la lleva el negocio.
+    const alcohol = f.get('alcohol');
+    if (dType === '2x1' && !alcohol) {
+      $('#formErr').textContent = 'Di si el 2x1 incluye bebidas alcohólicas.';
+      return;
+    }
+    if (dType === '2x1' && alcohol === 'yes') {
+      $('#formErr').textContent = 'No se pueden anunciar promociones 2x1 en bebidas alcohólicas. Prueba con un precio especial.';
+      return;
+    }
     const data = {
       business_id: BIZ.id,
       kind: f.get('kind'),
@@ -427,6 +447,7 @@ async function offerForm(v, id, kindDefault) {
           : (dValue ? Number(dValue) : null),
         currency: 'EUR',
         ...(prior ? { compare_at_cents: prior } : {}),
+        ...(dType === '2x1' ? { alcohol: alcohol === 'yes' } : {}),
       } : null,
       redeem_start_at: flash ? fromLocalInput(f.get('start')) : null,
       redeem_end_at: flash ? fromLocalInput(f.get('end')) : null,
@@ -467,6 +488,7 @@ async function offerForm(v, id, kindDefault) {
         /plan_limit_reached/.test(m) ? 'Has llegado al límite de publicaciones activas de tu plan. Pausa alguna o cambia de plan.'
         : /prior_price_required/.test(m) ? 'Pon el precio anterior: la ley obliga a enseñarlo junto al descuento.'
         : /prior_price_not_lower/.test(m) ? 'El precio anterior tiene que ser mayor que el de ahora.'
+        : /alcohol_declaration_required/.test(m) ? 'Di si el 2x1 incluye bebidas alcohólicas.'
         : /no_2x1_alcohol/.test(m) ? 'No se pueden anunciar promociones 2x1 en bebidas alcohólicas. Prueba con un precio especial.'
         : m;
     }
