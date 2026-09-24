@@ -159,7 +159,13 @@ const I18N = makeI18N({
     'Día a día': 'Day by day',
     'Cada barra es un día: la altura son las vistas y la parte de color, los canjes.':
       'Each bar is a day: the height is views and the coloured part, redemptions.',
-    'Por publicación': 'By publication',
+    'De dónde viene tu gente': 'Where your people come from',
+  'menos de 500 m': 'under 500 m',
+  '500 m - 1 km': '500 m - 1 km',
+  '1 - 2 km': '1 - 2 km',
+  '2 - 5 km': '2 - 5 km',
+  'más de 5 km': 'over 5 km',
+  'Por publicación': 'By publication',
     'No hay publicaciones en este periodo.': 'No publications in this period.',
     'Cada línea es un código validado en el local, con quién lo validó. Sirve de justificante.':
       'Each line is a code validated at the venue, with who validated it. It works as a receipt.',

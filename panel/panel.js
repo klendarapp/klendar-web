@@ -697,12 +697,36 @@ PAGES.equipo = async (v) => {
   }
 };
 
+// Cuánta gente viene de cerca y cuánta de lejos. Nunca un punto en un mapa
+// —sería señalar dónde vive un cliente—, y a partir de cinco personas: con
+// dos datos se adivina quién es quién.
+function audienciaHtml(aud) {
+  if (!aud) return '';
+  const tramos = aud.buckets || [];
+  if (!tramos.length) {
+    return aud.people
+      ? `<div class="card"><h2>De dónde viene tu gente</h2><p class="muted" style="margin:0">Todavía son pocas personas (${fmtNum(aud.people)}) para enseñarlo sin señalar a nadie. A partir de cinco aparece aquí.</p></div>`
+      : '';
+  }
+  const total = tramos.reduce((a, b) => a + b.n, 0) || 1;
+  return `<div class="card"><h2>De dónde viene tu gente</h2>
+    <div class="bars">${tramos.map((t) => `
+      <div class="bar"><span class="bl">${esc(t.bucket)}</span>
+        <span class="bt"><i style="width:${Math.round((t.n / total) * 100)}%"></i></span>
+        <span class="bn">${fmtNum(t.n)}</span></div>`).join('')}</div>
+    <p class="muted small" style="margin:10px 0 0">Distancia entre tu local y el último sitio conocido de quien ha canjeado algo, de ${fmtNum(aud.people)} persona(s). Es aproximado y nunca se enseña dónde está nadie.</p>
+  </div>`;
+}
+
 // ── Informe ─────────────────────────────────────────────────────────────────
 // Todo junto y exportable: es lo que el negocio le pasa a su gestor y lo que
 // mira cuando quiere saber si esto le sirve para algo.
 PAGES.informe = async (v, param) => {
   const days = Number(param) || 30;
-  const r = await rpc('business_report', { p_id: BIZ.id, p_days: days }) || {};
+  const [r, aud] = await Promise.all([
+    rpc('business_report', { p_id: BIZ.id, p_days: days }).then((x) => x || {}),
+    rpc('business_audience', { p_id: BIZ.id, p_days: days }).catch(() => null),
+  ]);
   const t = r.totals || {};
   const eur = (c) => (c == null ? '—' : (c / 100).toFixed(2).replace('.', ',') + ' €');
   const pct = (a, b) => (!b ? '—' : Math.round((a * 100) / b) + ' %');
@@ -728,6 +752,8 @@ PAGES.informe = async (v, param) => {
       <div class="spark">${(r.daily || []).map((d) => `<i title="${d.day}: ${d.views} vistas, ${d.redeemed} canjes" style="height:${Math.round((d.views / maxDay) * 100)}%"><u style="height:${d.views ? Math.round((d.redeemed / Math.max(d.views, 1)) * 100) : 0}%"></u></i>`).join('')}</div>
       <p class="muted" style="margin:8px 0 0">Cada barra es un día: la altura son las vistas y la parte de color, los canjes.</p>
     </div>
+
+    ${audienciaHtml(aud)}
 
     <div class="card"><h2>Por publicación</h2><div class="actions" style="margin-bottom:10px"><button class="btn sm" id="csvOffers">Descargar CSV</button></div>
       ${table({
