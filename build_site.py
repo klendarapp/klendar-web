@@ -66,6 +66,7 @@ T = {
     biz_cta='Escríbenos', biz_terms='Ver condiciones', biz_note='Las primeras semanas en cada ciudad, gratis.',
     biz_page_url='/para-negocios/', pricing_url='/precios/', faq_url='/preguntas/',
     live_eyebrow='Ahora mismo', live_h2='Lo que hay estos días',
+    live_note='La ciudad con más movimiento ahora mismo. No pedimos tu ubicación: eso es cosa de la app.',
     live_all='Ver la agenda completa', live_city='en',
     biz_panel='Acceso para negocios', biz_panel_url='/panel/',
     biz_panel_note='¿Ya tienes tu negocio en Klendar? Entra en tu panel para publicar, ver cómo va y validar códigos desde el ordenador.',
@@ -114,6 +115,7 @@ T = {
     biz_cta='Email us', biz_terms='Business terms', biz_note='The first weeks in each city are free.',
     biz_page_url='/en/for-business/', pricing_url='/en/pricing/', faq_url='/en/faq/',
     live_eyebrow='Right now', live_h2='What is on these days',
+    live_note='The busiest city right now. We do not ask for your location here: that is the app\u2019s job.',
     live_all='See the full agenda', live_city='in',
     biz_panel='Business sign in', biz_panel_url='/panel/',
     biz_panel_note='Already on Klendar? Sign in to your dashboard to publish, see how it is going and validate codes from your computer.',
@@ -284,6 +286,7 @@ def landing(t):
 <section id="ahora" class="live" hidden><div class="wrap">
   <span class="eyebrow">{t['live_eyebrow']}</span>
   <h2>{t['live_h2']} <span id="liveCity" class="muted"></span></h2>
+  <p class="note">{t['live_note']}</p>
   <div class="olist" id="liveList"></div>
   <p><a class="pill ghost" id="liveAll" href="{'/agenda/' if t['lang'] == 'es' else '/en/whats-on/'}">{t['live_all']}</a></p>
 </div></section>

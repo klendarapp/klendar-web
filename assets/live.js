@@ -52,15 +52,12 @@
     return r.ok ? r.json() : null;
   };
 
-  (async () => {
-    const ciudades = await rpc('public_cities');
-    const ciudad = Array.isArray(ciudades) && ciudades.length ? ciudades[0].city : null;
-    if (!ciudad) return;
+  const base = en ? '/en' : '';
 
+  async function pintar(ciudad) {
     const items = await rpc('public_city_agenda', { p_city: ciudad, p_limit: MAX });
-    if (!Array.isArray(items) || !items.length) return;
+    if (!Array.isArray(items) || !items.length) return false;
 
-    const base = en ? '/en' : '';
     lista.innerHTML = items.slice(0, MAX).map((o) => {
       const img = foto(o.images);
       const tag = etiqueta(o.discount, o.price_cents, o.currency);
@@ -77,11 +74,32 @@
       </a>`;
     }).join('');
 
-    const dondeEl = document.getElementById('liveCity');
-    if (dondeEl) dondeEl.textContent = `${en ? 'in' : 'en'} ${ciudad}`;
     const todas = document.getElementById('liveAll');
     if (todas) {
       todas.href = `${base}${en ? '/whats-on/' : '/agenda/'}${encodeURIComponent(ciudad.toLowerCase())}/`;
+    }
+    return true;
+  }
+
+  (async () => {
+    const ciudades = (await rpc('public_cities')) || [];
+    if (!Array.isArray(ciudades) || !ciudades.length) return;
+
+    // La primera es la que más se mueve, no la más cercana: aquí no se pide
+    // la ubicación de nadie. Si hay varias, que se pueda cambiar.
+    const inicial = ciudades[0].city;
+    if (!await pintar(inicial)) return;
+
+    const donde = document.getElementById('liveCity');
+    if (donde) {
+      if (ciudades.length > 1) {
+        donde.innerHTML = `<select id="liveSelect" aria-label="${en ? 'City' : 'Ciudad'}">`
+          + ciudades.map((c) => `<option value="${esc(c.city)}">${esc(c.city)}</option>`).join('')
+          + '</select>';
+        document.getElementById('liveSelect').onchange = (e) => pintar(e.target.value);
+      } else {
+        donde.textContent = `${en ? 'in' : 'en'} ${inicial}`;
+      }
     }
     seccion.hidden = false;
   })().catch(() => { /* sin conexión: la sección se queda escondida */ });
