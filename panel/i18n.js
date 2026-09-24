@@ -1,18 +1,8 @@
-// El panel, en español y en inglés.
-//
-// El panel se escribió en español y con las frases dentro del HTML, que para
-// una herramienta de dos pantallas está bien. En vez de reescribirlo entero
-// (y arriesgarse a romper lo que ya funciona), se traduce **lo que se ve**:
-// después de cada pantalla se recorren los textos y se cambian por su
-// equivalente en inglés. Lo que no esté en la lista se queda en español, que
-// es feo pero nunca rompe nada.
-//
-// El idioma se elige con el botón ES/EN, se recuerda en este navegador y, la
-// primera vez, se adivina del idioma del navegador.
+// Las palabras del panel del negocio en inglés. El motor está en
+// `/assets/i18n.js`; aquí solo está la lista.
 'use strict';
 
-const I18N = (() => {
-  const EN = {
+const I18N = makeI18N({
     // ── Entrada ───────────────────────────────────────────────────────────
     'Entra en tu panel': 'Sign in to your dashboard',
     'Con la misma cuenta que usas en la app. Si tu negocio todavía no está dado de alta, hazlo desde la app: Perfil → Dar de alta mi negocio.':
@@ -258,51 +248,4 @@ const I18N = (() => {
     'Todavía no tienes ningún negocio': 'You do not have a business yet',
     'Si alguien te ha añadido a su equipo, entra con el mismo correo con el que te invitaron.':
       'If someone added you to their team, sign in with the same email they invited.',
-  };
-
-  const ATTRS = ['placeholder', 'title', 'aria-label', 'alt'];
-  let lang = 'es';
-
-  try {
-    lang = localStorage.getItem('klendar_lang')
-      || (new URLSearchParams(location.search).get('lang'))
-      || (/^en/i.test(navigator.language || '') ? 'en' : 'es');
-  } catch { lang = 'es'; }
-  if (lang !== 'en') lang = 'es';
-
-  const one = (s) => {
-    const k = (s || '').trim();
-    return EN[k] ? s.replace(k, EN[k]) : null;
-  };
-
-  /** Traduce lo que ya está pintado dentro de `root`. */
-  function translate(root = document.body) {
-    if (lang !== 'en' || !root) return;
-    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-    const pending = [];
-    for (let n = walker.nextNode(); n; n = walker.nextNode()) {
-      const t = one(n.nodeValue);
-      if (t) pending.push([n, t]);
-    }
-    for (const [n, t] of pending) n.nodeValue = t;
-
-    for (const el of root.querySelectorAll('[placeholder],[title],[aria-label],[alt]')) {
-      for (const a of ATTRS) {
-        const v = el.getAttribute(a);
-        const t = v && one(v);
-        if (t) el.setAttribute(a, t);
-      }
-    }
-    document.documentElement.lang = 'en';
-  }
-
-  /** Para textos que se crean a mano (avisos, confirmaciones). */
-  const t = (s) => (lang === 'en' && EN[s]) || s;
-
-  function setLang(next) {
-    try { localStorage.setItem('klendar_lang', next); } catch { /* sin permisos */ }
-    location.reload();
-  }
-
-  return { get lang() { return lang; }, translate, t, setLang };
-})();
+});

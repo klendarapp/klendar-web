@@ -24,6 +24,7 @@
   <label class="f"><span>Contraseña</span><input id="password" type="password" autocomplete="current-password"></label>
   <button class="btn primary" id="doLogin">Entrar</button>
   <div id="loginErr" class="err"></div>
+  <span class="lang" id="langLogin" aria-label="Idioma / Language"></span>
 </div>
 
 <!-- Panel -->
@@ -31,12 +32,15 @@
   <aside class="side" id="side">
     <a class="brand" href="#/resumen"><img src="/assets/symbol.png" alt=""> Klendar <small>admin</small></a>
     <nav id="nav"></nav>
-    <div class="me"><span style="opacity:.6">Sesión</span><b id="who"></b><a href="#" id="logout">Salir</a></div>
+    <div class="me"><span style="opacity:.6">Sesión</span><b id="who"></b><a href="#" id="logout">Salir</a>
+      <span class="lang" id="langSide" aria-label="Idioma / Language"></span></div>
   </aside>
   <div>
     <div class="topbar">
       <a class="brand" href="#/resumen"><img src="/assets/symbol.png" alt=""> Klendar</a>
       <button class="btn sm" id="menuBtn" aria-label="Menú">☰ Menú</button>
+      <span class="spacer"></span>
+      <span class="lang" id="lang" aria-label="Idioma / Language"></span>
     </div>
     <main class="content" id="view"></main>
   </div>
@@ -47,6 +51,8 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="/config.js?v=1"></script>
-<script src="/admin/admin.js?v=7"></script>
+<script src="/assets/i18n.js?v=1"></script>
+<script src="/admin/i18n.js?v=1"></script>
+<script src="/admin/admin.js?v=8"></script>
 </body>
 </html>

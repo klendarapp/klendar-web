@@ -20,8 +20,9 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const fmtDate = (s) => s ? new Date(s).toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
-const fmtDay = (s) => s ? new Date(s).toLocaleDateString('es-ES', { dateStyle: 'medium' }) : '—';
+const LOC = () => (I18N.lang === 'en' ? 'en-GB' : 'es-ES');
+const fmtDate = (s) => s ? new Date(s).toLocaleString(LOC(), { dateStyle: 'medium', timeStyle: 'short' }) : '—';
+const fmtDay = (s) => s ? new Date(s).toLocaleDateString(LOC(), { dateStyle: 'medium' }) : '—';
 const fmtMoney = (c, cur = 'EUR') => (c == null ? '—' : (c / 100).toLocaleString('es-ES', { style: 'currency', currency: cur }));
 const fmtNum = (n) => (n ?? 0).toLocaleString('es-ES');
 const ago = (s) => {
@@ -70,7 +71,7 @@ const RPC_ERRORS = {
 
 function toast(msg, bad = false) {
   const t = document.createElement('div');
-  t.className = 'toast' + (bad ? ' bad' : ''); t.textContent = msg;
+  t.className = 'toast' + (bad ? ' bad' : ''); t.textContent = I18N.t(msg);
   $('#toasts').appendChild(t);
   setTimeout(() => t.remove(), bad ? 6000 : 3500);
 }
@@ -136,7 +137,7 @@ function table({ cols, rows, onRow, empty = 'Nada por aquí.' }) {
 function pager(state, total, onChange) {
   const pages = Math.max(1, Math.ceil(total / state.limit));
   const page = Math.floor(state.offset / state.limit) + 1;
-  const html = `<div class="pager"><span>${fmtNum(total)} resultados · página ${page} de ${pages}</span><span class="spacer"></span>
+  const html = `<div class="pager"><span><b>${fmtNum(total)}</b> resultados · <span>página</span> <b>${page}</b> <span>de</span> <b>${pages}</b></span><span class="spacer"></span>
     <button class="btn sm" data-pg="prev" ${page <= 1 ? 'disabled' : ''}>← Anterior</button><button class="btn sm" data-pg="next" ${page >= pages ? 'disabled' : ''}>Siguiente →</button>
     <select data-pg="limit">${[25, 50, 100, 200].map((n) => `<option ${n === state.limit ? 'selected' : ''}>${n}</option>`).join('')}</select></div>`;
   return { html, bind(root) {
@@ -176,6 +177,10 @@ $('#password').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('#d
 $('#logout').onclick = async (e) => { e.preventDefault(); await sb.auth.signOut(); showLogin(); };
 sb.auth.onAuthStateChange((ev) => { if (ev === 'SIGNED_OUT') showLogin(); });
 $('#menuBtn').onclick = () => $('#side').classList.toggle('open');
+
+// ── Idioma ──────────────────────────────────────────────────────────────────
+I18N.pickers(['#lang', '#langLogin', '#langSide']);
+I18N.translate(document.body);
 document.addEventListener('keydown', (e) => { if (e.key === '/' && !/input|textarea|select/i.test(e.target.tagName)) { const s = $('#q'); if (s) { e.preventDefault(); s.focus(); } } });
 
 // ── Navegación ──────────────────────────────────────────────────────────────
@@ -191,8 +196,10 @@ const NAV = [
 ];
 let BADGES = {};
 function renderNav(current) {
+  // (al final se traduce; la lista se arma igual en los dos idiomas)
   $('#nav').innerHTML = NAV.map((n) => n[0] === 'group' ? `<div class="group">${n[1]}</div>`
     : `<a class="nav ${current === n[0] ? 'on' : ''}" href="#/${n[0]}"><span class="ic">${n[1]}</span>${n[2]}${BADGES[n[0]] ? `<span class="badge">${BADGES[n[0]]}</span>` : ''}</a>`).join('');
+  I18N.translate($('#nav'));
 }
 async function refreshBadges() {
   try {
@@ -218,6 +225,7 @@ async function route() {
   try {
     const fn = PAGES[page] || PAGES.resumen;
     await fn(v, id);
+    I18N.translate(v);
   } catch (e) {
     v.innerHTML = `<div class="card"><p class="err">${esc(e.message)}</p>${/administradora/.test(e.message) ? '<p class="muted">Pide a otro administrador que te dé de alta en «Administradores», o ejecuta en Supabase: <code>insert into public.admin_users (user_id) select id from auth.users where email = \'tu@email\'</code></p>' : ''}</div>`;
   }
@@ -232,14 +240,14 @@ PAGES.resumen = async (v) => {
   const kpi = (n, label, cls = '') => `<div class="kpi ${cls}"><b>${typeof n === 'number' ? fmtNum(n) : n}</b><span>${label}</span></div>`;
   const series = k.series || [];
   v.innerHTML = `
-    <div class="page-head"><h1>Resumen</h1><span class="spacer"></span><span class="muted">${new Date().toLocaleString('es-ES', { dateStyle: 'full', timeStyle: 'short' })}</span></div>
+    <div class="page-head"><h1>Resumen</h1><span class="spacer"></span><span class="muted">${new Date().toLocaleString(LOC(), { dateStyle: 'full', timeStyle: 'short' })}</span></div>
     ${(k.businesses_pending || k.offers_pending || k.reports_open || BADGES.sugerencias) ? `<div class="card"><h2>Pendiente de ti</h2><div class="actions">
-      ${k.businesses_pending ? `<a class="btn" href="#/negocios?status=pending">🏪 ${k.businesses_pending} negocio(s) por verificar</a>` : ''}
-      ${k.offers_pending ? `<a class="btn" href="#/publicaciones?moderation=pending">⚡ ${k.offers_pending} publicación(es) por moderar</a>` : ''}
-      ${k.reports_open ? `<a class="btn" href="#/denuncias">🚩 ${k.reports_open} denuncia(s) abiertas</a>` : ''}
-      ${k.subs_expiring_7d ? `<a class="btn" href="#/planes">💳 ${k.subs_expiring_7d} suscripción(es) vencen en 7 días</a>` : ''}
-      ${k.push_failed_7d ? `<a class="btn" href="#/avisos?tab=push">🔔 ${k.push_failed_7d} push fallidos (7 d)</a>` : ''}
-      ${BADGES.sugerencias ? `<a class="btn" href="#/sugerencias">💡 ${BADGES.sugerencias} sugerencia(s) sin leer</a>` : ''}
+      ${k.businesses_pending ? `<a class="btn" href="#/negocios?status=pending">🏪 <b>${k.businesses_pending}</b> negocio(s) por verificar</a>` : ''}
+      ${k.offers_pending ? `<a class="btn" href="#/publicaciones?moderation=pending">⚡ <b>${k.offers_pending}</b> publicación(es) por moderar</a>` : ''}
+      ${k.reports_open ? `<a class="btn" href="#/denuncias">🚩 <b>${k.reports_open}</b> denuncia(s) abiertas</a>` : ''}
+      ${k.subs_expiring_7d ? `<a class="btn" href="#/planes">💳 <b>${k.subs_expiring_7d}</b> suscripción(es) vencen en 7 días</a>` : ''}
+      ${k.push_failed_7d ? `<a class="btn" href="#/avisos?tab=push">🔔 <b>${k.push_failed_7d}</b> push fallidos (7 d)</a>` : ''}
+      ${BADGES.sugerencias ? `<a class="btn" href="#/sugerencias">💡 <b>${BADGES.sugerencias}</b> sugerencia(s) sin leer</a>` : ''}
     </div></div>` : '<div class="card"><h2>Todo al día</h2><p class="muted" style="margin:0">No hay negocios por verificar, publicaciones por moderar ni denuncias abiertas.</p></div>'}
     <div class="grid2">
       <div class="card"><h2>Usuarios</h2><div class="kpis">

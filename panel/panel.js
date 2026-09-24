@@ -173,16 +173,7 @@ $('#menuBtn').onclick = () => $('#side').classList.toggle('open');
 // ── Idioma ──────────────────────────────────────────────────────────────────
 // El panel se escribió en español; la versión inglesa se pinta encima (ver
 // i18n.js). Lo que no esté traducido se queda en español, nunca en blanco.
-function renderLangPicker() {
-  const html = ['es', 'en'].map((l) => `<a href="#" data-lang="${l}" class="${I18N.lang === l ? 'on' : ''}">${l.toUpperCase()}</a>`).join('');
-  for (const id of ['#lang', '#langLogin', '#langSide']) {
-    const el = $(id);
-    if (!el) continue;
-    el.innerHTML = html;
-    $$('a', el).forEach((a) => { a.onclick = (e) => { e.preventDefault(); I18N.setLang(a.dataset.lang); }; });
-  }
-}
-renderLangPicker();
+I18N.pickers(['#lang', '#langLogin', '#langSide']);
 I18N.translate(document.body);
 
 // ── Navegación ──────────────────────────────────────────────────────────────

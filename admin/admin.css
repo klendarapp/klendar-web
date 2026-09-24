@@ -162,3 +162,12 @@ a.link { color: var(--accent-text); font-weight: 600; }
    no lo pretende: es para ver la forma de un vistazo. */
 .spark { display: flex; align-items: flex-end; gap: 4px; height: 110px; padding: 4px 0; }
 .spark i { flex: 1 1 0; min-width: 3px; min-height: 2px; background: var(--accent); border-radius: 3px 3px 0 0; opacity: .85; }
+
+/* Selector de idioma (barra lateral, barra de arriba y acceso). */
+.topbar .spacer { flex: 1; }
+.topbar .lang, .login .lang, .me .lang { display: inline-flex; border: 1px solid var(--glass-border);
+  border-radius: 999px; overflow: hidden; font-size: 11px; font-weight: 700; align-self: center; width: fit-content; }
+.topbar .lang a, .login .lang a, .me .lang a { padding: 4px 9px; color: var(--ink-2); text-decoration: none; }
+.topbar .lang a.on, .login .lang a.on, .me .lang a.on { background: var(--accent); color: var(--on-accent); }
+.me .lang { margin-top: 8px; }
+.login .lang { margin: 0 auto; }
