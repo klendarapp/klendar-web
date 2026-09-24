@@ -18,6 +18,13 @@ ALT = {
     '/cookies/': '/en/cookies/',
     '/normas/': '/en/community-guidelines/',
     '/eliminar-cuenta/': '/en/delete-account/',
+    '/para-negocios/': '/en/for-business/',
+    '/precios/': '/en/pricing/',
+    '/preguntas/': '/en/faq/',
+    '/prensa/': '/en/press/',
+    '/accesibilidad/': '/en/accessibility/',
+    '/estado/': '/en/status/',
+    '/sobre/': '/en/about/',
 }
 ALT_EN = {en: es for es, en in ALT.items()}
 
@@ -57,6 +64,9 @@ T = {
     biz_sub='Publica una oferta flash cuando tengas un hueco, anuncia tus eventos y valida los canjeos con la cámara del móvil. Sin comisiones por venta: una cuota mensual fija.',
     biz_points=['Alta en 2 minutos desde la app; verificamos tu negocio en 24–48 h.', 'Ofertas con cuenta atrás y aforo: tú decides cuántas y hasta cuándo.', 'Estadísticas de vistas, favoritos y canjeos por publicación.', 'Equipo: añade encargados y empleados para validar códigos.'],
     biz_cta='Escríbenos', biz_terms='Ver condiciones', biz_note='Las primeras semanas en cada ciudad, gratis.',
+    biz_page_url='/para-negocios/', pricing_url='/precios/', faq_url='/preguntas/',
+    live_eyebrow='Ahora mismo', live_h2='Lo que hay estos días',
+    live_all='Ver la agenda completa', live_city='en',
     biz_panel='Acceso para negocios', biz_panel_url='/panel/',
     biz_panel_note='¿Ya tienes tu negocio en Klendar? Entra en tu panel para publicar, ver cómo va y validar códigos desde el ordenador.',
     biz_kit='Kit para tu local: <a href="/assets/kit/klendar-guia-negocios.pdf">guía de 1 página (PDF)</a> · <a href="/assets/kit/klendar-cartel.pdf">cartel con QR (PDF)</a>',
@@ -69,8 +79,8 @@ T = {
           ('¿En qué ciudades está?', 'Empezamos ciudad a ciudad en España. Si en la tuya todavía hay poco, ayúdanos: díselo a tu bar de siempre.')],
     cta_h2='Lo que pasa cerca, en tu bolsillo', cta_sub='Muy pronto en Google Play y App Store.',
     foot_product='Producto', foot_legal='Legal', foot_contact='Contacto',
-    foot_links_product=[('/#como', 'Cómo funciona'), ('/agenda/', 'Agenda local'), ('/#negocios', 'Para negocios'), ('/panel/', 'Acceso para negocios'), ('/soporte/', 'Soporte'), ('/en/', 'English')],
-    foot_links_legal=[('/aviso-legal/', 'Aviso legal'), ('/privacidad/', 'Privacidad'), ('/terminos/', 'Términos de uso'), ('/negocios/', 'Condiciones para negocios'), ('/cookies/', 'Cookies'), ('/normas/', 'Normas de la comunidad'), ('/eliminar-cuenta/', 'Eliminar cuenta')],
+    foot_links_product=[('/#como', 'Cómo funciona'), ('/agenda/', 'Agenda local'), ('/para-negocios/', 'Para negocios'), ('/precios/', 'Precios'), ('/panel/', 'Acceso para negocios'), ('/preguntas/', 'Preguntas frecuentes'), ('/soporte/', 'Soporte'), ('/sobre/', 'Sobre Klendar'), ('/prensa/', 'Prensa'), ('/en/', 'English')],
+    foot_links_legal=[('/aviso-legal/', 'Aviso legal'), ('/privacidad/', 'Privacidad'), ('/terminos/', 'Términos de uso'), ('/negocios/', 'Condiciones para negocios'), ('/cookies/', 'Cookies'), ('/normas/', 'Normas de la comunidad'), ('/eliminar-cuenta/', 'Eliminar cuenta'), ('/accesibilidad/', 'Accesibilidad'), ('/estado/', 'Estado del servicio')],
     foot_rights=f'© {YEAR} Klendar. Todos los derechos reservados.', foot_made='Hecho en España',
     support_url='/soporte/', biz_terms_url='/negocios/',
   ),
@@ -102,6 +112,9 @@ T = {
     biz_sub='Post a flash deal when you have a quiet hour, announce your events and validate redemptions with your phone camera. No sales commission: one flat monthly fee.',
     biz_points=['Sign up in 2 minutes from the app; we verify your business in 24–48 h.', 'Deals with a countdown and capacity: you decide how many and until when.', 'Stats for views, favourites and redemptions per post.', 'Team: add managers and staff to validate codes.'],
     biz_cta='Email us', biz_terms='Business terms', biz_note='The first weeks in each city are free.',
+    biz_page_url='/en/for-business/', pricing_url='/en/pricing/', faq_url='/en/faq/',
+    live_eyebrow='Right now', live_h2='What is on these days',
+    live_all='See the full agenda', live_city='in',
     biz_panel='Business sign in', biz_panel_url='/panel/',
     biz_panel_note='Already on Klendar? Sign in to your dashboard to publish, see how it is going and validate codes from your computer.',
     biz_kit='Kit for your venue (Spanish): <a href="/assets/kit/klendar-guia-negocios.pdf">one-page guide (PDF)</a> · <a href="/assets/kit/klendar-cartel.pdf">poster with QR (PDF)</a>',
@@ -114,8 +127,8 @@ T = {
           ('Which cities?', 'We\'re starting city by city in Spain. If yours is still quiet, help us: tell your local bar.')],
     cta_h2='What\'s happening nearby, in your pocket', cta_sub='Coming soon to Google Play and the App Store.',
     foot_product='Product', foot_legal='Legal', foot_contact='Contact',
-    foot_links_product=[('/en/#how-it-works', 'How it works'), ('/en/whats-on/', "What's on"), ('/en/#businesses', 'For businesses'), ('/panel/', 'Business sign in'), ('/en/support/', 'Support'), ('/', 'Español')],
-    foot_links_legal=[('/en/legal-notice/', 'Legal notice'), ('/en/privacy/', 'Privacy policy'), ('/en/terms/', 'Terms of use'), ('/en/business-terms/', 'Business terms'), ('/en/cookies/', 'Cookies'), ('/en/community-guidelines/', 'Community guidelines'), ('/en/delete-account/', 'Delete account')],
+    foot_links_product=[('/en/#how-it-works', 'How it works'), ('/en/whats-on/', "What's on"), ('/en/for-business/', 'For businesses'), ('/en/pricing/', 'Pricing'), ('/panel/', 'Business sign in'), ('/en/faq/', 'FAQ'), ('/en/support/', 'Support'), ('/en/about/', 'About'), ('/en/press/', 'Press'), ('/', 'Español')],
+    foot_links_legal=[('/en/legal-notice/', 'Legal notice'), ('/en/privacy/', 'Privacy policy'), ('/en/terms/', 'Terms of use'), ('/en/business-terms/', 'Business terms'), ('/en/cookies/', 'Cookies'), ('/en/community-guidelines/', 'Community guidelines'), ('/en/delete-account/', 'Delete account'), ('/en/accessibility/', 'Accessibility'), ('/en/status/', 'Service status')],
     foot_rights=f'© {YEAR} Klendar. All rights reserved.', foot_made='Made in Spain',
     support_url='/en/support/', biz_terms_url='/en/business-terms/',
   ),
@@ -170,6 +183,7 @@ def head(t, path, page_title=None, page_desc=None, extra=''):
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/public.css?v=2">
 {extra}
 </head>
 <body>
@@ -179,8 +193,8 @@ def head(t, path, page_title=None, page_desc=None, extra=''):
   <label class="menu-toggle" for="menu" aria-label="Menú"><span></span><span></span><span></span></label>
   <nav class="main">
     <a href="/{t['dir']}#{t['a_how']}">{t['nav_how']}</a>
-    <a href="/{t['dir']}#{t['a_biz']}">{t['nav_biz']}</a>
-    <a href="/{t['dir']}#{t['a_faq']}">{t['nav_faq']}</a>
+    <a href="{t['biz_page_url']}">{t['nav_biz']}</a>
+    <a href="{t['faq_url']}">{t['nav_faq']}</a>
     <a href="{t['support_url']}">{t['nav_support']}</a>
     <a href="{t['biz_panel_url']}" class="nav-panel">{t['biz_panel']}</a>
     <span class="lang" aria-label="Idioma / Language">
@@ -192,7 +206,14 @@ def head(t, path, page_title=None, page_desc=None, extra=''):
 '''
 
 
-def footer(t):
+# Solo la portada trae contenido en vivo; los documentos no lo necesitan.
+LIVE_SCRIPTS = (
+    '<script src="/config.js?v=1"></script>'
+    '<script src="/assets/live.js?v=1" defer></script>'
+)
+
+
+def footer(t, only_footer=True):
     prod = ''.join(f'<a href="{h}">{l}</a>' for h, l in t['foot_links_product'])
     legal = ''.join(f'<a href="{h}">{l}</a>' for h, l in t['foot_links_legal'])
     return f'''
@@ -214,6 +235,7 @@ def footer(t):
   for(var i=0;i<links.length;i++){{links[i].addEventListener('click',function(){{try{{localStorage.setItem('klendar_lang',this.getAttribute('data-lang'))}}catch(e){{}}}});}}
 }})();
 </script>
+{'' if only_footer else LIVE_SCRIPTS}
 </body></html>
 '''
 
@@ -257,6 +279,13 @@ def landing(t):
     <div class="float a">{fa[0]}<small>{fa[1]}</small></div>
     <div class="float b">{fb[0]}<small>{fb[1]}</small></div>
   </div>
+</div></section>
+
+<section id="ahora" class="live" hidden><div class="wrap">
+  <span class="eyebrow">{t['live_eyebrow']}</span>
+  <h2>{t['live_h2']} <span id="liveCity" class="muted"></span></h2>
+  <div class="olist" id="liveList"></div>
+  <p><a class="pill ghost" id="liveAll" href="{'/agenda/' if t['lang'] == 'es' else '/en/whats-on/'}">{t['live_all']}</a></p>
 </div></section>
 
 <section id="{t['a_how']}"><div class="wrap">
@@ -309,7 +338,7 @@ def landing(t):
 </div></section>
 '''
     extra = jsonld + faq_ld + (LANG_REDIRECT if t['lang'] == 'es' else '')
-    return head(t, path, extra=extra) + body + footer(t)
+    return head(t, path, extra=extra) + body + footer(t, only_footer=False)
 
 
 def jsq(s):
@@ -329,8 +358,8 @@ def doc_page(t, path, title, desc, body):
 # ── robots.txt y sitemap.xml ────────────────────────────────────────────────
 # Solo se indexan las páginas estáticas: /admin/ es privado y /o/, /b/ y /r/
 # son enlaces profundos que se generan al vuelo (ya llevan su propio canonical).
-SITEMAP_ES = ['/', '/agenda/', '/negocios/', '/soporte/', '/privacidad/', '/terminos/', '/aviso-legal/', '/cookies/', '/normas/', '/eliminar-cuenta/']
-SITEMAP_EN = ['/en/', '/en/whats-on/', '/en/business-terms/', '/en/support/', '/en/privacy/', '/en/terms/', '/en/legal-notice/', '/en/cookies/', '/en/community-guidelines/', '/en/delete-account/']
+SITEMAP_ES = ['/', '/agenda/', '/para-negocios/', '/precios/', '/preguntas/', '/prensa/', '/sobre/', '/accesibilidad/', '/estado/', '/negocios/', '/soporte/', '/privacidad/', '/terminos/', '/aviso-legal/', '/cookies/', '/normas/', '/eliminar-cuenta/']
+SITEMAP_EN = ['/en/', '/en/whats-on/', '/en/for-business/', '/en/pricing/', '/en/faq/', '/en/press/', '/en/about/', '/en/accessibility/', '/en/status/', '/en/business-terms/', '/en/support/', '/en/privacy/', '/en/terms/', '/en/legal-notice/', '/en/cookies/', '/en/community-guidelines/', '/en/delete-account/']
 ALT_PAIRS = dict(zip(SITEMAP_ES, SITEMAP_EN))
 
 

@@ -23,6 +23,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/public.css?v=2">
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[
 {"@type":"Organization","name":"Klendar","url":"https://klendar.app/","logo":"https://klendar.app/assets/icon-512.png","email":"info@klendar.app"},
 {"@type":"WebSite","name":"Klendar","url":"https://klendar.app/","inLanguage":["es","en"]},
@@ -39,8 +40,8 @@ if(s==='en'||(!s&&/^en\b/i.test(navigator.language||''))){location.replace('/en/
   <label class="menu-toggle" for="menu" aria-label="Menú"><span></span><span></span><span></span></label>
   <nav class="main">
     <a href="/#como">Cómo funciona</a>
-    <a href="/#negocios">Para negocios</a>
-    <a href="/#preguntas">Preguntas</a>
+    <a href="/para-negocios/">Para negocios</a>
+    <a href="/preguntas/">Preguntas</a>
     <a href="/soporte/">Soporte</a>
     <a href="/panel/" class="nav-panel">Acceso para negocios</a>
     <span class="lang" aria-label="Idioma / Language">
@@ -65,6 +66,13 @@ if(s==='en'||(!s&&/^en\b/i.test(navigator.language||''))){location.replace('/en/
     <div class="float a">⚡ 1 h 31 min<small>para canjear</small></div>
     <div class="float b">📍 262 m<small>a pie desde ti</small></div>
   </div>
+</div></section>
+
+<section id="ahora" class="live" hidden><div class="wrap">
+  <span class="eyebrow">Ahora mismo</span>
+  <h2>Lo que hay estos días <span id="liveCity" class="muted"></span></h2>
+  <div class="olist" id="liveList"></div>
+  <p><a class="pill ghost" id="liveAll" href="/agenda/">Ver la agenda completa</a></p>
 </div></section>
 
 <section id="como"><div class="wrap">
@@ -120,8 +128,8 @@ if(s==='en'||(!s&&/^en\b/i.test(navigator.language||''))){location.replace('/en/
   <div class="cols">
     <div><a class="brand" href="/"><img src="/assets/symbol.png" alt="" width="30" height="30"> Klendar</a>
       <p style="margin:12px 0 0;max-width:340px">Ofertas flash con cuenta atrás y eventos de los negocios de tu barrio, ordenados por cercanía. Guarda tus sitios, recibe avisos y canjea con un QR.</p></div>
-    <div><h4>Producto</h4><a href="/#como">Cómo funciona</a><a href="/agenda/">Agenda local</a><a href="/#negocios">Para negocios</a><a href="/panel/">Acceso para negocios</a><a href="/soporte/">Soporte</a><a href="/en/">English</a></div>
-    <div><h4>Legal</h4><a href="/aviso-legal/">Aviso legal</a><a href="/privacidad/">Privacidad</a><a href="/terminos/">Términos de uso</a><a href="/negocios/">Condiciones para negocios</a><a href="/cookies/">Cookies</a><a href="/normas/">Normas de la comunidad</a><a href="/eliminar-cuenta/">Eliminar cuenta</a></div>
+    <div><h4>Producto</h4><a href="/#como">Cómo funciona</a><a href="/agenda/">Agenda local</a><a href="/para-negocios/">Para negocios</a><a href="/precios/">Precios</a><a href="/panel/">Acceso para negocios</a><a href="/preguntas/">Preguntas frecuentes</a><a href="/soporte/">Soporte</a><a href="/sobre/">Sobre Klendar</a><a href="/prensa/">Prensa</a><a href="/en/">English</a></div>
+    <div><h4>Legal</h4><a href="/aviso-legal/">Aviso legal</a><a href="/privacidad/">Privacidad</a><a href="/terminos/">Términos de uso</a><a href="/negocios/">Condiciones para negocios</a><a href="/cookies/">Cookies</a><a href="/normas/">Normas de la comunidad</a><a href="/eliminar-cuenta/">Eliminar cuenta</a><a href="/accesibilidad/">Accesibilidad</a><a href="/estado/">Estado del servicio</a></div>
   </div>
   <div class="bottom">
     <span>© 2026 Klendar. Todos los derechos reservados.</span>
@@ -134,4 +142,5 @@ if(s==='en'||(!s&&/^en\b/i.test(navigator.language||''))){location.replace('/en/
   for(var i=0;i<links.length;i++){links[i].addEventListener('click',function(){try{localStorage.setItem('klendar_lang',this.getAttribute('data-lang'))}catch(e){}});}
 })();
 </script>
+<script src="/config.js?v=1"></script><script src="/assets/live.js?v=1" defer></script>
 </body></html>

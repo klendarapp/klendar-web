@@ -176,3 +176,20 @@ nav.main a.nav-panel {
   font-weight: 700;
 }
 nav.main a.nav-panel:hover { background: var(--glass); text-decoration: none; }
+
+/* ── Páginas de contenido (precios, preguntas) ──────────────────────────── */
+.plans { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); margin: 22px 0; }
+.plan { border: 1px solid var(--glass-border); background: var(--elevated); border-radius: 22px; padding: 20px; }
+.plan h3 { font-family: var(--display); font-size: 20px; font-weight: 800; margin: 0 0 6px; }
+.plan .price { margin: 0 0 12px; display: flex; align-items: baseline; gap: 4px; }
+.plan .price b { font-family: var(--display); font-size: 30px; font-weight: 800; letter-spacing: -.02em; }
+.plan .price span { color: var(--ink-2); font-size: 14px; }
+.plan ul { margin: 0; padding-left: 18px; color: var(--ink-2); font-size: 15px; }
+.plan li { margin-bottom: 4px; }
+details.faq { border-bottom: 1px solid var(--glass-border); padding: 14px 0; }
+details.faq summary { cursor: pointer; font-weight: 700; font-family: var(--display); font-size: 17px; list-style: none; }
+details.faq summary::-webkit-details-marker { display: none; }
+details.faq summary::after { content: '+'; float: right; color: var(--accent-text); font-weight: 800; }
+details.faq[open] summary::after { content: '–'; }
+details.faq p { margin: 10px 0 0; color: var(--ink-2); }
+.doc .lead { font-size: 18px; color: var(--ink); }

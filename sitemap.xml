@@ -17,6 +17,62 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://klendar.app/agenda/"/>
   </url>
   <url>
+    <loc>https://klendar.app/para-negocios/</loc>
+    <lastmod>2026-09-24</lastmod>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://klendar.app/para-negocios/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://klendar.app/en/for-business/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://klendar.app/para-negocios/"/>
+  </url>
+  <url>
+    <loc>https://klendar.app/precios/</loc>
+    <lastmod>2026-09-24</lastmod>
+    <priority>0.5</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://klendar.app/precios/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://klendar.app/en/pricing/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://klendar.app/precios/"/>
+  </url>
+  <url>
+    <loc>https://klendar.app/preguntas/</loc>
+    <lastmod>2026-09-24</lastmod>
+    <priority>0.5</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://klendar.app/preguntas/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://klendar.app/en/faq/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://klendar.app/preguntas/"/>
+  </url>
+  <url>
+    <loc>https://klendar.app/prensa/</loc>
+    <lastmod>2026-09-24</lastmod>
+    <priority>0.5</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://klendar.app/prensa/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://klendar.app/en/press/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://klendar.app/prensa/"/>
+  </url>
+  <url>
+    <loc>https://klendar.app/sobre/</loc>
+    <lastmod>2026-09-24</lastmod>
+    <priority>0.5</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://klendar.app/sobre/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://klendar.app/en/about/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://klendar.app/sobre/"/>
+  </url>
+  <url>
+    <loc>https://klendar.app/accesibilidad/</loc>
+    <lastmod>2026-09-24</lastmod>
+    <priority>0.5</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://klendar.app/accesibilidad/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://klendar.app/en/accessibility/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://klendar.app/accesibilidad/"/>
+  </url>
+  <url>
+    <loc>https://klendar.app/estado/</loc>
+    <lastmod>2026-09-24</lastmod>
+    <priority>0.5</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://klendar.app/estado/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://klendar.app/en/status/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://klendar.app/estado/"/>
+  </url>
+  <url>
     <loc>https://klendar.app/negocios/</loc>
     <lastmod>2026-09-24</lastmod>
     <priority>0.8</priority>
@@ -95,6 +151,62 @@
     <xhtml:link rel="alternate" hreflang="es" href="https://klendar.app/agenda/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://klendar.app/en/whats-on/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://klendar.app/agenda/"/>
+  </url>
+  <url>
+    <loc>https://klendar.app/en/for-business/</loc>
+    <lastmod>2026-09-24</lastmod>
+    <priority>0.5</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://klendar.app/para-negocios/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://klendar.app/en/for-business/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://klendar.app/para-negocios/"/>
+  </url>
+  <url>
+    <loc>https://klendar.app/en/pricing/</loc>
+    <lastmod>2026-09-24</lastmod>
+    <priority>0.5</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://klendar.app/precios/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://klendar.app/en/pricing/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://klendar.app/precios/"/>
+  </url>
+  <url>
+    <loc>https://klendar.app/en/faq/</loc>
+    <lastmod>2026-09-24</lastmod>
+    <priority>0.5</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://klendar.app/preguntas/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://klendar.app/en/faq/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://klendar.app/preguntas/"/>
+  </url>
+  <url>
+    <loc>https://klendar.app/en/press/</loc>
+    <lastmod>2026-09-24</lastmod>
+    <priority>0.5</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://klendar.app/prensa/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://klendar.app/en/press/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://klendar.app/prensa/"/>
+  </url>
+  <url>
+    <loc>https://klendar.app/en/about/</loc>
+    <lastmod>2026-09-24</lastmod>
+    <priority>0.5</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://klendar.app/sobre/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://klendar.app/en/about/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://klendar.app/sobre/"/>
+  </url>
+  <url>
+    <loc>https://klendar.app/en/accessibility/</loc>
+    <lastmod>2026-09-24</lastmod>
+    <priority>0.5</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://klendar.app/accesibilidad/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://klendar.app/en/accessibility/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://klendar.app/accesibilidad/"/>
+  </url>
+  <url>
+    <loc>https://klendar.app/en/status/</loc>
+    <lastmod>2026-09-24</lastmod>
+    <priority>0.5</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://klendar.app/estado/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://klendar.app/en/status/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://klendar.app/estado/"/>
   </url>
   <url>
     <loc>https://klendar.app/en/business-terms/</loc>
