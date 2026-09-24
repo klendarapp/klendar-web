@@ -269,7 +269,81 @@ PAGES.publicaciones = async (v, param) => {
       <a class="btn sm" href="#/publicaciones/nuevo-evento">📅 Nuevo evento</a>
       <button class="btn sm ghost" id="csv">Exportar CSV</button></div>
     ${helpBox('¿Oferta o evento?', '<p><b>Oferta relámpago</b>: algo que se canjea hoy, con cuenta atrás y aforo («café + tostada 2,50 € hasta mediodía»). <b>Evento</b>: algo con fecha, que se guarda en la agenda y puede admitir reserva de plaza.</p>')}
-    <div id="list"></div>`;
+    <div id="list"></div>
+    <div id="rules"></div>`;
+  const DIAS = ['domingos', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábados'];
+
+  // Las reglas que publican solas. Se crean desde una publicación que ya
+  // existe («repetir esta cada martes»), no desde un formulario en blanco:
+  // nadie quiere escribirlo todo dos veces.
+  const renderRules = async () => {
+    const reglas = (await rpc('my_offer_rules', { p_business: BIZ.id })) || [];
+    if (!reglas.length) { $('#rules').innerHTML = ''; return; }
+    $('#rules').innerHTML = `<div class="card"><h2>Se repiten solas</h2>
+      <p class="muted" style="margin:0 0 10px">Cada una se publica sola a su hora. Si la de la semana pasada sigue activa, esa semana se salta: no se apilan.</p>
+      ${table({
+        cols: [
+          { h: 'Publicación', r: (x) => `<b class="title">${esc(x.title || '—')}</b><span class="sub">${fmtNum(x.published)} publicada(s)</span>` },
+          { h: 'Cuándo', r: (x) => `${x.weekdays.map((d) => DIAS[d]).join(', ')} a las ${esc(x.start_time)}` },
+          { h: 'Dura', r: (x) => `${Math.round(x.duration_min / 60 * 10) / 10} h` },
+          { h: 'Estado', r: (x) => tag(x.is_active ? 'active' : 'draft') },
+          { h: '', r: (x) => `<div class="actions">
+              <button class="btn sm ghost" data-rule="${x.is_active ? 'pause' : 'resume'}" data-id="${esc(x.id)}">${x.is_active ? 'Pausar' : 'Reanudar'}</button>
+              <button class="btn sm ghost" data-rule="delete" data-id="${esc(x.id)}">Quitar</button>
+            </div>` },
+        ],
+        rows: reglas,
+        empty: 'Ninguna.',
+      })}</div>`;
+    $$('[data-rule]', $('#rules')).forEach((b) => {
+      b.onclick = async () => {
+        try {
+          if (b.dataset.rule === 'delete') {
+            if (!await confirmDlg('Quitar la repetición', 'Dejará de publicarse sola. Lo que ya se publicó se queda como está.', { danger: true, submit: 'Quitar' })) return;
+            await rpc('delete_offer_rule', { p_id: b.dataset.id });
+            toast('Quitada');
+          } else {
+            await rpc('set_offer_rule_active', { p_id: b.dataset.id, p_active: b.dataset.rule === 'resume' });
+            toast('Guardado');
+          }
+          renderRules();
+        } catch (e) { toast(e.message, true); }
+      };
+    });
+  };
+
+  async function repetirDialogo(offerId) {
+    const o = offers.find((x) => x.id === offerId) || {};
+    const r = await modal({
+      title: 'Repetir cada semana',
+      intro: `«${esc(o.title || '')}» se publicará sola los días y la hora que elijas, con su cuenta atrás y su aforo. Puedes pausarla cuando quieras.`,
+      submit: 'Crear la repetición',
+      fields: [
+        { name: 'dias', type: 'select', label: '¿Qué días?', value: 'L-V', options: [
+          ['L-V', 'De lunes a viernes'], ['todos', 'Todos los días'], ['finde', 'Fines de semana'],
+          ['1', 'Solo los lunes'], ['2', 'Solo los martes'], ['3', 'Solo los miércoles'],
+          ['4', 'Solo los jueves'], ['5', 'Solo los viernes'], ['6', 'Solo los sábados'], ['0', 'Solo los domingos'],
+        ] },
+        { name: 'hora', type: 'time', label: '¿A qué hora empieza?', value: '17:00', required: true },
+        { name: 'duracion', type: 'select', label: '¿Cuánto dura?', value: '120', options: [
+          ['60', '1 hora'], ['120', '2 horas'], ['180', '3 horas'], ['240', '4 horas'], ['480', 'Toda la tarde (8 h)'],
+        ] },
+      ],
+    });
+    if (!r) return;
+    const dias = r.dias === 'L-V' ? [1, 2, 3, 4, 5]
+      : r.dias === 'todos' ? [0, 1, 2, 3, 4, 5, 6]
+        : r.dias === 'finde' ? [6, 0] : [Number(r.dias)];
+    try {
+      await rpc('save_offer_rule', {
+        p_business: BIZ.id, p_offer: offerId, p_weekdays: dias,
+        p_start_time: r.hora, p_duration_min: Number(r.duracion),
+      });
+      toast('Se repetirá sola');
+      renderRules();
+    } catch (e) { toast(e.message, true); }
+  }
+
   const render = () => {
     $('#list').innerHTML = table({
       cols: [
@@ -282,6 +356,7 @@ PAGES.publicaciones = async (v, param) => {
             <a class="btn sm" href="#/publicaciones/${esc(o.id)}">Editar</a>
             ${o.kind === 'future_event' && o.reservations_enabled ? `<a class="btn sm ghost" href="#/asistentes/${esc(o.id)}">Asistentes</a>` : ''}
             <button class="btn sm ghost" data-act="${o.status === 'active' ? 'pause' : 'activate'}" data-id="${esc(o.id)}">${o.status === 'active' ? 'Pausar' : 'Activar'}</button>
+            ${o.kind === 'flash_offer' ? `<button class="btn sm ghost" data-act="repeat" data-id="${esc(o.id)}">Repetir…</button>` : ''}
             <button class="btn sm ghost" data-act="delete" data-id="${esc(o.id)}">Borrar</button>
           </div>` },
       ],
@@ -292,6 +367,10 @@ PAGES.publicaciones = async (v, param) => {
       b.onclick = async () => {
         const id = b.dataset.id;
         try {
+          if (b.dataset.act === 'repeat') {
+            await repetirDialogo(id);
+            return;
+          }
           if (b.dataset.act === 'delete') {
             if (!await confirmDlg('Borrar publicación', 'Se borra para siempre, junto con sus estadísticas. Si solo quieres que deje de verse, púlsale a «Pausar».', { danger: true, submit: 'Borrar' })) return;
             await sb.from('offers').delete().eq('id', id);
@@ -310,6 +389,7 @@ PAGES.publicaciones = async (v, param) => {
     [(o) => o.kind === 'flash_offer' ? o.redeem_start_at : o.event_at, 'cuándo'],
   ]);
   render();
+  renderRules();
 };
 
 /** Formulario de publicación (nueva o existente). */
