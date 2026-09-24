@@ -236,6 +236,11 @@ PAGES.resumen = async (v) => {
     </div>
     ${sub ? `<div class="card"><h2>Tu plan</h2><p style="margin:0"><b>${esc(sub.plan_name_es || sub.plan || '')}</b> ${sub.status === 'trial' ? tag('trial') : ''} · ${sub.max_active_offers == null ? 'sin límite de publicaciones activas' : `hasta ${sub.max_active_offers} publicaciones activas`}</p>
       <p class="muted" style="margin:6px 0 0">Para cambiar de plan escribe a <a class="link" href="mailto:info@klendar.app">info@klendar.app</a>.</p></div>` : ''}
+    <div class="card"><h2>Klendar en tu web</h2>
+      <p class="muted" style="margin:0 0 8px">Pega esta línea donde quieras que salga lo que tienes publicado. Se actualiza solo: no tienes que tocar nada más.</p>
+      <pre id="wcode" class="code">&lt;script src="https://klendar.app/widget.js" data-klendar="${esc(BIZ.id)}"&gt;&lt;/script&gt;</pre>
+      <p style="margin:8px 0 0"><button class="btn sm" id="wcopy">Copiar</button>
+        <a class="btn sm" href="https://klendar.app/widget/${esc(BIZ.id)}" target="_blank" rel="noopener">Ver cómo queda</a></p></div>
     <div class="card"><h2>Últimas publicaciones</h2>${table({
       cols: [
         { h: 'Publicación', r: (o) => `<b class="title">${esc(o.title)}</b><span class="sub">${esc(LABELS[o.kind])} · ${fmtDate(o.kind === 'flash_offer' ? o.redeem_start_at : o.event_at)}</span>` },
@@ -247,6 +252,14 @@ PAGES.resumen = async (v) => {
       rows: offers.slice(0, 8),
       empty: 'Todavía no has publicado nada.',
     })}</div>`;
+  const wcopy = $('#wcopy', v);
+  if (wcopy) {
+    wcopy.onclick = async () => {
+      await navigator.clipboard.writeText($('#wcode', v).textContent);
+      wcopy.textContent = 'Copiado';
+      setTimeout(() => { wcopy.textContent = 'Copiar'; }, 1500);
+    };
+  }
   $$('[data-go]', v).forEach((b) => {
     b.onclick = () => {
       const g = b.dataset.go;

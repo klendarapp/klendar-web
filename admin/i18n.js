@@ -236,7 +236,9 @@ const I18N = makeI18N({
   'Impagadas': 'Unpaid',
   'En prueba': 'On trial',
   'Gratis': 'Free',
-  'Básico': 'Basic',
+  'Gratis de lanzamiento': 'Launch, free',
+  'Fundador': 'Founder',
+  'Todos los planes': 'All plans',
   'Premium cambiado': 'Premium changed',
   'pendientes de moderar': 'pending moderation',
 

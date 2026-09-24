@@ -125,3 +125,8 @@
 .bar .bt i { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
 .bar .bn { text-align: right; font-weight: 700; }
 @media (max-width: 560px) { .bar { grid-template-columns: 96px 1fr 38px; font-size: 13px; } }
+
+/* La línea que el negocio se lleva a su web. */
+.code { margin: 0; padding: 10px 12px; border-radius: 12px; overflow-x: auto;
+  background: rgba(127,127,127,.12); border: 1px solid var(--line, rgba(127,127,127,.25));
+  font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: pre-wrap; word-break: break-all; }

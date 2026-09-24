@@ -90,11 +90,22 @@ export function media(url, poster) {
  * del día de una reunión, no lo que hay esta semana en la ciudad. */
 export const agendaBase = (lang) => (lang === 'en' ? '/en/whats-on' : '/agenda');
 
+/** Donde vive cada seccion en cada idioma. */
+export const exploreBase = (lang) => (lang === 'en' ? '/en/explore' : '/explorar');
+export const collectionBase = (lang) => (lang === 'en' ? '/en/collection' : '/coleccion');
+
 /** La misma página en el otro idioma: /o/x ⇄ /en/o/x, /agenda/x ⇄ /en/whats-on/x. */
 export const altPath = (path, lang) =>
   lang === 'en'
-    ? (path.replace(/^\/en\/whats-on/, '/agenda').replace(/^\/en/, '') || '/')
-    : `/en${path.replace(/^\/agenda/, '/whats-on')}`;
+    ? (path
+        .replace(/^\/en\/whats-on/, '/agenda')
+        .replace(/^\/en\/explore/, '/explorar')
+        .replace(/^\/en\/collection/, '/coleccion')
+        .replace(/^\/en/, '') || '/')
+    : `/en${path
+        .replace(/^\/agenda/, '/whats-on')
+        .replace(/^\/explorar/, '/explore')
+        .replace(/^\/coleccion/, '/collection')}`;
 
 /**
  * Página pública completa: cabecera del sitio, contenido y pie sencillo.
@@ -107,8 +118,8 @@ export const altPath = (path, lang) =>
 export function publicPage({ lang, path, title, description, head = '', body, image }) {
   const en = lang === 'en';
   const S = en
-    ? { how: 'How it works', biz: 'Businesses', sup: 'Support', agenda: "What's on" }
-    : { how: 'Cómo funciona', biz: 'Negocios', sup: 'Soporte', agenda: 'Agenda local' };
+    ? { how: 'How it works', biz: 'Businesses', sup: 'Support', agenda: "What's on", exp: 'Explore' }
+    : { how: 'Cómo funciona', biz: 'Negocios', sup: 'Soporte', agenda: 'Agenda local', exp: 'Explorar' };
   const og = image || `${BASE}/assets/og.png`;
   const es = en ? altPath(path, 'en') : path;
   const enPath = en ? path : altPath(path, 'es');
@@ -138,14 +149,15 @@ export function publicPage({ lang, path, title, description, head = '', body, im
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/site.css">
-<link rel="stylesheet" href="/assets/public.css?v=2">
+<link rel="stylesheet" href="/assets/site.css?v=20260924">
+<link rel="stylesheet" href="/assets/public.css?v=3">
 ${head}
 </head>
 <body>
 <header class="top"><div class="wrap">
   <a class="brand" href="/${en ? 'en/' : ''}"><img src="/assets/symbol.png" alt=""> Klendar</a>
   <nav class="main">
+    <a href="${exploreBase(lang)}/">${S.exp}</a>
     <a href="${agendaBase(lang)}/">${S.agenda}</a>
     <a href="${en ? '/en/#how-it-works' : '/#como'}">${S.how}</a>
     <a href="${en ? '/en/business-terms/' : '/negocios/'}">${S.biz}</a>

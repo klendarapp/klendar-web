@@ -30,10 +30,16 @@ createServer(async (req, res) => {
     // En inglés la cartelera se llama «what's on», no «agenda».
     else if ((m = rest.match(/^\/(agenda|whats-on)\/([^/]+)\/?$/))) { mod = await load(`functions/${en}${en ? 'whats-on' : 'agenda'}/[city].js`); params = { city: m[2] }; }
     else if (/^\/(agenda|whats-on)\/?$/.test(rest)) { mod = await load(`functions/${en}${en ? 'whats-on' : 'agenda'}/index.js`); }
+    // Explorar, categoria dentro de una ciudad y colecciones.
+    else if ((m = rest.match(/^\/(explorar|explore)\/?$/))) { mod = await load(`functions/${en}${en ? 'explore' : 'explorar'}/index.js`); }
+    else if ((m = rest.match(/^\/(agenda|whats-on)\/([^/]+)\/([^/]+)\/?$/))) { mod = await load(`functions/${en}${en ? 'whats-on' : 'agenda'}/[city]/[category].js`); params = { city: m[2], category: m[3] }; }
+    else if ((m = rest.match(/^\/(coleccion|collection)\/([^/]+)\/([^/]+)\/?$/))) { mod = await load(`functions/${en}${en ? 'collection' : 'coleccion'}/[slug]/[city].js`); params = { slug: m[2], city: m[3] }; }
+    else if ((m = rest.match(/^\/(coleccion|collection)\/([^/]+)\/?$/))) { mod = await load(`functions/${en}${en ? 'collection' : 'coleccion'}/[slug].js`); params = { slug: m[2] }; }
+    else if ((m = path.match(/^\/widget\/([^/]+)\/?$/))) { mod = await load('functions/widget/[id].js'); params = { id: m[1] }; }
     else if (path === '/sitemap-agenda.xml') { mod = await load('functions/sitemap-agenda.xml.js'); }
 
     if (mod) {
-      const request = new Request(`https://klendar.app${path}`, { headers: { 'accept-language': 'es' } });
+      const request = new Request(`https://klendar.app${path}${url.search}`, { headers: { 'accept-language': 'es' } });
       const out = await mod.onRequestGet({ request, params, env: process.env });
       res.writeHead(out.status, Object.fromEntries(out.headers));
       res.end(await out.text());

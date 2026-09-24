@@ -85,6 +85,20 @@ main.pub { padding: 34px 20px 72px; }
   color: var(--ink); font-weight: 700; font-size: 14px; }
 .cities a:hover { text-decoration: none; border-color: var(--accent); }
 
+/* ── Explorar: buscador, filtros y paginación ─────────────────────────── */
+.finder { display: flex; gap: 8px; margin: 18px 0 6px; flex-wrap: wrap; }
+.finder input[type=search] { flex: 1 1 260px; min-width: 0; padding: 12px 16px; border-radius: 999px;
+  border: 1px solid var(--glass-border); background: var(--glass); color: inherit; font: inherit; }
+.finder input[type=search]:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.filters { margin: 10px 0 4px; }
+.frow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px; }
+.flabel { font-size: 13px; color: var(--ink-2); margin-right: 2px; }
+.chip { padding: 7px 13px; border-radius: 999px; background: var(--glass); border: 1px solid var(--glass-border);
+  font-size: 14px; font-weight: 600; color: inherit; }
+.chip:hover { text-decoration: none; border-color: var(--accent); }
+.chip.on { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.chip.on .muted { color: inherit; opacity: .75; }
+.pager { display: flex; gap: 10px; align-items: center; margin: 18px 0; flex-wrap: wrap; }
 .empty { padding: 28px; border-radius: var(--radius); border: 1px dashed var(--glass-border); color: var(--ink-2); text-align: center; }
 
 .info { display: grid; gap: 10px; margin: 0 0 18px; font-size: 15px; }

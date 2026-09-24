@@ -154,6 +154,12 @@ const I18N = makeI18N({
   'Cuándo': 'When',
   'Dura': 'Lasts',
   'Ninguna.': 'None.',
+  'Klendar en tu web': 'Klendar on your website',
+  'Pega esta línea donde quieras que salga lo que tienes publicado. Se actualiza solo: no tienes que tocar nada más.':
+    'Paste this line wherever you want what you publish to show up. It updates itself: nothing else to maintain.',
+  'Copiar': 'Copy',
+  'Copiado': 'Copied',
+  'Ver cómo queda': 'See how it looks',
   'Plazas': 'Places',
   'Plazas por persona': 'Places per person',
   '1 (solo quien reserva)': '1 (just whoever books)',

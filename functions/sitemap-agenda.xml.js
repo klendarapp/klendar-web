@@ -7,6 +7,7 @@ import { BASE } from './_lib/public.js';
 export async function onRequestGet(ctx) {
   configure(ctx.env);
   const cities = (await rpcAll('public_cities', {})).filter((c) => c.city);
+  const collections = await rpcAll('public_collections', {});
   const today = new Date().toISOString().slice(0, 10);
   // Cada ciudad, en español y en inglés, enlazadas entre sí con hreflang.
   const urls = cities.map((c) => {
@@ -25,9 +26,45 @@ export async function onRequestGet(ctx) {
   </url>`).join('\n');
   }).join('\n');
 
+  // Cada categoria que hoy tiene algo en cada ciudad: es lo que la gente
+  // busca («peluquerias en Madrid») y se llena sola.
+  const catUrls = (await Promise.all(cities.map(async (c) => {
+    const slug = encodeURIComponent(String(c.city).toLowerCase());
+    const cats = await rpcAll('public_categories', { p_city: c.city });
+    return cats.map((k) => {
+      const es = `${BASE}/agenda/${slug}/${encodeURIComponent(k.slug)}/`;
+      const en = `${BASE}/en/whats-on/${slug}/${encodeURIComponent(k.slug)}/`;
+      return [es, en].map((loc) => `  <url>
+    <loc>${loc}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="${es}"/>
+    <xhtml:link rel="alternate" hreflang="en" href="${en}"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="${es}"/>
+  </url>`).join('\n');
+    }).join('\n');
+  }))).join('\n');
+
+  const colUrls = collections.map((k) => {
+    const es = `${BASE}/coleccion/${encodeURIComponent(k.slug)}/`;
+    const en = `${BASE}/en/collection/${encodeURIComponent(k.slug)}/`;
+    return [es, en].map((loc) => `  <url>
+    <loc>${loc}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="${es}"/>
+    <xhtml:link rel="alternate" hreflang="en" href="${en}"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="${es}"/>
+  </url>`).join('\n');
+  }).join('\n');
+
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
 ${urls}
+${catUrls}
+${colUrls}
 </urlset>
 `;
   return new Response(xml, {

@@ -301,7 +301,7 @@ PAGES.negocios = async (v, id) => {
     <div class="toolbar">
       <input id="q" class="grow" placeholder="Buscar por nombre, ciudad, email del dueño, CIF o id…" value="${esc(s.q || '')}">
       <select id="status">${[['all', 'Todos los estados'], ['pending', 'Pendientes'], ['verified', 'Verificados'], ['rejected', 'Rechazados']].map((o) => `<option value="${o[0]}" ${s.status === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
-      <select id="plan">${[['all', 'Todos los planes'], ['free', 'Gratis'], ['basic', 'Básico'], ['pro', 'Pro']].map((o) => `<option value="${o[0]}" ${(s.plan || 'all') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
+      <select id="plan">${[['all', 'Todos los planes'], ['free', 'Gratis de lanzamiento'], ['standard', 'Klendar'], ['founder', 'Fundador']].map((o) => `<option value="${o[0]}" ${(s.plan || 'all') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
       <select id="active">${[['', 'Activos e inactivos'], ['true', 'Solo activos'], ['false', 'Solo desactivados']].map((o) => `<option value="${o[0]}" ${(s.active ?? '') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
       <select id="sort">${[['created_desc', 'Más recientes'], ['created_asc', 'Más antiguos'], ['name', 'Por nombre'], ['redemptions', 'Más canjeos']].map((o) => `<option value="${o[0]}" ${(s.sort || 'created_desc') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
     </div>
@@ -458,7 +458,7 @@ async function businessAction(a, b, d) {
       const plans = await rpc('admin_plans');
       const cur = d.subscriptions.find((s) => ['trial', 'active', 'past_due'].includes(s.status));
       const r = await modal({ title: 'Cambiar plan', intro: 'Se cierra la suscripción vigente y se abre una nueva desde hoy (queda el histórico).', fields: [
-        { name: 'plan', label: 'Plan', type: 'select', value: cur?.plan || 'basic', options: plans.map((p) => [p.slug, `${p.names?.es || p.slug} · ${fmtMoney(p.price_cents)}/mes`]) },
+        { name: 'plan', label: 'Plan', type: 'select', value: cur?.plan || 'standard', options: plans.map((p) => [p.slug, `${p.names?.es || p.slug} · ${fmtMoney(p.price_cents)}/mes`]) },
         { name: 'status', label: 'Estado', type: 'select', value: 'active', options: [['active', 'Activa (pagada)'], ['trial', 'Prueba gratuita'], ['past_due', 'Impagada'], ['cancelled', 'Cancelada']] },
         { name: 'period_end', label: 'Fin del periodo', type: 'date', value: cur?.period_end || '', help: 'Vacío = sin fecha de fin.' },
         { name: 'method', label: 'Forma de pago', type: 'select', value: 'transfer', options: [['transfer', 'Transferencia'], ['cash', 'Efectivo'], ['card', 'Tarjeta'], ['none', 'Ninguna']] },

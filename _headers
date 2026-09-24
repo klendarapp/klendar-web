@@ -9,3 +9,8 @@
 /panel/*
   X-Robots-Tag: noindex, nofollow
   Cache-Control: no-store
+
+/widget/*
+  ! X-Frame-Options
+  Content-Security-Policy: frame-ancestors *
+  X-Robots-Tag: noindex

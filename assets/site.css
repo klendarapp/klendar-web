@@ -186,6 +186,11 @@ nav.main a.nav-panel:hover { background: var(--glass); text-decoration: none; }
 .plan .price span { color: var(--ink-2); font-size: 14px; }
 .plan ul { margin: 0; padding-left: 18px; color: var(--ink-2); font-size: 15px; }
 .plan li { margin-bottom: 4px; }
+.plan .note { margin: -6px 0 12px; color: var(--ink-2); font-size: 13px; }
+.plan .tag { display: inline-block; margin: 0 0 8px; padding: 3px 9px; border-radius: 999px; background: var(--accent-soft); color: var(--accent-text); font-weight: 800; font-size: 12px; }
+.plan.best { border-color: var(--accent); box-shadow: 0 18px 40px rgba(0,0,0,.18); }
+.callout { border: 1px solid var(--glass-border); background: var(--elevated); border-radius: 18px; padding: 14px 16px; margin: 18px 0; color: var(--ink-2); }
+.callout strong { color: var(--ink); }
 details.faq { border-bottom: 1px solid var(--glass-border); padding: 14px 0; }
 details.faq summary { cursor: pointer; font-weight: 700; font-family: var(--display); font-size: 17px; list-style: none; }
 details.faq summary::-webkit-details-marker { display: none; }

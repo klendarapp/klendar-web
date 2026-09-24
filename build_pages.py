@@ -12,9 +12,12 @@ from build_site import T, doc_page
 
 # Precios reales de `subscription_plans` (Supabase). Si cambian allí, aquí.
 PLANES = [
-    ('free', 'Gratis', 'Free', '0 €', '€0', 2, False, 0),
-    ('basic', 'Básico', 'Basic', '19 €', '€19', 10, True, 1),
-    ('pro', 'Pro', 'Pro', '49 €', '€49', None, True, 5),
+    # Un solo plan y el precio de fundador. Los límites por plan se quitaron:
+    # castigaban justo lo que llena el mapa, que es publicar.
+    ('standard', 'Klendar', 'Klendar', '19,90 €', '€19.90',
+     '199 €/año (dos meses gratis)', '€199/year (two months free)', False),
+    ('founder', 'Fundador', 'Founder', '9,90 €', '€9.90',
+     'Precio bloqueado de por vida', 'Price locked for life', True),
 ]
 
 PAGINAS = {}  # slug ES -> (slug EN, título ES, título EN, desc ES, desc EN, cuerpo ES, cuerpo EN)
@@ -46,7 +49,7 @@ PAGINAS['para-negocios'] = (
 </ul>
 
 <h2>Lo que cuesta</h2>
-<p>Hay un plan <strong>gratuito</strong> con dos publicaciones activas, y planes de pago si necesitas más. <a href="/precios/">Ver precios</a>.</p>
+<p>Ahora mismo es <strong>gratis</strong> mientras arrancamos en tu ciudad. Después, un solo plan de 19,90 € al mes sin límites, y precio de fundador si entras al principio. <a href="/precios/">Ver precios</a>.</p>
 
 <h2>Lo que no hacemos</h2>
 <p>No vendemos tus datos ni los de tus clientes, no cobramos por canje y no ponemos tu oferta por delante de otra porque pagues más: <a href="/preguntas/">en la app el orden lo elige la persona</a> (cerca de ti, empieza antes o nuevas). Se pueden destacar publicaciones, y cuando pasa <strong>se dice</strong>.</p>
@@ -80,7 +83,7 @@ PAGINAS['para-negocios'] = (
 </ul>
 
 <h2>What it costs</h2>
-<p>There is a <strong>free</strong> plan with two active publications, and paid plans if you need more. <a href="/en/pricing/">See pricing</a>.</p>
+<p>Right now it is <strong>free</strong> while we are starting in your city. After that, one plan at €19.90 a month with no limits, and a founder price if you come in early. <a href="/en/pricing/">See pricing</a>.</p>
 
 <h2>What we do not do</h2>
 <p>We do not sell your data or your customers' data, we do not charge per redemption, and we do not put your deal ahead of another because you pay more: <a href="/en/faq/">in the app the order is chosen by the person</a> (near you, starting soonest or newest). Publications can be featured, and when that happens <strong>we say so</strong>.</p>
@@ -98,20 +101,43 @@ PAGINAS['para-negocios'] = (
 
 
 def tabla_planes(lang):
+    es = lang == 'es'
+    ventajas_es = [
+        'Publicaciones sin límite: ofertas flash, eventos y reservas',
+        'Canjes sin límite y <strong>sin comisión</strong>',
+        'Estadísticas, informe exportable y lista de asistentes',
+        'Ficha del negocio, galería y panel para tu equipo',
+        'Sin permanencia: lo dejas cuando quieras',
+    ]
+    ventajas_en = [
+        'Unlimited publications: flash offers, events and bookings',
+        'Unlimited redemptions and <strong>no commission</strong>',
+        'Stats, exportable report and attendee list',
+        'Business page, gallery and a panel for your team',
+        'No lock-in: leave whenever you want',
+    ]
     filas = []
-    for _slug, es, en, p_es, p_en, act, analitica, boosts in PLANES:
-        nombre = es if lang == 'es' else en
-        precio = p_es if lang == 'es' else p_en
-        activas = (f'{act}' if act else ('sin límite' if lang == 'es' else 'no limit'))
+    for _slug, n_es, n_en, p_es, p_en, extra_es, extra_en, destacado in PLANES:
+        nombre = n_es if es else n_en
+        precio = p_es if es else p_en
+        extra = extra_es if es else extra_en
+        if destacado:
+            puntos = [
+                ('Todo lo del plan Klendar' if es else 'Everything in the Klendar plan'),
+                ('El precio no te sube nunca, ni cuando suba la tarifa'
+                 if es else 'Your price never goes up, even when the rate does'),
+                ('Plazas limitadas en cada ciudad' if es else 'Limited spots in each city'),
+            ]
+        else:
+            puntos = ventajas_es if es else ventajas_en
         filas.append(f'''
-    <div class="plan">
+    <div class="plan{' best' if destacado else ''}">
+      {'<p class="tag">' + ('Para los primeros de tu ciudad' if es else 'For the first in your city') + '</p>' if destacado else ''}
       <h3>{nombre}</h3>
-      <p class="price"><b>{precio}</b><span>{'/mes' if lang == 'es' else '/month'}</span></p>
+      <p class="price"><b>{precio}</b><span>{'/mes' if es else '/month'}</span></p>
+      <p class="note">{extra}</p>
       <ul>
-        <li>{activas} {'publicaciones activas' if lang == 'es' else 'active publications'}</li>
-        <li>{'Canjes ilimitados' if lang == 'es' else 'Unlimited redemptions'}</li>
-        <li>{('Estadísticas e informe exportable' if analitica else 'Cifras básicas') if lang == 'es' else ('Stats and exportable report' if analitica else 'Basic numbers')}</li>
-        <li>{(f'{boosts} destacado(s) al mes' if boosts else 'Sin destacados') if lang == 'es' else (f'{boosts} featured slot(s) per month' if boosts else 'No featured slots')}</li>
+        {''.join(f'<li>{p}</li>' for p in puntos)}
       </ul>
     </div>''')
     return '<div class="plans">' + ''.join(filas) + '\n  </div>'
@@ -120,19 +146,23 @@ def tabla_planes(lang):
 PAGINAS['precios'] = (
     'pricing',
     'Precios', 'Pricing',
-    'Plan gratuito, Básico 19 €/mes y Pro 49 €/mes. Sin comisiones por canje y sin permanencia.',
-    'Free plan, Basic €19/month and Pro €49/month. No commission per redemption, no lock-in.',
+    'Un solo plan, 19,90 €/mes sin límites. Gratis mientras arrancamos en tu ciudad, '
+    'sin comisiones por canje y sin permanencia.',
+    'One plan, €19.90/month with no limits. Free while we are starting in your city, '
+    'no commission per redemption and no lock-in.',
     f'''
-<p class="lead">Sin comisiones por canje y sin permanencia. Lo que cobras en tu local es tuyo entero.</p>
+<p class="lead">Un solo plan, sin límites y sin comisiones por canje. Lo que cobras en tu local es tuyo entero.</p>
+<p class="callout"><strong>Ahora mismo es gratis.</strong> Mientras una ciudad está arrancando no le cobramos a nadie: un mapa vacío no le sirve ni a los negocios ni a la gente. Cuando vayamos a empezar a cobrar en tu ciudad, te avisamos con un mes de antelación.</p>
 {tabla_planes('es')}
-<p class="note">Precios por negocio y mes, IVA no incluido.</p>
+<p class="note">Precio por negocio, IVA no incluido. Si tienes varios locales, a partir de tres te hacemos precio: escríbenos.</p>
 
 <h2>La letra pequeña, en dos líneas</h2>
 <ul>
-  <li><strong>Prueba.</strong> Al dar de alta el negocio empiezas con todas las funciones durante un tiempo; al acabar se pasa a Gratis salvo que contrates uno de pago.</li>
-  <li><strong>Cómo se paga.</strong> Mientras no tengamos pago con tarjeta, los planes se pagan por transferencia: escribes a <a href="mailto:info@klendar.app">info@klendar.app</a> y lo dejamos activado.</li>
-  <li><strong>Cambiar o dejarlo.</strong> Cuando quieras, escribiendo al mismo correo. No hay permanencia ni penalización.</li>
-  <li><strong>Qué es un «destacado».</strong> Una publicación que aparece arriba durante un rato. Cuando una publicación está destacada, la app lo dice: no se disfraza de recomendación.</li>
+  <li><strong>Prueba.</strong> Al dar de alta el negocio tienes 30 días con todo, sin tarjeta y sin que se renueve solo.</li>
+  <li><strong>Cómo se paga.</strong> Mientras no tengamos pago con tarjeta, por transferencia: escribes a <a href="mailto:info@klendar.app">info@klendar.app</a> y lo dejamos activado.</li>
+  <li><strong>Cambiar o dejarlo.</strong> Cuando quieras, en el mismo correo. No hay permanencia ni penalización, y no cobramos el mes empezado si te vas.</li>
+  <li><strong>Nunca cobramos por canje.</strong> Ni porcentaje ni euros por código: si te funciona bien, pagas lo mismo.</li>
+  <li><strong>Qué es un «destacado».</strong> Una publicación que aparece arriba durante un rato; va aparte y se pide por correo. Cuando una está destacada, la app lo dice: no se disfraza de recomendación.</li>
   <li><strong>El plan no cambia lo que ve la gente</strong> más allá de eso: el orden lo elige cada persona en los filtros.</li>
 </ul>
 
@@ -141,16 +171,18 @@ PAGINAS['precios'] = (
 <p style="margin-top:18px"><a class="pill accent" href="mailto:info@klendar.app?subject=Plan%20de%20Klendar">Preguntar por un plan</a> <a class="pill ghost" href="/para-negocios/">Cómo funciona</a></p>
 ''',
     f'''
-<p class="lead">No commission per redemption and no lock-in. What you charge at your venue is yours.</p>
+<p class="lead">One plan, no limits and no commission per redemption. What you charge at your venue is yours.</p>
+<p class="callout"><strong>Right now it is free.</strong> While a city is starting we charge nobody: an empty map is no use to businesses or to people. Before we start charging in your city, we tell you a month ahead.</p>
 {tabla_planes('en')}
-<p class="note">Prices per business and month, VAT not included.</p>
+<p class="note">Price per business, VAT not included. With several venues, from three onwards we quote you: just write.</p>
 
 <h2>The small print, in two lines</h2>
 <ul>
-  <li><strong>Trial.</strong> When you register your business you start with every feature for a while; after that it moves to Free unless you take a paid plan.</li>
-  <li><strong>How you pay.</strong> Until we have card payments, plans are paid by bank transfer: write to <a href="mailto:info@klendar.app">info@klendar.app</a> and we activate it.</li>
-  <li><strong>Changing or leaving.</strong> Whenever you want, at the same address. No lock-in, no penalty.</li>
-  <li><strong>What a «featured» slot is.</strong> A publication that shows at the top for a while. When a publication is featured, the app says so: it is not dressed up as a recommendation.</li>
+  <li><strong>Trial.</strong> When you register your business you get 30 days with everything, no card and no automatic renewal.</li>
+  <li><strong>How you pay.</strong> Until we have card payments, by bank transfer: write to <a href="mailto:info@klendar.app">info@klendar.app</a> and we activate it.</li>
+  <li><strong>Changing or leaving.</strong> Whenever you want, at the same address. No lock-in, no penalty, and we do not charge the month you are in if you go.</li>
+  <li><strong>We never charge per redemption.</strong> No percentage, no euros per code: if it works well for you, you pay the same.</li>
+  <li><strong>What a «featured» slot is.</strong> A publication that shows at the top for a while; it goes separately and you ask for it by email. When one is featured, the app says so: it is not dressed up as a recommendation.</li>
   <li><strong>Your plan does not change what people see</strong> beyond that: the order is chosen by each person in the filters.</li>
 </ul>
 
@@ -163,7 +195,7 @@ PAGINAS['precios'] = (
 
 # ── Preguntas frecuentes ────────────────────────────────────────────────────
 FAQ_ES = [
-    ('¿Cuánto cuesta usar Klendar?', 'Para quien busca planes, nada. Para los negocios hay un plan gratuito y planes de pago; puedes verlos en <a href="/precios/">precios</a>.'),
+    ('¿Cuánto cuesta usar Klendar?', 'Para quien busca planes, nada. Para los negocios hay un solo plan, y ahora mismo es gratis mientras arrancamos; los detalles están en <a href="/precios/">precios</a>.'),
     ('¿Hace falta cuenta para mirar?', 'No. Puedes ver ofertas y eventos sin registrarte, en la app y en la web. La cuenta hace falta para canjear, guardar planes o recibir avisos.'),
     ('¿Cómo se canjea una oferta?', 'Pulsas «Canjear» y te sale un código QR de un solo uso. Se lo enseñas al negocio, que lo escanea o escribe el código. Ojo: algunos códigos caducan a los pocos minutos, así que se pide estando ya en el local.'),
     ('Mi código no funciona', 'Suele ser una de tres: ya se usó, caducó (los de barra duran minutos) o es de otro negocio. En la app, en «Mis planes», ves el estado de cada uno. Si algo no cuadra, escríbenos con el código a <a href="mailto:info@klendar.app">info@klendar.app</a>.'),
@@ -177,7 +209,7 @@ FAQ_ES = [
     ('¿En qué ciudades está?', 'Estamos empezando. Si en la tuya todavía no hay nada, en <a href="/agenda/">la agenda</a> lo verás vacío: escríbenos y lo arrancamos.'),
 ]
 FAQ_EN = [
-    ('How much does Klendar cost?', 'For people looking for plans, nothing. For businesses there is a free plan and paid plans; see <a href="/en/pricing/">pricing</a>.'),
+    ('How much does Klendar cost?', 'For people looking for plans, nothing. For businesses there is a single plan, and right now it is free while we are starting; the details are in <a href="/en/pricing/">pricing</a>.'),
     ('Do I need an account to look?', 'No. You can see deals and events without signing up, both in the app and on the web. An account is needed to redeem, save plans or get alerts.'),
     ('How do I redeem a deal?', 'You tap «Redeem» and get a single-use QR code. You show it to the business, which scans it or types the code. Careful: some codes expire within minutes, so ask for it once you are at the venue.'),
     ('My code does not work', 'Usually one of three: it was already used, it expired (bar codes last minutes) or it belongs to another business. In the app, under «My plans», you can see the status of each one. If something is off, write to us with the code at <a href="mailto:info@klendar.app">info@klendar.app</a>.'),
@@ -381,7 +413,7 @@ PAGINAS['sobre'] = (
 <p>Que lo que pasa cerca de ti se entere quien está cerca de ti. Ni un buscador de cupones ni una red social más: una lista de lo que hay <strong>hoy</strong> a tu alrededor, con el tiempo que le queda y las plazas que quedan, y un negocio al otro lado que puede publicarla en un minuto.</p>
 
 <h2>Cómo se gana dinero</h2>
-<p>Con los planes de los negocios (<a href="/precios/">precios</a>), y solo con eso. <strong>No cobramos comisión por canje</strong>, no vendemos datos y no hay publicidad de terceros. Un negocio puede destacar una publicación, y cuando lo hace la app lo dice.</p>
+<p>Con el plan de los negocios (<a href="/precios/">precios</a>), y solo con eso. <strong>No cobramos comisión por canje</strong>, no vendemos datos y no hay publicidad de terceros. Un negocio puede destacar una publicación, y cuando lo hace la app lo dice.</p>
 
 <h2>Lo que no vamos a hacer</h2>
 <ul>
@@ -401,7 +433,7 @@ PAGINAS['sobre'] = (
 <p>Make what is happening near you reach the people who are near you. Not a coupon search engine, not another social network: a list of what is on <strong>today</strong> around you, with the time it has left and the places still free, and a business on the other side that can publish it in a minute.</p>
 
 <h2>How it makes money</h2>
-<p>From business plans (<a href="/en/pricing/">pricing</a>), and only from that. <strong>We take no commission per redemption</strong>, we do not sell data and there is no third-party advertising. A business can feature a publication, and when it does, the app says so.</p>
+<p>From the business plan (<a href="/en/pricing/">pricing</a>), and only from that. <strong>We take no commission per redemption</strong>, we do not sell data and there is no third-party advertising. A business can feature a publication, and when it does, the app says so.</p>
 
 <h2>What we are not going to do</h2>
 <ul>
