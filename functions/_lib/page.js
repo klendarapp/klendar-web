@@ -4,8 +4,20 @@
 // que 404.html pero con título, descripción e imagen del contenido, para que
 // WhatsApp, Telegram, X, etc. muestren una vista previa útil.
 
-export const SUPABASE_URL = 'https://dpbbtgwxrlqlplbrtjuq.supabase.co';
-export const SUPABASE_KEY = 'sb_publishable_gNwxFIJGW_o_lGhv3si6IQ_35xHCq30';
+// A qué Supabase apuntamos. Lo mandan las variables de Cloudflare Pages
+// (SUPABASE_URL / SUPABASE_KEY) y, si no están, se usa dev, que es lo que hay
+// hoy. Igual que `/config.js` para el panel: un solo sitio que cambiar.
+let CFG = {
+  url: 'https://dpbbtgwxrlqlplbrtjuq.supabase.co',
+  key: 'sb_publishable_gNwxFIJGW_o_lGhv3si6IQ_35xHCq30',
+};
+
+/** Cada petición pasa por aquí antes de tocar la base. */
+export function configure(env) {
+  if (env?.SUPABASE_URL && env?.SUPABASE_KEY) {
+    CFG = { url: env.SUPABASE_URL, key: env.SUPABASE_KEY };
+  }
+}
 const BASE = 'https://klendar.app';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -13,9 +25,9 @@ export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&a
 export const isUuid = (s) => UUID.test(s || '');
 
 export async function rpc(fn, args) {
-  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+  const r = await fetch(`${CFG.url}/rest/v1/rpc/${fn}`, {
     method: 'POST',
-    headers: { apikey: SUPABASE_KEY, 'Content-Type': 'application/json' },
+    headers: { apikey: CFG.key, 'Content-Type': 'application/json' },
     body: JSON.stringify(args),
   });
   if (!r.ok) return null;
@@ -25,9 +37,9 @@ export async function rpc(fn, args) {
 
 /** Igual que `rpc`, pero para funciones que devuelven una lista. */
 export async function rpcAll(fn, args) {
-  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+  const r = await fetch(`${CFG.url}/rest/v1/rpc/${fn}`, {
     method: 'POST',
-    headers: { apikey: SUPABASE_KEY, 'Content-Type': 'application/json' },
+    headers: { apikey: CFG.key, 'Content-Type': 'application/json' },
     body: JSON.stringify(args),
   });
   if (!r.ok) return [];

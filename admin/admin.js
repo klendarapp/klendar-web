@@ -3,8 +3,16 @@
    de datos: las claves de aquí son públicas (anon/publishable). */
 'use strict';
 
-const SUPABASE_URL = 'https://dpbbtgwxrlqlplbrtjuq.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_gNwxFIJGW_o_lGhv3si6IQ_35xHCq30';
+// El proyecto al que apuntamos viene de `config.js` (un solo sitio para
+// cambiar dev por producción). Si faltara, no se inventa nada: se avisa.
+const ENV = globalThis.KLENDAR_ENV || {};
+const SUPABASE_URL = ENV.url;
+const SUPABASE_KEY = ENV.key;
+if (!SUPABASE_URL || !SUPABASE_KEY) {
+  document.body.innerHTML = '<p style="padding:24px">Falta la configuración '
+    + '(<code>/config.js</code>). Avisa a soporte.</p>';
+  throw new Error('sin configuración');
+}
 const APP_URL = 'https://klendar.app';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 

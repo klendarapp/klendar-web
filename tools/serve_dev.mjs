@@ -33,7 +33,7 @@ createServer(async (req, res) => {
 
     if (mod) {
       const request = new Request(`https://klendar.app${path}`, { headers: { 'accept-language': 'es' } });
-      const out = await mod.onRequestGet({ request, params });
+      const out = await mod.onRequestGet({ request, params, env: process.env });
       res.writeHead(out.status, Object.fromEntries(out.headers));
       res.end(await out.text());
       return;

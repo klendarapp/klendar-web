@@ -1,10 +1,11 @@
-import { rpcAll } from './_lib/page.js';
+import { configure, rpcAll } from './_lib/page.js';
 import { BASE } from './_lib/public.js';
 
 // Sitemap de las agendas por ciudad. Es dinámico porque las ciudades aparecen
 // solas: en cuanto un negocio publica en un sitio nuevo, esa agenda existe.
 
-export async function onRequestGet() {
+export async function onRequestGet(ctx) {
+  configure(ctx.env);
   const cities = (await rpcAll('public_cities', {})).filter((c) => c.city);
   const today = new Date().toISOString().slice(0, 10);
   // Cada ciudad, en español y en inglés, enlazadas entre sí con hreflang.
