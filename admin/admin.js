@@ -1157,6 +1157,7 @@ PAGES.colecciones = async (v) => {
 PAGES.configuracion = async (v) => {
   const cfg = await rpc('admin_config');
   const mv = cfg.min_version?.value || {}, mt = cfg.maintenance?.value || {}, sp = cfg.send_push?.value || {};
+  const rl = cfg.rules?.value || {};
   const limits = await rpc('admin_rate_limits', { p_limit: 50 });
   v.innerHTML = `
     <div class="page-head"><h1>Configuración</h1></div>
@@ -1164,6 +1165,10 @@ PAGES.configuracion = async (v) => {
     <div class="grid2">
       <div class="card"><h2>Versión mínima de la app</h2><form id="mvf" style="display:grid;gap:10px"><label class="f"><span>Android</span><input name="android" value="${esc(mv.android || '')}" placeholder="0.1.0"></label><label class="f"><span>iOS</span><input name="ios" value="${esc(mv.ios || '')}" placeholder="0.1.0"></label><div><button class="btn primary sm">Guardar</button> <span class="muted small">actualizado ${fmtDate(cfg.min_version?.updated_at)}</span></div></form></div>
       <div class="card"><h2>Modo mantenimiento</h2><form id="mtf" style="display:grid;gap:10px"><label class="f" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="enabled" ${mt.enabled ? 'checked' : ''}><span>App en mantenimiento (bloquea a todos los usuarios)</span></label><label class="f"><span>Mensaje</span><textarea name="message">${esc(mt.message || '')}</textarea></label><div><button class="btn ${mt.enabled ? 'bad' : 'primary'} sm">Guardar</button> <span class="muted small">actualizado ${fmtDate(cfg.maintenance?.updated_at)}</span></div></form></div>
+      <div class="card"><h2>Reglas de publicación</h2><form id="rlf" style="display:grid;gap:10px">
+        <label class="f" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="block2x1" ${rl.block_2x1_alcohol !== false ? 'checked' : ''}><span>Bloquear promociones <b>2x1 en bebidas alcohólicas</b></span></label>
+        <p class="muted small" style="margin:0">La Ley 34/1988 y varias leyes autonómicas prohíben las promociones que incentivan beber más por el mismo dinero («2x1», «barra libre»), aunque el local sea solo para mayores. La sanción recae en el negocio y puede alcanzar a quien publica el anuncio. Si lo desactivas, asumimos ese riesgo.</p>
+        <div><button class="btn primary sm">Guardar</button> <span class="muted small">actualizado ${fmtDate(cfg.rules?.updated_at)}</span></div></form></div>
       <div class="card"><h2>Envío de push</h2><form id="spf" style="display:grid;gap:10px"><label class="f"><span>URL de la función</span><input name="url" value="${esc(sp.url || '')}"></label><label class="f"><span>Clave</span><input name="key" value="${esc(sp.key || '')}"></label><div><button class="btn primary sm">Guardar</button></div></form></div>
       <div class="card"><h2>Mantenimiento</h2><p class="muted small">Las ofertas caducan solas cada 5 minutos (cron). Si ves alguna caducada que sigue apareciendo, fuerza la comprobación.</p><div class="actions"><button class="btn sm" id="expire">Caducar ofertas vencidas ahora</button></div>
         <h3 style="margin-top:16px">Límites anti-abuso (últimas 24 h)</h3>${table({ cols: [{ h: 'Usuario', r: (x) => esc(x.user_email || '—') }, { h: 'Acción', r: (x) => esc(x.action) }, { h: 'Ventana', r: (x) => fmtDate(x.window_start) }, { h: 'Intentos', num: true, r: (x) => x.hits }], rows: limits, empty: 'Nadie ha tocado un límite.' })}</div>
@@ -1172,6 +1177,7 @@ PAGES.configuracion = async (v) => {
   $('#mvf').onsubmit = (e) => { e.preventDefault(); save('min_version', { android: e.target.android.value.trim(), ios: e.target.ios.value.trim() }); };
   $('#mtf').onsubmit = async (e) => { e.preventDefault(); if (e.target.enabled.checked && !await confirmDlg('Activar mantenimiento', 'Todos los usuarios verán el mensaje y no podrán usar la app hasta que lo desactives.', { danger: true, submit: 'Activar' })) return; save('maintenance', { enabled: e.target.enabled.checked, message: e.target.message.value.trim() || null }); };
   $('#spf').onsubmit = (e) => { e.preventDefault(); save('send_push', { url: e.target.url.value.trim(), key: e.target.key.value.trim() }); };
+  $('#rlf').onsubmit = (e) => { e.preventDefault(); save('rules', { block_2x1_alcohol: e.target.block2x1.checked }); };
   $('#expire').onclick = async () => { try { const n = await rpc('admin_run_expire_offers'); toast(`${n} oferta(s) caducadas`); } catch (e) { toast(e.message, true); } };
 };
 
