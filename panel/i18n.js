@@ -335,12 +335,10 @@ const I18N = makeI18N({
 
     // ── Ayuda y textos largos ─────────────────────────────────────────────
     'Qué puedes hacer aquí': 'What you can do here',
-    'Este panel hace lo mismo que la app, pero desde el ordenador: publicar ofertas y eventos, ver cómo van, validar códigos en la puerta y llevar el equipo.':
-      'This dashboard does the same as the app, but from a computer: publish deals and events, see how they are doing, validate codes at the door and manage the team.',
-    'Lo único que se hace solo desde la app es': 'The only things you can do just from the app are',
-    'dar de alta el negocio': 'registering the business',
-    '(hace falta la ubicación exacta) y': '(it needs the exact location) and',
-    'escanear el QR con la cámara': 'scanning the QR code with the camera',
+    'Este panel hace lo mismo que la app, desde el ordenador o desde el navegador del móvil: dar de alta el negocio, publicar ofertas y eventos, ver cómo van, validar códigos en la puerta y llevar el equipo.':
+      'This dashboard does the same as the app, from a computer or a phone browser: register the business, publish deals and events, see how they are doing, validate codes at the door and manage the team.',
+    'Para validar, escanea el QR con la cámara (la del móvil o la del portátil) o escribe el código que la persona tiene debajo del QR.':
+      'To validate, scan the QR with the camera (your phone or laptop) or type the code the person has under the QR.',
     'Una oferta que funciona': 'A deal that works',
     'Ventana realista: lo que de verdad puedes servir.':
       'A realistic window: what you can actually serve.',

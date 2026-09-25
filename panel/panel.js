@@ -1907,8 +1907,8 @@ PAGES.ayuda = async (v) => {
   v.innerHTML = `
     <div class="page-head"><h1>Ayuda</h1></div>
     <div class="card"><h2>Qué puedes hacer aquí</h2>
-      <p>Este panel hace lo mismo que la app, pero desde el ordenador: publicar ofertas y eventos, ver cómo van, validar códigos en la puerta y llevar el equipo.</p>
-      <p class="muted">Lo único que se hace solo desde la app es <b>dar de alta el negocio</b> (hace falta la ubicación exacta) y <b>escanear el QR con la cámara</b>.</p></div>
+      <p>Este panel hace lo mismo que la app, desde el ordenador o desde el navegador del móvil: dar de alta el negocio, publicar ofertas y eventos, ver cómo van, validar códigos en la puerta y llevar el equipo.</p>
+      <p class="muted">Para validar, escanea el QR con la cámara (la del móvil o la del portátil) o escribe el código que la persona tiene debajo del QR.</p></div>
     <div class="grid2">
       <div class="card"><h3>Una oferta que funciona</h3><ul style="margin:0;padding-left:18px">
         <li>Título corto y concreto, con el precio dentro.</li>
