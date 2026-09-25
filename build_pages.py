@@ -214,15 +214,24 @@ def tabla_planes(lang):
 PAGINAS['precios'] = (
     'pricing',
     'Precios', 'Pricing',
-    'Un solo plan, 19,90 €/mes sin límites. Gratis mientras arrancamos en tu ciudad, '
-    'sin comisiones por canje y sin permanencia.',
-    'One plan, €19.90/month with no limits. Free while we are starting in your city, '
-    'no commission per redemption and no lock-in.',
+    'Un solo plan, 19,90 €/mes sin límites y menos por local si tienes varios. '
+    'Gratis mientras arrancamos en tu ciudad, sin comisiones por canje y sin permanencia.',
+    'One plan, €19.90/month with no limits and less per venue if you have several. '
+    'Free while we are starting in your city, no commission per redemption and no lock-in.',
     f'''
 <p class="lead">Un solo plan, sin límites y sin comisiones por canje. Lo que cobras en tu local es tuyo entero.</p>
 <p class="callout"><strong>Ahora mismo es gratis.</strong> Mientras una ciudad está arrancando no le cobramos a nadie: un mapa vacío no le sirve ni a los negocios ni a la gente. Cuando vayamos a empezar a cobrar en tu ciudad, te avisamos con un mes de antelación.</p>
 {tabla_planes('es')}
-<p class="note">Precio por negocio, IVA no incluido. Si tienes varios locales, a partir de tres te hacemos precio: escríbenos.</p>
+<p class="note">Precio por local, IVA no incluido.</p>
+
+<h2>¿Varios locales?</h2>
+<p>El precio es <strong>por local</strong>, porque cada uno tiene su público, sus códigos y sus números. A partir del segundo baja:</p>
+<table class="tiers">
+  <tr><td>1 local</td><td><b>19,90 €</b> al mes</td></tr>
+  <tr><td>2 a 5 locales</td><td><b>15 €</b> al mes por local</td></tr>
+  <tr><td>6 o más</td><td><b>12 €</b> al mes por local, con una persona de contacto</td></tr>
+</table>
+<p><strong>Publicar en varios locales a la vez va incluido.</strong> Escribes la oferta una vez, marcas en qué locales la quieres y cada uno recibe la suya, con su dirección y su propio código; las cifras las ves por separado y sumadas. No cobramos aparte por ahorrarte el trabajo de escribirlo tres veces.</p>
 
 <h2>La letra pequeña, en dos líneas</h2>
 <ul>
@@ -242,7 +251,16 @@ PAGINAS['precios'] = (
 <p class="lead">One plan, no limits and no commission per redemption. What you charge at your venue is yours.</p>
 <p class="callout"><strong>Right now it is free.</strong> While a city is starting we charge nobody: an empty map is no use to businesses or to people. Before we start charging in your city, we tell you a month ahead.</p>
 {tabla_planes('en')}
-<p class="note">Price per business, VAT not included. With several venues, from three onwards we quote you: just write.</p>
+<p class="note">Price per venue, VAT not included.</p>
+
+<h2>Several venues?</h2>
+<p>The price is <strong>per venue</strong>, because each one has its own audience, its own codes and its own numbers. From the second one it drops:</p>
+<table class="tiers">
+  <tr><td>1 venue</td><td><b>€19.90</b> a month</td></tr>
+  <tr><td>2 to 5 venues</td><td><b>€15</b> a month per venue</td></tr>
+  <tr><td>6 or more</td><td><b>€12</b> a month per venue, with someone to talk to</td></tr>
+</table>
+<p><strong>Publishing to several venues at once is included.</strong> You write the offer once, tick the venues you want and each one gets its own, with its own address and its own code; you see the numbers per venue and added up. We do not charge extra for saving you the work of typing it three times.</p>
 
 <h2>The small print, in two lines</h2>
 <ul>

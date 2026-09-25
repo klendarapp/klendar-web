@@ -198,6 +198,9 @@ nav.main a.nav-panel:hover { background: var(--glass); text-decoration: none; }
 .calc output { display: block; margin-top: 6px; padding-top: 12px; border-top: 1px solid var(--glass-border);
   font-size: 16px; line-height: 1.5; }
 .calc .mu { color: var(--ink-2); font-size: 14px; }
+.tiers { width: 100%; max-width: 520px; border-collapse: collapse; margin: 14px 0 6px; }
+.tiers td { padding: 10px 0; border-bottom: 1px solid var(--glass-border); font-size: 15px; }
+.tiers td:last-child { text-align: right; }
 .callout { border: 1px solid var(--glass-border); background: var(--elevated); border-radius: 18px; padding: 14px 16px; margin: 18px 0; color: var(--ink-2); }
 .callout strong { color: var(--ink); }
 details.faq { border-bottom: 1px solid var(--glass-border); padding: 14px 0; }
