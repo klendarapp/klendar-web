@@ -171,3 +171,7 @@ a.link { color: var(--accent-text); font-weight: 600; }
 .topbar .lang a.on, .login .lang a.on, .me .lang a.on { background: var(--accent); color: var(--on-accent); }
 .me .lang { margin-top: 8px; }
 .login .lang { margin: 0 auto; }
+
+/* Sube o baja respecto a la semana anterior. */
+.up { color: #2ECC71; font-weight: 700; font-size: 12px; }
+.down { color: #FF5C5C; font-weight: 700; font-size: 12px; }

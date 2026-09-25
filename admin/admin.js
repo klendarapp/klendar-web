@@ -132,7 +132,7 @@ function bars(series, key, labelFn) {
 // Tabla + paginación.
 function table({ cols, rows, onRow, empty = 'Nada por aquí.' }) {
   if (!rows.length) return `<div class="tbl-wrap"><div class="empty">${esc(empty)}</div></div>`;
-  return `<div class="tbl-wrap"><table class="tbl"><thead><tr>${cols.map((c) => `<th ${c.num ? 'class="num"' : ''}>${esc(c.h)}</th>`).join('')}</tr></thead><tbody>${rows.map((r, i) => `<tr class="${onRow ? 'row' : ''}" data-i="${i}">${cols.map((c) => `<td ${c.num ? 'class="num"' : ''}>${c.r(r)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+  return `<div class="tbl-wrap"><table class="tbl"><thead><tr>${cols.map((c) => `<th ${c.num ? 'class="num"' : ''}>${esc(c.h)}</th>`).join('')}</tr></thead><tbody>${rows.map((r, i) => `<tr class="${onRow ? 'row' : ''}" data-i="${i}">${cols.map((c) => `<td ${c.num ? 'class="num"' : ''}>${c.r(r, i)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
 }
 function pager(state, total, onChange) {
   const pages = Math.max(1, Math.ceil(total / state.limit));
@@ -186,7 +186,7 @@ document.addEventListener('keydown', (e) => { if (e.key === '/' && !/input|texta
 // ── Navegación ──────────────────────────────────────────────────────────────
 const NAV = [
   ['group', 'Actividad'],
-  ['resumen', '📊', 'Resumen'], ['ciudades', '🗺', 'Ciudades'], ['negocios', '🏪', 'Negocios'], ['publicaciones', '⚡', 'Publicaciones'], ['canjeos', '🎟', 'Canjeos'], ['usuarios', '👤', 'Usuarios'],
+  ['resumen', '📊', 'Resumen'], ['semanas', '📈', 'Semana a semana'], ['ciudades', '🗺', 'Ciudades'], ['negocios', '🏪', 'Negocios'], ['publicaciones', '⚡', 'Publicaciones'], ['canjeos', '🎟', 'Canjeos'], ['usuarios', '👤', 'Usuarios'],
   ['group', 'Moderación'],
   ['denuncias', '🚩', 'Denuncias'], ['resenas', '💬', 'Reseñas y posts'], ['sugerencias', '💡', 'Sugerencias'],
   ['group', 'Negocio'],
@@ -234,6 +234,58 @@ window.addEventListener('hashchange', route);
 const go = (h) => { location.hash = h; };
 
 // ── Resumen ─────────────────────────────────────────────────────────────────
+PAGES.semanas = async (v) => {
+  const [k, dormidos] = await Promise.all([
+    rpc('admin_weekly_kpis', { p_weeks: 10 }),
+    rpc('admin_sleeping_businesses', { p_days: 30 }),
+  ]);
+  const semanas = (k?.semanas || []).slice().reverse();
+  const dorm = dormidos?.negocios || [];
+  // La flecha compara con la semana anterior: un número suelto no dice nada.
+  const delta = (fila, anterior, campo) => {
+    if (!anterior) return '';
+    const a = Number(anterior[campo] || 0);
+    const b = Number(fila[campo] || 0);
+    if (a === b) return '<span class="muted"> =</span>';
+    const sube = b > a;
+    const pct = a === 0 ? '' : ` ${Math.round(Math.abs((b - a) / a) * 100)} %`;
+    return `<span class="${sube ? 'up' : 'down'}"> ${sube ? '▲' : '▼'}${pct}</span>`;
+  };
+
+  v.innerHTML = `
+    <div class="page-head"><h1>Semana a semana</h1></div>
+    ${helpBox('¿Qué miro aquí?', `<p><b>Gente</b> es quien ha hecho algo esa semana (guardar, canjear o marcar favorito), que es más honesto que contar quién abrió la app. <b>Conversión</b> es de cada cien publicaciones vistas, cuántas se canjearon: si baja, o lo que se publica no interesa o cuesta canjearlo.</p>
+      <p><b>Negocios activos</b> son los que publicaron algo esa semana. Es el número que mata una app como esta: sin negocios publicando, el resto da igual.</p>`)}
+    <div class="card"><h2>Últimas semanas</h2>${table({
+      cols: [
+        // Solo el día: una semana no empieza a las 2:00.
+        { h: 'Semana', r: (x) => new Date(`${x.semana}T00:00:00`).toLocaleDateString(LOC(), { day: 'numeric', month: 'short' }) },
+        { h: 'Gente', num: true, r: (x, i) => fmtNum(x.gente) + delta(x, semanas[i + 1], 'gente') },
+        { h: 'Altas', num: true, r: (x) => fmtNum(x.altas) },
+        { h: 'Publicaciones', num: true, r: (x, i) => fmtNum(x.publicaciones) + delta(x, semanas[i + 1], 'publicaciones') },
+        { h: 'Vistas', num: true, r: (x) => fmtNum(x.vistas) },
+        { h: 'Canjes', num: true, r: (x, i) => fmtNum(x.canjes) + delta(x, semanas[i + 1], 'canjes') },
+        { h: 'Conversión', num: true, r: (x) => x.conversion == null ? '—' : `${String(x.conversion).replace('.', ',')} %` },
+        { h: 'Negocios activos', num: true, r: (x, i) => fmtNum(x.negocios_activos) + delta(x, semanas[i + 1], 'negocios_activos') },
+        { h: 'Negocios nuevos', num: true, r: (x) => fmtNum(x.negocios_nuevos) },
+      ],
+      rows: semanas,
+      empty: 'Todavía no hay semanas que enseñar.',
+    })}</div>
+    <div class="card"><h2>Negocios dormidos</h2>
+      <p class="muted">Publicaron alguna vez y llevan más de un mes sin hacerlo. Esto no es un número para mirar: es la lista a la que hay que llamar.</p>
+      ${table({
+        cols: [
+          { h: 'Negocio', r: (x) => `<b class="title">${esc(x.name)}</b><span class="sub">${esc(x.city || '')}</span>` },
+          { h: 'Última publicación', r: (x) => fmtDate(x.ultima) },
+          { h: 'Publicaciones', num: true, r: (x) => fmtNum(x.total) },
+          { h: '', r: (x) => `<a class="btn sm" href="#/negocios/${esc(x.id)}">Abrir</a>` },
+        ],
+        rows: dorm,
+        empty: 'Ninguno: todos han publicado este mes.',
+      })}</div>`;
+};
+
 PAGES.resumen = async (v) => {
   const k = await refreshBadges();
   if (!k) throw new Error('Esta cuenta no es administradora.');
