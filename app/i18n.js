@@ -368,4 +368,6 @@ const APP_EN = {
   "Contacto y soporte": "Contact and support",
   "Términos de uso": "Terms of use",
   "Política de privacidad": "Privacy policy",
+  "Repite la contraseña": "Repeat the password",
+  "Ese correo no parece válido.": "That email does not look valid.",
 };

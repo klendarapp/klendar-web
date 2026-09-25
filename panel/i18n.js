@@ -427,4 +427,5 @@ const I18N = makeI18N({
     "No encontramos ninguna cámara en este dispositivo.": "We could not find a camera on this device.",
     "No se ha podido abrir la cámara. Escribe el código a mano.": "The camera could not be opened. Type the code by hand.",
     "Continuar con Google": "Continue with Google",
+  "Escribe el premio (sé concreto: «un café con leche gratis»).": "Write the reward (be specific: “a free coffee”).",
 });

@@ -110,6 +110,9 @@ async function llamar(fn, args = {}) {
   return d;
 }
 
+/** El mismo patrón de correo que la app (AuthForm.email). */
+const CORREO_OK = /^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/;
+
 // ── Sesión ────────────────────────────────────────────────────────────────
 let YO = null;
 async function sesion() {
@@ -391,9 +394,10 @@ RUTAS.registro = async (_p, params) => {
       ? 'Primero tu cuenta personal (la misma para la web y la app). Justo después das de alta tu negocio.'
       : 'Es la misma cuenta para la web y para la app.'))}</p>
     <form id="f" class="formu" novalidate>
-      <label>${esc(t('Nombre'))}<input name="name" autocomplete="name" maxlength="60" required></label>
+      <label>${esc(t('Nombre'))}<input name="name" autocomplete="name" maxlength="40" required></label>
       <label>${esc(t('Correo'))}<input name="email" type="email" autocomplete="email" required></label>
       <label>${esc(t('Contraseña'))} <small>${esc(t('(8 caracteres o más)'))}</small><input name="password" type="password" autocomplete="new-password" minlength="8" required></label>
+      <label>${esc(t('Repite la contraseña'))}<input name="password2" type="password" autocomplete="new-password" minlength="8" required></label>
       <label>${esc(t('Fecha de nacimiento'))}<input name="birth" type="date" required></label>
       <label class="check"><input type="checkbox" name="terms" required>
         <span>${t('He leído y acepto los <a href="/terminos/" target="_blank">términos</a> y la <a href="/privacidad/" target="_blank">privacidad</a>.')}</span></label>
@@ -415,7 +419,10 @@ RUTAS.registro = async (_p, params) => {
     const nac = String(f.get('birth') || '');
     const err = $('#err');
     if (!nombre || !email) { err.textContent = t('Faltan tu nombre o tu correo.'); return; }
+    // Las mismas comprobaciones que la app (AuthForm).
+    if (!CORREO_OK.test(email)) { err.textContent = t('Ese correo no parece válido.'); return; }
     if (password.length < 8) { err.textContent = t('La contraseña tiene que tener al menos 8 caracteres.'); return; }
+    if (password !== String(f.get('password2') || '')) { err.textContent = t('Las contraseñas no coinciden.'); return; }
     if (!nac) { err.textContent = t('Pon tu fecha de nacimiento.'); return; }
     const d = new Date(`${nac}T12:00:00`);
     const hoy = new Date();

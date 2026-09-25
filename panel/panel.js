@@ -489,7 +489,7 @@ PAGES.alta = async (v) => {
       <label class="f"><span>Categoría *</span><select name="category_id" required>
         <option value="">Elige una…</option>
         ${cats.map((c) => `<option value="${esc(c.id)}">${esc(c.names?.[I18N.lang] || c.names?.es || c.slug)}</option>`).join('')}</select></label>
-      <label class="f full"><span>De qué va <small>(¿qué ofrecéis? ¿qué os hace especiales?)</small></span><textarea name="description" maxlength="600"></textarea></label>
+      <label class="f full"><span>De qué va <small>(¿qué ofrecéis? ¿qué os hace especiales?)</small></span><textarea name="description" maxlength="500"></textarea></label>
       <label class="f"><span>Dirección *</span><input name="address" maxlength="120" required placeholder="Calle y número"></label>
       <label class="f"><span>Ciudad *</span><input name="city" maxlength="60" required></label>
       <div class="full">
@@ -859,7 +859,7 @@ async function offerForm(v, id, kindDefault) {
     <div class="page-head"><a class="btn sm ghost" href="#/publicaciones">← Volver</a><h1>${id ? 'Editar publicación' : (kindDefault === 'future_event' ? 'Nuevo evento' : 'Nueva oferta flash')}</h1></div>
     <form class="card" id="form">
       <div class="form-grid">
-        <label class="f full"><span>Título</span><input name="title" value="${esc(o.title || '')}" required maxlength="80" placeholder="${kindDefault === 'future_event' ? 'Concierto de jazz' : 'Café + tostada 2,50 €'}"></label>
+        <label class="f full"><span>Título</span><input name="title" value="${esc(o.title || '')}" required maxlength="90" placeholder="${kindDefault === 'future_event' ? 'Concierto de jazz' : 'Café + tostada 2,50 €'}"></label>
         <label class="f full"><span>Descripción</span><textarea name="description" maxlength="600">${esc(o.description || '')}</textarea></label>
         <label class="f"><span>Tipo</span><select name="kind">
           <option value="flash_offer" ${o.kind === 'flash_offer' ? 'selected' : ''}>Oferta flash</option>
@@ -883,7 +883,7 @@ async function offerForm(v, id, kindDefault) {
         <label class="f" id="seatsRow" hidden><span>Plazas por persona <small>(a un evento no se va solo; un código vale por todas)</small></span><select name="max_seats">
           ${[1, 2, 3, 4, 5, 6].map((n) => `<option value="${n}" ${Number(o.max_seats || 1) === n ? 'selected' : ''}>${n === 1 ? '1 (solo quien reserva)' : n + ' personas'}</option>`).join('')}</select></label>
         <label class="f full" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="adults_only" ${o.adults_only ? 'checked' : ''}><span>Solo para mayores de 18</span></label>
-        <label class="f full"><span>Condiciones (letra pequeña)</span><textarea name="terms" maxlength="400">${esc(o.terms || '')}</textarea></label>
+        <label class="f full"><span>Condiciones (letra pequeña)</span><textarea name="terms" maxlength="300">${esc(o.terms || '')}</textarea></label>
         <label class="f full"><span>Enlace externo (entradas, reservas…)</span><input name="external_url" value="${esc(o.external_url || '')}" placeholder="https://"></label>
       </div>
       <h3 style="margin-top:16px">Fotos y vídeo</h3>
@@ -1236,6 +1236,10 @@ PAGES.sellos = async (v) => {
   $('#f', v).onsubmit = async (e) => {
     e.preventDefault();
     const f = new FormData(e.target);
+    if (String(f.get('reward') || '').trim().length < 3) {
+      $('#msg', v).textContent = I18N.t('Escribe el premio (sé concreto: «un café con leche gratis»).');
+      return;
+    }
     const r = await rpc('set_stamp_card', {
       p_business: BIZ.id,
       p_goal: Number(f.get('goal')),
@@ -1575,7 +1579,7 @@ PAGES.ficha = async (v) => {
         <label class="f"><span>Nombre</span><input name="name" value="${esc(b.name || '')}" required maxlength="80" ${canManage ? '' : 'disabled'}></label>
         <label class="f"><span>Categoría</span><select name="category_id" ${canManage ? '' : 'disabled'}>
           ${(cats || []).map((c) => `<option value="${esc(c.id)}" ${c.id === b.category_id ? 'selected' : ''}>${esc(c.names?.es || c.slug)}</option>`).join('')}</select></label>
-        <label class="f full"><span>De qué va <small>(dos líneas bastan)</small></span><textarea name="description" maxlength="600" ${canManage ? '' : 'disabled'}>${esc(b.description || '')}</textarea></label>
+        <label class="f full"><span>De qué va <small>(dos líneas bastan)</small></span><textarea name="description" maxlength="500" ${canManage ? '' : 'disabled'}>${esc(b.description || '')}</textarea></label>
         <label class="f"><span>Dirección</span><input name="address" value="${esc(b.address || '')}" maxlength="120" ${canManage ? '' : 'disabled'}></label>
         <label class="f"><span>Ciudad</span><input name="city" value="${esc(b.city || '')}" maxlength="60" ${canManage ? '' : 'disabled'}></label>
         <label class="f"><span>Teléfono</span><input name="phone" value="${esc(b.phone || '')}" maxlength="20" ${canManage ? '' : 'disabled'}></label>

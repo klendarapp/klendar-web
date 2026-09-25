@@ -313,7 +313,7 @@ RUTAS.ajustes = async () => {
           <label class="pill">${esc(t('Cambiar foto'))}<input type="file" name="foto" accept="image/*" hidden></label>
         </div>
         <label>${esc(t('Nombre'))} <small>${esc(t('Cómo te ven en las reseñas'))}</small>
-          <input name="nombre" maxlength="60" required value="${esc(p.display_name || '')}"></label>
+          <input name="nombre" maxlength="40" required value="${esc(p.display_name || '')}"></label>
         <label>${esc(t('Idioma'))} <small>${esc(t('De la web, la app y los avisos que te mandamos'))}</small>
           <select name="idioma">
             <option value=""${!p.locale ? ' selected' : ''}>${esc(t('El del móvil o el navegador'))}</option>
@@ -519,7 +519,7 @@ RUTAS.sugerencias = async () => {
         ${TIPOS_SUGERENCIA.map(([v, l], i) => `<label><input type="radio" name="tipo" value="${v}"${i === 0 ? ' checked' : ''}> ${esc(t(l))}</label>`).join('')}
       </fieldset>
       <label>${esc(t('Tu mensaje'))}
-        <textarea name="msg" rows="6" maxlength="4000" placeholder="${esc(t(TIPOS_SUGERENCIA[0][2]))}"></textarea></label>
+        <textarea name="msg" rows="6" maxlength="2000" placeholder="${esc(t(TIPOS_SUGERENCIA[0][2]))}"></textarea></label>
       <p class="muted">${esc(t('Mandamos también que escribes desde la web y tu idioma, para entender mejor los fallos. Nada más.'))}</p>
       <p class="err" id="err" role="alert"></p>
       <button class="pill accent" id="enviar">${esc(t('Enviar'))}</button>
@@ -571,7 +571,7 @@ RUTAS.opinar = async ([id]) => {
         ${[5, 4, 3, 2, 1].map((n) => `<input type="radio" name="nota" id="n${n}" value="${n}"${mia.rating === n ? ' checked' : ''}><label for="n${n}" title="${n}/5"><span class="sr">${n} ${esc(t('de 5'))}</span>★</label>`).join('')}
       </fieldset>
       <label>${esc(t('¿Qué tal fue?'))} <small>${esc(t('(opcional)'))}</small>
-        <textarea name="texto" rows="5" maxlength="1000">${esc(mia.comment || '')}</textarea></label>
+        <textarea name="texto" rows="5" maxlength="500">${esc(mia.comment || '')}</textarea></label>
       <div class="foto-fila">
         ${mia.photo_url ? `<img id="prev" src="${esc(mia.photo_url)}" alt="">` : '<img id="prev" alt="" hidden>'}
         <label class="pill">📷 ${esc(mia.photo_url ? t('Cambiar la foto') : t('Añadir una foto'))}<input type="file" name="foto" accept="image/*" hidden></label>
@@ -636,7 +636,7 @@ RUTAS.denunciar = async ([tipo, id]) => {
           `<label class="check"><input type="radio" name="motivo" value="${v}"> ${esc(t(l))}</label>`).join('')}
       </fieldset>
       <label>${esc(t('Detalles'))} <small>${esc(t('(opcional)'))}</small>
-        <textarea name="det" rows="4" maxlength="1000"></textarea></label>
+        <textarea name="det" rows="4" maxlength="500"></textarea></label>
       <p class="err" id="err" role="alert"></p>
       <button class="pill accent" id="enviar">${esc(t('Enviar denuncia'))}</button>
     </form>`);
