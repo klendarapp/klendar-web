@@ -47,7 +47,35 @@ const ERRORS = {
   not_a_member: 'Esa persona ya no está en el equipo.',
   invalid_role: 'Ese rol no existe.',
   plan_limit_reached: 'Has llegado al límite de publicaciones activas de tu plan.',
+  prior_price_required: 'Pon el precio anterior: la ley obliga a enseñarlo junto al descuento.',
+  prior_price_not_lower: 'El precio anterior tiene que ser mayor que el de ahora.',
+  alcohol_declaration_required: 'Di si el 2x1 incluye bebidas alcohólicas.',
+  already_copied: 'Esa publicación ya estaba copiada en ese local.',
+  no_targets: 'No has marcado ningún local.',
+  too_many: 'Demasiados locales de una vez.',
+  bad_goal: 'Los sellos para el premio tienen que estar entre 2 y 20.',
+  bad_reward: 'Escribe qué premio se lleva la gente.',
+  offer_not_found: 'Esa publicación ya no existe.',
+  not_found: 'Eso ya no existe.',
+  rate_limited: 'Vas muy rápido. Espera un momento y vuelve a probar.',
+  auth_required: 'Vuelve a entrar en tu cuenta.',
 };
+
+/** El error tal y como se lo enseñamos a quien lleva el negocio.
+ *
+ * Los códigos conocidos tienen su frase; lo que viene de Postgres (permisos,
+ * claves repetidas, columnas) no se enseña crudo: no dice nada útil y asusta.
+ */
+function friendly(msg) {
+  const m = String(msg || '');
+  for (const [codigo, texto] of Object.entries(ERRORS)) {
+    if (m === codigo || m.includes(codigo)) return texto;
+  }
+  if (/row-level security|permission denied|violates|duplicate key|column |relation |JWT|invalid input syntax/i.test(m)) {
+    return 'No se ha podido guardar. Si vuelve a pasar, escríbenos a info@klendar.app.';
+  }
+  return m || 'No se ha podido hacer.';
+}
 async function rpc(fn, args = {}) {
   const { data, error } = await sb.rpc(fn, args);
   if (error) throw new Error(ERRORS[error.message] || error.message);
@@ -326,7 +354,7 @@ PAGES.publicaciones = async (v, param) => {
             toast('Guardado');
           }
           renderRules();
-        } catch (e) { toast(e.message, true); }
+        } catch (e) { toast(friendly(e.message), true); }
       };
     });
   };
@@ -360,7 +388,7 @@ PAGES.publicaciones = async (v, param) => {
       });
       toast('Se repetirá sola');
       renderRules();
-    } catch (e) { toast(e.message, true); }
+    } catch (e) { toast(friendly(e.message), true); }
   }
 
   const render = () => {
@@ -403,7 +431,7 @@ PAGES.publicaciones = async (v, param) => {
           }
           toast('Hecho');
           route();
-        } catch (e) { toast(e.message, true); }
+        } catch (e) { toast(friendly(e.message), true); }
       };
     });
   };
@@ -671,13 +699,7 @@ async function offerForm(v, id, kindDefault) {
       toast(id ? 'Cambios guardados' : 'Publicado');
       location.hash = '#/publicaciones';
     } catch (err) {
-      const m = err.message || '';
-      $('#formErr').textContent =
-        /plan_limit_reached/.test(m) ? 'Has llegado al límite de publicaciones activas de tu plan. Pausa alguna o cambia de plan.'
-        : /prior_price_required/.test(m) ? 'Pon el precio anterior: la ley obliga a enseñarlo junto al descuento.'
-        : /prior_price_not_lower/.test(m) ? 'El precio anterior tiene que ser mayor que el de ahora.'
-        : /alcohol_declaration_required/.test(m) ? 'Di si el 2x1 incluye bebidas alcohólicas.'
-        : m;
+      $('#formErr').textContent = friendly(err.message);
     }
   };
 }
@@ -733,7 +755,7 @@ PAGES.validar = async (v) => {
         };
         $('#result').innerHTML = `<div class="scan-result bad">❌ ${esc(msgs[res.error] || res.error)}${res.validated_at ? `<small>Se validó el ${esc(fmtDate(res.validated_at))}</small>` : ''}</div>`;
       }
-    } catch (e) { toast(e.message, true); }
+    } catch (e) { toast(friendly(e.message), true); }
   };
   $('#go').onclick = validate;
   $('#code').addEventListener('keydown', (e) => { if (e.key === 'Enter') validate(); });
@@ -774,7 +796,7 @@ PAGES.asistentes = async (v, offerId) => {
           if (!res.ok) { toast(res.error, true); return; }
           toast('Dentro');
           route();
-        } catch (e) { toast(e.message, true); }
+        } catch (e) { toast(friendly(e.message), true); }
       };
     });
   };
@@ -864,7 +886,7 @@ PAGES.carta = async (v) => {
   const guardar = async () => {
     try {
       await guardaFicha();
-    } catch (e) { toast(e.message, true); return; }
+    } catch (e) { toast(friendly(e.message), true); return; }
     const r = await rpc('save_business_menu', { p_business: BIZ.id, p_menu: carta })
       .catch((e) => ({ ok: false, error: e.message }));
     if (r?.ok) { sucia = false; toast('Carta guardada'); pinta(); }
@@ -1055,7 +1077,7 @@ PAGES.equipo = async (v) => {
         if (!res.ok) { toast(ERRORS[res.error] || res.error, true); return; }
         toast(res.invited ? 'Invitación guardada' : 'Añadido al equipo');
         route();
-      } catch (e) { toast(e.message, true); }
+      } catch (e) { toast(friendly(e.message), true); }
     };
     $$('[data-role]', v).forEach((b) => {
       b.onclick = async () => {
