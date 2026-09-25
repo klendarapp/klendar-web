@@ -155,6 +155,17 @@ const I18N = makeI18N({
   'Dura': 'Lasts',
   'Ninguna.': 'None.',
   'Carta': 'Menu',
+  'Tú eliges cómo ponerla': 'You choose how to put it up',
+  'Un enlace o un PDF': 'A link or a PDF',
+  'Si tu carta ya está en tu web o en un PDF, con pegar la dirección vale.':
+    'If your menu is already on your website or in a PDF, pasting the address is enough.',
+  'Dirección': 'Address',
+  'Fotos de la carta': 'Photos of the menu',
+  'La de la pizarra o la de papel, tal cual. Se ven en tu ficha, una debajo de otra.':
+    'The blackboard or the paper one, as it is. They show on your page, one under the other.',
+  'Escrita': 'Written',
+  'Quitar': 'Remove',
+  'Esa foto pesa más de 5 MB.': 'That photo is over 5 MB.',
   'Añadir sección': 'Add a section',
   'Guardar la carta': 'Save the menu',
   'Nueva sección': 'New section',

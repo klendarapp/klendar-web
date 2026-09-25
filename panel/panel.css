@@ -130,3 +130,8 @@
 .code { margin: 0; padding: 10px 12px; border-radius: 12px; overflow-x: auto;
   background: rgba(127,127,127,.12); border: 1px solid var(--line, rgba(127,127,127,.25));
   font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: pre-wrap; word-break: break-all; }
+
+/* Las fotos de la carta. */
+.thumbs { display: flex; flex-wrap: wrap; gap: 10px; }
+.thumbs .thumb { width: 140px; display: grid; gap: 6px; }
+.thumbs .thumb img { width: 140px; height: 180px; object-fit: cover; border-radius: 12px; }

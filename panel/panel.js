@@ -845,10 +845,26 @@ const nombreAlergeno = (k) => (ALERGENOS.find((a) => a[0] === k) || [k, k])[1];
 
 PAGES.carta = async (v) => {
   const canManage = ['owner', 'manager'].includes(BIZ.role);
+  const ficha = await sb.from('businesses')
+    .select('menu_url, menu_images').eq('id', BIZ.id).maybeSingle();
   let carta = await rpc('business_menu', { p_business: BIZ.id }).catch(() => []);
+  let enlace = ficha.data?.menu_url || '';
+  let fotos = ficha.data?.menu_images || [];
   let sucia = false;
 
+  // El enlace y las fotos se guardan en la ficha; la carta escrita, en su
+  // propia tabla. Se guarda todo junto para que sea un solo botón.
+  const guardaFicha = async () => {
+    const { error } = await sb.from('businesses')
+      .update({ menu_url: enlace.trim() || null, menu_images: fotos })
+      .eq('id', BIZ.id);
+    if (error) throw new Error(error.message);
+  };
+
   const guardar = async () => {
+    try {
+      await guardaFicha();
+    } catch (e) { toast(e.message, true); return; }
     const r = await rpc('save_business_menu', { p_business: BIZ.id, p_menu: carta })
       .catch((e) => ({ ok: false, error: e.message }));
     if (r?.ok) { sucia = false; toast('Carta guardada'); pinta(); }
@@ -860,7 +876,21 @@ PAGES.carta = async (v) => {
       <div class="page-head"><h1>Carta</h1><span class="spacer"></span>
         ${canManage ? `<button class="btn sm" id="add-sec">Añadir sección</button>
         <button class="btn sm primary" id="save" ${sucia ? '' : 'disabled'}>Guardar la carta</button>` : ''}</div>
-      ${helpBox('¿Para qué escribirla?', '<p>Un PDF o unas fotos sirven para salir del paso, pero no se leen bien en el móvil, no se pueden buscar y no las lee un lector de pantalla. Escrita, la gente ve los platos y los precios en tu ficha, y puede filtrar por alérgenos.</p><p>Los <b>alérgenos</b> son los catorce que obliga a declarar el Reglamento 1169/2011. Pon solo los que sepas seguro: aquí equivocarse no es una errata.</p>')}
+      ${helpBox('Tú eliges cómo ponerla', '<p>Tres maneras, y puedes usar las que quieras a la vez: <b>escribirla</b> aquí, subir <b>fotos</b> de la carta de papel o poner un <b>enlace</b> a tu web o a un PDF.</p><p>Escribirla es lo que mejor se lee en el móvil, se puede buscar y la lee un lector de pantalla; si la escribes, es lo primero que se ve y las fotos y el enlace se quedan debajo. Si no te apetece, con una foto vas servido.</p><p>Los <b>alérgenos</b> son los catorce que obliga a declarar el Reglamento 1169/2011. Pon solo los que sepas seguro: aquí equivocarse no es una errata.</p>')}
+
+      <div class="card"><h2>Un enlace o un PDF</h2>
+        <p class="muted" style="margin:0 0 8px">Si tu carta ya está en tu web o en un PDF, con pegar la dirección vale.</p>
+        <label class="f"><span>Dirección</span>
+          <input id="menu-url" type="url" value="${esc(enlace)}" placeholder="https://tubar.com/carta" ${canManage ? '' : 'disabled'}></label></div>
+
+      <div class="card"><h2>Fotos de la carta</h2>
+        <p class="muted" style="margin:0 0 8px">La de la pizarra o la de papel, tal cual. Se ven en tu ficha, una debajo de otra.</p>
+        <div id="menu-fotos" class="thumbs">${fotos.map((u, i) => `
+          <div class="thumb"><img src="${esc(u)}" alt="">
+            ${canManage ? `<button class="btn sm bad ghost" data-foto-del="${i}">Quitar</button>` : ''}</div>`).join('')}
+        </div>
+        ${canManage ? '<p style="margin:10px 0 0"><input type="file" id="menu-file" accept="image/*" multiple></p>' : ''}</div>
+      <h2 style="margin:24px 0 8px">Escrita</h2>
       ${carta.length ? carta.map((sec, si) => `
         <div class="card">
           <h2 style="display:flex;align-items:center;gap:8px">${esc(sec.name)}
@@ -890,6 +920,25 @@ PAGES.carta = async (v) => {
 
     if (!canManage) return;
     $('#save', v).onclick = guardar;
+    $('#menu-url', v).oninput = (e) => {
+      enlace = e.target.value;
+      if (!sucia) { sucia = true; $('#save', v).disabled = false; }
+    };
+    $$('[data-foto-del]', v).forEach((b) => { b.onclick = () => {
+      fotos.splice(+b.dataset.fotoDel, 1); sucia = true; pinta();
+    }; });
+    const file = $('#menu-file', v);
+    if (file) file.onchange = async (e) => {
+      for (const f of [...e.target.files].slice(0, 6)) {
+        if (f.size > 5 * 1024 * 1024) { toast('Esa foto pesa más de 5 MB.', true); continue; }
+        const ext = (f.name.split('.').pop() || 'jpg').toLowerCase();
+        const path = `${BIZ.id}/carta-${crypto.randomUUID()}.${ext}`;
+        const { error } = await sb.storage.from(BUCKET).upload(path, f, { contentType: f.type });
+        if (error) { toast(error.message, true); continue; }
+        fotos = [...fotos, sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl];
+      }
+      sucia = true; pinta();
+    };
     $('#add-sec', v).onclick = async () => {
       const r = await modal({ title: 'Nueva sección', fields: [{ name: 'name', label: 'Nombre', required: true, placeholder: 'Para picar' }] });
       if (!r?.name) return;
