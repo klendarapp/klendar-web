@@ -381,7 +381,7 @@ RUTAS.ajustes = async () => {
       </p>
       <p class="muted">${esc(t('Si entraste desde un móvil o un ordenador que no es tuyo, esto cierra la sesión también allí.'))}</p>
       <h3>${esc(t('Eliminar mi cuenta'))}</h3>
-      <p class="muted">${esc(t('Se borran para siempre tus datos, tus sitios, tus planes y tus canjes. Si eres dueño de un negocio, también su ficha, sus publicaciones y su equipo. No se puede deshacer.'))}</p>
+      <p class="muted">${esc(t('Se borran para siempre tus datos, tus favoritos, tus planes y tus canjes. Si eres dueño de un negocio, también su ficha, sus publicaciones y su equipo. No se puede deshacer.'))}</p>
       <p><button class="pill peligro" id="borrar">${esc(t('Eliminar mi cuenta'))}</button></p>
     </section>`);
 

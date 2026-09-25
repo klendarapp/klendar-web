@@ -51,7 +51,7 @@ const TEXTOS = {
   es: {
     menu: 'Menú',
     lema: 'Ofertas flash con cuenta atrás y eventos de los negocios de tu barrio, '
-      + 'ordenados por cercanía. Guarda tus sitios, recibe avisos y canjea con un QR.',
+      + 'ordenados por cercanía. Marca tus favoritos, recibe avisos y canjea con un QR.',
     producto: 'Producto',
     legal: 'Legal',
     derechos: `© ${new Date().getFullYear()} Klendar. Todos los derechos reservados.`,
@@ -60,7 +60,7 @@ const TEXTOS = {
   en: {
     menu: 'Menu',
     lema: 'Flash offers with a countdown and events from the businesses around you, '
-      + 'sorted by how close they are. Save your places, get alerts and redeem with a QR.',
+      + 'sorted by how close they are. Mark your favourites, get alerts and redeem with a QR.',
     producto: 'Product',
     legal: 'Legal',
     derechos: `© ${new Date().getFullYear()} Klendar. All rights reserved.`,

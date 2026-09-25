@@ -270,7 +270,7 @@ const APP_EN = {
   "Cerrar sesión en todos los dispositivos": "Log out of all devices",
   "Si entraste desde un móvil o un ordenador que no es tuyo, esto cierra la sesión también allí.": "If you signed in on a phone or computer that is not yours, this signs you out there too.",
   "Eliminar mi cuenta": "Delete my account",
-  "Se borran para siempre tus datos, tus sitios, tus planes y tus canjes. Si eres dueño de un negocio, también su ficha, sus publicaciones y su equipo. No se puede deshacer.": "Your data, places, plans and redemptions are deleted forever. If you own a business, also its page, its publications and its team. This cannot be undone.",
+  "Se borran para siempre tus datos, tus favoritos, tus planes y tus canjes. Si eres dueño de un negocio, también su ficha, sus publicaciones y su equipo. No se puede deshacer.": "Your data, favourites, plans and redemptions are deleted forever. If you own a business, also its page, its publications and its team. This cannot be undone.",
   "Pon tu nombre.": "Add your name.",
   "Perfil guardado": "Profile saved",
   "Pon las dos horas de silencio, o ninguna.": "Set both quiet hours, or neither.",
