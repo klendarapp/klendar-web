@@ -76,6 +76,42 @@ function friendly(msg) {
   }
   return m || 'No se ha podido hacer.';
 }
+/** Una dirección escrita → su punto en el mapa (Mapbox).
+ *
+ * Si no hay token o no se encuentra, se devuelve null y la ficha se guarda
+ * igual: mejor una dirección sin punto que no poder guardar. */
+let MAPBOX_TOKEN = null;
+async function tokenMapbox() {
+  if (MAPBOX_TOKEN !== null) return MAPBOX_TOKEN;
+  try {
+    const r = await fetch('/api/mapbox-token');
+    MAPBOX_TOKEN = r.ok ? (await r.json()).token || '' : '';
+  } catch { MAPBOX_TOKEN = ''; }
+  return MAPBOX_TOKEN;
+}
+
+async function geocodifica(texto) {
+  const token = await tokenMapbox();
+  if (!token || !String(texto).trim()) return null;
+  try {
+    const r = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(texto)}.json?limit=1&country=es&language=es&access_token=${token}`);
+    if (!r.ok) return null;
+    const j = await r.json();
+    const c = j.features?.[0]?.center;
+    return Array.isArray(c) ? { lng: c[0], lat: c[1] } : null;
+  } catch { return null; }
+}
+
+/** «−20 %», «2x1», «Gratis»… lo que hay que leer de un vistazo. */
+function etiquetaDescuento(d) {
+  if (!d) return '';
+  if (d.type === 'percent') return `−${d.value} %`;
+  if (d.type === 'fixed') return fmtMoney(Math.round(Number(d.value) * 100));
+  if (d.type === '2x1') return '2x1';
+  if (d.type === 'free') return 'Gratis';
+  return d.label || d.text || '';
+}
+
 async function rpc(fn, args = {}) {
   const { data, error } = await sb.rpc(fn, args);
   if (error) throw new Error(ERRORS[error.message] || error.message);
@@ -212,6 +248,8 @@ const NAV = [
   ['informe', '📈', 'Informe'],
   ['sellos', '🎫', 'Tarjeta de sellos'],
   ['carta', '🍽', 'Carta'],
+  ['novedades', '📣', 'Novedades'],
+  ['ficha', '🏪', 'Tu ficha'],
   ['equipo', '👥', 'Equipo'],
   ['ayuda', '❓', 'Ayuda'],
 ];
@@ -405,6 +443,7 @@ PAGES.publicaciones = async (v, param) => {
             <button class="btn sm ghost" data-act="${o.status === 'active' ? 'pause' : 'activate'}" data-id="${esc(o.id)}">${o.status === 'active' ? 'Pausar' : 'Activar'}</button>
             ${o.kind === 'flash_offer' ? `<button class="btn sm ghost" data-act="repeat" data-id="${esc(o.id)}">Repetir…</button>` : ''}
             ${OTROS_LOCALES.length ? `<button class="btn sm ghost" data-act="locales" data-id="${esc(o.id)}">En otros locales…</button>` : ''}
+            <a class="btn sm ghost" href="#/cartel/${esc(o.id)}">Cartel</a>
             <button class="btn sm ghost" data-act="delete" data-id="${esc(o.id)}">Borrar</button>
           </div>` },
       ],
@@ -923,12 +962,14 @@ PAGES.carta = async (v) => {
               <button class="btn sm bad ghost" data-sec-del="${si}">Borrar</button>` : ''}</h2>
           ${table({
             cols: [
-              { h: 'Plato', r: (it) => `<b class="title">${esc(it.name)}</b>${it.description ? `<span class="sub">${esc(it.description)}</span>` : ''}` },
+              { h: 'Plato', r: (it) => `${it.image_url ? `<img class="thumb" src="${esc(it.image_url)}" alt="" loading="lazy">` : ''}<b class="title">${esc(it.name)}</b>${it.description ? `<span class="sub">${esc(it.description)}</span>` : ''}` },
               { h: 'Alérgenos', r: (it) => (it.allergens || []).length
                 ? (it.allergens || []).map((a) => `<span class="tag">${esc(nombreAlergeno(a))}</span>`).join(' ')
                 : '<span class="muted">—</span>' },
               { h: 'Precio', num: true, r: (it) => it.price_cents == null ? '—' : fmtMoney(it.price_cents) },
               { h: '', r: (it, ii) => canManage ? `<div class="actions">
+                  <button class="btn sm ghost" data-item-photo="${si}:${ii}">${it.image_url ? 'Cambiar foto' : 'Poner foto'}</button>
+                  ${it.image_url ? `<button class="btn sm ghost" data-item-nophoto="${si}:${ii}">Quitar foto</button>` : ''}
                   <button class="btn sm ghost" data-item-edit="${si}:${ii}">Editar</button>
                   <button class="btn sm bad ghost" data-item-del="${si}:${ii}">Quitar</button></div>` : '' },
             ],
@@ -1010,6 +1051,7 @@ PAGES.carta = async (v) => {
         description: r.description || null,
         price_cents: precio === '' ? null : Math.round(parseFloat(precio) * 100),
         allergens: ALERGENOS.filter((a) => r[`a_${a[0]}`]).map((a) => a[0]),
+        image_url: it.image_url || null,
         is_available: true,
       };
       if (Number.isNaN(plato.price_cents)) plato.price_cents = null;
@@ -1022,9 +1064,285 @@ PAGES.carta = async (v) => {
       const [si, ii] = b.dataset.itemEdit.split(':').map(Number);
       editaPlato(si, ii);
     }; });
+    // La foto se sube al momento; el resto de la carta se guarda al final.
+    $$('[data-item-photo]', v).forEach((b) => { b.onclick = () => {
+      const [si, ii] = b.dataset.itemPhoto.split(':').map(Number);
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = async () => {
+        const f = input.files?.[0];
+        if (!f) return;
+        if (f.size > 5 * 1024 * 1024) { toast('Esa foto pesa más de 5 MB.', true); return; }
+        const ext = (f.name.split('.').pop() || 'jpg').toLowerCase();
+        const path = `${BIZ.id}/plato-${crypto.randomUUID()}.${ext}`;
+        const { error } = await sb.storage.from(BUCKET).upload(path, f, { contentType: f.type });
+        if (error) { toast(friendly(error.message), true); return; }
+        carta[si].items[ii].image_url = sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+        sucia = true; pinta();
+      };
+      input.click();
+    }; });
+    $$('[data-item-nophoto]', v).forEach((b) => { b.onclick = () => {
+      const [si, ii] = b.dataset.itemNophoto.split(':').map(Number);
+      carta[si].items[ii].image_url = null; sucia = true; pinta();
+    }; });
     $$('[data-item-del]', v).forEach((b) => { b.onclick = () => {
       const [si, ii] = b.dataset.itemDel.split(':').map(Number);
       carta[si].items.splice(ii, 1); sucia = true; pinta();
+    }; });
+  };
+
+  pinta();
+};
+
+const SEMANA = [
+  [1, 'Lunes'], [2, 'Martes'], [3, 'Miércoles'], [4, 'Jueves'],
+  [5, 'Viernes'], [6, 'Sábado'], [7, 'Domingo'],
+];
+
+/** «09:00-14:00, 17:00-21:00» ⇄ [["09:00","14:00"],["17:00","21:00"]].
+ *
+ * Es el mismo formato que guarda la app; escribirlo a mano es más rápido que
+ * pelearse con catorce desplegables, y lo que no se entienda se ignora en vez
+ * de romper el horario entero. */
+const horarioATexto = (tramos) => (tramos || []).map((t) => `${t[0]}-${t[1]}`).join(', ');
+const textoAHorario = (txt) => String(txt || '').split(',')
+  .map((x) => x.trim()).filter(Boolean)
+  .map((x) => x.split('-').map((y) => y.trim()))
+  .filter((p) => p.length === 2 && /^\d{1,2}:\d{2}$/.test(p[0]) && /^\d{1,2}:\d{2}$/.test(p[1]))
+  .map((p) => p.map((y) => (y.length === 4 ? '0' + y : y)));
+
+PAGES.cartel = async (v, offerId) => {
+  const todas = await rpc('my_business_offers', { p_id: BIZ.id });
+  const o = (todas || []).find((x) => x.id === offerId);
+  if (!o) { go('#/publicaciones'); return; }
+  const url = `https://klendar.app/o/${o.id}`;
+
+  v.innerHTML = `
+    <div class="page-head"><a class="btn sm" href="#/publicaciones">← Publicaciones</a>
+      <span class="spacer"></span><button class="btn sm primary" id="print">Imprimir</button></div>
+    ${helpBox('¿Para qué sirve?', '<p>Un folio para la puerta, la barra o el escaparate. Quien pase, apunta con la cámara del móvil y le sale tu publicación; si no tiene la app, la ve igual en la web.</p><p>Imprímelo en blanco y negro si quieres: el código se lee igual.</p>')}
+    <div class="cartel" id="cartel">
+      <div class="cartel-top">KLENDAR</div>
+      <h2>${esc(o.title)}</h2>
+      ${o.discount || o.price_cents != null ? `<p class="cartel-precio">${esc(o.discount ? etiquetaDescuento(o.discount) : fmtMoney(o.price_cents))}</p>` : ''}
+      <div id="qr" class="cartel-qr"></div>
+      <p class="cartel-pie"><b>${esc(BIZ.name)}</b><br>Apunta con la cámara del móvil</p>
+      <p class="cartel-url">${esc(url)}</p>
+    </div>`;
+
+  // El QR se dibuja aquí mismo, sin mandar la dirección a ningún sitio.
+  const qr = window.qrcode(0, 'M');
+  qr.addData(url);
+  qr.make();
+  $('#qr', v).innerHTML = qr.createSvgTag({ cellSize: 6, margin: 0, scalable: true });
+  $('#print', v).onclick = () => window.print();
+};
+
+PAGES.novedades = async (v) => {
+  const canManage = ['owner', 'manager'].includes(BIZ.role);
+  const { data: posts } = await sb.from('business_posts')
+    .select('id, body, image_url, created_at')
+    .eq('business_id', BIZ.id).order('created_at', { ascending: false }).limit(50);
+
+  const escribe = async (post) => {
+    const r = await modal({
+      title: post ? 'Editar novedad' : 'Nueva novedad',
+      intro: 'Una nota corta que sale en tu ficha: «hoy hay pulpo», «cerramos el lunes por obras», «ya tenemos terraza».',
+      fields: [{ name: 'body', label: 'Qué cuentas', type: 'textarea', value: post?.body || '', required: true }],
+      submit: post ? 'Guardar' : 'Publicar',
+    });
+    if (!r?.body) return;
+    try {
+      if (post) {
+        const { error } = await sb.from('business_posts')
+          .update({ body: r.body.trim() }).eq('id', post.id);
+        if (error) throw new Error(error.message);
+      } else {
+        const { error } = await sb.from('business_posts')
+          .insert({ business_id: BIZ.id, body: r.body.trim() });
+        if (error) throw new Error(error.message);
+      }
+      toast('Hecho'); route();
+    } catch (e) { toast(friendly(e.message), true); }
+  };
+
+  v.innerHTML = `
+    <div class="page-head"><h1>Novedades</h1><span class="spacer"></span>
+      ${canManage ? '<button class="btn sm primary" id="nueva">Nueva novedad</button>' : ''}</div>
+    ${helpBox('¿Qué es una novedad?', '<p>Una nota corta en tu ficha, sin cuenta atrás ni código: «hoy hay pulpo», «cerramos el lunes», «ya tenemos terraza». Para algo que se canjea, usa una <b>publicación</b>.</p><p>Quien te tenga en favoritos recibe un aviso.</p>')}
+    ${table({
+      cols: [
+        { h: 'Novedad', r: (p) => `${p.image_url ? `<img class="thumb" src="${esc(p.image_url)}" alt="" loading="lazy">` : ''}<span class="title">${esc(p.body || '')}</span>` },
+        { h: 'Cuándo', r: (p) => fmtDate(p.created_at) },
+        { h: '', r: (p) => canManage ? `<div class="actions">
+            <button class="btn sm ghost" data-edit="${esc(p.id)}">Editar</button>
+            <button class="btn sm bad ghost" data-del="${esc(p.id)}">Borrar</button></div>` : '' },
+      ],
+      rows: posts || [],
+      empty: 'Todavía no has contado nada.',
+    })}`;
+
+  if (!canManage) return;
+  $('#nueva', v).onclick = () => escribe(null);
+  $$('[data-edit]', v).forEach((b) => { b.onclick = () => escribe((posts || []).find((p) => p.id === b.dataset.edit)); });
+  $$('[data-del]', v).forEach((b) => { b.onclick = async () => {
+    if (!await confirmDlg('Borrar novedad', 'Desaparece de tu ficha. No se puede deshacer.', { danger: true, submit: 'Borrar' })) return;
+    const { error } = await sb.from('business_posts').delete().eq('id', b.dataset.del);
+    if (error) { toast(friendly(error.message), true); return; }
+    toast('Borrada'); route();
+  }; });
+};
+
+PAGES.ficha = async (v) => {
+  const canManage = ['owner', 'manager'].includes(BIZ.role);
+  const [{ data: b }, cats] = await Promise.all([
+    sb.from('businesses').select('*').eq('id', BIZ.id).maybeSingle(),
+    rpc('public_categories_all').catch(async () => {
+      const { data } = await sb.from('categories').select('id, slug, names, position').order('position');
+      return data || [];
+    }),
+  ]);
+  if (!b) { v.innerHTML = '<div class="card">No hemos podido cargar tu ficha.</div>'; return; }
+
+  const redes = b.social_links || {};
+  const horas = b.opening_hours || {};
+  let logo = b.logo_url || '';
+  let portada = b.cover_image_url || '';
+  let galeria = b.gallery || [];
+
+  const pinta = () => {
+    v.innerHTML = `
+      <div class="page-head"><h1>Tu ficha</h1><span class="spacer"></span>
+        <a class="btn sm" href="https://klendar.app/b/${esc(BIZ.id)}" target="_blank" rel="noopener">Ver cómo se ve ↗</a></div>
+      ${helpBox('¿Qué es esto?', '<p>Lo que ve la gente cuando entra en tu negocio: el nombre, de qué va, dónde estás, cómo llamarte y tus horarios. Es la misma ficha que editas desde la app.</p><p>La <b>dirección</b> se busca en el mapa al guardar. Si el punto no queda donde debe, se ajusta a mano desde la app (Perfil › Mi negocio › Editar ficha).</p>')}
+      <form id="f" class="form">
+        <label class="f"><span>Nombre</span><input name="name" value="${esc(b.name || '')}" required maxlength="80" ${canManage ? '' : 'disabled'}></label>
+        <label class="f"><span>Categoría</span><select name="category_id" ${canManage ? '' : 'disabled'}>
+          ${(cats || []).map((c) => `<option value="${esc(c.id)}" ${c.id === b.category_id ? 'selected' : ''}>${esc(c.names?.es || c.slug)}</option>`).join('')}</select></label>
+        <label class="f full"><span>De qué va <small>(dos líneas bastan)</small></span><textarea name="description" maxlength="600" ${canManage ? '' : 'disabled'}>${esc(b.description || '')}</textarea></label>
+        <label class="f"><span>Dirección</span><input name="address" value="${esc(b.address || '')}" maxlength="120" ${canManage ? '' : 'disabled'}></label>
+        <label class="f"><span>Ciudad</span><input name="city" value="${esc(b.city || '')}" maxlength="60" ${canManage ? '' : 'disabled'}></label>
+        <label class="f"><span>Teléfono</span><input name="phone" value="${esc(b.phone || '')}" maxlength="20" ${canManage ? '' : 'disabled'}></label>
+        <label class="f"><span>Web</span><input name="website" type="url" value="${esc(b.website || '')}" ${canManage ? '' : 'disabled'}></label>
+        <label class="f"><span>Correo de contacto</span><input name="contact_email" type="email" value="${esc(b.contact_email || '')}" ${canManage ? '' : 'disabled'}></label>
+        <label class="f"><span>NIF/CIF</span><input name="tax_id" value="${esc(b.tax_id || '')}" maxlength="20" ${canManage ? '' : 'disabled'}></label>
+        <label class="f"><span>Instagram</span><input name="instagram" value="${esc(redes.instagram || '')}" ${canManage ? '' : 'disabled'}></label>
+        <label class="f"><span>TikTok</span><input name="tiktok" value="${esc(redes.tiktok || '')}" ${canManage ? '' : 'disabled'}></label>
+        <label class="f"><span>Facebook</span><input name="facebook" value="${esc(redes.facebook || '')}" ${canManage ? '' : 'disabled'}></label>
+        <label class="f full" style="grid-template-columns:auto 1fr;align-items:center">
+          <input type="checkbox" name="adults_only" ${b.adults_only ? 'checked' : ''} ${canManage ? '' : 'disabled'}>
+          <span>Solo para mayores de 18 (todo lo que publiques quedará marcado)</span></label>
+        ${canManage ? '<div class="full"><button class="btn primary" type="submit">Guardar la ficha</button> <span id="msg" class="muted"></span></div>' : ''}
+      </form>
+
+      <div class="card"><h2>Horarios</h2>
+        <p class="muted" style="margin:0 0 10px">Escribe los tramos como «09:00-14:00, 17:00-21:00». Déjalo vacío el día que cierres.</p>
+        <form id="h" class="form">
+          ${SEMANA.map(([n, nombre]) => `<label class="f"><span>${nombre}</span>
+            <input name="d${n}" value="${esc(horarioATexto(horas[String(n)]))}" placeholder="09:00-14:00, 17:00-21:00" ${canManage ? '' : 'disabled'}></label>`).join('')}
+          ${canManage ? '<div class="full"><button class="btn primary" type="submit">Guardar horarios</button> <span id="msgh" class="muted"></span></div>' : ''}
+        </form></div>
+
+      <div class="card"><h2>Imágenes</h2>
+        <p class="muted" style="margin:0 0 10px">El <b>logo</b> sale redondo y pequeño; la <b>portada</b>, ancha arriba del todo. La galería son fotos del sitio.</p>
+        <div class="thumbs">
+          <div class="thumb"><img src="${esc(logo || '/assets/symbol.png')}" alt="">
+            ${canManage ? '<button class="btn sm" data-img="logo">Cambiar logo</button>' : ''}</div>
+          <div class="thumb"><img src="${esc(portada || '/assets/og.png')}" alt="">
+            ${canManage ? '<button class="btn sm" data-img="cover">Cambiar portada</button>' : ''}</div>
+        </div>
+        <h3 style="margin:16px 0 8px">Galería</h3>
+        <div class="thumbs">${galeria.map((u, i) => `<div class="thumb"><img src="${esc(u)}" alt="">
+          ${canManage ? `<button class="btn sm bad ghost" data-gal-del="${i}">Quitar</button>` : ''}</div>`).join('')}</div>
+        ${canManage ? '<p style="margin:10px 0 0"><button class="btn sm" data-img="gallery">Añadir fotos</button></p>' : ''}</div>`;
+
+    if (!canManage) return;
+
+    $('#f', v).onsubmit = async (e) => {
+      e.preventDefault();
+      const f = new FormData(e.target);
+      const patch = {
+        name: String(f.get('name') || '').trim(),
+        category_id: f.get('category_id') || null,
+        description: String(f.get('description') || '').trim(),
+        address: String(f.get('address') || '').trim(),
+        city: String(f.get('city') || '').trim(),
+        phone: String(f.get('phone') || '').trim(),
+        website: String(f.get('website') || '').trim(),
+        contact_email: String(f.get('contact_email') || '').trim(),
+        tax_id: String(f.get('tax_id') || '').trim(),
+        social_links: {
+          instagram: String(f.get('instagram') || '').trim(),
+          tiktok: String(f.get('tiktok') || '').trim(),
+          facebook: String(f.get('facebook') || '').trim(),
+        },
+        adults_only: $('[name=adults_only]', v).checked,
+      };
+      // Si la dirección ha cambiado, se busca el punto en el mapa.
+      if (patch.address && patch.address !== (b.address || '')) {
+        const punto = await geocodifica(`${patch.address}, ${patch.city || ''}`);
+        if (punto) { patch.lat = punto.lat; patch.lng = punto.lng; }
+        else toast('No hemos encontrado esa dirección en el mapa; ajústala desde la app.', true);
+      }
+      try {
+        await rpc('update_business', { p_id: BIZ.id, p_patch: patch });
+        $('#msg', v).textContent = 'Guardada';
+        toast('Ficha guardada');
+      } catch (err) { toast(friendly(err.message), true); }
+    };
+
+    $('#h', v).onsubmit = async (e) => {
+      e.preventDefault();
+      const f = new FormData(e.target);
+      const nuevo = {};
+      for (const [n] of SEMANA) nuevo[String(n)] = textoAHorario(f.get(`d${n}`));
+      try {
+        await rpc('update_business', { p_id: BIZ.id, p_patch: { opening_hours: nuevo } });
+        $('#msgh', v).textContent = 'Guardados';
+        toast('Horarios guardados');
+      } catch (err) { toast(friendly(err.message), true); }
+    };
+
+    $$('[data-img]', v).forEach((btn) => { btn.onclick = () => {
+      const que = btn.dataset.img;
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.multiple = que === 'gallery';
+      input.onchange = async () => {
+        const nuevas = [];
+        for (const f of [...input.files].slice(0, que === 'gallery' ? 6 : 1)) {
+          if (f.size > 5 * 1024 * 1024) { toast('Esa foto pesa más de 5 MB.', true); continue; }
+          const ext = (f.name.split('.').pop() || 'jpg').toLowerCase();
+          const path = `${BIZ.id}/${que}-${crypto.randomUUID()}.${ext}`;
+          const { error } = await sb.storage.from(BUCKET).upload(path, f, { contentType: f.type });
+          if (error) { toast(friendly(error.message), true); continue; }
+          nuevas.push(sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl);
+        }
+        if (!nuevas.length) return;
+        const patch = que === 'logo' ? { logo_url: nuevas[0] }
+          : que === 'cover' ? { cover_image_url: nuevas[0] }
+            : { gallery: [...galeria, ...nuevas] };
+        try {
+          await rpc('update_business', { p_id: BIZ.id, p_patch: patch });
+          if (que === 'logo') logo = nuevas[0];
+          else if (que === 'cover') portada = nuevas[0];
+          else galeria = [...galeria, ...nuevas];
+          toast('Guardado'); pinta();
+        } catch (err) { toast(friendly(err.message), true); }
+      };
+      input.click();
+    }; });
+
+    $$('[data-gal-del]', v).forEach((btn) => { btn.onclick = async () => {
+      const i = +btn.dataset.galDel;
+      const siguiente = galeria.filter((_, j) => j !== i);
+      try {
+        await rpc('update_business', { p_id: BIZ.id, p_patch: { gallery: siguiente } });
+        galeria = siguiente; toast('Quitada'); pinta();
+      } catch (err) { toast(friendly(err.message), true); }
     }; });
   };
 

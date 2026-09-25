@@ -107,6 +107,7 @@ main.pub { padding: 34px 20px 72px; }
   padding: 8px 0; border-bottom: 1px solid var(--glass-border); }
 .menu li small { display: block; color: var(--ink-2); font-size: 13px; }
 .menu li small.alg { font-size: 12px; opacity: .85; }
+.menu li img.dish { width: 56px; height: 56px; border-radius: 10px; object-fit: cover; flex: none; }
 .menu .price { font-weight: 700; white-space: nowrap; }
 .empty { padding: 28px; border-radius: var(--radius); border: 1px dashed var(--glass-border); color: var(--ink-2); text-align: center; }
 

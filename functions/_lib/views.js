@@ -213,6 +213,7 @@ export async function businessPage(id, lang) {
         <div class="menu">${carta.map((sec) => `<section>
           <h3>${esc(sec.name)}</h3>
           <ul>${(sec.items || []).map((it) => `<li>
+            ${it.image_url ? `<img class="dish" src="${esc(it.image_url)}" alt="" loading="lazy">` : ''}
             <span><b>${esc(it.name)}</b>${it.description ? `<small>${esc(it.description)}</small>` : ''}
             ${(it.allergens || []).length ? `<small class="alg">${S.allergens}: ${it.allergens.map((a) => esc(a.replace(/_/g, ' '))).join(', ')}</small>` : ''}</span>
             <span class="price">${it.price_cents == null ? '' : esc(money(it.price_cents, 'EUR', lang))}</span>
