@@ -1,4 +1,5 @@
 import { configure } from '../../_lib/page.js';
+import { guard } from '../../_lib/public.js';
 import { citiesPage } from '../../_lib/views.js';
 
 // Punto de entrada: la página la arma `_lib/views.js`, aquí solo se dice
@@ -6,5 +7,5 @@ import { citiesPage } from '../../_lib/views.js';
 
 export const onRequestGet = (ctx) => {
   configure(ctx.env);
-  return citiesPage('en');
+  return guard('en', new URL(ctx.request.url).pathname, () => citiesPage('en'));
 };

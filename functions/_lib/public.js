@@ -6,7 +6,7 @@
 // que hay, cuándo y dónde se lee aquí. Eso es lo que Google indexa y lo que
 // se le puede enseñar a un ayuntamiento o a un bar que aún no se fía.
 
-import { esc } from './page.js';
+import { BackendDown, esc, html } from './page.js';
 
 import { siteFooter, siteHeader } from './chrome.js';
 
@@ -192,4 +192,55 @@ export function offerCard(o, lang = 'es') {
       </span>
     </span>
   </a>`;
+}
+
+/** Cuando el servidor no contesta: decirlo claro y no mentir con un 404.
+ *
+ * Va con 503 y `Retry-After` para que los buscadores vuelvan luego en vez de
+ * quedarse con una página vacía, y con `noindex` por si acaso.
+ */
+export function serviceDown(lang, path) {
+  const en = lang === 'en';
+  const S = en
+    ? {
+        title: 'We could not load this',
+        body: 'It is not your fault: something on our side is not answering right now. '
+          + 'Try again in a minute.',
+        again: 'Try again',
+        home: 'Go to Klendar',
+      }
+    : {
+        title: 'No hemos podido cargar esto',
+        body: 'No es culpa tuya: algo de lo nuestro no está respondiendo ahora mismo. '
+          + 'Prueba otra vez en un minuto.',
+        again: 'Probar otra vez',
+        home: 'Ir a Klendar',
+      };
+  return publicPage({
+    lang,
+    path,
+    title: S.title,
+    description: S.body,
+    head: '<meta name="robots" content="noindex">',
+    body: `
+  <h1>${esc(S.title)}</h1>
+  <p class="muted" style="max-width:560px">${esc(S.body)}</p>
+  <p><a class="pill accent" href="${esc(path)}">${esc(S.again)}</a>
+     <a class="pill" href="/${en ? 'en/' : ''}">${esc(S.home)}</a></p>`,
+  });
+}
+
+/** Envuelve una página pública: si el servidor no contesta, se dice.
+ *
+ * Va con 503 y `Retry-After` para que un buscador vuelva luego en vez de
+ * quedarse con una página vacía, y con `noindex` por si acaso.
+ */
+export async function guard(lang, path, trabajo) {
+  try {
+    return await trabajo();
+  } catch (e) {
+    if (!(e instanceof BackendDown)) throw e;
+    console.error('backend caído:', e.message);
+    return html(serviceDown(lang, path), 503, 'no-store');
+  }
 }

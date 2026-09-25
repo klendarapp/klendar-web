@@ -24,25 +24,38 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 export const isUuid = (s) => UUID.test(s || '');
 
+/** El servidor no ha contestado (caído, sin red, 500). No es que no exista. */
+export class BackendDown extends Error {}
+
 export async function rpc(fn, args) {
-  const r = await fetch(`${CFG.url}/rest/v1/rpc/${fn}`, {
-    method: 'POST',
-    headers: { apikey: CFG.key, 'Content-Type': 'application/json' },
-    body: JSON.stringify(args),
-  });
-  if (!r.ok) return null;
+  let r;
+  try {
+    r = await fetch(`${CFG.url}/rest/v1/rpc/${fn}`, {
+      method: 'POST',
+      headers: { apikey: CFG.key, 'Content-Type': 'application/json' },
+      body: JSON.stringify(args),
+    });
+  } catch (e) {
+    throw new BackendDown(`${fn}: ${e.message}`);
+  }
+  if (!r.ok) throw new BackendDown(`${fn}: ${r.status}`);
   const data = await r.json();
   return Array.isArray(data) ? data[0] || null : data;
 }
 
 /** Igual que `rpc`, pero para funciones que devuelven una lista. */
 export async function rpcAll(fn, args) {
-  const r = await fetch(`${CFG.url}/rest/v1/rpc/${fn}`, {
-    method: 'POST',
-    headers: { apikey: CFG.key, 'Content-Type': 'application/json' },
-    body: JSON.stringify(args),
-  });
-  if (!r.ok) return [];
+  let r;
+  try {
+    r = await fetch(`${CFG.url}/rest/v1/rpc/${fn}`, {
+      method: 'POST',
+      headers: { apikey: CFG.key, 'Content-Type': 'application/json' },
+      body: JSON.stringify(args),
+    });
+  } catch (e) {
+    throw new BackendDown(`${fn}: ${e.message}`);
+  }
+  if (!r.ok) throw new BackendDown(`${fn}: ${r.status}`);
   const data = await r.json();
   return Array.isArray(data) ? data : [];
 }

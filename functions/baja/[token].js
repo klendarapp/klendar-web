@@ -1,5 +1,5 @@
 import { configure, esc, html, rpc } from '../_lib/page.js';
-import { publicPage } from '../_lib/public.js';
+import { guard, publicPage } from '../_lib/public.js';
 
 // Darse de baja del correo semanal: un clic desde el propio correo, sin
 // entrar a la cuenta ni buscar nada. El enlace lleva un testigo que solo
@@ -7,6 +7,8 @@ import { publicPage } from '../_lib/public.js';
 
 export async function onRequestGet(ctx) {
   configure(ctx.env);
+  const lang0 = new URL(ctx.request.url).searchParams.get('lang') === 'en' ? 'en' : 'es';
+  return guard(lang0, new URL(ctx.request.url).pathname, async () => {
   const token = String(ctx.params.token || '').slice(0, 64);
   const lang = new URL(ctx.request.url).searchParams.get('lang') === 'en' ? 'en' : 'es';
   const en = lang === 'en';
@@ -43,4 +45,5 @@ export async function onRequestGet(ctx) {
     body,
     head: '<meta name="robots" content="noindex, nofollow">',
   }), 200, 'no-store');
+  });
 }

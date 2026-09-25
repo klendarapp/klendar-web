@@ -1,4 +1,5 @@
 import { configure } from '../../../_lib/page.js';
+import { guard } from '../../../_lib/public.js';
 import { categoryPage } from '../../../_lib/explore.js';
 
 // Punto de entrada: la pagina la arma `_lib/explore.js`, aqui solo se dice
@@ -6,5 +7,5 @@ import { categoryPage } from '../../../_lib/explore.js';
 
 export const onRequestGet = (ctx) => {
   configure(ctx.env);
-  return categoryPage(ctx.params.city, ctx.params.category, 'en');
+  return guard('en', new URL(ctx.request.url).pathname, () => categoryPage(ctx.params.city, ctx.params.category, 'en'));
 };

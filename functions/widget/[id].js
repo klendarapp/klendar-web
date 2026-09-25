@@ -1,5 +1,5 @@
 import { configure, esc, isUuid, rpc, rpcAll } from '../_lib/page.js';
-import { benefit, firstPhoto, fmtDay, fmtLong, fmtTime } from '../_lib/public.js';
+import { benefit, firstPhoto, fmtDay, fmtLong, fmtTime, guard } from '../_lib/public.js';
 
 // El recuadro que el negocio pega en su web: lo que tiene vivo ahora mismo,
 // sin que tenga que mantener nada. Es una página suelta pensada para ir
@@ -15,6 +15,8 @@ const T = (en) => en
 
 export async function onRequestGet(ctx) {
   configure(ctx.env);
+  const lang0 = new URL(ctx.request.url).searchParams.get('lang') === 'en' ? 'en' : 'es';
+  return guard(lang0, new URL(ctx.request.url).pathname, async () => {
   const id = ctx.params.id;
   const url = new URL(ctx.request.url);
   const lang = url.searchParams.get('lang') === 'en' ? 'en' : 'es';
@@ -104,5 +106,6 @@ export async function onRequestGet(ctx) {
       // X-Frame-Options del resto del sitio lo quita `_headers`.
       'content-security-policy': 'frame-ancestors *',
     },
+  });
   });
 }
