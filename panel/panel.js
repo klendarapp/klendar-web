@@ -759,7 +759,7 @@ PAGES.publicaciones = async (v, param) => {
             <button class="btn sm ghost" data-act="${o.status === 'active' ? 'pause' : 'activate'}" data-id="${esc(o.id)}">${o.status === 'active' ? 'Pausar' : 'Activar'}</button>
             ${o.kind === 'flash_offer' ? `<button class="btn sm ghost" data-act="repeat" data-id="${esc(o.id)}">Repetir…</button>` : ''}
             ${OTROS_LOCALES.length ? `<button class="btn sm ghost" data-act="locales" data-id="${esc(o.id)}">En otros locales…</button>` : ''}
-            <a class="btn sm ghost" href="#/cartel/${esc(o.id)}">Cartel</a>
+            <a class="btn sm ghost" href="${I18N.lang === 'en' ? '/en/poster/' : '/cartel/'}${esc(o.id)}" target="_blank" rel="noopener">Cartel</a>
             <button class="btn sm ghost" data-act="delete" data-id="${esc(o.id)}">Borrar</button>
           </div>` },
       ],
@@ -1529,7 +1529,7 @@ PAGES.novedades = async (v) => {
   v.innerHTML = `
     <div class="page-head"><h1>Novedades</h1><span class="spacer"></span>
       ${canManage ? '<button class="btn sm primary" id="nueva">Nueva novedad</button>' : ''}</div>
-    ${helpBox('¿Qué es una novedad?', '<p>Una nota corta en tu ficha, sin cuenta atrás ni código: «hoy hay pulpo», «cerramos el lunes», «ya tenemos terraza». Para algo que se canjea, usa una <b>publicación</b>.</p><p>Quien te tenga en favoritos recibe un aviso.</p>')}
+    ${helpBox('¿Qué es una novedad?', '<p>Una nota corta en tu ficha, sin cuenta atrás ni código: «hoy hay pulpo», «cerramos el lunes», «ya tenemos terraza». Para algo que se canjea, usa una <b>publicación</b>.</p><p>Quien te tenga en favoritos recibe una notificación.</p>')}
     ${table({
       cols: [
         { h: 'Novedad', r: (p) => `${p.image_url ? `<img class="thumb" src="${esc(p.image_url)}" alt="" loading="lazy">` : ''}<span class="title">${esc(p.body || '')}</span>` },

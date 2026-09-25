@@ -36,6 +36,7 @@ createServer(async (req, res) => {
     const en = path.startsWith('/en/') ? 'en/' : '';
     const rest = en ? path.slice(3) : path;
     if ((m = rest.match(/^\/o\/([^/]+)\/?$/))) { mod = await load(`functions/${en}o/[id].js`); params = { id: m[1] }; }
+    else if ((m = rest.match(/^\/(cartel|poster)\/([^/]+)\/?$/))) { mod = await load(`functions/${en}${en ? 'poster' : 'cartel'}/[id].js`); params = { id: m[2] }; }
     else if ((m = rest.match(/^\/b\/([^/]+)\/?$/))) { mod = await load(`functions/${en}b/[id].js`); params = { id: m[1] }; }
     // En inglés la cartelera se llama «what's on», no «agenda».
     else if ((m = rest.match(/^\/(agenda|whats-on)\/([^/]+)\/?$/))) { mod = await load(`functions/${en}${en ? 'whats-on' : 'agenda'}/[city].js`); params = { city: m[2] }; }
