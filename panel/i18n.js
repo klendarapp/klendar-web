@@ -154,6 +154,16 @@ const I18N = makeI18N({
   'Cuándo': 'When',
   'Dura': 'Lasts',
   'Ninguna.': 'None.',
+  'En otros locales…': 'In your other venues…',
+  'Publicar también en…': 'Publish it in…',
+  'Se crea una copia en cada local que marques, con su dirección y su propio código. Las cifras de cada uno van por separado.':
+    'A copy is created in each venue you tick, with its own address and its own code. Each one keeps its own numbers.',
+  'Copiar': 'Copy',
+  'Copiada en 1 local': 'Copied to 1 venue',
+  'No se ha podido copiar': 'It could not be copied',
+  'Ya estaba copiada en ese local': 'It was already copied to that venue',
+  'Añade el precio anterior a la publicación antes de copiarla':
+    'Add the previous price to the publication before copying it',
   'Klendar en tu web': 'Klendar on your website',
   'Pega esta línea donde quieras que salga lo que tienes publicado. Se actualiza solo: no tienes que tocar nada más.':
     'Paste this line wherever you want what you publish to show up. It updates itself: nothing else to maintain.',

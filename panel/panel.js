@@ -276,7 +276,11 @@ PAGES.publicaciones = async (v, param) => {
   if (param === 'nuevo-evento') return offerForm(v, null, 'future_event');
   if (param) return offerForm(v, param);
 
-  const offers = await rpc('my_business_offers', { p_id: BIZ.id });
+  const [offers, otros] = await Promise.all([
+    rpc('my_business_offers', { p_id: BIZ.id }),
+    rpc('my_publishable_businesses', { p_except: BIZ.id }).catch(() => []),
+  ]);
+  OTROS_LOCALES = otros || [];
   v.innerHTML = `
     <div class="page-head"><h1>Publicaciones</h1><span class="spacer"></span>
       <a class="btn sm" href="#/publicaciones/nueva-flash">⚡ Nueva oferta</a>
@@ -371,6 +375,7 @@ PAGES.publicaciones = async (v, param) => {
             ${o.kind === 'future_event' && o.reservations_enabled ? `<a class="btn sm ghost" href="#/asistentes/${esc(o.id)}">Asistentes</a>` : ''}
             <button class="btn sm ghost" data-act="${o.status === 'active' ? 'pause' : 'activate'}" data-id="${esc(o.id)}">${o.status === 'active' ? 'Pausar' : 'Activar'}</button>
             ${o.kind === 'flash_offer' ? `<button class="btn sm ghost" data-act="repeat" data-id="${esc(o.id)}">Repetir…</button>` : ''}
+            ${OTROS_LOCALES.length ? `<button class="btn sm ghost" data-act="locales" data-id="${esc(o.id)}">En otros locales…</button>` : ''}
             <button class="btn sm ghost" data-act="delete" data-id="${esc(o.id)}">Borrar</button>
           </div>` },
       ],
@@ -383,6 +388,10 @@ PAGES.publicaciones = async (v, param) => {
         try {
           if (b.dataset.act === 'repeat') {
             await repetirDialogo(id);
+            return;
+          }
+          if (b.dataset.act === 'locales') {
+            await localesDialogo(id);
             return;
           }
           if (b.dataset.act === 'delete') {
@@ -405,6 +414,53 @@ PAGES.publicaciones = async (v, param) => {
   render();
   renderRules();
 };
+
+/** Los otros locales que lleva quien ha entrado. Se llena al abrir
+ * Publicaciones; si solo tienes uno, el botón ni aparece. */
+let OTROS_LOCALES = [];
+
+/** «En otros locales…»: copiar la misma publicación a los que elijas.
+ *
+ * Cada copia es una publicación de verdad, con la dirección de su local, sus
+ * códigos y sus cifras. El QR de la calle Mayor no puede valer en la
+ * sucursal de al lado. */
+async function localesDialogo(offerId) {
+  const r = await modal({
+    title: 'Publicar también en…',
+    intro: 'Se crea una copia en cada local que marques, con su dirección y su propio código. Las cifras de cada uno van por separado.',
+    fields: OTROS_LOCALES.map((b) => ({
+      name: `b_${b.id}`,
+      type: 'checkbox',
+      value: false,
+      label: [b.name, b.address, b.city].filter(Boolean).join(' · ')
+        + (b.verification_status !== 'verified' ? ' (sin verificar todavía)' : ''),
+    })),
+    submit: 'Copiar',
+  });
+  if (!r) return;
+  const elegidos = OTROS_LOCALES.map((b) => b.id).filter((id) => r[`b_${id}`]);
+  if (!elegidos.length) return;
+
+  const res = await rpc('copy_offer_to_businesses', { p_offer: offerId, p_businesses: elegidos })
+    .catch((e) => ({ ok: false, error: e.message }));
+  if (!res?.ok) { toast(res?.error || 'No se ha podido copiar', true); return; }
+
+  const fallos = res.failed || [];
+  if (res.copies && !fallos.length) {
+    toast(res.copies === 1 ? 'Copiada en 1 local' : `Copiada en ${res.copies} locales`);
+  } else if (res.copies) {
+    toast(`Copiada en ${res.copies}; ${fallos.length} no se han podido`, true);
+  } else {
+    // El caso más común y el más útil de explicar: una publicación vieja con
+    // un −X % a la que le falta el precio anterior que exige la ley.
+    const motivo = fallos[0]?.error || '';
+    toast(motivo === 'prior_price_required'
+      ? 'Añade el precio anterior a la publicación antes de copiarla'
+      : motivo === 'already_copied' ? 'Ya estaba copiada en ese local'
+        : 'No se ha podido copiar', true);
+  }
+  route();
+}
 
 /** Formulario de publicación (nueva o existente). */
 async function offerForm(v, id, kindDefault) {
