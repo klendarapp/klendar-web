@@ -344,10 +344,11 @@ async function boot() {
   if (!session) return showLogin();
   ME = session.user;
   // Quien entró con Google y aún no ha aceptado los términos ni dicho su
-  // edad lo hace primero en «Mi Klendar», y vuelve aquí.
+  // edad lo hace primero en «Tu cuenta», y vuelve aquí.
   try {
     const c = await rpc('my_consents');
-    if (c && !c.terms_accepted_at) {
+    if (!c) { await sb.auth.signOut({ scope: 'local' }).catch(() => {}); return showLogin(); }
+    if (!c.terms_accepted_at) {
       location.href = `/app/?volver=${encodeURIComponent(`/panel/${location.search}${location.hash}`)}#/ultimo-paso`;
       return;
     }

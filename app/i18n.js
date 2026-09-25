@@ -1,4 +1,4 @@
-// «Mi Klendar» en inglés. Lo que no esté aquí se queda en español.
+// «Tu cuenta» en inglés. Lo que no esté aquí se queda en español.
 'use strict';
 
 const APP_EN = {
@@ -7,7 +7,7 @@ const APP_EN = {
   'Volver': 'Back',
   'Algo ha fallado': 'Something went wrong',
   'Guardar': 'Save',
-  'Mi Klendar': 'My Klendar',
+  'Tu cuenta': 'Your account',
   'Hola': 'Hi',
   'Explorar': 'Explore',
   'Qué hay ahora cerca': 'What is on nearby right now',

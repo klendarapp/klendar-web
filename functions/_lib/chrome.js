@@ -16,7 +16,7 @@ export const NAV = [
   { es: 'Para negocios', en: 'For businesses', hrefEs: '/para-negocios/', hrefEn: '/en/for-business/' },
   { es: 'Preguntas', en: 'FAQ', hrefEs: '/preguntas/', hrefEn: '/en/faq/' },
   { es: 'Soporte', en: 'Support', hrefEs: '/soporte/', hrefEn: '/en/support/' },
-  { es: 'Mi Klendar', en: 'My Klendar', hrefEs: '/app/', hrefEn: '/app/?lang=en', cls: 'nav-yo' },
+  { es: 'Tu cuenta', en: 'Your account', hrefEs: '/app/', hrefEn: '/app/?lang=en', cls: 'nav-yo' },
   { es: 'Acceso para negocios', en: 'Business sign in', hrefEs: '/panel/', hrefEn: '/panel/', cls: 'nav-panel' },
 ];
 
@@ -26,7 +26,7 @@ export const FOOT_PRODUCT = [
   { es: 'Agenda local', en: "What's on", hrefEs: '/agenda/', hrefEn: '/en/whats-on/' },
   { es: 'Para negocios', en: 'For businesses', hrefEs: '/para-negocios/', hrefEn: '/en/for-business/' },
   { es: 'Precios', en: 'Pricing', hrefEs: '/precios/', hrefEn: '/en/pricing/' },
-  { es: 'Mi Klendar', en: 'My Klendar', hrefEs: '/app/', hrefEn: '/app/?lang=en' },
+  { es: 'Tu cuenta', en: 'Your account', hrefEs: '/app/', hrefEn: '/app/?lang=en' },
   { es: 'Acceso para negocios', en: 'Business sign in', hrefEs: '/panel/', hrefEn: '/panel/' },
   { es: 'Preguntas frecuentes', en: 'FAQ', hrefEs: '/preguntas/', hrefEn: '/en/faq/' },
   { es: 'Soporte', en: 'Support', hrefEs: '/soporte/', hrefEn: '/en/support/' },

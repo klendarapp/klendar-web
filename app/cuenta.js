@@ -1,4 +1,4 @@
-/* «Mi Klendar»: lo de la cuenta.
+/* «Tu cuenta»: lo de la cuenta.
  *
  * Avisos (la bandeja de la campana), «Avísame si…», ajustes (perfil,
  * notificaciones, privacidad, sesión y borrar la cuenta), sugerencias,
@@ -97,7 +97,7 @@ RUTAS.avisos = async () => {
     .order('created_at', { ascending: false }).limit(50));
   const nuevos = lista.filter((n) => !n.read_at).length;
   pinta(`
-    <p class="crumbs"><a href="#/">${esc(t('Mi Klendar'))}</a></p>
+    <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(t('Avisos'))}</h1>
     <p class="acciones">
       ${nuevos ? `<button class="pill" id="leidos">${esc(t('Marcar todo como leído'))}</button>` : ''}
@@ -162,7 +162,7 @@ RUTAS.alertas = async () => {
   if (!exigeSesion('alertas')) return;
   const [lista, cats] = await Promise.all([llamar('my_offer_alerts', {}), categorias()]);
   pinta(`
-    <p class="crumbs"><a href="#/">${esc(t('Mi Klendar'))}</a></p>
+    <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(t('Avísame si…'))}</h1>
     <p class="muted">${esc(t('Te avisamos cuando se publique algo que encaje. Como mucho tres avisos al día, y puedes apagarlos de uno en uno.'))}</p>
     <p><a class="pill accent" href="#/alerta/nueva">+ ${esc(t('Nuevo aviso'))}</a></p>
@@ -302,7 +302,7 @@ RUTAS.ajustes = async () => {
   const inicial = (p.display_name || YO.email || '?').trim().charAt(0).toUpperCase();
 
   pinta(`
-    <p class="crumbs"><a href="#/">${esc(t('Mi Klendar'))}</a></p>
+    <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(t('Ajustes'))}</h1>
 
     <section class="bloque">
@@ -511,7 +511,7 @@ RUTAS.sugerencias = async () => {
     .select('id, kind, message, status, created_at, replied_at')
     .order('created_at', { ascending: false }).limit(20));
   pinta(`
-    <p class="crumbs"><a href="#/">${esc(t('Mi Klendar'))}</a></p>
+    <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(t('Sugerencias y mejoras'))}</h1>
     <p class="muted">${esc(t('Klendar la hacemos con lo que nos contáis. Escribe lo que mejorarías, lo que echas de menos o lo que no funciona: lo leemos todo y te respondemos si hace falta.'))}</p>
     <form class="formu" id="f" novalidate>
@@ -600,7 +600,7 @@ RUTAS.opinar = async ([id]) => {
         titulo: t('Reseña publicada. ¡Gracias!'),
         texto: t('Ayuda a otros a decidirse y al sitio a mejorar.'),
         volver: `${pre}/b/${encodeURIComponent(id)}#resenas`, volverTxt: t('Volver al sitio'),
-        lista: '#/', listaTxt: t('Mi Klendar'),
+        lista: '#/', listaTxt: t('Tu cuenta'),
       });
     });
   });
@@ -653,7 +653,7 @@ RUTAS.denunciar = async ([tipo, id]) => {
         titulo: t('Denuncia enviada'),
         texto: t('Gracias por avisar. Si hace falta, lo quitamos y hablamos con quien lo publicó.'),
         volver, volverTxt: t('Volver'),
-        lista: '#/', listaTxt: t('Mi Klendar'),
+        lista: '#/', listaTxt: t('Tu cuenta'),
       });
     });
   });

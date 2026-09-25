@@ -417,7 +417,7 @@ if __name__ == '__main__':
     io.open('sitemap.xml', 'w', encoding='utf-8', newline=chr(10)).write(sitemap())
     print('ok: index.html, en/index.html, en/support/index.html, robots.txt, sitemap.xml')
 
-    # «Mi Klendar» (/app/) es una sola página con los dos idiomas: lleva las
+    # «Tu cuenta» (/app/) es una sola página con los dos idiomas: lleva las
     # dos cabeceras y los dos pies, y el propio app.js enseña la que toca.
     # Se estampan aquí para que el menú sea el mismo que en el resto.
     import re as _re

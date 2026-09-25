@@ -5,7 +5,7 @@
 // mandar el enlace inglés a quien toque y Google indexa las dos.
 //
 // Se pueden leer enteras sin app y sin cuenta. Lo que necesita cuenta
-// (guardar, seguir, pedir el código, opinar, denunciar) lleva a «Mi Klendar»
+// (guardar, seguir, pedir el código, opinar, denunciar) lleva a «Tu cuenta»
 // (/app/), que hace lo mismo que la app desde el navegador.
 
 import { esc, fmtWhen, html, isUuid, render, rpc, rpcAll, rows } from './page.js';

@@ -1,4 +1,4 @@
-// Textos de «Mi Klendar» que no tienen traducción inglesa.
+// Textos de «Tu cuenta» que no tienen traducción inglesa.
 //
 // Busca los t('…') de app.js y cuenta.js, y los textos de las listas que se
 // traducen al vuelo (motivos, tipos de sugerencia, estados), y dice cuáles no

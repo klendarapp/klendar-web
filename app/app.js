@@ -1,4 +1,4 @@
-/* «Mi Klendar» en la web: lo mismo que la app, desde cualquier navegador.
+/* «Tu cuenta» en la web: lo mismo que la app, desde cualquier navegador.
  *
  * Una sola página con rutas en el `#`: entrar, registrarse, planes
  * guardados, favoritos, códigos (con su QR para enseñar en la barra) y
@@ -164,7 +164,13 @@ async function faltaConsentimiento() {
   if (CONSENTIMIENTO.id !== YO.id) {
     try {
       const c = await llamar('my_consents', {});
-      CONSENTIMIENTO = { id: YO.id, ok: Boolean(c?.terms_accepted_at), fecha: c?.has_birth_date !== false };
+      if (!c) {
+        // La cuenta ya no existe (borrada desde otro sitio): se sale sin más.
+        await sb.auth.signOut({ scope: 'local' }).catch(() => {});
+        YO = null;
+        return false;
+      }
+      CONSENTIMIENTO = { id: YO.id, ok: Boolean(c.terms_accepted_at), fecha: c.has_birth_date !== false };
     } catch { CONSENTIMIENTO = { id: YO.id, ok: true, fecha: true }; } // sin red: no se bloquea
   }
   return !CONSENTIMIENTO.ok;
@@ -487,7 +493,7 @@ RUTAS.planes = async () => {
   const proximos = (lista || []).filter((o) => fin(o) >= ahora);
   const pasados = (lista || []).filter((o) => fin(o) < ahora);
   pinta(`
-    <p class="crumbs"><a href="#/">${esc(t('Mi Klendar'))}</a></p>
+    <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(t('Tus planes'))}</h1>
     ${proximos.length
     ? `<div class="olist">${proximos.map(tarjeta).join('')}</div>`
@@ -541,7 +547,7 @@ RUTAS.favoritos = async () => {
   if (!exigeSesion('favoritos')) return;
   const lista = await llamar('my_favorites', {});
   pinta(`
-    <p class="crumbs"><a href="#/">${esc(t('Mi Klendar'))}</a></p>
+    <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(t('Tus sitios'))}</h1>
     ${(lista || []).length ? `<div class="olist">${lista.map((b) => `
       <a class="ocard" href="${pre}/b/${esc(b.id)}">
@@ -575,7 +581,7 @@ RUTAS.codigos = async () => {
   const estado = (r) => (r.status === 'validated' ? t('Canjeado')
     : vivo(r) ? t('Listo para usar') : r.status === 'cancelled' ? t('Anulado') : t('Caducado'));
   pinta(`
-    <p class="crumbs"><a href="#/">${esc(t('Mi Klendar'))}</a></p>
+    <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(t('Tus códigos'))}</h1>
     ${(lista || []).length ? `<div class="olist">${lista.map((r) => `
       <a class="ocard" href="${vivo(r) ? `#/codigo/${esc(r.offer_id)}` : r.status === 'validated' ? `#/recibo/${esc(r.id)}` : `${pre}/o/${esc(r.offer_id)}`}">
@@ -653,7 +659,7 @@ RUTAS.espera = async ([id]) => {
     titulo: dentro ? t('Estás en la lista de espera') : t('Ya no estás en la lista de espera'),
     texto: dentro ? t('Te avisamos si se libera una plaza') : '',
     volver: `${pre}/o/${encodeURIComponent(id)}`, volverTxt: t('Volver a la publicación'),
-    lista: '#/', listaTxt: t('Mi Klendar'),
+    lista: '#/', listaTxt: t('Tu cuenta'),
     deshacer: `espera/${id}`,
   });
 };
@@ -690,7 +696,7 @@ RUTAS.sellos = async () => {
   if (!exigeSesion('sellos')) return;
   const lista = await llamar('my_stamp_cards', {});
   pinta(`
-    <p class="crumbs"><a href="#/">${esc(t('Mi Klendar'))}</a></p>
+    <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(t('Tarjetas de sellos'))}</h1>
     ${(lista || []).length ? lista.map((c) => `
       <div class="sello">

@@ -366,7 +366,7 @@ const I18N = makeI18N({
     'Si alguien te ha añadido a su equipo, entra con el mismo correo con el que te invitaron.':
       'If someone added you to their team, sign in with the same email they invited.',
     // ── Alta y mapa ─────────────────────────────────────────────────────
-    "Con la misma cuenta que usas en la app o en «Mi Klendar». Si tu negocio todavía no está dado de alta, entra y lo das de alta aquí mismo.": "With the same account you use in the app or in “My Klendar”. If your business is not registered yet, sign in and register it right here.",
+    "Con la misma cuenta que usas en la app o en la web. Si tu negocio todavía no está dado de alta, entra y lo das de alta aquí mismo.": "With the same account you use in the app or on the website. If your business is not registered yet, sign in and register it right here.",
     "¿Aún no tienes cuenta?": "No account yet?",
     "Crea una gratis": "Create one for free",
     "y da de alta tu negocio.": "and register your business.",
