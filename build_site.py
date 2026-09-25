@@ -4,6 +4,8 @@
 import datetime
 import io, os
 
+AQUI = os.path.dirname(os.path.abspath(__file__))
+
 YEAR = '2026'
 BASE = 'https://klendar.app'
 
@@ -189,22 +191,7 @@ def head(t, path, page_title=None, page_desc=None, extra=''):
 {extra}
 </head>
 <body>
-<header class="top"><div class="wrap">
-  <a class="brand" href="/{t['dir']}"><img src="/assets/symbol.png" alt="" width="30" height="30"> Klendar</a>
-  <input type="checkbox" id="menu" aria-hidden="true">
-  <label class="menu-toggle" for="menu" aria-label="Menú"><span></span><span></span><span></span></label>
-  <nav class="main">
-    <a href="/{t['dir']}#{t['a_how']}">{t['nav_how']}</a>
-    <a href="{t['biz_page_url']}">{t['nav_biz']}</a>
-    <a href="{t['faq_url']}">{t['nav_faq']}</a>
-    <a href="{t['support_url']}">{t['nav_support']}</a>
-    <a href="{t['biz_panel_url']}" class="nav-panel">{t['biz_panel']}</a>
-    <span class="lang" aria-label="Idioma / Language">
-      <a href="{es_path}" class="{'on' if t['lang']=='es' else ''}" data-lang="es" hreflang="es">ES</a>
-      <a href="{en_path}" class="{'on' if t['lang']=='en' else ''}" data-lang="en" hreflang="en">EN</a>
-    </span>
-  </nav>
-</div></header>
+{HEADER_TPL[t['lang']].replace('{{ES}}', es_path).replace('{{EN}}', en_path)}
 '''
 
 
@@ -215,22 +202,34 @@ LIVE_SCRIPTS = (
 )
 
 
+# ── La barra y el pie, compartidos con las páginas dinámicas ────────────────
+# Viven en `functions/_lib/chrome.js` porque allí también se usan; aquí se
+# piden a node para que no haya dos menús que se vayan separando solos.
+def _chrome(fn, *args):
+    import json as _json
+    import subprocess as _sub
+    codigo = (
+        "import('./functions/_lib/chrome.js').then(m=>"
+        "process.stdout.write(JSON.stringify(m.%s(%s))))"
+        % (fn, ','.join(_json.dumps(a) for a in args))
+    )
+    out = _sub.run(['node', '-e', codigo], cwd=AQUI, capture_output=True, text=True,
+                   encoding='utf-8')
+    if out.returncode != 0 or not out.stdout:
+        raise SystemExit('No se pudo leer la barra de functions/_lib/chrome.js '
+                         '(¿está node instalado?): ' + (out.stderr or '')[-300:])
+    return _json.loads(out.stdout)
+
+
+HEADER_TPL = {lang: _chrome('siteHeader', lang, '{{ES}}', '{{EN}}') for lang in ('es', 'en')}
+FOOTER_HTML = {lang: _chrome('siteFooter', lang) for lang in ('es', 'en')}
+
+
 def footer(t, only_footer=True):
     prod = ''.join(f'<a href="{h}">{l}</a>' for h, l in t['foot_links_product'])
     legal = ''.join(f'<a href="{h}">{l}</a>' for h, l in t['foot_links_legal'])
     return f'''
-<footer><div class="wrap">
-  <div class="cols">
-    <div><a class="brand" href="/{t['dir']}"><img src="/assets/symbol.png" alt="" width="30" height="30"> Klendar</a>
-      <p style="margin:12px 0 0;max-width:340px">{t['desc']}</p></div>
-    <div><h4>{t['foot_product']}</h4>{prod}</div>
-    <div><h4>{t['foot_legal']}</h4>{legal}</div>
-  </div>
-  <div class="bottom">
-    <span>{t['foot_rights']}</span>
-    <span><a href="mailto:info@klendar.app">info@klendar.app</a> · {t['foot_made']}</span>
-  </div>
-</div></footer>
+{FOOTER_HTML[t['lang']]}
 <script>
 (function(){{
   var links=document.querySelectorAll('.lang a');

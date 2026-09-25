@@ -8,6 +8,8 @@
 
 import { esc } from './page.js';
 
+import { siteFooter, siteHeader } from './chrome.js';
+
 export const BASE = 'https://klendar.app';
 
 export const money = (cents, currency = 'EUR', lang = 'es') =>
@@ -154,26 +156,9 @@ export function publicPage({ lang, path, title, description, head = '', body, im
 ${head}
 </head>
 <body>
-<header class="top"><div class="wrap">
-  <a class="brand" href="/${en ? 'en/' : ''}"><img src="/assets/symbol.png" alt=""> Klendar</a>
-  <nav class="main">
-    <a href="${exploreBase(lang)}/">${S.exp}</a>
-    <a href="${agendaBase(lang)}/">${S.agenda}</a>
-    <a href="${en ? '/en/#how-it-works' : '/#como'}">${S.how}</a>
-    <a href="${en ? '/en/business-terms/' : '/negocios/'}">${S.biz}</a>
-    <a href="${en ? '/en/support/' : '/soporte/'}">${S.sup}</a>
-    <span class="lang" aria-label="Idioma / Language">
-      <a href="${esc(es)}" class="${en ? '' : 'on'}" hreflang="es">ES</a>
-      <a href="${esc(enPath)}" class="${en ? 'on' : ''}" hreflang="en">EN</a>
-    </span>
-  </nav>
-</div></header>
+${siteHeader(lang, esc(es), esc(enPath))}
 <main class="pub wrap">${body}</main>
-<footer class="pub-foot"><div class="wrap">
-  <p>© ${new Date().getFullYear()} Klendar · ${en
-    ? '<a href="/en/privacy/">Privacy</a> · <a href="/en/terms/">Terms</a> · <a href="/en/support/">Support</a>'
-    : '<a href="/privacidad/">Privacidad</a> · <a href="/terminos/">Términos</a> · <a href="/soporte/">Soporte</a>'}</p>
-</div></footer>
+${siteFooter(lang)}
 </body></html>`;
 }
 

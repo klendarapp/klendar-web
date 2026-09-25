@@ -9,8 +9,8 @@
 
 import { esc, html, isUuid, render, rpc, rpcAll } from './page.js';
 import {
-  agendaBase, BASE, benefit, firstPhoto, fmtLong, fmtTime, isVideo, media,
-  money, offerCard, openInApp, priorPrice, publicPage,
+  agendaBase, BASE, benefit, exploreBase, firstPhoto, fmtLong, fmtTime, isVideo,
+  media, money, offerCard, openInApp, priorPrice, publicPage,
 } from './public.js';
 
 const pre = (lang) => (lang === 'en' ? '/en' : '');
@@ -141,7 +141,10 @@ export async function businessPage(id, lang) {
   if (!isUuid(id)) return notFound(lang, path, 'b');
   const b = await rpc('business_profile', { p_id: id });
   if (!b || !b.name) return notFound(lang, path, 'b');
-  const offers = await rpcAll('business_offers', { p_id: id });
+  const [offers, sellos] = await Promise.all([
+    rpcAll('business_offers', { p_id: id }),
+    rpc('stamp_card_of', { p_business: id }),
+  ]);
 
   const S = en
     ? {
@@ -150,6 +153,8 @@ export async function businessPage(id, lang) {
         open: 'Follow in the app', note: 'Free app. You get a heads-up when this business publishes something.',
         verified: 'Verified business', since: 'On Klendar since', redeemed: 'redemptions validated',
         about: 'About', menu: 'Menu',
+        stamps: 'Stamp card',
+        stampsBody: (n, r) => `When you get to ${n} visits: “${r}”. Every code you redeem here leaves a stamp, one a day at most, and the app keeps count.`,
       }
     : {
         now: 'Ahora mismo', soon: 'Próximamente',
@@ -157,6 +162,8 @@ export async function businessPage(id, lang) {
         open: 'Seguir en la app', note: 'App gratuita. Te avisa cuando este negocio publica algo.',
         verified: 'Negocio verificado', since: 'En Klendar desde', redeemed: 'canjes validados',
         about: 'Sobre el negocio', menu: 'Carta',
+        stamps: 'Tarjeta de sellos',
+        stampsBody: (n, r) => `Al llegar a ${n} visitas: «${r}». Cada código que canjeas aquí deja un sello, como mucho uno al día, y la app lleva la cuenta.`,
       };
 
   const flash = offers.filter((o) => o.kind === 'flash_offer');
@@ -197,6 +204,8 @@ export async function businessPage(id, lang) {
     </aside>
     <div class="d-body">
       ${b.description ? `<h2>${S.about}</h2><p>${esc(b.description).replace(/\n/g, '<br>')}</p>` : ''}
+      ${sellos?.is_active ? `<h2>${S.stamps}</h2>
+        <p class="callout">${esc(S.stampsBody(sellos.goal, sellos.reward))}</p>` : ''}
       ${flash.length ? `<h2>${S.now}</h2><div class="olist">${flash.map((o) => offerCard(o, lang)).join('')}</div>` : ''}
       ${events.length ? `<h2>${S.soon}</h2><div class="olist">${events.map((o) => offerCard(o, lang)).join('')}</div>` : ''}
       ${offers.length ? '' : `<p class="empty">${S.none}</p>`}
@@ -239,7 +248,10 @@ export async function agendaPage(rawCity, lang) {
   const path = `${agendaBase(lang)}/${encodeURIComponent(raw.toLowerCase())}/`;
   if (!raw || raw.length > 60) return notFound(lang, path, 'o');
 
-  const offers = await rpcAll('public_city_agenda', { p_city: raw, p_limit: 60 });
+  const [offers, negocios] = await Promise.all([
+    rpcAll('public_city_agenda', { p_city: raw, p_limit: 60 }),
+    rpc('public_businesses', { p_city: raw, p_limit: 12 }),
+  ]);
   const city = PRETTY(offers[0]?.city || raw);
 
   const S = en
@@ -248,6 +260,7 @@ export async function agendaPage(rawCity, lang) {
         lead: 'Flash deals and local events for the next few days. No account needed to look; the app is only for getting the code.',
         none: `Nothing published in ${city} yet. If you run a business here, you can be the first.`,
         biz: 'Publish your business', all: 'Other cities', app: 'Get the app', agenda: "What's on",
+        days: 'Days', places: 'Places in this city', explore: 'Explore everything',
         note: 'Updated as businesses publish. Times are local (Europe/Madrid).',
         plans: 'plans and deals',
       }
@@ -256,6 +269,7 @@ export async function agendaPage(rawCity, lang) {
         lead: 'Ofertas flash y planes de los próximos días. Para mirar no hace falta cuenta; la app solo se usa para conseguir el código.',
         none: `Todavía no hay nada publicado en ${city}. Si tienes un negocio aquí, puedes ser el primero.`,
         biz: 'Publicar mi negocio', all: 'Otras ciudades', app: 'Descargar la app', agenda: 'Agenda',
+        days: 'Días', places: 'Negocios de esta ciudad', explore: 'Explorar todo',
         note: 'Se actualiza según van publicando los negocios. Horas locales (Europe/Madrid).',
         plans: 'planes y ofertas',
       };
@@ -270,19 +284,32 @@ export async function agendaPage(rawCity, lang) {
   const dayTitle = (iso) => new Intl.DateTimeFormat(en ? 'en-GB' : 'es-ES', {
     timeZone: 'Europe/Madrid', weekday: 'long', day: 'numeric', month: 'long',
   }).format(new Date(`${iso}T12:00:00Z`));
+  // Para los botones de arriba: «vie 26», que caben varios en una línea.
+  const shortDay = (iso) => new Intl.DateTimeFormat(en ? 'en-GB' : 'es-ES', {
+    timeZone: 'Europe/Madrid', weekday: 'short', day: 'numeric',
+  }).format(new Date(`${iso}T12:00:00Z`));
 
   const body = `
   <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a> · <a href="${agendaBase(lang)}/">${S.agenda}</a></p>
   <h1>${esc(S.h1)}</h1>
   <p class="muted" style="max-width:620px">${esc(S.lead)}</p>
+  ${days.size > 1 ? `<div class="filters"><div class="frow"><span class="flabel">${esc(S.days)}</span>
+    ${[...days.keys()].map((iso) => `<a class="chip" href="#d${iso}">${esc(shortDay(iso))}</a>`).join('')}
+  </div></div>` : ''}
   ${offers.length
-    ? [...days.entries()].map(([iso, list]) => `<section class="daygroup">
+    ? [...days.entries()].map(([iso, list]) => `<section class="daygroup" id="d${iso}">
         <h3>${esc(dayTitle(iso))}</h3>
         <div class="olist">${list.map((o) => offerCard(o, lang)).join('')}</div>
       </section>`).join('')
     : `<p class="empty">${esc(S.none)}</p>`}
+  ${(negocios?.items || []).length ? `<section class="daygroup">
+    <h3>${esc(S.places)}</h3>
+    <div class="cities">${negocios.items.map((b) => `<a href="${en ? '/en' : ''}/b/${esc(b.id)}">${esc(b.name)}${b.live ? ` <span class="muted">${b.live}</span>` : ''}</a>`).join('')}</div>
+  </section>` : ''}
   <p class="muted" style="font-size:13px">${esc(S.note)}</p>
-  <p><a class="pill accent" href="/${en ? 'en/' : ''}">${S.app}</a> <a class="pill" href="${en ? '/en/business-terms/' : '/negocios/'}">${S.biz}</a></p>
+  <p><a class="pill accent" href="/${en ? 'en/' : ''}">${S.app}</a>
+     <a class="pill" href="${exploreBase(lang)}/?${en ? 'city' : 'ciudad'}=${encodeURIComponent(city)}">${S.explore}</a>
+     <a class="pill" href="${en ? '/en/business-terms/' : '/negocios/'}">${S.biz}</a></p>
   <p><a href="${agendaBase(lang)}/">${S.all} →</a></p>`;
 
   const jsonLd = offers.length

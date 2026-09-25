@@ -29,6 +29,10 @@ const T = (en) => en
       catNone: (c, city) => `No ${c.toLowerCase()} in ${city} have anything live right now.`,
       colNone: 'This selection is empty right now. Have a look in a while.',
       inCity: 'in', everywhere: 'Everywhere',
+      what: 'Show', plans: 'Plans', places: 'Places',
+      noPlaces: 'No places match that yet.',
+      live: (n) => `${n} on right now`,
+      picks: 'Selections', seeProfile: 'See the place',
     }
   : {
       exp: 'Explorar', agenda: 'Agenda local', search: 'Buscar', ph: 'Un bar, un mercadillo, «brunch»…',
@@ -44,6 +48,10 @@ const T = (en) => en
       catNone: (c, city) => `Ahora mismo no hay nada de ${c.toLowerCase()} en ${city}.`,
       colNone: 'Esta selección está vacía ahora mismo. Vuelve a mirar en un rato.',
       inCity: 'en', everywhere: 'En todas partes',
+      what: 'Ver', plans: 'Planes', places: 'Negocios',
+      noPlaces: 'Todavía no hay negocios con eso.',
+      live: (n) => `${n} ahora mismo`,
+      picks: 'Selecciones', seeProfile: 'Ver el sitio',
     };
 
 const catName = (c, en) => (en ? c?.names?.en : c?.names?.es) || c?.slug || '';
@@ -54,6 +62,23 @@ const colSub = (c, en) => (en ? c?.subtitle?.en : c?.subtitle?.es) || '';
 const lista = (items, lang, vacio) => items.length
   ? `<div class="olist">${items.map((o) => offerCard(o, lang)).join('')}</div>`
   : `<p class="empty">${esc(vacio)}</p>`;
+
+/** Tarjeta de negocio, para la pestaña «Negocios». */
+const bizCard = (b, lang, S) => {
+  const en = lang === 'en';
+  const nombre = (en ? b.names?.en : b.names?.es) || '';
+  return `<a class="ocard" href="${en ? '/en' : ''}/b/${esc(b.id)}">
+    ${b.logo_url ? `<img src="${esc(b.logo_url)}" alt="" loading="lazy">` : '<span class="ph">✦</span>'}
+    <span class="ocard-body">
+      <b>${esc(b.name)}</b>
+      <span class="muted">${esc(nombre)}${b.address ? ` · ${esc(b.address)}` : ''}</span>
+      <span class="ocard-meta">
+        ${b.live ? `<span class="tag">${esc(S.live(b.live))}</span>` : ''}
+        <span class="muted">${esc(S.seeProfile)} →</span>
+      </span>
+    </span>
+  </a>`;
+};
 
 const portada = (items) => items.map((o) => (o.images || []).find((u) => !isVideo(u))).find(Boolean);
 
@@ -67,10 +92,21 @@ export async function explorePage(url, lang) {
   const cat = (qs.get(en ? 'category' : 'categoria') || '').slice(0, 40);
   const kind = (qs.get(en ? 'type' : 'tipo') || '').slice(0, 20);
   const page = Math.max(1, Math.min(50, parseInt(qs.get('p') || '1', 10) || 1));
-  const filtrado = Boolean(q || city || cat || kind || page > 1);
+  // «Planes» o «Negocios»: la misma búsqueda, dos maneras de mirarla.
+  const ver = (qs.get(en ? 'show' : 'ver') || '').slice(0, 20);
+  const negocios = ver === 'places' || ver === 'negocios';
+  const filtrado = Boolean(q || city || cat || kind || negocios || page > 1);
 
-  const [res, cities, cats] = await Promise.all([
-    rpc('public_explore', {
+  const [res, cities, cats, cols] = await Promise.all([
+    negocios
+      ? rpc('public_businesses', {
+        p_city: city || null,
+        p_category: cat || null,
+        p_q: q || null,
+        p_limit: POR_PAGINA,
+        p_offset: (page - 1) * POR_PAGINA,
+      })
+      : rpc('public_explore', {
       p_city: city || null,
       p_category: cat || null,
       p_kind: kind === 'offers' || kind === 'ofertas' ? 'flash_offer'
@@ -81,6 +117,7 @@ export async function explorePage(url, lang) {
     }),
     rpcAll('public_cities', {}),
     rpcAll('public_categories', { p_city: city || null }),
+    rpcAll('public_collections', { p_city: city || null }),
   ]);
   const items = res?.items || [];
   const total = res?.total || 0;
@@ -89,11 +126,12 @@ export async function explorePage(url, lang) {
   // Los filtros son enlaces: se puede compartir la URL y va sin JavaScript.
   const link = (cambios) => {
     const p = new URLSearchParams();
-    const base = { q, city, cat, kind, p: 1, ...cambios };
+    const base = { q, city, cat, kind, ver, p: 1, ...cambios };
     if (base.q) p.set('q', base.q);
     if (base.city) p.set(en ? 'city' : 'ciudad', base.city);
     if (base.cat) p.set(en ? 'category' : 'categoria', base.cat);
-    if (base.kind) p.set(en ? 'type' : 'tipo', base.kind);
+    if (base.kind && !base.ver) p.set(en ? 'type' : 'tipo', base.kind);
+    if (base.ver) p.set(en ? 'show' : 'ver', base.ver);
     if (base.p && base.p > 1) p.set('p', String(base.p));
     const s = p.toString();
     return `${exploreBase(lang)}/${s ? `?${s}` : ''}`;
@@ -109,29 +147,42 @@ export async function explorePage(url, lang) {
     <input type="search" name="q" value="${esc(q)}" placeholder="${esc(S.ph)}" aria-label="${esc(S.search)}">
     ${city ? `<input type="hidden" name="${en ? 'city' : 'ciudad'}" value="${esc(city)}">` : ''}
     ${cat ? `<input type="hidden" name="${en ? 'category' : 'categoria'}" value="${esc(cat)}">` : ''}
-    ${kind ? `<input type="hidden" name="${en ? 'type' : 'tipo'}" value="${esc(kind)}">` : ''}
+    ${kind && !negocios ? `<input type="hidden" name="${en ? 'type' : 'tipo'}" value="${esc(kind)}">` : ''}
+    ${negocios ? `<input type="hidden" name="${en ? 'show' : 'ver'}" value="${esc(ver)}">` : ''}
     <button class="pill accent" type="submit">${esc(S.search)}</button>
   </form>
 
   <div class="filters">
-    <div class="frow"><span class="flabel">${esc(S.kind)}</span>
+    <div class="frow"><span class="flabel">${esc(S.what)}</span>
+      ${chip(link({ ver: '' }), S.plans, !negocios)}
+      ${chip(link({ ver: en ? 'places' : 'negocios' }), S.places, negocios)}
+    </div>
+    ${negocios ? '' : `<div class="frow"><span class="flabel">${esc(S.kind)}</span>
       ${chip(link({ kind: '' }), S.all, !kind)}
       ${chip(link({ kind: en ? 'offers' : 'ofertas' }), S.offers, kind === 'offers' || kind === 'ofertas')}
       ${chip(link({ kind: en ? 'events' : 'eventos' }), S.events, kind === 'events' || kind === 'eventos')}
-    </div>
+    </div>`}
     ${cities.length > 1 ? `<div class="frow"><span class="flabel">${esc(S.city)}</span>
       ${chip(link({ city: '' }), S.allCities, !city)}
       ${cities.filter((c) => c.city).slice(0, 12).map((c) => chip(link({ city: String(c.city) }), PRETTY(c.city), city.toLowerCase() === String(c.city).toLowerCase())).join('')}
     </div>` : ''}
     ${(cats || []).length ? `<div class="frow"><span class="flabel">${esc(S.cat)}</span>
       ${chip(link({ cat: '' }), S.all, !cat)}
-      ${(cats || []).map((c) => chip(link({ cat: c.slug }), `${catName(c, en)} (${c.n})`, cat === c.slug)).join('')}
+      ${(cats || []).map((c) => chip(link({ cat: c.slug }), negocios ? catName(c, en) : `${catName(c, en)} (${c.n})`, cat === c.slug)).join('')}
     </div>` : ''}
     ${filtrado ? `<p><a class="muted" href="${exploreBase(lang)}/">${esc(S.clear)}</a></p>` : ''}
   </div>
 
+  ${cols.length ? `<div class="filters"><div class="frow"><span class="flabel">${esc(S.picks)}</span>
+    ${cols.map((c) => `<a class="chip" href="${collectionBase(lang)}/${encodeURIComponent(c.slug)}/${city ? `${CITY(city)}/` : ''}">${esc(colTitle(c, en))}</a>`).join('')}
+  </div></div>` : ''}
+
   <p class="muted" style="margin:18px 0 8px">${esc(S.results(total))}</p>
-  ${lista(items, lang, S.none)}
+  ${negocios
+    ? (items.length
+      ? `<div class="olist">${items.map((b) => bizCard(b, lang, S)).join('')}</div>`
+      : `<p class="empty">${esc(S.noPlaces)}</p>`)
+    : lista(items, lang, S.none)}
   ${paginas > 1 ? `<nav class="pager">
     ${page > 1 ? `<a class="pill" href="${esc(link({ p: page - 1 }))}">${esc(S.prev)}</a>` : ''}
     <span class="muted">${esc(S.page)} ${page}/${paginas}</span>
