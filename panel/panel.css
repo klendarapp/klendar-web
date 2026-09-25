@@ -28,7 +28,8 @@
   gap: 4px;
 }
 .quick button:hover { filter: brightness(1.04); }
-.quick button .ic { font-size: 22px; }
+.quick button .ic { font-size: 26px; color: var(--accent); }
+.quick button.primary .ic { color: inherit; }
 .quick button small { font-weight: 500; color: var(--ink-2); }
 .quick button.primary { background: var(--accent); color: #fff; border-color: transparent; }
 .quick button.primary small { color: rgba(255, 255, 255, .85); }
@@ -192,3 +193,14 @@ dialog.modal input:focus, dialog.modal select:focus, dialog.modal textarea:focus
    dentro de su caja (.tbl-wrap) y la página nunca en horizontal. */
 .layout > *, #view, #view > div { min-width: 0; }
 input[type=file] { max-width: 100%; }
+
+/* Iconos de Material Symbols (los mismos que la app y «Tu cuenta»). */
+.ms { font-family: 'Material Symbols Outlined'; font-weight: normal; font-style: normal; font-size: 20px;
+  line-height: 1; letter-spacing: normal; text-transform: none; display: inline-block; white-space: nowrap;
+  direction: ltr; -webkit-font-smoothing: antialiased; font-feature-settings: 'liga'; flex: none; }
+.btn .ms { font-size: 18px; }
+.nav .ms { font-size: 20px; }
+.ph .ms { font-size: 22px; }
+.scan-result .ms { font-size: 22px; vertical-align: -5px; margin-right: 6px; }
+.scan-result small .ms { font-size: 16px; vertical-align: -3px; margin-right: 4px; }
+.card h2 .ms { font-size: 22px; vertical-align: -4px; color: var(--accent-text); }

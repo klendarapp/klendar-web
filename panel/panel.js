@@ -21,11 +21,13 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 // ── Utilidades ──────────────────────────────────────────────────────────────
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+// Iconos de Material Symbols, como en «Tu cuenta» y en la app (no emojis).
+const ms = (name) => `<span class="ms" aria-hidden="true">${name}</span>`;
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const LOC = () => (I18N.lang === 'en' ? 'en-GB' : 'es-ES');
 const fmtDate = (s) => s ? new Date(s).toLocaleString(LOC(), { dateStyle: 'medium', timeStyle: 'short' }) : '—';
 const fmtMoney = (c) => (c == null ? '—' : (c / 100).toLocaleString(I18N.lang === 'en' ? 'en-IE' : 'es-ES', { style: 'currency', currency: 'EUR' }));
-const fmtNum = (n) => (n ?? 0).toLocaleString('es-ES');
+const fmtNum = (n) => (n ?? 0).toLocaleString(LOC());
 const LABELS = {
   active: 'activa', draft: 'borrador', expired: 'terminada', sold_out: 'agotada', cancelled: 'cancelada',
   pending: 'en revisión', approved: 'aprobada', rejected: 'rechazada',
@@ -429,19 +431,19 @@ I18N.translate(document.body);
 
 // ── Navegación ──────────────────────────────────────────────────────────────
 const NAV = [
-  ['resumen', '📊', 'Resumen'],
-  ['publicaciones', '⚡', 'Publicaciones'],
-  ['validar', '🎟', 'Validar códigos'],
-  ['informe', '📈', 'Informe'],
-  ['sellos', '🎫', 'Tarjeta de sellos'],
-  ['carta', '🍽', 'Carta'],
-  ['novedades', '📣', 'Novedades'],
-  ['ficha', '🏪', 'Tu ficha'],
-  ['equipo', '👥', 'Equipo'],
-  ['ayuda', '❓', 'Ayuda'],
+  ['resumen', 'dashboard', 'Resumen'],
+  ['publicaciones', 'bolt', 'Publicaciones'],
+  ['validar', 'qr_code_scanner', 'Validar códigos'],
+  ['informe', 'bar_chart', 'Informe'],
+  ['sellos', 'loyalty', 'Tarjeta de sellos'],
+  ['carta', 'restaurant_menu', 'Carta'],
+  ['novedades', 'campaign', 'Novedades'],
+  ['ficha', 'storefront', 'Tu ficha'],
+  ['equipo', 'group', 'Equipo'],
+  ['ayuda', 'help', 'Ayuda'],
 ];
 function renderNav(current) {
-  $('#nav').innerHTML = NAV.map((n) => `<a class="nav ${current === n[0] ? 'on' : ''}" href="#/${n[0]}"><span class="ic">${n[1]}</span>${n[2]}</a>`).join('');
+  $('#nav').innerHTML = NAV.map((n) => `<a class="nav ${current === n[0] ? 'on' : ''}" href="#/${n[0]}">${ms(n[1])}${n[2]}</a>`).join('');
   I18N.translate($('#nav'));
 }
 const currentRoute = () => (location.hash.replace(/^#\/?/, '').split('?')[0] || 'resumen').split('/');
@@ -493,7 +495,7 @@ PAGES.alta = async (v) => {
       <label class="f"><span>Dirección *</span><input name="address" maxlength="120" required placeholder="Calle y número"></label>
       <label class="f"><span>Ciudad *</span><input name="city" maxlength="60" required></label>
       <div class="full">
-        <p style="margin:0 0 8px"><button class="btn sm" type="button" id="buscar">📍 Buscar en el mapa</button>
+        <p style="margin:0 0 8px"><button class="btn sm" type="button" id="buscar">${ms('location_on')}Buscar en el mapa</button>
           <button class="btn sm ghost" type="button" id="aqui">Estoy en el local</button>
           <span class="muted" id="punto-txt">Marca dónde está la puerta: la gente te encuentra por la distancia.</span></p>
         <div class="mapa" id="mapa"></div>
@@ -596,7 +598,7 @@ PAGES.resumen = async (v) => {
   const [stats, offers, sub] = await Promise.all([
     rpc('business_stats', { p_id: BIZ.id }),
     rpc('my_business_offers', { p_id: BIZ.id }),
-    rpc('my_subscription', { p_business_id: BIZ.id }).catch(() => null),
+    rpc('my_subscription', { p_business: BIZ.id }).catch(() => null),
   ]);
   const pending = offers.filter((o) => o.status === 'active');
   const s = stats || {};
@@ -605,9 +607,9 @@ PAGES.resumen = async (v) => {
       <a class="btn sm ghost" href="${APP_URL}/b/${esc(BIZ.id)}" target="_blank" rel="noopener">Ver ficha pública ↗</a></div>
     ${BIZ.verification_status !== 'verified' ? `<div class="help"><b>Tu negocio está ${esc(LABELS[BIZ.verification_status] || BIZ.verification_status)}.</b> Mientras tanto puedes preparar publicaciones en borrador; se verán en cuanto te verifiquemos.</div>` : ''}
     <div class="quick">
-      <button class="primary" data-go="nueva-flash"><span class="ic">⚡</span>Nueva oferta flash<small>Canjeable con QR durante unas horas</small></button>
-      <button data-go="nuevo-evento"><span class="ic">📅</span>Nuevo evento<small>Con fecha, aforo y reserva de plaza</small></button>
-      <button data-go="validar"><span class="ic">🎟</span>Validar un código<small>Escribe el código que enseña el cliente</small></button>
+      <button class="primary" data-go="nueva-flash"><span class="ic ms" aria-hidden="true">bolt</span>Nueva oferta flash<small>Canjeable con QR durante unas horas</small></button>
+      <button data-go="nuevo-evento"><span class="ic ms" aria-hidden="true">event</span>Nuevo evento<small>Con fecha, aforo y reserva de plaza</small></button>
+      <button data-go="validar"><span class="ic ms" aria-hidden="true">qr_code_scanner</span>Validar un código<small>Con la cámara o escribiendo el código</small></button>
     </div>
     <div class="card" style="margin-top:14px"><h2>Cómo va</h2>
       <div class="kpis">
@@ -618,8 +620,7 @@ PAGES.resumen = async (v) => {
         <div class="kpi"><b>${fmtNum(pending.length)}</b><span>Publicaciones activas</span></div>
       </div>
     </div>
-    ${sub ? `<div class="card"><h2>Tu plan</h2><p style="margin:0"><b>${esc(sub.plan_name_es || sub.plan || '')}</b> ${sub.status === 'trial' ? tag('trial') : ''} · ${sub.max_active_offers == null ? 'sin límite de publicaciones activas' : `hasta ${sub.max_active_offers} publicaciones activas`}</p>
-      <p class="muted" style="margin:6px 0 0">Para cambiar de plan escribe a <a class="link" href="mailto:info@klendar.app">info@klendar.app</a>.</p></div>` : ''}
+    ${sub ? planCard(sub) : ''}
     <div class="card"><h2>Klendar en tu web</h2>
       <p class="muted" style="margin:0 0 8px">Pega esta línea donde quieras que salga lo que tienes publicado. Se actualiza solo: no tienes que tocar nada más.</p>
       <pre id="wcode" class="code">&lt;script src="https://klendar.app/widget.js" data-klendar="${esc(BIZ.id)}"&gt;&lt;/script&gt;</pre>
@@ -666,8 +667,8 @@ PAGES.publicaciones = async (v, param) => {
   OTROS_LOCALES = otros || [];
   v.innerHTML = `
     <div class="page-head"><h1>Publicaciones</h1><span class="spacer"></span>
-      <a class="btn sm" href="#/publicaciones/nueva-flash">⚡ Nueva oferta</a>
-      <a class="btn sm" href="#/publicaciones/nuevo-evento">📅 Nuevo evento</a>
+      <a class="btn sm" href="#/publicaciones/nueva-flash">${ms('bolt')}Nueva oferta</a>
+      <a class="btn sm" href="#/publicaciones/nuevo-evento">${ms('event')}Nuevo evento</a>
       <button class="btn sm ghost" id="csv">Exportar CSV</button></div>
     ${helpBox('¿Oferta o evento?', '<p><b>Oferta flash</b>: algo que se canjea hoy, con cuenta atrás y aforo («café + tostada 2,50 € hasta mediodía»). <b>Evento</b>: algo con fecha, que se guarda en la agenda y puede admitir reserva de plaza.</p>')}
     <div id="list"></div>
@@ -748,7 +749,7 @@ PAGES.publicaciones = async (v, param) => {
   const render = () => {
     $('#list').innerHTML = table({
       cols: [
-        { h: 'Publicación', r: (o) => `${o.images?.[0] ? `<img class="thumb" src="${esc(o.images[0])}" alt="" loading="lazy">` : `<span class="ph">${o.kind === 'flash_offer' ? '⚡' : '📅'}</span>`}<b class="title">${esc(o.title)}</b><span class="sub">${esc(LABELS[o.kind])} · ${fmtDate(o.kind === 'flash_offer' ? o.redeem_start_at : o.event_at)}</span>` },
+        { h: 'Publicación', r: (o) => `${o.images?.[0] ? `<img class="thumb" src="${esc(o.images[0])}" alt="" loading="lazy">` : `<span class="ph">${ms(o.kind === 'flash_offer' ? 'bolt' : 'event')}</span>`}<b class="title">${esc(o.title)}</b><span class="sub">${esc(LABELS[o.kind])} · ${fmtDate(o.kind === 'flash_offer' ? o.redeem_start_at : o.event_at)}</span>` },
         { h: 'Estado', r: (o) => tag(o.status) + (o.moderation_status === 'pending' ? ' ' + tag('pending') : '') + (o.publish_at ? ` <span class="tag dim">programada ${esc(fmtDate(o.publish_at))}</span>` : '') },
         { h: 'Plazas', r: (o) => o.max_redemptions == null ? '—' : `${fmtNum(o.redemptions_count + (o.pending_count || 0))}/${fmtNum(o.max_redemptions)}` },
         { h: 'Vistas', num: true, r: (o) => fmtNum(o.views) },
@@ -1065,7 +1066,7 @@ PAGES.validar = async (v) => {
     <div class="page-head"><h1>Validar códigos</h1></div>
     ${helpBox('¿Cómo funciona?', '<p>Escanea el QR con la cámara (la del móvil o la del portátil) o escribe el código que la persona tiene debajo del QR. Cada código vale una vez: al validarlo queda marcado y el aforo baja.</p><p>Si es una reserva para varios, te decimos cuántas personas entran con ese código.</p>')}
     <div class="scan-box">
-      <button class="btn" id="camara" type="button">📷 Escanear con la cámara</button>
+      <button class="btn" id="camara" type="button">${ms('photo_camera')}Escanear con la cámara</button>
       <div class="camara" id="camara-caja" hidden><video id="video" muted playsinline></video><span class="mira" aria-hidden="true"></span></div>
       <input id="code" placeholder="Código o enlace del QR" autocomplete="off" autofocus>
       <button class="btn primary" id="go">Validar</button>
@@ -1101,8 +1102,8 @@ PAGES.validar = async (v) => {
       if (res.ok) {
         const personas = (res.seats || 1) > 1
           ? `<b class="plazas">${I18N.lang === 'en' ? `${res.seats} people come in` : `Entran ${res.seats} personas`}</b>` : '';
-        const premio = res.kind === 'stamp_reward' ? `<small>🎁 ${esc(I18N.t('Premio de la tarjeta de sellos'))}</small>` : '';
-        $('#result').innerHTML = `<div class="scan-result ok">✅ ${esc(I18N.t('Validado'))} · ${esc(res.offer_title || '')}${personas}${premio}<small>${esc(res.user_name || '')}</small></div>`;
+        const premio = res.kind === 'stamp_reward' ? `<small>${ms('redeem')}${esc(I18N.t('Premio de la tarjeta de sellos'))}</small>` : '';
+        $('#result').innerHTML = `<div class="scan-result ok">${ms('check_circle')}${esc(I18N.t('Validado'))} · ${esc(res.offer_title || '')}${personas}${premio}<small>${esc(res.user_name || '')}</small></div>`;
         if (navigator.vibrate) navigator.vibrate(120);
         $('#code').value = '';
         loadRecent();
@@ -1114,7 +1115,7 @@ PAGES.validar = async (v) => {
           code_expired: 'El código ha caducado: pide que generen otro.',
           rate_limited: 'Demasiados intentos seguidos. Espera un momento.',
         };
-        $('#result').innerHTML = `<div class="scan-result bad">❌ ${esc(I18N.t(msgs[res.error] || friendly(res.error)))}${res.validated_at ? `<small>${esc(I18N.t('Se validó el'))} ${esc(fmtDate(res.validated_at))}${(res.seats || 1) > 1 ? ` · ${res.seats} ${esc(I18N.t('personas'))}` : ''}</small>` : ''}</div>`;
+        $('#result').innerHTML = `<div class="scan-result bad">${ms('cancel')}${esc(I18N.t(msgs[res.error] || friendly(res.error)))}${res.validated_at ? `<small>${esc(I18N.t('Se validó el'))} ${esc(fmtDate(res.validated_at))}${(res.seats || 1) > 1 ? ` · ${res.seats} ${esc(I18N.t('personas'))}` : ''}</small>` : ''}</div>`;
         if (navigator.vibrate) navigator.vibrate([60, 60, 60]);
       }
     } catch (e) { toast(friendly(e.message), true); }
@@ -1131,7 +1132,7 @@ PAGES.validar = async (v) => {
       if (PARA_CAMARA) {
         paraCamara();
         $('#camara-caja').hidden = true;
-        boton.textContent = I18N.t('📷 Escanear con la cámara');
+        boton.innerHTML = ms('photo_camera') + esc(I18N.t('Escanear con la cámara'));
         return;
       }
       try {
@@ -1144,7 +1145,7 @@ PAGES.validar = async (v) => {
       } catch (e) {
         paraCamara();
         $('#camara-caja').hidden = true;
-        boton.textContent = I18N.t('📷 Escanear con la cámara');
+        boton.innerHTML = ms('photo_camera') + esc(I18N.t('Escanear con la cámara'));
         toast(e && e.name === 'NotAllowedError'
           ? 'Sin permiso para la cámara. Actívalo en el candado de la barra de direcciones.'
           : e && e.name === 'NotFoundError' ? 'No encontramos ninguna cámara en este dispositivo.'
@@ -1553,14 +1554,37 @@ PAGES.novedades = async (v) => {
   }; });
 };
 
+/** «Tu plan»: lo mismo que la tarjeta del panel en la app. */
+function planCard(sub) {
+  const en = I18N.lang === 'en';
+  const name = sub.plan_names?.[I18N.lang] || sub.plan_names?.es || sub.plan_slug || '';
+  const free = sub.plan_slug === 'free';
+  const trial = sub.status === 'trial';
+  const until = sub.period_end
+    ? new Date(sub.period_end).toLocaleDateString(LOC(), { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+  const estado = trial && until
+    ? (en ? `Free trial with every feature until ${until}. Then the Free plan unless you subscribe.`
+      : `Prueba gratuita con todas las funciones hasta el ${until}. Después, plan Gratis salvo que contrates uno.`)
+    : free ? (en ? 'No cost. Up to 2 active publications at a time.' : 'Sin coste. Hasta 2 publicaciones activas a la vez.')
+      : (en ? `${fmtMoney(sub.price_cents)} per month, no sales commission.` : `${fmtMoney(sub.price_cents)} al mes, sin comisiones por venta.`);
+  const usadas = sub.active_offers ?? 0;
+  const uso = sub.max_active_offers == null
+    ? (en ? `${usadas} active publications · unlimited` : `${usadas} publicaciones activas · sin límite`)
+    : (en ? `${usadas} of ${sub.max_active_offers} active publications` : `${usadas} de ${sub.max_active_offers} publicaciones activas`);
+  const asunto = encodeURIComponent(en ? 'Change of plan' : 'Cambio de plan');
+  const cuerpo = encodeURIComponent(`${en ? 'Business' : 'Negocio'}: ${BIZ.id}`);
+  return `<div class="card"><h2>${ms('workspace_premium')} ${esc(en ? `${name} plan` : `Plan ${name}`)}${trial ? ` <span class="tag st-trial">${en ? 'TRIAL' : 'PRUEBA'}</span>` : ''}</h2>
+    <p class="muted" style="margin:0 0 6px">${esc(estado)}</p>
+    <p style="margin:0 0 12px">${esc(uso)}</p>
+    <a class="btn sm" href="mailto:info@klendar.app?subject=${asunto}&body=${cuerpo}">${esc(free ? (en ? 'Upgrade plan' : 'Mejorar plan') : (en ? 'Change plan or payment method' : 'Cambiar plan o forma de pago'))}</a></div>`;
+}
+
 PAGES.ficha = async (v) => {
   const canManage = ['owner', 'manager'].includes(BIZ.role);
   const [{ data: b }, cats] = await Promise.all([
     sb.from('businesses').select('*').eq('id', BIZ.id).maybeSingle(),
-    rpc('public_categories_all').catch(async () => {
-      const { data } = await sb.from('categories').select('id, slug, names, position').order('position');
-      return data || [];
-    }),
+    sb.from('categories').select('id, slug, names, position').order('position', { ascending: true })
+      .then(({ data }) => data || []),
   ]);
   if (!b) { v.innerHTML = '<div class="card">No hemos podido cargar tu ficha.</div>'; return; }
 
