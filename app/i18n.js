@@ -338,4 +338,11 @@ const APP_EN = {
   "Denunciar un negocio": "Report a business",
   "Denunciar una reseña": "Report a review",
   "Denunciar una novedad": "Report a news post",
+  "Crea tu cuenta de negocio": "Create your business account",
+  "Primero tu cuenta personal (la misma para la web y la app). Justo después das de alta tu negocio.": "First your personal account (the same for the website and the app). Right after, you register your business.",
+  "O escribe aquí el código de 6 cifras del correo": "Or type the 6-digit code from the email here",
+  "Confirmar": "Confirm",
+  "¿No te llega? Mira en spam o en «Promociones».": "Not there? Check spam or “Promotions”.",
+  "Son 6 cifras.": "It is 6 digits.",
+  "Cuenta confirmada": "Account confirmed",
 };

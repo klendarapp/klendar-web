@@ -14,6 +14,16 @@ const TYPES = {
   '.jpg': 'image/jpeg', '.webp': 'image/webp', '.json': 'application/json',
 };
 
+// El token de Mapbox en producción vive en las variables de Cloudflare. En
+// local, si no se ha puesto a mano, se toma el de la app (env/dev.json del
+// repo hermano), que nunca se sube a ningún sitio.
+if (!process.env.MAPBOX_TOKEN) {
+  try {
+    const dev = JSON.parse(await readFile(join(ROOT, '..', 'klendar', 'env', 'dev.json'), 'utf8'));
+    if (dev.MAPBOX_ACCESS_TOKEN) process.env.MAPBOX_TOKEN = dev.MAPBOX_ACCESS_TOKEN;
+  } catch { /* sin mapa en local */ }
+}
+
 const load = (p) => import(`file://${join(ROOT, p).replace(/\\/g, '/')}`);
 
 createServer(async (req, res) => {

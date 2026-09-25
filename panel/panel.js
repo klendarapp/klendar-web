@@ -41,6 +41,9 @@ const toast = (msg, bad = false) => {
   setTimeout(() => t.remove(), bad ? 6000 : 3500);
 };
 const ERRORS = {
+  invalid_name: 'Pon el nombre del negocio (dos letras como mínimo).',
+  invalid_location: 'Marca en el mapa dónde está el local.',
+  auth_required: 'Tu sesión ha caducado. Vuelve a entrar.',
   not_authorized: 'No tienes permiso para esto. Pídeselo a quien lleve el negocio.',
   user_not_found: 'No hay ninguna cuenta con ese correo.',
   owner_untouchable: 'Al propietario no se le cambia el rol desde aquí.',
@@ -100,6 +103,158 @@ async function geocodifica(texto) {
     const c = j.features?.[0]?.center;
     return Array.isArray(c) ? { lng: c[0], lat: c[1] } : null;
   } catch { return null; }
+}
+
+/** Una dirección → punto, calle y ciudad (para rellenar el formulario). */
+async function buscaDireccion(texto) {
+  const token = await tokenMapbox();
+  if (!token || !String(texto).trim()) return null;
+  try {
+    const r = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(texto)}.json?limit=1&country=es&language=es&types=address,poi,place&access_token=${token}`);
+    if (!r.ok) return null;
+    const f = (await r.json()).features?.[0];
+    return f ? lugarDe(f) : null;
+  } catch { return null; }
+}
+/** Un punto del mapa → la calle y la ciudad que hay ahí. */
+async function direccionDe(lat, lng) {
+  const token = await tokenMapbox();
+  if (!token) return null;
+  try {
+    const r = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?limit=1&types=address&language=es&access_token=${token}`);
+    if (!r.ok) return null;
+    const f = (await r.json()).features?.[0];
+    return f ? lugarDe(f) : null;
+  } catch { return null; }
+}
+function lugarDe(f) {
+  const ctx = f.context || [];
+  const ciudad = (ctx.find((c) => String(c.id).startsWith('place.')) || (String(f.id).startsWith('place.') ? f : null))?.text || '';
+  const calle = f.place_type?.includes('address') ? [f.text, f.address].filter(Boolean).join(' ') : (f.place_type?.includes('poi') ? f.properties?.address || f.text : '');
+  return { lng: f.center[0], lat: f.center[1], address: calle, city: ciudad, label: f.place_name || '' };
+}
+
+/** Mapbox GL se carga solo cuando hace falta un mapa (pesa lo suyo). */
+let MAPBOX_GL = null;
+function cargaMapbox() {
+  if (!MAPBOX_GL) {
+    MAPBOX_GL = new Promise((ok, ko) => {
+      const css = document.createElement('link');
+      css.rel = 'stylesheet';
+      css.href = 'https://api.mapbox.com/mapbox-gl-js/v3.15.0/mapbox-gl.css';
+      document.head.append(css);
+      const js = document.createElement('script');
+      js.src = 'https://api.mapbox.com/mapbox-gl-js/v3.15.0/mapbox-gl.js';
+      js.onload = () => ok(window.mapboxgl);
+      js.onerror = () => { MAPBOX_GL = null; ko(new Error('mapbox')); };
+      document.head.append(js);
+    });
+  }
+  return MAPBOX_GL;
+}
+
+/** Un mapa con una chincheta que se arrastra (o se pone con un clic).
+ * Devuelve { mueve(punto) } o null si no hay mapa (sin token o sin red): el
+ * formulario sigue funcionando con la dirección escrita. */
+async function mapaPunto(caja, punto, alMover) {
+  const token = await tokenMapbox();
+  let gl = null;
+  if (token) { try { gl = await cargaMapbox(); } catch { gl = null; } }
+  if (!gl) {
+    caja.classList.add('sin-mapa');
+    caja.innerHTML = '<p class="muted">El mapa no se puede cargar ahora mismo. Escribe la dirección y pulsa «Buscar en el mapa»: la localizamos igual.</p>';
+    return null;
+  }
+  gl.accessToken = token;
+  const hay = punto && punto.lat != null;
+  const centro = hay ? [punto.lng, punto.lat] : [-3.7038, 40.4168];
+  const mapa = new gl.Map({ container: caja, style: 'mapbox://styles/mapbox/streets-v12', center: centro, zoom: hay ? 16 : 5, cooperativeGestures: true });
+  mapa.addControl(new gl.NavigationControl({ showCompass: false }));
+  const chincheta = new gl.Marker({ draggable: true, color: '#FF4D6D' }).setLngLat(centro);
+  if (hay) chincheta.addTo(mapa);
+  const avisa = () => { const p = chincheta.getLngLat(); alMover({ lat: p.lat, lng: p.lng }); };
+  chincheta.on('dragend', avisa);
+  mapa.on('click', (e) => { chincheta.setLngLat(e.lngLat).addTo(mapa); avisa(); });
+  return {
+    mueve(p, zoom = 17) {
+      chincheta.setLngLat([p.lng, p.lat]).addTo(mapa);
+      mapa.flyTo({ center: [p.lng, p.lat], zoom });
+    },
+  };
+}
+
+/** Lector de QR con la cámara del navegador.
+ *
+ * Chrome y Android traen `BarcodeDetector`; Safari y Firefox no, y para
+ * ellos se carga jsQR (solo entonces). Devuelve la función para apagar la
+ * cámara, que se llama también al cambiar de pantalla. */
+let JSQR = null;
+function cargaJsQR() {
+  if (!JSQR) {
+    JSQR = new Promise((ok, ko) => {
+      const js = document.createElement('script');
+      js.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js';
+      js.onload = () => ok(window.jsQR);
+      js.onerror = () => { JSQR = null; ko(new Error('jsqr')); };
+      document.head.append(js);
+    });
+  }
+  return JSQR;
+}
+let PARA_CAMARA = null;
+function paraCamara() { if (PARA_CAMARA) { PARA_CAMARA(); PARA_CAMARA = null; } }
+async function escanerQR(video, alLeer) {
+  paraCamara();
+  const flujo = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+  video.srcObject = flujo;
+  video.setAttribute('playsinline', '');
+  await video.play();
+  let detector = null;
+  if ('BarcodeDetector' in window) {
+    try {
+      const formatos = await window.BarcodeDetector.getSupportedFormats();
+      if (formatos.includes('qr_code')) detector = new window.BarcodeDetector({ formats: ['qr_code'] });
+    } catch { detector = null; }
+  }
+  const jsqr = detector ? null : await cargaJsQR();
+  const lienzo = document.createElement('canvas');
+  const ctx = lienzo.getContext('2d', { willReadFrequently: true });
+  let vivo = true;
+  let ultimo = '';
+  let pausa = 0;
+  const vuelta = async () => {
+    if (!vivo) return;
+    if (video.readyState >= 2 && Date.now() > pausa) {
+      let texto = null;
+      try {
+        if (detector) {
+          texto = (await detector.detect(video))[0]?.rawValue || null;
+        } else {
+          const w = video.videoWidth;
+          const h = video.videoHeight;
+          if (w && h) {
+            lienzo.width = w; lienzo.height = h;
+            ctx.drawImage(video, 0, 0, w, h);
+            texto = jsqr(ctx.getImageData(0, 0, w, h).data, w, h)?.data || null;
+          }
+        }
+      } catch { texto = null; }
+      // El mismo QR delante de la cámara no se valida veinte veces.
+      if (texto && texto !== ultimo) {
+        ultimo = texto;
+        pausa = Date.now() + 2500;
+        alLeer(texto);
+      }
+    }
+    setTimeout(vuelta, 200);
+  };
+  vuelta();
+  PARA_CAMARA = () => {
+    vivo = false;
+    flujo.getTracks().forEach((t) => t.stop());
+    video.srcObject = null;
+  };
+  return PARA_CAMARA;
 }
 
 /** «−20 %», «2x1», «Gratis»… lo que hay que leer de un vistazo. */
@@ -192,6 +347,10 @@ async function boot() {
   $('#login').hidden = true; $('#app').hidden = false;
 
   BIZZES = await rpc('my_businesses');
+  // Quien llega del registro de negocio trae ?alta=1: se limpia la dirección.
+  if (new URLSearchParams(location.search).has('alta')) {
+    history.replaceState(null, '', `${location.pathname}${BIZZES.length ? '' : '#/alta'}`);
+  }
   if (!BIZZES.length) return noBusiness();
   const saved = localStorage.getItem('klendar.biz');
   BIZ = BIZZES.find((b) => b.id === saved) || BIZZES[0];
@@ -200,12 +359,16 @@ async function boot() {
   route();
 }
 function showLogin() { $('#login').hidden = false; $('#app').hidden = true; ME = null; }
-function noBusiness() {
-  $('#view').innerHTML = `<div class="card"><h2>Todavía no tienes ningún negocio</h2>
-    <p class="muted">Este panel es para negocios ya dados de alta. El alta se hace desde la app (Perfil → Dar de alta mi negocio) porque hace falta la ubicación exacta del local.</p>
-    <p class="muted">Si alguien te ha añadido a su equipo, entra con el mismo correo con el que te invitaron.</p>
-    <a class="btn primary" href="${APP_URL}/negocios/">Cómo funciona ↗</a></div>`;
+async function noBusiness() {
   $('#nav').innerHTML = '';
+  $('.bizpick').hidden = true;
+  const v = $('#view');
+  try {
+    await PAGES.alta(v);
+    I18N.translate(v);
+  } catch (e) {
+    v.innerHTML = `<div class="card"><h2>Algo ha fallado</h2><p class="err">${esc(friendly(e.message))}</p><button class="btn" onclick="location.reload()">Reintentar</button></div>`;
+  }
 }
 function renderBizPicker() {
   $('#bizSelect').innerHTML = BIZZES.map((b) => `<option value="${esc(b.id)}" ${b.id === BIZ.id ? 'selected' : ''}>${esc(b.name)}</option>`).join('');
@@ -259,21 +422,150 @@ function renderNav(current) {
 }
 const currentRoute = () => (location.hash.replace(/^#\/?/, '').split('?')[0] || 'resumen').split('/');
 const PAGES = {};
+// Cada pintada lleva su número: si mientras carga una se pide otra (cambiar
+// de negocio y de pantalla seguido), lo que termine tarde no pisa ni saca
+// errores sobre la nueva.
+let RUTA_N = 0;
 async function route() {
-  if (!ME || !BIZ) return;
+  paraCamara();
+  if (!ME) return;
+  if (!BIZ) return noBusiness();
+  const n = ++RUTA_N;
   const [page, param] = currentRoute();
   renderNav(page);
   $('#side').classList.remove('open');
-  const v = $('#view');
+  // Cada pintada va en su propia caja: si una vieja termina tarde, escribe
+  // en una caja que ya no está en la página y no se ve.
+  const v = document.createElement('div');
   v.innerHTML = '<div class="loading">Cargando…</div>';
+  $('#view').replaceChildren(v);
   try {
     await (PAGES[page] || PAGES.resumen)(v, param);
-    I18N.translate(v);
+    if (n === RUTA_N) I18N.translate(v);
   } catch (e) {
+    if (n !== RUTA_N) return;
     v.innerHTML = `<div class="card"><h2>Algo ha fallado</h2><p class="err">${esc(e.message)}</p><button class="btn" onclick="location.reload()">Reintentar</button></div>`;
   }
 }
 window.addEventListener('hashchange', route);
+
+// ── Alta de un negocio (el primero o uno más) ──────────────────────────────
+PAGES.alta = async (v) => {
+  const cats = CATS.length ? CATS
+    : ((await sb.from('categories').select('id, slug, names, position').order('position')).data || []);
+  const otro = BIZZES.length > 0;
+  let punto = null;
+
+  v.innerHTML = `
+    <div class="page-head"><h1>${otro ? 'Dar de alta otro local' : 'Da de alta tu negocio'}</h1></div>
+    ${otro ? '' : `<div class="help"><b>Bienvenido/a.</b> Cuéntanos sobre tu negocio: lo revisamos antes de hacerlo público (normalmente en 24-48 h). Mientras, ya puedes preparar publicaciones.
+      <br><span class="muted">¿Te han invitado al equipo de un negocio? Entonces no hace falta: entra con el mismo correo con el que te invitaron y aparecerá solo.</span></div>`}
+    <form id="alta" class="form" novalidate>
+      <label class="f"><span>Nombre del negocio *</span><input name="name" maxlength="80" required placeholder="Ej. La Taberna del Gato"></label>
+      <label class="f"><span>Categoría *</span><select name="category_id" required>
+        <option value="">Elige una…</option>
+        ${cats.map((c) => `<option value="${esc(c.id)}">${esc(c.names?.[I18N.lang] || c.names?.es || c.slug)}</option>`).join('')}</select></label>
+      <label class="f full"><span>De qué va <small>(¿qué ofrecéis? ¿qué os hace especiales?)</small></span><textarea name="description" maxlength="600"></textarea></label>
+      <label class="f"><span>Dirección *</span><input name="address" maxlength="120" required placeholder="Calle y número"></label>
+      <label class="f"><span>Ciudad *</span><input name="city" maxlength="60" required></label>
+      <div class="full">
+        <p style="margin:0 0 8px"><button class="btn sm" type="button" id="buscar">📍 Buscar en el mapa</button>
+          <button class="btn sm ghost" type="button" id="aqui">Estoy en el local</button>
+          <span class="muted" id="punto-txt">Marca dónde está la puerta: la gente te encuentra por la distancia.</span></p>
+        <div class="mapa" id="mapa"></div>
+      </div>
+      <label class="f"><span>Teléfono</span><input name="phone" maxlength="20" inputmode="tel"></label>
+      <label class="f"><span>Web</span><input name="website" type="url" placeholder="https://"></label>
+      <label class="f"><span>Correo de contacto</span><input name="contact_email" type="email" value="${esc(ME.email || '')}"></label>
+      <label class="f"><span>NIF / CIF <small>(para la verificación; no se publica)</small></span><input name="tax_id" maxlength="20"></label>
+      <label class="f full" style="grid-template-columns:auto 1fr;align-items:start">
+        <input type="checkbox" name="adults_only">
+        <span>Solo para mayores de 18 <small class="muted">Si lo que publicas menciona alcohol, se marca +18 solo y se revisa antes de salir. La publicidad de tabaco, vapeo o apuestas no está permitida.</small></span></label>
+      <label class="f full" style="grid-template-columns:auto 1fr;align-items:start">
+        <input type="checkbox" name="terms" required>
+        <span>Acepto las <a href="${APP_URL}/negocios/" target="_blank" rel="noopener">condiciones para negocios</a> *</span></label>
+      <div class="full"><button class="btn primary" type="submit" id="enviar">Enviar solicitud</button> <span id="err" class="err"></span></div>
+    </form>`;
+
+  const f = $('#alta', v);
+  const txt = $('#punto-txt', v);
+  const marca = async (p, rellenar) => {
+    punto = { lat: p.lat, lng: p.lng };
+    txt.textContent = I18N.t('Ubicación marcada. Si no es exacta, arrastra la chincheta.');
+    if (rellenar) {
+      const d = await direccionDe(p.lat, p.lng);
+      if (d) {
+        if (!f.address.value.trim() && d.address) f.address.value = d.address;
+        if (!f.city.value.trim() && d.city) f.city.value = d.city;
+      }
+    }
+  };
+  const mapa = await mapaPunto($('#mapa', v), null, (p) => marca(p, true));
+
+  $('#buscar', v).onclick = async () => {
+    const q = [f.address.value, f.city.value].map((x) => x.trim()).filter(Boolean).join(', ');
+    if (!q) { toast('Escribe primero la dirección y la ciudad.', true); return; }
+    const d = await buscaDireccion(q);
+    if (!d) { toast('No encontramos esa dirección. Prueba a escribirla de otra forma o marca el punto en el mapa.', true); return; }
+    if (!f.city.value.trim() && d.city) f.city.value = d.city;
+    mapa?.mueve(d);
+    marca(d, false);
+  };
+  $('#aqui', v).onclick = () => {
+    if (!navigator.geolocation) { toast('Este navegador no deja saber dónde estás.', true); return; }
+    navigator.geolocation.getCurrentPosition((pos) => {
+      const p = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      mapa?.mueve(p);
+      marca(p, true);
+    }, () => toast('No hemos podido saber dónde estás. Revisa el permiso de ubicación del navegador.', true),
+    { enableHighAccuracy: true, timeout: 12000 });
+  };
+
+  f.onsubmit = async (e) => {
+    e.preventDefault();
+    const err = $('#err', v);
+    err.textContent = '';
+    const d = Object.fromEntries(new FormData(f));
+    if (String(d.name || '').trim().length < 2) { err.textContent = I18N.t('Pon el nombre del negocio.'); return; }
+    if (!d.category_id) { err.textContent = I18N.t('Elige una categoría.'); return; }
+    if (!String(d.address || '').trim() || !String(d.city || '').trim()) { err.textContent = I18N.t('Faltan la dirección o la ciudad.'); return; }
+    if (!punto) {
+      // Sin chincheta: se intenta con la dirección escrita.
+      const b = await buscaDireccion(`${d.address}, ${d.city}`);
+      if (!b) { err.textContent = I18N.t('Marca en el mapa dónde está el local (o pulsa «Buscar en el mapa»).'); return; }
+      punto = { lat: b.lat, lng: b.lng };
+    }
+    if (!f.terms.checked) { err.textContent = I18N.t('Tienes que aceptar las condiciones para negocios.'); return; }
+    const boton = $('#enviar', v);
+    boton.disabled = true;
+    try {
+      const id = await rpc('register_business', {
+        p_name: String(d.name).trim(), p_category_id: d.category_id,
+        p_lat: punto.lat, p_lng: punto.lng,
+        p_address: String(d.address).trim(), p_city: String(d.city).trim(),
+        p_description: String(d.description || '').trim() || null,
+        p_phone: String(d.phone || '').trim() || null,
+        p_website: String(d.website || '').trim() || null,
+        p_tax_id: String(d.tax_id || '').trim() || null,
+        p_contact_email: String(d.contact_email || '').trim() || null,
+        p_adults_only: f.adults_only.checked,
+      });
+      BIZZES = await rpc('my_businesses');
+      BIZ = BIZZES.find((b) => b.id === id) || BIZZES[0];
+      localStorage.setItem('klendar.biz', BIZ.id);
+      $('.bizpick').hidden = false;
+      renderBizPicker();
+      if (!CATS.length) CATS = cats;
+      toast('Solicitud enviada. Ahora completa la ficha: logo, portada y horarios.');
+      // Si ya estaba en #/ficha no hay «hashchange»: se pinta a mano (y solo
+      // entonces, para no pintarla dos veces).
+      if (location.hash === '#/ficha') route(); else location.hash = '#/ficha';
+    } catch (e2) {
+      err.textContent = I18N.t(friendly(e2.message));
+      boton.disabled = false;
+    }
+  };
+};
 
 // ── Resumen ─────────────────────────────────────────────────────────────────
 PAGES.resumen = async (v) => {
@@ -747,11 +1039,13 @@ async function offerForm(v, id, kindDefault) {
 PAGES.validar = async (v) => {
   v.innerHTML = `
     <div class="page-head"><h1>Validar códigos</h1></div>
-    ${helpBox('¿Cómo funciona?', '<p>Pide a la persona su código (lo tiene en la app, debajo del QR) y escríbelo aquí. Cada código vale una vez: al validarlo queda marcado y el aforo baja. Si tienes cámara, desde la app es más rápido.</p>')}
+    ${helpBox('¿Cómo funciona?', '<p>Escanea el QR con la cámara (la del móvil o la del portátil) o escribe el código que la persona tiene debajo del QR. Cada código vale una vez: al validarlo queda marcado y el aforo baja.</p><p>Si es una reserva para varios, te decimos cuántas personas entran con ese código.</p>')}
     <div class="scan-box">
+      <button class="btn" id="camara" type="button">📷 Escanear con la cámara</button>
+      <div class="camara" id="camara-caja" hidden><video id="video" muted playsinline></video><span class="mira" aria-hidden="true"></span></div>
       <input id="code" placeholder="Código o enlace del QR" autocomplete="off" autofocus>
       <button class="btn primary" id="go">Validar</button>
-      <div id="result"></div>
+      <div id="result" aria-live="assertive"></div>
     </div>
     <div class="card" style="margin-top:18px"><h2>Últimos validados</h2><div id="recent"></div></div>`;
 
@@ -781,7 +1075,11 @@ PAGES.validar = async (v) => {
     try {
       const res = await rpc('validate_redemption', { p_code: code });
       if (res.ok) {
-        $('#result').innerHTML = `<div class="scan-result ok">✅ Validado · ${esc(res.offer_title || '')}<small>${esc(res.user_name || '')}</small></div>`;
+        const personas = (res.seats || 1) > 1
+          ? `<b class="plazas">${I18N.lang === 'en' ? `${res.seats} people come in` : `Entran ${res.seats} personas`}</b>` : '';
+        const premio = res.kind === 'stamp_reward' ? `<small>🎁 ${esc(I18N.t('Premio de la tarjeta de sellos'))}</small>` : '';
+        $('#result').innerHTML = `<div class="scan-result ok">✅ ${esc(I18N.t('Validado'))} · ${esc(res.offer_title || '')}${personas}${premio}<small>${esc(res.user_name || '')}</small></div>`;
+        if (navigator.vibrate) navigator.vibrate(120);
         $('#code').value = '';
         loadRecent();
       } else {
@@ -792,12 +1090,44 @@ PAGES.validar = async (v) => {
           code_expired: 'El código ha caducado: pide que generen otro.',
           rate_limited: 'Demasiados intentos seguidos. Espera un momento.',
         };
-        $('#result').innerHTML = `<div class="scan-result bad">❌ ${esc(msgs[res.error] || res.error)}${res.validated_at ? `<small>Se validó el ${esc(fmtDate(res.validated_at))}</small>` : ''}</div>`;
+        $('#result').innerHTML = `<div class="scan-result bad">❌ ${esc(I18N.t(msgs[res.error] || friendly(res.error)))}${res.validated_at ? `<small>${esc(I18N.t('Se validó el'))} ${esc(fmtDate(res.validated_at))}${(res.seats || 1) > 1 ? ` · ${res.seats} ${esc(I18N.t('personas'))}` : ''}</small>` : ''}</div>`;
+        if (navigator.vibrate) navigator.vibrate([60, 60, 60]);
       }
     } catch (e) { toast(friendly(e.message), true); }
   };
   $('#go').onclick = validate;
   $('#code').addEventListener('keydown', (e) => { if (e.key === 'Enter') validate(); });
+
+  // Cámara: encender y apagar con el mismo botón.
+  const boton = $('#camara');
+  if (!navigator.mediaDevices?.getUserMedia) {
+    boton.hidden = true;
+  } else {
+    boton.onclick = async () => {
+      if (PARA_CAMARA) {
+        paraCamara();
+        $('#camara-caja').hidden = true;
+        boton.textContent = I18N.t('📷 Escanear con la cámara');
+        return;
+      }
+      try {
+        $('#camara-caja').hidden = false;
+        boton.textContent = I18N.t('Parar la cámara');
+        await escanerQR($('#video'), (texto) => {
+          $('#code').value = texto;
+          validate();
+        });
+      } catch (e) {
+        paraCamara();
+        $('#camara-caja').hidden = true;
+        boton.textContent = I18N.t('📷 Escanear con la cámara');
+        toast(e && e.name === 'NotAllowedError'
+          ? 'Sin permiso para la cámara. Actívalo en el candado de la barra de direcciones.'
+          : e && e.name === 'NotFoundError' ? 'No encontramos ninguna cámara en este dispositivo.'
+            : 'No se ha podido abrir la cámara. Escribe el código a mano.', true);
+      }
+    };
+  }
   await loadRecent();
 };
 
@@ -1216,7 +1546,7 @@ PAGES.ficha = async (v) => {
     v.innerHTML = `
       <div class="page-head"><h1>Tu ficha</h1><span class="spacer"></span>
         <a class="btn sm" href="https://klendar.app/b/${esc(BIZ.id)}" target="_blank" rel="noopener">Ver cómo se ve ↗</a></div>
-      ${helpBox('¿Qué es esto?', '<p>Lo que ve la gente cuando entra en tu negocio: el nombre, de qué va, dónde estás, cómo llamarte y tus horarios. Es la misma ficha que editas desde la app.</p><p>La <b>dirección</b> se busca en el mapa al guardar. Si el punto no queda donde debe, se ajusta a mano desde la app (Perfil › Mi negocio › Editar ficha).</p>')}
+      ${helpBox('¿Qué es esto?', '<p>Lo que ve la gente cuando entra en tu negocio: el nombre, de qué va, dónde estás, cómo llamarte y tus horarios. Es la misma ficha que editas desde la app.</p><p>La <b>dirección</b> se busca en el mapa al guardar. Si el punto no queda donde debe, arrastra la chincheta en «Ubicación en el mapa».</p>')}
       <form id="f" class="form">
         <label class="f"><span>Nombre</span><input name="name" value="${esc(b.name || '')}" required maxlength="80" ${canManage ? '' : 'disabled'}></label>
         <label class="f"><span>Categoría</span><select name="category_id" ${canManage ? '' : 'disabled'}>
@@ -1236,6 +1566,11 @@ PAGES.ficha = async (v) => {
           <span>Solo para mayores de 18 (todo lo que publiques quedará marcado)</span></label>
         ${canManage ? '<div class="full"><button class="btn primary" type="submit">Guardar la ficha</button> <span id="msg" class="muted"></span></div>' : ''}
       </form>
+
+      ${canManage ? `<div class="card"><h2>Ubicación en el mapa</h2>
+        <p class="muted" style="margin:0 0 10px">Es lo que usa la app para decir a qué distancia estás. Arrastra la chincheta hasta la puerta y guarda.</p>
+        <div class="mapa" id="mapa-ficha"></div>
+        <p style="margin:10px 0 0"><button class="btn primary sm" id="g-punto" disabled>Guardar la ubicación</button> <span class="muted" id="msgp"></span></p></div>` : ''}
 
       <div class="card"><h2>Horarios</h2>
         <p class="muted" style="margin:0 0 10px">Escribe los tramos como «09:00-14:00, 17:00-21:00». Déjalo vacío el día que cierres.</p>
@@ -1259,6 +1594,30 @@ PAGES.ficha = async (v) => {
         ${canManage ? '<p style="margin:10px 0 0"><button class="btn sm" data-img="gallery">Añadir fotos</button></p>' : ''}</div>`;
 
     if (!canManage) return;
+
+    // El mapa de la ficha: el punto de ahora, y guardar si se mueve.
+    (async () => {
+      const perfil = await rpc('business_profile', { p_id: BIZ.id }).catch(() => null);
+      const actual = Array.isArray(perfil) ? perfil[0] : perfil;
+      let nuevo = null;
+      const caja = $('#mapa-ficha', v);
+      if (!caja || caja.dataset.listo) return;
+      caja.dataset.listo = '1';
+      await mapaPunto(caja, actual && actual.lat != null ? { lat: actual.lat, lng: actual.lng } : null, (p) => {
+        nuevo = p;
+        $('#g-punto', v).disabled = false;
+        $('#msgp', v).textContent = I18N.t('Sin guardar');
+      });
+      $('#g-punto', v).onclick = async () => {
+        if (!nuevo) return;
+        try {
+          await rpc('update_business', { p_id: BIZ.id, p_patch: { lat: nuevo.lat, lng: nuevo.lng } });
+          $('#g-punto', v).disabled = true;
+          $('#msgp', v).textContent = I18N.t('Guardada');
+          toast('Ubicación guardada');
+        } catch (err) { toast(friendly(err.message), true); }
+      };
+    })();
 
     $('#f', v).onsubmit = async (e) => {
       e.preventDefault();

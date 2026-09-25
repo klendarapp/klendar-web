@@ -273,9 +273,14 @@ RUTAS['codigo-correo'] = async (_p, params) => {
 // aceptar los términos y, aparte y sin marcar, las comunicaciones.
 RUTAS.registro = async (_p, params) => {
   const siguiente = params.get('siguiente') || '';
+  // Desde «Acceso para negocios»: al terminar, al alta del negocio.
+  const negocio = params.get('para') === 'negocio';
+  const destino = negocio ? `${location.origin}/panel/?alta=1` : `${location.origin}/app/`;
   pinta(`
-    <h1>${esc(t('Crea tu cuenta'))}</h1>
-    <p class="muted">${esc(t('Es la misma cuenta para la web y para la app.'))}</p>
+    <h1>${esc(t(negocio ? 'Crea tu cuenta de negocio' : 'Crea tu cuenta'))}</h1>
+    <p class="muted">${esc(t(negocio
+      ? 'Primero tu cuenta personal (la misma para la web y la app). Justo después das de alta tu negocio.'
+      : 'Es la misma cuenta para la web y para la app.'))}</p>
     <form id="f" class="formu" novalidate>
       <label>${esc(t('Nombre'))}<input name="name" autocomplete="name" maxlength="60" required></label>
       <label>${esc(t('Correo'))}<input name="email" type="email" autocomplete="email" required></label>
@@ -312,7 +317,7 @@ RUTAS.registro = async (_p, params) => {
       email,
       password,
       options: {
-        emailRedirectTo: `${location.origin}/app/`,
+        emailRedirectTo: destino,
         data: {
           display_name: nombre,
           birth_date: nac,
@@ -326,13 +331,31 @@ RUTAS.registro = async (_p, params) => {
     });
     if (error) { err.textContent = amable(error.message); return; }
     if (!data.session) {
+      // El correo lleva enlace y código: el código sirve si lo abres en otro
+      // dispositivo (el ordenador aquí, el correo en el móvil).
       pinta(`<h1>${esc(t('Mira tu correo'))}</h1>
         <p class="muted">${esc(t('Te hemos mandado un enlace para confirmar la cuenta. Ábrelo y ya puedes entrar.'))}</p>
-        <p><a class="pill accent" href="#/entrar">${esc(t('Ir a entrar'))}</a></p>`);
+        <form id="fc" class="formu" novalidate>
+          <label>${esc(t('O escribe aquí el código de 6 cifras del correo'))}
+            <input name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}"></label>
+          <p id="errc" class="err" role="alert"></p>
+          <button class="pill accent" type="submit">${esc(t('Confirmar'))}</button>
+        </form>
+        <p class="muted">${esc(t('¿No te llega? Mira en spam o en «Promociones».'))} <a href="#/entrar">${esc(t('Ir a entrar'))}</a></p>`);
       I18N.translate(view);
+      $('#fc').onsubmit = async (ev) => {
+        ev.preventDefault();
+        const code = String(new FormData(ev.target).get('code') || '').replace(/\D/g, '');
+        if (code.length !== 6) { $('#errc').textContent = t('Son 6 cifras.'); return; }
+        const r = await sb.auth.verifyOtp({ email, token: code, type: 'signup' });
+        if (r.error) { $('#errc').textContent = t('Ese código no vale o ha caducado.'); return; }
+        toast(t('Cuenta confirmada'));
+        if (negocio) location.href = '/panel/?alta=1'; else vuelve(siguiente);
+      };
       return;
     }
     toast(t('Cuenta creada'));
+    if (negocio) { location.href = '/panel/?alta=1'; return; }
     vuelve(siguiente);
   };
 };

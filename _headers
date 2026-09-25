@@ -9,6 +9,15 @@
 /panel/*
   X-Robots-Tag: noindex, nofollow
   Cache-Control: no-store
+  ! Permissions-Policy
+  Permissions-Policy: geolocation=(self), camera=(self), microphone=()
+
+# «Mi Klendar»: la ubicación solo para «Avísame si…» (zona fija), y siempre
+# a petición de la persona.
+/app/*
+  X-Robots-Tag: noindex, nofollow
+  ! Permissions-Policy
+  Permissions-Policy: geolocation=(self), camera=(), microphone=()
 
 /widget/*
   ! X-Frame-Options
