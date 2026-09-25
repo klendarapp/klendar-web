@@ -1207,8 +1207,9 @@ async function cityDetail(v, city, days) {
 }
 
 // ── Colecciones ─────────────────────────────────────────────────────────────
-PAGES.colecciones = async (v) => {
+PAGES.colecciones = async (v, param) => {
   const cols = await rpc('admin_collections');
+  if (param) return pintaADedo(v, cols.find((c) => c.id === param));
   const cats = await rpc('admin_categories').catch(() => []);
   const byId = Object.fromEntries(cols.map((c) => [c.id, c]));
   const ruleText = (r = {}) => [
@@ -1221,13 +1222,13 @@ PAGES.colecciones = async (v) => {
   ].filter(Boolean).join(' · ') || 'todo lo que haya cerca';
   v.innerHTML = `
     <div class="page-head"><h1>Colecciones</h1><span class="spacer"></span><button class="btn primary sm" id="new">Nueva colección…</button></div>
-    ${helpBox('¿Qué es esto?', '<p>Selecciones con nombre que aparecen en Descubre («Planes para el finde», «Barato y bueno»). No se eligen una a una: se define una <b>regla</b> y la app enseña lo que encaje cerca de cada persona. Si una colección se queda sin nada cerca, no se enseña.</p><p>Puedes limitarlas a una <b>ciudad</b> y ponerles <b>fechas</b>: una colección de feria aparece y desaparece sola.</p>')}
+    ${helpBox('¿Qué es esto?', '<p>Selecciones con nombre que aparecen en Descubre («Planes para el finde», «Barato y bueno»). Hay dos maneras de llenarlas:</p><p><b>Por regla</b>: defines qué encaja (tipo, cuándo, precio, categoría) y la app enseña lo que haya cerca de cada persona. <b>A dedo</b>: eliges las publicaciones una a una y en el orden que quieras. Una colección con piezas a dedo enseña <b>solo esas</b> y su regla se ignora.</p><p>Lo elegido a dedo sigue pasando por el filtro de siempre: si una publicación caduca o el negocio la retira, se cae sola de la colección. Puedes limitarlas a una <b>ciudad</b> y ponerles <b>fechas</b>: una colección de feria aparece y desaparece sola.</p>')}
     ${table({ cols: [
       { h: 'Colección', r: (c) => `<span class="title">${esc(c.title?.es || c.slug)}<span class="sub">${esc(c.slug)}${c.city ? ' · ' + esc(c.city) : ''} · ${esc(ruleText(c.rules))}</span></span>` },
       { h: 'Estado', r: (c) => c.is_active ? tag('active') : tag('draft') },
       { h: 'Vigencia', r: (c) => (c.active_from || c.active_until) ? `<span class="small nowrap">${c.active_from ? fmtDay(c.active_from) : '—'} → ${c.active_until ? fmtDay(c.active_until) : '—'}</span>` : 'siempre' },
       { h: 'Orden', num: true, r: (c) => c.position },
-      { h: '', r: (c) => `<span class="actions"><button class="btn sm" data-edit="${c.id}">Editar…</button><button class="btn sm bad ghost" data-del="${c.id}">Borrar</button></span>` },
+      { h: '', r: (c) => `<span class="actions"><a class="btn sm" href="#/colecciones/${c.id}">Elegir a dedo…</a><button class="btn sm" data-edit="${c.id}">Editar…</button><button class="btn sm bad ghost" data-del="${c.id}">Borrar</button></span>` },
     ], rows: cols, empty: 'Todavía no hay colecciones.' })}`;
   const edit = async (c) => {
     const r = await modal({ title: c ? 'Editar colección' : 'Nueva colección', fields: [
@@ -1275,6 +1276,73 @@ PAGES.colecciones = async (v) => {
     try { await rpc('admin_delete_collection', { p_id: b.dataset.del }); toast('Borrada'); route(); } catch (e) { toast(e.message, true); }
   }; });
 };
+
+/** Las publicaciones de una colección, elegidas a mano y en orden. */
+async function pintaADedo(v, c) {
+  if (!c) { go('#/colecciones'); return; }
+  let busqueda = '';
+
+  const dibuja = async () => {
+    const [dentro, fuera] = await Promise.all([
+      rpc('admin_collection_items', { p_collection: c.id }),
+      busqueda.trim().length >= 2
+        ? rpc('admin_offers_page', {
+          p_moderation: 'all', p_status: 'all', p_kind: 'all',
+          p_query: busqueda.trim(), p_business: null, p_limit: 15, p_offset: 0,
+        }).catch(() => ({ rows: [] }))
+        : Promise.resolve({ rows: [] }),
+    ]);
+    const items = dentro?.items || [];
+    const dentroYa = new Set(items.map((x) => x.offer_id));
+    const candidatas = (fuera?.rows || []).filter((o) => !dentroYa.has(o.id));
+
+    v.innerHTML = `
+      <div class="page-head"><a class="btn sm" href="#/colecciones">← Colecciones</a>
+        <h1 style="margin-left:10px">${esc(c.title?.es || c.slug)}</h1></div>
+      ${helpBox('¿Cómo va esto?', '<p>Lo que pongas aquí se enseña <b>en este orden</b> y en lugar de la regla de la colección. Si la lista se queda vacía, vuelve a mandar la regla.</p><p>Una publicación caducada o retirada deja de verse sola: no hace falta que la quites.</p>')}
+      <div class="card"><h2>En la colección</h2>${table({
+        cols: [
+          { h: '#', num: true, r: (x, i) => i + 1 },
+          { h: 'Publicación', r: (x) => `<span class="title">${esc(x.title)}<span class="sub">${esc(x.business_name || '')}${x.city ? ' · ' + esc(x.city) : ''}</span></span>` },
+          { h: 'Se ve', r: (x) => x.visible ? tag('active') : '<span class="muted">ahora no</span>' },
+          { h: '', r: (x) => `<span class="actions">
+              <button class="btn sm" data-move="${esc(x.offer_id)}" data-delta="-1">↑</button>
+              <button class="btn sm" data-move="${esc(x.offer_id)}" data-delta="1">↓</button>
+              <button class="btn sm bad ghost" data-out="${esc(x.offer_id)}">Quitar</button></span>` },
+        ],
+        rows: items,
+        empty: 'Todavía no has elegido ninguna: manda la regla de la colección.',
+      })}</div>
+      <div class="card"><h2>Añadir</h2>
+        <label class="f"><span>Buscar publicación</span><input id="q" value="${esc(busqueda)}" placeholder="Título o negocio…"></label>
+        ${candidatas.length ? table({
+          cols: [
+            { h: 'Publicación', r: (o) => `<span class="title">${esc(o.title)}<span class="sub">${esc(o.business_name || '')} · ${LABELS[o.kind]}</span></span>` },
+            { h: 'Estado', r: (o) => `${tag(o.status)} ${tag(o.moderation_status)}` },
+            { h: '', r: (o) => `<button class="btn sm primary" data-in="${esc(o.id)}">Añadir</button>` },
+          ],
+          rows: candidatas,
+        }) : `<p class="muted">${busqueda.trim().length >= 2 ? 'Nada con ese nombre.' : 'Escribe al menos dos letras.'}</p>`}
+      </div>`;
+
+    const q = $('#q', v);
+    q.oninput = debounce(() => { busqueda = q.value; dibuja(); });
+    $$('[data-in]', v).forEach((b) => { b.onclick = async () => {
+      await rpc('admin_collection_add', { p_collection: c.id, p_offer: b.dataset.in });
+      toast('Añadida'); dibuja();
+    }; });
+    $$('[data-out]', v).forEach((b) => { b.onclick = async () => {
+      await rpc('admin_collection_remove', { p_collection: c.id, p_offer: b.dataset.out });
+      dibuja();
+    }; });
+    $$('[data-move]', v).forEach((b) => { b.onclick = async () => {
+      await rpc('admin_collection_move', { p_collection: c.id, p_offer: b.dataset.move, p_delta: +b.dataset.delta });
+      dibuja();
+    }; });
+  };
+
+  await dibuja();
+}
 
 // ── Configuración ───────────────────────────────────────────────────────────
 PAGES.configuracion = async (v) => {
