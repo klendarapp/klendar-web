@@ -104,7 +104,7 @@ function downloadCsv(name, rows, cols) {
 
 function table({ cols, rows, empty = 'Nada por aquí.' }) {
   if (!rows.length) return `<div class="tbl-wrap"><div class="empty">${esc(empty)}</div></div>`;
-  return `<div class="tbl-wrap"><table class="tbl"><thead><tr>${cols.map((c) => `<th ${c.num ? 'class="num"' : ''}>${esc(c.h)}</th>`).join('')}</tr></thead><tbody>${rows.map((r, i) => `<tr data-i="${i}">${cols.map((c) => `<td ${c.num ? 'class="num"' : ''}>${c.r(r)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+  return `<div class="tbl-wrap"><table class="tbl"><thead><tr>${cols.map((c) => `<th ${c.num ? 'class="num"' : ''}>${esc(c.h)}</th>`).join('')}</tr></thead><tbody>${rows.map((r, i) => `<tr data-i="${i}">${cols.map((c) => `<td ${c.num ? 'class="num"' : ''}>${c.r(r, i)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
 }
 const helpBox = (title, body) => `<details class="help"><summary>${esc(title)}</summary>${body}</details>`;
 
@@ -183,6 +183,7 @@ const NAV = [
   ['validar', '🎟', 'Validar códigos'],
   ['informe', '📈', 'Informe'],
   ['sellos', '🎫', 'Tarjeta de sellos'],
+  ['carta', '🍽', 'Carta'],
   ['equipo', '👥', 'Equipo'],
   ['ayuda', '❓', 'Ayuda'],
 ];
@@ -829,6 +830,134 @@ PAGES.sellos = async (v) => {
     $('#msg', v).textContent = r?.ok ? 'Guardado' : 'No se ha podido guardar';
     if (r?.ok) setTimeout(() => route(), 600);
   };
+};
+
+// Los catorce del Reglamento 1169/2011. Se declara lo que haya, no se
+// adivina: equivocarse aquí puede mandar a alguien al hospital.
+const ALERGENOS = [
+  ['gluten', 'Gluten'], ['crustaceos', 'Crustáceos'], ['huevos', 'Huevos'],
+  ['pescado', 'Pescado'], ['cacahuetes', 'Cacahuetes'], ['soja', 'Soja'],
+  ['lacteos', 'Lácteos'], ['frutos_cascara', 'Frutos de cáscara'],
+  ['apio', 'Apio'], ['mostaza', 'Mostaza'], ['sesamo', 'Sésamo'],
+  ['sulfitos', 'Sulfitos'], ['altramuces', 'Altramuces'], ['moluscos', 'Moluscos'],
+];
+const nombreAlergeno = (k) => (ALERGENOS.find((a) => a[0] === k) || [k, k])[1];
+
+PAGES.carta = async (v) => {
+  const canManage = ['owner', 'manager'].includes(BIZ.role);
+  let carta = await rpc('business_menu', { p_business: BIZ.id }).catch(() => []);
+  let sucia = false;
+
+  const guardar = async () => {
+    const r = await rpc('save_business_menu', { p_business: BIZ.id, p_menu: carta })
+      .catch((e) => ({ ok: false, error: e.message }));
+    if (r?.ok) { sucia = false; toast('Carta guardada'); pinta(); }
+    else toast(r?.error || 'No se ha podido guardar', true);
+  };
+
+  const pinta = () => {
+    v.innerHTML = `
+      <div class="page-head"><h1>Carta</h1><span class="spacer"></span>
+        ${canManage ? `<button class="btn sm" id="add-sec">Añadir sección</button>
+        <button class="btn sm primary" id="save" ${sucia ? '' : 'disabled'}>Guardar la carta</button>` : ''}</div>
+      ${helpBox('¿Para qué escribirla?', '<p>Un PDF o unas fotos sirven para salir del paso, pero no se leen bien en el móvil, no se pueden buscar y no las lee un lector de pantalla. Escrita, la gente ve los platos y los precios en tu ficha, y puede filtrar por alérgenos.</p><p>Los <b>alérgenos</b> son los catorce que obliga a declarar el Reglamento 1169/2011. Pon solo los que sepas seguro: aquí equivocarse no es una errata.</p>')}
+      ${carta.length ? carta.map((sec, si) => `
+        <div class="card">
+          <h2 style="display:flex;align-items:center;gap:8px">${esc(sec.name)}
+            ${canManage ? `<span class="spacer"></span>
+              <button class="btn sm ghost" data-sec-up="${si}">↑</button>
+              <button class="btn sm ghost" data-sec-down="${si}">↓</button>
+              <button class="btn sm ghost" data-sec-edit="${si}">Renombrar</button>
+              <button class="btn sm bad ghost" data-sec-del="${si}">Borrar</button>` : ''}</h2>
+          ${table({
+            cols: [
+              { h: 'Plato', r: (it) => `<b class="title">${esc(it.name)}</b>${it.description ? `<span class="sub">${esc(it.description)}</span>` : ''}` },
+              { h: 'Alérgenos', r: (it) => (it.allergens || []).length
+                ? (it.allergens || []).map((a) => `<span class="tag">${esc(nombreAlergeno(a))}</span>`).join(' ')
+                : '<span class="muted">—</span>' },
+              { h: 'Precio', num: true, r: (it) => it.price_cents == null ? '—' : fmtMoney(it.price_cents) },
+              { h: '', r: (it, ii) => canManage ? `<div class="actions">
+                  <button class="btn sm ghost" data-item-edit="${si}:${ii}">Editar</button>
+                  <button class="btn sm bad ghost" data-item-del="${si}:${ii}">Quitar</button></div>` : '' },
+            ],
+            rows: sec.items || [],
+            empty: 'Esta sección está vacía.',
+          })}
+          ${canManage ? `<p style="margin:10px 0 0"><button class="btn sm" data-item-add="${si}">Añadir plato</button></p>` : ''}
+        </div>`).join('')
+        : `<div class="card"><p class="muted" style="margin:0">Todavía no has escrito la carta. ${canManage ? 'Empieza por una sección: «Para picar», «Bocadillos», «Bebidas»…' : ''}</p></div>`}
+      ${sucia ? '<p class="muted">Hay cambios sin guardar.</p>' : ''}`;
+
+    if (!canManage) return;
+    $('#save', v).onclick = guardar;
+    $('#add-sec', v).onclick = async () => {
+      const r = await modal({ title: 'Nueva sección', fields: [{ name: 'name', label: 'Nombre', required: true, placeholder: 'Para picar' }] });
+      if (!r?.name) return;
+      carta = [...carta, { name: r.name, items: [] }];
+      sucia = true; pinta();
+    };
+    $$('[data-sec-edit]', v).forEach((b) => { b.onclick = async () => {
+      const i = +b.dataset.secEdit;
+      const r = await modal({ title: 'Renombrar sección', fields: [{ name: 'name', label: 'Nombre', value: carta[i].name, required: true }] });
+      if (!r?.name) return;
+      carta[i].name = r.name; sucia = true; pinta();
+    }; });
+    $$('[data-sec-del]', v).forEach((b) => { b.onclick = async () => {
+      const i = +b.dataset.secDel;
+      if (!await confirmDlg('Borrar sección', `Se quita «${carta[i].name}» con sus platos. No se guarda hasta que le des a «Guardar la carta».`, { danger: true, submit: 'Borrar' })) return;
+      carta.splice(i, 1); sucia = true; pinta();
+    }; });
+    $$('[data-sec-up]', v).forEach((b) => { b.onclick = () => {
+      const i = +b.dataset.secUp;
+      if (i === 0) return;
+      [carta[i - 1], carta[i]] = [carta[i], carta[i - 1]]; sucia = true; pinta();
+    }; });
+    $$('[data-sec-down]', v).forEach((b) => { b.onclick = () => {
+      const i = +b.dataset.secDown;
+      if (i >= carta.length - 1) return;
+      [carta[i + 1], carta[i]] = [carta[i], carta[i + 1]]; sucia = true; pinta();
+    }; });
+
+    const editaPlato = async (si, ii) => {
+      const it = ii == null ? { allergens: [] } : carta[si].items[ii];
+      const r = await modal({
+        title: ii == null ? 'Nuevo plato' : 'Editar plato',
+        fields: [
+          { name: 'name', label: 'Nombre', value: it.name, required: true, placeholder: 'Tortilla de patata' },
+          { name: 'description', label: 'Descripción (opcional)', value: it.description || '' },
+          { name: 'price', label: 'Precio (€)', value: it.price_cents == null ? '' : (it.price_cents / 100).toFixed(2).replace('.', ',') },
+          ...ALERGENOS.map((a) => ({
+            name: `a_${a[0]}`, type: 'checkbox', label: a[1],
+            value: (it.allergens || []).includes(a[0]),
+          })),
+        ],
+      });
+      if (!r?.name) return;
+      const precio = String(r.price || '').replace(',', '.').trim();
+      const plato = {
+        name: r.name,
+        description: r.description || null,
+        price_cents: precio === '' ? null : Math.round(parseFloat(precio) * 100),
+        allergens: ALERGENOS.filter((a) => r[`a_${a[0]}`]).map((a) => a[0]),
+        is_available: true,
+      };
+      if (Number.isNaN(plato.price_cents)) plato.price_cents = null;
+      if (ii == null) carta[si].items = [...(carta[si].items || []), plato];
+      else carta[si].items[ii] = { ...it, ...plato };
+      sucia = true; pinta();
+    };
+    $$('[data-item-add]', v).forEach((b) => { b.onclick = () => editaPlato(+b.dataset.itemAdd, null); });
+    $$('[data-item-edit]', v).forEach((b) => { b.onclick = () => {
+      const [si, ii] = b.dataset.itemEdit.split(':').map(Number);
+      editaPlato(si, ii);
+    }; });
+    $$('[data-item-del]', v).forEach((b) => { b.onclick = () => {
+      const [si, ii] = b.dataset.itemDel.split(':').map(Number);
+      carta[si].items.splice(ii, 1); sucia = true; pinta();
+    }; });
+  };
+
+  pinta();
 };
 
 PAGES.equipo = async (v) => {

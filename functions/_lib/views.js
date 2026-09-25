@@ -141,9 +141,10 @@ export async function businessPage(id, lang) {
   if (!isUuid(id)) return notFound(lang, path, 'b');
   const b = await rpc('business_profile', { p_id: id });
   if (!b || !b.name) return notFound(lang, path, 'b');
-  const [offers, sellos] = await Promise.all([
+  const [offers, sellos, carta] = await Promise.all([
     rpcAll('business_offers', { p_id: id }),
     rpc('stamp_card_of', { p_business: id }),
+    rpcAll('business_menu', { p_business: id }),
   ]);
 
   const S = en
@@ -153,7 +154,8 @@ export async function businessPage(id, lang) {
         open: 'Follow in the app', note: 'Free app. You get a heads-up when this business publishes something.',
         verified: 'Verified business', since: 'On Klendar since', redeemed: 'redemptions validated',
         about: 'About', menu: 'Menu',
-        stamps: 'Stamp card',
+        stamps: 'Stamp card', allergens: 'Allergens',
+        menuNote: 'Allergens as declared by the business. If you have an allergy, ask at the venue.',
         stampsBody: (n, r) => `When you get to ${n} visits: “${r}”. Every code you redeem here leaves a stamp, one a day at most, and the app keeps count.`,
       }
     : {
@@ -162,7 +164,8 @@ export async function businessPage(id, lang) {
         open: 'Seguir en la app', note: 'App gratuita. Te avisa cuando este negocio publica algo.',
         verified: 'Negocio verificado', since: 'En Klendar desde', redeemed: 'canjes validados',
         about: 'Sobre el negocio', menu: 'Carta',
-        stamps: 'Tarjeta de sellos',
+        stamps: 'Tarjeta de sellos', allergens: 'Alérgenos',
+        menuNote: 'Los alérgenos son los que declara el negocio. Si tienes alergia, pregunta en el sitio.',
         stampsBody: (n, r) => `Al llegar a ${n} visitas: «${r}». Cada código que canjeas aquí deja un sello, como mucho uno al día, y la app lleva la cuenta.`,
       };
 
@@ -206,6 +209,16 @@ export async function businessPage(id, lang) {
       ${b.description ? `<h2>${S.about}</h2><p>${esc(b.description).replace(/\n/g, '<br>')}</p>` : ''}
       ${sellos?.is_active ? `<h2>${S.stamps}</h2>
         <p class="callout">${esc(S.stampsBody(sellos.goal, sellos.reward))}</p>` : ''}
+      ${carta.length ? `<h2>${S.menu}</h2>
+        <div class="menu">${carta.map((sec) => `<section>
+          <h3>${esc(sec.name)}</h3>
+          <ul>${(sec.items || []).map((it) => `<li>
+            <span><b>${esc(it.name)}</b>${it.description ? `<small>${esc(it.description)}</small>` : ''}
+            ${(it.allergens || []).length ? `<small class="alg">${S.allergens}: ${it.allergens.map((a) => esc(a.replace(/_/g, ' '))).join(', ')}</small>` : ''}</span>
+            <span class="price">${it.price_cents == null ? '' : esc(money(it.price_cents, 'EUR', lang))}</span>
+          </li>`).join('')}</ul>
+        </section>`).join('')}</div>
+        <p class="note">${esc(S.menuNote)}</p>` : ''}
       ${flash.length ? `<h2>${S.now}</h2><div class="olist">${flash.map((o) => offerCard(o, lang)).join('')}</div>` : ''}
       ${events.length ? `<h2>${S.soon}</h2><div class="olist">${events.map((o) => offerCard(o, lang)).join('')}</div>` : ''}
       ${offers.length ? '' : `<p class="empty">${S.none}</p>`}
