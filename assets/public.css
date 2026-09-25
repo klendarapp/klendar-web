@@ -117,3 +117,6 @@ main.pub { padding: 34px 20px 72px; }
 
 footer.pub-foot { border-top: 1px solid var(--glass-border); padding: 22px 0; font-size: 13px; color: var(--ink-2); }
 footer.pub-foot a { color: var(--ink-2); }
+
+/* Guardar y abrir en la app, debajo del botón grande. */
+.acciones { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 0; }

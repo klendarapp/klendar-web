@@ -151,8 +151,8 @@ export function publicPage({ lang, path, title, description, head = '', body, im
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/site.css?v=20260925">
-<link rel="stylesheet" href="/assets/public.css?v=5">
+<link rel="stylesheet" href="/assets/site.css?v=20260928">
+<link rel="stylesheet" href="/assets/public.css?v=6">
 ${head}
 </head>
 <body>
@@ -163,11 +163,11 @@ ${siteFooter(lang)}
 }
 
 /** Botón grande para abrir la publicación en la app. */
-export function openInApp(path, label = 'Abrir en la app') {
+export function openInApp(path, label = 'Abrir en la app', cls = 'pill accent big') {
   // La app entiende /o/<id>, no /en/o/<id>.
   const deep = path.replace(/^\/en/, '');
   const intent = `intent://klendar.app${deep}#Intent;scheme=https;package=app.klendar;S.browser_fallback_url=${encodeURIComponent(BASE + '/')};end`;
-  return `<a class="pill accent big" id="open" data-web="${BASE}${esc(deep)}" href="${esc(intent)}">${esc(label)}</a>
+  return `<a class="${cls}" id="open" data-web="${BASE}${esc(deep)}" href="${esc(intent)}">${esc(label)}</a>
 <script>(function(){var a=document.getElementById('open');if(!a)return;if(!/Android/i.test(navigator.userAgent||''))a.href=a.getAttribute('data-web');})();</script>`;
 }
 

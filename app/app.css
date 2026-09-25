@@ -1,0 +1,62 @@
+/* «Mi Klendar»: móvil primero. Se apoya en site.css y public.css (tarjetas,
+   etiquetas, botones) y añade solo lo suyo. */
+
+.formu { display: grid; gap: 14px; max-width: 440px; margin: 18px 0; }
+.formu label { display: grid; gap: 6px; font-weight: 600; font-size: 15px; }
+.formu label small { font-weight: 400; color: var(--ink-2); }
+.formu input[type=email], .formu input[type=password], .formu input[type=date],
+.formu input:not([type]), .formu input[inputmode] {
+  padding: 12px 14px; border-radius: 12px; border: 1px solid var(--glass-border);
+  background: var(--glass); color: inherit; font: inherit; }
+.formu input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.formu .check { display: flex; gap: 10px; align-items: flex-start; font-weight: 400; }
+.formu .check input { margin-top: 3px; width: 18px; height: 18px; }
+.err { color: #FF5C5C; min-height: 1em; margin: 0; font-size: 14px; }
+.linkbtn { background: none; border: 0; padding: 0; color: var(--accent-text); font: inherit;
+  font-weight: 700; cursor: pointer; }
+:root[data-theme=dark] .linkbtn, .linkbtn { color: var(--accent); }
+
+.hub { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin: 18px 0; }
+.hub-i { display: grid; gap: 4px; padding: 18px; border-radius: 18px; border: 1px solid var(--glass-border);
+  background: var(--elevated); color: inherit; }
+.hub-i:hover { text-decoration: none; border-color: var(--accent); }
+.hub-i b { font-size: 17px; }
+.hub-i span { color: var(--ink-2); font-size: 14px; }
+
+.olist.pasado { opacity: .7; }
+.tag.off { background: var(--glass); color: var(--ink-2); }
+.tag.grande { font-size: 20px; padding: 6px 16px; }
+
+/* El código para la barra: blanco y grande, que se lea a la primera. */
+.ticket { text-align: center; max-width: 420px; margin: 0 auto; }
+.ticket h1 { margin: 4px 0 10px; }
+.qr { background: #fff; border-radius: 22px; padding: 16px; width: min(280px, 80vw); margin: 16px auto; }
+.qr svg { width: 100%; height: auto; display: block; }
+.codigo { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: .12em;
+  font-size: 15px; word-break: break-all; }
+
+.recibo { border: 1px solid var(--glass-border); border-radius: 18px; padding: 18px; max-width: 520px; background: var(--elevated); }
+.recibo h2 { margin: 0 0 4px; }
+.recibo dl { display: grid; grid-template-columns: 110px 1fr; gap: 8px 12px; margin: 16px 0; }
+.recibo dt { color: var(--ink-2); }
+.recibo dd { margin: 0; font-weight: 600; }
+
+.sello { border: 1px solid var(--glass-border); border-radius: 18px; padding: 18px; margin: 0 0 14px; background: var(--elevated); }
+.sello h2 { margin: 0 0 10px; font-size: 18px; }
+.huecos { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 10px; }
+.huecos span { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--glass-border); }
+.huecos span.lleno { background: var(--accent); border-color: var(--accent); }
+
+.hecho-ic { width: 64px; height: 64px; margin: 24px auto 0; border-radius: 50%; display: grid;
+  place-items: center; font-size: 30px; font-weight: 800; background: var(--accent); color: #fff; }
+.ticket .acciones { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+
+.toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 50;
+  background: var(--ink); color: var(--bg, #0B0F1A); padding: 12px 18px; border-radius: 14px;
+  font-weight: 600; max-width: calc(100vw - 32px); box-shadow: 0 12px 30px rgba(0,0,0,.3); }
+.toast.bad { background: #FF5C5C; color: #fff; }
+
+@media print {
+  header.top, footer, .crumbs, #imprimir, .toast { display: none !important; }
+  .recibo { border: 0; }
+}

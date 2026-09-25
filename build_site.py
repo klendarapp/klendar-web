@@ -186,7 +186,7 @@ def head(t, path, page_title=None, page_desc=None, extra=''):
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/site.css?v=20260925">
+<link rel="stylesheet" href="/assets/site.css?v=20260928">
 <link rel="stylesheet" href="/assets/public.css?v=2">
 {extra}
 </head>
@@ -416,3 +416,23 @@ if __name__ == '__main__':
     io.open('robots.txt', 'w', encoding='utf-8', newline=chr(10)).write(robots())
     io.open('sitemap.xml', 'w', encoding='utf-8', newline=chr(10)).write(sitemap())
     print('ok: index.html, en/index.html, en/support/index.html, robots.txt, sitemap.xml')
+
+    # «Mi Klendar» (/app/) es una sola página con los dos idiomas: lleva las
+    # dos cabeceras y los dos pies, y el propio app.js enseña la que toca.
+    # Se estampan aquí para que el menú sea el mismo que en el resto.
+    import re as _re
+    ruta = os.path.join('app', 'index.html')
+    if os.path.exists(ruta):
+        app = io.open(ruta, encoding='utf-8').read()
+        trozos = {
+            'CABECERA-ES': '<div data-only="es">' + HEADER_TPL['es'].replace('{{ES}}', '/app/?lang=es').replace('{{EN}}', '/app/?lang=en') + '</div>',
+            'CABECERA-EN': '<div data-only="en" hidden>' + HEADER_TPL['en'].replace('{{ES}}', '/app/?lang=es').replace('{{EN}}', '/app/?lang=en') + '</div>',
+            'PIE-ES': '<div data-only="es">' + FOOTER_HTML['es'] + '</div>',
+            'PIE-EN': '<div data-only="en" hidden>' + FOOTER_HTML['en'] + '</div>',
+        }
+        for marca, html_ in trozos.items():
+            app = _re.sub(r'<!--%s-->.*?<!--/%s-->' % (marca, marca),
+                          lambda _m, h=html_, m=marca: '<!--%s-->%s<!--/%s-->' % (m, h, m),
+                          app, flags=_re.S)
+        io.open(ruta, 'w', encoding='utf-8', newline=chr(10)).write(app)
+        print('ok: app/index.html (cabecera y pie)')

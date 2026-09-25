@@ -29,12 +29,13 @@ section h2 { font-size: clamp(28px, 4vw, 40px); line-height: 1.1; font-weight: 8
 /* ── Cabecera ─────────────────────────────────────────────────────────── */
 header.top { position: sticky; top: 0; z-index: 20; backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
   background: var(--glass); border-bottom: 1px solid var(--glass-border); }
-header.top .wrap { display: flex; align-items: center; gap: 14px; height: 64px; position: relative; }
+header.top .wrap { display: flex; align-items: center; gap: 14px; height: 64px; position: relative; max-width: 1240px; }
 .brand { display: flex; align-items: center; gap: 10px; color: var(--ink); font-family: var(--display); font-weight: 800; font-size: 20px; letter-spacing: -.6px; }
 .brand:hover { text-decoration: none; }
 .brand img { width: 30px; height: 30px; border-radius: 9px; }
-nav.main { margin-left: auto; display: flex; align-items: center; gap: 22px; font-weight: 600; font-size: 14px; }
-nav.main a { color: var(--ink-2); }
+nav.main { margin-left: auto; display: flex; align-items: center; gap: 18px; font-weight: 600; font-size: 14px; }
+/* Cada botón en una línea: si no caben todos, sale el menú desplegable. */
+nav.main a { color: var(--ink-2); white-space: nowrap; }
 nav.main a:hover { color: var(--ink); text-decoration: none; }
 .lang { display: inline-flex; border: 1px solid var(--glass-border); border-radius: 999px; overflow: hidden; font-size: 12px; font-weight: 700; }
 .lang a { padding: 6px 10px; color: var(--ink-2); }
@@ -42,7 +43,7 @@ nav.main a:hover { color: var(--ink); text-decoration: none; }
 .menu-toggle { display: none; margin-left: auto; width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--glass-border); background: transparent; cursor: pointer; color: var(--ink); }
 .menu-toggle span { display: block; width: 18px; height: 2px; background: currentColor; margin: 4px auto; border-radius: 2px; }
 #menu { display: none; }
-@media (max-width: 760px) {
+@media (max-width: 1100px) {
   .menu-toggle { display: block; }
   nav.main { display: none; position: absolute; left: 0; right: 0; top: 64px; flex-direction: column; align-items: flex-start; gap: 4px; padding: 12px 20px 18px;
     background: var(--surface); border-bottom: 1px solid var(--glass-border); }
@@ -176,6 +177,11 @@ nav.main a.nav-panel {
   font-weight: 700;
 }
 nav.main a.nav-panel:hover { background: var(--glass); text-decoration: none; }
+/* La cuenta de la gente: el botón que más se usa, en el color de la marca. */
+nav.main a.nav-yo {
+  background: var(--accent); color: #fff; border-radius: 999px; padding: 6px 14px; font-weight: 700;
+}
+nav.main a.nav-yo:hover { filter: brightness(1.08); text-decoration: none; }
 
 /* ── Páginas de contenido (precios, preguntas) ──────────────────────────── */
 .plans { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); margin: 22px 0; }

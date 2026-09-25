@@ -39,16 +39,18 @@ export async function offerPage(id, lang) {
     ? {
         when: 'When', redeem: 'Redemption window', where: 'Where', seats: 'Places left',
         terms: 'Conditions', about: 'What it is', biz: 'The business',
-        open: soldOut ? 'Join the waiting list' : (flash ? 'Get the code in the app' : 'Reserve in the app'),
-        note: 'Free app. The code is single-use and the business validates it on the spot.',
+        open: 'Open in the app',
+        code: 'Get the code', reserve: 'Reserve a place', wait: 'Join the waiting list', save: 'Save',
+        note: 'From here or from the app, with the same account. The code is single-use and the business validates it on the spot.',
         soldOut: 'Sold out', over: 'Finished', more: 'Everything from', hot: 'Popular',
         prior: 'Lowest price in the last 30 days',
       }
     : {
         when: 'Cuándo', redeem: 'Se canjea', where: 'Dónde', seats: 'Plazas libres',
         terms: 'Condiciones', about: 'Qué es', biz: 'El negocio',
-        open: soldOut ? 'Apuntarme a la lista de espera' : (flash ? 'Conseguir el código en la app' : 'Reservar en la app'),
-        note: 'App gratuita. El código es de un solo uso y lo valida el negocio en el momento.',
+        open: 'Abrir en la app',
+        code: 'Conseguir el código', reserve: 'Reservar plaza', wait: 'Apuntarme a la lista de espera', save: 'Guardar',
+        note: 'Desde aquí o desde la app, con la misma cuenta. El código es de un solo uso y lo valida el negocio en el momento.',
         soldOut: 'Agotado', over: 'Terminado', more: 'Todo lo de', hot: 'Con tirón',
         prior: 'Precio más bajo de los últimos 30 días',
       };
@@ -86,7 +88,18 @@ export async function offerPage(id, lang) {
         ${where ? `<div><dt>${S.where}</dt><dd>${esc(where)}</dd></div>` : ''}
         ${o.seats_left != null && !soldOut ? `<div><dt>${S.seats}</dt><dd>${o.seats_left}</dd></div>` : ''}
       </dl>
-      ${over ? '' : openInApp(path, S.open)}
+      ${over ? '' : (() => {
+        // Lo mismo que el botón grande de la app, pero sin salir de la web.
+        const id = encodeURIComponent(o.id);
+        const principal = soldOut ? `<a class="pill accent big" href="/app/#/espera/${id}">${S.wait}</a>`
+          : flash ? `<a class="pill accent big" href="/app/#/codigo/${id}">${S.code}</a>`
+            : o.reservations_enabled ? `<a class="pill accent big" href="/app/#/reservar/${id}">${S.reserve}</a>`
+              : o.external_url ? `<a class="pill accent big" href="${esc(o.external_url)}" rel="nofollow noopener" target="_blank">${esc(o.external_url.replace(/^https?:\/\//, '').split('/')[0])}</a>`
+                : '';
+        return `${principal}
+          <p class="acciones"><a class="pill" href="/app/#/guardar/${id}">♡ ${S.save}</a>
+            ${openInApp(path, S.open, 'pill ghost')}</p>`;
+      })()}
       <p class="note">${S.note}</p>
     </aside>
     <div class="d-body">
@@ -151,7 +164,7 @@ export async function businessPage(id, lang) {
     ? {
         now: 'On right now', soon: 'Coming up',
         none: 'Nothing published right now. It changes often — take a look in the app.',
-        open: 'Follow in the app', note: 'Free app. You get a heads-up when this business publishes something.',
+        open: 'Follow', note: 'From here or from the app, with the same account. You get a heads-up when this business publishes something.',
         verified: 'Verified business', since: 'On Klendar since', redeemed: 'redemptions validated',
         about: 'About', menu: 'Menu',
         stamps: 'Stamp card', allergens: 'Allergens',
@@ -161,7 +174,7 @@ export async function businessPage(id, lang) {
     : {
         now: 'Ahora mismo', soon: 'Próximamente',
         none: 'Ahora mismo no hay nada publicado. Suele cambiar: échale un ojo en la app.',
-        open: 'Seguir en la app', note: 'App gratuita. Te avisa cuando este negocio publica algo.',
+        open: 'Seguir', note: 'Desde aquí o desde la app, con la misma cuenta. Te avisamos cuando este negocio publique algo.',
         verified: 'Negocio verificado', since: 'En Klendar desde', redeemed: 'canjes validados',
         about: 'Sobre el negocio', menu: 'Carta',
         stamps: 'Tarjeta de sellos', allergens: 'Alérgenos',
@@ -196,7 +209,7 @@ export async function businessPage(id, lang) {
       ${where ? `<p class="muted">${esc(where)}</p>` : ''}
     </div>
     <aside class="side">
-      ${openInApp(path, S.open)}
+      <a class="pill accent big" href="/app/#/seguir/${encodeURIComponent(b.id)}">♡ ${S.open}</a>
       <p class="note" style="margin-bottom:16px">${S.note}</p>
       <div class="info">
         ${where ? `<div><span>📍</span><span>${maps ? `<a href="${esc(maps)}" rel="nofollow noopener" target="_blank">${esc(where)}</a>` : esc(where)}</span></div>` : ''}
