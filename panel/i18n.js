@@ -68,7 +68,7 @@ const I18N = makeI18N({
     'Nuevo evento': 'New event',
     'Validar un código': 'Validate a code',
     'Canjeable con QR durante unas horas': 'Redeemable with a QR code for a few hours',
-    'Con fecha, aforo y reserva de plaza': 'With a date, capacity and seat booking',
+    'Con fecha, aforo y reserva de plaza': 'With a date, capacity and place booking',
     'Escribe el código que enseña el cliente': 'Type the code the customer shows you',
     'Ver ficha pública ↗': 'See public page ↗',
     'Tu plan': 'Your plan',
@@ -327,7 +327,7 @@ const I18N = makeI18N({
     ': algo que se canjea hoy, con cuenta atrás y aforo («café + tostada 2,50 € hasta mediodía»).':
       ': something redeemed today, with a countdown and a capacity («coffee + toast €2.50 until noon»).',
     ': algo con fecha, que se guarda en la agenda y puede admitir reserva de plaza.':
-      ': something with a date, saved in the calendar, which can take seat bookings.',
+      ': something with a date, saved in the calendar, which can take place bookings.',
     'Pide a la persona su código (lo tiene en la app, debajo del QR) y escríbelo aquí. Cada código vale una vez: al validarlo queda marcado y el aforo baja. Si tienes cámara, desde la app es más rápido.':
       'Ask the person for their code (it is in the app, under the QR) and type it here. Each code works once: validating it marks it and the capacity goes down. If you have a camera, the app is quicker.',
     'código(s) se quedaron sin usar.': 'code(s) were left unused.',
@@ -350,7 +350,7 @@ const I18N = makeI18N({
     'Publícalo con días de antelación: la gente lo guarda en su agenda.':
       'Publish it days ahead: people save it in their calendar.',
     'Activa la reserva de plaza si quieres saber cuánta gente viene.':
-      'Turn on seat booking if you want to know how many people are coming.',
+      'Turn on place booking if you want to know how many people are coming.',
     'Pon el código «sin caducidad» para que valga como entrada.':
       'Set the code to «no expiry» so it works as a ticket.',
     'El día del evento, usa «Asistentes» para dar entrada.':
