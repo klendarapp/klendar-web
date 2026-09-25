@@ -345,4 +345,12 @@ const APP_EN = {
   "¿No te llega? Mira en spam o en «Promociones».": "Not there? Check spam or “Promotions”.",
   "Son 6 cifras.": "It is 6 digits.",
   "Cuenta confirmada": "Account confirmed",
+  "Continuar con Google": "Continue with Google",
+  "Si es tu primera vez, se crea tu cuenta y te pediremos tu fecha de nacimiento y que aceptes los términos.": "If it is your first time, your account is created and we will ask for your date of birth and for you to accept the terms.",
+  "Un último paso": "One last step",
+  "Para usar Klendar hay que tener 14 años o más y aceptar los términos. Solo te lo preguntamos una vez.": "To use Klendar you need to be 14 or older and accept the terms. We only ask once.",
+  "Para seguir usando Klendar, acepta los términos y la política de privacidad. Solo te lo preguntamos una vez.": "To keep using Klendar, please accept the terms and the privacy policy. We only ask once.",
+  "¡Listo! Ya puedes usar Klendar.": "Done! You can use Klendar now.",
+  "Esa fecha de nacimiento no es válida.": "That date of birth is not valid.",
+  "Continuar": "Continue",
 };

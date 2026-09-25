@@ -116,6 +116,12 @@ a.aviso:hover { text-decoration: none; border-color: var(--accent); }
 .estrellas input:focus-visible + label { outline: 2px solid var(--accent); border-radius: 6px; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
+/* Entrar con Google: blanco, como pide Google, con su «G». */
+.google-hueco { margin-top: 18px; max-width: 440px; }
+.pill.google { display: inline-flex; align-items: center; gap: 10px; background: #fff; color: #1f1f1f;
+  border: 1px solid #dadce0; font-weight: 700; }
+.pill.google:hover { background: #f7f8f8; }
+
 @media print {
   header.top, footer, .crumbs, #imprimir, .toast { display: none !important; }
   .recibo { border: 0; }

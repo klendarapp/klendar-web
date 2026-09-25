@@ -125,6 +125,51 @@ function exigeSesion(ruta) {
   return false;
 }
 
+// ── Entrar con Google ─────────────────────────────────────────────────────
+// Solo se ofrece si el proyecto de Supabase tiene Google activo (en dev no
+// lo está): un botón que no funciona es peor que ninguno.
+let GOOGLE = null;
+async function hayGoogle() {
+  if (GOOGLE === null) {
+    try {
+      const r = await fetch(`${window.KLENDAR_ENV.url}/auth/v1/settings`, { headers: { apikey: window.KLENDAR_ENV.key } });
+      GOOGLE = r.ok ? Boolean((await r.json()).external?.google) : false;
+    } catch { GOOGLE = false; }
+  }
+  return GOOGLE;
+}
+/** Pinta el botón en `#google` si toca. `siguiente` es la ruta a la que
+ * volver; `destino` cambia la página de vuelta (el panel, por ejemplo). */
+async function botonGoogle(siguiente, destino = '/app/') {
+  const hueco = $('#google');
+  if (!hueco || !(await hayGoogle())) return;
+  hueco.innerHTML = `<button class="pill google" type="button">
+      <svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>
+      ${esc(t('Continuar con Google'))}</button>
+    <p class="muted" style="font-size:13px">${esc(t('Si es tu primera vez, se crea tu cuenta y te pediremos tu fecha de nacimiento y que aceptes los términos.'))}</p>`;
+  $('button', hueco).onclick = async () => {
+    const vuelta = new URL(destino, location.origin);
+    if (siguiente) vuelta.searchParams.set('siguiente', siguiente);
+    const { error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: vuelta.toString() } });
+    if (error) toast(amable(error.message), true);
+  };
+}
+
+// ── Un último paso: términos y edad ───────────────────────────────────────
+// Quien entra con Google no pasa por el alta: sin esto no constaba que
+// aceptase los términos ni sabíamos si tiene 14 años. Se pregunta una vez.
+let CONSENTIMIENTO = { id: null, ok: true, fecha: true };
+async function faltaConsentimiento() {
+  if (!YO) return false;
+  if (CONSENTIMIENTO.id !== YO.id) {
+    try {
+      const c = await llamar('my_consents', {});
+      CONSENTIMIENTO = { id: YO.id, ok: Boolean(c?.terms_accepted_at), fecha: c?.has_birth_date !== false };
+    } catch { CONSENTIMIENTO = { id: YO.id, ok: true, fecha: true }; } // sin red: no se bloquea
+  }
+  return !CONSENTIMIENTO.ok;
+}
+
 // ── Rutas ─────────────────────────────────────────────────────────────────
 const RUTAS = {};
 function rutaActual() {
@@ -136,7 +181,17 @@ function rutaActual() {
 
 async function navegar() {
   await sesion();
-  const { partes, params, crudo } = rutaActual();
+  // Vuelta de Google (o de un enlace de correo): «?siguiente=» dice adónde.
+  const q = new URLSearchParams(location.search);
+  if (YO && q.has('siguiente')) {
+    const sig = q.get('siguiente') || '';
+    q.delete('siguiente');
+    history.replaceState(null, '', `${location.pathname}${q.toString() ? `?${q}` : ''}#/${sig}`);
+  }
+  let { partes, params, crudo } = rutaActual();
+  if (partes[0] !== 'ultimo-paso' && await faltaConsentimiento()) {
+    ({ partes, params, crudo } = { partes: ['ultimo-paso'], params: new URLSearchParams({ siguiente: crudo }), crudo });
+  }
   const nombre = partes[0] || '';
   const pagina = RUTAS[nombre] || RUTAS[''];
   window.scrollTo(0, 0);
@@ -214,7 +269,9 @@ RUTAS.entrar = async (_p, params) => {
     </form>
     <p><button class="linkbtn" id="otp">${esc(t('Entrar con un código por correo'))}</button></p>
     <p><a href="#/recuperar">${esc(t('He olvidado la contraseña'))}</a></p>
-    <p class="muted">${esc(t('¿No tienes cuenta?'))} <a href="#/registro${siguiente ? `?siguiente=${encodeURIComponent(siguiente)}` : ''}">${esc(t('Regístrate'))}</a></p>`);
+    <p class="muted">${esc(t('¿No tienes cuenta?'))} <a href="#/registro${siguiente ? `?siguiente=${encodeURIComponent(siguiente)}` : ''}">${esc(t('Regístrate'))}</a></p>
+    <div id="google" class="google-hueco"></div>`);
+  botonGoogle(siguiente);
 
   $('#f').onsubmit = async (e) => {
     e.preventDefault();
@@ -293,7 +350,9 @@ RUTAS.registro = async (_p, params) => {
       <p id="err" class="err" role="alert"></p>
       <button class="pill accent" type="submit">${esc(t('Crear la cuenta'))}</button>
     </form>
-    <p class="muted">${esc(t('¿Ya tienes cuenta?'))} <a href="#/entrar${siguiente ? `?siguiente=${encodeURIComponent(siguiente)}` : ''}">${esc(t('Entra'))}</a></p>`);
+    <p class="muted">${esc(t('¿Ya tienes cuenta?'))} <a href="#/entrar${siguiente ? `?siguiente=${encodeURIComponent(siguiente)}` : ''}">${esc(t('Entra'))}</a></p>
+    <div id="google" class="google-hueco"></div>`);
+  botonGoogle(negocio ? '' : siguiente, negocio ? '/panel/?alta=1' : '/app/');
 
   $('#f').onsubmit = async (e) => {
     e.preventDefault();

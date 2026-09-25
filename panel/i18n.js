@@ -428,4 +428,5 @@ const I18N = makeI18N({
     "Sin permiso para la cámara. Actívalo en el candado de la barra de direcciones.": "No camera permission. Turn it on from the padlock in the address bar.",
     "No encontramos ninguna cámara en este dispositivo.": "We could not find a camera on this device.",
     "No se ha podido abrir la cámara. Escribe el código a mano.": "The camera could not be opened. Type the code by hand.",
+    "Continuar con Google": "Continue with Google",
 });

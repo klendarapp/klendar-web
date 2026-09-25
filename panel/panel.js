@@ -343,6 +343,15 @@ async function boot() {
   const { data: { session } } = await sb.auth.getSession();
   if (!session) return showLogin();
   ME = session.user;
+  // Quien entró con Google y aún no ha aceptado los términos ni dicho su
+  // edad lo hace primero en «Mi Klendar», y vuelve aquí.
+  try {
+    const c = await rpc('my_consents');
+    if (c && !c.terms_accepted_at) {
+      location.href = `/app/?volver=${encodeURIComponent(`/panel/${location.search}${location.hash}`)}#/ultimo-paso`;
+      return;
+    }
+  } catch { /* sin red: no se bloquea */ }
   $('#who').textContent = ME.email || ME.phone || '';
   $('#login').hidden = true; $('#app').hidden = false;
 
@@ -393,6 +402,20 @@ $('#doReset').onclick = async () => {
   if (!error) toast('Te hemos enviado un correo para cambiar la contraseña.');
 };
 $('#password').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('#doLogin').click(); });
+
+// Entrar con Google: solo si el proyecto lo tiene activo.
+(async () => {
+  try {
+    const r = await fetch(`${window.KLENDAR_ENV.url}/auth/v1/settings`, { headers: { apikey: window.KLENDAR_ENV.key } });
+    if (!r.ok || !(await r.json()).external?.google) return;
+  } catch { return; }
+  const b = $('#doGoogle');
+  b.hidden = false;
+  b.onclick = async () => {
+    const { error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${location.origin}/panel/` } });
+    if (error) $('#loginErr').textContent = friendly(error.message);
+  };
+})();
 $('#logout').onclick = async (e) => { e.preventDefault(); await sb.auth.signOut(); showLogin(); };
 sb.auth.onAuthStateChange((ev) => { if (ev === 'SIGNED_OUT') showLogin(); });
 $('#menuBtn').onclick = () => $('#side').classList.toggle('open');

@@ -10,6 +10,9 @@
 'use strict';
 
 Object.assign(ERRORES, {
+  too_young: 'Para usar Klendar hay que tener 14 años o más.',
+  birth_date_required: 'Pon tu fecha de nacimiento.',
+  invalid_birth_date: 'Esa fecha de nacimiento no es válida.',
   auth_required: 'Tienes que entrar en tu cuenta.',
   too_many_alerts: 'Has llegado al máximo de 10 avisos. Borra alguno para crear otro.',
   message_too_short: 'Cuéntanos un poco más (5 letras como mínimo).',
@@ -654,6 +657,68 @@ RUTAS.denunciar = async ([tipo, id]) => {
       });
     });
   });
+};
+
+// ── Un último paso ────────────────────────────────────────────────────────
+RUTAS['ultimo-paso'] = async (_p, params) => {
+  if (!exigeSesion('ultimo-paso')) return;
+  const siguiente = params.get('siguiente') || '';
+  // Solo se vuelve a sitios de esta misma web (nunca a una dirección de fuera).
+  const volver = new URLSearchParams(location.search).get('volver');
+  const volverSeguro = volver && /^\/(panel|app)\//.test(volver) ? volver : '';
+  if (!(await faltaConsentimiento())) {
+    if (volverSeguro) { location.href = volverSeguro; return; }
+    vuelve(siguiente === 'ultimo-paso' ? '' : siguiente);
+    return;
+  }
+  const pideFecha = !CONSENTIMIENTO.fecha;
+  pinta(`
+    <div class="ticket" style="text-align:left">
+      <h1>${esc(t('Un último paso'))}</h1>
+      <p class="muted">${esc(t(pideFecha
+        ? 'Para usar Klendar hay que tener 14 años o más y aceptar los términos. Solo te lo preguntamos una vez.'
+        : 'Para seguir usando Klendar, acepta los términos y la política de privacidad. Solo te lo preguntamos una vez.'))}</p>
+      <form id="f" class="formu" novalidate>
+        ${pideFecha ? `<label>${esc(t('Fecha de nacimiento'))}<input name="birth" type="date" required></label>` : ''}
+        <label class="check"><input type="checkbox" name="terms" required>
+          <span>${t('He leído y acepto los <a href="/terminos/" target="_blank">términos</a> y la <a href="/privacidad/" target="_blank">privacidad</a>.')}</span></label>
+        <label class="check"><input type="checkbox" name="marketing">
+          <span>${esc(t('Quiero recibir novedades de Klendar (opcional).'))}</span></label>
+        <p id="err" class="err" role="alert"></p>
+        <button class="pill accent" id="seguir">${esc(t('Continuar'))}</button>
+      </form>
+      <p><button class="linkbtn" id="salir">${esc(t('Salir de la cuenta'))}</button></p>
+    </div>`);
+  const f = $('#f');
+  f.addEventListener('submit', (ev) => {
+    ev.preventDefault();
+    const err = $('#err');
+    err.textContent = '';
+    let nac = null;
+    if (pideFecha) {
+      nac = f.birth.value;
+      if (!nac) { err.textContent = t('Pon tu fecha de nacimiento.'); return; }
+      const d = new Date(`${nac}T12:00:00`);
+      const hoy = new Date();
+      let edad = hoy.getFullYear() - d.getFullYear();
+      if (hoy.getMonth() < d.getMonth() || (hoy.getMonth() === d.getMonth() && hoy.getDate() < d.getDate())) edad -= 1;
+      if (edad < 14) { err.textContent = t('Para usar Klendar hay que tener 14 años o más.'); return; }
+    }
+    if (!f.terms.checked) { err.textContent = t('Tienes que aceptar los términos y la privacidad.'); return; }
+    ocupado($('#seguir'), async () => {
+      await llamar('accept_terms', { p_version: '2026-09', p_birth_date: nac });
+      if (f.marketing.checked) await llamar('set_marketing_consent', { p_value: true });
+      CONSENTIMIENTO = { id: YO.id, ok: true, fecha: true };
+      toast(t('¡Listo! Ya puedes usar Klendar.'));
+      if (volverSeguro) { location.href = volverSeguro; return; }
+      vuelve(siguiente === 'ultimo-paso' ? '' : siguiente);
+    });
+  });
+  $('#salir').onclick = async () => {
+    await sb.auth.signOut();
+    CONSENTIMIENTO = { id: null, ok: true, fecha: true };
+    location.href = `${pre}/`;
+  };
 };
 
 // El número de avisos sin leer, en la tarjeta de la portada.
