@@ -4,10 +4,11 @@
 // con hreflang. El idioma lo manda la ruta, no el navegador: así se puede
 // mandar el enlace inglés a quien toque y Google indexa las dos.
 //
-// Se pueden leer enteras sin app y sin cuenta. Canjear sigue siendo cosa de
-// la app, porque el código es de un solo uso y lo valida el negocio.
+// Se pueden leer enteras sin app y sin cuenta. Lo que necesita cuenta
+// (guardar, seguir, pedir el código, opinar, denunciar) lleva a «Mi Klendar»
+// (/app/), que hace lo mismo que la app desde el navegador.
 
-import { esc, html, isUuid, render, rpc, rpcAll } from './page.js';
+import { esc, fmtWhen, html, isUuid, render, rpc, rpcAll, rows } from './page.js';
 import {
   agendaBase, BASE, benefit, exploreBase, firstPhoto, fmtLong, fmtTime, isVideo,
   media, money, offerCard, openInApp, priorPrice, publicPage,
@@ -39,7 +40,7 @@ export async function offerPage(id, lang) {
     ? {
         when: 'When', redeem: 'Redemption window', where: 'Where', seats: 'Places left',
         terms: 'Conditions', about: 'What it is', biz: 'The business',
-        open: 'Open in the app',
+        open: 'Open in the app', report: 'Report this publication',
         code: 'Get the code', reserve: 'Reserve a place', wait: 'Join the waiting list', save: 'Save',
         note: 'From here or from the app, with the same account. The code is single-use and the business validates it on the spot.',
         soldOut: 'Sold out', over: 'Finished', more: 'Everything from', hot: 'Popular',
@@ -48,7 +49,7 @@ export async function offerPage(id, lang) {
     : {
         when: 'Cuándo', redeem: 'Se canjea', where: 'Dónde', seats: 'Plazas libres',
         terms: 'Condiciones', about: 'Qué es', biz: 'El negocio',
-        open: 'Abrir en la app',
+        open: 'Abrir en la app', report: 'Denunciar esta publicación',
         code: 'Conseguir el código', reserve: 'Reservar plaza', wait: 'Apuntarme a la lista de espera', save: 'Guardar',
         note: 'Desde aquí o desde la app, con la misma cuenta. El código es de un solo uso y lo valida el negocio en el momento.',
         soldOut: 'Agotado', over: 'Terminado', more: 'Todo lo de', hot: 'Con tirón',
@@ -108,6 +109,7 @@ export async function offerPage(id, lang) {
       <h2>${S.biz}</h2>
       <p>${esc(o.business_name)}${o.business_rating && o.business_ratings ? ` · ★ ${Number(o.business_rating).toFixed(1)} (${o.business_ratings})` : ''}</p>
       <p><a href="${pre(lang)}/b/${esc(o.business_id)}">${S.more} ${esc(o.business_name)} →</a></p>
+      <p class="denuncia-pie"><a href="/app/#/denunciar/offer/${encodeURIComponent(o.id)}" rel="nofollow">${S.report}</a></p>
     </div>
   </div>`;
 
@@ -154,10 +156,12 @@ export async function businessPage(id, lang) {
   if (!isUuid(id)) return notFound(lang, path, 'b');
   const b = await rpc('business_profile', { p_id: id });
   if (!b || !b.name) return notFound(lang, path, 'b');
-  const [offers, sellos, carta] = await Promise.all([
+  const [offers, sellos, carta, opiniones, novedades] = await Promise.all([
     rpcAll('business_offers', { p_id: id }),
     rpc('stamp_card_of', { p_business: id }),
     rpcAll('business_menu', { p_business: id }),
+    rpcAll('business_reviews', { p_id: id, p_limit: 12 }),
+    rows('business_posts', `select=id,body,image_url,created_at&business_id=eq.${id}&order=created_at.desc&limit=6`),
   ]);
 
   const S = en
@@ -170,6 +174,10 @@ export async function businessPage(id, lang) {
         stamps: 'Stamp card', allergens: 'Allergens',
         menuNote: 'Allergens as declared by the business. If you have an allergy, ask at the venue.',
         stampsBody: (n, r) => `When you get to ${n} visits: “${r}”. Every code you redeem here leaves a stamp, one a day at most, and the app keeps count.`,
+        hours: 'Opening hours', closed: 'Closed', today: 'today',
+        days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+        news: 'News', reviews: 'Reviews', write: 'Write a review', noReviews: 'No reviews yet. Been here? Be the first.',
+        user: 'User', report: 'Report', reportBiz: 'Report this business', menuPhotos: 'Photos of the menu', menuPdf: 'Menu (PDF)',
       }
     : {
         now: 'Ahora mismo', soon: 'Próximamente',
@@ -180,11 +188,48 @@ export async function businessPage(id, lang) {
         stamps: 'Tarjeta de sellos', allergens: 'Alérgenos',
         menuNote: 'Los alérgenos son los que declara el negocio. Si tienes alergia, pregunta en el sitio.',
         stampsBody: (n, r) => `Al llegar a ${n} visitas: «${r}». Cada código que canjeas aquí deja un sello, como mucho uno al día, y la app lleva la cuenta.`,
+        hours: 'Horario', closed: 'Cerrado', today: 'hoy',
+        days: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'],
+        news: 'Novedades', reviews: 'Reseñas', write: 'Escribir una reseña', noReviews: 'Todavía no hay reseñas. ¿Has estado? Sé la primera persona.',
+        user: 'Usuario', report: 'Denunciar', reportBiz: 'Denunciar este negocio', menuPhotos: 'Fotos de la carta', menuPdf: 'Carta (PDF)',
       };
 
   const flash = offers.filter((o) => o.kind === 'flash_offer');
   const events = offers.filter((o) => o.kind !== 'flash_offer');
   const where = [b.address, b.city].filter(Boolean).join(', ');
+
+  // Horario: {"1": [["09:00","14:00"], …], …, "7": []} (1 = lunes). Hoy, en
+  // hora de Madrid, va marcado.
+  const horas = b.opening_hours && typeof b.opening_hours === 'object' ? b.opening_hours : null;
+  const hoy = (() => {
+    const d = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Madrid', weekday: 'short' }).format(new Date());
+    return ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].indexOf(d) + 1;
+  })();
+  const horario = horas && Object.keys(horas).length
+    ? `<table class="horario">${[1, 2, 3, 4, 5, 6, 7].map((d) => {
+        const tramos = Array.isArray(horas[d]) ? horas[d] : (Array.isArray(horas[String(d)]) ? horas[String(d)] : []);
+        const txt = tramos.length ? tramos.map((t) => `${esc(t[0])}–${esc(t[1])}`).join(', ') : S.closed;
+        return `<tr${d === hoy ? ' class="hoy"' : ''}><th>${S.days[d - 1]}${d === hoy ? ` <small>(${S.today})</small>` : ''}</th><td>${txt}</td></tr>`;
+      }).join('')}</table>`
+    : '';
+
+  // Redes: el negocio puede guardar el @ o el enlace entero.
+  const redUrl = (red, v) => {
+    const val = String(v || '').trim();
+    if (/^https?:\/\//.test(val)) return val;
+    const h = val.replace(/^@/, '');
+    return { instagram: `https://instagram.com/${h}`, tiktok: `https://tiktok.com/@${h}`,
+      facebook: `https://facebook.com/${h}`, x: `https://x.com/${h}`, twitter: `https://x.com/${h}`,
+      youtube: `https://youtube.com/@${h}` }[red] || `https://${val}`;
+  };
+  const redNombre = { instagram: 'Instagram', tiktok: 'TikTok', facebook: 'Facebook', x: 'X', twitter: 'X', youtube: 'YouTube' };
+  const redes = Object.entries(b.social || {})
+    .filter(([k, v]) => k !== 'web' && typeof v === 'string' && v.trim())
+    .map(([k, v]) => `<a href="${esc(redUrl(k, v))}" rel="nofollow noopener" target="_blank">${esc(redNombre[k] || k)}</a>`);
+
+  const fotosCarta = (b.menu_images || []).filter((u) => typeof u === 'string' && u);
+  const galeria = (b.gallery || []).filter((u) => typeof u === 'string' && u);
+  const estrellas = (n) => `<span class="stars" aria-label="${n}/5">${'★'.repeat(n)}<span>${'★'.repeat(5 - n)}</span></span>`;
   const since = b.member_since
     ? new Intl.DateTimeFormat(en ? 'en-GB' : 'es-ES', { timeZone: 'Europe/Madrid', month: 'long', year: 'numeric' })
         .format(new Date(b.member_since))
@@ -198,7 +243,10 @@ export async function businessPage(id, lang) {
   <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a>${city ? ` · <a href="${city}">${esc(b.city)}</a>` : ''}</p>
   <div class="detail">
     <div class="d-head">
-      ${b.cover ? `<div class="gallery solo"><img src="${esc(b.cover)}" alt="" loading="lazy"></div>` : ''}
+      ${b.cover || galeria.length
+        ? `<div class="gallery${galeria.length ? '' : ' solo'}">${[b.cover, ...galeria].filter(Boolean).slice(0, 7)
+          .map((u) => `<img src="${esc(u)}" alt="" loading="lazy">`).join('')}</div>`
+        : ''}
       <div class="badges" style="margin-top:18px">
         ${b.is_verified ? `<span class="badge ok">✓ ${S.verified}</span>` : ''}
         ${b.rating && b.ratings ? `<span class="badge">★ ${Number(b.rating).toFixed(1)} (${b.ratings})</span>` : ''}
@@ -216,7 +264,10 @@ export async function businessPage(id, lang) {
         ${b.phone ? `<div><span>📞</span><span><a href="tel:${esc(b.phone)}">${esc(b.phone)}</a></span></div>` : ''}
         ${b.website ? `<div><span>🔗</span><span><a href="${esc(b.website)}" rel="nofollow noopener" target="_blank">${esc(String(b.website).replace(/^https?:\/\//, ''))}</a></span></div>` : ''}
         ${b.menu_url ? `<div><span>📋</span><span><a href="${esc(b.menu_url)}" rel="nofollow noopener" target="_blank">${S.menu}</a></span></div>` : ''}
+        ${b.contact_email ? `<div><span>✉️</span><span><a href="mailto:${esc(b.contact_email)}">${esc(b.contact_email)}</a></span></div>` : ''}
+        ${redes.length ? `<div><span>💬</span><span>${redes.join(' · ')}</span></div>` : ''}
       </div>
+      ${horario ? `<h2 class="side-h">${S.hours}</h2>${horario}` : ''}
     </aside>
     <div class="d-body">
       ${b.description ? `<h2>${S.about}</h2><p>${esc(b.description).replace(/\n/g, '<br>')}</p>` : ''}
@@ -233,9 +284,30 @@ export async function businessPage(id, lang) {
           </li>`).join('')}</ul>
         </section>`).join('')}</div>
         <p class="note">${esc(S.menuNote)}</p>` : ''}
+      ${fotosCarta.length ? `${carta.length ? '' : `<h2>${S.menu}</h2>`}
+        <div class="carta-fotos">${fotosCarta.map((u) => /\.pdf($|\?)/i.test(u)
+          ? `<a class="pill" href="${esc(u)}" target="_blank" rel="noopener">📄 ${S.menuPdf}</a>`
+          : `<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt="${S.menuPhotos}" loading="lazy"></a>`).join('')}</div>` : ''}
       ${flash.length ? `<h2>${S.now}</h2><div class="olist">${flash.map((o) => offerCard(o, lang)).join('')}</div>` : ''}
       ${events.length ? `<h2>${S.soon}</h2><div class="olist">${events.map((o) => offerCard(o, lang)).join('')}</div>` : ''}
       ${offers.length ? '' : `<p class="empty">${S.none}</p>`}
+      ${novedades.length ? `<h2>${S.news}</h2>
+        <div class="novedades">${novedades.map((p) => `<article>
+          <p class="muted">${esc(fmtWhen(p.created_at, lang))}</p>
+          ${p.body ? `<p>${esc(p.body).replace(/\n/g, '<br>')}</p>` : ''}
+          ${p.image_url ? `<img src="${esc(p.image_url)}" alt="" loading="lazy">` : ''}
+        </article>`).join('')}</div>` : ''}
+      <h2 id="resenas">${S.reviews}${b.rating && b.ratings ? ` <small class="muted">★ ${Number(b.rating).toFixed(1)} (${b.ratings})</small>` : ''}</h2>
+      <p><a class="pill" href="/app/#/opinar/${encodeURIComponent(b.id)}">★ ${S.write}</a></p>
+      ${opiniones.length ? `<div class="resenas">${opiniones.map((r) => `<article>
+          <header>${r.avatar_url ? `<img class="av" src="${esc(r.avatar_url)}" alt="" loading="lazy">` : `<span class="av">${esc((r.display_name || S.user).trim().charAt(0).toUpperCase())}</span>`}
+            <span><b>${esc(r.display_name || S.user)}</b><small class="muted">${esc(fmtWhen(r.created_at, lang))}</small></span>
+            ${estrellas(Math.max(0, Math.min(5, r.rating | 0)))}</header>
+          ${r.comment ? `<p>${esc(r.comment)}</p>` : ''}
+          ${r.photo_url ? `<img class="foto" src="${esc(r.photo_url)}" alt="" loading="lazy">` : ''}
+          <a class="denuncia" href="/app/#/denunciar/review/${encodeURIComponent(r.id)}" rel="nofollow">${S.report}</a>
+        </article>`).join('')}</div>` : `<p class="empty">${S.noReviews}</p>`}
+      <p class="denuncia-pie"><a href="/app/#/denunciar/business/${encodeURIComponent(b.id)}" rel="nofollow">${S.reportBiz}</a></p>
     </div>
   </div>`;
 

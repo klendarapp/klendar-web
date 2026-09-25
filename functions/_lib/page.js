@@ -60,6 +60,22 @@ export async function rpcAll(fn, args) {
   return Array.isArray(data) ? data : [];
 }
 
+/** Lee filas de una tabla pública (con su RLS de lectura) por REST.
+ * `query` va tal cual detrás del `?`: `select=...&business_id=eq.X`. */
+export async function rows(table, query) {
+  let r;
+  try {
+    r = await fetch(`${CFG.url}/rest/v1/${table}?${query}`, {
+      headers: { apikey: CFG.key },
+    });
+  } catch (e) {
+    throw new BackendDown(`${table}: ${e.message}`);
+  }
+  if (!r.ok) throw new BackendDown(`${table}: ${r.status}`);
+  const data = await r.json();
+  return Array.isArray(data) ? data : [];
+}
+
 export function fmtWhen(iso, lang) {
   if (!iso) return '';
   try {

@@ -56,6 +56,66 @@
   font-weight: 600; max-width: calc(100vw - 32px); box-shadow: 0 12px 30px rgba(0,0,0,.3); }
 .toast.bad { background: #FF5C5C; color: #fff; }
 
+/* ── Cuenta: avisos, alertas, ajustes, reseñas y denuncias ─────────────── */
+.formu select, .formu textarea, .formu input[type=time], .formu input[name] {
+  padding: 12px 14px; border-radius: 12px; border: 1px solid var(--glass-border);
+  background: var(--glass); color: inherit; font: inherit; }
+.formu input[type=checkbox], .formu input[type=radio], .formu input[type=range], .formu input[type=file] { padding: 0; }
+.formu textarea { resize: vertical; min-height: 110px; }
+.formu select:focus, .formu textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.formu fieldset { border: 0; padding: 0; margin: 0; display: grid; gap: 8px; }
+.formu legend { font-weight: 600; font-size: 15px; margin-bottom: 8px; padding: 0; }
+.formu legend small { display: block; font-weight: 400; color: var(--ink-2); }
+.formu input[type=range] { width: 100%; accent-color: var(--accent); }
+.formu output { font-weight: 800; color: var(--ink); }
+.chips { display: flex !important; flex-wrap: wrap; gap: 8px !important; }
+.chips legend { width: 100%; }
+.chips label { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 999px;
+  border: 1px solid var(--glass-border); background: var(--glass); font-weight: 600; font-size: 14px; cursor: pointer; }
+.chips label:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+.chips input { accent-color: var(--accent); }
+.horas { grid-template-columns: 1fr 1fr; }
+.horas legend { grid-column: 1 / -1; }
+.motivos label { font-weight: 400; }
+
+.bloque { border-top: 1px solid var(--glass-border); margin-top: 26px; padding-top: 6px; }
+.bloque h2 { font-size: 20px; }
+.avatar-fila, .foto-fila { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.avatar { width: 64px; height: 64px; border-radius: 50%; overflow: hidden; display: grid; place-items: center;
+  background: var(--accent-soft); font-weight: 800; font-size: 24px; flex: none; }
+.avatar img { width: 100%; height: 100%; object-fit: cover; }
+.foto-fila img { width: 120px; height: 90px; object-fit: cover; border-radius: 12px; }
+label.pill { cursor: pointer; }
+.consen { display: grid; grid-template-columns: minmax(150px, 220px) 1fr; gap: 10px 16px; margin: 14px 0; }
+.consen dt { color: var(--ink-2); }
+.consen dd { margin: 0; }
+@media (max-width: 560px) { .consen { grid-template-columns: 1fr; } .consen dd { margin-bottom: 8px; } }
+.pill.peligro { border-color: #FF5C5C; color: #FF5C5C; background: transparent; }
+.pill.peligro:hover { background: rgba(255, 92, 92, .12); }
+button.pill:disabled { opacity: .6; cursor: progress; }
+
+.badge-n { display: inline-grid; place-items: center; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px;
+  background: var(--accent); color: #fff; font-size: 12px; font-weight: 800; vertical-align: 2px; }
+.avisos { display: grid; gap: 10px; margin: 16px 0; }
+.aviso { display: grid; gap: 4px; padding: 14px 16px; border-radius: 16px; border: 1px solid var(--glass-border);
+  background: var(--elevated); color: inherit; }
+a.aviso:hover { text-decoration: none; border-color: var(--accent); }
+.aviso.nuevo { border-color: var(--accent); box-shadow: inset 4px 0 0 var(--accent); }
+.aviso span { color: var(--ink-2); }
+.aviso.pausada { opacity: .7; }
+.aviso .acciones { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.acciones { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+
+/* Estrellas: cinco radios, de derecha a izquierda para que «hasta aquí» se
+   pinte con el selector de hermanos. */
+.estrellas { display: flex !important; flex-direction: row-reverse; justify-content: flex-end; gap: 2px !important; }
+.estrellas legend { order: 99; width: 100%; }
+.estrellas input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.estrellas label { font-size: 36px; line-height: 1; color: var(--glass-border); cursor: pointer; padding: 2px; }
+.estrellas input:checked ~ label, .estrellas label:hover, .estrellas label:hover ~ label { color: #FFB84D; }
+.estrellas input:focus-visible + label { outline: 2px solid var(--accent); border-radius: 6px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
 @media print {
   header.top, footer, .crumbs, #imprimir, .toast { display: none !important; }
   .recibo { border: 0; }

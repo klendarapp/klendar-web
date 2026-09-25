@@ -120,3 +120,27 @@ footer.pub-foot a { color: var(--ink-2); }
 
 /* Guardar y abrir en la app, debajo del botón grande. */
 .acciones { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 0; }
+
+/* ── Ficha del negocio: horario, carta en fotos, novedades y reseñas ─────── */
+.side-h { font-size: 16px; margin: 20px 0 8px; }
+.horario { width: 100%; border-collapse: collapse; font-size: 14px; }
+.horario th, .horario td { text-align: left; padding: 6px 0; border-bottom: 1px solid var(--glass-border); font-weight: 400; vertical-align: top; }
+.horario td { text-align: right; color: var(--ink-2); }
+.horario tr.hoy th, .horario tr.hoy td { font-weight: 800; color: var(--ink); }
+.carta-fotos { display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); margin: 10px 0 18px; align-items: start; }
+.carta-fotos img { width: 100%; aspect-ratio: 3/4; object-fit: cover; border-radius: 14px; display: block; background: var(--glass); }
+.novedades { display: grid; gap: 12px; }
+.novedades article, .resenas article { border: 1px solid var(--glass-border); background: var(--elevated); border-radius: 18px; padding: 14px 16px; }
+.novedades article p { margin: 0 0 8px; }
+.novedades img, .resenas img.foto { width: 100%; max-height: 420px; object-fit: cover; border-radius: 14px; display: block; margin-top: 8px; }
+.resenas { display: grid; gap: 12px; margin-top: 12px; }
+.resenas header { display: flex; align-items: center; gap: 10px; }
+.resenas header > span:not(.stars):not(.av) { display: grid; flex: 1; min-width: 0; }
+.resenas .av { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; display: grid; place-items: center;
+  background: var(--accent-soft); font-weight: 800; flex: none; }
+.resenas article > p { margin: 10px 0 0; }
+.stars { color: #FFB84D; letter-spacing: 1px; white-space: nowrap; }
+.stars span { color: var(--glass-border); }
+.denuncia, .denuncia-pie a { font-size: 13px; color: var(--ink-2); }
+.resenas .denuncia { display: inline-block; margin-top: 8px; }
+.denuncia-pie { margin-top: 28px; }

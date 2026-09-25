@@ -183,9 +183,15 @@ RUTAS[''] = async () => {
       <a class="hub-i" href="#/codigos"><b>${esc(t('Tus códigos'))}</b><span>${esc(t('Los que tienes listos y los que ya usaste'))}</span></a>
       <a class="hub-i" href="#/favoritos"><b>${esc(t('Tus sitios'))}</b><span>${esc(t('Los negocios que sigues'))}</span></a>
       <a class="hub-i" href="#/sellos"><b>${esc(t('Tarjetas de sellos'))}</b><span>${esc(t('Los cartones de siempre, sin cartón'))}</span></a>
+      <a class="hub-i" href="#/avisos"><b>${esc(t('Avisos'))} <span class="badge-n" id="sin-leer" hidden></span></b><span>${esc(t('Lo que te hemos contado'))}</span></a>
+      <a class="hub-i" href="#/alertas"><b>${esc(t('Avísame si…'))}</b><span>${esc(t('Que te escribamos cuando salga lo que buscas'))}</span></a>
       <a class="hub-i" href="${pre}/explorar/"><b>${esc(t('Explorar'))}</b><span>${esc(t('Qué hay ahora cerca'))}</span></a>
+      <a class="hub-i" href="#/ajustes"><b>${esc(t('Ajustes'))}</b><span>${esc(t('Perfil, avisos, privacidad y cuenta'))}</span></a>
+      <a class="hub-i" href="#/sugerencias"><b>${esc(t('Sugerencias y mejoras'))}</b><span>${esc(t('Cuéntanos qué cambiarías o qué falla'))}</span></a>
+      <a class="hub-i" href="/panel/"><b>${esc(t('¿Tienes un negocio?'))}</b><span>${esc(t('Publica ofertas y eventos desde el panel'))}</span></a>
     </div>
     <p style="margin-top:22px"><button class="pill" id="salir">${esc(t('Salir de la cuenta'))}</button></p>`);
+  pintaSinLeer();
   $('#salir').onclick = async () => {
     await sb.auth.signOut();
     toast(t('Has salido de tu cuenta'));
@@ -423,9 +429,11 @@ function hecho({ titulo, texto, volver, volverTxt, lista, listaTxt, deshacer }) 
         <a class="pill accent" href="${esc(volver)}">${esc(volverTxt)}</a>
         <a class="pill" href="${esc(lista)}">${esc(listaTxt)}</a>
       </p>
-      <p><a href="#/${esc(deshacer)}" data-deshacer>${esc(t('Deshacer'))}</a></p>
+      ${deshacer ? `<p><a href="#/${esc(deshacer)}" data-deshacer>${esc(t('Deshacer'))}</a></p>` : ''}
     </div>`);
   history.replaceState(null, '', lista);
+  I18N.translate(view);
+  if (!deshacer) return;
   // «Deshacer» vuelve a llamar a la misma ruta aunque la dirección ya sea otra.
   $('[data-deshacer]').addEventListener('click', (ev) => {
     ev.preventDefault();
@@ -634,4 +642,5 @@ RUTAS.sellos = async () => {
 };
 
 // ── Arranque ──────────────────────────────────────────────────────────────
-navegar();
+// Espera a que carguen también las rutas de cuenta.js.
+addEventListener('DOMContentLoaded', navegar);
