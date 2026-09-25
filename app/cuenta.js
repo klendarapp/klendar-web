@@ -90,8 +90,8 @@ async function sinLeer() {
   return count || 0;
 }
 
-RUTAS.avisos = async () => {
-  if (!exigeSesion('avisos')) return;
+RUTAS.notificaciones = async () => {
+  if (!exigeSesion('notificaciones')) return;
   const lista = await tabla(sb.from('notifications')
     .select('id, kind, title, body, route, read_at, created_at')
     .order('created_at', { ascending: false }).limit(50));
@@ -105,7 +105,7 @@ RUTAS.avisos = async () => {
     </p>
     ${lista.length ? `<div class="avisos">${lista.map((n) => {
       const destino = destinoWeb(n.route);
-      return `<a class="aviso${n.read_at ? '' : ' nuevo'}" href="${esc(destino || '#/avisos')}" data-id="${esc(n.id)}">
+      return `<a class="aviso${n.read_at ? '' : ' nuevo'}" href="${esc(destino || '#/notificaciones')}" data-id="${esc(n.id)}">
         <b>${esc(n.title)}</b>
         ${n.body ? `<span>${esc(n.body)}</span>` : ''}
         <small class="muted">${esc(fecha(n.created_at))}</small>
@@ -124,7 +124,7 @@ RUTAS.avisos = async () => {
       a.classList.remove('nuevo');
       try { await llamar('mark_notifications_read', { p_ids: [a.dataset.id] }); } catch { /* no bloquea */ }
       const href = a.getAttribute('href');
-      if (href === '#/avisos') return;
+      if (href === '#/notificaciones') return;
       if (href.startsWith('#')) location.hash = href; else location.href = href;
     }
   }));
@@ -721,7 +721,9 @@ RUTAS['ultimo-paso'] = async (_p, params) => {
   };
 };
 
-// El número de avisos sin leer, en la tarjeta de la portada.
+RUTAS.avisos = (...a) => RUTAS.notificaciones(...a); // enlaces antiguos
+
+// El número de notificaciones sin leer, en la tarjeta de la portada.
 async function pintaSinLeer() {
   const el = $('#sin-leer');
   if (!el) return;

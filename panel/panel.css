@@ -168,3 +168,27 @@
 .camara .mira { position: absolute; inset: 18%; border: 3px solid rgba(255, 255, 255, .85); border-radius: 18px;
   box-shadow: 0 0 0 999px rgba(0, 0, 0, .25); }
 .scan-result .plazas { display: block; font-size: 22px; margin-top: 6px; }
+
+/* ═══ Formularios: el mismo sistema que la app y «Tu cuenta» ════════════════
+   Etiqueta encima, campo de cristal con esquinas de 16 y el acento al
+   escribir. En escritorio, dos columnas y un ancho máximo (un campo de
+   1.100 px no se lee); en móvil, una columna a lo ancho. */
+.form { display: grid; gap: 16px 18px; grid-template-columns: 1fr 1fr; max-width: 820px; margin: 0 0 18px; }
+.form .full, .form > .help, .form > details { grid-column: 1 / -1; }
+@media (max-width: 760px) { .form { grid-template-columns: 1fr; } }
+.card .form { margin-bottom: 0; }
+label.f { font-size: 14px; color: var(--ink); gap: 6px; }
+label.f > span small, label.f small { color: var(--ink-2); font-weight: 500; }
+.form input:not([type=checkbox]):not([type=radio]):not([type=file]), .form select, .form textarea,
+.scan-box input, .toolbar input, .toolbar select, dialog.modal input:not([type=checkbox]), dialog.modal select, dialog.modal textarea {
+  width: 100%; box-sizing: border-box; padding: 12px 14px; border-radius: 16px; font-size: 15px;
+  border: 1px solid var(--glass-border); background: var(--glass); color: var(--ink); }
+.form input:focus, .form select:focus, .form textarea:focus, .scan-box input:focus,
+dialog.modal input:focus, dialog.modal select:focus, dialog.modal textarea:focus {
+  outline: none; border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.form .btn.primary { padding: 12px 22px; font-size: 15px; }
+
+/* Que ninguna columna crezca por una tabla ancha: las tablas se desplazan
+   dentro de su caja (.tbl-wrap) y la página nunca en horizontal. */
+.layout > *, #view, #view > div { min-width: 0; }
+input[type=file] { max-width: 100%; }

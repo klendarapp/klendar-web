@@ -1308,7 +1308,7 @@ PAGES.carta = async (v) => {
       <h2 style="margin:24px 0 8px">Escrita</h2>
       ${carta.length ? carta.map((sec, si) => `
         <div class="card">
-          <h2 style="display:flex;align-items:center;gap:8px">${esc(sec.name)}
+          <h2 style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">${esc(sec.name)}
             ${canManage ? `<span class="spacer"></span>
               <button class="btn sm ghost" data-sec-up="${si}">↑</button>
               <button class="btn sm ghost" data-sec-down="${si}">↓</button>

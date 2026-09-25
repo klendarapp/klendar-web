@@ -233,25 +233,71 @@ const vuelve = (siguiente) => {
 };
 
 // ── Inicio ────────────────────────────────────────────────────────────────
+/** Un icono de Material Symbols: los mismos que la app. */
+const ic = (nombre) => `<span class="ms" aria-hidden="true">${nombre}</span>`;
+
+/** Una fila de lista como las de la app: icono, título, detalle y flecha. */
+const fila = ({ href, icono, titulo, detalle, fuera = false, id = '' }) => `
+  <a class="fila" href="${esc(href)}"${fuera ? ' target="_blank" rel="noopener"' : ''}${id ? ` id="${id}"` : ''}>
+    ${ic(icono)}
+    <span class="fila-t"><b>${esc(titulo)}</b>${detalle ? `<small>${esc(detalle)}</small>` : ''}</span>
+    ${ic(fuera ? 'open_in_new' : 'chevron_right')}
+  </a>`;
+
+// La misma disposición que la pestaña Cuenta de la app: quién eres arriba,
+// lo que más se usa a un toque y lo demás agrupado. Lo irreversible (eliminar
+// la cuenta) vive en Ajustes.
 RUTAS[''] = async () => {
   if (!YO) return RUTAS.entrar([], new URLSearchParams());
-  const nombre = YO.user_metadata?.display_name || YO.email;
+  const nombre = YO.user_metadata?.display_name || (YO.email || '').split('@')[0];
+  const foto = YO.user_metadata?.avatar_url;
+  const negocios = await llamar('my_businesses', {}).catch(() => []);
+  const tieneNegocio = Array.isArray(negocios) && negocios.length > 0;
   pinta(`
-    <p class="crumbs"><a href="${pre}/">Klendar</a></p>
-    <h1>${esc(t('Hola'))}, ${esc(nombre)}</h1>
-    <div class="hub">
-      <a class="hub-i" href="#/planes"><b>${esc(t('Tus planes'))}</b><span>${esc(t('Lo que has guardado para ir'))}</span></a>
-      <a class="hub-i" href="#/codigos"><b>${esc(t('Tus códigos'))}</b><span>${esc(t('Los que tienes listos y los que ya usaste'))}</span></a>
-      <a class="hub-i" href="#/favoritos"><b>${esc(t('Favoritos'))}</b><span>${esc(t('Los negocios que te gustan'))}</span></a>
-      <a class="hub-i" href="#/sellos"><b>${esc(t('Tarjetas de sellos'))}</b><span>${esc(t('Los cartones de siempre, sin cartón'))}</span></a>
-      <a class="hub-i" href="#/avisos"><b>${esc(t('Notificaciones'))} <span class="badge-n" id="sin-leer" hidden></span></b><span>${esc(t('Lo que te hemos contado'))}</span></a>
-      <a class="hub-i" href="#/alertas"><b>${esc(t('Avísame si…'))}</b><span>${esc(t('Que te escribamos cuando salga lo que buscas'))}</span></a>
-      <a class="hub-i" href="${pre}/explorar/"><b>${esc(t('Explorar'))}</b><span>${esc(t('Qué hay ahora cerca'))}</span></a>
-      <a class="hub-i" href="#/ajustes"><b>${esc(t('Ajustes'))}</b><span>${esc(t('Perfil, avisos, privacidad y cuenta'))}</span></a>
-      <a class="hub-i" href="#/sugerencias"><b>${esc(t('Sugerencias y mejoras'))}</b><span>${esc(t('Cuéntanos qué cambiarías o qué falla'))}</span></a>
-      <a class="hub-i" href="/panel/"><b>${esc(t('¿Tienes un negocio?'))}</b><span>${esc(t('Publica ofertas y eventos desde el panel'))}</span></a>
+    <h1 class="titulo-pagina">${esc(t('Tu cuenta'))}</h1>
+    <a class="perfil" href="#/ajustes">
+      <span class="avatar">${foto ? `<img src="${esc(foto)}" alt="">` : esc((nombre || '?').charAt(0).toUpperCase())}</span>
+      <span class="perfil-t"><b>${esc(nombre)}</b><small>${esc(YO.email || '')}</small><em>${esc(t('Editar perfil'))}</em></span>
+      ${ic('chevron_right')}
+    </a>
+
+    <div class="rapidos">
+      <a class="rapido" href="#/planes">${ic('bookmark')}<b>${esc(t('Tus planes'))}</b></a>
+      <a class="rapido" href="#/codigos">${ic('qr_code_2')}<b>${esc(t('Tus códigos'))}</b></a>
+      <a class="rapido" href="#/favoritos">${ic('favorite')}<b>${esc(t('Favoritos'))}</b></a>
+      <a class="rapido" href="#/sellos">${ic('local_activity')}<b>${esc(t('Tarjetas de sellos'))}</b></a>
+      <a class="rapido" href="#/notificaciones">${ic('notifications')}<b>${esc(t('Notificaciones'))}</b><span class="badge-n" id="sin-leer" hidden></span></a>
+      <a class="rapido" href="${pre}/explorar/">${ic('explore')}<b>${esc(t('Explorar'))}</b></a>
     </div>
-    <p style="margin-top:22px"><button class="pill" id="salir">${esc(t('Cerrar sesión'))}</button></p>`);
+
+    ${tieneNegocio ? `
+      <h2 class="seccion-t">${esc(t('Negocio'))}</h2>
+      <div class="lista">
+        ${fila({ href: '/panel/', icono: 'storefront', titulo: t('Mi negocio'), detalle: t('Publicaciones, estadísticas, equipo') })}
+        ${fila({ href: '/panel/#/validar', icono: 'qr_code_scanner', titulo: t('Validar códigos'), detalle: t('Escanea los códigos de tus clientes') })}
+      </div>` : `
+      <a class="invitacion" href="/panel/">
+        <span class="inv-ic">${ic('storefront')}</span>
+        <span class="fila-t"><b>${esc(t('¿Quieres registrar tu negocio?'))}</b>
+          <small>${esc(t('Publica ofertas y eventos, valida canjes y sigue tus cifras. Prueba gratis de 30 días.'))}</small></span>
+        ${ic('chevron_right')}
+      </a>`}
+
+    <h2 class="seccion-t">${esc(t('Preferencias'))}</h2>
+    <div class="lista">
+      ${fila({ href: '#/alertas', icono: 'add_alert', titulo: t('Avísame si…'), detalle: t('Que te avisemos cuando salga algo que te interesa cerca') })}
+      ${fila({ href: '#/ajustes', icono: 'tune', titulo: t('Ajustes'), detalle: t('Idioma, notificaciones, privacidad y cuenta') })}
+    </div>
+
+    <h2 class="seccion-t">${esc(t('Ayuda'))}</h2>
+    <div class="lista">
+      ${fila({ href: '#/sugerencias', icono: 'lightbulb', titulo: t('Sugerencias y mejoras'), detalle: t('Cuéntanos qué cambiarías o qué falla') })}
+      ${fila({ href: 'mailto:info@klendar.app', icono: 'mail', titulo: t('Contacto y soporte'), detalle: 'info@klendar.app' })}
+      ${fila({ href: EN ? '/en/terms/' : '/terminos/', icono: 'description', titulo: t('Términos de uso'), fuera: true })}
+      ${fila({ href: EN ? '/en/privacy/' : '/privacidad/', icono: 'privacy_tip', titulo: t('Política de privacidad'), fuera: true })}
+    </div>
+
+    <button class="pill ancho" id="salir">${ic('logout')} ${esc(t('Cerrar sesión'))}</button>`);
   pintaSinLeer();
   $('#salir').onclick = async () => {
     await sb.auth.signOut();
