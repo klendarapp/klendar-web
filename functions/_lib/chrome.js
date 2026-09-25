@@ -17,7 +17,7 @@ export const NAV = [
   { es: 'Preguntas', en: 'FAQ', hrefEs: '/preguntas/', hrefEn: '/en/faq/' },
   { es: 'Soporte', en: 'Support', hrefEs: '/soporte/', hrefEn: '/en/support/' },
   { es: 'Tu cuenta', en: 'Your account', hrefEs: '/app/', hrefEn: '/app/?lang=en', cls: 'nav-yo' },
-  { es: 'Acceso para negocios', en: 'Business sign in', hrefEs: '/panel/', hrefEn: '/panel/', cls: 'nav-panel' },
+  { es: 'Acceso para negocios', en: 'Business login', hrefEs: '/panel/', hrefEn: '/panel/', cls: 'nav-panel' },
 ];
 
 export const FOOT_PRODUCT = [
@@ -27,7 +27,7 @@ export const FOOT_PRODUCT = [
   { es: 'Para negocios', en: 'For businesses', hrefEs: '/para-negocios/', hrefEn: '/en/for-business/' },
   { es: 'Precios', en: 'Pricing', hrefEs: '/precios/', hrefEn: '/en/pricing/' },
   { es: 'Tu cuenta', en: 'Your account', hrefEs: '/app/', hrefEn: '/app/?lang=en' },
-  { es: 'Acceso para negocios', en: 'Business sign in', hrefEs: '/panel/', hrefEn: '/panel/' },
+  { es: 'Acceso para negocios', en: 'Business login', hrefEs: '/panel/', hrefEn: '/panel/' },
   { es: 'Preguntas frecuentes', en: 'FAQ', hrefEs: '/preguntas/', hrefEn: '/en/faq/' },
   { es: 'Soporte', en: 'Support', hrefEs: '/soporte/', hrefEn: '/en/support/' },
   { es: 'Sobre Klendar', en: 'About', hrefEs: '/sobre/', hrefEn: '/en/about/' },

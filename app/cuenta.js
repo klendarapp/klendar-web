@@ -98,10 +98,10 @@ RUTAS.avisos = async () => {
   const nuevos = lista.filter((n) => !n.read_at).length;
   pinta(`
     <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
-    <h1>${esc(t('Avisos'))}</h1>
+    <h1>${esc(t('Notificaciones'))}</h1>
     <p class="acciones">
       ${nuevos ? `<button class="pill" id="leidos">${esc(t('Marcar todo como leído'))}</button>` : ''}
-      <a class="pill ghost" href="#/ajustes">${esc(t('Qué avisos recibo'))}</a>
+      <a class="pill ghost" href="#/ajustes">${esc(t('Qué notificaciones recibo'))}</a>
     </p>
     ${lista.length ? `<div class="avisos">${lista.map((n) => {
       const destino = destinoWeb(n.route);
@@ -111,7 +111,7 @@ RUTAS.avisos = async () => {
         <small class="muted">${esc(fecha(n.created_at))}</small>
       </a>`;
     }).join('')}</div>`
-    : `<p class="empty">${esc(t('Nada por aquí todavía. Sigue a tus sitios y crea un «Avísame si…» para no perderte nada.'))}</p>`}`);
+    : `<p class="empty">${esc(t('Nada por aquí todavía. Añade negocios a favoritos y crea un «Avísame si…» para no perderte nada.'))}</p>`}`);
 
   $('#leidos')?.addEventListener('click', (ev) => ocupado(ev.currentTarget, async () => {
     await llamar('mark_notifications_read', {});
@@ -327,10 +327,10 @@ RUTAS.ajustes = async () => {
     </section>
 
     <section class="bloque">
-      <h2>${esc(t('Avisos'))}</h2>
+      <h2>${esc(t('Notificaciones'))}</h2>
       <form class="formu" id="f-avisos" novalidate>
         <label class="check"><input type="checkbox" name="fav"${prefs.notify_favorites ? ' checked' : ''}>
-          <span><b>${esc(t('Mis sitios'))}</b><br><small>${esc(t('Cuando un sitio que sigues publica una oferta o un evento'))}</small></span></label>
+          <span><b>${esc(t('Mis favoritos'))}</b><br><small>${esc(t('Cuando uno de tus favoritos publica una oferta o un evento'))}</small></span></label>
         <label class="check"><input type="checkbox" name="cerca"${prefs.notify_nearby ? ' checked' : ''}>
           <span><b>${esc(t('Cerca de ti'))}</b><br><small>${esc(t('Ofertas flash a tu alrededor (como mucho 3 al día)'))}</small></span></label>
         <div id="cerca-mas" ${prefs.notify_nearby ? '' : 'hidden'}>
@@ -346,7 +346,7 @@ RUTAS.ajustes = async () => {
         </fieldset>
         <label class="check"><input type="checkbox" name="semanal"${prefs.weekly_email ? ' checked' : ''}>
           <span><b>${esc(t('Correo semanal'))}</b><br><small>${esc(t('Los jueves, lo que hay estos días en tu ciudad. Uno a la semana y se apaga cuando quieras.'))}</small></span></label>
-        <p class="muted">${esc(t('Los avisos te llegan al móvil si tienes la app, y siempre los tienes aquí, en «Avisos».'))}</p>
+        <p class="muted">${esc(t('Las notificaciones te llegan al móvil si tienes la app, y siempre las tienes aquí, en «Notificaciones».'))}</p>
         <p class="err" id="err-avisos" role="alert"></p>
         <button class="pill accent" id="g-avisos">${esc(t('Guardar'))}</button>
       </form>
@@ -434,7 +434,7 @@ RUTAS.ajustes = async () => {
         quiet_hours_end: hasta || null,
         weekly_email: fa.semanal.checked,
       } });
-      toast(t('Avisos guardados'));
+      toast(t('Notificaciones guardadas'));
     });
   });
 
@@ -472,7 +472,7 @@ RUTAS.ajustes = async () => {
     if (!confirm(t('Tendrás que volver a entrar en cada dispositivo, también en este. ¿Cerrar todas?'))) return;
     ocupado(ev.currentTarget, async () => {
       await sb.auth.signOut({ scope: 'global' });
-      toast(t('Has salido de tu cuenta en todos los dispositivos'));
+      toast(t('Has cerrado sesión en todos los dispositivos'));
       vuelve('');
     });
   });
@@ -528,7 +528,7 @@ RUTAS.sugerencias = async () => {
       <div class="avisos">${mias.map((m) => `<div class="aviso">
         <b>${esc(t(ESTADO_SUGERENCIA[m.status] || 'Recibida'))}</b>
         <span>${esc(m.message.length > 220 ? `${m.message.slice(0, 220)}…` : m.message)}</span>
-        <small class="muted">${esc(fecha(m.created_at))}${m.replied_at ? ` · ${esc(t('Te hemos respondido: míralo en tus avisos'))}` : ''}</small>
+        <small class="muted">${esc(fecha(m.created_at))}${m.replied_at ? ` · ${esc(t('Te hemos respondido: míralo en tus notificaciones'))}` : ''}</small>
       </div>`).join('')}</div>` : ''}`);
 
   const f = $('#f');
@@ -687,7 +687,7 @@ RUTAS['ultimo-paso'] = async (_p, params) => {
         <p id="err" class="err" role="alert"></p>
         <button class="pill accent" id="seguir">${esc(t('Continuar'))}</button>
       </form>
-      <p><button class="linkbtn" id="salir">${esc(t('Salir de la cuenta'))}</button></p>
+      <p><button class="linkbtn" id="salir">${esc(t('Cerrar sesión'))}</button></p>
     </div>`);
   const f = $('#f');
   f.addEventListener('submit', (ev) => {

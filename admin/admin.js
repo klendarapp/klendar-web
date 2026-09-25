@@ -186,7 +186,7 @@ document.addEventListener('keydown', (e) => { if (e.key === '/' && !/input|texta
 // ── Navegación ──────────────────────────────────────────────────────────────
 const NAV = [
   ['group', 'Actividad'],
-  ['resumen', '📊', 'Resumen'], ['semanas', '📈', 'Semana a semana'], ['ciudades', '🗺', 'Ciudades'], ['negocios', '🏪', 'Negocios'], ['publicaciones', '⚡', 'Publicaciones'], ['canjeos', '🎟', 'Canjeos'], ['usuarios', '👤', 'Usuarios'],
+  ['resumen', '📊', 'Resumen'], ['semanas', '📈', 'Semana a semana'], ['ciudades', '🗺', 'Ciudades'], ['negocios', '🏪', 'Negocios'], ['publicaciones', '⚡', 'Publicaciones'], ['canjes', '🎟', 'Canjes'], ['usuarios', '👤', 'Usuarios'],
   ['group', 'Moderación'],
   ['denuncias', '🚩', 'Denuncias'], ['resenas', '💬', 'Reseñas y posts'], ['sugerencias', '💡', 'Sugerencias'],
   ['group', 'Negocio'],
@@ -311,9 +311,9 @@ PAGES.resumen = async (v) => {
         ${kpi(k.businesses_total, 'en total')} ${kpi(k.businesses_verified, 'verificados')} ${kpi(k.businesses_pending, 'pendientes', k.businesses_pending ? 'accent' : '')}
         ${kpi(k.businesses_rejected, 'rechazados')} ${kpi(k.businesses_inactive, 'desactivados')}
       </div></div>
-      <div class="card"><h2>Publicaciones y canjeos</h2><div class="kpis">
+      <div class="card"><h2>Publicaciones y canjes</h2><div class="kpis">
         ${kpi(k.offers_active, 'activas ahora')} ${kpi(k.offers_7d, 'publicadas (7 d)')} ${kpi(k.offers_pending, 'por moderar', k.offers_pending ? 'accent' : '')} ${kpi(k.offers_rejected, 'retiradas')}
-        ${kpi(k.views_7d, 'vistas (7 d)')} ${kpi(k.views_30d, 'vistas (30 d)')} ${kpi(k.redemptions_7d, 'canjeos (7 d)')} ${kpi(k.redemptions_30d, 'canjeos (30 d)')} ${kpi(k.redemptions_pending, 'códigos en curso')}
+        ${kpi(k.views_7d, 'vistas (7 d)')} ${kpi(k.views_30d, 'vistas (30 d)')} ${kpi(k.redemptions_7d, 'canjes (7 d)')} ${kpi(k.redemptions_30d, 'canjes (30 d)')} ${kpi(k.redemptions_pending, 'códigos en curso')}
       </div></div>
       <div class="card"><h2>Ingresos y suscripciones</h2><div class="kpis">
         ${kpi(fmtMoney(k.revenue_month_cents), 'cobrado este mes', 'accent')} ${kpi(fmtMoney(k.revenue_30d_cents), 'cobrado (30 d)')} ${kpi(fmtMoney(k.revenue_total_cents), 'cobrado en total')}
@@ -327,13 +327,13 @@ PAGES.resumen = async (v) => {
       </div></div>
     </div>
     <div class="card"><div class="page-head" style="margin-bottom:4px"><h2 style="margin:0">Últimos 30 días</h2><span class="spacer"></span>
-      <div class="chart-tabs" id="ctabs">${[['redemptions', 'Canjeos'], ['views', 'Vistas'], ['offers', 'Publicaciones'], ['users', 'Altas']].map(([k2, l], i) => `<button class="${i === 0 ? 'on' : ''}" data-k="${k2}">${l}</button>`).join('')}</div></div>
+      <div class="chart-tabs" id="ctabs">${[['redemptions', 'Canjes'], ['views', 'Vistas'], ['offers', 'Publicaciones'], ['users', 'Altas']].map(([k2, l], i) => `<button class="${i === 0 ? 'on' : ''}" data-k="${k2}">${l}</button>`).join('')}</div></div>
       <div id="chart">${bars(series, 'redemptions', (s) => fmtDay(s.day))}</div>
       <div class="chart-legend"><span>${fmtDay(series[0]?.day)}</span><span style="margin-left:auto">${fmtDay(series[series.length - 1]?.day)}</span></div>
     </div>
     <div class="grid3">
-      <div class="card"><h2>Top negocios (canjeos 30 d)</h2>${(k.top_businesses || []).length ? `<ol style="margin:0;padding-left:18px">${k.top_businesses.map((b) => `<li><a class="link" href="#/negocios/${b.id}">${esc(b.name)}</a> <span class="muted">${esc(b.city || '')} · ${b.redemptions}</span></li>`).join('')}</ol>` : '<p class="muted">Aún sin canjeos.</p>'}</div>
-      <div class="card"><h2>Top publicaciones (30 d)</h2>${(k.top_offers || []).length ? `<ol style="margin:0;padding-left:18px">${k.top_offers.map((o) => `<li><a class="link" href="#/publicaciones/${o.id}">${esc(o.title)}</a> <span class="muted">${esc(o.business)} · ${o.redemptions_count} canjeos · ${o.views_count} vistas</span></li>`).join('')}</ol>` : '<p class="muted">Nada todavía.</p>'}</div>
+      <div class="card"><h2>Top negocios (canjes 30 d)</h2>${(k.top_businesses || []).length ? `<ol style="margin:0;padding-left:18px">${k.top_businesses.map((b) => `<li><a class="link" href="#/negocios/${b.id}">${esc(b.name)}</a> <span class="muted">${esc(b.city || '')} · ${b.redemptions}</span></li>`).join('')}</ol>` : '<p class="muted">Aún sin canjes.</p>'}</div>
+      <div class="card"><h2>Top publicaciones (30 d)</h2>${(k.top_offers || []).length ? `<ol style="margin:0;padding-left:18px">${k.top_offers.map((o) => `<li><a class="link" href="#/publicaciones/${o.id}">${esc(o.title)}</a> <span class="muted">${esc(o.business)} · ${o.redemptions_count} canjes · ${o.views_count} vistas</span></li>`).join('')}</ol>` : '<p class="muted">Nada todavía.</p>'}</div>
       <div class="card"><h2>Negocios por ciudad</h2>${(k.by_city || []).length ? `<dl class="kv" style="grid-template-columns:1fr auto">${k.by_city.map((c) => `<dt>${esc(c.city)}</dt><dd>${c.verified}/${c.businesses}</dd>`).join('')}</dl><p class="muted small" style="margin:8px 0 0">verificados / total</p>` : '<p class="muted">—</p>'}</div>
     </div>`;
   $('#ctabs').onclick = (e) => { const b = e.target.closest('button'); if (!b) return; $$('#ctabs button').forEach((x) => x.classList.toggle('on', x === b)); $('#chart').innerHTML = bars(series, b.dataset.k, (s) => fmtDay(s.day)); };
@@ -341,7 +341,7 @@ PAGES.resumen = async (v) => {
 
 // ── Negocios ────────────────────────────────────────────────────────────────
 const params = () => Object.fromEntries(new URLSearchParams((location.hash.split('?')[1] || '')));
-const st = { sugerencias: { limit: 50, offset: 0 }, negocios: { limit: 50, offset: 0 }, publicaciones: { limit: 50, offset: 0 }, canjeos: { limit: 50, offset: 0 }, usuarios: { limit: 50, offset: 0 }, resenas: { limit: 50, offset: 0 }, posts: { limit: 50, offset: 0 }, denuncias: { limit: 50, offset: 0 }, actividad: { limit: 100, offset: 0 }, pagos: { limit: 100, offset: 0 }, subs: { limit: 100, offset: 0 } };
+const st = { sugerencias: { limit: 50, offset: 0 }, negocios: { limit: 50, offset: 0 }, publicaciones: { limit: 50, offset: 0 }, canjes: { limit: 50, offset: 0 }, usuarios: { limit: 50, offset: 0 }, resenas: { limit: 50, offset: 0 }, posts: { limit: 50, offset: 0 }, denuncias: { limit: 50, offset: 0 }, actividad: { limit: 100, offset: 0 }, pagos: { limit: 100, offset: 0 }, subs: { limit: 100, offset: 0 } };
 
 PAGES.negocios = async (v, id) => {
   if (id) return businessDetail(v, id);
@@ -355,7 +355,7 @@ PAGES.negocios = async (v, id) => {
       <select id="status">${[['all', 'Todos los estados'], ['pending', 'Pendientes'], ['verified', 'Verificados'], ['rejected', 'Rechazados']].map((o) => `<option value="${o[0]}" ${s.status === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
       <select id="plan">${[['all', 'Todos los planes'], ['free', 'Gratis de lanzamiento'], ['standard', 'Klendar'], ['founder', 'Fundador']].map((o) => `<option value="${o[0]}" ${(s.plan || 'all') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
       <select id="active">${[['', 'Activos e inactivos'], ['true', 'Solo activos'], ['false', 'Solo desactivados']].map((o) => `<option value="${o[0]}" ${(s.active ?? '') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
-      <select id="sort">${[['created_desc', 'Más recientes'], ['created_asc', 'Más antiguos'], ['name', 'Por nombre'], ['redemptions', 'Más canjeos']].map((o) => `<option value="${o[0]}" ${(s.sort || 'created_desc') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
+      <select id="sort">${[['created_desc', 'Más recientes'], ['created_asc', 'Más antiguos'], ['name', 'Por nombre'], ['redemptions', 'Más canjes']].map((o) => `<option value="${o[0]}" ${(s.sort || 'created_desc') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
     </div>
     <div id="list"><div class="loading">Cargando…</div></div>`;
   let rows = [];
@@ -370,7 +370,7 @@ PAGES.negocios = async (v, id) => {
         { h: 'Estado', r: (b) => `${tag(b.verification_status)} ${b.is_active ? '' : tag('inactive', 'st-inactive')} ${b.open_reports ? `<span class="tag bad">🚩 ${b.open_reports}</span>` : ''}` },
         { h: 'Plan', r: (b) => `${tag(b.plan_slug || 'free', 'dim')} ${b.sub_status ? tag(b.sub_status) : ''}${b.sub_period_end ? `<span class="sub">hasta ${fmtDay(b.sub_period_end)}</span>` : ''}` },
         { h: 'Publicaciones', num: true, r: (b) => `${b.active_offers} <span class="muted">/ ${b.offers_count}</span>` },
-        { h: 'Canjeos', num: true, r: (b) => fmtNum(b.redemptions_count) },
+        { h: 'Canjes', num: true, r: (b) => fmtNum(b.redemptions_count) },
         { h: 'Alta', r: (b) => `<span class="nowrap">${fmtDay(b.created_at)}</span>` },
       ], rows, onRow: true, empty: 'No hay negocios con esos filtros.',
     }) + pg.html;
@@ -379,7 +379,7 @@ PAGES.negocios = async (v, id) => {
   };
   $('#q').oninput = debounce(() => { s.q = $('#q').value.trim(); s.offset = 0; load(); });
   ['status', 'plan', 'active', 'sort'].forEach((k) => { $('#' + k).onchange = () => { s[k] = $('#' + k).value; s.offset = 0; load(); }; });
-  $('#csv').onclick = () => downloadCsv('negocios', rows, [['id', 'id'], ['name', 'nombre'], ['category', 'categoría'], ['city', 'ciudad'], ['address', 'dirección'], ['owner_email', 'email dueño'], ['phone', 'teléfono'], ['website', 'web'], ['verification_status', 'verificación'], [(b) => b.is_active ? 'sí' : 'no', 'activo'], [(b) => b.plan_slug || 'free', 'plan'], ['sub_status', 'suscripción'], ['sub_period_end', 'fin periodo'], ['offers_count', 'publicaciones'], ['redemptions_count', 'canjeos'], ['created_at', 'alta']]);
+  $('#csv').onclick = () => downloadCsv('negocios', rows, [['id', 'id'], ['name', 'nombre'], ['category', 'categoría'], ['city', 'ciudad'], ['address', 'dirección'], ['owner_email', 'email dueño'], ['phone', 'teléfono'], ['website', 'web'], ['verification_status', 'verificación'], [(b) => b.is_active ? 'sí' : 'no', 'activo'], [(b) => b.plan_slug || 'free', 'plan'], ['sub_status', 'suscripción'], ['sub_period_end', 'fin periodo'], ['offers_count', 'publicaciones'], ['redemptions_count', 'canjes'], ['created_at', 'alta']]);
   await load();
 };
 
@@ -429,7 +429,7 @@ async function businessDetail(v, id) {
       <div>
         <div class="card"><h2>Actividad</h2><div class="kpis">
           <div class="kpi"><b>${fmtNum(d.stats.views_30d)}</b><span>vistas (30 d)</span></div>
-          <div class="kpi"><b>${fmtNum(d.stats.redemptions_30d)}</b><span>canjeos (30 d)</span></div>
+          <div class="kpi"><b>${fmtNum(d.stats.redemptions_30d)}</b><span>canjes (30 d)</span></div>
           <div class="kpi"><b>${fmtNum(d.stats.favorites)}</b><span>favoritos</span></div>
           <div class="kpi"><b>${d.offers.length}</b><span>publicaciones</span></div>
         </div></div>
@@ -454,7 +454,7 @@ async function businessDetail(v, id) {
         { h: 'Publicación', r: (o) => `${KIND_ICON[o.kind]} <span class="title">${esc(o.title)}</span>` },
         { h: 'Estado', r: (o) => `${tag(o.status)} ${tag(o.moderation_status)} ${o.is_boosted ? '<span class="tag">boost</span>' : ''}` },
         { h: 'Cuándo', r: (o) => `<span class="nowrap">${fmtDate(o.kind === 'flash_offer' ? o.redeem_end_at : o.event_at)}</span>` },
-        { h: 'Vistas', num: true, r: (o) => fmtNum(o.views_count) }, { h: 'Canjeos', num: true, r: (o) => `${o.redemptions_count}${o.max_redemptions ? ` / ${o.max_redemptions}` : ''}` },
+        { h: 'Vistas', num: true, r: (o) => fmtNum(o.views_count) }, { h: 'Canjes', num: true, r: (o) => `${o.redemptions_count}${o.max_redemptions ? ` / ${o.max_redemptions}` : ''}` },
         { h: 'Creada', r: (o) => fmtDay(o.created_at) },
       ], rows: d.offers, onRow: true, empty: 'Este negocio no ha publicado nada.' })}
     </div>
@@ -589,7 +589,7 @@ PAGES.publicaciones = async (v, id) => {
         { h: 'Cuándo', r: (o) => `<span class="nowrap">${o.kind === 'flash_offer' ? `${fmtDate(o.redeem_start_at)}<span class="sub">→ ${fmtDate(o.redeem_end_at)}</span>` : fmtDate(o.event_at)}</span>` },
         { h: 'Precio', r: (o) => `${o.discount ? `<span class="tag">${esc(discountLabel(o.discount))}</span> ` : ''}${o.price_cents != null ? fmtMoney(o.price_cents, o.currency) : ''}` },
         { h: 'Vistas', num: true, r: (o) => fmtNum(o.views_count) },
-        { h: 'Canjeos', num: true, r: (o) => `${o.redemptions_count}${o.max_redemptions ? `<span class="muted"> / ${o.max_redemptions}</span>` : ''}` },
+        { h: 'Canjes', num: true, r: (o) => `${o.redemptions_count}${o.max_redemptions ? `<span class="muted"> / ${o.max_redemptions}</span>` : ''}` },
         { h: '', r: (o) => `<span class="actions">${o.moderation_status !== 'approved' ? `<button class="btn sm ok" data-mod="${o.id}" data-val="approved">Aprobar</button>` : ''}${o.moderation_status !== 'rejected' ? `<button class="btn sm bad" data-mod="${o.id}" data-val="rejected">Retirar</button>` : ''}</span>` },
       ], rows, onRow: true, empty: 'No hay publicaciones con esos filtros.',
     }) + pg.html;
@@ -600,7 +600,7 @@ PAGES.publicaciones = async (v, id) => {
   $('#q').oninput = debounce(() => { s.q = $('#q').value.trim(); s.offset = 0; load(); });
   ['moderation', 'status', 'kind'].forEach((k) => { $('#' + k).onchange = () => { s[k] = $('#' + k).value; s.offset = 0; load(); }; });
   if ($('#clearbiz')) $('#clearbiz').onclick = () => { s.business = null; go('#/publicaciones'); };
-  $('#csv').onclick = () => downloadCsv('publicaciones', rows, [['id', 'id'], ['kind', 'tipo'], ['title', 'título'], ['business_name', 'negocio'], ['status', 'estado'], ['moderation_status', 'moderación'], ['redeem_start_at', 'inicio canje'], ['redeem_end_at', 'fin canje'], ['event_at', 'evento'], ['price_cents', 'precio (cts)'], ['views_count', 'vistas'], ['redemptions_count', 'canjeos'], ['max_redemptions', 'máx'], ['created_at', 'creada']]);
+  $('#csv').onclick = () => downloadCsv('publicaciones', rows, [['id', 'id'], ['kind', 'tipo'], ['title', 'título'], ['business_name', 'negocio'], ['status', 'estado'], ['moderation_status', 'moderación'], ['redeem_start_at', 'inicio canje'], ['redeem_end_at', 'fin canje'], ['event_at', 'evento'], ['price_cents', 'precio (cts)'], ['views_count', 'vistas'], ['redemptions_count', 'canjes'], ['max_redemptions', 'máx'], ['created_at', 'creada']]);
   await load();
 };
 const discountLabel = (d) => { if (!d) return ''; if (d.type === 'percent') return `−${d.value} %`; if (d.type === 'amount') return `−${(d.value / 100).toFixed(2)} €`; if (d.type === 'fixed_price') return `${(d.value / 100).toFixed(2)} €`; if (d.type === 'two_for_one') return '2×1'; return d.label || JSON.stringify(d); };
@@ -655,13 +655,13 @@ async function offerDetail(v, id) {
       ${(o.images || []).length ? `<h3 style="margin-top:12px">Fotos</h3><div class="gallery">${o.images.map((u) => `<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt=""></a>`).join('')}</div>` : ''}
       </div>
       <div>
-        <div class="card"><h2>Últimos 14 días</h2><div class="kpis"><div class="kpi"><b>${fmtNum(o.views_count)}</b><span>vistas totales</span></div><div class="kpi"><b>${fmtNum(o.redemptions_count)}</b><span>canjeos totales</span></div><div class="kpi"><b>${o.views_count ? Math.round(o.redemptions_count / o.views_count * 100) : 0} %</b><span>conversión</span></div></div>
-          <p class="muted small" style="margin:10px 0 0">Vistas</p>${bars(d.series, 'views', (s) => fmtDay(s.day))}<p class="muted small" style="margin:10px 0 0">Canjeos</p>${bars(d.series, 'redemptions', (s) => fmtDay(s.day))}</div>
+        <div class="card"><h2>Últimos 14 días</h2><div class="kpis"><div class="kpi"><b>${fmtNum(o.views_count)}</b><span>vistas totales</span></div><div class="kpi"><b>${fmtNum(o.redemptions_count)}</b><span>canjes totales</span></div><div class="kpi"><b>${o.views_count ? Math.round(o.redemptions_count / o.views_count * 100) : 0} %</b><span>conversión</span></div></div>
+          <p class="muted small" style="margin:10px 0 0">Vistas</p>${bars(d.series, 'views', (s) => fmtDay(s.day))}<p class="muted small" style="margin:10px 0 0">Canjes</p>${bars(d.series, 'redemptions', (s) => fmtDay(s.day))}</div>
         <div class="card"><h2>Denuncias (${d.reports.length})</h2>${d.reports.length ? d.reports.map((r) => `<div class="item" style="grid-template-columns:1fr"><div><b>${esc(r.reason)}</b> ${tag(r.status)} <span class="muted small">${ago(r.created_at)}</span><p>${esc(r.details || '')}</p></div></div>`).join('') + '<a class="link" href="#/denuncias">Gestionar en denuncias →</a>' : '<p class="muted">Ninguna.</p>'}</div>
         <div class="card"><h2>Registro de cambios</h2>${auditList(d.audit)}</div>
       </div>
     </div>
-    <div class="card"><h2>Canjeos (${d.redemptions.length} últimos)</h2>
+    <div class="card"><h2>Canjes (${d.redemptions.length} últimos)</h2>
       ${table({ cols: [{ h: 'Usuario', r: (r) => esc(r.user_email || '—') }, { h: 'Código', r: (r) => `<code>${esc(r.code)}</code>` }, { h: 'Estado', r: (r) => tag(r.status) }, { h: 'Generado', r: (r) => fmtDate(r.created_at) }, { h: 'Validado', r: (r) => `${fmtDate(r.validated_at)}<span class="sub">${esc(r.validated_by_email || '')}</span>` }], rows: d.redemptions, empty: 'Nadie ha canjeado todavía.' })}
     </div>`;
   $$('[data-a]').forEach((btn) => { btn.onclick = async () => {
@@ -685,11 +685,11 @@ async function offerDetail(v, id) {
   }; });
 }
 
-// ── Canjeos ─────────────────────────────────────────────────────────────────
-PAGES.canjeos = async (v) => {
-  const s = st.canjeos;
+// ── Canjes ─────────────────────────────────────────────────────────────────
+PAGES.canjes = async (v) => {
+  const s = st.canjes;
   v.innerHTML = `
-    <div class="page-head"><h1>Canjeos</h1><span class="spacer"></span><button class="btn sm ghost" id="csv">Exportar CSV</button></div>
+    <div class="page-head"><h1>Canjes</h1><span class="spacer"></span><button class="btn sm ghost" id="csv">Exportar CSV</button></div>
     ${helpBox('¿Qué hago aquí?', '<p>Cada vez que un usuario pulsa «Canjear» se genera un código de un solo uso válido 5 minutos (<b>pendiente</b>); cuando el negocio lo escanea pasa a <b>validado</b>; si no, <b>caduca</b>. Sirve para atender reclamaciones («me cobraron y no aplicaron el descuento») y detectar abusos: busca por email, negocio, título o código.</p>')}
     <div class="toolbar">
       <input id="q" class="grow" placeholder="Buscar por email, negocio, título o código…" value="${esc(s.q || '')}">
@@ -707,12 +707,12 @@ PAGES.canjeos = async (v) => {
       { h: 'Publicación', r: (x) => `<a class="link" href="#/publicaciones/${x.offer_id}">${esc(x.title)}</a><span class="sub"><a class="link" href="#/negocios/${x.business_id}">${esc(x.business)}</a></span>` },
       { h: 'Usuario', r: (x) => esc(x.user_email || '—') }, { h: 'Código', r: (x) => `<code>${esc(x.code)}</code>` }, { h: 'Estado', r: (x) => tag(x.status) },
       { h: 'Generado', r: (x) => `<span class="nowrap">${fmtDate(x.created_at)}</span>` }, { h: 'Validado', r: (x) => `<span class="nowrap">${fmtDate(x.validated_at)}</span><span class="sub">${esc(x.validated_by_email || '')}</span>` },
-    ], rows, empty: 'Sin canjeos con esos filtros.' }) + pg.html;
+    ], rows, empty: 'Sin canjes con esos filtros.' }) + pg.html;
     pg.bind($('#list'));
   };
   $('#q').oninput = debounce(() => { s.q = $('#q').value.trim(); s.offset = 0; load(); });
   ['status', 'from', 'to'].forEach((k) => { $('#' + k).onchange = () => { s[k] = $('#' + k).value; s.offset = 0; load(); }; });
-  $('#csv').onclick = () => downloadCsv('canjeos', rows, [['id', 'id'], ['title', 'publicación'], ['business', 'negocio'], ['user_email', 'usuario'], ['code', 'código'], ['status', 'estado'], ['created_at', 'generado'], ['validated_at', 'validado'], ['validated_by_email', 'validado por']]);
+  $('#csv').onclick = () => downloadCsv('canjes', rows, [['id', 'id'], ['title', 'publicación'], ['business', 'negocio'], ['user_email', 'usuario'], ['code', 'código'], ['status', 'estado'], ['created_at', 'generado'], ['validated_at', 'validado'], ['validated_by_email', 'validado por']]);
   await load();
 };
 
@@ -722,7 +722,7 @@ PAGES.usuarios = async (v, id) => {
   const s = st.usuarios;
   v.innerHTML = `
     <div class="page-head"><h1>Usuarios</h1><span class="spacer"></span><button class="btn sm ghost" id="csv">Exportar CSV</button></div>
-    ${helpBox('¿Qué hago aquí?', '<p>Todas las cuentas de la app. Pulsa en una para ver su ficha: consentimientos (RGPD), negocios, canjeos, reseñas y denuncias; desde allí puedes <b>suspender</b> a quien incumpla las normas, dar <b>premium</b>, o <b>borrar la cuenta</b> si el usuario lo pide por email (derecho de supresión; también puede hacerlo él mismo desde la app).</p>')}
+    ${helpBox('¿Qué hago aquí?', '<p>Todas las cuentas de la app. Pulsa en una para ver su ficha: consentimientos (RGPD), negocios, canjes, reseñas y denuncias; desde allí puedes <b>suspender</b> a quien incumpla las normas, dar <b>premium</b>, o <b>borrar la cuenta</b> si el usuario lo pide por email (derecho de supresión; también puede hacerlo él mismo desde la app).</p>')}
     <div class="toolbar">
       <input id="q" class="grow" placeholder="Buscar por email, nombre o id…" value="${esc(s.q || '')}">
       <select id="type">${[['all', 'Todos los tipos'], ['user', 'Usuarios'], ['business', 'Cuentas de negocio']].map((o) => `<option value="${o[0]}" ${(s.type || 'all') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
@@ -738,7 +738,7 @@ PAGES.usuarios = async (v, id) => {
     $('#list').innerHTML = table({ cols: [
       { h: 'Usuario', r: (u) => `${img(u.avatar_url, '👤')}<span class="title">${esc(u.display_name || '—')}<span class="sub">${esc(u.email)}</span></span>` },
       { h: 'Tipo', r: (u) => `${tag(u.user_type || 'user', 'dim')} ${u.is_admin ? '<span class="tag">admin</span>' : ''} ${u.is_premium ? '<span class="tag ok">premium</span>' : ''} ${u.banned_at ? tag('banned', 'st-banned') : ''} ${!u.email_confirmed_at ? '<span class="tag warn">email sin confirmar</span>' : ''}` },
-      { h: 'Negocios', num: true, r: (u) => u.memberships || 0 }, { h: 'Canjeos', num: true, r: (u) => u.redemptions || 0 },
+      { h: 'Negocios', num: true, r: (u) => u.memberships || 0 }, { h: 'Canjes', num: true, r: (u) => u.redemptions || 0 },
       { h: 'Alta', r: (u) => `<span class="nowrap">${fmtDay(u.created_at)}</span>` }, { h: 'Último acceso', r: (u) => `<span class="nowrap">${ago(u.last_sign_in_at)}</span>` },
     ], rows, onRow: true, empty: 'Sin usuarios con esos filtros.' }) + pg.html;
     pg.bind($('#list'));
@@ -746,7 +746,7 @@ PAGES.usuarios = async (v, id) => {
   };
   $('#q').oninput = debounce(() => { s.q = $('#q').value.trim(); s.offset = 0; load(); });
   ['type', 'banned', 'sort'].forEach((k) => { $('#' + k).onchange = () => { s[k] = $('#' + k).value; s.offset = 0; load(); }; });
-  $('#csv').onclick = () => downloadCsv('usuarios', rows, [['id', 'id'], ['email', 'email'], ['display_name', 'nombre'], ['user_type', 'tipo'], ['locale', 'idioma'], [(u) => u.is_premium ? 'sí' : 'no', 'premium'], [(u) => u.banned_at ? 'sí' : 'no', 'suspendido'], [(u) => u.marketing_consent ? 'sí' : 'no', 'consentimiento marketing'], ['memberships', 'negocios'], ['redemptions', 'canjeos'], ['created_at', 'alta'], ['last_sign_in_at', 'último acceso']]);
+  $('#csv').onclick = () => downloadCsv('usuarios', rows, [['id', 'id'], ['email', 'email'], ['display_name', 'nombre'], ['user_type', 'tipo'], ['locale', 'idioma'], [(u) => u.is_premium ? 'sí' : 'no', 'premium'], [(u) => u.banned_at ? 'sí' : 'no', 'suspendido'], [(u) => u.marketing_consent ? 'sí' : 'no', 'consentimiento marketing'], ['memberships', 'negocios'], ['redemptions', 'canjes'], ['created_at', 'alta'], ['last_sign_in_at', 'último acceso']]);
   await load();
 };
 
@@ -792,7 +792,7 @@ async function userDetail(v, id) {
     </div>
     <div class="grid2">
       <div class="card"><h2>Negocios (${d.memberships.length})</h2>${d.memberships.length ? table({ cols: [{ h: 'Negocio', r: (m) => `<a class="link" href="#/negocios/${m.business_id}">${esc(m.name)}</a><span class="sub">${esc(m.city || '')}</span>` }, { h: 'Rol', r: (m) => tag(m.role, 'dim') }, { h: 'Estado', r: (m) => tag(m.verification_status) }], rows: d.memberships }) : '<p class="muted">No pertenece a ningún negocio.</p>'}</div>
-      <div class="card"><h2>Canjeos (${d.redemptions.length} últimos)</h2>${table({ cols: [{ h: 'Publicación', r: (r) => `${esc(r.title)}<span class="sub">${esc(r.business)}</span>` }, { h: 'Estado', r: (r) => tag(r.status) }, { h: 'Fecha', r: (r) => `<span class="nowrap">${fmtDate(r.validated_at || r.created_at)}</span>` }], rows: d.redemptions, empty: 'Ninguno.' })}</div>
+      <div class="card"><h2>Canjes (${d.redemptions.length} últimos)</h2>${table({ cols: [{ h: 'Publicación', r: (r) => `${esc(r.title)}<span class="sub">${esc(r.business)}</span>` }, { h: 'Estado', r: (r) => tag(r.status) }, { h: 'Fecha', r: (r) => `<span class="nowrap">${fmtDate(r.validated_at || r.created_at)}</span>` }], rows: d.redemptions, empty: 'Ninguno.' })}</div>
     </div>
     <div class="grid2">
       <div class="card"><h2>Reseñas (${d.reviews.length})</h2>${d.reviews.length ? d.reviews.map((r) => `<div class="item" style="grid-template-columns:1fr"><div><span class="stars">${'★'.repeat(r.rating)}</span> <b>${esc(r.business)}</b> <span class="muted small">${ago(r.created_at)}</span><p>${esc(r.comment || '')}</p><div class="actions"><button class="btn sm bad" data-delreview="${r.id}">Borrar…</button></div></div></div>`).join('') : '<p class="muted">Ninguna.</p>'}</div>
@@ -830,7 +830,7 @@ async function userDetail(v, id) {
         else { if (!await confirmDlg('Hacer administrador', `${esc(u.email)} podrá entrar en este panel con todos los permisos.`, { submit: 'Hacer admin' })) return; await rpc('admin_add_admin', { p_email: u.email }); toast('Ahora es administrador'); }
       }
       if (a === 'delete') {
-        const r = await modal({ title: 'Borrar cuenta definitivamente', warn: 'Se borra todo: perfil, canjeos, reseñas, favoritos y <b>los negocios de los que sea propietario con todas sus publicaciones</b>. No se puede deshacer. Hazlo solo a petición del usuario (derecho de supresión) o por incumplimiento grave.', fields: [{ name: 'reason', label: 'Motivo (queda en el registro)', type: 'textarea', required: true }], submit: 'Borrar para siempre', danger: true, confirmWord: 'BORRAR' });
+        const r = await modal({ title: 'Borrar cuenta definitivamente', warn: 'Se borra todo: perfil, canjes, reseñas, favoritos y <b>los negocios de los que sea propietario con todas sus publicaciones</b>. No se puede deshacer. Hazlo solo a petición del usuario (derecho de supresión) o por incumplimiento grave.', fields: [{ name: 'reason', label: 'Motivo (queda en el registro)', type: 'textarea', required: true }], submit: 'Borrar para siempre', danger: true, confirmWord: 'BORRAR' });
         if (!r) return; await rpc('admin_delete_user', { p_id: u.id, p_reason: r.reason }); toast('Cuenta borrada'); go('#/usuarios'); return;
       }
       route();
@@ -1237,7 +1237,7 @@ PAGES.colecciones = async (v, param) => {
       { name: 'en', label: 'Título (EN)', value: c?.title?.en },
       { name: 'sub_es', label: 'Subtítulo (ES)', value: c?.subtitle?.es },
       { name: 'sub_en', label: 'Subtítulo (EN)', value: c?.subtitle?.en },
-      { name: 'kind', label: 'Qué incluye', type: 'select', value: c?.rules?.kind || '', options: [['', 'Ofertas y eventos'], ['flash_offer', 'Solo ofertas relámpago'], ['future_event', 'Solo eventos']] },
+      { name: 'kind', label: 'Qué incluye', type: 'select', value: c?.rules?.kind || '', options: [['', 'Ofertas y eventos'], ['flash_offer', 'Solo ofertas flash'], ['future_event', 'Solo eventos']] },
       { name: 'when', label: 'Cuándo', type: 'select', value: c?.rules?.when || '', options: [['', 'Cualquier momento'], ['today', 'Hoy'], ['weekend', 'Fin de semana'], ['next7', 'Próximos 7 días']] },
       { name: 'max_price', label: 'Precio máximo (€, opcional)', value: c?.rules?.max_price_cents != null ? (c.rules.max_price_cents / 100).toFixed(2) : '' },
       { name: 'discount_only', label: 'Solo con descuento', type: 'checkbox', value: !!c?.rules?.discount_only },

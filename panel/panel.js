@@ -605,14 +605,14 @@ PAGES.resumen = async (v) => {
       <a class="btn sm ghost" href="${APP_URL}/b/${esc(BIZ.id)}" target="_blank" rel="noopener">Ver ficha pública ↗</a></div>
     ${BIZ.verification_status !== 'verified' ? `<div class="help"><b>Tu negocio está ${esc(LABELS[BIZ.verification_status] || BIZ.verification_status)}.</b> Mientras tanto puedes preparar publicaciones en borrador; se verán en cuanto te verifiquemos.</div>` : ''}
     <div class="quick">
-      <button class="primary" data-go="nueva-flash"><span class="ic">⚡</span>Nueva oferta relámpago<small>Canjeable con QR durante unas horas</small></button>
+      <button class="primary" data-go="nueva-flash"><span class="ic">⚡</span>Nueva oferta flash<small>Canjeable con QR durante unas horas</small></button>
       <button data-go="nuevo-evento"><span class="ic">📅</span>Nuevo evento<small>Con fecha, aforo y reserva de plaza</small></button>
       <button data-go="validar"><span class="ic">🎟</span>Validar un código<small>Escribe el código que enseña el cliente</small></button>
     </div>
     <div class="card" style="margin-top:14px"><h2>Cómo va</h2>
       <div class="kpis">
         <div class="kpi"><b>${fmtNum(s.views_30d)}</b><span>Vistas (30 días)</span></div>
-        <div class="kpi accent"><b>${fmtNum(s.redemptions_30d)}</b><span>Canjeos (30 días)</span></div>
+        <div class="kpi accent"><b>${fmtNum(s.redemptions_30d)}</b><span>Canjes (30 días)</span></div>
         <div class="kpi"><b>${fmtNum(s.favorites)}</b><span>Favoritos</span></div>
         <div class="kpi"><b>${s.ratings ? `${Number(s.rating).toFixed(1).replace('.', ',')} (${s.ratings})` : '—'}</b><span>Valoración</span></div>
         <div class="kpi"><b>${fmtNum(pending.length)}</b><span>Publicaciones activas</span></div>
@@ -630,7 +630,7 @@ PAGES.resumen = async (v) => {
         { h: 'Publicación', r: (o) => `<b class="title">${esc(o.title)}</b><span class="sub">${esc(LABELS[o.kind])} · ${fmtDate(o.kind === 'flash_offer' ? o.redeem_start_at : o.event_at)}</span>` },
         { h: 'Estado', r: (o) => tag(o.status) + (o.moderation_status === 'pending' ? ' ' + tag('pending') : '') },
         { h: 'Vistas', num: true, r: (o) => fmtNum(o.views) },
-        { h: 'Canjeos', num: true, r: (o) => fmtNum(o.redemptions_count) },
+        { h: 'Canjes', num: true, r: (o) => fmtNum(o.redemptions_count) },
         { h: '', r: (o) => `<a class="btn sm" href="#/publicaciones/${esc(o.id)}">Abrir</a>` },
       ],
       rows: offers.slice(0, 8),
@@ -669,7 +669,7 @@ PAGES.publicaciones = async (v, param) => {
       <a class="btn sm" href="#/publicaciones/nueva-flash">⚡ Nueva oferta</a>
       <a class="btn sm" href="#/publicaciones/nuevo-evento">📅 Nuevo evento</a>
       <button class="btn sm ghost" id="csv">Exportar CSV</button></div>
-    ${helpBox('¿Oferta o evento?', '<p><b>Oferta relámpago</b>: algo que se canjea hoy, con cuenta atrás y aforo («café + tostada 2,50 € hasta mediodía»). <b>Evento</b>: algo con fecha, que se guarda en la agenda y puede admitir reserva de plaza.</p>')}
+    ${helpBox('¿Oferta o evento?', '<p><b>Oferta flash</b>: algo que se canjea hoy, con cuenta atrás y aforo («café + tostada 2,50 € hasta mediodía»). <b>Evento</b>: algo con fecha, que se guarda en la agenda y puede admitir reserva de plaza.</p>')}
     <div id="list"></div>
     <div id="rules"></div>`;
   const DIAS = ['domingos', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábados'];
@@ -752,7 +752,7 @@ PAGES.publicaciones = async (v, param) => {
         { h: 'Estado', r: (o) => tag(o.status) + (o.moderation_status === 'pending' ? ' ' + tag('pending') : '') + (o.publish_at ? ` <span class="tag dim">programada ${esc(fmtDate(o.publish_at))}</span>` : '') },
         { h: 'Plazas', r: (o) => o.max_redemptions == null ? '—' : `${fmtNum(o.redemptions_count + (o.pending_count || 0))}/${fmtNum(o.max_redemptions)}` },
         { h: 'Vistas', num: true, r: (o) => fmtNum(o.views) },
-        { h: 'Canjeos', num: true, r: (o) => fmtNum(o.redemptions_count) },
+        { h: 'Canjes', num: true, r: (o) => fmtNum(o.redemptions_count) },
         { h: '', r: (o) => `<div class="actions">
             <a class="btn sm" href="#/publicaciones/${esc(o.id)}">Editar</a>
             ${o.kind === 'future_event' && o.reservations_enabled ? `<a class="btn sm ghost" href="#/asistentes/${esc(o.id)}">Asistentes</a>` : ''}
@@ -792,7 +792,7 @@ PAGES.publicaciones = async (v, param) => {
   };
   $('#csv').onclick = () => downloadCsv(`klendar-${BIZ.name}`, offers, [
     ['title', 'publicación'], [(o) => LABELS[o.kind], 'tipo'], [(o) => LABELS[o.status], 'estado'],
-    ['views', 'vistas'], ['redemptions_count', 'canjeos'], ['max_redemptions', 'aforo'],
+    ['views', 'vistas'], ['redemptions_count', 'canjes'], ['max_redemptions', 'aforo'],
     [(o) => o.kind === 'flash_offer' ? o.redeem_start_at : o.event_at, 'cuándo'],
   ]);
   render();
@@ -856,13 +856,13 @@ async function offerForm(v, id, kindDefault) {
   const isFlash = () => $('[name=kind]', v).value === 'flash_offer';
   const disc = o.discount || {};
   v.innerHTML = `
-    <div class="page-head"><a class="btn sm ghost" href="#/publicaciones">← Volver</a><h1>${id ? 'Editar publicación' : (kindDefault === 'future_event' ? 'Nuevo evento' : 'Nueva oferta relámpago')}</h1></div>
+    <div class="page-head"><a class="btn sm ghost" href="#/publicaciones">← Volver</a><h1>${id ? 'Editar publicación' : (kindDefault === 'future_event' ? 'Nuevo evento' : 'Nueva oferta flash')}</h1></div>
     <form class="card" id="form">
       <div class="form-grid">
         <label class="f full"><span>Título</span><input name="title" value="${esc(o.title || '')}" required maxlength="80" placeholder="${kindDefault === 'future_event' ? 'Concierto de jazz' : 'Café + tostada 2,50 €'}"></label>
         <label class="f full"><span>Descripción</span><textarea name="description" maxlength="600">${esc(o.description || '')}</textarea></label>
         <label class="f"><span>Tipo</span><select name="kind">
-          <option value="flash_offer" ${o.kind === 'flash_offer' ? 'selected' : ''}>Oferta relámpago</option>
+          <option value="flash_offer" ${o.kind === 'flash_offer' ? 'selected' : ''}>Oferta flash</option>
           <option value="future_event" ${o.kind === 'future_event' ? 'selected' : ''}>Evento</option></select></label>
         <label class="f"><span>Categoría</span><select name="category_id"><option value="">La del negocio</option>
           ${CATS.map((c) => `<option value="${esc(c.id)}" ${o.category_id === c.id ? 'selected' : ''}>${esc(c.names?.es || c.names?.en || '')}</option>`).join('')}</select></label>
@@ -1032,7 +1032,7 @@ async function offerForm(v, id, kindDefault) {
       status: $('[name=publish]').checked ? 'active' : 'draft',
     };
     if (flash && (!data.redeem_start_at || !data.redeem_end_at)) {
-      $('#formErr').textContent = 'Una oferta relámpago necesita principio y fin.'; return;
+      $('#formErr').textContent = 'Una oferta flash necesita principio y fin.'; return;
     }
     if (flash && new Date(data.redeem_end_at) <= new Date(data.redeem_start_at)) {
       $('#formErr').textContent = 'El fin tiene que ser posterior al principio.'; return;

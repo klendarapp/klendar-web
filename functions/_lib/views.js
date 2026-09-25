@@ -41,7 +41,7 @@ export async function offerPage(id, lang) {
         when: 'When', redeem: 'Redemption window', where: 'Where', seats: 'Places left',
         terms: 'Conditions', about: 'What it is', biz: 'The business',
         open: 'Open in the app', report: 'Report this publication',
-        code: 'Get the code', reserve: 'Reserve a place', wait: 'Join the waiting list', save: 'Save',
+        code: 'Get the code', reserve: 'Reserve a place', wait: 'Join the waiting list', save: 'Save to Plans',
         note: 'From here or from the app, with the same account. The code is single-use and the business validates it on the spot.',
         soldOut: 'Sold out', over: 'Finished', more: 'Everything from', hot: 'Popular',
         prior: 'Lowest price in the last 30 days',
@@ -50,7 +50,7 @@ export async function offerPage(id, lang) {
         when: 'Cuándo', redeem: 'Se canjea', where: 'Dónde', seats: 'Plazas libres',
         terms: 'Condiciones', about: 'Qué es', biz: 'El negocio',
         open: 'Abrir en la app', report: 'Denunciar esta publicación',
-        code: 'Conseguir el código', reserve: 'Reservar plaza', wait: 'Apuntarme a la lista de espera', save: 'Guardar',
+        code: 'Conseguir el código', reserve: 'Reservar plaza', wait: 'Apuntarme a la lista de espera', save: 'Guardar en Planes',
         note: 'Desde aquí o desde la app, con la misma cuenta. El código es de un solo uso y lo valida el negocio en el momento.',
         soldOut: 'Agotado', over: 'Terminado', more: 'Todo lo de', hot: 'Con tirón',
         prior: 'Precio más bajo de los últimos 30 días',
@@ -98,7 +98,7 @@ export async function offerPage(id, lang) {
               : o.external_url ? `<a class="pill accent big" href="${esc(o.external_url)}" rel="nofollow noopener" target="_blank">${esc(o.external_url.replace(/^https?:\/\//, '').split('/')[0])}</a>`
                 : '';
         return `${principal}
-          <p class="acciones"><a class="pill" href="/app/#/guardar/${id}">♡ ${S.save}</a>
+          <p class="acciones"><a class="pill" href="/app/#/guardar/${id}"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg> ${S.save}</a>
             ${openInApp(path, S.open, 'pill ghost')}</p>`;
       })()}
       <p class="note">${S.note}</p>
@@ -168,7 +168,7 @@ export async function businessPage(id, lang) {
     ? {
         now: 'On right now', soon: 'Coming up',
         none: 'Nothing published right now. It changes often — take a look in the app.',
-        open: 'Follow', note: 'From here or from the app, with the same account. You get a heads-up when this business publishes something.',
+        open: 'Add to favourites', note: 'From here or from the app, with the same account. We let you know when this business posts something.',
         verified: 'Verified business', since: 'On Klendar since', redeemed: 'redemptions validated',
         about: 'About', menu: 'Menu',
         stamps: 'Stamp card', allergens: 'Allergens',
@@ -182,7 +182,7 @@ export async function businessPage(id, lang) {
     : {
         now: 'Ahora mismo', soon: 'Próximamente',
         none: 'Ahora mismo no hay nada publicado. Suele cambiar: échale un ojo en la app.',
-        open: 'Seguir', note: 'Desde aquí o desde la app, con la misma cuenta. Te avisamos cuando este negocio publique algo.',
+        open: 'Añadir a favoritos', note: 'Desde aquí o desde la app, con la misma cuenta. Te avisamos cuando este negocio publique algo.',
         verified: 'Negocio verificado', since: 'En Klendar desde', redeemed: 'canjes validados',
         about: 'Sobre el negocio', menu: 'Carta',
         stamps: 'Tarjeta de sellos', allergens: 'Alérgenos',
@@ -257,7 +257,7 @@ export async function businessPage(id, lang) {
       ${where ? `<p class="muted">${esc(where)}</p>` : ''}
     </div>
     <aside class="side">
-      <a class="pill accent big" href="/app/#/seguir/${encodeURIComponent(b.id)}">♡ ${S.open}</a>
+      <a class="pill accent big" href="/app/#/seguir/${encodeURIComponent(b.id)}"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.8 4.5c2.2 0 3.6 1.2 5.2 3 1.6-1.8 3-3 5.2-3 3.8 0 5.9 3.9 4.4 7.3C19.5 16.4 12 21 12 21z"/></svg> ${S.open}</a>
       <p class="note" style="margin-bottom:16px">${S.note}</p>
       <div class="info">
         ${where ? `<div><span>📍</span><span>${maps ? `<a href="${esc(maps)}" rel="nofollow noopener" target="_blank">${esc(where)}</a>` : esc(where)}</span></div>` : ''}

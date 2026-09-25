@@ -242,20 +242,20 @@ RUTAS[''] = async () => {
     <div class="hub">
       <a class="hub-i" href="#/planes"><b>${esc(t('Tus planes'))}</b><span>${esc(t('Lo que has guardado para ir'))}</span></a>
       <a class="hub-i" href="#/codigos"><b>${esc(t('Tus códigos'))}</b><span>${esc(t('Los que tienes listos y los que ya usaste'))}</span></a>
-      <a class="hub-i" href="#/favoritos"><b>${esc(t('Tus sitios'))}</b><span>${esc(t('Los negocios que sigues'))}</span></a>
+      <a class="hub-i" href="#/favoritos"><b>${esc(t('Favoritos'))}</b><span>${esc(t('Los negocios que te gustan'))}</span></a>
       <a class="hub-i" href="#/sellos"><b>${esc(t('Tarjetas de sellos'))}</b><span>${esc(t('Los cartones de siempre, sin cartón'))}</span></a>
-      <a class="hub-i" href="#/avisos"><b>${esc(t('Avisos'))} <span class="badge-n" id="sin-leer" hidden></span></b><span>${esc(t('Lo que te hemos contado'))}</span></a>
+      <a class="hub-i" href="#/avisos"><b>${esc(t('Notificaciones'))} <span class="badge-n" id="sin-leer" hidden></span></b><span>${esc(t('Lo que te hemos contado'))}</span></a>
       <a class="hub-i" href="#/alertas"><b>${esc(t('Avísame si…'))}</b><span>${esc(t('Que te escribamos cuando salga lo que buscas'))}</span></a>
       <a class="hub-i" href="${pre}/explorar/"><b>${esc(t('Explorar'))}</b><span>${esc(t('Qué hay ahora cerca'))}</span></a>
       <a class="hub-i" href="#/ajustes"><b>${esc(t('Ajustes'))}</b><span>${esc(t('Perfil, avisos, privacidad y cuenta'))}</span></a>
       <a class="hub-i" href="#/sugerencias"><b>${esc(t('Sugerencias y mejoras'))}</b><span>${esc(t('Cuéntanos qué cambiarías o qué falla'))}</span></a>
       <a class="hub-i" href="/panel/"><b>${esc(t('¿Tienes un negocio?'))}</b><span>${esc(t('Publica ofertas y eventos desde el panel'))}</span></a>
     </div>
-    <p style="margin-top:22px"><button class="pill" id="salir">${esc(t('Salir de la cuenta'))}</button></p>`);
+    <p style="margin-top:22px"><button class="pill" id="salir">${esc(t('Cerrar sesión'))}</button></p>`);
   pintaSinLeer();
   $('#salir').onclick = async () => {
     await sb.auth.signOut();
-    toast(t('Has salido de tu cuenta'));
+    toast(t('Has cerrado sesión'));
     vuelve('');
   };
 };
@@ -266,7 +266,7 @@ RUTAS.entrar = async (_p, params) => {
   if (YO) return vuelve(siguiente);
   pinta(`
     <h1>${esc(t('Entra en Klendar'))}</h1>
-    <p class="muted">${esc(t('Con la misma cuenta que en la app. Para mirar no hace falta: solo para guardar, seguir sitios y conseguir códigos.'))}</p>
+    <p class="muted">${esc(t('Con la misma cuenta que en la app. Para mirar no hace falta: solo para guardar planes, tener favoritos y conseguir códigos.'))}</p>
     <form id="f" class="formu" novalidate>
       <label>${esc(t('Correo'))}<input name="email" type="email" autocomplete="username" required></label>
       <label>${esc(t('Contraseña'))}<input name="password" type="password" autocomplete="current-password" required></label>
@@ -548,7 +548,7 @@ RUTAS.favoritos = async () => {
   const lista = await llamar('my_favorites', {});
   pinta(`
     <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
-    <h1>${esc(t('Tus sitios'))}</h1>
+    <h1>${esc(t('Favoritos'))}</h1>
     ${(lista || []).length ? `<div class="olist">${lista.map((b) => `
       <a class="ocard" href="${pre}/b/${esc(b.id)}">
         ${b.logo ? `<img src="${esc(b.logo)}" alt="" loading="lazy">` : '<span class="ph">✦</span>'}
@@ -558,17 +558,17 @@ RUTAS.favoritos = async () => {
             ${b.active_flash ? `<span class="tag">${esc(t('ofertas ahora'))}: ${b.active_flash}</span>` : ''}
             ${b.upcoming_events ? `<span class="muted">${esc(t('eventos'))}: ${b.upcoming_events}</span>` : ''}
           </span></span></a>`).join('')}</div>`
-    : `<p class="empty">${esc(t('Todavía no sigues ningún sitio. En la ficha de un negocio, dale a «Seguir» y te avisaremos cuando publique.'))}</p>`}`);
+    : `<p class="empty">${esc(t('Todavía no tienes favoritos. En la ficha de un negocio, dale a «Añadir a favoritos» y te avisaremos cuando publique.'))}</p>`}`);
 };
 
 RUTAS.seguir = async ([id]) => {
   if (!exigeSesion(`seguir/${id}`)) return;
   const sigue = await llamar('toggle_favorite', { p_business_id: id });
   hecho({
-    titulo: sigue ? t('Ahora sigues este sitio') : t('Ya no sigues este sitio'),
+    titulo: sigue ? t('Añadido a favoritos') : t('Quitado de favoritos'),
     texto: sigue ? t('Te avisamos cuando publique algo nuevo.') : '',
     volver: `${pre}/b/${encodeURIComponent(id)}`, volverTxt: t('Volver al sitio'),
-    lista: '#/favoritos', listaTxt: t('Ver tus sitios'),
+    lista: '#/favoritos', listaTxt: t('Ver tus favoritos'),
     deshacer: `seguir/${id}`,
   });
 };

@@ -84,7 +84,7 @@ ES['privacidad'] = ('Política de privacidad', 'Cómo trata Klendar tus datos pe
 <tr><td>Cuenta de usuario</td><td>Email, nombre mostrado, contraseña (cifrada), fecha de nacimiento, idioma, foto de perfil (opcional), fecha y versión de aceptación de los términos</td><td>Crear y gestionar tu cuenta; verificar la edad mínima (14 años) y el acceso a contenidos para mayores de 18</td><td>Ejecución del contrato (art. 6.1.b RGPD); obligación legal para la edad (art. 6.1.c; art. 7 LOPDGDD)</td><td>Mientras la cuenta esté activa. Al eliminarla, se borra en 30 días salvo obligación legal de conservación</td></tr>
 <tr><td>Inicio de sesión con Google / Apple</td><td>Identificador del proveedor, email, nombre</td><td>Autenticación sin contraseña</td><td>Ejecución del contrato</td><td>Igual que la cuenta</td></tr>
 <tr><td>Ubicación</td><td>Coordenadas aproximadas o precisas del dispositivo (según el permiso que concedas) o la ciudad que elijas manualmente</td><td>Ordenar el feed y el mapa por cercanía; "ofertas cerca de ti" si activas esa opción</td><td>Consentimiento (art. 6.1.a), revocable en los ajustes del dispositivo y de la app</td><td>No se guarda un historial. Solo se conserva la última ubicación conocida (para "cerca de ti") y se descarta a los 7 días</td></tr>
-<tr><td>Favoritos, reseñas, canjeos</td><td>Negocios guardados, valoraciones y comentarios, códigos de canjeo y su estado, vistas de ofertas</td><td>Prestar el servicio: tus favoritos, tus reseñas públicas, el historial de canjeos y estadísticas agregadas para los negocios</td><td>Ejecución del contrato</td><td>Mientras exista la cuenta. Las reseñas se muestran con tu nombre mostrado</td></tr>
+<tr><td>Favoritos, reseñas, canjes</td><td>Negocios guardados, valoraciones y comentarios, códigos de canje y su estado, vistas de ofertas</td><td>Prestar el servicio: tus favoritos, tus reseñas públicas, el historial de canjes y estadísticas agregadas para los negocios</td><td>Ejecución del contrato</td><td>Mientras exista la cuenta. Las reseñas se muestran con tu nombre mostrado</td></tr>
 <tr><td>Notificaciones push</td><td>Token del dispositivo, preferencias (favoritos, cercanía, horas de silencio)</td><td>Avisarte de novedades de tus favoritos y ofertas cercanas</td><td>Consentimiento, revocable en cualquier momento</td><td>Hasta que revoques el permiso, cierres sesión o elimines la cuenta</td></tr>
 <tr><td>Cuenta de negocio</td><td>Datos del negocio (nombre, dirección, NIF/CIF, teléfono, email de contacto, horarios), miembros del equipo (email y rol), plan contratado y pagos</td><td>Dar de alta, verificar y gestionar el negocio; facturar la cuota</td><td>Ejecución del contrato; obligación legal (facturación)</td><td>Durante la relación y después el plazo legal (fiscal: 4 años; mercantil: 6 años)</td></tr>
 <tr><td>Denuncias de contenido</td><td>Identidad de quien denuncia, motivo, contenido denunciado</td><td>Moderar la Plataforma (Reglamento (UE) 2022/2065, DSA)</td><td>Obligación legal e interés legítimo</td><td>2 años desde la resolución</td></tr>
@@ -179,9 +179,9 @@ ES['terminos'] = ('Términos de uso', 'Condiciones de uso de la app Klendar para
   <li>Puedes eliminar tu cuenta en cualquier momento desde Perfil o en <a href="/eliminar-cuenta/">klendar.app/eliminar-cuenta</a>.</li>
 </ul>
 
-<h2>3. Ofertas y canjeos</h2>
+<h2>3. Ofertas y canjes</h2>
 <ul>
-  <li>Las ofertas y eventos los publican los negocios, que son los únicos responsables de su contenido, condiciones, disponibilidad y cumplimiento. Klendar no vende productos ni servicios ni cobra por los canjeos.</li>
+  <li>Las ofertas y eventos los publican los negocios, que son los únicos responsables de su contenido, condiciones, disponibilidad y cumplimiento. Klendar no vende productos ni servicios ni cobra por los canjes.</li>
   <li>Cada código QR es <strong>personal y de un solo uso</strong>, válido 5 minutos desde que lo generas y solo dentro de la ventana de la oferta. Cada persona puede canjear cada oferta una vez, salvo que el negocio indique otra cosa.</li>
   <li>El negocio puede exigir que la persona que canjea sea la titular de la cuenta y que se cumplan las condiciones publicadas (consumo mínimo, aforo, horario).</li>
   <li>Si un negocio no honra una oferta publicada, denúncialo desde la app; podremos suspender al negocio.</li>
@@ -195,7 +195,7 @@ ES['terminos'] = ('Términos de uso', 'Condiciones de uso de la app Klendar para
 </ul>
 
 <h2>5. Uso permitido</h2>
-<p>No está permitido: usar la app para fines ilegales; intentar acceder a datos de otras personas o negocios; manipular canjeos, reseñas o valoraciones; extraer datos de forma automatizada; ni interferir con el funcionamiento del servicio.</p>
+<p>No está permitido: usar la app para fines ilegales; intentar acceder a datos de otras personas o negocios; manipular canjes, reseñas o valoraciones; extraer datos de forma automatizada; ni interferir con el funcionamiento del servicio.</p>
 
 <h2>6. Disponibilidad y cambios</h2>
 <p>Trabajamos para que Klendar esté disponible siempre, pero no garantizamos ausencia de interrupciones. Podemos modificar o retirar funciones. Si un cambio en estos términos es relevante, te avisaremos en la app con antelación razonable.</p>
@@ -258,7 +258,7 @@ ES['negocios'] = ('Condiciones para negocios', 'Condiciones de contratación del
 </ul>
 
 <h2>2. Servicio</h2>
-<p>Klendar permite al Negocio publicar ofertas flash y eventos, posts, su carta y horarios, gestionar su ficha, validar canjeos mediante QR y consultar estadísticas. Klendar no interviene en la venta ni cobra a las personas usuarias.</p>
+<p>Klendar permite al Negocio publicar ofertas flash y eventos, posts, su carta y horarios, gestionar su ficha, validar canjes mediante QR y consultar estadísticas. Klendar no interviene en la venta ni cobra a las personas usuarias.</p>
 
 <h2>3. Obligaciones del Negocio</h2>
 <ul>
@@ -270,13 +270,13 @@ ES['negocios'] = ('Condiciones para negocios', 'Condiciones de contratación del
 
 <h2>4. Planes, precio y facturación</h2>
 <ul>
-  <li>Klendar ofrece un <strong>plan gratuito</strong> con un número limitado de publicaciones activas a la vez y <strong>planes de pago</strong> con más capacidad y funciones, mediante una <strong>cuota mensual fija</strong> sin comisiones por canjeo. Los precios y límites de cada plan se comunican antes de la contratación y se muestran sin IVA.</li>
+  <li>Klendar ofrece un <strong>plan gratuito</strong> con un número limitado de publicaciones activas a la vez y <strong>planes de pago</strong> con más capacidad y funciones, mediante una <strong>cuota mensual fija</strong> sin comisiones por canje. Los precios y límites de cada plan se comunican antes de la contratación y se muestran sin IVA.</li>
   <li>Al darse de alta, el Negocio disfruta de un <strong>periodo de prueba gratuito</strong> del plan superior. Al terminar, pasa automáticamente al plan gratuito salvo que contrate uno de pago; sus publicaciones en curso no se borran.</li>
   <li>Pago por transferencia, domiciliación o tarjeta según se acuerde. Klendar emite factura. En caso de impago, tras un aviso y 15 días, el Negocio vuelve al plan gratuito.</li>
 </ul>
 
 <h2>5. Duración y baja</h2>
-<p>Los planes de pago son mensuales y se renuevan automáticamente. El Negocio puede darse de baja en cualquier momento con efecto al final del periodo pagado, escribiendo a <a href="mailto:info@klendar.app">info@klendar.app</a>. Klendar puede resolver el contrato por incumplimiento grave (no honrar ofertas, contenido ilícito, fraude en canjeos) con comunicación motivada.</p>
+<p>Los planes de pago son mensuales y se renuevan automáticamente. El Negocio puede darse de baja en cualquier momento con efecto al final del periodo pagado, escribiendo a <a href="mailto:info@klendar.app">info@klendar.app</a>. Klendar puede resolver el contrato por incumplimiento grave (no honrar ofertas, contenido ilícito, fraude en canjes) con comunicación motivada.</p>
 
 <h2>6. Moderación, suspensión y recurso</h2>
 <p>Klendar puede retirar contenido o suspender temporalmente la ficha ante denuncias fundadas o incumplimientos. El Negocio recibirá la motivación y podrá recurrir en 15 días a <a href="mailto:info@klendar.app">info@klendar.app</a> (Reglamento (UE) 2022/2065).</p>
@@ -362,7 +362,7 @@ ES['normas'] = ('Normas de la comunidad', 'Qué se puede y qué no se puede publ
   <li>Fotos reales de tu local y productos, de las que tengas derechos.</li>
   <li>Alcohol y ocio nocturno: marca el negocio o la oferta como "+18". No se permite incitar al consumo excesivo ni dirigirse a menores (Ley 34/1988). Las publicaciones que mencionan bebidas alcohólicas se marcan +18 automáticamente y se revisan antes de publicarse.</li>
   <li>No se admite publicidad de tabaco, productos de vapeo ni juegos de azar o apuestas.</li>
-  <li>No manipules reseñas ni canjeos (cuentas propias, incentivos por valoraciones).</li>
+  <li>No manipules reseñas ni canjes (cuentas propias, incentivos por valoraciones).</li>
 </ul>
 <h2>Cómo denunciar</h2>
 <p>En cualquier negocio, oferta, reseña o post encontrarás la opción "Denunciar". Indica el motivo y, si quieres, detalles. Recibiremos la denuncia con tu identidad (no se muestra al denunciado).</p>
@@ -414,12 +414,12 @@ ES['eliminar-cuenta'] = ('Eliminar tu cuenta', 'Cómo eliminar tu cuenta de Klen
 <p>Si no puedes acceder a la app, escribe a <a href="mailto:info@klendar.app?subject=Eliminar%20mi%20cuenta">info@klendar.app</a> desde el email de tu cuenta con el asunto "Eliminar mi cuenta". La eliminaremos en un máximo de 30 días y te lo confirmaremos.</p>
 <h2>Qué se elimina</h2>
 <ul>
-  <li>Tu perfil (nombre, email, fecha de nacimiento, foto), tus favoritos, tus preferencias y tokens de notificaciones, tu ubicación y tu historial de canjeos.</li>
+  <li>Tu perfil (nombre, email, fecha de nacimiento, foto), tus favoritos, tus preferencias y tokens de notificaciones, tu ubicación y tu historial de canjes.</li>
   <li>Tus reseñas se eliminan junto con tu cuenta.</li>
 </ul>
 <h2>Qué se conserva y por qué</h2>
 <ul>
-  <li>Estadísticas <strong>anónimas</strong> de los negocios (número de canjeos o vistas), que ya no se vinculan a ti.</li>
+  <li>Estadísticas <strong>anónimas</strong> de los negocios (número de canjes o vistas), que ya no se vinculan a ti.</li>
   <li>Si eres propietario/a de un negocio con cuota facturada, los datos de facturación se conservan el plazo legal (fiscal 4 años, mercantil 6 años). Antes de eliminar la cuenta deberás transferir la propiedad del negocio a otra persona o darlo de baja.</li>
   <li>Denuncias resueltas, 2 años, para cumplir el Reglamento de Servicios Digitales.</li>
 </ul>

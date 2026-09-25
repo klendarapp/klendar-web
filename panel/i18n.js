@@ -9,7 +9,7 @@ const I18N = makeI18N({
       'With the same account you use in the app. If your business is not registered yet, do it from the app: Profile → Register my business.',
     'Email': 'Email',
     'Contraseña': 'Password',
-    'Entrar': 'Sign in',
+    'Entrar': 'Log in',
     'He olvidado la contraseña': 'I forgot my password',
     'Correo o contraseña incorrectos.': 'Wrong email or password.',
     'Invalid login credentials': 'Wrong email or password.',
@@ -24,7 +24,7 @@ const I18N = makeI18N({
     '· negocios': '· business',
     'Negocio': 'Business',
     'Sesión': 'Session',
-    'Salir': 'Sign out',
+    'Salir': 'Log out',
     'Menú': 'Menu',
     '☰ Menú': '☰ Menu',
     'Resumen': 'Overview',
@@ -58,13 +58,13 @@ const I18N = makeI18N({
     'Cómo va': 'How it is going',
     'Vistas': 'Views',
     'Vistas (30 días)': 'Views (30 days)',
-    'Canjeos (30 días)': 'Redemptions (30 days)',
+    'Canjes (30 días)': 'Redemptions (30 days)',
     'Favoritos': 'Favourites',
     'Valoración': 'Rating',
     'Publicaciones activas': 'Active publications',
     'Últimas publicaciones': 'Latest publications',
     'Todavía no has publicado nada.': 'You have not published anything yet.',
-    'Nueva oferta relámpago': 'New flash deal',
+    'Nueva oferta flash': 'New flash offer',
     'Nuevo evento': 'New event',
     'Validar un código': 'Validate a code',
     'Canjeable con QR durante unas horas': 'Redeemable with a QR code for a few hours',
@@ -77,9 +77,9 @@ const I18N = makeI18N({
     'en revisión': 'under review',
 
     // ── Publicaciones ─────────────────────────────────────────────────────
-    '⚡ Nueva oferta': '⚡ New deal',
+    '⚡ Nueva oferta': '⚡ New offer',
     '📅 Nuevo evento': '📅 New event',
-    'Oferta relámpago': 'Flash deal',
+    'Oferta flash': 'Flash offer',
     'Evento': 'Event',
     'Editar publicación': 'Edit publication',
     'Borrar publicación': 'Delete publication',
@@ -128,7 +128,7 @@ const I18N = makeI18N({
     'Ese vídeo pesa más de 60 MB.': 'That video is over 60 MB.',
     'Publicar ahora (desactívalo para dejarlo en borrador)':
       'Publish now (turn it off to leave it as a draft)',
-    'Una oferta relámpago necesita principio y fin.':
+    'Una oferta flash necesita principio y fin.':
       'A flash deal needs a start and an end.',
     'El fin tiene que ser posterior al principio.': 'The end must be after the start.',
     'Has llegado al límite de publicaciones activas de tu plan. Pausa alguna o cambia de plan.':
@@ -331,7 +331,7 @@ const I18N = makeI18N({
     'Pide a la persona su código (lo tiene en la app, debajo del QR) y escríbelo aquí. Cada código vale una vez: al validarlo queda marcado y el aforo baja. Si tienes cámara, desde la app es más rápido.':
       'Ask the person for their code (it is in the app, under the QR) and type it here. Each code works once: validating it marks it and the capacity goes down. If you have a camera, the app is quicker.',
     'código(s) se quedaron sin usar.': 'code(s) were left unused.',
-    '¿Oferta o evento?': 'Deal or event?',
+    '¿Oferta o evento?': 'Offer or event?',
 
     // ── Ayuda y textos largos ─────────────────────────────────────────────
     'Qué puedes hacer aquí': 'What you can do here',
@@ -339,7 +339,7 @@ const I18N = makeI18N({
       'This dashboard does the same as the app, from a computer or a phone browser: register the business, publish deals and events, see how they are doing, validate codes at the door and manage the team.',
     'Para validar, escanea el QR con la cámara (la del móvil o la del portátil) o escribe el código que la persona tiene debajo del QR.':
       'To validate, scan the QR with the camera (your phone or laptop) or type the code the person has under the QR.',
-    'Una oferta que funciona': 'A deal that works',
+    'Una oferta que funciona': 'A offer that works',
     'Ventana realista: lo que de verdad puedes servir.':
       'A realistic window: what you can actually serve.',
     'Aforo si hay stock limitado; así nadie se lleva un chasco.':

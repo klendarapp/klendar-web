@@ -77,7 +77,7 @@ def guide():
         ('2', 'Da de alta tu negocio', 'Perfil → «¿Tienes un negocio? Dalo de alta». Nombre, categoría, ubicación en el mapa, contacto y NIF. Lo verificamos en 24–48 h.'),
         ('3', 'Completa tu ficha', 'Portada, logo, horarios, carta y redes. Es lo que ve la gente al tocar tu nombre.'),
         ('4', 'Publica tu primera oferta flash', 'Panel → «Nueva oferta flash». Título claro, una foto real, ventana horaria, descuento y aforo. Publica y ya está en el feed de quien esté cerca.'),
-        ('5', 'Valida los canjeos', 'Cuando alguien te enseñe el QR: Panel → «Validar códigos QR» y escanéalo. Verás qué aplicar y el nombre del cliente.'),
+        ('5', 'Valida los canjes', 'Cuando alguien te enseñe el QR: Panel → «Validar códigos QR» y escanéalo. Verás qué aplicar y el nombre del cliente.'),
     ]
     for n, title, body in steps:
         c.setFillColor(CARD); c.roundRect(M, y - 19 * mm, W - 2 * M, 21 * mm, 4 * mm, fill=1, stroke=0)
@@ -105,7 +105,7 @@ def guide():
     x2 = M + colw + 6 * mm
     c.setFillColor(CARD); c.roundRect(x2, y - 52 * mm, colw, 58 * mm, 4 * mm, fill=1, stroke=0)
     c.setFillColor(INK); c.setFont('Onest-Bold', 12.5); c.drawString(x2 + 6 * mm, y - 2 * mm, 'Planes y precio')
-    para(c, '<b><font color="#FF4D6D">Prueba gratis de 8 semanas</font></b> con todo incluido al darte de alta. '
+    para(c, '<b><font color="#FF4D6D">Prueba gratis de 30 días</font></b> con todo incluido al darte de alta. '
             'Después, plan <b>Gratis</b> (hasta 2 publicaciones activas) o un plan de pago con <b>cuota mensual fija</b> y sin comisiones. '
             'Cambias o te das de baja cuando quieras.<br/><br/>'
             'Condiciones completas en <b>klendar.app/negocios</b>.',
