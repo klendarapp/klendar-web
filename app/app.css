@@ -123,7 +123,7 @@ a.aviso:hover { text-decoration: none; border-color: var(--ink-2); }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 /* Entrar con Google: blanco, como pide Google, con su «G». */
-.google-hueco { margin-top: 18px; max-width: 440px; }
+.google-hueco { margin-top: 18px; }
 .pill.google { display: inline-flex; align-items: center; gap: 10px; background: #fff; color: #1f1f1f;
   border: 1px solid #dadce0; font-weight: 700; }
 .pill.google:hover { background: #f7f8f8; }
@@ -203,3 +203,18 @@ input[type=file] { max-width: 100%; }
 /* Teléfono: prefijo y número en la misma fila. */
 .fila-tel { display: grid; grid-template-columns: 110px 1fr; gap: 10px; }
 .google-hueco .acciones { margin-bottom: 8px; }
+
+/* Formularios de acceso, como la app: el error debajo de su campo. */
+.formu .err-campo { color: #FF5C5C; font-size: 13px; font-weight: 500; }
+.formu input[aria-invalid=true]:not([type=checkbox]), .formu input[aria-invalid=true]:not([type=checkbox]):focus { border-color: #FF5C5C; box-shadow: 0 0 0 1px #FF5C5C; }
+/* Como en la app: con error, la pista del campo deja sitio al error. */
+.formu .con-error > small:not(.err-campo) { display: none; }
+.formu .derecha { text-align: right; margin: -6px 0 0; font-size: 14px; }
+.formu .pie-form { font-size: 13px; margin: 0; }
+.formu .pie-form a { white-space: nowrap; }
+/* Las otras formas de entrar, una debajo de otra y del mismo ancho. */
+.alternativas, .google-hueco .acciones { display: grid; gap: 10px; margin: 0; }
+.alternativas > *, .google-hueco .acciones > * { width: 100%; justify-content: center; }
+.alternativas + .google-hueco { margin-top: 10px; }
+.formu .acciones { margin: 0; }
+.formu .err:empty { display: none; }

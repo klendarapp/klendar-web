@@ -60,16 +60,6 @@ async function subeFoto(carpeta, archivo, lado = 1600) {
   return sb.storage.from('business-images').getPublicUrl(ruta).data.publicUrl;
 }
 
-/** Un botón que se bloquea mientras trabaja, para no mandar dos veces. */
-async function ocupado(boton, trabajo) {
-  if (boton.disabled) return;
-  const antes = boton.textContent;
-  boton.disabled = true;
-  boton.textContent = t('Un momento…');
-  try { await trabajo(); } catch (e) { toast(e.message || amable(''), true); } finally {
-    if (boton.isConnected) { boton.disabled = false; boton.textContent = antes; }
-  }
-}
 
 // ── Avisos ────────────────────────────────────────────────────────────────
 /** Las rutas de la app, llevadas a la web. */
@@ -404,7 +394,7 @@ RUTAS.ajustes = async () => {
   fp.addEventListener('submit', (ev) => {
     ev.preventDefault();
     const nombre = fp.nombre.value.trim();
-    if (!nombre) { $('#err-perfil').textContent = t('Pon tu nombre.'); return; }
+    if (!validaForm(fp, { nombre: VALIDA.requerido })) return;
     $('#err-perfil').textContent = '';
     ocupado($('#g-perfil'), async () => {
       const avatar = foto ? await subeFoto('avatars', foto, 512) : undefined;
@@ -697,10 +687,7 @@ RUTAS['ultimo-paso'] = async (_p, params) => {
         : 'Para seguir usando Klendar, acepta los términos y la política de privacidad. Solo te lo preguntamos una vez.'))}</p>
       <form id="f" class="formu" novalidate>
         ${pideFecha ? `<label>${esc(t('Fecha de nacimiento'))}<input name="birth" type="date" required></label>` : ''}
-        <label class="check"><input type="checkbox" name="terms" required>
-          <span>${t('He leído y acepto los <a href="/terminos/" target="_blank">términos</a> y la <a href="/privacidad/" target="_blank">privacidad</a>.')}</span></label>
-        <label class="check"><input type="checkbox" name="marketing">
-          <span>${esc(t('Quiero recibir novedades de Klendar (opcional).'))}</span></label>
+        ${casillaTerminos()}
         <p id="err" class="err" role="alert"></p>
         <button class="pill accent" id="seguir">${esc(t('Continuar'))}</button>
       </form>
@@ -711,17 +698,8 @@ RUTAS['ultimo-paso'] = async (_p, params) => {
     ev.preventDefault();
     const err = $('#err');
     err.textContent = '';
-    let nac = null;
-    if (pideFecha) {
-      nac = f.birth.value;
-      if (!nac) { err.textContent = t('Pon tu fecha de nacimiento.'); return; }
-      const d = new Date(`${nac}T12:00:00`);
-      const hoy = new Date();
-      let edad = hoy.getFullYear() - d.getFullYear();
-      if (hoy.getMonth() < d.getMonth() || (hoy.getMonth() === d.getMonth() && hoy.getDate() < d.getDate())) edad -= 1;
-      if (edad < 14) { err.textContent = t('Para usar Klendar hay que tener 14 años o más.'); return; }
-    }
-    if (!f.terms.checked) { err.textContent = t('Tienes que aceptar los términos y la privacidad.'); return; }
+    if (!validaForm(f, { ...(pideFecha ? { birth: VALIDA.nacimiento } : {}), terms: VALIDA.terminos })) return;
+    const nac = pideFecha ? f.birth.value : null;
     ocupado($('#seguir'), async () => {
       await llamar('accept_terms', { p_version: '2026-09', p_birth_date: nac });
       if (f.marketing.checked) await llamar('set_marketing_consent', { p_value: true });

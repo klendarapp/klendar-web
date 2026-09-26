@@ -66,7 +66,6 @@ const toast = (msg, bad = false) => {
 const ERRORS = {
   invalid_name: 'Pon el nombre del negocio (dos letras como mínimo).',
   invalid_location: 'Marca en el mapa dónde está el local.',
-  auth_required: 'Tu sesión ha caducado. Vuelve a entrar.',
   not_authorized: 'No tienes permiso para esto. Pídeselo a quien lleve el negocio.',
   user_not_found: 'No hay ninguna cuenta con ese correo.',
   owner_untouchable: 'Al propietario no se le cambia el rol desde aquí.',
@@ -84,7 +83,7 @@ const ERRORS = {
   offer_not_found: 'Esa publicación ya no existe.',
   not_found: 'Eso ya no existe.',
   rate_limited: 'Vas muy rápido. Espera un momento y vuelve a probar.',
-  auth_required: 'Vuelve a entrar en tu cuenta.',
+  auth_required: 'Tu sesión ha caducado. Vuelve a entrar para continuar.',
 };
 
 /** El error tal y como se lo enseñamos a quien lleva el negocio.
@@ -420,18 +419,37 @@ function renderBizPicker() {
   };
 }
 
-$('#doLogin').onclick = async () => {
+// Entrar: los mismos mensajes que la app y que «Tu cuenta» (assets/auth-errors.js).
+const errAuth = (error) => window.KL_AUTH_ERROR(error, I18N.lang);
+/** Bloquea el botón mientras se espera, para no mandar dos veces. */
+async function esperando(boton, trabajo) {
+  if (boton.disabled) return;
+  boton.disabled = true;
+  try { await trabajo(); } finally { boton.disabled = false; }
+}
+$('#doLogin').onclick = () => {
   $('#loginErr').textContent = '';
-  const { error } = await sb.auth.signInWithPassword({ email: $('#email').value.trim(), password: $('#password').value });
-  if (error) { $('#loginErr').textContent = error.message === 'Invalid login credentials' ? 'Correo o contraseña incorrectos.' : error.message; return; }
-  boot();
+  if (!KL_VALIDA.correoYClave(I18N.lang, $('#email'), $('#password'))) return;
+  esperando($('#doLogin'), async () => {
+    const { error } = await sb.auth.signInWithPassword({ email: $('#email').value.trim(), password: $('#password').value });
+    if (error) { $('#loginErr').textContent = errAuth(error); return; }
+    boot();
+  });
 };
-$('#doReset').onclick = async () => {
-  const email = $('#email').value.trim();
-  if (!email) { $('#loginErr').textContent = 'Escribe tu correo y vuelve a pulsar.'; return; }
-  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: `${APP_URL}/panel/` });
-  $('#loginErr').textContent = error ? error.message : '';
-  if (!error) toast('Te hemos enviado un correo para cambiar la contraseña.');
+$('#doReset').onclick = () => {
+  $('#loginErr').textContent = '';
+  KL_CAMPO($('#password'), null);
+  if (!KL_VALIDA.correoYClave(I18N.lang, $('#email'))) return;
+  esperando($('#doReset'), async () => {
+    // La contraseña nueva se pone en «Tu cuenta» (la misma pantalla que para
+    // todo el mundo) y al guardarla se vuelve aquí.
+    const { error } = await sb.auth.resetPasswordForEmail($('#email').value.trim(),
+      { redirectTo: `${location.origin}/app/?destino=%2Fpanel%2F#/nueva-clave` });
+    if (error) { $('#loginErr').textContent = errAuth(error); return; }
+    toast(I18N.lang === 'en'
+      ? `If ${$('#email').value.trim()} has an account, it'll get an email in a few seconds. Check spam too.`
+      : `Si ${$('#email').value.trim()} tiene cuenta, recibirá un correo en unos segundos. Mira también en spam.`);
+  });
 };
 $('#password').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('#doLogin').click(); });
 
@@ -449,13 +467,18 @@ $('#password').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('#d
     b.hidden = false;
     b.onclick = async () => {
       const { error } = await sb.auth.signInWithOAuth({ provider: prov, options: { redirectTo: `${location.origin}/panel/` } });
-      if (error) $('#loginErr').textContent = friendly(error.message);
+      if (error) $('#loginErr').textContent = errAuth(error);
     };
   }
   if (ext.phone && $('#doPhone')) $('#doPhone').hidden = false;
 })();
 $('#logout').onclick = async (e) => { e.preventDefault(); await sb.auth.signOut(); showLogin(); };
-sb.auth.onAuthStateChange((ev) => { if (ev === 'SIGNED_OUT') showLogin(); });
+sb.auth.onAuthStateChange((ev) => {
+  if (ev === 'SIGNED_OUT') showLogin();
+  // Un enlace de «he olvidado la contraseña» antiguo que traiga aquí: la
+  // contraseña nueva se pone en «Tu cuenta» y se vuelve al panel.
+  if (ev === 'PASSWORD_RECOVERY') location.href = '/app/?destino=%2Fpanel%2F#/nueva-clave';
+});
 $('#menuBtn').onclick = () => $('#side').classList.toggle('open');
 
 // ── Idioma ──────────────────────────────────────────────────────────────────

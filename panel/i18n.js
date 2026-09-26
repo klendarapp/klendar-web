@@ -409,7 +409,7 @@ const I18N = makeI18N({
     "Solicitud enviada. Ahora completa la ficha: logo, portada y horarios.": "Request sent. Now complete your page: logo, cover and opening hours.",
     "Pon el nombre del negocio (dos letras como mínimo).": "Add the business name (two letters at least).",
     "Marca en el mapa dónde está el local.": "Mark on the map where the venue is.",
-    "Tu sesión ha caducado. Vuelve a entrar.": "Your session has expired. Sign in again.",
+    "Tu sesión ha caducado. Vuelve a entrar para continuar.": "Your session has expired. Log in again to continue.",
     "El mapa no se puede cargar ahora mismo. Escribe la dirección y pulsa «Buscar en el mapa»: la localizamos igual.": "The map cannot load right now. Type the address and tap “Find on the map”: we will locate it anyway.",
     "Ubicación en el mapa": "Location on the map",
     "Es lo que usa la app para decir a qué distancia estás. Arrastra la chincheta hasta la puerta y guarda.": "This is what the app uses to say how far away you are. Drag the pin to the door and save.",
@@ -550,4 +550,7 @@ const I18N = makeI18N({
     "Sin conexión: código guardado": "No connection: code saved",
     "Se validará solo en cuanto vuelva la cobertura.": "It will be validated as soon as you are back online.",
     "Enviar ahora": "Send now",
+    "¿Has olvidado la contraseña?": "Forgot your password?",
+    "Tu cuenta está suspendida. Si crees que es un error, escríbenos a info@klendar.app.": "Your account is suspended. If you think this is a mistake, write to info@klendar.app.",
+    "No tienes permiso para esto.": "You don't have permission to do this.",
 });

@@ -190,3 +190,12 @@ a.link { color: var(--ink); font-weight: 700; text-decoration: underline; text-u
 .side a.nav .ic .ms { font-size: 20px; }
 .ph .ms { font-size: 22px; }
 .btn .ms { font-size: 18px; }
+
+/* Acceso: el error de cada campo debajo de él, como en la app. */
+.f .err-campo { color: #b3261e; font-size: 13px; font-weight: 500; }
+.f input[aria-invalid=true] { border-color: #b3261e; box-shadow: 0 0 0 1px #b3261e; }
+@media (prefers-color-scheme: dark) {
+  .f .err-campo { color: #FF9B9B; }
+  .f input[aria-invalid=true] { border-color: #FF9B9B; box-shadow: 0 0 0 1px #FF9B9B; }
+}
+.login .err:empty { display: none; }

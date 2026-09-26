@@ -87,6 +87,9 @@ const ERRORES = {
   rate_limited: 'Vas muy rápido. Espera un momento y vuelve a probar.',
   not_enough_stamps: 'Todavía te faltan sellos para el premio.',
 };
+/** Un error de acceso (entrar, registrarse, códigos) dicho como en la app. */
+const errAuth = (error) => window.KL_AUTH_ERROR(error, EN ? 'en' : 'es');
+
 function amable(msg) {
   const m = String(msg || '');
   for (const [k, v] of Object.entries(ERRORES)) {
@@ -123,7 +126,12 @@ async function sesion() {
   YO = data.session?.user || null;
   return YO;
 }
-sb.auth.onAuthStateChange((_ev, s) => { YO = s?.user || null; });
+sb.auth.onAuthStateChange((ev, s) => {
+  YO = s?.user || null;
+  // El enlace de «he olvidado la contraseña» abre sesión y trae aquí; Supabase
+  // se come la ruta (#/nueva-clave), así que se lleva a mano.
+  if (ev === 'PASSWORD_RECOVERY') location.hash = '#/nueva-clave';
+});
 
 function exigeSesion(ruta) {
   if (YO) return true;
@@ -169,7 +177,7 @@ async function botonGoogle(siguiente, destino = '/app/') {
       const vuelta = new URL(destino, location.origin);
       if (siguiente) vuelta.searchParams.set('siguiente', siguiente);
       const { error } = await sb.auth.signInWithOAuth({ provider: b.dataset.prov, options: { redirectTo: vuelta.toString() } });
-      if (error) toast(amable(error.message), true);
+      if (error) toast(errAuth(error), true);
     };
   });
 }
@@ -325,80 +333,215 @@ RUTAS[''] = async () => {
   };
 };
 
+// ── Formularios de acceso: como la app ────────────────────────────────────
+// El error de cada campo va debajo de él (y se quita al corregirlo), el
+// botón se bloquea mientras se espera y los textos son los de la app
+// (AuthForm): «Obligatorio», «Ese correo no parece válido»…
+const VALIDA = {
+  requerido: (v) => (String(v).trim() ? null : t('Obligatorio')),
+  correo: (v) => (!String(v).trim() ? t('Obligatorio')
+    : CORREO_OK.test(String(v).trim()) ? null : t('Ese correo no parece válido')),
+  clave: (v) => (!v ? t('Obligatorio') : v.length < 8 ? t('Mínimo 8 caracteres') : null),
+  // 14 años (LOPDGDD art. 7), como AuthForm.birthDate.
+  nacimiento: (v) => (!v ? t('Obligatorio')
+    : edadDe(v) < 14 ? (EN ? 'You need to be at least 14 to use Klendar' : 'Necesitas tener al menos 14 años para usar Klendar') : null),
+  terminos: (v) => (v ? null : t('Tienes que aceptar los términos y la política de privacidad.')),
+};
+
+/** Años cumplidos a día de hoy de una fecha AAAA-MM-DD. */
+function edadDe(nac) {
+  const d = new Date(`${nac}T12:00:00`);
+  const hoy = new Date();
+  let edad = hoy.getFullYear() - d.getFullYear();
+  if (hoy.getMonth() < d.getMonth() || (hoy.getMonth() === d.getMonth() && hoy.getDate() < d.getDate())) edad -= 1;
+  return edad;
+}
+
+/** La casilla de términos, igual en el alta y en «un último paso». */
+const casillaTerminos = () => `<label class="check"><input type="checkbox" name="terms" required>
+  <span>${esc(t('He leído y acepto los'))} <a href="${EN ? '/en/terms/' : '/terminos/'}" target="_blank">${esc(t('Términos de uso'))}</a>
+    ${esc(t('y la'))} <a href="${EN ? '/en/privacy/' : '/privacidad/'}" target="_blank">${esc(t('Política de privacidad'))}</a></span></label>
+  <label class="check"><input type="checkbox" name="marketing">
+  <span>${esc(t('Quiero recibir novedades y ofertas destacadas por correo (opcional).'))}</span></label>`;
+
+function errorCampo(el, msg) {
+  const label = el.closest('label') || el.parentElement;
+  const id = `err-${el.name}`;
+  let s = document.getElementById(id);
+  label.classList.toggle('con-error', Boolean(msg));
+  if (!msg) {
+    s?.remove();
+    el.removeAttribute('aria-invalid');
+    el.removeAttribute('aria-describedby');
+    return;
+  }
+  if (!s) {
+    s = document.createElement('small');
+    s.className = 'err-campo';
+    s.id = id;
+    if (label.classList.contains('check')) label.insertAdjacentElement('afterend', s);
+    else label.appendChild(s);
+    el.addEventListener(el.type === 'checkbox' ? 'change' : 'input', () => errorCampo(el, null), { once: true });
+  }
+  s.textContent = msg;
+  el.setAttribute('aria-invalid', 'true');
+  el.setAttribute('aria-describedby', id);
+}
+
+/** `reglas`: { nombreDelCampo: (valor, form) => mensaje | null }. */
+function validaForm(form, reglas) {
+  let primero = null;
+  for (const [nombre, regla] of Object.entries(reglas)) {
+    const el = form.elements[nombre];
+    if (!el) continue;
+    const msg = regla(el.type === 'checkbox' ? el.checked : el.value, form);
+    errorCampo(el, msg);
+    if (msg && !primero) primero = el;
+  }
+  primero?.focus();
+  return !primero;
+}
+
+/** Un botón que se bloquea mientras trabaja, para no mandar dos veces. */
+async function ocupado(boton, trabajo) {
+  if (boton.disabled) return;
+  const antes = boton.textContent;
+  boton.disabled = true;
+  boton.textContent = t('Un momento…');
+  try { await trabajo(); } catch (e) { toast(e.message || amable(''), true); } finally {
+    if (boton.isConnected) { boton.disabled = false; boton.textContent = antes; }
+  }
+}
+
+/** «Enviar otro código» con su cuenta atrás de 60 s, como la app. */
+function reenvio(boton, enviar) {
+  let i = null;
+  const arranca = () => {
+    let falta = 60;
+    boton.disabled = true;
+    const pinta1 = () => {
+      boton.textContent = falta > 0
+        ? (EN ? `You can ask for another in ${falta} s` : `Puedes pedir otro en ${falta} s`)
+        : t('Enviar otro código');
+      boton.disabled = falta > 0;
+    };
+    pinta1();
+    clearInterval(i);
+    i = setInterval(() => { falta -= 1; pinta1(); if (falta <= 0) clearInterval(i); }, 1000);
+  };
+  boton.onclick = async () => { if (await enviar()) arranca(); };
+  return arranca;
+}
+
+/** Lo que manda la app al crear la cuenta con un código (el texto legal de
+ * debajo dice que al continuar se aceptan los términos). */
+const DATOS_ALTA = () => ({ terms_accepted: true, terms_version: '2026-09', user_type: 'user', locale: EN ? 'en' : 'es' });
+const conSiguiente = (ruta, siguiente) => `#/${ruta}${siguiente ? `?siguiente=${encodeURIComponent(siguiente)}` : ''}`;
+const legalCodigo = () => `<p class="muted pie-form">${esc(t('Si es tu primera vez, se creará tu cuenta al entrar. Al continuar aceptas los términos y la política de privacidad.'))}
+  <a href="${EN ? '/en/terms/' : '/terminos/'}" target="_blank">${esc(t('Términos de uso'))}</a> ·
+  <a href="${EN ? '/en/privacy/' : '/privacidad/'}" target="_blank">${esc(t('Política de privacidad'))}</a></p>`;
+
 // ── Entrar ────────────────────────────────────────────────────────────────
 RUTAS.entrar = async (_p, params) => {
   const siguiente = params.get('siguiente') || '';
   if (YO) return vuelve(siguiente);
   pinta(`
-    <h1>${esc(t('Entra en Klendar'))}</h1>
-    <p class="muted">${esc(t('Con la misma cuenta que en la app. Para mirar no hace falta: solo para guardar planes, tener favoritos y conseguir códigos.'))}</p>
+    <h1>${esc(t('Hola de nuevo'))}</h1>
+    <p class="muted">${esc(t('Para guardar planes, tener favoritos y conseguir códigos.'))}</p>
     <form id="f" class="formu" novalidate>
-      <label>${esc(t('Correo'))}<input name="email" type="email" autocomplete="username" required></label>
+      <label>${esc(t('Correo electrónico'))}<input name="email" type="email" autocomplete="username" required></label>
       <label>${esc(t('Contraseña'))}<input name="password" type="password" autocomplete="current-password" required></label>
+      <p class="derecha"><a href="#/recuperar">${esc(t('¿Has olvidado la contraseña?'))}</a></p>
       <p id="err" class="err" role="alert"></p>
       <button class="pill accent" type="submit">${esc(t('Entrar'))}</button>
     </form>
-    <p><button class="linkbtn" id="otp">${esc(t('Entrar con un código por correo'))}</button></p>
-    <p><a href="#/recuperar">${esc(t('He olvidado la contraseña'))}</a></p>
-    <p class="muted">${esc(t('¿No tienes cuenta?'))} <a href="#/registro${siguiente ? `?siguiente=${encodeURIComponent(siguiente)}` : ''}">${esc(t('Regístrate'))}</a></p>
-    <div id="google" class="google-hueco"></div>`);
+    <div class="alternativas">
+      <a class="pill" href="${conSiguiente('codigo-correo', siguiente)}">${esc(t('Entrar con un código por correo'))}</a>
+    </div>
+    <div id="google" class="google-hueco"></div>
+    <p class="muted">${esc(t('¿No tienes cuenta?'))} <a href="${conSiguiente('registro', siguiente)}">${esc(t('Regístrate'))}</a></p>`);
   botonGoogle(siguiente);
 
-  $('#f').onsubmit = async (e) => {
+  $('#f').onsubmit = (e) => {
     e.preventDefault();
-    const f = new FormData(e.target);
-    const email = String(f.get('email') || '').trim();
-    const password = String(f.get('password') || '');
-    if (!email || !password) { $('#err').textContent = t('Escribe tu correo y tu contraseña.'); return; }
-    const { error } = await sb.auth.signInWithPassword({ email, password });
-    if (error) { $('#err').textContent = amable(error.message); return; }
-    toast(t('Dentro'));
-    vuelve(siguiente);
+    const form = e.target;
+    $('#err').textContent = '';
+    if (!validaForm(form, { email: VALIDA.correo, password: (v) => (v ? null : t('Obligatorio')) })) return;
+    ocupado(form.querySelector('button[type=submit]'), async () => {
+      const { error } = await sb.auth.signInWithPassword({ email: form.email.value.trim(), password: form.password.value });
+      if (error) { $('#err').textContent = errAuth(error); return; }
+      toast(t('Dentro'));
+      vuelve(siguiente);
+    });
   };
-
-  $('#otp').onclick = () => { location.hash = `#/codigo-correo${siguiente ? `?siguiente=${encodeURIComponent(siguiente)}` : ''}`; };
 };
 
 // ── Entrar con un código por correo ───────────────────────────────────────
 RUTAS['codigo-correo'] = async (_p, params) => {
   const siguiente = params.get('siguiente') || '';
   pinta(`
-    <h1>${esc(t('Entra con un código'))}</h1>
-    <p class="muted">${esc(t('Te mandamos un código de seis cifras a tu correo. Sin contraseñas.'))}</p>
-    <form id="f1" class="formu">
-      <label>${esc(t('Correo'))}<input name="email" type="email" autocomplete="username" required></label>
+    <h1>${esc(t('Entrar sin contraseña'))}</h1>
+    <p class="muted" id="sub">${esc(t('Te mandamos un código al correo. Sin contraseñas que recordar.'))}</p>
+    <form id="f1" class="formu" novalidate>
+      <label>${esc(t('Correo electrónico'))}<input name="email" type="email" autocomplete="username" required></label>
       <p id="err" class="err" role="alert"></p>
-      <button class="pill accent" type="submit">${esc(t('Mandarme el código'))}</button>
+      <button class="pill accent" type="submit">${esc(EN ? 'Email me the code' : 'Enviarme el código')}</button>
+      ${legalCodigo()}
     </form>
-    <form id="f2" class="formu" hidden>
+    <form id="f2" class="formu" novalidate hidden>
       <label>${esc(t('Código'))}<input name="token" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required></label>
+      <p class="muted">${esc(t('En ese correo también hay un botón: si lo abres en este dispositivo, entras directamente.'))}</p>
       <p id="err2" class="err" role="alert"></p>
       <button class="pill accent" type="submit">${esc(t('Entrar'))}</button>
+      <div class="acciones">
+        <button type="button" class="pill" id="otro">${esc(t('Enviar otro código'))}</button>
+        <button type="button" class="pill" id="cambia">${esc(t('Cambiar de correo'))}</button>
+      </div>
     </form>`);
   let correo = '';
-  $('#f1').onsubmit = async (e) => {
-    e.preventDefault();
-    correo = String(new FormData(e.target).get('email') || '').trim();
-    if (!correo) return;
-    const { error } = await sb.auth.signInWithOtp({ email: correo, options: { shouldCreateUser: true } });
-    if (error) { $('#err').textContent = amable(error.message); return; }
-    $('#f1').hidden = true;
-    $('#f2').hidden = false;
-    toast(t('Te hemos mandado el código'));
+  const manda = async () => {
+    const { error } = await sb.auth.signInWithOtp({
+      email: correo,
+      options: { shouldCreateUser: true, emailRedirectTo: `${location.origin}/app/`, data: DATOS_ALTA() },
+    });
+    if (error) { ($('#f2').hidden ? $('#err') : $('#err2')).textContent = errAuth(error); return false; }
+    return true;
   };
-  $('#f2').onsubmit = async (e) => {
+  const cuentaAtras = reenvio($('#otro'), manda);
+  $('#f1').onsubmit = (e) => {
     e.preventDefault();
-    const token = String(new FormData(e.target).get('token') || '').trim();
-    const { error } = await sb.auth.verifyOtp({ email: correo, token, type: 'email' });
-    if (error) { $('#err2').textContent = t('Ese código no vale o ha caducado.'); return; }
-    toast(t('Dentro'));
-    vuelve(siguiente);
+    const form = e.target;
+    $('#err').textContent = '';
+    if (!validaForm(form, { email: VALIDA.correo })) return;
+    correo = form.email.value.trim();
+    ocupado(form.querySelector('button[type=submit]'), async () => {
+      if (!(await manda())) return;
+      $('#f1').hidden = true;
+      $('#f2').hidden = false;
+      $('#sub').textContent = EN ? `We wrote to ${correo}` : `Te hemos escrito a ${correo}`;
+      $('#f2').token.focus();
+      cuentaAtras();
+    });
+  };
+  $('#cambia').onclick = () => {
+    $('#f2').hidden = true; $('#f1').hidden = false;
+    $('#sub').textContent = t('Te mandamos un código al correo. Sin contraseñas que recordar.');
+  };
+  $('#f2').onsubmit = (e) => {
+    e.preventDefault();
+    const form = e.target;
+    $('#err2').textContent = '';
+    const token = form.token.value.replace(/\D/g, '');
+    if (token.length !== 6) { errorCampo(form.token, t('Son 6 cifras.')); return; }
+    ocupado(form.querySelector('button[type=submit]'), async () => {
+      const { error } = await sb.auth.verifyOtp({ email: correo, token, type: 'email' });
+      if (error) { $('#err2').textContent = errAuth(error); return; }
+      toast(t('Dentro'));
+      vuelve(siguiente);
+    });
   };
 };
 
-// ── Registrarse ───────────────────────────────────────────────────────────
-// Lo mismo que pide la app: nombre, fecha de nacimiento (14 años o más),
-// aceptar los términos y, aparte y sin marcar, las comunicaciones.
 // ── Entrar con el teléfono (SMS) ──────────────────────────────────────────
 // Lo mismo que la app: prefijo, número, código de seis cifras. Si es la
 // primera vez, se crea la cuenta y luego se piden edad y términos.
@@ -408,7 +551,7 @@ RUTAS.movil = async (_p, params) => {
   const PREFIJOS = ['+34', '+351', '+33', '+44', '+39', '+49'];
   pinta(`
     <h1>${esc(t('Entrar con el teléfono'))}</h1>
-    <p class="muted">${esc(t('Te mandamos un código por SMS. Sin contraseñas.'))}</p>
+    <p class="muted" id="sub">${esc(t('Te mandamos un código por SMS. Sin contraseñas.'))}</p>
     <form id="f1" class="formu" novalidate>
       <div class="fila-tel">
         <label>${esc(t('País'))}<select name="prefijo">${PREFIJOS.map((x) => `<option>${x}</option>`).join('')}</select></label>
@@ -416,39 +559,62 @@ RUTAS.movil = async (_p, params) => {
       </div>
       <p id="err" class="err" role="alert"></p>
       <button class="pill accent" type="submit">${esc(t('Enviarme el código'))}</button>
-      <p class="muted" style="font-size:13px">${esc(t('Si es tu primera vez, se creará tu cuenta al entrar. Al continuar aceptas los términos y la política de privacidad.'))}</p>
+      ${legalCodigo()}
     </form>
-    <form id="f2" class="formu" hidden>
-      <p class="muted" id="enviado"></p>
+    <form id="f2" class="formu" novalidate hidden>
       <label>${esc(t('Código'))}<input name="token" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required></label>
       <p id="err2" class="err" role="alert"></p>
       <button class="pill accent" type="submit">${esc(t('Entrar'))}</button>
-      <p><button type="button" class="linkbtn" id="otro">${esc(t('Cambiar de número'))}</button></p>
+      <div class="acciones">
+        <button type="button" class="pill" id="otro">${esc(t('Enviar otro código'))}</button>
+        <button type="button" class="pill" id="cambia">${esc(t('Cambiar de número'))}</button>
+      </div>
     </form>`);
   let telefono = '';
-  $('#f1').onsubmit = async (e) => {
-    e.preventDefault();
-    const f = new FormData(e.target);
-    const numero = String(f.get('numero') || '').replace(/[\s.-]/g, '');
-    if (!/^\d{6,12}$/.test(numero)) { $('#err').textContent = t('Escribe un número válido'); return; }
-    telefono = `${f.get('prefijo')}${numero}`;
-    const { error } = await sb.auth.signInWithOtp({ phone: telefono });
-    if (error) { $('#err').textContent = amable(error.message); return; }
-    $('#f1').hidden = true; $('#f2').hidden = false;
-    $('#enviado').textContent = t('Te hemos enviado un SMS a') + ' ' + telefono;
+  const manda = async () => {
+    const { error } = await sb.auth.signInWithOtp({ phone: telefono, options: { data: DATOS_ALTA() } });
+    if (error) { ($('#f2').hidden ? $('#err') : $('#err2')).textContent = errAuth(error); return false; }
+    return true;
   };
-  $('#otro').onclick = () => { $('#f2').hidden = true; $('#f1').hidden = false; };
-  $('#f2').onsubmit = async (e) => {
+  const cuentaAtras = reenvio($('#otro'), manda);
+  $('#f1').onsubmit = (e) => {
     e.preventDefault();
-    const token = String(new FormData(e.target).get('token') || '').trim();
-    const { error } = await sb.auth.verifyOtp({ phone: telefono, token, type: 'sms' });
-    if (error) { $('#err2').textContent = t('Ese código no vale o ha caducado.'); return; }
-    toast(t('Dentro'));
-    if (destino && destino.startsWith('/')) { location.href = destino; return; }
-    vuelve(siguiente);
+    const form = e.target;
+    $('#err').textContent = '';
+    const numero = form.numero.value.replace(/[\s.-]/g, '');
+    if (!validaForm(form, { numero: () => (/^\d{6,12}$/.test(numero) ? null : t('Escribe un número válido')) })) return;
+    telefono = `${form.prefijo.value}${numero}`;
+    ocupado(form.querySelector('button[type=submit]'), async () => {
+      if (!(await manda())) return;
+      $('#f1').hidden = true; $('#f2').hidden = false;
+      $('#sub').textContent = EN ? `We sent a text to ${telefono}` : `Te hemos enviado un SMS a ${telefono}`;
+      $('#f2').token.focus();
+      cuentaAtras();
+    });
+  };
+  $('#cambia').onclick = () => {
+    $('#f2').hidden = true; $('#f1').hidden = false;
+    $('#sub').textContent = t('Te mandamos un código por SMS. Sin contraseñas.');
+  };
+  $('#f2').onsubmit = (e) => {
+    e.preventDefault();
+    const form = e.target;
+    $('#err2').textContent = '';
+    const token = form.token.value.replace(/\D/g, '');
+    if (token.length !== 6) { errorCampo(form.token, t('Son 6 cifras.')); return; }
+    ocupado(form.querySelector('button[type=submit]'), async () => {
+      const { error } = await sb.auth.verifyOtp({ phone: telefono, token, type: 'sms' });
+      if (error) { $('#err2').textContent = errAuth(error); return; }
+      toast(t('Dentro'));
+      if (destino && destino.startsWith('/')) { location.href = destino; return; }
+      vuelve(siguiente);
+    });
   };
 };
 
+// ── Registrarse ───────────────────────────────────────────────────────────
+// Lo mismo que pide la app: nombre, fecha de nacimiento (14 años o más),
+// términos y, aparte, si quiere novedades.
 RUTAS.registro = async (_p, params) => {
   const siguiente = params.get('siguiente') || '';
   // Desde «Acceso para negocios»: al terminar, al alta del negocio.
@@ -458,135 +624,153 @@ RUTAS.registro = async (_p, params) => {
     <h1>${esc(t(negocio ? 'Crea tu cuenta de negocio' : 'Crea tu cuenta'))}</h1>
     <p class="muted">${esc(t(negocio
       ? 'Primero tu cuenta personal (la misma para la web y la app). Justo después das de alta tu negocio.'
-      : 'Es la misma cuenta para la web y para la app.'))}</p>
+      : 'Un minuto y estás dentro. Es la misma cuenta para la web y para la app.'))}</p>
     <form id="f" class="formu" novalidate>
       <label>${esc(t('Nombre'))}<input name="name" autocomplete="name" maxlength="40" required></label>
-      <label>${esc(t('Correo'))}<input name="email" type="email" autocomplete="email" required></label>
-      <label>${esc(t('Contraseña'))} <small>${esc(t('(8 caracteres o más)'))}</small><input name="password" type="password" autocomplete="new-password" minlength="8" required></label>
+      <label>${esc(t('Correo electrónico'))}<input name="email" type="email" autocomplete="email" required></label>
+      <label>${esc(t('Contraseña'))}<input name="password" type="password" autocomplete="new-password" minlength="8" required>
+        <small>${esc(t('Mínimo 8 caracteres'))}</small></label>
       <label>${esc(t('Repite la contraseña'))}<input name="password2" type="password" autocomplete="new-password" minlength="8" required></label>
-      <label>${esc(t('Fecha de nacimiento'))}<input name="birth" type="date" required></label>
-      <label class="check"><input type="checkbox" name="terms" required>
-        <span>${t('He leído y acepto los <a href="/terminos/" target="_blank">términos</a> y la <a href="/privacidad/" target="_blank">privacidad</a>.')}</span></label>
-      <label class="check"><input type="checkbox" name="marketing">
-        <span>${esc(t('Quiero recibir novedades de Klendar (opcional).'))}</span></label>
+      <label>${esc(t('Fecha de nacimiento'))}<input name="birth" type="date" required>
+        <small>${esc(t('Solo para mostrarte ofertas adecuadas a tu edad.'))}</small></label>
+      ${casillaTerminos()}
       <p id="err" class="err" role="alert"></p>
-      <button class="pill accent" type="submit">${esc(t('Crear la cuenta'))}</button>
+      <button class="pill accent" type="submit">${esc(t('Crear cuenta'))}</button>
     </form>
-    <p class="muted">${esc(t('¿Ya tienes cuenta?'))} <a href="#/entrar${siguiente ? `?siguiente=${encodeURIComponent(siguiente)}` : ''}">${esc(t('Entra'))}</a></p>
-    <div id="google" class="google-hueco"></div>`);
+    <div id="google" class="google-hueco"></div>
+    <p class="muted">${esc(t('¿Ya tienes cuenta?'))} <a href="${conSiguiente('entrar', siguiente)}">${esc(t('Entra'))}</a></p>`);
   botonGoogle(negocio ? '' : siguiente, negocio ? '/panel/?alta=1' : '/app/');
 
-  $('#f').onsubmit = async (e) => {
+  $('#f').onsubmit = (e) => {
     e.preventDefault();
-    const f = new FormData(e.target);
-    const nombre = String(f.get('name') || '').trim();
-    const email = String(f.get('email') || '').trim();
-    const password = String(f.get('password') || '');
-    const nac = String(f.get('birth') || '');
+    const form = e.target;
     const err = $('#err');
-    if (!nombre || !email) { err.textContent = t('Faltan tu nombre o tu correo.'); return; }
+    err.textContent = '';
     // Las mismas comprobaciones que la app (AuthForm).
-    if (!CORREO_OK.test(email)) { err.textContent = t('Ese correo no parece válido.'); return; }
-    if (password.length < 8) { err.textContent = t('La contraseña tiene que tener al menos 8 caracteres.'); return; }
-    if (password !== String(f.get('password2') || '')) { err.textContent = t('Las contraseñas no coinciden.'); return; }
-    if (!nac) { err.textContent = t('Pon tu fecha de nacimiento.'); return; }
-    const d = new Date(`${nac}T12:00:00`);
-    const hoy = new Date();
-    let edad = hoy.getFullYear() - d.getFullYear();
-    if (hoy.getMonth() < d.getMonth() || (hoy.getMonth() === d.getMonth() && hoy.getDate() < d.getDate())) edad -= 1;
-    if (edad < 14) { err.textContent = t('Para usar Klendar hay que tener 14 años o más.'); return; }
-    if (!f.get('terms')) { err.textContent = t('Tienes que aceptar los términos y la privacidad.'); return; }
-
-    const { data, error } = await sb.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: destino,
-        data: {
-          display_name: nombre,
-          birth_date: nac,
-          terms_accepted: true,
-          terms_version: '2026-09',
-          marketing_consent: Boolean(f.get('marketing')),
-          user_type: 'user',
-          locale: EN ? 'en' : 'es',
-        },
-      },
+    const ok = validaForm(form, {
+      name: VALIDA.requerido,
+      email: VALIDA.correo,
+      password: VALIDA.clave,
+      password2: (v, f) => VALIDA.clave(v) || (v !== f.password.value ? t('Las contraseñas no coinciden') : null),
+      birth: VALIDA.nacimiento,
+      terms: VALIDA.terminos,
     });
-    if (error) { err.textContent = amable(error.message); return; }
-    if (!data.session) {
-      // El correo lleva enlace y código: el código sirve si lo abres en otro
-      // dispositivo (el ordenador aquí, el correo en el móvil).
-      pinta(`<h1>${esc(t('Mira tu correo'))}</h1>
-        <p class="muted">${esc(t('Te hemos mandado un enlace para confirmar la cuenta. Ábrelo y ya puedes entrar.'))}</p>
-        <form id="fc" class="formu" novalidate>
-          <label>${esc(t('O escribe aquí el código de 6 cifras del correo'))}
-            <input name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}"></label>
-          <p id="errc" class="err" role="alert"></p>
-          <button class="pill accent" type="submit">${esc(t('Confirmar'))}</button>
-        </form>
-        <p class="muted">${esc(t('¿No te llega? Mira en spam o en «Promociones».'))} <a href="#/entrar">${esc(t('Ir a entrar'))}</a></p>`);
-      I18N.translate(view);
-      $('#fc').onsubmit = async (ev) => {
-        ev.preventDefault();
-        const code = String(new FormData(ev.target).get('code') || '').replace(/\D/g, '');
-        if (code.length !== 6) { $('#errc').textContent = t('Son 6 cifras.'); return; }
-        const r = await sb.auth.verifyOtp({ email, token: code, type: 'signup' });
-        if (r.error) { $('#errc').textContent = t('Ese código no vale o ha caducado.'); return; }
-        toast(t('Cuenta confirmada'));
-        if (negocio) location.href = '/panel/?alta=1'; else vuelve(siguiente);
-      };
-      return;
-    }
-    toast(t('Cuenta creada'));
-    if (negocio) { location.href = '/panel/?alta=1'; return; }
-    vuelve(siguiente);
+    if (!ok) return;
+    const email = form.email.value.trim();
+    const nac = form.birth.value;
+    ocupado(form.querySelector('button[type=submit]'), async () => {
+      const { data, error } = await sb.auth.signUp({
+        email,
+        password: form.password.value,
+        options: {
+          emailRedirectTo: destino,
+          data: {
+            display_name: form.elements.name.value.trim(),
+            birth_date: nac,
+            terms_accepted: true,
+            terms_version: '2026-09',
+            marketing_consent: form.marketing.checked,
+            user_type: 'user',
+            locale: EN ? 'en' : 'es',
+          },
+        },
+      });
+      if (error) { err.textContent = errAuth(error); return; }
+      if (!data.session) {
+        // El correo lleva enlace y código: el código sirve si lo abres en otro
+        // dispositivo (el ordenador aquí, el correo en el móvil).
+        pinta(`<h1>${esc(t('Revisa tu correo'))}</h1>
+          <p class="muted">${esc(EN ? `We've sent a link to ${email} to confirm your account.` : `Te hemos enviado un enlace a ${email} para confirmar tu cuenta.`)}</p>
+          <form id="fc" class="formu" novalidate>
+            <label>${esc(t('O escribe aquí el código de 6 cifras del correo'))}
+              <input name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}"></label>
+            <p id="errc" class="err" role="alert"></p>
+            <button class="pill accent" type="submit">${esc(t('Confirmar'))}</button>
+          </form>
+          <p class="muted">${esc(t('¿No te llega? Mira en spam o en «Promociones».'))} <a href="#/entrar">${esc(t('Ir a entrar'))}</a></p>`);
+        I18N.translate(view);
+        $('#fc').onsubmit = (ev) => {
+          ev.preventDefault();
+          const fc = ev.target;
+          $('#errc').textContent = '';
+          const code = fc.code.value.replace(/\D/g, '');
+          if (code.length !== 6) { errorCampo(fc.code, t('Son 6 cifras.')); return; }
+          ocupado(fc.querySelector('button[type=submit]'), async () => {
+            const r = await sb.auth.verifyOtp({ email, token: code, type: 'signup' });
+            if (r.error) { $('#errc').textContent = errAuth(r.error); return; }
+            toast(t('Cuenta confirmada'));
+            if (negocio) location.href = '/panel/?alta=1'; else vuelve(siguiente);
+          });
+        };
+        return;
+      }
+      toast(t('Cuenta creada'));
+      if (negocio) { location.href = '/panel/?alta=1'; return; }
+      vuelve(siguiente);
+    });
   };
 };
 
 // ── Recuperar la contraseña ───────────────────────────────────────────────
 RUTAS.recuperar = async () => {
   pinta(`
-    <h1>${esc(t('Recupera tu contraseña'))}</h1>
-    <p class="muted">${esc(t('Te mandamos un enlace para poner una nueva.'))}</p>
-    <form id="f" class="formu">
-      <label>${esc(t('Correo'))}<input name="email" type="email" autocomplete="username" required></label>
+    <h1>${esc(t('Recuperar contraseña'))}</h1>
+    <p class="muted">${esc(t('Te enviamos un enlace para crear una nueva.'))}</p>
+    <form id="f" class="formu" novalidate>
+      <label>${esc(t('Correo electrónico'))}<input name="email" type="email" autocomplete="username" required></label>
       <p id="err" class="err" role="alert"></p>
-      <button class="pill accent" type="submit">${esc(t('Mandarme el enlace'))}</button>
+      <button class="pill accent" type="submit">${esc(t('Enviar enlace'))}</button>
     </form>`);
-  $('#f').onsubmit = async (e) => {
+  $('#f').onsubmit = (e) => {
     e.preventDefault();
-    const email = String(new FormData(e.target).get('email') || '').trim();
-    if (!email) return;
-    const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: `${location.origin}/app/#/nueva-clave` });
-    // Se dice lo mismo exista o no la cuenta: no damos pistas de quién está.
-    if (error && !/rate/i.test(error.message)) console.warn(error.message);
-    pinta(`<h1>${esc(t('Mira tu correo'))}</h1>
-      <p class="muted">${esc(t('Si hay una cuenta con ese correo, te llegará un enlace en un momento.'))}</p>`);
-    I18N.translate(view);
+    const form = e.target;
+    $('#err').textContent = '';
+    if (!validaForm(form, { email: VALIDA.correo })) return;
+    const email = form.email.value.trim();
+    ocupado(form.querySelector('button[type=submit]'), async () => {
+      const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: `${location.origin}/app/#/nueva-clave` });
+      // Se dice lo mismo exista o no la cuenta (Supabase no da pistas de quién
+      // está); sí se avisa si no hay red o si se ha pedido demasiadas veces.
+      if (error) { $('#err').textContent = errAuth(error); return; }
+      pinta(`<h1>${esc(t('Enlace enviado'))}</h1>
+        <p class="muted">${esc(EN ? `If ${email} has an account, it'll get an email in a few seconds. Check spam too.`
+          : `Si ${email} tiene cuenta, recibirá un correo en unos segundos. Mira también en spam.`)}</p>
+        <p><a class="pill" href="#/entrar">${esc(t('Ir a entrar'))}</a></p>`);
+      I18N.translate(view);
+    });
   };
 };
 
 RUTAS['nueva-clave'] = async () => {
   if (!YO) return RUTAS.recuperar();
   pinta(`
-    <h1>${esc(t('Pon una contraseña nueva'))}</h1>
-    <form id="f" class="formu">
-      <label>${esc(t('Contraseña nueva'))}<input name="p1" type="password" autocomplete="new-password" minlength="8" required></label>
-      <label>${esc(t('Repítela'))}<input name="p2" type="password" autocomplete="new-password" minlength="8" required></label>
+    <h1>${esc(t('Nueva contraseña'))}</h1>
+    <p class="muted">${esc(t('Elige una que no uses en otros sitios.'))}</p>
+    <form id="f" class="formu" novalidate>
+      <label>${esc(t('Contraseña'))}<input name="p1" type="password" autocomplete="new-password" minlength="8" required>
+        <small>${esc(t('Mínimo 8 caracteres'))}</small></label>
+      <label>${esc(t('Repite la contraseña'))}<input name="p2" type="password" autocomplete="new-password" minlength="8" required></label>
       <p id="err" class="err" role="alert"></p>
-      <button class="pill accent" type="submit">${esc(t('Guardar'))}</button>
+      <button class="pill accent" type="submit">${esc(t('Guardar contraseña'))}</button>
     </form>`);
-  $('#f').onsubmit = async (e) => {
+  $('#f').onsubmit = (e) => {
     e.preventDefault();
-    const f = new FormData(e.target);
-    const p1 = String(f.get('p1') || '');
-    if (p1.length < 8) { $('#err').textContent = t('La contraseña tiene que tener al menos 8 caracteres.'); return; }
-    if (p1 !== String(f.get('p2') || '')) { $('#err').textContent = t('Las contraseñas no coinciden.'); return; }
-    const { error } = await sb.auth.updateUser({ password: p1 });
-    if (error) { $('#err').textContent = amable(error.message); return; }
-    toast(t('Contraseña guardada'));
-    vuelve('');
+    const form = e.target;
+    $('#err').textContent = '';
+    const ok = validaForm(form, {
+      p1: VALIDA.clave,
+      p2: (v, f) => VALIDA.clave(v) || (v !== f.p1.value ? t('Las contraseñas no coinciden') : null),
+    });
+    if (!ok) return;
+    ocupado(form.querySelector('button[type=submit]'), async () => {
+      const { error } = await sb.auth.updateUser({ password: form.p1.value });
+      if (error) { $('#err').textContent = errAuth(error); return; }
+      toast(t('Contraseña actualizada'));
+      // Desde el panel de negocios se vuelve al panel.
+      const destino = new URLSearchParams(location.search).get('destino') || '';
+      if (/^\/[a-z]/.test(destino)) { location.href = destino; return; }
+      vuelve('');
+    });
   };
 };
 

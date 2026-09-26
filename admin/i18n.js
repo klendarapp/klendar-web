@@ -372,4 +372,10 @@ const I18N = makeI18N({
     'Borrar novedad': 'Delete news post',
     'novedad': 'news post',
     'Novedad de': 'News post from',
+    "¿Has olvidado la contraseña?": "Forgot your password?",
+    "Correo": "Email",
+    "Tu cuenta está suspendida. Si crees que es un error, escríbenos a info@klendar.app.": "Your account is suspended. If you think this is a mistake, write to info@klendar.app.",
+    "No tienes permiso para esto.": "You don't have permission to do this.",
+    "Esta cuenta no es administradora.": "This account is not an administrator.",
+    "Solo cuentas dadas de alta como administradoras.": "Only accounts registered as administrators.",
 });

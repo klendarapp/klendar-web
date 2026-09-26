@@ -56,7 +56,13 @@ async function rpc(fn, args = {}) {
   const { data, error } = await sb.rpc(fn, args);
   if (error) {
     const msg = error.message || '';
-    if (/not_admin|42501/.test(msg + error.code)) throw new Error('Esta cuenta no es administradora.');
+    // Suspendida y «no es administradora» llegan con el mismo código (42501):
+    // se distinguen por el mensaje.
+    if (msg.includes('account_suspended')) throw new Error(RPC_ERRORS.account_suspended);
+    if (msg.includes('not_admin')) throw new Error('Esta cuenta no es administradora.');
+    if (/auth_required|JWT/.test(msg)) throw new Error(window.KL_AUTH_TEXT('sesion', I18N.lang));
+    if (/Failed to fetch|NetworkError|Load failed/i.test(msg)) throw new Error(window.KL_AUTH_TEXT('sinRed', I18N.lang));
+    if (error.code === '42501') throw new Error('No tienes permiso para esto.');
     throw new Error(RPC_ERRORS[msg] || msg);
   }
   return data;
@@ -68,7 +74,7 @@ const RPC_ERRORS = {
   user_not_found: 'No existe ningún usuario con ese email.', cannot_remove_self: 'No puedes quitarte a ti mismo.', last_admin: 'Tiene que quedar al menos un administrador.',
   category_in_use: 'La categoría está en uso (negocios, publicaciones o subcategorías).', slug_required: 'El identificador (slug) es obligatorio.',
   title_body_required: 'Título y texto son obligatorios.', unknown_key: 'Clave de configuración desconocida.', invalid_amount: 'Importe no válido.', invalid_period: 'El fin del periodo es anterior al inicio.',
-  not_found: 'No encontrado.', account_suspended: 'Cuenta suspendida.',
+  not_found: 'No encontrado.', account_suspended: 'Tu cuenta está suspendida. Si crees que es un error, escríbenos a info@klendar.app.',
 };
 
 function toast(msg, bad = false) {
@@ -169,15 +175,42 @@ async function boot() {
   route();
 }
 function showLogin() { $('#login').hidden = false; $('#app').hidden = true; ME = null; }
-$('#doLogin').onclick = async () => {
+// Entrar: los mismos mensajes que la app, «Tu cuenta» y el panel
+// (assets/auth-errors.js).
+const errAuth = (error) => window.KL_AUTH_ERROR(error, I18N.lang);
+async function esperando(boton, trabajo) {
+  if (boton.disabled) return;
+  boton.disabled = true;
+  try { await trabajo(); } finally { boton.disabled = false; }
+}
+$('#doLogin').onclick = () => {
   $('#loginErr').textContent = '';
-  const { error } = await sb.auth.signInWithPassword({ email: $('#email').value.trim(), password: $('#password').value });
-  if (error) { $('#loginErr').textContent = error.message === 'Invalid login credentials' ? 'Email o contraseña incorrectos.' : error.message; return; }
-  boot();
+  if (!KL_VALIDA.correoYClave(I18N.lang, $('#email'), $('#password'))) return;
+  esperando($('#doLogin'), async () => {
+    const { error } = await sb.auth.signInWithPassword({ email: $('#email').value.trim(), password: $('#password').value });
+    if (error) { $('#loginErr').textContent = errAuth(error); return; }
+    boot();
+  });
+};
+$('#doReset').onclick = () => {
+  $('#loginErr').textContent = '';
+  KL_CAMPO($('#password'), null);
+  if (!KL_VALIDA.correoYClave(I18N.lang, $('#email'))) return;
+  esperando($('#doReset'), async () => {
+    const { error } = await sb.auth.resetPasswordForEmail($('#email').value.trim(),
+      { redirectTo: `${location.origin}/app/?destino=%2Fadmin%2F#/nueva-clave` });
+    if (error) { $('#loginErr').textContent = errAuth(error); return; }
+    toast(I18N.lang === 'en'
+      ? `If ${$('#email').value.trim()} has an account, it'll get an email in a few seconds. Check spam too.`
+      : `Si ${$('#email').value.trim()} tiene cuenta, recibirá un correo en unos segundos. Mira también en spam.`);
+  });
 };
 $('#password').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('#doLogin').click(); });
 $('#logout').onclick = async (e) => { e.preventDefault(); await sb.auth.signOut(); showLogin(); };
-sb.auth.onAuthStateChange((ev) => { if (ev === 'SIGNED_OUT') showLogin(); });
+sb.auth.onAuthStateChange((ev) => {
+  if (ev === 'SIGNED_OUT') showLogin();
+  if (ev === 'PASSWORD_RECOVERY') location.href = '/app/?destino=%2Fadmin%2F#/nueva-clave';
+});
 $('#menuBtn').onclick = () => $('#side').classList.toggle('open');
 
 // ── Idioma ──────────────────────────────────────────────────────────────────
