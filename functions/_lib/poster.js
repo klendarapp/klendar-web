@@ -43,13 +43,13 @@ export async function posterPage(id, lang) {
 <style>
   :root { color-scheme: light; }
   * { box-sizing: border-box; }
-  body { margin: 0; background: #EEE9E3; font-family: Manrope, system-ui, sans-serif; color: #0B0F1A; }
+  body { margin: 0; background: #EEE9E3; font-family: Manrope, system-ui, sans-serif; color: #0A0A0A; }
   .barra { max-width: 640px; margin: 0 auto; padding: 16px; display: flex; gap: 12px; align-items: center; }
-  .barra p { margin: 0; flex: 1; font-size: 14px; color: #5A6170; }
+  .barra p { margin: 0; flex: 1; font-size: 14px; color: #636363; }
   .barra button { font: inherit; font-weight: 700; border: 0; border-radius: 999px; padding: 12px 22px;
-    background: #FF4D6D; color: #0B0F1A; cursor: pointer; }
+    background: #FF4D6D; color: #0A0A0A; cursor: pointer; }
   .folio { background: #fff; max-width: 640px; margin: 0 auto 32px; padding: 48px 32px; text-align: center;
-    border-radius: 18px; box-shadow: 0 20px 60px -30px rgba(18,21,28,.35); }
+    border-radius: 18px; box-shadow: 0 20px 60px -30px rgba(10,10,10,.35); }
   .marca { font-family: Sora, sans-serif; font-weight: 800; letter-spacing: .18em; font-size: 14px; color: #C81E42; }
   h1 { font-family: Sora, sans-serif; font-size: clamp(28px, 7vw, 44px); line-height: 1.1; margin: 18px 0 10px; }
   .precio { display: inline-block; background: #FF4D6D; font-family: Sora, sans-serif; font-weight: 800;
@@ -58,7 +58,7 @@ export async function posterPage(id, lang) {
   #qr { width: min(300px, 70vw); margin: 0 auto; }
   #qr svg { width: 100%; height: auto; display: block; }
   .pie { font-size: 18px; font-weight: 700; margin: 22px 0 4px; }
-  .url { font-size: 12px; color: #5A6170; word-break: break-all; margin: 0; }
+  .url { font-size: 12px; color: #636363; word-break: break-all; margin: 0; }
   @page { size: A4; margin: 12mm; }
   @media print {
     body { background: #fff; }

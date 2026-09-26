@@ -3,7 +3,7 @@
    escaparate, así que menos aire y más densidad que en la portada. */
 
 main.pub { padding: 34px 20px 72px; }
-.pub a { color: var(--accent-text); }
+.pub a { color: var(--ink); }
 .pub .muted { color: var(--ink-2); }
 .pub .crumbs { font-size: 13px; color: var(--ink-2); margin-bottom: 14px; }
 .pub .crumbs a { color: var(--ink-2); font-weight: 600; }
@@ -69,7 +69,7 @@ main.pub { padding: 34px 20px 72px; }
 .pub .ocard { color: var(--ink); }
 .ocard { display: flex; gap: 14px; align-items: center; padding: 10px; border-radius: 20px;
   background: var(--elevated); border: 1px solid var(--glass-border); color: var(--ink); }
-.ocard:hover { text-decoration: none; border-color: var(--accent); }
+.ocard:hover { text-decoration: none; border-color: var(--ink-2); }
 .ocard img, .ocard .ph { width: 96px; height: 78px; border-radius: 14px; object-fit: cover; flex: none;
   background: var(--glass); display: grid; place-items: center; color: var(--ink-2); }
 .ocard-body { display: grid; gap: 3px; min-width: 0; }
@@ -87,20 +87,20 @@ main.pub { padding: 34px 20px 72px; }
 .cities { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 24px; }
 .cities a { padding: 8px 14px; border-radius: 999px; background: var(--glass); border: 1px solid var(--glass-border);
   color: var(--ink); font-weight: 700; font-size: 14px; }
-.cities a:hover { text-decoration: none; border-color: var(--accent); }
+.cities a:hover { text-decoration: none; border-color: var(--ink-2); }
 
 /* ── Explorar: buscador, filtros y paginación ─────────────────────────── */
 .finder { display: flex; gap: 8px; margin: 18px 0 6px; flex-wrap: wrap; }
 .finder input[type=search] { flex: 1 1 260px; min-width: 0; padding: 12px 16px; border-radius: 999px;
   border: 1px solid var(--glass-border); background: var(--glass); color: inherit; font: inherit; }
-.finder input[type=search]:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.finder input[type=search]:focus { outline: 2px solid var(--ink); outline-offset: 1px; }
 .filters { margin: 10px 0 4px; }
 .frow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px; }
 .flabel { font-size: 13px; color: var(--ink-2); margin-right: 2px; }
 .chip { padding: 7px 13px; border-radius: 999px; background: var(--glass); border: 1px solid var(--glass-border);
   font-size: 14px; font-weight: 600; color: inherit; }
-.chip:hover { text-decoration: none; border-color: var(--accent); }
-.chip.on { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.chip:hover { text-decoration: none; border-color: var(--ink-2); }
+.chip.on { background: var(--ink); color: var(--surface); border-color: var(--ink); }
 .chip.on .muted { color: inherit; opacity: .75; }
 .pager { display: flex; gap: 10px; align-items: center; margin: 18px 0; flex-wrap: wrap; }
 /* La carta escrita. */
@@ -117,7 +117,7 @@ main.pub { padding: 34px 20px 72px; }
 
 .info { display: grid; gap: 10px; margin: 0 0 18px; font-size: 15px; }
 .info div { display: flex; gap: 10px; }
-.info span:first-child { width: 22px; flex: none; color: var(--accent-text); display: inline-flex; padding-top: 1px; }
+.info span:first-child { width: 22px; flex: none; color: var(--ink-2); display: inline-flex; padding-top: 1px; }
 
 footer.pub-foot { border-top: 1px solid var(--glass-border); padding: 22px 0; font-size: 13px; color: var(--ink-2); }
 footer.pub-foot a { color: var(--ink-2); }
@@ -141,10 +141,10 @@ footer.pub-foot a { color: var(--ink-2); }
 .resenas header { display: flex; align-items: center; gap: 10px; }
 .resenas header > span:not(.stars):not(.av) { display: grid; flex: 1; min-width: 0; }
 .resenas .av { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; display: grid; place-items: center;
-  background: var(--accent-soft); font-weight: 800; flex: none; }
+  background: var(--soft); font-weight: 800; flex: none; }
 .resenas article > p { margin: 10px 0 0; }
 /* La respuesta del negocio, bajo la reseña (como en la app). */
-.resenas .respuesta { margin-top: 10px; padding: 10px 12px; border-radius: 14px; background: var(--accent-soft); }
+.resenas .respuesta { margin-top: 10px; padding: 10px 12px; border-radius: 14px; background: var(--soft); }
 .resenas .respuesta header { gap: 6px; font-size: 14px; }
 .resenas .respuesta header .ic { color: var(--ink-2); flex: none; }
 .resenas .respuesta header b { flex: 1; min-width: 0; }

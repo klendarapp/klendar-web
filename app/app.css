@@ -8,18 +8,18 @@
 .formu input:not([type]), .formu input[inputmode] {
   padding: 12px 14px; border-radius: 12px; border: 1px solid var(--glass-border);
   background: var(--glass); color: inherit; font: inherit; }
-.formu input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.formu input:focus { outline: 2px solid var(--ink); outline-offset: 1px; }
 .formu .check { display: flex; gap: 10px; align-items: flex-start; font-weight: 400; }
 .formu .check input { margin-top: 3px; width: 18px; height: 18px; }
 .err { color: #FF5C5C; min-height: 1em; margin: 0; font-size: 14px; }
-.linkbtn { background: none; border: 0; padding: 0; color: var(--accent-text); font: inherit;
+.linkbtn { background: none; border: 0; padding: 0; color: var(--ink); text-decoration: underline; text-underline-offset: 2px; font: inherit;
   font-weight: 700; cursor: pointer; }
-:root[data-theme=dark] .linkbtn, .linkbtn { color: var(--accent); }
+:root[data-theme=dark] .linkbtn, .linkbtn { color: var(--ink); }
 
 .hub { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin: 18px 0; }
 .hub-i { display: grid; gap: 4px; padding: 18px; border-radius: 18px; border: 1px solid var(--glass-border);
   background: var(--elevated); color: inherit; }
-.hub-i:hover { text-decoration: none; border-color: var(--accent); }
+.hub-i:hover { text-decoration: none; border-color: var(--ink-2); }
 .hub-i b { font-size: 17px; }
 .hub-i span { color: var(--ink-2); font-size: 14px; }
 
@@ -48,11 +48,11 @@
 .huecos span.lleno { background: var(--accent); border-color: var(--accent); }
 
 .hecho-ic { width: 64px; height: 64px; margin: 24px auto 0; border-radius: 50%; display: grid;
-  place-items: center; font-size: 30px; font-weight: 800; background: var(--accent); color: #fff; }
+  place-items: center; font-size: 30px; font-weight: 800; background: var(--ink); color: var(--surface); }
 .ticket .acciones { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
 
 .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 50;
-  background: var(--ink); color: var(--bg, #0B0F1A); padding: 12px 18px; border-radius: 14px;
+  background: var(--ink); color: var(--bg, #0A0A0A); padding: 12px 18px; border-radius: 14px;
   font-weight: 600; max-width: calc(100vw - 32px); box-shadow: 0 12px 30px rgba(0,0,0,.3); }
 .toast.bad { background: #FF5C5C; color: #fff; }
 
@@ -62,11 +62,11 @@
   background: var(--glass); color: inherit; font: inherit; }
 .formu input[type=checkbox], .formu input[type=radio], .formu input[type=range], .formu input[type=file] { padding: 0; }
 .formu textarea { resize: vertical; min-height: 110px; }
-.formu select:focus, .formu textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.formu select:focus, .formu textarea:focus { outline: 2px solid var(--ink); outline-offset: 1px; }
 .formu fieldset { border: 0; padding: 0; margin: 0; display: grid; gap: 8px; }
 .formu legend { font-weight: 600; font-size: 15px; margin-bottom: 8px; padding: 0; }
 .formu legend small { display: block; font-weight: 400; color: var(--ink-2); }
-.formu input[type=range] { width: 100%; accent-color: var(--accent); }
+.formu input[type=range] { width: 100%; accent-color: var(--ink); }
 .formu output { font-weight: 800; color: var(--ink); }
 .chips { display: flex !important; flex-wrap: wrap; gap: 8px !important; }
 .chips legend { width: 100%; }
@@ -74,8 +74,8 @@
   border: 1px solid var(--glass-border); background: var(--glass); font-weight: 600; font-size: 14px; cursor: pointer; }
 /* Como en la app: la opción elegida va rellena de acento, sin casilla. La
    casilla sigue ahí (teclado y lector de pantalla), solo que no se ve. */
-.chips label:has(input:checked) { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
-.chips label:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.chips label:has(input:checked) { border-color: var(--ink); background: var(--ink); color: var(--surface); }
+.chips label:has(input:focus-visible) { outline: 2px solid var(--ink); outline-offset: 2px; }
 .chips input { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
 .horas { grid-template-columns: 1fr 1fr; }
 .horas legend { grid-column: 1 / -1; }
@@ -85,7 +85,7 @@
 .bloque h2 { font-size: 20px; }
 .avatar-fila, .foto-fila { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
 .avatar { width: 64px; height: 64px; border-radius: 50%; overflow: hidden; display: grid; place-items: center;
-  background: var(--accent-soft); font-weight: 800; font-size: 24px; flex: none; }
+  background: var(--soft); font-weight: 800; font-size: 24px; flex: none; }
 .avatar img { width: 100%; height: 100%; object-fit: cover; }
 .foto-fila img { width: 120px; height: 90px; object-fit: cover; border-radius: 12px; }
 label.pill { cursor: pointer; }
@@ -98,11 +98,11 @@ label.pill { cursor: pointer; }
 button.pill:disabled { opacity: .6; cursor: progress; }
 
 .badge-n { display: inline-grid; place-items: center; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px;
-  background: var(--accent); color: #fff; font-size: 12px; font-weight: 800; vertical-align: 2px; }
+  background: var(--accent); color: var(--on-accent); font-size: 12px; font-weight: 800; vertical-align: 2px; }
 .avisos { display: grid; gap: 10px; margin: 16px 0; }
 .aviso { display: grid; gap: 4px; padding: 14px 16px; border-radius: 16px; border: 1px solid var(--glass-border);
   background: var(--elevated); color: inherit; }
-a.aviso:hover { text-decoration: none; border-color: var(--accent); }
+a.aviso:hover { text-decoration: none; border-color: var(--ink-2); }
 .aviso.nuevo { border-color: var(--accent); box-shadow: inset 4px 0 0 var(--accent); }
 .aviso span { color: var(--ink-2); }
 .aviso.pausada { opacity: .7; }
@@ -117,7 +117,7 @@ a.aviso:hover { text-decoration: none; border-color: var(--accent); }
 .estrellas input { position: absolute; opacity: 0; width: 1px; height: 1px; }
 .estrellas label { font-size: 36px; line-height: 1; color: var(--glass-border); cursor: pointer; padding: 2px; }
 .estrellas input:checked ~ label, .estrellas label:hover, .estrellas label:hover ~ label { color: #FFB84D; }
-.estrellas input:focus-visible + label { outline: 2px solid var(--accent); border-radius: 6px; }
+.estrellas input:focus-visible + label { outline: 2px solid var(--ink); border-radius: 6px; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 /* Entrar con Google: blanco, como pide Google, con su «G». */
@@ -151,18 +151,18 @@ a.aviso:hover { text-decoration: none; border-color: var(--accent); }
 .perfil-t { display: grid; flex: 1; min-width: 0; }
 .perfil-t b { font-family: var(--display); font-size: 20px; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .perfil-t small { color: var(--ink-2); font-size: 14px; overflow: hidden; text-overflow: ellipsis; }
-.perfil-t em { font-style: normal; font-weight: 700; font-size: 14px; color: var(--accent-text); margin-top: 2px; }
-:root[data-theme=dark] .perfil-t em { color: var(--accent); }
-@media (prefers-color-scheme: dark) { :root:not([data-theme=light]) .perfil-t em { color: var(--accent); } }
+.perfil-t em { font-style: normal; font-weight: 700; font-size: 14px; color: var(--ink-2); margin-top: 2px; }
+:root[data-theme=dark] .perfil-t em { color: var(--ink-2); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme=light]) .perfil-t em { color: var(--ink-2); } }
 .perfil > .ms, .fila > .ms:last-child, .invitacion > .ms:last-child { color: var(--ink-2); }
 
 .rapidos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 14px 0 4px; }
 .rapido { position: relative; display: flex; align-items: center; gap: 10px; min-height: 68px;
   padding: 12px 14px; border-radius: 20px; }
-.rapido .ms { color: var(--accent); }
+.rapido .ms { color: var(--ink); }
 .rapido b { font-size: 15px; line-height: 1.2; }
 .rapido .badge-n { position: absolute; top: 8px; left: 30px; }
-.rapido:focus-visible, .fila:focus-visible, .perfil:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.rapido:focus-visible, .fila:focus-visible, .perfil:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 
 .seccion-t { font-family: inherit; font-size: 14px; font-weight: 700; color: var(--ink-2);
   margin: 22px 4px 8px; letter-spacing: 0; }
@@ -174,8 +174,8 @@ a.aviso:hover { text-decoration: none; border-color: var(--accent); }
 .fila-t b { font-size: 15px; font-weight: 700; }
 .fila-t small { color: var(--ink-2); font-size: 13px; line-height: 1.35; }
 .invitacion { display: flex; align-items: center; gap: 14px; padding: 16px; border-radius: 22px; margin-top: 20px; }
-.inv-ic { width: 44px; height: 44px; border-radius: 14px; background: var(--accent-soft); display: grid;
-  place-items: center; color: var(--accent); flex: none; }
+.inv-ic { width: 44px; height: 44px; border-radius: 14px; background: var(--soft); display: grid;
+  place-items: center; color: var(--ink); flex: none; }
 .pill.ancho { width: 100%; justify-content: center; display: inline-flex; align-items: center; gap: 8px; margin-top: 24px; }
 
 /* Campos: los mismos que en la app. */
@@ -183,8 +183,8 @@ a.aviso:hover { text-decoration: none; border-color: var(--accent); }
 .formu select, .formu textarea {
   width: 100%; box-sizing: border-box; padding: 14px 16px; border-radius: 16px; font-size: 16px;
   border: 1px solid var(--glass-border); background: var(--glass); color: inherit; font-family: inherit; }
-.formu input:focus, .formu select:focus, .formu textarea:focus { outline: none; border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent); }
+.formu input:focus, .formu select:focus, .formu textarea:focus { outline: none; border-color: var(--ink);
+  box-shadow: 0 0 0 1px var(--ink); }
 .formu label { font-size: 14px; }
 .formu > .pill.accent, .formu > button.pill { width: 100%; justify-content: center; }
 .bloque { border-top: 0; margin-top: 8px; padding-top: 0; }

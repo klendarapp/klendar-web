@@ -10,10 +10,10 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ASSETS = os.path.join(ROOT, 'assets')
 FONTS = os.path.join(ROOT, 'tools', 'fonts')
 
-INK = (0x0B, 0x0F, 0x1A, 255)
+INK = (0x0A, 0x0A, 0x0A, 255)
 CORAL = (0xFF, 0x4D, 0x6D, 255)
 WHITE = (255, 255, 255, 255)
-INK2 = (0xA7, 0xAE, 0xC0, 255)
+INK2 = (0xA3, 0xA3, 0xA3, 255)
 SS = 4
 
 
@@ -30,16 +30,17 @@ def symbol(size, *, box=None, bg=INK, corner=True):
         else:
             d.rectangle([0, 0, S, S], fill=bg)
     cx, cy = ox + 32 * u, oy + 32 * u
-    r, w = 17 * u, 7 * u
+    # Anillo r=18, trazo 6, 80 %; aguja corta que no toca el anillo (2026-09-26).
+    r, w = 18 * u, 6 * u
     ro = r + w / 2
-    d.arc([cx - ro, cy - ro, cx + ro, cy + ro], start=-90, end=-90 + 360 * 0.82, fill=CORAL, width=int(round(w)))
-    for ang in (-90, -90 + 360 * 0.82):
+    d.arc([cx - ro, cy - ro, cx + ro, cy + ro], start=-90, end=-90 + 360 * 0.80, fill=CORAL, width=int(round(w)))
+    for ang in (-90, -90 + 360 * 0.80):
         ex, ey = cx + r * math.cos(math.radians(ang)), cy + r * math.sin(math.radians(ang))
         d.ellipse([ex - w / 2, ey - w / 2, ex + w / 2, ey + w / 2], fill=CORAL)
     hw = 4 * u
-    d.line([(cx, cy), (cx, cy - 15 * u)], fill=WHITE, width=int(round(hw)))
-    d.ellipse([cx - hw / 2, cy - 15 * u - hw / 2, cx + hw / 2, cy - 15 * u + hw / 2], fill=WHITE)
-    d.ellipse([cx - 5 * u, cy - 5 * u, cx + 5 * u, cy + 5 * u], fill=WHITE)
+    d.line([(cx, cy), (cx, cy - 9 * u)], fill=WHITE, width=int(round(hw)))
+    d.ellipse([cx - hw / 2, cy - 9 * u - hw / 2, cx + hw / 2, cy - 9 * u + hw / 2], fill=WHITE)
+    d.ellipse([cx - 4 * u, cy - 4 * u, cx + 4 * u, cy + 4 * u], fill=WHITE)
     return im.resize((size, size), Image.LANCZOS)
 
 

@@ -50,10 +50,10 @@ export async function onRequestGet(ctx) {
 <title>${esc(b.name)} · Klendar</title>
 <meta name="robots" content="noindex">
 <style>
-  :root { color-scheme: light dark; --ink: #0B0F1A; --mu: #5A6472; --line: rgba(11,15,26,.12);
+  :root { color-scheme: light dark; --ink: #0A0A0A; --mu: #5A6472; --line: rgba(10,10,10,.12);
           --bg: #fff; --accent: #C81E42; --soft: rgba(255,77,109,.12); }
   @media (prefers-color-scheme: dark) {
-    :root { --ink: #F2F5FA; --mu: #A6B0C0; --line: rgba(255,255,255,.14); --bg: #0B0F1A; --accent: #FF4D6D; }
+    :root { --ink: #F2F5FA; --mu: #A6B0C0; --line: rgba(255,255,255,.14); --bg: #0A0A0A; --accent: #FF4D6D; }
   }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--ink);

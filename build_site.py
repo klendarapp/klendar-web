@@ -180,14 +180,14 @@ def head(t, path, page_title=None, page_desc=None, extra=''):
 <meta property="og:type" content="website">
 <meta property="og:locale" content="{'es_ES' if t['lang']=='es' else 'en_GB'}">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="theme-color" content="#0B0F1A">
+<meta name="theme-color" content="#0A0A0A">
 <link rel="icon" href="/assets/favicon.png">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/site.css?v=20260930">
-<link rel="stylesheet" href="/assets/public.css?v=2">
+<link rel="stylesheet" href="/assets/site.css?v=20261001">
+<link rel="stylesheet" href="/assets/public.css?v=13">
 {extra}
 </head>
 <body>
@@ -276,7 +276,7 @@ def landing(t):
     <p class="note">{t['note']}</p>
   </div>
   <div class="hero-visual">
-    <div class="phone"><img src="/assets/screens/feed.webp?v=20260926" alt="Klendar" width="540" height="1212" fetchpriority="high"></div>
+    <div class="phone"><img src="/assets/screens/feed.webp?v=20261001" alt="Klendar" width="540" height="1212" fetchpriority="high"></div>
     <div class="float a">{fa[0]}<small>{fa[1]}</small></div>
     <div class="float b">{fb[0]}<small>{fb[1]}</small></div>
   </div>

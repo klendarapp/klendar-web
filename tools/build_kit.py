@@ -24,8 +24,8 @@ pdfmetrics.registerFont(TTFont('Onest-Bold', os.path.join(FONTS, 'Manrope-Bold.t
 pdfmetrics.registerFont(TTFont('Onest-Black', os.path.join(FONTS, 'Sora-ExtraBold.ttf')))
 pdfmetrics.registerFontFamily('Onest', normal='Onest', bold='Onest-Bold', italic='Onest', boldItalic='Onest-Bold')
 
-BG = HexColor('#0B0F1A'); CARD = HexColor('#151A2A'); ACCENT = HexColor('#FF4D6D')
-INK = white; INK2 = HexColor('#A7AEC0'); LINE = HexColor('#2A3145')
+BG = HexColor('#0A0A0A'); CARD = HexColor('#171717'); ACCENT = HexColor('#FF4D6D')
+INK = white; INK2 = HexColor('#A3A3A3'); LINE = HexColor('#2A2A2A')
 W, H = A4
 SYMBOL = os.path.join(ROOT, 'assets', 'symbol.png')
 
@@ -39,7 +39,7 @@ def brand(c, x, y, size=9 * mm, text_size=20):
 def qr_image(url):
     q = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_Q, box_size=10, border=1)
     q.add_data(url); q.make(fit=True)
-    img = q.make_image(fill_color='#0B0F1A', back_color='white').convert('RGB')
+    img = q.make_image(fill_color='#0A0A0A', back_color='white').convert('RGB')
     buf = io.BytesIO(); img.save(buf, format='PNG'); buf.seek(0)
     return ImageReader(buf)
 

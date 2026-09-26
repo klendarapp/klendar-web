@@ -351,10 +351,10 @@ PAGINAS['prensa'] = (
 <h2>Material</h2>
 <ul>
   <li><a href="/assets/icon-512.png">Icono (PNG 512)</a> · <a href="/assets/symbol.png">Símbolo</a> · <a href="/assets/og.png">Imagen social</a></li>
-  <li>Capturas: <a href="/assets/screens/feed.webp?v=20260926">descubrir</a> · <a href="/assets/screens/detail.webp?v=20260926">ficha</a> · <a href="/assets/screens/agenda.webp?v=20260926">agenda</a> · <a href="/assets/screens/map.webp?v=20260926">mapa</a></li>
+  <li>Capturas: <a href="/assets/screens/feed.webp?v=20261001">descubrir</a> · <a href="/assets/screens/detail.webp?v=20261001">ficha</a> · <a href="/assets/screens/agenda.webp?v=20261001">agenda</a> · <a href="/assets/screens/map.webp?v=20261001">mapa</a></li>
   <li><a href="/assets/kit/klendar-guia-negocios.pdf">Guía para negocios (PDF)</a> · <a href="/assets/kit/klendar-cartel.pdf">Cartel con QR (PDF)</a></li>
 </ul>
-<p class="note">El nombre se escribe <strong>Klendar</strong>, con K y sin acentos. El color de marca es el coral <code>#FF4D6D</code> sobre fondo tinta <code>#0B0F1A</code>. Se puede usar el logotipo tal cual, sin deformarlo ni cambiarle el color.</p>
+<p class="note">El nombre se escribe <strong>Klendar</strong>, con K y sin acentos. El color de marca es el coral <code>#FF4D6D</code> sobre fondo tinta <code>#0A0A0A</code>. Se puede usar el logotipo tal cual, sin deformarlo ni cambiarle el color.</p>
 
 <h2>Contacto</h2>
 <p>Prensa y cualquier consulta: <a href="mailto:info@klendar.app">info@klendar.app</a>. Asuntos técnicos: <a href="mailto:dev@klendar.app">dev@klendar.app</a>.</p>
@@ -371,10 +371,10 @@ PAGINAS['prensa'] = (
 <h2>Assets</h2>
 <ul>
   <li><a href="/assets/icon-512.png">Icon (PNG 512)</a> · <a href="/assets/symbol.png">Symbol</a> · <a href="/assets/og.png">Social image</a></li>
-  <li>Screenshots: <a href="/assets/screens/feed.webp?v=20260926">discover</a> · <a href="/assets/screens/detail.webp?v=20260926">detail</a> · <a href="/assets/screens/agenda.webp?v=20260926">agenda</a> · <a href="/assets/screens/map.webp?v=20260926">map</a></li>
+  <li>Screenshots: <a href="/assets/screens/feed.webp?v=20261001">discover</a> · <a href="/assets/screens/detail.webp?v=20261001">detail</a> · <a href="/assets/screens/agenda.webp?v=20261001">agenda</a> · <a href="/assets/screens/map.webp?v=20261001">map</a></li>
   <li><a href="/assets/kit/klendar-guia-negocios.pdf">Business guide (PDF, Spanish)</a> · <a href="/assets/kit/klendar-cartel.pdf">Poster with QR (PDF)</a></li>
 </ul>
-<p class="note">The name is written <strong>Klendar</strong>, with a K. The brand colour is coral <code>#FF4D6D</code> on ink <code>#0B0F1A</code>. The logo can be used as it is, without stretching it or changing its colour.</p>
+<p class="note">The name is written <strong>Klendar</strong>, with a K. The brand colour is coral <code>#FF4D6D</code> on ink <code>#0A0A0A</code>. The logo can be used as it is, without stretching it or changing its colour.</p>
 
 <h2>Contact</h2>
 <p>Press and anything else: <a href="mailto:info@klendar.app">info@klendar.app</a>. Technical matters: <a href="mailto:dev@klendar.app">dev@klendar.app</a>.</p>

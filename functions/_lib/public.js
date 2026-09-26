@@ -159,13 +159,13 @@ export function publicPage({ lang, path, title, description, head = '', body, im
 <meta name="twitter:title" content="${esc(title)}">
 <meta name="twitter:description" content="${esc(description)}">
 <meta name="twitter:image" content="${esc(og)}">
-<meta name="theme-color" content="#0B0F1A">
+<meta name="theme-color" content="#0A0A0A">
 <link rel="icon" href="/assets/favicon.png">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/site.css?v=20260930">
-<link rel="stylesheet" href="/assets/public.css?v=12">
+<link rel="stylesheet" href="/assets/site.css?v=20261001">
+<link rel="stylesheet" href="/assets/public.css?v=13">
 ${head}
 </head>
 <body>
