@@ -630,4 +630,6 @@ const I18N = makeI18N({
     "Aforo": "Limit",
     "Código": "Code",
     "Fecha": "Date",
+    "Falta cuándo: elige el inicio (y el final, si es una oferta flash).": "When is missing: pick the start (and the end, if it's a flash offer).",
+    "El fin debe ser posterior al inicio.": "The end must be after the start.",
 });

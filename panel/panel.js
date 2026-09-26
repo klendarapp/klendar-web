@@ -1423,14 +1423,14 @@ async function offerForm(v, id, kindDefault, desde = null) {
     const priorRaw = (f.get('prior_price') || '').toString().replace(',', '.');
     const prior = priorRaw ? Math.round(parseFloat(priorRaw) * 100) : null;
     if (['percent', 'fixed'].includes(dType) && !prior) {
-      $('#formErr').textContent = 'Pon el precio anterior: la ley obliga a enseñarlo junto al descuento.';
+      $('#formErr').textContent = I18N.t('Pon el precio anterior: la ley obliga a enseñarlo junto al descuento.');
       return;
     }
     // El 2x1 obliga a declarar si hay alcohol: por el texto no se sabe
     // («2x1 en bebidas» no dice nada) y la multa se la lleva el negocio.
     const alcohol = f.get('alcohol');
     if (dType === '2x1' && !alcohol) {
-      $('#formErr').textContent = 'Di si el 2x1 incluye bebidas alcohólicas.';
+      $('#formErr').textContent = I18N.t('Di si el 2x1 incluye bebidas alcohólicas.');
       return;
     }
     // Bajar el precio con códigos sin usar no es gratis: quien los tenga
@@ -1482,11 +1482,13 @@ async function offerForm(v, id, kindDefault, desde = null) {
       publish_at: programada,
       style: { template: estilo.template, ...(estilo.accent ? { accent: estilo.accent } : {}) },
     };
-    if (flash && (!data.redeem_start_at || !data.redeem_end_at)) {
-      $('#formErr').textContent = 'Una oferta flash necesita principio y fin.'; return;
+    // Los mismos avisos que la app.
+    if (flash ? (!data.redeem_start_at || !data.redeem_end_at) : !data.event_at) {
+      $('#formErr').textContent = I18N.t('Falta cuándo: elige el inicio (y el final, si es una oferta flash).'); return;
     }
-    if (flash && new Date(data.redeem_end_at) <= new Date(data.redeem_start_at)) {
-      $('#formErr').textContent = 'El fin tiene que ser posterior al principio.'; return;
+    const [ini, fin] = flash ? [data.redeem_start_at, data.redeem_end_at] : [data.event_at, data.event_end_at];
+    if (fin && new Date(fin) <= new Date(ini)) {
+      $('#formErr').textContent = I18N.t('El fin debe ser posterior al inicio.'); return;
     }
     try {
       let offerId = id;
