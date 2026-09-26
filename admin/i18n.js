@@ -368,4 +368,8 @@ const I18N = makeI18N({
   'Cómo funciona Klendar (en 1 minuto)': 'How Klendar works (in 1 minute)',
   'Criterios de moderación': 'Moderation criteria',
   'Obligaciones legales que cubre el panel': 'Legal duties this panel covers',
+    'Novedad borrada': 'News post deleted',
+    'Borrar novedad': 'Delete news post',
+    'novedad': 'news post',
+    'Novedad de': 'News post from',
 });

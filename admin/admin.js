@@ -19,6 +19,8 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 // ── Utilidades ──────────────────────────────────────────────────────────────
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+// Iconos de Material Symbols, los mismos que la app y el panel de negocios.
+const ms = (name) => `<span class="ms" aria-hidden="true">${name}</span>`;
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const LOC = () => (I18N.lang === 'en' ? 'en-GB' : 'es-ES');
 const fmtDate = (s) => s ? new Date(s).toLocaleString(LOC(), { dateStyle: 'medium', timeStyle: 'short' }) : '—';
@@ -39,13 +41,13 @@ const LABELS = {
   pending: 'pendiente', verified: 'verificado', rejected: 'rechazado', approved: 'aprobada', active: 'activa', expired: 'caducada',
   cancelled: 'cancelada', sold_out: 'agotada', draft: 'borrador', open: 'abierta', reviewing: 'en revisión', resolved: 'resuelta', dismissed: 'desestimada',
   trial: 'prueba', past_due: 'impagada', validated: 'validado', failed: 'fallido', sent: 'enviado', skipped: 'omitido',
-  flash_offer: 'oferta flash', future_event: 'evento', user: 'usuario', business: 'negocio', offer: 'publicación', review: 'reseña', post: 'post',
+  flash_offer: 'oferta flash', future_event: 'evento', user: 'usuario', business: 'negocio', offer: 'publicación', review: 'reseña', post: 'novedad',
   owner: 'propietario', manager: 'encargado', staff: 'empleado', free: 'Gratis', basic: 'Básico', pro: 'Pro',
   new: 'sin leer', planned: 'la haremos', done: 'hecho', declined: 'descartada',
   suggestion: 'sugerencia', bug: 'fallo',
 };
-const KIND_ICON = { flash_offer: '⚡', future_event: '📅' };
-const FLAGS = { alcohol: '🍺 alcohol', tobacco: '🚬 tabaco/vapeo', gambling: '🎰 apuestas' };
+const KIND_ICON = { flash_offer: ms('bolt'), future_event: ms('event') };
+const FLAGS = { alcohol: 'alcohol', tobacco: 'tabaco/vapeo', gambling: 'apuestas' };
 const flagTags = (o) => (o.moderation_flags || []).map((f) => `<span class="tag warn" title="Detectado automáticamente en el texto">${esc(FLAGS[f] || f)}</span>`).join(' ');
 const debounce = (fn, ms = 350) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
 const qs = (o) => Object.entries(o).filter(([, v]) => v != null && v !== '').map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&');
@@ -148,7 +150,7 @@ function pager(state, total, onChange) {
   } };
 }
 const helpBox = (title, body) => `<details class="help"><summary>${esc(title)}</summary>${body}</details>`;
-const img = (url, ph = '🏪') => url ? `<img class="thumb" src="${esc(url)}" alt="" loading="lazy">` : `<span class="ph">${ph}</span>`;
+const img = (url, ph = ms('storefront')) => url ? `<img class="thumb" src="${esc(url)}" alt="" loading="lazy">` : `<span class="ph">${ph}</span>`;
 const appLink = (path, label = 'Ver en la app') => `<a class="btn sm ghost" href="${APP_URL}${path}" target="_blank" rel="noopener">${label} ↗</a>`;
 
 // ── Sesión ──────────────────────────────────────────────────────────────────
@@ -186,19 +188,19 @@ document.addEventListener('keydown', (e) => { if (e.key === '/' && !/input|texta
 // ── Navegación ──────────────────────────────────────────────────────────────
 const NAV = [
   ['group', 'Actividad'],
-  ['resumen', '📊', 'Resumen'], ['semanas', '📈', 'Semana a semana'], ['ciudades', '🗺', 'Ciudades'], ['negocios', '🏪', 'Negocios'], ['publicaciones', '⚡', 'Publicaciones'], ['canjes', '🎟', 'Canjes'], ['usuarios', '👤', 'Usuarios'],
+  ['resumen', 'dashboard', 'Resumen'], ['semanas', 'trending_up', 'Semana a semana'], ['ciudades', 'map', 'Ciudades'], ['negocios', 'storefront', 'Negocios'], ['publicaciones', 'bolt', 'Publicaciones'], ['canjes', 'confirmation_number', 'Canjes'], ['usuarios', 'person', 'Usuarios'],
   ['group', 'Moderación'],
-  ['denuncias', '🚩', 'Denuncias'], ['resenas', '💬', 'Reseñas y novedades'], ['sugerencias', '💡', 'Sugerencias'],
+  ['denuncias', 'flag', 'Denuncias'], ['resenas', 'chat_bubble', 'Reseñas y novedades'], ['sugerencias', 'lightbulb', 'Sugerencias'],
   ['group', 'Negocio'],
-  ['planes', '💳', 'Planes y pagos'], ['avisos', '🔔', 'Avisos y push'],
+  ['planes', 'credit_card', 'Planes y pagos'], ['avisos', 'notifications', 'Avisos y push'],
   ['group', 'Sistema'],
-  ['colecciones', '✨', 'Colecciones'], ['categorias', '🗂', 'Categorías'], ['configuracion', '⚙️', 'Configuración'], ['administradores', '🛡', 'Administradores'], ['actividad', '📜', 'Registro de actividad'], ['ayuda', '❓', 'Ayuda'],
+  ['colecciones', 'auto_awesome', 'Colecciones'], ['categorias', 'category', 'Categorías'], ['configuracion', 'settings', 'Configuración'], ['administradores', 'shield', 'Administradores'], ['actividad', 'history', 'Registro de actividad'], ['ayuda', 'help', 'Ayuda'],
 ];
 let BADGES = {};
 function renderNav(current) {
   // (al final se traduce; la lista se arma igual en los dos idiomas)
   $('#nav').innerHTML = NAV.map((n) => n[0] === 'group' ? `<div class="group">${n[1]}</div>`
-    : `<a class="nav ${current === n[0] ? 'on' : ''}" href="#/${n[0]}"><span class="ic">${n[1]}</span>${n[2]}${BADGES[n[0]] ? `<span class="badge">${BADGES[n[0]]}</span>` : ''}</a>`).join('');
+    : `<a class="nav ${current === n[0] ? 'on' : ''}" href="#/${n[0]}"><span class="ic">${ms(n[1])}</span>${n[2]}${BADGES[n[0]] ? `<span class="badge">${BADGES[n[0]]}</span>` : ''}</a>`).join('');
   I18N.translate($('#nav'));
 }
 async function refreshBadges() {
@@ -294,12 +296,12 @@ PAGES.resumen = async (v) => {
   v.innerHTML = `
     <div class="page-head"><h1>Resumen</h1><span class="spacer"></span><span class="muted">${new Date().toLocaleString(LOC(), { dateStyle: 'full', timeStyle: 'short' })}</span></div>
     ${(k.businesses_pending || k.offers_pending || k.reports_open || BADGES.sugerencias) ? `<div class="card"><h2>Pendiente de ti</h2><div class="actions">
-      ${k.businesses_pending ? `<a class="btn" href="#/negocios?status=pending">🏪 <b>${k.businesses_pending}</b> negocio(s) por verificar</a>` : ''}
-      ${k.offers_pending ? `<a class="btn" href="#/publicaciones?moderation=pending">⚡ <b>${k.offers_pending}</b> publicación(es) por moderar</a>` : ''}
-      ${k.reports_open ? `<a class="btn" href="#/denuncias">🚩 <b>${k.reports_open}</b> denuncia(s) abiertas</a>` : ''}
-      ${k.subs_expiring_7d ? `<a class="btn" href="#/planes">💳 <b>${k.subs_expiring_7d}</b> suscripción(es) vencen en 7 días</a>` : ''}
-      ${k.push_failed_7d ? `<a class="btn" href="#/avisos?tab=push">🔔 <b>${k.push_failed_7d}</b> push fallidos (7 d)</a>` : ''}
-      ${BADGES.sugerencias ? `<a class="btn" href="#/sugerencias">💡 <b>${BADGES.sugerencias}</b> sugerencia(s) sin leer</a>` : ''}
+      ${k.businesses_pending ? `<a class="btn" href="#/negocios?status=pending">${ms('storefront')} <b>${k.businesses_pending}</b> negocio(s) por verificar</a>` : ''}
+      ${k.offers_pending ? `<a class="btn" href="#/publicaciones?moderation=pending">${ms('bolt')} <b>${k.offers_pending}</b> publicación(es) por moderar</a>` : ''}
+      ${k.reports_open ? `<a class="btn" href="#/denuncias">${ms('flag')} <b>${k.reports_open}</b> denuncia(s) abiertas</a>` : ''}
+      ${k.subs_expiring_7d ? `<a class="btn" href="#/planes">${ms('credit_card')} <b>${k.subs_expiring_7d}</b> suscripción(es) vencen en 7 días</a>` : ''}
+      ${k.push_failed_7d ? `<a class="btn" href="#/avisos?tab=push">${ms('notifications')} <b>${k.push_failed_7d}</b> push fallidos (7 d)</a>` : ''}
+      ${BADGES.sugerencias ? `<a class="btn" href="#/sugerencias">${ms('lightbulb')} <b>${BADGES.sugerencias}</b> sugerencia(s) sin leer</a>` : ''}
     </div></div>` : '<div class="card"><h2>Todo al día</h2><p class="muted" style="margin:0">No hay negocios por verificar, publicaciones por moderar ni denuncias abiertas.</p></div>'}
     <div class="grid2">
       <div class="card"><h2>Usuarios</h2><div class="kpis">
@@ -367,7 +369,7 @@ PAGES.negocios = async (v, id) => {
       cols: [
         { h: 'Negocio', r: (b) => `${img(b.logo_url)}<span class="title">${esc(b.name)}<span class="sub">${esc([b.category, b.city].filter(Boolean).join(' · '))}</span></span>` },
         { h: 'Dueño', r: (b) => `${esc(b.owner_name || '—')}<span class="sub">${esc(b.owner_email || '')}</span>` },
-        { h: 'Estado', r: (b) => `${tag(b.verification_status)} ${b.is_active ? '' : tag('inactive', 'st-inactive')} ${b.open_reports ? `<span class="tag bad">🚩 ${b.open_reports}</span>` : ''}` },
+        { h: 'Estado', r: (b) => `${tag(b.verification_status)} ${b.is_active ? '' : tag('inactive', 'st-inactive')} ${b.open_reports ? `<span class="tag bad">${ms('flag')} ${b.open_reports}</span>` : ''}` },
         { h: 'Plan', r: (b) => `${tag(b.plan_slug || 'free', 'dim')} ${b.sub_status ? tag(b.sub_status) : ''}${b.sub_period_end ? `<span class="sub">hasta ${fmtDay(b.sub_period_end)}</span>` : ''}` },
         { h: 'Publicaciones', num: true, r: (b) => `${b.active_offers} <span class="muted">/ ${b.offers_count}</span>` },
         { h: 'Canjes', num: true, r: (b) => fmtNum(b.redemptions_count) },
@@ -393,7 +395,7 @@ async function businessDetail(v, id) {
   v.innerHTML = `
     <div class="page-head"><a class="btn sm ghost" href="#/negocios">← Negocios</a></div>
     <div class="detail-head">
-      ${b.logo_url ? `<img src="${esc(b.logo_url)}" alt="">` : '<div class="ph">🏪</div>'}
+      ${b.logo_url ? `<img src="${esc(b.logo_url)}" alt="">` : `<div class="ph">${ms('storefront')}</div>`}
       <div><h1>${esc(b.name)}</h1><div class="tags">${tag(b.verification_status)} ${b.is_active ? tag('active') : tag('inactive', 'st-inactive')} ${tag(cur?.plan || 'free', 'dim')} ${cur ? tag(cur.status) : ''} ${b.adults_only ? '<span class="tag bad">+18</span>' : ''}</div></div>
       <span class="spacer"></span>
       <div class="actions">
@@ -460,7 +462,7 @@ async function businessDetail(v, id) {
     </div>
     <div class="grid2">
       <div class="card"><h2>Reseñas (${d.reviews.length})</h2>${d.reviews.length ? d.reviews.map((r) => `<div class="item" style="grid-template-columns:1fr"><div><span class="stars">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</span> <span class="muted small">${esc(r.user_email || '')} · ${ago(r.created_at)}</span><p>${esc(r.comment || '')}</p><div class="actions"><button class="btn sm bad" data-delreview="${r.id}">Borrar…</button></div></div></div>`).join('') : '<p class="muted">Sin reseñas.</p>'}</div>
-      <div class="card"><h2>Novedades (${d.posts.length})</h2>${d.posts.length ? d.posts.map((p) => `<div class="item">${p.image_url ? `<img src="${esc(p.image_url)}" alt="">` : '<div class="ph">📝</div>'}<div><span class="muted small">${ago(p.created_at)}</span><p>${esc(p.body || '')}</p><div class="actions"><button class="btn sm bad" data-delpost="${p.id}">Borrar…</button></div></div></div>`).join('') : '<p class="muted">Sin novedades.</p>'}</div>
+      <div class="card"><h2>Novedades (${d.posts.length})</h2>${d.posts.length ? d.posts.map((p) => `<div class="item">${p.image_url ? `<img src="${esc(p.image_url)}" alt="">` : `<div class="ph">${ms('article')}</div>`}<div><span class="muted small">${ago(p.created_at)}</span><p>${esc(p.body || '')}</p><div class="actions"><button class="btn sm bad" data-delpost="${p.id}">Borrar…</button></div></div></div>`).join('') : '<p class="muted">Sin novedades.</p>'}</div>
     </div>
     <div class="grid2">
       <div class="card"><h2>Denuncias relacionadas (${d.reports.length})</h2>${d.reports.length ? table({ cols: [{ h: 'Sobre', r: (r) => tag(r.target_type, 'dim') }, { h: 'Motivo', r: (r) => `${esc(r.reason)}<span class="sub">${esc(r.details || '')}</span>` }, { h: 'Estado', r: (r) => tag(r.status) }, { h: 'Fecha', r: (r) => fmtDay(r.created_at) }], rows: d.reports }) : '<p class="muted">Ninguna.</p>'}<p style="margin:10px 0 0"><a class="link" href="#/denuncias">Ir a denuncias →</a></p></div>
@@ -554,7 +556,7 @@ function auditList(list) {
 const ACTIONS = {
   'business.verification': 'Verificación de negocio', 'business.activate': 'Negocio activado', 'business.deactivate': 'Negocio desactivado', 'business.update': 'Ficha editada', 'business.member': 'Equipo modificado',
   'business.subscription': 'Cambio de plan', 'business.payment': 'Pago registrado', 'offer.moderation': 'Moderación de publicación', 'offer.status': 'Estado de publicación', 'offer.boost': 'Boost de publicación',
-  'report.resolve': 'Denuncia resuelta', 'review.delete': 'Reseña borrada', 'post.delete': 'Post borrado', 'user.ban': 'Usuario suspendido', 'user.unban': 'Usuario reactivado', 'user.premium': 'Premium cambiado',
+  'report.resolve': 'Denuncia resuelta', 'review.delete': 'Reseña borrada', 'post.delete': 'Novedad borrada', 'user.ban': 'Usuario suspendido', 'user.unban': 'Usuario reactivado', 'user.premium': 'Premium cambiado',
   'user.type': 'Tipo de cuenta cambiado', 'user.delete': 'Cuenta borrada', 'notification.send': 'Aviso enviado', 'push.retry': 'Push reintentado', 'config.set': 'Configuración cambiada', 'plan.upsert': 'Plan guardado',
   'category.upsert': 'Categoría guardada', 'category.delete': 'Categoría borrada', 'admin.add': 'Administrador añadido', 'admin.remove': 'Administrador quitado', 'maintenance.expire_offers': 'Caducidad forzada',
 };
@@ -585,7 +587,7 @@ PAGES.publicaciones = async (v, id) => {
     $('#list').innerHTML = table({
       cols: [
         { h: 'Publicación', r: (o) => `${img(o.images?.[0], KIND_ICON[o.kind])}<span class="title">${esc(o.title)}<span class="sub">${LABELS[o.kind]} · <a class="link" href="#/negocios/${o.business_id}" onclick="event.stopPropagation()">${esc(o.business_name)}</a> ${o.verification_status !== 'verified' ? tag(o.verification_status) : ''}</span></span>` },
-        { h: 'Estado', r: (o) => `${tag(o.status)} ${tag(o.moderation_status)} ${flagTags(o)} ${o.adults_only ? '<span class="tag bad">+18</span>' : ''} ${o.is_boosted ? '<span class="tag">boost</span>' : ''} ${o.open_reports ? `<span class="tag bad">🚩 ${o.open_reports}</span>` : ''}` },
+        { h: 'Estado', r: (o) => `${tag(o.status)} ${tag(o.moderation_status)} ${flagTags(o)} ${o.adults_only ? '<span class="tag bad">+18</span>' : ''} ${o.is_boosted ? '<span class="tag">boost</span>' : ''} ${o.open_reports ? `<span class="tag bad">${ms('flag')} ${o.open_reports}</span>` : ''}` },
         { h: 'Cuándo', r: (o) => `<span class="nowrap">${o.kind === 'flash_offer' ? `${fmtDate(o.redeem_start_at)}<span class="sub">→ ${fmtDate(o.redeem_end_at)}</span>` : fmtDate(o.event_at)}</span>` },
         { h: 'Precio', r: (o) => `${o.discount ? `<span class="tag">${esc(discountLabel(o.discount))}</span> ` : ''}${o.price_cents != null ? fmtMoney(o.price_cents, o.currency) : ''}` },
         { h: 'Vistas', num: true, r: (o) => fmtNum(o.views_count) },
@@ -736,7 +738,7 @@ PAGES.usuarios = async (v, id) => {
     rows = r.rows;
     const pg = pager(s, r.total, load);
     $('#list').innerHTML = table({ cols: [
-      { h: 'Usuario', r: (u) => `${img(u.avatar_url, '👤')}<span class="title">${esc(u.display_name || '—')}<span class="sub">${esc(u.email)}</span></span>` },
+      { h: 'Usuario', r: (u) => `${img(u.avatar_url, ms('person'))}<span class="title">${esc(u.display_name || '—')}<span class="sub">${esc(u.email)}</span></span>` },
       { h: 'Tipo', r: (u) => `${tag(u.user_type || 'user', 'dim')} ${u.is_admin ? '<span class="tag">admin</span>' : ''} ${u.is_premium ? '<span class="tag ok">premium</span>' : ''} ${u.banned_at ? tag('banned', 'st-banned') : ''} ${!u.email_confirmed_at ? '<span class="tag warn">email sin confirmar</span>' : ''}` },
       { h: 'Negocios', num: true, r: (u) => u.memberships || 0 }, { h: 'Canjes', num: true, r: (u) => u.redemptions || 0 },
       { h: 'Alta', r: (u) => `<span class="nowrap">${fmtDay(u.created_at)}</span>` }, { h: 'Último acceso', r: (u) => `<span class="nowrap">${ago(u.last_sign_in_at)}</span>` },
@@ -758,7 +760,7 @@ async function userDetail(v, id) {
   v.innerHTML = `
     <div class="page-head"><a class="btn sm ghost" href="#/usuarios">← Usuarios</a></div>
     <div class="detail-head">
-      ${u.avatar_url ? `<img src="${esc(u.avatar_url)}" alt="">` : '<div class="ph">👤</div>'}
+      ${u.avatar_url ? `<img src="${esc(u.avatar_url)}" alt="">` : `<div class="ph">${ms('person')}</div>`}
       <div><h1>${esc(u.display_name || u.email)}</h1><div class="tags">${tag(u.user_type || 'user', 'dim')} ${u.is_admin ? '<span class="tag">administrador</span>' : ''} ${u.is_premium ? `<span class="tag ok">premium${u.premium_until ? ` hasta ${fmtDay(u.premium_until)}` : ''}</span>` : ''} ${u.banned_at ? `<span class="tag bad">suspendido ${fmtDay(u.banned_at)}</span>` : ''} ${!u.email_confirmed_at ? '<span class="tag warn">email sin confirmar</span>' : ''}</div><div class="muted small" style="margin-top:4px">${esc(u.email)}</div></div>
       <span class="spacer"></span>
       <div class="actions">
@@ -838,37 +840,37 @@ async function userDetail(v, id) {
   }; });
 }
 
-// ── Reseñas y posts ─────────────────────────────────────────────────────────
+// ── Reseñas y novedades ─────────────────────────────────────────────────────────
 async function deleteReview(id) {
   const r = await modal({ title: 'Borrar reseña', intro: 'El autor recibe un aviso con el motivo y puede recurrir.', fields: [{ name: 'reason', label: 'Motivo', type: 'textarea', required: true }], submit: 'Borrar', danger: true });
   if (!r) return;
   try { await rpc('admin_delete_review', { p_id: id, p_reason: r.reason }); toast('Reseña borrada'); route(); } catch (e) { toast(e.message, true); }
 }
 async function deletePost(id) {
-  const r = await modal({ title: 'Borrar post', intro: 'El negocio recibe un aviso con el motivo y puede recurrir.', fields: [{ name: 'reason', label: 'Motivo', type: 'textarea', required: true }], submit: 'Borrar', danger: true });
+  const r = await modal({ title: 'Borrar novedad', intro: 'El negocio recibe un aviso con el motivo y puede recurrir.', fields: [{ name: 'reason', label: 'Motivo', type: 'textarea', required: true }], submit: 'Borrar', danger: true });
   if (!r) return;
-  try { await rpc('admin_delete_post', { p_id: id, p_reason: r.reason }); toast('Post borrado'); route(); } catch (e) { toast(e.message, true); }
+  try { await rpc('admin_delete_post', { p_id: id, p_reason: r.reason }); toast('Novedad borrada'); route(); } catch (e) { toast(e.message, true); }
 }
 PAGES.resenas = async (v) => {
   const p = params(); let tab = p.tab || 'reviews';
   const sR = st.resenas, sP = st.posts;
   v.innerHTML = `
-    <div class="page-head"><h1>Reseñas y posts</h1></div>
+    <div class="page-head"><h1>Reseñas y novedades</h1></div>
     ${helpBox('¿Qué hago aquí?', '<p>Las <b>reseñas</b> las escriben usuarios sobre negocios; las <b>novedades</b> las publican los negocios en su perfil. Bórralos solo si incumplen las normas (insultos, datos personales, spam, contenido que no es del local). El autor recibe el motivo.</p>')}
-    <div class="tabs"><button data-t="reviews" class="${tab === 'reviews' ? 'on' : ''}">Reseñas</button><button data-t="posts" class="${tab === 'posts' ? 'on' : ''}">Posts</button></div>
+    <div class="tabs"><button data-t="reviews" class="${tab === 'reviews' ? 'on' : ''}">Reseñas</button><button data-t="posts" class="${tab === 'posts' ? 'on' : ''}">Novedades</button></div>
     <div class="toolbar"><input id="q" class="grow" placeholder="Buscar por texto, negocio o email…"><select id="rating" ${tab === 'posts' ? 'hidden' : ''}>${[['', 'Cualquier puntuación'], ['1', 'Solo 1 ★'], ['2', '≤ 2 ★'], ['3', '≤ 3 ★']].map((o) => `<option value="${o[0]}">${o[1]}</option>`).join('')}</select></div>
     <div id="list"><div class="loading">Cargando…</div></div>`;
   const load = async () => {
     if (tab === 'reviews') {
       const r = await rpc('admin_reviews', { p_query: sR.q || null, p_max_rating: sR.rating ? +sR.rating : null, p_limit: sR.limit, p_offset: sR.offset });
       const pg = pager(sR, r.total, load);
-      $('#list').innerHTML = (r.rows.length ? r.rows.map((x) => `<div class="item"><div class="ph">💬</div><div><h3><span class="stars">${'★'.repeat(x.rating)}${'☆'.repeat(5 - x.rating)}</span> en <a class="link" href="#/negocios/${x.business_id}">${esc(x.business)}</a> ${x.open_reports ? `<span class="tag bad">🚩 ${x.open_reports}</span>` : ''}</h3><div class="meta">${esc(x.user_email || 'anónimo')} · ${fmtDate(x.created_at)}</div><p>${esc(x.comment || '(sin texto)')}</p><div class="actions"><button class="btn sm bad" data-del="${x.id}">Borrar…</button></div></div></div>`).join('') : '<div class="tbl-wrap"><div class="empty">Sin reseñas.</div></div>') + pg.html;
+      $('#list').innerHTML = (r.rows.length ? r.rows.map((x) => `<div class="item"><div class="ph">${ms('chat_bubble')}</div><div><h3><span class="stars">${'★'.repeat(x.rating)}${'☆'.repeat(5 - x.rating)}</span> en <a class="link" href="#/negocios/${x.business_id}">${esc(x.business)}</a> ${x.open_reports ? `<span class="tag bad">${ms('flag')} ${x.open_reports}</span>` : ''}</h3><div class="meta">${esc(x.user_email || 'anónimo')} · ${fmtDate(x.created_at)}</div><p>${esc(x.comment || '(sin texto)')}</p><div class="actions"><button class="btn sm bad" data-del="${x.id}">Borrar…</button></div></div></div>`).join('') : '<div class="tbl-wrap"><div class="empty">Sin reseñas.</div></div>') + pg.html;
       pg.bind($('#list'));
       $$('#list [data-del]').forEach((b) => { b.onclick = () => deleteReview(b.dataset.del); });
     } else {
       const r = await rpc('admin_posts', { p_query: sP.q || null, p_limit: sP.limit, p_offset: sP.offset });
       const pg = pager(sP, r.total, load);
-      $('#list').innerHTML = (r.rows.length ? r.rows.map((x) => `<div class="item">${x.image_url ? `<img src="${esc(x.image_url)}" alt="">` : '<div class="ph">📝</div>'}<div><h3><a class="link" href="#/negocios/${x.business_id}">${esc(x.business)}</a> ${x.open_reports ? `<span class="tag bad">🚩 ${x.open_reports}</span>` : ''}</h3><div class="meta">${fmtDate(x.created_at)}</div><p>${esc(x.body || '')}</p><div class="actions"><button class="btn sm bad" data-del="${x.id}">Borrar…</button></div></div></div>`).join('') : '<div class="tbl-wrap"><div class="empty">Sin novedades.</div></div>') + pg.html;
+      $('#list').innerHTML = (r.rows.length ? r.rows.map((x) => `<div class="item">${x.image_url ? `<img src="${esc(x.image_url)}" alt="">` : `<div class="ph">${ms('article')}</div>`}<div><h3><a class="link" href="#/negocios/${x.business_id}">${esc(x.business)}</a> ${x.open_reports ? `<span class="tag bad">${ms('flag')} ${x.open_reports}</span>` : ''}</h3><div class="meta">${fmtDate(x.created_at)}</div><p>${esc(x.body || '')}</p><div class="actions"><button class="btn sm bad" data-del="${x.id}">Borrar…</button></div></div></div>`).join('') : '<div class="tbl-wrap"><div class="empty">Sin novedades.</div></div>') + pg.html;
       pg.bind($('#list'));
       $$('#list [data-del]').forEach((b) => { b.onclick = () => deletePost(b.dataset.del); });
     }
@@ -887,7 +889,7 @@ PAGES.denuncias = async (v) => {
     ${helpBox('¿Qué hago aquí?', '<p>Cuando un usuario denuncia una publicación, negocio, reseña o novedad, aparece aquí. Revisa el contenido (botón «Ver»), y decide: <b>Retirar y cerrar</b> (la oferta se retira, el negocio se desactiva, la reseña o la novedad se borran; el autor recibe el motivo y puede recurrir en 15 días), <b>Cerrar sin retirar</b> (la denuncia era razonable pero el contenido es correcto) o <b>Desestimar</b> (denuncia sin fundamento). Por ley (DSA) hay que resolverlas con diligencia y motivar la decisión.</p>')}
     <div class="toolbar">
       <select id="status">${[['open', 'Abiertas'], ['resolved', 'Resueltas'], ['dismissed', 'Desestimadas'], ['all', 'Todas']].map((o) => `<option value="${o[0]}" ${(s.status || 'open') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
-      <select id="type">${[['all', 'Todo tipo'], ['offer', 'Publicaciones'], ['business', 'Negocios'], ['review', 'Reseñas'], ['post', 'Posts']].map((o) => `<option value="${o[0]}" ${(s.type || 'all') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
+      <select id="type">${[['all', 'Todo tipo'], ['offer', 'Publicaciones'], ['business', 'Negocios'], ['review', 'Reseñas'], ['post', 'Novedades']].map((o) => `<option value="${o[0]}" ${(s.type || 'all') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
     </div>
     <div id="list"><div class="loading">Cargando…</div></div>`;
   const target = (r) => {
@@ -896,14 +898,14 @@ PAGES.denuncias = async (v) => {
     if (r.target_type === 'offer') return `Publicación <a class="link" href="#/publicaciones/${r.target_id}">«${esc(t.title)}»</a> de <a class="link" href="#/negocios/${t.business_id}">${esc(t.business)}</a> · ${tag(t.moderation)} ${tag(t.status)}`;
     if (r.target_type === 'business') return `Negocio <a class="link" href="#/negocios/${r.target_id}">«${esc(t.name)}»</a> (${esc(t.city || '')}) · ${t.active ? tag('active') : tag('inactive', 'st-inactive')} ${tag(t.verification)}`;
     if (r.target_type === 'review') return `Reseña <span class="stars">${'★'.repeat(t.rating)}</span> en <a class="link" href="#/negocios/${t.business_id}">${esc(t.business)}</a>: «${esc(t.comment || '')}» · <a class="link" href="#/usuarios/${t.user_id}">autor</a>`;
-    if (r.target_type === 'post') return `Post de <a class="link" href="#/negocios/${t.business_id}">${esc(t.business)}</a>: «${esc(t.body || '')}»`;
+    if (r.target_type === 'post') return `Novedad de <a class="link" href="#/negocios/${t.business_id}">${esc(t.business)}</a>: «${esc(t.body || '')}»`;
     return '';
   };
   const load = async () => {
     const r = await rpc('admin_reports_page', { p_status: s.status || 'open', p_type: s.type || 'all', p_limit: s.limit, p_offset: s.offset });
     const pg = pager(s, r.total, load);
     $('#list').innerHTML = (r.rows.length ? r.rows.map((x) => `
-      <div class="item">${x.target?.image ? `<img src="${esc(x.target.image)}" alt="">` : '<div class="ph">🚩</div>'}<div>
+      <div class="item">${x.target?.image ? `<img src="${esc(x.target.image)}" alt="">` : `<div class="ph">${ms('flag')}</div>`}<div>
         <h3>${esc(x.reason)} ${tag(x.status)} ${tag(x.target_type, 'dim')} ${x.same_target_count > 1 ? `<span class="tag warn">${x.same_target_count} denuncias sobre lo mismo</span>` : ''}</h3>
         <div class="meta">${fmtDate(x.created_at)} · por ${x.reporter_id ? `<a class="link" href="#/usuarios/${x.reporter_id}">${esc(x.reporter_email || 'usuario')}</a>` : 'anónimo'}${x.resolved_at ? ` · cerrada ${fmtDate(x.resolved_at)}` : ''}</div>
         <p>${target(x)}</p>${x.details ? `<div class="meta">Detalles: ${esc(x.details)}</div>` : ''}
@@ -944,7 +946,7 @@ PAGES.sugerencias = async (v) => {
     </div>
     <div id="list"><div class="loading">Cargando…</div></div>`;
   let rows = [];
-  const kindIcon = { suggestion: '💡', bug: '🐞', business: '🏪', other: '💬' };
+  const kindIcon = { suggestion: ms('lightbulb'), bug: ms('bug_report'), business: ms('storefront'), other: ms('chat_bubble') };
   const load = async () => {
     const r = await rpc('admin_feedback', { p_status: s.status, p_kind: s.kind || 'all', p_query: s.q || null, p_limit: s.limit, p_offset: s.offset });
     rows = r.rows;
@@ -956,7 +958,7 @@ PAGES.sugerencias = async (v) => {
       <div class="kpi"><b>${fmtNum(c.done)}</b><span>hechas</span></div></div>`;
     const pg = pager(s, r.total, load);
     $('#list').innerHTML = (rows.length ? rows.map((f) => `
-      <div class="item"><div class="ph">${kindIcon[f.kind] || '💬'}</div><div>
+      <div class="item"><div class="ph">${kindIcon[f.kind] || ms('chat_bubble')}</div><div>
         <h3>${tag(f.kind, 'dim')} ${tag(f.status)} ${f.replied_at ? '<span class="tag ok">respondida</span>' : ''}</h3>
         <div class="meta">${fmtDate(f.created_at)} · ${f.user_id ? `<a class="link" href="#/usuarios/${f.user_id}">${esc(f.user_email || f.user_name || 'usuario')}</a>` : 'sin cuenta'}${f.from_same_user > 1 ? ` · ${f.from_same_user} mensajes suyos` : ''} · ${esc(f.app_version || '?')} · ${esc(f.platform || '?')}${f.locale ? ' · ' + esc(f.locale) : ''}</div>
         <p style="white-space:pre-wrap">${esc(f.message)}</p>
@@ -1389,7 +1391,7 @@ PAGES.actividad = async (v) => {
   v.innerHTML = `
     <div class="page-head"><h1>Registro de actividad</h1><span class="spacer"></span><button class="btn sm ghost" id="csv">Exportar CSV</button></div>
     ${helpBox('¿Qué hago aquí?', '<p>Todo lo que hacen los administradores queda aquí con fecha, quién y sobre qué: verificaciones, moderación, pagos, cambios de configuración… Sirve para auditoría y para responder ante una reclamación («¿por qué se retiró mi oferta y cuándo?»).</p>')}
-    <div class="toolbar"><input id="q" class="grow" placeholder="Buscar por email del admin, id del objeto o texto…" value="${esc(s.q || '')}"><select id="action">${[['all', 'Todas las acciones'], ['business', 'Negocios'], ['offer', 'Publicaciones'], ['report', 'Denuncias'], ['user', 'Usuarios'], ['review', 'Reseñas'], ['post', 'Posts'], ['notification', 'Avisos'], ['config', 'Configuración'], ['plan', 'Planes'], ['category', 'Categorías'], ['admin', 'Administradores']].map((o) => `<option value="${o[0]}" ${(s.action || 'all') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select></div>
+    <div class="toolbar"><input id="q" class="grow" placeholder="Buscar por email del admin, id del objeto o texto…" value="${esc(s.q || '')}"><select id="action">${[['all', 'Todas las acciones'], ['business', 'Negocios'], ['offer', 'Publicaciones'], ['report', 'Denuncias'], ['user', 'Usuarios'], ['review', 'Reseñas'], ['post', 'Novedades'], ['notification', 'Avisos'], ['config', 'Configuración'], ['plan', 'Planes'], ['category', 'Categorías'], ['admin', 'Administradores']].map((o) => `<option value="${o[0]}" ${(s.action || 'all') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select></div>
     <div id="list"></div>`;
   let rows = [];
   const linkFor = (l) => l.target_type === 'business' ? `#/negocios/${l.target_id}` : l.target_type === 'offer' ? `#/publicaciones/${l.target_id}` : l.target_type === 'user' ? `#/usuarios/${l.target_id}` : null;
@@ -1415,7 +1417,7 @@ PAGES.actividad = async (v) => {
 PAGES.ayuda = async (v) => {
   v.innerHTML = `
     <div class="page-head"><h1>Ayuda</h1></div>
-    <div class="card"><h2>Cómo funciona Klendar (en 1 minuto)</h2><p>Los <b>negocios</b> se dan de alta desde la app y quedan <b>pendientes</b> hasta que un administrador los verifica. Una vez verificados publican <b>ofertas flash</b> (con cuenta atrás y aforo) y <b>eventos</b>. Los <b>usuarios</b> las ven en Descubre y el mapa, las guardan en Mis planes y las canjean enseñando un <b>código QR de un solo uso</b> que el negocio escanea. Los negocios tienen un <b>plan</b> (Gratis / Básico / Pro) con una prueba inicial; por ahora los cobros se hacen por transferencia y se anotan aquí.</p></div>
+    <div class="card"><h2>Cómo funciona Klendar (en 1 minuto)</h2><p>Los <b>negocios</b> se dan de alta desde la app y quedan <b>pendientes</b> hasta que un administrador los verifica. Una vez verificados publican <b>ofertas flash</b> (con cuenta atrás y aforo) y <b>eventos</b>. Los <b>usuarios</b> las ven en Descubre y el mapa, las guardan en Tus planes y las canjean enseñando un <b>código QR de un solo uso</b> que el negocio escanea. Los negocios tienen un <b>plan</b> (Gratis / Básico / Pro) con una prueba inicial; por ahora los cobros se hacen por transferencia y se anotan aquí.</p></div>
     <div class="grid2">
       <div class="card"><h2>Rutina diaria (5 minutos)</h2><ol style="margin:0;padding-left:18px"><li><b>Resumen</b>: mira «Pendiente de ti».</li><li><b>Negocios pendientes</b>: comprueba que existen (web, teléfono, Google Maps) y verifica o rechaza con motivo.</li><li><b>Publicaciones por moderar</b>: aprueba o retira con motivo.</li><li><b>Denuncias abiertas</b>: revisa y resuelve (siempre con motivo si retiras algo).</li><li><b>Push fallidos</b>: si hay muchos, algo pasa con Firebase.</li></ol></div>
       <div class="card"><h2>Rutina semanal</h2><ul style="margin:0;padding-left:18px"><li><b>Planes y pagos</b>: suscripciones que vencen en 7 días → contacta con el negocio; registra las transferencias recibidas.</li><li><b>Usuarios</b>: atiende peticiones de acceso o supresión recibidas por email (info@klendar.app).</li><li><b>Sugerencias</b>: lee lo que ha entrado, marca estado y responde lo que merezca respuesta.</li><li><b>Registro de actividad</b>: repasa que todo lo hecho tenga sentido.</li></ul></div>

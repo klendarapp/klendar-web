@@ -197,10 +197,6 @@ dialog.modal input:focus, dialog.modal select:focus, dialog.modal textarea:focus
 .layout > *, #view, #view > div { min-width: 0; }
 input[type=file] { max-width: 100%; }
 
-/* Iconos de Material Symbols (los mismos que la app y «Tu cuenta»). */
-.ms { font-family: 'Material Symbols Outlined'; font-weight: normal; font-style: normal; font-size: 20px;
-  line-height: 1; letter-spacing: normal; text-transform: none; display: inline-block; white-space: nowrap;
-  direction: ltr; -webkit-font-smoothing: antialiased; font-feature-settings: 'liga'; flex: none; }
 .btn .ms { font-size: 18px; }
 .nav .ms { font-size: 20px; }
 .ph .ms { font-size: 22px; }

@@ -182,3 +182,11 @@ a.link { color: var(--ink); font-weight: 700; text-decoration: underline; text-u
 /* Sube o baja respecto a la semana anterior. */
 .up { color: #2ECC71; font-weight: 700; font-size: 12px; }
 .down { color: #FF5C5C; font-weight: 700; font-size: 12px; }
+
+/* Iconos de Material Symbols (los mismos que la app y «Tu cuenta»). */
+.ms { font-family: 'Material Symbols Outlined'; font-weight: normal; font-style: normal; font-size: 20px;
+  line-height: 1; letter-spacing: normal; text-transform: none; display: inline-block; white-space: nowrap;
+  direction: ltr; -webkit-font-smoothing: antialiased; font-feature-settings: 'liga'; flex: none; }
+.side a.nav .ic .ms { font-size: 20px; }
+.ph .ms { font-size: 22px; }
+.btn .ms { font-size: 18px; }
