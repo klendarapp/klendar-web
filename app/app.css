@@ -218,3 +218,13 @@ input[type=file] { max-width: 100%; }
 .alternativas + .google-hueco { margin-top: 10px; }
 .formu .acciones { margin: 0; }
 .formu .err:empty { display: none; }
+
+/* El diálogo de confirmar, como el de la app. */
+.dialogo { border: 1px solid var(--glass-border); border-radius: 24px; padding: 24px; max-width: min(420px, calc(100vw - 32px));
+  background: var(--elevated); color: var(--ink); box-shadow: 0 20px 60px rgba(0,0,0,.35); }
+.dialogo::backdrop { background: rgba(0,0,0,.55); }
+.dialogo h2 { margin: 0 0 8px; font-size: 20px; }
+.dialogo p { margin: 0 0 20px; }
+.dialogo-botones { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.dialogo-botones .pill { justify-content: center; }
+.pill.peligro-lleno { background: #FF5C5C; border-color: transparent; color: #fff; }

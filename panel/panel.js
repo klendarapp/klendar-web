@@ -352,6 +352,8 @@ function table({ cols, rows, empty = 'Nada por aquí.' }) {
   if (!rows.length) return `<div class="tbl-wrap"><div class="empty">${esc(empty)}</div></div>`;
   return `<div class="tbl-wrap"><table class="tbl"><thead><tr>${cols.map((c) => `<th ${c.num ? 'class="num"' : ''}>${esc(c.h)}</th>`).join('')}</tr></thead><tbody>${rows.map((r, i) => `<tr data-i="${i}">${cols.map((c) => `<td ${c.num ? 'class="num"' : ''}${c.h ? ` data-label="${esc(I18N.t(c.h))}"` : ''}>${c.r(r, i)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
 }
+/** Un texto con negritas o datos dentro, que no se puede traducir trozo a trozo. */
+const bi = (es, en) => (I18N.lang === 'en' ? en : es);
 const helpBox = (title, body) => `<details class="help"><summary>${esc(title)}</summary>${body}</details>`;
 
 // ── Sesión y negocio activo ─────────────────────────────────────────────────
@@ -674,7 +676,7 @@ PAGES.resumen = async (v) => {
   v.innerHTML = `
     <div class="page-head"><h1>${esc(BIZ.name)}</h1><span class="tag st-${esc(BIZ.verification_status)}">${esc(BIZ_LABELS[BIZ.verification_status] || BIZ.verification_status)}</span><span class="spacer"></span>
       <a class="btn sm ghost" href="${APP_URL}/b/${esc(BIZ.id)}" target="_blank" rel="noopener">Ver ficha pública ↗</a></div>
-    ${BIZ.verification_status !== 'verified' ? `<div class="help"><b>Tu negocio está ${esc(BIZ_LABELS[BIZ.verification_status] || BIZ.verification_status)}.</b> Mientras tanto puedes preparar publicaciones en borrador; se verán en cuanto te verifiquemos.</div>` : ''}
+    ${BIZ.verification_status !== 'verified' ? `<div class="help"><b>${esc(bi(`Tu negocio está ${BIZ_LABELS[BIZ.verification_status] || BIZ.verification_status}.`, `Your business is ${I18N.t(BIZ_LABELS[BIZ.verification_status] || BIZ.verification_status)}.`))}</b> ${esc(I18N.t('Mientras tanto puedes preparar publicaciones en borrador; se verán en cuanto te verifiquemos.'))}</div>` : ''}
     ${primeros ? `<div class="card primeros"><h2>Primeros pasos</h2>
       <p class="muted" style="margin:0 0 8px">Tres cosas y tu negocio está listo para que la gente lo encuentre.</p>
       ${paso(1, conFotos, 'Pon tu logo y una foto', '', '#/ficha')}
@@ -787,10 +789,13 @@ PAGES.publicaciones = async (v, param) => {
       ${gestiona() ? `<a class="btn sm" href="#/publicaciones/nueva-flash">${ms('bolt')}Nueva oferta</a>
       <a class="btn sm" href="#/publicaciones/nuevo-evento">${ms('event')}Nuevo evento</a>` : ''}
       <button class="btn sm ghost" id="csv">Exportar CSV</button></div>
-    ${helpBox('¿Oferta o evento?', '<p><b>Oferta flash</b>: algo que se canjea hoy, con cuenta atrás y aforo («café + tostada 2,50 € hasta mediodía»). <b>Evento</b>: algo con fecha, que se guarda en la agenda y puede admitir reserva de plaza.</p>')}
+    ${helpBox('¿Oferta o evento?', bi('<p><b>Oferta flash</b>: algo que se canjea hoy, con cuenta atrás y aforo («café + tostada 2,50 € hasta mediodía»). <b>Evento</b>: algo con fecha, que se guarda en la agenda y puede admitir reserva de plaza.</p>',
+      '<p><b>Flash offer</b>: something redeemed today, with a countdown and a limit (“coffee + toast €2.50 until noon”). <b>Event</b>: something with a date, which people save to their agenda and which can take seat reservations.</p>'))}
     <div id="list"></div>
     <div id="rules"></div>`;
-  const DIAS = ['domingos', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábados'];
+  const DIAS = I18N.lang === 'en'
+    ? ['Sundays', 'Mondays', 'Tuesdays', 'Wednesdays', 'Thursdays', 'Fridays', 'Saturdays']
+    : ['domingos', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábados'];
 
   // Las reglas que publican solas. Se crean desde una publicación que ya
   // existe («repetir esta cada martes»), no desde un formulario en blanco:
@@ -803,7 +808,7 @@ PAGES.publicaciones = async (v, param) => {
       ${table({
         cols: [
           { h: 'Publicación', r: (x) => `<b class="title">${esc(x.title || '—')}</b><span class="sub">${fmtNum(x.published)} publicada(s)</span>` },
-          { h: 'Cuándo', r: (x) => `${x.weekdays.map((d) => DIAS[d]).join(', ')} a las ${esc(x.start_time)}` },
+          { h: 'Cuándo', r: (x) => `${x.weekdays.map((d) => DIAS[d]).join(', ')} ${I18N.lang === 'en' ? 'at' : 'a las'} ${esc(x.start_time)}` },
           { h: 'Dura', r: (x) => `${Math.round(x.duration_min / 60 * 10) / 10} h` },
           { h: 'Estado', r: (x) => tag(x.is_active ? 'active' : 'draft') },
           { h: '', r: (x) => `<div class="actions">
@@ -1153,7 +1158,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
         <label class="f"><span>¿Cuánto vale el código QR?</span><select name="code_ttl_minutes">
           ${[[5, '5 minutos'], [30, '30 minutos'], [180, '3 horas'], [1440, '1 día'], ['', 'Sin caducidad']].map((t) => `<option value="${t[0]}" ${String(o.code_ttl_minutes ?? '') === String(t[0]) ? 'selected' : ''}>${t[1]}</option>`).join('')}</select></label>
         <label class="f"><span>Canjes por persona</span><input name="max_per_user" type="number" min="1" max="20" value="${o.max_per_user ?? 1}"></label>
-        <label class="f full" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="reservations_enabled" ${o.reservations_enabled ? 'checked' : ''}><span>Evento con <b>reserva de plaza</b> (sin pago): la gente reserva desde la app y enseña su código en la puerta</span></label>
+        <label class="f full" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="reservations_enabled" ${o.reservations_enabled ? 'checked' : ''}><span>${bi('Evento con <b>reserva de plaza</b> (sin pago): la gente reserva desde la app y enseña su código en la puerta', 'Event with <b>seat reservation</b> (no payment): people book from the app and show their code at the door')}</span></label>
         <label class="f" id="seatsRow" hidden><span>Plazas por persona <small>(a un evento no se va solo; un código vale por todas)</small></span><select name="max_seats">
           ${[1, 2, 3, 4, 5, 6].map((n) => `<option value="${n}" ${Number(o.max_seats || 1) === n ? 'selected' : ''}>${n === 1 ? '1 (solo quien reserva)' : n + ' personas'}</option>`).join('')}</select></label>
         <label class="f full" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="adults_only" ${o.adults_only ? 'checked' : ''}><span>Solo para mayores de 18</span></label>
@@ -1723,8 +1728,10 @@ PAGES.sellos = async (v) => {
 
   v.innerHTML = `
     <div class="page-head"><h1>Tarjeta de sellos</h1></div>
-    ${helpBox('¿Cómo funciona?', `<p>La de toda la vida, la de cartón, pero sin cartón: cada vez que validas un código de esta persona, cae un sello. Al llegar a la meta, se lleva el premio, y el premio es otro código que validas igual que los demás.</p>
-      <p>Como mucho <b>un sello al día por persona</b>, para que no valga con pedir tres cafés seguidos. Si la apagas, dejas de dar sellos nuevos, pero <b>nadie pierde los que tiene</b>: al encenderla otra vez siguen ahí.</p>`)}
+    ${helpBox('¿Cómo funciona?', bi(`<p>La de toda la vida, la de cartón, pero sin cartón: cada vez que validas un código de esta persona, cae un sello. Al llegar a la meta, se lleva el premio, y el premio es otro código que validas igual que los demás.</p>
+      <p>Como mucho <b>un sello al día por persona</b>, para que no valga con pedir tres cafés seguidos. Si la apagas, dejas de dar sellos nuevos, pero <b>nadie pierde los que tiene</b>: al encenderla otra vez siguen ahí.</p>`,
+      `<p>The classic loyalty card, without the cardboard: every time you validate a code from this person, they get a stamp. When they reach the goal they get the reward, and the reward is another code you validate like any other.</p>
+      <p>At most <b>one stamp a day per person</b>, so three coffees in a row don't count three times. If you switch it off you stop giving new stamps, but <b>nobody loses the ones they have</b>: they are still there when you switch it back on.</p>`))}
 
     <div class="card"><h2>${c ? 'Tu tarjeta' : 'Enciende tu tarjeta'}</h2>
       <form id="f" class="form">
@@ -1809,7 +1816,8 @@ PAGES.carta = async (v) => {
       <div class="page-head"><h1>Carta</h1><span class="spacer"></span>
         ${canManage ? `<button class="btn sm" id="add-sec">Añadir sección</button>
         <button class="btn sm primary" id="save" ${sucia ? '' : 'disabled'}>Guardar la carta</button>` : ''}</div>
-      ${helpBox('Tú eliges cómo ponerla', '<p>Tres maneras, y puedes usar las que quieras a la vez: <b>escribirla</b> aquí, subir <b>fotos</b> de la carta de papel o poner un <b>enlace</b> a tu web o a un PDF.</p><p>Escribirla es lo que mejor se lee en el móvil, se puede buscar y la lee un lector de pantalla; si la escribes, es lo primero que se ve y las fotos y el enlace se quedan debajo. Si no te apetece, con una foto vas servido.</p><p>Los <b>alérgenos</b> son los catorce que obliga a declarar el Reglamento 1169/2011. Pon solo los que sepas seguro: aquí equivocarse no es una errata.</p>')}
+      ${helpBox('Tú eliges cómo ponerla', bi('<p>Tres maneras, y puedes usar las que quieras a la vez: <b>escribirla</b> aquí, subir <b>fotos</b> de la carta de papel o poner un <b>enlace</b> a tu web o a un PDF.</p><p>Escribirla es lo que mejor se lee en el móvil, se puede buscar y la lee un lector de pantalla; si la escribes, es lo primero que se ve y las fotos y el enlace se quedan debajo. Si no te apetece, con una foto vas servido.</p><p>Los <b>alérgenos</b> son los catorce que obliga a declarar el Reglamento 1169/2011. Pon solo los que sepas seguro: aquí equivocarse no es una errata.</p>',
+        '<p>Three ways, and you can use as many as you like at once: <b>type it</b> here, upload <b>photos</b> of the paper menu or add a <b>link</b> to your website or a PDF.</p><p>Typing it is what reads best on a phone, it can be searched and screen readers can read it; if you type it, it is shown first and the photos and the link go below. If you would rather not, a photo is enough.</p><p>The <b>allergens</b> are the fourteen that Regulation (EU) 1169/2011 requires you to declare. Only mark the ones you are sure about: a mistake here is not just a typo.</p>'))}
 
       <div class="card"><h2>Un enlace o un PDF</h2>
         <p class="muted" style="margin:0 0 8px">Si tu carta ya está en tu web o en un PDF, con pegar la dirección vale.</p>
@@ -2062,7 +2070,8 @@ PAGES.novedades = async (v) => {
   v.innerHTML = `
     <div class="page-head"><h1>Novedades</h1><span class="spacer"></span>
       ${canManage ? '<button class="btn sm primary" id="nueva">Nueva novedad</button>' : ''}</div>
-    ${helpBox('¿Qué es una novedad?', '<p>Una nota corta en tu ficha, sin cuenta atrás ni código: «hoy hay pulpo», «cerramos el lunes», «ya tenemos terraza». Para algo que se canjea, usa una <b>publicación</b>.</p><p>Quien te tenga en favoritos recibe una notificación (como mucho una al día por negocio, para no cansar).</p>')}
+    ${helpBox('¿Qué es una novedad?', bi('<p>Una nota corta en tu ficha, sin cuenta atrás ni código: «hoy hay pulpo», «cerramos el lunes», «ya tenemos terraza». Para algo que se canjea, usa una <b>publicación</b>.</p><p>Quien te tenga en favoritos recibe una notificación (como mucho una al día por negocio, para no cansar).</p>',
+      '<p>A short note on your page, with no countdown or code: “octopus today”, “closed on Monday”, “the terrace is open”. For something people redeem, use a <b>publication</b>.</p><p>People who have you in their favourites get a notification (at most one a day per business, so it doesn\'t get tiring).</p>'))}
     ${table({
       cols: [
         { h: 'Novedad', r: (p) => `${p.image_url ? `<img class="thumb" src="${esc(p.image_url)}" alt="" loading="lazy">` : ''}<span class="title">${esc(p.body || '')}</span>` },
@@ -2131,7 +2140,8 @@ PAGES.ficha = async (v) => {
     v.innerHTML = `
       <div class="page-head"><h1>Tu ficha</h1><span class="spacer"></span>
         <a class="btn sm" href="https://klendar.app/b/${esc(BIZ.id)}" target="_blank" rel="noopener">Ver cómo se ve ↗</a></div>
-      ${helpBox('¿Qué es esto?', '<p>Lo que ve la gente cuando entra en tu negocio: el nombre, de qué va, dónde estás, cómo llamarte y tus horarios. Es la misma ficha que editas desde la app.</p><p>La <b>dirección</b> se busca en el mapa al guardar. Si el punto no queda donde debe, arrastra la chincheta en «Ubicación en el mapa».</p>')}
+      ${helpBox('¿Qué es esto?', bi('<p>Lo que ve la gente cuando entra en tu negocio: el nombre, de qué va, dónde estás, cómo llamarte y tus horarios. Es la misma ficha que editas desde la app.</p><p>La <b>dirección</b> se busca en el mapa al guardar. Si el punto no queda donde debe, arrastra la chincheta en «Ubicación en el mapa».</p>',
+      '<p>What people see when they open your business: the name, what you do, where you are, how to call you and your opening hours. It is the same page you edit from the app.</p><p>The <b>address</b> is looked up on the map when you save. If the pin is not in the right place, drag it in “Location on the map”.</p>'))}
       <form id="f" class="form">
         <label class="f"><span>Nombre</span><input name="name" value="${esc(b.name || '')}" required maxlength="80" ${canManage ? '' : 'disabled'}></label>
         <label class="f"><span>Categoría</span><select name="category_id" ${canManage ? '' : 'disabled'}>
@@ -2166,7 +2176,7 @@ PAGES.ficha = async (v) => {
         </form></div>
 
       <div class="card"><h2>Imágenes</h2>
-        <p class="muted" style="margin:0 0 10px">El <b>logo</b> sale redondo y pequeño; la <b>portada</b>, ancha arriba del todo. La galería son fotos del sitio.</p>
+        <p class="muted" style="margin:0 0 10px">${bi('El <b>logo</b> sale redondo y pequeño; la <b>portada</b>, ancha arriba del todo. La galería son fotos del sitio.', 'The <b>logo</b> is shown small and round; the <b>cover</b>, wide at the very top. The gallery is photos of the place.')}</p>
         <div class="thumbs">
           <div class="thumb"><img src="${esc(logo || '/assets/symbol.png')}" alt="">
             ${canManage ? '<button class="btn sm" data-img="logo">Cambiar logo</button>' : ''}</div>
@@ -2302,7 +2312,8 @@ PAGES.equipo = async (v) => {
   v.innerHTML = `
     <div class="page-head"><h1>Equipo</h1><span class="spacer"></span>
       ${canManage ? '<button class="btn sm primary" id="add">Añadir a alguien</button>' : ''}</div>
-    ${helpBox('¿Quién puede qué?', '<p><b>Empleado</b>: valida códigos QR. <b>Encargado</b>: además publica, edita la ficha y lleva el equipo. <b>Propietario</b>: todo; no se le puede cambiar el rol desde aquí.</p>')}
+    ${helpBox('¿Quién puede qué?', bi('<p><b>Empleado</b>: valida códigos QR. <b>Encargado</b>: además publica, edita la ficha y lleva el equipo. <b>Propietario</b>: todo; no se le puede cambiar el rol desde aquí.</p>',
+      '<p><b>Staff</b>: validates QR codes. <b>Manager</b>: also publishes, edits the business page and runs the team. <b>Owner</b>: everything; their role cannot be changed from here.</p>'))}
     <div id="list"></div>
     ${invites.length ? `<div class="card" style="margin-top:14px"><h2>Invitaciones pendientes</h2>
       <p class="muted">Todavía no tienen cuenta en Klendar. Entran solas al registrarse con ese correo.</p>
@@ -2381,7 +2392,8 @@ function audienciaHtml(aud) {
       <div class="bar"><span class="bl">${esc(t.bucket)}</span>
         <span class="bt"><i style="width:${Math.round((t.n / total) * 100)}%"></i></span>
         <span class="bn">${fmtNum(t.n)}</span></div>`).join('')}</div>
-    <p class="muted small" style="margin:10px 0 0">Distancia entre tu local y el último sitio conocido de quien ha canjeado algo, de ${fmtNum(aud.people)} persona(s). Es aproximado y nunca se enseña dónde está nadie.</p>
+    <p class="muted small" style="margin:10px 0 0">${esc(bi(`Distancia entre tu local y el último sitio conocido de quien ha canjeado algo, de ${fmtNum(aud.people)} persona(s). Es aproximado y nunca se enseña dónde está nadie.`,
+      `Distance between your place and the last known location of people who redeemed something (${fmtNum(aud.people)} ${aud.people === 1 ? 'person' : 'people'}). It is approximate and never shows where anyone is.`))}</p>
   </div>`;
 }
 

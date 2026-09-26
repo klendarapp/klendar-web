@@ -178,8 +178,8 @@ RUTAS.alertas = async () => {
     toast(a.active ? t('Aviso en pausa') : t('Aviso activado'));
     navegar();
   })));
-  $$('[data-borra]').forEach((b) => b.addEventListener('click', () => {
-    if (!confirm(t('¿Borrar este aviso?'))) return;
+  $$('[data-borra]').forEach((b) => b.addEventListener('click', async () => {
+    if (!(await confirma({ titulo: t('¿Borrar este aviso?'), aceptar: t('Borrar'), peligro: true }))) return;
     ocupado(b, async () => {
       await tabla(sb.from('offer_alerts').delete().eq('id', b.dataset.borra));
       toast(t('Aviso borrado'));
@@ -447,13 +447,23 @@ RUTAS.ajustes = async () => {
       navegar();
     } catch (e) { caja.checked = !caja.checked; toast(e.message, true); }
   });
-  $('#sin-ubicacion')?.addEventListener('click', (ev) => {
-    if (!confirm(t('Borramos tu última posición y apagamos los avisos de «cerca de ti». ¿Seguimos?'))) return;
-    ocupado(ev.currentTarget, async () => { await llamar('revoke_location_consent', {}); toast(t('Ya no guardamos tu posición')); navegar(); });
+  $('#sin-ubicacion')?.addEventListener('click', async (ev) => {
+    const boton = ev.currentTarget;
+    if (!(await confirma({
+      titulo: t('Dejar de compartir'),
+      texto: t('Borramos tu última posición y desactivamos los avisos de «cerca de ti».'),
+      aceptar: t('Dejar de compartir'),
+    }))) return;
+    ocupado(boton, async () => { await llamar('revoke_location_consent', {}); toast(t('Ya no guardamos tu posición')); navegar(); });
   });
-  $('#sin-push')?.addEventListener('click', (ev) => {
-    if (!confirm(t('Dejarán de llegarte notificaciones a todos tus móviles. Podrás volver a activarlas desde la app. ¿Seguimos?'))) return;
-    ocupado(ev.currentTarget, async () => { await llamar('revoke_push', {}); toast(t('Notificaciones del móvil desactivadas')); navegar(); });
+  $('#sin-push')?.addEventListener('click', async (ev) => {
+    const boton = ev.currentTarget;
+    if (!(await confirma({
+      titulo: t('Desactivar push'),
+      texto: t('Dejarán de llegarte notificaciones a todos tus dispositivos. Podrás volver a activarlas desde Ajustes de notificaciones.'),
+      aceptar: t('Desactivar push'),
+    }))) return;
+    ocupado(boton, async () => { await llamar('revoke_push', {}); toast(t('Notificaciones del móvil desactivadas')); navegar(); });
   });
   $('#descargar').addEventListener('click', (ev) => ocupado(ev.currentTarget, async () => {
     const datos = await llamar('export_my_data', {});
@@ -468,20 +478,28 @@ RUTAS.ajustes = async () => {
   }));
 
   // Sesión y cuenta
-  $('#salir-todo').addEventListener('click', (ev) => {
-    if (!confirm(t('Tendrás que volver a entrar en cada dispositivo, también en este. ¿Cerrar todas?'))) return;
-    ocupado(ev.currentTarget, async () => {
+  $('#salir-todo').addEventListener('click', async (ev) => {
+    const boton = ev.currentTarget;
+    if (!(await confirma({
+      titulo: t('¿Cerrar sesión en todos los dispositivos?'),
+      texto: t('Tendrás que volver a entrar en cada uno, incluido este.'),
+      aceptar: t('Cerrar todas'),
+    }))) return;
+    ocupado(boton, async () => {
       await sb.auth.signOut({ scope: 'global' });
       toast(t('Has cerrado sesión en todos los dispositivos'));
       vuelve('');
     });
   });
-  $('#borrar').addEventListener('click', (ev) => {
-    const palabra = t('ELIMINAR');
-    const escrito = prompt(t('Esto borra tu cuenta para siempre. Para confirmarlo, escribe ELIMINAR:'));
-    if (escrito == null) return;
-    if (escrito.trim().toUpperCase() !== palabra) { toast(t('No coincide: la cuenta sigue como estaba.'), true); return; }
-    ocupado(ev.currentTarget, async () => {
+  $('#borrar').addEventListener('click', async (ev) => {
+    const boton = ev.currentTarget;
+    if (!(await confirma({
+      titulo: t('¿Eliminar tu cuenta?'),
+      texto: t('Se borrarán tus datos, favoritos y canjes de forma permanente. Esta acción no se puede deshacer.'),
+      aceptar: t('Eliminar'),
+      peligro: true,
+    }))) return;
+    ocupado(boton, async () => {
       await llamar('delete_my_account', {});
       try { await sb.auth.signOut(); } catch { /* la sesión ya no existe */ }
       pinta(`<div class="ticket"><p class="hecho-ic" aria-hidden="true">✓</p>

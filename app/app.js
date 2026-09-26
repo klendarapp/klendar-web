@@ -402,6 +402,30 @@ function validaForm(form, reglas) {
   return !primero;
 }
 
+/** El diálogo de confirmar, como el de la app (confirmDialog): título,
+ * explicación, «Cancelar» y la acción, en rojo si no tiene vuelta atrás.
+ * Devuelve true solo si se confirma. */
+function confirma({ titulo, texto = '', aceptar, peligro = false }) {
+  return new Promise((resolve) => {
+    const d = document.createElement('dialog');
+    d.className = 'dialogo';
+    d.setAttribute('aria-labelledby', 'dialogo-t');
+    d.innerHTML = `<h2 id="dialogo-t">${esc(titulo)}</h2>
+      ${texto ? `<p class="muted">${esc(texto)}</p>` : ''}
+      <div class="dialogo-botones">
+        <button type="button" class="pill" value="no">${esc(t('Cancelar'))}</button>
+        <button type="button" class="pill ${peligro ? 'peligro-lleno' : 'accent'}" value="si">${esc(aceptar)}</button>
+      </div>`;
+    document.body.appendChild(d);
+    let ok = false;
+    d.querySelectorAll('button').forEach((b) => { b.onclick = () => { ok = b.value === 'si'; d.close(); }; });
+    d.addEventListener('click', (e) => { if (e.target === d) d.close(); }); // fuera del cuadro, cancela
+    d.addEventListener('close', () => { d.remove(); resolve(ok); });
+    d.showModal();
+    d.querySelector('button[value=no]').focus();
+  });
+}
+
 /** Un botón que se bloquea mientras trabaja, para no mandar dos veces. */
 async function ocupado(boton, trabajo) {
   if (boton.disabled) return;
@@ -927,7 +951,12 @@ RUTAS.codigo = async ([id], params) => {
     </div>`);
   // «Ya no voy»: las plazas quedan libres y la lista de espera se entera.
   $('#anular')?.addEventListener('click', async () => {
-    if (!confirm(t('Tus plazas quedan libres para otra persona y este código deja de valer. ¿Anular la reserva?'))) return;
+    if (!(await confirma({
+      titulo: t('¿Anular la reserva?'),
+      texto: t('Tus plazas quedan libres para otra persona y este código deja de valer. Si cambias de idea, puedes volver a reservar mientras quede sitio.'),
+      aceptar: t('Anular'),
+      peligro: true,
+    }))) return;
     try {
       const r = await llamar('cancel_redemption', { p_code: tk.code });
       toast(r?.ok ? t('Reserva anulada. Gracias por dejar el sitio libre.') : t('Esta reserva ya no se podía anular (se usó o ha caducado).'), !r?.ok);
