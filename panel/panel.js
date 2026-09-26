@@ -614,16 +614,25 @@ PAGES.alta = async (v) => {
     const err = $('#err', v);
     err.textContent = '';
     const d = Object.fromEntries(new FormData(f));
-    if (String(d.name || '').trim().length < 2) { err.textContent = I18N.t('Pon el nombre del negocio.'); return; }
-    if (!d.category_id) { err.textContent = I18N.t('Elige una categoría.'); return; }
-    if (!String(d.address || '').trim() || !String(d.city || '').trim()) { err.textContent = I18N.t('Faltan la dirección o la ciudad.'); return; }
+    // Como la app: «Obligatorio» debajo de cada campo que falta.
+    const obligatorio = KL_VALIDA.MSG[I18N.lang === 'en' ? 'en' : 'es'].obligatorio;
+    const faltan = [
+      ['name', String(d.name || '').trim().length < 2],
+      ['category_id', !d.category_id],
+      ['address', !String(d.address || '').trim()],
+      ['city', !String(d.city || '').trim()],
+    ];
+    for (const [campo, falta] of faltan) KL_CAMPO(f.elements[campo], falta ? obligatorio : null);
+    const primero = faltan.find(([, falta]) => falta);
+    if (primero) { f.elements[primero[0]].focus(); return; }
     if (!punto) {
       // Sin chincheta: se intenta con la dirección escrita.
       const b = await buscaDireccion(`${d.address}, ${d.city}`);
       if (!b) { err.textContent = I18N.t('Marca en el mapa dónde está el local (o pulsa «Buscar en el mapa»).'); return; }
       punto = { lat: b.lat, lng: b.lng };
     }
-    if (!f.terms.checked) { err.textContent = I18N.t('Tienes que aceptar las condiciones para negocios.'); return; }
+    KL_CAMPO(f.terms, f.terms.checked ? null : I18N.t('Tienes que aceptar las condiciones para negocios.'));
+    if (!f.terms.checked) { f.terms.focus(); return; }
     const boton = $('#enviar', v);
     boton.disabled = true;
     try {
