@@ -1096,7 +1096,8 @@ PAGES.validar = async (v) => {
   const validate = async () => {
     const raw = $('#code').value.trim();
     if (!raw) return;
-    const code = raw.includes('/r/') ? raw.split('/r/').pop().split(/[?#]/)[0] : raw;
+    // Tecleado se ve en grupos de cuatro («0882 7EC7 …»): fuera espacios y guiones.
+    const code = raw.includes('/r/') ? raw.split('/r/').pop().split(/[?#]/)[0] : raw.replace(/[\s-]/g, '');
     try {
       const res = await rpc('validate_redemption', { p_code: code });
       if (res.ok) {
@@ -1569,7 +1570,8 @@ function planCard(sub) {
       : (en ? `${fmtMoney(sub.price_cents)} per month, no sales commission.` : `${fmtMoney(sub.price_cents)} al mes, sin comisiones por venta.`);
   const usadas = sub.active_offers ?? 0;
   const uso = sub.max_active_offers == null
-    ? (en ? `${usadas} active publications · unlimited` : `${usadas} publicaciones activas · sin límite`)
+    ? (en ? `${usadas} active publication${usadas === 1 ? '' : 's'} · unlimited`
+      : `${usadas} ${usadas === 1 ? 'publicación activa' : 'publicaciones activas'} · sin límite`)
     : (en ? `${usadas} of ${sub.max_active_offers} active publications` : `${usadas} de ${sub.max_active_offers} publicaciones activas`);
   const asunto = encodeURIComponent(en ? 'Change of plan' : 'Cambio de plan');
   const cuerpo = encodeURIComponent(`${en ? 'Business' : 'Negocio'}: ${BIZ.id}`);

@@ -37,6 +37,9 @@ for (const a of $$('.lang a[data-lang]')) {
 document.documentElement.lang = EN ? 'en' : 'es';
 
 // ── Formatos ──────────────────────────────────────────────────────────────
+// El código para leerlo o dictarlo, de cuatro en cuatro («0882 7EC7 …»),
+// igual que en la app. Al validarlo se aceptan con o sin espacios.
+const codigoLegible = (c) => String(c || '').toUpperCase().replace(/(.{4})(?=.)/g, '$1 ');
 const money = (c, cur = 'EUR') => (c == null ? '' : (c / 100).toLocaleString(LOC, { style: 'currency', currency: cur || 'EUR' }));
 const fecha = (iso, opts = { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) => {
   if (!iso) return '';
@@ -640,11 +643,11 @@ RUTAS.codigos = async () => {
       <a class="ocard" href="${vivo(r) ? `#/codigo/${esc(r.offer_id)}` : r.status === 'validated' ? `#/recibo/${esc(r.id)}` : `${pre}/o/${esc(r.offer_id)}`}">
         ${r.business_logo ? `<img src="${esc(r.business_logo)}" alt="" loading="lazy">` : '<span class="ph">✦</span>'}
         <span class="ocard-body"><b>${esc(r.offer_title)}</b>
-          <span class="muted">${esc(r.business_name)} · ${esc(fecha(r.validated_at || r.created_at))}</span>
+          <span class="muted">${esc(r.business_name)} · ${esc(fecha(r.validated_at || (r.status === 'pending' && r.event_at) || r.created_at))}</span>
           <span class="ocard-meta"><span class="tag${vivo(r) ? '' : ' off'}">${esc(estado(r))}</span>
             ${r.status === 'validated' ? `<span class="muted">${esc(t('Ver recibo'))} →</span>` : ''}</span>
         </span></a>`).join('')}</div>`
-    : `<p class="empty">${esc(t('Todavía no has pedido ningún código. Cuando veas una oferta que te guste, dale a «Conseguir el código».'))}</p>`}`);
+    : `<p class="empty">${esc(t('Todavía no tienes códigos. Cuando consigas el código de una oferta o reserves plaza en un evento, lo tendrás aquí.'))}</p>`}`);
 };
 
 // ── El código, para enseñar en la barra ───────────────────────────────────
@@ -662,8 +665,12 @@ RUTAS.codigo = async ([id], params) => {
       <h1>${esc(tk.offer_title || '')}</h1>
       ${(tk.seats || 1) > 1 ? `<p class="muted"><b>${tk.seats} ${esc(t('plazas'))}</b></p>` : ''}
       ${beneficio(tk.discount, tk.price_cents, tk.currency) ? `<p><span class="tag grande">${esc(beneficio(tk.discount, tk.price_cents, tk.currency))}</span></p>` : ''}
+      ${(tk.seats || 1) > 1 && !tk.discount && tk.price_cents != null
+        ? `<p class="muted">${esc(EN
+          ? `${money(tk.price_cents, tk.currency)} each · ${money(tk.price_cents * tk.seats, tk.currency)} in total`
+          : `${money(tk.price_cents, tk.currency)} por persona · ${money(tk.price_cents * tk.seats, tk.currency)} en total`)}</p>` : ''}
       <div class="qr" id="qr" role="img" aria-label="${esc(t('Código QR para que el negocio valide tu canje'))}"></div>
-      <p class="codigo">${esc(String(tk.code).toUpperCase())}</p>
+      <p class="codigo">${esc(codigoLegible(tk.code))}</p>
       <p class="muted" id="cuenta"></p>
       <p class="muted">${esc(t('Enséñalo en el sitio. Si no pueden escanearlo, que escriban el código de debajo.'))}</p>
     </div>`);
@@ -736,7 +743,7 @@ RUTAS.recibo = async ([id]) => {
         ${benef ? `<dt>${esc(t('Beneficio'))}</dt><dd>${esc(benef)}</dd>` : ''}
         ${(r.seats || 1) > 1 ? `<dt>${esc(t('Plazas'))}</dt><dd>${r.seats}</dd>` : ''}
         <dt>${esc(t('Cuándo'))}</dt><dd>${esc(fecha(r.validated_at, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }))}</dd>
-        <dt>${esc(t('Código'))}</dt><dd><code>${esc(String(r.code).toUpperCase())}</code></dd>
+        <dt>${esc(t('Código'))}</dt><dd><code>${esc(codigoLegible(r.code))}</code></dd>
       </dl>
       <p class="muted">${esc(t('Esto no es una factura: el cobro lo hace el negocio. Es el resguardo de que usaste este código.'))}</p>
     </div>
@@ -774,7 +781,7 @@ RUTAS.sellos = async () => {
           <p class="muted">${esc(t('Tu premio'))}</p>
           <h1>${esc(r.reward || b.dataset.reward)}</h1>
           <div class="qr">${qr.createSvgTag({ cellSize: 6, margin: 2, scalable: true })}</div>
-          <p class="codigo">${esc(String(r.code).toUpperCase())}</p>
+          <p class="codigo">${esc(codigoLegible(r.code))}</p>
           <p class="muted">${esc(t('Enséñalo en el sitio. Vale una vez.'))}</p>
         </div>`);
       I18N.translate(view);

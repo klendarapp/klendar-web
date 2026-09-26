@@ -126,7 +126,7 @@ const APP_EN = {
   'Anulado': 'Cancelled',
   'Caducado': 'Expired',
   'Ver recibo': 'See receipt',
-  'Todavía no has pedido ningún código. Cuando veas una oferta que te guste, dale a «Conseguir el código».': 'You have not asked for any code yet. When you see an offer you like, tap “Get the code”.',
+  'Todavía no tienes códigos. Cuando consigas el código de una oferta o reserves plaza en un evento, lo tendrás aquí.': 'No codes yet. When you get the code for an offer or reserve a place at an event, it will be here.',
   'plazas': 'places',
   'Código QR para que el negocio valide tu canje': 'QR code for the business to validate your redemption',
   'Enséñalo en el sitio. Si no pueden escanearlo, que escriban el código de debajo.': 'Show it at the place. If they cannot scan it, they can type the code underneath.',
