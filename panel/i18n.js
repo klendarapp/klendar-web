@@ -293,6 +293,8 @@ const I18N = makeI18N({
     'Añadido al equipo': 'Added to the team',
     'Invitaciones pendientes': 'Pending invitations',
     'Invitación guardada': 'Invitation saved',
+    'Invitación enviada: le hemos mandado un correo': 'Invitation sent: we have emailed them',
+    "Si aún no tiene cuenta en Klendar, le mandamos un correo con la invitación y entra al equipo en cuanto se registre con esa dirección.": "If they don't have a Klendar account yet, we email them the invitation and they join the team as soon as they sign up with that address.",
     'Todavía no tienen cuenta en Klendar. Entran solas al registrarse con ese correo.':
       'They do not have a Klendar account yet. They join automatically when they sign up with that email.',
     'Propietario': 'Owner',

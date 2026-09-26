@@ -1959,7 +1959,7 @@ PAGES.equipo = async (v) => {
     $('#add').onclick = async () => {
       const r = await modal({
         title: 'Añadir a alguien al equipo',
-        intro: 'Si todavía no tiene cuenta en Klendar, le guardamos la invitación y entra en cuanto se registre con ese correo.',
+        intro: esc(I18N.t('Si aún no tiene cuenta en Klendar, le mandamos un correo con la invitación y entra al equipo en cuanto se registre con esa dirección.')),
         fields: [
           { name: 'email', label: 'Correo', type: 'email', required: true },
           { name: 'role', label: 'Rol', type: 'select', value: 'staff', options: [['staff', 'Empleado'], ['manager', 'Encargado']] },
@@ -1970,7 +1970,7 @@ PAGES.equipo = async (v) => {
       try {
         const res = await rpc('add_business_member', { p_business_id: BIZ.id, p_email: r.email, p_role: r.role });
         if (!res.ok) { toast(ERRORS[res.error] || res.error, true); return; }
-        toast(res.invited ? 'Invitación guardada' : 'Añadido al equipo');
+        toast(res.invited ? 'Invitación enviada: le hemos mandado un correo' : 'Añadido al equipo');
         route();
       } catch (e) { toast(friendly(e.message), true); }
     };
