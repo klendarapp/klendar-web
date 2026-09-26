@@ -5,8 +5,6 @@
 const I18N = makeI18N({
     // ── Entrada ───────────────────────────────────────────────────────────
     'Entra en tu panel': 'Log in to your dashboard',
-    'Con la misma cuenta que usas en la app. Si tu negocio todavía no está dado de alta, hazlo desde la app: Perfil → Dar de alta mi negocio.':
-      'With the same account you use in the app. If your business is not registered yet, do it from the app: Profile → Register my business.',
     'Email': 'Email',
     'Contraseña': 'Password',
     'Entrar': 'Log in',

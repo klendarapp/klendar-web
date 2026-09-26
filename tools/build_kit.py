@@ -74,10 +74,10 @@ def guide():
 
     steps = [
         ('1', 'Descarga Klendar y crea tu cuenta', 'Google Play o App Store. Entra con tu correo o con Google.'),
-        ('2', 'Da de alta tu negocio', 'Perfil → «¿Tienes un negocio? Dalo de alta». Nombre, categoría, ubicación en el mapa, contacto y NIF. Lo verificamos en 24–48 h.'),
+        ('2', 'Da de alta tu negocio', 'En la app, Cuenta → «¿Quieres registrar tu negocio?», o en klendar.app/panel. Nombre, categoría, ubicación en el mapa, contacto y NIF. Lo verificamos en 24–48 h.'),
         ('3', 'Completa tu ficha', 'Portada, logo, horarios, carta y redes. Es lo que ve la gente al tocar tu nombre.'),
-        ('4', 'Publica tu primera oferta flash', 'Panel → «Nueva oferta flash». Título claro, una foto real, ventana horaria, descuento y aforo. Publica y ya está en el feed de quien esté cerca.'),
-        ('5', 'Valida los canjes', 'Cuando alguien te enseñe el QR: Panel → «Validar códigos QR» y escanéalo. Verás qué aplicar y el nombre del cliente.'),
+        ('4', 'Publica tu primera oferta flash', 'Mi negocio → «Crear» → «Nueva oferta flash» (o en el panel web). Título claro, una foto real, ventana horaria, descuento y aforo. Publica y ya está en el feed de quien esté cerca.'),
+        ('5', 'Valida los canjes', 'Cuando alguien te enseñe el QR: Mi negocio → «Validar códigos» y escanéalo (o escribe el código). Verás qué aplicar y el nombre del cliente.'),
     ]
     for n, title, body in steps:
         c.setFillColor(CARD); c.roundRect(M, y - 19 * mm, W - 2 * M, 21 * mm, 4 * mm, fill=1, stroke=0)

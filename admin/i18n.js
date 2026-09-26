@@ -33,7 +33,7 @@ const I18N = makeI18N({
   'Usuarios': 'Users',
   'Moderación': 'Moderation',
   'Denuncias': 'Reports',
-  'Reseñas y posts': 'Reviews and posts',
+  'Reseñas y novedades': 'Reviews and news',
   'Sugerencias': 'Feedback',
   'Negocio': 'Business',
   'Planes y pagos': 'Plans and payments',
@@ -108,7 +108,8 @@ const I18N = makeI18N({
   'de': 'of',
   'Reseñas': 'Reviews',
   'Reseña': 'Review',
-  'Posts': 'Posts',
+  'Novedades': 'News',
+  'Sin novedades.': 'No news.',
   'Ofertas y eventos': 'Offers and events',
 
   // ── Tablas y filtros ──────────────────────────────────────────────────

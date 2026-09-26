@@ -188,7 +188,7 @@ const NAV = [
   ['group', 'Actividad'],
   ['resumen', '📊', 'Resumen'], ['semanas', '📈', 'Semana a semana'], ['ciudades', '🗺', 'Ciudades'], ['negocios', '🏪', 'Negocios'], ['publicaciones', '⚡', 'Publicaciones'], ['canjes', '🎟', 'Canjes'], ['usuarios', '👤', 'Usuarios'],
   ['group', 'Moderación'],
-  ['denuncias', '🚩', 'Denuncias'], ['resenas', '💬', 'Reseñas y posts'], ['sugerencias', '💡', 'Sugerencias'],
+  ['denuncias', '🚩', 'Denuncias'], ['resenas', '💬', 'Reseñas y novedades'], ['sugerencias', '💡', 'Sugerencias'],
   ['group', 'Negocio'],
   ['planes', '💳', 'Planes y pagos'], ['avisos', '🔔', 'Avisos y push'],
   ['group', 'Sistema'],
@@ -460,7 +460,7 @@ async function businessDetail(v, id) {
     </div>
     <div class="grid2">
       <div class="card"><h2>Reseñas (${d.reviews.length})</h2>${d.reviews.length ? d.reviews.map((r) => `<div class="item" style="grid-template-columns:1fr"><div><span class="stars">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</span> <span class="muted small">${esc(r.user_email || '')} · ${ago(r.created_at)}</span><p>${esc(r.comment || '')}</p><div class="actions"><button class="btn sm bad" data-delreview="${r.id}">Borrar…</button></div></div></div>`).join('') : '<p class="muted">Sin reseñas.</p>'}</div>
-      <div class="card"><h2>Posts (${d.posts.length})</h2>${d.posts.length ? d.posts.map((p) => `<div class="item">${p.image_url ? `<img src="${esc(p.image_url)}" alt="">` : '<div class="ph">📝</div>'}<div><span class="muted small">${ago(p.created_at)}</span><p>${esc(p.body || '')}</p><div class="actions"><button class="btn sm bad" data-delpost="${p.id}">Borrar…</button></div></div></div>`).join('') : '<p class="muted">Sin posts.</p>'}</div>
+      <div class="card"><h2>Novedades (${d.posts.length})</h2>${d.posts.length ? d.posts.map((p) => `<div class="item">${p.image_url ? `<img src="${esc(p.image_url)}" alt="">` : '<div class="ph">📝</div>'}<div><span class="muted small">${ago(p.created_at)}</span><p>${esc(p.body || '')}</p><div class="actions"><button class="btn sm bad" data-delpost="${p.id}">Borrar…</button></div></div></div>`).join('') : '<p class="muted">Sin novedades.</p>'}</div>
     </div>
     <div class="grid2">
       <div class="card"><h2>Denuncias relacionadas (${d.reports.length})</h2>${d.reports.length ? table({ cols: [{ h: 'Sobre', r: (r) => tag(r.target_type, 'dim') }, { h: 'Motivo', r: (r) => `${esc(r.reason)}<span class="sub">${esc(r.details || '')}</span>` }, { h: 'Estado', r: (r) => tag(r.status) }, { h: 'Fecha', r: (r) => fmtDay(r.created_at) }], rows: d.reports }) : '<p class="muted">Ninguna.</p>'}<p style="margin:10px 0 0"><a class="link" href="#/denuncias">Ir a denuncias →</a></p></div>
@@ -854,7 +854,7 @@ PAGES.resenas = async (v) => {
   const sR = st.resenas, sP = st.posts;
   v.innerHTML = `
     <div class="page-head"><h1>Reseñas y posts</h1></div>
-    ${helpBox('¿Qué hago aquí?', '<p>Las <b>reseñas</b> las escriben usuarios sobre negocios; los <b>posts</b> los publican los negocios en su perfil. Bórralos solo si incumplen las normas (insultos, datos personales, spam, contenido que no es del local). El autor recibe el motivo.</p>')}
+    ${helpBox('¿Qué hago aquí?', '<p>Las <b>reseñas</b> las escriben usuarios sobre negocios; las <b>novedades</b> las publican los negocios en su perfil. Bórralos solo si incumplen las normas (insultos, datos personales, spam, contenido que no es del local). El autor recibe el motivo.</p>')}
     <div class="tabs"><button data-t="reviews" class="${tab === 'reviews' ? 'on' : ''}">Reseñas</button><button data-t="posts" class="${tab === 'posts' ? 'on' : ''}">Posts</button></div>
     <div class="toolbar"><input id="q" class="grow" placeholder="Buscar por texto, negocio o email…"><select id="rating" ${tab === 'posts' ? 'hidden' : ''}>${[['', 'Cualquier puntuación'], ['1', 'Solo 1 ★'], ['2', '≤ 2 ★'], ['3', '≤ 3 ★']].map((o) => `<option value="${o[0]}">${o[1]}</option>`).join('')}</select></div>
     <div id="list"><div class="loading">Cargando…</div></div>`;
@@ -868,7 +868,7 @@ PAGES.resenas = async (v) => {
     } else {
       const r = await rpc('admin_posts', { p_query: sP.q || null, p_limit: sP.limit, p_offset: sP.offset });
       const pg = pager(sP, r.total, load);
-      $('#list').innerHTML = (r.rows.length ? r.rows.map((x) => `<div class="item">${x.image_url ? `<img src="${esc(x.image_url)}" alt="">` : '<div class="ph">📝</div>'}<div><h3><a class="link" href="#/negocios/${x.business_id}">${esc(x.business)}</a> ${x.open_reports ? `<span class="tag bad">🚩 ${x.open_reports}</span>` : ''}</h3><div class="meta">${fmtDate(x.created_at)}</div><p>${esc(x.body || '')}</p><div class="actions"><button class="btn sm bad" data-del="${x.id}">Borrar…</button></div></div></div>`).join('') : '<div class="tbl-wrap"><div class="empty">Sin posts.</div></div>') + pg.html;
+      $('#list').innerHTML = (r.rows.length ? r.rows.map((x) => `<div class="item">${x.image_url ? `<img src="${esc(x.image_url)}" alt="">` : '<div class="ph">📝</div>'}<div><h3><a class="link" href="#/negocios/${x.business_id}">${esc(x.business)}</a> ${x.open_reports ? `<span class="tag bad">🚩 ${x.open_reports}</span>` : ''}</h3><div class="meta">${fmtDate(x.created_at)}</div><p>${esc(x.body || '')}</p><div class="actions"><button class="btn sm bad" data-del="${x.id}">Borrar…</button></div></div></div>`).join('') : '<div class="tbl-wrap"><div class="empty">Sin novedades.</div></div>') + pg.html;
       pg.bind($('#list'));
       $$('#list [data-del]').forEach((b) => { b.onclick = () => deletePost(b.dataset.del); });
     }
@@ -884,7 +884,7 @@ PAGES.denuncias = async (v) => {
   const s = st.denuncias;
   v.innerHTML = `
     <div class="page-head"><h1>Denuncias</h1></div>
-    ${helpBox('¿Qué hago aquí?', '<p>Cuando un usuario denuncia una publicación, negocio, reseña o post, aparece aquí. Revisa el contenido (botón «Ver»), y decide: <b>Retirar y cerrar</b> (la oferta se retira, el negocio se desactiva, la reseña o el post se borran; el autor recibe el motivo y puede recurrir en 15 días), <b>Cerrar sin retirar</b> (la denuncia era razonable pero el contenido es correcto) o <b>Desestimar</b> (denuncia sin fundamento). Por ley (DSA) hay que resolverlas con diligencia y motivar la decisión.</p>')}
+    ${helpBox('¿Qué hago aquí?', '<p>Cuando un usuario denuncia una publicación, negocio, reseña o novedad, aparece aquí. Revisa el contenido (botón «Ver»), y decide: <b>Retirar y cerrar</b> (la oferta se retira, el negocio se desactiva, la reseña o la novedad se borran; el autor recibe el motivo y puede recurrir en 15 días), <b>Cerrar sin retirar</b> (la denuncia era razonable pero el contenido es correcto) o <b>Desestimar</b> (denuncia sin fundamento). Por ley (DSA) hay que resolverlas con diligencia y motivar la decisión.</p>')}
     <div class="toolbar">
       <select id="status">${[['open', 'Abiertas'], ['resolved', 'Resueltas'], ['dismissed', 'Desestimadas'], ['all', 'Todas']].map((o) => `<option value="${o[0]}" ${(s.status || 'open') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
       <select id="type">${[['all', 'Todo tipo'], ['offer', 'Publicaciones'], ['business', 'Negocios'], ['review', 'Reseñas'], ['post', 'Posts']].map((o) => `<option value="${o[0]}" ${(s.type || 'all') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
@@ -919,7 +919,7 @@ PAGES.denuncias = async (v) => {
     $$('#list [data-res]').forEach((b) => { b.onclick = async () => {
       let reason = null;
       if (b.dataset.action === 'hide') {
-        const r = await modal({ title: 'Retirar contenido', intro: 'Publicaciones: se retiran; negocios: se desactivan; reseñas y posts: se borran. Se cierran también las demás denuncias sobre el mismo contenido.', fields: [{ name: 'reason', label: 'Motivo que verá quien lo publicó (obligatorio por el DSA)', type: 'textarea', required: true }], submit: 'Retirar y cerrar', danger: true });
+        const r = await modal({ title: 'Retirar contenido', intro: 'Publicaciones: se retiran; negocios: se desactivan; reseñas y novedades: se borran. Se cierran también las demás denuncias sobre el mismo contenido.', fields: [{ name: 'reason', label: 'Motivo que verá quien lo publicó (obligatorio por el DSA)', type: 'textarea', required: true }], submit: 'Retirar y cerrar', danger: true });
         if (!r) return; reason = r.reason;
       }
       try { await rpc('admin_resolve_report', { p_id: b.dataset.res, p_status: b.dataset.status, p_action: b.dataset.action, p_reason: reason }); toast('Denuncia actualizada'); refreshBadges(); load(); } catch (e) { toast(e.message, true); }
@@ -935,7 +935,7 @@ PAGES.sugerencias = async (v) => {
   s.status = s.status || 'open';
   v.innerHTML = `
     <div class="page-head"><h1>Sugerencias</h1><span class="spacer"></span><button class="btn sm ghost" id="csv">Exportar CSV</button></div>
-    ${helpBox('¿Qué hago aquí?', '<p>Lo que la gente escribe desde la app (Perfil → «Sugerencias y mejoras»): ideas, fallos y mensajes de negocios. Los <b>fallos</b> te llegan además como aviso al móvil. Marca cada una con lo que vas a hacer —<b>la estamos viendo</b>, <b>la haremos</b>, <b>hecho</b> o <b>de momento no</b>— y, si quieres, <b>responde</b>: la persona recibe tu respuesta como notificación. Las notas internas no las ve nadie de fuera.</p>')}
+    ${helpBox('¿Qué hago aquí?', '<p>Lo que la gente escribe desde la app (Cuenta → «Sugerencias y mejoras») o la web: ideas, fallos y mensajes de negocios. Los <b>fallos</b> te llegan además como aviso al móvil. Marca cada una con lo que vas a hacer —<b>la estamos viendo</b>, <b>la haremos</b>, <b>hecho</b> o <b>de momento no</b>— y, si quieres, <b>responde</b>: la persona recibe tu respuesta como notificación. Las notas internas no las ve nadie de fuera.</p>')}
     <div id="counts"></div>
     <div class="toolbar">
       <input id="q" class="grow" placeholder="Buscar en el texto o por email…" value="${esc(s.q || '')}">

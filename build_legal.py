@@ -108,7 +108,7 @@ ES['privacidad'] = ('Política de privacidad', 'Cómo trata Klendar tus datos pe
 <p>La edad mínima para usar Klendar es de <strong>14 años</strong>. Los contenidos marcados como "+18" (locales de ocio nocturno, alcohol) solo se muestran a personas que han acreditado ser mayores de 18 años mediante su fecha de nacimiento. Si detectamos una cuenta de un menor de 14 años, la eliminaremos.</p>
 
 <h2>5. Tus derechos</h2>
-<p>Puedes ejercer los derechos de acceso, rectificación, supresión, oposición, limitación y portabilidad, y retirar el consentimiento en cualquier momento, escribiendo a <a href="mailto:info@klendar.app">info@klendar.app</a> desde el email de tu cuenta. Además, desde la app (Perfil → Ajustes → Privacidad y datos) puedes: ver qué has consentido y cuándo, retirar por separado el consentimiento de ubicación, notificaciones push y comunicaciones comerciales, descargar todos tus datos en un archivo (acceso y portabilidad), y <a href="/eliminar-cuenta/">eliminar tu cuenta</a> por completo. Si consideras que no hemos atendido correctamente tu solicitud, puedes reclamar ante la Agencia Española de Protección de Datos (<a href="https://www.aepd.es" rel="noopener">www.aepd.es</a>).</p>
+<p>Puedes ejercer los derechos de acceso, rectificación, supresión, oposición, limitación y portabilidad, y retirar el consentimiento en cualquier momento, escribiendo a <a href="mailto:info@klendar.app">info@klendar.app</a> desde el email de tu cuenta. Además, desde la app (Cuenta → Ajustes → Privacidad y datos) puedes: ver qué has consentido y cuándo, retirar por separado el consentimiento de ubicación, notificaciones push y comunicaciones comerciales, descargar todos tus datos en un archivo (acceso y portabilidad), y <a href="/eliminar-cuenta/">eliminar tu cuenta</a> por completo. Si consideras que no hemos atendido correctamente tu solicitud, puedes reclamar ante la Agencia Española de Protección de Datos (<a href="https://www.aepd.es" rel="noopener">www.aepd.es</a>).</p>
 
 <h2>6. Seguridad</h2>
 <p>Los datos se transmiten cifrados (TLS), las contraseñas se almacenan con hash, el acceso a la base de datos está restringido por políticas de seguridad a nivel de fila (cada persona solo accede a lo suyo) y los proveedores citados cuentan con certificaciones de seguridad reconocidas.</p>
@@ -134,7 +134,7 @@ EN['privacidad'] = ('privacy', 'Privacy policy', 'How Klendar handles your perso
 <tr><td>Sign in with Google / Apple</td><td>Provider identifier, email, name</td><td>Passwordless authentication</td><td>Performance of a contract</td><td>Same as the account</td></tr>
 <tr><td>Location</td><td>Approximate or precise device coordinates (depending on the permission you grant) or the city you pick manually</td><td>Sort the feed and the map by distance; "deals near you" if you enable it</td><td>Consent (art. 6(1)(a)), revocable in your device and app settings</td><td>No history is kept. Only the last known location is stored (for "near you") and discarded after 7 days</td></tr>
 <tr><td>Favourites, reviews, redemptions</td><td>Saved businesses, ratings and comments, redemption codes and their status, deal views</td><td>Provide the service: your favourites, your public reviews, your redemption history and aggregate statistics for businesses</td><td>Performance of a contract</td><td>While the account exists. Reviews are shown with your display name</td></tr>
-<tr><td>Push notifications</td><td>Device token, preferences (favourites, nearby, quiet hours)</td><td>Alert you about news from your favourites and nearby deals</td><td>Consent, revocable at any time</td><td>Until you revoke the permission, sign out or delete the account</td></tr>
+<tr><td>Push notifications</td><td>Device token, preferences (favourites, nearby, quiet hours)</td><td>Alert you about news from your favourites and nearby deals</td><td>Consent, revocable at any time</td><td>Until you revoke the permission, log out or delete the account</td></tr>
 <tr><td>Business account</td><td>Business details (name, address, tax ID, phone, contact email, opening hours), team members (email and role), plan and payments</td><td>Register, verify and manage the business; invoice the subscription</td><td>Performance of a contract; legal obligation (invoicing)</td><td>During the relationship and afterwards for the statutory period (tax: 4 years; commercial: 6 years)</td></tr>
 <tr><td>Content reports</td><td>Identity of the reporter, reason, reported content</td><td>Moderate the Platform (Regulation (EU) 2022/2065, DSA)</td><td>Legal obligation and legitimate interest</td><td>2 years from resolution</td></tr>
 <tr><td>Diagnostics and performance</td><td>Installation identifier, device model and OS, crash reports, aggregate screen usage</td><td>Detect failures and improve the app (Firebase Crashlytics and Analytics)</td><td>Legitimate interest (art. 6(1)(f)): keeping the app stable</td><td>Crashlytics 90 days; aggregate Analytics 14 months</td></tr>
@@ -157,7 +157,7 @@ EN['privacidad'] = ('privacy', 'Privacy policy', 'How Klendar handles your perso
 <p>The minimum age to use Klendar is <strong>14</strong>. Content marked "18+" (nightlife venues, alcohol) is only shown to people who have confirmed they are over 18 through their date of birth. If we detect an account belonging to someone under 14, we will delete it.</p>
 
 <h2>5. Your rights</h2>
-<p>You may exercise your rights of access, rectification, erasure, objection, restriction and portability, and withdraw consent at any time, by writing to <a href="mailto:info@klendar.app">info@klendar.app</a> from your account email. From the app (Profile → Settings → Privacy and data) you can also see what you have consented to and when, withdraw location, push and marketing consent separately, download all your data as a file (access and portability), and <a href="/en/delete-account/">delete your account</a> entirely. If you believe we have not handled your request properly, you may lodge a complaint with the Spanish Data Protection Agency (<a href="https://www.aepd.es" rel="noopener">www.aepd.es</a>).</p>
+<p>You may exercise your rights of access, rectification, erasure, objection, restriction and portability, and withdraw consent at any time, by writing to <a href="mailto:info@klendar.app">info@klendar.app</a> from your account email. From the app (Account → Settings → Privacy and data) you can also see what you have consented to and when, withdraw location, push and marketing consent separately, download all your data as a file (access and portability), and <a href="/en/delete-account/">delete your account</a> entirely. If you believe we have not handled your request properly, you may lodge a complaint with the Spanish Data Protection Agency (<a href="https://www.aepd.es" rel="noopener">www.aepd.es</a>).</p>
 
 <h2>6. Security</h2>
 <p>Data is transmitted encrypted (TLS), passwords are stored hashed, database access is restricted by row-level security policies (each person only reaches their own data), and the providers listed hold recognised security certifications.</p>
@@ -176,7 +176,7 @@ ES['terminos'] = ('Términos de uso', 'Condiciones de uso de la app Klendar para
   <li>Debes tener al menos <strong>14 años</strong>. Los contenidos "+18" solo se muestran a mayores de 18.</li>
   <li>Los datos de tu cuenta deben ser veraces. Eres responsable de mantener tu contraseña en secreto.</li>
   <li>Puedes usar la app sin cuenta ("invitado") para ver ofertas; canjear, guardar favoritos y reseñar requiere cuenta.</li>
-  <li>Puedes eliminar tu cuenta en cualquier momento desde Perfil o en <a href="/eliminar-cuenta/">klendar.app/eliminar-cuenta</a>.</li>
+  <li>Puedes eliminar tu cuenta en cualquier momento desde Cuenta → Ajustes (en la app o en «Tu cuenta» de la web) o en <a href="/eliminar-cuenta/">klendar.app/eliminar-cuenta</a>.</li>
 </ul>
 
 <h2>3. Ofertas y canjes</h2>
@@ -216,7 +216,7 @@ EN['terminos'] = ('terms', 'Terms of use', 'Terms of use of the Klendar app for 
   <li>You must be at least <strong>14 years old</strong>. "18+" content is only shown to people over 18.</li>
   <li>Your account details must be accurate. You are responsible for keeping your password secret.</li>
   <li>You can use the app without an account ("guest") to browse deals; redeeming, saving favourites and reviewing require an account.</li>
-  <li>You can delete your account at any time from Profile or at <a href="/en/delete-account/">klendar.app/en/delete-account</a>.</li>
+  <li>You can delete your account at any time from Account → Settings (in the app or in “Your account” on the website) or at <a href="/en/delete-account/">klendar.app/en/delete-account</a>.</li>
 </ul>
 
 <h2>3. Deals and redemptions</h2>
@@ -258,7 +258,7 @@ ES['negocios'] = ('Condiciones para negocios', 'Condiciones de contratación del
 </ul>
 
 <h2>2. Servicio</h2>
-<p>Klendar permite al Negocio publicar ofertas flash y eventos, posts, su carta y horarios, gestionar su ficha, validar canjes mediante QR y consultar estadísticas. Klendar no interviene en la venta ni cobra a las personas usuarias.</p>
+<p>Klendar permite al Negocio publicar ofertas flash y eventos, novedades, su carta y horarios, gestionar su ficha, validar canjes mediante QR y consultar estadísticas. Klendar no interviene en la venta ni cobra a las personas usuarias.</p>
 
 <h2>3. Obligaciones del Negocio</h2>
 <ul>
@@ -301,7 +301,7 @@ EN['negocios'] = ('business-terms', 'Business terms', 'Terms of service of Klend
 </ul>
 
 <h2>2. Service</h2>
-<p>Klendar lets the Business publish flash deals and events, posts, its menu and opening hours, manage its profile, validate redemptions via QR and view statistics. Klendar does not take part in the sale and does not charge users.</p>
+<p>Klendar lets the Business publish flash deals and events, news, its menu and opening hours, manage its profile, validate redemptions via QR and view statistics. Klendar does not take part in the sale and does not charge users.</p>
 
 <h2>3. Obligations of the Business</h2>
 <ul>
@@ -313,8 +313,8 @@ EN['negocios'] = ('business-terms', 'Business terms', 'Terms of service of Klend
 
 <h2>4. Plans, pricing and invoicing</h2>
 <ul>
-  <li>Klendar offers a <strong>free plan</strong> with a limited number of simultaneously active posts and <strong>paid plans</strong> with more capacity and features, billed as a <strong>flat monthly fee</strong> with no commission on redemptions. Prices and limits of each plan are communicated before subscribing and are shown excluding VAT.</li>
-  <li>On registration, the Business enjoys a <strong>free trial</strong> of the top plan. When it ends, the Business automatically moves to the free plan unless it subscribes to a paid one; its ongoing posts are not deleted.</li>
+  <li>Klendar offers a <strong>free plan</strong> with a limited number of simultaneously active publications and <strong>paid plans</strong> with more capacity and features, billed as a <strong>flat monthly fee</strong> with no commission on redemptions. Prices and limits of each plan are communicated before subscribing and are shown excluding VAT.</li>
+  <li>On registration, the Business enjoys a <strong>free trial</strong> of the top plan. When it ends, the Business automatically moves to the free plan unless it subscribes to a paid one; its ongoing publications are not deleted.</li>
   <li>Payment by bank transfer, direct debit or card as agreed. Klendar issues an invoice. In case of non-payment, after a reminder and 15 days, the Business reverts to the free plan.</li>
 </ul>
 
@@ -365,7 +365,7 @@ ES['normas'] = ('Normas de la comunidad', 'Qué se puede y qué no se puede publ
   <li>No manipules reseñas ni canjes (cuentas propias, incentivos por valoraciones).</li>
 </ul>
 <h2>Cómo denunciar</h2>
-<p>En cualquier negocio, oferta, reseña o post encontrarás la opción "Denunciar". Indica el motivo y, si quieres, detalles. Recibiremos la denuncia con tu identidad (no se muestra al denunciado).</p>
+<p>En cualquier negocio, oferta, reseña o novedad encontrarás la opción "Denunciar". Indica el motivo y, si quieres, detalles. Recibiremos la denuncia con tu identidad (no se muestra al denunciado).</p>
 <h2>Cómo moderamos</h2>
 <ul>
   <li>Revisamos las denuncias en un plazo máximo de <strong>72 horas</strong> (24 horas si afectan a menores o contenido claramente ilegal).</li>
@@ -387,7 +387,7 @@ EN['normas'] = ('community-guidelines', 'Community guidelines', 'What you can an
 <ul>
   <li>Only publish deals you will honour, with clear conditions (hours, capacity, requirements).</li>
   <li>Real photos of your venue and products that you hold the rights to.</li>
-  <li>Alcohol and nightlife: mark the business or the deal as "18+". Encouraging excessive drinking or targeting minors is not allowed (Spanish Law 34/1988). Posts that mention alcoholic drinks are marked 18+ automatically and reviewed before going live.</li>
+  <li>Alcohol and nightlife: mark the business or the deal as "18+". Encouraging excessive drinking or targeting minors is not allowed (Spanish Law 34/1988). Publications that mention alcoholic drinks are marked 18+ automatically and reviewed before going live.</li>
   <li>Advertising of tobacco, vaping products, gambling or betting is not accepted.</li>
   <li>Do not manipulate reviews or redemptions (own accounts, incentives for ratings).</li>
 </ul>
@@ -407,7 +407,7 @@ ES['eliminar-cuenta'] = ('Eliminar tu cuenta', 'Cómo eliminar tu cuenta de Klen
 <h2>Desde la app (recomendado)</h2>
 <ol>
   <li>Abre Klendar e inicia sesión.</li>
-  <li>Ve a <strong>Perfil</strong> → sección <strong>Cuenta</strong> → <strong>Eliminar mi cuenta</strong>.</li>
+  <li>Ve a <strong>Cuenta</strong> → <strong>Ajustes</strong> → <strong>Eliminar mi cuenta</strong> (al final de la pantalla).</li>
   <li>Confirma. La cuenta se elimina al momento.</li>
 </ol>
 <h2>Por correo</h2>
@@ -428,8 +428,8 @@ ES['eliminar-cuenta'] = ('Eliminar tu cuenta', 'Cómo eliminar tu cuenta de Klen
 EN['eliminar-cuenta'] = ('delete-account', 'Delete your account', 'How to delete your Klendar account and what data is erased.', '''
 <h2>From the app (recommended)</h2>
 <ol>
-  <li>Open Klendar and sign in.</li>
-  <li>Go to <strong>Profile</strong> → <strong>Account</strong> section → <strong>Delete my account</strong>.</li>
+  <li>Open Klendar and log in.</li>
+  <li>Go to <strong>Account</strong> → <strong>Settings</strong> → <strong>Delete my account</strong> (at the bottom of the screen).</li>
   <li>Confirm. The account is deleted immediately.</li>
 </ol>
 <h2>By email</h2>
@@ -459,9 +459,9 @@ ES['soporte'] = ('Soporte', 'Ayuda de Klendar: cómo canjear una oferta, dar de 
 <h3>Un negocio no ha respetado su oferta</h3>
 <p>Denúncialo desde su ficha (icono de bandera) con el motivo "La oferta no es como se anuncia". Lo revisamos y, si se repite, el negocio queda suspendido.</p>
 <h3>No recibo notificaciones</h3>
-<p>Revisa Perfil → Ajustes de notificaciones y los permisos de notificaciones del sistema. "Cerca de ti" solo avisa de ofertas flash dentro del radio elegido y como máximo 3 veces al día.</p>
+<p>Revisa Cuenta → Ajustes → Notificaciones y los permisos de notificaciones del sistema. "Cerca de ti" solo avisa de ofertas flash dentro del radio elegido y como máximo 3 veces al día.</p>
 <h3>Soy un negocio y quiero darme de alta</h3>
-<p>En la app: Perfil → "¿Tienes un negocio? Dalo de alta". Lo revisamos en 24-48 h. También puedes escribirnos.</p>
+<p>En la app: Cuenta → «¿Quieres registrar tu negocio?». Lo revisamos en 24-48 h. También puedes escribirnos.</p>
 ''')
 
 LEGAL_SLUGS = ('aviso-legal', 'privacidad', 'terminos', 'negocios')
