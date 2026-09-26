@@ -321,7 +321,7 @@ PAGINAS['preguntas'] = (
     'Cómo se canjea una oferta, qué pasa si el código no funciona, cómo se da de alta un negocio y qué hacemos con tus datos.',
     'How to redeem a deal, what to do if a code does not work, how a business registers and what we do with your data.',
     f'''
-<p class="lead">Lo que más nos preguntáis. Si lo tuyo no está aquí, escríbenos a <a href="mailto:info@klendar.app">info@klendar.app</a> y lo añadimos.</p>
+<p class="lead">Lo que más nos preguntan. Si lo tuyo no está aquí, escríbenos a <a href="mailto:info@klendar.app">info@klendar.app</a> y lo añadimos.</p>
 {faq_html(FAQ_ES)}
 <p class="note" style="margin-top:22px">¿Necesitas ayuda con algo concreto? <a href="/soporte/">Soporte</a>.</p>
 ''',

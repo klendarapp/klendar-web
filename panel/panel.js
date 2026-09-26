@@ -495,7 +495,7 @@ PAGES.alta = async (v) => {
       <label class="f"><span>Categoría *</span><select name="category_id" required>
         <option value="">Elige una…</option>
         ${cats.map((c) => `<option value="${esc(c.id)}">${esc(c.names?.[I18N.lang] || c.names?.es || c.slug)}</option>`).join('')}</select></label>
-      <label class="f full"><span>De qué va <small>(¿qué ofrecéis? ¿qué os hace especiales?)</small></span><textarea name="description" maxlength="500"></textarea></label>
+      <label class="f full"><span>De qué va <small>(¿qué ofrece tu negocio? ¿qué lo hace especial?)</small></span><textarea name="description" maxlength="500"></textarea></label>
       <label class="f"><span>Dirección *</span><input name="address" maxlength="120" required placeholder="Calle y número"></label>
       <label class="f"><span>Ciudad *</span><input name="city" maxlength="60" required></label>
       <div class="full">

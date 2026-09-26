@@ -513,7 +513,7 @@ RUTAS.sugerencias = async () => {
   pinta(`
     <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(t('Sugerencias y mejoras'))}</h1>
-    <p class="muted">${esc(t('Klendar la hacemos con lo que nos contáis. Escribe lo que mejorarías, lo que echas de menos o lo que no funciona: lo leemos todo y te respondemos si hace falta.'))}</p>
+    <p class="muted">${esc(t('Klendar la hacemos con lo que nos cuentas. Escribe lo que mejorarías, lo que echas de menos o lo que no funciona: lo leemos todo y te respondemos si hace falta.'))}</p>
     <form class="formu" id="f" novalidate>
       <fieldset class="chips"><legend>${esc(t('¿De qué se trata?'))}</legend>
         ${TIPOS_SUGERENCIA.map(([v, l], i) => `<label><input type="radio" name="tipo" value="${v}"${i === 0 ? ' checked' : ''}> ${esc(t(l))}</label>`).join('')}

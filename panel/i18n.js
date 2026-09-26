@@ -378,7 +378,7 @@ const I18N = makeI18N({
     "Categoría *": "Category *",
     "Elige una…": "Pick one…",
     "De qué va": "What it is about",
-    "(¿qué ofrecéis? ¿qué os hace especiales?)": "(what do you offer? what makes you special?)",
+    "(¿qué ofrece tu negocio? ¿qué lo hace especial?)": "(what do you offer? what makes you special?)",
     "Dirección *": "Address *",
     "Ciudad *": "City *",
     "Buscar en el mapa": "Find on the map",

@@ -292,7 +292,7 @@ const APP_EN = {
   "No coincide: la cuenta sigue como estaba.": "It does not match: your account is untouched.",
   "Tu cuenta se ha eliminado": "Your account has been deleted",
   "Gracias por haber usado Klendar. Si algún día vuelves, aquí estaremos.": "Thanks for using Klendar. If you ever come back, we will be here.",
-  "Klendar la hacemos con lo que nos contáis. Escribe lo que mejorarías, lo que echas de menos o lo que no funciona: lo leemos todo y te respondemos si hace falta.": "Klendar is built on what you tell us. Write what you would improve, what you miss or what does not work: we read everything and reply when needed.",
+  "Klendar la hacemos con lo que nos cuentas. Escribe lo que mejorarías, lo que echas de menos o lo que no funciona: lo leemos todo y te respondemos si hace falta.": "Klendar is built on what you tell us. Write what you would improve, what you miss or what does not work: we read everything and reply when needed.",
   "¿De qué se trata?": "What is it about?",
   "Tu mensaje": "Your message",
   "Mandamos también que escribes desde la web y tu idioma, para entender mejor los fallos. Nada más.": "We also send that you are writing from the website and your language, to understand problems better. Nothing else.",
