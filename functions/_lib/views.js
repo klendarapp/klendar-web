@@ -8,7 +8,7 @@
 // (guardar, seguir, pedir el código, opinar, denunciar) lleva a «Tu cuenta»
 // (/app/), que hace lo mismo que la app desde el navegador.
 
-import { esc, fmtWhen, html, isUuid, render, rpc, rpcAll, rows } from './page.js';
+import { esc, fmtWhen, html, isUuid, render, rpc, rpcAll, rows, supabasePublic } from './page.js';
 import {
   agendaBase, BASE, benefit, exploreBase, firstPhoto, fmtEnd, fmtLong, isVideo,
   media, money, offerCard, openInApp, priorPrice, publicPage,
@@ -156,8 +156,14 @@ export async function offerPage(id, lang) {
           : undefined,
       };
 
+  // La vista cuenta para el negocio (panel e informe), como en la app. Solo
+  // desde un navegador de verdad y una vez por sesión: los robots de Google o
+  // de WhatsApp no ejecutan esto.
+  const sp = supabasePublic();
+  const vista = `<script>(function(){try{var k='v:${o.id}';if(navigator.webdriver||sessionStorage.getItem(k))return;sessionStorage.setItem(k,'1');fetch(${JSON.stringify(sp.url + '/rest/v1/offer_views')},{method:'POST',keepalive:true,headers:{apikey:${JSON.stringify(sp.key)},Authorization:'Bearer '+${JSON.stringify(sp.key)},'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({offer_id:'${o.id}'})});}catch(e){}})();</script>`;
+
   return html(publicPage({
-    lang, path, image: cover, body,
+    lang, path, image: cover, body: body + vista,
     title: `${o.title} · ${o.business_name}`,
     description,
     head: `<meta name="robots" content="${o.adults_only ? 'noindex' : 'index, follow'}">
@@ -340,6 +346,7 @@ export async function businessPage(id, lang) {
           <p class="muted">${esc(fmtWhen(p.created_at, lang))}</p>
           ${p.body ? `<p>${esc(p.body).replace(/\n/g, '<br>')}</p>` : ''}
           ${p.image_url ? `<img src="${esc(p.image_url)}" alt="" loading="lazy">` : ''}
+          <a class="denuncia" href="/app/#/denunciar/post/${encodeURIComponent(p.id)}" rel="nofollow">${S.report}</a>
         </article>`).join('')}</div>` : ''}
       <h2 id="resenas">${S.reviews}${b.rating && b.ratings ? ` <small class="muted">★ ${Number(b.rating).toFixed(1)} (${b.ratings})</small>` : ''}</h2>
       <p><a class="pill" href="/app/#/opinar/${encodeURIComponent(b.id)}">${icono('resena', 16)} ${S.write}</a></p>

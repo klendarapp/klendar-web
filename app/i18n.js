@@ -320,6 +320,7 @@ const APP_EN = {
   "de 5": "out of 5",
   "¿Qué tal fue?": "How was it?",
   "Cambiar la foto": "Change the photo",
+  'Quitar la foto': 'Remove the photo',
   "Añadir una foto": "Add a photo",
   "Tu nombre y tu foto de perfil salen junto a la reseña. Sigue las normas de la comunidad: sin insultos ni datos de nadie.": "Your name and profile photo appear next to the review. Follow the community guidelines: no insults and nobody's personal data.",
   "Elige de una a cinco estrellas.": "Pick one to five stars.",

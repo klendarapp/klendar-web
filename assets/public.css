@@ -157,7 +157,7 @@ footer.pub-foot a { color: var(--ink-2); }
 .stars { color: #FFB84D; letter-spacing: 1px; white-space: nowrap; }
 .stars span { color: var(--glass-border); }
 .denuncia, .denuncia-pie a { font-size: 13px; color: var(--ink-2); }
-.resenas .denuncia { display: inline-block; margin-top: 8px; }
+.resenas .denuncia, .novedades .denuncia { display: inline-block; margin-top: 8px; }
 .denuncia-pie { margin-top: 28px; }
 
 /* Iconos dentro de los botones: el marcador de Planes y el corazón de Favoritos, como en la app. */

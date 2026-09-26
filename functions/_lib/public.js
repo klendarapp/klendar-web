@@ -165,7 +165,7 @@ export function publicPage({ lang, path, title, description, head = '', body, im
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/site.css?v=20261001">
-<link rel="stylesheet" href="/assets/public.css?v=13">
+<link rel="stylesheet" href="/assets/public.css?v=14">
 ${head}
 </head>
 <body>

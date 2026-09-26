@@ -43,6 +43,7 @@ const esVideo = (u) => /\.(mp4|mov|webm)(\?|$)/i.test(u || '');
 const primeraFoto = (lista) => (lista || []).find((u) => !esVideo(u)) || null;
 
 const gestiona = () => ['owner', 'manager'].includes(BIZ?.role);
+const pausado = () => !!BIZ?.paused_until && new Date(BIZ.paused_until) > new Date();
 const fmtDate = (s) => s ? new Date(s).toLocaleString(LOC(), { dateStyle: 'medium', timeStyle: 'short' }) : '—';
 const fmtMoney = (c) => (c == null ? '—' : (c / 100).toLocaleString(I18N.lang === 'en' ? 'en-IE' : 'es-ES', { style: 'currency', currency: 'EUR' }));
 const fmtNum = (n) => (n ?? 0).toLocaleString(LOC());
@@ -305,7 +306,7 @@ function toLocalInput(iso) {
 const fromLocalInput = (v) => (v ? new Date(v).toISOString() : null);
 
 // Modal sencillo (mismo patrón que el panel de administración).
-function modal({ title, intro, fields = [], submit = 'Guardar', danger = false }) {
+function modal({ title, intro, html = '', fields = [], submit = 'Guardar', danger = false, cancel = 'Cancelar' }) {
   return new Promise((resolve) => {
     const d = $('#modal');
     const field = (f) => {
@@ -318,10 +319,12 @@ function modal({ title, intro, fields = [], submit = 'Guardar', danger = false }
     };
     d.innerHTML = `<form method="dialog"><h2>${esc(title)}</h2>${intro ? `<p class="muted" style="margin:0">${intro}</p>` : ''}
       ${fields.map(field).join('')}
-      <div class="foot"><button type="button" class="btn ghost" data-cancel>Cancelar</button><button type="submit" class="btn ${danger ? 'bad' : 'primary'}">${esc(submit)}</button></div></form>`;
+      ${html}
+      <div class="foot">${cancel ? `<button type="button" class="btn ghost" data-cancel>${esc(cancel)}</button>` : ''}<button type="submit" class="btn ${danger ? 'bad' : 'primary'}">${esc(submit)}</button></div></form>`;
     const form = $('form', d);
     const close = (v) => { d.close(); resolve(v); };
-    $('[data-cancel]', d).onclick = () => close(null);
+    const c = $('[data-cancel]', d);
+    if (c) c.onclick = () => close(null);
     d.oncancel = (e) => { e.preventDefault(); close(null); };
     form.onsubmit = (e) => {
       e.preventDefault();
@@ -660,6 +663,12 @@ PAGES.resumen = async (v) => {
         <div class="kpi"><b>${fmtNum(pending.length)}</b><span>Publicaciones activas</span></div>
       </div>
     </div>
+    ${gestiona() && BIZ.verification_status === 'verified' ? `<div class="card pausa"><div>
+        <h2 style="margin:0">Cerrado por hoy</h2>
+        <p class="muted" style="margin:4px 0 0">${pausado()
+          ? esc(I18N.t('Ahora mismo no se ve nada de tu negocio. Mañana vuelve a verse solo.'))
+          : esc(I18N.t('Si hoy no puedes atender, esconde todo de una vez. Mañana vuelve a verse solo.'))}</p></div>
+        <button class="btn ${pausado() ? 'primary' : ''}" id="pausa">${pausado() ? 'Abrir de nuevo' : 'Cerrar por hoy'}</button></div>` : ''}
     ${sub && gestiona() ? planCard(sub) : ''}
     <div class="card"><h2>Klendar en tu web</h2>
       <p class="muted" style="margin:0 0 8px">Pega esta línea donde quieras que salga lo que tienes publicado. Se actualiza solo: no tienes que tocar nada más.</p>
@@ -692,6 +701,19 @@ PAGES.resumen = async (v) => {
         : g === 'nueva-flash' ? '#/publicaciones/nueva-flash' : '#/publicaciones/nuevo-evento';
     };
   });
+  const pausa = $('#pausa', v);
+  if (pausa) {
+    pausa.onclick = async () => {
+      // Hasta las 5 de la mañana: mañana abre solo (lo mismo que la app).
+      const hasta = new Date(); hasta.setDate(hasta.getDate() + 1); hasta.setHours(5, 0, 0, 0);
+      const cerrar = !pausado();
+      try {
+        await rpc('set_business_pause', { p_business: BIZ.id, p_until: cerrar ? hasta.toISOString() : null });
+        BIZ.paused_until = cerrar ? hasta.toISOString() : null;
+        toast(cerrar ? 'Cerrado por hoy' : 'Abierto de nuevo'); route();
+      } catch (e) { toast(friendly(e.message), true); }
+    };
+  }
   const compartir = $('[data-compartir]', v);
   if (compartir) {
     compartir.onclick = async (e) => {
@@ -715,8 +737,12 @@ PAGES.publicaciones = async (v, param) => {
     I18N.translate(v);
     return;
   }
-  if (param === 'nueva-flash') return offerForm(v, null, 'flash_offer');
-  if (param === 'nuevo-evento') return offerForm(v, null, 'future_event');
+  // «Crear a partir de esta» (?from=) y «Repetir mañana» (?from=&repeat=1),
+  // como en la app.
+  const q = new URLSearchParams(location.hash.split('?')[1] || '');
+  const desde = q.get('from') ? { from: q.get('from'), repeat: q.get('repeat') === '1' } : null;
+  if (param === 'nueva-flash') return offerForm(v, null, 'flash_offer', desde);
+  if (param === 'nuevo-evento') return offerForm(v, null, 'future_event', desde);
   if (param) return offerForm(v, param);
 
   const [offers, otros] = await Promise.all([
@@ -814,15 +840,20 @@ PAGES.publicaciones = async (v, param) => {
         { h: 'Vistas', num: true, r: (o) => fmtNum(o.views) },
         { h: 'Canjes', num: true, r: (o) => fmtNum(o.redemptions_count) },
         { h: '', r: (o) => !gestiona()
-          ? (o.kind === 'future_event' && o.reservations_enabled ? `<div class="actions"><a class="btn sm ghost" href="#/asistentes/${esc(o.id)}">Asistentes</a></div>` : '')
+          ? `<div class="actions"><button class="btn sm ghost" data-act="stats" data-id="${esc(o.id)}">Cifras</button>${o.kind === 'future_event' && o.reservations_enabled ? `<a class="btn sm ghost" href="#/asistentes/${esc(o.id)}">Asistentes</a>` : ''}</div>`
           : `<div class="actions">
             <a class="btn sm" href="#/publicaciones/${esc(o.id)}">Editar</a>
+            <button class="btn sm ghost" data-act="stats" data-id="${esc(o.id)}">Cifras</button>
             ${o.kind === 'future_event' && o.reservations_enabled ? `<a class="btn sm ghost" href="#/asistentes/${esc(o.id)}">Asistentes</a>` : ''}
             <button class="btn sm ghost" data-act="${o.status === 'active' ? 'pause' : 'activate'}" data-id="${esc(o.id)}">${o.status === 'active' ? 'Pausar' : 'Activar'}</button>
-            ${o.kind === 'flash_offer' ? `<button class="btn sm ghost" data-act="repeat" data-id="${esc(o.id)}">Repetir…</button>` : ''}
-            ${OTROS_LOCALES.length ? `<button class="btn sm ghost" data-act="locales" data-id="${esc(o.id)}">En otros locales…</button>` : ''}
-            <a class="btn sm ghost" href="${I18N.lang === 'en' ? '/en/poster/' : '/cartel/'}${esc(o.id)}" target="_blank" rel="noopener">Cartel</a>
-            <button class="btn sm ghost" data-act="delete" data-id="${esc(o.id)}">Borrar</button>
+            <details class="mas"><summary class="btn sm ghost">Más</summary><div class="mas-menu">
+              <a href="#/publicaciones/${o.kind === 'flash_offer' ? 'nueva-flash' : 'nuevo-evento'}?from=${esc(o.id)}">Crear a partir de esta</a>
+              ${o.kind === 'flash_offer' ? `<a href="#/publicaciones/nueva-flash?from=${esc(o.id)}&repeat=1">Repetir mañana</a>
+              <button type="button" data-act="repeat" data-id="${esc(o.id)}">Repetir cada semana…</button>` : ''}
+              ${OTROS_LOCALES.length ? `<button type="button" data-act="locales" data-id="${esc(o.id)}">En otros locales…</button>` : ''}
+              <a href="${I18N.lang === 'en' ? '/en/poster/' : '/cartel/'}${esc(o.id)}" target="_blank" rel="noopener">Cartel para imprimir</a>
+              <button type="button" class="bad" data-act="delete" data-id="${esc(o.id)}">Borrar</button>
+            </div></details>
           </div>` },
       ],
       rows: offers,
@@ -834,6 +865,10 @@ PAGES.publicaciones = async (v, param) => {
         try {
           if (b.dataset.act === 'repeat') {
             await repetirDialogo(id);
+            return;
+          }
+          if (b.dataset.act === 'stats') {
+            await cifrasDialogo(offers.find((x) => x.id === id));
             return;
           }
           if (b.dataset.act === 'locales') {
@@ -860,6 +895,65 @@ PAGES.publicaciones = async (v, param) => {
   render();
   renderRules();
 };
+
+/** «Cifras» de una publicación: los últimos 14 días, cómo va frente a las
+ * demás del negocio y, en eventos con reserva, la asistencia. Lo mismo que la
+ * hoja de estadísticas de la app. */
+async function cifrasDialogo(o) {
+  if (!o) return;
+  const [dias, bench, asis] = await Promise.all([
+    rpc('offer_daily_stats', { p_offer: o.id, p_days: 14 }).catch(() => []),
+    rpc('offer_benchmark', { p_offer: o.id }).catch(() => null),
+    o.kind === 'future_event' && o.reservations_enabled
+      ? rpc('offer_attendance', { p_offer: o.id }).catch(() => null) : Promise.resolve(null),
+  ]);
+  const d = dias || [];
+  const vistas = d.reduce((a, x) => a + (x.views || 0), 0);
+  const canjes = d.reduce((a, x) => a + (x.redemptions || 0), 0);
+  const conv = vistas ? `${(canjes / vistas * 100).toFixed(1).replace('.', I18N.lang === 'en' ? '.' : ',')} %` : '—';
+  const max = Math.max(1, ...d.map((x) => x.views || 0));
+  const dia = (s) => new Date(s).toLocaleDateString(LOC(), { day: 'numeric', month: 'short' });
+  let comparativa = '';
+  if (bench && bench.conversion != null && bench.business_avg && bench.compared_with >= 2) {
+    const delta = Math.round(((bench.conversion - bench.business_avg) / bench.business_avg) * 100);
+    const en = I18N.lang === 'en';
+    comparativa = delta >= 0
+      ? (en ? `Doing ${delta}% better than your average.` : `Va un ${delta} % mejor que tu media.`)
+      : (en ? `Doing ${-delta}% below your average.` : `Va un ${-delta} % por debajo de tu media.`);
+  }
+  const hora = bench?.best_hours?.[0]?.hour;
+  const pad = (n) => String(n).padStart(2, '0');
+  const html = `
+    <div class="kpis">
+      <div class="kpi"><b>${fmtNum(vistas)}</b><span>Vistas</span></div>
+      <div class="kpi accent"><b>${fmtNum(canjes)}</b><span>Canjes</span></div>
+      <div class="kpi"><b>${conv}</b><span>Conversión</span></div>
+    </div>
+    <h3 style="margin:6px 0 0">Últimos 14 días</h3>
+    ${vistas ? `<div class="spark">${d.map((x) => `<i title="${esc(dia(x.day))}: ${x.views} · ${x.redemptions}" style="height:${Math.round((x.views / max) * 100)}%"><u style="height:${x.views ? Math.round((x.redemptions / Math.max(x.views, 1)) * 100) : 0}%"></u></i>`).join('')}</div>`
+      : '<p class="muted" style="margin:0">Todavía nadie la ha visto. En cuanto lleguen visitas y canjes, los verás aquí día a día.</p>'}
+    ${comparativa ? `<p style="margin:0">${esc(comparativa)}</p>` : ''}
+    ${hora != null ? `<p class="muted" style="margin:0">${I18N.lang === 'en'
+      ? `Your busiest time for redemptions is ${pad(hora)}:00–${pad((hora + 1) % 24)}:00.`
+      : `Donde más te canjean es entre las ${pad(hora)}:00 y las ${pad((hora + 1) % 24)}:00.`}</p>` : ''}
+    ${asis ? `<h3 style="margin:6px 0 0">Asistencia</h3>
+      <div class="kpis">
+        <div class="kpi"><b>${fmtNum(asis.reserved)}</b><span>Reservas</span></div>
+        <div class="kpi"><b>${fmtNum(asis.attended)}</b><span>Han entrado</span></div>
+        ${asis.expected_cents ? `<div class="kpi"><b>${fmtMoney(asis.expected_cents)}</b><span>Si viene todo el mundo</span></div>` : ''}
+      </div>
+      <p class="muted" style="margin:0">${asis.waitlist ? `${fmtNum(asis.waitlist)} ${I18N.lang === 'en' ? 'on the waiting list' : 'en lista de espera'} · ` : ''}${esc(I18N.t('El cobro es tuyo, en la puerta: aquí solo contamos plazas a precio de tarifa.'))}</p>` : ''}
+    ${vistas ? '<p style="margin:0"><button type="button" class="btn sm" data-csvdia>Exportar CSV</button></p>' : ''}`;
+  const abierto = modal({ title: o.title, html, submit: 'Cerrar', cancel: '' });
+  I18N.translate($('#modal'));
+  const csv = $('#modal [data-csvdia]');
+  if (csv) {
+    csv.onclick = () => downloadCsv(`klendar-${o.title}-diario`, d, [
+      [(x) => String(x.day).slice(0, 10), 'día'], ['views', 'vistas'], ['redemptions', 'canjes'],
+    ]);
+  }
+  await abierto;
+}
 
 /** Los otros locales que lleva quien ha entrado. Se llena al abrir
  * Publicaciones; si solo tienes uno, el botón ni aparece. */
@@ -909,11 +1003,32 @@ async function localesDialogo(offerId) {
 }
 
 /** Formulario de publicación (nueva o existente). */
-async function offerForm(v, id, kindDefault) {
+async function offerForm(v, id, kindDefault, desde = null) {
   let o = { kind: kindDefault || 'flash_offer', max_per_user: 1, code_ttl_minutes: 5, images: [], status: 'active' };
   if (id) {
     const all = await rpc('my_business_offers', { p_id: BIZ.id });
     o = all.find((x) => x.id === id) || o;
+  } else if (desde) {
+    // Nueva, rellena con otra: textos, fotos, precio, aforo y diseño. Las
+    // fechas no (siempre cambian), salvo «Repetir mañana»: a la misma hora.
+    const all = await rpc('my_business_offers', { p_id: BIZ.id });
+    const src = all.find((x) => x.id === desde.from);
+    if (src) {
+      o = { ...src, id: undefined, status: 'active', publish_at: null };
+      if (desde.repeat && src.kind === 'flash_offer' && src.redeem_start_at) {
+        // Mañana (de hoy) a la misma hora y con la misma duración.
+        const ini = new Date(src.redeem_start_at);
+        const dura = src.redeem_end_at ? new Date(src.redeem_end_at) - ini : 3 * 36e5;
+        const nuevo = new Date();
+        nuevo.setDate(nuevo.getDate() + 1);
+        nuevo.setHours(ini.getHours(), ini.getMinutes(), 0, 0);
+        o.redeem_start_at = nuevo.toISOString();
+        o.redeem_end_at = new Date(nuevo.getTime() + dura).toISOString();
+      } else {
+        o.redeem_start_at = null; o.redeem_end_at = null; o.event_at = null; o.event_end_at = null;
+      }
+      kindDefault = src.kind;
+    }
   }
   const isFlash = () => $('[name=kind]', v).value === 'flash_offer';
   const disc = o.discount || {};
@@ -921,7 +1036,7 @@ async function offerForm(v, id, kindDefault) {
   // desde la app en ideas.js) y las que el negocio ha guardado.
   let ideas = [];
   let guardadas = [];
-  if (!id) {
+  if (!id && !desde) {
     const [{ data: yo }, { data: tpl }] = await Promise.all([
       sb.from('businesses').select('category_id').eq('id', BIZ.id).maybeSingle(),
       sb.from('offer_templates').select('id, name, data, updated_at').eq('business_id', BIZ.id).order('updated_at', { ascending: false }),
@@ -933,10 +1048,11 @@ async function offerForm(v, id, kindDefault) {
   }
   const en = I18N.lang === 'en';
   v.innerHTML = `
-    <div class="page-head"><a class="btn sm ghost" href="#/publicaciones">← Volver</a><h1>${id ? 'Editar publicación' : (kindDefault === 'future_event' ? 'Nuevo evento' : 'Nueva oferta flash')}</h1></div>
+    <div class="page-head"><a class="btn sm ghost" href="#/publicaciones">← Volver</a><h1>${id ? 'Editar publicación' : desde?.repeat ? 'Repetir mañana' : desde ? 'A partir de otra publicación' : (kindDefault === 'future_event' ? 'Nuevo evento' : 'Nueva oferta flash')}</h1></div>
     ${ideas.length || guardadas.length ? `<div class="card plantillas" id="plantillas">
       ${guardadas.length ? `<h2>Tus plantillas</h2>
-        <div class="acciones">${guardadas.map((t, i) => `<button type="button" class="btn sm" data-tpl="${i}">${esc(t.name)}</button>`).join('')}</div>` : ''}
+        <div class="acciones">${guardadas.map((t, i) => `<button type="button" class="btn sm" data-tpl="${i}">${esc(t.name)}</button>`).join('')}</div>
+        <p style="margin:8px 0 0"><button type="button" class="linkbtn" id="borraTpl">Borrar plantillas…</button></p>` : ''}
       ${ideas.length ? `<h2 ${guardadas.length ? 'style="margin-top:14px"' : ''}>Plantillas</h2>
         <p class="hint" style="margin:0 0 10px">Lo que suele funcionar en tu tipo de negocio. Rellena el formulario; luego lo cambias a tu gusto.</p>
         <div class="acciones">${ideas.map((t, i) => `<button type="button" class="btn sm" data-idea="${i}">${esc(en ? t.en : t.es)}</button>`).join('')}</div>` : ''}
@@ -978,6 +1094,8 @@ async function offerForm(v, id, kindDefault) {
         <button class="btn" type="button" id="saveTpl">Guardar como plantilla</button>
         <label class="f" style="grid-template-columns:auto 1fr;align-items:center;margin:0"><input type="checkbox" name="publish" ${o.status !== 'draft' ? 'checked' : ''}><span>Publicar ahora (desactívalo para dejarlo en borrador)</span></label>
       </div>
+      <label class="f" style="margin-top:12px;max-width:360px"><span>O publicarla sola más tarde <small>(opcional)</small></span><input type="datetime-local" name="publish_at" value="${toLocalInput(o.publish_at)}"></label>
+      <p class="hint">Se guarda en borrador y se publica sola a esa hora (para dejar preparada la del lunes el viernes).</p>
       <div class="err" id="formErr"></div>
     </form>`;
 
@@ -1033,7 +1151,9 @@ async function offerForm(v, id, kindDefault) {
       };
     });
     $('#photos input[type=file]').onchange = async (e) => {
-      for (const file of [...e.target.files].slice(0, 6)) {
+      const hueco = Math.max(0, 6 - images.length);
+      if (!hueco) { toast('Como mucho 6 fotos o vídeos por publicación.', true); return; }
+      for (const file of [...e.target.files].slice(0, hueco)) {
         const video = /^video\//.test(file.type);
         const max = video ? 60 * 1024 * 1024 : 5 * 1024 * 1024;
         if (file.size > max) { toast(video ? 'Ese vídeo pesa más de 60 MB.' : 'Esa foto pesa más de 5 MB.', true); continue; }
@@ -1087,6 +1207,24 @@ async function offerForm(v, id, kindDefault) {
     renderPhotos(); syncKind(); syncDiscount();
   };
   $$('[data-idea]', v).forEach((b) => { b.onclick = () => { aplicarIdea(ideas[+b.dataset.idea]); toast('Plantilla aplicada: repasa precio y hora'); }; });
+  const borraTpl = $('#borraTpl', v);
+  if (borraTpl) {
+    borraTpl.onclick = async () => {
+      const r = await modal({
+        title: 'Borrar plantillas',
+        intro: esc(I18N.t('Marca las que ya no uses. Las publicaciones hechas con ellas no cambian.')),
+        fields: guardadas.map((t, i) => ({ name: `t${i}`, type: 'checkbox', label: t.name, value: false })),
+        submit: 'Borrar', danger: true,
+      });
+      if (!r) return;
+      const ids = guardadas.filter((_, i) => r[`t${i}`]).map((t) => t.id);
+      if (!ids.length) return;
+      const { error } = await sb.from('offer_templates').delete().in('id', ids);
+      if (error) { toast(friendly(error.message), true); return; }
+      toast(ids.length === 1 ? 'Plantilla borrada' : 'Plantillas borradas');
+      route();
+    };
+  }
   $$('[data-tpl]', v).forEach((b) => { b.onclick = () => { aplicarGuardada(guardadas[+b.dataset.tpl]); toast('Plantilla aplicada: repasa precio y hora'); }; });
   // Desde «Primeros pasos»: ya rellena con la primera de su gremio.
   if (!id && /[?&]idea=1\b/.test(location.hash) && ideas.length) aplicarIdea(ideas[0]);
@@ -1117,7 +1255,7 @@ async function offerForm(v, id, kindDefault) {
       max_redemptions: String(f.get('max_redemptions') || '').trim() || null,
       max_per_user: Number(f.get('max_per_user') || 1),
       adults_only: campo('adults_only').checked,
-      style: null,
+      style: o.style || null,
       code_ttl_minutes: f.get('code_ttl_minutes') ? Number(f.get('code_ttl_minutes')) : null,
       reservations_enabled: f.get('kind') !== 'flash_offer' && campo('reservations_enabled').checked,
       images,
@@ -1133,6 +1271,17 @@ async function offerForm(v, id, kindDefault) {
     $('#formErr').textContent = '';
     const f = new FormData($('#form'));
     const flash = f.get('kind') === 'flash_offer';
+    // Mismas reglas que la app (y que la base).
+    if (String(f.get('title') || '').trim().length < 3) {
+      $('#formErr').textContent = I18N.t('El título necesita al menos 3 caracteres.'); return;
+    }
+    if (f.get('discount_type') === 'other' && String(f.get('discount_value') || '').trim().length > 24) {
+      $('#formErr').textContent = I18N.t('El descuento «Otro» cabe en 24 caracteres («2ª unidad −50 %»).'); return;
+    }
+    const programada = fromLocalInput(f.get('publish_at'));
+    if (programada && new Date(programada) <= new Date()) {
+      $('#formErr').textContent = I18N.t('La hora de publicación tiene que ser futura.'); return;
+    }
     const price = (f.get('price') || '').toString().replace(',', '.');
     const dType = f.get('discount_type');
     const dValue = (f.get('discount_value') || '').toString().replace(',', '.');
@@ -1194,7 +1343,10 @@ async function offerForm(v, id, kindDefault) {
       max_seats: !flash && $('[name=reservations_enabled]').checked
         ? Number(f.get('max_seats') || 1) : 1,
       adults_only: $('[name=adults_only]').checked,
-      status: $('[name=publish]').checked ? 'active' : 'draft',
+      status: programada ? 'draft' : ($('[name=publish]').checked ? 'active' : 'draft'),
+      publish_at: programada,
+      // Al crearla a partir de otra, se queda con su diseño.
+      ...(!id && o.style ? { style: o.style } : {}),
     };
     if (flash && (!data.redeem_start_at || !data.redeem_end_at)) {
       $('#formErr').textContent = 'Una oferta flash necesita principio y fin.'; return;
@@ -1287,6 +1439,14 @@ PAGES.validar = async (v) => {
   };
   $('#go').onclick = validate;
   $('#code').addEventListener('keydown', (e) => { if (e.key === 'Enter') validate(); });
+  // Desde klendar.app/r/<código> (el QR escaneado con la cámara del móvil,
+  // sin la app): el código llega puesto y se valida al momento.
+  const desdeQr = new URLSearchParams(location.hash.split('?')[1] || '').get('code');
+  if (desdeQr && /^[0-9a-f]{8,64}$/i.test(desdeQr)) {
+    $('#code').value = desdeQr;
+    history.replaceState(null, '', `${location.pathname}#/validar`);
+    validate();
+  }
 
   // Cámara: encender y apagar con el mismo botón.
   const boton = $('#camara');
@@ -1640,7 +1800,7 @@ const textoAHorario = (txt) => String(txt || '').split(',')
 PAGES.cartel = async (v, offerId) => {
   const todas = await rpc('my_business_offers', { p_id: BIZ.id });
   const o = (todas || []).find((x) => x.id === offerId);
-  if (!o) { go('#/publicaciones'); return; }
+  if (!o) { location.hash = '#/publicaciones'; return; }
   const url = `https://klendar.app/o/${o.id}`;
 
   v.innerHTML = `
@@ -1671,23 +1831,42 @@ PAGES.novedades = async (v) => {
     .eq('business_id', BIZ.id).order('created_at', { ascending: false }).limit(50);
 
   const escribe = async (post) => {
-    const r = await modal({
+    const foto = `<label class="f"><span>${esc(I18N.t('Foto'))} <small>(${esc(I18N.t('opcional'))})</small></span><input type="file" name="foto" accept="image/*"></label>
+      ${post?.image_url ? `<label class="f" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="quitaFoto"><span>${esc(I18N.t('Quitar la foto que tiene'))}</span></label>` : ''}`;
+    const abierto = modal({
       title: post ? 'Editar novedad' : 'Nueva novedad',
       intro: 'Una nota corta que sale en tu ficha: «hoy hay pulpo», «cerramos el lunes por obras», «ya tenemos terraza».',
-      fields: [{ name: 'body', label: 'Qué cuentas', type: 'textarea', value: post?.body || '', required: true }],
+      fields: [{ name: 'body', label: 'Qué cuentas', type: 'textarea', value: post?.body || '', maxlength: 1000 }],
+      html: foto,
       submit: post ? 'Guardar' : 'Publicar',
     });
-    if (!r?.body) return;
+    I18N.translate($('#modal'));
+    const campoFoto = $('#modal [name=foto]');
+    const campoQuita = $('#modal [name=quitaFoto]');
+    const r = await abierto;
+    if (!r) return;
+    const archivo = campoFoto?.files?.[0];
+    const texto = (r.body || '').trim();
+    // Texto, foto o las dos cosas (como en la app); vacía del todo, no.
+    if (!texto && !archivo && !(post?.image_url && !campoQuita?.checked)) {
+      toast('Escribe algo o añade una foto.', true); return;
+    }
     try {
-      if (post) {
-        const { error } = await sb.from('business_posts')
-          .update({ body: r.body.trim() }).eq('id', post.id);
-        if (error) throw new Error(error.message);
-      } else {
-        const { error } = await sb.from('business_posts')
-          .insert({ business_id: BIZ.id, body: r.body.trim() });
-        if (error) throw new Error(error.message);
+      let image = post ? post.image_url : null;
+      if (campoQuita?.checked) image = null;
+      if (archivo) {
+        if (archivo.size > 5 * 1024 * 1024) { toast('Esa foto pesa más de 5 MB.', true); return; }
+        const ext = (archivo.name.split('.').pop() || 'jpg').toLowerCase();
+        const path = `${BIZ.id}/posts/${crypto.randomUUID()}.${ext}`;
+        const { error: up } = await sb.storage.from(BUCKET).upload(path, archivo, { contentType: archivo.type });
+        if (up) throw new Error(up.message);
+        image = sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
       }
+      const fila = { body: texto || null, image_url: image };
+      const { error } = post
+        ? await sb.from('business_posts').update(fila).eq('id', post.id)
+        : await sb.from('business_posts').insert({ business_id: BIZ.id, ...fila });
+      if (error) throw new Error(error.message);
       toast('Hecho'); route();
     } catch (e) { toast(friendly(e.message), true); }
   };
@@ -1695,7 +1874,7 @@ PAGES.novedades = async (v) => {
   v.innerHTML = `
     <div class="page-head"><h1>Novedades</h1><span class="spacer"></span>
       ${canManage ? '<button class="btn sm primary" id="nueva">Nueva novedad</button>' : ''}</div>
-    ${helpBox('¿Qué es una novedad?', '<p>Una nota corta en tu ficha, sin cuenta atrás ni código: «hoy hay pulpo», «cerramos el lunes», «ya tenemos terraza». Para algo que se canjea, usa una <b>publicación</b>.</p><p>Quien te tenga en favoritos recibe una notificación.</p>')}
+    ${helpBox('¿Qué es una novedad?', '<p>Una nota corta en tu ficha, sin cuenta atrás ni código: «hoy hay pulpo», «cerramos el lunes», «ya tenemos terraza». Para algo que se canjea, usa una <b>publicación</b>.</p><p>Quien te tenga en favoritos recibe una notificación (como mucho una al día por negocio, para no cansar).</p>')}
     ${table({
       cols: [
         { h: 'Novedad', r: (p) => `${p.image_url ? `<img class="thumb" src="${esc(p.image_url)}" alt="" loading="lazy">` : ''}<span class="title">${esc(p.body || '')}</span>` },
@@ -2092,7 +2271,7 @@ PAGES.informe = async (v, param) => {
     ['max_redemptions', 'Aforo'], ['seats_left', 'Plazas libres'],
   ]);
   $('#csvRed').onclick = () => downloadCsv(`canjes-${BIZ.name}`, r.redemptions || [], [
-    ['at', 'Fecha y hora'], ['title', 'Publicación'], ['code', 'Código'], ['by', 'Validado por'],
+    ['at', 'Fecha y hora'], ['title', 'Publicación'], ['code', 'Código'], [(x) => x.seats ?? 1, 'Plazas'], ['by', 'Validado por'],
   ]);
 };
 

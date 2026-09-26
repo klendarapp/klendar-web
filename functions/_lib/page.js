@@ -12,6 +12,9 @@ let CFG = {
   key: 'sb_publishable_gNwxFIJGW_o_lGhv3si6IQ_35xHCq30',
 };
 
+/** Dirección y clave pública de Supabase (para lo que se llama desde el navegador). */
+export const supabasePublic = () => ({ ...CFG });
+
 /** Cada petición pasa por aquí antes de tocar la base. */
 export function configure(env) {
   if (env?.SUPABASE_URL && env?.SUPABASE_KEY) {

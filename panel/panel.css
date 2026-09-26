@@ -274,3 +274,24 @@ table.tbl .actions > * { flex: 1 1 auto; justify-content: center; white-space: n
 .resenas-panel .respuesta p { margin: 6px 0 0; }
 .resenas-panel .pie { display: flex; justify-content: flex-end; margin-top: 10px; }
 .stars span { color: var(--glass-border); }
+
+/* Enlace con aspecto de texto (borrar plantillas…). */
+.linkbtn { background: none; border: 0; padding: 0; color: var(--ink); text-decoration: underline;
+  text-underline-offset: 2px; font: inherit; font-size: 14px; cursor: pointer; }
+
+/* «Más» en cada publicación: las acciones de uso menos frecuente. Se abre
+   dentro de la fila (flotando, la tabla lo recortaría). */
+details.mas { display: inline-block; }
+details.mas > summary { list-style: none; cursor: pointer; }
+details.mas > summary::-webkit-details-marker { display: none; }
+details.mas[open] { flex-basis: 100%; }
+details.mas .mas-menu { display: grid; gap: 2px; margin-top: 6px; padding: 6px; border-radius: 14px;
+  background: var(--elevated); border: 1px solid var(--glass-border); min-width: 220px; }
+details.mas .mas-menu a, details.mas .mas-menu button { display: block; text-align: left; padding: 9px 12px;
+  border-radius: 10px; color: var(--ink); background: none; border: 0; font: inherit; font-size: 14px;
+  cursor: pointer; white-space: nowrap; }
+details.mas .mas-menu a:hover, details.mas .mas-menu button:hover { background: var(--soft); text-decoration: none; }
+details.mas .mas-menu .bad { color: #E5484D; }
+
+/* «Cerrado por hoy» en el resumen */
+.card.pausa { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }

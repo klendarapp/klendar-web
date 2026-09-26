@@ -574,7 +574,8 @@ RUTAS.opinar = async ([id]) => {
         <textarea name="texto" rows="5" maxlength="500">${esc(mia.comment || '')}</textarea></label>
       <div class="foto-fila">
         ${mia.photo_url ? `<img id="prev" src="${esc(mia.photo_url)}" alt="">` : '<img id="prev" alt="" hidden>'}
-        <label class="pill">📷 ${esc(mia.photo_url ? t('Cambiar la foto') : t('Añadir una foto'))}<input type="file" name="foto" accept="image/*" hidden></label>
+        <label class="pill">${esc(mia.photo_url ? t('Cambiar la foto') : t('Añadir una foto'))}<input type="file" name="foto" accept="image/*" hidden></label>
+        ${mia.photo_url ? `<button type="button" class="linkbtn" id="quitaFoto">${esc(t('Quitar la foto'))}</button>` : ''}
       </div>
       <p class="muted">${esc(t('Tu nombre y tu foto de perfil salen junto a la reseña. Sigue las normas de la comunidad: sin insultos ni datos de nadie.'))}</p>
       <p class="err" id="err" role="alert"></p>
@@ -586,13 +587,19 @@ RUTAS.opinar = async ([id]) => {
     const archivo = f.foto.files[0];
     if (archivo) { img.src = URL.createObjectURL(archivo); img.hidden = false; }
   });
+  // Quitar la foto que tenía: se manda vacía (sin nada, la base la conserva).
+  let quitar = false;
+  const quita = $('#quitaFoto');
+  if (quita) {
+    quita.onclick = () => { quitar = true; f.foto.value = ''; $('#prev').hidden = true; quita.hidden = true; };
+  }
   f.addEventListener('submit', (ev) => {
     ev.preventDefault();
     const nota = Number(f.nota.value);
     if (!nota) { $('#err').textContent = t('Elige de una a cinco estrellas.'); return; }
     $('#err').textContent = '';
     ocupado($('#publicar'), async () => {
-      const foto = f.foto.files[0] ? await subeFoto('reviews', f.foto.files[0]) : null;
+      const foto = f.foto.files[0] ? await subeFoto('reviews', f.foto.files[0]) : (quitar ? '' : null);
       await llamar('upsert_review', {
         p_business_id: id, p_rating: nota, p_comment: f.texto.value.trim() || null, p_photo_url: foto,
       });
