@@ -1,6 +1,8 @@
 /* «Mi Klendar»: móvil primero. Se apoya en site.css y public.css (tarjetas,
    etiquetas, botones) y añade solo lo suyo. */
 
+/* Lo oculto se oculta siempre, aunque la clase diga display: grid. */
+[hidden] { display: none !important; }
 .formu { display: grid; gap: 16px; margin: 18px 0; }
 .formu label { display: grid; gap: 6px; font-weight: 600; font-size: 15px; }
 .formu label small { font-weight: 400; color: var(--ink-2); }
@@ -197,3 +199,7 @@ a.aviso:hover { text-decoration: none; border-color: var(--ink-2); }
 .cuenta h2.seccion-t, .cuenta .bloque h2 { font-family: inherit; font-size: 14px; font-weight: 700;
   color: var(--ink-2); letter-spacing: 0; line-height: 1.3; }
 input[type=file] { max-width: 100%; }
+
+/* Teléfono: prefijo y número en la misma fila. */
+.fila-tel { display: grid; grid-template-columns: 110px 1fr; gap: 10px; }
+.google-hueco .acciones { margin-bottom: 8px; }

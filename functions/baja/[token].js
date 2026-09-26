@@ -1,7 +1,7 @@
 import { configure, esc, html, rpc } from '../_lib/page.js';
 import { guard, publicPage } from '../_lib/public.js';
 
-// Darse de baja del correo semanal: un clic desde el propio correo, sin
+// Darse de baja del correo semanal (o del resumen del negocio): un clic desde el propio correo, sin
 // entrar a la cuenta ni buscar nada. El enlace lleva un testigo que solo
 // sirve para esto.
 
@@ -15,19 +15,24 @@ export async function onRequestGet(ctx) {
 
   const r = await rpc('email_optout', { p_token: token });
   const ok = r?.ok === true;
+  const negocio = r?.kind === 'business';
 
   const S = en
     ? {
         title: ok ? 'Done' : 'That link no longer works',
         body: ok
-          ? 'You will not get the weekly email any more. You can switch it back on in the app, in Notification settings.'
+          ? (negocio
+            ? 'You will not get your business’s weekly summary any more. You can switch it back on in the app, in Notification settings.'
+            : 'You will not get the weekly email any more. You can switch it back on in the app, in Notification settings.')
           : 'Maybe it was already used. You can also switch it off in the app, in Notification settings.',
         home: 'Go to Klendar',
       }
     : {
         title: ok ? 'Listo' : 'Ese enlace ya no vale',
         body: ok
-          ? 'No volverás a recibir el correo semanal. Si te arrepientes, se vuelve a encender en la app, en Ajustes de notificaciones.'
+          ? (negocio
+            ? 'No volverás a recibir el resumen semanal de tu negocio. Si te arrepientes, se vuelve a encender en la app, en Ajustes de notificaciones.'
+            : 'No volverás a recibir el correo semanal. Si te arrepientes, se vuelve a encender en la app, en Ajustes de notificaciones.')
           : 'A lo mejor ya se usó. También puedes apagarlo en la app, en Ajustes de notificaciones.',
         home: 'Ir a Klendar',
       };

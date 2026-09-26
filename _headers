@@ -23,3 +23,11 @@
   ! X-Frame-Options
   Content-Security-Policy: frame-ancestors *
   X-Robots-Tag: noindex
+
+# Explorar: «Cerca de mí» pide la ubicación (solo al pulsarlo).
+/explorar/*
+  ! Permissions-Policy
+  Permissions-Policy: geolocation=(self), camera=(), microphone=()
+/en/explore/*
+  ! Permissions-Policy
+  Permissions-Policy: geolocation=(self), camera=(), microphone=()

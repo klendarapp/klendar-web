@@ -391,7 +391,10 @@ async function boot() {
   }
   if (!BIZZES.length) return noBusiness();
   const saved = localStorage.getItem('klendar.biz');
-  BIZ = BIZZES.find((b) => b.id === saved) || BIZZES[0];
+  // ?biz= (desde un aviso de otro de tus locales) manda sobre el último usado.
+  const pedido = new URLSearchParams(location.hash.split('?')[1] || '').get('biz');
+  BIZ = BIZZES.find((b) => b.id === pedido) || BIZZES.find((b) => b.id === saved) || BIZZES[0];
+  if (pedido && BIZ.id === pedido) localStorage.setItem('klendar.biz', BIZ.id);
   renderBizPicker();
   try { CATS = (await sb.from('categories').select('id, slug, names, position').order('position')).data || []; } catch { CATS = []; }
   route();
@@ -432,18 +435,24 @@ $('#doReset').onclick = async () => {
 };
 $('#password').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('#doLogin').click(); });
 
-// Entrar con Google: solo si el proyecto lo tiene activo.
+// Google, Apple y teléfono: solo los que el proyecto tenga activos (el día
+// que se enciendan en Supabase aparecen solos). Los mismos que la app.
 (async () => {
+  let ext = {};
   try {
     const r = await fetch(`${window.KLENDAR_ENV.url}/auth/v1/settings`, { headers: { apikey: window.KLENDAR_ENV.key } });
-    if (!r.ok || !(await r.json()).external?.google) return;
+    if (r.ok) ext = (await r.json()).external || {};
   } catch { return; }
-  const b = $('#doGoogle');
-  b.hidden = false;
-  b.onclick = async () => {
-    const { error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${location.origin}/panel/` } });
-    if (error) $('#loginErr').textContent = friendly(error.message);
-  };
+  for (const prov of ['google', 'apple']) {
+    const b = $(`#do${prov === 'google' ? 'Google' : 'Apple'}`);
+    if (!ext[prov] || !b) continue;
+    b.hidden = false;
+    b.onclick = async () => {
+      const { error } = await sb.auth.signInWithOAuth({ provider: prov, options: { redirectTo: `${location.origin}/panel/` } });
+      if (error) $('#loginErr').textContent = friendly(error.message);
+    };
+  }
+  if (ext.phone && $('#doPhone')) $('#doPhone').hidden = false;
 })();
 $('#logout').onclick = async (e) => { e.preventDefault(); await sb.auth.signOut(); showLogin(); };
 sb.auth.onAuthStateChange((ev) => { if (ev === 'SIGNED_OUT') showLogin(); });
@@ -845,6 +854,7 @@ PAGES.publicaciones = async (v, param) => {
             <button class="btn sm ghost" data-act="${o.status === 'active' ? 'pause' : 'activate'}" data-id="${esc(o.id)}">${o.status === 'active' ? 'Pausar' : 'Activar'}</button>
             <details class="mas"><summary class="btn sm ghost">Más</summary><div class="mas-menu">
               <a href="#/publicaciones/${o.kind === 'flash_offer' ? 'nueva-flash' : 'nuevo-evento'}?from=${esc(o.id)}">Crear a partir de esta</a>
+              ${o.kind === 'flash_offer' && o.status === 'active' && new Date(o.redeem_end_at) > new Date() ? `<button type="button" data-act="extend" data-id="${esc(o.id)}">Ampliar 1 h</button>` : ''}
               ${o.kind === 'flash_offer' ? `<a href="#/publicaciones/nueva-flash?from=${esc(o.id)}&repeat=1">Repetir mañana</a>
               <button type="button" data-act="repeat" data-id="${esc(o.id)}">Repetir cada semana…</button>` : ''}
               ${OTROS_LOCALES.length ? `<button type="button" data-act="locales" data-id="${esc(o.id)}">En otros locales…</button>` : ''}
@@ -862,6 +872,10 @@ PAGES.publicaciones = async (v, param) => {
         try {
           if (b.dataset.act === 'repeat') {
             await repetirDialogo(id);
+            return;
+          }
+          if (b.dataset.act === 'extend') {
+            await ampliarDialogo(offers.find((x) => x.id === id));
             return;
           }
           if (b.dataset.act === 'stats') {
@@ -891,7 +905,35 @@ PAGES.publicaciones = async (v, param) => {
   ]);
   render();
   renderRules();
+  // Desde el aviso «tu oferta termina en 1 h» (Tu cuenta → notificaciones).
+  const qx = new URLSearchParams(location.hash.split('?')[1] || '');
+  const aAmpliar = qx.get('extend') && offers.find((x) => x.id === qx.get('extend'));
+  if (aAmpliar) {
+    history.replaceState(null, '', `${location.pathname}#/publicaciones`);
+    ampliarDialogo(aAmpliar);
+  }
 };
+
+/** «Ampliar 1 h»: con la hora nueva a la vista, como en la app. */
+async function ampliarDialogo(o) {
+  if (!o || !o.redeem_end_at) return;
+  const hm = (d) => new Date(d).toLocaleTimeString(LOC(), { hour: '2-digit', minute: '2-digit' });
+  const nueva = new Date(new Date(o.redeem_end_at).getTime() + 36e5);
+  const en = I18N.lang === 'en';
+  if (!await confirmDlg(en ? 'Extend by an hour?' : '¿Ampliar una hora?',
+    esc(en ? `“${o.title}” will end at ${hm(nueva)}. Anyone who already has a code can use it until then.`
+      : `«${o.title}» terminará a las ${hm(nueva)}. Quien ya tenga su código lo podrá usar hasta entonces.`),
+    { submit: 'Ampliar 1 h' })) return;
+  const r = await rpc('extend_offer', { p_offer: o.id, p_minutes: 60 }).catch((e) => ({ ok: false, error: e.message }));
+  if (!r?.ok) {
+    toast(r?.error === 'already_over' ? 'Esa oferta ya ha terminado. Puedes repetirla mañana.'
+      : r?.error === 'too_long' ? 'Una oferta flash dura como mucho 24 h. Para más, crea un evento o repítela otro día.'
+        : r?.error === 'not_authorized' ? ERRORS.not_authorized : 'No se ha podido guardar', true);
+    return;
+  }
+  toast(en ? `Extended until ${hm(r.redeem_end_at)}` : `Ampliada hasta las ${hm(r.redeem_end_at)}`);
+  route();
+}
 
 /** «Cifras» de una publicación: los últimos 14 días, cómo va frente a las
  * demás del negocio y, en eventos con reserva, la asistencia. Lo mismo que la
@@ -1005,7 +1047,19 @@ async function offerForm(v, id, kindDefault, desde = null) {
   if (id) {
     const all = await rpc('my_business_offers', { p_id: BIZ.id });
     o = all.find((x) => x.id === id) || o;
-  } else if (desde) {
+  } else if (!desde) {
+    // Como la app: una oferta flash empieza ya y dura 3 h; un evento, mañana
+    // a las 20:00. Se cambia en un momento; un formulario en blanco frena.
+    const ahora = new Date(); ahora.setSeconds(0, 0);
+    if (o.kind === 'flash_offer') {
+      o.redeem_start_at = ahora.toISOString();
+      o.redeem_end_at = new Date(ahora.getTime() + 3 * 36e5).toISOString();
+    } else {
+      const m = new Date(ahora); m.setDate(m.getDate() + 1); m.setHours(20, 0, 0, 0);
+      o.event_at = m.toISOString();
+    }
+  }
+  if (!id && desde) {
     // Nueva, rellena con otra: textos, fotos, precio, aforo y diseño. Las
     // fechas no (siempre cambian), salvo «Repetir mañana»: a la misma hora.
     const all = await rpc('my_business_offers', { p_id: BIZ.id });
@@ -1086,6 +1140,16 @@ async function offerForm(v, id, kindDefault, desde = null) {
       <h3 style="margin-top:16px">Fotos y vídeo</h3>
       <p class="hint">La primera es la portada; muévelas con las flechas. Si no pones ninguna, se usa la foto del local. Los vídeos se ven al abrir la publicación (en el feed van las fotos).</p>
       <div class="photos" id="photos"></div>
+      <h3 style="margin-top:18px">Diseño del anuncio</h3>
+      <p class="hint">Así se verá en Descubre. Elige la plantilla y el color que mejor casen con tu marca.</p>
+      <div class="estilo">
+        <div class="estilo-prev" id="estiloPrev" aria-hidden="true"></div>
+        <div class="estilo-opc">
+          <div class="pills" id="plantillasEstilo"></div>
+          <p class="hint" style="margin:14px 0 6px">Color de tu marca</p>
+          <div class="colores" id="colores"></div>
+        </div>
+      </div>
       <div class="actions" style="margin-top:18px">
         <button class="btn primary" type="submit">${id ? 'Guardar cambios' : 'Publicar'}</button>
         <button class="btn" type="button" id="saveTpl">Guardar como plantilla</button>
@@ -1123,6 +1187,8 @@ async function offerForm(v, id, kindDefault, desde = null) {
 
   // Fotos
   let images = [...(o.images || [])];
+  // La vista previa del diseño se define más abajo; las fotos la repintan.
+  let pintaEstilo = () => {};
   const isVideo = (u) => /\.(mp4|mov|webm)(\?|$)/i.test(u);
   const renderPhotos = () => {
     // El orden manda: la primera es la portada. Se mueve con las flechas.
@@ -1138,6 +1204,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
       </div>`).join('')
       + `<label class="add">+ Añadir foto o vídeo<input type="file" accept="image/*,video/mp4,video/quicktime" multiple></label>`;
     $$('#photos .rm').forEach((b) => { b.onclick = () => { images.splice(+b.dataset.i, 1); renderPhotos(); }; });
+    pintaEstilo();
     $$('#photos [data-mv]').forEach((b) => {
       b.onclick = () => {
         const [i, d] = b.dataset.mv.split(':').map(Number);
@@ -1166,6 +1233,48 @@ async function offerForm(v, id, kindDefault, desde = null) {
     };
   };
   renderPhotos();
+
+  // ── Diseño del anuncio (las mismas plantillas y colores que la app) ──────
+  const PLANTILLAS = [['glass', 'Cristal'], ['bold', 'Color'], ['poster', 'Póster'], ['minimal', 'Limpio']];
+  const COLORES = ['#FF4D6D', '#F5B041', '#0EA5E9', '#7C5CFF', '#34D399', '#FF8A3D', '#E879F9', '#111827'];
+  let estilo = { template: o.style?.template || 'glass', accent: o.style?.accent || null };
+  const claro = (hex) => {
+    const n = parseInt(hex.slice(1), 16);
+    const l = (c) => { const x = c / 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; };
+    return 0.2126 * l(n >> 16 & 255) + 0.7152 * l(n >> 8 & 255) + 0.0722 * l(n & 255) > 0.45;
+  };
+  pintaEstilo = () => {
+    const acento = estilo.accent || '#FF4D6D';
+    const sobre = claro(acento) ? '#0A0A0A' : '#FFFFFF';
+    const f = new FormData($('#form'));
+    const titulo = String(f.get('title') || '').trim() || (I18N.lang === 'en' ? 'Your publication' : 'Tu publicación');
+    const dt = String(f.get('discount_type') || '');
+    const dv = String(f.get('discount_value') || '').trim();
+    const precioTxt = String(f.get('price') || '').trim();
+    const etiqueta = dt ? etiquetaDescuento({ type: dt, value: dt === 'other' ? dv : Number(dv.replace(',', '.')) || dv })
+      : precioTxt ? fmtMoney(Math.round(parseFloat(precioTxt.replace(',', '.')) * 100)) : '';
+    const foto = images.find((u) => !isVideo(u));
+    const t = estilo.template;
+    $('#estiloPrev', v).innerHTML = `
+      <div class="ep ep-${t}" style="--ac:${acento};--on:${sobre};${foto ? `background-image:url('${esc(foto)}')` : ''}">
+        <div class="ep-panel">
+          <b class="ep-biz">${esc(BIZ.name)}</b>
+          <span class="ep-title">${esc(titulo)}</span>
+          ${etiqueta ? `<span class="ep-tag">${esc(etiqueta)}</span>` : ''}
+          <span class="ep-cta">${esc(I18N.lang === 'en' ? 'Get the code' : 'Conseguir el código')}</span>
+        </div>
+      </div>`;
+    $('#plantillasEstilo', v).innerHTML = PLANTILLAS.map(([k, n]) =>
+      `<button type="button" class="${estilo.template === k ? 'on' : ''}" data-plantilla="${k}">${esc(I18N.t(n))}</button>`).join('');
+    $('#colores', v).innerHTML = COLORES.map((c, i) =>
+      `<button type="button" class="color ${(estilo.accent || '#FF4D6D') === c ? 'on' : ''}" data-color="${i === 0 ? '' : c}" style="background:${c}" aria-label="${c}"></button>`).join('');
+    $$('[data-plantilla]', v).forEach((b) => { b.onclick = () => { estilo.template = b.dataset.plantilla; pintaEstilo(); }; });
+    $$('[data-color]', v).forEach((b) => { b.onclick = () => { estilo.accent = b.dataset.color || null; pintaEstilo(); }; });
+  };
+  $('#form').addEventListener('input', (e) => {
+    if (['title', 'price', 'discount_type', 'discount_value'].includes(e.target.name)) pintaEstilo();
+  });
+  pintaEstilo();
 
   // ── Plantillas ──────────────────────────────────────────────────────────
   const campo = (n) => $(`[name=${n}]`, v);
@@ -1201,7 +1310,8 @@ async function offerForm(v, id, kindDefault, desde = null) {
     pon('prior_price', ds.compare_at_cents != null ? (ds.compare_at_cents / 100).toFixed(2).replace('.', ',') : '');
     pon('alcohol', ds.alcohol === true ? 'yes' : ds.alcohol === false ? 'no' : '');
     images = [...(d.images || [])];
-    renderPhotos(); syncKind(); syncDiscount();
+    if (d.style) estilo = { template: d.style.template || 'glass', accent: d.style.accent || null };
+    renderPhotos(); syncKind(); syncDiscount(); pintaEstilo();
   };
   $$('[data-idea]', v).forEach((b) => { b.onclick = () => { aplicarIdea(ideas[+b.dataset.idea]); toast('Plantilla aplicada: repasa precio y hora'); }; });
   const borraTpl = $('#borraTpl', v);
@@ -1252,7 +1362,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
       max_redemptions: String(f.get('max_redemptions') || '').trim() || null,
       max_per_user: Number(f.get('max_per_user') || 1),
       adults_only: campo('adults_only').checked,
-      style: o.style || null,
+      style: { template: estilo.template, ...(estilo.accent ? { accent: estilo.accent } : {}) },
       code_ttl_minutes: f.get('code_ttl_minutes') ? Number(f.get('code_ttl_minutes')) : null,
       reservations_enabled: f.get('kind') !== 'flash_offer' && campo('reservations_enabled').checked,
       images,
@@ -1342,8 +1452,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
       adults_only: $('[name=adults_only]').checked,
       status: programada ? 'draft' : ($('[name=publish]').checked ? 'active' : 'draft'),
       publish_at: programada,
-      // Al crearla a partir de otra, se queda con su diseño.
-      ...(!id && o.style ? { style: o.style } : {}),
+      style: { template: estilo.template, ...(estilo.accent ? { accent: estilo.accent } : {}) },
     };
     if (flash && (!data.redeem_start_at || !data.redeem_end_at)) {
       $('#formErr').textContent = 'Una oferta flash necesita principio y fin.'; return;
@@ -1384,8 +1493,54 @@ PAGES.validar = async (v) => {
       <input id="code" placeholder="Código o enlace del QR" autocomplete="off" autofocus>
       <button class="btn primary" id="go">Validar</button>
       <div id="result" aria-live="assertive"></div>
+      <div id="cola"></div>
     </div>
     <div class="card" style="margin-top:18px"><h2>Últimos validados</h2><div id="recent"></div></div>`;
+
+  // ── Sin conexión: los códigos se guardan y se validan al volver la red ──
+  // (como en la app). Se guardan por negocio en este navegador.
+  const COLA = `klendar.cola.${BIZ.id}`;
+  const leeCola = () => { try { return JSON.parse(localStorage.getItem(COLA) || '[]'); } catch { return []; } };
+  const guardaCola = (c) => { try { localStorage.setItem(COLA, JSON.stringify(c)); } catch { /* sin espacio */ } };
+  const pintaCola = () => {
+    const c = leeCola();
+    const caja = $('#cola');
+    if (!caja) return; // ya estás en otra pantalla
+    caja.innerHTML = c.length ? `<div class="scan-result warn">${ms('cloud_off')}${esc(I18N.lang === 'en'
+      ? `${c.length} code(s) waiting for a connection`
+      : `${c.length} código(s) esperando conexión`)}<small>${esc(I18N.t('Se validará solo en cuanto vuelva la cobertura.'))}</small>
+      <button class="btn sm" id="enviaCola" type="button">${esc(I18N.t('Enviar ahora'))}</button></div>` : '';
+    const b = $('#enviaCola');
+    if (b) b.onclick = () => enviaCola();
+  };
+  const sinRed = (msg) => !navigator.onLine || /fetch|network|NetworkError|Load failed/i.test(String(msg || ''));
+  let enviando = false;
+  const enviaCola = async () => {
+    const c = leeCola();
+    if (!c.length || enviando || !navigator.onLine) return;
+    enviando = true;
+    let ok = 0; let mal = 0; const quedan = [];
+    for (const item of c) {
+      try {
+        const r = await rpc('validate_redemption', { p_code: item.code });
+        if (r?.ok) ok++; else mal++;
+      } catch (e) {
+        if (sinRed(e.message)) quedan.push(item); else mal++;
+      }
+    }
+    guardaCola(quedan);
+    enviando = false;
+    pintaCola();
+    if (ok || mal) {
+      toast(I18N.lang === 'en' ? `Pending codes sent: ${ok} valid, ${mal} rejected.`
+        : `Pendientes enviados: ${ok} validados, ${mal} rechazados.`, mal > 0);
+      if ($('#recent')) loadRecent();
+    }
+  };
+  // Un solo oyente aunque se entre varias veces en esta pantalla.
+  window.removeEventListener('online', window.KL_ENVIA_COLA || (() => {}));
+  window.KL_ENVIA_COLA = enviaCola;
+  window.addEventListener('online', enviaCola);
 
   const loadRecent = async () => {
     const offers = await rpc('my_business_offers', { p_id: BIZ.id });
@@ -1411,6 +1566,15 @@ PAGES.validar = async (v) => {
     if (!raw) return;
     // Tecleado se ve en grupos de cuatro («0882 7EC7 …»): fuera espacios y guiones.
     const code = raw.includes('/r/') ? raw.split('/r/').pop().split(/[?#]/)[0] : raw.replace(/[\s-]/g, '');
+    const aLaCola = () => {
+      const c = leeCola();
+      if (!c.some((x) => x.code === code)) c.push({ code, at: new Date().toISOString() });
+      guardaCola(c);
+      $('#result').innerHTML = `<div class="scan-result warn">${ms('cloud_off')}${esc(I18N.t('Sin conexión: código guardado'))}<small>${esc(I18N.t('Se validará solo en cuanto vuelva la cobertura.'))}</small></div>`;
+      $('#code').value = '';
+      pintaCola();
+    };
+    if (!navigator.onLine) { aLaCola(); return; }
     try {
       const res = await rpc('validate_redemption', { p_code: code });
       if (res.ok) {
@@ -1432,9 +1596,13 @@ PAGES.validar = async (v) => {
         $('#result').innerHTML = `<div class="scan-result bad">${ms('cancel')}${esc(I18N.t(msgs[res.error] || friendly(res.error)))}${res.validated_at ? `<small>${esc(I18N.t('Se validó el'))} ${esc(fmtDate(res.validated_at))}${(res.seats || 1) > 1 ? ` · ${res.seats} ${esc(I18N.t('personas'))}` : ''}</small>` : ''}</div>`;
         if (navigator.vibrate) navigator.vibrate([60, 60, 60]);
       }
-    } catch (e) { toast(friendly(e.message), true); }
+    } catch (e) {
+      if (sinRed(e.message)) aLaCola(); else toast(friendly(e.message), true);
+    }
   };
   $('#go').onclick = validate;
+  pintaCola();
+  enviaCola();
   $('#code').addEventListener('keydown', (e) => { if (e.key === 'Enter') validate(); });
   // Desde klendar.app/r/<código> (el QR escaneado con la cámara del móvil,
   // sin la app): el código llega puesto y se valida al momento.

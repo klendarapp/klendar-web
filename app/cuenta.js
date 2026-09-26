@@ -79,6 +79,10 @@ function destinoWeb(ruta) {
   if ((m = r.match(/^\/offer\/([0-9a-f-]{36})/i))) return `${pre}/o/${m[1]}`;
   if ((m = r.match(/^\/business\/([0-9a-f-]{36})\?review=1/i))) return `#/opinar/${m[1]}`;
   if ((m = r.match(/^\/business\/([0-9a-f-]{36})/i))) return `${pre}/b/${m[1]}`;
+  // «Tu oferta termina en 1 h»: al panel, con la pregunta de ampliarla hecha.
+  if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\?extend=([0-9a-f-]{36})/i))) {
+    return `/panel/#/publicaciones?biz=${m[1]}&extend=${m[2]}`;
+  }
   if (r.startsWith('/my-business')) return '/panel/';
   if (r.startsWith('/profile')) return '#/ajustes';
   return '';
@@ -290,12 +294,15 @@ RUTAS.alerta = async ([id]) => {
 // ── Ajustes ───────────────────────────────────────────────────────────────
 RUTAS.ajustes = async () => {
   if (!exigeSesion('ajustes')) return;
-  const [perfil, prefs, cons, cats] = await Promise.all([
+  const [perfil, prefs, cons, cats, negocios] = await Promise.all([
     tabla(sb.from('profiles').select('display_name, avatar_url, locale').eq('id', YO.id).maybeSingle()),
     llamar('my_notification_preferences', {}),
     llamar('my_consents', {}),
     categorias(),
+    llamar('my_businesses', {}).catch(() => []),
   ]);
+  // El resumen del negocio solo le llega a quien lo lleva (dueño o encargado).
+  const llevaNegocio = Array.isArray(negocios) && negocios.some((b) => ['owner', 'manager'].includes(b.role));
   const p = perfil || {};
   const hora = (v) => (v ? String(v).slice(0, 5) : '');
   const dia = (iso) => fecha(iso, { day: 'numeric', month: 'long', year: 'numeric' });
@@ -346,6 +353,8 @@ RUTAS.ajustes = async () => {
         </fieldset>
         <label class="check"><input type="checkbox" name="semanal"${prefs.weekly_email ? ' checked' : ''}>
           <span><b>${esc(t('Correo semanal'))}</b><br><small>${esc(t('Los jueves, lo que hay estos días en tu ciudad. Uno a la semana y se apaga cuando quieras.'))}</small></span></label>
+        ${llevaNegocio ? `<label class="check"><input type="checkbox" name="negocio"${prefs.business_email !== false ? ' checked' : ''}>
+          <span><b>${esc(t('Resumen semanal de tu negocio'))}</b><br><small>${esc(t('Los lunes, por correo: vistas, canjes, favoritos y reseñas de la semana pasada.'))}</small></span></label>` : ''}
         <p class="muted">${esc(t('Las notificaciones te llegan al móvil si tienes la app, y siempre las tienes aquí, en «Notificaciones».'))}</p>
         <p class="err" id="err-avisos" role="alert"></p>
         <button class="pill accent" id="g-avisos">${esc(t('Guardar'))}</button>
@@ -433,6 +442,7 @@ RUTAS.ajustes = async () => {
         quiet_hours_start: desde || null,
         quiet_hours_end: hasta || null,
         weekly_email: fa.semanal.checked,
+        ...(fa.negocio ? { business_email: fa.negocio.checked } : {}),
       } });
       toast(t('Notificaciones guardadas'));
     });

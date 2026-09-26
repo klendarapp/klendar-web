@@ -162,3 +162,14 @@ footer.pub-foot a { color: var(--ink-2); }
 
 /* Iconos dentro de los botones: el marcador de Planes y el corazón de Favoritos, como en la app. */
 .pill .ic { vertical-align: -3px; margin-right: 4px; }
+
+/* Explorar: el mapa */
+.mapa-explorar { height: min(70vh, 560px); border-radius: 22px; overflow: hidden; border: 1px solid var(--glass-border); margin-top: 8px; }
+.chincheta { width: 22px; height: 22px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: block;
+  background: var(--accent); border: 2px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,.35); }
+.mapa-explorar .mapboxgl-popup-content { background: var(--elevated); color: var(--ink); border-radius: 14px; padding: 10px 12px; font: inherit;
+  border: 1px solid var(--glass-border); box-shadow: 0 10px 30px rgba(0,0,0,.35); }
+.mapa-explorar .mapboxgl-popup-tip { display: none; }
+.pop { display: grid; gap: 2px; color: var(--ink); text-decoration: none; max-width: 220px; }
+.pop span { color: var(--ink-2); font-size: 13px; }
+button.chip { font-family: inherit; cursor: pointer; }

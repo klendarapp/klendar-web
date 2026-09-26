@@ -33,6 +33,12 @@ const T = (en) => en
       noPlaces: 'No places match that yet.',
       live: (n) => `${n} on right now`,
       picks: 'Selections', seeProfile: 'See the place',
+      price: 'Price', any: 'Any', free: 'Free', upTo: (n) => `Up to €${n}`,
+      when: 'When?', anytime: 'Any time', now: 'Right now', today: 'Today', tomorrow: 'Tomorrow', next10: 'Next 10 days',
+      discount: 'Discounts only', sort: 'Sort by', soonest: 'Soonest', newest: 'Newest', nearest: 'Nearest',
+      near: 'Near me', nearOn: 'Near you', nearNo: 'We could not get your location. Allow it in the browser and try again.',
+      view: 'View', listView: 'List', mapView: 'Map',
+      mapNo: 'The map cannot load right now. The list has the same.', away: 'away',
     }
   : {
       exp: 'Explorar', agenda: 'Agenda local', search: 'Buscar', ph: 'Un bar, un mercadillo, «brunch»…',
@@ -52,6 +58,12 @@ const T = (en) => en
       noPlaces: 'Todavía no hay negocios con eso.',
       live: (n) => `${n} ahora mismo`,
       picks: 'Selecciones', seeProfile: 'Ver el sitio',
+      price: 'Precio', any: 'Cualquiera', free: 'Gratis', upTo: (n) => `Hasta ${n} €`,
+      when: '¿Cuándo?', anytime: 'Cuando sea', now: 'Ahora mismo', today: 'Hoy', tomorrow: 'Mañana', next10: 'Próximos 10 días',
+      discount: 'Solo con descuento', sort: 'Ordenar', soonest: 'Más pronto', newest: 'Novedades', nearest: 'Más cerca',
+      near: 'Cerca de mí', nearOn: 'Cerca de ti', nearNo: 'No hemos podido saber dónde estás. Permítelo en el navegador y vuelve a probar.',
+      view: 'Ver en', listView: 'Lista', mapView: 'Mapa',
+      mapNo: 'El mapa no se puede cargar ahora mismo. En la lista está lo mismo.', away: '',
     };
 
 const catName = (c, en) => (en ? c?.names?.en : c?.names?.es) || c?.slug || '';
@@ -80,6 +92,42 @@ const bizCard = (b, lang, S) => {
   </a>`;
 };
 
+/** Mapa con una chincheta por publicación. Si Mapbox no carga (sin token,
+ * sin red), se dice y se enseña la lista: nunca un hueco en blanco. */
+const mapaHtml = (items, lang, S) => {
+  const puntos = items.filter((o) => Number.isFinite(o.lat) && Number.isFinite(o.lng)).map((o) => ({
+    id: o.id, t: o.title, b: o.business_name, lat: o.lat, lng: o.lng,
+    u: `${lang === 'en' ? '/en' : ''}/o/${o.id}`,
+  }));
+  return `<div id="mapa" class="mapa-explorar" data-no="${esc(S.mapNo)}"></div>
+  <div id="mapaLista" hidden>${lista(items, lang, S.none)}</div>
+  <script type="application/json" id="mapaPuntos">${JSON.stringify(puntos).replace(/</g, '\\u003c')}</script>
+  <script>(async function(){
+    var caja=document.getElementById('mapa');var puntos=JSON.parse(document.getElementById('mapaPuntos').textContent||'[]');
+    function falla(){caja.innerHTML='<p class="empty">'+caja.dataset.no+'</p>';document.getElementById('mapaLista').hidden=false;}
+    try{
+      var tk=(await (await fetch('/api/mapbox-token')).json()).token;if(!tk)return falla();
+      await new Promise(function(ok,ko){var c=document.createElement('link');c.rel='stylesheet';c.href='https://api.mapbox.com/mapbox-gl-js/v3.15.0/mapbox-gl.css';document.head.append(c);
+        var s=document.createElement('script');s.src='https://api.mapbox.com/mapbox-gl-js/v3.15.0/mapbox-gl.js';s.onload=ok;s.onerror=ko;document.head.append(s);});
+      mapboxgl.accessToken=tk;
+      var oscuro=matchMedia('(prefers-color-scheme: dark)').matches;
+      var m=new mapboxgl.Map({container:caja,style:oscuro?'mapbox://styles/mapbox/dark-v11':'mapbox://styles/mapbox/light-v11',center:puntos.length?[puntos[0].lng,puntos[0].lat]:[-3.7038,40.4168],zoom:12});
+      m.addControl(new mapboxgl.NavigationControl({showCompass:false}));
+      var bounds=new mapboxgl.LngLatBounds();
+      puntos.forEach(function(p){bounds.extend([p.lng,p.lat]);
+        var el=document.createElement('a');el.className='chincheta';el.href=p.u;el.setAttribute('aria-label',p.t);
+        var a=document.createElement('a');a.className='pop';a.href=p.u;
+        var bt=document.createElement('b');bt.textContent=p.t;var sp=document.createElement('span');sp.textContent=p.b||'';
+        a.append(bt,sp);
+        var pop=new mapboxgl.Popup({offset:18,closeButton:false,focusAfterOpen:false}).setDOMContent(a);
+        new mapboxgl.Marker({element:el}).setLngLat([p.lng,p.lat]).setPopup(pop).addTo(m);
+        el.addEventListener('click',function(e){e.preventDefault();});
+      });
+      if(puntos.length>1)m.fitBounds(bounds,{padding:48,maxZoom:15,duration:0});
+    }catch(e){falla();}
+  })();</script>`;
+};
+
 const portada = (items) => items.map((o) => (o.images || []).find((u) => !isVideo(u))).find(Boolean);
 
 // ── Explorar ───────────────────────────────────────────────────────────────
@@ -95,7 +143,32 @@ export async function explorePage(url, lang) {
   // «Planes» o «Negocios»: la misma búsqueda, dos maneras de mirarla.
   const ver = (qs.get(en ? 'show' : 'ver') || '').slice(0, 20);
   const negocios = ver === 'places' || ver === 'negocios';
-  const filtrado = Boolean(q || city || cat || kind || negocios || page > 1);
+  // Los filtros de la app: precio, cuándo, solo descuento, orden, cerca de mí
+  // y lista o mapa. Todo en la URL: se comparte y va sin JavaScript (salvo
+  // el mapa y pedir la ubicación).
+  const K = en
+    ? { price: 'price', when: 'when', discount: 'discount', sort: 'sort', view: 'view' }
+    : { price: 'precio', when: 'cuando', discount: 'descuento', sort: 'orden', view: 'vista' };
+  const price = (qs.get(K.price) || '').slice(0, 10);
+  const when = (qs.get(K.when) || '').slice(0, 12);
+  const soloDescuento = qs.get(K.discount) === '1';
+  const sort = (qs.get(K.sort) || '').slice(0, 12);
+  const vista = (qs.get(K.view) || '').slice(0, 8);
+  const mapa = !negocios && (vista === 'map' || vista === 'mapa');
+  const lat = Number.parseFloat(qs.get('lat') || '');
+  const lng = Number.parseFloat(qs.get('lng') || '');
+  const cerca = Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
+  const WHEN = { ahora: 'now', now: 'now', hoy: 'today', today: 'today', manana: 'tomorrow', tomorrow: 'tomorrow', '10dias': 'next10', next10: 'next10' };
+  const SORT = { nuevas: 'newest', newest: 'newest', cerca: 'nearest', nearest: 'nearest' };
+  const filtros = {
+    ...(price === 'gratis' || price === 'free' ? { free: true } : {}),
+    ...(/^\d{1,3}$/.test(price) ? { max_price_cents: Number(price) * 100 } : {}),
+    ...(WHEN[when] ? { when: WHEN[when] } : {}),
+    ...(soloDescuento ? { discount_only: true } : {}),
+    ...(SORT[sort] ? { sort: SORT[sort] } : cerca ? { sort: 'nearest' } : {}),
+    ...(cerca ? { radius_m: 10000 } : {}),
+  };
+  const filtrado = Boolean(q || city || cat || kind || negocios || page > 1 || price || when || soloDescuento || sort || cerca);
 
   const [res, cities, cats, cols] = await Promise.all([
     negocios
@@ -112,8 +185,11 @@ export async function explorePage(url, lang) {
       p_kind: kind === 'offers' || kind === 'ofertas' ? 'flash_offer'
         : kind === 'events' || kind === 'eventos' ? 'future_event' : null,
       p_q: q || null,
-      p_limit: POR_PAGINA,
-      p_offset: (page - 1) * POR_PAGINA,
+      p_limit: mapa ? 60 : POR_PAGINA,
+      p_offset: mapa ? 0 : (page - 1) * POR_PAGINA,
+      p_filters: filtros,
+      p_lat: cerca ? lat : null,
+      p_lng: cerca ? lng : null,
     }),
     rpcAll('public_cities', {}),
     rpcAll('public_categories', { p_city: city || null }),
@@ -121,17 +197,25 @@ export async function explorePage(url, lang) {
   ]);
   const items = res?.items || [];
   const total = res?.total || 0;
-  const paginas = Math.max(1, Math.ceil(total / POR_PAGINA));
+  const paginas = mapa ? 1 : Math.max(1, Math.ceil(total / POR_PAGINA));
 
   // Los filtros son enlaces: se puede compartir la URL y va sin JavaScript.
   const link = (cambios) => {
     const p = new URLSearchParams();
-    const base = { q, city, cat, kind, ver, p: 1, ...cambios };
+    const base = { q, city, cat, kind, ver, price, when, soloDescuento, sort, vista, cerca, p: 1, ...cambios };
     if (base.q) p.set('q', base.q);
     if (base.city) p.set(en ? 'city' : 'ciudad', base.city);
     if (base.cat) p.set(en ? 'category' : 'categoria', base.cat);
     if (base.kind && !base.ver) p.set(en ? 'type' : 'tipo', base.kind);
     if (base.ver) p.set(en ? 'show' : 'ver', base.ver);
+    if (!base.ver) {
+      if (base.price) p.set(K.price, base.price);
+      if (base.when) p.set(K.when, base.when);
+      if (base.soloDescuento) p.set(K.discount, '1');
+      if (base.sort) p.set(K.sort, base.sort);
+      if (base.vista) p.set(K.view, base.vista);
+      if (base.cerca) { p.set('lat', lat.toFixed(4)); p.set('lng', lng.toFixed(4)); }
+    }
     if (base.p && base.p > 1) p.set('p', String(base.p));
     const s = p.toString();
     return `${exploreBase(lang)}/${s ? `?${s}` : ''}`;
@@ -149,6 +233,9 @@ export async function explorePage(url, lang) {
     ${cat ? `<input type="hidden" name="${en ? 'category' : 'categoria'}" value="${esc(cat)}">` : ''}
     ${kind && !negocios ? `<input type="hidden" name="${en ? 'type' : 'tipo'}" value="${esc(kind)}">` : ''}
     ${negocios ? `<input type="hidden" name="${en ? 'show' : 'ver'}" value="${esc(ver)}">` : ''}
+    ${negocios ? '' : [[K.price, price], [K.when, when], [K.discount, soloDescuento ? '1' : ''], [K.sort, sort], [K.view, vista],
+      ['lat', cerca ? lat.toFixed(4) : ''], ['lng', cerca ? lng.toFixed(4) : '']]
+      .filter(([, val]) => val).map(([k, val]) => `<input type="hidden" name="${k}" value="${esc(val)}">`).join('')}
     <button class="pill accent" type="submit">${esc(S.search)}</button>
   </form>
 
@@ -161,6 +248,29 @@ export async function explorePage(url, lang) {
       ${chip(link({ kind: '' }), S.all, !kind)}
       ${chip(link({ kind: en ? 'offers' : 'ofertas' }), S.offers, kind === 'offers' || kind === 'ofertas')}
       ${chip(link({ kind: en ? 'events' : 'eventos' }), S.events, kind === 'events' || kind === 'eventos')}
+    </div>`}
+    ${negocios ? '' : `<div class="frow"><span class="flabel">${esc(S.when)}</span>
+      ${chip(link({ when: '' }), S.anytime, !when)}
+      ${[[en ? 'now' : 'ahora', S.now], [en ? 'today' : 'hoy', S.today], [en ? 'tomorrow' : 'manana', S.tomorrow], [en ? 'next10' : '10dias', S.next10]]
+        .map(([k, n]) => chip(link({ when: k }), n, when === k)).join('')}
+    </div>
+    <div class="frow"><span class="flabel">${esc(S.price)}</span>
+      ${chip(link({ price: '' }), S.any, !price)}
+      ${chip(link({ price: en ? 'free' : 'gratis' }), S.free, price === 'free' || price === 'gratis')}
+      ${['10', '25', '50'].map((n) => chip(link({ price: n }), S.upTo(n), price === n)).join('')}
+      ${chip(link({ soloDescuento: !soloDescuento }), S.discount, soloDescuento)}
+    </div>
+    <div class="frow"><span class="flabel">${esc(S.sort)}</span>
+      ${chip(link({ sort: '' }), S.soonest, !sort && !cerca)}
+      ${chip(link({ sort: en ? 'newest' : 'nuevas' }), S.newest, sort === 'newest' || sort === 'nuevas')}
+      ${cerca
+        ? `${chip(link({ sort: en ? 'nearest' : 'cerca' }), S.nearest, sort === 'nearest' || sort === 'cerca' || !sort)}
+           ${chip(link({ cerca: false, sort: '' }), `✕ ${S.nearOn}`, true)}`
+        : `<button type="button" class="chip" id="cercaDeMi" data-err="${esc(S.nearNo)}">${esc(S.near)}</button>`}
+    </div>
+    <div class="frow"><span class="flabel">${esc(S.view)}</span>
+      ${chip(link({ vista: '' }), S.listView, !mapa)}
+      ${chip(link({ vista: en ? 'map' : 'mapa' }), S.mapView, mapa)}
     </div>`}
     ${cities.length > 1 ? `<div class="frow"><span class="flabel">${esc(S.city)}</span>
       ${chip(link({ city: '' }), S.allCities, !city)}
@@ -182,13 +292,18 @@ export async function explorePage(url, lang) {
     ? (items.length
       ? `<div class="olist">${items.map((b) => bizCard(b, lang, S)).join('')}</div>`
       : `<p class="empty">${esc(S.noPlaces)}</p>`)
-    : lista(items, lang, S.none)}
+    : mapa ? mapaHtml(items, lang, S) : lista(items, lang, S.none)}
   ${paginas > 1 ? `<nav class="pager">
     ${page > 1 ? `<a class="pill" href="${esc(link({ p: page - 1 }))}">${esc(S.prev)}</a>` : ''}
     <span class="muted">${esc(S.page)} ${page}/${paginas}</span>
     ${page < paginas ? `<a class="pill" href="${esc(link({ p: page + 1 }))}">${esc(S.next)}</a>` : ''}
   </nav>` : ''}
 
+  <script>(function(){var b=document.getElementById('cercaDeMi');if(!b)return;
+    if(!navigator.geolocation){b.hidden=true;return;}
+    b.onclick=function(){navigator.geolocation.getCurrentPosition(function(p){
+      var u=new URL(location.href);u.searchParams.set('lat',p.coords.latitude.toFixed(4));u.searchParams.set('lng',p.coords.longitude.toFixed(4));u.searchParams.delete('p');location.href=u.toString();
+    },function(){alert(b.dataset.err);},{maximumAge:300000,timeout:10000});};})();</script>
   <p style="margin-top:22px"><a class="pill accent" href="/${en ? 'en/' : ''}">${esc(S.app)}</a> <a class="pill" href="${en ? '/en/business-terms/' : '/negocios/'}">${esc(S.biz)}</a></p>`;
 
   return html(publicPage({

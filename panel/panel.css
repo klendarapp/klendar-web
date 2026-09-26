@@ -295,3 +295,29 @@ details.mas .mas-menu .bad { color: #E5484D; }
 
 /* «Cerrado por hoy» en el resumen */
 .card.pausa { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+
+/* Diseño del anuncio: vista previa aproximada de la tarjeta de Descubre. */
+.estilo { display: grid; grid-template-columns: 200px 1fr; gap: 18px; align-items: start; margin-top: 10px; }
+@media (max-width: 640px) { .estilo { grid-template-columns: 1fr; justify-items: center; } .estilo-opc { width: 100%; } }
+.estilo-prev .ep { width: 200px; height: 360px; border-radius: 22px; overflow: hidden; position: relative;
+  background: #2a2a2a center / cover no-repeat; display: flex; align-items: flex-end; padding: 10px; }
+.ep-panel { width: 100%; border-radius: 16px; padding: 10px; display: grid; gap: 6px; color: #fff;
+  background: rgba(10,10,10,.62); backdrop-filter: blur(8px); }
+.ep-biz { font-size: 10px; opacity: .8; font-weight: 600; }
+.ep-title { font-family: Sora, sans-serif; font-weight: 800; font-size: 14px; line-height: 1.15; }
+.ep-tag { justify-self: start; background: var(--ac); color: var(--on); border-radius: 999px; padding: 2px 8px; font-size: 10px; font-weight: 800; }
+.ep-cta { background: var(--ac); color: var(--on); border-radius: 999px; padding: 6px; text-align: center; font-size: 10px; font-weight: 800; }
+.ep-bold .ep-panel { background: var(--ac); color: var(--on); backdrop-filter: none; }
+.ep-bold .ep-tag, .ep-bold .ep-cta { background: var(--on); color: var(--ac); }
+.ep-poster::before { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 30%, rgba(0,0,0,.8)); }
+.ep-poster .ep-panel { position: relative; background: none; backdrop-filter: none; padding: 4px; }
+.ep-poster .ep-title { font-size: 20px; }
+.ep-minimal .ep-panel { background: var(--elevated); color: var(--ink); backdrop-filter: none; }
+.colores { display: flex; flex-wrap: wrap; gap: 10px; }
+.colores .color { width: 34px; height: 34px; border-radius: 50%; border: 2px solid transparent; cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.15); }
+.colores .color.on { border-color: var(--ink); box-shadow: inset 0 0 0 3px var(--surface); }
+
+.scan-result.warn { background: rgba(255,184,77,.18); color: #8a5200; }
+@media (prefers-color-scheme: dark) { .scan-result.warn { color: #FFD08A; } }
+.scan-result .btn { margin-top: 8px; }
