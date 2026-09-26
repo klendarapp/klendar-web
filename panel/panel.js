@@ -53,6 +53,8 @@ const LABELS = {
   owner: 'propietario', manager: 'encargado', staff: 'empleado',
   validated: 'dentro',
 };
+// El estado del negocio va en masculino y no es el de una publicación.
+const BIZ_LABELS = { verified: 'verificado', pending: 'en revisión', rejected: 'rechazado' };
 const tag = (v, cls) => v ? `<span class="tag ${cls || 'st-' + esc(v)}">${esc(LABELS[v] || v)}</span>` : '';
 const toast = (msg, bad = false) => {
   const t = document.createElement('div');
@@ -309,7 +311,10 @@ function modal({ title, intro, fields = [], submit = 'Guardar', danger = false }
     const field = (f) => {
       if (f.type === 'select') return `<label class="f"><span>${esc(f.label)}</span><select name="${f.name}">${f.options.map((o) => `<option value="${esc(o[0])}" ${o[0] == f.value ? 'selected' : ''}>${esc(o[1])}</option>`).join('')}</select></label>`;
       if (f.type === 'checkbox') return `<label class="f" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="${f.name}" ${f.value ? 'checked' : ''}><span>${esc(f.label)}</span></label>`;
-      return `<label class="f"><span>${esc(f.label)}</span><input name="${f.name}" type="${f.type || 'text'}" value="${esc(f.value ?? '')}" ${f.required ? 'required' : ''} ${f.placeholder ? `placeholder="${esc(f.placeholder)}"` : ''}></label>`;
+      const extra = `${f.required ? 'required' : ''} ${f.placeholder ? `placeholder="${esc(f.placeholder)}"` : ''} ${f.maxlength ? `maxlength="${f.maxlength}"` : ''} ${f.min ? `min="${esc(f.min)}"` : ''} ${f.max ? `max="${esc(f.max)}"` : ''}`;
+      const help = f.help ? `<small class="muted">${esc(f.help)}</small>` : '';
+      if (f.type === 'textarea') return `<label class="f"><span>${esc(f.label)}</span><textarea name="${f.name}" rows="${f.rows || 5}" ${extra}>${esc(f.value ?? '')}</textarea>${help}</label>`;
+      return `<label class="f"><span>${esc(f.label)}</span><input name="${f.name}" type="${f.type || 'text'}" value="${esc(f.value ?? '')}" ${extra}>${help}</label>`;
     };
     d.innerHTML = `<form method="dialog"><h2>${esc(title)}</h2>${intro ? `<p class="muted" style="margin:0">${intro}</p>` : ''}
       ${fields.map(field).join('')}
@@ -385,7 +390,7 @@ async function boot() {
   const saved = localStorage.getItem('klendar.biz');
   BIZ = BIZZES.find((b) => b.id === saved) || BIZZES[0];
   renderBizPicker();
-  try { CATS = (await sb.from('categories').select('id, names, position').order('position')).data || []; } catch { CATS = []; }
+  try { CATS = (await sb.from('categories').select('id, slug, names, position').order('position')).data || []; } catch { CATS = []; }
   route();
 }
 function showLogin() { $('#login').hidden = false; $('#app').hidden = true; ME = null; }
@@ -453,10 +458,12 @@ const NAV = [
   ['publicaciones', 'bolt', 'Publicaciones'],
   ['validar', 'qr_code_scanner', 'Validar códigos'],
   ['informe', 'bar_chart', 'Informe'],
+  ['resenas', 'reviews', 'Reseñas'],
   ['sellos', 'loyalty', 'Tarjeta de sellos'],
   ['carta', 'restaurant_menu', 'Carta'],
   ['novedades', 'campaign', 'Novedades'],
   ['ficha', 'storefront', 'Tu ficha'],
+  ['cerrados', 'event_busy', 'Días cerrados'],
   ['equipo', 'group', 'Equipo'],
   ['ayuda', 'help', 'Ayuda'],
 ];
@@ -620,10 +627,25 @@ PAGES.resumen = async (v) => {
   ]);
   const pending = offers.filter((o) => o.status === 'active');
   const s = stats || {};
+  // Primeros pasos: recién aprobado y sin nada publicado. Lo mismo que en la
+  // app; desaparece al publicar.
+  const primeros = gestiona() && BIZ.verification_status === 'verified' && !offers.length;
+  const ficha = primeros
+    ? (await sb.from('businesses').select('logo_url, cover_image_url, gallery').eq('id', BIZ.id).maybeSingle()).data || {}
+    : {};
+  const conFotos = !!ficha.logo_url && (!!ficha.cover_image_url || (ficha.gallery || []).length > 0);
+  const paso = (n, hecho, titulo, pista, href, attrs = '') => `<a class="paso${hecho ? ' hecho' : ''}" ${hecho ? '' : `href="${href}" ${attrs}`}>
+      <span class="n">${hecho ? ms('check') : n}</span><span><b>${titulo}</b>${pista && !hecho ? `<small>${pista}</small>` : ''}</span>${hecho ? '' : ms('chevron_right')}</a>`;
   v.innerHTML = `
-    <div class="page-head"><h1>${esc(BIZ.name)}</h1>${tag(BIZ.verification_status)}<span class="spacer"></span>
+    <div class="page-head"><h1>${esc(BIZ.name)}</h1><span class="tag st-${esc(BIZ.verification_status)}">${esc(BIZ_LABELS[BIZ.verification_status] || BIZ.verification_status)}</span><span class="spacer"></span>
       <a class="btn sm ghost" href="${APP_URL}/b/${esc(BIZ.id)}" target="_blank" rel="noopener">Ver ficha pública ↗</a></div>
-    ${BIZ.verification_status !== 'verified' ? `<div class="help"><b>Tu negocio está ${esc(LABELS[BIZ.verification_status] || BIZ.verification_status)}.</b> Mientras tanto puedes preparar publicaciones en borrador; se verán en cuanto te verifiquemos.</div>` : ''}
+    ${BIZ.verification_status !== 'verified' ? `<div class="help"><b>Tu negocio está ${esc(BIZ_LABELS[BIZ.verification_status] || BIZ.verification_status)}.</b> Mientras tanto puedes preparar publicaciones en borrador; se verán en cuanto te verifiquemos.</div>` : ''}
+    ${primeros ? `<div class="card primeros"><h2>Primeros pasos</h2>
+      <p class="muted" style="margin:0 0 8px">Tres cosas y tu negocio está listo para que la gente lo encuentre.</p>
+      ${paso(1, conFotos, 'Pon tu logo y una foto', '', '#/ficha')}
+      ${paso(2, false, 'Publica tu primera oferta', 'Te la dejamos casi hecha: cambia el precio y la hora.', '#/publicaciones/nueva-flash?idea=1')}
+      ${paso(3, false, 'Cuéntalo en tus redes', '', '#', 'data-compartir')}
+    </div>` : ''}
     <div class="quick">
       ${gestiona() ? `<button class="primary" data-go="nueva-flash"><span class="ic ms" aria-hidden="true">bolt</span>Nueva oferta flash<small>Canjeable con QR durante unas horas</small></button>
       <button data-go="nuevo-evento"><span class="ic ms" aria-hidden="true">event</span>Nuevo evento<small>Con fecha, aforo y reserva de plaza</small></button>` : ''}
@@ -670,6 +692,20 @@ PAGES.resumen = async (v) => {
         : g === 'nueva-flash' ? '#/publicaciones/nueva-flash' : '#/publicaciones/nuevo-evento';
     };
   });
+  const compartir = $('[data-compartir]', v);
+  if (compartir) {
+    compartir.onclick = async (e) => {
+      e.preventDefault();
+      const url = `${APP_URL}/b/${BIZ.id}`;
+      const text = I18N.lang === 'en' ? `${BIZ.name} is on Klendar: ${url}` : `${BIZ.name} está en Klendar: ${url}`;
+      if (navigator.share) {
+        try { await navigator.share({ title: BIZ.name, text }); } catch { /* cancelado */ }
+        return;
+      }
+      await navigator.clipboard.writeText(text);
+      toast('Enlace copiado: pégalo en tus redes');
+    };
+  }
 };
 
 // ── Publicaciones ───────────────────────────────────────────────────────────
@@ -881,8 +917,30 @@ async function offerForm(v, id, kindDefault) {
   }
   const isFlash = () => $('[name=kind]', v).value === 'flash_offer';
   const disc = o.discount || {};
+  // Plantillas, como en la app: las de su gremio (mismas ideas, generadas
+  // desde la app en ideas.js) y las que el negocio ha guardado.
+  let ideas = [];
+  let guardadas = [];
+  if (!id) {
+    const [{ data: yo }, { data: tpl }] = await Promise.all([
+      sb.from('businesses').select('category_id').eq('id', BIZ.id).maybeSingle(),
+      sb.from('offer_templates').select('id, name, data, updated_at').eq('business_id', BIZ.id).order('updated_at', { ascending: false }),
+    ]);
+    const slug = CATS.find((c) => c.id === yo?.category_id)?.slug;
+    const IDEAS = window.KLENDAR_IDEAS || { general: [], bySlug: {} };
+    ideas = (IDEAS.bySlug[slug] || IDEAS.general).filter((t) => t.kind === o.kind);
+    guardadas = tpl || [];
+  }
+  const en = I18N.lang === 'en';
   v.innerHTML = `
     <div class="page-head"><a class="btn sm ghost" href="#/publicaciones">← Volver</a><h1>${id ? 'Editar publicación' : (kindDefault === 'future_event' ? 'Nuevo evento' : 'Nueva oferta flash')}</h1></div>
+    ${ideas.length || guardadas.length ? `<div class="card plantillas" id="plantillas">
+      ${guardadas.length ? `<h2>Tus plantillas</h2>
+        <div class="acciones">${guardadas.map((t, i) => `<button type="button" class="btn sm" data-tpl="${i}">${esc(t.name)}</button>`).join('')}</div>` : ''}
+      ${ideas.length ? `<h2 ${guardadas.length ? 'style="margin-top:14px"' : ''}>Plantillas</h2>
+        <p class="hint" style="margin:0 0 10px">Lo que suele funcionar en tu tipo de negocio. Rellena el formulario; luego lo cambias a tu gusto.</p>
+        <div class="acciones">${ideas.map((t, i) => `<button type="button" class="btn sm" data-idea="${i}">${esc(en ? t.en : t.es)}</button>`).join('')}</div>` : ''}
+    </div>` : ''}
     <form class="card" id="form">
       <div class="form-grid">
         <label class="f full"><span>Título</span><input name="title" value="${esc(o.title || '')}" required maxlength="90" placeholder="${kindDefault === 'future_event' ? 'Concierto de jazz' : 'Café + tostada 2,50 €'}"></label>
@@ -917,6 +975,7 @@ async function offerForm(v, id, kindDefault) {
       <div class="photos" id="photos"></div>
       <div class="actions" style="margin-top:18px">
         <button class="btn primary" type="submit">${id ? 'Guardar cambios' : 'Publicar'}</button>
+        <button class="btn" type="button" id="saveTpl">Guardar como plantilla</button>
         <label class="f" style="grid-template-columns:auto 1fr;align-items:center;margin:0"><input type="checkbox" name="publish" ${o.status !== 'draft' ? 'checked' : ''}><span>Publicar ahora (desactívalo para dejarlo en borrador)</span></label>
       </div>
       <div class="err" id="formErr"></div>
@@ -990,6 +1049,84 @@ async function offerForm(v, id, kindDefault) {
     };
   };
   renderPhotos();
+
+  // ── Plantillas ──────────────────────────────────────────────────────────
+  const campo = (n) => $(`[name=${n}]`, v);
+  const pon = (n, val) => { const el = campo(n); if (el) el.value = val ?? ''; };
+  const precioTxt = (x) => (x == null || x === '' ? '' : String(x).replace('.', ','));
+  const aplicarIdea = (t) => {
+    pon('title', en ? t.en : t.es);
+    const desc = en ? t.descEn : t.descEs;
+    if (desc) pon('description', desc);
+    pon('discount_type', t.discount === 'none' ? '' : t.discount);
+    pon('discount_value', precioTxt(t.value));
+    if (t.kind === 'flash_offer') {
+      const ahora = new Date();
+      pon('start', toLocalInput(ahora.toISOString()));
+      pon('end', toLocalInput(new Date(ahora.getTime() + t.hours * 3600e3).toISOString()));
+    }
+    syncDiscount();
+  };
+  // Lo que guarda la app como plantilla (offer_templates.data): todo menos
+  // fechas y estado. Mismo formato en los dos lados.
+  const aplicarGuardada = (t) => {
+    const d = t.data || {};
+    pon('kind', d.kind === 'future_event' ? 'future_event' : 'flash_offer');
+    pon('title', d.title); pon('description', d.description); pon('terms', d.terms);
+    pon('price', d.price); pon('external_url', d.external_url);
+    pon('max_redemptions', d.max_redemptions); pon('max_per_user', d.max_per_user || 1);
+    pon('code_ttl_minutes', d.code_ttl_minutes ?? '');
+    campo('adults_only').checked = !!d.adults_only;
+    campo('reservations_enabled').checked = !!d.reservations_enabled;
+    const ds = d.discount || {};
+    pon('discount_type', ds.type || '');
+    pon('discount_value', ds.type === 'other' ? ds.value : precioTxt(ds.value));
+    pon('prior_price', ds.compare_at_cents != null ? (ds.compare_at_cents / 100).toFixed(2).replace('.', ',') : '');
+    pon('alcohol', ds.alcohol === true ? 'yes' : ds.alcohol === false ? 'no' : '');
+    images = [...(d.images || [])];
+    renderPhotos(); syncKind(); syncDiscount();
+  };
+  $$('[data-idea]', v).forEach((b) => { b.onclick = () => { aplicarIdea(ideas[+b.dataset.idea]); toast('Plantilla aplicada: repasa precio y hora'); }; });
+  $$('[data-tpl]', v).forEach((b) => { b.onclick = () => { aplicarGuardada(guardadas[+b.dataset.tpl]); toast('Plantilla aplicada: repasa precio y hora'); }; });
+  // Desde «Primeros pasos»: ya rellena con la primera de su gremio.
+  if (!id && /[?&]idea=1\b/.test(location.hash) && ideas.length) aplicarIdea(ideas[0]);
+
+  $('#saveTpl', v).onclick = async () => {
+    const f = new FormData($('#form'));
+    const title = String(f.get('title') || '').trim();
+    if (!title) { toast('Pon al menos el título antes de guardarla.', true); return; }
+    const r = await modal({ title: 'Guardar como plantilla', fields: [{ name: 'name', label: 'Nombre de la plantilla', value: title, required: true, maxlength: 60 }] });
+    if (!r || !r.name) return;
+    const dType = f.get('discount_type');
+    const dVal = String(f.get('discount_value') || '').trim();
+    const priorRaw = String(f.get('prior_price') || '').replace(',', '.');
+    const data = {
+      kind: f.get('kind'),
+      title,
+      description: String(f.get('description') || '').trim() || null,
+      terms: String(f.get('terms') || '').trim() || null,
+      discount: dType ? {
+        type: dType,
+        value: dType === 'other' || dType === 'free' ? (dVal || null) : (dVal ? Number(dVal.replace(',', '.')) : null),
+        ...(dType === 'fixed' ? { currency: 'EUR' } : {}),
+        ...(priorRaw && ['percent', 'fixed'].includes(dType) ? { compare_at_cents: Math.round(parseFloat(priorRaw) * 100) } : {}),
+        ...(dType === '2x1' && f.get('alcohol') ? { alcohol: f.get('alcohol') === 'yes' } : {}),
+      } : null,
+      price: String(f.get('price') || '').trim(),
+      external_url: String(f.get('external_url') || '').trim() || null,
+      max_redemptions: String(f.get('max_redemptions') || '').trim() || null,
+      max_per_user: Number(f.get('max_per_user') || 1),
+      adults_only: campo('adults_only').checked,
+      style: null,
+      code_ttl_minutes: f.get('code_ttl_minutes') ? Number(f.get('code_ttl_minutes')) : null,
+      reservations_enabled: f.get('kind') !== 'flash_offer' && campo('reservations_enabled').checked,
+      images,
+    };
+    try {
+      await rpc('save_offer_template', { p_business: BIZ.id, p_name: r.name, p_data: data });
+      toast('Plantilla guardada');
+    } catch (err) { toast(friendly(err.message), true); }
+  };
 
   $('#form').onsubmit = async (e) => {
     e.preventDefault();
@@ -1957,6 +2094,130 @@ PAGES.informe = async (v, param) => {
   $('#csvRed').onclick = () => downloadCsv(`canjes-${BIZ.name}`, r.redemptions || [], [
     ['at', 'Fecha y hora'], ['title', 'Publicación'], ['code', 'Código'], ['by', 'Validado por'],
   ]);
+};
+
+// ── Reseñas ─────────────────────────────────────────────────────────────────
+// Las reseñas del negocio, para contestarlas. Lo mismo que «Reseñas» en la
+// app: la respuesta se ve debajo, para todo el mundo, y a quien escribió le
+// llega una notificación la primera vez.
+const estrellas = (n) => `<span class="stars" aria-label="${n}/5">${'★'.repeat(n)}<span>${'★'.repeat(5 - n)}</span></span>`;
+PAGES.resenas = async (v) => {
+  const lista = await rpc('business_reviews', { p_id: BIZ.id, p_limit: 50 });
+  const media = lista.length ? lista.reduce((s, r) => s + r.rating, 0) / lista.length : 0;
+  const sin = lista.filter((r) => !r.reply).length;
+  const media1 = media.toFixed(1).replace('.', I18N.lang === 'en' ? '.' : ',');
+  v.innerHTML = `
+    <div class="page-head"><h1>Reseñas</h1><span class="spacer"></span>
+      <a class="btn sm ghost" href="${APP_URL}/b/${esc(BIZ.id)}#resenas" target="_blank" rel="noopener">Ver en tu ficha ↗</a></div>
+    ${helpBox('¿Para qué contestar?', '<p>Una reseña mala contestada con educación pesa mucho menos que una sin contestar, y una buena con un «gracias» anima a volver. La respuesta se ve debajo de la reseña, en la app y en la web, y a quien la escribió le llega una notificación.</p><p>Puedes cambiarla cuando quieras. Si la dejas vacía, se borra.</p>')}
+    ${lista.length ? `<div class="card resumen-resenas">${estrellas(Math.round(media))}
+      <b>${esc(I18N.lang === 'en' ? `${media1} average · ${lista.length} review${lista.length === 1 ? '' : 's'}` : `${media1} de media · ${lista.length} reseña${lista.length === 1 ? '' : 's'}`)}</b>
+      <span class="spacer"></span>${sin ? `<span class="tag st-pending">${esc(I18N.lang === 'en' ? `${sin} unanswered` : `${sin} sin responder`)}</span>` : ''}</div>` : ''}
+    ${lista.length ? `<div class="resenas-panel">${lista.map((r, i) => `<article class="card">
+        <header><span class="av">${r.avatar_url ? `<img src="${esc(r.avatar_url)}" alt="">` : esc((r.display_name || 'U').trim().charAt(0).toUpperCase())}</span>
+          <span><b>${esc(r.display_name || 'Usuario')}</b><small class="muted">${esc(fmtDate(r.created_at))}</small></span>${estrellas(r.rating)}</header>
+        ${r.comment ? `<p>${esc(r.comment)}</p>` : ''}
+        ${r.photo_url ? `<img class="foto" src="${esc(r.photo_url)}" alt="" loading="lazy">` : ''}
+        ${r.reply ? `<div class="respuesta"><b>Respuesta de <span>${esc(BIZ.name)}</span></b>${r.reply_at ? `<small class="muted"> · ${esc(fmtDate(r.reply_at))}</small>` : ''}<p>${esc(r.reply).replace(/\n/g, '<br>')}</p></div>` : ''}
+        ${gestiona() ? `<div class="pie"><button class="btn sm" data-resp="${i}">${ms(r.reply ? 'edit' : 'reply')}${r.reply ? 'Editar respuesta' : 'Responder'}</button></div>` : ''}
+      </article>`).join('')}</div>`
+    : '<div class="card"><p class="muted" style="margin:0">Todavía no tienes reseñas. Llegan cuando la gente canjea y vuelve a contarlo.</p></div>'}`;
+
+  $$('[data-resp]', v).forEach((b) => { b.onclick = async () => {
+    const r = lista[+b.dataset.resp];
+    const out = await modal({
+      title: 'Responder a la reseña',
+      intro: esc(I18N.t('Se ve debajo de la reseña, para todo el mundo. A quien la escribió le llega una notificación.')),
+      fields: [{ name: 'reply', label: 'Tu respuesta', type: 'textarea', value: r.reply || '', maxlength: 500, rows: 6,
+        placeholder: 'Gracias por venir. Nos alegra que…' }],
+      submit: 'Publicar',
+    });
+    if (!out) return;
+    const texto = out.reply.trim();
+    if (texto === (r.reply || '')) return;
+    if (!texto && !(await confirmDlg('Borrar la respuesta', '', { submit: 'Quitar', danger: true }))) return;
+    if (texto && texto.length < 2) { toast('Escribe al menos 2 caracteres.', true); return; }
+    const res = await rpc('reply_to_review', { p_review: r.id, p_reply: texto }).catch((e) => ({ ok: false, error: e.message }));
+    if (!res?.ok) {
+      toast(res?.error === 'invalid_reply' ? 'Escribe al menos 2 caracteres.'
+        : res?.error === 'not_authorized' ? ERRORS.not_authorized : 'No se ha podido guardar', true);
+      return;
+    }
+    toast(texto ? 'Respuesta publicada' : 'Respuesta borrada');
+    route();
+  }; });
+};
+
+// ── Días cerrados ───────────────────────────────────────────────────────────
+// Vacaciones, festivos, obras. Mientras dura uno no se ve nada del negocio
+// (como «Cerrado por hoy» en la app) y la ficha dice hasta cuándo.
+const diaLargo = (iso) => new Intl.DateTimeFormat(LOC(), { day: 'numeric', month: 'long', timeZone: 'UTC' }).format(new Date(`${iso}T00:00:00Z`));
+// «Del 12 al 13 de octubre» si es el mismo mes; si no, cada día con su mes.
+const diaSolo = (iso) => String(Number(iso.slice(8, 10)));
+const rangoDias = (a, b) => (a.slice(0, 7) === b.slice(0, 7) ? [diaSolo(a), diaLargo(b)] : [diaLargo(a), diaLargo(b)]);
+const hoyMadrid = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(new Date());
+const ERR_CIERRE = {
+  too_long: 'Como mucho tres meses seguidos.',
+  too_many: 'Ya tienes 12 cierres por delante. Quita alguno antes.',
+  in_the_past: 'Esas fechas ya han pasado.',
+  invalid_range: 'El último día no puede ser antes que el primero.',
+  not_authorized: ERRORS.not_authorized,
+};
+PAGES.cerrados = async (v) => {
+  const lista = await rpc('business_closures', { p_business: BIZ.id });
+  const hoy = hoyMadrid();
+  const tramo = (c) => (c.starts_on === c.ends_on
+    ? (I18N.lang === 'en' ? `On ${diaLargo(c.starts_on)}` : `El ${diaLargo(c.starts_on)}`)
+    : (([a, b]) => (I18N.lang === 'en' ? `From ${a} to ${b}` : `Del ${a} al ${b}`))(rangoDias(c.starts_on, c.ends_on)));
+  v.innerHTML = `
+    <div class="page-head"><h1>Días cerrados</h1></div>
+    ${helpBox('¿Cómo funciona?', '<p>Vacaciones, festivos, obras. Esos días no se ve nada de tu negocio, como con «Cerrado por hoy», y tu ficha dice hasta cuándo cierras. Al acabar, todo vuelve a verse solo.</p><p>Como mucho tres meses seguidos y doce cierres por delante.</p>')}
+    <div class="card"><h2>Por delante</h2>${table({
+      cols: [
+        { h: 'Días', r: (c) => `<b class="title">${esc(tramo(c))}</b>${c.starts_on <= hoy && hoy <= c.ends_on ? ` ${tag('Ahora', 'st-pending')}` : ''}` },
+        { h: 'Motivo', r: (c) => esc(c.reason || '—') },
+        ...(gestiona() ? [{ h: '', r: (c, i) => `<span class="actions"><button class="btn sm" data-del="${i}">${ms('delete')}Quitar</button></span>` }] : []),
+      ],
+      rows: lista,
+      empty: 'No tienes días cerrados por delante.',
+    })}</div>
+    ${gestiona() ? `<div class="card"><h2>Añadir días cerrados</h2>
+      <form id="f" class="form">
+        <label class="f"><span>Primer día</span><input type="date" name="from" required min="${hoy}"></label>
+        <label class="f"><span>Último día</span><input type="date" name="to" required min="${hoy}"></label>
+        <label class="f full"><span>Motivo <small>(opcional)</small></span><input name="reason" maxlength="60" placeholder="Vacaciones"></label>
+        <div class="full"><button class="btn primary" type="submit">Añadir días cerrados</button> <span id="msg" class="err"></span></div>
+      </form></div>` : ''}`;
+
+  $$('[data-del]', v).forEach((b) => { b.onclick = async () => {
+    const c = lista[+b.dataset.del];
+    if (!(await confirmDlg('¿Quitar estos días cerrados?', I18N.t('Tus publicaciones vuelven a verse esos días.'), { submit: 'Quitar', danger: true }))) return;
+    const r = await rpc('delete_business_closure', { p_id: c.id }).catch(() => null);
+    if (!r?.ok) { toast(ERR_CIERRE[r?.error] || 'No se ha podido guardar', true); return; }
+    toast('Días cerrados quitados'); route();
+  }; });
+  const f = $('#f', v);
+  if (!f) return;
+  // El último día, por defecto el primero (un festivo suelto).
+  $('[name=from]', f).onchange = (e) => {
+    const to = $('[name=to]', f);
+    to.min = e.target.value || hoy;
+    if (!to.value || to.value < e.target.value) to.value = e.target.value;
+  };
+  f.onsubmit = async (e) => {
+    e.preventDefault();
+    const d = Object.fromEntries(new FormData(f));
+    const reason = String(d.reason || '').trim();
+    const msg = $('#msg', f);
+    msg.textContent = '';
+    if (reason.length === 1) { msg.textContent = I18N.t('Escribe al menos 2 caracteres.'); return; }
+    const dias = (new Date(d.to) - new Date(d.from)) / 864e5;
+    if (dias < 0) { msg.textContent = I18N.t(ERR_CIERRE.invalid_range); return; }
+    if (dias > 92) { msg.textContent = I18N.t(ERR_CIERRE.too_long); return; }
+    const r = await rpc('save_business_closure', { p_business: BIZ.id, p_starts: d.from, p_ends: d.to, p_reason: reason }).catch(() => null);
+    if (!r?.ok) { msg.textContent = I18N.t(ERR_CIERRE[r?.error] || 'No se ha podido guardar'); return; }
+    toast('Días cerrados guardados'); route();
+  };
 };
 
 // ── Ayuda ───────────────────────────────────────────────────────────────────

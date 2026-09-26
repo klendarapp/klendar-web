@@ -530,7 +530,10 @@ RUTAS['nueva-clave'] = async () => {
 // ── Tarjeta de publicación, como en la agenda ─────────────────────────────
 function tarjeta(o) {
   const img = (o.images || []).find((u) => !/\.(mp4|mov|webm)(\?|$)/i.test(u));
-  const cuando = o.kind === 'future_event' ? fecha(o.event_at) : `${fecha(o.redeem_start_at)} – ${fecha(o.redeem_end_at, { hour: '2-digit', minute: '2-digit' })}`;
+  // Si acaba otro día, el final lleva también el día (como en la app).
+  const mismoDia = fecha(o.redeem_start_at, { day: 'numeric', month: 'numeric' }) === fecha(o.redeem_end_at, { day: 'numeric', month: 'numeric' });
+  const cuando = o.kind === 'future_event' ? fecha(o.event_at)
+    : `${fecha(o.redeem_start_at)} – ${mismoDia ? fecha(o.redeem_end_at, { hour: '2-digit', minute: '2-digit' }) : fecha(o.redeem_end_at)}`;
   const tag = beneficio(o.discount, o.price_cents, o.currency);
   return `<a class="ocard" href="${pre}/o/${esc(o.id)}">
     ${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : '<span class="ph">✦</span>'}

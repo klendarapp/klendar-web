@@ -143,6 +143,17 @@ footer.pub-foot a { color: var(--ink-2); }
 .resenas .av { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; display: grid; place-items: center;
   background: var(--accent-soft); font-weight: 800; flex: none; }
 .resenas article > p { margin: 10px 0 0; }
+/* La respuesta del negocio, bajo la reseña (como en la app). */
+.resenas .respuesta { margin-top: 10px; padding: 10px 12px; border-radius: 14px; background: var(--accent-soft); }
+.resenas .respuesta header { gap: 6px; font-size: 14px; }
+.resenas .respuesta header .ic { color: var(--ink-2); flex: none; }
+.resenas .respuesta header b { flex: 1; min-width: 0; }
+.resenas .respuesta p { margin: 6px 0 0; }
+/* Días cerrados: «Cerrado hasta el 15 de agosto · Vacaciones». */
+.cierre { display: flex; align-items: center; gap: 10px; margin: 12px 0 0; padding: 10px 14px; border-radius: 16px;
+  border: 1px solid var(--glass-border); background: var(--elevated); }
+.cierre .ic { flex: none; color: var(--ink-2); }
+.cierre.ahora .ic { color: #F5B041; }
 .stars { color: #FFB84D; letter-spacing: 1px; white-space: nowrap; }
 .stars span { color: var(--glass-border); }
 .denuncia, .denuncia-pie a { font-size: 13px; color: var(--ink-2); }

@@ -10,7 +10,7 @@
 
 import { esc, fmtWhen, html, isUuid, render, rpc, rpcAll, rows } from './page.js';
 import {
-  agendaBase, BASE, benefit, exploreBase, firstPhoto, fmtLong, fmtTime, isVideo,
+  agendaBase, BASE, benefit, exploreBase, firstPhoto, fmtEnd, fmtLong, isVideo,
   media, money, offerCard, openInApp, priorPrice, publicPage,
 } from './public.js';
 
@@ -24,6 +24,8 @@ const PATHS = {
   correo: 'M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z',
   redes: 'M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z',
   pdf: 'M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z',
+  cerrado: 'M9.31 17l2.44-2.44L14.19 17l1.06-1.06-2.44-2.44 2.44-2.44L14.19 10l-2.44 2.44L9.31 10l-1.06 1.06 2.44 2.44-2.44 2.44L9.31 17zM19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z',
+  negocio: 'M20 4H4v2h16V4zm1 10v-2l-1-5H4l-1 5v2h1v6h10v-6h4v6h2v-6h1zm-9 4H6v-4h6v4z',
   resena: 'M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 14v-2.47l6.88-6.88c.2-.2.51-.2.71 0l1.77 1.77c.2.2.2.51 0 .71L8.47 14H6zm12 0h-7.5l2-2H18v2z',
 };
 const icono = (n, size = 18) => `<svg class="ic" viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true"><path fill="currentColor" d="${PATHS[n]}"/></svg>`;
@@ -71,8 +73,8 @@ export async function offerPage(id, lang) {
       };
 
   const when = flash
-    ? `${fmtLong(o.redeem_start_at, lang)} – ${fmtTime(o.redeem_end_at, lang)}`
-    : fmtLong(o.event_at, lang) + (o.event_end_at ? ` – ${fmtTime(o.event_end_at, lang)}` : '');
+    ? `${fmtLong(o.redeem_start_at, lang)} – ${fmtEnd(o.redeem_start_at, o.redeem_end_at, lang)}`
+    : fmtLong(o.event_at, lang) + (o.event_end_at ? ` – ${fmtEnd(o.event_at, o.event_end_at, lang)}` : '');
 
   // El beneficio ya sale en grande debajo: en las etiquetas solo va si es un
   // descuento (ahí la etiqueta dice algo que el precio solo no dice).
@@ -170,12 +172,13 @@ export async function businessPage(id, lang) {
   if (!isUuid(id)) return notFound(lang, path, 'b');
   const b = await rpc('business_profile', { p_id: id });
   if (!b || !b.name) return notFound(lang, path, 'b');
-  const [offers, sellos, carta, opiniones, novedades] = await Promise.all([
+  const [offers, sellos, carta, opiniones, novedades, cierres] = await Promise.all([
     rpcAll('business_offers', { p_id: id }),
     rpc('stamp_card_of', { p_business: id }),
     rpcAll('business_menu', { p_business: id }),
     rpcAll('business_reviews', { p_id: id, p_limit: 12 }),
     rows('business_posts', `select=id,body,image_url,created_at&business_id=eq.${id}&order=created_at.desc&limit=6`),
+    rpcAll('business_closures', { p_business: id }),
   ]);
 
   const S = en
@@ -192,6 +195,9 @@ export async function businessPage(id, lang) {
         days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
         news: 'News', reviews: 'Reviews', write: 'Write a review', noReviews: 'No reviews yet. Been here? Be the first.',
         user: 'User', report: 'Report', reportBiz: 'Report this business', menuPhotos: 'Photos of the menu', menuPdf: 'Menu (PDF)',
+        replyFrom: (n) => `Reply from ${n}`,
+        closedToday: 'Closed today', closedUntil: (d) => `Closed until ${d}`,
+        closingDay: (d) => `Closing on ${d}`, closing: (a, b) => `Closing from ${a} to ${b}`,
       }
     : {
         now: 'Ahora mismo', soon: 'Próximamente',
@@ -206,11 +212,34 @@ export async function businessPage(id, lang) {
         days: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'],
         news: 'Novedades', reviews: 'Reseñas', write: 'Escribir una reseña', noReviews: 'Todavía no hay reseñas. ¿Has estado? Sé la primera persona.',
         user: 'Usuario', report: 'Denunciar', reportBiz: 'Denunciar este negocio', menuPhotos: 'Fotos de la carta', menuPdf: 'Carta (PDF)',
+        replyFrom: (n) => `Respuesta de ${n}`,
+        closedToday: 'Cerrado hoy', closedUntil: (d) => `Cerrado hasta el ${d}`,
+        closingDay: (d) => `Cerrará el ${d}`, closing: (a, b) => `Cerrará del ${a} al ${b}`,
       };
 
   const flash = offers.filter((o) => o.kind === 'flash_offer');
   const events = offers.filter((o) => o.kind !== 'flash_offer');
   const where = [b.address, b.city].filter(Boolean).join(', ');
+
+  // Días cerrados (vacaciones, festivos): el que está en curso o, si cae en
+  // el próximo mes, el siguiente. Igual que en la app. Fechas de calendario,
+  // sin hora: se comparan como texto AAAA-MM-DD con el hoy de Madrid.
+  const cierre = (() => {
+    const c = cierres[0];
+    if (!c) return '';
+    const hoyIso = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(new Date());
+    const dia = (iso) => new Intl.DateTimeFormat(en ? 'en-GB' : 'es-ES', { day: 'numeric', month: 'long', timeZone: 'UTC' })
+      .format(new Date(`${iso}T00:00:00Z`));
+    const ahora = c.starts_on <= hoyIso && hoyIso <= c.ends_on;
+    const dias = (new Date(`${c.starts_on}T00:00:00Z`) - new Date(`${hoyIso}T00:00:00Z`)) / 864e5;
+    if (!ahora && dias > 30) return '';
+    const txt = ahora
+      ? (c.ends_on === hoyIso ? S.closedToday : S.closedUntil(dia(c.ends_on)))
+      : (c.starts_on === c.ends_on ? S.closingDay(dia(c.starts_on))
+        // «Del 12 al 13 de octubre» si es el mismo mes.
+        : S.closing(c.starts_on.slice(0, 7) === c.ends_on.slice(0, 7) ? String(Number(c.starts_on.slice(8, 10))) : dia(c.starts_on), dia(c.ends_on)));
+    return `<p class="cierre${ahora ? ' ahora' : ''}">${icono('cerrado', 18)}<span><b>${esc(txt)}</b>${c.reason ? ` · ${esc(c.reason)}` : ''}</span></p>`;
+  })();
 
   // Horario: {"1": [["09:00","14:00"], …], …, "7": []} (1 = lunes). Hoy, en
   // hora de Madrid, va marcado.
@@ -269,6 +298,7 @@ export async function businessPage(id, lang) {
       </div>
       <h1>${esc(b.name)}</h1>
       ${where ? `<p class="muted">${esc(where)}</p>` : ''}
+      ${cierre}
     </div>
     <aside class="side">
       <a class="pill accent big" href="/app/#/seguir/${encodeURIComponent(b.id)}"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.8 4.5c2.2 0 3.6 1.2 5.2 3 1.6-1.8 3-3 5.2-3 3.8 0 5.9 3.9 4.4 7.3C19.5 16.4 12 21 12 21z"/></svg> ${S.open}</a>
@@ -319,6 +349,8 @@ export async function businessPage(id, lang) {
             ${estrellas(Math.max(0, Math.min(5, r.rating | 0)))}</header>
           ${r.comment ? `<p>${esc(r.comment)}</p>` : ''}
           ${r.photo_url ? `<img class="foto" src="${esc(r.photo_url)}" alt="" loading="lazy">` : ''}
+          ${r.reply ? `<div class="respuesta"><header>${icono('negocio', 16)}<b>${esc(S.replyFrom(b.name))}</b>${r.reply_at ? `<small class="muted">${esc(fmtWhen(r.reply_at, lang))}</small>` : ''}</header>
+            <p>${esc(r.reply).replace(/\n/g, '<br>')}</p></div>` : ''}
           <a class="denuncia" href="/app/#/denunciar/review/${encodeURIComponent(r.id)}" rel="nofollow">${S.report}</a>
         </article>`).join('')}</div>` : `<p class="empty">${S.noReviews}</p>`}
       <p class="denuncia-pie"><a href="/app/#/denunciar/business/${encodeURIComponent(b.id)}" rel="nofollow">${S.reportBiz}</a></p>

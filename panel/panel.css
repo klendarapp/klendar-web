@@ -229,6 +229,8 @@ table.tbl .actions > * { flex: 1 1 auto; justify-content: center; white-space: n
   table.tbl td:first-child { position: relative; min-height: 40px; padding: 0 0 10px 52px; text-align: left; }
   table.tbl td:first-child > .ph, table.tbl td:first-child > .thumb { position: absolute; left: 0; top: 0; transform: none; margin: 0; }
   table.tbl td:first-child > .title, table.tbl td:first-child > .sub { display: block; margin: 0; }
+  /* Sin foto (días cerrados, equipo…), el texto empieza en el borde. */
+  table.tbl td:first-child:not(:has(> .ph, > .thumb)) { padding-left: 0; min-height: 0; }
   table.tbl td:not([data-label]), table.tbl td[data-label=""] { padding-top: 10px; }
   table.tbl td:not([data-label])::before { content: none; }
   /* Botones de la fila: dos por línea, el que sobra centrado (como en la app). */
@@ -245,3 +247,34 @@ table.tbl .actions > * { flex: 1 1 auto; justify-content: center; white-space: n
   .page-head { column-gap: 8px; row-gap: 10px; justify-content: center; }
   .page-head > .btn { flex: 1 1 calc(50% - 4px); justify-content: center; white-space: nowrap; }
 }
+
+/* Primeros pasos (negocio recién aprobado, sin nada publicado) */
+.primeros .paso { display: flex; align-items: center; gap: 12px; padding: 10px 4px; border-top: 1px solid var(--glass-border);
+  color: var(--ink); text-decoration: none; }
+.primeros .paso:hover { text-decoration: none; background: var(--glass); }
+.primeros .paso > span:nth-child(2) { flex: 1; display: grid; gap: 2px; }
+.primeros .paso small { color: var(--ink-2); font-weight: 500; }
+.primeros .paso .n { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; flex: none;
+  background: var(--accent-soft); font-weight: 800; }
+.primeros .paso.hecho { cursor: default; }
+.primeros .paso.hecho .n { background: #2ECC71; color: #fff; }
+.primeros .paso.hecho b { text-decoration: line-through; color: var(--ink-2); }
+
+/* Plantillas del formulario de publicación */
+.plantillas h2 { margin-bottom: 8px; }
+
+/* Reseñas */
+.resumen-resenas { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.resenas-panel { display: grid; gap: 12px; }
+.resenas-panel article { margin: 0; }
+.resenas-panel header { display: flex; align-items: center; gap: 10px; }
+.resenas-panel header > span:nth-child(2) { display: grid; flex: 1; min-width: 0; }
+.resenas-panel .av { width: 36px; height: 36px; border-radius: 50%; overflow: hidden; display: grid; place-items: center;
+  background: var(--accent-soft); font-weight: 800; flex: none; }
+.resenas-panel .av img { width: 100%; height: 100%; object-fit: cover; }
+.resenas-panel article > p { margin: 10px 0 0; }
+.resenas-panel img.foto { width: 100%; max-height: 360px; object-fit: cover; border-radius: 14px; display: block; margin-top: 8px; }
+.resenas-panel .respuesta { margin-top: 10px; padding: 10px 12px; border-radius: 14px; background: var(--accent-soft); }
+.resenas-panel .respuesta p { margin: 6px 0 0; }
+.resenas-panel .pie { display: flex; justify-content: flex-end; margin-top: 10px; }
+.stars span { color: var(--glass-border); }

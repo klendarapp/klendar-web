@@ -1,5 +1,5 @@
 import { configure, esc, isUuid, rpc, rpcAll } from '../_lib/page.js';
-import { benefit, firstPhoto, fmtDay, fmtLong, fmtTime, guard } from '../_lib/public.js';
+import { benefit, firstPhoto, fmtDay, fmtEnd, fmtLong, fmtTime, guard } from '../_lib/public.js';
 
 // El recuadro que el negocio pega en su web: lo que tiene vivo ahora mismo,
 // sin que tenga que mantener nada. Es una página suelta pensada para ir
@@ -35,7 +35,7 @@ export async function onRequestGet(ctx) {
     const img = firstPhoto(o.images);
     const when = o.kind === 'future_event'
       ? fmtLong(o.event_at, lang)
-      : `${fmtDay(o.redeem_start_at, lang)} · ${fmtTime(o.redeem_start_at, lang)}–${fmtTime(o.redeem_end_at, lang)}`;
+      : `${fmtDay(o.redeem_start_at, lang)} · ${fmtTime(o.redeem_start_at, lang)} – ${fmtEnd(o.redeem_start_at, o.redeem_end_at, lang)}`;
     const tag = benefit(o.discount, o.price_cents, o.currency, lang);
     return `<a class="it" href="${BASE}${en ? '/en' : ''}/o/${esc(o.id)}" target="_blank" rel="noopener">
       ${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : '<span class="ph">✦</span>'}

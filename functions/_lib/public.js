@@ -50,6 +50,17 @@ export function fmtTime(iso, lang = 'es') {
   } catch { return ''; }
 }
 
+/** ¿Mismo día en Madrid? */
+const diaMadrid = (iso) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(new Date(iso));
+export const sameDay = (a, b) => !!a && !!b && diaMadrid(a) === diaMadrid(b);
+
+/** El final de una franja: solo la hora si acaba el mismo día; si no, con el
+ *  día delante («dom 27 sept 10:57»). Como `Formatters.timeRange` en la app. */
+export function fmtEnd(startIso, endIso, lang = 'es') {
+  if (!endIso) return '';
+  return sameDay(startIso, endIso) ? fmtTime(endIso, lang) : `${fmtDay(endIso, lang)} ${fmtTime(endIso, lang)}`;
+}
+
 /** El beneficio en una etiqueta: «−20 %», «2x1», «12 €». */
 export function benefit(d, priceCents, currency, lang = 'es') {
   if (d) {
@@ -154,7 +165,7 @@ export function publicPage({ lang, path, title, description, head = '', body, im
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/site.css?v=20260930">
-<link rel="stylesheet" href="/assets/public.css?v=11">
+<link rel="stylesheet" href="/assets/public.css?v=12">
 ${head}
 </head>
 <body>
@@ -179,7 +190,7 @@ export function offerCard(o, lang = 'es') {
   const img = firstPhoto(o.images);
   const when = o.kind === 'future_event'
     ? fmtLong(o.event_at || o.starts_at, lang)
-    : `${fmtDay(o.redeem_start_at || o.starts_at, lang)} · ${fmtTime(o.redeem_start_at || o.starts_at, lang)}–${fmtTime(o.redeem_end_at, lang)}`;
+    : `${fmtDay(o.redeem_start_at || o.starts_at, lang)} · ${fmtTime(o.redeem_start_at || o.starts_at, lang)} – ${fmtEnd(o.redeem_start_at || o.starts_at, o.redeem_end_at, lang)}`;
   const tag = benefit(o.discount, o.price_cents, o.currency, lang);
   const prior = priorPrice(o.discount, lang);
   return `<a class="ocard" href="${en ? '/en' : ''}/o/${esc(o.id)}">
