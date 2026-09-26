@@ -527,4 +527,12 @@ const I18N = makeI18N({
     "Si hoy no puedes atender, esconde todo de una vez. Mañana vuelve a verse solo.": "If you cannot serve today, hide everything at once. Tomorrow it shows again on its own.",
     "Una nota corta en tu ficha, sin cuenta atrás ni código: «hoy hay pulpo», «cerramos el lunes», «ya tenemos terraza». Para algo que se canjea, usa una publicación.": "A short note on your page, with no countdown or code: “octopus today”, “closed on Monday”, “the terrace is open”. For something to redeem, use a publication.",
     "Quien te tenga en favoritos recibe una notificación (como mucho una al día por negocio, para no cansar).": "People who have you in their favourites get a notification (at most one a day per business, so as not to tire them).",
+    'Marca al menos un día.': 'Tick at least one day.',
+    'Lunes': 'Monday',
+    'Martes': 'Tuesday',
+    'Miércoles': 'Wednesday',
+    'Jueves': 'Thursday',
+    'Viernes': 'Friday',
+    'Sábado': 'Saturday',
+    'Domingo': 'Sunday',
 });

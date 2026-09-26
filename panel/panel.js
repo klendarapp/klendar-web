@@ -805,12 +805,10 @@ PAGES.publicaciones = async (v, param) => {
       title: 'Repetir cada semana',
       intro: `«${esc(o.title || '')}» se publicará sola los días y la hora que elijas, con su cuenta atrás y su aforo. Puedes pausarla cuando quieras.`,
       submit: 'Crear la repetición',
+      // Cualquier combinación de días, como en la app (de lunes a domingo).
       fields: [
-        { name: 'dias', type: 'select', label: '¿Qué días?', value: 'L-V', options: [
-          ['L-V', 'De lunes a viernes'], ['todos', 'Todos los días'], ['finde', 'Fines de semana'],
-          ['1', 'Solo los lunes'], ['2', 'Solo los martes'], ['3', 'Solo los miércoles'],
-          ['4', 'Solo los jueves'], ['5', 'Solo los viernes'], ['6', 'Solo los sábados'], ['0', 'Solo los domingos'],
-        ] },
+        ...[[1, 'Lunes'], [2, 'Martes'], [3, 'Miércoles'], [4, 'Jueves'], [5, 'Viernes'], [6, 'Sábado'], [0, 'Domingo']]
+          .map(([d, n]) => ({ name: `d${d}`, type: 'checkbox', label: n, value: d >= 1 && d <= 5 })),
         { name: 'hora', type: 'time', label: '¿A qué hora empieza?', value: '17:00', required: true },
         { name: 'duracion', type: 'select', label: '¿Cuánto dura?', value: '120', options: [
           ['60', '1 hora'], ['120', '2 horas'], ['180', '3 horas'], ['240', '4 horas'], ['480', 'Toda la tarde (8 h)'],
@@ -818,9 +816,8 @@ PAGES.publicaciones = async (v, param) => {
       ],
     });
     if (!r) return;
-    const dias = r.dias === 'L-V' ? [1, 2, 3, 4, 5]
-      : r.dias === 'todos' ? [0, 1, 2, 3, 4, 5, 6]
-        : r.dias === 'finde' ? [6, 0] : [Number(r.dias)];
+    const dias = [0, 1, 2, 3, 4, 5, 6].filter((d) => r[`d${d}`]);
+    if (!dias.length) { toast('Marca al menos un día.', true); return; }
     try {
       await rpc('save_offer_rule', {
         p_business: BIZ.id, p_offer: offerId, p_weekdays: dias,
