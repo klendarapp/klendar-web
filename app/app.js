@@ -14,6 +14,8 @@
 const I18N = makeI18N(APP_EN);
 const t = I18N.t;
 const EN = I18N.lang === 'en';
+// El «Cargando…» del HTML, mientras llega la primera pantalla.
+I18N.translate(document.getElementById('view'));
 const LOC = EN ? 'en-GB' : 'es-ES';
 const sb = supabase.createClient(window.KLENDAR_ENV.url, window.KLENDAR_ENV.key);
 

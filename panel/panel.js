@@ -1144,7 +1144,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
           <option value="flash_offer" ${o.kind === 'flash_offer' ? 'selected' : ''}>Oferta flash</option>
           <option value="future_event" ${o.kind === 'future_event' ? 'selected' : ''}>Evento</option></select></label>
         <label class="f"><span>Categoría</span><select name="category_id"><option value="">La del negocio</option>
-          ${CATS.map((c) => `<option value="${esc(c.id)}" ${o.category_id === c.id ? 'selected' : ''}>${esc(c.names?.es || c.names?.en || '')}</option>`).join('')}</select></label>
+          ${CATS.map((c) => `<option value="${esc(c.id)}" ${o.category_id === c.id ? 'selected' : ''}>${esc(c.names?.[I18N.lang] || c.names?.es || '')}</option>`).join('')}</select></label>
         <label class="f"><span>Empieza</span><input type="datetime-local" name="start" value="${toLocalInput(o.kind === 'future_event' ? o.event_at : o.redeem_start_at)}" required></label>
         <label class="f"><span>Termina</span><input type="datetime-local" name="end" value="${toLocalInput(o.kind === 'future_event' ? o.event_end_at : o.redeem_end_at)}"></label>
         <label class="f"><span>Precio (opcional)</span><input name="price" inputmode="decimal" value="${o.price_cents == null ? '' : (o.price_cents / 100).toFixed(2).replace('.', ',')}" placeholder="12,00"></label>
@@ -2145,7 +2145,7 @@ PAGES.ficha = async (v) => {
       <form id="f" class="form">
         <label class="f"><span>Nombre</span><input name="name" value="${esc(b.name || '')}" required maxlength="80" ${canManage ? '' : 'disabled'}></label>
         <label class="f"><span>Categoría</span><select name="category_id" ${canManage ? '' : 'disabled'}>
-          ${(cats || []).map((c) => `<option value="${esc(c.id)}" ${c.id === b.category_id ? 'selected' : ''}>${esc(c.names?.es || c.slug)}</option>`).join('')}</select></label>
+          ${(cats || []).map((c) => `<option value="${esc(c.id)}" ${c.id === b.category_id ? 'selected' : ''}>${esc(c.names?.[I18N.lang] || c.names?.es || c.slug)}</option>`).join('')}</select></label>
         <label class="f full"><span>De qué va <small>(dos líneas bastan)</small></span><textarea name="description" maxlength="500" ${canManage ? '' : 'disabled'}>${esc(b.description || '')}</textarea></label>
         <label class="f"><span>Dirección</span><input name="address" value="${esc(b.address || '')}" maxlength="120" ${canManage ? '' : 'disabled'}></label>
         <label class="f"><span>Ciudad</span><input name="city" value="${esc(b.city || '')}" maxlength="60" ${canManage ? '' : 'disabled'}></label>

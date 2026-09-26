@@ -95,7 +95,7 @@
   background: rgba(0, 0, 0, .55); color: #fff;
   font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px;
 }
-.photos .ph-move { display: flex; gap: 4px; justify-content: center; margin-top: 4px; }
+.photos .ph-move { display: flex; gap: 8px; justify-content: center; margin-top: 4px; }
 .photos .ph-move button {
   border: 1px solid var(--glass-border); background: var(--elevated); color: var(--ink);
   border-radius: 8px; width: 46px; cursor: pointer; font: inherit; font-size: 13px;
@@ -234,8 +234,7 @@ table.tbl .actions > * { flex: 1 1 auto; justify-content: center; white-space: n
   table.tbl .actions > * { flex: 1 1 calc(50% - 4px); justify-content: center; white-space: nowrap; }
   table.tbl .actions > :last-child:nth-child(odd) { flex-grow: 0; }
   /* Cifras de dos en dos, como en la app; si sobra una, a lo ancho. */
-  .kpis { grid-template-columns: repeat(2, 1fr); }
-  .kpis > :last-child:nth-child(odd) { grid-column: 1 / -1; }
+  .kpis > * { flex-basis: calc(50% - 5px); }
   /* Cabecera: el título en su línea y los botones repartidos debajo. */
   .page-head { flex-wrap: wrap; }
   .page-head > h1, .page-head > h2 { flex-basis: 100%; }

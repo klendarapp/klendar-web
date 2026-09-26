@@ -228,3 +228,7 @@ details.faq p { margin: 10px 0 0; color: var(--ink-2); }
 .acciones { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
 .acciones > * { flex: 1 1 calc(50% - 4px); justify-content: center; text-align: center; margin: 0; white-space: nowrap; }
 .acciones > :last-child:nth-child(odd) { flex-grow: 0; }
+
+/* Dos o más botones seguidos en un párrafo: con su hueco también cuando no
+   caben en una fila (si no, en el móvil quedaban pegados uno encima de otro). */
+p:has(> .pill + .pill) { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }

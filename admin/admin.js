@@ -9,8 +9,9 @@ const ENV = globalThis.KLENDAR_ENV || {};
 const SUPABASE_URL = ENV.url;
 const SUPABASE_KEY = ENV.key;
 if (!SUPABASE_URL || !SUPABASE_KEY) {
-  document.body.innerHTML = '<p style="padding:24px">Falta la configuración '
-    + '(<code>/config.js</code>). Avisa a soporte.</p>';
+  document.body.innerHTML = I18N.lang === 'en'
+    ? '<p style="padding:24px">The configuration is missing (<code>/config.js</code>). Tell support.</p>'
+    : '<p style="padding:24px">Falta la configuración (<code>/config.js</code>). Avisa a soporte.</p>';
   throw new Error('sin configuración');
 }
 const APP_URL = 'https://klendar.app';
@@ -30,10 +31,11 @@ const fmtNum = (n) => (n ?? 0).toLocaleString('es-ES');
 const ago = (s) => {
   if (!s) return '—';
   const d = (Date.now() - new Date(s)) / 1000;
-  if (d < 60) return 'hace un momento';
-  if (d < 3600) return `hace ${Math.floor(d / 60)} min`;
-  if (d < 86400) return `hace ${Math.floor(d / 3600)} h`;
-  if (d < 86400 * 30) return `hace ${Math.floor(d / 86400)} d`;
+  const en = I18N.lang === 'en';
+  if (d < 60) return en ? 'just now' : 'hace un momento';
+  if (d < 3600) return en ? `${Math.floor(d / 60)} min ago` : `hace ${Math.floor(d / 60)} min`;
+  if (d < 86400) return en ? `${Math.floor(d / 3600)} h ago` : `hace ${Math.floor(d / 3600)} h`;
+  if (d < 86400 * 30) return en ? `${Math.floor(d / 86400)} d ago` : `hace ${Math.floor(d / 86400)} d`;
   return fmtDay(s);
 };
 const tag = (v, cls) => v ? `<span class="tag ${cls || 'st-' + esc(v)}">${esc(LABELS[v] || v)}</span>` : '';
@@ -101,7 +103,7 @@ function modal({ title, intro, warn, fields = [], submit = 'Guardar', danger = f
       ${intro ? `<p class="muted" style="margin:0">${intro}</p>` : ''}
       ${warn ? `<div class="warn">${warn}</div>` : ''}
       ${fields.map(field).join('')}
-      ${confirmWord ? `<label class="f"><span>Escribe <b>${esc(confirmWord)}</b> para confirmar</span><input name="__confirm" autocomplete="off" required></label>` : ''}
+      ${confirmWord ? `<label class="f"><span>${I18N.lang === 'en' ? `Type <b>${esc(confirmWord)}</b> to confirm` : `Escribe <b>${esc(confirmWord)}</b> para confirmar`}</span><input name="__confirm" autocomplete="off" required></label>` : ''}
       <div class="foot"><button type="button" class="btn ghost" data-cancel>Cancelar</button><button type="submit" class="btn ${danger ? 'bad' : 'primary'}">${esc(submit)}</button></div>
     </form>`;
     const form = $('form', d);
@@ -123,7 +125,7 @@ const confirmDlg = (title, text, opts = {}) => modal({ title, intro: text, submi
 
 // CSV del listado actual.
 function downloadCsv(name, rows, cols) {
-  const head = cols.map((c) => c[1]);
+  const head = cols.map((c) => I18N.t(c[1]));
   const lines = [head, ...rows.map((r) => cols.map((c) => { const v = typeof c[0] === 'function' ? c[0](r) : r[c[0]]; return v == null ? '' : String(typeof v === 'object' ? JSON.stringify(v) : v); }))];
   const csv = lines.map((l) => l.map((v) => `"${v.replace(/"/g, '""')}"`).join(';')).join('\r\n');
   const a = document.createElement('a');
@@ -157,12 +159,14 @@ function pager(state, total, onChange) {
 }
 const helpBox = (title, body) => `<details class="help"><summary>${esc(title)}</summary>${body}</details>`;
 const img = (url, ph = ms('storefront')) => url ? `<img class="thumb" src="${esc(url)}" alt="" loading="lazy">` : `<span class="ph">${ph}</span>`;
-const appLink = (path, label = 'Ver en la app') => `<a class="btn sm ghost" href="${APP_URL}${path}" target="_blank" rel="noopener">${label} ↗</a>`;
+const appLink = (path, label = I18N.lang === 'en' ? 'View in the app' : 'Ver en la app') => `<a class="btn sm ghost" href="${APP_URL}${path}" target="_blank" rel="noopener">${label} ↗</a>`;
 
 // ── Sesión ──────────────────────────────────────────────────────────────────
 const insecure = location.protocol === 'http:' && !/^(localhost|127\.0\.0\.1)$/.test(location.hostname);
 if (insecure) {
-  document.body.innerHTML = '<div class="login"><h2>Conexión no segura</h2><p class="muted">Este panel solo funciona por HTTPS: <a href="https://klendar.app/admin/">https://klendar.app/admin/</a>.</p></div>';
+  document.body.innerHTML = I18N.lang === 'en'
+    ? '<div class="login"><h2>Insecure connection</h2><p class="muted">This panel only works over HTTPS: <a href="https://klendar.app/admin/">https://klendar.app/admin/</a>.</p></div>'
+    : '<div class="login"><h2>Conexión no segura</h2><p class="muted">Este panel solo funciona por HTTPS: <a href="https://klendar.app/admin/">https://klendar.app/admin/</a>.</p></div>';
   throw new Error('insecure');
 }
 let ME = null;
@@ -262,7 +266,7 @@ async function route() {
     await fn(v, id);
     I18N.translate(v);
   } catch (e) {
-    v.innerHTML = `<div class="card"><p class="err">${esc(e.message)}</p>${/administradora/.test(e.message) ? '<p class="muted">Pide a otro administrador que te dé de alta en «Administradores», o ejecuta en Supabase: <code>insert into public.admin_users (user_id) select id from auth.users where email = \'tu@email\'</code></p>' : ''}</div>`;
+    v.innerHTML = `<div class="card"><p class="err">${esc(I18N.t(e.message))}</p>${/administradora/.test(e.message) ? (I18N.lang === 'en' ? '<p class="muted">Ask another administrator to add you in “Administrators”, or run this in Supabase: <code>insert into public.admin_users (user_id) select id from auth.users where email = \'your@email\'</code></p>' : '<p class="muted">Pide a otro administrador que te dé de alta en «Administradores», o ejecuta en Supabase: <code>insert into public.admin_users (user_id) select id from auth.users where email = \'tu@email\'</code></p>') : ''}</div>`;
   }
 }
 window.addEventListener('hashchange', route);
@@ -289,8 +293,9 @@ PAGES.semanas = async (v) => {
 
   v.innerHTML = `
     <div class="page-head"><h1>Semana a semana</h1></div>
-    ${helpBox('¿Qué miro aquí?', `<p><b>Gente</b> es quien ha hecho algo esa semana (guardar, canjear o marcar favorito), que es más honesto que contar quién abrió la app. <b>Conversión</b> es de cada cien publicaciones vistas, cuántas se canjearon: si baja, o lo que se publica no interesa o cuesta canjearlo.</p>
-      <p><b>Negocios activos</b> son los que publicaron algo esa semana. Es el número que mata una app como esta: sin negocios publicando, el resto da igual.</p>`)}
+    ${helpBox('¿Qué miro aquí?', I18N.lang === 'en'
+      ? `<p><b>People</b> means everyone who did something that week (saved, redeemed or added a favourite), which is more honest than counting who opened the app. <b>Conversion</b> is, out of every hundred publications viewed, how many were redeemed: if it drops, either what gets published isn't interesting or it's hard to redeem.</p><p><b>Active businesses</b> are the ones that published something that week. It's the number that makes or breaks an app like this: without businesses publishing, nothing else matters.</p>`
+      : `<p><b>Gente</b> es quien ha hecho algo esa semana (guardar, canjear o marcar favorito), que es más honesto que contar quién abrió la app. <b>Conversión</b> es de cada cien publicaciones vistas, cuántas se canjearon: si baja, o lo que se publica no interesa o cuesta canjearlo.</p><p><b>Negocios activos</b> son los que publicaron algo esa semana. Es el número que mata una app como esta: sin negocios publicando, el resto da igual.</p>`)}
     <div class="card"><h2>Últimas semanas</h2>${table({
       cols: [
         // Solo el día: una semana no empieza a las 2:00.
@@ -326,15 +331,16 @@ PAGES.resumen = async (v) => {
   if (!k) throw new Error('Esta cuenta no es administradora.');
   const kpi = (n, label, cls = '') => `<div class="kpi ${cls}"><b>${typeof n === 'number' ? fmtNum(n) : n}</b><span>${label}</span></div>`;
   const series = k.series || [];
+  const en = I18N.lang === 'en';
   v.innerHTML = `
     <div class="page-head"><h1>Resumen</h1><span class="spacer"></span><span class="muted">${new Date().toLocaleString(LOC(), { dateStyle: 'full', timeStyle: 'short' })}</span></div>
     ${(k.businesses_pending || k.offers_pending || k.reports_open || BADGES.sugerencias) ? `<div class="card"><h2>Pendiente de ti</h2><div class="actions">
-      ${k.businesses_pending ? `<a class="btn" href="#/negocios?status=pending">${ms('storefront')} <b>${k.businesses_pending}</b> negocio(s) por verificar</a>` : ''}
-      ${k.offers_pending ? `<a class="btn" href="#/publicaciones?moderation=pending">${ms('bolt')} <b>${k.offers_pending}</b> publicación(es) por moderar</a>` : ''}
-      ${k.reports_open ? `<a class="btn" href="#/denuncias">${ms('flag')} <b>${k.reports_open}</b> denuncia(s) abiertas</a>` : ''}
-      ${k.subs_expiring_7d ? `<a class="btn" href="#/planes">${ms('credit_card')} <b>${k.subs_expiring_7d}</b> suscripción(es) vencen en 7 días</a>` : ''}
+      ${k.businesses_pending ? `<a class="btn" href="#/negocios?status=pending">${ms('storefront')} <b>${k.businesses_pending}</b> ${en ? (k.businesses_pending === 1 ? 'business to verify' : 'businesses to verify') : 'negocio(s) por verificar'}</a>` : ''}
+      ${k.offers_pending ? `<a class="btn" href="#/publicaciones?moderation=pending">${ms('bolt')} <b>${k.offers_pending}</b> ${en ? (k.offers_pending === 1 ? 'publication to moderate' : 'publications to moderate') : 'publicación(es) por moderar'}</a>` : ''}
+      ${k.reports_open ? `<a class="btn" href="#/denuncias">${ms('flag')} <b>${k.reports_open}</b> ${en ? (k.reports_open === 1 ? 'open report' : 'open reports') : 'denuncia(s) abiertas'}</a>` : ''}
+      ${k.subs_expiring_7d ? `<a class="btn" href="#/planes">${ms('credit_card')} <b>${k.subs_expiring_7d}</b> ${en ? (k.subs_expiring_7d === 1 ? 'subscription expiring in 7 days' : 'subscriptions expiring in 7 days') : 'suscripción(es) vencen en 7 días'}</a>` : ''}
       ${k.push_failed_7d ? `<a class="btn" href="#/avisos?tab=push">${ms('notifications')} <b>${k.push_failed_7d}</b> push fallidos (7 d)</a>` : ''}
-      ${BADGES.sugerencias ? `<a class="btn" href="#/sugerencias">${ms('lightbulb')} <b>${BADGES.sugerencias}</b> sugerencia(s) sin leer</a>` : ''}
+      ${BADGES.sugerencias ? `<a class="btn" href="#/sugerencias">${ms('lightbulb')} <b>${BADGES.sugerencias}</b> ${en ? (BADGES.sugerencias === 1 ? 'unread suggestion' : 'unread suggestions') : 'sugerencia(s) sin leer'}</a>` : ''}
     </div></div>` : '<div class="card"><h2>Todo al día</h2><p class="muted" style="margin:0">No hay negocios por verificar, publicaciones por moderar ni denuncias abiertas.</p></div>'}
     <div class="grid2">
       <div class="card"><h2>Usuarios</h2><div class="kpis">
@@ -384,7 +390,7 @@ PAGES.negocios = async (v, id) => {
   s.status = p.status || s.status || 'all';
   v.innerHTML = `
     <div class="page-head"><h1>Negocios</h1><span class="spacer"></span><button class="btn sm ghost" id="csv">Exportar CSV</button></div>
-    ${helpBox('¿Qué hago aquí?', '<p>Aquí ves todos los negocios dados de alta. Los <b>pendientes</b> son altas nuevas que tienes que revisar: comprueba que el negocio existe (web, teléfono, Google Maps) y pulsa <b>Verificar</b>; si no procede, <b>Rechazar</b> indicando el motivo (el negocio lo recibe como aviso). Pulsa en una fila para ver la ficha completa, cambiar el plan o registrar un pago.</p>')}
+    ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p>Here you see every registered business. <b>Pending</b> ones are new sign-ups you need to review: check that the business exists (website, phone, Google Maps) and press <b>Verify</b>; if it doesn't qualify, <b>Reject</b> it with a reason (the business gets it as a notification). Click a row to see the full business page, change the plan or record a payment.</p>` : '<p>Aquí ves todos los negocios dados de alta. Los <b>pendientes</b> son altas nuevas que tienes que revisar: comprueba que el negocio existe (web, teléfono, Google Maps) y pulsa <b>Verificar</b>; si no procede, <b>Rechazar</b> indicando el motivo (el negocio lo recibe como aviso). Pulsa en una fila para ver la ficha completa, cambiar el plan o registrar un pago.</p>')}
     <div class="toolbar">
       <input id="q" class="grow" placeholder="Buscar por nombre, ciudad, email del dueño, CIF o id…" value="${esc(s.q || '')}">
       <select id="status">${[['all', 'Todos los estados'], ['pending', 'Pendientes'], ['verified', 'Verificados'], ['rejected', 'Rechazados']].map((o) => `<option value="${o[0]}" ${s.status === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
@@ -403,7 +409,7 @@ PAGES.negocios = async (v, id) => {
         { h: 'Negocio', r: (b) => `${img(b.logo_url)}<span class="title">${esc(b.name)}<span class="sub">${esc([b.category, b.city].filter(Boolean).join(' · '))}</span></span>` },
         { h: 'Dueño', r: (b) => `${esc(b.owner_name || '—')}<span class="sub">${esc(b.owner_email || '')}</span>` },
         { h: 'Estado', r: (b) => `${tag(b.verification_status)} ${b.is_active ? '' : tag('inactive', 'st-inactive')} ${b.open_reports ? `<span class="tag bad">${ms('flag')} ${b.open_reports}</span>` : ''}` },
-        { h: 'Plan', r: (b) => `${tag(b.plan_slug || 'free', 'dim')} ${b.sub_status ? tag(b.sub_status) : ''}${b.sub_period_end ? `<span class="sub">hasta ${fmtDay(b.sub_period_end)}</span>` : ''}` },
+        { h: 'Plan', r: (b) => `${tag(b.plan_slug || 'free', 'dim')} ${b.sub_status ? tag(b.sub_status) : ''}${b.sub_period_end ? `<span class="sub">${I18N.lang === 'en' ? 'until' : 'hasta'} ${fmtDay(b.sub_period_end)}</span>` : ''}` },
         { h: 'Publicaciones', num: true, r: (b) => `${b.active_offers} <span class="muted">/ ${b.offers_count}</span>` },
         { h: 'Canjes', num: true, r: (b) => fmtNum(b.redemptions_count) },
         { h: 'Alta', r: (b) => `<span class="nowrap">${fmtDay(b.created_at)}</span>` },
@@ -454,7 +460,7 @@ async function businessDetail(v, id) {
         <dt>CIF / NIF</dt><dd>${esc(b.tax_id || '—')}</dd>
         <dt>Dueño</dt><dd>${esc(b.owner_name || '—')} · <a class="link" href="#/usuarios/${b.owner_id}">${esc(b.owner_email || '')}</a></dd>
         <dt>Valoración</dt><dd>${b.rating_count ? `★ ${Number(b.rating_avg).toFixed(1)} (${b.rating_count})` : 'sin reseñas'}</dd>
-        <dt>Alta</dt><dd>${fmtDate(b.created_at)} ${b.verified_at ? `· verificado ${fmtDate(b.verified_at)}` : ''}</dd>
+        <dt>Alta</dt><dd>${fmtDate(b.created_at)} ${b.verified_at ? `· ${I18N.lang === 'en' ? 'verified' : 'verificado'} ${fmtDate(b.verified_at)}` : ''}</dd>
         <dt>Horario</dt><dd>${hours.length ? hours.map(([k, val]) => `${esc(k)}: ${esc(Array.isArray(val) ? val.map((x) => Array.isArray(x) ? x.join('–') : JSON.stringify(x)).join(', ') : JSON.stringify(val))}`).join('<br>') : '—'}</dd>
         <dt>Descripción</dt><dd>${esc(b.description || '—')}</dd>
         <dt>Id</dt><dd><code>${b.id}</code></dd>
@@ -477,14 +483,14 @@ async function businessDetail(v, id) {
           <div class="actions" style="margin-top:10px"><button class="btn sm" data-a="addmember">Añadir persona…</button></div>
         </div>
         <div class="card"><h2>Suscripción</h2>
-          ${cur ? `<dl class="kv"><dt>Plan</dt><dd>${tag(cur.plan, 'dim')} ${tag(cur.status)} · ${fmtMoney(cur.price_cents)}/mes</dd><dt>Periodo</dt><dd>${fmtDay(cur.period_start)} → ${cur.period_end ? fmtDay(cur.period_end) : 'sin fin'}</dd><dt>Forma de pago</dt><dd>${esc(cur.payment_method || '—')}</dd></dl>` : '<p class="muted">Sin suscripción vigente (plan Gratis).</p>'}
-          ${d.subscriptions.length > 1 ? `<details style="margin-top:8px"><summary class="muted">Histórico (${d.subscriptions.length})</summary>${table({ cols: [{ h: 'Plan', r: (s) => tag(s.plan, 'dim') }, { h: 'Estado', r: (s) => tag(s.status) }, { h: 'Periodo', r: (s) => `${fmtDay(s.period_start)} → ${s.period_end ? fmtDay(s.period_end) : '—'}` }, { h: 'Pago', r: (s) => esc(s.payment_method || '') }], rows: d.subscriptions })}</details>` : ''}
+          ${cur ? `<dl class="kv"><dt>Plan</dt><dd>${tag(cur.plan, 'dim')} ${tag(cur.status)} · ${fmtMoney(cur.price_cents)}/${I18N.lang === 'en' ? 'month' : 'mes'}</dd><dt>Periodo</dt><dd>${fmtDay(cur.period_start)} → ${cur.period_end ? fmtDay(cur.period_end) : (I18N.lang === 'en' ? 'no end' : 'sin fin')}</dd><dt>Forma de pago</dt><dd>${esc(cur.payment_method || '—')}</dd></dl>` : '<p class="muted">Sin suscripción vigente (plan Gratis).</p>'}
+          ${d.subscriptions.length > 1 ? `<details style="margin-top:8px"><summary class="muted">${I18N.lang === 'en' ? 'History' : 'Histórico'} (${d.subscriptions.length})</summary>${table({ cols: [{ h: 'Plan', r: (s) => tag(s.plan, 'dim') }, { h: 'Estado', r: (s) => tag(s.status) }, { h: 'Periodo', r: (s) => `${fmtDay(s.period_start)} → ${s.period_end ? fmtDay(s.period_end) : '—'}` }, { h: 'Pago', r: (s) => esc(s.payment_method || '') }], rows: d.subscriptions })}</details>` : ''}
           <h3 style="margin-top:12px">Pagos registrados</h3>
           ${table({ cols: [{ h: 'Fecha', r: (p) => fmtDay(p.paid_at) }, { h: 'Importe', num: true, r: (p) => fmtMoney(p.amount_cents, p.currency) }, { h: 'Método', r: (p) => esc(p.method) }, { h: 'Periodo', r: (p) => `${fmtDay(p.period_start)} → ${fmtDay(p.period_end)}` }, { h: 'Notas', r: (p) => `${esc(p.notes || '')}<span class="sub">${esc(p.recorded_by || '')}</span>` }], rows: d.payments, empty: 'Ningún pago registrado.' })}
         </div>
       </div>
     </div>
-    <div class="card"><h2>Publicaciones (${d.offers.length})</h2>
+    <div class="card"><h2>${I18N.lang === 'en' ? 'Publications' : 'Publicaciones'} (${d.offers.length})</h2>
       ${table({ cols: [
         { h: 'Publicación', r: (o) => `${KIND_ICON[o.kind]} <span class="title">${esc(o.title)}</span>` },
         { h: 'Estado', r: (o) => `${tag(o.status)} ${tag(o.moderation_status)} ${o.is_boosted ? '<span class="tag">boost</span>' : ''}` },
@@ -494,11 +500,11 @@ async function businessDetail(v, id) {
       ], rows: d.offers, onRow: true, empty: 'Este negocio no ha publicado nada.' })}
     </div>
     <div class="grid2">
-      <div class="card"><h2>Reseñas (${d.reviews.length})</h2>${d.reviews.length ? d.reviews.map((r) => `<div class="item" style="grid-template-columns:1fr"><div><span class="stars">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</span> <span class="muted small">${esc(r.user_email || '')} · ${ago(r.created_at)}</span><p>${esc(r.comment || '')}</p><div class="actions"><button class="btn sm bad" data-delreview="${r.id}">Borrar…</button></div></div></div>`).join('') : '<p class="muted">Sin reseñas.</p>'}</div>
-      <div class="card"><h2>Novedades (${d.posts.length})</h2>${d.posts.length ? d.posts.map((p) => `<div class="item">${p.image_url ? `<img src="${esc(p.image_url)}" alt="">` : `<div class="ph">${ms('article')}</div>`}<div><span class="muted small">${ago(p.created_at)}</span><p>${esc(p.body || '')}</p><div class="actions"><button class="btn sm bad" data-delpost="${p.id}">Borrar…</button></div></div></div>`).join('') : '<p class="muted">Sin novedades.</p>'}</div>
+      <div class="card"><h2>${I18N.lang === 'en' ? 'Reviews' : 'Reseñas'} (${d.reviews.length})</h2>${d.reviews.length ? d.reviews.map((r) => `<div class="item" style="grid-template-columns:1fr"><div><span class="stars">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</span> <span class="muted small">${esc(r.user_email || '')} · ${ago(r.created_at)}</span><p>${esc(r.comment || '')}</p><div class="actions"><button class="btn sm bad" data-delreview="${r.id}">Borrar…</button></div></div></div>`).join('') : '<p class="muted">Sin reseñas.</p>'}</div>
+      <div class="card"><h2>${I18N.lang === 'en' ? 'News' : 'Novedades'} (${d.posts.length})</h2>${d.posts.length ? d.posts.map((p) => `<div class="item">${p.image_url ? `<img src="${esc(p.image_url)}" alt="">` : `<div class="ph">${ms('article')}</div>`}<div><span class="muted small">${ago(p.created_at)}</span><p>${esc(p.body || '')}</p><div class="actions"><button class="btn sm bad" data-delpost="${p.id}">Borrar…</button></div></div></div>`).join('') : '<p class="muted">Sin novedades.</p>'}</div>
     </div>
     <div class="grid2">
-      <div class="card"><h2>Denuncias relacionadas (${d.reports.length})</h2>${d.reports.length ? table({ cols: [{ h: 'Sobre', r: (r) => tag(r.target_type, 'dim') }, { h: 'Motivo', r: (r) => `${esc(r.reason)}<span class="sub">${esc(r.details || '')}</span>` }, { h: 'Estado', r: (r) => tag(r.status) }, { h: 'Fecha', r: (r) => fmtDay(r.created_at) }], rows: d.reports }) : '<p class="muted">Ninguna.</p>'}<p style="margin:10px 0 0"><a class="link" href="#/denuncias">Ir a denuncias →</a></p></div>
+      <div class="card"><h2>${I18N.lang === 'en' ? 'Related reports' : 'Denuncias relacionadas'} (${d.reports.length})</h2>${d.reports.length ? table({ cols: [{ h: 'Sobre', r: (r) => tag(r.target_type, 'dim') }, { h: 'Motivo', r: (r) => `${esc(r.reason)}<span class="sub">${esc(r.details || '')}</span>` }, { h: 'Estado', r: (r) => tag(r.status) }, { h: 'Fecha', r: (r) => fmtDay(r.created_at) }], rows: d.reports }) : '<p class="muted">Ninguna.</p>'}<p style="margin:10px 0 0"><a class="link" href="#/denuncias">Ir a denuncias →</a></p></div>
       <div class="card"><h2>Registro de cambios</h2>${auditList(d.audit)}</div>
     </div>`;
   $$('#view tr.row').forEach((tr) => { tr.onclick = () => go(`#/publicaciones/${d.offers[tr.dataset.i].id}`); });
@@ -512,7 +518,7 @@ async function businessDetail(v, id) {
 async function businessAction(a, b, d) {
   try {
     if (a === 'verify') {
-      if (!await confirmDlg('Verificar negocio', `«${esc(b.name)}» pasará a verificado y activo: sus publicaciones aparecerán en la app y el dueño recibirá un aviso.`, { submit: 'Verificar' })) return;
+      if (!await confirmDlg('Verificar negocio', I18N.lang === 'en' ? `“${esc(b.name)}” will become verified and active: its publications will appear in the app and the owner will get a notification.` : `«${esc(b.name)}» pasará a verificado y activo: sus publicaciones aparecerán en la app y el dueño recibirá un aviso.`, { submit: 'Verificar' })) return;
       await rpc('admin_set_verification', { p_id: b.id, p_status: 'verified' }); toast('Negocio verificado');
     }
     if (a === 'reject') {
@@ -545,7 +551,7 @@ async function businessAction(a, b, d) {
       const plans = await rpc('admin_plans');
       const cur = d.subscriptions.find((s) => ['trial', 'active', 'past_due'].includes(s.status));
       const r = await modal({ title: 'Cambiar plan', intro: 'Se cierra la suscripción vigente y se abre una nueva desde hoy (queda el histórico).', fields: [
-        { name: 'plan', label: 'Plan', type: 'select', value: cur?.plan || 'standard', options: plans.map((p) => [p.slug, `${p.names?.es || p.slug} · ${fmtMoney(p.price_cents)}/mes`]) },
+        { name: 'plan', label: 'Plan', type: 'select', value: cur?.plan || 'standard', options: plans.map((p) => [p.slug, `${p.names?.es || p.slug} · ${fmtMoney(p.price_cents)}/${I18N.lang === 'en' ? 'month' : 'mes'}`]) },
         { name: 'status', label: 'Estado', type: 'select', value: 'active', options: [['active', 'Activa (pagada)'], ['trial', 'Prueba gratuita'], ['past_due', 'Impagada'], ['cancelled', 'Cancelada']] },
         { name: 'period_end', label: 'Fin del periodo', type: 'date', value: cur?.period_end || '', help: 'Vacío = sin fecha de fin.' },
         { name: 'method', label: 'Forma de pago', type: 'select', value: 'transfer', options: [['transfer', 'Transferencia'], ['cash', 'Efectivo'], ['card', 'Tarjeta'], ['none', 'Ninguna']] },
@@ -568,7 +574,7 @@ async function businessAction(a, b, d) {
       const r = await modal({ title: 'Aviso al equipo del negocio', intro: 'Lo reciben el dueño y los encargados como notificación (y push si la tienen activada).', fields: [{ name: 'title', label: 'Título', required: true }, { name: 'body', label: 'Texto', type: 'textarea', required: true }] });
       if (!r) return;
       const ids = d.members.filter((m) => ['owner', 'manager'].includes(m.role)).map((m) => m.user_id);
-      const n = await rpc('admin_send_notification', { p_audience: 'ids', p_user_ids: ids, p_title: r.title, p_body: r.body, p_route: '/my-business/' + b.id }); toast(`Aviso enviado a ${n} persona(s)`);
+      const n = await rpc('admin_send_notification', { p_audience: 'ids', p_user_ids: ids, p_title: r.title, p_body: r.body, p_route: '/my-business/' + b.id }); toast(I18N.lang === 'en' ? `Notification sent to ${n} ${n === 1 ? 'person' : 'people'}` : `Aviso enviado a ${n} persona(s)`);
     }
     if (a === 'addmember') {
       const r = await modal({ title: 'Añadir persona al equipo', intro: 'Busca por email en «Usuarios» y copia su id, o escribe aquí su email exacto.', fields: [{ name: 'email', label: 'Email del usuario', type: 'email', required: true }, { name: 'role', label: 'Rol', type: 'select', value: 'staff', options: [['staff', 'Empleado (valida códigos)'], ['manager', 'Encargado (gestiona publicaciones)'], ['owner', 'Propietario']] }] });
@@ -603,7 +609,7 @@ PAGES.publicaciones = async (v, id) => {
   if (p.business) s.business = p.business;
   v.innerHTML = `
     <div class="page-head"><h1>Publicaciones</h1><span class="spacer"></span><button class="btn sm ghost" id="csv">Exportar CSV</button></div>
-    ${helpBox('¿Qué hago aquí?', '<p>Ofertas flash y eventos de todos los negocios. Las <b>pendientes de moderar</b> son de negocios que aún no han sido verificados o que han sido marcadas para revisión: si cumplen las <a class="link" href="/normas/" target="_blank">Normas de la comunidad</a> (sin contenido engañoso, fotos propias, sin alcohol a menores…) pulsa <b>Aprobar</b>; si no, <b>Retirar</b> con un motivo, que el negocio recibe junto con la vía de recurso (obligatorio por el DSA). El sistema pone en revisión automáticamente las que mencionan <b>alcohol</b> (además las marca +18: solo las ven mayores), <b>tabaco/vapeo</b> (publicidad prohibida: retirar) o <b>apuestas</b>; verás la etiqueta del motivo.</p>')}
+    ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p>Flash offers and events from every business. The ones <b>pending moderation</b> come from businesses that haven't been verified yet or have been flagged for review: if they meet the <a class="link" href="/en/community-guidelines/" target="_blank">Community guidelines</a> (nothing misleading, their own photos, no alcohol aimed at minors…) press <b>Approve</b>; if not, <b>Take down</b> with a reason, which the business receives along with how to appeal (required by the DSA). The system automatically puts under review the ones that mention <b>alcohol</b> (and also marks them 18+: only adults see them), <b>tobacco/vaping</b> (advertising is banned: take it down) or <b>gambling</b>; you'll see a tag with the reason.</p>` : '<p>Ofertas flash y eventos de todos los negocios. Las <b>pendientes de moderar</b> son de negocios que aún no han sido verificados o que han sido marcadas para revisión: si cumplen las <a class="link" href="/normas/" target="_blank">Normas de la comunidad</a> (sin contenido engañoso, fotos propias, sin alcohol a menores…) pulsa <b>Aprobar</b>; si no, <b>Retirar</b> con un motivo, que el negocio recibe junto con la vía de recurso (obligatorio por el DSA). El sistema pone en revisión automáticamente las que mencionan <b>alcohol</b> (además las marca +18: solo las ven mayores), <b>tabaco/vapeo</b> (publicidad prohibida: retirar) o <b>apuestas</b>; verás la etiqueta del motivo.</p>')}
     <div class="toolbar">
       <input id="q" class="grow" placeholder="Buscar por título, negocio o id…" value="${esc(s.q || '')}">
       <select id="moderation">${[['all', 'Toda moderación'], ['pending', 'Por moderar'], ['approved', 'Aprobadas'], ['rejected', 'Retiradas']].map((o) => `<option value="${o[0]}" ${s.moderation === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
@@ -662,7 +668,7 @@ async function offerDetail(v, id) {
     <div class="page-head"><a class="btn sm ghost" href="#/publicaciones">← Publicaciones</a></div>
     <div class="detail-head">
       ${o.images?.[0] ? `<img src="${esc(o.images[0])}" alt="">` : `<div class="ph">${KIND_ICON[o.kind]}</div>`}
-      <div><h1>${esc(o.title)}</h1><div class="tags">${tag(o.kind, 'dim')} ${tag(o.status)} ${tag(o.moderation_status)} ${flagTags(o)} ${o.adults_only ? '<span class="tag bad">+18</span>' : ''} ${o.is_boosted ? `<span class="tag">boost hasta ${fmtDate(o.boosted_until)}</span>` : ''}</div>
+      <div><h1>${esc(o.title)}</h1><div class="tags">${tag(o.kind, 'dim')} ${tag(o.status)} ${tag(o.moderation_status)} ${flagTags(o)} ${o.adults_only ? '<span class="tag bad">+18</span>' : ''} ${o.is_boosted ? `<span class="tag">boost ${I18N.lang === 'en' ? 'until' : 'hasta'} ${fmtDate(o.boosted_until)}</span>` : ''}</div>
         <div class="muted small" style="margin-top:4px"><a class="link" href="#/negocios/${o.business_id}">${esc(o.business_name)}</a> ${o.verification_status !== 'verified' ? tag(o.verification_status) : ''} · ${esc(o.city || '')}</div></div>
       <span class="spacer"></span>
       <div class="actions">
@@ -679,10 +685,10 @@ async function offerDetail(v, id) {
         <dt>Condiciones</dt><dd>${esc(o.terms || '—')}</dd>
         ${o.kind === 'flash_offer' ? `<dt>Canje</dt><dd>${fmtDate(o.redeem_start_at)} → ${fmtDate(o.redeem_end_at)}</dd>` : `<dt>Evento</dt><dd>${fmtDate(o.event_at)}${o.event_end_at ? ` → ${fmtDate(o.event_end_at)}` : ''}</dd>`}
         <dt>Descuento / precio</dt><dd>${o.discount ? esc(discountLabel(o.discount)) : '—'} ${o.price_cents != null ? `· ${fmtMoney(o.price_cents, o.currency)}` : ''}</dd>
-        <dt>Aforo</dt><dd>${o.max_redemptions ? `${o.redemptions_count} de ${o.max_redemptions}` : `${o.redemptions_count} (sin límite)`} ${o.max_per_user ? `· máx. ${o.max_per_user} por persona` : ''}</dd>
+        <dt>Aforo</dt><dd>${I18N.lang === 'en' ? `${o.max_redemptions ? `${o.redemptions_count} of ${o.max_redemptions}` : `${o.redemptions_count} (no limit)`} ${o.max_per_user ? `· max. ${o.max_per_user} per person` : ''}` : `${o.max_redemptions ? `${o.redemptions_count} de ${o.max_redemptions}` : `${o.redemptions_count} (sin límite)`} ${o.max_per_user ? `· máx. ${o.max_per_user} por persona` : ''}`}</dd>
         <dt>Enlace externo</dt><dd>${o.external_url ? `<a class="link" target="_blank" rel="noopener" href="${esc(o.external_url)}">${esc(o.external_url)}</a>` : '—'}</dd>
         <dt>Diseño</dt><dd>${o.style && Object.keys(o.style).length ? esc(JSON.stringify(o.style)) : 'por defecto'}</dd>
-        <dt>Guardada por</dt><dd>${fmtNum(d.saved)} persona(s)</dd>
+        <dt>Guardada por</dt><dd>${fmtNum(d.saved)} ${I18N.lang === 'en' ? (d.saved === 1 ? 'person' : 'people') : 'persona(s)'}</dd>
         <dt>Posición</dt><dd>${o.lat ? `<a class="link" target="_blank" rel="noopener" href="https://www.google.com/maps?q=${o.lat},${o.lng}">${o.lat.toFixed(5)}, ${o.lng.toFixed(5)} ↗</a>` : 'la del negocio'}</dd>
         <dt>Creada / editada</dt><dd>${fmtDate(o.created_at)} · ${fmtDate(o.updated_at)}</dd>
         <dt>Id</dt><dd><code>${o.id}</code></dd>
@@ -692,11 +698,11 @@ async function offerDetail(v, id) {
       <div>
         <div class="card"><h2>Últimos 14 días</h2><div class="kpis"><div class="kpi"><b>${fmtNum(o.views_count)}</b><span>vistas totales</span></div><div class="kpi"><b>${fmtNum(o.redemptions_count)}</b><span>canjes totales</span></div><div class="kpi"><b>${o.views_count ? Math.round(o.redemptions_count / o.views_count * 100) : 0} %</b><span>conversión</span></div></div>
           <p class="muted small" style="margin:10px 0 0">Vistas</p>${bars(d.series, 'views', (s) => fmtDay(s.day))}<p class="muted small" style="margin:10px 0 0">Canjes</p>${bars(d.series, 'redemptions', (s) => fmtDay(s.day))}</div>
-        <div class="card"><h2>Denuncias (${d.reports.length})</h2>${d.reports.length ? d.reports.map((r) => `<div class="item" style="grid-template-columns:1fr"><div><b>${esc(r.reason)}</b> ${tag(r.status)} <span class="muted small">${ago(r.created_at)}</span><p>${esc(r.details || '')}</p></div></div>`).join('') + '<a class="link" href="#/denuncias">Gestionar en denuncias →</a>' : '<p class="muted">Ninguna.</p>'}</div>
+        <div class="card"><h2>${I18N.lang === 'en' ? 'Reports' : 'Denuncias'} (${d.reports.length})</h2>${d.reports.length ? d.reports.map((r) => `<div class="item" style="grid-template-columns:1fr"><div><b>${esc(r.reason)}</b> ${tag(r.status)} <span class="muted small">${ago(r.created_at)}</span><p>${esc(r.details || '')}</p></div></div>`).join('') + '<a class="link" href="#/denuncias">Gestionar en denuncias →</a>' : '<p class="muted">Ninguna.</p>'}</div>
         <div class="card"><h2>Registro de cambios</h2>${auditList(d.audit)}</div>
       </div>
     </div>
-    <div class="card"><h2>Canjes (${d.redemptions.length} últimos)</h2>
+    <div class="card"><h2>${I18N.lang === 'en' ? `Last ${d.redemptions.length} redemptions` : `Canjes (${d.redemptions.length} últimos)`}</h2>
       ${table({ cols: [{ h: 'Usuario', r: (r) => esc(r.user_email || '—') }, { h: 'Código', r: (r) => `<code>${esc(r.code)}</code>` }, { h: 'Estado', r: (r) => tag(r.status) }, { h: 'Generado', r: (r) => fmtDate(r.created_at) }, { h: 'Validado', r: (r) => `${fmtDate(r.validated_at)}<span class="sub">${esc(r.validated_by_email || '')}</span>` }], rows: d.redemptions, empty: 'Nadie ha canjeado todavía.' })}
     </div>`;
   $$('[data-a]').forEach((btn) => { btn.onclick = async () => {
@@ -725,7 +731,7 @@ PAGES.canjes = async (v) => {
   const s = st.canjes;
   v.innerHTML = `
     <div class="page-head"><h1>Canjes</h1><span class="spacer"></span><button class="btn sm ghost" id="csv">Exportar CSV</button></div>
-    ${helpBox('¿Qué hago aquí?', '<p>Cada vez que un usuario pulsa «Canjear» se genera un código de un solo uso válido 5 minutos (<b>pendiente</b>); cuando el negocio lo escanea pasa a <b>validado</b>; si no, <b>caduca</b>. Sirve para atender reclamaciones («me cobraron y no aplicaron el descuento») y detectar abusos: busca por email, negocio, título o código.</p>')}
+    ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p>Every time a user taps “Redeem”, a single-use code valid for 5 minutes is created (<b>pending</b>); when the business scans it, it becomes <b>validated</b>; if not, it <b>expires</b>. Use it to handle complaints (“they charged me and didn't apply the discount”) and to spot abuse: search by email, business, title or code.</p>` : '<p>Cada vez que un usuario pulsa «Canjear» se genera un código de un solo uso válido 5 minutos (<b>pendiente</b>); cuando el negocio lo escanea pasa a <b>validado</b>; si no, <b>caduca</b>. Sirve para atender reclamaciones («me cobraron y no aplicaron el descuento») y detectar abusos: busca por email, negocio, título o código.</p>')}
     <div class="toolbar">
       <input id="q" class="grow" placeholder="Buscar por email, negocio, título o código…" value="${esc(s.q || '')}">
       <select id="status">${[['all', 'Todos'], ['validated', 'Validados'], ['pending', 'Pendientes'], ['expired', 'Caducados'], ['cancelled', 'Cancelados']].map((o) => `<option value="${o[0]}" ${(s.status || 'all') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
@@ -757,7 +763,7 @@ PAGES.usuarios = async (v, id) => {
   const s = st.usuarios;
   v.innerHTML = `
     <div class="page-head"><h1>Usuarios</h1><span class="spacer"></span><button class="btn sm ghost" id="csv">Exportar CSV</button></div>
-    ${helpBox('¿Qué hago aquí?', '<p>Todas las cuentas de la app. Pulsa en una para ver su ficha: consentimientos (RGPD), negocios, canjes, reseñas y denuncias; desde allí puedes <b>suspender</b> a quien incumpla las normas, dar <b>premium</b>, o <b>borrar la cuenta</b> si el usuario lo pide por email (derecho de supresión; también puede hacerlo él mismo desde la app).</p>')}
+    ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p>Every account in the app. Click one to see its details: consents (GDPR), businesses, redemptions, reviews and reports; from there you can <b>suspend</b> anyone who breaks the rules, give <b>premium</b>, or <b>delete the account</b> if the user asks by email (right to erasure; they can also do it themselves from the app).</p>` : '<p>Todas las cuentas de la app. Pulsa en una para ver su ficha: consentimientos (RGPD), negocios, canjes, reseñas y denuncias; desde allí puedes <b>suspender</b> a quien incumpla las normas, dar <b>premium</b>, o <b>borrar la cuenta</b> si el usuario lo pide por email (derecho de supresión; también puede hacerlo él mismo desde la app).</p>')}
     <div class="toolbar">
       <input id="q" class="grow" placeholder="Buscar por email, nombre o id…" value="${esc(s.q || '')}">
       <select id="type">${[['all', 'Todos los tipos'], ['user', 'Usuarios'], ['business', 'Cuentas de negocio']].map((o) => `<option value="${o[0]}" ${(s.type || 'all') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
@@ -790,11 +796,12 @@ async function userDetail(v, id) {
   const u = d.user;
   if (!u) throw new Error('Usuario no encontrado.');
   const prefs = d.notification_prefs;
+  const en = I18N.lang === 'en';
   v.innerHTML = `
     <div class="page-head"><a class="btn sm ghost" href="#/usuarios">← Usuarios</a></div>
     <div class="detail-head">
       ${u.avatar_url ? `<img src="${esc(u.avatar_url)}" alt="">` : `<div class="ph">${ms('person')}</div>`}
-      <div><h1>${esc(u.display_name || u.email)}</h1><div class="tags">${tag(u.user_type || 'user', 'dim')} ${u.is_admin ? '<span class="tag">administrador</span>' : ''} ${u.is_premium ? `<span class="tag ok">premium${u.premium_until ? ` hasta ${fmtDay(u.premium_until)}` : ''}</span>` : ''} ${u.banned_at ? `<span class="tag bad">suspendido ${fmtDay(u.banned_at)}</span>` : ''} ${!u.email_confirmed_at ? '<span class="tag warn">email sin confirmar</span>' : ''}</div><div class="muted small" style="margin-top:4px">${esc(u.email)}</div></div>
+      <div><h1>${esc(u.display_name || u.email)}</h1><div class="tags">${tag(u.user_type || 'user', 'dim')} ${u.is_admin ? '<span class="tag">administrador</span>' : ''} ${u.is_premium ? `<span class="tag ok">premium${u.premium_until ? ` ${en ? 'until' : 'hasta'} ${fmtDay(u.premium_until)}` : ''}</span>` : ''} ${u.banned_at ? `<span class="tag bad">${en ? 'suspended' : 'suspendido'} ${fmtDay(u.banned_at)}</span>` : ''} ${!u.email_confirmed_at ? '<span class="tag warn">email sin confirmar</span>' : ''}</div><div class="muted small" style="margin-top:4px">${esc(u.email)}</div></div>
       <span class="spacer"></span>
       <div class="actions">
         <button class="btn ${u.banned_at ? 'ok' : 'bad'}" data-a="ban">${u.banned_at ? 'Reactivar cuenta' : 'Suspender…'}</button>
@@ -819,22 +826,22 @@ async function userDetail(v, id) {
         <dt>Favoritos / guardados</dt><dd>${d.favorites} / ${d.saved}</dd>
       </dl></div>
       <div class="card"><h2>Consentimientos (RGPD)</h2><dl class="kv">
-        <dt>Términos</dt><dd>${u.terms_accepted_at ? `aceptados ${fmtDate(u.terms_accepted_at)} (v${esc(u.terms_version || '?')})` : '<span class="tag warn">sin registro</span>'}</dd>
-        <dt>Comunicaciones comerciales</dt><dd>${u.marketing_consent ? `sí, ${fmtDate(u.marketing_consent_at)}` : 'no'}</dd>
-        <dt>Ubicación</dt><dd>${u.location_consent_at ? `consentida ${fmtDate(u.location_consent_at)} · última ${ago(u.last_location_at)}` : 'no consentida'}</dd>
-        <dt>Avisos</dt><dd>${prefs ? `favoritos: ${prefs.notify_favorites ? 'sí' : 'no'} · cerca: ${prefs.notify_nearby ? `sí (${prefs.nearby_radius_m} m)` : 'no'}${prefs.quiet_hours_start ? ` · silencio ${esc(prefs.quiet_hours_start)}–${esc(prefs.quiet_hours_end)}` : ''}` : 'por defecto'}</dd>
+        <dt>Términos</dt><dd>${u.terms_accepted_at ? `${en ? 'accepted' : 'aceptados'} ${fmtDate(u.terms_accepted_at)} (v${esc(u.terms_version || '?')})` : '<span class="tag warn">sin registro</span>'}</dd>
+        <dt>Comunicaciones comerciales</dt><dd>${u.marketing_consent ? `${en ? 'yes' : 'sí'}, ${fmtDate(u.marketing_consent_at)}` : 'no'}</dd>
+        <dt>Ubicación</dt><dd>${u.location_consent_at ? (en ? `given ${fmtDate(u.location_consent_at)} · last ${ago(u.last_location_at)}` : `consentida ${fmtDate(u.location_consent_at)} · última ${ago(u.last_location_at)}`) : (en ? 'not given' : 'no consentida')}</dd>
+        <dt>Avisos</dt><dd>${prefs ? (en ? `favourites: ${prefs.notify_favorites ? 'yes' : 'no'} · nearby: ${prefs.notify_nearby ? `yes (${prefs.nearby_radius_m} m)` : 'no'}${prefs.quiet_hours_start ? ` · quiet hours ${esc(prefs.quiet_hours_start)}–${esc(prefs.quiet_hours_end)}` : ''}` : `favoritos: ${prefs.notify_favorites ? 'sí' : 'no'} · cerca: ${prefs.notify_nearby ? `sí (${prefs.nearby_radius_m} m)` : 'no'}${prefs.quiet_hours_start ? ` · silencio ${esc(prefs.quiet_hours_start)}–${esc(prefs.quiet_hours_end)}` : ''}`) : 'por defecto'}</dd>
       </dl><p class="muted small" style="margin:10px 0 0">Para atender un derecho de acceso, usa «Exportar» en cada listado o pide el volcado en Supabase; para supresión, «Borrar cuenta».</p></div>
     </div>
     <div class="grid2">
-      <div class="card"><h2>Negocios (${d.memberships.length})</h2>${d.memberships.length ? table({ cols: [{ h: 'Negocio', r: (m) => `<a class="link" href="#/negocios/${m.business_id}">${esc(m.name)}</a><span class="sub">${esc(m.city || '')}</span>` }, { h: 'Rol', r: (m) => tag(m.role, 'dim') }, { h: 'Estado', r: (m) => tag(m.verification_status) }], rows: d.memberships }) : '<p class="muted">No pertenece a ningún negocio.</p>'}</div>
-      <div class="card"><h2>Canjes (${d.redemptions.length} últimos)</h2>${table({ cols: [{ h: 'Publicación', r: (r) => `${esc(r.title)}<span class="sub">${esc(r.business)}</span>` }, { h: 'Estado', r: (r) => tag(r.status) }, { h: 'Fecha', r: (r) => `<span class="nowrap">${fmtDate(r.validated_at || r.created_at)}</span>` }], rows: d.redemptions, empty: 'Ninguno.' })}</div>
+      <div class="card"><h2>${I18N.lang === 'en' ? 'Businesses' : 'Negocios'} (${d.memberships.length})</h2>${d.memberships.length ? table({ cols: [{ h: 'Negocio', r: (m) => `<a class="link" href="#/negocios/${m.business_id}">${esc(m.name)}</a><span class="sub">${esc(m.city || '')}</span>` }, { h: 'Rol', r: (m) => tag(m.role, 'dim') }, { h: 'Estado', r: (m) => tag(m.verification_status) }], rows: d.memberships }) : '<p class="muted">No pertenece a ningún negocio.</p>'}</div>
+      <div class="card"><h2>${I18N.lang === 'en' ? `Last ${d.redemptions.length} redemptions` : `Canjes (${d.redemptions.length} últimos)`}</h2>${table({ cols: [{ h: 'Publicación', r: (r) => `${esc(r.title)}<span class="sub">${esc(r.business)}</span>` }, { h: 'Estado', r: (r) => tag(r.status) }, { h: 'Fecha', r: (r) => `<span class="nowrap">${fmtDate(r.validated_at || r.created_at)}</span>` }], rows: d.redemptions, empty: 'Ninguno.' })}</div>
     </div>
     <div class="grid2">
-      <div class="card"><h2>Reseñas (${d.reviews.length})</h2>${d.reviews.length ? d.reviews.map((r) => `<div class="item" style="grid-template-columns:1fr"><div><span class="stars">${'★'.repeat(r.rating)}</span> <b>${esc(r.business)}</b> <span class="muted small">${ago(r.created_at)}</span><p>${esc(r.comment || '')}</p><div class="actions"><button class="btn sm bad" data-delreview="${r.id}">Borrar…</button></div></div></div>`).join('') : '<p class="muted">Ninguna.</p>'}</div>
-      <div class="card"><h2>Denuncias que ha puesto (${d.reports_made.length})</h2>${d.reports_made.length ? table({ cols: [{ h: 'Sobre', r: (r) => tag(r.target_type, 'dim') }, { h: 'Motivo', r: (r) => esc(r.reason) }, { h: 'Estado', r: (r) => tag(r.status) }, { h: 'Fecha', r: (r) => fmtDay(r.created_at) }], rows: d.reports_made }) : '<p class="muted">Ninguna.</p>'}</div>
+      <div class="card"><h2>${I18N.lang === 'en' ? 'Reviews' : 'Reseñas'} (${d.reviews.length})</h2>${d.reviews.length ? d.reviews.map((r) => `<div class="item" style="grid-template-columns:1fr"><div><span class="stars">${'★'.repeat(r.rating)}</span> <b>${esc(r.business)}</b> <span class="muted small">${ago(r.created_at)}</span><p>${esc(r.comment || '')}</p><div class="actions"><button class="btn sm bad" data-delreview="${r.id}">Borrar…</button></div></div></div>`).join('') : '<p class="muted">Ninguna.</p>'}</div>
+      <div class="card"><h2>${I18N.lang === 'en' ? 'Reports made' : 'Denuncias que ha puesto'} (${d.reports_made.length})</h2>${d.reports_made.length ? table({ cols: [{ h: 'Sobre', r: (r) => tag(r.target_type, 'dim') }, { h: 'Motivo', r: (r) => esc(r.reason) }, { h: 'Estado', r: (r) => tag(r.status) }, { h: 'Fecha', r: (r) => fmtDay(r.created_at) }], rows: d.reports_made }) : '<p class="muted">Ninguna.</p>'}</div>
     </div>
     <div class="grid2">
-      <div class="card"><h2>Últimas notificaciones</h2>${d.notifications.length ? `<ul style="margin:0;padding-left:18px;font-size:14px">${d.notifications.map((n) => `<li>${esc(n.title)} <span class="muted small">· ${esc(n.kind)} · ${ago(n.created_at)}${n.read_at ? ' · leída' : ''}</span></li>`).join('')}</ul>` : '<p class="muted">Ninguna.</p>'}</div>
+      <div class="card"><h2>Últimas notificaciones</h2>${d.notifications.length ? `<ul style="margin:0;padding-left:18px;font-size:14px">${d.notifications.map((n) => `<li>${esc(n.title)} <span class="muted small">· ${esc(n.kind)} · ${ago(n.created_at)}${n.read_at ? (en ? ' · read' : ' · leída') : ''}</span></li>`).join('')}</ul>` : '<p class="muted">Ninguna.</p>'}</div>
       <div class="card"><h2>Registro de cambios</h2>${auditList(d.audit)}</div>
     </div>`;
   $$('[data-delreview]').forEach((btn) => { btn.onclick = () => deleteReview(btn.dataset.delreview); });
@@ -861,11 +868,11 @@ async function userDetail(v, id) {
         if (!r) return; await rpc('admin_send_notification', { p_audience: 'ids', p_user_ids: [u.id], p_title: r.title, p_body: r.body }); toast('Aviso enviado');
       }
       if (a === 'admin') {
-        if (u.is_admin) { if (!await confirmDlg('Quitar permisos de administrador', `${esc(u.email)} dejará de poder entrar en este panel.`, { danger: true, submit: 'Quitar' })) return; await rpc('admin_remove_admin', { p_user_id: u.id }); toast('Ya no es administrador'); }
-        else { if (!await confirmDlg('Hacer administrador', `${esc(u.email)} podrá entrar en este panel con todos los permisos.`, { submit: 'Hacer admin' })) return; await rpc('admin_add_admin', { p_email: u.email }); toast('Ahora es administrador'); }
+        if (u.is_admin) { if (!await confirmDlg('Quitar permisos de administrador', en ? `${esc(u.email)} will no longer be able to log in to this panel.` : `${esc(u.email)} dejará de poder entrar en este panel.`, { danger: true, submit: 'Quitar' })) return; await rpc('admin_remove_admin', { p_user_id: u.id }); toast('Ya no es administrador'); }
+        else { if (!await confirmDlg('Hacer administrador', en ? `${esc(u.email)} will be able to log in to this panel with full permissions.` : `${esc(u.email)} podrá entrar en este panel con todos los permisos.`, { submit: 'Hacer admin' })) return; await rpc('admin_add_admin', { p_email: u.email }); toast('Ahora es administrador'); }
       }
       if (a === 'delete') {
-        const r = await modal({ title: 'Borrar cuenta definitivamente', warn: 'Se borra todo: perfil, canjes, reseñas, favoritos y <b>los negocios de los que sea propietario con todas sus publicaciones</b>. No se puede deshacer. Hazlo solo a petición del usuario (derecho de supresión) o por incumplimiento grave.', fields: [{ name: 'reason', label: 'Motivo (queda en el registro)', type: 'textarea', required: true }], submit: 'Borrar para siempre', danger: true, confirmWord: 'BORRAR' });
+        const r = await modal({ title: 'Borrar cuenta definitivamente', warn: en ? `Everything is deleted: profile, redemptions, reviews, favourites and <b>any businesses they own, with all their publications</b>. This can't be undone. Only do it at the user's request (right to erasure) or for a serious breach.` : 'Se borra todo: perfil, canjes, reseñas, favoritos y <b>los negocios de los que sea propietario con todas sus publicaciones</b>. No se puede deshacer. Hazlo solo a petición del usuario (derecho de supresión) o por incumplimiento grave.', fields: [{ name: 'reason', label: 'Motivo (queda en el registro)', type: 'textarea', required: true }], submit: 'Borrar para siempre', danger: true, confirmWord: 'BORRAR' });
         if (!r) return; await rpc('admin_delete_user', { p_id: u.id, p_reason: r.reason }); toast('Cuenta borrada'); go('#/usuarios'); return;
       }
       route();
@@ -889,7 +896,7 @@ PAGES.resenas = async (v) => {
   const sR = st.resenas, sP = st.posts;
   v.innerHTML = `
     <div class="page-head"><h1>Reseñas y novedades</h1></div>
-    ${helpBox('¿Qué hago aquí?', '<p>Las <b>reseñas</b> las escriben usuarios sobre negocios; las <b>novedades</b> las publican los negocios en su perfil. Bórralos solo si incumplen las normas (insultos, datos personales, spam, contenido que no es del local). El autor recibe el motivo.</p>')}
+    ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p><b>Reviews</b> are written by users about businesses; <b>news posts</b> are published by businesses on their page. Only delete them if they break the rules (insults, personal data, spam, content that isn't about the venue). The author gets the reason.</p>` : '<p>Las <b>reseñas</b> las escriben usuarios sobre negocios; las <b>novedades</b> las publican los negocios en su perfil. Bórralos solo si incumplen las normas (insultos, datos personales, spam, contenido que no es del local). El autor recibe el motivo.</p>')}
     <div class="tabs"><button data-t="reviews" class="${tab === 'reviews' ? 'on' : ''}">Reseñas</button><button data-t="posts" class="${tab === 'posts' ? 'on' : ''}">Novedades</button></div>
     <div class="toolbar"><input id="q" class="grow" placeholder="Buscar por texto, negocio o email…"><select id="rating" ${tab === 'posts' ? 'hidden' : ''}>${[['', 'Cualquier puntuación'], ['1', 'Solo 1 ★'], ['2', '≤ 2 ★'], ['3', '≤ 3 ★']].map((o) => `<option value="${o[0]}">${o[1]}</option>`).join('')}</select></div>
     <div id="list"><div class="loading">Cargando…</div></div>`;
@@ -897,7 +904,7 @@ PAGES.resenas = async (v) => {
     if (tab === 'reviews') {
       const r = await rpc('admin_reviews', { p_query: sR.q || null, p_max_rating: sR.rating ? +sR.rating : null, p_limit: sR.limit, p_offset: sR.offset });
       const pg = pager(sR, r.total, load);
-      $('#list').innerHTML = (r.rows.length ? r.rows.map((x) => `<div class="item"><div class="ph">${ms('chat_bubble')}</div><div><h3><span class="stars">${'★'.repeat(x.rating)}${'☆'.repeat(5 - x.rating)}</span> en <a class="link" href="#/negocios/${x.business_id}">${esc(x.business)}</a> ${x.open_reports ? `<span class="tag bad">${ms('flag')} ${x.open_reports}</span>` : ''}</h3><div class="meta">${esc(x.user_email || 'anónimo')} · ${fmtDate(x.created_at)}</div><p>${esc(x.comment || '(sin texto)')}</p><div class="actions"><button class="btn sm bad" data-del="${x.id}">Borrar…</button></div></div></div>`).join('') : '<div class="tbl-wrap"><div class="empty">Sin reseñas.</div></div>') + pg.html;
+      $('#list').innerHTML = (r.rows.length ? r.rows.map((x) => `<div class="item"><div class="ph">${ms('chat_bubble')}</div><div><h3><span class="stars">${'★'.repeat(x.rating)}${'☆'.repeat(5 - x.rating)}</span> ${I18N.lang === 'en' ? 'at' : 'en'} <a class="link" href="#/negocios/${x.business_id}">${esc(x.business)}</a> ${x.open_reports ? `<span class="tag bad">${ms('flag')} ${x.open_reports}</span>` : ''}</h3><div class="meta">${esc(x.user_email || (I18N.lang === 'en' ? 'anonymous' : 'anónimo'))} · ${fmtDate(x.created_at)}</div><p>${esc(x.comment || '(sin texto)')}</p><div class="actions"><button class="btn sm bad" data-del="${x.id}">Borrar…</button></div></div></div>`).join('') : '<div class="tbl-wrap"><div class="empty">Sin reseñas.</div></div>') + pg.html;
       pg.bind($('#list'));
       $$('#list [data-del]').forEach((b) => { b.onclick = () => deleteReview(b.dataset.del); });
     } else {
@@ -919,7 +926,7 @@ PAGES.denuncias = async (v) => {
   const s = st.denuncias;
   v.innerHTML = `
     <div class="page-head"><h1>Denuncias</h1></div>
-    ${helpBox('¿Qué hago aquí?', '<p>Cuando un usuario denuncia una publicación, negocio, reseña o novedad, aparece aquí. Revisa el contenido (botón «Ver»), y decide: <b>Retirar y cerrar</b> (la oferta se retira, el negocio se desactiva, la reseña o la novedad se borran; el autor recibe el motivo y puede recurrir en 15 días), <b>Cerrar sin retirar</b> (la denuncia era razonable pero el contenido es correcto) o <b>Desestimar</b> (denuncia sin fundamento). Por ley (DSA) hay que resolverlas con diligencia y motivar la decisión.</p>')}
+    ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p>When a user reports a publication, business, review or news post, it shows up here. Check the content (“View” button) and decide: <b>Take down and close</b> (the offer is taken down, the business is deactivated, the review or news post is deleted; the author gets the reason and can appeal within 15 days), <b>Close without taking down</b> (the report was reasonable but the content is fine) or <b>Dismiss</b> (unfounded report). By law (DSA) reports must be handled diligently and the decision explained.</p>` : '<p>Cuando un usuario denuncia una publicación, negocio, reseña o novedad, aparece aquí. Revisa el contenido (botón «Ver»), y decide: <b>Retirar y cerrar</b> (la oferta se retira, el negocio se desactiva, la reseña o la novedad se borran; el autor recibe el motivo y puede recurrir en 15 días), <b>Cerrar sin retirar</b> (la denuncia era razonable pero el contenido es correcto) o <b>Desestimar</b> (denuncia sin fundamento). Por ley (DSA) hay que resolverlas con diligencia y motivar la decisión.</p>')}
     <div class="toolbar">
       <select id="status">${[['open', 'Abiertas'], ['resolved', 'Resueltas'], ['dismissed', 'Desestimadas'], ['all', 'Todas']].map((o) => `<option value="${o[0]}" ${(s.status || 'open') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
       <select id="type">${[['all', 'Todo tipo'], ['offer', 'Publicaciones'], ['business', 'Negocios'], ['review', 'Reseñas'], ['post', 'Novedades']].map((o) => `<option value="${o[0]}" ${(s.type || 'all') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
@@ -927,11 +934,12 @@ PAGES.denuncias = async (v) => {
     <div id="list"><div class="loading">Cargando…</div></div>`;
   const target = (r) => {
     const t = r.target || {};
+    const en = I18N.lang === 'en';
     if (!r.target) return '<span class="tag dim">contenido ya eliminado</span>';
-    if (r.target_type === 'offer') return `Publicación <a class="link" href="#/publicaciones/${r.target_id}">«${esc(t.title)}»</a> de <a class="link" href="#/negocios/${t.business_id}">${esc(t.business)}</a> · ${tag(t.moderation)} ${tag(t.status)}`;
-    if (r.target_type === 'business') return `Negocio <a class="link" href="#/negocios/${r.target_id}">«${esc(t.name)}»</a> (${esc(t.city || '')}) · ${t.active ? tag('active') : tag('inactive', 'st-inactive')} ${tag(t.verification)}`;
-    if (r.target_type === 'review') return `Reseña <span class="stars">${'★'.repeat(t.rating)}</span> en <a class="link" href="#/negocios/${t.business_id}">${esc(t.business)}</a>: «${esc(t.comment || '')}» · <a class="link" href="#/usuarios/${t.user_id}">autor</a>`;
-    if (r.target_type === 'post') return `Novedad de <a class="link" href="#/negocios/${t.business_id}">${esc(t.business)}</a>: «${esc(t.body || '')}»`;
+    if (r.target_type === 'offer') return en ? `Publication <a class="link" href="#/publicaciones/${r.target_id}">“${esc(t.title)}”</a> by <a class="link" href="#/negocios/${t.business_id}">${esc(t.business)}</a> · ${tag(t.moderation)} ${tag(t.status)}` : `Publicación <a class="link" href="#/publicaciones/${r.target_id}">«${esc(t.title)}»</a> de <a class="link" href="#/negocios/${t.business_id}">${esc(t.business)}</a> · ${tag(t.moderation)} ${tag(t.status)}`;
+    if (r.target_type === 'business') return en ? `Business <a class="link" href="#/negocios/${r.target_id}">“${esc(t.name)}”</a> (${esc(t.city || '')}) · ${t.active ? tag('active') : tag('inactive', 'st-inactive')} ${tag(t.verification)}` : `Negocio <a class="link" href="#/negocios/${r.target_id}">«${esc(t.name)}»</a> (${esc(t.city || '')}) · ${t.active ? tag('active') : tag('inactive', 'st-inactive')} ${tag(t.verification)}`;
+    if (r.target_type === 'review') return en ? `Review <span class="stars">${'★'.repeat(t.rating)}</span> at <a class="link" href="#/negocios/${t.business_id}">${esc(t.business)}</a>: “${esc(t.comment || '')}” · <a class="link" href="#/usuarios/${t.user_id}">author</a>` : `Reseña <span class="stars">${'★'.repeat(t.rating)}</span> en <a class="link" href="#/negocios/${t.business_id}">${esc(t.business)}</a>: «${esc(t.comment || '')}» · <a class="link" href="#/usuarios/${t.user_id}">autor</a>`;
+    if (r.target_type === 'post') return en ? `News post from <a class="link" href="#/negocios/${t.business_id}">${esc(t.business)}</a>: “${esc(t.body || '')}”` : `Novedad de <a class="link" href="#/negocios/${t.business_id}">${esc(t.business)}</a>: «${esc(t.body || '')}»`;
     return '';
   };
   const load = async () => {
@@ -939,9 +947,9 @@ PAGES.denuncias = async (v) => {
     const pg = pager(s, r.total, load);
     $('#list').innerHTML = (r.rows.length ? r.rows.map((x) => `
       <div class="item">${x.target?.image ? `<img src="${esc(x.target.image)}" alt="">` : `<div class="ph">${ms('flag')}</div>`}<div>
-        <h3>${esc(x.reason)} ${tag(x.status)} ${tag(x.target_type, 'dim')} ${x.same_target_count > 1 ? `<span class="tag warn">${x.same_target_count} denuncias sobre lo mismo</span>` : ''}</h3>
-        <div class="meta">${fmtDate(x.created_at)} · por ${x.reporter_id ? `<a class="link" href="#/usuarios/${x.reporter_id}">${esc(x.reporter_email || 'usuario')}</a>` : 'anónimo'}${x.resolved_at ? ` · cerrada ${fmtDate(x.resolved_at)}` : ''}</div>
-        <p>${target(x)}</p>${x.details ? `<div class="meta">Detalles: ${esc(x.details)}</div>` : ''}
+        <h3>${esc(x.reason)} ${tag(x.status)} ${tag(x.target_type, 'dim')} ${x.same_target_count > 1 ? `<span class="tag warn">${x.same_target_count} ${I18N.lang === 'en' ? 'reports about the same thing' : 'denuncias sobre lo mismo'}</span>` : ''}</h3>
+        <div class="meta">${fmtDate(x.created_at)} · ${I18N.lang === 'en' ? 'by' : 'por'} ${x.reporter_id ? `<a class="link" href="#/usuarios/${x.reporter_id}">${esc(x.reporter_email || 'usuario')}</a>` : (I18N.lang === 'en' ? 'anonymous' : 'anónimo')}${x.resolved_at ? ` · ${I18N.lang === 'en' ? 'closed' : 'cerrada'} ${fmtDate(x.resolved_at)}` : ''}</div>
+        <p>${target(x)}</p>${x.details ? `<div class="meta">${I18N.lang === 'en' ? 'Details' : 'Detalles'}: ${esc(x.details)}</div>` : ''}
         ${['open', 'reviewing'].includes(x.status) ? `<div class="actions">
           <button class="btn sm bad" data-res="${x.id}" data-status="resolved" data-action="hide" ${x.target ? '' : 'disabled'}>Retirar contenido y cerrar…</button>
           <button class="btn sm ok" data-res="${x.id}" data-status="resolved" data-action="none">Cerrar sin retirar</button>
@@ -970,7 +978,7 @@ PAGES.sugerencias = async (v) => {
   s.status = s.status || 'open';
   v.innerHTML = `
     <div class="page-head"><h1>Sugerencias</h1><span class="spacer"></span><button class="btn sm ghost" id="csv">Exportar CSV</button></div>
-    ${helpBox('¿Qué hago aquí?', '<p>Lo que la gente escribe desde la app (Cuenta → «Sugerencias y mejoras») o la web: ideas, fallos y mensajes de negocios. Los <b>fallos</b> te llegan además como aviso al móvil. Marca cada una con lo que vas a hacer —<b>la estamos viendo</b>, <b>la haremos</b>, <b>hecho</b> o <b>de momento no</b>— y, si quieres, <b>responde</b>: la persona recibe tu respuesta como notificación. Las notas internas no las ve nadie de fuera.</p>')}
+    ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p>What people write from the app (Account → “Ideas and feedback”) or the website: ideas, bugs and messages from businesses. <b>Bugs</b> also reach your phone as a notification. Mark each one with what you're going to do —<b>we're looking into it</b>, <b>we'll do it</b>, <b>done</b> or <b>not for now</b>— and, if you like, <b>reply</b>: the person gets your reply as a notification. Nobody outside sees the internal notes.</p>` : '<p>Lo que la gente escribe desde la app (Cuenta → «Sugerencias y mejoras») o la web: ideas, fallos y mensajes de negocios. Los <b>fallos</b> te llegan además como aviso al móvil. Marca cada una con lo que vas a hacer —<b>la estamos viendo</b>, <b>la haremos</b>, <b>hecho</b> o <b>de momento no</b>— y, si quieres, <b>responde</b>: la persona recibe tu respuesta como notificación. Las notas internas no las ve nadie de fuera.</p>')}
     <div id="counts"></div>
     <div class="toolbar">
       <input id="q" class="grow" placeholder="Buscar en el texto o por email…" value="${esc(s.q || '')}">
@@ -993,7 +1001,7 @@ PAGES.sugerencias = async (v) => {
     $('#list').innerHTML = (rows.length ? rows.map((f) => `
       <div class="item"><div class="ph">${kindIcon[f.kind] || ms('chat_bubble')}</div><div>
         <h3>${tag(f.kind, 'dim')} ${tag(f.status)} ${f.replied_at ? '<span class="tag ok">respondida</span>' : ''}</h3>
-        <div class="meta">${fmtDate(f.created_at)} · ${f.user_id ? `<a class="link" href="#/usuarios/${f.user_id}">${esc(f.user_email || f.user_name || 'usuario')}</a>` : 'sin cuenta'}${f.from_same_user > 1 ? ` · ${f.from_same_user} mensajes suyos` : ''} · ${esc(f.app_version || '?')} · ${esc(f.platform || '?')}${f.locale ? ' · ' + esc(f.locale) : ''}</div>
+        <div class="meta">${fmtDate(f.created_at)} · ${f.user_id ? `<a class="link" href="#/usuarios/${f.user_id}">${esc(f.user_email || f.user_name || 'usuario')}</a>` : (I18N.lang === 'en' ? 'no account' : 'sin cuenta')}${f.from_same_user > 1 ? ` · ${f.from_same_user} ${I18N.lang === 'en' ? 'messages from them' : 'mensajes suyos'}` : ''} · ${esc(f.app_version || '?')} · ${esc(f.platform || '?')}${f.locale ? ' · ' + esc(f.locale) : ''}</div>
         <p style="white-space:pre-wrap">${esc(f.message)}</p>
         ${f.admin_note ? `<div class="meta"><b>Nota interna:</b> ${esc(f.admin_note)}</div>` : ''}
         <div class="actions">
@@ -1040,7 +1048,7 @@ PAGES.planes = async (v) => {
   const p = params(); let tab = p.tab || 'subs';
   v.innerHTML = `
     <div class="page-head"><h1>Planes y pagos</h1><span class="spacer"></span><button class="btn sm ghost" id="csv">Exportar CSV</button></div>
-    ${helpBox('¿Qué hago aquí?', '<p><b>Suscripciones</b>: qué plan tiene cada negocio y cuándo vence. Mientras no haya pago con tarjeta, los cobros se hacen por transferencia y se anotan a mano en la ficha del negocio («Registrar pago»). <b>Pagos</b>: histórico de cobros con totales por mes (para la contabilidad). <b>Planes</b>: precio y límites de cada plan (cambiarlos afecta a los negocios que los tengan).</p>')}
+    ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p><b>Subscriptions</b>: which plan each business has and when it expires. Until card payments are available, payments are made by bank transfer and recorded by hand on the business page (“Record payment”). <b>Payments</b>: history of payments with monthly totals (for the accounts). <b>Plans</b>: price and limits of each plan (changing them affects the businesses that have them).</p>` : '<p><b>Suscripciones</b>: qué plan tiene cada negocio y cuándo vence. Mientras no haya pago con tarjeta, los cobros se hacen por transferencia y se anotan a mano en la ficha del negocio («Registrar pago»). <b>Pagos</b>: histórico de cobros con totales por mes (para la contabilidad). <b>Planes</b>: precio y límites de cada plan (cambiarlos afecta a los negocios que los tengan).</p>')}
     <div class="tabs">${[['subs', 'Suscripciones'], ['payments', 'Pagos'], ['plans', 'Planes']].map((t) => `<button data-t="${t[0]}" class="${tab === t[0] ? 'on' : ''}">${t[1]}</button>`).join('')}</div>
     <div id="tabview"></div>`;
   let rows = [], csvCols = [], csvName = 'suscripciones';
@@ -1055,9 +1063,9 @@ PAGES.planes = async (v) => {
       const pg = pager(s, r.total, load);
       $('#list').innerHTML = table({ cols: [
         { h: 'Negocio', r: (x) => `<a class="link" href="#/negocios/${x.business_id}">${esc(x.business)}</a><span class="sub">${esc(x.city || '')} · ${esc(x.owner_email || '')}</span>` },
-        { h: 'Plan', r: (x) => `${tag(x.plan, 'dim')} ${fmtMoney(x.price_cents)}/mes` }, { h: 'Estado', r: (x) => tag(x.status) },
+        { h: 'Plan', r: (x) => `${tag(x.plan, 'dim')} ${fmtMoney(x.price_cents)}/${I18N.lang === 'en' ? 'month' : 'mes'}` }, { h: 'Estado', r: (x) => tag(x.status) },
         { h: 'Periodo', r: (x) => `${fmtDay(x.period_start)} → ${x.period_end ? fmtDay(x.period_end) : '∞'}` },
-        { h: 'Vence', r: (x) => x.days_left == null ? '—' : x.days_left < 0 ? `<span class="tag bad">hace ${-x.days_left} d</span>` : x.days_left <= 7 ? `<span class="tag warn">en ${x.days_left} d</span>` : `en ${x.days_left} d` },
+        { h: 'Vence', r: (x) => x.days_left == null ? '—' : I18N.lang === 'en' ? (x.days_left < 0 ? `<span class="tag bad">${-x.days_left} d ago</span>` : x.days_left <= 7 ? `<span class="tag warn">in ${x.days_left} d</span>` : `in ${x.days_left} d`) : x.days_left < 0 ? `<span class="tag bad">hace ${-x.days_left} d</span>` : x.days_left <= 7 ? `<span class="tag warn">en ${x.days_left} d</span>` : `en ${x.days_left} d` },
         { h: 'Cobrado', num: true, r: (x) => fmtMoney(x.paid_cents) }, { h: 'Pago', r: (x) => esc(x.payment_method || '') },
       ], rows, empty: 'Sin suscripciones.' }) + pg.html;
       pg.bind($('#list'));
@@ -1070,7 +1078,7 @@ PAGES.planes = async (v) => {
       rows = r.rows; csvName = 'pagos';
       csvCols = [['paid_at', 'fecha'], ['business', 'negocio'], ['plan', 'plan'], [(x) => (x.amount_cents / 100).toFixed(2), 'importe (€)'], ['currency', 'moneda'], ['method', 'método'], ['period_start', 'periodo inicio'], ['period_end', 'periodo fin'], ['notes', 'notas'], ['recorded_by', 'registrado por']];
       const months = r.by_month || [];
-      $('#sum').innerHTML = `<div class="card"><div class="kpis"><div class="kpi accent"><b>${fmtMoney(r.sum_cents)}</b><span>total en el periodo (${fmtNum(r.total)} pagos)</span></div></div>${months.length ? `<p class="muted small" style="margin:10px 0 0">Por mes (12 meses)</p>${bars(months.map((m) => ({ ...m, cents: m.cents })), 'cents', (m) => `${m.month} · ${fmtMoney(m.cents)} (${m.n})`)}<div class="chart-legend">${months.map((m) => `<span>${m.month.slice(5)}: ${fmtMoney(m.cents)}</span>`).join('')}</div>` : ''}</div>`;
+      $('#sum').innerHTML = `<div class="card"><div class="kpis"><div class="kpi accent"><b>${fmtMoney(r.sum_cents)}</b><span>${I18N.lang === 'en' ? `total for the period (${fmtNum(r.total)} ${r.total === 1 ? 'payment' : 'payments'})` : `total en el periodo (${fmtNum(r.total)} pagos)`}</span></div></div>${months.length ? `<p class="muted small" style="margin:10px 0 0">Por mes (12 meses)</p>${bars(months.map((m) => ({ ...m, cents: m.cents })), 'cents', (m) => `${m.month} · ${fmtMoney(m.cents)} (${m.n})`)}<div class="chart-legend">${months.map((m) => `<span>${m.month.slice(5)}: ${fmtMoney(m.cents)}</span>`).join('')}</div>` : ''}</div>`;
       const pg = pager(s, r.total, load);
       $('#list').innerHTML = table({ cols: [
         { h: 'Fecha', r: (x) => `<span class="nowrap">${fmtDate(x.paid_at)}</span>` }, { h: 'Negocio', r: (x) => `<a class="link" href="#/negocios/${x.business_id}">${esc(x.business)}</a> ${tag(x.plan, 'dim')}` },
@@ -1086,7 +1094,7 @@ PAGES.planes = async (v) => {
       csvCols = [['slug', 'slug'], [(x) => x.names?.es, 'nombre'], [(x) => (x.price_cents / 100).toFixed(2), 'precio (€)'], ['max_active_offers', 'máx. publicaciones activas'], ['boosts_included', 'boosts'], [(x) => x.has_analytics ? 'sí' : 'no', 'estadísticas'], ['current_subs', 'suscripciones']];
       tv.innerHTML = `<div class="toolbar"><span class="spacer"></span><button class="btn primary sm" id="newplan">Nuevo plan…</button></div>` + table({ cols: [
         { h: 'Plan', r: (x) => `<span class="title">${esc(x.names?.es || x.slug)}<span class="sub">${esc(x.slug)} · ${esc(x.names?.en || '')}</span></span>` },
-        { h: 'Precio', num: true, r: (x) => `${fmtMoney(x.price_cents, x.currency)}/mes` }, { h: 'Publicaciones activas', num: true, r: (x) => x.max_active_offers ?? 'sin límite' },
+        { h: 'Precio', num: true, r: (x) => `${fmtMoney(x.price_cents, x.currency)}/${I18N.lang === 'en' ? 'month' : 'mes'}` }, { h: 'Publicaciones activas', num: true, r: (x) => x.max_active_offers ?? 'sin límite' },
         { h: 'Boosts', num: true, r: (x) => x.boosts_included }, { h: 'Estadísticas', r: (x) => x.has_analytics ? 'sí' : 'no' }, { h: 'Suscripciones', num: true, r: (x) => x.current_subs },
         { h: '', r: (x) => `<button class="btn sm" data-edit="${x.id}">Editar…</button>` },
       ], rows: plans });
@@ -1119,7 +1127,7 @@ PAGES.avisos = async (v) => {
   const p = params(); let tab = p.tab || 'send';
   v.innerHTML = `
     <div class="page-head"><h1>Avisos y push</h1></div>
-    ${helpBox('¿Qué hago aquí?', '<p><b>Enviar aviso</b>: manda una notificación (en la app y por push) a todos los usuarios, solo a usuarios, solo a los negocios, o a los negocios de una ciudad. Úsalo con moderación (novedades importantes, incidencias); todo queda en el registro. <b>Cola de push</b>: lo que el sistema está enviando; si algo falla (token caducado, error de Firebase) verás el motivo y podrás reintentar.</p>')}
+    ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p><b>Send notification</b>: sends a notification (in the app and by push) to every user, users only, businesses only, or the businesses in one city. Use it sparingly (important news, incidents); everything is logged. <b>Push queue</b>: what the system is sending; if something fails (expired token, Firebase error) you'll see why and can retry.</p>` : '<p><b>Enviar aviso</b>: manda una notificación (en la app y por push) a todos los usuarios, solo a usuarios, solo a los negocios, o a los negocios de una ciudad. Úsalo con moderación (novedades importantes, incidencias); todo queda en el registro. <b>Cola de push</b>: lo que el sistema está enviando; si algo falla (token caducado, error de Firebase) verás el motivo y podrás reintentar.</p>')}
     <div class="tabs">${[['send', 'Enviar aviso'], ['history', 'Enviados'], ['push', 'Cola de push']].map((t) => `<button data-t="${t[0]}" class="${tab === t[0] ? 'on' : ''}">${t[1]}</button>`).join('')}</div>
     <div id="tabview"></div>`;
   const load = async () => {
@@ -1137,8 +1145,8 @@ PAGES.avisos = async (v) => {
       f.onsubmit = async (e) => {
         e.preventDefault();
         const aud = f.audience.value;
-        if (!await confirmDlg('Enviar aviso', `Se enviará «${esc(f.title.value)}» a: <b>${esc($('option:checked', f.audience).textContent)}${aud === 'city' ? ' ' + esc(f.city.value) : ''}</b>. No se puede deshacer.`, { submit: 'Enviar' })) return;
-        try { const n = await rpc('admin_send_notification', { p_audience: aud, p_title: f.title.value.trim(), p_body: f.body.value.trim(), p_route: f.route.value.trim() || null, p_city: f.city.value.trim() || null }); toast(`Aviso enviado a ${n} persona(s)`); f.reset(); } catch (err) { toast(err.message, true); }
+        if (!await confirmDlg('Enviar aviso', I18N.lang === 'en' ? `“${esc(f.title.value)}” will be sent to: <b>${esc($('option:checked', f.audience).textContent)}${aud === 'city' ? ' ' + esc(f.city.value) : ''}</b>. This can't be undone.` : `Se enviará «${esc(f.title.value)}» a: <b>${esc($('option:checked', f.audience).textContent)}${aud === 'city' ? ' ' + esc(f.city.value) : ''}</b>. No se puede deshacer.`, { submit: 'Enviar' })) return;
+        try { const n = await rpc('admin_send_notification', { p_audience: aud, p_title: f.title.value.trim(), p_body: f.body.value.trim(), p_route: f.route.value.trim() || null, p_city: f.city.value.trim() || null }); toast(I18N.lang === 'en' ? `Notification sent to ${n} ${n === 1 ? 'person' : 'people'}` : `Aviso enviado a ${n} persona(s)`); f.reset(); } catch (err) { toast(err.message, true); }
       };
     }
     if (tab === 'history') {
@@ -1149,7 +1157,7 @@ PAGES.avisos = async (v) => {
       tv.innerHTML = `<div class="toolbar"><select id="pstatus">${[['all', 'Todos'], ['pending', 'Pendientes'], ['sent', 'Enviados'], ['failed', 'Fallidos'], ['skipped', 'Omitidos']].map((o) => `<option value="${o[0]}">${o[1]}</option>`).join('')}</select></div><div id="list"></div>`;
       const loadQ = async () => {
         const rows = await rpc('admin_push_queue', { p_status: $('#pstatus').value, p_limit: 200 });
-        $('#list').innerHTML = table({ cols: [{ h: 'Creado', r: (x) => `<span class="nowrap">${fmtDate(x.created_at)}</span>` }, { h: 'Usuario', r: (x) => esc(x.user_email || '—') }, { h: 'Aviso', r: (x) => `<span class="title">${esc(x.title)}<span class="sub">${esc(x.body || '')} · ${esc(x.kind || '')}</span></span>` }, { h: 'Estado', r: (x) => `${tag(x.status)} ${x.attempts ? `<span class="muted small">${x.attempts} intento(s)</span>` : ''}${x.error ? `<span class="sub">${esc(x.error)}</span>` : ''}` }, { h: 'Enviado', r: (x) => fmtDate(x.sent_at) }, { h: '', r: (x) => ['failed', 'skipped'].includes(x.status) ? `<button class="btn sm" data-retry="${x.id}">Reintentar</button>` : '' }], rows, empty: 'Cola vacía.' });
+        $('#list').innerHTML = table({ cols: [{ h: 'Creado', r: (x) => `<span class="nowrap">${fmtDate(x.created_at)}</span>` }, { h: 'Usuario', r: (x) => esc(x.user_email || '—') }, { h: 'Aviso', r: (x) => `<span class="title">${esc(x.title)}<span class="sub">${esc(x.body || '')} · ${esc(x.kind || '')}</span></span>` }, { h: 'Estado', r: (x) => `${tag(x.status)} ${x.attempts ? `<span class="muted small">${x.attempts} ${I18N.lang === 'en' ? (x.attempts === 1 ? 'attempt' : 'attempts') : 'intento(s)'}</span>` : ''}${x.error ? `<span class="sub">${esc(x.error)}</span>` : ''}` }, { h: 'Enviado', r: (x) => fmtDate(x.sent_at) }, { h: '', r: (x) => ['failed', 'skipped'].includes(x.status) ? `<button class="btn sm" data-retry="${x.id}">Reintentar</button>` : '' }], rows, empty: 'Cola vacía.' });
         $$('#list [data-retry]').forEach((b) => { b.onclick = async () => { try { await rpc('admin_push_retry', { p_id: +b.dataset.retry }); toast('Reencolado'); loadQ(); } catch (e) { toast(e.message, true); } }; });
       };
       $('#pstatus').onchange = loadQ; await loadQ();
@@ -1165,9 +1173,9 @@ PAGES.categorias = async (v) => {
   const byId = Object.fromEntries(cats.map((c) => [c.id, c]));
   v.innerHTML = `
     <div class="page-head"><h1>Categorías</h1><span class="spacer"></span><button class="btn primary sm" id="new">Nueva categoría…</button></div>
-    ${helpBox('¿Qué hago aquí?', '<p>Las categorías con las que se clasifican negocios y publicaciones (filtros de la app). El <b>slug</b> es el identificador interno (no lo cambies si ya está en uso); el icono es un emoji. Solo se puede borrar una categoría vacía.</p>')}
+    ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p>The categories used to classify businesses and publications (the app's filters). The <b>slug</b> is the internal identifier (don't change it if it's already in use); the icon is an emoji. Only an empty category can be deleted.</p>` : '<p>Las categorías con las que se clasifican negocios y publicaciones (filtros de la app). El <b>slug</b> es el identificador interno (no lo cambies si ya está en uso); el icono es un emoji. Solo se puede borrar una categoría vacía.</p>')}
     ${table({ cols: [
-      { h: 'Categoría', r: (c) => `<span class="ph" style="font-size:20px">${esc(c.icon || '·')}</span><span class="title">${esc(c.names?.es || c.slug)}<span class="sub">${esc(c.slug)} · EN: ${esc(c.names?.en || '—')}${c.parent_id ? ` · dentro de ${esc(byId[c.parent_id]?.names?.es || '')}` : ''}</span></span>` },
+      { h: 'Categoría', r: (c) => `<span class="ph" style="font-size:20px">${esc(c.icon || '·')}</span><span class="title">${esc(c.names?.es || c.slug)}<span class="sub">${esc(c.slug)} · EN: ${esc(c.names?.en || '—')}${c.parent_id ? ` · ${I18N.lang === 'en' ? 'under' : 'dentro de'} ${esc(byId[c.parent_id]?.names?.es || '')}` : ''}</span></span>` },
       { h: 'Orden', num: true, r: (c) => c.position }, { h: 'Negocios', num: true, r: (c) => c.businesses }, { h: 'Publicaciones', num: true, r: (c) => c.offers },
       { h: '', r: (c) => `<span class="actions"><button class="btn sm" data-edit="${c.id}">Editar…</button>${(c.businesses || c.offers) ? '' : `<button class="btn sm bad ghost" data-del="${c.id}">Borrar</button>`}</span>` },
     ], rows: cats, empty: 'Sin categorías.' })}`;
@@ -1195,11 +1203,11 @@ PAGES.ciudades = async (v, param) => {
   const rows = await rpc('admin_cities', { p_days: days });
   const ratio = (a, b) => (!b ? '—' : (a / b).toFixed(1).replace('.', ','));
   v.innerHTML = `
-    <div class="page-head"><h1>Ciudades</h1><span class="muted small">últimos ${days} días</span></div>
+    <div class="page-head"><h1>Ciudades</h1><span class="muted small">${I18N.lang === 'en' ? `last ${days} days` : `últimos ${days} días`}</span></div>
     <div class="card">${table({
       cols: [
         { h: 'Ciudad', r: (c) => `<a class="link" href="#/ciudades/${encodeURIComponent(c.city)}"><b>${esc(c.city)}</b></a>` },
-        { h: 'Negocios', num: true, r: (c) => `${fmtNum(c.negocios)} <span class="muted small">(${fmtNum(c.verificados)} verif.)</span>` },
+        { h: 'Negocios', num: true, r: (c) => `${fmtNum(c.negocios)} <span class="muted small">(${fmtNum(c.verificados)} ${I18N.lang === 'en' ? 'verified' : 'verif.'})</span>` },
         { h: 'Publicaciones', num: true, r: (c) => fmtNum(c.publicaciones) },
         { h: 'Activas ahora', num: true, r: (c) => fmtNum(c.activas) },
         { h: 'Vistas', num: true, r: (c) => fmtNum(c.vistas) },
@@ -1220,16 +1228,16 @@ async function cityDetail(v, city, days) {
   const dormidos = biz.filter((b) => b.published === 0).length;
   v.innerHTML = `
     <div class="page-head"><a class="btn sm ghost" href="#/ciudades">← Ciudades</a><h1>${esc(city)}</h1>
-      <span class="muted small">últimos ${days} días</span></div>
+      <span class="muted small">${I18N.lang === 'en' ? `last ${days} days` : `últimos ${days} días`}</span></div>
     <div class="card"><h2>Publicaciones por semana</h2>
-      <div class="spark">${weeks.map((w) => `<i title="Semana del ${w.week}: ${w.published}" style="height:${Math.round((w.published / max) * 100)}%"></i>`).join('')}</div>
+      <div class="spark">${weeks.map((w) => `<i title="${I18N.lang === 'en' ? 'Week of' : 'Semana del'} ${w.week}: ${w.published}" style="height:${Math.round((w.published / max) * 100)}%"></i>`).join('')}</div>
       <p class="muted small" style="margin:8px 0 0">Doce semanas. Si baja y no sube, es que los negocios se han enfriado.</p>
     </div>
     <div class="card"><h2>Negocios</h2>
-      ${dormidos ? `<p class="muted" style="margin:0 0 10px"><b>${dormidos}</b> no han publicado nada en este periodo: son los que hay que llamar.</p>` : ''}
+      ${dormidos ? `<p class="muted" style="margin:0 0 10px"><b>${dormidos}</b> ${I18N.lang === 'en' ? (dormidos === 1 ? "hasn't published anything in this period: that's the one to call." : "haven't published anything in this period: these are the ones to call.") : 'no han publicado nada en este periodo: son los que hay que llamar.'}</p>` : ''}
       ${table({
         cols: [
-          { h: 'Negocio', r: (b) => `<a class="link" href="#/negocios/${esc(b.id)}"><b>${esc(b.name)}</b></a><span class="sub">alta ${fmtDate(b.created_at)}</span>` },
+          { h: 'Negocio', r: (b) => `<a class="link" href="#/negocios/${esc(b.id)}"><b>${esc(b.name)}</b></a><span class="sub">${I18N.lang === 'en' ? 'joined' : 'alta'} ${fmtDate(b.created_at)}</span>` },
           { h: 'Estado', r: (b) => tag(b.status) },
           { h: 'Activas', num: true, r: (b) => fmtNum(b.active) },
           { h: 'Publicadas', num: true, r: (b) => (b.published ? fmtNum(b.published) : '<span class="muted">0</span>') },
@@ -1247,17 +1255,18 @@ PAGES.colecciones = async (v, param) => {
   if (param) return pintaADedo(v, cols.find((c) => c.id === param));
   const cats = await rpc('admin_categories').catch(() => []);
   const byId = Object.fromEntries(cols.map((c) => [c.id, c]));
+  const en = I18N.lang === 'en';
   const ruleText = (r = {}) => [
-    r.kind === 'flash_offer' ? 'ofertas' : r.kind === 'future_event' ? 'eventos' : null,
-    r.when === 'today' ? 'hoy' : r.when === 'weekend' ? 'fin de semana' : r.when === 'next7' ? 'próximos 7 días' : null,
-    r.max_price_cents != null ? `hasta ${fmtMoney(r.max_price_cents)}` : null,
-    r.discount_only ? 'solo con descuento' : null,
-    r.new_days ? `publicado en ${r.new_days} días` : null,
-    r.categories?.length ? `${r.categories.length} categoría(s)` : null,
-  ].filter(Boolean).join(' · ') || 'todo lo que haya cerca';
+    r.kind === 'flash_offer' ? (en ? 'offers' : 'ofertas') : r.kind === 'future_event' ? (en ? 'events' : 'eventos') : null,
+    r.when === 'today' ? (en ? 'today' : 'hoy') : r.when === 'weekend' ? (en ? 'weekend' : 'fin de semana') : r.when === 'next7' ? (en ? 'next 7 days' : 'próximos 7 días') : null,
+    r.max_price_cents != null ? (en ? `up to ${fmtMoney(r.max_price_cents)}` : `hasta ${fmtMoney(r.max_price_cents)}`) : null,
+    r.discount_only ? (en ? 'discounted only' : 'solo con descuento') : null,
+    r.new_days ? (en ? `published in the last ${r.new_days} days` : `publicado en ${r.new_days} días`) : null,
+    r.categories?.length ? (en ? `${r.categories.length} ${r.categories.length === 1 ? 'category' : 'categories'}` : `${r.categories.length} categoría(s)`) : null,
+  ].filter(Boolean).join(' · ') || (en ? 'everything nearby' : 'todo lo que haya cerca');
   v.innerHTML = `
     <div class="page-head"><h1>Colecciones</h1><span class="spacer"></span><button class="btn primary sm" id="new">Nueva colección…</button></div>
-    ${helpBox('¿Qué es esto?', '<p>Selecciones con nombre que aparecen en Descubre («Planes para el finde», «Barato y bueno»). Hay dos maneras de llenarlas:</p><p><b>Por regla</b>: defines qué encaja (tipo, cuándo, precio, categoría) y la app enseña lo que haya cerca de cada persona. <b>A dedo</b>: eliges las publicaciones una a una y en el orden que quieras. Una colección con piezas a dedo enseña <b>solo esas</b> y su regla se ignora.</p><p>Lo elegido a dedo sigue pasando por el filtro de siempre: si una publicación caduca o el negocio la retira, se cae sola de la colección. Puedes limitarlas a una <b>ciudad</b> y ponerles <b>fechas</b>: una colección de feria aparece y desaparece sola.</p>')}
+    ${helpBox('¿Qué es esto?', en ? `<p>Named selections that appear in Discover (“Plans for the weekend”, “Cheap and good”). There are two ways to fill them:</p><p><b>By rule</b>: you define what fits (type, when, price, category) and the app shows whatever is near each person. <b>By hand</b>: you pick the publications one by one, in the order you want. A collection with hand-picked items shows <b>only those</b> and its rule is ignored.</p><p>Hand-picked items still go through the usual filter: if a publication expires or the business takes it down, it drops out of the collection by itself. You can limit collections to a <b>city</b> and give them <b>dates</b>: a collection for a local fair appears and disappears by itself.</p>` : '<p>Selecciones con nombre que aparecen en Descubre («Planes para el finde», «Barato y bueno»). Hay dos maneras de llenarlas:</p><p><b>Por regla</b>: defines qué encaja (tipo, cuándo, precio, categoría) y la app enseña lo que haya cerca de cada persona. <b>A dedo</b>: eliges las publicaciones una a una y en el orden que quieras. Una colección con piezas a dedo enseña <b>solo esas</b> y su regla se ignora.</p><p>Lo elegido a dedo sigue pasando por el filtro de siempre: si una publicación caduca o el negocio la retira, se cae sola de la colección. Puedes limitarlas a una <b>ciudad</b> y ponerles <b>fechas</b>: una colección de feria aparece y desaparece sola.</p>')}
     ${table({ cols: [
       { h: 'Colección', r: (c) => `<span class="title">${esc(c.title?.es || c.slug)}<span class="sub">${esc(c.slug)}${c.city ? ' · ' + esc(c.city) : ''} · ${esc(ruleText(c.rules))}</span></span>` },
       { h: 'Estado', r: (c) => c.is_active ? tag('active') : tag('draft') },
@@ -1334,7 +1343,7 @@ async function pintaADedo(v, c) {
     v.innerHTML = `
       <div class="page-head"><a class="btn sm" href="#/colecciones">← Colecciones</a>
         <h1 style="margin-left:10px">${esc(c.title?.es || c.slug)}</h1></div>
-      ${helpBox('¿Cómo va esto?', '<p>Lo que pongas aquí se enseña <b>en este orden</b> y en lugar de la regla de la colección. Si la lista se queda vacía, vuelve a mandar la regla.</p><p>Una publicación caducada o retirada deja de verse sola: no hace falta que la quites.</p>')}
+      ${helpBox('¿Cómo va esto?', I18N.lang === 'en' ? `<p>Whatever you put here is shown <b>in this order</b> and instead of the collection's rule. If the list ends up empty, the rule takes over again.</p><p>An expired or taken-down publication stops showing by itself: you don't need to remove it.</p>` : '<p>Lo que pongas aquí se enseña <b>en este orden</b> y en lugar de la regla de la colección. Si la lista se queda vacía, vuelve a mandar la regla.</p><p>Una publicación caducada o retirada deja de verse sola: no hace falta que la quites.</p>')}
       <div class="card"><h2>En la colección</h2>${table({
         cols: [
           { h: '#', num: true, r: (x, i) => i + 1 },
@@ -1387,14 +1396,14 @@ PAGES.configuracion = async (v) => {
   const limits = await rpc('admin_rate_limits', { p_limit: 50 });
   v.innerHTML = `
     <div class="page-head"><h1>Configuración</h1></div>
-    ${helpBox('¿Qué hago aquí?', '<p><b>Versión mínima</b>: si un usuario abre una versión más antigua de la app, se le pide actualizar (útil tras cambios incompatibles). <b>Mantenimiento</b>: bloquea la app con un mensaje mientras haces un cambio delicado. <b>Envío de push</b>: dirección de la función que manda las notificaciones (no la toques salvo que cambie el proyecto). Abajo, herramientas de mantenimiento y el uso de los límites anti-abuso.</p>')}
+    ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p><b>Minimum version</b>: if a user opens an older version of the app, they're asked to update (useful after breaking changes). <b>Maintenance</b>: blocks the app with a message while you make a delicate change. <b>Push delivery</b>: address of the function that sends the notifications (don't touch it unless the project changes). Below, maintenance tools and usage of the anti-abuse limits.</p>` : '<p><b>Versión mínima</b>: si un usuario abre una versión más antigua de la app, se le pide actualizar (útil tras cambios incompatibles). <b>Mantenimiento</b>: bloquea la app con un mensaje mientras haces un cambio delicado. <b>Envío de push</b>: dirección de la función que manda las notificaciones (no la toques salvo que cambie el proyecto). Abajo, herramientas de mantenimiento y el uso de los límites anti-abuso.</p>')}
     <div class="grid2">
-      <div class="card"><h2>Versión mínima de la app</h2><form id="mvf" style="display:grid;gap:10px"><label class="f"><span>Android</span><input name="android" value="${esc(mv.android || '')}" placeholder="0.1.0"></label><label class="f"><span>iOS</span><input name="ios" value="${esc(mv.ios || '')}" placeholder="0.1.0"></label><div><button class="btn primary sm">Guardar</button> <span class="muted small">actualizado ${fmtDate(cfg.min_version?.updated_at)}</span></div></form></div>
-      <div class="card"><h2>Modo mantenimiento</h2><form id="mtf" style="display:grid;gap:10px"><label class="f" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="enabled" ${mt.enabled ? 'checked' : ''}><span>App en mantenimiento (bloquea a todos los usuarios)</span></label><label class="f"><span>Mensaje</span><textarea name="message">${esc(mt.message || '')}</textarea></label><div><button class="btn ${mt.enabled ? 'bad' : 'primary'} sm">Guardar</button> <span class="muted small">actualizado ${fmtDate(cfg.maintenance?.updated_at)}</span></div></form></div>
+      <div class="card"><h2>Versión mínima de la app</h2><form id="mvf" style="display:grid;gap:10px"><label class="f"><span>Android</span><input name="android" value="${esc(mv.android || '')}" placeholder="0.1.0"></label><label class="f"><span>iOS</span><input name="ios" value="${esc(mv.ios || '')}" placeholder="0.1.0"></label><div><button class="btn primary sm">Guardar</button> <span class="muted small">${I18N.lang === 'en' ? 'updated' : 'actualizado'} ${fmtDate(cfg.min_version?.updated_at)}</span></div></form></div>
+      <div class="card"><h2>Modo mantenimiento</h2><form id="mtf" style="display:grid;gap:10px"><label class="f" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="enabled" ${mt.enabled ? 'checked' : ''}><span>App en mantenimiento (bloquea a todos los usuarios)</span></label><label class="f"><span>Mensaje</span><textarea name="message">${esc(mt.message || '')}</textarea></label><div><button class="btn ${mt.enabled ? 'bad' : 'primary'} sm">Guardar</button> <span class="muted small">${I18N.lang === 'en' ? 'updated' : 'actualizado'} ${fmtDate(cfg.maintenance?.updated_at)}</span></div></form></div>
       <div class="card"><h2>Reglas de publicación</h2><form id="rlf" style="display:grid;gap:10px">
         <label class="f" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="block2x1" ${rl.block_2x1_alcohol === true ? 'checked' : ''}><span>Bloquear promociones <b>2x1 en bebidas alcohólicas</b></span></label>
-        <p class="muted small" style="margin:0">Apagado, que es como está ahora: el negocio declara si su 2x1 lleva alcohol y, si dice que sí, la publicación sale marcada <b>solo para mayores de 18</b>. Encendido, directamente no deja publicarla. Contexto para decidir: la Ley 34/1988 y varias leyes autonómicas prohíben las promociones que incentivan beber más por el mismo dinero («2x1», «barra libre»), aunque el local sea solo para mayores, y la sanción recae en el negocio anunciante.</p>
-        <div><button class="btn primary sm">Guardar</button> <span class="muted small">actualizado ${fmtDate(cfg.rules?.updated_at)}</span></div></form></div>
+        <p class="muted small" style="margin:0">${I18N.lang === 'en' ? `Off, which is how it is now: the business declares whether its two-for-one includes alcohol and, if it says yes, the publication is marked <b>over-18s only</b>. On, it simply won't let them publish it. Context for deciding: Law 34/1988 and several regional laws ban promotions that encourage drinking more for the same money (“2x1”, “open bar”), even if the venue is adults-only, and the fine falls on the advertising business.` : `Apagado, que es como está ahora: el negocio declara si su 2x1 lleva alcohol y, si dice que sí, la publicación sale marcada <b>solo para mayores de 18</b>. Encendido, directamente no deja publicarla. Contexto para decidir: la Ley 34/1988 y varias leyes autonómicas prohíben las promociones que incentivan beber más por el mismo dinero («2x1», «barra libre»), aunque el local sea solo para mayores, y la sanción recae en el negocio anunciante.`}</p>
+        <div><button class="btn primary sm">Guardar</button> <span class="muted small">${I18N.lang === 'en' ? 'updated' : 'actualizado'} ${fmtDate(cfg.rules?.updated_at)}</span></div></form></div>
       <div class="card"><h2>Envío de push</h2><form id="spf" style="display:grid;gap:10px"><label class="f"><span>URL de la función</span><input name="url" value="${esc(sp.url || '')}"></label><label class="f"><span>Clave</span><input name="key" value="${esc(sp.key || '')}"></label><div><button class="btn primary sm">Guardar</button></div></form></div>
       <div class="card"><h2>Mantenimiento</h2><p class="muted small">Las ofertas caducan solas cada 5 minutos (cron). Si ves alguna caducada que sigue apareciendo, fuerza la comprobación.</p><div class="actions"><button class="btn sm" id="expire">Caducar ofertas vencidas ahora</button></div>
         <h3 style="margin-top:16px">Límites anti-abuso (últimas 24 h)</h3>${table({ cols: [{ h: 'Usuario', r: (x) => esc(x.user_email || '—') }, { h: 'Acción', r: (x) => esc(x.action) }, { h: 'Ventana', r: (x) => fmtDate(x.window_start) }, { h: 'Intentos', num: true, r: (x) => x.hits }], rows: limits, empty: 'Nadie ha tocado un límite.' })}</div>
@@ -1404,7 +1413,7 @@ PAGES.configuracion = async (v) => {
   $('#mtf').onsubmit = async (e) => { e.preventDefault(); if (e.target.enabled.checked && !await confirmDlg('Activar mantenimiento', 'Todos los usuarios verán el mensaje y no podrán usar la app hasta que lo desactives.', { danger: true, submit: 'Activar' })) return; save('maintenance', { enabled: e.target.enabled.checked, message: e.target.message.value.trim() || null }); };
   $('#spf').onsubmit = (e) => { e.preventDefault(); save('send_push', { url: e.target.url.value.trim(), key: e.target.key.value.trim() }); };
   $('#rlf').onsubmit = (e) => { e.preventDefault(); save('rules', { block_2x1_alcohol: e.target.block2x1.checked }); };
-  $('#expire').onclick = async () => { try { const n = await rpc('admin_run_expire_offers'); toast(`${n} oferta(s) caducadas`); } catch (e) { toast(e.message, true); } };
+  $('#expire').onclick = async () => { try { const n = await rpc('admin_run_expire_offers'); toast(I18N.lang === 'en' ? `${n} ${n === 1 ? 'offer' : 'offers'} expired` : `${n} oferta(s) caducadas`); } catch (e) { toast(e.message, true); } };
 };
 
 // ── Administradores ─────────────────────────────────────────────────────────
@@ -1450,15 +1459,15 @@ PAGES.actividad = async (v) => {
 PAGES.ayuda = async (v) => {
   v.innerHTML = `
     <div class="page-head"><h1>Ayuda</h1></div>
-    <div class="card"><h2>Cómo funciona Klendar (en 1 minuto)</h2><p>Los <b>negocios</b> se dan de alta desde la app y quedan <b>pendientes</b> hasta que un administrador los verifica. Una vez verificados publican <b>ofertas flash</b> (con cuenta atrás y aforo) y <b>eventos</b>. Los <b>usuarios</b> las ven en Descubre y el mapa, las guardan en Tus planes y las canjean enseñando un <b>código QR de un solo uso</b> que el negocio escanea. Los negocios tienen un <b>plan</b> (Gratis / Básico / Pro) con una prueba inicial; por ahora los cobros se hacen por transferencia y se anotan aquí.</p></div>
+    <div class="card"><h2>Cómo funciona Klendar (en 1 minuto)</h2>${I18N.lang === 'en' ? `<p><b>Businesses</b> sign up from the app and stay <b>pending</b> until an administrator verifies them. Once verified, they publish <b>flash offers</b> (with a countdown and limited places) and <b>events</b>. <b>Users</b> see them in Discover and on the map, save them in Your plans and redeem them by showing a <b>single-use QR code</b> that the business scans. Businesses have a <b>plan</b> (Free / Basic / Pro) with an initial trial; for now payments are made by bank transfer and recorded here.</p>` : `<p>Los <b>negocios</b> se dan de alta desde la app y quedan <b>pendientes</b> hasta que un administrador los verifica. Una vez verificados publican <b>ofertas flash</b> (con cuenta atrás y aforo) y <b>eventos</b>. Los <b>usuarios</b> las ven en Descubre y el mapa, las guardan en Tus planes y las canjean enseñando un <b>código QR de un solo uso</b> que el negocio escanea. Los negocios tienen un <b>plan</b> (Gratis / Básico / Pro) con una prueba inicial; por ahora los cobros se hacen por transferencia y se anotan aquí.</p>`}</div>
     <div class="grid2">
-      <div class="card"><h2>Rutina diaria (5 minutos)</h2><ol style="margin:0;padding-left:18px"><li><b>Resumen</b>: mira «Pendiente de ti».</li><li><b>Negocios pendientes</b>: comprueba que existen (web, teléfono, Google Maps) y verifica o rechaza con motivo.</li><li><b>Publicaciones por moderar</b>: aprueba o retira con motivo.</li><li><b>Denuncias abiertas</b>: revisa y resuelve (siempre con motivo si retiras algo).</li><li><b>Push fallidos</b>: si hay muchos, algo pasa con Firebase.</li></ol></div>
-      <div class="card"><h2>Rutina semanal</h2><ul style="margin:0;padding-left:18px"><li><b>Planes y pagos</b>: suscripciones que vencen en 7 días → contacta con el negocio; registra las transferencias recibidas.</li><li><b>Usuarios</b>: atiende peticiones de acceso o supresión recibidas por email (info@klendar.app).</li><li><b>Sugerencias</b>: lee lo que ha entrado, marca estado y responde lo que merezca respuesta.</li><li><b>Registro de actividad</b>: repasa que todo lo hecho tenga sentido.</li></ul></div>
-      <div class="card"><h2>Criterios de moderación</h2><ul style="margin:0;padding-left:18px"><li>Fotos propias del local o del producto; nada de imágenes de terceros sin permiso.</li><li>Oferta clara y cumplible: precio, condiciones, aforo, horario. Nada engañoso.</li><li>Alcohol: solo negocios +18 marcados, sin incitar al consumo (Ley 34/1988).</li><li>Sin datos personales de terceros, insultos, discriminación ni contenido sexual.</li><li>Ante la duda, marca «en revisión» y pide más información al negocio con «Enviar aviso».</li></ul><p class="muted small" style="margin:8px 0 0">Referencia: <a class="link" href="/normas/" target="_blank">Normas de la comunidad</a> · <a class="link" href="/negocios/" target="_blank">Condiciones para negocios</a>.</p></div>
-      <div class="card"><h2>Obligaciones legales que cubre el panel</h2><ul style="margin:0;padding-left:18px"><li><b>DSA</b> (Reglamento de Servicios Digitales): toda retirada de contenido lleva motivo y vía de recurso (15 días, info@klendar.app); las denuncias se gestionan con diligencia.</li><li><b>RGPD</b>: consentimientos visibles en la ficha del usuario; supresión con «Borrar cuenta»; acceso con «Exportar CSV».</li><li><b>Registro</b>: cada acción administrativa queda registrada con autor y fecha.</li></ul></div>
+      <div class="card">${I18N.lang === 'en' ? `<h2>Daily routine (5 minutes)</h2><ol style="margin:0;padding-left:18px"><li><b>Overview</b>: check “Waiting for you”.</li><li><b>Pending businesses</b>: check that they exist (website, phone, Google Maps) and verify or reject them with a reason.</li><li><b>Publications to moderate</b>: approve or take down with a reason.</li><li><b>Open reports</b>: review and resolve them (always with a reason if you take something down).</li><li><b>Failed push</b>: if there are many, something is wrong with Firebase.</li></ol>` : `<h2>Rutina diaria (5 minutos)</h2><ol style="margin:0;padding-left:18px"><li><b>Resumen</b>: mira «Pendiente de ti».</li><li><b>Negocios pendientes</b>: comprueba que existen (web, teléfono, Google Maps) y verifica o rechaza con motivo.</li><li><b>Publicaciones por moderar</b>: aprueba o retira con motivo.</li><li><b>Denuncias abiertas</b>: revisa y resuelve (siempre con motivo si retiras algo).</li><li><b>Push fallidos</b>: si hay muchos, algo pasa con Firebase.</li></ol>`}</div>
+      <div class="card">${I18N.lang === 'en' ? `<h2>Weekly routine</h2><ul style="margin:0;padding-left:18px"><li><b>Plans and payments</b>: subscriptions expiring in 7 days → contact the business; record the bank transfers received.</li><li><b>Users</b>: handle access or erasure requests received by email (info@klendar.app).</li><li><b>Feedback</b>: read what has come in, set the status and reply to whatever deserves a reply.</li><li><b>Activity log</b>: check that everything that was done makes sense.</li></ul>` : `<h2>Rutina semanal</h2><ul style="margin:0;padding-left:18px"><li><b>Planes y pagos</b>: suscripciones que vencen en 7 días → contacta con el negocio; registra las transferencias recibidas.</li><li><b>Usuarios</b>: atiende peticiones de acceso o supresión recibidas por email (info@klendar.app).</li><li><b>Sugerencias</b>: lee lo que ha entrado, marca estado y responde lo que merezca respuesta.</li><li><b>Registro de actividad</b>: repasa que todo lo hecho tenga sentido.</li></ul>`}</div>
+      <div class="card">${I18N.lang === 'en' ? `<h2>Moderation criteria</h2><ul style="margin:0;padding-left:18px"><li>The venue's or product's own photos; no third-party images without permission.</li><li>A clear offer that can be honoured: price, conditions, places, opening hours. Nothing misleading.</li><li>Alcohol: only businesses marked 18+, without encouraging drinking (Law 34/1988).</li><li>No third parties' personal data, insults, discrimination or sexual content.</li><li>If in doubt, mark it “under review” and ask the business for more information with “Send notification”.</li></ul><p class="muted small" style="margin:8px 0 0">Reference: <a class="link" href="/en/community-guidelines/" target="_blank">Community guidelines</a> · <a class="link" href="/en/business-terms/" target="_blank">Business terms</a>.</p>` : `<h2>Criterios de moderación</h2><ul style="margin:0;padding-left:18px"><li>Fotos propias del local o del producto; nada de imágenes de terceros sin permiso.</li><li>Oferta clara y cumplible: precio, condiciones, aforo, horario. Nada engañoso.</li><li>Alcohol: solo negocios +18 marcados, sin incitar al consumo (Ley 34/1988).</li><li>Sin datos personales de terceros, insultos, discriminación ni contenido sexual.</li><li>Ante la duda, marca «en revisión» y pide más información al negocio con «Enviar aviso».</li></ul><p class="muted small" style="margin:8px 0 0">Referencia: <a class="link" href="/normas/" target="_blank">Normas de la comunidad</a> · <a class="link" href="/negocios/" target="_blank">Condiciones para negocios</a>.</p>`}</div>
+      <div class="card">${I18N.lang === 'en' ? `<h2>Legal duties this panel covers</h2><ul style="margin:0;padding-left:18px"><li><b>DSA</b> (Digital Services Act): every content takedown comes with a reason and a way to appeal (15 days, info@klendar.app); reports are handled diligently.</li><li><b>GDPR</b>: consents visible on the user's page; erasure with “Delete account”; access with “Export CSV”.</li><li><b>Log</b>: every administrative action is logged with its author and date.</li></ul>` : `<h2>Obligaciones legales que cubre el panel</h2><ul style="margin:0;padding-left:18px"><li><b>DSA</b> (Reglamento de Servicios Digitales): toda retirada de contenido lleva motivo y vía de recurso (15 días, info@klendar.app); las denuncias se gestionan con diligencia.</li><li><b>RGPD</b>: consentimientos visibles en la ficha del usuario; supresión con «Borrar cuenta»; acceso con «Exportar CSV».</li><li><b>Registro</b>: cada acción administrativa queda registrada con autor y fecha.</li></ul>`}</div>
     </div>
-    <div class="card"><h2>Atajos</h2><p class="muted" style="margin:0"><code>/</code> salta al buscador de la página · Pulsa en cualquier fila para abrir su ficha · «Exportar CSV» descarga lo que ves con los filtros aplicados.</p></div>
-    <div class="card"><h2>Si algo falla</h2><p class="muted" style="margin:0">Si ves «Esta cuenta no es administradora» pide a otro administrador que te añada. Si el panel no carga datos, comprueba el estado de Supabase (<a class="link" href="https://status.supabase.com" target="_blank" rel="noopener">status.supabase.com</a>). Soporte técnico: dev@klendar.app.</p></div>`;
+    <div class="card"><h2>Atajos</h2><p class="muted" style="margin:0">${I18N.lang === 'en' ? `<code>/</code> jumps to the page's search box · Click any row to open its details · “Export CSV” downloads what you see with the filters applied.` : `<code>/</code> salta al buscador de la página · Pulsa en cualquier fila para abrir su ficha · «Exportar CSV» descarga lo que ves con los filtros aplicados.`}</p></div>
+    <div class="card"><h2>Si algo falla</h2><p class="muted" style="margin:0">${I18N.lang === 'en' ? `If you see “This account is not an administrator”, ask another administrator to add you. If the panel doesn't load any data, check Supabase's status (<a class="link" href="https://status.supabase.com" target="_blank" rel="noopener">status.supabase.com</a>). Technical support: dev@klendar.app.` : `Si ves «Esta cuenta no es administradora» pide a otro administrador que te añada. Si el panel no carga datos, comprueba el estado de Supabase (<a class="link" href="https://status.supabase.com" target="_blank" rel="noopener">status.supabase.com</a>). Soporte técnico: dev@klendar.app.`}</p></div>`;
 };
 
 boot();

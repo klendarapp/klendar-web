@@ -45,7 +45,7 @@ const I18N = makeI18N({
     'Abrir': 'Open',
     'Editar': 'Edit',
     'Quitar': 'Remove',
-    'Borrar': 'Clear',
+    'Borrar': 'Delete',
     'Descargar CSV': 'Download CSV',
     'Exportar CSV': 'Export CSV',
     'Tipo': 'Type',

@@ -429,4 +429,5 @@ const APP_EN = {
   "¿Eliminar tu cuenta?": "Delete your account?",
   "Se borrarán tus datos, favoritos y canjes de forma permanente. Esta acción no se puede deshacer.": "Your data, favourites and redemptions will be permanently deleted. This can't be undone.",
   "Eliminar": "Delete",
+  "Cargando…": "Loading…",
 };
