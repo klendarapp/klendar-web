@@ -84,9 +84,12 @@
 
 /* Orden y vídeos en la galería del formulario */
 .photos .ph-video {
-  width: 104px; height: 104px; border-radius: 14px;
-  background: #0B0F1A; color: #fff; display: grid; place-items: center; font-size: 26px;
+  width: 104px; height: 104px; border-radius: 14px; overflow: hidden; position: relative;
+  background: #0B0F1A; color: #fff; display: grid; place-items: center; font-size: 22px;
 }
+/* El primer fotograma, para reconocer cada vídeo; el ▶ encima dice que lo es. */
+.photos .ph-video video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.photos .ph-video span { position: relative; text-shadow: 0 1px 6px rgba(0,0,0,.6); }
 .photos .ph-cover {
   position: absolute; left: 6px; bottom: 30px;
   background: rgba(0, 0, 0, .55); color: #fff;

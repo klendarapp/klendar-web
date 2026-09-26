@@ -35,6 +35,8 @@ main.pub { padding: 34px 20px 72px; }
 .gallery.solo { grid-template-columns: 1fr; }
 /* El vídeo se ve, pero no arranca solo ni tapa lo demás. */
 .gallery video { background: #000; }
+/* Entero: un vídeo vertical recortado a 16:9 se queda sin la mitad. */
+.gallery > video { object-fit: contain; }
 
 .badges { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; }
 .badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px;

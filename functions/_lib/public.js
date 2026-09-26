@@ -84,7 +84,9 @@ export const firstPhoto = (images) => (images || []).find((u) => !isVideo(u)) ||
  */
 export function media(url, poster) {
   if (!isVideo(url)) return `<img src="${esc(url)}" alt="" loading="lazy">`;
-  return `<video src="${esc(url)}" ${poster ? `poster="${esc(poster)}"` : ''}
+  // Sin foto de portada, «#t=0.1» hace que el navegador enseñe el primer
+  // fotograma en vez de un rectángulo negro.
+  return `<video src="${esc(url)}${poster ? '' : '#t=0.1'}" ${poster ? `poster="${esc(poster)}"` : ''}
     controls playsinline preload="metadata" muted></video>`;
 }
 
@@ -152,7 +154,7 @@ export function publicPage({ lang, path, title, description, head = '', body, im
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/site.css?v=20260928">
-<link rel="stylesheet" href="/assets/public.css?v=8">
+<link rel="stylesheet" href="/assets/public.css?v=9">
 ${head}
 </head>
 <body>

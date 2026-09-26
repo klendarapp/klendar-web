@@ -28,6 +28,20 @@ const LOC = () => (I18N.lang === 'en' ? 'en-GB' : 'es-ES');
 // Publicar, el plan y la ficha son de propietarios y encargados; el personal
 // valida códigos. La base lo hace cumplir igual: esto solo evita botones que
 // no van a funcionar.
+/** Segundos que dura un vídeo elegido (0 si el navegador no lo sabe leer). */
+const duracion = (file) => new Promise((ok) => {
+  const v = document.createElement('video');
+  const url = URL.createObjectURL(file);
+  v.preload = 'metadata';
+  v.onloadedmetadata = () => { URL.revokeObjectURL(url); ok(v.duration || 0); };
+  v.onerror = () => { URL.revokeObjectURL(url); ok(0); };
+  v.src = url;
+});
+
+// Las publicaciones guardan fotos y vídeos en la misma lista.
+const esVideo = (u) => /\.(mp4|mov|webm)(\?|$)/i.test(u || '');
+const primeraFoto = (lista) => (lista || []).find((u) => !esVideo(u)) || null;
+
 const gestiona = () => ['owner', 'manager'].includes(BIZ?.role);
 const fmtDate = (s) => s ? new Date(s).toLocaleString(LOC(), { dateStyle: 'medium', timeStyle: 'short' }) : '—';
 const fmtMoney = (c) => (c == null ? '—' : (c / 100).toLocaleString(I18N.lang === 'en' ? 'en-IE' : 'es-ES', { style: 'currency', currency: 'EUR' }));
@@ -758,7 +772,7 @@ PAGES.publicaciones = async (v, param) => {
   const render = () => {
     $('#list').innerHTML = table({
       cols: [
-        { h: 'Publicación', r: (o) => `${o.images?.[0] ? `<img class="thumb" src="${esc(o.images[0])}" alt="" loading="lazy">` : `<span class="ph">${ms(o.kind === 'flash_offer' ? 'bolt' : 'event')}</span>`}<b class="title">${esc(o.title)}</b><span class="sub">${esc(LABELS[o.kind])} · ${fmtDate(o.kind === 'flash_offer' ? o.redeem_start_at : o.event_at)}</span>` },
+        { h: 'Publicación', r: (o) => `${primeraFoto(o.images) ? `<img class="thumb" src="${esc(primeraFoto(o.images))}" alt="" loading="lazy">` : `<span class="ph">${ms((o.images || []).some(esVideo) ? 'play_circle' : o.kind === 'flash_offer' ? 'bolt' : 'event')}</span>`}<b class="title">${esc(o.title)}</b><span class="sub">${esc(LABELS[o.kind])} · ${fmtDate(o.kind === 'flash_offer' ? o.redeem_start_at : o.event_at)}</span>` },
         { h: 'Estado', r: (o) => tag(o.status) + (o.moderation_status === 'pending' ? ' ' + tag('pending') : '') + (o.publish_at ? ` <span class="tag dim">programada ${esc(fmtDate(o.publish_at))}</span>` : '') },
         { h: 'Plazas', r: (o) => o.max_redemptions == null ? '—' : `${fmtNum(o.redemptions_count + (o.pending_count || 0))}/${fmtNum(o.max_redemptions)}` },
         { h: 'Vistas', num: true, r: (o) => fmtNum(o.views) },
@@ -940,7 +954,7 @@ async function offerForm(v, id, kindDefault) {
     // El orden manda: la primera es la portada. Se mueve con las flechas.
     $('#photos').innerHTML = images.map((u, i) => `
       <div class="ph-item">
-        ${isVideo(u) ? `<div class="ph-video">▶</div>` : `<img src="${esc(u)}" alt="">`}
+        ${isVideo(u) ? `<div class="ph-video"><video src="${esc(u)}#t=0.1" muted playsinline preload="metadata"></video><span>▶</span></div>` : `<img src="${esc(u)}" alt="">`}
         ${i === 0 ? '<span class="ph-cover">Portada</span>' : ''}
         <button class="rm" type="button" data-i="${i}" title="Quitar">×</button>
         <div class="ph-move">
@@ -964,6 +978,8 @@ async function offerForm(v, id, kindDefault) {
         const video = /^video\//.test(file.type);
         const max = video ? 60 * 1024 * 1024 : 5 * 1024 * 1024;
         if (file.size > max) { toast(video ? 'Ese vídeo pesa más de 60 MB.' : 'Esa foto pesa más de 5 MB.', true); continue; }
+        // Como en la app: vídeos de menos de 45 segundos.
+        if (video && (await duracion(file)) > 45.5) { toast('Ese vídeo dura más de 45 segundos. Recórtalo y vuelve a subirlo.', true); continue; }
         const ext = video ? 'mp4' : (file.name.split('.').pop() || 'jpg').toLowerCase();
         const path = `${BIZ.id}/${crypto.randomUUID()}.${ext}`;
         const { error } = await sb.storage.from(BUCKET).upload(path, file, { contentType: file.type });
