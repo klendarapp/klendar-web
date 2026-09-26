@@ -1,4 +1,4 @@
-import { configure, rpcAll } from './_lib/page.js';
+import { configure, datosDePrueba, rpcAll } from './_lib/page.js';
 import { BASE } from './_lib/public.js';
 
 // Sitemap de las agendas por ciudad. Es dinámico porque las ciudades aparecen
@@ -6,6 +6,12 @@ import { BASE } from './_lib/public.js';
 
 export async function onRequestGet(ctx) {
   configure(ctx.env);
+  // Con los datos de prueba de dev, nada que indexar (ver datosDePrueba).
+  if (datosDePrueba()) {
+    return new Response('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>\n', {
+      headers: { 'content-type': 'application/xml; charset=utf-8', 'cache-control': 'public, max-age=3600' },
+    });
+  }
   const cities = (await rpcAll('public_cities', {})).filter((c) => c.city);
   const collections = await rpcAll('public_collections', {});
   const today = new Date().toISOString().slice(0, 10);

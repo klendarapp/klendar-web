@@ -70,6 +70,11 @@ if __name__ == '__main__':
     symbol(1024).save(os.path.join(ASSETS, 'symbol.png'))
     symbol(512).save(os.path.join(ASSETS, 'icon-512.png'))
     symbol(64).save(os.path.join(ASSETS, 'favicon.png'))
+    # Google pide el favicon en múltiplos de 48 px; /favicon.ico lo busca
+    # cualquier navegador o buscador aunque no se enlace.
+    symbol(96).save(os.path.join(ASSETS, 'favicon-96.png'))
+    symbol(192).save(os.path.join(ASSETS, 'icon-192.png'))
+    symbol(48).save(os.path.join(os.path.dirname(ASSETS), 'favicon.ico'), sizes=[(16, 16), (32, 32), (48, 48)])
     # apple-touch-icon: a sangre, el sistema redondea.
     symbol(180, box=180 * 1.18, corner=False).save(os.path.join(ASSETS, 'apple-touch-icon.png'))
     og().save(os.path.join(ASSETS, 'og.png'), optimize=True)

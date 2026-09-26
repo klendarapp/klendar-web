@@ -6,7 +6,7 @@
 // que hay, cuándo y dónde se lee aquí. Eso es lo que Google indexa y lo que
 // se le puede enseñar a un ayuntamiento o a un bar que aún no se fía.
 
-import { BackendDown, esc, html } from './page.js';
+import { BackendDown, datosDePrueba, esc, html } from './page.js';
 
 import { siteFooter, siteHeader } from './chrome.js';
 
@@ -136,6 +136,11 @@ export function publicPage({ lang, path, title, description, head = '', body, im
     ? { how: 'How it works', biz: 'Businesses', sup: 'Support', agenda: "What's on", exp: 'Explore' }
     : { how: 'Cómo funciona', biz: 'Negocios', sup: 'Soporte', agenda: 'Agenda local', exp: 'Explorar' };
   const og = image || `${BASE}/assets/og.png`;
+  // Con los datos de prueba de dev, ninguna página con datos se indexa (y
+  // se quita el «index, follow» que traiga, para no mandar dos órdenes).
+  const cabeza = datosDePrueba()
+    ? `<meta name="robots" content="noindex, follow">\n${head.replace(/<meta name="robots"[^>]*>\s*/g, '')}`
+    : head;
   const es = en ? altPath(path, 'en') : path;
   const enPath = en ? path : altPath(path, 'es');
   return `<!doctype html>
@@ -160,13 +165,13 @@ export function publicPage({ lang, path, title, description, head = '', body, im
 <meta name="twitter:description" content="${esc(description)}">
 <meta name="twitter:image" content="${esc(og)}">
 <meta name="theme-color" content="#0A0A0A">
-<link rel="icon" href="/assets/favicon.png">
+<link rel="icon" href="/favicon.ico" sizes="48x48"><link rel="icon" type="image/png" sizes="96x96" href="/assets/favicon-96.png"><link rel="manifest" href="/site.webmanifest">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/site.css?v=20261003">
 <link rel="stylesheet" href="/assets/public.css?v=15">
-${head}
+${cabeza}
 </head>
 <body>
 ${siteHeader(lang, esc(es), esc(enPath))}

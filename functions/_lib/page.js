@@ -12,6 +12,12 @@ let CFG = {
   key: 'sb_publishable_gNwxFIJGW_o_lGhv3si6IQ_35xHCq30',
 };
 
+/** ¿Estamos enseñando los datos de dev (negocios y ofertas de prueba)? Mientras
+ * sí, las páginas con datos no se indexan: Google no debe guardar negocios
+ * inventados ni fotos de relleno con el nombre de Klendar. Se apaga solo el
+ * día que la web apunte a prod. */
+export const datosDePrueba = () => CFG.url.includes('dpbbtgwxrlqlplbrtjuq');
+
 /** Dirección y clave pública de Supabase (para lo que se llama desde el navegador). */
 export const supabasePublic = () => ({ ...CFG });
 
@@ -107,7 +113,7 @@ export function render({ lang, path, kind, title, description, image, ogTitle, o
   const head = [
     `<title>${esc(ogTitle || t)} · Klendar</title>`,
     `<meta name="description" content="${esc(ogDescription || desc)}">`,
-    `<meta name="robots" content="${notFound ? 'noindex' : 'index, follow'}">`,
+    `<meta name="robots" content="${notFound || datosDePrueba() ? 'noindex' : 'index, follow'}">`,
     `<link rel="canonical" href="${BASE}${esc(path)}">`,
     '<meta property="og:site_name" content="Klendar">',
     `<meta property="og:type" content="${kind === 'b' ? 'business.business' : 'website'}">`,
@@ -131,7 +137,7 @@ export function render({ lang, path, kind, title, description, image, ogTitle, o
 <meta name="viewport" content="width=device-width, initial-scale=1">
 ${head}
 <meta name="theme-color" content="#0A0A0A">
-<link rel="icon" href="/assets/favicon.png">
+<link rel="icon" href="/favicon.ico" sizes="48x48"><link rel="icon" type="image/png" sizes="96x96" href="/assets/favicon-96.png"><link rel="manifest" href="/site.webmanifest">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -169,4 +175,4 @@ export function pickLang(request) {
 }
 
 export const html = (body, status = 200, cache = 'public, max-age=60, s-maxage=300') =>
-  new Response(body, { status, headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': cache, 'x-robots-tag': status === 404 ? 'noindex' : 'all' } });
+  new Response(body, { status, headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': cache, 'x-robots-tag': status === 404 || datosDePrueba() ? 'noindex' : 'all' } });
