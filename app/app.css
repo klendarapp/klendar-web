@@ -213,7 +213,7 @@ input[type=file] { max-width: 100%; }
 .formu .pie-form { font-size: 13px; margin: 0; }
 .formu .pie-form a { white-space: nowrap; }
 /* Las otras formas de entrar, una debajo de otra y del mismo ancho. */
-.alternativas, .google-hueco .acciones { display: grid; gap: 10px; margin: 0; }
+.alternativas, .google-hueco .acciones { display: grid; grid-template-columns: 1fr; gap: 10px; margin: 0; }
 .alternativas > *, .google-hueco .acciones > * { width: 100%; justify-content: center; }
 .alternativas + .google-hueco { margin-top: 10px; }
 .formu .acciones { margin: 0; }
