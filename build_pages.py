@@ -90,7 +90,7 @@ PAGINAS['para-negocios'] = (
 
 <h2>Empezar</h2>
 <p>Estamos empezando, así que si en tu ciudad todavía no hay nadie, escríbenos y lo arrancamos contigo: <a href="mailto:info@klendar.app">info@klendar.app</a>.</p>
-<p style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px">
+<p class="acciones" style="margin-top:18px">
   <a class="pill accent" href="mailto:info@klendar.app?subject=Quiero%20dar%20de%20alta%20mi%20negocio">Escríbenos</a>
   <a class="pill ghost" href="/panel/">Entrar al panel</a>
   <a class="pill ghost" href="/precios/">Ver precios</a>
@@ -158,7 +158,7 @@ PAGINAS['para-negocios'] = (
 
 <h2>Getting started</h2>
 <p>We are just starting, so if nobody is on Klendar in your city yet, write to us and we will get it going with you: <a href="mailto:info@klendar.app">info@klendar.app</a>.</p>
-<p style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px">
+<p class="acciones" style="margin-top:18px">
   <a class="pill accent" href="mailto:info@klendar.app?subject=I%20want%20to%20register%20my%20business">Write to us</a>
   <a class="pill ghost" href="/panel/">Go to the dashboard</a>
   <a class="pill ghost" href="/en/pricing/">See pricing</a>

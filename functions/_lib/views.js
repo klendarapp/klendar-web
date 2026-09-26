@@ -14,6 +14,20 @@ import {
   media, money, offerCard, openInApp, priorPrice, publicPage,
 } from './public.js';
 
+// Iconos de Material (los mismos que la app), en SVG: las páginas públicas
+// no cargan la fuente de iconos.
+const PATHS = {
+  lugar: 'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z',
+  telefono: 'M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z',
+  web: 'M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z',
+  carta: 'M8.1 13.34l2.83-2.83L3.91 3.5c-1.56 1.56-1.56 4.09 0 5.66l4.19 4.18zm6.78-1.81c1.53.71 3.68.21 5.27-1.38 1.91-1.91 2.28-4.65.81-6.12-1.46-1.46-4.2-1.1-6.12.81-1.59 1.59-2.09 3.74-1.38 5.27L3.7 19.87l1.41 1.41L12 14.41l6.88 6.88 1.41-1.41L13.41 13l1.47-1.47z',
+  correo: 'M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z',
+  redes: 'M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z',
+  pdf: 'M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z',
+  resena: 'M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 14v-2.47l6.88-6.88c.2-.2.51-.2.71 0l1.77 1.77c.2.2.2.51 0 .71L8.47 14H6zm12 0h-7.5l2-2H18v2z',
+};
+const icono = (n, size = 18) => `<svg class="ic" viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true"><path fill="currentColor" d="${PATHS[n]}"/></svg>`;
+
 const pre = (lang) => (lang === 'en' ? '/en' : '');
 const notFound = (lang, path, kind) =>
   html(render({ lang, path, kind, notFound: true }), 404, 'no-store');
@@ -260,12 +274,12 @@ export async function businessPage(id, lang) {
       <a class="pill accent big" href="/app/#/seguir/${encodeURIComponent(b.id)}"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.8 4.5c2.2 0 3.6 1.2 5.2 3 1.6-1.8 3-3 5.2-3 3.8 0 5.9 3.9 4.4 7.3C19.5 16.4 12 21 12 21z"/></svg> ${S.open}</a>
       <p class="note" style="margin-bottom:16px">${S.note}</p>
       <div class="info">
-        ${where ? `<div><span>📍</span><span>${maps ? `<a href="${esc(maps)}" rel="nofollow noopener" target="_blank">${esc(where)}</a>` : esc(where)}</span></div>` : ''}
-        ${b.phone ? `<div><span>📞</span><span><a href="tel:${esc(b.phone)}">${esc(b.phone)}</a></span></div>` : ''}
-        ${b.website ? `<div><span>🔗</span><span><a href="${esc(b.website)}" rel="nofollow noopener" target="_blank">${esc(String(b.website).replace(/^https?:\/\//, ''))}</a></span></div>` : ''}
-        ${b.menu_url ? `<div><span>📋</span><span><a href="${esc(b.menu_url)}" rel="nofollow noopener" target="_blank">${S.menu}</a></span></div>` : ''}
-        ${b.contact_email ? `<div><span>✉️</span><span><a href="mailto:${esc(b.contact_email)}">${esc(b.contact_email)}</a></span></div>` : ''}
-        ${redes.length ? `<div><span>💬</span><span>${redes.join(' · ')}</span></div>` : ''}
+        ${where ? `<div><span>${icono('lugar')}</span><span>${maps ? `<a href="${esc(maps)}" rel="nofollow noopener" target="_blank">${esc(where)}</a>` : esc(where)}</span></div>` : ''}
+        ${b.phone ? `<div><span>${icono('telefono')}</span><span><a href="tel:${esc(b.phone)}">${esc(b.phone)}</a></span></div>` : ''}
+        ${b.website ? `<div><span>${icono('web')}</span><span><a href="${esc(b.website)}" rel="nofollow noopener" target="_blank">${esc(String(b.website).replace(/^https?:\/\//, ''))}</a></span></div>` : ''}
+        ${b.menu_url ? `<div><span>${icono('carta')}</span><span><a href="${esc(b.menu_url)}" rel="nofollow noopener" target="_blank">${S.menu}</a></span></div>` : ''}
+        ${b.contact_email ? `<div><span>${icono('correo')}</span><span><a href="mailto:${esc(b.contact_email)}">${esc(b.contact_email)}</a></span></div>` : ''}
+        ${redes.length ? `<div><span>${icono('redes')}</span><span>${redes.join(' · ')}</span></div>` : ''}
       </div>
       ${horario ? `<h2 class="side-h">${S.hours}</h2>${horario}` : ''}
     </aside>
@@ -286,7 +300,7 @@ export async function businessPage(id, lang) {
         <p class="note">${esc(S.menuNote)}</p>` : ''}
       ${fotosCarta.length ? `${carta.length ? '' : `<h2>${S.menu}</h2>`}
         <div class="carta-fotos">${fotosCarta.map((u) => /\.pdf($|\?)/i.test(u)
-          ? `<a class="pill" href="${esc(u)}" target="_blank" rel="noopener">📄 ${S.menuPdf}</a>`
+          ? `<a class="pill" href="${esc(u)}" target="_blank" rel="noopener">${icono('pdf', 16)} ${S.menuPdf}</a>`
           : `<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt="${S.menuPhotos}" loading="lazy"></a>`).join('')}</div>` : ''}
       ${flash.length ? `<h2>${S.now}</h2><div class="olist">${flash.map((o) => offerCard(o, lang)).join('')}</div>` : ''}
       ${events.length ? `<h2>${S.soon}</h2><div class="olist">${events.map((o) => offerCard(o, lang)).join('')}</div>` : ''}
@@ -298,7 +312,7 @@ export async function businessPage(id, lang) {
           ${p.image_url ? `<img src="${esc(p.image_url)}" alt="" loading="lazy">` : ''}
         </article>`).join('')}</div>` : ''}
       <h2 id="resenas">${S.reviews}${b.rating && b.ratings ? ` <small class="muted">★ ${Number(b.rating).toFixed(1)} (${b.ratings})</small>` : ''}</h2>
-      <p><a class="pill" href="/app/#/opinar/${encodeURIComponent(b.id)}">★ ${S.write}</a></p>
+      <p><a class="pill" href="/app/#/opinar/${encodeURIComponent(b.id)}">${icono('resena', 16)} ${S.write}</a></p>
       ${opiniones.length ? `<div class="resenas">${opiniones.map((r) => `<article>
           <header>${r.avatar_url ? `<img class="av" src="${esc(r.avatar_url)}" alt="" loading="lazy">` : `<span class="av">${esc((r.display_name || S.user).trim().charAt(0).toUpperCase())}</span>`}
             <span><b>${esc(r.display_name || S.user)}</b><small class="muted">${esc(fmtWhen(r.created_at, lang))}</small></span>

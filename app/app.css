@@ -70,10 +70,13 @@
 .formu output { font-weight: 800; color: var(--ink); }
 .chips { display: flex !important; flex-wrap: wrap; gap: 8px !important; }
 .chips legend { width: 100%; }
-.chips label { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 999px;
+.chips label { position: relative; display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 999px;
   border: 1px solid var(--glass-border); background: var(--glass); font-weight: 600; font-size: 14px; cursor: pointer; }
-.chips label:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
-.chips input { accent-color: var(--accent); }
+/* Como en la app: la opción elegida va rellena de acento, sin casilla. La
+   casilla sigue ahí (teclado y lector de pantalla), solo que no se ve. */
+.chips label:has(input:checked) { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
+.chips label:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.chips input { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
 .horas { grid-template-columns: 1fr 1fr; }
 .horas legend { grid-column: 1 / -1; }
 .motivos label { font-weight: 400; }
@@ -103,8 +106,9 @@ a.aviso:hover { text-decoration: none; border-color: var(--accent); }
 .aviso.nuevo { border-color: var(--accent); box-shadow: inset 4px 0 0 var(--accent); }
 .aviso span { color: var(--ink-2); }
 .aviso.pausada { opacity: .7; }
-.aviso .acciones { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
-.acciones { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+/* En la fila de un aviso, botones pequeños a su medida. */
+.aviso .acciones { justify-content: flex-start; margin-top: 8px; }
+.aviso .acciones > * { flex: 0 0 auto; }
 
 /* Estrellas: cinco radios, de derecha a izquierda para que «hasta aquí» se
    pinte con el selector de hermanos. */

@@ -216,3 +216,10 @@ details.faq summary::after { content: '+'; float: right; color: var(--accent-tex
 details.faq[open] summary::after { content: '–'; }
 details.faq p { margin: 10px 0 0; color: var(--ink-2); }
 .doc .lead { font-size: 18px; color: var(--ink); }
+
+/* Grupos de botones (acciones de una ficha, llamadas a la acción): columnas
+   iguales, dos por fila, y si sobra uno va centrado. Un botón cuyo texto no
+   cabe en media fila ocupa la fila entera. Lo mismo que ActionGrid en la app. */
+.acciones { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.acciones > * { flex: 1 1 calc(50% - 4px); justify-content: center; text-align: center; margin: 0; white-space: nowrap; }
+.acciones > :last-child:nth-child(odd) { flex-grow: 0; }

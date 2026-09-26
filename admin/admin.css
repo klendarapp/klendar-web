@@ -112,7 +112,13 @@ table.tbl td.num { text-align: right; font-variant-numeric: tabular-nums; }
 table.tbl .thumb { width: 40px; height: 40px; border-radius: 10px; object-fit: cover; background: var(--accent-soft); display: inline-block; vertical-align: middle; margin-right: 8px; }
 table.tbl .ph { width: 40px; height: 40px; border-radius: 10px; background: var(--accent-soft); display: inline-grid; place-items: center; vertical-align: middle; margin-right: 8px; font-size: 18px; }
 table.tbl .title { font-weight: 700; }
-table.tbl .sub { display: block; color: var(--ink-2); font-size: 12px; font-weight: 500; }
+/* Celda con miniatura: la imagen a la izquierda y el texto al lado, sin que
+   el título se parta alrededor de ella. */
+table.tbl td:has(> .thumb:first-child, > .ph:first-child) { position: relative; padding-left: 64px; min-width: 200px; }
+table.tbl td:has(> .thumb:first-child, > .ph:first-child) > :is(.thumb, .ph):first-child { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); margin: 0; }
+table.tbl td:has(> .thumb:first-child, > .ph:first-child) > .title { display: block; }
+/* .sub también es el subtítulo de la portada (site.css): aquí, sin su margen ni su centrado. */
+table.tbl .sub { display: block; color: var(--ink-2); font-size: 12px; font-weight: 500; margin: 0; max-width: none; }
 .pager { display: flex; gap: 8px; align-items: center; margin-top: 12px; font-size: 14px; color: var(--ink-2); flex-wrap: wrap; }
 .pager .spacer { flex: 1; }
 .empty { padding: 30px; text-align: center; color: var(--ink-2); }

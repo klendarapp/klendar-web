@@ -186,7 +186,7 @@ def head(t, path, page_title=None, page_desc=None, extra=''):
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/site.css?v=20260928">
+<link rel="stylesheet" href="/assets/site.css?v=20260930">
 <link rel="stylesheet" href="/assets/public.css?v=2">
 {extra}
 </head>
@@ -315,7 +315,7 @@ def landing(t):
       <h2>{t['biz_h2']}</h2>
       <p class="sub">{t['biz_sub']}</p>
       <ul>{points}</ul>
-      <p style="margin:0;display:flex;gap:10px;flex-wrap:wrap"><a class="pill accent" href="{mail}">{t['biz_cta']}</a> <a class="pill ghost" href="{t['biz_panel_url']}">{t['biz_panel']}</a> <a class="pill ghost" href="{t['biz_terms_url']}">{t['biz_terms']}</a></p>
+      <p class="acciones" style="margin:0"><a class="pill accent" href="{mail}">{t['biz_cta']}</a> <a class="pill ghost" href="{t['biz_panel_url']}">{t['biz_panel']}</a> <a class="pill ghost" href="{t['biz_terms_url']}">{t['biz_terms']}</a></p>
       <p class="note" style="color:inherit;opacity:.7">{t['biz_panel_note']}</p>
       <p class="note" style="color:inherit;opacity:.7">{t['biz_note']}</p>
       <p class="note" style="color:inherit;opacity:.85">{t['biz_kit']}</p>

@@ -207,3 +207,41 @@ input[type=file] { max-width: 100%; }
 .scan-result .ms { font-size: 22px; vertical-align: -5px; margin-right: 6px; }
 .scan-result small .ms { font-size: 16px; vertical-align: -3px; margin-right: 4px; }
 .card h2 .ms { font-size: 22px; vertical-align: -4px; color: var(--accent-text); }
+
+/* Botones de una fila de la tabla: si no caben en una línea, cada línea se
+   rellena entera (nada escalonado). */
+table.tbl .actions > * { flex: 1 1 auto; justify-content: center; white-space: nowrap; }
+
+/* ── Móvil: tablas como tarjetas y botones en columnas iguales ─────────────
+   Una tabla de cinco columnas no cabe en 375 px: se salía por la derecha y
+   los botones de cada fila se amontonaban en una columna estrecha. */
+@media (max-width: 640px) {
+  .tbl-wrap { overflow: visible; }
+  table.tbl, table.tbl tbody, table.tbl tr, table.tbl td { display: block; width: auto; }
+  table.tbl thead { display: none; }
+  table.tbl tr { padding: 14px 14px 12px; border-bottom: 1px solid var(--glass-border); }
+  table.tbl tr:last-child { border-bottom: 0; }
+  table.tbl td { border: 0; padding: 3px 0; text-align: left; }
+  /* Cada dato con su etiqueta, en una línea: «Vistas ········ 12». */
+  table.tbl td[data-label]:not(:first-child) { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; }
+  table.tbl td[data-label]:not(:first-child)::before { content: attr(data-label); color: var(--ink-2); font-size: 13px; }
+  /* La publicación: icono a la izquierda, título y fecha al lado. */
+  table.tbl td:first-child { position: relative; min-height: 40px; padding: 0 0 10px 52px; text-align: left; }
+  table.tbl td:first-child > .ph, table.tbl td:first-child > .thumb { position: absolute; left: 0; top: 0; transform: none; margin: 0; }
+  table.tbl td:first-child > .title, table.tbl td:first-child > .sub { display: block; margin: 0; }
+  table.tbl td:not([data-label]), table.tbl td[data-label=""] { padding-top: 10px; }
+  table.tbl td:not([data-label])::before { content: none; }
+  /* Botones de la fila: dos por línea, el que sobra centrado (como en la app). */
+  table.tbl .actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  table.tbl .actions > * { flex: 1 1 calc(50% - 4px); justify-content: center; white-space: nowrap; }
+  table.tbl .actions > :last-child:nth-child(odd) { flex-grow: 0; }
+  /* Cifras de dos en dos, como en la app; si sobra una, a lo ancho. */
+  .kpis { grid-template-columns: repeat(2, 1fr); }
+  .kpis > :last-child:nth-child(odd) { grid-column: 1 / -1; }
+  /* Cabecera: el título en su línea y los botones repartidos debajo. */
+  .page-head { flex-wrap: wrap; }
+  .page-head > h1, .page-head > h2 { flex-basis: 100%; }
+  .page-head > .spacer { display: none; }
+  .page-head { column-gap: 8px; row-gap: 10px; justify-content: center; }
+  .page-head > .btn { flex: 1 1 calc(50% - 4px); justify-content: center; white-space: nowrap; }
+}

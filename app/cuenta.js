@@ -217,7 +217,7 @@ RUTAS.alerta = async ([id]) => {
       <label class="check"><input type="checkbox" name="fija"${a.lat != null ? ' checked' : ''}>
         <span><b>${esc(t('Vigilar una zona fija'))}</b><br><small id="fija-txt"></small></span></label>
       <div id="zona" ${a.lat != null ? '' : 'hidden'}>
-        <p class="acciones"><button type="button" class="pill" id="aqui">📍 ${esc(t('Usar dónde estoy ahora'))}</button></p>
+        <p class="acciones"><button type="button" class="pill" id="aqui">${ic('my_location')}${esc(t('Usar dónde estoy ahora'))}</button></p>
         <p class="muted" id="zona-txt">${a.lat != null ? esc(`${t('Zona guardada')}: ${a.place_label || `${a.lat.toFixed(4)}, ${a.lng.toFixed(4)}`}`) : ''}</p>
         <label>${esc(t('Nombre de la zona'))} <small>${esc(t('(opcional, p. ej. «casa» o «el trabajo»)'))}</small>
           <input name="place" maxlength="60" value="${esc(a.place_label || '')}"></label>
