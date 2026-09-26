@@ -673,7 +673,17 @@ RUTAS.codigo = async ([id], params) => {
       <p class="codigo">${esc(codigoLegible(tk.code))}</p>
       <p class="muted" id="cuenta"></p>
       <p class="muted">${esc(t('Enséñalo en el sitio. Si no pueden escanearlo, que escriban el código de debajo.'))}</p>
+      ${largo ? `<p><button class="pill" id="anular" type="button">${esc(t('Ya no voy: anular la reserva'))}</button></p>` : ''}
     </div>`);
+  // «Ya no voy»: las plazas quedan libres y la lista de espera se entera.
+  $('#anular')?.addEventListener('click', async () => {
+    if (!confirm(t('Tus plazas quedan libres para otra persona y este código deja de valer. ¿Anular la reserva?'))) return;
+    try {
+      const r = await llamar('cancel_redemption', { p_code: tk.code });
+      toast(r?.ok ? t('Reserva anulada. Gracias por dejar el sitio libre.') : t('Esta reserva ya no se podía anular (se usó o ha caducado).'), !r?.ok);
+      if (r?.ok) vuelve('codigos');
+    } catch (e) { toast(amable(e.message), true); }
+  });
   const qr = window.qrcode(0, 'M');
   qr.addData(url);
   qr.make();
