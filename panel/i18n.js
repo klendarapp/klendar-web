@@ -25,6 +25,8 @@ const I18N = makeI18N({
     'Negocio': 'Business',
     'Sesión': 'Session',
     'Salir': 'Log out',
+    'Publicar es cosa de quien lleva el negocio. Tú puedes': 'Publishing is for whoever runs the business. You can',
+    'validar códigos': 'validate codes',
     'Menú': 'Menu',
     'Resumen': 'Overview',
     'Publicaciones': 'Publications',

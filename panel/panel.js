@@ -25,6 +25,10 @@ const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const ms = (name) => `<span class="ms" aria-hidden="true">${name}</span>`;
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const LOC = () => (I18N.lang === 'en' ? 'en-GB' : 'es-ES');
+// Publicar, el plan y la ficha son de propietarios y encargados; el personal
+// valida códigos. La base lo hace cumplir igual: esto solo evita botones que
+// no van a funcionar.
+const gestiona = () => ['owner', 'manager'].includes(BIZ?.role);
 const fmtDate = (s) => s ? new Date(s).toLocaleString(LOC(), { dateStyle: 'medium', timeStyle: 'short' }) : '—';
 const fmtMoney = (c) => (c == null ? '—' : (c / 100).toLocaleString(I18N.lang === 'en' ? 'en-IE' : 'es-ES', { style: 'currency', currency: 'EUR' }));
 const fmtNum = (n) => (n ?? 0).toLocaleString(LOC());
@@ -607,9 +611,9 @@ PAGES.resumen = async (v) => {
       <a class="btn sm ghost" href="${APP_URL}/b/${esc(BIZ.id)}" target="_blank" rel="noopener">Ver ficha pública ↗</a></div>
     ${BIZ.verification_status !== 'verified' ? `<div class="help"><b>Tu negocio está ${esc(LABELS[BIZ.verification_status] || BIZ.verification_status)}.</b> Mientras tanto puedes preparar publicaciones en borrador; se verán en cuanto te verifiquemos.</div>` : ''}
     <div class="quick">
-      <button class="primary" data-go="nueva-flash"><span class="ic ms" aria-hidden="true">bolt</span>Nueva oferta flash<small>Canjeable con QR durante unas horas</small></button>
-      <button data-go="nuevo-evento"><span class="ic ms" aria-hidden="true">event</span>Nuevo evento<small>Con fecha, aforo y reserva de plaza</small></button>
-      <button data-go="validar"><span class="ic ms" aria-hidden="true">qr_code_scanner</span>Validar un código<small>Con la cámara o escribiendo el código</small></button>
+      ${gestiona() ? `<button class="primary" data-go="nueva-flash"><span class="ic ms" aria-hidden="true">bolt</span>Nueva oferta flash<small>Canjeable con QR durante unas horas</small></button>
+      <button data-go="nuevo-evento"><span class="ic ms" aria-hidden="true">event</span>Nuevo evento<small>Con fecha, aforo y reserva de plaza</small></button>` : ''}
+      <button ${gestiona() ? '' : 'class="primary" '}data-go="validar"><span class="ic ms" aria-hidden="true">qr_code_scanner</span>Validar un código<small>Con la cámara o escribiendo el código</small></button>
     </div>
     <div class="card" style="margin-top:14px"><h2>Cómo va</h2>
       <div class="kpis">
@@ -620,7 +624,7 @@ PAGES.resumen = async (v) => {
         <div class="kpi"><b>${fmtNum(pending.length)}</b><span>Publicaciones activas</span></div>
       </div>
     </div>
-    ${sub ? planCard(sub) : ''}
+    ${sub && gestiona() ? planCard(sub) : ''}
     <div class="card"><h2>Klendar en tu web</h2>
       <p class="muted" style="margin:0 0 8px">Pega esta línea donde quieras que salga lo que tienes publicado. Se actualiza solo: no tienes que tocar nada más.</p>
       <pre id="wcode" class="code">&lt;script src="https://klendar.app/widget.js" data-klendar="${esc(BIZ.id)}"&gt;&lt;/script&gt;</pre>
@@ -656,6 +660,11 @@ PAGES.resumen = async (v) => {
 
 // ── Publicaciones ───────────────────────────────────────────────────────────
 PAGES.publicaciones = async (v, param) => {
+  if (!gestiona() && (param === 'nueva-flash' || param === 'nuevo-evento')) {
+    v.innerHTML = '<div class="card"><p style="margin:0">Publicar es cosa de quien lleva el negocio. Tú puedes <a class="link" href="#/validar">validar códigos</a>.</p></div>';
+    I18N.translate(v);
+    return;
+  }
   if (param === 'nueva-flash') return offerForm(v, null, 'flash_offer');
   if (param === 'nuevo-evento') return offerForm(v, null, 'future_event');
   if (param) return offerForm(v, param);
@@ -667,8 +676,8 @@ PAGES.publicaciones = async (v, param) => {
   OTROS_LOCALES = otros || [];
   v.innerHTML = `
     <div class="page-head"><h1>Publicaciones</h1><span class="spacer"></span>
-      <a class="btn sm" href="#/publicaciones/nueva-flash">${ms('bolt')}Nueva oferta</a>
-      <a class="btn sm" href="#/publicaciones/nuevo-evento">${ms('event')}Nuevo evento</a>
+      ${gestiona() ? `<a class="btn sm" href="#/publicaciones/nueva-flash">${ms('bolt')}Nueva oferta</a>
+      <a class="btn sm" href="#/publicaciones/nuevo-evento">${ms('event')}Nuevo evento</a>` : ''}
       <button class="btn sm ghost" id="csv">Exportar CSV</button></div>
     ${helpBox('¿Oferta o evento?', '<p><b>Oferta flash</b>: algo que se canjea hoy, con cuenta atrás y aforo («café + tostada 2,50 € hasta mediodía»). <b>Evento</b>: algo con fecha, que se guarda en la agenda y puede admitir reserva de plaza.</p>')}
     <div id="list"></div>
@@ -754,7 +763,9 @@ PAGES.publicaciones = async (v, param) => {
         { h: 'Plazas', r: (o) => o.max_redemptions == null ? '—' : `${fmtNum(o.redemptions_count + (o.pending_count || 0))}/${fmtNum(o.max_redemptions)}` },
         { h: 'Vistas', num: true, r: (o) => fmtNum(o.views) },
         { h: 'Canjes', num: true, r: (o) => fmtNum(o.redemptions_count) },
-        { h: '', r: (o) => `<div class="actions">
+        { h: '', r: (o) => !gestiona()
+          ? (o.kind === 'future_event' && o.reservations_enabled ? `<div class="actions"><a class="btn sm ghost" href="#/asistentes/${esc(o.id)}">Asistentes</a></div>` : '')
+          : `<div class="actions">
             <a class="btn sm" href="#/publicaciones/${esc(o.id)}">Editar</a>
             ${o.kind === 'future_event' && o.reservations_enabled ? `<a class="btn sm ghost" href="#/asistentes/${esc(o.id)}">Asistentes</a>` : ''}
             <button class="btn sm ghost" data-act="${o.status === 'active' ? 'pause' : 'activate'}" data-id="${esc(o.id)}">${o.status === 'active' ? 'Pausar' : 'Activar'}</button>
