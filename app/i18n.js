@@ -80,7 +80,7 @@ const APP_EN = {
   'Para usar Klendar hay que tener 14 años o más.': 'You need to be 14 or older to use Klendar.',
   'Tienes que aceptar los términos y la privacidad.': 'You need to accept the terms and the privacy policy.',
   'Mira tu correo': 'Check your email',
-  'Te hemos mandado un enlace para confirmar la cuenta. Ábrelo y ya puedes entrar.': 'We have sent you a link to confirm your account. Open it and you can sign in.',
+  'Te hemos mandado un enlace para confirmar la cuenta. Ábrelo y ya puedes entrar.': 'We have sent you a link to confirm your account. Open it and you can log in.',
   'Ir a entrar': 'Go to log in',
   'Cuenta creada': 'Account created',
 

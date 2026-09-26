@@ -4,7 +4,7 @@
 
 const I18N = makeI18N({
     // ── Entrada ───────────────────────────────────────────────────────────
-    'Entra en tu panel': 'Sign in to your dashboard',
+    'Entra en tu panel': 'Log in to your dashboard',
     'Con la misma cuenta que usas en la app. Si tu negocio todavía no está dado de alta, hazlo desde la app: Perfil → Dar de alta mi negocio.':
       'With the same account you use in the app. If your business is not registered yet, do it from the app: Profile → Register my business.',
     'Email': 'Email',
@@ -362,7 +362,7 @@ const I18N = makeI18N({
     'Cómo funciona ↗': 'How it works ↗',
     'Todavía no tienes ningún negocio': 'You do not have a business yet',
     'Si alguien te ha añadido a su equipo, entra con el mismo correo con el que te invitaron.':
-      'If someone added you to their team, sign in with the same email they invited.',
+      'If someone added you to their team, log in with the same email they invited.',
     // ── Alta y mapa ─────────────────────────────────────────────────────
     "Con la misma cuenta que usas en la app o en la web. Si tu negocio todavía no está dado de alta, entra y lo das de alta aquí mismo.": "With the same account you use in the app or on the website. If your business is not registered yet, sign in and register it right here.",
     "¿Aún no tienes cuenta?": "No account yet?",
