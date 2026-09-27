@@ -383,7 +383,7 @@ async function boot() {
     }
   } catch { /* sin red: no se bloquea */ }
   $('#who').textContent = ME.email || ME.phone || '';
-  $('#login').hidden = true; $('#app').hidden = false;
+  $('#app').hidden = false;
 
   BIZZES = await rpc('my_businesses');
   // Quien llega del registro de negocio trae ?alta=1: se limpia la dirección.
@@ -400,7 +400,14 @@ async function boot() {
   try { CATS = (await sb.from('categories').select('id, slug, names, position').order('position')).data || []; } catch { CATS = []; }
   route();
 }
-function showLogin() { $('#login').hidden = false; $('#app').hidden = true; ME = null; }
+/** Sin sesión: a la pantalla de entrar de siempre (la de «Tu cuenta»), que
+ * devuelve aquí, a la misma página del panel, al entrar. Una sola cuenta y
+ * una sola forma de entrar, como en la app. */
+function showLogin() {
+  ME = null;
+  const aqui = `/panel/${location.search}${location.hash}`;
+  location.replace(`/app/?destino=${encodeURIComponent(aqui)}#/entrar`);
+}
 async function noBusiness() {
   $('#nav').innerHTML = '';
   $('.bizpick').hidden = true;
@@ -421,62 +428,15 @@ function renderBizPicker() {
   };
 }
 
-// Entrar: los mismos mensajes que la app y que «Tu cuenta» (assets/auth-errors.js).
-const errAuth = (error) => window.KL_AUTH_ERROR(error, I18N.lang);
-/** Bloquea el botón mientras se espera, para no mandar dos veces. */
-async function esperando(boton, trabajo) {
-  if (boton.disabled) return;
-  boton.disabled = true;
-  try { await trabajo(); } finally { boton.disabled = false; }
-}
-$('#doLogin').onclick = () => {
-  $('#loginErr').textContent = '';
-  if (!KL_VALIDA.correoYClave(I18N.lang, $('#email'), $('#password'))) return;
-  esperando($('#doLogin'), async () => {
-    const { error } = await sb.auth.signInWithPassword({ email: $('#email').value.trim(), password: $('#password').value });
-    if (error) { $('#loginErr').textContent = errAuth(error); return; }
-    boot();
-  });
+let saliendo = false;
+$('#logout').onclick = async (e) => {
+  e.preventDefault();
+  saliendo = true;
+  await sb.auth.signOut();
+  location.href = '/';
 };
-$('#doReset').onclick = () => {
-  $('#loginErr').textContent = '';
-  KL_CAMPO($('#password'), null);
-  if (!KL_VALIDA.correoYClave(I18N.lang, $('#email'))) return;
-  esperando($('#doReset'), async () => {
-    // La contraseña nueva se pone en «Tu cuenta» (la misma pantalla que para
-    // todo el mundo) y al guardarla se vuelve aquí.
-    const { error } = await sb.auth.resetPasswordForEmail($('#email').value.trim(),
-      { redirectTo: `${location.origin}/app/?destino=%2Fpanel%2F#/nueva-clave` });
-    if (error) { $('#loginErr').textContent = errAuth(error); return; }
-    toast(I18N.lang === 'en'
-      ? `If ${$('#email').value.trim()} has an account, it'll get an email in a few seconds. Check spam too.`
-      : `Si ${$('#email').value.trim()} tiene cuenta, recibirá un correo en unos segundos. Mira también en spam.`);
-  });
-};
-$('#password').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('#doLogin').click(); });
-
-// Google, Apple y teléfono: solo los que el proyecto tenga activos (el día
-// que se enciendan en Supabase aparecen solos). Los mismos que la app.
-(async () => {
-  let ext = {};
-  try {
-    const r = await fetch(`${window.KLENDAR_ENV.url}/auth/v1/settings`, { headers: { apikey: window.KLENDAR_ENV.key } });
-    if (r.ok) ext = (await r.json()).external || {};
-  } catch { return; }
-  for (const prov of ['google', 'apple']) {
-    const b = $(`#do${prov === 'google' ? 'Google' : 'Apple'}`);
-    if (!ext[prov] || !b) continue;
-    b.hidden = false;
-    b.onclick = async () => {
-      const { error } = await sb.auth.signInWithOAuth({ provider: prov, options: { redirectTo: `${location.origin}/panel/` } });
-      if (error) $('#loginErr').textContent = errAuth(error);
-    };
-  }
-  if (ext.phone && $('#doPhone')) $('#doPhone').hidden = false;
-})();
-$('#logout').onclick = async (e) => { e.preventDefault(); await sb.auth.signOut(); showLogin(); };
 sb.auth.onAuthStateChange((ev) => {
-  if (ev === 'SIGNED_OUT') showLogin();
+  if (ev === 'SIGNED_OUT' && !saliendo) showLogin();
   // Un enlace de «he olvidado la contraseña» antiguo que traiga aquí: la
   // contraseña nueva se pone en «Tu cuenta» y se vuelve al panel.
   if (ev === 'PASSWORD_RECOVERY') location.href = '/app/?destino=%2Fpanel%2F#/nueva-clave';
@@ -486,7 +446,7 @@ $('#menuBtn').onclick = () => $('#side').classList.toggle('open');
 // ── Idioma ──────────────────────────────────────────────────────────────────
 // El panel se escribió en español; la versión inglesa se pinta encima (ver
 // i18n.js). Lo que no esté traducido se queda en español, nunca en blanco.
-I18N.pickers(['#lang', '#langLogin', '#langSide']);
+I18N.pickers(['#lang', '#langSide']);
 I18N.translate(document.body);
 
 // ── Navegación ──────────────────────────────────────────────────────────────

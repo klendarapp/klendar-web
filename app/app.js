@@ -261,6 +261,20 @@ const vuelve = (siguiente) => {
   else location.hash = destino;
 };
 
+/** Hay una sola pantalla de entrar para todo (también para el panel de
+ * negocios): quien llega desde el panel trae `?destino=/panel/…` y vuelve
+ * allí al entrar. Solo rutas propias. */
+const destinoTrasEntrar = () => {
+  const d = new URLSearchParams(location.search).get('destino') || '';
+  return /^\/(panel|app)\//.test(d) ? d : '';
+};
+const vieneDelPanel = () => destinoTrasEntrar().startsWith('/panel/');
+const trasEntrar = (siguiente) => {
+  const d = destinoTrasEntrar();
+  if (d) { location.href = d; return; }
+  vuelve(siguiente);
+};
+
 // ── Inicio ────────────────────────────────────────────────────────────────
 /** Un icono de Material Symbols: los mismos que la app. */
 const ic = (nombre) => `<span class="ms" aria-hidden="true">${nombre}</span>`;
@@ -470,10 +484,13 @@ const legalCodigo = () => `<p class="muted pie-form">${esc(t('Si es tu primera v
 // ── Entrar ────────────────────────────────────────────────────────────────
 RUTAS.entrar = async (_p, params) => {
   const siguiente = params.get('siguiente') || '';
-  if (YO) return vuelve(siguiente);
+  if (YO) return trasEntrar(siguiente);
+  const panel = vieneDelPanel();
   pinta(`
-    <h1>${esc(t('Hola de nuevo'))}</h1>
-    <p class="muted">${esc(t('Para guardar planes, tener favoritos y conseguir códigos.'))}</p>
+    <h1>${esc(t(panel ? 'Entra en tu panel' : 'Hola de nuevo'))}</h1>
+    <p class="muted">${esc(t(panel
+      ? 'Con la misma cuenta que usas en la app. Si tu negocio todavía no está dado de alta, entra y lo das de alta en un momento.'
+      : 'Para guardar planes, tener favoritos y conseguir códigos.'))}</p>
     <form id="f" class="formu" novalidate>
       <label>${esc(t('Correo electrónico'))}<input name="email" type="email" autocomplete="username" required></label>
       <label>${esc(t('Contraseña'))}<input name="password" type="password" autocomplete="current-password" required></label>
@@ -485,8 +502,9 @@ RUTAS.entrar = async (_p, params) => {
       <a class="pill" href="${conSiguiente('codigo-correo', siguiente)}">${esc(t('Entrar con un código por correo'))}</a>
     </div>
     <div id="google" class="google-hueco"></div>
-    <p class="muted">${esc(t('¿No tienes cuenta?'))} <a href="${conSiguiente('registro', siguiente)}">${esc(t('Regístrate'))}</a></p>`);
-  botonGoogle(siguiente);
+    <p class="muted">${esc(t('¿No tienes cuenta?'))} <a href="${panel ? '#/registro?para=negocio' : conSiguiente('registro', siguiente)}">${esc(t('Regístrate'))}</a></p>
+    ${panel ? '' : `<p class="muted pie-form">${esc(t('¿Llevas un negocio? Es la misma cuenta: entra y ve a tu panel desde «Mi negocio».'))}</p>`}`);
+  botonGoogle(siguiente, destinoTrasEntrar() || '/app/');
 
   $('#f').onsubmit = (e) => {
     e.preventDefault();
@@ -497,7 +515,7 @@ RUTAS.entrar = async (_p, params) => {
       const { error } = await sb.auth.signInWithPassword({ email: form.email.value.trim(), password: form.password.value });
       if (error) { $('#err').textContent = errAuth(error); return; }
       toast(t('Dentro'));
-      vuelve(siguiente);
+      trasEntrar(siguiente);
     });
   };
 };
@@ -563,7 +581,7 @@ RUTAS['codigo-correo'] = async (_p, params) => {
       const { error } = await sb.auth.verifyOtp({ email: correo, token, type: 'email' });
       if (error) { $('#err2').textContent = errAuth(error); return; }
       toast(t('Dentro'));
-      vuelve(siguiente);
+      trasEntrar(siguiente);
     });
   };
 };
@@ -573,7 +591,8 @@ RUTAS['codigo-correo'] = async (_p, params) => {
 // primera vez, se crea la cuenta y luego se piden edad y términos.
 RUTAS.movil = async (_p, params) => {
   const siguiente = params.get('siguiente') || '';
-  const destino = params.get('destino') || '';
+  // `destino` en la ruta: enlaces antiguos del panel (#/movil?destino=…).
+  const destino = params.get('destino') || destinoTrasEntrar();
   const PREFIJOS = ['+34', '+351', '+33', '+44', '+39', '+49'];
   pinta(`
     <h1>${esc(t('Entrar con el teléfono'))}</h1>
