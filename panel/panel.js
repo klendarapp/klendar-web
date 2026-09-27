@@ -143,7 +143,10 @@ async function direccionDe(lat, lng) {
   const token = await tokenMapbox();
   if (!token) return null;
   try {
-    const r = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?limit=1&types=address&language=es&access_token=${token}`);
+    // Sin filtrar por tipo: en un pueblo o en una carretera puede no haber
+    // «dirección» y aun así hay que sacar la ciudad. El primero es el más
+    // concreto (calle y número si los hay); la ciudad sale de su contexto.
+    const r = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?language=es&access_token=${token}`);
     if (!r.ok) return null;
     const f = (await r.json()).features?.[0];
     return f ? lugarDe(f) : null;
@@ -537,14 +540,26 @@ PAGES.alta = async (v) => {
 
   const f = $('#alta', v);
   const txt = $('#punto-txt', v);
+  // Lo que se rellena solo desde el mapa se vuelve a rellenar cada vez que
+  // se mueve la chincheta o se usa «Estoy en el local»; lo escrito a mano no
+  // se toca nunca.
+  const autoRellena = (campo, valor) => {
+    const el = f.elements[campo];
+    if (!valor || !el) return;
+    if (!el.value.trim() || el.dataset.auto === el.value) {
+      el.value = valor;
+      el.dataset.auto = valor;
+      KL_CAMPO(el, null);
+    }
+  };
   const marca = async (p, rellenar) => {
     punto = { lat: p.lat, lng: p.lng };
     txt.textContent = I18N.t('Ubicación marcada. Si no es exacta, arrastra la chincheta.');
     if (rellenar) {
       const d = await direccionDe(p.lat, p.lng);
       if (d) {
-        if (!f.address.value.trim() && d.address) f.address.value = d.address;
-        if (!f.city.value.trim() && d.city) f.city.value = d.city;
+        autoRellena('address', d.address);
+        autoRellena('city', d.city);
       }
     }
   };
@@ -555,7 +570,7 @@ PAGES.alta = async (v) => {
     if (!q) { toast('Escribe primero la dirección y la ciudad.', true); return; }
     const d = await buscaDireccion(q);
     if (!d) { toast('No encontramos esa dirección. Prueba a escribirla de otra forma o marca el punto en el mapa.', true); return; }
-    if (!f.city.value.trim() && d.city) f.city.value = d.city;
+    autoRellena('city', d.city);
     mapa?.mueve(d);
     marca(d, false);
   };
