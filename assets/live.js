@@ -61,14 +61,14 @@
     lista.innerHTML = items.slice(0, MAX).map((o) => {
       const img = foto(o.images);
       const tag = etiqueta(o.discount, o.price_cents, o.currency);
-      return `<a class="ocard" href="${base}/o/${esc(o.id)}">
+      return `<a class="tarjeta" href="${base}/o/${esc(o.id)}">
         ${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : '<span class="ph">✦</span>'}
-        <span class="ocard-body">
+        <span class="tarjeta-cuerpo">
           <b>${esc(o.title)}</b>
           <span class="muted">${esc(o.business_name || '')}</span>
-          <span class="ocard-meta">
+          <span class="tarjeta-meta">
             ${tag ? `<span class="tag">${esc(tag)}</span>` : ''}
-            <span class="muted">${esc(cuando(o.starts_at))}</span>
+            <span>${esc(cuando(o.starts_at))}</span>
           </span>
         </span>
       </a>`;
@@ -88,6 +88,13 @@
     // La primera es la que más se mueve, no la más cercana: aquí no se pide
     // la ubicación de nadie. Si hay varias, que se pueda cambiar.
     const inicial = ciudades[0].city;
+
+    // «Qué hacer hoy en Madrid · Valencia…» del titular: la agenda de cada una.
+    const enlaces = document.getElementById('liveCiudades');
+    if (enlaces) {
+      enlaces.innerHTML = ciudades.filter((c) => c.city).slice(0, 5).map((c) => `<a href="${base}${en ? '/whats-on/' : '/agenda/'}${encodeURIComponent(String(c.city).toLowerCase())}/">${esc(c.city)}</a>`).join('');
+    }
+
     if (!await pintar(inicial)) return;
 
     const donde = document.getElementById('liveCity');

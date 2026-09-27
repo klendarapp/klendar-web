@@ -130,6 +130,8 @@ async function sesion() {
 }
 sb.auth.onAuthStateChange((ev, s) => {
   YO = s?.user || null;
+  // La cabecera (Entrar ↔ tu inicial), sin esperar a cambiar de página.
+  if (ev === 'SIGNED_IN' || ev === 'SIGNED_OUT' || ev === 'USER_UPDATED') setTimeout(() => window.KL_CABECERA?.(), 0);
   // El enlace de «he olvidado la contraseña» abre sesión y trae aquí; Supabase
   // se come la ruta (#/nueva-clave), así que se lleva a mano.
   if (ev === 'PASSWORD_RECOVERY') location.hash = '#/nueva-clave';

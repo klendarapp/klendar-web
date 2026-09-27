@@ -22,7 +22,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/site.css?v=20261003">
+<link rel="stylesheet" href="/assets/site.css?v=20261005">
 <link rel="stylesheet" href="/assets/public.css?v=15">
 
 </head>
@@ -30,22 +30,30 @@
 <header class="top"><div class="wrap">
   <a class="brand" href="/"><img src="/assets/symbol.png" alt="" width="30" height="30"> Klendar</a>
   <input type="checkbox" id="menu" aria-hidden="true">
-  <label class="menu-toggle" for="menu" aria-label="Menú"><span></span><span></span><span></span></label>
   <nav class="main">
     <a href="/explorar/">Explorar</a>
     <a href="/agenda/">Agenda</a>
-    <a href="/#como">Cómo funciona</a>
+    <a href="/como-funciona/">Cómo funciona</a>
     <a href="/para-negocios/">Para negocios</a>
-    <a href="/preguntas/">Preguntas</a>
-    <a href="/soporte/">Soporte</a>
-    <a href="/app/" class="nav-yo">Tu cuenta</a>
-    <a href="/panel/" class="nav-panel">Acceso para negocios</a>
+    <a href="/preguntas/" class="solo-movil">Preguntas</a>
+    <a href="/soporte/" class="solo-movil">Soporte</a>
+    <a href="/panel/" class="solo-movil">Soy un negocio</a>
+    <span class="solo-movil"><span class="lang" aria-label="Idioma / Language">
+      <a href="/eliminar-cuenta/" class="on" data-lang="es" hreflang="es">ES</a>
+      <a href="/en/delete-account/" class="" data-lang="en" hreflang="en">EN</a>
+    </span></span>
+  </nav>
+  <div class="top-acciones">
+    <a class="top-negocio" href="/panel/">Soy un negocio</a>
+    <a class="pill top-entrar" href="/app/#/entrar" data-cuenta="/app/" data-cuenta-txt="Tu cuenta">Entrar</a>
     <span class="lang" aria-label="Idioma / Language">
       <a href="/eliminar-cuenta/" class="on" data-lang="es" hreflang="es">ES</a>
       <a href="/en/delete-account/" class="" data-lang="en" hreflang="en">EN</a>
     </span>
-  </nav>
+    <label class="menu-toggle" for="menu" aria-label="Menú"><span></span><span></span><span></span></label>
+  </div>
 </div></header>
+<script src="/assets/cabecera.js?v=4" defer></script>
 <main class="doc">
 <h1>Eliminar tu cuenta</h1>
 <div class="meta">Última actualización: 17 de septiembre de 2026 · Versión 2026-09</div>
@@ -77,7 +85,7 @@
   <div class="cols">
     <div><a class="brand" href="/"><img src="/assets/symbol.png" alt="" width="30" height="30"> Klendar</a>
       <p style="margin:12px 0 0;max-width:340px">Ofertas flash con cuenta atrás y eventos de los negocios de tu barrio, ordenados por cercanía. Marca tus favoritos, recibe avisos y canjea con un QR.</p></div>
-    <div><h4>Producto</h4><a href="/#como">Cómo funciona</a><a href="/explorar/">Explorar</a><a href="/agenda/">Agenda local</a><a href="/para-negocios/">Para negocios</a><a href="/precios/">Precios</a><a href="/app/">Tu cuenta</a><a href="/panel/">Acceso para negocios</a><a href="/preguntas/">Preguntas frecuentes</a><a href="/soporte/">Soporte</a><a href="/sobre/">Sobre Klendar</a><a href="/prensa/">Prensa</a><a href="/en/">English</a></div>
+    <div><h4>Producto</h4><a href="/como-funciona/">Cómo funciona</a><a href="/explorar/">Explorar</a><a href="/agenda/">Agenda local</a><a href="/para-negocios/">Para negocios</a><a href="/precios/">Precios</a><a href="/app/">Tu cuenta</a><a href="/panel/">Acceso para negocios</a><a href="/preguntas/">Preguntas frecuentes</a><a href="/soporte/">Soporte</a><a href="/sobre/">Sobre Klendar</a><a href="/prensa/">Prensa</a><a href="/en/">English</a></div>
     <div><h4>Legal</h4><a href="/aviso-legal/">Aviso legal</a><a href="/privacidad/">Privacidad</a><a href="/terminos/">Términos de uso</a><a href="/negocios/">Condiciones para negocios</a><a href="/cookies/">Cookies</a><a href="/normas/">Normas de la comunidad</a><a href="/eliminar-cuenta/">Eliminar cuenta</a><a href="/accesibilidad/">Accesibilidad</a><a href="/estado/">Estado del servicio</a></div>
   </div>
   <div class="bottom">

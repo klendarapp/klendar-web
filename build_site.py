@@ -27,6 +27,7 @@ ALT = {
     '/accesibilidad/': '/en/accessibility/',
     '/estado/': '/en/status/',
     '/sobre/': '/en/about/',
+    '/como-funciona/': '/en/how-it-works/',
 }
 ALT_EN = {en: es for es, en in ALT.items()}
 
@@ -40,8 +41,29 @@ def alternates(path):
 T = {
   'es': dict(
     lang='es', dir='', other='en', other_url='/en/',
-    title='Klendar — Lo que pasa cerca de ti, ahora mismo',
-    desc='Ofertas flash con cuenta atrás y eventos de los negocios de tu barrio, ordenados por cercanía. Marca tus favoritos, recibe avisos y canjea con un QR.',
+    title='Klendar — Ofertas y planes cerca de ti, hoy',
+    desc='Ofertas flash con cuenta atrás y eventos de los bares, restaurantes, tiendas y salas de tu barrio, ordenados por cercanía. Gratis y sin anuncios.',
+    hero_eyebrow='Ofertas que se acaban. Planes que empiezan.',
+    hero_h1='Ofertas y planes <em>cerca de ti</em>, hoy',
+    hero_lead='Ofertas flash con cuenta atrás y eventos de los bares, restaurantes, tiendas y salas de tu barrio, ordenados por cercanía. Gratis y sin anuncios.',
+    cta_explore='Ver qué hay cerca', cta_explore_url='/explorar/',
+    cta_register='Crear cuenta gratis', cta_register_url='/app/#/registro',
+    cities_label='Qué hacer hoy en', cities_fallback='tu ciudad', agenda_url='/agenda/',
+    app_note='App para Android e iPhone, muy pronto. Mientras tanto, todo funciona desde aquí.',
+    live_all_short='Ver todo',
+    home_how_h2='Mira, elige y enséñalo en la puerta',
+    home_steps=[('Mira lo que hay cerca', 'Ofertas que duran unas horas y eventos con fecha, ordenados por distancia.'),
+                ('Guárdalo o pide tu código', 'Los eventos, a tu agenda. Las ofertas, un QR antes de que acabe la cuenta atrás.'),
+                ('Enséñalo y listo', 'El negocio lo escanea. Cada código vale una vez; sin tarjetas ni registros raros.')],
+    how_url='/como-funciona/', how_more='Todo lo que hace Klendar →',
+    how_title='Cómo funciona Klendar',
+    how_desc='Cómo funciona Klendar: ofertas flash con cuenta atrás y eventos de tu barrio, ordenados por cercanía; se guardan en tu agenda o se canjean con un QR de un solo uso.',
+    band_h2='¿Tienes un bar, una tienda o una sala?',
+    band_text='Publica una oferta cuando tengas un hueco y llena tus eventos. Sin comisiones por venta. Las primeras semanas en cada ciudad, gratis.',
+    band_more='Cómo funciona para negocios', band_panel='Entrar a mi panel',
+    faq_all='Todas las preguntas', faq_support='Soporte',
+    app_h2='Llévalo en el bolsillo',
+    app_text='La app para Android e iPhone llega muy pronto, con avisos de lo que pasa a dos calles.',
     nav_how='Cómo funciona', nav_biz='Para negocios', nav_faq='Preguntas', nav_support='Soporte',
     a_how='como', a_feat='funciones', a_screens='pantallas', a_biz='negocios', a_faq='preguntas',
     h1='Ofertas que se acaban. <em>Planes que empiezan.</em>',
@@ -89,8 +111,29 @@ T = {
   ),
   'en': dict(
     lang='en', dir='en/', other='es', other_url='/',
-    title='Klendar — What\'s happening near you, right now',
-    desc='Flash deals with a countdown and events from the businesses around you, sorted by distance. Mark your favourites, get alerts and redeem with a QR code.',
+    title='Klendar — Deals and things to do near you, today',
+    desc='Flash deals with a countdown and events from the bars, restaurants, shops and venues around you, sorted by distance. Free, no ads.',
+    hero_eyebrow='Deals that run out. Plans that begin.',
+    hero_h1='Deals and things to do <em>near you</em>, today',
+    hero_lead='Flash deals with a countdown and events from the bars, restaurants, shops and venues around you, sorted by distance. Free, no ads.',
+    cta_explore='See what\'s nearby', cta_explore_url='/en/explore/',
+    cta_register='Create a free account', cta_register_url='/app/?lang=en#/registro',
+    cities_label='What to do today in', cities_fallback='your city', agenda_url='/en/whats-on/',
+    app_note='Android and iPhone app coming soon. Meanwhile, everything works right here.',
+    live_all_short='See all',
+    home_how_h2='Look, choose and show it at the door',
+    home_steps=[('See what\'s nearby', 'Deals that last a few hours and events with a date, sorted by distance.'),
+                ('Save it or get your code', 'Events go to your agenda. Deals get a QR code before the countdown ends.'),
+                ('Show it, done', 'The business scans it. Each code works once; no cards, no weird sign-ups.')],
+    how_url='/en/how-it-works/', how_more='Everything Klendar does →',
+    how_title='How Klendar works',
+    how_desc='How Klendar works: flash deals with a countdown and events from your neighbourhood, sorted by distance; save them to your agenda or redeem with a single-use QR code.',
+    band_h2='Got a bar, a shop or a venue?',
+    band_text='Post a deal when you have a quiet hour and fill your events. No sales commission. The first weeks in each city are free.',
+    band_more='How it works for businesses', band_panel='Log in to my dashboard',
+    faq_all='All questions', faq_support='Support',
+    app_h2='Take it in your pocket',
+    app_text='The Android and iPhone app is coming soon, with alerts for what\'s happening two streets away.',
     nav_how='How it works', nav_biz='For businesses', nav_faq='FAQ', nav_support='Support',
     a_how='how-it-works', a_feat='features', a_screens='screenshots', a_biz='businesses', a_faq='faq',
     h1='Deals that run out. <em>Plans that begin.</em>',
@@ -186,7 +229,7 @@ def head(t, path, page_title=None, page_desc=None, extra=''):
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/site.css?v=20261003">
+<link rel="stylesheet" href="/assets/site.css?v=20261005">
 <link rel="stylesheet" href="/assets/public.css?v=15">
 {extra}
 </head>
@@ -198,7 +241,7 @@ def head(t, path, page_title=None, page_desc=None, extra=''):
 # Solo la portada trae contenido en vivo; los documentos no lo necesitan.
 LIVE_SCRIPTS = (
     '<script src="/config.js?v=1"></script>'
-    '<script src="/assets/live.js?v=1" defer></script>'
+    '<script src="/assets/live.js?v=2" defer></script>'
 )
 
 
@@ -264,16 +307,19 @@ def landing(t):
         '{"@type":"Question","name":%s,"acceptedAnswer":{"@type":"Answer","text":%s}}' % (jsq(q), jsq(a)) for q, a in t['faqs']) + ']}</script>'
     fa, fb = t['float_a'], t['float_b']
     mail = 'mailto:info@klendar.app?subject=' + ('Quiero%20dar%20de%20alta%20mi%20negocio%20en%20Klendar' if t['lang'] == 'es' else 'I%20want%20to%20list%20my%20business%20on%20Klendar')
+    home_steps = ''.join(f'<div><span class="num">{i}</span><h3>{h}</h3><p>{p}</p></div>' for i, (h, p) in enumerate(t['home_steps'], 1))
     body = f'''
 <section class="hero"><div class="wrap">
   <div>
-    <h1>{t['h1']}</h1>
-    <p class="lead">{t['lead']}</p>
-    <div class="stores">
-      <a class="pill ink" href="#" aria-disabled="true">▶ {t['play']}</a>
-      <a class="pill ink" href="#" aria-disabled="true"> {t['appstore']}</a>
+    <span class="eyebrow">{t['hero_eyebrow']}</span>
+    <h1>{t['hero_h1']}</h1>
+    <p class="lead">{t['hero_lead']}</p>
+    <div class="cta-botones">
+      <a class="pill accent big" href="{t['cta_explore_url']}">{t['cta_explore']}</a>
+      <a class="pill big" href="{t['cta_register_url']}" data-sin-sesion>{t['cta_register']}</a>
     </div>
-    <p class="note">{t['note']}</p>
+    <p class="ciudades">{t['cities_label']} <span id="liveCiudades"><a href="{t['agenda_url']}">{t['cities_fallback']}</a></span></p>
+    <p class="note">{t['app_note']}</p>
   </div>
   <div class="hero-visual">
     <div class="phone"><img src="/assets/screens/feed.webp?v=20261001" alt="Klendar" width="540" height="1212" fetchpriority="high"></div>
@@ -282,45 +328,36 @@ def landing(t):
   </div>
 </div></section>
 
-<section id="ahora" class="live" hidden><div class="wrap">
-  <span class="eyebrow">{t['live_eyebrow']}</span>
-  <h2>{t['live_h2']} <span id="liveCity" class="muted"></span></h2>
-  <p class="note">{t['live_note']}</p>
-  <div class="olist" id="liveList"></div>
-  <p><a class="pill ghost" id="liveAll" href="{'/agenda/' if t['lang'] == 'es' else '/en/whats-on/'}">{t['live_all']}</a></p>
+<section id="ahora" class="live junto" hidden><div class="wrap">
+  <div class="cabecera-seccion">
+    <div>
+      <span class="eyebrow">{t['live_eyebrow']}</span>
+      <h2>{t['live_h2']} <span id="liveCity"></span></h2>
+    </div>
+    <a class="pill" id="liveAll" href="{t['cta_explore_url']}">{t['live_all_short']}</a>
+  </div>
+  <div class="tarjetas" id="liveList"></div>
 </div></section>
 
 <section id="{t['a_how']}"><div class="wrap">
   <span class="eyebrow">{t['how_eyebrow']}</span>
-  <h2>{t['how_h2']}</h2>
-  <div class="steps">{steps}</div>
+  <h2>{t['home_how_h2']}</h2>
+  <div class="pasos">{home_steps}</div>
+  <div class="screens compactas">{screens}</div>
+  <p class="mas"><a href="{t['how_url']}">{t['how_more']}</a></p>
 </div></section>
 
-<section id="{t['a_feat']}"><div class="wrap">
-  <span class="eyebrow">{t['feat_eyebrow']}</span>
-  <h2>{t['feat_h2']}</h2>
-  <div class="grid">{feats}</div>
-</div></section>
-
-<section id="{t['a_screens']}"><div class="wrap">
-  <span class="eyebrow">{t['screens_eyebrow']}</span>
-  <h2>{t['screens_h2']}</h2>
-  <div class="screens">{screens}</div>
-</div></section>
-
-<section id="{t['a_biz']}"><div class="wrap">
-  <div class="biz">
+<section id="{t['a_biz']}" class="junto"><div class="wrap">
+  <div class="franja-biz">
     <div>
       <span class="eyebrow">{t['biz_eyebrow']}</span>
-      <h2>{t['biz_h2']}</h2>
-      <p class="sub">{t['biz_sub']}</p>
-      <ul>{points}</ul>
-      <p class="acciones" style="margin:0"><a class="pill accent" href="{mail}">{t['biz_cta']}</a> <a class="pill ghost" href="{t['biz_panel_url']}">{t['biz_panel']}</a> <a class="pill ghost" href="{t['biz_terms_url']}">{t['biz_terms']}</a></p>
-      <p class="note" style="color:inherit;opacity:.7">{t['biz_panel_note']}</p>
-      <p class="note" style="color:inherit;opacity:.7">{t['biz_note']}</p>
-      <p class="note" style="color:inherit;opacity:.85">{t['biz_kit']}</p>
+      <h2>{t['band_h2']}</h2>
+      <p>{t['band_text']}</p>
     </div>
-    <aside><div class="row">{stats}</div></aside>
+    <div class="botones">
+      <a class="pill accent" href="{t['biz_page_url']}">{t['band_more']}</a>
+      <a class="pill" href="/panel/">{t['band_panel']}</a>
+    </div>
   </div>
 </div></section>
 
@@ -328,19 +365,60 @@ def landing(t):
   <span class="eyebrow">{t['faq_eyebrow']}</span>
   <h2>{t['faq_h2']}</h2>
   <div class="faq">{faqs}</div>
+  <p class="mas"><a href="{t['faq_url']}">{t['faq_all']}</a> · <a href="{t['support_url']}">{t['faq_support']}</a></p>
 </div></section>
 
-<section class="cta"><div class="wrap">
-  <h2>{t['cta_h2']}</h2>
-  <p class="sub" style="margin:0 auto 24px">{t['cta_sub']}</p>
-  <div class="stores" style="justify-content:center">
-    <a class="pill ink" href="#" aria-disabled="true">▶ {t['play']}</a>
-    <a class="pill ink" href="#" aria-disabled="true"> {t['appstore']}</a>
+<section class="junto"><div class="wrap">
+  <div class="app-caja">
+    <div><h2>{t['app_h2']}</h2><p>{t['app_text']}</p></div>
+    <div class="stores">
+      <a class="pill ink" href="#" aria-disabled="true">▶ {t['play']}</a>
+      <a class="pill ink" href="#" aria-disabled="true"> {t['appstore']}</a>
+    </div>
   </div>
 </div></section>
 '''
     extra = jsonld + faq_ld + (LANG_REDIRECT if t['lang'] == 'es' else '')
     return head(t, path, extra=extra) + body + footer(t, only_footer=False)
+
+
+def como_funciona(t):
+    """Los pasos, todo lo que hace Klendar y las capturas: lo que no cabe en
+    la portada. También es una puerta de entrada desde Google."""
+    path = t['how_url']
+    steps = ''.join(f'<div class="step"><h3>{h}</h3><p>{p}</p></div>' for h, p in t['steps'])
+    feats = ''.join(f'<div class="card"><div class="ic">{i}</div><h3>{h}</h3><p>{p}</p></div>' for i, h, p in t['feats'])
+    screens = ''.join(f'<figure><div class="phone"><img src="/assets/screens/{f}.webp?v=20260926" alt="{h}" loading="lazy" width="540" height="1212"></div><figcaption>{h}<small>{s_}</small></figcaption></figure>' for f, h, s_ in t['screens'])
+    body = f'''
+<section class="junto" style="padding-top:48px"><div class="wrap">
+  <h1 style="font-size:clamp(34px,5vw,52px);letter-spacing:-.03em;margin:0 0 12px">{t['how_title']}</h1>
+  <p class="lead" style="font-size:19px;color:var(--ink-2);max-width:640px;margin:0 0 22px">{t['hero_lead']}</p>
+  <div class="cta-botones">
+    <a class="pill accent" href="{t['cta_explore_url']}">{t['cta_explore']}</a>
+    <a class="pill" href="{t['biz_page_url']}">{t['band_more']}</a>
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <span class="eyebrow">{t['how_eyebrow']}</span>
+  <h2>{t['how_h2']}</h2>
+  <div class="steps">{steps}</div>
+</div></section>
+
+<section class="junto"><div class="wrap">
+  <span class="eyebrow">{t['feat_eyebrow']}</span>
+  <h2>{t['feat_h2']}</h2>
+  <div class="grid">{feats}</div>
+</div></section>
+
+<section><div class="wrap">
+  <span class="eyebrow">{t['screens_eyebrow']}</span>
+  <h2>{t['screens_h2']}</h2>
+  <div class="screens">{screens}</div>
+  <p class="mas"><a href="{t['faq_url']}">{t['faq_all']}</a> · <a href="{t['support_url']}">{t['faq_support']}</a></p>
+</div></section>
+'''
+    return head(t, path, f"{t['how_title']} · Klendar", t['how_desc']) + body + footer(t)
 
 
 def jsq(s):
@@ -360,8 +438,8 @@ def doc_page(t, path, title, desc, body):
 # ── robots.txt y sitemap.xml ────────────────────────────────────────────────
 # Solo se indexan las páginas estáticas: /admin/ es privado y /o/, /b/ y /r/
 # son enlaces profundos que se generan al vuelo (ya llevan su propio canonical).
-SITEMAP_ES = ['/', '/explorar/', '/agenda/', '/para-negocios/', '/precios/', '/preguntas/', '/prensa/', '/sobre/', '/accesibilidad/', '/estado/', '/negocios/', '/soporte/', '/privacidad/', '/terminos/', '/aviso-legal/', '/cookies/', '/normas/', '/eliminar-cuenta/']
-SITEMAP_EN = ['/en/', '/en/explore/', '/en/whats-on/', '/en/for-business/', '/en/pricing/', '/en/faq/', '/en/press/', '/en/about/', '/en/accessibility/', '/en/status/', '/en/business-terms/', '/en/support/', '/en/privacy/', '/en/terms/', '/en/legal-notice/', '/en/cookies/', '/en/community-guidelines/', '/en/delete-account/']
+SITEMAP_ES = ['/', '/como-funciona/', '/explorar/', '/agenda/', '/para-negocios/', '/precios/', '/preguntas/', '/prensa/', '/sobre/', '/accesibilidad/', '/estado/', '/negocios/', '/soporte/', '/privacidad/', '/terminos/', '/aviso-legal/', '/cookies/', '/normas/', '/eliminar-cuenta/']
+SITEMAP_EN = ['/en/', '/en/how-it-works/', '/en/explore/', '/en/whats-on/', '/en/for-business/', '/en/pricing/', '/en/faq/', '/en/press/', '/en/about/', '/en/accessibility/', '/en/status/', '/en/business-terms/', '/en/support/', '/en/privacy/', '/en/terms/', '/en/legal-notice/', '/en/cookies/', '/en/community-guidelines/', '/en/delete-account/']
 ALT_PAIRS = dict(zip(SITEMAP_ES, SITEMAP_EN))
 
 
@@ -413,6 +491,10 @@ if __name__ == '__main__':
     io.open('index.html', 'w', encoding='utf-8', newline='\n').write(landing(T['es']))
     io.open('en/index.html', 'w', encoding='utf-8', newline='\n').write(landing(T['en']))
     io.open('en/support/index.html', 'w', encoding='utf-8', newline='\n').write(doc_page(T['en'], '/en/support/', *SUPPORT_EN))
+    os.makedirs('como-funciona', exist_ok=True)
+    os.makedirs('en/how-it-works', exist_ok=True)
+    io.open('como-funciona/index.html', 'w', encoding='utf-8', newline='\n').write(como_funciona(T['es']))
+    io.open('en/how-it-works/index.html', 'w', encoding='utf-8', newline='\n').write(como_funciona(T['en']))
     io.open('robots.txt', 'w', encoding='utf-8', newline=chr(10)).write(robots())
     io.open('sitemap.xml', 'w', encoding='utf-8', newline=chr(10)).write(sitemap())
     print('ok: index.html, en/index.html, en/support/index.html, robots.txt, sitemap.xml')

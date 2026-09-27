@@ -12,16 +12,16 @@
 export const NAV = [
   { es: 'Explorar', en: 'Explore', hrefEs: '/explorar/', hrefEn: '/en/explore/' },
   { es: 'Agenda', en: "What's on", hrefEs: '/agenda/', hrefEn: '/en/whats-on/' },
-  { es: 'Cómo funciona', en: 'How it works', hrefEs: '/#como', hrefEn: '/en/#how-it-works' },
+  { es: 'Cómo funciona', en: 'How it works', hrefEs: '/como-funciona/', hrefEn: '/en/how-it-works/' },
   { es: 'Para negocios', en: 'For businesses', hrefEs: '/para-negocios/', hrefEn: '/en/for-business/' },
-  { es: 'Preguntas', en: 'FAQ', hrefEs: '/preguntas/', hrefEn: '/en/faq/' },
-  { es: 'Soporte', en: 'Support', hrefEs: '/soporte/', hrefEn: '/en/support/' },
-  { es: 'Tu cuenta', en: 'Your account', hrefEs: '/app/', hrefEn: '/app/?lang=en', cls: 'nav-yo' },
-  { es: 'Acceso para negocios', en: 'Business login', hrefEs: '/panel/', hrefEn: '/panel/', cls: 'nav-panel' },
+  // Solo en el menú desplegable del móvil (en escritorio están en el pie).
+  { es: 'Preguntas', en: 'FAQ', hrefEs: '/preguntas/', hrefEn: '/en/faq/', cls: 'solo-movil' },
+  { es: 'Soporte', en: 'Support', hrefEs: '/soporte/', hrefEn: '/en/support/', cls: 'solo-movil' },
+  { es: 'Soy un negocio', en: 'Business login', hrefEs: '/panel/', hrefEn: '/panel/', cls: 'solo-movil' },
 ];
 
 export const FOOT_PRODUCT = [
-  { es: 'Cómo funciona', en: 'How it works', hrefEs: '/#como', hrefEn: '/en/#how-it-works' },
+  { es: 'Cómo funciona', en: 'How it works', hrefEs: '/como-funciona/', hrefEn: '/en/how-it-works/' },
   { es: 'Explorar', en: 'Explore', hrefEs: '/explorar/', hrefEn: '/en/explore/' },
   { es: 'Agenda local', en: "What's on", hrefEs: '/agenda/', hrefEn: '/en/whats-on/' },
   { es: 'Para negocios', en: 'For businesses', hrefEs: '/para-negocios/', hrefEn: '/en/for-business/' },
@@ -50,6 +50,9 @@ export const FOOT_LEGAL = [
 const TEXTOS = {
   es: {
     menu: 'Menú',
+    entrar: 'Entrar',
+    negocio: 'Soy un negocio',
+    cuenta: 'Tu cuenta',
     lema: 'Ofertas flash con cuenta atrás y eventos de los negocios de tu barrio, '
       + 'ordenados por cercanía. Marca tus favoritos, recibe avisos y canjea con un QR.',
     producto: 'Producto',
@@ -59,6 +62,9 @@ const TEXTOS = {
   },
   en: {
     menu: 'Menu',
+    entrar: 'Log in',
+    negocio: 'Business login',
+    cuenta: 'Your account',
     lema: 'Flash offers with a countdown and events from the businesses around you, '
       + 'sorted by how close they are. Mark your favourites, get alerts and redeem with a QR.',
     producto: 'Product',
@@ -83,17 +89,27 @@ export function siteHeader(lang, esPath = '/', enPath = '/en/') {
   const enlaces = NAV.map((n) => item(n, en))
     .map((n) => `\n    <a href="${n.href}"${n.cls ? ` class="${n.cls}"` : ''}>${n.label}</a>`)
     .join('');
+  const cuenta = en ? '/app/?lang=en' : '/app/';
+  const selector = `<span class="lang" aria-label="Idioma / Language">
+      <a href="${esPath}" class="${en ? '' : 'on'}" data-lang="es" hreflang="es">ES</a>
+      <a href="${enPath}" class="${en ? 'on' : ''}" data-lang="en" hreflang="en">EN</a>
+    </span>`;
+  // «Entrar» siempre a la vista, también en el móvil (fuera del menú). Si ya
+  // hay sesión, cabecera.js lo cambia por tu inicial o tu foto.
   return `<header class="top"><div class="wrap">
   <a class="brand" href="/${en ? 'en/' : ''}"><img src="/assets/symbol.png" alt="" width="30" height="30"> Klendar</a>
   <input type="checkbox" id="menu" aria-hidden="true">
-  <label class="menu-toggle" for="menu" aria-label="${T.menu}"><span></span><span></span><span></span></label>
   <nav class="main">${enlaces}
-    <span class="lang" aria-label="Idioma / Language">
-      <a href="${esPath}" class="${en ? '' : 'on'}" data-lang="es" hreflang="es">ES</a>
-      <a href="${enPath}" class="${en ? 'on' : ''}" data-lang="en" hreflang="en">EN</a>
-    </span>
+    <span class="solo-movil">${selector}</span>
   </nav>
-</div></header>`;
+  <div class="top-acciones">
+    <a class="top-negocio" href="/panel/">${T.negocio}</a>
+    <a class="pill top-entrar" href="${cuenta}#/entrar" data-cuenta="${cuenta}" data-cuenta-txt="${T.cuenta}">${T.entrar}</a>
+    ${selector}
+    <label class="menu-toggle" for="menu" aria-label="${T.menu}"><span></span><span></span><span></span></label>
+  </div>
+</div></header>
+<script src="/assets/cabecera.js?v=4" defer></script>`;
 }
 
 /** El pie, con las mismas columnas en todas las páginas. */
