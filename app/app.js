@@ -43,10 +43,29 @@ document.documentElement.lang = EN ? 'en' : 'es';
 // igual que en la app. Al validarlo se aceptan con o sin espacios.
 const codigoLegible = (c) => String(c || '').toUpperCase().replace(/(.{4})(?=.)/g, '$1 ');
 const money = (c, cur = 'EUR') => (c == null ? '' : (c / 100).toLocaleString(LOC, { style: 'currency', currency: cur || 'EUR' }));
-const fecha = (iso, opts = { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) => {
+// Las horas de un código o de un plan, en la del negocio (Canarias va una
+// por detrás de la península; ver /assets/zona.js). `tz` es su zona; sin
+// ella, Madrid.
+const KZ = globalThis.KlendarZona;
+const fecha = (iso, opts = { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }, tz) => {
   if (!iso) return '';
+  if (KZ) return KZ.fmt(iso, tz, LOC, opts);
   try { return new Intl.DateTimeFormat(LOC, { timeZone: 'Europe/Madrid', ...opts }).format(new Date(iso)); } catch { return ''; }
 };
+/** Zona de cada negocio, por id. Las listas de «Tu cuenta» no traen
+ * coordenadas, pero `businesses.time_zone` se puede leer: una consulta por
+ * lista y lo que ya se sabe no se vuelve a pedir. Devuelve `fila → zona`. */
+const ZONAS = new Map();
+async function zonasDe(filas) {
+  const faltan = [...new Set((filas || []).map((f) => f?.business_id).filter(Boolean))].filter((id) => !ZONAS.has(id));
+  if (faltan.length && KZ) {
+    try {
+      const { data } = await sb.from('businesses').select('id, time_zone').in('id', faltan);
+      for (const f of data || []) if (KZ.valida(f.time_zone)) ZONAS.set(f.id, f.time_zone);
+    } catch { /* sin red: Madrid */ }
+  }
+  return (fila) => ZONAS.get(fila?.business_id) || (KZ ? KZ.de(fila) : undefined);
+}
 function beneficio(d, precio, moneda) {
   if (d?.type === 'percent') return `−${d.value} %`;
   if (d?.type === 'fixed') return money(Math.round(Number(d.value) * 100), moneda);
@@ -841,12 +860,13 @@ RUTAS['nueva-clave'] = async (_p, params) => {
 };
 
 // ── Tarjeta de publicación, como en la agenda ─────────────────────────────
-function tarjeta(o) {
+function tarjeta(o, tz) {
   const img = (o.images || []).find((u) => !/\.(mp4|mov|webm)(\?|$)/i.test(u));
   // Si acaba otro día, el final lleva también el día (como en la app).
-  const mismoDia = fecha(o.redeem_start_at, { day: 'numeric', month: 'numeric' }) === fecha(o.redeem_end_at, { day: 'numeric', month: 'numeric' });
-  const cuando = o.kind === 'future_event' ? fecha(o.event_at)
-    : `${fecha(o.redeem_start_at)} – ${mismoDia ? fecha(o.redeem_end_at, { hour: '2-digit', minute: '2-digit' }) : fecha(o.redeem_end_at)}`;
+  const diaMes = { day: 'numeric', month: 'numeric' };
+  const mismoDia = fecha(o.redeem_start_at, diaMes, tz) === fecha(o.redeem_end_at, diaMes, tz);
+  const cuando = o.kind === 'future_event' ? fecha(o.event_at, undefined, tz)
+    : `${fecha(o.redeem_start_at, undefined, tz)} – ${mismoDia ? fecha(o.redeem_end_at, { hour: '2-digit', minute: '2-digit' }, tz) : fecha(o.redeem_end_at, undefined, tz)}`;
   const tag = beneficio(o.discount, o.price_cents, o.currency);
   return `<a class="ocard" href="${pre}/o/${esc(o.id)}">
     ${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : '<span class="ph">✦</span>'}
@@ -860,6 +880,7 @@ function tarjeta(o) {
 RUTAS.planes = async () => {
   if (!exigeSesion('planes')) return;
   const lista = await llamar('my_saved_offers', {});
+  const zona = await zonasDe(lista);
   const ahora = Date.now();
   const fin = (o) => new Date(o.event_at || o.redeem_end_at || o.redeem_start_at || 0).getTime();
   const proximos = (lista || []).filter((o) => fin(o) >= ahora);
@@ -868,11 +889,11 @@ RUTAS.planes = async () => {
     <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(t('Tus planes'))}</h1>
     ${proximos.length
-    ? `<div class="olist">${proximos.map(tarjeta).join('')}</div>`
+    ? `<div class="olist">${proximos.map((o) => tarjeta(o, zona(o))).join('')}</div>`
     : `<p class="empty">${esc(pasados.length
       ? t('No tienes nada próximo guardado.')
       : t('Todavía no has guardado nada. Cuando algo te guste, dale a «Guardar» y lo tendrás aquí.'))}</p>`}
-    ${pasados.length ? `<h2>${esc(t('Ya pasaron'))}</h2><div class="olist pasado">${pasados.map(tarjeta).join('')}</div>` : ''}
+    ${pasados.length ? `<h2>${esc(t('Ya pasaron'))}</h2><div class="olist pasado">${pasados.map((o) => tarjeta(o, zona(o))).join('')}</div>` : ''}
     <p><a class="pill" href="${pre}/explorar/">${esc(t('Buscar planes'))}</a></p>`);
 };
 
@@ -963,6 +984,7 @@ RUTAS.seguir = async ([id], params) => {
 RUTAS.codigos = async () => {
   if (!exigeSesion('codigos')) return;
   const lista = await llamar('my_redemptions', {});
+  const zona = await zonasDe(lista);
   const vivo = (r) => r.status === 'pending' && new Date(r.expires_at).getTime() > Date.now();
   const estado = (r) => (r.status === 'validated' ? t('Canjeado')
     : vivo(r) ? t('Listo para usar') : r.status === 'cancelled' ? t('Anulado') : t('Caducado'));
@@ -973,7 +995,7 @@ RUTAS.codigos = async () => {
       <a class="ocard" href="${vivo(r) ? `#/codigo/${esc(r.offer_id)}` : r.status === 'validated' ? `#/recibo/${esc(r.id)}` : `${pre}/o/${esc(r.offer_id)}`}">
         ${r.business_logo ? `<img src="${esc(r.business_logo)}" alt="" loading="lazy">` : '<span class="ph">✦</span>'}
         <span class="ocard-body"><b>${esc(r.offer_title)}</b>
-          <span class="muted">${esc(r.business_name)} · ${esc(fecha(r.validated_at || (r.status === 'pending' && r.event_at) || r.created_at))}</span>
+          <span class="muted">${esc(r.business_name)} · ${esc(fecha(r.validated_at || (r.status === 'pending' && r.event_at) || r.created_at, undefined, zona(r)))}</span>
           <span class="ocard-meta"><span class="tag${vivo(r) ? '' : ' off'}">${esc(estado(r))}</span>
             ${r.status === 'validated' ? `<span class="muted">${esc(t('Ver recibo'))} →</span>` : ''}</span>
         </span></a>`).join('')}</div>`
@@ -1015,8 +1037,8 @@ function vigilaCanje(code, alValidar) {
 }
 
 /** El negocio ya lo ha validado: la confirmación grande, como en la app. */
-function pintaCanjeado({ titulo, negocio, benef, at, volver = '#/codigos' }) {
-  const hora = fecha(at, { hour: '2-digit', minute: '2-digit' });
+function pintaCanjeado({ titulo, negocio, benef, at, volver = '#/codigos', tz }) {
+  const hora = fecha(at, { hour: '2-digit', minute: '2-digit' }, tz);
   pinta(`
     <div class="ticket canjeado" role="status">
       <p class="hecho-ic" aria-hidden="true">✓</p>
@@ -1035,7 +1057,11 @@ function pintaCanjeado({ titulo, negocio, benef, at, volver = '#/codigos' }) {
 RUTAS.codigo = async ([id], params) => {
   if (!exigeSesion(`codigo/${id}${params.toString() ? `?${params}` : ''}`)) return;
   const plazas = Math.max(1, Math.min(10, parseInt(params.get('plazas') || '1', 10) || 1));
-  const tk = await llamar('start_redemption', { p_offer_id: id, p_seats: plazas });
+  // La zona del negocio, para «vale hasta el…» y la hora del canje.
+  const [tk, tz] = await Promise.all([
+    llamar('start_redemption', { p_offer_id: id, p_seats: plazas }),
+    llamar('offer_tz', { p_offer: id }).catch(() => null),
+  ]);
   const url = `https://klendar.app/r/${tk.code}`;
   const caduca = new Date(tk.expires_at);
   const largo = caduca.getTime() - Date.now() > 3600 * 1000;
@@ -1092,7 +1118,7 @@ RUTAS.codigo = async ([id], params) => {
 
   // En cuanto el negocio lo valida, esta pantalla se entera sola.
   alSalir(vigilaCanje(tk.code, (at) => pintaCanjeado({
-    titulo: tk.offer_title, negocio: tk.business_name, benef, at,
+    titulo: tk.offer_title, negocio: tk.business_name, benef, at, tz,
   })));
 
   // La cuenta atrás, o hasta cuándo vale si queda más de una hora. Un código
@@ -1111,7 +1137,7 @@ RUTAS.codigo = async ([id], params) => {
       clearInterval(reloj);
       return;
     }
-    if (falta >= 3600 * 1000) { el.textContent = `${t('Vale hasta el')} ${fecha(tk.expires_at)}`; return; }
+    if (falta >= 3600 * 1000) { el.textContent = `${t('Vale hasta el')} ${fecha(tk.expires_at, undefined, tz)}`; return; }
     const m = Math.floor(falta / 60000);
     const s = Math.floor((falta % 60000) / 1000);
     el.textContent = `${t('Válido durante')} ${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
@@ -1159,6 +1185,7 @@ RUTAS.recibo = async ([id]) => {
   const lista = await llamar('my_redemptions', {});
   const r = (lista || []).find((x) => x.id === id);
   if (!r) { pinta(`<p class="empty">${esc(t('Ese recibo no está.'))}</p>`); return; }
+  const tz = (await zonasDe([r]))(r);
   const lugar = [r.business_address, r.business_city].filter(Boolean).join(' · ');
   const benef = beneficio(r.discount, r.price_cents, r.currency);
   pinta(`
@@ -1171,7 +1198,7 @@ RUTAS.recibo = async ([id]) => {
         <dt>${esc(t('Qué'))}</dt><dd>${esc(r.offer_title)}</dd>
         ${benef ? `<dt>${esc(t('Beneficio'))}</dt><dd>${esc(benef)}</dd>` : ''}
         ${(r.seats || 1) > 1 ? `<dt>${esc(t('Plazas'))}</dt><dd>${r.seats}</dd>` : ''}
-        <dt>${esc(t('Cuándo'))}</dt><dd>${esc(fecha(r.validated_at, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }))}</dd>
+        <dt>${esc(t('Cuándo'))}</dt><dd>${esc(fecha(r.validated_at, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }, tz))}</dd>
         <dt>${esc(t('Código'))}</dt><dd><code>${esc(codigoLegible(r.code))}</code></dd>
       </dl>
       <p class="muted">${esc(t('Esto no es una factura: el cobro lo hace el negocio. Es el resguardo de que usaste este código.'))}</p>
@@ -1184,6 +1211,7 @@ RUTAS.recibo = async ([id]) => {
 RUTAS.sellos = async () => {
   if (!exigeSesion('sellos')) return;
   const lista = await llamar('my_stamp_cards', {});
+  await zonasDe(lista); // la hora del canje, en la del negocio
   pinta(`
     <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(t('Tarjetas de sellos'))}</h1>
@@ -1194,7 +1222,7 @@ RUTAS.sellos = async () => {
         <p>${esc(t('Premio'))}: <b>${esc(c.reward)}</b></p>
         <p class="muted">${c.pending_code || c.stamps >= c.goal ? esc(t('¡Te toca premio!')) : esc(c.goal - c.stamps === 1 ? t('Te falta 1 sello') : `${t('Te faltan')} ${c.goal - c.stamps} ${t('sellos')}`)}</p>
         ${!c.is_active ? `<p class="muted">${esc(t('En pausa: ahora mismo no se dan sellos nuevos. Los tuyos siguen aquí.'))}</p>` : ''}
-        ${c.pending_code || c.stamps >= c.goal ? `<button class="pill accent" data-premio="${esc(c.id)}" data-reward="${esc(c.reward)}" data-negocio="${esc(c.business_name)}">${esc(c.pending_code ? t('Ver el código') : t('Pedir el premio'))}</button>` : ''}
+        ${c.pending_code || c.stamps >= c.goal ? `<button class="pill accent" data-premio="${esc(c.id)}" data-reward="${esc(c.reward)}" data-negocio="${esc(c.business_name)}" data-biz="${esc(c.business_id)}">${esc(c.pending_code ? t('Ver el código') : t('Pedir el premio'))}</button>` : ''}
       </div>`).join('')
     : `<p class="empty">${esc(t('Todavía no tienes ninguna. Se abren solas: canjea algo en un sitio que tenga tarjeta y ahí tendrás tu primer sello.'))}</p>`}`);
 
@@ -1216,7 +1244,7 @@ RUTAS.sellos = async () => {
       I18N.translate(view);
       // Igual que un código de oferta: al validarlo en el local, se ve aquí.
       alSalir(vigilaCanje(r.code, (at) => pintaCanjeado({
-        titulo: r.reward || b.dataset.reward, negocio: b.dataset.negocio, at, volver: '#/sellos',
+        titulo: r.reward || b.dataset.reward, negocio: b.dataset.negocio, at, volver: '#/sellos', tz: ZONAS.get(b.dataset.biz),
       })));
     } catch (e) { toast(e.message, true); }
   }; });

@@ -241,7 +241,8 @@ def head(t, path, page_title=None, page_desc=None, extra=''):
 # Solo la portada trae contenido en vivo; los documentos no lo necesitan.
 LIVE_SCRIPTS = (
     '<script src="/config.js?v=1"></script>'
-    '<script src="/assets/live.js?v=2" defer></script>'
+    '<script src="/assets/zona.js?v=1" defer></script>'
+    '<script src="/assets/live.js?v=3" defer></script>'
 )
 
 

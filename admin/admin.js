@@ -24,30 +24,22 @@ const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const ms = (name) => `<span class="ms" aria-hidden="true">${name}</span>`;
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const LOC = () => (I18N.lang === 'en' ? 'en-GB' : 'es-ES');
-// Las horas, siempre las de Madrid: el negocio y la gente están en España,
-// abra quien abra el panel (y con el ordenador en la hora que sea).
-const TZ = 'Europe/Madrid';
-const fmtDate = (s) => s ? new Date(s).toLocaleString(LOC(), { dateStyle: 'medium', timeStyle: 'short', timeZone: TZ }) : '—';
-const fmtDay = (s) => s ? new Date(s).toLocaleDateString(LOC(), { dateStyle: 'medium', timeZone: TZ }) : '—';
+// Las horas: las de Madrid, abra quien abra el panel (y con el ordenador en
+// la hora que sea); las de un negocio o una publicación concretos, en la zona
+// de ese negocio (Canarias va una por detrás; ver /assets/zona.js). `tz` es
+// opcional en `fmtDate` y `fmtDay`.
+const KZ = globalThis.KlendarZona;
+const TZ = KZ.MADRID;
+const fmtDate = (s, tz = TZ) => s ? new Date(s).toLocaleString(LOC(), { dateStyle: 'medium', timeStyle: 'short', timeZone: KZ.zona(tz) }) : '—';
+const fmtDay = (s, tz = TZ) => s ? new Date(s).toLocaleDateString(LOC(), { dateStyle: 'medium', timeZone: KZ.zona(tz) }) : '—';
 /** AAAA-MM-DD de hoy (o dentro de `dias`) en Madrid, para <input type="date">. */
-const diaMadridISO = (dias = 0) => new Intl.DateTimeFormat('en-CA', { timeZone: TZ }).format(new Date(Date.now() + dias * 864e5));
+const diaMadridISO = (dias = 0) => KZ.hoy(TZ, dias);
 /** Un instante → «AAAA-MM-DDTHH:MM» del reloj de Madrid (datetime-local). */
-function aInputMadrid(d) {
-  const p = Object.fromEntries(new Intl.DateTimeFormat('en-GB', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
-    .formatToParts(d).map((x) => [x.type, x.value]));
-  return `${p.year}-${p.month}-${p.day}T${String(+p.hour % 24).padStart(2, '0')}:${p.minute}`;
-}
+const aInputMadrid = (d) => KZ.aInput(d, TZ);
 /** Lo escrito en un datetime-local, leído como hora de Madrid → ISO. */
-function deInputMadrid(v) {
-  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(String(v || ''));
-  if (!m) return null;
-  const pared = Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]);
-  // Lo que Madrid va por delante de UTC en ese momento (1 h o 2 h).
-  const desfase = (t) => Date.parse(`${aInputMadrid(new Date(t))}:00Z`) - Math.floor(t / 6e4) * 6e4;
-  let t = pared - desfase(pared);
-  t = pared - desfase(t);
-  return new Date(t).toISOString();
-}
+const deInputMadrid = (v) => KZ.deInput(v, TZ);
+/** «Europe/Madrid» → cómo se lee en la ficha del admin. */
+const zonaTxt = (tz) => `<code>${esc(tz)}</code>${tz === KZ.CANARIAS ? ` <span class="muted small">${esc(I18N.t('una hora menos que en la península'))}</span>` : ''}`;
 const fmtMoney = (c, cur = 'EUR') => (c == null ? '—' : (c / 100).toLocaleString('es-ES', { style: 'currency', currency: cur }));
 const fmtNum = (n) => (n ?? 0).toLocaleString('es-ES');
 const ago = (s) => {
@@ -164,7 +156,7 @@ function downloadCsv(name, rows, cols) {
   const csv = lines.map((l) => l.map((v) => `"${v.replace(/"/g, '""')}"`).join(';')).join('\r\n');
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }));
-  a.download = `${name}-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
+  a.download = `${name}-${diaMadridISO()}.csv`; a.click();
 }
 
 // Gráfica de barras simple.
@@ -485,6 +477,7 @@ async function businessDetail(v, id) {
   const d = await rpc('admin_business_detail', { p_id: id });
   const b = d.business;
   if (!b) throw new Error('Negocio no encontrado.');
+  const tz = KZ.de(b);
   const cur = d.subscriptions.find((s) => ['trial', 'active', 'past_due'].includes(s.status));
   const social = b.social_links && typeof b.social_links === 'object' ? Object.entries(b.social_links).filter(([, u]) => u) : [];
   const hours = b.opening_hours && typeof b.opening_hours === 'object' ? Object.entries(b.opening_hours) : [];
@@ -505,7 +498,7 @@ async function businessDetail(v, id) {
         ${appLink('/b/' + b.id)}
       </div>
     </div>
-    ${b.rejection_reason ? `<div class="card"><b>Motivo del rechazo:</b> ${esc(b.rejection_reason)}</div>` : ''}
+    ${b.rejection_reason ? `<div class="card"><b>Motivo del rechazo:</b> ${esc(b.rejection_reason)}${b.rejection_reason_en ? `<div class="muted small" style="margin-top:4px"><b>${I18N.lang === 'en' ? 'In English' : 'En inglés'}:</b> ${esc(b.rejection_reason_en)}</div>` : ''}</div>` : ''}
     <div class="grid2">
       <div class="card"><h2>Ficha</h2><dl class="kv">
         <dt>Categoría</dt><dd>${esc(b.category || '—')}</dd>
@@ -517,7 +510,8 @@ async function businessDetail(v, id) {
         <dt>CIF / NIF</dt><dd>${esc(b.tax_id || '—')}</dd>
         <dt>Dueño</dt><dd>${esc(b.owner_name || '—')} · <a class="link" href="#/usuarios/${b.owner_id}">${esc(b.owner_email || '')}</a></dd>
         <dt>Valoración</dt><dd>${b.rating_count ? `★ ${Number(b.rating_avg).toFixed(1)} (${b.rating_count})` : 'sin reseñas'}</dd>
-        <dt>Alta</dt><dd>${fmtDate(b.created_at)} ${b.verified_at ? `· ${I18N.lang === 'en' ? 'verified' : 'verificado'} ${fmtDate(b.verified_at)}` : ''}</dd>
+        <dt>Alta</dt><dd>${fmtDate(b.created_at, tz)} ${b.verified_at ? `· ${I18N.lang === 'en' ? 'verified' : 'verificado'} ${fmtDate(b.verified_at, tz)}` : ''}</dd>
+        <dt>Zona horaria</dt><dd>${zonaTxt(tz)}</dd>
         <dt>Horario</dt><dd>${hours.length ? hours.map(([k, val]) => `${esc(k)}: ${esc(Array.isArray(val) ? val.map((x) => Array.isArray(x) ? x.join('–') : JSON.stringify(x)).join(', ') : JSON.stringify(val))}`).join('<br>') : '—'}</dd>
         <dt>Descripción</dt><dd>${esc(b.description || '—')}</dd>
         <dt>Id</dt><dd><code>${b.id}</code></dd>
@@ -551,9 +545,9 @@ async function businessDetail(v, id) {
       ${table({ cols: [
         { h: 'Publicación', r: (o) => `${KIND_ICON[o.kind]} <span class="title">${esc(o.title)}</span>` },
         { h: 'Estado', r: (o) => `${tag(o.status)} ${tag(o.moderation_status)} ${o.is_boosted ? '<span class="tag">boost</span>' : ''}` },
-        { h: 'Cuándo', r: (o) => `<span class="nowrap">${fmtDate(o.kind === 'flash_offer' ? o.redeem_end_at : o.event_at)}</span>` },
+        { h: 'Cuándo', r: (o) => `<span class="nowrap">${fmtDate(o.kind === 'flash_offer' ? o.redeem_end_at : o.event_at, tz)}</span>` },
         { h: 'Vistas', num: true, r: (o) => fmtNum(o.views_count) }, { h: 'Canjes', num: true, r: (o) => `${o.redemptions_count}${o.max_redemptions ? ` / ${o.max_redemptions}` : ''}` },
-        { h: 'Creada', r: (o) => fmtDay(o.created_at) },
+        { h: 'Creada', r: (o) => fmtDay(o.created_at, tz) },
       ], rows: d.offers, onRow: true, empty: 'Este negocio no ha publicado nada.' })}
     </div>
     <div class="grid2">
@@ -579,9 +573,12 @@ async function businessAction(a, b, d) {
       await rpc('admin_set_verification', { p_id: b.id, p_status: 'verified' }); toast('Negocio verificado');
     }
     if (a === 'reject') {
-      const r = await modal({ title: 'Rechazar negocio', intro: 'El dueño recibirá el motivo como notificación en la app. Sé concreto: «no encontramos el local en la dirección indicada», «faltan datos fiscales»…', fields: [{ name: 'reason', label: 'Motivo', type: 'textarea', required: true }], submit: 'Rechazar', danger: true });
+      const r = await modal({ title: 'Rechazar negocio', intro: 'El dueño recibirá el motivo como notificación en la app. Sé concreto: «no encontramos el local en la dirección indicada», «faltan datos fiscales»…', fields: [
+        { name: 'reason', label: 'Motivo', type: 'textarea', required: true },
+        { name: 'reason_en', label: 'En inglés (opcional)', type: 'textarea', help: 'Lo recibe quien tiene la app en inglés. Si lo dejas vacío, le llega el español.' },
+      ], submit: 'Rechazar', danger: true });
       if (!r) return;
-      await rpc('admin_set_verification', { p_id: b.id, p_status: 'rejected', p_reason: r.reason }); toast('Negocio rechazado');
+      await rpc('admin_set_verification', { p_id: b.id, p_status: 'rejected', p_reason: r.reason, p_reason_en: r.reason_en || null }); toast('Negocio rechazado');
     }
     if (a === 'active') {
       if (b.is_active && !await confirmDlg('Desactivar negocio', 'El negocio y sus publicaciones dejarán de verse en la app hasta que lo actives de nuevo.', { danger: true, submit: 'Desactivar' })) return;
@@ -630,10 +627,10 @@ async function businessAction(a, b, d) {
       await rpc('admin_record_payment', { p_business: b.id, p_amount_cents: Math.round(parseFloat(r.amount.replace(',', '.')) * 100), p_method: r.method, p_period_start: r.start, p_period_end: r.end, p_notes: r.notes || null }); toast('Pago registrado');
     }
     if (a === 'notify') {
-      const r = await modal({ title: 'Notificación al equipo del negocio', intro: 'Lo reciben el dueño y los encargados como notificación (y push si la tienen activada).', fields: [{ name: 'title', label: 'Título', required: true }, { name: 'body', label: 'Texto', type: 'textarea', required: true }] });
+      const r = await modal({ title: 'Notificación al equipo del negocio', intro: 'Lo reciben el dueño y los encargados como notificación (y push si la tienen activada).', fields: CAMPOS_AVISO });
       if (!r) return;
       const ids = d.members.filter((m) => ['owner', 'manager'].includes(m.role)).map((m) => m.user_id);
-      const n = await rpc('admin_send_notification', { p_audience: 'ids', p_user_ids: ids, p_title: r.title, p_body: r.body, p_route: '/my-business/' + b.id }); toast(I18N.lang === 'en' ? `Notification sent to ${n} ${n === 1 ? 'person' : 'people'}` : `Notificación enviada a ${n} persona(s)`);
+      const n = await rpc('admin_send_notification', { p_audience: 'ids', p_user_ids: ids, ...textosAviso(r), p_route: '/my-business/' + b.id }); toast(I18N.lang === 'en' ? `Notification sent to ${n} ${n === 1 ? 'person' : 'people'}` : `Notificación enviada a ${n} persona(s)`);
     }
     if (a === 'addmember') {
       const r = await modal({ title: 'Añadir persona al equipo', intro: 'Busca por email en «Usuarios» y copia su id, o escribe aquí su email exacto.', fields: [{ name: 'email', label: 'Email del usuario', type: 'email', required: true }, { name: 'role', label: 'Rol', type: 'select', value: 'staff', options: [['staff', 'Empleado (valida códigos)'], ['manager', 'Encargado (gestiona publicaciones)'], ['owner', 'Propietario']] }] });
@@ -686,7 +683,7 @@ PAGES.publicaciones = async (v, id) => {
       cols: [
         { h: 'Publicación', r: (o) => `${img(o.images?.[0], KIND_ICON[o.kind])}<span class="title">${esc(o.title)}<span class="sub">${LABELS[o.kind]} · <a class="link" href="#/negocios/${o.business_id}" onclick="event.stopPropagation()">${esc(o.business_name)}</a> ${o.verification_status !== 'verified' ? tag(o.verification_status) : ''}</span></span>` },
         { h: 'Estado', r: (o) => `${tag(o.status)} ${tag(o.moderation_status)} ${flagTags(o)} ${o.adults_only ? '<span class="tag bad">+18</span>' : ''} ${o.is_boosted ? '<span class="tag">boost</span>' : ''} ${o.open_reports ? `<span class="tag bad">${ms('flag')} ${o.open_reports}</span>` : ''}` },
-        { h: 'Cuándo', r: (o) => `<span class="nowrap">${o.kind === 'flash_offer' ? `${fmtDate(o.redeem_start_at)}<span class="sub">→ ${fmtDate(o.redeem_end_at)}</span>` : fmtDate(o.event_at)}</span>` },
+        { h: 'Cuándo', r: (o) => `<span class="nowrap">${o.kind === 'flash_offer' ? `${fmtDate(o.redeem_start_at, KZ.de(o))}<span class="sub">→ ${fmtDate(o.redeem_end_at, KZ.de(o))}</span>` : fmtDate(o.event_at, KZ.de(o))}</span>` },
         { h: 'Precio', r: (o) => `${o.discount ? `<span class="tag">${esc(discountLabel(o.discount))}</span> ` : ''}${o.price_cents != null ? fmtMoney(o.price_cents, o.currency) : ''}` },
         { h: 'Vistas', num: true, r: (o) => fmtNum(o.views_count) },
         { h: 'Canjes', num: true, r: (o) => `${o.redemptions_count}${o.max_redemptions ? `<span class="muted"> / ${o.max_redemptions}</span>` : ''}` },
@@ -731,6 +728,8 @@ async function offerDetail(v, id) {
   const d = await rpc('admin_offer_detail', { p_id: id });
   const o = d.offer;
   if (!o) throw new Error('Publicación no encontrada.');
+  // Sus horas, en la zona de su negocio (la posición es la del local).
+  const tz = KZ.de(o);
   v.innerHTML = `
     <div class="page-head"><a class="btn sm ghost" href="#/publicaciones">← Publicaciones</a></div>
     <div class="detail-head">
@@ -750,14 +749,15 @@ async function offerDetail(v, id) {
       <div class="card"><h2>Detalles</h2><dl class="kv">
         <dt>Descripción</dt><dd>${esc(o.description || '—')}</dd>
         <dt>Condiciones</dt><dd>${esc(o.terms || '—')}</dd>
-        ${o.kind === 'flash_offer' ? `<dt>Canje</dt><dd>${fmtDate(o.redeem_start_at)} → ${fmtDate(o.redeem_end_at)}</dd>` : `<dt>Evento</dt><dd>${fmtDate(o.event_at)}${o.event_end_at ? ` → ${fmtDate(o.event_end_at)}` : ''}</dd>`}
+        ${o.kind === 'flash_offer' ? `<dt>Canje</dt><dd>${fmtDate(o.redeem_start_at, tz)} → ${fmtDate(o.redeem_end_at, tz)}</dd>` : `<dt>Evento</dt><dd>${fmtDate(o.event_at, tz)}${o.event_end_at ? ` → ${fmtDate(o.event_end_at, tz)}` : ''}</dd>`}
+        <dt>Zona horaria</dt><dd>${zonaTxt(tz)}</dd>
         <dt>Descuento / precio</dt><dd>${o.discount ? esc(discountLabel(o.discount)) : '—'} ${o.price_cents != null ? `· ${fmtMoney(o.price_cents, o.currency)}` : ''}</dd>
         <dt>Aforo</dt><dd>${I18N.lang === 'en' ? `${o.max_redemptions ? `${o.redemptions_count} of ${o.max_redemptions}` : `${o.redemptions_count} (no limit)`} ${o.max_per_user ? `· max. ${o.max_per_user} per person` : ''}` : `${o.max_redemptions ? `${o.redemptions_count} de ${o.max_redemptions}` : `${o.redemptions_count} (sin límite)`} ${o.max_per_user ? `· máx. ${o.max_per_user} por persona` : ''}`}</dd>
         <dt>Enlace externo</dt><dd>${o.external_url ? `<a class="link" target="_blank" rel="noopener" href="${esc(o.external_url)}">${esc(o.external_url)}</a>` : '—'}</dd>
         <dt>Diseño</dt><dd>${o.style && Object.keys(o.style).length ? esc(JSON.stringify(o.style)) : 'por defecto'}</dd>
         <dt>Guardada por</dt><dd>${fmtNum(d.saved)} ${I18N.lang === 'en' ? (d.saved === 1 ? 'person' : 'people') : 'persona(s)'}</dd>
         <dt>Posición</dt><dd>${o.lat ? `<a class="link" target="_blank" rel="noopener" href="https://www.google.com/maps?q=${o.lat},${o.lng}">${o.lat.toFixed(5)}, ${o.lng.toFixed(5)} ↗</a>` : 'la del negocio'}</dd>
-        <dt>Creada / editada</dt><dd>${fmtDate(o.created_at)} · ${fmtDate(o.updated_at)}</dd>
+        <dt>Creada / editada</dt><dd>${fmtDate(o.created_at, tz)} · ${fmtDate(o.updated_at, tz)}</dd>
         <dt>Id</dt><dd><code>${o.id}</code></dd>
       </dl>
       ${(o.images || []).length ? `<h3 style="margin-top:12px">Fotos</h3><div class="gallery">${o.images.map((u) => `<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt=""></a>`).join('')}</div>` : ''}
@@ -770,7 +770,7 @@ async function offerDetail(v, id) {
       </div>
     </div>
     <div class="card"><h2>${I18N.lang === 'en' ? `Last ${d.redemptions.length} redemptions` : `Canjes (${d.redemptions.length} últimos)`}</h2>
-      ${table({ cols: [{ h: 'Usuario', r: (r) => esc(r.user_email || '—') }, { h: 'Código', r: (r) => `<code>${esc(r.code)}</code>` }, { h: 'Estado', r: (r) => tag(r.status) }, { h: 'Generado', r: (r) => fmtDate(r.created_at) }, { h: 'Validado', r: (r) => `${fmtDate(r.validated_at)}<span class="sub">${esc(r.validated_by_email || '')}</span>` }], rows: d.redemptions, empty: 'Nadie ha canjeado todavía.' })}
+      ${table({ cols: [{ h: 'Usuario', r: (r) => esc(r.user_email || '—') }, { h: 'Código', r: (r) => `<code>${esc(r.code)}</code>` }, { h: 'Estado', r: (r) => tag(r.status) }, { h: 'Generado', r: (r) => fmtDate(r.created_at, tz) }, { h: 'Validado', r: (r) => `${fmtDate(r.validated_at, tz)}<span class="sub">${esc(r.validated_by_email || '')}</span>` }], rows: d.redemptions, empty: 'Nadie ha canjeado todavía.' })}
     </div>`;
   $$('[data-a]').forEach((btn) => { btn.onclick = async () => {
     try {
@@ -931,8 +931,8 @@ async function userDetail(v, id) {
         if (!r) return; await rpc('admin_set_user_type', { p_id: u.id, p_type: r.type }); toast('Tipo actualizado');
       }
       if (a === 'notify') {
-        const r = await modal({ title: 'Notificación al usuario', fields: [{ name: 'title', label: 'Título', required: true }, { name: 'body', label: 'Texto', type: 'textarea', required: true }] });
-        if (!r) return; await rpc('admin_send_notification', { p_audience: 'ids', p_user_ids: [u.id], p_title: r.title, p_body: r.body }); toast('Notificación enviada');
+        const r = await modal({ title: 'Notificación al usuario', fields: CAMPOS_AVISO });
+        if (!r) return; await rpc('admin_send_notification', { p_audience: 'ids', p_user_ids: [u.id], ...textosAviso(r) }); toast('Notificación enviada');
       }
       if (a === 'admin') {
         if (u.is_admin) { if (!await confirmDlg('Quitar permisos de administrador', en ? `${esc(u.email)} will no longer be able to log in to this panel.` : `${esc(u.email)} dejará de poder entrar en este panel.`, { danger: true, submit: 'Quitar' })) return; await rpc('admin_remove_admin', { p_user_id: u.id }); toast('Ya no es administrador'); }
@@ -1088,10 +1088,11 @@ PAGES.sugerencias = async (v) => {
     $$('#list [data-reply]').forEach((b) => { b.onclick = async () => {
       const r2 = await modal({ title: 'Responder', intro: 'Le llega como notificación en la app (y push si lo tiene activado). Sé concreto y breve.', fields: [
         { name: 'reply', label: 'Tu respuesta', type: 'textarea', required: true },
+        { name: 'reply_en', label: 'En inglés (opcional)', type: 'textarea', help: 'Lo recibe quien tiene la app en inglés. Si lo dejas vacío, le llega el español.' },
         { name: 'status', label: 'Y marcarla como', type: 'select', value: 'reviewing', options: [['reviewing', 'La estamos viendo'], ['planned', 'La haremos'], ['done', 'Hecho'], ['declined', 'De momento no'], ['new', 'Dejar sin leer']] },
       ], submit: 'Responder' });
       if (!r2) return;
-      try { await rpc('admin_set_feedback', { p_id: b.dataset.reply, p_status: r2.status, p_reply: r2.reply }); toast('Respuesta enviada'); refreshBadges(); load(); } catch (e) { toast(e.message, true); }
+      try { await rpc('admin_set_feedback', { p_id: b.dataset.reply, p_status: r2.status, p_reply: r2.reply, p_reply_en: r2.reply_en || null }); toast('Respuesta enviada'); refreshBadges(); load(); } catch (e) { toast(e.message, true); }
     }; });
     $$('#list [data-note]').forEach((b) => { b.onclick = async () => {
       const f = rows.find((x) => x.id === b.dataset.note);
@@ -1189,6 +1190,20 @@ PAGES.planes = async (v) => {
   await load();
 };
 
+/** Los campos de una notificación a mano: español obligatorio, inglés si se
+ * quiere (lo recibe quien tiene la app en inglés). */
+const CAMPOS_AVISO = [
+  { name: 'title', label: 'Título', required: true },
+  { name: 'body', label: 'Texto', type: 'textarea', required: true },
+  { name: 'title_en', label: 'Título en inglés (opcional)' },
+  { name: 'body_en', label: 'Texto en inglés (opcional)', type: 'textarea', help: 'Lo recibe quien tiene la app en inglés. Si lo dejas vacío, le llega el español.' },
+];
+/** Lo escrito → parámetros de `admin_send_notification` (vacío = sin inglés). */
+const textosAviso = (r) => ({
+  p_title: String(r.title || '').trim(), p_body: String(r.body || '').trim(),
+  p_title_en: String(r.title_en || '').trim() || null, p_body_en: String(r.body_en || '').trim() || null,
+});
+
 // ── Notificaciones y push ───────────────────────────────────────────────────────────
 PAGES.avisos = async (v) => {
   const p = params(); let tab = p.tab || 'send';
@@ -1205,6 +1220,9 @@ PAGES.avisos = async (v) => {
         <label class="f" id="cityf" hidden><span>Ciudad</span><input name="city" placeholder="Madrid"></label>
         <label class="f"><span>Título</span><input name="title" required maxlength="80"></label>
         <label class="f"><span>Texto</span><textarea name="body" required maxlength="300"></textarea></label>
+        <label class="f"><span>Título en inglés <small>(opcional)</small></span><input name="title_en" maxlength="80" lang="en"></label>
+        <label class="f"><span>Texto en inglés <small>(opcional)</small></span><textarea name="body_en" maxlength="300" lang="en"></textarea></label>
+        <p class="muted small" style="margin:-4px 0 0">Lo recibe quien tiene la app en inglés. Si lo dejas vacío, le llega el español.</p>
         <label class="f"><span>Ruta al pulsar <small>(opcional, p. ej. /explore)</small></span><input name="route" placeholder="/explore"></label>
         <div><button class="btn primary" type="submit">Enviar notificación…</button></div></form></div>`;
       const f = $('#sendf');
@@ -1213,7 +1231,7 @@ PAGES.avisos = async (v) => {
         e.preventDefault();
         const aud = f.audience.value;
         if (!await confirmDlg('Enviar notificación', I18N.lang === 'en' ? `“${esc(f.title.value)}” will be sent to: <b>${esc($('option:checked', f.audience).textContent)}${aud === 'city' ? ' ' + esc(f.city.value) : ''}</b>. This can't be undone.` : `Se enviará «${esc(f.title.value)}» a: <b>${esc($('option:checked', f.audience).textContent)}${aud === 'city' ? ' ' + esc(f.city.value) : ''}</b>. No se puede deshacer.`, { submit: 'Enviar' })) return;
-        try { const n = await rpc('admin_send_notification', { p_audience: aud, p_title: f.title.value.trim(), p_body: f.body.value.trim(), p_route: f.route.value.trim() || null, p_city: f.city.value.trim() || null }); toast(I18N.lang === 'en' ? `Notification sent to ${n} ${n === 1 ? 'person' : 'people'}` : `Notificación enviada a ${n} persona(s)`); f.reset(); } catch (err) { toast(err.message, true); }
+        try { const n = await rpc('admin_send_notification', { p_audience: aud, ...textosAviso({ title: f.title.value, body: f.body.value, title_en: f.title_en.value, body_en: f.body_en.value }), p_route: f.route.value.trim() || null, p_city: f.city.value.trim() || null }); toast(I18N.lang === 'en' ? `Notification sent to ${n} ${n === 1 ? 'person' : 'people'}` : `Notificación enviada a ${n} persona(s)`); f.reset(); } catch (err) { toast(err.message, true); }
       };
     }
     if (tab === 'history') {

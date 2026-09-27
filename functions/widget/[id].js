@@ -1,5 +1,5 @@
 import { configure, esc, isUuid, rpc, rpcAll } from '../_lib/page.js';
-import { benefit, firstPhoto, fmtDay, fmtEnd, fmtLong, fmtTime, guard } from '../_lib/public.js';
+import { benefit, firstPhoto, fmtDay, fmtEnd, fmtLong, fmtTime, guard, zonaDe } from '../_lib/public.js';
 
 // El recuadro que el negocio pega en su web: lo que tiene vivo ahora mismo,
 // sin que tenga que mantener nada. Es una página suelta pensada para ir
@@ -31,11 +31,13 @@ export async function onRequestGet(ctx) {
   ]);
   if (!b || !b.name) return new Response('not found', { status: 404 });
 
+  // Las horas, las del negocio (en Canarias, una menos que en la península).
+  const tz = zonaDe(b);
   const items = offers.slice(0, limit).map((o) => {
     const img = firstPhoto(o.images);
     const when = o.kind === 'future_event'
-      ? fmtLong(o.event_at, lang)
-      : `${fmtDay(o.redeem_start_at, lang)} · ${fmtTime(o.redeem_start_at, lang)} – ${fmtEnd(o.redeem_start_at, o.redeem_end_at, lang)}`;
+      ? fmtLong(o.event_at, lang, tz)
+      : `${fmtDay(o.redeem_start_at, lang, tz)} · ${fmtTime(o.redeem_start_at, lang, tz)} – ${fmtEnd(o.redeem_start_at, o.redeem_end_at, lang, tz)}`;
     const tag = benefit(o.discount, o.price_cents, o.currency, lang);
     return `<a class="it" href="${BASE}${en ? '/en' : ''}/o/${esc(o.id)}" target="_blank" rel="noopener">
       ${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : '<span class="ph">✦</span>'}

@@ -6,7 +6,8 @@
 // que hay, cuándo y dónde se lee aquí. Eso es lo que Google indexa y lo que
 // se le puede enseñar a un ayuntamiento o a un bar que aún no se fía.
 
-import { BackendDown, datosDePrueba, esc, html } from './page.js';
+import KZ from '../../assets/zona.js';
+import { BackendDown, datosDePrueba, esc, html, isUuid, rows } from './page.js';
 
 import { siteFooter, siteHeader } from './chrome.js';
 
@@ -20,45 +21,52 @@ export const money = (cents, currency = 'EUR', lang = 'es') =>
         currency,
       });
 
+// Cada fecha va en la hora del negocio (Canarias, una menos que la
+// península). `tz` es su zona; sin ella, Madrid. Ver `assets/zona.js`.
+const loc = (lang) => (lang === 'en' ? 'en-GB' : 'es-ES');
+
+/** La zona de una fila (negocio o publicación): la que traiga o la de sus
+ *  coordenadas. */
+export const zonaDe = (fila) => KZ.de(fila);
+
 /** «sábado 4 de octubre, 11:00» */
-export function fmtLong(iso, lang = 'es') {
-  if (!iso) return '';
-  try {
-    return new Intl.DateTimeFormat(lang === 'en' ? 'en-GB' : 'es-ES', {
-      timeZone: 'Europe/Madrid', weekday: 'long', day: 'numeric', month: 'long',
-      hour: '2-digit', minute: '2-digit',
-    }).format(new Date(iso));
-  } catch { return ''; }
-}
+export const fmtLong = (iso, lang = 'es', tz) => KZ.fmt(iso, tz, loc(lang), {
+  weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit',
+});
 
 /** «mié 24 sept» */
-export function fmtDay(iso, lang = 'es') {
-  if (!iso) return '';
-  try {
-    return new Intl.DateTimeFormat(lang === 'en' ? 'en-GB' : 'es-ES', {
-      timeZone: 'Europe/Madrid', weekday: 'short', day: 'numeric', month: 'short',
-    }).format(new Date(iso));
-  } catch { return ''; }
-}
+export const fmtDay = (iso, lang = 'es', tz) => KZ.fmt(iso, tz, loc(lang), {
+  weekday: 'short', day: 'numeric', month: 'short',
+});
 
-export function fmtTime(iso, lang = 'es') {
-  if (!iso) return '';
-  try {
-    return new Intl.DateTimeFormat(lang === 'en' ? 'en-GB' : 'es-ES', {
-      timeZone: 'Europe/Madrid', hour: '2-digit', minute: '2-digit',
-    }).format(new Date(iso));
-  } catch { return ''; }
-}
+export const fmtTime = (iso, lang = 'es', tz) => KZ.fmt(iso, tz, loc(lang), {
+  hour: '2-digit', minute: '2-digit',
+});
 
-/** ¿Mismo día en Madrid? */
-const diaMadrid = (iso) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(new Date(iso));
-export const sameDay = (a, b) => !!a && !!b && diaMadrid(a) === diaMadrid(b);
+/** ¿Mismo día en la zona del negocio? */
+export const sameDay = (a, b, tz) => !!a && !!b && KZ.dia(a, tz) === KZ.dia(b, tz);
 
 /** El final de una franja: solo la hora si acaba el mismo día; si no, con el
  *  día delante («dom 27 sept 10:57»). Como `Formatters.timeRange` en la app. */
-export function fmtEnd(startIso, endIso, lang = 'es') {
+export function fmtEnd(startIso, endIso, lang = 'es', tz) {
   if (!endIso) return '';
-  return sameDay(startIso, endIso) ? fmtTime(endIso, lang) : `${fmtDay(endIso, lang)} ${fmtTime(endIso, lang)}`;
+  return sameDay(startIso, endIso, tz)
+    ? fmtTime(endIso, lang, tz)
+    : `${fmtDay(endIso, lang, tz)} ${fmtTime(endIso, lang, tz)}`;
+}
+
+/** La zona de cada negocio de una lista que no trae coordenadas (la agenda
+ *  de una ciudad): `businesses.time_zone` se puede leer sin cuenta. Si no
+ *  contesta, la página sale igual, con la hora de Madrid. */
+export async function zonasDeNegocios(ids) {
+  const unicos = [...new Set((ids || []).filter(isUuid))].slice(0, 100);
+  const zonas = new Map();
+  if (!unicos.length) return zonas;
+  try {
+    const filas = await rows('businesses', `select=id,time_zone&id=in.(${unicos.join(',')})`);
+    for (const f of filas) if (KZ.valida(f.time_zone)) zonas.set(f.id, f.time_zone);
+  } catch { /* sin zonas: Madrid */ }
+  return zonas;
 }
 
 /** El beneficio en una etiqueta: «−20 %», «2x1», «12 €». */
@@ -189,13 +197,15 @@ export function openInApp(path, label = 'Abrir en la app', cls = 'pill accent bi
 <script>(function(){var a=document.getElementById('open');if(!a)return;if(!/Android/i.test(navigator.userAgent||''))a.href=a.getAttribute('data-web');})();</script>`;
 }
 
-/** Tarjeta de publicación para listados (negocio y agenda). */
-export function offerCard(o, lang = 'es') {
+/** Tarjeta de publicación para listados (negocio y agenda). `tz` es la zona
+ *  de su negocio; si no se da, la de sus coordenadas. */
+export function offerCard(o, lang = 'es', tz = KZ.de(o)) {
   const en = lang === 'en';
   const img = firstPhoto(o.images);
+  const ini = o.redeem_start_at || o.starts_at;
   const when = o.kind === 'future_event'
-    ? fmtLong(o.event_at || o.starts_at, lang)
-    : `${fmtDay(o.redeem_start_at || o.starts_at, lang)} · ${fmtTime(o.redeem_start_at || o.starts_at, lang)} – ${fmtEnd(o.redeem_start_at || o.starts_at, o.redeem_end_at, lang)}`;
+    ? fmtLong(o.event_at || o.starts_at, lang, tz)
+    : `${fmtDay(ini, lang, tz)} · ${fmtTime(ini, lang, tz)} – ${fmtEnd(ini, o.redeem_end_at, lang, tz)}`;
   const tag = benefit(o.discount, o.price_cents, o.currency, lang);
   const prior = priorPrice(o.discount, lang);
   return `<a class="ocard" href="${en ? '/en' : ''}/o/${esc(o.id)}">

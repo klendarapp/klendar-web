@@ -325,8 +325,6 @@ const I18N = makeI18N({
     'Tu negocio está en revisión.': 'Your business is under review.',
     'Tu negocio está rechazado.': 'Your business was rejected.',
     'Tu negocio está verificado.': 'Your business is verified.',
-    'Mientras tanto puedes preparar publicaciones en borrador; se verán en cuanto te verifiquemos.':
-      'Meanwhile you can prepare draft publications; they go live as soon as we verify you.',
     ': algo que se canjea hoy, con cuenta atrás y aforo («café + tostada 2,50 € hasta mediodía»).':
       ': something redeemed today, with a countdown and a capacity («coffee + toast €2.50 until noon»).',
     ': algo con fecha, que se guarda en la agenda y puede admitir reserva de plaza.':
@@ -657,7 +655,8 @@ const I18N = makeI18N({
     "plazas": "places",
     "Nombre *": "Name *",
     "No hemos encontrado esa dirección en el mapa: arrastra la chincheta en «Ubicación en el mapa».": "We couldn't find that address on the map: drag the pin in “Location on the map”.",
-    "Las fechas y horas son las de Madrid (hora peninsular española).": "Dates and times are Madrid time (mainland Spain).",
+    "Las fechas y horas son las de Canarias, donde está tu local.": "Dates and times are Canary Islands time, where your venue is.",
+    "Las fechas y horas son las de la península (hora de Madrid), donde está tu local.": "Dates and times are mainland Spain time (Madrid), where your venue is.",
     "Hasta 6 fotos o vídeos. La primera es la portada; muévelas con las flechas. Si no pones ninguna, se usa la foto del local. Los vídeos se ven al abrir la publicación (en el feed van las fotos).": "Up to 6 photos or videos. The first one is the cover; move them with the arrows. If you don't add any, the venue's photo is used. Videos play when the publication is opened (the feed shows the photos).",
     "Ese código no es de tu negocio.": "That code doesn't belong to your business.",
     "Demasiados intentos seguidos. Espera un momento.": "Too many attempts in a row. Wait a moment.",
@@ -665,4 +664,9 @@ const I18N = makeI18N({
     "Hay gente con reserva": "People have booked",
     "No se puede borrar mientras alguien tenga reserva: perdería su código sin enterarse. Si la cancelas, anulamos las reservas y avisamos a cada persona.": "It can't be deleted while someone has a booking: they'd lose their code without knowing. If you cancel it, we void the bookings and tell each person.",
     "Cancelar publicación": "Cancel publication",
+    // Revisión 2026-09-28: aviso de verificación como en la app
+    "Motivo:": "Reason:",
+    "No hemos podido verificar el negocio. Escríbenos a info@klendar.app.": "We couldn't verify the business. Write to info@klendar.app.",
+    "Estamos revisando tu negocio; normalmente tardamos 24–48 h. Mientras tanto puedes preparar la ficha y tus publicaciones: se harán públicas al verificarlo. Si pasan más de 48 h sin noticias, escríbenos.": "We're reviewing your business; it usually takes 24–48 h. Meanwhile you can prepare your profile and publications: they go public once verified. If more than 48 h go by without news, write to us.",
+    "Escribir a soporte": "Email support",
 });

@@ -844,4 +844,14 @@ const I18N = makeI18N({
   'Reintentar': 'Try again',
   "No se ha podido cargar. Prueba otra vez.": "It couldn't be loaded. Try again.",
   'Hasta (hora de Madrid)': 'Until (Madrid time)',
+  // Revisión 2026-09-28: zona de cada negocio y textos en inglés
+  'Zona horaria': 'Time zone',
+  'una hora menos que en la península': 'one hour behind mainland Spain',
+  'Título en inglés': 'Title in English',
+  'Texto en inglés': 'Text in English',
+  'Título en inglés (opcional)': 'Title in English (optional)',
+  'Texto en inglés (opcional)': 'Text in English (optional)',
+  'En inglés (opcional)': 'In English (optional)',
+  'Lo recibe quien tiene la app en inglés. Si lo dejas vacío, le llega el español.': 'People with the app in English get this. If you leave it empty, they get the Spanish.',
+  '(opcional)': '(optional)',
 });

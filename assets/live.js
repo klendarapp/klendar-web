@@ -23,7 +23,11 @@
     { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const money = (c, cur = 'EUR') => (c == null ? '' : (c / 100)
     .toLocaleString(en ? 'en-IE' : 'es-ES', { style: 'currency', currency: cur }));
-  const cuando = (iso) => {
+  // Cada hora, la de su negocio (Canarias va una por detrás): ver
+  // `/assets/zona.js`. Si no ha cargado, Madrid.
+  const KZ = window.KlendarZona;
+  const cuando = (iso, tz) => {
+    if (KZ) return KZ.fmt(iso, tz, LOC, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
     try {
       return new Intl.DateTimeFormat(LOC, {
         timeZone: 'Europe/Madrid', weekday: 'short', day: 'numeric', month: 'short',
@@ -54,9 +58,23 @@
 
   const base = en ? '/en' : '';
 
+  /** La zona de cada negocio (la agenda no trae coordenadas). */
+  const zonas = async (ids) => {
+    const unicos = [...new Set(ids.filter((id) => /^[0-9a-f-]{36}$/i.test(id || '')))];
+    if (!unicos.length || !KZ) return new Map();
+    try {
+      const r = await fetch(`${env.url}/rest/v1/businesses?select=id,time_zone&id=in.(${unicos.join(',')})`, {
+        headers: { apikey: env.key },
+      });
+      const filas = r.ok ? await r.json() : [];
+      return new Map((Array.isArray(filas) ? filas : []).map((f) => [f.id, f.time_zone]));
+    } catch { return new Map(); }
+  };
+
   async function pintar(ciudad) {
     const items = await rpc('public_city_agenda', { p_city: ciudad, p_limit: MAX });
     if (!Array.isArray(items) || !items.length) return false;
+    const tz = await zonas(items.slice(0, MAX).map((o) => o.business_id));
 
     lista.innerHTML = items.slice(0, MAX).map((o) => {
       const img = foto(o.images);
@@ -68,7 +86,7 @@
           <span class="muted">${esc(o.business_name || '')}</span>
           <span class="tarjeta-meta">
             ${tag ? `<span class="tag">${esc(tag)}</span>` : ''}
-            <span>${esc(cuando(o.starts_at))}</span>
+            <span>${esc(cuando(o.starts_at, tz.get(o.business_id)))}</span>
           </span>
         </span>
       </a>`;

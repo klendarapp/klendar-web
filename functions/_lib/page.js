@@ -4,6 +4,8 @@
 // que 404.html pero con título, descripción e imagen del contenido, para que
 // WhatsApp, Telegram, X, etc. muestren una vista previa útil.
 
+import KZ from '../../assets/zona.js';
+
 // A qué Supabase apuntamos. Lo mandan las variables de Cloudflare Pages
 // (SUPABASE_URL / SUPABASE_KEY) y, si no están, se usa dev, que es lo que hay
 // hoy. Igual que `/config.js` para el panel: un solo sitio que cambiar.
@@ -85,12 +87,10 @@ export async function rows(table, query) {
   return Array.isArray(data) ? data : [];
 }
 
-export function fmtWhen(iso, lang) {
-  if (!iso) return '';
-  try {
-    return new Intl.DateTimeFormat(lang === 'en' ? 'en-GB' : 'es-ES', { timeZone: 'Europe/Madrid', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(iso));
-  } catch { return ''; }
-}
+/** «mié 24 sept, 18:00» en la hora del negocio (`tz`; sin ella, Madrid). */
+export const fmtWhen = (iso, lang, tz) => KZ.fmt(iso, tz, lang === 'en' ? 'en-GB' : 'es-ES', {
+  weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
+});
 
 export function discountLabel(d) {
   if (!d) return '';

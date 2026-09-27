@@ -44,40 +44,19 @@ const primeraFoto = (lista) => (lista || []).find((u) => !esVideo(u)) || null;
 
 const gestiona = () => ['owner', 'manager'].includes(BIZ?.role);
 const pausado = () => !!BIZ?.paused_until && new Date(BIZ.paused_until) > new Date();
-// ── La hora, siempre la de Madrid ───────────────────────────────────────────
-// Los negocios están en España: una oferta de 18:00 es a las 18:00 de allí,
-// abra quien abra el panel (un encargado de viaje, un portátil con la hora de
-// fábrica en UTC…). Se enseña y se escribe en hora de Madrid, con su cambio
-// de horario, y a la base va el instante exacto.
-const TZ = 'Europe/Madrid';
-const PARTES_MADRID = new Intl.DateTimeFormat('en-GB', {
-  timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit',
-  hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23',
-});
-/** Año, mes, día, hora y minuto que marca el reloj de Madrid en ese instante. */
-function partesMadrid(d) {
-  const p = Object.fromEntries(PARTES_MADRID.formatToParts(d).map((x) => [x.type, x.value]));
-  return { y: +p.year, m: +p.month, d: +p.day, h: +p.hour % 24, min: +p.minute, s: +p.second };
-}
-/** Milisegundos que Madrid va por delante de UTC en ese instante (1 h o 2 h). */
-function desfaseMadrid(t) {
-  const p = partesMadrid(new Date(t));
-  return Date.UTC(p.y, p.m - 1, p.d, p.h, p.min, p.s) - Math.floor(t / 1000) * 1000;
-}
-/** Una hora del reloj de Madrid → el instante. Se corrige dos veces por si
- * cae justo en el cambio de hora. */
-function instanteMadrid(y, m, d, h = 0, min = 0) {
-  const pared = Date.UTC(y, m - 1, d, h, min);
-  let t = pared - desfaseMadrid(pared);
-  t = pared - desfaseMadrid(t);
-  return new Date(t);
-}
-/** «Mañana» (o dentro de `dias`) en Madrid, a esa hora. */
-function diaMadrid(dias, h, min = 0) {
-  const hoy = partesMadrid(new Date());
-  const base = new Date(Date.UTC(hoy.y, hoy.m - 1, hoy.d + dias));
-  return instanteMadrid(base.getUTCFullYear(), base.getUTCMonth() + 1, base.getUTCDate(), h, min);
-}
+// ── La hora, la del negocio ─────────────────────────────────────────────────
+// Una oferta de 18:00 es a las 18:00 del local, abra quien abra el panel (un
+// encargado de viaje, un portátil con la hora de fábrica en UTC…). Canarias
+// va una hora por detrás de la península: cada negocio lleva su zona
+// (`businesses.time_zone`, o la de sus coordenadas; ver /assets/zona.js). Se
+// enseña y se escribe en esa hora, con su cambio de horario, y a la base va
+// el instante exacto. `TZ` cambia al elegir otro local (`preparaNegocio`).
+const KZ = globalThis.KlendarZona;
+let TZ = KZ.MADRID;
+/** Año, mes, día, hora y minuto que marca el reloj del negocio en ese instante. */
+const partesNegocio = (d) => KZ.partes(d, TZ);
+/** «Mañana» (o dentro de `dias`) en el negocio, a esa hora de allí. */
+const enDiasNegocio = (dias, h, min = 0) => KZ.enDias(TZ, dias, h, min);
 const fmtDate = (s) => s ? new Date(s).toLocaleString(LOC(), { dateStyle: 'medium', timeStyle: 'short', timeZone: TZ }) : '—';
 const fmtHora = (s) => new Date(s).toLocaleTimeString(LOC(), { hour: '2-digit', minute: '2-digit', timeZone: TZ });
 const fmtMoney = (c) => (c == null ? '—' : (c / 100).toLocaleString(I18N.lang === 'en' ? 'en-IE' : 'es-ES', { style: 'currency', currency: 'EUR' }));
@@ -375,20 +354,11 @@ async function rpc(fn, args = {}) {
   return res.data;
 }
 
-/** Fecha para <input type="datetime-local">: la hora de Madrid, sin zona. */
-function toLocalInput(iso) {
-  if (!iso) return '';
-  const d = partesMadrid(new Date(iso));
-  const p = (n) => String(n).padStart(2, '0');
-  return `${d.y}-${p(d.m)}-${p(d.d)}T${p(d.h)}:${p(d.min)}`;
-}
-/** Lo escrito en un datetime-local se lee como hora de Madrid (no la del
+/** Fecha para <input type="datetime-local">: la hora del negocio, sin zona. */
+const toLocalInput = (iso) => KZ.aInput(iso, TZ);
+/** Lo escrito en un datetime-local se lee como hora del negocio (no la del
  * ordenador) y se devuelve el instante en ISO. */
-function fromLocalInput(v) {
-  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(String(v || ''));
-  if (!m) return null;
-  return instanteMadrid(+m[1], +m[2], +m[3], +m[4], +m[5]).toISOString();
-}
+const fromLocalInput = (v) => KZ.deInput(v, TZ);
 
 // Modal sencillo (mismo patrón que el panel de administración).
 function modal({ title, intro, html = '', fields = [], submit = 'Guardar', danger = false, cancel = 'Cancelar' }) {
@@ -432,7 +402,7 @@ function downloadCsv(name, rows, cols) {
   const csv = lines.map((l) => l.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(';')).join('\r\n');
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }));
-  a.download = `${name}-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.download = `${name}-${KZ.hoy(TZ)}.csv`;
   a.click();
 }
 
@@ -455,6 +425,28 @@ let ME = null;
 let BIZ = null;          // negocio activo
 let BIZZES = [];         // todos los del usuario
 let CATS = [];
+
+/** Lo que `my_businesses` no trae del negocio activo: su zona horaria (para
+ * todas las fechas del panel) y el motivo de rechazo en inglés. Se lee al
+ * entrar y cada vez que se cambia de local; si falla, se deduce de las
+ * coordenadas y, sin ellas, Madrid. */
+async function preparaNegocio() {
+  if (!BIZ) { TZ = KZ.MADRID; return; }
+  if (!KZ.valida(BIZ.time_zone)) {
+    try {
+      const { data } = await sb.from('businesses').select('time_zone, rejection_reason_en').eq('id', BIZ.id).maybeSingle();
+      if (data) Object.assign(BIZ, data);
+    } catch { /* se prueba abajo */ }
+  }
+  if (!KZ.valida(BIZ.time_zone)) {
+    try {
+      const fila = await rpc('business_profile', { p_id: BIZ.id });
+      const perfil = Array.isArray(fila) ? fila[0] : fila;
+      if (perfil) BIZ.time_zone = KZ.de(perfil);
+    } catch { /* Madrid */ }
+  }
+  TZ = KZ.de(BIZ);
+}
 
 async function boot() {
   const { data: { session } } = await sb.auth.getSession();
@@ -489,6 +481,7 @@ async function boot() {
   const pedido = new URLSearchParams(location.hash.split('?')[1] || '').get('biz');
   BIZ = BIZZES.find((b) => b.id === pedido) || BIZZES.find((b) => b.id === saved) || BIZZES[0];
   if (pedido && BIZ.id === pedido) localStorage.setItem('klendar.biz', BIZ.id);
+  await preparaNegocio();
   renderBizPicker();
   try { CATS = (await sb.from('categories').select('id, slug, names, position').order('position')).data || []; } catch { CATS = []; }
   route();
@@ -516,9 +509,10 @@ async function noBusiness() {
 }
 function renderBizPicker() {
   $('#bizSelect').innerHTML = BIZZES.map((b) => `<option value="${esc(b.id)}" ${b.id === BIZ.id ? 'selected' : ''}>${esc(b.name)}</option>`).join('');
-  $('#bizSelect').onchange = () => {
+  $('#bizSelect').onchange = async () => {
     BIZ = BIZZES.find((b) => b.id === $('#bizSelect').value);
     localStorage.setItem('klendar.biz', BIZ.id);
+    await preparaNegocio();
     const [pag, param] = currentRoute();
     if (param) { location.hash = `#/${pag}`; return; }
     route();
@@ -749,6 +743,9 @@ PAGES.alta = async (v) => {
       BIZZES = await rpc('my_businesses');
       BIZ = BIZZES.find((b) => b.id === id) || BIZZES[0];
       localStorage.setItem('klendar.biz', BIZ.id);
+      // Recién dado de alta: su zona sale del punto marcado en el mapa.
+      if (BIZ.id === id) BIZ.time_zone = KZ.porCoordenadas(punto.lat, punto.lng);
+      await preparaNegocio();
       $('.bizpick').hidden = false;
       renderBizPicker();
       if (!CATS.length) CATS = cats;
@@ -764,6 +761,21 @@ PAGES.alta = async (v) => {
 };
 
 // ── Resumen ─────────────────────────────────────────────────────────────────
+/** En revisión o rechazado: qué pasa y cómo escribirnos, como en la app. Si
+ * lo rechazamos, el motivo (en inglés si el admin lo escribió). */
+function avisoVerificacion() {
+  const rechazado = BIZ.verification_status === 'rejected';
+  const motivo = (I18N.lang === 'en' && BIZ.rejection_reason_en) || BIZ.rejection_reason || '';
+  const en = I18N.lang === 'en';
+  const asunto = encodeURIComponent(en ? 'Klendar · my business verification' : 'Klendar · verificación de mi negocio');
+  const cuerpo = encodeURIComponent(en ? `Business: ${BIZ.id}` : `Negocio: ${BIZ.id}`);
+  return `<div class="help"><b>${esc(I18N.t(rechazado ? 'Tu negocio está rechazado.' : 'Tu negocio está en revisión.'))}</b>
+    ${rechazado
+      ? (motivo ? `<span>${esc(I18N.t('Motivo:'))}</span> <span>${esc(motivo)}</span>` : esc(I18N.t('No hemos podido verificar el negocio. Escríbenos a info@klendar.app.')))
+      : esc(I18N.t('Estamos revisando tu negocio; normalmente tardamos 24–48 h. Mientras tanto puedes preparar la ficha y tus publicaciones: se harán públicas al verificarlo. Si pasan más de 48 h sin noticias, escríbenos.'))}
+    <p style="margin:8px 0 0"><a class="btn sm" href="mailto:info@klendar.app?subject=${asunto}&body=${cuerpo}">${ms('mail')}${esc(I18N.t('Escribir a soporte'))}</a></p></div>`;
+}
+
 PAGES.resumen = async (v) => {
   const [stats, offers, sub] = await Promise.all([
     rpc('business_stats', { p_id: BIZ.id }),
@@ -784,7 +796,7 @@ PAGES.resumen = async (v) => {
   v.innerHTML = `
     <div class="page-head"><h1>${esc(BIZ.name)}</h1><span class="tag st-${esc(BIZ.verification_status)}">${esc(BIZ_LABELS[BIZ.verification_status] || BIZ.verification_status)}</span><span class="spacer"></span>
       <a class="btn sm ghost" href="${APP_URL}/b/${esc(BIZ.id)}" target="_blank" rel="noopener">Ver ficha pública ↗</a></div>
-    ${BIZ.verification_status !== 'verified' ? `<div class="help"><b>${esc(bi(`Tu negocio está ${BIZ_LABELS[BIZ.verification_status] || BIZ.verification_status}.`, `Your business is ${I18N.t(BIZ_LABELS[BIZ.verification_status] || BIZ.verification_status)}.`))}</b> ${esc(I18N.t('Mientras tanto puedes preparar publicaciones en borrador; se verán en cuanto te verifiquemos.'))}</div>` : ''}
+    ${BIZ.verification_status !== 'verified' ? avisoVerificacion() : ''}
     ${primeros ? `<div class="card primeros"><h2>Primeros pasos</h2>
       <p class="muted" style="margin:0 0 8px">Tres cosas y tu negocio está listo para que la gente lo encuentre.</p>
       ${paso(1, conFotos, 'Pon tu logo y una foto', '', '#/ficha')}
@@ -847,8 +859,8 @@ PAGES.resumen = async (v) => {
   if (pausa) {
     pausa.onclick = async () => {
       // Hasta las 5 de la mañana: mañana abre solo (lo mismo que la app).
-      // Las 5 de Madrid, no las del ordenador desde el que se pulsa.
-      const hasta = diaMadrid(1, 5);
+      // Las 5 del negocio, no las del ordenador desde el que se pulsa.
+      const hasta = enDiasNegocio(1, 5);
       const cerrar = !pausado();
       try {
         await rpc('set_business_pause', { p_business: BIZ.id, p_until: cerrar ? hasta.toISOString() : null });
@@ -1225,7 +1237,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
       o.redeem_start_at = ahora.toISOString();
       o.redeem_end_at = new Date(ahora.getTime() + 3 * 36e5).toISOString();
     } else {
-      o.event_at = diaMadrid(1, 20).toISOString();
+      o.event_at = enDiasNegocio(1, 20).toISOString();
     }
   }
   if (!id && desde) {
@@ -1236,11 +1248,11 @@ async function offerForm(v, id, kindDefault, desde = null) {
     if (src) {
       o = { ...src, id: undefined, status: 'active', publish_at: null };
       if (desde.repeat && src.kind === 'flash_offer' && src.redeem_start_at) {
-        // Mañana (de hoy) a la misma hora de Madrid y con la misma duración.
+        // Mañana (de hoy) a la misma hora del negocio y con la misma duración.
         const ini = new Date(src.redeem_start_at);
         const dura = src.redeem_end_at ? new Date(src.redeem_end_at) - ini : 3 * 36e5;
-        const hora = partesMadrid(ini);
-        const nuevo = diaMadrid(1, hora.h, hora.min);
+        const hora = partesNegocio(ini);
+        const nuevo = enDiasNegocio(1, hora.h, hora.min);
         o.redeem_start_at = nuevo.toISOString();
         o.redeem_end_at = new Date(nuevo.getTime() + dura).toISOString();
       } else {
@@ -1308,7 +1320,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
         <label class="f full"><span>Condiciones (letra pequeña)</span><textarea name="terms" maxlength="300">${esc(o.terms || '')}</textarea></label>
         <label class="f full"><span>Enlace externo (entradas, reservas…)</span><input name="external_url" value="${esc(o.external_url || '')}" placeholder="https://"></label>
       </div>
-      <p class="hint">Las fechas y horas son las de Madrid (hora peninsular española).</p>
+      <p class="hint">${TZ === KZ.CANARIAS ? 'Las fechas y horas son las de Canarias, donde está tu local.' : 'Las fechas y horas son las de la península (hora de Madrid), donde está tu local.'}</p>
       <h3 style="margin-top:16px">Fotos y vídeo</h3>
       <p class="hint">Hasta 6 fotos o vídeos. La primera es la portada; muévelas con las flechas. Si no pones ninguna, se usa la foto del local. Los vídeos se ven al abrir la publicación (en el feed van las fotos).</p>
       <div class="photos" id="photos"></div>
@@ -2321,7 +2333,7 @@ function planCard(sub) {
   return `<div class="card"><h2>${ms('workspace_premium')} ${esc(en ? `${name} plan` : `Plan ${name}`)}${trial ? ` <span class="tag st-trial">${en ? 'TRIAL' : 'PRUEBA'}</span>` : ''}</h2>
     <p class="muted" style="margin:0 0 6px">${esc(estado)}</p>
     <p style="margin:0 0 12px">${esc(uso)}</p>
-    <a class="btn sm" href="mailto:info@klendar.app?subject=${asunto}&body=${cuerpo}">${esc(free ? (en ? 'Ask about the plan' : 'Preguntar por el plan') : (en ? 'Change plan or payment method' : 'Cambiar plan o forma de pago'))}</a></div>`;
+    <a class="btn sm" href="mailto:info@klendar.app?subject=${asunto}&body=${cuerpo}">${esc(free || trial ? (en ? 'Ask about the plan' : 'Preguntar por el plan') : (en ? 'Change plan or payment method' : 'Cambiar plan o forma de pago'))}</a></div>`;
 }
 
 PAGES.ficha = async (v) => {
@@ -2416,6 +2428,8 @@ PAGES.ficha = async (v) => {
         if (!nuevo) return;
         try {
           await rpc('update_business', { p_id: BIZ.id, p_patch: { lat: nuevo.lat, lng: nuevo.lng } });
+          // Otro sitio puede ser otra zona (la base la recalcula igual).
+          BIZ.time_zone = KZ.porCoordenadas(nuevo.lat, nuevo.lng); TZ = KZ.de(BIZ);
           $('#g-punto', v).disabled = true;
           $('#msgp', v).textContent = I18N.t('Guardada');
           toast('Ubicación guardada');
@@ -2462,6 +2476,11 @@ PAGES.ficha = async (v) => {
       }
       try {
         await rpc('update_business', { p_id: BIZ.id, p_patch: patch });
+        // El nombre nuevo, ya en el selector de locales y en el resumen; y la
+        // zona, si la dirección nueva ha movido el punto.
+        BIZ.name = patch.name;
+        if (patch.lat != null) { BIZ.time_zone = KZ.porCoordenadas(patch.lat, patch.lng); TZ = KZ.de(BIZ); }
+        renderBizPicker();
         $('#msg', v).textContent = 'Guardada';
         toast('Ficha guardada');
       } catch (err) { toast(friendly(err.message), true); }
@@ -2761,7 +2780,7 @@ const diaLargo = (iso) => new Intl.DateTimeFormat(LOC(), { day: 'numeric', month
 // «Del 12 al 13 de octubre» si es el mismo mes; si no, cada día con su mes.
 const diaSolo = (iso) => String(Number(iso.slice(8, 10)));
 const rangoDias = (a, b) => (a.slice(0, 7) === b.slice(0, 7) ? [diaSolo(a), diaLargo(b)] : [diaLargo(a), diaLargo(b)]);
-const hoyMadrid = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(new Date());
+const hoyNegocio = () => KZ.hoy(TZ);
 const ERR_CIERRE = {
   too_long: 'Como mucho tres meses seguidos.',
   too_many: 'Ya tienes 12 cierres por delante. Quita alguno antes.',
@@ -2771,7 +2790,7 @@ const ERR_CIERRE = {
 };
 PAGES.cerrados = async (v) => {
   const lista = await rpc('business_closures', { p_business: BIZ.id });
-  const hoy = hoyMadrid();
+  const hoy = hoyNegocio();
   const tramo = (c) => (c.starts_on === c.ends_on
     ? (I18N.lang === 'en' ? `On ${diaLargo(c.starts_on)}` : `El ${diaLargo(c.starts_on)}`)
     : (([a, b]) => (I18N.lang === 'en' ? `From ${a} to ${b}` : `Del ${a} al ${b}`))(rangoDias(c.starts_on, c.ends_on)));

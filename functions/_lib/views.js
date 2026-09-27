@@ -9,9 +9,10 @@
 // (/app/), que hace lo mismo que la app desde el navegador.
 
 import { esc, fmtWhen, html, isUuid, render, rpc, rpcAll, rows, supabasePublic } from './page.js';
+import KZ from '../../assets/zona.js';
 import {
   agendaBase, BASE, benefit, exploreBase, firstPhoto, fmtEnd, fmtLong, isVideo,
-  media, money, offerCard, openInApp, priorPrice, publicPage,
+  media, money, offerCard, openInApp, priorPrice, publicPage, zonaDe, zonasDeNegocios,
 } from './public.js';
 
 // Iconos de Material (los mismos que la app), en SVG: las páginas públicas
@@ -59,6 +60,8 @@ export async function offerPage(id, lang) {
   const cover = firstPhoto(o.images);
   const pieces = (o.images || []).slice(0, 4);
   const where = [o.business_address, o.business_city].filter(Boolean).join(', ');
+  // Las horas, las del sitio: en Canarias, una menos que en la península.
+  const tz = zonaDe(o);
 
   const S = en
     ? {
@@ -68,7 +71,7 @@ export async function offerPage(id, lang) {
         code: 'Get the code', notYet: 'Not available yet', reserve: 'Reserve a place', wait: 'Join the waiting list', save: 'Save to Plans',
         note: 'From here or from the app, with the same account. The code is single-use and the business validates it on the spot.',
         soldOut: 'Sold out', over: 'Finished', more: 'Everything from', hot: 'Popular',
-        prior: 'Lowest price in the last 30 days',
+        prior: 'Lowest price in the last 30 days', canary: 'Canary Islands time',
       }
     : {
         when: 'Cuándo', redeem: 'Se canjea', where: 'Dónde', seats: 'Plazas libres',
@@ -77,12 +80,12 @@ export async function offerPage(id, lang) {
         code: 'Conseguir el código', notYet: 'Aún no disponible', reserve: 'Reservar plaza', wait: 'Apuntarme a la lista de espera', save: 'Guardar en Planes',
         note: 'Desde aquí o desde la app, con la misma cuenta. El código es de un solo uso y lo valida el negocio en el momento.',
         soldOut: 'Agotado', over: 'Terminado', more: 'Todo lo de', hot: 'Con tirón',
-        prior: 'Precio más bajo de los últimos 30 días',
+        prior: 'Precio más bajo de los últimos 30 días', canary: 'hora de Canarias',
       };
 
   const when = flash
-    ? `${fmtLong(o.redeem_start_at, lang)} – ${fmtEnd(o.redeem_start_at, o.redeem_end_at, lang)}`
-    : fmtLong(o.event_at, lang) + (o.event_end_at ? ` – ${fmtEnd(o.event_at, o.event_end_at, lang)}` : '');
+    ? `${fmtLong(o.redeem_start_at, lang, tz)} – ${fmtEnd(o.redeem_start_at, o.redeem_end_at, lang, tz)}`
+    : fmtLong(o.event_at, lang, tz) + (o.event_end_at ? ` – ${fmtEnd(o.event_at, o.event_end_at, lang, tz)}` : '');
 
   // El beneficio ya sale en grande debajo: en las etiquetas solo va si es un
   // descuento (ahí la etiqueta dice algo que el precio solo no dice).
@@ -109,7 +112,7 @@ export async function offerPage(id, lang) {
     </div>
     <aside class="side">
       <dl>
-        <div><dt>${flash ? S.redeem : S.when}</dt><dd>${esc(when)}</dd></div>
+        <div><dt>${flash ? S.redeem : S.when}</dt><dd>${esc(when)}${tz === KZ.CANARIAS ? ` <small class="muted">(${S.canary})</small>` : ''}</dd></div>
         ${where ? `<div><dt>${S.where}</dt><dd>${esc(where)}</dd></div>` : ''}
         ${o.seats_left != null && !soldOut ? `<div><dt>${S.seats}</dt><dd>${o.seats_left}${o.holds_seats === false ? ` · ${en ? 'first come, first served' : 'por orden de llegada'}` : ''}</dd></div>` : ''}
       </dl>
@@ -138,7 +141,7 @@ export async function offerPage(id, lang) {
     </div>
   </div>`;
 
-  const description = [tag, flash ? when : fmtLong(o.event_at, lang), o.business_name, o.business_city]
+  const description = [tag, flash ? when : fmtLong(o.event_at, lang, tz), o.business_name, o.business_city]
     .filter(Boolean).join(' · ').slice(0, 200);
 
   const jsonLd = flash
@@ -235,14 +238,16 @@ export async function businessPage(id, lang) {
   const flash = offers.filter((o) => o.kind === 'flash_offer');
   const events = offers.filter((o) => o.kind !== 'flash_offer');
   const where = [b.address, b.city].filter(Boolean).join(', ');
+  // Todo lo de la ficha, en la hora del negocio (Canarias, una menos).
+  const tz = zonaDe(b);
 
   // Días cerrados (vacaciones, festivos): el que está en curso o, si cae en
   // el próximo mes, el siguiente. Igual que en la app. Fechas de calendario,
-  // sin hora: se comparan como texto AAAA-MM-DD con el hoy de Madrid.
+  // sin hora: se comparan como texto AAAA-MM-DD con el hoy del negocio.
   const cierre = (() => {
     const c = cierres[0];
     if (!c) return '';
-    const hoyIso = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(new Date());
+    const hoyIso = KZ.hoy(tz);
     const dia = (iso) => new Intl.DateTimeFormat(en ? 'en-GB' : 'es-ES', { day: 'numeric', month: 'long', timeZone: 'UTC' })
       .format(new Date(`${iso}T00:00:00Z`));
     const ahora = c.starts_on <= hoyIso && hoyIso <= c.ends_on;
@@ -257,12 +262,9 @@ export async function businessPage(id, lang) {
   })();
 
   // Horario: {"1": [["09:00","14:00"], …], …, "7": []} (1 = lunes). Hoy, en
-  // hora de Madrid, va marcado.
+  // la hora del negocio, va marcado.
   const horas = b.opening_hours && typeof b.opening_hours === 'object' ? b.opening_hours : null;
-  const hoy = (() => {
-    const d = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Madrid', weekday: 'short' }).format(new Date());
-    return ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].indexOf(d) + 1;
-  })();
+  const hoy = KZ.diaSemana(tz);
   const horario = horas && Object.keys(horas).length
     ? `<table class="horario">${[1, 2, 3, 4, 5, 6, 7].map((d) => {
         const tramos = Array.isArray(horas[d]) ? horas[d] : (Array.isArray(horas[String(d)]) ? horas[String(d)] : []);
@@ -288,10 +290,7 @@ export async function businessPage(id, lang) {
   const fotosCarta = (b.menu_images || []).filter((u) => typeof u === 'string' && seguro(u));
   const galeria = (b.gallery || []).filter((u) => typeof u === 'string' && u);
   const estrellas = (n) => `<span class="stars" aria-label="${n}/5">${'★'.repeat(n)}<span>${'★'.repeat(5 - n)}</span></span>`;
-  const since = b.member_since
-    ? new Intl.DateTimeFormat(en ? 'en-GB' : 'es-ES', { timeZone: 'Europe/Madrid', month: 'long', year: 'numeric' })
-        .format(new Date(b.member_since))
-    : '';
+  const since = KZ.fmt(b.member_since, tz, en ? 'en-GB' : 'es-ES', { month: 'long', year: 'numeric' });
   const maps = b.lat ? `https://www.google.com/maps/search/?api=1&query=${b.lat},${b.lng}` : null;
   const city = b.city
     ? `${agendaBase(lang)}/${encodeURIComponent(String(b.city).toLowerCase())}/`
@@ -347,12 +346,12 @@ export async function businessPage(id, lang) {
         <div class="carta-fotos">${fotosCarta.map((u) => /\.pdf($|\?)/i.test(u)
           ? `<a class="pill" href="${esc(u)}" target="_blank" rel="noopener">${icono('pdf', 16)} ${S.menuPdf}</a>`
           : `<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt="${S.menuPhotos}" loading="lazy"></a>`).join('')}</div>` : ''}
-      ${flash.length ? `<h2>${S.now}</h2><div class="olist">${flash.map((o) => offerCard(o, lang)).join('')}</div>` : ''}
-      ${events.length ? `<h2>${S.soon}</h2><div class="olist">${events.map((o) => offerCard(o, lang)).join('')}</div>` : ''}
+      ${flash.length ? `<h2>${S.now}</h2><div class="olist">${flash.map((o) => offerCard(o, lang, tz)).join('')}</div>` : ''}
+      ${events.length ? `<h2>${S.soon}</h2><div class="olist">${events.map((o) => offerCard(o, lang, tz)).join('')}</div>` : ''}
       ${offers.length ? '' : `<p class="empty">${S.none}</p>`}
       ${novedades.length ? `<h2>${S.news}</h2>
         <div class="novedades">${novedades.map((p) => `<article>
-          <p class="muted">${esc(fmtWhen(p.created_at, lang))}</p>
+          <p class="muted">${esc(fmtWhen(p.created_at, lang, tz))}</p>
           ${p.body ? `<p>${esc(p.body).replace(/\n/g, '<br>')}</p>` : ''}
           ${p.image_url ? `<img src="${esc(p.image_url)}" alt="" loading="lazy">` : ''}
           <a class="denuncia" href="${cuenta(lang)}#/denunciar/post/${encodeURIComponent(p.id)}" rel="nofollow">${S.report}</a>
@@ -361,11 +360,11 @@ export async function businessPage(id, lang) {
       <p><a class="pill" href="${cuenta(lang)}#/opinar/${encodeURIComponent(b.id)}">${icono('resena', 16)} ${S.write}</a></p>
       ${opiniones.length ? `<div class="resenas">${opiniones.map((r) => `<article>
           <header>${r.avatar_url ? `<img class="av" src="${esc(r.avatar_url)}" alt="" loading="lazy">` : `<span class="av">${esc((r.display_name || S.user).trim().charAt(0).toUpperCase())}</span>`}
-            <span><b>${esc(r.display_name || S.user)}</b><small class="muted">${esc(fmtWhen(r.created_at, lang))}</small></span>
+            <span><b>${esc(r.display_name || S.user)}</b><small class="muted">${esc(fmtWhen(r.created_at, lang, tz))}</small></span>
             ${estrellas(Math.max(0, Math.min(5, r.rating | 0)))}</header>
           ${r.comment ? `<p>${esc(r.comment)}</p>` : ''}
           ${r.photo_url ? `<img class="foto" src="${esc(r.photo_url)}" alt="" loading="lazy">` : ''}
-          ${r.reply ? `<div class="respuesta"><header>${icono('negocio', 16)}<b>${esc(S.replyFrom(b.name))}</b>${r.reply_at ? `<small class="muted">${esc(fmtWhen(r.reply_at, lang))}</small>` : ''}</header>
+          ${r.reply ? `<div class="respuesta"><header>${icono('negocio', 16)}<b>${esc(S.replyFrom(b.name))}</b>${r.reply_at ? `<small class="muted">${esc(fmtWhen(r.reply_at, lang, tz))}</small>` : ''}</header>
             <p>${esc(r.reply).replace(/\n/g, '<br>')}</p></div>` : ''}
           <a class="denuncia" href="${cuenta(lang)}#/denunciar/review/${encodeURIComponent(r.id)}" rel="nofollow">${S.report}</a>
         </article>`).join('')}</div>` : `<p class="empty">${S.noReviews}</p>`}
@@ -414,6 +413,12 @@ export async function agendaPage(rawCity, lang) {
     rpc('public_businesses', { p_city: raw, p_limit: 12 }),
   ]);
   const city = PRETTY(offers[0]?.city || raw);
+  // La agenda no trae coordenadas: la zona de cada negocio se lee aparte.
+  // Cada tarjeta va en la hora de su negocio; los días, en la de la ciudad
+  // (la de la mayoría de sus negocios).
+  const zonas = await zonasDeNegocios(offers.map((o) => o.business_id));
+  const tzDe = (o) => zonas.get(o.business_id) || zonaDe(o);
+  const tzCiudad = KZ.comun(offers.map(tzDe));
 
   const S = en
     ? {
@@ -422,7 +427,7 @@ export async function agendaPage(rawCity, lang) {
         none: `Nothing published in ${city} yet. If you run a business here, you can be the first.`,
         biz: 'Publish your business', all: 'Other cities', app: 'Get the app', agenda: "What's on",
         days: 'Days', places: 'Places in this city', explore: 'Explore everything',
-        note: 'Updated as businesses publish. Times are local (Europe/Madrid).',
+        note: "Updated as businesses publish. Times are each business's local time.",
         plans: 'plans and deals',
       }
     : {
@@ -431,36 +436,45 @@ export async function agendaPage(rawCity, lang) {
         none: `Todavía no hay nada publicado en ${city}. Si tienes un negocio aquí, puedes ser el primero.`,
         biz: 'Publicar mi negocio', all: 'Otras ciudades', app: 'Descargar la app', agenda: 'Agenda',
         days: 'Días', places: 'Negocios de esta ciudad', explore: 'Explorar todo',
-        note: 'Se actualiza según van publicando los negocios. Horas locales (Europe/Madrid).',
+        note: 'Se actualiza según van publicando los negocios. Horas locales de cada negocio.',
         plans: 'planes y ofertas',
       };
 
-  // Agrupado por día: una agenda se lee por días, no por relevancia.
+  // Agrupado por día: una agenda se lee por días, no por relevancia. Lo que
+  // empezó antes y sigue en marcha (una oferta flash de anoche que dura
+  // hasta hoy) va en «Hoy», no bajo un día que ya pasó.
+  const hoy = KZ.hoy(tzCiudad);
+  const manana = KZ.hoy(tzCiudad, 1);
   const days = new Map();
   for (const o of offers) {
-    const key = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(new Date(o.starts_at));
+    const dia = KZ.dia(o.starts_at, tzCiudad);
+    const key = dia < hoy ? hoy : dia;
     if (!days.has(key)) days.set(key, []);
     days.get(key).push(o);
   }
-  const dayTitle = (iso) => new Intl.DateTimeFormat(en ? 'en-GB' : 'es-ES', {
-    timeZone: 'Europe/Madrid', weekday: 'long', day: 'numeric', month: 'long',
-  }).format(new Date(`${iso}T12:00:00Z`));
+  const orden = [...days.keys()].sort();
+  const rel = (iso) => (iso === hoy ? (en ? 'Today' : 'Hoy') : iso === manana ? (en ? 'Tomorrow' : 'Mañana') : '');
+  // `iso` es un día sin hora («2026-10-03»): se escribe tal cual, en UTC.
+  const dayTitle = (iso) => {
+    const d = KZ.fmt(`${iso}T12:00:00Z`, 'UTC', en ? 'en-GB' : 'es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+    return rel(iso) ? `${rel(iso)} · ${d}` : d;
+  };
   // Para los botones de arriba: «vie 26», que caben varios en una línea.
-  const shortDay = (iso) => new Intl.DateTimeFormat(en ? 'en-GB' : 'es-ES', {
-    timeZone: 'Europe/Madrid', weekday: 'short', day: 'numeric',
-  }).format(new Date(`${iso}T12:00:00Z`));
+  const shortDay = (iso) => rel(iso) || KZ.fmt(`${iso}T12:00:00Z`, 'UTC', en ? 'en-GB' : 'es-ES', {
+    weekday: 'short', day: 'numeric',
+  });
 
   const body = `
   <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a> · <a href="${agendaBase(lang)}/">${S.agenda}</a></p>
   <h1>${esc(S.h1)}</h1>
   <p class="muted" style="max-width:620px">${esc(S.lead)}</p>
   ${days.size > 1 ? `<div class="filters"><div class="frow"><span class="flabel">${esc(S.days)}</span>
-    ${[...days.keys()].map((iso) => `<a class="chip" href="#d${iso}">${esc(shortDay(iso))}</a>`).join('')}
+    ${orden.map((iso) => `<a class="chip" href="#d${iso}">${esc(shortDay(iso))}</a>`).join('')}
   </div></div>` : ''}
   ${offers.length
-    ? [...days.entries()].map(([iso, list]) => `<section class="daygroup" id="d${iso}">
+    ? orden.map((iso) => [iso, days.get(iso)]).map(([iso, list]) => `<section class="daygroup" id="d${iso}">
         <h3>${esc(dayTitle(iso))}</h3>
-        <div class="olist">${list.map((o) => offerCard(o, lang)).join('')}</div>
+        <div class="olist">${list.map((o) => offerCard(o, lang, tzDe(o))).join('')}</div>
       </section>`).join('')
     : `<p class="empty">${esc(S.none)}</p>`}
   ${(negocios?.items || []).length ? `<section class="daygroup">
@@ -487,7 +501,7 @@ export async function agendaPage(rawCity, lang) {
     lang, path, body,
     title: S.h1,
     description: offers.length
-      ? `${offers.length} ${S.plans} · ${city} · ${fmtLong(offers[0].starts_at, lang)}`
+      ? `${offers.length} ${S.plans} · ${city} · ${fmtLong(offers[0].starts_at, lang, tzDe(offers[0]))}`
       : S.none,
     image: offers.map((o) => (o.images || []).find((u) => !isVideo(u))).find(Boolean),
     head: jsonLd

@@ -605,7 +605,10 @@ RUTAS.opinar = async ([id]) => {
   ]);
   const b = Array.isArray(fila) ? fila[0] : fila;
   if (!b) { pinta(`<p class="empty">${esc(t('Ese sitio ya no está en Klendar.'))}</p>`); return; }
-  const mia = (resenas || []).find((r) => r.is_mine) || {};
+  // La tuya, aunque no esté entre las 50 últimas: la ficha trae tu nota, tu
+  // texto y tu foto (si no, editar una reseña antigua empezaba en blanco).
+  const mia = (resenas || []).find((r) => r.is_mine)
+    || (b.my_rating ? { id: true, rating: b.my_rating, comment: b.my_comment, photo_url: b.my_photo_url } : {});
   pinta(`
     <p class="crumbs"><a href="${pre}/b/${esc(id)}">${esc(b.name)}</a></p>
     <h1>${esc(mia.id ? t('Editar mi reseña') : t('Escribir una reseña'))}</h1>
