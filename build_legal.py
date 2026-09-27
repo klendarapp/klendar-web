@@ -416,11 +416,12 @@ ES['eliminar-cuenta'] = ('Eliminar tu cuenta', 'Cómo eliminar tu cuenta de Klen
 <ul>
   <li>Tu perfil (nombre, email, fecha de nacimiento, foto), tus favoritos, tus preferencias y tokens de notificaciones, tu ubicación y tu historial de canjes.</li>
   <li>Tus reseñas se eliminan junto con tu cuenta.</li>
+  <li>Si eres propietario/a de un negocio, también su ficha, sus publicaciones, sus fotos y su equipo. Si quieres que el negocio siga en Klendar, escríbenos antes a <a href="mailto:info@klendar.app">info@klendar.app</a> y pasamos la propiedad a otra persona.</li>
 </ul>
 <h2>Qué se conserva y por qué</h2>
 <ul>
   <li>Estadísticas <strong>anónimas</strong> de los negocios (número de canjes o vistas), que ya no se vinculan a ti.</li>
-  <li>Si eres propietario/a de un negocio con cuota facturada, los datos de facturación se conservan el plazo legal (fiscal 4 años, mercantil 6 años). Antes de eliminar la cuenta deberás transferir la propiedad del negocio a otra persona o darlo de baja.</li>
+  <li>Si eres propietario/a de un negocio con cuota facturada, los datos de facturación se conservan el plazo legal (fiscal 4 años, mercantil 6 años).</li>
   <li>Denuncias resueltas, 2 años, para cumplir el Reglamento de Servicios Digitales.</li>
 </ul>
 ''')
@@ -438,11 +439,12 @@ EN['eliminar-cuenta'] = ('delete-account', 'Delete your account', 'How to delete
 <ul>
   <li>Your profile (name, email, date of birth, photo), your favourites, your preferences and notification tokens, your location and your redemption history.</li>
   <li>Your reviews are deleted together with your account.</li>
+  <li>If you own a business, its profile, publications, photos and team are deleted too. If you want the business to stay on Klendar, write to us first at <a href="mailto:info@klendar.app">info@klendar.app</a> and we'll transfer ownership to someone else.</li>
 </ul>
 <h2>What is kept and why</h2>
 <ul>
   <li><strong>Anonymous</strong> business statistics (number of redemptions or views), no longer linked to you.</li>
-  <li>If you own a business with invoiced fees, invoicing data is kept for the statutory period (tax 4 years, commercial 6 years). Before deleting the account you must transfer ownership of the business to someone else or close it.</li>
+  <li>If you own a business with invoiced fees, invoicing data is kept for the statutory period (tax 4 years, commercial 6 years).</li>
   <li>Resolved reports, 2 years, to comply with the Digital Services Act.</li>
 </ul>
 ''')

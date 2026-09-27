@@ -498,7 +498,7 @@ RUTAS.ajustes = async () => {
     const boton = ev.currentTarget;
     if (!(await confirma({
       titulo: t('¿Eliminar tu cuenta?'),
-      texto: t('Se borrarán tus datos, favoritos y canjes de forma permanente. Esta acción no se puede deshacer.'),
+      texto: t('Se borran para siempre tus datos, tus favoritos, tus planes y tus canjes. Si eres dueño de un negocio, también su ficha, sus publicaciones y su equipo. No se puede deshacer.'),
       aceptar: t('Eliminar'),
       peligro: true,
     }))) return;

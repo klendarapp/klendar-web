@@ -1857,12 +1857,11 @@ PAGES.carta = async (v) => {
 
   // El enlace y las fotos se guardan en la ficha; la carta escrita, en su
   // propia tabla. Se guarda todo junto para que sea un solo botón.
-  const guardaFicha = async () => {
-    const { error } = await sb.from('businesses')
-      .update({ menu_url: enlace.trim() || null, menu_images: fotos })
-      .eq('id', BIZ.id);
-    if (error) throw new Error(error.message);
-  };
+  // Por `update_business`, como el resto de la ficha: la tabla no se escribe
+  // directamente (antes, a un encargado no se le guardaba y no decía nada).
+  const guardaFicha = () => rpc('update_business', {
+    p_id: BIZ.id, p_patch: { menu_url: enlace.trim(), menu_images: fotos },
+  });
 
   const guardar = async () => {
     try {
@@ -2187,12 +2186,16 @@ function planCard(sub) {
 
 PAGES.ficha = async (v) => {
   const canManage = ['owner', 'manager'].includes(BIZ.role);
-  const [{ data: b }, cats] = await Promise.all([
-    sb.from('businesses').select('*').eq('id', BIZ.id).maybeSingle(),
+  // El NIF no se puede leer de la tabla (no es público): lo da
+  // `business_private` a quien gestiona.
+  const [{ data: b }, cats, privado] = await Promise.all([
+    sb.from('businesses').select('id, name, description, category_id, address, city, phone, website, contact_email, social_links, logo_url, cover_image_url, gallery, opening_hours, adults_only, verification_status, rejection_reason, is_active, paused_until').eq('id', BIZ.id).maybeSingle(),
     sb.from('categories').select('id, slug, names, position').order('position', { ascending: true })
       .then(({ data }) => data || []),
+    canManage ? rpc('business_private', { p_id: BIZ.id }).catch(() => null) : null,
   ]);
   if (!b) { v.innerHTML = '<div class="card">No hemos podido cargar tu ficha.</div>'; return; }
+  b.tax_id = privado?.tax_id || '';
 
   const redes = b.social_links || {};
   const horas = b.opening_hours || {};
