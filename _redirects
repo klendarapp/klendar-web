@@ -2,3 +2,11 @@ https://www.klendar.app/* https://klendar.app/:splat 301
 # «Agenda» en inglés es el orden del día de una reunión; la
 # cartelera es «what's on». Lo de antes estuvo publicado un rato.
 /en/agenda/* /en/whats-on/:splat 301
+# Direcciones «en inglés» de las páginas legales (las pide gente que da por
+# hecho /legal/…; Google las rechazaba por ser un 404).
+/legal/privacy /privacidad/ 301
+/legal/privacy/ /privacidad/ 301
+/legal/terms /terminos/ 301
+/legal/terms/ /terminos/ 301
+/privacy /privacidad/ 301
+/terms /terminos/ 301
