@@ -967,11 +967,15 @@ RUTAS.codigo = async ([id], params) => {
           ? `${money(tk.price_cents, tk.currency)} each · ${money(tk.price_cents * tk.seats, tk.currency)} in total`
           : `${money(tk.price_cents, tk.currency)} por persona · ${money(tk.price_cents * tk.seats, tk.currency)} en total`)}</p>` : ''}
       <div class="qr" id="qr" role="img" aria-label="${esc(t('Código QR para que el negocio valide tu canje'))}"></div>
-      <p class="codigo">${esc(codigoLegible(tk.code))}</p>
+      <p><button type="button" class="codigo copiar" id="copiar" aria-label="${esc(t('Copiar el código'))}">${esc(codigoLegible(tk.code))} ${ic('content_copy')}</button></p>
       <p class="muted" id="cuenta"></p>
       <p class="muted">${esc(t('Enséñalo en el sitio. Si no pueden escanearlo, que escriban el código de debajo.'))}</p>
       ${largo ? `<p><button class="pill" id="anular" type="button">${esc(t('Ya no voy: anular la reserva'))}</button></p>` : ''}
     </div>`);
+  // El código de debajo del QR se copia de un toque (como en la app).
+  $('#copiar')?.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(tk.code); toast(t('Código copiado')); } catch { /* sin permiso */ }
+  });
   // «Ya no voy»: las plazas quedan libres y la lista de espera se entera.
   $('#anular')?.addEventListener('click', async () => {
     if (!(await confirma({

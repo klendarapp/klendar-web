@@ -1175,13 +1175,13 @@ PAGES.categorias = async (v) => {
     <div class="page-head"><h1>Categorías</h1><span class="spacer"></span><button class="btn primary sm" id="new">Nueva categoría…</button></div>
     ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p>The categories used to classify businesses and publications (the app's filters). The <b>slug</b> is the internal identifier (don't change it if it's already in use); the icon is an emoji. Only an empty category can be deleted.</p>` : '<p>Las categorías con las que se clasifican negocios y publicaciones (filtros de la app). El <b>slug</b> es el identificador interno (no lo cambies si ya está en uso); el icono es un emoji. Solo se puede borrar una categoría vacía.</p>')}
     ${table({ cols: [
-      { h: 'Categoría', r: (c) => `<span class="ph" style="font-size:20px">${esc(c.icon || '·')}</span><span class="title">${esc(c.names?.es || c.slug)}<span class="sub">${esc(c.slug)} · EN: ${esc(c.names?.en || '—')}${c.parent_id ? ` · ${I18N.lang === 'en' ? 'under' : 'dentro de'} ${esc(byId[c.parent_id]?.names?.es || '')}` : ''}</span></span>` },
+      { h: 'Categoría', r: (c) => `<span class="ph" style="font-size:20px">${c.icon ? ms(esc(c.icon)) : '·'}</span><span class="title">${esc(c.names?.es || c.slug)}<span class="sub">${esc(c.slug)} · EN: ${esc(c.names?.en || '—')}${c.parent_id ? ` · ${I18N.lang === 'en' ? 'under' : 'dentro de'} ${esc(byId[c.parent_id]?.names?.es || '')}` : ''}</span></span>` },
       { h: 'Orden', num: true, r: (c) => c.position }, { h: 'Negocios', num: true, r: (c) => c.businesses }, { h: 'Publicaciones', num: true, r: (c) => c.offers },
       { h: '', r: (c) => `<span class="actions"><button class="btn sm" data-edit="${c.id}">Editar…</button>${(c.businesses || c.offers) ? '' : `<button class="btn sm bad ghost" data-del="${c.id}">Borrar</button>`}</span>` },
     ], rows: cats, empty: 'Sin categorías.' })}`;
   const edit = async (c) => {
     const r = await modal({ title: c ? 'Editar categoría' : 'Nueva categoría', fields: [
-      { name: 'slug', label: 'Slug', value: c?.slug, required: true }, { name: 'icon', label: 'Icono (emoji)', value: c?.icon },
+      { name: 'slug', label: 'Slug', value: c?.slug, required: true }, { name: 'icon', label: 'Icono (nombre de Material Symbols, como en la app: local_bar, restaurant…)', value: c?.icon },
       { name: 'es', label: 'Nombre (ES)', value: c?.names?.es, required: true }, { name: 'en', label: 'Nombre (EN)', value: c?.names?.en },
       { name: 'parent_id', label: 'Categoría superior', type: 'select', value: c?.parent_id || '', options: [['', '— (principal)'], ...cats.filter((x) => x.id !== c?.id).map((x) => [x.id, x.names?.es || x.slug])] },
       { name: 'position', label: 'Orden', type: 'number', value: c?.position ?? 99 },

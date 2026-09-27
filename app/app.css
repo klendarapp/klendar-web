@@ -228,3 +228,9 @@ input[type=file] { max-width: 100%; }
 .dialogo-botones { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .dialogo-botones .pill { justify-content: center; }
 .pill.peligro-lleno { background: #FF5C5C; border-color: transparent; color: #fff; }
+
+/* El código de debajo del QR: se toca y se copia. */
+button.codigo.copiar { background: none; border: 0; color: inherit; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 14px; border-radius: 999px; }
+button.codigo.copiar:hover { background: var(--glass); }
+button.codigo.copiar .ms { font-size: 18px; color: var(--ink-2); letter-spacing: 0; }

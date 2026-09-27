@@ -433,4 +433,6 @@ const APP_EN = {
   "Entra en tu panel": "Log in to your dashboard",
   "Con la misma cuenta que usas en la app. Si tu negocio todavía no está dado de alta, entra y lo das de alta en un momento.": "With the same account you use in the app. If your business isn't registered yet, log in and register it in a moment.",
   "¿Llevas un negocio? Es la misma cuenta: entra y ve a tu panel desde «Mi negocio».": "Run a business? It’s the same account: log in and go to your dashboard from “My business”.",
+  "Copiar el código": "Copy the code",
+  "Código copiado": "Code copied",
 };

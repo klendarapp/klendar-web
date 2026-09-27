@@ -271,7 +271,7 @@ p:has(> .pill + .pill) { display: flex; flex-wrap: wrap; gap: 10px; align-items:
 .pasos > div { border: 1px solid var(--glass-border); border-radius: 20px; padding: 20px; background: var(--glass); }
 .pasos h3 { font-size: 18px; margin: 10px 0 4px; }
 .pasos p { margin: 0; color: var(--ink-2); font-size: 15px; }
-.num { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--ink); color: var(--surface); font-weight: 800; }
+.paso-num { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--ink); color: var(--surface); font-weight: 800; }
 .screens.compactas { margin-top: 28px; }
 .screens.compactas .phone { max-width: 220px; }
 .mas { margin: 16px 0 0; font-weight: 600; }

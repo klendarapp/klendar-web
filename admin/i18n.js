@@ -695,7 +695,7 @@ const I18N = makeI18N({
   "Editar categoría": "Edit category",
   "Nueva categoría": "New category",
   "Slug": "Slug",
-  "Icono (emoji)": "Icon (emoji)",
+  "Icono (nombre de Material Symbols, como en la app: local_bar, restaurant…)": "Icon (Material Symbols name, as in the app: local_bar, restaurant…)",
   "Categoría superior": "Parent category",
   "— (principal)": "— (top level)",
   "Borrar categoría": "Delete category",

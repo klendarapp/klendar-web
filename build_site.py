@@ -229,7 +229,7 @@ def head(t, path, page_title=None, page_desc=None, extra=''):
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/site.css?v=20261006">
+<link rel="stylesheet" href="/assets/site.css?v=20261007">
 <link rel="stylesheet" href="/assets/public.css?v=15">
 {extra}
 </head>
@@ -307,7 +307,7 @@ def landing(t):
         '{"@type":"Question","name":%s,"acceptedAnswer":{"@type":"Answer","text":%s}}' % (jsq(q), jsq(a)) for q, a in t['faqs']) + ']}</script>'
     fa, fb = t['float_a'], t['float_b']
     mail = 'mailto:info@klendar.app?subject=' + ('Quiero%20dar%20de%20alta%20mi%20negocio%20en%20Klendar' if t['lang'] == 'es' else 'I%20want%20to%20list%20my%20business%20on%20Klendar')
-    home_steps = ''.join(f'<div><span class="num">{i}</span><h3>{h}</h3><p>{p}</p></div>' for i, (h, p) in enumerate(t['home_steps'], 1))
+    home_steps = ''.join(f'<div><span class="paso-num">{i}</span><h3>{h}</h3><p>{p}</p></div>' for i, (h, p) in enumerate(t['home_steps'], 1))
     body = f'''
 <section class="hero"><div class="wrap">
   <div>
