@@ -235,10 +235,8 @@ details.faq p { margin: 10px 0 0; color: var(--ink-2); }
 p:has(> .pill + .pill) { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 
 
-/* ── Cabecera: «Entrar» y «Soy un negocio» a la derecha, siempre ────────── */
+/* ── Cabecera: «Entrar» a la derecha, siempre ─────────────────────────────── */
 .top-acciones { margin-left: auto; display: flex; align-items: center; gap: 14px; }
-.top-negocio { color: var(--ink-2); font-weight: 600; font-size: 14px; white-space: nowrap; }
-.top-negocio:hover { color: var(--ink); text-decoration: none; }
 .pill.top-entrar { padding: 8px 18px; font-size: 14px; background: var(--ink); color: var(--surface); border-color: transparent; }
 .pill.top-entrar:hover { transform: none; filter: brightness(1.08); }
 /* Con sesión: tu inicial o tu foto, redonda. */
@@ -246,7 +244,7 @@ p:has(> .pill + .pill) { display: flex; flex-wrap: wrap; gap: 10px; align-items:
 .top-yo img { width: 100%; height: 100%; object-fit: cover; }
 .solo-movil { display: none; }
 @media (max-width: 960px) {
-  .top-negocio, .top-acciones > .lang { display: none; }
+  .top-acciones > .lang { display: none; }
   .top-acciones { gap: 8px; }
   nav.main { margin-left: 0; }
   nav.main .solo-movil { display: block; }
