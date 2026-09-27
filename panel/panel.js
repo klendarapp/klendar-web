@@ -854,7 +854,7 @@ PAGES.publicaciones = async (v, param) => {
       cols: [
         { h: 'Publicación', r: (o) => `${primeraFoto(o.images) ? `<img class="thumb" src="${esc(primeraFoto(o.images))}" alt="" loading="lazy">` : `<span class="ph">${ms((o.images || []).some(esVideo) ? 'play_circle' : o.kind === 'flash_offer' ? 'bolt' : 'event')}</span>`}<b class="title">${esc(o.title)}</b><span class="sub">${esc(LABELS[o.kind])} · ${fmtDate(o.kind === 'flash_offer' ? o.redeem_start_at : o.event_at)}</span>` },
         { h: 'Estado', r: (o) => tag(o.status) + (o.moderation_status === 'pending' ? ' ' + tag('pending') : '') + (o.publish_at ? ` <span class="tag dim">programada ${esc(fmtDate(o.publish_at))}</span>` : '') },
-        { h: 'Plazas', r: (o) => o.max_redemptions == null ? '—' : `${fmtNum(o.redemptions_count + (o.pending_count || 0))}/${fmtNum(o.max_redemptions)}` },
+        { h: 'Plazas', r: (o) => o.max_redemptions == null ? '—' : `${fmtNum(o.redemptions_count + (o.holds_seats === false ? 0 : (o.pending_count || 0)))}/${fmtNum(o.max_redemptions)}` },
         { h: 'Vistas', num: true, r: (o) => fmtNum(o.views) },
         { h: 'Canjes', num: true, r: (o) => fmtNum(o.redemptions_count) },
         { h: '', r: (o) => !gestiona()
@@ -1133,6 +1133,9 @@ async function offerForm(v, id, kindDefault, desde = null) {
         <label class="f"><span>Termina</span><input type="datetime-local" name="end" value="${toLocalInput(o.kind === 'future_event' ? o.event_end_at : o.redeem_end_at)}"></label>
         <label class="f"><span>Precio (opcional)</span><input name="price" inputmode="decimal" value="${o.price_cents == null ? '' : (o.price_cents / 100).toFixed(2).replace('.', ',')}" placeholder="12,00"></label>
         <label class="f"><span>Aforo / unidades</span><input name="max_redemptions" type="number" min="1" value="${o.max_redemptions ?? ''}" placeholder="vacío = sin límite"></label>
+        <label class="f" id="plazasRow" hidden><span>Cómo se llenan las plazas <small id="plazasAyuda"></small></span><select name="holds_seats">
+          <option value="si" ${o.holds_seats === false ? '' : 'selected'}>El código guarda la plaza</option>
+          <option value="no" ${o.holds_seats === false ? 'selected' : ''}>Por orden de llegada</option></select></label>
         <label class="f"><span>Descuento</span><select name="discount_type">
           ${[['', 'Sin descuento'], ['percent', 'Porcentaje'], ['fixed', 'Precio fijo'], ['2x1', '2x1'], ['free', 'Gratis'], ['other', 'Otro (lo escribes tú)']].map((d) => `<option value="${d[0]}" ${disc.type === d[0] ? 'selected' : ''}>${d[1]}</option>`).join('')}</select></label>
         <label class="f"><span>Valor del descuento</span><input name="discount_value" value="${esc(disc.value ?? '')}" placeholder="20"></label>
@@ -1188,6 +1191,16 @@ async function offerForm(v, id, kindDefault, desde = null) {
   };
   $('[name=kind]', v).onchange = syncKind;
   $('[name=reservations_enabled]', v).onchange = syncKind;
+  // Con aforo: si el código guarda la plaza o se entra por orden de llegada.
+  const syncPlazas = () => {
+    $('#plazasRow', v).hidden = !String($('[name=max_redemptions]', v).value || '').trim();
+    $('#plazasAyuda', v).textContent = I18N.t($('[name=holds_seats]', v).value === 'no'
+      ? '(no guarda sitio: cuentan los que entran; cuando se llena, los que lleguen después ya no pasan)'
+      : '(quien tiene código tiene sitio; si no va y no anula, su plaza se queda sin usar)');
+  };
+  $('[name=max_redemptions]', v).addEventListener('input', syncPlazas);
+  $('[name=holds_seats]', v).onchange = syncPlazas;
+  syncPlazas();
   syncKind();
 
   // La pregunta del alcohol solo aparece si el descuento es un 2x1.
@@ -1313,6 +1326,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
     pon('title', d.title); pon('description', d.description); pon('terms', d.terms);
     pon('price', d.price); pon('external_url', d.external_url);
     pon('max_redemptions', d.max_redemptions); pon('max_per_user', d.max_per_user || 1);
+    pon('holds_seats', d.holds_seats === false ? 'no' : 'si');
     pon('code_ttl_minutes', d.code_ttl_minutes ?? '');
     campo('adults_only').checked = !!d.adults_only;
     campo('reservations_enabled').checked = !!d.reservations_enabled;
@@ -1372,6 +1386,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
       price: String(f.get('price') || '').trim(),
       external_url: String(f.get('external_url') || '').trim() || null,
       max_redemptions: String(f.get('max_redemptions') || '').trim() || null,
+      holds_seats: f.get('holds_seats') !== 'no',
       max_per_user: Number(f.get('max_per_user') || 1),
       adults_only: campo('adults_only').checked,
       style: { template: estilo.template, ...(estilo.accent ? { accent: estilo.accent } : {}) },
@@ -1456,6 +1471,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
       event_at: flash ? null : fromLocalInput(f.get('start')),
       event_end_at: flash ? null : fromLocalInput(f.get('end')),
       max_redemptions: f.get('max_redemptions') ? Number(f.get('max_redemptions')) : null,
+      holds_seats: f.get('holds_seats') !== 'no',
       max_per_user: Number(f.get('max_per_user') || 1),
       code_ttl_minutes: f.get('code_ttl_minutes') ? Number(f.get('code_ttl_minutes')) : null,
       reservations_enabled: !flash && $('[name=reservations_enabled]').checked,
@@ -1605,6 +1621,7 @@ PAGES.validar = async (v) => {
           not_authorized: 'Ese código no es de tu negocio.',
           already_validated: 'Ese código ya se usó.',
           code_expired: 'El código ha caducado: pide que generen otro.',
+          sold_out: 'Aforo completo: ya han entrado todas las plazas.',
           rate_limited: 'Demasiados intentos seguidos. Espera un momento.',
         };
         $('#result').innerHTML = `<div class="scan-result bad">${ms('cancel')}${esc(I18N.t(msgs[res.error] || friendly(res.error)))}${res.validated_at ? `<small>${esc(I18N.t('Se validó el'))} ${esc(fmtDate(res.validated_at))}${(res.seats || 1) > 1 ? ` · ${res.seats} ${esc(I18N.t('personas'))}` : ''}</small>` : ''}</div>`;

@@ -103,7 +103,7 @@ export async function offerPage(id, lang) {
       <dl>
         <div><dt>${flash ? S.redeem : S.when}</dt><dd>${esc(when)}</dd></div>
         ${where ? `<div><dt>${S.where}</dt><dd>${esc(where)}</dd></div>` : ''}
-        ${o.seats_left != null && !soldOut ? `<div><dt>${S.seats}</dt><dd>${o.seats_left}</dd></div>` : ''}
+        ${o.seats_left != null && !soldOut ? `<div><dt>${S.seats}</dt><dd>${o.seats_left}${o.holds_seats === false ? ` · ${en ? 'first come, first served' : 'por orden de llegada'}` : ''}</dd></div>` : ''}
       </dl>
       ${over ? '' : (() => {
         // Lo mismo que el botón grande de la app, pero sin salir de la web.

@@ -632,4 +632,10 @@ const I18N = makeI18N({
     "Fecha": "Date",
     "Falta cuándo: elige el inicio (y el final, si es una oferta flash).": "When is missing: pick the start (and the end, if it's a flash offer).",
     "El fin debe ser posterior al inicio.": "The end must be after the start.",
+    "Cómo se llenan las plazas": "How places fill up",
+    "El código guarda la plaza": "The code holds a place",
+    "Por orden de llegada": "First come, first served",
+    "(no guarda sitio: cuentan los que entran; cuando se llena, los que lleguen después ya no pasan)": "(doesn't hold a place: only people who get in count; once it's full, later arrivals can't get in)",
+    "(quien tiene código tiene sitio; si no va y no anula, su plaza se queda sin usar)": "(having a code means having a place; if someone doesn't come and doesn't cancel, their place goes unused)",
+    "Aforo completo: ya han entrado todas las plazas.": "Full: every place has been taken.",
 });
