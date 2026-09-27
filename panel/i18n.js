@@ -638,4 +638,5 @@ const I18N = makeI18N({
     "(no guarda sitio: cuentan los que entran; cuando se llena, los que lleguen después ya no pasan)": "(doesn't hold a place: only people who get in count; once it's full, later arrivals can't get in)",
     "(quien tiene código tiene sitio; si no va y no anula, su plaza se queda sin usar)": "(having a code means having a place; if someone doesn't come and doesn't cancel, their place goes unused)",
     "Aforo completo: ya han entrado todas las plazas.": "Full: every place has been taken.",
+    "Has llegado al máximo de publicaciones activas de tu plan. Espera a que termine alguna o escríbenos.": "You've reached your plan's limit of active publications. Wait for one to end or write to us.",
 });

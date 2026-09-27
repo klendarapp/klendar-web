@@ -71,7 +71,7 @@ const ERRORS = {
   owner_untouchable: 'Al propietario no se le cambia el rol desde aquí.',
   not_a_member: 'Esa persona ya no está en el equipo.',
   invalid_role: 'Ese rol no existe.',
-  plan_limit_reached: 'Has llegado al límite de publicaciones activas de tu plan.',
+  plan_limit_reached: 'Has llegado al máximo de publicaciones activas de tu plan. Espera a que termine alguna o escríbenos.',
   prior_price_required: 'Pon el precio anterior: la ley obliga a enseñarlo junto al descuento.',
   prior_price_not_lower: 'El precio anterior tiene que ser mayor que el de ahora.',
   alcohol_declaration_required: 'Di si el 2x1 incluye bebidas alcohólicas.',
@@ -2107,9 +2107,10 @@ function planCard(sub) {
   const until = sub.period_end
     ? new Date(sub.period_end).toLocaleDateString(LOC(), { day: 'numeric', month: 'short', year: 'numeric' }) : '';
   const estado = trial && until
-    ? (en ? `Free trial with every feature until ${until}. Then the Free plan unless you subscribe.`
-      : `Prueba gratuita con todas las funciones hasta el ${until}. Después, plan Gratis salvo que contrates uno.`)
-    : free ? (en ? 'No cost. Up to 2 active publications at a time.' : 'Sin coste. Hasta 2 publicaciones activas a la vez.')
+    ? (en ? `Everything included until ${until}, no card and no automatic renewal. While your city is launching, it stays free.`
+      : `Prueba con todo hasta el ${until}, sin tarjeta y sin renovación automática. Mientras tu ciudad arranca, sigues gratis.`)
+    : free ? (en ? 'Free while your city is launching, with no limit on publications. We\u2019ll give you a month\u2019s notice before charging.'
+      : 'Gratis mientras tu ciudad arranca, sin límite de publicaciones. Te avisaremos con un mes de antelación antes de cobrar.')
       : (en ? `${fmtMoney(sub.price_cents)} per month, no sales commission.` : `${fmtMoney(sub.price_cents)} al mes, sin comisiones por venta.`);
   const usadas = sub.active_offers ?? 0;
   const uso = sub.max_active_offers == null
@@ -2121,7 +2122,7 @@ function planCard(sub) {
   return `<div class="card"><h2>${ms('workspace_premium')} ${esc(en ? `${name} plan` : `Plan ${name}`)}${trial ? ` <span class="tag st-trial">${en ? 'TRIAL' : 'PRUEBA'}</span>` : ''}</h2>
     <p class="muted" style="margin:0 0 6px">${esc(estado)}</p>
     <p style="margin:0 0 12px">${esc(uso)}</p>
-    <a class="btn sm" href="mailto:info@klendar.app?subject=${asunto}&body=${cuerpo}">${esc(free ? (en ? 'Upgrade plan' : 'Mejorar plan') : (en ? 'Change plan or payment method' : 'Cambiar plan o forma de pago'))}</a></div>`;
+    <a class="btn sm" href="mailto:info@klendar.app?subject=${asunto}&body=${cuerpo}">${esc(free ? (en ? 'Ask about the plan' : 'Preguntar por el plan') : (en ? 'Change plan or payment method' : 'Cambiar plan o forma de pago'))}</a></div>`;
 }
 
 PAGES.ficha = async (v) => {
