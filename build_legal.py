@@ -104,6 +104,16 @@ ES['privacidad'] = ('Política de privacidad', 'Cómo trata Klendar tus datos pe
 </ul>
 <p>Los <strong>negocios</strong> ven tu nombre mostrado cuando canjeas una oferta o publicas una reseña, y estadísticas agregadas (nunca tu email ni tu ubicación).</p>
 
+<h2 id="google">Si entras con tu cuenta de Google</h2>
+<p>Si eliges «Continuar con Google», Google nos comparte, con tu permiso, solo lo básico de tu cuenta: tu <strong>nombre</strong>, tu <strong>dirección de correo</strong> y tu <strong>foto de perfil</strong> (permisos <em>openid</em>, <em>email</em> y <em>profile</em>). No pedimos acceso a tus contactos, a tu calendario, a Gmail, a Drive ni a ningún otro dato de Google.</p>
+<ul>
+  <li><strong>Para qué:</strong> solo para crear tu cuenta de Klendar e identificarte al entrar. El nombre y la foto se usan como nombre y foto de tu perfil (puedes cambiarlos cuando quieras) y el correo, para los avisos de tu cuenta.</li>
+  <li><strong>Con quién:</strong> con nadie. No vendemos estos datos, no los usamos para publicidad ni para perfiles publicitarios y no se los pasamos a terceros, salvo a Supabase, que guarda las cuentas por nosotros como encargado del tratamiento.</li>
+  <li><strong>Cuánto tiempo:</strong> mientras tengas la cuenta. Si la eliminas, se borran con ella.</li>
+  <li><strong>Cómo quitar el acceso:</strong> en cualquier momento desde <a href="https://myaccount.google.com/permissions" rel="noopener">myaccount.google.com/permissions</a>. Tu cuenta de Klendar sigue funcionando si le pones una contraseña.</li>
+</ul>
+<p>El uso que Klendar hace de la información recibida de las API de Google se ajusta a la <a href="https://developers.google.com/terms/api-services-user-data-policy" rel="noopener">Política de datos de usuario de los servicios de API de Google</a>, incluidos los requisitos de uso limitado.</p>
+
 <h2>4. Menores</h2>
 <p>La edad mínima para usar Klendar es de <strong>14 años</strong>. Los contenidos marcados como "+18" (locales de ocio nocturno, alcohol) solo se muestran a personas que han acreditado ser mayores de 18 años mediante su fecha de nacimiento. Si detectamos una cuenta de un menor de 14 años, la eliminaremos.</p>
 
@@ -152,6 +162,16 @@ EN['privacidad'] = ('privacy', 'Privacy policy', 'How Klendar handles your perso
   <li>A transactional email provider for account emails.</li>
 </ul>
 <p><strong>Businesses</strong> see your display name when you redeem a deal or post a review, plus aggregate statistics (never your email or your location).</p>
+
+<h2 id="google">If you sign in with your Google account</h2>
+<p>If you choose “Continue with Google”, Google shares with us, with your permission, only the basics of your account: your <strong>name</strong>, your <strong>email address</strong> and your <strong>profile picture</strong> (the <em>openid</em>, <em>email</em> and <em>profile</em> scopes). We do not ask for access to your contacts, calendar, Gmail, Drive or any other Google data.</p>
+<ul>
+  <li><strong>What for:</strong> only to create your Klendar account and identify you when you log in. Your name and picture become your profile name and picture (you can change them at any time) and your email is used for account emails.</li>
+  <li><strong>Who with:</strong> nobody. We do not sell this data, we do not use it for advertising or advertising profiles and we do not pass it on to third parties, except Supabase, which stores accounts on our behalf as a processor.</li>
+  <li><strong>How long:</strong> for as long as you have the account. If you delete it, they are deleted with it.</li>
+  <li><strong>How to remove access:</strong> at any time from <a href="https://myaccount.google.com/permissions" rel="noopener">myaccount.google.com/permissions</a>. Your Klendar account keeps working if you set a password.</li>
+</ul>
+<p>Klendar's use of information received from Google APIs adheres to the <a href="https://developers.google.com/terms/api-services-user-data-policy" rel="noopener">Google API Services User Data Policy</a>, including the Limited Use requirements.</p>
 
 <h2>4. Minors</h2>
 <p>The minimum age to use Klendar is <strong>14</strong>. Content marked "18+" (nightlife venues, alcohol) is only shown to people who have confirmed they are over 18 through their date of birth. If we detect an account belonging to someone under 14, we will delete it.</p>
