@@ -1,11 +1,37 @@
 import { configure, esc, html, rpc } from '../_lib/page.js';
 import { guard, publicPage } from '../_lib/public.js';
 
-// Darse de baja del correo semanal (o del resumen del negocio): un clic desde el propio correo, sin
-// entrar a la cuenta ni buscar nada. El enlace lleva un testigo que solo
-// sirve para esto.
+// Darse de baja del correo semanal (o del resumen del negocio), sin entrar a
+// la cuenta ni buscar nada. El enlace lleva un testigo que solo sirve para esto.
+//
+// Abrir el enlace (GET) solo pregunta: los antivirus y los correos que abren
+// los enlaces por su cuenta daban de baja a gente sin que pulsara nada. La baja
+// se hace con POST: el botón de esta página o la «baja en un clic» de Gmail y
+// Outlook (cabecera List-Unsubscribe-Post, RFC 8058).
 
 export async function onRequestGet(ctx) {
+  configure(ctx.env);
+  const url = new URL(ctx.request.url);
+  const lang = url.searchParams.get('lang') === 'en' ? 'en' : 'es';
+  const en = lang === 'en';
+  const token = String(ctx.params.token || '').slice(0, 64);
+  const S = en
+    ? { title: 'Unsubscribe', body: 'You will stop getting this email. You can switch it back on in Notification settings.', go: 'Unsubscribe', no: 'Keep getting it' }
+    : { title: 'Darse de baja', body: 'Dejarás de recibir este correo. Se puede volver a encender en Ajustes de notificaciones.', go: 'Darme de baja', no: 'Seguir recibiéndolo' };
+  const body = `
+  <h1>${esc(S.title)}</h1>
+  <p class="muted" style="max-width:560px">${esc(S.body)}</p>
+  <form method="post" action="/baja/${encodeURIComponent(token)}${en ? '?lang=en' : ''}">
+    <p class="acciones" style="justify-content:flex-start"><button class="pill accent" type="submit">${esc(S.go)}</button>
+    <a class="pill" href="/${en ? 'en/' : ''}">${esc(S.no)}</a></p>
+  </form>`;
+  return html(publicPage({
+    lang, path: `/baja/${esc(token)}/`, title: S.title, description: S.body, body,
+    head: '<meta name="robots" content="noindex, nofollow">',
+  }), 200, 'no-store');
+}
+
+export async function onRequestPost(ctx) {
   configure(ctx.env);
   const lang0 = new URL(ctx.request.url).searchParams.get('lang') === 'en' ? 'en' : 'es';
   return guard(lang0, new URL(ctx.request.url).pathname, async () => {

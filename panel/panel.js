@@ -83,6 +83,15 @@ const ERRORS = {
   offer_not_found: 'Esa publicación ya no existe.',
   not_found: 'Eso ya no existe.',
   rate_limited: 'Vas muy rápido. Espera un momento y vuelve a probar.',
+  no_2x1_alcohol: 'Di si el 2x1 incluye bebidas alcohólicas.',
+  plan_no_boosts: 'Tu plan no incluye publicaciones destacadas.',
+  invalid_email: 'Ese correo no parece válido.',
+  bad_menu: 'La carta tiene algo mal escrito. Revisa los precios y los nombres.',
+  too_many_sections: 'Demasiadas secciones en la carta.',
+  sold_out: 'Aforo completo: ya han entrado todas las plazas.',
+  code_expired: 'El código ha caducado: pide que generen otro.',
+  already_validated: 'Ese código ya se usó.',
+  invalid_code: 'Ese código no existe.',
   auth_required: 'Tu sesión ha caducado. Vuelve a entrar para continuar.',
 };
 
@@ -289,6 +298,7 @@ function etiquetaDescuento(d) {
   if (d.type === 'fixed') return fmtMoney(Math.round(Number(d.value) * 100));
   if (d.type === '2x1') return '2x1';
   if (d.type === 'free') return 'Gratis';
+  if (d.type === 'other' && d.value) return String(d.value);
   return d.label || d.text || '';
 }
 
@@ -342,7 +352,9 @@ const confirmDlg = (title, text, opts = {}) => modal({ title, intro: text, submi
 function downloadCsv(name, rows, cols) {
   const lines = [cols.map((c) => c[1]), ...rows.map((r) => cols.map((c) => {
     const v = typeof c[0] === 'function' ? c[0](r) : r[c[0]];
-    return v == null ? '' : String(v);
+    if (v == null) return '';
+    const t = String(v);
+    return /^[=+\-@\t\r]/.test(t) ? `'${t}` : t;
   }))];
   const csv = lines.map((l) => l.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(';')).join('\r\n');
   const a = document.createElement('a');
@@ -388,7 +400,12 @@ async function boot() {
   $('#who').textContent = ME.email || ME.phone || '';
   $('#app').hidden = false;
 
-  BIZZES = await rpc('my_businesses');
+  try {
+    BIZZES = await rpc('my_businesses');
+  } catch (e) {
+    $('#view').innerHTML = `<div class="card"><h2>${esc(I18N.t('Algo ha fallado'))}</h2><p class="err">${esc(friendly(e.message))}</p><button class="btn" onclick="location.reload()">${esc(I18N.t('Reintentar'))}</button></div>`;
+    return;
+  }
   // Quien llega del registro de negocio trae ?alta=1: se limpia la dirección.
   if (new URLSearchParams(location.search).has('alta')) {
     history.replaceState(null, '', `${location.pathname}${BIZZES.length ? '' : '#/alta'}`);
@@ -417,6 +434,7 @@ async function noBusiness() {
   const v = $('#view');
   try {
     await PAGES.alta(v);
+    sinDobleEnvio(v);
     I18N.translate(v);
   } catch (e) {
     v.innerHTML = `<div class="card"><h2>Algo ha fallado</h2><p class="err">${esc(friendly(e.message))}</p><button class="btn" onclick="location.reload()">Reintentar</button></div>`;
@@ -427,6 +445,8 @@ function renderBizPicker() {
   $('#bizSelect').onchange = () => {
     BIZ = BIZZES.find((b) => b.id === $('#bizSelect').value);
     localStorage.setItem('klendar.biz', BIZ.id);
+    const [pag, param] = currentRoute();
+    if (param) { location.hash = `#/${pag}`; return; }
     route();
   };
 }
@@ -435,7 +455,7 @@ let saliendo = false;
 $('#logout').onclick = async (e) => {
   e.preventDefault();
   saliendo = true;
-  await sb.auth.signOut();
+  await sb.auth.signOut({ scope: 'local' }); // solo este navegador
   location.href = '/';
 };
 sb.auth.onAuthStateChange((ev) => {
@@ -468,7 +488,7 @@ const NAV = [
   ['ayuda', 'help', 'Ayuda'],
 ];
 function renderNav(current) {
-  $('#nav').innerHTML = NAV.map((n) => `<a class="nav ${current === n[0] ? 'on' : ''}" href="#/${n[0]}">${ms(n[1])}${n[2]}</a>`).join('');
+  $('#nav').innerHTML = NAV.filter((n) => gestiona() || !SOLO_GESTION.includes(n[0])).map((n) => `<a class="nav ${current === n[0] ? 'on' : ''}" href="#/${n[0]}">${ms(n[1])}${n[2]}</a>`).join('');
   I18N.translate($('#nav'));
 }
 const currentRoute = () => (location.hash.replace(/^#\/?/, '').split('?')[0] || 'resumen').split('/');
@@ -477,12 +497,38 @@ const PAGES = {};
 // de negocio y de pantalla seguido), lo que termine tarde no pisa ni saca
 // errores sobre la nueva.
 let RUTA_N = 0;
+/** Un formulario no se manda dos veces: mientras trabaja, sus botones de
+ * enviar se bloquean. Se aplica solo a los formularios de cada pantalla. */
+function sinDobleEnvio(caja) {
+  for (const form of caja.querySelectorAll('form')) {
+    const original = form.onsubmit;
+    if (!original || form.dataset.unaVez) continue;
+    form.dataset.unaVez = '1';
+    let ocupado = false;
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      if (ocupado) return;
+      ocupado = true;
+      const botones = [...form.querySelectorAll('button[type=submit], button:not([type])')];
+      botones.forEach((b) => { b.disabled = true; });
+      try { await original.call(form, e); } finally {
+        ocupado = false;
+        botones.forEach((b) => { b.disabled = false; });
+      }
+    };
+  }
+}
+
+// Lo que no es de un empleado: solo propietario y encargados (como la app).
+const SOLO_GESTION = ['sellos', 'carta', 'novedades', 'ficha', 'cerrados', 'equipo'];
+
 async function route() {
   paraCamara();
   if (!ME) return;
   if (!BIZ) return noBusiness();
   const n = ++RUTA_N;
-  const [page, param] = currentRoute();
+  let [page, param] = currentRoute();
+  if (!gestiona() && SOLO_GESTION.includes(page)) page = 'resumen';
   renderNav(page);
   $('#side').classList.remove('open');
   // Cada pintada va en su propia caja: si una vieja termina tarde, escribe
@@ -492,7 +538,7 @@ async function route() {
   $('#view').replaceChildren(v);
   try {
     await (PAGES[page] || PAGES.resumen)(v, param);
-    if (n === RUTA_N) I18N.translate(v);
+    if (n === RUTA_N) { sinDobleEnvio(v); I18N.translate(v); }
   } catch (e) {
     if (n !== RUTA_N) return;
     v.innerHTML = `<div class="card"><h2>Algo ha fallado</h2><p class="err">${esc(e.message)}</p><button class="btn" onclick="location.reload()">Reintentar</button></div>`;
@@ -770,7 +816,7 @@ PAGES.publicaciones = async (v, param) => {
   OTROS_LOCALES = otros || [];
   v.innerHTML = `
     <div class="page-head"><h1>Publicaciones</h1><span class="spacer"></span>
-      ${gestiona() ? `<a class="btn sm" href="#/publicaciones/nueva-flash">${ms('bolt')}Nueva oferta</a>
+      ${gestiona() ? `<a class="btn sm" href="#/publicaciones/nueva-flash">${ms('bolt')}Nueva oferta flash</a>
       <a class="btn sm" href="#/publicaciones/nuevo-evento">${ms('event')}Nuevo evento</a>` : ''}
       <button class="btn sm ghost" id="csv">Exportar CSV</button></div>
     ${helpBox('¿Oferta o evento?', bi('<p><b>Oferta flash</b>: algo que se canjea hoy, con cuenta atrás y aforo («café + tostada 2,50 € hasta mediodía»). <b>Evento</b>: algo con fecha, que se guarda en la agenda y puede admitir reserva de plaza.</p>',
@@ -869,7 +915,7 @@ PAGES.publicaciones = async (v, param) => {
               ${o.kind === 'flash_offer' && o.status === 'active' && new Date(o.redeem_end_at) > new Date() ? `<button type="button" data-act="extend" data-id="${esc(o.id)}">Ampliar 1 h</button>` : ''}
               ${o.kind === 'flash_offer' ? `<a href="#/publicaciones/nueva-flash?from=${esc(o.id)}&repeat=1">Repetir mañana</a>
               <button type="button" data-act="repeat" data-id="${esc(o.id)}">Repetir cada semana…</button>` : ''}
-              ${OTROS_LOCALES.length ? `<button type="button" data-act="locales" data-id="${esc(o.id)}">En otros locales…</button>` : ''}
+              ${OTROS_LOCALES.length ? `<button type="button" data-act="locales" data-id="${esc(o.id)}">Publicar en otros locales…</button>` : ''}
               <a href="${I18N.lang === 'en' ? '/en/poster/' : '/cartel/'}${esc(o.id)}" target="_blank" rel="noopener">Cartel para imprimir</a>
               <button type="button" class="bad" data-act="delete" data-id="${esc(o.id)}">Borrar</button>
             </div></details>
@@ -900,9 +946,11 @@ PAGES.publicaciones = async (v, param) => {
           }
           if (b.dataset.act === 'delete') {
             if (!await confirmDlg('Borrar publicación', 'Se borra para siempre, junto con sus estadísticas. Si solo quieres que deje de verse, púlsale a «Pausar».', { danger: true, submit: 'Borrar' })) return;
-            await sb.from('offers').delete().eq('id', id);
+            const { error } = await sb.from('offers').delete().eq('id', id);
+            if (error) throw error;
           } else {
-            await sb.from('offers').update({ status: b.dataset.act === 'pause' ? 'draft' : 'active' }).eq('id', id);
+            const { error } = await sb.from('offers').update({ status: b.dataset.act === 'pause' ? 'draft' : 'active' }).eq('id', id);
+            if (error) throw error;
           }
           toast('Hecho');
           route();
@@ -1055,6 +1103,11 @@ async function localesDialogo(offerId) {
 
 /** Formulario de publicación (nueva o existente). */
 async function offerForm(v, id, kindDefault, desde = null) {
+  // Un empleado valida códigos, no publica (como en la app).
+  if (!gestiona()) {
+    v.innerHTML = `<div class="card"><p class="muted" style="margin:0">${esc(I18N.t('Solo el propietario y los encargados pueden crear o editar publicaciones.'))}</p></div>`;
+    return;
+  }
   let o = { kind: kindDefault || 'flash_offer', max_per_user: 1, code_ttl_minutes: 5, images: [], status: 'active' };
   if (id) {
     const all = await rpc('my_business_offers', { p_id: BIZ.id });
@@ -1591,9 +1644,16 @@ PAGES.validar = async (v) => {
     });
   };
 
+  let validando = false;
   const validate = async () => {
+    if (validando) return;
     const raw = $('#code').value.trim();
     if (!raw) return;
+    validando = true;
+    $('#go').disabled = true;
+    try { await validaUno(raw); } finally { validando = false; $('#go').disabled = false; }
+  };
+  const validaUno = async (raw) => {
     // Tecleado se ve en grupos de cuatro («0882 7EC7 …»): fuera espacios y guiones.
     const code = raw.includes('/r/') ? raw.split('/r/').pop().split(/[?#]/)[0] : raw.replace(/[\s-]/g, '');
     const aLaCola = () => {
@@ -1899,7 +1959,7 @@ PAGES.carta = async (v) => {
     }; });
     $$('[data-sec-del]', v).forEach((b) => { b.onclick = async () => {
       const i = +b.dataset.secDel;
-      if (!await confirmDlg('Borrar sección', `Se quita «${carta[i].name}» con sus platos. No se guarda hasta que le des a «Guardar la carta».`, { danger: true, submit: 'Borrar' })) return;
+      if (!await confirmDlg('Borrar sección', `Se quita «${esc(carta[i].name)}» con sus platos. No se guarda hasta que le des a «Guardar la carta».`, { danger: true, submit: 'Borrar' })) return;
       carta.splice(i, 1); sucia = true; pinta();
     }; });
     $$('[data-sec-up]', v).forEach((b) => { b.onclick = () => {
@@ -2351,28 +2411,34 @@ PAGES.equipo = async (v) => {
       if (!r) return;
       try {
         const res = await rpc('add_business_member', { p_business_id: BIZ.id, p_email: r.email, p_role: r.role });
-        if (!res.ok) { toast(ERRORS[res.error] || res.error, true); return; }
+        if (!res.ok) { toast(friendly(res.error), true); return; }
         toast(res.invited ? 'Invitación enviada: le hemos mandado un correo' : 'Añadido al equipo');
         route();
       } catch (e) { toast(friendly(e.message), true); }
     };
     $$('[data-role]', v).forEach((b) => {
       b.onclick = async () => {
-        const res = await rpc('set_business_member_role', { p_business_id: BIZ.id, p_user_id: b.dataset.user, p_role: b.dataset.role });
-        if (!res.ok) { toast(ERRORS[res.error] || res.error, true); return; }
-        toast('Rol cambiado'); route();
+        try {
+          const res = await rpc('set_business_member_role', { p_business_id: BIZ.id, p_user_id: b.dataset.user, p_role: b.dataset.role });
+          if (!res.ok) { toast(friendly(res.error), true); return; }
+          toast('Rol cambiado'); route();
+        } catch (e) { toast(friendly(e.message), true); }
       };
     });
     $$('[data-remove]', v).forEach((b) => {
       b.onclick = async () => {
         if (!await confirmDlg('Quitar del equipo', 'Dejará de poder validar códigos y de ver el panel.', { danger: true, submit: 'Quitar' })) return;
-        await rpc('remove_business_member', { p_business_id: BIZ.id, p_user_id: b.dataset.remove });
-        toast('Fuera del equipo'); route();
+        try {
+          const res = await rpc('remove_business_member', { p_business_id: BIZ.id, p_user_id: b.dataset.remove });
+          if (res && res.ok === false) { toast(friendly(res.error), true); return; }
+          toast('Fuera del equipo'); route();
+        } catch (e) { toast(friendly(e.message), true); }
       };
     });
     $$('[data-cancel]', v).forEach((b) => {
       b.onclick = async () => {
-        await sb.from('business_invites').delete().eq('id', b.dataset.cancel);
+        const { error } = await sb.from('business_invites').delete().eq('id', b.dataset.cancel);
+        if (error) { toast(friendly(error.message), true); return; }
         toast('Invitación cancelada'); route();
       };
     });

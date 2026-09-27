@@ -639,4 +639,11 @@ const I18N = makeI18N({
     "(quien tiene código tiene sitio; si no va y no anula, su plaza se queda sin usar)": "(having a code means having a place; if someone doesn't come and doesn't cancel, their place goes unused)",
     "Aforo completo: ya han entrado todas las plazas.": "Full: every place has been taken.",
     "Has llegado al máximo de publicaciones activas de tu plan. Espera a que termine alguna o escríbenos.": "You've reached your plan's limit of active publications. Wait for one to end or write to us.",
+    "Publicar en otros locales…": "Publish in other venues…",
+    "Cerrar sesión": "Log out",
+    "Tu plan no incluye publicaciones destacadas.": "Your plan doesn't include featured publications.",
+    "Ese correo no parece válido.": "That email doesn't look valid.",
+    "La carta tiene algo mal escrito. Revisa los precios y los nombres.": "Something in the menu is badly written. Check the prices and names.",
+    "Demasiadas secciones en la carta.": "Too many sections in the menu.",
+    "Solo el propietario y los encargados pueden crear o editar publicaciones.": "Only the owner and managers can create or edit publications.",
 });

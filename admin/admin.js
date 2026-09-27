@@ -45,6 +45,7 @@ const LABELS = {
   trial: 'prueba', past_due: 'impagada', validated: 'validado', failed: 'fallido', sent: 'enviado', skipped: 'omitido',
   flash_offer: 'oferta flash', future_event: 'evento', user: 'usuario', business: 'negocio', offer: 'publicación', review: 'reseña', post: 'novedad',
   owner: 'propietario', manager: 'encargado', staff: 'empleado', free: 'Gratis', basic: 'Básico', pro: 'Pro',
+  standard: 'Klendar', founder: 'Fundador', inactive: 'inactivo', banned: 'suspendido', other: 'otra cosa',
   new: 'sin leer', planned: 'la haremos', done: 'hecho', declined: 'descartada',
   suggestion: 'sugerencia', bug: 'fallo',
 };
@@ -76,7 +77,7 @@ const RPC_ERRORS = {
   user_not_found: 'No existe ningún usuario con ese email.', cannot_remove_self: 'No puedes quitarte a ti mismo.', last_admin: 'Tiene que quedar al menos un administrador.',
   category_in_use: 'La categoría está en uso (negocios, publicaciones o subcategorías).', slug_required: 'El identificador (slug) es obligatorio.',
   title_body_required: 'Título y texto son obligatorios.', unknown_key: 'Clave de configuración desconocida.', invalid_amount: 'Importe no válido.', invalid_period: 'El fin del periodo es anterior al inicio.',
-  not_found: 'No encontrado.', account_suspended: 'Tu cuenta está suspendida. Si crees que es un error, escríbenos a info@klendar.app.',
+  not_found: 'No encontrado.', invalid_type: 'Tipo de cuenta no válido.', account_suspended: 'Tu cuenta está suspendida. Si crees que es un error, escríbenos a info@klendar.app.',
 };
 
 function toast(msg, bad = false) {
@@ -126,7 +127,7 @@ const confirmDlg = (title, text, opts = {}) => modal({ title, intro: text, submi
 // CSV del listado actual.
 function downloadCsv(name, rows, cols) {
   const head = cols.map((c) => I18N.t(c[1]));
-  const lines = [head, ...rows.map((r) => cols.map((c) => { const v = typeof c[0] === 'function' ? c[0](r) : r[c[0]]; return v == null ? '' : String(typeof v === 'object' ? JSON.stringify(v) : v); }))];
+  const lines = [head, ...rows.map((r) => cols.map((c) => { const v = typeof c[0] === 'function' ? c[0](r) : r[c[0]]; if (v == null) return ''; const t = String(typeof v === 'object' ? JSON.stringify(v) : v); return /^[=+\-@\t\r]/.test(t) ? `'${t}` : t; }))];
   const csv = lines.map((l) => l.map((v) => `"${v.replace(/"/g, '""')}"`).join(';')).join('\r\n');
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }));
@@ -210,7 +211,7 @@ $('#doReset').onclick = () => {
   });
 };
 $('#password').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('#doLogin').click(); });
-$('#logout').onclick = async (e) => { e.preventDefault(); await sb.auth.signOut(); showLogin(); };
+$('#logout').onclick = async (e) => { e.preventDefault(); await sb.auth.signOut({ scope: 'local' }); showLogin(); };
 sb.auth.onAuthStateChange((ev) => {
   if (ev === 'SIGNED_OUT') showLogin();
   if (ev === 'PASSWORD_RECOVERY') location.href = '/app/?destino=%2Fadmin%2F#/nueva-clave';
@@ -644,7 +645,15 @@ PAGES.publicaciones = async (v, id) => {
   $('#csv').onclick = () => downloadCsv('publicaciones', rows, [['id', 'id'], ['kind', 'tipo'], ['title', 'título'], ['business_name', 'negocio'], ['status', 'estado'], ['moderation_status', 'moderación'], ['redeem_start_at', 'inicio canje'], ['redeem_end_at', 'fin canje'], ['event_at', 'evento'], ['price_cents', 'precio (cts)'], ['views_count', 'vistas'], ['redemptions_count', 'canjes'], ['max_redemptions', 'máx'], ['created_at', 'creada']]);
   await load();
 };
-const discountLabel = (d) => { if (!d) return ''; if (d.type === 'percent') return `−${d.value} %`; if (d.type === 'amount') return `−${(d.value / 100).toFixed(2)} €`; if (d.type === 'fixed_price') return `${(d.value / 100).toFixed(2)} €`; if (d.type === 'two_for_one') return '2×1'; return d.label || JSON.stringify(d); };
+const discountLabel = (d) => {
+  if (!d) return '';
+  if (d.type === 'percent') return `−${d.value} %`;
+  if (d.type === 'fixed') return `${Number(d.value).toFixed(2).replace('.', ',')} €`;
+  if (d.type === '2x1') return d.alcohol ? '2x1 (con alcohol)' : '2x1';
+  if (d.type === 'free') return 'Gratis';
+  if (d.type === 'other') return String(d.value || '');
+  return d.label || '';
+};
 
 async function moderateOffer(id, val) {
   try {
@@ -856,7 +865,7 @@ async function userDetail(v, id) {
         }
       }
       if (a === 'premium') {
-        const r = await modal({ title: 'Premium', intro: 'Sin fecha = quitar premium.', fields: [{ name: 'until', label: 'Premium hasta', type: 'date', value: u.premium_until || '' }] });
+        const r = await modal({ title: 'Premium', intro: 'Sin fecha = quitar premium.', fields: [{ name: 'until', label: 'Premium hasta', type: 'date', value: u.premium_until ? new Date(u.premium_until).toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' }) : '' }] });
         if (!r) return; await rpc('admin_set_premium', { p_id: u.id, p_until: r.until || null }); toast('Premium actualizado');
       }
       if (a === 'type') {
@@ -1173,7 +1182,7 @@ PAGES.categorias = async (v) => {
   const byId = Object.fromEntries(cats.map((c) => [c.id, c]));
   v.innerHTML = `
     <div class="page-head"><h1>Categorías</h1><span class="spacer"></span><button class="btn primary sm" id="new">Nueva categoría…</button></div>
-    ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p>The categories used to classify businesses and publications (the app's filters). The <b>slug</b> is the internal identifier (don't change it if it's already in use); the icon is an emoji. Only an empty category can be deleted.</p>` : '<p>Las categorías con las que se clasifican negocios y publicaciones (filtros de la app). El <b>slug</b> es el identificador interno (no lo cambies si ya está en uso); el icono es un emoji. Solo se puede borrar una categoría vacía.</p>')}
+    ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p>The categories used to classify businesses and publications (the app's filters). The <b>slug</b> is the internal identifier (don't change it if it's already in use); the icon is a Material Symbols name, as in the app (local_bar, restaurant…). Only an empty category can be deleted.</p>` : '<p>Las categorías con las que se clasifican negocios y publicaciones (filtros de la app). El <b>slug</b> es el identificador interno (no lo cambies si ya está en uso); el icono es el nombre de un icono de Material Symbols, como en la app (local_bar, restaurant…). Solo se puede borrar una categoría vacía.</p>')}
     ${table({ cols: [
       { h: 'Categoría', r: (c) => `<span class="ph" style="font-size:20px">${c.icon ? ms(esc(c.icon)) : '·'}</span><span class="title">${esc(c.names?.es || c.slug)}<span class="sub">${esc(c.slug)} · EN: ${esc(c.names?.en || '—')}${c.parent_id ? ` · ${I18N.lang === 'en' ? 'under' : 'dentro de'} ${esc(byId[c.parent_id]?.names?.es || '')}` : ''}</span></span>` },
       { h: 'Orden', num: true, r: (c) => c.position }, { h: 'Negocios', num: true, r: (c) => c.businesses }, { h: 'Publicaciones', num: true, r: (c) => c.offers },

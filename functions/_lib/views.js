@@ -31,6 +31,10 @@ const PATHS = {
 const icono = (n, size = 18) => `<svg class="ic" viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true"><path fill="currentColor" d="${PATHS[n]}"/></svg>`;
 
 const pre = (lang) => (lang === 'en' ? '/en' : '');
+/** «Tu cuenta» en el idioma de la ficha (la cabecera ya lo hace así). */
+const cuenta = (lang) => (lang === 'en' ? '/app/?lang=en' : '/app/');
+/** Solo enlaces web: lo que escribe un negocio no puede ser un javascript:. */
+const seguro = (u) => (/^https?:\/\//i.test(String(u || '')) ? String(u) : '');
 const notFound = (lang, path, kind) =>
   html(render({ lang, path, kind, notFound: true }), 404, 'no-store');
 
@@ -44,7 +48,11 @@ export async function offerPage(id, lang) {
 
   const flash = o.kind === 'flash_offer';
   const soldOut = o.status === 'sold_out' || (o.seats_left != null && o.seats_left <= 0);
-  const over = new Date(o.redeem_end_at || o.event_end_at || o.event_at || 0) < new Date();
+  // Un evento sin hora de fin sigue abierto 6 h (lo mismo que dura su código).
+  const fin = o.redeem_end_at || o.event_end_at
+    || (o.event_at ? new Date(new Date(o.event_at).getTime() + 6 * 3600e3).toISOString() : 0);
+  const over = new Date(fin || 0) < new Date();
+  const noEmpezada = flash && o.redeem_start_at && new Date(o.redeem_start_at) > new Date();
   const availability = soldOut ? 'https://schema.org/SoldOut' : 'https://schema.org/InStock';
   const tag = benefit(o.discount, o.price_cents, o.currency, lang);
   const prior = priorPrice(o.discount, lang);
@@ -57,7 +65,7 @@ export async function offerPage(id, lang) {
         when: 'When', redeem: 'Redemption window', where: 'Where', seats: 'Places left',
         terms: 'Conditions', about: 'What it is', biz: 'The business',
         open: 'Open in the app', report: 'Report this publication',
-        code: 'Get the code', reserve: 'Reserve a place', wait: 'Join the waiting list', save: 'Save to Plans',
+        code: 'Get the code', notYet: 'Not available yet', reserve: 'Reserve a place', wait: 'Join the waiting list', save: 'Save to Plans',
         note: 'From here or from the app, with the same account. The code is single-use and the business validates it on the spot.',
         soldOut: 'Sold out', over: 'Finished', more: 'Everything from', hot: 'Popular',
         prior: 'Lowest price in the last 30 days',
@@ -66,7 +74,7 @@ export async function offerPage(id, lang) {
         when: 'Cuándo', redeem: 'Se canjea', where: 'Dónde', seats: 'Plazas libres',
         terms: 'Condiciones', about: 'Qué es', biz: 'El negocio',
         open: 'Abrir en la app', report: 'Denunciar esta publicación',
-        code: 'Conseguir el código', reserve: 'Reservar plaza', wait: 'Apuntarme a la lista de espera', save: 'Guardar en Planes',
+        code: 'Conseguir el código', notYet: 'Aún no disponible', reserve: 'Reservar plaza', wait: 'Apuntarme a la lista de espera', save: 'Guardar en Planes',
         note: 'Desde aquí o desde la app, con la misma cuenta. El código es de un solo uso y lo valida el negocio en el momento.',
         soldOut: 'Agotado', over: 'Terminado', more: 'Todo lo de', hot: 'Con tirón',
         prior: 'Precio más bajo de los últimos 30 días',
@@ -108,13 +116,14 @@ export async function offerPage(id, lang) {
       ${over ? '' : (() => {
         // Lo mismo que el botón grande de la app, pero sin salir de la web.
         const id = encodeURIComponent(o.id);
-        const principal = soldOut ? `<a class="pill accent big" href="/app/#/espera/${id}">${S.wait}</a>`
-          : flash ? `<a class="pill accent big" href="/app/#/codigo/${id}">${S.code}</a>`
-            : o.reservations_enabled ? `<a class="pill accent big" href="/app/#/reservar/${id}">${S.reserve}</a>`
-              : o.external_url ? `<a class="pill accent big" href="${esc(o.external_url)}" rel="nofollow noopener" target="_blank">${esc(o.external_url.replace(/^https?:\/\//, '').split('/')[0])}</a>`
+        const principal = soldOut ? `<a class="pill accent big" href="${cuenta(lang)}#/espera/${id}">${S.wait}</a>`
+          : noEmpezada ? `<span class="pill accent big" aria-disabled="true" style="opacity:.55">${S.notYet}</span>`
+          : flash ? `<a class="pill accent big" href="${cuenta(lang)}#/codigo/${id}">${S.code}</a>`
+            : o.reservations_enabled ? `<a class="pill accent big" href="${cuenta(lang)}#/reservar/${id}">${S.reserve}</a>`
+              : seguro(o.external_url) ? `<a class="pill accent big" href="${esc(seguro(o.external_url))}" rel="nofollow noopener" target="_blank">${esc(o.external_url.replace(/^https?:\/\//, '').split('/')[0])}</a>`
                 : '';
         return `${principal}
-          <p class="acciones"><a class="pill" href="/app/#/guardar/${id}"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg> ${S.save}</a>
+          <p class="acciones"><a class="pill" href="${cuenta(lang)}#/guardar/${id}"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg> ${S.save}</a>
             ${openInApp(path, S.open, 'pill ghost')}</p>`;
       })()}
       <p class="note">${S.note}</p>
@@ -125,7 +134,7 @@ export async function offerPage(id, lang) {
       <h2>${S.biz}</h2>
       <p>${esc(o.business_name)}${o.business_rating && o.business_ratings ? ` · ★ ${Number(o.business_rating).toFixed(1)} (${o.business_ratings})` : ''}</p>
       <p><a href="${pre(lang)}/b/${esc(o.business_id)}">${S.more} ${esc(o.business_name)} →</a></p>
-      <p class="denuncia-pie"><a href="/app/#/denunciar/offer/${encodeURIComponent(o.id)}" rel="nofollow">${S.report}</a></p>
+      <p class="denuncia-pie"><a href="${cuenta(lang)}#/denunciar/offer/${encodeURIComponent(o.id)}" rel="nofollow">${S.report}</a></p>
     </div>
   </div>`;
 
@@ -276,7 +285,7 @@ export async function businessPage(id, lang) {
     .filter(([k, v]) => k !== 'web' && typeof v === 'string' && v.trim())
     .map(([k, v]) => `<a href="${esc(redUrl(k, v))}" rel="nofollow noopener" target="_blank">${esc(redNombre[k] || k)}</a>`);
 
-  const fotosCarta = (b.menu_images || []).filter((u) => typeof u === 'string' && u);
+  const fotosCarta = (b.menu_images || []).filter((u) => typeof u === 'string' && seguro(u));
   const galeria = (b.gallery || []).filter((u) => typeof u === 'string' && u);
   const estrellas = (n) => `<span class="stars" aria-label="${n}/5">${'★'.repeat(n)}<span>${'★'.repeat(5 - n)}</span></span>`;
   const since = b.member_since
@@ -307,13 +316,13 @@ export async function businessPage(id, lang) {
       ${cierre}
     </div>
     <aside class="side">
-      <a class="pill accent big" href="/app/#/seguir/${encodeURIComponent(b.id)}"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.8 4.5c2.2 0 3.6 1.2 5.2 3 1.6-1.8 3-3 5.2-3 3.8 0 5.9 3.9 4.4 7.3C19.5 16.4 12 21 12 21z"/></svg> ${S.open}</a>
+      <a class="pill accent big" href="${cuenta(lang)}#/seguir/${encodeURIComponent(b.id)}"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.8 4.5c2.2 0 3.6 1.2 5.2 3 1.6-1.8 3-3 5.2-3 3.8 0 5.9 3.9 4.4 7.3C19.5 16.4 12 21 12 21z"/></svg> ${S.open}</a>
       <p class="note" style="margin-bottom:16px">${S.note}</p>
       <div class="info">
         ${where ? `<div><span>${icono('lugar')}</span><span>${maps ? `<a href="${esc(maps)}" rel="nofollow noopener" target="_blank">${esc(where)}</a>` : esc(where)}</span></div>` : ''}
         ${b.phone ? `<div><span>${icono('telefono')}</span><span><a href="tel:${esc(b.phone)}">${esc(b.phone)}</a></span></div>` : ''}
-        ${b.website ? `<div><span>${icono('web')}</span><span><a href="${esc(b.website)}" rel="nofollow noopener" target="_blank">${esc(String(b.website).replace(/^https?:\/\//, ''))}</a></span></div>` : ''}
-        ${b.menu_url ? `<div><span>${icono('carta')}</span><span><a href="${esc(b.menu_url)}" rel="nofollow noopener" target="_blank">${S.menu}</a></span></div>` : ''}
+        ${seguro(b.website) ? `<div><span>${icono('web')}</span><span><a href="${esc(seguro(b.website))}" rel="nofollow noopener" target="_blank">${esc(String(b.website).replace(/^https?:\/\//, ''))}</a></span></div>` : ''}
+        ${seguro(b.menu_url) ? `<div><span>${icono('carta')}</span><span><a href="${esc(seguro(b.menu_url))}" rel="nofollow noopener" target="_blank">${S.menu}</a></span></div>` : ''}
         ${b.contact_email ? `<div><span>${icono('correo')}</span><span><a href="mailto:${esc(b.contact_email)}">${esc(b.contact_email)}</a></span></div>` : ''}
         ${redes.length ? `<div><span>${icono('redes')}</span><span>${redes.join(' · ')}</span></div>` : ''}
       </div>
@@ -346,10 +355,10 @@ export async function businessPage(id, lang) {
           <p class="muted">${esc(fmtWhen(p.created_at, lang))}</p>
           ${p.body ? `<p>${esc(p.body).replace(/\n/g, '<br>')}</p>` : ''}
           ${p.image_url ? `<img src="${esc(p.image_url)}" alt="" loading="lazy">` : ''}
-          <a class="denuncia" href="/app/#/denunciar/post/${encodeURIComponent(p.id)}" rel="nofollow">${S.report}</a>
+          <a class="denuncia" href="${cuenta(lang)}#/denunciar/post/${encodeURIComponent(p.id)}" rel="nofollow">${S.report}</a>
         </article>`).join('')}</div>` : ''}
       <h2 id="resenas">${S.reviews}${b.rating && b.ratings ? ` <small class="muted">★ ${Number(b.rating).toFixed(1)} (${b.ratings})</small>` : ''}</h2>
-      <p><a class="pill" href="/app/#/opinar/${encodeURIComponent(b.id)}">${icono('resena', 16)} ${S.write}</a></p>
+      <p><a class="pill" href="${cuenta(lang)}#/opinar/${encodeURIComponent(b.id)}">${icono('resena', 16)} ${S.write}</a></p>
       ${opiniones.length ? `<div class="resenas">${opiniones.map((r) => `<article>
           <header>${r.avatar_url ? `<img class="av" src="${esc(r.avatar_url)}" alt="" loading="lazy">` : `<span class="av">${esc((r.display_name || S.user).trim().charAt(0).toUpperCase())}</span>`}
             <span><b>${esc(r.display_name || S.user)}</b><small class="muted">${esc(fmtWhen(r.created_at, lang))}</small></span>
@@ -358,9 +367,9 @@ export async function businessPage(id, lang) {
           ${r.photo_url ? `<img class="foto" src="${esc(r.photo_url)}" alt="" loading="lazy">` : ''}
           ${r.reply ? `<div class="respuesta"><header>${icono('negocio', 16)}<b>${esc(S.replyFrom(b.name))}</b>${r.reply_at ? `<small class="muted">${esc(fmtWhen(r.reply_at, lang))}</small>` : ''}</header>
             <p>${esc(r.reply).replace(/\n/g, '<br>')}</p></div>` : ''}
-          <a class="denuncia" href="/app/#/denunciar/review/${encodeURIComponent(r.id)}" rel="nofollow">${S.report}</a>
+          <a class="denuncia" href="${cuenta(lang)}#/denunciar/review/${encodeURIComponent(r.id)}" rel="nofollow">${S.report}</a>
         </article>`).join('')}</div>` : `<p class="empty">${S.noReviews}</p>`}
-      <p class="denuncia-pie"><a href="/app/#/denunciar/business/${encodeURIComponent(b.id)}" rel="nofollow">${S.reportBiz}</a></p>
+      <p class="denuncia-pie"><a href="${cuenta(lang)}#/denunciar/business/${encodeURIComponent(b.id)}" rel="nofollow">${S.reportBiz}</a></p>
     </div>
   </div>`;
 
@@ -381,7 +390,7 @@ export async function businessPage(id, lang) {
     aggregateRating: b.rating && b.ratings
       ? { '@type': 'AggregateRating', ratingValue: Number(b.rating).toFixed(1), reviewCount: b.ratings }
       : undefined,
-    sameAs: b.website ? [b.website] : undefined,
+    sameAs: seguro(b.website) ? [b.website] : undefined,
   };
 
   return html(publicPage({

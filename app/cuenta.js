@@ -444,7 +444,10 @@ RUTAS.ajustes = async () => {
     try {
       await llamar('set_marketing_consent', { p_value: caja.checked });
       toast(caja.checked ? t('Te mandaremos novedades de vez en cuando') : t('No te mandaremos más novedades'));
-      navegar();
+      // Solo cambia su texto: repintar Ajustes entero borraba lo que se
+      // estuviera editando en el perfil o en las notificaciones.
+      const texto = caja.closest('label')?.querySelector('span');
+      if (texto) texto.textContent = caja.checked ? `${t('Sí, desde el')} ${dia(new Date().toISOString())}` : t('No recibes novedades ni promociones por correo');
     } catch (e) { caja.checked = !caja.checked; toast(e.message, true); }
   });
   $('#sin-ubicacion')?.addEventListener('click', async (ev) => {
@@ -501,7 +504,7 @@ RUTAS.ajustes = async () => {
     }))) return;
     ocupado(boton, async () => {
       await llamar('delete_my_account', {});
-      try { await sb.auth.signOut(); } catch { /* la sesión ya no existe */ }
+      try { await sb.auth.signOut({ scope: 'local' }); } catch { /* la sesión ya no existe */ }
       pinta(`<div class="ticket"><p class="hecho-ic" aria-hidden="true">✓</p>
         <h1>${esc(t('Tu cuenta se ha eliminado'))}</h1>
         <p class="muted">${esc(t('Gracias por haber usado Klendar. Si algún día vuelves, aquí estaremos.'))}</p>
@@ -728,7 +731,7 @@ RUTAS['ultimo-paso'] = async (_p, params) => {
     });
   });
   $('#salir').onclick = async () => {
-    await sb.auth.signOut();
+    await sb.auth.signOut({ scope: 'local' });
     CONSENTIMIENTO = { id: null, ok: true, fecha: true };
     location.href = `${pre}/`;
   };

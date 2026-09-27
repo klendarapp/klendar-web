@@ -52,6 +52,8 @@ function beneficio(d, precio, moneda) {
   if (d?.type === 'fixed') return money(Math.round(Number(d.value) * 100), moneda);
   if (d?.type === '2x1') return '2x1';
   if (d?.type === 'free') return t('Gratis');
+  // «Otro»: la app y el panel lo guardan en value.
+  if (d?.type === 'other' && d.value) return String(d.value);
   if (d?.label) return d.label;
   if (precio === 0) return t('Gratis');
   return precio != null ? money(precio, moneda) : '';
@@ -345,7 +347,7 @@ RUTAS[''] = async () => {
     <button class="pill ancho" id="salir">${ic('logout')} ${esc(t('Cerrar sesión'))}</button>`);
   pintaSinLeer();
   $('#salir').onclick = async () => {
-    await sb.auth.signOut();
+    await sb.auth.signOut({ scope: 'local' }); // solo este navegador, como la app
     toast(t('Has cerrado sesión'));
     vuelve('');
   };
@@ -594,7 +596,8 @@ RUTAS['codigo-correo'] = async (_p, params) => {
 RUTAS.movil = async (_p, params) => {
   const siguiente = params.get('siguiente') || '';
   // `destino` en la ruta: enlaces antiguos del panel (#/movil?destino=…).
-  const destino = params.get('destino') || destinoTrasEntrar();
+  const pedido = params.get('destino') || '';
+  const destino = /^\/(panel|app)\//.test(pedido) ? pedido : destinoTrasEntrar();
   const PREFIJOS = ['+34', '+351', '+33', '+44', '+39', '+49'];
   pinta(`
     <h1>${esc(t('Entrar con el teléfono'))}</h1>
@@ -653,7 +656,7 @@ RUTAS.movil = async (_p, params) => {
       const { error } = await sb.auth.verifyOtp({ phone: telefono, token, type: 'sms' });
       if (error) { $('#err2').textContent = errAuth(error); return; }
       toast(t('Dentro'));
-      if (destino && destino.startsWith('/')) { location.href = destino; return; }
+      if (destino) { location.href = destino; return; }
       vuelve(siguiente);
     });
   };
@@ -883,15 +886,27 @@ function hecho({ titulo, texto, volver, volverTxt, lista, listaTxt, deshacer }) 
   });
 }
 
-RUTAS.guardar = async ([id]) => {
+/** «Añadir» o «quitar» con funciones que alternan: primero se mira cómo
+ * está, y solo se cambia si hace falta. La ficha pública no sabe quién la
+ * mira y siempre ofrece «Guardar»; antes, si ya lo tenías, lo quitaba. */
+async function ponOQuita(tablaNombre, campo, id, quitar, alternar) {
+  const { data } = await sb.from(tablaNombre).select(campo).eq(campo, id).eq('user_id', YO.id).limit(1);
+  const ya = Array.isArray(data) && data.length > 0;
+  if (ya === !quitar) return { puesto: ya, yaEstaba: true };
+  return { puesto: await alternar(), yaEstaba: false };
+}
+
+RUTAS.guardar = async ([id], params) => {
   if (!exigeSesion(`guardar/${id}`)) return;
-  const guardado = await llamar('toggle_saved_offer', { p_offer: id });
+  const quitar = params?.get('quitar') === '1';
+  const { puesto: guardado, yaEstaba } = await ponOQuita('saved_offers', 'offer_id', id, quitar,
+    () => llamar('toggle_saved_offer', { p_offer: id }));
   hecho({
-    titulo: guardado ? t('Guardado en tus planes') : t('Quitado de tus planes'),
+    titulo: guardado ? t(yaEstaba ? 'Ya estaba en tus planes' : 'Guardado en tus planes') : t('Quitado de tus planes'),
     texto: guardado ? t('Te avisamos si baja de precio y, si es un evento, antes de que empiece.') : '',
     volver: `${pre}/o/${encodeURIComponent(id)}`, volverTxt: t('Volver a la publicación'),
     lista: '#/planes', listaTxt: t('Ver tus planes'),
-    deshacer: `guardar/${id}`,
+    deshacer: `guardar/${id}${guardado ? '?quitar=1' : ''}`,
   });
 };
 
@@ -914,15 +929,17 @@ RUTAS.favoritos = async () => {
     : `<p class="empty">${esc(t('Todavía no tienes favoritos. En la ficha de un negocio, dale a «Añadir a favoritos» y te avisaremos cuando publique.'))}</p>`}`);
 };
 
-RUTAS.seguir = async ([id]) => {
+RUTAS.seguir = async ([id], params) => {
   if (!exigeSesion(`seguir/${id}`)) return;
-  const sigue = await llamar('toggle_favorite', { p_business_id: id });
+  const quitar = params?.get('quitar') === '1';
+  const { puesto: sigue, yaEstaba } = await ponOQuita('favorites', 'business_id', id, quitar,
+    () => llamar('toggle_favorite', { p_business_id: id }));
   hecho({
-    titulo: sigue ? t('Añadido a favoritos') : t('Quitado de favoritos'),
+    titulo: sigue ? t(yaEstaba ? 'Ya estaba en tus favoritos' : 'Añadido a favoritos') : t('Quitado de favoritos'),
     texto: sigue ? t('Te avisamos cuando publique algo nuevo.') : '',
     volver: `${pre}/b/${encodeURIComponent(id)}`, volverTxt: t('Volver al sitio'),
     lista: '#/favoritos', listaTxt: t('Ver tus favoritos'),
-    deshacer: `seguir/${id}`,
+    deshacer: `seguir/${id}${sigue ? '?quitar=1' : ''}`,
   });
 };
 
@@ -985,10 +1002,13 @@ RUTAS.codigo = async ([id], params) => {
       peligro: true,
     }))) return;
     try {
-      const r = await llamar('cancel_redemption', { p_code: tk.code });
-      toast(r?.ok ? t('Reserva anulada. Gracias por dejar el sitio libre.') : t('Esta reserva ya no se podía anular (se usó o ha caducado).'), !r?.ok);
-      if (r?.ok) vuelve('codigos');
-    } catch (e) { toast(amable(e.message), true); }
+      await llamar('cancel_redemption', { p_code: tk.code });
+      toast(t('Reserva anulada. Gracias por dejar el sitio libre.'));
+      vuelve('codigos');
+    } catch (e) {
+      // `llamar` ya trae el texto traducido; «not_pending» tiene el suyo.
+      toast(e.clave === 'not_pending' ? t('Esta reserva ya no se podía anular (se usó o ha caducado).') : e.message, true);
+    }
   });
   const qr = window.qrcode(0, 'M');
   qr.addData(url);
@@ -1028,15 +1048,17 @@ RUTAS.reservar = async ([id]) => {
 };
 
 // ── Lista de espera de algo agotado ───────────────────────────────────────
-RUTAS.espera = async ([id]) => {
+RUTAS.espera = async ([id], params) => {
   if (!exigeSesion(`espera/${id}`)) return;
-  const dentro = await llamar('toggle_waitlist', { p_offer: id });
+  const quitar = params?.get('quitar') === '1';
+  const { puesto: dentro } = await ponOQuita('offer_waitlist', 'offer_id', id, quitar,
+    () => llamar('toggle_waitlist', { p_offer: id }));
   hecho({
     titulo: dentro ? t('Estás en la lista de espera') : t('Ya no estás en la lista de espera'),
     texto: dentro ? t('Te avisamos si se libera una plaza') : '',
     volver: `${pre}/o/${encodeURIComponent(id)}`, volverTxt: t('Volver a la publicación'),
     lista: '#/', listaTxt: t('Tu cuenta'),
-    deshacer: `espera/${id}`,
+    deshacer: `espera/${id}${dentro ? '?quitar=1' : ''}`,
   });
 };
 

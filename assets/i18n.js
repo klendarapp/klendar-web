@@ -72,5 +72,32 @@ function makeI18N(EN) {
     }
   }
 
+  // Lo que se pinta después (diálogos, listas que se recargan al filtrar,
+  // pestañas, carta…) también se traduce: se vigila la página y se traduce
+  // cada trozo nuevo. Cambiar el texto de un nodo no añade nodos, así que no
+  // se vuelve a disparar a sí mismo.
+  if (lang === 'en' && typeof MutationObserver === 'function') {
+    let pendientes = [];
+    let programado = false;
+    const vigila = new MutationObserver((cambios) => {
+      for (const c of cambios) {
+        for (const n of c.addedNodes) {
+          if (n.nodeType === 1) pendientes.push(n);
+          else if (n.nodeType === 3 && n.parentElement) pendientes.push(n.parentElement);
+        }
+      }
+      if (programado || !pendientes.length) return;
+      programado = true;
+      queueMicrotask(() => {
+        const lote = pendientes;
+        pendientes = [];
+        programado = false;
+        for (const el of lote) if (el.isConnected) translate(el);
+      });
+    });
+    const empieza = () => vigila.observe(document.body, { childList: true, subtree: true });
+    if (document.body) empieza(); else document.addEventListener('DOMContentLoaded', empieza);
+  }
+
   return { get lang() { return lang; }, translate, t, setLang, pickers };
 }

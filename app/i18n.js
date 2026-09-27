@@ -435,4 +435,6 @@ const APP_EN = {
   "¿Llevas un negocio? Es la misma cuenta: entra y ve a tu panel desde «Mi negocio».": "Run a business? It’s the same account: log in and go to your dashboard from “My business”.",
   "Copiar el código": "Copy the code",
   "Código copiado": "Code copied",
+  "Ya estaba en tus planes": "It was already in your plans",
+  "Ya estaba en tus favoritos": "It was already in your favourites",
 };
