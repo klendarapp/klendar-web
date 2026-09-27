@@ -24,8 +24,30 @@ const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const ms = (name) => `<span class="ms" aria-hidden="true">${name}</span>`;
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const LOC = () => (I18N.lang === 'en' ? 'en-GB' : 'es-ES');
-const fmtDate = (s) => s ? new Date(s).toLocaleString(LOC(), { dateStyle: 'medium', timeStyle: 'short' }) : '—';
-const fmtDay = (s) => s ? new Date(s).toLocaleDateString(LOC(), { dateStyle: 'medium' }) : '—';
+// Las horas, siempre las de Madrid: el negocio y la gente están en España,
+// abra quien abra el panel (y con el ordenador en la hora que sea).
+const TZ = 'Europe/Madrid';
+const fmtDate = (s) => s ? new Date(s).toLocaleString(LOC(), { dateStyle: 'medium', timeStyle: 'short', timeZone: TZ }) : '—';
+const fmtDay = (s) => s ? new Date(s).toLocaleDateString(LOC(), { dateStyle: 'medium', timeZone: TZ }) : '—';
+/** AAAA-MM-DD de hoy (o dentro de `dias`) en Madrid, para <input type="date">. */
+const diaMadridISO = (dias = 0) => new Intl.DateTimeFormat('en-CA', { timeZone: TZ }).format(new Date(Date.now() + dias * 864e5));
+/** Un instante → «AAAA-MM-DDTHH:MM» del reloj de Madrid (datetime-local). */
+function aInputMadrid(d) {
+  const p = Object.fromEntries(new Intl.DateTimeFormat('en-GB', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
+    .formatToParts(d).map((x) => [x.type, x.value]));
+  return `${p.year}-${p.month}-${p.day}T${String(+p.hour % 24).padStart(2, '0')}:${p.minute}`;
+}
+/** Lo escrito en un datetime-local, leído como hora de Madrid → ISO. */
+function deInputMadrid(v) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(String(v || ''));
+  if (!m) return null;
+  const pared = Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]);
+  // Lo que Madrid va por delante de UTC en ese momento (1 h o 2 h).
+  const desfase = (t) => Date.parse(`${aInputMadrid(new Date(t))}:00Z`) - Math.floor(t / 6e4) * 6e4;
+  let t = pared - desfase(pared);
+  t = pared - desfase(t);
+  return new Date(t).toISOString();
+}
 const fmtMoney = (c, cur = 'EUR') => (c == null ? '—' : (c / 100).toLocaleString('es-ES', { style: 'currency', currency: cur }));
 const fmtNum = (n) => (n ?? 0).toLocaleString('es-ES');
 const ago = (s) => {
@@ -55,8 +77,18 @@ const flagTags = (o) => (o.moderation_flags || []).map((f) => `<span class="tag 
 const debounce = (fn, ms = 350) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
 const qs = (o) => Object.entries(o).filter(([, v]) => v != null && v !== '').map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&');
 
+// Cada pintada lleva su número (como `RUTA_N` en el panel). Una lectura que
+// llega cuando ya se ha cambiado de pantalla no pinta nada: se corta con
+// `Obsoleta` (sin mensaje, no se enseña). Lo que escribe sí termina siempre.
+let RUTA_N = 0;
+class Obsoleta extends Error {
+  constructor() { super(''); this.obsoleta = true; }
+}
+const ESCRIBE = /^admin_(set|record|send|delete|upsert|resolve|add|remove|push_retry|save|collection_(add|remove|move)|run|update)/;
 async function rpc(fn, args = {}) {
+  const n = RUTA_N;
   const { data, error } = await sb.rpc(fn, args);
+  if (n !== RUTA_N && !ESCRIBE.test(fn)) throw new Obsoleta();
   if (error) {
     const msg = error.message || '';
     // Suspendida y «no es administradora» llegan con el mismo código (42501):
@@ -81,6 +113,7 @@ const RPC_ERRORS = {
 };
 
 function toast(msg, bad = false) {
+  if (!msg) return; // una respuesta de una pantalla que ya no está
   const t = document.createElement('div');
   t.className = 'toast' + (bad ? ' bad' : ''); t.textContent = I18N.t(msg);
   $('#toasts').appendChild(t);
@@ -230,7 +263,7 @@ const NAV = [
   ['group', 'Moderación'],
   ['denuncias', 'flag', 'Denuncias'], ['resenas', 'chat_bubble', 'Reseñas y novedades'], ['sugerencias', 'lightbulb', 'Sugerencias'],
   ['group', 'Negocio'],
-  ['planes', 'credit_card', 'Planes y pagos'], ['avisos', 'notifications', 'Avisos y push'],
+  ['planes', 'credit_card', 'Planes y pagos'], ['avisos', 'notifications', 'Notificaciones y push'],
   ['group', 'Sistema'],
   ['colecciones', 'auto_awesome', 'Colecciones'], ['categorias', 'category', 'Categorías'], ['configuracion', 'settings', 'Configuración'], ['administradores', 'shield', 'Administradores'], ['actividad', 'history', 'Registro de actividad'], ['ayuda', 'help', 'Ayuda'],
 ];
@@ -256,21 +289,44 @@ const currentRoute = () => (location.hash.replace(/^#\/?/, '').split('?')[0] || 
 const PAGES = {};
 async function route() {
   if (!ME) return;
+  const n = ++RUTA_N;
   const [page, id] = currentRoute();
   renderNav(page);
   $('#side').classList.remove('open');
-  const v = $('#view');
+  // Cada pintada en su propia caja: si una vieja termina tarde, escribe en
+  // una caja que ya no está en la página.
+  const v = document.createElement('div');
   v.innerHTML = '<div class="loading">Cargando…</div>';
+  $('#view').replaceChildren(v);
+  I18N.translate(v);
   window.scrollTo(0, 0);
   try {
     const fn = PAGES[page] || PAGES.resumen;
     await fn(v, id);
-    I18N.translate(v);
+    if (n === RUTA_N) I18N.translate(v);
   } catch (e) {
-    v.innerHTML = `<div class="card"><p class="err">${esc(I18N.t(e.message))}</p>${/administradora/.test(e.message) ? (I18N.lang === 'en' ? '<p class="muted">Ask another administrator to add you in “Administrators”, or run this in Supabase: <code>insert into public.admin_users (user_id) select id from auth.users where email = \'your@email\'</code></p>' : '<p class="muted">Pide a otro administrador que te dé de alta en «Administradores», o ejecuta en Supabase: <code>insert into public.admin_users (user_id) select id from auth.users where email = \'tu@email\'</code></p>') : ''}</div>`;
+    if (n !== RUTA_N || e?.obsoleta) return;
+    console.error(e);
+    const msg = e?.message || window.KL_AUTH_TEXT('sinRed', I18N.lang);
+    // Nunca la pantalla en blanco: el error y «Reintentar».
+    v.innerHTML = `<div class="card"><h2>Algo ha fallado</h2><p class="err">${esc(I18N.t(msg))}</p>${/administradora/.test(msg) ? (I18N.lang === 'en' ? '<p class="muted">Ask another administrator to add you in “Administrators”, or run this in Supabase: <code>insert into public.admin_users (user_id) select id from auth.users where email = \'your@email\'</code></p>' : '<p class="muted">Pide a otro administrador que te dé de alta en «Administradores», o ejecuta en Supabase: <code>insert into public.admin_users (user_id) select id from auth.users where email = \'tu@email\'</code></p>') : ''}
+      <p style="margin:12px 0 0"><button class="btn" type="button" data-reintentar>Reintentar</button></p></div>`;
+    $('[data-reintentar]', v).onclick = () => route();
+    I18N.translate(v);
   }
 }
 window.addEventListener('hashchange', route);
+// Lo que se recarga dentro de una pantalla (filtros, buscador, páginas,
+// pestañas) no pasa por `route`: si falla, se dice, en vez de dejar la lista
+// a medias sin explicación. Lo de pantallas que ya no están, se calla.
+window.addEventListener('unhandledrejection', (ev) => {
+  const e = ev.reason;
+  if (e?.obsoleta) { ev.preventDefault(); return; }
+  if (e instanceof Error && ME) {
+    toast(e.message || window.KL_AUTH_TEXT('sinRed', I18N.lang), true);
+    $$('#view .loading').forEach((l) => { l.textContent = I18N.t('No se ha podido cargar. Prueba otra vez.'); });
+  }
+});
 const go = (h) => { location.hash = h; };
 
 // ── Resumen ─────────────────────────────────────────────────────────────────
@@ -334,7 +390,7 @@ PAGES.resumen = async (v) => {
   const series = k.series || [];
   const en = I18N.lang === 'en';
   v.innerHTML = `
-    <div class="page-head"><h1>Resumen</h1><span class="spacer"></span><span class="muted">${new Date().toLocaleString(LOC(), { dateStyle: 'full', timeStyle: 'short' })}</span></div>
+    <div class="page-head"><h1>Resumen</h1><span class="spacer"></span><span class="muted">${new Date().toLocaleString(LOC(), { dateStyle: 'full', timeStyle: 'short', timeZone: TZ })}</span></div>
     ${(k.businesses_pending || k.offers_pending || k.reports_open || BADGES.sugerencias) ? `<div class="card"><h2>Pendiente de ti</h2><div class="actions">
       ${k.businesses_pending ? `<a class="btn" href="#/negocios?status=pending">${ms('storefront')} <b>${k.businesses_pending}</b> ${en ? (k.businesses_pending === 1 ? 'business to verify' : 'businesses to verify') : 'negocio(s) por verificar'}</a>` : ''}
       ${k.offers_pending ? `<a class="btn" href="#/publicaciones?moderation=pending">${ms('bolt')} <b>${k.offers_pending}</b> ${en ? (k.offers_pending === 1 ? 'publication to moderate' : 'publications to moderate') : 'publicación(es) por moderar'}</a>` : ''}
@@ -391,7 +447,7 @@ PAGES.negocios = async (v, id) => {
   s.status = p.status || s.status || 'all';
   v.innerHTML = `
     <div class="page-head"><h1>Negocios</h1><span class="spacer"></span><button class="btn sm ghost" id="csv">Exportar CSV</button></div>
-    ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p>Here you see every registered business. <b>Pending</b> ones are new sign-ups you need to review: check that the business exists (website, phone, Google Maps) and press <b>Verify</b>; if it doesn't qualify, <b>Reject</b> it with a reason (the business gets it as a notification). Click a row to see the full business page, change the plan or record a payment.</p>` : '<p>Aquí ves todos los negocios dados de alta. Los <b>pendientes</b> son altas nuevas que tienes que revisar: comprueba que el negocio existe (web, teléfono, Google Maps) y pulsa <b>Verificar</b>; si no procede, <b>Rechazar</b> indicando el motivo (el negocio lo recibe como aviso). Pulsa en una fila para ver la ficha completa, cambiar el plan o registrar un pago.</p>')}
+    ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p>Here you see every registered business. <b>Pending</b> ones are new sign-ups you need to review: check that the business exists (website, phone, Google Maps) and press <b>Verify</b>; if it doesn't qualify, <b>Reject</b> it with a reason (the business gets it as a notification). Click a row to see the full business page, change the plan or record a payment.</p>` : '<p>Aquí ves todos los negocios dados de alta. Los <b>pendientes</b> son altas nuevas que tienes que revisar: comprueba que el negocio existe (web, teléfono, Google Maps) y pulsa <b>Verificar</b>; si no procede, <b>Rechazar</b> indicando el motivo (el negocio lo recibe como notificación). Pulsa en una fila para ver la ficha completa, cambiar el plan o registrar un pago.</p>')}
     <div class="toolbar">
       <input id="q" class="grow" placeholder="Buscar por nombre, ciudad, email del dueño, CIF o id…" value="${esc(s.q || '')}">
       <select id="status">${[['all', 'Todos los estados'], ['pending', 'Pendientes'], ['verified', 'Verificados'], ['rejected', 'Rechazados']].map((o) => `<option value="${o[0]}" ${s.status === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
@@ -445,7 +501,7 @@ async function businessDetail(v, id) {
         <button class="btn" data-a="edit">Editar ficha…</button>
         <button class="btn" data-a="plan">Cambiar plan…</button>
         <button class="btn" data-a="pay">Registrar pago…</button>
-        <button class="btn" data-a="notify">Enviar aviso al dueño…</button>
+        <button class="btn" data-a="notify">Enviar notificación al dueño…</button>
         ${appLink('/b/' + b.id)}
       </div>
     </div>
@@ -519,11 +575,11 @@ async function businessDetail(v, id) {
 async function businessAction(a, b, d) {
   try {
     if (a === 'verify') {
-      if (!await confirmDlg('Verificar negocio', I18N.lang === 'en' ? `“${esc(b.name)}” will become verified and active: its publications will appear in the app and the owner will get a notification.` : `«${esc(b.name)}» pasará a verificado y activo: sus publicaciones aparecerán en la app y el dueño recibirá un aviso.`, { submit: 'Verificar' })) return;
+      if (!await confirmDlg('Verificar negocio', I18N.lang === 'en' ? `“${esc(b.name)}” will become verified and active: its publications will appear in the app and the owner will get a notification.` : `«${esc(b.name)}» pasará a verificado y activo: sus publicaciones aparecerán en la app y el dueño recibirá una notificación.`, { submit: 'Verificar' })) return;
       await rpc('admin_set_verification', { p_id: b.id, p_status: 'verified' }); toast('Negocio verificado');
     }
     if (a === 'reject') {
-      const r = await modal({ title: 'Rechazar negocio', intro: 'El dueño recibirá el motivo como aviso en la app. Sé concreto: «no encontramos el local en la dirección indicada», «faltan datos fiscales»…', fields: [{ name: 'reason', label: 'Motivo', type: 'textarea', required: true }], submit: 'Rechazar', danger: true });
+      const r = await modal({ title: 'Rechazar negocio', intro: 'El dueño recibirá el motivo como notificación en la app. Sé concreto: «no encontramos el local en la dirección indicada», «faltan datos fiscales»…', fields: [{ name: 'reason', label: 'Motivo', type: 'textarea', required: true }], submit: 'Rechazar', danger: true });
       if (!r) return;
       await rpc('admin_set_verification', { p_id: b.id, p_status: 'rejected', p_reason: r.reason }); toast('Negocio rechazado');
     }
@@ -561,7 +617,9 @@ async function businessAction(a, b, d) {
       await rpc('admin_set_subscription', { p_business: b.id, p_plan_slug: r.plan, p_status: r.status, p_period_end: r.period_end || null, p_payment_method: r.method }); toast('Plan actualizado');
     }
     if (a === 'pay') {
-      const today = new Date().toISOString().slice(0, 10); const next = new Date(); next.setMonth(next.getMonth() + 1);
+      // Hoy y dentro de un mes, en días de Madrid (no en UTC).
+      const today = diaMadridISO(); const [ay, am, ad] = today.split('-').map(Number);
+      const next = new Date(Date.UTC(ay, am, Math.min(ad, new Date(Date.UTC(ay, am + 1, 0)).getUTCDate())));
       const r = await modal({ title: 'Registrar pago', intro: 'Anota un cobro recibido (transferencia, efectivo…). La suscripción pasa a activa y su fin se amplía hasta el fin del periodo pagado.', fields: [
         { name: 'amount', label: 'Importe (€)', type: 'number', step: '0.01', required: true, placeholder: '19,00' },
         { name: 'method', label: 'Forma de pago', type: 'select', value: 'transfer', options: [['transfer', 'Transferencia'], ['cash', 'Efectivo'], ['card', 'Tarjeta']] },
@@ -572,10 +630,10 @@ async function businessAction(a, b, d) {
       await rpc('admin_record_payment', { p_business: b.id, p_amount_cents: Math.round(parseFloat(r.amount.replace(',', '.')) * 100), p_method: r.method, p_period_start: r.start, p_period_end: r.end, p_notes: r.notes || null }); toast('Pago registrado');
     }
     if (a === 'notify') {
-      const r = await modal({ title: 'Aviso al equipo del negocio', intro: 'Lo reciben el dueño y los encargados como notificación (y push si la tienen activada).', fields: [{ name: 'title', label: 'Título', required: true }, { name: 'body', label: 'Texto', type: 'textarea', required: true }] });
+      const r = await modal({ title: 'Notificación al equipo del negocio', intro: 'Lo reciben el dueño y los encargados como notificación (y push si la tienen activada).', fields: [{ name: 'title', label: 'Título', required: true }, { name: 'body', label: 'Texto', type: 'textarea', required: true }] });
       if (!r) return;
       const ids = d.members.filter((m) => ['owner', 'manager'].includes(m.role)).map((m) => m.user_id);
-      const n = await rpc('admin_send_notification', { p_audience: 'ids', p_user_ids: ids, p_title: r.title, p_body: r.body, p_route: '/my-business/' + b.id }); toast(I18N.lang === 'en' ? `Notification sent to ${n} ${n === 1 ? 'person' : 'people'}` : `Aviso enviado a ${n} persona(s)`);
+      const n = await rpc('admin_send_notification', { p_audience: 'ids', p_user_ids: ids, p_title: r.title, p_body: r.body, p_route: '/my-business/' + b.id }); toast(I18N.lang === 'en' ? `Notification sent to ${n} ${n === 1 ? 'person' : 'people'}` : `Notificación enviada a ${n} persona(s)`);
     }
     if (a === 'addmember') {
       const r = await modal({ title: 'Añadir persona al equipo', intro: 'Busca por email en «Usuarios» y copia su id, o escribe aquí su email exacto.', fields: [{ name: 'email', label: 'Email del usuario', type: 'email', required: true }, { name: 'role', label: 'Rol', type: 'select', value: 'staff', options: [['staff', 'Empleado (valida códigos)'], ['manager', 'Encargado (gestiona publicaciones)'], ['owner', 'Propietario']] }] });
@@ -597,7 +655,7 @@ const ACTIONS = {
   'business.verification': 'Verificación de negocio', 'business.activate': 'Negocio activado', 'business.deactivate': 'Negocio desactivado', 'business.update': 'Ficha editada', 'business.member': 'Equipo modificado',
   'business.subscription': 'Cambio de plan', 'business.payment': 'Pago registrado', 'offer.moderation': 'Moderación de publicación', 'offer.status': 'Estado de publicación', 'offer.boost': 'Boost de publicación',
   'report.resolve': 'Denuncia resuelta', 'review.delete': 'Reseña borrada', 'post.delete': 'Novedad borrada', 'user.ban': 'Usuario suspendido', 'user.unban': 'Usuario reactivado', 'user.premium': 'Premium cambiado',
-  'user.type': 'Tipo de cuenta cambiado', 'user.delete': 'Cuenta borrada', 'notification.send': 'Aviso enviado', 'push.retry': 'Push reintentado', 'config.set': 'Configuración cambiada', 'plan.upsert': 'Plan guardado',
+  'user.type': 'Tipo de cuenta cambiado', 'user.delete': 'Cuenta borrada', 'notification.send': 'Notificación enviada', 'push.retry': 'Push reintentado', 'config.set': 'Configuración cambiada', 'plan.upsert': 'Plan guardado',
   'category.upsert': 'Categoría guardada', 'category.delete': 'Categoría borrada', 'admin.add': 'Administrador añadido', 'admin.remove': 'Administrador quitado', 'maintenance.expire_offers': 'Caducidad forzada',
 };
 const summarize = (o) => Object.entries(o).filter(([, v]) => v != null && v !== '').map(([k, v]) => `${k}: ${typeof v === 'object' ? JSON.stringify(v) : v}`).join(' · ').slice(0, 300);
@@ -726,8 +784,8 @@ async function offerDetail(v, id) {
       if (a === 'boost') {
         if (o.is_boosted) { await rpc('admin_set_offer_boost', { p_id: o.id, p_until: null }); toast('Boost retirado'); }
         else {
-          const r = await modal({ title: 'Destacar publicación', intro: 'Sale la primera en Descubre y en el mapa hasta la fecha indicada.', fields: [{ name: 'until', label: 'Hasta', type: 'datetime-local', required: true, value: new Date(Date.now() + 7 * 86400e3).toISOString().slice(0, 16) }] });
-          if (!r) return; await rpc('admin_set_offer_boost', { p_id: o.id, p_until: new Date(r.until).toISOString() }); toast('Publicación destacada');
+          const r = await modal({ title: 'Destacar publicación', intro: 'Sale la primera en Descubre y en el mapa hasta la fecha indicada.', fields: [{ name: 'until', label: 'Hasta (hora de Madrid)', type: 'datetime-local', required: true, value: aInputMadrid(new Date(Date.now() + 7 * 86400e3)) }] });
+          if (!r) return; await rpc('admin_set_offer_boost', { p_id: o.id, p_until: deInputMadrid(r.until) }); toast('Publicación destacada');
         }
       }
       route();
@@ -740,7 +798,7 @@ PAGES.canjes = async (v) => {
   const s = st.canjes;
   v.innerHTML = `
     <div class="page-head"><h1>Canjes</h1><span class="spacer"></span><button class="btn sm ghost" id="csv">Exportar CSV</button></div>
-    ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p>Every time a user taps “Redeem”, a single-use code valid for 5 minutes is created (<b>pending</b>); when the business scans it, it becomes <b>validated</b>; if not, it <b>expires</b>. Use it to handle complaints (“they charged me and didn't apply the discount”) and to spot abuse: search by email, business, title or code.</p>` : '<p>Cada vez que un usuario pulsa «Canjear» se genera un código de un solo uso válido 5 minutos (<b>pendiente</b>); cuando el negocio lo escanea pasa a <b>validado</b>; si no, <b>caduca</b>. Sirve para atender reclamaciones («me cobraron y no aplicaron el descuento») y detectar abusos: busca por email, negocio, título o código.</p>')}
+    ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p>Every time someone taps “Get the code”, a single-use code is created (<b>pending</b>) that expires when the business decides (5 minutes for a bar offer, the day of the event for a ticket); when the business scans it, it becomes <b>validated</b>; if not, it <b>expires</b>. Use it to handle complaints (“they charged me and didn't apply the discount”) and to spot abuse: search by email, business, title or code.</p>` : '<p>Cada vez que alguien pulsa «Conseguir el código» se genera un código de un solo uso (<b>pendiente</b>), que caduca cuando decide el negocio (5 minutos en una oferta de barra, hasta el día del evento en una entrada); cuando el negocio lo escanea pasa a <b>validado</b>; si no, <b>caduca</b>. Sirve para atender reclamaciones («me cobraron y no aplicaron el descuento») y detectar abusos: busca por email, negocio, título o código.</p>')}
     <div class="toolbar">
       <input id="q" class="grow" placeholder="Buscar por email, negocio, título o código…" value="${esc(s.q || '')}">
       <select id="status">${[['all', 'Todos'], ['validated', 'Validados'], ['pending', 'Pendientes'], ['expired', 'Caducados'], ['cancelled', 'Cancelados']].map((o) => `<option value="${o[0]}" ${(s.status || 'all') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
@@ -816,7 +874,7 @@ async function userDetail(v, id) {
         <button class="btn ${u.banned_at ? 'ok' : 'bad'}" data-a="ban">${u.banned_at ? 'Reactivar cuenta' : 'Suspender…'}</button>
         <button class="btn" data-a="premium">Premium…</button>
         <button class="btn" data-a="type">Tipo de cuenta…</button>
-        <button class="btn" data-a="notify">Enviar aviso…</button>
+        <button class="btn" data-a="notify">Enviar notificación…</button>
         <button class="btn" data-a="admin">${u.is_admin ? 'Quitar admin' : 'Hacer admin'}</button>
         <button class="btn bad ghost" data-a="delete">Borrar cuenta…</button>
       </div>
@@ -838,7 +896,7 @@ async function userDetail(v, id) {
         <dt>Términos</dt><dd>${u.terms_accepted_at ? `${en ? 'accepted' : 'aceptados'} ${fmtDate(u.terms_accepted_at)} (v${esc(u.terms_version || '?')})` : '<span class="tag warn">sin registro</span>'}</dd>
         <dt>Comunicaciones comerciales</dt><dd>${u.marketing_consent ? `${en ? 'yes' : 'sí'}, ${fmtDate(u.marketing_consent_at)}` : 'no'}</dd>
         <dt>Ubicación</dt><dd>${u.location_consent_at ? (en ? `given ${fmtDate(u.location_consent_at)} · last ${ago(u.last_location_at)}` : `consentida ${fmtDate(u.location_consent_at)} · última ${ago(u.last_location_at)}`) : (en ? 'not given' : 'no consentida')}</dd>
-        <dt>Avisos</dt><dd>${prefs ? (en ? `favourites: ${prefs.notify_favorites ? 'yes' : 'no'} · nearby: ${prefs.notify_nearby ? `yes (${prefs.nearby_radius_m} m)` : 'no'}${prefs.quiet_hours_start ? ` · quiet hours ${esc(prefs.quiet_hours_start)}–${esc(prefs.quiet_hours_end)}` : ''}` : `favoritos: ${prefs.notify_favorites ? 'sí' : 'no'} · cerca: ${prefs.notify_nearby ? `sí (${prefs.nearby_radius_m} m)` : 'no'}${prefs.quiet_hours_start ? ` · silencio ${esc(prefs.quiet_hours_start)}–${esc(prefs.quiet_hours_end)}` : ''}`) : 'por defecto'}</dd>
+        <dt>Notificaciones</dt><dd>${prefs ? (en ? `favourites: ${prefs.notify_favorites ? 'yes' : 'no'} · nearby: ${prefs.notify_nearby ? `yes (${prefs.nearby_radius_m} m)` : 'no'}${prefs.quiet_hours_start ? ` · quiet hours ${esc(prefs.quiet_hours_start)}–${esc(prefs.quiet_hours_end)}` : ''}` : `favoritos: ${prefs.notify_favorites ? 'sí' : 'no'} · cerca: ${prefs.notify_nearby ? `sí (${prefs.nearby_radius_m} m)` : 'no'}${prefs.quiet_hours_start ? ` · silencio ${esc(prefs.quiet_hours_start)}–${esc(prefs.quiet_hours_end)}` : ''}`) : 'por defecto'}</dd>
       </dl><p class="muted small" style="margin:10px 0 0">Para atender un derecho de acceso, usa «Exportar» en cada listado o pide el volcado en Supabase; para supresión, «Borrar cuenta».</p></div>
     </div>
     <div class="grid2">
@@ -860,7 +918,7 @@ async function userDetail(v, id) {
       if (a === 'ban') {
         if (u.banned_at) { await rpc('admin_set_user_ban', { p_id: u.id, p_banned: false }); toast('Cuenta reactivada'); }
         else {
-          const r = await modal({ title: 'Suspender cuenta', intro: 'No podrá canjear, publicar, reseñar ni denunciar. Recibe un aviso con el motivo y la vía de recurso.', fields: [{ name: 'reason', label: 'Motivo', type: 'textarea', required: true }], submit: 'Suspender', danger: true });
+          const r = await modal({ title: 'Suspender cuenta', intro: 'No podrá canjear, publicar, reseñar ni denunciar. Recibe una notificación con el motivo y la vía de recurso.', fields: [{ name: 'reason', label: 'Motivo', type: 'textarea', required: true }], submit: 'Suspender', danger: true });
           if (!r) return; await rpc('admin_set_user_ban', { p_id: u.id, p_banned: true, p_reason: r.reason }); toast('Cuenta suspendida');
         }
       }
@@ -873,8 +931,8 @@ async function userDetail(v, id) {
         if (!r) return; await rpc('admin_set_user_type', { p_id: u.id, p_type: r.type }); toast('Tipo actualizado');
       }
       if (a === 'notify') {
-        const r = await modal({ title: 'Aviso al usuario', fields: [{ name: 'title', label: 'Título', required: true }, { name: 'body', label: 'Texto', type: 'textarea', required: true }] });
-        if (!r) return; await rpc('admin_send_notification', { p_audience: 'ids', p_user_ids: [u.id], p_title: r.title, p_body: r.body }); toast('Aviso enviado');
+        const r = await modal({ title: 'Notificación al usuario', fields: [{ name: 'title', label: 'Título', required: true }, { name: 'body', label: 'Texto', type: 'textarea', required: true }] });
+        if (!r) return; await rpc('admin_send_notification', { p_audience: 'ids', p_user_ids: [u.id], p_title: r.title, p_body: r.body }); toast('Notificación enviada');
       }
       if (a === 'admin') {
         if (u.is_admin) { if (!await confirmDlg('Quitar permisos de administrador', en ? `${esc(u.email)} will no longer be able to log in to this panel.` : `${esc(u.email)} dejará de poder entrar en este panel.`, { danger: true, submit: 'Quitar' })) return; await rpc('admin_remove_admin', { p_user_id: u.id }); toast('Ya no es administrador'); }
@@ -891,12 +949,12 @@ async function userDetail(v, id) {
 
 // ── Reseñas y novedades ─────────────────────────────────────────────────────────
 async function deleteReview(id) {
-  const r = await modal({ title: 'Borrar reseña', intro: 'El autor recibe un aviso con el motivo y puede recurrir.', fields: [{ name: 'reason', label: 'Motivo', type: 'textarea', required: true }], submit: 'Borrar', danger: true });
+  const r = await modal({ title: 'Borrar reseña', intro: 'El autor recibe una notificación con el motivo y puede recurrir.', fields: [{ name: 'reason', label: 'Motivo', type: 'textarea', required: true }], submit: 'Borrar', danger: true });
   if (!r) return;
   try { await rpc('admin_delete_review', { p_id: id, p_reason: r.reason }); toast('Reseña borrada'); route(); } catch (e) { toast(e.message, true); }
 }
 async function deletePost(id) {
-  const r = await modal({ title: 'Borrar novedad', intro: 'El negocio recibe un aviso con el motivo y puede recurrir.', fields: [{ name: 'reason', label: 'Motivo', type: 'textarea', required: true }], submit: 'Borrar', danger: true });
+  const r = await modal({ title: 'Borrar novedad', intro: 'El negocio recibe una notificación con el motivo y puede recurrir.', fields: [{ name: 'reason', label: 'Motivo', type: 'textarea', required: true }], submit: 'Borrar', danger: true });
   if (!r) return;
   try { await rpc('admin_delete_post', { p_id: id, p_reason: r.reason }); toast('Novedad borrada'); route(); } catch (e) { toast(e.message, true); }
 }
@@ -987,7 +1045,7 @@ PAGES.sugerencias = async (v) => {
   s.status = s.status || 'open';
   v.innerHTML = `
     <div class="page-head"><h1>Sugerencias</h1><span class="spacer"></span><button class="btn sm ghost" id="csv">Exportar CSV</button></div>
-    ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p>What people write from the app (Account → “Ideas and feedback”) or the website: ideas, bugs and messages from businesses. <b>Bugs</b> also reach your phone as a notification. Mark each one with what you're going to do —<b>we're looking into it</b>, <b>we'll do it</b>, <b>done</b> or <b>not for now</b>— and, if you like, <b>reply</b>: the person gets your reply as a notification. Nobody outside sees the internal notes.</p>` : '<p>Lo que la gente escribe desde la app (Cuenta → «Sugerencias y mejoras») o la web: ideas, fallos y mensajes de negocios. Los <b>fallos</b> te llegan además como aviso al móvil. Marca cada una con lo que vas a hacer —<b>la estamos viendo</b>, <b>la haremos</b>, <b>hecho</b> o <b>de momento no</b>— y, si quieres, <b>responde</b>: la persona recibe tu respuesta como notificación. Las notas internas no las ve nadie de fuera.</p>')}
+    ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p>What people write from the app (Account → “Ideas and feedback”) or the website: ideas, bugs and messages from businesses. <b>Bugs</b> also reach your phone as a notification. Mark each one with what you're going to do —<b>we're looking into it</b>, <b>we'll do it</b>, <b>done</b> or <b>not for now</b>— and, if you like, <b>reply</b>: the person gets your reply as a notification. Nobody outside sees the internal notes.</p>` : '<p>Lo que la gente escribe desde la app (Cuenta → «Sugerencias y mejoras») o la web: ideas, fallos y mensajes de negocios. Los <b>fallos</b> te llegan además como notificación al móvil. Marca cada una con lo que vas a hacer —<b>la estamos viendo</b>, <b>la haremos</b>, <b>hecho</b> o <b>de momento no</b>— y, si quieres, <b>responde</b>: la persona recibe tu respuesta como notificación. Las notas internas no las ve nadie de fuera.</p>')}
     <div id="counts"></div>
     <div class="toolbar">
       <input id="q" class="grow" placeholder="Buscar en el texto o por email…" value="${esc(s.q || '')}">
@@ -1028,7 +1086,7 @@ PAGES.sugerencias = async (v) => {
       try { await rpc('admin_set_feedback', { p_id: b.dataset.set, p_status: b.dataset.status }); toast('Actualizada'); refreshBadges(); load(); } catch (e) { toast(e.message, true); }
     }; });
     $$('#list [data-reply]').forEach((b) => { b.onclick = async () => {
-      const r2 = await modal({ title: 'Responder', intro: 'Le llega como aviso en la app (y push si lo tiene activado). Sé concreto y breve.', fields: [
+      const r2 = await modal({ title: 'Responder', intro: 'Le llega como notificación en la app (y push si lo tiene activado). Sé concreto y breve.', fields: [
         { name: 'reply', label: 'Tu respuesta', type: 'textarea', required: true },
         { name: 'status', label: 'Y marcarla como', type: 'select', value: 'reviewing', options: [['reviewing', 'La estamos viendo'], ['planned', 'La haremos'], ['done', 'Hecho'], ['declined', 'De momento no'], ['new', 'Dejar sin leer']] },
       ], submit: 'Responder' });
@@ -1131,13 +1189,13 @@ PAGES.planes = async (v) => {
   await load();
 };
 
-// ── Avisos y push ───────────────────────────────────────────────────────────
+// ── Notificaciones y push ───────────────────────────────────────────────────────────
 PAGES.avisos = async (v) => {
   const p = params(); let tab = p.tab || 'send';
   v.innerHTML = `
-    <div class="page-head"><h1>Avisos y push</h1></div>
-    ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p><b>Send notification</b>: sends a notification (in the app and by push) to every user, users only, businesses only, or the businesses in one city. Use it sparingly (important news, incidents); everything is logged. <b>Push queue</b>: what the system is sending; if something fails (expired token, Firebase error) you'll see why and can retry.</p>` : '<p><b>Enviar aviso</b>: manda una notificación (en la app y por push) a todos los usuarios, solo a usuarios, solo a los negocios, o a los negocios de una ciudad. Úsalo con moderación (novedades importantes, incidencias); todo queda en el registro. <b>Cola de push</b>: lo que el sistema está enviando; si algo falla (token caducado, error de Firebase) verás el motivo y podrás reintentar.</p>')}
-    <div class="tabs">${[['send', 'Enviar aviso'], ['history', 'Enviados'], ['push', 'Cola de push']].map((t) => `<button data-t="${t[0]}" class="${tab === t[0] ? 'on' : ''}">${t[1]}</button>`).join('')}</div>
+    <div class="page-head"><h1>Notificaciones y push</h1></div>
+    ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p><b>Send notification</b>: sends a notification (in the app and by push) to every user, users only, businesses only, or the businesses in one city. Use it sparingly (important news, incidents); everything is logged. <b>Push queue</b>: what the system is sending; if something fails (expired token, Firebase error) you'll see why and can retry.</p>` : '<p><b>Enviar notificación</b>: manda una notificación (en la app y por push) a todos los usuarios, solo a usuarios, solo a los negocios, o a los negocios de una ciudad. Úsalo con moderación (novedades importantes, incidencias); todo queda en el registro. <b>Cola de push</b>: lo que el sistema está enviando; si algo falla (token caducado, error de Firebase) verás el motivo y podrás reintentar.</p>')}
+    <div class="tabs">${[['send', 'Enviar notificación'], ['history', 'Enviados'], ['push', 'Cola de push']].map((t) => `<button data-t="${t[0]}" class="${tab === t[0] ? 'on' : ''}">${t[1]}</button>`).join('')}</div>
     <div id="tabview"></div>`;
   const load = async () => {
     const tv = $('#tabview'); tv.innerHTML = '<div class="loading">Cargando…</div>';
@@ -1148,25 +1206,25 @@ PAGES.avisos = async (v) => {
         <label class="f"><span>Título</span><input name="title" required maxlength="80"></label>
         <label class="f"><span>Texto</span><textarea name="body" required maxlength="300"></textarea></label>
         <label class="f"><span>Ruta al pulsar <small>(opcional, p. ej. /explore)</small></span><input name="route" placeholder="/explore"></label>
-        <div><button class="btn primary" type="submit">Enviar aviso…</button></div></form></div>`;
+        <div><button class="btn primary" type="submit">Enviar notificación…</button></div></form></div>`;
       const f = $('#sendf');
       f.audience.onchange = () => { $('#cityf').hidden = f.audience.value !== 'city'; };
       f.onsubmit = async (e) => {
         e.preventDefault();
         const aud = f.audience.value;
-        if (!await confirmDlg('Enviar aviso', I18N.lang === 'en' ? `“${esc(f.title.value)}” will be sent to: <b>${esc($('option:checked', f.audience).textContent)}${aud === 'city' ? ' ' + esc(f.city.value) : ''}</b>. This can't be undone.` : `Se enviará «${esc(f.title.value)}» a: <b>${esc($('option:checked', f.audience).textContent)}${aud === 'city' ? ' ' + esc(f.city.value) : ''}</b>. No se puede deshacer.`, { submit: 'Enviar' })) return;
-        try { const n = await rpc('admin_send_notification', { p_audience: aud, p_title: f.title.value.trim(), p_body: f.body.value.trim(), p_route: f.route.value.trim() || null, p_city: f.city.value.trim() || null }); toast(I18N.lang === 'en' ? `Notification sent to ${n} ${n === 1 ? 'person' : 'people'}` : `Aviso enviado a ${n} persona(s)`); f.reset(); } catch (err) { toast(err.message, true); }
+        if (!await confirmDlg('Enviar notificación', I18N.lang === 'en' ? `“${esc(f.title.value)}” will be sent to: <b>${esc($('option:checked', f.audience).textContent)}${aud === 'city' ? ' ' + esc(f.city.value) : ''}</b>. This can't be undone.` : `Se enviará «${esc(f.title.value)}» a: <b>${esc($('option:checked', f.audience).textContent)}${aud === 'city' ? ' ' + esc(f.city.value) : ''}</b>. No se puede deshacer.`, { submit: 'Enviar' })) return;
+        try { const n = await rpc('admin_send_notification', { p_audience: aud, p_title: f.title.value.trim(), p_body: f.body.value.trim(), p_route: f.route.value.trim() || null, p_city: f.city.value.trim() || null }); toast(I18N.lang === 'en' ? `Notification sent to ${n} ${n === 1 ? 'person' : 'people'}` : `Notificación enviada a ${n} persona(s)`); f.reset(); } catch (err) { toast(err.message, true); }
       };
     }
     if (tab === 'history') {
       const r = await rpc('admin_audit', { p_action: 'notification.send', p_limit: 100 });
-      tv.innerHTML = table({ cols: [{ h: 'Fecha', r: (x) => `<span class="nowrap">${fmtDate(x.created_at)}</span>` }, { h: 'Aviso', r: (x) => `<span class="title">${esc(x.details?.title)}<span class="sub">${esc(x.details?.body)}</span></span>` }, { h: 'Destinatarios', r: (x) => `${esc(x.details?.audience)}${x.details?.city ? ' ' + esc(x.details.city) : ''} · ${x.details?.recipients ?? '?'}` }, { h: 'Por', r: (x) => esc(x.admin_email || '') }], rows: r.rows, empty: 'Todavía no se ha enviado ningún aviso.' });
+      tv.innerHTML = table({ cols: [{ h: 'Fecha', r: (x) => `<span class="nowrap">${fmtDate(x.created_at)}</span>` }, { h: 'Notificación', r: (x) => `<span class="title">${esc(x.details?.title)}<span class="sub">${esc(x.details?.body)}</span></span>` }, { h: 'Destinatarios', r: (x) => `${esc(x.details?.audience)}${x.details?.city ? ' ' + esc(x.details.city) : ''} · ${x.details?.recipients ?? '?'}` }, { h: 'Por', r: (x) => esc(x.admin_email || '') }], rows: r.rows, empty: 'Todavía no se ha enviado ninguna notificación.' });
     }
     if (tab === 'push') {
       tv.innerHTML = `<div class="toolbar"><select id="pstatus">${[['all', 'Todos'], ['pending', 'Pendientes'], ['sent', 'Enviados'], ['failed', 'Fallidos'], ['skipped', 'Omitidos']].map((o) => `<option value="${o[0]}">${o[1]}</option>`).join('')}</select></div><div id="list"></div>`;
       const loadQ = async () => {
         const rows = await rpc('admin_push_queue', { p_status: $('#pstatus').value, p_limit: 200 });
-        $('#list').innerHTML = table({ cols: [{ h: 'Creado', r: (x) => `<span class="nowrap">${fmtDate(x.created_at)}</span>` }, { h: 'Usuario', r: (x) => esc(x.user_email || '—') }, { h: 'Aviso', r: (x) => `<span class="title">${esc(x.title)}<span class="sub">${esc(x.body || '')} · ${esc(x.kind || '')}</span></span>` }, { h: 'Estado', r: (x) => `${tag(x.status)} ${x.attempts ? `<span class="muted small">${x.attempts} ${I18N.lang === 'en' ? (x.attempts === 1 ? 'attempt' : 'attempts') : 'intento(s)'}</span>` : ''}${x.error ? `<span class="sub">${esc(x.error)}</span>` : ''}` }, { h: 'Enviado', r: (x) => fmtDate(x.sent_at) }, { h: '', r: (x) => ['failed', 'skipped'].includes(x.status) ? `<button class="btn sm" data-retry="${x.id}">Reintentar</button>` : '' }], rows, empty: 'Cola vacía.' });
+        $('#list').innerHTML = table({ cols: [{ h: 'Creado', r: (x) => `<span class="nowrap">${fmtDate(x.created_at)}</span>` }, { h: 'Usuario', r: (x) => esc(x.user_email || '—') }, { h: 'Notificación', r: (x) => `<span class="title">${esc(x.title)}<span class="sub">${esc(x.body || '')} · ${esc(x.kind || '')}</span></span>` }, { h: 'Estado', r: (x) => `${tag(x.status)} ${x.attempts ? `<span class="muted small">${x.attempts} ${I18N.lang === 'en' ? (x.attempts === 1 ? 'attempt' : 'attempts') : 'intento(s)'}</span>` : ''}${x.error ? `<span class="sub">${esc(x.error)}</span>` : ''}` }, { h: 'Enviado', r: (x) => fmtDate(x.sent_at) }, { h: '', r: (x) => ['failed', 'skipped'].includes(x.status) ? `<button class="btn sm" data-retry="${x.id}">Reintentar</button>` : '' }], rows, empty: 'Cola vacía.' });
         $$('#list [data-retry]').forEach((b) => { b.onclick = async () => { try { await rpc('admin_push_retry', { p_id: +b.dataset.retry }); toast('Reencolado'); loadQ(); } catch (e) { toast(e.message, true); } }; });
       };
       $('#pstatus').onchange = loadQ; await loadQ();
@@ -1442,7 +1500,7 @@ PAGES.actividad = async (v) => {
   v.innerHTML = `
     <div class="page-head"><h1>Registro de actividad</h1><span class="spacer"></span><button class="btn sm ghost" id="csv">Exportar CSV</button></div>
     ${helpBox('¿Qué hago aquí?', '<p>Todo lo que hacen los administradores queda aquí con fecha, quién y sobre qué: verificaciones, moderación, pagos, cambios de configuración… Sirve para auditoría y para responder ante una reclamación («¿por qué se retiró mi oferta y cuándo?»).</p>')}
-    <div class="toolbar"><input id="q" class="grow" placeholder="Buscar por email del admin, id del objeto o texto…" value="${esc(s.q || '')}"><select id="action">${[['all', 'Todas las acciones'], ['business', 'Negocios'], ['offer', 'Publicaciones'], ['report', 'Denuncias'], ['user', 'Usuarios'], ['review', 'Reseñas'], ['post', 'Novedades'], ['notification', 'Avisos'], ['config', 'Configuración'], ['plan', 'Planes'], ['category', 'Categorías'], ['admin', 'Administradores']].map((o) => `<option value="${o[0]}" ${(s.action || 'all') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select></div>
+    <div class="toolbar"><input id="q" class="grow" placeholder="Buscar por email del admin, id del objeto o texto…" value="${esc(s.q || '')}"><select id="action">${[['all', 'Todas las acciones'], ['business', 'Negocios'], ['offer', 'Publicaciones'], ['report', 'Denuncias'], ['user', 'Usuarios'], ['review', 'Reseñas'], ['post', 'Novedades'], ['notification', 'Notificaciones'], ['config', 'Configuración'], ['plan', 'Planes'], ['category', 'Categorías'], ['admin', 'Administradores']].map((o) => `<option value="${o[0]}" ${(s.action || 'all') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select></div>
     <div id="list"></div>`;
   let rows = [];
   const linkFor = (l) => l.target_type === 'business' ? `#/negocios/${l.target_id}` : l.target_type === 'offer' ? `#/publicaciones/${l.target_id}` : l.target_type === 'user' ? `#/usuarios/${l.target_id}` : null;
@@ -1472,7 +1530,7 @@ PAGES.ayuda = async (v) => {
     <div class="grid2">
       <div class="card">${I18N.lang === 'en' ? `<h2>Daily routine (5 minutes)</h2><ol style="margin:0;padding-left:18px"><li><b>Overview</b>: check “Waiting for you”.</li><li><b>Pending businesses</b>: check that they exist (website, phone, Google Maps) and verify or reject them with a reason.</li><li><b>Publications to moderate</b>: approve or take down with a reason.</li><li><b>Open reports</b>: review and resolve them (always with a reason if you take something down).</li><li><b>Failed push</b>: if there are many, something is wrong with Firebase.</li></ol>` : `<h2>Rutina diaria (5 minutos)</h2><ol style="margin:0;padding-left:18px"><li><b>Resumen</b>: mira «Pendiente de ti».</li><li><b>Negocios pendientes</b>: comprueba que existen (web, teléfono, Google Maps) y verifica o rechaza con motivo.</li><li><b>Publicaciones por moderar</b>: aprueba o retira con motivo.</li><li><b>Denuncias abiertas</b>: revisa y resuelve (siempre con motivo si retiras algo).</li><li><b>Push fallidos</b>: si hay muchos, algo pasa con Firebase.</li></ol>`}</div>
       <div class="card">${I18N.lang === 'en' ? `<h2>Weekly routine</h2><ul style="margin:0;padding-left:18px"><li><b>Plans and payments</b>: subscriptions expiring in 7 days → contact the business; record the bank transfers received.</li><li><b>Users</b>: handle access or erasure requests received by email (info@klendar.app).</li><li><b>Feedback</b>: read what has come in, set the status and reply to whatever deserves a reply.</li><li><b>Activity log</b>: check that everything that was done makes sense.</li></ul>` : `<h2>Rutina semanal</h2><ul style="margin:0;padding-left:18px"><li><b>Planes y pagos</b>: suscripciones que vencen en 7 días → contacta con el negocio; registra las transferencias recibidas.</li><li><b>Usuarios</b>: atiende peticiones de acceso o supresión recibidas por email (info@klendar.app).</li><li><b>Sugerencias</b>: lee lo que ha entrado, marca estado y responde lo que merezca respuesta.</li><li><b>Registro de actividad</b>: repasa que todo lo hecho tenga sentido.</li></ul>`}</div>
-      <div class="card">${I18N.lang === 'en' ? `<h2>Moderation criteria</h2><ul style="margin:0;padding-left:18px"><li>The venue's or product's own photos; no third-party images without permission.</li><li>A clear offer that can be honoured: price, conditions, places, opening hours. Nothing misleading.</li><li>Alcohol: only businesses marked 18+, without encouraging drinking (Law 34/1988).</li><li>No third parties' personal data, insults, discrimination or sexual content.</li><li>If in doubt, mark it “under review” and ask the business for more information with “Send notification”.</li></ul><p class="muted small" style="margin:8px 0 0">Reference: <a class="link" href="/en/community-guidelines/" target="_blank">Community guidelines</a> · <a class="link" href="/en/business-terms/" target="_blank">Business terms</a>.</p>` : `<h2>Criterios de moderación</h2><ul style="margin:0;padding-left:18px"><li>Fotos propias del local o del producto; nada de imágenes de terceros sin permiso.</li><li>Oferta clara y cumplible: precio, condiciones, aforo, horario. Nada engañoso.</li><li>Alcohol: solo negocios +18 marcados, sin incitar al consumo (Ley 34/1988).</li><li>Sin datos personales de terceros, insultos, discriminación ni contenido sexual.</li><li>Ante la duda, marca «en revisión» y pide más información al negocio con «Enviar aviso».</li></ul><p class="muted small" style="margin:8px 0 0">Referencia: <a class="link" href="/normas/" target="_blank">Normas de la comunidad</a> · <a class="link" href="/negocios/" target="_blank">Condiciones para negocios</a>.</p>`}</div>
+      <div class="card">${I18N.lang === 'en' ? `<h2>Moderation criteria</h2><ul style="margin:0;padding-left:18px"><li>The venue's or product's own photos; no third-party images without permission.</li><li>A clear offer that can be honoured: price, conditions, places, opening hours. Nothing misleading.</li><li>Alcohol: only businesses marked 18+, without encouraging drinking (Law 34/1988).</li><li>No third parties' personal data, insults, discrimination or sexual content.</li><li>If in doubt, mark it “under review” and ask the business for more information with “Send notification”.</li></ul><p class="muted small" style="margin:8px 0 0">Reference: <a class="link" href="/en/community-guidelines/" target="_blank">Community guidelines</a> · <a class="link" href="/en/business-terms/" target="_blank">Business terms</a>.</p>` : `<h2>Criterios de moderación</h2><ul style="margin:0;padding-left:18px"><li>Fotos propias del local o del producto; nada de imágenes de terceros sin permiso.</li><li>Oferta clara y cumplible: precio, condiciones, aforo, horario. Nada engañoso.</li><li>Alcohol: solo negocios +18 marcados, sin incitar al consumo (Ley 34/1988).</li><li>Sin datos personales de terceros, insultos, discriminación ni contenido sexual.</li><li>Ante la duda, marca «en revisión» y pide más información al negocio con «Enviar notificación».</li></ul><p class="muted small" style="margin:8px 0 0">Referencia: <a class="link" href="/normas/" target="_blank">Normas de la comunidad</a> · <a class="link" href="/negocios/" target="_blank">Condiciones para negocios</a>.</p>`}</div>
       <div class="card">${I18N.lang === 'en' ? `<h2>Legal duties this panel covers</h2><ul style="margin:0;padding-left:18px"><li><b>DSA</b> (Digital Services Act): every content takedown comes with a reason and a way to appeal (15 days, info@klendar.app); reports are handled diligently.</li><li><b>GDPR</b>: consents visible on the user's page; erasure with “Delete account”; access with “Export CSV”.</li><li><b>Log</b>: every administrative action is logged with its author and date.</li></ul>` : `<h2>Obligaciones legales que cubre el panel</h2><ul style="margin:0;padding-left:18px"><li><b>DSA</b> (Reglamento de Servicios Digitales): toda retirada de contenido lleva motivo y vía de recurso (15 días, info@klendar.app); las denuncias se gestionan con diligencia.</li><li><b>RGPD</b>: consentimientos visibles en la ficha del usuario; supresión con «Borrar cuenta»; acceso con «Exportar CSV».</li><li><b>Registro</b>: cada acción administrativa queda registrada con autor y fecha.</li></ul>`}</div>
     </div>
     <div class="card"><h2>Atajos</h2><p class="muted" style="margin:0">${I18N.lang === 'en' ? `<code>/</code> jumps to the page's search box · Click any row to open its details · “Export CSV” downloads what you see with the filters applied.` : `<code>/</code> salta al buscador de la página · Pulsa en cualquier fila para abrir su ficha · «Exportar CSV» descarga lo que ves con los filtros aplicados.`}</p></div>

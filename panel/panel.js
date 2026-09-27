@@ -44,7 +44,42 @@ const primeraFoto = (lista) => (lista || []).find((u) => !esVideo(u)) || null;
 
 const gestiona = () => ['owner', 'manager'].includes(BIZ?.role);
 const pausado = () => !!BIZ?.paused_until && new Date(BIZ.paused_until) > new Date();
-const fmtDate = (s) => s ? new Date(s).toLocaleString(LOC(), { dateStyle: 'medium', timeStyle: 'short' }) : '—';
+// ── La hora, siempre la de Madrid ───────────────────────────────────────────
+// Los negocios están en España: una oferta de 18:00 es a las 18:00 de allí,
+// abra quien abra el panel (un encargado de viaje, un portátil con la hora de
+// fábrica en UTC…). Se enseña y se escribe en hora de Madrid, con su cambio
+// de horario, y a la base va el instante exacto.
+const TZ = 'Europe/Madrid';
+const PARTES_MADRID = new Intl.DateTimeFormat('en-GB', {
+  timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit',
+  hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23',
+});
+/** Año, mes, día, hora y minuto que marca el reloj de Madrid en ese instante. */
+function partesMadrid(d) {
+  const p = Object.fromEntries(PARTES_MADRID.formatToParts(d).map((x) => [x.type, x.value]));
+  return { y: +p.year, m: +p.month, d: +p.day, h: +p.hour % 24, min: +p.minute, s: +p.second };
+}
+/** Milisegundos que Madrid va por delante de UTC en ese instante (1 h o 2 h). */
+function desfaseMadrid(t) {
+  const p = partesMadrid(new Date(t));
+  return Date.UTC(p.y, p.m - 1, p.d, p.h, p.min, p.s) - Math.floor(t / 1000) * 1000;
+}
+/** Una hora del reloj de Madrid → el instante. Se corrige dos veces por si
+ * cae justo en el cambio de hora. */
+function instanteMadrid(y, m, d, h = 0, min = 0) {
+  const pared = Date.UTC(y, m - 1, d, h, min);
+  let t = pared - desfaseMadrid(pared);
+  t = pared - desfaseMadrid(t);
+  return new Date(t);
+}
+/** «Mañana» (o dentro de `dias`) en Madrid, a esa hora. */
+function diaMadrid(dias, h, min = 0) {
+  const hoy = partesMadrid(new Date());
+  const base = new Date(Date.UTC(hoy.y, hoy.m - 1, hoy.d + dias));
+  return instanteMadrid(base.getUTCFullYear(), base.getUTCMonth() + 1, base.getUTCDate(), h, min);
+}
+const fmtDate = (s) => s ? new Date(s).toLocaleString(LOC(), { dateStyle: 'medium', timeStyle: 'short', timeZone: TZ }) : '—';
+const fmtHora = (s) => new Date(s).toLocaleTimeString(LOC(), { hour: '2-digit', minute: '2-digit', timeZone: TZ });
 const fmtMoney = (c) => (c == null ? '—' : (c / 100).toLocaleString(I18N.lang === 'en' ? 'en-IE' : 'es-ES', { style: 'currency', currency: 'EUR' }));
 const fmtNum = (n) => (n ?? 0).toLocaleString(LOC());
 const LABELS = {
@@ -93,6 +128,11 @@ const ERRORS = {
   already_validated: 'Ese código ya se usó.',
   invalid_code: 'Ese código no existe.',
   auth_required: 'Tu sesión ha caducado. Vuelve a entrar para continuar.',
+  invalid_reply: 'Escribe al menos 2 caracteres.',
+  // Lo que devuelve Storage al subir una foto.
+  'Payload too large': 'Esa foto pesa demasiado. Prueba con otra más pequeña.',
+  'maximum allowed size': 'Esa foto pesa demasiado. Prueba con otra más pequeña.',
+  'mime type': 'Ese archivo no es una foto. Prueba con una JPG o PNG.',
 };
 
 /** El error tal y como se lo enseñamos a quien lleva el negocio.
@@ -105,10 +145,13 @@ function friendly(msg) {
   for (const [codigo, texto] of Object.entries(ERRORS)) {
     if (m === codigo || m.includes(codigo)) return texto;
   }
-  if (/row-level security|permission denied|violates|duplicate key|column |relation |JWT|invalid input syntax/i.test(m)) {
-    return 'No se ha podido guardar. Si vuelve a pasar, escríbenos a info@klendar.app.';
+  if (/Failed to fetch|NetworkError|network|Load failed/i.test(m)) {
+    return 'No hay conexión. Revisa tu internet y vuelve a probar.';
   }
-  return m || 'No se ha podido hacer.';
+  // Lo que ya viene escrito para la persona (nuestras frases, en español) se
+  // enseña tal cual; lo demás (Postgres, Storage, un código sin traducir) no.
+  if (Object.values(ERRORS).includes(m) || /[áéíóúñ¿¡]/i.test(m)) return m;
+  return 'No se ha podido guardar. Si vuelve a pasar, escríbenos a info@klendar.app.';
 }
 /** Una dirección escrita → su punto en el mapa (Mapbox).
  *
@@ -291,6 +334,24 @@ async function escanerQR(video, alLeer) {
   return PARA_CAMARA;
 }
 
+/** Las fotos que caben: los mismos topes que la app (carta 8, galería 12,
+ * publicación 6). Si se eligen más, se dice cuántas se quedan fuera en vez de
+ * perderlas en silencio. */
+const TOPE = { carta: 8, galeria: 12, publicacion: 6 };
+const topeLleno = (max) => bi(`Ya tienes ${max}, el máximo. Quita alguna para poner otra.`, `You already have ${max}, the maximum. Remove one to add another.`);
+const topeHasta = (max) => bi(`Hasta ${max} fotos.`, `Up to ${max} photos.`);
+function caben(archivos, hay, max) {
+  const lista = [...archivos];
+  const hueco = Math.max(0, max - hay);
+  if (lista.length > hueco) {
+    toast(hueco
+      ? bi(`Caben ${hueco} más (el máximo son ${max}). Las demás no se han subido.`,
+        `Only ${hueco} more fit (${max} at most). The rest weren't uploaded.`)
+      : topeLleno(max), true);
+  }
+  return lista.slice(0, hueco);
+}
+
 /** «−20 %», «2x1», «Gratis»… lo que hay que leer de un vistazo. */
 function etiquetaDescuento(d) {
   if (!d) return '';
@@ -303,19 +364,31 @@ function etiquetaDescuento(d) {
 }
 
 async function rpc(fn, args = {}) {
-  const { data, error } = await sb.rpc(fn, args);
-  if (error) throw new Error(ERRORS[error.message] || error.message);
-  return data;
+  let res;
+  try {
+    res = await sb.rpc(fn, args);
+  } catch (e) {
+    throw new Error(friendly(e?.message));
+  }
+  // Nunca el texto de Postgres tal cual: el código, si lo hay, se traduce.
+  if (res.error) throw Object.assign(new Error(friendly(res.error.message)), { clave: res.error.message });
+  return res.data;
 }
 
-/** Fecha para <input type="datetime-local"> (hora local, sin zona). */
+/** Fecha para <input type="datetime-local">: la hora de Madrid, sin zona. */
 function toLocalInput(iso) {
   if (!iso) return '';
-  const d = new Date(iso);
+  const d = partesMadrid(new Date(iso));
   const p = (n) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+  return `${d.y}-${p(d.m)}-${p(d.d)}T${p(d.h)}:${p(d.min)}`;
 }
-const fromLocalInput = (v) => (v ? new Date(v).toISOString() : null);
+/** Lo escrito en un datetime-local se lee como hora de Madrid (no la del
+ * ordenador) y se devuelve el instante en ISO. */
+function fromLocalInput(v) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(String(v || ''));
+  if (!m) return null;
+  return instanteMadrid(+m[1], +m[2], +m[3], +m[4], +m[5]).toISOString();
+}
 
 // Modal sencillo (mismo patrón que el panel de administración).
 function modal({ title, intro, html = '', fields = [], submit = 'Guardar', danger = false, cancel = 'Cancelar' }) {
@@ -438,6 +511,7 @@ async function noBusiness() {
     I18N.translate(v);
   } catch (e) {
     v.innerHTML = `<div class="card"><h2>Algo ha fallado</h2><p class="err">${esc(friendly(e.message))}</p><button class="btn" onclick="location.reload()">Reintentar</button></div>`;
+    I18N.translate(v);
   }
 }
 function renderBizPicker() {
@@ -541,7 +615,11 @@ async function route() {
     if (n === RUTA_N) { sinDobleEnvio(v); I18N.translate(v); }
   } catch (e) {
     if (n !== RUTA_N) return;
-    v.innerHTML = `<div class="card"><h2>Algo ha fallado</h2><p class="err">${esc(e.message)}</p><button class="btn" onclick="location.reload()">Reintentar</button></div>`;
+    console.error(e);
+    // «Reintentar» vuelve a pintar la pantalla, sin recargar todo el panel.
+    v.innerHTML = `<div class="card"><h2>Algo ha fallado</h2><p class="err">${esc(friendly(e?.message))}</p><button class="btn" type="button" data-reintentar>Reintentar</button></div>`;
+    $('[data-reintentar]', v).onclick = () => route();
+    I18N.translate(v);
   }
 }
 window.addEventListener('hashchange', route);
@@ -769,7 +847,8 @@ PAGES.resumen = async (v) => {
   if (pausa) {
     pausa.onclick = async () => {
       // Hasta las 5 de la mañana: mañana abre solo (lo mismo que la app).
-      const hasta = new Date(); hasta.setDate(hasta.getDate() + 1); hasta.setHours(5, 0, 0, 0);
+      // Las 5 de Madrid, no las del ordenador desde el que se pulsa.
+      const hasta = diaMadrid(1, 5);
       const cerrar = !pausado();
       try {
         await rpc('set_business_pause', { p_business: BIZ.id, p_until: cerrar ? hasta.toISOString() : null });
@@ -900,7 +979,7 @@ PAGES.publicaciones = async (v, param) => {
       cols: [
         { h: 'Publicación', r: (o) => `${primeraFoto(o.images) ? `<img class="thumb" src="${esc(primeraFoto(o.images))}" alt="" loading="lazy">` : `<span class="ph">${ms((o.images || []).some(esVideo) ? 'play_circle' : o.kind === 'flash_offer' ? 'bolt' : 'event')}</span>`}<b class="title">${esc(o.title)}</b><span class="sub">${esc(LABELS[o.kind])} · ${fmtDate(o.kind === 'flash_offer' ? o.redeem_start_at : o.event_at)}</span>` },
         { h: 'Estado', r: (o) => tag(o.status) + (o.moderation_status === 'pending' ? ' ' + tag('pending') : '') + (o.publish_at ? ` <span class="tag dim">programada ${esc(fmtDate(o.publish_at))}</span>` : '') },
-        { h: 'Plazas', r: (o) => o.max_redemptions == null ? '—' : `${fmtNum(o.redemptions_count + (o.holds_seats === false ? 0 : (o.pending_count || 0)))}/${fmtNum(o.max_redemptions)}` },
+        { h: 'Plazas', r: (o) => o.max_redemptions == null ? '—' : `<span data-plazas="${esc(o.id)}">${plazasTxt(o, plazasOcupadas(o))}</span>` },
         { h: 'Vistas', num: true, r: (o) => fmtNum(o.views) },
         { h: 'Canjes', num: true, r: (o) => fmtNum(o.redemptions_count) },
         { h: '', r: (o) => !gestiona()
@@ -947,7 +1026,22 @@ PAGES.publicaciones = async (v, param) => {
           if (b.dataset.act === 'delete') {
             if (!await confirmDlg('Borrar publicación', 'Se borra para siempre, junto con sus estadísticas. Si solo quieres que deje de verse, púlsale a «Pausar».', { danger: true, submit: 'Borrar' })) return;
             const { error } = await sb.from('offers').delete().eq('id', id);
-            if (error) throw error;
+            if (error) {
+              // Con gente que tiene reserva la base no deja borrar (perdería su
+              // código sin enterarse): se ofrece cancelarla y avisarles.
+              if (!String(error.message).includes('offer_has_reservations')) throw error;
+              if (!await confirmDlg('Hay gente con reserva', 'No se puede borrar mientras alguien tenga reserva: perdería su código sin enterarse. Si la cancelas, anulamos las reservas y avisamos a cada persona.', { danger: true, submit: 'Cancelar publicación' })) return;
+              const r = await rpc('cancel_offer', { p_offer: id });
+              if (!r?.ok) throw new Error(r?.error || 'unknown');
+              const en = I18N.lang === 'en';
+              toast(r.notified === 1
+                ? (en ? 'Publication cancelled. We told the person who had booked.' : 'Publicación cancelada. Hemos avisado a la persona que tenía reserva.')
+                : r.notified > 1
+                  ? (en ? `Publication cancelled. We told the ${r.notified} people who had booked.` : `Publicación cancelada. Hemos avisado a las ${r.notified} personas con reserva.`)
+                  : (en ? 'Publication cancelled.' : 'Publicación cancelada.'));
+              route();
+              return;
+            }
           } else {
             const { error } = await sb.from('offers').update({ status: b.dataset.act === 'pause' ? 'draft' : 'active' }).eq('id', id);
             if (error) throw error;
@@ -960,7 +1054,7 @@ PAGES.publicaciones = async (v, param) => {
   };
   $('#csv').onclick = () => downloadCsv(`klendar-${BIZ.name}`, offers, [
     ['title', 'publicación'], [(o) => LABELS[o.kind], 'tipo'], [(o) => LABELS[o.status], 'estado'],
-    ['views', 'vistas'], ['redemptions_count', 'canjes'], ['max_redemptions', 'aforo'],
+    ['views', 'vistas'], ['redemptions_count', 'canjes'], ['max_redemptions', 'aforo'], [(o) => plazasOcupadas(o), 'plazas ocupadas'],
     [(o) => o.kind === 'flash_offer' ? o.redeem_start_at : o.event_at, 'cuándo'],
   ]);
   render();
@@ -974,10 +1068,20 @@ PAGES.publicaciones = async (v, param) => {
   }
 };
 
+/** Plazas ocupadas (personas) de una publicación con aforo: lo que dice la
+ * base (`seats_left`, según guarde plaza o vaya por orden de llegada) o, con
+ * una respuesta antigua, la cuenta de códigos. */
+function plazasOcupadas(o) {
+  if (o.max_redemptions == null) return null;
+  if (o.seats_left != null) return Math.max(0, o.max_redemptions - o.seats_left);
+  return o.redemptions_count + (o.holds_seats === false ? 0 : (o.pending_count || 0));
+}
+const plazasTxt = (o, n) => `${fmtNum(n)}/${fmtNum(o.max_redemptions)}`;
+
 /** «Ampliar 1 h»: con la hora nueva a la vista, como en la app. */
 async function ampliarDialogo(o) {
   if (!o || !o.redeem_end_at) return;
-  const hm = (d) => new Date(d).toLocaleTimeString(LOC(), { hour: '2-digit', minute: '2-digit' });
+  const hm = fmtHora;
   const nueva = new Date(new Date(o.redeem_end_at).getTime() + 36e5);
   const en = I18N.lang === 'en';
   if (!await confirmDlg(en ? 'Extend by an hour?' : '¿Ampliar una hora?',
@@ -1011,7 +1115,8 @@ async function cifrasDialogo(o) {
   const canjes = d.reduce((a, x) => a + (x.redemptions || 0), 0);
   const conv = vistas ? `${(canjes / vistas * 100).toFixed(1).replace('.', I18N.lang === 'en' ? '.' : ',')} %` : '—';
   const max = Math.max(1, ...d.map((x) => x.views || 0));
-  const dia = (s) => new Date(s).toLocaleDateString(LOC(), { day: 'numeric', month: 'short' });
+  // `day` es una fecha sin hora («2026-09-27»): se lee tal cual, sin zona.
+  const dia = (s) => new Date(`${String(s).slice(0, 10)}T12:00:00Z`).toLocaleDateString(LOC(), { day: 'numeric', month: 'short', timeZone: 'UTC' });
   let comparativa = '';
   if (bench && bench.conversion != null && bench.business_avg && bench.compared_with >= 2) {
     const delta = Math.round(((bench.conversion - bench.business_avg) / bench.business_avg) * 100);
@@ -1082,7 +1187,7 @@ async function localesDialogo(offerId) {
 
   const res = await rpc('copy_offer_to_businesses', { p_offer: offerId, p_businesses: elegidos })
     .catch((e) => ({ ok: false, error: e.message }));
-  if (!res?.ok) { toast(res?.error || 'No se ha podido copiar', true); return; }
+  if (!res?.ok) { toast(res?.error ? friendly(res.error) : 'No se ha podido copiar', true); return; }
 
   const fallos = res.failed || [];
   if (res.copies && !fallos.length) {
@@ -1120,8 +1225,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
       o.redeem_start_at = ahora.toISOString();
       o.redeem_end_at = new Date(ahora.getTime() + 3 * 36e5).toISOString();
     } else {
-      const m = new Date(ahora); m.setDate(m.getDate() + 1); m.setHours(20, 0, 0, 0);
-      o.event_at = m.toISOString();
+      o.event_at = diaMadrid(1, 20).toISOString();
     }
   }
   if (!id && desde) {
@@ -1132,12 +1236,11 @@ async function offerForm(v, id, kindDefault, desde = null) {
     if (src) {
       o = { ...src, id: undefined, status: 'active', publish_at: null };
       if (desde.repeat && src.kind === 'flash_offer' && src.redeem_start_at) {
-        // Mañana (de hoy) a la misma hora y con la misma duración.
+        // Mañana (de hoy) a la misma hora de Madrid y con la misma duración.
         const ini = new Date(src.redeem_start_at);
         const dura = src.redeem_end_at ? new Date(src.redeem_end_at) - ini : 3 * 36e5;
-        const nuevo = new Date();
-        nuevo.setDate(nuevo.getDate() + 1);
-        nuevo.setHours(ini.getHours(), ini.getMinutes(), 0, 0);
+        const hora = partesMadrid(ini);
+        const nuevo = diaMadrid(1, hora.h, hora.min);
         o.redeem_start_at = nuevo.toISOString();
         o.redeem_end_at = new Date(nuevo.getTime() + dura).toISOString();
       } else {
@@ -1205,8 +1308,9 @@ async function offerForm(v, id, kindDefault, desde = null) {
         <label class="f full"><span>Condiciones (letra pequeña)</span><textarea name="terms" maxlength="300">${esc(o.terms || '')}</textarea></label>
         <label class="f full"><span>Enlace externo (entradas, reservas…)</span><input name="external_url" value="${esc(o.external_url || '')}" placeholder="https://"></label>
       </div>
+      <p class="hint">Las fechas y horas son las de Madrid (hora peninsular española).</p>
       <h3 style="margin-top:16px">Fotos y vídeo</h3>
-      <p class="hint">La primera es la portada; muévelas con las flechas. Si no pones ninguna, se usa la foto del local. Los vídeos se ven al abrir la publicación (en el feed van las fotos).</p>
+      <p class="hint">Hasta 6 fotos o vídeos. La primera es la portada; muévelas con las flechas. Si no pones ninguna, se usa la foto del local. Los vídeos se ven al abrir la publicación (en el feed van las fotos).</p>
       <div class="photos" id="photos"></div>
       <h3 style="margin-top:18px">Diseño del anuncio</h3>
       <p class="hint">Así se verá en Descubre. Elige la plantilla y el color que mejor casen con tu marca.</p>
@@ -1280,7 +1384,10 @@ async function offerForm(v, id, kindDefault, desde = null) {
           <button type="button" data-mv="${i}:1" ${i === images.length - 1 ? 'disabled' : ''} title="Mover después">→</button>
         </div>
       </div>`).join('')
-      + `<label class="add">+ Añadir foto o vídeo<input type="file" accept="image/*,video/mp4,video/quicktime" multiple></label>`;
+      // Con el tope lleno no se ofrece añadir (como la app).
+      + (images.length < TOPE.publicacion
+        ? `<label class="add">+ Añadir foto o vídeo<input type="file" accept="image/*,video/mp4,video/quicktime" multiple></label>`
+        : `<p class="hint">${esc(topeLleno(TOPE.publicacion))}</p>`);
     $$('#photos .rm').forEach((b) => { b.onclick = () => { images.splice(+b.dataset.i, 1); renderPhotos(); }; });
     pintaEstilo();
     $$('#photos [data-mv]').forEach((b) => {
@@ -1292,10 +1399,9 @@ async function offerForm(v, id, kindDefault, desde = null) {
         renderPhotos();
       };
     });
-    $('#photos input[type=file]').onchange = async (e) => {
-      const hueco = Math.max(0, 6 - images.length);
-      if (!hueco) { toast('Como mucho 6 fotos o vídeos por publicación.', true); return; }
-      for (const file of [...e.target.files].slice(0, hueco)) {
+    const subir = $('#photos input[type=file]');
+    if (subir) subir.onchange = async (e) => {
+      for (const file of caben(e.target.files, images.length, TOPE.publicacion)) {
         const video = /^video\//.test(file.type);
         const max = video ? 60 * 1024 * 1024 : 5 * 1024 * 1024;
         if (file.size > max) { toast(video ? 'Ese vídeo pesa más de 60 MB.' : 'Esa foto pesa más de 5 MB.', true); continue; }
@@ -1304,7 +1410,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
         const ext = video ? 'mp4' : (file.name.split('.').pop() || 'jpg').toLowerCase();
         const path = `${BIZ.id}/${crypto.randomUUID()}.${ext}`;
         const { error } = await sb.storage.from(BUCKET).upload(path, file, { contentType: file.type });
-        if (error) { toast(error.message, true); continue; }
+        if (error) { toast(friendly(error.message), true); continue; }
         images.push(sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl);
       }
       renderPhotos();
@@ -1490,11 +1596,14 @@ async function offerForm(v, id, kindDefault, desde = null) {
     const newCents = price ? Math.round(parseFloat(price) * 100) : null;
     if (id && o.price_cents != null && newCents != null && newCents < o.price_cents) {
       const codes = await rpc('offer_pending_codes', { p_offer: id });
-      const eur = (c) => (c / 100).toFixed(2).replace('.', ',') + ' €';
-      if (codes > 0 && !confirm(
-        `Hay ${codes} código(s) sin usar de ${eur(o.price_cents)}. Si lo dejas en `
-        + `${eur(newCents)}, esas personas pagarán ${eur(newCents)} en el local. `
-        + 'A quien ya canjeó no se le avisa.')) {
+      // El diálogo del panel (no el `confirm` del navegador, que no se
+      // traduce ni se parece a nada de Klendar).
+      const antes = fmtMoney(o.price_cents);
+      const ahora = fmtMoney(newCents);
+      if (codes > 0 && !await confirmDlg(bi('¿Bajar el precio?', 'Lower the price?'), esc(bi(
+        `Hay ${codes} código(s) sin usar de ${antes}. Si lo dejas en ${ahora}, esas personas pagarán ${ahora} en el local. A quien ya canjeó no se le avisa.`,
+        `There ${codes === 1 ? 'is 1 unused code' : `are ${codes} unused codes`} at ${antes}. If you set it to ${ahora}, those people will pay ${ahora} at the venue. People who already redeemed are not notified.`)),
+      { submit: bi('Bajar el precio', 'Lower the price') })) {
         return;
       }
     }
@@ -1560,12 +1669,22 @@ async function offerForm(v, id, kindDefault, desde = null) {
       toast(id ? 'Cambios guardados' : 'Publicado');
       location.hash = '#/publicaciones';
     } catch (err) {
-      $('#formErr').textContent = friendly(err.message);
+      $('#formErr').textContent = I18N.t(friendly(err.message));
     }
   };
 }
 
 // ── Validar códigos ─────────────────────────────────────────────────────────
+/** Por qué no se ha podido validar un código, dicho para la puerta. Lo usan
+ * el escáner y «Dar entrada» en Asistentes. */
+const ERR_VALIDAR = {
+  invalid_code: 'Ese código no existe.',
+  not_authorized: 'Ese código no es de tu negocio.',
+  already_validated: 'Ese código ya se usó.',
+  code_expired: 'El código ha caducado: pide que generen otro.',
+  sold_out: 'Aforo completo: ya han entrado todas las plazas.',
+  rate_limited: 'Demasiados intentos seguidos. Espera un momento.',
+};
 PAGES.validar = async (v) => {
   v.innerHTML = `
     <div class="page-head"><h1>Validar códigos</h1></div>
@@ -1596,7 +1715,8 @@ PAGES.validar = async (v) => {
     const b = $('#enviaCola');
     if (b) b.onclick = () => enviaCola();
   };
-  const sinRed = (msg) => !navigator.onLine || /fetch|network|NetworkError|Load failed/i.test(String(msg || ''));
+  // `rpc` ya lo trae traducido («No hay conexión…»); se mira también el crudo.
+  const sinRed = (msg) => !navigator.onLine || /fetch|network|NetworkError|Load failed|No hay conexión/i.test(String(msg || ''));
   let enviando = false;
   const enviaCola = async () => {
     const c = leeCola();
@@ -1676,15 +1796,7 @@ PAGES.validar = async (v) => {
         $('#code').value = '';
         loadRecent();
       } else {
-        const msgs = {
-          invalid_code: 'Ese código no existe.',
-          not_authorized: 'Ese código no es de tu negocio.',
-          already_validated: 'Ese código ya se usó.',
-          code_expired: 'El código ha caducado: pide que generen otro.',
-          sold_out: 'Aforo completo: ya han entrado todas las plazas.',
-          rate_limited: 'Demasiados intentos seguidos. Espera un momento.',
-        };
-        $('#result').innerHTML = `<div class="scan-result bad">${ms('cancel')}${esc(I18N.t(msgs[res.error] || friendly(res.error)))}${res.validated_at ? `<small>${esc(I18N.t('Se validó el'))} ${esc(fmtDate(res.validated_at))}${(res.seats || 1) > 1 ? ` · ${res.seats} ${esc(I18N.t('personas'))}` : ''}</small>` : ''}</div>`;
+        $('#result').innerHTML = `<div class="scan-result bad">${ms('cancel')}${esc(I18N.t(ERR_VALIDAR[res.error] || friendly(res.error)))}${res.validated_at ? `<small>${esc(I18N.t('Se validó el'))} ${esc(fmtDate(res.validated_at))}${(res.seats || 1) > 1 ? ` · ${res.seats} ${esc(I18N.t('personas'))}` : ''}</small>` : ''}</div>`;
         if (navigator.vibrate) navigator.vibrate([60, 60, 60]);
       }
     } catch (e) {
@@ -1739,24 +1851,43 @@ PAGES.validar = async (v) => {
 
 // ── Asistentes de un evento ─────────────────────────────────────────────────
 PAGES.asistentes = async (v, offerId) => {
-  const offers = await rpc('my_business_offers', { p_id: BIZ.id });
+  const [offers, list] = await Promise.all([
+    rpc('my_business_offers', { p_id: BIZ.id }),
+    rpc('offer_attendees', { p_offer: offerId }),
+  ]);
   const offer = offers.find((o) => o.id === offerId);
-  const list = await rpc('offer_attendees', { p_offer: offerId });
-  const inside = list.filter((a) => a.status === 'validated').length;
+  const plazas = (a) => Math.max(1, Number(a.seats) || 1);
+  const dentro = list.filter((a) => a.status === 'validated');
+  // En la puerta se cuentan personas, no códigos: un código vale por todas
+  // las plazas que reservó.
+  const personasDentro = dentro.reduce((n, a) => n + plazas(a), 0);
+  const personas = list.filter((a) => a.status !== 'cancelled' && a.status !== 'expired').reduce((n, a) => n + plazas(a), 0);
+  // Los mismos nombres que la app: Dentro, Reservada, Caducada (y Anulada,
+  // si quien reservó dijo «Ya no voy»).
+  const estado = (a) => (a.status === 'validated' ? '<span class="tag ok">Dentro</span>'
+    : a.status === 'expired' ? '<span class="tag dim">Caducada</span>'
+      : a.status === 'cancelled' ? '<span class="tag dim">Anulada</span>'
+        : '<span class="tag st-pending">Reservada</span>');
+  const ESTADO_CSV = { validated: 'dentro', expired: 'caducada', cancelled: 'anulada', pending: 'reservada' };
   v.innerHTML = `
     <div class="page-head"><a class="btn sm ghost" href="#/publicaciones">← Volver</a><h1>Asistentes</h1><span class="spacer"></span>
       <button class="btn sm ghost" id="csv">Exportar CSV</button></div>
     <div class="card"><h2>${esc(offer?.title || '')}</h2>
-      <p class="muted" style="margin:0">${fmtNum(inside)} de ${fmtNum(list.length)} han entrado${offer?.max_redemptions ? ` · aforo ${fmtNum(offer.max_redemptions)}` : ''}</p></div>
+      <p class="muted" style="margin:0">${esc(bi(
+        `${fmtNum(dentro.length)} de ${fmtNum(list.length)} han entrado · ${fmtNum(personasDentro)} de ${fmtNum(personas)} ${personas === 1 ? 'persona' : 'personas'}${offer?.max_redemptions ? ` · aforo ${fmtNum(offer.max_redemptions)}` : ''}`,
+        `${fmtNum(dentro.length)} of ${fmtNum(list.length)} checked in · ${fmtNum(personasDentro)} of ${fmtNum(personas)} ${personas === 1 ? 'person' : 'people'}${offer?.max_redemptions ? ` · capacity ${fmtNum(offer.max_redemptions)}` : ''}`))}</p></div>
     <div class="toolbar"><input id="q" class="grow" placeholder="Buscar por nombre o código"></div>
     <div id="list"></div>`;
   const render = () => {
-    const q = $('#q').value.trim().toLowerCase();
-    const rows = list.filter((a) => !q || (a.user_name || '').toLowerCase().includes(q) || a.code.toLowerCase().includes(q));
-    $('#list').innerHTML = table({
+    const q = $('#q', v).value.trim().toLowerCase();
+    // El código se busca como se lee («0882 7EC7»), con o sin espacios.
+    const qc = q.replace(/\s/g, '');
+    const rows = list.filter((a) => !q || (a.user_name || '').toLowerCase().includes(q) || a.code.toLowerCase().includes(qc));
+    $('#list', v).innerHTML = table({
       cols: [
-        { h: 'Persona', r: (a) => `<b class="title">${esc(a.user_name || 'Invitada')}</b><span class="sub mono">${esc(a.code.slice(0, 8).toUpperCase())}</span>` },
-        { h: 'Estado', r: (a) => a.status === 'validated' ? tag('validated', 'ok') : a.status === 'expired' ? tag('expired', 'dim') : tag('pending') },
+        { h: 'Persona', r: (a) => `<b class="title">${esc(a.user_name || I18N.t('Invitada'))}</b><span class="sub mono">${esc(a.code.slice(0, 8).toUpperCase())}</span>` },
+        { h: 'Plazas', num: true, r: (a) => fmtNum(plazas(a)) },
+        { h: 'Estado', r: estado },
         { h: 'Reservó', r: (a) => fmtDate(a.created_at) },
         { h: 'Entró', r: (a) => fmtDate(a.validated_at) },
         { h: '', r: (a) => a.status === 'pending' ? `<button class="btn sm primary" data-code="${esc(a.code)}">Dar entrada</button>` : '' },
@@ -1764,20 +1895,27 @@ PAGES.asistentes = async (v, offerId) => {
       rows,
       empty: 'Todavía no hay nadie apuntado.',
     });
-    $$('#list [data-code]').forEach((b) => {
+    I18N.translate($('#list', v));
+    $$('#list [data-code]', v).forEach((b) => {
       b.onclick = async () => {
+        if (b.disabled) return;
+        b.disabled = true;
+        const a = list.find((x) => x.code === b.dataset.code) || {};
+        const nombre = a.user_name || I18N.t('Invitada');
         try {
+          // Lo mismo que el escáner: las cifras cuadran igual.
           const res = await rpc('validate_redemption', { p_code: b.dataset.code });
-          if (!res.ok) { toast(res.error, true); return; }
-          toast('Dentro');
+          if (!res?.ok) { toast(ERR_VALIDAR[res?.error] || friendly(res?.error), true); b.disabled = false; return; }
+          toast(bi(`${nombre} ha entrado`, `${nombre} is in`));
           route();
-        } catch (e) { toast(friendly(e.message), true); }
+        } catch (e) { toast(friendly(e.message), true); b.disabled = false; }
       };
     });
   };
-  $('#q').oninput = render;
-  $('#csv').onclick = () => downloadCsv(`asistentes-${offer?.title || ''}`, list, [
-    ['user_name', 'nombre'], ['code', 'código'], ['status', 'estado'], ['created_at', 'reservó'], ['validated_at', 'entró'],
+  $('#q', v).oninput = render;
+  $('#csv', v).onclick = () => downloadCsv(`asistentes-${offer?.title || ''}`, list, [
+    ['user_name', 'nombre'], ['code', 'código'], [(a) => plazas(a), 'plazas'], [(a) => ESTADO_CSV[a.status] || a.status, 'estado'],
+    ['created_at', 'reservó'], ['validated_at', 'entró'],
   ]);
   render();
 };
@@ -1829,8 +1967,8 @@ PAGES.sellos = async (v) => {
       p_goal: Number(f.get('goal')),
       p_reward: String(f.get('reward') || '').trim(),
       p_active: $('[name=is_active]', v).checked,
-    }).catch(() => null);
-    $('#msg', v).textContent = r?.ok ? 'Guardado' : 'No se ha podido guardar';
+    }).catch((err) => ({ ok: false, error: err.message }));
+    $('#msg', v).textContent = I18N.t(r?.ok ? 'Guardado' : r?.error ? friendly(r.error) : 'No se ha podido guardar');
     if (r?.ok) setTimeout(() => route(), 600);
   };
 };
@@ -1870,7 +2008,7 @@ PAGES.carta = async (v) => {
     const r = await rpc('save_business_menu', { p_business: BIZ.id, p_menu: carta })
       .catch((e) => ({ ok: false, error: e.message }));
     if (r?.ok) { sucia = false; toast('Carta guardada'); pinta(); }
-    else toast(r?.error || 'No se ha podido guardar', true);
+    else toast(r?.error ? friendly(r.error) : 'No se ha podido guardar', true);
   };
 
   const pinta = () => {
@@ -1892,7 +2030,9 @@ PAGES.carta = async (v) => {
           <div class="thumb"><img src="${esc(u)}" alt="">
             ${canManage ? `<button class="btn sm bad ghost" data-foto-del="${i}">Quitar</button>` : ''}</div>`).join('')}
         </div>
-        ${canManage ? '<p style="margin:10px 0 0"><input type="file" id="menu-file" accept="image/*" multiple></p>' : ''}</div>
+        ${canManage ? (fotos.length < TOPE.carta
+          ? `<p style="margin:10px 0 0"><label class="btn sm">${esc(I18N.t('Añadir fotos'))}<input type="file" id="menu-file" accept="image/*" multiple hidden></label> <span class="muted small">${esc(topeHasta(TOPE.carta))}</span></p>`
+          : `<p class="muted" style="margin:10px 0 0">${esc(topeLleno(TOPE.carta))}</p>`) : ''}</div>
       <h2 style="margin:24px 0 8px">Escrita</h2>
       ${carta.length ? carta.map((sec, si) => `
         <div class="card">
@@ -1913,7 +2053,7 @@ PAGES.carta = async (v) => {
                   <button class="btn sm ghost" data-item-photo="${si}:${ii}">${it.image_url ? 'Cambiar foto' : 'Poner foto'}</button>
                   ${it.image_url ? `<button class="btn sm ghost" data-item-nophoto="${si}:${ii}">Quitar foto</button>` : ''}
                   <button class="btn sm ghost" data-item-edit="${si}:${ii}">Editar</button>
-                  <button class="btn sm bad ghost" data-item-del="${si}:${ii}">Quitar</button></div>` : '' },
+                  <button class="btn sm bad ghost" data-item-del="${si}:${ii}">Borrar</button></div>` : '' },
             ],
             rows: sec.items || [],
             empty: 'Esta sección está vacía.',
@@ -1934,12 +2074,12 @@ PAGES.carta = async (v) => {
     }; });
     const file = $('#menu-file', v);
     if (file) file.onchange = async (e) => {
-      for (const f of [...e.target.files].slice(0, 6)) {
+      for (const f of caben(e.target.files, fotos.length, TOPE.carta)) {
         if (f.size > 5 * 1024 * 1024) { toast('Esa foto pesa más de 5 MB.', true); continue; }
         const ext = (f.name.split('.').pop() || 'jpg').toLowerCase();
         const path = `${BIZ.id}/carta-${crypto.randomUUID()}.${ext}`;
         const { error } = await sb.storage.from(BUCKET).upload(path, f, { contentType: f.type });
-        if (error) { toast(error.message, true); continue; }
+        if (error) { toast(friendly(error.message), true); continue; }
         fotos = [...fotos, sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl];
       }
       sucia = true; pinta();
@@ -2164,7 +2304,7 @@ function planCard(sub) {
   const free = sub.plan_slug === 'free';
   const trial = sub.status === 'trial';
   const until = sub.period_end
-    ? new Date(sub.period_end).toLocaleDateString(LOC(), { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+    ? new Date(sub.period_end).toLocaleDateString(LOC(), { day: 'numeric', month: 'short', year: 'numeric', timeZone: TZ }) : '';
   const estado = trial && until
     ? (en ? `Everything included until ${until}, no card and no automatic renewal. While your city is launching, it stays free.`
       : `Prueba con todo hasta el ${until}, sin tarjeta y sin renovación automática. Mientras tu ciudad arranca, sigues gratis.`)
@@ -2209,13 +2349,13 @@ PAGES.ficha = async (v) => {
         <a class="btn sm" href="https://klendar.app/b/${esc(BIZ.id)}" target="_blank" rel="noopener">Ver cómo se ve ↗</a></div>
       ${helpBox('¿Qué es esto?', bi('<p>Lo que ve la gente cuando entra en tu negocio: el nombre, de qué va, dónde estás, cómo llamarte y tus horarios. Es la misma ficha que editas desde la app.</p><p>La <b>dirección</b> se busca en el mapa al guardar. Si el punto no queda donde debe, arrastra la chincheta en «Ubicación en el mapa».</p>',
       '<p>What people see when they open your business: the name, what you do, where you are, how to call you and your opening hours. It is the same page you edit from the app.</p><p>The <b>address</b> is looked up on the map when you save. If the pin is not in the right place, drag it in “Location on the map”.</p>'))}
-      <form id="f" class="form">
-        <label class="f"><span>Nombre</span><input name="name" value="${esc(b.name || '')}" required maxlength="80" ${canManage ? '' : 'disabled'}></label>
+      <form id="f" class="form" novalidate>
+        <label class="f"><span>Nombre *</span><input name="name" value="${esc(b.name || '')}" required maxlength="80" ${canManage ? '' : 'disabled'}></label>
         <label class="f"><span>Categoría</span><select name="category_id" ${canManage ? '' : 'disabled'}>
           ${(cats || []).map((c) => `<option value="${esc(c.id)}" ${c.id === b.category_id ? 'selected' : ''}>${esc(c.names?.[I18N.lang] || c.names?.es || c.slug)}</option>`).join('')}</select></label>
         <label class="f full"><span>De qué va <small>(dos líneas bastan)</small></span><textarea name="description" maxlength="500" ${canManage ? '' : 'disabled'}>${esc(b.description || '')}</textarea></label>
-        <label class="f"><span>Dirección</span><input name="address" value="${esc(b.address || '')}" maxlength="120" ${canManage ? '' : 'disabled'}></label>
-        <label class="f"><span>Ciudad</span><input name="city" value="${esc(b.city || '')}" maxlength="60" ${canManage ? '' : 'disabled'}></label>
+        <label class="f"><span>Dirección *</span><input name="address" value="${esc(b.address || '')}" maxlength="120" required ${canManage ? '' : 'disabled'}></label>
+        <label class="f"><span>Ciudad *</span><input name="city" value="${esc(b.city || '')}" maxlength="60" required ${canManage ? '' : 'disabled'}></label>
         <label class="f"><span>Teléfono</span><input name="phone" value="${esc(b.phone || '')}" maxlength="20" ${canManage ? '' : 'disabled'}></label>
         <label class="f"><span>Web</span><input name="website" type="url" value="${esc(b.website || '')}" ${canManage ? '' : 'disabled'}></label>
         <label class="f"><span>Correo de contacto</span><input name="contact_email" type="email" value="${esc(b.contact_email || '')}" ${canManage ? '' : 'disabled'}></label>
@@ -2253,7 +2393,9 @@ PAGES.ficha = async (v) => {
         <h3 style="margin:16px 0 8px">Galería</h3>
         <div class="thumbs">${galeria.map((u, i) => `<div class="thumb"><img src="${esc(u)}" alt="">
           ${canManage ? `<button class="btn sm bad ghost" data-gal-del="${i}">Quitar</button>` : ''}</div>`).join('')}</div>
-        ${canManage ? '<p style="margin:10px 0 0"><button class="btn sm" data-img="gallery">Añadir fotos</button></p>' : ''}</div>`;
+        ${canManage ? (galeria.length < TOPE.galeria
+          ? `<p style="margin:10px 0 0"><button class="btn sm" data-img="gallery">Añadir fotos</button> <span class="muted small">${esc(topeHasta(TOPE.galeria))}</span></p>`
+          : `<p class="muted" style="margin:10px 0 0">${esc(topeLleno(TOPE.galeria))}</p>`) : ''}</div>`;
 
     if (!canManage) return;
 
@@ -2284,6 +2426,17 @@ PAGES.ficha = async (v) => {
     $('#f', v).onsubmit = async (e) => {
       e.preventDefault();
       const f = new FormData(e.target);
+      // Lo mismo que la app (y que el alta): nombre de dos letras o más, y
+      // dirección y ciudad obligatorias; «Obligatorio» debajo de cada campo.
+      const obligatorio = KL_VALIDA.MSG[I18N.lang === 'en' ? 'en' : 'es'].obligatorio;
+      const faltan = [
+        ['name', String(f.get('name') || '').trim().length < 2],
+        ['address', !String(f.get('address') || '').trim()],
+        ['city', !String(f.get('city') || '').trim()],
+      ];
+      for (const [campo, falta] of faltan) KL_CAMPO(e.target.elements[campo], falta ? obligatorio : null);
+      const primero = faltan.find(([, falta]) => falta);
+      if (primero) { e.target.elements[primero[0]].focus(); return; }
       const patch = {
         name: String(f.get('name') || '').trim(),
         category_id: f.get('category_id') || null,
@@ -2305,7 +2458,7 @@ PAGES.ficha = async (v) => {
       if (patch.address && patch.address !== (b.address || '')) {
         const punto = await geocodifica(`${patch.address}, ${patch.city || ''}`);
         if (punto) { patch.lat = punto.lat; patch.lng = punto.lng; }
-        else toast('No hemos encontrado esa dirección en el mapa; ajústala desde la app.', true);
+        else toast('No hemos encontrado esa dirección en el mapa: arrastra la chincheta en «Ubicación en el mapa».', true);
       }
       try {
         await rpc('update_business', { p_id: BIZ.id, p_patch: patch });
@@ -2334,7 +2487,8 @@ PAGES.ficha = async (v) => {
       input.multiple = que === 'gallery';
       input.onchange = async () => {
         const nuevas = [];
-        for (const f of [...input.files].slice(0, que === 'gallery' ? 6 : 1)) {
+        const elegidas = que === 'gallery' ? caben(input.files, galeria.length, TOPE.galeria) : [...input.files].slice(0, 1);
+        for (const f of elegidas) {
           if (f.size > 5 * 1024 * 1024) { toast('Esa foto pesa más de 5 MB.', true); continue; }
           const ext = (f.name.split('.').pop() || 'jpg').toLowerCase();
           const path = `${BIZ.id}/${que}-${crypto.randomUUID()}.${ext}`;

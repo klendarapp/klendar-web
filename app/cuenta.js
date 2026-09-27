@@ -284,13 +284,24 @@ RUTAS.alerta = async ([id]) => {
 // ── Ajustes ───────────────────────────────────────────────────────────────
 RUTAS.ajustes = async () => {
   if (!exigeSesion('ajustes')) return;
-  const [perfil, prefs, cons, cats, negocios] = await Promise.all([
+  const [perfil, prefs, cons, cats, negocios, cuenta, metodos] = await Promise.all([
     tabla(sb.from('profiles').select('display_name, avatar_url, locale').eq('id', YO.id).maybeSingle()),
     llamar('my_notification_preferences', {}),
     llamar('my_consents', {}),
     categorias(),
     llamar('my_businesses', {}).catch(() => []),
+    // Las formas de entrar, recién preguntadas (la sesión guardada puede ser
+    // de antes de añadir una contraseña o de enlazar Google).
+    sb.auth.getUser().then(({ data }) => data?.user || YO).catch(() => YO),
+    // Si hay contraseña lo sabe la base: la identidad «email» existe también
+    // en cuentas creadas con un código por correo.
+    llamar('my_auth_methods', {}).catch(() => null),
   ]);
+  const vias = new Set((cuenta?.identities || []).map((i) => i.provider));
+  const tieneClave = metodos?.has_password ?? vias.has('email');
+  const metodo = (icono, texto, activa) => `<div class="fila metodo${activa ? '' : ' off'}">
+      ${icono}<span class="fila-t"><b>${esc(texto)}</b></span>
+      <span class="estado">${esc(activa ? t('Activa') : t('Sin usar'))}</span></div>`;
   // El resumen del negocio solo le llega a quien lo lleva (dueño o encargado).
   const llevaNegocio = Array.isArray(negocios) && negocios.some((b) => ['owner', 'manager'].includes(b.role));
   const p = perfil || {};
@@ -311,7 +322,7 @@ RUTAS.ajustes = async () => {
         </div>
         <label>${esc(t('Nombre'))} <small>${esc(t('Cómo te ven en las reseñas'))}</small>
           <input name="nombre" maxlength="40" required value="${esc(p.display_name || '')}"></label>
-        <label>${esc(t('Idioma'))} <small>${esc(t('De la web, la app y los avisos que te mandamos'))}</small>
+        <label>${esc(t('Idioma'))} <small>${esc(t('De la web, la app y las notificaciones y correos que te enviamos'))}</small>
           <select name="idioma">
             <option value=""${!p.locale ? ' selected' : ''}>${esc(t('El del móvil o el navegador'))}</option>
             <option value="es"${p.locale === 'es' ? ' selected' : ''}>Español</option>
@@ -352,6 +363,18 @@ RUTAS.ajustes = async () => {
     </section>
 
     <section class="bloque">
+      <h2>${esc(t('Formas de entrar'))}</h2>
+      <div class="lista">
+        ${metodo(ic('password'), t('Correo y contraseña'), tieneClave)}
+        ${metodo(`<span class="logo-via">${LOGO_GOOGLE}</span>`, t('Cuenta de Google'), vias.has('google'))}
+        ${vias.has('apple') ? metodo(`<span class="logo-via">${LOGO_APPLE}</span>`, t('Cuenta de Apple'), true) : ''}
+        ${vias.has('phone') ? metodo(ic('smartphone'), t('Teléfono'), true) : ''}
+      </div>
+      <p class="muted">${esc(t('Con el mismo correo entras siempre a la misma cuenta, da igual por dónde. Tener contraseña además de Google evita quedarte fuera si pierdes el acceso a una.'))}</p>
+      <p><a class="pill" href="#/nueva-clave?siguiente=ajustes">${ic('key')} ${esc(t(tieneClave ? 'Cambiar la contraseña' : 'Crear una contraseña'))}</a></p>
+    </section>
+
+    <section class="bloque">
       <h2>${esc(t('Privacidad y datos'))}</h2>
       <p class="muted">${esc(t('Qué has consentido y cuándo. Puedes retirar cada permiso por separado y descargar todo lo que guardamos de ti.'))}</p>
       <dl class="consen">
@@ -375,7 +398,6 @@ RUTAS.ajustes = async () => {
     <section class="bloque">
       <h2>${esc(t('Sesión y cuenta'))}</h2>
       <p class="acciones">
-        <a class="pill" href="#/nueva-clave">${esc(t('Cambiar la contraseña'))}</a>
         <button class="pill" id="salir-todo">${esc(t('Cerrar sesión en todos los dispositivos'))}</button>
       </p>
       <p class="muted">${esc(t('Si entraste desde un móvil o un ordenador que no es tuyo, esto cierra la sesión también allí.'))}</p>
@@ -473,7 +495,8 @@ RUTAS.ajustes = async () => {
     const blob = new Blob([JSON.stringify(datos, null, 2)], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `klendar-${EN ? 'my-data' : 'mis-datos'}-${new Date().toISOString().slice(0, 10)}.json`;
+    // El día de Madrid (en UTC, entre las 0 y las 2 aún sería ayer).
+    a.download = `klendar-${EN ? 'my-data' : 'mis-datos'}-${new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(new Date())}.json`;
     document.body.append(a);
     a.click();
     a.remove();

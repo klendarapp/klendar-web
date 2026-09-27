@@ -132,6 +132,9 @@ async function sesion() {
 }
 sb.auth.onAuthStateChange((ev, s) => {
   YO = s?.user || null;
+  // «Sigue usándola»: la base lo apunta como mucho una vez por hora (así no
+  // le llega «vuelve, tu barrio se mueve» a quien entra a diario).
+  if (s && (ev === 'INITIAL_SESSION' || ev === 'SIGNED_IN')) sb.rpc('mark_seen').then(() => {}, () => {});
   // La cabecera (Entrar ↔ tu inicial), sin esperar a cambiar de página.
   if (ev === 'SIGNED_IN' || ev === 'SIGNED_OUT' || ev === 'USER_UPDATED') setTimeout(() => window.KL_CABECERA?.(), 0);
   // El enlace de «he olvidado la contraseña» abre sesión y trae aquí; Supabase
@@ -218,7 +221,18 @@ function rutaActual() {
   return { partes, params: new URLSearchParams(qs || ''), crudo: h };
 }
 
+/** Lo que sigue vivo mientras se ve una pantalla (vigilar si validan el
+ * código, cuentas atrás…). Se apaga al cambiar de pantalla. */
+let AL_SALIR = [];
+const alSalir = (fn) => { AL_SALIR.push(fn); };
+function apagaPantalla() {
+  const lista = AL_SALIR;
+  AL_SALIR = [];
+  for (const fn of lista) { try { fn(); } catch { /* ya estaba apagado */ } }
+}
+
 async function navegar() {
+  apagaPantalla();
   await sesion();
   // Vuelta de Google (o de un enlace de correo): «?siguiente=» dice adónde.
   const q = new URLSearchParams(location.search);
@@ -791,8 +805,10 @@ RUTAS.recuperar = async () => {
   };
 };
 
-RUTAS['nueva-clave'] = async () => {
+RUTAS['nueva-clave'] = async (_p, params) => {
   if (!YO) return RUTAS.recuperar();
+  // Desde Ajustes («Formas de entrar») se vuelve allí al guardar.
+  const siguiente = /^[a-z-]+$/.test(params?.get('siguiente') || '') ? params.get('siguiente') : '';
   pinta(`
     <h1>${esc(t('Nueva contraseña'))}</h1>
     <p class="muted">${esc(t('Elige una que no uses en otros sitios.'))}</p>
@@ -815,11 +831,11 @@ RUTAS['nueva-clave'] = async () => {
     ocupado(form.querySelector('button[type=submit]'), async () => {
       const { error } = await sb.auth.updateUser({ password: form.p1.value });
       if (error) { $('#err').textContent = errAuth(error); return; }
-      toast(t('Contraseña actualizada'));
+      toast(t(siguiente ? 'Contraseña guardada' : 'Contraseña actualizada'));
       // Desde el panel de negocios se vuelve al panel.
       const destino = new URLSearchParams(location.search).get('destino') || '';
       if (/^\/[a-z]/.test(destino)) { location.href = destino; return; }
-      vuelve('');
+      vuelve(siguiente);
     });
   };
 };
@@ -965,6 +981,57 @@ RUTAS.codigos = async () => {
 };
 
 // ── El código, para enseñar en la barra ───────────────────────────────────
+/** Avisa en cuanto el negocio valida `code`: Supabase Realtime (la fila es
+ * tuya, así que la política deja verla) y, por si el canal no llega, un
+ * vistazo cada 5 s. Lo mismo que hace la app (watchValidation). Devuelve la
+ * función que lo apaga. */
+function vigilaCanje(code, alValidar) {
+  let hecho = false;
+  let sondeo = null;
+  let canal = null;
+  const apaga = () => {
+    clearInterval(sondeo);
+    if (canal) sb.removeChannel(canal).catch(() => {});
+  };
+  const avisa = (fila) => {
+    if (hecho || fila?.status !== 'validated') return;
+    hecho = true;
+    apaga();
+    alValidar(fila.validated_at || new Date().toISOString());
+  };
+  canal = sb.channel(`redemption:${code}`)
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'redemptions', filter: `code=eq.${code}` },
+      (payload) => avisa(payload.new))
+    .subscribe();
+  const mira = async () => {
+    try {
+      const { data } = await sb.from('redemptions').select('status, validated_at').eq('code', code).maybeSingle();
+      avisa(data);
+    } catch { /* sin red: se vuelve a mirar en 5 s */ }
+  };
+  sondeo = setInterval(mira, 5000);
+  mira();
+  return apaga;
+}
+
+/** El negocio ya lo ha validado: la confirmación grande, como en la app. */
+function pintaCanjeado({ titulo, negocio, benef, at, volver = '#/codigos' }) {
+  const hora = fecha(at, { hour: '2-digit', minute: '2-digit' });
+  pinta(`
+    <div class="ticket canjeado" role="status">
+      <p class="hecho-ic" aria-hidden="true">✓</p>
+      <h1>${esc(t('¡Canjeado!'))}</h1>
+      <p><b>${esc(titulo || '')}</b></p>
+      ${negocio ? `<p class="muted">${esc(negocio)}</p>` : ''}
+      ${benef ? `<p><span class="tag grande">${esc(benef)}</span></p>` : ''}
+      <p class="muted">${esc(EN ? `Validated at ${hora}` : `Validado a las ${hora}`)}</p>
+      <p class="muted">${esc(t('El negocio ya lo ha registrado. Disfrútalo y, si quieres, deja una reseña luego.'))}</p>
+      <p><a class="pill accent" href="${esc(volver)}">${esc(t('Listo'))}</a></p>
+    </div>`);
+  I18N.translate(view);
+  if (navigator.vibrate) navigator.vibrate(120);
+}
+
 RUTAS.codigo = async ([id], params) => {
   if (!exigeSesion(`codigo/${id}${params.toString() ? `?${params}` : ''}`)) return;
   const plazas = Math.max(1, Math.min(10, parseInt(params.get('plazas') || '1', 10) || 1));
@@ -972,21 +1039,26 @@ RUTAS.codigo = async ([id], params) => {
   const url = `https://klendar.app/r/${tk.code}`;
   const caduca = new Date(tk.expires_at);
   const largo = caduca.getTime() - Date.now() > 3600 * 1000;
+  const benef = beneficio(tk.discount, tk.price_cents, tk.currency);
   pinta(`
     <p class="crumbs"><a href="#/codigos">${esc(t('Tus códigos'))}</a></p>
     <div class="ticket">
       <p class="muted">${esc(tk.business_name || '')}</p>
       <h1>${esc(tk.offer_title || '')}</h1>
       ${(tk.seats || 1) > 1 ? `<p class="muted"><b>${tk.seats} ${esc(t('plazas'))}</b></p>` : ''}
-      ${beneficio(tk.discount, tk.price_cents, tk.currency) ? `<p><span class="tag grande">${esc(beneficio(tk.discount, tk.price_cents, tk.currency))}</span></p>` : ''}
+      ${benef ? `<p><span class="tag grande">${esc(benef)}</span></p>` : ''}
       ${(tk.seats || 1) > 1 && !tk.discount && tk.price_cents != null
         ? `<p class="muted">${esc(EN
           ? `${money(tk.price_cents, tk.currency)} each · ${money(tk.price_cents * tk.seats, tk.currency)} in total`
           : `${money(tk.price_cents, tk.currency)} por persona · ${money(tk.price_cents * tk.seats, tk.currency)} en total`)}</p>` : ''}
       <div class="qr" id="qr" role="img" aria-label="${esc(t('Código QR para que el negocio valide tu canje'))}"></div>
       <p><button type="button" class="codigo copiar" id="copiar" aria-label="${esc(t('Copiar el código'))}">${esc(codigoLegible(tk.code))} ${ic('content_copy')}</button></p>
-      <p class="muted" id="cuenta"></p>
-      <p class="muted">${esc(t('Enséñalo en el sitio. Si no pueden escanearlo, que escriban el código de debajo.'))}</p>
+      <p class="muted" id="cuenta" aria-live="polite"></p>
+      <div id="caducado" hidden>
+        <p><b>${esc(t('El código ha caducado'))}</b></p>
+        <p><button class="pill accent" id="otro-codigo" type="button">${ic('refresh')} ${esc(t('Generar otro código'))}</button></p>
+      </div>
+      <p class="muted" id="instrucciones">${esc(t('Enséñalo en el sitio. Si no pueden escanearlo, que escriban el código de debajo.'))}</p>
       ${largo ? `<p><button class="pill" id="anular" type="button">${esc(t('Ya no voy: anular la reserva'))}</button></p>` : ''}
     </div>`);
   // El código de debajo del QR se copia de un toque (como en la app).
@@ -1010,24 +1082,43 @@ RUTAS.codigo = async ([id], params) => {
       toast(e.clave === 'not_pending' ? t('Esta reserva ya no se podía anular (se usó o ha caducado).') : e.message, true);
     }
   });
+  // Caducado: se pide otro a la base (start_redemption da uno nuevo) sin
+  // salir de aquí, como el botón de la app.
+  $('#otro-codigo').addEventListener('click', () => navegar());
   const qr = window.qrcode(0, 'M');
   qr.addData(url);
   qr.make();
   $('#qr').innerHTML = qr.createSvgTag({ cellSize: 6, margin: 2, scalable: true });
 
-  // La cuenta atrás, o hasta cuándo vale si queda más de una hora.
+  // En cuanto el negocio lo valida, esta pantalla se entera sola.
+  alSalir(vigilaCanje(tk.code, (at) => pintaCanjeado({
+    titulo: tk.offer_title, negocio: tk.business_name, benef, at,
+  })));
+
+  // La cuenta atrás, o hasta cuándo vale si queda más de una hora. Un código
+  // largo (una entrada para el sábado) se mira cada 30 s, como en la app.
+  let reloj = null;
   const pintaCuenta = () => {
     const el = $('#cuenta');
-    if (!el) { clearInterval(pintaCuenta.i); return; }
+    if (!el) { clearInterval(reloj); return; }
     const falta = caduca.getTime() - Date.now();
-    if (falta <= 0) { el.textContent = t('Ha caducado. Vuelve a la publicación y pide otro.'); clearInterval(pintaCuenta.i); return; }
-    if (largo) { el.textContent = `${t('Vale hasta el')} ${fecha(tk.expires_at)}`; return; }
+    if (falta <= 0) {
+      el.textContent = '';
+      $('#qr')?.classList.add('caducado');
+      $('#caducado').hidden = false;
+      $('#instrucciones').hidden = true;
+      $('#anular')?.remove();
+      clearInterval(reloj);
+      return;
+    }
+    if (falta >= 3600 * 1000) { el.textContent = `${t('Vale hasta el')} ${fecha(tk.expires_at)}`; return; }
     const m = Math.floor(falta / 60000);
     const s = Math.floor((falta % 60000) / 1000);
-    el.textContent = `${t('Caduca en')} ${m}:${String(s).padStart(2, '0')}`;
+    el.textContent = `${t('Válido durante')} ${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
   };
+  reloj = setInterval(pintaCuenta, largo ? 30000 : 1000);
+  alSalir(() => clearInterval(reloj));
   pintaCuenta();
-  pintaCuenta.i = setInterval(pintaCuenta, 1000);
 };
 
 // ── Reservar plaza: primero «¿para cuántos?» si el evento deja varias ─────
@@ -1103,7 +1194,7 @@ RUTAS.sellos = async () => {
         <p>${esc(t('Premio'))}: <b>${esc(c.reward)}</b></p>
         <p class="muted">${c.pending_code || c.stamps >= c.goal ? esc(t('¡Te toca premio!')) : esc(c.goal - c.stamps === 1 ? t('Te falta 1 sello') : `${t('Te faltan')} ${c.goal - c.stamps} ${t('sellos')}`)}</p>
         ${!c.is_active ? `<p class="muted">${esc(t('En pausa: ahora mismo no se dan sellos nuevos. Los tuyos siguen aquí.'))}</p>` : ''}
-        ${c.pending_code || c.stamps >= c.goal ? `<button class="pill accent" data-premio="${esc(c.id)}" data-reward="${esc(c.reward)}">${esc(c.pending_code ? t('Ver el código') : t('Pedir el premio'))}</button>` : ''}
+        ${c.pending_code || c.stamps >= c.goal ? `<button class="pill accent" data-premio="${esc(c.id)}" data-reward="${esc(c.reward)}" data-negocio="${esc(c.business_name)}">${esc(c.pending_code ? t('Ver el código') : t('Pedir el premio'))}</button>` : ''}
       </div>`).join('')
     : `<p class="empty">${esc(t('Todavía no tienes ninguna. Se abren solas: canjea algo en un sitio que tenga tarjeta y ahí tendrás tu primer sello.'))}</p>`}`);
 
@@ -1123,6 +1214,10 @@ RUTAS.sellos = async () => {
           <p class="muted">${esc(t('Enséñalo en el sitio. Vale una vez.'))}</p>
         </div>`);
       I18N.translate(view);
+      // Igual que un código de oferta: al validarlo en el local, se ve aquí.
+      alSalir(vigilaCanje(r.code, (at) => pintaCanjeado({
+        titulo: r.reward || b.dataset.reward, negocio: b.dataset.negocio, at, volver: '#/sellos',
+      })));
     } catch (e) { toast(e.message, true); }
   }; });
 };

@@ -34,6 +34,9 @@
 .ticket h1 { margin: 4px 0 10px; }
 .qr { background: #fff; border-radius: 22px; padding: 16px; width: min(280px, 80vw); margin: 16px auto; }
 .qr svg { width: 100%; height: auto; display: block; }
+/* Caducado: el QR se apaga, como en la app, para que nadie lo enseñe. */
+.qr { transition: opacity .3s; }
+.qr.caducado { opacity: .25; }
 .codigo { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: .12em;
   font-size: 15px; word-break: break-all; }
 
@@ -175,6 +178,13 @@ a.aviso:hover { text-decoration: none; border-color: var(--ink-2); }
 .fila-t { display: grid; flex: 1; min-width: 0; }
 .fila-t b { font-size: 15px; font-weight: 700; }
 .fila-t small { color: var(--ink-2); font-size: 13px; line-height: 1.35; }
+/* «Formas de entrar»: filas de datos, no enlaces. Sin color de estado:
+ * activa en tinta, sin usar en gris (identidad sobria). */
+.metodo:hover { background: none; }
+.metodo .estado { font-size: 13px; font-weight: 700; }
+.metodo.off, .metodo.off .estado { color: var(--ink-2); }
+.metodo.off .logo-via { opacity: .5; }
+.logo-via { display: grid; place-items: center; width: 24px; }
 .invitacion { display: flex; align-items: center; gap: 14px; padding: 16px; border-radius: 22px; margin-top: 20px; }
 .inv-ic { width: 44px; height: 44px; border-radius: 14px; background: var(--soft); display: grid;
   place-items: center; color: var(--ink); flex: none; }
