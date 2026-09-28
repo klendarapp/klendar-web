@@ -114,7 +114,7 @@ const RPC_ERRORS = {
   user_not_found: 'No existe ningún usuario con ese email.', cannot_remove_self: 'No puedes quitarte a ti mismo.', last_admin: 'Tiene que quedar al menos un administrador.',
   category_in_use: 'La categoría está en uso (negocios, publicaciones o subcategorías).', slug_required: 'El identificador (slug) es obligatorio.',
   title_body_required: 'Título y texto son obligatorios.', unknown_key: 'Clave de configuración desconocida.', invalid_amount: 'Importe no válido.', invalid_period: 'El fin del periodo es anterior al inicio.',
-  not_found: 'No encontrado.', invalid_type: 'Tipo de cuenta no válido.', account_suspended: 'Tu cuenta está suspendida. Si crees que es un error, escríbenos a info@klendar.app.',
+  not_found: 'No encontrado.', invalid_type: 'Tipo de cuenta no válido.', invalid_birth_date: 'Esa fecha de nacimiento no es válida.', account_suspended: 'Tu cuenta está suspendida. Si crees que es un error, escríbenos a info@klendar.app.',
 };
 
 function toast(msg, bad = false) {
@@ -680,7 +680,7 @@ const ACTIONS = {
   'business.verification': 'Verificación de negocio', 'business.activate': 'Negocio activado', 'business.deactivate': 'Negocio desactivado', 'business.update': 'Ficha editada', 'business.member': 'Equipo modificado',
   'business.subscription': 'Cambio de plan', 'business.payment': 'Pago registrado', 'offer.moderation': 'Moderación de publicación', 'offer.status': 'Estado de publicación', 'offer.boost': 'Boost de publicación',
   'report.resolve': 'Denuncia resuelta', 'review.delete': 'Reseña borrada', 'post.delete': 'Novedad borrada', 'user.ban': 'Usuario suspendido', 'user.unban': 'Usuario reactivado', 'user.premium': 'Premium cambiado',
-  'user.type': 'Tipo de cuenta cambiado', 'user.delete': 'Cuenta eliminada', 'notification.send': 'Notificación enviada', 'push.retry': 'Push reintentado', 'config.set': 'Configuración cambiada', 'plan.upsert': 'Plan guardado',
+  'user.type': 'Tipo de cuenta cambiado', 'user.birth_date': 'Fecha de nacimiento corregida', 'user.delete': 'Cuenta eliminada', 'notification.send': 'Notificación enviada', 'push.retry': 'Push reintentado', 'config.set': 'Configuración cambiada', 'plan.upsert': 'Plan guardado',
   'category.upsert': 'Categoría guardada', 'category.delete': 'Categoría borrada', 'admin.add': 'Administrador añadido', 'admin.remove': 'Administrador quitado', 'maintenance.expire_offers': 'Caducidad forzada',
   'business_message_approve': 'Mensaje a clientes aprobado', 'business_message_reject': 'Mensaje a clientes rechazado', 'collection_save': 'Colección guardada', 'collection_delete': 'Colección borrada',
   'feedback.update': 'Sugerencia actualizada', 'feedback.delete': 'Sugerencia borrada',
@@ -904,6 +904,7 @@ async function userDetail(v, id) {
         <button class="btn ${u.banned_at ? 'ok' : 'bad'}" data-a="ban">${u.banned_at ? 'Reactivar cuenta' : 'Suspender…'}</button>
         <button class="btn" data-a="premium">Premium…</button>
         <button class="btn" data-a="type">Tipo de cuenta…</button>
+        <button class="btn" data-a="birth">Corregir fecha de nacimiento…</button>
         <button class="btn" data-a="notify">Enviar notificación…</button>
         <button class="btn" data-a="admin">${u.is_admin ? 'Quitar admin' : 'Hacer admin'}</button>
         <button class="btn bad ghost" data-a="delete">Eliminar cuenta…</button>
@@ -959,6 +960,15 @@ async function userDetail(v, id) {
       if (a === 'type') {
         const r = await modal({ title: 'Tipo de cuenta', fields: [{ name: 'type', label: 'Tipo', type: 'select', value: u.user_type, options: [['user', 'Usuario'], ['business', 'Cuenta de negocio']] }] });
         if (!r) return; await rpc('admin_set_user_type', { p_id: u.id, p_type: r.type }); toast('Tipo actualizado');
+      }
+      if (a === 'birth') {
+        // La persona no puede cambiarla (así no adelanta el regalo de
+        // cumpleaños ni se hace mayor de edad): solo aquí, con motivo.
+        const r = await modal({ title: 'Corregir fecha de nacimiento', intro: 'La persona no puede cambiarla desde la app ni desde la web. Corrígela solo si lo pide y lo acredita (por ejemplo, con el DNI). Queda en el registro con la fecha anterior y el motivo.', fields: [
+          { name: 'birth', label: 'Fecha de nacimiento', type: 'date', required: true, value: u.birth_date || '' },
+          { name: 'reason', label: 'Motivo (queda en el registro)', type: 'textarea', required: true },
+        ], submit: 'Corregir' });
+        if (!r) return; await rpc('admin_set_birth_date', { p_id: u.id, p_birth_date: r.birth, p_reason: r.reason }); toast('Fecha de nacimiento corregida');
       }
       if (a === 'notify') {
         const r = await modal({ title: 'Notificación al usuario', fields: CAMPOS_AVISO, submit: 'Enviar' });

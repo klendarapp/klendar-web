@@ -32,3 +32,10 @@
 /en/explore/*
   ! Permissions-Policy
   Permissions-Policy: geolocation=(self), camera=(), microphone=()
+
+# Clave de IndexNow: los buscadores comprueban que este archivo contiene la
+# clave con la que la base les avisa de páginas nuevas (pública por diseño).
+/fb10641a46f1f09afa85f2dd2958ea4b.txt
+  Content-Type: text/plain; charset=utf-8
+  Cache-Control: public, max-age=3600
+  X-Robots-Tag: noindex

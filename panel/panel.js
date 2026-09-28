@@ -1445,8 +1445,10 @@ async function offerForm(v, id, kindDefault, desde = null) {
     });
     const subir = $('#photos input[type=file]');
     if (subir) subir.onchange = async (e) => {
-      for (const file of caben(e.target.files, images.length, TOPE.publicacion)) {
-        const video = /^video\//.test(file.type);
+      for (const elegido of caben(e.target.files, images.length, TOPE.publicacion)) {
+        const video = /^video\//.test(elegido.type);
+        // Las fotos, reducidas como en la app; los vídeos, tal cual.
+        const file = video ? elegido : await KFotos.reduce(elegido, KFotos.TAM.foto);
         const max = video ? 60 * 1024 * 1024 : 5 * 1024 * 1024;
         if (file.size > max) { toast(video ? 'Ese vídeo pesa más de 60 MB.' : 'Esa foto pesa más de 5 MB.', true); continue; }
         // Como en la app: vídeos de menos de 45 segundos.
@@ -2488,7 +2490,8 @@ PAGES.carta = async (v) => {
     }; });
     const file = $('#menu-file', v);
     if (file) file.onchange = async (e) => {
-      for (const f of caben(e.target.files, fotos.length, TOPE.carta)) {
+      for (const elegida of caben(e.target.files, fotos.length, TOPE.carta)) {
+        const f = await KFotos.reduce(elegida, KFotos.TAM.foto);
         if (f.size > 5 * 1024 * 1024) { toast('Esa foto pesa más de 5 MB.', true); continue; }
         const ext = (f.name.split('.').pop() || 'jpg').toLowerCase();
         const path = `${BIZ.id}/carta-${crypto.randomUUID()}.${ext}`;
@@ -2567,8 +2570,8 @@ PAGES.carta = async (v) => {
       input.type = 'file';
       input.accept = 'image/*';
       input.onchange = async () => {
-        const f = input.files?.[0];
-        if (!f) return;
+        if (!input.files?.[0]) return;
+        const f = await KFotos.reduce(input.files[0], KFotos.TAM.plato);
         if (f.size > 5 * 1024 * 1024) { toast('Esa foto pesa más de 5 MB.', true); return; }
         const ext = (f.name.split('.').pop() || 'jpg').toLowerCase();
         const path = `${BIZ.id}/plato-${crypto.randomUUID()}.${ext}`;
@@ -2717,16 +2720,17 @@ PAGES.novedades = async (v) => {
     const campoQuita = $('#modal [name=quitaFoto]');
     const r = await abierto;
     if (!r) return;
-    const archivo = campoFoto?.files?.[0];
+    const elegida = campoFoto?.files?.[0];
     const texto = (r.body || '').trim();
     // Texto, foto o las dos cosas (como en la app); vacía del todo, no.
-    if (!texto && !archivo && !(post?.image_url && !campoQuita?.checked)) {
+    if (!texto && !elegida && !(post?.image_url && !campoQuita?.checked)) {
       toast('Escribe algo o añade una foto.', true); return;
     }
     try {
       let image = post ? post.image_url : null;
       if (campoQuita?.checked) image = null;
-      if (archivo) {
+      if (elegida) {
+        const archivo = await KFotos.reduce(elegida, KFotos.TAM.foto);
         if (archivo.size > 5 * 1024 * 1024) { toast('Esa foto pesa más de 5 MB.', true); return; }
         const ext = (archivo.name.split('.').pop() || 'jpg').toLowerCase();
         const path = `${BIZ.id}/posts/${crypto.randomUUID()}.${ext}`;
@@ -2970,7 +2974,8 @@ PAGES.ficha = async (v) => {
       input.onchange = async () => {
         const nuevas = [];
         const elegidas = que === 'gallery' ? caben(input.files, galeria.length, TOPE.galeria) : [...input.files].slice(0, 1);
-        for (const f of elegidas) {
+        for (const elegida of elegidas) {
+          const f = await KFotos.reduce(elegida, que === 'logo' ? KFotos.TAM.logo : KFotos.TAM.foto);
           if (f.size > 5 * 1024 * 1024) { toast('Esa foto pesa más de 5 MB.', true); continue; }
           const ext = (f.name.split('.').pop() || 'jpg').toLowerCase();
           const path = `${BIZ.id}/${que}-${crypto.randomUUID()}.${ext}`;

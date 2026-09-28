@@ -13,6 +13,7 @@ Object.assign(ERRORES, {
   too_young: 'Para usar Klendar hay que tener 14 años o más.',
   birth_date_required: 'Pon tu fecha de nacimiento.',
   invalid_birth_date: 'Esa fecha de nacimiento no es válida.',
+  birth_date_locked: 'Tu fecha de nacimiento ya está guardada. Para cambiarla, escríbenos a info@klendar.app.',
   auth_required: 'Tienes que entrar en tu cuenta.',
   too_many_alerts: 'Has llegado al máximo de 10 avisos. Borra alguno para crear otro.',
   message_too_short: 'Cuéntanos un poco más: al menos 5 caracteres.',
@@ -40,23 +41,21 @@ async function categorias() {
 }
 const nombreCat = (c) => (c.names && (c.names[EN ? 'en' : 'es'] || c.names.es)) || c.slug;
 
-/** Reduce la foto en el navegador antes de subirla (menos datos, menos
- * espera) y la sube a la carpeta de la persona. Devuelve la URL pública. */
-async function subeFoto(carpeta, archivo, lado = 1600) {
+/** Reduce la foto en el navegador antes de subirla, como la app (menos
+ * datos, menos espera; `assets/fotos.js`), y la sube a la carpeta de la
+ * persona. Devuelve la URL pública. */
+async function subeFoto(carpeta, archivo, tam = KFotos.TAM.foto) {
   if (!archivo) return null;
   if (archivo.size > 20 * 1024 * 1024) throw new Error(t('La foto pesa demasiado. Prueba con otra más pequeña.'));
-  let bmp;
-  try { bmp = await createImageBitmap(archivo); } catch {
+  const blob = await KFotos.reduce(archivo, tam);
+  // Si no se ha podido reducir y el navegador tampoco la sabría enseñar
+  // (una HEIC en Chrome, por ejemplo), mejor decirlo que subirla rota.
+  if (!/^image\/(jpeg|png|webp|gif|avif)$/.test(blob.type)) {
     throw new Error(t('Esa imagen no se puede abrir. Prueba con una foto JPG o PNG.'));
   }
-  const k = Math.min(1, lado / Math.max(bmp.width, bmp.height));
-  const lienzo = document.createElement('canvas');
-  lienzo.width = Math.round(bmp.width * k);
-  lienzo.height = Math.round(bmp.height * k);
-  lienzo.getContext('2d').drawImage(bmp, 0, 0, lienzo.width, lienzo.height);
-  const blob = await new Promise((ok) => lienzo.toBlob(ok, 'image/jpeg', 0.85));
-  const ruta = `${carpeta}/${YO.id}/${crypto.randomUUID()}.jpg`;
-  const { error } = await sb.storage.from('business-images').upload(ruta, blob, { contentType: 'image/jpeg' });
+  const ext = blob.type === 'image/jpeg' ? 'jpg' : blob.type.split('/')[1];
+  const ruta = `${carpeta}/${YO.id}/${crypto.randomUUID()}.${ext}`;
+  const { error } = await sb.storage.from('business-images').upload(ruta, blob, { contentType: blob.type });
   if (error) throw Object.assign(new Error(amable(error.message)), { clave: error.message });
   return sb.storage.from('business-images').getPublicUrl(ruta).data.publicUrl;
 }
@@ -358,7 +357,7 @@ RUTAS.alerta = async ([id]) => {
 RUTAS.ajustes = async () => {
   if (!exigeSesion('ajustes')) return;
   const [perfil, prefs, cons, cats, negocios, cuenta, metodos] = await Promise.all([
-    tabla(sb.from('profiles').select('display_name, avatar_url, locale').eq('id', YO.id).maybeSingle()),
+    tabla(sb.from('profiles').select('display_name, avatar_url, locale, birth_date').eq('id', YO.id).maybeSingle()),
     llamar('my_notification_preferences', {}),
     llamar('my_consents', {}),
     categorias(),
@@ -381,6 +380,13 @@ RUTAS.ajustes = async () => {
   const hora = (v) => (v ? String(v).slice(0, 5) : '');
   const dia = (iso) => fecha(iso, { day: 'numeric', month: 'long', year: 'numeric' });
   const inicial = (p.display_name || YO.email || '?').trim().charAt(0).toUpperCase();
+  // La fecha de nacimiento, una vez puesta, no se cambia (como en la app):
+  // se ve y se dice cómo pedir que la corrijan. Quien entró con Google o
+  // Apple y no la tiene la pone aquí, una vez.
+  const nacimiento = p.birth_date
+    ? new Intl.DateTimeFormat(LOC, { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
+      .format(new Date(`${p.birth_date}T00:00:00Z`))
+    : null;
 
   pinta(`
     <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
@@ -395,6 +401,11 @@ RUTAS.ajustes = async () => {
         </div>
         <label>${esc(t('Nombre'))} <small>${esc(t('Cómo te ven en las reseñas'))}</small>
           <input name="nombre" maxlength="40" required value="${esc(p.display_name || '')}"></label>
+        ${nacimiento
+    ? `<label>${esc(t('Fecha de nacimiento'))} <small>${esc(t('Para cambiarla, escríbenos a info@klendar.app.'))}</small>
+          <input value="${esc(nacimiento)}" readonly></label>`
+    : `<label>${esc(t('Fecha de nacimiento'))} <small>${esc(t('Solo para mostrarte ofertas adecuadas a tu edad. Revísala bien: una vez guardada, no se puede cambiar.'))}</small>
+          <input name="birth" type="date" max="${new Date().toISOString().slice(0, 10)}"></label>`}
         <label>${esc(t('Idioma'))} <small>${esc(t('De la web, la app y las notificaciones y correos que te enviamos'))}</small>
           <select name="idioma">
             <option value=""${!p.locale ? ' selected' : ''}>${esc(t('El del móvil o el navegador'))}</option>
@@ -503,10 +514,12 @@ RUTAS.ajustes = async () => {
   fp.addEventListener('submit', (ev) => {
     ev.preventDefault();
     const nombre = fp.nombre.value.trim();
-    if (!validaForm(fp, { nombre: VALIDA.requerido })) return;
+    const nac = fp.birth?.value || '';
+    if (!validaForm(fp, { nombre: VALIDA.requerido, ...(nac ? { birth: VALIDA.nacimiento } : {}) })) return;
     $('#err-perfil').textContent = '';
     ocupado($('#g-perfil'), async () => {
-      const avatar = foto ? await subeFoto('avatars', foto, 512) : undefined;
+      if (nac) await llamar('set_my_birth_date', { p_birth_date: nac });
+      const avatar = foto ? await subeFoto('avatars', foto, KFotos.TAM.avatar) : undefined;
       const idioma = fp.idioma.value || null;
       const cambio = { display_name: nombre, locale: idioma };
       if (avatar) cambio.avatar_url = avatar;
@@ -519,6 +532,9 @@ RUTAS.ajustes = async () => {
       if (idioma && idioma !== (EN ? 'en' : 'es')) {
         try { localStorage.setItem('klendar_lang', idioma); } catch { /* sin permisos */ }
         location.reload();
+      } else if (nac) {
+        // Ya puesta: se vuelve a pintar, ahora de solo lectura.
+        RUTAS.ajustes();
       }
     });
   });
@@ -781,7 +797,7 @@ RUTAS.opinar = async ([id]) => {
     if (!nota) { $('#err').textContent = t('Elige de una a cinco estrellas.'); return; }
     $('#err').textContent = '';
     ocupado($('#publicar'), async () => {
-      const foto = f.foto.files[0] ? await subeFoto('reviews', f.foto.files[0]) : (quitar ? '' : null);
+      const foto = f.foto.files[0] ? await subeFoto('reviews', f.foto.files[0], KFotos.TAM.resena) : (quitar ? '' : null);
       await llamar('upsert_review', {
         p_business_id: id, p_rating: nota, p_comment: f.texto.value.trim() || null, p_photo_url: foto,
       });
