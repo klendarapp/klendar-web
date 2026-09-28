@@ -105,9 +105,12 @@ const APP_EN = {
   'Los cartones de siempre, sin cartón': 'The old paper card, without the paper',
 
   // Planes
-  'Todavía no has guardado nada. Cuando algo te guste, dale a «Guardar» y lo tendrás aquí.': 'You have not saved anything yet. When you like something, tap “Save” and it will be here.',
-  'Ya pasaron': 'Already over',
-  'No tienes nada próximo guardado.': 'You have nothing coming up saved.',
+  // Como en la app (plansLive, plansUpcoming, plansPast, plansEmpty…).
+  'En curso': 'Live now',
+  'Próximos': 'Upcoming',
+  'Pasados': 'Past',
+  'Aún no tienes planes': 'No plans yet',
+  'Cuando algo te guste, dale a «Guardar» y lo tendrás aquí. Tus canjes también aparecerán.': 'When you like something, tap “Save” and it will be here. Your redemptions will show up too.',
   'Buscar planes': 'Find plans',
   'Guardado en tus planes': 'Saved to your plans',
   'Quitado de tus planes': 'Removed from your plans',
@@ -197,7 +200,7 @@ const APP_EN = {
   "Eventos": "Events",
   "Solo con descuento": "Only with a discount",
   "hasta": "up to",
-  "Te avisamos cuando se publique algo que encaje. Como mucho tres avisos al día, y puedes apagarlos de uno en uno.": "We write when something matching is posted. Three alerts a day at most, and you can switch them off one by one.",
+  "Te avisamos cuando se publique algo que encaje. Como mucho tres notificaciones al día, y puedes apagar cada aviso por separado.": "We let you know when something matching is posted. Three notifications a day at most, and you can switch each alert off separately.",
   "Nuevo aviso": "New alert",
   "Aviso": "Alert",
   "En pausa": "Paused",
@@ -402,7 +405,7 @@ const APP_EN = {
   "He leído y acepto los": "I have read and accept the",
   "y la": "and the",
   "Quiero recibir novedades y ofertas destacadas por correo (opcional).": "I'd like to receive news and featured offers by email (optional).",
-  "Crear cuenta": "Create account",
+  "Crear cuenta": "Sign up",
   "Tienes que aceptar los términos y la política de privacidad.": "You need to accept the terms and the privacy policy.",
   "Revisa tu correo": "Check your email",
   "Recuperar contraseña": "Reset password",

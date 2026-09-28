@@ -59,7 +59,8 @@ const partesNegocio = (d) => KZ.partes(d, TZ);
 const enDiasNegocio = (dias, h, min = 0) => KZ.enDias(TZ, dias, h, min);
 const fmtDate = (s) => s ? new Date(s).toLocaleString(LOC(), { dateStyle: 'medium', timeStyle: 'short', timeZone: TZ }) : '—';
 const fmtHora = (s) => new Date(s).toLocaleTimeString(LOC(), { hour: '2-digit', minute: '2-digit', timeZone: TZ });
-const fmtMoney = (c) => (c == null ? '—' : (c / 100).toLocaleString(I18N.lang === 'en' ? 'en-IE' : 'es-ES', { style: 'currency', currency: 'EUR' }));
+// El mismo idioma que las fechas y los números: «2,50 €» / «€2.50».
+const fmtMoney = (c, cur = 'EUR') => (c == null ? '—' : (c / 100).toLocaleString(LOC(), { style: 'currency', currency: cur || 'EUR' }));
 const fmtNum = (n) => (n ?? 0).toLocaleString(LOC());
 const LABELS = {
   active: 'activa', draft: 'borrador', expired: 'terminada', sold_out: 'agotada', cancelled: 'cancelada',
@@ -2040,21 +2041,45 @@ PAGES.carta = async (v) => {
     p_id: BIZ.id, p_patch: { menu_url: enlace.trim(), menu_images: fotos },
   });
 
+  // Un solo envío a la vez: el botón se bloquea mientras guarda (un segundo
+  // clic mandaba la carta dos veces) y sigue bloqueado aunque se repinte.
+  // Lo que se toque mientras tanto no se da por guardado.
+  let guardando = false;
+  const estadoCarta = () => JSON.stringify({ enlace: enlace.trim(), fotos, carta });
   const guardar = async () => {
+    if (guardando) return;
+    guardando = true;
+    const enviado = estadoCarta();
+    const boton = $('#save', v);
+    if (boton) { boton.disabled = true; boton.textContent = I18N.t('Guardando…'); }
+    let ok = false;
     try {
       await guardaFicha();
-    } catch (e) { toast(friendly(e.message), true); return; }
-    const r = await rpc('save_business_menu', { p_business: BIZ.id, p_menu: carta })
-      .catch((e) => ({ ok: false, error: e.message }));
-    if (r?.ok) { sucia = false; toast('Carta guardada'); pinta(); }
-    else toast(r?.error ? friendly(r.error) : 'No se ha podido guardar', true);
+      const r = await rpc('save_business_menu', { p_business: BIZ.id, p_menu: JSON.parse(enviado).carta })
+        .catch((e) => ({ ok: false, error: e.message }));
+      ok = !!r?.ok;
+      if (ok) { sucia = estadoCarta() !== enviado; toast('Carta guardada'); }
+      else toast(r?.error ? friendly(r.error) : 'No se ha podido guardar', true);
+    } catch (e) {
+      toast(friendly(e.message), true);
+    } finally {
+      guardando = false;
+      if (v.isConnected) {
+        if (ok) pinta();
+        else {
+          // Sin repintar: lo escrito sigue ahí para volver a probar.
+          const b = $('#save', v);
+          if (b) { b.disabled = !sucia; b.textContent = I18N.t('Guardar la carta'); }
+        }
+      }
+    }
   };
 
   const pinta = () => {
     v.innerHTML = `
       <div class="page-head"><h1>Carta</h1><span class="spacer"></span>
         ${canManage ? `<button class="btn sm" id="add-sec">Añadir sección</button>
-        <button class="btn sm primary" id="save" ${sucia ? '' : 'disabled'}>Guardar la carta</button>` : ''}</div>
+        <button class="btn sm primary" id="save" ${sucia && !guardando ? '' : 'disabled'}>${guardando ? 'Guardando…' : 'Guardar la carta'}</button>` : ''}</div>
       ${helpBox('Tú eliges cómo ponerla', bi('<p>Tres maneras, y puedes usar las que quieras a la vez: <b>escribirla</b> aquí, subir <b>fotos</b> de la carta de papel o poner un <b>enlace</b> a tu web o a un PDF.</p><p>Escribirla es lo que mejor se lee en el móvil, se puede buscar y la lee un lector de pantalla; si la escribes, es lo primero que se ve y las fotos y el enlace se quedan debajo. Si no te apetece, con una foto vas servido.</p><p>Los <b>alérgenos</b> son los catorce que obliga a declarar el Reglamento 1169/2011. Pon solo los que sepas seguro: aquí equivocarse no es una errata.</p>',
         '<p>Three ways, and you can use as many as you like at once: <b>type it</b> here, upload <b>photos</b> of the paper menu or add a <b>link</b> to your website or a PDF.</p><p>Typing it is what reads best on a phone, it can be searched and screen readers can read it; if you type it, it is shown first and the photos and the link go below. If you would rather not, a photo is enough.</p><p>The <b>allergens</b> are the fourteen that Regulation (EU) 1169/2011 requires you to declare. Only mark the ones you are sure about: a mistake here is not just a typo.</p>'))}
 
@@ -2106,7 +2131,7 @@ PAGES.carta = async (v) => {
     $('#save', v).onclick = guardar;
     $('#menu-url', v).oninput = (e) => {
       enlace = e.target.value;
-      if (!sucia) { sucia = true; $('#save', v).disabled = false; }
+      if (!sucia) { sucia = true; $('#save', v).disabled = guardando; }
     };
     $$('[data-foto-del]', v).forEach((b) => { b.onclick = () => {
       fotos.splice(+b.dataset.fotoDel, 1); sucia = true; pinta();
@@ -2680,7 +2705,6 @@ PAGES.informe = async (v, param) => {
     rpc('business_audience', { p_id: BIZ.id, p_days: days }).catch(() => null),
   ]);
   const t = r.totals || {};
-  const eur = (c) => (c == null ? '—' : (c / 100).toFixed(2).replace('.', ',') + ' €');
   const pct = (a, b) => (!b ? '—' : Math.round((a * 100) / b) + ' %');
   const hours = r.by_hour || [];
   const best = hours.slice().sort((a, b) => b.redeemed - a.redeemed)[0];
@@ -2711,7 +2735,7 @@ PAGES.informe = async (v, param) => {
       ${table({
         cols: [
           { h: 'Publicación', r: (o) => `<b class="title">${esc(o.title)}</b><span class="sub">${esc(LABELS[o.kind] || o.kind)} · ${fmtDate(o.starts_at)}</span>` },
-          { h: 'Precio', r: (o) => eur(o.price_cents) },
+          { h: 'Precio', num: true, r: (o) => fmtMoney(o.price_cents, o.currency) },
           { h: 'Vistas', num: true, r: (o) => fmtNum(o.views) },
           { h: 'Códigos', num: true, r: (o) => fmtNum(o.codes) },
           { h: 'Canjes', num: true, r: (o) => fmtNum(o.redeemed) },

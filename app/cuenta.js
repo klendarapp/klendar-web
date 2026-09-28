@@ -78,14 +78,45 @@ function destinoWeb(ruta) {
   return '';
 }
 
+/** Lo último que se ha mandado marcar como leído: el número de la portada
+ * espera a que termine (si no, al volver aún contaba las que acabas de ver). */
+let MARCA_LEIDAS = Promise.resolve();
+/** El token de la sesión, al día (Supabase lo renueva solo cada hora): al
+ * cerrar la página ya no da tiempo a pedirlo. */
+let TOKEN_SESION = null;
+sb.auth.onAuthStateChange((_ev, s) => { TOKEN_SESION = s?.access_token || null; });
+
 async function sinLeer() {
   if (!YO) return 0;
+  await MARCA_LEIDAS;
   const { count } = await sb.from('notifications').select('id', { count: 'exact', head: true }).is('read_at', null);
   return count || 0;
 }
 
+/** Marca como leídas `ids`. Al cerrar la pestaña o irse a otra página de la
+ * web, `fetch` normal se corta a medias: va con `keepalive` y el token que ya
+ * se tenía, directo a la misma función de la base. */
+function marcaLeidas(ids, alIrse = false) {
+  if (!ids.length) return;
+  if (!alIrse) {
+    MARCA_LEIDAS = llamar('mark_notifications_read', { p_ids: ids }).then(() => {}, () => {});
+    return;
+  }
+  const token = TOKEN_SESION;
+  if (!token) return;
+  try {
+    fetch(`${window.KLENDAR_ENV.url}/rest/v1/rpc/mark_notifications_read`, {
+      method: 'POST',
+      keepalive: true,
+      headers: { apikey: window.KLENDAR_ENV.key, Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_ids: ids }),
+    }).catch(() => {}); // sin red se quedan como nuevas; ya se marcarán otra vez
+  } catch { /* navegador sin keepalive: la próxima vez */ }
+}
+
 RUTAS.notificaciones = async () => {
   if (!exigeSesion('notificaciones')) return;
+  await MARCA_LEIDAS; // las que se acaban de dar por vistas ya no salen como nuevas
   const lista = await tabla(sb.from('notifications')
     .select('id, kind, title, body, route, read_at, created_at')
     .order('created_at', { ascending: false }).limit(50));
@@ -107,15 +138,49 @@ RUTAS.notificaciones = async () => {
     }).join('')}</div>`
     : `<p class="empty">${esc(t('Nada por aquí todavía. Añade negocios a favoritos y crea un «Avísame si…» para no perderte nada.'))}</p>`}`);
 
+  // Como en la app: las que no habías leído se marcan como leídas al salir
+  // de aquí, solo las que han llegado a verse en pantalla. Mientras estás
+  // dentro siguen resaltadas, para saber qué es nuevo.
+  const vistas = new Set();
+  let vigia = null;
+  const nuevas = $$('.aviso.nuevo');
+  if (nuevas.length && 'IntersectionObserver' in window) {
+    vigia = new IntersectionObserver((entradas) => {
+      for (const e of entradas) {
+        if (!e.isIntersecting) continue;
+        vistas.add(e.target.dataset.id);
+        vigia.unobserve(e.target);
+      }
+    }, { threshold: 0.5 });
+    nuevas.forEach((a) => vigia.observe(a));
+  } else {
+    nuevas.forEach((a) => vistas.add(a.dataset.id));
+  }
+  let marcadas = false;
+  const alIrse = (cerrando) => {
+    if (marcadas) return;
+    marcadas = true;
+    vigia?.disconnect();
+    removeEventListener('pagehide', alCerrar);
+    marcaLeidas([...vistas], cerrando);
+  };
+  // Cambiar de pantalla dentro de «Tu cuenta», o salir de la página.
+  const alCerrar = () => alIrse(true);
+  addEventListener('pagehide', alCerrar);
+  alSalir(() => alIrse(false));
+
   $('#leidos')?.addEventListener('click', (ev) => ocupado(ev.currentTarget, async () => {
     await llamar('mark_notifications_read', {});
+    vistas.clear(); // ya están todas
     navegar();
   }));
-  // Al abrir uno se marca como leído; si no lleva a ningún sitio, se queda.
+  // Tocar una es haberla leído: se marca ya, sin esperar a salir. Si no lleva
+  // a ningún sitio, se queda aquí.
   $$('.aviso').forEach((a) => a.addEventListener('click', async (ev) => {
     if (a.classList.contains('nuevo')) {
       ev.preventDefault();
       a.classList.remove('nuevo');
+      vistas.delete(a.dataset.id);
       try { await llamar('mark_notifications_read', { p_ids: [a.dataset.id] }); } catch { /* no bloquea */ }
       const href = a.getAttribute('href');
       if (href === '#/notificaciones') return;
@@ -158,7 +223,7 @@ RUTAS.alertas = async () => {
   pinta(`
     <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(t('Avísame si…'))}</h1>
-    <p class="muted">${esc(t('Te avisamos cuando se publique algo que encaje. Como mucho tres avisos al día, y puedes apagarlos de uno en uno.'))}</p>
+    <p class="muted">${esc(t('Te avisamos cuando se publique algo que encaje. Como mucho tres notificaciones al día, y puedes apagar cada aviso por separado.'))}</p>
     <p><a class="pill accent" href="#/alerta/nueva">${ic('add')} ${esc(t('Nuevo aviso'))}</a></p>
     ${(lista || []).length ? `<div class="avisos">${lista.map((a) => `
       <div class="aviso alerta${a.active ? '' : ' pausada'}">
@@ -385,10 +450,10 @@ RUTAS.ajustes = async () => {
         <dd><label class="check"><input type="checkbox" id="marketing"${cons?.marketing_consent ? ' checked' : ''}>
           <span>${esc(cons?.marketing_consent ? `${t('Sí, desde el')} ${dia(cons.marketing_consent_at)}` : t('No recibes novedades ni promociones por correo'))}</span></label></dd>
         <dt>${esc(t('Ubicación'))}</dt>
-        <dd>${cons?.location_consent_at ? `${esc(`${t('Compartida desde el')} ${dia(cons.location_consent_at)}`)}
+        <dd id="dd-ubicacion">${cons?.location_consent_at ? `${esc(`${t('Compartida desde el')} ${dia(cons.location_consent_at)}`)}
           <button class="linkbtn" id="sin-ubicacion">${esc(t('Dejar de compartir'))}</button>` : esc(t('No guardamos tu posición'))}</dd>
         <dt>${esc(t('Notificaciones en el móvil'))}</dt>
-        <dd>${cons?.push_devices ? `${esc(`${cons.push_devices} ${cons.push_devices === 1 ? t('dispositivo') : t('dispositivos')}`)}
+        <dd id="dd-push">${cons?.push_devices ? `${esc(`${cons.push_devices} ${cons.push_devices === 1 ? t('dispositivo') : t('dispositivos')}`)}
           <button class="linkbtn" id="sin-push">${esc(t('Desactivarlas'))}</button>` : esc(t('Sin dispositivos registrados'))}</dd>
       </dl>
       <p><button class="pill" id="descargar">${ic('download')} ${esc(t('Descargar mis datos'))}</button></p>
@@ -480,7 +545,19 @@ RUTAS.ajustes = async () => {
       texto: t('Borramos tu última posición y desactivamos las notificaciones de «Cerca de ti».'),
       aceptar: t('Dejar de compartir'),
     }))) return;
-    ocupado(boton, async () => { await llamar('revoke_location_consent', {}); toast(t('Ya no guardamos tu posición')); navegar(); });
+    // Solo cambia lo suyo: repintar Ajustes entero borraba lo que se
+    // estuviera escribiendo en el perfil o en las notificaciones.
+    ocupado(boton, async () => {
+      await llamar('revoke_location_consent', {});
+      toast(t('Ya no guardamos tu posición'));
+      const dd = $('#dd-ubicacion');
+      if (dd) dd.textContent = t('No guardamos tu posición');
+      // La base apaga también «Cerca de ti»: el formulario lo refleja.
+      if (fa.elements.cerca.checked) {
+        fa.elements.cerca.checked = false;
+        $('#cerca-mas').hidden = true;
+      }
+    });
   });
   $('#sin-push')?.addEventListener('click', async (ev) => {
     const boton = ev.currentTarget;
@@ -489,7 +566,12 @@ RUTAS.ajustes = async () => {
       texto: t('Dejarán de llegarte notificaciones a todos tus dispositivos. Podrás volver a activarlas desde la app.'),
       aceptar: t('Desactivar push'),
     }))) return;
-    ocupado(boton, async () => { await llamar('revoke_push', {}); toast(t('Notificaciones del móvil desactivadas')); navegar(); });
+    ocupado(boton, async () => {
+      await llamar('revoke_push', {});
+      toast(t('Notificaciones del móvil desactivadas'));
+      const dd = $('#dd-push');
+      if (dd) dd.textContent = t('Sin dispositivos registrados');
+    });
   });
   $('#descargar').addEventListener('click', (ev) => ocupado(ev.currentTarget, async () => {
     const datos = await llamar('export_my_data', {});

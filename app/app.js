@@ -881,24 +881,56 @@ function tarjeta(o, tz) {
 }
 
 // ── Tus planes ────────────────────────────────────────────────────────────
+// Como «Planes» en la app (my_plans_screen): lo guardado y lo canjeado en
+// tres bloques. «En curso»: los códigos vivos (pedidos y sin caducar).
+// «Próximos»: lo guardado que aún no ha pasado. «Pasados»: los canjes hechos
+// y lo guardado que ya pasó, de lo más reciente a lo más antiguo.
+/** Cuándo «pasa» algo guardado: un evento, a su hora; una oferta, al acabar
+ * el canje. Sin fecha, se da por próximo (como la app). */
+const momentoPlan = (o) => {
+  const iso = o.kind === 'future_event' ? o.event_at : o.redeem_end_at;
+  return iso ? new Date(iso).getTime() : null;
+};
 RUTAS.planes = async () => {
   if (!exigeSesion('planes')) return;
-  const lista = await llamar('my_saved_offers', {});
-  const zona = await zonasDe(lista);
+  // Las mismas dos funciones que la app. Si fallan los canjes, se enseña lo
+  // guardado igualmente (la app hace lo mismo).
+  const [guardados, canjes] = await Promise.all([
+    llamar('my_saved_offers', {}),
+    llamar('my_redemptions', {}).catch(() => []),
+  ]);
+  const saved = guardados || [];
+  const reds = canjes || [];
+  const zona = await zonasDe([...saved, ...reds]);
   const ahora = Date.now();
-  const fin = (o) => new Date(o.event_at || o.redeem_end_at || o.redeem_start_at || 0).getTime();
-  const proximos = (lista || []).filter((o) => fin(o) >= ahora);
-  const pasados = (lista || []).filter((o) => fin(o) < ahora);
+  const pasado = (o) => { const m = momentoPlan(o); return m != null && m < ahora; };
+  const enCurso = reds.filter((r) => r.status === 'pending' && new Date(r.expires_at).getTime() > ahora);
+  const proximos = saved.filter((o) => !pasado(o));
+  const pasados = [
+    ...reds.filter((r) => r.status === 'validated')
+      .map((r) => ({ cuando: new Date(r.validated_at || r.created_at).getTime(), html: filaCanje(r, zona(r)) })),
+    ...saved.filter(pasado).map((o) => ({ cuando: momentoPlan(o), html: tarjeta(o, zona(o)) })),
+  ].sort((a, b) => b.cuando - a.cuando);
+
+  const explorar = `<p><a class="pill" href="${EN ? '/en/explore/' : '/explorar/'}">${esc(t('Buscar planes'))}</a></p>`;
+  if (!enCurso.length && !proximos.length && !pasados.length) {
+    pinta(`
+      <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
+      <h1>${esc(t('Tus planes'))}</h1>
+      <div class="empty"><p><b>${esc(t('Aún no tienes planes'))}</b></p>
+        <p>${esc(t('Cuando algo te guste, dale a «Guardar» y lo tendrás aquí. Tus canjes también aparecerán.'))}</p></div>
+      ${explorar}`);
+    return;
+  }
+  const bloque = (titulo, filas, clase = '') => (filas.length
+    ? `<h2 class="seccion-t">${esc(titulo)}</h2><div class="olist${clase}">${filas.join('')}</div>` : '');
   pinta(`
     <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(t('Tus planes'))}</h1>
-    ${proximos.length
-    ? `<div class="olist">${proximos.map((o) => tarjeta(o, zona(o))).join('')}</div>`
-    : `<p class="empty">${esc(pasados.length
-      ? t('No tienes nada próximo guardado.')
-      : t('Todavía no has guardado nada. Cuando algo te guste, dale a «Guardar» y lo tendrás aquí.'))}</p>`}
-    ${pasados.length ? `<h2>${esc(t('Ya pasaron'))}</h2><div class="olist pasado">${pasados.map((o) => tarjeta(o, zona(o))).join('')}</div>` : ''}
-    <p><a class="pill" href="${EN ? '/en/explore/' : '/explorar/'}">${esc(t('Buscar planes'))}</a></p>`);
+    ${bloque(t('En curso'), enCurso.map((r) => filaCanje(r, zona(r))))}
+    ${bloque(t('Próximos'), proximos.map((o) => tarjeta(o, zona(o))))}
+    ${bloque(t('Pasados'), pasados.map((p) => p.html), ' pasado')}
+    ${explorar}`);
 };
 
 /** Guardar, seguir y la lista de espera cambian algo y te lo confirman aquí
@@ -986,24 +1018,32 @@ RUTAS.seguir = async ([id], params) => {
 };
 
 // ── Tus códigos ───────────────────────────────────────────────────────────
+/** Un código o un canje en una lista (Tus códigos y Tus planes), como el
+ * RedemptionTile de la app: uno vivo vuelve a su QR, uno usado enseña el
+ * recibo y el resto, la publicación. `tz`: la zona del negocio. */
+function filaCanje(r, tz) {
+  const vivo = r.status === 'pending' && new Date(r.expires_at).getTime() > Date.now();
+  const estado = r.status === 'validated' ? t('Canjeado')
+    : vivo ? t('Código activo') : r.status === 'cancelled' ? t('Anulado') : t('Caducado');
+  const destino = vivo ? `#/codigo/${esc(r.offer_id)}` : r.status === 'validated' ? `#/recibo/${esc(r.id)}` : `${pre}/o/${esc(r.offer_id)}`;
+  return `
+    <a class="ocard" href="${destino}">
+      ${r.business_logo ? `<img src="${esc(r.business_logo)}" alt="" loading="lazy">` : '<span class="ph">✦</span>'}
+      <span class="ocard-body"><b>${esc(r.offer_title)}</b>
+        <span class="muted">${esc(r.business_name)} · ${esc(fecha(r.validated_at || (r.status === 'pending' && r.event_at) || r.created_at, undefined, tz))}</span>
+        <span class="ocard-meta"><span class="tag${vivo ? '' : ' off'}">${esc(estado)}</span>
+          ${r.status === 'validated' ? `<span class="muted">${esc(t('Ver recibo'))} →</span>` : ''}</span>
+      </span></a>`;
+}
+
 RUTAS.codigos = async () => {
   if (!exigeSesion('codigos')) return;
   const lista = await llamar('my_redemptions', {});
   const zona = await zonasDe(lista);
-  const vivo = (r) => r.status === 'pending' && new Date(r.expires_at).getTime() > Date.now();
-  const estado = (r) => (r.status === 'validated' ? t('Canjeado')
-    : vivo(r) ? t('Código activo') : r.status === 'cancelled' ? t('Anulado') : t('Caducado'));
   pinta(`
     <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(t('Tus códigos'))}</h1>
-    ${(lista || []).length ? `<div class="olist">${lista.map((r) => `
-      <a class="ocard" href="${vivo(r) ? `#/codigo/${esc(r.offer_id)}` : r.status === 'validated' ? `#/recibo/${esc(r.id)}` : `${pre}/o/${esc(r.offer_id)}`}">
-        ${r.business_logo ? `<img src="${esc(r.business_logo)}" alt="" loading="lazy">` : '<span class="ph">✦</span>'}
-        <span class="ocard-body"><b>${esc(r.offer_title)}</b>
-          <span class="muted">${esc(r.business_name)} · ${esc(fecha(r.validated_at || (r.status === 'pending' && r.event_at) || r.created_at, undefined, zona(r)))}</span>
-          <span class="ocard-meta"><span class="tag${vivo(r) ? '' : ' off'}">${esc(estado(r))}</span>
-            ${r.status === 'validated' ? `<span class="muted">${esc(t('Ver recibo'))} →</span>` : ''}</span>
-        </span></a>`).join('')}</div>`
+    ${(lista || []).length ? `<div class="olist">${lista.map((r) => filaCanje(r, zona(r))).join('')}</div>`
     : `<p class="empty">${esc(t('Todavía no tienes códigos. Cuando consigas el código de una oferta o reserves plaza en un evento, lo tendrás aquí.'))}</p>`}`);
 };
 

@@ -158,7 +158,6 @@ const I18N = makeI18N({
   'Tu ficha': 'Your page',
   'Ver cómo se ve ↗': 'See how it looks ↗',
   'Nombre': 'Name',
-  'Categoría': 'Category',
   'Dirección': 'Address',
   'Ciudad': 'City',
   'Teléfono': 'Phone',
@@ -191,15 +190,13 @@ const I18N = makeI18N({
   'Un enlace o un PDF': 'A link or a PDF',
   'Si tu carta ya está en tu web o en un PDF, con pegar la dirección vale.':
     'If your menu is already on your website or in a PDF, pasting the address is enough.',
-  'Dirección': 'Address',
   'Fotos de la carta': 'Photos of the menu',
   'La de la pizarra o la de papel, tal cual. Se ven en tu ficha, una debajo de otra.':
     'The blackboard or the paper one, as it is. They show on your page, one under the other.',
   'Escrita': 'Written',
-  'Quitar': 'Remove',
-  'Esa foto pesa más de 5 MB.': 'That photo is over 5 MB.',
   'Añadir sección': 'Add a section',
   'Guardar la carta': 'Save the menu',
+  'Guardando…': 'Saving…',
   'Nueva sección': 'New section',
   'Renombrar sección': 'Rename section',
   'Borrar sección': 'Delete section',
@@ -226,7 +223,6 @@ const I18N = makeI18N({
   'Klendar en tu web': 'Klendar on your website',
   'Pega esta línea donde quieras que salga lo que tienes publicado. Se actualiza solo: no tienes que tocar nada más.':
     'Paste this line wherever you want what you publish to show up. It updates itself: nothing else to maintain.',
-  'Copiar': 'Copy',
   'Copiado': 'Copied',
   'Ver cómo queda': 'See how it looks',
   'Tarjeta de sellos': 'Stamp card',
@@ -236,7 +232,6 @@ const I18N = makeI18N({
   'Premio': 'Reward',
   '(lo que se lleva; sé concreto)': '(what they get; be specific)',
   'Encendida: se dan sellos nuevos': 'On: new stamps are given',
-  'Cómo va': 'How it is going',
   'Con sellos ahora': 'With stamps right now',
   'Sellos dados': 'Stamps given',
   'Premios entregados': 'Rewards handed over',
@@ -257,11 +252,11 @@ const I18N = makeI18N({
     'Todavía no has validado ningún código.': 'You have not validated any code yet.',
     'Ese código no existe.': 'That code does not exist.',
     'Ese código ya se usó.': 'That code was already used.',
-    'Ese código no es de tu negocio.': 'That code is not from your business.',
+    'Ese código no es de tu negocio.': "That code doesn't belong to your business.",
     'El código ha caducado: pide que generen otro.':
       'The code has expired: ask them to generate another one.',
     'Demasiados intentos seguidos. Espera un momento.':
-      'Too many tries in a row. Wait a moment.',
+      'Too many attempts in a row. Wait a moment.',
 
     // ── Informe ───────────────────────────────────────────────────────────
     'El periodo en cuatro cifras': 'The period in four numbers',
@@ -388,7 +383,6 @@ const I18N = makeI18N({
     "Ubicación marcada. Si no es exacta, arrastra la chincheta.": "Location marked. If it is not exact, drag the pin.",
     "NIF / CIF": "Tax ID (NIF / CIF)",
     "(para la verificación; no se publica)": "(for verification; not published)",
-    "Solo para mayores de 18": "Over-18s only",
     "Si lo que publicas menciona alcohol, se marca +18 solo y se revisa antes de salir. La publicidad de tabaco, vapeo o apuestas no está permitida.": "If what you post mentions alcohol, it is marked 18+ automatically and reviewed before going out. Tobacco, vaping or gambling advertising is not allowed.",
     "Acepto las": "I accept the",
     "condiciones para negocios": "business terms",
@@ -657,8 +651,6 @@ const I18N = makeI18N({
     "Las fechas y horas son las de Canarias, donde está tu local.": "Dates and times are Canary Islands time, where your venue is.",
     "Las fechas y horas son las de la península (hora de Madrid), donde está tu local.": "Dates and times are mainland Spain time (Madrid), where your venue is.",
     "Hasta 6 fotos o vídeos. La primera es la portada; muévelas con las flechas. Si no pones ninguna, se usa la foto del local. Los vídeos se ven al abrir la publicación (en el feed van las fotos).": "Up to 6 photos or videos. The first one is the cover; move them with the arrows. If you don't add any, the venue's photo is used. Videos play when the publication is opened (the feed shows the photos).",
-    "Ese código no es de tu negocio.": "That code doesn't belong to your business.",
-    "Demasiados intentos seguidos. Espera un momento.": "Too many attempts in a row. Wait a moment.",
     "Escribe al menos 2 caracteres.": "Type at least 2 characters.",
     "Hay gente con reserva": "People have booked",
     "No se puede borrar mientras alguien tenga reserva: perdería su código sin enterarse. Si la cancelas, anulamos las reservas y avisamos a cada persona.": "It can't be deleted while someone has a booking: they'd lose their code without knowing. If you cancel it, we void the bookings and tell each person.",

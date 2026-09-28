@@ -40,8 +40,9 @@ const aInputMadrid = (d) => KZ.aInput(d, TZ);
 const deInputMadrid = (v) => KZ.deInput(v, TZ);
 /** «Europe/Madrid» → cómo se lee en la ficha del admin. */
 const zonaTxt = (tz) => `<code>${esc(tz)}</code>${tz === KZ.CANARIAS ? ` <span class="muted small">${esc(I18N.t('una hora menos que en la península'))}</span>` : ''}`;
-const fmtMoney = (c, cur = 'EUR') => (c == null ? '—' : (c / 100).toLocaleString('es-ES', { style: 'currency', currency: cur }));
-const fmtNum = (n) => (n ?? 0).toLocaleString('es-ES');
+// En el idioma del panel, como las fechas: «19,90 €» / «€19.90».
+const fmtMoney = (c, cur = 'EUR') => (c == null ? '—' : (c / 100).toLocaleString(LOC(), { style: 'currency', currency: cur || 'EUR' }));
+const fmtNum = (n) => (n ?? 0).toLocaleString(LOC());
 const ago = (s) => {
   if (!s) return '—';
   const d = (Date.now() - new Date(s)) / 1000;
@@ -551,7 +552,7 @@ async function businessDetail(v, id) {
           <div class="actions" style="margin-top:10px"><button class="btn sm" data-a="addmember">Añadir persona…</button></div>
         </div>
         <div class="card"><h2>Suscripción</h2>
-          ${cur ? `<dl class="kv"><dt>Plan</dt><dd>${tag(cur.plan, 'dim')} ${tag(cur.status)} · ${fmtMoney(cur.price_cents)}/${I18N.lang === 'en' ? 'month' : 'mes'}</dd><dt>Periodo</dt><dd>${fmtDay(cur.period_start)} → ${cur.period_end ? fmtDay(cur.period_end) : (I18N.lang === 'en' ? 'no end' : 'sin fin')}</dd><dt>Forma de pago</dt><dd>${esc(cur.payment_method || '—')}</dd></dl>` : '<p class="muted">Sin suscripción vigente (plan Gratis).</p>'}
+          ${cur ? `<dl class="kv"><dt>Plan</dt><dd>${tag(cur.plan, 'dim')} ${tag(cur.status)} · ${fmtMoney(cur.price_cents)}/${I18N.lang === 'en' ? 'month' : 'mes'}</dd><dt>Periodo</dt><dd>${fmtDay(cur.period_start)} → ${cur.period_end ? fmtDay(cur.period_end) : (I18N.lang === 'en' ? 'no end' : 'sin fin')}</dd><dt>Forma de pago</dt><dd>${esc(cur.payment_method || '—')}</dd></dl>` : '<p class="muted">Sin suscripción vigente: cuenta como «Gratis de lanzamiento».</p>'}
           ${d.subscriptions.length > 1 ? `<details style="margin-top:8px"><summary class="muted">${I18N.lang === 'en' ? 'History' : 'Histórico'} (${d.subscriptions.length})</summary>${table({ cols: [{ h: 'Plan', r: (s) => tag(s.plan, 'dim') }, { h: 'Estado', r: (s) => tag(s.status) }, { h: 'Periodo', r: (s) => `${fmtDay(s.period_start)} → ${s.period_end ? fmtDay(s.period_end) : '—'}` }, { h: 'Pago', r: (s) => esc(s.payment_method || '') }], rows: d.subscriptions })}</details>` : ''}
           <h3 style="margin-top:12px">Pagos registrados</h3>
           ${table({ cols: [{ h: 'Fecha', r: (p) => fmtDay(p.paid_at) }, { h: 'Importe', num: true, r: (p) => fmtMoney(p.amount_cents, p.currency) }, { h: 'Método', r: (p) => esc(p.method) }, { h: 'Periodo', r: (p) => `${fmtDay(p.period_start)} → ${fmtDay(p.period_end)}` }, { h: 'Notas', r: (p) => `${esc(p.notes || '')}<span class="sub">${esc(p.recorded_by || '')}</span>` }], rows: d.payments, empty: 'Ningún pago registrado.' })}
@@ -576,11 +577,13 @@ async function businessDetail(v, id) {
       <div class="card"><h2>Registro de cambios</h2>${auditList(d.audit)}</div>
     </div>`;
   $$('#view tr.row').forEach((tr) => { tr.onclick = () => go(`#/publicaciones/${d.offers[tr.dataset.i].id}`); });
-  $$('[data-role]').forEach((sel) => { let antes = sel.value; sel.onchange = async () => { try { await rpc('admin_set_member_role', { p_business: id, p_user: sel.dataset.role, p_role: sel.value }); antes = sel.value; toast('Rol actualizado'); } catch (e) { sel.value = antes; toast(e.message, true); } }; });
-  $$('[data-rm]').forEach((btn) => { btn.onclick = async () => { if (!await confirmDlg('Quitar del equipo', 'Esta persona dejará de poder gestionar el negocio ni validar códigos.', { danger: true, submit: 'Quitar' })) return; try { await rpc('admin_set_member_role', { p_business: id, p_user: btn.dataset.rm, p_role: null }); toast('Quitado'); route(); } catch (e) { toast(e.message, true); } }; });
-  $$('[data-delreview]').forEach((btn) => { btn.onclick = () => deleteReview(btn.dataset.delreview); });
-  $$('[data-delpost]').forEach((btn) => { btn.onclick = () => deletePost(btn.dataset.delpost); });
-  $$('[data-a]').forEach((btn) => { btn.onclick = () => businessAction(btn.dataset.a, b, d); });
+  // Cada acción bloquea su botón (o su desplegable) mientras trabaja: un
+  // doble clic no la manda dos veces.
+  $$('[data-role]').forEach((sel) => { let antes = sel.value; sel.onchange = () => esperando(sel, async () => { try { await rpc('admin_set_member_role', { p_business: id, p_user: sel.dataset.role, p_role: sel.value }); antes = sel.value; toast('Rol actualizado'); } catch (e) { sel.value = antes; toast(e.message, true); } }); });
+  $$('[data-rm]').forEach((btn) => { btn.onclick = () => esperando(btn, async () => { if (!await confirmDlg('Quitar del equipo', 'Esta persona dejará de poder gestionar el negocio ni validar códigos.', { danger: true, submit: 'Quitar' })) return; try { await rpc('admin_set_member_role', { p_business: id, p_user: btn.dataset.rm, p_role: null }); toast('Quitado'); route(); } catch (e) { toast(e.message, true); } }); });
+  $$('[data-delreview]').forEach((btn) => { btn.onclick = () => esperando(btn, () => deleteReview(btn.dataset.delreview)); });
+  $$('[data-delpost]').forEach((btn) => { btn.onclick = () => esperando(btn, () => deletePost(btn.dataset.delpost)); });
+  $$('[data-a]').forEach((btn) => { btn.onclick = () => esperando(btn, () => businessAction(btn.dataset.a, b, d)); });
 }
 
 async function businessAction(a, b, d) {
@@ -635,7 +638,7 @@ async function businessAction(a, b, d) {
       const today = diaMadridISO(); const [ay, am, ad] = today.split('-').map(Number);
       const next = new Date(Date.UTC(ay, am, Math.min(ad, new Date(Date.UTC(ay, am + 1, 0)).getUTCDate())));
       const r = await modal({ title: 'Registrar pago', intro: 'Anota un cobro recibido (transferencia, efectivo…). La suscripción pasa a activa y su fin se amplía hasta el fin del periodo pagado.', fields: [
-        { name: 'amount', label: 'Importe (€)', type: 'number', step: '0.01', required: true, placeholder: '19,00' },
+        { name: 'amount', label: 'Importe (€)', type: 'number', step: '0.01', required: true, placeholder: '19,90' },
         { name: 'method', label: 'Forma de pago', type: 'select', value: 'transfer', options: [['transfer', 'Transferencia'], ['cash', 'Efectivo'], ['card', 'Tarjeta']] },
         { name: 'start', label: 'Inicio del periodo pagado', type: 'date', value: today, required: true }, { name: 'end', label: 'Fin del periodo pagado', type: 'date', value: next.toISOString().slice(0, 10), required: true },
         { name: 'notes', label: 'Notas (nº de factura, referencia…)' },
@@ -709,7 +712,7 @@ PAGES.publicaciones = async (v, id) => {
     }) + pg.html;
     pg.bind($('#list'));
     $$('#list tr.row').forEach((tr) => { tr.onclick = (e) => { if (e.target.closest('button,a')) return; go(`#/publicaciones/${rows[tr.dataset.i].id}`); }; });
-    $$('#list [data-mod]').forEach((btn) => { btn.onclick = async () => { if (await moderateOffer(btn.dataset.mod, btn.dataset.val)) load(); }; });
+    $$('#list [data-mod]').forEach((btn) => { btn.onclick = () => esperando(btn, async () => { if (await moderateOffer(btn.dataset.mod, btn.dataset.val)) await load(); }); });
   };
   $('#q').oninput = debounce(() => { s.q = $('#q').value.trim(); s.offset = 0; load(); });
   ['moderation', 'status', 'kind'].forEach((k) => { $('#' + k).onchange = () => { s[k] = $('#' + k).value; s.offset = 0; load(); }; });
@@ -789,7 +792,7 @@ async function offerDetail(v, id) {
     <div class="card"><h2>${I18N.lang === 'en' ? `Last ${d.redemptions.length} redemptions` : `Canjes (${d.redemptions.length} últimos)`}</h2>
       ${table({ cols: [{ h: 'Usuario', r: (r) => esc(r.user_email || '—') }, { h: 'Código', r: (r) => `<code>${esc(r.code)}</code>` }, { h: 'Estado', r: (r) => tag(r.status) }, { h: 'Generado', r: (r) => fmtDate(r.created_at, tz) }, { h: 'Validado', r: (r) => `${fmtDate(r.validated_at, tz)}<span class="sub">${esc(r.validated_by_email || '')}</span>` }], rows: d.redemptions, empty: 'Nadie ha canjeado todavía.' })}
     </div>`;
-  $$('[data-a]').forEach((btn) => { btn.onclick = async () => {
+  $$('[data-a]').forEach((btn) => { btn.onclick = () => esperando(btn, async () => {
     try {
       const a = btn.dataset.a;
       if (a === 'approve') { if (await moderateOffer(o.id, 'approved')) route(); return; }
@@ -807,7 +810,7 @@ async function offerDetail(v, id) {
       }
       route();
     } catch (e) { toast(e.message, true); }
-  }; });
+  }); });
 }
 
 // ── Canjes ─────────────────────────────────────────────────────────────────
@@ -928,8 +931,8 @@ async function userDetail(v, id) {
       <div class="card"><h2>Últimas notificaciones</h2>${d.notifications.length ? `<ul style="margin:0;padding-left:18px;font-size:14px">${d.notifications.map((n) => `<li>${esc(n.title)} <span class="muted small">· ${esc(n.kind)} · ${ago(n.created_at)}${n.read_at ? (en ? ' · read' : ' · leída') : ''}</span></li>`).join('')}</ul>` : '<p class="muted">Ninguna.</p>'}</div>
       <div class="card"><h2>Registro de cambios</h2>${auditList(d.audit)}</div>
     </div>`;
-  $$('[data-delreview]').forEach((btn) => { btn.onclick = () => deleteReview(btn.dataset.delreview); });
-  $$('[data-a]').forEach((btn) => { btn.onclick = async () => {
+  $$('[data-delreview]').forEach((btn) => { btn.onclick = () => esperando(btn, () => deleteReview(btn.dataset.delreview)); });
+  $$('[data-a]').forEach((btn) => { btn.onclick = () => esperando(btn, async () => {
     try {
       const a = btn.dataset.a;
       if (a === 'ban') {
@@ -961,7 +964,7 @@ async function userDetail(v, id) {
       }
       route();
     } catch (e) { toast(e.message, true); }
-  }; });
+  }); });
 }
 
 // ── Reseñas y novedades ─────────────────────────────────────────────────────────
@@ -990,13 +993,13 @@ PAGES.resenas = async (v) => {
       const pg = pager(sR, r.total, load);
       $('#list').innerHTML = (r.rows.length ? r.rows.map((x) => `<div class="item"><div class="ph">${ms('chat_bubble')}</div><div><h3><span class="stars">${'★'.repeat(x.rating)}${'☆'.repeat(5 - x.rating)}</span> ${I18N.lang === 'en' ? 'at' : 'en'} <a class="link" href="#/negocios/${x.business_id}">${esc(x.business)}</a> ${x.open_reports ? `<span class="tag bad">${ms('flag')} ${x.open_reports}</span>` : ''}</h3><div class="meta">${esc(x.user_email || (I18N.lang === 'en' ? 'anonymous' : 'anónimo'))} · ${fmtDate(x.created_at)}</div><p>${esc(x.comment || '(sin texto)')}</p><div class="actions"><button class="btn sm bad" data-del="${x.id}">Borrar…</button></div></div></div>`).join('') : '<div class="tbl-wrap"><div class="empty">Sin reseñas.</div></div>') + pg.html;
       pg.bind($('#list'));
-      $$('#list [data-del]').forEach((b) => { b.onclick = () => deleteReview(b.dataset.del); });
+      $$('#list [data-del]').forEach((b) => { b.onclick = () => esperando(b, () => deleteReview(b.dataset.del)); });
     } else {
       const r = await rpc('admin_posts', { p_query: sP.q || null, p_limit: sP.limit, p_offset: sP.offset });
       const pg = pager(sP, r.total, load);
       $('#list').innerHTML = (r.rows.length ? r.rows.map((x) => `<div class="item">${x.image_url ? `<img src="${esc(x.image_url)}" alt="">` : `<div class="ph">${ms('article')}</div>`}<div><h3><a class="link" href="#/negocios/${x.business_id}">${esc(x.business)}</a> ${x.open_reports ? `<span class="tag bad">${ms('flag')} ${x.open_reports}</span>` : ''}</h3><div class="meta">${fmtDate(x.created_at)}</div><p>${esc(x.body || '')}</p><div class="actions"><button class="btn sm bad" data-del="${x.id}">Borrar…</button></div></div></div>`).join('') : '<div class="tbl-wrap"><div class="empty">Sin novedades.</div></div>') + pg.html;
       pg.bind($('#list'));
-      $$('#list [data-del]').forEach((b) => { b.onclick = () => deletePost(b.dataset.del); });
+      $$('#list [data-del]').forEach((b) => { b.onclick = () => esperando(b, () => deletePost(b.dataset.del)); });
     }
   };
   $$('.tabs button').forEach((b) => { b.onclick = () => { tab = b.dataset.t; history.replaceState(null, '', `#/resenas?tab=${tab}`); $$('.tabs button').forEach((x) => x.classList.toggle('on', x === b)); $('#rating').hidden = tab === 'posts'; load(); }; });
@@ -1043,14 +1046,14 @@ PAGES.denuncias = async (v) => {
         </div>` : ''}
       </div></div>`).join('') : '<div class="tbl-wrap"><div class="empty">Sin denuncias con esos filtros.</div></div>') + pg.html;
     pg.bind($('#list'));
-    $$('#list [data-res]').forEach((b) => { b.onclick = async () => {
+    $$('#list [data-res]').forEach((b) => { b.onclick = () => esperando(b, async () => {
       let reason = null;
       if (b.dataset.action === 'hide') {
         const r = await modal({ title: 'Retirar contenido', intro: 'Publicaciones: se retiran; negocios: se desactivan; reseñas y novedades: se borran. Se cierran también las demás denuncias sobre el mismo contenido.', fields: [{ name: 'reason', label: 'Motivo que verá quien lo publicó (obligatorio por el DSA)', type: 'textarea', required: true }], submit: 'Retirar y cerrar', danger: true });
         if (!r) return; reason = r.reason;
       }
-      try { await rpc('admin_resolve_report', { p_id: b.dataset.res, p_status: b.dataset.status, p_action: b.dataset.action, p_reason: reason }); toast('Denuncia actualizada'); refreshBadges(); load(); } catch (e) { toast(e.message, true); }
-    }; });
+      try { await rpc('admin_resolve_report', { p_id: b.dataset.res, p_status: b.dataset.status, p_action: b.dataset.action, p_reason: reason }); toast('Denuncia actualizada'); refreshBadges(); await load(); } catch (e) { toast(e.message, true); }
+    }); });
   };
   ['status', 'type'].forEach((k) => { $('#' + k).onchange = () => { s[k] = $('#' + k).value; s.offset = 0; load(); }; });
   await load();
@@ -1099,28 +1102,28 @@ PAGES.sugerencias = async (v) => {
         </div>
       </div></div>`).join('') : '<div class="tbl-wrap"><div class="empty">Nada por aquí.</div></div>') + pg.html;
     pg.bind($('#list'));
-    $$('#list [data-set]').forEach((b) => { b.onclick = async () => {
-      try { await rpc('admin_set_feedback', { p_id: b.dataset.set, p_status: b.dataset.status }); toast('Actualizada'); refreshBadges(); load(); } catch (e) { toast(e.message, true); }
-    }; });
-    $$('#list [data-reply]').forEach((b) => { b.onclick = async () => {
+    $$('#list [data-set]').forEach((b) => { b.onclick = () => esperando(b, async () => {
+      try { await rpc('admin_set_feedback', { p_id: b.dataset.set, p_status: b.dataset.status }); toast('Actualizada'); refreshBadges(); await load(); } catch (e) { toast(e.message, true); }
+    }); });
+    $$('#list [data-reply]').forEach((b) => { b.onclick = () => esperando(b, async () => {
       const r2 = await modal({ title: 'Responder', intro: 'Le llega como notificación en la app (y push si lo tiene activado). Sé concreto y breve.', fields: [
         { name: 'reply', label: 'Tu respuesta', type: 'textarea', required: true },
         { name: 'reply_en', label: 'En inglés (opcional)', type: 'textarea', help: 'Lo recibe quien tiene la app en inglés. Si lo dejas vacío, le llega el español.' },
         { name: 'status', label: 'Y marcarla como', type: 'select', value: 'reviewing', options: [['reviewing', 'La estamos viendo'], ['planned', 'La haremos'], ['done', 'Hecho'], ['declined', 'De momento no'], ['new', 'Dejar sin leer']] },
       ], submit: 'Responder' });
       if (!r2) return;
-      try { await rpc('admin_set_feedback', { p_id: b.dataset.reply, p_status: r2.status, p_reply: r2.reply, p_reply_en: r2.reply_en || null }); toast('Respuesta enviada'); refreshBadges(); load(); } catch (e) { toast(e.message, true); }
-    }; });
-    $$('#list [data-note]').forEach((b) => { b.onclick = async () => {
+      try { await rpc('admin_set_feedback', { p_id: b.dataset.reply, p_status: r2.status, p_reply: r2.reply, p_reply_en: r2.reply_en || null }); toast('Respuesta enviada'); refreshBadges(); await load(); } catch (e) { toast(e.message, true); }
+    }); });
+    $$('#list [data-note]').forEach((b) => { b.onclick = () => esperando(b, async () => {
       const f = rows.find((x) => x.id === b.dataset.note);
       const r2 = await modal({ title: 'Nota interna', intro: 'Solo la veis los administradores.', fields: [{ name: 'note', label: 'Nota', type: 'textarea', value: f?.admin_note || '' }] });
       if (!r2) return;
-      try { await rpc('admin_set_feedback', { p_id: b.dataset.note, p_note: r2.note }); toast('Guardada'); load(); } catch (e) { toast(e.message, true); }
-    }; });
-    $$('#list [data-del]').forEach((b) => { b.onclick = async () => {
+      try { await rpc('admin_set_feedback', { p_id: b.dataset.note, p_note: r2.note }); toast('Guardada'); await load(); } catch (e) { toast(e.message, true); }
+    }); });
+    $$('#list [data-del]').forEach((b) => { b.onclick = () => esperando(b, async () => {
       if (!await confirmDlg('Borrar mensaje', 'Se borra para siempre. Úsalo solo con spam o duplicados.', { danger: true, submit: 'Borrar' })) return;
-      try { await rpc('admin_delete_feedback', { p_id: b.dataset.del }); toast('Borrado'); refreshBadges(); load(); } catch (e) { toast(e.message, true); }
-    }; });
+      try { await rpc('admin_delete_feedback', { p_id: b.dataset.del }); toast('Borrado'); refreshBadges(); await load(); } catch (e) { toast(e.message, true); }
+    }); });
   };
   $('#q').oninput = debounce(() => { s.q = $('#q').value.trim(); s.offset = 0; load(); });
   ['status', 'kind'].forEach((k) => { $('#' + k).onchange = () => { s[k] = $('#' + k).value; s.offset = 0; load(); }; });
@@ -1133,7 +1136,7 @@ PAGES.planes = async (v) => {
   const p = params(); let tab = p.tab || 'subs';
   v.innerHTML = `
     <div class="page-head"><h1>Planes y pagos</h1><span class="spacer"></span><button class="btn sm ghost" id="csv">Exportar CSV</button></div>
-    ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p><b>Subscriptions</b>: which plan each business has and when it expires. Until card payments are available, payments are made by bank transfer and recorded by hand on the business page (“Record payment”). <b>Payments</b>: history of payments with monthly totals (for the accounts). <b>Plans</b>: price and limits of each plan (changing them affects the businesses that have them).</p>` : '<p><b>Suscripciones</b>: qué plan tiene cada negocio y cuándo vence. Mientras no haya pago con tarjeta, los cobros se hacen por transferencia y se anotan a mano en la ficha del negocio («Registrar pago»). <b>Pagos</b>: histórico de cobros con totales por mes (para la contabilidad). <b>Planes</b>: precio y límites de cada plan (cambiarlos afecta a los negocios que los tengan).</p>')}
+    ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p><b>Subscriptions</b>: which plan each business has and when it expires. Until card payments are available, payments are made by bank transfer and recorded by hand on the business page (“Record payment”). <b>Payments</b>: history of payments with monthly totals (for the accounts). <b>Plans</b>: there is a single plan with no limits and no commission per redemption: <b>Klendar</b> (<code>standard</code>, €19.90 a month or €199 a year per venue), <b>Founder</b> (<code>founder</code>, €9.90 for life for the first ones in each city) and <b>Launch, free</b> (<code>free</code>, while a city is starting up). Chains pay per venue on a sliding scale (2 to 5 venues €15 each, 6 or more €12 each): apply it when you record the subscription. Changing a plan affects the businesses that have it.</p>` : '<p><b>Suscripciones</b>: qué plan tiene cada negocio y cuándo vence. Mientras no haya pago con tarjeta, los cobros se hacen por transferencia y se anotan a mano en la ficha del negocio («Registrar pago»). <b>Pagos</b>: histórico de cobros con totales por mes (para la contabilidad). <b>Planes</b>: hay un solo plan, sin límites y sin comisión por canje: <b>Klendar</b> (<code>standard</code>, 19,90 € al mes o 199 € al año por local), <b>Fundador</b> (<code>founder</code>, 9,90 € de por vida para los primeros de cada ciudad) y <b>Gratis de lanzamiento</b> (<code>free</code>, mientras una ciudad está arrancando). Las cadenas pagan por local con escalera (de 2 a 5 locales, 15 € cada uno; 6 o más, 12 €): aplícala al registrar la suscripción. Cambiar un plan afecta a los negocios que lo tengan.</p>')}
     <div class="tabs">${[['subs', 'Suscripciones'], ['payments', 'Pagos'], ['plans', 'Planes']].map((t) => `<button data-t="${t[0]}" class="${tab === t[0] ? 'on' : ''}">${t[1]}</button>`).join('')}</div>
     <div id="tabview"></div>`;
   let rows = [], csvCols = [], csvName = 'suscripciones';
@@ -1185,7 +1188,7 @@ PAGES.planes = async (v) => {
       ], rows: plans });
       const edit = async (pl) => {
         const r = await modal({ title: pl ? 'Editar plan' : 'Nuevo plan', fields: [
-          { name: 'slug', label: 'Identificador (slug)', value: pl?.slug, required: true, help: 'Sin espacios: free, basic, pro…' },
+          { name: 'slug', label: 'Identificador (slug)', value: pl?.slug, required: true, help: 'Sin espacios: free, standard, founder…' },
           { name: 'name_es', label: 'Nombre (ES)', value: pl?.names?.es, required: true }, { name: 'name_en', label: 'Nombre (EN)', value: pl?.names?.en },
           { name: 'price', label: 'Precio al mes (€)', type: 'number', step: '0.01', value: pl ? (pl.price_cents / 100).toFixed(2) : '0' },
           { name: 'max', label: 'Máx. publicaciones activas', type: 'number', value: pl?.max_active_offers ?? '', help: 'Vacío = sin límite.' },
@@ -1199,7 +1202,7 @@ PAGES.planes = async (v) => {
         } catch (e) { toast(e.message, true); }
       };
       $('#newplan').onclick = () => edit(null);
-      $$('[data-edit]').forEach((b) => { b.onclick = () => edit(plans.find((x) => x.id === b.dataset.edit)); });
+      $$('[data-edit]').forEach((b) => { b.onclick = () => esperando(b, () => edit(plans.find((x) => x.id === b.dataset.edit))); });
     }
   };
   $$('.tabs button').forEach((b) => { b.onclick = () => { tab = b.dataset.t; $$('.tabs button').forEach((x) => x.classList.toggle('on', x === b)); load(); }; });
@@ -1243,17 +1246,20 @@ PAGES.avisos = async (v) => {
         <label class="f"><span>Ruta al pulsar <small>(opcional, p. ej. /explore)</small></span><input name="route" placeholder="/explore"></label>
         <div><button class="btn primary" type="submit">Enviar notificación…</button></div></form></div>`;
       const f = $('#sendf');
-      f.audience.onchange = () => { $('#cityf').hidden = f.audience.value !== 'city'; };
+      // Los campos, por `elements`: `f.title` o `f.name` chocan con propiedades
+      // del propio formulario y se leen distinto según el navegador.
+      const c = f.elements;
+      c.audience.onchange = () => { $('#cityf').hidden = c.audience.value !== 'city'; };
       f.onsubmit = async (e) => {
         e.preventDefault();
-        const aud = f.audience.value;
-        if (aud === 'city' && !f.city.value.trim()) { toast('Escribe la ciudad.', true); f.city.focus(); return; }
+        const aud = c.audience.value;
+        if (aud === 'city' && !c.city.value.trim()) { toast('Escribe la ciudad.', true); c.city.focus(); return; }
         const boton = f.querySelector('[type=submit]');
         if (boton.disabled) return;
-        if (!await confirmDlg('Enviar notificación', I18N.lang === 'en' ? `“${esc(f.title.value)}” will be sent to: <b>${esc($('option:checked', f.audience).textContent)}${aud === 'city' ? ' ' + esc(f.city.value) : ''}</b>. This can't be undone.` : `Se enviará «${esc(f.title.value)}» a: <b>${esc($('option:checked', f.audience).textContent)}${aud === 'city' ? ' ' + esc(f.city.value) : ''}</b>. No se puede deshacer.`, { submit: 'Enviar' })) return;
+        if (!await confirmDlg('Enviar notificación', I18N.lang === 'en' ? `“${esc(c.title.value)}” will be sent to: <b>${esc($('option:checked', c.audience).textContent)}${aud === 'city' ? ' ' + esc(c.city.value) : ''}</b>. This can't be undone.` : `Se enviará «${esc(c.title.value)}» a: <b>${esc($('option:checked', c.audience).textContent)}${aud === 'city' ? ' ' + esc(c.city.value) : ''}</b>. No se puede deshacer.`, { submit: 'Enviar' })) return;
         // Bloqueado mientras va: un segundo clic lo mandaría dos veces a todos.
         await esperando(boton, async () => {
-          try { const n = await rpc('admin_send_notification', { p_audience: aud, ...textosAviso({ title: f.title.value, body: f.body.value, title_en: f.title_en.value, body_en: f.body_en.value }), p_route: f.route.value.trim() || null, p_city: aud === 'city' ? f.city.value.trim() : null }); toast(I18N.lang === 'en' ? `Notification sent to ${n} ${n === 1 ? 'person' : 'people'}` : `Notificación enviada a ${n} ${n === 1 ? 'persona' : 'personas'}`); f.reset(); $('#cityf').hidden = true; } catch (err) { toast(err.message, true); }
+          try { const n = await rpc('admin_send_notification', { p_audience: aud, ...textosAviso({ title: c.title.value, body: c.body.value, title_en: c.title_en.value, body_en: c.body_en.value }), p_route: c.route.value.trim() || null, p_city: aud === 'city' ? c.city.value.trim() : null }); toast(I18N.lang === 'en' ? `Notification sent to ${n} ${n === 1 ? 'person' : 'people'}` : `Notificación enviada a ${n} ${n === 1 ? 'persona' : 'personas'}`); f.reset(); $('#cityf').hidden = true; } catch (err) { toast(err.message, true); }
         });
       };
     }
@@ -1266,7 +1272,7 @@ PAGES.avisos = async (v) => {
       const loadQ = async () => {
         const rows = await rpc('admin_push_queue', { p_status: $('#pstatus').value, p_limit: 200 });
         $('#list').innerHTML = table({ cols: [{ h: 'Creado', r: (x) => `<span class="nowrap">${fmtDate(x.created_at)}</span>` }, { h: 'Usuario', r: (x) => esc(x.user_email || '—') }, { h: 'Notificación', r: (x) => `<span class="title">${esc(x.title)}<span class="sub">${esc(x.body || '')} · ${esc(x.kind || '')}</span></span>` }, { h: 'Estado', r: (x) => `${tag(x.status)} ${x.attempts ? `<span class="muted small">${x.attempts} ${I18N.lang === 'en' ? (x.attempts === 1 ? 'attempt' : 'attempts') : (x.attempts === 1 ? 'intento' : 'intentos')}</span>` : ''}${x.error ? `<span class="sub">${esc(x.error)}</span>` : ''}` }, { h: 'Enviado', r: (x) => fmtDate(x.sent_at) }, { h: '', r: (x) => ['failed', 'skipped'].includes(x.status) ? `<button class="btn sm" data-retry="${x.id}">Reintentar</button>` : '' }], rows, empty: 'Cola vacía.' });
-        $$('#list [data-retry]').forEach((b) => { b.onclick = async () => { try { await rpc('admin_push_retry', { p_id: +b.dataset.retry }); toast('Reencolado'); loadQ(); } catch (e) { toast(e.message, true); } }; });
+        $$('#list [data-retry]').forEach((b) => { b.onclick = () => esperando(b, async () => { try { await rpc('admin_push_retry', { p_id: +b.dataset.retry }); toast('Reencolado'); await loadQ(); } catch (e) { toast(e.message, true); } }); });
       };
       $('#pstatus').onchange = loadQ; await loadQ();
     }
@@ -1298,8 +1304,8 @@ PAGES.categorias = async (v) => {
     try { await rpc('admin_upsert_category', { p: { id: c?.id, slug: r.slug, icon: r.icon || null, names: { es: r.es, en: r.en || r.es }, parent_id: r.parent_id || null, position: +r.position || 99 } }); toast('Categoría guardada'); route(); } catch (e) { toast(e.message, true); }
   };
   $('#new').onclick = () => edit(null);
-  $$('[data-edit]').forEach((b) => { b.onclick = () => edit(byId[b.dataset.edit]); });
-  $$('[data-del]').forEach((b) => { b.onclick = async () => { if (!await confirmDlg('Borrar categoría', 'Solo se puede si no la usa ningún negocio ni publicación.', { danger: true, submit: 'Borrar' })) return; try { await rpc('admin_delete_category', { p_id: b.dataset.del }); toast('Borrada'); route(); } catch (e) { toast(e.message, true); } }; });
+  $$('[data-edit]').forEach((b) => { b.onclick = () => esperando(b, () => edit(byId[b.dataset.edit])); });
+  $$('[data-del]').forEach((b) => { b.onclick = () => esperando(b, async () => { if (!await confirmDlg('Borrar categoría', 'Solo se puede si no la usa ningún negocio ni publicación.', { danger: true, submit: 'Borrar' })) return; try { await rpc('admin_delete_category', { p_id: b.dataset.del }); toast('Borrada'); route(); } catch (e) { toast(e.message, true); } }); });
 };
 
 // ── Ciudades ────────────────────────────────────────────────────────────────
@@ -1422,11 +1428,11 @@ PAGES.colecciones = async (v, param) => {
     } catch (e) { toast(e.message, true); }
   };
   $('#new').onclick = () => edit(null);
-  $$('[data-edit]').forEach((b) => { b.onclick = () => edit(byId[b.dataset.edit]); });
-  $$('[data-del]').forEach((b) => { b.onclick = async () => {
+  $$('[data-edit]').forEach((b) => { b.onclick = () => esperando(b, () => edit(byId[b.dataset.edit])); });
+  $$('[data-del]').forEach((b) => { b.onclick = () => esperando(b, async () => {
     if (!await confirmDlg('Borrar colección', 'Deja de aparecer en Descubre. Las publicaciones no se tocan.', { danger: true, submit: 'Borrar' })) return;
     try { await rpc('admin_delete_collection', { p_id: b.dataset.del }); toast('Borrada'); route(); } catch (e) { toast(e.message, true); }
-  }; });
+  }); });
 };
 
 /** Las publicaciones de una colección, elegidas a mano y en orden. */
@@ -1523,11 +1529,21 @@ PAGES.configuracion = async (v) => {
         <h3 style="margin-top:16px">Límites anti-abuso (últimas 24 h)</h3>${table({ cols: [{ h: 'Usuario', r: (x) => esc(x.user_email || '—') }, { h: 'Acción', r: (x) => esc(x.action) }, { h: 'Ventana', r: (x) => fmtDate(x.window_start) }, { h: 'Intentos', num: true, r: (x) => x.hits }], rows: limits, empty: 'Nadie ha tocado un límite.' })}</div>
     </div>`;
   const save = (key, value) => rpc('admin_set_config', { p_key: key, p_value: value }).then(() => { toast('Guardado'); route(); }).catch((e) => toast(e.message, true));
-  $('#mvf').onsubmit = async (e) => { e.preventDefault(); if (!await confirmDlg('Cambiar la versión mínima', 'Quien tenga una versión anterior tendrá que actualizar para seguir usando la app.', { danger: true, submit: 'Guardar' })) return; save('min_version', { android: e.target.elements.android.value.trim(), ios: e.target.elements.ios.value.trim() }); };
-  $('#mtf').onsubmit = async (e) => { e.preventDefault(); if (e.target.enabled.checked && !await confirmDlg('Activar mantenimiento', 'Todos los usuarios verán el mensaje y no podrán usar la app hasta que lo desactives.', { danger: true, submit: 'Activar' })) return; save('maintenance', { enabled: e.target.enabled.checked, message: e.target.message.value.trim() || null }); };
-  $('#spf').onsubmit = async (e) => { e.preventDefault(); if (!await confirmDlg('Cambiar el envío de push', 'Si la dirección o la clave están mal, dejarán de llegar todas las notificaciones push.', { danger: true, submit: 'Guardar' })) return; save('send_push', { url: e.target.elements.url.value.trim(), key: e.target.elements.key.value.trim() }); };
-  $('#rlf').onsubmit = (e) => { e.preventDefault(); save('rules', { block_2x1_alcohol: e.target.block2x1.checked }); };
-  $('#expire').onclick = async () => { try { const n = await rpc('admin_run_expire_offers'); toast(I18N.lang === 'en' ? `${n} ${n === 1 ? 'publication' : 'publications'} expired` : `${n} ${n === 1 ? 'publicación caducada' : 'publicaciones caducadas'}`); } catch (e) { toast(e.message, true); } };
+  // Cada formulario bloquea su botón mientras pregunta y guarda. Los campos,
+  // por `elements` (un campo llamado como una propiedad del formulario, tipo
+  // `name` o `title`, choca con ella).
+  const alGuardar = (form, trabajo) => {
+    form.onsubmit = (e) => {
+      e.preventDefault();
+      const boton = form.querySelector('button:not([type]), button[type=submit]');
+      esperando(boton, () => trabajo(form.elements));
+    };
+  };
+  alGuardar($('#mvf'), async (c) => { if (!await confirmDlg('Cambiar la versión mínima', 'Quien tenga una versión anterior tendrá que actualizar para seguir usando la app.', { danger: true, submit: 'Guardar' })) return; await save('min_version', { android: c.android.value.trim(), ios: c.ios.value.trim() }); });
+  alGuardar($('#mtf'), async (c) => { if (c.enabled.checked && !await confirmDlg('Activar mantenimiento', 'Todos los usuarios verán el mensaje y no podrán usar la app hasta que lo desactives.', { danger: true, submit: 'Activar' })) return; await save('maintenance', { enabled: c.enabled.checked, message: c.message.value.trim() || null }); });
+  alGuardar($('#spf'), async (c) => { if (!await confirmDlg('Cambiar el envío de push', 'Si la dirección o la clave están mal, dejarán de llegar todas las notificaciones push.', { danger: true, submit: 'Guardar' })) return; await save('send_push', { url: c.url.value.trim(), key: c.key.value.trim() }); });
+  alGuardar($('#rlf'), (c) => save('rules', { block_2x1_alcohol: c.block2x1.checked }));
+  $('#expire').onclick = (ev) => esperando(ev.currentTarget, async () => { try { const n = await rpc('admin_run_expire_offers'); toast(I18N.lang === 'en' ? `${n} ${n === 1 ? 'publication' : 'publications'} expired` : `${n} ${n === 1 ? 'publicación caducada' : 'publicaciones caducadas'}`); } catch (e) { toast(e.message, true); } });
 };
 
 // ── Administradores ─────────────────────────────────────────────────────────
@@ -1537,8 +1553,8 @@ PAGES.administradores = async (v) => {
     <div class="page-head"><h1>Administradores</h1><span class="spacer"></span><button class="btn primary sm" id="add">Añadir administrador…</button></div>
     ${helpBox('¿Qué hago aquí?', '<p>Quién puede entrar en este panel. Un administrador puede hacerlo todo, así que da acceso solo a personas de confianza con contraseña fuerte y verificación en dos pasos en su correo. La persona tiene que haberse registrado antes en la app con ese email. Todas sus acciones quedan en el registro de actividad.</p>')}
     ${table({ cols: [{ h: 'Administrador', r: (a) => `<span class="title">${esc(a.display_name || '—')}<span class="sub"><a class="link" href="#/usuarios/${a.user_id}">${esc(a.email)}</a></span></span>` }, { h: 'Desde', r: (a) => fmtDay(a.created_at) }, { h: 'Último acceso', r: (a) => ago(a.last_sign_in_at) }, { h: 'Acciones', num: true, r: (a) => fmtNum(a.actions) }, { h: '', r: (a) => a.user_id === ME.id ? '<span class="muted small">tú</span>' : `<button class="btn sm bad ghost" data-rm="${a.user_id}">Quitar</button>` }], rows: list })}`;
-  $('#add').onclick = async () => { const r = await modal({ title: 'Añadir administrador', fields: [{ name: 'email', label: 'Email (tiene que existir como usuario)', type: 'email', required: true }] }); if (!r) return; try { await rpc('admin_add_admin', { p_email: r.email }); toast('Administrador añadido'); route(); } catch (e) { toast(e.message, true); } };
-  $$('[data-rm]').forEach((b) => { b.onclick = async () => { if (!await confirmDlg('Quitar administrador', 'Dejará de poder entrar en el panel.', { danger: true, submit: 'Quitar' })) return; try { await rpc('admin_remove_admin', { p_user_id: b.dataset.rm }); toast('Quitado'); route(); } catch (e) { toast(e.message, true); } }; });
+  $('#add').onclick = () => esperando($('#add'), async () => { const r = await modal({ title: 'Añadir administrador', fields: [{ name: 'email', label: 'Email (tiene que existir como usuario)', type: 'email', required: true }] }); if (!r) return; try { await rpc('admin_add_admin', { p_email: r.email }); toast('Administrador añadido'); route(); } catch (e) { toast(e.message, true); } });
+  $$('[data-rm]').forEach((b) => { b.onclick = () => esperando(b, async () => { if (!await confirmDlg('Quitar administrador', 'Dejará de poder entrar en el panel.', { danger: true, submit: 'Quitar' })) return; try { await rpc('admin_remove_admin', { p_user_id: b.dataset.rm }); toast('Quitado'); route(); } catch (e) { toast(e.message, true); } }); });
 };
 
 // ── Registro de actividad ───────────────────────────────────────────────────
@@ -1573,7 +1589,7 @@ PAGES.actividad = async (v) => {
 PAGES.ayuda = async (v) => {
   v.innerHTML = `
     <div class="page-head"><h1>Ayuda</h1></div>
-    <div class="card"><h2>Cómo funciona Klendar (en 1 minuto)</h2>${I18N.lang === 'en' ? `<p><b>Businesses</b> sign up from the app and stay <b>pending</b> until an administrator verifies them. Once verified, they publish <b>flash offers</b> (with a countdown and limited places) and <b>events</b>. <b>Users</b> see them in Discover and on the map, save them in Your plans and redeem them by showing a <b>single-use QR code</b> that the business scans. Businesses have a <b>plan</b> (Free / Basic / Pro) with an initial trial; for now payments are made by bank transfer and recorded here.</p>` : `<p>Los <b>negocios</b> se dan de alta desde la app y quedan <b>pendientes</b> hasta que un administrador los verifica. Una vez verificados publican <b>ofertas flash</b> (con cuenta atrás y aforo) y <b>eventos</b>. Los <b>usuarios</b> las ven en Descubre y el mapa, las guardan en Tus planes y las canjean enseñando un <b>código QR de un solo uso</b> que el negocio escanea. Los negocios tienen un <b>plan</b> (Gratis / Básico / Pro) con una prueba inicial; por ahora los cobros se hacen por transferencia y se anotan aquí.</p>`}</div>
+    <div class="card"><h2>Cómo funciona Klendar (en 1 minuto)</h2>${I18N.lang === 'en' ? `<p><b>Businesses</b> sign up from the app and stay <b>pending</b> until an administrator verifies them. Once verified, they publish <b>flash offers</b> (with a countdown and limited places) and <b>events</b>. <b>Users</b> see them in Discover and on the map, save them in Your plans and redeem them by showing a <b>single-use QR code</b> that the business scans. Businesses have <b>a single plan</b>, with no limits and <b>never a commission per redemption</b>: <b>€19.90 a month</b> (or €199 a year) per venue, <b>€9.90 for life</b> for the founders (the first businesses in each city) and <b>free while each city is starting up</b> (with a month's notice before we start charging). Sign-up comes with a 30-day trial without a card; for now payments are made by bank transfer and recorded here.</p>` : `<p>Los <b>negocios</b> se dan de alta desde la app y quedan <b>pendientes</b> hasta que un administrador los verifica. Una vez verificados publican <b>ofertas flash</b> (con cuenta atrás y aforo) y <b>eventos</b>. Los <b>usuarios</b> las ven en Descubre y el mapa, las guardan en Tus planes y las canjean enseñando un <b>código QR de un solo uso</b> que el negocio escanea. Los negocios tienen <b>un solo plan</b>, sin límites y <b>nunca con comisión por canje</b>: <b>19,90 € al mes</b> (o 199 € al año) por local, <b>9,90 € de por vida</b> para los fundadores (los primeros de cada ciudad) y <b>gratis mientras cada ciudad está arrancando</b> (con un mes de aviso antes de empezar a cobrar). El alta trae una prueba de 30 días sin tarjeta; por ahora los cobros se hacen por transferencia y se anotan aquí.</p>`}</div>
     <div class="grid2">
       <div class="card">${I18N.lang === 'en' ? `<h2>Daily routine (5 minutes)</h2><ol style="margin:0;padding-left:18px"><li><b>Overview</b>: check “Waiting for you”.</li><li><b>Pending businesses</b>: check that they exist (website, phone, Google Maps) and verify or reject them with a reason.</li><li><b>Publications to moderate</b>: approve or take down with a reason.</li><li><b>Open reports</b>: review and resolve them (always with a reason if you take something down).</li><li><b>Failed push</b>: if there are many, something is wrong with Firebase.</li></ol>` : `<h2>Rutina diaria (5 minutos)</h2><ol style="margin:0;padding-left:18px"><li><b>Resumen</b>: mira «Pendiente de ti».</li><li><b>Negocios pendientes</b>: comprueba que existen (web, teléfono, Google Maps) y verifica o rechaza con motivo.</li><li><b>Publicaciones por moderar</b>: aprueba o retira con motivo.</li><li><b>Denuncias abiertas</b>: revisa y resuelve (siempre con motivo si retiras algo).</li><li><b>Push fallidos</b>: si hay muchos, algo pasa con Firebase.</li></ol>`}</div>
       <div class="card">${I18N.lang === 'en' ? `<h2>Weekly routine</h2><ul style="margin:0;padding-left:18px"><li><b>Plans and payments</b>: subscriptions expiring in 7 days → contact the business; record the bank transfers received.</li><li><b>Users</b>: handle access or erasure requests received by email (info@klendar.app).</li><li><b>Feedback</b>: read what has come in, set the status and reply to whatever deserves a reply.</li><li><b>Activity log</b>: check that everything that was done makes sense.</li></ul>` : `<h2>Rutina semanal</h2><ul style="margin:0;padding-left:18px"><li><b>Planes y pagos</b>: suscripciones que vencen en 7 días → contacta con el negocio; registra las transferencias recibidas.</li><li><b>Usuarios</b>: atiende peticiones de acceso o supresión recibidas por email (info@klendar.app).</li><li><b>Sugerencias</b>: lee lo que ha entrado, marca estado y responde lo que merezca respuesta.</li><li><b>Registro de actividad</b>: repasa que todo lo hecho tenga sentido.</li></ul>`}</div>
