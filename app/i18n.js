@@ -456,4 +456,5 @@ const APP_EN = {
   "Con el mismo correo entras siempre a la misma cuenta, da igual por dónde. Tener contraseña además de Google evita quedarte fuera si pierdes el acceso a una.": "The same email always opens the same account, whichever way you come in. Having a password as well as Google keeps you from being locked out if you lose one.",
   "Crear una contraseña": "Create a password",
   "Contraseña guardada": "Password saved",
+  "No puedes valorar un negocio en el que trabajas.": "You can't review a business you work at.",
 };

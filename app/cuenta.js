@@ -17,6 +17,7 @@ Object.assign(ERRORES, {
   too_many_alerts: 'Has llegado al máximo de 10 avisos. Borra alguno para crear otro.',
   message_too_short: 'Cuéntanos un poco más: al menos 5 caracteres.',
   invalid_rating: 'Elige de una a cinco estrellas.',
+  own_business: 'No puedes valorar un negocio en el que trabajas.',
   'Payload too large': 'La foto pesa demasiado. Prueba con otra más pequeña.',
   'mime type': 'Ese archivo no es una foto. Prueba con una JPG o PNG.',
 });
