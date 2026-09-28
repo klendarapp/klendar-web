@@ -99,16 +99,16 @@ export const firstPhoto = (images) => (images || []).find((u) => !isVideo(u)) ||
  *
  * El vídeo no arranca solo (en una página que se abre desde un enlace, un
  * vídeo que suena de golpe es lo peor que te puede pasar) y usa la primera
- * foto de portada mientras no se toca. Al darle a reproducir **suena**, como
- * en la ficha de la app: es que lo quiere ver; el altavoz del reproductor lo
- * quita.
+ * foto de portada mientras no se toca. Empieza en silencio, como en la app;
+ * el altavoz del reproductor le pone el sonido (y en el móvil, las teclas de
+ * volumen del propio navegador).
  */
 export function media(url, poster) {
   if (!isVideo(url)) return `<img src="${esc(url)}" alt="" loading="lazy">`;
   // Sin foto de portada, «#t=0.1» hace que el navegador enseñe el primer
   // fotograma en vez de un rectángulo negro.
   return `<video src="${esc(url)}${poster ? '' : '#t=0.1'}" ${poster ? `poster="${esc(poster)}"` : ''}
-    controls playsinline preload="metadata"></video>`;
+    controls playsinline preload="metadata" muted></video>`;
 }
 
 /** Dónde vive la cartelera en cada idioma. En inglés «agenda» es el orden
