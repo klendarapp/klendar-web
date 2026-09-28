@@ -200,7 +200,7 @@ ES['terminos'] = ('Términos de uso', 'Condiciones de uso de la app Klendar para
 <h2>3. Ofertas y canjes</h2>
 <ul>
   <li>Las ofertas y eventos los publican los negocios, que son los únicos responsables de su contenido, condiciones, disponibilidad y cumplimiento. Klendar no vende productos ni servicios ni cobra por los canjes.</li>
-  <li>Cada código QR es <strong>personal y de un solo uso</strong>, válido 5 minutos desde que lo generas y solo dentro de la ventana de la oferta. Cada persona puede canjear cada oferta una vez, salvo que el negocio indique otra cosa.</li>
+  <li>Cada código QR es <strong>personal y de un solo uso</strong>, válido durante el tiempo que indica la pantalla del código (lo fija cada negocio: unos minutos en una oferta flash; en un evento, hasta que termina) y solo dentro de la ventana de la oferta. Cada persona puede canjear cada oferta una vez, salvo que el negocio permita más.</li>
   <li>El negocio puede exigir que la persona que canjea sea la titular de la cuenta y que se cumplan las condiciones publicadas (consumo mínimo, aforo, horario).</li>
   <li>Si un negocio no honra una oferta publicada, denúncialo desde la app; podremos suspender al negocio.</li>
 </ul>
@@ -240,7 +240,7 @@ EN['terminos'] = ('terms', 'Terms of use', 'Terms of use of the Klendar app for 
 <h2>3. Deals and redemptions</h2>
 <ul>
   <li>Deals and events are published by businesses, which are solely responsible for their content, conditions, availability and fulfilment. Klendar does not sell products or services and does not charge for redemptions.</li>
-  <li>Each QR code is <strong>personal and single-use</strong>, valid for 5 minutes after you generate it and only within the deal's time window. Each person may redeem each deal once, unless the business states otherwise.</li>
+  <li>Each QR code is <strong>personal and single-use</strong>, valid for the time shown on the code screen (each business sets it: a few minutes for a flash offer; for an event, until it ends) and only within the offer's time window. Each person may redeem each offer once, unless the business allows more.</li>
   <li>The business may require that the person redeeming is the account holder and that the published conditions are met (minimum spend, capacity, opening hours).</li>
   <li>If a business does not honour a published deal, report it from the app; we may suspend the business.</li>
 </ul>
