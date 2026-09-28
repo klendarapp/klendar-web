@@ -74,7 +74,12 @@ function destinoWeb(ruta) {
   if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\?extend=([0-9a-f-]{36})/i))) {
     return `/panel/#/publicaciones?biz=${m[1]}&extend=${m[2]}`;
   }
+  // «Tu mensaje ya se ha enviado» / «…no se ha enviado»: a «Avisar a mis
+  // clientes» de ese negocio en el panel.
+  if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/message/i))) return `/panel/#/mensajes?biz=${m[1]}`;
   if (r.startsWith('/my-business')) return '/panel/';
+  // «¡Feliz cumpleaños!»: el regalo, con su QR.
+  if ((m = r.match(/^\/gift\/([0-9a-f-]{36})/i))) return `#/regalo/${m[1]}`;
   if (r.startsWith('/profile')) return '#/ajustes';
   return '';
 }
@@ -405,6 +410,10 @@ RUTAS.ajustes = async () => {
       <form class="formu" id="f-avisos" novalidate>
         <label class="check"><input type="checkbox" name="fav"${prefs.notify_favorites ? ' checked' : ''}>
           <span><b>${esc(t('Mis favoritos'))}</b><br><small>${esc(t('Cuando uno de tus favoritos publica una oferta o un evento'))}</small></span></label>
+        <label class="check"><input type="checkbox" name="mensajes"${prefs.notify_business_messages !== false ? ' checked' : ''}>
+          <span><b>${esc(t('Mensajes de mis negocios favoritos'))}</b><br><small>${esc(t('Lo que te cuentan tus favoritos: como mucho uno por semana de cada uno.'))}</small></span></label>
+        <label class="check"><input type="checkbox" name="cumple"${prefs.notify_birthday !== false ? ' checked' : ''}>
+          <span><b>${esc(t('Regalos de cumpleaños'))}</b><br><small>${esc(t('Si uno de tus favoritos hace un regalo por tu cumpleaños, te llega ese día con su código.'))}</small></span></label>
         <label class="check"><input type="checkbox" name="cerca"${prefs.notify_nearby ? ' checked' : ''}>
           <span><b>${esc(t('Cerca de ti'))}</b><br><small>${esc(t('Ofertas flash a tu alrededor (como mucho 3 al día)'))}</small></span></label>
         <div id="cerca-mas" ${prefs.notify_nearby ? '' : 'hidden'}>
@@ -519,6 +528,8 @@ RUTAS.ajustes = async () => {
       await llamar('update_notification_preferences', { p: {
         notify_favorites: fa.fav.checked,
         notify_nearby: fa.cerca.checked,
+        notify_business_messages: fa.elements.mensajes.checked,
+        notify_birthday: fa.elements.cumple.checked,
         nearby_radius_m: Number(fa.radio.value),
         nearby_categories: elegidas.length ? elegidas : null,
         quiet_hours_start: desde || null,

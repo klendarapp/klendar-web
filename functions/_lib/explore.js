@@ -40,7 +40,7 @@ const T = (en) => en
       picks: 'Selections', seeProfile: 'See the place',
       price: 'Price', any: 'Any', free: 'Free', upTo: (n) => `Up to €${n}`,
       when: 'When?', anytime: 'Any time', now: 'Right now', today: 'Today', tomorrow: 'Tomorrow', next10: 'Next 10 days',
-      discount: 'Discounts only', sort: 'Sort by', soonest: 'Soonest', newest: 'Newest', nearest: 'Nearest',
+      discount: 'Discounts only', openNow: 'Open now', sort: 'Sort by', soonest: 'Soonest', newest: 'Newest', nearest: 'Nearest',
       near: 'Near me', nearOn: 'Near you', nearNo: 'We could not get your location. Allow it in the browser and try again.',
       view: 'View', listView: 'List', mapView: 'Map',
       mapNo: 'The map cannot load right now. The list has the same.', away: 'away',
@@ -69,7 +69,7 @@ const T = (en) => en
       picks: 'Selecciones', seeProfile: 'Ver el sitio',
       price: 'Precio', any: 'Cualquiera', free: 'Gratis', upTo: (n) => `Hasta ${n} €`,
       when: '¿Cuándo?', anytime: 'Cuando sea', now: 'Ahora mismo', today: 'Hoy', tomorrow: 'Mañana', next10: 'Próximos 10 días',
-      discount: 'Solo con descuento', sort: 'Ordenar', soonest: 'Más pronto', newest: 'Novedades', nearest: 'Más cerca',
+      discount: 'Solo con descuento', openNow: 'Abierto ahora', sort: 'Ordenar', soonest: 'Más pronto', newest: 'Novedades', nearest: 'Más cerca',
       near: 'Cerca de mí', nearOn: 'Cerca de ti', nearNo: 'No hemos podido saber dónde estás. Permítelo en el navegador y vuelve a probar.',
       view: 'Ver en', listView: 'Lista', mapView: 'Mapa',
       mapNo: 'El mapa no se puede cargar ahora mismo. En la lista está lo mismo.', away: '',
@@ -156,11 +156,15 @@ export async function explorePage(url, lang) {
   // y lista o mapa. Todo en la URL: se comparte y va sin JavaScript (salvo
   // el mapa y pedir la ubicación).
   const K = en
-    ? { price: 'price', when: 'when', discount: 'discount', sort: 'sort', view: 'view' }
-    : { price: 'precio', when: 'cuando', discount: 'descuento', sort: 'orden', view: 'vista' };
+    ? { price: 'price', when: 'when', discount: 'discount', open: 'open', sort: 'sort', view: 'view' }
+    : { price: 'precio', when: 'cuando', discount: 'descuento', open: 'abierto', sort: 'orden', view: 'vista' };
   const price = (qs.get(K.price) || '').slice(0, 10);
   const when = (qs.get(K.when) || '').slice(0, 12);
   const soloDescuento = qs.get(K.discount) === '1';
+  // «Abierto ahora»: vale para Planes y para Negocios, así que se conserva al
+  // pasar de una vista a la otra (la base mira el horario en la zona de cada
+  // negocio; sin horario no pasa).
+  const abierto = qs.get(K.open) === '1';
   const sort = (qs.get(K.sort) || '').slice(0, 12);
   const vista = (qs.get(K.view) || '').slice(0, 8);
   const mapa = !negocios && (vista === 'map' || vista === 'mapa');
@@ -174,10 +178,11 @@ export async function explorePage(url, lang) {
     ...(/^\d{1,3}$/.test(price) ? { max_price_cents: Number(price) * 100 } : {}),
     ...(WHEN[when] ? { when: WHEN[when] } : {}),
     ...(soloDescuento ? { discount_only: true } : {}),
+    ...(abierto ? { open_now: true } : {}),
     ...(SORT[sort] ? { sort: SORT[sort] } : cerca ? { sort: 'nearest' } : {}),
     ...(cerca ? { radius_m: 10000 } : {}),
   };
-  const filtrado = Boolean(q || city || cat || kind || negocios || page > 1 || price || when || soloDescuento || sort || cerca);
+  const filtrado = Boolean(q || city || cat || kind || negocios || page > 1 || price || when || soloDescuento || abierto || sort || cerca);
 
   const [res, cities, cats, cols] = await Promise.all([
     negocios
@@ -187,6 +192,7 @@ export async function explorePage(url, lang) {
         p_q: q || null,
         p_limit: POR_PAGINA,
         p_offset: (page - 1) * POR_PAGINA,
+        p_open_now: abierto,
       })
       : rpc('public_explore', {
       p_city: city || null,
@@ -211,12 +217,13 @@ export async function explorePage(url, lang) {
   // Los filtros son enlaces: se puede compartir la URL y va sin JavaScript.
   const link = (cambios) => {
     const p = new URLSearchParams();
-    const base = { q, city, cat, kind, ver, price, when, soloDescuento, sort, vista, cerca, p: 1, ...cambios };
+    const base = { q, city, cat, kind, ver, price, when, soloDescuento, abierto, sort, vista, cerca, p: 1, ...cambios };
     if (base.q) p.set('q', base.q);
     if (base.city) p.set(en ? 'city' : 'ciudad', base.city);
     if (base.cat) p.set(en ? 'category' : 'categoria', base.cat);
     if (base.kind && !base.ver) p.set(en ? 'type' : 'tipo', base.kind);
     if (base.ver) p.set(en ? 'show' : 'ver', base.ver);
+    if (base.abierto) p.set(K.open, '1');
     if (!base.ver) {
       if (base.price) p.set(K.price, base.price);
       if (base.when) p.set(K.when, base.when);
@@ -242,6 +249,7 @@ export async function explorePage(url, lang) {
     ${cat ? `<input type="hidden" name="${en ? 'category' : 'categoria'}" value="${esc(cat)}">` : ''}
     ${kind && !negocios ? `<input type="hidden" name="${en ? 'type' : 'tipo'}" value="${esc(kind)}">` : ''}
     ${negocios ? `<input type="hidden" name="${en ? 'show' : 'ver'}" value="${esc(ver)}">` : ''}
+    ${abierto ? `<input type="hidden" name="${K.open}" value="1">` : ''}
     ${negocios ? '' : [[K.price, price], [K.when, when], [K.discount, soloDescuento ? '1' : ''], [K.sort, sort], [K.view, vista],
       ['lat', cerca ? lat.toFixed(4) : ''], ['lng', cerca ? lng.toFixed(4) : '']]
       .filter(([, val]) => val).map(([k, val]) => `<input type="hidden" name="${k}" value="${esc(val)}">`).join('')}
@@ -253,7 +261,9 @@ export async function explorePage(url, lang) {
       ${chip(link({ ver: '' }), S.plans, !negocios)}
       ${chip(link({ ver: en ? 'places' : 'negocios' }), S.places, negocios)}
     </div>
-    ${negocios ? '' : `<div class="frow"><span class="flabel">${esc(S.kind)}</span>
+    ${negocios ? `<div class="frow"><span class="flabel">${esc(S.when)}</span>
+      ${chip(link({ abierto: !abierto }), S.openNow, abierto)}
+    </div>` : `<div class="frow"><span class="flabel">${esc(S.kind)}</span>
       ${chip(link({ kind: '' }), S.all, !kind)}
       ${chip(link({ kind: en ? 'offers' : 'ofertas' }), S.offers, kind === 'offers' || kind === 'ofertas')}
       ${chip(link({ kind: en ? 'events' : 'eventos' }), S.events, kind === 'events' || kind === 'eventos')}
@@ -262,6 +272,7 @@ export async function explorePage(url, lang) {
       ${chip(link({ when: '' }), S.anytime, !when)}
       ${[[en ? 'now' : 'ahora', S.now], [en ? 'today' : 'hoy', S.today], [en ? 'tomorrow' : 'manana', S.tomorrow], [en ? 'next10' : '10dias', S.next10]]
         .map(([k, n]) => chip(link({ when: k }), n, when === k)).join('')}
+      ${chip(link({ abierto: !abierto }), S.openNow, abierto)}
     </div>
     <div class="frow"><span class="flabel">${esc(S.price)}</span>
       ${chip(link({ price: '' }), S.any, !price)}

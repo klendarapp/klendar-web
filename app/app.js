@@ -140,10 +140,12 @@ async function llamar(fn, args = {}) {
   } catch (e) {
     throw new Error(amable(e.message));
   }
-  const falla = (clave) => Object.assign(new Error(amable(clave)), { clave: String(clave || '') });
+  // `datos`: lo demás que manda la base con el error (p. ej. de qué negocio
+  // es una exclusiva), para las pantallas que lo cuentan con nombre.
+  const falla = (clave, datos = null) => Object.assign(new Error(amable(clave)), { clave: String(clave || ''), datos });
   if (res.error) throw falla(res.error.message);
   const d = res.data;
-  if (d && typeof d === 'object' && !Array.isArray(d) && d.ok === false) throw falla(d.error);
+  if (d && typeof d === 'object' && !Array.isArray(d) && d.ok === false) throw falla(d.error, d);
   return d;
 }
 
@@ -882,6 +884,34 @@ RUTAS['nueva-clave'] = async (_p, params) => {
 };
 
 // ── Tarjeta de publicación, como en la agenda ─────────────────────────────
+/** «Para favoritos» / «Para clientes»: una publicación que solo ve quien
+ * tiene el negocio en favoritos o sellos en sus tarjetas. */
+const etiquetaExclusiva = (aud) => (aud === 'favorites' ? t('Para favoritos') : aud === 'customers' ? t('Para clientes') : '');
+
+/** Una exclusiva que no es para ti (al pedir el código o reservar): de
+ * quién es, qué hace falta y el botón para conseguirlo, como en la app. */
+function pintaExclusiva(aud, negocioId, negocio) {
+  const fav = aud !== 'customers';
+  const n = negocio || '';
+  pinta(`
+    <div class="ticket">
+      <p class="hecho-ic" aria-hidden="true">${ic('lock')}</p>
+      <h1>${esc(fav
+        ? (EN ? `Exclusive for people who have ${n} in their favourites` : `Exclusiva para quien tiene ${n} en favoritos`)
+        : (EN ? `Exclusive for ${n}'s customers` : `Exclusiva para clientes de ${n}`))}</h1>
+      <p class="muted">${esc(fav
+        ? (EN ? `This offer is only for people who have ${n} in their favourites.` : `Esta oferta es solo para quien tiene ${n} en favoritos.`)
+        : (EN ? `This offer is only for customers with stamps from ${n}.` : `Esta oferta es solo para clientes con sellos de ${n}.`))}</p>
+      ${fav ? '' : `<p class="muted">${esc(t('Es para quien tiene sellos en alguna de sus tarjetas. Consigue el primero canjeando una de sus ofertas o con el QR del local.'))}</p>`}
+      <p class="acciones">
+        ${negocioId ? (fav
+          ? `<a class="pill accent" href="#/seguir/${esc(negocioId)}">${ic('favorite')} ${esc(t('Añadir a favoritos'))}</a>`
+          : `<a class="pill accent" href="${pre}/b/${esc(negocioId)}">${ic('storefront')} ${esc(t('Ver el negocio'))}</a>`) : ''}
+        <a class="pill" href="#/">${esc(t('Volver'))}</a>
+      </p>
+    </div>`);
+}
+
 function tarjeta(o, tz) {
   const img = (o.images || []).find((u) => !/\.(mp4|mov|webm)(\?|$)/i.test(u));
   // Si acaba otro día, el final lleva también el día (como en la app).
@@ -890,11 +920,12 @@ function tarjeta(o, tz) {
   const cuando = o.kind === 'future_event' ? fecha(o.event_at, undefined, tz)
     : `${fecha(o.redeem_start_at, undefined, tz)} – ${mismoDia ? fecha(o.redeem_end_at, { hour: '2-digit', minute: '2-digit' }, tz) : fecha(o.redeem_end_at, undefined, tz)}`;
   const tag = beneficio(o.discount, o.price_cents, o.currency);
+  const exclusiva = etiquetaExclusiva(o.audience);
   return `<a class="ocard" href="${pre}/o/${esc(o.id)}">
     ${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : '<span class="ph">✦</span>'}
     <span class="ocard-body"><b>${esc(o.title)}</b>
       <span class="muted">${esc(o.business_name || '')}</span>
-      <span class="ocard-meta">${tag ? `<span class="tag">${esc(tag)}</span>` : ''}<span class="muted">${esc(cuando)}</span></span>
+      <span class="ocard-meta">${tag ? `<span class="tag">${esc(tag)}</span>` : ''}${exclusiva ? `<span class="tag off">${esc(exclusiva)}</span>` : ''}<span class="muted">${esc(cuando)}</span></span>
     </span></a>`;
 }
 
@@ -1056,13 +1087,94 @@ function filaCanje(r, tz) {
 
 RUTAS.codigos = async () => {
   if (!exigeSesion('codigos')) return;
-  const lista = await llamar('my_redemptions', {});
+  // Los regalos de cumpleaños van aparte y arriba; si fallan, los códigos
+  // salen igual.
+  const [lista, regalos] = await Promise.all([
+    llamar('my_redemptions', {}),
+    llamar('my_birthday_gifts', {}).catch(() => []),
+  ]);
   const zona = await zonasDe(lista);
+  const conRegalos = Array.isArray(regalos) && regalos.length > 0;
   pinta(`
     <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(t('Tus códigos'))}</h1>
+    ${conRegalos ? `<h2 class="seccion-t">${esc(t('Regalos de cumpleaños'))}</h2>
+      <div class="olist">${regalos.map(filaRegalo).join('')}</div>
+      <h2 class="seccion-t">${esc(t('Tus códigos'))}</h2>` : ''}
     ${(lista || []).length ? `<div class="olist">${lista.map((r) => filaCanje(r, zona(r))).join('')}</div>`
     : `<p class="empty">${esc(t('Todavía no tienes códigos. Cuando consigas el código de una oferta o reserves plaza en un evento, lo tendrás aquí.'))}</p>`}`);
+};
+
+// ── Regalos de cumpleaños ─────────────────────────────────────────────────
+/** El último día que vale un regalo: `expires_at` es el final de ese día
+ * (medianoche del siguiente), así que se escribe un segundo antes. En la
+ * zona del negocio: «5 de octubre». */
+const ultimoDiaRegalo = (g) => (g?.expires_at
+  ? fecha(new Date(new Date(g.expires_at).getTime() - 1000).toISOString(), { day: 'numeric', month: 'long' }, g.time_zone || undefined)
+  : '');
+/** Un regalo en «Tus códigos»: vivo abre su QR; usado o caducado, solo se ve. */
+function filaRegalo(g) {
+  const vivo = g.status === 'pending' && !!g.code;
+  const estado = g.status === 'validated' ? t('Canjeado') : vivo ? t('Código activo') : t('Caducado');
+  const dentro = `
+      ${g.business_logo ? `<img src="${esc(g.business_logo)}" alt="" loading="lazy">` : `<span class="ph">${ic('cake')}</span>`}
+      <span class="ocard-body"><b>${esc(g.gift)}</b>
+        <span class="muted">${esc(EN ? `From ${g.business_name} · valid until ${ultimoDiaRegalo(g)}` : `De ${g.business_name} · vale hasta el ${ultimoDiaRegalo(g)}`)}</span>
+        <span class="ocard-meta"><span class="tag${vivo ? '' : ' off'}">${esc(estado)}</span></span>
+      </span>`;
+  return vivo ? `<a class="ocard" href="#/regalo/${esc(g.id)}">${dentro}</a>` : `<div class="ocard">${dentro}</div>`;
+}
+
+/** El regalo, para enseñarlo en el sitio: como el premio de la tarjeta de
+ * sellos. La tabla de regalos no se puede leer desde aquí (ni Realtime), así
+ * que para enterarse de que lo han validado se vuelve a preguntar a
+ * `my_birthday_gifts` cada pocos segundos. */
+RUTAS.regalo = async ([id]) => {
+  if (!exigeSesion(`regalo/${id}`)) return;
+  const lista = await llamar('my_birthday_gifts', {});
+  const g = (lista || []).find((x) => x.id === id);
+  if (!g) { pinta(`<p class="empty">${esc(t('Ese regalo no está.'))}</p><p><a class="pill" href="#/codigos">${esc(t('Tus códigos'))}</a></p>`); return; }
+  const tz = g.time_zone || undefined;
+  if (g.status === 'validated') {
+    pintaCanjeado({ titulo: g.gift, negocio: g.business_name, at: g.validated_at, tz });
+    return;
+  }
+  if (!g.code) {
+    pinta(`
+      <p class="crumbs"><a href="#/codigos">${esc(t('Tus códigos'))}</a></p>
+      <div class="ticket">
+        <p class="muted">${esc(EN ? `A gift from ${g.business_name}` : `Un regalo de ${g.business_name}`)}</p>
+        <h1>${esc(g.gift)}</h1>
+        <p><span class="tag off">${esc(t('Caducado'))}</span></p>
+      </div>`);
+    return;
+  }
+  const qr = window.qrcode(0, 'M');
+  qr.addData(`https://klendar.app/r/${g.code}`);
+  qr.make();
+  pinta(`
+    <p class="crumbs"><a href="#/codigos">${esc(t('Tus códigos'))}</a></p>
+    <div class="ticket">
+      <p class="hecho-ic" aria-hidden="true">${ic('cake')}</p>
+      <h1>${esc(t('¡Feliz cumpleaños!'))}</h1>
+      <p class="muted">${esc(EN ? `A gift from ${g.business_name}` : `Un regalo de ${g.business_name}`)}</p>
+      <p><span class="tag grande">${esc(g.gift)}</span></p>
+      <div class="qr" role="img" aria-label="${esc(t('Código QR para que el negocio valide tu canje'))}">${qr.createSvgTag({ cellSize: 6, margin: 2, scalable: true })}</div>
+      <p><button type="button" class="codigo copiar" id="copiar" aria-label="${esc(t('Copiar el código'))}">${esc(codigoLegible(g.code))} ${ic('content_copy')}</button></p>
+      <p class="muted">${esc(EN ? `Show it at the place until ${ultimoDiaRegalo(g)}. It works once.` : `Enséñalo en el sitio hasta el ${ultimoDiaRegalo(g)}. Vale una vez.`)}</p>
+    </div>`);
+  $('#copiar')?.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(g.code); toast(t('Código copiado')); } catch { toast(t('No se ha podido copiar'), true); }
+  });
+  const sondeo = setInterval(async () => {
+    try {
+      const ahora = ((await llamar('my_birthday_gifts', {})) || []).find((x) => x.id === id);
+      if (ahora?.status !== 'validated') return;
+      clearInterval(sondeo);
+      pintaCanjeado({ titulo: g.gift, negocio: g.business_name, at: ahora.validated_at, tz });
+    } catch { /* sin red: se vuelve a mirar */ }
+  }, 6000);
+  alSalir(() => clearInterval(sondeo));
 };
 
 // ── El código, para enseñar en la barra ───────────────────────────────────
@@ -1121,10 +1233,22 @@ RUTAS.codigo = async ([id], params) => {
   if (!exigeSesion(`codigo/${id}${params.toString() ? `?${params}` : ''}`)) return;
   const plazas = Math.max(1, Math.min(10, parseInt(params.get('plazas') || '1', 10) || 1));
   // La zona del negocio, para «vale hasta el…» y la hora del canje.
-  const [tk, tz] = await Promise.all([
-    llamar('start_redemption', { p_offer_id: id, p_seats: plazas }),
-    llamar('offer_tz', { p_offer: id }).catch(() => null),
-  ]);
+  let tk;
+  let tz;
+  try {
+    [tk, tz] = await Promise.all([
+      llamar('start_redemption', { p_offer_id: id, p_seats: plazas }),
+      llamar('offer_tz', { p_offer: id }).catch(() => null),
+    ]);
+  } catch (e) {
+    // Exclusiva para favoritos o clientes y no es tu caso: se dice de quién
+    // es y cómo conseguirla, no un error suelto.
+    if (e.clave === 'audience_only') {
+      pintaExclusiva(e.datos?.audience, e.datos?.business_id, e.datos?.business_name);
+      return;
+    }
+    throw e;
+  }
   const url = `https://klendar.app/r/${tk.code}`;
   const caduca = new Date(tk.expires_at);
   const largo = caduca.getTime() - Date.now() > 3600 * 1000;
@@ -1221,6 +1345,7 @@ RUTAS.reservar = async ([id]) => {
   const fila = await llamar('offer_detail', { p_id: id });
   const o = Array.isArray(fila) ? fila[0] : fila;
   if (!o) { pinta(`<p class="empty">${esc(t('Esa publicación ya no existe.'))}</p>`); return; }
+  if (o.locked) { pintaExclusiva(o.audience, o.business_id, o.business_name); return; }
   const tope = Math.max(1, Math.min(o.max_seats || 1, o.seats_left == null ? 10 : o.seats_left));
   if (tope <= 1) { location.replace(`#/codigo/${encodeURIComponent(id)}`); return; }
   pinta(`

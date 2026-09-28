@@ -28,6 +28,8 @@ const PATHS = {
   pdf: 'M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z',
   cerrado: 'M9.31 17l2.44-2.44L14.19 17l1.06-1.06-2.44-2.44 2.44-2.44L14.19 10l-2.44 2.44L9.31 10l-1.06 1.06 2.44 2.44-2.44 2.44L9.31 17zM19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z',
   negocio: 'M20 4H4v2h16V4zm1 10v-2l-1-5H4l-1 5v2h1v6h10v-6h4v6h2v-6h1zm-9 4H6v-4h6v4z',
+  candado: 'M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z',
+  regalo: 'M20 6h-2.18c.11-.31.18-.65.18-1 0-1.66-1.34-3-3-3-1.05 0-1.96.54-2.5 1.35l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-5-2c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zM9 4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm11 15H4v-2h16v2zm0-5H4V8h5.08L7 10.83 8.62 12 11 8.76l1-1.36 1 1.36L15.38 12 17 10.83 14.92 8H20v6z',
   resena: 'M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 14v-2.47l6.88-6.88c.2-.2.51-.2.71 0l1.77 1.77c.2.2.2.51 0 .71L8.47 14H6zm12 0h-7.5l2-2H18v2z',
 };
 const icono = (n, size = 18) => `<svg class="ic" viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true"><path fill="currentColor" d="${PATHS[n]}"/></svg>`;
@@ -75,6 +77,10 @@ export async function offerPage(id, lang) {
   if (!o) return notFound(lang, path, 'o');
   // La ficha del negocio, por su dirección con nombre.
   const bHref = bizPath(lang, (await slugDe(o.business_id)) || o.business_id);
+  // Exclusiva para favoritos o clientes: la web pública va siempre sin
+  // sesión, así que aquí siempre llega bloqueada (sin título, beneficio ni
+  // fotos). Se dice qué es, de quién y cómo conseguirla.
+  if (o.locked) return lockedOfferPage(o, lang, path, bHref);
 
   const flash = o.kind === 'flash_offer';
   const soldOut = o.status === 'sold_out' || (o.seats_left != null && o.seats_left <= 0);
@@ -220,6 +226,80 @@ el.textContent=n<ini?${JSON.stringify(en ? 'Starts in ' : 'Empieza en ')}+dur(in
   }));
 }
 
+/**
+ * La ficha de una exclusiva que quien mira no puede ver: el tipo y cuándo,
+ * de qué negocio y cómo conseguirla (favoritos → añadir a favoritos desde
+ * «Tu cuenta»; clientes → la ficha del negocio). Sin beneficio, sin fotos de
+ * la oferta, sin JSON-LD y fuera de Google: no hay nada que indexar.
+ */
+function lockedOfferPage(o, lang, path, bHref) {
+  const en = lang === 'en';
+  const fav = o.audience !== 'customers';
+  const n = o.business_name || '';
+  const tz = zonaDe(o);
+  const flash = o.kind === 'flash_offer';
+  const S = en
+    ? {
+        page: `Exclusive publication · ${n}`,
+        kind: flash ? 'Flash offer' : 'Event', redeem: 'Redemption window', when: 'When',
+        title: fav ? `Exclusive for people who have ${n} in their favourites` : `Exclusive for ${n}'s customers`,
+        text: fav ? `Add ${n} to your favourites to see it and get it.`
+          : "It's for people with stamps on one of their cards. Get your first one by redeeming one of their offers or with the venue QR code.",
+        btn: fav ? 'Add to favourites' : 'See the business',
+        note: fav ? "If it's already in your favourites, open it in the app or log in."
+          : 'If you already have stamps, open it in the app or log in.',
+        open: 'Open in the app', code: 'Get the code', reserve: 'Reserve a place', canary: 'Canary Islands time',
+      }
+    : {
+        page: `Publicación exclusiva · ${n}`,
+        kind: flash ? 'Oferta flash' : 'Evento', redeem: 'Se canjea', when: 'Cuándo',
+        title: fav ? `Exclusiva para quien tiene ${n} en favoritos` : `Exclusiva para clientes de ${n}`,
+        text: fav ? `Añade ${n} a favoritos para verla y conseguirla.`
+          : 'Es para quien tiene sellos en alguna de sus tarjetas. Consigue el primero canjeando una de sus ofertas o con el QR del local.',
+        btn: fav ? 'Añadir a favoritos' : 'Ver el negocio',
+        note: fav ? 'Si ya lo tienes en favoritos, ábrela en la app o entra con tu cuenta.'
+          : 'Si ya tienes sellos, ábrela en la app o entra con tu cuenta.',
+        open: 'Abrir en la app', code: 'Conseguir el código', reserve: 'Reservar plaza', canary: 'hora de Canarias',
+      };
+  const when = flash
+    ? `${fmtLong(o.redeem_start_at, lang, tz)} – ${fmtEnd(o.redeem_start_at, o.redeem_end_at, lang, tz)}`
+    : fmtLong(o.event_at, lang, tz) + (o.event_end_at ? ` – ${fmtEnd(o.event_at, o.event_end_at, lang, tz)}` : '');
+  const where = [o.business_address, o.business_city].filter(Boolean).join(', ');
+  // «…o entra con tu cuenta»: el mismo botón que una ficha normal, en
+  // «Tu cuenta». Pide entrar si hace falta y allí la base ya sabe quién mira:
+  // a quien le toca le da el código; a quien no, le dice por qué.
+  const accion = flash ? [`#/codigo/${encodeURIComponent(o.id)}`, S.code]
+    : o.reservations_enabled ? [`#/reservar/${encodeURIComponent(o.id)}`, S.reserve] : null;
+  const boton = fav
+    ? `<a class="pill accent big" href="${cuenta(lang)}#/seguir/${encodeURIComponent(o.business_id)}"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.8 4.5c2.2 0 3.6 1.2 5.2 3 1.6-1.8 3-3 5.2-3 3.8 0 5.9 3.9 4.4 7.3C19.5 16.4 12 21 12 21z"/></svg> ${esc(S.btn)}</a>`
+    : `<a class="pill accent big" href="${esc(bHref)}">${icono('negocio', 16)} ${esc(S.btn)}</a>`;
+  const body = `
+  <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a> · <a href="${esc(bHref)}">${esc(n)}</a></p>
+  <div class="detail">
+    <div class="d-head">
+      ${o.business_cover ? `<div class="gallery solo"><img src="${esc(o.business_cover)}" alt="" loading="lazy"></div>` : ''}
+      <div class="badges" style="margin-top:18px"><span class="badge">${esc(S.kind)}</span>${o.adults_only ? '<span class="badge">+18</span>' : ''}</div>
+      <h1>${esc(S.title)}</h1>
+      <p class="muted">${esc(n)}${where ? ` · ${esc(where)}` : ''}</p>
+      <p>${esc(S.text)}</p>
+    </div>
+    <aside class="side">
+      <dl>
+        <div><dt>${flash ? S.redeem : S.when}</dt><dd>${esc(when)}${tz === KZ.CANARIAS ? ` <small class="muted">(${S.canary})</small>` : ''}</dd></div>
+      </dl>
+      ${boton}
+      <p class="acciones">${accion ? `<a class="pill" href="${cuenta(lang)}${accion[0]}" rel="nofollow">${esc(accion[1])}</a>` : ''}
+        ${openInApp(path, S.open, 'pill ghost')}</p>
+      <p class="note">${esc(S.note)}</p>
+    </aside>
+  </div>`;
+  return html(publicPage({
+    lang, path, body, image: o.business_cover || o.business_logo,
+    title: S.page, description: `${S.title}. ${S.text}`.slice(0, 200),
+    head: '<meta name="robots" content="noindex">',
+  }));
+}
+
 // ── Negocio ────────────────────────────────────────────────────────────────
 /** Redirección permanente dentro de la web (relativa: vale igual en local). */
 const movida = (to) => new Response(null, {
@@ -304,6 +384,11 @@ export async function businessPage(param, lang, search = '') {
         closedToday: 'Closed today', closedUntil: (d) => `Closed until ${d}`,
         closingDay: (d) => `Closing on ${d}`, closing: (a, b) => `Closing from ${a} to ${b}`,
         moreIn: (c) => `More in ${c}:`, cityToday: 'things to do today', cityWeek: 'this week',
+        hiddenFav: (n) => (n === 1 ? "There's 1 exclusive publication for people who have it in their favourites."
+          : `There are ${n} exclusive publications for people who have it in their favourites.`),
+        hiddenCust: (n) => (n === 1 ? "There's 1 exclusive publication for their customers with stamps."
+          : `There are ${n} exclusive publications for their customers with stamps.`),
+        birthday: 'Birthday gift for people who have it in their favourites',
       }
     : {
         now: 'Ahora mismo', soon: 'Próximamente',
@@ -328,10 +413,25 @@ export async function businessPage(param, lang, search = '') {
         closedToday: 'Cerrado hoy', closedUntil: (d) => `Cerrado hasta el ${d}`,
         closingDay: (d) => `Cerrará el ${d}`, closing: (a, b) => `Cerrará del ${a} al ${b}`,
         moreIn: (c) => `Más en ${c}:`, cityToday: 'qué hacer hoy', cityWeek: 'esta semana',
+        hiddenFav: (n) => (n === 1 ? 'Hay 1 publicación exclusiva para quien lo tiene en favoritos.'
+          : `Hay ${n} publicaciones exclusivas para quien lo tiene en favoritos.`),
+        hiddenCust: (n) => (n === 1 ? 'Hay 1 publicación exclusiva para sus clientes con sellos.'
+          : `Hay ${n} publicaciones exclusivas para sus clientes con sellos.`),
+        birthday: 'Regalo de cumpleaños para quien lo tiene en favoritos',
       };
 
   const flash = offers.filter((o) => o.kind === 'flash_offer');
   const events = offers.filter((o) => o.kind !== 'flash_offer');
+  // Lo que la ficha no enseña a quien mira sin sesión: las exclusivas para
+  // favoritos o clientes (solo cuántas hay) y el regalo de cumpleaños. Es la
+  // razón para añadirlo a favoritos, así que se dice.
+  const nFav = Number(b.hidden_for_favorites) || 0;
+  const nCli = Number(b.hidden_for_customers) || 0;
+  const exclusivas = [
+    nFav > 0 ? `<p class="exclusiva">${icono('candado')}<span>${esc(S.hiddenFav(nFav))}</span></p>` : '',
+    nCli > 0 ? `<p class="exclusiva">${icono('candado')}<span>${esc(S.hiddenCust(nCli))}</span></p>` : '',
+    b.birthday_gift ? `<p class="exclusiva">${icono('regalo')}<span>${esc(S.birthday)}</span></p>` : '',
+  ].join('');
   const where = [b.address, b.city].filter(Boolean).join(', ');
   // Todo lo de la ficha, en la hora del negocio (Canarias, una menos).
   const tz = zonaDe(b);
@@ -444,6 +544,7 @@ export async function businessPage(param, lang, search = '') {
       ${flash.length ? `<h2>${S.now}</h2><div class="olist">${flash.map((o) => offerCard(o, lang, tz)).join('')}</div>` : ''}
       ${events.length ? `<h2>${S.soon}</h2><div class="olist">${events.map((o) => offerCard(o, lang, tz)).join('')}</div>` : ''}
       ${offers.length ? '' : `<p class="empty">${S.none}</p>`}
+      ${exclusivas}
       ${novedades.length ? `<h2>${S.news}</h2>
         <div class="novedades">${novedades.map((p) => `<article>
           <p class="muted">${esc(fmtWhen(p.created_at, lang, tz))}</p>

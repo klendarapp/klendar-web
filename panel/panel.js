@@ -557,6 +557,8 @@ const NAV = [
   ['sellos', 'loyalty', 'Tarjetas de sellos'],
   ['carta', 'restaurant_menu', 'Carta'],
   ['novedades', 'campaign', 'Novedades'],
+  ['mensajes', 'notifications_active', 'Avisar a mis clientes'],
+  ['cumpleanos', 'cake', 'Regalo de cumpleaños'],
   ['ficha', 'storefront', 'Tu ficha'],
   ['cerrados', 'event_busy', 'Días cerrados'],
   ['equipo', 'group', 'Equipo'],
@@ -595,7 +597,8 @@ function sinDobleEnvio(caja) {
 }
 
 // Lo que no es de un empleado: solo propietario y encargados (como la app).
-const SOLO_GESTION = ['sellos', 'carta', 'novedades', 'ficha', 'cerrados', 'equipo', 'cartel-local'];
+// «Regalo de cumpleaños» no está: el personal lo ve, en solo lectura.
+const SOLO_GESTION = ['sellos', 'carta', 'novedades', 'mensajes', 'ficha', 'cerrados', 'equipo', 'cartel-local'];
 
 async function route() {
   paraCamara();
@@ -838,7 +841,7 @@ PAGES.resumen = async (v) => {
         <a class="btn sm" href="https://klendar.app/widget/${esc(BIZ.id)}" target="_blank" rel="noopener">Ver cómo queda</a></p></div>
     <div class="card"><h2>Últimas publicaciones</h2>${table({
       cols: [
-        { h: 'Publicación', r: (o) => `<b class="title">${esc(o.title)}</b><span class="sub">${esc(I18N.t(LABELS[o.kind]))} · ${fmtDate(o.kind === 'flash_offer' ? o.redeem_start_at : o.event_at)}</span>` },
+        { h: 'Publicación', r: (o) => `<b class="title">${esc(o.title)}</b><span class="sub">${esc(I18N.t(LABELS[o.kind]))} · ${fmtDate(o.kind === 'flash_offer' ? o.redeem_start_at : o.event_at)}${etiquetaAudiencia(o)}</span>` },
         { h: 'Estado', r: (o) => tag(estadoVisible(o)) + (o.moderation_status === 'pending' || o.moderation_status === 'rejected' ? ' ' + tag(o.moderation_status) : '') },
         { h: 'Vistas', num: true, r: (o) => fmtNum(o.views) },
         { h: 'Canjes', num: true, r: (o) => fmtNum(o.redemptions_count) },
@@ -999,7 +1002,7 @@ PAGES.publicaciones = async (v, param) => {
   const render = () => {
     $('#list').innerHTML = table({
       cols: [
-        { h: 'Publicación', r: (o) => `${primeraFoto(o.images) ? `<img class="thumb" src="${esc(primeraFoto(o.images))}" alt="" loading="lazy">` : `<span class="ph">${ms((o.images || []).some(esVideo) ? 'play_circle' : o.kind === 'flash_offer' ? 'bolt' : 'event')}</span>`}<b class="title">${esc(o.title)}</b><span class="sub">${esc(I18N.t(LABELS[o.kind]))} · ${fmtDate(o.kind === 'flash_offer' ? o.redeem_start_at : o.event_at)}</span>` },
+        { h: 'Publicación', r: (o) => `${primeraFoto(o.images) ? `<img class="thumb" src="${esc(primeraFoto(o.images))}" alt="" loading="lazy">` : `<span class="ph">${ms((o.images || []).some(esVideo) ? 'play_circle' : o.kind === 'flash_offer' ? 'bolt' : 'event')}</span>`}<b class="title">${esc(o.title)}</b><span class="sub">${esc(I18N.t(LABELS[o.kind]))} · ${fmtDate(o.kind === 'flash_offer' ? o.redeem_start_at : o.event_at)}${etiquetaAudiencia(o)}</span>` },
         { h: 'Estado', r: (o) => tag(estadoVisible(o)) + (o.moderation_status === 'pending' || o.moderation_status === 'rejected' ? ' ' + tag(o.moderation_status) : '') + (o.publish_at ? ` <span class="tag dim">${esc(bi('programada', 'scheduled'))} ${esc(fmtDate(o.publish_at))}</span>` : '') },
         { h: 'Plazas', r: (o) => o.max_redemptions == null ? '—' : `<span data-plazas="${esc(o.id)}">${plazasTxt(o, plazasOcupadas(o))}</span>` },
         { h: 'Vistas', num: true, r: (o) => fmtNum(o.views) },
@@ -1089,6 +1092,16 @@ PAGES.publicaciones = async (v, param) => {
     ampliarDialogo(aAmpliar);
   }
 };
+
+/** Quién ve una publicación (`offers.audience`), las mismas palabras que la
+ * app. «Todo el mundo» es lo normal y no lleva etiqueta. */
+const AUDIENCIAS = [
+  ['all', 'Todo el mundo'],
+  ['favorites', 'Solo quien tiene tu negocio en favoritos'],
+  ['customers', 'Solo clientes con sellos en alguna de tus tarjetas'],
+];
+const etiquetaAudiencia = (o) => (o?.audience === 'favorites' ? ` <span class="tag dim">${esc(I18N.t('Para favoritos'))}</span>`
+  : o?.audience === 'customers' ? ` <span class="tag dim">${esc(I18N.t('Para clientes'))}</span>` : '');
 
 /** Plazas ocupadas (personas) de una publicación con aforo: lo que dice la
  * base (`seats_left`, según guarde plaza o vaya por orden de llegada) o, con
@@ -1327,6 +1340,10 @@ async function offerForm(v, id, kindDefault, desde = null) {
         <label class="f" id="seatsRow" hidden><span>Plazas por persona <small>(a un evento no se va solo; un código vale por todas)</small></span><select name="max_seats">
           ${[1, 2, 3, 4, 5, 6].map((n) => `<option value="${n}" ${Number(o.max_seats || 1) === n ? 'selected' : ''}>${n === 1 ? esc(I18N.t('1 (solo quien reserva)')) : esc(bi(`${n} personas`, `${n} people`))}</option>`).join('')}</select></label>
         <label class="f full" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="adults_only" ${o.adults_only ? 'checked' : ''}><span>Solo para mayores de 18</span></label>
+        <fieldset class="f full filtro-sellos"><legend>Quién la ve</legend>
+          ${AUDIENCIAS.map(([k, t]) => `<label class="opcion"><input type="radio" name="audience" value="${k}" ${(o.audience || 'all') === k ? 'checked' : ''}><span>${esc(t)}</span></label>`).join('')}
+          <p class="hint" id="audAyuda" ${(o.audience || 'all') === 'all' ? 'hidden' : ''}>Solo la ven ellos. Si a otra persona le llega el enlace, la ficha dice que es exclusiva y cómo conseguirla, sin enseñar el beneficio.</p>
+        </fieldset>
         <label class="f full"><span>Condiciones (letra pequeña)</span><textarea name="terms" maxlength="300">${esc(o.terms || '')}</textarea></label>
         <label class="f full"><span>Enlace externo (entradas, reservas…)</span><input name="external_url" value="${esc(o.external_url || '')}" placeholder="https://"></label>
       </div>
@@ -1389,6 +1406,10 @@ async function offerForm(v, id, kindDefault, desde = null) {
   };
   $('[name=discount_type]', v).onchange = syncDiscount;
   syncDiscount();
+  // La ayuda de «Quién la ve» solo hace falta si no es para todo el mundo.
+  $$('[name=audience]', v).forEach((r) => {
+    r.onchange = () => { $('#audAyuda', v).hidden = ($('[name=audience]:checked', v)?.value || 'all') === 'all'; };
+  });
 
   // Fotos
   let images = [...(o.images || [])];
@@ -1675,6 +1696,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
       max_seats: !flash && $('[name=reservations_enabled]').checked
         ? Number(f.get('max_seats') || 1) : 1,
       adults_only: $('[name=adults_only]').checked,
+      audience: f.get('audience') || 'all',
       // Sin marcar: borrador, salvo que ya estuviera terminada, agotada o
       // cancelada (se queda así; editarla no la saca del cajón).
       status: programada ? 'draft' : ($('[name=publish]').checked ? 'active'
@@ -1830,7 +1852,8 @@ PAGES.validar = async (v) => {
       if (res.ok) {
         const personas = (res.seats || 1) > 1
           ? `<b class="plazas">${I18N.lang === 'en' ? `${res.seats} people come in` : `Entran ${res.seats} personas`}</b>` : '';
-        const premio = res.kind === 'stamp_reward' ? `<small>${ms('redeem')}${esc(I18N.t('Premio de la tarjeta de sellos'))}</small>` : '';
+        const premio = res.kind === 'stamp_reward' ? `<small>${ms('redeem')}${esc(I18N.t('Premio de la tarjeta de sellos'))}</small>`
+          : res.kind === 'birthday_gift' ? `<small>${ms('cake')}${esc(I18N.t('Regalo de cumpleaños'))}</small>` : '';
         $('#result').innerHTML = `<div class="scan-result ok">${ms('check_circle')}${esc(I18N.t('Validado'))} · ${esc(res.offer_title || '')}${personas}${premio}<small>${esc(res.user_name || '')}</small></div>`;
         if (navigator.vibrate) navigator.vibrate(120);
         $('#code').value = '';
@@ -3082,6 +3105,214 @@ function audienciaHtml(aud) {
       `Distance between your place and the last known location of people who redeemed something (${fmtNum(aud.people)} ${aud.people === 1 ? 'person' : 'people'}). It is approximate and never shows where anyone is.`))}</p>
   </div>`;
 }
+
+// ── Avisar a mis clientes ───────────────────────────────────────────────────
+// Un mensaje corto que llega como notificación a quien tiene el negocio en
+// favoritos (y, si se quiere, a quien tiene sellos en sus tarjetas). Uno por
+// semana y local. Lo mismo que la pantalla de la app, con las mismas
+// funciones de la base: `business_message_info` y `send_business_message`.
+// Solo propietario y encargado (la base contesta `not_authorized` al resto).
+const ERR_MENSAJE = {
+  not_authorized: 'Solo el propietario o un encargado pueden enviar mensajes.',
+  not_verified: 'Tu negocio tiene que estar verificado para enviar mensajes.',
+  title_length: 'El título tiene que tener entre 3 y 60 caracteres.',
+  body_length: 'El mensaje tiene que tener entre 5 y 240 caracteres.',
+  bad_offer: 'Esa publicación ya no está activa.',
+  no_recipients: 'Ahora mismo no le llegaría a nadie.',
+  rate_limited: 'Demasiados intentos seguidos. Espera un momento.',
+};
+/** «lunes 5 de octubre, 18:30» / “Monday 5 October, 18:30”, en la hora del
+ * negocio (Intl pone «lunes, 5…» y “… at 18:30”: se arma a mano). */
+const diaYHora = (iso, tz) => `${KZ.fmt(iso, tz, LOC(), { weekday: 'long', day: 'numeric', month: 'long' }).replace(',', '')}, ${KZ.fmt(iso, tz, LOC(), { hour: '2-digit', minute: '2-digit' })}`;
+const personasTxt = (n) => bi(n === 1 ? '1 persona' : `${fmtNum(n)} personas`, n === 1 ? '1 person' : `${fmtNum(n)} people`);
+
+PAGES.mensajes = async (v) => {
+  const info = await rpc('business_message_info', { p_business: BIZ.id });
+  if (info?.ok === false) throw new Error(I18N.t(ERR_MENSAJE[info.error] || friendly(info.error)));
+  const tz = KZ.valida(info.time_zone) ? info.time_zone : TZ;
+  const offers = info.offers || [];
+  const hist = info.history || [];
+  const estado = !info.verified ? `<div class="scan-result warn">${esc(I18N.t('Tu negocio tiene que estar verificado para enviar mensajes.'))}</div>`
+    : info.can_send ? `<div class="scan-result ok">${ms('check_circle')}${esc(I18N.t('Puedes enviar uno esta semana.'))}</div>`
+      : `<div class="scan-result warn">${esc(bi(`El siguiente lo podrás enviar el ${diaYHora(info.next_at, tz)}.`, `You can send the next one on ${diaYHora(info.next_at, tz)}.`))}</div>`;
+  const ESTADOS = { sent: ['ok', 'Enviado'], review: ['warn', 'En revisión'], rejected: ['bad', 'No enviado'] };
+
+  v.innerHTML = `
+    <div class="page-head"><h1>Avisar a mis clientes</h1></div>
+    <p class="muted" style="max-width:640px">Un mensaje corto que llega como notificación a quien tiene tu negocio en favoritos. Uno por semana.</p>
+    <div style="max-width:820px;margin:0 0 18px">${estado}</div>
+    <div id="msgHecho" style="max-width:820px" aria-live="polite"></div>
+    <form id="f" class="form" novalidate>
+      <label class="f full"><span>Título</span>
+        <input name="titulo" maxlength="60" placeholder="Ej.: Hoy, croquetas caseras" autocomplete="off">
+        <small class="hint" data-cuenta="titulo" aria-live="polite">0/60</small></label>
+      <label class="f full"><span>Mensaje</span>
+        <textarea name="mensaje" maxlength="240" rows="3" placeholder="Ej.: Acaban de salir del horno. Hasta las 16:00 o hasta que se acaben."></textarea>
+        <small class="hint" data-cuenta="mensaje" aria-live="polite">0/240</small></label>
+      <label class="f full"><span>Enlazar una publicación (opcional)</span><select name="oferta">
+        <option value="">Ninguna</option>
+        ${offers.map((o) => `<option value="${esc(o.id)}">${esc(o.title)} · ${esc(I18N.t(LABELS[o.kind] || ''))}${o.starts_at ? ` · ${esc(fmtDate(o.starts_at))}` : ''}</option>`).join('')}
+      </select></label>
+      <label class="f full" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="clientes"><span>Enviarlo también a quien tiene sellos en tus tarjetas</span></label>
+      <p class="full" style="margin:0"><b id="recuento"></b></p>
+      <p class="hint full">Respetamos las horas de silencio de cada persona y a quien ha apagado estos mensajes.</p>
+      <div class="full"><button class="btn primary" type="submit" ${info.can_send ? '' : 'disabled'}>Vista previa</button></div>
+      <p class="err full" id="msgErr" role="alert"></p>
+    </form>
+    <div class="card"><h2>Enviados</h2>
+      ${hist.length ? hist.map((m) => {
+        const [cls, txt] = ESTADOS[m.status] || ['dim', m.status];
+        return `<div class="mensaje-hist">
+          <p><b>${esc(m.title)}</b> <span class="tag ${cls}">${esc(I18N.t(txt))}</span></p>
+          <p>${esc(m.body)}</p>
+          <p class="muted small">${esc(fmtDate(m.sent_at || m.created_at))}${m.status === 'sent' ? ` · ${esc(personasTxt(m.recipients || 0))}` : ''}${m.author_name ? ` · ${esc(m.author_name)}` : ''}</p>
+          ${m.offer_title ? `<p class="muted small">${esc(bi(`Con enlace a «${m.offer_title}»`, `Linking to “${m.offer_title}”`))}</p>` : ''}
+          ${m.status === 'rejected' && m.rejection_reason ? `<p class="muted small">${esc(bi(`Motivo: ${m.rejection_reason}`, `Reason: ${m.rejection_reason}`))}</p>` : ''}
+        </div>`;
+      }).join('') : '<p class="muted" style="margin:0">Aún no has enviado ninguno.</p>'}
+    </div>`;
+
+  const f = $('#f', v);
+  // Cuántos lo recibirían: solo favoritos o también clientes; si el negocio
+  // es +18 o la publicación enlazada lo es, solo mayores de edad.
+  const cuantos = () => {
+    const o = offers.find((x) => x.id === f.elements.oferta.value);
+    const adultos = !!info.adults_only || !!o?.adults_only;
+    const conClientes = f.elements.clientes.checked;
+    return Number(conClientes
+      ? (adultos ? info.with_customers_adults : info.with_customers)
+      : (adultos ? info.favorites_adults : info.favorites)) || 0;
+  };
+  const pintaRecuento = () => {
+    const n = cuantos();
+    $('#recuento', v).textContent = n === 0 ? I18N.t('Ahora mismo no le llegaría a nadie.')
+      : bi(n === 1 ? 'Lo recibirá 1 persona' : `Lo recibirán ${fmtNum(n)} personas`, n === 1 ? '1 person will get it' : `${fmtNum(n)} people will get it`);
+  };
+  const pintaCuentas = () => {
+    for (const el of $$('[data-cuenta]', v)) {
+      const campo = f.elements[el.dataset.cuenta];
+      el.textContent = `${campo.value.length}/${campo.maxLength}`;
+    }
+  };
+  f.elements.titulo.addEventListener('input', pintaCuentas);
+  f.elements.mensaje.addEventListener('input', pintaCuentas);
+  f.elements.oferta.onchange = pintaRecuento;
+  f.elements.clientes.onchange = pintaRecuento;
+  pintaRecuento();
+
+  const error = (clave, datos) => {
+    $('#msgErr', v).textContent = clave === 'too_soon' && datos?.next_at
+      ? bi(`Ya has enviado uno esta semana. El siguiente, el ${diaYHora(datos.next_at, tz)}.`, `You've already sent one this week. The next one, on ${diaYHora(datos.next_at, tz)}.`)
+      : I18N.t(ERR_MENSAJE[clave] || friendly(clave));
+  };
+
+  f.onsubmit = async (e) => {
+    e.preventDefault();
+    $('#msgErr', v).textContent = '';
+    const titulo = f.elements.titulo.value.replace(/\s+/g, ' ').trim();
+    const cuerpo = f.elements.mensaje.value.trim();
+    // Las mismas reglas que la base (y la app), antes de enseñar nada.
+    if (titulo.length < 3 || titulo.length > 60) { error('title_length'); return; }
+    if (cuerpo.length < 5 || cuerpo.length > 240) { error('body_length'); return; }
+    const n = cuantos();
+    if (!n) { error('no_recipients'); return; }
+    // La vista previa: la notificación tal cual llegará al móvil, y desde
+    // aquí se envía (o se vuelve a editar).
+    const enviar = await modal({
+      title: 'Así llegará',
+      html: `<div class="noti-prev">
+          <img src="/assets/icon-192.png" alt="" width="36" height="36">
+          <div><p class="noti-app">Klendar</p>
+            <p class="noti-t">${esc(`${info.business_name || BIZ.name}: ${titulo}`)}</p>
+            <p class="noti-b">${esc(cuerpo)}</p></div>
+        </div>`,
+      submit: bi(n === 1 ? 'Enviar a 1 persona' : `Enviar a ${fmtNum(n)} personas`, n === 1 ? 'Send to 1 person' : `Send to ${fmtNum(n)} people`),
+      cancel: 'Seguir editando',
+    });
+    if (!enviar) return;
+    let r;
+    try {
+      r = await rpc('send_business_message', {
+        p_business: BIZ.id,
+        p_title: titulo,
+        p_body: cuerpo,
+        p_offer: f.elements.oferta.value || null,
+        p_include_customers: f.elements.clientes.checked,
+      });
+    } catch (err) { toast(friendly(err.message), true); return; }
+    if (!r?.ok) { error(r?.error, r); return; }
+    // Hecho: se vuelve a pintar (estado de la semana e historial al día) y
+    // arriba se dice qué ha pasado.
+    const hecho = r.status === 'review'
+      ? `<div class="scan-result warn">${esc(I18N.t('Lo revisamos antes de enviarlo porque menciona alcohol, tabaco o apuestas. Normalmente en menos de 24 h.'))}</div>`
+      : `<div class="scan-result ok">${ms('check_circle')}${esc(bi(r.recipients === 1 ? 'Mensaje enviado a 1 persona.' : `Mensaje enviado a ${fmtNum(r.recipients || 0)} personas.`,
+        r.recipients === 1 ? 'Message sent to 1 person.' : `Message sent to ${fmtNum(r.recipients || 0)} people.`))}</div>`;
+    await route();
+    const caja = $('#msgHecho');
+    if (caja) { caja.innerHTML = hecho; caja.style.marginBottom = '18px'; }
+  };
+};
+
+// ── Regalo de cumpleaños ────────────────────────────────────────────────────
+// El día de su cumpleaños, quien tiene el negocio en favoritos recibe una
+// notificación y un código de regalo. Lo ve todo el equipo; lo cambian el
+// propietario y el encargado (el resto, en solo lectura).
+const ERR_REGALO = {
+  not_authorized: 'Solo el propietario o un encargado pueden cambiarlo.',
+  gift_length: 'Escribe el regalo (de 3 a 80 caracteres).',
+  days_range: 'Elige cuántos días vale.',
+  flagged: 'El regalo no puede ser tabaco ni apuestas.',
+};
+PAGES.cumpleanos = async (v) => {
+  const d = await rpc('business_birthday_gift', { p_business: BIZ.id });
+  if (d?.ok === false) throw new Error(I18N.t(ERR_REGALO[d.error] || friendly(d.error)));
+  const edita = !!d.can_edit;
+  const dias = [1, 3, 7, 14, 30];
+  if (d.valid_days && !dias.includes(d.valid_days)) dias.push(d.valid_days);
+  dias.sort((a, b) => a - b);
+  const n = d.given_this_year || 0;
+  const m = d.redeemed_this_year || 0;
+  const alcance = d.reachable || 0;
+  const ro = edita ? '' : 'disabled';
+  v.innerHTML = `
+    <div class="page-head"><h1>Regalo de cumpleaños</h1></div>
+    <p class="muted" style="max-width:640px">El día de su cumpleaños, quien tiene tu negocio en favoritos recibe una notificación y un código de regalo que validas como cualquier otro.</p>
+    ${edita ? '' : '<div class="help" style="max-width:820px">Solo el propietario o un encargado pueden cambiarlo.</div>'}
+    <form id="f" class="form" novalidate>
+      <label class="f full" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="activo" ${d.enabled ? 'checked' : ''} ${ro}><span>Dar un regalo de cumpleaños</span></label>
+      <label class="f full"><span>Qué regalas</span>
+        <input name="regalo" maxlength="80" placeholder="Ej.: Un postre gratis" value="${esc(d.gift || '')}" autocomplete="off" ${ro}></label>
+      <label class="f"><span>Cuántos días vale</span><select name="dias" ${ro}>
+        ${dias.map((x) => `<option value="${x}" ${Number(d.valid_days) === x ? 'selected' : ''}>${esc(bi(x === 1 ? '1 día' : `${x} días`, x === 1 ? '1 day' : `${x} days`))}</option>`).join('')}</select></label>
+      <p class="hint full">Uno al año por persona. Llega a partir de las 9:00 del día de su cumpleaños, en la hora de tu negocio.</p>
+      <p class="hint full" id="alcohol" ${d.adults_only ? '' : 'hidden'}>Menciona alcohol: solo lo recibirán mayores de edad.</p>
+      ${edita ? '<div class="full"><button class="btn primary" type="submit">Guardar</button></div>' : ''}
+      <p class="err full" id="regaloErr" role="alert"></p>
+    </form>
+    <div class="card">
+      <p style="margin:0">${esc(bi(`Este año: ${n === 1 ? '1 regalo' : `${fmtNum(n)} regalos`} · ${m === 1 ? '1 canjeado' : `${fmtNum(m)} canjeados`}`,
+        `This year: ${n === 1 ? '1 gift' : `${fmtNum(n)} gifts`} · ${fmtNum(m)} redeemed`))}</p>
+      <p class="muted" style="margin:6px 0 0">${esc(bi(alcance === 1 ? 'Puede llegar a 1 persona a lo largo del año.' : `Puede llegar a ${fmtNum(alcance)} personas a lo largo del año.`,
+        alcance === 1 ? 'It can reach 1 person over the year.' : `It can reach ${fmtNum(alcance)} people over the year.`))}</p>
+    </div>`;
+  if (!edita) return;
+  const f = $('#f', v);
+  f.onsubmit = async (e) => {
+    e.preventDefault();
+    const err = $('#regaloErr', v);
+    err.textContent = '';
+    const activo = f.elements.activo.checked;
+    const regalo = f.elements.regalo.value.replace(/\s+/g, ' ').trim();
+    // Las mismas reglas que la base: encendido o con texto, de 3 a 80.
+    if ((activo || regalo) && (regalo.length < 3 || regalo.length > 80)) { err.textContent = I18N.t(ERR_REGALO.gift_length); return; }
+    const r = await rpc('save_birthday_gift', {
+      p_business: BIZ.id, p_enabled: activo, p_gift: regalo || null, p_valid_days: Number(f.elements.dias.value),
+    }).catch((x) => ({ ok: false, error: x.message }));
+    if (!r?.ok) { err.textContent = I18N.t(ERR_REGALO[r?.error] || friendly(r?.error)); return; }
+    $('#alcohol', v).hidden = !r.adults_only;
+    toast('Guardado');
+  };
+};
 
 // ── Informe ─────────────────────────────────────────────────────────────────
 // Todo junto y exportable: es lo que el negocio le pasa a su gestor y lo que

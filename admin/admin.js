@@ -81,7 +81,7 @@ let RUTA_N = 0;
 class Obsoleta extends Error {
   constructor() { super(''); this.obsoleta = true; }
 }
-const ESCRIBE = /^admin_(set|record|send|delete|upsert|resolve|add|remove|push_retry|save|collection_(add|remove|move)|run|update)/;
+const ESCRIBE = /^admin_(set|record|send|delete|upsert|resolve|review|add|remove|push_retry|save|collection_(add|remove|move)|run|update)/;
 async function rpc(fn, args = {}) {
   const n = RUTA_N;
   const { data, error } = await sb.rpc(fn, args);
@@ -271,7 +271,7 @@ const NAV = [
   ['group', 'Actividad'],
   ['resumen', 'dashboard', 'Resumen'], ['semanas', 'trending_up', 'Semana a semana'], ['ciudades', 'map', 'Ciudades'], ['negocios', 'storefront', 'Negocios'], ['publicaciones', 'bolt', 'Publicaciones'], ['canjes', 'confirmation_number', 'Canjes'], ['usuarios', 'person', 'Usuarios'],
   ['group', 'Moderación'],
-  ['denuncias', 'flag', 'Denuncias'], ['resenas', 'chat_bubble', 'Reseñas y novedades'], ['sugerencias', 'lightbulb', 'Sugerencias'],
+  ['denuncias', 'flag', 'Denuncias'], ['mensajes', 'campaign', 'Mensajes a clientes'], ['resenas', 'chat_bubble', 'Reseñas y novedades'], ['sugerencias', 'lightbulb', 'Sugerencias'],
   ['group', 'Negocio'],
   ['planes', 'credit_card', 'Planes y pagos'], ['avisos', 'notifications', 'Notificaciones y push'],
   ['group', 'Sistema'],
@@ -289,7 +289,10 @@ async function refreshBadges(lanzar = false) {
     const k = await rpc('admin_kpis');
     let sug = 0;
     try { sug = (await rpc('admin_feedback', { p_status: 'new', p_limit: 1 })).counts?.new || 0; } catch { /* sin permisos */ }
-    BADGES = { negocios: k.businesses_pending || 0, publicaciones: k.offers_pending || 0, denuncias: k.reports_open || 0, sugerencias: sug };
+    // Mensajes a clientes parados por la moderación automática.
+    let msj = 0;
+    try { msj = (await rpc('admin_business_messages', { p_status: 'review', p_limit: 1, p_offset: 0 })).pending || 0; } catch { /* sin la función */ }
+    BADGES = { negocios: k.businesses_pending || 0, publicaciones: k.offers_pending || 0, denuncias: k.reports_open || 0, mensajes: msj, sugerencias: sug };
     Object.keys(BADGES).forEach((x) => { if (!BADGES[x]) delete BADGES[x]; });
     renderNav(currentRoute()[0]);
     return k;
@@ -405,12 +408,13 @@ PAGES.resumen = async (v) => {
   const en = I18N.lang === 'en';
   v.innerHTML = `
     <div class="page-head"><h1>Resumen</h1><span class="spacer"></span><span class="muted">${new Date().toLocaleString(LOC(), { dateStyle: 'full', timeStyle: 'short', timeZone: TZ })}</span></div>
-    ${(k.businesses_pending || k.offers_pending || k.reports_open || k.subs_expiring_7d || k.push_failed_7d || BADGES.sugerencias) ? `<div class="card"><h2>Pendiente de ti</h2><div class="actions">
+    ${(k.businesses_pending || k.offers_pending || k.reports_open || k.subs_expiring_7d || k.push_failed_7d || BADGES.sugerencias || BADGES.mensajes) ? `<div class="card"><h2>Pendiente de ti</h2><div class="actions">
       ${k.businesses_pending ? `<a class="btn" href="#/negocios?status=pending">${ms('storefront')} <b>${k.businesses_pending}</b> ${en ? (k.businesses_pending === 1 ? 'business to verify' : 'businesses to verify') : (k.businesses_pending === 1 ? 'negocio por verificar' : 'negocios por verificar')}</a>` : ''}
       ${k.offers_pending ? `<a class="btn" href="#/publicaciones?moderation=pending">${ms('bolt')} <b>${k.offers_pending}</b> ${en ? (k.offers_pending === 1 ? 'publication to moderate' : 'publications to moderate') : (k.offers_pending === 1 ? 'publicación por moderar' : 'publicaciones por moderar')}</a>` : ''}
       ${k.reports_open ? `<a class="btn" href="#/denuncias">${ms('flag')} <b>${k.reports_open}</b> ${en ? (k.reports_open === 1 ? 'open report' : 'open reports') : (k.reports_open === 1 ? 'denuncia abierta' : 'denuncias abiertas')}</a>` : ''}
       ${k.subs_expiring_7d ? `<a class="btn" href="#/planes">${ms('credit_card')} <b>${k.subs_expiring_7d}</b> ${en ? (k.subs_expiring_7d === 1 ? 'subscription expiring in 7 days' : 'subscriptions expiring in 7 days') : (k.subs_expiring_7d === 1 ? 'suscripción vence en 7 días' : 'suscripciones vencen en 7 días')}</a>` : ''}
       ${k.push_failed_7d ? `<a class="btn" href="#/avisos?tab=push">${ms('notifications')} <b>${k.push_failed_7d}</b> ${en ? (k.push_failed_7d === 1 ? 'failed push notification (7 d)' : 'failed push notifications (7 d)') : (k.push_failed_7d === 1 ? 'notificación push fallida (7 d)' : 'notificaciones push fallidas (7 d)')}</a>` : ''}
+      ${BADGES.mensajes ? `<a class="btn" href="#/mensajes">${ms('campaign')} <b>${BADGES.mensajes}</b> ${en ? (BADGES.mensajes === 1 ? 'customer message to review' : 'customer messages to review') : (BADGES.mensajes === 1 ? 'mensaje a clientes por revisar' : 'mensajes a clientes por revisar')}</a>` : ''}
       ${BADGES.sugerencias ? `<a class="btn" href="#/sugerencias">${ms('lightbulb')} <b>${BADGES.sugerencias}</b> ${en ? (BADGES.sugerencias === 1 ? 'unread suggestion' : 'unread suggestions') : (BADGES.sugerencias === 1 ? 'sugerencia sin leer' : 'sugerencias sin leer')}</a>` : ''}
     </div></div>` : '<div class="card"><h2>Todo al día</h2><p class="muted" style="margin:0">No hay negocios por verificar, publicaciones por moderar ni denuncias abiertas.</p></div>'}
     <div class="grid2">
@@ -453,7 +457,7 @@ PAGES.resumen = async (v) => {
 
 // ── Negocios ────────────────────────────────────────────────────────────────
 const params = () => Object.fromEntries(new URLSearchParams((location.hash.split('?')[1] || '')));
-const st = { sugerencias: { limit: 50, offset: 0 }, negocios: { limit: 50, offset: 0 }, publicaciones: { limit: 50, offset: 0 }, canjes: { limit: 50, offset: 0 }, usuarios: { limit: 50, offset: 0 }, resenas: { limit: 50, offset: 0 }, posts: { limit: 50, offset: 0 }, denuncias: { limit: 50, offset: 0 }, actividad: { limit: 100, offset: 0 }, pagos: { limit: 100, offset: 0 }, subs: { limit: 100, offset: 0 } };
+const st = { mensajes: { limit: 50, offset: 0 }, sugerencias: { limit: 50, offset: 0 }, negocios: { limit: 50, offset: 0 }, publicaciones: { limit: 50, offset: 0 }, canjes: { limit: 50, offset: 0 }, usuarios: { limit: 50, offset: 0 }, resenas: { limit: 50, offset: 0 }, posts: { limit: 50, offset: 0 }, denuncias: { limit: 50, offset: 0 }, actividad: { limit: 100, offset: 0 }, pagos: { limit: 100, offset: 0 }, subs: { limit: 100, offset: 0 } };
 
 PAGES.negocios = async (v, id) => {
   if (id) return businessDetail(v, id);
@@ -1060,6 +1064,71 @@ PAGES.denuncias = async (v) => {
     }); });
   };
   ['status', 'type'].forEach((k) => { $('#' + k).onchange = () => { s[k] = $('#' + k).value; s.offset = 0; load(); }; });
+  await load();
+};
+
+// ── Mensajes a clientes ─────────────────────────────────────────────────────
+// Los mensajes de «Avisar a mis clientes» que la moderación automática ha
+// parado (mencionan alcohol, tabaco o apuestas) esperan aquí: se envían tal
+// cual o se rechazan con un motivo opcional, que el negocio recibe. El resto
+// ya salió solo; se listan para poder mirar qué se manda.
+const ESTADO_MENSAJE = { review: ['warn', 'En revisión'], sent: ['ok', 'Enviado'], rejected: ['bad', 'No enviado'] };
+PAGES.mensajes = async (v) => {
+  const s = st.mensajes;
+  const en = I18N.lang === 'en';
+  v.innerHTML = `
+    <div class="page-head"><h1>Mensajes a clientes</h1></div>
+    ${helpBox('¿Qué hago aquí?', en
+      ? '<p>A business can send one short message a week to people who have it in their favourites (“Message my customers”). If the text mentions <b>alcohol</b>, <b>tobacco</b> or <b>gambling</b> it stops here. <b>Send</b> delivers it as it is (with alcohol, only to adults); <b>Reject</b> discards it and the business is told, with the reason if you give one. A rejected message does not use up their week.</p>'
+      : '<p>Un negocio puede mandar un mensaje corto a la semana a quien lo tiene en favoritos («Avisar a mis clientes»). Si el texto menciona <b>alcohol</b>, <b>tabaco</b> o <b>apuestas</b>, se para aquí. <b>Enviar</b> lo manda tal cual (con alcohol, solo a mayores de edad); <b>Rechazar</b> lo descarta y se le dice al negocio, con el motivo si lo pones. Uno rechazado no le gasta la semana.</p>')}
+    <div class="toolbar">
+      <select id="status">${[['all', 'Todos'], ['review', 'En revisión'], ['sent', 'Enviados'], ['rejected', 'No enviados']].map((o) => `<option value="${o[0]}" ${(s.status || 'review') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
+    </div>
+    <div id="list"><div class="loading">Cargando…</div></div>`;
+  const load = async () => {
+    const estado = s.status || 'review';
+    const r = await rpc('admin_business_messages', { p_status: estado === 'all' ? null : estado, p_limit: s.limit, p_offset: s.offset });
+    const pg = pager(s, r.total || 0, load);
+    const items = r.items || [];
+    $('#list').innerHTML = (items.length ? items.map((x) => {
+      const [cls, txt] = ESTADO_MENSAJE[x.status] || ['dim', x.status];
+      const personas = x.recipients === 1 ? (en ? '1 person' : '1 persona') : `${fmtNum(x.recipients || 0)} ${en ? 'people' : 'personas'}`;
+      return `
+      <div class="item"><div class="ph">${ms('campaign')}</div><div>
+        <h3>${esc(x.title)} <span class="tag ${cls}">${esc(I18N.t(txt))}</span> ${flagTags(x)}</h3>
+        <div class="meta"><a class="link" href="#/negocios/${esc(x.business_id)}">${esc(x.business_name)}</a>${x.city ? ` · ${esc(x.city)}` : ''} · ${fmtDate(x.created_at)}${x.author_email ? ` · ${esc(x.author_email)}` : ''}</div>
+        <p>${esc(x.body)}</p>
+        <div class="meta">${esc(en ? (x.include_customers ? 'Favourites and customers with stamps' : 'Favourites') : (x.include_customers ? 'Favoritos y clientes con sellos' : 'Favoritos'))}${x.status === 'sent' ? ` · ${esc(personas)}${x.sent_at ? ` · ${fmtDate(x.sent_at)}` : ''}` : ''}${x.offer_title ? ` · ${esc(en ? `Linking to “${x.offer_title}”` : `Con enlace a «${x.offer_title}»`)}` : ''}</div>
+        ${x.status === 'rejected' && x.rejection_reason ? `<div class="meta">${esc(en ? `Reason: ${x.rejection_reason}` : `Motivo: ${x.rejection_reason}`)}</div>` : ''}
+        ${x.status === 'review' ? `<div class="actions">
+          <button class="btn sm ok" data-msg="${esc(x.id)}" data-ok="1">Enviar</button>
+          <button class="btn sm bad" data-msg="${esc(x.id)}" data-ok="0">Rechazar…</button>
+        </div>` : ''}
+      </div></div>`;
+    }).join('') : '<div class="tbl-wrap"><div class="empty">Ningún mensaje con ese filtro.</div></div>') + pg.html;
+    pg.bind($('#list'));
+    $$('#list [data-msg]').forEach((b) => { b.onclick = () => esperando(b, async () => {
+      const aprobar = b.dataset.ok === '1';
+      let motivo = null;
+      if (aprobar) {
+        if (!await confirmDlg('Enviar el mensaje', esc(I18N.t('Llega ahora como notificación a quien tiene el negocio en favoritos (y a sus clientes, si lo pidió). No se puede deshacer.')), { submit: 'Enviar' })) return;
+      } else {
+        const m = await modal({ title: 'Rechazar el mensaje', intro: esc(I18N.t('No se envía y se le dice al negocio. Puede escribir otro cuando quiera.')), fields: [{ name: 'reason', label: 'Motivo que verá el negocio (opcional)', type: 'textarea' }], submit: 'Rechazar', danger: true });
+        if (!m) return;
+        motivo = m.reason || null;
+      }
+      try {
+        const res = await rpc('admin_review_business_message', { p_id: b.dataset.msg, p_approve: aprobar, p_reason: motivo });
+        if (res?.ok === false) { toast(res.error === 'not_in_review' ? 'Ese mensaje ya no está en revisión.' : 'No encontrado.', true); await load(); return; }
+        toast(aprobar
+          ? (res.recipients === 1 ? (en ? 'Sent to 1 person' : 'Enviado a 1 persona') : (en ? `Sent to ${fmtNum(res.recipients || 0)} people` : `Enviado a ${fmtNum(res.recipients || 0)} personas`))
+          : 'Mensaje rechazado');
+        refreshBadges();
+        await load();
+      } catch (e) { toast(e.message, true); }
+    }); });
+  };
+  $('#status').onchange = () => { s.status = $('#status').value; s.offset = 0; load(); };
   await load();
 };
 

@@ -858,4 +858,16 @@ const I18N = makeI18N({
   'En inglés (opcional)': 'In English (optional)',
   'Lo recibe quien tiene la app en inglés. Si lo dejas vacío, le llega el español.': 'People with the app in English get this. If you leave it empty, they get the Spanish.',
   '(opcional)': '(optional)',
+  // Mensajes a clientes («Avisar a mis clientes» de los negocios)
+  "Mensajes a clientes": "Customer messages",
+  "No enviado": "Not sent",
+  "No enviados": "Not sent",
+  "Mensaje rechazado": "Message rejected",
+  "Motivo que verá el negocio (opcional)": "Reason the business will see (optional)",
+  "Llega ahora como notificación a quien tiene el negocio en favoritos (y a sus clientes, si lo pidió). No se puede deshacer.": "It arrives now as a notification for people who have the business in their favourites (and its customers, if it asked for that). It can't be undone.",
+  "Ningún mensaje con ese filtro.": "No messages with that filter.",
+  "Enviar el mensaje": "Send the message",
+  "Rechazar el mensaje": "Reject the message",
+  "No se envía y se le dice al negocio. Puede escribir otro cuando quiera.": "It isn't sent and the business is told. They can write another one whenever they like.",
+  "Ese mensaje ya no está en revisión.": "That message is no longer under review.",
 });

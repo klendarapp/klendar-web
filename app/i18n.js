@@ -469,4 +469,16 @@ const APP_EN = {
     "Cuentan todas las publicaciones": "Every publication counts",
     "También por visita con el QR del local": "Also per visit with the venue QR code",
     "Tarjeta de sellos": "Stamp card",
+    // Exclusivas, mensajes de los negocios y regalo de cumpleaños
+    "Para favoritos": "For favourites",
+    "Para clientes": "For customers",
+    "Añadir a favoritos": "Add to favourites",
+    "Ver el negocio": "See the business",
+    "Es para quien tiene sellos en alguna de sus tarjetas. Consigue el primero canjeando una de sus ofertas o con el QR del local.": "It's for people with stamps on one of their cards. Get your first one by redeeming one of their offers or with the venue QR code.",
+    "Regalos de cumpleaños": "Birthday gifts",
+    "¡Feliz cumpleaños!": "Happy birthday!",
+    "Ese regalo no está.": "That gift isn't here.",
+    "Mensajes de mis negocios favoritos": "Messages from my favourite businesses",
+    "Lo que te cuentan tus favoritos: como mucho uno por semana de cada uno.": "What your favourites tell you: at most one a week from each.",
+    "Si uno de tus favoritos hace un regalo por tu cumpleaños, te llega ese día con su código.": "If one of your favourites gives a birthday gift, it arrives on the day with its code.",
 };

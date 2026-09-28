@@ -162,6 +162,11 @@ footer.pub-foot a { color: var(--ink-2); }
   border: 1px solid var(--glass-border); background: var(--elevated); }
 .cierre .ic { flex: none; color: var(--ink-2); }
 .cierre.ahora .ic { color: #F5B041; }
+/* Lo que la ficha del negocio no enseña sin sesión: exclusivas para favoritos
+   o clientes (cuántas) y el regalo de cumpleaños. */
+.exclusiva { display: flex; align-items: center; gap: 10px; margin: 12px 0 0; padding: 10px 14px; border-radius: 16px;
+  border: 1px solid var(--glass-border); background: var(--elevated); color: var(--ink-2); }
+.exclusiva .ic { flex: none; color: var(--accent-text); }
 .stars { color: #FFB84D; letter-spacing: 1px; white-space: nowrap; }
 .stars span { color: var(--glass-border); }
 .denuncia, .denuncia-pie a { font-size: 13px; color: var(--ink-2); }

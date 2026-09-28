@@ -356,3 +356,17 @@ a.card.tarjeta-sellos:hover { border-color: var(--ink-2); }
 .nuevos { list-style: none; margin: 10px 0; padding: 0; display: grid; gap: 8px; }
 #buscaNuevos { margin-bottom: 14px; }
 #qNuevos, #qGente { width: 100%; box-sizing: border-box; padding: 12px 14px; border-radius: 16px; font-size: 15px; background: var(--glass); }
+
+/* «Avisar a mis clientes»: la vista previa, con el aspecto de la notificación
+   que llegará al móvil, y el historial de lo enviado. */
+.noti-prev { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border-radius: 18px; margin: 6px 0 4px;
+  background: var(--elevated); border: 1px solid var(--glass-border); box-shadow: 0 6px 20px rgba(0,0,0,.12); }
+.noti-prev img { border-radius: 9px; flex: none; }
+.noti-prev p { margin: 0; }
+.noti-prev .noti-app { font-size: 12px; color: var(--ink-2); }
+.noti-prev .noti-t { font-weight: 700; color: var(--ink); font-size: 15px; }
+.noti-prev .noti-b { color: var(--ink); font-size: 14px; white-space: pre-line; }
+.mensaje-hist { padding: 12px 0; border-top: 1px solid var(--glass-border); }
+.mensaje-hist:first-of-type { border-top: 0; padding-top: 0; }
+.mensaje-hist p { margin: 4px 0 0; color: var(--ink); }
+.mensaje-hist p:first-child { margin: 0; }
