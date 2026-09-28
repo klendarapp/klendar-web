@@ -467,5 +467,6 @@ const APP_EN = {
     "Solo cuentan algunas categorías": "Only some categories count",
     "Solo cuentan algunas publicaciones": "Only some publications count",
     "Cuentan todas las publicaciones": "Every publication counts",
+    "También por visita con el QR del local": "Also per visit with the venue QR code",
     "Tarjeta de sellos": "Stamp card",
 };

@@ -1276,8 +1276,13 @@ RUTAS.recibo = async ([id]) => {
 };
 
 // ── Tarjetas de sellos ────────────────────────────────────────────────────
-/** Qué da sello en una tarjeta, con las mismas palabras que la app. */
+/** Qué da sello en una tarjeta, con las mismas palabras que la app; y, si
+ * también sella por visita con el QR del local, dicho. */
 function queSella(c) {
+  const base = queSellaBase(c);
+  return c.by_visit ? `${base} · ${t('También por visita con el QR del local')}` : base;
+}
+function queSellaBase(c) {
   if (c.applies_to === 'flash_offer') return t('Solo cuentan las ofertas flash');
   if (c.applies_to === 'future_event') return t('Solo cuentan los eventos');
   if (c.applies_to === 'categories' || c.applies_to === 'offers') {
@@ -1332,6 +1337,16 @@ RUTAS.sellos = async () => {
       titulo: r.reward || b.dataset.reward, negocio: b.dataset.negocio, at, volver: '#/sellos', tz: ZONAS.get(b.dataset.biz),
     }), 'stamp_rewards'));
   }); });
+};
+
+// ── El QR del local ───────────────────────────────────────────────────────
+/** Vuelta de «Entra para llevarte el sello de hoy» (la ficha abierta desde
+ * el QR del local): ya con sesión, otra vez a la ficha, que da el sello
+ * (ver /assets/visita.js). */
+RUTAS.visita = async ([token]) => {
+  if (!/^[A-Za-z0-9_-]{16}$/.test(token || '')) { vuelve(''); return; }
+  if (!exigeSesion(`visita/${token}`)) return;
+  location.replace(`/v/${encodeURIComponent(token)}`);
 };
 
 // ── Arranque ──────────────────────────────────────────────────────────────

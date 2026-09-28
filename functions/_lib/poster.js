@@ -92,3 +92,147 @@ export async function posterPage(id, lang) {
 </body>
 </html>`);
 }
+
+// ── El cartel del local ─────────────────────────────────────────────────────
+// Un folio con el logo, el nombre, el QR del local y la dirección corta, para
+// la barra, la puerta o las mesas. El QR (klendar.app/v/<código>) abre la
+// ficha del negocio y, si alguna tarjeta de sellos lo tiene activado, da un
+// sello por visita. «Tamaño mesa»: cuatro iguales en el mismo folio, para
+// recortar. El mismo cartel que la app («Cartel del local»).
+//
+// Se abre con el código en la dirección (`/cartel/local/<código>`), que es
+// el mismo que va impreso en la pared: no descubre nada que no esté ya a la
+// vista. Quien lo imprime lo abre desde el panel o desde la app.
+
+const TV = {
+  es: {
+    lang: 'es', title: 'Cartel del local', point: 'Apunta con la cámara del móvil', print: 'Imprimir',
+    scan: 'Escanea para ver nuestra carta y todo lo que tenemos',
+    scanStamps: 'Escanea para ver nuestra carta y todo lo que tenemos, y llévate un sello en cada visita',
+    a4: 'Folio A4', table: 'Tamaño mesa',
+    help: 'Para la barra, la puerta o las mesas. Se imprime igual en blanco y negro.',
+    helpTable: 'Cuatro por folio: recórtalos por las líneas y ponlos en las mesas.',
+    changed: 'Este cartel ya no vale', changedBody: 'El local ha cambiado su QR. Imprime el cartel nuevo desde el panel o desde la app.',
+  },
+  en: {
+    lang: 'en', title: 'Venue poster', point: 'Point your phone camera here', print: 'Print',
+    scan: 'Scan to see our menu and everything we offer',
+    scanStamps: 'Scan to see our menu and everything we offer, and get a stamp on every visit',
+    a4: 'A4 sheet', table: 'Table size',
+    help: 'For the counter, the door or the tables. Black and white prints fine.',
+    helpTable: 'Four per sheet: cut along the lines and put them on the tables.',
+    changed: 'This poster no longer works', changedBody: 'The venue has changed its QR code. Print the new poster from the dashboard or the app.',
+  },
+};
+
+/** «Calle Mayor 12, Madrid»: lo primero de la dirección y la ciudad (sin
+ * repetirla). Lo mismo que la app. */
+export function direccionCorta(address, city) {
+  const calle = String(address || '').split(',')[0].trim();
+  const c = String(city || '').trim();
+  if (!calle) return c;
+  if (!c || calle.toLowerCase().includes(c.toLowerCase())) return calle;
+  return `${calle}, ${c}`;
+}
+
+const CABEZA = (S, titulo) => `<!doctype html>
+<html lang="${S.lang}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>${esc(titulo)} · Klendar</title>
+<link rel="icon" href="/favicon.ico" sizes="48x48"><link rel="icon" type="image/png" sizes="96x96" href="/assets/favicon-96.png"><link rel="manifest" href="/site.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=Manrope:wght@500;600;700&display=swap" rel="stylesheet">`;
+
+export async function venuePosterPage(token, lang, mesa) {
+  const S = TV[lang === 'en' ? 'en' : 'es'];
+  const base = lang === 'en' ? '/en/poster/venue' : '/cartel/local';
+  const valido = /^[A-Za-z0-9_-]{16}$/.test(token || '');
+  const info = valido ? await rpc('visit_qr_info', { p_token: token }) : null;
+  if (info?.error === 'token_changed') {
+    return html(`${CABEZA(S, S.changed)}
+<link rel="stylesheet" href="/assets/site.css?v=20261008">
+</head>
+<body><main class="open"><div class="card" style="max-width:460px;margin:60px auto;padding:24px;text-align:center">
+<h1>${esc(S.changed)}</h1><p class="muted">${esc(info.business_name || '')}</p><p>${esc(S.changedBody)}</p>
+</div></main></body></html>`, 410, 'no-store');
+  }
+  const b = info?.ok ? info.business : null;
+  if (!b?.name) return notFound(S.lang, `${base}/${token}`, 'b');
+
+  const url = `https://klendar.app/v/${token}`;
+  const sellos = (info.visit_cards || []).length > 0;
+  const dir = direccionCorta(b.address, b.city);
+  const cartel = `
+    <section class="cartel">
+      ${b.logo_url ? `<img class="logo" src="${esc(b.logo_url)}" alt="">` : ''}
+      <h1>${esc(b.name)}</h1>
+      <p class="invita">${esc(sellos ? S.scanStamps : S.scan)}</p>
+      <div class="qr" role="img" aria-label="QR ${esc(url)}"></div>
+      <p class="apunta">${esc(S.point)}</p>
+      ${dir ? `<p class="dir">${esc(dir)}</p>` : ''}
+      <p class="marca"><img src="/assets/symbol.png" alt=""> klendar.app</p>
+    </section>`;
+
+  return html(`${CABEZA(S, `${S.title} · ${b.name}`)}
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #F5F5F5; font-family: Manrope, system-ui, sans-serif; color: #0A0A0A; }
+  .barra { max-width: 640px; margin: 0 auto; padding: 16px; display: flex; flex-wrap: wrap; gap: 10px 12px; align-items: center; }
+  .barra p { margin: 0; flex: 1 1 260px; font-size: 14px; color: #636363; }
+  .barra nav { display: flex; gap: 4px; background: #fff; border-radius: 999px; padding: 3px; }
+  .barra nav a { font-weight: 700; font-size: 14px; color: #0A0A0A; text-decoration: none; padding: 8px 14px; border-radius: 999px; }
+  .barra nav a[aria-current] { background: #0A0A0A; color: #fff; }
+  .barra button { font: inherit; font-weight: 700; border: 0; border-radius: 999px; padding: 12px 22px;
+    background: #FF4D6D; color: #0A0A0A; cursor: pointer; }
+  .folio { background: #fff; width: min(640px, calc(100vw - 32px)); aspect-ratio: 210 / 297; margin: 0 auto 32px;
+    border-radius: 18px; box-shadow: 0 20px 60px -30px rgba(10,10,10,.35); display: grid; overflow: hidden; container-type: inline-size; }
+  .folio.mesa { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+  .mesa .cartel { outline: 1px dashed #BDBDBD; outline-offset: -0.5px; }
+  .cartel { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 8cqw 6cqw 5cqw; min-height: 0; }
+  .mesa .cartel { padding: 4cqw 3cqw 2.5cqw; }
+  .cartel .logo { width: 14cqw; height: 14cqw; border-radius: 50%; object-fit: cover; background: #F0F0F0; margin-bottom: 2.6cqw; }
+  .mesa .cartel .logo { width: 7cqw; height: 7cqw; margin-bottom: 1.3cqw; }
+  .cartel h1 { font-family: Sora, sans-serif; font-weight: 800; font-size: 7cqw; line-height: 1.1; letter-spacing: -.02em; margin: 0 0 2.2cqw; }
+  .mesa .cartel h1 { font-size: 3.5cqw; margin-bottom: 1.1cqw; }
+  .cartel .invita { font-weight: 600; font-size: 3.6cqw; line-height: 1.3; margin: 0; max-width: 80%; }
+  .mesa .cartel .invita { font-size: 1.8cqw; }
+  .cartel .qr { width: 52cqw; margin: auto 0 2.6cqw; }
+  .mesa .cartel .qr { width: 26cqw; margin-bottom: 1.3cqw; }
+  .cartel .qr svg { width: 100%; height: auto; display: block; }
+  .cartel .apunta { font-weight: 700; font-size: 3.3cqw; margin: 0 0 auto; }
+  .mesa .cartel .apunta { font-size: 1.65cqw; }
+  .cartel .dir { font-size: 2.9cqw; color: #636363; margin: 3cqw 0 1.4cqw; }
+  .mesa .cartel .dir { font-size: 1.45cqw; margin: 1.5cqw 0 .7cqw; }
+  .cartel .marca { font-family: Sora, sans-serif; font-weight: 700; font-size: 2.6cqw; margin: 0; display: flex; align-items: center; gap: 1.2cqw; }
+  .mesa .cartel .marca { font-size: 1.3cqw; gap: .6cqw; }
+  .cartel .marca img { width: 3.8cqw; height: 3.8cqw; }
+  .mesa .cartel .marca img { width: 1.9cqw; height: 1.9cqw; }
+  @page { size: A4; margin: 0; }
+  @media print {
+    body { background: #fff; }
+    .barra { display: none; }
+    .folio { width: 210mm; height: 297mm; aspect-ratio: auto; box-shadow: none; border-radius: 0; margin: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="barra">
+  <p>${esc(mesa ? S.helpTable : S.help)}</p>
+  <nav aria-label="${esc(S.title)}"><a href="${base}/${esc(token)}"${mesa ? '' : ' aria-current="page"'}>${esc(S.a4)}</a><a href="${base}/${esc(token)}?mesa=1"${mesa ? ' aria-current="page"' : ''}>${esc(S.table)}</a></nav>
+  <button onclick="print()">${esc(S.print)}</button>
+</div>
+<main class="folio${mesa ? ' mesa' : ''}">${mesa ? cartel.repeat(4) : cartel}</main>
+<script src="/assets/vendor/qrcode.js?v=1"></script>
+<script>
+  var q = qrcode(0, 'M'); q.addData(${JSON.stringify(url)}); q.make();
+  var svg = q.createSvgTag({ cellSize: 6, margin: 0, scalable: true });
+  document.querySelectorAll('.qr').forEach(function (el) { el.innerHTML = svg; });
+</script>
+</body>
+</html>`, 200, 'no-store');
+}

@@ -595,7 +595,7 @@ function sinDobleEnvio(caja) {
 }
 
 // Lo que no es de un empleado: solo propietario y encargados (como la app).
-const SOLO_GESTION = ['sellos', 'carta', 'novedades', 'ficha', 'cerrados', 'equipo'];
+const SOLO_GESTION = ['sellos', 'carta', 'novedades', 'ficha', 'cerrados', 'equipo', 'cartel-local'];
 
 async function route() {
   paraCamara();
@@ -1989,8 +1989,17 @@ const ERR_SELLOS = {
 };
 const errSellos = (code) => I18N.t(ERR_SELLOS[code] || friendly(code));
 
-/** Qué da sello, dicho como lo ve la gente en su tarjeta. */
+/** Qué da sello, dicho como lo ve la gente en su tarjeta; y, si también
+ * sella por visita con el QR del local, dicho. */
 function filtroSellos(c, offers = []) {
+  const base = filtroSellosBase(c, offers);
+  return c.by_visit ? `${base} · ${I18N.t('También por visita con el QR del local')}` : base;
+}
+/** «De ellos: 60 por canje · 30 por visita · 6 a mano», como la app. */
+const origenSellos = (c) => bi(
+  `De ellos: ${fmtNum(c.stamps_redemption || 0)} por canje · ${fmtNum(c.stamps_visit || 0)} por visita · ${fmtNum(c.stamps_manual || 0)} a mano`,
+  `Of those: ${fmtNum(c.stamps_redemption || 0)} from redemptions · ${fmtNum(c.stamps_visit || 0)} from visits · ${fmtNum(c.stamps_manual || 0)} by hand`);
+function filtroSellosBase(c, offers = []) {
   if (c.applies_to === 'flash_offer') return I18N.t('Solo cuentan las ofertas flash');
   if (c.applies_to === 'future_event') return I18N.t('Solo cuentan los eventos');
   if (c.applies_to === 'categories' || c.applies_to === 'offers') {
@@ -2042,10 +2051,13 @@ PAGES.sellos = async (v, param) => {
   const lleno = cards.length >= (d.max || 5);
   v.innerHTML = `
     <div class="page-head"><h1>Tarjetas de sellos</h1><span class="spacer"></span>
+      <a class="btn sm ghost" href="#/cartel-local">Imprimir el cartel del local</a>
       <button class="btn sm primary" type="button" id="nueva" ${lleno ? 'disabled' : ''}>Nueva tarjeta</button></div>
     ${helpBox('¿Cómo funciona?', bi(`<p>Cada tarjeta tiene su meta, su premio y lo que da sello: todas las publicaciones, solo las ofertas flash, solo los eventos, ciertas categorías o ciertas publicaciones. Cuando validas un código, <b>cada tarjeta encendida que encaje da su sello</b>, como mucho uno al día por persona y tarjeta.</p>
+      <p>Si marcas <b>«También por visita con el QR del local»</b>, quien escanee el cartel del local en tu negocio se lleva además un sello, con el mismo tope de uno al día.</p>
       <p>El premio es otro código que validas igual, o lo entregas tú desde la lista de clientes de la tarjeta, donde también puedes añadir o quitar sellos y ponerla a 0. Si apagas una tarjeta, <b>nadie pierde los sellos que tiene</b>.</p>`,
       `<p>Each card has its goal, its reward and what earns a stamp: all publications, flash offers only, events only, certain categories or certain publications. When you validate a code, <b>every card that is on and matches gives its stamp</b>, one a day per person and card at most.</p>
+      <p>If you tick <b>“Also per visit with the venue QR code”</b>, whoever scans the venue poster at your place also gets a stamp, with the same limit of one a day.</p>
       <p>The reward is another code you validate the same way, or you hand it over yourself from the card's customer list, where you can also add or remove stamps and reset it to 0. If you turn a card off, <b>nobody loses the stamps they have</b>.</p>`))}
     ${lleno ? `<p class="muted">${esc(bi(`Ya tienes ${d.max}, el máximo. Borra o cambia alguna para crear otra.`, `You already have ${d.max}, the maximum. Delete or change one to create another.`))}</p>` : ''}
     ${cards.length ? cards.map((c) => `
@@ -2053,6 +2065,7 @@ PAGES.sellos = async (v, param) => {
         <div class="ts-top"><h2>${esc(c.name)}</h2>${estadoTarjeta(c)}<span class="ms" aria-hidden="true">chevron_right</span></div>
         <p class="ts-meta"><b>${esc(metaPremio(c))}</b></p>
         <p class="muted">${esc(filtroSellos(c, d.offers))}</p>
+        ${c.stamps ? `<p class="muted">${esc(origenSellos(c))}</p>` : ''}
         <p class="muted">${esc(bi(
           `${c.people === 0 ? 'Nadie con sellos ahora' : c.people === 1 ? '1 persona con sellos' : `${fmtNum(c.people)} personas con sellos`} · ${c.rewards_given === 0 ? 'ningún premio entregado' : c.rewards_given === 1 ? '1 premio entregado' : `${fmtNum(c.rewards_given)} premios entregados`}`,
           `${c.people === 0 ? 'Nobody with stamps now' : c.people === 1 ? '1 person with stamps' : `${fmtNum(c.people)} people with stamps`} · ${c.rewards_given === 0 ? 'no rewards handed over' : c.rewards_given === 1 ? '1 reward handed over' : `${fmtNum(c.rewards_given)} rewards handed over`}`))}</p>
@@ -2093,6 +2106,9 @@ async function tarjetaForm(v, id) {
           ${ofertas.map((o) => `<label class="opcion"><input type="checkbox" data-off="${esc(o.id)}" ${offs.has(o.id) ? 'checked' : ''}><span>${esc(o.title)} <small class="muted">${esc(I18N.t(o.kind === 'future_event' ? 'Evento' : 'Oferta flash'))}${o.repeats ? ` · ${esc(I18N.t('Se repite cada semana'))}` : ''}</small></span></label>`).join('')}`
         : `<p class="hint">Todavía no tienes publicaciones. Publica alguna y vuelve, o elige otra opción.</p>`}
       </div>
+      <label class="f full" style="grid-template-columns:auto 1fr;align-items:center">
+        <input type="checkbox" name="by_visit" ${c?.by_visit ? 'checked' : ''}>
+        <span>También por visita con el QR del local <small class="muted">Quien escanee el cartel del local en tu negocio se lleva un sello, como mucho uno al día.</small></span></label>
       <label class="f full" style="grid-template-columns:auto 1fr;align-items:center">
         <input type="checkbox" name="is_active" ${!c || c.is_active ? 'checked' : ''}>
         <span>Encendida <small class="muted">Si la apagas, no se dan sellos nuevos, pero nadie pierde los suyos.</small></span></label>
@@ -2136,6 +2152,7 @@ async function tarjetaForm(v, id) {
       p_applies_to: aplica,
       p_category_ids: aplica === 'categories' ? [...cats] : [],
       p_offer_ids: aplica === 'offers' ? elegidas : [],
+      p_by_visit: f.elements.by_visit.checked,
     }).catch((err) => ({ ok: false, error: err.message }));
     if (!r?.ok) { msg.textContent = r?.error === 'too_many_cards' ? I18N.t('Ya tienes 5, el máximo.') : errSellos(r?.error); return; }
     toast('Guardado');
@@ -2190,6 +2207,7 @@ async function tarjetaClientes(v, id) {
       <div class="kpi"><b>${fmtNum(c.rewards_given)}</b><span>Premios entregados</span></div>
       <div class="kpi"><b>${fmtNum(c.rewards_pending)}</b><span>Premios por recoger</span></div>
     </div>
+    ${c.stamps ? `<p class="muted" style="margin-top:-6px">${esc(origenSellos(c))}</p>` : ''}
     <div id="persona"></div>
     <div class="card"><div class="page-head" style="margin:0 0 10px"><h2 style="margin:0">Clientes</h2><span class="spacer"></span>
         <button class="btn sm primary" type="button" id="anadir">Añadir a alguien</button></div>
@@ -2595,6 +2613,66 @@ PAGES.cartel = async (v, offerId) => {
   $('#print', v).onclick = () => window.print();
 };
 
+// ── El cartel del local ─────────────────────────────────────────────────────
+// Un folio con el QR del local (klendar.app/v/<código>): quien lo escanea ve
+// tu ficha y, si alguna tarjeta de sellos lo tiene activado, se lleva un
+// sello por visita. Se imprime en la web (`/cartel/local/<código>`), en A4 o
+// cuatro por folio para las mesas. Lo mismo que «Cartel del local» en la app.
+PAGES['cartel-local'] = async (v) => {
+  const d = await rpc('business_visit_qr', { p_business: BIZ.id });
+  if (d?.ok === false) throw new Error(friendly(d.error));
+  const base = I18N.lang === 'en' ? '/en/poster/venue/' : '/cartel/local/';
+  const url = `https://klendar.app/v/${d.token}`;
+  const tarjetas = d.visit_cards || [];
+  const nombres = tarjetas.map((c) => c.name).join(', ');
+  const n = d.visit_stamps_30d || 0;
+  v.innerHTML = `
+    <p class="crumbs"><a href="#/ficha">${esc(I18N.t('Tu ficha'))}</a> · <a href="#/sellos">${esc(I18N.t('Tarjetas de sellos'))}</a></p>
+    <div class="page-head"><h1>Cartel del local</h1></div>
+    ${helpBox('¿Para qué sirve?', bi('<p>Para la barra, la puerta o las mesas. Quien lo escanea con la cámara del móvil ve tu ficha: carta, fotos, publicaciones y reseñas. Desde ahí puede añadirte a favoritos.</p><p>Si una tarjeta de sellos tiene activado <b>«También por visita con el QR del local»</b>, además se lleva un sello, como mucho uno al día. Para eso comprobamos que está en tu local con la ubicación de su móvil (no la guardamos).</p>',
+      '<p>For the counter, the door or the tables. Whoever scans it with their phone camera sees your profile: menu, photos, publications and reviews. From there they can add you to their favourites.</p><p>If a stamp card has <b>“Also per visit with the venue QR code”</b> turned on, they also get a stamp, one a day at most. To do that we check they are at your place with their phone’s location (we don’t store it).</p>'))}
+    <div class="card cartel-local">
+      <div id="qr" class="cl-qr" role="img" aria-label="QR ${esc(url)}"></div>
+      <div class="cl-txt">
+        <p><b>${esc(tarjetas.length ? bi(`Sellan por visita: ${nombres}`, `Stamp per visit: ${nombres}`)
+          : I18N.t('Ninguna tarjeta de sellos da sello por visita, así que el cartel solo invita a ver tu ficha. Actívalo al crear o editar una tarjeta.'))}</b></p>
+        ${tarjetas.length ? `<p class="muted">${esc(bi(
+          n === 0 ? 'Ningún sello por visita en los últimos 30 días' : n === 1 ? '1 sello por visita en los últimos 30 días' : `${fmtNum(n)} sellos por visita en los últimos 30 días`,
+          n === 0 ? 'No stamps from visits in the last 30 days' : n === 1 ? '1 stamp from visits in the last 30 days' : `${fmtNum(n)} stamps from visits in the last 30 days`))}</p>` : ''}
+        <p class="acciones">
+          <a class="btn primary" href="${base}${esc(d.token)}" target="_blank" rel="noopener">Imprimir en A4</a>
+          <a class="btn" href="${base}${esc(d.token)}?mesa=1" target="_blank" rel="noopener">Imprimir tamaño mesa</a>
+        </p>
+        <p class="hint">Tamaño mesa: cuatro por folio, para recortar y poner en las mesas.</p>
+        <p class="cartel-url">${esc(url)}</p>
+      </div>
+    </div>
+    ${d.can_change ? `<div class="card">
+      <h2 style="margin-top:0">Cambiar el QR</h2>
+      <p class="muted">Si alguien lo usa sin venir (por ejemplo, con una foto del cartel), cámbialo: el cartel impreso deja de dar sellos al momento y tendrás que imprimir el nuevo.</p>
+      <button class="btn bad ghost" type="button" id="cambiar">Cambiar el QR</button>
+    </div>` : ''}`;
+
+  // El QR se dibuja aquí mismo, sin mandar la dirección a ningún sitio.
+  const qr = window.qrcode(0, 'M');
+  qr.addData(url);
+  qr.make();
+  $('#qr', v).innerHTML = qr.createSvgTag({ cellSize: 6, margin: 0, scalable: true });
+
+  const cambiar = $('#cambiar', v);
+  if (cambiar) {
+    cambiar.onclick = async () => {
+      if (!await confirmDlg(I18N.t('¿Cambiar el QR del local?'),
+        esc(I18N.t('El cartel que tienes impreso dejará de valer al momento y tendrás que imprimir el nuevo. Hazlo si alguien lo usa sin venir (por ejemplo, con una foto del cartel).')),
+        { danger: true, submit: 'Cambiar' })) return;
+      const r = await rpc('rotate_visit_qr', { p_business: BIZ.id }).catch((err) => ({ ok: false, error: err.message }));
+      if (!r?.ok) { toast(friendly(r?.error), true); return; }
+      toast('QR cambiado. Imprime el cartel nuevo.');
+      route();
+    };
+  }
+};
+
 PAGES.novedades = async (v) => {
   const canManage = ['owner', 'manager'].includes(BIZ.role);
   const { data: posts } = await sb.from('business_posts')
@@ -2719,6 +2797,7 @@ PAGES.ficha = async (v) => {
   const pinta = () => {
     v.innerHTML = `
       <div class="page-head"><h1>Tu ficha</h1><span class="spacer"></span>
+        <a class="btn sm ghost" href="#/cartel-local">Imprimir el cartel del local</a>
         <a class="btn sm" href="https://klendar.app/b/${esc(BIZ.id)}" target="_blank" rel="noopener">Ver cómo se ve ↗</a></div>
       ${helpBox('¿Qué es esto?', bi('<p>Lo que ve la gente cuando entra en tu negocio: el nombre, de qué va, dónde estás, cómo llamarte y tus horarios. Es la misma ficha que editas desde la app.</p><p>La <b>dirección</b> se busca en el mapa al guardar. Si el punto no queda donde debe, arrastra la chincheta en «Ubicación en el mapa».</p>',
       '<p>What people see when they open your business: the name, what you do, where you are, how to call you and your opening hours. It is the same page you edit from the app.</p><p>The <b>address</b> is looked up on the map when you save. If the pin is not in the right place, drag it in “Location on the map”.</p>'))}

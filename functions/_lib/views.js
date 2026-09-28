@@ -240,6 +240,8 @@ function queSellaFicha(c, S, en) {
   }
   return S.stampsAll;
 }
+/** Lo de arriba y, si la tarjeta también sella por visita, dicho. */
+const queSellaTarjeta = (c, S, en) => (c.by_visit ? `${queSellaFicha(c, S, en)} · ${S.stampsByVisit}` : queSellaFicha(c, S, en));
 
 /**
  * La ficha de un negocio: `/b/cafe-central-madrid`.
@@ -293,6 +295,7 @@ export async function businessPage(param, lang, search = '') {
         stampsAll: 'Every publication counts', stampsFlash: 'Only flash offers count', stampsEvents: 'Only events count',
         stampsSomeCats: 'Only some categories count', stampsSomeOffers: 'Only some publications count',
         stampsOnly: (l) => `Only these count: ${l}`, stampsMore: (l, n) => `${l} and ${n} more`,
+        stampsByVisit: 'Also per visit with the venue QR code',
         hours: 'Opening hours', closed: 'Closed', today: 'today',
         days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
         news: 'News', reviews: 'Reviews', write: 'Write a review', noReviews: 'No reviews yet. Been here? Be the first.',
@@ -316,6 +319,7 @@ export async function businessPage(param, lang, search = '') {
         stampsAll: 'Cuentan todas las publicaciones', stampsFlash: 'Solo cuentan las ofertas flash', stampsEvents: 'Solo cuentan los eventos',
         stampsSomeCats: 'Solo cuentan algunas categorías', stampsSomeOffers: 'Solo cuentan algunas publicaciones',
         stampsOnly: (l) => `Solo cuentan: ${l}`, stampsMore: (l, n) => `${l} y ${n} más`,
+        stampsByVisit: 'También por visita con el QR del local',
         hours: 'Horario', closed: 'Cerrado', today: 'hoy',
         days: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'],
         news: 'Novedades', reviews: 'Reseñas', write: 'Escribir una reseña', noReviews: 'Todavía no hay reseñas. ¿Has estado? Sé la primera persona.',
@@ -420,7 +424,7 @@ export async function businessPage(param, lang, search = '') {
     <div class="d-body">
       ${b.description ? `<h2>${S.about}</h2><p>${esc(b.description).replace(/\n/g, '<br>')}</p>` : ''}
       ${sellos.length ? `<h2>${sellos.length > 1 ? S.stampsMany : S.stamps}</h2>
-        ${sellos.map((c) => `<p class="callout"><b>${esc(c.name)}</b> · ${esc(S.stampsBody(c.goal, c.reward))}<br><small>${esc(queSellaFicha(c, S, en))}</small></p>`).join('')}
+        ${sellos.map((c) => `<p class="callout"><b>${esc(c.name)}</b> · ${esc(S.stampsBody(c.goal, c.reward))}<br><small>${esc(queSellaTarjeta(c, S, en))}</small></p>`).join('')}
         <p class="muted">${esc(S.stampsNote)}</p>` : ''}
       ${carta.length ? `<h2>${S.menu}</h2>
         <div class="menu">${carta.map((sec) => `<section>
@@ -493,11 +497,20 @@ export async function businessPage(param, lang, search = '') {
   // el nombre ya la lleva, «FitBox Madrid», no se repite).
   const plano = (t) => String(t || '').normalize('NFD').replace(/[^a-zA-Z0-9]+/g, ' ').toLowerCase().trim();
   const conCiudad = b.city && !` ${plano(b.name)} `.includes(` ${plano(b.city)} `);
+  // Abierta desde el QR del local (`/v/<código>` trae `?visita=`): si el
+  // local da sellos por visita, el sello de hoy y un aviso encima de la
+  // ficha. Lo hace el navegador, con la sesión de «Tu cuenta».
+  const visita = new URLSearchParams(search).get('visita') || '';
+  const conVisita = /^[A-Za-z0-9_-]{16}$/.test(visita)
+    ? `<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" defer></script>
+<script src="/config.js?v=3" defer></script>
+<script src="/assets/visita.js?v=1" defer data-token="${esc(visita)}" data-lang="${en ? 'en' : 'es'}"></script>`
+    : '';
   return html(publicPage({
     lang, path, body, title: conCiudad ? `${b.name} · ${b.city}` : b.name, description, image: b.cover || b.logo,
-    head: `<meta name="robots" content="${b.adults_only ? 'noindex' : 'index, follow'}">
-${ldScript(jsonLd)}`,
-  }));
+    head: `<meta name="robots" content="${b.adults_only || conVisita ? 'noindex' : 'index, follow'}">
+${ldScript(jsonLd)}${conVisita ? `\n${conVisita}` : ''}`,
+  }), 200, conVisita ? 'no-store' : undefined);
 }
 
 // ── Agenda de una ciudad ───────────────────────────────────────────────────

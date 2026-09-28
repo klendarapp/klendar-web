@@ -152,6 +152,18 @@
 .cartel-pie { margin: 18px 0 0; font-size: 16px; }
 .cartel-url { margin: 6px 0 0; font-size: 12px; color: #636363; word-break: break-all; }
 
+/* El cartel del local: el QR (sobre blanco, que es lo que lee cualquier
+   cámara) y al lado qué da y cómo imprimirlo. En el móvil, uno encima de otro. */
+.cartel-local { display: grid; grid-template-columns: 200px 1fr; gap: 20px; align-items: start; }
+.cl-qr { background: #fff; border-radius: 16px; padding: 14px; }
+.cl-qr svg { width: 100%; height: auto; display: block; }
+.cl-txt p { margin: 0 0 10px; }
+.cl-txt .acciones { display: flex; flex-wrap: wrap; gap: 8px; }
+@media (max-width: 640px) {
+  .cartel-local { grid-template-columns: 1fr; }
+  .cl-qr { max-width: 220px; }
+}
+
 @media print {
   body * { visibility: hidden; }
   .cartel, .cartel * { visibility: visible; }

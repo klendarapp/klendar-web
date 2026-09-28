@@ -1,5 +1,5 @@
 // Servidor de desarrollo mínimo: sirve los ficheros estáticos del repo y
-// ejecuta las Pages Functions de /o/, /b/ (por id o por dirección), /r/, /agenda/,
+// ejecuta las Pages Functions de /o/, /b/ (por id o por dirección), /r/, /v/, /cartel/, /agenda/,
 // /hoy/ y los sitemaps de agenda y negocios.
 // No sustituye a Cloudflare; es para ver las páginas mientras se escriben.
 import { createServer } from 'node:http';
@@ -37,6 +37,8 @@ createServer(async (req, res) => {
     const en = path.startsWith('/en/') ? 'en/' : '';
     const rest = en ? path.slice(3) : path;
     if ((m = rest.match(/^\/o\/([^/]+)\/?$/))) { mod = await load(`functions/${en}o/[id].js`); params = { id: m[1] }; }
+    // El cartel del local: /cartel/local/<código> y /en/poster/venue/<código>.
+    else if ((m = rest.match(/^\/(cartel\/local|poster\/venue)\/([^/]+)\/?$/))) { mod = await load(`functions/${en}${en ? 'poster/venue' : 'cartel/local'}/[token].js`); params = { token: m[2] }; }
     else if ((m = rest.match(/^\/(cartel|poster)\/([^/]+)\/?$/))) { mod = await load(`functions/${en}${en ? 'poster' : 'cartel'}/[id].js`); params = { id: m[2] }; }
     else if ((m = rest.match(/^\/b\/([^/]+)\/?$/))) { mod = await load(`functions/${en}b/[id].js`); params = { id: m[1] }; }
     // En inglés la cartelera se llama «what's on», no «agenda».
@@ -51,6 +53,8 @@ createServer(async (req, res) => {
     else if ((m = rest.match(/^\/(coleccion|collection)\/([^/]+)\/([^/]+)\/?$/))) { mod = await load(`functions/${en}${en ? 'collection' : 'coleccion'}/[slug]/[city].js`); params = { slug: m[2], city: m[3] }; }
     else if ((m = rest.match(/^\/(coleccion|collection)\/([^/]+)\/?$/))) { mod = await load(`functions/${en}${en ? 'collection' : 'coleccion'}/[slug].js`); params = { slug: m[2] }; }
     else if ((m = path.match(/^\/r\/([^/]+)\/?$/))) { mod = await load('functions/r/[code].js'); params = { code: m[1] }; }
+    // El QR del cartel del local: a la ficha del negocio.
+    else if ((m = path.match(/^\/v\/([^/]+)\/?$/))) { mod = await load('functions/v/[token].js'); params = { token: m[1] }; }
     else if ((m = path.match(/^\/baja\/([^/]+)\/?$/))) { mod = await load('functions/baja/[token].js'); params = { token: m[1] }; }
     else if ((m = path.match(/^\/widget\/([^/]+)\/?$/))) { mod = await load('functions/widget/[id].js'); params = { id: m[1] }; }
     else if (path === '/api/mapbox-token') { mod = await load('functions/api/mapbox-token.js'); }

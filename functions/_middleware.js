@@ -19,7 +19,7 @@ const SEGURIDAD = {
 };
 
 export async function onRequest(ctx) {
-  const { pathname } = new URL(ctx.request.url);
+  const { pathname, searchParams } = new URL(ctx.request.url);
   if (INTERNO.test(pathname)) {
     return new Response('Not found', {
       status: 404,
@@ -37,7 +37,10 @@ export async function onRequest(ctx) {
   // El widget se incrusta en webs de negocios; el resto no se deja enmarcar.
   if (!pathname.startsWith('/widget/') && !cabeceras.has('x-frame-options')) cabeceras.set('x-frame-options', 'DENY');
   if (!cabeceras.has('permissions-policy')) {
-    const ubicacion = /^\/(explorar|en\/explore|app|panel)\//.test(pathname) ? '(self)' : '()';
+    // La ficha abierta desde el QR del local (`?visita=`) mira si estás en
+    // el local para darte el sello: solo entonces puede pedir la ubicación.
+    const desdeQr = /^\/(en\/)?b\//.test(pathname) && searchParams.has('visita');
+    const ubicacion = desdeQr || /^\/(explorar|en\/explore|app|panel)\//.test(pathname) ? '(self)' : '()';
     cabeceras.set('permissions-policy', `geolocation=${ubicacion}, camera=${pathname.startsWith('/panel/') ? '(self)' : '()'}, microphone=()`);
   }
   return new Response(head ? null : res.body, { status: res.status, statusText: res.statusText, headers: cabeceras });
