@@ -461,4 +461,11 @@ const APP_EN = {
   "No mandamos estadísticas de cómo usas la app": "We don't send statistics about how you use the app",
   "Gracias: nos ayudas a mejorar Klendar": "Thanks: you are helping us improve Klendar",
   "La app ya no mandará estadísticas de uso": "The app will no longer send usage statistics",
+    // ── Tarjetas de sellos (v2) ──
+    "Solo cuentan las ofertas flash": "Only flash offers count",
+    "Solo cuentan los eventos": "Only events count",
+    "Solo cuentan algunas categorías": "Only some categories count",
+    "Solo cuentan algunas publicaciones": "Only some publications count",
+    "Cuentan todas las publicaciones": "Every publication counts",
+    "Tarjeta de sellos": "Stamp card",
 };

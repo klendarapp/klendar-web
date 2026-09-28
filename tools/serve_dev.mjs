@@ -1,5 +1,6 @@
 // Servidor de desarrollo mínimo: sirve los ficheros estáticos del repo y
-// ejecuta las Pages Functions de /o/, /b/, /r/, /agenda/ y el sitemap de agendas.
+// ejecuta las Pages Functions de /o/, /b/ (por id o por dirección), /r/, /agenda/,
+// /hoy/ y los sitemaps de agenda y negocios.
 // No sustituye a Cloudflare; es para ver las páginas mientras se escriben.
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
@@ -41,6 +42,9 @@ createServer(async (req, res) => {
     // En inglés la cartelera se llama «what's on», no «agenda».
     else if ((m = rest.match(/^\/(agenda|whats-on)\/([^/]+)\/?$/))) { mod = await load(`functions/${en}${en ? 'whats-on' : 'agenda'}/[city].js`); params = { city: m[2] }; }
     else if (/^\/(agenda|whats-on)\/?$/.test(rest)) { mod = await load(`functions/${en}${en ? 'whats-on' : 'agenda'}/index.js`); }
+    // «Qué hacer hoy en <ciudad>»: /hoy/<ciudad>/ y /en/today/<city>/.
+    else if ((m = rest.match(/^\/(hoy|today)\/([^/]+)\/?$/))) { mod = await load(`functions/${en}${en ? 'today' : 'hoy'}/[city].js`); params = { city: m[2] }; }
+    else if (/^\/(hoy|today)\/?$/.test(rest)) { mod = await load(`functions/${en}${en ? 'today' : 'hoy'}/index.js`); }
     // Explorar, categoria dentro de una ciudad y colecciones.
     else if ((m = rest.match(/^\/(explorar|explore)\/?$/))) { mod = await load(`functions/${en}${en ? 'explore' : 'explorar'}/index.js`); }
     else if ((m = rest.match(/^\/(agenda|whats-on)\/([^/]+)\/([^/]+)\/?$/))) { mod = await load(`functions/${en}${en ? 'whats-on' : 'agenda'}/[city]/[category].js`); params = { city: m[2], category: m[3] }; }
@@ -51,6 +55,7 @@ createServer(async (req, res) => {
     else if ((m = path.match(/^\/widget\/([^/]+)\/?$/))) { mod = await load('functions/widget/[id].js'); params = { id: m[1] }; }
     else if (path === '/api/mapbox-token') { mod = await load('functions/api/mapbox-token.js'); }
     else if (path === '/sitemap-agenda.xml') { mod = await load('functions/sitemap-agenda.xml.js'); }
+    else if (path === '/sitemap-negocios.xml') { mod = await load('functions/sitemap-negocios.xml.js'); }
 
     if (mod) {
       const request = new Request(`https://klendar.app${path}${url.search}`, { headers: { 'accept-language': 'es' } });

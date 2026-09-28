@@ -7,7 +7,8 @@
 
 import { esc, html, rpc, rpcAll } from './page.js';
 import {
-  agendaBase, BASE, collectionBase, exploreBase, isVideo, offerCard, publicPage,
+  agendaBase, bizPath, cityLinks, collectionBase, exploreBase, isVideo, ldScript, listingLd, offerCard,
+  publicPage, todayBase,
 } from './public.js';
 
 const PRETTY = (s) => String(s || '').replace(/(^|[\s-])(\p{Ll})/gu, (m, a, b) => a + b.toUpperCase());
@@ -25,7 +26,11 @@ const T = (en) => en
       lead: 'Everything live right now: flash offers and local events. No account needed to look.',
       biz: 'Publish your business', app: 'Create a free account',
       catTitle: (c, city) => `${c} in ${city}`,
+      catHead: (c, city) => `${c} in ${city}: deals and events`,
       catLead: (c, city) => `Flash offers and events from ${c.toLowerCase()} in ${city}, updated as businesses publish.`,
+      catDesc: (c, city, n) => `${n} ${n === 1 ? 'deal or event' : 'deals and events'} from ${c.toLowerCase()} in ${city}: flash offers with a countdown, events and the places that publish them. No account needed to look.`,
+      catPlaces: (c, city) => `${c} in ${city} on Klendar`,
+      todayIn: 'Things to do today in', weekIn: 'This week in',
       catNone: (c, city) => `No ${c.toLowerCase()} in ${city} have anything live right now.`,
       colNone: 'This selection is empty right now. Have a look in a while.',
       inCity: 'in', everywhere: 'Everywhere',
@@ -50,7 +55,11 @@ const T = (en) => en
       lead: 'Todo lo que hay ahora mismo: ofertas flash y planes de barrio. Para mirar no hace falta cuenta.',
       biz: 'Publicar mi negocio', app: 'Crear cuenta gratis',
       catTitle: (c, city) => `${c} en ${city}`,
+      catHead: (c, city) => `${c} en ${city}: ofertas y planes`,
       catLead: (c, city) => `Ofertas y planes de ${c.toLowerCase()} en ${city}, según van publicando los negocios.`,
+      catDesc: (c, city, n) => `${n} ${n === 1 ? 'oferta o plan' : 'ofertas y planes'} de ${c.toLowerCase()} en ${city}: ofertas flash con cuenta atrás, eventos y los negocios que los publican. Sin cuenta para mirar.`,
+      catPlaces: (c, city) => `${c} de ${city} en Klendar`,
+      todayIn: 'Qué hacer hoy en', weekIn: 'Esta semana en',
       catNone: (c, city) => `Ahora mismo no hay nada de ${c.toLowerCase()} en ${city}.`,
       colNone: 'Esta selección está vacía ahora mismo. Vuelve a mirar en un rato.',
       inCity: 'en', everywhere: 'En todas partes',
@@ -79,7 +88,7 @@ const lista = (items, lang, vacio) => items.length
 const bizCard = (b, lang, S) => {
   const en = lang === 'en';
   const nombre = (en ? b.names?.en : b.names?.es) || '';
-  return `<a class="ocard" href="${en ? '/en' : ''}/b/${esc(b.id)}">
+  return `<a class="ocard" href="${esc(bizPath(lang, b.slug || b.id))}">
     ${b.logo_url ? `<img src="${esc(b.logo_url)}" alt="" loading="lazy">` : '<span class="ph">✦</span>'}
     <span class="ocard-body">
       <b>${esc(b.name)}</b>
@@ -284,6 +293,15 @@ export async function explorePage(url, lang) {
     <p id="cercaErr" class="muted" role="alert" hidden></p>
   </div>
 
+  ${filtrado || !cities.length ? '' : `<div class="filters">
+    <div class="frow"><span class="flabel">${esc(S.todayIn)}</span>
+      ${cities.filter((c) => c.city).slice(0, 12).map((c) => `<a class="chip" href="${todayBase(lang)}/${CITY(c.city)}/">${esc(PRETTY(c.city))}</a>`).join('')}
+    </div>
+    <div class="frow"><span class="flabel">${esc(S.weekIn)}</span>
+      ${cities.filter((c) => c.city).slice(0, 12).map((c) => `<a class="chip" href="${agendaBase(lang)}/${CITY(c.city)}/">${esc(PRETTY(c.city))}</a>`).join('')}
+    </div>
+  </div>`}
+  ${city ? `<p><a href="${todayBase(lang)}/${CITY(city)}/">${esc(S.todayIn)} ${esc(PRETTY(city))} →</a></p>` : ''}
   ${cols.length ? `<div class="filters"><div class="frow"><span class="flabel">${esc(S.picks)}</span>
     ${cols.map((c) => `<a class="chip" href="${collectionBase(lang)}/${encodeURIComponent(c.slug)}/${city ? `${CITY(city)}/` : ''}">${esc(colTitle(c, en))}</a>`).join('')}
   </div></div>` : ''}
@@ -321,20 +339,27 @@ export async function explorePage(url, lang) {
 }
 
 // ── Una categoría en una ciudad ────────────────────────────────────────────
+/**
+ * «Peluquerías en Madrid»: lo que la gente escribe en Google. Las ofertas y
+ * planes vivos de esa categoría y, debajo, los negocios que la forman (con
+ * enlace a su ficha), para que la página responda aunque hoy no haya nada.
+ */
 export async function categoryPage(rawCity, rawCat, lang) {
   const en = lang === 'en';
   const S = T(en);
-  const rawc = decodeURIComponent(rawCity || '').replace(/\/+$/, '');
-  const slug = decodeURIComponent(rawCat || '').replace(/\/+$/, '').toLowerCase();
+  const rawc = decodeURIComponent(rawCity || '').replace(/[/]+$/, '');
+  const slug = decodeURIComponent(rawCat || '').replace(/[/]+$/, '').toLowerCase();
   const path = `${agendaBase(lang)}/${CITY(rawc)}/${encodeURIComponent(slug)}/`;
 
-  const [res, cats] = await Promise.all([
+  const [res, cats, negocios] = await Promise.all([
     rpc('public_explore', { p_city: rawc, p_category: slug, p_limit: 60 }),
     rpcAll('public_categories', { p_city: rawc }),
+    rpc('public_businesses', { p_city: rawc, p_category: slug, p_limit: 24 }),
   ]);
   const cat = (cats || []).find((c) => c.slug === slug);
   const items = res?.items || [];
-  const city = PRETTY(items[0]?.city || rawc);
+  const lugares = negocios?.items || [];
+  const city = PRETTY(items[0]?.city || lugares[0]?.city || rawc);
   const nombre = cat ? catName(cat, en) : PRETTY(slug);
   const h1 = S.catTitle(nombre, city);
 
@@ -342,27 +367,26 @@ export async function categoryPage(rawCity, rawCat, lang) {
   <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a> · <a href="${agendaBase(lang)}/">${S.agenda}</a> · <a href="${agendaBase(lang)}/${CITY(rawc)}/">${esc(city)}</a></p>
   <h1>${esc(h1)}</h1>
   <p class="muted" style="max-width:640px">${esc(S.catLead(nombre, city))}</p>
-  ${(cats || []).length ? `<div class="filters"><div class="frow">
-    ${(cats || []).map((c) => `<a class="chip${c.slug === slug ? ' on' : ''}" href="${agendaBase(lang)}/${CITY(rawc)}/${encodeURIComponent(c.slug)}/">${esc(catName(c, en))} <span class="muted">${c.n}</span></a>`).join('')}
-  </div></div>` : ''}
+  ${cityLinks(lang, rawc, city, cats, slug)}
   ${lista(items, lang, S.catNone(nombre, city))}
-  <p style="margin-top:22px"><a class="pill accent" href="${exploreBase(lang)}/">${esc(S.exp)}</a> <a class="pill" href="${agendaBase(lang)}/${CITY(rawc)}/">${esc(city)}</a></p>`;
+  ${lugares.length ? `<h2>${esc(S.catPlaces(nombre, city))}</h2>
+    <div class="olist">${lugares.map((b) => bizCard(b, lang, S)).join('')}</div>` : ''}
+  <p style="margin-top:22px"><a class="pill accent" href="${todayBase(lang)}/${CITY(rawc)}/">${esc(S.todayIn)} ${esc(city)}</a> <a class="pill" href="${agendaBase(lang)}/${CITY(rawc)}/">${esc(S.weekIn)} ${esc(city)}</a> <a class="pill" href="${exploreBase(lang)}/">${esc(S.exp)}</a></p>`;
 
-  const jsonLd = items.length ? {
-    '@context': 'https://schema.org', '@type': 'ItemList', name: h1, url: `${BASE}${path}`,
-    numberOfItems: items.length,
-    itemListElement: items.slice(0, 30).map((o, i) => ({
-      '@type': 'ListItem', position: i + 1, url: `${BASE}${en ? '/en' : ''}/o/${o.id}`, name: o.title,
-    })),
-  } : null;
+  const description = items.length ? S.catDesc(nombre, city, items.length) : S.catNone(nombre, city);
+  // Se indexa si hay algo que enseñar: publicaciones o negocios de la
+  // categoría. Una categoría inventada en la URL no.
+  const indexable = Boolean(cat) && (items.length || lugares.length);
+  const jsonLd = listingLd({
+    lang, path, name: h1, description, city, items,
+    migas: [['Klendar', en ? '/en/' : '/'], [S.agenda, `${agendaBase(lang)}/`], [city, `${agendaBase(lang)}/${CITY(rawc)}/`], [nombre, path]],
+  });
 
   return html(publicPage({
-    lang, path, body, title: h1,
-    description: items.length ? S.catLead(nombre, city) : S.catNone(nombre, city),
+    lang, path, body, title: S.catHead(nombre, city),
+    description,
     image: portada(items),
-    head: jsonLd
-      ? `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, '\\u003c')}</script>`
-      : '<meta name="robots" content="noindex, follow">',
+    head: indexable ? ldScript(jsonLd) : '<meta name="robots" content="noindex, follow">',
   }), 200, 'public, max-age=300, s-maxage=900');
 }
 

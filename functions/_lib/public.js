@@ -55,19 +55,73 @@ export function fmtEnd(startIso, endIso, lang = 'es', tz) {
     : `${fmtDay(endIso, lang, tz)} ${fmtTime(endIso, lang, tz)}`;
 }
 
-/** La zona de cada negocio de una lista que no trae coordenadas (la agenda
- *  de una ciudad): `businesses.time_zone` se puede leer sin cuenta. Si no
- *  contesta, la página sale igual, con la hora de Madrid. */
-export async function zonasDeNegocios(ids) {
+/** La zona y la dirección (`slug`) de cada negocio de una lista que no las
+ *  trae (la agenda de una ciudad, una publicación): `businesses` se puede
+ *  leer sin cuenta. Si no contesta, la página sale igual, con la hora de
+ *  Madrid y los enlaces por id (que llevan a la misma ficha). */
+export async function datosDeNegocios(ids) {
   const unicos = [...new Set((ids || []).filter(isUuid))].slice(0, 100);
   const zonas = new Map();
-  if (!unicos.length) return zonas;
+  const slugs = new Map();
+  if (!unicos.length) return { zonas, slugs };
   try {
-    const filas = await rows('businesses', `select=id,time_zone&id=in.(${unicos.join(',')})`);
-    for (const f of filas) if (KZ.valida(f.time_zone)) zonas.set(f.id, f.time_zone);
-  } catch { /* sin zonas: Madrid */ }
-  return zonas;
+    const filas = await rows('businesses', `select=id,time_zone,slug&id=in.(${unicos.join(',')})`);
+    for (const f of filas) {
+      if (KZ.valida(f.time_zone)) zonas.set(f.id, f.time_zone);
+      if (isSlug(f.slug)) slugs.set(f.id, f.slug);
+    }
+  } catch { /* sin datos: Madrid y enlaces por id */ }
+  return { zonas, slugs };
 }
+
+export const zonasDeNegocios = async (ids) => (await datosDeNegocios(ids)).zonas;
+
+/** La dirección con nombre de un negocio (`cafe-central-madrid`), o null. */
+export const slugDe = async (id) => (await datosDeNegocios([id])).slugs.get(id) || null;
+
+/** Una dirección de negocio bien formada: minúsculas, números y guiones. */
+export const isSlug = (s) => typeof s === 'string' && s.length <= 100 && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(s);
+
+/** La ficha de un negocio: /b/cafe-central-madrid (o /b/<id> si aún no se
+ *  sabe su dirección; la web la manda a la buena con un 301). */
+export const bizPath = (lang, slugOrId) => `${lang === 'en' ? '/en' : ''}/b/${encodeURIComponent(slugOrId || '')}`;
+
+/** Datos estructurados listos para el <head>. */
+export const ldScript = (obj) => `<script type="application/ld+json">${JSON.stringify(obj).replace(/</g, '\\u003c')}</script>`;
+
+/** Migas para Google: [[nombre, ruta], …] → BreadcrumbList. */
+export const breadcrumbLd = (migas) => ({
+  '@type': 'BreadcrumbList',
+  itemListElement: migas.map(([name, path], i) => ({
+    '@type': 'ListItem', position: i + 1, name, item: `${BASE}${path}`,
+  })),
+});
+
+/** Una página de listado (agenda, hoy, categoría) como la entiende Google:
+ *  la página, su lista y sus migas, en un solo bloque. */
+export const listingLd = ({ lang, path, name, description, city, items, migas }) => ({
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'CollectionPage', '@id': `${BASE}${path}`, url: `${BASE}${path}`, name, description,
+      inLanguage: lang === 'en' ? 'en' : 'es',
+      isPartOf: { '@type': 'WebSite', name: 'Klendar', url: `${BASE}/` },
+      about: city ? { '@type': 'City', name: city } : undefined,
+      mainEntity: items.length
+        ? {
+            '@type': 'ItemList', numberOfItems: items.length,
+            itemListElement: items.slice(0, 30).map((o, i) => ({
+              '@type': 'ListItem', position: i + 1, url: `${BASE}${lang === 'en' ? '/en' : ''}/o/${o.id}`, name: o.title,
+            })),
+          }
+        : undefined,
+    },
+    breadcrumbLd(migas),
+  ],
+});
+
+/** Una ciudad en la URL: /agenda/madrid/, /hoy/santa%20cruz%20de%20tenerife/. */
+export const citySeg = (c) => encodeURIComponent(String(c || '').toLowerCase());
 
 /** El beneficio en una etiqueta: «−20 %», «2x1», «12 €». */
 export function benefit(d, priceCents, currency, lang = 'es') {
@@ -115,20 +169,44 @@ export function media(url, poster) {
  * del día de una reunión, no lo que hay esta semana en la ciudad. */
 export const agendaBase = (lang) => (lang === 'en' ? '/en/whats-on' : '/agenda');
 
+/** «Qué hacer hoy en <ciudad>»: /hoy/madrid/ y /en/today/madrid/. */
+export const todayBase = (lang) => (lang === 'en' ? '/en/today' : '/hoy');
+
+/**
+ * Los enlaces entre las páginas de entrada de una ciudad: hoy, la semana y
+ * cada categoría con algo publicado. Van en las tres, para que quien llega
+ * de Google a una encuentre las otras (y Google también). `actual` marca la
+ * que se está viendo: 'hoy', 'semana' o el slug de la categoría.
+ */
+export function cityLinks(lang, rawCity, city, cats, actual) {
+  const en = lang === 'en';
+  const c = citySeg(rawCity);
+  const nombre = (k) => (en ? k?.names?.en : k?.names?.es) || k?.slug || '';
+  const chip = (href, label, on) => `<a class="chip${on ? ' on' : ''}" href="${esc(href)}"${on ? ' aria-current="page"' : ''}>${esc(label)}</a>`;
+  return `<nav class="filters" aria-label="${esc(city)}"><div class="frow">
+    ${chip(`${todayBase(lang)}/${c}/`, en ? `Today in ${city}` : `Hoy en ${city}`, actual === 'hoy')}
+    ${chip(`${agendaBase(lang)}/${c}/`, en ? 'This week' : 'Esta semana', actual === 'semana')}
+    ${(cats || []).filter((k) => k?.slug).map((k) => chip(`${agendaBase(lang)}/${c}/${encodeURIComponent(k.slug)}/`, nombre(k), actual === k.slug)).join('')}
+  </div></nav>`;
+}
+
 /** Donde vive cada seccion en cada idioma. */
 export const exploreBase = (lang) => (lang === 'en' ? '/en/explore' : '/explorar');
 export const collectionBase = (lang) => (lang === 'en' ? '/en/collection' : '/coleccion');
 
-/** La misma página en el otro idioma: /o/x ⇄ /en/o/x, /agenda/x ⇄ /en/whats-on/x. */
+/** La misma página en el otro idioma: /o/x ⇄ /en/o/x, /agenda/x ⇄ /en/whats-on/x,
+ * /hoy/x ⇄ /en/today/x. */
 export const altPath = (path, lang) =>
   lang === 'en'
     ? (path
         .replace(/^\/en\/whats-on/, '/agenda')
+        .replace(/^\/en\/today/, '/hoy')
         .replace(/^\/en\/explore/, '/explorar')
         .replace(/^\/en\/collection/, '/coleccion')
         .replace(/^\/en/, '') || '/')
     : `/en${path
         .replace(/^\/agenda/, '/whats-on')
+        .replace(/^\/hoy/, '/today')
         .replace(/^\/explorar/, '/explore')
         .replace(/^\/coleccion/, '/collection')}`;
 

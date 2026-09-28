@@ -11,8 +11,9 @@
 import { esc, fmtWhen, html, isUuid, rpc, rpcAll, rows, supabasePublic } from './page.js';
 import KZ from '../../assets/zona.js';
 import {
-  agendaBase, BASE, benefit, exploreBase, firstPhoto, fmtEnd, fmtLong, isVideo,
-  media, money, offerCard, openInApp, priorPrice, publicPage, zonaDe, zonasDeNegocios,
+  agendaBase, BASE, benefit, bizPath, breadcrumbLd, cityLinks, citySeg, datosDeNegocios, exploreBase,
+  firstPhoto, fmtEnd, fmtLong, isSlug, isVideo, ldScript, listingLd, media, money, offerCard, openInApp,
+  priorPrice, publicPage, slugDe, todayBase, zonaDe,
 } from './public.js';
 
 // Iconos de Material (los mismos que la app), en SVG: las páginas públicas
@@ -72,6 +73,8 @@ export async function offerPage(id, lang) {
   if (!isUuid(id)) return notFound(lang, path, 'o');
   const o = await rpc('offer_detail', { p_id: id });
   if (!o) return notFound(lang, path, 'o');
+  // La ficha del negocio, por su dirección con nombre.
+  const bHref = bizPath(lang, (await slugDe(o.business_id)) || o.business_id);
 
   const flash = o.kind === 'flash_offer';
   const soldOut = o.status === 'sold_out' || (o.seats_left != null && o.seats_left <= 0);
@@ -124,7 +127,7 @@ export async function offerPage(id, lang) {
   ].filter(Boolean).join('');
 
   const body = `
-  <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a> · <a href="${pre(lang)}/b/${esc(o.business_id)}">${esc(o.business_name)}</a></p>
+  <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a> · <a href="${esc(bHref)}">${esc(o.business_name)}</a></p>
   <div class="detail">
     <div class="d-head">
       ${pieces.length ? `<div class="gallery${pieces.length === 1 ? ' solo' : ''}">${pieces.map((u) => media(u, cover)).join('')}</div>` : ''}
@@ -163,7 +166,7 @@ export async function offerPage(id, lang) {
       ${o.terms ? `<h2>${S.terms}</h2><p class="muted">${esc(o.terms).replace(/\n/g, '<br>')}</p>` : ''}
       <h2>${S.biz}</h2>
       <p>${esc(o.business_name)}${o.business_rating && o.business_ratings ? ` · ★ ${Number(o.business_rating).toFixed(1)} (${o.business_ratings})` : ''}</p>
-      <p><a href="${pre(lang)}/b/${esc(o.business_id)}">${S.more} ${esc(o.business_name)} →</a></p>
+      <p><a href="${esc(bHref)}">${S.more} ${esc(o.business_name)} →</a></p>
       <p class="denuncia-pie"><a href="${cuenta(lang)}#/denunciar/offer/${encodeURIComponent(o.id)}" rel="nofollow">${S.report}</a></p>
     </div>
   </div>`;
@@ -175,7 +178,7 @@ export async function offerPage(id, lang) {
     ? {
         '@context': 'https://schema.org', '@type': 'Offer', name: o.title, description: o.description || undefined,
         url: `${BASE}${path}`, image: cover || undefined, validFrom: o.redeem_start_at, validThrough: o.redeem_end_at,
-        offeredBy: { '@type': 'LocalBusiness', name: o.business_name, address: where || undefined },
+        offeredBy: { '@type': 'LocalBusiness', name: o.business_name, url: `${BASE}${bHref}`, address: where || undefined },
         price: o.price_cents != null ? (o.price_cents / 100).toFixed(2) : undefined,
         priceCurrency: o.price_cents != null ? (o.currency || 'EUR') : undefined,
         availability,
@@ -184,8 +187,8 @@ export async function offerPage(id, lang) {
         '@context': 'https://schema.org', '@type': 'Event', name: o.title, description: o.description || undefined,
         url: `${BASE}${path}`, image: cover || undefined, startDate: o.event_at, endDate: o.event_end_at || undefined,
         eventStatus: 'https://schema.org/EventScheduled', eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
-        location: { '@type': 'Place', name: o.business_name, address: where || undefined },
-        organizer: { '@type': 'Organization', name: o.business_name },
+        location: { '@type': 'Place', name: o.business_name, url: `${BASE}${bHref}`, address: where || undefined },
+        organizer: { '@type': 'Organization', name: o.business_name, url: `${BASE}${bHref}` },
         offers: o.reservations_enabled
           ? {
               '@type': 'Offer', url: `${BASE}${path}`, availability,
@@ -218,15 +221,57 @@ el.textContent=n<ini?${JSON.stringify(en ? 'Starts in ' : 'Empieza en ')}+dur(in
 }
 
 // ── Negocio ────────────────────────────────────────────────────────────────
-export async function businessPage(id, lang) {
-  const path = `${pre(lang)}/b/${id}`;
+/** Redirección permanente dentro de la web (relativa: vale igual en local). */
+const movida = (to) => new Response(null, {
+  status: 301, headers: { location: to, 'cache-control': 'public, max-age=3600, s-maxage=3600' },
+});
+
+/** Qué da sello en una tarjeta: las mismas palabras que la app y «Tu cuenta». */
+function queSellaFicha(c, S, en) {
+  if (c.applies_to === 'flash_offer') return S.stampsFlash;
+  if (c.applies_to === 'future_event') return S.stampsEvents;
+  if (c.applies_to === 'categories' || c.applies_to === 'offers') {
+    const nombres = c.applies_to === 'categories'
+      ? (c.category_names || []).map((n) => (en ? n.en : n.es) || n.es || '').filter(Boolean)
+      : (c.offer_titles || []);
+    if (!nombres.length) return c.applies_to === 'categories' ? S.stampsSomeCats : S.stampsSomeOffers;
+    const lista = nombres.slice(0, 3).join(', ');
+    return S.stampsOnly(nombres.length > 3 ? S.stampsMore(lista, nombres.length - 3) : lista);
+  }
+  return S.stampsAll;
+}
+
+/**
+ * La ficha de un negocio: `/b/cafe-central-madrid`.
+ *
+ * `/b/<id>` (los enlaces de antes, los QR impresos, la app) lleva a la de la
+ * dirección con nombre con un 301, y una dirección vieja (el negocio cambió
+ * de nombre) a la actual: una sola URL por negocio para Google.
+ */
+export async function businessPage(param, lang, search = '') {
   const en = lang === 'en';
+  const raw = String(param || '');
+  let id = raw;
+  let slug = null;
+  if (isUuid(raw)) {
+    slug = await slugDe(raw);
+    if (slug) return movida(bizPath(lang, slug) + search);
+  } else {
+    const limpio = raw.toLowerCase();
+    if (!isSlug(limpio)) return notFound(lang, bizPath(lang, raw), 'b');
+    const r = await rpc('resolve_business_slug', { p_slug: limpio });
+    if (!r?.id) return notFound(lang, bizPath(lang, limpio), 'b');
+    if (r.slug !== raw) return movida(bizPath(lang, r.slug) + search);
+    id = r.id;
+    slug = r.slug;
+  }
+  const path = bizPath(lang, slug || id);
   if (!isUuid(id)) return notFound(lang, path, 'b');
   const b = await rpc('business_profile', { p_id: id });
   if (!b || !b.name) return notFound(lang, path, 'b');
   const [offers, sellos, carta, opiniones, novedades, cierres] = await Promise.all([
     rpcAll('business_offers', { p_id: id }),
-    rpc('stamp_card_of', { p_business: id }),
+    rpcAll('stamp_cards_of', { p_business: id }).catch(() => []), // opcional: sin ella, la ficha sale igual
     rpcAll('business_menu', { p_business: id }),
     rpcAll('business_reviews', { p_id: id, p_limit: 12 }),
     rows('business_posts', `select=id,body,image_url,created_at&business_id=eq.${id}&order=created_at.desc&limit=6`),
@@ -242,7 +287,12 @@ export async function businessPage(id, lang) {
         about: 'About', menu: 'Menu',
         stamps: 'Stamp card', allergens: 'Allergens',
         menuNote: 'Allergens as declared by the business. If you have an allergy, ask at the venue.',
-        stampsBody: (n, r) => `When you get to ${n} visits: “${r}”. Every code you redeem here leaves a stamp, one a day at most, and the app keeps count.`,
+        stampsMany: 'Stamp cards',
+        stampsBody: (n, r) => `${n} stamps: “${r}”`,
+        stampsNote: 'Each redemption that counts leaves a stamp, one a day per card at most, and the app keeps count.',
+        stampsAll: 'Every publication counts', stampsFlash: 'Only flash offers count', stampsEvents: 'Only events count',
+        stampsSomeCats: 'Only some categories count', stampsSomeOffers: 'Only some publications count',
+        stampsOnly: (l) => `Only these count: ${l}`, stampsMore: (l, n) => `${l} and ${n} more`,
         hours: 'Opening hours', closed: 'Closed', today: 'today',
         days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
         news: 'News', reviews: 'Reviews', write: 'Write a review', noReviews: 'No reviews yet. Been here? Be the first.',
@@ -250,6 +300,7 @@ export async function businessPage(id, lang) {
         replyFrom: (n) => `Reply from ${n}`,
         closedToday: 'Closed today', closedUntil: (d) => `Closed until ${d}`,
         closingDay: (d) => `Closing on ${d}`, closing: (a, b) => `Closing from ${a} to ${b}`,
+        moreIn: (c) => `More in ${c}:`, cityToday: 'things to do today', cityWeek: 'this week',
       }
     : {
         now: 'Ahora mismo', soon: 'Próximamente',
@@ -259,7 +310,12 @@ export async function businessPage(id, lang) {
         about: 'Sobre el negocio', menu: 'Carta',
         stamps: 'Tarjeta de sellos', allergens: 'Alérgenos',
         menuNote: 'Los alérgenos son los que declara el negocio. Si tienes alergia, pregunta en el sitio.',
-        stampsBody: (n, r) => `Al llegar a ${n} visitas: «${r}». Cada código que canjeas aquí deja un sello, como mucho uno al día, y la app lleva la cuenta.`,
+        stampsMany: 'Tarjetas de sellos',
+        stampsBody: (n, r) => `${n} sellos: «${r}»`,
+        stampsNote: 'Cada canje que cuenta deja un sello, como mucho uno al día por tarjeta, y la app lleva la cuenta.',
+        stampsAll: 'Cuentan todas las publicaciones', stampsFlash: 'Solo cuentan las ofertas flash', stampsEvents: 'Solo cuentan los eventos',
+        stampsSomeCats: 'Solo cuentan algunas categorías', stampsSomeOffers: 'Solo cuentan algunas publicaciones',
+        stampsOnly: (l) => `Solo cuentan: ${l}`, stampsMore: (l, n) => `${l} y ${n} más`,
         hours: 'Horario', closed: 'Cerrado', today: 'hoy',
         days: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'],
         news: 'Novedades', reviews: 'Reseñas', write: 'Escribir una reseña', noReviews: 'Todavía no hay reseñas. ¿Has estado? Sé la primera persona.',
@@ -267,6 +323,7 @@ export async function businessPage(id, lang) {
         replyFrom: (n) => `Respuesta de ${n}`,
         closedToday: 'Cerrado hoy', closedUntil: (d) => `Cerrado hasta el ${d}`,
         closingDay: (d) => `Cerrará el ${d}`, closing: (a, b) => `Cerrará del ${a} al ${b}`,
+        moreIn: (c) => `Más en ${c}:`, cityToday: 'qué hacer hoy', cityWeek: 'esta semana',
       };
 
   const flash = offers.filter((o) => o.kind === 'flash_offer');
@@ -326,9 +383,8 @@ export async function businessPage(id, lang) {
   const estrellas = (n) => `<span class="stars" aria-label="${n}/5">${'★'.repeat(n)}<span>${'★'.repeat(5 - n)}</span></span>`;
   const since = KZ.fmt(b.member_since, tz, en ? 'en-GB' : 'es-ES', { month: 'long', year: 'numeric' });
   const maps = b.lat ? `https://www.google.com/maps/search/?api=1&query=${b.lat},${b.lng}` : null;
-  const city = b.city
-    ? `${agendaBase(lang)}/${encodeURIComponent(String(b.city).toLowerCase())}/`
-    : null;
+  const city = b.city ? `${agendaBase(lang)}/${citySeg(b.city)}/` : null;
+  const cityToday = b.city ? `${todayBase(lang)}/${citySeg(b.city)}/` : null;
 
   const body = `
   <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a>${city ? ` · <a href="${city}">${esc(b.city)}</a>` : ''}</p>
@@ -363,8 +419,9 @@ export async function businessPage(id, lang) {
     </aside>
     <div class="d-body">
       ${b.description ? `<h2>${S.about}</h2><p>${esc(b.description).replace(/\n/g, '<br>')}</p>` : ''}
-      ${sellos?.is_active ? `<h2>${S.stamps}</h2>
-        <p class="callout">${esc(S.stampsBody(sellos.goal, sellos.reward))}</p>` : ''}
+      ${sellos.length ? `<h2>${sellos.length > 1 ? S.stampsMany : S.stamps}</h2>
+        ${sellos.map((c) => `<p class="callout"><b>${esc(c.name)}</b> · ${esc(S.stampsBody(c.goal, c.reward))}<br><small>${esc(queSellaFicha(c, S, en))}</small></p>`).join('')}
+        <p class="muted">${esc(S.stampsNote)}</p>` : ''}
       ${carta.length ? `<h2>${S.menu}</h2>
         <div class="menu">${carta.map((sec) => `<section>
           <h3>${esc(sec.name)}</h3>
@@ -402,6 +459,7 @@ export async function businessPage(id, lang) {
             <p>${esc(r.reply).replace(/\n/g, '<br>')}</p></div>` : ''}
           <a class="denuncia" href="${cuenta(lang)}#/denunciar/review/${encodeURIComponent(r.id)}" rel="nofollow">${S.report}</a>
         </article>`).join('')}</div>` : `<p class="empty">${S.noReviews}</p>`}
+      ${b.city ? `<p class="muted">${esc(S.moreIn(b.city))} <a href="${cityToday}">${esc(S.cityToday)}</a> · <a href="${city}">${esc(S.cityWeek)}</a></p>` : ''}
       <p class="denuncia-pie"><a href="${cuenta(lang)}#/denunciar/business/${encodeURIComponent(b.id)}" rel="nofollow">${S.reportBiz}</a></p>
     </div>
   </div>`;
@@ -414,8 +472,8 @@ export async function businessPage(id, lang) {
   if (where) bits.push(where);
   const description = `${bits.join(' · ')}${b.description ? ` — ${b.description}` : ''}`.slice(0, 200);
 
-  const jsonLd = {
-    '@context': 'https://schema.org', '@type': 'LocalBusiness', name: b.name, description: b.description || undefined,
+  const negocioLd = {
+    '@type': 'LocalBusiness', '@id': `${BASE}/b/${slug || id}#negocio`, name: b.name, description: b.description || undefined,
     url: `${BASE}${path}`, image: b.cover || b.logo || undefined, telephone: b.phone || undefined,
     address: where
       ? { '@type': 'PostalAddress', streetAddress: b.address || undefined, addressLocality: b.city || undefined, addressCountry: 'ES' }
@@ -426,11 +484,19 @@ export async function businessPage(id, lang) {
       : undefined,
     sameAs: seguro(b.website) ? [b.website] : undefined,
   };
+  const migas = [['Klendar', en ? '/en/' : '/']];
+  if (city) migas.push([b.city, city]);
+  migas.push([b.name, path]);
+  const jsonLd = { '@context': 'https://schema.org', '@graph': [negocioLd, breadcrumbLd(migas)] };
 
+  // En el título, la ciudad: «Café Central · Madrid» es lo que se busca (si
+  // el nombre ya la lleva, «FitBox Madrid», no se repite).
+  const plano = (t) => String(t || '').normalize('NFD').replace(/[^a-zA-Z0-9]+/g, ' ').toLowerCase().trim();
+  const conCiudad = b.city && !` ${plano(b.name)} `.includes(` ${plano(b.city)} `);
   return html(publicPage({
-    lang, path, body, title: b.name, description, image: b.cover || b.logo,
+    lang, path, body, title: conCiudad ? `${b.name} · ${b.city}` : b.name, description, image: b.cover || b.logo,
     head: `<meta name="robots" content="${b.adults_only ? 'noindex' : 'index, follow'}">
-<script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, '\\u003c')}</script>`,
+${ldScript(jsonLd)}`,
   }));
 }
 
@@ -439,40 +505,43 @@ const PRETTY = (s) => String(s || '').replace(/(^|[\s-])(\p{L})/gu, (m, a, b) =>
 
 export async function agendaPage(rawCity, lang) {
   const en = lang === 'en';
-  const raw = decodeURIComponent(rawCity || '').replace(/\/+$/, '');
-  const path = `${agendaBase(lang)}/${encodeURIComponent(raw.toLowerCase())}/`;
+  const raw = decodeURIComponent(rawCity || '').replace(/[/]+$/, '');
+  const path = `${agendaBase(lang)}/${citySeg(raw)}/`;
   if (!raw || raw.length > 60) return notFound(lang, path, 'c');
 
-  const [offers, negocios] = await Promise.all([
+  const [offers, negocios, cats] = await Promise.all([
     rpcAll('public_city_agenda', { p_city: raw, p_limit: 60 }),
     rpc('public_businesses', { p_city: raw, p_limit: 12 }),
+    rpcAll('public_categories', { p_city: raw }),
   ]);
-  const city = PRETTY(offers[0]?.city || raw);
+  const city = PRETTY(offers[0]?.city || negocios?.items?.[0]?.city || raw);
   // La agenda no trae coordenadas: la zona de cada negocio se lee aparte.
   // Cada tarjeta va en la hora de su negocio; los días, en la de la ciudad
   // (la de la mayoría de sus negocios).
-  const zonas = await zonasDeNegocios(offers.map((o) => o.business_id));
+  const { zonas } = await datosDeNegocios(offers.map((o) => o.business_id));
   const tzDe = (o) => zonas.get(o.business_id) || zonaDe(o);
   const tzCiudad = KZ.comun(offers.map(tzDe));
 
   const S = en
     ? {
-        h1: `What's on in ${city}`,
+        h1: `Things to do in ${city} this week`,
+        title: `Things to do in ${city} this week: events and deals`,
+        desc: (n) => `${n} events and deals in ${city} over the next few days: flash offers with a countdown and local events. No account needed to look.`,
         lead: 'Flash offers and local events for the next few days. No account needed to look; to get a code, log in here on the website or in the app.',
         none: `Nothing published in ${city} yet. If you run a business here, you can be the first.`,
         biz: 'Publish your business', all: 'Other cities', app: 'Create a free account', agenda: "What's on",
         days: 'Days', places: 'Places in this city', explore: 'Explore everything',
         note: "Updated as businesses publish. Times are each business's local time.",
-        plans: 'plans and deals',
       }
     : {
-        h1: `Qué hacer en ${city}`,
+        h1: `Qué hacer en ${city} esta semana`,
+        title: `Qué hacer en ${city} esta semana: planes y ofertas`,
+        desc: (n) => `${n} planes y ofertas en ${city} para los próximos días: ofertas flash con cuenta atrás y eventos de los negocios de la ciudad. Sin cuenta para mirar.`,
         lead: 'Ofertas flash y planes de los próximos días. Para mirar no hace falta cuenta; para conseguir el código, entra aquí en la web o en la app.',
         none: `Todavía no hay nada publicado en ${city}. Si tienes un negocio aquí, puedes ser el primero.`,
         biz: 'Publicar mi negocio', all: 'Otras ciudades', app: 'Crear cuenta gratis', agenda: 'Agenda',
         days: 'Días', places: 'Negocios de esta ciudad', explore: 'Explorar todo',
         note: 'Se actualiza según van publicando los negocios. Horas locales de cada negocio.',
-        plans: 'planes y ofertas',
       };
 
   // Agrupado por día: una agenda se lee por días, no por relevancia. Lo que
@@ -503,6 +572,7 @@ export async function agendaPage(rawCity, lang) {
   <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a> · <a href="${agendaBase(lang)}/">${S.agenda}</a></p>
   <h1>${esc(S.h1)}</h1>
   <p class="muted" style="max-width:620px">${esc(S.lead)}</p>
+  ${cityLinks(lang, raw, city, cats, 'semana')}
   ${days.size > 1 ? `<div class="filters"><div class="frow"><span class="flabel">${esc(S.days)}</span>
     ${orden.map((iso) => `<a class="chip" href="#d${iso}">${esc(shortDay(iso))}</a>`).join('')}
   </div></div>` : ''}
@@ -512,37 +582,131 @@ export async function agendaPage(rawCity, lang) {
         <div class="olist">${list.map((o) => offerCard(o, lang, tzDe(o))).join('')}</div>
       </section>`).join('')
     : `<p class="empty">${esc(S.none)}</p>`}
-  ${(negocios?.items || []).length ? `<section class="daygroup">
-    <h3>${esc(S.places)}</h3>
-    <div class="cities">${negocios.items.map((b) => `<a href="${en ? '/en' : ''}/b/${esc(b.id)}">${esc(b.name)}${b.live ? ` <span class="muted">${b.live}</span>` : ''}</a>`).join('')}</div>
-  </section>` : ''}
+  ${placesBlock(negocios, lang, S.places)}
   <p class="muted" style="font-size:13px">${esc(S.note)}</p>
   <p><a class="pill accent" href="${exploreBase(lang)}/?${en ? 'city' : 'ciudad'}=${encodeURIComponent(city)}">${S.explore}</a>
      <a class="pill" href="${cuenta(lang)}#/registro" data-sin-sesion>${S.app}</a>
      <a class="pill" href="${en ? '/en/for-business/' : '/para-negocios/'}">${S.biz}</a></p>
   <p><a href="${agendaBase(lang)}/">${S.all} →</a></p>`;
 
+  const description = offers.length ? S.desc(offers.length) : S.none;
   const jsonLd = offers.length
-    ? {
-        '@context': 'https://schema.org', '@type': 'ItemList', name: S.h1, url: `${BASE}${path}`,
-        numberOfItems: offers.length,
-        itemListElement: offers.slice(0, 30).map((o, i) => ({
-          '@type': 'ListItem', position: i + 1, url: `${BASE}${pre(lang)}/o/${o.id}`, name: o.title,
-        })),
-      }
+    ? listingLd({
+        lang, path, name: S.h1, description, city, items: offers,
+        migas: [['Klendar', en ? '/en/' : '/'], [S.agenda, `${agendaBase(lang)}/`], [city, path]],
+      })
     : null;
 
   return html(publicPage({
     lang, path, body,
-    title: S.h1,
-    description: offers.length
-      ? `${offers.length} ${S.plans} · ${city} · ${fmtLong(offers[0].starts_at, lang, tzDe(offers[0]))}`
-      : S.none,
+    title: S.title,
+    description,
     image: offers.map((o) => (o.images || []).find((u) => !isVideo(u))).find(Boolean),
-    head: jsonLd
-      ? `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, '\\u003c')}</script>`
-      : '<meta name="robots" content="noindex, follow">',
+    head: jsonLd ? ldScript(jsonLd) : '<meta name="robots" content="noindex, follow">',
   }), 200, 'public, max-age=300, s-maxage=900');
+}
+
+/** «Negocios de esta ciudad»: enlaces a sus fichas, por su dirección con nombre. */
+function placesBlock(negocios, lang, titulo) {
+  const items = negocios?.items || [];
+  if (!items.length) return '';
+  return `<section class="daygroup">
+    <h3>${esc(titulo)}</h3>
+    <div class="cities">${items.map((b) => `<a href="${esc(bizPath(lang, b.slug || b.id))}">${esc(b.name)}${b.live ? ` <span class="muted">${b.live}</span>` : ''}</a>`).join('')}</div>
+  </section>`;
+}
+
+// ── Hoy en una ciudad ──────────────────────────────────────────────────────
+/**
+ * «Qué hacer hoy en Madrid»: lo que se busca con el móvil en la mano. Lo que
+ * está en marcha ahora mismo, lo que empieza más tarde y, para que la página
+ * nunca se quede en blanco, un adelanto de mañana. Enlaza con la semana y
+ * con cada categoría de la ciudad.
+ */
+export async function todayPage(rawCity, lang) {
+  const en = lang === 'en';
+  const raw = decodeURIComponent(rawCity || '').replace(/[/]+$/, '');
+  const path = `${todayBase(lang)}/${citySeg(raw)}/`;
+  if (!raw || raw.length > 60) return notFound(lang, path, 'c');
+
+  const [hoyRes, mananaRes, cats, negocios] = await Promise.all([
+    rpc('public_explore', { p_city: raw, p_filters: { when: 'today' }, p_limit: 60 }),
+    rpc('public_explore', { p_city: raw, p_filters: { when: 'tomorrow' }, p_limit: 6 }),
+    rpcAll('public_categories', { p_city: raw }),
+    rpc('public_businesses', { p_city: raw, p_limit: 12 }),
+  ]);
+  const hoyItems = hoyRes?.items || [];
+  const mananaItems = mananaRes?.items || [];
+  const lugares = negocios?.items || [];
+  // Una ciudad sin nada de nada (mal escrita, o donde aún no hay negocios).
+  if (!hoyItems.length && !mananaItems.length && !lugares.length) return notFound(lang, path, 'c');
+
+  const city = PRETTY(hoyItems[0]?.city || mananaItems[0]?.city || lugares[0]?.city || raw);
+  const tzCiudad = KZ.comun([...hoyItems, ...mananaItems].map((o) => zonaDe(o)));
+  const fecha = KZ.fmt(`${KZ.hoy(tzCiudad)}T12:00:00Z`, 'UTC', en ? 'en-GB' : 'es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+  const ya = Date.now();
+  const empezado = (o) => new Date(o.starts_at || 0).getTime() <= ya;
+  const ahora = hoyItems.filter(empezado);
+  const luego = hoyItems.filter((o) => !empezado(o));
+
+  const S = en
+    ? {
+        h1: `Things to do in ${city} today`,
+        title: `Things to do in ${city} today: events and deals`,
+        desc: (n) => `${n} ${n === 1 ? 'plan' : 'plans'} for today in ${city}: flash offers with a countdown and local events, live right now or later today. No account needed to look.`,
+        descNone: `Nothing more for today in ${city}. Here is what is coming up tomorrow and the places in the city.`,
+        lead: (f) => `Today is ${f}. What is on right now and later today, from the businesses in the city. Times are local.`,
+        now: 'On right now', later: 'Later today', tomorrow: 'Tomorrow',
+        none: 'Nothing more published for today. Have a look at tomorrow or the rest of the week.',
+        places: 'Places in this city', week: `The whole week in ${city}`, agenda: "What's on", today: 'Today',
+        explore: 'Explore with filters', biz: 'Publish your business',
+      }
+    : {
+        h1: `Qué hacer hoy en ${city}`,
+        title: `Qué hacer hoy en ${city}: planes y ofertas de hoy`,
+        desc: (n) => `${n} ${n === 1 ? 'plan' : 'planes'} para hoy en ${city}: ofertas flash con cuenta atrás y eventos de los negocios de la ciudad, ahora mismo o más tarde. Sin cuenta para mirar.`,
+        descNone: `Hoy ya no queda nada más en ${city}. Aquí tienes lo de mañana y los negocios de la ciudad.`,
+        lead: (f) => `Hoy es ${f}. Lo que hay ahora mismo y lo que empieza más tarde en los negocios de la ciudad. Horas locales.`,
+        now: 'Ahora mismo', later: 'Más tarde, hoy', tomorrow: 'Mañana',
+        none: 'Para hoy ya no hay nada más publicado. Mira lo de mañana o el resto de la semana.',
+        places: 'Negocios de esta ciudad', week: `Toda la semana en ${city}`, agenda: 'Agenda', today: 'Hoy',
+        explore: 'Explorar con filtros', biz: 'Publicar mi negocio',
+      };
+
+  const bloque = (titulo, items) => (items.length
+    ? `<section class="daygroup"><h3>${esc(titulo)}</h3>
+        <div class="olist">${items.map((o) => offerCard(o, lang)).join('')}</div></section>`
+    : '');
+
+  const body = `
+  <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a> · <a href="${agendaBase(lang)}/">${S.agenda}</a> · <a href="${agendaBase(lang)}/${citySeg(raw)}/">${esc(city)}</a></p>
+  <h1>${esc(S.h1)}</h1>
+  <p class="muted" style="max-width:620px">${esc(S.lead(fecha))}</p>
+  ${cityLinks(lang, raw, city, cats, 'hoy')}
+  ${bloque(S.now, ahora)}
+  ${bloque(S.later, luego)}
+  ${hoyItems.length ? '' : `<p class="empty">${esc(S.none)}</p>`}
+  ${bloque(S.tomorrow, mananaItems)}
+  ${placesBlock(negocios, lang, S.places)}
+  <p><a class="pill accent" href="${agendaBase(lang)}/${citySeg(raw)}/">${esc(S.week)}</a>
+     <a class="pill" href="${exploreBase(lang)}/?${en ? 'city' : 'ciudad'}=${encodeURIComponent(city)}&amp;${en ? 'when=today' : 'cuando=hoy'}">${esc(S.explore)}</a>
+     <a class="pill" href="${en ? '/en/for-business/' : '/para-negocios/'}">${esc(S.biz)}</a></p>`;
+
+  const description = hoyItems.length ? S.desc(hoyItems.length) : S.descNone;
+  const jsonLd = listingLd({
+    lang, path, name: S.h1, description, city, items: hoyItems,
+    migas: [['Klendar', en ? '/en/' : '/'], [S.agenda, `${agendaBase(lang)}/`], [city, `${agendaBase(lang)}/${citySeg(raw)}/`], [S.today, path]],
+  });
+
+  return html(publicPage({
+    lang, path, body,
+    title: S.title,
+    description,
+    image: [...hoyItems, ...mananaItems].map((o) => firstPhoto(o.images)).find(Boolean),
+    // Un día sin nada no se desindexa: mañana vuelve a haber, y la página
+    // sigue teniendo lo de mañana y los negocios de la ciudad.
+    head: ldScript(jsonLd),
+  }), 200, 'public, max-age=300, s-maxage=600');
 }
 
 // ── Índice de ciudades ─────────────────────────────────────────────────────
@@ -555,11 +719,13 @@ export async function citiesPage(lang) {
         h1: "What's on near you",
         lead: 'Flash offers and plans for the next few days, city by city. No account needed.',
         none: 'No city has anything published yet.', biz: 'Publish your business',
+        today: 'Things to do today', todayIn: (c) => `Today in ${c}`,
       }
     : {
         h1: 'Agenda local',
         lead: 'Lo que hay en cada ciudad: ofertas flash y planes de los próximos días. No hace falta cuenta.',
         none: 'Todavía no hay ninguna ciudad con publicaciones.', biz: 'Publicar mi negocio',
+        today: 'Qué hacer hoy', todayIn: (c) => `Hoy en ${c}`,
       };
 
   const body = `
@@ -567,7 +733,9 @@ export async function citiesPage(lang) {
   <h1>${S.h1}</h1>
   <p class="muted" style="max-width:620px">${S.lead}</p>
   ${cities.length
-    ? `<div class="cities">${cities.map((c) => `<a href="${agendaBase(lang)}/${encodeURIComponent(String(c.city).toLowerCase())}/">${esc(c.city)} <span class="muted">${c.n}</span></a>`).join('')}</div>`
+    ? `<div class="cities">${cities.map((c) => `<a href="${agendaBase(lang)}/${citySeg(c.city)}/">${esc(c.city)} <span class="muted">${c.n}</span></a>`).join('')}</div>
+    <h2>${S.today}</h2>
+    <div class="cities">${cities.map((c) => `<a href="${todayBase(lang)}/${citySeg(c.city)}/">${esc(S.todayIn(c.city))}</a>`).join('')}</div>`
     : `<p class="empty">${S.none}</p>`}
   <p><a class="pill" href="${en ? '/en/for-business/' : '/para-negocios/'}">${S.biz}</a></p>`;
 

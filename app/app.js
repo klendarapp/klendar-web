@@ -1276,6 +1276,22 @@ RUTAS.recibo = async ([id]) => {
 };
 
 // ── Tarjetas de sellos ────────────────────────────────────────────────────
+/** Qué da sello en una tarjeta, con las mismas palabras que la app. */
+function queSella(c) {
+  if (c.applies_to === 'flash_offer') return t('Solo cuentan las ofertas flash');
+  if (c.applies_to === 'future_event') return t('Solo cuentan los eventos');
+  if (c.applies_to === 'categories' || c.applies_to === 'offers') {
+    const nombres = c.applies_to === 'categories'
+      ? (c.category_names || []).map((n) => (EN ? n.en : n.es) || n.es || '').filter(Boolean)
+      : (c.offer_titles || []);
+    if (!nombres.length) return t(c.applies_to === 'categories' ? 'Solo cuentan algunas categorías' : 'Solo cuentan algunas publicaciones');
+    const resto = nombres.length - 3;
+    const lista = nombres.slice(0, 3).join(', ') + (resto > 0 ? (EN ? ` and ${resto} more` : ` y ${resto} más`) : '');
+    return EN ? `Only these count: ${lista}` : `Solo cuentan: ${lista}`;
+  }
+  return t('Cuentan todas las publicaciones');
+}
+
 RUTAS.sellos = async () => {
   if (!exigeSesion('sellos')) return;
   const lista = await llamar('my_stamp_cards', {});
@@ -1285,7 +1301,9 @@ RUTAS.sellos = async () => {
     <h1>${esc(t('Tarjetas de sellos'))}</h1>
     ${(lista || []).length ? lista.map((c) => `
       <div class="sello">
-        <h2><a href="${pre}/b/${esc(c.business_id)}">${esc(c.business_name)}</a></h2>
+        <p class="sello-negocio"><a href="${pre}/b/${esc(c.business_id)}">${esc(c.business_name)}</a></p>
+        <h2>${esc(c.name || t('Tarjeta de sellos'))}</h2>
+        <p class="muted sello-filtro">${esc(queSella(c))}</p>
         <div class="huecos" aria-label="${esc(`${c.stamps} / ${c.goal}`)}">${Array.from({ length: c.goal }, (_, i) => `<span class="${i < c.stamps ? 'lleno' : ''}"></span>`).join('')}</div>
         <p>${esc(t('Premio'))}: <b>${esc(c.reward)}</b></p>
         <p class="muted">${c.pending_code || c.stamps >= c.goal ? esc(t('¡Te toca premio!')) : esc(c.goal - c.stamps === 1 ? t('Te falta 1 sello') : (EN ? `${c.goal - c.stamps} stamps to go` : `Te faltan ${c.goal - c.stamps} sellos`))}</p>

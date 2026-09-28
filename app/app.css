@@ -47,10 +47,13 @@
 .recibo dd { margin: 0; font-weight: 600; }
 
 .sello { border: 1px solid var(--glass-border); border-radius: 18px; padding: 18px; margin: 0 0 14px; background: var(--elevated); }
-.sello h2 { margin: 0 0 10px; font-size: 18px; }
+.sello h2 { margin: 0 0 2px; font-size: 18px; }
+.sello .sello-negocio { margin: 0 0 6px; font-size: 14px; font-weight: 600; }
+.sello .sello-negocio a { color: var(--ink-2); }
+.sello .sello-filtro { margin: 0 0 10px; font-size: 14px; }
 .huecos { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 10px; }
 .huecos span { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--glass-border); }
-.huecos span.lleno { background: var(--accent); border-color: var(--accent); }
+.huecos span.lleno { background: var(--ink); border-color: var(--ink); }
 
 .hecho-ic { width: 64px; height: 64px; margin: 24px auto 0; border-radius: 50%; display: grid;
   place-items: center; font-size: 30px; font-weight: 800; background: var(--ink); color: var(--surface); }

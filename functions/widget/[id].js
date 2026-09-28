@@ -1,5 +1,5 @@
 import { configure, esc, isUuid, rpc, rpcAll } from '../_lib/page.js';
-import { benefit, firstPhoto, fmtDay, fmtEnd, fmtLong, fmtTime, guard, zonaDe } from '../_lib/public.js';
+import { benefit, bizPath, firstPhoto, fmtDay, fmtEnd, fmtLong, fmtTime, guard, slugDe, zonaDe } from '../_lib/public.js';
 
 // El recuadro que el negocio pega en su web: lo que tiene vivo ahora mismo,
 // sin que tenga que mantener nada. Es una página suelta pensada para ir
@@ -25,9 +25,10 @@ export async function onRequestGet(ctx) {
   const S = T(en);
 
   if (!isUuid(id)) return new Response('not found', { status: 404 });
-  const [b, offers] = await Promise.all([
+  const [b, offers, slug] = await Promise.all([
     rpc('business_profile', { p_id: id }),
     rpcAll('business_offers', { p_id: id }),
+    slugDe(id),
   ]);
   if (!b || !b.name) return new Response('not found', { status: 404 });
 
@@ -84,7 +85,7 @@ export async function onRequestGet(ctx) {
   <div class="hd"><b>${esc(b.name)}</b><span class="mu">· ${esc(S.on)}</span></div>
   ${items || `<p class="empty">${esc(S.none)}</p>`}
   <div class="ft">
-    <a href="${BASE}${en ? '/en' : ''}/b/${esc(id)}" target="_blank" rel="noopener">${esc(S.all)} →</a>
+    <a href="${BASE}${esc(bizPath(lang, slug || id))}" target="_blank" rel="noopener">${esc(S.all)} →</a>
     <span class="mu">${esc(S.by)}</span>
   </div>
 </div>

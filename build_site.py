@@ -242,7 +242,7 @@ def head(t, path, page_title=None, page_desc=None, extra=''):
 LIVE_SCRIPTS = (
     '<script src="/config.js?v=3"></script>'
     '<script src="/assets/zona.js?v=1" defer></script>'
-    '<script src="/assets/live.js?v=3" defer></script>'
+    '<script src="/assets/live.js?v=4" defer></script>'
 )
 
 
@@ -437,8 +437,10 @@ def doc_page(t, path, title, desc, body):
 
 
 # ── robots.txt y sitemap.xml ────────────────────────────────────────────────
-# Solo se indexan las páginas estáticas: /admin/ es privado y /o/, /b/ y /r/
-# son enlaces profundos que se generan al vuelo (ya llevan su propio canonical).
+# Aquí solo van las páginas estáticas: /admin/ es privado y /r/ es un enlace
+# profundo. Las que se generan al vuelo tienen su sitemap dinámico: ciudades,
+# «hoy» y categorías en /sitemap-agenda.xml y las fichas de negocio (/b/) en
+# /sitemap-negocios.xml (vacíos mientras la web enseña los datos de dev).
 SITEMAP_ES = ['/', '/como-funciona/', '/explorar/', '/agenda/', '/para-negocios/', '/precios/', '/preguntas/', '/prensa/', '/sobre/', '/accesibilidad/', '/estado/', '/negocios/', '/soporte/', '/privacidad/', '/terminos/', '/aviso-legal/', '/cookies/', '/normas/', '/eliminar-cuenta/']
 SITEMAP_EN = ['/en/', '/en/how-it-works/', '/en/explore/', '/en/whats-on/', '/en/for-business/', '/en/pricing/', '/en/faq/', '/en/press/', '/en/about/', '/en/accessibility/', '/en/status/', '/en/business-terms/', '/en/support/', '/en/privacy/', '/en/terms/', '/en/legal-notice/', '/en/cookies/', '/en/community-guidelines/', '/en/delete-account/']
 ALT_PAIRS = dict(zip(SITEMAP_ES, SITEMAP_EN))
@@ -455,6 +457,7 @@ def robots():
         '',
         f'Sitemap: {BASE}/sitemap.xml',
         f'Sitemap: {BASE}/sitemap-agenda.xml',
+        f'Sitemap: {BASE}/sitemap-negocios.xml',
         '',
     ])
 

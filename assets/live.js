@@ -107,10 +107,11 @@
     // la ubicación de nadie. Si hay varias, que se pueda cambiar.
     const inicial = ciudades[0].city;
 
-    // «Qué hacer hoy en Madrid · Valencia…» del titular: la agenda de cada una.
+    // «Qué hacer hoy en Madrid · Valencia…» del titular: el «hoy» de cada una
+    // (/hoy/madrid/), que enlaza a su vez con la semana y las categorías.
     const enlaces = document.getElementById('liveCiudades');
     if (enlaces) {
-      enlaces.innerHTML = ciudades.filter((c) => c.city).slice(0, 5).map((c) => `<a href="${base}${en ? '/whats-on/' : '/agenda/'}${encodeURIComponent(String(c.city).toLowerCase())}/">${esc(c.city)}</a>`).join('');
+      enlaces.innerHTML = ciudades.filter((c) => c.city).slice(0, 5).map((c) => `<a href="${base}${en ? '/today/' : '/hoy/'}${encodeURIComponent(String(c.city).toLowerCase())}/">${esc(c.city)}</a>`).join('');
     }
 
     if (!await pintar(inicial)) return;
