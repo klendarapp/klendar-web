@@ -6,13 +6,13 @@ import io, os
 from build_site import head, footer, T, ALT
 
 TODO = {
-  'es': '''<p class="todo"><strong>Pendiente de completar antes del lanzamiento:</strong> los datos marcados en <mark class="tbd">amarillo</mark> (titular, NIF, domicilio) dependen de la forma jurídica que se elija. Este texto es un borrador profesional; conviene que lo revise un abogado antes de publicar la app.</p>''',
-  'en': '''<p class="todo"><strong>To be completed before launch:</strong> the details highlighted in <mark class="tbd">yellow</mark> (owner, tax ID, address) depend on the legal form chosen. This text is a professional draft and should be reviewed by a lawyer before the app is published.</p>''',
+  'es': '''<p class="todo"><strong>Pendiente de completar antes del lanzamiento:</strong> los datos marcados en amarillo (NIF, domicilio) dependen de la forma jurídica que se elija. Este texto es un borrador profesional; conviene que lo revise un abogado antes de publicar la app.</p>''',
+  'en': '''<p class="todo"><strong>To be completed before launch:</strong> the details highlighted in yellow (tax ID, address) depend on the legal form chosen. This text is a professional draft and should be reviewed by a lawyer before the app is published.</p>''',
 }
 
 COURTESY = '''<p class="notice">This is a courtesy translation provided for information only. In case of any discrepancy, the <a href="{es}">Spanish version</a> prevails.</p>'''
 
-TITULAR = {'es': '<mark class="tbd">[Nombre del titular / razón social]</mark>', 'en': '<mark class="tbd">[Owner / company name]</mark>'}
+TITULAR = {'es': 'Iván Hijano Pérez', 'en': 'Iván Hijano Pérez'}
 NIF = {'es': '<mark class="tbd">[NIF/CIF]</mark>', 'en': '<mark class="tbd">[Spanish tax ID (NIF/CIF)]</mark>'}
 DOMICILIO = {'es': '<mark class="tbd">[Domicilio completo, España]</mark>', 'en': '<mark class="tbd">[Full address, Spain]</mark>'}
 DATE = {'es': '17 de septiembre de 2026', 'en': '17 September 2026'}
@@ -73,8 +73,7 @@ ES['privacidad'] = ('Política de privacidad', 'Cómo trata Klendar tus datos pe
 
 <h2>1. Responsable del tratamiento</h2>
 <ul>
-  <li>Responsable: {TITULAR['es']} · NIF/CIF: {NIF['es']}</li>
-  <li>Domicilio: {DOMICILIO['es']}</li>
+  <li>Responsable: {TITULAR['es']}</li>
   <li>Contacto para protección de datos: <a href="mailto:info@klendar.app">info@klendar.app</a></li>
 </ul>
 
@@ -132,8 +131,7 @@ EN['privacidad'] = ('privacy', 'Privacy policy', 'How Klendar handles your perso
 
 <h2>1. Data controller</h2>
 <ul>
-  <li>Controller: {TITULAR['en']} · Tax ID: {NIF['en']}</li>
-  <li>Address: {DOMICILIO['en']}</li>
+  <li>Controller: {TITULAR['en']}</li>
   <li>Data protection contact: <a href="mailto:info@klendar.app">info@klendar.app</a></li>
 </ul>
 
@@ -189,7 +187,7 @@ EN['privacidad'] = ('privacy', 'Privacy policy', 'How Klendar handles your perso
 # ── Términos de uso ─────────────────────────────────────────────────────────
 ES['terminos'] = ('Términos de uso', 'Condiciones de uso de la app Klendar para personas usuarias.', f'''
 <h2>1. Quiénes somos y qué es Klendar</h2>
-<p>Klendar es una plataforma titularidad de {TITULAR['es']} (NIF {NIF['es']}) que permite descubrir ofertas de duración limitada y eventos de negocios locales, guardarlos, valorarlos y canjearlos con un código QR. Al crear una cuenta o usar la app aceptas estos términos y la <a href="/privacidad/">Política de privacidad</a>.</p>
+<p>Klendar es una plataforma titularidad de {TITULAR['es']} que permite descubrir ofertas de duración limitada y eventos de negocios locales, guardarlos, valorarlos y canjearlos con un código QR. Al crear una cuenta o usar la app aceptas estos términos y la <a href="/privacidad/">Política de privacidad</a>.</p>
 
 <h2>2. Cuenta</h2>
 <ul>
@@ -229,7 +227,7 @@ ES['terminos'] = ('Términos de uso', 'Condiciones de uso de la app Klendar para
 
 EN['terminos'] = ('terms', 'Terms of use', 'Terms of use of the Klendar app for users.', f'''
 <h2>1. Who we are and what Klendar is</h2>
-<p>Klendar is a platform owned by {TITULAR['en']} (tax ID {NIF['en']}) that lets you discover time-limited deals and events from local businesses, save them, review them and redeem them with a QR code. By creating an account or using the app you accept these terms and the <a href="/en/privacy/">Privacy policy</a>.</p>
+<p>Klendar is a platform owned by {TITULAR['en']} that lets you discover time-limited deals and events from local businesses, save them, review them and redeem them with a QR code. By creating an account or using the app you accept these terms and the <a href="/en/privacy/">Privacy policy</a>.</p>
 
 <h2>2. Account</h2>
 <ul>
@@ -269,7 +267,7 @@ EN['terminos'] = ('terms', 'Terms of use', 'Terms of use of the Klendar app for 
 
 # ── Condiciones para negocios ───────────────────────────────────────────────
 ES['negocios'] = ('Condiciones para negocios', 'Condiciones de contratación del servicio Klendar para negocios.', f'''
-<p>Estas condiciones regulan la relación entre {TITULAR['es']} (NIF {NIF['es']}, "Klendar") y el negocio que se da de alta en la Plataforma ("el Negocio"). Al enviar la solicitud de alta, la persona que la envía declara tener poder para obligar al Negocio.</p>
+<p>Estas condiciones regulan la relación entre {TITULAR['es']} ("Klendar") y el negocio que se da de alta en la Plataforma ("el Negocio"). Al enviar la solicitud de alta, la persona que la envía declara tener poder para obligar al Negocio.</p>
 
 <h2>1. Alta y verificación</h2>
 <ul>
@@ -312,7 +310,7 @@ ES['negocios'] = ('Condiciones para negocios', 'Condiciones de contratación del
 ''')
 
 EN['negocios'] = ('business-terms', 'Business terms', 'Terms of service of Klendar for businesses.', f'''
-<p>These terms govern the relationship between {TITULAR['en']} (tax ID {NIF['en']}, "Klendar") and the business that registers on the Platform ("the Business"). By submitting the registration, the person submitting it declares they are authorised to bind the Business.</p>
+<p>These terms govern the relationship between {TITULAR['en']} ("Klendar") and the business that registers on the Platform ("the Business"). By submitting the registration, the person submitting it declares they are authorised to bind the Business.</p>
 
 <h2>1. Registration and verification</h2>
 <ul>
@@ -491,7 +489,7 @@ LEGAL_SLUGS = ('aviso-legal', 'privacidad', 'terminos', 'negocios')
 
 def render(lang, path, title, desc, body, es_path=None):
     t = T[lang]
-    todo = TODO[lang] if (es_path or path).strip('/') in LEGAL_SLUGS else ''
+    todo = TODO[lang] if (es_path or path).strip('/') in LEGAL_SLUGS and 'class="tbd"' in body else ''
     courtesy = COURTESY.format(es=es_path) if lang == 'en' else ''
     meta = META[lang].format(date=DATE[lang], v=VERSION)
     return (head(t, path, f'{title} · Klendar', desc)
