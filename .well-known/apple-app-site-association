@@ -4,7 +4,7 @@
     "details": [
       {
         "appID": "TEAMID.app.klendar",
-        "paths": ["/o/*", "/b/*", "/r/*", "/v/*"]
+        "paths": ["/o/*", "/b/*", "/r/*", "/v/*", "/amigo/*", "/en/friend/*"]
       }
     ]
   }

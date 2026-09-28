@@ -360,6 +360,10 @@ RUTAS[''] = async () => {
       <a class="rapido" href="${EN ? '/en/explore/' : '/explorar/'}">${ic('explore')}<b>${esc(t('Explorar'))}</b></a>
     </div>
 
+    <div class="lista lista-amigos">
+      ${fila({ href: '#/amigos', icono: 'group', titulo: t('Amigos'), detalle: t('Tu enlace de amigo, tu QR y tu lista') })}
+    </div>
+
     ${tieneNegocio ? `
       <h2 class="seccion-t">${esc(t('Negocio'))}</h2>
       <div class="lista">

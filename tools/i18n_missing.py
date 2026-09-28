@@ -25,7 +25,7 @@ AREAS = {
     # ideas.js ya trae cada idea en los dos idiomas.
     'panel': (['panel/panel.js', 'panel/index.html'], 'panel/i18n.js'),
     'admin': (['admin/admin.js', 'admin/index.html'], 'admin/i18n.js'),
-    'cuenta': (['app/app.js', 'app/cuenta.js'], 'app/i18n.js'),
+    'cuenta': (['app/app.js', 'app/cuenta.js', 'app/amigos.js'], 'app/i18n.js'),
 }
 
 # Palabras que delatan una frase en español.

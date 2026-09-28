@@ -186,3 +186,48 @@ footer.pub-foot a { color: var(--ink-2); }
 .pop { display: grid; gap: 2px; color: var(--ink); text-decoration: none; max-width: 220px; }
 .pop span { color: var(--ink-2); font-size: 13px; }
 button.chip { font-family: inherit; cursor: pointer; }
+
+/* ── Planes con amigos ────────────────────────────────────────────────── */
+/* Quién va: hasta tres avatares de 24 px solapados, con borde del color del
+   fondo en el que están (la ficha, una tarjeta, la tarjeta lateral). */
+.av-pila { display: inline-flex; flex: none; --av-relleno: #E4E4E4; }
+@media (prefers-color-scheme: dark) { .av-pila { --av-relleno: #2E2E2E; } }
+.av-pila .av-amigo { width: 24px; height: 24px; border-radius: 50%; overflow: hidden; display: grid; place-items: center;
+  box-sizing: border-box; border: 2px solid var(--av-borde, var(--surface)); background: var(--av-relleno);
+  color: var(--ink); font-size: 10px; font-weight: 800; line-height: 1; flex: none; }
+.av-pila .av-amigo + .av-amigo { margin-left: -8px; }
+/* La primera encima, como en la app. */
+.av-pila .av-amigo { position: relative; }
+.av-pila .av-amigo:nth-child(1) { z-index: 3; }
+.av-pila .av-amigo:nth-child(2) { z-index: 2; }
+.av-pila .av-amigo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.quien-va { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; color: var(--ink); margin: 12px 0 0; min-width: 0; }
+.quien-va > span:last-child { min-width: 0; }
+.ocard, .side, .invita { --av-borde: var(--elevated); }
+.ocard .quien-va { font-size: 13px; margin: 2px 0 0; }
+/* «Voy» en activo: «Vas», relleno de tinta (como los interruptores). */
+.pill.on { background: var(--ink); color: var(--surface); border-color: transparent; }
+.amigos-acc { display: flex; flex-wrap: wrap; gap: 8px; }
+/* «Ana te invita a este plan», arriba de la tarjeta lateral. */
+.invita { border: 1px solid var(--glass-border); background: var(--elevated); border-radius: 22px; padding: 14px 16px; margin: 0 0 16px;
+  box-shadow: var(--shadow); }
+.side .invita { background: var(--soft); box-shadow: none; }
+.invita-cab { display: flex; align-items: center; gap: 10px; margin: 0; line-height: 1.35; }
+.invita-acc { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin-top: 12px; }
+.invita-acc .pill { flex: 1 1 110px; justify-content: center; padding: 10px 16px; }
+.invita-acc .pill:disabled { opacity: .6; cursor: progress; }
+.invita-estado { font-weight: 600; color: var(--ink-2); }
+.invita .linkbtn { background: none; border: 0; padding: 0; color: var(--ink); text-decoration: underline; text-underline-offset: 2px;
+  font: inherit; font-weight: 700; cursor: pointer; }
+/* El aviso de abajo (páginas públicas). */
+.am-toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 50; background: var(--ink); color: var(--surface);
+  padding: 12px 18px; border-radius: 14px; font-weight: 600; max-width: calc(100vw - 32px); box-shadow: 0 12px 30px rgba(0,0,0,.3); }
+.am-toast.bad { background: #FF5C5C; color: #fff; }
+/* /amigo/<código>: la invitación a ser amigos, sin decir de quién. */
+.amigo-pub { max-width: 520px; margin: 12px auto 0; text-align: center; }
+.pub .amigo-pub-ic { width: 72px; height: 72px; border-radius: 50%; display: grid; place-items: center; margin: 12px auto 18px;
+  background: var(--soft); color: var(--ink); }
+.amigo-pub .acciones { display: grid; gap: 10px; margin-top: 22px; }
+.amigo-pub .pill.big { justify-content: center; }
+/* Los botones de verdad, con la letra de la web (no la del sistema). */
+button.pill { font-family: inherit; cursor: pointer; }

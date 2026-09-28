@@ -30,6 +30,9 @@ const PATHS = {
   negocio: 'M20 4H4v2h16V4zm1 10v-2l-1-5H4l-1 5v2h1v6h10v-6h4v6h2v-6h1zm-9 4H6v-4h6v4z',
   candado: 'M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z',
   regalo: 'M20 6h-2.18c.11-.31.18-.65.18-1 0-1.66-1.34-3-3-3-1.05 0-1.96.54-2.5 1.35l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-5-2c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zM9 4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm11 15H4v-2h16v2zm0-5H4V8h5.08L7 10.83 8.62 12 11 8.76l1-1.36 1 1.36L15.38 12 17 10.83 14.92 8H20v6z',
+  // «Voy» (check_circle) e «Invitar a un amigo» (group_add), como en la app.
+  voy: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z',
+  invitar: 'M8 10H5V7H3v3H0v2h3v3h2v-3h3v-2zm10 1c1.66 0 2.99-1.34 2.99-3S19.66 5 18 5c-.32 0-.63.05-.91.14.57.81.9 1.79.9 2.86s-.34 2.04-.9 2.86c.28.09.59.14.91.14zm-5 0c1.66 0 2.99-1.34 2.99-3S14.66 5 13 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm6.62 2.16c.83.73 1.38 1.66 1.38 2.84v2h3v-2c0-1.54-2.37-2.49-4.38-2.84zM13 13c-2 0-6 1-6 3v2h12v-2c0-2-4-3-6-3z',
   resena: 'M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 14v-2.47l6.88-6.88c.2-.2.51-.2.71 0l1.77 1.77c.2.2.2.51 0 .71L8.47 14H6zm12 0h-7.5l2-2H18v2z',
 };
 const icono = (n, size = 18) => `<svg class="ic" viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true"><path fill="currentColor" d="${PATHS[n]}"/></svg>`;
@@ -48,12 +51,14 @@ export const notFound = (lang, path, kind) => {
         o: ['This publication is no longer here', 'It may have ended or been removed by the business. There is probably something else on nearby.'],
         b: ['This business is not on Klendar', 'The link may be wrong or the business may no longer be here.'],
         c: ['We could not find that city', 'Have a look at the list of cities with something on.'],
+        a: ['This link no longer works', 'They may have changed it. Ask them for the new one.'],
         exp: "See what's on now", agenda: "What's on",
       }
     : {
         o: ['Esta publicación ya no está', 'Puede que haya terminado o que el negocio la haya quitado. Seguro que hay otra cosa cerca.'],
         b: ['Este negocio no está en Klendar', 'Puede que el enlace esté mal o que el negocio ya no esté.'],
         c: ['No encontramos esa ciudad', 'Mira la lista de ciudades con algo publicado.'],
+        a: ['Este enlace ya no vale', 'Puede que lo haya cambiado. Pídele el nuevo.'],
         exp: 'Ver qué hay ahora', agenda: 'Agenda local',
       };
   const [titulo, texto] = S[kind] || S.o;
@@ -104,6 +109,7 @@ export async function offerPage(id, lang) {
         terms: 'Conditions', about: 'What it is', biz: 'The business',
         open: 'Open in the app', report: 'Report this publication',
         code: 'Get the code', notYet: 'Not available yet', reserve: 'Reserve a place', wait: 'Join the waiting list', save: 'Save to Plans',
+        going: "I'm going", invite: 'Invite a friend',
         note: 'From here or from the app, with the same account. The code is single-use and the business validates it on the spot.',
         soldOut: 'Sold out', over: 'Finished', more: 'Everything from', hot: 'Popular',
         prior: 'Lowest price in the last 30 days', canary: 'Canary Islands time',
@@ -113,6 +119,7 @@ export async function offerPage(id, lang) {
         terms: 'Condiciones', about: 'Qué es', biz: 'El negocio',
         open: 'Abrir en la app', report: 'Denunciar esta publicación',
         code: 'Conseguir el código', notYet: 'Aún no disponible', reserve: 'Reservar plaza', wait: 'Apuntarme a la lista de espera', save: 'Guardar en Planes',
+        going: 'Voy', invite: 'Invitar a un amigo',
         note: 'Desde aquí o desde la app, con la misma cuenta. El código es de un solo uso y lo valida el negocio en el momento.',
         soldOut: 'Agotado', over: 'Terminado', more: 'Todo lo de', hot: 'Con tirón',
         prior: 'Precio más bajo de los últimos 30 días', canary: 'hora de Canarias',
@@ -144,8 +151,10 @@ export async function offerPage(id, lang) {
         <b>${esc(tag || money(o.price_cents, o.currency, lang))}</b>
         ${prior ? `<s>${esc(prior)}</s><span class="rule">${S.prior}</span>` : ''}
       </div>` : ''}
+      ${over ? '' : '<p class="quien-va" id="quien-va" hidden></p>'}
     </div>
     <aside class="side">
+      ${over ? '' : '<div class="invita" id="invita" hidden></div>'}
       <dl>
         <div><dt>${flash ? S.redeem : S.when}</dt><dd>${esc(when)}${tz === KZ.CANARIAS ? ` <small class="muted">(${S.canary})</small>` : ''}</dd>
           ${flash && !over && !soldOut && o.redeem_end_at ? `<dd id="cuenta" hidden style="color:var(--accent-text);font-weight:800" data-ini="${esc(o.redeem_start_at || '')}" data-fin="${esc(o.redeem_end_at)}"></dd>` : ''}</div>
@@ -161,7 +170,13 @@ export async function offerPage(id, lang) {
             : o.reservations_enabled ? `<a class="pill accent big" href="${cuenta(lang)}#/reservar/${id}">${S.reserve}</a>`
               : seguro(o.external_url) ? `<a class="pill accent big" href="${esc(seguro(o.external_url))}" rel="nofollow noopener" target="_blank">${esc(o.external_url.replace(/^https?:\/\//, '').split('/')[0])}</a>`
                 : '';
+        // «Voy» e «Invitar a un amigo»: la página va en caché y no sabe quién
+        // la mira; si ya vas, lo pinta el navegador (/assets/amigos.js).
         return `${principal}
+          <p class="acciones amigos-acc" id="amigos-ficha" data-offer="${esc(o.id)}">
+            <a class="pill" id="voy" href="${cuenta(lang)}#/voy/${id}" rel="nofollow">${icono('voy', 16)} <span>${S.going}</span></a>
+            <a class="pill" href="${cuenta(lang)}#/invitar/${id}" rel="nofollow">${icono('invitar', 16)} ${S.invite}</a></p>
+          <p class="note" id="voy-auto" hidden></p>
           <p class="acciones"><a class="pill" href="${cuenta(lang)}#/guardar/${id}"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg> ${S.save}</a>
             ${openInApp(path, S.open, 'pill ghost')}</p>`;
       })()}
@@ -856,4 +871,45 @@ export async function citiesPage(lang) {
   return html(publicPage({
     lang, path: `${agendaBase(lang)}/`, body, title: S.h1, description: S.lead,
   }), 200, 'public, max-age=600, s-maxage=1800');
+}
+
+// ── Enlace de amigo ────────────────────────────────────────────────────────
+/**
+ * klendar.app/amigo/<código> (y /en/friend/<código>): el enlace de amigo que
+ * alguien comparte. Con la app instalada lo abre la app; si no, llega aquí.
+ * La página es pública, así que no dice de quién es: eso se ve al entrar en
+ * «Tu cuenta» (`#/amigo/<código>`), que pregunta a la base con tu sesión y
+ * deja aceptar. Ni se indexa ni se guarda en caché.
+ */
+export function friendLinkPage(code, lang) {
+  const en = lang === 'en';
+  const path = en ? `/en/friend/${code}` : `/amigo/${code}`;
+  if (!/^[A-Za-z0-9_-]{16}$/.test(code || '')) return notFound(lang, path, 'a');
+  const S = en
+    ? {
+        title: "You've been invited to be friends on Klendar",
+        text: 'Someone has sent you their friend link. Log in with your account to see who it is and accept.',
+        web: 'Continue on the web', app: 'Open in the app',
+      }
+    : {
+        title: 'Te han invitado a ser amigos en Klendar',
+        text: 'Alguien te ha mandado su enlace de amigo. Entra con tu cuenta para ver quién es y aceptar.',
+        web: 'Seguir en la web', app: 'Abrir en la app',
+      };
+  const body = `
+  <div class="amigo-pub">
+    <p class="amigo-pub-ic" aria-hidden="true">${icono('invitar', 34)}</p>
+    <h1>${esc(S.title)}</h1>
+    <p class="muted">${esc(S.text)}</p>
+    <p class="acciones">
+      <a class="pill accent big" href="${cuenta(lang)}#/amigo/${esc(code)}" rel="nofollow">${esc(S.web)}</a>
+      ${openInApp(`/amigo/${code}`, S.app, 'pill big')}
+    </p>
+  </div>`;
+  const res = html(publicPage({
+    lang, path, body, title: S.title, description: S.text,
+    head: '<meta name="robots" content="noindex, nofollow">\n<meta name="referrer" content="no-referrer">',
+  }), 200, 'no-store');
+  res.headers.set('x-robots-tag', 'noindex, nofollow');
+  return res;
 }

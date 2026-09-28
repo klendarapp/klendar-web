@@ -81,6 +81,8 @@ function destinoWeb(ruta) {
   // «¡Feliz cumpleaños!»: el regalo, con su QR.
   if ((m = r.match(/^\/gift\/([0-9a-f-]{36})/i))) return `#/regalo/${m[1]}`;
   if (r.startsWith('/profile')) return '#/ajustes';
+  // «Ana está en tus amigos»: tu lista de amigos.
+  if (r.startsWith('/friends')) return '#/amigos';
   return '';
 }
 
@@ -414,6 +416,8 @@ RUTAS.ajustes = async () => {
           <span><b>${esc(t('Mensajes de mis negocios favoritos'))}</b><br><small>${esc(t('Lo que te cuentan tus favoritos: como mucho uno por semana de cada uno.'))}</small></span></label>
         <label class="check"><input type="checkbox" name="cumple"${prefs.notify_birthday !== false ? ' checked' : ''}>
           <span><b>${esc(t('Regalos de cumpleaños'))}</b><br><small>${esc(t('Si uno de tus favoritos hace un regalo por tu cumpleaños, te llega ese día con su código.'))}</small></span></label>
+        <label class="check"><input type="checkbox" name="amigos"${prefs.notify_friend_invites !== false ? ' checked' : ''}>
+          <span><b>${esc(t('Invitaciones de amigos'))}</b><br><small>${esc(t('Cuando un amigo te invita a un plan o dice que va al tuyo. Apagado, no te pueden invitar.'))}</small></span></label>
         <label class="check"><input type="checkbox" name="cerca"${prefs.notify_nearby ? ' checked' : ''}>
           <span><b>${esc(t('Cerca de ti'))}</b><br><small>${esc(t('Ofertas flash a tu alrededor (como mucho 3 al día)'))}</small></span></label>
         <div id="cerca-mas" ${prefs.notify_nearby ? '' : 'hidden'}>
@@ -462,6 +466,11 @@ RUTAS.ajustes = async () => {
         <dt>${esc(t('Estadísticas de uso de la app'))}</dt>
         <dd><label class="check"><input type="checkbox" id="estadisticas"${cons?.analytics_consent ? ' checked' : ''}>
           <span>${esc(cons?.analytics_consent ? `${t('Sí, desde el')} ${dia(cons.analytics_consent_at)}` : t('No mandamos estadísticas de cómo usas la app'))}</span></label></dd>
+        <dt>${esc(t('Que mis amigos vean mis planes'))}</dt>
+        <dd><label class="check"><input type="checkbox" id="compartir-planes"${cons?.share_plans !== false ? ' checked' : ''}>
+          <span>${esc(t(cons?.share_plans !== false
+            ? 'Tus amigos ven a qué vas («Voy», una plaza reservada o un código)'
+            : 'No sales en el «quién va» de tus amigos'))}</span></label></dd>
         <dt>${esc(t('Ubicación'))}</dt>
         <dd id="dd-ubicacion">${cons?.location_consent_at ? `${esc(`${t('Compartida desde el')} ${dia(cons.location_consent_at)}`)}
           <button class="linkbtn" id="sin-ubicacion">${esc(t('Dejar de compartir'))}</button>` : esc(t('No guardamos tu posición'))}</dd>
@@ -530,6 +539,7 @@ RUTAS.ajustes = async () => {
         notify_nearby: fa.cerca.checked,
         notify_business_messages: fa.elements.mensajes.checked,
         notify_birthday: fa.elements.cumple.checked,
+        notify_friend_invites: fa.elements.amigos.checked,
         nearby_radius_m: Number(fa.radio.value),
         nearby_categories: elegidas.length ? elegidas : null,
         quiet_hours_start: desde || null,
@@ -564,6 +574,21 @@ RUTAS.ajustes = async () => {
       const texto = caja.closest('label')?.querySelector('span');
       if (texto) texto.textContent = caja.checked ? `${t('Sí, desde el')} ${dia(new Date().toISOString())}` : t('No mandamos estadísticas de cómo usas la app');
     } catch (e) { caja.checked = !caja.checked; toast(e.message, true); }
+  });
+  // «Que mis amigos vean mis planes»: apagado, no sales en el «quién va» de
+  // nadie (ni por «Voy» ni por una plaza o un código).
+  $('#compartir-planes').addEventListener('change', async (ev) => {
+    const caja = ev.currentTarget;
+    caja.disabled = true;
+    try {
+      await llamar('set_share_plans', { p_value: caja.checked });
+      const texto = caja.closest('label')?.querySelector('span');
+      if (texto) {
+        texto.textContent = caja.checked
+          ? t('Tus amigos ven a qué vas («Voy», una plaza reservada o un código)')
+          : t('No sales en el «quién va» de tus amigos');
+      }
+    } catch (e) { caja.checked = !caja.checked; toast(e.message, true); } finally { caja.disabled = false; }
   });
   $('#sin-ubicacion')?.addEventListener('click', async (ev) => {
     const boton = ev.currentTarget;

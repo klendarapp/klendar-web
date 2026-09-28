@@ -1,5 +1,5 @@
 // Servidor de desarrollo mínimo: sirve los ficheros estáticos del repo y
-// ejecuta las Pages Functions de /o/, /b/ (por id o por dirección), /r/, /v/, /cartel/, /agenda/,
+// ejecuta las Pages Functions de /o/, /b/ (por id o por dirección), /r/, /v/, /amigo/, /cartel/, /agenda/,
 // /hoy/ y los sitemaps de agenda y negocios.
 // No sustituye a Cloudflare; es para ver las páginas mientras se escriben.
 import { createServer } from 'node:http';
@@ -52,6 +52,9 @@ createServer(async (req, res) => {
     else if ((m = rest.match(/^\/(agenda|whats-on)\/([^/]+)\/([^/]+)\/?$/))) { mod = await load(`functions/${en}${en ? 'whats-on' : 'agenda'}/[city]/[category].js`); params = { city: m[2], category: m[3] }; }
     else if ((m = rest.match(/^\/(coleccion|collection)\/([^/]+)\/([^/]+)\/?$/))) { mod = await load(`functions/${en}${en ? 'collection' : 'coleccion'}/[slug]/[city].js`); params = { slug: m[2], city: m[3] }; }
     else if ((m = rest.match(/^\/(coleccion|collection)\/([^/]+)\/?$/))) { mod = await load(`functions/${en}${en ? 'collection' : 'coleccion'}/[slug].js`); params = { slug: m[2] }; }
+    // El enlace de amigo: /amigo/<código> y /en/friend/<código>.
+    else if ((m = path.match(/^\/amigo\/([^/]+)\/?$/))) { mod = await load('functions/amigo/[code].js'); params = { code: m[1] }; }
+    else if ((m = path.match(/^\/en\/friend\/([^/]+)\/?$/))) { mod = await load('functions/en/friend/[code].js'); params = { code: m[1] }; }
     else if ((m = path.match(/^\/r\/([^/]+)\/?$/))) { mod = await load('functions/r/[code].js'); params = { code: m[1] }; }
     // El QR del cartel del local: a la ficha del negocio.
     else if ((m = path.match(/^\/v\/([^/]+)\/?$/))) { mod = await load('functions/v/[token].js'); params = { token: m[1] }; }

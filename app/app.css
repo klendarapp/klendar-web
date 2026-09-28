@@ -247,3 +247,53 @@ button.codigo.copiar { background: none; border: 0; color: inherit; cursor: poin
   padding: 8px 14px; border-radius: 999px; }
 button.codigo.copiar:hover { background: var(--glass); }
 button.codigo.copiar .ms { font-size: 18px; color: var(--ink-2); letter-spacing: 0; }
+
+/* ── Planes con amigos ─────────────────────────────────────────────────── */
+/* «Amigos», una fila a lo ancho debajo de los accesos rápidos. */
+.lista-amigos { margin-top: 10px; }
+/* Tu enlace de amigo: el QR, el enlace (se toca y se copia) y los botones. */
+.enlace-amigo { background: var(--glass); border: 1px solid var(--glass-border); border-radius: 22px; padding: 18px 16px;
+  text-align: center; margin-top: 8px; }
+.enlace-amigo .qr { width: min(220px, 70vw); margin: 4px auto 12px; }
+.enlace-amigo p { margin: 0 0 12px; }
+.enlace-amigo .enlace-txt { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; background: none; border: 0;
+  color: inherit; font: inherit; font-weight: 700; font-size: 14px; padding: 6px 12px; border-radius: 999px; cursor: pointer; }
+.enlace-amigo .enlace-txt:hover { background: var(--glass); }
+.enlace-amigo .enlace-txt .ms { font-size: 18px; color: var(--ink-2); }
+.enlace-amigo .enlace-txt span { overflow-wrap: anywhere; text-align: left; }
+.enlace-acc { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0 0 8px; }
+.enlace-acc .pill { justify-content: center; }
+@media (max-width: 380px) { .enlace-acc { grid-template-columns: 1fr; } }
+.aviso-planes { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; margin: 14px 4px 0; }
+.aviso-planes .ms { font-size: 20px; }
+.bloque h2.con-cuenta { display: flex; justify-content: space-between; gap: 12px; }
+.bloque h2.con-cuenta span:last-child { font-weight: 600; }
+.amigos-vacio p { margin: 0 0 8px; }
+.amigos-vacio .acciones { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin: 14px 0 0; }
+
+/* Una persona: su foto o su inicial. */
+.av-amigo { width: 40px; height: 40px; border-radius: 50%; overflow: hidden; display: grid; place-items: center; flex: none;
+  background: var(--soft); color: var(--ink); font-weight: 800; font-size: 16px; }
+.av-amigo img { width: 100%; height: 100%; object-fit: cover; }
+.av-amigo.av-grande { width: 88px; height: 88px; font-size: 34px; margin: 24px auto 0; }
+.amigo-fila:hover, .inv-fila:hover { background: none; }
+.icono-btn { width: 44px; height: 44px; border-radius: 999px; display: grid; place-items: center; flex: none; cursor: pointer;
+  background: none; border: 0; color: var(--ink-2); }
+.icono-btn:hover { background: var(--glass); color: var(--ink); }
+.icono-btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.icono-btn:disabled { opacity: .5; cursor: progress; }
+.enlace-abierto .acciones { margin-top: 18px; }
+
+/* Invitar: una casilla por amigo, y cómo está cada uno. */
+.inv-lista { margin: 0; }
+.formu label.inv-fila { display: flex; gap: 12px; align-items: center; font-weight: 400; cursor: pointer; }
+.formu label.inv-fila input { width: 20px; height: 20px; margin: 0; flex: none; }
+.formu label.inv-fila.hecha { cursor: default; }
+.formu label.inv-fila.hecha .fila-t b { color: var(--ink-2); }
+.estado-inv { font-size: 13px; font-weight: 700; color: var(--ink-2); white-space: nowrap; }
+.aviso-inv { padding: 12px 14px; border-radius: 16px; background: var(--soft); font-size: 14px; font-weight: 600; margin: 0 0 12px; }
+.cuenta > .acciones { display: flex; flex-wrap: wrap; gap: 10px; }
+/* Sin el aire de las secciones de la portada (site.css) entre bloque y bloque. */
+.bloque.bloque-amigos { padding-bottom: 0; }
+/* El círculo de «hecho», centrado (`.pub p` le quitaba el margen automático). */
+.cuenta .hecho-ic { margin-left: auto; margin-right: auto; }

@@ -203,12 +203,14 @@ export const altPath = (path, lang) =>
         .replace(/^\/en\/today/, '/hoy')
         .replace(/^\/en\/explore/, '/explorar')
         .replace(/^\/en\/collection/, '/coleccion')
+        .replace(/^\/en\/friend\//, '/amigo/')
         .replace(/^\/en/, '') || '/')
     : `/en${path
         .replace(/^\/agenda/, '/whats-on')
         .replace(/^\/hoy/, '/today')
         .replace(/^\/explorar/, '/explore')
-        .replace(/^\/coleccion/, '/collection')}`;
+        .replace(/^\/coleccion/, '/collection')
+        .replace(/^\/amigo\//, '/friend/')}`;
 
 /**
  * Página pública completa: cabecera del sitio, contenido y pie sencillo.
@@ -231,6 +233,10 @@ export function publicPage({ lang, path, title, description, head = '', body, im
     : head;
   const es = en ? altPath(path, 'en') : path;
   const enPath = en ? path : altPath(path, 'es');
+  // «Planes con amigos»: con sesión, qué amigos van a cada publicación de la
+  // página y, en una ficha, «Vas» y las invitaciones. Solo carga Supabase si
+  // hay una sesión guardada (ver /assets/amigos.js).
+  const conAmigos = /\sdata-o="|id="amigos-ficha"/.test(body);
   return `<!doctype html>
 <html lang="${en ? 'en' : 'es'}">
 <head>
@@ -258,14 +264,15 @@ export function publicPage({ lang, path, title, description, head = '', body, im
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/site.css?v=20261008">
-<link rel="stylesheet" href="/assets/public.css?v=17">
+<link rel="stylesheet" href="/assets/public.css?v=18">
 ${cabeza}
 </head>
 <body>
 ${siteHeader(lang, esc(es), esc(enPath))}
 <main class="pub wrap">${body}</main>
 ${siteFooter(lang)}
-${CONTADOR}
+${conAmigos ? `<script src="/assets/amigos.js?v=1" defer data-lang="${en ? 'en' : 'es'}"></script>
+` : ''}${CONTADOR}
 </body></html>`;
 }
 
@@ -290,7 +297,8 @@ export function offerCard(o, lang = 'es', tz = KZ.de(o)) {
     : `${fmtDay(ini, lang, tz)} · ${fmtTime(ini, lang, tz)} – ${fmtEnd(ini, o.redeem_end_at, lang, tz)}`;
   const tag = benefit(o.discount, o.price_cents, o.currency, lang);
   const prior = priorPrice(o.discount, lang);
-  return `<a class="ocard" href="${en ? '/en' : ''}/o/${esc(o.id)}">
+  // `data-o`: /assets/amigos.js le añade qué amigos van (con sesión).
+  return `<a class="ocard" href="${en ? '/en' : ''}/o/${esc(o.id)}" data-o="${esc(o.id)}">
     ${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : '<span class="ph">✦</span>'}
     <span class="ocard-body">
       <b>${esc(o.title)}</b>
