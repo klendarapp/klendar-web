@@ -1982,7 +1982,7 @@ PAGES.sellos = async (v) => {
           <input name="reward" maxlength="80" required placeholder="Un café con leche gratis" value="${esc(c?.reward || '')}" ${canManage ? '' : 'disabled'}></label>
         <label class="f full" style="grid-template-columns:auto 1fr;align-items:center">
           <input type="checkbox" name="is_active" ${c === null || c.is_active ? 'checked' : ''} ${canManage ? '' : 'disabled'}>
-          <span>Encendida: se dan sellos nuevos</span></label>
+          <span>Encendida <small class="muted">Si la apagas, no se dan sellos nuevos, pero nadie pierde los suyos.</small></span></label>
         ${canManage ? '<div class="full"><button class="btn primary" type="submit">Guardar</button> <span id="msg" class="muted"></span></div>' : ''}
       </form></div>
 
