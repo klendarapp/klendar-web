@@ -10,7 +10,6 @@
   border-color: rgba(255, 255, 255, .18);
   font-weight: 700;
 }
-.bizpick select option { color: #0A0A0A; }
 
 /* Acciones grandes de la portada del panel */
 .quick { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }

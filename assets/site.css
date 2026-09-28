@@ -24,6 +24,10 @@ body { margin: 0; font-family: Manrope, system-ui, -apple-system, "Segoe UI", Ro
 img { max-width: 100%; display: block; }
 /* Casillas y opciones del navegador en la paleta (no en su azul). */
 input[type=checkbox], input[type=radio], input[type=range] { accent-color: var(--ink); }
+/* La lista que se abre de un desplegable: Chrome en Windows la pinta blanca
+   aunque la página esté en oscuro, y el texto heredaba el blanco (no se veía
+   nada). Colores propios, los mismos que el campo. */
+select option, select optgroup { background-color: var(--elevated); color: var(--ink); }
 a { color: var(--ink); text-decoration: none; }
 a:hover { text-decoration: underline; }
 .wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
