@@ -523,6 +523,11 @@ const I18N = makeI18N({
   "Administrador añadido": "Administrator added",
   "Administrador quitado": "Administrator removed",
   "Caducidad forzada": "Forced expiry",
+  "Mensaje a clientes aprobado": "Customer message approved",
+  "Mensaje a clientes rechazado": "Customer message rejected",
+  "Colección borrada": "Collection deleted",
+  "Sugerencia actualizada": "Suggestion updated",
+  "Sugerencia borrada": "Suggestion deleted",
 
   // ── Publicaciones ─────────────────────────────────────────────────────
   "✕ Solo un negocio": "✕ One business only",

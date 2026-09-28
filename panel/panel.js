@@ -821,7 +821,7 @@ PAGES.resumen = async (v) => {
     <div class="card" style="margin-top:14px"><h2>Cómo va</h2>
       <div class="kpis">
         <div class="kpi"><b>${fmtNum(s.views_30d)}</b><span>Vistas (30 días)</span></div>
-        <div class="kpi accent"><b>${fmtNum(s.redemptions_30d)}</b><span>Canjes (30 días)</span></div>
+        <div class="kpi"><b>${fmtNum(s.redemptions_30d)}</b><span>Canjes (30 días)</span></div>
         <div class="kpi"><b>${fmtNum(s.favorites)}</b><span>Favoritos</span></div>
         <div class="kpi"><b>${s.ratings ? `${Number(s.rating).toLocaleString(LOC(), { minimumFractionDigits: 1, maximumFractionDigits: 1 })} (${s.ratings})` : '—'}</b><span>Valoración</span></div>
         <div class="kpi"><b>${fmtNum(pending.length)}</b><span>Publicaciones activas</span></div>
@@ -1165,7 +1165,7 @@ async function cifrasDialogo(o) {
   const html = `
     <div class="kpis">
       <div class="kpi"><b>${fmtNum(vistas)}</b><span>Vistas</span></div>
-      <div class="kpi accent"><b>${fmtNum(canjes)}</b><span>Canjes</span></div>
+      <div class="kpi"><b>${fmtNum(canjes)}</b><span>Canjes</span></div>
       <div class="kpi"><b>${conv}</b><span>Conversión</span></div>
     </div>
     <h3 style="margin:6px 0 0">Últimos 14 días</h3>
@@ -3337,7 +3337,7 @@ PAGES.informe = async (v, param) => {
       <div class="kpis">
         <div class="kpi"><b>${fmtNum(t.views)}</b><span>Vistas</span></div>
         <div class="kpi"><b>${fmtNum(t.codes)}</b><span>Códigos generados</span></div>
-        <div class="kpi accent"><b>${fmtNum(t.redeemed)}</b><span>Canjes validados</span></div>
+        <div class="kpi"><b>${fmtNum(t.redeemed)}</b><span>Canjes validados</span></div>
         <div class="kpi"><b>${pct(t.redeemed, t.codes)}</b><span>De código a canje</span></div>
       </div>
       <p class="muted" style="margin:10px 0 0">${bi(`<b>${fmtNum(t.unused)}</b> ${t.unused === 1 ? 'código se quedó' : 'códigos se quedaron'} sin usar.${best ? ` La hora a la que más se canjea es a las <b>${best.hour}:00</b>.` : ''}`, `<b>${fmtNum(t.unused)}</b> ${t.unused === 1 ? 'code was' : 'codes were'} never used.${best ? ` The busiest redemption hour is <b>${best.hour}:00</b>.` : ''}`)}</p>

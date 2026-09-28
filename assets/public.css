@@ -231,3 +231,16 @@ button.chip { font-family: inherit; cursor: pointer; }
 .amigo-pub .pill.big { justify-content: center; }
 /* Los botones de verdad, con la letra de la web (no la del sistema). */
 button.pill { font-family: inherit; cursor: pointer; }
+
+/* «Abierto · cierra a las 21:00» encima del horario (lo pinta horario.js).
+   Los colores de la app; en claro, un tono más oscuro para que se lea. */
+.estado-hoy { margin: 0 0 10px; font-size: 14px; color: var(--ink-2); }
+.estado-hoy b { font-weight: 700; }
+.estado-hoy.abierto b { color: #1E8F4E; }
+.estado-hoy.pronto b { color: #B7700A; }
+.estado-hoy.cerrado b { color: #D93636; }
+@media (prefers-color-scheme: dark) {
+  .estado-hoy.abierto b { color: #2ECC71; }
+  .estado-hoy.pronto b { color: #F5B041; }
+  .estado-hoy.cerrado b { color: #FF5C5C; }
+}

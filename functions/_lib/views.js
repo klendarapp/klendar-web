@@ -41,6 +41,9 @@ const pre = (lang) => (lang === 'en' ? '/en' : '');
 /** «Tu cuenta» en el idioma de la ficha (la cabecera ya lo hace así). */
 const cuenta = (lang) => (lang === 'en' ? '/app/?lang=en' : '/app/');
 /** Solo enlaces web: lo que escribe un negocio no puede ser un javascript:. */
+// «4,0» en español y «4.0» en inglés, como la app.
+const nota = (r, lang) => Number(r).toLocaleString(lang === 'en' ? 'en-GB' : 'es-ES', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
 const seguro = (u) => (/^https?:\/\//i.test(String(u || '')) ? String(u) : '');
 /** Una publicación que ya acabó o se borró, o un negocio que ya no está: con
  * la cabecera y el pie de siempre y algo que hacer, no una página suelta. */
@@ -186,7 +189,7 @@ export async function offerPage(id, lang) {
       ${o.description ? `<h2>${S.about}</h2><p>${esc(o.description).replace(/\n/g, '<br>')}</p>` : ''}
       ${o.terms ? `<h2>${S.terms}</h2><p class="muted">${esc(o.terms).replace(/\n/g, '<br>')}</p>` : ''}
       <h2>${S.biz}</h2>
-      <p>${esc(o.business_name)}${o.business_rating && o.business_ratings ? ` · ★ ${Number(o.business_rating).toFixed(1)} (${o.business_ratings})` : ''}</p>
+      <p>${esc(o.business_name)}${o.business_rating && o.business_ratings ? ` · ★ ${nota(o.business_rating, lang)} (${o.business_ratings})` : ''}</p>
       <p><a href="${esc(bHref)}">${S.more} ${esc(o.business_name)} →</a></p>
       <p class="denuncia-pie"><a href="${cuenta(lang)}#/denunciar/offer/${encodeURIComponent(o.id)}" rel="nofollow">${S.report}</a></p>
     </div>
@@ -380,7 +383,7 @@ export async function businessPage(param, lang, search = '') {
         now: 'On right now', soon: 'Coming up',
         none: 'Nothing published right now. It changes often — take a look in the app.',
         open: 'Add to favourites', note: 'From here or from the app, with the same account. We let you know when this business posts something.',
-        verified: 'Verified business', since: 'On Klendar since', redeemed: 'redemptions validated',
+        verified: 'Verified business', since: 'On Klendar since', redeemed: (n) => (n === 1 ? '1 redemption validated' : `${n} redemptions validated`),
         about: 'About', menu: 'Menu',
         stamps: 'Stamp card', allergens: 'Allergens',
         menuNote: 'Allergens as declared by the business. If you have an allergy, ask at the venue.',
@@ -409,7 +412,7 @@ export async function businessPage(param, lang, search = '') {
         now: 'Ahora mismo', soon: 'Próximamente',
         none: 'Ahora mismo no hay nada publicado. Suele cambiar: échale un ojo en la app.',
         open: 'Añadir a favoritos', note: 'Desde aquí o desde la app, con la misma cuenta. Te avisamos cuando este negocio publique algo.',
-        verified: 'Negocio verificado', since: 'En Klendar desde', redeemed: 'canjes validados',
+        verified: 'Negocio verificado', since: 'En Klendar desde', redeemed: (n) => (n === 1 ? '1 canje validado' : `${n} canjes validados`),
         about: 'Sobre el negocio', menu: 'Carta',
         stamps: 'Tarjeta de sellos', allergens: 'Alérgenos',
         menuNote: 'Los alérgenos son los que declara el negocio. Si tienes alergia, pregunta en el sitio.',
@@ -515,8 +518,8 @@ export async function businessPage(param, lang, search = '') {
         : ''}
       <div class="badges" style="margin-top:18px">
         ${b.is_verified ? `<span class="badge ok">✓ ${S.verified}</span>` : ''}
-        ${b.rating && b.ratings ? `<span class="badge">★ ${Number(b.rating).toFixed(1)} (${b.ratings})</span>` : ''}
-        ${b.redemptions_total ? `<span class="badge">${b.redemptions_total} ${S.redeemed}</span>` : ''}
+        ${b.rating && b.ratings ? `<span class="badge">★ ${nota(b.rating, lang)} (${b.ratings})</span>` : ''}
+        ${b.redemptions_total ? `<span class="badge">${esc(S.redeemed(Number(b.redemptions_total)))}</span>` : ''}
         ${since ? `<span class="badge">${S.since} ${esc(since)}</span>` : ''}
       </div>
       <h1>${esc(b.name)}</h1>
@@ -534,7 +537,7 @@ export async function businessPage(param, lang, search = '') {
         ${b.contact_email ? `<div><span>${icono('correo')}</span><span><a href="mailto:${esc(b.contact_email)}">${esc(b.contact_email)}</a></span></div>` : ''}
         ${redes.length ? `<div><span>${icono('redes')}</span><span>${redes.join(' · ')}</span></div>` : ''}
       </div>
-      ${horario ? `<h2 class="side-h">${S.hours}</h2>${horario}` : ''}
+      ${horario ? `<h2 class="side-h">${S.hours}</h2><p class="estado-hoy" hidden data-horario="${esc(JSON.stringify(horas))}" data-cierres="${esc(JSON.stringify(cierres.map((c) => ({ starts_on: c.starts_on, ends_on: c.ends_on }))))}" data-tz="${esc(tz)}" data-lang="${en ? 'en' : 'es'}"></p>${horario}` : ''}
     </aside>
     <div class="d-body">
       ${b.description ? `<h2>${S.about}</h2><p>${esc(b.description).replace(/\n/g, '<br>')}</p>` : ''}
@@ -567,7 +570,7 @@ export async function businessPage(param, lang, search = '') {
           ${p.image_url ? `<img src="${esc(p.image_url)}" alt="" loading="lazy">` : ''}
           <a class="denuncia" href="${cuenta(lang)}#/denunciar/post/${encodeURIComponent(p.id)}" rel="nofollow">${S.report}</a>
         </article>`).join('')}</div>` : ''}
-      <h2 id="resenas">${S.reviews}${b.rating && b.ratings ? ` <small class="muted">★ ${Number(b.rating).toFixed(1)} (${b.ratings})</small>` : ''}</h2>
+      <h2 id="resenas">${S.reviews}${b.rating && b.ratings ? ` <small class="muted">★ ${nota(b.rating, lang)} (${b.ratings})</small>` : ''}</h2>
       <p><a class="pill" href="${cuenta(lang)}#/opinar/${encodeURIComponent(b.id)}">${icono('resena', 16)} ${S.write}</a></p>
       ${opiniones.length ? `<div class="resenas">${opiniones.map((r) => `<article>
           <header>${r.avatar_url ? `<img class="av" src="${esc(r.avatar_url)}" alt="" loading="lazy">` : `<span class="av">${esc((r.display_name || S.user).trim().charAt(0).toUpperCase())}</span>`}
@@ -585,7 +588,7 @@ export async function businessPage(param, lang, search = '') {
   </div>`;
 
   const bits = [];
-  if (b.rating && b.ratings) bits.push(`★ ${Number(b.rating).toFixed(1)} (${b.ratings})`);
+  if (b.rating && b.ratings) bits.push(`★ ${nota(b.rating, lang)} (${b.ratings})`);
   const uno = (n, es1, esN, en1, enN) => `${n} ${n === 1 ? (en ? en1 : es1) : (en ? enN : esN)}`;
   if (flash.length) bits.push(`${uno(flash.length, 'oferta flash', 'ofertas flash', 'flash offer', 'flash offers')} ${en ? 'now' : 'ahora'}`);
   if (events.length) bits.push(uno(events.length, 'evento', 'eventos', 'event', 'events'));
@@ -625,7 +628,7 @@ export async function businessPage(param, lang, search = '') {
   return html(publicPage({
     lang, path, body, title: conCiudad ? `${b.name} · ${b.city}` : b.name, description, image: b.cover || b.logo,
     head: `<meta name="robots" content="${b.adults_only || conVisita ? 'noindex' : 'index, follow'}">
-${ldScript(jsonLd)}${conVisita ? `\n${conVisita}` : ''}`,
+${ldScript(jsonLd)}${horario ? '\n<script src="/assets/zona.js?v=1" defer></script>\n<script src="/assets/horario.js?v=1" defer></script>' : ''}${conVisita ? `\n${conVisita}` : ''}`,
   }), 200, conVisita ? 'no-store' : undefined);
 }
 
