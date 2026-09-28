@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Klendar · Comprobación</title>
+<!--
+  La comprobación anti-robots (Cloudflare Turnstile) para la app.
+
+  La app abre esta página en una vista web pequeña al entrar, registrarse o
+  pedir un código; Turnstile se resuelve solo casi siempre (sin pulsar nada)
+  y el token vuelve a la app por el canal `KlendarCaptcha`. La app lo manda a
+  Supabase con la petición de acceso. Tiene que estar en klendar.app: el
+  widget solo vale en los dominios que tiene autorizados.
+
+  ?k=<clave pública del sitio>  ?hl=es|en  ?tema=light|dark
+-->
+<style>
+  html, body { margin: 0; height: 100%; background: transparent; }
+  body { display: grid; place-items: center; font: 14px/1.4 system-ui, sans-serif; }
+  #caja { min-height: 65px; }
+</style>
+</head>
+<body>
+<div id="caja"></div>
+<script>
+  (function () {
+    var q = new URLSearchParams(location.search);
+    var canal = window.KlendarCaptcha;
+    function manda(m) { if (canal && canal.postMessage) canal.postMessage(m); }
+    window.alCargar = function () {
+      if (!q.get('k')) { manda('error:sin_clave'); return; }
+      window.turnstile.render('#caja', {
+        sitekey: q.get('k'),
+        language: q.get('hl') || 'es',
+        theme: q.get('tema') === 'dark' ? 'dark' : 'light',
+        appearance: 'interaction-only',
+        callback: function (token) { manda('ok:' + token); },
+        'error-callback': function (code) { manda('error:' + code); return true; },
+        'expired-callback': function () { manda('error:expired'); },
+      });
+    };
+  })();
+</script>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=alCargar" async defer></script>
+</body>
+</html>

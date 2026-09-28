@@ -25,6 +25,7 @@
       telefono: 'Escribe un número válido',
       sesion: 'Tu sesión ha caducado. Vuelve a entrar para continuar.',
       sinRed: 'Revisa tu conexión a internet e inténtalo de nuevo.',
+      robot: 'No hemos podido comprobar que no eres un robot. Vuelve a probar.',
       generico: 'Algo ha fallado. Inténtalo de nuevo.',
     },
     en: {
@@ -42,6 +43,7 @@
       telefono: 'Enter a valid number',
       sesion: 'Your session has expired. Log in again to continue.',
       sinRed: 'Check your internet connection and try again.',
+      robot: "We couldn't check that you're not a robot. Please try again.",
       generico: 'Something went wrong. Please try again.',
     },
   };
@@ -64,6 +66,7 @@
     if (es(['provider_disabled', 'email_provider_disabled', 'phone_provider_disabled', 'signup_disabled', 'otp_disabled'],
       ['provider is not enabled', 'unsupported provider', 'signups not allowed'])) return 'noDisponible';
     if (es(['user_banned'], ['banned'])) return 'suspendida';
+    if (es(['captcha_failed', 'captcha_unavailable'], ['captcha'])) return 'robot';
     if (es(['email_address_invalid'])) return 'correoMal';
     if (es(['sms_send_failed'])) return 'sms';
     if (es(['validation_failed'], ['invalid phone'])) return m.includes('phone') ? 'telefono' : 'generico';
@@ -117,4 +120,56 @@
 
   window.KL_CAMPO = campo;
   window.KL_VALIDA = { correoYClave, MSG };
+})();
+
+/* La comprobación anti-robots (Cloudflare Turnstile) antes de entrar, crear
+ * la cuenta, pedir un código o recuperar la contraseña. Supabase la exige en
+ * cuanto se activa en Authentication → Attack Protection; aquí solo se pide
+ * si el entorno tiene clave (`KLENDAR_ENV.turnstile`, producción). Casi
+ * siempre se resuelve sola; si Cloudflare duda, aparece abajo un recuadro
+ * para marcar. La app hace lo mismo con klendar.app/captcha/.
+ *
+ * Uso: `options: { captchaToken: await KL_CAPTCHA() }` (undefined sin clave). */
+(function () {
+  let cargando = null;
+  function carga() {
+    if (window.turnstile) return Promise.resolve();
+    if (!cargando) {
+      cargando = new Promise((ok, mal) => {
+        const s = document.createElement('script');
+        s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+        s.async = true;
+        s.onload = () => ok();
+        s.onerror = () => { cargando = null; mal(Object.assign(new Error('captcha'), { code: 'captcha_unavailable' })); };
+        document.head.appendChild(s);
+      });
+    }
+    return cargando;
+  }
+
+  window.KL_CAPTCHA = async function () {
+    const clave = window.KLENDAR_ENV && window.KLENDAR_ENV.turnstile;
+    if (!clave) return undefined;
+    await carga();
+    let caja = document.getElementById('kl-captcha');
+    if (!caja) {
+      caja = document.createElement('div');
+      caja.id = 'kl-captcha';
+      caja.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:1000';
+      document.body.appendChild(caja);
+    }
+    return new Promise((ok, mal) => {
+      let id = null;
+      const quita = () => setTimeout(() => { try { window.turnstile.remove(id); } catch (e) { /* ya no está */ } }, 0);
+      const falla = () => { quita(); mal(Object.assign(new Error('captcha'), { code: 'captcha_failed' })); };
+      id = window.turnstile.render(caja, {
+        sitekey: clave,
+        appearance: 'interaction-only',
+        language: document.documentElement.lang === 'en' ? 'en' : 'es',
+        callback: (token) => { quita(); ok(token); },
+        'error-callback': () => { falla(); return true; },
+        'expired-callback': falla,
+      });
+    });
+  };
 })();

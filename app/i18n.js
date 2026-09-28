@@ -457,4 +457,8 @@ const APP_EN = {
   "Crear una contraseña": "Create a password",
   "Contraseña guardada": "Password saved",
   "No puedes valorar un negocio en el que trabajas.": "You can't review a business you work at.",
+  "Estadísticas de uso de la app": "App usage statistics",
+  "No mandamos estadísticas de cómo usas la app": "We don't send statistics about how you use the app",
+  "Gracias: nos ayudas a mejorar Klendar": "Thanks: you are helping us improve Klendar",
+  "La app ya no mandará estadísticas de uso": "The app will no longer send usage statistics",
 };

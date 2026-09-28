@@ -11,4 +11,8 @@ window.KLENDAR_ENV = {
   name: 'dev',
   url: 'https://dpbbtgwxrlqlplbrtjuq.supabase.co',
   key: 'sb_publishable_gNwxFIJGW_o_lGhv3si6IQ_35xHCq30',
+  // Clave pública de Cloudflare Turnstile (anti-robots al entrar). Vacía en
+  // dev: las pruebas automáticas entran solas. En producción, la del widget
+  // de klendar.app (y en Supabase prod, Attack Protection con su secreto).
+  turnstile: '',
 };

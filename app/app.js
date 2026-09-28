@@ -114,6 +114,13 @@ const ERRORES = {
 /** Un error de acceso (entrar, registrarse, códigos) dicho como en la app. */
 const errAuth = (error) => window.KL_AUTH_ERROR(error, EN ? 'en' : 'es');
 
+/** La comprobación anti-robots antes de pedir nada a Supabase Auth
+ * (`KL_CAPTCHA`, en assets/auth-errors.js). Sin clave en el entorno no hace
+ * nada. Devuelve `{ token }` o `{ error }` para enseñarlo como los demás. */
+async function sinRobots() {
+  try { return { token: await window.KL_CAPTCHA?.() }; } catch (e) { return { error: e }; }
+}
+
 function amable(msg) {
   const m = String(msg || '');
   for (const [k, v] of Object.entries(ERRORES)) {
@@ -550,7 +557,9 @@ RUTAS.entrar = async (_p, params) => {
     $('#err').textContent = '';
     if (!validaForm(form, { email: VALIDA.correo, password: (v) => (v ? null : t('Obligatorio')) })) return;
     ocupado(form.querySelector('button[type=submit]'), async () => {
-      const { error } = await sb.auth.signInWithPassword({ email: form.email.value.trim(), password: form.password.value });
+      const robot = await sinRobots();
+      if (robot.error) { $('#err').textContent = errAuth(robot.error); return; }
+      const { error } = await sb.auth.signInWithPassword({ email: form.email.value.trim(), password: form.password.value, options: { captchaToken: robot.token } });
       if (error) { $('#err').textContent = errAuth(error); return; }
       toast(t('Dentro'));
       trasEntrar(siguiente);
@@ -582,9 +591,11 @@ RUTAS['codigo-correo'] = async (_p, params) => {
     </form>`);
   let correo = '';
   const manda = async () => {
+    const robot = await sinRobots();
+    if (robot.error) { ($('#f2').hidden ? $('#err') : $('#err2')).textContent = errAuth(robot.error); return false; }
     const { error } = await sb.auth.signInWithOtp({
       email: correo,
-      options: { shouldCreateUser: true, emailRedirectTo: `${location.origin}/app/`, data: DATOS_ALTA() },
+      options: { shouldCreateUser: true, emailRedirectTo: `${location.origin}/app/`, data: DATOS_ALTA(), captchaToken: robot.token },
     });
     if (error) { ($('#f2').hidden ? $('#err') : $('#err2')).textContent = errAuth(error); return false; }
     return true;
@@ -659,7 +670,9 @@ RUTAS.movil = async (_p, params) => {
     </form>`);
   let telefono = '';
   const manda = async () => {
-    const { error } = await sb.auth.signInWithOtp({ phone: telefono, options: { data: DATOS_ALTA() } });
+    const robot = await sinRobots();
+    if (robot.error) { ($('#f2').hidden ? $('#err') : $('#err2')).textContent = errAuth(robot.error); return false; }
+    const { error } = await sb.auth.signInWithOtp({ phone: telefono, options: { data: DATOS_ALTA(), captchaToken: robot.token } });
     if (error) { ($('#f2').hidden ? $('#err') : $('#err2')).textContent = errAuth(error); return false; }
     return true;
   };
@@ -746,10 +759,13 @@ RUTAS.registro = async (_p, params) => {
     const email = form.email.value.trim();
     const nac = form.birth.value;
     ocupado(form.querySelector('button[type=submit]'), async () => {
+      const robot = await sinRobots();
+      if (robot.error) { $('#err').textContent = errAuth(robot.error); return; }
       const { data, error } = await sb.auth.signUp({
         email,
         password: form.password.value,
         options: {
+          captchaToken: robot.token,
           emailRedirectTo: destino,
           data: {
             display_name: form.elements.name.value.trim(),
@@ -815,7 +831,9 @@ RUTAS.recuperar = async () => {
     if (!validaForm(form, { email: VALIDA.correo })) return;
     const email = form.email.value.trim();
     ocupado(form.querySelector('button[type=submit]'), async () => {
-      const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: `${location.origin}/app/#/nueva-clave` });
+      const robot = await sinRobots();
+      if (robot.error) { $('#err').textContent = errAuth(robot.error); return; }
+      const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: `${location.origin}/app/#/nueva-clave`, captchaToken: robot.token });
       // Se dice lo mismo exista o no la cuenta (Supabase no da pistas de quién
       // está); sí se avisa si no hay red o si se ha pedido demasiadas veces.
       if (error) { $('#err').textContent = errAuth(error); return; }

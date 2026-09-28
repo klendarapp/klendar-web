@@ -96,9 +96,9 @@ ES['privacidad'] = ('Política de privacidad', 'Cómo trata Klendar tus datos pe
 <p>No vendemos ni cedemos tus datos. Para prestar el servicio usamos proveedores que actúan como encargados del tratamiento con contratos conforme al art. 28 RGPD:</p>
 <ul>
   <li><strong>Supabase</strong> (base de datos, autenticación y almacenamiento; servidores en la Unión Europea).</li>
-  <li><strong>Google Firebase</strong> (notificaciones push, informes de errores y analítica agregada; Google Ireland Ltd.; transferencias internacionales amparadas en el Marco de Privacidad de Datos UE-EE. UU. y cláusulas contractuales tipo).</li>
+  <li><strong>Google Firebase</strong> (notificaciones push, informes de errores y, solo si lo aceptas, estadísticas de uso de la app; Google Ireland Ltd.; transferencias internacionales amparadas en el Marco de Privacidad de Datos UE-EE. UU. y cláusulas contractuales tipo).</li>
   <li><strong>Mapbox</strong> (mapas; recibe las coordenadas del área que consultas para pintar el mapa).</li>
-  <li><strong>Cloudflare</strong> (alojamiento y red de entrega de klendar.app; procesa la dirección IP de las visitas para servir la web y protegerla).</li>
+  <li><strong>Cloudflare</strong> (alojamiento y red de entrega de klendar.app; procesa la dirección IP de las visitas para servir la web y protegerla, y cuenta las visitas de forma agregada con Cloudflare Web Analytics, sin cookies ni identificarte).</li>
   <li>Proveedor de correo transaccional para emails de cuenta.</li>
 </ul>
 <p>Los <strong>negocios</strong> ven tu nombre mostrado cuando canjeas una oferta o publicas una reseña, y estadísticas agregadas (nunca tu email ni tu ubicación).</p>
@@ -154,9 +154,9 @@ EN['privacidad'] = ('privacy', 'Privacy policy', 'How Klendar handles your perso
 <p>We never sell or share your data. To provide the service we rely on providers acting as processors under contracts compliant with art. 28 GDPR:</p>
 <ul>
   <li><strong>Supabase</strong> (database, authentication and storage; servers in the European Union).</li>
-  <li><strong>Google Firebase</strong> (push notifications, crash reports and aggregate analytics; Google Ireland Ltd.; international transfers covered by the EU-US Data Privacy Framework and standard contractual clauses).</li>
+  <li><strong>Google Firebase</strong> (push notifications, crash reports and, only if you agree, app usage statistics; Google Ireland Ltd.; international transfers covered by the EU-US Data Privacy Framework and standard contractual clauses).</li>
   <li><strong>Mapbox</strong> (maps; receives the coordinates of the area you look at in order to render the map).</li>
-  <li><strong>Cloudflare</strong> (hosting and content delivery for klendar.app; processes visitors' IP addresses to serve and protect the website).</li>
+  <li><strong>Cloudflare</strong> (hosting and content delivery for klendar.app; processes visitors' IP addresses to serve and protect the website, and counts visits in aggregate with Cloudflare Web Analytics, without cookies or identifying you).</li>
   <li>A transactional email provider for account emails.</li>
 </ul>
 <p><strong>Businesses</strong> see your display name when you redeem a deal or post a review, plus aggregate statistics (never your email or your location).</p>
@@ -355,14 +355,16 @@ EN['negocios'] = ('business-terms', 'Business terms', 'Terms of service of Klend
 # ── Cookies ─────────────────────────────────────────────────────────────────
 ES['cookies'] = ('Política de cookies', 'Klendar no usa cookies de seguimiento ni publicidad: solo las técnicas imprescindibles y tu preferencia de idioma. Qué se guarda, por qué y cómo borrarlo.', '''
 <p><strong>klendar.app</strong> no utiliza cookies de seguimiento ni publicidad. Solo se utilizan, en su caso, cookies técnicas estrictamente necesarias para el funcionamiento del sitio y el almacenamiento local de tu preferencia de idioma, que no requieren consentimiento según el art. 22.2 de la LSSI-CE.</p>
+<p>Para saber cuánta gente visita la web usamos <strong>Cloudflare Web Analytics</strong>, que cuenta las visitas de forma agregada <strong>sin cookies</strong>, sin guardar nada en tu navegador y sin seguirte entre sitios, así que no necesita tu consentimiento.</p>
 <p>Las fuentes tipográficas se cargan desde Google Fonts, lo que implica una petición a servidores de Google con tu dirección IP; si en el futuro se incorporan cookies analíticas o de terceros, actualizaremos esta política y solicitaremos tu consentimiento previo.</p>
-<p>La <strong>app móvil</strong> no usa cookies. Usa identificadores de dispositivo para notificaciones y diagnóstico, descritos en la <a href="/privacidad/">Política de privacidad</a>.</p>
+<p>La <strong>app móvil</strong> no usa cookies. Usa identificadores de dispositivo para las notificaciones y los informes de errores, y solo si lo aceptas (al registrarte o en Cuenta → Ajustes → Privacidad) para estadísticas de uso anónimas. Puedes retirarlo cuando quieras desde la app o desde «Tu cuenta» en la web. Más detalle en la <a href="/privacidad/">Política de privacidad</a>.</p>
 ''')
 
 EN['cookies'] = ('cookies', 'Cookie policy', 'Klendar uses no tracking or advertising cookies: only strictly necessary ones and your language preference. What is stored, why, and how to delete it.', '''
 <p><strong>klendar.app</strong> does not use tracking or advertising cookies. Only strictly necessary technical cookies, if any, and local storage of your language preference are used, which do not require consent under art. 22.2 of the Spanish LSSI-CE.</p>
+<p>To know how many people visit the website we use <strong>Cloudflare Web Analytics</strong>, which counts visits in aggregate <strong>without cookies</strong>, without storing anything in your browser and without tracking you across sites, so it does not need your consent.</p>
 <p>Fonts are loaded from Google Fonts, which involves a request to Google's servers including your IP address; if analytics or third-party cookies are added in the future, we will update this policy and ask for your prior consent.</p>
-<p>The <strong>mobile app</strong> does not use cookies. It uses device identifiers for notifications and diagnostics, described in the <a href="/en/privacy/">Privacy policy</a>.</p>
+<p>The <strong>mobile app</strong> does not use cookies. It uses device identifiers for notifications and crash reports and, only if you agree (when signing up or in Account → Settings → Privacy), for anonymous usage statistics. You can withdraw it at any time from the app or from “Your account” on the website. More detail in the <a href="/en/privacy/">Privacy policy</a>.</p>
 ''')
 
 # ── Normas de la comunidad ──────────────────────────────────────────────────

@@ -230,7 +230,9 @@ $('#doLogin').onclick = () => {
   $('#loginErr').textContent = '';
   if (!KL_VALIDA.correoYClave(I18N.lang, $('#email'), $('#password'))) return;
   esperando($('#doLogin'), async () => {
-    const { error } = await sb.auth.signInWithPassword({ email: $('#email').value.trim(), password: $('#password').value });
+    let captchaToken;
+    try { captchaToken = await window.KL_CAPTCHA?.(); } catch (e) { $('#loginErr').textContent = errAuth(e); return; }
+    const { error } = await sb.auth.signInWithPassword({ email: $('#email').value.trim(), password: $('#password').value, options: { captchaToken } });
     if (error) { $('#loginErr').textContent = errAuth(error); return; }
     boot();
   });
@@ -240,8 +242,10 @@ $('#doReset').onclick = () => {
   KL_CAMPO($('#password'), null);
   if (!KL_VALIDA.correoYClave(I18N.lang, $('#email'))) return;
   esperando($('#doReset'), async () => {
+    let captchaToken;
+    try { captchaToken = await window.KL_CAPTCHA?.(); } catch (e) { $('#loginErr').textContent = errAuth(e); return; }
     const { error } = await sb.auth.resetPasswordForEmail($('#email').value.trim(),
-      { redirectTo: `${location.origin}/app/?destino=%2Fadmin%2F#/nueva-clave` });
+      { redirectTo: `${location.origin}/app/?destino=%2Fadmin%2F#/nueva-clave`, captchaToken });
     if (error) { $('#loginErr').textContent = errAuth(error); return; }
     toast(I18N.lang === 'en'
       ? `If ${$('#email').value.trim()} has an account, it'll get an email in a few seconds. Check spam too.`

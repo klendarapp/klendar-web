@@ -450,6 +450,9 @@ RUTAS.ajustes = async () => {
         <dt>${esc(t('Comunicaciones comerciales'))}</dt>
         <dd><label class="check"><input type="checkbox" id="marketing"${cons?.marketing_consent ? ' checked' : ''}>
           <span>${esc(cons?.marketing_consent ? `${t('Sí, desde el')} ${dia(cons.marketing_consent_at)}` : t('No recibes novedades ni promociones por correo'))}</span></label></dd>
+        <dt>${esc(t('Estadísticas de uso de la app'))}</dt>
+        <dd><label class="check"><input type="checkbox" id="estadisticas"${cons?.analytics_consent ? ' checked' : ''}>
+          <span>${esc(cons?.analytics_consent ? `${t('Sí, desde el')} ${dia(cons.analytics_consent_at)}` : t('No mandamos estadísticas de cómo usas la app'))}</span></label></dd>
         <dt>${esc(t('Ubicación'))}</dt>
         <dd id="dd-ubicacion">${cons?.location_consent_at ? `${esc(`${t('Compartida desde el')} ${dia(cons.location_consent_at)}`)}
           <button class="linkbtn" id="sin-ubicacion">${esc(t('Dejar de compartir'))}</button>` : esc(t('No guardamos tu posición'))}</dd>
@@ -537,6 +540,18 @@ RUTAS.ajustes = async () => {
       // estuviera editando en el perfil o en las notificaciones.
       const texto = caja.closest('label')?.querySelector('span');
       if (texto) texto.textContent = caja.checked ? `${t('Sí, desde el')} ${dia(new Date().toISOString())}` : t('No recibes novedades ni promociones por correo');
+    } catch (e) { caja.checked = !caja.checked; toast(e.message, true); }
+  });
+  // Lo que manda la app a Firebase (la web no usa estadísticas que necesiten
+  // permiso): aquí se da o se quita igual que en la app, y la app lo recoge
+  // la próxima vez que se abra.
+  $('#estadisticas').addEventListener('change', async (ev) => {
+    const caja = ev.currentTarget;
+    try {
+      await llamar('set_analytics_consent', { p_value: caja.checked });
+      toast(caja.checked ? t('Gracias: nos ayudas a mejorar Klendar') : t('La app ya no mandará estadísticas de uso'));
+      const texto = caja.closest('label')?.querySelector('span');
+      if (texto) texto.textContent = caja.checked ? `${t('Sí, desde el')} ${dia(new Date().toISOString())}` : t('No mandamos estadísticas de cómo usas la app');
     } catch (e) { caja.checked = !caja.checked; toast(e.message, true); }
   });
   $('#sin-ubicacion')?.addEventListener('click', async (ev) => {
