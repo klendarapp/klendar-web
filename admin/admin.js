@@ -53,6 +53,8 @@ const ago = (s) => {
   return fmtDay(s);
 };
 const tag = (v, cls) => v ? `<span class="tag ${cls || 'st-' + esc(v)}">${esc(LABELS[v] || v)}</span>` : '';
+// Una publicación rechazada en moderación está «retirada» (como en los filtros).
+const modTag = (v) => (v === 'rejected' ? '<span class="tag st-rejected">retirada</span>' : tag(v));
 const LABELS = {
   pending: 'pendiente', verified: 'verificado', rejected: 'rechazado', approved: 'aprobada', active: 'activa', expired: 'caducada',
   cancelled: 'cancelada', sold_out: 'agotada', draft: 'borrador', open: 'abierta', reviewing: 'en revisión', resolved: 'resuelta', dismissed: 'desestimada',
@@ -63,6 +65,8 @@ const LABELS = {
   new: 'sin leer', planned: 'la haremos', done: 'hecho', declined: 'descartada',
   suggestion: 'sugerencia', bug: 'fallo',
 };
+// Quién recibió una notificación enviada desde aquí, como en el formulario.
+const AUDIENCIAS = { all: 'Todos los usuarios', users: 'Solo usuarios (no negocios)', business_owners: 'Propietarios y encargados de negocios', city: 'Negocios de una ciudad', ids: 'Equipo de un negocio' };
 const KIND_ICON = { flash_offer: ms('bolt'), future_event: ms('event') };
 const FLAGS = { alcohol: 'alcohol', tobacco: 'tabaco/vapeo', gambling: 'apuestas' };
 const flagTags = (o) => (o.moderation_flags || []).map((f) => `<span class="tag warn" title="Detectado automáticamente en el texto">${esc(FLAGS[f] || f)}</span>`).join(' ');
@@ -90,12 +94,20 @@ async function rpc(fn, args = {}) {
     if (/auth_required|JWT/.test(msg)) throw new Error(window.KL_AUTH_TEXT('sesion', I18N.lang));
     if (/Failed to fetch|NetworkError|Load failed/i.test(msg)) throw new Error(window.KL_AUTH_TEXT('sinRed', I18N.lang));
     if (error.code === '42501') throw new Error('No tienes permiso para esto.');
-    throw new Error(RPC_ERRORS[msg] || msg);
+    if (error.code === '23505') throw new Error('Ya existe uno con ese identificador.');
+    if (RPC_ERRORS[msg]) throw new Error(RPC_ERRORS[msg]);
+    // Un código sin traducir o un mensaje técnico de Postgres se apunta en la
+    // consola y se dice en cristiano; un texto escrito para personas, tal cual.
+    console.error(fn, error);
+    if (/^[a-z0-9_]+$/.test(msg) || /violates|constraint|syntax|relation|column|function|permission denied|null value|invalid input|duplicate key/i.test(msg)) {
+      throw new Error('No se ha podido completar. Prueba otra vez.');
+    }
+    throw new Error(msg || 'No se ha podido completar. Prueba otra vez.');
   }
   return data;
 }
 const RPC_ERRORS = {
-  cannot_ban_admin: 'No se puede suspender a un administrador.', cannot_delete_self: 'No puedes borrar tu propia cuenta desde aquí.',
+  cannot_ban_admin: 'No se puede suspender a un administrador.', cannot_delete_self: 'No puedes eliminar tu propia cuenta desde aquí.',
   cannot_delete_admin: 'Quita primero los permisos de administrador.', reason_required: 'Hace falta indicar un motivo.',
   invalid_plan: 'Plan no válido.', invalid_status: 'Estado no válido.', no_subscription: 'El negocio no tiene suscripción vigente; asigna primero un plan.',
   user_not_found: 'No existe ningún usuario con ese email.', cannot_remove_self: 'No puedes quitarte a ti mismo.', last_admin: 'Tiene que quedar al menos un administrador.',
@@ -173,7 +185,7 @@ function table({ cols, rows, onRow, empty = 'Nada por aquí.' }) {
 function pager(state, total, onChange) {
   const pages = Math.max(1, Math.ceil(total / state.limit));
   const page = Math.floor(state.offset / state.limit) + 1;
-  const html = `<div class="pager"><span><b>${fmtNum(total)}</b> resultados · <span>página</span> <b>${page}</b> <span>de</span> <b>${pages}</b></span><span class="spacer"></span>
+  const html = `<div class="pager"><span><b>${fmtNum(total)}</b> ${total === 1 ? 'resultado ·' : 'resultados ·'} <span>página</span> <b>${page}</b> <span>de</span> <b>${pages}</b></span><span class="spacer"></span>
     <button class="btn sm" data-pg="prev" ${page <= 1 ? 'disabled' : ''}>← Anterior</button><button class="btn sm" data-pg="next" ${page >= pages ? 'disabled' : ''}>Siguiente →</button>
     <select data-pg="limit">${[25, 50, 100, 200].map((n) => `<option ${n === state.limit ? 'selected' : ''}>${n}</option>`).join('')}</select></div>`;
   return { html, bind(root) {
@@ -246,6 +258,7 @@ $('#menuBtn').onclick = () => $('#side').classList.toggle('open');
 // ── Idioma ──────────────────────────────────────────────────────────────────
 I18N.pickers(['#lang', '#langLogin', '#langSide']);
 I18N.translate(document.body);
+if (I18N.lang === 'en') document.title = 'Klendar · Administration';
 document.addEventListener('keydown', (e) => { if (e.key === '/' && !/input|textarea|select/i.test(e.target.tagName)) { const s = $('#q'); if (s) { e.preventDefault(); s.focus(); } } });
 
 // ── Navegación ──────────────────────────────────────────────────────────────
@@ -266,7 +279,7 @@ function renderNav(current) {
     : `<a class="nav ${current === n[0] ? 'on' : ''}" href="#/${n[0]}"><span class="ic">${ms(n[1])}</span>${n[2]}${BADGES[n[0]] ? `<span class="badge">${BADGES[n[0]]}</span>` : ''}</a>`).join('');
   I18N.translate($('#nav'));
 }
-async function refreshBadges() {
+async function refreshBadges(lanzar = false) {
   try {
     const k = await rpc('admin_kpis');
     let sug = 0;
@@ -275,7 +288,12 @@ async function refreshBadges() {
     Object.keys(BADGES).forEach((x) => { if (!BADGES[x]) delete BADGES[x]; });
     renderNav(currentRoute()[0]);
     return k;
-  } catch { return null; }
+  } catch (e) {
+    // Resumen necesita saber por qué ha fallado (sin red, sesión caducada…);
+    // las demás pantallas solo pierden los numeritos del menú.
+    if (lanzar) throw e;
+    return null;
+  }
 }
 const currentRoute = () => (location.hash.replace(/^#\/?/, '').split('?')[0] || 'resumen').split('/');
 const PAGES = {};
@@ -315,7 +333,7 @@ window.addEventListener('unhandledrejection', (ev) => {
   const e = ev.reason;
   if (e?.obsoleta) { ev.preventDefault(); return; }
   if (e instanceof Error && ME) {
-    toast(e.message || window.KL_AUTH_TEXT('sinRed', I18N.lang), true);
+    toast(e instanceof TypeError ? 'Algo ha fallado. Prueba otra vez.' : (e.message || window.KL_AUTH_TEXT('sinRed', I18N.lang)), true);
     $$('#view .loading').forEach((l) => { l.textContent = I18N.t('No se ha podido cargar. Prueba otra vez.'); });
   }
 });
@@ -376,20 +394,19 @@ PAGES.semanas = async (v) => {
 };
 
 PAGES.resumen = async (v) => {
-  const k = await refreshBadges();
-  if (!k) throw new Error('Esta cuenta no es administradora.');
+  const k = await refreshBadges(true);
   const kpi = (n, label, cls = '') => `<div class="kpi ${cls}"><b>${typeof n === 'number' ? fmtNum(n) : n}</b><span>${label}</span></div>`;
   const series = k.series || [];
   const en = I18N.lang === 'en';
   v.innerHTML = `
     <div class="page-head"><h1>Resumen</h1><span class="spacer"></span><span class="muted">${new Date().toLocaleString(LOC(), { dateStyle: 'full', timeStyle: 'short', timeZone: TZ })}</span></div>
-    ${(k.businesses_pending || k.offers_pending || k.reports_open || BADGES.sugerencias) ? `<div class="card"><h2>Pendiente de ti</h2><div class="actions">
-      ${k.businesses_pending ? `<a class="btn" href="#/negocios?status=pending">${ms('storefront')} <b>${k.businesses_pending}</b> ${en ? (k.businesses_pending === 1 ? 'business to verify' : 'businesses to verify') : 'negocio(s) por verificar'}</a>` : ''}
-      ${k.offers_pending ? `<a class="btn" href="#/publicaciones?moderation=pending">${ms('bolt')} <b>${k.offers_pending}</b> ${en ? (k.offers_pending === 1 ? 'publication to moderate' : 'publications to moderate') : 'publicación(es) por moderar'}</a>` : ''}
-      ${k.reports_open ? `<a class="btn" href="#/denuncias">${ms('flag')} <b>${k.reports_open}</b> ${en ? (k.reports_open === 1 ? 'open report' : 'open reports') : 'denuncia(s) abiertas'}</a>` : ''}
-      ${k.subs_expiring_7d ? `<a class="btn" href="#/planes">${ms('credit_card')} <b>${k.subs_expiring_7d}</b> ${en ? (k.subs_expiring_7d === 1 ? 'subscription expiring in 7 days' : 'subscriptions expiring in 7 days') : 'suscripción(es) vencen en 7 días'}</a>` : ''}
-      ${k.push_failed_7d ? `<a class="btn" href="#/avisos?tab=push">${ms('notifications')} <b>${k.push_failed_7d}</b> push fallidos (7 d)</a>` : ''}
-      ${BADGES.sugerencias ? `<a class="btn" href="#/sugerencias">${ms('lightbulb')} <b>${BADGES.sugerencias}</b> ${en ? (BADGES.sugerencias === 1 ? 'unread suggestion' : 'unread suggestions') : 'sugerencia(s) sin leer'}</a>` : ''}
+    ${(k.businesses_pending || k.offers_pending || k.reports_open || k.subs_expiring_7d || k.push_failed_7d || BADGES.sugerencias) ? `<div class="card"><h2>Pendiente de ti</h2><div class="actions">
+      ${k.businesses_pending ? `<a class="btn" href="#/negocios?status=pending">${ms('storefront')} <b>${k.businesses_pending}</b> ${en ? (k.businesses_pending === 1 ? 'business to verify' : 'businesses to verify') : (k.businesses_pending === 1 ? 'negocio por verificar' : 'negocios por verificar')}</a>` : ''}
+      ${k.offers_pending ? `<a class="btn" href="#/publicaciones?moderation=pending">${ms('bolt')} <b>${k.offers_pending}</b> ${en ? (k.offers_pending === 1 ? 'publication to moderate' : 'publications to moderate') : (k.offers_pending === 1 ? 'publicación por moderar' : 'publicaciones por moderar')}</a>` : ''}
+      ${k.reports_open ? `<a class="btn" href="#/denuncias">${ms('flag')} <b>${k.reports_open}</b> ${en ? (k.reports_open === 1 ? 'open report' : 'open reports') : (k.reports_open === 1 ? 'denuncia abierta' : 'denuncias abiertas')}</a>` : ''}
+      ${k.subs_expiring_7d ? `<a class="btn" href="#/planes">${ms('credit_card')} <b>${k.subs_expiring_7d}</b> ${en ? (k.subs_expiring_7d === 1 ? 'subscription expiring in 7 days' : 'subscriptions expiring in 7 days') : (k.subs_expiring_7d === 1 ? 'suscripción vence en 7 días' : 'suscripciones vencen en 7 días')}</a>` : ''}
+      ${k.push_failed_7d ? `<a class="btn" href="#/avisos?tab=push">${ms('notifications')} <b>${k.push_failed_7d}</b> ${en ? (k.push_failed_7d === 1 ? 'failed push notification (7 d)' : 'failed push notifications (7 d)') : (k.push_failed_7d === 1 ? 'notificación push fallida (7 d)' : 'notificaciones push fallidas (7 d)')}</a>` : ''}
+      ${BADGES.sugerencias ? `<a class="btn" href="#/sugerencias">${ms('lightbulb')} <b>${BADGES.sugerencias}</b> ${en ? (BADGES.sugerencias === 1 ? 'unread suggestion' : 'unread suggestions') : (BADGES.sugerencias === 1 ? 'sugerencia sin leer' : 'sugerencias sin leer')}</a>` : ''}
     </div></div>` : '<div class="card"><h2>Todo al día</h2><p class="muted" style="margin:0">No hay negocios por verificar, publicaciones por moderar ni denuncias abiertas.</p></div>'}
     <div class="grid2">
       <div class="card"><h2>Usuarios</h2><div class="kpis">
@@ -423,7 +440,7 @@ PAGES.resumen = async (v) => {
     </div>
     <div class="grid3">
       <div class="card"><h2>Top negocios (canjes 30 d)</h2>${(k.top_businesses || []).length ? `<ol style="margin:0;padding-left:18px">${k.top_businesses.map((b) => `<li><a class="link" href="#/negocios/${b.id}">${esc(b.name)}</a> <span class="muted">${esc(b.city || '')} · ${b.redemptions}</span></li>`).join('')}</ol>` : '<p class="muted">Aún sin canjes.</p>'}</div>
-      <div class="card"><h2>Top publicaciones (30 d)</h2>${(k.top_offers || []).length ? `<ol style="margin:0;padding-left:18px">${k.top_offers.map((o) => `<li><a class="link" href="#/publicaciones/${o.id}">${esc(o.title)}</a> <span class="muted">${esc(o.business)} · ${o.redemptions_count} canjes · ${o.views_count} vistas</span></li>`).join('')}</ol>` : '<p class="muted">Nada todavía.</p>'}</div>
+      <div class="card"><h2>Top publicaciones (30 d)</h2>${(k.top_offers || []).length ? `<ol style="margin:0;padding-left:18px">${k.top_offers.map((o) => `<li><a class="link" href="#/publicaciones/${o.id}">${esc(o.title)}</a> <span class="muted">${esc(o.business)} · ${en ? `${o.redemptions_count} ${o.redemptions_count === 1 ? 'redemption' : 'redemptions'} · ${o.views_count} ${o.views_count === 1 ? 'view' : 'views'}` : `${o.redemptions_count} ${o.redemptions_count === 1 ? 'canje' : 'canjes'} · ${o.views_count} ${o.views_count === 1 ? 'vista' : 'vistas'}`}</span></li>`).join('')}</ol>` : '<p class="muted">Nada todavía.</p>'}</div>
       <div class="card"><h2>Negocios por ciudad</h2>${(k.by_city || []).length ? `<dl class="kv" style="grid-template-columns:1fr auto">${k.by_city.map((c) => `<dt>${esc(c.city)}</dt><dd>${c.verified}/${c.businesses}</dd>`).join('')}</dl><p class="muted small" style="margin:8px 0 0">verificados / total</p>` : '<p class="muted">—</p>'}</div>
     </div>`;
   $('#ctabs').onclick = (e) => { const b = e.target.closest('button'); if (!b) return; $$('#ctabs button').forEach((x) => x.classList.toggle('on', x === b)); $('#chart').innerHTML = bars(series, b.dataset.k, (s) => fmtDay(s.day)); };
@@ -544,7 +561,7 @@ async function businessDetail(v, id) {
     <div class="card"><h2>${I18N.lang === 'en' ? 'Publications' : 'Publicaciones'} (${d.offers.length})</h2>
       ${table({ cols: [
         { h: 'Publicación', r: (o) => `${KIND_ICON[o.kind]} <span class="title">${esc(o.title)}</span>` },
-        { h: 'Estado', r: (o) => `${tag(o.status)} ${tag(o.moderation_status)} ${o.is_boosted ? '<span class="tag">boost</span>' : ''}` },
+        { h: 'Estado', r: (o) => `${tag(o.status)} ${modTag(o.moderation_status)} ${o.is_boosted ? '<span class="tag">boost</span>' : ''}` },
         { h: 'Cuándo', r: (o) => `<span class="nowrap">${fmtDate(o.kind === 'flash_offer' ? o.redeem_end_at : o.event_at, tz)}</span>` },
         { h: 'Vistas', num: true, r: (o) => fmtNum(o.views_count) }, { h: 'Canjes', num: true, r: (o) => `${o.redemptions_count}${o.max_redemptions ? ` / ${o.max_redemptions}` : ''}` },
         { h: 'Creada', r: (o) => fmtDay(o.created_at, tz) },
@@ -559,7 +576,7 @@ async function businessDetail(v, id) {
       <div class="card"><h2>Registro de cambios</h2>${auditList(d.audit)}</div>
     </div>`;
   $$('#view tr.row').forEach((tr) => { tr.onclick = () => go(`#/publicaciones/${d.offers[tr.dataset.i].id}`); });
-  $$('[data-role]').forEach((sel) => { sel.onchange = async () => { try { await rpc('admin_set_member_role', { p_business: id, p_user: sel.dataset.role, p_role: sel.value }); toast('Rol actualizado'); } catch (e) { toast(e.message, true); } }; });
+  $$('[data-role]').forEach((sel) => { let antes = sel.value; sel.onchange = async () => { try { await rpc('admin_set_member_role', { p_business: id, p_user: sel.dataset.role, p_role: sel.value }); antes = sel.value; toast('Rol actualizado'); } catch (e) { sel.value = antes; toast(e.message, true); } }; });
   $$('[data-rm]').forEach((btn) => { btn.onclick = async () => { if (!await confirmDlg('Quitar del equipo', 'Esta persona dejará de poder gestionar el negocio ni validar códigos.', { danger: true, submit: 'Quitar' })) return; try { await rpc('admin_set_member_role', { p_business: id, p_user: btn.dataset.rm, p_role: null }); toast('Quitado'); route(); } catch (e) { toast(e.message, true); } }; });
   $$('[data-delreview]').forEach((btn) => { btn.onclick = () => deleteReview(btn.dataset.delreview); });
   $$('[data-delpost]').forEach((btn) => { btn.onclick = () => deletePost(btn.dataset.delpost); });
@@ -569,11 +586,11 @@ async function businessDetail(v, id) {
 async function businessAction(a, b, d) {
   try {
     if (a === 'verify') {
-      if (!await confirmDlg('Verificar negocio', I18N.lang === 'en' ? `“${esc(b.name)}” will become verified and active: its publications will appear in the app and the owner will get a notification.` : `«${esc(b.name)}» pasará a verificado y activo: sus publicaciones aparecerán en la app y el dueño recibirá una notificación.`, { submit: 'Verificar' })) return;
+      if (!await confirmDlg('Verificar negocio', I18N.lang === 'en' ? `“${esc(b.name)}” will become verified and active: its publications will appear in the app and the owner will get a notification.` : `«${esc(b.name)}» pasará a verificado y activo: sus publicaciones aparecerán en la app y el propietario recibirá una notificación.`, { submit: 'Verificar' })) return;
       await rpc('admin_set_verification', { p_id: b.id, p_status: 'verified' }); toast('Negocio verificado');
     }
     if (a === 'reject') {
-      const r = await modal({ title: 'Rechazar negocio', intro: 'El dueño recibirá el motivo como notificación en la app. Sé concreto: «no encontramos el local en la dirección indicada», «faltan datos fiscales»…', fields: [
+      const r = await modal({ title: 'Rechazar negocio', intro: 'El propietario recibirá el motivo como notificación en la app. Sé concreto: «no encontramos el local en la dirección indicada», «faltan datos fiscales»…', fields: [
         { name: 'reason', label: 'Motivo', type: 'textarea', required: true },
         { name: 'reason_en', label: 'En inglés (opcional)', type: 'textarea', help: 'Lo recibe quien tiene la app en inglés. Si lo dejas vacío, le llega el español.' },
       ], submit: 'Rechazar', danger: true });
@@ -627,16 +644,16 @@ async function businessAction(a, b, d) {
       await rpc('admin_record_payment', { p_business: b.id, p_amount_cents: Math.round(parseFloat(r.amount.replace(',', '.')) * 100), p_method: r.method, p_period_start: r.start, p_period_end: r.end, p_notes: r.notes || null }); toast('Pago registrado');
     }
     if (a === 'notify') {
-      const r = await modal({ title: 'Notificación al equipo del negocio', intro: 'Lo reciben el dueño y los encargados como notificación (y push si la tienen activada).', fields: CAMPOS_AVISO });
+      const r = await modal({ title: 'Notificación al equipo del negocio', intro: 'Lo reciben el propietario y los encargados como notificación (y push si la tienen activada).', fields: CAMPOS_AVISO, submit: 'Enviar' });
       if (!r) return;
       const ids = d.members.filter((m) => ['owner', 'manager'].includes(m.role)).map((m) => m.user_id);
-      const n = await rpc('admin_send_notification', { p_audience: 'ids', p_user_ids: ids, ...textosAviso(r), p_route: '/my-business/' + b.id }); toast(I18N.lang === 'en' ? `Notification sent to ${n} ${n === 1 ? 'person' : 'people'}` : `Notificación enviada a ${n} persona(s)`);
+      const n = await rpc('admin_send_notification', { p_audience: 'ids', p_user_ids: ids, ...textosAviso(r), p_route: '/my-business/' + b.id }); toast(I18N.lang === 'en' ? `Notification sent to ${n} ${n === 1 ? 'person' : 'people'}` : `Notificación enviada a ${n} ${n === 1 ? 'persona' : 'personas'}`);
     }
     if (a === 'addmember') {
-      const r = await modal({ title: 'Añadir persona al equipo', intro: 'Busca por email en «Usuarios» y copia su id, o escribe aquí su email exacto.', fields: [{ name: 'email', label: 'Email del usuario', type: 'email', required: true }, { name: 'role', label: 'Rol', type: 'select', value: 'staff', options: [['staff', 'Empleado (valida códigos)'], ['manager', 'Encargado (gestiona publicaciones)'], ['owner', 'Propietario']] }] });
+      const r = await modal({ title: 'Añadir persona al equipo', intro: 'Escribe el email exacto con el que se registró.', fields: [{ name: 'email', label: 'Email del usuario', type: 'email', required: true }, { name: 'role', label: 'Rol', type: 'select', value: 'staff', options: [['staff', 'Empleado (valida códigos)'], ['manager', 'Encargado (gestiona publicaciones)'], ['owner', 'Propietario']] }], submit: 'Añadir' });
       if (!r) return;
-      const u = await rpc('admin_users', { p_query: r.email, p_limit: 5 });
-      const found = u.rows.find((x) => x.email.toLowerCase() === r.email.toLowerCase());
+      const u = await rpc('admin_users', { p_query: r.email, p_limit: 50 });
+      const found = u.rows.find((x) => (x.email || '').toLowerCase() === r.email.trim().toLowerCase());
       if (!found) throw new Error('No existe ningún usuario con ese email.');
       await rpc('admin_set_member_role', { p_business: b.id, p_user: found.id, p_role: r.role }); toast('Añadido al equipo');
     }
@@ -652,7 +669,7 @@ const ACTIONS = {
   'business.verification': 'Verificación de negocio', 'business.activate': 'Negocio activado', 'business.deactivate': 'Negocio desactivado', 'business.update': 'Ficha editada', 'business.member': 'Equipo modificado',
   'business.subscription': 'Cambio de plan', 'business.payment': 'Pago registrado', 'offer.moderation': 'Moderación de publicación', 'offer.status': 'Estado de publicación', 'offer.boost': 'Boost de publicación',
   'report.resolve': 'Denuncia resuelta', 'review.delete': 'Reseña borrada', 'post.delete': 'Novedad borrada', 'user.ban': 'Usuario suspendido', 'user.unban': 'Usuario reactivado', 'user.premium': 'Premium cambiado',
-  'user.type': 'Tipo de cuenta cambiado', 'user.delete': 'Cuenta borrada', 'notification.send': 'Notificación enviada', 'push.retry': 'Push reintentado', 'config.set': 'Configuración cambiada', 'plan.upsert': 'Plan guardado',
+  'user.type': 'Tipo de cuenta cambiado', 'user.delete': 'Cuenta eliminada', 'notification.send': 'Notificación enviada', 'push.retry': 'Push reintentado', 'config.set': 'Configuración cambiada', 'plan.upsert': 'Plan guardado',
   'category.upsert': 'Categoría guardada', 'category.delete': 'Categoría borrada', 'admin.add': 'Administrador añadido', 'admin.remove': 'Administrador quitado', 'maintenance.expire_offers': 'Caducidad forzada',
 };
 const summarize = (o) => Object.entries(o).filter(([, v]) => v != null && v !== '').map(([k, v]) => `${k}: ${typeof v === 'object' ? JSON.stringify(v) : v}`).join(' · ').slice(0, 300);
@@ -681,8 +698,8 @@ PAGES.publicaciones = async (v, id) => {
     const pg = pager(s, r.total, load);
     $('#list').innerHTML = table({
       cols: [
-        { h: 'Publicación', r: (o) => `${img(o.images?.[0], KIND_ICON[o.kind])}<span class="title">${esc(o.title)}<span class="sub">${LABELS[o.kind]} · <a class="link" href="#/negocios/${o.business_id}" onclick="event.stopPropagation()">${esc(o.business_name)}</a> ${o.verification_status !== 'verified' ? tag(o.verification_status) : ''}</span></span>` },
-        { h: 'Estado', r: (o) => `${tag(o.status)} ${tag(o.moderation_status)} ${flagTags(o)} ${o.adults_only ? '<span class="tag bad">+18</span>' : ''} ${o.is_boosted ? '<span class="tag">boost</span>' : ''} ${o.open_reports ? `<span class="tag bad">${ms('flag')} ${o.open_reports}</span>` : ''}` },
+        { h: 'Publicación', r: (o) => `${img(o.images?.[0], KIND_ICON[o.kind])}<span class="title">${esc(o.title)}<span class="sub">${esc(I18N.t(LABELS[o.kind]))} · <a class="link" href="#/negocios/${o.business_id}" onclick="event.stopPropagation()">${esc(o.business_name)}</a> ${o.verification_status !== 'verified' ? tag(o.verification_status) : ''}</span></span>` },
+        { h: 'Estado', r: (o) => `${tag(o.status)} ${modTag(o.moderation_status)} ${flagTags(o)} ${o.adults_only ? '<span class="tag bad">+18</span>' : ''} ${o.is_boosted ? '<span class="tag">boost</span>' : ''} ${o.open_reports ? `<span class="tag bad">${ms('flag')} ${o.open_reports}</span>` : ''}` },
         { h: 'Cuándo', r: (o) => `<span class="nowrap">${o.kind === 'flash_offer' ? `${fmtDate(o.redeem_start_at, KZ.de(o))}<span class="sub">→ ${fmtDate(o.redeem_end_at, KZ.de(o))}</span>` : fmtDate(o.event_at, KZ.de(o))}</span>` },
         { h: 'Precio', r: (o) => `${o.discount ? `<span class="tag">${esc(discountLabel(o.discount))}</span> ` : ''}${o.price_cents != null ? fmtMoney(o.price_cents, o.currency) : ''}` },
         { h: 'Vistas', num: true, r: (o) => fmtNum(o.views_count) },
@@ -734,7 +751,7 @@ async function offerDetail(v, id) {
     <div class="page-head"><a class="btn sm ghost" href="#/publicaciones">← Publicaciones</a></div>
     <div class="detail-head">
       ${o.images?.[0] ? `<img src="${esc(o.images[0])}" alt="">` : `<div class="ph">${KIND_ICON[o.kind]}</div>`}
-      <div><h1>${esc(o.title)}</h1><div class="tags">${tag(o.kind, 'dim')} ${tag(o.status)} ${tag(o.moderation_status)} ${flagTags(o)} ${o.adults_only ? '<span class="tag bad">+18</span>' : ''} ${o.is_boosted ? `<span class="tag">boost ${I18N.lang === 'en' ? 'until' : 'hasta'} ${fmtDate(o.boosted_until)}</span>` : ''}</div>
+      <div><h1>${esc(o.title)}</h1><div class="tags">${tag(o.kind, 'dim')} ${tag(o.status)} ${modTag(o.moderation_status)} ${flagTags(o)} ${o.adults_only ? '<span class="tag bad">+18</span>' : ''} ${o.is_boosted ? `<span class="tag">boost ${I18N.lang === 'en' ? 'until' : 'hasta'} ${fmtDate(o.boosted_until)}</span>` : ''}</div>
         <div class="muted small" style="margin-top:4px"><a class="link" href="#/negocios/${o.business_id}">${esc(o.business_name)}</a> ${o.verification_status !== 'verified' ? tag(o.verification_status) : ''} · ${esc(o.city || '')}</div></div>
       <span class="spacer"></span>
       <div class="actions">
@@ -755,7 +772,7 @@ async function offerDetail(v, id) {
         <dt>Aforo</dt><dd>${I18N.lang === 'en' ? `${o.max_redemptions ? `${o.redemptions_count} of ${o.max_redemptions}` : `${o.redemptions_count} (no limit)`} ${o.max_per_user ? `· max. ${o.max_per_user} per person` : ''}` : `${o.max_redemptions ? `${o.redemptions_count} de ${o.max_redemptions}` : `${o.redemptions_count} (sin límite)`} ${o.max_per_user ? `· máx. ${o.max_per_user} por persona` : ''}`}</dd>
         <dt>Enlace externo</dt><dd>${o.external_url ? `<a class="link" target="_blank" rel="noopener" href="${esc(o.external_url)}">${esc(o.external_url)}</a>` : '—'}</dd>
         <dt>Diseño</dt><dd>${o.style && Object.keys(o.style).length ? esc(JSON.stringify(o.style)) : 'por defecto'}</dd>
-        <dt>Guardada por</dt><dd>${fmtNum(d.saved)} ${I18N.lang === 'en' ? (d.saved === 1 ? 'person' : 'people') : 'persona(s)'}</dd>
+        <dt>Guardada por</dt><dd>${fmtNum(d.saved)} ${I18N.lang === 'en' ? (d.saved === 1 ? 'person' : 'people') : (d.saved === 1 ? 'persona' : 'personas')}</dd>
         <dt>Posición</dt><dd>${o.lat ? `<a class="link" target="_blank" rel="noopener" href="https://www.google.com/maps?q=${o.lat},${o.lng}">${o.lat.toFixed(5)}, ${o.lng.toFixed(5)} ↗</a>` : 'la del negocio'}</dd>
         <dt>Creada / editada</dt><dd>${fmtDate(o.created_at, tz)} · ${fmtDate(o.updated_at, tz)}</dd>
         <dt>Id</dt><dd><code>${o.id}</code></dd>
@@ -876,7 +893,7 @@ async function userDetail(v, id) {
         <button class="btn" data-a="type">Tipo de cuenta…</button>
         <button class="btn" data-a="notify">Enviar notificación…</button>
         <button class="btn" data-a="admin">${u.is_admin ? 'Quitar admin' : 'Hacer admin'}</button>
-        <button class="btn bad ghost" data-a="delete">Borrar cuenta…</button>
+        <button class="btn bad ghost" data-a="delete">Eliminar cuenta…</button>
       </div>
     </div>
     ${u.banned_reason ? `<div class="card"><b>Motivo de la suspensión:</b> ${esc(u.banned_reason)}</div>` : ''}
@@ -897,7 +914,7 @@ async function userDetail(v, id) {
         <dt>Comunicaciones comerciales</dt><dd>${u.marketing_consent ? `${en ? 'yes' : 'sí'}, ${fmtDate(u.marketing_consent_at)}` : 'no'}</dd>
         <dt>Ubicación</dt><dd>${u.location_consent_at ? (en ? `given ${fmtDate(u.location_consent_at)} · last ${ago(u.last_location_at)}` : `consentida ${fmtDate(u.location_consent_at)} · última ${ago(u.last_location_at)}`) : (en ? 'not given' : 'no consentida')}</dd>
         <dt>Notificaciones</dt><dd>${prefs ? (en ? `favourites: ${prefs.notify_favorites ? 'yes' : 'no'} · nearby: ${prefs.notify_nearby ? `yes (${prefs.nearby_radius_m} m)` : 'no'}${prefs.quiet_hours_start ? ` · quiet hours ${esc(prefs.quiet_hours_start)}–${esc(prefs.quiet_hours_end)}` : ''}` : `favoritos: ${prefs.notify_favorites ? 'sí' : 'no'} · cerca: ${prefs.notify_nearby ? `sí (${prefs.nearby_radius_m} m)` : 'no'}${prefs.quiet_hours_start ? ` · silencio ${esc(prefs.quiet_hours_start)}–${esc(prefs.quiet_hours_end)}` : ''}`) : 'por defecto'}</dd>
-      </dl><p class="muted small" style="margin:10px 0 0">Para atender un derecho de acceso, usa «Exportar» en cada listado o pide el volcado en Supabase; para supresión, «Borrar cuenta».</p></div>
+      </dl><p class="muted small" style="margin:10px 0 0">Para atender un derecho de acceso, usa «Exportar» en cada listado o pide el volcado en Supabase; para supresión, «Eliminar cuenta».</p></div>
     </div>
     <div class="grid2">
       <div class="card"><h2>${I18N.lang === 'en' ? 'Businesses' : 'Negocios'} (${d.memberships.length})</h2>${d.memberships.length ? table({ cols: [{ h: 'Negocio', r: (m) => `<a class="link" href="#/negocios/${m.business_id}">${esc(m.name)}</a><span class="sub">${esc(m.city || '')}</span>` }, { h: 'Rol', r: (m) => tag(m.role, 'dim') }, { h: 'Estado', r: (m) => tag(m.verification_status) }], rows: d.memberships }) : '<p class="muted">No pertenece a ningún negocio.</p>'}</div>
@@ -931,7 +948,7 @@ async function userDetail(v, id) {
         if (!r) return; await rpc('admin_set_user_type', { p_id: u.id, p_type: r.type }); toast('Tipo actualizado');
       }
       if (a === 'notify') {
-        const r = await modal({ title: 'Notificación al usuario', fields: CAMPOS_AVISO });
+        const r = await modal({ title: 'Notificación al usuario', fields: CAMPOS_AVISO, submit: 'Enviar' });
         if (!r) return; await rpc('admin_send_notification', { p_audience: 'ids', p_user_ids: [u.id], ...textosAviso(r) }); toast('Notificación enviada');
       }
       if (a === 'admin') {
@@ -939,8 +956,8 @@ async function userDetail(v, id) {
         else { if (!await confirmDlg('Hacer administrador', en ? `${esc(u.email)} will be able to log in to this panel with full permissions.` : `${esc(u.email)} podrá entrar en este panel con todos los permisos.`, { submit: 'Hacer admin' })) return; await rpc('admin_add_admin', { p_email: u.email }); toast('Ahora es administrador'); }
       }
       if (a === 'delete') {
-        const r = await modal({ title: 'Borrar cuenta definitivamente', warn: en ? `Everything is deleted: profile, redemptions, reviews, favourites and <b>any businesses they own, with all their publications</b>. This can't be undone. Only do it at the user's request (right to erasure) or for a serious breach.` : 'Se borra todo: perfil, canjes, reseñas, favoritos y <b>los negocios de los que sea propietario con todas sus publicaciones</b>. No se puede deshacer. Hazlo solo a petición del usuario (derecho de supresión) o por incumplimiento grave.', fields: [{ name: 'reason', label: 'Motivo (queda en el registro)', type: 'textarea', required: true }], submit: 'Borrar para siempre', danger: true, confirmWord: 'BORRAR' });
-        if (!r) return; await rpc('admin_delete_user', { p_id: u.id, p_reason: r.reason }); toast('Cuenta borrada'); go('#/usuarios'); return;
+        const r = await modal({ title: 'Eliminar la cuenta definitivamente', warn: en ? `Everything is deleted: profile, redemptions, reviews, favourites and <b>any businesses they own, with all their publications</b>. This can't be undone. Only do it at the user's request (right to erasure) or for a serious breach.` : 'Se borra todo: perfil, canjes, reseñas, favoritos y <b>los negocios de los que sea propietario con todas sus publicaciones</b>. No se puede deshacer. Hazlo solo a petición del usuario (derecho de supresión) o por incumplimiento grave.', fields: [{ name: 'reason', label: 'Motivo (queda en el registro)', type: 'textarea', required: true }], submit: 'Eliminar para siempre', danger: true, confirmWord: en ? 'DELETE' : 'ELIMINAR' });
+        if (!r) return; await rpc('admin_delete_user', { p_id: u.id, p_reason: r.reason }); toast('Cuenta eliminada'); go('#/usuarios'); return;
       }
       route();
     } catch (e) { toast(e.message, true); }
@@ -965,7 +982,7 @@ PAGES.resenas = async (v) => {
     <div class="page-head"><h1>Reseñas y novedades</h1></div>
     ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p><b>Reviews</b> are written by users about businesses; <b>news posts</b> are published by businesses on their page. Only delete them if they break the rules (insults, personal data, spam, content that isn't about the venue). The author gets the reason.</p>` : '<p>Las <b>reseñas</b> las escriben usuarios sobre negocios; las <b>novedades</b> las publican los negocios en su perfil. Bórralos solo si incumplen las normas (insultos, datos personales, spam, contenido que no es del local). El autor recibe el motivo.</p>')}
     <div class="tabs"><button data-t="reviews" class="${tab === 'reviews' ? 'on' : ''}">Reseñas</button><button data-t="posts" class="${tab === 'posts' ? 'on' : ''}">Novedades</button></div>
-    <div class="toolbar"><input id="q" class="grow" placeholder="Buscar por texto, negocio o email…"><select id="rating" ${tab === 'posts' ? 'hidden' : ''}>${[['', 'Cualquier puntuación'], ['1', 'Solo 1 ★'], ['2', '≤ 2 ★'], ['3', '≤ 3 ★']].map((o) => `<option value="${o[0]}">${o[1]}</option>`).join('')}</select></div>
+    <div class="toolbar"><input id="q" class="grow" placeholder="Buscar por texto, negocio o email…" value="${esc((tab === 'posts' ? sP.q : sR.q) || '')}"><select id="rating" ${tab === 'posts' ? 'hidden' : ''}>${[['', 'Cualquier puntuación'], ['1', 'Solo 1 ★'], ['2', '≤ 2 ★'], ['3', '≤ 3 ★']].map((o) => `<option value="${o[0]}" ${String(sR.rating || '') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select></div>
     <div id="list"><div class="loading">Cargando…</div></div>`;
   const load = async () => {
     if (tab === 'reviews') {
@@ -982,7 +999,7 @@ PAGES.resenas = async (v) => {
       $$('#list [data-del]').forEach((b) => { b.onclick = () => deletePost(b.dataset.del); });
     }
   };
-  $$('.tabs button').forEach((b) => { b.onclick = () => { tab = b.dataset.t; $$('.tabs button').forEach((x) => x.classList.toggle('on', x === b)); $('#rating').hidden = tab === 'posts'; load(); }; });
+  $$('.tabs button').forEach((b) => { b.onclick = () => { tab = b.dataset.t; history.replaceState(null, '', `#/resenas?tab=${tab}`); $$('.tabs button').forEach((x) => x.classList.toggle('on', x === b)); $('#rating').hidden = tab === 'posts'; load(); }; });
   $('#q').oninput = debounce(() => { const q = $('#q').value.trim(); sR.q = q; sP.q = q; sR.offset = sP.offset = 0; load(); });
   $('#rating').onchange = () => { sR.rating = $('#rating').value; sR.offset = 0; load(); };
   await load();
@@ -1002,7 +1019,7 @@ PAGES.denuncias = async (v) => {
   const target = (r) => {
     const t = r.target || {};
     const en = I18N.lang === 'en';
-    if (!r.target) return '<span class="tag dim">contenido ya eliminado</span>';
+    if (!r.target) return '<span class="tag dim">contenido ya borrado</span>';
     if (r.target_type === 'offer') return en ? `Publication <a class="link" href="#/publicaciones/${r.target_id}">“${esc(t.title)}”</a> by <a class="link" href="#/negocios/${t.business_id}">${esc(t.business)}</a> · ${tag(t.moderation)} ${tag(t.status)}` : `Publicación <a class="link" href="#/publicaciones/${r.target_id}">«${esc(t.title)}»</a> de <a class="link" href="#/negocios/${t.business_id}">${esc(t.business)}</a> · ${tag(t.moderation)} ${tag(t.status)}`;
     if (r.target_type === 'business') return en ? `Business <a class="link" href="#/negocios/${r.target_id}">“${esc(t.name)}”</a> (${esc(t.city || '')}) · ${t.active ? tag('active') : tag('inactive', 'st-inactive')} ${tag(t.verification)}` : `Negocio <a class="link" href="#/negocios/${r.target_id}">«${esc(t.name)}»</a> (${esc(t.city || '')}) · ${t.active ? tag('active') : tag('inactive', 'st-inactive')} ${tag(t.verification)}`;
     if (r.target_type === 'review') return en ? `Review <span class="stars">${'★'.repeat(t.rating)}</span> at <a class="link" href="#/negocios/${t.business_id}">${esc(t.business)}</a>: “${esc(t.comment || '')}” · <a class="link" href="#/usuarios/${t.user_id}">author</a>` : `Reseña <span class="stars">${'★'.repeat(t.rating)}</span> en <a class="link" href="#/negocios/${t.business_id}">${esc(t.business)}</a>: «${esc(t.comment || '')}» · <a class="link" href="#/usuarios/${t.user_id}">autor</a>`;
@@ -1072,13 +1089,13 @@ PAGES.sugerencias = async (v) => {
         <p style="white-space:pre-wrap">${esc(f.message)}</p>
         ${f.admin_note ? `<div class="meta"><b>Nota interna:</b> ${esc(f.admin_note)}</div>` : ''}
         <div class="actions">
-          <button class="btn sm" data-set="${f.id}" data-status="reviewing">La estoy viendo</button>
-          <button class="btn sm ok" data-set="${f.id}" data-status="planned">La haremos</button>
-          <button class="btn sm ok" data-set="${f.id}" data-status="done">Hecho</button>
+          <button class="btn sm ghost" data-set="${f.id}" data-status="reviewing">La estamos viendo</button>
+          <button class="btn sm ghost" data-set="${f.id}" data-status="planned">La haremos</button>
+          <button class="btn sm ghost" data-set="${f.id}" data-status="done">Hecho</button>
           <button class="btn sm ghost" data-set="${f.id}" data-status="declined">De momento no</button>
-          <button class="btn sm primary" data-reply="${f.id}">Responder…</button>
+          <button class="btn sm" data-reply="${f.id}">Responder…</button>
           <button class="btn sm ghost" data-note="${f.id}">Nota interna…</button>
-          <button class="btn sm bad ghost" data-del="${f.id}">Borrar</button>
+          <button class="btn sm bad ghost" data-del="${f.id}" style="margin-left:auto">Borrar…</button>
         </div>
       </div></div>`).join('') : '<div class="tbl-wrap"><div class="empty">Nada por aquí.</div></div>') + pg.html;
     pg.bind($('#list'));
@@ -1146,7 +1163,7 @@ PAGES.planes = async (v) => {
       rows = r.rows; csvName = 'pagos';
       csvCols = [['paid_at', 'fecha'], ['business', 'negocio'], ['plan', 'plan'], [(x) => (x.amount_cents / 100).toFixed(2), 'importe (€)'], ['currency', 'moneda'], ['method', 'método'], ['period_start', 'periodo inicio'], ['period_end', 'periodo fin'], ['notes', 'notas'], ['recorded_by', 'registrado por']];
       const months = r.by_month || [];
-      $('#sum').innerHTML = `<div class="card"><div class="kpis"><div class="kpi accent"><b>${fmtMoney(r.sum_cents)}</b><span>${I18N.lang === 'en' ? `total for the period (${fmtNum(r.total)} ${r.total === 1 ? 'payment' : 'payments'})` : `total en el periodo (${fmtNum(r.total)} pagos)`}</span></div></div>${months.length ? `<p class="muted small" style="margin:10px 0 0">Por mes (12 meses)</p>${bars(months.map((m) => ({ ...m, cents: m.cents })), 'cents', (m) => `${m.month} · ${fmtMoney(m.cents)} (${m.n})`)}<div class="chart-legend">${months.map((m) => `<span>${m.month.slice(5)}: ${fmtMoney(m.cents)}</span>`).join('')}</div>` : ''}</div>`;
+      $('#sum').innerHTML = `<div class="card"><div class="kpis"><div class="kpi accent"><b>${fmtMoney(r.sum_cents)}</b><span>${I18N.lang === 'en' ? `total for the period (${fmtNum(r.total)} ${r.total === 1 ? 'payment' : 'payments'})` : `total en el periodo (${fmtNum(r.total)} ${r.total === 1 ? 'pago' : 'pagos'})`}</span></div></div>${months.length ? `<p class="muted small" style="margin:10px 0 0">Por mes (12 meses)</p>${bars(months.map((m) => ({ ...m, cents: m.cents })), 'cents', (m) => `${m.month} · ${fmtMoney(m.cents)} (${m.n})`)}<div class="chart-legend">${months.map((m) => `<span>${m.month.slice(5)}: ${fmtMoney(m.cents)}</span>`).join('')}</div>` : ''}</div>`;
       const pg = pager(s, r.total, load);
       $('#list').innerHTML = table({ cols: [
         { h: 'Fecha', r: (x) => `<span class="nowrap">${fmtDate(x.paid_at)}</span>` }, { h: 'Negocio', r: (x) => `<a class="link" href="#/negocios/${x.business_id}">${esc(x.business)}</a> ${tag(x.plan, 'dim')}` },
@@ -1216,7 +1233,7 @@ PAGES.avisos = async (v) => {
     const tv = $('#tabview'); tv.innerHTML = '<div class="loading">Cargando…</div>';
     if (tab === 'send') {
       tv.innerHTML = `<div class="card" style="max-width:640px"><form id="sendf" style="display:grid;gap:12px">
-        <label class="f"><span>Destinatarios</span><select name="audience"><option value="all">Todos los usuarios</option><option value="users">Solo usuarios (no negocios)</option><option value="business_owners">Dueños y encargados de negocios</option><option value="city">Negocios de una ciudad…</option></select></label>
+        <label class="f"><span>Destinatarios</span><select name="audience"><option value="all">Todos los usuarios</option><option value="users">Solo usuarios (no negocios)</option><option value="business_owners">Propietarios y encargados de negocios</option><option value="city">Negocios de una ciudad…</option></select></label>
         <label class="f" id="cityf" hidden><span>Ciudad</span><input name="city" placeholder="Madrid"></label>
         <label class="f"><span>Título</span><input name="title" required maxlength="80"></label>
         <label class="f"><span>Texto</span><textarea name="body" required maxlength="300"></textarea></label>
@@ -1230,19 +1247,25 @@ PAGES.avisos = async (v) => {
       f.onsubmit = async (e) => {
         e.preventDefault();
         const aud = f.audience.value;
+        if (aud === 'city' && !f.city.value.trim()) { toast('Escribe la ciudad.', true); f.city.focus(); return; }
+        const boton = f.querySelector('[type=submit]');
+        if (boton.disabled) return;
         if (!await confirmDlg('Enviar notificación', I18N.lang === 'en' ? `“${esc(f.title.value)}” will be sent to: <b>${esc($('option:checked', f.audience).textContent)}${aud === 'city' ? ' ' + esc(f.city.value) : ''}</b>. This can't be undone.` : `Se enviará «${esc(f.title.value)}» a: <b>${esc($('option:checked', f.audience).textContent)}${aud === 'city' ? ' ' + esc(f.city.value) : ''}</b>. No se puede deshacer.`, { submit: 'Enviar' })) return;
-        try { const n = await rpc('admin_send_notification', { p_audience: aud, ...textosAviso({ title: f.title.value, body: f.body.value, title_en: f.title_en.value, body_en: f.body_en.value }), p_route: f.route.value.trim() || null, p_city: f.city.value.trim() || null }); toast(I18N.lang === 'en' ? `Notification sent to ${n} ${n === 1 ? 'person' : 'people'}` : `Notificación enviada a ${n} persona(s)`); f.reset(); } catch (err) { toast(err.message, true); }
+        // Bloqueado mientras va: un segundo clic lo mandaría dos veces a todos.
+        await esperando(boton, async () => {
+          try { const n = await rpc('admin_send_notification', { p_audience: aud, ...textosAviso({ title: f.title.value, body: f.body.value, title_en: f.title_en.value, body_en: f.body_en.value }), p_route: f.route.value.trim() || null, p_city: aud === 'city' ? f.city.value.trim() : null }); toast(I18N.lang === 'en' ? `Notification sent to ${n} ${n === 1 ? 'person' : 'people'}` : `Notificación enviada a ${n} ${n === 1 ? 'persona' : 'personas'}`); f.reset(); $('#cityf').hidden = true; } catch (err) { toast(err.message, true); }
+        });
       };
     }
     if (tab === 'history') {
       const r = await rpc('admin_audit', { p_action: 'notification.send', p_limit: 100 });
-      tv.innerHTML = table({ cols: [{ h: 'Fecha', r: (x) => `<span class="nowrap">${fmtDate(x.created_at)}</span>` }, { h: 'Notificación', r: (x) => `<span class="title">${esc(x.details?.title)}<span class="sub">${esc(x.details?.body)}</span></span>` }, { h: 'Destinatarios', r: (x) => `${esc(x.details?.audience)}${x.details?.city ? ' ' + esc(x.details.city) : ''} · ${x.details?.recipients ?? '?'}` }, { h: 'Por', r: (x) => esc(x.admin_email || '') }], rows: r.rows, empty: 'Todavía no se ha enviado ninguna notificación.' });
+      tv.innerHTML = table({ cols: [{ h: 'Fecha', r: (x) => `<span class="nowrap">${fmtDate(x.created_at)}</span>` }, { h: 'Notificación', r: (x) => `<span class="title">${esc(x.details?.title)}<span class="sub">${esc(x.details?.body)}</span></span>` }, { h: 'Destinatarios', r: (x) => `${esc(I18N.t(AUDIENCIAS[x.details?.audience] || x.details?.audience || ''))}${x.details?.city ? ' ' + esc(x.details.city) : ''} · ${x.details?.recipients ?? '?'}` }, { h: 'Por', r: (x) => esc(x.admin_email || '') }], rows: r.rows, empty: 'Todavía no se ha enviado ninguna notificación.' });
     }
     if (tab === 'push') {
       tv.innerHTML = `<div class="toolbar"><select id="pstatus">${[['all', 'Todos'], ['pending', 'Pendientes'], ['sent', 'Enviados'], ['failed', 'Fallidos'], ['skipped', 'Omitidos']].map((o) => `<option value="${o[0]}">${o[1]}</option>`).join('')}</select></div><div id="list"></div>`;
       const loadQ = async () => {
         const rows = await rpc('admin_push_queue', { p_status: $('#pstatus').value, p_limit: 200 });
-        $('#list').innerHTML = table({ cols: [{ h: 'Creado', r: (x) => `<span class="nowrap">${fmtDate(x.created_at)}</span>` }, { h: 'Usuario', r: (x) => esc(x.user_email || '—') }, { h: 'Notificación', r: (x) => `<span class="title">${esc(x.title)}<span class="sub">${esc(x.body || '')} · ${esc(x.kind || '')}</span></span>` }, { h: 'Estado', r: (x) => `${tag(x.status)} ${x.attempts ? `<span class="muted small">${x.attempts} ${I18N.lang === 'en' ? (x.attempts === 1 ? 'attempt' : 'attempts') : 'intento(s)'}</span>` : ''}${x.error ? `<span class="sub">${esc(x.error)}</span>` : ''}` }, { h: 'Enviado', r: (x) => fmtDate(x.sent_at) }, { h: '', r: (x) => ['failed', 'skipped'].includes(x.status) ? `<button class="btn sm" data-retry="${x.id}">Reintentar</button>` : '' }], rows, empty: 'Cola vacía.' });
+        $('#list').innerHTML = table({ cols: [{ h: 'Creado', r: (x) => `<span class="nowrap">${fmtDate(x.created_at)}</span>` }, { h: 'Usuario', r: (x) => esc(x.user_email || '—') }, { h: 'Notificación', r: (x) => `<span class="title">${esc(x.title)}<span class="sub">${esc(x.body || '')} · ${esc(x.kind || '')}</span></span>` }, { h: 'Estado', r: (x) => `${tag(x.status)} ${x.attempts ? `<span class="muted small">${x.attempts} ${I18N.lang === 'en' ? (x.attempts === 1 ? 'attempt' : 'attempts') : (x.attempts === 1 ? 'intento' : 'intentos')}</span>` : ''}${x.error ? `<span class="sub">${esc(x.error)}</span>` : ''}` }, { h: 'Enviado', r: (x) => fmtDate(x.sent_at) }, { h: '', r: (x) => ['failed', 'skipped'].includes(x.status) ? `<button class="btn sm" data-retry="${x.id}">Reintentar</button>` : '' }], rows, empty: 'Cola vacía.' });
         $$('#list [data-retry]').forEach((b) => { b.onclick = async () => { try { await rpc('admin_push_retry', { p_id: +b.dataset.retry }); toast('Reencolado'); loadQ(); } catch (e) { toast(e.message, true); } }; });
       };
       $('#pstatus').onchange = loadQ; await loadQ();
@@ -1319,7 +1342,7 @@ async function cityDetail(v, city, days) {
       <p class="muted small" style="margin:8px 0 0">Doce semanas. Si baja y no sube, es que los negocios se han enfriado.</p>
     </div>
     <div class="card"><h2>Negocios</h2>
-      ${dormidos ? `<p class="muted" style="margin:0 0 10px"><b>${dormidos}</b> ${I18N.lang === 'en' ? (dormidos === 1 ? "hasn't published anything in this period: that's the one to call." : "haven't published anything in this period: these are the ones to call.") : 'no han publicado nada en este periodo: son los que hay que llamar.'}</p>` : ''}
+      ${dormidos ? `<p class="muted" style="margin:0 0 10px"><b>${dormidos}</b> ${I18N.lang === 'en' ? (dormidos === 1 ? "hasn't published anything in this period: that's the one to call." : "haven't published anything in this period: these are the ones to call.") : (dormidos === 1 ? 'no ha publicado nada en este periodo: es al que hay que llamar.' : 'no han publicado nada en este periodo: son los que hay que llamar.')}</p>` : ''}
       ${table({
         cols: [
           { h: 'Negocio', r: (b) => `<a class="link" href="#/negocios/${esc(b.id)}"><b>${esc(b.name)}</b></a><span class="sub">${I18N.lang === 'en' ? 'joined' : 'alta'} ${fmtDate(b.created_at)}</span>` },
@@ -1347,7 +1370,7 @@ PAGES.colecciones = async (v, param) => {
     r.max_price_cents != null ? (en ? `up to ${fmtMoney(r.max_price_cents)}` : `hasta ${fmtMoney(r.max_price_cents)}`) : null,
     r.discount_only ? (en ? 'discounted only' : 'solo con descuento') : null,
     r.new_days ? (en ? `published in the last ${r.new_days} days` : `publicado en ${r.new_days} días`) : null,
-    r.categories?.length ? (en ? `${r.categories.length} ${r.categories.length === 1 ? 'category' : 'categories'}` : `${r.categories.length} categoría(s)`) : null,
+    r.categories?.length ? (en ? `${r.categories.length} ${r.categories.length === 1 ? 'category' : 'categories'}` : `${r.categories.length} ${r.categories.length === 1 ? 'categoría' : 'categorías'}`) : null,
   ].filter(Boolean).join(' · ') || (en ? 'everything nearby' : 'todo lo que haya cerca');
   v.innerHTML = `
     <div class="page-head"><h1>Colecciones</h1><span class="spacer"></span><button class="btn primary sm" id="new">Nueva colección…</button></div>
@@ -1418,16 +1441,22 @@ async function pintaADedo(v, c) {
         ? rpc('admin_offers_page', {
           p_moderation: 'all', p_status: 'all', p_kind: 'all',
           p_query: busqueda.trim(), p_business: null, p_limit: 15, p_offset: 0,
-        }).catch(() => ({ rows: [] }))
+        }).catch((e) => { if (!e?.obsoleta) toast(e.message, true); return { rows: [] }; })
         : Promise.resolve({ rows: [] }),
     ]);
     const items = dentro?.items || [];
     const dentroYa = new Set(items.map((x) => x.offer_id));
     const candidatas = (fuera?.rows || []).filter((o) => !dentroYa.has(o.id));
+    // Se repinta todo, buscador incluido: lo escrito mientras tanto, el foco
+    // y el cursor se quedan como estaban para poder seguir escribiendo.
+    const qAntes = $('#q', v);
+    const escribiendo = qAntes && document.activeElement === qAntes;
+    const cursor = escribiendo ? qAntes.selectionStart : null;
+    if (qAntes) busqueda = qAntes.value;
 
     v.innerHTML = `
-      <div class="page-head"><a class="btn sm" href="#/colecciones">← Colecciones</a>
-        <h1 style="margin-left:10px">${esc(c.title?.es || c.slug)}</h1></div>
+      <div class="page-head"><a class="btn sm ghost" href="#/colecciones">← Colecciones</a>
+        <h1>${esc(c.title?.es || c.slug)}</h1></div>
       ${helpBox('¿Cómo va esto?', I18N.lang === 'en' ? `<p>Whatever you put here is shown <b>in this order</b> and instead of the collection's rule. If the list ends up empty, the rule takes over again.</p><p>An expired or taken-down publication stops showing by itself: you don't need to remove it.</p>` : '<p>Lo que pongas aquí se enseña <b>en este orden</b> y en lugar de la regla de la colección. Si la lista se queda vacía, vuelve a mandar la regla.</p><p>Una publicación caducada o retirada deja de verse sola: no hace falta que la quites.</p>')}
       <div class="card"><h2>En la colección</h2>${table({
         cols: [
@@ -1446,28 +1475,28 @@ async function pintaADedo(v, c) {
         <label class="f"><span>Buscar publicación</span><input id="q" value="${esc(busqueda)}" placeholder="Título o negocio…"></label>
         ${candidatas.length ? table({
           cols: [
-            { h: 'Publicación', r: (o) => `<span class="title">${esc(o.title)}<span class="sub">${esc(o.business_name || '')} · ${LABELS[o.kind]}</span></span>` },
-            { h: 'Estado', r: (o) => `${tag(o.status)} ${tag(o.moderation_status)}` },
-            { h: '', r: (o) => `<button class="btn sm primary" data-in="${esc(o.id)}">Añadir</button>` },
+            { h: 'Publicación', r: (o) => `<span class="title">${esc(o.title)}<span class="sub">${esc(o.business_name || '')} · ${esc(I18N.t(LABELS[o.kind]))}</span></span>` },
+            { h: 'Estado', r: (o) => `${tag(o.status)} ${modTag(o.moderation_status)}` },
+            { h: '', r: (o) => `<button class="btn sm" data-in="${esc(o.id)}">Añadir</button>` },
           ],
           rows: candidatas,
         }) : `<p class="muted">${busqueda.trim().length >= 2 ? 'Nada con ese nombre.' : 'Escribe al menos dos letras.'}</p>`}
       </div>`;
 
     const q = $('#q', v);
+    if (escribiendo) { q.focus(); q.setSelectionRange(cursor, cursor); }
     q.oninput = debounce(() => { busqueda = q.value; dibuja(); });
-    $$('[data-in]', v).forEach((b) => { b.onclick = async () => {
+    // Cada botón, bloqueado mientras va (un doble clic subía dos puestos) y
+    // con el error dicho si falla.
+    const accion = (b, trabajo) => esperando(b, async () => {
+      try { await trabajo(); await dibuja(); } catch (e) { toast(e.message, true); }
+    });
+    $$('[data-in]', v).forEach((b) => { b.onclick = () => accion(b, async () => {
       await rpc('admin_collection_add', { p_collection: c.id, p_offer: b.dataset.in });
-      toast('Añadida'); dibuja();
-    }; });
-    $$('[data-out]', v).forEach((b) => { b.onclick = async () => {
-      await rpc('admin_collection_remove', { p_collection: c.id, p_offer: b.dataset.out });
-      dibuja();
-    }; });
-    $$('[data-move]', v).forEach((b) => { b.onclick = async () => {
-      await rpc('admin_collection_move', { p_collection: c.id, p_offer: b.dataset.move, p_delta: +b.dataset.delta });
-      dibuja();
-    }; });
+      toast('Añadida');
+    }); });
+    $$('[data-out]', v).forEach((b) => { b.onclick = () => accion(b, () => rpc('admin_collection_remove', { p_collection: c.id, p_offer: b.dataset.out })); });
+    $$('[data-move]', v).forEach((b) => { b.onclick = () => accion(b, () => rpc('admin_collection_move', { p_collection: c.id, p_offer: b.dataset.move, p_delta: +b.dataset.delta })); });
   };
 
   await dibuja();
@@ -1483,22 +1512,22 @@ PAGES.configuracion = async (v) => {
     <div class="page-head"><h1>Configuración</h1></div>
     ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p><b>Minimum version</b>: if a user opens an older version of the app, they're asked to update (useful after breaking changes). <b>Maintenance</b>: blocks the app with a message while you make a delicate change. <b>Push delivery</b>: address of the function that sends the notifications (don't touch it unless the project changes). Below, maintenance tools and usage of the anti-abuse limits.</p>` : '<p><b>Versión mínima</b>: si un usuario abre una versión más antigua de la app, se le pide actualizar (útil tras cambios incompatibles). <b>Mantenimiento</b>: bloquea la app con un mensaje mientras haces un cambio delicado. <b>Envío de push</b>: dirección de la función que manda las notificaciones (no la toques salvo que cambie el proyecto). Abajo, herramientas de mantenimiento y el uso de los límites anti-abuso.</p>')}
     <div class="grid2">
-      <div class="card"><h2>Versión mínima de la app</h2><form id="mvf" style="display:grid;gap:10px"><label class="f"><span>Android</span><input name="android" value="${esc(mv.android || '')}" placeholder="0.1.0"></label><label class="f"><span>iOS</span><input name="ios" value="${esc(mv.ios || '')}" placeholder="0.1.0"></label><div><button class="btn primary sm">Guardar</button> <span class="muted small">${I18N.lang === 'en' ? 'updated' : 'actualizado'} ${fmtDate(cfg.min_version?.updated_at)}</span></div></form></div>
-      <div class="card"><h2>Modo mantenimiento</h2><form id="mtf" style="display:grid;gap:10px"><label class="f" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="enabled" ${mt.enabled ? 'checked' : ''}><span>App en mantenimiento (bloquea a todos los usuarios)</span></label><label class="f"><span>Mensaje</span><textarea name="message">${esc(mt.message || '')}</textarea></label><div><button class="btn ${mt.enabled ? 'bad' : 'primary'} sm">Guardar</button> <span class="muted small">${I18N.lang === 'en' ? 'updated' : 'actualizado'} ${fmtDate(cfg.maintenance?.updated_at)}</span></div></form></div>
+      <div class="card"><h2>Versión mínima de la app</h2><form id="mvf" style="display:grid;gap:10px"><label class="f"><span>Android</span><input name="android" value="${esc(mv.android || '')}" placeholder="0.1.0"></label><label class="f"><span>iOS</span><input name="ios" value="${esc(mv.ios || '')}" placeholder="0.1.0"></label><div><button class="btn sm">Guardar</button> <span class="muted small">${I18N.lang === 'en' ? 'updated' : 'actualizado'} ${fmtDate(cfg.min_version?.updated_at)}</span></div></form></div>
+      <div class="card"><h2>Modo mantenimiento</h2><form id="mtf" style="display:grid;gap:10px"><label class="f" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="enabled" ${mt.enabled ? 'checked' : ''}><span>App en mantenimiento (bloquea a todos los usuarios)</span></label><label class="f"><span>Mensaje</span><textarea name="message">${esc(mt.message || '')}</textarea></label><div><button class="btn ${mt.enabled ? 'bad' : ''} sm">Guardar</button> <span class="muted small">${I18N.lang === 'en' ? 'updated' : 'actualizado'} ${fmtDate(cfg.maintenance?.updated_at)}</span></div></form></div>
       <div class="card"><h2>Reglas de publicación</h2><form id="rlf" style="display:grid;gap:10px">
         <label class="f" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="block2x1" ${rl.block_2x1_alcohol === true ? 'checked' : ''}><span>Bloquear promociones <b>2x1 en bebidas alcohólicas</b></span></label>
         <p class="muted small" style="margin:0">${I18N.lang === 'en' ? `Off, which is how it is now: the business declares whether its two-for-one includes alcohol and, if it says yes, the publication is marked <b>over-18s only</b>. On, it simply won't let them publish it. Context for deciding: Law 34/1988 and several regional laws ban promotions that encourage drinking more for the same money (“2x1”, “open bar”), even if the venue is adults-only, and the fine falls on the advertising business.` : `Apagado, que es como está ahora: el negocio declara si su 2x1 lleva alcohol y, si dice que sí, la publicación sale marcada <b>solo para mayores de 18</b>. Encendido, directamente no deja publicarla. Contexto para decidir: la Ley 34/1988 y varias leyes autonómicas prohíben las promociones que incentivan beber más por el mismo dinero («2x1», «barra libre»), aunque el local sea solo para mayores, y la sanción recae en el negocio anunciante.`}</p>
-        <div><button class="btn primary sm">Guardar</button> <span class="muted small">${I18N.lang === 'en' ? 'updated' : 'actualizado'} ${fmtDate(cfg.rules?.updated_at)}</span></div></form></div>
-      <div class="card"><h2>Envío de push</h2><form id="spf" style="display:grid;gap:10px"><label class="f"><span>URL de la función</span><input name="url" value="${esc(sp.url || '')}"></label><label class="f"><span>Clave</span><input name="key" value="${esc(sp.key || '')}"></label><div><button class="btn primary sm">Guardar</button></div></form></div>
-      <div class="card"><h2>Mantenimiento</h2><p class="muted small">Las ofertas caducan solas cada 5 minutos (cron). Si ves alguna caducada que sigue apareciendo, fuerza la comprobación.</p><div class="actions"><button class="btn sm" id="expire">Caducar ofertas vencidas ahora</button></div>
+        <div><button class="btn sm">Guardar</button> <span class="muted small">${I18N.lang === 'en' ? 'updated' : 'actualizado'} ${fmtDate(cfg.rules?.updated_at)}</span></div></form></div>
+      <div class="card"><h2>Envío de push</h2><form id="spf" style="display:grid;gap:10px"><label class="f"><span>URL de la función</span><input name="url" value="${esc(sp.url || '')}"></label><label class="f"><span>Clave</span><input name="key" type="password" autocomplete="off" value="${esc(sp.key || '')}"></label><div><button class="btn sm">Guardar</button></div></form></div>
+      <div class="card"><h2>Mantenimiento</h2><p class="muted small">Las publicaciones caducan solas cada 5 minutos (cron). Si ves alguna caducada que sigue apareciendo, fuerza la comprobación.</p><div class="actions"><button class="btn sm" id="expire">Caducar publicaciones vencidas ahora</button></div>
         <h3 style="margin-top:16px">Límites anti-abuso (últimas 24 h)</h3>${table({ cols: [{ h: 'Usuario', r: (x) => esc(x.user_email || '—') }, { h: 'Acción', r: (x) => esc(x.action) }, { h: 'Ventana', r: (x) => fmtDate(x.window_start) }, { h: 'Intentos', num: true, r: (x) => x.hits }], rows: limits, empty: 'Nadie ha tocado un límite.' })}</div>
     </div>`;
   const save = (key, value) => rpc('admin_set_config', { p_key: key, p_value: value }).then(() => { toast('Guardado'); route(); }).catch((e) => toast(e.message, true));
-  $('#mvf').onsubmit = (e) => { e.preventDefault(); save('min_version', { android: e.target.android.value.trim(), ios: e.target.ios.value.trim() }); };
+  $('#mvf').onsubmit = async (e) => { e.preventDefault(); if (!await confirmDlg('Cambiar la versión mínima', 'Quien tenga una versión anterior tendrá que actualizar para seguir usando la app.', { danger: true, submit: 'Guardar' })) return; save('min_version', { android: e.target.elements.android.value.trim(), ios: e.target.elements.ios.value.trim() }); };
   $('#mtf').onsubmit = async (e) => { e.preventDefault(); if (e.target.enabled.checked && !await confirmDlg('Activar mantenimiento', 'Todos los usuarios verán el mensaje y no podrán usar la app hasta que lo desactives.', { danger: true, submit: 'Activar' })) return; save('maintenance', { enabled: e.target.enabled.checked, message: e.target.message.value.trim() || null }); };
-  $('#spf').onsubmit = (e) => { e.preventDefault(); save('send_push', { url: e.target.url.value.trim(), key: e.target.key.value.trim() }); };
+  $('#spf').onsubmit = async (e) => { e.preventDefault(); if (!await confirmDlg('Cambiar el envío de push', 'Si la dirección o la clave están mal, dejarán de llegar todas las notificaciones push.', { danger: true, submit: 'Guardar' })) return; save('send_push', { url: e.target.elements.url.value.trim(), key: e.target.elements.key.value.trim() }); };
   $('#rlf').onsubmit = (e) => { e.preventDefault(); save('rules', { block_2x1_alcohol: e.target.block2x1.checked }); };
-  $('#expire').onclick = async () => { try { const n = await rpc('admin_run_expire_offers'); toast(I18N.lang === 'en' ? `${n} ${n === 1 ? 'offer' : 'offers'} expired` : `${n} oferta(s) caducadas`); } catch (e) { toast(e.message, true); } };
+  $('#expire').onclick = async () => { try { const n = await rpc('admin_run_expire_offers'); toast(I18N.lang === 'en' ? `${n} ${n === 1 ? 'publication' : 'publications'} expired` : `${n} ${n === 1 ? 'publicación caducada' : 'publicaciones caducadas'}`); } catch (e) { toast(e.message, true); } };
 };
 
 // ── Administradores ─────────────────────────────────────────────────────────

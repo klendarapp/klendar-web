@@ -178,7 +178,7 @@ export function publicPage({ lang, path, title, description, head = '', body, im
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/site.css?v=20261007">
-<link rel="stylesheet" href="/assets/public.css?v=15">
+<link rel="stylesheet" href="/assets/public.css?v=16">
 ${cabeza}
 </head>
 <body>
@@ -194,7 +194,7 @@ export function openInApp(path, label = 'Abrir en la app', cls = 'pill accent bi
   const deep = path.replace(/^\/en/, '');
   const intent = `intent://klendar.app${deep}#Intent;scheme=https;package=app.klendar;S.browser_fallback_url=${encodeURIComponent(BASE + '/')};end`;
   return `<a class="${cls}" id="open" data-web="${BASE}${esc(deep)}" href="${esc(intent)}">${esc(label)}</a>
-<script>(function(){var a=document.getElementById('open');if(!a)return;if(!/Android/i.test(navigator.userAgent||''))a.href=a.getAttribute('data-web');})();</script>`;
+<script>(function(){var a=document.getElementById('open');if(!a)return;if(!/Android/i.test(navigator.userAgent||''))a.remove();})();</script>`;
 }
 
 /** Tarjeta de publicación para listados (negocio y agenda). `tz` es la zona
@@ -203,8 +203,9 @@ export function offerCard(o, lang = 'es', tz = KZ.de(o)) {
   const en = lang === 'en';
   const img = firstPhoto(o.images);
   const ini = o.redeem_start_at || o.starts_at;
+  // El mismo formato corto para eventos y ofertas: «jue, 1 oct · 20:00».
   const when = o.kind === 'future_event'
-    ? fmtLong(o.event_at || o.starts_at, lang, tz)
+    ? `${fmtDay(o.event_at || o.starts_at, lang, tz)} · ${fmtTime(o.event_at || o.starts_at, lang, tz)}`
     : `${fmtDay(ini, lang, tz)} · ${fmtTime(ini, lang, tz)} – ${fmtEnd(ini, o.redeem_end_at, lang, tz)}`;
   const tag = benefit(o.discount, o.price_cents, o.currency, lang);
   const prior = priorPrice(o.discount, lang);

@@ -65,6 +65,21 @@ createServer(async (req, res) => {
     res.writeHead(200, { 'content-type': TYPES[extname(file)] || 'application/octet-stream' });
     res.end(buf);
   } catch (e) {
+    // Como Cloudflare: /precios → /precios/, y si no existe, la 404.html más
+    // cercana (/en/404.html para /en/…).
+    if (e.code === 'EISDIR') {
+      res.writeHead(308, { Location: `${path}/${url.search}` });
+      res.end();
+      return;
+    }
+    if (e.code === 'ENOENT') {
+      try {
+        const nf = await readFile(join(ROOT, path.startsWith('/en/') ? 'en/404.html' : '404.html'));
+        res.writeHead(404, { 'content-type': TYPES['.html'] });
+        res.end(nf);
+        return;
+      } catch { /* sin 404.html: el texto de abajo */ }
+    }
     res.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' });
     res.end(`404 ${e.message}`);
   }

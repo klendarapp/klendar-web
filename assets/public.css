@@ -91,7 +91,7 @@ main.pub { padding: 34px 20px 72px; }
 
 /* ── Explorar: buscador, filtros y paginación ─────────────────────────── */
 .finder { display: flex; gap: 8px; margin: 18px 0 6px; flex-wrap: wrap; }
-.finder input[type=search] { flex: 1 1 260px; min-width: 0; padding: 12px 16px; border-radius: 999px;
+.finder input[type=search] { flex: 1 1 160px; min-width: 0; padding: 12px 16px; border-radius: 999px;
   border: 1px solid var(--glass-border); background: var(--glass); color: inherit; font: inherit; }
 .finder input[type=search]:focus { outline: 2px solid var(--ink); outline-offset: 1px; }
 .filters { margin: 10px 0 4px; }
@@ -102,6 +102,14 @@ main.pub { padding: 34px 20px 72px; }
 .chip:hover { text-decoration: none; border-color: var(--ink-2); }
 .chip.on { background: var(--ink); color: var(--surface); border-color: var(--ink); }
 .chip.on .muted { color: inherit; opacity: .75; }
+/* En el móvil cada fila de filtros va en una línea que se desliza de lado
+   (como en la app): si no, los filtros ocupaban la pantalla entera y los
+   resultados empezaban muy abajo. */
+@media (max-width: 640px) {
+  .filters .frow { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .filters .frow::-webkit-scrollbar { display: none; }
+  .filters .frow > * { flex: none; white-space: nowrap; }
+}
 .pager { display: flex; gap: 10px; align-items: center; margin: 18px 0; flex-wrap: wrap; }
 /* La carta escrita. */
 .menu section { margin: 0 0 18px; }

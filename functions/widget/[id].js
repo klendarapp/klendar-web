@@ -52,10 +52,11 @@ export async function onRequestGet(ctx) {
 <title>${esc(b.name)} · Klendar</title>
 <meta name="robots" content="noindex">
 <style>
-  :root { color-scheme: light dark; --ink: #0A0A0A; --mu: #5A6472; --line: rgba(10,10,10,.12);
-          --bg: #fff; --accent: #C81E42; --soft: rgba(255,77,109,.12); }
+  /* Neutros como el resto de Klendar; el coral, solo en lo que es la oferta. */
+  :root { color-scheme: light dark; --ink: #0A0A0A; --mu: #636363; --line: rgba(10,10,10,.12);
+          --bg: #fff; --accent: #C81E42; --soft: rgba(255,77,109,.12); --hover: rgba(10,10,10,.05); }
   @media (prefers-color-scheme: dark) {
-    :root { --ink: #F2F5FA; --mu: #A6B0C0; --line: rgba(255,255,255,.14); --bg: #0A0A0A; --accent: #FF4D6D; }
+    :root { --ink: #FFFFFF; --mu: #A3A3A3; --line: rgba(255,255,255,.14); --bg: #0A0A0A; --accent: #FF4D6D; --hover: rgba(255,255,255,.08); }
   }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--ink);
@@ -66,9 +67,9 @@ export async function onRequestGet(ctx) {
   .hd .mu { font-size: 12px; }
   .it { display: flex; gap: 10px; align-items: center; padding: 8px; border-radius: 12px;
         text-decoration: none; color: inherit; }
-  .it:hover { background: var(--soft); }
+  .it:hover { background: var(--hover); }
   .it img, .it .ph { width: 56px; height: 56px; border-radius: 10px; object-fit: cover; flex: none;
-        display: grid; place-items: center; background: var(--soft); color: var(--accent); }
+        display: grid; place-items: center; background: var(--hover); color: var(--mu); }
   .tx { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
   .tx b { font-size: 15px; }
   .me { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
@@ -76,7 +77,7 @@ export async function onRequestGet(ctx) {
   .tag { background: var(--soft); color: var(--accent); font-weight: 700; font-size: 12px;
          padding: 2px 8px; border-radius: 999px; }
   .ft { margin-top: 10px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-  .ft a { color: var(--accent); font-weight: 700; text-decoration: none; font-size: 13px; }
+  .ft a { color: var(--ink); font-weight: 700; text-decoration: none; font-size: 13px; }
   .empty { color: var(--mu); padding: 10px 8px; }
 </style></head>
 <body><div class="box" id="box">

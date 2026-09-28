@@ -48,18 +48,18 @@ export async function onRequestPost(ctx) {
         title: ok ? 'Done' : 'That link no longer works',
         body: ok
           ? (negocio
-            ? 'You will not get your business’s weekly summary any more. You can switch it back on in the app, in Notification settings.'
-            : 'You will not get the weekly email any more. You can switch it back on in the app, in Notification settings.')
-          : 'Maybe it was already used. You can also switch it off in the app, in Notification settings.',
+            ? 'You will not get your business’s weekly summary any more. You can switch it back on in Notification settings, in the app or on the website.'
+            : 'You will not get the weekly email any more. You can switch it back on in Notification settings, in the app or on the website.')
+          : 'Maybe it was already used. You can also switch it off in Notification settings, in the app or on the website.',
         home: 'Go to Klendar',
       }
     : {
         title: ok ? 'Listo' : 'Ese enlace ya no vale',
         body: ok
           ? (negocio
-            ? 'No volverás a recibir el resumen semanal de tu negocio. Si te arrepientes, se vuelve a encender en la app, en Ajustes de notificaciones.'
-            : 'No volverás a recibir el correo semanal. Si te arrepientes, se vuelve a encender en la app, en Ajustes de notificaciones.')
-          : 'A lo mejor ya se usó. También puedes apagarlo en la app, en Ajustes de notificaciones.',
+            ? 'No volverás a recibir el resumen semanal de tu negocio. Si te arrepientes, se vuelve a encender en Ajustes de notificaciones, en la app o en la web.'
+            : 'No volverás a recibir el correo semanal. Si te arrepientes, se vuelve a encender en Ajustes de notificaciones, en la app o en la web.')
+          : 'A lo mejor ya se usó. También puedes apagarlo en Ajustes de notificaciones, en la app o en la web.',
         home: 'Ir a Klendar',
       };
 

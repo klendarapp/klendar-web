@@ -60,6 +60,9 @@ label.f > span small { font-weight: 500; }
 .btn.ok { background: #2ECC71; color: #07321a; border-color: transparent; }
 .btn.bad { background: #FF5C5C; color: #fff; border-color: transparent; }
 .btn.ghost { background: transparent; }
+/* «Borrar» en fantasma: rojo sobre transparente (si no, heredaba el texto
+   blanco de .bad y en modo claro no se veía). */
+.btn.bad.ghost { background: transparent; color: #b3261e; border-color: rgba(179,38,30,.35); }
 .btn.sm { padding: 5px 10px; font-size: 13px; }
 .btn:disabled { opacity: .5; cursor: default; }
 .actions { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -81,6 +84,15 @@ label.f > span small { font-weight: 500; }
 .card { background: var(--glass); border: 1px solid var(--glass-border); border-radius: 20px; padding: 18px 20px; margin-bottom: 14px; }
 .card h2 { font-size: 17px; margin-bottom: 10px; }
 .card h3 { font-size: 15px; margin: 0 0 8px; }
+/* site.css da a todo `.card p` gris y 15 px (es de la portada): aquí manda
+   la clase del párrafo. */
+.card p.err { color: #b3261e; font-size: 14px; }
+.card p.muted { font-size: 14px; }
+.card p.small, .card p.muted.small { font-size: 13px; }
+@media (prefers-color-scheme: dark) {
+  .btn.bad.ghost { color: #FF9B9B; border-color: rgba(255,155,155,.4); }
+  .card p.err { color: #FF9B9B; }
+}
 /* Las cifras se reparten la fila: la última nunca se queda sola y estrecha. */
 .kpis { display: flex; flex-wrap: wrap; gap: 10px; }
 .kpis > * { flex: 1 1 180px; min-width: 0; }

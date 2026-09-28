@@ -8,7 +8,7 @@
 // (guardar, seguir, pedir el código, opinar, denunciar) lleva a «Tu cuenta»
 // (/app/), que hace lo mismo que la app desde el navegador.
 
-import { esc, fmtWhen, html, isUuid, render, rpc, rpcAll, rows, supabasePublic } from './page.js';
+import { esc, fmtWhen, html, isUuid, rpc, rpcAll, rows, supabasePublic } from './page.js';
 import KZ from '../../assets/zona.js';
 import {
   agendaBase, BASE, benefit, exploreBase, firstPhoto, fmtEnd, fmtLong, isVideo,
@@ -36,8 +36,34 @@ const pre = (lang) => (lang === 'en' ? '/en' : '');
 const cuenta = (lang) => (lang === 'en' ? '/app/?lang=en' : '/app/');
 /** Solo enlaces web: lo que escribe un negocio no puede ser un javascript:. */
 const seguro = (u) => (/^https?:\/\//i.test(String(u || '')) ? String(u) : '');
-const notFound = (lang, path, kind) =>
-  html(render({ lang, path, kind, notFound: true }), 404, 'no-store');
+/** Una publicación que ya acabó o se borró, o un negocio que ya no está: con
+ * la cabecera y el pie de siempre y algo que hacer, no una página suelta. */
+export const notFound = (lang, path, kind) => {
+  const en = lang === 'en';
+  const S = en
+    ? {
+        o: ['This publication is no longer here', 'It may have ended or been removed by the business. There is probably something else on nearby.'],
+        b: ['This business is not on Klendar', 'The link may be wrong or the business may no longer be here.'],
+        c: ['We could not find that city', 'Have a look at the list of cities with something on.'],
+        exp: "See what's on now", agenda: "What's on",
+      }
+    : {
+        o: ['Esta publicación ya no está', 'Puede que haya terminado o que el negocio la haya quitado. Seguro que hay otra cosa cerca.'],
+        b: ['Este negocio no está en Klendar', 'Puede que el enlace esté mal o que el negocio ya no esté.'],
+        c: ['No encontramos esa ciudad', 'Mira la lista de ciudades con algo publicado.'],
+        exp: 'Ver qué hay ahora', agenda: 'Agenda local',
+      };
+  const [titulo, texto] = S[kind] || S.o;
+  const body = `
+  <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a></p>
+  <h1>${esc(titulo)}</h1>
+  <p class="muted" style="max-width:620px">${esc(texto)}</p>
+  <p><a class="pill accent" href="${exploreBase(lang)}/">${esc(S.exp)}</a>
+     <a class="pill" href="${agendaBase(lang)}/">${esc(S.agenda)}</a></p>`;
+  return html(publicPage({
+    lang, path, body, title: titulo, description: texto, head: '<meta name="robots" content="noindex">',
+  }), 404, 'no-store');
+};
 
 // ── Publicación ────────────────────────────────────────────────────────────
 export async function offerPage(id, lang) {
@@ -112,7 +138,8 @@ export async function offerPage(id, lang) {
     </div>
     <aside class="side">
       <dl>
-        <div><dt>${flash ? S.redeem : S.when}</dt><dd>${esc(when)}${tz === KZ.CANARIAS ? ` <small class="muted">(${S.canary})</small>` : ''}</dd></div>
+        <div><dt>${flash ? S.redeem : S.when}</dt><dd>${esc(when)}${tz === KZ.CANARIAS ? ` <small class="muted">(${S.canary})</small>` : ''}</dd>
+          ${flash && !over && !soldOut && o.redeem_end_at ? `<dd id="cuenta" hidden style="color:var(--accent-text);font-weight:800" data-ini="${esc(o.redeem_start_at || '')}" data-fin="${esc(o.redeem_end_at)}"></dd>` : ''}</div>
         ${where ? `<div><dt>${S.where}</dt><dd>${esc(where)}</dd></div>` : ''}
         ${o.seats_left != null && !soldOut ? `<div><dt>${S.seats}</dt><dd>${o.seats_left}${o.holds_seats === false ? ` · ${en ? 'first come, first served' : 'por orden de llegada'}` : ''}</dd></div>` : ''}
       </dl>
@@ -171,11 +198,18 @@ export async function offerPage(id, lang) {
   // La vista cuenta para el negocio (panel e informe), como en la app. Solo
   // desde un navegador de verdad y una vez por sesión: los robots de Google o
   // de WhatsApp no ejecutan esto.
+  // La cuenta atrás, como en la app («Quedan 1 h 31 min»). Se calcula en el
+  // navegador: la página va en caché y una hora escrita aquí saldría vieja.
+  const cuentaAtras = `<script>(function(){var el=document.getElementById('cuenta');if(!el)return;
+var ini=Date.parse(el.dataset.ini)||0,fin=Date.parse(el.dataset.fin);
+function dur(ms){var m=Math.floor(ms/60000);if(m>=1440)return Math.floor(m/1440)+' d';if(m>=60)return Math.floor(m/60)+' h'+(m%60?' '+(m%60)+' min':'');return Math.max(1,m)+' min';}
+function tic(){var n=Date.now();if(n>=fin){el.textContent=${JSON.stringify(S.over)};return;}
+el.textContent=n<ini?${JSON.stringify(en ? 'Starts in ' : 'Empieza en ')}+dur(ini-n):${en ? "dur(fin-n)+' left'" : "'Quedan '+dur(fin-n)"};el.hidden=false;setTimeout(tic,30000);}tic();})();</script>`;
   const sp = supabasePublic();
   const vista = `<script>(function(){try{var k='v:${o.id}';if(navigator.webdriver||sessionStorage.getItem(k))return;sessionStorage.setItem(k,'1');fetch(${JSON.stringify(sp.url + '/rest/v1/offer_views')},{method:'POST',keepalive:true,headers:{apikey:${JSON.stringify(sp.key)},Authorization:'Bearer '+${JSON.stringify(sp.key)},'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({offer_id:'${o.id}'})});}catch(e){}})();</script>`;
 
   return html(publicPage({
-    lang, path, image: cover, body: body + vista,
+    lang, path, image: cover, body: body + cuentaAtras + vista,
     title: `${o.title} · ${o.business_name}`,
     description,
     head: `<meta name="robots" content="${o.adults_only ? 'noindex' : 'index, follow'}">
@@ -374,8 +408,9 @@ export async function businessPage(id, lang) {
 
   const bits = [];
   if (b.rating && b.ratings) bits.push(`★ ${Number(b.rating).toFixed(1)} (${b.ratings})`);
-  if (flash.length) bits.push(en ? `${flash.length} flash deal(s) now` : `${flash.length} oferta(s) flash ahora`);
-  if (events.length) bits.push(en ? `${events.length} event(s)` : `${events.length} evento(s)`);
+  const uno = (n, es1, esN, en1, enN) => `${n} ${n === 1 ? (en ? en1 : es1) : (en ? enN : esN)}`;
+  if (flash.length) bits.push(`${uno(flash.length, 'oferta flash', 'ofertas flash', 'flash offer', 'flash offers')} ${en ? 'now' : 'ahora'}`);
+  if (events.length) bits.push(uno(events.length, 'evento', 'eventos', 'event', 'events'));
   if (where) bits.push(where);
   const description = `${bits.join(' · ')}${b.description ? ` — ${b.description}` : ''}`.slice(0, 200);
 
@@ -406,7 +441,7 @@ export async function agendaPage(rawCity, lang) {
   const en = lang === 'en';
   const raw = decodeURIComponent(rawCity || '').replace(/\/+$/, '');
   const path = `${agendaBase(lang)}/${encodeURIComponent(raw.toLowerCase())}/`;
-  if (!raw || raw.length > 60) return notFound(lang, path, 'o');
+  if (!raw || raw.length > 60) return notFound(lang, path, 'c');
 
   const [offers, negocios] = await Promise.all([
     rpcAll('public_city_agenda', { p_city: raw, p_limit: 60 }),
@@ -423,18 +458,18 @@ export async function agendaPage(rawCity, lang) {
   const S = en
     ? {
         h1: `What's on in ${city}`,
-        lead: 'Flash deals and local events for the next few days. No account needed to look; the app is only for getting the code.',
+        lead: 'Flash offers and local events for the next few days. No account needed to look; to get a code, log in here on the website or in the app.',
         none: `Nothing published in ${city} yet. If you run a business here, you can be the first.`,
-        biz: 'Publish your business', all: 'Other cities', app: 'Get the app', agenda: "What's on",
+        biz: 'Publish your business', all: 'Other cities', app: 'Create a free account', agenda: "What's on",
         days: 'Days', places: 'Places in this city', explore: 'Explore everything',
         note: "Updated as businesses publish. Times are each business's local time.",
         plans: 'plans and deals',
       }
     : {
         h1: `Qué hacer en ${city}`,
-        lead: 'Ofertas flash y planes de los próximos días. Para mirar no hace falta cuenta; la app solo se usa para conseguir el código.',
+        lead: 'Ofertas flash y planes de los próximos días. Para mirar no hace falta cuenta; para conseguir el código, entra aquí en la web o en la app.',
         none: `Todavía no hay nada publicado en ${city}. Si tienes un negocio aquí, puedes ser el primero.`,
-        biz: 'Publicar mi negocio', all: 'Otras ciudades', app: 'Descargar la app', agenda: 'Agenda',
+        biz: 'Publicar mi negocio', all: 'Otras ciudades', app: 'Crear cuenta gratis', agenda: 'Agenda',
         days: 'Días', places: 'Negocios de esta ciudad', explore: 'Explorar todo',
         note: 'Se actualiza según van publicando los negocios. Horas locales de cada negocio.',
         plans: 'planes y ofertas',
@@ -482,9 +517,9 @@ export async function agendaPage(rawCity, lang) {
     <div class="cities">${negocios.items.map((b) => `<a href="${en ? '/en' : ''}/b/${esc(b.id)}">${esc(b.name)}${b.live ? ` <span class="muted">${b.live}</span>` : ''}</a>`).join('')}</div>
   </section>` : ''}
   <p class="muted" style="font-size:13px">${esc(S.note)}</p>
-  <p><a class="pill accent" href="/${en ? 'en/' : ''}">${S.app}</a>
-     <a class="pill" href="${exploreBase(lang)}/?${en ? 'city' : 'ciudad'}=${encodeURIComponent(city)}">${S.explore}</a>
-     <a class="pill" href="${en ? '/en/business-terms/' : '/negocios/'}">${S.biz}</a></p>
+  <p><a class="pill accent" href="${exploreBase(lang)}/?${en ? 'city' : 'ciudad'}=${encodeURIComponent(city)}">${S.explore}</a>
+     <a class="pill" href="${cuenta(lang)}#/registro" data-sin-sesion>${S.app}</a>
+     <a class="pill" href="${en ? '/en/for-business/' : '/para-negocios/'}">${S.biz}</a></p>
   <p><a href="${agendaBase(lang)}/">${S.all} →</a></p>`;
 
   const jsonLd = offers.length
@@ -518,7 +553,7 @@ export async function citiesPage(lang) {
   const S = en
     ? {
         h1: "What's on near you",
-        lead: 'Flash deals and plans for the next few days, city by city. No account needed.',
+        lead: 'Flash offers and plans for the next few days, city by city. No account needed.',
         none: 'No city has anything published yet.', biz: 'Publish your business',
       }
     : {
@@ -534,7 +569,7 @@ export async function citiesPage(lang) {
   ${cities.length
     ? `<div class="cities">${cities.map((c) => `<a href="${agendaBase(lang)}/${encodeURIComponent(String(c.city).toLowerCase())}/">${esc(c.city)} <span class="muted">${c.n}</span></a>`).join('')}</div>`
     : `<p class="empty">${S.none}</p>`}
-  <p><a class="pill" href="${en ? '/en/business-terms/' : '/negocios/'}">${S.biz}</a></p>`;
+  <p><a class="pill" href="${en ? '/en/for-business/' : '/para-negocios/'}">${S.biz}</a></p>`;
 
   return html(publicPage({
     lang, path: `${agendaBase(lang)}/`, body, title: S.h1, description: S.lead,

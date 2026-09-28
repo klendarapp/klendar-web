@@ -22,9 +22,17 @@
     .filter((el, _, todos) => !todos.some((o) => o !== el && o.contains(el)));
   const avisos = [];
   const ancho = document.documentElement.clientWidth;
+  // Dentro de una fila que se desliza de lado (los filtros de Explorar en el
+  // móvil) salirse por la derecha es lo esperado, no un fallo.
+  const enCarril = (el) => {
+    for (let p = el.parentElement; p && p !== document.body; p = p.parentElement) {
+      if (/auto|scroll/.test(getComputedStyle(p).overflowX)) return true;
+    }
+    return false;
+  };
   for (let i = 0; i < els.length; i++) {
     const a = els[i].getBoundingClientRect();
-    if (a.right > ancho + 1) avisos.push(`se sale por la derecha (${Math.round(a.right - ancho)} px): ${nombre(els[i])}`);
+    if (a.right > ancho + 1 && !enCarril(els[i])) avisos.push(`se sale por la derecha (${Math.round(a.right - ancho)} px): ${nombre(els[i])}`);
     if (els[i].scrollWidth > els[i].clientWidth + 2 && /BUTTON|A/.test(els[i].tagName) && getComputedStyle(els[i]).overflow === 'hidden') {
       avisos.push(`texto cortado: ${nombre(els[i])}`);
     }

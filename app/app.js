@@ -37,6 +37,7 @@ for (const a of $$('.lang a[data-lang]')) {
   });
 }
 document.documentElement.lang = EN ? 'en' : 'es';
+document.title = `${t('Tu cuenta')} · Klendar`;
 
 // ── Formatos ──────────────────────────────────────────────────────────────
 // El código para leerlo o dictarlo, de cuatro en cuatro («0882 7EC7 …»),
@@ -347,13 +348,13 @@ RUTAS[''] = async () => {
       <a class="rapido" href="#/favoritos">${ic('favorite')}<b>${esc(t('Favoritos'))}</b></a>
       <a class="rapido" href="#/sellos">${ic('local_activity')}<b>${esc(t('Tarjetas de sellos'))}</b></a>
       <a class="rapido" href="#/notificaciones">${ic('notifications')}<b>${esc(t('Notificaciones'))}</b><span class="badge-n" id="sin-leer" hidden></span></a>
-      <a class="rapido" href="${pre}/explorar/">${ic('explore')}<b>${esc(t('Explorar'))}</b></a>
+      <a class="rapido" href="${EN ? '/en/explore/' : '/explorar/'}">${ic('explore')}<b>${esc(t('Explorar'))}</b></a>
     </div>
 
     ${tieneNegocio ? `
       <h2 class="seccion-t">${esc(t('Negocio'))}</h2>
       <div class="lista">
-        ${fila({ href: '/panel/', icono: 'storefront', titulo: t('Mi negocio'), detalle: t('Publicaciones, estadísticas, equipo') })}
+        ${fila({ href: '/panel/', icono: 'storefront', titulo: t('Mi negocio'), detalle: t('Publicaciones, informe, equipo') })}
         ${fila({ href: '/panel/#/validar', icono: 'qr_code_scanner', titulo: t('Validar códigos'), detalle: t('Escanea los códigos de tus clientes') })}
       </div>` : `
       <a class="invitacion" href="/panel/">
@@ -458,7 +459,7 @@ function validaForm(form, reglas) {
 /** El diálogo de confirmar, como el de la app (confirmDialog): título,
  * explicación, «Cancelar» y la acción, en rojo si no tiene vuelta atrás.
  * Devuelve true solo si se confirma. */
-function confirma({ titulo, texto = '', aceptar, peligro = false }) {
+function confirma({ titulo, texto = '', aceptar, peligro = false, cancelar = t('Cancelar') }) {
   return new Promise((resolve) => {
     const d = document.createElement('dialog');
     d.className = 'dialogo';
@@ -466,7 +467,7 @@ function confirma({ titulo, texto = '', aceptar, peligro = false }) {
     d.innerHTML = `<h2 id="dialogo-t">${esc(titulo)}</h2>
       ${texto ? `<p class="muted">${esc(texto)}</p>` : ''}
       <div class="dialogo-botones">
-        <button type="button" class="pill" value="no">${esc(t('Cancelar'))}</button>
+        <button type="button" class="pill" value="no">${esc(cancelar)}</button>
         <button type="button" class="pill ${peligro ? 'peligro-lleno' : 'accent'}" value="si">${esc(aceptar)}</button>
       </div>`;
     document.body.appendChild(d);
@@ -631,6 +632,9 @@ RUTAS.movil = async (_p, params) => {
   // `destino` en la ruta: enlaces antiguos del panel (#/movil?destino=…).
   const pedido = params.get('destino') || '';
   const destino = /^\/(panel|app)\//.test(pedido) ? pedido : destinoTrasEntrar();
+  // Con el SMS apagado en Supabase, un enlace antiguo a #/movil llevaría a un
+  // formulario que siempre falla: mejor la pantalla de entrar.
+  if (!(await proveedores()).phone) return RUTAS.entrar(_p, params);
   const PREFIJOS = ['+34', '+351', '+33', '+44', '+39', '+49'];
   pinta(`
     <h1>${esc(t('Entrar con el teléfono'))}</h1>
@@ -894,7 +898,7 @@ RUTAS.planes = async () => {
       ? t('No tienes nada próximo guardado.')
       : t('Todavía no has guardado nada. Cuando algo te guste, dale a «Guardar» y lo tendrás aquí.'))}</p>`}
     ${pasados.length ? `<h2>${esc(t('Ya pasaron'))}</h2><div class="olist pasado">${pasados.map((o) => tarjeta(o, zona(o))).join('')}</div>` : ''}
-    <p><a class="pill" href="${pre}/explorar/">${esc(t('Buscar planes'))}</a></p>`);
+    <p><a class="pill" href="${EN ? '/en/explore/' : '/explorar/'}">${esc(t('Buscar planes'))}</a></p>`);
 };
 
 /** Guardar, seguir y la lista de espera cambian algo y te lo confirman aquí
@@ -927,7 +931,8 @@ function hecho({ titulo, texto, volver, volverTxt, lista, listaTxt, deshacer }) 
  * está, y solo se cambia si hace falta. La ficha pública no sabe quién la
  * mira y siempre ofrece «Guardar»; antes, si ya lo tenías, lo quitaba. */
 async function ponOQuita(tablaNombre, campo, id, quitar, alternar) {
-  const { data } = await sb.from(tablaNombre).select(campo).eq(campo, id).eq('user_id', YO.id).limit(1);
+  const { data, error } = await sb.from(tablaNombre).select(campo).eq(campo, id).eq('user_id', YO.id).limit(1);
+  if (error) throw Object.assign(new Error(amable(error.message)), { clave: error.message });
   const ya = Array.isArray(data) && data.length > 0;
   if (ya === !quitar) return { puesto: ya, yaEstaba: true };
   return { puesto: await alternar(), yaEstaba: false };
@@ -987,7 +992,7 @@ RUTAS.codigos = async () => {
   const zona = await zonasDe(lista);
   const vivo = (r) => r.status === 'pending' && new Date(r.expires_at).getTime() > Date.now();
   const estado = (r) => (r.status === 'validated' ? t('Canjeado')
-    : vivo(r) ? t('Listo para usar') : r.status === 'cancelled' ? t('Anulado') : t('Caducado'));
+    : vivo(r) ? t('Código activo') : r.status === 'cancelled' ? t('Anulado') : t('Caducado'));
   pinta(`
     <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(t('Tus códigos'))}</h1>
@@ -1007,7 +1012,7 @@ RUTAS.codigos = async () => {
  * tuya, así que la política deja verla) y, por si el canal no llega, un
  * vistazo cada 5 s. Lo mismo que hace la app (watchValidation). Devuelve la
  * función que lo apaga. */
-function vigilaCanje(code, alValidar) {
+function vigilaCanje(code, alValidar, tabla = 'redemptions') {
   let hecho = false;
   let sondeo = null;
   let canal = null;
@@ -1022,12 +1027,12 @@ function vigilaCanje(code, alValidar) {
     alValidar(fila.validated_at || new Date().toISOString());
   };
   canal = sb.channel(`redemption:${code}`)
-    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'redemptions', filter: `code=eq.${code}` },
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: tabla, filter: `code=eq.${code}` },
       (payload) => avisa(payload.new))
     .subscribe();
   const mira = async () => {
     try {
-      const { data } = await sb.from('redemptions').select('status, validated_at').eq('code', code).maybeSingle();
+      const { data } = await sb.from(tabla).select('status, validated_at').eq('code', code).maybeSingle();
       avisa(data);
     } catch { /* sin red: se vuelve a mirar en 5 s */ }
   };
@@ -1089,16 +1094,20 @@ RUTAS.codigo = async ([id], params) => {
     </div>`);
   // El código de debajo del QR se copia de un toque (como en la app).
   $('#copiar')?.addEventListener('click', async () => {
-    try { await navigator.clipboard.writeText(tk.code); toast(t('Código copiado')); } catch { /* sin permiso */ }
+    try { await navigator.clipboard.writeText(tk.code); toast(t('Código copiado')); } catch { toast(t('No se ha podido copiar'), true); }
   });
   // «Ya no voy»: las plazas quedan libres y la lista de espera se entera.
-  $('#anular')?.addEventListener('click', async () => {
+  $('#anular')?.addEventListener('click', async (ev) => {
+    const boton = ev.currentTarget;
+    if (boton.disabled) return;
     if (!(await confirma({
       titulo: t('¿Anular la reserva?'),
       texto: t('Tus plazas quedan libres para otra persona y este código deja de valer. Si cambias de idea, puedes volver a reservar mientras quede sitio.'),
       aceptar: t('Anular'),
+      cancelar: t('Mantenerla'),
       peligro: true,
     }))) return;
+    boton.disabled = true;
     try {
       await llamar('cancel_redemption', { p_code: tk.code });
       toast(t('Reserva anulada. Gracias por dejar el sitio libre.'));
@@ -1106,6 +1115,7 @@ RUTAS.codigo = async ([id], params) => {
     } catch (e) {
       // `llamar` ya trae el texto traducido; «not_pending» tiene el suyo.
       toast(e.clave === 'not_pending' ? t('Esta reserva ya no se podía anular (se usó o ha caducado).') : e.message, true);
+      if (boton.isConnected) boton.disabled = false;
     }
   });
   // Caducado: se pide otro a la base (start_redemption da uno nuevo) sin
@@ -1220,34 +1230,32 @@ RUTAS.sellos = async () => {
         <h2><a href="${pre}/b/${esc(c.business_id)}">${esc(c.business_name)}</a></h2>
         <div class="huecos" aria-label="${esc(`${c.stamps} / ${c.goal}`)}">${Array.from({ length: c.goal }, (_, i) => `<span class="${i < c.stamps ? 'lleno' : ''}"></span>`).join('')}</div>
         <p>${esc(t('Premio'))}: <b>${esc(c.reward)}</b></p>
-        <p class="muted">${c.pending_code || c.stamps >= c.goal ? esc(t('¡Te toca premio!')) : esc(c.goal - c.stamps === 1 ? t('Te falta 1 sello') : `${t('Te faltan')} ${c.goal - c.stamps} ${t('sellos')}`)}</p>
+        <p class="muted">${c.pending_code || c.stamps >= c.goal ? esc(t('¡Te toca premio!')) : esc(c.goal - c.stamps === 1 ? t('Te falta 1 sello') : (EN ? `${c.goal - c.stamps} stamps to go` : `Te faltan ${c.goal - c.stamps} sellos`))}</p>
         ${!c.is_active ? `<p class="muted">${esc(t('En pausa: ahora mismo no se dan sellos nuevos. Los tuyos siguen aquí.'))}</p>` : ''}
         ${c.pending_code || c.stamps >= c.goal ? `<button class="pill accent" data-premio="${esc(c.id)}" data-reward="${esc(c.reward)}" data-negocio="${esc(c.business_name)}" data-biz="${esc(c.business_id)}">${esc(c.pending_code ? t('Ver el código') : t('Pedir el premio'))}</button>` : ''}
       </div>`).join('')
     : `<p class="empty">${esc(t('Todavía no tienes ninguna. Se abren solas: canjea algo en un sitio que tenga tarjeta y ahí tendrás tu primer sello.'))}</p>`}`);
 
-  $$('[data-premio]').forEach((b) => { b.onclick = async () => {
-    try {
-      const r = await llamar('claim_stamp_reward', { p_card: b.dataset.premio });
-      const qr = window.qrcode(0, 'M');
-      qr.addData(`https://klendar.app/r/${r.code}`);
-      qr.make();
-      pinta(`
-        <p class="crumbs"><a href="#/sellos">${esc(t('Tarjetas de sellos'))}</a></p>
-        <div class="ticket">
-          <p class="muted">${esc(t('Tu premio'))}</p>
-          <h1>${esc(r.reward || b.dataset.reward)}</h1>
-          <div class="qr">${qr.createSvgTag({ cellSize: 6, margin: 2, scalable: true })}</div>
-          <p class="codigo">${esc(codigoLegible(r.code))}</p>
-          <p class="muted">${esc(t('Enséñalo en el sitio. Vale una vez.'))}</p>
-        </div>`);
-      I18N.translate(view);
-      // Igual que un código de oferta: al validarlo en el local, se ve aquí.
-      alSalir(vigilaCanje(r.code, (at) => pintaCanjeado({
-        titulo: r.reward || b.dataset.reward, negocio: b.dataset.negocio, at, volver: '#/sellos', tz: ZONAS.get(b.dataset.biz),
-      })));
-    } catch (e) { toast(e.message, true); }
-  }; });
+  $$('[data-premio]').forEach((b) => { b.onclick = () => ocupado(b, async () => {
+    const r = await llamar('claim_stamp_reward', { p_card: b.dataset.premio });
+    const qr = window.qrcode(0, 'M');
+    qr.addData(`https://klendar.app/r/${r.code}`);
+    qr.make();
+    pinta(`
+      <p class="crumbs"><a href="#/sellos">${esc(t('Tarjetas de sellos'))}</a></p>
+      <div class="ticket">
+        <p class="muted">${esc(t('Tu premio'))}</p>
+        <h1>${esc(r.reward || b.dataset.reward)}</h1>
+        <div class="qr">${qr.createSvgTag({ cellSize: 6, margin: 2, scalable: true })}</div>
+        <p class="codigo">${esc(codigoLegible(r.code))}</p>
+        <p class="muted">${esc(t('Enséñalo en el sitio. Vale una vez.'))}</p>
+      </div>`);
+    I18N.translate(view);
+    // Igual que un código de oferta: al validarlo en el local, se ve aquí.
+    alSalir(vigilaCanje(r.code, (at) => pintaCanjeado({
+      titulo: r.reward || b.dataset.reward, negocio: b.dataset.negocio, at, volver: '#/sellos', tz: ZONAS.get(b.dataset.biz),
+    }), 'stamp_rewards'));
+  }); });
 };
 
 // ── Arranque ──────────────────────────────────────────────────────────────

@@ -23,7 +23,7 @@ const T = (en) => en
       results: (n) => `${n} ${n === 1 ? 'result' : 'results'}`,
       prev: '← Previous', next: 'Next →', page: 'Page',
       lead: 'Everything live right now: flash offers and local events. No account needed to look.',
-      biz: 'Publish your business', app: 'Get the app',
+      biz: 'Publish your business', app: 'Create a free account',
       catTitle: (c, city) => `${c} in ${city}`,
       catLead: (c, city) => `Flash offers and events from ${c.toLowerCase()} in ${city}, updated as businesses publish.`,
       catNone: (c, city) => `No ${c.toLowerCase()} in ${city} have anything live right now.`,
@@ -48,7 +48,7 @@ const T = (en) => en
       results: (n) => `${n} ${n === 1 ? 'resultado' : 'resultados'}`,
       prev: '← Anterior', next: 'Siguiente →', page: 'Página',
       lead: 'Todo lo que hay ahora mismo: ofertas flash y planes de barrio. Para mirar no hace falta cuenta.',
-      biz: 'Publicar mi negocio', app: 'Descargar la app',
+      biz: 'Publicar mi negocio', app: 'Crear cuenta gratis',
       catTitle: (c, city) => `${c} en ${city}`,
       catLead: (c, city) => `Ofertas y planes de ${c.toLowerCase()} en ${city}, según van publicando los negocios.`,
       catNone: (c, city) => `Ahora mismo no hay nada de ${c.toLowerCase()} en ${city}.`,
@@ -223,7 +223,7 @@ export async function explorePage(url, lang) {
   const chip = (href, label, on) => `<a class="chip${on ? ' on' : ''}" href="${esc(href)}">${esc(label)}</a>`;
 
   const body = `
-  <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a> · <a href="${agendaBase(lang)}/">${S.agenda}</a></p>
+  <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a></p>
   <h1>${esc(S.exp)}</h1>
   <p class="muted" style="max-width:640px">${esc(S.lead)}</p>
 
@@ -281,6 +281,7 @@ export async function explorePage(url, lang) {
       ${(cats || []).map((c) => chip(link({ cat: c.slug }), negocios ? catName(c, en) : `${catName(c, en)} (${c.n})`, cat === c.slug)).join('')}
     </div>` : ''}
     ${filtrado ? `<p><a class="muted" href="${exploreBase(lang)}/">${esc(S.clear)}</a></p>` : ''}
+    <p id="cercaErr" class="muted" role="alert" hidden></p>
   </div>
 
   ${cols.length ? `<div class="filters"><div class="frow"><span class="flabel">${esc(S.picks)}</span>
@@ -303,8 +304,8 @@ export async function explorePage(url, lang) {
     if(!navigator.geolocation){b.hidden=true;return;}
     b.onclick=function(){navigator.geolocation.getCurrentPosition(function(p){
       var u=new URL(location.href);u.searchParams.set('lat',p.coords.latitude.toFixed(4));u.searchParams.set('lng',p.coords.longitude.toFixed(4));u.searchParams.delete('p');location.href=u.toString();
-    },function(){alert(b.dataset.err);},{maximumAge:300000,timeout:10000});};})();</script>
-  <p style="margin-top:22px"><a class="pill accent" href="/${en ? 'en/' : ''}">${esc(S.app)}</a> <a class="pill" href="${en ? '/en/business-terms/' : '/negocios/'}">${esc(S.biz)}</a></p>`;
+    },function(){var e=document.getElementById('cercaErr');if(e){e.textContent=b.dataset.err;e.hidden=false;}},{maximumAge:300000,timeout:10000});};})();</script>
+  <p style="margin-top:22px"><a class="pill" href="${en ? '/app/?lang=en' : '/app/'}#/registro" data-sin-sesion>${esc(S.app)}</a> <a class="pill" href="${en ? '/en/for-business/' : '/para-negocios/'}">${esc(S.biz)}</a></p>`;
 
   return html(publicPage({
     lang,

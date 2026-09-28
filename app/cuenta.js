@@ -15,7 +15,7 @@ Object.assign(ERRORES, {
   invalid_birth_date: 'Esa fecha de nacimiento no es válida.',
   auth_required: 'Tienes que entrar en tu cuenta.',
   too_many_alerts: 'Has llegado al máximo de 10 avisos. Borra alguno para crear otro.',
-  message_too_short: 'Cuéntanos un poco más (5 letras como mínimo).',
+  message_too_short: 'Cuéntanos un poco más: al menos 5 caracteres.',
   invalid_rating: 'Elige de una a cinco estrellas.',
   'Payload too large': 'La foto pesa demasiado. Prueba con otra más pequeña.',
   'mime type': 'Ese archivo no es una foto. Prueba con una JPG o PNG.',
@@ -159,7 +159,7 @@ RUTAS.alertas = async () => {
     <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(t('Avísame si…'))}</h1>
     <p class="muted">${esc(t('Te avisamos cuando se publique algo que encaje. Como mucho tres avisos al día, y puedes apagarlos de uno en uno.'))}</p>
-    <p><a class="pill accent" href="#/alerta/nueva">+ ${esc(t('Nuevo aviso'))}</a></p>
+    <p><a class="pill accent" href="#/alerta/nueva">${ic('add')} ${esc(t('Nuevo aviso'))}</a></p>
     ${(lista || []).length ? `<div class="avisos">${lista.map((a) => `
       <div class="aviso alerta${a.active ? '' : ' pausada'}">
         <b>${esc(a.label || t('Aviso'))}${a.active ? '' : ` <span class="tag off">${esc(t('En pausa'))}</span>`}</b>
@@ -391,7 +391,7 @@ RUTAS.ajustes = async () => {
         <dd>${cons?.push_devices ? `${esc(`${cons.push_devices} ${cons.push_devices === 1 ? t('dispositivo') : t('dispositivos')}`)}
           <button class="linkbtn" id="sin-push">${esc(t('Desactivarlas'))}</button>` : esc(t('Sin dispositivos registrados'))}</dd>
       </dl>
-      <p><button class="pill" id="descargar">⤓ ${esc(t('Descargar mis datos'))}</button></p>
+      <p><button class="pill" id="descargar">${ic('download')} ${esc(t('Descargar mis datos'))}</button></p>
       <p class="muted">${esc(t('Un archivo JSON con todo lo que Klendar guarda de ti (derecho de acceso y portabilidad).'))}</p>
     </section>
 
@@ -425,7 +425,8 @@ RUTAS.ajustes = async () => {
       if (avatar) cambio.avatar_url = avatar;
       await tabla(sb.from('profiles').update(cambio).eq('id', YO.id));
       // El idioma viaja también en la cuenta: los correos lo leen de ahí.
-      await sb.auth.updateUser({ data: cambio });
+      const { error: eCuenta } = await sb.auth.updateUser({ data: cambio });
+      if (eCuenta) throw new Error(errAuth(eCuenta));
       foto = null;
       toast(t('Perfil guardado'));
       if (idioma && idioma !== (EN ? 'en' : 'es')) {
@@ -476,7 +477,7 @@ RUTAS.ajustes = async () => {
     const boton = ev.currentTarget;
     if (!(await confirma({
       titulo: t('Dejar de compartir'),
-      texto: t('Borramos tu última posición y desactivamos los avisos de «cerca de ti».'),
+      texto: t('Borramos tu última posición y desactivamos las notificaciones de «Cerca de ti».'),
       aceptar: t('Dejar de compartir'),
     }))) return;
     ocupado(boton, async () => { await llamar('revoke_location_consent', {}); toast(t('Ya no guardamos tu posición')); navegar(); });
@@ -485,7 +486,7 @@ RUTAS.ajustes = async () => {
     const boton = ev.currentTarget;
     if (!(await confirma({
       titulo: t('Desactivar push'),
-      texto: t('Dejarán de llegarte notificaciones a todos tus dispositivos. Podrás volver a activarlas desde Ajustes de notificaciones.'),
+      texto: t('Dejarán de llegarte notificaciones a todos tus dispositivos. Podrás volver a activarlas desde la app.'),
       aceptar: t('Desactivar push'),
     }))) return;
     ocupado(boton, async () => { await llamar('revoke_push', {}); toast(t('Notificaciones del móvil desactivadas')); navegar(); });
@@ -583,7 +584,7 @@ RUTAS.sugerencias = async () => {
   f.addEventListener('submit', (ev) => {
     ev.preventDefault();
     const msg = f.msg.value.trim();
-    if (msg.length < 5) { $('#err').textContent = t('Cuéntanos un poco más (5 letras como mínimo).'); return; }
+    if (msg.length < 5) { $('#err').textContent = t('Cuéntanos un poco más: al menos 5 caracteres.'); return; }
     $('#err').textContent = '';
     ocupado($('#enviar'), async () => {
       await llamar('send_feedback', {
@@ -612,7 +613,7 @@ RUTAS.opinar = async ([id]) => {
   pinta(`
     <p class="crumbs"><a href="${pre}/b/${esc(id)}">${esc(b.name)}</a></p>
     <h1>${esc(mia.id ? t('Editar mi reseña') : t('Escribir una reseña'))}</h1>
-    <p class="muted">${esc(t('Una reseña por persona y sitio. Puedes cambiarla cuando quieras.'))}</p>
+    <p class="muted">${esc(t('Una reseña por persona y negocio. Puedes editarla cuando quieras.'))}</p>
     <form class="formu" id="f" novalidate>
       <fieldset class="estrellas"><legend>${esc(t('¿Qué nota le pones?'))}</legend>
         ${[5, 4, 3, 2, 1].map((n) => `<input type="radio" name="nota" id="n${n}" value="${n}"${mia.rating === n ? ' checked' : ''}><label for="n${n}" title="${n}/5"><span class="sr">${n} ${esc(t('de 5'))}</span>★</label>`).join('')}
@@ -668,6 +669,11 @@ const MOTIVOS = [
   ['closed', 'El negocio ya no existe o está cerrado'],
   ['other', 'Otro motivo'],
 ];
+// Los motivos que tienen sentido en cada cosa, como en la app (report_sheet).
+const MOTIVOS_DE = {
+  offer: ['spam', 'inappropriate', 'misleading', 'closed', 'other'],
+  business: ['spam', 'inappropriate', 'closed', 'other'],
+};
 const QUE_SE_DENUNCIA = {
   offer: 'Denunciar una publicación', business: 'Denunciar un negocio',
   review: 'Denunciar una reseña', post: 'Denunciar una novedad',
@@ -686,7 +692,7 @@ RUTAS.denunciar = async ([tipo, id]) => {
     <p class="muted">${esc(t('Cuéntanos qué pasa. Lo revisamos lo antes posible y nadie sabrá que has sido tú.'))}</p>
     <form class="formu" id="f" novalidate>
       <fieldset class="motivos"><legend>${esc(t('Motivo'))}</legend>
-        ${MOTIVOS.filter(([v]) => tipo !== 'review' || v !== 'closed').map(([v, l]) =>
+        ${MOTIVOS.filter(([v]) => (MOTIVOS_DE[tipo] || ['spam', 'inappropriate', 'other']).includes(v)).map(([v, l]) =>
           `<label class="check"><input type="radio" name="motivo" value="${v}"> ${esc(t(l))}</label>`).join('')}
       </fieldset>
       <label>${esc(t('Detalles'))} <small>${esc(t('(opcional)'))}</small>

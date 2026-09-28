@@ -8,7 +8,7 @@
 import io
 import os
 
-from build_site import T, doc_page
+from build_site import T, doc_page, footer, head
 
 # Precios reales de `subscription_plans` (Supabase). Si cambian allí, aquí.
 PLANES = [
@@ -34,7 +34,7 @@ PAGINAS['para-negocios'] = (
 
 <h2>Cómo funciona</h2>
 <ol>
-  <li><strong>Das de alta tu negocio</strong> desde la app (hace falta la ubicación exacta del local). Lo revisamos y lo verificamos, normalmente en 24-48 horas.</li>
+  <li><strong>Das de alta tu negocio</strong> desde la app o desde el <a href="/panel/">panel web</a> (hace falta la ubicación exacta del local). Lo revisamos y lo verificamos, normalmente en 24-48 horas.</li>
   <li><strong>Publicas</strong> una oferta flash (con cuenta atrás y aforo) o un evento con fecha. Desde el móvil o desde el <a href="/panel/">panel del ordenador</a>.</li>
   <li><strong>La gente la canjea</strong> enseñándote un código QR de un solo uso. Lo validas con la cámara o escribiendo el código; el aforo baja solo.</li>
 </ol>
@@ -102,8 +102,8 @@ PAGINAS['para-negocios'] = (
 
 <h2>How it works</h2>
 <ol>
-  <li><strong>Register your business</strong> from the app (it needs the venue's exact location). We check it and verify it, usually within 24-48 hours.</li>
-  <li><strong>Publish</strong> a flash deal (with a countdown and a capacity) or an event with a date. From your phone or from the <a href="/panel/">dashboard on a computer</a>.</li>
+  <li><strong>Register your business</strong> from the app or from the <a href="/panel/">web dashboard</a> (it needs the venue's exact location). We check it and verify it, usually within 24-48 hours.</li>
+  <li><strong>Publish</strong> a flash offer (with a countdown and a capacity) or an event with a date. From your phone or from the <a href="/panel/">dashboard on a computer</a>.</li>
   <li><strong>People redeem it</strong> by showing you a single-use QR code. You validate it with the camera or by typing the code; the capacity goes down on its own.</li>
 </ol>
 
@@ -178,10 +178,10 @@ def tabla_planes(lang):
         'Sin permanencia: lo dejas cuando quieras',
     ]
     ventajas_en = [
-        'Unlimited publications: flash offers, events and bookings',
+        'Unlimited publications: flash offers, events and place reservations',
         'Unlimited redemptions and <strong>no commission</strong>',
         'Stats, exportable report and attendee list',
-        'Business page, gallery and a panel for your team',
+        'Business page, gallery and a dashboard for your team',
         'No lock-in: leave whenever you want',
     ]
     filas = []
@@ -283,30 +283,30 @@ PAGINAS['precios'] = (
 FAQ_ES = [
     ('¿Cuánto cuesta usar Klendar?', 'Para quien busca planes, nada. Para los negocios hay un solo plan, y ahora mismo es gratis mientras arrancamos; los detalles están en <a href="/precios/">precios</a>.'),
     ('¿Hace falta cuenta para mirar?', 'No. Puedes ver ofertas y eventos sin registrarte, en la app y en la web. La cuenta hace falta para canjear, guardar planes o recibir avisos.'),
-    ('¿Cómo se canjea una oferta?', 'Pulsas «Canjear» y te sale un código QR de un solo uso. Se lo enseñas al negocio, que lo escanea o escribe el código. Ojo: algunos códigos caducan a los pocos minutos, así que se pide estando ya en el local.'),
-    ('Mi código no funciona', 'Suele ser una de tres: ya se usó, caducó (los de barra duran minutos) o es de otro negocio. En la app, en «Tus códigos», ves el estado de cada uno. Si algo no cuadra, escríbenos con el código a <a href="mailto:info@klendar.app">info@klendar.app</a>.'),
-    ('¿Puedo reservar una plaza en un evento?', 'Si el negocio lo activa, sí: reservas desde la app y enseñas tu código en la puerta. La reserva no es un pago; lo que cueste, si cuesta, se paga en el local.'),
-    ('¿Por qué veo unas cosas y no otras?', 'Por cercanía, por lo que empieza pronto y por lo que sigues. No usamos tu historial ni datos de otras webs. En cada ficha hay un «¿Por qué ves esto?» que lo explica, y el orden lo eliges tú en los filtros.'),
-    ('¿Qué pasa con mis datos?', 'Lo contamos entero en la <a href="/privacidad/">política de privacidad</a>. En resumen: se usan para que la app funcione, no se venden, y puedes descargarlos o borrar tu cuenta desde la propia app.'),
+    ('¿Cómo se canjea una oferta?', 'Pulsas «Conseguir el código» y te sale un código QR de un solo uso. Se lo enseñas al negocio, que lo escanea o escribe el código. Ojo: algunos códigos caducan a los pocos minutos, así que se pide estando ya en el local.'),
+    ('Mi código no funciona', 'Suele ser una de tres: ya se usó, caducó (los de barra duran minutos) o es de otro negocio. En «Tus códigos» (en la app o en la web) ves el estado de cada uno. Si algo no cuadra, escríbenos con el código a <a href="mailto:info@klendar.app">info@klendar.app</a>.'),
+    ('¿Puedo reservar una plaza en un evento?', 'Si el negocio lo activa, sí: reservas plaza desde la app o desde la web y enseñas tu código en la puerta. La reserva no es un pago; lo que cueste, si cuesta, se paga en el local.'),
+    ('¿Por qué veo unas cosas y no otras?', 'Por cercanía, por lo que empieza pronto y por tus favoritos. No usamos tu historial ni datos de otras webs. En cada ficha hay un «¿Por qué ves esto?» que lo explica, y el orden lo eliges tú en los filtros.'),
+    ('¿Qué pasa con mis datos?', 'Lo contamos entero en la <a href="/privacidad/">política de privacidad</a>. En resumen: se usan para que la app funcione, no se venden, y puedes descargarlos o borrar tu cuenta desde la app o desde «Tu cuenta» en la web.'),
     ('¿Cómo borro mi cuenta?', 'Desde Cuenta → Ajustes → Eliminar mi cuenta, en la app o en «Tu cuenta» de la web. Se borra todo lo tuyo. También puedes pedirlo por correo: <a href="/eliminar-cuenta/">cómo hacerlo</a>.'),
-    ('Soy un negocio, ¿cómo me doy de alta?', 'Desde la app: Cuenta → ¿Quieres registrar tu negocio? (hace falta la ubicación exacta del local). Lo revisamos y te verificamos, normalmente en 24-48 horas. Luego puedes publicar desde el móvil o desde el <a href="/panel/">panel</a>.'),
+    ('Soy un negocio, ¿cómo me doy de alta?', 'Desde la app (Cuenta → ¿Quieres registrar tu negocio?) o desde el <a href="/panel/">panel web</a>; hace falta la ubicación exacta del local. Lo revisamos y te verificamos, normalmente en 24-48 horas. Luego puedes publicar desde el móvil o desde el ordenador.'),
     ('¿Klendar se lleva una comisión de lo que vendo?', 'No. Lo que cobras en tu local es tuyo entero; Klendar no toca el dinero.'),
-    ('Vi algo que no debería estar ahí', 'En la app, en la ficha, hay un botón para denunciar. Lo revisamos y, si hay que retirarlo, se retira con un motivo y el negocio puede recurrir.'),
+    ('Vi algo que no debería estar ahí', 'En cada ficha, en la app y en la web, hay un botón para denunciar. Lo revisamos y, si hay que retirarlo, se retira con un motivo y el negocio puede recurrir.'),
     ('¿En qué ciudades está?', 'Estamos empezando. Si en la tuya todavía no hay nada, en <a href="/agenda/">la agenda</a> lo verás vacío: escríbenos y lo arrancamos.'),
 ]
 FAQ_EN = [
     ('How much does Klendar cost?', 'For people looking for plans, nothing. For businesses there is a single plan, and right now it is free while we are starting; the details are in <a href="/en/pricing/">pricing</a>.'),
     ('Do I need an account to look?', 'No. You can see deals and events without signing up, both in the app and on the web. An account is needed to redeem, save plans or get alerts.'),
-    ('How do I redeem a deal?', 'You tap «Redeem» and get a single-use QR code. You show it to the business, which scans it or types the code. Careful: some codes expire within minutes, so ask for it once you are at the venue.'),
-    ('My code does not work', 'Usually one of three: it was already used, it expired (bar codes last minutes) or it belongs to another business. In the app, under «My plans», you can see the status of each one. If something is off, write to us with the code at <a href="mailto:info@klendar.app">info@klendar.app</a>.'),
-    ('Can I book a place at an event?', 'If the business turns it on, yes: you book from the app and show your code at the door. Booking is not a payment; whatever it costs, if anything, is paid at the venue.'),
-    ('Why do I see some things and not others?', 'Because of how near they are, what starts soon and who you follow. We do not use your history or data from other sites. Each publication has a «Why are you seeing this?» that explains it, and you choose the order in the filters.'),
-    ('What happens with my data?', 'The whole story is in the <a href="/en/privacy/">privacy policy</a>. In short: it is used to make the app work, it is not sold, and you can download it or delete your account from the app itself.'),
+    ('How do I redeem a deal?', 'You tap «Get the code» and get a single-use QR code. You show it to the business, which scans it or types the code. Careful: some codes expire within minutes, so ask for it once you are at the venue.'),
+    ('My code does not work', 'Usually one of three: it was already used, it expired (bar codes last minutes) or it belongs to another business. Under «Your codes» (in the app or on the web) you can see the status of each one. If something is off, write to us with the code at <a href="mailto:info@klendar.app">info@klendar.app</a>.'),
+    ('Can I reserve a place at an event?', 'If the business turns it on, yes: you reserve a place from the app or the website and show your code at the door. Reserving is not a payment; whatever it costs, if anything, is paid at the venue.'),
+    ('Why do I see some things and not others?', 'Because of how near they are, what starts soon and your favourites. We do not use your history or data from other sites. Each publication has a «Why are you seeing this?» that explains it, and you choose the order in the filters.'),
+    ('What happens with my data?', 'The whole story is in the <a href="/en/privacy/">privacy policy</a>. In short: it is used to make the app work, it is not sold, and you can download it or delete your account from the app or from “Your account” on the website.'),
     ('How do I delete my account?', 'From Account → Settings → Delete my account, in the app or in “Your account” on the website. Everything of yours is deleted. You can also ask by email: <a href="/en/delete-account/">how to do it</a>.'),
-    ('I am a business, how do I register?', 'From the app: Account → Want to register your business? (it needs the venue’s exact location). We check it and verify you, usually within 24-48 hours. After that you can publish from your phone or from the <a href="/panel/">dashboard</a>.'),
+    ('I am a business, how do I register?', 'From the app (Account → Want to register your business?) or from the <a href="/panel/">web dashboard</a>; it needs the venue’s exact location. We check it and verify you, usually within 24-48 hours. After that you can publish from your phone or from a computer.'),
     ('Does Klendar take a commission on what I sell?', 'No. What you charge at your venue is yours; Klendar never touches the money.'),
-    ('I saw something that should not be there', 'In the app, on the publication, there is a button to report it. We review it and, if it has to come down, it comes down with a reason and the business can appeal.'),
-    ('Which cities is it in?', 'We are just starting. If nothing is happening in yours yet, <a href="/agenda/">the agenda</a> will look empty: write to us and we will get it going.'),
+    ('I saw something that should not be there', 'On every publication, in the app and on the website, there is a button to report it. We review it and, if it has to come down, it comes down with a reason and the business can appeal.'),
+    ('Which cities is it in?', 'We are just starting. If nothing is happening in yours yet, <a href="/en/whats-on/">what\'s on</a> will look empty: write to us and we will get it going.'),
 ]
 
 
@@ -546,3 +546,27 @@ if __name__ == '__main__':
             io.open(os.path.join(slug, 'index.html'), 'w', encoding='utf-8', newline='\n').write(
                 doc_page(T[lang], path, title, desc, body))
         print('ok', es_slug, '·', en_slug)
+
+    # «Esta página no existe». Cloudflare sirve la 404.html más cercana a la
+    # ruta pedida: /en/404.html para lo que empieza por /en/, y la de la raíz
+    # para lo demás. Con la cabecera y el pie de siempre, y algo que hacer.
+    NO_EXISTE = {
+        'es': ('/', 'Esta página no existe', 'Puede que el enlace esté mal escrito o que la página se haya movido.',
+               [('/explorar/', 'Ver qué hay cerca'), ('/', 'Ir a la portada')], '',
+               '¿Buscabas algo concreto? Escríbenos desde <a href="/soporte/">soporte</a>.'),
+        'en': ('/en/', 'This page does not exist', 'The link may be mistyped or the page may have moved.',
+               [('/en/explore/', "See what's nearby"), ('/en/', 'Go to the home page')], 'en',
+               'Looking for something in particular? Write to us from <a href="/en/support/">support</a>.'),
+    }
+    for lang, (path, titulo, texto, botones, carpeta, pie) in NO_EXISTE.items():
+        pills = ''.join(f'<a class="pill{" accent" if i == 0 else " ghost"}" href="{h}">{l}</a>' for i, (h, l) in enumerate(botones))
+        pagina = head(T[lang], path, f'{titulo} · Klendar', texto, extra='<meta name="robots" content="noindex">') + f'''
+<main class="doc">
+<h1>{titulo}</h1>
+<p class="lead">{texto}</p>
+<p class="acciones" style="margin-top:18px">{pills}</p>
+<p class="note">{pie}</p>
+</main>
+''' + footer(T[lang])
+        io.open(os.path.join(carpeta, '404.html'), 'w', encoding='utf-8', newline=chr(10)).write(pagina)
+        print('ok', os.path.join(carpeta, '404.html'))

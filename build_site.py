@@ -53,11 +53,11 @@ T = {
     live_all_short='Ver todo',
     home_how_h2='Mira, elige y enséñalo en la puerta',
     home_steps=[('Mira lo que hay cerca', 'Ofertas que duran unas horas y eventos con fecha, ordenados por distancia.'),
-                ('Guárdalo o pide tu código', 'Los eventos, a tu agenda. Las ofertas, un QR antes de que acabe la cuenta atrás.'),
+                ('Guárdalo o pide tu código', 'Los eventos, a tus planes. Las ofertas, un QR antes de que acabe la cuenta atrás.'),
                 ('Enséñalo y listo', 'El negocio lo escanea. Cada código vale una vez; sin tarjetas ni registros raros.')],
     how_url='/como-funciona/', how_more='Todo lo que hace Klendar →',
     how_title='Cómo funciona Klendar',
-    how_desc='Cómo funciona Klendar: ofertas flash con cuenta atrás y eventos de tu barrio, ordenados por cercanía; se guardan en tu agenda o se canjean con un QR de un solo uso.',
+    how_desc='Cómo funciona Klendar: ofertas flash con cuenta atrás y eventos de tu barrio, ordenados por cercanía; se guardan en tus planes o se canjean con un QR de un solo uso.',
     band_h2='¿Tienes un bar, una tienda o una sala?',
     band_text='Publica una oferta cuando tengas un hueco y llena tus eventos. Sin comisiones por venta. Las primeras semanas en cada ciudad, gratis.',
     band_more='Cómo funciona para negocios', band_panel='Entrar a mi panel',
@@ -73,7 +73,7 @@ T = {
     float_a=('⚡ 1 h 31 min', 'para canjear'), float_b=('📍 262 m', 'a pie desde ti'),
     how_eyebrow='Cómo funciona', how_h2='Tres pasos y estás dentro',
     steps=[('Abre y mira lo más cercano', 'Un feed a pantalla completa con lo que está pasando a tu alrededor: bares, restaurantes, peluquerías, gimnasios, tiendas, cultura y ocio nocturno.'),
-           ('Guarda o canjea', 'Si es un evento, guárdalo en tu agenda o en el calendario del móvil. Si es una oferta flash, pulsa «Canjear» antes de que acabe la cuenta atrás.'),
+           ('Guarda o canjea', 'Si es un evento, guárdalo en tus planes o en el calendario del móvil. Si es una oferta flash, pulsa «Conseguir el código» antes de que acabe la cuenta atrás.'),
            ('Enseña el QR', 'El negocio escanea tu código y listo. Cada código vale una sola vez; sin tarjetas, sin registros raros.')],
     feat_eyebrow='Todo en una app', feat_h2='Pensada para el barrio, no para el algoritmo',
     feats=[('📍', 'Por cercanía', 'Lo que tienes a mano, ordenado por distancia. Filtra por categoría, precio, tipo y radio.'),
@@ -99,7 +99,7 @@ T = {
     faq_eyebrow='Preguntas frecuentes', faq_h2='Dudas habituales',
     faqs=[('¿Klendar es gratis?', 'Sí, para las personas usuarias es gratis y sin anuncios. Los negocios pagan una cuota mensual fija por publicar.'),
           ('¿Necesito cuenta?', 'Puedes mirar el feed, la agenda y el mapa sin cuenta. Para canjear, guardar favoritos o recibir avisos hace falta una cuenta (email o Google). Edad mínima: 14 años.'),
-          ('¿Cómo funciona el canje?', 'Pulsas «Canjear», te sale un QR que vale 5 minutos y el negocio lo escanea con su móvil. Cada oferta se canjea una vez por persona y el código no se puede reutilizar.'),
+          ('¿Cómo funciona el canje?', 'Pulsas «Conseguir el código», te sale un QR de un solo uso y el negocio lo escanea con su móvil (o escribe el código). Suele caducar a los pocos minutos, así que pídelo cuando ya estés en el local.'),
           ('¿Qué hacéis con mi ubicación?', 'Solo se usa mientras la app está abierta para ordenar por cercanía y, si lo activas, para avisarte de ofertas cerca. Nunca se comparte con otros usuarios ni con los negocios.'),
           ('¿En qué ciudades está?', 'Empezamos ciudad a ciudad en España. Si en la tuya todavía hay poco, ayúdanos: díselo a tu bar de siempre.')],
     cta_h2='Lo que pasa cerca, en tu bolsillo', cta_sub='Muy pronto en Google Play y App Store.',
@@ -112,10 +112,10 @@ T = {
   'en': dict(
     lang='en', dir='en/', other='es', other_url='/',
     title='Klendar — Deals and things to do near you, today',
-    desc='Flash deals with a countdown and events from the bars, restaurants, shops and venues around you, sorted by distance. Free, no ads.',
+    desc='Flash offers with a countdown and events from the bars, restaurants, shops and venues around you, sorted by distance. Free, no ads.',
     hero_eyebrow='Deals that run out. Plans that begin.',
     hero_h1='Deals and things to do <em>near you</em>, today',
-    hero_lead='Flash deals with a countdown and events from the bars, restaurants, shops and venues around you, sorted by distance. Free, no ads.',
+    hero_lead='Flash offers with a countdown and events from the bars, restaurants, shops and venues around you, sorted by distance. Free, no ads.',
     cta_explore='See what\'s nearby', cta_explore_url='/en/explore/',
     cta_register='Create a free account', cta_register_url='/app/?lang=en#/registro',
     cities_label='What to do today in', cities_fallback='your city', agenda_url='/en/whats-on/',
@@ -123,11 +123,11 @@ T = {
     live_all_short='See all',
     home_how_h2='Look, choose and show it at the door',
     home_steps=[('See what\'s nearby', 'Deals that last a few hours and events with a date, sorted by distance.'),
-                ('Save it or get your code', 'Events go to your agenda. Deals get a QR code before the countdown ends.'),
+                ('Save it or get your code', 'Events go to your plans. Deals get a QR code before the countdown ends.'),
                 ('Show it, done', 'The business scans it. Each code works once; no cards, no weird sign-ups.')],
     how_url='/en/how-it-works/', how_more='Everything Klendar does →',
     how_title='How Klendar works',
-    how_desc='How Klendar works: flash deals with a countdown and events from your neighbourhood, sorted by distance; save them to your agenda or redeem with a single-use QR code.',
+    how_desc='How Klendar works: flash offers with a countdown and events from your neighbourhood, sorted by distance; save them to your plans or redeem with a single-use QR code.',
     band_h2='Got a bar, a shop or a venue?',
     band_text='Post a deal when you have a quiet hour and fill your events. No sales commission. The first weeks in each city are free.',
     band_more='How it works for businesses', band_panel='Log in to my dashboard',
@@ -137,17 +137,17 @@ T = {
     nav_how='How it works', nav_biz='For businesses', nav_faq='FAQ', nav_support='Support',
     a_how='how-it-works', a_feat='features', a_screens='screenshots', a_biz='businesses', a_faq='faq',
     h1='Deals that run out. <em>Plans that begin.</em>',
-    lead='What\'s happening near you, right now: flash deals with a countdown and events from your neighbourhood, sorted by distance. Mark your favourites, get alerts and redeem with a single-use QR code.',
+    lead='What\'s happening near you, right now: flash offers with a countdown and events from your neighbourhood, sorted by distance. Mark your favourites, get alerts and redeem with a single-use QR code.',
     play='Google Play · coming soon', appstore='App Store · coming soon',
     note='Launching city by city in Spain. Free, no ads.',
     float_a=('⚡ 1 h 31 min', 'left to redeem'), float_b=('📍 262 m', 'walk from you'),
     how_eyebrow='How it works', how_h2='Three steps and you\'re in',
     steps=[('Open and see what\'s closest', 'A full-screen feed with what\'s going on around you: bars, restaurants, hairdressers, gyms, shops, culture and nightlife.'),
-           ('Save or redeem', 'If it\'s an event, save it to your agenda or your phone calendar. If it\'s a flash deal, tap "Redeem" before the countdown ends.'),
+           ('Save or redeem', 'If it\'s an event, save it to your plans or your phone calendar. If it\'s a flash offer, tap "Get the code" before the countdown ends.'),
            ('Show the QR', 'The business scans your code and that\'s it. Each code works once; no cards, no weird sign-ups.')],
     feat_eyebrow='All in one app', feat_h2='Built for the neighbourhood, not the algorithm',
     feats=[('📍', 'By distance', 'What\'s within reach, sorted by how close it is. Filter by category, price, type and radius.'),
-           ('⚡', 'Flash deals', 'Discounts that last a few hours, with a countdown and limited spots. Perfect for last-minute gaps.'),
+           ('⚡', 'Flash offers', 'Discounts that last a few hours, with a countdown and limited spots. Perfect for last-minute gaps.'),
            ('📅', 'Agenda and map', 'Everything happening each day on a calendar and on a map of businesses with something live.'),
            ('🔲', 'QR redemption', 'A unique single-use code the business validates on the spot. No fees for users.'),
            ('❤️', 'Favourites and alerts', 'Add businesses to your favourites and we tell you when they post. Or turn on "nearby" and never miss a deal two streets away.'),
@@ -155,7 +155,7 @@ T = {
     screens_eyebrow='The app', screens_h2='This is what it looks like',
     screens=[('agenda', 'Agenda', 'A calendar with what\'s on each day'), ('map', 'Map', 'Businesses with something live and how long it takes to walk'), ('detail', 'Details', 'When, where, directions and add to calendar')],
     biz_eyebrow='For businesses', biz_h2='Got a bar, a shop, a venue?',
-    biz_sub='Post a flash deal when you have a quiet hour, announce your events and validate redemptions with your phone camera. No sales commission: one flat monthly fee.',
+    biz_sub='Post a flash offer when you have a quiet hour, announce your events and validate redemptions with your phone camera. No sales commission: one flat monthly fee.',
     biz_points=['Sign up in 2 minutes from the app; we verify your business in 24–48 h.', 'Deals with a countdown and capacity: you decide how many and until when.', 'Stats for views, favourites and redemptions per publication.', 'Team: add managers and staff to validate codes.'],
     biz_cta='Email us', biz_terms='Business terms', biz_note='The first weeks in each city are free.',
     biz_page_url='/en/for-business/', pricing_url='/en/pricing/', faq_url='/en/faq/',
@@ -169,7 +169,7 @@ T = {
     faq_eyebrow='FAQ', faq_h2='Common questions',
     faqs=[('Is Klendar free?', 'Yes, for users it\'s free and ad-free. Businesses pay a flat monthly fee to publish.'),
           ('Do I need an account?', 'You can browse the feed, the agenda and the map without one. To redeem, save favourites or get alerts you need an account (email or Google). Minimum age: 14.'),
-          ('How does redemption work?', 'Tap "Redeem", a QR code valid for 5 minutes appears and the business scans it with their phone. Each deal can be redeemed once per person and codes can\'t be reused.'),
+          ('How does redemption work?', 'Tap "Get the code" and a single-use QR code appears; the business scans it with their phone (or types the code). It usually expires within minutes, so ask for it once you are at the venue.'),
           ('What do you do with my location?', 'It\'s only used while the app is open to sort by distance and, if you turn it on, to alert you about nearby deals. It\'s never shared with other users or with businesses.'),
           ('Which cities?', 'We\'re starting city by city in Spain. If yours is still quiet, help us: tell your local bar.')],
     cta_h2='What\'s happening nearby, in your pocket', cta_sub='Coming soon to Google Play and the App Store.',
@@ -186,15 +186,15 @@ SUPPORT_EN = ('Support', 'Klendar help: how to redeem a deal, list your business
 <p>Email us at <a href="mailto:info@klendar.app">info@klendar.app</a>. We reply within 2 working days.</p>
 <h2>Frequently asked questions</h2>
 <h3>I can't redeem a deal</h3>
-<p>Check that the deal is still active (it has a time window and a capacity), that you are logged in and that you haven't redeemed it already: each deal can be redeemed once per person.</p>
+<p>Check that the deal is still active (it has a time window and a capacity), that you are logged in and that you haven't used up the redemptions per person the business allows.</p>
 <h3>The QR code has expired</h3>
-<p>Each code is valid for 5 minutes. Tap "Generate another code" on the same screen.</p>
+<p>Codes expire after a while (usually a few minutes; each business chooses). Tap "Generate another code" on the same screen.</p>
 <h3>A business didn't honour its deal</h3>
 <p>Report it from its profile (flag icon) with the reason "The deal isn't as advertised". We review it and, if it happens again, the business is suspended.</p>
 <h3>I don't get notifications</h3>
-<p>Check Account → Settings → Notifications and the system notification permission. "Nearby" only alerts you about flash deals within your chosen radius, at most 3 times a day.</p>
+<p>Check Account → Settings → Notifications and the system notification permission. "Nearby" only alerts you about flash offers within your chosen radius, at most 3 times a day.</p>
 <h3>I run a business and want to sign up</h3>
-<p>In the app: Account → “Want to register your business?”. We review it within 24–48 h. You can also email us.</p>
+<p>In the app: Account → “Want to register your business?”, or on the web from the <a href="/panel/">dashboard</a>. We review it within 24–48 h. You can also email us.</p>
 <h2>Legal documents</h2>
 <p><a href="/en/privacy/">Privacy policy</a> · <a href="/en/terms/">Terms of use</a> · <a href="/en/business-terms/">Business terms</a> · <a href="/en/community-guidelines/">Community guidelines</a> · <a href="/en/delete-account/">Delete your account</a>. English versions are courtesy translations; the Spanish originals are the governing text.</p>
 ''')
@@ -230,7 +230,7 @@ def head(t, path, page_title=None, page_desc=None, extra=''):
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/site.css?v=20261007">
-<link rel="stylesheet" href="/assets/public.css?v=15">
+<link rel="stylesheet" href="/assets/public.css?v=16">
 {extra}
 </head>
 <body>
