@@ -7,7 +7,7 @@
 // se le puede enseñar a un ayuntamiento o a un bar que aún no se fía.
 
 import KZ from '../../assets/zona.js';
-import { BackendDown, datosDePrueba, esc, html, isUuid, rows } from './page.js';
+import { BackendDown, CONTADOR, datosDePrueba, esc, html, isUuid, rows } from './page.js';
 
 import { siteFooter, siteHeader } from './chrome.js';
 
@@ -185,6 +185,7 @@ ${cabeza}
 ${siteHeader(lang, esc(es), esc(enPath))}
 <main class="pub wrap">${body}</main>
 ${siteFooter(lang)}
+${CONTADOR}
 </body></html>`;
 }
 

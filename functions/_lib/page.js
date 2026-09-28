@@ -32,6 +32,11 @@ export function configure(env) {
 const BASE = 'https://klendar.app';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+/** Cloudflare Web Analytics (sin cookies). En las páginas estáticas lo mete
+ * Cloudflare solo; las que pintan las Functions no lo llevan, así que va aquí.
+ * El token es público: Cloudflare lo escribe en el HTML de cada página. */
+export const CONTADOR = `<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "2b00b2503582440ea0309eee67d10210"}'></script>`;
+
 export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 export const isUuid = (s) => UUID.test(s || '');
 
@@ -166,6 +171,7 @@ ${head}
   setTimeout(function () { if (/Android|iPhone|iPad/i.test(ua)) location.href = a.href; }, 400);
 })();
 </script>
+${CONTADOR}
 </body></html>`;
 }
 
