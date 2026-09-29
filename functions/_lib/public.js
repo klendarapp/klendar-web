@@ -7,7 +7,7 @@
 // se le puede enseñar a un ayuntamiento o a un bar que aún no se fía.
 
 import KZ from '../../assets/zona.js';
-import { BackendDown, CONTADOR, datosDePrueba, esc, html, isUuid, rows } from './page.js';
+import { BackendDown, CONTADOR, datosDePrueba, erroresScript, esc, html, isUuid, rows } from './page.js';
 
 import { siteFooter, siteHeader } from './chrome.js';
 
@@ -243,6 +243,7 @@ export function publicPage({ lang, path, title, description, head = '', body, im
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+${erroresScript()}
 <title>${esc(title)} · Klendar</title>
 <meta name="description" content="${esc(description)}">
 <link rel="canonical" href="${BASE}${esc(path)}">

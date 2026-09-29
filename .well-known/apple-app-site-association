@@ -1,11 +1,22 @@
 {
   "applinks": {
-    "apps": [],
     "details": [
       {
-        "appID": "TEAMID.app.klendar",
-        "paths": ["/o/*", "/b/*", "/r/*", "/v/*", "/amigo/*", "/en/friend/*"]
+        "appIDs": ["TEAMID.app.klendar"],
+        "components": [
+          { "/": "/o/*", "comment": "Oferta o evento compartido" },
+          { "/": "/b/*", "comment": "Ficha de un negocio" },
+          { "/": "/r/*", "comment": "QR de canje" },
+          { "/": "/v/*", "comment": "Cartel del local (QR)" },
+          { "/": "/amigo/*", "comment": "Enlace de amigo" },
+          { "/": "/en/o/*", "comment": "Offer or event (EN)" },
+          { "/": "/en/b/*", "comment": "Business page (EN)" },
+          { "/": "/en/friend/*", "comment": "Friend link (EN)" }
+        ]
       }
     ]
+  },
+  "webcredentials": {
+    "apps": ["TEAMID.app.klendar"]
   }
 }

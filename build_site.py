@@ -210,6 +210,7 @@ def head(t, path, page_title=None, page_desc=None, extra=''):
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+{ERRORES}
 <title>{title}</title>
 <meta name="description" content="{desc}">
 <link rel="canonical" href="{canonical}">
@@ -237,6 +238,11 @@ def head(t, path, page_title=None, page_desc=None, extra=''):
 {HEADER_TPL[t['lang']].replace('{{ES}}', es_path).replace('{{EN}}', en_path)}
 '''
 
+
+# Errores del navegador → «Errores de la web» del admin. En el <head> y antes
+# que nada; estas páginas no cargan config.js y errores.js lo pide solo si
+# tiene algo que mandar. Mismo `?v=` que `ERRORES_V` en functions/_lib/page.js.
+ERRORES = '<script src="/assets/errores.js?v=1"></script>'
 
 # Solo la portada trae contenido en vivo; los documentos no lo necesitan.
 LIVE_SCRIPTS = (

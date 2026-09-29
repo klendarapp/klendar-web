@@ -37,6 +37,14 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
  * El token es público: Cloudflare lo escribe en el HTML de cada página. */
 export const CONTADOR = `<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "2b00b2503582440ea0309eee67d10210"}'></script>`;
 
+/** Los errores del navegador van a «Errores de la web» del admin
+ * (assets/errores.js). Estas páginas no cargan config.js: la dirección y la
+ * clave pública de Supabase van en la etiqueta (las mismas que usa la
+ * Function, que manda sobre config.js). En el <head>, antes que los demás. */
+export const ERRORES_V = 1;
+export const erroresScript = () =>
+  `<script src="/assets/errores.js?v=${ERRORES_V}" data-url="${esc(CFG.url)}" data-key="${esc(CFG.key)}"></script>`;
+
 export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 export const isUuid = (s) => UUID.test(s || '');
 
@@ -140,6 +148,7 @@ export function render({ lang, path, kind, title, description, image, ogTitle, o
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+${erroresScript()}
 ${head}
 <meta name="theme-color" content="#0A0A0A">
 <link rel="icon" href="/favicon.ico" sizes="48x48"><link rel="icon" type="image/png" sizes="96x96" href="/assets/favicon-96.png"><link rel="manifest" href="/site.webmanifest">

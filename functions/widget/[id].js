@@ -1,4 +1,4 @@
-import { configure, esc, isUuid, rpc, rpcAll } from '../_lib/page.js';
+import { configure, erroresScript, esc, isUuid, rpc, rpcAll } from '../_lib/page.js';
 import { benefit, bizPath, firstPhoto, fmtDay, fmtEnd, fmtLong, fmtTime, guard, slugDe, zonaDe } from '../_lib/public.js';
 
 // El recuadro que el negocio pega en su web: lo que tiene vivo ahora mismo,
@@ -50,6 +50,7 @@ export async function onRequestGet(ctx) {
   const html = `<!doctype html>
 <html lang="${lang}"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+${erroresScript()}
 <title>${esc(b.name)} · Klendar</title>
 <meta name="robots" content="noindex">
 <style>

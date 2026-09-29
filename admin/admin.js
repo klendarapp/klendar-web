@@ -276,9 +276,10 @@ const NAV = [
   ['group', 'Negocio'],
   ['planes', 'credit_card', 'Planes y pagos'], ['avisos', 'notifications', 'Notificaciones y push'],
   ['group', 'Sistema'],
-  ['colecciones', 'auto_awesome', 'Colecciones'], ['categorias', 'category', 'Categorías'], ['configuracion', 'settings', 'Configuración'], ['administradores', 'shield', 'Administradores'], ['actividad', 'history', 'Registro de actividad'], ['ayuda', 'help', 'Ayuda'],
+  ['colecciones', 'auto_awesome', 'Colecciones'], ['categorias', 'category', 'Categorías'], ['configuracion', 'settings', 'Configuración'], ['errores', 'bug_report', 'Errores de la web'], ['administradores', 'shield', 'Administradores'], ['actividad', 'history', 'Registro de actividad'], ['ayuda', 'help', 'Ayuda'],
 ];
 let BADGES = {};
+let WEB_ERR = null;
 function renderNav(current) {
   // (al final se traduce; la lista se arma igual en los dos idiomas)
   $('#nav').innerHTML = NAV.map((n) => n[0] === 'group' ? `<div class="group">${n[1]}</div>`
@@ -293,7 +294,9 @@ async function refreshBadges(lanzar = false) {
     // Mensajes a clientes parados por la moderación automática.
     let msj = 0;
     try { msj = (await rpc('admin_business_messages', { p_status: 'review', p_limit: 1, p_offset: 0 })).pending || 0; } catch { /* sin la función */ }
-    BADGES = { negocios: k.businesses_pending || 0, publicaciones: k.offers_pending || 0, denuncias: k.reports_open || 0, mensajes: msj, sugerencias: sug };
+    // Errores de la web: los nuevos de las últimas 24 h (y lo demás para el Resumen).
+    try { WEB_ERR = (await rpc('admin_web_errors', { p_status: 'open', p_limit: 1, p_offset: 0 })).counts || null; } catch { WEB_ERR = null; }
+    BADGES = { negocios: k.businesses_pending || 0, publicaciones: k.offers_pending || 0, denuncias: k.reports_open || 0, mensajes: msj, sugerencias: sug, errores: WEB_ERR?.new_24h || 0 };
     Object.keys(BADGES).forEach((x) => { if (!BADGES[x]) delete BADGES[x]; });
     renderNav(currentRoute()[0]);
     return k;
@@ -409,13 +412,14 @@ PAGES.resumen = async (v) => {
   const en = I18N.lang === 'en';
   v.innerHTML = `
     <div class="page-head"><h1>Resumen</h1><span class="spacer"></span><span class="muted">${new Date().toLocaleString(LOC(), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: TZ })}</span></div>
-    ${(k.businesses_pending || k.offers_pending || k.reports_open || k.subs_expiring_7d || k.push_failed_7d || BADGES.sugerencias || BADGES.mensajes) ? `<div class="card"><h2>Pendiente de ti</h2><div class="actions">
+    ${(k.businesses_pending || k.offers_pending || k.reports_open || k.subs_expiring_7d || k.push_failed_7d || BADGES.sugerencias || BADGES.mensajes || BADGES.errores) ? `<div class="card"><h2>Pendiente de ti</h2><div class="actions">
       ${k.businesses_pending ? `<a class="btn" href="#/negocios?status=pending">${ms('storefront')} <b>${k.businesses_pending}</b> ${en ? (k.businesses_pending === 1 ? 'business to verify' : 'businesses to verify') : (k.businesses_pending === 1 ? 'negocio por verificar' : 'negocios por verificar')}</a>` : ''}
       ${k.offers_pending ? `<a class="btn" href="#/publicaciones?moderation=pending">${ms('bolt')} <b>${k.offers_pending}</b> ${en ? (k.offers_pending === 1 ? 'publication to moderate' : 'publications to moderate') : (k.offers_pending === 1 ? 'publicación por moderar' : 'publicaciones por moderar')}</a>` : ''}
       ${k.reports_open ? `<a class="btn" href="#/denuncias">${ms('flag')} <b>${k.reports_open}</b> ${en ? (k.reports_open === 1 ? 'open report' : 'open reports') : (k.reports_open === 1 ? 'denuncia abierta' : 'denuncias abiertas')}</a>` : ''}
       ${k.subs_expiring_7d ? `<a class="btn" href="#/planes">${ms('credit_card')} <b>${k.subs_expiring_7d}</b> ${en ? (k.subs_expiring_7d === 1 ? 'subscription expiring in 7 days' : 'subscriptions expiring in 7 days') : (k.subs_expiring_7d === 1 ? 'suscripción vence en 7 días' : 'suscripciones vencen en 7 días')}</a>` : ''}
       ${k.push_failed_7d ? `<a class="btn" href="#/avisos?tab=push">${ms('notifications')} <b>${k.push_failed_7d}</b> ${en ? (k.push_failed_7d === 1 ? 'failed push notification (7 d)' : 'failed push notifications (7 d)') : (k.push_failed_7d === 1 ? 'notificación push fallida (7 d)' : 'notificaciones push fallidas (7 d)')}</a>` : ''}
       ${BADGES.mensajes ? `<a class="btn" href="#/mensajes">${ms('campaign')} <b>${BADGES.mensajes}</b> ${en ? (BADGES.mensajes === 1 ? 'customer message to review' : 'customer messages to review') : (BADGES.mensajes === 1 ? 'mensaje a clientes por revisar' : 'mensajes a clientes por revisar')}</a>` : ''}
+      ${BADGES.errores ? `<a class="btn" href="#/errores">${ms('bug_report')} <b>${BADGES.errores}</b> ${en ? (BADGES.errores === 1 ? 'new website error (24 h)' : 'new website errors (24 h)') : (BADGES.errores === 1 ? 'error nuevo en la web (24 h)' : 'errores nuevos en la web (24 h)')}</a>` : ''}
       ${BADGES.sugerencias ? `<a class="btn" href="#/sugerencias">${ms('lightbulb')} <b>${BADGES.sugerencias}</b> ${en ? (BADGES.sugerencias === 1 ? 'unread suggestion' : 'unread suggestions') : (BADGES.sugerencias === 1 ? 'sugerencia sin leer' : 'sugerencias sin leer')}</a>` : ''}
     </div></div>` : '<div class="card"><h2>Todo al día</h2><p class="muted" style="margin:0">No hay negocios por verificar, publicaciones por moderar ni denuncias abiertas.</p></div>'}
     <div class="grid2">
@@ -442,6 +446,9 @@ PAGES.resumen = async (v) => {
       <div class="card"><h2>Notificaciones push</h2><div class="kpis">
         ${kpi(k.push_queue, 'en cola')} ${kpi(k.push_sent_7d, 'enviadas (7 d)')} ${kpi(k.push_failed_7d, 'fallidas (7 d)', k.push_failed_7d ? 'accent' : '')}
       </div></div>
+      ${WEB_ERR ? `<div class="card"><h2><a class="link" href="#/errores">Errores de la web</a></h2><div class="kpis">
+        ${kpi(WEB_ERR.new_24h || 0, 'errores nuevos (24 h)', WEB_ERR.new_24h ? 'accent' : '')} ${kpi(WEB_ERR.open || 0, 'sin resolver')} ${kpi(WEB_ERR.last_hour || 0, 'veces en la última hora')}
+      </div></div>` : ''}
     </div>
     <div class="card"><div class="page-head" style="margin-bottom:4px"><h2 style="margin:0">Últimos 30 días</h2><span class="spacer"></span>
       <div class="chart-tabs" id="ctabs">${[['redemptions', 'Canjes'], ['views', 'Vistas'], ['offers', 'Publicaciones'], ['users', 'Altas']].map(([k2, l], i) => `<button class="${i === 0 ? 'on' : ''}" data-k="${k2}">${l}</button>`).join('')}</div></div>
@@ -458,7 +465,7 @@ PAGES.resumen = async (v) => {
 
 // ── Negocios ────────────────────────────────────────────────────────────────
 const params = () => Object.fromEntries(new URLSearchParams((location.hash.split('?')[1] || '')));
-const st = { mensajes: { limit: 50, offset: 0 }, sugerencias: { limit: 50, offset: 0 }, negocios: { limit: 50, offset: 0 }, publicaciones: { limit: 50, offset: 0 }, canjes: { limit: 50, offset: 0 }, usuarios: { limit: 50, offset: 0 }, resenas: { limit: 50, offset: 0 }, posts: { limit: 50, offset: 0 }, denuncias: { limit: 50, offset: 0 }, actividad: { limit: 100, offset: 0 }, pagos: { limit: 100, offset: 0 }, subs: { limit: 100, offset: 0 } };
+const st = { mensajes: { limit: 50, offset: 0 }, sugerencias: { limit: 50, offset: 0 }, negocios: { limit: 50, offset: 0 }, publicaciones: { limit: 50, offset: 0 }, canjes: { limit: 50, offset: 0 }, usuarios: { limit: 50, offset: 0 }, resenas: { limit: 50, offset: 0 }, posts: { limit: 50, offset: 0 }, denuncias: { limit: 50, offset: 0 }, actividad: { limit: 100, offset: 0 }, pagos: { limit: 100, offset: 0 }, subs: { limit: 100, offset: 0 }, errores: { limit: 50, offset: 0 } };
 
 PAGES.negocios = async (v, id) => {
   if (id) return businessDetail(v, id);
@@ -685,6 +692,7 @@ const ACTIONS = {
   'category.upsert': 'Categoría guardada', 'category.delete': 'Categoría borrada', 'admin.add': 'Administrador añadido', 'admin.remove': 'Administrador quitado', 'maintenance.expire_offers': 'Caducidad forzada',
   'business_message_approve': 'Mensaje a clientes aprobado', 'business_message_reject': 'Mensaje a clientes rechazado', 'collection_save': 'Colección guardada', 'collection_delete': 'Colección borrada',
   'feedback.update': 'Sugerencia actualizada', 'feedback.delete': 'Sugerencia borrada',
+  'web_error.resolve': 'Error de la web resuelto',
 };
 const summarize = (o) => Object.entries(o).filter(([, v]) => v != null && v !== '').map(([k, v]) => `${k}: ${typeof v === 'object' ? JSON.stringify(v) : v}`).join(' · ').slice(0, 300);
 
@@ -1630,6 +1638,104 @@ PAGES.configuracion = async (v) => {
   alGuardar($('#spf'), async (c) => { if (!await confirmDlg('Cambiar el envío de push', 'Si la dirección o la clave están mal, dejarán de llegar todas las notificaciones push.', { danger: true, submit: 'Guardar' })) return; await save('send_push', { url: c.url.value.trim(), key: c.key.value.trim() }); });
   alGuardar($('#rlf'), (c) => save('rules', { block_2x1_alcohol: c.block2x1.checked }));
   $('#expire').onclick = (ev) => esperando(ev.currentTarget, async () => { try { const n = await rpc('admin_run_expire_offers'); toast(I18N.lang === 'en' ? `${n} ${n === 1 ? 'publication' : 'publications'} expired` : `${n} ${n === 1 ? 'publicación caducada' : 'publicaciones caducadas'}`); } catch (e) { toast(e.message, true); } });
+};
+
+// ── Errores de la web ───────────────────────────────────────────────────────
+// Lo que falla en el navegador de la gente (assets/errores.js → log_web_error),
+// agrupado: el mismo error suma veces en vez de repetirse.
+const AREAS_ERR = { publica: 'Web pública', cuenta: 'Tu cuenta', panel: 'Panel de negocios', admin: 'Administración' };
+const AREA_ICON = { publica: 'public', cuenta: 'person', panel: 'storefront', admin: 'shield' };
+PAGES.errores = async (v) => {
+  const p = params(); const s = st.errores;
+  s.area = p.area || s.area || 'all';
+  s.status = p.status || s.status || 'open';
+  const en = I18N.lang === 'en';
+  v.innerHTML = `
+    <div class="page-head"><h1>Errores de la web</h1><span class="spacer"></span><button class="btn sm ghost" id="csv">Exportar CSV</button></div>
+    ${helpBox('¿Qué hago aquí?', en
+      ? `<p>What breaks in people's browsers on klendar.app: the public pages, Your account, the business dashboard and this panel. The same error is <b>grouped</b> (same place and message) and adds up <b>times</b> instead of repeating. No personal data is kept: only the page (without the address details), the browser, the language and the error, with emails, keys and long numbers removed.</p><p>What to do: start with the <b>new</b> ones and the ones repeated most, open the <b>stack</b> to see where it breaks, fix it and, once it's published, press <b>Mark as resolved</b>. If it happens again, it reopens by itself and is marked <b>back again</b>. A few odd ones (old browsers, bots) can be marked as resolved without doing anything. Browser extensions, network drops and similar noise are never recorded. Everything is deleted after 30 days without happening.</p><p><b>Email alert</b> (at the bottom): if an error repeats a lot in one hour, or many new ones appear in a day, an email goes to the address you set, at most once every few hours.</p>`
+      : `<p>Lo que falla en el navegador de la gente en klendar.app: las páginas públicas, «Tu cuenta», el panel de negocios y este panel. El mismo error se <b>agrupa</b> (mismo sitio y mismo mensaje) y suma <b>veces</b> en vez de repetirse. No se guarda nada personal: solo la página (sin los datos de la dirección), el navegador, el idioma y el error, con correos, claves y números largos quitados.</p><p>Qué hacer: empieza por los <b>nuevos</b> y los que más se repiten, abre la <b>pila</b> para ver dónde se rompe, arréglalo y, cuando esté publicado, pulsa <b>Marcar como resuelto</b>. Si vuelve a pasar, se reabre solo y sale marcado como <b>ha vuelto</b>. Alguno raro (navegadores muy viejos, robots) se puede marcar como resuelto sin hacer nada. Las extensiones del navegador, los cortes de red y ruido parecido no se apuntan nunca. Todo se borra a los 30 días sin volver a pasar.</p><p><b>Aviso por correo</b> (abajo): si un error se repite mucho en una hora, o salen muchos nuevos en un día, llega un correo a la dirección que pongas, como mucho uno cada pocas horas.</p>`)}
+    <div id="counts"></div>
+    <div class="toolbar">
+      <select id="area">${[['all', 'Todas las áreas'], ['publica', 'Web pública'], ['cuenta', 'Tu cuenta'], ['panel', 'Panel de negocios'], ['admin', 'Administración']].map((o) => `<option value="${o[0]}" ${s.area === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
+      <select id="status">${[['open', 'Sin resolver'], ['resolved', 'Resueltos'], ['all', 'Todos']].map((o) => `<option value="${o[0]}" ${s.status === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
+    </div>
+    <div id="list"><div class="loading">Cargando…</div></div>
+    <div id="aviso"></div>`;
+  let rows = [];
+  let avisoPintado = false;
+  const donde = (e) => e.source ? `<code>${esc(e.source)}${e.line != null ? ':' + e.line : ''}${e.col != null ? ':' + e.col : ''}</code>${e.version ? ` <span class="muted">v${esc(e.version)}</span>` : ''}` : '';
+  const veces = (e) => en
+    ? `<b>${fmtNum(e.count)}</b> ${e.count === 1 ? 'time' : 'times'}${e.last_hour ? ` · ${fmtNum(e.last_hour)} in the last hour` : ''}`
+    : `<b>${fmtNum(e.count)}</b> ${e.count === 1 ? 'vez' : 'veces'}${e.last_hour ? ` · ${fmtNum(e.last_hour)} en la última hora` : ''}`;
+  const pintaAviso = (cfg, ultimo) => {
+    if (avisoPintado || !cfg) return;
+    avisoPintado = true;
+    $('#aviso').innerHTML = `<div class="card"><h2>Aviso por correo</h2>
+      <p class="muted small" style="margin:0 0 10px">${en
+        ? `An email when an error that hasn't been reported yet repeats in one hour, or when more new errors than the limit appear since the last alert (within 24 h). Last alert: <b>${ultimo ? fmtDate(ultimo) : 'never'}</b>.`
+        : `Un correo cuando un error del que aún no se ha avisado se repite en una hora, o cuando salen más errores nuevos que el límite desde el último aviso (dentro de 24 h). Último aviso: <b>${ultimo ? fmtDate(ultimo) : 'nunca'}</b>.`}</p>
+      <form id="avf" style="display:grid;gap:10px">
+        <label class="f" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="email" ${cfg.email !== false ? 'checked' : ''}><span>Mandar el aviso por correo</span></label>
+        <label class="f"><span>Dirección</span><input name="to" type="email" required value="${esc(cfg.to || 'dev@klendar.app')}"></label>
+        <div class="grid3" style="gap:10px">
+          <label class="f"><span>Veces en una hora</span><input name="hits" type="number" min="1" max="100000" step="1" required value="${esc(cfg.hits_per_hour ?? 20)}"></label>
+          <label class="f"><span>Errores nuevos al día</span><input name="nuevos" type="number" min="0" max="500" step="1" required value="${esc(cfg.new_per_day ?? 10)}"></label>
+          <label class="f"><span>Como mucho uno cada (horas)</span><input name="cada" type="number" min="1" max="168" step="1" required value="${esc(cfg.every_hours ?? 6)}"></label>
+        </div>
+        <label class="f" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="log" ${cfg.log !== false ? 'checked' : ''}><span>Apuntar los errores de la web (si lo apagas, no se guarda ninguno nuevo)</span></label>
+        <div><button class="btn sm">Guardar</button></div>
+      </form></div>`;
+    const f = $('#avf');
+    f.onsubmit = (ev) => {
+      ev.preventDefault();
+      const c = f.elements;
+      esperando(f.querySelector('button'), async () => {
+        const entero = (x, min, max, def) => { const n = Math.round(Number(x)); return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : def; };
+        const valor = {
+          log: c.log.checked,
+          email: c.email.checked,
+          to: c.to.value.trim() || 'dev@klendar.app',
+          hits_per_hour: entero(c.hits.value, 1, 100000, 20),
+          new_per_day: entero(c.nuevos.value, 0, 500, 10),
+          every_hours: entero(c.cada.value, 1, 168, 6),
+        };
+        if (!valor.log && !await confirmDlg('Dejar de apuntar errores', 'No se guardará ningún error nuevo de la web hasta que lo vuelvas a encender.', { danger: true, submit: 'Apagar' })) return;
+        try { await rpc('admin_set_config', { p_key: 'web_errors', p_value: valor }); toast('Guardado'); } catch (e) { toast(e.message, true); }
+      });
+    };
+  };
+  const load = async () => {
+    const r = await rpc('admin_web_errors', { p_area: s.area === 'all' ? null : s.area, p_limit: s.limit, p_offset: s.offset, p_status: s.status });
+    rows = r.rows || [];
+    const c = r.counts || {};
+    $('#counts').innerHTML = `<div class="kpis" style="margin-bottom:14px">
+      <div class="kpi ${c.new_24h ? 'accent' : ''}"><b>${fmtNum(c.new_24h)}</b><span>nuevos (24 h)</span></div>
+      <div class="kpi"><b>${fmtNum(c.open)}</b><span>sin resolver</span></div>
+      <div class="kpi"><b>${fmtNum(c.last_hour)}</b><span>veces en la última hora</span></div>
+      <div class="kpi"><b>${fmtNum(c.resolved)}</b><span>resueltos</span></div></div>`;
+    const pg = pager(s, r.total, load);
+    $('#list').innerHTML = (rows.length ? rows.map((e) => `
+      <div class="item"><div class="ph">${ms(AREA_ICON[e.area] || 'bug_report')}</div><div style="min-width:0">
+        <h3><span class="tag dim">${esc(AREAS_ERR[e.area] || e.area)}</span> ${e.is_new ? `<span class="tag ${e.reopened_at ? 'warn' : 'bad'}">${e.reopened_at ? 'ha vuelto' : 'nuevo'}</span>` : ''} ${e.resolved_at ? '<span class="tag ok">resuelto</span>' : ''} ${e.kind === 'rejection' ? '<span class="tag dim" title="Una promesa rechazada que nadie ha atendido (unhandledrejection)">promesa</span>' : ''}</h3>
+        <p class="mono" style="font-size:13px;white-space:pre-wrap;word-break:break-word;margin:6px 0"><b>${esc(e.message)}</b></p>
+        <div class="meta">${e.page ? `<code>${esc(e.page)}</code>` : '—'}${donde(e) ? ' · ' + donde(e) : ''}</div>
+        <div class="meta">${veces(e)} · ${en ? 'first' : 'primera'} ${fmtDate(e.first_seen)} · ${en ? 'last' : 'última'} ${ago(e.last_seen)}${e.browser ? ' · ' + esc(e.browser) : ''}${e.lang ? ' · ' + esc(e.lang) : ''}</div>
+        ${e.stack ? `<details style="margin-top:6px"><summary class="small" style="cursor:pointer">Pila</summary><pre class="mono">${esc(e.stack)}</pre></details>` : ''}
+        <div class="actions">${e.resolved_at
+          ? `<span class="muted small">${en ? 'Resolved' : 'Resuelto'} ${ago(e.resolved_at)}</span>`
+          : `<button class="btn sm" data-res="${e.id}">Marcar como resuelto</button>`}</div>
+      </div></div>`).join('') : `<div class="tbl-wrap"><div class="empty">${s.status === 'open' ? 'Ningún error sin resolver. Todo en orden.' : 'Nada por aquí.'}</div></div>`) + pg.html;
+    pg.bind($('#list'));
+    $$('#list [data-res]').forEach((b) => { b.onclick = () => esperando(b, async () => {
+      try { await rpc('admin_resolve_web_error', { p_id: +b.dataset.res }); toast('Marcado como resuelto'); refreshBadges(); await load(); } catch (e) { toast(e.message, true); }
+    }); });
+    pintaAviso(r.config, r.last_alert);
+  };
+  $('#area').onchange = () => { s.area = $('#area').value; s.offset = 0; load(); };
+  $('#status').onchange = () => { s.status = $('#status').value; s.offset = 0; load(); };
+  $('#csv').onclick = () => downloadCsv('errores-web', rows, [['area', 'área'], ['page', 'página'], ['message', 'mensaje'], ['source', 'archivo'], ['line', 'línea'], ['version', 'versión'], ['count', 'veces'], ['first_seen', 'primera vez'], ['last_seen', 'última vez'], ['browser', 'navegador'], ['lang', 'idioma'], ['resolved_at', 'resuelto']]);
+  await load();
 };
 
 // ── Administradores ─────────────────────────────────────────────────────────

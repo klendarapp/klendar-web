@@ -39,3 +39,13 @@
   Content-Type: text/plain; charset=utf-8
   Cache-Control: public, max-age=3600
   X-Robots-Tag: noindex
+
+# Universal Links de iOS (y autorrelleno de contraseñas): Apple lo pide como
+# JSON aunque el archivo no tenga extensión. Sin redirecciones ni caché larga:
+# el CDN de Apple lo vuelve a leer al instalar/actualizar la app. Cambiar
+# TEAMID por el Team ID de Apple Developer (docs/RUNBOOK.md de la app →
+# «iOS con Codemagic»); con el marcador no hace nada.
+/.well-known/apple-app-site-association
+  Content-Type: application/json
+  Cache-Control: public, max-age=3600
+  X-Robots-Tag: noindex

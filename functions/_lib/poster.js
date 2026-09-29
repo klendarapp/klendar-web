@@ -5,7 +5,7 @@
 // desde la app, desde el panel o desde cualquier ordenador con impresora,
 // sin tener que entrar. El QR se dibuja en el navegador.
 
-import { esc, html, isUuid, rpc } from './page.js';
+import { erroresScript, esc, html, isUuid, rpc } from './page.js';
 import { benefit, fmtDay, fmtEnd, fmtTime, zonaDe } from './public.js';
 import { notFound } from './views.js';
 
@@ -38,6 +38,7 @@ export async function posterPage(id, lang) {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+${erroresScript()}
 <meta name="robots" content="noindex">
 <title>${esc(S.title)} · ${esc(o.title)} · Klendar</title>
 <link rel="icon" href="/favicon.ico" sizes="48x48"><link rel="icon" type="image/png" sizes="96x96" href="/assets/favicon-96.png"><link rel="manifest" href="/site.webmanifest">
@@ -140,6 +141,7 @@ const CABEZA = (S, titulo) => `<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+${erroresScript()}
 <meta name="robots" content="noindex">
 <title>${esc(titulo)} · Klendar</title>
 <link rel="icon" href="/favicon.ico" sizes="48x48"><link rel="icon" type="image/png" sizes="96x96" href="/assets/favicon-96.png"><link rel="manifest" href="/site.webmanifest">
