@@ -354,8 +354,13 @@ RUTAS[''] = async () => {
   if (!YO) return RUTAS.entrar([], new URLSearchParams());
   const nombre = YO.user_metadata?.display_name || (YO.email || '').split('@')[0];
   const foto = YO.user_metadata?.avatar_url;
-  const negocios = await llamar('my_businesses', {}).catch(() => []);
+  const [negocios, invitaciones] = await Promise.all([
+    llamar('my_businesses', {}).catch(() => []),
+    // Un negocio te ha invitado a su equipo: se contesta desde aquí.
+    llamar('my_team_invites', {}).catch(() => []),
+  ]);
   const tieneNegocio = Array.isArray(negocios) && negocios.length > 0;
+  const nInv = Array.isArray(invitaciones) ? invitaciones.length : 0;
   pinta(`
     <h1 class="titulo-pagina">${esc(t('Tu cuenta'))}</h1>
     <a class="perfil" href="#/ajustes">
@@ -363,6 +368,14 @@ RUTAS[''] = async () => {
       <span class="perfil-t"><b>${esc(nombre)}</b><small>${esc(YO.email || '')}</small><em>${esc(t('Editar perfil'))}</em></span>
       ${ic('chevron_right')}
     </a>
+
+    ${nInv ? `<a class="invitacion inv-equipo" href="#/invitaciones">
+        <span class="inv-ic">${ic('group_add')}</span>
+        <span class="fila-t"><b>${esc(nInv === 1 ? t('Tienes una invitación de equipo')
+          : (EN ? `You have ${nInv} team invitations` : `Tienes ${nInv} invitaciones de equipo`))}</b>
+          <small>${esc(t('Acéptala o recházala'))}</small></span>
+        ${ic('chevron_right')}
+      </a>` : ''}
 
     <div class="rapidos">
       <a class="rapido" href="#/planes">${ic('bookmark')}<b>${esc(t('Tus planes'))}</b></a>
@@ -1281,6 +1294,7 @@ RUTAS.codigo = async ([id], params) => {
       <h1>${esc(tk.offer_title || '')}</h1>
       ${(tk.seats || 1) > 1 ? `<p class="muted"><b>${tk.seats} ${esc(t('plazas'))}</b></p>` : ''}
       ${benef ? `<p><span class="tag grande">${esc(benef)}</span></p>` : ''}
+      ${tk.price_kept ? `<p class="muted">${esc(t('Mantienes el precio de cuando lo conseguiste.'))}</p>` : ''}
       ${(tk.seats || 1) > 1 && !tk.discount && tk.price_cents != null
         ? `<p class="muted">${esc(EN
           ? `${money(tk.price_cents, tk.currency)} each · ${money(tk.price_cents * tk.seats, tk.currency)} in total`
@@ -1393,11 +1407,34 @@ RUTAS.espera = async ([id], params) => {
       return;
     }
   }
+  // Dónde estás de verdad: con dos avisos gastados ya no se vuelve a entrar;
+  // si ya te avisamos, hasta cuándo tienes.
+  const antes = await llamar('my_waitlist_status', { p_offer: id }).catch(() => null);
+  if (!quitar && antes?.state === 'exhausted') {
+    hecho({
+      titulo: t('Ya no estás en la lista de espera'),
+      texto: t('Te avisamos dos veces y no llegaste a coger plaza, así que ya no estás en la lista de espera.'),
+      volver: `${pre}/o/${encodeURIComponent(id)}`, volverTxt: t('Volver a la publicación'),
+      lista: '#/', listaTxt: t('Tu cuenta'),
+    });
+    return;
+  }
   const { puesto: dentro } = await ponOQuita('offer_waitlist', 'offer_id', id, quitar,
     () => llamar('toggle_waitlist', { p_offer: id }));
+  const hora = antes?.notified_until
+    ? new Date(antes.notified_until).toLocaleTimeString(EN ? 'en-GB' : 'es-ES', { hour: '2-digit', minute: '2-digit' }) : '';
+  const estado = !dentro ? ''
+    : antes?.state === 'notified' && hora
+      ? (antes.notices >= 2
+        ? (EN ? `Last notice: a place is free and you have until ${hora} to take it.` : `Último aviso: hay una plaza libre y tienes hasta las ${hora} para cogerla.`)
+        : (EN ? `We’ve told you a place is free: you have until ${hora} to take it. If it’s gone, you go back on the list.`
+          : `Te hemos avisado de una plaza libre: tienes hasta las ${hora} para cogerla. Si ya no queda, vuelves a la lista.`))
+      : antes?.state === 'waiting' && antes.notices > 0
+        ? t('Sigues en la lista de espera. Ya te avisamos una vez; te queda un aviso más.')
+        : t('Te avisamos si se libera una plaza');
   hecho({
     titulo: dentro ? t('Estás en la lista de espera') : t('Ya no estás en la lista de espera'),
-    texto: dentro ? t('Te avisamos si se libera una plaza') : '',
+    texto: estado,
     volver: `${pre}/o/${encodeURIComponent(id)}`, volverTxt: t('Volver a la publicación'),
     lista: '#/', listaTxt: t('Tu cuenta'),
     deshacer: `espera/${id}${dentro ? '?quitar=1' : ''}`,

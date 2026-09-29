@@ -370,3 +370,28 @@ a.card.tarjeta-sellos:hover { border-color: var(--ink-2); }
 .mensaje-hist:first-of-type { border-top: 0; padding-top: 0; }
 .mensaje-hist p { margin: 4px 0 0; color: var(--ink); }
 .mensaje-hist p:first-child { margin: 0; }
+
+/* Validar: qué código es, de un vistazo (como la app). La publicación en
+   grande con su foto; lo que hay que dar en coral, solo si vale; el resto en
+   neutros. */
+.codigo-card { margin-top: 12px; padding: 18px; border-radius: 22px; background: var(--elevated); border: 1px solid var(--glass-border); }
+.codigo-card p { margin: 0; }
+.cod-top { display: flex; gap: 14px; align-items: flex-start; }
+.cod-top img, .cod-ic { width: 72px; height: 72px; border-radius: 16px; flex: none; object-fit: cover; }
+.cod-ic { display: grid; place-items: center; background: rgba(128,128,128,.14); color: var(--ink-2); }
+.cod-ic .ms { font-size: 30px; }
+.cod-cab { min-width: 0; }
+.cod-tipo { display: block; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); }
+.cod-titulo { margin: 4px 0 0; font-size: 26px; line-height: 1.12; font-weight: 800; color: var(--ink); overflow-wrap: anywhere; }
+.cod-label { margin-top: 16px !important; font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.cod-dar { display: inline-block; margin-top: 6px !important; padding: 8px 16px; border-radius: 16px; background: var(--accent); color: var(--on-accent); font-size: 24px; font-weight: 800; line-height: 1.2; }
+.codigo-card.bad .cod-dar { background: none; color: var(--ink); padding: 0; font-size: 20px; }
+.cod-antes { margin-top: 6px !important; color: var(--ink-2); font-size: 17px; }
+.cod-plazas { margin-top: 12px !important; font-size: 22px; font-weight: 800; color: var(--ink); }
+.cod-cond { margin-top: 12px !important; color: var(--ink-2); font-size: 14px; }
+.cod-linea { margin-top: 8px !important; color: var(--ink-2); font-size: 15px; }
+.cod-linea b { color: var(--ink); }
+.cod-linea .ms { font-size: 18px; vertical-align: -4px; margin-right: 6px; }
+.btn.grande { width: 100%; justify-content: center; margin-top: 12px; padding: 16px; font-size: 20px; }
+.btn.grande .ms { font-size: 26px; }
+@media (max-width: 520px) { .cod-titulo { font-size: 22px; } .cod-dar { font-size: 20px; } }

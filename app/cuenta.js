@@ -84,6 +84,8 @@ function destinoWeb(ruta) {
   if (r.startsWith('/profile')) return '#/ajustes';
   // «Ana está en tus amigos»: tu lista de amigos.
   if (r.startsWith('/friends')) return '#/amigos';
+  // «Te invitan a un equipo»: aceptarla o rechazarla.
+  if (r.startsWith('/team-invites')) return '#/invitaciones';
   return '';
 }
 
@@ -490,6 +492,8 @@ RUTAS.ajustes = async () => {
         <dt>${esc(t('Notificaciones en el móvil'))}</dt>
         <dd id="dd-push">${cons?.push_devices ? `${esc(`${cons.push_devices} ${cons.push_devices === 1 ? t('dispositivo') : t('dispositivos')}`)}
           <button class="linkbtn" id="sin-push">${esc(t('Desactivarlas'))}</button>` : esc(t('Sin dispositivos registrados'))}</dd>
+        <dt>${esc(t('Personas bloqueadas'))}</dt>
+        <dd id="dd-bloqueadas">${esc(t('Un momento…'))}</dd>
       </dl>
       <p><button class="pill" id="descargar">${ic('download')} ${esc(t('Descargar mis datos'))}</button></p>
       <p class="muted">${esc(t('Un archivo JSON con todo lo que Klendar guarda de ti (derecho de acceso y portabilidad).'))}</p>
@@ -570,6 +574,7 @@ RUTAS.ajustes = async () => {
   });
 
   // Privacidad
+  pintaBloqueadas();
   $('#marketing').addEventListener('change', async (ev) => {
     const caja = ev.currentTarget;
     try {
@@ -871,6 +876,84 @@ RUTAS.denunciar = async ([tipo, id]) => {
   });
 };
 
+// ── Bloquear a una persona ────────────────────────────────────────────────
+// Desde su reseña (ficha pública), la lista de amigos o una invitación. Deja
+// de ver sus reseñas, deja de ser su amigo, no se ven en «quién va» ni
+// pueden invitarse. No se le avisa. Se deshace en Ajustes → Privacidad.
+/** «¿Bloquear a X?» con lo que pasa. `true` si se confirma. */
+function confirmaBloqueo(nombre) {
+  return confirma({
+    titulo: nombre
+      ? (EN ? `Block ${nombre}?` : `¿Bloquear a ${nombre}?`)
+      : t('¿Bloquear a esta persona?'),
+    texto: t('Dejarás de ver sus reseñas. Si es tu amigo, dejará de serlo: no verás a qué planes va, no podrá invitarte ni volver con tu enlace. No le avisamos. Lo puedes deshacer en Ajustes → Privacidad y datos.'),
+    aceptar: t('Bloquear'),
+    peligro: true,
+  });
+}
+
+RUTAS.bloquear = async ([id]) => {
+  if (!/^[0-9a-f-]{36}$/i.test(id || '')) {
+    pinta(`<p class="empty">${esc(t('Ese enlace no está completo.'))}</p>`);
+    return;
+  }
+  if (!exigeSesion(`bloquear/${id}`)) return;
+  const volver = document.referrer && new URL(document.referrer).origin === location.origin
+    ? document.referrer : `${pre}/`;
+  if (id === YO.id) {
+    pinta(`<p class="empty">${esc(t('No puedes bloquearte a ti.'))}</p>`);
+    return;
+  }
+  pinta(`
+    <div class="ticket">
+      <p class="hecho-ic" aria-hidden="true">${ic('block')}</p>
+      <h1>${esc(t('¿Bloquear a esta persona?'))}</h1>
+      <p class="muted">${esc(t('Dejarás de ver sus reseñas. Si es tu amigo, dejará de serlo: no verás a qué planes va, no podrá invitarte ni volver con tu enlace. No le avisamos. Lo puedes deshacer en Ajustes → Privacidad y datos.'))}</p>
+      <p class="acciones">
+        <button type="button" class="pill peligro-lleno" id="bloquear">${esc(t('Bloquear'))}</button>
+        <a class="pill" href="${esc(volver)}">${esc(t('Cancelar'))}</a>
+      </p>
+    </div>`);
+  $('#bloquear').onclick = (ev) => ocupado(ev.currentTarget, async () => {
+    await llamar('block_user', { p_user: id });
+    hecho({
+      titulo: t('Persona bloqueada'),
+      texto: t('Ya no verás sus reseñas. Si cambias de idea, desbloquéala en Ajustes → Privacidad y datos.'),
+      volver, volverTxt: t('Volver'),
+      lista: '#/ajustes', listaTxt: t('Ajustes'),
+    });
+  });
+};
+
+/** Ajustes → Privacidad: las personas bloqueadas, con «Desbloquear». */
+async function pintaBloqueadas() {
+  const caja = $('#dd-bloqueadas');
+  if (!caja) return;
+  let lista = [];
+  try { lista = (await llamar('my_blocks', {})).blocks || []; } catch { caja.textContent = t('No se ha podido cargar.'); return; }
+  if (!caja.isConnected) return;
+  if (!lista.length) { caja.textContent = t('No has bloqueado a nadie. Se hace desde una reseña, tu lista de amigos o una invitación.'); return; }
+  caja.innerHTML = `<ul class="bloqueadas">${lista.map((p) => `<li>
+      <span><b>${esc(p.name || t('Usuario'))}</b> <small class="muted">${esc(`${t('Desde el')} ${fecha(p.since, { day: 'numeric', month: 'long', year: 'numeric' })}`)}</small></span>
+      <button type="button" class="linkbtn" data-desbloquear="${esc(p.id)}" data-nombre="${esc(p.name || t('Usuario'))}">${esc(t('Desbloquear'))}</button>
+    </li>`).join('')}</ul>`;
+  I18N.translate(caja);
+  $$('[data-desbloquear]', caja).forEach((b) => b.addEventListener('click', async () => {
+    const nombre = b.dataset.nombre;
+    if (!(await confirma({
+      titulo: EN ? `Unblock ${nombre}?` : `¿Desbloquear a ${nombre}?`,
+      texto: t('Volverás a ver sus reseñas. No vuelve a tus amigos: si quieres, abre su enlace de amigo.'),
+      aceptar: t('Desbloquear'),
+    }))) return;
+    b.disabled = true;
+    try {
+      await llamar('unblock_user', { p_user: b.dataset.desbloquear });
+      toast(EN ? `You've unblocked ${nombre}` : `Has desbloqueado a ${nombre}`);
+      pintaBloqueadas();
+    } catch (e) { toast(e.message, true); if (b.isConnected) b.disabled = false; }
+  }));
+}
+
 // ── Un último paso ────────────────────────────────────────────────────────
 RUTAS['ultimo-paso'] = async (_p, params) => {
   if (!exigeSesion('ultimo-paso')) return;
@@ -973,6 +1056,57 @@ RUTAS['ultimo-paso'] = async (_p, params) => {
 };
 
 RUTAS.avisos = (...a) => RUTAS.notificaciones(...a); // enlaces antiguos
+
+// ── Invitaciones de equipo ────────────────────────────────────────────────
+// Un negocio te invita a su equipo y decides tú (antes, con cuenta, entrabas
+// sin que se te preguntara). Como «Invitaciones de equipo» en la app.
+RUTAS.invitaciones = async () => {
+  if (!exigeSesion('invitaciones')) return;
+  const lista = await llamar('my_team_invites', {});
+  const papel = (r) => (r === 'manager' ? t('encargado') : t('empleado'));
+  const dia = (s) => new Date(s).toLocaleDateString(EN ? 'en-GB' : 'es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+  pinta(`
+    <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
+    <h1>${esc(t('Invitaciones de equipo'))}</h1>
+    ${(lista || []).length ? `<div class="invitaciones-eq">${lista.map((i) => `
+      <div class="lista inv-eq">
+        <p class="inv-eq-t"><b>${esc(EN ? `You’re invited to the ${i.business_name} team` : `Te invitan al equipo de ${i.business_name}`)}</b>
+          ${i.business_city ? `<small class="muted">${esc(i.business_city)}</small>` : ''}</p>
+        <p>${esc(i.invited_by_name
+          ? (EN ? `As ${papel(i.role)} · invited by ${i.invited_by_name}` : `Como ${papel(i.role)} · te invita ${i.invited_by_name}`)
+          : (EN ? `As ${papel(i.role)}` : `Como ${papel(i.role)}`))}</p>
+        <p class="muted">${esc(i.role === 'manager'
+          ? t('Podrás publicar ofertas y eventos, validar códigos y llevar el equipo.')
+          : t('Podrás validar los códigos de los clientes.'))}</p>
+        ${i.expires_at ? `<p class="muted">${esc(EN ? `Expires on ${dia(i.expires_at)}` : `Caduca el ${dia(i.expires_at)}`)}</p>` : ''}
+        <p class="dos-pills">
+          <button class="pill" type="button" data-no="${esc(i.id)}">${esc(t('Rechazar'))}</button>
+          <button class="pill accent" type="button" data-si="${esc(i.id)}">${esc(t('Aceptar'))}</button>
+        </p>
+      </div>`).join('')}</div>`
+    : `<p class="empty">${esc(t('No tienes invitaciones pendientes.'))}</p>`}`);
+  const contesta = async (id, acepta, boton) => {
+    boton.disabled = true;
+    try {
+      const r = await llamar('respond_team_invite', { p_invite: id, p_accept: acepta });
+      if (!r?.ok) {
+        toast(r?.error === 'expired' ? t('Esta invitación ha caducado.') : t('No se ha podido. Vuelve a probar.'), true);
+      } else if (acepta) {
+        toast(EN ? `You’re now part of the ${r.business_name} team.` : `Ya formas parte del equipo de ${r.business_name}.`);
+        // Dentro: a su panel, que es lo que viene a hacer.
+        location.href = '/panel/';
+        return;
+      } else {
+        toast(t('Invitación rechazada.'));
+      }
+    } catch (e) {
+      toast(e.message, true);
+    }
+    RUTAS.invitaciones();
+  };
+  $$('[data-si]').forEach((b) => { b.onclick = () => contesta(b.dataset.si, true, b); });
+  $$('[data-no]').forEach((b) => { b.onclick = () => contesta(b.dataset.no, false, b); });
+};
 
 // El número de notificaciones sin leer, en la tarjeta de la portada.
 async function pintaSinLeer() {

@@ -107,6 +107,8 @@ RUTAS.amigos = async () => {
             <small>${esc(EN ? `Friends since ${dia(a.since)}` : `Amigos desde ${dia(a.since)}`)}</small></span>
           <button type="button" class="icono-btn" data-quitar="${esc(a.id)}" data-nombre="${esc(nombreDeAmigo(a))}"
             aria-label="${esc(t('Quitar de tus amigos'))}" title="${esc(t('Quitar de tus amigos'))}">${ic('person_remove')}</button>
+          <button type="button" class="icono-btn" data-bloquear="${esc(a.id)}" data-nombre="${esc(nombreDeAmigo(a))}"
+            aria-label="${esc(t('Bloquear'))}" title="${esc(t('Bloquear'))}">${ic('block')}</button>
         </div>`).join('')}</div>` : ''}</div>
       <div class="empty amigos-vacio" id="amigos-vacio"${amigos.length ? ' hidden' : ''}>
         <p><b>${esc(t('Aún no tienes amigos en Klendar'))}</b></p>
@@ -176,6 +178,27 @@ RUTAS.amigos = async () => {
       if (b.isConnected) b.disabled = false;
     }
   }));
+  // Bloquear: deja de ser tu amigo, no sale en tu «quién va» (ni tú en el
+  // suyo), no puede invitarte y no ves sus reseñas. No se le avisa.
+  $$('[data-bloquear]').forEach((b) => b.addEventListener('click', async () => {
+    const nombre = b.dataset.nombre;
+    if (!(await confirmaBloqueo(nombre))) return;
+    b.disabled = true;
+    try {
+      await llamar('block_user', { p_user: b.dataset.bloquear });
+      toast(EN ? `You've blocked ${nombre}` : `Has bloqueado a ${nombre}`);
+      const filaAmigo = b.closest('.amigo-fila');
+      const caja = filaAmigo?.parentElement;
+      filaAmigo?.remove();
+      if (caja && !caja.children.length) caja.remove();
+      quedan -= 1;
+      $('#cuantos-amigos').textContent = cuantos(quedan);
+      $('#amigos-vacio').hidden = quedan > 0;
+    } catch (e) {
+      toast(e.message, true);
+      if (b.isConnected) b.disabled = false;
+    }
+  }));
 };
 
 // ── El enlace de otra persona ─────────────────────────────────────────────
@@ -199,7 +222,7 @@ RUTAS.amigo = async ([code]) => {
   let fallo = valido ? '' : 'not_found';
   if (valido) {
     try { info = await llamar('friend_link_info', { p_code: code }); } catch (e) {
-      if (!['not_found', 'rate_limited'].includes(e.clave)) throw e;
+      if (!['not_found', 'rate_limited', 'blocked'].includes(e.clave)) throw e;
       fallo = e.clave;
     }
   }
@@ -234,6 +257,13 @@ RUTAS.amigo = async ([code]) => {
         titulo: t('Demasiados intentos. Espera un rato y vuelve a probar.'),
         botones: `<a class="pill" href="#/">${esc(t('Tu cuenta'))}</a>`,
       });
+      // La tienes bloqueada tú (a quien está bloqueado se le dice que el
+      // enlace no vale, como si no existiera).
+      case 'blocked': return pintaEnlaceAbierto({
+        titulo: t('Tienes bloqueada a esta persona'),
+        texto: t('Para ser amigos, desbloquéala en Ajustes → Privacidad y datos → Personas bloqueadas.'),
+        botones: `<a class="pill" href="#/ajustes">${esc(t('Ajustes'))}</a>`,
+      });
       default: return pintaEnlaceAbierto({
         titulo: t('Este enlace ya no vale'),
         texto: t('Puede que lo haya cambiado. Pídele el nuevo.'),
@@ -254,7 +284,7 @@ RUTAS.amigo = async ([code]) => {
   $('#aceptar-amigo').onclick = (ev) => ocupado(ev.currentTarget, async () => {
     let r;
     try { r = await llamar('accept_friend_link', { p_code: code }); } catch (e) {
-      if (['not_found', 'self', 'full', 'their_full', 'too_many_today', 'rate_limited'].includes(e.clave)) {
+      if (['not_found', 'self', 'full', 'their_full', 'too_many_today', 'rate_limited', 'blocked'].includes(e.clave)) {
         estado(e.clave);
         I18N.translate(view);
         return;

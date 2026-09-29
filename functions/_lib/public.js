@@ -250,7 +250,9 @@ export function publicPage({ lang, path, title, description, head = '', body, im
   // página y, en una ficha, «Vas» y las invitaciones. Solo carga Supabase si
   // hay una sesión guardada (ver /assets/amigos.js). También pone en activo
   // «Añadir a favoritos» y «Guardar en Planes» si ya lo tienes.
-  const conAmigos = /\sdata-(o|fav|plan)="|id="amigos-ficha"/.test(body);
+  // `data-autor`: reseñas, que se esconden si quien mira ha bloqueado a quien
+  // las escribió.
+  const conAmigos = /\sdata-(o|fav|plan|autor)="|id="amigos-ficha"/.test(body);
   return `<!doctype html>
 <html lang="${en ? 'en' : 'es'}">
 <head>
@@ -286,7 +288,7 @@ ${cabeza}
 ${siteHeader(lang, esc(es), esc(enPath))}
 <main class="pub wrap" id="contenido">${body}</main>
 ${siteFooter(lang)}
-${conAmigos ? `<script src="/assets/amigos.js?v=2" defer data-lang="${en ? 'en' : 'es'}"></script>
+${conAmigos ? `<script src="/assets/amigos.js?v=3" defer data-lang="${en ? 'en' : 'es'}"></script>
 ` : ''}${/class="detail"/.test(body) ? `<script src="/assets/barra.js?v=2" defer></script>
 ` : ''}${CONTADOR}
 </body></html>`;

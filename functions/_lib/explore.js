@@ -120,7 +120,7 @@ const mapaHtml = (items, lang, S) => {
         var s=document.createElement('script');s.src='https://api.mapbox.com/mapbox-gl-js/v3.15.0/mapbox-gl.js';s.onload=ok;s.onerror=ko;document.head.append(s);});
       mapboxgl.accessToken=tk;
       var oscuro=matchMedia('(prefers-color-scheme: dark)').matches;
-      var m=new mapboxgl.Map({container:caja,style:oscuro?'mapbox://styles/mapbox/dark-v11':'mapbox://styles/mapbox/light-v11',center:puntos.length?[puntos[0].lng,puntos[0].lat]:[-3.7038,40.4168],zoom:12});
+      var m=new mapboxgl.Map({container:caja,style:oscuro?'mapbox://styles/mapbox/dark-v11':'mapbox://styles/mapbox/light-v11',center:puntos.length?[puntos[0].lng,puntos[0].lat]:[-3.7038,40.4168],zoom:12,performanceMetricsCollection:false,collectResourceTiming:false});
       m.addControl(new mapboxgl.NavigationControl({showCompass:false}));
       var bounds=new mapboxgl.LngLatBounds();
       puntos.forEach(function(p){bounds.extend([p.lng,p.lat]);

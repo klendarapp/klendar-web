@@ -289,6 +289,13 @@ const I18N = makeI18N({
     'Añadir a alguien al equipo': 'Add someone to the team',
     'Añadido al equipo': 'Added to the team',
     'Invitaciones pendientes': 'Pending invitations',
+    'Aún no han contestado. Caducan a los 14 días y puedes cancelarlas.':
+      'They haven’t answered yet. They expire after 14 days and you can cancel them.',
+    'Caduca': 'Expires',
+    'Invitación enviada: entrará en el equipo cuando la acepte': 'Invitation sent: they’ll join the team when they accept it',
+    'Le llega una invitación (en la app y por correo) que tiene que aceptar. Si aún no tiene cuenta, la verá al crearla con ese correo. Caduca a los 14 días.':
+      'They get an invitation (in the app and by email) that they have to accept. If they don’t have an account yet, they’ll see it when they sign up with that email. It expires after 14 days.',
+    'Esa persona ya está en el equipo. Su papel se cambia en la lista.': 'That person is already on the team. Change their role in the list.',
     'Invitación guardada': 'Invitation saved',
     'Invitación enviada: le hemos mandado un correo': 'Invitation sent: we have emailed them',
     "Si aún no tiene cuenta en Klendar, le mandamos un correo con la invitación y entra al equipo en cuanto se registre con esa dirección.": "If they don't have a Klendar account yet, we email them the invitation and they join the team as soon as they sign up with that address.",

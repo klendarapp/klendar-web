@@ -22,7 +22,9 @@
   // una publicación): si ya lo tienes, en activo y para quitarlo, como la app.
   var botonFav = document.querySelector('[data-fav]');
   var botonPlan = document.querySelector('[data-plan]');
-  if (!ficha && !tarjetas.length && !botonFav && !botonPlan) return;
+  // Reseñas de la ficha de un negocio: las de quien has bloqueado no se ven.
+  var resenas = document.querySelectorAll('[data-autor]');
+  if (!ficha && !tarjetas.length && !botonFav && !botonPlan && !resenas.length) return;
   var UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   var cuenta = en ? '/app/?lang=en' : '/app/';
 
@@ -43,6 +45,7 @@
     gone: 'This publication is no longer available.',
     oops: 'Something did not work. If it happens again, write to info@klendar.app.',
     favOn: 'Remove from favourites', planOn: 'Remove from Plans',
+    block: function (a) { return 'Block ' + a; },
   } : {
     someone: 'Alguien',
     one: function (a) { return a + ' va'; },
@@ -60,6 +63,7 @@
     gone: 'Esta publicación ya no está disponible.',
     oops: 'Algo no ha ido bien. Si vuelve a pasar, escríbenos a info@klendar.app.',
     favOn: 'Quitar de favoritos', planOn: 'Quitar de Planes',
+    block: function (a) { return 'Bloquear a ' + a; },
   };
 
   // ── ¿Hay sesión? Sin llamar a nada: lo que guarda Supabase en el navegador.
@@ -77,9 +81,12 @@
   }
   if (!sesionGuardada()) return;
 
-  function carga(src) {
+  // Con `integrity`, el navegador comprueba que el archivo del CDN es
+  // exactamente el esperado (versión fija de supabase-js).
+  function carga(src, integrity) {
     return new Promise(function (ok, ko) {
       var s = document.createElement('script');
+      if (integrity) { s.integrity = integrity; s.crossOrigin = 'anonymous'; }
       s.src = src; s.onload = ok; s.onerror = ko;
       document.head.appendChild(s);
     });
@@ -130,7 +137,8 @@
       var env = window.KLENDAR_ENV;
       var ref = env && (env.url.match(/^https:\/\/([a-z0-9]+)\./) || [])[1];
       if (!env || !sesionGuardada(ref)) return null;
-      return (window.supabase ? Promise.resolve() : carga('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js'))
+      return (window.supabase ? Promise.resolve() : carga('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js',
+          'sha384-Rj26LVGvoeRVR6+mwQmFfcR3QOBEwT+ZmuCWpuiqeTzJpCs0ER4ITAWGb4Hiy3Ok'))
         .then(function () {
           var sb = window.supabase.createClient(env.url, env.key);
           return sb.auth.getSession().then(function (r) {
@@ -140,6 +148,7 @@
             var uid = r.data.session.user && r.data.session.user.id;
             if (botonFav) yaLoTienes(sb, uid, botonFav, 'favorites', 'business_id', botonFav.getAttribute('data-fav'), '#/seguir/', T.favOn);
             if (botonPlan) yaLoTienes(sb, uid, botonPlan, 'saved_offers', 'offer_id', botonPlan.getAttribute('data-plan'), '#/guardar/', T.planOn);
+            if (resenas.length) sinBloqueadas(sb, uid);
           });
         });
     })
@@ -158,6 +167,26 @@
       boton.classList.add('on');
       boton.setAttribute('href', cuenta + ruta + id + '?quitar=1');
     }, function () { /* sin red: el botón tal cual */ });
+  }
+
+  // ── Reseñas de personas bloqueadas: fuera ───────────────────────────────
+  // La página va en caché y no sabe quién mira: aquí se esconden las de
+  // quien has bloqueado (y tu propia reseña no ofrece bloquearte).
+  function sinBloqueadas(sb, uid) {
+    resenas.forEach(function (r) {
+      if (r.getAttribute('data-autor') !== uid) return;
+      var b = r.querySelector('a[href*="#/bloquear/"]');
+      if (b) { var sep = b.previousSibling; if (sep && sep.nodeType === 3) sep.textContent = ''; b.remove(); }
+    });
+    sb.rpc('my_blocks').then(function (res) {
+      var ids = ((res && res.data && res.data.blocks) || []).map(function (p) { return p.id; });
+      if (!ids.length) return;
+      resenas.forEach(function (r) {
+        if (ids.indexOf(r.getAttribute('data-autor')) >= 0) r.hidden = true;
+      });
+      var caja = document.querySelector('.resenas');
+      if (caja && !caja.querySelector('article:not([hidden])')) caja.hidden = true;
+    }, function () { /* sin red: las reseñas tal cual */ });
   }
 
   // ── Tarjetas: qué amigos van a cada una ─────────────────────────────────
@@ -232,8 +261,13 @@
           '<button type="button" class="pill" data-r="0">' + esc(T.no) + '</button>'
         : '<span class="invita-estado">' + esc(todasNo ? T.saidNo : T.saidYes) + '</span>' +
           '<button type="button" class="linkbtn" data-cambiar>' + esc(T.change) + '</button>';
+      // Bloquear a quien invita (el primero): «Tu cuenta» pregunta antes.
+      var de = invs[0].from && UUID.test(invs[0].from.id || '') ? invs[0].from.id : '';
+      var bloquear = de
+        ? '<a class="denuncia" rel="nofollow" href="' + esc(cuenta + '#/bloquear/' + de) + '">' + esc(T.block(nombre(invs[0].from))) + '</a>'
+        : '';
       caja.innerHTML = '<p class="invita-cab">' + pila(quienes) + '<b>' + esc(titulo) + '</b></p>' +
-        '<div class="invita-acc">' + botones + '</div>';
+        '<div class="invita-acc">' + botones + '</div>' + bloquear;
       caja.hidden = false;
       var cambiar = caja.querySelector('[data-cambiar]');
       if (cambiar) cambiar.onclick = function () { cambiando = true; pintaInvitacion(d); };

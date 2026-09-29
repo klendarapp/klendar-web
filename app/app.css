@@ -100,6 +100,9 @@ label.pill { cursor: pointer; }
 .consen { display: grid; grid-template-columns: minmax(150px, 220px) 1fr; gap: 10px 16px; margin: 14px 0; }
 .consen dt { color: var(--ink-2); }
 .consen dd { margin: 0; }
+/* Personas bloqueadas (Ajustes → Privacidad): una por línea, «Desbloquear» a la derecha. */
+.bloqueadas { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.bloqueadas li { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 @media (max-width: 560px) { .consen { grid-template-columns: 1fr; } .consen dd { margin-bottom: 8px; } }
 /* Rojo legible en los dos temas (el #FF5C5C sobre blanco no llegaba a 3:1). */
 .pill.peligro { border-color: #B3261E; color: #B3261E; background: transparent; }
@@ -311,3 +314,13 @@ button.codigo.copiar .ms { font-size: 18px; color: var(--ink-2); letter-spacing:
 .bloque.bloque-amigos { padding-bottom: 0; }
 /* El círculo de «hecho», centrado (`.pub p` le quitaba el margen automático). */
 .cuenta .hecho-ic { margin-left: auto; margin-right: auto; }
+
+/* Invitaciones de equipo (2026-09-29): el aviso de la portada y la lista
+   con «Rechazar» / «Aceptar», como en la app. */
+.inv-equipo { margin: 0 0 16px; }
+.invitaciones-eq { display: grid; gap: 12px; }
+.inv-eq { padding: 16px; }
+.inv-eq p { margin: 0 0 6px; }
+.inv-eq-t b { display: block; font-size: 17px; }
+.dos-pills { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0 0 !important; }
+.dos-pills .pill { justify-content: center; width: 100%; }

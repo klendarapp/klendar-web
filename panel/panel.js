@@ -106,6 +106,7 @@ const ERRORS = {
   no_2x1_alcohol: 'Di si el 2x1 incluye bebidas alcohólicas.',
   plan_no_boosts: 'Tu plan no incluye publicaciones destacadas.',
   invalid_email: 'Ese correo no parece válido.',
+  already_member: 'Esa persona ya está en el equipo. Su papel se cambia en la lista.',
   bad_menu: 'La carta tiene algo mal escrito. Revisa los precios y los nombres.',
   too_many_sections: 'Demasiadas secciones en la carta.',
   sold_out: 'Aforo completo: ya han entrado todas las plazas.',
@@ -233,7 +234,10 @@ async function mapaPunto(caja, punto, alMover) {
   gl.accessToken = token;
   const hay = punto && punto.lat != null;
   const centro = hay ? [punto.lng, punto.lat] : [-3.7038, 40.4168];
-  const mapa = new gl.Map({ container: caja, style: 'mapbox://styles/mapbox/streets-v12', center: centro, zoom: hay ? 16 : 5, cooperativeGestures: true });
+  const mapa = new gl.Map({ container: caja, style: 'mapbox://styles/mapbox/streets-v12', center: centro, zoom: hay ? 16 : 5, cooperativeGestures: true,
+    // Sin métricas de uso para Mapbox (lo que se puede apagar; las cargas de
+    // mapa las cuenta igual, para la factura).
+    performanceMetricsCollection: false, collectResourceTiming: false });
   mapa.addControl(new gl.NavigationControl({ showCompass: false }));
   const chincheta = new gl.Marker({ draggable: true, color: '#FF4D6D' }).setLngLat(centro);
   if (hay) chincheta.addTo(mapa);
@@ -1774,6 +1778,81 @@ const ERR_VALIDAR = {
   sold_out: 'Aforo completo: ya han entrado todas las plazas.',
   rate_limited: 'Demasiados intentos seguidos. Espera un momento.',
 };
+
+/** Qué hay que dar (como `codeDealParts` en la app), en dos trozos: lo que
+ * se aplica («−25 % · 3,00 €», «2x1», «Gratis», «12,00 €»; en un premio o un
+ * regalo, el premio) y el precio de antes («en vez de 4,00 €»), que va
+ * debajo. */
+function partesDelCanje(r) {
+  if (r.kind === 'stamp_reward' || r.kind === 'birthday_gift') return [r.offer_title || '', ''];
+  const cur = r.currency || 'EUR';
+  const pagar = r.pay_cents != null ? fmtMoney(r.pay_cents, cur) : '';
+  const antes = r.compare_at_cents != null ? fmtMoney(r.compare_at_cents, cur) : '';
+  const enVez = antes && antes !== pagar ? bi(`en vez de ${antes}`, `instead of ${antes}`) : '';
+  const d = r.discount;
+  if (!d) return [r.price_cents != null ? fmtMoney(r.price_cents, cur) : pagar, ''];
+  const et = I18N.t(etiquetaDescuento(d));
+  if (d.type === 'percent') return [pagar ? `${et} · ${pagar}` : et, pagar ? enVez : ''];
+  if (d.type === 'fixed') return [et, enVez];
+  return [et, ''];
+}
+
+/** «20:14» si es de hoy (en la hora del negocio); si no, con el día. */
+function horaCodigo(iso) {
+  if (!iso) return '';
+  const f = new Date(iso);
+  const dia = (x) => x.toLocaleDateString('en-CA', { timeZone: TZ });
+  const hora = f.toLocaleTimeString(LOC(), { hour: '2-digit', minute: '2-digit', timeZone: TZ });
+  return dia(f) === dia(new Date()) ? hora
+    : `${f.toLocaleDateString(LOC(), { day: 'numeric', month: 'short', timeZone: TZ })}, ${hora}`;
+}
+
+/** Lo que hay que saber de un código en la puerta, de un vistazo aunque haya
+ * varias ofertas a la vez: la publicación en grande (foto y tipo), qué hay
+ * que dar (en coral, solo si vale), plazas, condiciones y quién. Igual que
+ * `CodeDetailsView` en la app. `estado`: ok | ready | bad. */
+function tarjetaCodigo(r, estado) {
+  const ajeno = r.error === 'not_authorized';
+  const tipo = r.kind === 'stamp_reward' ? I18N.t('Tarjeta de sellos')
+    : r.kind === 'birthday_gift' ? bi('Regalo de cumpleaños', 'Birthday gift')
+      : r.offer_kind === 'future_event' ? I18N.t('Evento') : r.offer_kind ? I18N.t('Oferta flash') : '';
+  const titulo = r.kind === 'stamp_reward' && r.card_name ? bi(`Premio de «${r.card_name}»`, `Reward from “${r.card_name}”`)
+    : r.kind === 'birthday_gift' ? bi('Regalo de cumpleaños', 'Birthday gift') : (r.offer_title || '');
+  const icono = r.kind === 'stamp_reward' ? 'loyalty' : r.kind === 'birthday_gift' ? 'cake'
+    : r.offer_kind === 'future_event' ? 'event' : 'redeem';
+  const foto = r.offer_image ? `<img src="${esc(r.offer_image)}" alt="" loading="lazy">` : `<span class="cod-ic">${ms(icono)}</span>`;
+  const [dar, antes] = ajeno ? ['', ''] : partesDelCanje(r);
+  const lineas = [];
+  if (r.user_name) {
+    lineas.push(`${ms('person')}<b>${esc(r.user_name)}</b>${r.obtained_at
+      ? ` · ${esc(bi('lo consiguió', 'got it'))}: ${esc(horaCodigo(r.obtained_at))}` : ''}`);
+  }
+  if (ajeno && r.business_name) {
+    lineas.push(ms('storefront') + esc(bi(`Es de ${r.business_name}, no de tu negocio.`, `It belongs to ${r.business_name}, not your business.`)));
+  }
+  if (r.validated_at && estado !== 'ready') {
+    lineas.push(ms('check_circle') + esc(`${bi('Se validó', 'Validated')}: ${horaCodigo(r.validated_at)}${r.validated_by_name
+      ? ` · ${bi('por', 'by')} ${r.validated_by_name}` : ''}`));
+  }
+  if (r.error === 'code_expired' && r.expires_at) {
+    lineas.push(ms('timer_off') + esc(`${bi('Caducó', 'Expired')}: ${horaCodigo(r.expires_at)}`));
+  }
+  const plazas = (r.seats || 1) > 1 && !ajeno;
+  return `<div class="codigo-card ${estado}">
+    <div class="cod-top">${foto}<div class="cod-cab">
+      ${tipo || r.business_name ? `<span class="cod-tipo">${esc([tipo, r.business_name].filter(Boolean).join(' · '))}</span>` : ''}
+      <h2 class="cod-titulo">${esc(titulo)}</h2></div></div>
+    ${dar ? `<p class="cod-label">${esc(estado === 'bad' ? bi('Era para', 'It was for') : bi('Aplicar al cliente', 'Apply to the customer'))}</p>
+      <p class="cod-dar">${esc(dar)}</p>
+      ${antes ? `<p class="cod-antes">${esc(antes)}</p>` : ''}` : ''}
+    ${r.price_kept && !ajeno ? `<p class="cod-linea">${ms('lock_clock')}${esc(bi('Se mantiene el precio de cuando lo consiguió: hoy está más caro.',
+      'They keep the price from when they got it: it costs more today.'))}</p>` : ''}
+    ${plazas ? `<p class="cod-plazas">${esc(bi(`Entran ${r.seats} personas`, `${r.seats} people come in`))}</p>` : ''}
+    ${r.terms && !ajeno ? `<p class="cod-cond">${esc(bi('Condiciones', 'Conditions'))}: ${esc(r.terms)}</p>` : ''}
+    ${lineas.map((l) => `<p class="cod-linea">${l}</p>`).join('')}
+  </div>`;
+}
+
 PAGES.validar = async (v) => {
   v.innerHTML = `
     <div class="page-head"><h1>Validar códigos</h1></div>
@@ -1876,21 +1955,40 @@ PAGES.validar = async (v) => {
     if (!navigator.onLine) { aLaCola(); return; }
     try {
       const res = await rpc('validate_redemption', { p_code: code });
+      pintaResultado(res, res.ok ? 'ok' : 'bad');
       if (res.ok) {
-        const personas = (res.seats || 1) > 1
-          ? `<b class="plazas">${I18N.lang === 'en' ? `${res.seats} people come in` : `Entran ${res.seats} personas`}</b>` : '';
-        const premio = res.kind === 'stamp_reward' ? `<small>${ms('redeem')}${esc(I18N.t('Premio de la tarjeta de sellos'))}</small>`
-          : res.kind === 'birthday_gift' ? `<small>${ms('cake')}${esc(I18N.t('Regalo de cumpleaños'))}</small>` : '';
-        $('#result').innerHTML = `<div class="scan-result ok">${ms('check_circle')}${esc(I18N.t('Validado'))} · ${esc(res.offer_title || '')}${personas}${premio}<small>${esc(res.user_name || '')}</small></div>`;
         if (navigator.vibrate) navigator.vibrate(120);
         $('#code').value = '';
         loadRecent();
-      } else {
-        $('#result').innerHTML = `<div class="scan-result bad">${ms('cancel')}${esc(I18N.t(ERR_VALIDAR[res.error] || friendly(res.error)))}${res.validated_at ? `<small>${esc(I18N.t('Se validó el'))} ${esc(fmtDate(res.validated_at))}${(res.seats || 1) > 1 ? ` · ${res.seats} ${esc(I18N.t('personas'))}` : ''}</small>` : ''}</div>`;
-        if (navigator.vibrate) navigator.vibrate([60, 60, 60]);
+      } else if (navigator.vibrate) {
+        navigator.vibrate([60, 60, 60]);
       }
     } catch (e) {
       if (sinRed(e.message)) aLaCola(); else toast(friendly(e.message), true);
+    }
+  };
+  /** Arriba, el estado (verde: aplicar; ámbar: sin validar todavía; rojo: no
+   * vale); debajo, qué código es. En la vista previa, el botón «Validar». */
+  const pintaResultado = (res, estado) => {
+    const cab = estado === 'ok' ? `${ms('check_circle')}${esc(I18N.t('Validado'))}`
+      : estado === 'ready' ? `${ms('qr_code_2')}${esc(bi('Código sin usar', 'Unused code'))}<small>${esc(bi(
+        'Todavía no está validado. Compruébalo y pulsa «Validar».', 'It hasn’t been validated yet. Check it and tap “Validate”.'))}</small>`
+        : `${ms('cancel')}${esc(I18N.t(ERR_VALIDAR[res.error] || friendly(res.error)))}${!res.offer_title && res.validated_at
+          ? `<small>${esc(bi('Se validó el', 'Validated on'))} ${esc(fmtDate(res.validated_at))}</small>` : ''}`;
+    $('#result').innerHTML = `<div class="scan-result ${estado === 'ready' ? 'warn' : estado}">${cab}</div>
+      ${res.offer_title ? tarjetaCodigo(res, estado) : ''}
+      ${estado === 'ready' ? `<button class="btn primary grande" id="validaYa" type="button">${ms('check')}${esc(I18N.t('Validar'))}</button>` : ''}`;
+    const b = $('#validaYa');
+    if (b) b.onclick = () => { $('#code').value = res.code_input || $('#code').value; validate(); };
+  };
+  // Desde el enlace del código: primero se mira, sin validar (un enlace
+  // tocado sin querer, o abierto por el propio cliente, ya no lo gasta).
+  const mira = async (code) => {
+    try {
+      const res = await rpc('redemption_preview', { p_code: code });
+      pintaResultado({ ...res, code_input: code }, res.ok ? 'ready' : 'bad');
+    } catch (e) {
+      toast(friendly(e.message), true);
     }
   };
   $('#go').onclick = validate;
@@ -1898,12 +1996,13 @@ PAGES.validar = async (v) => {
   enviaCola();
   $('#code').addEventListener('keydown', (e) => { if (e.key === 'Enter') validate(); });
   // Desde klendar.app/r/<código> (el QR escaneado con la cámara del móvil,
-  // sin la app): el código llega puesto y se valida al momento.
+  // sin la app): el código llega puesto y se enseña qué es; se valida con el
+  // botón «Validar». La cámara de aquí sí valida directamente.
   const desdeQr = new URLSearchParams(location.hash.split('?')[1] || '').get('code');
   if (desdeQr && /^[0-9a-f]{8,64}$/i.test(desdeQr)) {
     $('#code').value = desdeQr;
     history.replaceState(null, '', `${location.pathname}#/validar`);
-    validate();
+    mira(desdeQr);
   }
 
   // Cámara: encender y apagar con el mismo botón.
@@ -3051,11 +3150,12 @@ PAGES.equipo = async (v) => {
       '<p><b>Staff</b>: validates QR codes. <b>Manager</b>: also publishes, edits the business page and runs the team. <b>Owner</b>: everything; their role cannot be changed from here.</p>'))}
     <div id="list"></div>
     ${invites.length ? `<div class="card" style="margin-top:14px"><h2>Invitaciones pendientes</h2>
-      <p class="muted">Todavía no tienen cuenta en Klendar. Entran solas al registrarse con ese correo.</p>
+      <p class="muted">Aún no han contestado. Caducan a los 14 días y puedes cancelarlas.</p>
       ${table({ cols: [
         { h: 'Correo', r: (i) => esc(i.email) },
         { h: 'Rol', r: (i) => tag(i.role) },
         { h: 'Fecha de invitación', r: (i) => fmtDate(i.created_at) },
+        { h: 'Caduca', r: (i) => (i.expires_at ? fmtDate(i.expires_at) : '—') },
         { h: '', r: (i) => canManage ? `<button class="btn sm ghost" data-cancel="${esc(i.id)}">Cancelar</button>` : '' },
       ], rows: invites })}</div>` : ''}`;
   $('#list').innerHTML = table({
@@ -3072,7 +3172,7 @@ PAGES.equipo = async (v) => {
     $('#add').onclick = async () => {
       const r = await modal({
         title: 'Añadir a alguien al equipo',
-        intro: esc(I18N.t('Si aún no tiene cuenta en Klendar, le mandamos un correo con la invitación y entra al equipo en cuanto se registre con esa dirección.')),
+        intro: esc(I18N.t('Le llega una invitación (en la app y por correo) que tiene que aceptar. Si aún no tiene cuenta, la verá al crearla con ese correo. Caduca a los 14 días.')),
         fields: [
           { name: 'email', label: 'Correo', type: 'email', required: true },
           { name: 'role', label: 'Rol', type: 'select', value: 'staff', options: [['staff', 'Empleado'], ['manager', 'Encargado']] },
@@ -3083,7 +3183,9 @@ PAGES.equipo = async (v) => {
       try {
         const res = await rpc('add_business_member', { p_business_id: BIZ.id, p_email: r.email, p_role: r.role });
         if (!res.ok) { toast(friendly(res.error), true); return; }
-        toast(res.invited ? 'Invitación enviada: le hemos mandado un correo' : 'Añadido al equipo');
+        // Siempre es una invitación que la persona acepta (antes, con cuenta,
+        // entraba sin que se le preguntara).
+        toast(res.invited ? 'Invitación enviada: entrará en el equipo cuando la acepte' : 'Añadido al equipo');
         route();
       } catch (e) { toast(friendly(e.message), true); }
     };
@@ -3405,6 +3507,9 @@ PAGES.informe = async (v, param) => {
           { h: 'Publicación', r: (x) => esc(x.title) },
           { h: 'Código', r: (x) => `<code>${esc(x.code)}</code>` },
         { h: 'Plazas', num: true, r: (x) => fmtNum(x.seats || 1) },
+          // Lo que se pagó por plaza: el precio de cuando se consiguió el
+          // código si luego subió.
+          { h: 'Precio', num: true, r: (x) => (x.paid_cents == null ? '—' : fmtMoney(x.paid_cents, x.currency)) },
           { h: 'Validado por', r: (x) => esc(x.by) },
         ],
         rows: r.redemptions || [],
@@ -3419,7 +3524,8 @@ PAGES.informe = async (v, param) => {
     ['max_redemptions', 'Aforo'], ['seats_left', 'Plazas libres'],
   ]);
   $('#csvRed').onclick = () => downloadCsv(`canjes-${BIZ.name}`, r.redemptions || [], [
-    ['at', 'Fecha y hora'], ['title', 'Publicación'], ['code', 'Código'], [(x) => x.seats ?? 1, 'Plazas'], ['by', 'Validado por'],
+    ['at', 'Fecha y hora'], ['title', 'Publicación'], ['code', 'Código'], [(x) => x.seats ?? 1, 'Plazas'],
+    [(x) => (x.paid_cents == null ? '' : (x.paid_cents / 100).toFixed(2)), 'Precio'], ['by', 'Validado por'],
   ]);
 };
 
