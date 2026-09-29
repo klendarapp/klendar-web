@@ -265,8 +265,8 @@ const I18N = makeI18N({
     'Canjes validados': 'Redemptions validated',
     'De código a canje': 'From code to redemption',
     'Día a día': 'Day by day',
-    'Cada barra es un día: la altura son las vistas y la parte de color, los canjes.':
-      'Each bar is a day: the height is views and the coloured part, redemptions.',
+    'Cada barra es un día: la altura son las vistas y la parte rellena, los canjes.':
+      'Each bar is a day: the height is views and the filled part, redemptions.',
     'De dónde viene tu gente': 'Where your people come from',
   'menos de 500 m': 'under 500 m',
   '500 m - 1 km': '500 m - 1 km',

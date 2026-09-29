@@ -403,7 +403,7 @@ RUTAS.ajustes = async () => {
           <input name="nombre" maxlength="40" required value="${esc(p.display_name || '')}"></label>
         ${nacimiento
     ? `<label>${esc(t('Fecha de nacimiento'))} <small>${esc(t('Para cambiarla, escríbenos a info@klendar.app.'))}</small>
-          <input value="${esc(nacimiento)}" readonly></label>`
+          <span class="candado"><input value="${esc(nacimiento)}" readonly aria-readonly="true"><span class="ms" aria-hidden="true">lock</span></span></label>`
     : `<label>${esc(t('Fecha de nacimiento'))} <small>${esc(t('Solo para mostrarte ofertas adecuadas a tu edad. Revísala bien: una vez guardada, no se puede cambiar.'))}</small>
           <input name="birth" type="date" max="${new Date().toISOString().slice(0, 10)}"></label>`}
         <label>${esc(t('Idioma'))} <small>${esc(t('De la web, la app y las notificaciones y correos que te enviamos'))}</small>

@@ -57,7 +57,8 @@ let TZ = KZ.MADRID;
 const partesNegocio = (d) => KZ.partes(d, TZ);
 /** «Mañana» (o dentro de `dias`) en el negocio, a esa hora de allí. */
 const enDiasNegocio = (dias, h, min = 0) => KZ.enDias(TZ, dias, h, min);
-const fmtDate = (s) => s ? new Date(s).toLocaleString(LOC(), { dateStyle: 'medium', timeStyle: 'short', timeZone: TZ }) : '—';
+// Horas siempre con dos cifras («07:12»): `timeStyle: 'short'` en español da «7:12».
+const fmtDate = (s) => s ? new Date(s).toLocaleString(LOC(), { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: TZ }) : '—';
 const fmtHora = (s) => new Date(s).toLocaleTimeString(LOC(), { hour: '2-digit', minute: '2-digit', timeZone: TZ });
 // El mismo idioma que las fechas y los números: «2,50 €» / «€2.50».
 const fmtMoney = (c, cur = 'EUR') => (c == null ? '—' : (c / 100).toLocaleString(LOC(), { style: 'currency', currency: cur || 'EUR' }));
@@ -1469,16 +1470,21 @@ async function offerForm(v, id, kindDefault, desde = null) {
   const PLANTILLAS = [['glass', 'Cristal'], ['bold', 'Color'], ['poster', 'Póster'], ['minimal', 'Limpio']];
   const COLORES = ['#FF4D6D', '#F5B041', '#0EA5E9', '#7C5CFF', '#34D399', '#FF8A3D', '#E879F9', '#111827'];
   let estilo = { template: o.style?.template || 'glass', accent: o.style?.accent || null };
+  // Tinta sobre el color si su luminancia pasa de 0,186 (donde la tinta ya
+  // contrasta más que el blanco), como `OfferStyle.onAccent` en la app.
   const claro = (hex) => {
     const n = parseInt(hex.slice(1), 16);
     const l = (c) => { const x = c / 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; };
-    return 0.2126 * l(n >> 16 & 255) + 0.7152 * l(n >> 8 & 255) + 0.0722 * l(n & 255) > 0.45;
+    return 0.2126 * l(n >> 16 & 255) + 0.7152 * l(n >> 8 & 255) + 0.0722 * l(n & 255) > 0.186;
   };
   pintaEstilo = () => {
     const acento = estilo.accent || '#FF4D6D';
     const sobre = claro(acento) ? '#0A0A0A' : '#FFFFFF';
     const f = new FormData($('#form'));
-    const titulo = String(f.get('title') || '').trim() || (I18N.lang === 'en' ? 'Your publication' : 'Tu publicación');
+    const evento = String(f.get('kind') || kindDefault) === 'future_event';
+    const titulo = String(f.get('title') || '').trim() || (I18N.lang === 'en'
+      ? (evento ? 'Your event title' : 'Your offer title')
+      : (evento ? 'El título de tu evento' : 'El título de tu oferta'));
     const dt = String(f.get('discount_type') || '');
     const dv = String(f.get('discount_value') || '').trim();
     const precioTxt = String(f.get('price') || '').trim();
@@ -1503,7 +1509,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
     $$('[data-color]', v).forEach((b) => { b.onclick = () => { estilo.accent = b.dataset.color || null; pintaEstilo(); }; });
   };
   $('#form').addEventListener('input', (e) => {
-    if (['title', 'price', 'discount_type', 'discount_value'].includes(e.target.name)) pintaEstilo();
+    if (['title', 'kind', 'price', 'discount_type', 'discount_value'].includes(e.target.name)) pintaEstilo();
   });
   pintaEstilo();
 
@@ -3348,12 +3354,12 @@ PAGES.informe = async (v, param) => {
         <div class="kpi"><b>${fmtNum(t.redeemed)}</b><span>Canjes validados</span></div>
         <div class="kpi"><b>${pct(t.redeemed, t.codes)}</b><span>De código a canje</span></div>
       </div>
-      <p class="muted" style="margin:10px 0 0">${bi(`<b>${fmtNum(t.unused)}</b> ${t.unused === 1 ? 'código se quedó' : 'códigos se quedaron'} sin usar.${best ? ` La hora a la que más se canjea es a las <b>${best.hour}:00</b>.` : ''}`, `<b>${fmtNum(t.unused)}</b> ${t.unused === 1 ? 'code was' : 'codes were'} never used.${best ? ` The busiest redemption hour is <b>${best.hour}:00</b>.` : ''}`)}</p>
+      <p class="muted" style="margin:10px 0 0">${bi(`<b>${fmtNum(t.unused)}</b> ${t.unused === 1 ? 'código se quedó' : 'códigos se quedaron'} sin usar.${best ? ` La hora a la que más se canjea es a las <b>${String(best.hour).padStart(2, '0')}:00</b>.` : ''}`, `<b>${fmtNum(t.unused)}</b> ${t.unused === 1 ? 'code was' : 'codes were'} never used.${best ? ` The busiest redemption hour is <b>${String(best.hour).padStart(2, '0')}:00</b>.` : ''}`)}</p>
     </div>
 
     <div class="card"><h2>Día a día</h2>
       <div class="spark">${(r.daily || []).map((d) => `<i title="${d.day}: ${d.views} ${bi('vistas', 'views')}, ${d.redeemed} ${bi('canjes', 'redemptions')}" style="height:${Math.round((d.views / maxDay) * 100)}%"><u style="height:${d.views ? Math.round((d.redeemed / Math.max(d.views, 1)) * 100) : 0}%"></u></i>`).join('')}</div>
-      <p class="muted" style="margin:8px 0 0">Cada barra es un día: la altura son las vistas y la parte de color, los canjes.</p>
+      <p class="muted" style="margin:8px 0 0">Cada barra es un día: la altura son las vistas y la parte rellena, los canjes.</p>
     </div>
 
     ${audienciaHtml(aud)}

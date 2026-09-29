@@ -30,7 +30,8 @@ const LOC = () => (I18N.lang === 'en' ? 'en-GB' : 'es-ES');
 // opcional en `fmtDate` y `fmtDay`.
 const KZ = globalThis.KlendarZona;
 const TZ = KZ.MADRID;
-const fmtDate = (s, tz = TZ) => s ? new Date(s).toLocaleString(LOC(), { dateStyle: 'medium', timeStyle: 'short', timeZone: KZ.zona(tz) }) : '—';
+// Horas siempre con dos cifras («07:12»): `timeStyle: 'short'` en español da «7:12».
+const fmtDate = (s, tz = TZ) => s ? new Date(s).toLocaleString(LOC(), { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: KZ.zona(tz) }) : '—';
 const fmtDay = (s, tz = TZ) => s ? new Date(s).toLocaleDateString(LOC(), { dateStyle: 'medium', timeZone: KZ.zona(tz) }) : '—';
 /** AAAA-MM-DD de hoy (o dentro de `dias`) en Madrid, para <input type="date">. */
 const diaMadridISO = (dias = 0) => KZ.hoy(TZ, dias);
@@ -407,7 +408,7 @@ PAGES.resumen = async (v) => {
   const series = k.series || [];
   const en = I18N.lang === 'en';
   v.innerHTML = `
-    <div class="page-head"><h1>Resumen</h1><span class="spacer"></span><span class="muted">${new Date().toLocaleString(LOC(), { dateStyle: 'full', timeStyle: 'short', timeZone: TZ })}</span></div>
+    <div class="page-head"><h1>Resumen</h1><span class="spacer"></span><span class="muted">${new Date().toLocaleString(LOC(), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: TZ })}</span></div>
     ${(k.businesses_pending || k.offers_pending || k.reports_open || k.subs_expiring_7d || k.push_failed_7d || BADGES.sugerencias || BADGES.mensajes) ? `<div class="card"><h2>Pendiente de ti</h2><div class="actions">
       ${k.businesses_pending ? `<a class="btn" href="#/negocios?status=pending">${ms('storefront')} <b>${k.businesses_pending}</b> ${en ? (k.businesses_pending === 1 ? 'business to verify' : 'businesses to verify') : (k.businesses_pending === 1 ? 'negocio por verificar' : 'negocios por verificar')}</a>` : ''}
       ${k.offers_pending ? `<a class="btn" href="#/publicaciones?moderation=pending">${ms('bolt')} <b>${k.offers_pending}</b> ${en ? (k.offers_pending === 1 ? 'publication to moderate' : 'publications to moderate') : (k.offers_pending === 1 ? 'publicación por moderar' : 'publicaciones por moderar')}</a>` : ''}

@@ -265,7 +265,7 @@ export function publicPage({ lang, path, title, description, head = '', body, im
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/site.css?v=20261008">
-<link rel="stylesheet" href="/assets/public.css?v=20">
+<link rel="stylesheet" href="/assets/public.css?v=21">
 ${cabeza}
 </head>
 <body>
@@ -273,6 +273,7 @@ ${siteHeader(lang, esc(es), esc(enPath))}
 <main class="pub wrap">${body}</main>
 ${siteFooter(lang)}
 ${conAmigos ? `<script src="/assets/amigos.js?v=2" defer data-lang="${en ? 'en' : 'es'}"></script>
+` : ''}${/class="detail"/.test(body) ? `<script src="/assets/barra.js?v=2" defer></script>
 ` : ''}${CONTADOR}
 </body></html>`;
 }

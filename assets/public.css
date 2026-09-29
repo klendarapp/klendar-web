@@ -245,3 +245,10 @@ button.pill { font-family: inherit; cursor: pointer; }
   .estado-hoy.pronto b { color: #F5B041; }
   .estado-hoy.cerrado b { color: #FF5C5C; }
 }
+
+/* ── La acción principal, siempre a mano en el móvil (/assets/barra.js) ── */
+.barra-accion { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+  background: var(--elevated); border-top: 1px solid var(--glass-border); box-shadow: 0 -10px 30px -20px rgba(0,0,0,.4); }
+.barra-accion .pill { width: 100%; justify-content: center; margin: 0; }
+body.con-barra-accion { padding-bottom: 76px; }
+@media (min-width: 861px) { .barra-accion { display: none; } }

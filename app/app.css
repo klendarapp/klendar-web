@@ -208,10 +208,13 @@ a.aviso:hover { text-decoration: none; border-color: var(--ink-2); }
 .formu input:focus, .formu select:focus, .formu textarea:focus { outline: none; border-color: var(--ink);
   box-shadow: 0 0 0 1px var(--ink); }
 .formu label { font-size: 14px; }
-/* Lo que se ve y no se cambia (la fecha de nacimiento ya puesta). */
-.formu input[readonly]:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]) {
-  background: transparent; color: var(--ink-2); font-weight: 500; cursor: default; }
+/* Lo que se ve y no se cambia (la fecha de nacimiento ya puesta): el campo de
+   siempre, no el gris de desactivado, con un candado a la derecha (como la app). */
+.formu input[readonly]:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]) { cursor: default; }
 .formu input[readonly]:focus { border-color: var(--glass-border); box-shadow: none; }
+.candado { position: relative; display: block; }
+.formu .candado > input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]) { padding-right: 48px; }
+.candado .ms { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); font-size: 20px; color: var(--ink-2); pointer-events: none; }
 .formu > .pill.accent, .formu > button.pill { width: 100%; justify-content: center; }
 .bloque { border-top: 0; margin-top: 8px; padding-top: 0; }
 .bloque h2 { font-family: inherit; font-size: 14px; font-weight: 700; color: var(--ink-2); margin: 26px 4px 4px; }
