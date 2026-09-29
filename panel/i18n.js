@@ -605,7 +605,7 @@ const I18N = makeI18N({
     "Pescado": "Fish",
     "Cacahuetes": "Peanuts",
     "Soja": "Soy",
-    "Lácteos": "Dairy",
+    "Lácteos": "Milk",
     "Apio": "Celery",
     "Mostaza": "Mustard",
     "Sésamo": "Sesame",

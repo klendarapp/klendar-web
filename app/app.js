@@ -1038,6 +1038,9 @@ RUTAS.guardar = async ([id], params) => {
 };
 
 // ── Tus sitios (favoritos) ────────────────────────────────────────────────
+// «1 oferta activa» / «3 ofertas activas», como en la app.
+const cuantas = (n, es, en) => { const [uno, varios] = EN ? en : es; return n === 1 ? uno : `${n} ${varios}`; };
+
 RUTAS.favoritos = async () => {
   if (!exigeSesion('favoritos')) return;
   const lista = await llamar('my_favorites', {});
@@ -1050,8 +1053,9 @@ RUTAS.favoritos = async () => {
         <span class="ocard-body"><b>${esc(b.name)}</b>
           <span class="muted">${esc(b.city || '')}</span>
           <span class="ocard-meta">
-            ${b.active_flash ? `<span class="tag">${esc(t('ofertas ahora'))}: ${b.active_flash}</span>` : ''}
-            ${b.upcoming_events ? `<span class="muted">${esc(t('eventos'))}: ${b.upcoming_events}</span>` : ''}
+            ${b.active_flash ? `<span class="tag">${esc(cuantas(b.active_flash, ['1 oferta activa', 'ofertas activas'], ['1 active offer', 'active offers']))}</span>` : ''}
+            ${b.upcoming_events ? `<span class="muted">${esc(cuantas(b.upcoming_events, ['1 evento próximo', 'eventos próximos'], ['1 upcoming event', 'upcoming events']))}</span>` : ''}
+            ${!b.active_flash && !b.upcoming_events ? `<span class="muted">${esc(EN ? 'Nothing new right now' : 'Sin novedades ahora mismo')}</span>` : ''}
           </span></span></a>`).join('')}</div>`
     : `<p class="empty">${esc(t('Todavía no tienes favoritos. En la ficha de un negocio, dale a «Añadir a favoritos» y te avisaremos cuando publique.'))}</p>`}`);
 };

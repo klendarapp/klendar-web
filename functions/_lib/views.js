@@ -180,7 +180,7 @@ export async function offerPage(id, lang) {
             <a class="pill" id="voy" href="${cuenta(lang)}#/voy/${id}" rel="nofollow">${icono('voy', 16)} <span>${S.going}</span></a>
             <a class="pill" href="${cuenta(lang)}#/invitar/${id}" rel="nofollow">${icono('invitar', 16)} ${S.invite}</a></p>
           <p class="note" id="voy-auto" hidden></p>
-          <p class="acciones"><a class="pill" href="${cuenta(lang)}#/guardar/${id}"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg> ${S.save}</a>
+          <p class="acciones"><a class="pill" data-plan="${id}" href="${cuenta(lang)}#/guardar/${id}"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg> <span>${S.save}</span></a>
             ${openInApp(path, S.open, 'pill ghost')}</p>`;
       })()}
       <p class="note">${S.note}</p>
@@ -339,6 +339,16 @@ function queSellaFicha(c, S, en) {
   return S.stampsAll;
 }
 /** Lo de arriba y, si la tarjeta también sella por visita, dicho. */
+// Los catorce alérgenos, con la clave que guarda la carta y su nombre en cada
+// idioma (los mismos que el panel y la app); una clave desconocida sale tal cual.
+const ALERGENOS = {
+  gluten: ['Gluten', 'Gluten'], crustaceos: ['Crustáceos', 'Crustaceans'], huevos: ['Huevos', 'Eggs'],
+  pescado: ['Pescado', 'Fish'], cacahuetes: ['Cacahuetes', 'Peanuts'], soja: ['Soja', 'Soy'],
+  lacteos: ['Lácteos', 'Milk'], frutos_cascara: ['Frutos de cáscara', 'Tree nuts'], apio: ['Apio', 'Celery'],
+  mostaza: ['Mostaza', 'Mustard'], sesamo: ['Sésamo', 'Sesame'], sulfitos: ['Sulfitos', 'Sulphites'],
+  altramuces: ['Altramuces', 'Lupin'], moluscos: ['Moluscos', 'Molluscs'],
+};
+const nombreAlergeno = (k, en) => (ALERGENOS[k] ? ALERGENOS[k][en ? 1 : 0] : String(k).replace(/_/g, ' '));
 const queSellaTarjeta = (c, S, en) => (c.by_visit ? `${queSellaFicha(c, S, en)} · ${S.stampsByVisit}` : queSellaFicha(c, S, en));
 
 /**
@@ -527,7 +537,7 @@ export async function businessPage(param, lang, search = '') {
       ${cierre}
     </div>
     <aside class="side">
-      <a class="pill accent big" href="${cuenta(lang)}#/seguir/${encodeURIComponent(b.id)}"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.8 4.5c2.2 0 3.6 1.2 5.2 3 1.6-1.8 3-3 5.2-3 3.8 0 5.9 3.9 4.4 7.3C19.5 16.4 12 21 12 21z"/></svg> ${S.open}</a>
+      <a class="pill accent big" data-fav="${esc(b.id)}" href="${cuenta(lang)}#/seguir/${encodeURIComponent(b.id)}"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.8 4.5c2.2 0 3.6 1.2 5.2 3 1.6-1.8 3-3 5.2-3 3.8 0 5.9 3.9 4.4 7.3C19.5 16.4 12 21 12 21z"/></svg> <span>${S.open}</span></a>
       <p class="note" style="margin-bottom:16px">${S.note}</p>
       <div class="info">
         ${where ? `<div><span>${icono('lugar')}</span><span>${maps ? `<a href="${esc(maps)}" rel="nofollow noopener" target="_blank">${esc(where)}</a>` : esc(where)}</span></div>` : ''}
@@ -550,7 +560,7 @@ export async function businessPage(param, lang, search = '') {
           <ul>${(sec.items || []).map((it) => `<li>
             ${it.image_url ? `<img class="dish" src="${esc(it.image_url)}" alt="" loading="lazy">` : ''}
             <span><b>${esc(it.name)}</b>${it.description ? `<small>${esc(it.description)}</small>` : ''}
-            ${(it.allergens || []).length ? `<small class="alg">${S.allergens}: ${it.allergens.map((a) => esc(a.replace(/_/g, ' '))).join(', ')}</small>` : ''}</span>
+            ${(it.allergens || []).length ? `<small class="alg">${S.allergens}: ${it.allergens.map((a) => esc(nombreAlergeno(a, en))).join(', ')}</small>` : ''}</span>
             <span class="price">${it.price_cents == null ? '' : esc(money(it.price_cents, 'EUR', lang))}</span>
           </li>`).join('')}</ul>
         </section>`).join('')}</div>

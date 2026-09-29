@@ -546,6 +546,7 @@ $('#menuBtn').onclick = () => $('#side').classList.toggle('open');
 // i18n.js). Lo que no esté traducido se queda en español, nunca en blanco.
 I18N.pickers(['#lang', '#langSide']);
 I18N.translate(document.body);
+if (I18N.lang === 'en') document.title = 'Klendar · Business dashboard';
 
 // ── Navegación ──────────────────────────────────────────────────────────────
 const NAV = [
@@ -1916,6 +1917,8 @@ PAGES.validar = async (v) => {
 
 // ── Asistentes de un evento ─────────────────────────────────────────────────
 PAGES.asistentes = async (v, offerId) => {
+  // Sin evento (enlace cortado o escrito a mano): a Publicaciones, no a un error.
+  if (!offerId) { location.hash = '#/publicaciones'; return; }
   const [offers, list] = await Promise.all([
     rpc('my_business_offers', { p_id: BIZ.id }),
     rpc('offer_attendees', { p_offer: offerId }),

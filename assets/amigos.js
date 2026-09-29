@@ -18,7 +18,11 @@
   var en = !!(yo && yo.dataset.lang === 'en');
   var ficha = document.getElementById('amigos-ficha');
   var tarjetas = document.querySelectorAll('[data-o]');
-  if (!ficha && !tarjetas.length) return;
+  // «Añadir a favoritos» (ficha del negocio) y «Guardar en Planes» (ficha de
+  // una publicación): si ya lo tienes, en activo y para quitarlo, como la app.
+  var botonFav = document.querySelector('[data-fav]');
+  var botonPlan = document.querySelector('[data-plan]');
+  if (!ficha && !tarjetas.length && !botonFav && !botonPlan) return;
   var UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   var cuenta = en ? '/app/?lang=en' : '/app/';
 
@@ -38,6 +42,7 @@
     declined: "Done. We won't tell them.",
     gone: 'This publication is no longer available.',
     oops: 'Something did not work. If it happens again, write to info@klendar.app.',
+    favOn: 'Remove from favourites', planOn: 'Remove from Plans',
   } : {
     someone: 'Alguien',
     one: function (a) { return a + ' va'; },
@@ -54,6 +59,7 @@
     declined: 'Hecho. No le avisamos.',
     gone: 'Esta publicación ya no está disponible.',
     oops: 'Algo no ha ido bien. Si vuelve a pasar, escríbenos a info@klendar.app.',
+    favOn: 'Quitar de favoritos', planOn: 'Quitar de Planes',
   };
 
   // ── ¿Hay sesión? Sin llamar a nada: lo que guarda Supabase en el navegador.
@@ -131,10 +137,28 @@
             if (!r.data || !r.data.session) return;
             if (ficha) social(sb);
             if (tarjetas.length) enTarjetas(sb);
+            var uid = r.data.session.user && r.data.session.user.id;
+            if (botonFav) yaLoTienes(sb, uid, botonFav, 'favorites', 'business_id', botonFav.getAttribute('data-fav'), '#/seguir/', T.favOn);
+            if (botonPlan) yaLoTienes(sb, uid, botonPlan, 'saved_offers', 'offer_id', botonPlan.getAttribute('data-plan'), '#/guardar/', T.planOn);
           });
         });
     })
     .catch(function () { /* sin red: la página, sin lo de amigos */ });
+
+  // ── «Añadir a favoritos» / «Guardar en Planes» ya puestos ──────────────
+  // Solo mira si ya lo tienes; el cambio lo hace «Tu cuenta» (con ?quitar=1
+  // lo quita), igual que el botón «Voy».
+  function yaLoTienes(sb, uid, boton, tabla, campo, id, ruta, textoOn) {
+    if (!uid || !UUID.test(id || '')) return;
+    sb.from(tabla).select(campo).eq(campo, id).eq('user_id', uid).limit(1).then(function (res) {
+      if (!res || res.error || !(res.data || []).length) return;
+      var texto = boton.querySelector('span');
+      if (texto) texto.textContent = textoOn;
+      boton.classList.remove('accent');
+      boton.classList.add('on');
+      boton.setAttribute('href', cuenta + ruta + id + '?quitar=1');
+    }, function () { /* sin red: el botón tal cual */ });
+  }
 
   // ── Tarjetas: qué amigos van a cada una ─────────────────────────────────
   function enTarjetas(sb) {

@@ -167,8 +167,9 @@ footer.pub-foot a { color: var(--ink-2); }
 .exclusiva { display: flex; align-items: center; gap: 10px; margin: 12px 0 0; padding: 10px 14px; border-radius: 16px;
   border: 1px solid var(--glass-border); background: var(--elevated); color: var(--ink-2); }
 .exclusiva .ic { flex: none; color: var(--accent-text); }
-.stars { color: #FFB84D; letter-spacing: 1px; white-space: nowrap; }
-.stars span { color: var(--glass-border); }
+.stars { color: #F5B041; letter-spacing: 1px; white-space: nowrap; }
+/* Como la app: llenas en ámbar, vacías en el gris secundario al 60 %. */
+.stars span { color: var(--ink-2); opacity: .6; }
 .denuncia, .denuncia-pie a { font-size: 13px; color: var(--ink-2); }
 .resenas .denuncia, .novedades .denuncia { display: inline-block; margin-top: 8px; }
 .denuncia-pie { margin-top: 28px; }
@@ -236,7 +237,7 @@ button.pill { font-family: inherit; cursor: pointer; }
    Los colores de la app; en claro, un tono más oscuro para que se lea. */
 .estado-hoy { margin: 0 0 10px; font-size: 14px; color: var(--ink-2); }
 .estado-hoy b { font-weight: 700; }
-.estado-hoy.abierto b { color: #1E8F4E; }
+.estado-hoy.abierto b { color: #177A42; }
 .estado-hoy.pronto b { color: #B7700A; }
 .estado-hoy.cerrado b { color: #D93636; }
 @media (prefers-color-scheme: dark) {

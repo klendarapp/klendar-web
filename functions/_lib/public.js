@@ -235,8 +235,9 @@ export function publicPage({ lang, path, title, description, head = '', body, im
   const enPath = en ? path : altPath(path, 'es');
   // «Planes con amigos»: con sesión, qué amigos van a cada publicación de la
   // página y, en una ficha, «Vas» y las invitaciones. Solo carga Supabase si
-  // hay una sesión guardada (ver /assets/amigos.js).
-  const conAmigos = /\sdata-o="|id="amigos-ficha"/.test(body);
+  // hay una sesión guardada (ver /assets/amigos.js). También pone en activo
+  // «Añadir a favoritos» y «Guardar en Planes» si ya lo tienes.
+  const conAmigos = /\sdata-(o|fav|plan)="|id="amigos-ficha"/.test(body);
   return `<!doctype html>
 <html lang="${en ? 'en' : 'es'}">
 <head>
@@ -264,14 +265,14 @@ export function publicPage({ lang, path, title, description, head = '', body, im
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/site.css?v=20261008">
-<link rel="stylesheet" href="/assets/public.css?v=19">
+<link rel="stylesheet" href="/assets/public.css?v=20">
 ${cabeza}
 </head>
 <body>
 ${siteHeader(lang, esc(es), esc(enPath))}
 <main class="pub wrap">${body}</main>
 ${siteFooter(lang)}
-${conAmigos ? `<script src="/assets/amigos.js?v=1" defer data-lang="${en ? 'en' : 'es'}"></script>
+${conAmigos ? `<script src="/assets/amigos.js?v=2" defer data-lang="${en ? 'en' : 'es'}"></script>
 ` : ''}${CONTADOR}
 </body></html>`;
 }

@@ -101,7 +101,9 @@ label.pill { cursor: pointer; }
 .consen dt { color: var(--ink-2); }
 .consen dd { margin: 0; }
 @media (max-width: 560px) { .consen { grid-template-columns: 1fr; } .consen dd { margin-bottom: 8px; } }
-.pill.peligro { border-color: #FF5C5C; color: #FF5C5C; background: transparent; }
+/* Rojo legible en los dos temas (el #FF5C5C sobre blanco no llegaba a 3:1). */
+.pill.peligro { border-color: #B3261E; color: #B3261E; background: transparent; }
+@media (prefers-color-scheme: dark) { .pill.peligro { border-color: #FF9B9B; color: #FF9B9B; } }
 .pill.peligro:hover { background: rgba(255, 92, 92, .12); }
 button.pill:disabled { opacity: .6; cursor: progress; }
 
@@ -111,7 +113,10 @@ button.pill:disabled { opacity: .6; cursor: progress; }
 .aviso { display: grid; gap: 4px; padding: 14px 16px; border-radius: 16px; border: 1px solid var(--glass-border);
   background: var(--elevated); color: inherit; }
 a.aviso:hover { text-decoration: none; border-color: var(--ink-2); }
-.aviso.nuevo { border-color: var(--accent); box-shadow: inset 4px 0 0 var(--accent); }
+/* Sin leer, como en la app: título más marcado y un punto coral (el borde sigue neutro). */
+.aviso.nuevo { position: relative; padding-right: 34px; }
+.aviso.nuevo > b { font-weight: 800; }
+.aviso.nuevo::after { content: ''; position: absolute; top: 20px; right: 16px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
 .aviso span { color: var(--ink-2); }
 .aviso.pausada { opacity: .7; }
 /* En la fila de un aviso, botones pequeños a su medida. */
@@ -149,7 +154,9 @@ a.aviso:hover { text-decoration: none; border-color: var(--ink-2); }
 .titulo-pagina { margin-top: 18px; }
 .ms { font-family: 'Material Symbols Outlined'; font-weight: normal; font-style: normal; font-size: 24px;
   line-height: 1; letter-spacing: normal; text-transform: none; display: inline-block; white-space: nowrap;
-  direction: ltr; -webkit-font-smoothing: antialiased; font-feature-settings: 'liga'; flex: none; }
+  direction: ltr; -webkit-font-smoothing: antialiased; font-feature-settings: 'liga'; flex: none;
+  /* Mientras llega la fuente, el nombre del icono ocupa lo que un icono y no empuja nada. */
+  width: 1em; overflow: hidden; }
 
 .perfil, .rapido, .lista, .invitacion {
   background: var(--glass); border: 1px solid var(--glass-border); color: inherit; }
@@ -244,7 +251,7 @@ input[type=file] { max-width: 100%; }
 .dialogo p { margin: 0 0 20px; }
 .dialogo-botones { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .dialogo-botones .pill { justify-content: center; }
-.pill.peligro-lleno { background: #FF5C5C; border-color: transparent; color: #fff; }
+.pill.peligro-lleno { background: #D32F2F; border-color: transparent; color: #fff; }
 
 /* El código de debajo del QR: se toca y se copia. */
 button.codigo.copiar { background: none; border: 0; color: inherit; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;

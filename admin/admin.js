@@ -616,7 +616,7 @@ async function businessAction(a, b, d) {
       const cats = await rpc('admin_categories');
       const r = await modal({ title: 'Editar ficha', fields: [
         { name: 'name', label: 'Nombre', value: b.name, required: true },
-        { name: 'category_id', label: 'Categoría', type: 'select', value: b.category_id || '', options: [['', '—'], ...cats.map((c) => [c.id, (c.names?.es || c.slug)])] },
+        { name: 'category_id', label: 'Categoría', type: 'select', value: b.category_id || '', options: [['', '—'], ...cats.map((c) => [c.id, (c.names?.[I18N.lang] || c.names?.es || c.slug)])] },
         { name: 'description', label: 'Descripción', type: 'textarea', value: b.description },
         { name: 'address', label: 'Dirección', value: b.address }, { name: 'city', label: 'Ciudad', value: b.city },
         { name: 'phone', label: 'Teléfono', value: b.phone }, { name: 'contact_email', label: 'Email de contacto', type: 'email', value: b.contact_email },
@@ -1374,7 +1374,7 @@ PAGES.categorias = async (v) => {
     <div class="page-head"><h1>Categorías</h1><span class="spacer"></span><button class="btn primary sm" id="new">Nueva categoría…</button></div>
     ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p>The categories used to classify businesses and publications (the app's filters). The <b>slug</b> is the internal identifier (don't change it if it's already in use); the icon is a Material Symbols name, as in the app (local_bar, restaurant…). Only an empty category can be deleted.</p>` : '<p>Las categorías con las que se clasifican negocios y publicaciones (filtros de la app). El <b>slug</b> es el identificador interno (no lo cambies si ya está en uso); el icono es el nombre de un icono de Material Symbols, como en la app (local_bar, restaurant…). Solo se puede borrar una categoría vacía.</p>')}
     ${table({ cols: [
-      { h: 'Categoría', r: (c) => `<span class="ph" style="font-size:20px">${c.icon ? ms(esc(c.icon)) : '·'}</span><span class="title">${esc(c.names?.es || c.slug)}<span class="sub">${esc(c.slug)} · EN: ${esc(c.names?.en || '—')}${c.parent_id ? ` · ${I18N.lang === 'en' ? 'under' : 'dentro de'} ${esc(byId[c.parent_id]?.names?.es || '')}` : ''}</span></span>` },
+      { h: 'Categoría', r: (c) => `<span class="ph" style="font-size:20px">${c.icon ? ms(esc(c.icon)) : '·'}</span><span class="title">${esc(c.names?.[I18N.lang] || c.names?.es || c.slug)}<span class="sub">${esc(c.slug)} · EN: ${esc(c.names?.en || '—')}${c.parent_id ? ` · ${I18N.lang === 'en' ? 'under' : 'dentro de'} ${esc(byId[c.parent_id]?.names?.es || '')}` : ''}</span></span>` },
       { h: 'Orden', num: true, r: (c) => c.position }, { h: 'Negocios', num: true, r: (c) => c.businesses }, { h: 'Publicaciones', num: true, r: (c) => c.offers },
       { h: '', r: (c) => `<span class="actions"><button class="btn sm" data-edit="${c.id}">Editar…</button>${(c.businesses || c.offers) ? '' : `<button class="btn sm bad ghost" data-del="${c.id}">Borrar</button>`}</span>` },
     ], rows: cats, empty: 'Sin categorías.' })}`;
@@ -1382,7 +1382,7 @@ PAGES.categorias = async (v) => {
     const r = await modal({ title: c ? 'Editar categoría' : 'Nueva categoría', fields: [
       { name: 'slug', label: 'Slug', value: c?.slug, required: true }, { name: 'icon', label: 'Icono (nombre de Material Symbols, como en la app: local_bar, restaurant…)', value: c?.icon },
       { name: 'es', label: 'Nombre (ES)', value: c?.names?.es, required: true }, { name: 'en', label: 'Nombre (EN)', value: c?.names?.en },
-      { name: 'parent_id', label: 'Categoría superior', type: 'select', value: c?.parent_id || '', options: [['', '— (principal)'], ...cats.filter((x) => x.id !== c?.id).map((x) => [x.id, x.names?.es || x.slug])] },
+      { name: 'parent_id', label: 'Categoría superior', type: 'select', value: c?.parent_id || '', options: [['', '— (principal)'], ...cats.filter((x) => x.id !== c?.id).map((x) => [x.id, x.names?.[I18N.lang] || x.names?.es || x.slug])] },
       { name: 'position', label: 'Orden', type: 'number', value: c?.position ?? 99 },
     ] });
     if (!r) return;
@@ -1485,7 +1485,7 @@ PAGES.colecciones = async (v, param) => {
       { name: 'max_price', label: 'Precio máximo (€, opcional)', value: c?.rules?.max_price_cents != null ? (c.rules.max_price_cents / 100).toFixed(2) : '' },
       { name: 'discount_only', label: 'Solo con descuento', type: 'checkbox', value: !!c?.rules?.discount_only },
       { name: 'new_days', label: 'Publicado en los últimos N días (opcional)', type: 'number', value: c?.rules?.new_days ?? '' },
-      { name: 'category_id', label: 'Categoría (opcional)', type: 'select', value: c?.rules?.categories?.[0] || '', options: [['', '— todas'], ...cats.map((x) => [x.id, x.names?.es || x.slug])] },
+      { name: 'category_id', label: 'Categoría (opcional)', type: 'select', value: c?.rules?.categories?.[0] || '', options: [['', '— todas'], ...cats.map((x) => [x.id, x.names?.[I18N.lang] || x.names?.es || x.slug])] },
       { name: 'city', label: 'Ciudad (opcional)', value: c?.city || '' },
       { name: 'position', label: 'Orden', type: 'number', value: c?.position ?? 50 },
       { name: 'active_from', label: 'Desde (opcional)', type: 'date', value: c?.active_from ? c.active_from.slice(0, 10) : '' },

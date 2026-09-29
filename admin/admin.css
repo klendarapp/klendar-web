@@ -58,7 +58,7 @@ label.f > span small { font-weight: 500; }
 .btn:hover { text-decoration: none; filter: brightness(1.05); }
 .btn.primary { background: var(--accent); color: var(--on-accent); border-color: transparent; }
 .btn.ok { background: #2ECC71; color: #07321a; border-color: transparent; }
-.btn.bad { background: #FF5C5C; color: #fff; border-color: transparent; }
+.btn.bad { background: #D32F2F; color: #fff; border-color: transparent; }
 .btn.ghost { background: transparent; }
 /* «Borrar» en fantasma: rojo sobre transparente (si no, heredaba el texto
    blanco de .bad y en modo claro no se veía). */
@@ -100,12 +100,14 @@ label.f > span small { font-weight: 500; }
 .kpi b { display: block; font-family: var(--display); font-size: 24px; letter-spacing: -.5px; }
 .kpi span { color: var(--ink-2); font-size: 12px; }
 .kpi.accent b { color: var(--accent-text); }
-.grid2 { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; }
-.grid3 { display: grid; gap: 14px; grid-template-columns: repeat(3, 1fr); }
-@media (max-width: 900px) { .grid2, .grid3 { grid-template-columns: 1fr; } }
-.kv { display: grid; grid-template-columns: 160px 1fr; gap: 6px 12px; font-size: 14px; }
+/* minmax(0, 1fr): la columna no crece con lo que lleva dentro (un correo o un
+   enlace largo sacaban la tarjeta de la pantalla en el móvil). */
+.grid2 { display: grid; gap: 14px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.grid3 { display: grid; gap: 14px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 900px) { .grid2, .grid3 { grid-template-columns: minmax(0, 1fr); } }
+.kv { display: grid; grid-template-columns: 160px minmax(0, 1fr); gap: 6px 12px; font-size: 14px; }
 .kv dt { color: var(--ink-2); } .kv dd { margin: 0; word-break: break-word; }
-@media (max-width: 600px) { .kv { grid-template-columns: 1fr; } .kv dt { margin-top: 6px; } }
+@media (max-width: 600px) { .kv { grid-template-columns: minmax(0, 1fr); } .kv dt { margin-top: 6px; } }
 
 /* Gráficas */
 .chart { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 3px; align-items: end; height: 90px; margin-top: 8px; }
@@ -177,7 +179,7 @@ dialog.modal .warn { background: rgba(255,92,92,.14); border-radius: 12px; paddi
 @keyframes pulse { 50% { opacity: .5 } }
 .mono { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; }
 a.link { color: var(--ink); font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }
-.stars { color: #FFB84D; letter-spacing: 1px; }
+.stars { color: #F5B041; letter-spacing: 1px; }
 .json { font-size: 12px; }
 .nowrap { white-space: nowrap; }
 
@@ -194,6 +196,12 @@ a.link { color: var(--ink); font-weight: 700; text-decoration: underline; text-u
 .topbar .lang a.on, .login .lang a.on, .me .lang a.on { background: var(--ink); color: var(--surface); }
 .me .lang { margin-top: 8px; }
 .login .lang { margin: 0 auto; }
+/* La barra lateral es oscura también en modo claro: sus grises no pueden ser
+   los de la página (el --ink-2 claro sobre negro no se leía). */
+.side .me .lang { border-color: rgba(255,255,255,.18); }
+.side .me .lang a { color: rgba(255,255,255,.72); opacity: 1; }
+.side .me .lang a.on { background: #fff; color: #0A0A0A; }
+.side .bizpick-mas { color: rgba(255,255,255,.66); }
 
 /* Sube o baja respecto a la semana anterior. */
 .up { color: #2ECC71; font-weight: 700; font-size: 12px; }
@@ -202,7 +210,9 @@ a.link { color: var(--ink); font-weight: 700; text-decoration: underline; text-u
 /* Iconos de Material Symbols (los mismos que la app y «Tu cuenta»). */
 .ms { font-family: 'Material Symbols Outlined'; font-weight: normal; font-style: normal; font-size: 20px;
   line-height: 1; letter-spacing: normal; text-transform: none; display: inline-block; white-space: nowrap;
-  direction: ltr; -webkit-font-smoothing: antialiased; font-feature-settings: 'liga'; flex: none; }
+  direction: ltr; -webkit-font-smoothing: antialiased; font-feature-settings: 'liga'; flex: none;
+  /* Mientras llega la fuente, el nombre del icono ocupa lo que un icono y no empuja nada. */
+  width: 1em; overflow: hidden; }
 .side a.nav .ic .ms { font-size: 20px; }
 .ph .ms { font-size: 22px; }
 .btn .ms { font-size: 18px; }
