@@ -89,7 +89,7 @@ const bizCard = (b, lang, S) => {
   const en = lang === 'en';
   const nombre = (en ? b.names?.en : b.names?.es) || '';
   return `<a class="ocard" href="${esc(bizPath(lang, b.slug || b.id))}">
-    ${b.logo_url ? `<img src="${esc(b.logo_url)}" alt="" loading="lazy">` : '<span class="ph">✦</span>'}
+    ${b.logo_url ? `<img src="${esc(b.logo_url)}" alt="" loading="lazy" decoding="async">` : '<span class="ph">✦</span>'}
     <span class="ocard-body">
       <b>${esc(b.name)}</b>
       <span class="muted">${esc(nombre)}${b.address ? ` · ${esc(b.address)}` : ''}</span>

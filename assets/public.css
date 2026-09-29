@@ -43,7 +43,9 @@ main.pub { padding: 34px 20px 72px; }
 .badges { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; }
 .badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px;
   font-size: 13px; font-weight: 700; background: var(--glass); border: 1px solid var(--glass-border); color: var(--ink); }
-.badge.hot { background: var(--accent-soft); border-color: transparent; color: var(--accent-text); }
+/* El rosa sobre la tarjeta (no transparente sobre el gris del fondo): así el
+   coral del texto llega a 4,5:1 (WCAG 1.4.3). */
+.badge.hot { background: color-mix(in srgb, var(--accent) 14%, var(--elevated)); border-color: transparent; color: var(--accent-text); }
 .badge.off { background: rgba(120,120,120,.18); color: var(--ink-2); }
 .badge.ok { background: rgba(60,180,120,.16); color: var(--ink); }
 
@@ -79,10 +81,12 @@ main.pub { padding: 34px 20px 72px; }
 .tag { padding: 3px 9px; border-radius: 999px; background: var(--accent-soft); color: var(--accent-text); font-weight: 800; font-size: 12px; }
 
 .daygroup { margin: 0 0 26px; }
-.daygroup h3 { font-family: var(--display); font-size: 15px; font-weight: 800;
+/* <h2> por el orden de títulos (debajo del <h1> de la página), con el
+   tamaño de antes. */
+.daygroup h2, .daygroup h3 { font-family: var(--display); font-size: 15px; font-weight: 800; line-height: inherit;
   margin: 0 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--glass-border); }
 /* «jueves, 24 de septiembre» -> «Jueves, 24 de septiembre»: solo la primera. */
-.daygroup h3::first-letter { text-transform: uppercase; }
+.daygroup h2::first-letter, .daygroup h3::first-letter { text-transform: uppercase; }
 
 .cities { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 24px; }
 .cities a { padding: 8px 14px; border-radius: 999px; background: var(--glass); border: 1px solid var(--glass-border);
@@ -238,7 +242,7 @@ button.pill { font-family: inherit; cursor: pointer; }
 .estado-hoy { margin: 0 0 10px; font-size: 14px; color: var(--ink-2); }
 .estado-hoy b { font-weight: 700; }
 .estado-hoy.abierto b { color: #177A42; }
-.estado-hoy.pronto b { color: #B7700A; }
+.estado-hoy.pronto b { color: #A16207; } /* ámbar oscuro: 4,9:1 sobre blanco */
 .estado-hoy.cerrado b { color: #D93636; }
 @media (prefers-color-scheme: dark) {
   .estado-hoy.abierto b { color: #2ECC71; }

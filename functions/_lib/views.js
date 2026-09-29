@@ -12,7 +12,7 @@ import { esc, fmtWhen, html, isUuid, rpc, rpcAll, rows, supabasePublic } from '.
 import KZ from '../../assets/zona.js';
 import {
   agendaBase, BASE, benefit, bizPath, breadcrumbLd, cityLinks, citySeg, datosDeNegocios, exploreBase,
-  firstPhoto, fmtEnd, fmtLong, isSlug, isVideo, ldScript, listingLd, media, money, offerCard, openInApp,
+  firstPhoto, fmtEnd, fmtLong, imgGaleria, isSlug, isVideo, ldScript, listingLd, media, money, offerCard, openInApp,
   priorPrice, publicPage, slugDe, todayBase, zonaDe,
 } from './public.js';
 
@@ -146,7 +146,7 @@ export async function offerPage(id, lang) {
   <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a> · <a href="${esc(bHref)}">${esc(o.business_name)}</a></p>
   <div class="detail">
     <div class="d-head">
-      ${pieces.length ? `<div class="gallery${pieces.length === 1 ? ' solo' : ''}">${pieces.map((u) => media(u, cover)).join('')}</div>` : ''}
+      ${pieces.length ? `<div class="gallery${pieces.length === 1 ? ' solo' : ''}">${pieces.map((u, i) => media(u, cover, i === 0)).join('')}</div>` : ''}
       ${badges ? `<div class="badges" style="margin-top:18px">${badges}</div>` : ''}
       <h1>${esc(o.title)}</h1>
       <p class="muted">${esc(o.business_name)}${where ? ` · ${esc(where)}` : ''}</p>
@@ -295,7 +295,7 @@ function lockedOfferPage(o, lang, path, bHref) {
   <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a> · <a href="${esc(bHref)}">${esc(n)}</a></p>
   <div class="detail">
     <div class="d-head">
-      ${o.business_cover ? `<div class="gallery solo"><img src="${esc(o.business_cover)}" alt="" loading="lazy"></div>` : ''}
+      ${o.business_cover ? `<div class="gallery solo">${imgGaleria(o.business_cover, true)}</div>` : ''}
       <div class="badges" style="margin-top:18px"><span class="badge">${esc(S.kind)}</span>${o.adults_only ? '<span class="badge">+18</span>' : ''}</div>
       <h1>${esc(S.title)}</h1>
       <p class="muted">${esc(n)}${where ? ` · ${esc(where)}` : ''}</p>
@@ -524,7 +524,7 @@ export async function businessPage(param, lang, search = '') {
     <div class="d-head">
       ${b.cover || galeria.length
         ? `<div class="gallery${galeria.length ? '' : ' solo'}">${[b.cover, ...galeria].filter(Boolean).slice(0, 7)
-          .map((u) => `<img src="${esc(u)}" alt="" loading="lazy">`).join('')}</div>`
+          .map((u, i) => imgGaleria(u, i === 0)).join('')}</div>`
         : ''}
       <div class="badges" style="margin-top:18px">
         ${b.is_verified ? `<span class="badge ok">✓ ${S.verified}</span>` : ''}
@@ -720,7 +720,7 @@ export async function agendaPage(rawCity, lang) {
   </div></div>` : ''}
   ${offers.length
     ? orden.map((iso) => [iso, days.get(iso)]).map(([iso, list]) => `<section class="daygroup" id="d${iso}">
-        <h3>${esc(dayTitle(iso))}</h3>
+        <h2>${esc(dayTitle(iso))}</h2>
         <div class="olist">${list.map((o) => offerCard(o, lang, tzDe(o))).join('')}</div>
       </section>`).join('')
     : `<p class="empty">${esc(S.none)}</p>`}
@@ -753,7 +753,7 @@ function placesBlock(negocios, lang, titulo) {
   const items = negocios?.items || [];
   if (!items.length) return '';
   return `<section class="daygroup">
-    <h3>${esc(titulo)}</h3>
+    <h2>${esc(titulo)}</h2>
     <div class="cities">${items.map((b) => `<a href="${esc(bizPath(lang, b.slug || b.id))}">${esc(b.name)}${b.live ? ` <span class="muted">${b.live}</span>` : ''}</a>`).join('')}</div>
   </section>`;
 }
@@ -816,7 +816,7 @@ export async function todayPage(rawCity, lang) {
       };
 
   const bloque = (titulo, items) => (items.length
-    ? `<section class="daygroup"><h3>${esc(titulo)}</h3>
+    ? `<section class="daygroup"><h2>${esc(titulo)}</h2>
         <div class="olist">${items.map((o) => offerCard(o, lang)).join('')}</div></section>`
     : '');
 

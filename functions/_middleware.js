@@ -9,18 +9,29 @@
 //    aplica a los ficheros, no a lo que devuelven las funciones.
 // 3. HEAD responde como GET (sin cuerpo): las funciones solo tienen GET y los
 //    comprobadores de enlaces y algunos buscadores preguntan con HEAD.
-const INTERNO = /^\/(tools\/|README\.md$|build_[\w-]*\.py$|[\w-]+\.py$|__pycache__\/|node_modules\/|\.(?!well-known\/))/;
+const INTERNO = /^\/(tools\/|README\.md$|build_[\w-]*\.py$|[\w-]+\.py$|__pycache__\/|node_modules\/|\.(?!well-known\/))/i;
 
 const SEGURIDAD = {
   // Siempre HTTPS, aunque alguien escriba http:// (un año; también www).
   'strict-transport-security': 'max-age=31536000; includeSubDomains',
   'x-content-type-options': 'nosniff',
   'referrer-policy': 'strict-origin-when-cross-origin',
+  // Lo mínimo que no rompe nada: sin <base> ajeno, sin plugins y sin iframes
+  // de fuera (igual que X-Frame-Options). El widget trae la suya.
+  'content-security-policy': "base-uri 'self'; object-src 'none'; frame-ancestors 'none'",
+};
+
+// La ruta tal y como la sirve Cloudflare: decodificada y sin barras dobles
+// (`/%52EADME.md` o `//tools/…` se colaban por delante de INTERNO).
+const rutaReal = (pathname) => {
+  let ruta = pathname;
+  try { ruta = decodeURIComponent(pathname); } catch { /* se queda como venía */ }
+  return ruta.replace(/\/{2,}/g, '/');
 };
 
 export async function onRequest(ctx) {
   const { pathname, searchParams } = new URL(ctx.request.url);
-  if (INTERNO.test(pathname)) {
+  if (INTERNO.test(pathname) || INTERNO.test(rutaReal(pathname))) {
     return new Response('Not found', {
       status: 404,
       headers: { 'content-type': 'text/plain; charset=utf-8', 'x-robots-tag': 'noindex' },

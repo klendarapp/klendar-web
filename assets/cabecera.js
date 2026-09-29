@@ -60,4 +60,27 @@
 
   window.KL_CABECERA = pinta;
   pinta();
+
+  // «Saltar al contenido» va a <main id="contenido">; si el <main> de esta
+  // página tiene otro nombre (o ninguno), se apunta a él.
+  const main = document.querySelector('main');
+  if (main) {
+    if (!main.id) main.id = 'contenido';
+    document.querySelectorAll('a.saltar').forEach((a) => { a.setAttribute('href', `#${main.id}`); });
+  }
+
+  // Una tabla de documento más ancha que la pantalla se desliza de lado: que
+  // también se pueda con el teclado (WCAG 2.1.1).
+  document.querySelectorAll('.doc table').forEach((t) => {
+    if (t.scrollWidth > t.clientWidth + 1 && !t.hasAttribute('tabindex')) t.tabIndex = 0;
+  });
+
+  // El menú del móvil se cierra con Escape y el foco vuelve a su botón.
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    document.querySelectorAll('input#menu:checked').forEach((casilla) => {
+      casilla.checked = false;
+      casilla.focus();
+    });
+  });
 })();

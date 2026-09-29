@@ -80,7 +80,7 @@
       const img = foto(o.images);
       const tag = etiqueta(o.discount, o.price_cents, o.currency);
       return `<a class="tarjeta" href="${base}/o/${esc(o.id)}">
-        ${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : '<span class="ph">✦</span>'}
+        ${img ? `<img src="${esc(img)}" alt="" loading="lazy" decoding="async">` : '<span class="ph">✦</span>'}
         <span class="tarjeta-cuerpo">
           <b>${esc(o.title)}</b>
           <span class="muted">${esc(o.business_name || '')}</span>

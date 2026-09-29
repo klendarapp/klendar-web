@@ -12,12 +12,12 @@ from build_site import T, doc_page, footer, head
 
 # Precios reales de `subscription_plans` (Supabase). Si cambian allí, aquí.
 PLANES = [
-    # Un solo plan y el precio de fundador. Los límites por plan se quitaron:
-    # castigaban justo lo que llena el mapa, que es publicar.
+    # Un solo plan, después de la prueba gratis. Los límites por plan se
+    # quitaron: castigaban justo lo que llena el mapa, que es publicar. El
+    # precio de fundador se retiró el 2026-09-29 (el plan sigue en la base,
+    # oculto, por si alguien lo tuviera).
     ('standard', 'Klendar', 'Klendar', '19,90 €', '€19.90',
-     '199 €/año (dos meses gratis)', '€199/year (two months free)', False),
-    ('founder', 'Fundador', 'Founder', '9,90 €', '€9.90',
-     'Precio bloqueado de por vida', 'Price locked for life', True),
+     '199 €/año (dos meses gratis)', '€199/year (two months free)'),
 ]
 
 PAGINAS = {}  # slug ES -> (slug EN, título ES, título EN, desc ES, desc EN, cuerpo ES, cuerpo EN)
@@ -27,10 +27,10 @@ PAGINAS = {}  # slug ES -> (slug EN, título ES, título EN, desc ES, desc EN, c
 PAGINAS['para-negocios'] = (
     'for-business',
     'Klendar para negocios', 'Klendar for businesses',
-    'Llena los huecos de tu local con gente del barrio. Sin comisiones por canje y sin permanencia.',
-    'Fill the empty hours in your venue with people from the neighbourhood. No commission per redemption, no lock-in.',
+    'Atrae clientes nuevos, llena tus eventos y haz que vuelvan. Pruébalo gratis, sin comisiones por canje y sin permanencia.',
+    'Bring in new customers, fill your events and get people coming back. Try it free, no commission per redemption, no lock-in.',
     '''
-<p class="lead">Tienes mesas vacías a las cinco de la tarde, tres cortes libres el martes o veinte entradas sin vender para el jueves. Klendar es para eso: lo publicas en un minuto y lo ve quien está cerca <strong>ahora</strong>.</p>
+<p class="lead">Quieres que te conozca gente nueva, llenar la cata del jueves o que quien vino una vez vuelva. Klendar es para eso: publicas una oferta flash o un evento en un minuto y lo ve quien está cerca <strong>ahora</strong>.</p>
 
 <h2>Cómo funciona</h2>
 <ol>
@@ -42,14 +42,14 @@ PAGINAS['para-negocios'] = (
 <h2>Qué ganas</h2>
 <ul>
   <li><strong>Sin comisiones por canje.</strong> Lo que cobras en el local es tuyo entero: Klendar no toca el dinero.</li>
-  <li><strong>Clientes de al lado.</strong> La app enseña lo que está cerca y empieza pronto, no lo que más paga.</li>
+  <li><strong>Clientes nuevos.</strong> La app enseña lo que está cerca y empieza pronto, no lo que más paga.</li>
   <li><strong>Sabes qué funcionó.</strong> Vistas, códigos y canjes de cada publicación, con el detalle de quién validó cada uno; exportable para tu gestor.</li>
   <li><strong>Tu equipo, con su sitio.</strong> Puedes dar acceso a quien esté en barra para que valide códigos, sin darle acceso a lo demás.</li>
-  <li><strong>Sin permanencia.</strong> Se cambia de plan o se deja cuando quieras.</li>
+  <li><strong>Sin permanencia.</strong> Lo dejas cuando quieras.</li>
 </ul>
 
 <h2>Lo que cuesta</h2>
-<p>Ahora mismo es <strong>gratis</strong> mientras arrancamos en tu ciudad. Después, un solo plan de 19,90 € al mes sin límites, y precio de fundador si entras al principio. <a href="/precios/">Ver precios</a>.</p>
+<p>Lo <strong>pruebas gratis</strong>: 30 días con todo al darte de alta, sin tarjeta, y gratis mientras arrancamos en tu ciudad. Después, un solo plan de 19,90 € al mes sin límites, sin permanencia y sin comisión por canje. <a href="/precios/">Ver precios</a>.</p>
 
 <h2>Echa la cuenta</h2>
 <p>Con tus números, no con los nuestros. Es una estimación para ver si sale a cuenta, no una promesa.</p>
@@ -98,7 +98,7 @@ PAGINAS['para-negocios'] = (
 <p class="note">Kit para tu local: <a href="/assets/kit/klendar-guia-negocios.pdf">guía de 1 página (PDF)</a> · <a href="/assets/kit/klendar-cartel.pdf">cartel con QR (PDF)</a>. Lo legal, en las <a href="/negocios/">condiciones para negocios</a>.</p>
 ''',
     '''
-<p class="lead">You have empty tables at five in the afternoon, three free slots on Tuesday or twenty unsold tickets for Thursday. That is what Klendar is for: you publish it in a minute and people nearby see it <strong>now</strong>.</p>
+<p class="lead">You want new people to discover you, a full house for Thursday's tasting, or the customers who came once to come back. That is what Klendar is for: you publish a flash offer or an event in a minute and people nearby see it <strong>now</strong>.</p>
 
 <h2>How it works</h2>
 <ol>
@@ -110,14 +110,14 @@ PAGINAS['para-negocios'] = (
 <h2>What you get</h2>
 <ul>
   <li><strong>No commission per redemption.</strong> What you charge at the venue is yours: Klendar never touches the money.</li>
-  <li><strong>Customers from next door.</strong> The app shows what is near and starting soon, not what pays most.</li>
+  <li><strong>New customers.</strong> The app shows what is near and starting soon, not what pays most.</li>
   <li><strong>You know what worked.</strong> Views, codes and redemptions for each publication, with who validated each one; exportable for your accountant.</li>
   <li><strong>Your team, with its own access.</strong> Whoever is behind the bar can validate codes without getting access to everything else.</li>
-  <li><strong>No lock-in.</strong> Change plan or leave whenever you want.</li>
+  <li><strong>No lock-in.</strong> Leave whenever you want.</li>
 </ul>
 
 <h2>What it costs</h2>
-<p>Right now it is <strong>free</strong> while we are starting in your city. After that, one plan at €19.90 a month with no limits, and a founder price if you come in early. <a href="/en/pricing/">See pricing</a>.</p>
+<p>You <strong>try it free</strong>: 30 days with everything when you register, no card, and free while we are starting in your city. After that, one plan at €19.90 a month with no limits, no lock-in and no commission per redemption. <a href="/en/pricing/">See pricing</a>.</p>
 
 <h2>Do the maths</h2>
 <p>With your numbers, not ours. It is an estimate to see whether it adds up, not a promise.</p>
@@ -184,24 +184,33 @@ def tabla_planes(lang):
         'Business page, gallery and a dashboard for your team',
         'No lock-in: leave whenever you want',
     ]
-    filas = []
-    for _slug, n_es, n_en, p_es, p_en, extra_es, extra_en, destacado in PLANES:
+    # Primero la prueba (no es un plan: es cómo se empieza) y luego el plan.
+    prueba = [
+        'Todo lo del plan, sin límites', 'Y gratis mientras arrancamos en tu ciudad',
+        'Te avisamos un mes antes de empezar a cobrar',
+    ] if es else [
+        'Everything in the plan, no limits', 'And free while we are starting in your city',
+        'We tell you a month before we start charging',
+    ]
+    filas = [f'''
+    <div class="plan">
+      <p class="tag">{'Para empezar' if es else 'To start'}</p>
+      <h2>{'Prueba gratis' if es else 'Free trial'}</h2>
+      <p class="price"><b>{'0 €' if es else '€0'}</b><span>{'· 30 días' if es else '· 30 days'}</span></p>
+      <p class="note">{'Sin tarjeta y sin renovación automática' if es else 'No card and no automatic renewal'}</p>
+      <ul>
+        {''.join(f'<li>{p}</li>' for p in prueba)}
+      </ul>
+    </div>''']
+    for _slug, n_es, n_en, p_es, p_en, extra_es, extra_en in PLANES:
         nombre = n_es if es else n_en
         precio = p_es if es else p_en
         extra = extra_es if es else extra_en
-        if destacado:
-            puntos = [
-                ('Todo lo del plan Klendar' if es else 'Everything in the Klendar plan'),
-                ('El precio no te sube nunca, ni cuando suba la tarifa'
-                 if es else 'Your price never goes up, even when the rate does'),
-                ('Plazas limitadas en cada ciudad' if es else 'Limited spots in each city'),
-            ]
-        else:
-            puntos = ventajas_es if es else ventajas_en
+        puntos = ventajas_es if es else ventajas_en
         filas.append(f'''
-    <div class="plan{' best' if destacado else ''}">
-      {'<p class="tag">' + ('Para los primeros de tu ciudad' if es else 'For the first in your city') + '</p>' if destacado else ''}
-      <h3>{nombre}</h3>
+    <div class="plan best">
+      <p class="tag">{'Después' if es else 'After that'}</p>
+      <h2>{nombre}</h2>
       <p class="price"><b>{precio}</b><span>{'/mes' if es else '/month'}</span></p>
       <p class="note">{extra}</p>
       <ul>
@@ -214,10 +223,10 @@ def tabla_planes(lang):
 PAGINAS['precios'] = (
     'pricing',
     'Precios', 'Pricing',
-    'Un solo plan, 19,90 €/mes sin límites y menos por local si tienes varios. '
-    'Gratis mientras arrancamos en tu ciudad, sin comisiones por canje y sin permanencia.',
-    'One plan, €19.90/month with no limits and less per venue if you have several. '
-    'Free while we are starting in your city, no commission per redemption and no lock-in.',
+    'Pruébalo gratis y, después, un solo plan de 19,90 €/mes sin límites (menos por local si tienes varios). '
+    'Sin comisiones por canje y sin permanencia.',
+    'Try it free, then one plan at €19.90/month with no limits (less per venue if you have several). '
+    'No commission per redemption and no lock-in.',
     f'''
 <p class="lead">Un solo plan, sin límites y sin comisiones por canje. Lo que cobras en tu local es tuyo entero.</p>
 <p class="callout"><strong>Ahora mismo es gratis.</strong> Mientras una ciudad está arrancando no le cobramos a nadie: un mapa vacío no le sirve ni a los negocios ni a la gente. Cuando vayamos a empezar a cobrar en tu ciudad, te avisamos con un mes de antelación.</p>
@@ -561,7 +570,7 @@ if __name__ == '__main__':
     for lang, (path, titulo, texto, botones, carpeta, pie) in NO_EXISTE.items():
         pills = ''.join(f'<a class="pill{" accent" if i == 0 else " ghost"}" href="{h}">{l}</a>' for i, (h, l) in enumerate(botones))
         pagina = head(T[lang], path, f'{titulo} · Klendar', texto, extra='<meta name="robots" content="noindex">') + f'''
-<main class="doc">
+<main class="doc" id="contenido">
 <h1>{titulo}</h1>
 <p class="lead">{texto}</p>
 <p class="acciones" style="margin-top:18px">{pills}</p>

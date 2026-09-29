@@ -91,7 +91,7 @@ def guide():
     # Dos columnas: consejos y plan
     colw = (W - 2 * M - 6 * mm) / 2
     c.setFillColor(INK); c.setFont('Onest-Bold', 12.5); c.drawString(M, y, 'Ofertas que funcionan')
-    tips = ['Ventanas cortas (2–4 h) en tus horas flojas: la cuenta atrás mueve a la gente.',
+    tips = ['Ventanas cortas (2–4 h), cuando más te interese llenar: la cuenta atrás mueve a la gente.',
             'Un beneficio concreto: «-30 %», «2x1», «café + tostada 2,50 €».',
             'Aforo limitado («20 plazas»): lo que se agota, se canjea antes.',
             'Foto real del producto o del local, con luz. Nada de bancos de imágenes.',
@@ -103,11 +103,12 @@ def guide():
         yy -= h + 1.5 * mm
 
     x2 = M + colw + 6 * mm
-    c.setFillColor(CARD); c.roundRect(x2, y - 52 * mm, colw, 58 * mm, 4 * mm, fill=1, stroke=0)
-    c.setFillColor(INK); c.setFont('Onest-Bold', 12.5); c.drawString(x2 + 6 * mm, y - 2 * mm, 'Planes y precio')
-    para(c, '<b><font color="#FF4D6D">Prueba gratis de 30 días</font></b> con todo incluido al darte de alta. '
-            'Después, plan <b>Gratis</b> (hasta 2 publicaciones activas) o un plan de pago con <b>cuota mensual fija</b> y sin comisiones. '
-            'Cambias o te das de baja cuando quieras.<br/><br/>'
+    c.setFillColor(CARD); c.roundRect(x2, y - 60 * mm, colw, 66 * mm, 4 * mm, fill=1, stroke=0)
+    c.setFillColor(INK); c.setFont('Onest-Bold', 12.5); c.drawString(x2 + 6 * mm, y - 2 * mm, 'Lo que cuesta')
+    para(c, '<b><font color="#FF4D6D">Prueba gratis de 30 días</font></b> con todo incluido al darte de alta, sin tarjeta, '
+            'y gratis mientras arrancamos en tu ciudad. '
+            'Después, un solo plan de <b>19,90 € al mes</b> por local, sin límites y <b>sin comisiones</b> por canje. '
+            'Te avisamos un mes antes de cobrar y te das de baja cuando quieras.<br/><br/>'
             'Condiciones completas en <b>klendar.app/negocios</b>.',
          x2 + 6 * mm, y - 7 * mm, colw - 12 * mm, size=9.8, leading=13.5)
 

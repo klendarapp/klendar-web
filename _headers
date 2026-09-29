@@ -49,3 +49,42 @@
   Content-Type: application/json
   Cache-Control: public, max-age=3600
   X-Robots-Tag: noindex
+
+# Estáticos versionados: cada página los pide con `?v=` y ese número se sube
+# cada vez que cambian, así que el navegador los puede guardar un año sin
+# volver a preguntar. OJO: al tocar uno de estos ficheros, subir su `?v=` en
+# todos los sitios que lo enlazan (si no, quien ya lo tenga no lo verá).
+# Las fuentes no cambian nunca: si algún día cambian, con otro nombre.
+# (Los iconos y las imágenes sin `?v=` se quedan con la caché de siempre.)
+/assets/fonts/*
+  Cache-Control: public, max-age=31536000, immutable
+/assets/screens/*
+  Cache-Control: public, max-age=31536000, immutable
+/assets/vendor/*
+  Cache-Control: public, max-age=31536000, immutable
+/assets/site.css
+  Cache-Control: public, max-age=31536000, immutable
+/assets/public.css
+  Cache-Control: public, max-age=31536000, immutable
+/assets/amigos.js
+  Cache-Control: public, max-age=31536000, immutable
+/assets/auth-errors.js
+  Cache-Control: public, max-age=31536000, immutable
+/assets/barra.js
+  Cache-Control: public, max-age=31536000, immutable
+/assets/cabecera.js
+  Cache-Control: public, max-age=31536000, immutable
+/assets/errores.js
+  Cache-Control: public, max-age=31536000, immutable
+/assets/fotos.js
+  Cache-Control: public, max-age=31536000, immutable
+/assets/horario.js
+  Cache-Control: public, max-age=31536000, immutable
+/assets/i18n.js
+  Cache-Control: public, max-age=31536000, immutable
+/assets/live.js
+  Cache-Control: public, max-age=31536000, immutable
+/assets/visita.js
+  Cache-Control: public, max-age=31536000, immutable
+/assets/zona.js
+  Cache-Control: public, max-age=31536000, immutable

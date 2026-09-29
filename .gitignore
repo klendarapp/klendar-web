@@ -1,3 +1,6 @@
 .wrangler/
 __pycache__/
 node_modules/
+
+# Vista previa de los textos legales con la SL (se genera con build_legal.py --vista-previa)
+/tools/legal_preview/

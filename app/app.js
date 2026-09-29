@@ -223,7 +223,13 @@ async function botonGoogle(siguiente, destino = '/app/') {
 // ── Un último paso: términos y edad ───────────────────────────────────────
 // Quien entra con Google no pasa por el alta: sin esto no constaba que
 // aceptase los términos ni sabíamos si tiene 14 años. Se pregunta una vez.
-let CONSENTIMIENTO = { id: null, ok: true, fecha: true };
+// Y si aceptó una versión anterior a la vigente, se le vuelve a pedir
+// («Hemos actualizado los términos y la privacidad»).
+// La versión vigente la decide la base (`app_config.terms`, `my_consents`
+// → `terms_current` / `terms_outdated`), que además guarda siempre esa al
+// registrarse o aceptar. Esta constante es solo el respaldo que se manda.
+const TERMINOS_VERSION = '2026-09-29';
+let CONSENTIMIENTO = { id: null, ok: true, fecha: true, nueva: false, vigente: null };
 async function faltaConsentimiento() {
   if (!YO) return false;
   if (CONSENTIMIENTO.id !== YO.id) {
@@ -235,8 +241,15 @@ async function faltaConsentimiento() {
         YO = null;
         return false;
       }
-      CONSENTIMIENTO = { id: YO.id, ok: Boolean(c.terms_accepted_at), fecha: c.has_birth_date !== false };
-    } catch { CONSENTIMIENTO = { id: YO.id, ok: true, fecha: true }; } // sin red: no se bloquea
+      CONSENTIMIENTO = {
+        id: YO.id,
+        ok: Boolean(c.terms_accepted_at) && c.terms_outdated !== true,
+        fecha: c.has_birth_date !== false,
+        // Ya los aceptó una vez: lo que falta es aceptar la versión nueva.
+        nueva: Boolean(c.terms_accepted_at) && c.terms_outdated === true,
+        vigente: c.terms_current || null,
+      };
+    } catch { CONSENTIMIENTO = { id: YO.id, ok: true, fecha: true, nueva: false, vigente: null }; } // sin red: no se bloquea
   }
   return !CONSENTIMIENTO.ok;
 }
@@ -526,7 +539,7 @@ function reenvio(boton, enviar) {
 
 /** Lo que manda la app al crear la cuenta con un código (el texto legal de
  * debajo dice que al continuar se aceptan los términos). */
-const DATOS_ALTA = () => ({ terms_accepted: true, terms_version: '2026-09', user_type: 'user', locale: EN ? 'en' : 'es' });
+const DATOS_ALTA = () => ({ terms_accepted: true, terms_version: TERMINOS_VERSION, user_type: 'user', locale: EN ? 'en' : 'es' });
 const conSiguiente = (ruta, siguiente) => `#/${ruta}${siguiente ? `?siguiente=${encodeURIComponent(siguiente)}` : ''}`;
 const legalCodigo = () => `<p class="muted pie-form">${esc(t('Si es tu primera vez, se creará tu cuenta al entrar. Al continuar aceptas los términos y la política de privacidad.'))}
   <a href="${EN ? '/en/terms/' : '/terminos/'}" target="_blank">${esc(t('Términos de uso'))}</a> ·
@@ -777,7 +790,7 @@ RUTAS.registro = async (_p, params) => {
             display_name: form.elements.name.value.trim(),
             birth_date: nac,
             terms_accepted: true,
-            terms_version: '2026-09',
+            terms_version: TERMINOS_VERSION,
             marketing_consent: form.marketing.checked,
             user_type: 'user',
             locale: EN ? 'en' : 'es',
@@ -1369,6 +1382,17 @@ RUTAS.reservar = async ([id]) => {
 RUTAS.espera = async ([id], params) => {
   if (!exigeSesion(`espera/${id}`)) return;
   const quitar = params?.get('quitar') === '1';
+  // La ficha pública va en caché y no sabe quién mira: a quien ya tiene
+  // plaza (su código vivo) le ofrece la lista de espera de algo agotado. No
+  // hace cola: va a su entrada, como «Mi entrada» en la app.
+  if (!quitar) {
+    const mios = await llamar('my_redemptions', {}).catch(() => []);
+    if ((mios || []).some((r) => r.offer_id === id && r.status === 'pending'
+        && new Date(r.expires_at).getTime() > Date.now())) {
+      location.replace(`#/codigo/${encodeURIComponent(id)}`);
+      return;
+    }
+  }
   const { puesto: dentro } = await ponOQuita('offer_waitlist', 'offer_id', id, quitar,
     () => llamar('toggle_waitlist', { p_offer: id }));
   hecho({

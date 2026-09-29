@@ -20,17 +20,17 @@
 <meta name="theme-color" content="#0A0A0A">
 <link rel="icon" href="/favicon.ico" sizes="48x48"><link rel="icon" type="image/png" sizes="96x96" href="/assets/favicon-96.png"><link rel="manifest" href="/site.webmanifest">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/site.css?v=20261008">
-<link rel="stylesheet" href="/assets/public.css?v=21">
+<link rel="preload" href="/assets/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/site.css?v=20261009">
+<link rel="stylesheet" href="/assets/public.css?v=22">
 
 </head>
 <body>
+<a class="saltar" href="#contenido">Saltar al contenido</a>
 <header class="top"><div class="wrap">
-  <a class="brand" href="/"><img src="/assets/symbol.png" alt="" width="30" height="30"> Klendar</a>
-  <input type="checkbox" id="menu" aria-hidden="true">
+  <a class="brand" href="/"><img src="/assets/symbol-96.png" alt="" width="30" height="30"> Klendar</a>
+  <input type="checkbox" id="menu" aria-label="Menú">
   <nav class="main">
     <a href="/explorar/">Explorar</a>
     <a href="/agenda/">Agenda</a>
@@ -49,13 +49,13 @@
       <a href="/privacidad/" class="on" data-lang="es" hreflang="es">ES</a>
       <a href="/en/privacy/" class="" data-lang="en" hreflang="en">EN</a>
     </span>
-    <label class="menu-toggle" for="menu" aria-label="Menú"><span></span><span></span><span></span></label>
+    <label class="menu-toggle" for="menu" aria-hidden="true"><span></span><span></span><span></span></label>
   </div>
 </div></header>
-<script src="/assets/cabecera.js?v=4" defer></script>
+<script src="/assets/cabecera.js?v=5" defer></script>
 <main class="doc">
 <h1>Política de privacidad</h1>
-<div class="meta">Última actualización: 17 de septiembre de 2026 · Versión 2026-09</div>
+<div class="meta">Última actualización: 29 de septiembre de 2026 · Versión 2026-09-29</div>
 
 
 <p>Esta política explica qué datos personales tratamos en la app Klendar y en klendar.app, para qué, con qué base legal, cuánto tiempo los conservamos y qué derechos tienes. Cumple el Reglamento (UE) 2016/679 (RGPD) y la Ley Orgánica 3/2018 (LOPDGDD).</p>
@@ -71,7 +71,7 @@
 <tr><th>Tratamiento</th><th>Datos</th><th>Finalidad</th><th>Base jurídica</th><th>Conservación</th></tr>
 <tr><td>Cuenta de usuario</td><td>Email, nombre mostrado, contraseña (cifrada), fecha de nacimiento, idioma, foto de perfil (opcional), fecha y versión de aceptación de los términos</td><td>Crear y gestionar tu cuenta; verificar la edad mínima (14 años) y el acceso a contenidos para mayores de 18; y, si un negocio de tus favoritos ofrece regalo de cumpleaños y no lo apagas en Ajustes → Notificaciones, dártelo el día de tu cumpleaños (el negocio no ve tu fecha: solo recibe el código cuando lo canjeas)</td><td>Ejecución del contrato (art. 6.1.b RGPD); obligación legal para la edad (art. 6.1.c; art. 7 LOPDGDD)</td><td>Mientras la cuenta esté activa. Al eliminarla, se borra en 30 días salvo obligación legal de conservación</td></tr>
 <tr><td>Inicio de sesión con Google / Apple</td><td>Identificador del proveedor, email, nombre</td><td>Autenticación sin contraseña</td><td>Ejecución del contrato</td><td>Igual que la cuenta</td></tr>
-<tr><td>Ubicación</td><td>Coordenadas aproximadas o precisas del dispositivo (según el permiso que concedas) o la ciudad que elijas manualmente</td><td>Ordenar el feed y el mapa por cercanía; "ofertas cerca de ti" si activas esa opción</td><td>Consentimiento (art. 6.1.a), revocable en los ajustes del dispositivo y de la app</td><td>No se guarda un historial. Solo se conserva la última ubicación conocida (para "cerca de ti") y se descarta a los 7 días</td></tr>
+<tr><td>Ubicación</td><td>Coordenadas aproximadas o precisas del dispositivo (según el permiso que concedas) o la ciudad que elijas manualmente</td><td>Ordenar el feed y el mapa por cercanía; "ofertas cerca de ti" si activas esa opción; y, de forma agregada y sin identificar a nadie, las cifras de distancia del «Informe» de cada negocio (desde qué distancia llega su clientela)</td><td>Consentimiento (art. 6.1.a), revocable en los ajustes del dispositivo y de la app</td><td>No se guarda un historial. Solo se conserva la última ubicación conocida (para "cerca de ti") y se descarta a los 7 días</td></tr>
 <tr><td>Favoritos, reseñas, canjes</td><td>Negocios guardados, valoraciones y comentarios, códigos de canje y su estado, vistas de ofertas</td><td>Prestar el servicio: tus favoritos, tus reseñas públicas, el historial de canjes y estadísticas agregadas para los negocios</td><td>Ejecución del contrato</td><td>Mientras exista la cuenta. Las reseñas se muestran con tu nombre mostrado</td></tr>
 <tr><td>Amigos y planes</td><td>Tu enlace de amigo (y su QR), tus amigos y desde cuándo lo sois, las publicaciones a las que marcas «Voy», las invitaciones que mandas y recibes (y lo que contestas) y tu opción «Que mis amigos vean mis planes»</td><td>Que puedas hacerte amigo de quien tenga tu enlace, ver a qué planes van tus amigos, invitarles y que ellos vean a qué vas tú. No hay buscador de personas: solo te encuentra quien tiene tu enlace o tu QR</td><td>Ejecución del contrato. Que tus amigos vean tus planes se apaga en Ajustes → Privacidad, y las invitaciones, en Ajustes → Notificaciones</td><td>Mientras exista la cuenta. Si quitas a alguien de tus amigos, deja de ver tus planes al momento (no le avisamos)</td></tr>
 <tr><td>Notificaciones push</td><td>Token del dispositivo, preferencias (favoritos, cercanía, mensajes de tus favoritos, invitaciones de amigos, cumpleaños, horas de silencio)</td><td>Avisarte de novedades y mensajes de tus favoritos (como mucho uno por semana y negocio), ofertas cercanas, invitaciones de tus amigos y tu regalo de cumpleaños. Cada tipo se apaga por separado en Ajustes → Notificaciones</td><td>Consentimiento, revocable en cualquier momento</td><td>Hasta que revoques el permiso, cierres sesión o elimines la cuenta</td></tr>
@@ -85,12 +85,13 @@
 <h2>3. Destinatarios y encargados del tratamiento</h2>
 <p>No vendemos ni cedemos tus datos. Para prestar el servicio usamos proveedores que actúan como encargados del tratamiento con contratos conforme al art. 28 RGPD:</p>
 <ul>
-  <li><strong>Supabase</strong> (base de datos, autenticación y almacenamiento; servidores en la Unión Europea).</li>
+  <li><strong>Supabase</strong> (base de datos, autenticación y almacenamiento; servidores en Londres (Reino Unido), país con decisión de adecuación de la Comisión Europea (art. 45 RGPD), por lo que tus datos pueden guardarse allí sin garantías adicionales).</li>
   <li><strong>Google Firebase</strong> (notificaciones push, informes de errores y, solo si lo aceptas, estadísticas de uso de la app; Google Ireland Ltd.; transferencias internacionales amparadas en el Marco de Privacidad de Datos UE-EE. UU. y cláusulas contractuales tipo).</li>
   <li><strong>Mapbox</strong> (mapas; recibe las coordenadas del área que consultas para pintar el mapa).</li>
   <li><strong>Cloudflare</strong> (alojamiento y red de entrega de klendar.app; procesa la dirección IP de las visitas para servir la web y protegerla, y cuenta las visitas de forma agregada con Cloudflare Web Analytics, sin cookies ni identificarte).</li>
-  <li>Proveedor de correo transaccional para emails de cuenta.</li>
+  <li><strong>Resend</strong> (envío de correos: los de tu cuenta, los avisos y los resúmenes por correo; recibe tu dirección de correo y el contenido del mensaje; Plus Five Five, Inc., EE. UU.; transferencia internacional amparada en el Marco de Privacidad de Datos UE-EE. UU., al que Resend está adherido, y en las cláusulas contractuales tipo de la Comisión Europea que incluye su contrato de encargo).</li>
 </ul>
+<p>Si entras con tu cuenta de <strong>Apple</strong> («Continuar con Apple»), Apple (Apple Distribution International Ltd., Irlanda) comprueba tu identidad y nos comunica un identificador, tu nombre y tu correo, o una dirección de reenvío privada de Apple si eliges ocultar el tuyo. Apple trata esos datos como responsable independiente, según su propia política de privacidad; nosotros solo recibimos lo indicado. Lo mismo ocurre con <strong>Google</strong> si entras con tu cuenta de Google (más abajo).</p>
 <p>Los <strong>negocios</strong> ven tu nombre mostrado cuando canjeas una oferta o publicas una reseña, y estadísticas agregadas (nunca tu email ni tu ubicación).</p>
 <p>Tus <strong>amigos</strong> en Klendar (solo las personas con las que te has hecho amigo con un enlace de amigo) ven tu nombre mostrado y tu foto y, si no lo apagas, a qué planes vas («Voy», una plaza reservada o un código). Nadie más lo ve: ni otras personas ni los negocios, que tampoco saben quién es amigo de quién.</p>
 
@@ -120,10 +121,10 @@
 
 <footer><div class="wrap">
   <div class="cols">
-    <div><a class="brand" href="/"><img src="/assets/symbol.png" alt="" width="30" height="30"> Klendar</a>
+    <div><a class="brand" href="/"><img src="/assets/symbol-96.png" alt="" width="30" height="30" loading="lazy" decoding="async"> Klendar</a>
       <p style="margin:12px 0 0;max-width:340px">Ofertas flash con cuenta atrás y eventos de los negocios de tu barrio, ordenados por cercanía. Marca tus favoritos, recibe avisos y canjea con un QR.</p></div>
-    <div><h4>Producto</h4><a href="/como-funciona/">Cómo funciona</a><a href="/explorar/">Explorar</a><a href="/agenda/">Agenda local</a><a href="/para-negocios/">Para negocios</a><a href="/precios/">Precios</a><a href="/app/">Tu cuenta</a><a href="/panel/">Acceso para negocios</a><a href="/preguntas/">Preguntas frecuentes</a><a href="/soporte/">Soporte</a><a href="/sobre/">Sobre Klendar</a><a href="/prensa/">Prensa</a><a href="/en/">English</a></div>
-    <div><h4>Legal</h4><a href="/aviso-legal/">Aviso legal</a><a href="/privacidad/">Privacidad</a><a href="/terminos/">Términos de uso</a><a href="/negocios/">Condiciones para negocios</a><a href="/cookies/">Cookies</a><a href="/normas/">Normas de la comunidad</a><a href="/eliminar-cuenta/">Eliminar cuenta</a><a href="/accesibilidad/">Accesibilidad</a><a href="/estado/">Estado del servicio</a></div>
+    <div><h2 class="pie-h">Producto</h2><a href="/como-funciona/">Cómo funciona</a><a href="/explorar/">Explorar</a><a href="/agenda/">Agenda local</a><a href="/para-negocios/">Para negocios</a><a href="/precios/">Precios</a><a href="/app/">Tu cuenta</a><a href="/panel/">Acceso para negocios</a><a href="/preguntas/">Preguntas frecuentes</a><a href="/soporte/">Soporte</a><a href="/sobre/">Sobre Klendar</a><a href="/prensa/">Prensa</a><a href="/en/">English</a></div>
+    <div><h2 class="pie-h">Legal</h2><a href="/aviso-legal/">Aviso legal</a><a href="/privacidad/">Privacidad</a><a href="/terminos/">Términos de uso</a><a href="/negocios/">Condiciones para negocios</a><a href="/cookies/">Cookies</a><a href="/normas/">Normas de la comunidad</a><a href="/eliminar-cuenta/">Eliminar cuenta</a><a href="/accesibilidad/">Accesibilidad</a><a href="/estado/">Estado del servicio</a></div>
   </div>
   <div class="bottom">
     <span>© 2026 Klendar. Todos los derechos reservados.</span>

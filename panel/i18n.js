@@ -256,6 +256,7 @@ const I18N = makeI18N({
     'Ese código no es de tu negocio.': "That code doesn't belong to your business.",
     'El código ha caducado: pide que generen otro.':
       'The code has expired: ask them to generate another one.',
+    'Reserva anulada: este código ya no vale.': 'Booking cancelled: this code is no longer valid.',
     'Demasiados intentos seguidos. Espera un momento.':
       'Too many attempts in a row. Wait a moment.',
 

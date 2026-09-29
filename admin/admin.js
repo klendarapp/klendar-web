@@ -23,6 +23,12 @@ const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 // Iconos de Material Symbols, los mismos que la app y el panel de negocios.
 const ms = (name) => `<span class="ms" aria-hidden="true">${name}</span>`;
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+// Enlaces que escribe un negocio (web, redes, fotos, enlace de la oferta):
+// solo http(s). `esc` no para un `javascript:` en un href.
+const urlSegura = (u) => (/^https?:\/\//i.test(String(u ?? '').trim()) ? String(u).trim() : '');
+const enlaceExterno = (u, texto = u) => (urlSegura(u)
+  ? `<a class="link" target="_blank" rel="noopener noreferrer" href="${esc(urlSegura(u))}">${esc(texto)}</a>`
+  : esc(texto || '—'));
 const LOC = () => (I18N.lang === 'en' ? 'en-GB' : 'es-ES');
 // Las horas: las de Madrid, abra quien abra el panel (y con el ordenador en
 // la hora que sea); las de un negocio o una publicación concretos, en la zona
@@ -477,7 +483,7 @@ PAGES.negocios = async (v, id) => {
     <div class="toolbar">
       <input id="q" class="grow" placeholder="Buscar por nombre, ciudad, email del dueño, CIF o id…" value="${esc(s.q || '')}">
       <select id="status">${[['all', 'Todos los estados'], ['pending', 'Pendientes'], ['verified', 'Verificados'], ['rejected', 'Rechazados']].map((o) => `<option value="${o[0]}" ${s.status === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
-      <select id="plan">${[['all', 'Todos los planes'], ['free', 'Gratis de lanzamiento'], ['standard', 'Klendar'], ['founder', 'Fundador']].map((o) => `<option value="${o[0]}" ${(s.plan || 'all') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
+      <select id="plan">${[['all', 'Todos los planes'], ['free', 'Gratis de lanzamiento'], ['standard', 'Klendar']].map((o) => `<option value="${o[0]}" ${(s.plan || 'all') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
       <select id="active">${[['', 'Activos e inactivos'], ['true', 'Solo activos'], ['false', 'Solo desactivados']].map((o) => `<option value="${o[0]}" ${(s.active ?? '') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
       <select id="sort">${[['created_desc', 'Más recientes'], ['created_asc', 'Más antiguos'], ['name', 'Por nombre'], ['redemptions', 'Más canjes']].map((o) => `<option value="${o[0]}" ${(s.sort || 'created_desc') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
     </div>
@@ -539,8 +545,8 @@ async function businessDetail(v, id) {
         <dt>Dirección</dt><dd>${esc([b.address, b.city].filter(Boolean).join(', ') || '—')} ${b.lat ? `· <a class="link" target="_blank" rel="noopener" href="https://www.google.com/maps?q=${b.lat},${b.lng}">mapa ↗</a>` : ''}</dd>
         <dt>Teléfono</dt><dd>${b.phone ? `<a class="link" href="tel:${esc(b.phone)}">${esc(b.phone)}</a>` : '—'}</dd>
         <dt>Email de contacto</dt><dd>${b.contact_email ? `<a class="link" href="mailto:${esc(b.contact_email)}">${esc(b.contact_email)}</a>` : '—'}</dd>
-        <dt>Web</dt><dd>${b.website ? `<a class="link" target="_blank" rel="noopener" href="${esc(b.website)}">${esc(b.website)}</a>` : '—'}</dd>
-        <dt>Redes</dt><dd>${social.length ? social.map(([k, u]) => `<a class="link" target="_blank" rel="noopener" href="${esc(u)}">${esc(k)}</a>`).join(' · ') : '—'}</dd>
+        <dt>Web</dt><dd>${b.website ? enlaceExterno(b.website) : '—'}</dd>
+        <dt>Redes</dt><dd>${social.length ? social.map(([k, u]) => (urlSegura(u) ? enlaceExterno(u, k) : `${esc(k)}: ${esc(u)}`)).join(' · ') : '—'}</dd>
         <dt>CIF / NIF</dt><dd>${esc(b.tax_id || '—')}</dd>
         <dt>Dueño</dt><dd>${esc(b.owner_name || '—')} · <a class="link" href="#/usuarios/${b.owner_id}">${esc(b.owner_email || '')}</a></dd>
         <dt>Valoración</dt><dd>${b.rating_count ? `★ ${Number(b.rating_avg).toFixed(1)} (${b.rating_count})` : 'sin reseñas'}</dd>
@@ -550,7 +556,7 @@ async function businessDetail(v, id) {
         <dt>Descripción</dt><dd>${esc(b.description || '—')}</dd>
         <dt>Id</dt><dd><code>${b.id}</code></dd>
       </dl>
-      ${(b.gallery || []).length ? `<h3 style="margin-top:12px">Galería</h3><div class="gallery">${b.gallery.map((u) => `<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt=""></a>`).join('')}</div>` : ''}
+      ${(b.gallery || []).length ? `<h3 style="margin-top:12px">Galería</h3><div class="gallery">${b.gallery.filter(urlSegura).map((u) => `<a href="${esc(urlSegura(u))}" target="_blank" rel="noopener noreferrer"><img src="${esc(urlSegura(u))}" alt=""></a>`).join('')}</div>` : ''}
       </div>
       <div>
         <div class="card"><h2>Actividad</h2><div class="kpis">
@@ -641,7 +647,8 @@ async function businessAction(a, b, d) {
       const plans = await rpc('admin_plans');
       const cur = d.subscriptions.find((s) => ['trial', 'active', 'past_due'].includes(s.status));
       const r = await modal({ title: 'Cambiar plan', intro: 'Se cierra la suscripción vigente y se abre una nueva desde hoy (queda el histórico).', fields: [
-        { name: 'plan', label: 'Plan', type: 'select', value: cur?.plan || 'standard', options: plans.map((p) => [p.slug, `${p.names?.es || p.slug} · ${fmtMoney(p.price_cents)}/${I18N.lang === 'en' ? 'month' : 'mes'}`]) },
+        // Los planes retirados (`is_offered` = false, p. ej. «Fundador») solo salen a quien ya lo tiene.
+        { name: 'plan', label: 'Plan', type: 'select', value: cur?.plan || 'standard', options: plans.filter((p) => p.is_offered !== false || p.slug === cur?.plan).map((p) => [p.slug, `${p.names?.es || p.slug} · ${fmtMoney(p.price_cents)}/${I18N.lang === 'en' ? 'month' : 'mes'}`]) },
         { name: 'status', label: 'Estado', type: 'select', value: 'active', options: [['active', 'Activa (pagada)'], ['trial', 'Prueba gratuita'], ['past_due', 'Impagada'], ['cancelled', 'Cancelada']] },
         { name: 'period_end', label: 'Fin del periodo', type: 'date', value: cur?.period_end || '', help: 'Vacío = sin fecha de fin.' },
         { name: 'method', label: 'Forma de pago', type: 'select', value: 'transfer', options: [['transfer', 'Transferencia'], ['cash', 'Efectivo'], ['card', 'Tarjeta'], ['none', 'Ninguna']] },
@@ -792,14 +799,14 @@ async function offerDetail(v, id) {
         <dt>Zona horaria</dt><dd>${zonaTxt(tz)}</dd>
         <dt>Descuento / precio</dt><dd>${o.discount ? esc(discountLabel(o.discount)) : '—'} ${o.price_cents != null ? `· ${fmtMoney(o.price_cents, o.currency)}` : ''}</dd>
         <dt>Aforo</dt><dd>${I18N.lang === 'en' ? `${o.max_redemptions ? `${o.redemptions_count} of ${o.max_redemptions}` : `${o.redemptions_count} (no limit)`} ${o.max_per_user ? `· max. ${o.max_per_user} per person` : ''}` : `${o.max_redemptions ? `${o.redemptions_count} de ${o.max_redemptions}` : `${o.redemptions_count} (sin límite)`} ${o.max_per_user ? `· máx. ${o.max_per_user} por persona` : ''}`}</dd>
-        <dt>Enlace externo</dt><dd>${o.external_url ? `<a class="link" target="_blank" rel="noopener" href="${esc(o.external_url)}">${esc(o.external_url)}</a>` : '—'}</dd>
+        <dt>Enlace externo</dt><dd>${o.external_url ? enlaceExterno(o.external_url) : '—'}</dd>
         <dt>Diseño</dt><dd>${o.style && Object.keys(o.style).length ? esc(JSON.stringify(o.style)) : 'por defecto'}</dd>
         <dt>Guardada por</dt><dd>${fmtNum(d.saved)} ${I18N.lang === 'en' ? (d.saved === 1 ? 'person' : 'people') : (d.saved === 1 ? 'persona' : 'personas')}</dd>
         <dt>Posición</dt><dd>${o.lat ? `<a class="link" target="_blank" rel="noopener" href="https://www.google.com/maps?q=${o.lat},${o.lng}">${o.lat.toFixed(5)}, ${o.lng.toFixed(5)} ↗</a>` : 'la del negocio'}</dd>
         <dt>Creada / editada</dt><dd>${fmtDate(o.created_at, tz)} · ${fmtDate(o.updated_at, tz)}</dd>
         <dt>Id</dt><dd><code>${o.id}</code></dd>
       </dl>
-      ${(o.images || []).length ? `<h3 style="margin-top:12px">Fotos</h3><div class="gallery">${o.images.map((u) => `<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt=""></a>`).join('')}</div>` : ''}
+      ${(o.images || []).length ? `<h3 style="margin-top:12px">Fotos</h3><div class="gallery">${o.images.filter(urlSegura).map((u) => `<a href="${esc(urlSegura(u))}" target="_blank" rel="noopener noreferrer"><img src="${esc(urlSegura(u))}" alt=""></a>`).join('')}</div>` : ''}
       </div>
       <div>
         <div class="card"><h2>Últimos 14 días</h2><div class="kpis"><div class="kpi"><b>${fmtNum(o.views_count)}</b><span>vistas totales</span></div><div class="kpi"><b>${fmtNum(o.redemptions_count)}</b><span>canjes totales</span></div><div class="kpi"><b>${o.views_count ? Math.round(o.redemptions_count / o.views_count * 100) : 0} %</b><span>conversión</span></div></div>
@@ -1230,7 +1237,7 @@ PAGES.planes = async (v) => {
   const p = params(); let tab = p.tab || 'subs';
   v.innerHTML = `
     <div class="page-head"><h1>Planes y pagos</h1><span class="spacer"></span><button class="btn sm ghost" id="csv">Exportar CSV</button></div>
-    ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p><b>Subscriptions</b>: which plan each business has and when it expires. Until card payments are available, payments are made by bank transfer and recorded by hand on the business page (“Record payment”). <b>Payments</b>: history of payments with monthly totals (for the accounts). <b>Plans</b>: there is a single plan with no limits and no commission per redemption: <b>Klendar</b> (<code>standard</code>, €19.90 a month or €199 a year per venue), <b>Founder</b> (<code>founder</code>, €9.90 for life for the first ones in each city) and <b>Launch, free</b> (<code>free</code>, while a city is starting up). Chains pay per venue on a sliding scale (2 to 5 venues €15 each, 6 or more €12 each): apply it when you record the subscription. Changing a plan affects the businesses that have it.</p>` : '<p><b>Suscripciones</b>: qué plan tiene cada negocio y cuándo vence. Mientras no haya pago con tarjeta, los cobros se hacen por transferencia y se anotan a mano en la ficha del negocio («Registrar pago»). <b>Pagos</b>: histórico de cobros con totales por mes (para la contabilidad). <b>Planes</b>: hay un solo plan, sin límites y sin comisión por canje: <b>Klendar</b> (<code>standard</code>, 19,90 € al mes o 199 € al año por local), <b>Fundador</b> (<code>founder</code>, 9,90 € de por vida para los primeros de cada ciudad) y <b>Gratis de lanzamiento</b> (<code>free</code>, mientras una ciudad está arrancando). Las cadenas pagan por local con escalera (de 2 a 5 locales, 15 € cada uno; 6 o más, 12 €): aplícala al registrar la suscripción. Cambiar un plan afecta a los negocios que lo tengan.</p>')}
+    ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p><b>Subscriptions</b>: which plan each business has and when it expires. Until card payments are available, payments are made by bank transfer and recorded by hand on the business page (“Record payment”). <b>Payments</b>: history of payments with monthly totals (for the accounts). <b>Plans</b>: there is a single plan with no limits and no commission per redemption: <b>Klendar</b> (<code>standard</code>, €19.90 a month or €199 a year per venue, after the 30-day free trial) and <b>Launch, free</b> (<code>free</code>, while a city is starting up). <b>Founder</b> (<code>founder</code>, €9.90) was withdrawn: it stays hidden and is not offered to anyone new. Chains pay per venue on a sliding scale (2 to 5 venues €15 each, 6 or more €12 each): apply it when you record the subscription. Changing a plan affects the businesses that have it.</p>` : '<p><b>Suscripciones</b>: qué plan tiene cada negocio y cuándo vence. Mientras no haya pago con tarjeta, los cobros se hacen por transferencia y se anotan a mano en la ficha del negocio («Registrar pago»). <b>Pagos</b>: histórico de cobros con totales por mes (para la contabilidad). <b>Planes</b>: hay un solo plan, sin límites y sin comisión por canje: <b>Klendar</b> (<code>standard</code>, 19,90 € al mes o 199 € al año por local, después de la prueba gratis de 30 días) y <b>Gratis de lanzamiento</b> (<code>free</code>, mientras una ciudad está arrancando). <b>Fundador</b> (<code>founder</code>, 9,90 €) se retiró: queda oculto y no se ofrece a nadie nuevo. Las cadenas pagan por local con escalera (de 2 a 5 locales, 15 € cada uno; 6 o más, 12 €): aplícala al registrar la suscripción. Cambiar un plan afecta a los negocios que lo tengan.</p>')}
     <div class="tabs">${[['subs', 'Suscripciones'], ['payments', 'Pagos'], ['plans', 'Planes']].map((t) => `<button data-t="${t[0]}" class="${tab === t[0] ? 'on' : ''}">${t[1]}</button>`).join('')}</div>
     <div id="tabview"></div>`;
   let rows = [], csvCols = [], csvName = 'suscripciones';
@@ -1273,25 +1280,26 @@ PAGES.planes = async (v) => {
     if (tab === 'plans') {
       const plans = await rpc('admin_plans');
       rows = plans; csvName = 'planes';
-      csvCols = [['slug', 'slug'], [(x) => x.names?.es, 'nombre'], [(x) => (x.price_cents / 100).toFixed(2), 'precio (€)'], ['max_active_offers', 'máx. publicaciones activas'], ['boosts_included', 'boosts'], [(x) => x.has_analytics ? 'sí' : 'no', 'estadísticas'], ['current_subs', 'suscripciones']];
+      csvCols = [['slug', 'slug'], [(x) => x.names?.es, 'nombre'], [(x) => (x.price_cents / 100).toFixed(2), 'precio (€)'], ['max_active_offers', 'máx. publicaciones activas'], ['boosts_included', 'boosts'], [(x) => x.has_analytics ? 'sí' : 'no', 'estadísticas'], [(x) => x.is_offered === false ? 'no' : 'sí', 'se ofrece'], ['current_subs', 'suscripciones']];
       tv.innerHTML = `<div class="toolbar"><span class="spacer"></span><button class="btn primary sm" id="newplan">Nuevo plan…</button></div>` + table({ cols: [
         { h: 'Plan', r: (x) => `<span class="title">${esc(x.names?.es || x.slug)}<span class="sub">${esc(x.slug)} · ${esc(x.names?.en || '')}</span></span>` },
         { h: 'Precio', num: true, r: (x) => `${fmtMoney(x.price_cents, x.currency)}/${I18N.lang === 'en' ? 'month' : 'mes'}` }, { h: 'Publicaciones activas', num: true, r: (x) => x.max_active_offers ?? 'sin límite' },
-        { h: 'Boosts', num: true, r: (x) => x.boosts_included }, { h: 'Estadísticas', r: (x) => x.has_analytics ? 'sí' : 'no' }, { h: 'Suscripciones', num: true, r: (x) => x.current_subs },
+        { h: 'Boosts', num: true, r: (x) => x.boosts_included }, { h: 'Estadísticas', r: (x) => x.has_analytics ? 'sí' : 'no' }, { h: 'Se ofrece', r: (x) => x.is_offered === false ? 'no' : 'sí' }, { h: 'Suscripciones', num: true, r: (x) => x.current_subs },
         { h: '', r: (x) => `<button class="btn sm" data-edit="${x.id}">Editar…</button>` },
       ], rows: plans });
       const edit = async (pl) => {
         const r = await modal({ title: pl ? 'Editar plan' : 'Nuevo plan', fields: [
-          { name: 'slug', label: 'Identificador (slug)', value: pl?.slug, required: true, help: 'Sin espacios: free, standard, founder…' },
+          { name: 'slug', label: 'Identificador (slug)', value: pl?.slug, required: true, help: 'Sin espacios: free, standard…' },
           { name: 'name_es', label: 'Nombre (ES)', value: pl?.names?.es, required: true }, { name: 'name_en', label: 'Nombre (EN)', value: pl?.names?.en },
           { name: 'price', label: 'Precio al mes (€)', type: 'number', step: '0.01', value: pl ? (pl.price_cents / 100).toFixed(2) : '0' },
           { name: 'max', label: 'Máx. publicaciones activas', type: 'number', value: pl?.max_active_offers ?? '', help: 'Vacío = sin límite.' },
           { name: 'boosts', label: 'Boosts incluidos', type: 'number', value: pl?.boosts_included ?? 0 }, { name: 'position', label: 'Orden', type: 'number', value: pl?.position ?? 99 },
           { name: 'analytics', label: 'Incluye estadísticas', type: 'checkbox', value: pl?.has_analytics },
+          { name: 'offered', label: 'Se ofrece al cambiar de plan', type: 'checkbox', value: pl ? pl.is_offered !== false : true, help: 'Apagado, quien ya lo tiene lo conserva, pero no se asigna a nadie más.' },
         ] });
         if (!r) return;
         try {
-          await rpc('admin_upsert_plan', { p: { id: pl?.id, slug: r.slug, names: { es: r.name_es, en: r.name_en || r.name_es }, price_cents: Math.round(parseFloat(r.price.replace(',', '.') || '0') * 100), currency: 'EUR', max_active_offers: r.max === '' ? null : +r.max, boosts_included: +r.boosts || 0, has_analytics: r.analytics, position: +r.position || 99 } });
+          await rpc('admin_upsert_plan', { p: { id: pl?.id, slug: r.slug, names: { es: r.name_es, en: r.name_en || r.name_es }, price_cents: Math.round(parseFloat(r.price.replace(',', '.') || '0') * 100), currency: 'EUR', max_active_offers: r.max === '' ? null : +r.max, boosts_included: +r.boosts || 0, has_analytics: r.analytics, position: +r.position || 99, is_offered: r.offered } });
           toast('Plan guardado'); load();
         } catch (e) { toast(e.message, true); }
       };
@@ -1781,7 +1789,7 @@ PAGES.actividad = async (v) => {
 PAGES.ayuda = async (v) => {
   v.innerHTML = `
     <div class="page-head"><h1>Ayuda</h1></div>
-    <div class="card"><h2>Cómo funciona Klendar (en 1 minuto)</h2>${I18N.lang === 'en' ? `<p><b>Businesses</b> sign up from the app and stay <b>pending</b> until an administrator verifies them. Once verified, they publish <b>flash offers</b> (with a countdown and limited places) and <b>events</b>. <b>Users</b> see them in Discover and on the map, save them in Your plans and redeem them by showing a <b>single-use QR code</b> that the business scans. Businesses have <b>a single plan</b>, with no limits and <b>never a commission per redemption</b>: <b>€19.90 a month</b> (or €199 a year) per venue, <b>€9.90 for life</b> for the founders (the first businesses in each city) and <b>free while each city is starting up</b> (with a month's notice before we start charging). Sign-up comes with a 30-day trial without a card; for now payments are made by bank transfer and recorded here.</p>` : `<p>Los <b>negocios</b> se dan de alta desde la app y quedan <b>pendientes</b> hasta que un administrador los verifica. Una vez verificados publican <b>ofertas flash</b> (con cuenta atrás y aforo) y <b>eventos</b>. Los <b>usuarios</b> las ven en Descubre y el mapa, las guardan en Tus planes y las canjean enseñando un <b>código QR de un solo uso</b> que el negocio escanea. Los negocios tienen <b>un solo plan</b>, sin límites y <b>nunca con comisión por canje</b>: <b>19,90 € al mes</b> (o 199 € al año) por local, <b>9,90 € de por vida</b> para los fundadores (los primeros de cada ciudad) y <b>gratis mientras cada ciudad está arrancando</b> (con un mes de aviso antes de empezar a cobrar). El alta trae una prueba de 30 días sin tarjeta; por ahora los cobros se hacen por transferencia y se anotan aquí.</p>`}</div>
+    <div class="card"><h2>Cómo funciona Klendar (en 1 minuto)</h2>${I18N.lang === 'en' ? `<p><b>Businesses</b> sign up from the app and stay <b>pending</b> until an administrator verifies them. Once verified, they publish <b>flash offers</b> (with a countdown and limited places) and <b>events</b>. <b>Users</b> see them in Discover and on the map, save them in Your plans and redeem them by showing a <b>single-use QR code</b> that the business scans. Businesses have <b>a single plan</b>, with no limits and <b>never a commission per redemption</b>: a <b>30-day free trial</b>, <b>free while each city is starting up</b> (with a month's notice before we start charging) and then <b>€19.90 a month</b> (or €199 a year) per venue, with no lock-in. Sign-up comes with a 30-day trial without a card; for now payments are made by bank transfer and recorded here.</p>` : `<p>Los <b>negocios</b> se dan de alta desde la app y quedan <b>pendientes</b> hasta que un administrador los verifica. Una vez verificados publican <b>ofertas flash</b> (con cuenta atrás y aforo) y <b>eventos</b>. Los <b>usuarios</b> las ven en Descubre y el mapa, las guardan en Tus planes y las canjean enseñando un <b>código QR de un solo uso</b> que el negocio escanea. Los negocios tienen <b>un solo plan</b>, sin límites y <b>nunca con comisión por canje</b>: <b>prueba gratis de 30 días</b>, <b>gratis mientras cada ciudad está arrancando</b> (con un mes de aviso antes de empezar a cobrar) y después <b>19,90 € al mes</b> (o 199 € al año) por local, sin permanencia. El alta trae una prueba de 30 días sin tarjeta; por ahora los cobros se hacen por transferencia y se anotan aquí.</p>`}</div>
     <div class="grid2">
       <div class="card">${I18N.lang === 'en' ? `<h2>Daily routine (5 minutes)</h2><ol style="margin:0;padding-left:18px"><li><b>Overview</b>: check “Waiting for you”.</li><li><b>Pending businesses</b>: check that they exist (website, phone, Google Maps) and verify or reject them with a reason.</li><li><b>Publications to moderate</b>: approve or take down with a reason.</li><li><b>Open reports</b>: review and resolve them (always with a reason if you take something down).</li><li><b>Failed push</b>: if there are many, something is wrong with Firebase.</li></ol>` : `<h2>Rutina diaria (5 minutos)</h2><ol style="margin:0;padding-left:18px"><li><b>Resumen</b>: mira «Pendiente de ti».</li><li><b>Negocios pendientes</b>: comprueba que existen (web, teléfono, Google Maps) y verifica o rechaza con motivo.</li><li><b>Publicaciones por moderar</b>: aprueba o retira con motivo.</li><li><b>Denuncias abiertas</b>: revisa y resuelve (siempre con motivo si retiras algo).</li><li><b>Push fallidos</b>: si hay muchos, algo pasa con Firebase.</li></ol>`}</div>
       <div class="card">${I18N.lang === 'en' ? `<h2>Weekly routine</h2><ul style="margin:0;padding-left:18px"><li><b>Plans and payments</b>: subscriptions expiring in 7 days → contact the business; record the bank transfers received.</li><li><b>Users</b>: handle access or erasure requests received by email (info@klendar.app).</li><li><b>Feedback</b>: read what has come in, set the status and reply to whatever deserves a reply.</li><li><b>Activity log</b>: check that everything that was done makes sense.</li></ul>` : `<h2>Rutina semanal</h2><ul style="margin:0;padding-left:18px"><li><b>Planes y pagos</b>: suscripciones que vencen en 7 días → contacta con el negocio; registra las transferencias recibidas.</li><li><b>Usuarios</b>: atiende peticiones de acceso o supresión recibidas por email (info@klendar.app).</li><li><b>Sugerencias</b>: lee lo que ha entrado, marca estado y responde lo que merezca respuesta.</li><li><b>Registro de actividad</b>: repasa que todo lo hecho tenga sentido.</li></ul>`}</div>

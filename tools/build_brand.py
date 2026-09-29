@@ -68,6 +68,9 @@ def og():
 
 if __name__ == '__main__':
     symbol(1024).save(os.path.join(ASSETS, 'symbol.png'))
+    # El logo de la cabecera y el pie se ve a 30 px: con el de 1024 px cada
+    # página bajaba 66 KB para nada (96 px da para pantallas de 3x).
+    symbol(96).save(os.path.join(ASSETS, 'symbol-96.png'), optimize=True)
     symbol(512).save(os.path.join(ASSETS, 'icon-512.png'))
     symbol(64).save(os.path.join(ASSETS, 'favicon.png'))
     # Google pide el favicon en múltiplos de 48 px; /favicon.ico lo busca

@@ -539,4 +539,9 @@ const APP_EN = {
     "No sales en el «quién va» de tus amigos": "You don't appear in your friends' “who's going”",
     "Invitaciones de amigos": "Invitations from friends",
     "Cuando un amigo te invita a un plan o dice que va al tuyo. Apagado, no te pueden invitar.": "When a friend invites you to a plan or says they're going to yours. When off, nobody can invite you.",
+    // Volver a aceptar los términos cuando cambia la versión (2026-09-29)
+    "Hemos actualizado los términos y la privacidad": "We've updated our terms and privacy policy",
+    "Hemos cambiado los términos de uso y la política de privacidad. Léelos y, si estás de acuerdo, acéptalos para seguir usando Klendar.": "We've changed our terms of use and privacy policy. Please read them and, if you agree, accept them to keep using Klendar.",
+    "Aceptar y seguir": "Accept and continue",
+    "Si no estás de acuerdo, puedes cerrar sesión o eliminar tu cuenta.": "If you don't agree, you can log out or delete your account.",
 };

@@ -2,6 +2,19 @@
    negro, grises y blanco neutros y un solo color, el coral, para lo que importa
    (botón principal, etiquetas de oferta, contadores). Iconos, enlaces,
    selección y foco van en tinta. Sora en titulares, Manrope en todo lo demás. */
+
+/* Fuentes servidas desde klendar.app (las mismas de Google Fonts, variables,
+   solo latín): sin ir a otro dominio antes de pintar. La de latín extendido
+   solo se baja si la página lleva letras de ese bloque. Las de latín van con
+   <link rel="preload"> en el <head> de cada página. */
+@font-face { font-family: Manrope; font-style: normal; font-weight: 400 800; font-display: swap;
+  src: url(/assets/fonts/manrope-latin.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: Manrope; font-style: normal; font-weight: 400 800; font-display: swap;
+  src: url(/assets/fonts/manrope-latin-ext.woff2) format('woff2'); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: Sora; font-style: normal; font-weight: 600 800; font-display: swap;
+  src: url(/assets/fonts/sora-latin.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: Sora; font-style: normal; font-weight: 600 800; font-display: swap;
+  src: url(/assets/fonts/sora-latin-ext.woff2) format('woff2'); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
 :root {
   --accent: #FF4D6D; --on-accent: #0A0A0A; --accent-text: #C81E42; --accent-soft: rgba(255,77,109,.14);
   --soft: rgba(10,10,10,.06);
@@ -30,6 +43,12 @@ input[type=checkbox], input[type=radio], input[type=range] { accent-color: var(-
 select option, select optgroup { background-color: var(--elevated); color: var(--ink); }
 a { color: var(--ink); text-decoration: none; }
 a:hover { text-decoration: underline; }
+/* Foco visible y en tinta en todo lo que se puede tabular (solo con teclado). */
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+/* «Saltar al contenido»: fuera de la vista hasta que le llega el foco. */
+.saltar { position: absolute; left: 12px; top: -80px; z-index: 50; padding: 10px 16px; border-radius: 999px;
+  background: var(--ink); color: var(--surface); font-weight: 700; font-size: 14px; }
+.saltar:focus { top: 10px; }
 .wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
 h1, h2, h3 { margin: 0; letter-spacing: -.02em; font-family: var(--display); }
 .eyebrow { display: inline-block; font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); margin-bottom: 10px; }
@@ -56,6 +75,11 @@ nav.main a:hover { color: var(--ink); text-decoration: none; }
 #menu { display: none; }
 @media (max-width: 960px) {
   .menu-toggle { display: block; }
+  /* La casilla va encima del icono, invisible: es la que recibe el toque, el
+     tabulador y el lector de pantalla. El icono enseña el foco. */
+  #menu { display: block; position: absolute; right: 20px; top: 10px; width: 44px; height: 44px; margin: 0;
+    opacity: 0; z-index: 1; cursor: pointer; }
+  #menu:focus-visible ~ .top-acciones .menu-toggle { outline: 2px solid var(--ink); outline-offset: 2px; }
   nav.main { display: none; position: absolute; left: 0; right: 0; top: 64px; flex-direction: column; align-items: flex-start; gap: 4px; padding: 12px 20px 18px;
     background: var(--surface); border-bottom: 1px solid var(--glass-border); }
   nav.main a { padding: 10px 6px; font-size: 16px; width: 100%; }
@@ -150,10 +174,16 @@ nav.main a:hover { color: var(--ink); text-decoration: none; }
 .cta { text-align: center; }
 footer { padding: 40px 0 60px; color: var(--ink-2); font-size: 14px; border-top: 1px solid var(--glass-border); margin-top: 20px; }
 footer .cols { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 24px; margin-bottom: 26px; }
-footer h4 { margin: 0 0 10px; color: var(--ink); font-size: 14px; }
+footer h4, footer .pie-h { margin: 0 0 10px; color: var(--ink); font-size: 14px; }
+/* Títulos de columna del pie: <h2> por el orden de títulos, con el aspecto
+   que tenían de <h4>. */
+footer .pie-h { font-family: inherit; font-weight: 700; letter-spacing: normal; line-height: inherit; }
 footer .cols a { display: block; color: var(--ink-2); padding: 3px 0; }
 footer .links { display: flex; flex-wrap: wrap; gap: 14px 22px; margin-bottom: 14px; }
 footer .bottom { display: flex; flex-wrap: wrap; gap: 10px 20px; justify-content: space-between; align-items: center; border-top: 1px solid var(--glass-border); padding-top: 18px; }
+/* Un enlace en medio de un texto se distingue por algo más que el color
+   (WCAG 1.4.1): subrayado, como en los documentos. */
+footer .bottom a, .doc :is(p, li, td) a:not(.pill) { text-decoration: underline; text-underline-offset: 2px; text-decoration-thickness: 1px; }
 @media (max-width: 760px) { footer .cols { grid-template-columns: 1fr; } }
 
 /* ── Documentos legales ──────────────────────────────────────────────── */
@@ -176,7 +206,14 @@ mark.tbd { background: rgba(255,184,77,.35); color: inherit; padding: 0 4px; bor
 .open img.logo { width: 72px; height: 72px; border-radius: 22px; margin: 0 auto; }
 .open h1 { font-size: 26px; letter-spacing: -.6px; margin: 16px 0 6px; }
 
-@media (prefers-reduced-motion: reduce) { .float { animation: none; } html { scroll-behavior: auto; } }
+/* Movimiento reducido: sin animaciones ni desplazamientos suaves (también
+   el saltito de los botones al pasar por encima). */
+@media (prefers-reduced-motion: reduce) {
+  .float { animation: none; } html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important; scroll-behavior: auto !important; }
+  .pill:hover { transform: none; }
+}
 
 /* Acceso al panel del negocio: se distingue del resto del menú sin gritar. */
 nav.main a.nav-panel {
@@ -196,7 +233,7 @@ nav.main a.nav-yo:hover { filter: brightness(1.08); text-decoration: none; }
 /* ── Páginas de contenido (precios, preguntas) ──────────────────────────── */
 .plans { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); margin: 22px 0; }
 .plan { border: 1px solid var(--glass-border); background: var(--elevated); border-radius: 22px; padding: 20px; }
-.plan h3 { font-family: var(--display); font-size: 20px; font-weight: 800; margin: 0 0 6px; }
+.plan :is(h2, h3) { font-family: var(--display); font-size: 20px; font-weight: 800; margin: 0 0 6px; }
 .plan .price { margin: 0 0 12px; display: flex; align-items: baseline; gap: 4px; }
 .plan .price b { font-family: var(--display); font-size: 30px; font-weight: 800; letter-spacing: -.02em; }
 .plan .price span { color: var(--ink-2); font-size: 14px; }

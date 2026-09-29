@@ -79,6 +79,8 @@ function destinoWeb(ruta) {
   if (r.startsWith('/my-business')) return '/panel/';
   // «¡Feliz cumpleaños!»: el regalo, con su QR.
   if ((m = r.match(/^\/gift\/([0-9a-f-]{36})/i))) return `#/regalo/${m[1]}`;
+  // «… se ha cancelado»: la reserva, que sale como «Anulado».
+  if (r.startsWith('/my-redemptions')) return '#/codigos';
   if (r.startsWith('/profile')) return '#/ajustes';
   // «Ana está en tus amigos»: tu lista de amigos.
   if (r.startsWith('/friends')) return '#/amigos';
@@ -881,6 +883,61 @@ RUTAS['ultimo-paso'] = async (_p, params) => {
     vuelve(siguiente === 'ultimo-paso' ? '' : siguiente);
     return;
   }
+  const salir = async () => {
+    await sb.auth.signOut({ scope: 'local' });
+    CONSENTIMIENTO = { id: null, ok: true, fecha: true, nueva: false, vigente: null };
+    location.href = `${pre}/`;
+  };
+  // Ya los aceptó, pero una versión anterior (y sabemos su fecha, que
+  // `accept_terms` necesita): solo aceptar la nueva, salir o eliminar la cuenta.
+  if (CONSENTIMIENTO.nueva && CONSENTIMIENTO.fecha) {
+    const doc = (ruta, texto) => `<li><a href="${pre}/${ruta}/" target="_blank" rel="noopener">${esc(t(texto))}</a></li>`;
+    pinta(`
+      <div class="ticket" style="text-align:left">
+        <h1>${esc(t('Hemos actualizado los términos y la privacidad'))}</h1>
+        <p class="muted">${esc(t('Hemos cambiado los términos de uso y la política de privacidad. Léelos y, si estás de acuerdo, acéptalos para seguir usando Klendar.'))}</p>
+        <ul>
+          ${doc(EN ? 'terms' : 'terminos', 'Términos de uso')}
+          ${doc(EN ? 'privacy' : 'privacidad', 'Política de privacidad')}
+          ${volverSeguro.startsWith('/panel/') ? doc(EN ? 'business-terms' : 'negocios', 'Condiciones para negocios') : ''}
+        </ul>
+        <p id="err" class="err" role="alert"></p>
+        <p><button class="pill accent" id="seguir">${esc(t('Aceptar y seguir'))}</button></p>
+        <p class="muted">${esc(t('Si no estás de acuerdo, puedes cerrar sesión o eliminar tu cuenta.'))}</p>
+        <p class="acciones"><button class="pill" id="salir">${esc(t('Cerrar sesión'))}</button>
+          <button class="pill peligro" id="borrar">${esc(t('Eliminar mi cuenta'))}</button></p>
+      </div>`);
+    $('#seguir').addEventListener('click', (ev) => {
+      ocupado(ev.currentTarget, async () => {
+        await llamar('accept_terms', { p_version: CONSENTIMIENTO.vigente || TERMINOS_VERSION, p_birth_date: null });
+        CONSENTIMIENTO = { ...CONSENTIMIENTO, ok: true, nueva: false };
+        toast(t('¡Listo! Ya puedes usar Klendar.'));
+        if (volverSeguro) { location.href = volverSeguro; return; }
+        vuelve(siguiente === 'ultimo-paso' ? '' : siguiente);
+      });
+    });
+    $('#salir').onclick = salir;
+    $('#borrar').addEventListener('click', async (ev) => {
+      const boton = ev.currentTarget;
+      if (!(await confirma({
+        titulo: t('¿Eliminar tu cuenta?'),
+        texto: t('Se borran para siempre tus datos, tus favoritos, tus planes y tus canjes. Si eres dueño de un negocio, también su ficha, sus publicaciones y su equipo. No se puede deshacer.'),
+        aceptar: t('Eliminar'),
+        peligro: true,
+      }))) return;
+      ocupado(boton, async () => {
+        await llamar('delete_my_account', {});
+        try { await sb.auth.signOut({ scope: 'local' }); } catch { /* la sesión ya no existe */ }
+        CONSENTIMIENTO = { id: null, ok: true, fecha: true, nueva: false, vigente: null };
+        pinta(`<div class="ticket"><p class="hecho-ic" aria-hidden="true">✓</p>
+          <h1>${esc(t('Tu cuenta se ha eliminado'))}</h1>
+          <p class="muted">${esc(t('Gracias por haber usado Klendar. Si algún día vuelves, aquí estaremos.'))}</p>
+          <p><a class="pill accent" href="${pre}/">${esc(t('Ir al inicio'))}</a></p></div>`);
+        I18N.translate(view);
+      });
+    });
+    return;
+  }
   const pideFecha = !CONSENTIMIENTO.fecha;
   pinta(`
     <div class="ticket" style="text-align:left">
@@ -904,19 +961,15 @@ RUTAS['ultimo-paso'] = async (_p, params) => {
     if (!validaForm(f, { ...(pideFecha ? { birth: VALIDA.nacimiento } : {}), terms: VALIDA.terminos })) return;
     const nac = pideFecha ? f.birth.value : null;
     ocupado($('#seguir'), async () => {
-      await llamar('accept_terms', { p_version: '2026-09', p_birth_date: nac });
+      await llamar('accept_terms', { p_version: CONSENTIMIENTO.vigente || TERMINOS_VERSION, p_birth_date: nac });
       if (f.marketing.checked) await llamar('set_marketing_consent', { p_value: true });
-      CONSENTIMIENTO = { id: YO.id, ok: true, fecha: true };
+      CONSENTIMIENTO = { ...CONSENTIMIENTO, id: YO.id, ok: true, fecha: true, nueva: false };
       toast(t('¡Listo! Ya puedes usar Klendar.'));
       if (volverSeguro) { location.href = volverSeguro; return; }
       vuelve(siguiente === 'ultimo-paso' ? '' : siguiente);
     });
   });
-  $('#salir').onclick = async () => {
-    await sb.auth.signOut({ scope: 'local' });
-    CONSENTIMIENTO = { id: null, ok: true, fecha: true };
-    location.href = `${pre}/`;
-  };
+  $('#salir').onclick = salir;
 };
 
 RUTAS.avisos = (...a) => RUTAS.notificaciones(...a); // enlaces antiguos

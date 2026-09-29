@@ -49,6 +49,7 @@ export const FOOT_LEGAL = [
 const TEXTOS = {
   es: {
     menu: 'Menú',
+    saltar: 'Saltar al contenido',
     entrar: 'Entrar',
     cuenta: 'Tu cuenta',
     lema: 'Ofertas flash con cuenta atrás y eventos de los negocios de tu barrio, '
@@ -60,6 +61,7 @@ const TEXTOS = {
   },
   en: {
     menu: 'Menu',
+    saltar: 'Skip to content',
     entrar: 'Log in',
     cuenta: 'Your account',
     lema: 'Flash offers with a countdown and events from the businesses around you, '
@@ -95,19 +97,26 @@ export function siteHeader(lang, esPath = '/', enPath = '/en/') {
   // hay sesión, cabecera.js lo cambia por tu inicial o tu foto. Es el único
   // acceso: quien lleva un negocio va a su panel desde «Tu cuenta» o desde
   // «Para negocios» (hay una sola cuenta y una sola forma de entrar).
-  return `<header class="top"><div class="wrap">
-  <a class="brand" href="/${en ? 'en/' : ''}"><img src="/assets/symbol.png" alt="" width="30" height="30"> Klendar</a>
-  <input type="checkbox" id="menu" aria-hidden="true">
+  // «Saltar al contenido»: solo se ve al llegar con el tabulador (WCAG 2.4.1).
+  // Apunta a <main id="contenido">; cabecera.js lo arregla si el <main> de
+  // la página se llama de otra forma.
+  // El menú del móvil es una casilla: se puede tabular y se lee «Menú»; va
+  // encima del icono (invisible) para que el toque y el lector de pantalla
+  // den con ella.
+  return `<a class="saltar" href="#contenido">${T.saltar}</a>
+<header class="top"><div class="wrap">
+  <a class="brand" href="/${en ? 'en/' : ''}"><img src="/assets/symbol-96.png" alt="" width="30" height="30"> Klendar</a>
+  <input type="checkbox" id="menu" aria-label="${T.menu}">
   <nav class="main">${enlaces}
     <span class="solo-movil">${selector}</span>
   </nav>
   <div class="top-acciones">
     <a class="pill top-entrar" href="${cuenta}#/entrar" data-cuenta="${cuenta}" data-cuenta-txt="${T.cuenta}">${T.entrar}</a>
     ${selector}
-    <label class="menu-toggle" for="menu" aria-label="${T.menu}"><span></span><span></span><span></span></label>
+    <label class="menu-toggle" for="menu" aria-hidden="true"><span></span><span></span><span></span></label>
   </div>
 </div></header>
-<script src="/assets/cabecera.js?v=4" defer></script>`;
+<script src="/assets/cabecera.js?v=5" defer></script>`;
 }
 
 /** El pie, con las mismas columnas en todas las páginas. */
@@ -118,10 +127,10 @@ export function siteFooter(lang) {
     .map((n) => `<a href="${n.href}">${n.label}</a>`).join('');
   return `<footer><div class="wrap">
   <div class="cols">
-    <div><a class="brand" href="/${en ? 'en/' : ''}"><img src="/assets/symbol.png" alt="" width="30" height="30"> Klendar</a>
+    <div><a class="brand" href="/${en ? 'en/' : ''}"><img src="/assets/symbol-96.png" alt="" width="30" height="30" loading="lazy" decoding="async"> Klendar</a>
       <p style="margin:12px 0 0;max-width:340px">${T.lema}</p></div>
-    <div><h4>${T.producto}</h4>${col(FOOT_PRODUCT)}</div>
-    <div><h4>${T.legal}</h4>${col(FOOT_LEGAL)}</div>
+    <div><h2 class="pie-h">${T.producto}</h2>${col(FOOT_PRODUCT)}</div>
+    <div><h2 class="pie-h">${T.legal}</h2>${col(FOOT_LEGAL)}</div>
   </div>
   <div class="bottom">
     <span>${T.derechos}</span>

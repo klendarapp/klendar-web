@@ -141,7 +141,7 @@ export function render({ lang, path, kind, title, description, image, ogTitle, o
     `<meta name="twitter:image" content="${esc(og)}">`,
     jsonLd ? `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, '\\u003c')}</script>` : '',
   ].join('\n');
-  const hero = image && !notFound ? `<img class="hero-img" src="${esc(image)}" alt="">` : '<img class="logo" src="/assets/symbol.png" alt="Klendar">';
+  const hero = image && !notFound ? `<img class="hero-img" src="${esc(image)}" alt="" fetchpriority="high">` : '<img class="logo" src="/assets/icon-192.png" alt="Klendar" width="72" height="72">';
   const open = notFound ? '' : `<a id="open" class="pill accent" href="${esc(intent)}" data-web="${BASE}${esc(path)}">${S.open}</a>`;
   return `<!doctype html>
 <html lang="${en ? 'en' : 'es'}">
@@ -153,14 +153,14 @@ ${head}
 <meta name="theme-color" content="#0A0A0A">
 <link rel="icon" href="/favicon.ico" sizes="48x48"><link rel="icon" type="image/png" sizes="96x96" href="/assets/favicon-96.png"><link rel="manifest" href="/site.webmanifest">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/site.css?v=20261008">
+<link rel="preload" href="/assets/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/site.css?v=20261009">
 <style>.open .card{max-width:460px}.open .hero-img{width:100%;aspect-ratio:16/10;object-fit:cover;border-radius:18px;margin-bottom:14px}.open .meta{color:var(--ink-2);font-size:14px;margin:0 0 12px}</style>
 </head>
 <body>
 <header class="top"><div class="wrap">
-  <a class="brand" href="/"><img src="/assets/symbol.png" alt=""> Klendar</a>
+  <a class="brand" href="/"><img src="/assets/symbol-96.png" alt="" width="30" height="30"> Klendar</a>
   <nav class="main"><a href="${en ? '/en/#how-it-works' : '/#como'}">${S.how}</a><a href="${en ? '/en/for-business/' : '/para-negocios/'}">${S.biz}</a><a href="${en ? '/en/support/' : '/soporte/'}">${S.sup}</a></nav>
 </div></header>
 <div class="open"><div class="card">

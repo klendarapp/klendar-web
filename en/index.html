@@ -20,20 +20,20 @@
 <meta name="theme-color" content="#0A0A0A">
 <link rel="icon" href="/favicon.ico" sizes="48x48"><link rel="icon" type="image/png" sizes="96x96" href="/assets/favicon-96.png"><link rel="manifest" href="/site.webmanifest">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/site.css?v=20261008">
-<link rel="stylesheet" href="/assets/public.css?v=21">
+<link rel="preload" href="/assets/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/site.css?v=20261009">
+<link rel="stylesheet" href="/assets/public.css?v=22">
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[
 {"@type":"Organization","name":"Klendar","url":"https://klendar.app/","logo":"https://klendar.app/assets/icon-512.png","email":"info@klendar.app"},
 {"@type":"WebSite","name":"Klendar","url":"https://klendar.app/","inLanguage":["es","en"]},
 {"@type":"MobileApplication","name":"Klendar","operatingSystem":"Android, iOS","applicationCategory":"LifestyleApplication","offers":{"@type":"Offer","price":"0","priceCurrency":"EUR"},"description":"Flash offers with a countdown and events from the bars, restaurants, shops and venues around you, sorted by distance. Free, no ads."}]}</script><script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Is Klendar free?","acceptedAnswer":{"@type":"Answer","text":"Yes, for users it's free and ad-free. Businesses pay a flat monthly fee to publish."}},{"@type":"Question","name":"Do I need an account?","acceptedAnswer":{"@type":"Answer","text":"You can browse the feed, the agenda and the map without one. To redeem, save favourites or get alerts you need an account (email or Google). Minimum age: 14."}},{"@type":"Question","name":"How does redemption work?","acceptedAnswer":{"@type":"Answer","text":"Tap \"Get the code\" and a single-use QR code appears; the business scans it with their phone (or types the code). It usually expires within minutes, so ask for it once you are at the venue."}},{"@type":"Question","name":"What do you do with my location?","acceptedAnswer":{"@type":"Answer","text":"It's only used while the app is open to sort by distance and, if you turn it on, to alert you about nearby deals. It's never shared with other users or with businesses."}},{"@type":"Question","name":"Which cities?","acceptedAnswer":{"@type":"Answer","text":"We're starting city by city in Spain. If yours is still quiet, help us: tell your local bar."}}]}</script>
 </head>
 <body>
+<a class="saltar" href="#contenido">Skip to content</a>
 <header class="top"><div class="wrap">
-  <a class="brand" href="/en/"><img src="/assets/symbol.png" alt="" width="30" height="30"> Klendar</a>
-  <input type="checkbox" id="menu" aria-hidden="true">
+  <a class="brand" href="/en/"><img src="/assets/symbol-96.png" alt="" width="30" height="30"> Klendar</a>
+  <input type="checkbox" id="menu" aria-label="Menu">
   <nav class="main">
     <a href="/en/explore/">Explore</a>
     <a href="/en/whats-on/">What's on</a>
@@ -52,11 +52,12 @@
       <a href="/" class="" data-lang="es" hreflang="es">ES</a>
       <a href="/en/" class="on" data-lang="en" hreflang="en">EN</a>
     </span>
-    <label class="menu-toggle" for="menu" aria-label="Menu"><span></span><span></span><span></span></label>
+    <label class="menu-toggle" for="menu" aria-hidden="true"><span></span><span></span><span></span></label>
   </div>
 </div></header>
-<script src="/assets/cabecera.js?v=4" defer></script>
+<script src="/assets/cabecera.js?v=5" defer></script>
 
+<main id="contenido">
 <section class="hero"><div class="wrap">
   <div>
     <span class="eyebrow">Deals that run out. Plans that begin.</span>
@@ -91,7 +92,7 @@
   <span class="eyebrow">How it works</span>
   <h2>Look, choose and show it at the door</h2>
   <div class="pasos"><div><span class="paso-num">1</span><h3>See what's nearby</h3><p>Deals that last a few hours and events with a date, sorted by distance.</p></div><div><span class="paso-num">2</span><h3>Save it or get your code</h3><p>Events go to your plans. Deals get a QR code before the countdown ends.</p></div><div><span class="paso-num">3</span><h3>Show it, done</h3><p>The business scans it. Each code works once; no cards, no weird sign-ups.</p></div></div>
-  <div class="screens compactas"><figure><div class="phone"><img src="/assets/screens/agenda.webp?v=20260926" alt="Agenda" loading="lazy" width="540" height="1212"></div><figcaption>Agenda<small>A calendar with what's on each day</small></figcaption></figure><figure><div class="phone"><img src="/assets/screens/map.webp?v=20260926" alt="Map" loading="lazy" width="540" height="1212"></div><figcaption>Map<small>Businesses with something live and how long it takes to walk</small></figcaption></figure><figure><div class="phone"><img src="/assets/screens/detail.webp?v=20260926" alt="Details" loading="lazy" width="540" height="1212"></div><figcaption>Details<small>When, where, directions and add to calendar</small></figcaption></figure></div>
+  <div class="screens compactas" tabindex="0" role="region" aria-label="This is what it looks like"><figure><div class="phone"><img src="/assets/screens/agenda.webp?v=20260926" alt="Agenda" loading="lazy" width="540" height="1212"></div><figcaption>Agenda<small>A calendar with what's on each day</small></figcaption></figure><figure><div class="phone"><img src="/assets/screens/map.webp?v=20260926" alt="Map" loading="lazy" width="540" height="1212"></div><figcaption>Map<small>Businesses with something live and how long it takes to walk</small></figcaption></figure><figure><div class="phone"><img src="/assets/screens/detail.webp?v=20260926" alt="Details" loading="lazy" width="540" height="1212"></div><figcaption>Details<small>When, where, directions and add to calendar</small></figcaption></figure></div>
   <p class="mas"><a href="/en/how-it-works/">Everything Klendar does →</a></p>
 </div></section>
 
@@ -125,13 +126,14 @@
     </div>
   </div>
 </div></section>
+</main>
 
 <footer><div class="wrap">
   <div class="cols">
-    <div><a class="brand" href="/en/"><img src="/assets/symbol.png" alt="" width="30" height="30"> Klendar</a>
+    <div><a class="brand" href="/en/"><img src="/assets/symbol-96.png" alt="" width="30" height="30" loading="lazy" decoding="async"> Klendar</a>
       <p style="margin:12px 0 0;max-width:340px">Flash offers with a countdown and events from the businesses around you, sorted by how close they are. Mark your favourites, get alerts and redeem with a QR.</p></div>
-    <div><h4>Product</h4><a href="/en/how-it-works/">How it works</a><a href="/en/explore/">Explore</a><a href="/en/whats-on/">What's on</a><a href="/en/for-business/">For businesses</a><a href="/en/pricing/">Pricing</a><a href="/app/?lang=en">Your account</a><a href="/panel/">Business login</a><a href="/en/faq/">FAQ</a><a href="/en/support/">Support</a><a href="/en/about/">About</a><a href="/en/press/">Press</a><a href="/">Español</a></div>
-    <div><h4>Legal</h4><a href="/en/legal-notice/">Legal notice</a><a href="/en/privacy/">Privacy policy</a><a href="/en/terms/">Terms of use</a><a href="/en/business-terms/">Business terms</a><a href="/en/cookies/">Cookies</a><a href="/en/community-guidelines/">Community guidelines</a><a href="/en/delete-account/">Delete account</a><a href="/en/accessibility/">Accessibility</a><a href="/en/status/">Service status</a></div>
+    <div><h2 class="pie-h">Product</h2><a href="/en/how-it-works/">How it works</a><a href="/en/explore/">Explore</a><a href="/en/whats-on/">What's on</a><a href="/en/for-business/">For businesses</a><a href="/en/pricing/">Pricing</a><a href="/app/?lang=en">Your account</a><a href="/panel/">Business login</a><a href="/en/faq/">FAQ</a><a href="/en/support/">Support</a><a href="/en/about/">About</a><a href="/en/press/">Press</a><a href="/">Español</a></div>
+    <div><h2 class="pie-h">Legal</h2><a href="/en/legal-notice/">Legal notice</a><a href="/en/privacy/">Privacy policy</a><a href="/en/terms/">Terms of use</a><a href="/en/business-terms/">Business terms</a><a href="/en/cookies/">Cookies</a><a href="/en/community-guidelines/">Community guidelines</a><a href="/en/delete-account/">Delete account</a><a href="/en/accessibility/">Accessibility</a><a href="/en/status/">Service status</a></div>
   </div>
   <div class="bottom">
     <span>© 2026 Klendar. All rights reserved.</span>
@@ -144,5 +146,5 @@
   for(var i=0;i<links.length;i++){links[i].addEventListener('click',function(){try{localStorage.setItem('klendar_lang',this.getAttribute('data-lang'))}catch(e){}});}
 })();
 </script>
-<script src="/config.js?v=3"></script><script src="/assets/zona.js?v=1" defer></script><script src="/assets/live.js?v=4" defer></script>
+<script src="/config.js?v=3"></script><script src="/assets/zona.js?v=1" defer></script><script src="/assets/live.js?v=5" defer></script>
 </body></html>

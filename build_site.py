@@ -227,11 +227,10 @@ def head(t, path, page_title=None, page_desc=None, extra=''):
 <meta name="theme-color" content="#0A0A0A">
 <link rel="icon" href="/favicon.ico" sizes="48x48"><link rel="icon" type="image/png" sizes="96x96" href="/assets/favicon-96.png"><link rel="manifest" href="/site.webmanifest">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/site.css?v=20261008">
-<link rel="stylesheet" href="/assets/public.css?v=21">
+<link rel="preload" href="/assets/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/site.css?v=20261009">
+<link rel="stylesheet" href="/assets/public.css?v=22">
 {extra}
 </head>
 <body>
@@ -248,7 +247,7 @@ ERRORES = '<script src="/assets/errores.js?v=1"></script>'
 LIVE_SCRIPTS = (
     '<script src="/config.js?v=3"></script>'
     '<script src="/assets/zona.js?v=1" defer></script>'
-    '<script src="/assets/live.js?v=4" defer></script>'
+    '<script src="/assets/live.js?v=5" defer></script>'
 )
 
 
@@ -316,6 +315,7 @@ def landing(t):
     mail = 'mailto:info@klendar.app?subject=' + ('Quiero%20dar%20de%20alta%20mi%20negocio%20en%20Klendar' if t['lang'] == 'es' else 'I%20want%20to%20list%20my%20business%20on%20Klendar')
     home_steps = ''.join(f'<div><span class="paso-num">{i}</span><h3>{h}</h3><p>{p}</p></div>' for i, (h, p) in enumerate(t['home_steps'], 1))
     body = f'''
+<main id="contenido">
 <section class="hero"><div class="wrap">
   <div>
     <span class="eyebrow">{t['hero_eyebrow']}</span>
@@ -350,7 +350,7 @@ def landing(t):
   <span class="eyebrow">{t['how_eyebrow']}</span>
   <h2>{t['home_how_h2']}</h2>
   <div class="pasos">{home_steps}</div>
-  <div class="screens compactas">{screens}</div>
+  <div class="screens compactas" tabindex="0" role="region" aria-label="{t['screens_h2']}">{screens}</div>
   <p class="mas"><a href="{t['how_url']}">{t['how_more']}</a></p>
 </div></section>
 
@@ -384,6 +384,7 @@ def landing(t):
     </div>
   </div>
 </div></section>
+</main>
 '''
     extra = jsonld + faq_ld + (LANG_REDIRECT if t['lang'] == 'es' else '')
     return head(t, path, extra=extra) + body + footer(t, only_footer=False)
@@ -397,6 +398,7 @@ def como_funciona(t):
     feats = ''.join(f'<div class="card"><div class="ic">{i}</div><h3>{h}</h3><p>{p}</p></div>' for i, h, p in t['feats'])
     screens = ''.join(f'<figure><div class="phone"><img src="/assets/screens/{f}.webp?v=20260926" alt="{h}" loading="lazy" width="540" height="1212"></div><figcaption>{h}<small>{s_}</small></figcaption></figure>' for f, h, s_ in t['screens'])
     body = f'''
+<main id="contenido">
 <section class="junto" style="padding-top:48px"><div class="wrap">
   <h1 style="font-size:clamp(34px,5vw,52px);letter-spacing:-.03em;margin:0 0 12px">{t['how_title']}</h1>
   <p class="lead" style="font-size:19px;color:var(--ink-2);max-width:640px;margin:0 0 22px">{t['hero_lead']}</p>
@@ -424,6 +426,7 @@ def como_funciona(t):
   <div class="screens">{screens}</div>
   <p class="mas"><a href="{t['faq_url']}">{t['faq_all']}</a> · <a href="{t['support_url']}">{t['faq_support']}</a></p>
 </div></section>
+</main>
 '''
     return head(t, path, f"{t['how_title']} · Klendar", t['how_desc']) + body + footer(t)
 
@@ -435,7 +438,7 @@ def jsq(s):
 
 def doc_page(t, path, title, desc, body):
     return head(t, path, f'{title} · Klendar', desc) + f'''
-<main class="doc">
+<main class="doc" id="contenido">
 <h1>{title}</h1>
 {body}
 </main>

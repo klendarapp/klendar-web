@@ -20,17 +20,17 @@
 <meta name="theme-color" content="#0A0A0A">
 <link rel="icon" href="/favicon.ico" sizes="48x48"><link rel="icon" type="image/png" sizes="96x96" href="/assets/favicon-96.png"><link rel="manifest" href="/site.webmanifest">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/site.css?v=20261008">
-<link rel="stylesheet" href="/assets/public.css?v=21">
+<link rel="preload" href="/assets/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/site.css?v=20261009">
+<link rel="stylesheet" href="/assets/public.css?v=22">
 
 </head>
 <body>
+<a class="saltar" href="#contenido">Saltar al contenido</a>
 <header class="top"><div class="wrap">
-  <a class="brand" href="/"><img src="/assets/symbol.png" alt="" width="30" height="30"> Klendar</a>
-  <input type="checkbox" id="menu" aria-hidden="true">
+  <a class="brand" href="/"><img src="/assets/symbol-96.png" alt="" width="30" height="30"> Klendar</a>
+  <input type="checkbox" id="menu" aria-label="Menú">
   <nav class="main">
     <a href="/explorar/">Explorar</a>
     <a href="/agenda/">Agenda</a>
@@ -49,13 +49,13 @@
       <a href="/terminos/" class="on" data-lang="es" hreflang="es">ES</a>
       <a href="/en/terms/" class="" data-lang="en" hreflang="en">EN</a>
     </span>
-    <label class="menu-toggle" for="menu" aria-label="Menú"><span></span><span></span><span></span></label>
+    <label class="menu-toggle" for="menu" aria-hidden="true"><span></span><span></span><span></span></label>
   </div>
 </div></header>
-<script src="/assets/cabecera.js?v=4" defer></script>
+<script src="/assets/cabecera.js?v=5" defer></script>
 <main class="doc">
 <h1>Términos de uso</h1>
-<div class="meta">Última actualización: 17 de septiembre de 2026 · Versión 2026-09</div>
+<div class="meta">Última actualización: 29 de septiembre de 2026 · Versión 2026-09-29</div>
 
 
 <h2>1. Quiénes somos y qué es Klendar</h2>
@@ -88,22 +88,22 @@
 <p>No está permitido: usar la app para fines ilegales; intentar acceder a datos de otras personas o negocios; manipular canjes, reseñas o valoraciones; extraer datos de forma automatizada; ni interferir con el funcionamiento del servicio.</p>
 
 <h2>6. Disponibilidad y cambios</h2>
-<p>Trabajamos para que Klendar esté disponible siempre, pero no garantizamos ausencia de interrupciones. Podemos modificar o retirar funciones. Si un cambio en estos términos es relevante, te avisaremos en la app con antelación razonable.</p>
+<p>Trabajamos para que Klendar esté disponible siempre, pero no garantizamos ausencia de interrupciones. Podemos modificar o retirar funciones. Si un cambio en estos términos es relevante, te avisaremos en la app con antelación razonable y te pediremos que los aceptes de nuevo; si no estás de acuerdo, puedes eliminar tu cuenta en cualquier momento.</p>
 
 <h2>7. Responsabilidad</h2>
 <p>En la medida permitida por la ley, Klendar no responde de los daños derivados de ofertas o eventos publicados por los negocios, ni de decisiones tomadas en base a la información de la Plataforma. Nada en estos términos limita los derechos que te reconoce la normativa de consumo.</p>
 
 <h2>8. Legislación y jurisdicción</h2>
-<p>Se aplica la legislación española. Como persona consumidora, puedes acudir a los juzgados de tu domicilio y a la plataforma europea de resolución de litigios en línea.</p>
+<p>Se aplica la legislación española, sin perjuicio de las normas de protección de las personas consumidoras de tu país de residencia que te sean más favorables. Si tienes un problema, escríbenos antes a <a href="mailto:info@klendar.app">info@klendar.app</a> e intentaremos resolverlo. Como persona consumidora, también puedes dirigirte a los servicios de consumo de tu comunidad autónoma o de tu ayuntamiento, acudir al arbitraje de consumo si las dos partes lo aceptan, o presentar tu reclamación ante los juzgados de tu domicilio.</p>
 
 </main>
 
 <footer><div class="wrap">
   <div class="cols">
-    <div><a class="brand" href="/"><img src="/assets/symbol.png" alt="" width="30" height="30"> Klendar</a>
+    <div><a class="brand" href="/"><img src="/assets/symbol-96.png" alt="" width="30" height="30" loading="lazy" decoding="async"> Klendar</a>
       <p style="margin:12px 0 0;max-width:340px">Ofertas flash con cuenta atrás y eventos de los negocios de tu barrio, ordenados por cercanía. Marca tus favoritos, recibe avisos y canjea con un QR.</p></div>
-    <div><h4>Producto</h4><a href="/como-funciona/">Cómo funciona</a><a href="/explorar/">Explorar</a><a href="/agenda/">Agenda local</a><a href="/para-negocios/">Para negocios</a><a href="/precios/">Precios</a><a href="/app/">Tu cuenta</a><a href="/panel/">Acceso para negocios</a><a href="/preguntas/">Preguntas frecuentes</a><a href="/soporte/">Soporte</a><a href="/sobre/">Sobre Klendar</a><a href="/prensa/">Prensa</a><a href="/en/">English</a></div>
-    <div><h4>Legal</h4><a href="/aviso-legal/">Aviso legal</a><a href="/privacidad/">Privacidad</a><a href="/terminos/">Términos de uso</a><a href="/negocios/">Condiciones para negocios</a><a href="/cookies/">Cookies</a><a href="/normas/">Normas de la comunidad</a><a href="/eliminar-cuenta/">Eliminar cuenta</a><a href="/accesibilidad/">Accesibilidad</a><a href="/estado/">Estado del servicio</a></div>
+    <div><h2 class="pie-h">Producto</h2><a href="/como-funciona/">Cómo funciona</a><a href="/explorar/">Explorar</a><a href="/agenda/">Agenda local</a><a href="/para-negocios/">Para negocios</a><a href="/precios/">Precios</a><a href="/app/">Tu cuenta</a><a href="/panel/">Acceso para negocios</a><a href="/preguntas/">Preguntas frecuentes</a><a href="/soporte/">Soporte</a><a href="/sobre/">Sobre Klendar</a><a href="/prensa/">Prensa</a><a href="/en/">English</a></div>
+    <div><h2 class="pie-h">Legal</h2><a href="/aviso-legal/">Aviso legal</a><a href="/privacidad/">Privacidad</a><a href="/terminos/">Términos de uso</a><a href="/negocios/">Condiciones para negocios</a><a href="/cookies/">Cookies</a><a href="/normas/">Normas de la comunidad</a><a href="/eliminar-cuenta/">Eliminar cuenta</a><a href="/accesibilidad/">Accesibilidad</a><a href="/estado/">Estado del servicio</a></div>
   </div>
   <div class="bottom">
     <span>© 2026 Klendar. Todos los derechos reservados.</span>

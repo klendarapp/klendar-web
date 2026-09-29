@@ -110,6 +110,7 @@ const ERRORS = {
   too_many_sections: 'Demasiadas secciones en la carta.',
   sold_out: 'Aforo completo: ya han entrado todas las plazas.',
   code_expired: 'El código ha caducado: pide que generen otro.',
+  code_cancelled: 'Reserva anulada: este código ya no vale.',
   already_validated: 'Ese código ya se usó.',
   invalid_code: 'Ese código no existe.',
   auth_required: 'Tu sesión ha caducado. Vuelve a entrar para continuar.',
@@ -461,11 +462,12 @@ async function boot() {
   if (!session) return showLogin();
   ME = session.user;
   // Quien entró con Google y aún no ha aceptado los términos ni dicho su
-  // edad lo hace primero en «Tu cuenta», y vuelve aquí.
+  // edad lo hace primero en «Tu cuenta», y vuelve aquí. Igual si los aceptó
+  // en una versión anterior a la vigente («Hemos actualizado los términos…»).
   try {
     const c = await rpc('my_consents');
     if (!c) { await sb.auth.signOut({ scope: 'local' }).catch(() => {}); return showLogin(); }
-    if (!c.terms_accepted_at) {
+    if (!c.terms_accepted_at || c.terms_outdated === true) {
       location.href = `/app/?volver=${encodeURIComponent(`/panel/${location.search}${location.hash}`)}#/ultimo-paso`;
       return;
     }
@@ -1389,7 +1391,14 @@ async function offerForm(v, id, kindDefault, desde = null) {
       flash ? 'Empieza' : 'Día y hora del evento';
   };
   $('[name=kind]', v).onchange = syncKind;
-  $('[name=reservations_enabled]', v).onchange = syncKind;
+  $('[name=reservations_enabled]', v).onchange = () => {
+    // Una reserva de evento se guarda hasta el día: con los 5 minutos de las
+    // ofertas flash (lo que viene marcado), la plaza se perdía al rato de
+    // reservarla. Lo mismo que la app.
+    const ttl = $('[name=code_ttl_minutes]', v);
+    if ($('[name=reservations_enabled]', v).checked && ttl.value === '5') ttl.value = '';
+    syncKind();
+  };
   // Con aforo: si el código guarda la plaza o se entra por orden de llegada.
   const syncPlazas = () => {
     $('#plazasRow', v).hidden = !String($('[name=max_redemptions]', v).value || '').trim();
@@ -1469,7 +1478,14 @@ async function offerForm(v, id, kindDefault, desde = null) {
   // ── Diseño del anuncio (las mismas plantillas y colores que la app) ──────
   const PLANTILLAS = [['glass', 'Cristal'], ['bold', 'Color'], ['poster', 'Póster'], ['minimal', 'Limpio']];
   const COLORES = ['#FF4D6D', '#F5B041', '#0EA5E9', '#7C5CFF', '#34D399', '#FF8A3D', '#E879F9', '#111827'];
-  let estilo = { template: o.style?.template || 'glass', accent: o.style?.accent || null };
+  // El estilo viene de la base (lo escribe cualquiera del equipo que
+  // gestione): solo plantillas conocidas y un color #rrggbb, que va dentro
+  // de un atributo `style`.
+  const limpiaEstilo = (s) => ({
+    template: PLANTILLAS.some(([k]) => k === s?.template) ? s.template : 'glass',
+    accent: /^#[0-9a-f]{6}$/i.test(String(s?.accent || '')) ? s.accent : null,
+  });
+  let estilo = limpiaEstilo(o.style);
   // Tinta sobre el color si su luminancia pasa de 0,186 (donde la tinta ya
   // contrasta más que el blanco), como `OfferStyle.onAccent` en la app.
   const claro = (hex) => {
@@ -1548,7 +1564,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
     pon('prior_price', ds.compare_at_cents != null ? (ds.compare_at_cents / 100).toFixed(2).replace('.', ',') : '');
     pon('alcohol', ds.alcohol === true ? 'yes' : ds.alcohol === false ? 'no' : '');
     images = [...(d.images || [])];
-    if (d.style) estilo = { template: d.style.template || 'glass', accent: d.style.accent || null };
+    if (d.style) estilo = limpiaEstilo(d.style);
     renderPhotos(); syncKind(); syncDiscount(); pintaEstilo();
   };
   $$('[data-idea]', v).forEach((b) => { b.onclick = () => { aplicarIdea(ideas[+b.dataset.idea]); toast('Plantilla aplicada: repasa precio y hora'); }; });
@@ -1753,6 +1769,8 @@ const ERR_VALIDAR = {
   not_authorized: 'Ese código no es de tu negocio.',
   already_validated: 'Ese código ya se usó.',
   code_expired: 'El código ha caducado: pide que generen otro.',
+  // Anulada por quien reservó o al cancelar el evento: su plaza ya no es suya.
+  code_cancelled: 'Reserva anulada: este código ya no vale.',
   sold_out: 'Aforo completo: ya han entrado todas las plazas.',
   rate_limited: 'Demasiados intentos seguidos. Espera un momento.',
 };

@@ -157,13 +157,20 @@ export const firstPhoto = (images) => (images || []).find((u) => !isVideo(u)) ||
  * el altavoz del reproductor le pone el sonido (y en el móvil, las teclas de
  * volumen del propio navegador).
  */
-export function media(url, poster) {
-  if (!isVideo(url)) return `<img src="${esc(url)}" alt="" loading="lazy">`;
+export function media(url, poster, primera = false) {
+  if (!isVideo(url)) return imgGaleria(url, primera);
   // Sin foto de portada, «#t=0.1» hace que el navegador enseñe el primer
   // fotograma en vez de un rectángulo negro.
   return `<video src="${esc(url)}${poster ? '' : '#t=0.1'}" ${poster ? `poster="${esc(poster)}"` : ''}
     controls playsinline preload="metadata" muted></video>`;
 }
+
+/** Una foto de galería. La primera es lo más grande que se ve al abrir la
+ *  página (el LCP): se pide ya y con prioridad. Las demás, al acercarse. El
+ *  tamaño lo pone el CSS (aspect-ratio), así que no mueve nada al cargar. */
+export const imgGaleria = (url, primera = false) => (primera
+  ? `<img src="${esc(url)}" alt="" fetchpriority="high">`
+  : `<img src="${esc(url)}" alt="" loading="lazy" decoding="async">`);
 
 /** Dónde vive la cartelera en cada idioma. En inglés «agenda» es el orden
  * del día de una reunión, no lo que hay esta semana en la ciudad. */
@@ -233,6 +240,12 @@ export function publicPage({ lang, path, title, description, head = '', body, im
     : head;
   const es = en ? altPath(path, 'en') : path;
   const enPath = en ? path : altPath(path, 'es');
+  // La foto grande de la página (la de la vista previa) suele ser lo que más
+  // tarda en pintarse: se abre ya la conexión con su servidor.
+  let origen = '';
+  try { origen = image ? new URL(image).origin : ''; } catch { /* sin foto */ }
+  const preconectar = origen && origen !== BASE ? `<link rel="preconnect" href="${esc(origen)}">
+` : '';
   // «Planes con amigos»: con sesión, qué amigos van a cada publicación de la
   // página y, en una ficha, «Vas» y las invitaciones. Solo carga Supabase si
   // hay una sesión guardada (ver /assets/amigos.js). También pone en activo
@@ -263,15 +276,15 @@ ${erroresScript()}
 <meta name="theme-color" content="#0A0A0A">
 <link rel="icon" href="/favicon.ico" sizes="48x48"><link rel="icon" type="image/png" sizes="96x96" href="/assets/favicon-96.png"><link rel="manifest" href="/site.webmanifest">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/site.css?v=20261008">
-<link rel="stylesheet" href="/assets/public.css?v=21">
+${preconectar}<link rel="preload" href="/assets/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/site.css?v=20261009">
+<link rel="stylesheet" href="/assets/public.css?v=22">
 ${cabeza}
 </head>
 <body>
 ${siteHeader(lang, esc(es), esc(enPath))}
-<main class="pub wrap">${body}</main>
+<main class="pub wrap" id="contenido">${body}</main>
 ${siteFooter(lang)}
 ${conAmigos ? `<script src="/assets/amigos.js?v=2" defer data-lang="${en ? 'en' : 'es'}"></script>
 ` : ''}${/class="detail"/.test(body) ? `<script src="/assets/barra.js?v=2" defer></script>
@@ -302,7 +315,7 @@ export function offerCard(o, lang = 'es', tz = KZ.de(o)) {
   const prior = priorPrice(o.discount, lang);
   // `data-o`: /assets/amigos.js le añade qué amigos van (con sesión).
   return `<a class="ocard" href="${en ? '/en' : ''}/o/${esc(o.id)}" data-o="${esc(o.id)}">
-    ${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : '<span class="ph">✦</span>'}
+    ${img ? `<img src="${esc(img)}" alt="" loading="lazy" decoding="async" width="96" height="78">` : '<span class="ph">✦</span>'}
     <span class="ocard-body">
       <b>${esc(o.title)}</b>
       <span class="muted">${esc(o.business_name || '')}${o.address ? ` · ${esc(o.address)}` : ''}</span>
