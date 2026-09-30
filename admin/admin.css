@@ -204,8 +204,10 @@ a.link { color: var(--ink); font-weight: 700; text-decoration: underline; text-u
 .side .bizpick-mas { color: rgba(255,255,255,.66); }
 
 /* Sube o baja respecto a la semana anterior. */
-.up { color: #2ECC71; font-weight: 700; font-size: 12px; }
-.down { color: #FF5C5C; font-weight: 700; font-size: 12px; }
+/* Verde y rojo oscuros en claro (el vivo no llegaba a 3:1 sobre blanco). */
+.up { color: #1B7F3B; font-weight: 700; font-size: 12px; }
+.down { color: #C62828; font-weight: 700; font-size: 12px; }
+@media (prefers-color-scheme: dark) { .up { color: #2ECC71; } .down { color: #FF7B7B; } }
 
 /* Iconos de Material Symbols (los mismos que la app y «Tu cuenta»). */
 .ms { font-family: 'Material Symbols Outlined'; font-weight: normal; font-style: normal; font-size: 20px;

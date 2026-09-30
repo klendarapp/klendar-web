@@ -95,7 +95,9 @@
     if (!caja.parentNode) document.body.appendChild(caja);
   }
 
-  var sb = window.supabase.createClient(window.KLENDAR_ENV.url, window.KLENDAR_ENV.key);
+  // Un solo cliente por página (amigos.js usa el mismo): dos sobre la misma
+  // sesión se pisan al renovar el token.
+  var sb = window.klendarSb || (window.klendarSb = window.supabase.createClient(window.KLENDAR_ENV.url, window.KLENDAR_ENV.key));
 
   function dondeEstoy() {
     return new Promise(function (ok) {

@@ -71,6 +71,8 @@
 
 /* Validación de códigos */
 .scan-box { display: grid; gap: 12px; max-width: 460px; }
+/* Los botones ocupan el ancho de la caja: el texto, centrado. */
+.scan-box > .btn { justify-content: center; }
 .scan-box input { font-size: 18px; letter-spacing: 2px; text-align: center; font-family: ui-monospace, Menlo, Consolas, monospace; }
 .scan-result { border-radius: 18px; padding: 16px 18px; font-weight: 700; }
 .scan-result.ok { background: rgba(46, 204, 113, .18); color: #146c3a; }
@@ -218,6 +220,8 @@ input[type=file] { max-width: 100%; }
 /* Botones de una fila de la tabla: si no caben en una línea, cada línea se
    rellena entera (nada escalonado). */
 table.tbl .actions > * { flex: 1 1 auto; justify-content: center; white-space: nowrap; }
+/* Todos a su altura: «Más» (un <details>) estiraba al de al lado. */
+table.tbl .actions { align-items: flex-start; }
 
 /* ── Móvil: tablas como tarjetas y botones en columnas iguales ─────────────
    Una tabla de cinco columnas no cabe en 375 px: se salía por la derecha y
@@ -244,6 +248,9 @@ table.tbl .actions > * { flex: 1 1 auto; justify-content: center; white-space: n
   table.tbl .actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
   table.tbl .actions > * { flex: 1 1 calc(50% - 4px); justify-content: center; white-space: nowrap; }
   table.tbl .actions > :last-child:nth-child(odd) { flex-grow: 0; }
+  /* «Más» es un <details>: su botón ocupa la caja entera, como los demás
+     (si no, se quedaba pegado a la izquierda de una caja centrada). */
+  table.tbl .actions > details.mas > summary { display: flex; width: 100%; justify-content: center; }
   /* Cifras de dos en dos, como en la app; si sobra una, a lo ancho. */
   .kpis > * { flex-basis: calc(50% - 5px); }
   /* Cabecera: el título en su línea y los botones repartidos debajo. */
@@ -291,7 +298,7 @@ table.tbl .actions > * { flex: 1 1 auto; justify-content: center; white-space: n
 
 /* «Más» en cada publicación: las acciones de uso menos frecuente. Se abre
    dentro de la fila (flotando, la tabla lo recortaría). */
-details.mas { display: inline-block; }
+details.mas { display: inline-block; margin: 0; } /* sin el margen de los «¿Cómo funciona?» */
 details.mas > summary { list-style: none; cursor: pointer; }
 details.mas > summary::-webkit-details-marker { display: none; }
 details.mas[open] { flex-basis: 100%; }
@@ -301,7 +308,9 @@ details.mas .mas-menu a, details.mas .mas-menu button { display: block; text-ali
   border-radius: 10px; color: var(--ink); background: none; border: 0; font: inherit; font-size: 14px;
   cursor: pointer; white-space: nowrap; }
 details.mas .mas-menu a:hover, details.mas .mas-menu button:hover { background: var(--soft); text-decoration: none; }
-details.mas .mas-menu .bad { color: #E5484D; }
+/* Rojo con contraste suficiente sobre el menú (claro: 5,6:1; oscuro: rosa claro). */
+details.mas .mas-menu .bad { color: #C62828; }
+@media (prefers-color-scheme: dark) { details.mas .mas-menu .bad { color: #FF9B9B; } }
 
 /* «Cerrado por hoy» en el resumen */
 .card.pausa { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }

@@ -25,6 +25,36 @@ if (!process.env.MAPBOX_TOKEN) {
   } catch { /* sin mapa en local */ }
 }
 
+// Como Cloudflare Pages: las reglas de `_headers` se aplican a los ficheros
+// estáticos (no a lo que devuelven las Functions). Así, en local, «Tu cuenta»,
+// el panel y el admin llevan la misma CSP (y los avisos salen en la consola).
+const REGLAS = [];
+try {
+  let actual = null;
+  for (const linea of (await readFile(join(ROOT, '_headers'), 'utf8')).split(/\r?\n/)) {
+    if (!linea.trim() || linea.trim().startsWith('#')) continue;
+    if (!/^\s/.test(linea)) {
+      // En `_headers` solo hay rutas con `*`: lo demás se toma literal.
+      const patron = linea.trim().split('*').map((t) => t.replace(/[.+?^${}()|[\]\\]/g, '\\$&')).join('.*');
+      actual = { re: new RegExp(`^${patron}$`), poner: [], quitar: [] };
+      REGLAS.push(actual);
+    } else if (actual) {
+      const t = linea.trim();
+      if (t.startsWith('!')) actual.quitar.push(t.slice(1).trim().toLowerCase());
+      else { const i = t.indexOf(':'); actual.poner.push([t.slice(0, i).trim().toLowerCase(), t.slice(i + 1).trim()]); }
+    }
+  }
+} catch { /* sin _headers */ }
+const cabecerasDe = (ruta) => {
+  const h = {};
+  for (const r of REGLAS) {
+    if (!r.re.test(ruta)) continue;
+    for (const q of r.quitar) delete h[q];
+    for (const [k, v] of r.poner) h[k] = h[k] ? `${h[k]}, ${v}` : v;
+  }
+  return h;
+};
+
 const load = (p) => import(`file://${join(ROOT, p).replace(/\\/g, '/')}`);
 
 createServer(async (req, res) => {
@@ -74,7 +104,7 @@ createServer(async (req, res) => {
 
     const file = path.endsWith('/') ? `${path}index.html` : path;
     const buf = await readFile(join(ROOT, file));
-    res.writeHead(200, { 'content-type': TYPES[extname(file)] || 'application/octet-stream' });
+    res.writeHead(200, { ...cabecerasDe(path), 'content-type': TYPES[extname(file)] || 'application/octet-stream' });
     res.end(buf);
   } catch (e) {
     // Como Cloudflare: /precios → /precios/, y si no existe, la 404.html más

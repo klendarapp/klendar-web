@@ -290,14 +290,14 @@ ${erroresScript()}
 ${preconectar}<link rel="preload" href="/assets/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/assets/site.css?v=20261009">
-<link rel="stylesheet" href="/assets/public.css?v=22">
+<link rel="stylesheet" href="/assets/public.css?v=23">
 ${cabeza}
 </head>
 <body>
 ${siteHeader(lang, esc(es), esc(enPath))}
 <main class="pub wrap" id="contenido">${body}</main>
 ${siteFooter(lang)}
-${conAmigos ? `<script src="/assets/amigos.js?v=5" defer data-lang="${en ? 'en' : 'es'}"></script>
+${conAmigos ? `<script src="/assets/amigos.js?v=6" defer data-lang="${en ? 'en' : 'es'}"></script>
 ` : ''}${/class="detail"/.test(body) ? `<script src="/assets/barra.js?v=2" defer></script>
 ` : ''}${contador ? CONTADOR : ''}
 </body></html>`;

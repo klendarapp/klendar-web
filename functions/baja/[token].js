@@ -22,7 +22,7 @@ export async function onRequestGet(ctx) {
   <h1>${esc(S.title)}</h1>
   <p class="muted" style="max-width:560px">${esc(S.body)}</p>
   <form method="post" action="/baja/${encodeURIComponent(token)}${en ? '?lang=en' : ''}">
-    <p class="acciones" style="justify-content:flex-start"><button class="pill accent" type="submit">${esc(S.go)}</button>
+    <p class="acciones" style="justify-content:flex-start;max-width:560px"><button class="pill accent" type="submit">${esc(S.go)}</button>
     <a class="pill" href="/${en ? 'en/' : ''}">${esc(S.no)}</a></p>
   </form>`;
   return html(publicPage({

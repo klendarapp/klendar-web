@@ -518,10 +518,19 @@ const VALIDA = {
     : CORREO_OK.test(String(v).trim()) ? null : t('Ese correo no parece válido')),
   clave: (v) => (!v ? t('Obligatorio') : v.length < 8 ? t('Mínimo 8 caracteres') : null),
   // 14 años (LOPDGDD art. 7), como AuthForm.birthDate.
+  // Como el selector de la app: de hace 110 años a hoy (y 14 como mínimo).
   nacimiento: (v) => (!v ? t('Obligatorio')
+    : !/^\d{4}-\d{2}-\d{2}$/.test(v) || edadDe(v) > 110 || v > hoyISO() ? t('Revisa la fecha')
     : edadDe(v) < 14 ? (EN ? 'You need to be at least 14 to use Klendar' : 'Necesitas tener al menos 14 años para usar Klendar') : null),
   terminos: (v) => (v ? null : t('Tienes que aceptar los términos y la política de privacidad.')),
 };
+
+/** Hoy (fecha local) como AAAA-MM-DD, y el tope de edad de los selectores. */
+function hoyISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+const LIMITES_NACIMIENTO = () => `min="${new Date().getFullYear() - 110}-01-01" max="${hoyISO()}"`;
 
 /** Años cumplidos a día de hoy de una fecha AAAA-MM-DD. */
 function edadDe(nac) {
@@ -845,7 +854,7 @@ RUTAS.registro = async (_p, params) => {
       <label>${esc(t('Contraseña'))}<input name="password" type="password" autocomplete="new-password" minlength="8" required>
         <small>${esc(t('Mínimo 8 caracteres'))}</small></label>
       <label>${esc(t('Repite la contraseña'))}<input name="password2" type="password" autocomplete="new-password" minlength="8" required></label>
-      <label>${esc(t('Fecha de nacimiento'))}<input name="birth" type="date" required>
+      <label>${esc(t('Fecha de nacimiento'))}<input name="birth" type="date" ${LIMITES_NACIMIENTO()} required>
         <small>${esc(t('Solo para mostrarte ofertas adecuadas a tu edad.'))}</small></label>
       ${casillaTerminos()}
       <p id="err" class="err" role="alert"></p>

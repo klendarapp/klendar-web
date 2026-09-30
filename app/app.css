@@ -65,7 +65,7 @@ body:has(#view > .cargando) footer { display: none; }
 .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 50;
   background: var(--ink); color: var(--bg, #0A0A0A); padding: 12px 18px; border-radius: 14px;
   font-weight: 600; max-width: calc(100vw - 32px); box-shadow: 0 12px 30px rgba(0,0,0,.3); }
-.toast.bad { background: #FF5C5C; color: #fff; }
+.toast.bad { background: #C62828; color: #fff; } /* blanco sobre #FF5C5C no llegaba a 3:1 */
 
 /* ── Cuenta: avisos, alertas, ajustes, reseñas y denuncias ─────────────── */
 .formu select, .formu textarea, .formu input[type=time], .formu input[name] {
@@ -134,7 +134,9 @@ a.aviso:hover { text-decoration: none; border-color: var(--ink-2); }
 .estrellas { display: flex !important; flex-direction: row-reverse; justify-content: flex-end; gap: 2px !important; }
 .estrellas legend { order: 99; width: 100%; }
 .estrellas input { position: absolute; opacity: 0; width: 1px; height: 1px; }
-.estrellas label { font-size: 36px; line-height: 1; color: var(--glass-border); cursor: pointer; padding: 2px; }
+/* Con .formu delante: «.formu label { font-size: 14px }» (más abajo) las dejaba
+   diminutas. Las vacías en gris secundario: con el borde del cristal casi no se veían. */
+.formu .estrellas label, .estrellas label { font-size: 36px; line-height: 1; color: var(--ink-2); cursor: pointer; padding: 2px; }
 .estrellas input:checked ~ label, .estrellas label:hover, .estrellas label:hover ~ label { color: #FFB84D; }
 .estrellas input:focus-visible + label { outline: 2px solid var(--ink); border-radius: 6px; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

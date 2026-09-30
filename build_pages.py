@@ -194,7 +194,7 @@ def tabla_planes(lang):
     ]
     filas = [f'''
     <div class="plan">
-      <p class="tag">{'Para empezar' if es else 'To begin'}</p>
+      <p class="tag">{'Para empezar' if es else 'To start'}</p>
       <h2>{'Prueba gratis' if es else 'Free trial'}</h2>
       <p class="price"><b>{'0 €' if es else '€0'}</b><span>{'· 30 días' if es else '· 30 days'}</span></p>
       <p class="note">{'Sin tarjeta y sin renovación automática' if es else 'No card and no automatic renewal'}</p>

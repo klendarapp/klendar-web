@@ -1401,7 +1401,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
         </div>
       </div>
       <div class="actions" style="margin-top:18px">
-        <button class="btn primary" type="submit">${id ? 'Guardar cambios' : 'Publicar'}</button>
+        <button class="btn primary" type="submit" id="enviarPub">${id ? 'Guardar cambios' : 'Publicar'}</button>
         <button class="btn" type="button" id="saveTpl">Guardar como plantilla</button>
         <label class="f" style="grid-template-columns:auto 1fr;align-items:center;margin:0"><input type="checkbox" name="publish" ${o.status === 'active' ? 'checked' : ''}><span>Publicar ahora (desactívalo para dejarlo en borrador)</span></label>
       </div>
@@ -1426,6 +1426,17 @@ async function offerForm(v, id, kindDefault, desde = null) {
       flash ? 'Empieza' : 'Día y hora del evento';
   };
   $('[name=kind]', v).onchange = syncKind;
+  // Una nueva sin «Publicar ahora» se queda en borrador (o se programa): el
+  // botón lo dice, para que nadie crea que ya está publicada.
+  if (!id) {
+    const syncEnviar = () => {
+      const programada = !!$('[name=publish_at]', v).value;
+      $('#enviarPub', v).textContent = programada ? 'Programar' : $('[name=publish]', v).checked ? 'Publicar' : 'Guardar borrador';
+    };
+    $('[name=publish]', v).addEventListener('change', syncEnviar);
+    $('[name=publish_at]', v).addEventListener('input', syncEnviar);
+    syncEnviar();
+  }
   $('[name=reservations_enabled]', v).onchange = () => {
     // Una reserva de evento se guarda hasta el día: con los 5 minutos de las
     // ofertas flash (lo que viene marcado), la plaza se perdía al rato de

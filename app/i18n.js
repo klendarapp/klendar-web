@@ -409,6 +409,7 @@ const APP_EN = {
   "Resumen semanal de tu negocio": "Your business’s weekly summary",
   "Los lunes, por correo: vistas, canjes, favoritos y reseñas de la semana pasada.": "On Mondays, by email: last week’s views, redemptions, favourites and reviews.",
   "Obligatorio": "Required",
+  "Revisa la fecha": "Check the date",
   "Ese correo no parece válido": "That email doesn't look valid",
   "Mínimo 8 caracteres": "At least 8 characters",
   "Las contraseñas no coinciden": "Passwords don't match",

@@ -93,6 +93,8 @@ const I18N = makeI18N({
     'Categoría': 'Category',
     'Enlace externo (entradas, reservas…)': 'External link (tickets, bookings…)',
     'Empieza': 'Starts',
+    'Guardar borrador': 'Save draft',
+    'Programar': 'Schedule',
     'Termina': 'Ends',
     'Termina (obligatorio)': 'Ends (required)',
     'Termina (opcional)': 'Ends (optional)',

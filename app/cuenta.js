@@ -409,7 +409,7 @@ RUTAS.ajustes = async () => {
     ? `<label>${esc(t('Fecha de nacimiento'))} <small>${esc(t('Para cambiarla, escríbenos a info@klendar.app.'))}</small>
           <span class="candado"><input value="${esc(nacimiento)}" readonly aria-readonly="true"><span class="ms" aria-hidden="true">lock</span></span></label>`
     : `<label>${esc(t('Fecha de nacimiento'))} <small>${esc(t('Solo para mostrarte ofertas adecuadas a tu edad. Revísala bien: una vez guardada, no se puede cambiar.'))}</small>
-          <input name="birth" type="date" max="${new Date().toISOString().slice(0, 10)}"></label>`}
+          <input name="birth" type="date" ${LIMITES_NACIMIENTO()}></label>`}
         <label>${esc(t('Idioma'))} <small>${esc(t('De la web, la app y las notificaciones y correos que te enviamos'))}</small>
           <select name="idioma">
             <option value=""${!p.locale ? ' selected' : ''}>${esc(t('El del móvil o el navegador'))}</option>
@@ -1060,7 +1060,7 @@ RUTAS['ultimo-paso'] = async (_p, params) => {
         ? 'Para usar Klendar hay que tener 14 años o más y aceptar los términos. Solo te lo preguntamos una vez.'
         : 'Para seguir usando Klendar, acepta los términos y la política de privacidad. Solo te lo preguntamos una vez.'))}</p>
       <form id="f" class="formu" novalidate>
-        ${pideFecha ? `<label>${esc(t('Fecha de nacimiento'))}<input name="birth" type="date" required></label>` : ''}
+        ${pideFecha ? `<label>${esc(t('Fecha de nacimiento'))}<input name="birth" type="date" ${LIMITES_NACIMIENTO()} required></label>` : ''}
         ${casillaTerminos()}
         <p id="err" class="err" role="alert"></p>
         <button class="pill accent" id="seguir">${esc(t('Continuar'))}</button>
