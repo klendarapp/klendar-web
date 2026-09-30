@@ -38,6 +38,10 @@
       // nombre y un cerrojo propios de cada vez: con el cerrojo del navegador
       // compartido, una comprobación a medias (pestaña en segundo plano)
       // dejaba esperando a la siguiente y su sesión sin cerrar.
+      // `implicit` a propósito (el resto de la web usa PKCE): aquí no hay
+      // vueltas ni enlaces, solo contraseña o código de 6 cifras, así que PKCE
+      // no protege nada, y con él `signInWithOtp` guardaría un verificador
+      // que no se usa nunca.
       auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false,
         storageKey: `klendar-identidad-${Date.now()}-${Math.random().toString(36).slice(2)}`,
         flowType: 'implicit', lock: async (_nombre, _espera, fn) => fn() },

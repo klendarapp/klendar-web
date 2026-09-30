@@ -5,12 +5,13 @@
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: geolocation=(), camera=(), microphone=()
 # Zonas con sesión (admin, panel, «Tu cuenta»):
-# - `no-transform`: Cloudflare no les mete su contador de visitas (con el
-#   acceso implícito el token pasa un momento por la dirección).
-# - CSP estricta en modo «solo avisar» (Report-Only): no rompe nada; los
-#   avisos salen en la consola. Cuando se haya probado cada zona con sesión
-#   (entrar, mapa y escáner del panel, 2FA del admin) sin avisos, cambiar
-#   el nombre a Content-Security-Policy (revisión de seguridad 2026-09-30).
+# - `no-transform`: Cloudflare no les mete su contador de visitas. (Desde
+#   2026-10-01 la web usa PKCE y los enlaces de los correos van con
+#   `token_hash`: ningún token pasa ya por la dirección, pero un código de un
+#   solo uso sí, y un script de fuera no tiene nada que hacer aquí.)
+# - CSP estricta y obligatoria (Content-Security-Policy). Ya cubre lo de
+#   entrar: Supabase en connect-src (canje de `?code=`, verifyOtp) y
+#   Turnstile en script-src y frame-src.
 /admin/*
   X-Robots-Tag: noindex, nofollow
   Cache-Control: no-store, no-transform

@@ -15,7 +15,16 @@ if (!SUPABASE_URL || !SUPABASE_KEY) {
   throw new Error('sin configuración');
 }
 const APP_URL = 'https://klendar.app';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// Sesión PROPIA del admin, guardada aparte de la de «Tu cuenta» y el panel
+// (`sb-<ref>-admin-auth-token`): entrar aquí no abre sesión en el resto de la
+// web, y cerrarla (a mano, por inactividad o a las 12 h) no saca a nadie de su
+// cuenta ni del panel de su negocio. PKCE, como el resto de la web; el admin
+// no recibe vueltas de Google ni enlaces de correo, así que no lee nada de la
+// dirección (`detectSessionInUrl: false`).
+const REF = (SUPABASE_URL.match(/^https:\/\/([a-z0-9]+)\./) || [])[1] || 'klendar';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: { flowType: 'pkce', detectSessionInUrl: false, storageKey: `sb-${REF}-admin-auth-token` },
+});
 
 // ── Utilidades ──────────────────────────────────────────────────────────────
 const $ = (s, r = document) => r.querySelector(s);
@@ -107,6 +116,10 @@ async function rpc(fn, args = {}) {
     // La base pide el código (se ha vuelto obligatorio con el panel abierto):
     // se enseña la pantalla del código.
     if (msg.includes('mfa_required')) { setTimeout(boot, 0); throw new Error('Escribe el código de tu app de verificación para seguir.'); }
+    // Han pasado 12 h desde que se entró (o se escribió el código): la base ya
+    // no deja administrar con esta sesión. Se cierra y se pide entrar (la
+    // pantalla de entrar dice por qué; aquí no se enseña nada más).
+    if (msg.includes('admin_session_expired')) { setTimeout(() => cierraSesion('caducada'), 0); throw new Obsoleta(); }
     if (msg.includes('not_admin')) throw new Error('Esta cuenta no es administradora.');
     // Eliminar una cuenta pide haber confirmado la contraseña hace poco.
     if (msg.includes('reauth_required')) throw new Error('Por seguridad, vuelve a confirmar que eres tú.');
@@ -259,10 +272,16 @@ async function boot() {
   $('#who').textContent = ME.email;
   // Antes del panel, la verificación en dos pasos (más abajo).
   if (!await puertaMfa()) return;
-  $('#login').hidden = true; $('#mfa').hidden = true; $('#app').hidden = false;
-  route();
+  alPanel();
 }
-function showLogin() { $('#login').hidden = false; $('#app').hidden = true; $('#mfa').hidden = true; ME = null; }
+function showLogin() {
+  paraVigilancia();
+  $('#login').hidden = false; $('#app').hidden = true; $('#mfa').hidden = true; ME = null;
+  // Si se acaba de cerrar por inactividad o caducidad (aquí o en otra pestaña
+  // del admin), se dice por qué.
+  const motivo = motivoCierre();
+  if (motivo) $('#loginErr').textContent = I18N.t(CIERRES[motivo]);
+}
 // Entrar: los mismos mensajes que la app, «Tu cuenta» y el panel
 // (assets/auth-errors.js).
 const errAuth = (error) => window.KL_AUTH_ERROR(error, I18N.lang);
@@ -279,6 +298,8 @@ $('#doLogin').onclick = () => {
     try { captchaToken = await window.KL_CAPTCHA?.(); } catch (e) { $('#loginErr').textContent = errAuth(e); return; }
     const { error } = await sb.auth.signInWithPassword({ email: $('#email').value.trim(), password: $('#password').value, options: { captchaToken } });
     if (error) { $('#loginErr').textContent = errAuth(error); return; }
+    marcaActividad(true);
+    try { localStorage.removeItem(CIERRE); } catch { /* sin almacenamiento */ }
     boot();
   });
 };
@@ -298,7 +319,7 @@ $('#doReset').onclick = () => {
   });
 };
 $('#password').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('#doLogin').click(); });
-$('#logout').onclick = async (e) => { e.preventDefault(); await sb.auth.signOut({ scope: 'local' }); showLogin(); };
+$('#logout').onclick = (e) => { e.preventDefault(); cierraSesion(null); };
 sb.auth.onAuthStateChange((ev) => {
   if (ev === 'SIGNED_OUT') showLogin();
   if (ev === 'PASSWORD_RECOVERY') location.href = '/app/?destino=%2Fadmin%2F#/nueva-clave';
@@ -311,7 +332,8 @@ $('#menuBtn').onclick = () => $('#side').classList.toggle('open');
 // solo deja administrar con aal2 si `app_config.admin_require_mfa` es true
 // (`admin_mfa_status` lo dice). Aunque no lo sea, a quien no lo tiene se le
 // ofrece (recomendado) y a quien lo tiene se le pide el código. El aal2 dura
-// lo que la sesión de Supabase en este navegador: al cerrar sesión, otra vez.
+// lo que la sesión del admin: como mucho 12 h, y se cierra tras 30 min sin
+// actividad (más abajo, «Caducidad de la sesión»).
 const MFA_LUEGO = 'kl_admin_mfa_luego'; // «Ahora no», hasta cerrar la pestaña
 let MFA = null;
 
@@ -379,14 +401,151 @@ const INPUT_CODIGO = '<label class="f"><span>Código de 6 cifras</span><input id
 function alPanel() {
   $('#mfa').hidden = true; $('#login').hidden = true; $('#app').hidden = false;
   route();
+  vigila();
 }
+
+// ── Caducidad de la sesión ──────────────────────────────────────────────────
+// Dos límites (docs/RUNBOOK.md de la app, §2a):
+// · 30 minutos sin tocar nada en ninguna pestaña del admin: un minuto antes,
+//   «¿Sigues ahí?»; si nadie pulsa «Seguir», se cierra la sesión.
+// · 12 horas desde que se entró (o se escribió el código de verificación):
+//   lo manda la base (`admin_session_expired`); aquí se cierra a esa hora.
+// Solo se cierra la sesión del admin (va aparte): «Tu cuenta» y el panel de
+// negocio siguen como estaban.
+const INACTIVIDAD = { total: 30 * 60e3, aviso: 60e3 };
+// Solo en local y solo para acortarlo, para probarlo sin esperar media hora:
+// /admin/?inactividad=20 (segundos).
+if (/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) {
+  const seg = Number(new URLSearchParams(location.search).get('inactividad'));
+  if (seg >= 10 && seg * 1000 < INACTIVIDAD.total) {
+    INACTIVIDAD.total = seg * 1000;
+    INACTIVIDAD.aviso = Math.min(INACTIVIDAD.aviso, Math.floor(seg * 500));
+  }
+}
+const ACTIVIDAD = 'klendar.admin.actividad'; // última actividad, común a las pestañas
+const CIERRE = 'klendar.admin.cierre';       // por qué se cerró: { m, t }
+const CIERRES = {
+  inactividad: 'Hemos cerrado la sesión de administración tras 30 minutos sin actividad. Vuelve a entrar.',
+  caducada: 'Por seguridad, la sesión de administración dura 12 horas. Vuelve a entrar.',
+};
+let VIGILA = null;     // el intervalo que lo comprueba cada segundo
+let CADUCA_EN = null;  // cuándo caduca (ms), según admin_mfa_status
+let ULTIMA = Date.now();
+let MARCADA = 0;
+
+/** Apunta que hay alguien (en el almacenamiento, como mucho cada 5 s). */
+function marcaActividad(forzar = false) {
+  ULTIMA = Date.now();
+  if (!forzar && ULTIMA - MARCADA < 5000) return;
+  MARCADA = ULTIMA;
+  try { localStorage.setItem(ACTIVIDAD, String(ULTIMA)); } catch { /* sin almacenamiento */ }
+}
+/** La última actividad en cualquier pestaña del admin. */
+function ultimaActividad() {
+  let otra = 0;
+  try { otra = Number(localStorage.getItem(ACTIVIDAD)) || 0; } catch { /* sin almacenamiento */ }
+  return Math.max(ULTIMA, otra);
+}
+/** Por qué se cerró la sesión hace un momento (y se olvida), o null. */
+function motivoCierre() {
+  try {
+    // Se queda un par de minutos: así lo ven también las otras pestañas.
+    const c = JSON.parse(localStorage.getItem(CIERRE) || 'null');
+    return c && CIERRES[c.m] && Date.now() - c.t < 2 * 60e3 ? c.m : null;
+  } catch { return null; }
+}
+
+const avisoInactivo = () => $('#inactivo');
+function quitaAviso() {
+  const d = avisoInactivo();
+  if (d?.open) d.close();
+}
+function pintaAviso(quedan) {
+  const d = avisoInactivo();
+  const seg = Math.max(0, Math.ceil(quedan / 1000));
+  const texto = I18N.lang === 'en'
+    ? `For your security, we'll log you out of the admin panel in ${seg} s.`
+    : `Por seguridad, cerraremos la sesión de administración en ${seg} s.`;
+  if (d.open) { $('#inactivoTxt', d).textContent = texto; return; }
+  d.innerHTML = `<form method="dialog">
+    <h2 id="inactivoTit">¿Sigues ahí?</h2>
+    <p class="muted" style="margin:0" id="inactivoTxt"></p>
+    <div class="foot"><button type="button" class="btn ghost" id="inactivoSalir">Cerrar sesión</button>
+      <button type="submit" class="btn primary" id="inactivoSeguir">Seguir</button></div>
+  </form>`;
+  I18N.translate(d);
+  $('#inactivoTxt', d).textContent = texto;
+  const seguir = () => { marcaActividad(true); quitaAviso(); };
+  $('form', d).onsubmit = (e) => { e.preventDefault(); seguir(); };
+  // Escape también quiere decir que hay alguien.
+  d.oncancel = (e) => { e.preventDefault(); seguir(); };
+  $('#inactivoSalir', d).onclick = () => cierraSesion(null);
+  d.showModal();
+  $('#inactivoSeguir', d).focus();
+}
+
+function comprueba() {
+  if (!ME || !VIGILA) return;
+  const ahora = Date.now();
+  if (CADUCA_EN && ahora >= CADUCA_EN) { cierraSesion('caducada'); return; }
+  const quieto = ahora - ultimaActividad();
+  if (quieto >= INACTIVIDAD.total) { cierraSesion('inactividad'); return; }
+  if (quieto >= INACTIVIDAD.total - INACTIVIDAD.aviso) pintaAviso(INACTIVIDAD.total - quieto);
+  else quitaAviso(); // han pulsado «Seguir» en otra pestaña
+}
+
+async function vigila() {
+  marcaActividad(true);
+  if (!VIGILA) VIGILA = setInterval(comprueba, 1000);
+  // Cuándo caduca esta sesión (al escribir el código, la hora se renueva).
+  try {
+    const { data } = await sb.rpc('admin_mfa_status');
+    if (data?.admin && data.session_expired) { cierraSesion('caducada'); return; }
+    const fin = Date.parse(data?.session_expires_at || '');
+    CADUCA_EN = data?.admin && Number.isFinite(fin) ? fin : null;
+  } catch { /* sin red: ya lo dirá la base */ }
+}
+function paraVigilancia() {
+  clearInterval(VIGILA);
+  VIGILA = null;
+  CADUCA_EN = null;
+  quitaAviso();
+}
+
+let CERRANDO = false;
+/** Cierra la sesión del admin en este navegador (y en sus otras pestañas) y
+ * lo explica en la pantalla de entrar. */
+async function cierraSesion(motivo) {
+  if (CERRANDO) return;
+  CERRANDO = true;
+  paraVigilancia();
+  try {
+    try {
+      if (motivo) localStorage.setItem(CIERRE, JSON.stringify({ m: motivo, t: Date.now() }));
+      else localStorage.removeItem(CIERRE);
+    } catch { /* sin almacenamiento */ }
+    $$('dialog[open]').forEach((d) => d.close());
+    await sb.auth.signOut({ scope: 'local' }).catch(() => {});
+    showLogin();
+  } finally {
+    CERRANDO = false;
+  }
+}
+
+// Lo que cuenta como actividad: teclado, ratón, toques y desplazamiento. Con
+// el aviso delante, solo «Seguir».
+for (const ev of ['pointerdown', 'keydown', 'wheel', 'touchstart', 'mousemove', 'scroll']) {
+  addEventListener(ev, () => { if (ME && !avisoInactivo()?.open) marcaActividad(); }, { passive: true, capture: true });
+}
+// Al volver a la pestaña (o al despertar el portátil) se mira enseguida.
+document.addEventListener('visibilitychange', () => { if (!document.hidden) comprueba(); });
 
 function pantallaCodigo(factor) {
   pantallaMfa(`<h2 style="margin:0">Verificación en dos pasos</h2>
     <p class="muted" style="margin:0">Escribe el código de 6 cifras de tu app de verificación (Google Authenticator, 1Password, Authy…).</p>
     ${INPUT_CODIGO}
     <button class="btn primary" id="mfaOk" type="button">Verificar</button>
-    <p class="muted small" style="margin:0">En este navegador no te lo volveremos a pedir hasta que cierres sesión.</p>
+    <p class="muted small" style="margin:0">No te lo volveremos a pedir mientras sigas usando el panel en este navegador. La sesión se cierra tras 30 minutos sin actividad y, como mucho, a las 12 horas.</p>
     <details class="help"><summary>¿Has perdido el móvil?</summary><p>Pide a otro administrador que quite tu factor en Supabase (Authentication → Users → tu cuenta → quitar el factor MFA). Al volver a entrar podrás configurarlo en el móvil nuevo.</p></details>`);
   const enviar = () => esperando($('#mfaOk'), async () => {
     const code = $('#mfaCode').value.trim();
@@ -1009,7 +1168,7 @@ const discountLabel = (d) => {
 async function moderateOffer(id, val) {
   try {
     if (val === 'rejected') {
-      const r = await modal({ title: 'Retirar publicación', intro: 'Deja de verse en la app. El negocio recibe el motivo y puede recurrir en 15 días (Reglamento de Servicios Digitales).', fields: [{ name: 'reason', label: 'Motivo', type: 'textarea', required: true, placeholder: 'Ej.: la foto no es del local; la oferta es engañosa; publicidad de alcohol dirigida a menores…' }], submit: 'Retirar', danger: true });
+      const r = await modal({ title: 'Retirar publicación', intro: 'Deja de verse en la app. El negocio recibe el motivo y puede pedir que se revise en 6 meses (Reglamento de Servicios Digitales).', fields: [{ name: 'reason', label: 'Motivo', type: 'textarea', required: true, placeholder: 'Ej.: la foto no es del local; la oferta es engañosa; publicidad de alcohol dirigida a menores…' }], submit: 'Retirar', danger: true });
       if (!r) return false;
       await rpc('admin_set_offer_moderation', { p_id: id, p_status: 'rejected', p_reason: r.reason }); toast('Publicación retirada');
     } else {
@@ -1284,7 +1443,7 @@ async function decideTexto(x, aprobar) {
     }[x.kind] || '';
     const r = await modal({
       title: 'Retirar texto',
-      intro: `${esc(intro)} ${en ? 'Whoever wrote it gets the reason below and can appeal within 15 days.' : 'Quien lo escribió recibe el motivo de abajo y puede recurrir en 15 días.'}`,
+      intro: `${esc(intro)} ${en ? 'Whoever wrote it gets the reason below and can ask for a review within 6 months.' : 'Quien lo escribió recibe el motivo de abajo y puede pedir que se revise en 6 meses.'}`,
       fields: [{ name: 'reason', label: 'Motivo que verá quien lo publicó (obligatorio por el DSA)', type: 'textarea', required: true }],
       submit: 'Retirar', danger: true,
     });
@@ -1408,7 +1567,7 @@ async function decideDenuncias(tipo, id, decision, abiertas) {
     }[tipo];
     const r = await modal({
       title: en ? 'Take down and close all' : 'Retirar y cerrar todas',
-      intro: `${esc(intro)} ${en ? `The ${abiertas} open reports are closed and each reporter is told the content was taken down. Whoever posted it gets the reason below and can appeal within 15 days.` : `Se cierran las ${abiertas} denuncias abiertas y a cada denunciante se le dice que se ha retirado. Quien lo publicó recibe el motivo de abajo y puede recurrir en 15 días.`}`,
+      intro: `${esc(intro)} ${en ? `The ${abiertas} open reports are closed and each reporter is told the content was taken down. Whoever posted it gets the reason below and can ask for a review within 6 months.` : `Se cierran las ${abiertas} denuncias abiertas y a cada denunciante se le dice que se ha retirado. Quien lo publicó recibe el motivo de abajo y puede pedir que se revise en 6 meses.`}`,
       fields: [{ name: 'reason', label: 'Motivo que verá quien lo publicó (obligatorio por el DSA)', type: 'textarea', required: true }],
       submit: 'Retirar y cerrar', danger: true,
     });
@@ -1460,8 +1619,8 @@ PAGES.denuncias = async (v, tipoRuta) => {
   v.innerHTML = `
     <div class="page-head"><h1>Denuncias</h1></div>
     ${helpBox('¿Qué hago aquí?', en
-      ? `<p>One card per reported item (publication, business, review or news post), with how many reports it has, from how many different people (with and without an account), the reasons and whether it's still up. Open it (“See the reports”) to read each report and who made it. Decide for all its open reports at once: <b>Take down and close all</b> (the publication is taken down, the business deactivated, the review or news post deleted; whoever posted it gets the reason and can appeal within 15 days), <b>Close without taking down</b> (the content complies) or <b>Dismiss all</b> (unfounded reports). Every reporter is told the decision: in the app if they have an account, by email if they reported without one. By law (DSA, art. 16) reports must be handled diligently and the decision explained.</p><p>People without an account report from klendar.app (“Report illegal content” in the footer, or “Report” on any page without being logged in). Their name and email are only visible here.</p>`
-      : `<p>Una tarjeta por cada contenido denunciado (publicación, negocio, reseña o novedad), con cuántas denuncias tiene, de cuántas personas distintas (con y sin cuenta), los motivos y si sigue publicado. Ábrelo («Ver las denuncias») para leer cada denuncia y quién la puso. Decide para todas sus denuncias abiertas a la vez: <b>Retirar y cerrar todas</b> (la publicación se retira, el negocio se desactiva, la reseña o la novedad se borran; quien lo publicó recibe el motivo y puede recurrir en 15 días), <b>Cerrar sin retirar</b> (el contenido cumple) o <b>Desestimar todas</b> (denuncias sin fundamento). A cada denunciante le llega la decisión: en la app si tiene cuenta, por correo si denunció sin ella. Por ley (DSA, art. 16) hay que resolverlas con diligencia y explicar la decisión.</p><p>Quien no tiene cuenta denuncia desde klendar.app («Denunciar contenido ilegal» en el pie, o «Denunciar» en cualquier ficha sin haber entrado). Su nombre y su correo solo se ven aquí.</p>`)}
+      ? `<p>One card per reported item (publication, business, review or news post), with how many reports it has, from how many different people (with and without an account), the reasons and whether it's still up. Open it (“See the reports”) to read each report and who made it. Decide for all its open reports at once: <b>Take down and close all</b> (the publication is taken down, the business deactivated, the review or news post deleted; whoever posted it gets the reason and can ask for a review within 6 months), <b>Close without taking down</b> (the content complies) or <b>Dismiss all</b> (unfounded reports). Every reporter is told the decision: in the app if they have an account, by email if they reported without one. By law (DSA, art. 16) reports must be handled diligently and the decision explained.</p><p>People without an account report from klendar.app (“Report illegal content” in the footer, or “Report” on any page without being logged in). Their name and email are only visible here.</p>`
+      : `<p>Una tarjeta por cada contenido denunciado (publicación, negocio, reseña o novedad), con cuántas denuncias tiene, de cuántas personas distintas (con y sin cuenta), los motivos y si sigue publicado. Ábrelo («Ver las denuncias») para leer cada denuncia y quién la puso. Decide para todas sus denuncias abiertas a la vez: <b>Retirar y cerrar todas</b> (la publicación se retira, el negocio se desactiva, la reseña o la novedad se borran; quien lo publicó recibe el motivo y puede pedir que se revise en 6 meses), <b>Cerrar sin retirar</b> (el contenido cumple) o <b>Desestimar todas</b> (denuncias sin fundamento). A cada denunciante le llega la decisión: en la app si tiene cuenta, por correo si denunció sin ella. Por ley (DSA, art. 16) hay que resolverlas con diligencia y explicar la decisión.</p><p>Quien no tiene cuenta denuncia desde klendar.app («Denunciar contenido ilegal» en el pie, o «Denunciar» en cualquier ficha sin haber entrado). Su nombre y su correo solo se ven aquí.</p>`)}
     <div class="toolbar">
       <select id="status">${[['open', 'Con denuncias abiertas'], ['closed', 'Ya cerradas'], ['all', 'Todo']].map((o) => `<option value="${o[0]}" ${(s.status || 'open') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
       <select id="type">${[['all', 'Todo tipo'], ['offer', 'Publicaciones'], ['business', 'Negocios'], ['review', 'Reseñas'], ['post', 'Novedades']].map((o) => `<option value="${o[0]}" ${(s.type || 'all') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
@@ -2300,7 +2459,7 @@ PAGES.ayuda = async (v) => {
       <div class="card">${I18N.lang === 'en' ? `<h2>Daily routine (5 minutes)</h2><ol style="margin:0;padding-left:18px"><li><b>Overview</b>: check “Waiting for you”.</li><li><b>Pending businesses</b>: check that they exist (website, phone, Google Maps) and verify or reject them with a reason.</li><li><b>Publications to moderate</b>: approve or take down with a reason.</li><li><b>Open reports</b>: review and resolve them (always with a reason if you take something down).</li><li><b>Failed push</b>: if there are many, something is wrong with Firebase.</li></ol>` : `<h2>Rutina diaria (5 minutos)</h2><ol style="margin:0;padding-left:18px"><li><b>Resumen</b>: mira «Pendiente de ti».</li><li><b>Negocios pendientes</b>: comprueba que existen (web, teléfono, Google Maps) y verifica o rechaza con motivo.</li><li><b>Publicaciones por moderar</b>: aprueba o retira con motivo.</li><li><b>Denuncias abiertas</b>: revisa y resuelve (siempre con motivo si retiras algo).</li><li><b>Push fallidos</b>: si hay muchos, algo pasa con Firebase.</li></ol>`}</div>
       <div class="card">${I18N.lang === 'en' ? `<h2>Weekly routine</h2><ul style="margin:0;padding-left:18px"><li><b>Plans and payments</b>: subscriptions expiring in 7 days → contact the business; record the bank transfers received.</li><li><b>Users</b>: handle access or erasure requests received by email (info@klendar.app).</li><li><b>Feedback</b>: read what has come in, set the status and reply to whatever deserves a reply.</li><li><b>Activity log</b>: check that everything that was done makes sense.</li></ul>` : `<h2>Rutina semanal</h2><ul style="margin:0;padding-left:18px"><li><b>Planes y pagos</b>: suscripciones que vencen en 7 días → contacta con el negocio; registra las transferencias recibidas.</li><li><b>Usuarios</b>: atiende peticiones de acceso o supresión recibidas por email (info@klendar.app).</li><li><b>Sugerencias</b>: lee lo que ha entrado, marca estado y responde lo que merezca respuesta.</li><li><b>Registro de actividad</b>: repasa que todo lo hecho tenga sentido.</li></ul>`}</div>
       <div class="card">${I18N.lang === 'en' ? `<h2>Moderation criteria</h2><ul style="margin:0;padding-left:18px"><li>The venue's or product's own photos; no third-party images without permission.</li><li>A clear offer that can be honoured: price, conditions, places, opening hours. Nothing misleading.</li><li>Alcohol: only businesses marked 18+, without encouraging drinking (Law 34/1988).</li><li>No third parties' personal data, insults, discrimination or sexual content.</li><li>If in doubt, mark it “under review” and ask the business for more information with “Send notification”.</li></ul><p class="muted small" style="margin:8px 0 0">Reference: <a class="link" href="/en/community-guidelines/" target="_blank">Community guidelines</a> · <a class="link" href="/en/business-terms/" target="_blank">Business terms</a>.</p>` : `<h2>Criterios de moderación</h2><ul style="margin:0;padding-left:18px"><li>Fotos propias del local o del producto; nada de imágenes de terceros sin permiso.</li><li>Oferta clara y cumplible: precio, condiciones, aforo, horario. Nada engañoso.</li><li>Alcohol: solo negocios +18 marcados, sin incitar al consumo (Ley 34/1988).</li><li>Sin datos personales de terceros, insultos, discriminación ni contenido sexual.</li><li>Ante la duda, marca «en revisión» y pide más información al negocio con «Enviar notificación».</li></ul><p class="muted small" style="margin:8px 0 0">Referencia: <a class="link" href="/normas/" target="_blank">Normas de la comunidad</a> · <a class="link" href="/negocios/" target="_blank">Condiciones para negocios</a>.</p>`}</div>
-      <div class="card">${I18N.lang === 'en' ? `<h2>Legal duties this panel covers</h2><ul style="margin:0;padding-left:18px"><li><b>DSA</b> (Digital Services Act): every content takedown comes with a reason and a way to appeal (15 days, info@klendar.app); reports are handled diligently.</li><li><b>GDPR</b>: consents visible on the user's page; erasure with “Delete account”; access with “Export CSV”.</li><li><b>Log</b>: every administrative action is logged with its author and date.</li></ul>` : `<h2>Obligaciones legales que cubre el panel</h2><ul style="margin:0;padding-left:18px"><li><b>DSA</b> (Reglamento de Servicios Digitales): toda retirada de contenido lleva motivo y vía de recurso (15 días, info@klendar.app); las denuncias se gestionan con diligencia.</li><li><b>RGPD</b>: consentimientos visibles en la ficha del usuario; supresión con «Borrar cuenta»; acceso con «Exportar CSV».</li><li><b>Registro</b>: cada acción administrativa queda registrada con autor y fecha.</li></ul>`}</div>
+      <div class="card">${I18N.lang === 'en' ? `<h2>Legal duties this panel covers</h2><ul style="margin:0;padding-left:18px"><li><b>DSA</b> (Digital Services Act): every content takedown comes with a reason and a way to appeal (6 months, info@klendar.app); reports are handled diligently.</li><li><b>GDPR</b>: consents visible on the user's page; erasure with “Delete account”; access with “Export CSV”.</li><li><b>Log</b>: every administrative action is logged with its author and date.</li></ul>` : `<h2>Obligaciones legales que cubre el panel</h2><ul style="margin:0;padding-left:18px"><li><b>DSA</b> (Reglamento de Servicios Digitales): toda retirada de contenido lleva motivo y vía de recurso (6 meses, info@klendar.app); las denuncias se gestionan con diligencia.</li><li><b>RGPD</b>: consentimientos visibles en la ficha del usuario; supresión con «Borrar cuenta»; acceso con «Exportar CSV».</li><li><b>Registro</b>: cada acción administrativa queda registrada con autor y fecha.</li></ul>`}</div>
     </div>
     <div class="card"><h2>Atajos</h2><p class="muted" style="margin:0">${I18N.lang === 'en' ? `<code>/</code> jumps to the page's search box · Click any row to open its details · “Export CSV” downloads what you see with the filters applied.` : `<code>/</code> salta al buscador de la página · Pulsa en cualquier fila para abrir su ficha · «Exportar CSV» descarga lo que ves con los filtros aplicados.`}</p></div>
     <div class="card"><h2>Si algo falla</h2><p class="muted" style="margin:0">${I18N.lang === 'en' ? `If you see “This account is not an administrator”, ask another administrator to add you. If the panel doesn't load any data, check Supabase's status (<a class="link" href="https://status.supabase.com" target="_blank" rel="noopener">status.supabase.com</a>). Technical support: dev@klendar.app.` : `Si ves «Esta cuenta no es administradora» pide a otro administrador que te añada. Si el panel no carga datos, comprueba el estado de Supabase (<a class="link" href="https://status.supabase.com" target="_blank" rel="noopener">status.supabase.com</a>). Soporte técnico: dev@klendar.app.`}</p></div>`;

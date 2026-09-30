@@ -16,7 +16,9 @@ if (!SUPABASE_URL || !SUPABASE_KEY) {
 }
 const APP_URL = 'https://klendar.app';
 const BUCKET = 'business-images';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// PKCE y los enlaces de los correos (el de confirmar el alta de negocio
+// vuelve aquí): /assets/acceso.js.
+const sb = window.KL_SUPABASE();
 
 // ── Utilidades ──────────────────────────────────────────────────────────────
 const $ = (s, r = document) => r.querySelector(s);
@@ -488,9 +490,13 @@ function olvidaColas() {
 }
 
 async function boot() {
+  await window.KL_ENLACE(sb);
   const { data: { session } } = await sb.auth.getSession();
+  // Sin sesión, el aviso de un enlace que no ha servido lo da «Tu cuenta».
   if (!session) return showLogin();
   ME = session.user;
+  const aviso = window.KL_ENLACE.aviso(I18N.lang);
+  if (aviso) toast(aviso, true);
   // Quien entró con Google y aún no ha aceptado los términos ni dicho su
   // edad lo hace primero en «Tu cuenta», y vuelve aquí. Igual si los aceptó
   // en una versión anterior a la vigente («Hemos actualizado los términos…»).

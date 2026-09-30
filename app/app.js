@@ -17,7 +17,10 @@ const EN = I18N.lang === 'en';
 // El «Cargando…» del HTML, mientras llega la primera pantalla.
 I18N.translate(document.getElementById('view'));
 const LOC = EN ? 'en-GB' : 'es-ES';
-const sb = supabase.createClient(window.KLENDAR_ENV.url, window.KLENDAR_ENV.key);
+// PKCE y los enlaces de los correos: /assets/acceso.js. El enlace (si lo
+// hay) se canjea al cargar, antes de mirar la sesión.
+const sb = window.KL_SUPABASE();
+const ENLACE = window.KL_ENLACE(sb);
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -161,6 +164,7 @@ let YO = null;
  * nueva no pide la vieja (el enlace ya demuestra que eres tú). */
 let RECUPERANDO = false;
 async function sesion() {
+  await ENLACE;
   const { data } = await sb.auth.getSession();
   YO = data.session?.user || null;
   return YO;
@@ -343,6 +347,10 @@ function apagaPantalla() {
 async function navegar() {
   apagaPantalla();
   await sesion();
+  // Un enlace del correo que no ha servido (caducado, ya usado…), aquí o en
+  // el panel antes de mandar a entrar: se dice una vez.
+  const aviso = window.KL_ENLACE.aviso(EN ? 'en' : 'es');
+  if (aviso) toast(aviso, true);
   // Vuelta de Google (o de un enlace de correo): «?siguiente=» dice adónde.
   const q = new URLSearchParams(location.search);
   if (YO && q.has('siguiente')) {
@@ -1129,8 +1137,10 @@ RUTAS['nueva-clave'] = async (_p, params) => {
       }
       RECUPERANDO = false;
       toast(t(siguiente ? 'Contraseña guardada' : 'Contraseña actualizada'));
-      // Desde el panel de negocios se vuelve al panel.
-      const destino = rutaInterna(new URLSearchParams(location.search).get('destino'));
+      // Desde el panel de negocios se vuelve al panel; desde el admin, a su
+      // pantalla de entrar (tiene su propia sesión: ver admin.js).
+      const pedido = new URLSearchParams(location.search).get('destino');
+      const destino = rutaInterna(pedido) || (pedido === '/admin/' ? '/admin/' : '');
       if (destino) { location.href = destino; return; }
       vuelve(siguiente);
     });
@@ -1819,3 +1829,8 @@ RUTAS.visita = async ([token]) => {
 // ── Arranque ──────────────────────────────────────────────────────────────
 // Espera a que carguen también las rutas de cuenta.js.
 addEventListener('DOMContentLoaded', navegar);
+// Se ha entrado o confirmado la cuenta con el enlace del correo.
+ENLACE.then((r) => {
+  if (r.tipo === 'signup') toast(t('Cuenta confirmada'));
+  else if (r.tipo === 'magiclink' || r.tipo === 'email') toast(t('Dentro'));
+});

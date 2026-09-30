@@ -119,12 +119,93 @@ ACTUALIZADO = {
     'cookies': {'es': '1 de octubre de 2026', 'en': '1 October 2026'},
     'eliminar-cuenta': {'es': '1 de octubre de 2026', 'en': '1 October 2026'},
     'soporte': {'es': '1 de octubre de 2026', 'en': '1 October 2026'},
+    # 2026-10-01 (segunda tanda, R4 de la revisión legal): los términos
+    # explican la moderación automática y las condiciones para negocios se
+    # ponen al día. Informativo o a favor de quien acepta: sin re-aceptación
+    # (criterio en docs/AUDITORIA_LEGAL.md, «Revisión 2026-10-01», R6).
+    'terminos': {'es': '1 de octubre de 2026', 'en': '1 October 2026'},
+    'negocios': {'es': '1 de octubre de 2026', 'en': '1 October 2026'},
 }
 
 
 def fecha(slug, lang):
     """Fecha de «Última actualización» de un documento (slug ES)."""
     return ACTUALIZADO.get(slug, DATE)[lang]
+
+
+# Historial de cambios que sale al pie de cada documento legal, del más
+# reciente al más antiguo. Al cambiar un documento: su fecha en ACTUALIZADO
+# (o DATE/VERSION si hay que volver a pedir la aceptación) y una línea aquí.
+_INICIO = ('29 de septiembre de 2026', 'Versión vigente de los términos (2026-09-29).',
+           '29 September 2026', 'Current version of the terms (2026-09-29).')
+CAMBIOS = {
+    'aviso-legal': [_INICIO],
+    'privacidad': [
+        ('1 de octubre de 2026',
+         'Denuncias sin cuenta; las estadísticas de uso de la app, con consentimiento y aparte de los informes de errores; tratamientos de avisos «Avísame si…», resúmenes por correo, mensajes de tus favoritos, sugerencias, seguridad e historial de consentimientos; encargados, transferencias y plazos al día.',
+         '1 October 2026',
+         'Reports without an account; app usage statistics, based on consent and separate from crash reports; processing for “Tell me when…” alerts, email summaries, messages from your favourites, suggestions, security and consent history; processors, transfers and retention periods brought up to date.'),
+        _INICIO],
+    'terminos': [
+        ('1 de octubre de 2026',
+         'Se explica la moderación automática de los textos (apartado 4). No cambian tus derechos ni tus obligaciones, así que no hace falta volver a aceptarlos.',
+         '1 October 2026',
+         'Automatic moderation of text is explained (section 4). Your rights and obligations don\'t change, so there\'s no need to accept them again.'),
+        _INICIO],
+    'negocios': [
+        ('1 de octubre de 2026',
+         'Servicio al día (apartado 2); honrar los premios de sellos y el regalo de cumpleaños, precio final con IVA y precio anterior de 30 días en las rebajas (apartado 3); moderación automática y 6 meses para pedir la revisión (apartado 6).',
+         '1 October 2026',
+         'Service description brought up to date (section 2); honouring stamp rewards and the birthday gift, final price including VAT and the 30-day previous price in reductions (section 3); automatic moderation and 6 months to ask for a review (section 6).'),
+        _INICIO],
+    'cookies': [
+        ('1 de octubre de 2026', 'Inventario al día de lo que se guarda en el navegador y de los servicios de terceros.',
+         '1 October 2026', 'Up-to-date list of what is stored in your browser and of third-party services.'),
+        _INICIO],
+    'normas': [
+        ('1 de octubre de 2026',
+         'Denunciar sin cuenta, moderación automática, bloquear a alguien, idiomas del punto de contacto y 6 meses para pedir la revisión de una decisión.',
+         '1 October 2026',
+         'Reporting without an account, automatic moderation, blocking someone, languages of the point of contact and 6 months to ask for a decision to be reviewed.'),
+        _INICIO],
+    'eliminar-cuenta': [
+        ('1 de octubre de 2026', 'Eliminar también desde la web, confirmar que eres tú y lista al día de lo que se borra.',
+         '1 October 2026', 'Deleting from the website too, confirming it\'s you and an up-to-date list of what is deleted.'),
+        _INICIO],
+}
+CAMBIOS_TITULO = {'es': 'Historial de cambios', 'en': 'Change history'}
+
+
+def historial(slug, lang):
+    filas = CAMBIOS.get(slug)
+    if not filas:
+        return ''
+    i = 0 if lang == 'es' else 2
+    items = ''.join(f'\n  <li><strong>{f[i]}</strong>: {html.escape(f[i + 1], quote=False)}</li>' for f in filas)
+    return f'\n<h2 class="cambios">{CAMBIOS_TITULO[lang]}</h2>\n<ul>{items}\n</ul>\n'
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# ENTRAR CON EL TELÉFONO (SMS). Mientras `PHONE_AUTH` esté apagado en la app
+# (lib/core/config/env.dart), la privacidad no lo cuenta. El día que se
+# encienda: poner el proveedor de SMS (también en la lista de encargados),
+# ACCESO_TELEFONO = True, una fecha en ACTUALIZADO y regenerar. Si falta el
+# proveedor, el script no genera nada.
+# ════════════════════════════════════════════════════════════════════════════
+ACCESO_TELEFONO = False
+PROVEEDOR_SMS = ''                       # p. ej. 'Twilio Inc. (EE. UU.; DPF + CCT)'
+
+
+def fila_telefono():
+    if not ACCESO_TELEFONO:
+        return {'es': '', 'en': ''}
+    if not PROVEEDOR_SMS.strip():
+        sys.exit('build_legal.py: ACCESO_TELEFONO = True pero falta PROVEEDOR_SMS.')
+    prov = html.escape(PROVEEDOR_SMS.strip(), quote=False)
+    return {
+        'es': f'<tr><td>Entrar con tu teléfono</td><td>Número de teléfono y el código que te mandamos por SMS</td><td>Identificarte al entrar sin contraseña; el SMS lo envía {prov}</td><td>Ejecución del contrato</td><td>El número, mientras exista la cuenta; el código caduca a la hora</td></tr>\n',
+        'en': f'<tr><td>Log in with your phone</td><td>Phone number and the code we text you</td><td>Identify you when you log in without a password; the text message is sent by {prov}</td><td>Performance of a contract</td><td>The number, while the account exists; the code expires after an hour</td></tr>\n',
+    }
 
 # Datos de EJEMPLO para la vista previa (--vista-previa). Claramente falsos:
 # el script se niega a publicar nada que los contenga.
@@ -320,6 +401,7 @@ def textos(D, resaltar=False):
     es, en = por_idioma(D, 'es', resaltar), por_idioma(D, 'en', resaltar)
     E, EP = limpio(D['email']), limpio(D['email_privacidad'])
     SRV = UBICACION_SERVIDORES[SERVIDORES]
+    TEL = fila_telefono()
     ES, EN = {}, {}
 
     # ── Aviso legal ─────────────────────────────────────────────────────────────
@@ -382,7 +464,13 @@ def textos(D, resaltar=False):
 <tr><td>Informes de errores</td><td>Identificador de instalación, modelo y sistema del dispositivo, versión de la app, informe técnico del fallo (sin tu nombre ni tu correo)</td><td>Detectar y arreglar fallos de la app (Firebase Crashlytics)</td><td>Interés legítimo (art. 6.1.f): que la app funcione</td><td>90 días</td></tr>
 <tr><td>Estadísticas de uso de la app (opcional)</td><td>Identificador de instalación, pantallas y acciones (ver una oferta, guardar, canjear, compartir, buscar —sin el texto que buscas—), modelo y sistema del dispositivo</td><td>Saber qué se usa para mejorar la app (Firebase Analytics)</td><td>Consentimiento (art. 6.1.a): casilla sin marcar al registrarte o en Ajustes → Privacidad y datos; se retira igual</td><td>14 meses</td></tr>
 <tr><td>Comunicaciones comerciales</td><td>Email</td><td>Enviarte novedades de Klendar (nunca de terceros)</td><td>Consentimiento específico marcado en el registro; revocable en cada email o en el perfil</td><td>Hasta que lo revoques</td></tr>
-<tr><td>Soporte</td><td>Email y contenido de tu mensaje</td><td>Atender tus consultas</td><td>Ejecución del contrato / interés legítimo</td><td>1 año desde el cierre</td></tr>
+<tr><td>Avisos «Avísame si…»</td><td>La zona que eliges (punto y radio), categorías, precio máximo</td><td>Avisarte cuando aparece algo que encaja</td><td>Ejecución del contrato</td><td>Hasta que borres el aviso o la cuenta</td></tr>
+<tr><td>Resúmenes por correo</td><td>Email, idioma, ciudad, tus favoritos y planes</td><td>Mandarte el resumen semanal con ofertas y planes de negocios (si lo activas en Ajustes → Notificaciones; empieza apagado)</td><td>Consentimiento; baja en un clic en cada correo</td><td>Hasta que lo apagues</td></tr>
+<tr><td>Mensajes de tus favoritos</td><td>Que tienes el negocio en favoritos o sellos en una de sus tarjetas</td><td>Que el negocio te mande un aviso (como mucho uno por semana y local), revisado por Klendar; el negocio no ve quién lo recibe</td><td>Consentimiento (notificaciones); se apaga en Ajustes → Notificaciones</td><td>La bandeja, 90 días</td></tr>
+<tr><td>Sugerencias «Quizá te interese»</td><td>Tus últimas búsquedas y las categorías que más miras, guardadas en tu móvil</td><td>Sugerirte algo cuando cerca no hay nada; se envían con esa consulta y no se guardan en nuestros servidores</td><td>Ejecución del contrato</td><td>En tu móvil, hasta que las borres o elimines la cuenta</td></tr>
+<tr><td>Seguridad</td><td>Resumen cifrado de tu conexión (cambia cada día, nunca la IP), dispositivos de confianza para entrar con huella o Face ID, códigos para confirmar que eres tú, errores técnicos de la web (sin datos personales)</td><td>Frenar abusos, entrar sin contraseña en tus dispositivos, proteger los cambios de contraseña y la eliminación de la cuenta, detectar fallos</td><td>Interés legítimo (art. 6.1.f)</td><td>Resumen 24 h; dispositivos 90 días sin uso; códigos 1 h; errores 30 días</td></tr>
+<tr><td>Historial de consentimientos</td><td>Qué has aceptado o retirado y cuándo</td><td>Poder demostrarlo (art. 7.1 RGPD)</td><td>Obligación legal (art. 6.1.c)</td><td>Mientras exista la cuenta</td></tr>
+{TEL['es']}<tr><td>Soporte</td><td>Email y contenido de tu mensaje</td><td>Atender tus consultas</td><td>Ejecución del contrato / interés legítimo</td><td>1 año desde el cierre</td></tr>
 </table>
 <p>Para crear la cuenta son obligatorios el correo (o tu cuenta de Google o Apple), la fecha de nacimiento y aceptar los términos; sin ellos no se puede usar la cuenta. Todo lo demás es opcional.</p>
 
@@ -447,7 +535,13 @@ def textos(D, resaltar=False):
 <tr><td>Crash reports</td><td>Installation identifier, device model and OS, app version, technical crash report (without your name or email)</td><td>Detect and fix app crashes (Firebase Crashlytics)</td><td>Legitimate interest (art. 6(1)(f)): keeping the app working</td><td>90 days</td></tr>
 <tr><td>App usage statistics (optional)</td><td>Installation identifier, screens and actions (viewing a deal, saving, redeeming, sharing, searching —without what you type—), device model and OS</td><td>Know what is used in order to improve the app (Firebase Analytics)</td><td>Consent (art. 6(1)(a)): unticked box at sign-up or in Settings → Privacy and data; withdrawn the same way</td><td>14 months</td></tr>
 <tr><td>Marketing emails</td><td>Email</td><td>Send you Klendar news (never from third parties)</td><td>Specific consent ticked at sign-up; revocable in every email or in your profile</td><td>Until you withdraw it</td></tr>
-<tr><td>Support</td><td>Email and the content of your message</td><td>Answer your enquiries</td><td>Performance of a contract / legitimate interest</td><td>1 year after closure</td></tr>
+<tr><td>“Tell me when…” alerts</td><td>The area you choose (point and radius), categories, maximum price</td><td>Tell you when something matching appears</td><td>Performance of a contract</td><td>Until you delete the alert or the account</td></tr>
+<tr><td>Email summaries</td><td>Email, language, city, your favourites and plans</td><td>Send you the weekly summary with deals and plans from businesses (if you turn it on in Settings → Notifications; it starts off)</td><td>Consent; one-click unsubscribe in every email</td><td>Until you turn it off</td></tr>
+<tr><td>Messages from your favourites</td><td>That you have the business in your favourites or stamps on one of its cards</td><td>Let the business send you an alert (at most one a week per venue), reviewed by Klendar; the business doesn't see who receives it</td><td>Consent (notifications); turn it off in Settings → Notifications</td><td>Inbox, 90 days</td></tr>
+<tr><td>“You might like” suggestions</td><td>Your latest searches and the categories you look at most, stored on your phone</td><td>Suggest something when there's nothing nearby; they're sent with that request and not stored on our servers</td><td>Performance of a contract</td><td>On your phone, until you delete them or the account</td></tr>
+<tr><td>Security</td><td>Encrypted digest of your connection (changes daily, never the IP address), trusted devices for fingerprint or Face ID login, codes to confirm it's you, technical website errors (no personal data)</td><td>Stop abuse, log in without a password on your devices, protect password changes and account deletion, detect failures</td><td>Legitimate interest (art. 6(1)(f))</td><td>Digest 24 h; devices 90 days unused; codes 1 h; errors 30 days</td></tr>
+<tr><td>Consent history</td><td>What you have accepted or withdrawn and when</td><td>Being able to prove it (art. 7(1) GDPR)</td><td>Legal obligation (art. 6(1)(c))</td><td>While the account exists</td></tr>
+{TEL['en']}<tr><td>Support</td><td>Email and the content of your message</td><td>Answer your enquiries</td><td>Performance of a contract / legitimate interest</td><td>1 year after closure</td></tr>
 </table>
 <p>To create an account, your email (or your Google or Apple account), your date of birth and accepting the terms are required; without them the account cannot be used. Everything else is optional.</p>
 
@@ -515,7 +609,7 @@ def textos(D, resaltar=False):
 <ul>
   <li>Puedes publicar una reseña por negocio (editable). Debe basarse en tu experiencia real y respetar las <a href="/normas/">Normas de la comunidad</a>.</li>
   <li>Concedes a Klendar una licencia no exclusiva, gratuita y mundial para mostrar tus reseñas en la Plataforma mientras estén publicadas.</li>
-  <li>Podemos retirar contenido que incumpla las normas y suspender cuentas reincidentes, con la motivación y vías de recurso previstas en el Reglamento de Servicios Digitales (DSA).</li>
+  <li>Podemos retirar contenido que incumpla las normas y suspender cuentas reincidentes, con la motivación y vías de recurso previstas en el Reglamento de Servicios Digitales (DSA). Antes de publicarse, los textos pasan por una moderación automática que puede dejarlos en revisión hasta que los mire una persona; cómo funciona está en las <a href="/normas/">Normas de la comunidad</a>.</li>
 </ul>
 
 <h2>5. Uso permitido</h2>
@@ -555,7 +649,7 @@ def textos(D, resaltar=False):
 <ul>
   <li>You may post one review per business (editable). It must be based on your real experience and follow the <a href="/en/community-guidelines/">Community guidelines</a>.</li>
   <li>You grant Klendar a non-exclusive, royalty-free, worldwide licence to display your reviews on the Platform while they are published.</li>
-  <li>We may remove content that breaches the guidelines and suspend repeat offenders, with the statement of reasons and appeal routes provided by the Digital Services Act (DSA).</li>
+  <li>We may remove content that breaches the guidelines and suspend repeat offenders, with the statement of reasons and appeal routes provided by the Digital Services Act (DSA). Before going live, text goes through automatic moderation that may hold it for review until a person has looked at it; how it works is explained in the <a href="/en/community-guidelines/">Community guidelines</a>.</li>
 </ul>
 
 <h2>5. Acceptable use</h2>
@@ -582,11 +676,14 @@ def textos(D, resaltar=False):
 </ul>
 
 <h2>2. Servicio</h2>
-<p>Klendar permite al Negocio publicar ofertas flash y eventos, novedades, su carta y horarios, gestionar su ficha, validar canjes mediante QR y consultar estadísticas. Klendar no interviene en la venta ni cobra a las personas usuarias.</p>
+<p>Klendar permite al Negocio publicar ofertas flash y eventos (con reserva de plazas y lista de espera si lo activa), novedades, su carta y horarios, gestionar su ficha, ofrecer tarjetas de sellos y un regalo de cumpleaños, avisar a sus clientes (como mucho una vez por semana y local, con revisión de Klendar), validar canjes mediante QR y consultar estadísticas. Klendar no interviene en la venta ni cobra a las personas usuarias.</p>
 
 <h2>3. Obligaciones del Negocio</h2>
 <ul>
   <li><strong>Honrar las ofertas publicadas</strong> en las condiciones indicadas durante su vigencia y hasta agotar el aforo declarado.</li>
+  <li>Honrar los premios de sus tarjetas de sellos y el regalo de cumpleaños mientras los ofrezca.</li>
+  <li>Publicar el precio final que pagará la persona, con el IVA y cualquier otro cargo incluidos.</li>
+  <li>Si anuncia una rebaja, indicar como precio anterior el más bajo que haya aplicado en los 30 días anteriores.</li>
   <li>Publicar solo contenido veraz, lícito, del que tenga derechos (fotos, textos) y conforme a las <a href="/normas/">Normas de la comunidad</a>.</li>
   <li>Cumplir la normativa aplicable a su actividad, incluida la de publicidad de bebidas alcohólicas (Ley 34/1988 y normativa autonómica) y la protección de menores: los negocios de ocio nocturno o cuyas ofertas incluyan alcohol deben marcarse como "+18".</li>
   <li>Tratar los datos de las personas usuarias que conozca (nombre al canjear) solo para prestar el servicio, sin fines propios ni cesiones.</li>
@@ -605,7 +702,7 @@ def textos(D, resaltar=False):
 <p>El plan es mensual (o anual, si se elige así) y se renueva automáticamente, <strong>sin permanencia</strong>. El Negocio puede darse de baja en cualquier momento, sin penalización, escribiendo a <a href="mailto:{E}">{E}</a>: la baja tiene efecto al final del periodo ya pagado y no se cobra ningún periodo posterior. Klendar puede resolver el contrato por incumplimiento grave (no honrar ofertas, contenido ilícito, fraude en canjes) con comunicación motivada.</p>
 
 <h2>6. Moderación, suspensión y recurso</h2>
-<p>Klendar puede retirar contenido o suspender temporalmente la ficha ante denuncias fundadas o incumplimientos. El Negocio recibirá la motivación y podrá recurrir en 15 días a <a href="mailto:{E}">{E}</a> (Reglamento (UE) 2022/2065).</p>
+<p>Klendar puede retirar contenido o suspender temporalmente la ficha ante denuncias fundadas o incumplimientos. El Negocio recibirá la motivación y podrá pedir que se revise la decisión en un plazo de 6 meses escribiendo a <a href="mailto:{E}">{E}</a> (Reglamento (UE) 2022/2065). Los textos del Negocio pasan por una moderación automática que puede dejarlos en revisión hasta que los revise una persona de Klendar (ver «Cómo moderamos» en las <a href="/normas/">Normas de la comunidad</a>); la ficha y la carta siguen a la vista mientras tanto.</p>
 
 <h2>7. Propiedad intelectual y datos</h2>
 <p>El Negocio conserva la propiedad de sus contenidos y concede a Klendar licencia para mostrarlos en la Plataforma y en materiales promocionales de Klendar (con posibilidad de oponerse). Klendar y el Negocio actúan como responsables independientes respecto de los datos personales que cada uno trata.</p>
@@ -627,11 +724,14 @@ def textos(D, resaltar=False):
 </ul>
 
 <h2>2. Service</h2>
-<p>Klendar lets the Business publish flash deals and events, news, its menu and opening hours, manage its profile, validate redemptions via QR and view statistics. Klendar does not take part in the sale and does not charge users.</p>
+<p>Klendar lets the Business publish flash deals and events (with place reservations and a waiting list if it turns them on), news, its menu and opening hours, manage its profile, offer stamp cards and a birthday gift, message its customers (at most once a week per venue, reviewed by Klendar), validate redemptions via QR and view statistics. Klendar does not take part in the sale and does not charge users.</p>
 
 <h2>3. Obligations of the Business</h2>
 <ul>
   <li><strong>Honour published deals</strong> under the stated conditions for as long as they are valid and until the declared capacity runs out.</li>
+  <li>Honour the rewards on its stamp cards and the birthday gift for as long as it offers them.</li>
+  <li>Publish the final price the person will pay, including VAT and any other charges.</li>
+  <li>If it announces a price reduction, give as the previous price the lowest price it applied in the previous 30 days.</li>
   <li>Publish only accurate, lawful content it holds the rights to (photos, text), in line with the <a href="/en/community-guidelines/">Community guidelines</a>.</li>
   <li>Comply with the rules applicable to its activity, including those on advertising alcoholic beverages (Spanish Law 34/1988 and regional regulations) and the protection of minors: nightlife venues, or deals that include alcohol, must be marked "18+".</li>
   <li>Use the user data it learns (name on redemption) only to provide the service, with no purposes of its own and no disclosure.</li>
@@ -650,7 +750,7 @@ def textos(D, resaltar=False):
 <p>The plan is monthly (or yearly, if chosen) and renews automatically, <strong>with no minimum term</strong>. The Business may cancel at any time, without penalty, by writing to <a href="mailto:{E}">{E}</a>: cancellation takes effect at the end of the period already paid and no later period is charged. Klendar may terminate the contract for serious breach (not honouring deals, unlawful content, redemption fraud) with a reasoned notice.</p>
 
 <h2>6. Moderation, suspension and appeal</h2>
-<p>Klendar may remove content or temporarily suspend the profile in response to substantiated reports or breaches. The Business will receive the reasons and may appeal within 15 days to <a href="mailto:{E}">{E}</a> (Regulation (EU) 2022/2065).</p>
+<p>Klendar may remove content or temporarily suspend the profile in response to substantiated reports or breaches. The Business will receive the reasons and may ask for the decision to be reviewed within 6 months by writing to <a href="mailto:{E}">{E}</a> (Regulation (EU) 2022/2065). The Business's text goes through automatic moderation that may hold it for review until someone at Klendar has reviewed it (see “How we moderate” in the <a href="/en/community-guidelines/">Community guidelines</a>); the business page and menu stay visible in the meantime.</p>
 
 <h2>7. Intellectual property and data</h2>
 <p>The Business retains ownership of its content and grants Klendar a licence to display it on the Platform and in Klendar's promotional materials (with the option to object). Klendar and the Business act as independent controllers with regard to the personal data each of them processes.</p>
@@ -747,7 +847,7 @@ def textos(D, resaltar=False):
   <li>Revisamos las denuncias en un plazo máximo de <strong>72 horas</strong> (24 horas si afectan a menores o contenido claramente ilegal).</li>
   <li>Moderación automática: revisamos de forma automática los textos que se publican (publicaciones, novedades, reseñas y sus respuestas, mensajes a clientes, ficha y carta del negocio, regalo de cumpleaños y tarjetas de sellos) en busca de insultos, palabras malsonantes, contenido sexual explícito, odio o discriminación y amenazas, además de alcohol, tabaco y apuestas. Lo que se marca no se publica hasta que lo revisa una persona de Klendar, normalmente en menos de 24 horas; la ficha y la carta del negocio siguen a la vista mientras tanto. No se admite un nombre de perfil con insultos o palabras malsonantes.</li>
   <li>Las medidas posibles son: retirar el contenido, avisar, suspender temporalmente o dar de baja la cuenta o el negocio.</li>
-  <li>Quien publicó el contenido recibe una notificación motivada y puede recurrir en 15 días escribiendo a <a href="mailto:{E}">{E}</a>.</li>
+  <li>Quien publicó el contenido recibe una notificación motivada y puede pedirnos que lo revisemos en un plazo de 6 meses escribiendo a <a href="mailto:{E}">{E}</a>.</li>
   <li>Punto de contacto para autoridades, para quienes usan Klendar y para el Reglamento de Servicios Digitales (DSA): <a href="mailto:{E}">{E}</a> (en español o en inglés).</li>
 </ul>
 ''')
@@ -777,7 +877,7 @@ def textos(D, resaltar=False):
   <li>We review reports within <strong>72 hours</strong> at most (24 hours if they involve minors or clearly illegal content).</li>
   <li>Automatic moderation: we automatically check the text people publish (publications, news, reviews and replies, customer messages, business page and menu, birthday gift and stamp cards) for insults, swear words, explicit sexual content, hate or discrimination and threats, as well as alcohol, tobacco and gambling. Anything flagged isn't published until someone at Klendar has reviewed it, usually within 24 hours; the business page and menu stay visible in the meantime. Profile names with insults or swear words aren't accepted.</li>
   <li>Possible measures: remove the content, issue a warning, temporarily suspend, or close the account or business.</li>
-  <li>Whoever posted the content receives a reasoned notification and may appeal within 15 days by writing to <a href="mailto:{E}">{E}</a>.</li>
+  <li>Whoever posted the content receives a reasoned notification and can ask us to review it within 6 months by writing to <a href="mailto:{E}">{E}</a>.</li>
   <li>Point of contact for authorities, for people using Klendar and for the Digital Services Act (DSA): <a href="mailto:{E}">{E}</a> (in Spanish or English).</li>
 </ul>
 ''')
@@ -846,6 +946,8 @@ def textos(D, resaltar=False):
 <p>Si ves algo ilegal o que incumple las <a href="/normas/">Normas de la comunidad</a>, pulsa «Denunciar» en ese negocio, publicación, reseña o novedad, o usa el <a href="/app/#/denunciar">formulario de denuncias</a> (también en el pie de cada página: «Denunciar contenido ilegal»). No hace falta tener cuenta. Te confirmamos que la hemos recibido y te contamos qué hemos decidido y por qué. Si alguien está en peligro ahora mismo, llama al 112.</p>
 <h3>No recibo notificaciones</h3>
 <p>Revisa Cuenta → Ajustes → Notificaciones y los permisos de notificaciones del sistema. "Cerca de ti" solo avisa de ofertas flash dentro del radio elegido y como máximo 3 veces al día.</p>
+<h3>No puedo entrar en mi cuenta</h3>
+<p>En «Entrar», pulsa «¿Has olvidado la contraseña?» y te mandamos un enlace para crear una nueva, o elige «Entrar con un código por correo» y entra sin contraseña. Si creaste la cuenta con Google o con Apple, entra con ese mismo botón. Si ya no puedes abrir ese correo, escríbenos a <a href="mailto:{E}">{E}</a> desde otra dirección y dinos con qué correo te registraste.</p>
 <h3>Soy un negocio y quiero darme de alta</h3>
 <p>En la app: Cuenta → «¿Quieres registrar tu negocio?», o en la web desde el <a href="/panel/">panel</a>. Lo revisamos en 24-48 h. También puedes escribirnos.</p>
 ''')
@@ -863,7 +965,7 @@ def render(lang, path, title, desc, body, es_path=None):
     return (head(t, path, f'{title} · Klendar', desc)
             + '<main class="doc">\n<h1>' + title + '</h1>\n'
             + f'<div class="meta">{meta}</div>\n' + courtesy + todo + '\n'
-            + body + '\n</main>\n' + footer(t))
+            + body + historial((es_path or path).strip('/'), lang) + '\n</main>\n' + footer(t))
 
 
 def parar_si_faltan_datos(D, publicar):
@@ -934,7 +1036,7 @@ def vista_previa(dest=os.path.join('tools', 'legal_preview')):
             meta = META[lang].format(date=fecha(s, lang), v=VERSION)
             cuerpo = body.replace('href="/', 'href="https://klendar.app/')
             secciones.append(f'<section class="doc" id="{ancla}" lang="{lang}">\n<h1>{title}</h1>\n'
-                             f'<div class="meta">{meta} · {url}</div>\n{cuerpo}\n</section>')
+                             f'<div class="meta">{meta} · {url}</div>\n{cuerpo}{historial(s, lang)}\n</section>')
     doc = f'''<!doctype html>
 <html lang="es">
 <head>

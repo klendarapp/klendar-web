@@ -195,6 +195,8 @@ SUPPORT_EN = ('Support', 'Klendar help: how to redeem a deal, list your business
 <p>If you see something illegal or that breaks the <a href="/en/community-guidelines/">Community guidelines</a>, tap “Report” on that business, publication, review or news post, or use the <a href="/app/?lang=en#/denunciar">report form</a> (also in the footer of every page: “Report illegal content”). You don't need an account. We'll confirm we've received it and tell you what we've decided and why. If someone is in danger right now, call 112.</p>
 <h3>I don't get notifications</h3>
 <p>Check Account → Settings → Notifications and the system notification permission. “Nearby” only alerts you about flash offers within your chosen radius, at most 3 times a day.</p>
+<h3>I can't log in to my account</h3>
+<p>On “Log in”, tap “Forgot your password?” and we'll send you a link to create a new one, or choose “Log in with an email code” and get in without a password. If you created the account with Google or Apple, log in with that same button. If you can no longer open that email, write to <a href="mailto:info@klendar.app">info@klendar.app</a> from another address and tell us which email you signed up with.</p>
 <h3>I run a business and want to sign up</h3>
 <p>In the app: Account → “Want to register your business?”, or on the web from the <a href="/panel/">dashboard</a>. We review it within 24–48 h. You can also email us.</p>
 <h2>Legal documents</h2>

@@ -140,8 +140,10 @@
       return (window.supabase ? Promise.resolve() : carga('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js',
           'sha384-Rj26LVGvoeRVR6+mwQmFfcR3QOBEwT+ZmuCWpuiqeTzJpCs0ER4ITAWGb4Hiy3Ok'))
         .then(function () {
-          // El mismo cliente que visita.js si ya lo ha creado (uno por página).
-          var sb = window.klendarSb || (window.klendarSb = window.supabase.createClient(env.url, env.key));
+          // El mismo cliente que visita.js si ya lo ha creado (uno por página,
+          // con las mismas opciones): sin leer nada de la dirección.
+          var sb = window.klendarSb || (window.klendarSb = window.supabase.createClient(env.url, env.key,
+            { auth: { flowType: 'pkce', detectSessionInUrl: false } }));
           return sb.auth.getSession().then(function (r) {
             if (!r.data || !r.data.session) return;
             if (ficha) social(sb);

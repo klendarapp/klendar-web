@@ -95,9 +95,12 @@
     if (!caja.parentNode) document.body.appendChild(caja);
   }
 
-  // Un solo cliente por página (amigos.js usa el mismo): dos sobre la misma
-  // sesión se pisan al renovar el token.
-  var sb = window.klendarSb || (window.klendarSb = window.supabase.createClient(window.KLENDAR_ENV.url, window.KLENDAR_ENV.key));
+  // Un solo cliente por página (amigos.js usa el mismo y con las mismas
+  // opciones): dos sobre la misma sesión se pisan al renovar el token. Esta
+  // página no recibe vueltas de acceso: no lee nada de la dirección (así un
+  // enlace con `#access_token=…` de otra persona no cambia tu sesión).
+  var sb = window.klendarSb || (window.klendarSb = window.supabase.createClient(window.KLENDAR_ENV.url, window.KLENDAR_ENV.key,
+    { auth: { flowType: 'pkce', detectSessionInUrl: false } }));
 
   function dondeEstoy() {
     return new Promise(function (ok) {

@@ -640,7 +640,7 @@ export async function businessPage(param, lang, search = '') {
   const conVisita = /^[A-Za-z0-9_-]{16}$/.test(visita)
     ? `<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js" integrity="sha384-Rj26LVGvoeRVR6+mwQmFfcR3QOBEwT+ZmuCWpuiqeTzJpCs0ER4ITAWGb4Hiy3Ok" crossorigin="anonymous" defer></script>
 <script src="/config.js?v=3" defer></script>
-<script src="/assets/visita.js?v=2" defer data-token="${esc(visita)}" data-lang="${en ? 'en' : 'es'}"></script>`
+<script src="/assets/visita.js?v=3" defer data-token="${esc(visita)}" data-lang="${en ? 'en' : 'es'}"></script>`
     : '';
   return html(publicPage({
     lang, path, body, title: conCiudad ? `${b.name} · ${b.city}` : b.name, description, image: b.cover || b.logo,
