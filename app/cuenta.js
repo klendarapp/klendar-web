@@ -754,12 +754,39 @@ RUTAS.sugerencias = async () => {
   });
 };
 
+// ── Tu nombre público ─────────────────────────────────────────────────────
+// Sin nombre, en las reseñas y para tus amigos sales como «Usuario de
+// Klendar» (antes salía lo de antes de la @ de tu correo). Al escribir una
+// reseña o compartir tu enlace de amigo se sugiere ponerlo.
+
+/** El nombre que ven los demás; `null` si aún no tiene; `undefined` si no se
+ * ha podido mirar (entonces no se sugiere nada). */
+async function nombrePublico() {
+  try {
+    const fila = await tabla(sb.from('profiles').select('display_name').eq('id', YO.id).maybeSingle());
+    return String(fila?.display_name || '').trim() || null;
+  } catch { return undefined; }
+}
+
+async function guardaNombrePublico(nombre) {
+  const n = String(nombre || '').trim().slice(0, 40);
+  if (!n) return;
+  await tabla(sb.from('profiles').update({ display_name: n }).eq('id', YO.id));
+  // Como «Editar perfil»: también en la cuenta (lo que lee la cabecera).
+  await sb.auth.updateUser({ data: { display_name: n } }).catch(() => {});
+}
+
+const campoNombrePublico = () => `
+      <label>${esc(t('Tu nombre'))} <small>${esc(t('(opcional) Sin nombre, sales como «Usuario de Klendar». Nunca enseñamos tu correo.'))}</small>
+        <input name="nombre" maxlength="40" autocomplete="name"></label>`;
+
 // ── Reseñas ───────────────────────────────────────────────────────────────
 RUTAS.opinar = async ([id]) => {
   if (!exigeSesion(`opinar/${id}`)) return;
-  const [fila, resenas] = await Promise.all([
+  const [fila, resenas, miNombre] = await Promise.all([
     llamar('business_profile', { p_id: id }),
     llamar('business_reviews', { p_id: id, p_limit: 50 }),
+    nombrePublico(),
   ]);
   const b = Array.isArray(fila) ? fila[0] : fila;
   if (!b) { pinta(`<p class="empty">${esc(t('Ese sitio ya no está en Klendar.'))}</p>`); return; }
@@ -782,6 +809,7 @@ RUTAS.opinar = async ([id]) => {
         <label class="pill">${esc(mia.photo_url ? t('Cambiar la foto') : t('Añadir una foto'))}<input type="file" name="foto" accept="image/*" hidden></label>
         ${mia.photo_url ? `<button type="button" class="linkbtn" id="quitaFoto">${esc(t('Quitar la foto'))}</button>` : ''}
       </div>
+      ${miNombre === null ? campoNombrePublico() : ''}
       <p class="muted">${esc(t('Tu nombre y tu foto de perfil salen junto a la reseña. Sigue las normas de la comunidad: sin insultos ni datos de nadie.'))}</p>
       <p class="err" id="err" role="alert"></p>
       <button class="pill accent" id="publicar">${esc(t('Publicar'))}</button>
@@ -804,6 +832,7 @@ RUTAS.opinar = async ([id]) => {
     if (!nota) { $('#err').textContent = t('Elige de una a cinco estrellas.'); return; }
     $('#err').textContent = '';
     ocupado($('#publicar'), async () => {
+      if (f.nombre?.value.trim()) await guardaNombrePublico(f.nombre.value);
       const foto = f.foto.files[0] ? await subeFoto('reviews', f.foto.files[0], KFotos.TAM.resena) : (quitar ? '' : null);
       await llamar('upsert_review', {
         p_business_id: id, p_rating: nota, p_comment: f.texto.value.trim() || null, p_photo_url: foto,
@@ -959,8 +988,7 @@ RUTAS['ultimo-paso'] = async (_p, params) => {
   if (!exigeSesion('ultimo-paso')) return;
   const siguiente = params.get('siguiente') || '';
   // Solo se vuelve a sitios de esta misma web (nunca a una dirección de fuera).
-  const volver = new URLSearchParams(location.search).get('volver');
-  const volverSeguro = volver && /^\/(panel|app)\//.test(volver) ? volver : '';
+  const volverSeguro = rutaInterna(new URLSearchParams(location.search).get('volver'));
   if (!(await faltaConsentimiento())) {
     if (volverSeguro) { location.href = volverSeguro; return; }
     vuelve(siguiente === 'ultimo-paso' ? '' : siguiente);

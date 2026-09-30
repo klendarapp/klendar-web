@@ -169,6 +169,15 @@ sb.auth.onAuthStateChange((ev, s) => {
   // El enlace de «he olvidado la contraseña» abre sesión y trae aquí; Supabase
   // se come la ruta (#/nueva-clave), así que se lleva a mano.
   if (ev === 'PASSWORD_RECOVERY') location.hash = '#/nueva-clave';
+  // Los códigos que el panel guardó sin conexión eran de esta sesión.
+  if (ev === 'SIGNED_OUT') {
+    try {
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith('klendar.cola.')) localStorage.removeItem(k);
+      }
+    } catch { /* sin permisos */ }
+  }
 });
 
 function exigeSesion(ruta) {
@@ -324,10 +333,30 @@ const vuelve = (siguiente) => {
 /** Hay una sola pantalla de entrar para todo (también para el panel de
  * negocios): quien llega desde el panel trae `?destino=/panel/…` y vuelve
  * allí al entrar. Solo rutas propias. */
-const destinoTrasEntrar = () => {
-  const d = new URLSearchParams(location.search).get('destino') || '';
-  return /^\/(panel|app)\//.test(d) ? d : '';
-};
+const destinoTrasEntrar = () => rutaInterna(new URLSearchParams(location.search).get('destino'));
+
+/** Una dirección de vuelta (`?destino=`, `?volver=`) de esta misma web y sin
+ * datos: `/panel/` o `/app/`, como mucho `?lang=`/`?alta=` y una ruta del
+ * hash (`#/validar`, `#/publicaciones/<id>`, `?biz=<id>`). Otra web, `//…`,
+ * tokens o correos en el hash: fuera. '' = no hay a dónde volver. */
+function rutaInterna(v) {
+  const s = String(v || '');
+  if (!/^\/(panel|app)\//.test(s)) return '';
+  let u;
+  try { u = new URL(s, location.origin); } catch { return ''; }
+  if (u.origin !== location.origin || !/^\/(panel|app)\/$/.test(u.pathname)) return '';
+  const q = new URLSearchParams();
+  for (const k of ['lang', 'alta']) {
+    const x = u.searchParams.get(k);
+    if (x != null && /^[a-z0-9]{1,5}$/i.test(x)) q.set(k, x);
+  }
+  const [h, hq] = u.hash.split('?');
+  const biz = new URLSearchParams(hq || '').get('biz');
+  const hash = /^#\/[a-z0-9-]{1,30}(\/[A-Za-z0-9-]{1,40}){0,2}$/.test(h || '')
+    ? h + (biz && /^[0-9a-f-]{36}$/i.test(biz) ? `?biz=${biz}` : '')
+    : '';
+  return `${u.pathname}${q.toString() ? `?${q}` : ''}${hash}`;
+}
 const vieneDelPanel = () => destinoTrasEntrar().startsWith('/panel/');
 const trasEntrar = (siguiente) => {
   const d = destinoTrasEntrar();
@@ -352,7 +381,8 @@ const fila = ({ href, icono, titulo, detalle, fuera = false, id = '' }) => `
 // la cuenta) vive en Ajustes.
 RUTAS[''] = async () => {
   if (!YO) return RUTAS.entrar([], new URLSearchParams());
-  const nombre = YO.user_metadata?.display_name || (YO.email || '').split('@')[0];
+  // Sin nombre, lo mismo que ven los demás (nunca el correo).
+  const nombre = (YO.user_metadata?.display_name || '').trim() || t('Usuario de Klendar');
   const foto = YO.user_metadata?.avatar_url;
   const [negocios, invitaciones] = await Promise.all([
     llamar('my_businesses', {}).catch(() => []),
@@ -674,7 +704,7 @@ RUTAS.movil = async (_p, params) => {
   const siguiente = params.get('siguiente') || '';
   // `destino` en la ruta: enlaces antiguos del panel (#/movil?destino=…).
   const pedido = params.get('destino') || '';
-  const destino = /^\/(panel|app)\//.test(pedido) ? pedido : destinoTrasEntrar();
+  const destino = rutaInterna(pedido) || destinoTrasEntrar();
   // Con el SMS apagado en Supabase, un enlace antiguo a #/movil llevaría a un
   // formulario que siempre falla: mejor la pantalla de entrar.
   if (!(await proveedores()).phone) return RUTAS.entrar(_p, params);
@@ -906,8 +936,8 @@ RUTAS['nueva-clave'] = async (_p, params) => {
       if (error) { $('#err').textContent = errAuth(error); return; }
       toast(t(siguiente ? 'Contraseña guardada' : 'Contraseña actualizada'));
       // Desde el panel de negocios se vuelve al panel.
-      const destino = new URLSearchParams(location.search).get('destino') || '';
-      if (/^\/[a-z]/.test(destino)) { location.href = destino; return; }
+      const destino = rutaInterna(new URLSearchParams(location.search).get('destino'));
+      if (destino) { location.href = destino; return; }
       vuelve(siguiente);
     });
   };

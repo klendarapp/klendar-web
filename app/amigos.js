@@ -24,8 +24,8 @@ const UUID_AMIGOS = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{1
  * servidor de pruebas, para poder abrirlo). */
 const enlaceDeAmigo = (code) => `${location.origin.replace('://www.', '://')}/amigo/${code}`;
 
-/** Sin nombre en el perfil: «Alguien». */
-const nombreDeAmigo = (p) => (p && p.name) || t('Alguien');
+/** Sin nombre en el perfil: «Usuario de Klendar» (nunca el correo). */
+const nombreDeAmigo = (p) => (p && p.name) || t('Usuario de Klendar');
 
 /** La foto de alguien, o su inicial si no tiene. `clase`: tamaño. */
 function avatarDeAmigo(p, clase = '') {
@@ -65,10 +65,11 @@ async function compartirOCopiar(texto, copia) {
 // ── Amigos: tu enlace, tu QR y tu lista ───────────────────────────────────
 RUTAS.amigos = async () => {
   if (!exigeSesion('amigos')) return;
-  const [enlace, lista, cons] = await Promise.all([
+  const [enlace, lista, cons, miNombre] = await Promise.all([
     llamar('my_friend_link', {}),
     llamar('my_friends', {}),
     llamar('my_consents', {}).catch(() => null),
+    nombrePublico(),
   ]);
   const amigos = lista?.friends || [];
   const tope = lista?.limit || 500;
@@ -92,6 +93,11 @@ RUTAS.amigos = async () => {
         </div>
         <p><button type="button" class="linkbtn" id="cambiar-enlace">${esc(t('Cambiar el enlace'))}</button></p>
       </div>
+      ${miNombre === null ? `<form class="formu nombre-publico" id="f-nombre" novalidate>
+        <p class="muted">${esc(t('Quien abra tu enlace verá tu nombre. Sin él, sales como «Usuario de Klendar».'))}</p>
+        ${campoNombrePublico()}
+        <button class="pill" id="g-nombre">${esc(t('Guardar'))}</button>
+      </form>` : ''}
       <p class="muted aviso-planes">${ic(comparte ? 'visibility' : 'visibility_off')}
         <span>${esc(t(comparte
           ? 'Tus amigos ven a qué planes vas. Puedes apagarlo en Ajustes → Privacidad.'
@@ -126,6 +132,20 @@ RUTAS.amigos = async () => {
     $('#qr-amigo').innerHTML = qr.createSvgTag({ cellSize: 6, margin: 2, scalable: true });
   };
   pintaEnlace(enlace.code);
+
+  // Sin nombre: se pone aquí mismo, antes de mandar el enlace.
+  const fn = $('#f-nombre');
+  if (fn) {
+    fn.addEventListener('submit', (ev) => {
+      ev.preventDefault();
+      if (!fn.nombre.value.trim()) { fn.nombre.focus(); return; }
+      ocupado($('#g-nombre'), async () => {
+        await guardaNombrePublico(fn.nombre.value);
+        fn.remove();
+        toast(t('Nombre guardado'));
+      });
+    });
+  }
 
   const copia = async () => {
     try { await navigator.clipboard.writeText(url); toast(t('Enlace copiado')); } catch { toast(t('No se ha podido copiar'), true); }

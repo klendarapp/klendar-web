@@ -228,3 +228,13 @@ a.link { color: var(--ink); font-weight: 700; text-decoration: underline; text-u
 
 /* Botones seguidos en un párrafo: con hueco también al saltar de línea. */
 p:has(> .btn + .btn) { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+/* Verificación en dos pasos: QR sobre blanco (también en modo oscuro, o las
+   apps de códigos no lo leen), clave en grupos de 4 y el código grande. */
+.mfa-qr { display: block; margin: 4px auto; width: 200px; height: 200px; padding: 10px; background: #fff; border-radius: 16px; box-sizing: content-box; }
+.mfa-clave { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.mfa-clave code { font-size: 14px; letter-spacing: .04em; word-break: break-all; color: var(--ink); }
+.mfa-pasos { margin: 0; padding-left: 20px; display: grid; gap: 4px; font-size: 14px; }
+input.mfa-code { font-size: 22px; letter-spacing: .3em; text-align: center; font-variant-numeric: tabular-nums; }
+#mfa .help p { margin: 6px 0 0; font-size: 13px; }
+#mfa div.f { display: grid; gap: 5px; font-size: 13px; font-weight: 600; color: var(--ink-2); }

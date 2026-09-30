@@ -29,7 +29,7 @@
   var cuenta = en ? '/app/?lang=en' : '/app/';
 
   var T = en ? {
-    someone: 'Someone',
+    someone: 'Klendar user',
     one: function (a) { return a + ' is going'; },
     two: function (a, b) { return a + ' and ' + b + ' are going'; },
     many: function (a, n) { return a + ' and ' + n + ' more friends are going'; },
@@ -47,7 +47,7 @@
     favOn: 'Remove from favourites', planOn: 'Remove from Plans',
     block: function (a) { return 'Block ' + a; },
   } : {
-    someone: 'Alguien',
+    someone: 'Usuario de Klendar',
     one: function (a) { return a + ' va'; },
     two: function (a, b) { return a + ' y ' + b + ' van'; },
     many: function (a, n) { return a + ' y ' + n + ' amigos más van'; },

@@ -10,7 +10,7 @@
 
 import { esc, fmtWhen, html, isUuid, rpc, rpcAll, rows, supabasePublic } from './page.js';
 import KZ from '../../assets/zona.js';
-import {
+import { decodeSeg,
   agendaBase, BASE, benefit, bizPath, breadcrumbLd, cityLinks, citySeg, datosDeNegocios, exploreBase,
   firstPhoto, fmtEnd, fmtLong, imgGaleria, isSlug, isVideo, ldScript, listingLd, media, money, offerCard, openInApp,
   priorPrice, publicPage, slugDe, todayBase, zonaDe,
@@ -407,7 +407,7 @@ export async function businessPage(param, lang, search = '') {
         hours: 'Opening hours', closed: 'Closed', today: 'today',
         days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
         news: 'News', reviews: 'Reviews', write: 'Write a review', noReviews: 'No reviews yet. Been here? Be the first.',
-        user: 'User', report: 'Report', block: 'Block', reportBiz: 'Report this business', menuPhotos: 'Photos of the menu', menuPdf: 'Menu (PDF)',
+        user: 'Klendar user', report: 'Report', block: 'Block', reportBiz: 'Report this business', menuPhotos: 'Photos of the menu', menuPdf: 'Menu (PDF)',
         replyFrom: (n) => `Reply from ${n}`,
         closedToday: 'Closed today', closedUntil: (d) => `Closed until ${d}`,
         closingDay: (d) => `Closing on ${d}`, closing: (a, b) => `Closing from ${a} to ${b}`,
@@ -436,7 +436,7 @@ export async function businessPage(param, lang, search = '') {
         hours: 'Horario', closed: 'Cerrado', today: 'hoy',
         days: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'],
         news: 'Novedades', reviews: 'Reseñas', write: 'Escribir una reseña', noReviews: 'Todavía no hay reseñas. ¿Has estado? Sé la primera persona.',
-        user: 'Usuario', report: 'Denunciar', block: 'Bloquear', reportBiz: 'Denunciar este negocio', menuPhotos: 'Fotos de la carta', menuPdf: 'Carta (PDF)',
+        user: 'Usuario de Klendar', report: 'Denunciar', block: 'Bloquear', reportBiz: 'Denunciar este negocio', menuPhotos: 'Fotos de la carta', menuPdf: 'Carta (PDF)',
         replyFrom: (n) => `Respuesta de ${n}`,
         closedToday: 'Cerrado hoy', closedUntil: (d) => `Cerrado hasta el ${d}`,
         closingDay: (d) => `Cerrará el ${d}`, closing: (a, b) => `Cerrará del ${a} al ${b}`,
@@ -647,7 +647,10 @@ const PRETTY = (s) => String(s || '').replace(/(^|[\s-])(\p{L})/gu, (m, a, b) =>
 
 export async function agendaPage(rawCity, lang) {
   const en = lang === 'en';
-  const raw = decodeURIComponent(rawCity || '').replace(/[/]+$/, '');
+  // Mal codificada: «esa ciudad no está» (404), no un 500.
+  const dec = decodeSeg(rawCity);
+  if (dec == null) return notFound(lang, `${agendaBase(lang)}/`, 'c');
+  const raw = dec.replace(/[/]+$/, '');
   const path = `${agendaBase(lang)}/${citySeg(raw)}/`;
   if (!raw || raw.length > 60) return notFound(lang, path, 'c');
 
@@ -767,7 +770,9 @@ function placesBlock(negocios, lang, titulo) {
  */
 export async function todayPage(rawCity, lang) {
   const en = lang === 'en';
-  const raw = decodeURIComponent(rawCity || '').replace(/[/]+$/, '');
+  const dec = decodeSeg(rawCity);
+  if (dec == null) return notFound(lang, `${todayBase(lang)}/`, 'c');
+  const raw = dec.replace(/[/]+$/, '');
   const path = `${todayBase(lang)}/${citySeg(raw)}/`;
   if (!raw || raw.length > 60) return notFound(lang, path, 'c');
 

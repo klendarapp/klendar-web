@@ -98,6 +98,9 @@ async function rpc(fn, args = {}) {
     // Suspendida y «no es administradora» llegan con el mismo código (42501):
     // se distinguen por el mensaje.
     if (msg.includes('account_suspended')) throw new Error(RPC_ERRORS.account_suspended);
+    // La base pide el código (se ha vuelto obligatorio con el panel abierto):
+    // se enseña la pantalla del código.
+    if (msg.includes('mfa_required')) { setTimeout(boot, 0); throw new Error('Escribe el código de tu app de verificación para seguir.'); }
     if (msg.includes('not_admin')) throw new Error('Esta cuenta no es administradora.');
     if (/auth_required|JWT/.test(msg)) throw new Error(window.KL_AUTH_TEXT('sesion', I18N.lang));
     if (/Failed to fetch|NetworkError|Load failed/i.test(msg)) throw new Error(window.KL_AUTH_TEXT('sinRed', I18N.lang));
@@ -221,10 +224,12 @@ async function boot() {
   if (!session) return showLogin();
   ME = session.user;
   $('#who').textContent = ME.email;
-  $('#login').hidden = true; $('#app').hidden = false;
+  // Antes del panel, la verificación en dos pasos (más abajo).
+  if (!await puertaMfa()) return;
+  $('#login').hidden = true; $('#mfa').hidden = true; $('#app').hidden = false;
   route();
 }
-function showLogin() { $('#login').hidden = false; $('#app').hidden = true; ME = null; }
+function showLogin() { $('#login').hidden = false; $('#app').hidden = true; $('#mfa').hidden = true; ME = null; }
 // Entrar: los mismos mensajes que la app, «Tu cuenta» y el panel
 // (assets/auth-errors.js).
 const errAuth = (error) => window.KL_AUTH_ERROR(error, I18N.lang);
@@ -266,6 +271,198 @@ sb.auth.onAuthStateChange((ev) => {
   if (ev === 'PASSWORD_RECOVERY') location.href = '/app/?destino=%2Fadmin%2F#/nueva-clave';
 });
 $('#menuBtn').onclick = () => $('#side').classList.toggle('open');
+
+// ── Verificación en dos pasos (TOTP) ────────────────────────────────────────
+// Supabase Auth, un factor TOTP por persona (Google Authenticator, 1Password,
+// Authy…). Con contraseña la sesión es «aal1»; con el código, «aal2». La base
+// solo deja administrar con aal2 si `app_config.admin_require_mfa` es true
+// (`admin_mfa_status` lo dice). Aunque no lo sea, a quien no lo tiene se le
+// ofrece (recomendado) y a quien lo tiene se le pide el código. El aal2 dura
+// lo que la sesión de Supabase en este navegador: al cerrar sesión, otra vez.
+const MFA_LUEGO = 'kl_admin_mfa_luego'; // «Ahora no», hasta cerrar la pestaña
+let MFA = null;
+
+async function mfaEstado() {
+  const [{ data: st, error }, { data: f, error: e2 }, { data: aal }] = await Promise.all([
+    sb.rpc('admin_mfa_status'), sb.auth.mfa.listFactors(), sb.auth.mfa.getAuthenticatorAssuranceLevel()]);
+  if (error || e2 || !st) return null;
+  return {
+    ...st,
+    factor: (f?.totp || []).find((x) => x.status === 'verified') || null,
+    aMedias: (f?.all || []).filter((x) => x.factor_type === 'totp' && x.status !== 'verified'),
+    nivel: aal?.currentLevel || st.aal || 'aal1',
+  };
+}
+
+/** true: al panel; false: se está enseñando una pantalla de la verificación. */
+async function puertaMfa() {
+  try { MFA = await mfaEstado(); } catch { MFA = null; }
+  // Sin red o sin ser administradora: el panel lo explica como siempre.
+  if (!MFA || !MFA.admin) return true;
+  if (MFA.factor && MFA.nivel !== 'aal2') { pantallaCodigo(MFA.factor); return false; }
+  if (!MFA.factor) {
+    let luego = false;
+    try { luego = sessionStorage.getItem(MFA_LUEGO) === '1'; } catch { /* sin almacenamiento */ }
+    if (MFA.required || !luego) { pantallaAlta({ obligatorio: MFA.required }); return false; }
+  }
+  return true;
+}
+
+function mfaError(e) {
+  const c = e?.code || '';
+  const m = e?.message || '';
+  let t;
+  if (c === 'mfa_verification_failed' || /invalid totp|invalid code/i.test(m)) t = 'Código incorrecto. Escribe el que enseña ahora la app.';
+  else if (c === 'mfa_challenge_expired') t = 'El código ha caducado. Escribe el nuevo.';
+  else if (/rate.?limit|too many/i.test(c + m) || c === 'mfa_verification_rejected') t = 'Demasiados intentos. Espera un minuto y vuelve a probar.';
+  else if (/not_enabled/.test(c)) t = 'La verificación en dos pasos no está activada en Supabase. Avisa a soporte.';
+  else if (/Failed to fetch|NetworkError|Load failed/i.test(m)) return window.KL_AUTH_TEXT('sinRed', I18N.lang);
+  else { console.error(e); t = 'No se ha podido completar. Prueba otra vez.'; }
+  return I18N.t(t);
+}
+
+function pantallaMfa(html) {
+  const box = $('#mfa');
+  box.innerHTML = `<a class="brand" href="/"><img src="/assets/symbol.png" alt="" width="30" height="30"> Klendar <small class="muted">· admin</small></a>
+    ${html}
+    <button class="btn sm ghost" id="mfaSalir" type="button">Cerrar sesión</button>
+    <span class="lang" id="langMfa" aria-label="Idioma / Language"></span>`;
+  $('#login').hidden = true; $('#app').hidden = true; box.hidden = false;
+  I18N.pickers(['#langMfa']);
+  $('#mfaSalir').onclick = async () => { await sb.auth.signOut({ scope: 'local' }); showLogin(); };
+  I18N.translate(box);
+  return box;
+}
+
+/** El campo del código: solo cifras y, al llegar a 6, adelante. */
+function campoCodigo(enviar) {
+  const i = $('#mfaCode');
+  i.oninput = () => { i.value = i.value.replace(/\D/g, '').slice(0, 6); if (i.value.length === 6) enviar(); };
+  i.onkeydown = (e) => { if (e.key === 'Enter') enviar(); };
+  i.focus();
+}
+const INPUT_CODIGO = '<label class="f"><span>Código de 6 cifras</span><input id="mfaCode" class="mfa-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456"></label><div id="mfaErr" class="err" role="alert"></div>';
+
+function alPanel() {
+  $('#mfa').hidden = true; $('#login').hidden = true; $('#app').hidden = false;
+  route();
+}
+
+function pantallaCodigo(factor) {
+  pantallaMfa(`<h2 style="margin:0">Verificación en dos pasos</h2>
+    <p class="muted" style="margin:0">Escribe el código de 6 cifras de tu app de verificación (Google Authenticator, 1Password, Authy…).</p>
+    ${INPUT_CODIGO}
+    <button class="btn primary" id="mfaOk" type="button">Verificar</button>
+    <p class="muted small" style="margin:0">En este navegador no te lo volveremos a pedir hasta que cierres sesión.</p>
+    <details class="help"><summary>¿Has perdido el móvil?</summary><p>Pide a otro administrador que quite tu factor en Supabase (Authentication → Users → tu cuenta → quitar el factor MFA). Al volver a entrar podrás configurarlo en el móvil nuevo.</p></details>`);
+  const enviar = () => esperando($('#mfaOk'), async () => {
+    const code = $('#mfaCode').value.trim();
+    $('#mfaErr').textContent = '';
+    if (!/^\d{6}$/.test(code)) { $('#mfaErr').textContent = I18N.t('Son 6 cifras.'); return; }
+    const { error } = await sb.auth.mfa.challengeAndVerify({ factorId: factor.id, code });
+    if (error) { $('#mfaErr').textContent = mfaError(error); $('#mfaCode').select(); return; }
+    MFA = { ...MFA, nivel: 'aal2' };
+    alPanel();
+  });
+  $('#mfaOk').onclick = enviar;
+  campoCodigo(enviar);
+}
+
+/** Alta del factor: QR, clave para escribirla a mano y el primer código. */
+// `reemplaza`: el factor de antes (cambio de móvil), que se quita solo cuando
+// el nuevo ya funciona; si se cancela, se queda el de antes.
+async function pantallaAlta({ obligatorio = false, cancelar = false, reemplaza = null } = {}) {
+  pantallaMfa(`<h2 style="margin:0">Protege la administración</h2><div class="loading">Cargando…</div>`);
+  // Un alta a medias de otra vez (se cerró la pestaña con el QR delante):
+  // fuera, o Supabase no deja crear otra con el mismo nombre.
+  const { data: fs } = await sb.auth.mfa.listFactors();
+  for (const f of (fs?.all || []).filter((x) => x.factor_type === 'totp' && x.status !== 'verified')) {
+    await sb.auth.mfa.unenroll({ factorId: f.id });
+  }
+  // El nombre, distinto cada vez: con un cambio de móvil conviven un momento.
+  const nombre = `Klendar admin · ${aInputMadrid(new Date()).replace('T', ' ')}`;
+  const { data, error } = await sb.auth.mfa.enroll({ factorType: 'totp', issuer: 'Klendar admin', friendlyName: nombre });
+  if (error) {
+    pantallaMfa(`<h2 style="margin:0">Protege la administración</h2><p class="err">${esc(mfaError(error))}</p>
+      <button class="btn" id="mfaOtra" type="button">Reintentar</button>`);
+    $('#mfaOtra').onclick = () => pantallaAlta({ obligatorio, cancelar, reemplaza });
+    return;
+  }
+  const clave = data.totp.secret;
+  pantallaMfa(`<h2 style="margin:0">${reemplaza ? 'Cambiar de móvil o de app' : 'Protege la administración'}</h2>
+    <p class="muted" style="margin:0">${reemplaza ? 'Añade Klendar en la app nueva. El código de antes sigue valiendo hasta que escribas aquí el primero de la nueva.' : obligatorio ? 'Para administrar Klendar hace falta la verificación en dos pasos: además de la contraseña, un código que cambia cada 30 segundos en tu móvil.' : 'Recomendado: con la verificación en dos pasos, además de la contraseña hace falta un código que cambia cada 30 segundos en tu móvil. Así, una contraseña robada no basta para entrar en el panel.'}</p>
+    <ol class="mfa-pasos">
+      <li>Abre Google Authenticator, 1Password, Authy o la app de códigos que uses.</li>
+      <li>Escanea este código QR (o añade la clave a mano).</li>
+      <li>Escribe aquí el código de 6 cifras que te enseña.</li>
+    </ol>
+    <img class="mfa-qr" id="mfaQr" alt="Código QR para tu app de verificación" width="200" height="200">
+    <div class="f"><span>Clave para añadirla a mano</span>
+      <span class="mfa-clave"><code id="mfaSecret"></code><button class="btn sm" id="mfaCopy" type="button">Copiar</button></span>
+      <a class="link small" id="mfaUri">Abrir en la app de códigos (desde el móvil)</a></div>
+    ${INPUT_CODIGO}
+    <button class="btn primary" id="mfaOk" type="button">Activar</button>
+    ${obligatorio ? '' : `<button class="btn ghost" id="mfaLuego" type="button">${cancelar ? 'Cancelar' : 'Ahora no'}</button>`}`);
+  // El SVG del QR como imagen (propiedad, no atributo: lleva comillas dentro).
+  const svg = String(data.totp.qr_code || '').replace(/^data:image\/svg\+xml;[^,]*,/, '');
+  $('#mfaQr').src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  $('#mfaSecret').textContent = clave.replace(/(.{4})(?=.)/g, '$1 ');
+  $('#mfaUri').href = data.totp.uri;
+  $('#mfaCopy').onclick = async () => {
+    try { await navigator.clipboard.writeText(clave); toast('Clave copiada'); } catch { toast('No se ha podido copiar: selecciónala y cópiala a mano.', true); }
+  };
+  if ($('#mfaLuego')) {
+    $('#mfaLuego').onclick = () => esperando($('#mfaLuego'), async () => {
+      // El alta sin terminar no se deja colgada.
+      await sb.auth.mfa.unenroll({ factorId: data.id });
+      if (!reemplaza) { try { sessionStorage.setItem(MFA_LUEGO, '1'); } catch { /* sin almacenamiento */ } }
+      alPanel();
+    });
+  }
+  const enviar = () => esperando($('#mfaOk'), async () => {
+    const code = $('#mfaCode').value.trim();
+    $('#mfaErr').textContent = '';
+    if (!/^\d{6}$/.test(code)) { $('#mfaErr').textContent = I18N.t('Son 6 cifras.'); return; }
+    const { error: e } = await sb.auth.mfa.challengeAndVerify({ factorId: data.id, code });
+    if (e) { $('#mfaErr').textContent = mfaError(e); $('#mfaCode').select(); return; }
+    try { sessionStorage.removeItem(MFA_LUEGO); } catch { /* sin almacenamiento */ }
+    if (reemplaza) await sb.auth.mfa.unenroll({ factorId: reemplaza });
+    MFA = await mfaEstado().catch(() => null);
+    toast(reemplaza ? 'Listo: ahora vale el código del móvil nuevo' : 'Verificación en dos pasos activada');
+    alPanel();
+  });
+  $('#mfaOk').onclick = enviar;
+  campoCodigo(enviar);
+}
+
+/** Quitar el propio factor, o cambiarlo (móvil nuevo): primero el código actual. */
+async function cambiarFactor(quitar) {
+  const f = MFA?.factor;
+  if (!f) return;
+  const r = await modal({
+    title: quitar ? 'Quitar la verificación en dos pasos' : 'Cambiar de móvil o de app',
+    intro: I18N.t('Escribe el código que enseña ahora tu app de verificación para confirmar que eres tú.'),
+    warn: quitar && MFA.required ? I18N.t('Es obligatoria para administrar: justo después tendrás que configurarla otra vez.') : '',
+    fields: [{ name: 'code', label: 'Código de 6 cifras', required: true, placeholder: '123456' }],
+    submit: quitar ? 'Quitar' : 'Seguir', danger: quitar,
+  });
+  if (!r) return;
+  const { error } = await sb.auth.mfa.challengeAndVerify({ factorId: f.id, code: r.code.replace(/\D/g, '') });
+  if (error) { toast(mfaError(error), true); return; }
+  // Cambiar: el de antes sigue valiendo hasta que el nuevo funcione.
+  if (!quitar) { pantallaAlta({ cancelar: true, reemplaza: f.id }); return; }
+  const { error: e2 } = await sb.auth.mfa.unenroll({ factorId: f.id });
+  if (e2) { toast(mfaError(e2), true); return; }
+  await sb.auth.refreshSession().catch(() => {});
+  MFA = await mfaEstado().catch(() => null);
+  if (!MFA?.required) {
+    try { sessionStorage.setItem(MFA_LUEGO, '1'); } catch { /* sin almacenamiento */ }
+    toast('Verificación en dos pasos quitada');
+    route();
+    return;
+  }
+  pantallaAlta({ obligatorio: true });
+}
 
 // ── Idioma ──────────────────────────────────────────────────────────────────
 I18N.pickers(['#lang', '#langLogin', '#langSide']);
@@ -316,7 +513,7 @@ async function refreshBadges(lanzar = false) {
 const currentRoute = () => (location.hash.replace(/^#\/?/, '').split('?')[0] || 'resumen').split('/');
 const PAGES = {};
 async function route() {
-  if (!ME) return;
+  if (!ME || !$('#mfa').hidden) return;
   const n = ++RUTA_N;
   const [page, id] = currentRoute();
   renderNav(page);
@@ -1748,11 +1945,20 @@ PAGES.errores = async (v) => {
 
 // ── Administradores ─────────────────────────────────────────────────────────
 PAGES.administradores = async (v) => {
-  const list = await rpc('admin_admins');
+  const [list, m] = await Promise.all([rpc('admin_admins'), mfaEstado().catch(() => null)]);
+  if (m) MFA = m;
+  const f = MFA?.factor;
   v.innerHTML = `
     <div class="page-head"><h1>Administradores</h1><span class="spacer"></span><button class="btn primary sm" id="add">Añadir administrador…</button></div>
-    ${helpBox('¿Qué hago aquí?', '<p>Quién puede entrar en este panel. Un administrador puede hacerlo todo, así que da acceso solo a personas de confianza con contraseña fuerte y verificación en dos pasos en su correo. La persona tiene que haberse registrado antes en la app con ese email. Todas sus acciones quedan en el registro de actividad.</p>')}
-    ${table({ cols: [{ h: 'Administrador', r: (a) => `<span class="title">${esc(a.display_name || '—')}<span class="sub"><a class="link" href="#/usuarios/${a.user_id}">${esc(a.email)}</a></span></span>` }, { h: 'Desde', r: (a) => fmtDay(a.created_at) }, { h: 'Último acceso', r: (a) => ago(a.last_sign_in_at) }, { h: 'Acciones', num: true, r: (a) => fmtNum(a.actions) }, { h: '', r: (a) => a.user_id === ME.id ? '<span class="muted small">tú</span>' : `<button class="btn sm bad ghost" data-rm="${a.user_id}">Quitar</button>` }], rows: list })}`;
+    ${helpBox('¿Qué hago aquí?', '<p>Quién puede entrar en este panel. Un administrador puede hacerlo todo, así que da acceso solo a personas de confianza, con contraseña fuerte y la verificación en dos pasos activada (columna «2FA»). La persona tiene que haberse registrado antes en la app con ese email. Todas sus acciones quedan en el registro de actividad.</p>')}
+    <div class="card"><h2>Tu verificación en dos pasos</h2>
+      <p style="margin:0 0 10px">${f ? `<span class="tag ok">Activada</span> <span class="muted small">${I18N.lang === 'en' ? 'since' : 'desde'} ${esc(fmtDay(f.created_at))}</span>` : '<span class="tag warn">Sin activar</span>'}</p>
+      <p class="muted small" style="margin:0 0 10px">${MFA?.required ? 'Obligatoria para administrar.' : 'Recomendada (todavía no es obligatoria).'}</p>
+      <p style="margin:0">${f ? '<button class="btn sm" id="mfaCambiar" type="button">Cambiar de móvil o de app…</button><button class="btn sm bad ghost" id="mfaQuitar" type="button">Quitar…</button>' : '<button class="btn sm primary" id="mfaActivar" type="button">Activar ahora</button>'}</p></div>
+    ${table({ cols: [{ h: 'Administrador', r: (a) => `<span class="title">${esc(a.display_name || '—')}<span class="sub"><a class="link" href="#/usuarios/${a.user_id}">${esc(a.email)}</a></span></span>` }, { h: '2FA', r: (a) => a.mfa ? '<span class="tag ok">activada</span>' : '<span class="tag warn">sin activar</span>' }, { h: 'Desde', r: (a) => fmtDay(a.created_at) }, { h: 'Último acceso', r: (a) => ago(a.last_sign_in_at) }, { h: 'Acciones', num: true, r: (a) => fmtNum(a.actions) }, { h: '', r: (a) => a.user_id === ME.id ? '<span class="muted small">tú</span>' : `<button class="btn sm bad ghost" data-rm="${a.user_id}">Quitar</button>` }], rows: list })}`;
+  if ($('#mfaActivar')) $('#mfaActivar').onclick = () => pantallaAlta({ cancelar: true });
+  if ($('#mfaCambiar')) $('#mfaCambiar').onclick = () => cambiarFactor(false);
+  if ($('#mfaQuitar')) $('#mfaQuitar').onclick = () => cambiarFactor(true);
   $('#add').onclick = () => esperando($('#add'), async () => { const r = await modal({ title: 'Añadir administrador', fields: [{ name: 'email', label: 'Email (tiene que existir como usuario)', type: 'email', required: true }] }); if (!r) return; try { await rpc('admin_add_admin', { p_email: r.email }); toast('Administrador añadido'); route(); } catch (e) { toast(e.message, true); } });
   $$('[data-rm]').forEach((b) => { b.onclick = () => esperando(b, async () => { if (!await confirmDlg('Quitar administrador', 'Dejará de poder entrar en el panel.', { danger: true, submit: 'Quitar' })) return; try { await rpc('admin_remove_admin', { p_user_id: b.dataset.rm }); toast('Quitado'); route(); } catch (e) { toast(e.message, true); } }); });
 };

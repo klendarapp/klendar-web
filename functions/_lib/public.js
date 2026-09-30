@@ -123,6 +123,12 @@ export const listingLd = ({ lang, path, name, description, city, items, migas })
 /** Una ciudad en la URL: /agenda/madrid/, /hoy/santa%20cruz%20de%20tenerife/. */
 export const citySeg = (c) => encodeURIComponent(String(c || '').toLowerCase());
 
+/** Un trozo de la dirección, decodificado; `null` si viene mal codificado
+ * (`/agenda/%E0%A4%A/`): `decodeURIComponent` lanza y la página daba 500. */
+export function decodeSeg(s) {
+  try { return decodeURIComponent(s || ''); } catch { return null; }
+}
+
 /** El beneficio en una etiqueta: «−20 %», «2x1», «12 €». */
 export function benefit(d, priceCents, currency, lang = 'es') {
   if (d) {
@@ -288,7 +294,7 @@ ${cabeza}
 ${siteHeader(lang, esc(es), esc(enPath))}
 <main class="pub wrap" id="contenido">${body}</main>
 ${siteFooter(lang)}
-${conAmigos ? `<script src="/assets/amigos.js?v=3" defer data-lang="${en ? 'en' : 'es'}"></script>
+${conAmigos ? `<script src="/assets/amigos.js?v=4" defer data-lang="${en ? 'en' : 'es'}"></script>
 ` : ''}${/class="detail"/.test(body) ? `<script src="/assets/barra.js?v=2" defer></script>
 ` : ''}${CONTADOR}
 </body></html>`;

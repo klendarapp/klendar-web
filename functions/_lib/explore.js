@@ -7,9 +7,12 @@
 
 import { esc, html, rpc, rpcAll } from './page.js';
 import {
-  agendaBase, bizPath, cityLinks, collectionBase, exploreBase, isVideo, ldScript, listingLd, offerCard,
+  agendaBase, bizPath, cityLinks, collectionBase, decodeSeg, exploreBase, isVideo, ldScript, listingLd, offerCard,
   publicPage, todayBase,
 } from './public.js';
+
+/** Una dirección mal codificada no es un 500: se manda al listado (302). */
+const aListado = (loc) => new Response(null, { status: 302, headers: { Location: loc, 'Cache-Control': 'no-store' } });
 
 const PRETTY = (s) => String(s || '').replace(/(^|[\s-])(\p{Ll})/gu, (m, a, b) => a + b.toUpperCase());
 const CITY = (c) => encodeURIComponent(String(c || '').toLowerCase());
@@ -358,8 +361,11 @@ export async function explorePage(url, lang) {
 export async function categoryPage(rawCity, rawCat, lang) {
   const en = lang === 'en';
   const S = T(en);
-  const rawc = decodeURIComponent(rawCity || '').replace(/[/]+$/, '');
-  const slug = decodeURIComponent(rawCat || '').replace(/[/]+$/, '').toLowerCase();
+  const decCity = decodeSeg(rawCity);
+  const decCat = decodeSeg(rawCat);
+  if (decCity == null || decCat == null) return aListado(`${agendaBase(lang)}/`);
+  const rawc = decCity.replace(/[/]+$/, '');
+  const slug = decCat.replace(/[/]+$/, '').toLowerCase();
   const path = `${agendaBase(lang)}/${CITY(rawc)}/${encodeURIComponent(slug)}/`;
 
   const [res, cats, negocios] = await Promise.all([
@@ -405,8 +411,11 @@ export async function categoryPage(rawCity, rawCat, lang) {
 export async function collectionPage(rawSlug, rawCity, lang) {
   const en = lang === 'en';
   const S = T(en);
-  const slug = decodeURIComponent(rawSlug || '').replace(/\/+$/, '').toLowerCase();
-  const rawc = decodeURIComponent(rawCity || '').replace(/\/+$/, '');
+  const decSlug = decodeSeg(rawSlug);
+  const decCity = decodeSeg(rawCity);
+  if (decSlug == null || decCity == null) return aListado(`${exploreBase(lang)}/`);
+  const slug = decSlug.replace(/\/+$/, '').toLowerCase();
+  const rawc = decCity.replace(/\/+$/, '');
   const path = `${collectionBase(lang)}/${encodeURIComponent(slug)}/${rawc ? `${CITY(rawc)}/` : ''}`;
 
   const [cols, res, cities] = await Promise.all([

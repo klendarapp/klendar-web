@@ -26,7 +26,9 @@ export async function onRequestGet(ctx) {
     <a class="pill" href="/${en ? 'en/' : ''}">${esc(S.no)}</a></p>
   </form>`;
   return html(publicPage({
-    lang, path: `/baja/${esc(token)}/`, title: S.title, description: S.body, body,
+    // Sin el testigo: `path` da la canónica y el og:url, y el enlace de
+    // baja de cada persona no debe acabar en ningún índice ni caché.
+    lang, path: '/baja/', title: S.title, description: S.body, body,
     head: '<meta name="robots" content="noindex, nofollow">',
   }), 200, 'no-store');
 }
@@ -70,7 +72,7 @@ export async function onRequestPost(ctx) {
 
   return html(publicPage({
     lang,
-    path: `/baja/${esc(token)}/`,
+    path: '/baja/',
     title: S.title,
     description: S.body,
     body,

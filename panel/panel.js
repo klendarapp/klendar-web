@@ -461,6 +461,30 @@ async function preparaNegocio() {
   TZ = KZ.de(BIZ);
 }
 
+/** A dónde volver después de entrar o de aceptar los términos: la página del
+ * panel y nada más. El hash puede traer de todo (un `#access_token=…` de un
+ * enlace de acceso, un código escrito…) y viajaba entero en `?volver=`. */
+function rutaDeVuelta() {
+  const [h, q] = location.hash.split('?');
+  const biz = new URLSearchParams(q || '').get('biz');
+  const hash = /^#\/[a-z0-9-]{1,30}(\/[A-Za-z0-9-]{1,40}){0,2}$/.test(h || '')
+    ? h + (biz && /^[0-9a-f-]{36}$/i.test(biz) ? `?biz=${biz}` : '')
+    : '';
+  const alta = new URLSearchParams(location.search).has('alta') ? '?alta=1' : '';
+  return `/panel/${alta}${hash}`;
+}
+
+/** Los códigos guardados sin conexión son de quien tenía la sesión: al salir
+ * se olvidan (si no, los mandaría la siguiente persona que entre aquí). */
+function olvidaColas() {
+  try {
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith('klendar.cola.')) localStorage.removeItem(k);
+    }
+  } catch { /* sin permisos */ }
+}
+
 async function boot() {
   const { data: { session } } = await sb.auth.getSession();
   if (!session) return showLogin();
@@ -472,7 +496,7 @@ async function boot() {
     const c = await rpc('my_consents');
     if (!c) { await sb.auth.signOut({ scope: 'local' }).catch(() => {}); return showLogin(); }
     if (!c.terms_accepted_at || c.terms_outdated === true) {
-      location.href = `/app/?volver=${encodeURIComponent(`/panel/${location.search}${location.hash}`)}#/ultimo-paso`;
+      location.href = `/app/?volver=${encodeURIComponent(rutaDeVuelta())}#/ultimo-paso`;
       return;
     }
   } catch { /* sin red: no se bloquea */ }
@@ -505,7 +529,7 @@ async function boot() {
  * una sola forma de entrar, como en la app. */
 function showLogin() {
   ME = null;
-  const aqui = `/panel/${location.search}${location.hash}`;
+  const aqui = rutaDeVuelta();
   location.replace(`/app/?destino=${encodeURIComponent(aqui)}#/entrar`);
 }
 async function noBusiness() {
@@ -537,10 +561,13 @@ let saliendo = false;
 $('#logout').onclick = async (e) => {
   e.preventDefault();
   saliendo = true;
+  olvidaColas();
   await sb.auth.signOut({ scope: 'local' }); // solo este navegador
   location.href = '/';
 };
 sb.auth.onAuthStateChange((ev) => {
+  // También si se sale desde otra pestaña o desde «Tu cuenta».
+  if (ev === 'SIGNED_OUT') olvidaColas();
   if (ev === 'SIGNED_OUT' && !saliendo) showLogin();
   // Un enlace de «he olvidado la contraseña» antiguo que traiga aquí: la
   // contraseña nueva se pone en «Tu cuenta» y se vuelve al panel.
@@ -663,7 +690,7 @@ PAGES.alta = async (v) => {
       </div>
       <label class="f"><span>Teléfono</span><input name="phone" maxlength="20" inputmode="tel"></label>
       <label class="f"><span>Web</span><input name="website" type="url" placeholder="https://"></label>
-      <label class="f"><span>Correo de contacto</span><input name="contact_email" type="email" value="${esc(ME.email || '')}"></label>
+      <label class="f"><span>Correo de contacto <small>(lo ven los clientes: mejor uno del negocio que el tuyo personal)</small></span><input name="contact_email" type="email" maxlength="254" placeholder="hola@tunegocio.com"></label>
       <label class="f"><span>NIF / CIF <small>(para la verificación; no se publica)</small></span><input name="tax_id" maxlength="20"></label>
       <label class="f full" style="grid-template-columns:auto 1fr;align-items:start">
         <input type="checkbox" name="adults_only">
@@ -2963,7 +2990,7 @@ PAGES.ficha = async (v) => {
         <label class="f"><span>Ciudad *</span><input name="city" value="${esc(b.city || '')}" maxlength="60" required ${canManage ? '' : 'disabled'}></label>
         <label class="f"><span>Teléfono</span><input name="phone" value="${esc(b.phone || '')}" maxlength="20" ${canManage ? '' : 'disabled'}></label>
         <label class="f"><span>Web</span><input name="website" type="url" value="${esc(b.website || '')}" ${canManage ? '' : 'disabled'}></label>
-        <label class="f"><span>Correo de contacto</span><input name="contact_email" type="email" value="${esc(b.contact_email || '')}" ${canManage ? '' : 'disabled'}></label>
+        <label class="f"><span>Correo de contacto <small>(lo ven los clientes: mejor uno del negocio que el tuyo personal)</small></span><input name="contact_email" type="email" maxlength="254" placeholder="hola@tunegocio.com" value="${esc(b.contact_email || '')}" ${canManage ? '' : 'disabled'}></label>
         <label class="f"><span>NIF/CIF</span><input name="tax_id" value="${esc(b.tax_id || '')}" maxlength="20" ${canManage ? '' : 'disabled'}></label>
         <label class="f"><span>Instagram</span><input name="instagram" value="${esc(redes.instagram || '')}" ${canManage ? '' : 'disabled'}></label>
         <label class="f"><span>TikTok</span><input name="tiktok" value="${esc(redes.tiktok || '')}" ${canManage ? '' : 'disabled'}></label>
@@ -3548,7 +3575,7 @@ PAGES.resenas = async (v) => {
       <span class="spacer"></span>${sin ? `<span class="tag st-pending">${esc(I18N.lang === 'en' ? `${sin} unanswered` : `${sin} sin responder`)}</span>` : ''}</div>` : ''}
     ${lista.length ? `<div class="resenas-panel">${lista.map((r, i) => `<article class="card">
         <header><span class="av">${r.avatar_url ? `<img src="${esc(r.avatar_url)}" alt="">` : esc((r.display_name || 'U').trim().charAt(0).toUpperCase())}</span>
-          <span><b>${esc(r.display_name || 'Usuario')}</b><small class="muted">${esc(fmtDate(r.created_at))}</small></span>${estrellas(r.rating)}</header>
+          <span><b>${esc(r.display_name || 'Usuario de Klendar')}</b><small class="muted">${esc(fmtDate(r.created_at))}</small></span>${estrellas(r.rating)}</header>
         ${r.comment ? `<p>${esc(r.comment)}</p>` : ''}
         ${r.photo_url ? `<img class="foto" src="${esc(r.photo_url)}" alt="" loading="lazy">` : ''}
         ${r.reply ? `<div class="respuesta"><b>Respuesta de <span>${esc(BIZ.name)}</span></b>${r.reply_at ? `<small class="muted"> · ${esc(fmtDate(r.reply_at))}</small>` : ''}<p>${esc(r.reply).replace(/\n/g, '<br>')}</p></div>` : ''}
