@@ -1714,7 +1714,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
       const ahora = fmtMoney(newCents);
       if (codes > 0 && !await confirmDlg(bi('¿Bajar el precio?', 'Lower the price?'), esc(bi(
         `Hay ${codes} ${codes === 1 ? 'código' : 'códigos'} sin usar de ${antes}. Si lo dejas en ${ahora}, esas personas pagarán ${ahora} en el local. A quien ya canjeó no se le avisa.`,
-        `There ${codes === 1 ? 'is 1 unused code' : `are ${codes} unused codes`} at ${antes}. If you set it to ${ahora}, those people will pay ${ahora} at the venue. People who already redeemed are not notified.`)),
+        `There ${codes === 1 ? 'is 1 unused code' : `are ${codes} unused codes`} at ${antes}. If you change it to ${ahora}, those people will pay ${ahora} at the venue. People who have already redeemed won't be notified.`)),
       { submit: bi('Bajar el precio', 'Lower the price') })) {
         return;
       }
@@ -2980,7 +2980,7 @@ PAGES.ficha = async (v) => {
         <a class="btn sm ghost" href="#/cartel-local">Imprimir el cartel del local</a>
         <a class="btn sm" href="https://klendar.app/b/${esc(BIZ.id)}" target="_blank" rel="noopener">Ver cómo se ve ↗</a></div>
       ${helpBox('¿Qué es esto?', bi('<p>Lo que ve la gente cuando entra en tu negocio: el nombre, de qué va, dónde estás, cómo llamarte y tus horarios. Es la misma ficha que editas desde la app.</p><p>La <b>dirección</b> se busca en el mapa al guardar. Si el punto no queda donde debe, arrastra la chincheta en «Ubicación en el mapa».</p>',
-      '<p>What people see when they open your business: the name, what you do, where you are, how to call you and your opening hours. It is the same page you edit from the app.</p><p>The <b>address</b> is looked up on the map when you save. If the pin is not in the right place, drag it in “Location on the map”.</p>'))}
+      '<p>What people see when they open your business: the name, what you do, where you are, how to call you and your opening hours. It\'s the same page you edit from the app.</p><p>The <b>address</b> is looked up on the map when you save. If the pin isn\'t in the right place, drag it in “Location on the map”.</p>'))}
       <form id="f" class="form" novalidate>
         <label class="f"><span>Nombre *</span><input name="name" value="${esc(b.name || '')}" required maxlength="80" ${canManage ? '' : 'disabled'}></label>
         <label class="f"><span>Categoría</span><select name="category_id" ${canManage ? '' : 'disabled'}>
@@ -3174,7 +3174,7 @@ PAGES.equipo = async (v) => {
     <div class="page-head"><h1>Equipo</h1><span class="spacer"></span>
       ${canManage ? '<button class="btn sm primary" id="add">Añadir a alguien</button>' : ''}</div>
     ${helpBox('¿Quién puede qué?', bi('<p><b>Empleado</b>: valida códigos QR. <b>Encargado</b>: además publica, edita la ficha y lleva el equipo. <b>Propietario</b>: todo; no se le puede cambiar el rol desde aquí.</p>',
-      '<p><b>Staff</b>: validates QR codes. <b>Manager</b>: also publishes, edits the business page and runs the team. <b>Owner</b>: everything; their role cannot be changed from here.</p>'))}
+      '<p><b>Staff</b>: validates QR codes. <b>Manager</b>: also publishes, edits the business page and runs the team. <b>Owner</b>: everything; their role can\'t be changed from here.</p>'))}
     <div id="list"></div>
     ${invites.length ? `<div class="card" style="margin-top:14px"><h2>Invitaciones pendientes</h2>
       <p class="muted">Aún no han contestado. Caducan a los 14 días y puedes cancelarlas.</p>
@@ -3263,7 +3263,7 @@ function audienciaHtml(aud) {
         <span class="bt"><i style="width:${Math.round((t.n / total) * 100)}%"></i></span>
         <span class="bn">${fmtNum(t.n)}</span></div>`).join('')}</div>
     <p class="muted small" style="margin:10px 0 0">${esc(bi(`Distancia entre tu local y el último sitio conocido de quien ha canjeado algo, de ${fmtNum(aud.people)} persona(s). Es aproximado y nunca se enseña dónde está nadie.`,
-      `Distance between your place and the last known location of people who redeemed something (${fmtNum(aud.people)} ${aud.people === 1 ? 'person' : 'people'}). It is approximate and never shows where anyone is.`))}</p>
+      `Distance between your place and the last known location of people who redeemed something (${fmtNum(aud.people)} ${aud.people === 1 ? 'person' : 'people'}). It's approximate and never shows where anyone is.`))}</p>
   </div>`;
 }
 

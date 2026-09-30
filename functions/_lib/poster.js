@@ -16,7 +16,7 @@ const T = {
   },
   en: {
     lang: 'en', path: '/en', title: 'Poster', scan: 'Point your phone camera here', print: 'Print',
-    help: 'One sheet for the door, the bar or the window. Black and white prints fine.',
+    help: 'One sheet for the door, the bar or the window. It prints fine in black and white.',
   },
 };
 
@@ -120,7 +120,7 @@ const TV = {
     scan: 'Scan to see our menu and everything we offer',
     scanStamps: 'Scan to see our menu and everything we offer, and get a stamp on every visit',
     a4: 'A4 sheet', table: 'Table size',
-    help: 'For the counter, the door or the tables. Black and white prints fine.',
+    help: 'For the counter, the door or the tables. It prints fine in black and white.',
     helpTable: 'Four per sheet: cut along the lines and put them on the tables.',
     changed: 'This poster no longer works', changedBody: 'The venue has changed its QR code. Print the new poster from the dashboard or the app.',
   },

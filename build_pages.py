@@ -98,29 +98,29 @@ PAGINAS['para-negocios'] = (
 <p class="note">Kit para tu local: <a href="/assets/kit/klendar-guia-negocios.pdf">guía de 1 página (PDF)</a> · <a href="/assets/kit/klendar-cartel.pdf">cartel con QR (PDF)</a>. Lo legal, en las <a href="/negocios/">condiciones para negocios</a>.</p>
 ''',
     '''
-<p class="lead">You want new people to discover you, a full house for Thursday's tasting, or the customers who came once to come back. That is what Klendar is for: you publish a flash offer or an event in a minute and people nearby see it <strong>now</strong>.</p>
+<p class="lead">You want new people to discover you, a full house for Thursday's tasting, or the customers who came once to come back. That's what Klendar is for: you post a flash offer or an event in a minute and people nearby see it <strong>now</strong>.</p>
 
 <h2>How it works</h2>
 <ol>
-  <li><strong>Register your business</strong> from the app or from the <a href="/panel/">web dashboard</a> (it needs the venue's exact location). We check it and verify it, usually within 24-48 hours.</li>
+  <li><strong>Register your business</strong> from the app or from the <a href="/panel/">web dashboard</a> (it needs the venue's exact location). We review and verify it, usually within 24–48 hours.</li>
   <li><strong>Publish</strong> a flash offer (with a countdown and a capacity) or an event with a date. From your phone or from the <a href="/panel/">dashboard on a computer</a>.</li>
-  <li><strong>People redeem it</strong> by showing you a single-use QR code. You validate it with the camera or by typing the code; the capacity goes down on its own.</li>
+  <li><strong>People redeem it</strong> by showing you a single-use QR code. You validate it with the camera or by typing the code; the capacity updates automatically.</li>
 </ol>
 
 <h2>What you get</h2>
 <ul>
   <li><strong>No commission per redemption.</strong> What you charge at the venue is yours: Klendar never touches the money.</li>
-  <li><strong>New customers.</strong> The app shows what is near and starting soon, not what pays most.</li>
+  <li><strong>New customers.</strong> The app shows what's nearby and starting soon, not whoever pays most.</li>
   <li><strong>You know what worked.</strong> Views, codes and redemptions for each publication, with who validated each one; exportable for your accountant.</li>
   <li><strong>Your team, with its own access.</strong> Whoever is behind the bar can validate codes without getting access to everything else.</li>
-  <li><strong>No lock-in.</strong> Leave whenever you want.</li>
+  <li><strong>No lock-in.</strong> Leave whenever you like.</li>
 </ul>
 
 <h2>What it costs</h2>
-<p>You <strong>try it free</strong>: 30 days with everything when you register, no card, and free while we are starting in your city. After that, one plan at €19.90 a month with no limits, no lock-in and no commission per redemption. <a href="/en/pricing/">See pricing</a>.</p>
+<p>You <strong>try it free</strong>: 30 days with everything when you register, no card, and free while we're launching in your city. After that, one plan at €19.90 a month with no limits, no lock-in and no commission per redemption. <a href="/en/pricing/">See pricing</a>.</p>
 
 <h2>Do the maths</h2>
-<p>With your numbers, not ours. It is an estimate to see whether it adds up, not a promise.</p>
+<p>With your numbers, not ours. It's an estimate to see whether it adds up, not a promise.</p>
 <div class="calc" id="calc">
   <label>Average ticket <input type="number" id="c-ticket" value="12" min="1" step="0.5"> €</label>
   <label>Discount <input type="number" id="c-desc" value="20" min="0" max="90" step="5"> %</label>
@@ -141,7 +141,7 @@ PAGINAS['para-negocios'] = (
     var plan = 19.9;
     var paraPagarlo = cobras * m / 100 > 0 ? Math.ceil(plan / (cobras * m / 100)) : 0;
     $('c-out').innerHTML = '<b>' + eur(ingresos) + ' a month</b> through the till from that offer, '
-      + eur(margen) + ' of margin. The plan costs ' + eur(plan) + ': '
+      + eur(margen) + ' in margin. The plan costs ' + eur(plan) + ': '
       + '<b>' + paraPagarlo + (paraPagarlo === 1 ? ' redemption' : ' redemptions') + '</b> a month pays for it.'
       + '<br><span class="mu">Each person pays you ' + eur(cobras) + ' instead of ' + eur(t) + '. '
       + 'If they were coming anyway, the discount costs you ' + eur(t * d / 100 * g) + '.</span>';
@@ -153,13 +153,13 @@ PAGINAS['para-negocios'] = (
 })();
 </script>
 
-<h2>What we do not do</h2>
-<p>We do not sell your data or your customers' data, we do not charge per redemption, and we do not put your deal ahead of another because you pay more: <a href="/en/faq/">in the app the order is chosen by the person</a> (near you, starting soonest or newest). Publications can be featured, and when that happens <strong>we say so</strong>.</p>
+<h2>What we don't do</h2>
+<p>We don't sell your data or your customers' data, we don't charge per redemption, and we don't put your offer ahead of another because you pay more: <a href="/en/faq/">in the app the order is chosen by the person</a> (near you, starting soonest or newest). Publications can be featured, and when that happens <strong>we say so</strong>.</p>
 
 <h2>Getting started</h2>
-<p>We are just starting, so if nobody is on Klendar in your city yet, write to us and we will get it going with you: <a href="mailto:info@klendar.app">info@klendar.app</a>.</p>
+<p>We're just getting started, so if nobody in your city is on Klendar yet, email us and we'll get it going with you: <a href="mailto:info@klendar.app">info@klendar.app</a>.</p>
 <p class="acciones" style="margin-top:18px">
-  <a class="pill accent" href="mailto:info@klendar.app?subject=I%20want%20to%20register%20my%20business">Write to us</a>
+  <a class="pill accent" href="mailto:info@klendar.app?subject=I%20want%20to%20register%20my%20business">Email us</a>
   <a class="pill ghost" href="/panel/">Go to the dashboard</a>
   <a class="pill ghost" href="/en/pricing/">See pricing</a>
 </p>
@@ -182,19 +182,19 @@ def tabla_planes(lang):
         'Unlimited redemptions and <strong>no commission</strong>',
         'Stats, exportable report and attendee list',
         'Business page, gallery and a dashboard for your team',
-        'No lock-in: leave whenever you want',
+        'No lock-in: leave whenever you like',
     ]
     # Primero la prueba (no es un plan: es cómo se empieza) y luego el plan.
     prueba = [
         'Todo lo del plan, sin límites', 'Y gratis mientras arrancamos en tu ciudad',
         'Te avisamos un mes antes de empezar a cobrar',
     ] if es else [
-        'Everything in the plan, no limits', 'And free while we are starting in your city',
-        'We tell you a month before we start charging',
+        'Everything in the plan, no limits', 'And free while we\'re launching in your city',
+        'We\'ll give you a month\'s notice before charging',
     ]
     filas = [f'''
     <div class="plan">
-      <p class="tag">{'Para empezar' if es else 'To start'}</p>
+      <p class="tag">{'Para empezar' if es else 'To begin'}</p>
       <h2>{'Prueba gratis' if es else 'Free trial'}</h2>
       <p class="price"><b>{'0 €' if es else '€0'}</b><span>{'· 30 días' if es else '· 30 days'}</span></p>
       <p class="note">{'Sin tarjeta y sin renovación automática' if es else 'No card and no automatic renewal'}</p>
@@ -258,31 +258,31 @@ PAGINAS['precios'] = (
 ''',
     f'''
 <p class="lead">One plan, no limits and no commission per redemption. What you charge at your venue is yours.</p>
-<p class="callout"><strong>Right now it is free.</strong> While a city is starting we charge nobody: an empty map is no use to businesses or to people. Before we start charging in your city, we tell you a month ahead.</p>
+<p class="callout"><strong>Right now it's free.</strong> While a city is launching, we don't charge anyone: an empty map is no use to businesses or to people. Before we start charging in your city, we'll give you a month's notice.</p>
 {tabla_planes('en')}
 <p class="note">Price per venue, VAT not included.</p>
 
 <h2>Several venues?</h2>
-<p>The price is <strong>per venue</strong>, because each one has its own audience, its own codes and its own numbers. From the second one it drops:</p>
+<p>The price is <strong>per venue</strong>, because each one has its own audience, its own codes and its own numbers. From the second one, it goes down:</p>
 <table class="tiers">
   <tr><td>1 venue</td><td><b>€19.90</b> a month</td></tr>
   <tr><td>2 to 5 venues</td><td><b>€15</b> a month per venue</td></tr>
-  <tr><td>6 or more</td><td><b>€12</b> a month per venue, with someone to talk to</td></tr>
+  <tr><td>6 or more</td><td><b>€12</b> a month per venue, with a dedicated contact</td></tr>
 </table>
-<p><strong>Publishing to several venues at once is included.</strong> You write the offer once, tick the venues you want and each one gets its own, with its own address and its own code; you see the numbers per venue and added up. We do not charge extra for saving you the work of typing it three times.</p>
+<p><strong>Publishing to several venues at once is included.</strong> You write the offer once, tick the venues you want and each one gets its own, with its own address and its own code; you see the numbers per venue and added up. We don't charge extra for saving you from typing it three times.</p>
 
 <h2>The small print, in two lines</h2>
 <ul>
   <li><strong>Trial.</strong> When you register your business you get 30 days with everything, no card and no automatic renewal.</li>
-  <li><strong>How you pay.</strong> Until we have card payments, by bank transfer: write to <a href="mailto:info@klendar.app">info@klendar.app</a> and we activate it.</li>
-  <li><strong>Changing or leaving.</strong> Whenever you want, at the same address. No lock-in, no penalty, and we do not charge the month you are in if you go.</li>
+  <li><strong>How you pay.</strong> Until we have card payments, by bank transfer: email <a href="mailto:info@klendar.app">info@klendar.app</a> and we'll activate it.</li>
+  <li><strong>Changing or leaving.</strong> Whenever you want, at the same address. No lock-in, no penalty, and we don't charge for the month you're in if you leave.</li>
   <li><strong>We never charge per redemption.</strong> No percentage, no euros per code: if it works well for you, you pay the same.</li>
-  <li><strong>What a «featured» slot is.</strong> A publication that shows at the top for a while; it goes separately and you ask for it by email. When one is featured, the app says so: it is not dressed up as a recommendation.</li>
-  <li><strong>Your plan does not change what people see</strong> beyond that: the order is chosen by each person in the filters.</li>
+  <li><strong>What “featured” means.</strong> A publication that shows at the top for a while; it's charged separately and you request it by email. When one is featured, the app says so: it isn't dressed up as a recommendation.</li>
+  <li><strong>Your plan doesn't change what people see</strong> beyond that: the order is chosen by each person in the filters.</li>
 </ul>
 
 <h2>And for people using the app?</h2>
-<p>Free, and no account needed to look. You only sign up to redeem, save plans or get alerts.</p>
+<p>Free, and no account needed to browse. You only sign up to redeem, save plans or get alerts.</p>
 <p style="margin-top:18px"><a class="pill accent" href="mailto:info@klendar.app?subject=Klendar%20plan">Ask about a plan</a> <a class="pill ghost" href="/en/for-business/">How it works</a></p>
 ''',
 )
@@ -304,18 +304,18 @@ FAQ_ES = [
     ('¿En qué ciudades está?', 'Estamos empezando. Si en la tuya todavía no hay nada, en <a href="/agenda/">la agenda</a> lo verás vacío: escríbenos y lo arrancamos.'),
 ]
 FAQ_EN = [
-    ('How much does Klendar cost?', 'For people looking for plans, nothing. For businesses there is a single plan, and right now it is free while we are starting; the details are in <a href="/en/pricing/">pricing</a>.'),
+    ('How much does Klendar cost?', 'For people looking for plans, nothing. For businesses there is a single plan, and right now it\'s free while we\'re launching; the details are in <a href="/en/pricing/">pricing</a>.'),
     ('Do I need an account to look?', 'No. You can see deals and events without signing up, both in the app and on the web. An account is needed to redeem, save plans or get alerts.'),
-    ('How do I redeem a deal?', 'You tap «Get the code» and get a single-use QR code. You show it to the business, which scans it or types the code. Careful: some codes expire within minutes, so ask for it once you are at the venue.'),
-    ('My code does not work', 'Usually one of three: it was already used, it expired (bar codes last minutes) or it belongs to another business. Under «Your codes» (in the app or on the web) you can see the status of each one. If something is off, write to us with the code at <a href="mailto:info@klendar.app">info@klendar.app</a>.'),
-    ('Can I reserve a place at an event?', 'If the business turns it on, yes: you reserve a place from the app or the website and show your code at the door. Reserving is not a payment; whatever it costs, if anything, is paid at the venue.'),
-    ('Why do I see some things and not others?', 'Because of how near they are, what starts soon and your favourites. We do not use your history or data from other sites. Each publication has a «Why are you seeing this?» that explains it, and you choose the order in the filters.'),
-    ('What happens with my data?', 'The whole story is in the <a href="/en/privacy/">privacy policy</a>. In short: it is used to make the app work, it is not sold, and you can download it or delete your account from the app or from “Your account” on the website.'),
+    ('How do I redeem a deal?', 'Tap “Get the code” and you get a single-use QR code. Show it to the business, and they scan it or type in the code. Careful: some codes expire within minutes, so get it once you\'re at the venue.'),
+    ('My code doesn\'t work', 'Usually one of three things: it\'s already been used, it\'s expired (codes at a bar last minutes) or it belongs to another business. In “Your codes” (in the app or on the web) you can see the status of each one. If something is off, email us the code at <a href="mailto:info@klendar.app">info@klendar.app</a>.'),
+    ('Can I reserve a place at an event?', 'If the business turns it on, yes: you reserve a place from the app or the website and show your code at the door. Reserving isn\'t a payment; whatever it costs, if anything, is paid at the venue.'),
+    ('Why do I see some things and not others?', 'Because of how close they are, what starts soon and your favourites. We don\'t use your history or data from other sites. Each publication has a “Why are you seeing this?” that explains it, and you choose the order in the filters.'),
+    ('What happens to my data?', 'It\'s all in the <a href="/en/privacy/">privacy policy</a>. In short: it\'s used to make the app work, it\'s never sold, and you can download it or delete your account from the app or from “Your account” on the website.'),
     ('How do I delete my account?', 'From Account → Settings → Delete my account, in the app or in “Your account” on the website. Everything of yours is deleted. You can also ask by email: <a href="/en/delete-account/">how to do it</a>.'),
-    ('I am a business, how do I register?', 'From the app (Account → Want to register your business?) or from the <a href="/panel/">web dashboard</a>; it needs the venue’s exact location. We check it and verify you, usually within 24-48 hours. After that you can publish from your phone or from a computer.'),
+    ('I run a business. How do I register?', 'From the app (Account → Want to register your business?) or from the <a href="/panel/">web dashboard</a>; it needs the venue’s exact location. We review and verify it, usually within 24–48 hours. After that you can publish from your phone or from a computer.'),
     ('Does Klendar take a commission on what I sell?', 'No. What you charge at your venue is yours; Klendar never touches the money.'),
-    ('I saw something that should not be there', 'On every publication, in the app and on the website, there is a button to report it. We review it and, if it has to come down, it comes down with a reason and the business can appeal.'),
-    ('Which cities is it in?', 'We are just starting. If nothing is happening in yours yet, <a href="/en/whats-on/">what\'s on</a> will look empty: write to us and we will get it going.'),
+    ('I saw something that shouldn\'t be there', 'On every publication, in the app and on the website, there\'s a button to report it. We review it and, if it has to come down, it comes down with a reason and the business can appeal.'),
+    ('Which cities is it in?', 'We\'re just getting started. If nothing is happening in yours yet, <a href="/en/whats-on/">what\'s on</a> will look empty: email us and we\'ll get it going.'),
 ]
 
 
@@ -328,14 +328,14 @@ PAGINAS['preguntas'] = (
     'faq',
     'Preguntas frecuentes', 'Frequently asked questions',
     'Cómo se canjea una oferta, qué pasa si el código no funciona, cómo se da de alta un negocio y qué hacemos con tus datos.',
-    'How to redeem a deal, what to do if a code does not work, how a business registers and what we do with your data.',
+    'How to redeem a deal, what to do if a code doesn\'t work, how a business registers and what we do with your data.',
     f'''
 <p class="lead">Lo que más nos preguntan. Si lo tuyo no está aquí, escríbenos a <a href="mailto:info@klendar.app">info@klendar.app</a> y lo añadimos.</p>
 {faq_html(FAQ_ES)}
 <p class="note" style="margin-top:22px">¿Necesitas ayuda con algo concreto? <a href="/soporte/">Soporte</a>.</p>
 ''',
     f'''
-<p class="lead">What we get asked most. If yours is not here, write to <a href="mailto:info@klendar.app">info@klendar.app</a> and we will add it.</p>
+<p class="lead">What we get asked most. If yours isn't here, email <a href="mailto:info@klendar.app">info@klendar.app</a> and we'll add it.</p>
 {faq_html(FAQ_EN)}
 <p class="note" style="margin-top:22px">Need help with something specific? <a href="/en/support/">Support</a>.</p>
 ''',
@@ -347,7 +347,7 @@ PAGINAS['prensa'] = (
     'press',
     'Prensa', 'Press',
     'Qué es Klendar en dos líneas, logotipos, capturas y a quién escribir.',
-    'What Klendar is in two lines, logos, screenshots and who to write to.',
+    'What Klendar is in two lines, logos, screenshots and who to contact.',
     '''
 <p class="lead">Si estás escribiendo sobre Klendar, aquí tienes lo que necesitas. Para cualquier otra cosa: <a href="mailto:info@klendar.app">info@klendar.app</a>.</p>
 
@@ -369,13 +369,13 @@ PAGINAS['prensa'] = (
 <p>Prensa y cualquier consulta: <a href="mailto:info@klendar.app">info@klendar.app</a>. Asuntos técnicos: <a href="mailto:dev@klendar.app">dev@klendar.app</a>.</p>
 ''',
     '''
-<p class="lead">If you are writing about Klendar, here is what you need. For anything else: <a href="mailto:info@klendar.app">info@klendar.app</a>.</p>
+<p class="lead">If you're writing about Klendar, here's what you need. For anything else: <a href="mailto:info@klendar.app">info@klendar.app</a>.</p>
 
 <h2>In two lines</h2>
-<p>Klendar is a free app where neighbourhood businesses publish <strong>last-minute deals</strong> (with a countdown and limited places) and <strong>events</strong>, and people nearby see them and redeem them by showing a single-use QR code. There is no commission per redemption: what is charged at the venue belongs to the venue.</p>
+<p>Klendar is a free app where neighbourhood businesses publish <strong>last-minute deals</strong> (with a countdown and limited places) and <strong>events</strong>, and people nearby see them and redeem them by showing a single-use QR code. There's no commission per redemption: what the venue charges, the venue keeps.</p>
 
 <h2>In one paragraph</h2>
-<p>A bar with empty tables mid-afternoon, a hairdresser with three free slots on Tuesday or a venue with unsold tickets all share a problem: telling someone two streets away, in time. Klendar (klendar.app) turns that gap into a publication with an expiry that only people nearby see. For the business it is a dashboard where they publish in a minute and validate codes at the door; for everyone else, an honest list of what is on around them today, ordered by distance or by what starts soonest, with no ad profiling.</p>
+<p>A bar with empty tables mid-afternoon, a hairdresser with three free slots on Tuesday or a venue with unsold tickets all share a problem: telling someone two streets away, in time. Klendar (klendar.app) turns that gap into a publication with an expiry that only people nearby see. For businesses, it's a dashboard where they post in a minute and validate codes at the door; for everyone else, an honest list of what's on around them today, sorted by distance or by what starts soonest, with no ad profiling.</p>
 
 <h2>Assets</h2>
 <ul>
@@ -424,12 +424,12 @@ PAGINAS['accesibilidad'] = (
 <p>Si no te contestamos o no te convence la respuesta, puedes reclamar ante la autoridad competente en materia de accesibilidad.</p>
 ''',
     '''
-<p class="lead">We want Klendar to work with a screen reader, with large text and without depending on colour. Here is what is done, what is missing and how to tell us when something does not work.</p>
+<p class="lead">We want Klendar to work with a screen reader, with large text and without depending on colour. Here's what's done, what's missing and how to tell us when something doesn't work.</p>
 
 <h2>Status</h2>
 <p><strong>Partially compliant</strong> with WCAG 2.2 level AA. Statement prepared under Spanish Law 11/2023 and Royal Decree 1112/2018; last reviewed September 2026.</p>
 
-<h2>What is already there</h2>
+<h2>What's already in place</h2>
 <ul>
   <li>Contrast reviewed on the main text and buttons, in light and dark mode.</li>
   <li>The app respects the system font size and works in portrait.</li>
@@ -441,13 +441,13 @@ PAGINAS['accesibilidad'] = (
 <h2>What we know is missing</h2>
 <ul>
   <li>A full pass with a screen reader (TalkBack and VoiceOver) over every screen of the app: pending, and next on the list.</li>
-  <li>The map is not comfortable with a screen reader; the same information is in the list and the agenda, which are.</li>
-  <li>Some videos uploaded by businesses have no captions, because whoever publishes adds them.</li>
+  <li>The map isn't easy to use with a screen reader; the same information is in the list and the agenda, which are.</li>
+  <li>Some videos uploaded by businesses have no captions, because adding them is up to the business that uploads them.</li>
 </ul>
 
-<h2>If something does not work for you</h2>
-<p>Write to <a href="mailto:info@klendar.app">info@klendar.app</a> telling us which screen it is and what you use it with (phone, screen reader, browser). We reply within 20 working days at most, as the rules require, and we fix it sooner if we can.</p>
-<p>If we do not reply, or the reply does not satisfy you, you can complain to the competent accessibility authority.</p>
+<h2>If something doesn't work for you</h2>
+<p>Email <a href="mailto:info@klendar.app">info@klendar.app</a> and tell us which screen it is and what you use it with (phone, screen reader, browser). We reply within 20 working days at most, as the rules require, and we fix it sooner if we can.</p>
+<p>If we don't reply, or you're not satisfied with the reply, you can complain to the competent accessibility authority.</p>
 ''',
 )
 
@@ -457,7 +457,7 @@ PAGINAS['estado'] = (
     'status',
     'Estado del servicio', 'Service status',
     'Si Klendar no va, aquí están los sitios donde mirar y cómo avisarnos.',
-    'If Klendar is down, here is where to look and how to tell us.',
+    'If Klendar is down, here\'s where to look and how to tell us.',
     '''
 <p class="lead">Si la app o la web no van, casi siempre es una de tres cosas. Aquí puedes comprobarlo tú mismo.</p>
 
@@ -476,7 +476,7 @@ PAGINAS['estado'] = (
 <p class="note">Todavía no publicamos cifras de disponibilidad: preferimos no dar un número que no podamos sostener.</p>
 ''',
     '''
-<p class="lead">If the app or the website are not working, it is almost always one of three things. You can check it yourself here.</p>
+<p class="lead">If the app or the website isn't working, it's almost always one of three things. You can check it yourself here.</p>
 
 <h2>Where to look</h2>
 <ul>
@@ -486,11 +486,11 @@ PAGINAS['estado'] = (
 </ul>
 
 <h2>Maintenance</h2>
-<p>When we touch something delicate, the app shows a message instead of half-failing. If you see it, it is on purpose and usually brief.</p>
+<p>When we touch something delicate, the app shows a message instead of half-failing. If you see it, it's on purpose and usually brief.</p>
 
-<h2>If it still does not work</h2>
-<p>Write to <a href="mailto:info@klendar.app">info@klendar.app</a> telling us what you were doing and where (phone or web). If it affects a lot of people, we will say so here.</p>
-<p class="note">We do not publish uptime figures yet: we would rather not give a number we cannot back up.</p>
+<h2>If it still doesn't work</h2>
+<p>Email <a href="mailto:info@klendar.app">info@klendar.app</a> and tell us what you were doing and where (phone or web). If it affects a lot of people, we'll say so here.</p>
+<p class="note">We don't publish uptime figures yet: we'd rather not give a number we can't back up.</p>
 ''',
 )
 
@@ -500,7 +500,7 @@ PAGINAS['sobre'] = (
     'about',
     'Sobre Klendar', 'About Klendar',
     'Por qué existe Klendar, cómo se gana dinero y qué no vamos a hacer.',
-    'Why Klendar exists, how it makes money and what we are not going to do.',
+    'Why Klendar exists, how it makes money and what we won\'t do.',
     '''
 <p class="lead">Klendar nació de una escena de todos los días: un bar medio vacío a las seis de la tarde y, a dos calles, alguien mirando el móvil sin saber qué hacer.</p>
 
@@ -524,13 +524,13 @@ PAGINAS['sobre'] = (
     '''
 <p class="lead">Klendar started from an everyday scene: a half-empty bar at six in the afternoon and, two streets away, someone staring at their phone with nothing to do.</p>
 
-<h2>What we are trying to do</h2>
-<p>Make what is happening near you reach the people who are near you. Not a coupon search engine, not another social network: a list of what is on <strong>today</strong> around you, with the time it has left and the places still free, and a business on the other side that can publish it in a minute.</p>
+<h2>What we're trying to do</h2>
+<p>Make sure what's happening near you reaches the people who are near you. Not a coupon search engine, not another social network: a list of what's on <strong>today</strong> around you, with the time it has left and the places still free, and a business on the other side that can publish it in a minute.</p>
 
 <h2>How it makes money</h2>
-<p>From the business plan (<a href="/en/pricing/">pricing</a>), and only from that. <strong>We take no commission per redemption</strong>, we do not sell data and there is no third-party advertising. A business can feature a publication, and when it does, the app says so.</p>
+<p>From the business plan (<a href="/en/pricing/">pricing</a>), and only from that. <strong>We take no commission per redemption</strong>, we don't sell data and there's no third-party advertising. A business can feature a publication, and when it does, the app says so.</p>
 
-<h2>What we are not going to do</h2>
+<h2>What we won't do</h2>
 <ul>
   <li>Invent urgency: if ten places are left, it says ten.</li>
   <li>Order things by who pays us most, or decide for you: you choose the order in the filters.</li>
@@ -538,7 +538,7 @@ PAGINAS['sobre'] = (
   <li>Ask you for more data than this needs to work.</li>
 </ul>
 
-<h2>Who is behind it</h2>
+<h2>Who's behind it</h2>
 <p>A small project, made in Spain. The owner's details are in the <a href="/en/legal-notice/">legal notice</a>. For anything at all: <a href="mailto:info@klendar.app">info@klendar.app</a>.</p>
 ''',
 )
@@ -563,9 +563,9 @@ if __name__ == '__main__':
         'es': ('/', 'Esta página no existe', 'Puede que el enlace esté mal escrito o que la página se haya movido.',
                [('/explorar/', 'Ver qué hay cerca'), ('/', 'Ir a la portada')], '',
                '¿Buscabas algo concreto? Escríbenos desde <a href="/soporte/">soporte</a>.'),
-        'en': ('/en/', 'This page does not exist', 'The link may be mistyped or the page may have moved.',
+        'en': ('/en/', 'This page doesn\'t exist', 'The link may be mistyped or the page may have moved.',
                [('/en/explore/', "See what's nearby"), ('/en/', 'Go to the home page')], 'en',
-               'Looking for something in particular? Write to us from <a href="/en/support/">support</a>.'),
+               'Looking for something in particular? Get in touch through <a href="/en/support/">support</a>.'),
     }
     for lang, (path, titulo, texto, botones, carpeta, pie) in NO_EXISTE.items():
         pills = ''.join(f'<a class="pill{" accent" if i == 0 else " ghost"}" href="{h}">{l}</a>' for i, (h, l) in enumerate(botones))

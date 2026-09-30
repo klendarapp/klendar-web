@@ -65,7 +65,7 @@ const TEXTOS = {
     entrar: 'Log in',
     cuenta: 'Your account',
     lema: 'Flash offers with a countdown and events from the businesses around you, '
-      + 'sorted by how close they are. Mark your favourites, get alerts and redeem with a QR.',
+      + 'sorted by distance. Add businesses to your favourites, get alerts and redeem with a QR code.',
     producto: 'Product',
     legal: 'Legal',
     derechos: `© ${new Date().getFullYear()} Klendar. All rights reserved.`,

@@ -52,8 +52,8 @@ export const notFound = (lang, path, kind) => {
   const S = en
     ? {
         o: ['This publication is no longer here', 'It may have ended or been removed by the business. There is probably something else on nearby.'],
-        b: ['This business is not on Klendar', 'The link may be wrong or the business may no longer be here.'],
-        c: ['We could not find that city', 'Have a look at the list of cities with something on.'],
+        b: ["This business isn't on Klendar", 'The link may be wrong or the business may no longer be here.'],
+        c: ["We couldn't find that city", 'Have a look at the list of cities with something on.'],
         a: ['This link no longer works', 'They may have changed it. Ask them for the new one.'],
         exp: "See what's on now", agenda: "What's on",
       }
@@ -109,12 +109,12 @@ export async function offerPage(id, lang) {
   const S = en
     ? {
         when: 'When', redeem: 'Redemption window', where: 'Where', seats: 'Places left',
-        terms: 'Conditions', about: 'What it is', biz: 'The business',
+        terms: 'Conditions', about: 'About', biz: 'The business',
         open: 'Open in the app', report: 'Report this publication',
         code: 'Get the code', notYet: 'Not available yet', reserve: 'Reserve a place', wait: 'Join the waiting list', save: 'Save to Plans',
         going: "I'm going", invite: 'Invite a friend',
         note: 'From here or from the app, with the same account. The code is single-use and the business validates it on the spot.',
-        soldOut: 'Sold out', over: 'Finished', more: 'Everything from', hot: 'Popular',
+        soldOut: 'Sold out', over: 'Ended', more: 'Everything from', hot: 'Trending',
         prior: 'Lowest price in the last 30 days', canary: 'Canary Islands time',
       }
     : {
@@ -392,14 +392,14 @@ export async function businessPage(param, lang, search = '') {
     ? {
         now: 'On right now', soon: 'Coming up',
         none: 'Nothing published right now. It changes often — take a look in the app.',
-        open: 'Add to favourites', note: 'From here or from the app, with the same account. We let you know when this business posts something.',
+        open: 'Add to favourites', note: 'From here or from the app, with the same account. We'll let you know when this business posts something.",
         verified: 'Verified business', since: 'On Klendar since', redeemed: (n) => (n === 1 ? '1 redemption validated' : `${n} redemptions validated`),
         about: 'About', menu: 'Menu',
         stamps: 'Stamp card', allergens: 'Allergens',
         menuNote: 'Allergens as declared by the business. If you have an allergy, ask at the venue.',
         stampsMany: 'Stamp cards',
         stampsBody: (n, r) => `${n} stamps: “${r}”`,
-        stampsNote: 'Each redemption that counts leaves a stamp, one a day per card at most, and the app keeps count.',
+        stampsNote: 'Each redemption that counts earns a stamp (at most one a day per card), and the app keeps count.',
         stampsAll: 'Every publication counts', stampsFlash: 'Only flash offers count', stampsEvents: 'Only events count',
         stampsSomeCats: 'Only some categories count', stampsSomeOffers: 'Only some publications count',
         stampsOnly: (l) => `Only these count: ${l}`, stampsMore: (l, n) => `${l} and ${n} more`,
@@ -671,10 +671,10 @@ export async function agendaPage(rawCity, lang) {
     ? {
         h1: `Things to do in ${city} this week`,
         title: `Things to do in ${city} this week: events and deals`,
-        desc: (n) => `${n} events and deals in ${city} over the next few days: flash offers with a countdown and local events. No account needed to look.`,
-        lead: 'Flash offers and local events for the next few days. No account needed to look; to get a code, log in here on the website or in the app.',
+        desc: (n) => `${n} events and deals in ${city} over the next few days: flash offers with a countdown and local events. No account needed to browse.`,
+        lead: 'Flash offers and local events for the next few days. No account needed to browse; to get a code, log in here on the website or in the app.',
         none: `Nothing published in ${city} yet. If you run a business here, you can be the first.`,
-        biz: 'Publish your business', all: 'Other cities', app: 'Create a free account', agenda: "What's on",
+        biz: 'List your business', all: 'Other cities', app: 'Create a free account', agenda: "What's on",
         days: 'Days', places: 'Places in this city', explore: 'Explore everything',
         note: "Updated as businesses publish. Times are each business's local time.",
       }
@@ -800,13 +800,13 @@ export async function todayPage(rawCity, lang) {
     ? {
         h1: `Things to do in ${city} today`,
         title: `Things to do in ${city} today: events and deals`,
-        desc: (n) => `${n} ${n === 1 ? 'plan' : 'plans'} for today in ${city}: flash offers with a countdown and local events, live right now or later today. No account needed to look.`,
-        descNone: `Nothing more for today in ${city}. Here is what is coming up tomorrow and the places in the city.`,
-        lead: (f) => `Today is ${f}. What is on right now and later today, from the businesses in the city. Times are local.`,
+        desc: (n) => `${n} ${n === 1 ? 'plan' : 'plans'} for today in ${city}: flash offers with a countdown and local events, live right now or later today. No account needed to browse.`,
+        descNone: `Nothing more for today in ${city}. Here's what's coming up tomorrow and the places in the city.`,
+        lead: (f) => `Today is ${f}. What's on right now and later today at local businesses. Times are local.`,
         now: 'On right now', later: 'Later today', tomorrow: 'Tomorrow',
         none: 'Nothing more published for today. Have a look at tomorrow or the rest of the week.',
         places: 'Places in this city', week: `The whole week in ${city}`, agenda: "What's on", today: 'Today',
-        explore: 'Explore with filters', biz: 'Publish your business',
+        explore: 'Explore with filters', biz: 'List your business',
       }
     : {
         h1: `Qué hacer hoy en ${city}`,
@@ -865,7 +865,7 @@ export async function citiesPage(lang) {
     ? {
         h1: "What's on near you",
         lead: 'Flash offers and plans for the next few days, city by city. No account needed.',
-        none: 'No city has anything published yet.', biz: 'Publish your business',
+        none: 'No city has anything published yet.', biz: 'List your business',
         today: 'Things to do today', todayIn: (c) => `Today in ${c}`,
       }
     : {

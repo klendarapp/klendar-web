@@ -687,7 +687,7 @@ RUTAS['codigo-correo'] = async (_p, params) => {
     const form = e.target;
     $('#err2').textContent = '';
     const token = form.token.value.replace(/\D/g, '');
-    if (token.length !== 6) { errorCampo(form.token, t('Son 6 cifras.')); return; }
+    if (!/^\d{6}$/.test(token)) { errorCampo(form.token, t('Son 6 cifras.')); return; }
     ocupado(form.querySelector('button[type=submit]'), async () => {
       const { error } = await sb.auth.verifyOtp({ email: correo, token, type: 'email' });
       if (error) { $('#err2').textContent = errAuth(error); return; }
@@ -763,7 +763,7 @@ RUTAS.movil = async (_p, params) => {
     const form = e.target;
     $('#err2').textContent = '';
     const token = form.token.value.replace(/\D/g, '');
-    if (token.length !== 6) { errorCampo(form.token, t('Son 6 cifras.')); return; }
+    if (!/^\d{6}$/.test(token)) { errorCampo(form.token, t('Son 6 cifras.')); return; }
     ocupado(form.querySelector('button[type=submit]'), async () => {
       const { error } = await sb.auth.verifyOtp({ phone: telefono, token, type: 'sms' });
       if (error) { $('#err2').textContent = errAuth(error); return; }
@@ -859,7 +859,7 @@ RUTAS.registro = async (_p, params) => {
           const fc = ev.target;
           $('#errc').textContent = '';
           const code = fc.code.value.replace(/\D/g, '');
-          if (code.length !== 6) { errorCampo(fc.code, t('Son 6 cifras.')); return; }
+          if (!/^\d{6}$/.test(code)) { errorCampo(fc.code, t('Son 6 cifras.')); return; }
           ocupado(fc.querySelector('button[type=submit]'), async () => {
             const r = await sb.auth.verifyOtp({ email, token: code, type: 'signup' });
             if (r.error) { $('#errc').textContent = errAuth(r.error); return; }

@@ -37,7 +37,7 @@
       igual: 'Your new password has to be different from the old one.',
       codigo: "That code isn't valid or has expired.",
       noDisponible: "This sign-in method isn't available yet",
-      suspendida: 'Your account is suspended. If you think this is a mistake, write to info@klendar.app.',
+      suspendida: 'Your account is suspended. If you think this is a mistake, email info@klendar.app.',
       correoMal: "That email doesn't look valid",
       sms: "We couldn't send the text. Check the number and try again.",
       telefono: 'Enter a valid number',

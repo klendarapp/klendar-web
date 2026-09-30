@@ -50,8 +50,8 @@ export async function onRequestPost(ctx) {
         title: ok ? 'Done' : 'That link no longer works',
         body: ok
           ? (negocio
-            ? 'You will not get your business’s weekly summary any more. You can switch it back on in Notification settings, in the app or on the website.'
-            : 'You will not get the weekly email any more. You can switch it back on in Notification settings, in the app or on the website.')
+            ? 'You won’t get your business’s weekly summary any more. You can turn it back on in Notification settings, in the app or on the website.'
+            : 'You won’t get the weekly email any more. You can turn it back on in Notification settings, in the app or on the website.')
           : 'Maybe it was already used. You can also switch it off in Notification settings, in the app or on the website.',
         home: 'Go to Klendar',
       }

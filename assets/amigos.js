@@ -43,7 +43,7 @@
     doneNoShare: "Done. It's in your plans.",
     declined: "Done. We won't tell them.",
     gone: 'This publication is no longer available.',
-    oops: 'Something did not work. If it happens again, write to info@klendar.app.',
+    oops: 'Something went wrong. If it happens again, email info@klendar.app.',
     favOn: 'Remove from favourites', planOn: 'Remove from Plans',
     block: function (a) { return 'Block ' + a; },
   } : {

@@ -57,29 +57,29 @@
 <main class="doc" id="contenido">
 <h1>Klendar for businesses</h1>
 
-<p class="lead">You want new people to discover you, a full house for Thursday's tasting, or the customers who came once to come back. That is what Klendar is for: you publish a flash offer or an event in a minute and people nearby see it <strong>now</strong>.</p>
+<p class="lead">You want new people to discover you, a full house for Thursday's tasting, or the customers who came once to come back. That's what Klendar is for: you post a flash offer or an event in a minute and people nearby see it <strong>now</strong>.</p>
 
 <h2>How it works</h2>
 <ol>
-  <li><strong>Register your business</strong> from the app or from the <a href="/panel/">web dashboard</a> (it needs the venue's exact location). We check it and verify it, usually within 24-48 hours.</li>
+  <li><strong>Register your business</strong> from the app or from the <a href="/panel/">web dashboard</a> (it needs the venue's exact location). We review and verify it, usually within 24–48 hours.</li>
   <li><strong>Publish</strong> a flash offer (with a countdown and a capacity) or an event with a date. From your phone or from the <a href="/panel/">dashboard on a computer</a>.</li>
-  <li><strong>People redeem it</strong> by showing you a single-use QR code. You validate it with the camera or by typing the code; the capacity goes down on its own.</li>
+  <li><strong>People redeem it</strong> by showing you a single-use QR code. You validate it with the camera or by typing the code; the capacity updates automatically.</li>
 </ol>
 
 <h2>What you get</h2>
 <ul>
   <li><strong>No commission per redemption.</strong> What you charge at the venue is yours: Klendar never touches the money.</li>
-  <li><strong>New customers.</strong> The app shows what is near and starting soon, not what pays most.</li>
+  <li><strong>New customers.</strong> The app shows what's nearby and starting soon, not whoever pays most.</li>
   <li><strong>You know what worked.</strong> Views, codes and redemptions for each publication, with who validated each one; exportable for your accountant.</li>
   <li><strong>Your team, with its own access.</strong> Whoever is behind the bar can validate codes without getting access to everything else.</li>
-  <li><strong>No lock-in.</strong> Leave whenever you want.</li>
+  <li><strong>No lock-in.</strong> Leave whenever you like.</li>
 </ul>
 
 <h2>What it costs</h2>
-<p>You <strong>try it free</strong>: 30 days with everything when you register, no card, and free while we are starting in your city. After that, one plan at €19.90 a month with no limits, no lock-in and no commission per redemption. <a href="/en/pricing/">See pricing</a>.</p>
+<p>You <strong>try it free</strong>: 30 days with everything when you register, no card, and free while we're launching in your city. After that, one plan at €19.90 a month with no limits, no lock-in and no commission per redemption. <a href="/en/pricing/">See pricing</a>.</p>
 
 <h2>Do the maths</h2>
-<p>With your numbers, not ours. It is an estimate to see whether it adds up, not a promise.</p>
+<p>With your numbers, not ours. It's an estimate to see whether it adds up, not a promise.</p>
 <div class="calc" id="calc">
   <label>Average ticket <input type="number" id="c-ticket" value="12" min="1" step="0.5"> €</label>
   <label>Discount <input type="number" id="c-desc" value="20" min="0" max="90" step="5"> %</label>
@@ -100,7 +100,7 @@
     var plan = 19.9;
     var paraPagarlo = cobras * m / 100 > 0 ? Math.ceil(plan / (cobras * m / 100)) : 0;
     $('c-out').innerHTML = '<b>' + eur(ingresos) + ' a month</b> through the till from that offer, '
-      + eur(margen) + ' of margin. The plan costs ' + eur(plan) + ': '
+      + eur(margen) + ' in margin. The plan costs ' + eur(plan) + ': '
       + '<b>' + paraPagarlo + (paraPagarlo === 1 ? ' redemption' : ' redemptions') + '</b> a month pays for it.'
       + '<br><span class="mu">Each person pays you ' + eur(cobras) + ' instead of ' + eur(t) + '. '
       + 'If they were coming anyway, the discount costs you ' + eur(t * d / 100 * g) + '.</span>';
@@ -112,13 +112,13 @@
 })();
 </script>
 
-<h2>What we do not do</h2>
-<p>We do not sell your data or your customers' data, we do not charge per redemption, and we do not put your deal ahead of another because you pay more: <a href="/en/faq/">in the app the order is chosen by the person</a> (near you, starting soonest or newest). Publications can be featured, and when that happens <strong>we say so</strong>.</p>
+<h2>What we don't do</h2>
+<p>We don't sell your data or your customers' data, we don't charge per redemption, and we don't put your offer ahead of another because you pay more: <a href="/en/faq/">in the app the order is chosen by the person</a> (near you, starting soonest or newest). Publications can be featured, and when that happens <strong>we say so</strong>.</p>
 
 <h2>Getting started</h2>
-<p>We are just starting, so if nobody is on Klendar in your city yet, write to us and we will get it going with you: <a href="mailto:info@klendar.app">info@klendar.app</a>.</p>
+<p>We're just getting started, so if nobody in your city is on Klendar yet, email us and we'll get it going with you: <a href="mailto:info@klendar.app">info@klendar.app</a>.</p>
 <p class="acciones" style="margin-top:18px">
-  <a class="pill accent" href="mailto:info@klendar.app?subject=I%20want%20to%20register%20my%20business">Write to us</a>
+  <a class="pill accent" href="mailto:info@klendar.app?subject=I%20want%20to%20register%20my%20business">Email us</a>
   <a class="pill ghost" href="/panel/">Go to the dashboard</a>
   <a class="pill ghost" href="/en/pricing/">See pricing</a>
 </p>
@@ -129,7 +129,7 @@
 <footer><div class="wrap">
   <div class="cols">
     <div><a class="brand" href="/en/"><img src="/assets/symbol-96.png" alt="" width="30" height="30" loading="lazy" decoding="async"> Klendar</a>
-      <p style="margin:12px 0 0;max-width:340px">Flash offers with a countdown and events from the businesses around you, sorted by how close they are. Mark your favourites, get alerts and redeem with a QR.</p></div>
+      <p style="margin:12px 0 0;max-width:340px">Flash offers with a countdown and events from the businesses around you, sorted by distance. Add businesses to your favourites, get alerts and redeem with a QR code.</p></div>
     <div><h2 class="pie-h">Product</h2><a href="/en/how-it-works/">How it works</a><a href="/en/explore/">Explore</a><a href="/en/whats-on/">What's on</a><a href="/en/for-business/">For businesses</a><a href="/en/pricing/">Pricing</a><a href="/app/?lang=en">Your account</a><a href="/panel/">Business login</a><a href="/en/faq/">FAQ</a><a href="/en/support/">Support</a><a href="/en/about/">About</a><a href="/en/press/">Press</a><a href="/">Español</a></div>
     <div><h2 class="pie-h">Legal</h2><a href="/en/legal-notice/">Legal notice</a><a href="/en/privacy/">Privacy policy</a><a href="/en/terms/">Terms of use</a><a href="/en/business-terms/">Business terms</a><a href="/en/cookies/">Cookies</a><a href="/en/community-guidelines/">Community guidelines</a><a href="/en/delete-account/">Delete account</a><a href="/en/accessibility/">Accessibility</a><a href="/en/status/">Service status</a></div>
   </div>

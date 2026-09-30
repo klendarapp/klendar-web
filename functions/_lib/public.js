@@ -294,7 +294,7 @@ ${cabeza}
 ${siteHeader(lang, esc(es), esc(enPath))}
 <main class="pub wrap" id="contenido">${body}</main>
 ${siteFooter(lang)}
-${conAmigos ? `<script src="/assets/amigos.js?v=4" defer data-lang="${en ? 'en' : 'es'}"></script>
+${conAmigos ? `<script src="/assets/amigos.js?v=5" defer data-lang="${en ? 'en' : 'es'}"></script>
 ` : ''}${/class="detail"/.test(body) ? `<script src="/assets/barra.js?v=2" defer></script>
 ` : ''}${CONTADOR}
 </body></html>`;
@@ -345,8 +345,8 @@ export function serviceDown(lang, path) {
   const en = lang === 'en';
   const S = en
     ? {
-        title: 'We could not load this',
-        body: 'It is not your fault: something on our side is not answering right now. '
+        title: "We couldn't load this",
+        body: "It's not your fault: something on our side isn't responding right now. "
           + 'Try again in a minute.',
         again: 'Try again',
         home: 'Go to Klendar',

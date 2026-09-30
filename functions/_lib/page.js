@@ -117,7 +117,7 @@ export function discountLabel(d) {
 export function render({ lang, path, kind, title, description, image, ogTitle, ogDescription, jsonLd, notFound = false }) {
   const en = lang === 'en';
   const S = en
-    ? { open: 'Open in the app', gp: 'Google Play · coming soon', as: 'App Store · coming soon', home: 'Go to klendar.app', d: 'If you have the app installed it will open on its own. If not, download it and open the link again.', nf: 'Page not found', inv: 'This link is not valid.', how: 'How it works', biz: 'Businesses', sup: 'Support' }
+    ? { open: 'Open in the app', gp: 'Google Play · coming soon', as: 'App Store · coming soon', home: 'Go to klendar.app', d: "If you have the app installed, it'll open automatically. If not, download it and open the link again.", nf: 'Page not found', inv: "This link isn't valid.", how: 'How it works', biz: 'Businesses', sup: 'Support' }
     : { open: 'Abrir en la app', gp: 'Google Play · próximamente', as: 'App Store · próximamente', home: 'Ir a klendar.app', d: 'Si tienes la app instalada, se abrirá sola. Si no, descárgala y vuelve a abrir el enlace.', nf: 'Página no encontrada', inv: 'El enlace no es válido.', how: 'Cómo funciona', biz: 'Negocios', sup: 'Soporte' };
   const t = notFound ? S.nf : title;
   const desc = notFound ? S.inv : (description || S.d);
