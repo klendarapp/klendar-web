@@ -16,3 +16,7 @@ export const onRequestGet = (ctx) => {
     headers: { Location: `/panel/#/validar?code=${code}`, 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex' },
   });
 };
+
+// HEAD igual que GET (el middleware quita el cuerpo): comprobadores de enlaces
+// y vigilantes de caídas preguntan con HEAD, y sin esto Cloudflare da 404.
+export const onRequestHead = onRequestGet;

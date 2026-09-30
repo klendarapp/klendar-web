@@ -9,3 +9,7 @@ export const onRequestGet = (ctx) => {
   const url = new URL(ctx.request.url);
   return guard('es', url.pathname, () => venuePosterPage(ctx.params.token, 'es', url.searchParams.get('mesa') === '1'));
 };
+
+// HEAD igual que GET (el middleware quita el cuerpo): comprobadores de enlaces
+// y vigilantes de caídas preguntan con HEAD, y sin esto Cloudflare da 404.
+export const onRequestHead = onRequestGet;

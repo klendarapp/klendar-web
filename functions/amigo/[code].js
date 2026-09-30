@@ -15,3 +15,7 @@ export const onRequestGet = (ctx) => {
   const lang = pedido === 'en' || pedido === 'es' ? pedido : pickLang(ctx.request);
   return guard(lang, url.pathname, () => friendLinkPage(String(ctx.params.code || ''), lang));
 };
+
+// HEAD igual que GET (el middleware quita el cuerpo): comprobadores de enlaces
+// y vigilantes de caídas preguntan con HEAD, y sin esto Cloudflare da 404.
+export const onRequestHead = onRequestGet;

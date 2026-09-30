@@ -114,3 +114,7 @@ ${erroresScript()}
   });
   });
 }
+
+// HEAD igual que GET (el middleware quita el cuerpo): comprobadores de enlaces
+// y vigilantes de caídas preguntan con HEAD, y sin esto Cloudflare da 404.
+export const onRequestHead = onRequestGet;
