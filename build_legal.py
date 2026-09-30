@@ -104,6 +104,28 @@ UBICACION_SERVIDORES = {
 DATE = {'es': '29 de septiembre de 2026', 'en': '29 September 2026'}
 VERSION = '2026-09-29'
 
+# Documentos que han cambiado DESPUÉS de VERSION sin que haga falta volver a
+# pedir la aceptación (cambios informativos: la privacidad y las normas
+# informan, no obligan a nada nuevo). Cada uno lleva su propia fecha de
+# «Última actualización»; la versión sigue siendo VERSION. Si un cambio sí
+# tiene que volver a pedirse, se sube VERSION (y `app_config.terms`) y se
+# vacía esta tabla. Clave: slug ES del documento.
+ACTUALIZADO = {
+    # 2026-10-01: denuncias sin cuenta, moderación automática, bloquear;
+    # correcciones de la revisión legal (docs/AUDITORIA_LEGAL.md, «Revisión
+    # 2026-10-01»).
+    'normas': {'es': '1 de octubre de 2026', 'en': '1 October 2026'},
+    'privacidad': {'es': '1 de octubre de 2026', 'en': '1 October 2026'},
+    'cookies': {'es': '1 de octubre de 2026', 'en': '1 October 2026'},
+    'eliminar-cuenta': {'es': '1 de octubre de 2026', 'en': '1 October 2026'},
+    'soporte': {'es': '1 de octubre de 2026', 'en': '1 October 2026'},
+}
+
+
+def fecha(slug, lang):
+    """Fecha de «Última actualización» de un documento (slug ES)."""
+    return ACTUALIZADO.get(slug, DATE)[lang]
+
 # Datos de EJEMPLO para la vista previa (--vista-previa). Claramente falsos:
 # el script se niega a publicar nada que los contenga.
 EJEMPLO_SL = dict(TITULAR_DATOS,
@@ -349,29 +371,34 @@ def textos(D, resaltar=False):
 <h2>2. Qué datos tratamos y para qué</h2>
 <table>
 <tr><th>Tratamiento</th><th>Datos</th><th>Finalidad</th><th>Base jurídica</th><th>Conservación</th></tr>
-<tr><td>Cuenta de usuario</td><td>Email, nombre mostrado, contraseña (cifrada), fecha de nacimiento, idioma, foto de perfil (opcional), fecha y versión de aceptación de los términos</td><td>Crear y gestionar tu cuenta; verificar la edad mínima (14 años) y el acceso a contenidos para mayores de 18; y, si un negocio de tus favoritos ofrece regalo de cumpleaños y no lo apagas en Ajustes → Notificaciones, dártelo el día de tu cumpleaños (el negocio no ve tu fecha: solo recibe el código cuando lo canjeas)</td><td>Ejecución del contrato (art. 6.1.b RGPD); obligación legal para la edad (art. 6.1.c; art. 7 LOPDGDD)</td><td>Mientras la cuenta esté activa. Al eliminarla, se borra en 30 días salvo obligación legal de conservación</td></tr>
+<tr><td>Cuenta de usuario</td><td>Email, nombre mostrado, contraseña (cifrada), fecha de nacimiento, idioma, foto de perfil (opcional), fecha y versión de aceptación de los términos</td><td>Crear y gestionar tu cuenta; verificar la edad mínima (14 años) y el acceso a contenidos para mayores de 18; y, si un negocio de tus favoritos ofrece regalo de cumpleaños y no lo apagas en Ajustes → Notificaciones, dártelo el día de tu cumpleaños (el negocio no ve tu fecha: solo recibe el código cuando lo canjeas)</td><td>Ejecución del contrato (art. 6.1.b RGPD); obligación legal para la edad (art. 6.1.c; art. 7 LOPDGDD)</td><td>Mientras la cuenta esté activa. Al eliminarla se borra al momento (si lo pides por correo, en un máximo de 30 días) y las copias de seguridad se sobrescriben en un máximo de 7 días. Se conservan, sin vincularlos a ti, los datos de facturación de los negocios (6 años) y las denuncias resueltas (2 años)</td></tr>
 <tr><td>Inicio de sesión con Google / Apple</td><td>Identificador del proveedor, email, nombre</td><td>Autenticación sin contraseña</td><td>Ejecución del contrato</td><td>Igual que la cuenta</td></tr>
 <tr><td>Ubicación</td><td>Coordenadas aproximadas o precisas del dispositivo (según el permiso que concedas) o la ciudad que elijas manualmente</td><td>Ordenar el feed y el mapa por cercanía; "ofertas cerca de ti" si activas esa opción; y, de forma agregada y sin identificar a nadie, las cifras de distancia del «Informe» de cada negocio (desde qué distancia llega su clientela)</td><td>Consentimiento (art. 6.1.a), revocable en los ajustes del dispositivo y de la app</td><td>No se guarda un historial. Solo se conserva la última ubicación conocida (para "cerca de ti") y se descarta a los 7 días</td></tr>
-<tr><td>Favoritos, reseñas, canjes</td><td>Negocios guardados, valoraciones y comentarios, códigos de canje y su estado, vistas de ofertas</td><td>Prestar el servicio: tus favoritos, tus reseñas públicas, el historial de canjes y estadísticas agregadas para los negocios</td><td>Ejecución del contrato</td><td>Mientras exista la cuenta. Las reseñas se muestran con tu nombre mostrado</td></tr>
-<tr><td>Amigos y planes</td><td>Tu enlace de amigo (y su QR), tus amigos y desde cuándo lo sois, las publicaciones a las que marcas «Voy», las invitaciones que mandas y recibes (y lo que contestas) y tu opción «Que mis amigos vean mis planes»</td><td>Que puedas hacerte amigo de quien tenga tu enlace, ver a qué planes van tus amigos, invitarles y que ellos vean a qué vas tú. No hay buscador de personas: solo te encuentra quien tiene tu enlace o tu QR</td><td>Ejecución del contrato. Que tus amigos vean tus planes se apaga en Ajustes → Privacidad, y las invitaciones, en Ajustes → Notificaciones</td><td>Mientras exista la cuenta. Si quitas a alguien de tus amigos, deja de ver tus planes al momento (no le avisamos)</td></tr>
-<tr><td>Notificaciones push</td><td>Token del dispositivo, preferencias (favoritos, cercanía, mensajes de tus favoritos, invitaciones de amigos, cumpleaños, horas de silencio)</td><td>Avisarte de novedades y mensajes de tus favoritos (como mucho uno por semana y negocio), ofertas cercanas, invitaciones de tus amigos y tu regalo de cumpleaños. Cada tipo se apaga por separado en Ajustes → Notificaciones</td><td>Consentimiento, revocable en cualquier momento</td><td>Hasta que revoques el permiso, cierres sesión o elimines la cuenta</td></tr>
+<tr><td>Favoritos, reseñas, canjes y sellos</td><td>Negocios guardados, valoraciones y comentarios, códigos de canje y su estado, vistas de ofertas, tarjetas de sellos (sellos, premios y sus códigos)</td><td>Prestar el servicio: tus favoritos, tus reseñas públicas, el historial de canjes, las tarjetas de sellos de los negocios y estadísticas agregadas para los negocios</td><td>Ejecución del contrato</td><td>Mientras exista la cuenta. Las reseñas se muestran con tu nombre mostrado</td></tr>
+<tr><td>Amigos y planes</td><td>Tu enlace de amigo (y su QR), tus amigos y desde cuándo lo sois, las publicaciones a las que marcas «Voy», las invitaciones que mandas y recibes (y lo que contestas), tu opción «Que mis amigos vean mis planes» y las personas que bloqueas</td><td>Que puedas hacerte amigo de quien tenga tu enlace, ver a qué planes van tus amigos, invitarles y que ellos vean a qué vas tú; y que las personas que bloqueas no puedan ser tus amigas ni invitarte (no se les avisa). No hay buscador de personas: solo te encuentra quien tiene tu enlace o tu QR</td><td>Ejecución del contrato. Que tus amigos vean tus planes se apaga en Ajustes → Privacidad, y las invitaciones, en Ajustes → Notificaciones</td><td>Mientras exista la cuenta. Si quitas a alguien de tus amigos, deja de ver tus planes al momento (no le avisamos)</td></tr>
+<tr><td>Notificaciones push</td><td>Token del dispositivo, preferencias (favoritos, cercanía, mensajes de tus favoritos, invitaciones de amigos, sellos y premios, cumpleaños, horas de silencio)</td><td>Avisarte de novedades y mensajes de tus favoritos (como mucho uno por semana y negocio), ofertas cercanas, invitaciones de tus amigos, los sellos y premios de tus tarjetas y tu regalo de cumpleaños. Cada tipo se apaga por separado en Ajustes → Notificaciones</td><td>Consentimiento, revocable en cualquier momento</td><td>Hasta que revoques el permiso, cierres sesión o elimines la cuenta</td></tr>
 <tr><td>Cuenta de negocio</td><td>Datos del negocio (nombre, dirección, NIF/CIF, teléfono, email de contacto, horarios), miembros del equipo (email y rol), plan contratado y pagos</td><td>Dar de alta, verificar y gestionar el negocio; facturar la cuota</td><td>Ejecución del contrato; obligación legal (facturación)</td><td>Durante la relación y después el plazo legal (fiscal: 4 años; mercantil: 6 años)</td></tr>
-<tr><td>Denuncias de contenido</td><td>Identidad de quien denuncia, motivo, contenido denunciado</td><td>Moderar la Plataforma (Reglamento (UE) 2022/2065, DSA)</td><td>Obligación legal e interés legítimo</td><td>2 años desde la resolución</td></tr>
-<tr><td>Diagnóstico y rendimiento</td><td>Identificador de instalación, modelo y sistema del dispositivo, informes de errores, uso agregado de pantallas</td><td>Detectar fallos y mejorar la app (Firebase Crashlytics y Analytics)</td><td>Interés legítimo (art. 6.1.f): mantener la app estable</td><td>Crashlytics 90 días; Analytics agregado 14 meses</td></tr>
+<tr><td>Denuncias de contenido (también sin cuenta)</td><td>Si denuncias sin cuenta: tu nombre, tu correo (opcionales si se trata de abuso sexual infantil) y tu idioma; si denuncias con tu cuenta, la cuenta. En los dos casos: el motivo, el texto de la denuncia, una copia del contenido denunciado y la fecha. Para frenar abusos en las denuncias sin cuenta, un resumen de la conexión calculado con una clave que cambia cada día; nunca la dirección IP</td><td>Tramitar la denuncia y contestarte: confirmarte que la hemos recibido y decirte qué hemos decidido y por qué. Quien publicó el contenido no sabe quién lo denunció</td><td>Obligación legal (art. 6.1.c RGPD; Reglamento (UE) 2022/2065, art. 16)</td><td>Hasta 2 años desde que se cierra la denuncia. El resumen de la conexión se borra en 24 horas</td></tr>
+<tr><td>Informes de errores</td><td>Identificador de instalación, modelo y sistema del dispositivo, versión de la app, informe técnico del fallo (sin tu nombre ni tu correo)</td><td>Detectar y arreglar fallos de la app (Firebase Crashlytics)</td><td>Interés legítimo (art. 6.1.f): que la app funcione</td><td>90 días</td></tr>
+<tr><td>Estadísticas de uso de la app (opcional)</td><td>Identificador de instalación, pantallas y acciones (ver una oferta, guardar, canjear, compartir, buscar —sin el texto que buscas—), modelo y sistema del dispositivo</td><td>Saber qué se usa para mejorar la app (Firebase Analytics)</td><td>Consentimiento (art. 6.1.a): casilla sin marcar al registrarte o en Ajustes → Privacidad y datos; se retira igual</td><td>14 meses</td></tr>
 <tr><td>Comunicaciones comerciales</td><td>Email</td><td>Enviarte novedades de Klendar (nunca de terceros)</td><td>Consentimiento específico marcado en el registro; revocable en cada email o en el perfil</td><td>Hasta que lo revoques</td></tr>
 <tr><td>Soporte</td><td>Email y contenido de tu mensaje</td><td>Atender tus consultas</td><td>Ejecución del contrato / interés legítimo</td><td>1 año desde el cierre</td></tr>
 </table>
+<p>Para crear la cuenta son obligatorios el correo (o tu cuenta de Google o Apple), la fecha de nacimiento y aceptar los términos; sin ellos no se puede usar la cuenta. Todo lo demás es opcional.</p>
 
 <h2>3. Destinatarios y encargados del tratamiento</h2>
 <p>No vendemos ni cedemos tus datos. Para prestar el servicio usamos proveedores que actúan como encargados del tratamiento con contratos conforme al art. 28 RGPD:</p>
 <ul>
   <li><strong>Supabase</strong> (base de datos, autenticación y almacenamiento; {SRV['es']}).</li>
   <li><strong>Google Firebase</strong> (notificaciones push, informes de errores y, solo si lo aceptas, estadísticas de uso de la app; Google Ireland Ltd.; transferencias internacionales amparadas en el Marco de Privacidad de Datos UE-EE. UU. y cláusulas contractuales tipo).</li>
-  <li><strong>Mapbox</strong> (mapas; recibe las coordenadas del área que consultas para pintar el mapa).</li>
-  <li><strong>Cloudflare</strong> (alojamiento y red de entrega de klendar.app; procesa la dirección IP de las visitas para servir la web y protegerla, y cuenta las visitas de forma agregada con Cloudflare Web Analytics, sin cookies ni identificarte).</li>
-  <li><strong>Resend</strong> (envío de correos: los de tu cuenta, los avisos y los resúmenes por correo; recibe tu dirección de correo y el contenido del mensaje; Plus Five Five, Inc., EE. UU.; transferencia internacional amparada en el Marco de Privacidad de Datos UE-EE. UU., al que Resend está adherido, y en las cláusulas contractuales tipo de la Comisión Europea que incluye su contrato de encargo).</li>
+  <li><strong>Mapbox</strong> (Mapbox, Inc., EE. UU.: mapas y rutas a pie; recibe las coordenadas del área que consultas para pintar el mapa y, si pides la ruta a pie hasta un local, tu posición y la del local, sin tu nombre ni tu correo; transferencia internacional amparada en el Marco de Privacidad de Datos UE-EE. UU., al que Mapbox está adherida, y en cláusulas contractuales tipo).</li>
+  <li><strong>Cloudflare</strong> (Cloudflare, Inc.: alojamiento y red de entrega de klendar.app; procesa la dirección IP de las visitas para servir la web y protegerla, cuenta las visitas de forma agregada con Cloudflare Web Analytics, sin cookies ni identificarte, y, cuando está activada, hace la comprobación anti-robots (Turnstile) al entrar y al denunciar sin cuenta; transferencias internacionales amparadas en el Marco de Privacidad de Datos UE-EE. UU. y cláusulas contractuales tipo).</li>
+  <li><strong>IONOS</strong> (IONOS SE, Alemania: nuestro buzón de correo; recibe lo que nos escribes).</li>
+  <li><strong>Resend</strong> (envío de correos: los de tu cuenta, los avisos, los resúmenes por correo y las respuestas a quien denuncia sin cuenta; recibe tu dirección de correo y el contenido del mensaje; Plus Five Five, Inc., EE. UU.; transferencia internacional amparada en el Marco de Privacidad de Datos UE-EE. UU., al que Resend está adherido, y en las cláusulas contractuales tipo de la Comisión Europea que incluye su contrato de encargo).</li>
 </ul>
 <p>Si entras con tu cuenta de <strong>Apple</strong> («Continuar con Apple»), Apple (Apple Distribution International Ltd., Irlanda) comprueba tu identidad y nos comunica un identificador, tu nombre y tu correo, o una dirección de reenvío privada de Apple si eliges ocultar el tuyo. Apple trata esos datos como responsable independiente, según su propia política de privacidad; nosotros solo recibimos lo indicado. Lo mismo ocurre con <strong>Google</strong> si entras con tu cuenta de Google (más abajo).</p>
+<p>Si añades un canje a <strong>Google Wallet</strong>, Google recibe los datos del pase (oferta, negocio y código) como responsable independiente. Algunas páginas de la web cargan los iconos de <strong>Google Fonts</strong> y una librería de <strong>jsDelivr</strong>, que reciben tu dirección IP (más detalle en la <a href="/cookies/">política de cookies</a>).</p>
+<p>Las <strong>denuncias</strong> solo las ve el equipo de Klendar. No se las damos a quien publicó el contenido denunciado; solo las comunicamos a las autoridades si hay indicios de un delito (art. 18 del Reglamento (UE) 2022/2065) o si nos lo pide un juez o la autoridad competente.</p>
 <p>Los <strong>negocios</strong> ven tu nombre mostrado cuando canjeas una oferta o publicas una reseña, y estadísticas agregadas (nunca tu email ni tu ubicación).</p>
 <p>Tus <strong>amigos</strong> en Klendar (solo las personas con las que te has hecho amigo con un enlace de amigo) ven tu nombre mostrado y tu foto y, si no lo apagas, a qué planes vas («Voy», una plaza reservada o un código). Nadie más lo ve: ni otras personas ni los negocios, que tampoco saben quién es amigo de quién.</p>
 
@@ -386,10 +413,10 @@ def textos(D, resaltar=False):
 <p>El uso que Klendar hace de la información recibida de las API de Google se ajusta a la <a href="https://developers.google.com/terms/api-services-user-data-policy" rel="noopener">Política de datos de usuario de los servicios de API de Google</a>, incluidos los requisitos de uso limitado.</p>
 
 <h2>4. Menores</h2>
-<p>La edad mínima para usar Klendar es de <strong>14 años</strong>. Los contenidos marcados como "+18" (locales de ocio nocturno, alcohol) solo se muestran a personas que han acreditado ser mayores de 18 años mediante su fecha de nacimiento. Si detectamos una cuenta de un menor de 14 años, la eliminaremos.</p>
+<p>La edad mínima para usar Klendar es de <strong>14 años</strong>. Los contenidos marcados como "+18" (locales de ocio nocturno, alcohol) solo se muestran a personas que han indicado con su fecha de nacimiento que son mayores de 18 años. Si detectamos una cuenta de un menor de 14 años, la eliminaremos.</p>
 
 <h2>5. Tus derechos</h2>
-<p>Puedes ejercer los derechos de acceso, rectificación, supresión, oposición, limitación y portabilidad, y retirar el consentimiento en cualquier momento, escribiendo a <a href="mailto:{EP}">{EP}</a> desde el email de tu cuenta. Además, desde la app (Cuenta → Ajustes → Privacidad y datos) puedes: ver qué has consentido y cuándo, retirar por separado el consentimiento de ubicación, notificaciones push y comunicaciones comerciales, dejar de enseñar tus planes a tus amigos, descargar todos tus datos en un archivo (acceso y portabilidad), y <a href="/eliminar-cuenta/">eliminar tu cuenta</a> por completo. Si consideras que no hemos atendido correctamente tu solicitud, puedes reclamar ante la Agencia Española de Protección de Datos (<a href="https://www.aepd.es" rel="noopener">www.aepd.es</a>).</p>
+<p>Puedes ejercer los derechos de acceso, rectificación, supresión, oposición, limitación y portabilidad, y retirar el consentimiento en cualquier momento, escribiendo a <a href="mailto:{EP}">{EP}</a> desde el email de tu cuenta. Además, desde la app o desde «Tu cuenta» en la web (Cuenta → Ajustes → Privacidad y datos) puedes: ver qué has consentido y cuándo, retirar por separado el consentimiento de ubicación, notificaciones push, estadísticas de uso y comunicaciones comerciales, dejar de enseñar tus planes a tus amigos, ver y desbloquear a las personas que has bloqueado, descargar todos tus datos en un archivo (acceso y portabilidad), y <a href="/eliminar-cuenta/">eliminar tu cuenta</a> por completo. Si consideras que no hemos atendido correctamente tu solicitud, puedes reclamar ante la Agencia Española de Protección de Datos (<a href="https://www.aepd.es" rel="noopener">www.aepd.es</a>).</p>
 
 <h2>6. Seguridad</h2>
 <p>Los datos se transmiten cifrados (TLS), las contraseñas se almacenan con hash, el acceso a la base de datos está restringido por políticas de seguridad a nivel de fila (cada persona solo accede a lo suyo) y los proveedores citados cuentan con certificaciones de seguridad reconocidas.</p>
@@ -409,29 +436,34 @@ def textos(D, resaltar=False):
 <h2>2. What we process and why</h2>
 <table>
 <tr><th>Processing</th><th>Data</th><th>Purpose</th><th>Legal basis</th><th>Retention</th></tr>
-<tr><td>User account</td><td>Email, display name, password (hashed), date of birth, language, profile photo (optional), date and version of the terms you accepted</td><td>Create and manage your account; verify the minimum age (14) and access to 18+ content; and, if one of your favourite businesses offers a birthday gift and you don't turn it off in Settings → Notifications, give it to you on your birthday (the business never sees your date: it only gets the code when you redeem it)</td><td>Performance of a contract (art. 6(1)(b) GDPR); legal obligation for age (art. 6(1)(c); art. 7 LOPDGDD)</td><td>While the account is active. When you delete it, data is erased within 30 days unless we must keep it by law</td></tr>
+<tr><td>User account</td><td>Email, display name, password (hashed), date of birth, language, profile photo (optional), date and version of the terms you accepted</td><td>Create and manage your account; verify the minimum age (14) and access to 18+ content; and, if one of your favourite businesses offers a birthday gift and you don't turn it off in Settings → Notifications, give it to you on your birthday (the business never sees your date: it only gets the code when you redeem it)</td><td>Performance of a contract (art. 6(1)(b) GDPR); legal obligation for age (art. 6(1)(c); art. 7 LOPDGDD)</td><td>While the account is active. When you delete it, it is erased immediately (within 30 days at most if you ask by email) and backups are overwritten within 7 days. Businesses' invoicing data (6 years) and resolved reports (2 years) are kept, no longer linked to you</td></tr>
 <tr><td>Sign in with Google / Apple</td><td>Provider identifier, email, name</td><td>Passwordless authentication</td><td>Performance of a contract</td><td>Same as the account</td></tr>
 <tr><td>Location</td><td>Approximate or precise device coordinates (depending on the permission you grant) or the city you pick manually</td><td>Sort the feed and the map by distance; "deals near you" if you enable it; and, in aggregate and without identifying anyone, the distance figures in each business's “Report” (how far its customers come from)</td><td>Consent (art. 6(1)(a)), revocable in your device and app settings</td><td>No history is kept. Only the last known location is stored (for "near you") and discarded after 7 days</td></tr>
-<tr><td>Favourites, reviews, redemptions</td><td>Saved businesses, ratings and comments, redemption codes and their status, deal views</td><td>Provide the service: your favourites, your public reviews, your redemption history and aggregate statistics for businesses</td><td>Performance of a contract</td><td>While the account exists. Reviews are shown with your display name</td></tr>
-<tr><td>Friends and plans</td><td>Your friend link (and its QR code), your friends and since when, the publications you mark as “I'm going”, the invitations you send and receive (and your answers) and your “Let my friends see my plans” setting</td><td>Let you become friends with people who have your link, see which plans your friends are going to, invite them and let them see what you're going to. There is no people search: only people with your link or your QR code can find you</td><td>Performance of a contract. Showing your plans to your friends can be turned off in Settings → Privacy, and invitations in Settings → Notifications</td><td>While the account exists. If you remove someone from your friends, they stop seeing your plans straight away (we don't tell them)</td></tr>
-<tr><td>Push notifications</td><td>Device token, preferences (favourites, nearby, messages from your favourites, friend invitations, birthday, quiet hours)</td><td>Tell you about news and messages from your favourites (at most one a week per business), nearby offers, invitations from your friends and your birthday gift. Each kind can be turned off separately in Settings → Notifications</td><td>Consent, revocable at any time</td><td>Until you revoke the permission, log out or delete the account</td></tr>
+<tr><td>Favourites, reviews, redemptions and stamps</td><td>Saved businesses, ratings and comments, redemption codes and their status, deal views, stamp cards (stamps, rewards and their codes)</td><td>Provide the service: your favourites, your public reviews, your redemption history, businesses' stamp cards and aggregate statistics for businesses</td><td>Performance of a contract</td><td>While the account exists. Reviews are shown with your display name</td></tr>
+<tr><td>Friends and plans</td><td>Your friend link (and its QR code), your friends and since when, the publications you mark as “I'm going”, the invitations you send and receive (and your answers), your “Let my friends see my plans” setting and the people you block</td><td>Let you become friends with people who have your link, see which plans your friends are going to, invite them and let them see what you're going to; and make sure the people you block can't be your friends or invite you (they aren't told). There is no people search: only people with your link or your QR code can find you</td><td>Performance of a contract. Showing your plans to your friends can be turned off in Settings → Privacy, and invitations in Settings → Notifications</td><td>While the account exists. If you remove someone from your friends, they stop seeing your plans straight away (we don't tell them)</td></tr>
+<tr><td>Push notifications</td><td>Device token, preferences (favourites, nearby, messages from your favourites, friend invitations, stamps and rewards, birthday, quiet hours)</td><td>Tell you about news and messages from your favourites (at most one a week per business), nearby offers, invitations from your friends, the stamps and rewards on your cards and your birthday gift. Each kind can be turned off separately in Settings → Notifications</td><td>Consent, revocable at any time</td><td>Until you revoke the permission, log out or delete the account</td></tr>
 <tr><td>Business account</td><td>Business details (name, address, tax ID, phone, contact email, opening hours), team members (email and role), plan and payments</td><td>Register, verify and manage the business; invoice the subscription</td><td>Performance of a contract; legal obligation (invoicing)</td><td>During the relationship and afterwards for the statutory period (tax: 4 years; commercial: 6 years)</td></tr>
-<tr><td>Content reports</td><td>Identity of the reporter, reason, reported content</td><td>Moderate the Platform (Regulation (EU) 2022/2065, DSA)</td><td>Legal obligation and legitimate interest</td><td>2 years from resolution</td></tr>
-<tr><td>Diagnostics and performance</td><td>Installation identifier, device model and OS, crash reports, aggregate screen usage</td><td>Detect failures and improve the app (Firebase Crashlytics and Analytics)</td><td>Legitimate interest (art. 6(1)(f)): keeping the app stable</td><td>Crashlytics 90 days; aggregate Analytics 14 months</td></tr>
+<tr><td>Content reports (also without an account)</td><td>If you report without an account: your name, your email (optional if it concerns child sexual abuse) and your language; if you report with your account, the account. In both cases: the reason, the text of the report, a copy of the reported content and the date. To stop abuse of reports made without an account, a digest of the connection calculated with a key that changes every day; never the IP address</td><td>Handle the report and reply to you: confirm we've received it and tell you what we've decided and why. The person who posted the content doesn't know who reported it</td><td>Legal obligation (art. 6(1)(c) GDPR; Regulation (EU) 2022/2065, art. 16)</td><td>Up to 2 years after the report is closed. The connection digest is deleted within 24 hours</td></tr>
+<tr><td>Crash reports</td><td>Installation identifier, device model and OS, app version, technical crash report (without your name or email)</td><td>Detect and fix app crashes (Firebase Crashlytics)</td><td>Legitimate interest (art. 6(1)(f)): keeping the app working</td><td>90 days</td></tr>
+<tr><td>App usage statistics (optional)</td><td>Installation identifier, screens and actions (viewing a deal, saving, redeeming, sharing, searching —without what you type—), device model and OS</td><td>Know what is used in order to improve the app (Firebase Analytics)</td><td>Consent (art. 6(1)(a)): unticked box at sign-up or in Settings → Privacy and data; withdrawn the same way</td><td>14 months</td></tr>
 <tr><td>Marketing emails</td><td>Email</td><td>Send you Klendar news (never from third parties)</td><td>Specific consent ticked at sign-up; revocable in every email or in your profile</td><td>Until you withdraw it</td></tr>
 <tr><td>Support</td><td>Email and the content of your message</td><td>Answer your enquiries</td><td>Performance of a contract / legitimate interest</td><td>1 year after closure</td></tr>
 </table>
+<p>To create an account, your email (or your Google or Apple account), your date of birth and accepting the terms are required; without them the account cannot be used. Everything else is optional.</p>
 
 <h2>3. Recipients and processors</h2>
 <p>We never sell or share your data. To provide the service we rely on providers acting as processors under contracts compliant with art. 28 GDPR:</p>
 <ul>
   <li><strong>Supabase</strong> (database, authentication and storage; {SRV['en']}).</li>
   <li><strong>Google Firebase</strong> (push notifications, crash reports and, only if you agree, app usage statistics; Google Ireland Ltd.; international transfers covered by the EU-US Data Privacy Framework and standard contractual clauses).</li>
-  <li><strong>Mapbox</strong> (maps; receives the coordinates of the area you look at in order to render the map).</li>
-  <li><strong>Cloudflare</strong> (hosting and content delivery for klendar.app; processes visitors' IP addresses to serve and protect the website, and counts visits in aggregate with Cloudflare Web Analytics, without cookies or identifying you).</li>
-  <li><strong>Resend</strong> (sending emails: your account emails, alerts and email summaries; it receives your email address and the content of the message; Plus Five Five, Inc., USA; international transfer covered by the EU-US Data Privacy Framework, to which Resend has self-certified, and by the European Commission's standard contractual clauses included in its data processing agreement).</li>
+  <li><strong>Mapbox</strong> (Mapbox, Inc., USA: maps and walking directions; it receives the coordinates of the area you look at in order to render the map and, if you ask for walking directions to a venue, your position and the venue's, without your name or email; international transfer covered by the EU-US Data Privacy Framework, to which Mapbox has self-certified, and by standard contractual clauses).</li>
+  <li><strong>Cloudflare</strong> (Cloudflare, Inc.: hosting and content delivery for klendar.app; it processes visitors' IP addresses to serve and protect the website, counts visits in aggregate with Cloudflare Web Analytics, without cookies or identifying you, and, when enabled, runs the anti-bot check (Turnstile) when you log in and when you report without an account; international transfers covered by the EU-US Data Privacy Framework and standard contractual clauses).</li>
+  <li><strong>IONOS</strong> (IONOS SE, Germany: our mailbox; it receives what you write to us).</li>
+  <li><strong>Resend</strong> (sending emails: your account emails, alerts, email summaries and replies to people who report without an account; it receives your email address and the content of the message; Plus Five Five, Inc., USA; international transfer covered by the EU-US Data Privacy Framework, to which Resend has self-certified, and by the European Commission's standard contractual clauses included in its data processing agreement).</li>
 </ul>
 <p>If you log in with your <strong>Apple</strong> account (“Continue with Apple”), Apple (Apple Distribution International Ltd., Ireland) verifies your identity and gives us an identifier, your name and your email, or a private Apple relay address if you choose to hide yours. Apple processes that data as an independent controller, under its own privacy policy; we only receive what is listed here. The same applies to <strong>Google</strong> if you log in with your Google account (see below).</p>
+<p>If you add a redemption to <strong>Google Wallet</strong>, Google receives the pass data (deal, business and code) as an independent controller. Some pages of the website load icons from <strong>Google Fonts</strong> and a library from <strong>jsDelivr</strong>, which receive your IP address (more detail in the <a href="/en/cookies/">cookie policy</a>).</p>
+<p><strong>Reports</strong> are only seen by the Klendar team. We never give them to the person who posted the reported content; we only pass them on to the authorities if there are signs of a criminal offence (art. 18 of Regulation (EU) 2022/2065) or if a court or the competent authority requires it.</p>
 <p><strong>Businesses</strong> see your display name when you redeem a deal or post a review, plus aggregate statistics (never your email or your location).</p>
 <p>Your <strong>friends</strong> on Klendar (only the people you have become friends with through a friend link) see your display name and photo and, unless you turn it off, which plans you're going to (“I'm going”, a reserved place or a code). Nobody else sees it: not other people and not businesses, who don't know who is friends with whom either.</p>
 
@@ -446,10 +478,10 @@ def textos(D, resaltar=False):
 <p>Klendar's use of information received from Google APIs adheres to the <a href="https://developers.google.com/terms/api-services-user-data-policy" rel="noopener">Google API Services User Data Policy</a>, including the Limited Use requirements.</p>
 
 <h2>4. Minors</h2>
-<p>The minimum age to use Klendar is <strong>14</strong>. Content marked "18+" (nightlife venues, alcohol) is only shown to people who have confirmed they are over 18 through their date of birth. If we detect an account belonging to someone under 14, we will delete it.</p>
+<p>The minimum age to use Klendar is <strong>14</strong>. Content marked "18+" (nightlife venues, alcohol) is only shown to people who have stated through their date of birth that they are over 18. If we detect an account belonging to someone under 14, we will delete it.</p>
 
 <h2>5. Your rights</h2>
-<p>You may exercise your rights of access, rectification, erasure, objection, restriction and portability, and withdraw consent at any time, by writing to <a href="mailto:{EP}">{EP}</a> from your account email. From the app (Account → Settings → Privacy and data) you can also see what you have consented to and when, withdraw location, push and marketing consent separately, stop showing your plans to your friends, download all your data as a file (access and portability), and <a href="/en/delete-account/">delete your account</a> entirely. If you believe we have not handled your request properly, you may lodge a complaint with the Spanish Data Protection Agency (<a href="https://www.aepd.es" rel="noopener">www.aepd.es</a>).</p>
+<p>You may exercise your rights of access, rectification, erasure, objection, restriction and portability, and withdraw consent at any time, by writing to <a href="mailto:{EP}">{EP}</a> from your account email. From the app or from “Your account” on the website (Account → Settings → Privacy and data) you can also see what you have consented to and when, withdraw location, push, usage statistics and marketing consent separately, stop showing your plans to your friends, see and unblock the people you have blocked, download all your data as a file (access and portability), and <a href="/en/delete-account/">delete your account</a> entirely. If you believe we have not handled your request properly, you may lodge a complaint with the Spanish Data Protection Agency (<a href="https://www.aepd.es" rel="noopener">www.aepd.es</a>).</p>
 
 <h2>6. Security</h2>
 <p>Data is transmitted encrypted (TLS), passwords are stored hashed, database access is restricted by row-level security policies (each person only reaches their own data), and the providers listed hold recognised security certifications.</p>
@@ -631,18 +663,62 @@ def textos(D, resaltar=False):
 ''')
 
     # ── Cookies ─────────────────────────────────────────────────────────────────
-    ES['cookies'] = ('Política de cookies', 'Klendar no usa cookies de seguimiento ni publicidad: solo las técnicas imprescindibles y tu preferencia de idioma. Qué se guarda, por qué y cómo borrarlo.', '''
-<p><strong>klendar.app</strong> no utiliza cookies de seguimiento ni publicidad. Solo se utilizan, en su caso, cookies técnicas estrictamente necesarias para el funcionamiento del sitio y el almacenamiento local de tu preferencia de idioma, que no requieren consentimiento según el art. 22.2 de la LSSI-CE.</p>
-<p>Para saber cuánta gente visita la web usamos <strong>Cloudflare Web Analytics</strong>, que cuenta las visitas de forma agregada <strong>sin cookies</strong>, sin guardar nada en tu navegador y sin seguirte entre sitios, así que no necesita tu consentimiento.</p>
-<p>Las fuentes tipográficas se cargan desde Google Fonts, lo que implica una petición a servidores de Google con tu dirección IP; si en el futuro se incorporan cookies analíticas o de terceros, actualizaremos esta política y solicitaremos tu consentimiento previo.</p>
-<p>La <strong>app móvil</strong> no usa cookies. Usa identificadores de dispositivo para las notificaciones y los informes de errores, y solo si lo aceptas (al registrarte o en Cuenta → Ajustes → Privacidad) para estadísticas de uso anónimas. Puedes retirarlo cuando quieras desde la app o desde «Tu cuenta» en la web. Más detalle en la <a href="/privacidad/">Política de privacidad</a>.</p>
+    ES['cookies'] = ('Política de cookies', 'Klendar no usa cookies: qué guarda en tu navegador para que funcione, cómo contamos las visitas sin identificarte y qué servicios de terceros se cargan.', '''
+<p><strong>En resumen.</strong> klendar.app no usa cookies. Guarda en tu navegador solo lo imprescindible para que funcione lo que pides (tu sesión, tu idioma, los códigos que un negocio valida sin conexión) y cuenta las visitas sin cookies ni identificarte. Nada de esto sirve para publicidad ni para seguirte por otras webs, así que no te pedimos consentimiento (art. 22.2 de la LSSI-CE). Si algún día añadimos algo que lo necesite, te lo pediremos antes.</p>
+<h2>Qué se guarda en tu navegador</h2>
+<table>
+<tr><th>Nombre</th><th>Dónde</th><th>Para qué</th><th>Cuánto dura</th><th>Tipo</th></tr>
+<tr><td><code>klendar_lang</code></td><td>Todo klendar.app (almacenamiento local)</td><td>Recordar el idioma que eliges con ES/EN</td><td>Hasta que lo borres</td><td>Preferencia elegida por ti</td></tr>
+<tr><td><code>sb-…-auth-token</code></td><td>«Tu cuenta», panel y administración (almacenamiento local)</td><td>Mantener tu sesión iniciada</td><td>Hasta que cierres sesión</td><td>Técnica (autenticación)</td></tr>
+<tr><td><code>klendar.intencion</code></td><td>Fichas y «Tu cuenta» (almacenamiento de sesión)</td><td>Recordar el botón que acabas de pulsar (guardar, reservar, conseguir el código…) para hacerlo al volver de entrar, y no hacerlo nunca si llegas por un enlace de fuera</td><td>Hasta usarlo, 15 minutos como mucho o cerrar la pestaña</td><td>Técnica (seguridad)</td></tr>
+<tr><td><code>klendar.biz</code></td><td>Panel del negocio</td><td>Recordar qué negocio estabas gestionando</td><td>Hasta que cierres sesión</td><td>Técnica</td></tr>
+<tr><td><code>klendar.cola.…</code></td><td>Panel del negocio</td><td>Guardar los códigos validados sin conexión hasta que vuelva la red</td><td>Hasta que se envían o cierras sesión</td><td>Técnica</td></tr>
+<tr><td>marca de verificación en dos pasos</td><td>Administración (almacenamiento de sesión)</td><td>No volver a preguntar en esa pestaña</td><td>Hasta cerrar la pestaña</td><td>Técnica (seguridad)</td></tr>
+<tr><td><code>mapbox.eventData…</code> (si aparece)</td><td>Mapas de Explorar y del panel (almacenamiento local, lo pone Mapbox)</td><td>Un identificador aleatorio que cambia cada 24 horas y que Mapbox usa para contar cuántos mapas se cargan (facturación)</td><td>24 horas</td><td>Técnica del servicio de mapas</td></tr>
+</table>
+<h2>Estadísticas de visitas</h2>
+<p>Usamos <strong>Cloudflare Web Analytics</strong>, que no usa cookies ni guarda nada en tu navegador: un pequeño script envía a Cloudflare, por encargo nuestro, la página vista, la web de la que vienes, el tipo de navegador y dispositivo, el país y los tiempos de carga. Solo vemos cifras agregadas, sin identificarte ni seguirte entre sitios, y Cloudflare no las usa para nada más. No se usa en «Tu cuenta», en el panel ni en la administración, ni en las direcciones de baja de los correos o los enlaces de amigo.</p>
+<h2>Servicios de terceros que se cargan en algunas páginas</h2>
+<p>Reciben tu dirección IP, como cualquier web que visitas, y no guardan cookies:</p>
+<ul>
+  <li><strong>Mapbox</strong>: los mapas de Explorar y del panel. Al cargar un mapa, Mapbox recibe el aviso de «mapa cargado» con el que factura.</li>
+  <li><strong>Google Fonts</strong>: los iconos de «Tu cuenta», del panel, de la administración y de los carteles para imprimir.</li>
+  <li><strong>jsDelivr</strong>: la librería con la que «Tu cuenta» y el panel se conectan a nuestra base de datos.</li>
+  <li><strong>Cloudflare Turnstile</strong>: cuando está activada, la comprobación anti-robots al entrar y al denunciar sin cuenta.</li>
+</ul>
+<h2>Cómo borrarlo</h2>
+<p>Al cerrar sesión se borran la sesión y lo del panel. Todo lo demás lo puedes borrar desde la configuración de tu navegador («Borrar datos de navegación» o «Datos de sitios»).</p>
+<h2>La app</h2>
+<p>La <strong>app móvil</strong> no usa cookies. Usa identificadores del dispositivo para las notificaciones (solo si las activas) y para los informes de errores y, solo si lo aceptas (al registrarte o en Cuenta → Ajustes → Privacidad y datos), para estadísticas de uso de la app. Puedes retirarlo cuando quieras desde la app o desde «Tu cuenta» en la web. Más detalle en la <a href="/privacidad/">Política de privacidad</a>.</p>
 ''')
 
-    EN['cookies'] = ('cookies', 'Cookie policy', 'Klendar uses no tracking or advertising cookies: only strictly necessary ones and your language preference. What is stored, why, and how to delete it.', '''
-<p><strong>klendar.app</strong> does not use tracking or advertising cookies. Only strictly necessary technical cookies, if any, and local storage of your language preference are used, which do not require consent under art. 22.2 of the Spanish LSSI-CE.</p>
-<p>To know how many people visit the website we use <strong>Cloudflare Web Analytics</strong>, which counts visits in aggregate <strong>without cookies</strong>, without storing anything in your browser and without tracking you across sites, so it does not need your consent.</p>
-<p>Fonts are loaded from Google Fonts, which involves a request to Google's servers including your IP address; if analytics or third-party cookies are added in the future, we will update this policy and ask for your prior consent.</p>
-<p>The <strong>mobile app</strong> does not use cookies. It uses device identifiers for notifications and crash reports and, only if you agree (when signing up or in Account → Settings → Privacy), for anonymous usage statistics. You can withdraw it at any time from the app or from “Your account” on the website. More detail in the <a href="/en/privacy/">Privacy policy</a>.</p>
+    EN['cookies'] = ('cookies', 'Cookie policy', 'Klendar uses no cookies: what it stores in your browser so things work, how we count visits without identifying you, and which third-party services load.', '''
+<p><strong>In short.</strong> klendar.app does not use cookies. It only stores in your browser what is essential for what you ask it to do (your session, your language, codes a business validates offline) and it counts visits without cookies and without identifying you. None of this is used for advertising or to follow you across other sites, so we don't ask for your consent (art. 22.2 of the Spanish LSSI-CE). If we ever add anything that needs it, we will ask you first.</p>
+<h2>What is stored in your browser</h2>
+<table>
+<tr><th>Name</th><th>Where</th><th>Purpose</th><th>How long</th><th>Type</th></tr>
+<tr><td><code>klendar_lang</code></td><td>All of klendar.app (local storage)</td><td>Remember the language you pick with ES/EN</td><td>Until you delete it</td><td>Preference you chose</td></tr>
+<tr><td><code>sb-…-auth-token</code></td><td>“Your account”, business dashboard and admin (local storage)</td><td>Keep you logged in</td><td>Until you log out</td><td>Technical (authentication)</td></tr>
+<tr><td><code>klendar.intencion</code></td><td>Publication and business pages and “Your account” (session storage)</td><td>Remember the button you just pressed (save, reserve, get the code…) so it's done once you've logged in, and never done if you arrive through an outside link</td><td>Until it's used, 15 minutes at most or until the tab is closed</td><td>Technical (security)</td></tr>
+<tr><td><code>klendar.biz</code></td><td>Business dashboard</td><td>Remember which business you were managing</td><td>Until you log out</td><td>Technical</td></tr>
+<tr><td><code>klendar.cola.…</code></td><td>Business dashboard</td><td>Keep codes validated offline until the connection is back</td><td>Until they are sent or you log out</td><td>Technical</td></tr>
+<tr><td>two-step verification flag</td><td>Admin (session storage)</td><td>Not asking again in that tab</td><td>Until the tab is closed</td><td>Technical (security)</td></tr>
+<tr><td><code>mapbox.eventData…</code> (if present)</td><td>Maps in Explore and the dashboard (local storage, set by Mapbox)</td><td>A random identifier that changes every 24 hours, used by Mapbox to count map loads (billing)</td><td>24 hours</td><td>Technical, for the map service</td></tr>
+</table>
+<h2>Visit statistics</h2>
+<p>We use <strong>Cloudflare Web Analytics</strong>, which uses no cookies and stores nothing in your browser: a small script sends Cloudflare, on our behalf, the page viewed, the site you came from, your browser and device type, your country and load times. We only see aggregate figures, without identifying you or tracking you across sites, and Cloudflare does not use them for anything else. It isn't used in “Your account”, the business dashboard or admin, or on email unsubscribe links and friend links.</p>
+<h2>Third-party services loaded on some pages</h2>
+<p>They receive your IP address, like any website you visit, and set no cookies:</p>
+<ul>
+  <li><strong>Mapbox</strong>: the maps in Explore and in the business dashboard. When a map loads, Mapbox receives the “map loaded” event it uses for billing.</li>
+  <li><strong>Google Fonts</strong>: the icons in “Your account”, the business dashboard, admin and the printable posters.</li>
+  <li><strong>jsDelivr</strong>: the library “Your account” and the dashboard use to connect to our database.</li>
+  <li><strong>Cloudflare Turnstile</strong>: when enabled, the anti-bot check when you log in and when you report without an account.</li>
+</ul>
+<h2>How to delete it</h2>
+<p>Logging out deletes the session and the dashboard data. You can delete everything else in your browser settings (“Clear browsing data” or “Site data”).</p>
+<h2>The app</h2>
+<p>The <strong>mobile app</strong> does not use cookies. It uses device identifiers for notifications (only if you turn them on) and for crash reports and, only if you agree (when signing up or in Account → Settings → Privacy and data), for app usage statistics. You can withdraw it at any time from the app or from “Your account” on the website. More detail in the <a href="/en/privacy/">Privacy policy</a>.</p>
 ''')
 
     # ── Normas de la comunidad ──────────────────────────────────────────────────
@@ -658,18 +734,21 @@ def textos(D, resaltar=False):
 <ul>
   <li>Publica solo ofertas que vayas a honrar, con condiciones claras (horario, aforo, requisitos).</li>
   <li>Fotos reales de tu local y productos, de las que tengas derechos.</li>
-  <li>Alcohol y ocio nocturno: marca el negocio o la oferta como "+18". No se permite incitar al consumo excesivo ni dirigirse a menores (Ley 34/1988). Las publicaciones que mencionan bebidas alcohólicas se marcan +18 automáticamente y se revisan antes de publicarse.</li>
+  <li>Alcohol y ocio nocturno: marca el negocio o la oferta como "+18". No se permite incitar al consumo excesivo ni dirigirse a menores (Ley 34/1988). Las publicaciones que mencionan bebidas alcohólicas se marcan +18 automáticamente y pasan por la moderación automática (más abajo).</li>
   <li>No se admite publicidad de tabaco, productos de vapeo ni juegos de azar o apuestas.</li>
   <li>No manipules reseñas ni canjes (cuentas propias, incentivos por valoraciones).</li>
 </ul>
 <h2>Cómo denunciar</h2>
-<p>En cualquier negocio, oferta, reseña o novedad encontrarás la opción "Denunciar". Indica el motivo y, si quieres, detalles. Recibiremos la denuncia con tu identidad (no se muestra al denunciado).</p>
+<p>Cualquiera puede denunciar, tenga cuenta o no. En cada negocio, publicación, reseña o novedad hay un enlace "Denunciar", y en el pie de la web, "<a href="/app/#/denunciar">Denunciar contenido ilegal</a>". Indica qué contenido es, el motivo y por qué crees que es ilegal o incumple estas normas. Sin cuenta te pediremos tu nombre y tu correo (opcionales si se trata de abuso sexual infantil) y que declares que actúas de buena fe. Te confirmaremos que la hemos recibido y te diremos qué hemos decidido y por qué (en la app o por correo). Si no estás de acuerdo, puedes pedirnos que lo revisemos en un plazo de 6 meses. Quien publicó el contenido no sabrá quién lo denunció. Las decisiones las toma una persona, no un sistema automático.</p>
+<h2>Bloquear a alguien</h2>
+<p>Puedes bloquear a una persona desde su reseña, desde tu lista de amigos o desde una invitación suya. Dejas de ver sus reseñas, dejáis de ser amigos y no puede invitarte ni volver a añadirte. No se le avisa. Lo deshaces en Cuenta → Ajustes → Privacidad y datos → «Personas bloqueadas». Bloquear no retira nada para los demás: si el contenido incumple estas normas, denúncialo.</p>
 <h2>Cómo moderamos</h2>
 <ul>
   <li>Revisamos las denuncias en un plazo máximo de <strong>72 horas</strong> (24 horas si afectan a menores o contenido claramente ilegal).</li>
+  <li>Moderación automática: revisamos de forma automática los textos que se publican (publicaciones, novedades, reseñas y sus respuestas, mensajes a clientes, ficha y carta del negocio, regalo de cumpleaños y tarjetas de sellos) en busca de insultos, palabras malsonantes, contenido sexual explícito, odio o discriminación y amenazas, además de alcohol, tabaco y apuestas. Lo que se marca no se publica hasta que lo revisa una persona de Klendar, normalmente en menos de 24 horas; la ficha y la carta del negocio siguen a la vista mientras tanto. No se admite un nombre de perfil con insultos o palabras malsonantes.</li>
   <li>Las medidas posibles son: retirar el contenido, avisar, suspender temporalmente o dar de baja la cuenta o el negocio.</li>
-  <li>Quien publicó el contenido recibe una notificación motivada y puede recurrir en 15 días escribiendo a <a href="mailto:{E}">{E}</a>. Quien denunció también recibe respuesta.</li>
-  <li>Punto de contacto para autoridades y para el Reglamento de Servicios Digitales (DSA): <a href="mailto:{E}">{E}</a>.</li>
+  <li>Quien publicó el contenido recibe una notificación motivada y puede recurrir en 15 días escribiendo a <a href="mailto:{E}">{E}</a>.</li>
+  <li>Punto de contacto para autoridades, para quienes usan Klendar y para el Reglamento de Servicios Digitales (DSA): <a href="mailto:{E}">{E}</a> (en español o en inglés).</li>
 </ul>
 ''')
 
@@ -685,35 +764,38 @@ def textos(D, resaltar=False):
 <ul>
   <li>Only publish deals you will honour, with clear conditions (hours, capacity, requirements).</li>
   <li>Real photos of your venue and products that you hold the rights to.</li>
-  <li>Alcohol and nightlife: mark the business or the deal as "18+". Encouraging excessive drinking or targeting minors is not allowed (Spanish Law 34/1988). Publications that mention alcoholic drinks are marked 18+ automatically and reviewed before going live.</li>
+  <li>Alcohol and nightlife: mark the business or the deal as "18+". Encouraging excessive drinking or targeting minors is not allowed (Spanish Law 34/1988). Publications that mention alcoholic drinks are marked 18+ automatically and go through automatic moderation (see below).</li>
   <li>Advertising of tobacco, vaping products, gambling or betting is not accepted.</li>
   <li>Do not manipulate reviews or redemptions (own accounts, incentives for ratings).</li>
 </ul>
 <h2>How to report</h2>
-<p>On any business, deal, review or post you will find the "Report" option. State the reason and, if you wish, details. We receive the report with your identity (it is not shown to the reported party).</p>
+<p>Anyone can report, with or without an account. Every business, publication, review and news post has a "Report" link, and the website footer has "<a href="/app/?lang=en#/denunciar">Report illegal content</a>". Tell us which content it is, the reason and why you believe it is illegal or breaks these guidelines. Without an account, we'll ask for your name and email (optional if it concerns child sexual abuse) and for you to declare that you are acting in good faith. We'll confirm we've received your report and tell you what we've decided and why (in the app or by email). If you disagree, you can ask us to review it within 6 months. The person who posted the content won't know who reported it. Decisions are made by a person, not by an automated system.</p>
+<h2>Blocking someone</h2>
+<p>You can block someone from their review, from your friends list or from an invitation they sent you. You stop seeing their reviews, you are no longer friends and they can't invite you or add you again. They aren't told. You can undo it in Account → Settings → Privacy and data → “Blocked people”. Blocking doesn't remove anything for anyone else: if the content breaks these guidelines, report it.</p>
 <h2>How we moderate</h2>
 <ul>
   <li>We review reports within <strong>72 hours</strong> at most (24 hours if they involve minors or clearly illegal content).</li>
+  <li>Automatic moderation: we automatically check the text people publish (publications, news, reviews and replies, customer messages, business page and menu, birthday gift and stamp cards) for insults, swear words, explicit sexual content, hate or discrimination and threats, as well as alcohol, tobacco and gambling. Anything flagged isn't published until someone at Klendar has reviewed it, usually within 24 hours; the business page and menu stay visible in the meantime. Profile names with insults or swear words aren't accepted.</li>
   <li>Possible measures: remove the content, issue a warning, temporarily suspend, or close the account or business.</li>
-  <li>Whoever posted the content receives a reasoned notification and may appeal within 15 days by writing to <a href="mailto:{E}">{E}</a>. The reporter also gets a reply.</li>
-  <li>Point of contact for authorities and for the Digital Services Act (DSA): <a href="mailto:{E}">{E}</a>.</li>
+  <li>Whoever posted the content receives a reasoned notification and may appeal within 15 days by writing to <a href="mailto:{E}">{E}</a>.</li>
+  <li>Point of contact for authorities, for people using Klendar and for the Digital Services Act (DSA): <a href="mailto:{E}">{E}</a> (in Spanish or English).</li>
 </ul>
 ''')
 
     # ── Eliminar cuenta ─────────────────────────────────────────────────────────
     ES['eliminar-cuenta'] = ('Eliminar tu cuenta', 'Cómo eliminar tu cuenta de Klendar y qué datos se borran.', f'''
-<h2>Desde la app (recomendado)</h2>
+<h2>Desde la app o desde la web (recomendado)</h2>
 <ol>
-  <li>Abre Klendar e inicia sesión.</li>
+  <li>Abre Klendar, o <a href="/app/">«Tu cuenta»</a> en klendar.app, y entra con tu cuenta.</li>
   <li>Ve a <strong>Cuenta</strong> → <strong>Ajustes</strong> → <strong>Eliminar mi cuenta</strong> (al final de la pantalla).</li>
-  <li>Confirma. La cuenta se elimina al momento.</li>
+  <li>Confirma que eres tú, con tu contraseña actual o con un código que te mandamos al correo, y confirma la eliminación. La cuenta se elimina al momento.</li>
 </ol>
 <h2>Por correo</h2>
-<p>Si no puedes acceder a la app, escribe a <a href="mailto:{EP}?subject=Eliminar%20mi%20cuenta">{EP}</a> desde el email de tu cuenta con el asunto "Eliminar mi cuenta". La eliminaremos en un máximo de 30 días y te lo confirmaremos.</p>
+<p>Si no puedes entrar en tu cuenta, escribe a <a href="mailto:{EP}?subject=Eliminar%20mi%20cuenta">{EP}</a> desde el email de tu cuenta con el asunto "Eliminar mi cuenta". La eliminaremos en un máximo de 30 días y te lo confirmaremos.</p>
 <h2>Qué se elimina</h2>
 <ul>
-  <li>Tu perfil (nombre, email, fecha de nacimiento, foto), tus favoritos, tus preferencias y tokens de notificaciones, tu ubicación y tu historial de canjes.</li>
-  <li>Tu enlace de amigo, tus amigos, tus «Voy» y las invitaciones que has mandado y recibido.</li>
+  <li>Tu perfil (nombre, email, fecha de nacimiento, foto), tus favoritos, tus planes, tus avisos «Avísame si…», tus preferencias y tokens de notificaciones, tus dispositivos de confianza, tu ubicación, tus tarjetas de sellos y tu historial de canjes.</li>
+  <li>Tu enlace de amigo, tus amigos, tus «Voy», las invitaciones que has mandado y recibido y las personas que has bloqueado.</li>
   <li>Tus reseñas se eliminan junto con tu cuenta.</li>
   <li>Si eres propietario/a de un negocio, también su ficha, sus publicaciones, sus fotos y su equipo. Si quieres que el negocio siga en Klendar, escríbenos antes a <a href="mailto:{E}">{E}</a> y pasamos la propiedad a otra persona.</li>
 </ul>
@@ -726,18 +808,18 @@ def textos(D, resaltar=False):
 ''')
 
     EN['eliminar-cuenta'] = ('delete-account', 'Delete your account', 'How to delete your Klendar account and what data is erased.', f'''
-<h2>From the app (recommended)</h2>
+<h2>From the app or the website (recommended)</h2>
 <ol>
-  <li>Open Klendar and log in.</li>
+  <li>Open Klendar, or <a href="/app/?lang=en">“Your account”</a> on klendar.app, and log in.</li>
   <li>Go to <strong>Account</strong> → <strong>Settings</strong> → <strong>Delete my account</strong> (at the bottom of the screen).</li>
-  <li>Confirm. The account is deleted immediately.</li>
+  <li>Confirm it's you, with your current password or with a code we email you, and confirm the deletion. The account is deleted immediately.</li>
 </ol>
 <h2>By email</h2>
-<p>If you cannot access the app, write to <a href="mailto:{EP}?subject=Delete%20my%20account">{EP}</a> from your account email with the subject "Delete my account". We will delete it within 30 days at most and confirm it to you.</p>
+<p>If you can't log in to your account, write to <a href="mailto:{EP}?subject=Delete%20my%20account">{EP}</a> from your account email with the subject "Delete my account". We will delete it within 30 days at most and confirm it to you.</p>
 <h2>What is deleted</h2>
 <ul>
-  <li>Your profile (name, email, date of birth, photo), your favourites, your preferences and notification tokens, your location and your redemption history.</li>
-  <li>Your friend link, your friends, your “I'm going” marks and the invitations you have sent and received.</li>
+  <li>Your profile (name, email, date of birth, photo), your favourites, your plans, your “Tell me when…” alerts, your preferences and notification tokens, your trusted devices, your location, your stamp cards and your redemption history.</li>
+  <li>Your friend link, your friends, your “I'm going” marks, the invitations you have sent and received and the people you have blocked.</li>
   <li>Your reviews are deleted together with your account.</li>
   <li>If you own a business, its profile, publications, photos and team are deleted too. If you want the business to stay on Klendar, write to us first at <a href="mailto:{E}">{E}</a> and we'll transfer ownership to someone else.</li>
 </ul>
@@ -760,6 +842,8 @@ def textos(D, resaltar=False):
 <p>Los códigos caducan al cabo de un rato (normalmente pocos minutos; lo elige cada negocio). Pulsa "Generar otro código" en la misma pantalla.</p>
 <h3>Un negocio no ha respetado su oferta</h3>
 <p>Denúncialo desde su ficha (icono de bandera) con el motivo "La oferta no es como se anuncia". Lo revisamos y, si se repite, el negocio queda suspendido.</p>
+<h3>Denunciar contenido ilegal</h3>
+<p>Si ves algo ilegal o que incumple las <a href="/normas/">Normas de la comunidad</a>, pulsa «Denunciar» en ese negocio, publicación, reseña o novedad, o usa el <a href="/app/#/denunciar">formulario de denuncias</a> (también en el pie de cada página: «Denunciar contenido ilegal»). No hace falta tener cuenta. Te confirmamos que la hemos recibido y te contamos qué hemos decidido y por qué. Si alguien está en peligro ahora mismo, llama al 112.</p>
 <h3>No recibo notificaciones</h3>
 <p>Revisa Cuenta → Ajustes → Notificaciones y los permisos de notificaciones del sistema. "Cerca de ti" solo avisa de ofertas flash dentro del radio elegido y como máximo 3 veces al día.</p>
 <h3>Soy un negocio y quiero darme de alta</h3>
@@ -775,7 +859,7 @@ def render(lang, path, title, desc, body, es_path=None):
     t = T[lang]
     todo = TODO[lang] if (es_path or path).strip('/') in LEGAL_SLUGS and 'class="tbd"' in body else ''
     courtesy = COURTESY.format(es=es_path) if lang == 'en' else ''
-    meta = META[lang].format(date=DATE[lang], v=VERSION)
+    meta = META[lang].format(date=fecha((es_path or path).strip('/'), lang), v=VERSION)
     return (head(t, path, f'{title} · Klendar', desc)
             + '<main class="doc">\n<h1>' + title + '</h1>\n'
             + f'<div class="meta">{meta}</div>\n' + courtesy + todo + '\n'
@@ -847,7 +931,7 @@ def vista_previa(dest=os.path.join('tools', 'legal_preview')):
             ancla = f'{lang}-{slug}'
             url = f'https://klendar.app/{slug}/' if lang == 'es' else f'https://klendar.app/en/{slug}/'
             indice.append(f'<li><a href="#{ancla}">{title}</a> <span class="nota">({"ES, la que vale" if lang == "es" else "EN, traducción informativa"} · {url})</span></li>')
-            meta = META[lang].format(date=DATE[lang], v=VERSION)
+            meta = META[lang].format(date=fecha(s, lang), v=VERSION)
             cuerpo = body.replace('href="/', 'href="https://klendar.app/')
             secciones.append(f'<section class="doc" id="{ancla}" lang="{lang}">\n<h1>{title}</h1>\n'
                              f'<div class="meta">{meta} · {url}</div>\n{cuerpo}\n</section>')

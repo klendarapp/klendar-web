@@ -295,7 +295,7 @@ FAQ_ES = [
     ('¿Cómo se canjea una oferta?', 'Pulsas «Conseguir el código» y te sale un código QR de un solo uso. Se lo enseñas al negocio, que lo escanea o escribe el código. Ojo: algunos códigos caducan a los pocos minutos, así que se pide estando ya en el local.'),
     ('Mi código no funciona', 'Suele ser una de tres: ya se usó, caducó (los de barra duran minutos) o es de otro negocio. En «Tus códigos» (en la app o en la web) ves el estado de cada uno. Si algo no cuadra, escríbenos con el código a <a href="mailto:info@klendar.app">info@klendar.app</a>.'),
     ('¿Puedo reservar una plaza en un evento?', 'Si el negocio lo activa, sí: reservas plaza desde la app o desde la web y enseñas tu código en la puerta. La reserva no es un pago; lo que cueste, si cuesta, se paga en el local.'),
-    ('¿Por qué veo unas cosas y no otras?', 'Por cercanía, por lo que empieza pronto y por tus favoritos. No usamos tu historial ni datos de otras webs. En cada ficha hay un «¿Por qué ves esto?» que lo explica, y el orden lo eliges tú en los filtros.'),
+    ('¿Por qué veo unas cosas y no otras?', 'Por cercanía, por lo que empieza pronto y por tus favoritos. Si un negocio paga por destacar una publicación, sale primero y siempre con la etiqueta «Destacado»; el resto del orden lo eliges tú en los filtros. Si cerca no hay nada, la app te sugiere cosas según tus últimas búsquedas y las categorías que más miras, que se guardan en tu móvil. No usamos datos de otras webs. En cada ficha hay un «¿Por qué ves esto?» que lo explica.'),
     ('¿Qué pasa con mis datos?', 'Lo contamos entero en la <a href="/privacidad/">política de privacidad</a>. En resumen: se usan para que la app funcione, no se venden, y puedes descargarlos o borrar tu cuenta desde la app o desde «Tu cuenta» en la web.'),
     ('¿Cómo borro mi cuenta?', 'Desde Cuenta → Ajustes → Eliminar mi cuenta, en la app o en «Tu cuenta» de la web. Se borra todo lo tuyo. También puedes pedirlo por correo: <a href="/eliminar-cuenta/">cómo hacerlo</a>.'),
     ('Soy un negocio, ¿cómo me doy de alta?', 'Desde la app (Cuenta → ¿Quieres registrar tu negocio?) o desde el <a href="/panel/">panel web</a>; hace falta la ubicación exacta del local. Lo revisamos y te verificamos, normalmente en 24-48 horas. Luego puedes publicar desde el móvil o desde el ordenador.'),
@@ -309,7 +309,7 @@ FAQ_EN = [
     ('How do I redeem a deal?', 'Tap “Get the code” and you get a single-use QR code. Show it to the business, and they scan it or type in the code. Careful: some codes expire within minutes, so get it once you\'re at the venue.'),
     ('My code doesn\'t work', 'Usually one of three things: it\'s already been used, it\'s expired (codes at a bar last minutes) or it belongs to another business. In “Your codes” (in the app or on the web) you can see the status of each one. If something is off, email us the code at <a href="mailto:info@klendar.app">info@klendar.app</a>.'),
     ('Can I reserve a place at an event?', 'If the business turns it on, yes: you reserve a place from the app or the website and show your code at the door. Reserving isn\'t a payment; whatever it costs, if anything, is paid at the venue.'),
-    ('Why do I see some things and not others?', 'Because of how close they are, what starts soon and your favourites. We don\'t use your history or data from other sites. Each publication has a “Why are you seeing this?” that explains it, and you choose the order in the filters.'),
+    ('Why do I see some things and not others?', 'Because of how close they are, what starts soon and your favourites. If a business pays to feature a publication, it comes first and always carries the “Featured” label; you choose the rest of the order in the filters. If there\'s nothing nearby, the app suggests things based on your recent searches and the categories you look at most, which are stored on your phone. We don\'t use data from other sites. Each publication has a “Why are you seeing this?” that explains it.'),
     ('What happens to my data?', 'It\'s all in the <a href="/en/privacy/">privacy policy</a>. In short: it\'s used to make the app work, it\'s never sold, and you can download it or delete your account from the app or from “Your account” on the website.'),
     ('How do I delete my account?', 'From Account → Settings → Delete my account, in the app or in “Your account” on the website. Everything of yours is deleted. You can also ask by email: <a href="/en/delete-account/">how to do it</a>.'),
     ('I run a business. How do I register?', 'From the app (Account → Want to register your business?) or from the <a href="/panel/">web dashboard</a>; it needs the venue’s exact location. We review and verify it, usually within 24–48 hours. After that you can publish from your phone or from a computer.'),
@@ -401,7 +401,7 @@ PAGINAS['accesibilidad'] = (
 <p class="lead">Queremos que Klendar se pueda usar con lector de pantalla, con el texto grande y sin depender del color. Esto es lo que hay hecho, lo que falta y cómo avisarnos si algo no funciona.</p>
 
 <h2>Estado</h2>
-<p><strong>Parcialmente conforme</strong> con las WCAG 2.2 nivel AA. Declaración preparada según la Ley 11/2023 y el Real Decreto 1112/2018; última revisión: septiembre de 2026.</p>
+<p><strong>Parcialmente conforme</strong> con las WCAG 2.2 nivel AA. Klendar es una microempresa y la Ley 11/2023 no le obliga a publicar esta información, pero queremos contar qué hay hecho y qué falta. Última revisión: septiembre de 2026.</p>
 
 <h2>Lo que ya está</h2>
 <ul>
@@ -420,14 +420,14 @@ PAGINAS['accesibilidad'] = (
 </ul>
 
 <h2>Si algo no te funciona</h2>
-<p>Escríbenos a <a href="mailto:info@klendar.app">info@klendar.app</a> contando qué pantalla es y con qué lo usas (móvil, lector de pantalla, navegador). Respondemos en un máximo de 20 días hábiles, como marca la norma, y si podemos lo arreglamos antes.</p>
+<p>Escríbenos a <a href="mailto:info@klendar.app">info@klendar.app</a> contando qué pantalla es y con qué lo usas (móvil, lector de pantalla, navegador). Respondemos en un máximo de 20 días hábiles y, si podemos, lo arreglamos antes.</p>
 <p>Si no te contestamos o no te convence la respuesta, puedes reclamar ante la autoridad competente en materia de accesibilidad.</p>
 ''',
     '''
 <p class="lead">We want Klendar to work with a screen reader, with large text and without depending on colour. Here's what's done, what's missing and how to tell us when something doesn't work.</p>
 
 <h2>Status</h2>
-<p><strong>Partially compliant</strong> with WCAG 2.2 level AA. Statement prepared under Spanish Law 11/2023 and Royal Decree 1112/2018; last reviewed September 2026.</p>
+<p><strong>Partially compliant</strong> with WCAG 2.2 level AA. Klendar is a micro-enterprise and Spanish Law 11/2023 does not require it to publish this information, but we want to explain what has been done and what is still missing. Last reviewed: September 2026.</p>
 
 <h2>What's already in place</h2>
 <ul>
@@ -446,7 +446,7 @@ PAGINAS['accesibilidad'] = (
 </ul>
 
 <h2>If something doesn't work for you</h2>
-<p>Email <a href="mailto:info@klendar.app">info@klendar.app</a> and tell us which screen it is and what you use it with (phone, screen reader, browser). We reply within 20 working days at most, as the rules require, and we fix it sooner if we can.</p>
+<p>Email <a href="mailto:info@klendar.app">info@klendar.app</a> and tell us which screen it is and what you use it with (phone, screen reader, browser). We reply within 20 working days at most and, if we can, fix it sooner.</p>
 <p>If we don't reply, or you're not satisfied with the reply, you can complain to the competent accessibility authority.</p>
 ''',
 )
@@ -513,8 +513,8 @@ PAGINAS['sobre'] = (
 <h2>Lo que no vamos a hacer</h2>
 <ul>
   <li>Inventar urgencia: si quedan diez plazas, pone diez.</li>
-  <li>Ordenar por lo que más nos paga, ni decidir por ti: el orden lo eliges en los filtros.</li>
-  <li>Perfilarte con tu historial ni con datos de otras webs.</li>
+  <li>Colar lo pagado sin decirlo: si un negocio paga por destacar algo, sale primero y con la etiqueta «Destacado»; el resto del orden lo eliges tú en los filtros.</li>
+  <li>Perfilarte con datos de otras webs. Si cerca no hay nada, la app te sugiere cosas según tus últimas búsquedas, que se quedan en tu móvil.</li>
   <li>Pedirte más datos de los que hacen falta para que esto funcione.</li>
 </ul>
 
@@ -533,8 +533,8 @@ PAGINAS['sobre'] = (
 <h2>What we won't do</h2>
 <ul>
   <li>Invent urgency: if ten places are left, it says ten.</li>
-  <li>Order things by who pays us most, or decide for you: you choose the order in the filters.</li>
-  <li>Profile you with your history or with data from other sites.</li>
+  <li>Sneak in paid placements: if a business pays to feature something, it comes first and carries the “Featured” label; you choose the rest of the order in the filters.</li>
+  <li>Profile you with data from other sites. If there's nothing nearby, the app suggests things based on your recent searches, which stay on your phone.</li>
   <li>Ask you for more data than this needs to work.</li>
 </ul>
 

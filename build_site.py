@@ -100,7 +100,7 @@ T = {
     faqs=[('¿Klendar es gratis?', 'Sí, para las personas usuarias es gratis y sin anuncios. Los negocios pagan una cuota mensual fija por publicar.'),
           ('¿Necesito cuenta?', 'Puedes mirar el feed, la agenda y el mapa sin cuenta. Para canjear, guardar favoritos o recibir avisos hace falta una cuenta (email o Google). Edad mínima: 14 años.'),
           ('¿Cómo funciona el canje?', 'Pulsas «Conseguir el código», te sale un QR de un solo uso y el negocio lo escanea con su móvil (o escribe el código). Suele caducar a los pocos minutos, así que pídelo cuando ya estés en el local.'),
-          ('¿Qué hacéis con mi ubicación?', 'Solo se usa mientras la app está abierta para ordenar por cercanía y, si lo activas, para avisarte de ofertas cerca. Nunca se comparte con otros usuarios ni con los negocios.'),
+          ('¿Qué hacéis con mi ubicación?', 'Se usa para ordenar por cercanía y, si lo activas, para avisarte de ofertas cerca (con la última ubicación conocida, que se borra a los 7 días; no guardamos un historial). Nunca se comparte con otros usuarios, y los negocios solo ven cifras agregadas de distancia, sin saber de quién son.'),
           ('¿En qué ciudades está?', 'Empezamos ciudad a ciudad en España. Si en la tuya todavía hay poco, ayúdanos: díselo a tu bar de siempre.')],
     cta_h2='Lo que pasa cerca, en tu bolsillo', cta_sub='Muy pronto en Google Play y App Store.',
     foot_product='Producto', foot_legal='Legal', foot_contact='Contacto',
@@ -170,7 +170,7 @@ T = {
     faqs=[('Is Klendar free?', 'Yes, for users it\'s free and ad-free. Businesses pay a flat monthly fee to publish.'),
           ('Do I need an account?', 'You can browse the feed, the agenda and the map without one. To redeem, save favourites or get alerts you need an account (email or Google). Minimum age: 14.'),
           ('How does redemption work?', 'Tap “Get the code” and a single-use QR code appears; the business scans it with their phone (or types the code). It usually expires within minutes, so get it once you\'re at the venue.'),
-          ('What do you do with my location?', 'It\'s only used while the app is open to sort by distance and, if you turn it on, to alert you about nearby deals. It\'s never shared with other users or with businesses.'),
+          ('What do you do with my location?', 'It\'s used to sort by distance and, if you turn it on, to alert you about nearby deals (using your last known location, which is deleted after 7 days; we keep no history). It\'s never shared with other users, and businesses only see aggregate distance figures, without knowing whose they are.'),
           ('Which cities?', 'We\'re starting city by city in Spain. If yours is still quiet, help us: tell your local bar.')],
     cta_h2='What\'s happening nearby, in your pocket', cta_sub='Coming soon to Google Play and the App Store.',
     foot_product='Product', foot_legal='Legal', foot_contact='Contact',
@@ -191,6 +191,8 @@ SUPPORT_EN = ('Support', 'Klendar help: how to redeem a deal, list your business
 <p>Codes expire after a while (usually a few minutes; each business chooses). Tap “Generate a new code” on the same screen.</p>
 <h3>A business didn't honour its deal</h3>
 <p>Report it from its profile (flag icon) with the reason “The offer isn't as advertised”. We review it and, if it happens again, the business is suspended.</p>
+<h3>Report illegal content</h3>
+<p>If you see something illegal or that breaks the <a href="/en/community-guidelines/">Community guidelines</a>, tap “Report” on that business, publication, review or news post, or use the <a href="/app/?lang=en#/denunciar">report form</a> (also in the footer of every page: “Report illegal content”). You don't need an account. We'll confirm we've received it and tell you what we've decided and why. If someone is in danger right now, call 112.</p>
 <h3>I don't get notifications</h3>
 <p>Check Account → Settings → Notifications and the system notification permission. “Nearby” only alerts you about flash offers within your chosen radius, at most 3 times a day.</p>
 <h3>I run a business and want to sign up</h3>
