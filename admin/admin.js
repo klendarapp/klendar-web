@@ -80,8 +80,10 @@ const FLAGS = { alcohol: 'alcohol', tobacco: 'tabaco/vapeo', gambling: 'apuestas
 const flagTags = (o) => (o.moderation_flags || []).map((f) => `<span class="tag warn" title="Detectado automáticamente en el texto">${esc(FLAGS[f] || f)}</span>`).join(' ');
 // Lenguaje ofensivo: qué ha encontrado (`text_offensive`) y en qué texto.
 const CAT_OFENSIVA = { insult: 'insultos', profanity: 'palabras malsonantes', sexual: 'contenido sexual', hate: 'odio o discriminación', threat: 'amenazas' };
-const TIPO_TEXTO = { post: 'Novedad', review: 'Reseña', reply: 'Respuesta a una reseña', business_name: 'Nombre del negocio', business_description: 'Descripción del negocio', menu: 'Carta' };
-const ICONO_TEXTO = { post: 'article', review: 'chat_bubble', reply: 'reply', business_name: 'storefront', business_description: 'storefront', menu: 'restaurant_menu' };
+const TIPO_TEXTO = { post: 'Novedad', review: 'Reseña', reply: 'Respuesta a una reseña', business_name: 'Nombre del negocio', business_description: 'Descripción del negocio', menu: 'Carta', closure_reason: 'Motivo de días cerrados', birthday_gift: 'Regalo de cumpleaños', stamp_card_name: 'Nombre de una tarjeta de sellos', stamp_card_reward: 'Premio de una tarjeta de sellos' };
+const ICONO_TEXTO = { post: 'article', review: 'chat_bubble', reply: 'reply', business_name: 'storefront', business_description: 'storefront', menu: 'restaurant_menu', closure_reason: 'event_busy', birthday_gift: 'cake', stamp_card_name: 'loyalty', stamp_card_reward: 'loyalty' };
+// Qué se enseña al lado del texto para situarlo.
+const CONTEXTO_TEXTO = { reply: 'Reseña', stamp_card_name: 'Tarjeta', stamp_card_reward: 'Tarjeta', closure_reason: 'Días' };
 const debounce = (fn, ms = 350) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
 const qs = (o) => Object.entries(o).filter(([, v]) => v != null && v !== '').map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&');
 
@@ -1275,6 +1277,10 @@ async function decideTexto(x, aprobar) {
       business_name: en ? 'The name goes back to the previous one.' : 'El nombre vuelve al anterior.',
       business_description: en ? 'The description goes back to the previous one (or is left empty).' : 'La descripción vuelve a la anterior (o se queda vacía).',
       menu: en ? 'Dishes with that name are deleted; if it is a description, it is removed; if it is a section, it is renamed “Carta”.' : 'Los platos con ese nombre se borran; si es una descripción, se quita; si es un apartado, pasa a llamarse «Carta».',
+      closure_reason: en ? 'The closed days stay, without a reason.' : 'Los días cerrados se quedan, sin motivo.',
+      birthday_gift: en ? 'It is not used: the previous gift stays (if there was none, no gift is given).' : 'No se usa: sigue el regalo anterior (si no había, no se regala nada).',
+      stamp_card_name: en ? 'It is not used: the previous name stays. If the card is new, it is deleted.' : 'No se usa: sigue el nombre anterior. Si la tarjeta es nueva, se borra.',
+      stamp_card_reward: en ? 'It is not used: the previous reward stays. If the card is new, it is deleted.' : 'No se usa: sigue el premio anterior. Si la tarjeta es nueva, se borra.',
     }[x.kind] || '';
     const r = await modal({
       title: 'Retirar texto',
@@ -1290,7 +1296,9 @@ async function decideTexto(x, aprobar) {
     if (!res?.ok) {
       toast(res?.error === 'no_previous'
         ? (en ? 'There is no earlier name to go back to: change it from the business page or reject the verification.' : 'No hay un nombre anterior al que volver: cámbialo desde la ficha del negocio o rechaza la verificación.')
-        : (res?.error || 'Error'), true);
+        : res?.error === 'outdated' ? (en ? 'The business has already changed it: reload the list.' : 'El negocio ya lo ha cambiado: vuelve a cargar la lista.')
+          : res?.error === 'name_taken' ? (en ? 'Another card of that business already has that name.' : 'Otra tarjeta de ese negocio ya tiene ese nombre.')
+            : (res?.error || 'Error'), true);
       return false;
     }
     toast(aprobar ? 'Texto aprobado' : 'Texto retirado');
@@ -1307,7 +1315,7 @@ PAGES.resenas = async (v) => {
   v.innerHTML = `
     <div class="page-head"><h1>Reseñas y novedades</h1></div>
     ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p><b>Reviews</b> are written by users about businesses; <b>news posts</b> are published by businesses on their page. Only delete them if they break the rules (insults, personal data, spam, content that isn't about the venue). The author gets the reason.</p>` : '<p>Las <b>reseñas</b> las escriben usuarios sobre negocios; las <b>novedades</b> las publican los negocios en su perfil. Bórralos solo si incumplen las normas (insultos, datos personales, spam, contenido que no es del local). El autor recibe el motivo.</p>')}
-    ${helpBox('¿Qué es «En revisión»?', I18N.lang === 'en' ? '<p>Texts the system has stopped automatically for <b>offensive language</b> (insults, swear words, explicit sexual content, hate or threats), with the tag of what it found. News, reviews and replies to reviews are <b>not public</b> until you approve them; the business name, description and menu stay visible in the meantime. <b>Approve</b> if it is fine (a false positive, or strong but acceptable language); <b>Take down</b> if it breaks the Community guidelines: the author gets the reason. The word lists are in the database (<code>offensive_terms</code> and <code>offensive_exceptions</code>).</p>' : '<p>Textos que el sistema ha parado solo por <b>lenguaje ofensivo</b> (insultos, palabras malsonantes, contenido sexual explícito, odio o amenazas), con la etiqueta de lo que ha encontrado. Las novedades, las reseñas y las respuestas a reseñas <b>no se ven</b> hasta que las apruebas; el nombre, la descripción y la carta del negocio siguen a la vista mientras tanto. <b>Aprobar</b> si está bien (un falso positivo o algo fuerte pero aceptable); <b>Retirar</b> si incumple las Normas de la comunidad: el autor recibe el motivo. Las listas de palabras están en la base (<code>offensive_terms</code> y <code>offensive_exceptions</code>).</p>')}
+    ${helpBox('¿Qué es «En revisión»?', I18N.lang === 'en' ? '<p>Texts the system has stopped automatically for <b>offensive language</b> (insults, swear words, explicit sexual content, hate or threats), with the tag of what it found. News, reviews and replies to reviews are <b>not public</b> until you approve them. A new <b>birthday gift</b> or <b>stamp card</b> name or reward is not used until you approve it (the previous one stays; a new card waits paused), because it reaches customers in notifications. The business name, description, menu and the reason for closed days stay visible in the meantime. <b>Approve</b> if it is fine (a false positive, or strong but acceptable language); <b>Take down</b> if it breaks the Community guidelines: the author gets the reason. The word lists are in the database (<code>offensive_terms</code> and <code>offensive_exceptions</code>).</p>' : '<p>Textos que el sistema ha parado solo por <b>lenguaje ofensivo</b> (insultos, palabras malsonantes, contenido sexual explícito, odio o amenazas), con la etiqueta de lo que ha encontrado. Las novedades, las reseñas y las respuestas a reseñas <b>no se ven</b> hasta que las apruebas. El <b>regalo de cumpleaños</b> y el nombre o el premio de una <b>tarjeta de sellos</b> no se usan hasta que los apruebas (sigue el anterior; una tarjeta nueva espera en pausa), porque llegan a los clientes en notificaciones. El nombre, la descripción y la carta del negocio y el motivo de los días cerrados siguen a la vista mientras tanto. <b>Aprobar</b> si está bien (un falso positivo o algo fuerte pero aceptable); <b>Retirar</b> si incumple las Normas de la comunidad: el autor recibe el motivo. Las listas de palabras están en la base (<code>offensive_terms</code> y <code>offensive_exceptions</code>).</p>')}
     <div class="tabs"><button data-t="cola" class="${tab === 'cola' ? 'on' : ''}">En revisión${BADGES.resenas ? ` <span class="badge">${BADGES.resenas}</span>` : ''}</button><button data-t="reviews" class="${tab === 'reviews' ? 'on' : ''}">Reseñas</button><button data-t="posts" class="${tab === 'posts' ? 'on' : ''}">Novedades</button></div>
     <div class="toolbar" ${tab === 'cola' ? 'hidden' : ''}><input id="q" class="grow" placeholder="Buscar por texto, negocio o email…" value="${esc((tab === 'posts' ? sP.q : sR.q) || '')}"><select id="rating" ${tab === 'posts' ? 'hidden' : ''}>${[['', 'Cualquier puntuación'], ['1', 'Solo 1 ★'], ['2', '≤ 2 ★'], ['3', '≤ 3 ★']].map((o) => `<option value="${o[0]}" ${String(sR.rating || '') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select></div>
     <div id="list"><div class="loading">Cargando…</div></div>`;
@@ -1319,8 +1327,8 @@ PAGES.resenas = async (v) => {
         <h3>${esc(I18N.t(TIPO_TEXTO[x.kind] || x.kind))} · <a class="link" href="#/negocios/${x.business_id}">${esc(x.business)}</a> ${(x.categories || []).map((c) => `<span class="tag warn" title="Detectado automáticamente en el texto">${esc(I18N.t(CAT_OFENSIVA[c] || c))}</span>`).join(' ')}</h3>
         <div class="meta">${x.user_email ? `${esc(x.user_email)} · ` : ''}${fmtDate(x.created_at)}${x.rating ? ` · <span class="stars">${'★'.repeat(x.rating)}${'☆'.repeat(5 - x.rating)}</span>` : ''}</div>
         <p>${esc(x.text || '')}</p>
-        ${x.context ? `<div class="meta">${esc(I18N.t('Reseña'))}: «${esc(x.context)}»</div>` : ''}
-        ${x.previous ? `<div class="meta">${esc(I18N.t(x.kind === 'reply' ? 'Respuesta publicada' : 'Antes'))}: «${esc(x.previous)}»</div>` : ''}
+        ${x.context ? `<div class="meta">${esc(I18N.t(CONTEXTO_TEXTO[x.kind] || 'Reseña'))}: «${esc(x.context)}»</div>` : ''}
+        ${x.previous ? `<div class="meta">${esc(I18N.t(x.kind === 'reply' ? 'Respuesta publicada' : ['birthday_gift', 'stamp_card_name', 'stamp_card_reward'].includes(x.kind) ? 'En uso' : 'Antes'))}: «${esc(x.previous)}»</div>` : ''}
         <div class="actions"><button class="btn sm ok" data-ap="${i}">Aprobar</button><button class="btn sm bad" data-re="${i}">Retirar…</button></div></div></div>`).join('') : '<div class="tbl-wrap"><div class="empty">No hay textos en revisión.</div></div>') + pg.html;
       pg.bind($('#list'));
       $$('#list [data-ap]').forEach((b) => { b.onclick = () => esperando(b, async () => { if (await decideTexto(r.rows[+b.dataset.ap], true)) await load(); }); });
@@ -1649,7 +1657,7 @@ PAGES.sugerencias = async (v) => {
     const pg = pager(s, r.total, load);
     $('#list').innerHTML = (rows.length ? rows.map((f) => `
       <div class="item"><div class="ph">${kindIcon[f.kind] || ms('chat_bubble')}</div><div>
-        <h3>${tag(f.kind, 'dim')} ${tag(f.status)} ${f.replied_at ? '<span class="tag ok">respondida</span>' : ''}</h3>
+        <h3>${tag(f.kind, 'dim')} ${tag(f.status)} ${f.replied_at ? '<span class="tag ok">respondida</span>' : ''} ${(f.offensive || []).length ? `<span class="tag warn" title="${esc(I18N.t('Detectado automáticamente en el texto'))}">${esc(I18N.t('lenguaje ofensivo'))}: ${esc(f.offensive.map((c) => I18N.t(CAT_OFENSIVA[c] || c)).join(', '))}</span>` : ''}</h3>
         <div class="meta">${fmtDate(f.created_at)} · ${f.user_id ? `<a class="link" href="#/usuarios/${f.user_id}">${esc(f.user_email || f.user_name || 'usuario')}</a>` : (I18N.lang === 'en' ? 'no account' : 'sin cuenta')}${f.from_same_user > 1 ? ` · ${f.from_same_user} ${I18N.lang === 'en' ? 'messages from them' : 'mensajes suyos'}` : ''} · ${esc(f.app_version || '?')} · ${esc(f.platform || '?')}${f.locale ? ' · ' + esc(f.locale) : ''}</div>
         <p style="white-space:pre-wrap">${esc(f.message)}</p>
         ${f.admin_note ? `<div class="meta"><b>Nota interna:</b> ${esc(f.admin_note)}</div>` : ''}

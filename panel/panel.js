@@ -1899,6 +1899,13 @@ function tarjetaCodigo(r, estado) {
   </div>`;
 }
 
+/** De dónde sale un código validado: la publicación, una tarjeta de sellos o
+ * el regalo de cumpleaños (`business_recent_validations`, `business_report`). */
+const queValidado = (r) => (r.kind === 'stamp_reward'
+  ? `${I18N.t('Tarjeta de sellos')}${r.detail ? ` «${r.detail}»` : ''}`
+  : r.kind === 'birthday_gift' ? I18N.t('Regalo de cumpleaños')
+    : I18N.t(r.kind === 'future_event' ? 'Evento' : 'Oferta flash'));
+
 PAGES.validar = async (v) => {
   v.innerHTML = `
     <div class="page-head"><h1>Validar códigos</h1></div>
@@ -1959,21 +1966,20 @@ PAGES.validar = async (v) => {
   window.KL_ENVIA_COLA = enviaCola;
   window.addEventListener('online', enviaCola);
 
+  // Todo lo que se valida aquí, de la publicación que sea (antes solo las 5
+  // más recientes): también premios de sellos y regalos de cumpleaños. Lo
+  // mismo que «Canjes validados» del informe, en la app y aquí.
   const loadRecent = async () => {
-    const offers = await rpc('my_business_offers', { p_id: BIZ.id });
-    const rows = [];
-    for (const o of offers.slice(0, 5)) {
-      const att = await rpc('offer_attendees', { p_offer: o.id }).catch(() => []);
-      att.filter((a) => a.status === 'validated').slice(0, 5).forEach((a) => rows.push({ ...a, offer: o.title }));
-    }
-    rows.sort((a, b) => new Date(b.validated_at) - new Date(a.validated_at));
-    $('#recent').innerHTML = table({
+    const rows = await rpc('business_recent_validations', { p_business: BIZ.id, p_limit: 15 }).catch(() => []);
+    const caja = $('#recent');
+    if (!caja) return; // ya estás en otra pantalla
+    caja.innerHTML = table({
       cols: [
-        { h: 'Cuándo', r: (r) => fmtDate(r.validated_at) },
-        { h: 'Publicación', r: (r) => esc(r.offer) },
-        { h: 'Persona', r: (r) => esc(r.user_name || 'Invitada') },
+        { h: 'Cuándo', r: (r) => fmtDate(r.at) },
+        { h: 'Qué', r: (r) => `<b class="title">${esc(r.title)}</b><span class="sub">${esc(queValidado(r))}</span>` },
+        { h: 'Persona', r: (r) => esc(r.person || I18N.t('Usuario de Klendar')) },
       ],
-      rows: rows.slice(0, 15),
+      rows: rows || [],
       empty: 'Todavía no has validado ningún código.',
     });
   };
@@ -2212,7 +2218,8 @@ function filtroSellosBase(c, offers = []) {
   }
   return I18N.t('Cuentan todas las publicaciones');
 }
-const estadoTarjeta = (c) => `<span class="tag ${c.is_active ? 'ok' : 'dim'}">${esc(I18N.t(c.is_active ? 'Encendida' : 'Apagada'))}</span>`;
+const estadoTarjeta = (c) => (c.review ? tag('pending')
+  : `<span class="tag ${c.is_active ? 'ok' : 'dim'}">${esc(I18N.t(c.is_active ? 'Encendida' : 'Apagada'))}</span>`);
 const metaPremio = (c) => bi(`${c.goal} sellos · ${c.reward}`, `${c.goal} stamps · ${c.reward}`);
 const sellosDe = (n, meta) => bi(`${n} de ${meta} sellos`, `${n} of ${meta} stamps`);
 const premiosTxt = (p) => [
@@ -2277,6 +2284,9 @@ async function tarjetaForm(v, id) {
   if (d?.ok === false) throw new Error(friendly(d.error));
   const c = id ? (d.cards || []).find((x) => x.id === id) : null;
   if (id && !c) { location.hash = '#/sellos'; return; }
+  // Nombre o premio que esperan revisión (lenguaje ofensivo): se enseña lo
+  // último que se escribió y lo que sigue en uso mientras tanto.
+  const rev = c?.review || null;
   const ofertas = d.offers || [];
   const filtro = c?.applies_to || 'all';
   const cats = new Set(c?.category_ids || []);
@@ -2285,13 +2295,16 @@ async function tarjetaForm(v, id) {
     <p class="crumbs"><a href="#/sellos">${esc(I18N.t('Tarjetas de sellos'))}</a>${c ? ` · <a href="#/sellos/${esc(c.id)}">${esc(c.name)}</a>` : ''}</p>
     <div class="page-head"><h1>${c ? 'Editar tarjeta' : 'Nueva tarjeta'}</h1></div>
     <form id="f" class="form" novalidate>
+      ${rev?.paused ? `<div class="full scan-result warn">${esc(I18N.t('En revisión: la tarjeta empieza cuando la revisemos, porque puede contener lenguaje ofensivo. Normalmente en menos de 24 h.'))}</div>` : ''}
       <label class="f full"><span>Nombre</span>
-        <input name="name" maxlength="40" required placeholder="Cafés" value="${esc(c?.name || '')}">
+        <input name="name" maxlength="40" required placeholder="Cafés" value="${esc(rev?.name || c?.name || '')}">
         <small class="muted">Lo ve la gente: «Cafés», «Menús», «Manicuras»…</small></label>
+      ${rev?.name && !rev.paused ? `<div class="full">${revisionTexto(rev.name, c.name)}</div>` : ''}
       <label class="f"><span>Sellos para el premio</span><select name="goal">
         ${Array.from({ length: 19 }, (_, i) => i + 2).map((n) => `<option value="${n}" ${Number(c?.goal || 10) === n ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
       <label class="f full"><span>Premio</span>
-        <input name="reward" maxlength="80" required placeholder="Un café con leche gratis" value="${esc(c?.reward || '')}"></label>
+        <input name="reward" maxlength="80" required placeholder="Un café con leche gratis" value="${esc(rev?.reward || c?.reward || '')}"></label>
+      ${rev?.reward && !rev.paused ? `<div class="full">${revisionTexto(rev.reward, c.reward)}</div>` : ''}
       <fieldset class="f full filtro-sellos"><legend>¿Qué da sello?</legend>
         ${FILTROS_SELLO.map(([k, t]) => `<label class="opcion"><input type="radio" name="applies_to" value="${k}" ${filtro === k ? 'checked' : ''}><span>${esc(t)}</span></label>`).join('')}
       </fieldset>
@@ -2307,7 +2320,7 @@ async function tarjetaForm(v, id) {
         <input type="checkbox" name="by_visit" ${c?.by_visit ? 'checked' : ''}>
         <span>También por visita con el QR del local <small class="muted">Quien escanee el cartel del local en tu negocio se lleva un sello, como mucho uno al día.</small></span></label>
       <label class="f full" style="grid-template-columns:auto 1fr;align-items:center">
-        <input type="checkbox" name="is_active" ${!c || c.is_active ? 'checked' : ''}>
+        <input type="checkbox" name="is_active" ${!c || (rev?.paused ? rev.activate : c.is_active) ? 'checked' : ''}>
         <span>Encendida <small class="muted">Si la apagas, no se dan sellos nuevos, pero nadie pierde los suyos.</small></span></label>
       <div class="full"><button class="btn primary" type="submit">${c ? 'Guardar' : 'Crear la tarjeta'}</button> <span id="msg" class="muted" role="status"></span></div>
       ${c ? '<div class="full"><button class="btn bad ghost" type="button" id="borrar">Borrar la tarjeta</button></div>' : ''}
@@ -2352,7 +2365,7 @@ async function tarjetaForm(v, id) {
       p_by_visit: f.elements.by_visit.checked,
     }).catch((err) => ({ ok: false, error: err.message }));
     if (!r?.ok) { msg.textContent = r?.error === 'too_many_cards' ? I18N.t('Ya tienes 5, el máximo.') : errSellos(r?.error); return; }
-    toast('Guardado');
+    toast(r.status === 'review' ? EN_REVISION_USO : 'Guardado');
     location.hash = `#/sellos/${r.card.id}`;
   };
   const borrar = $('#borrar', v);
@@ -2562,10 +2575,22 @@ const ALERGENOS = [
 ];
 const nombreAlergeno = (k) => (ALERGENOS.find((a) => a[0] === k) || [k, k])[1];
 
+/** Lo que va en la carta según el gremio (glosario): comida y bebida →
+ * plato; tiendas, discotecas y «Otros» → producto; el resto → servicio. Lo
+ * mismo que `menuItemKind` en la app. */
+const palabraCarta = (slug) => (['restaurant', 'cafe', 'bar'].includes(slug) ? 'dish'
+  : (!slug || ['shop', 'nightclub', 'other'].includes(slug)) ? 'product' : 'service');
+const TEXTOS_CARTA = {
+  dish: { add: 'Añadir plato', edit: 'Editar plato', col: 'Plato', ej: 'Tortilla de patata', sus: ['sus platos', 'its dishes'] },
+  service: { add: 'Añadir servicio', edit: 'Editar servicio', col: 'Servicio', ej: '', sus: ['sus servicios', 'its services'] },
+  product: { add: 'Añadir producto', edit: 'Editar producto', col: 'Producto', ej: '', sus: ['sus productos', 'its products'] },
+};
+
 PAGES.carta = async (v) => {
   const canManage = ['owner', 'manager'].includes(BIZ.role);
   const ficha = await sb.from('businesses')
-    .select('menu_url, menu_images').eq('id', BIZ.id).maybeSingle();
+    .select('menu_url, menu_images, category_id').eq('id', BIZ.id).maybeSingle();
+  const tc = TEXTOS_CARTA[palabraCarta(CATS.find((c) => c.id === ficha.data?.category_id)?.slug)];
   let carta = await rpc('business_menu', { p_business: BIZ.id }).catch(() => []);
   let enlace = ficha.data?.menu_url || '';
   let fotos = ficha.data?.menu_images || [];
@@ -2646,7 +2671,7 @@ PAGES.carta = async (v) => {
               <button class="btn sm bad ghost" data-sec-del="${si}">Borrar</button>` : ''}</h2>
           ${table({
             cols: [
-              { h: 'Plato', r: (it) => `${it.image_url ? `<img class="thumb" src="${esc(it.image_url)}" alt="" loading="lazy">` : ''}<b class="title">${esc(it.name)}</b>${it.description ? `<span class="sub">${esc(it.description)}</span>` : ''}` },
+              { h: tc.col, r: (it) => `${it.image_url ? `<img class="thumb" src="${esc(it.image_url)}" alt="" loading="lazy">` : ''}<b class="title">${esc(it.name)}</b>${it.description ? `<span class="sub">${esc(it.description)}</span>` : ''}` },
               { h: 'Alérgenos', r: (it) => (it.allergens || []).length
                 ? (it.allergens || []).map((a) => `<span class="tag">${esc(nombreAlergeno(a))}</span>`).join(' ')
                 : '<span class="muted">—</span>' },
@@ -2660,7 +2685,7 @@ PAGES.carta = async (v) => {
             rows: sec.items || [],
             empty: 'Esta sección está vacía.',
           })}
-          ${canManage ? `<p style="margin:10px 0 0"><button class="btn sm" data-item-add="${si}">Añadir plato</button></p>` : ''}
+          ${canManage ? `<p style="margin:10px 0 0"><button class="btn sm" data-item-add="${si}">${esc(I18N.t(tc.add))}</button></p>` : ''}
         </div>`).join('')
         : `<div class="card"><p class="muted" style="margin:0"><span>Todavía no has escrito la carta.</span> ${canManage ? '<span>Empieza por una sección: «Para picar», «Bocadillos», «Bebidas»…</span>' : ''}</p></div>`}
       ${sucia ? '<p class="muted">Hay cambios sin guardar.</p>' : ''}`;
@@ -2701,7 +2726,7 @@ PAGES.carta = async (v) => {
     }; });
     $$('[data-sec-del]', v).forEach((b) => { b.onclick = async () => {
       const i = +b.dataset.secDel;
-      if (!await confirmDlg('Borrar sección', bi(`Se quita «${esc(carta[i].name)}» con sus platos. No se guarda hasta que le des a «Guardar la carta».`, `“${esc(carta[i].name)}” and its dishes are removed. Nothing is saved until you press “Save the menu”.`), { danger: true, submit: 'Borrar' })) return;
+      if (!await confirmDlg('Borrar sección', bi(`Se quita «${esc(carta[i].name)}» con ${tc.sus[0]}. No se guarda hasta que le des a «Guardar la carta».`, `“${esc(carta[i].name)}” and ${tc.sus[1]} are removed. Nothing is saved until you press “Save the menu”.`), { danger: true, submit: 'Borrar' })) return;
       carta.splice(i, 1); sucia = true; pinta();
     }; });
     $$('[data-sec-up]', v).forEach((b) => { b.onclick = () => {
@@ -2718,9 +2743,9 @@ PAGES.carta = async (v) => {
     const editaPlato = async (si, ii) => {
       const it = ii == null ? { allergens: [] } : carta[si].items[ii];
       const r = await modal({
-        title: ii == null ? 'Nuevo plato' : 'Editar plato',
+        title: ii == null ? tc.add : tc.edit,
         fields: [
-          { name: 'name', label: 'Nombre', value: it.name, required: true, placeholder: 'Tortilla de patata', maxlength: 80 },
+          { name: 'name', label: 'Nombre', value: it.name, required: true, placeholder: tc.ej, maxlength: 80 },
           { name: 'description', label: 'Descripción (opcional)', value: it.description || '', maxlength: 200 },
           { name: 'price', label: 'Precio (€)', value: it.price_cents == null ? '' : (it.price_cents / 100).toFixed(2).replace('.', ',') },
           ...ALERGENOS.map((a) => ({
@@ -3462,6 +3487,14 @@ const ERR_REGALO = {
   days_range: 'Elige cuántos días vale.',
   flagged: 'El regalo no puede ser tabaco ni apuestas.',
 };
+/** Lenguaje ofensivo en el regalo o en una tarjeta de sellos: el texto nuevo
+ * espera revisión y mientras sigue el que había (como en la app). */
+const EN_REVISION_USO = 'Lo revisamos antes de usarlo porque puede contener lenguaje ofensivo. Normalmente en menos de 24 h.';
+const revisionTexto = (nuevo, actual) => `<div class="scan-result warn">${esc(actual
+  ? bi(`En revisión: «${nuevo}». Mientras, sigue «${actual}».`, `In review: “${nuevo}”. Until then, “${actual}” stays.`)
+  : bi(`En revisión: «${nuevo}». No se usa hasta que lo revisemos.`, `In review: “${nuevo}”. It won't be used until we've reviewed it.`))}</div>`;
+const revisionRegalo = (pendiente, actual) => (pendiente ? revisionTexto(pendiente, actual) : '');
+
 PAGES.cumpleanos = async (v) => {
   const d = await rpc('business_birthday_gift', { p_business: BIZ.id });
   if (d?.ok === false) throw new Error(I18N.t(ERR_REGALO[d.error] || friendly(d.error)));
@@ -3480,7 +3513,8 @@ PAGES.cumpleanos = async (v) => {
     <form id="f" class="form" novalidate>
       <label class="f full" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="activo" ${d.enabled ? 'checked' : ''} ${ro}><span>Dar un regalo de cumpleaños</span></label>
       <label class="f full"><span>Qué regalas</span>
-        <input name="regalo" maxlength="80" placeholder="Ej.: Un postre gratis" value="${esc(d.gift || '')}" autocomplete="off" ${ro}></label>
+        <input name="regalo" maxlength="80" placeholder="Ej.: Un postre gratis" value="${esc(d.pending_gift || d.gift || '')}" autocomplete="off" ${ro}></label>
+      <div class="full" id="regaloRevision">${revisionRegalo(d.pending_gift, d.gift)}</div>
       <label class="f"><span>Cuántos días vale</span><select name="dias" ${ro}>
         ${dias.map((x) => `<option value="${x}" ${Number(d.valid_days) === x ? 'selected' : ''}>${esc(bi(x === 1 ? '1 día' : `${x} días`, x === 1 ? '1 day' : `${x} days`))}</option>`).join('')}</select></label>
       <p class="hint full">Uno al año por persona. Llega a partir de las 9:00 del día de su cumpleaños, en la hora de tu negocio.</p>
@@ -3509,7 +3543,15 @@ PAGES.cumpleanos = async (v) => {
     }).catch((x) => ({ ok: false, error: x.message }));
     if (!r?.ok) { err.textContent = I18N.t(ERR_REGALO[r?.error] || friendly(r?.error)); return; }
     $('#alcohol', v).hidden = !r.adults_only;
-    toast('Guardado');
+    // Con lenguaje ofensivo espera revisión y sigue el anterior.
+    if (r.status === 'review') {
+      $('#regaloRevision', v).innerHTML = revisionRegalo(regalo, d.gift);
+      toast(EN_REVISION_USO);
+    } else {
+      d.gift = regalo || null;
+      $('#regaloRevision', v).innerHTML = '';
+      toast('Guardado');
+    }
   };
 };
 
@@ -3569,7 +3611,7 @@ PAGES.informe = async (v, param) => {
       ${table({
         cols: [
           { h: 'Cuándo', r: (x) => fmtDate(x.at) },
-          { h: 'Publicación', r: (x) => esc(x.title) },
+          { h: 'Qué', r: (x) => `<b class="title">${esc(x.title)}</b><span class="sub">${esc(queValidado(x))}</span>` },
           { h: 'Código', r: (x) => `<code>${esc(x.code)}</code>` },
         { h: 'Plazas', num: true, r: (x) => fmtNum(x.seats || 1) },
           // Lo que se pagó por plaza: el precio de cuando se consiguió el
@@ -3589,7 +3631,7 @@ PAGES.informe = async (v, param) => {
     ['max_redemptions', 'Aforo'], ['seats_left', 'Plazas libres'],
   ]);
   $('#csvRed').onclick = () => downloadCsv(`canjes-${BIZ.name}`, r.redemptions || [], [
-    ['at', 'Fecha y hora'], ['title', 'Publicación'], ['code', 'Código'], [(x) => x.seats ?? 1, 'Plazas'],
+    ['at', 'Fecha y hora'], [(x) => queValidado(x), 'Tipo'], ['title', 'Qué'], ['code', 'Código'], [(x) => x.seats ?? 1, 'Plazas'],
     [(x) => (x.paid_cents == null ? '' : (x.paid_cents / 100).toFixed(2)), 'Precio'], ['by', 'Validado por'],
   ]);
 };
