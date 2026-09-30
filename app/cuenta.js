@@ -431,6 +431,8 @@ RUTAS.ajustes = async () => {
           <span><b>${esc(t('Mensajes de mis negocios favoritos'))}</b><br><small>${esc(t('Lo que te cuentan tus favoritos: como mucho uno por semana de cada uno.'))}</small></span></label>
         <label class="check"><input type="checkbox" name="cumple"${prefs.notify_birthday !== false ? ' checked' : ''}>
           <span><b>${esc(t('Regalos de cumpleaños'))}</b><br><small>${esc(t('Si uno de tus favoritos hace un regalo por tu cumpleaños, te llega ese día con su código.'))}</small></span></label>
+        <label class="check"><input type="checkbox" name="sellos"${prefs.notify_stamps !== false ? ' checked' : ''}>
+          <span><b>${esc(t('Sellos y premios'))}</b><br><small>${esc(t('Cuando te llega un sello en una tarjeta y cuando ya tienes el premio.'))}</small></span></label>
         <label class="check"><input type="checkbox" name="amigos"${prefs.notify_friend_invites !== false ? ' checked' : ''}>
           <span><b>${esc(t('Invitaciones de amigos'))}</b><br><small>${esc(t('Cuando un amigo te invita a un plan o dice que va al tuyo. Apagado, no te pueden invitar.'))}</small></span></label>
         <label class="check"><input type="checkbox" name="cerca"${prefs.notify_nearby ? ' checked' : ''}>
@@ -562,6 +564,7 @@ RUTAS.ajustes = async () => {
         notify_business_messages: fa.elements.mensajes.checked,
         notify_birthday: fa.elements.cumple.checked,
         notify_friend_invites: fa.elements.amigos.checked,
+        notify_stamps: fa.elements.sellos.checked,
         nearby_radius_m: Number(fa.radio.value),
         nearby_categories: elegidas.length ? elegidas : null,
         quiet_hours_start: desde || null,
@@ -683,6 +686,10 @@ RUTAS.ajustes = async () => {
       aceptar: t('Eliminar'),
       peligro: true,
     }))) return;
+    // La base no elimina sin «Confirma que eres tú» reciente.
+    const id = await confirmaIdentidad();
+    if (!id) return;
+    await id.cerrar();
     ocupado(boton, async () => {
       await llamar('delete_my_account', {});
       try { await sb.auth.signOut({ scope: 'local' }); } catch { /* la sesión ya no existe */ }
@@ -840,9 +847,15 @@ RUTAS.opinar = async ([id]) => {
       await llamar('upsert_review', {
         p_business_id: id, p_rating: nota, p_comment: f.texto.value.trim() || null, p_photo_url: foto,
       });
+      // Con lenguaje ofensivo queda en revisión: hasta entonces solo la ves tú.
+      const estado = await tabla(sb.from('reviews').select('moderation_status')
+        .eq('business_id', id).eq('user_id', YO.id).maybeSingle()).catch(() => null);
+      const enRevision = estado?.moderation_status === 'pending';
       hecho({
-        titulo: t('Reseña publicada. ¡Gracias!'),
-        texto: t('Ayuda a otros a decidirse y al sitio a mejorar.'),
+        titulo: enRevision ? t('Tu reseña está en revisión') : t('Reseña publicada. ¡Gracias!'),
+        texto: enRevision
+          ? t('Se publicará cuando la revisemos: puede contener lenguaje ofensivo. Normalmente en menos de 24 h.')
+          : t('Ayuda a otros a decidirse y al sitio a mejorar.'),
         volver: `${pre}/b/${encodeURIComponent(id)}#resenas`, volverTxt: t('Volver al sitio'),
         lista: '#/', listaTxt: t('Tu cuenta'),
       });
@@ -851,58 +864,241 @@ RUTAS.opinar = async ([id]) => {
 };
 
 // ── Denunciar ─────────────────────────────────────────────────────────────
+// Con cuenta, `report_target` (como la app). Sin cuenta también se puede
+// (DSA, art. 16): nombre y correo (salvo abuso sexual infantil), una
+// explicación y la declaración de buena fe; va a la Edge Function
+// `report-public`, que comprueba Turnstile si el entorno tiene clave. Desde
+// el pie («Denunciar contenido ilegal») se llega sin contenido: se pide su
+// dirección en Klendar.
 const MOTIVOS = [
   ['spam', 'Spam o publicidad engañosa'],
   ['inappropriate', 'Contenido inapropiado u ofensivo'],
   ['misleading', 'La oferta no es como se anuncia'],
   ['closed', 'El negocio ya no existe o está cerrado'],
+  ['illegal', 'Contenido ilegal'],
+  ['child_abuse', 'Abuso sexual infantil'],
   ['other', 'Otro motivo'],
 ];
 // Los motivos que tienen sentido en cada cosa, como en la app (report_sheet).
 const MOTIVOS_DE = {
-  offer: ['spam', 'inappropriate', 'misleading', 'closed', 'other'],
-  business: ['spam', 'inappropriate', 'closed', 'other'],
+  offer: ['spam', 'inappropriate', 'misleading', 'closed', 'illegal', 'child_abuse', 'other'],
+  business: ['spam', 'inappropriate', 'closed', 'illegal', 'child_abuse', 'other'],
+  review: ['spam', 'inappropriate', 'illegal', 'child_abuse', 'other'],
+  post: ['spam', 'inappropriate', 'illegal', 'child_abuse', 'other'],
 };
 const QUE_SE_DENUNCIA = {
   offer: 'Denunciar una publicación', business: 'Denunciar un negocio',
   review: 'Denunciar una reseña', post: 'Denunciar una novedad',
 };
+// Lo que contesta `report-public` (y `report_public`), dicho para personas.
+const ERR_DENUNCIA = {
+  bad_target: 'Esa dirección no es de una publicación, un negocio, una reseña o una novedad de Klendar.',
+  not_found: 'Ese contenido ya no existe (puede que ya lo hayan quitado).',
+  bad_reason: 'Elige un motivo.',
+  details_required: 'Explica por qué lo denuncias (al menos 10 caracteres).',
+  details_too_long: 'La explicación es demasiado larga (máximo 2000 caracteres).',
+  good_faith_required: 'Marca la declaración de buena fe para enviarla.',
+  name_required: 'Escribe tu nombre.',
+  name_too_long: 'El nombre es demasiado largo.',
+  email_required: 'Escribe tu correo: es para contestarte.',
+  email_invalid: 'Ese correo no parece válido',
+  rate_limited: 'Has enviado varias denuncias seguidas. Espera un rato y vuelve a probar.',
+  already_reported: 'Ya nos has denunciado este contenido hoy. Lo estamos revisando.',
+  busy: 'Ahora mismo estamos recibiendo muchas denuncias. Prueba dentro de un rato o escríbenos a info@klendar.app.',
+  captcha_failed: 'No hemos podido comprobar que no eres un robot. Vuelve a probar.',
+};
+const UUID_DENUNCIA = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
+
+/** Qué contenido es una dirección de Klendar: /o/<id>, /cartel/<id>
+ * (publicación), /b/<nombre-o-id> (negocio; con #resena-<id> o
+ * #novedad-<id>, esa reseña o novedad) o un enlace de «Denunciar».
+ * `null` si no es de Klendar o no se entiende. */
+async function contenidoDeUrl(texto) {
+  let u;
+  try { u = new URL(String(texto || '').trim()); } catch { return null; }
+  const propio = u.host === location.host
+    || /(^|\.)klendar\.app$|\.klendar-web\.pages\.dev$|^localhost$|^127\.0\.0\.1$/i.test(u.hostname);
+  if (!/^https?:$/.test(u.protocol) || !propio) return null;
+  const hash = decodeURIComponent(u.hash || '');
+  let m = hash.match(new RegExp(`^#/?denunciar/(offer|business|review|post)/(${UUID_DENUNCIA})`, 'i'));
+  if (m) return { tipo: m[1], id: m[2].toLowerCase() };
+  const camino = u.pathname.replace(/^\/en(?=\/)/, '');
+  m = camino.match(new RegExp(`^/(?:o|cartel|poster|widget)/(${UUID_DENUNCIA})`, 'i'));
+  if (m) return { tipo: 'offer', id: m[1].toLowerCase() };
+  m = camino.match(/^\/b\/([^/]+)/);
+  if (!m) return null;
+  const parte = hash.match(new RegExp(`^#(resena|novedad)-(${UUID_DENUNCIA})`, 'i'));
+  if (parte) return { tipo: parte[1] === 'resena' ? 'review' : 'post', id: parte[2].toLowerCase() };
+  const slug = decodeURIComponent(m[1]);
+  if (new RegExp(`^${UUID_DENUNCIA}$`, 'i').test(slug)) return { tipo: 'business', id: slug.toLowerCase() };
+  try {
+    const fila = await llamar('resolve_business_slug', { p_slug: slug });
+    const b = Array.isArray(fila) ? fila[0] : fila;
+    return b?.id ? { tipo: 'business', id: b.id } : null;
+  } catch { return null; }
+}
+
+/** El título de lo que se denuncia, para enseñarlo encima del formulario. */
+async function queSeDenuncia(tipo, id) {
+  if (tipo === 'offer') return queOferta(id);
+  if (tipo === 'business') {
+    try {
+      const { data } = await sb.from('businesses').select('name, city').eq('id', id).maybeSingle();
+      return data ? [data.name, data.city].filter(Boolean).join(' · ') : '';
+    } catch { return ''; }
+  }
+  return '';
+}
 
 RUTAS.denunciar = async ([tipo, id]) => {
-  if (!QUE_SE_DENUNCIA[tipo] || !/^[0-9a-f-]{36}$/i.test(id || '')) {
+  const conContenido = Boolean(tipo || id);
+  if (conContenido && (!QUE_SE_DENUNCIA[tipo] || !new RegExp(`^${UUID_DENUNCIA}$`, 'i').test(id || ''))) {
     pinta(`<p class="empty">${esc(t('Ese enlace no está completo.'))}</p>`);
     return;
   }
-  if (!exigeSesion(`denunciar/${tipo}/${id}`)) return;
   const volver = document.referrer && new URL(document.referrer).origin === location.origin
+    && !new URL(document.referrer).pathname.startsWith('/app/')
     ? document.referrer : `${pre}/`;
-  pinta(`
-    <h1>${esc(t(QUE_SE_DENUNCIA[tipo]))}</h1>
+  const que = conContenido ? await queSeDenuncia(tipo, id) : '';
+  const ruta = conContenido ? `denunciar/${tipo}/${id}` : 'denunciar';
+  const motivos = (lista) => MOTIVOS.filter(([v]) => lista.includes(v)).map(([v, l]) =>
+    `<label class="check"><input type="radio" name="motivo" value="${v}"> ${esc(t(l))}</label>`).join('');
+  const listaMotivos = MOTIVOS_DE[tipo] || MOTIVOS.map(([v]) => v);
+  const campoUrl = conContenido ? '' : `
+      <label>${esc(t('Dirección del contenido en Klendar'))}
+        <small>${esc(t('Cópiala de la barra del navegador: klendar.app/o/… es una publicación y klendar.app/b/… un negocio. Para una reseña o una novedad, usa el enlace «Denunciar» que hay debajo de ella.'))}</small>
+        <input name="url" type="url" inputmode="url" autocomplete="off" maxlength="500" placeholder="https://klendar.app/o/…"></label>`;
+  const cabecera = `
+    <h1>${esc(t(conContenido ? QUE_SE_DENUNCIA[tipo] : 'Denunciar contenido'))}</h1>
+    ${que ? `<p class="denuncia-que"><b>${esc(que)}</b></p>` : ''}`;
+
+  if (YO) {
+    pinta(`${cabecera}
     <p class="muted">${esc(t('Cuéntanos qué pasa. Lo revisamos lo antes posible y nadie sabrá que has sido tú.'))}</p>
-    <form class="formu" id="f" novalidate>
-      <fieldset class="motivos"><legend>${esc(t('Motivo'))}</legend>
-        ${MOTIVOS.filter(([v]) => (MOTIVOS_DE[tipo] || ['spam', 'inappropriate', 'other']).includes(v)).map(([v, l]) =>
-          `<label class="check"><input type="radio" name="motivo" value="${v}"> ${esc(t(l))}</label>`).join('')}
-      </fieldset>
+    <form class="formu" id="f" novalidate>${campoUrl}
+      <fieldset class="motivos"><legend>${esc(t('Motivo'))}</legend>${motivos(listaMotivos)}</fieldset>
       <label>${esc(t('Detalles'))} <small>${esc(t('(opcional)'))}</small>
-        <textarea name="det" rows="4" maxlength="500"></textarea></label>
+        <textarea name="det" rows="4" maxlength="2000"></textarea></label>
       <p class="err" id="err" role="alert"></p>
       <button class="pill accent" id="enviar">${esc(t('Enviar denuncia'))}</button>
     </form>`);
+    const f = $('#f');
+    f.addEventListener('submit', (ev) => {
+      ev.preventDefault();
+      if (!f.motivo.value) { $('#err').textContent = t('Elige un motivo.'); return; }
+      $('#err').textContent = '';
+      ocupado($('#enviar'), async () => {
+        const destino = conContenido ? { tipo, id } : await contenidoDeUrl(f.elements.url.value);
+        if (!destino) { KL_CAMPO(f.elements.url, t(ERR_DENUNCIA.bad_target)); f.elements.url.focus(); return; }
+        await llamar('report_target', {
+          p_type: destino.tipo, p_id: destino.id, p_reason: f.motivo.value, p_details: f.det.value.trim() || null,
+        });
+        hecho({
+          titulo: t('Denuncia enviada'),
+          texto: t('Gracias por avisar. Si hace falta, lo quitamos y hablamos con quien lo publicó.'),
+          volver, volverTxt: t('Volver'),
+          lista: '#/', listaTxt: t('Tu cuenta'),
+        });
+      });
+    });
+    return;
+  }
+
+  // ── Sin cuenta ──
+  pinta(`${cabecera}
+    <p class="muted">${esc(t('Cualquiera puede avisarnos de algo que crea ilegal o que incumpla las Normas de la comunidad, tenga cuenta o no. Lo revisa una persona del equipo y te contamos qué hemos decidido.'))}</p>
+    <p class="muted">${esc(t('¿Tienes cuenta?'))} <a href="#/entrar?siguiente=${encodeURIComponent(ruta)}">${esc(t('Entra y denúncialo con ella'))}</a>.</p>
+    <form class="formu" id="f" novalidate>${campoUrl}
+      <fieldset class="motivos" id="motivos"><legend>${esc(t('Motivo'))}</legend>${motivos(listaMotivos)}</fieldset>
+      <label>${esc(t('Explica por qué lo denuncias'))}
+        <small>${esc(t('Qué es exactamente y por qué crees que es ilegal o incumple las normas. Si es ilegal, di qué ley crees que incumple si lo sabes.'))}</small>
+        <textarea name="det" rows="5" minlength="10" maxlength="2000" required></textarea></label>
+      <label>${esc(t('Tu nombre'))} <small data-opc hidden>${esc(t('(opcional)'))}</small>
+        <input name="nombre" autocomplete="name" maxlength="120"></label>
+      <label>${esc(t('Tu correo'))} <small data-opc hidden>${esc(t('(opcional)'))}</small>
+        <small>${esc(t('Para confirmarte que la hemos recibido y contarte qué decidimos.'))}</small>
+        <input name="correo" type="email" autocomplete="email" maxlength="254"></label>
+      <p class="muted pie-form" id="csam" hidden>${esc(t('En una denuncia por abuso sexual infantil, tu nombre y tu correo son opcionales. Si nos dejas el correo, te contaremos qué hemos hecho.'))}</p>
+      <label class="check"><input type="checkbox" name="fe"> ${esc(t('Declaro de buena fe que la información y las afirmaciones de esta denuncia son exactas y completas.'))}</label>
+      <p class="muted pie-form">${esc(t('Usamos tu nombre y tu correo solo para tramitar la denuncia y contestarte; no se los damos a quien publicó el contenido.'))}
+        <a href="${EN ? '/en/privacy/' : '/privacidad/'}" target="_blank">${esc(t('Política de privacidad'))}</a></p>
+      <p class="err" id="err" role="alert"></p>
+      <button class="pill accent" id="enviar">${esc(t('Enviar denuncia'))}</button>
+    </form>
+    <p class="muted pie-form">${esc(t('Si alguien está en peligro ahora mismo, llama al 112.'))}</p>`);
   const f = $('#f');
+  const el = f.elements;
+  // Abuso sexual infantil: nombre y correo pasan a ser opcionales (art. 16.2.c).
+  const alCambiarMotivo = () => {
+    const opcional = f.motivo.value === 'child_abuse';
+    $$('[data-opc]', f).forEach((s) => { s.hidden = !opcional; });
+    $('#csam').hidden = !opcional;
+    if (opcional) { KL_CAMPO(el.nombre, null); KL_CAMPO(el.correo, null); }
+  };
+  $('#motivos').addEventListener('change', alCambiarMotivo);
+
   f.addEventListener('submit', (ev) => {
     ev.preventDefault();
-    if (!f.motivo.value) { $('#err').textContent = t('Elige un motivo.'); return; }
     $('#err').textContent = '';
+    const opcional = f.motivo.value === 'child_abuse';
+    const nombre = el.nombre.value.trim();
+    const correo = el.correo.value.trim();
+    const det = el.det.value.trim();
+    const fallos = [];
+    if (el.url) {
+      const v = el.url.value.trim();
+      KL_CAMPO(el.url, v ? null : t('Obligatorio'));
+      if (!v) fallos.push(el.url);
+    }
+    if (!f.motivo.value) { $('#err').textContent = t('Elige un motivo.'); fallos.push($('#motivos input')); }
+    KL_CAMPO(el.det, det.length >= 10 ? null : t(ERR_DENUNCIA.details_required));
+    if (det.length < 10) fallos.push(el.det);
+    KL_CAMPO(el.nombre, nombre || opcional ? null : t(ERR_DENUNCIA.name_required));
+    if (!nombre && !opcional) fallos.push(el.nombre);
+    const correoMal = correo ? !CORREO_OK.test(correo) : !opcional;
+    KL_CAMPO(el.correo, correoMal ? t(correo ? ERR_DENUNCIA.email_invalid : ERR_DENUNCIA.email_required) : null);
+    if (correoMal) fallos.push(el.correo);
+    if (!el.fe.checked && !fallos.length) $('#err').textContent = t(ERR_DENUNCIA.good_faith_required);
+    if (!el.fe.checked) fallos.push(el.fe);
+    if (fallos.length) { fallos[0]?.focus(); return; }
+
     ocupado($('#enviar'), async () => {
-      await llamar('report_target', {
-        p_type: tipo, p_id: id, p_reason: f.motivo.value, p_details: f.det.value.trim() || null,
-      });
+      const destino = conContenido ? { tipo, id } : await contenidoDeUrl(el.url.value);
+      if (!destino) { KL_CAMPO(el.url, t(ERR_DENUNCIA.bad_target)); el.url.focus(); return; }
+      const robot = await sinRobots();
+      if (robot.error) { $('#err').textContent = errAuth(robot.error); return; }
+      let res;
+      let datos = null;
+      try {
+        res = await fetch(`${window.KLENDAR_ENV.url}/functions/v1/report-public`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', apikey: window.KLENDAR_ENV.key },
+          body: JSON.stringify({
+            type: destino.tipo, id: destino.id, reason: f.motivo.value, details: det,
+            name: nombre || null, email: correo || null, lang: EN ? 'en' : 'es',
+            good_faith: el.fe.checked, captcha: robot.token || null,
+          }),
+        });
+        datos = await res.json().catch(() => null);
+      } catch (e) {
+        throw new Error(amable(e.message));
+      }
+      if (!res.ok || !datos?.ok) {
+        const clave = datos?.error || '';
+        const campo = { name_required: el.nombre, name_too_long: el.nombre, email_required: el.correo, email_invalid: el.correo, details_required: el.det, details_too_long: el.det }[clave]
+          || (!conContenido && ['bad_target', 'not_found'].includes(clave) ? el.url : null);
+        const msg = ERR_DENUNCIA[clave] ? t(ERR_DENUNCIA[clave]) : amable(clave);
+        if (campo) { KL_CAMPO(campo, msg); campo.focus(); } else $('#err').textContent = msg;
+        return;
+      }
+      const ref = datos.ref ? (EN ? ` Your reference: ${datos.ref}.` : ` Tu referencia: ${datos.ref}.`) : '';
       hecho({
         titulo: t('Denuncia enviada'),
-        texto: t('Gracias por avisar. Si hace falta, lo quitamos y hablamos con quien lo publicó.'),
+        texto: (datos.ack
+          ? t('Te hemos mandado un correo para confirmarlo (mira también en spam). Te escribiremos con lo que decidamos.')
+          : t('La revisaremos lo antes posible. Gracias por avisar.')) + ref,
         volver, volverTxt: t('Volver'),
-        lista: '#/', listaTxt: t('Tu cuenta'),
+        lista: '#/denunciar', listaTxt: t('Denunciar otra cosa'),
       });
     });
   });
@@ -1039,6 +1235,9 @@ RUTAS['ultimo-paso'] = async (_p, params) => {
         aceptar: t('Eliminar'),
         peligro: true,
       }))) return;
+      const id = await confirmaIdentidad();
+      if (!id) return;
+      await id.cerrar();
       ocupado(boton, async () => {
         await llamar('delete_my_account', {});
         try { await sb.auth.signOut({ scope: 'local' }); } catch { /* la sesión ya no existe */ }

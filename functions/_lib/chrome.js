@@ -41,6 +41,8 @@ export const FOOT_LEGAL = [
   { es: 'Condiciones para negocios', en: 'Business terms', hrefEs: '/negocios/', hrefEn: '/en/business-terms/' },
   { es: 'Cookies', en: 'Cookies', hrefEs: '/cookies/', hrefEn: '/en/cookies/' },
   { es: 'Normas de la comunidad', en: 'Community guidelines', hrefEs: '/normas/', hrefEn: '/en/community-guidelines/' },
+  // DSA art. 16: cualquiera, con cuenta o sin ella (formulario en «Tu cuenta»).
+  { es: 'Denunciar contenido ilegal', en: 'Report illegal content', hrefEs: '/app/#/denunciar', hrefEn: '/app/?lang=en#/denunciar' },
   { es: 'Eliminar cuenta', en: 'Delete account', hrefEs: '/eliminar-cuenta/', hrefEn: '/en/delete-account/' },
   { es: 'Accesibilidad', en: 'Accessibility', hrefEs: '/accesibilidad/', hrefEn: '/en/accessibility/' },
   { es: 'Estado del servicio', en: 'Service status', hrefEs: '/estado/', hrefEn: '/en/status/' },

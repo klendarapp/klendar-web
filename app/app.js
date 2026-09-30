@@ -99,6 +99,9 @@ const ERRORES = {
   'Password should be at least': 'La contraseña tiene que tener al menos 8 caracteres.',
   'rate limit': 'Demasiados intentos seguidos. Espera un minuto y vuelve a probar.',
   not_authenticated: 'Tienes que entrar en tu cuenta.',
+  reauth_required: 'Por seguridad, vuelve a confirmar que eres tú.',
+  image_not_allowed: 'Esa foto no se puede usar. Súbela desde Klendar.',
+  offensive_name: 'Ese nombre no está permitido: no puede tener insultos ni palabras malsonantes. Elige otro.',
   offer_not_found: 'Esa publicación ya no existe.',
   not_redeemable: 'Esta publicación no se canjea con código.',
   offer_not_active: 'Esta publicación ya no está activa.',
@@ -154,6 +157,9 @@ const CORREO_OK = /^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/;
 
 // ── Sesión ────────────────────────────────────────────────────────────────
 let YO = null;
+/** Se llegó por el enlace de «¿Has olvidado la contraseña?»: la contraseña
+ * nueva no pide la vieja (el enlace ya demuestra que eres tú). */
+let RECUPERANDO = false;
 async function sesion() {
   const { data } = await sb.auth.getSession();
   YO = data.session?.user || null;
@@ -168,7 +174,7 @@ sb.auth.onAuthStateChange((ev, s) => {
   if (ev === 'SIGNED_IN' || ev === 'SIGNED_OUT' || ev === 'USER_UPDATED') setTimeout(() => window.KL_CABECERA?.(), 0);
   // El enlace de «he olvidado la contraseña» abre sesión y trae aquí; Supabase
   // se come la ruta (#/nueva-clave), así que se lleva a mano.
-  if (ev === 'PASSWORD_RECOVERY') location.hash = '#/nueva-clave';
+  if (ev === 'PASSWORD_RECOVERY') { RECUPERANDO = true; location.hash = '#/nueva-clave'; }
   // Los códigos que el panel guardó sin conexión eran de esta sesión.
   if (ev === 'SIGNED_OUT') {
     try {
@@ -610,6 +616,106 @@ function confirma({ titulo, texto = '', aceptar, peligro = false, cancelar = t('
   });
 }
 
+/** «Confirma que eres tú» antes de cambiar la contraseña o eliminar la
+ * cuenta, como la app (confirmIdentity): la contraseña actual o, si la cuenta
+ * no tiene (entró con Google o Apple), un código de 6 cifras al correo. Quien
+ * tiene contraseña puede pedir también el código: las cuentas creadas con un
+ * código llevan por dentro una contraseña que la persona no conoce. La lógica
+ * está en assets/identidad.js. Devuelve la comprobación hecha (hay que
+ * llamar a `cerrar()` al acabar) o null si se cancela. */
+async function confirmaIdentidad() {
+  let id = null;
+  try { id = await window.KL_IDENTIDAD?.(sb); } catch { id = null; }
+  if (!id) { toast(amable(''), true); return null; }
+  let tieneClave = true;
+  try {
+    const m = await llamar('my_auth_methods', {});
+    if (typeof m?.has_password === 'boolean') tieneClave = m.has_password;
+  } catch { tieneClave = (YO?.identities || []).some((i) => i.provider === 'email'); }
+
+  return new Promise((resolve) => {
+    const d = document.createElement('dialog');
+    d.className = 'dialogo identidad';
+    d.setAttribute('aria-labelledby', 'identidad-t');
+    let conCodigo = !tieneClave;
+    let enviado = false;
+    let hecho = false;
+    const correo = esc(id.email);
+    const pinta1 = () => {
+      d.innerHTML = `<h2 id="identidad-t">${esc(t('Confirma que eres tú'))}</h2>
+        <form class="formu" novalidate>
+          ${!conCodigo ? `<p class="muted">${esc(t('Por seguridad, escribe tu contraseña actual.'))}</p>
+            <label>${esc(t('Contraseña actual'))}<input name="clave" type="password" autocomplete="current-password"></label>`
+          : !enviado ? `<p class="muted">${EN ? `We'll email a 6-digit code to <b>${correo}</b>.` : `Te mandaremos un código de 6 cifras a <b>${correo}</b>.`}</p>`
+          : `<p class="muted">${EN ? `Enter the 6-digit code we've sent to <b>${correo}</b>.` : `Escribe el código de 6 cifras que te hemos mandado a <b>${correo}</b>.`}</p>
+            <label>${esc(t('Código'))}<input name="codigo" inputmode="numeric" autocomplete="one-time-code" maxlength="6"></label>`}
+          <p class="err" role="alert"></p>
+          <div class="acciones">
+            ${!conCodigo ? `<button type="button" class="pill" data-modo="codigo">${esc(t('Prefiero un código por correo'))}</button>` : ''}
+            ${conCodigo && enviado ? `<button type="button" class="pill" data-reenvio>${esc(t('Enviar otro código'))}</button>` : ''}
+            ${conCodigo && tieneClave ? `<button type="button" class="pill" data-modo="clave">${esc(t('Usar mi contraseña'))}</button>` : ''}
+          </div>
+          <div class="dialogo-botones">
+            <button type="button" class="pill" value="no">${esc(t('Cancelar'))}</button>
+            <button type="submit" class="pill accent">${esc(conCodigo && !enviado ? (EN ? 'Email me the code' : 'Enviarme el código') : t('Seguir'))}</button>
+          </div>
+        </form>`;
+      const form = d.querySelector('form');
+      const err = d.querySelector('.err');
+      const falla = (e, clave) => {
+        const invalida = clave && (e?.code === 'invalid_credentials' || /invalid login credentials/i.test(e?.message || ''));
+        err.textContent = invalida ? t('La contraseña no es correcta.') : errAuth(e);
+      };
+      d.querySelector('button[value=no]').onclick = () => d.close();
+      d.querySelectorAll('[data-modo]').forEach((b) => { b.onclick = () => { conCodigo = b.dataset.modo === 'codigo'; pinta1(); }; });
+      const reenv = d.querySelector('[data-reenvio]');
+      if (reenv) {
+        // Recién mandado: la cuenta atrás de 60 s empieza ya.
+        reenvio(reenv, async () => {
+          try { await id.mandarCodigo(); return true; } catch (e) { falla(e); return false; }
+        })();
+      }
+      form.onsubmit = (e) => {
+        e.preventDefault();
+        err.textContent = '';
+        const boton = form.querySelector('button[type=submit]');
+        if (!conCodigo) {
+          if (!validaForm(form, { clave: VALIDA.requerido })) return;
+          ocupado(boton, async () => {
+            try { await id.conClave(form.elements.clave.value); } catch (x) { falla(x, true); return; }
+            hecho = true;
+            d.close();
+          });
+        } else if (!enviado) {
+          ocupado(boton, async () => {
+            try { await id.mandarCodigo(); } catch (x) { falla(x); return; }
+            enviado = true;
+            pinta1();
+          });
+        } else {
+          const codigo = form.elements.codigo.value.replace(/\D/g, '');
+          if (!/^\d{6}$/.test(codigo)) { errorCampo(form.elements.codigo, t('Son 6 cifras.')); return; }
+          ocupado(boton, async () => {
+            try { await id.conCodigo(codigo); } catch (x) { falla(x); return; }
+            hecho = true;
+            d.close();
+          });
+        }
+      };
+      (form.querySelector('input') || form.querySelector('button[type=submit]'))?.focus();
+    };
+    document.body.appendChild(d);
+    d.addEventListener('close', async () => {
+      d.remove();
+      if (!hecho) await id.cerrar();
+      resolve(hecho ? id : null);
+    });
+    pinta1();
+    d.showModal();
+    (d.querySelector('input') || d.querySelector('button[type=submit]'))?.focus();
+  });
+}
+
 /** Un botón que se bloquea mientras trabaja, para no mandar dos veces. */
 async function ocupado(boton, trabajo) {
   if (boton.disabled) return;
@@ -882,6 +988,14 @@ RUTAS.registro = async (_p, params) => {
     const email = form.email.value.trim();
     const nac = form.birth.value;
     ocupado(form.querySelector('button[type=submit]'), async () => {
+      // El nombre se ve en reseñas y amigos: sin insultos ni palabrotas (la
+      // base lo dejaría vacío). Sin conexión se da por bueno.
+      let nombreOk = true;
+      try {
+        const { data: sirve } = await sb.rpc('display_name_allowed', { p_name: form.elements.name.value.trim() });
+        nombreOk = sirve !== false;
+      } catch { /* sin conexión: lo mira la base al crear la cuenta */ }
+      if (!nombreOk) { err.textContent = t('Ese nombre no está permitido: no puede tener insultos ni palabras malsonantes. Elige otro.'); return; }
       const robot = await sinRobots();
       if (robot.error) { $('#err').textContent = errAuth(robot.error); return; }
       const { data, error } = await sb.auth.signUp({
@@ -973,6 +1087,11 @@ RUTAS['nueva-clave'] = async (_p, params) => {
   if (!YO) return RUTAS.recuperar();
   // Desde Ajustes («Formas de entrar») se vuelve allí al guardar.
   const siguiente = /^[a-z-]+$/.test(params?.get('siguiente') || '') ? params.get('siguiente') : '';
+  // Por el enlace de recuperación (aquí, o desde el panel o el admin, que
+  // traen la sesión recién abierta) no se pide la contraseña vieja. Desde
+  // Ajustes, o sin venir de ese enlace, primero «Confirma que eres tú».
+  const recuperando = siguiente !== 'ajustes'
+    && (RECUPERANDO || await window.KL_IDENTIDAD?.reciente(sb, ['recovery', 'otp', 'magiclink'], 600));
   pinta(`
     <h1>${esc(t('Nueva contraseña'))}</h1>
     <p class="muted">${esc(t('Elige una que no uses en otros sitios.'))}</p>
@@ -993,8 +1112,22 @@ RUTAS['nueva-clave'] = async (_p, params) => {
     });
     if (!ok) return;
     ocupado(form.querySelector('button[type=submit]'), async () => {
-      const { error } = await sb.auth.updateUser({ password: form.p1.value });
-      if (error) { $('#err').textContent = errAuth(error); return; }
+      if (recuperando) {
+        const { error } = await sb.auth.updateUser({ password: form.p1.value });
+        if (error) { $('#err').textContent = errAuth(error); return; }
+      } else {
+        const id = await confirmaIdentidad();
+        if (!id) return;
+        try {
+          await id.cambiarClave(form.p1.value);
+        } catch (x) {
+          $('#err').textContent = errAuth(x);
+          return;
+        } finally {
+          await id.cerrar();
+        }
+      }
+      RECUPERANDO = false;
       toast(t(siguiente ? 'Contraseña guardada' : 'Contraseña actualizada'));
       // Desde el panel de negocios se vuelve al panel.
       const destino = rutaInterna(new URLSearchParams(location.search).get('destino'));
@@ -1224,21 +1357,43 @@ RUTAS.codigos = async () => {
   if (!exigeSesion('codigos')) return;
   // Los regalos de cumpleaños van aparte y arriba; si fallan, los códigos
   // salen igual.
-  const [lista, regalos] = await Promise.all([
+  const [lista, regalos, premios] = await Promise.all([
     llamar('my_redemptions', {}),
     llamar('my_birthday_gifts', {}).catch(() => []),
+    // Los premios de las tarjetas de sellos, también aparte.
+    llamar('my_stamp_rewards', {}).catch(() => []),
   ]);
   const zona = await zonasDe(lista);
   const conRegalos = Array.isArray(regalos) && regalos.length > 0;
+  const conPremios = Array.isArray(premios) && premios.length > 0;
   pinta(`
     <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(t('Tus códigos'))}</h1>
     ${conRegalos ? `<h2 class="seccion-t">${esc(t('Regalos de cumpleaños'))}</h2>
-      <div class="olist">${regalos.map(filaRegalo).join('')}</div>
-      <h2 class="seccion-t">${esc(t('Tus códigos'))}</h2>` : ''}
+      <div class="olist">${regalos.map(filaRegalo).join('')}</div>` : ''}
+    ${conPremios ? `<h2 class="seccion-t">${esc(t('Premios de tarjetas de sellos'))}</h2>
+      <div class="olist">${premios.map(filaPremio).join('')}</div>` : ''}
+    ${conRegalos || conPremios ? `<h2 class="seccion-t">${esc(t('Tus códigos'))}</h2>` : ''}
     ${(lista || []).length ? `<div class="olist">${lista.map((r) => filaCanje(r, zona(r))).join('')}</div>`
     : `<p class="empty">${esc(t('Todavía no tienes códigos. Cuando consigas el código de una oferta o reserves plaza en un evento, lo tendrás aquí.'))}</p>`}`);
 };
+
+/** Un premio de tarjeta de sellos en «Tus códigos»: pendiente lleva a
+ * «Tarjetas de sellos», donde está su código; si no, solo se ve. */
+function filaPremio(p) {
+  const vivo = p.status === 'pending' && !!p.code;
+  const estado = p.status === 'validated'
+    ? (p.source === 'manual' ? t('Entregado en el local') : t('Canjeado'))
+    : vivo ? t('Código activo') : t('Caducado');
+  const cuando = fecha(p.validated_at || p.created_at, undefined, p.time_zone || undefined);
+  const dentro = `
+      ${p.business_logo ? `<img src="${esc(p.business_logo)}" alt="" loading="lazy">` : `<span class="ph">${ic('local_activity')}</span>`}
+      <span class="ocard-body"><b>${esc(p.reward)}</b>
+        <span class="muted">${esc(`${p.card_name} · ${p.business_name} · ${cuando}`)}</span>
+        <span class="ocard-meta"><span class="tag${vivo ? '' : ' off'}">${esc(estado)}</span></span>
+      </span>`;
+  return vivo ? `<a class="ocard" href="#/sellos">${dentro}</a>` : `<div class="ocard">${dentro}</div>`;
+}
 
 // ── Regalos de cumpleaños ─────────────────────────────────────────────────
 /** El último día que vale un regalo: `expires_at` es el final de ese día
@@ -1627,7 +1782,7 @@ RUTAS.sellos = async () => {
         ${!c.is_active ? `<p class="muted">${esc(t('En pausa: ahora mismo no se dan sellos nuevos. Los tuyos siguen aquí.'))}</p>` : ''}
         ${c.pending_code || c.stamps >= c.goal ? `<button class="pill accent" data-premio="${esc(c.id)}" data-reward="${esc(c.reward)}" data-negocio="${esc(c.business_name)}" data-biz="${esc(c.business_id)}">${esc(c.pending_code ? t('Ver el código') : t('Pedir el premio'))}</button>` : ''}
       </div>`).join('')
-    : `<p class="empty">${esc(t('Todavía no tienes ninguna. Se abren solas: canjea algo en un sitio que tenga tarjeta y ahí tendrás tu primer sello.'))}</p>`}`);
+    : `<p class="empty">${esc(t('Todavía no tienes ninguna. Se abren solas con tu primer sello: canjea algo en un sitio que tenga tarjeta o escanea el QR del local.'))}</p>`}`);
 
   $$('[data-premio]').forEach((b) => { b.onclick = () => ocupado(b, async () => {
     const r = await llamar('claim_stamp_reward', { p_card: b.dataset.premio });

@@ -120,11 +120,14 @@ main.pub { padding: 34px 20px 72px; }
 .menu section { margin: 0 0 18px; padding: 0; }
 .menu h3 { font-size: 17px; margin: 0 0 6px; }
 .menu ul { list-style: none; padding: 0; margin: 0; }
-.menu li { display: flex; gap: 12px; justify-content: space-between; align-items: baseline;
+/* Foto (si la hay) · nombre y detalles · precio, alineados arriba como en la app. */
+.menu li { display: flex; gap: 12px; align-items: flex-start;
   padding: 8px 0; border-bottom: 1px solid var(--glass-border); }
+.menu li > .plato { flex: 1; min-width: 0; }
 .menu li small { display: block; color: var(--ink-2); font-size: 13px; }
 .menu li small.alg { font-size: 12px; opacity: .85; }
-.menu li img.dish { width: 56px; height: 56px; border-radius: 10px; object-fit: cover; flex: none; }
+.menu li .dish { flex: none; display: block; border-radius: 10px; }
+.menu li .dish img { width: 56px; height: 56px; border-radius: 10px; object-fit: cover; }
 .menu .price { font-weight: 700; white-space: nowrap; }
 .empty { padding: 28px; border-radius: var(--radius); border: 1px dashed var(--glass-border); color: var(--ink-2); text-align: center; }
 

@@ -2398,13 +2398,7 @@ async function tarjetaClientes(v, id) {
     <div class="page-head"><h1>${esc(c.name)}</h1>${estadoTarjeta(c)}<span class="spacer"></span>
       <a class="btn sm ghost" href="#/sellos/${esc(c.id)}/editar">Editar</a></div>
     <p><b>${esc(metaPremio(c))}</b><br><span class="muted">${esc(filtroSellos(c, todas?.offers || []))}</span></p>
-    <div class="kpis" style="margin-bottom:14px">
-      <div class="kpi"><b>${fmtNum(c.people)}</b><span>Con sellos ahora</span></div>
-      <div class="kpi"><b>${fmtNum(c.stamps)}</b><span>Sellos dados</span></div>
-      <div class="kpi"><b>${fmtNum(c.rewards_given)}</b><span>Premios entregados</span></div>
-      <div class="kpi"><b>${fmtNum(c.rewards_pending)}</b><span>Premios por recoger</span></div>
-    </div>
-    ${c.stamps ? `<p class="muted" style="margin-top:-6px">${esc(origenSellos(c))}</p>` : ''}
+    <div id="cifras"></div>
     <div id="persona"></div>
     <div class="card"><div class="page-head" style="margin:0 0 10px"><h2 style="margin:0">Clientes</h2><span class="spacer"></span>
         <button class="btn sm primary" type="button" id="anadir">Añadir a alguien</button></div>
@@ -2435,8 +2429,28 @@ async function tarjetaClientes(v, id) {
     });
   };
 
+  // Las cifras de arriba también cambian al poner o quitar sellos a mano.
+  const pintaCifras = () => {
+    const caja = $('#cifras', v);
+    if (!caja) return;
+    caja.innerHTML = `<div class="kpis" style="margin-bottom:14px">
+      <div class="kpi"><b>${fmtNum(c.people)}</b><span>Con sellos ahora</span></div>
+      <div class="kpi"><b>${fmtNum(c.stamps)}</b><span>Sellos dados</span></div>
+      <div class="kpi"><b>${fmtNum(c.rewards_given)}</b><span>Premios entregados</span></div>
+      <div class="kpi"><b>${fmtNum(c.rewards_pending)}</b><span>Premios por recoger</span></div>
+    </div>
+    ${c.stamps ? `<p class="muted" style="margin-top:-6px">${esc(origenSellos(c))}</p>` : ''}`;
+    I18N.translate(caja);
+  };
+  pintaCifras();
+
   const recarga = async () => {
-    const n = await rpc('stamp_card_customers', { p_card: id }).catch(() => null);
+    const [n, t] = await Promise.all([
+      rpc('stamp_card_customers', { p_card: id }).catch(() => null),
+      rpc('business_stamp_cards', { p_business: BIZ.id }).catch(() => null),
+    ]);
+    const nueva = (t?.cards || []).find((x) => x.id === id);
+    if (nueva) { Object.assign(c, nueva); pintaCifras(); }
     if (!n?.ok) return;
     gente.splice(0, gente.length, ...(n.customers || []).map((p) => ({ ...p, goal: c.goal })));
     if (elegido) elegido = gente.find((p) => p.user_id === elegido.user_id) || elegido;
@@ -2874,7 +2888,7 @@ PAGES['cartel-local'] = async (v) => {
 PAGES.novedades = async (v) => {
   const canManage = ['owner', 'manager'].includes(BIZ.role);
   const { data: posts } = await sb.from('business_posts')
-    .select('id, body, image_url, created_at')
+    .select('id, body, image_url, created_at, moderation_status')
     .eq('business_id', BIZ.id).order('created_at', { ascending: false }).limit(50);
 
   const escribe = async (post) => {
@@ -2911,11 +2925,14 @@ PAGES.novedades = async (v) => {
         image = sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
       }
       const fila = { body: texto || null, image_url: image };
-      const { error } = post
-        ? await sb.from('business_posts').update(fila).eq('id', post.id)
-        : await sb.from('business_posts').insert({ business_id: BIZ.id, ...fila });
+      const { data: guardada, error } = post
+        ? await sb.from('business_posts').update(fila).eq('id', post.id).select('moderation_status').single()
+        : await sb.from('business_posts').insert({ business_id: BIZ.id, ...fila }).select('moderation_status').single();
       if (error) throw new Error(error.message);
-      toast('Hecho'); route();
+      // Con lenguaje ofensivo no se publica hasta revisarla (como en la app).
+      toast(guardada?.moderation_status === 'pending'
+        ? 'Lo revisamos antes de publicarlo porque puede contener lenguaje ofensivo. Normalmente en menos de 24 h.'
+        : 'Hecho'); route();
     } catch (e) { toast(friendly(e.message), true); }
   };
 
@@ -2926,7 +2943,7 @@ PAGES.novedades = async (v) => {
       '<p>A short note on your page, with no countdown or code: “octopus today”, “closed on Monday”, “the terrace is open”. For something people redeem, use a <b>publication</b>.</p><p>People who have you in their favourites get a notification (at most one a day per business, so it doesn\'t get tiring).</p>'))}
     ${table({
       cols: [
-        { h: 'Novedad', r: (p) => `${p.image_url ? `<img class="thumb" src="${esc(p.image_url)}" alt="" loading="lazy">` : ''}<span class="title">${esc(p.body || '')}</span>` },
+        { h: 'Novedad', r: (p) => `${p.image_url ? `<img class="thumb" src="${esc(p.image_url)}" alt="" loading="lazy">` : ''}<span class="title">${esc(p.body || '')}</span>${p.moderation_status === 'pending' ? ' <span class="tag st-pending">En revisión</span>' : ''}` },
         { h: 'Cuándo', r: (p) => fmtDate(p.created_at) },
         { h: '', r: (p) => canManage ? `<div class="actions">
             <button class="btn sm ghost" data-edit="${esc(p.id)}">Editar</button>
@@ -3424,7 +3441,9 @@ PAGES.mensajes = async (v) => {
     // Hecho: se vuelve a pintar (estado de la semana e historial al día) y
     // arriba se dice qué ha pasado.
     const hecho = r.status === 'review'
-      ? `<div class="scan-result warn">${esc(I18N.t('Lo revisamos antes de enviarlo porque menciona alcohol, tabaco o apuestas. Normalmente en menos de 24 h.'))}</div>`
+      ? `<div class="scan-result warn">${esc(I18N.t((r.flags || []).includes('offensive')
+        ? 'Lo revisamos antes de enviarlo porque puede contener lenguaje ofensivo. Normalmente en menos de 24 h.'
+        : 'Lo revisamos antes de enviarlo porque menciona alcohol, tabaco o apuestas. Normalmente en menos de 24 h.'))}</div>`
       : `<div class="scan-result ok">${ms('check_circle')}${esc(bi(r.recipients === 1 ? 'Mensaje enviado a 1 persona.' : `Mensaje enviado a ${fmtNum(r.recipients || 0)} personas.`,
         r.recipients === 1 ? 'Message sent to 1 person.' : `Message sent to ${fmtNum(r.recipients || 0)} people.`))}</div>`;
     await route();
@@ -3598,6 +3617,7 @@ PAGES.resenas = async (v) => {
         ${r.comment ? `<p>${esc(r.comment)}</p>` : ''}
         ${r.photo_url ? `<img class="foto" src="${esc(r.photo_url)}" alt="" loading="lazy">` : ''}
         ${r.reply ? `<div class="respuesta"><b>Respuesta de <span>${esc(BIZ.name)}</span></b>${r.reply_at ? `<small class="muted"> · ${esc(fmtDate(r.reply_at))}</small>` : ''}<p>${esc(r.reply).replace(/\n/g, '<br>')}</p></div>` : ''}
+        ${r.reply_pending ? `<div class="respuesta"><b>Tu respuesta, en revisión</b> <span class="tag st-pending">En revisión</span><p>${esc(r.reply_pending).replace(/\n/g, '<br>')}</p></div>` : ''}
         ${gestiona() ? `<div class="pie"><button class="btn sm" data-resp="${i}">${ms(r.reply ? 'edit' : 'reply')}${r.reply ? 'Editar respuesta' : 'Responder'}</button></div>` : ''}
       </article>`).join('')}</div>`
     : '<div class="card"><p class="muted" style="margin:0">Todavía no tienes reseñas. Llegan cuando la gente canjea y vuelve a contarlo.</p></div>'}`;
@@ -3622,7 +3642,8 @@ PAGES.resenas = async (v) => {
         : res?.error === 'not_authorized' ? ERRORS.not_authorized : 'No se ha podido guardar', true);
       return;
     }
-    toast(texto ? 'Respuesta publicada' : 'Respuesta borrada');
+    toast(res.status === 'review' ? 'Lo revisamos antes de publicarlo porque puede contener lenguaje ofensivo. Normalmente en menos de 24 h.'
+      : texto ? 'Respuesta publicada' : 'Respuesta borrada');
     route();
   }; });
 };

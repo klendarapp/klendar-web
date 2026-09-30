@@ -300,7 +300,7 @@ FAQ_ES = [
     ('¿Cómo borro mi cuenta?', 'Desde Cuenta → Ajustes → Eliminar mi cuenta, en la app o en «Tu cuenta» de la web. Se borra todo lo tuyo. También puedes pedirlo por correo: <a href="/eliminar-cuenta/">cómo hacerlo</a>.'),
     ('Soy un negocio, ¿cómo me doy de alta?', 'Desde la app (Cuenta → ¿Quieres registrar tu negocio?) o desde el <a href="/panel/">panel web</a>; hace falta la ubicación exacta del local. Lo revisamos y te verificamos, normalmente en 24-48 horas. Luego puedes publicar desde el móvil o desde el ordenador.'),
     ('¿Klendar se lleva una comisión de lo que vendo?', 'No. Lo que cobras en tu local es tuyo entero; Klendar no toca el dinero.'),
-    ('Vi algo que no debería estar ahí', 'En cada ficha, en la app y en la web, hay un botón para denunciar. Lo revisamos y, si hay que retirarlo, se retira con un motivo y el negocio puede recurrir.'),
+    ('Vi algo que no debería estar ahí', 'En cada ficha, en la app y en la web, hay un botón para denunciar, y no hace falta tener cuenta: también puedes usar <a href="/app/#/denunciar">el formulario de denuncias</a>. Lo revisamos y, si hay que retirarlo, se retira con un motivo y el negocio puede recurrir.'),
     ('¿En qué ciudades está?', 'Estamos empezando. Si en la tuya todavía no hay nada, en <a href="/agenda/">la agenda</a> lo verás vacío: escríbenos y lo arrancamos.'),
 ]
 FAQ_EN = [
@@ -314,7 +314,7 @@ FAQ_EN = [
     ('How do I delete my account?', 'From Account → Settings → Delete my account, in the app or in “Your account” on the website. Everything of yours is deleted. You can also ask by email: <a href="/en/delete-account/">how to do it</a>.'),
     ('I run a business. How do I register?', 'From the app (Account → Want to register your business?) or from the <a href="/panel/">web dashboard</a>; it needs the venue’s exact location. We review and verify it, usually within 24–48 hours. After that you can publish from your phone or from a computer.'),
     ('Does Klendar take a commission on what I sell?', 'No. What you charge at your venue is yours; Klendar never touches the money.'),
-    ('I saw something that shouldn\'t be there', 'On every publication, in the app and on the website, there\'s a button to report it. We review it and, if it has to come down, it comes down with a reason and the business can appeal.'),
+    ('I saw something that shouldn\'t be there', 'On every publication, in the app and on the website, there\'s a button to report it, and you don\'t need an account: you can also use <a href="/app/?lang=en#/denunciar">the report form</a>. We review it and, if it has to come down, it comes down with a reason and the business can appeal.'),
     ('Which cities is it in?', 'We\'re just getting started. If nothing is happening in yours yet, <a href="/en/whats-on/">what\'s on</a> will look empty: email us and we\'ll get it going.'),
 ]
 

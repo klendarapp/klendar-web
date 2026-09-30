@@ -76,8 +76,12 @@ const LABELS = {
 // Quién recibió una notificación enviada desde aquí, como en el formulario.
 const AUDIENCIAS = { all: 'Todos los usuarios', users: 'Solo usuarios (no negocios)', business_owners: 'Propietarios y encargados de negocios', city: 'Negocios de una ciudad', ids: 'Equipo de un negocio' };
 const KIND_ICON = { flash_offer: ms('bolt'), future_event: ms('event') };
-const FLAGS = { alcohol: 'alcohol', tobacco: 'tabaco/vapeo', gambling: 'apuestas' };
+const FLAGS = { alcohol: 'alcohol', tobacco: 'tabaco/vapeo', gambling: 'apuestas', offensive: 'lenguaje ofensivo' };
 const flagTags = (o) => (o.moderation_flags || []).map((f) => `<span class="tag warn" title="Detectado automáticamente en el texto">${esc(FLAGS[f] || f)}</span>`).join(' ');
+// Lenguaje ofensivo: qué ha encontrado (`text_offensive`) y en qué texto.
+const CAT_OFENSIVA = { insult: 'insultos', profanity: 'palabras malsonantes', sexual: 'contenido sexual', hate: 'odio o discriminación', threat: 'amenazas' };
+const TIPO_TEXTO = { post: 'Novedad', review: 'Reseña', reply: 'Respuesta a una reseña', business_name: 'Nombre del negocio', business_description: 'Descripción del negocio', menu: 'Carta' };
+const ICONO_TEXTO = { post: 'article', review: 'chat_bubble', reply: 'reply', business_name: 'storefront', business_description: 'storefront', menu: 'restaurant_menu' };
 const debounce = (fn, ms = 350) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
 const qs = (o) => Object.entries(o).filter(([, v]) => v != null && v !== '').map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&');
 
@@ -102,6 +106,9 @@ async function rpc(fn, args = {}) {
     // se enseña la pantalla del código.
     if (msg.includes('mfa_required')) { setTimeout(boot, 0); throw new Error('Escribe el código de tu app de verificación para seguir.'); }
     if (msg.includes('not_admin')) throw new Error('Esta cuenta no es administradora.');
+    // Eliminar una cuenta pide haber confirmado la contraseña hace poco.
+    if (msg.includes('reauth_required')) throw new Error('Por seguridad, vuelve a confirmar que eres tú.');
+    if (msg.includes('image_not_allowed')) throw new Error('Esa foto no se puede usar. Súbela desde Klendar.');
     if (/auth_required|JWT/.test(msg)) throw new Error(window.KL_AUTH_TEXT('sesion', I18N.lang));
     if (/Failed to fetch|NetworkError|Load failed/i.test(msg)) throw new Error(window.KL_AUTH_TEXT('sinRed', I18N.lang));
     if (error.code === '42501') throw new Error('No tienes permiso para esto.');
@@ -169,6 +176,30 @@ function modal({ title, intro, warn, fields = [], submit = 'Guardar', danger = f
     d.showModal();
     const first = $('input:not([type=checkbox]),select,textarea', d); if (first) first.focus();
   });
+}
+// «Confirma que eres tú» (assets/identidad.js): antes de eliminar una cuenta,
+// la contraseña actual. Se comprueba con una sesión aparte y la de este
+// navegador (la que pasó el segundo factor) queda confirmada 10 minutos.
+// Devuelve true si se confirma.
+async function confirmaIdentidad() {
+  let id = null;
+  try { id = await window.KL_IDENTIDAD?.(sb); } catch { id = null; }
+  if (!id) { toast('No se ha podido completar. Prueba otra vez.', true); return false; }
+  try {
+    for (;;) {
+      const r = await modal({ title: 'Confirma que eres tú', intro: esc('Por seguridad, escribe tu contraseña actual.'),
+        fields: [{ name: 'clave', label: 'Contraseña actual', type: 'password', required: true }], submit: 'Seguir' });
+      if (!r) return false;
+      try {
+        await id.conClave(r.clave);
+        return true;
+      } catch (e) {
+        toast(e?.code === 'invalid_credentials' ? 'La contraseña no es correcta.' : errAuth(e), true);
+      }
+    }
+  } finally {
+    await id.cerrar();
+  }
 }
 const confirmDlg = (title, text, opts = {}) => modal({ title, intro: text, submit: opts.submit || 'Confirmar', danger: opts.danger, confirmWord: opts.confirmWord, warn: opts.warn }).then((v) => v !== null);
 
@@ -500,9 +531,12 @@ async function refreshBadges(lanzar = false) {
     // Mensajes a clientes parados por la moderación automática.
     let msj = 0;
     try { msj = (await rpc('admin_business_messages', { p_status: 'review', p_limit: 1, p_offset: 0 })).pending || 0; } catch { /* sin la función */ }
+    // Textos parados por lenguaje ofensivo (novedades, reseñas, respuestas, ficha y carta).
+    let textos = 0;
+    try { textos = (await rpc('admin_text_reviews', { p_limit: 1, p_offset: 0 })).total || 0; } catch { /* sin la función */ }
     // Errores de la web: los nuevos de las últimas 24 h (y lo demás para el Resumen).
     try { WEB_ERR = (await rpc('admin_web_errors', { p_status: 'open', p_limit: 1, p_offset: 0 })).counts || null; } catch { WEB_ERR = null; }
-    BADGES = { negocios: k.businesses_pending || 0, publicaciones: k.offers_pending || 0, denuncias: k.reports_open || 0, mensajes: msj, sugerencias: sug, errores: WEB_ERR?.new_24h || 0 };
+    BADGES = { negocios: k.businesses_pending || 0, publicaciones: k.offers_pending || 0, denuncias: k.reports_open || 0, mensajes: msj, resenas: textos, sugerencias: sug, errores: WEB_ERR?.new_24h || 0 };
     Object.keys(BADGES).forEach((x) => { if (!BADGES[x]) delete BADGES[x]; });
     renderNav(currentRoute()[0]);
     return k;
@@ -616,9 +650,23 @@ PAGES.resumen = async (v) => {
   const kpi = (n, label, cls = '') => `<div class="kpi ${cls}"><b>${typeof n === 'number' ? fmtNum(n) : n}</b><span>${label}</span></div>`;
   const series = k.series || [];
   const en = I18N.lang === 'en';
+  // Lo que acumula 3 o más denuncias abiertas, lo primero (Denuncias).
+  let calientes = null;
+  try { calientes = await rpc('admin_report_groups', { p_status: 'open', p_type: 'all', p_min_open: 3, p_limit: 5, p_offset: 0 }); } catch (e) { if (e?.obsoleta) throw e; }
+  const nCal = calientes?.total || 0;
   v.innerHTML = `
     <div class="page-head"><h1>Resumen</h1><span class="spacer"></span><span class="muted">${new Date().toLocaleString(LOC(), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: TZ })}</span></div>
+    ${nCal ? `<div class="card den-resumen"><h2>${ms('report')} ${en ? 'Content with 3 or more open reports' : 'Contenido con 3 o más denuncias abiertas'}</h2>
+      <p class="muted" style="margin:0 0 10px">${en ? 'Several people have reported the same thing: check it first.' : 'Varias personas han denunciado lo mismo: revísalo lo primero.'}</p>
+      ${calientes.rows.map((g) => `<a class="item den-caliente den-mini" href="#/denuncias/${esc(g.target_type)}/${esc(g.target_id)}">${miniDen(g.target_type, g.target)}<div style="min-width:0">
+        <h3>${esc(tituloDen(g.target_type, g.target))}</h3>
+        <div class="meta">${tag(g.target_type, 'dim')} ${estadoDen(g.state)} · <b>${g.open_count}</b> ${en ? 'open reports' : 'denuncias abiertas'} · ${g.people} ${en ? (g.people === 1 ? 'person' : 'people') : (g.people === 1 ? 'persona' : 'personas')}${g.target?.business && g.target_type !== 'business' ? ` · ${esc(g.target.business)}` : ''} · ${en ? 'latest' : 'última'} ${ago(g.last_at)}</div>
+        <div class="den-motivos">${(g.reasons || []).map((m) => `<span class="tag ${m.reason === 'child_abuse' || m.reason === 'illegal' ? 'bad' : 'dim'}">${esc(motivoDen(m.reason))} · ${m.n}</span>`).join(' ')}</div>
+      </div></a>`).join('')}
+      ${nCal > calientes.rows.length ? `<p style="margin:6px 0 0"><a class="link" href="#/denuncias">${en ? `See all ${nCal}` : `Ver los ${nCal}`}</a></p>` : ''}
+    </div>` : ''}
     ${(k.businesses_pending || k.offers_pending || k.reports_open || k.subs_expiring_7d || k.push_failed_7d || BADGES.sugerencias || BADGES.mensajes || BADGES.errores) ? `<div class="card"><h2>Pendiente de ti</h2><div class="actions">
+      ${nCal ? `<a class="btn bad" href="#/denuncias">${ms('report')} <b>${nCal}</b> ${en ? (nCal === 1 ? 'item with 3+ open reports' : 'items with 3+ open reports') : (nCal === 1 ? 'contenido con 3 o más denuncias' : 'contenidos con 3 o más denuncias')}</a>` : ''}
       ${k.businesses_pending ? `<a class="btn" href="#/negocios?status=pending">${ms('storefront')} <b>${k.businesses_pending}</b> ${en ? (k.businesses_pending === 1 ? 'business to verify' : 'businesses to verify') : (k.businesses_pending === 1 ? 'negocio por verificar' : 'negocios por verificar')}</a>` : ''}
       ${k.offers_pending ? `<a class="btn" href="#/publicaciones?moderation=pending">${ms('bolt')} <b>${k.offers_pending}</b> ${en ? (k.offers_pending === 1 ? 'publication to moderate' : 'publications to moderate') : (k.offers_pending === 1 ? 'publicación por moderar' : 'publicaciones por moderar')}</a>` : ''}
       ${k.reports_open ? `<a class="btn" href="#/denuncias">${ms('flag')} <b>${k.reports_open}</b> ${en ? (k.reports_open === 1 ? 'open report' : 'open reports') : (k.reports_open === 1 ? 'denuncia abierta' : 'denuncias abiertas')}</a>` : ''}
@@ -894,7 +942,7 @@ function auditList(list) {
 const ACTIONS = {
   'business.verification': 'Verificación de negocio', 'business.activate': 'Negocio activado', 'business.deactivate': 'Negocio desactivado', 'business.update': 'Ficha editada', 'business.member': 'Equipo modificado',
   'business.subscription': 'Cambio de plan', 'business.payment': 'Pago registrado', 'offer.moderation': 'Moderación de publicación', 'offer.status': 'Estado de publicación', 'offer.boost': 'Boost de publicación',
-  'report.resolve': 'Denuncia resuelta', 'review.delete': 'Reseña borrada', 'post.delete': 'Novedad borrada', 'user.ban': 'Usuario suspendido', 'user.unban': 'Usuario reactivado', 'user.premium': 'Premium cambiado',
+  'report.resolve': 'Denuncia resuelta', 'report.group': 'Denuncias resueltas en bloque', 'review.delete': 'Reseña borrada', 'post.delete': 'Novedad borrada', 'user.ban': 'Usuario suspendido', 'user.unban': 'Usuario reactivado', 'user.premium': 'Premium cambiado',
   'user.type': 'Tipo de cuenta cambiado', 'user.birth_date': 'Fecha de nacimiento corregida', 'user.delete': 'Cuenta eliminada', 'notification.send': 'Notificación enviada', 'push.retry': 'Push reintentado', 'config.set': 'Configuración cambiada', 'plan.upsert': 'Plan guardado',
   'category.upsert': 'Categoría guardada', 'category.delete': 'Categoría borrada', 'admin.add': 'Administrador añadido', 'admin.remove': 'Administrador quitado', 'maintenance.expire_offers': 'Caducidad forzada',
   'business_message_approve': 'Mensaje a clientes aprobado', 'business_message_reject': 'Mensaje a clientes rechazado', 'collection_save': 'Colección guardada', 'collection_delete': 'Colección borrada',
@@ -911,7 +959,7 @@ PAGES.publicaciones = async (v, id) => {
   if (p.business) s.business = p.business;
   v.innerHTML = `
     <div class="page-head"><h1>Publicaciones</h1><span class="spacer"></span><button class="btn sm ghost" id="csv">Exportar CSV</button></div>
-    ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p>Flash offers and events from every business. The ones <b>pending moderation</b> come from businesses that haven't been verified yet or have been flagged for review: if they meet the <a class="link" href="/en/community-guidelines/" target="_blank">Community guidelines</a> (nothing misleading, their own photos, no alcohol aimed at minors…) press <b>Approve</b>; if not, <b>Take down</b> with a reason, which the business receives along with how to appeal (required by the DSA). The system automatically puts under review the ones that mention <b>alcohol</b> (and also marks them 18+: only adults see them), <b>tobacco/vaping</b> (advertising is banned: take it down) or <b>gambling</b>; you'll see a tag with the reason.</p>` : '<p>Ofertas flash y eventos de todos los negocios. Las <b>pendientes de moderar</b> son de negocios que aún no han sido verificados o que han sido marcadas para revisión: si cumplen las <a class="link" href="/normas/" target="_blank">Normas de la comunidad</a> (sin contenido engañoso, fotos propias, sin alcohol a menores…) pulsa <b>Aprobar</b>; si no, <b>Retirar</b> con un motivo, que el negocio recibe junto con la vía de recurso (obligatorio por el DSA). El sistema pone en revisión automáticamente las que mencionan <b>alcohol</b> (además las marca +18: solo las ven mayores), <b>tabaco/vapeo</b> (publicidad prohibida: retirar) o <b>apuestas</b>; verás la etiqueta del motivo.</p>')}
+    ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p>Flash offers and events from every business. The ones <b>pending moderation</b> come from businesses that haven't been verified yet or have been flagged for review: if they meet the <a class="link" href="/en/community-guidelines/" target="_blank">Community guidelines</a> (nothing misleading, their own photos, no alcohol aimed at minors…) press <b>Approve</b>; if not, <b>Take down</b> with a reason, which the business receives along with how to appeal (required by the DSA). The system automatically puts under review the ones that mention <b>alcohol</b> (and also marks them 18+: only adults see them), <b>tobacco/vaping</b> (advertising is banned: take it down), <b>gambling</b> or <b>offensive language</b> (insults, swear words, explicit sexual content, hate or threats); you'll see a tag with the reason.</p>` : '<p>Ofertas flash y eventos de todos los negocios. Las <b>pendientes de moderar</b> son de negocios que aún no han sido verificados o que han sido marcadas para revisión: si cumplen las <a class="link" href="/normas/" target="_blank">Normas de la comunidad</a> (sin contenido engañoso, fotos propias, sin alcohol a menores…) pulsa <b>Aprobar</b>; si no, <b>Retirar</b> con un motivo, que el negocio recibe junto con la vía de recurso (obligatorio por el DSA). El sistema pone en revisión automáticamente las que mencionan <b>alcohol</b> (además las marca +18: solo las ven mayores), <b>tabaco/vapeo</b> (publicidad prohibida: retirar), <b>apuestas</b> o <b>lenguaje ofensivo</b> (insultos, palabras malsonantes, contenido sexual explícito, odio o amenazas); verás la etiqueta del motivo.</p>')}
     <div class="toolbar">
       <input id="q" class="grow" placeholder="Buscar por título, negocio o id…" value="${esc(s.q || '')}">
       <select id="moderation">${[['all', 'Toda moderación'], ['pending', 'Por moderar'], ['approved', 'Aprobadas'], ['rejected', 'Retiradas']].map((o) => `<option value="${o[0]}" ${s.moderation === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
@@ -1196,7 +1244,8 @@ async function userDetail(v, id) {
       }
       if (a === 'delete') {
         const r = await modal({ title: 'Eliminar la cuenta definitivamente', warn: en ? `Everything is deleted: profile, redemptions, reviews, favourites and <b>any businesses they own, with all their publications</b>. This can't be undone. Only do it at the user's request (right to erasure) or for a serious breach.` : 'Se borra todo: perfil, canjes, reseñas, favoritos y <b>los negocios de los que sea propietario con todas sus publicaciones</b>. No se puede deshacer. Hazlo solo a petición del usuario (derecho de supresión) o por incumplimiento grave.', fields: [{ name: 'reason', label: 'Motivo (queda en el registro)', type: 'textarea', required: true }], submit: 'Eliminar para siempre', danger: true, confirmWord: en ? 'DELETE' : 'ELIMINAR' });
-        if (!r) return; await rpc('admin_delete_user', { p_id: u.id, p_reason: r.reason }); toast('Cuenta eliminada'); go('#/usuarios'); return;
+        if (!r || !await confirmaIdentidad()) return;
+        await rpc('admin_delete_user', { p_id: u.id, p_reason: r.reason }); toast('Cuenta eliminada'); go('#/usuarios'); return;
       }
       route();
     } catch (e) { toast(e.message, true); }
@@ -1214,86 +1263,298 @@ async function deletePost(id) {
   if (!r) return;
   try { await rpc('admin_delete_post', { p_id: id, p_reason: r.reason }); toast('Novedad borrada'); route(); } catch (e) { toast(e.message, true); }
 }
+/** Aprobar o retirar un texto de la cola «En revisión». true si se hizo. */
+async function decideTexto(x, aprobar) {
+  const en = I18N.lang === 'en';
+  let reason = null;
+  if (!aprobar) {
+    const intro = {
+      post: en ? 'The news post is deleted.' : 'La novedad se borra.',
+      review: en ? 'The review is deleted.' : 'La reseña se borra.',
+      reply: en ? "The reply isn't published (if there was an earlier one, it stays)." : 'La respuesta no se publica (si había otra antes, se queda).',
+      business_name: en ? 'The name goes back to the previous one.' : 'El nombre vuelve al anterior.',
+      business_description: en ? 'The description goes back to the previous one (or is left empty).' : 'La descripción vuelve a la anterior (o se queda vacía).',
+      menu: en ? 'Dishes with that name are deleted; if it is a description, it is removed; if it is a section, it is renamed “Carta”.' : 'Los platos con ese nombre se borran; si es una descripción, se quita; si es un apartado, pasa a llamarse «Carta».',
+    }[x.kind] || '';
+    const r = await modal({
+      title: 'Retirar texto',
+      intro: `${esc(intro)} ${en ? 'Whoever wrote it gets the reason below and can appeal within 15 days.' : 'Quien lo escribió recibe el motivo de abajo y puede recurrir en 15 días.'}`,
+      fields: [{ name: 'reason', label: 'Motivo que verá quien lo publicó (obligatorio por el DSA)', type: 'textarea', required: true }],
+      submit: 'Retirar', danger: true,
+    });
+    if (!r) return false;
+    reason = r.reason;
+  }
+  try {
+    const res = await rpc('admin_review_text', { p_kind: x.kind, p_id: x.id, p_approve: aprobar, p_reason: reason });
+    if (!res?.ok) {
+      toast(res?.error === 'no_previous'
+        ? (en ? 'There is no earlier name to go back to: change it from the business page or reject the verification.' : 'No hay un nombre anterior al que volver: cámbialo desde la ficha del negocio o rechaza la verificación.')
+        : (res?.error || 'Error'), true);
+      return false;
+    }
+    toast(aprobar ? 'Texto aprobado' : 'Texto retirado');
+    refreshBadges();
+    return true;
+  } catch (e) { toast(e.message, true); return false; }
+}
+
 PAGES.resenas = async (v) => {
-  const p = params(); let tab = p.tab || 'reviews';
+  const p = params(); let tab = p.tab || (BADGES.resenas ? 'cola' : 'reviews');
   const sR = st.resenas, sP = st.posts;
+  st.cola = st.cola || { limit: 50, offset: 0 };
+  const sC = st.cola;
   v.innerHTML = `
     <div class="page-head"><h1>Reseñas y novedades</h1></div>
     ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p><b>Reviews</b> are written by users about businesses; <b>news posts</b> are published by businesses on their page. Only delete them if they break the rules (insults, personal data, spam, content that isn't about the venue). The author gets the reason.</p>` : '<p>Las <b>reseñas</b> las escriben usuarios sobre negocios; las <b>novedades</b> las publican los negocios en su perfil. Bórralos solo si incumplen las normas (insultos, datos personales, spam, contenido que no es del local). El autor recibe el motivo.</p>')}
-    <div class="tabs"><button data-t="reviews" class="${tab === 'reviews' ? 'on' : ''}">Reseñas</button><button data-t="posts" class="${tab === 'posts' ? 'on' : ''}">Novedades</button></div>
-    <div class="toolbar"><input id="q" class="grow" placeholder="Buscar por texto, negocio o email…" value="${esc((tab === 'posts' ? sP.q : sR.q) || '')}"><select id="rating" ${tab === 'posts' ? 'hidden' : ''}>${[['', 'Cualquier puntuación'], ['1', 'Solo 1 ★'], ['2', '≤ 2 ★'], ['3', '≤ 3 ★']].map((o) => `<option value="${o[0]}" ${String(sR.rating || '') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select></div>
+    ${helpBox('¿Qué es «En revisión»?', I18N.lang === 'en' ? '<p>Texts the system has stopped automatically for <b>offensive language</b> (insults, swear words, explicit sexual content, hate or threats), with the tag of what it found. News, reviews and replies to reviews are <b>not public</b> until you approve them; the business name, description and menu stay visible in the meantime. <b>Approve</b> if it is fine (a false positive, or strong but acceptable language); <b>Take down</b> if it breaks the Community guidelines: the author gets the reason. The word lists are in the database (<code>offensive_terms</code> and <code>offensive_exceptions</code>).</p>' : '<p>Textos que el sistema ha parado solo por <b>lenguaje ofensivo</b> (insultos, palabras malsonantes, contenido sexual explícito, odio o amenazas), con la etiqueta de lo que ha encontrado. Las novedades, las reseñas y las respuestas a reseñas <b>no se ven</b> hasta que las apruebas; el nombre, la descripción y la carta del negocio siguen a la vista mientras tanto. <b>Aprobar</b> si está bien (un falso positivo o algo fuerte pero aceptable); <b>Retirar</b> si incumple las Normas de la comunidad: el autor recibe el motivo. Las listas de palabras están en la base (<code>offensive_terms</code> y <code>offensive_exceptions</code>).</p>')}
+    <div class="tabs"><button data-t="cola" class="${tab === 'cola' ? 'on' : ''}">En revisión${BADGES.resenas ? ` <span class="badge">${BADGES.resenas}</span>` : ''}</button><button data-t="reviews" class="${tab === 'reviews' ? 'on' : ''}">Reseñas</button><button data-t="posts" class="${tab === 'posts' ? 'on' : ''}">Novedades</button></div>
+    <div class="toolbar" ${tab === 'cola' ? 'hidden' : ''}><input id="q" class="grow" placeholder="Buscar por texto, negocio o email…" value="${esc((tab === 'posts' ? sP.q : sR.q) || '')}"><select id="rating" ${tab === 'posts' ? 'hidden' : ''}>${[['', 'Cualquier puntuación'], ['1', 'Solo 1 ★'], ['2', '≤ 2 ★'], ['3', '≤ 3 ★']].map((o) => `<option value="${o[0]}" ${String(sR.rating || '') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select></div>
     <div id="list"><div class="loading">Cargando…</div></div>`;
   const load = async () => {
+    if (tab === 'cola') {
+      const r = await rpc('admin_text_reviews', { p_limit: sC.limit, p_offset: sC.offset });
+      const pg = pager(sC, r.total, load);
+      $('#list').innerHTML = (r.rows.length ? r.rows.map((x, i) => `<div class="item">${x.image ? `<img src="${esc(x.image)}" alt="">` : `<div class="ph">${ms(ICONO_TEXTO[x.kind] || 'text_fields')}</div>`}<div>
+        <h3>${esc(I18N.t(TIPO_TEXTO[x.kind] || x.kind))} · <a class="link" href="#/negocios/${x.business_id}">${esc(x.business)}</a> ${(x.categories || []).map((c) => `<span class="tag warn" title="Detectado automáticamente en el texto">${esc(I18N.t(CAT_OFENSIVA[c] || c))}</span>`).join(' ')}</h3>
+        <div class="meta">${x.user_email ? `${esc(x.user_email)} · ` : ''}${fmtDate(x.created_at)}${x.rating ? ` · <span class="stars">${'★'.repeat(x.rating)}${'☆'.repeat(5 - x.rating)}</span>` : ''}</div>
+        <p>${esc(x.text || '')}</p>
+        ${x.context ? `<div class="meta">${esc(I18N.t('Reseña'))}: «${esc(x.context)}»</div>` : ''}
+        ${x.previous ? `<div class="meta">${esc(I18N.t(x.kind === 'reply' ? 'Respuesta publicada' : 'Antes'))}: «${esc(x.previous)}»</div>` : ''}
+        <div class="actions"><button class="btn sm ok" data-ap="${i}">Aprobar</button><button class="btn sm bad" data-re="${i}">Retirar…</button></div></div></div>`).join('') : '<div class="tbl-wrap"><div class="empty">No hay textos en revisión.</div></div>') + pg.html;
+      pg.bind($('#list'));
+      $$('#list [data-ap]').forEach((b) => { b.onclick = () => esperando(b, async () => { if (await decideTexto(r.rows[+b.dataset.ap], true)) await load(); }); });
+      $$('#list [data-re]').forEach((b) => { b.onclick = () => esperando(b, async () => { if (await decideTexto(r.rows[+b.dataset.re], false)) await load(); }); });
+      I18N.translate($('#list'));
+      return;
+    }
     if (tab === 'reviews') {
       const r = await rpc('admin_reviews', { p_query: sR.q || null, p_max_rating: sR.rating ? +sR.rating : null, p_limit: sR.limit, p_offset: sR.offset });
       const pg = pager(sR, r.total, load);
-      $('#list').innerHTML = (r.rows.length ? r.rows.map((x) => `<div class="item"><div class="ph">${ms('chat_bubble')}</div><div><h3><span class="stars">${'★'.repeat(x.rating)}${'☆'.repeat(5 - x.rating)}</span> ${I18N.lang === 'en' ? 'at' : 'en'} <a class="link" href="#/negocios/${x.business_id}">${esc(x.business)}</a> ${x.open_reports ? `<span class="tag bad">${ms('flag')} ${x.open_reports}</span>` : ''}</h3><div class="meta">${esc(x.user_email || (I18N.lang === 'en' ? 'anonymous' : 'anónimo'))} · ${fmtDate(x.created_at)}</div><p>${esc(x.comment || '(sin texto)')}</p><div class="actions"><button class="btn sm bad" data-del="${x.id}">Borrar…</button></div></div></div>`).join('') : '<div class="tbl-wrap"><div class="empty">Sin reseñas.</div></div>') + pg.html;
+      $('#list').innerHTML = (r.rows.length ? r.rows.map((x) => `<div class="item"><div class="ph">${ms('chat_bubble')}</div><div><h3><span class="stars">${'★'.repeat(x.rating)}${'☆'.repeat(5 - x.rating)}</span> ${I18N.lang === 'en' ? 'at' : 'en'} <a class="link" href="#/negocios/${x.business_id}">${esc(x.business)}</a> ${x.moderation_status === 'pending' ? '<span class="tag warn">en revisión</span>' : ''} ${flagTags(x)} ${x.reply_pending ? '<span class="tag warn">respuesta en revisión</span>' : ''} ${x.open_reports ? `<span class="tag bad">${ms('flag')} ${x.open_reports}</span>` : ''}</h3><div class="meta">${esc(x.user_email || (I18N.lang === 'en' ? 'anonymous' : 'anónimo'))} · ${fmtDate(x.created_at)}</div><p>${esc(x.comment || '(sin texto)')}</p><div class="actions"><button class="btn sm bad" data-del="${x.id}">Borrar…</button></div></div></div>`).join('') : '<div class="tbl-wrap"><div class="empty">Sin reseñas.</div></div>') + pg.html;
       pg.bind($('#list'));
       $$('#list [data-del]').forEach((b) => { b.onclick = () => esperando(b, () => deleteReview(b.dataset.del)); });
     } else {
       const r = await rpc('admin_posts', { p_query: sP.q || null, p_limit: sP.limit, p_offset: sP.offset });
       const pg = pager(sP, r.total, load);
-      $('#list').innerHTML = (r.rows.length ? r.rows.map((x) => `<div class="item">${x.image_url ? `<img src="${esc(x.image_url)}" alt="">` : `<div class="ph">${ms('article')}</div>`}<div><h3><a class="link" href="#/negocios/${x.business_id}">${esc(x.business)}</a> ${x.open_reports ? `<span class="tag bad">${ms('flag')} ${x.open_reports}</span>` : ''}</h3><div class="meta">${fmtDate(x.created_at)}</div><p>${esc(x.body || '')}</p><div class="actions"><button class="btn sm bad" data-del="${x.id}">Borrar…</button></div></div></div>`).join('') : '<div class="tbl-wrap"><div class="empty">Sin novedades.</div></div>') + pg.html;
+      $('#list').innerHTML = (r.rows.length ? r.rows.map((x) => `<div class="item">${x.image_url ? `<img src="${esc(x.image_url)}" alt="">` : `<div class="ph">${ms('article')}</div>`}<div><h3><a class="link" href="#/negocios/${x.business_id}">${esc(x.business)}</a> ${x.moderation_status === 'pending' ? '<span class="tag warn">en revisión</span>' : ''} ${flagTags(x)} ${x.open_reports ? `<span class="tag bad">${ms('flag')} ${x.open_reports}</span>` : ''}</h3><div class="meta">${fmtDate(x.created_at)}</div><p>${esc(x.body || '')}</p><div class="actions"><button class="btn sm bad" data-del="${x.id}">Borrar…</button></div></div></div>`).join('') : '<div class="tbl-wrap"><div class="empty">Sin novedades.</div></div>') + pg.html;
       pg.bind($('#list'));
       $$('#list [data-del]').forEach((b) => { b.onclick = () => esperando(b, () => deletePost(b.dataset.del)); });
     }
   };
-  $$('.tabs button').forEach((b) => { b.onclick = () => { tab = b.dataset.t; history.replaceState(null, '', `#/resenas?tab=${tab}`); $$('.tabs button').forEach((x) => x.classList.toggle('on', x === b)); $('#rating').hidden = tab === 'posts'; load(); }; });
+  $$('.tabs button').forEach((b) => { b.onclick = () => { tab = b.dataset.t; history.replaceState(null, '', `#/resenas?tab=${tab}`); $$('.tabs button').forEach((x) => x.classList.toggle('on', x === b)); $('#rating').hidden = tab === 'posts'; $('.toolbar', v).hidden = tab === 'cola'; load(); }; });
   $('#q').oninput = debounce(() => { const q = $('#q').value.trim(); sR.q = q; sP.q = q; sR.offset = sP.offset = 0; load(); });
   $('#rating').onchange = () => { sR.rating = $('#rating').value; sR.offset = 0; load(); };
   await load();
 };
 
 // ── Denuncias ───────────────────────────────────────────────────────────────
-PAGES.denuncias = async (v) => {
+// Una tarjeta por contenido denunciado (publicación, negocio, reseña o
+// novedad), con cuántas denuncias tiene, de cuántas personas (con y sin
+// cuenta), los motivos y cómo está el contenido. Dentro (#/denuncias/<tipo>/<id>),
+// cada denuncia con su explicación y quién la puso. Las decisiones se toman
+// para todas las abiertas de ese contenido a la vez
+// (`admin_resolve_report_group`); a quien denunció le llega la decisión
+// (en la app, o por correo si fue sin cuenta).
+const MOTIVOS_DENUNCIA = {
+  spam: 'Spam o publicidad engañosa', inappropriate: 'Contenido inapropiado u ofensivo', misleading: 'La oferta no es como se anuncia',
+  closed: 'El negocio ya no existe o está cerrado', illegal: 'Contenido ilegal', child_abuse: 'Abuso sexual infantil', other: 'Otro motivo',
+};
+const motivoDen = (r) => I18N.t(MOTIVOS_DENUNCIA[r] || r);
+// Cómo está lo denunciado (report_target_state).
+const ESTADO_DEN = { published: ['publicado', 'ok'], review: ['en revisión', 'warn'], removed: ['retirado', 'bad'], hidden: ['no visible', 'dim'], deleted: ['borrado', 'dim'] };
+const estadoDen = (s) => { const e = ESTADO_DEN[s]; return e ? `<span class="tag ${e[1]}">${esc(I18N.t(e[0]))}</span>` : ''; };
+const RESOLUCION_DEN = { removed: 'contenido retirado', no_action: 'cerrada sin retirar', dismissed: 'desestimada' };
+const TIPO_DEN = { offer: 'Publicación', business: 'Negocio', review: 'Reseña', post: 'Novedad' };
+/** Dónde se ve en la web pública (reseñas y novedades, con su ancla en la ficha). */
+const urlDenunciado = (tipo, id, t) => {
+  const b = (t && (t.slug || t.business_id)) || null;
+  if (tipo === 'offer') return `/o/${id}`;
+  if (tipo === 'business') return `/b/${(t && t.slug) || id}`;
+  if (!b) return '';
+  return `/b/${b}#${tipo === 'review' ? 'resena' : 'novedad'}-${id}`;
+};
+/** Su ficha dentro del admin. */
+const adminDenunciado = (tipo, id, t) => (tipo === 'offer' ? `#/publicaciones/${id}` : tipo === 'business' ? `#/negocios/${id}` : t?.business_id ? `#/negocios/${t.business_id}` : '');
+/** El título que se enseña: el de la publicación, el nombre del negocio o el texto de la reseña o la novedad. */
+const tituloDen = (tipo, t) => {
+  const en = I18N.lang === 'en';
+  if (!t) return en ? '(content no longer available)' : '(contenido ya no disponible)';
+  if (tipo === 'review') return `${'★'.repeat(Math.max(0, Math.min(5, t.rating | 0)))} ${t.title ? `«${t.title}»` : (en ? '(no text)' : '(sin texto)')}`;
+  if (tipo === 'post') return t.title ? `«${t.title}»` : (en ? '(photo only)' : '(solo foto)');
+  return t.title || '—';
+};
+const miniDen = (tipo, t) => (t?.image && /\.(mp4|webm|mov)(\?|$)/i.test(t.image) ? `<video src="${esc(t.image)}#t=0.5" muted playsinline preload="metadata" aria-hidden="true"></video>` : t?.image ? `<img src="${esc(t.image)}" alt="" loading="lazy">` : `<div class="ph">${ms({ offer: 'bolt', business: 'storefront', review: 'chat_bubble', post: 'article' }[tipo] || 'flag')}</div>`);
+
+/** Retirar y cerrar / cerrar sin retirar / desestimar / en revisión, para
+ * todas las abiertas de un contenido. true si se hizo. */
+async function decideDenuncias(tipo, id, decision, abiertas) {
+  const en = I18N.lang === 'en';
+  let reason = null;
+  if (decision === 'remove') {
+    const intro = {
+      offer: en ? 'The publication is taken down (it stops being visible).' : 'La publicación se retira (deja de verse).',
+      business: en ? 'The business is deactivated: its page and publications stop being visible.' : 'El negocio se desactiva: su ficha y sus publicaciones dejan de verse.',
+      review: en ? 'The review is deleted.' : 'La reseña se borra.',
+      post: en ? 'The news post is deleted.' : 'La novedad se borra.',
+    }[tipo];
+    const r = await modal({
+      title: en ? 'Take down and close all' : 'Retirar y cerrar todas',
+      intro: `${esc(intro)} ${en ? `The ${abiertas} open reports are closed and each reporter is told the content was taken down. Whoever posted it gets the reason below and can appeal within 15 days.` : `Se cierran las ${abiertas} denuncias abiertas y a cada denunciante se le dice que se ha retirado. Quien lo publicó recibe el motivo de abajo y puede recurrir en 15 días.`}`,
+      fields: [{ name: 'reason', label: 'Motivo que verá quien lo publicó (obligatorio por el DSA)', type: 'textarea', required: true }],
+      submit: 'Retirar y cerrar', danger: true,
+    });
+    if (!r) return false;
+    reason = r.reason;
+    if (!reason) { toast('Hace falta indicar un motivo.', true); return false; }
+  } else if (decision !== 'reviewing') {
+    const ok = await confirmDlg(
+      decision === 'dismiss' ? (en ? 'Dismiss all' : 'Desestimar todas') : (en ? 'Close without taking down' : 'Cerrar sin retirar'),
+      decision === 'dismiss'
+        ? (en ? `The ${abiertas} open reports are dismissed as unfounded. The content stays up and each reporter is told so.` : `Se desestiman las ${abiertas} denuncias abiertas por no tener fundamento. El contenido sigue publicado y a cada denunciante se le dice.`)
+        : (en ? `The ${abiertas} open reports are closed: the content complies with the rules and stays up. Each reporter is told so.` : `Se cierran las ${abiertas} denuncias abiertas: el contenido cumple las normas y sigue publicado. A cada denunciante se le dice.`),
+      { submit: decision === 'dismiss' ? 'Desestimar todas' : 'Cerrar sin retirar' });
+    if (!ok) return false;
+  }
+  try {
+    const res = await rpc('admin_resolve_report_group', { p_type: tipo, p_id: id, p_decision: decision, p_reason: reason });
+    toast(en ? `${res?.reports ?? 0} ${res?.reports === 1 ? 'report updated' : 'reports updated'}` : `${res?.reports ?? 0} ${res?.reports === 1 ? 'denuncia actualizada' : 'denuncias actualizadas'}`);
+    refreshBadges();
+    return true;
+  } catch (e) { toast(e.message, true); return false; }
+}
+
+const botonesDen = (g) => g.open_count > 0 ? `
+  <button class="btn sm bad" data-dec="remove" ${g.state === 'deleted' ? 'disabled' : ''}>${g.state === 'removed' ? 'Cerrar (ya retirado)…' : 'Retirar y cerrar todas…'}</button>
+  <button class="btn sm ok" data-dec="keep">Cerrar sin retirar</button>
+  <button class="btn sm ghost" data-dec="dismiss">Desestimar todas</button>
+  ${g.reviewing ? '' : '<button class="btn sm ghost" data-dec="reviewing">Marcar en revisión</button>'}` : '';
+
+/** Las cifras de un grupo: denuncias, personas, con y sin cuenta, fechas. */
+function cifrasDen(g, abiertas = true) {
+  const en = I18N.lang === 'en';
+  const n = g.n;
+  const cuenta = en
+    ? `<b>${n}</b> ${abiertas ? (n === 1 ? 'open report' : 'open reports') : (n === 1 ? 'report' : 'reports')} · <b>${g.people}</b> ${g.people === 1 ? 'person' : 'different people'} · ${g.with_account} with an account · ${g.without_account} without`
+    : `<b>${n}</b> ${abiertas ? (n === 1 ? 'denuncia abierta' : 'denuncias abiertas') : (n === 1 ? 'denuncia' : 'denuncias')} · <b>${g.people}</b> ${g.people === 1 ? 'persona' : 'personas distintas'} · ${g.with_account} con cuenta · ${g.without_account} sin cuenta`;
+  const fechas = g.first_at === g.last_at || n === 1
+    ? `${en ? 'On' : 'El'} ${fmtDate(g.last_at)}`
+    : `${en ? 'First' : 'Primera'} ${fmtDate(g.first_at)} · ${en ? 'latest' : 'última'} ${fmtDate(g.last_at)}`;
+  const otras = abiertas && g.total_count > g.open_count ? ` · ${en ? `${g.total_count - g.open_count} already closed` : `${g.total_count - g.open_count} ya cerradas`}` : '';
+  return `<div class="meta">${cuenta}${otras}</div><div class="meta">${fechas}</div>`;
+}
+
+PAGES.denuncias = async (v, tipoRuta) => {
+  const [, tipoD, idD] = currentRoute();
+  if (tipoRuta && TIPO_DEN[tipoD] && /^[0-9a-f-]{36}$/i.test(idD || '')) return denunciasDe(v, tipoD, idD);
   const s = st.denuncias;
+  const en = I18N.lang === 'en';
   v.innerHTML = `
     <div class="page-head"><h1>Denuncias</h1></div>
-    ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p>When a user reports a publication, business, review or news post, it shows up here. Check the content (“View” button) and decide: <b>Take down and close</b> (the offer is taken down, the business is deactivated, the review or news post is deleted; the author gets the reason and can appeal within 15 days), <b>Close without taking down</b> (the report was reasonable but the content is fine) or <b>Dismiss</b> (unfounded report). By law (DSA) reports must be handled diligently and the decision explained.</p>` : '<p>Cuando un usuario denuncia una publicación, negocio, reseña o novedad, aparece aquí. Revisa el contenido (botón «Ver»), y decide: <b>Retirar y cerrar</b> (la oferta se retira, el negocio se desactiva, la reseña o la novedad se borran; el autor recibe el motivo y puede recurrir en 15 días), <b>Cerrar sin retirar</b> (la denuncia era razonable pero el contenido es correcto) o <b>Desestimar</b> (denuncia sin fundamento). Por ley (DSA) hay que resolverlas con diligencia y motivar la decisión.</p>')}
+    ${helpBox('¿Qué hago aquí?', en
+      ? `<p>One card per reported item (publication, business, review or news post), with how many reports it has, from how many different people (with and without an account), the reasons and whether it's still up. Open it (“See the reports”) to read each report and who made it. Decide for all its open reports at once: <b>Take down and close all</b> (the publication is taken down, the business deactivated, the review or news post deleted; whoever posted it gets the reason and can appeal within 15 days), <b>Close without taking down</b> (the content complies) or <b>Dismiss all</b> (unfounded reports). Every reporter is told the decision: in the app if they have an account, by email if they reported without one. By law (DSA, art. 16) reports must be handled diligently and the decision explained.</p><p>People without an account report from klendar.app (“Report illegal content” in the footer, or “Report” on any page without being logged in). Their name and email are only visible here.</p>`
+      : `<p>Una tarjeta por cada contenido denunciado (publicación, negocio, reseña o novedad), con cuántas denuncias tiene, de cuántas personas distintas (con y sin cuenta), los motivos y si sigue publicado. Ábrelo («Ver las denuncias») para leer cada denuncia y quién la puso. Decide para todas sus denuncias abiertas a la vez: <b>Retirar y cerrar todas</b> (la publicación se retira, el negocio se desactiva, la reseña o la novedad se borran; quien lo publicó recibe el motivo y puede recurrir en 15 días), <b>Cerrar sin retirar</b> (el contenido cumple) o <b>Desestimar todas</b> (denuncias sin fundamento). A cada denunciante le llega la decisión: en la app si tiene cuenta, por correo si denunció sin ella. Por ley (DSA, art. 16) hay que resolverlas con diligencia y explicar la decisión.</p><p>Quien no tiene cuenta denuncia desde klendar.app («Denunciar contenido ilegal» en el pie, o «Denunciar» en cualquier ficha sin haber entrado). Su nombre y su correo solo se ven aquí.</p>`)}
     <div class="toolbar">
-      <select id="status">${[['open', 'Abiertas'], ['resolved', 'Resueltas'], ['dismissed', 'Desestimadas'], ['all', 'Todas']].map((o) => `<option value="${o[0]}" ${(s.status || 'open') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
+      <select id="status">${[['open', 'Con denuncias abiertas'], ['closed', 'Ya cerradas'], ['all', 'Todo']].map((o) => `<option value="${o[0]}" ${(s.status || 'open') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
       <select id="type">${[['all', 'Todo tipo'], ['offer', 'Publicaciones'], ['business', 'Negocios'], ['review', 'Reseñas'], ['post', 'Novedades']].map((o) => `<option value="${o[0]}" ${(s.type || 'all') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
     </div>
     <div id="list"><div class="loading">Cargando…</div></div>`;
-  const target = (r) => {
-    const t = r.target || {};
-    const en = I18N.lang === 'en';
-    if (!r.target) return '<span class="tag dim">contenido ya borrado</span>';
-    if (r.target_type === 'offer') return en ? `Publication <a class="link" href="#/publicaciones/${r.target_id}">“${esc(t.title)}”</a> by <a class="link" href="#/negocios/${t.business_id}">${esc(t.business)}</a> · ${tag(t.moderation)} ${tag(t.status)}` : `Publicación <a class="link" href="#/publicaciones/${r.target_id}">«${esc(t.title)}»</a> de <a class="link" href="#/negocios/${t.business_id}">${esc(t.business)}</a> · ${tag(t.moderation)} ${tag(t.status)}`;
-    if (r.target_type === 'business') return en ? `Business <a class="link" href="#/negocios/${r.target_id}">“${esc(t.name)}”</a> (${esc(t.city || '')}) · ${t.active ? tag('active') : tag('inactive', 'st-inactive')} ${tag(t.verification)}` : `Negocio <a class="link" href="#/negocios/${r.target_id}">«${esc(t.name)}»</a> (${esc(t.city || '')}) · ${t.active ? tag('active') : tag('inactive', 'st-inactive')} ${tag(t.verification)}`;
-    if (r.target_type === 'review') return en ? `Review <span class="stars">${'★'.repeat(t.rating)}</span> at <a class="link" href="#/negocios/${t.business_id}">${esc(t.business)}</a>: “${esc(t.comment || '')}” · <a class="link" href="#/usuarios/${t.user_id}">author</a>` : `Reseña <span class="stars">${'★'.repeat(t.rating)}</span> en <a class="link" href="#/negocios/${t.business_id}">${esc(t.business)}</a>: «${esc(t.comment || '')}» · <a class="link" href="#/usuarios/${t.user_id}">autor</a>`;
-    if (r.target_type === 'post') return en ? `News post from <a class="link" href="#/negocios/${t.business_id}">${esc(t.business)}</a>: “${esc(t.body || '')}”` : `Novedad de <a class="link" href="#/negocios/${t.business_id}">${esc(t.business)}</a>: «${esc(t.body || '')}»`;
-    return '';
-  };
   const load = async () => {
-    const r = await rpc('admin_reports_page', { p_status: s.status || 'open', p_type: s.type || 'all', p_limit: s.limit, p_offset: s.offset });
+    const abiertas = (s.status || 'open') === 'open';
+    const r = await rpc('admin_report_groups', { p_status: s.status || 'open', p_type: s.type || 'all', p_min_open: 0, p_limit: s.limit, p_offset: s.offset });
     const pg = pager(s, r.total, load);
-    $('#list').innerHTML = (r.rows.length ? r.rows.map((x) => `
-      <div class="item">${x.target?.image ? `<img src="${esc(x.target.image)}" alt="">` : `<div class="ph">${ms('flag')}</div>`}<div>
-        <h3>${esc(x.reason)} ${tag(x.status)} ${tag(x.target_type, 'dim')} ${x.same_target_count > 1 ? `<span class="tag warn">${x.same_target_count} ${I18N.lang === 'en' ? 'reports about the same thing' : 'denuncias sobre lo mismo'}</span>` : ''}</h3>
-        <div class="meta">${fmtDate(x.created_at)} · ${I18N.lang === 'en' ? 'by' : 'por'} ${x.reporter_id ? `<a class="link" href="#/usuarios/${x.reporter_id}">${esc(x.reporter_email || 'usuario')}</a>` : (I18N.lang === 'en' ? 'anonymous' : 'anónimo')}${x.resolved_at ? ` · ${I18N.lang === 'en' ? 'closed' : 'cerrada'} ${fmtDate(x.resolved_at)}` : ''}</div>
-        <p>${target(x)}</p>${x.details ? `<div class="meta">${I18N.lang === 'en' ? 'Details' : 'Detalles'}: ${esc(x.details)}</div>` : ''}
-        ${['open', 'reviewing'].includes(x.status) ? `<div class="actions">
-          <button class="btn sm bad" data-res="${x.id}" data-status="resolved" data-action="hide" ${x.target ? '' : 'disabled'}>Retirar contenido y cerrar…</button>
-          <button class="btn sm ok" data-res="${x.id}" data-status="resolved" data-action="none">Cerrar sin retirar</button>
-          <button class="btn sm ghost" data-res="${x.id}" data-status="dismissed" data-action="none">Desestimar</button>
-          ${x.status === 'open' ? `<button class="btn sm ghost" data-res="${x.id}" data-status="reviewing" data-action="none">Marcar en revisión</button>` : ''}
-          ${x.target_type === 'offer' ? appLink('/o/' + x.target_id, 'Ver') : x.target_type === 'business' ? appLink('/b/' + x.target_id, 'Ver') : ''}
-        </div>` : ''}
-      </div></div>`).join('') : '<div class="tbl-wrap"><div class="empty">Sin denuncias con esos filtros.</div></div>') + pg.html;
+    $('#list').innerHTML = (r.rows.length ? r.rows.map((g) => {
+      const t = g.target || {};
+      const url = urlDenunciado(g.target_type, g.target_id, t);
+      const det = `#/denuncias/${g.target_type}/${g.target_id}`;
+      return `
+      <div class="item den-grupo${g.open_count >= 3 ? ' den-caliente' : ''}" data-tipo="${esc(g.target_type)}" data-id="${esc(g.target_id)}" data-abiertas="${g.open_count}">${miniDen(g.target_type, t)}<div style="min-width:0">
+        <h3><a class="link" href="${det}">${esc(tituloDen(g.target_type, g.target))}</a></h3>
+        <div class="meta">${tag(g.target_type, 'dim')} ${estadoDen(g.state)} ${g.reviewing ? tag('reviewing') : ''} ${g.target_type !== 'business' && t.business ? `${en ? 'by' : 'de'} ${t.business_id ? `<a class="link" href="#/negocios/${esc(t.business_id)}">${esc(t.business)}</a>` : esc(t.business)}` : ''}${t.city ? ` · ${esc(t.city)}` : ''}</div>
+        ${cifrasDen(g, abiertas)}
+        <div class="den-motivos">${(g.reasons || []).map((m) => `<span class="tag ${m.reason === 'child_abuse' || m.reason === 'illegal' ? 'bad' : 'dim'}">${esc(motivoDen(m.reason))} · ${m.n}</span>`).join(' ')}</div>
+        <div class="actions">
+          <a class="btn sm" href="${det}">${en ? `See the reports (${g.total_count})` : `Ver las denuncias (${g.total_count})`}</a>
+          ${url ? `<a class="btn sm ghost" href="${APP_URL}${esc(url)}" target="_blank" rel="noopener">${en ? 'Open' : 'Abrir'} ↗</a>` : ''}
+          ${botonesDen(g)}
+        </div>
+      </div></div>`;
+    }).join('') : `<div class="tbl-wrap"><div class="empty">${abiertas ? 'No hay denuncias abiertas.' : 'Sin denuncias con esos filtros.'}</div></div>`) + pg.html;
     pg.bind($('#list'));
-    $$('#list [data-res]').forEach((b) => { b.onclick = () => esperando(b, async () => {
-      let reason = null;
-      if (b.dataset.action === 'hide') {
-        const r = await modal({ title: 'Retirar contenido', intro: 'Publicaciones: se retiran; negocios: se desactivan; reseñas y novedades: se borran. Se cierran también las demás denuncias sobre el mismo contenido.', fields: [{ name: 'reason', label: 'Motivo que verá quien lo publicó (obligatorio por el DSA)', type: 'textarea', required: true }], submit: 'Retirar y cerrar', danger: true });
-        if (!r) return; reason = r.reason;
-      }
-      try { await rpc('admin_resolve_report', { p_id: b.dataset.res, p_status: b.dataset.status, p_action: b.dataset.action, p_reason: reason }); toast('Denuncia actualizada'); refreshBadges(); await load(); } catch (e) { toast(e.message, true); }
+    $$('#list [data-dec]').forEach((b) => { b.onclick = () => esperando(b, async () => {
+      const card = b.closest('[data-tipo]');
+      if (await decideDenuncias(card.dataset.tipo, card.dataset.id, b.dataset.dec, +card.dataset.abiertas)) await load();
     }); });
+    I18N.translate($('#list'));
   };
   ['status', 'type'].forEach((k) => { $('#' + k).onchange = () => { s[k] = $('#' + k).value; s.offset = 0; load(); }; });
   await load();
 };
+
+/** Un contenido denunciado: qué es, cómo está y cada denuncia. */
+async function denunciasDe(v, tipo, id) {
+  const en = I18N.lang === 'en';
+  const d = await rpc('admin_report_group', { p_type: tipo, p_id: id });
+  const t = d.target || {};
+  const reps = d.reports || [];
+  const abiertas = reps.filter((r) => ['open', 'reviewing'].includes(r.status));
+  const personas = new Set(reps.filter((r) => ['open', 'reviewing'].includes(r.status)).map((r) => r.reporter?.kind === 'account' ? r.reporter.id : r.reporter?.email ? `m:${r.reporter.email.toLowerCase()}` : r.id)).size;
+  const motivos = {};
+  for (const r of (abiertas.length ? abiertas : reps)) motivos[r.reason] = (motivos[r.reason] || 0) + 1;
+  const url = urlDenunciado(tipo, id, t);
+  const ficha = adminDenunciado(tipo, id, t);
+  const g = {
+    n: abiertas.length || reps.length, open_count: abiertas.length, total_count: reps.length, people: personas || new Set(reps.map((r) => r.reporter?.id || r.reporter?.email || r.id)).size,
+    with_account: (abiertas.length ? abiertas : reps).filter((r) => r.channel === 'account').length,
+    without_account: (abiertas.length ? abiertas : reps).filter((r) => r.channel === 'public').length,
+    first_at: (abiertas.length ? abiertas : reps).reduce((m, r) => (!m || r.created_at < m ? r.created_at : m), null),
+    last_at: (abiertas.length ? abiertas : reps).reduce((m, r) => (!m || r.created_at > m ? r.created_at : m), null),
+    state: d.state, reviewing: abiertas.some((r) => r.status === 'reviewing'),
+  };
+  const quien = (r) => {
+    const p = r.reporter || {};
+    if (p.kind === 'account') return `${en ? 'Account' : 'Cuenta'}: <a class="link" href="#/usuarios/${esc(p.id)}">${esc(p.email || p.name || (en ? 'user' : 'usuario'))}</a>${p.name && p.email ? ` <span class="muted">(${esc(p.name)})</span>` : ''}`;
+    if (p.kind === 'public') {
+      const datos = [p.name ? esc(p.name) : '', p.email ? `<a class="link" href="mailto:${esc(p.email)}">${esc(p.email)}</a>` : ''].filter(Boolean).join(' · ');
+      const correos = [p.ack_sent_at ? `${en ? 'receipt sent' : 'acuse enviado'} ${fmtDate(p.ack_sent_at)}` : '', p.decision_sent_at ? `${en ? 'decision sent' : 'decisión enviada'} ${fmtDate(p.decision_sent_at)}` : ''].filter(Boolean).join(' · ');
+      return `<span class="tag warn">${en ? 'no account' : 'sin cuenta'}</span> ${datos || `<span class="muted">${en ? 'anonymous (no name or email)' : 'anónima (sin nombre ni correo)'}</span>`}${p.good_faith ? ` · <span class="muted">${en ? 'good-faith statement ✓' : 'declaración de buena fe ✓'}</span>` : ''}${correos ? `<div class="meta">${correos}</div>` : ''}`;
+    }
+    return `<span class="muted">${en ? 'deleted account' : 'cuenta borrada'}</span>`;
+  };
+  v.innerHTML = `
+    <div class="page-head"><a class="btn sm ghost" href="#/denuncias">← ${en ? 'Reports' : 'Denuncias'}</a></div>
+    <div class="card den-ficha">
+      <div class="item" style="border:0;padding:0">${miniDen(tipo, d.target)}<div style="min-width:0">
+        <h1 style="margin:0 0 4px;font-size:22px">${esc(tituloDen(tipo, d.target))}</h1>
+        <div class="meta">${tag(tipo, 'dim')} ${estadoDen(d.state)} ${g.reviewing ? tag('reviewing') : ''} ${tipo !== 'business' && t.business ? `${en ? 'by' : 'de'} ${t.business_id ? `<a class="link" href="#/negocios/${esc(t.business_id)}">${esc(t.business)}</a>` : esc(t.business)}` : ''}${t.city ? ` · ${esc(t.city)}` : ''}</div>
+        ${d.live ? '' : `<p class="meta">${en ? 'It no longer exists: this is how it was when it was reported.' : 'Ya no existe: así estaba cuando lo denunciaron.'}</p>`}
+        ${cifrasDen(g, abiertas.length > 0)}
+        <div class="den-motivos">${Object.entries(motivos).sort((a, b) => b[1] - a[1]).map(([m, n]) => `<span class="tag ${m === 'child_abuse' || m === 'illegal' ? 'bad' : 'dim'}">${esc(motivoDen(m))} · ${n}</span>`).join(' ')}</div>
+        <div class="actions">
+          ${url && d.live ? `<a class="btn sm" href="${APP_URL}${esc(url)}" target="_blank" rel="noopener">${en ? 'Open on the website' : 'Abrir en la web'} ↗</a>` : ''}
+          ${ficha ? `<a class="btn sm ghost" href="${ficha}">${tipo === 'offer' ? (en ? 'Publication in the admin' : 'Publicación en el admin') : (en ? 'Business in the admin' : 'Negocio en el admin')}</a>` : ''}
+          ${botonesDen(g)}
+        </div>
+      </div></div>
+    </div>
+    ${reps.some((r) => r.reason === 'child_abuse' && ['open', 'reviewing'].includes(r.status)) ? `<div class="card den-aviso">${en ? '<b>Child sexual abuse.</b> If the report looks credible, take the content down straight away and report it to the Police (Policía Nacional, <a class="link" href="https://www.policia.es/_es/colabora.php" target="_blank" rel="noopener">policia.es</a>) or the Guardia Civil: the DSA (art. 18) requires informing the authorities of any suspected offence that threatens someone’s life or safety. Do not download or forward the material.' : '<b>Abuso sexual infantil.</b> Si la denuncia parece creíble, retira el contenido en el acto y avisa a la Policía Nacional (<a class="link" href="https://www.policia.es/_es/colabora.php" target="_blank" rel="noopener">policia.es</a>) o a la Guardia Civil: el DSA (art. 18) obliga a informar a las autoridades de cualquier sospecha de delito que amenace la vida o la seguridad de alguien. No descargues ni reenvíes el material.'}</div>` : ''}
+    <div class="card"><h2>${en ? `Reports (${reps.length})` : `Denuncias (${reps.length})`}</h2>
+      ${reps.map((r) => `<div class="item den-fila" style="grid-template-columns:1fr" data-rep="${esc(r.id)}"><div>
+        <h3>${esc(motivoDen(r.reason))} ${tag(r.status)} ${r.resolution && r.resolution !== 'dismissed' ? `<span class="tag dim">${esc(I18N.t(RESOLUCION_DEN[r.resolution] || r.resolution))}</span>` : ''} <span class="muted small">${en ? 'ref.' : 'ref.'} ${esc(r.ref)}</span></h3>
+        <div class="meta">${fmtDate(r.created_at)}${r.resolved_at ? ` · ${en ? 'closed' : 'cerrada'} ${fmtDate(r.resolved_at)}` : ''}</div>
+        <div class="meta">${quien(r)}</div>
+        ${r.details ? `<p class="den-texto">${esc(r.details)}</p>` : `<p class="meta">${en ? 'No explanation.' : 'Sin explicación.'}</p>`}
+        ${['open', 'reviewing'].includes(r.status) ? `<div class="actions"><button class="btn sm ghost" data-una="dismissed">${en ? 'Dismiss this one' : 'Desestimar esta'}</button></div>` : ''}
+      </div></div>`).join('')}
+    </div>`;
+  $$('[data-dec]', v).forEach((b) => { b.onclick = () => esperando(b, async () => {
+    if (await decideDenuncias(tipo, id, b.dataset.dec, abiertas.length)) route();
+  }); });
+  $$('[data-una]', v).forEach((b) => { b.onclick = () => esperando(b, async () => {
+    if (!await confirmDlg(en ? 'Dismiss this report' : 'Desestimar esta denuncia', en ? 'Only this report is dismissed (unfounded). The reporter is told the content stays up.' : 'Solo se desestima esta denuncia (sin fundamento). A quien la puso se le dice que el contenido sigue publicado.', { submit: 'Desestimar' })) return;
+    try { await rpc('admin_resolve_report', { p_id: b.closest('[data-rep]').dataset.rep, p_status: 'dismissed', p_action: 'none', p_reason: null }); toast('Denuncia actualizada'); refreshBadges(); route(); } catch (e) { toast(e.message, true); }
+  }); });
+}
 
 // ── Mensajes a clientes ─────────────────────────────────────────────────────
 // Los mensajes de «Avisar a mis clientes» que la moderación automática ha
@@ -1307,8 +1568,8 @@ PAGES.mensajes = async (v) => {
   v.innerHTML = `
     <div class="page-head"><h1>Mensajes a clientes</h1></div>
     ${helpBox('¿Qué hago aquí?', en
-      ? '<p>A business can send one short message a week to people who have it in their favourites (“Message my customers”). If the text mentions <b>alcohol</b>, <b>tobacco</b> or <b>gambling</b> it stops here. <b>Send</b> delivers it as it is (with alcohol, only to adults); <b>Reject</b> discards it and the business is told, with the reason if you give one. A rejected message does not use up their week.</p>'
-      : '<p>Un negocio puede mandar un mensaje corto a la semana a quien lo tiene en favoritos («Avisar a mis clientes»). Si el texto menciona <b>alcohol</b>, <b>tabaco</b> o <b>apuestas</b>, se para aquí. <b>Enviar</b> lo manda tal cual (con alcohol, solo a mayores de edad); <b>Rechazar</b> lo descarta y se le dice al negocio, con el motivo si lo pones. Uno rechazado no le gasta la semana.</p>')}
+      ? '<p>A business can send one short message a week to people who have it in their favourites (“Message my customers”). If the text mentions <b>alcohol</b>, <b>tobacco</b> or <b>gambling</b>, or has <b>offensive language</b>, it stops here. <b>Send</b> delivers it as it is (with alcohol, only to adults); <b>Reject</b> discards it and the business is told, with the reason if you give one. A rejected message does not use up their week.</p>'
+      : '<p>Un negocio puede mandar un mensaje corto a la semana a quien lo tiene en favoritos («Avisar a mis clientes»). Si el texto menciona <b>alcohol</b>, <b>tabaco</b> o <b>apuestas</b>, o tiene <b>lenguaje ofensivo</b>, se para aquí. <b>Enviar</b> lo manda tal cual (con alcohol, solo a mayores de edad); <b>Rechazar</b> lo descarta y se le dice al negocio, con el motivo si lo pones. Uno rechazado no le gasta la semana.</p>')}
     <div class="toolbar">
       <select id="status">${[['all', 'Todos'], ['review', 'En revisión'], ['sent', 'Enviados'], ['rejected', 'No enviados']].map((o) => `<option value="${o[0]}" ${(s.status || 'review') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
     </div>

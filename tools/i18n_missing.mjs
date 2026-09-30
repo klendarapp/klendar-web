@@ -28,7 +28,7 @@ for (const nombre of ['TIPOS_SUGERENCIA', 'MOTIVOS']) {
     if (fila[2]) textos.add(fila[2]);
   }
 }
-for (const nombre of ['ESTADO_SUGERENCIA', 'QUE_SE_DENUNCIA', 'ERRORES']) {
+for (const nombre of ['ESTADO_SUGERENCIA', 'QUE_SE_DENUNCIA', 'ERRORES', 'ERR_DENUNCIA']) {
   for (const bloque of codigo.matchAll(new RegExp(`${nombre}(?: = |, )\\{([\\s\\S]*?)\\n\\}`, 'g'))) {
     for (const par of bloque[1].matchAll(/:\s*'([^']+)'/g)) textos.add(par[1]);
   }

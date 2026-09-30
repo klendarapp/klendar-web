@@ -407,6 +407,8 @@ export async function businessPage(param, lang, search = '') {
         stampsSomeCats: 'Only some categories count', stampsSomeOffers: 'Only some publications count',
         stampsOnly: (l) => `Only these count: ${l}`, stampsMore: (l, n) => `${l} and ${n} more`,
         stampsByVisit: 'Also per visit with the venue QR code',
+        stampsNoteVisit: 'Each redemption that counts earns a stamp, and so does scanning the venue QR code when the card says so: at most one a day per card. The app keeps count.',
+        dishPhoto: (n) => `Photo: ${n}`,
         hours: 'Opening hours', closed: 'Closed', today: 'today',
         days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
         news: 'News', reviews: 'Reviews', write: 'Write a review', noReviews: 'No reviews yet. Been here? Be the first.',
@@ -436,6 +438,8 @@ export async function businessPage(param, lang, search = '') {
         stampsSomeCats: 'Solo cuentan algunas categorías', stampsSomeOffers: 'Solo cuentan algunas publicaciones',
         stampsOnly: (l) => `Solo cuentan: ${l}`, stampsMore: (l, n) => `${l} y ${n} más`,
         stampsByVisit: 'También por visita con el QR del local',
+        stampsNoteVisit: 'Cada canje que cuenta deja un sello, y también escanear el QR del local si la tarjeta lo dice: como mucho uno al día por tarjeta. La app lleva la cuenta.',
+        dishPhoto: (n) => `Foto: ${n}`,
         hours: 'Horario', closed: 'Cerrado', today: 'hoy',
         days: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'],
         news: 'Novedades', reviews: 'Reseñas', write: 'Escribir una reseña', noReviews: 'Todavía no hay reseñas. ¿Has estado? Sé la primera persona.',
@@ -556,13 +560,13 @@ export async function businessPage(param, lang, search = '') {
       ${b.description ? `<h2>${S.about}</h2><p>${esc(b.description).replace(/\n/g, '<br>')}</p>` : ''}
       ${sellos.length ? `<h2>${sellos.length > 1 ? S.stampsMany : S.stamps}</h2>
         ${sellos.map((c) => `<p class="callout"><b>${esc(c.name)}</b> · ${esc(S.stampsBody(c.goal, c.reward))}<br><small>${esc(queSellaTarjeta(c, S, en))}</small></p>`).join('')}
-        <p class="muted">${esc(S.stampsNote)}</p>` : ''}
+        <p class="muted">${esc(sellos.some((c) => c.by_visit) ? S.stampsNoteVisit : S.stampsNote)}</p>` : ''}
       ${carta.length ? `<h2>${S.menu}</h2>
         <div class="menu">${carta.map((sec) => `<section>
           <h3>${esc(sec.name)}</h3>
           <ul>${(sec.items || []).map((it) => `<li>
-            ${it.image_url ? `<img class="dish" src="${esc(it.image_url)}" alt="" loading="lazy">` : ''}
-            <span><b>${esc(it.name)}</b>${it.description ? `<small>${esc(it.description)}</small>` : ''}
+            ${seguro(it.image_url) ? `<a class="dish" href="${esc(seguro(it.image_url))}" target="_blank" rel="noopener" aria-label="${esc(S.dishPhoto(it.name))}"><img src="${esc(seguro(it.image_url))}" alt="" loading="lazy" width="56" height="56"></a>` : ''}
+            <span class="plato"><b>${esc(it.name)}</b>${it.description ? `<small>${esc(it.description)}</small>` : ''}
             ${(it.allergens || []).length ? `<small class="alg">${S.allergens}: ${it.allergens.map((a) => esc(nombreAlergeno(a, en))).join(', ')}</small>` : ''}</span>
             <span class="price">${it.price_cents == null ? '' : esc(money(it.price_cents, 'EUR', lang))}</span>
           </li>`).join('')}</ul>
@@ -577,7 +581,7 @@ export async function businessPage(param, lang, search = '') {
       ${offers.length ? '' : `<p class="empty">${S.none}</p>`}
       ${exclusivas}
       ${novedades.length ? `<h2>${S.news}</h2>
-        <div class="novedades">${novedades.map((p) => `<article>
+        <div class="novedades">${novedades.map((p) => `<article${isUuid(p.id) ? ` id="novedad-${p.id}"` : ''}>
           <p class="muted">${esc(fmtWhen(p.created_at, lang, tz))}</p>
           ${p.body ? `<p>${esc(p.body).replace(/\n/g, '<br>')}</p>` : ''}
           ${p.image_url ? `<img src="${esc(p.image_url)}" alt="" loading="lazy">` : ''}
@@ -585,7 +589,7 @@ export async function businessPage(param, lang, search = '') {
         </article>`).join('')}</div>` : ''}
       <h2 id="resenas">${S.reviews}${b.rating && b.ratings ? ` <small class="muted">★ ${nota(b.rating, lang)} (${b.ratings})</small>` : ''}</h2>
       <p><a class="pill" href="${cuenta(lang)}#/opinar/${encodeURIComponent(b.id)}">${icono('resena', 16)} ${S.write}</a></p>
-      ${opiniones.length ? `<div class="resenas">${opiniones.map((r) => `<article${isUuid(r.user_id) ? ` data-autor="${r.user_id}"` : ''}>
+      ${opiniones.length ? `<div class="resenas">${opiniones.map((r) => `<article${isUuid(r.id) ? ` id="resena-${r.id}"` : ''}${isUuid(r.user_id) ? ` data-autor="${r.user_id}"` : ''}>
           <header>${r.avatar_url ? `<img class="av" src="${esc(r.avatar_url)}" alt="" loading="lazy">` : `<span class="av">${esc((r.display_name || S.user).trim().charAt(0).toUpperCase())}</span>`}
             <span><b>${esc(r.display_name || S.user)}</b><small class="muted">${esc(fmtWhen(r.created_at, lang, tz))}</small></span>
             ${estrellas(Math.max(0, Math.min(5, r.rating | 0)))}</header>
