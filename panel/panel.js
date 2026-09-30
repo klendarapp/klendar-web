@@ -482,6 +482,8 @@ function olvidaColas() {
       const k = localStorage.key(i);
       if (k && k.startsWith('klendar.cola.')) localStorage.removeItem(k);
     }
+    // Qué negocio llevabas: tampoco se queda para quien entre después.
+    localStorage.removeItem('klendar.biz');
   } catch { /* sin permisos */ }
 }
 
@@ -506,7 +508,8 @@ async function boot() {
   try {
     BIZZES = await rpc('my_businesses');
   } catch (e) {
-    $('#view').innerHTML = `<div class="card"><h2>${esc(I18N.t('Algo ha fallado'))}</h2><p class="err">${esc(friendly(e.message))}</p><button class="btn" onclick="location.reload()">${esc(I18N.t('Reintentar'))}</button></div>`;
+    $('#view').innerHTML = `<div class="card"><h2>${esc(I18N.t('Algo ha fallado'))}</h2><p class="err">${esc(friendly(e.message))}</p><button class="btn" data-recargar>${esc(I18N.t('Reintentar'))}</button></div>`;
+    $('[data-recargar]', $('#view')).onclick = () => location.reload();
     return;
   }
   // Quien llega del registro de negocio trae ?alta=1: se limpia la dirección.
@@ -541,7 +544,8 @@ async function noBusiness() {
     sinDobleEnvio(v);
     I18N.translate(v);
   } catch (e) {
-    v.innerHTML = `<div class="card"><h2>Algo ha fallado</h2><p class="err">${esc(friendly(e.message))}</p><button class="btn" onclick="location.reload()">Reintentar</button></div>`;
+    v.innerHTML = `<div class="card"><h2>Algo ha fallado</h2><p class="err">${esc(friendly(e.message))}</p><button class="btn" data-recargar>Reintentar</button></div>`;
+    $('[data-recargar]', v).onclick = () => location.reload();
     I18N.translate(v);
   }
 }
@@ -1540,7 +1544,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
     const foto = images.find((u) => !isVideo(u));
     const t = estilo.template;
     $('#estiloPrev', v).innerHTML = `
-      <div class="ep ep-${t}" style="--ac:${acento};--on:${sobre};${foto ? `background-image:url('${esc(foto)}')` : ''}">
+      <div class="ep ep-${t}" style="--ac:${acento};--on:${sobre}">
         <div class="ep-panel">
           <b class="ep-biz">${esc(BIZ.name)}</b>
           <span class="ep-title">${esc(titulo)}</span>
@@ -1548,6 +1552,10 @@ async function offerForm(v, id, kindDefault, desde = null) {
           <span class="ep-cta">${esc(I18N.lang === 'en' ? 'Get the code' : 'Conseguir el código')}</span>
         </div>
       </div>`;
+    // La foto va por el DOM, no dentro del atributo: una comilla en la
+    // dirección cerraba el `url('…')` (el escape HTML se deshace antes de
+    // leer el CSS). Solo https.
+    if (foto && /^https:\/\//i.test(foto)) $('.ep', $('#estiloPrev', v)).style.backgroundImage = `url(${JSON.stringify(foto)})`;
     $('#plantillasEstilo', v).innerHTML = PLANTILLAS.map(([k, n]) =>
       `<button type="button" class="${estilo.template === k ? 'on' : ''}" data-plantilla="${k}">${esc(I18N.t(n))}</button>`).join('');
     $('#colores', v).innerHTML = COLORES.map((c, i) =>

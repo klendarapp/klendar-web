@@ -176,6 +176,7 @@ sb.auth.onAuthStateChange((ev, s) => {
         const k = localStorage.key(i);
         if (k && k.startsWith('klendar.cola.')) localStorage.removeItem(k);
       }
+      localStorage.removeItem('klendar.biz');
     } catch { /* sin permisos */ }
   }
 });
@@ -184,6 +185,54 @@ function exigeSesion(ruta) {
   if (YO) return true;
   location.hash = `#/entrar?siguiente=${encodeURIComponent(ruta)}`;
   return false;
+}
+
+// ── Acciones que llegan por enlace ────────────────────────────────────────
+// Las rutas que hacen algo (guardar, seguir, «Voy», lista de espera, sacar un
+// código o reservar plazas) solo actúan solas si vienen de un botón de esta
+// web: la ficha pública y la propia cuenta dejan una marca en sessionStorage
+// al pulsarlo (assets/cabecera.js). Un enlace abierto desde fuera (un chat,
+// otra web, `#/entrar?siguiente=…`) no la trae: primero se dice qué va a
+// pasar y se pide confirmar, como en /r/.
+const INTENCION = 'klendar.intencion';
+function marcaIntencion(ruta) {
+  try { sessionStorage.setItem(INTENCION, JSON.stringify({ r: ruta, t: Date.now() })); } catch { /* sin almacenamiento */ }
+}
+/** ¿Se pulsó en esta web el botón de esta ruta hace poco? Se gasta al mirarla. */
+function hayIntencion(ruta) {
+  try {
+    const m = JSON.parse(sessionStorage.getItem(INTENCION) || 'null');
+    if (!m || m.r !== ruta) return false;
+    sessionStorage.removeItem(INTENCION);
+    return Date.now() - m.t < 15 * 60 * 1000;
+  } catch { return false; }
+}
+/** Con marca, sigue sin preguntar; sin ella, pinta qué va a pasar y espera
+ * al botón. Cancelar vuelve a la ficha (y la promesa se queda sin cumplir). */
+async function confirmaEnlace(ruta, { titulo, que, texto, boton, volver }) {
+  if (hayIntencion(ruta)) return true;
+  return new Promise((sigue) => {
+    pinta(`
+      <div class="ticket">
+        <h1>${esc(titulo)}</h1>
+        ${que ? `<p><b>${esc(que)}</b></p>` : ''}
+        ${texto ? `<p class="muted">${esc(texto)}</p>` : ''}
+        <p class="acciones">
+          <button type="button" class="pill accent" id="confirmaEnlace">${esc(boton)}</button>
+          <a class="pill" href="${esc(volver)}">${esc(t('Cancelar'))}</a>
+        </p>
+      </div>`);
+    I18N.translate(view);
+    $('#confirmaEnlace').addEventListener('click', () => sigue(true), { once: true });
+  });
+}
+/** El título (y el local) de una publicación para la pantalla de confirmar. */
+async function queOferta(id) {
+  try {
+    const fila = await llamar('offer_detail', { p_id: id });
+    const o = Array.isArray(fila) ? fila[0] : fila;
+    return o ? [o.title, o.business_name].filter(Boolean).join(' · ') : '';
+  } catch { return ''; }
 }
 
 // ── Entrar con Google ─────────────────────────────────────────────────────
@@ -260,7 +309,10 @@ async function faltaConsentimiento() {
       };
     } catch { CONSENTIMIENTO = { id: YO.id, ok: true, fecha: true, nueva: false, vigente: null }; } // sin red: no se bloquea
   }
-  return !CONSENTIMIENTO.ok;
+  // Sin fecha de nacimiento tampoco: quien entra con un código por correo
+  // acepta los términos al continuar, pero la edad mínima (14) hay que
+  // comprobarla igual (como en la app).
+  return !CONSENTIMIENTO.ok || !CONSENTIMIENTO.fecha;
 }
 
 // ── Rutas ─────────────────────────────────────────────────────────────────
@@ -1063,6 +1115,7 @@ function hecho({ titulo, texto, volver, volverTxt, lista, listaTxt, deshacer }) 
   // «Deshacer» vuelve a llamar a la misma ruta aunque la dirección ya sea otra.
   $('[data-deshacer]').addEventListener('click', (ev) => {
     ev.preventDefault();
+    marcaIntencion(deshacer);
     history.replaceState(null, '', `#/${deshacer}`);
     navegar();
   });
@@ -1079,9 +1132,13 @@ async function ponOQuita(tablaNombre, campo, id, quitar, alternar) {
   return { puesto: await alternar(), yaEstaba: false };
 }
 
-RUTAS.guardar = async ([id], params) => {
+RUTAS.guardar = async ([id], params, crudo) => {
   if (!exigeSesion(`guardar/${id}`)) return;
   const quitar = params?.get('quitar') === '1';
+  if (!(await confirmaEnlace(crudo, {
+    titulo: t(quitar ? '¿Quitar de tus planes?' : '¿Guardar en tus planes?'), que: await queOferta(id),
+    boton: t(quitar ? 'Quitar' : 'Guardar'), volver: `${pre}/o/${encodeURIComponent(id)}`,
+  }))) return;
   const { puesto: guardado, yaEstaba } = await ponOQuita('saved_offers', 'offer_id', id, quitar,
     () => llamar('toggle_saved_offer', { p_offer: id }));
   hecho({
@@ -1116,9 +1173,14 @@ RUTAS.favoritos = async () => {
     : `<p class="empty">${esc(t('Todavía no tienes favoritos. En la ficha de un negocio, dale a «Añadir a favoritos» y te avisaremos cuando publique.'))}</p>`}`);
 };
 
-RUTAS.seguir = async ([id], params) => {
+RUTAS.seguir = async ([id], params, crudo) => {
   if (!exigeSesion(`seguir/${id}`)) return;
   const quitar = params?.get('quitar') === '1';
+  if (!(await confirmaEnlace(crudo, {
+    titulo: t(quitar ? '¿Quitar de favoritos?' : '¿Añadir a favoritos?'),
+    que: await sb.from('businesses').select('name').eq('id', id).maybeSingle().then((r) => r.data?.name || '', () => ''),
+    boton: t(quitar ? 'Quitar' : 'Añadir'), volver: `${pre}/b/${encodeURIComponent(id)}`,
+  }))) return;
   const { puesto: sigue, yaEstaba } = await ponOQuita('favorites', 'business_id', id, quitar,
     () => llamar('toggle_favorite', { p_business_id: id }));
   hecho({
@@ -1293,9 +1355,16 @@ function pintaCanjeado({ titulo, negocio, benef, at, volver = '#/codigos', tz })
   if (navigator.vibrate) navigator.vibrate(120);
 }
 
-RUTAS.codigo = async ([id], params) => {
+RUTAS.codigo = async ([id], params, crudo) => {
   if (!exigeSesion(`codigo/${id}${params.toString() ? `?${params}` : ''}`)) return;
   const plazas = Math.max(1, Math.min(10, parseInt(params.get('plazas') || '1', 10) || 1));
+  // Abierto desde fuera, no se saca el código (ni se reservan plazas) sin
+  // pulsar: si ya lo tienes, el botón te lo enseña igual.
+  if (!(await confirmaEnlace(crudo, {
+    titulo: t(plazas > 1 ? '¿Reservar plazas?' : '¿Sacar tu código?'), que: await queOferta(id),
+    texto: plazas > 1 ? (EN ? `For ${plazas} people. The code is valid for all the places.` : `Para ${plazas} personas. El código vale por todas las plazas.`) : '',
+    boton: t(plazas > 1 ? 'Reservar' : 'Sacar el código'), volver: `${pre}/o/${encodeURIComponent(id)}`,
+  }))) return;
   // La zona del negocio, para «vale hasta el…» y la hora del canje.
   let tk;
   let tz;
@@ -1412,7 +1481,12 @@ RUTAS.reservar = async ([id]) => {
   if (!o) { pinta(`<p class="empty">${esc(t('Esa publicación ya no existe.'))}</p>`); return; }
   if (o.locked) { pintaExclusiva(o.audience, o.business_id, o.business_name); return; }
   const tope = Math.max(1, Math.min(o.max_seats || 1, o.seats_left == null ? 10 : o.seats_left));
-  if (tope <= 1) { location.replace(`#/codigo/${encodeURIComponent(id)}`); return; }
+  if (tope <= 1) {
+    // Venía del botón «Reservar» de la ficha: el código no vuelve a preguntar.
+    if (hayIntencion(`reservar/${id}`)) marcaIntencion(`codigo/${encodeURIComponent(id)}`);
+    location.replace(`#/codigo/${encodeURIComponent(id)}`);
+    return;
+  }
   pinta(`
     <p class="crumbs"><a href="${pre}/o/${esc(id)}">${esc(o.title)}</a></p>
     <h1>${esc(t('¿Para cuántos?'))}</h1>
@@ -1423,9 +1497,13 @@ RUTAS.reservar = async ([id]) => {
 };
 
 // ── Lista de espera de algo agotado ───────────────────────────────────────
-RUTAS.espera = async ([id], params) => {
+RUTAS.espera = async ([id], params, crudo) => {
   if (!exigeSesion(`espera/${id}`)) return;
   const quitar = params?.get('quitar') === '1';
+  if (!(await confirmaEnlace(crudo, {
+    titulo: t(quitar ? '¿Salir de la lista de espera?' : '¿Apuntarte a la lista de espera?'), que: await queOferta(id),
+    boton: t(quitar ? 'Salir' : 'Apuntarme'), volver: `${pre}/o/${encodeURIComponent(id)}`,
+  }))) return;
   // La ficha pública va en caché y no sabe quién mira: a quien ya tiene
   // plaza (su código vivo) le ofrece la lista de espera de algo agotado. No
   // hace cola: va a su entrada, como «Mi entrada» en la app.
@@ -1433,6 +1511,7 @@ RUTAS.espera = async ([id], params) => {
     const mios = await llamar('my_redemptions', {}).catch(() => []);
     if ((mios || []).some((r) => r.offer_id === id && r.status === 'pending'
         && new Date(r.expires_at).getTime() > Date.now())) {
+      marcaIntencion(`codigo/${encodeURIComponent(id)}`);
       location.replace(`#/codigo/${encodeURIComponent(id)}`);
       return;
     }

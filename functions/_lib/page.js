@@ -42,8 +42,10 @@ export const CONTADOR = `<script defer src="https://static.cloudflareinsights.co
  * clave pública de Supabase van en la etiqueta (las mismas que usa la
  * Function, que manda sobre config.js). En el <head>, antes que los demás. */
 export const ERRORES_V = 1;
+// `async`: sin frenar el primer pintado; se pide el primero y corre antes que
+// los `defer` (`document.currentScript` sigue valiendo para leer data-*).
 export const erroresScript = () =>
-  `<script src="/assets/errores.js?v=${ERRORES_V}" data-url="${esc(CFG.url)}" data-key="${esc(CFG.key)}"></script>`;
+  `<script src="/assets/errores.js?v=${ERRORES_V}" async data-url="${esc(CFG.url)}" data-key="${esc(CFG.key)}"></script>`;
 
 export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 export const isUuid = (s) => UUID.test(s || '');

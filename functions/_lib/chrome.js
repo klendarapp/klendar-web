@@ -116,7 +116,7 @@ export function siteHeader(lang, esPath = '/', enPath = '/en/') {
     <label class="menu-toggle" for="menu" aria-hidden="true"><span></span><span></span><span></span></label>
   </div>
 </div></header>
-<script src="/assets/cabecera.js?v=5" defer></script>`;
+<script src="/assets/cabecera.js?v=6" defer></script>`;
 }
 
 /** El pie, con las mismas columnas en todas las páginas. */

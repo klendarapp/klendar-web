@@ -4,12 +4,21 @@
   X-Frame-Options: DENY
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: geolocation=(), camera=(), microphone=()
+# Zonas con sesión (admin, panel, «Tu cuenta»):
+# - `no-transform`: Cloudflare no les mete su contador de visitas (con el
+#   acceso implícito el token pasa un momento por la dirección).
+# - CSP estricta en modo «solo avisar» (Report-Only): no rompe nada; los
+#   avisos salen en la consola. Cuando se haya probado cada zona con sesión
+#   (entrar, mapa y escáner del panel, 2FA del admin) sin avisos, cambiar
+#   el nombre a Content-Security-Policy (revisión de seguridad 2026-09-30).
 /admin/*
   X-Robots-Tag: noindex, nofollow
-  Cache-Control: no-store
+  Cache-Control: no-store, no-transform
+  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://api.mapbox.com https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://api.mapbox.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.mapbox.com https://events.mapbox.com; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; base-uri 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'none'
 /panel/*
   X-Robots-Tag: noindex, nofollow
-  Cache-Control: no-store
+  Cache-Control: no-store, no-transform
+  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://api.mapbox.com https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://api.mapbox.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.mapbox.com https://events.mapbox.com; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; base-uri 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'none'
   ! Permissions-Policy
   Permissions-Policy: geolocation=(self), camera=(self), microphone=()
 
@@ -17,6 +26,8 @@
 # a petición de la persona.
 /app/*
   X-Robots-Tag: noindex, nofollow
+  Cache-Control: public, max-age=0, must-revalidate, no-transform
+  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://api.mapbox.com https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://api.mapbox.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.mapbox.com https://events.mapbox.com; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; base-uri 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'none'
   ! Permissions-Policy
   Permissions-Policy: geolocation=(self), camera=(), microphone=()
 

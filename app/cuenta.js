@@ -746,7 +746,10 @@ RUTAS.sugerencias = async () => {
     ocupado($('#enviar'), async () => {
       await llamar('send_feedback', {
         p_message: msg, p_kind: f.tipo.value, p_platform: 'web',
-        p_app_version: 'web', p_locale: EN ? 'en' : 'es', p_route: document.referrer ? new URL(document.referrer).pathname : null,
+        p_app_version: 'web', p_locale: EN ? 'en' : 'es', p_route: document.referrer
+          // Solo la ruta, y sin el código de un enlace personal (/amigo/…).
+          ? new URL(document.referrer).pathname.replace(/(\/(en\/)?(amigo|friend|r|baja|unsubscribe|v|cartel\/local|poster\/venue))\/[\w-]{6,}/g, '$1/*')
+          : null,
       });
       toast(t('¡Gracias! Lo hemos recibido. Si necesitamos más detalles, te escribimos.'));
       navegar();

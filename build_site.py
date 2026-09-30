@@ -241,7 +241,9 @@ def head(t, path, page_title=None, page_desc=None, extra=''):
 # Errores del navegador → «Errores de la web» del admin. En el <head> y antes
 # que nada; estas páginas no cargan config.js y errores.js lo pide solo si
 # tiene algo que mandar. Mismo `?v=` que `ERRORES_V` en functions/_lib/page.js.
-ERRORES = '<script src="/assets/errores.js?v=1"></script>'
+# `async`: se pide el primero y corre en cuanto llega (antes que los `defer`),
+# sin frenar el primer pintado (Lighthouse lo daba como bloqueante, ~0,4 s).
+ERRORES = '<script src="/assets/errores.js?v=1" async></script>'
 
 # Solo la portada trae contenido en vivo; los documentos no lo necesitan.
 LIVE_SCRIPTS = (

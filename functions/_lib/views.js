@@ -233,7 +233,10 @@ function dur(ms){var m=Math.floor(ms/60000);if(m>=1440)return Math.floor(m/1440)
 function tic(){var n=Date.now();if(n>=fin){el.textContent=${JSON.stringify(S.over)};return;}
 el.textContent=n<ini?${JSON.stringify(en ? 'Starts in ' : 'Empieza en ')}+dur(ini-n):${en ? "dur(fin-n)+' left'" : "'Quedan '+dur(fin-n)"};el.hidden=false;setTimeout(tic,30000);}tic();})();</script>`;
   const sp = supabasePublic();
-  const vista = `<script>(function(){try{var k='v:${o.id}';if(navigator.webdriver||sessionStorage.getItem(k))return;sessionStorage.setItem(k,'1');fetch(${JSON.stringify(sp.url + '/rest/v1/offer_views')},{method:'POST',keepalive:true,headers:{apikey:${JSON.stringify(sp.key)},Authorization:'Bearer '+${JSON.stringify(sp.key)},'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({offer_id:'${o.id}'})});}catch(e){}})();</script>`;
+  // Cuenta la visita para las estadísticas del negocio. Sin guardar nada en el
+  // navegador (ni cookies ni sessionStorage): la base ya no cuenta dos veces a
+  // la misma persona en 30 minutos (`offer_views_dedupe`).
+  const vista = `<script>(function(){try{if(navigator.webdriver)return;fetch(${JSON.stringify(sp.url + '/rest/v1/offer_views')},{method:'POST',keepalive:true,headers:{apikey:${JSON.stringify(sp.key)},Authorization:'Bearer '+${JSON.stringify(sp.key)},'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({offer_id:'${o.id}'})});}catch(e){}})();</script>`;
 
   return html(publicPage({
     lang, path, image: cover, body: body + cuentaAtras + vista,
@@ -392,7 +395,7 @@ export async function businessPage(param, lang, search = '') {
     ? {
         now: 'On right now', soon: 'Coming up',
         none: 'Nothing published right now. It changes often — take a look in the app.',
-        open: 'Add to favourites', note: 'From here or from the app, with the same account. We'll let you know when this business posts something.",
+        open: 'Add to favourites', note: "From here or from the app, with the same account. We'll let you know when this business posts something.",
         verified: 'Verified business', since: 'On Klendar since', redeemed: (n) => (n === 1 ? '1 redemption validated' : `${n} redemptions validated`),
         about: 'About', menu: 'Menu',
         stamps: 'Stamp card', allergens: 'Allergens',
@@ -925,6 +928,7 @@ export function friendLinkPage(code, lang) {
     </p>
   </div>`;
   const res = html(publicPage({
+    contador: false,
     lang, path, body, title: S.title, description: S.text,
     head: '<meta name="robots" content="noindex, nofollow">\n<meta name="referrer" content="no-referrer">',
   }), 200, 'no-store');

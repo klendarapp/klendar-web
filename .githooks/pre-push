@@ -1,0 +1,5 @@
+#!/bin/sh
+# Antes de subir: sintaxis de todo el JavaScript (un error en functions/ tumba el despliegue entero).
+python tools/check_js.py || { echo "pre-push: hay errores de sintaxis; no se sube."; exit 1; }
+python tools/i18n_missing.py panel >/dev/null && python tools/i18n_missing.py admin >/dev/null || { echo "pre-push: faltan traducciones."; exit 1; }
+echo "pre-push: todo bien."

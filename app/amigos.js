@@ -326,10 +326,16 @@ RUTAS.amigo = async ([code]) => {
 /** Desde la ficha pública: marcar o quitar «Voy», como Guardar. Marcar
  * también la guarda en Planes. Quitarlo no anula una plaza ni un código:
  * si hay uno, sigues yendo (y se dice). */
-RUTAS.voy = async ([id], params) => {
+RUTAS.voy = async ([id], params, crudo) => {
   const quitar = params?.get('quitar') === '1';
   if (!UUID_AMIGOS.test(id || '')) { pinta(`<p class="empty">${esc(t('Ese enlace no está completo.'))}</p>`); return; }
   if (!exigeSesion(`voy/${id}${quitar ? '?quitar=1' : ''}`)) return;
+  // Desde fuera (sin pulsar «Voy» aquí) se pregunta antes: tus amigos lo ven.
+  if (!(await confirmaEnlace(crudo, {
+    titulo: t(quitar ? '¿Quitar tu «Voy»?' : '¿Marcar que vas?'), que: await queOferta(id),
+    texto: quitar ? '' : t('Tus amigos verán que vas y se guardará en tus planes.'),
+    boton: t(quitar ? 'Quitar' : 'Voy'), volver: `${pre}/o/${encodeURIComponent(id)}`,
+  }))) return;
   const [r, cons] = await Promise.all([
     llamar('set_going', { p_offer: id, p_going: !quitar }),
     quitar ? null : llamar('my_consents', {}).catch(() => null),

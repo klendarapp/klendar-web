@@ -75,6 +75,9 @@
   function limpia(s, max) {
     if (s == null) return null;
     s = String(s).slice(0, max * 4)
+      // Los códigos de los enlaces personales (/amigo/<código>, /r/, /v/,
+      // /baja/…), también en el archivo y la pila, no solo en la página.
+      .replace(/(\/(en\/)?(amigo|friend|r|baja|unsubscribe|v|cartel\/local|poster\/venue))\/[\w-]{6,}/g, '$1/*')
       .replace(/\?(?!v=[\w.-]{1,20}(?::|\s|\)|$))[^\s)'"<>]*/g, '')
       .replace(/(access_token|refresh_token|provider_token|token|apikey|api_key|password|code|email)=[^&\s)'"<>]*/gi, '$1=<x>')
       .replace(/eyJ[\w-]{4,}\.[\w-]{4,}(\.[\w-]*)?/g, '<jwt>')

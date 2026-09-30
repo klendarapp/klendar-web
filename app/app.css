@@ -3,6 +3,9 @@
 
 /* Lo oculto se oculta siempre, aunque la clase diga display: grid. */
 [hidden] { display: none !important; }
+/* Mientras llega la primera pantalla, el pie espera: pintado debajo del
+   «Cargando…», saltaría hacia abajo al llegar la cuenta (CLS 0,72). */
+body:has(#view > .cargando) footer { display: none; }
 .formu { display: grid; gap: 16px; margin: 18px 0; }
 .formu label { display: grid; gap: 6px; font-weight: 600; font-size: 15px; }
 .formu label small { font-weight: 400; color: var(--ink-2); }

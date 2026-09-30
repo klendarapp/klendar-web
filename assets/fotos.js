@@ -12,9 +12,10 @@
  *   KFotos.TAM.avatar  lado largo 800 y corto 512, calidad 85 (foto de perfil)
  *   KFotos.TAM.resena  lado largo 1600, calidad 85 (foto de una reseña)
  *
- * Respeta la orientación de la cámara (EXIF). Deja tal cual lo que no es una
- * foto (vídeos, PDF), los GIF y SVG, lo que el navegador no sabe abrir y lo
- * que al reducirlo pesaría más que el original.
+ * Respeta la orientación de la cámara (EXIF) y no copia los metadatos (GPS,
+ * móvil). Deja tal cual lo que no es una foto (vídeos, PDF), los GIF y SVG, lo
+ * que el navegador no sabe abrir y lo que al reducirlo pesaría más que el
+ * original (menos las fotos de cámara, JPEG/HEIC, por el EXIF).
  *
  *   const f = await KFotos.reduce(archivo, KFotos.TAM.logo);  // File
  */
@@ -74,8 +75,12 @@
     const blob = await new Promise((ok) => {
       try { lienzo.toBlob(ok, 'image/jpeg', tam.calidad); } catch { ok(null); }
     });
-    // Reducida pesaría más (una foto ya pequeña y muy comprimida): la original.
-    if (!blob || blob.size >= archivo.size) return archivo;
+    if (!blob) return archivo;
+    // Reducida pesaría más (una foto ya pequeña y muy comprimida): la
+    // original, salvo que sea de cámara (JPEG/HEIC), que puede llevar en el
+    // EXIF dónde se hizo (GPS) y el móvil: esa pasa siempre por el lienzo,
+    // que no copia los metadatos (las fotos son públicas).
+    if (blob.size >= archivo.size && !/^image\/(jpe?g|heic|heif)$/i.test(archivo.type || '')) return archivo;
     const nombre = (archivo.name || 'foto').replace(/\.[^.]*$/, '') + '.jpg';
     return new File([blob], nombre, { type: 'image/jpeg', lastModified: Date.now() });
   }

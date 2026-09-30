@@ -26,6 +26,7 @@ export async function onRequestGet(ctx) {
     <a class="pill" href="/${en ? 'en/' : ''}">${esc(S.no)}</a></p>
   </form>`;
   return html(publicPage({
+    contador: false,
     // Sin el testigo: `path` da la canónica y el og:url, y el enlace de
     // baja de cada persona no debe acabar en ningún índice ni caché.
     lang, path: '/baja/', title: S.title, description: S.body, body,
@@ -71,6 +72,7 @@ export async function onRequestPost(ctx) {
   <p><a class="pill accent" href="/${en ? 'en/' : ''}">${esc(S.home)}</a></p>`;
 
   return html(publicPage({
+    contador: false,
     lang,
     path: '/baja/',
     title: S.title,

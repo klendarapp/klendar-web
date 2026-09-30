@@ -468,6 +468,9 @@ async function cambiarFactor(quitar) {
 I18N.pickers(['#lang', '#langLogin', '#langSide']);
 I18N.translate(document.body);
 if (I18N.lang === 'en') document.title = 'Klendar · Administration';
+// Un enlace dentro de una fila que se abre al pulsarla: va a su sitio sin
+// abrir la fila (sin `onclick` en el HTML, que una CSP estricta no deja).
+document.addEventListener('click', (e) => { if (e.target instanceof Element && e.target.closest('[data-sin-fila]')) e.stopPropagation(); }, true);
 document.addEventListener('keydown', (e) => { if (e.key === '/' && !/input|textarea|select/i.test(e.target.tagName)) { const s = $('#q'); if (s) { e.preventDefault(); s.focus(); } } });
 
 // ── Navegación ──────────────────────────────────────────────────────────────
@@ -924,7 +927,7 @@ PAGES.publicaciones = async (v, id) => {
     const pg = pager(s, r.total, load);
     $('#list').innerHTML = table({
       cols: [
-        { h: 'Publicación', r: (o) => `${img(o.images?.[0], KIND_ICON[o.kind])}<span class="title">${esc(o.title)}<span class="sub">${esc(I18N.t(LABELS[o.kind]))} · <a class="link" href="#/negocios/${o.business_id}" onclick="event.stopPropagation()">${esc(o.business_name)}</a> ${o.verification_status !== 'verified' ? tag(o.verification_status) : ''}</span></span>` },
+        { h: 'Publicación', r: (o) => `${img(o.images?.[0], KIND_ICON[o.kind])}<span class="title">${esc(o.title)}<span class="sub">${esc(I18N.t(LABELS[o.kind]))} · <a class="link" href="#/negocios/${o.business_id}" data-sin-fila>${esc(o.business_name)}</a> ${o.verification_status !== 'verified' ? tag(o.verification_status) : ''}</span></span>` },
         { h: 'Estado', r: (o) => `${tag(o.status)} ${modTag(o.moderation_status)} ${flagTags(o)} ${o.adults_only ? '<span class="tag bad">+18</span>' : ''} ${o.is_boosted ? '<span class="tag">boost</span>' : ''} ${o.open_reports ? `<span class="tag bad">${ms('flag')} ${o.open_reports}</span>` : ''}` },
         { h: 'Cuándo', r: (o) => `<span class="nowrap">${o.kind === 'flash_offer' ? `${fmtDate(o.redeem_start_at, KZ.de(o))}<span class="sub">→ ${fmtDate(o.redeem_end_at, KZ.de(o))}</span>` : fmtDate(o.event_at, KZ.de(o))}</span>` },
         { h: 'Precio', r: (o) => `${o.discount ? `<span class="tag">${esc(discountLabel(o.discount))}</span> ` : ''}${o.price_cents != null ? fmtMoney(o.price_cents, o.currency) : ''}` },
@@ -1866,7 +1869,8 @@ PAGES.errores = async (v) => {
       <select id="status">${[['open', 'Sin resolver'], ['resolved', 'Resueltos'], ['all', 'Todos']].map((o) => `<option value="${o[0]}" ${s.status === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
     </div>
     <div id="list"><div class="loading">Cargando…</div></div>
-    <div id="aviso"></div>`;
+    <div id="aviso"></div>
+    <div id="tareas"></div>`;
   let rows = [];
   let avisoPintado = false;
   const donde = (e) => e.source ? `<code>${esc(e.source)}${e.line != null ? ':' + e.line : ''}${e.col != null ? ':' + e.col : ''}</code>${e.version ? ` <span class="muted">v${esc(e.version)}</span>` : ''}` : '';
@@ -1937,10 +1941,37 @@ PAGES.errores = async (v) => {
     }); });
     pintaAviso(r.config, r.last_alert);
   };
+  // Tareas programadas (pg_cron) y llamadas de la base a las Edge Functions
+  // (pg_net) que han fallado en 7 días: `admin_task_health`. Lo que se ve en
+  // Supabase, aquí, para no tener que entrar allí a mirarlo.
+  const tareas = async () => {
+    let h;
+    try { h = await rpc('admin_task_health'); } catch (e) { $('#tareas').innerHTML = `<div class="card"><h2>Tareas programadas</h2><p class="err">${esc(e.message)}</p></div>`; return; }
+    const crons = h.crons || [];
+    const malas = crons.filter((c) => c.failed_7d > 0 || (c.last_status && c.last_status !== 'succeeded'));
+    const http = h.http || [];
+    $('#tareas').innerHTML = `<div class="card"><h2>Tareas programadas</h2>
+      <p class="muted small" style="margin:0 0 10px">${en
+        ? `What the database runs by itself (expire offers, send push, reminders, emails…) and its calls to the Edge Functions, over the last 7 days. <b>${fmtNum(crons.length)}</b> tasks · <b>${fmtNum(malas.length)}</b> with failures · <b>${fmtNum(h.http_24h)}</b> failed calls in 24 h. An Edge Function that fails when the app or the website calls it is only in Supabase (Edge Functions → Logs).`
+        : `Lo que la base hace sola (caducar ofertas, mandar push, recordatorios, correos…) y sus llamadas a las Edge Functions, en los últimos 7 días. <b>${fmtNum(crons.length)}</b> tareas · <b>${fmtNum(malas.length)}</b> con fallos · <b>${fmtNum(h.http_24h)}</b> llamadas fallidas en 24 h. Si una Edge Function falla cuando la llama la app o la web, eso solo está en Supabase (Edge Functions → Logs).`}</p>
+      ${malas.length ? table({ cols: [
+        { h: 'Tarea', r: (c) => `<b class="mono">${esc(c.jobname)}</b><span class="sub mono">${esc(c.schedule)}</span>` },
+        { h: 'Fallos (7 días)', num: true, r: (c) => `<span class="tag bad">${fmtNum(c.failed_7d)}</span> <span class="muted small">/ ${fmtNum(c.runs_7d)}</span>` },
+        { h: 'Último fallo', r: (c) => c.last_failed_at ? ago(c.last_failed_at) : '—' },
+        { h: 'Error', r: (c) => `<span class="mono small">${esc(c.last_error || '')}</span>` },
+      ], rows: malas }) : `<p style="margin:0"><span class="tag ok">Todo en orden</span> <span class="muted small">${en ? 'No task has failed in 7 days.' : 'Ninguna tarea ha fallado en 7 días.'}</span></p>`}
+      ${http.length ? `<h3 style="margin:14px 0 6px">Llamadas a Edge Functions que han fallado</h3>${table({ cols: [
+        { h: 'Respuesta', r: (x) => `<span class="tag bad">${x.status_code ?? '—'}</span> ${esc(x.error || '')}` },
+        { h: 'Veces', num: true, r: (x) => fmtNum(x.count) },
+        { h: 'Última', r: (x) => ago(x.last) },
+        { h: 'Cuerpo', r: (x) => `<span class="mono small">${esc(x.body || '')}</span>` },
+      ], rows: http })}` : ''}</div>`;
+  };
   $('#area').onchange = () => { s.area = $('#area').value; s.offset = 0; load(); };
   $('#status').onchange = () => { s.status = $('#status').value; s.offset = 0; load(); };
   $('#csv').onclick = () => downloadCsv('errores-web', rows, [['area', 'área'], ['page', 'página'], ['message', 'mensaje'], ['source', 'archivo'], ['line', 'línea'], ['version', 'versión'], ['count', 'veces'], ['first_seen', 'primera vez'], ['last_seen', 'última vez'], ['browser', 'navegador'], ['lang', 'idioma'], ['resolved_at', 'resuelto']]);
   await load();
+  await tareas();
 };
 
 // ── Administradores ─────────────────────────────────────────────────────────

@@ -75,6 +75,22 @@
     if (t.scrollWidth > t.clientWidth + 1 && !t.hasAttribute('tabindex')) t.tabIndex = 0;
   });
 
+  // Los botones que llevan a una acción de «Tu cuenta» (guardar, seguir,
+  // «Voy», lista de espera, sacar un código) dejan una marca al pulsarlos:
+  // así la cuenta la hace sin volver a preguntar. Un enlace que llegue de
+  // fuera (un chat, otra web) no la trae y la cuenta pide confirmar antes
+  // (`hayIntencion` en app/app.js).
+  document.addEventListener('click', (ev) => {
+    const a = ev.target instanceof Element ? ev.target.closest('a[href*="#/"]') : null;
+    if (!a) return;
+    let u;
+    try { u = new URL(a.href, location.href); } catch { return; }
+    if (u.origin !== location.origin || !/^\/(en\/)?app\/$/.test(u.pathname)) return;
+    const ruta = u.hash.replace(/^#\/?/, '');
+    if (!/^(guardar|seguir|voy|espera|codigo|reservar)\//.test(ruta)) return;
+    try { sessionStorage.setItem('klendar.intencion', JSON.stringify({ r: ruta, t: Date.now() })); } catch { /* sin almacenamiento */ }
+  }, true);
+
   // El menú del móvil se cierra con Escape y el foco vuelve a su botón.
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;

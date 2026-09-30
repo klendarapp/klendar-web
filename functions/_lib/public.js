@@ -233,7 +233,10 @@ export const altPath = (path, lang) =>
  * la URL, no el navegador: así se puede enlazar la versión inglesa y Google
  * indexa las dos.
  */
-export function publicPage({ lang, path, title, description, head = '', body, image }) {
+// `contador: false` en las páginas cuya dirección lleva un código personal
+// (baja de correos, enlace de amigo): así ese código no llega a Cloudflare Web
+// Analytics, que apunta la ruta de cada visita.
+export function publicPage({ lang, path, title, description, head = '', body, image, contador = true }) {
   const en = lang === 'en';
   const S = en
     ? { how: 'How it works', biz: 'Businesses', sup: 'Support', agenda: "What's on", exp: 'Explore' }
@@ -296,7 +299,7 @@ ${siteHeader(lang, esc(es), esc(enPath))}
 ${siteFooter(lang)}
 ${conAmigos ? `<script src="/assets/amigos.js?v=5" defer data-lang="${en ? 'en' : 'es'}"></script>
 ` : ''}${/class="detail"/.test(body) ? `<script src="/assets/barra.js?v=2" defer></script>
-` : ''}${CONTADOR}
+` : ''}${contador ? CONTADOR : ''}
 </body></html>`;
 }
 
