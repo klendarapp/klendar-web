@@ -63,7 +63,11 @@
 <table>
 <tr><th>Name</th><th>Where</th><th>Purpose</th><th>How long</th><th>Type</th></tr>
 <tr><td><code>klendar_lang</code></td><td>All of klendar.app (local storage)</td><td>Remember the language you pick with ES/EN</td><td>Until you delete it</td><td>Preference you chose</td></tr>
-<tr><td><code>sb-…-auth-token</code></td><td>“Your account”, business dashboard and admin (local storage)</td><td>Keep you logged in</td><td>Until you log out</td><td>Technical (authentication)</td></tr>
+<tr><td><code>sb-…-auth-token</code></td><td>“Your account” and business dashboard (local storage)</td><td>Keep you logged in</td><td>Until you log out</td><td>Technical (authentication)</td></tr>
+<tr><td><code>sb-…-auth-token-…code-verifier</code></td><td>“Your account” and business dashboard (local storage)</td><td>A one-time secret that checks that the return from Google or Apple reaches the same browser where you started logging in (PKCE)</td><td>Until you finish logging in or log out</td><td>Technical (security)</td></tr>
+<tr><td><code>sb-…-admin-auth-token</code></td><td>Admin (local storage)</td><td>Keep the admin session, separate from the “Your account” one</td><td>Until you log out, after 30 minutes of inactivity or after 12 hours</td><td>Technical (authentication)</td></tr>
+<tr><td><code>klendar.admin.actividad</code>, <code>klendar.admin.cierre</code></td><td>Admin (local storage)</td><td>When there was last activity (to log out after 30 minutes without any) and why the session was closed, so we can tell you</td><td>Until the next time you log in</td><td>Technical (security)</td></tr>
+<tr><td><code>klendar.acceso.aviso</code></td><td>“Your account” and business dashboard (session storage)</td><td>Tell you if an email link has expired or was already used</td><td>Until the notice is shown or the tab is closed</td><td>Technical</td></tr>
 <tr><td><code>klendar.intencion</code></td><td>Publication and business pages and “Your account” (session storage)</td><td>Remember the button you just pressed (save, reserve, get the code…) so it's done once you've logged in, and never done if you arrive through an outside link</td><td>Until it's used, 15 minutes at most or until the tab is closed</td><td>Technical (security)</td></tr>
 <tr><td><code>klendar.biz</code></td><td>Business dashboard</td><td>Remember which business you were managing</td><td>Until you log out</td><td>Technical</td></tr>
 <tr><td><code>klendar.cola.…</code></td><td>Business dashboard</td><td>Keep codes validated offline until the connection is back</td><td>Until they are sent or you log out</td><td>Technical</td></tr>
@@ -76,10 +80,9 @@
 <p>They receive your IP address, like any website you visit, and set no cookies:</p>
 <ul>
   <li><strong>Mapbox</strong>: the maps in Explore and in the business dashboard. When a map loads, Mapbox receives the “map loaded” event it uses for billing.</li>
-  <li><strong>Google Fonts</strong>: the icons in “Your account”, the business dashboard, admin and the printable posters.</li>
-  <li><strong>jsDelivr</strong>: the library “Your account” and the dashboard use to connect to our database.</li>
   <li><strong>Cloudflare Turnstile</strong>: when enabled, the anti-bot check when you log in and when you report without an account.</li>
 </ul>
+<p>Fonts, icons and libraries (including the one that connects “Your account”, the business dashboard and admin to our database) are served from klendar.app, without going through Google Fonts or any other service.</p>
 <h2>How to delete it</h2>
 <p>Logging out deletes the session and the dashboard data. You can delete everything else in your browser settings (“Clear browsing data” or “Site data”).</p>
 <h2>The app</h2>
@@ -87,7 +90,7 @@
 
 <h2 class="cambios">Change history</h2>
 <ul>
-  <li><strong>1 October 2026</strong>: Up-to-date list of what is stored in your browser and of third-party services.</li>
+  <li><strong>1 October 2026</strong>: Up-to-date list of what is stored in your browser (including the separate admin session and the PKCE check when logging in with Google or Apple) and of third-party services; icons and libraries are now served from klendar.app, without Google Fonts or jsDelivr.</li>
   <li><strong>29 September 2026</strong>: Current version of the terms (2026-09-29).</li>
 </ul>
 

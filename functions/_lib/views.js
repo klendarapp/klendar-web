@@ -638,7 +638,7 @@ export async function businessPage(param, lang, search = '') {
   // ficha. Lo hace el navegador, con la sesión de «Tu cuenta».
   const visita = new URLSearchParams(search).get('visita') || '';
   const conVisita = /^[A-Za-z0-9_-]{16}$/.test(visita)
-    ? `<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js" integrity="sha384-Rj26LVGvoeRVR6+mwQmFfcR3QOBEwT+ZmuCWpuiqeTzJpCs0ER4ITAWGb4Hiy3Ok" crossorigin="anonymous" defer></script>
+    ? `<script src="/assets/vendor/supabase-js-2.117.2.js" integrity="sha384-Rj26LVGvoeRVR6+mwQmFfcR3QOBEwT+ZmuCWpuiqeTzJpCs0ER4ITAWGb4Hiy3Ok" crossorigin="anonymous" defer></script>
 <script src="/config.js?v=3" defer></script>
 <script src="/assets/visita.js?v=3" defer data-token="${esc(visita)}" data-lang="${en ? 'en' : 'es'}"></script>`
     : '';

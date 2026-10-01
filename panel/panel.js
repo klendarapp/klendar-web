@@ -264,7 +264,9 @@ function cargaJsQR() {
   if (!JSQR) {
     JSQR = new Promise((ok, ko) => {
       const js = document.createElement('script');
-      js.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js';
+      // jsQR 1.4.0, servido desde klendar.app (mismo archivo que el de npm).
+      js.src = '/assets/vendor/jsqr-1.4.0.js';
+      js.integrity = 'sha384-b5Ya4Bq3qCyz39m2ISh+4DxjAIljdeFwK/BsXLuj9gugaNwAcj/ia15fxNZL9Nlx';
       js.onload = () => ok(window.jsQR);
       js.onerror = () => { JSQR = null; ko(new Error('jsqr')); };
       document.head.append(js);

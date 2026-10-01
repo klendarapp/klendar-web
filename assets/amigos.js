@@ -81,8 +81,8 @@
   }
   if (!sesionGuardada()) return;
 
-  // Con `integrity`, el navegador comprueba que el archivo del CDN es
-  // exactamente el esperado (versión fija de supabase-js).
+  // Con `integrity`, el navegador comprueba que el archivo es exactamente
+  // el esperado (supabase-js 2.117.2, servido desde klendar.app).
   function carga(src, integrity) {
     return new Promise(function (ok, ko) {
       var s = document.createElement('script');
@@ -137,7 +137,7 @@
       var env = window.KLENDAR_ENV;
       var ref = env && (env.url.match(/^https:\/\/([a-z0-9]+)\./) || [])[1];
       if (!env || !sesionGuardada(ref)) return null;
-      return (window.supabase ? Promise.resolve() : carga('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js',
+      return (window.supabase ? Promise.resolve() : carga('/assets/vendor/supabase-js-2.117.2.js',
           'sha384-Rj26LVGvoeRVR6+mwQmFfcR3QOBEwT+ZmuCWpuiqeTzJpCs0ER4ITAWGb4Hiy3Ok'))
         .then(function () {
           // El mismo cliente que visita.js si ya lo ha creado (uno por página,

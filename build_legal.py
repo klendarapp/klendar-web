@@ -142,9 +142,9 @@ CAMBIOS = {
     'aviso-legal': [_INICIO],
     'privacidad': [
         ('1 de octubre de 2026',
-         'Denuncias sin cuenta; las estadísticas de uso de la app, con consentimiento y aparte de los informes de errores; tratamientos de avisos «Avísame si…», resúmenes por correo, mensajes de tus favoritos, sugerencias, seguridad e historial de consentimientos; encargados, transferencias y plazos al día.',
+         'Denuncias sin cuenta; las estadísticas de uso de la app, con consentimiento y aparte de los informes de errores; tratamientos de avisos «Avísame si…», resúmenes por correo, mensajes de tus favoritos, sugerencias, seguridad e historial de consentimientos; encargados, transferencias y plazos al día; los iconos y las librerías de la web, desde klendar.app.',
          '1 October 2026',
-         'Reports without an account; app usage statistics, based on consent and separate from crash reports; processing for “Tell me when…” alerts, email summaries, messages from your favourites, suggestions, security and consent history; processors, transfers and retention periods brought up to date.'),
+         'Reports without an account; app usage statistics, based on consent and separate from crash reports; processing for “Tell me when…” alerts, email summaries, messages from your favourites, suggestions, security and consent history; processors, transfers and retention periods brought up to date; icons and libraries for the website, served from klendar.app.'),
         _INICIO],
     'terminos': [
         ('1 de octubre de 2026',
@@ -159,8 +159,8 @@ CAMBIOS = {
          'Service description brought up to date (section 2); honouring stamp rewards and the birthday gift, final price including VAT and the 30-day previous price in reductions (section 3); automatic moderation and 6 months to ask for a review (section 6).'),
         _INICIO],
     'cookies': [
-        ('1 de octubre de 2026', 'Inventario al día de lo que se guarda en el navegador y de los servicios de terceros.',
-         '1 October 2026', 'Up-to-date list of what is stored in your browser and of third-party services.'),
+        ('1 de octubre de 2026', 'Inventario al día de lo que se guarda en el navegador (también la sesión aparte de la administración y la comprobación PKCE al entrar con Google o Apple) y de los servicios de terceros; los iconos y las librerías ya se sirven desde klendar.app, sin Google Fonts ni jsDelivr.',
+         '1 October 2026', 'Up-to-date list of what is stored in your browser (including the separate admin session and the PKCE check when logging in with Google or Apple) and of third-party services; icons and libraries are now served from klendar.app, without Google Fonts or jsDelivr.'),
         _INICIO],
     'normas': [
         ('1 de octubre de 2026',
@@ -485,7 +485,7 @@ def textos(D, resaltar=False):
   <li><strong>Resend</strong> (envío de correos: los de tu cuenta, los avisos, los resúmenes por correo y las respuestas a quien denuncia sin cuenta; recibe tu dirección de correo y el contenido del mensaje; Plus Five Five, Inc., EE. UU.; transferencia internacional amparada en el Marco de Privacidad de Datos UE-EE. UU., al que Resend está adherido, y en las cláusulas contractuales tipo de la Comisión Europea que incluye su contrato de encargo).</li>
 </ul>
 <p>Si entras con tu cuenta de <strong>Apple</strong> («Continuar con Apple»), Apple (Apple Distribution International Ltd., Irlanda) comprueba tu identidad y nos comunica un identificador, tu nombre y tu correo, o una dirección de reenvío privada de Apple si eliges ocultar el tuyo. Apple trata esos datos como responsable independiente, según su propia política de privacidad; nosotros solo recibimos lo indicado. Lo mismo ocurre con <strong>Google</strong> si entras con tu cuenta de Google (más abajo).</p>
-<p>Si añades un canje a <strong>Google Wallet</strong>, Google recibe los datos del pase (oferta, negocio y código) como responsable independiente. Algunas páginas de la web cargan los iconos de <strong>Google Fonts</strong> y una librería de <strong>jsDelivr</strong>, que reciben tu dirección IP (más detalle en la <a href="/cookies/">política de cookies</a>).</p>
+<p>Si añades un canje a <strong>Google Wallet</strong>, Google recibe los datos del pase (oferta, negocio y código) como responsable independiente. Los iconos, las fuentes y las librerías de la web se sirven desde klendar.app: tu navegador no los pide a Google Fonts ni a ningún otro servicio (más detalle en la <a href="/cookies/">política de cookies</a>).</p>
 <p>Las <strong>denuncias</strong> solo las ve el equipo de Klendar. No se las damos a quien publicó el contenido denunciado; solo las comunicamos a las autoridades si hay indicios de un delito (art. 18 del Reglamento (UE) 2022/2065) o si nos lo pide un juez o la autoridad competente.</p>
 <p>Los <strong>negocios</strong> ven tu nombre mostrado cuando canjeas una oferta o publicas una reseña, y estadísticas agregadas (nunca tu email ni tu ubicación).</p>
 <p>Tus <strong>amigos</strong> en Klendar (solo las personas con las que te has hecho amigo con un enlace de amigo) ven tu nombre mostrado y tu foto y, si no lo apagas, a qué planes vas («Voy», una plaza reservada o un código). Nadie más lo ve: ni otras personas ni los negocios, que tampoco saben quién es amigo de quién.</p>
@@ -556,7 +556,7 @@ def textos(D, resaltar=False):
   <li><strong>Resend</strong> (sending emails: your account emails, alerts, email summaries and replies to people who report without an account; it receives your email address and the content of the message; Plus Five Five, Inc., USA; international transfer covered by the EU-US Data Privacy Framework, to which Resend has self-certified, and by the European Commission's standard contractual clauses included in its data processing agreement).</li>
 </ul>
 <p>If you log in with your <strong>Apple</strong> account (“Continue with Apple”), Apple (Apple Distribution International Ltd., Ireland) verifies your identity and gives us an identifier, your name and your email, or a private Apple relay address if you choose to hide yours. Apple processes that data as an independent controller, under its own privacy policy; we only receive what is listed here. The same applies to <strong>Google</strong> if you log in with your Google account (see below).</p>
-<p>If you add a redemption to <strong>Google Wallet</strong>, Google receives the pass data (deal, business and code) as an independent controller. Some pages of the website load icons from <strong>Google Fonts</strong> and a library from <strong>jsDelivr</strong>, which receive your IP address (more detail in the <a href="/en/cookies/">cookie policy</a>).</p>
+<p>If you add a redemption to <strong>Google Wallet</strong>, Google receives the pass data (deal, business and code) as an independent controller. The website's icons, fonts and libraries are served from klendar.app: your browser does not request them from Google Fonts or any other service (more detail in the <a href="/en/cookies/">cookie policy</a>).</p>
 <p><strong>Reports</strong> are only seen by the Klendar team. We never give them to the person who posted the reported content; we only pass them on to the authorities if there are signs of a criminal offence (art. 18 of Regulation (EU) 2022/2065) or if a court or the competent authority requires it.</p>
 <p><strong>Businesses</strong> see your display name when you redeem a deal or post a review, plus aggregate statistics (never your email or your location).</p>
 <p>Your <strong>friends</strong> on Klendar (only the people you have become friends with through a friend link) see your display name and photo and, unless you turn it off, which plans you're going to (“I'm going”, a reserved place or a code). Nobody else sees it: not other people and not businesses, who don't know who is friends with whom either.</p>
@@ -769,7 +769,11 @@ def textos(D, resaltar=False):
 <table>
 <tr><th>Nombre</th><th>Dónde</th><th>Para qué</th><th>Cuánto dura</th><th>Tipo</th></tr>
 <tr><td><code>klendar_lang</code></td><td>Todo klendar.app (almacenamiento local)</td><td>Recordar el idioma que eliges con ES/EN</td><td>Hasta que lo borres</td><td>Preferencia elegida por ti</td></tr>
-<tr><td><code>sb-…-auth-token</code></td><td>«Tu cuenta», panel y administración (almacenamiento local)</td><td>Mantener tu sesión iniciada</td><td>Hasta que cierres sesión</td><td>Técnica (autenticación)</td></tr>
+<tr><td><code>sb-…-auth-token</code></td><td>«Tu cuenta» y panel (almacenamiento local)</td><td>Mantener tu sesión iniciada</td><td>Hasta que cierres sesión</td><td>Técnica (autenticación)</td></tr>
+<tr><td><code>sb-…-auth-token-…code-verifier</code></td><td>«Tu cuenta» y panel (almacenamiento local)</td><td>Un secreto de un solo uso que comprueba que la vuelta de Google o Apple llega al mismo navegador en el que empezaste a entrar (PKCE)</td><td>Hasta terminar de entrar o cerrar sesión</td><td>Técnica (seguridad)</td></tr>
+<tr><td><code>sb-…-admin-auth-token</code></td><td>Administración (almacenamiento local)</td><td>Mantener la sesión de administración, aparte de la de «Tu cuenta»</td><td>Hasta que cierres sesión, tras 30 minutos sin actividad o a las 12 horas</td><td>Técnica (autenticación)</td></tr>
+<tr><td><code>klendar.admin.actividad</code>, <code>klendar.admin.cierre</code></td><td>Administración (almacenamiento local)</td><td>Cuándo hubo actividad por última vez (para cerrar la sesión tras 30 minutos sin ella) y por qué se cerró, para decírtelo</td><td>Hasta la siguiente vez que entres</td><td>Técnica (seguridad)</td></tr>
+<tr><td><code>klendar.acceso.aviso</code></td><td>«Tu cuenta» y panel (almacenamiento de sesión)</td><td>Avisarte si un enlace del correo ha caducado o ya se usó</td><td>Hasta enseñar el aviso o cerrar la pestaña</td><td>Técnica</td></tr>
 <tr><td><code>klendar.intencion</code></td><td>Fichas y «Tu cuenta» (almacenamiento de sesión)</td><td>Recordar el botón que acabas de pulsar (guardar, reservar, conseguir el código…) para hacerlo al volver de entrar, y no hacerlo nunca si llegas por un enlace de fuera</td><td>Hasta usarlo, 15 minutos como mucho o cerrar la pestaña</td><td>Técnica (seguridad)</td></tr>
 <tr><td><code>klendar.biz</code></td><td>Panel del negocio</td><td>Recordar qué negocio estabas gestionando</td><td>Hasta que cierres sesión</td><td>Técnica</td></tr>
 <tr><td><code>klendar.cola.…</code></td><td>Panel del negocio</td><td>Guardar los códigos validados sin conexión hasta que vuelva la red</td><td>Hasta que se envían o cierras sesión</td><td>Técnica</td></tr>
@@ -782,10 +786,9 @@ def textos(D, resaltar=False):
 <p>Reciben tu dirección IP, como cualquier web que visitas, y no guardan cookies:</p>
 <ul>
   <li><strong>Mapbox</strong>: los mapas de Explorar y del panel. Al cargar un mapa, Mapbox recibe el aviso de «mapa cargado» con el que factura.</li>
-  <li><strong>Google Fonts</strong>: los iconos de «Tu cuenta», del panel, de la administración y de los carteles para imprimir.</li>
-  <li><strong>jsDelivr</strong>: la librería con la que «Tu cuenta» y el panel se conectan a nuestra base de datos.</li>
   <li><strong>Cloudflare Turnstile</strong>: cuando está activada, la comprobación anti-robots al entrar y al denunciar sin cuenta.</li>
 </ul>
+<p>Las fuentes, los iconos y las librerías (también la que conecta «Tu cuenta», el panel y la administración con nuestra base de datos) se sirven desde klendar.app, sin pasar por Google Fonts ni por otros servicios.</p>
 <h2>Cómo borrarlo</h2>
 <p>Al cerrar sesión se borran la sesión y lo del panel. Todo lo demás lo puedes borrar desde la configuración de tu navegador («Borrar datos de navegación» o «Datos de sitios»).</p>
 <h2>La app</h2>
@@ -798,7 +801,11 @@ def textos(D, resaltar=False):
 <table>
 <tr><th>Name</th><th>Where</th><th>Purpose</th><th>How long</th><th>Type</th></tr>
 <tr><td><code>klendar_lang</code></td><td>All of klendar.app (local storage)</td><td>Remember the language you pick with ES/EN</td><td>Until you delete it</td><td>Preference you chose</td></tr>
-<tr><td><code>sb-…-auth-token</code></td><td>“Your account”, business dashboard and admin (local storage)</td><td>Keep you logged in</td><td>Until you log out</td><td>Technical (authentication)</td></tr>
+<tr><td><code>sb-…-auth-token</code></td><td>“Your account” and business dashboard (local storage)</td><td>Keep you logged in</td><td>Until you log out</td><td>Technical (authentication)</td></tr>
+<tr><td><code>sb-…-auth-token-…code-verifier</code></td><td>“Your account” and business dashboard (local storage)</td><td>A one-time secret that checks that the return from Google or Apple reaches the same browser where you started logging in (PKCE)</td><td>Until you finish logging in or log out</td><td>Technical (security)</td></tr>
+<tr><td><code>sb-…-admin-auth-token</code></td><td>Admin (local storage)</td><td>Keep the admin session, separate from the “Your account” one</td><td>Until you log out, after 30 minutes of inactivity or after 12 hours</td><td>Technical (authentication)</td></tr>
+<tr><td><code>klendar.admin.actividad</code>, <code>klendar.admin.cierre</code></td><td>Admin (local storage)</td><td>When there was last activity (to log out after 30 minutes without any) and why the session was closed, so we can tell you</td><td>Until the next time you log in</td><td>Technical (security)</td></tr>
+<tr><td><code>klendar.acceso.aviso</code></td><td>“Your account” and business dashboard (session storage)</td><td>Tell you if an email link has expired or was already used</td><td>Until the notice is shown or the tab is closed</td><td>Technical</td></tr>
 <tr><td><code>klendar.intencion</code></td><td>Publication and business pages and “Your account” (session storage)</td><td>Remember the button you just pressed (save, reserve, get the code…) so it's done once you've logged in, and never done if you arrive through an outside link</td><td>Until it's used, 15 minutes at most or until the tab is closed</td><td>Technical (security)</td></tr>
 <tr><td><code>klendar.biz</code></td><td>Business dashboard</td><td>Remember which business you were managing</td><td>Until you log out</td><td>Technical</td></tr>
 <tr><td><code>klendar.cola.…</code></td><td>Business dashboard</td><td>Keep codes validated offline until the connection is back</td><td>Until they are sent or you log out</td><td>Technical</td></tr>
@@ -811,10 +818,9 @@ def textos(D, resaltar=False):
 <p>They receive your IP address, like any website you visit, and set no cookies:</p>
 <ul>
   <li><strong>Mapbox</strong>: the maps in Explore and in the business dashboard. When a map loads, Mapbox receives the “map loaded” event it uses for billing.</li>
-  <li><strong>Google Fonts</strong>: the icons in “Your account”, the business dashboard, admin and the printable posters.</li>
-  <li><strong>jsDelivr</strong>: the library “Your account” and the dashboard use to connect to our database.</li>
   <li><strong>Cloudflare Turnstile</strong>: when enabled, the anti-bot check when you log in and when you report without an account.</li>
 </ul>
+<p>Fonts, icons and libraries (including the one that connects “Your account”, the business dashboard and admin to our database) are served from klendar.app, without going through Google Fonts or any other service.</p>
 <h2>How to delete it</h2>
 <p>Logging out deletes the session and the dashboard data. You can delete everything else in your browser settings (“Clear browsing data” or “Site data”).</p>
 <h2>The app</h2>

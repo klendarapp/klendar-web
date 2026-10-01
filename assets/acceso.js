@@ -81,11 +81,33 @@
     return 'acceso';
   }
 
+  /** Borra los verificadores PKCE que se hayan quedado (`<clave>-…code-verifier`).
+   * supabase-js los guarda al pedir un código o un enlace y solo los gasta si
+   * la vuelta trae `?code=`; con los enlaces de `token_hash` o el código de 6
+   * cifras se quedarían para siempre. La política de cookies dice «hasta
+   * terminar de entrar o cerrar sesión». */
+  function olvidaVerificadores(clave) {
+    try {
+      for (var i = localStorage.length - 1; i >= 0; i--) {
+        var k = localStorage.key(i);
+        if (k && k.indexOf(clave + '-') === 0 && /code-verifier$/.test(k)) localStorage.removeItem(k);
+      }
+    } catch (e) { /* sin almacenamiento */ }
+  }
+  window.KL_OLVIDA_VERIFICADORES = olvidaVerificadores;
+
   window.KL_SUPABASE = function (auth) {
     var env = window.KLENDAR_ENV || {};
-    return window.supabase.createClient(env.url, env.key, {
-      auth: Object.assign({ flowType: 'pkce' }, auth || {}),
+    var opciones = Object.assign({ flowType: 'pkce' }, auth || {});
+    var sb = window.supabase.createClient(env.url, env.key, { auth: opciones });
+    var ref = (String(env.url || '').match(/^https:\/\/([a-z0-9]+)\./) || [])[1] || '';
+    var clave = opciones.storageKey || 'sb-' + ref + '-auth-token';
+    // Con sesión (ya se ha entrado: el canje de `?code=` ya ha pasado) o al
+    // salir, los verificadores sobran.
+    sb.auth.onAuthStateChange(function (ev, s) {
+      if (s || ev === 'SIGNED_OUT') setTimeout(function () { olvidaVerificadores(clave); }, 0);
     });
+    return sb;
   };
 
   var pendiente = null;

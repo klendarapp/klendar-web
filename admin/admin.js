@@ -320,7 +320,19 @@ $('#doReset').onclick = () => {
 };
 $('#password').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('#doLogin').click(); });
 $('#logout').onclick = (e) => { e.preventDefault(); cierraSesion(null); };
-sb.auth.onAuthStateChange((ev) => {
+sb.auth.onAuthStateChange((ev, s) => {
+  // Los verificadores PKCE que deja pedir el enlace de la contraseña: con
+  // sesión o al salir, sobran (assets/acceso.js hace lo mismo en «Tu cuenta»).
+  if (s || ev === 'SIGNED_OUT') {
+    setTimeout(() => {
+      try {
+        for (let i = localStorage.length - 1; i >= 0; i--) {
+          const k = localStorage.key(i);
+          if (k?.startsWith(`sb-${REF}-admin-auth-token-`) && k.endsWith('code-verifier')) localStorage.removeItem(k);
+        }
+      } catch { /* sin almacenamiento */ }
+    }, 0);
+  }
   if (ev === 'SIGNED_OUT') showLogin();
   if (ev === 'PASSWORD_RECOVERY') location.href = '/app/?destino=%2Fadmin%2F#/nueva-clave';
 });

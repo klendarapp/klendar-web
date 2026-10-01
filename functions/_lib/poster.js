@@ -9,6 +9,17 @@ import { erroresScript, esc, html, isUuid, rpc } from './page.js';
 import { benefit, fmtDay, fmtEnd, fmtTime, zonaDe } from './public.js';
 import { notFound } from './views.js';
 
+// Sora y Manrope, las de toda la web (assets/site.css), servidas desde
+// klendar.app: el cartel no pide nada a Google Fonts.
+const FUENTES = `@font-face { font-family: Manrope; font-style: normal; font-weight: 400 800; font-display: swap;
+  src: url(/assets/fonts/manrope-latin.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: Manrope; font-style: normal; font-weight: 400 800; font-display: swap;
+  src: url(/assets/fonts/manrope-latin-ext.woff2) format('woff2'); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: Sora; font-style: normal; font-weight: 600 800; font-display: swap;
+  src: url(/assets/fonts/sora-latin.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: Sora; font-style: normal; font-weight: 600 800; font-display: swap;
+  src: url(/assets/fonts/sora-latin-ext.woff2) format('woff2'); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }`;
+
 const T = {
   es: {
     lang: 'es', path: '', title: 'Cartel', scan: 'Apunta con la cámara del móvil', print: 'Imprimir',
@@ -42,9 +53,7 @@ ${erroresScript()}
 <meta name="robots" content="noindex">
 <title>${esc(S.title)} · ${esc(o.title)} · Klendar</title>
 <link rel="icon" href="/favicon.ico" sizes="48x48"><link rel="icon" type="image/png" sizes="96x96" href="/assets/favicon-96.png"><link rel="manifest" href="/site.webmanifest">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=Manrope:wght@500;700&display=swap" rel="stylesheet">
+<style>${FUENTES}</style>
 <style>
   :root { color-scheme: light; }
   * { box-sizing: border-box; }
@@ -145,9 +154,7 @@ ${erroresScript()}
 <meta name="robots" content="noindex">
 <title>${esc(titulo)} · Klendar</title>
 <link rel="icon" href="/favicon.ico" sizes="48x48"><link rel="icon" type="image/png" sizes="96x96" href="/assets/favicon-96.png"><link rel="manifest" href="/site.webmanifest">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=Manrope:wght@500;600;700&display=swap" rel="stylesheet">`;
+<style>${FUENTES}</style>`;
 
 export async function venuePosterPage(token, lang, mesa) {
   const S = TV[lang === 'en' ? 'en' : 'es'];

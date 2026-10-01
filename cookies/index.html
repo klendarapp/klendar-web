@@ -63,7 +63,11 @@
 <table>
 <tr><th>Nombre</th><th>Dónde</th><th>Para qué</th><th>Cuánto dura</th><th>Tipo</th></tr>
 <tr><td><code>klendar_lang</code></td><td>Todo klendar.app (almacenamiento local)</td><td>Recordar el idioma que eliges con ES/EN</td><td>Hasta que lo borres</td><td>Preferencia elegida por ti</td></tr>
-<tr><td><code>sb-…-auth-token</code></td><td>«Tu cuenta», panel y administración (almacenamiento local)</td><td>Mantener tu sesión iniciada</td><td>Hasta que cierres sesión</td><td>Técnica (autenticación)</td></tr>
+<tr><td><code>sb-…-auth-token</code></td><td>«Tu cuenta» y panel (almacenamiento local)</td><td>Mantener tu sesión iniciada</td><td>Hasta que cierres sesión</td><td>Técnica (autenticación)</td></tr>
+<tr><td><code>sb-…-auth-token-…code-verifier</code></td><td>«Tu cuenta» y panel (almacenamiento local)</td><td>Un secreto de un solo uso que comprueba que la vuelta de Google o Apple llega al mismo navegador en el que empezaste a entrar (PKCE)</td><td>Hasta terminar de entrar o cerrar sesión</td><td>Técnica (seguridad)</td></tr>
+<tr><td><code>sb-…-admin-auth-token</code></td><td>Administración (almacenamiento local)</td><td>Mantener la sesión de administración, aparte de la de «Tu cuenta»</td><td>Hasta que cierres sesión, tras 30 minutos sin actividad o a las 12 horas</td><td>Técnica (autenticación)</td></tr>
+<tr><td><code>klendar.admin.actividad</code>, <code>klendar.admin.cierre</code></td><td>Administración (almacenamiento local)</td><td>Cuándo hubo actividad por última vez (para cerrar la sesión tras 30 minutos sin ella) y por qué se cerró, para decírtelo</td><td>Hasta la siguiente vez que entres</td><td>Técnica (seguridad)</td></tr>
+<tr><td><code>klendar.acceso.aviso</code></td><td>«Tu cuenta» y panel (almacenamiento de sesión)</td><td>Avisarte si un enlace del correo ha caducado o ya se usó</td><td>Hasta enseñar el aviso o cerrar la pestaña</td><td>Técnica</td></tr>
 <tr><td><code>klendar.intencion</code></td><td>Fichas y «Tu cuenta» (almacenamiento de sesión)</td><td>Recordar el botón que acabas de pulsar (guardar, reservar, conseguir el código…) para hacerlo al volver de entrar, y no hacerlo nunca si llegas por un enlace de fuera</td><td>Hasta usarlo, 15 minutos como mucho o cerrar la pestaña</td><td>Técnica (seguridad)</td></tr>
 <tr><td><code>klendar.biz</code></td><td>Panel del negocio</td><td>Recordar qué negocio estabas gestionando</td><td>Hasta que cierres sesión</td><td>Técnica</td></tr>
 <tr><td><code>klendar.cola.…</code></td><td>Panel del negocio</td><td>Guardar los códigos validados sin conexión hasta que vuelva la red</td><td>Hasta que se envían o cierras sesión</td><td>Técnica</td></tr>
@@ -76,10 +80,9 @@
 <p>Reciben tu dirección IP, como cualquier web que visitas, y no guardan cookies:</p>
 <ul>
   <li><strong>Mapbox</strong>: los mapas de Explorar y del panel. Al cargar un mapa, Mapbox recibe el aviso de «mapa cargado» con el que factura.</li>
-  <li><strong>Google Fonts</strong>: los iconos de «Tu cuenta», del panel, de la administración y de los carteles para imprimir.</li>
-  <li><strong>jsDelivr</strong>: la librería con la que «Tu cuenta» y el panel se conectan a nuestra base de datos.</li>
   <li><strong>Cloudflare Turnstile</strong>: cuando está activada, la comprobación anti-robots al entrar y al denunciar sin cuenta.</li>
 </ul>
+<p>Las fuentes, los iconos y las librerías (también la que conecta «Tu cuenta», el panel y la administración con nuestra base de datos) se sirven desde klendar.app, sin pasar por Google Fonts ni por otros servicios.</p>
 <h2>Cómo borrarlo</h2>
 <p>Al cerrar sesión se borran la sesión y lo del panel. Todo lo demás lo puedes borrar desde la configuración de tu navegador («Borrar datos de navegación» o «Datos de sitios»).</p>
 <h2>La app</h2>
@@ -87,7 +90,7 @@
 
 <h2 class="cambios">Historial de cambios</h2>
 <ul>
-  <li><strong>1 de octubre de 2026</strong>: Inventario al día de lo que se guarda en el navegador y de los servicios de terceros.</li>
+  <li><strong>1 de octubre de 2026</strong>: Inventario al día de lo que se guarda en el navegador (también la sesión aparte de la administración y la comprobación PKCE al entrar con Google o Apple) y de los servicios de terceros; los iconos y las librerías ya se sirven desde klendar.app, sin Google Fonts ni jsDelivr.</li>
   <li><strong>29 de septiembre de 2026</strong>: Versión vigente de los términos (2026-09-29).</li>
 </ul>
 
