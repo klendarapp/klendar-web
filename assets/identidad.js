@@ -17,6 +17,7 @@
  *   const id = await KL_IDENTIDAD(sb);         // null si la cuenta no tiene correo
  *   await id.conClave(clave) | await id.mandarCodigo(); await id.conCodigo('123456');
  *   await id.cambiarClave(nueva);              // opcional
+ *   await id.cambiarCorreo(nuevo);             // opcional (códigos en los dos correos)
  *   await id.cerrar();                         // siempre, al acabar o cancelar
  *
  *   KL_IDENTIDAD.reciente(sb, ['otp'], 600)    // ¿se entró así hace poco?
@@ -88,6 +89,13 @@
           falla((await sb.auth.setSession({ access_token: s.session.access_token, refresh_token: s.session.refresh_token })).error);
           adoptada = true;
         }
+      },
+      /** Pide cambiar el correo de acceso (con la sesión recién abierta).
+       * Con «Secure email change» llega un código y un enlace al correo
+       * nuevo y otro al de ahora; los enlaces vuelven a «Tu cuenta». */
+      async cambiarCorreo(nuevo) {
+        falla((await aparte.auth.updateUser({ email: String(nuevo).trim() },
+          { emailRedirectTo: `${location.origin}/app/?siguiente=ajustes` })).error);
       },
       async cerrar() {
         if (adoptada) return;

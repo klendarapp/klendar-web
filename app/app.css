@@ -329,3 +329,11 @@ button.codigo.copiar .ms { font-size: 18px; color: var(--ink-2); letter-spacing:
 .inv-eq-t b { display: block; font-size: 17px; }
 .dos-pills { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0 0 !important; }
 .dos-pills .pill { justify-content: center; width: 100%; }
+
+/* El correo que rebota (correo.js) y lo que se pierde al eliminar la cuenta. */
+.aviso-correo { margin: 0 0 14px; align-items: flex-start; }
+.aviso-correo .fila-t small b { color: var(--ink); }
+.aviso-correo .acciones { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.dialogo-lista { margin: 0 0 16px; padding-left: 20px; font-size: 14px; max-height: 40vh; overflow-y: auto; }
+.dialogo-lista li + li { margin-top: 4px; }
+.dialogo-lista li:first-child { list-style: none; margin-left: -20px; font-weight: 700; }

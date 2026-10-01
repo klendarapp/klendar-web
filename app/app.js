@@ -103,6 +103,7 @@ const ERRORES = {
   'rate limit': 'Demasiados intentos seguidos. Espera un minuto y vuelve a probar.',
   not_authenticated: 'Tienes que entrar en tu cuenta.',
   reauth_required: 'Por seguridad, vuelve a confirmar que eres tú.',
+  owns_business: 'Eres propietario de un negocio: dalo de baja o traspásalo antes de eliminar la cuenta.',
   image_not_allowed: 'Esa foto no se puede usar. Súbela desde Klendar.',
   offensive_name: 'Ese nombre no está permitido: no puede tener insultos ni palabras malsonantes. Elige otro.',
   offer_not_found: 'Esa publicación ya no existe.',
@@ -184,7 +185,8 @@ sb.auth.onAuthStateChange((ev, s) => {
     try {
       for (let i = localStorage.length - 1; i >= 0; i--) {
         const k = localStorage.key(i);
-        if (k && k.startsWith('klendar.cola.')) localStorage.removeItem(k);
+        // Y los códigos guardados para cuando no hay cobertura (por persona).
+        if (k && (k.startsWith('klendar.cola.') || k.startsWith('klendar.codigos.'))) localStorage.removeItem(k);
       }
       localStorage.removeItem('klendar.biz');
     } catch { /* sin permisos */ }
@@ -452,8 +454,12 @@ RUTAS[''] = async () => {
   const foto = YO.user_metadata?.avatar_url;
   const [negocios, invitaciones] = await Promise.all([
     llamar('my_businesses', {}).catch(() => []),
-    // Un negocio te ha invitado a su equipo: se contesta desde aquí.
-    llamar('my_team_invites', {}).catch(() => []),
+    // Un negocio te ha invitado a su equipo (o te ofrece ser su
+    // propietario): se contesta desde aquí.
+    Promise.all([
+      llamar('my_team_invites', {}).catch(() => []),
+      llamar('my_business_transfers', {}).catch(() => []),
+    ]).then(([a, b]) => [...(a || []), ...(b || [])]),
   ]);
   const tieneNegocio = Array.isArray(negocios) && negocios.length > 0;
   const nInv = Array.isArray(invitaciones) ? invitaciones.length : 0;
@@ -464,6 +470,8 @@ RUTAS[''] = async () => {
       <span class="perfil-t"><b>${esc(nombre)}</b><small>${esc(YO.email || '')}</small><em>${esc(t('Editar perfil'))}</em></span>
       ${ic('chevron_right')}
     </a>
+
+    <div id="aviso-correo"></div>
 
     ${nInv ? `<a class="invitacion inv-equipo" href="#/invitaciones">
         <span class="inv-ic">${ic('group_add')}</span>
@@ -515,6 +523,8 @@ RUTAS[''] = async () => {
 
     <button class="pill ancho" id="salir">${ic('logout')} ${esc(t('Cerrar sesión'))}</button>`);
   pintaSinLeer();
+  // Su correo nos devuelve los mensajes: que lo revise o lo cambie.
+  correoAvisoPortada($('#aviso-correo'));
   $('#salir').onclick = async () => {
     await sb.auth.signOut({ scope: 'local' }); // solo este navegador, como la app
     toast(t('Has cerrado sesión'));
@@ -603,13 +613,15 @@ function validaForm(form, reglas) {
 /** El diálogo de confirmar, como el de la app (confirmDialog): título,
  * explicación, «Cancelar» y la acción, en rojo si no tiene vuelta atrás.
  * Devuelve true solo si se confirma. */
-function confirma({ titulo, texto = '', aceptar, peligro = false, cancelar = t('Cancelar') }) {
+function confirma({ titulo, texto = '', lista = [], pie = '', aceptar, peligro = false, cancelar = t('Cancelar') }) {
   return new Promise((resolve) => {
     const d = document.createElement('dialog');
     d.className = 'dialogo';
     d.setAttribute('aria-labelledby', 'dialogo-t');
     d.innerHTML = `<h2 id="dialogo-t">${esc(titulo)}</h2>
       ${texto ? `<p class="muted">${esc(texto)}</p>` : ''}
+      ${lista.length ? `<ul class="dialogo-lista">${lista.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
+      ${pie ? `<p class="muted">${esc(pie)}</p>` : ''}
       <div class="dialogo-botones">
         <button type="button" class="pill" value="no">${esc(cancelar)}</button>
         <button type="button" class="pill ${peligro ? 'peligro-lleno' : 'accent'}" value="si">${esc(aceptar)}</button>
@@ -1363,6 +1375,81 @@ function filaCanje(r, tz) {
       </span></a>`;
 }
 
+// ── Códigos guardados para cuando no hay cobertura ────────────────────────
+// En la puerta de un local o en un sótano no siempre hay red, y «Tu código»
+// siempre lo pedía a la base. Los vivos que se ven (al sacarlo y en «Tus
+// códigos») se guardan en este navegador, por persona, y si no hay red se
+// enseña el guardado: el QR vale igual en el local. Al cerrar sesión se
+// borran (onAuthStateChange, arriba).
+const claveCodigos = () => (YO ? `klendar.codigos.${YO.id}` : null);
+function codigosGuardados() {
+  try {
+    const m = JSON.parse(localStorage.getItem(claveCodigos()) || '{}');
+    return m && typeof m === 'object' && !Array.isArray(m) ? m : {};
+  } catch { return {}; }
+}
+/** Guarda los códigos vivos de `filas` (start_redemption o my_redemptions),
+ * uno por publicación. `todos`: la lista entera de la base, que sustituye a
+ * lo guardado (lo usado o anulado desaparece). */
+function recuerdaCodigos(filas, todos = false) {
+  const clave = claveCodigos();
+  if (!clave) return;
+  const ahora = Date.now();
+  const m = todos ? {} : codigosGuardados();
+  for (const r of filas) {
+    if (!r?.offer_id || !r.code || !(new Date(r.expires_at).getTime() > ahora)) continue;
+    m[r.offer_id] = {
+      offer_id: r.offer_id, code: r.code, offer_title: r.offer_title || '', business_name: r.business_name || '',
+      expires_at: r.expires_at, seats: r.seats || 1, discount: r.discount || null,
+      price_cents: r.price_cents ?? null, currency: r.currency || 'EUR', tz: r.tz || null,
+    };
+  }
+  // Lo caducado no se guarda.
+  for (const [k, v] of Object.entries(m)) if (!(new Date(v.expires_at).getTime() > ahora)) delete m[k];
+  try { localStorage.setItem(clave, JSON.stringify(m)); } catch { /* sin espacio o sin permisos */ }
+}
+function olvidaCodigo(offerId) {
+  const m = codigosGuardados();
+  if (!m[offerId]) return;
+  delete m[offerId];
+  try { localStorage.setItem(claveCodigos(), JSON.stringify(m)); } catch { /* sin permisos */ }
+}
+/** El guardado de esa publicación, si sigue vivo. */
+function codigoGuardado(offerId) {
+  const g = codigosGuardados()[offerId];
+  return g && new Date(g.expires_at).getTime() > Date.now() ? g : null;
+}
+/** ¿El fallo es por no tener red? `llamar` trae la clave cruda de Supabase
+ * («Failed to fetch») o, si lanzó, el texto ya traducido. */
+const sinRedCuenta = (e) => navigator.onLine === false
+  || /Failed to fetch|NetworkError|network|Load failed/i.test(`${e?.clave || ''} ${e?.message || ''}`)
+  || e?.message === t('No hay conexión. Revisa tu internet y vuelve a probar.');
+/** El ticket del código guardado, sin red: el mismo QR, sin «anular» (que
+ * necesita la base). */
+function pintaCodigoGuardado(g) {
+  const benef = beneficio(g.discount, g.price_cents, g.currency);
+  pinta(`
+    <p class="crumbs"><a href="#/codigos">${esc(t('Tus códigos'))}</a></p>
+    <div class="ticket">
+      <p class="aviso-inv">${esc(t('Sin conexión: este es tu código guardado. Vale igual en el local.'))}</p>
+      <p class="muted">${esc(g.business_name || '')}</p>
+      <h1>${esc(g.offer_title || '')}</h1>
+      ${(g.seats || 1) > 1 ? `<p class="muted"><b>${g.seats} ${esc(t('plazas'))}</b></p>` : ''}
+      ${benef ? `<p><span class="tag grande">${esc(benef)}</span></p>` : ''}
+      <div class="qr" id="qr" role="img" aria-label="${esc(t('Código QR para que el negocio valide tu canje'))}"></div>
+      <p><button type="button" class="codigo copiar" id="copiar" aria-label="${esc(t('Copiar el código'))}">${esc(codigoLegible(g.code))} ${ic('content_copy')}</button></p>
+      <p class="muted">${esc(t('Vale hasta el'))} ${esc(fecha(g.expires_at, undefined, g.tz || undefined))}</p>
+      <p class="muted">${esc(t('Enséñalo en el sitio. Si no pueden escanearlo, que escriban el código de debajo.'))}</p>
+    </div>`);
+  $('#copiar')?.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(g.code); toast(t('Código copiado')); } catch { toast(t('No se ha podido copiar'), true); }
+  });
+  const qr = window.qrcode(0, 'M');
+  qr.addData(`https://klendar.app/r/${g.code}`);
+  qr.make();
+  $('#qr').innerHTML = qr.createSvgTag({ cellSize: 6, margin: 2, scalable: true });
+}
+
 RUTAS.codigos = async () => {
   if (!exigeSesion('codigos')) return;
   // Los regalos de cumpleaños van aparte y arriba; si fallan, los códigos
@@ -1374,6 +1461,9 @@ RUTAS.codigos = async () => {
     llamar('my_stamp_rewards', {}).catch(() => []),
   ]);
   const zona = await zonasDe(lista);
+  // Los vivos, guardados para enseñarlos sin cobertura (y fuera los demás).
+  recuerdaCodigos((lista || []).filter((r) => r.status === 'pending')
+    .map((r) => ({ ...r, tz: zona(r) })), true);
   const conRegalos = Array.isArray(regalos) && regalos.length > 0;
   const conPremios = Array.isArray(premios) && premios.length > 0;
   pinta(`
@@ -1532,6 +1622,10 @@ function pintaCanjeado({ titulo, negocio, benef, at, volver = '#/codigos', tz })
 RUTAS.codigo = async ([id], params, crudo) => {
   if (!exigeSesion(`codigo/${id}${params.toString() ? `?${params}` : ''}`)) return;
   const plazas = Math.max(1, Math.min(10, parseInt(params.get('plazas') || '1', 10) || 1));
+  // Sin red y con el código guardado: se enseña ya (no se pide nada a la base,
+  // así que no hace falta confirmar nada).
+  const guardado = codigoGuardado(id);
+  if (navigator.onLine === false && guardado) { pintaCodigoGuardado(guardado); return; }
   // Abierto desde fuera, no se saca el código (ni se reservan plazas) sin
   // pulsar: si ya lo tienes, el botón te lo enseña igual.
   if (!(await confirmaEnlace(crudo, {
@@ -1554,8 +1648,12 @@ RUTAS.codigo = async ([id], params, crudo) => {
       pintaExclusiva(e.datos?.audience, e.datos?.business_id, e.datos?.business_name);
       return;
     }
+    // Sin red: el guardado, si lo hay y no ha caducado; si no, el error.
+    const g = sinRedCuenta(e) ? codigoGuardado(id) : null;
+    if (g) { pintaCodigoGuardado(g); return; }
     throw e;
   }
+  recuerdaCodigos([{ ...tk, offer_id: id, tz }]);
   const url = `https://klendar.app/r/${tk.code}`;
   const caduca = new Date(tk.expires_at);
   const largo = caduca.getTime() - Date.now() > 3600 * 1000;
@@ -1600,6 +1698,7 @@ RUTAS.codigo = async ([id], params, crudo) => {
     boton.disabled = true;
     try {
       await llamar('cancel_redemption', { p_code: tk.code });
+      olvidaCodigo(id);
       toast(t('Reserva anulada. Gracias por dejar el sitio libre.'));
       vuelve('codigos');
     } catch (e) {
@@ -1617,9 +1716,10 @@ RUTAS.codigo = async ([id], params, crudo) => {
   $('#qr').innerHTML = qr.createSvgTag({ cellSize: 6, margin: 2, scalable: true });
 
   // En cuanto el negocio lo valida, esta pantalla se entera sola.
-  alSalir(vigilaCanje(tk.code, (at) => pintaCanjeado({
-    titulo: tk.offer_title, negocio: tk.business_name, benef, at, tz,
-  })));
+  alSalir(vigilaCanje(tk.code, (at) => {
+    olvidaCodigo(id); // ya está usado: no se enseña sin red
+    pintaCanjeado({ titulo: tk.offer_title, negocio: tk.business_name, benef, at, tz });
+  }));
 
   // La cuenta atrás, o hasta cuándo vale si queda más de una hora. Un código
   // largo (una entrada para el sábado) se mira cada 30 s, como en la app.
@@ -1789,6 +1889,9 @@ RUTAS.sellos = async () => {
         <div class="huecos" aria-label="${esc(`${c.stamps} / ${c.goal}`)}">${Array.from({ length: c.goal }, (_, i) => `<span class="${i < c.stamps ? 'lleno' : ''}"></span>`).join('')}</div>
         <p>${esc(t('Premio'))}: <b>${esc(c.reward)}</b></p>
         <p class="muted">${c.pending_code || c.stamps >= c.goal ? esc(t('¡Te toca premio!')) : esc(c.goal - c.stamps === 1 ? t('Te falta 1 sello') : (EN ? `${c.goal - c.stamps} stamps to go` : `Te faltan ${c.goal - c.stamps} sellos`))}</p>
+        ${c.card_goal != null && c.card_goal !== c.goal ? `<p class="muted">${esc(EN
+          ? `Your goal is ${c.goal}; for your next cards it's ${c.card_goal}.`
+          : `Tu meta es ${c.goal}; para las próximas tarjetas, ${c.card_goal}.`)}</p>` : ''}
         ${!c.is_active ? `<p class="muted">${esc(t('En pausa: ahora mismo no se dan sellos nuevos. Los tuyos siguen aquí.'))}</p>` : ''}
         ${c.pending_code || c.stamps >= c.goal ? `<button class="pill accent" data-premio="${esc(c.id)}" data-reward="${esc(c.reward)}" data-negocio="${esc(c.business_name)}" data-biz="${esc(c.business_id)}">${esc(c.pending_code ? t('Ver el código') : t('Pedir el premio'))}</button>` : ''}
       </div>`).join('')
@@ -1833,4 +1936,9 @@ addEventListener('DOMContentLoaded', navegar);
 ENLACE.then((r) => {
   if (r.tipo === 'signup') toast(t('Cuenta confirmada'));
   else if (r.tipo === 'magiclink' || r.tipo === 'email') toast(t('Dentro'));
+  // Cambio de correo: el primer enlace confirma uno de los dos correos; el
+  // segundo lo termina (y abre la sesión con el correo nuevo).
+  else if (r.tipo === 'email_change') {
+    toast(r.sesion ? t('Listo: tu correo ya está cambiado') : t('Confirmado desde este correo. Falta confirmarlo también desde el otro.'));
+  }
 });

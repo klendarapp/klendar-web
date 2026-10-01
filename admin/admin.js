@@ -74,7 +74,7 @@ const tag = (v, cls) => v ? `<span class="tag ${cls || 'st-' + esc(v)}">${esc(LA
 const modTag = (v) => (v === 'rejected' ? '<span class="tag st-rejected">retirada</span>' : tag(v));
 const LABELS = {
   pending: 'pendiente', verified: 'verificado', rejected: 'rechazado', approved: 'aprobada', active: 'activa', expired: 'caducada',
-  cancelled: 'cancelada', sold_out: 'agotada', draft: 'borrador', open: 'abierta', reviewing: 'en revisión', resolved: 'resuelta', dismissed: 'desestimada',
+  cancelled: 'cancelada', archived: 'archivada', sold_out: 'agotada', draft: 'borrador', open: 'abierta', reviewing: 'en revisión', resolved: 'resuelta', dismissed: 'desestimada',
   trial: 'prueba', past_due: 'impagada', validated: 'validado', failed: 'fallido', sent: 'enviado', skipped: 'omitido',
   flash_offer: 'oferta flash', future_event: 'evento', user: 'usuario', business: 'negocio', offer: 'publicación', review: 'reseña', post: 'novedad',
   owner: 'propietario', manager: 'encargado', staff: 'empleado', free: 'Gratis', basic: 'Básico', pro: 'Pro',
@@ -103,7 +103,7 @@ let RUTA_N = 0;
 class Obsoleta extends Error {
   constructor() { super(''); this.obsoleta = true; }
 }
-const ESCRIBE = /^admin_(set|record|send|delete|upsert|resolve|review|add|remove|push_retry|save|collection_(add|remove|move)|run|update)/;
+const ESCRIBE = /^admin_(set|record|send|delete|upsert|resolve|review|add|remove|push_retry|save|collection_(add|remove|move)|run|update|dismiss|merge)/;
 async function rpc(fn, args = {}) {
   const n = RUTA_N;
   const { data, error } = await sb.rpc(fn, args);
@@ -123,6 +123,13 @@ async function rpc(fn, args = {}) {
     if (msg.includes('not_admin')) throw new Error('Esta cuenta no es administradora.');
     // Eliminar una cuenta pide haber confirmado la contraseña hace poco.
     if (msg.includes('reauth_required')) throw new Error('Por seguridad, vuelve a confirmar que eres tú.');
+    // Dueña de un negocio: primero se traspasa o se elimina el negocio (con
+    // avisos a cada persona afectada), desde su ficha.
+    if (msg.includes('owns_business')) {
+      throw new Error(I18N.lang === 'en'
+        ? `This person owns a business (${error.details || ''}). Hand it over (make someone else the owner in its team) or delete it from its page first.`
+        : `Es propietaria de un negocio (${error.details || ''}). Traspásalo (pon a otra persona como propietaria en su equipo) o elimínalo desde su ficha antes.`);
+    }
     if (msg.includes('image_not_allowed')) throw new Error('Esa foto no se puede usar. Súbela desde Klendar.');
     if (/auth_required|JWT/.test(msg)) throw new Error(window.KL_AUTH_TEXT('sesion', I18N.lang));
     if (/Failed to fetch|NetworkError|Load failed/i.test(msg)) throw new Error(window.KL_AUTH_TEXT('sinRed', I18N.lang));
@@ -142,6 +149,13 @@ async function rpc(fn, args = {}) {
 const RPC_ERRORS = {
   cannot_ban_admin: 'No se puede suspender a un administrador.', cannot_delete_self: 'No puedes eliminar tu propia cuenta desde aquí.',
   cannot_delete_admin: 'Quita primero los permisos de administrador.', reason_required: 'Hace falta indicar un motivo.',
+  owner_needs_transfer: 'Al propietario no se le cambia el rol: nombra antes a otra persona propietaria.',
+  adult_required: 'Para ser propietario hace falta tener 18 años y la fecha de nacimiento en el perfil.',
+  min_age_16: 'Para entrar en un equipo hace falta tener 16 años y la fecha de nacimiento en el perfil.',
+  team_has_minors: 'Hay alguien en el equipo menor de 18 años (o sin fecha de nacimiento): quítalo del equipo antes de marcar el negocio como +18.',
+  member_suspended: 'Esa cuenta está suspendida y no puede entrar en un equipo.',
+  owner_suspended: 'El propietario sigue suspendido: levanta antes la suspensión.',
+  paused_by_klendar: 'Klendar pausó este negocio al suspender a su propietario: quita la pausa desde su ficha.',
   invalid_plan: 'Plan no válido.', invalid_status: 'Estado no válido.', no_subscription: 'El negocio no tiene suscripción vigente; asigna primero un plan.',
   user_not_found: 'No existe ningún usuario con ese email.', cannot_remove_self: 'No puedes quitarte a ti mismo.', last_admin: 'Tiene que quedar al menos un administrador.',
   category_in_use: 'La categoría está en uso (negocios, publicaciones o subcategorías).', slug_required: 'El identificador (slug) es obligatorio.',
@@ -680,9 +694,9 @@ document.addEventListener('keydown', (e) => { if (e.key === '/' && !/input|texta
 // ── Navegación ──────────────────────────────────────────────────────────────
 const NAV = [
   ['group', 'Actividad'],
-  ['resumen', 'dashboard', 'Resumen'], ['semanas', 'trending_up', 'Semana a semana'], ['ciudades', 'map', 'Ciudades'], ['negocios', 'storefront', 'Negocios'], ['publicaciones', 'bolt', 'Publicaciones'], ['canjes', 'confirmation_number', 'Canjes'], ['usuarios', 'person', 'Usuarios'],
+  ['resumen', 'dashboard', 'Resumen'], ['semanas', 'trending_up', 'Semana a semana'], ['ciudades', 'map', 'Ciudades'], ['negocios', 'storefront', 'Negocios'], ['publicaciones', 'bolt', 'Publicaciones'], ['canjes', 'confirmation_number', 'Canjes'], ['usuarios', 'person', 'Usuarios'], ['inactivas', 'hourglass_empty', 'Cuentas inactivas'],
   ['group', 'Moderación'],
-  ['denuncias', 'flag', 'Denuncias'], ['mensajes', 'campaign', 'Mensajes a clientes'], ['resenas', 'chat_bubble', 'Reseñas y novedades'], ['sugerencias', 'lightbulb', 'Sugerencias'],
+  ['denuncias', 'flag', 'Denuncias'], ['mensajes', 'campaign', 'Mensajes a clientes'], ['reclamaciones', 'how_to_reg', 'Reclamaciones'], ['duplicados', 'content_copy', 'Posibles duplicados'], ['resenas', 'chat_bubble', 'Reseñas y novedades'], ['sugerencias', 'lightbulb', 'Sugerencias'],
   ['group', 'Negocio'],
   ['planes', 'credit_card', 'Planes y pagos'], ['avisos', 'notifications', 'Notificaciones y push'],
   ['group', 'Sistema'],
@@ -690,6 +704,12 @@ const NAV = [
 ];
 let BADGES = {};
 let WEB_ERR = null;
+let BAJAS = null;
+// Negocios verificados que han cambiado de nombre, de ciudad o de sitio
+// (20261028100001) y negocios pausados al suspender a su propietario cuya
+// suspensión ya se ha levantado (20261028100000).
+let CAMBIOS = null;
+let PAUSAS = null;
 function renderNav(current) {
   // (al final se traduce; la lista se arma igual en los dos idiomas)
   $('#nav').innerHTML = NAV.map((n) => n[0] === 'group' ? `<div class="group">${n[1]}</div>`
@@ -709,7 +729,16 @@ async function refreshBadges(lanzar = false) {
     try { textos = (await rpc('admin_text_reviews', { p_limit: 1, p_offset: 0 })).total || 0; } catch { /* sin la función */ }
     // Errores de la web: los nuevos de las últimas 24 h (y lo demás para el Resumen).
     try { WEB_ERR = (await rpc('admin_web_errors', { p_status: 'open', p_limit: 1, p_offset: 0 })).counts || null; } catch { WEB_ERR = null; }
-    BADGES = { negocios: k.businesses_pending || 0, publicaciones: k.offers_pending || 0, denuncias: k.reports_open || 0, mensajes: msj, resenas: textos, sugerencias: sug, errores: WEB_ERR?.new_24h || 0 };
+    // Negocios que han pedido cancelar la suscripción (hasta Stripe, a mano).
+    try { BAJAS = await rpc('admin_subscription_cancellations', { p_status: 'pending', p_business: null, p_limit: 20, p_offset: 0 }); } catch { BAJAS = null; }
+    try { CAMBIOS = await rpc('admin_business_changes', { p_status: 'open', p_business: null, p_limit: 20, p_offset: 0 }); } catch { CAMBIOS = null; }
+    try { PAUSAS = (await rpc('admin_suspension_pauses', { p_user: null })).filter((x) => !x.owner_banned_at); } catch { PAUSAS = null; }
+    // «¿Es tu negocio?» pendientes y posibles duplicados (20261029100001).
+    let reclam = 0;
+    try { reclam = (await rpc('admin_business_claims', { p_status: 'pending', p_limit: 1, p_offset: 0 })).counts?.pending || 0; } catch { /* sin la función */ }
+    let dups = 0;
+    try { dups = ((await rpc('admin_duplicate_alerts', { p_limit: 200 })) || []).filter((x) => x.pending).length; } catch { /* sin la función */ }
+    BADGES = { reclamaciones: reclam, duplicados: dups, negocios: (k.businesses_pending || 0) + (CAMBIOS?.open || 0) + (PAUSAS?.length || 0), publicaciones: k.offers_pending || 0, denuncias: k.reports_open || 0, mensajes: msj, resenas: textos, sugerencias: sug, errores: WEB_ERR?.new_24h || 0 };
     Object.keys(BADGES).forEach((x) => { if (!BADGES[x]) delete BADGES[x]; });
     renderNav(currentRoute()[0]);
     return k;
@@ -838,7 +867,10 @@ PAGES.resumen = async (v) => {
       </div></a>`).join('')}
       ${nCal > calientes.rows.length ? `<p style="margin:6px 0 0"><a class="link" href="#/denuncias">${en ? `See all ${nCal}` : `Ver los ${nCal}`}</a></p>` : ''}
     </div>` : ''}
-    ${(k.businesses_pending || k.offers_pending || k.reports_open || k.subs_expiring_7d || k.push_failed_7d || BADGES.sugerencias || BADGES.mensajes || BADGES.errores) ? `<div class="card"><h2>Pendiente de ti</h2><div class="actions">
+    ${(k.businesses_pending || k.offers_pending || k.reports_open || k.subs_expiring_7d || k.push_failed_7d || BADGES.sugerencias || BADGES.mensajes || BADGES.errores || BAJAS?.pending || CAMBIOS?.open || PAUSAS?.length) ? `<div class="card"><h2>Pendiente de ti</h2><div class="actions">
+      ${CAMBIOS?.open ? `<button class="btn" type="button" data-ir="revisar">${ms('published_with_changes')} <b>${CAMBIOS.open}</b> ${en ? (CAMBIOS.open === 1 ? 'business to review again' : 'businesses to review again') : (CAMBIOS.open === 1 ? 'negocio para revisar de nuevo' : 'negocios para revisar de nuevo')}</button>` : ''}
+      ${PAUSAS?.length ? `<button class="btn" type="button" data-ir="pausas">${ms('pause_circle')} <b>${PAUSAS.length}</b> ${en ? (PAUSAS.length === 1 ? 'business paused by a suspension that has been lifted' : 'businesses paused by a suspension that has been lifted') : (PAUSAS.length === 1 ? 'negocio en pausa por una suspensión ya levantada' : 'negocios en pausa por una suspensión ya levantada')}</button>` : ''}
+      ${BAJAS?.pending ? `<button class="btn bad" type="button" data-ir-bajas>${ms('credit_card_off')} <b>${BAJAS.pending}</b> ${en ? (BAJAS.pending === 1 ? 'subscription cancellation to handle' : 'subscription cancellations to handle') : (BAJAS.pending === 1 ? 'cancelación de suscripción por gestionar' : 'cancelaciones de suscripción por gestionar')}</button>` : ''}
       ${nCal ? `<a class="btn bad" href="#/denuncias">${ms('report')} <b>${nCal}</b> ${en ? (nCal === 1 ? 'item with 3+ open reports' : 'items with 3+ open reports') : (nCal === 1 ? 'contenido con 3 o más denuncias' : 'contenidos con 3 o más denuncias')}</a>` : ''}
       ${k.businesses_pending ? `<a class="btn" href="#/negocios?status=pending">${ms('storefront')} <b>${k.businesses_pending}</b> ${en ? (k.businesses_pending === 1 ? 'business to verify' : 'businesses to verify') : (k.businesses_pending === 1 ? 'negocio por verificar' : 'negocios por verificar')}</a>` : ''}
       ${k.offers_pending ? `<a class="btn" href="#/publicaciones?moderation=pending">${ms('bolt')} <b>${k.offers_pending}</b> ${en ? (k.offers_pending === 1 ? 'publication to moderate' : 'publications to moderate') : (k.offers_pending === 1 ? 'publicación por moderar' : 'publicaciones por moderar')}</a>` : ''}
@@ -848,7 +880,7 @@ PAGES.resumen = async (v) => {
       ${BADGES.mensajes ? `<a class="btn" href="#/mensajes">${ms('campaign')} <b>${BADGES.mensajes}</b> ${en ? (BADGES.mensajes === 1 ? 'customer message to review' : 'customer messages to review') : (BADGES.mensajes === 1 ? 'mensaje a clientes por revisar' : 'mensajes a clientes por revisar')}</a>` : ''}
       ${BADGES.errores ? `<a class="btn" href="#/errores">${ms('bug_report')} <b>${BADGES.errores}</b> ${en ? (BADGES.errores === 1 ? 'new website error (24 h)' : 'new website errors (24 h)') : (BADGES.errores === 1 ? 'error nuevo en la web (24 h)' : 'errores nuevos en la web (24 h)')}</a>` : ''}
       ${BADGES.sugerencias ? `<a class="btn" href="#/sugerencias">${ms('lightbulb')} <b>${BADGES.sugerencias}</b> ${en ? (BADGES.sugerencias === 1 ? 'unread suggestion' : 'unread suggestions') : (BADGES.sugerencias === 1 ? 'sugerencia sin leer' : 'sugerencias sin leer')}</a>` : ''}
-    </div></div>` : '<div class="card"><h2>Todo al día</h2><p class="muted" style="margin:0">No hay negocios por verificar, publicaciones por moderar ni denuncias abiertas.</p></div>'}
+    </div></div>${tarjetaBajas(BAJAS?.items || [])}${tarjetaCambios(CAMBIOS?.rows || [])}${tarjetaPausas(PAUSAS || [])}` : '<div class="card"><h2>Todo al día</h2><p class="muted" style="margin:0">No hay negocios por verificar, publicaciones por moderar ni denuncias abiertas.</p></div>'}
     <div class="grid2">
       <div class="card"><h2>Usuarios</h2><div class="kpis">
         ${kpi(k.users_total, 'usuarios en total')} ${kpi(k.users_7d, 'nuevos (7 d)')} ${kpi(k.users_30d, 'nuevos (30 d)')}
@@ -888,6 +920,12 @@ PAGES.resumen = async (v) => {
       <div class="card"><h2>Negocios por ciudad</h2>${(k.by_city || []).length ? `<dl class="kv" style="grid-template-columns:1fr auto">${k.by_city.map((c) => `<dt>${esc(c.city)}</dt><dd>${c.verified}/${c.businesses}</dd>`).join('')}</dl><p class="muted small" style="margin:8px 0 0">verificados / total</p>` : '<p class="muted">—</p>'}</div>
     </div>`;
   $('#ctabs').onclick = (e) => { const b = e.target.closest('button'); if (!b) return; $$('#ctabs button').forEach((x) => x.classList.toggle('on', x === b)); $('#chart').innerHTML = bars(series, b.dataset.k, (s) => fmtDay(s.day)); };
+  activaBajas(v);
+  activaCambios(v);
+  activaPausas(v);
+  $$('[data-ir]', v).forEach((b) => { b.onclick = () => document.getElementById(b.dataset.ir)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+  const irBajas = $('[data-ir-bajas]', v);
+  if (irBajas) irBajas.onclick = () => document.getElementById('bajas')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 };
 
 // ── Negocios ────────────────────────────────────────────────────────────────
@@ -935,9 +973,20 @@ PAGES.negocios = async (v, id) => {
 };
 
 async function businessDetail(v, id) {
-  const d = await rpc('admin_business_detail', { p_id: id });
+  const [d, bajas, traspaso, cambios, duplicados] = await Promise.all([
+    rpc('admin_business_detail', { p_id: id }),
+    rpc('admin_subscription_cancellations', { p_status: 'all', p_business: id, p_limit: 20, p_offset: 0 }).catch(() => null),
+    rpc('admin_business_transfer', { p_id: id }).catch(() => null),
+    rpc('admin_business_changes', { p_status: 'all', p_business: id, p_limit: 20, p_offset: 0 }).catch(() => null),
+    rpc('admin_business_duplicates', { p_id: id }).catch(() => []),
+  ]);
   const b = d.business;
   if (!b) throw new Error('Negocio no encontrado.');
+  // Pausado por Klendar al suspender a su propietario: ¿sigue suspendido?
+  const pausa = b.suspension_paused_at
+    ? ((await rpc('admin_suspension_pauses', { p_user: b.owner_id }).catch(() => [])) || []).find((x) => x.id === b.id) || { ...b, owner_banned_at: null }
+    : null;
+  const porRevisar = (cambios?.rows || []).some((x) => !x.reviewed_at);
   const tz = KZ.de(b);
   const cur = d.subscriptions.find((s) => ['trial', 'active', 'past_due'].includes(s.status));
   const social = b.social_links && typeof b.social_links === 'object' ? Object.entries(b.social_links).filter(([, u]) => u) : [];
@@ -946,7 +995,7 @@ async function businessDetail(v, id) {
     <div class="page-head"><a class="btn sm ghost" href="#/negocios">← Negocios</a></div>
     <div class="detail-head">
       ${b.logo_url ? `<img src="${esc(b.logo_url)}" alt="">` : `<div class="ph">${ms('storefront')}</div>`}
-      <div><h1>${esc(b.name)}</h1><div class="tags">${tag(b.verification_status)} ${b.is_active ? tag('active') : tag('inactive', 'st-inactive')} ${tag(cur?.plan || 'free', 'dim')} ${cur ? tag(cur.status) : ''} ${b.adults_only ? '<span class="tag bad">+18</span>' : ''}</div></div>
+      <div><h1>${esc(b.name)}</h1><div class="tags">${b.closed_permanently_at ? `<span class="tag bad">${I18N.lang === 'en' ? 'closed for good' : 'cerrado de verdad'}</span> ` : ''}${tag(b.verification_status)} ${b.is_active ? tag('active') : tag('inactive', 'st-inactive')} ${tag(cur?.plan || 'free', 'dim')} ${cur ? tag(cur.status) : ''} ${b.adults_only ? '<span class="tag bad">+18</span>' : ''} ${b.closed_indefinitely_at ? `<span class="tag bad">${esc(I18N.lang === 'en' ? 'Closed until further notice' : 'Cerrado hasta nuevo aviso')}</span>` : ''} ${pausa ? `<span class="tag bad">${esc(I18N.lang === 'en' ? 'Paused by a suspension' : 'En pausa por una suspensión')}</span>` : ''} ${porRevisar ? `<span class="tag warn">${esc(I18N.lang === 'en' ? 'Review again' : 'Revisar de nuevo')}</span>` : ''}</div></div>
       <span class="spacer"></span>
       <div class="actions">
         ${b.verification_status !== 'verified' ? '<button class="btn ok" data-a="verify">✓ Verificar</button>' : ''}
@@ -956,9 +1005,16 @@ async function businessDetail(v, id) {
         <button class="btn" data-a="plan">Cambiar plan…</button>
         <button class="btn" data-a="pay">Registrar pago…</button>
         <button class="btn" data-a="notify">Enviar notificación al dueño…</button>
+        <button class="btn bad" data-a="delete">Eliminar negocio…</button>
+        ${b.closed_permanently_at ? '<button class="btn" data-a="reopen">Reabrir…</button>' : '<button class="btn bad ghost" data-a="closed">Marcar como cerrado…</button>'}
         ${appLink('/b/' + b.id)}
       </div>
     </div>
+    ${b.closed_permanently_at ? `<div class="card"><b>${I18N.lang === 'en' ? 'Marked as closed for good on' : 'Marcado como cerrado de verdad el'}</b> ${fmtDate(b.closed_permanently_at, tz)}${b.closed_permanently_note ? ` · ${esc(b.closed_permanently_note)}` : ''}<div class="muted small" style="margin-top:4px">${I18N.lang === 'en' ? 'It no longer appears on Klendar; its address says “This business has closed”. Use “Reopen” if it is a mistake.' : 'Ya no sale en Klendar; su dirección dice «Este negocio ha cerrado». «Reabrir» si es un error.'}</div></div>` : ''}
+    ${b.review_requested_at && b.verification_status === 'pending' ? `<div class="card"><b>${I18N.lang === 'en' ? 'Asked for another review on' : 'Pidió otra revisión el'}</b> ${fmtDate(b.review_requested_at, tz)}${b.review_request_note ? `<p style="margin:6px 0 0">«${esc(b.review_request_note)}»</p>` : ''}</div>` : ''}
+    ${pausa ? tarjetaPausas([pausa], false) : ''}
+    ${(cambios?.rows || []).length ? tarjetaCambios(cambios.rows, false) : ''}
+    ${tarjetaDuplicados(b, duplicados)}
     ${b.rejection_reason ? `<div class="card"><b>Motivo del rechazo:</b> ${esc(b.rejection_reason)}${b.rejection_reason_en ? `<div class="muted small" style="margin-top:4px"><b>${I18N.lang === 'en' ? 'In English' : 'En inglés'}:</b> ${esc(b.rejection_reason_en)}</div>` : ''}</div>` : ''}
     <div class="grid2">
       <div class="card"><h2>Ficha</h2><dl class="kv">
@@ -997,6 +1053,9 @@ async function businessDetail(v, id) {
         <div class="card"><h2>Suscripción</h2>
           ${cur ? `<dl class="kv"><dt>Plan</dt><dd>${tag(cur.plan, 'dim')} ${tag(cur.status)} · ${fmtMoney(cur.price_cents)}/${I18N.lang === 'en' ? 'month' : 'mes'}</dd><dt>Periodo</dt><dd>${fmtDay(cur.period_start)} → ${cur.period_end ? fmtDay(cur.period_end) : (I18N.lang === 'en' ? 'no end' : 'sin fin')}</dd><dt>Forma de pago</dt><dd>${esc(cur.payment_method || '—')}</dd></dl>` : '<p class="muted">Sin suscripción vigente: cuenta como «Gratis de lanzamiento».</p>'}
           ${d.subscriptions.length > 1 ? `<details style="margin-top:8px"><summary class="muted">${I18N.lang === 'en' ? 'History' : 'Histórico'} (${d.subscriptions.length})</summary>${table({ cols: [{ h: 'Plan', r: (s) => tag(s.plan, 'dim') }, { h: 'Estado', r: (s) => tag(s.status) }, { h: 'Periodo', r: (s) => `${fmtDay(s.period_start)} → ${s.period_end ? fmtDay(s.period_end) : '—'}` }, { h: 'Pago', r: (s) => esc(s.payment_method || '') }], rows: d.subscriptions })}</details>` : ''}
+          ${b.closed_indefinitely_at ? `<p class="muted" style="margin:10px 0 0">${esc(I18N.lang === 'en' ? `Closed until further notice since ${fmtDay(b.closed_indefinitely_at)}. Billing while closed is decided case by case for now.` : `Cerrado hasta nuevo aviso desde el ${fmtDay(b.closed_indefinitely_at)}. Mientras no haya cobro automático, qué se cobra en pausa se decide a mano.`)}</p>` : ''}
+          ${traspaso ? `<p style="margin:10px 0 0"><b>${esc(I18N.lang === 'en' ? 'Pending handover' : 'Traspaso pendiente')}</b>: ${esc(traspaso.from_email || '')} → ${esc(traspaso.to_email || '')} · ${esc(I18N.lang === 'en' ? 'expires' : 'caduca')} ${fmtDay(traspaso.expires_at)}</p>` : ''}
+          ${(bajas?.items || []).length ? `<h3 style="margin-top:12px">${I18N.lang === 'en' ? 'Cancellation requests' : 'Peticiones de cancelación'}</h3>${tablaBajas(bajas.items, false)}` : ''}
           <h3 style="margin-top:12px">Pagos registrados</h3>
           ${table({ cols: [{ h: 'Fecha', r: (p) => fmtDay(p.paid_at) }, { h: 'Importe', num: true, r: (p) => fmtMoney(p.amount_cents, p.currency) }, { h: 'Método', r: (p) => esc(p.method) }, { h: 'Periodo', r: (p) => `${fmtDay(p.period_start)} → ${fmtDay(p.period_end)}` }, { h: 'Notas', r: (p) => `${esc(p.notes || '')}<span class="sub">${esc(p.recorded_by || '')}</span>` }], rows: d.payments, empty: 'Ningún pago registrado.' })}
         </div>
@@ -1023,14 +1082,141 @@ async function businessDetail(v, id) {
   // Cada acción bloquea su botón (o su desplegable) mientras trabaja: un
   // doble clic no la manda dos veces.
   $$('[data-role]').forEach((sel) => { let antes = sel.value; sel.onchange = () => esperando(sel, async () => { try { await rpc('admin_set_member_role', { p_business: id, p_user: sel.dataset.role, p_role: sel.value }); antes = sel.value; toast('Rol actualizado'); } catch (e) { sel.value = antes; toast(e.message, true); } }); });
+  enlazaDuplicados(v, b, duplicados);
   $$('[data-rm]').forEach((btn) => { btn.onclick = () => esperando(btn, async () => { if (!await confirmDlg('Quitar del equipo', 'Esta persona dejará de poder gestionar el negocio ni validar códigos.', { danger: true, submit: 'Quitar' })) return; try { await rpc('admin_set_member_role', { p_business: id, p_user: btn.dataset.rm, p_role: null }); toast('Quitado'); route(); } catch (e) { toast(e.message, true); } }); });
   $$('[data-delreview]').forEach((btn) => { btn.onclick = () => esperando(btn, () => deleteReview(btn.dataset.delreview)); });
   $$('[data-delpost]').forEach((btn) => { btn.onclick = () => esperando(btn, () => deletePost(btn.dataset.delpost)); });
   $$('[data-a]').forEach((btn) => { btn.onclick = () => esperando(btn, () => businessAction(btn.dataset.a, b, d)); });
+  activaBajas(document.getElementById('view'));
+  activaCambios(document.getElementById('view'));
+  activaPausas(document.getElementById('view'));
+}
+
+// ── Cancelaciones de suscripción ───────────────────────────────────────────
+// Las pide el propietario desde «Dar de baja el negocio» (app o panel). Hasta
+// que haya cobro automático, se gestionan a mano: dejar de renovar, avisar y
+// marcarla aquí. Se puede deshacer antes de la fecha: entonces sale como
+// «deshecha».
+function tablaBajas(items, conNegocio = true) {
+  const en = I18N.lang === 'en';
+  const estado = (c) => (c.undone_at ? `<span class="tag dim">${en ? 'undone' : 'deshecha'}</span>`
+    : c.handled_at ? `<span class="tag ok">${en ? 'handled' : 'gestionada'}</span>`
+    : c.live ? `<span class="tag bad">${en ? 'pending' : 'por gestionar'}</span>` : `<span class="tag dim">${en ? 'in effect' : 'ya efectiva'}</span>`);
+  return table({ cols: [
+    ...(conNegocio ? [{ h: 'Negocio', r: (c) => `<a class="link" href="#/negocios/${esc(c.business_id)}">${esc(c.business_name)}</a><span class="sub">${esc(c.owner_email || '')}</span>` }] : []),
+    { h: en ? 'Requested' : 'Pedida', r: (c) => fmtDay(c.requested_at) },
+    { h: en ? 'Effective' : 'Efectiva', r: (c) => (c.effective_on ? fmtDay(c.effective_on) : (en ? 'nothing to pay' : 'sin nada que pagar')) },
+    { h: en ? 'Plan status' : 'Estado del plan', r: (c) => esc(c.sub_status || '') },
+    { h: en ? 'Reason' : 'Motivo', r: (c) => `${esc(c.reason || '—')}${c.handled_note ? `<span class="sub">${esc(c.handled_note)}</span>` : ''}` },
+    { h: '', r: (c) => `${estado(c)}${!c.handled_at && !c.undone_at ? ` <button class="btn sm" data-gestion="${esc(c.id)}">${en ? 'Mark as handled…' : 'Marcar gestionada…'}</button>` : ''}` },
+  ], rows: items });
+}
+function tarjetaBajas(items) {
+  if (!items.length) return '';
+  const en = I18N.lang === 'en';
+  return `<div class="card" id="bajas"><h2>${en ? 'Subscription cancellations' : 'Cancelaciones de suscripción'}</h2>
+    <p class="muted" style="margin:0 0 8px">${en ? 'Until there is automatic billing: stop renewing it on its date, tell the owner if needed and mark it as handled.' : 'Hasta que haya cobro automático: no renovarla en su fecha, avisar al dueño si hace falta y marcarla como gestionada.'}</p>
+    ${tablaBajas(items)}</div>`;
+}
+function activaBajas(caja) {
+  $$('[data-gestion]', caja).forEach((btn) => { btn.onclick = () => esperando(btn, async () => {
+    const r = await modal({ title: I18N.lang === 'en' ? 'Mark as handled' : 'Marcar como gestionada', fields: [{ name: 'note', label: I18N.lang === 'en' ? 'Note (optional, stays in the log)' : 'Nota (opcional, queda en el registro)', type: 'textarea' }], submit: I18N.lang === 'en' ? 'Mark' : 'Marcar' });
+    if (!r) return;
+    try { await rpc('admin_handle_cancellation', { p_id: btn.dataset.gestion, p_note: r.note || null }); toast(I18N.lang === 'en' ? 'Marked as handled' : 'Marcada como gestionada'); refreshBadges(); route(); } catch (e) { toast(e.message, true); }
+  }); });
+}
+
+// ── «Revisar de nuevo» ─────────────────────────────────────────────────────
+// Un negocio verificado que ha cambiado de nombre de forma notable, de ciudad
+// o de sitio (más de 1 km). No se oculta ni pierde la verificación: se mira
+// que siga siendo el mismo negocio y se marca «Revisado».
+function tarjetaCambios(rows, conNegocio = true) {
+  if (!rows.length) return '';
+  const en = I18N.lang === 'en';
+  const MOTIVO = { name: en ? 'new name' : 'nombre nuevo', city: en ? 'other city' : 'otra ciudad', location: en ? 'moved' : 'se ha mudado' };
+  const mapa = (x) => (x?.lat != null ? ` · <a class="link" target="_blank" rel="noopener" href="https://www.google.com/maps?q=${x.lat},${x.lng}">${en ? 'map ↗' : 'mapa ↗'}</a>` : '');
+  const fila = (h, a, b2) => `<tr><th>${h}</th><td>${a}</td><td>${b2}</td></tr>`;
+  const cambio = (c) => `<div class="item cambio-neg" style="grid-template-columns:1fr">
+    <div>
+      <h3>${conNegocio ? `<a class="link" href="#/negocios/${esc(c.business_id)}">${esc(c.business_name)}</a> ` : ''}${(c.reasons || []).map((m) => `<span class="tag warn">${esc(MOTIVO[m] || m)}</span>`).join(' ')}
+        ${c.reviewed_at ? `<span class="tag ok">${en ? 'reviewed' : 'revisado'}</span>` : ''}</h3>
+      <div class="meta">${esc(c.changed_by_name || c.changed_by_email || '—')}${c.changed_by_role ? ` (${esc(LABELS[c.changed_by_role] ? I18N.t(LABELS[c.changed_by_role]) : c.changed_by_role)})` : ''} · ${fmtDate(c.updated_at)}${c.distance_m != null ? ` · ${(c.distance_m / 1000).toLocaleString(LOC(), { maximumFractionDigits: 1 })} km` : ''}${c.offers_moved ? ` · ${c.offers_moved} ${en ? (c.offers_moved === 1 ? 'live publication moved with it' : 'live publications moved with it') : (c.offers_moved === 1 ? 'publicación viva mudada' : 'publicaciones vivas mudadas')}` : ''}</div>
+      <div class="tbl-wrap"><table class="tbl"><thead><tr><th></th><th>${en ? 'Before' : 'Antes'}</th><th>${en ? 'After' : 'Después'}</th></tr></thead><tbody>
+        ${fila(en ? 'Name' : 'Nombre', esc(c.before?.name || '—'), esc(c.after?.name || '—'))}
+        ${fila(en ? 'Address' : 'Dirección', esc(c.before?.address || '—') + mapa(c.before), esc(c.after?.address || '—') + mapa(c.after))}
+        ${fila(en ? 'City' : 'Ciudad', esc(c.before?.city || '—'), esc(c.after?.city || '—'))}
+      </tbody></table></div>
+      ${c.reviewed_at
+        ? `<p class="muted small" style="margin:6px 0 0">${en ? 'Reviewed' : 'Revisado'} ${fmtDate(c.reviewed_at)}${c.reviewed_by_email ? ` · ${esc(c.reviewed_by_email)}` : ''}${c.review_note ? ` · ${esc(c.review_note)}` : ''}</p>`
+        : `<div class="actions" style="margin-top:8px"><button class="btn sm ok" type="button" data-revisado="${esc(c.id)}">${en ? 'Reviewed…' : 'Revisado…'}</button></div>`}
+    </div></div>`;
+  return `<div class="card" id="revisar"><h2>${ms('published_with_changes')} ${en ? 'Review again' : 'Revisar de nuevo'}</h2>
+    <p class="muted" style="margin:0 0 8px">${en
+      ? 'Verified businesses that have changed their name, city or location (more than 1 km). They stay visible and verified: check it is still the same business (website, Google Maps, phone) and mark it as reviewed. If it isn’t, deactivate it or reject it from its page.'
+      : 'Negocios verificados que han cambiado de nombre, de ciudad o de sitio (más de 1 km). Siguen a la vista y verificados: comprueba que sigue siendo el mismo negocio (web, Google Maps, teléfono) y márcalo como revisado. Si no lo es, desactívalo o recházalo desde su ficha.'}</p>
+    ${rows.map(cambio).join('')}</div>`;
+}
+function activaCambios(caja) {
+  $$('[data-revisado]', caja).forEach((btn) => { btn.onclick = () => esperando(btn, async () => {
+    const en = I18N.lang === 'en';
+    const r = await modal({ title: en ? 'Mark as reviewed' : 'Marcar como revisado', fields: [{ name: 'note', label: en ? 'Note (optional, stays in the log)' : 'Nota (opcional, queda en el registro)', type: 'textarea' }], submit: en ? 'Reviewed' : 'Revisado' });
+    if (!r) return;
+    try { await rpc('admin_review_business_change', { p_id: btn.dataset.revisado, p_note: r.note || null }); toast(en ? 'Marked as reviewed' : 'Marcado como revisado'); refreshBadges(); route(); } catch (e) { toast(e.message, true); }
+  }); });
+}
+
+// ── En pausa por una suspensión ────────────────────────────────────────────
+// Al suspender a un propietario, Klendar pausa sus negocios («cerrado hasta
+// nuevo aviso»). Al levantar la suspensión, el admin decide: reabrir, o
+// dejarlo cerrado y que lo abra el propietario cuando quiera.
+function tarjetaPausas(rows, conTitulo = true) {
+  if (!rows.length) return '';
+  const en = I18N.lang === 'en';
+  const fila = (x) => `<div class="item" style="grid-template-columns:1fr"><div>
+    <h3><a class="link" href="#/negocios/${esc(x.id)}">${esc(x.name)}</a>${x.city ? ` <span class="muted small">${esc(x.city)}</span>` : ''}</h3>
+    <div class="meta">${en ? 'Paused since' : 'En pausa desde el'} ${fmtDate(x.suspension_paused_at)}${x.owner_email ? ` · ${en ? 'owner' : 'propietario'} <a class="link" href="#/usuarios/${esc(x.owner_id)}">${esc(x.owner_email)}</a>` : ''}</div>
+    ${x.owner_banned_at
+      ? `<p class="muted small" style="margin:6px 0 0">${en ? 'The owner is still suspended: when you lift the suspension, you can reopen it here.' : 'El propietario sigue suspendido: cuando levantes la suspensión, podrás reabrirlo desde aquí.'}</p>`
+      : `<div class="actions" style="margin-top:8px"><button class="btn sm ok" type="button" data-pausa="${esc(x.id)}" data-reabrir="1">${en ? 'Reopen' : 'Reabrir'}</button><button class="btn sm" type="button" data-pausa="${esc(x.id)}" data-reabrir="0">${en ? 'Let the owner decide' : 'Que lo decida el propietario'}</button></div>`}
+  </div></div>`;
+  return `<div class="card" id="pausas"><h2>${ms('pause_circle')} ${en ? 'Paused by a suspension' : 'En pausa por una suspensión'}</h2>
+    ${conTitulo ? `<p class="muted" style="margin:0 0 8px">${en
+      ? 'We paused these businesses when we suspended their owner, and the suspension has now been lifted. Reopen them, or leave them closed for the owner to reopen whenever they like. Their team gets a notification either way.'
+      : 'Los pausamos al suspender a su propietario y la suspensión ya se ha levantado. Reábrelos, o déjalos cerrados para que los abra el propietario cuando quiera. Su equipo recibe una notificación en los dos casos.'}</p>` : ''}
+    ${rows.map(fila).join('')}</div>`;
+}
+function activaPausas(caja) {
+  $$('[data-pausa]', caja).forEach((btn) => { btn.onclick = () => esperando(btn, async () => {
+    const en = I18N.lang === 'en';
+    const reabrir = btn.dataset.reabrir === '1';
+    if (!await confirmDlg(reabrir ? (en ? 'Reopen business' : 'Reabrir negocio') : (en ? 'Let the owner decide' : 'Que lo decida el propietario'), reabrir
+      ? (en ? 'It will show on Klendar again and its team will be told.' : 'Volverá a verse en Klendar y avisamos a su equipo.')
+      : (en ? 'It stays “closed until further notice”, but the owner can reopen it from their dashboard whenever they like. We let them know.' : 'Sigue «cerrado hasta nuevo aviso», pero el propietario puede abrirlo desde su panel cuando quiera. Se lo decimos.'),
+    { submit: reabrir ? (en ? 'Reopen' : 'Reabrir') : (en ? 'Confirm' : 'Confirmar') })) return;
+    try { await rpc('admin_release_suspension_pause', { p_business: btn.dataset.pausa, p_reopen: reabrir }); toast(reabrir ? (en ? 'Business reopened' : 'Negocio reabierto') : (en ? 'Done: the owner decides' : 'Hecho: lo decide el propietario')); refreshBadges(); route(); } catch (e) { toast(e.message, true); }
+  }); });
 }
 
 async function businessAction(a, b, d) {
   try {
+    if (a === 'closed') {
+      // No es una retirada por incumplir las normas: el negocio ha cerrado.
+      const r = await modal({ title: 'Marcar como cerrado', warn: I18N.lang === 'en'
+        ? `Only for a business that has <b>closed for good</b> (not for breaking the rules: for that, “Deactivate”). It stops appearing on Klendar, its live publications are cancelled, bookings and unused codes are voided and each person is told; anyone with it in their favourites or with stamps gets “${esc(b.name)} has closed”, and the team is told how to let us know if it's a mistake.`
+        : `Solo para un negocio que <b>ha cerrado de verdad</b> (no por incumplir las normas: para eso, «Desactivar»). Deja de salir en Klendar, se cancelan sus publicaciones vivas, se anulan las reservas y los códigos sin usar avisando a cada persona; a quien lo tiene en favoritos o tiene sellos le llega «${esc(b.name)} ha cerrado», y al equipo, cómo decirnos que es un error.`,
+        fields: [{ name: 'note', label: 'Cómo lo sabemos (queda en el registro)', type: 'textarea', required: true }],
+        submit: 'Marcar como cerrado', danger: true });
+      if (!r) return;
+      const res = await rpc('admin_mark_business_closed', { p_id: b.id, p_closed: true, p_note: r.note });
+      toast(I18N.lang === 'en'
+        ? `Marked as closed: ${res?.offers_cancelled ?? 0} publications cancelled, ${res?.people_notified ?? 0} people notified`
+        : `Marcado como cerrado: ${res?.offers_cancelled ?? 0} publicaciones canceladas, ${res?.people_notified ?? 0} personas avisadas`);
+    }
+    if (a === 'reopen') {
+      if (!await confirmDlg('Reabrir negocio', I18N.lang === 'en' ? 'It will appear on Klendar again (if it is verified). Cancelled publications stay cancelled. The team gets a notification.' : 'Vuelve a salir en Klendar (si está verificado). Las publicaciones canceladas siguen canceladas. El equipo recibe una notificación.', { submit: 'Reabrir' })) return;
+      await rpc('admin_mark_business_closed', { p_id: b.id, p_closed: false });
+      toast('Negocio reabierto');
+    }
     if (a === 'verify') {
       if (!await confirmDlg('Verificar negocio', I18N.lang === 'en' ? `“${esc(b.name)}” will become verified and active: its publications will appear in the app and the owner will get a notification.` : `«${esc(b.name)}» pasará a verificado y activo: sus publicaciones aparecerán en la app y el propietario recibirá una notificación.`, { submit: 'Verificar' })) return;
       await rpc('admin_set_verification', { p_id: b.id, p_status: 'verified' }); toast('Negocio verificado');
@@ -1044,7 +1230,9 @@ async function businessAction(a, b, d) {
       await rpc('admin_set_verification', { p_id: b.id, p_status: 'rejected', p_reason: r.reason, p_reason_en: r.reason_en || null }); toast('Negocio rechazado');
     }
     if (a === 'active') {
-      if (b.is_active && !await confirmDlg('Desactivar negocio', 'El negocio y sus publicaciones dejarán de verse en la app hasta que lo actives de nuevo.', { danger: true, submit: 'Desactivar' })) return;
+      if (b.is_active && !await confirmDlg('Desactivar negocio', I18N.lang === 'en'
+        ? 'The business and its publications will stop showing in the app until you activate it again. Unused bookings and codes, stamp-card rewards and pending birthday gifts are cancelled, and we let each person know with a generic reason (reports are never mentioned).'
+        : 'El negocio y sus publicaciones dejarán de verse en la app hasta que lo actives de nuevo. Las reservas y los códigos sin usar, los premios de sellos y los regalos de cumpleaños pendientes se anulan y avisamos a cada persona con un motivo genérico (nunca se habla de denuncias).', { danger: true, submit: 'Desactivar' })) return;
       await rpc('admin_set_business_active', { p_id: b.id, p_active: !b.is_active }); toast(b.is_active ? 'Negocio desactivado' : 'Negocio activado');
     }
     if (a === 'edit') {
@@ -1090,6 +1278,17 @@ async function businessAction(a, b, d) {
       if (!r) return;
       await rpc('admin_record_payment', { p_business: b.id, p_amount_cents: Math.round(parseFloat(r.amount.replace(',', '.')) * 100), p_method: r.method, p_period_start: r.start, p_period_end: r.end, p_notes: r.notes || null }); toast('Pago registrado');
     }
+    if (a === 'delete') {
+      const en = I18N.lang === 'en';
+      const r = await modal({ title: en ? 'Delete the business' : 'Eliminar el negocio',
+        warn: en ? `Unused bookings and codes are cancelled and each person is told; also anyone with stamps, a reward or a gift, the team and the owner (with the reason). Billing records are archived for 6 years. This can't be undone. Prefer «Deactivate» if it may come back.`
+          : `Se anulan las reservas y los códigos sin usar y se avisa a cada persona; también a quien tiene sellos, un premio o un regalo, al equipo y al propietario (con el motivo). La facturación se archiva 6 años. No se puede deshacer. Si puede volver, mejor «Desactivar».`,
+        fields: [{ name: 'reason', label: en ? 'Reason (the owner receives it)' : 'Motivo (lo recibe el propietario)', type: 'textarea', required: true }],
+        submit: en ? 'Delete for good' : 'Eliminar para siempre', danger: true, confirmWord: en ? 'DELETE' : 'ELIMINAR' });
+      if (!r || !await confirmaIdentidad()) return;
+      await rpc('admin_delete_business', { p_id: b.id, p_reason: r.reason });
+      toast(en ? 'Business deleted' : 'Negocio eliminado'); go('#/negocios'); return;
+    }
     if (a === 'notify') {
       const r = await modal({ title: 'Notificación al equipo del negocio', intro: 'Lo reciben el propietario y los encargados como notificación (y push si la tienen activada).', fields: CAMPOS_AVISO, submit: 'Enviar' });
       if (!r) return;
@@ -1116,11 +1315,12 @@ const ACTIONS = {
   'business.verification': 'Verificación de negocio', 'business.activate': 'Negocio activado', 'business.deactivate': 'Negocio desactivado', 'business.update': 'Ficha editada', 'business.member': 'Equipo modificado',
   'business.subscription': 'Cambio de plan', 'business.payment': 'Pago registrado', 'offer.moderation': 'Moderación de publicación', 'offer.status': 'Estado de publicación', 'offer.boost': 'Boost de publicación',
   'report.resolve': 'Denuncia resuelta', 'report.group': 'Denuncias resueltas en bloque', 'review.delete': 'Reseña borrada', 'post.delete': 'Novedad borrada', 'user.ban': 'Usuario suspendido', 'user.unban': 'Usuario reactivado', 'user.premium': 'Premium cambiado',
-  'user.type': 'Tipo de cuenta cambiado', 'user.birth_date': 'Fecha de nacimiento corregida', 'user.delete': 'Cuenta eliminada', 'notification.send': 'Notificación enviada', 'push.retry': 'Push reintentado', 'config.set': 'Configuración cambiada', 'plan.upsert': 'Plan guardado',
+  'user.type': 'Tipo de cuenta cambiado', 'user.email_change': 'Correo de la cuenta cambiado', 'business.closed': 'Negocio cerrado de verdad', 'business.reopen': 'Negocio reabierto (admin)', 'user.birth_date': 'Fecha de nacimiento corregida', 'user.delete': 'Cuenta eliminada', 'notification.send': 'Notificación enviada', 'push.retry': 'Push reintentado', 'config.set': 'Configuración cambiada', 'plan.upsert': 'Plan guardado',
   'category.upsert': 'Categoría guardada', 'category.delete': 'Categoría borrada', 'admin.add': 'Administrador añadido', 'admin.remove': 'Administrador quitado', 'maintenance.expire_offers': 'Caducidad forzada',
   'business_message_approve': 'Mensaje a clientes aprobado', 'business_message_reject': 'Mensaje a clientes rechazado', 'collection_save': 'Colección guardada', 'collection_delete': 'Colección borrada',
   'feedback.update': 'Sugerencia actualizada', 'feedback.delete': 'Sugerencia borrada',
   'web_error.resolve': 'Error de la web resuelto',
+  'business.delete': 'Negocio eliminado (admin)', 'business.self_delete': 'Negocio eliminado por su propietario', 'subscription.cancel_handled': 'Cancelación de suscripción gestionada',
 };
 const summarize = (o) => Object.entries(o).filter(([, v]) => v != null && v !== '').map(([k, v]) => `${k}: ${typeof v === 'object' ? JSON.stringify(v) : v}`).join(' · ').slice(0, 300);
 
@@ -1136,7 +1336,7 @@ PAGES.publicaciones = async (v, id) => {
     <div class="toolbar">
       <input id="q" class="grow" placeholder="Buscar por título, negocio o id…" value="${esc(s.q || '')}">
       <select id="moderation">${[['all', 'Toda moderación'], ['pending', 'Por moderar'], ['approved', 'Aprobadas'], ['rejected', 'Retiradas']].map((o) => `<option value="${o[0]}" ${s.moderation === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
-      <select id="status">${[['all', 'Todos los estados'], ['active', 'Activas'], ['draft', 'Borradores'], ['expired', 'Caducadas'], ['sold_out', 'Agotadas'], ['cancelled', 'Canceladas']].map((o) => `<option value="${o[0]}" ${(s.status || 'all') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
+      <select id="status">${[['all', 'Todos los estados'], ['active', 'Activas'], ['draft', 'Borradores'], ['expired', 'Caducadas'], ['sold_out', 'Agotadas'], ['cancelled', 'Canceladas'], ['archived', 'Archivadas']].map((o) => `<option value="${o[0]}" ${(s.status || 'all') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
       <select id="kind">${[['all', 'Ofertas y eventos'], ['flash_offer', 'Solo ofertas flash'], ['future_event', 'Solo eventos']].map((o) => `<option value="${o[0]}" ${(s.kind || 'all') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
       ${s.business ? `<button class="btn sm" id="clearbiz">✕ Solo un negocio</button>` : ''}
     </div>
@@ -1150,7 +1350,11 @@ PAGES.publicaciones = async (v, id) => {
       cols: [
         { h: 'Publicación', r: (o) => `${img(o.images?.[0], KIND_ICON[o.kind])}<span class="title">${esc(o.title)}<span class="sub">${esc(I18N.t(LABELS[o.kind]))} · <a class="link" href="#/negocios/${o.business_id}" data-sin-fila>${esc(o.business_name)}</a> ${o.verification_status !== 'verified' ? tag(o.verification_status) : ''}</span></span>` },
         { h: 'Estado', r: (o) => `${tag(o.status)} ${modTag(o.moderation_status)} ${flagTags(o)} ${o.adults_only ? '<span class="tag bad">+18</span>' : ''} ${o.is_boosted ? '<span class="tag">boost</span>' : ''} ${o.open_reports ? `<span class="tag bad">${ms('flag')} ${o.open_reports}</span>` : ''}` },
-        { h: 'Cuándo', r: (o) => `<span class="nowrap">${o.kind === 'flash_offer' ? `${fmtDate(o.redeem_start_at, KZ.de(o))}<span class="sub">→ ${fmtDate(o.redeem_end_at, KZ.de(o))}</span>` : fmtDate(o.event_at, KZ.de(o))}</span>` },
+        // Por moderar: cuándo caduca (la cola va por lo que caduca antes) o, si
+        // ya pasó, «caducada» (revisarla ya no sirve de nada).
+        { h: 'Cuándo', r: (o) => `<span class="nowrap">${o.kind === 'flash_offer' ? `${fmtDate(o.redeem_start_at, KZ.de(o))}<span class="sub">→ ${fmtDate(o.redeem_end_at, KZ.de(o))}</span>` : fmtDate(o.event_at, KZ.de(o))}</span>${o.moderation_status === 'pending' && o.ends_at
+          ? (new Date(o.ends_at) <= new Date() ? ' <span class="tag bad">caducada</span>'
+            : `<span class="sub">${esc(I18N.lang === 'en' ? 'Expires' : 'Caduca')}: ${fmtDate(o.ends_at, KZ.de(o))}</span>`) : ''}` },
         { h: 'Precio', r: (o) => `${o.discount ? `<span class="tag">${esc(discountLabel(o.discount))}</span> ` : ''}${o.price_cents != null ? fmtMoney(o.price_cents, o.currency) : ''}` },
         { h: 'Vistas', num: true, r: (o) => fmtNum(o.views_count) },
         { h: 'Canjes', num: true, r: (o) => `${o.redemptions_count}${o.max_redemptions ? `<span class="muted"> / ${o.max_redemptions}</span>` : ''}` },
@@ -1245,7 +1449,9 @@ async function offerDetail(v, id) {
       if (a === 'approve') { if (await moderateOffer(o.id, 'approved')) route(); return; }
       if (a === 'reject') { if (await moderateOffer(o.id, 'rejected')) route(); return; }
       if (a === 'status') {
-        const r = await modal({ title: 'Cambiar estado', intro: 'Úsalo con cuidado: «cancelada» y «caducada» la quitan del feed; «activa» la vuelve a publicar (si el negocio está verificado y la moderación es aprobada).', fields: [{ name: 'status', label: 'Estado', type: 'select', value: o.status, options: [['active', 'Activa'], ['draft', 'Borrador'], ['expired', 'Caducada'], ['sold_out', 'Agotada'], ['cancelled', 'Cancelada']] }] });
+        const r = await modal({ title: 'Cambiar estado', intro: I18N.lang === 'en'
+          ? 'Use with care: “cancelled” and “expired” take it off the feed; “active” publishes it again (if the business is verified and moderation is approved). “Cancelled” also cancels live bookings and codes and tells each person we’ve taken it down.'
+          : 'Úsalo con cuidado: «cancelada» y «caducada» la quitan del feed; «activa» la vuelve a publicar (si el negocio está verificado y la moderación es aprobada). «Cancelada» además anula las reservas y los códigos vivos y avisa a cada persona de que la hemos retirado.', fields: [{ name: 'status', label: 'Estado', type: 'select', value: o.status, options: [['active', 'Activa'], ['draft', 'Borrador'], ['expired', 'Caducada'], ['sold_out', 'Agotada'], ['cancelled', 'Cancelada']] }] });
         if (!r) return; await rpc('admin_set_offer_status', { p_id: o.id, p_status: r.status }); toast('Estado actualizado');
       }
       if (a === 'boost') {
@@ -1326,7 +1532,12 @@ PAGES.usuarios = async (v, id) => {
 };
 
 async function userDetail(v, id) {
-  const d = await rpc('admin_user_detail', { p_id: id });
+  const [d, correo, pausas, inactiva] = await Promise.all([
+    rpc('admin_user_detail', { p_id: id }),
+    rpc('admin_user_email_status', { p_id: id }).catch(() => null),
+    rpc('admin_suspension_pauses', { p_user: id }).catch(() => []),
+    rpc('admin_inactive_notice', { p_id: id }).catch(() => null),
+  ]);
   const u = d.user;
   if (!u) throw new Error('Usuario no encontrado.');
   const prefs = d.notification_prefs;
@@ -1335,24 +1546,28 @@ async function userDetail(v, id) {
     <div class="page-head"><a class="btn sm ghost" href="#/usuarios">← Usuarios</a></div>
     <div class="detail-head">
       ${u.avatar_url ? `<img src="${esc(u.avatar_url)}" alt="">` : `<div class="ph">${ms('person')}</div>`}
-      <div><h1>${esc(u.display_name || u.email)}</h1><div class="tags">${tag(u.user_type || 'user', 'dim')} ${u.is_admin ? '<span class="tag">administrador</span>' : ''} ${u.is_premium ? `<span class="tag ok">premium${u.premium_until ? ` ${en ? 'until' : 'hasta'} ${fmtDay(u.premium_until)}` : ''}</span>` : ''} ${u.banned_at ? `<span class="tag bad">${en ? 'suspended' : 'suspendido'} ${fmtDay(u.banned_at)}</span>` : ''} ${!u.email_confirmed_at ? '<span class="tag warn">email sin confirmar</span>' : ''}</div><div class="muted small" style="margin-top:4px">${esc(u.email)}</div></div>
+      <div><h1>${esc(u.display_name || u.email)}</h1><div class="tags">${tag(u.user_type || 'user', 'dim')} ${u.is_admin ? '<span class="tag">administrador</span>' : ''} ${u.is_premium ? `<span class="tag ok">premium${u.premium_until ? ` ${en ? 'until' : 'hasta'} ${fmtDay(u.premium_until)}` : ''}</span>` : ''} ${u.banned_at ? `<span class="tag bad">${en ? 'suspended' : 'suspendido'} ${fmtDay(u.banned_at)}</span>` : ''} ${!u.email_confirmed_at ? '<span class="tag warn">email sin confirmar</span>' : ''} ${correo?.suppressed_at ? `<span class="tag bad" title="${esc(correo.suppression_detail || '')}">${correo.suppressed_reason === 'complaint' ? (en ? 'marked us as spam' : 'nos marcó como spam') : (en ? 'email bounces' : 'correo devuelto')} ${fmtDay(correo.suppressed_at)}</span>` : ''} ${correo?.new_email ? `<span class="tag warn">${en ? 'pending change to' : 'cambio pendiente a'} ${esc(correo.new_email)}</span>` : ''}</div><div class="muted small" style="margin-top:4px">${esc(u.email)}</div></div>
       <span class="spacer"></span>
       <div class="actions">
         <button class="btn ${u.banned_at ? 'ok' : 'bad'}" data-a="ban">${u.banned_at ? 'Reactivar cuenta' : 'Suspender…'}</button>
         <button class="btn" data-a="premium">Premium…</button>
         <button class="btn" data-a="type">Tipo de cuenta…</button>
         <button class="btn" data-a="birth">Corregir fecha de nacimiento…</button>
+        <button class="btn" data-a="email">Cambiar correo…</button>
         <button class="btn" data-a="notify">Enviar notificación…</button>
         <button class="btn" data-a="admin">${u.is_admin ? 'Quitar admin' : 'Hacer admin'}</button>
         <button class="btn bad ghost" data-a="delete">Eliminar cuenta…</button>
       </div>
     </div>
     ${u.banned_reason ? `<div class="card"><b>Motivo de la suspensión:</b> ${esc(u.banned_reason)}</div>` : ''}
+    ${(pausas || []).length ? tarjetaPausas(pausas.map((x) => ({ ...x, owner_banned_at: u.banned_at })), false) : ''}
     <div class="grid2">
       <div class="card"><h2>Cuenta</h2><dl class="kv">
         <dt>Id</dt><dd><code>${u.id}</code></dd>
         <dt>Alta</dt><dd>${fmtDate(u.created_at)}</dd>
         <dt>Último acceso</dt><dd>${fmtDate(u.last_sign_in_at)}</dd>
+        ${inactiva?.last_activity_at ? `<dt>${en ? 'Last active' : 'Última actividad'}</dt><dd>${fmtDate(inactiva.last_activity_at)}</dd>` : ''}
+        ${inactiva?.notice ? `<dt>${en ? 'Inactivity' : 'Inactividad'}</dt><dd>${inactiva.notice.held_at ? `<span class="tag warn">${en ? 'held: owns a business' : 'retenida: es dueña de un negocio'}</span>` : `${en ? 'warned on' : 'avisada el'} ${fmtDay(inactiva.notice.warned_at)} · ${en ? 'deleted on' : 'se borra el'} ${fmtDay(inactiva.notice.delete_after)}`} · <a class="link" href="#/inactivas">${en ? 'see all' : 'ver todas'}</a></dd>` : ''}
         <dt>Email confirmado</dt><dd>${u.email_confirmed_at ? fmtDate(u.email_confirmed_at) : 'no'}</dd>
         <dt>Acceso con</dt><dd>${esc((u.providers || []).join(', ') || 'email')}</dd>
         <dt>Idioma</dt><dd>${esc(u.locale || 'sistema')}</dd>
@@ -1384,9 +1599,15 @@ async function userDetail(v, id) {
     try {
       const a = btn.dataset.a;
       if (a === 'ban') {
-        if (u.banned_at) { await rpc('admin_set_user_ban', { p_id: u.id, p_banned: false }); toast('Cuenta reactivada'); }
-        else {
-          const r = await modal({ title: 'Suspender cuenta', intro: 'No podrá canjear, publicar, reseñar ni denunciar. Recibe una notificación con el motivo y la vía de recurso.', fields: [{ name: 'reason', label: 'Motivo', type: 'textarea', required: true }], submit: 'Suspender', danger: true });
+        if (u.banned_at) {
+          await rpc('admin_set_user_ban', { p_id: u.id, p_banned: false });
+          toast((pausas || []).length
+            ? (en ? 'Account reactivated. Their businesses are still paused: decide below whether to reopen them.' : 'Cuenta reactivada. Sus negocios siguen en pausa: decide abajo si los reabres.')
+            : 'Cuenta reactivada');
+        } else {
+          const r = await modal({ title: 'Suspender cuenta', intro: en
+            ? 'They won’t be able to redeem, publish, review, report, validate codes, invite or join a team. If they own a business, we pause it (“closed until further notice”) and let their team know; when you lift the suspension, you decide whether to reopen it. They get a notification with the reason and how to appeal.'
+            : 'No podrá canjear, publicar, reseñar, denunciar, validar códigos, invitar ni entrar en un equipo. Si es propietario de un negocio, lo pausamos («cerrado hasta nuevo aviso») y avisamos a su equipo; al levantar la suspensión decides si se reabre. Recibe una notificación con el motivo y la vía de recurso.', fields: [{ name: 'reason', label: 'Motivo', type: 'textarea', required: true }], submit: 'Suspender', danger: true });
           if (!r) return; await rpc('admin_set_user_ban', { p_id: u.id, p_banned: true, p_reason: r.reason }); toast('Cuenta suspendida');
         }
       }
@@ -1407,6 +1628,19 @@ async function userDetail(v, id) {
         ], submit: 'Corregir' });
         if (!r) return; await rpc('admin_set_birth_date', { p_id: u.id, p_birth_date: r.birth, p_reason: r.reason }); toast('Fecha de nacimiento corregida');
       }
+      if (a === 'email') {
+        // Solo para quien ha perdido el acceso a su correo y no puede
+        // cambiarlo desde Ajustes: procedimiento en docs/RUNBOOK.md §2g.
+        const r = await modal({ title: 'Cambiar el correo de acceso', warn: en
+          ? `Only for someone who has lost access to their email and can't change it in Settings. First <b>verify it's them</b> (RUNBOOK §2g): they write from the new address and prove things only the account holder knows. No confirmation email is sent: the new address is marked as confirmed and they get a notification in the app.`
+          : `Solo para quien ha perdido el acceso a su correo y no puede cambiarlo desde Ajustes. Antes <b>verifica que es la persona</b> (RUNBOOK §2g): escribe desde el correo nuevo y demuestra cosas que solo sabe quien tiene la cuenta. No sale correo de confirmación: el nuevo queda confirmado y le llega una notificación en la app.`,
+          fields: [
+            { name: 'email', label: 'Correo nuevo', type: 'email', required: true },
+            { name: 'reason', label: 'Cómo lo hemos verificado (queda en el registro)', type: 'textarea', required: true },
+          ], submit: 'Cambiar el correo' });
+        if (!r || !await confirmaIdentidad()) return;
+        await rpc('admin_change_user_email', { p_id: u.id, p_email: r.email, p_reason: r.reason }); toast('Correo cambiado');
+      }
       if (a === 'notify') {
         const r = await modal({ title: 'Notificación al usuario', fields: CAMPOS_AVISO, submit: 'Enviar' });
         if (!r) return; await rpc('admin_send_notification', { p_audience: 'ids', p_user_ids: [u.id], ...textosAviso(r) }); toast('Notificación enviada');
@@ -1416,7 +1650,7 @@ async function userDetail(v, id) {
         else { if (!await confirmDlg('Hacer administrador', en ? `${esc(u.email)} will be able to log in to this panel with full permissions.` : `${esc(u.email)} podrá entrar en este panel con todos los permisos.`, { submit: 'Hacer admin' })) return; await rpc('admin_add_admin', { p_email: u.email }); toast('Ahora es administrador'); }
       }
       if (a === 'delete') {
-        const r = await modal({ title: 'Eliminar la cuenta definitivamente', warn: en ? `Everything is deleted: profile, redemptions, reviews, favourites and <b>any businesses they own, with all their publications</b>. This can't be undone. Only do it at the user's request (right to erasure) or for a serious breach.` : 'Se borra todo: perfil, canjes, reseñas, favoritos y <b>los negocios de los que sea propietario con todas sus publicaciones</b>. No se puede deshacer. Hazlo solo a petición del usuario (derecho de supresión) o por incumplimiento grave.', fields: [{ name: 'reason', label: 'Motivo (queda en el registro)', type: 'textarea', required: true }], submit: 'Eliminar para siempre', danger: true, confirmWord: en ? 'DELETE' : 'ELIMINAR' });
+        const r = await modal({ title: 'Eliminar la cuenta definitivamente', warn: en ? `Everything is deleted: profile, redemptions, reviews and favourites. If they own a business, hand it over or delete it first (from its page). This can't be undone. Only do it at the user's request (right to erasure) or for a serious breach.` : 'Se borra todo: perfil, canjes, reseñas y favoritos. Si es propietaria de un negocio, primero hay que traspasarlo o eliminarlo (desde su ficha). No se puede deshacer. Hazlo solo a petición del usuario (derecho de supresión) o por incumplimiento grave.', fields: [{ name: 'reason', label: 'Motivo (queda en el registro)', type: 'textarea', required: true }], submit: 'Eliminar para siempre', danger: true, confirmWord: en ? 'DELETE' : 'ELIMINAR' });
         if (!r || !await confirmaIdentidad()) return;
         await rpc('admin_delete_user', { p_id: u.id, p_reason: r.reason }); toast('Cuenta eliminada'); go('#/usuarios'); return;
       }
@@ -1741,6 +1975,243 @@ async function denunciasDe(v, tipo, id) {
 // cual o se rechazan con un motivo opcional, que el negocio recibe. El resto
 // ya salió solo; se listan para poder mirar qué se manda.
 const ESTADO_MENSAJE = { review: ['warn', 'En revisión'], sent: ['ok', 'Enviado'], rejected: ['bad', 'No enviado'] };
+// ── «¿Es tu negocio?», posibles duplicados y cuentas inactivas (2026-10-29) ─
+// Migraciones 20261029100000/01/10. Los textos van en los dos idiomas aquí
+// mismo (`en ? … : …`): llevan nombres y números intercalados.
+
+st.reclamaciones = { status: 'pending', limit: 50, offset: 0 };
+
+/** Por qué dos fichas parecen la misma. */
+const motivoDuplicado = (c, en) => (c.reason === 'same_name_city'
+  ? (en ? 'Same name in the same city' : 'Mismo nombre en la misma ciudad')
+  : (en ? `${fmtNum(c.distance_m || 0)} m away with a similar name` : `A ${fmtNum(c.distance_m || 0)} m con un nombre parecido`));
+
+/** Lo que tiene una ficha, en corto (para decidir cuál se queda). */
+const cuentaFicha = (k, en) => (k ? [
+  `${fmtNum(k.publications || 0)} ${en ? 'publications' : 'publicaciones'}`,
+  `${fmtNum(k.reviews || 0)} ${en ? 'reviews' : 'reseñas'}`,
+  `${fmtNum(k.favorites || 0)} ${en ? 'favourites' : 'favoritos'}`,
+  `${fmtNum(k.team || 0)} ${en ? 'in the team' : 'en el equipo'}`,
+].join(' · ') : '');
+
+/** «No es duplicado»: la pareja deja de avisarse. */
+async function noEsDuplicado(a, b) {
+  const en = I18N.lang === 'en';
+  if (!await confirmDlg(en ? 'Not a duplicate' : 'No es duplicado',
+    esc(en ? 'We will stop flagging these two as possible duplicates. You can still merge them by hand.' : 'Dejaremos de avisar de que estas dos pueden ser la misma. Se pueden seguir uniendo a mano.'),
+    { submit: en ? 'Not a duplicate' : 'No es duplicado' })) return false;
+  await rpc('admin_dismiss_duplicate', { p_a: a, p_b: b });
+  toast(en ? 'Marked as not a duplicate' : 'Marcado como no duplicado');
+  return true;
+}
+
+/** «Fusionar»: una ficha desaparece dentro de la otra. Solo sola si la que
+ * sobra está vacía; si no, el procedimiento manual (RUNBOOK §4b). */
+async function fusionar(actual, otra) {
+  const en = I18N.lang === 'en';
+  const r = await modal({
+    title: en ? 'Merge the two pages' : 'Fusionar las dos fichas',
+    intro: esc(en
+      ? 'One page stays and the other disappears: its favourites and its named addresses (old links) move to the one that stays, it is deleted like “Delete business” and its owner is told they can claim the other one. It is only done automatically if the page that goes is empty (no publications, reviews, news, stamp cards, menu, gifts, payments or other team members); otherwise follow the manual procedure (RUNBOOK §4b).'
+      : 'Una ficha se queda y la otra desaparece: sus favoritos y sus direcciones con nombre (los enlaces viejos) pasan a la que se queda, se elimina como con «Eliminar negocio» y a su dueño se le dice que puede reclamar la otra. Solo se hace sola si la que sobra está vacía (sin publicaciones, reseñas, novedades, tarjetas, carta, regalos, pagos ni más equipo); si no, el procedimiento manual (RUNBOOK §4b).'),
+    fields: [
+      { name: 'keep', label: en ? 'Which one stays' : 'Cuál se queda', type: 'select', value: otra.id,
+        options: [[otra.id, `${otra.name}${otra.city ? ` (${otra.city})` : ''}`], [actual.id, `${actual.name}${actual.city ? ` (${actual.city})` : ''}`]] },
+      { name: 'reason', label: en ? 'Note for the record (optional)' : 'Nota para el registro (opcional)', type: 'textarea' },
+    ],
+    submit: en ? 'Merge' : 'Fusionar', danger: true,
+  });
+  if (!r || !await confirmaIdentidad()) return false;
+  const keep = r.keep;
+  const drop = keep === actual.id ? otra.id : actual.id;
+  try {
+    await rpc('admin_merge_businesses', { p_keep: keep, p_drop: drop, p_reason: r.reason || null });
+  } catch (e) {
+    if (String(e.message).includes('merge_manual')) {
+      toast(en ? 'The page that goes has content: follow the manual procedure (RUNBOOK §4b).' : 'La ficha que sobra tiene contenido: sigue el procedimiento manual (RUNBOOK §4b).', true);
+      return false;
+    }
+    throw e;
+  }
+  toast(en ? 'Merged' : 'Fusionadas');
+  go(`#/negocios/${keep}`);
+  return true;
+}
+
+/** En la ficha de un negocio: las que se le parecen. */
+function tarjetaDuplicados(b, lista) {
+  const en = I18N.lang === 'en';
+  if (!lista?.length) return '';
+  return `<div class="card warnbox" id="duplicados"><h2>${ms('content_copy')} ${en ? 'Possible duplicates' : 'Posibles duplicados'}</h2>
+    <p class="muted" style="margin:0 0 8px">${esc(en ? 'Pages that look like this one. Open both and decide: if they are the same, merge them; if not, mark them so we stop flagging them.' : 'Fichas que se parecen a esta. Abre las dos y decide: si son la misma, fusiónalas; si no, márcalo y dejaremos de avisar.')}</p>
+    ${lista.map((c) => `<div class="item" style="grid-template-columns:1fr"><div>
+      <h3><a class="link" href="#/negocios/${esc(c.id)}">${esc(c.name)}</a> ${tag(c.verification_status)} <span class="muted small">${esc(c.city || '')}</span></h3>
+      <div class="meta">${esc(motivoDuplicado(c, en))}${c.owner_email ? ` · ${esc(c.owner_email)}` : ''} · ${en ? 'joined' : 'alta'} ${fmtDay(c.created_at)}</div>
+      <div class="meta">${esc(cuentaFicha(c.counts, en))}</div>
+      <div class="actions"><a class="btn sm" href="#/negocios/${esc(c.id)}">${en ? 'Open' : 'Abrir'}</a>
+        <button class="btn sm" data-nodup="${esc(c.id)}">${en ? 'Not a duplicate' : 'No es duplicado'}</button>
+        <button class="btn sm bad" data-fusion="${esc(c.id)}">${en ? 'Merge…' : 'Fusionar…'}</button></div>
+    </div></div>`).join('')}
+  </div>`;
+}
+function enlazaDuplicados(v, b, lista) {
+  $$('[data-nodup]', v).forEach((btn) => { btn.onclick = () => esperando(btn, async () => { if (await noEsDuplicado(b.id, btn.dataset.nodup)) route(); }); });
+  $$('[data-fusion]', v).forEach((btn) => { btn.onclick = () => esperando(btn, async () => {
+    const otra = lista.find((x) => x.id === btn.dataset.fusion);
+    if (otra) await fusionar({ id: b.id, name: b.name, city: b.city }, otra);
+  }); });
+}
+
+PAGES.duplicados = async (v) => {
+  const en = I18N.lang === 'en';
+  const lista = await rpc('admin_duplicate_alerts', { p_limit: 100 });
+  v.innerHTML = `
+    <div class="page-head"><h1>${en ? 'Possible duplicates' : 'Posibles duplicados'}</h1></div>
+    ${helpBox(en ? 'What do I do here?' : '¿Qué hago aquí?', en
+      ? '<p>When a business signs up (or changes its name or place while pending), we look for pages with the <b>same name in the same city</b> (ignoring accents, capitals, punctuation and “S.L.”) or <b>less than 50 m away with a similar name</b>. Here are the pending ones and those that joined in the last 90 days. Open both: if they are the same business, <b>merge</b> them from the business page (automatic only if the one that goes is empty; otherwise RUNBOOK §4b); if not, <b>Not a duplicate</b>. If someone created a page for a business that is not theirs, the real owner can claim it (“Is this your business?”).</p>'
+      : '<p>Al dar de alta un negocio (o cambiarle el nombre o el sitio mientras está pendiente) buscamos fichas con el <b>mismo nombre en la misma ciudad</b> (sin tildes, mayúsculas, signos ni «S.L.») o <b>a menos de 50 m con un nombre parecido</b>. Aquí están los pendientes y las altas de los últimos 90 días. Abre las dos: si son el mismo negocio, <b>fusiónalas</b> desde la ficha del negocio (sola solo si la que sobra está vacía; si no, RUNBOOK §4b); si no, <b>No es duplicado</b>. Si alguien creó la ficha de un negocio que no es suyo, el dueño de verdad puede reclamarla («¿Es tu negocio?»).</p>')}
+    <div id="list"></div>`;
+  $('#list', v).innerHTML = lista.length ? lista.map((x) => `<div class="item"><div class="ph">${ms('content_copy')}</div><div>
+      <h3><a class="link" href="#/negocios/${esc(x.id)}">${esc(x.name)}</a> ${tag(x.verification_status)} <span class="muted small">${esc(x.city || '')} · ${en ? 'joined' : 'alta'} ${fmtDay(x.created_at)}</span></h3>
+      ${(x.candidates || []).map((c) => `<div class="meta">↔ <a class="link" href="#/negocios/${esc(c.id)}">${esc(c.name)}</a> ${tag(c.verification_status)} · ${esc(motivoDuplicado(c, en))}
+        <button class="btn sm" data-nodup="${esc(x.id)}" data-otra="${esc(c.id)}">${en ? 'Not a duplicate' : 'No es duplicado'}</button></div>`).join('')}
+      <div class="actions"><a class="btn sm" href="#/negocios/${esc(x.id)}#duplicados">${en ? 'Open and decide' : 'Abrir y decidir'}</a></div>
+    </div></div>`).join('') : `<div class="tbl-wrap"><div class="empty">${en ? 'No possible duplicates right now.' : 'Ahora no hay posibles duplicados.'}</div></div>`;
+  $$('[data-nodup]', v).forEach((b) => { b.onclick = () => esperando(b, async () => { if (await noEsDuplicado(b.dataset.nodup, b.dataset.otra)) { refreshBadges(); route(); } }); });
+};
+
+/** Abre la prueba (Storage privado) con un enlace que caduca en 5 minutos. */
+async function verPrueba(ruta) {
+  const { data, error } = await sb.storage.from('business-claims').createSignedUrl(ruta, 300);
+  if (error || !data?.signedUrl) { toast(I18N.lang === 'en' ? 'The evidence could not be opened.' : 'No se ha podido abrir la prueba.', true); return; }
+  window.open(data.signedUrl, '_blank', 'noopener');
+}
+
+PAGES.reclamaciones = async (v) => {
+  const en = I18N.lang === 'en';
+  const s = st.reclamaciones;
+  const p = params();
+  if (p.status) s.status = p.status;
+  v.innerHTML = `
+    <div class="page-head"><h1>${en ? 'Business claims' : 'Reclamaciones de negocios'}</h1></div>
+    ${helpBox(en ? 'What do I do here?' : '¿Qué hago aquí?', en
+      ? '<p>“Is this your business?”: someone with an account (18 or over) says they own or run a business whose page someone else created. Compare what they send with the page (phone, email, website): call the business number if in doubt. <b>Approve</b> makes them the owner (like a handover: the previous owner is told by notification and email, and you can leave them as a manager) and the other open claims for that business are rejected. <b>Reject</b> needs a reason, which they see; they can try again after 30 days. The evidence is deleted 6 months after deciding and the claim after 2 years. Everything stays in the activity log.</p>'
+      : '<p>«¿Es tu negocio?»: alguien con cuenta (18 años o más) dice que es dueño o que lleva un negocio cuya ficha creó otra persona. Compara lo que manda con la ficha (teléfono, correo, web): si hay dudas, llama al número del negocio. <b>Aprobar</b> le hace propietario (como un traspaso: a quien lo era se le avisa por notificación y correo, y puedes dejarle de encargado) y las demás reclamaciones abiertas de ese negocio quedan rechazadas. <b>Rechazar</b> pide un motivo, que verá; podrá volver a intentarlo a los 30 días. La prueba se borra a los 6 meses de decidir y la reclamación a los 2 años. Todo queda en el registro de actividad.</p>')}
+    <div class="toolbar"><select id="status">${[['pending', en ? 'Pending' : 'Pendientes'], ['approved', en ? 'Approved' : 'Aprobadas'], ['rejected', en ? 'Rejected' : 'Rechazadas'], ['withdrawn', en ? 'Withdrawn' : 'Retiradas'], ['all', en ? 'All' : 'Todas']].map((o) => `<option value="${o[0]}" ${s.status === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select></div>
+    <div id="list"><div class="loading">${en ? 'Loading…' : 'Cargando…'}</div></div>`;
+  const ESTADO = { pending: ['warn', en ? 'pending' : 'pendiente'], approved: ['ok', en ? 'approved' : 'aprobada'], rejected: ['bad', en ? 'rejected' : 'rechazada'], withdrawn: ['dim', en ? 'withdrawn' : 'retirada'] };
+  const load = async () => {
+    const r = await rpc('admin_business_claims', { p_status: s.status, p_limit: s.limit, p_offset: s.offset });
+    const total = s.status === 'all' ? Object.values(r.counts || {}).reduce((a, n) => a + n, 0) : (r.counts || {})[s.status] || 0;
+    const pg = pager(s, total, load);
+    const items = r.items || [];
+    $('#list').innerHTML = (items.length ? items.map((x, i) => {
+      const [cls, txt] = ESTADO[x.status] || ['dim', x.status];
+      const coincide = (a, b2) => a && b2 && String(a).replace(/\D/g, '').slice(-9) === String(b2).replace(/\D/g, '').slice(-9);
+      return `<div class="item"><div class="ph">${ms('how_to_reg')}</div><div>
+        <h3><a class="link" href="#/negocios/${esc(x.business_id)}">${esc(x.business_name || '—')}</a> <span class="tag ${cls}">${esc(txt)}</span> <span class="muted small">${esc(x.business_city || '')}</span></h3>
+        <div class="meta">${en ? 'Claimed by' : 'Reclama'} <a class="link" href="#/usuarios/${esc(x.user_id)}">${esc(x.user_name || x.user_email || '—')}</a>${x.user_name ? ` (${esc(x.user_email || '')})` : ''} · ${en ? 'account since' : 'cuenta desde'} ${fmtDay(x.user_since)} · ${fmtDate(x.created_at)}${x.user_claims > 1 ? ` · ${fmtNum(x.user_claims)} ${en ? 'claims in total' : 'reclamaciones en total'}` : ''}${x.other_pending ? ` · <b>${fmtNum(x.other_pending)} ${en ? 'other open claims for this business' : 'reclamaciones más abiertas de este negocio'}</b>` : ''}</div>
+        <dl class="kv">
+          <dt>${en ? 'Role' : 'Cargo'}</dt><dd>${esc(x.role_title)}</dd>
+          <dt>${en ? 'Phone given' : 'Teléfono que da'}</dt><dd>${x.contact_phone ? `<a class="link" href="tel:${esc(x.contact_phone)}">${esc(x.contact_phone)}</a> ${coincide(x.contact_phone, x.business_phone) ? `<span class="tag ok">${en ? 'matches the page' : 'coincide con la ficha'}</span>` : ''}` : '—'}</dd>
+          <dt>${en ? 'Email given' : 'Correo que da'}</dt><dd>${x.contact_email ? `<a class="link" href="mailto:${esc(x.contact_email)}">${esc(x.contact_email)}</a> ${x.business_email && x.contact_email.toLowerCase() === String(x.business_email).toLowerCase() ? `<span class="tag ok">${en ? 'matches the page' : 'coincide con la ficha'}</span>` : ''}` : '—'}</dd>
+          <dt>${en ? 'On the page' : 'En la ficha'}</dt><dd>${esc([x.business_phone, x.business_email, x.business_website, x.business_address].filter(Boolean).join(' · ') || '—')}</dd>
+          <dt>${en ? 'Evidence' : 'Prueba'}</dt><dd>${x.proof_text ? `<span style="white-space:pre-wrap">${esc(x.proof_text)}</span>` : ''}${x.proof_path ? ` <button class="btn sm" data-prueba="${i}">${ms('attach_file')} ${en ? 'View the file' : 'Ver el archivo'}</button>` : ''}${x.proof_deleted_at ? ` <span class="muted small">${en ? 'file deleted' : 'archivo borrado'} ${fmtDay(x.proof_deleted_at)}</span>` : ''}${!x.proof_text && !x.proof_path && !x.proof_deleted_at ? '—' : ''}</dd>
+          <dt>${en ? 'Current owner' : 'Propietario ahora'}</dt><dd>${x.owner_id ? `<a class="link" href="#/usuarios/${esc(x.owner_id)}">${esc(x.owner_email || x.owner_name || '—')}</a>${x.owner_last_activity ? ` · ${en ? 'last active' : 'última actividad'} ${fmtDay(x.owner_last_activity)}` : ''}` : '—'}</dd>
+          ${x.status !== 'pending' ? `<dt>${en ? 'Decision' : 'Decisión'}</dt><dd>${fmtDate(x.resolved_at)}${x.resolved_by_email ? ` · ${esc(x.resolved_by_email)}` : ''}${x.reason ? ` · ${esc(x.reason)}` : ''}${x.status === 'approved' ? ` · ${x.previous_owner_kept ? (en ? 'previous owner kept as manager' : 'quien era dueño sigue de encargado') : (en ? 'previous owner removed from the team' : 'quien era dueño sale del equipo')}` : ''}</dd>` : ''}
+        </dl>
+        ${x.status === 'pending' ? `<div class="actions">
+          <button class="btn sm ok" data-aprobar="${i}">${en ? 'Approve…' : 'Aprobar…'}</button>
+          <button class="btn sm bad" data-rechazar="${i}">${en ? 'Reject…' : 'Rechazar…'}</button>
+        </div>` : ''}
+      </div></div>`;
+    }).join('') : `<div class="tbl-wrap"><div class="empty">${en ? 'No claims with that filter.' : 'Ninguna reclamación con ese filtro.'}</div></div>`) + pg.html;
+    pg.bind($('#list'));
+    $$('#list [data-prueba]').forEach((b) => { b.onclick = () => esperando(b, () => verPrueba(items[b.dataset.prueba].proof_path)); });
+    $$('#list [data-aprobar]').forEach((b) => { b.onclick = () => esperando(b, async () => {
+      const x = items[b.dataset.aprobar];
+      const r2 = await modal({
+        title: en ? 'Approve the claim' : 'Aprobar la reclamación',
+        intro: esc(en
+          ? `${x.user_email} becomes the owner of “${x.business_name}”. The current owner (${x.owner_email || '—'}) is told by notification and email, and the other open claims for this business are rejected.`
+          : `${x.user_email} pasa a ser propietario de «${x.business_name}». A quien lo es ahora (${x.owner_email || '—'}) se le avisa por notificación y correo, y las demás reclamaciones abiertas de este negocio quedan rechazadas.`),
+        fields: [
+          { name: 'keep', label: en ? 'Leave the current owner on the team as a manager' : 'Dejar a quien es dueño ahora en el equipo como encargado', type: 'checkbox', value: false },
+          { name: 'note', label: en ? 'How you checked it (for the record)' : 'Cómo lo has comprobado (para el registro)', type: 'textarea' },
+        ],
+        submit: en ? 'Approve' : 'Aprobar',
+      });
+      if (!r2 || !await confirmaIdentidad()) return;
+      await rpc('admin_resolve_business_claim', { p_id: x.id, p_approve: true, p_reason: r2.note || null, p_reason_en: null, p_keep_previous: !!r2.keep });
+      toast(en ? 'Claim approved: ownership handed over' : 'Reclamación aprobada: propiedad traspasada');
+      refreshBadges(); load();
+    }); });
+    $$('#list [data-rechazar]').forEach((b) => { b.onclick = () => esperando(b, async () => {
+      const x = items[b.dataset.rechazar];
+      const r2 = await modal({
+        title: en ? 'Reject the claim' : 'Rechazar la reclamación',
+        intro: esc(en ? 'They will see the reason and can try again in 30 days with more evidence.' : 'Verá el motivo y podrá volver a intentarlo dentro de 30 días con más pruebas.'),
+        fields: [
+          { name: 'reason', label: en ? 'Reason (Spanish)' : 'Motivo (español)', type: 'textarea', required: true },
+          { name: 'reason_en', label: en ? 'Reason in English (optional)' : 'Motivo en inglés (opcional)', type: 'textarea' },
+        ],
+        submit: en ? 'Reject' : 'Rechazar', danger: true,
+      });
+      if (!r2) return;
+      await rpc('admin_resolve_business_claim', { p_id: x.id, p_approve: false, p_reason: r2.reason, p_reason_en: r2.reason_en || null, p_keep_previous: false });
+      toast(en ? 'Claim rejected' : 'Reclamación rechazada');
+      refreshBadges(); load();
+    }); });
+  };
+  $('#status', v).onchange = () => { s.status = $('#status', v).value; s.offset = 0; history.replaceState(null, '', `#/reclamaciones?status=${s.status}`); load(); };
+  await load();
+};
+
+PAGES.inactivas = async (v) => {
+  const en = I18N.lang === 'en';
+  const d = await rpc('admin_inactive_accounts', { p_limit: 100 });
+  const c = d.config || {};
+  const k = d.counts || {};
+  v.innerHTML = `
+    <div class="page-head"><h1>${en ? 'Inactive accounts' : 'Cuentas inactivas'}</h1></div>
+    ${helpBox(en ? 'What do I do here?' : '¿Qué hago aquí?', en
+      ? `<p>Every day (05:20 UTC) we look for accounts nobody has used for <b>${c.warn_months} months</b> (opening the app or the website, logging in or refreshing the session): they get an email saying the account will be deleted on the date of the <b>${c.delete_months} months</b> (never less than ${c.min_notice_days} days after the warning) and a reminder <b>${c.reminder_days} days</b> before. Logging in once cancels it. On the date the account is deleted the same way as “Delete my account”. <b>Business owners are never deleted automatically</b>: they appear here as “held” and you decide (hand over or delete the business from its page); once they own nothing, the next run deletes them. Administrators are left out.</p>`
+      : `<p>Cada día (05:20 UTC) buscamos las cuentas que nadie usa desde hace <b>${c.warn_months} meses</b> (abrir la app o la web, entrar o refrescar la sesión): les llega un correo diciendo que la cuenta se borrará en la fecha de los <b>${c.delete_months} meses</b> (nunca menos de ${c.min_notice_days} días después del aviso) y un recordatorio <b>${c.reminder_days} días</b> antes. Con entrar una vez se anula. El día, la cuenta se elimina igual que con «Eliminar mi cuenta». <b>A quien es dueño de un negocio nunca se le borra sola</b>: sale aquí como «retenida» y decides tú (traspasar o eliminar el negocio desde su ficha); cuando ya no es dueña de nada, la siguiente pasada la elimina. Los administradores quedan fuera.</p>`)}
+    <div class="card"><div class="kpis">
+      <div class="kpi"><b>${fmtNum(k.warned || 0)}</b><span>${en ? 'warned' : 'avisadas'}</span></div>
+      <div class="kpi"><b>${fmtNum(k.due_30d || 0)}</b><span>${en ? 'to delete in 30 days' : 'se borran en 30 días'}</span></div>
+      <div class="kpi"><b>${fmtNum(k.held || 0)}</b><span>${en ? 'held (own a business)' : 'retenidas (tienen negocio)'}</span></div>
+      <div class="kpi"><b>${fmtNum(k.deleted_365d || 0)}</b><span>${en ? 'deleted (12 months)' : 'eliminadas (12 meses)'}</span></div>
+    </div></div>
+    <div class="card"><h2>${en ? 'Accounts' : 'Cuentas'}</h2>${table({ cols: [
+      { h: en ? 'Account' : 'Cuenta', r: (x) => `<a class="link" href="#/usuarios/${esc(x.user_id)}">${esc(x.email || x.user_id)}</a>${x.display_name ? `<span class="sub">${esc(x.display_name)}</span>` : ''}` },
+      { h: en ? 'Last active' : 'Última actividad', r: (x) => `<span class="nowrap">${fmtDay(x.last_activity_at)}</span>` },
+      { h: en ? 'Warned' : 'Aviso', r: (x) => `<span class="nowrap">${fmtDay(x.warned_at)}</span>${x.warn_emailed ? '' : `<span class="sub">${en ? 'no email sent' : 'sin correo'}</span>`}` },
+      { h: en ? 'Reminder' : 'Recordatorio', r: (x) => (x.reminded_at ? `<span class="nowrap">${fmtDay(x.reminded_at)}</span>` : '—') },
+      { h: en ? 'Deleted on' : 'Se borra', r: (x) => (x.held ? `<span class="tag warn">${en ? 'held' : 'retenida'}</span>` : `<span class="nowrap">${fmtDay(x.delete_after)}</span>`) },
+      { h: en ? 'Businesses' : 'Negocios', r: (x) => (x.businesses || []).map((b) => `<a class="link" href="#/negocios/${esc(b.id)}">${esc(b.name)}</a>`).join(', ') || '—' },
+    ], rows: d.items || [], empty: en ? 'No account has been warned.' : 'Ninguna cuenta avisada.' })}</div>
+    <div class="card"><h2>${en ? 'Periods' : 'Plazos'}</h2>
+      <form id="plazos" class="grid2" style="align-items:end">
+        <label class="f"><span>${en ? 'Warn after (months)' : 'Avisar a los (meses)'}</span><input name="warn_months" type="number" min="6" max="60" value="${esc(c.warn_months)}" required></label>
+        <label class="f"><span>${en ? 'Delete after (months)' : 'Borrar a los (meses)'}</span><input name="delete_months" type="number" min="8" max="120" value="${esc(c.delete_months)}" required></label>
+        <label class="f"><span>${en ? 'Reminder (days before)' : 'Recordatorio (días antes)'}</span><input name="reminder_days" type="number" min="7" max="90" value="${esc(c.reminder_days)}" required></label>
+        <label class="f"><span>${en ? 'Minimum notice (days)' : 'Aviso mínimo (días)'}</span><input name="min_notice_days" type="number" min="21" max="365" value="${esc(c.min_notice_days)}" required></label>
+        <label class="f" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="enabled" ${c.enabled ? 'checked' : ''}><span>${en ? 'Turned on' : 'Encendido'}</span></label>
+        <div><button class="btn primary" type="submit">${en ? 'Save' : 'Guardar'}</button></div>
+      </form>
+      <p class="muted small" style="margin:8px 0 0">${en ? 'If you change them, update the privacy policy too (klendar-web/build_legal.py), which states 24 and 36 months.' : 'Si los cambias, cambia también la política de privacidad (klendar-web/build_legal.py), que dice 24 y 36 meses.'}</p>
+    </div>`;
+  const f = $('#plazos', v);
+  f.onsubmit = (e) => { e.preventDefault(); esperando($('button[type=submit]', f), async () => {
+    await rpc('admin_set_inactive_accounts', { p_value: {
+      enabled: f.elements.enabled.checked, warn_months: +f.elements.warn_months.value, delete_months: +f.elements.delete_months.value,
+      reminder_days: +f.elements.reminder_days.value, min_notice_days: +f.elements.min_notice_days.value,
+    } });
+    toast(en ? 'Saved' : 'Guardado'); route();
+  }); };
+};
+
 PAGES.mensajes = async (v) => {
   const s = st.mensajes;
   const en = I18N.lang === 'en';
@@ -2256,6 +2727,13 @@ PAGES.configuracion = async (v) => {
   const mv = cfg.min_version?.value || {}, mt = cfg.maintenance?.value || {}, sp = cfg.send_push?.value || {};
   const rl = cfg.rules?.value || {};
   const limits = await rpc('admin_rate_limits', { p_limit: 50 });
+  // Fotos y vídeos sin usar (`storage_cleanup_count`): lo que se borraría.
+  const fotos = await rpc('storage_cleanup_count', { p_examples: 3 }).catch(() => null);
+  const fr = cfg.storage_rules?.value || { modo: 'contar', grace_days: 7, media_months: 12 };
+  const MOTIVOS_FOTO = I18N.lang === 'en'
+    ? { sin_uso: 'not used anywhere', caducada: 'from old publications', cuenta_borrada: 'deleted accounts', avatar_cambiado: 'old profile photos', resena_borrada: 'deleted reviews', negocio_borrado: 'deleted businesses' }
+    : { sin_uso: 'sin usar en ningún sitio', caducada: 'de publicaciones viejas', cuenta_borrada: 'cuentas eliminadas', avatar_cambiado: 'fotos de perfil cambiadas', resena_borrada: 'reseñas borradas', negocio_borrado: 'negocios eliminados' };
+  const mb = (n) => `${(Number(n || 0) / 1048576).toLocaleString(I18N.lang === 'en' ? 'en-GB' : 'es-ES', { maximumFractionDigits: 1 })} MB`;
   v.innerHTML = `
     <div class="page-head"><h1>Configuración</h1></div>
     ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p><b>Minimum version</b>: if a user opens an older version of the app, they're asked to update (useful after breaking changes). <b>Maintenance</b>: blocks the app with a message while you make a delicate change. <b>Push delivery</b>: address of the function that sends the notifications (don't touch it unless the project changes). Below, maintenance tools and usage of the anti-abuse limits.</p>` : '<p><b>Versión mínima</b>: si un usuario abre una versión más antigua de la app, se le pide actualizar (útil tras cambios incompatibles). <b>Mantenimiento</b>: bloquea la app con un mensaje mientras haces un cambio delicado. <b>Envío de push</b>: dirección de la función que manda las notificaciones (no la toques salvo que cambie el proyecto). Abajo, herramientas de mantenimiento y el uso de los límites anti-abuso.</p>')}
@@ -2266,6 +2744,17 @@ PAGES.configuracion = async (v) => {
         <label class="f" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="block2x1" ${rl.block_2x1_alcohol === true ? 'checked' : ''}><span>Bloquear promociones <b>2x1 en bebidas alcohólicas</b></span></label>
         <p class="muted small" style="margin:0">${I18N.lang === 'en' ? `Off, which is how it is now: the business declares whether its two-for-one includes alcohol and, if it says yes, the publication is marked <b>over-18s only</b>. On, it simply won't let them publish it. Context for deciding: Law 34/1988 and several regional laws ban promotions that encourage drinking more for the same money (“2x1”, “open bar”), even if the venue is adults-only, and the fine falls on the advertising business.` : `Apagado, que es como está ahora: el negocio declara si su 2x1 lleva alcohol y, si dice que sí, la publicación sale marcada <b>solo para mayores de 18</b>. Encendido, directamente no deja publicarla. Contexto para decidir: la Ley 34/1988 y varias leyes autonómicas prohíben las promociones que incentivan beber más por el mismo dinero («2x1», «barra libre»), aunque el local sea solo para mayores, y la sanción recae en el negocio anunciante.`}</p>
         <div><button class="btn sm">Guardar</button> <span class="muted small">${I18N.lang === 'en' ? 'updated' : 'actualizado'} ${fmtDate(cfg.rules?.updated_at)}</span></div></form></div>
+      <div class="card"><h2>Fotos y vídeos sin usar</h2>
+        <p class="muted small" style="margin:0 0 10px">${I18N.lang === 'en'
+          ? `Every night, files that nothing uses any more are deleted: from deleted accounts and businesses, old profile photos, deleted reviews and, if the mode is <b>delete</b>, what a business uploaded and no longer uses and the media of publications that ended more than N months ago. In <b>count only</b> mode the new rules just count: check the list below before switching. Nothing uploaded in the last days is touched (an upload in progress isn't saved anywhere yet).`
+          : `Cada noche se borran los archivos que ya no usa nada: de cuentas y negocios eliminados, fotos de perfil cambiadas, reseñas borradas y, si el modo es <b>borrar</b>, lo que un negocio subió y ya no usa y los medios de publicaciones que terminaron hace más de N meses. En modo <b>solo contar</b> lo nuevo solo se cuenta: revisa la lista de abajo antes de cambiarlo. Nada subido en los últimos días se toca (una subida a medias aún no está guardada en ningún sitio).`}</p>
+        ${fotos ? `<p class="small" style="margin:0 0 8px"><b>${fmtNum(fotos.total)}</b> ${I18N.lang === 'en' ? 'files' : 'archivos'} · ${mb(fotos.bytes)}</p>
+          ${Object.keys(fotos.por_motivo || {}).length ? `<ul class="small" style="margin:0 0 10px;padding-left:18px">${Object.entries(fotos.por_motivo).map(([k, x]) => `<li>${esc(MOTIVOS_FOTO[k] || k)}: <b>${fmtNum(x.n)}</b> (${mb(x.bytes)})${(x.ejemplos || []).length ? `<br><code class="small">${x.ejemplos.map(esc).join('<br>')}</code>` : ''}</li>`).join('')}</ul>` : `<p class="muted small">${I18N.lang === 'en' ? 'Nothing to delete right now.' : 'Ahora mismo no hay nada que borrar.'}</p>`}` : ''}
+        <form id="frf" style="display:grid;gap:10px">
+          <label class="f"><span>Modo</span><select name="modo"><option value="contar" ${fr.modo !== 'borrar' ? 'selected' : ''}>Solo contar</option><option value="borrar" ${fr.modo === 'borrar' ? 'selected' : ''}>Borrar</option></select></label>
+          <label class="f"><span>Días de margen desde la subida</span><input name="grace" type="number" min="3" max="60" value="${esc(fr.grace_days ?? 7)}"></label>
+          <label class="f"><span>Meses tras terminar una publicación</span><input name="months" type="number" min="3" max="60" value="${esc(fr.media_months ?? 12)}"></label>
+          <div><button class="btn sm">Guardar</button> <span class="muted small">${I18N.lang === 'en' ? 'updated' : 'actualizado'} ${fmtDate(cfg.storage_rules?.updated_at)}</span></div></form></div>
       <div class="card"><h2>Envío de push</h2><form id="spf" style="display:grid;gap:10px"><label class="f"><span>URL de la función</span><input name="url" value="${esc(sp.url || '')}"></label><label class="f"><span>Clave</span><input name="key" type="password" autocomplete="off" value="${esc(sp.key || '')}"></label><div><button class="btn sm">Guardar</button></div></form></div>
       <div class="card"><h2>Mantenimiento</h2><p class="muted small">Las publicaciones caducan solas cada 5 minutos (cron). Si ves alguna caducada que sigue apareciendo, fuerza la comprobación.</p><div class="actions"><button class="btn sm" id="expire">Caducar publicaciones vencidas ahora</button></div>
         <h3 style="margin-top:16px">Límites anti-abuso (últimas 24 h)</h3>${table({ cols: [{ h: 'Usuario', r: (x) => esc(x.user_email || '—') }, { h: 'Acción', r: (x) => esc(x.action) }, { h: 'Ventana', r: (x) => fmtDate(x.window_start) }, { h: 'Intentos', num: true, r: (x) => x.hits }], rows: limits, empty: 'Nadie ha tocado un límite.' })}</div>
@@ -2285,6 +2774,13 @@ PAGES.configuracion = async (v) => {
   alGuardar($('#mtf'), async (c) => { if (c.enabled.checked && !await confirmDlg('Activar mantenimiento', 'Todos los usuarios verán el mensaje y no podrán usar la app hasta que lo desactives.', { danger: true, submit: 'Activar' })) return; await save('maintenance', { enabled: c.enabled.checked, message: c.message.value.trim() || null }); });
   alGuardar($('#spf'), async (c) => { if (!await confirmDlg('Cambiar el envío de push', 'Si la dirección o la clave están mal, dejarán de llegar todas las notificaciones push.', { danger: true, submit: 'Guardar' })) return; await save('send_push', { url: c.url.value.trim(), key: c.key.value.trim() }); });
   alGuardar($('#rlf'), (c) => save('rules', { block_2x1_alcohol: c.block2x1.checked }));
+  alGuardar($('#frf'), async (c) => {
+    if (c.modo.value === 'borrar' && fr.modo !== 'borrar' && !await confirmDlg('Borrar fotos y vídeos sin usar', I18N.lang === 'en' ? 'From tonight, the files in the list will be deleted for good. Check it first.' : 'Desde esta noche se borrarán para siempre los archivos de la lista. Revísala antes.', { danger: true, submit: 'Borrar' })) return;
+    try {
+      await rpc('admin_set_storage_rules', { p_modo: c.modo.value, p_grace_days: Number(c.grace.value), p_media_months: Number(c.months.value) });
+      toast('Guardado'); route();
+    } catch (e) { toast(e.message, true); }
+  });
   $('#expire').onclick = (ev) => esperando(ev.currentTarget, async () => { try { const n = await rpc('admin_run_expire_offers'); toast(I18N.lang === 'en' ? `${n} ${n === 1 ? 'publication' : 'publications'} expired` : `${n} ${n === 1 ? 'publicación caducada' : 'publicaciones caducadas'}`); } catch (e) { toast(e.message, true); } });
 };
 

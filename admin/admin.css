@@ -72,7 +72,7 @@ label.f > span small { font-weight: 500; }
 .tag.warn, .tag.st-pending, .tag.st-trial, .tag.st-reviewing, .tag.st-draft, .tag.st-past_due { background: rgba(255,184,77,.25); color: #8a5200; }
 .tag.bad, .tag.st-rejected, .tag.st-open, .tag.st-failed, .tag.st-cancelled, .tag.st-banned, .tag.st-inactive { background: rgba(255,92,92,.2); color: #b3261e; }
 .tag.ok, .tag.st-verified, .tag.st-resolved, .tag.st-approved, .tag.st-active, .tag.st-validated, .tag.st-sent { background: rgba(46,204,113,.2); color: #146c3a; }
-.tag.dim, .tag.st-expired, .tag.st-dismissed, .tag.st-skipped, .tag.st-sold_out { background: rgba(120,120,120,.18); color: var(--ink-2); }
+.tag.dim, .tag.st-expired, .tag.st-dismissed, .tag.st-skipped, .tag.st-sold_out, .tag.st-archived {background: rgba(120,120,120,.18); color: var(--ink-2); }
 @media (prefers-color-scheme: dark) {
   .tag.warn, .tag.st-pending, .tag.st-trial, .tag.st-reviewing, .tag.st-draft, .tag.st-past_due { color: #FFD08A; }
   .tag.bad, .tag.st-rejected, .tag.st-open, .tag.st-failed, .tag.st-cancelled, .tag.st-banned, .tag.st-inactive { color: #FF9B9B; }

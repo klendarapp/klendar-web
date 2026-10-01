@@ -67,6 +67,7 @@ const fmtMoney = (c, cur = 'EUR') => (c == null ? '—' : (c / 100).toLocaleStri
 const fmtNum = (n) => (n ?? 0).toLocaleString(LOC());
 const LABELS = {
   active: 'activa', draft: 'borrador', expired: 'terminada', sold_out: 'agotada', cancelled: 'cancelada',
+  archived: 'archivada',
   pending: 'en revisión', approved: 'aprobada', rejected: 'rechazada',
   flash_offer: 'oferta flash', future_event: 'evento',
   owner: 'propietario', manager: 'encargado', staff: 'empleado',
@@ -118,6 +119,14 @@ const ERRORS = {
   invalid_code: 'Ese código no existe.',
   auth_required: 'Tu sesión ha caducado. Vuelve a entrar para continuar.',
   invalid_reply: 'Escribe al menos 2 caracteres.',
+  offer_archived: 'Una publicación archivada no se vuelve a publicar: crea otra a partir de ella.',
+  // Edad y suspensión (20261028100000).
+  adult_required: 'Para esto hace falta tener 18 años y la fecha de nacimiento en el perfil.',
+  min_age_16: 'Para entrar en el equipo de un negocio hace falta tener 16 años.',
+  team_has_minors: 'Hay alguien en el equipo menor de 18 años (o sin fecha de nacimiento en su perfil). Quítalo del equipo antes de marcar el negocio como +18.',
+  paused_by_klendar: 'Klendar ha pausado este negocio y no se puede abrir desde aquí. Si tienes dudas, escríbenos a info@klendar.app.',
+  account_suspended: 'Tu cuenta está suspendida: no puedes publicar ni cambiar nada del negocio. Si crees que es un error, escribe a info@klendar.app.',
+  member_suspended: 'Esa cuenta está suspendida y no puede entrar en un equipo.',
   // Lo que devuelve Storage al subir una foto.
   'Payload too large': 'Esa foto pesa demasiado. Prueba con otra más pequeña.',
   'maximum allowed size': 'Esa foto pesa demasiado. Prueba con otra más pequeña.',
@@ -685,6 +694,7 @@ PAGES.alta = async (v) => {
   v.innerHTML = `
     <div class="page-head"><h1>${otro ? 'Dar de alta otro local' : 'Da de alta tu negocio'}</h1></div>
     ${otro ? '' : `<div class="help"><b>Bienvenido/a.</b> Cuéntanos sobre tu negocio: lo revisamos antes de hacerlo público (normalmente en 24-48 h). Mientras, ya puedes preparar publicaciones.
+      <br><span class="muted">Para dar de alta un negocio hace falta tener 18 años.</span>
       <br><span class="muted">¿Te han invitado al equipo de un negocio? Entonces no hace falta: entra con el mismo correo con el que te invitaron y aparecerá solo.</span></div>`}
     <form id="alta" class="form" novalidate>
       <label class="f"><span>Nombre del negocio *</span><input name="name" maxlength="80" required placeholder="Ej. La Taberna del Gato"></label>
@@ -830,14 +840,48 @@ function avisoVerificacion() {
     ${rechazado
       ? (motivo ? `<span>${esc(I18N.t('Motivo:'))}</span> <span>${esc(motivo)}</span>` : esc(I18N.t('No hemos podido verificar el negocio. Escríbenos a info@klendar.app.')))
       : esc(I18N.t('Estamos revisando tu negocio; normalmente tardamos 24–48 h. Mientras tanto puedes preparar la ficha y tus publicaciones: se harán públicas al verificarlo. Si pasan más de 48 h sin noticias, escríbenos.'))}
+    <p style="margin:8px 0 0"><a class="btn sm" href="mailto:info@klendar.app?subject=${asunto}&body=${cuerpo}">${ms('mail')}${esc(I18N.t('Escribir a soporte'))}</a>
+      ${rechazado && gestiona() ? `<button class="btn sm primary" type="button" id="otra-revision">${ms('check')}${esc(I18N.t('Pedir otra revisión'))}</button>` : ''}</p></div>`;
+}
+
+/** Administración lo ha marcado como cerrado de verdad (`business_closure_state`). */
+function avisoCerrado() {
+  const en = I18N.lang === 'en';
+  const asunto = encodeURIComponent(en ? 'Klendar · my business has not closed' : 'Klendar · mi negocio no ha cerrado');
+  const cuerpo = encodeURIComponent(en ? `Business: ${BIZ.id}` : `Negocio: ${BIZ.id}`);
+  return `<div class="help"><b>${esc(I18N.t('Hemos marcado tu negocio como cerrado.'))}</b>
+    ${esc(I18N.t('Ya no aparece en Klendar y sus publicaciones se han cancelado. Si es un error o vuelve a abrir, escríbenos.'))}
     <p style="margin:8px 0 0"><a class="btn sm" href="mailto:info@klendar.app?subject=${asunto}&body=${cuerpo}">${ms('mail')}${esc(I18N.t('Escribir a soporte'))}</a></p></div>`;
 }
 
+/** «Pedir otra revisión»: tras corregir lo del rechazo, otra vez a la cola
+ * del admin, con lo que ha cambiado si lo cuenta (`request_business_review`). */
+async function pideOtraRevision(boton) {
+  const r = await modal({
+    title: 'Pedir otra revisión',
+    intro: esc(I18N.t('Cuando hayas corregido lo que te dijimos, pídenos que lo miremos otra vez. Si quieres, cuéntanos qué has cambiado. Normalmente contestamos en 24–48 h.')),
+    fields: [{ name: 'note', label: 'Qué has corregido (opcional)', type: 'textarea', rows: 3, maxlength: 500 }],
+    submit: 'Pedir la revisión',
+  });
+  if (!r) return;
+  boton.disabled = true;
+  try {
+    const res = await rpc('request_business_review', { p_business: BIZ.id, p_note: r.note || null });
+    toast(I18N.t(res?.ok ? 'Hecho: tu negocio vuelve a estar en revisión' : 'Tu negocio ya no está rechazado.'));
+    await recargaNegocios();
+    route();
+  } catch (e) {
+    toast(e.message, true);
+    boton.disabled = false;
+  }
+}
+
 PAGES.resumen = async (v) => {
-  const [stats, offers, sub] = await Promise.all([
+  const [stats, offers, sub, cerradoDeVerdad] = await Promise.all([
     rpc('business_stats', { p_id: BIZ.id }),
     rpc('my_business_offers', { p_id: BIZ.id }),
     rpc('my_subscription', { p_business: BIZ.id }).catch(() => null),
+    rpc('business_closure_state', { p_ref: BIZ.id }).catch(() => null),
   ]);
   const pending = offers.filter((o) => o.status === 'active');
   const s = stats || {};
@@ -853,6 +897,7 @@ PAGES.resumen = async (v) => {
   v.innerHTML = `
     <div class="page-head"><h1>${esc(BIZ.name)}</h1><span class="tag st-${esc(BIZ.verification_status)}">${esc(BIZ_LABELS[BIZ.verification_status] || BIZ.verification_status)}</span><span class="spacer"></span>
       <a class="btn sm ghost" href="${APP_URL}/b/${esc(BIZ.id)}" target="_blank" rel="noopener">Ver ficha pública ↗</a></div>
+    ${cerradoDeVerdad ? avisoCerrado() : ''}
     ${BIZ.verification_status !== 'verified' ? avisoVerificacion() : ''}
     ${primeros ? `<div class="card primeros"><h2>Primeros pasos</h2>
       <p class="muted" style="margin:0 0 8px">Tres cosas y tu negocio está listo para que la gente lo encuentre.</p>
@@ -874,7 +919,13 @@ PAGES.resumen = async (v) => {
         <div class="kpi"><b>${fmtNum(pending.length)}</b><span>Publicaciones activas</span></div>
       </div>
     </div>
-    ${gestiona() && BIZ.verification_status === 'verified' ? `<div class="card pausa"><div>
+    ${cerradoIndef() ? `<div class="card pausa"><div>
+        <h2 style="margin:0">Cerrado hasta nuevo aviso</h2>
+        <p class="muted" style="margin:4px 0 0">${esPropietario()
+          ? esc(I18N.t('Ahora mismo no se ve nada de tu negocio. Lo abres de nuevo cuando quieras.'))
+          : esc(I18N.t('Solo el propietario puede abrirlo de nuevo.'))}</p></div>
+        ${esPropietario() ? '<a class="btn primary" href="#/baja">Abrir de nuevo</a>' : ''}</div>`
+    : gestiona() && BIZ.verification_status === 'verified' ? `<div class="card pausa"><div>
         <h2 style="margin:0">Cerrado por hoy</h2>
         <p class="muted" style="margin:4px 0 0">${pausado()
           ? esc(I18N.t('Ahora mismo no se ve nada de tu negocio. Mañana vuelve a verse solo.'))
@@ -896,7 +947,21 @@ PAGES.resumen = async (v) => {
       ],
       rows: offers.slice(0, 8),
       empty: 'Todavía no has publicado nada.',
-    })}</div>`;
+    })}</div>
+    ${esPropietario() ? '' : `<div class="card"><h2>Salir del equipo</h2>
+      <p class="muted" style="margin:0 0 10px">Dejarás de ver este panel y de validar sus códigos. Avisaremos al propietario.</p>
+      <button class="btn bad ghost" type="button" id="salir-equipo">Salir del equipo</button></div>`}`;
+  const otra = $('#otra-revision', v);
+  if (otra) otra.onclick = () => pideOtraRevision(otra);
+  const salirEq = $('#salir-equipo', v);
+  if (salirEq) {
+    salirEq.onclick = async () => {
+      if (salirEq.disabled) return;
+      salirEq.disabled = true;
+      try { await salirDelEquipo(); } catch (e) { toast(e.message, true); }
+      salirEq.disabled = false;
+    };
+  }
   const wcopy = $('#wcopy', v);
   if (wcopy) {
     wcopy.onclick = async () => {
@@ -971,8 +1036,14 @@ PAGES.publicaciones = async (v, param) => {
       <button class="btn sm ghost" id="csv">Exportar CSV</button></div>
     ${helpBox('¿Oferta o evento?', bi('<p><b>Oferta flash</b>: algo que se canjea hoy, con cuenta atrás y aforo («café + tostada 2,50 € hasta mediodía»). <b>Evento</b>: algo con fecha, que se guarda en la agenda y puede admitir reserva de plaza.</p>',
       '<p><b>Flash offer</b>: something redeemed today, with a countdown and a limit (“coffee + toast €2.50 until noon”). <b>Event</b>: something with a date, which people save to their agenda and where people can reserve a place.</p>'))}
+    <div id="filtroArch"></div>
     <div id="list"></div>
     <div id="rules"></div>`;
+  // Las archivadas (se borraron con canjes validados) no salen en la lista:
+  // solo con el filtro «Archivadas», para ver sus cifras o crear otra a
+  // partir de ellas. No se editan ni se vuelven a publicar.
+  const archivadas = offers.filter((o) => o.status === 'archived');
+  let verArchivadas = false;
   const DIAS = I18N.lang === 'en'
     ? ['Sundays', 'Mondays', 'Tuesdays', 'Wednesdays', 'Thursdays', 'Fridays', 'Saturdays']
     : ['domingos', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábados'];
@@ -1047,6 +1118,15 @@ PAGES.publicaciones = async (v, param) => {
   }
 
   const render = () => {
+    // El filtro solo aparece si hay alguna archivada.
+    $('#filtroArch').innerHTML = archivadas.length ? `<div class="pills" style="margin:0 0 12px">
+      <button type="button" data-arch="0" class="${verArchivadas ? '' : 'on'}" aria-pressed="${!verArchivadas}">${esc(I18N.t('Publicaciones'))}</button>
+      <button type="button" data-arch="1" class="${verArchivadas ? 'on' : ''}" aria-pressed="${verArchivadas}">${esc(bi(`Archivadas (${archivadas.length})`, `Archived (${archivadas.length})`))}</button>
+    </div>${verArchivadas ? `<p class="hint" style="margin:0 0 12px">${esc(I18N.t('Se borraron con canjes validados: ya no se ven en ninguna parte, pero siguen contando en el Informe.'))}</p>` : ''}` : '';
+    $$('[data-arch]', $('#filtroArch')).forEach((b) => {
+      b.onclick = () => { verArchivadas = b.dataset.arch === '1'; render(); };
+    });
+    const desdeEsta = (o) => `#/publicaciones/${o.kind === 'flash_offer' ? 'nueva-flash' : 'nuevo-evento'}?from=${esc(o.id)}`;
     $('#list').innerHTML = table({
       cols: [
         { h: 'Publicación', r: (o) => `${primeraFoto(o.images) ? `<img class="thumb" src="${esc(primeraFoto(o.images))}" alt="" loading="lazy">` : `<span class="ph">${ms((o.images || []).some(esVideo) ? 'play_circle' : o.kind === 'flash_offer' ? 'bolt' : 'event')}</span>`}<b class="title">${esc(o.title)}</b><span class="sub">${esc(I18N.t(LABELS[o.kind]))} · ${fmtDate(o.kind === 'flash_offer' ? o.redeem_start_at : o.event_at)}${etiquetaAudiencia(o)}</span>` },
@@ -1054,7 +1134,10 @@ PAGES.publicaciones = async (v, param) => {
         { h: 'Plazas', r: (o) => o.max_redemptions == null ? '—' : `<span data-plazas="${esc(o.id)}">${plazasTxt(o, plazasOcupadas(o))}</span>` },
         { h: 'Vistas', num: true, r: (o) => fmtNum(o.views) },
         { h: 'Canjes', num: true, r: (o) => fmtNum(o.redemptions_count) },
-        { h: '', r: (o) => !gestiona()
+        { h: '', r: (o) => o.status === 'archived'
+          // Archivada: solo sus cifras y, a quien publica, crear otra igual.
+          ? `<div class="actions"><button class="btn sm ghost" data-act="stats" data-id="${esc(o.id)}">Cifras</button>${gestiona() ? `<a class="btn sm ghost" href="${desdeEsta(o)}">Crear a partir de esta</a>` : ''}</div>`
+          : !gestiona()
           ? `<div class="actions"><button class="btn sm ghost" data-act="stats" data-id="${esc(o.id)}">Cifras</button>${o.kind === 'future_event' && o.reservations_enabled ? `<a class="btn sm ghost" href="#/asistentes/${esc(o.id)}">Asistentes</a>` : ''}</div>`
           : `<div class="actions">
             <a class="btn sm" href="#/publicaciones/${esc(o.id)}">Editar</a>
@@ -1072,8 +1155,8 @@ PAGES.publicaciones = async (v, param) => {
             </div></details>
           </div>` },
       ],
-      rows: offers,
-      empty: 'Todavía no has publicado nada.',
+      rows: verArchivadas ? archivadas : offers.filter((o) => o.status !== 'archived'),
+      empty: archivadas.length ? 'Ninguna a la vista: las que tienes están archivadas.' : 'Todavía no has publicado nada.',
     });
     $$('[data-act]', $('#list')).forEach((b) => {
       b.onclick = async () => {
@@ -1096,7 +1179,12 @@ PAGES.publicaciones = async (v, param) => {
             return;
           }
           if (b.dataset.act === 'delete') {
-            if (!await confirmDlg('Borrar publicación', 'Se borra para siempre, junto con sus estadísticas. Si solo quieres que deje de verse, púlsale a «Pausar».', { danger: true, submit: 'Borrar' })) return;
+            // Con canjes validados la base no la borra: la archiva (los canjes
+            // son del negocio y cuentan en el Informe). Se dice antes.
+            const conCanjes = (offers.find((x) => x.id === id)?.redemptions_count || 0) > 0;
+            if (!await confirmDlg('Borrar publicación', conCanjes
+              ? 'Tiene canjes validados, así que no se borra: se archiva. Deja de verse, sigue contando en el Informe y puedes crear otra a partir de ella.'
+              : 'Se borra para siempre, junto con sus estadísticas. Si solo quieres que deje de verse, púlsale a «Pausar».', { danger: true, submit: 'Borrar' })) return;
             const { error } = await sb.from('offers').delete().eq('id', id);
             if (error) {
               // Con gente que tiene reserva la base no deja borrar (perdería su
@@ -1114,7 +1202,13 @@ PAGES.publicaciones = async (v, param) => {
               route();
               return;
             }
+            if (conCanjes) { toast('Archivada'); route(); return; }
           } else {
+            // Pausar con gente que tiene reserva o código: la base les avisa;
+            // el negocio lo sabe antes.
+            const o = offers.find((x) => x.id === id);
+            if (b.dataset.act === 'pause' && o?.pending_count > 0
+              && !await confirmaAvisos(o.pending_count, o.kind === 'future_event', ['pausa'], bi('¿Pausar la publicación?', 'Pause the publication?'), 'Pausar')) return;
             const { error } = await sb.from('offers').update({ status: b.dataset.act === 'pause' ? 'draft' : 'active' }).eq('id', id);
             if (error) throw error;
           }
@@ -1159,6 +1253,36 @@ function plazasOcupadas(o) {
   return o.redemptions_count + (o.holds_seats === false ? 0 : (o.pending_count || 0));
 }
 const plazasTxt = (o, n) => `${fmtNum(n)}/${fmtNum(o.max_redemptions)}`;
+
+/** Antes de un cambio que avisa a quien ya tiene reserva o código (fechas,
+ * pausa, +18): la base les manda la notificación al guardar; el negocio lo
+ * decide sabiéndolo, como con la bajada de precio. `n`: códigos vivos
+ * (`offer_pending_codes` / `pending_count`); `motivos`: fechas | pausa | adultos.
+ * Devuelve true si sigue adelante. */
+async function confirmaAvisos(n, evento, motivos, titulo, boton) {
+  const quien = evento
+    ? bi(n === 1 ? '1 persona con reserva recibirá un aviso.' : `${n} personas con reserva recibirán un aviso.`,
+      n === 1 ? '1 person with a booking will be notified.' : `${n} people with a booking will be notified.`)
+    : bi(n === 1 ? '1 persona con código recibirá un aviso.' : `${n} personas con código recibirán un aviso.`,
+      n === 1 ? '1 person with a code will be notified.' : `${n} people with a code will be notified.`);
+  const QUE = evento ? {
+    fechas: bi('Les avisamos del cambio de fecha; su reserva sigue valiendo y la pueden anular.',
+      "We'll tell them about the new date; their booking is still valid and they can cancel it."),
+    pausa: bi('Su reserva sigue valiendo; les avisamos de que está en pausa.',
+      "Their booking is still valid; we'll tell them it's paused."),
+    adultos: bi('Las reservas de quien no sea mayor de edad se anulan y se les avisa; al resto, que en la puerta pueden pedirle el DNI.',
+      "Bookings from anyone under 18 are cancelled and they're notified; everyone else is told they may be asked for ID at the door."),
+  } : {
+    fechas: bi('Les avisamos del cambio de fecha; su código sigue valiendo y lo pueden anular.',
+      "We'll tell them about the new date; their code is still valid and they can cancel it."),
+    pausa: bi('Su código sigue valiendo; les avisamos de que está en pausa.',
+      "Their code is still valid; we'll tell them it's paused."),
+    adultos: bi('Los códigos de quien no sea mayor de edad se anulan y se les avisa; al resto, que en la puerta pueden pedirle el DNI.',
+      "Codes from anyone under 18 are cancelled and they're notified; everyone else is told they may be asked for ID at the door."),
+  };
+  const html = `<p style="margin:0"><b>${esc(quien)}</b></p>${motivos.map((m) => `<p class="muted" style="margin:0">${esc(QUE[m])}</p>`).join('')}`;
+  return (await modal({ title: titulo, html, submit: boton })) !== null;
+}
 
 /** «Ampliar 1 h»: con la hora nueva a la vista, como en la app. */
 async function ampliarDialogo(o) {
@@ -1795,6 +1919,28 @@ async function offerForm(v, id, kindDefault, desde = null) {
     if (fin && new Date(fin) <= new Date(ini)) {
       $('#formErr').textContent = I18N.t('El fin debe ser posterior al inicio.'); return;
     }
+    // Cambios que la base avisa a quien ya tiene reserva o código (la misma
+    // regla que `offers_codes_follow`): cuándo es (alargar el final no
+    // cuenta), pausarla o marcarla +18. Se dice antes de guardar.
+    if (id && !['cancelled', 'archived'].includes(data.status)) {
+      const min = (s) => (s ? Math.floor(new Date(s).getTime() / 6e4) : null);
+      const evento = data.kind === 'future_event';
+      const fechas = data.kind !== o.kind || (evento
+        ? min(data.event_at) !== min(o.event_at)
+          || min(data.event_end_at || data.event_at) < min(o.event_end_at || o.event_at)
+        : min(data.redeem_start_at) !== min(o.redeem_start_at)
+          || min(data.redeem_end_at) < min(o.redeem_end_at));
+      const motivos = [
+        ...(fechas ? ['fechas'] : []),
+        ...(data.status === 'draft' && ['active', 'sold_out'].includes(o.status) ? ['pausa'] : []),
+        ...(data.adults_only && !o.adults_only ? ['adultos'] : []),
+      ];
+      if (motivos.length) {
+        let vivos = 0;
+        try { vivos = await rpc('offer_pending_codes', { p_offer: id }); } catch (e2) { $('#formErr').textContent = I18N.t(friendly(e2.message)); return; }
+        if (vivos > 0 && !await confirmaAvisos(vivos, evento, motivos, bi('¿Guardar los cambios?', 'Save the changes?'), 'Guardar cambios')) return;
+      }
+    }
     try {
       let offerId = id;
       if (id) {
@@ -1814,7 +1960,12 @@ async function offerForm(v, id, kindDefault, desde = null) {
       toast(id ? 'Cambios guardados' : 'Publicado');
       location.hash = '#/publicaciones';
     } catch (err) {
-      $('#formErr').textContent = I18N.t(friendly(err.message));
+      // El aforo no baja de lo ya reservado o usado: la base dice cuánto es.
+      const ocupadas = /capacity_below_reserved:(\d+)/.exec(String(err.message || ''));
+      $('#formErr').textContent = ocupadas
+        ? bi(`No puedes bajar el aforo a menos de ${ocupadas[1]}: ya hay ${ocupadas[1]} plazas reservadas o usadas.`,
+          `You can't lower the capacity below ${ocupadas[1]}: ${ocupadas[1]} places are already reserved or used.`)
+        : I18N.t(friendly(err.message));
     }
   };
 }
@@ -1831,6 +1982,12 @@ const ERR_VALIDAR = {
   code_cancelled: 'Reserva anulada: este código ya no vale.',
   sold_out: 'Aforo completo: ya han entrado todas las plazas.',
   rate_limited: 'Demasiados intentos seguidos. Espera un momento.',
+  // Escaneado sin conexión y enviado tarde (la base acepta hasta 24 h).
+  scan_too_old: 'Se escaneó hace más de 24 horas: ya no se puede validar.',
+  offer_cancelled: 'Esta publicación está cancelada: el código ya no vale.',
+  offer_removed: 'Klendar ha retirado esta publicación: el código ya no vale.',
+  business_inactive: 'Tu negocio está desactivado: no se pueden validar códigos. Escríbenos a info@klendar.app.',
+  account_suspended: 'Tu cuenta está suspendida: no puedes validar códigos. Si crees que es un error, escribe a info@klendar.app.',
 };
 
 /** Qué hay que dar (como `codeDealParts` en la app), en dos trozos: lo que
@@ -1913,6 +2070,12 @@ const queValidado = (r) => (r.kind === 'stamp_reward'
   ? `${I18N.t('Tarjeta de sellos')}${r.detail ? ` «${r.detail}»` : ''}`
   : r.kind === 'birthday_gift' ? I18N.t('Regalo de cumpleaños')
     : I18N.t(r.kind === 'future_event' ? 'Evento' : 'Oferta flash'));
+/** «sin conexión»: se escaneó sin red y se validó después, a la hora del
+ * escaneo (`offline` en `business_recent_validations` y `business_report`). */
+const etiquetaSinConexion = (r) => (r.offline ? ` <span class="tag dim">${esc(bi('sin conexión', 'offline'))}</span>` : '');
+/** Quién lo usó: su nombre, «Usuario de Klendar» sin nombre o «Cuenta
+ * eliminada» si ya no tiene cuenta (el canje se queda, sin nadie detrás). */
+const personaValidada = (r) => (r.deleted_account ? I18N.t('Cuenta eliminada') : (r.person || I18N.t('Usuario de Klendar')));
 
 PAGES.validar = async (v) => {
   v.innerHTML = `
@@ -1954,7 +2117,10 @@ PAGES.validar = async (v) => {
     let ok = 0; let mal = 0; const quedan = [];
     for (const item of c) {
       try {
-        const r = await rpc('validate_redemption', { p_code: item.code });
+        // Con la hora del escaneo: la base lo acepta si valía entonces (hasta
+        // 24 h antes). Las entradas viejas, sin hora, van como siempre.
+        const r = await rpc('validate_redemption', item.at
+          ? { p_code: item.code, p_scanned_at: item.at } : { p_code: item.code });
         if (r?.ok) ok++; else mal++;
       } catch (e) {
         if (sinRed(e.message)) quedan.push(item); else mal++;
@@ -1984,8 +2150,8 @@ PAGES.validar = async (v) => {
     caja.innerHTML = table({
       cols: [
         { h: 'Cuándo', r: (r) => fmtDate(r.at) },
-        { h: 'Qué', r: (r) => `<b class="title">${esc(r.title)}</b><span class="sub">${esc(queValidado(r))}</span>` },
-        { h: 'Persona', r: (r) => esc(r.person || I18N.t('Usuario de Klendar')) },
+        { h: 'Qué', r: (r) => `<b class="title">${esc(r.title)}</b><span class="sub">${esc(queValidado(r))}${etiquetaSinConexion(r)}</span>` },
+        { h: 'Persona', r: (r) => esc(personaValidada(r)) },
       ],
       rows: rows || [],
       empty: 'Todavía no has validado ningún código.',
@@ -2281,6 +2447,9 @@ PAGES.sellos = async (v, param) => {
         <p class="muted">${esc(bi(
           `${c.people === 0 ? 'Nadie con sellos ahora' : c.people === 1 ? '1 persona con sellos' : `${fmtNum(c.people)} personas con sellos`} · ${c.rewards_given === 0 ? 'ningún premio entregado' : c.rewards_given === 1 ? '1 premio entregado' : `${fmtNum(c.rewards_given)} premios entregados`}`,
           `${c.people === 0 ? 'Nobody with stamps now' : c.people === 1 ? '1 person with stamps' : `${fmtNum(c.people)} people with stamps`} · ${c.rewards_given === 0 ? 'no rewards handed over' : c.rewards_given === 1 ? '1 reward handed over' : `${fmtNum(c.rewards_given)} rewards handed over`}`))}</p>
+        ${c.people_old_goal > 0 ? `<p class="muted">${esc(bi(
+          `${c.people_old_goal === 1 ? '1 persona sigue' : `${fmtNum(c.people_old_goal)} personas siguen`} con una meta anterior, más baja, hasta su premio.`,
+          `${c.people_old_goal === 1 ? '1 person keeps' : `${fmtNum(c.people_old_goal)} people keep`} an earlier, lower goal until their reward.`))}</p>` : ''}
       </a>`).join('')
     : `<div class="empty"><b>${esc(I18N.t('Todavía no tienes ninguna tarjeta'))}</b><br>${esc(bi(`Crea la primera: «al décimo café, uno gratis». Puedes tener hasta ${d.max || 5}, cada una con lo suyo.`, `Create the first one: “the tenth coffee is on us”. You can have up to ${d.max || 5}, each with its own rules.`))}</div>`}`;
   $('#nueva', v).onclick = () => { location.hash = '#/sellos/nueva'; };
@@ -2309,7 +2478,8 @@ async function tarjetaForm(v, id) {
         <small class="muted">Lo ve la gente: «Cafés», «Menús», «Manicuras»…</small></label>
       ${rev?.name && !rev.paused ? `<div class="full">${revisionTexto(rev.name, c.name)}</div>` : ''}
       <label class="f"><span>Sellos para el premio</span><select name="goal">
-        ${Array.from({ length: 19 }, (_, i) => i + 2).map((n) => `<option value="${n}" ${Number(c?.goal || 10) === n ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
+        ${Array.from({ length: 19 }, (_, i) => i + 2).map((n) => `<option value="${n}" ${Number(c?.goal || 10) === n ? 'selected' : ''}>${n}</option>`).join('')}</select>
+        <small class="muted" id="metaAyuda" role="status" hidden></small></label>
       <label class="f full"><span>Premio</span>
         <input name="reward" maxlength="80" required placeholder="Un café con leche gratis" value="${esc(rev?.reward || c?.reward || '')}"></label>
       ${rev?.reward && !rev.paused ? `<div class="full">${revisionTexto(rev.reward, c.reward)}</div>` : ''}
@@ -2335,6 +2505,22 @@ async function tarjetaForm(v, id) {
     </form>`;
 
   const f = $('#f', v);
+  // Cambiar la meta con gente a medias: si sube, cada uno conserva la suya
+  // hasta su premio; si baja, vale ya para todos y se les avisa. Se explica
+  // debajo del campo antes de guardar.
+  const metaAyuda = () => {
+    const caja = $('#metaAyuda', v);
+    const nueva = Number(f.elements.goal.value);
+    const n = c?.people || 0;
+    if (!c || !n || nueva === c.goal) { caja.hidden = true; return; }
+    caja.hidden = false;
+    caja.textContent = nueva > c.goal
+      ? bi(`${n === 1 ? 'La persona que ya tiene sellos sigue' : `Las ${n} personas que ya tienen sellos siguen`} con su meta de ${c.goal} hasta conseguir el premio; la nueva vale para las que empiecen desde ahora.`,
+        `${n === 1 ? 'The person who already has stamps keeps' : `The ${n} people who already have stamps keep`} their goal of ${c.goal} until they get the reward; the new one applies to anyone who starts from now on.`)
+      : bi(`Se aplica ya a ${n === 1 ? 'la persona que tiene sellos, y le avisamos' : `las ${n} personas que tienen sellos, y les avisamos`}.`,
+        `It applies straight away to ${n === 1 ? 'the person who has stamps, and we’ll let them know' : `the ${n} people who have stamps, and we’ll let them know`}.`);
+  };
+  f.elements.goal.addEventListener('change', metaAyuda);
   $$('[name=applies_to]', v).forEach((r) => {
     r.onchange = () => {
       $('#cats', v).hidden = r.value !== 'categories' || !r.checked;
@@ -2373,7 +2559,15 @@ async function tarjetaForm(v, id) {
       p_by_visit: f.elements.by_visit.checked,
     }).catch((err) => ({ ok: false, error: err.message }));
     if (!r?.ok) { msg.textContent = r?.error === 'too_many_cards' ? I18N.t('Ya tienes 5, el máximo.') : errSellos(r?.error); return; }
-    toast(r.status === 'review' ? EN_REVISION_USO : 'Guardado');
+    // Lo que ha pasado con la meta de quien ya tenía sellos.
+    const meta = r.kept_goal > 0
+      ? bi(` ${r.kept_goal === 1 ? '1 persona sigue' : `${r.kept_goal} personas siguen`} con su meta anterior hasta conseguir el premio.`,
+        ` ${r.kept_goal === 1 ? '1 person keeps' : `${r.kept_goal} people keep`} their previous goal until they get the reward.`)
+      : r.notified > 0
+        ? bi(` Hemos avisado de la nueva meta a ${r.notified === 1 ? '1 persona' : `${r.notified} personas`}.`,
+          ` We’ve told ${r.notified === 1 ? '1 person' : `${r.notified} people`} about the new goal.`)
+        : '';
+    toast(r.status === 'review' ? I18N.t(EN_REVISION_USO) + meta : meta ? bi('Guardado.', 'Saved.') + meta : 'Guardado');
     location.hash = `#/sellos/${r.card.id}`;
   };
   const borrar = $('#borrar', v);
@@ -2410,7 +2604,9 @@ async function tarjetaClientes(v, id) {
     throw new Error(friendly(d.error));
   }
   const c = (todas?.cards || []).find((x) => x.id === id) || d.card;
-  const gente = (d.customers || []).map((p) => ({ ...p, goal: c.goal }));
+  // Cada persona con su meta: quien empezó antes de subirla conserva la suya
+  // (`stamp_card_customers` la trae; si no, la de la tarjeta).
+  const gente = (d.customers || []).map((p) => ({ ...p, goal: p.goal || c.goal }));
   let elegido = null;   // la persona abierta
   let q = '';
 
@@ -2473,7 +2669,7 @@ async function tarjetaClientes(v, id) {
     const nueva = (t?.cards || []).find((x) => x.id === id);
     if (nueva) { Object.assign(c, nueva); pintaCifras(); }
     if (!n?.ok) return;
-    gente.splice(0, gente.length, ...(n.customers || []).map((p) => ({ ...p, goal: c.goal })));
+    gente.splice(0, gente.length, ...(n.customers || []).map((p) => ({ ...p, goal: p.goal || c.goal })));
     if (elegido) elegido = gente.find((p) => p.user_id === elegido.user_id) || elegido;
     pintaGente();
     pintaPersona();
@@ -2492,12 +2688,14 @@ async function tarjetaClientes(v, id) {
     if (!elegido) { caja.innerHTML = ''; return; }
     const p = elegido;
     const nombre = p.name || I18N.t('Sin nombre');
-    const puedeDar = p.stamps >= c.goal || p.rewards_pending > 0;
+    // Su meta (puede ser una anterior, más baja, si la tarjeta la subió).
+    const meta = p.goal || c.goal;
+    const puedeDar = p.stamps >= meta || p.rewards_pending > 0;
     caja.innerHTML = `<div class="card persona-sellos">
       <div class="page-head" style="margin:0"><h2 style="margin:0">${esc(nombre)}</h2><span class="spacer"></span>
         <button class="btn sm ghost" type="button" id="cierra">${esc(I18N.t('Cerrar'))}</button></div>
-      ${huecos(p.stamps, c.goal)}
-      <p><b>${esc(premiosTxt({ ...p, goal: c.goal }))}</b></p>
+      ${huecos(p.stamps, meta)}
+      <p><b>${esc(premiosTxt({ ...p, goal: meta }))}</b></p>
       <form id="fp" class="form persona-form">
         <label class="f"><span>¿Cuántos sellos?</span><input name="n" type="number" min="1" max="20" value="1" inputmode="numeric"></label>
         <div class="f full dos-botones">
@@ -2527,7 +2725,7 @@ async function tarjetaClientes(v, id) {
       if (!await confirmDlg(bi(`¿Entregar el premio a ${nombre}?`, `Hand over the reward to ${nombre}?`),
         esc(p.rewards_pending
           ? bi(`«${c.reward}». Ya lo había pedido: su código queda canjeado.`, `“${c.reward}”. They had already claimed it: their code is marked as redeemed.`)
-          : bi(`«${c.reward}». Se gastan ${c.goal} sellos y queda apuntado como entregado.`, `“${c.reward}”. ${c.goal} stamps are used and it is recorded as handed over.`)),
+          : bi(`«${c.reward}». Se gastan ${meta} sellos y queda apuntado como entregado.`, `“${c.reward}”. ${meta} stamps are used and it is recorded as handed over.`)),
         { submit: 'Entregar' })) return;
       accion('give_stamp_reward', { p_card: c.id, p_user: p.user_id }, 'Premio entregado');
     };
@@ -3057,6 +3255,7 @@ PAGES.ficha = async (v) => {
         <label class="f full"><span>De qué va <small>(dos líneas bastan)</small></span><textarea name="description" maxlength="500" ${canManage ? '' : 'disabled'}>${esc(b.description || '')}</textarea></label>
         <label class="f"><span>Dirección *</span><input name="address" value="${esc(b.address || '')}" maxlength="120" required ${canManage ? '' : 'disabled'}></label>
         <label class="f"><span>Ciudad *</span><input name="city" value="${esc(b.city || '')}" maxlength="60" required ${canManage ? '' : 'disabled'}></label>
+        ${canManage ? '<p class="hint full">Si cambias el nombre, la ciudad o te mudas a más de 1 km, lo revisamos de nuevo. Tu negocio sigue a la vista mientras tanto y lo que tengas publicado se muda contigo.</p>' : ''}
         <label class="f"><span>Teléfono</span><input name="phone" value="${esc(b.phone || '')}" maxlength="20" ${canManage ? '' : 'disabled'}></label>
         <label class="f"><span>Web</span><input name="website" type="url" value="${esc(b.website || '')}" ${canManage ? '' : 'disabled'}></label>
         <label class="f"><span>Correo de contacto <small>(lo ven los clientes: mejor uno del negocio que el tuyo personal)</small></span><input name="contact_email" type="email" maxlength="254" placeholder="hola@tunegocio.com" value="${esc(b.contact_email || '')}" ${canManage ? '' : 'disabled'}></label>
@@ -3066,7 +3265,7 @@ PAGES.ficha = async (v) => {
         <label class="f"><span>Facebook</span><input name="facebook" value="${esc(redes.facebook || '')}" ${canManage ? '' : 'disabled'}></label>
         <label class="f full" style="grid-template-columns:auto 1fr;align-items:center">
           <input type="checkbox" name="adults_only" ${b.adults_only ? 'checked' : ''} ${canManage ? '' : 'disabled'}>
-          <span>Solo para mayores de 18 (todo lo que publiques quedará marcado)</span></label>
+          <span>Solo para mayores de 18 (todo lo que publiques quedará marcado y todo el equipo tiene que ser mayor de edad)</span></label>
         ${canManage ? '<div class="full"><button class="btn primary" type="submit">Guardar la ficha</button> <span id="msg" class="muted"></span></div>' : ''}
       </form>
 
@@ -3096,7 +3295,12 @@ PAGES.ficha = async (v) => {
           ${canManage ? `<button class="btn sm bad ghost" data-gal-del="${i}">Quitar</button>` : ''}</div>`).join('')}</div>
         ${canManage ? (galeria.length < TOPE.galeria
           ? `<p style="margin:10px 0 0"><button class="btn sm" data-img="gallery">Añadir fotos</button> <span class="muted small">${esc(topeHasta(TOPE.galeria))}</span></p>`
-          : `<p class="muted" style="margin:10px 0 0">${esc(topeLleno(TOPE.galeria))}</p>`) : ''}</div>`;
+          : `<p class="muted" style="margin:10px 0 0">${esc(topeLleno(TOPE.galeria))}</p>`) : ''}</div>
+      ${esPropietario() ? `${tarjetaDescarga()}
+      <div class="card"><h2>Dar de baja el negocio</h2>
+        <p class="muted" style="margin:0 0 10px">Cerrar hasta nuevo aviso, cancelar la suscripción, traspasarlo o eliminarlo.</p>
+        <a class="btn bad ghost" href="#/baja">Dar de baja el negocio</a></div>` : ''}`;
+    activaDescarga(v);
 
     if (!canManage) return;
 
@@ -3268,7 +3472,7 @@ PAGES.equipo = async (v) => {
     $('#add').onclick = async () => {
       const r = await modal({
         title: 'Añadir a alguien al equipo',
-        intro: esc(I18N.t('Le llega una invitación (en la app y por correo) que tiene que aceptar. Si aún no tiene cuenta, la verá al crearla con ese correo. Caduca a los 14 días.')),
+        intro: esc(I18N.t('Le llega una invitación (en la app y por correo) que tiene que aceptar. Si aún no tiene cuenta, la verá al crearla con ese correo. Caduca a los 14 días. Tiene que tener 16 años (18 si tu negocio es +18).')),
         fields: [
           { name: 'email', label: 'Correo', type: 'email', required: true },
           { name: 'role', label: 'Rol', type: 'select', value: 'staff', options: [['staff', 'Empleado'], ['manager', 'Encargado']] },
@@ -3590,6 +3794,8 @@ PAGES.informe = async (v, param) => {
         <div class="kpi"><b>${pct(t.redeemed, t.codes)}</b><span>De código a canje</span></div>
       </div>
       <p class="muted" style="margin:10px 0 0">${bi(`<b>${fmtNum(t.unused)}</b> ${t.unused === 1 ? 'código se quedó' : 'códigos se quedaron'} sin usar.${best ? ` La hora a la que más se canjea es a las <b>${String(best.hour).padStart(2, '0')}:00</b>.` : ''}`, `<b>${fmtNum(t.unused)}</b> ${t.unused === 1 ? 'code was' : 'codes were'} never used.${best ? ` The busiest redemption hour is <b>${String(best.hour).padStart(2, '0')}:00</b>.` : ''}`)}</p>
+      ${t.offline > 0 ? `<p class="muted" style="margin:4px 0 0">${esc(bi(`${fmtNum(t.offline)} ${t.offline === 1 ? 'validado' : 'validados'} sin conexión (a la hora en que se escanearon).`,
+        `${fmtNum(t.offline)} validated offline (at the time they were scanned).`))}</p>` : ''}
     </div>
 
     <div class="card"><h2>Día a día</h2>
@@ -3602,7 +3808,7 @@ PAGES.informe = async (v, param) => {
     <div class="card"><h2>Por publicación</h2><div class="actions" style="margin-bottom:10px"><button class="btn sm" id="csvOffers">Descargar CSV</button></div>
       ${table({
         cols: [
-          { h: 'Publicación', r: (o) => `<b class="title">${esc(o.title)}</b><span class="sub">${esc(LABELS[o.kind] || o.kind)} · ${fmtDate(o.starts_at)}</span>` },
+          { h: 'Publicación', r: (o) => `<b class="title">${esc(o.title)}</b><span class="sub">${esc(LABELS[o.kind] || o.kind)} · ${fmtDate(o.starts_at)}${o.status === 'archived' ? ` ${tag('archived')}` : ''}</span>` },
           { h: 'Precio', num: true, r: (o) => fmtMoney(o.price_cents, o.currency) },
           { h: 'Vistas', num: true, r: (o) => fmtNum(o.views) },
           { h: 'Códigos', num: true, r: (o) => fmtNum(o.codes) },
@@ -3619,7 +3825,7 @@ PAGES.informe = async (v, param) => {
       ${table({
         cols: [
           { h: 'Cuándo', r: (x) => fmtDate(x.at) },
-          { h: 'Qué', r: (x) => `<b class="title">${esc(x.title)}</b><span class="sub">${esc(queValidado(x))}</span>` },
+          { h: 'Qué', r: (x) => `<b class="title">${esc(x.title)}</b><span class="sub">${esc(queValidado(x))}${etiquetaSinConexion(x)}</span>` },
           { h: 'Código', r: (x) => `<code>${esc(x.code)}</code>` },
         { h: 'Plazas', num: true, r: (x) => fmtNum(x.seats || 1) },
           // Lo que se pagó por plaza: el precio de cuando se consiguió el
@@ -3641,6 +3847,7 @@ PAGES.informe = async (v, param) => {
   $('#csvRed').onclick = () => downloadCsv(`canjes-${BIZ.name}`, r.redemptions || [], [
     ['at', 'Fecha y hora'], [(x) => queValidado(x), 'Tipo'], ['title', 'Qué'], ['code', 'Código'], [(x) => x.seats ?? 1, 'Plazas'],
     [(x) => (x.paid_cents == null ? '' : (x.paid_cents / 100).toFixed(2)), 'Precio'], ['by', 'Validado por'],
+    [(x) => (x.offline ? bi('sí', 'yes') : ''), 'Sin conexión'],
   ]);
 };
 
@@ -3794,5 +4001,368 @@ PAGES.ayuda = async (v) => {
     </div>
     <div class="card"><h2>¿Algo no cuadra?</h2><p class="muted" style="margin:0">Escríbenos a <a class="link" href="mailto:info@klendar.app">info@klendar.app</a> y lo miramos.</p></div>`;
 };
+
+// ── Dar de baja el negocio ──────────────────────────────────────────────────
+// Solo el propietario, de menos a más: descargar los datos, cerrar hasta
+// nuevo aviso, cancelar la suscripción, traspasarlo y eliminarlo. La base lo
+// vuelve a comprobar todo (migración 20261025100000). Lo mismo que «Dar de
+// baja el negocio» en la app.
+
+/** Cerrado hasta nuevo aviso: la base guarda esa pausa sin fin como
+ * `paused_until` = 9999-12-31 (así lo esconde todo lo que ya escondía
+ * «Cerrado por hoy»). */
+const cerradoIndef = () => !!BIZ?.paused_until && new Date(BIZ.paused_until).getUTCFullYear() >= 9000;
+const esPropietario = () => BIZ?.role === 'owner';
+const diaLargoFecha = (iso) => (iso ? new Intl.DateTimeFormat(LOC(), { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
+  .format(new Date(`${String(iso).slice(0, 10)}T00:00:00Z`)) : '');
+
+const ERR_BAJA = {
+  already_cancelled: 'Ya estaba cancelada.',
+  not_member: 'Esa persona ya no está en tu equipo.',
+  self: 'Elige a otra persona del equipo.',
+  not_found: 'Ya no está: puede que haya caducado.',
+  expired: 'Ya no está: puede que haya caducado.',
+  owner: 'El propietario no sale del equipo: traspasa el negocio o dalo de baja.',
+  not_owner: 'Solo el propietario puede dar de baja el negocio.',
+  reauth_required: 'Por seguridad, vuelve a confirmar que eres tú.',
+  adult_required: 'Para ser propietario de un negocio hace falta tener 18 años y la fecha de nacimiento en el perfil. Esa persona aún no lo cumple.',
+};
+const errBaja = (codigo) => I18N.t(ERR_BAJA[codigo] || friendly(codigo));
+/** Llama y, si la base dice `{ ok: false, error }` (o lanza un código que
+ * conocemos), lo convierte en un error con su frase. */
+async function rpcOk(fn, args) {
+  let r;
+  try {
+    r = await rpc(fn, args);
+  } catch (e) {
+    const clave = String(e?.clave || '');
+    const k = Object.keys(ERR_BAJA).sort((x, y) => y.length - x.length).find((x) => clave.includes(x));
+    throw k ? new Error(errBaja(k)) : e;
+  }
+  if (r && r.ok === false) throw new Error(errBaja(r.error));
+  return r;
+}
+
+/** «Confirma que eres tú» (contraseña o código de 6 cifras al correo) antes
+ * de traspasar o eliminar el negocio, como en la app y «Tu cuenta». La lógica
+ * está en /assets/identidad.js. Devuelve true si queda confirmado. */
+async function confirmaIdentidad() {
+  let id = null;
+  try { id = await window.KL_IDENTIDAD?.(sb); } catch { id = null; }
+  if (!id) { toast('No se ha podido. Vuelve a probar.', true); return false; }
+  let tieneClave = true;
+  try {
+    const m = await rpc('my_auth_methods');
+    if (typeof m?.has_password === 'boolean') tieneClave = m.has_password;
+  } catch { tieneClave = (ME?.identities || []).some((i) => i.provider === 'email'); }
+  const lang = I18N.lang === 'en' ? 'en' : 'es';
+  return new Promise((resolve) => {
+    const d = $('#modal');
+    let conCodigo = !tieneClave;
+    let enviado = false;
+    let terminado = false;
+    const acaba = async (ok) => {
+      if (terminado) return;
+      terminado = true;
+      d.close();
+      await id.cerrar();
+      resolve(ok);
+    };
+    const correo = esc(id.email);
+    const pinta = () => {
+      d.innerHTML = `<form method="dialog" novalidate><h2>Confirma que eres tú</h2>
+        ${!conCodigo ? `<p class="muted" style="margin:0">Por seguridad, escribe tu contraseña actual.</p>
+          <label class="f"><span>Contraseña actual</span><input name="clave" type="password" autocomplete="current-password"></label>`
+        : !enviado ? `<p class="muted" style="margin:0">${bi(`Te mandaremos un código de 6 cifras a <b>${correo}</b>.`, `We'll email a 6-digit code to <b>${correo}</b>.`)}</p>`
+        : `<p class="muted" style="margin:0">${bi(`Escribe el código de 6 cifras que te hemos mandado a <b>${correo}</b>.`, `Enter the 6-digit code we've sent to <b>${correo}</b>.`)}</p>
+          <label class="f"><span>Código</span><input name="codigo" inputmode="numeric" autocomplete="one-time-code" maxlength="6"></label>`}
+        <p class="err" role="alert" style="margin:0"></p>
+        <p style="margin:0">${!conCodigo ? '<button type="button" class="btn sm ghost" data-modo="codigo">Prefiero un código por correo</button>' : ''}
+          ${conCodigo && enviado ? '<button type="button" class="btn sm ghost" data-reenvio>Enviar otro código</button>' : ''}
+          ${conCodigo && tieneClave ? '<button type="button" class="btn sm ghost" data-modo="clave">Usar mi contraseña</button>' : ''}</p>
+        <div class="foot"><button type="button" class="btn ghost" data-cancel>Cancelar</button>
+          <button type="submit" class="btn primary">${conCodigo && !enviado ? 'Enviarme el código' : 'Seguir'}</button></div></form>`;
+      I18N.translate(d);
+      const form = $('form', d);
+      const err = $('.err', d);
+      const falla = (e, clave) => {
+        const mala = clave && (e?.code === 'invalid_credentials' || /invalid login credentials/i.test(e?.message || ''));
+        err.textContent = mala ? I18N.t('La contraseña no es correcta.') : window.KL_AUTH_ERROR(e, lang);
+      };
+      $('[data-cancel]', d).onclick = () => acaba(false);
+      $$('[data-modo]', d).forEach((b) => { b.onclick = () => { conCodigo = b.dataset.modo === 'codigo'; pinta(); }; });
+      const reenvio = $('[data-reenvio]', d);
+      if (reenvio) {
+        reenvio.onclick = async () => {
+          reenvio.disabled = true;
+          try { await id.mandarCodigo(); toast('Te hemos mandado otro código.'); } catch (e) { falla(e); }
+          setTimeout(() => { reenvio.disabled = false; }, 60000);
+        };
+      }
+      form.onsubmit = async (e) => {
+        e.preventDefault();
+        err.textContent = '';
+        const boton = $('button[type=submit]', form);
+        boton.disabled = true;
+        try {
+          if (!conCodigo) {
+            const clave = form.elements.clave.value;
+            if (!clave) { err.textContent = I18N.t('Obligatorio'); return; }
+            try { await id.conClave(clave); } catch (x) { falla(x, true); return; }
+            await acaba(true);
+          } else if (!enviado) {
+            try { await id.mandarCodigo(); } catch (x) { falla(x); return; }
+            enviado = true;
+            pinta();
+          } else {
+            const codigo = form.elements.codigo.value.replace(/\D/g, '');
+            if (!/^\d{6}$/.test(codigo)) { err.textContent = I18N.t('Son 6 cifras.'); return; }
+            try { await id.conCodigo(codigo); } catch (x) { falla(x); return; }
+            await acaba(true);
+          }
+        } finally { boton.disabled = false; }
+      };
+      ($('input', form) || $('button[type=submit]', form))?.focus();
+    };
+    d.oncancel = (e) => { e.preventDefault(); acaba(false); };
+    pinta();
+    d.showModal();
+  });
+}
+
+/** Descargar los datos del negocio: todo en JSON, o las publicaciones con
+ * sus cifras en CSV (para una hoja de cálculo). Sin datos de los clientes. */
+async function descargaDatos(formato) {
+  const datos = await rpc('business_export', { p_business: BIZ.id });
+  const nombre = (BIZ.name || 'klendar').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'klendar';
+  if (formato === 'json') {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(datos, null, 2)], { type: 'application/json' }));
+    a.download = `klendar-${nombre}-${bi('datos', 'data')}-${KZ.hoy(TZ)}.json`;
+    a.click();
+    return;
+  }
+  const tipos = { flash_offer: I18N.t('Oferta flash'), future_event: I18N.t('Evento') };
+  downloadCsv(`klendar-${nombre}-${bi('publicaciones', 'publications')}`, datos.publications || [], [
+    ['title', I18N.t('Publicación')],
+    [(p) => tipos[p.kind] || p.kind, I18N.t('Tipo')],
+    [(p) => I18N.t(LABELS[p.status] || p.status), I18N.t('Estado')],
+    [(p) => fmtDate(p.created_at), I18N.t('Creada')],
+    [(p) => (p.starts_at ? fmtDate(p.starts_at) : ''), I18N.t('Inicio')],
+    [(p) => (p.ends_at ? fmtDate(p.ends_at) : ''), I18N.t('Fin')],
+    [(p) => (p.price_cents == null ? '' : (p.price_cents / 100).toFixed(2)), I18N.t('Precio (€)')],
+    ['views', I18N.t('Vistas')],
+    ['codes', I18N.t('Códigos')],
+    ['redeemed', I18N.t('Canjes')],
+    [(p) => p.max_redemptions ?? '', I18N.t('Aforo')],
+  ]);
+}
+
+/** La tarjeta de «Descargar los datos del negocio» (en la ficha, aquí y al
+ * eliminar). Dos botones del mismo ancho. */
+const tarjetaDescarga = () => `<div class="card"><h2>Descargar los datos del negocio</h2>
+  <p class="muted" style="margin:0 0 10px">Tu ficha, las publicaciones con sus cifras, el informe por meses, las tarjetas de sellos (sin datos de los clientes), las reseñas y los pagos. En JSON va todo; en CSV, las publicaciones para abrirlas en una hoja de cálculo.</p>
+  <div class="dos-botones"><button class="btn" type="button" data-descarga="json">JSON</button>
+    <button class="btn" type="button" data-descarga="csv">CSV</button></div></div>`;
+function activaDescarga(v) {
+  $$('[data-descarga]', v).forEach((b) => {
+    b.onclick = async () => {
+      if (b.disabled) return;
+      b.disabled = true;
+      try { await descargaDatos(b.dataset.descarga); } catch (e) { toast(friendly(e.message), true); }
+      b.disabled = false;
+    };
+  });
+}
+
+/** Al cambiar algo, `my_businesses` trae el estado nuevo (cerrado, rol…). */
+async function recargaNegocios() {
+  try {
+    BIZZES = await rpc('my_businesses');
+    BIZ = BIZZES.find((b) => b.id === BIZ.id) || BIZ;
+  } catch { /* se queda como estaba */ }
+}
+
+PAGES.baja = async (v, param) => {
+  if (!esPropietario()) {
+    v.innerHTML = `<div class="page-head"><h1>Dar de baja el negocio</h1></div>
+      <div class="card"><p style="margin:0">Solo el propietario puede dar de baja el negocio.</p></div>`;
+    return;
+  }
+  if (param === 'eliminar') return eliminarNegocio(v);
+  const s = await rpc('business_account_status', { p_business: BIZ.id });
+  const sub = s.subscription || {};
+  const can = s.cancellation;
+  const tr = s.transfer;
+  const estadoSub = can
+    ? (can.effective_on ? bi(`Cancelada: todo sigue hasta el ${diaLargoFecha(can.effective_on)}.`, `Cancelled: everything carries on until ${diaLargoFecha(can.effective_on)}.`) : I18N.t('Cancelada: no se empezará a cobrar.'))
+    : !sub.period_end ? I18N.t('Ahora no pagas nada.')
+    : sub.status === 'trial' ? bi(`Prueba gratis hasta el ${diaLargoFecha(sub.period_end)}.`, `Free trial until ${diaLargoFecha(sub.period_end)}.`)
+    : bi(`Pagada hasta el ${diaLargoFecha(sub.period_end)}.`, `Paid until ${diaLargoFecha(sub.period_end)}.`);
+  v.innerHTML = `
+    <div class="page-head"><h1>Dar de baja el negocio</h1><span class="spacer"></span><a class="btn sm ghost" href="#/ficha">← Tu ficha</a></div>
+    <p class="muted" style="margin:0 0 14px">Lo que puedes hacer si dejas de usar Klendar, de menos a más. Solo lo ve el propietario.</p>
+    ${tarjetaDescarga()}
+    <div class="card"><h2>Cerrar hasta nuevo aviso</h2>
+      <p class="muted" style="margin:0 0 10px">Nadie verá tu ficha ni tus publicaciones en Descubre, el mapa o la búsqueda; quien tenga el enlace verá «Cerrado temporalmente». Lo abres de nuevo cuando quieras. Cerrar no cancela la suscripción.</p>
+      ${s.closed_since ? `<p style="margin:0 0 10px"><b>${esc(I18N.t('Cerrado hasta nuevo aviso'))}</b> · ${esc(bi(`Desde el ${diaLargoFecha(s.closed_since)}. No se ve nada de tu negocio.`, `Since ${diaLargoFecha(s.closed_since)}. Nothing from your business is showing.`))}</p>
+        <button class="btn primary" type="button" data-accion="abrir">Abrir de nuevo</button>`
+        : '<button class="btn" type="button" data-accion="cerrar">Cerrar hasta nuevo aviso</button>'}</div>
+    <div class="card"><h2>Suscripción</h2>
+      <p class="muted" style="margin:0 0 10px">El negocio sigue igual hasta el final de lo pagado; después no se renueva. Te mandamos un correo de confirmación.</p>
+      <p style="margin:0 0 10px"><b>${esc(estadoSub)}</b></p>
+      ${can ? '<button class="btn" type="button" data-accion="deshacer">Deshacer la cancelación</button>'
+        : '<button class="btn" type="button" data-accion="cancelar">Cancelar la suscripción</button>'}</div>
+    <div class="card"><h2>Traspasar el negocio</h2>
+      <p class="muted" style="margin:0 0 10px">Pasa a ser de otra persona de tu equipo, que tiene que aceptarlo. Tú puedes quedarte como encargado o salir.</p>
+      ${tr ? `<p style="margin:0 0 10px"><b>${esc(bi(`Esperando a que ${tr.to_name} lo acepte (caduca el ${diaLargoFecha(tr.expires_at)}).`, `Waiting for ${tr.to_name} to accept (expires on ${diaLargoFecha(tr.expires_at)}).`))}</b></p>
+        <button class="btn" type="button" data-accion="no-traspaso">Cancelar el traspaso</button>`
+        : '<button class="btn" type="button" data-accion="traspaso">Elegir a quién</button>'}</div>
+    <div class="card"><h2>Eliminar el negocio</h2>
+      <p class="muted" style="margin:0 0 10px">Para siempre: la ficha, las publicaciones, las tarjetas de sellos y el equipo. Avisamos a quien tenga algo pendiente.</p>
+      <a class="btn bad" href="#/baja/eliminar">Eliminar el negocio</a></div>`;
+  activaDescarga(v);
+  const hecho = async (msg) => { toast(msg); await recargaNegocios(); route(); };
+  const acciones = {
+    async cerrar() {
+      const vivas = s.live_reservations || 0;
+      const texto = esc(bi(`${BIZ.name} dejará de verse en Klendar hasta que lo abras de nuevo.`, `${BIZ.name} will stop showing on Klendar until you reopen it.`))
+        + (vivas ? `<br><br>${esc(bi(vivas === 1 ? 'Hay 1 reserva o código sin usar: sigue valiendo. Si no vas a atenderlo, cancela esa publicación.' : `Hay ${vivas} reservas o códigos sin usar: siguen valiendo. Si no vas a atenderlos, cancela esas publicaciones.`,
+          vivas === 1 ? "There is 1 unused booking or code: it's still valid. If you won't honour it, cancel that publication." : `There are ${vivas} unused bookings or codes: they're still valid. If you won't honour them, cancel those publications.`))}` : '');
+      if (!await confirmDlg(I18N.t('¿Cerrar hasta nuevo aviso?'), texto, { submit: I18N.t('Cerrar') })) return;
+      await rpcOk('set_business_closed', { p_business: BIZ.id, p_closed: true });
+      await hecho('Cerrado hasta nuevo aviso');
+    },
+    async abrir() {
+      await rpcOk('set_business_closed', { p_business: BIZ.id, p_closed: false });
+      await hecho('Abierto de nuevo');
+    },
+    async cancelar() {
+      const fin = sub.period_end;
+      const intro = esc(!fin ? I18N.t('Ahora no pagas nada, así que no cambia nada: solo que no empezaremos a cobrarte cuando acabe el periodo gratis. Puedes deshacerlo cuando quieras.')
+        : sub.status === 'trial' ? bi(`La prueba gratis sigue hasta el ${diaLargoFecha(fin)}; después no pasará a ser de pago. Puedes deshacerlo antes.`, `The free trial carries on until ${diaLargoFecha(fin)}; afterwards it won't become a paid plan. You can undo it before then.`)
+        : bi(`Todo sigue igual hasta el ${diaLargoFecha(fin)}; desde ese día no se renueva y no se te cobra nada más. Puedes deshacerlo antes.`, `Everything stays the same until ${diaLargoFecha(fin)}; from that day it won't renew and you won't be charged again. You can undo it before then.`));
+      const r = await modal({
+        title: I18N.t('¿Cancelar la suscripción?'), intro,
+        fields: [{ name: 'reason', type: 'textarea', rows: 3, maxlength: 500, label: I18N.t('¿Nos cuentas por qué? (opcional)') }],
+        submit: I18N.t('Cancelar la suscripción'), cancel: I18N.t('Mantenerla'),
+      });
+      if (r === null) return;
+      await rpcOk('cancel_my_subscription', { p_business: BIZ.id, p_reason: r.reason || null });
+      await hecho('Suscripción cancelada. Te hemos mandado un correo.');
+    },
+    async deshacer() {
+      await rpcOk('undo_subscription_cancellation', { p_business: BIZ.id });
+      await hecho('Cancelación deshecha');
+    },
+    async traspaso() {
+      const team = (await rpc('business_team', { p_id: BIZ.id })).filter((m) => m.user_id !== ME.id);
+      if (!team.length) { toast('Primero invita a esa persona a tu equipo, en Equipo.', true); return; }
+      const nombre = (m) => m.display_name || m.email || '';
+      const r = await modal({
+        title: I18N.t('¿A quién se lo traspasas?'),
+        intro: esc(I18N.t('Si lo acepta, el negocio pasa a ser suyo: lo gestiona todo, también la suscripción y los datos de facturación. Tendrá 14 días para aceptarlo; hasta entonces, todo sigue igual.')),
+        fields: [
+          { name: 'to', type: 'select', label: I18N.t('Persona del equipo'), options: team.map((m) => [m.user_id, `${nombre(m)} · ${I18N.t(LABELS[m.role] || m.role)}`]) },
+          { name: 'stay', type: 'checkbox', label: I18N.t('Seguir en el equipo como encargado'), value: true },
+        ],
+        submit: I18N.t('Enviar el traspaso'),
+      });
+      if (r === null) return;
+      // Ceder el negocio es como eliminarlo: la base pide identidad reciente.
+      if (!await confirmaIdentidad()) return;
+      await rpcOk('offer_business_transfer', { p_business: BIZ.id, p_to: r.to, p_stay: !!r.stay });
+      const quien = nombre(team.find((m) => m.user_id === r.to) || {});
+      await hecho(bi(`Traspaso enviado a ${quien}`, `Handover sent to ${quien}`));
+    },
+    async 'no-traspaso'() {
+      await rpcOk('cancel_business_transfer', { p_business: BIZ.id });
+      await hecho('Traspaso cancelado');
+    },
+  };
+  $$('[data-accion]', v).forEach((b) => {
+    b.onclick = async () => {
+      if (b.disabled) return;
+      b.disabled = true;
+      try { await acciones[b.dataset.accion](); } catch (e) { toast(e.message, true); }
+      b.disabled = false;
+    };
+  });
+};
+
+/** «Eliminar el negocio»: lo que se pierde, guardar los datos antes y el
+ * botón, que pide «Confirma que eres tú». */
+async function eliminarNegocio(v) {
+  const s = await rpc('business_deletion_summary', { p_business: BIZ.id });
+  const filas = [
+    ['event', 'Reservas para eventos que aún no han pasado', s.reservations],
+    ['qr_code_2', 'Códigos sin usar', s.codes],
+    ['cake', 'Regalos de cumpleaños sin usar', s.birthday_gifts],
+    ['loyalty', 'Clientes con sellos o un premio sin canjear', s.stamp_customers],
+    ['person', 'Personas que lo tienen en favoritos', s.favorites],
+    ['reviews', 'Reseñas', s.reviews],
+    ['bolt', 'Publicaciones', s.publications],
+    ['group', 'Personas del equipo', s.team],
+  ];
+  v.innerHTML = `
+    <div class="page-head"><h1>Eliminar el negocio</h1><span class="spacer"></span><a class="btn sm ghost" href="#/baja">← Dar de baja el negocio</a></div>
+    <div class="card"><p style="margin:0 0 10px"><b>${esc(bi(`Esto es lo que se pierde al eliminar ${BIZ.name}. No se puede deshacer.`, `This is what's lost when you delete ${BIZ.name}. It can't be undone.`))}</b></p>
+      ${table({ cols: [
+        { h: 'Qué', r: (f) => `${ms(f[0])} ${esc(I18N.t(f[1]))}` },
+        { h: 'Cuántos', num: true, r: (f) => fmtNum(f[2]) },
+      ], rows: filas })}
+      <p class="muted" style="margin:12px 0 0">Al eliminarlo anulamos las reservas y los códigos sin usar y avisamos a cada persona; también a quien tiene sellos, un premio o un regalo, y a tu equipo. Solo guardamos los datos de facturación el tiempo que obliga la ley.</p>
+      ${s.paid_until ? `<p style="margin:10px 0 0"><b>${esc(bi(`Tienes pagado hasta el ${diaLargoFecha(s.paid_until)}. Si tienes dudas sobre lo pagado, escríbenos antes.`, `You've paid until ${diaLargoFecha(s.paid_until)}. If you have questions about what you've paid, write to us first.`))}</b></p>` : ''}
+      <p class="muted" style="margin:10px 0 0">${bi('¿Solo quieres parar un tiempo? Mejor <a class="link" href="#/baja">cierra hasta nuevo aviso</a>.', 'Just want a break? <a class="link" href="#/baja">Close until further notice</a> instead.')}</p></div>
+    ${tarjetaDescarga().replace('<h2>Descargar los datos del negocio</h2>', '<h2>Antes, guarda tus datos</h2>')}
+    <div class="card"><label class="f" style="grid-template-columns:auto 1fr;align-items:center;margin:0 0 12px">
+        <input type="checkbox" id="entiendo"><span>Entiendo que no se puede deshacer</span></label>
+      <button class="btn bad" type="button" id="eliminar" disabled>Eliminar el negocio</button></div>`;
+  activaDescarga(v);
+  const boton = $('#eliminar', v);
+  $('#entiendo', v).onchange = (e) => { boton.disabled = !e.target.checked; };
+  boton.onclick = async () => {
+    if (!await confirmDlg(bi(`¿Eliminar ${BIZ.name}?`, `Delete ${BIZ.name}?`),
+      esc(I18N.t('Se borra para siempre y avisamos a las personas afectadas. Después te pediremos que confirmes que eres tú.')),
+      { submit: I18N.t('Eliminar el negocio'), danger: true })) return;
+    if (!await confirmaIdentidad()) return;
+    boton.disabled = true;
+    try {
+      await rpcOk('delete_my_business', { p_business: BIZ.id });
+    } catch (e) {
+      toast(e.message, true);
+      boton.disabled = false;
+      return;
+    }
+    const nombre = BIZ.name;
+    localStorage.removeItem('klendar.biz');
+    BIZZES = await rpc('my_businesses').catch(() => []);
+    BIZ = BIZZES[0] || null;
+    toast(bi(`${nombre} se ha eliminado`, `${nombre} has been deleted`));
+    if (!BIZ) { noBusiness(); return; }
+    await preparaNegocio();
+    renderBizPicker();
+    location.hash = '#/resumen';
+  };
+}
+
+/** «Salir del equipo» para quien no es propietario. Avisa al propietario la
+ * base. */
+async function salirDelEquipo() {
+  if (!await confirmDlg(bi(`¿Salir del equipo de ${BIZ.name}?`, `Leave the ${BIZ.name} team?`),
+    esc(I18N.t('Dejarás de ver su panel y de validar sus códigos. Avisaremos al propietario. Para volver, tendrán que invitarte otra vez.')),
+    { submit: I18N.t('Salir del equipo'), danger: true })) return;
+  await rpcOk('leave_business', { p_business: BIZ.id });
+  const nombre = BIZ.name;
+  localStorage.removeItem('klendar.biz');
+  BIZZES = await rpc('my_businesses').catch(() => []);
+  BIZ = BIZZES[0] || null;
+  toast(bi(`Has salido del equipo de ${nombre}`, `You've left the ${nombre} team`));
+  if (!BIZ) { noBusiness(); return; }
+  await preparaNegocio();
+  renderBizPicker();
+  if (location.hash === '#/resumen') route(); else location.hash = '#/resumen';
+}
 
 boot();

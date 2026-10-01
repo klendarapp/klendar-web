@@ -76,6 +76,30 @@ export const notFound = (lang, path, kind) => {
   }), 404, 'no-store');
 };
 
+/** Un negocio que administración ha marcado como cerrado de verdad
+ * (`business_closure_state`, por id o por cualquiera de sus direcciones con
+ * nombre): «Este negocio ha cerrado», con 410 para que los buscadores lo
+ * quiten. null si no es eso (y la ficha sigue con su «no está»). */
+async function cerradoPage(lang, ref, path) {
+  let c = null;
+  try { c = await rpc('business_closure_state', { p_ref: ref }); } catch { c = null; }
+  if (!c || !c.name) return null;
+  const en = lang === 'en';
+  const titulo = en ? 'This business has closed' : 'Este negocio ha cerrado';
+  const texto = en
+    ? `We've been told that ${c.name} has closed, so it's no longer on Klendar.`
+    : `Nos han confirmado que ${c.name} ha cerrado, así que ya no está en Klendar.`;
+  const body = `
+  <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a></p>
+  <h1>${esc(titulo)}</h1>
+  <p class="muted" style="max-width:620px">${esc(texto)}</p>
+  <p><a class="pill accent" href="${exploreBase(lang)}/">${esc(en ? "See what's on now" : 'Ver qué hay ahora')}</a>
+     <a class="pill" href="${agendaBase(lang)}/">${esc(en ? "What's on" : 'Agenda local')}</a></p>`;
+  return html(publicPage({
+    lang, path, body, title: titulo, description: texto, head: '<meta name="robots" content="noindex">',
+  }), 410, 'public, max-age=300');
+}
+
 // ── Publicación ────────────────────────────────────────────────────────────
 export async function offerPage(id, lang) {
   const path = `${pre(lang)}/o/${id}`;
@@ -373,7 +397,7 @@ export async function businessPage(param, lang, search = '') {
     const limpio = raw.toLowerCase();
     if (!isSlug(limpio)) return notFound(lang, bizPath(lang, raw), 'b');
     const r = await rpc('resolve_business_slug', { p_slug: limpio });
-    if (!r?.id) return notFound(lang, bizPath(lang, limpio), 'b');
+    if (!r?.id) return (await cerradoPage(lang, limpio, bizPath(lang, limpio))) || notFound(lang, bizPath(lang, limpio), 'b');
     if (r.slug !== raw) return movida(bizPath(lang, r.slug) + search);
     id = r.id;
     slug = r.slug;
@@ -381,14 +405,18 @@ export async function businessPage(param, lang, search = '') {
   const path = bizPath(lang, slug || id);
   if (!isUuid(id)) return notFound(lang, path, 'b');
   const b = await rpc('business_profile', { p_id: id });
-  if (!b || !b.name) return notFound(lang, path, 'b');
-  const [offers, sellos, carta, opiniones, novedades, cierres] = await Promise.all([
+  if (!b || !b.name) return (await cerradoPage(lang, id, path)) || notFound(lang, path, 'b');
+  // «Clientes verificados»: solo las reseñas de quien ha canjeado algo aquí
+  // (`?resenas=verificadas`, el mismo filtro que la app).
+  const soloVerificadas = new URLSearchParams(search).get('resenas') === 'verificadas';
+  const [offers, sellos, carta, opiniones, novedades, cierres, nVerificadas] = await Promise.all([
     rpcAll('business_offers', { p_id: id }),
     rpcAll('stamp_cards_of', { p_business: id }).catch(() => []), // opcional: sin ella, la ficha sale igual
     rpcAll('business_menu', { p_business: id }),
-    rpcAll('business_reviews', { p_id: id, p_limit: 12 }),
+    rpcAll('business_reviews', { p_id: id, p_limit: 12, ...(soloVerificadas ? { p_verified_only: true } : {}) }),
     rows('business_posts', `select=id,body,image_url,created_at&business_id=eq.${id}&order=created_at.desc&limit=6`),
     rpcAll('business_closures', { p_business: id }),
+    rpc('business_verified_review_count', { p_id: id }).then((n) => Number(n) || 0).catch(() => 0),
   ]);
 
   const S = en
@@ -413,8 +441,14 @@ export async function businessPage(param, lang, search = '') {
         days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
         news: 'News', reviews: 'Reviews', write: 'Write a review', noReviews: 'No reviews yet. Been here? Be the first.',
         user: 'Klendar user', report: 'Report', block: 'Block', reportBiz: 'Report this business', menuPhotos: 'Photos of the menu', menuPdf: 'Menu (PDF)',
+        verifiedCustomer: 'Verified customer',
+        verifiedWhat: "They've redeemed something at this business with Klendar: an offer, an event, a stamp reward or a birthday gift. We check it against the redemptions validated at the venue.",
+        howReviews: 'How reviews work', allReviews: 'All',
+        verifiedReviews: (n) => `Verified customers (${n})`, noVerified: 'No reviews from verified customers yet.',
+        claim: 'Is this your business?',
         replyFrom: (n) => `Reply from ${n}`,
         closedToday: 'Closed today', closedUntil: (d) => `Closed until ${d}`,
+        closedTemp: 'Temporarily closed', closedTempBody: "This business has closed for a while and isn't posting anything right now.",
         closingDay: (d) => `Closing on ${d}`, closing: (a, b) => `Closing from ${a} to ${b}`,
         moreIn: (c) => `More in ${c}:`, cityToday: 'things to do today', cityWeek: 'this week',
         hiddenFav: (n) => (n === 1 ? "There's 1 exclusive publication for people who have it in their favourites."
@@ -444,8 +478,14 @@ export async function businessPage(param, lang, search = '') {
         days: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'],
         news: 'Novedades', reviews: 'Reseñas', write: 'Escribir una reseña', noReviews: 'Todavía no hay reseñas. ¿Has estado? Sé la primera persona.',
         user: 'Usuario de Klendar', report: 'Denunciar', block: 'Bloquear', reportBiz: 'Denunciar este negocio', menuPhotos: 'Fotos de la carta', menuPdf: 'Carta (PDF)',
+        verifiedCustomer: 'Cliente verificado',
+        verifiedWhat: 'Ha canjeado algo en este negocio con Klendar: una oferta, un evento, un premio de sellos o un regalo de cumpleaños. Lo comprobamos con los canjes validados en el local.',
+        howReviews: 'Cómo funcionan las reseñas', allReviews: 'Todas',
+        verifiedReviews: (n) => `Clientes verificados (${n})`, noVerified: 'Aún no hay reseñas de clientes verificados.',
+        claim: '¿Es tu negocio?',
         replyFrom: (n) => `Respuesta de ${n}`,
         closedToday: 'Cerrado hoy', closedUntil: (d) => `Cerrado hasta el ${d}`,
+        closedTemp: 'Cerrado temporalmente', closedTempBody: 'Este negocio ha cerrado por un tiempo y ahora no publica nada.',
         closingDay: (d) => `Cerrará el ${d}`, closing: (a, b) => `Cerrará del ${a} al ${b}`,
         moreIn: (c) => `Más en ${c}:`, cityToday: 'qué hacer hoy', cityWeek: 'esta semana',
         hiddenFav: (n) => (n === 1 ? 'Hay 1 publicación exclusiva para quien lo tiene en favoritos.'
@@ -475,6 +515,11 @@ export async function businessPage(param, lang, search = '') {
   // el próximo mes, el siguiente. Igual que en la app. Fechas de calendario,
   // sin hora: se comparan como texto AAAA-MM-DD con el hoy del negocio.
   const cierre = (() => {
+    // Cerrado hasta nuevo aviso (desde «Dar de baja el negocio»): manda sobre
+    // los días cerrados.
+    if (b.closed_indefinitely) {
+      return `<p class="cierre ahora">${icono('cerrado', 18)}<span><b>${esc(S.closedTemp)}</b> · ${esc(S.closedTempBody)}</span></p>`;
+    }
     const c = cierres[0];
     if (!c) return '';
     const hoyIso = KZ.hoy(tz);
@@ -589,18 +634,24 @@ export async function businessPage(param, lang, search = '') {
         </article>`).join('')}</div>` : ''}
       <h2 id="resenas">${S.reviews}${b.rating && b.ratings ? ` <small class="muted">★ ${nota(b.rating, lang)} (${b.ratings})</small>` : ''}</h2>
       <p><a class="pill" href="${cuenta(lang)}#/opinar/${encodeURIComponent(b.id)}">${icono('resena', 16)} ${S.write}</a></p>
+      ${nVerificadas > 0 || soloVerificadas ? `<nav class="filtro-resenas" aria-label="${esc(S.reviews)}">
+        <a class="pill${soloVerificadas ? '' : ' on'}" href="${path}#resenas"${soloVerificadas ? '' : ' aria-current="true"'}>${S.allReviews}</a>
+        <a class="pill${soloVerificadas ? ' on' : ''}" href="${path}?resenas=verificadas#resenas" rel="nofollow"${soloVerificadas ? ' aria-current="true"' : ''}>${esc(S.verifiedReviews(nVerificadas))}</a>
+      </nav>` : ''}
       ${opiniones.length ? `<div class="resenas">${opiniones.map((r) => `<article${isUuid(r.id) ? ` id="resena-${r.id}"` : ''}${isUuid(r.user_id) ? ` data-autor="${r.user_id}"` : ''}>
           <header>${r.avatar_url ? `<img class="av" src="${esc(r.avatar_url)}" alt="" loading="lazy">` : `<span class="av">${esc((r.display_name || S.user).trim().charAt(0).toUpperCase())}</span>`}
             <span><b>${esc(r.display_name || S.user)}</b><small class="muted">${esc(fmtWhen(r.created_at, lang, tz))}</small></span>
             ${estrellas(Math.max(0, Math.min(5, r.rating | 0)))}</header>
+          ${r.verified ? `<details class="verificado"><summary>${icono('voy', 15)}<span>${S.verifiedCustomer}</span></summary>
+            <p>${esc(S.verifiedWhat)} <a href="${en ? '/en/community-guidelines/' : '/normas/'}#resenas">${S.howReviews}</a></p></details>` : ''}
           ${r.comment ? `<p>${esc(r.comment)}</p>` : ''}
           ${r.photo_url ? `<img class="foto" src="${esc(r.photo_url)}" alt="" loading="lazy">` : ''}
           ${r.reply ? `<div class="respuesta"><header>${icono('negocio', 16)}<b>${esc(S.replyFrom(b.name))}</b>${r.reply_at ? `<small class="muted">${esc(fmtWhen(r.reply_at, lang, tz))}</small>` : ''}</header>
             <p>${esc(r.reply).replace(/\n/g, '<br>')}</p></div>` : ''}
           <a class="denuncia" href="${cuenta(lang)}#/denunciar/review/${encodeURIComponent(r.id)}" rel="nofollow">${S.report}</a>${isUuid(r.user_id) ? ` · <a class="denuncia" href="${cuenta(lang)}#/bloquear/${r.user_id}" rel="nofollow">${S.block}</a>` : ''}
-        </article>`).join('')}</div>` : `<p class="empty">${S.noReviews}</p>`}
+        </article>`).join('')}</div>` : `<p class="empty">${soloVerificadas ? S.noVerified : S.noReviews}</p>`}
       ${b.city ? `<p class="muted">${esc(S.moreIn(b.city))} <a href="${cityToday}">${esc(S.cityToday)}</a> · <a href="${city}">${esc(S.cityWeek)}</a></p>` : ''}
-      <p class="denuncia-pie"><a href="${cuenta(lang)}#/denunciar/business/${encodeURIComponent(b.id)}" rel="nofollow">${S.reportBiz}</a></p>
+      <p class="denuncia-pie"><a href="${cuenta(lang)}#/reclamar/${encodeURIComponent(b.id)}" rel="nofollow">${S.claim}</a> · <a href="${cuenta(lang)}#/denunciar/business/${encodeURIComponent(b.id)}" rel="nofollow">${S.reportBiz}</a></p>
     </div>
   </div>`;
 
@@ -644,7 +695,7 @@ export async function businessPage(param, lang, search = '') {
     : '';
   return html(publicPage({
     lang, path, body, title: conCiudad ? `${b.name} · ${b.city}` : b.name, description, image: b.cover || b.logo,
-    head: `<meta name="robots" content="${b.adults_only || conVisita ? 'noindex' : 'index, follow'}">
+    head: `<meta name="robots" content="${b.adults_only || conVisita || b.closed_indefinitely ? 'noindex' : 'index, follow'}">
 ${ldScript(jsonLd)}${horario ? '\n<script src="/assets/zona.js?v=1" defer></script>\n<script src="/assets/horario.js?v=1" defer></script>' : ''}${conVisita ? `\n${conVisita}` : ''}`,
   }), 200, conVisita ? 'no-store' : undefined);
 }

@@ -45,8 +45,20 @@ const T = (en) => en
       when: 'When?', anytime: 'Any time', now: 'Right now', today: 'Today', tomorrow: 'Tomorrow', next10: 'Next 10 days',
       discount: 'Discounts only', openNow: 'Open now', sort: 'Sort by', soonest: 'Soonest', newest: 'Newest', nearest: 'Nearest',
       near: 'Near me', nearOn: 'Near you', nearNo: "We couldn't get your location. Allow it in your browser and try again.",
-      view: 'View', listView: 'List', mapView: 'Map',
+      view: 'View', listView: 'List', mapView: 'Map', distance: 'Distance',
       mapNo: "The map can't load right now. The list shows the same results.", away: 'away',
+      // Final de la lista (como el final de Descubre en la app).
+      endTitle: (d) => `You've seen everything ${d}`, endTitleAll: "You're all caught up for now",
+      within: (km) => `within ${km} km`, inPlace: (c) => `in ${c}`,
+      endBody: "Widen the search to see more, or check what's on in the coming days.",
+      endBodyFiltered: "That's with the filters you have on. Clear them or widen the search to see more.",
+      endBodyAll: "There's nothing else for now. Businesses publish every day: check back later or let us tell you.",
+      endBodyAllFiltered: "There's nothing else with the filters you have on. Clear them, or let us tell you when something new comes up.",
+      widen: (km) => `Widen to ${km} km`, allCitiesBtn: 'See every city',
+      clearF: 'Clear filters', changeF: 'Change filters', seeAgenda: "See what's on",
+      backTop: 'Back to the top', notifyMe: "Tell me when there's something new",
+      recommend: 'Missing a place? Recommend a business', recommendDraft: "I'd like to see this business on Klendar: ",
+      maybe: 'You might like',
     }
   : {
       exp: 'Explorar', agenda: 'Agenda local', search: 'Buscar', ph: 'Un bar, un mercadillo, «brunch»…',
@@ -74,8 +86,20 @@ const T = (en) => en
       when: '¿Cuándo?', anytime: 'Cuando sea', now: 'Ahora mismo', today: 'Hoy', tomorrow: 'Mañana', next10: 'Próximos 10 días',
       discount: 'Solo con descuento', openNow: 'Abierto ahora', sort: 'Ordenar', soonest: 'Más pronto', newest: 'Novedades', nearest: 'Más cerca',
       near: 'Cerca de mí', nearOn: 'Cerca de ti', nearNo: 'No hemos podido saber dónde estás. Permítelo en el navegador y vuelve a probar.',
-      view: 'Ver en', listView: 'Lista', mapView: 'Mapa',
+      view: 'Ver en', listView: 'Lista', mapView: 'Mapa', distance: 'Distancia',
       mapNo: 'El mapa no se puede cargar ahora mismo. En la lista está lo mismo.', away: '',
+      // Final de la lista (como el final de Descubre en la app).
+      endTitle: (d) => `Has visto todo lo que hay ${d}`, endTitleAll: 'Ya lo has visto todo por ahora',
+      within: (km) => `a ${km} km`, inPlace: (c) => `en ${c}`,
+      endBody: 'Amplía la búsqueda para ver más o mira lo que viene en la agenda.',
+      endBodyFiltered: 'Esto es con los filtros que tienes puestos. Quítalos o amplía la búsqueda para ver más.',
+      endBodyAll: 'No hay nada más por ahora. Los negocios publican cada día: vuelve luego o deja que te avisemos.',
+      endBodyAllFiltered: 'No hay nada más con los filtros que tienes puestos. Quítalos o deja que te avisemos cuando haya algo nuevo.',
+      widen: (km) => `Ampliar a ${km} km`, allCitiesBtn: 'Ver todas las ciudades',
+      clearF: 'Quitar filtros', changeF: 'Cambiar filtros', seeAgenda: 'Ver la agenda',
+      backTop: 'Volver al principio', notifyMe: 'Avísame cuando haya algo nuevo',
+      recommend: '¿Echas en falta algún sitio? Recomiéndanos un negocio', recommendDraft: 'Me gustaría ver en Klendar este negocio: ',
+      maybe: 'Quizá te interese',
     };
 
 const catName = (c, en) => (en ? c?.names?.en : c?.names?.es) || c?.slug || '';
@@ -140,6 +164,46 @@ const mapaHtml = (items, lang, S) => {
   })();</script>`;
 };
 
+/** Las distancias de «Cerca de mí», las mismas que la hoja de filtros de la
+ * app. Sin elegir, 10 km. */
+const RADIOS_KM = [1, 3, 5, 10, 25];
+const RADIO_KM = 10;
+
+/** Al final de la lista (última página): qué se ha visto y qué hacer ahora.
+ * Lo mismo que la tarjeta final de Descubre en la app. */
+const finalHtml = ({ S, en, lang, cerca, km, city, filtros, link, page, alertaHref, sugerencias }) => {
+  const sigKm = cerca ? RADIOS_KM.find((k) => k > km) : null;
+  // ¿Se puede mirar más lejos? Con «Cerca de mí», a la distancia siguiente;
+  // en una ciudad, en todas.
+  const ampliar = cerca ? (sigKm ? { href: link({ km: sigKm }), txt: S.widen(sigKm) } : null)
+    : city ? { href: link({ city: '' }), txt: S.allCitiesBtn } : null;
+  const donde = cerca ? S.within(km) : city ? S.inPlace(PRETTY(city)) : '';
+  const titulo = ampliar ? S.endTitle(donde) : S.endTitleAll;
+  const cuerpo = ampliar ? (filtros ? S.endBodyFiltered : S.endBody) : (filtros ? S.endBodyAllFiltered : S.endBodyAll);
+  const agenda = `${agendaBase(lang)}/${city ? `${CITY(city)}/` : ''}`;
+  const quitar = filtros
+    ? `<a class="pill" href="${esc(link({ q: '', cat: '', kind: '', price: '', when: '', soloDescuento: false, abierto: false }))}">${esc(S.clearF)}</a>`
+    : '';
+  const botones = ampliar
+    ? `<a class="pill accent" href="${esc(ampliar.href)}">${esc(ampliar.txt)}</a>
+       ${quitar}
+       <a class="pill" href="#filtros">${esc(S.changeF)}</a>
+       <a class="pill" href="${esc(agenda)}">${esc(S.seeAgenda)}</a>`
+    : `<a class="pill accent" href="${esc(alertaHref)}">${esc(S.notifyMe)}</a>
+       ${quitar}
+       <a class="pill" href="${esc(page > 1 ? link({ p: 1 }) : '#arriba')}">${esc(S.backTop)}</a>
+       <a class="pill" href="${esc(agenda)}">${esc(S.seeAgenda)}</a>`;
+  return `<section class="fin" aria-labelledby="finTitulo">
+    <span class="fin-ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="26" height="26"><path fill="currentColor" d="M18 7l-1.41-1.41-6.34 6.34 1.41 1.41L18 7zm4.24-1.41L11.66 16.17 7.48 12l-1.41 1.41L11.66 19l12-12-1.42-1.41zM.41 13.41L6 19l1.41-1.41L1.83 12 .41 13.41z"/></svg></span>
+    <h2 id="finTitulo">${esc(titulo)}</h2>
+    <p class="muted">${esc(cuerpo)}</p>
+    <div class="fin-botones">${botones}</div>
+    ${ampliar ? '' : `<p class="fin-sugiere"><a href="${esc(`${en ? '/app/?lang=en' : '/app/'}#/sugerencias?texto=${encodeURIComponent(S.recommendDraft)}`)}">${esc(S.recommend)}</a></p>`}
+  </section>
+  ${sugerencias.length ? `<h2 class="fin-h">${esc(S.maybe)}</h2>
+  <div class="olist">${sugerencias.map((o) => offerCard(o, lang)).join('')}</div>` : ''}`;
+};
+
 const portada = (items) => items.map((o) => (o.images || []).find((u) => !isVideo(u))).find(Boolean);
 
 // ── Explorar ───────────────────────────────────────────────────────────────
@@ -174,6 +238,9 @@ export async function explorePage(url, lang) {
   const lat = Number.parseFloat(qs.get('lat') || '');
   const lng = Number.parseFloat(qs.get('lng') || '');
   const cerca = Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
+  // La distancia de «Cerca de mí» (solo las de la lista).
+  const kmPedido = Number.parseInt(qs.get('km') || '', 10);
+  const km = RADIOS_KM.includes(kmPedido) ? kmPedido : RADIO_KM;
   const WHEN = { ahora: 'now', now: 'now', hoy: 'today', today: 'today', manana: 'tomorrow', tomorrow: 'tomorrow', '10dias': 'next10', next10: 'next10' };
   const SORT = { nuevas: 'newest', newest: 'newest', cerca: 'nearest', nearest: 'nearest' };
   const filtros = {
@@ -183,7 +250,7 @@ export async function explorePage(url, lang) {
     ...(soloDescuento ? { discount_only: true } : {}),
     ...(abierto ? { open_now: true } : {}),
     ...(SORT[sort] ? { sort: SORT[sort] } : cerca ? { sort: 'nearest' } : {}),
-    ...(cerca ? { radius_m: 10000 } : {}),
+    ...(cerca ? { radius_m: km * 1000 } : {}),
   };
   const filtrado = Boolean(q || city || cat || kind || negocios || page > 1 || price || when || soloDescuento || abierto || sort || cerca);
 
@@ -217,10 +284,26 @@ export async function explorePage(url, lang) {
   const total = res?.total || 0;
   const paginas = mapa ? 1 : Math.max(1, Math.ceil(total / POR_PAGINA));
 
+  // Última página de la lista de planes: el final, con «Quizá te interese»
+  // de fuera de lo que se está mirando (más lejos que la distancia o en
+  // otras ciudades). Sin nada fuera (todas las ciudades), no sale.
+  const alFinal = !negocios && !mapa && items.length > 0 && page >= paginas;
+  const conFiltros = Boolean(q || cat || kind || price || when || soloDescuento || abierto);
+  let sugerencias = [];
+  if (alFinal && (cerca || city)) {
+    const vistos = new Set(items.map((o) => o.id));
+    // Son un extra: si no llegan, la página sale igual (sin ellas).
+    const fuera = await (cerca
+      ? rpcAll('recommended_offers', { p_lat: lat, p_lng: lng, p_min_distance_m: km * 1000, p_limit: 8 })
+      : rpc('public_explore', { p_city: null, p_limit: 24, p_filters: {} }).then((r) => (r?.items || [])
+        .filter((o) => String(o.city || '').toLowerCase() !== city.toLowerCase()))).catch(() => []);
+    sugerencias = (fuera || []).filter((o) => !vistos.has(o.id)).slice(0, 4);
+  }
+
   // Los filtros son enlaces: se puede compartir la URL y va sin JavaScript.
   const link = (cambios) => {
     const p = new URLSearchParams();
-    const base = { q, city, cat, kind, ver, price, when, soloDescuento, abierto, sort, vista, cerca, p: 1, ...cambios };
+    const base = { q, city, cat, kind, ver, price, when, soloDescuento, abierto, sort, vista, cerca, km, p: 1, ...cambios };
     if (base.q) p.set('q', base.q);
     if (base.city) p.set(en ? 'city' : 'ciudad', base.city);
     if (base.cat) p.set(en ? 'category' : 'categoria', base.cat);
@@ -233,7 +316,10 @@ export async function explorePage(url, lang) {
       if (base.soloDescuento) p.set(K.discount, '1');
       if (base.sort) p.set(K.sort, base.sort);
       if (base.vista) p.set(K.view, base.vista);
-      if (base.cerca) { p.set('lat', lat.toFixed(4)); p.set('lng', lng.toFixed(4)); }
+      if (base.cerca) {
+        p.set('lat', lat.toFixed(4)); p.set('lng', lng.toFixed(4));
+        if (base.km !== RADIO_KM) p.set('km', String(base.km));
+      }
     }
     if (base.p && base.p > 1) p.set('p', String(base.p));
     const s = p.toString();
@@ -242,7 +328,7 @@ export async function explorePage(url, lang) {
   const chip = (href, label, on) => `<a class="chip${on ? ' on' : ''}" href="${esc(href)}">${esc(label)}</a>`;
 
   const body = `
-  <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a></p>
+  <p class="crumbs" id="arriba"><a href="/${en ? 'en/' : ''}">Klendar</a></p>
   <h1>${esc(S.exp)}</h1>
   <p class="muted" style="max-width:640px">${esc(S.lead)}</p>
 
@@ -254,12 +340,12 @@ export async function explorePage(url, lang) {
     ${negocios ? `<input type="hidden" name="${en ? 'show' : 'ver'}" value="${esc(ver)}">` : ''}
     ${abierto ? `<input type="hidden" name="${K.open}" value="1">` : ''}
     ${negocios ? '' : [[K.price, price], [K.when, when], [K.discount, soloDescuento ? '1' : ''], [K.sort, sort], [K.view, vista],
-      ['lat', cerca ? lat.toFixed(4) : ''], ['lng', cerca ? lng.toFixed(4) : '']]
+      ['lat', cerca ? lat.toFixed(4) : ''], ['lng', cerca ? lng.toFixed(4) : ''], ['km', cerca && km !== RADIO_KM ? String(km) : '']]
       .filter(([, val]) => val).map(([k, val]) => `<input type="hidden" name="${k}" value="${esc(val)}">`).join('')}
     <button class="pill accent" type="submit">${esc(S.search)}</button>
   </form>
 
-  <div class="filters">
+  <div class="filters" id="filtros">
     <div class="frow"><span class="flabel">${esc(S.what)}</span>
       ${chip(link({ ver: '' }), S.plans, !negocios)}
       ${chip(link({ ver: en ? 'places' : 'negocios' }), S.places, negocios)}
@@ -291,6 +377,9 @@ export async function explorePage(url, lang) {
            ${chip(link({ cerca: false, sort: '' }), `✕ ${S.nearOn}`, true)}`
         : `<button type="button" class="chip" id="cercaDeMi" data-err="${esc(S.nearNo)}">${esc(S.near)}</button>`}
     </div>
+    ${cerca ? `<div class="frow"><span class="flabel">${esc(S.distance)}</span>
+      ${RADIOS_KM.map((k) => chip(link({ km: k }), `${k} km`, km === k)).join('')}
+    </div>` : ''}
     <div class="frow"><span class="flabel">${esc(S.view)}</span>
       ${chip(link({ vista: '' }), S.listView, !mapa)}
       ${chip(link({ vista: en ? 'map' : 'mapa' }), S.mapView, mapa)}
@@ -332,6 +421,17 @@ export async function explorePage(url, lang) {
     ${page < paginas ? `<a class="pill" href="${esc(link({ p: page + 1 }))}">${esc(S.next)}</a>` : ''}
   </nav>` : ''}
 
+  ${alFinal ? finalHtml({
+    S, en, lang, cerca, km, city, filtros: conFiltros, link, page, sugerencias,
+    alertaHref: `${en ? '/app/?lang=en' : '/app/'}#/alerta/nueva?${new URLSearchParams({
+      origen: 'explorar',
+      ...(kind === 'offers' || kind === 'ofertas' ? { tipo: 'flash_offer' } : kind === 'events' || kind === 'eventos' ? { tipo: 'future_event' } : {}),
+      ...(cat ? { cat } : {}),
+      ...(price === 'gratis' || price === 'free' ? { precio: '0' } : /^\d{1,3}$/.test(price) ? { precio: String(Number(price) * 100) } : {}),
+      ...(soloDescuento ? { descuento: '1' } : {}),
+      ...(cerca ? { radio: String(km * 1000), lat: lat.toFixed(4), lng: lng.toFixed(4) } : {}),
+    })}`,
+  }) : ''}
   <script>(function(){var b=document.getElementById('cercaDeMi');if(!b)return;
     if(!navigator.geolocation){b.hidden=true;return;}
     b.onclick=function(){navigator.geolocation.getCurrentPosition(function(p){

@@ -125,11 +125,27 @@ function marcaLeidas(ids, alIrse = false) {
   } catch { /* navegador sin keepalive: la próxima vez */ }
 }
 
+/** El botón de una notificación con `data.action`: «Ver mi código» (cambio de
+ * fecha, pausa o +18 de algo que tienes reservado: el código, con «Ya no voy»)
+ * o «Crear a partir de esta» (caducó mientras la revisábamos: al formulario
+ * del panel, copiándola, en su negocio). Sin acción conocida, null. */
+function accionAviso(d) {
+  const uuid = /^[0-9a-f-]{36}$/i;
+  if (d?.action === 'view_code' && uuid.test(d.offer_id || '')) {
+    return { href: `#/codigo/${d.offer_id}`, txt: t('Ver mi código') };
+  }
+  if (d?.action === 'duplicate' && uuid.test(d.offer_id || '') && uuid.test(d.business_id || '')) {
+    const nueva = d.offer_kind === 'future_event' ? 'nuevo-evento' : 'nueva-flash';
+    return { href: `/panel/#/publicaciones/${nueva}?biz=${d.business_id}&from=${d.offer_id}`, txt: t('Crear a partir de esta') };
+  }
+  return null;
+}
+
 RUTAS.notificaciones = async () => {
   if (!exigeSesion('notificaciones')) return;
   await MARCA_LEIDAS; // las que se acaban de dar por vistas ya no salen como nuevas
   const lista = await tabla(sb.from('notifications')
-    .select('id, kind, title, body, route, read_at, created_at')
+    .select('id, kind, title, body, route, data, read_at, created_at')
     .order('created_at', { ascending: false }).limit(50));
   const nuevos = lista.filter((n) => !n.read_at).length;
   pinta(`
@@ -140,11 +156,14 @@ RUTAS.notificaciones = async () => {
       <a class="pill ghost" href="#/ajustes">${esc(t('Qué notificaciones recibo'))}</a>
     </p>
     ${lista.length ? `<div class="avisos">${lista.map((n) => {
-      const destino = destinoWeb(n.route);
+      // Con acción, toda la notificación lleva a ella y el botón lo dice.
+      const accion = accionAviso(n.data);
+      const destino = accion?.href || destinoWeb(n.route);
       return `<a class="aviso${n.read_at ? '' : ' nuevo'}" href="${esc(destino || '#/notificaciones')}" data-id="${esc(n.id)}">
         <b>${esc(n.title)}</b>
         ${n.body ? `<span>${esc(n.body)}</span>` : ''}
         <small class="muted">${esc(fecha(n.created_at))}</small>
+        ${accion ? `<span class="acciones"><span class="pill">${esc(accion.txt)}</span></span>` : ''}
       </a>`;
     }).join('')}</div>`
     : `<p class="empty">${esc(t('Nada por aquí todavía. Añade negocios a favoritos y crea un «Avísame si…» para no perderte nada.'))}</p>`}`);
@@ -188,6 +207,10 @@ RUTAS.notificaciones = async () => {
   // Tocar una es haberla leído: se marca ya, sin esperar a salir. Si no lleva
   // a ningún sitio, se queda aquí.
   $$('.aviso').forEach((a) => a.addEventListener('click', async (ev) => {
+    // «Ver mi código» viene de aquí, no de un enlace de fuera: el código se
+    // enseña sin la pantalla de confirmar (`confirmaEnlace`).
+    const ir = a.getAttribute('href') || '';
+    if (ir.startsWith('#/codigo/')) marcaIntencion(ir.slice(2));
     if (a.classList.contains('nuevo')) {
       ev.preventDefault();
       a.classList.remove('nuevo');
@@ -264,14 +287,60 @@ RUTAS.alertas = async () => {
   }));
 };
 
-RUTAS.alerta = async ([id]) => {
-  if (!exigeSesion(`alerta/${id || 'nueva'}`)) return;
+/** Un aviso nuevo ya rellenado desde el final de Explorar
+ * (`#/alerta/nueva?tipo=&cat=&precio=&descuento=&radio=&lat=&lng=`): los
+ * filtros que se estaban mirando. Solo rellena el formulario; guardar sigue
+ * siendo cosa de la persona. */
+function alertaDesdeParams(params, cats) {
+  const a = { radius_m: 1500, categories: [], active: true };
+  if (!params || !params.has('origen')) return a;
+  const tipo = params.get('tipo');
+  if (tipo === 'flash_offer' || tipo === 'future_event') a.kind = tipo;
+  const cat = cats.find((c) => c.slug === params.get('cat'));
+  if (cat) a.categories = [cat.id];
+  const precio = Number.parseInt(params.get('precio') || '', 10);
+  if (Number.isFinite(precio) && precio >= 0) a.max_price_cents = precio;
+  if (params.get('descuento') === '1') a.discount_only = true;
+  const radio = Number.parseInt(params.get('radio') || '', 10);
+  if (Number.isFinite(radio) && radio >= 500 && radio <= 25000) a.radius_m = radio;
+  const lat = Number.parseFloat(params.get('lat') || '');
+  const lng = Number.parseFloat(params.get('lng') || '');
+  if (Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180) {
+    a.lat = lat; a.lng = lng; a.place_label = t('Aquí');
+  }
+  return a;
+}
+
+/** Dos avisos que piden lo mismo (la misma comparación que la app). Los de
+ * zona fija valen iguales si el punto está a menos de ~200 m. */
+const mismoAviso = (x, y) => {
+  const cx = [...new Set(x.categories || [])].sort().join();
+  const cy = [...new Set(y.categories || [])].sort().join();
+  const fijo = (v) => v.lat != null && v.lng != null;
+  const cerca = fijo(x) === fijo(y)
+    && (!fijo(x) || (Math.abs(x.lat - y.lat) < 0.002 && Math.abs(x.lng - y.lng) < 0.002));
+  return cx === cy && (x.kind || null) === (y.kind || null)
+    && (x.max_price_cents ?? null) === (y.max_price_cents ?? null)
+    && !!x.discount_only === !!y.discount_only && x.radius_m === y.radius_m && cerca;
+};
+
+RUTAS.alerta = async ([id], params, crudo) => {
+  if (!exigeSesion(crudo || `alerta/${id || 'nueva'}`)) return;
   const [lista, cats] = await Promise.all([llamar('my_offer_alerts', {}), categorias()]);
   const a = (id && id !== 'nueva' && (lista || []).find((x) => x.id === id))
-    || { radius_m: 1500, categories: [], active: true };
+    || alertaDesdeParams(params, cats);
+  // Desde Explorar: si ya hay uno igual, se dice (y se lleva a él).
+  const igual = !a.id && params?.has('origen') ? (lista || []).find((x) => mismoAviso(x, a)) : null;
+  // Hasta 10 km; uno que venga de más lejos (Explorar llega a 25) cabe.
+  const maxRadio = a.radius_m > 10000 ? 25000 : 10000;
   pinta(`
     <p class="crumbs"><a href="#/alertas">${esc(t('Avísame si…'))}</a></p>
     <h1>${esc(a.id ? t('Editar aviso') : t('Nuevo aviso'))}</h1>
+    ${igual ? `<div class="aviso alerta" role="status">
+        <b>${esc(igual.active ? t('Ya tienes un aviso igual') : t('Ya tienes un aviso igual, en pausa'))}</b>
+        <span>${esc(resumenAlerta(igual, cats))}</span>
+        <span class="acciones"><a class="pill" href="#/alerta/${esc(igual.id)}">${esc(t('Ver el aviso'))}</a></span>
+      </div>` : ''}
     <form class="formu" id="f" novalidate>
       <label>${esc(t('Nombre'))} <small>${esc(t('(opcional, p. ej. «sushi cerca de casa»)'))}</small>
         <input name="label" maxlength="60" value="${esc(a.label || '')}"></label>
@@ -283,7 +352,7 @@ RUTAS.alerta = async ([id]) => {
           `<label><input type="radio" name="kind" value="${v}"${(a.kind || '') === v ? ' checked' : ''}> ${esc(l)}</label>`).join('')}
       </fieldset>
       <label>${esc(t('¿A cuánta distancia?'))} <output id="radio-txt">${esc(distancia(a.radius_m))}</output>
-        <input type="range" name="radius" min="500" max="10000" step="500" value="${esc(a.radius_m)}"></label>
+        <input type="range" name="radius" min="500" max="${maxRadio}" step="500" value="${esc(a.radius_m)}"></label>
       <label class="check"><input type="checkbox" name="fija"${a.lat != null ? ' checked' : ''}>
         <span><b>${esc(t('Vigilar una zona fija'))}</b><br><small id="fija-txt"></small></span></label>
       <div id="zona" ${a.lat != null ? '' : 'hidden'}>
@@ -416,7 +485,6 @@ RUTAS.ajustes = async () => {
             <option value="es"${p.locale === 'es' ? ' selected' : ''}>Español</option>
             <option value="en"${p.locale === 'en' ? ' selected' : ''}>English</option>
           </select></label>
-        <p class="muted">${esc(t('Correo'))}: <b>${esc(YO.email || '')}</b></p>
         <p class="err" id="err-perfil" role="alert"></p>
         <button class="pill accent" id="g-perfil">${esc(t('Guardar'))}</button>
       </form>
@@ -457,6 +525,8 @@ RUTAS.ajustes = async () => {
         <button class="pill accent" id="g-avisos">${esc(t('Guardar'))}</button>
       </form>
     </section>
+
+    <section class="bloque" id="correo-cuenta"></section>
 
     <section class="bloque">
       <h2>${esc(t('Formas de entrar'))}</h2>
@@ -499,6 +569,7 @@ RUTAS.ajustes = async () => {
       </dl>
       <p><button class="pill" id="descargar">${ic('download')} ${esc(t('Descargar mis datos'))}</button></p>
       <p class="muted">${esc(t('Un archivo JSON con todo lo que Klendar guarda de ti (derecho de acceso y portabilidad).'))}</p>
+      <p class="muted">${esc(t('Si no usas Klendar en 24 meses, te avisamos por correo; si sigues sin entrar, la cuenta se borra a los 36 meses. Basta con entrar una vez para conservarla.'))}</p>
     </section>
 
     <section class="bloque">
@@ -508,9 +579,12 @@ RUTAS.ajustes = async () => {
       </p>
       <p class="muted">${esc(t('Si entraste desde un móvil o un ordenador que no es tuyo, esto cierra la sesión también allí.'))}</p>
       <h3>${esc(t('Eliminar mi cuenta'))}</h3>
-      <p class="muted">${esc(t('Se borran para siempre tus datos, tus favoritos, tus planes y tus canjes. Si eres dueño de un negocio, también su ficha, sus publicaciones y su equipo. No se puede deshacer.'))}</p>
+      <p class="muted">${esc(t('Se borran para siempre tus datos, tus favoritos, tus planes y tus canjes. Si eres propietario de un negocio, antes tendrás que darlo de baja o traspasarlo. No se puede deshacer.'))}</p>
       <p><button class="pill peligro" id="borrar">${esc(t('Eliminar mi cuenta'))}</button></p>
     </section>`);
+
+  // Correo: con qué entras, «Cambiar correo» y el aviso si rebota (correo.js).
+  correoSeccion($('#correo-cuenta'));
 
   // Perfil
   const fp = $('#f-perfil');
@@ -680,9 +754,27 @@ RUTAS.ajustes = async () => {
   });
   $('#borrar').addEventListener('click', async (ev) => {
     const boton = ev.currentTarget;
+    // Dueño de un negocio: antes se borraba en cascada sin avisar a nadie. La
+    // base ya no lo deja (`owns_business`); aquí se explica y se lleva allí.
+    const propios = ((await llamar('my_businesses', {}).catch(() => [])) || []).filter((b) => b.role === 'owner');
+    if (propios.length) {
+      const nombres = propios.map((b) => b.name).join(', ');
+      if (await confirma({
+        titulo: t('Primero, tu negocio'),
+        texto: EN ? `You own ${nombres}. Before deleting your account, take the business off Klendar or hand it over to someone on your team, under “Leave Klendar” in the dashboard.`
+          : `Eres propietario de ${nombres}. Antes de eliminar tu cuenta, da de baja el negocio o traspásalo a alguien de tu equipo, en «Dar de baja el negocio» del panel.`,
+        aceptar: t('Ir a mi negocio'),
+      })) location.href = `/panel/${propios.length === 1 ? `#/baja?biz=${propios[0].id}` : ''}`;
+      return;
+    }
+    // Lo que sigue vivo y se pierde (reservas, códigos, premios, sellos): se
+    // dice antes. Al eliminar, la base anula las reservas y avisa a la lista
+    // de espera (correo.js).
+    const vivo = await cuentaVivaLineas();
     if (!(await confirma({
+      ...(vivo.length ? { lista: [`${t('Ahora mismo tienes')}:`, ...vivo], pie: t(PIE_VIVO) } : {}),
       titulo: t('¿Eliminar tu cuenta?'),
-      texto: t('Se borran para siempre tus datos, tus favoritos, tus planes y tus canjes. Si eres dueño de un negocio, también su ficha, sus publicaciones y su equipo. No se puede deshacer.'),
+      texto: t('Se borran para siempre tus datos, tus favoritos, tus planes y tus canjes. Si eres propietario de un negocio, antes tendrás que darlo de baja o traspasarlo. No se puede deshacer.'),
       aceptar: t('Eliminar'),
       peligro: true,
     }))) return;
@@ -714,8 +806,11 @@ const ESTADO_SUGERENCIA = {
   new: 'Recibida', reviewing: 'La estamos viendo', planned: 'La vamos a hacer', done: 'Hecho', declined: 'De momento no',
 };
 
-RUTAS.sugerencias = async () => {
-  if (!exigeSesion('sugerencias')) return;
+RUTAS.sugerencias = async (_p, params, crudo) => {
+  // Con el texto ya empezado (`?texto=`, p. ej. «Recomiéndanos un negocio»
+  // desde Explorar), también después de entrar.
+  if (!exigeSesion(crudo || 'sugerencias')) return;
+  const empezado = (params?.get('texto') || '').slice(0, 300);
   const mias = await tabla(sb.from('feedback')
     .select('id, kind, message, status, created_at, replied_at')
     .order('created_at', { ascending: false }).limit(20));
@@ -728,7 +823,7 @@ RUTAS.sugerencias = async () => {
         ${TIPOS_SUGERENCIA.map(([v, l], i) => `<label><input type="radio" name="tipo" value="${v}"${i === 0 ? ' checked' : ''}> ${esc(t(l))}</label>`).join('')}
       </fieldset>
       <label>${esc(t('Tu mensaje'))}
-        <textarea name="msg" rows="6" maxlength="2000" placeholder="${esc(t(TIPOS_SUGERENCIA[0][2]))}"></textarea></label>
+        <textarea name="msg" rows="6" maxlength="2000" placeholder="${esc(t(TIPOS_SUGERENCIA[0][2]))}">${esc(empezado)}</textarea></label>
       <p class="muted">${esc(t('Mandamos también que escribes desde la web y tu idioma, para entender mejor los fallos. Nada más.'))}</p>
       <p class="err" id="err" role="alert"></p>
       <button class="pill accent" id="enviar">${esc(t('Enviar'))}</button>
@@ -857,6 +952,184 @@ RUTAS.opinar = async ([id]) => {
           ? t('Se publicará cuando la revisemos: puede contener lenguaje ofensivo. Normalmente en menos de 24 h.')
           : t('Ayuda a otros a decidirse y al sitio a mejorar.'),
         volver: `${pre}/b/${encodeURIComponent(id)}#resenas`, volverTxt: t('Volver al sitio'),
+        lista: '#/', listaTxt: t('Tu cuenta'),
+      });
+    });
+  });
+};
+
+// ── ¿Es tu negocio? ───────────────────────────────────────────────────────
+// Pedir la propiedad de una ficha que creó otra persona (migración
+// 20261029100001): cuenta y 18 años, cargo, teléfono o correo del negocio,
+// una prueba (foto o PDF al Storage privado `business-claims`, o un texto) y
+// la declaración. Lo revisa administración; igual que en la app.
+
+Object.assign(ERRORES, {
+  invalid_role: 'Escribe tu cargo (de 2 a 60 caracteres).',
+  contact_required: 'Pon el teléfono o el correo del negocio.',
+  invalid_phone: 'Ese teléfono no parece válido.',
+  invalid_email: 'Ese correo no parece válido.',
+  proof_required: 'Añade una foto o cuéntanos cómo comprobarlo (20 caracteres o más).',
+  invalid_proof: 'Añade una foto o cuéntanos cómo comprobarlo (20 caracteres o más).',
+  declaration_required: 'Marca la declaración para enviarla.',
+  adult_required: 'Para reclamar un negocio hace falta tener 18 años o más (y la fecha de nacimiento en tu perfil).',
+  too_many_pending: 'Ya tienes 3 reclamaciones en revisión. Espera a que las resolvamos.',
+  business_busy: 'Este negocio ya tiene varias reclamaciones en revisión. Escríbenos a info@klendar.app.',
+  already_pending: 'Ya tienes una reclamación de este negocio en revisión.',
+  already_owner: 'Ya eres el propietario de este negocio.',
+});
+
+const TEL_RECLAMAR = /^\+?[0-9][0-9 ().-]{5,23}$/;
+
+/** Sube la prueba a tu carpeta privada y devuelve su ruta en el bucket. Las
+ * fotos se reducen como las demás (sin GPS ni datos del móvil); un PDF va tal
+ * cual, como mucho 10 MB. */
+async function subePrueba(archivo) {
+  if (!archivo) return null;
+  const pdf = archivo.type === 'application/pdf';
+  let blob = archivo;
+  if (!pdf) {
+    if (archivo.size > 20 * 1024 * 1024) throw new Error(t('La foto pesa demasiado. Prueba con otra más pequeña.'));
+    blob = await KFotos.reduce(archivo, KFotos.TAM.resena);
+    if (!/^image\/(jpeg|png|webp)$/.test(blob.type)) {
+      throw new Error(t('Esa imagen no se puede abrir. Prueba con una foto JPG o PNG.'));
+    }
+  } else if (archivo.size > 10 * 1024 * 1024) {
+    throw new Error(t('El PDF pesa demasiado: como mucho 10 MB.'));
+  }
+  const ext = pdf ? 'pdf' : blob.type === 'image/jpeg' ? 'jpg' : blob.type.split('/')[1];
+  const ruta = `${YO.id}/${crypto.randomUUID()}.${ext}`;
+  const { error } = await sb.storage.from('business-claims').upload(ruta, blob, { contentType: blob.type });
+  if (error) throw Object.assign(new Error(amable(error.message)), { clave: error.message });
+  return ruta;
+}
+
+RUTAS.reclamar = async ([id]) => {
+  if (!/^[0-9a-f-]{36}$/i.test(id || '')) { pinta(`<p class="empty">${esc(t('Ese sitio ya no está en Klendar.'))}</p>`); return; }
+  if (!exigeSesion(`reclamar/${id}`)) return;
+  const [fila, estado] = await Promise.all([
+    llamar('business_profile', { p_id: id }),
+    llamar('my_business_claim', { p_business: id }),
+  ]);
+  const b = Array.isArray(fila) ? fila[0] : fila;
+  if (!b) { pinta(`<p class="empty">${esc(t('Ese sitio ya no está en Klendar.'))}</p>`); return; }
+  const ficha = `${pre}/b/${encodeURIComponent(id)}`;
+  const cabeza = `
+    <p class="crumbs"><a href="${ficha}">${esc(b.name)}</a></p>
+    <h1>${esc(t('¿Es tu negocio?'))}</h1>`;
+  const dia = (iso) => fecha(iso, { day: 'numeric', month: 'long', year: 'numeric' });
+
+  if (!estado.can_claim) {
+    const c = estado.claim || {};
+    let titulo = t('¿Es tu negocio?');
+    let texto = t('Algo no ha ido bien. Si vuelve a pasar, escríbenos a info@klendar.app.');
+    if (estado.why === 'already_pending') {
+      titulo = t('Reclamación en revisión');
+      texto = t('La enviaste el {fecha}. La revisamos a mano, normalmente en unos días, y te avisaremos con lo que decidamos.').replace('{fecha}', dia(c.created_at));
+    } else if (estado.why === 'recently_rejected') {
+      titulo = t('No hemos podido confirmarlo');
+      texto = [c.reason ? `${t('Motivo:')} ${c.reason}` : '',
+        estado.retry_after ? t('Puedes volver a intentarlo con más pruebas a partir del {fecha}.').replace('{fecha}', dia(estado.retry_after)) : '']
+        .filter(Boolean).join(' ');
+    } else if (estado.why === 'already_owner') {
+      titulo = t('Ya eres el propietario de este negocio.');
+      texto = '';
+    } else if (estado.why === 'adult_required') {
+      texto = t('Para reclamar un negocio hace falta tener 18 años o más (y la fecha de nacimiento en tu perfil).');
+    } else if (estado.why === 'not_found') {
+      texto = t('Ese sitio ya no está en Klendar.');
+    }
+    pinta(`${cabeza}
+      <h2>${esc(titulo)}</h2>${texto ? `<p class="muted">${esc(texto)}</p>` : ''}
+      ${estado.why === 'already_pending' && c.id ? `<p><button class="pill" id="retirar">${esc(t('Retirar la reclamación'))}</button></p>` : ''}
+      <p><a class="pill" href="${ficha}">${esc(t('Volver al sitio'))}</a></p>`);
+    const r = $('#retirar');
+    if (r) {
+      r.onclick = () => ocupado(r, async () => {
+        if (!await confirma({ titulo: t('¿Retirar la reclamación?'), texto: t('Dejaremos de revisarla. Podrás volver a enviarla cuando quieras.'), aceptar: t('Retirar la reclamación') })) return;
+        await llamar('withdraw_business_claim', { p_id: c.id });
+        toast(t('Reclamación retirada'));
+        navegar();
+      });
+    }
+    return;
+  }
+
+  pinta(`${cabeza}
+    <p class="muted">${esc(t('Si este negocio es tuyo o lo llevas tú y la ficha la creó otra persona, pide su propiedad: podrás gestionar la ficha, publicar y validar códigos. Lo comprobamos a mano antes de traspasarlo y te avisamos.'))}</p>
+    <form class="formu" id="f" novalidate>
+      <label>${esc(t('Tu cargo'))}
+        <input name="rol" maxlength="60" required autocomplete="organization-title" placeholder="${esc(t('Propietaria, gerente, encargado…'))}"></label>
+      <label>${esc(t('Teléfono del negocio'))}
+        <input name="tel" type="tel" maxlength="25" autocomplete="tel"></label>
+      <label>${esc(t('Correo del negocio'))}
+        <input name="mail" type="email" maxlength="254" autocomplete="email"></label>
+      <p class="muted">${esc(t('Al menos uno de los dos. Puede que te llamemos o te escribamos para comprobarlo.'))}</p>
+      <fieldset><legend>${esc(t('Prueba'))}</legend>
+        <p class="muted">${esc(t('Una foto o un PDF de algo que lo demuestre (licencia de apertura, una factura a nombre del negocio, el alta en Hacienda…) o cuéntanos cómo podemos comprobarlo. Con una de las dos basta.'))}</p>
+        <div class="foto-fila">
+          <img id="prev" alt="" hidden>
+          <span id="pdf" class="muted" hidden></span>
+          <label class="pill">${esc(t('Añadir una foto o un PDF'))}<input type="file" name="prueba" accept="image/*,application/pdf" hidden></label>
+          <button type="button" class="linkbtn" id="quita" hidden>${esc(t('Quitar'))}</button>
+        </div>
+        <label>${esc(t('Cómo podemos comprobarlo'))} <small>${esc(t('(opcional si añades una foto)'))}</small>
+          <textarea name="texto" rows="4" maxlength="1000" placeholder="${esc(t('Por ejemplo: «Soy la titular y el teléfono de la ficha es el mío».'))}"></textarea></label>
+      </fieldset>
+      <label class="check"><input type="checkbox" name="decl"> ${esc(t('Declaro que los datos son ciertos y que puedo representar a este negocio.'))}</label>
+      <p class="err" id="err" role="alert"></p>
+      <button class="pill accent" id="enviar">${esc(t('Enviar la reclamación'))}</button>
+      <p class="muted">${esc(t('Solo lo ve el equipo de Klendar para comprobarlo. La prueba se borra 6 meses después de resolver la reclamación.'))}
+        <a href="${EN ? '/en/privacy/' : '/privacidad/'}">${esc(t('Política de privacidad'))}</a></p>
+    </form>`);
+
+  const f = $('#f');
+  const err = $('#err');
+  const quita = $('#quita');
+  f.prueba.addEventListener('change', () => {
+    const a = f.prueba.files[0];
+    const img = $('#prev');
+    const pdf = $('#pdf');
+    img.hidden = true; pdf.hidden = true;
+    if (!a) { quita.hidden = true; return; }
+    if (a.type === 'application/pdf') { pdf.textContent = a.name; pdf.hidden = false; } else { img.src = URL.createObjectURL(a); img.hidden = false; }
+    quita.hidden = false;
+  });
+  quita.onclick = () => { f.prueba.value = ''; $('#prev').hidden = true; $('#pdf').hidden = true; quita.hidden = true; };
+
+  f.addEventListener('submit', (ev) => {
+    ev.preventDefault();
+    const rol = f.rol.value.trim();
+    const tel = f.tel.value.trim();
+    const mail = f.mail.value.trim();
+    const texto = f.texto.value.trim();
+    const archivo = f.prueba.files[0];
+    const mal = rol.length < 2 ? 'invalid_role'
+      : !tel && !mail ? 'contact_required'
+        : tel && !TEL_RECLAMAR.test(tel) ? 'invalid_phone'
+          : mail && !CORREO_OK.test(mail) ? 'invalid_email'
+            : !archivo && texto.length < 20 ? 'proof_required'
+              : texto && texto.length < 20 ? 'invalid_proof'
+                : !f.decl.checked ? 'declaration_required' : null;
+    if (mal) { err.textContent = amable(mal); return; }
+    err.textContent = '';
+    ocupado($('#enviar'), async () => {
+      let ruta = null;
+      try {
+        ruta = await subePrueba(archivo);
+        await llamar('claim_business', {
+          p_business: id, p_role: rol, p_phone: tel || null, p_email: mail || null,
+          p_proof_text: texto || null, p_proof_path: ruta, p_declaration: true,
+        });
+      } catch (e) {
+        // La subida que no ha llegado a ir en una reclamación, fuera.
+        if (ruta) sb.storage.from('business-claims').remove([ruta]).catch(() => {});
+        throw e;
+      }
+      hecho({
+        titulo: t('Reclamación enviada'),
+        texto: t('La revisamos a mano, normalmente en unos días. Te avisaremos con lo que decidamos.'),
+        volver: ficha, volverTxt: t('Volver al sitio'),
         lista: '#/', listaTxt: t('Tu cuenta'),
       });
     });
@@ -1229,9 +1502,11 @@ RUTAS['ultimo-paso'] = async (_p, params) => {
     $('#salir').onclick = salir;
     $('#borrar').addEventListener('click', async (ev) => {
       const boton = ev.currentTarget;
+      const vivo = await cuentaVivaLineas();
       if (!(await confirma({
+        ...(vivo.length ? { lista: [`${t('Ahora mismo tienes')}:`, ...vivo], pie: t(PIE_VIVO) } : {}),
         titulo: t('¿Eliminar tu cuenta?'),
-        texto: t('Se borran para siempre tus datos, tus favoritos, tus planes y tus canjes. Si eres dueño de un negocio, también su ficha, sus publicaciones y su equipo. No se puede deshacer.'),
+        texto: t('Se borran para siempre tus datos, tus favoritos, tus planes y tus canjes. Si eres propietario de un negocio, antes tendrás que darlo de baja o traspasarlo. No se puede deshacer.'),
         aceptar: t('Eliminar'),
         peligro: true,
       }))) return;
@@ -1292,12 +1567,27 @@ RUTAS.avisos = (...a) => RUTAS.notificaciones(...a); // enlaces antiguos
 // sin que se te preguntara). Como «Invitaciones de equipo» en la app.
 RUTAS.invitaciones = async () => {
   if (!exigeSesion('invitaciones')) return;
-  const lista = await llamar('my_team_invites', {});
+  const [lista, traspasos] = await Promise.all([
+    llamar('my_team_invites', {}),
+    llamar('my_business_transfers', {}).catch(() => []),
+  ]);
   const papel = (r) => (r === 'manager' ? t('encargado') : t('empleado'));
   const dia = (s) => new Date(s).toLocaleDateString(EN ? 'en-GB' : 'es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
   pinta(`
     <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(t('Invitaciones de equipo'))}</h1>
+    ${(traspasos || []).length ? `<div class="invitaciones-eq">${traspasos.map((i) => `
+      <div class="lista inv-eq">
+        <p class="inv-eq-t"><b>${esc(EN ? `You’re offered ownership of ${i.business_name}` : `Te ofrecen ser propietario de ${i.business_name}`)}</b>
+          ${i.business_city ? `<small class="muted">${esc(i.business_city)}</small>` : ''}</p>
+        ${i.from_name ? `<p>${esc(EN ? `Offered by ${i.from_name}.` : `Te lo propone ${i.from_name}.`)}</p>` : ''}
+        <p class="muted">${esc(t('Si lo aceptas, el negocio pasa a ser tuyo: lo gestionas todo, también la suscripción y los datos de facturación.'))}</p>
+        ${i.expires_at ? `<p class="muted">${esc(EN ? `Expires on ${dia(i.expires_at)}` : `Caduca el ${dia(i.expires_at)}`)}</p>` : ''}
+        <p class="dos-pills">
+          <button class="pill" type="button" data-tr-no="${esc(i.id)}">${esc(t('Rechazar'))}</button>
+          <button class="pill accent" type="button" data-tr-si="${esc(i.id)}">${esc(t('Aceptar'))}</button>
+        </p>
+      </div>`).join('')}</div>` : ''}
     ${(lista || []).length ? `<div class="invitaciones-eq">${lista.map((i) => `
       <div class="lista inv-eq">
         <p class="inv-eq-t"><b>${esc(EN ? `You’re invited to the ${i.business_name} team` : `Te invitan al equipo de ${i.business_name}`)}</b>
@@ -1314,13 +1604,23 @@ RUTAS.invitaciones = async () => {
           <button class="pill accent" type="button" data-si="${esc(i.id)}">${esc(t('Aceptar'))}</button>
         </p>
       </div>`).join('')}</div>`
-    : `<p class="empty">${esc(t('No tienes invitaciones pendientes.'))}</p>`}`);
+    : (traspasos || []).length ? '' : `<p class="empty">${esc(t('No tienes invitaciones pendientes.'))}</p>`}`);
   const contesta = async (id, acepta, boton) => {
     boton.disabled = true;
     try {
       const r = await llamar('respond_team_invite', { p_invite: id, p_accept: acepta });
       if (!r?.ok) {
-        toast(r?.error === 'expired' ? t('Esta invitación ha caducado.') : t('No se ha podido. Vuelve a probar.'), true);
+        // Edad y suspensión (20261028100000): la invitación sigue ahí.
+        const negocio = r?.business_name || (lista || []).find((x) => x.id === id)?.business_name || '';
+        const motivo = {
+          expired: t('Esta invitación ha caducado.'),
+          min_age_16: EN ? `To join the ${negocio} team you need to be 16 and have your date of birth in your profile.`
+            : `Para entrar en el equipo de ${negocio} hace falta tener 16 años y la fecha de nacimiento en tu perfil.`,
+          adult_required: EN ? `${negocio} is 18+: to join its team you need to be 18 and have your date of birth in your profile.`
+            : `${negocio} es +18: para entrar en su equipo hace falta tener 18 años y la fecha de nacimiento en tu perfil.`,
+          account_suspended: t('Tu cuenta está suspendida. Si crees que es un error, escribe a info@klendar.app.'),
+        }[r?.error];
+        toast(motivo || t('No se ha podido. Vuelve a probar.'), true);
       } else if (acepta) {
         toast(EN ? `You’re now part of the ${r.business_name} team.` : `Ya formas parte del equipo de ${r.business_name}.`);
         // Dentro: a su panel, que es lo que viene a hacer.
@@ -1334,6 +1634,28 @@ RUTAS.invitaciones = async () => {
     }
     RUTAS.invitaciones();
   };
+  const traspaso = async (id, acepta, boton) => {
+    boton.disabled = true;
+    try {
+      const r = await llamar('respond_business_transfer', { p_transfer: id, p_accept: acepta });
+      if (!r?.ok) {
+        toast(r?.error === 'adult_required'
+          ? t('Para ser propietario de un negocio hace falta tener 18 años y la fecha de nacimiento en tu perfil. Ponla en Ajustes y vuelve a aceptarlo.')
+          : t('Esta invitación ha caducado.'), true);
+      } else if (acepta) {
+        toast(EN ? `You’re now the owner of ${r.business_name}.` : `Ahora eres propietario de ${r.business_name}.`);
+        location.href = `/panel/#/resumen?biz=${r.business_id}`;
+        return;
+      } else {
+        toast(t('Traspaso rechazado.'));
+      }
+    } catch (e) {
+      toast(e.message, true);
+    }
+    RUTAS.invitaciones();
+  };
+  $$('[data-tr-si]').forEach((b) => { b.onclick = () => traspaso(b.dataset.trSi, true, b); });
+  $$('[data-tr-no]').forEach((b) => { b.onclick = () => traspaso(b.dataset.trNo, false, b); });
   $$('[data-si]').forEach((b) => { b.onclick = () => contesta(b.dataset.si, true, b); });
   $$('[data-no]').forEach((b) => { b.onclick = () => contesta(b.dataset.no, false, b); });
 };

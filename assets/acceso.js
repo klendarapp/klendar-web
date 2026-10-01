@@ -21,7 +21,7 @@
  *
  * Uso:
  *   const sb = KL_SUPABASE();                  // cliente con PKCE
- *   const r = await KL_ENLACE(sb);             // { tipo, error } (una vez por página)
+ *   const r = await KL_ENLACE(sb);             // { tipo, sesion, error } (una vez por página)
  *   KL_ENLACE.aviso(lang)                      // el aviso pendiente (y se gasta), o ''
  */
 (function () {
@@ -121,7 +121,13 @@
         } else {
           try {
             var res = await sb.auth.verifyOtp({ token_hash: enlace.token_hash, type: enlace.type });
-            if (res.error) r.error = res.error; else r.tipo = enlace.type;
+            if (res.error) r.error = res.error;
+            else {
+              r.tipo = enlace.type;
+              // El cambio de correo se confirma en dos correos: el primero no
+              // trae sesión (falta el otro); el segundo, sí.
+              r.sesion = !!(res.data && res.data.session);
+            }
           } catch (e) { r.error = e; }
         }
       } else if (fallo) {
