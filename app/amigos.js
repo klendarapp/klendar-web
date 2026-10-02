@@ -230,6 +230,8 @@ RUTAS.amigos = async ([idAmigo]) => {
 // ── La ficha de un amigo ──────────────────────────────────────────────────
 /** «Va a 1 plan» · «Va a 3 planes». */
 const planesDeAmigo = (n) => (EN ? `Going to ${n} ${n === 1 ? 'plan' : 'plans'}` : `Va a ${n} ${n === 1 ? 'plan' : 'planes'}`);
+/** «Habéis ido juntos a 1 plan» · «… a 4 planes». */
+const planesJuntos = (n) => (EN ? `You've been to ${n} ${n === 1 ? 'plan' : 'plans'} together` : `Habéis ido juntos a ${n} ${n === 1 ? 'plan' : 'planes'}`);
 
 /** Sus PRÓXIMOS planes (lo pasado no se guarda aquí), solo lo que tú puedes
  * ver, y desde cada uno «Voy también» o el botón de la publicación (código o
@@ -254,6 +256,9 @@ async function fichaDeAmigo(id) {
   const nombre = nombreDeAmigo(amigo);
   const planes = d.plans || [];
   const desde = amigo.since ? fecha(amigo.since, { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+  // «Habéis ido juntos a N planes»: solo el número y solo si es más de 0
+  // (la base da 0 si alguno lo tiene apagado, sin decir por qué).
+  const juntos = Number(d.together) || 0;
   const accion = (p) => {
     const ficha = `${pre}/o/${encodeURIComponent(p.id)}`;
     if (p.going && p.auto) return `<p class="plan-va">${esc(t(p.auto === 'reservation' ? 'Vas: tienes plaza reservada' : 'Vas: tienes el código'))}</p>`;
@@ -271,6 +276,7 @@ async function fichaDeAmigo(id) {
       ${avatarDeAmigo(amigo, 'av-grande')}
       <h1>${esc(nombre)}</h1>
       ${desde ? `<p class="muted">${esc(EN ? `Friends since ${desde}` : `Amigos desde ${desde}`)}</p>` : ''}
+      ${juntos > 0 ? `<p class="juntos-amigo">${ic('group')}<span>${esc(planesJuntos(juntos))}</span></p>` : ''}
     </div>
     ${planes.length ? `<section class="bloque">
       <h2>${esc(planes.length === 1 ? t('Su próximo plan') : (EN ? `Their next ${planes.length} plans` : `Sus próximos ${planes.length} planes`))}</h2>

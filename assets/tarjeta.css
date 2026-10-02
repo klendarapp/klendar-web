@@ -1,0 +1,150 @@
+/* La tarjeta de una publicación y el calendario de la agenda: los mismos en
+   la web pública (Descubre, Explorar, agenda, fichas; enlazado detrás de
+   public.css) y en el panel del negocio («Tus publicaciones», su calendario y
+   la vista previa del formulario, dentro de `.tjv`). El HTML lo pinta
+   `assets/tarjeta.js`. Lo que en la web pública va dentro de `main.pub`
+   aquí es `:is(.pub, .tjv)`: la misma especificidad en los dos sitios. */
+
+/* ── Tarjeta de publicación (functions/_lib/tarjeta.js) ────────────────── */
+/* La foto o el vídeo de protagonista, entera (4:5, como se suben desde la
+   app), y el panel encima de su borde de abajo, como el panel de cristal de
+   Descubre. Toda la tarjeta es un enlace (el del título, estirado). */
+.tjs { display: grid; gap: 22px 18px; grid-template-columns: repeat(auto-fill, minmax(255px, 1fr)); margin: 0 0 14px; }
+.tjs--feed { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+@media (max-width: 600px) { .tjs, .tjs--feed { grid-template-columns: 1fr; gap: 22px; } }
+.tj { position: relative; display: flex; flex-direction: column; min-width: 0; color: var(--ink); isolation: isolate; }
+.tj-media { position: relative; aspect-ratio: 4 / 5; border-radius: 26px; overflow: hidden; background: var(--soft); }
+.tj-img { width: 100%; height: 100%; object-fit: cover; display: block; background: var(--soft); transition: transform .4s ease; }
+.tj:hover .tj-img { transform: scale(1.03); }
+.tj-ph { position: absolute; inset: 0; display: grid; place-items: center; font: 800 64px/1 var(--display); color: var(--ink-2);
+  background: linear-gradient(140deg, var(--soft), transparent 70%); }
+.tj-tipo, .tj-video { position: absolute; top: 12px; z-index: 1; display: inline-flex; align-items: center; gap: 4px; padding: 5px 11px;
+  border-radius: 999px; font-size: 12px; font-weight: 800; background: rgba(10,10,10,.62); color: #fff;
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.tj-tipo { left: 12px; }
+.tj-video { right: 12px; padding: 5px 8px; }
+.tj-panel { position: relative; flex: 1; margin: -56px 10px 0; padding: 14px 16px 16px; border-radius: 22px; display: flex; flex-direction: column; gap: 8px;
+  background: color-mix(in srgb, var(--elevated) 88%, transparent); border: 1px solid var(--glass-border);
+  backdrop-filter: blur(18px) saturate(1.3); -webkit-backdrop-filter: blur(18px) saturate(1.3);
+  box-shadow: 0 14px 34px -18px rgba(0,0,0,.45); }
+:is(.pub, .tjv) .tj p, :is(.pub, .tjv) .tj .tj-titulo { margin: 0; }
+.tj-negocio { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; min-width: 0; }
+.tj-logo { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; flex: none; background: var(--soft); }
+.tj-nombre, .tj-lugar { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.tj-lugar { color: var(--ink-2); font-weight: 600; }
+.tj-negocio .tj-dist { margin-left: auto; padding-left: 6px; color: var(--ink-2); font-weight: 700; white-space: nowrap; }
+:is(.pub, .tjv) .tj .tj-titulo { font: 800 19px/1.2 var(--display); letter-spacing: -.02em; overflow-wrap: anywhere;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.tj-enlace { color: inherit; }
+.tj-enlace:hover { text-decoration: none; }
+.tj-enlace::after { content: ""; position: absolute; inset: 0; z-index: 2; border-radius: 26px; }
+.tj-enlace:focus-visible { outline: none; }
+.tj:has(.tj-enlace:focus-visible) { outline: 2px solid var(--ink); outline-offset: 4px; border-radius: 26px; }
+.tj-desc { font-size: 14px; color: var(--ink-2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.tj-datos { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.tj-precio { padding: 4px 11px; border-radius: 999px; background: var(--tj-acento, var(--accent)); color: var(--tj-sobre, var(--on-accent));
+  font-weight: 800; font-size: 14px; white-space: nowrap; }
+.tj-antes { color: var(--ink-2); font-size: 13px; }
+.tj-chip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--glass-border);
+  background: var(--soft); font-size: 13px; font-weight: 700; min-width: 0; }
+.tj-chip .ic { flex: none; }
+.tj-cuando.ahora { color: var(--accent-text); }
+.tj-cuando.fin { color: var(--ink-2); }
+.tj-amigos:empty { display: none; }
+.tj-amigos .quien-va { margin: 0; font-size: 13px; }
+.tj-cta { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; margin-top: auto; /* siempre abajo: en una fila de tarjetas quedan alineados */ border-radius: 999px;
+  background: var(--accent); color: var(--on-accent); font-weight: 800; font-size: 15px; }
+.tj:hover .tj-cta { filter: brightness(1.05); }
+/* Plantilla «bold»: el panel del color del negocio. */
+.tj--bold .tj-panel { background: var(--tj-acento, var(--accent)); color: var(--tj-sobre, var(--on-accent)); border-color: transparent;
+  backdrop-filter: none; -webkit-backdrop-filter: none; }
+.tj--bold .tj-lugar, .tj--bold .tj-negocio .tj-dist, .tj--bold .tj-antes, .tj--bold .tj-desc { color: inherit; opacity: .8; }
+.tj--bold .tj-precio, .tj--bold .tj-cta { background: var(--tj-sobre, var(--on-accent)); color: var(--tj-acento, var(--accent)); }
+.tj--bold .tj-chip { background: color-mix(in srgb, currentColor 14%, transparent); border-color: transparent; }
+/* Plantilla «minimal»: panel opaco, sin cristal. */
+.tj--minimal .tj-panel { background: var(--elevated); backdrop-filter: none; -webkit-backdrop-filter: none; }
+/* Plantilla «poster»: sin panel; el título grande sobre la foto oscurecida. */
+.tj--poster .tj-panel { position: absolute; left: 0; right: 0; bottom: 0; margin: 0; padding: 80px 18px 18px; border: 0; border-radius: 0 0 26px 26px;
+  background: linear-gradient(to bottom, transparent, rgba(0,0,0,.55) 35%, rgba(0,0,0,.88)); color: #fff; box-shadow: none;
+  backdrop-filter: none; -webkit-backdrop-filter: none; }
+:is(.pub, .tjv) .tj--poster .tj-titulo { font-size: 24px; }
+.tj--poster .tj-lugar, .tj--poster .tj-negocio .tj-dist, .tj--poster .tj-antes, .tj--poster .tj-desc { color: rgba(255,255,255,.82); }
+.tj--poster .tj-chip { background: rgba(255,255,255,.16); border-color: transparent; color: #fff; }
+.tj--poster .tj-cta { background: #fff; color: #0A0A0A; }
+.tj--poster .tj-cuando.ahora { color: #FF8FA3; }
+/* Antetítulo de «Cartel»: la fecha, en un bloque del color del negocio. */
+.tj-kicker { align-self: flex-start; padding: 4px 9px; border-radius: 6px; background: var(--tj-acento, var(--accent));
+  color: var(--tj-sobre, var(--on-accent)); font-size: 12px; font-weight: 800; letter-spacing: .05em; }
+:is(.pub, .tjv) .tj--poster .tj-titulo { font-size: 28px; font-weight: 900; line-height: 1.04; letter-spacing: -.03em; -webkit-line-clamp: 4; }
+/* Sin panel debajo («Cartel» y «Foto grande»): la foto llena toda la tarjeta
+   aunque la fila de la rejilla sea más alta que ella. */
+.tj--photo .tj-media, .tj--poster .tj-media { flex: 1 1 auto; }
+/* Plantilla «photo» (Foto grande): la foto manda; datos pequeños sobre un
+   degradado discreto, sin panel, y el botón del ancho del texto. */
+.tj--photo .tj-panel { position: absolute; left: 0; right: 0; bottom: 0; margin: 0; padding: 70px 16px 16px; border: 0; border-radius: 0 0 26px 26px;
+  background: linear-gradient(to bottom, transparent, rgba(0,0,0,.45) 45%, rgba(0,0,0,.72)); color: #fff; box-shadow: none; gap: 6px;
+  backdrop-filter: none; -webkit-backdrop-filter: none; text-shadow: 0 1px 3px rgba(0,0,0,.35); }
+:is(.pub, .tjv) .tj--photo .tj-titulo { font-size: 17px; -webkit-line-clamp: 2; }
+.tj--photo .tj-negocio { font-size: 12px; }
+.tj--photo .tj-logo { width: 20px; height: 20px; }
+.tj--photo .tj-desc, .tj--photo .tj-antes { display: none; }
+.tj--photo .tj-negocio .tj-dist, .tj--photo .tj-org { color: rgba(255,255,255,.82); }
+.tj--photo .tj-chip { background: none; border: 0; padding: 0; color: rgba(255,255,255,.88); }
+.tj--photo .tj-precio { font-size: 13px; padding: 3px 9px; text-shadow: none; }
+.tj--photo .tj-cta { align-self: flex-start; min-height: 36px; padding: 0 14px; font-size: 13px; background: #fff; color: #0A0A0A; text-shadow: none; }
+.tj--photo .tj-cuando.ahora { color: #FF8FA3; }
+/* Plantilla «minimal»: sobria; el color solo en el precio. */
+:is(.pub, .tjv) .tj--minimal .tj-titulo { font-weight: 700; }
+.tj--minimal .tj-chip { background: none; border: 0; padding: 0 4px 0 0; color: var(--ink-2); }
+/* Con lugar propio: el sitio y, debajo, quién lo organiza. */
+.tj-nombre .ic { vertical-align: -2px; margin-right: 2px; }
+.tj-org { font-size: 12px; color: var(--ink-2); margin-top: -4px !important; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tj--bold .tj-org { color: inherit; opacity: .8; }
+.tj--poster .tj-org { color: rgba(255,255,255,.82); }
+
+/* La forma «fila»: la lista de un día del calendario (la agenda de la app). */
+.tj-filas { display: grid; gap: 10px; }
+.tj-fila { flex-direction: row; align-items: center; gap: 14px; padding: 10px 12px 10px 10px; border-radius: 22px; background: var(--elevated);
+  border: 1px solid var(--glass-border); }
+.tj-fila:hover { border-color: var(--ink-2); }
+.tj-fila .tj-media { width: 84px; height: 84px; aspect-ratio: auto; flex: none; border-radius: 16px; }
+.tj-fila .tj-ph { font-size: 30px; }
+.tj-fila .tj-enlace::after { border-radius: 22px; }
+.tj-fila:has(.tj-enlace:focus-visible) { border-radius: 22px; }
+.tj-cuerpo { display: grid; gap: 3px; min-width: 0; flex: 1; }
+.tj-fila .tj-datos { gap: 8px; }
+.tj-hora { color: var(--accent-text); font-weight: 800; font-size: 15px; }
+.tj-rayo { color: var(--accent-text); display: inline-flex; }
+.tj-fila .tj-precio { font-size: 13px; padding: 2px 9px; }
+:is(.pub, .tjv) .tj-fila .tj-titulo { font-size: 16px; -webkit-line-clamp: 2; }
+.tj-fila .tj-negocio { font-weight: 600; color: var(--ink-2); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tj-chevron { color: var(--ink-2); flex: none; display: inline-flex; }
+@media (prefers-reduced-motion: reduce) { .tj-img { transition: none; } .tj:hover .tj-img { transform: none; } }
+
+/* ── Calendario (la agenda de Explorar en la app) ──────────────────────── */
+.calendario { display: grid; gap: 22px 28px; grid-template-columns: minmax(0, 440px) minmax(0, 1fr); align-items: start; }
+@media (max-width: 900px) { .calendario { grid-template-columns: 1fr; } }
+.cal-mes { margin: 0; background: var(--elevated); border: 1px solid var(--glass-border); border-radius: 28px; padding: 14px 12px 12px; position: sticky; top: 84px; }
+@media (max-width: 900px) { .cal-mes { position: static; } }
+.cal-cab { display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; margin: 0 0 4px; }
+:is(.pub, .tjv) .cal-cab h2 { margin: 0; text-align: center; font-size: 20px; }
+.cal-nav { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; color: var(--ink); }
+a.cal-nav:hover { background: var(--soft); }
+.cal-rejilla { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px 2px; text-align: center; }
+.cal-sem { font-size: 13px; color: var(--ink-2); padding: 6px 0 4px; text-transform: lowercase; }
+:is(.pub, .tjv) .cal-dia { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-height: 50px; border-radius: 15px;
+  font-weight: 700; font-size: 16px; color: var(--ink); position: relative; }
+a.cal-dia:hover { background: var(--soft); text-decoration: none; }
+.cal-dia.pasado { color: var(--ink-2); opacity: .5; }
+.cal-dia.hoy { box-shadow: inset 0 0 0 1.5px var(--ink-2); }
+:is(.pub, .tjv) .cal-dia.sel { background: var(--ink); color: var(--surface); box-shadow: none; }
+.cal-puntos { display: flex; gap: 3px; height: 6px; }
+.cal-puntos i, .cal-leyenda i { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+.pe { background: var(--accent); }
+.pf { background: var(--amber); }
+:is(.pub, .tjv) .cal-leyenda { display: flex; justify-content: center; gap: 18px; font-size: 13px; color: var(--ink-2); margin: 10px 0 2px; }
+.cal-leyenda span { display: inline-flex; align-items: center; gap: 6px; }
+.cal-lista { min-width: 0; padding: 0; scroll-margin-top: 80px; }
+.cal-lista-cab { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin: 4px 0 12px; }
+:is(.pub, .tjv) .cal-lista-cab h2 { margin: 0; font-size: 20px; }
+.cal-lista .empty a { font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }

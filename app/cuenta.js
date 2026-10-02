@@ -432,6 +432,15 @@ RUTAS.alerta = async ([id], params, crudo) => {
 };
 
 // ── Ajustes ───────────────────────────────────────────────────────────────
+/** El texto de «Mostrar los planes a los que he ido con cada amigo» según
+ * «Que mis amigos vean mis planes» (`comparte`) y el propio interruptor. */
+function textoPlanesJuntos(comparte, encendido) {
+  if (!comparte) return t('Necesita «Que mis amigos vean mis planes»');
+  return encendido
+    ? t('En la ficha de cada amigo: «Habéis ido juntos a N planes». Solo el número, sin decir cuáles ni cuándo. Si uno de los dos lo apaga, no lo ve ninguno')
+    : t('Nadie ve a cuántos planes habéis ido juntos, y tú tampoco lo ves en la ficha de tus amigos');
+}
+
 RUTAS.ajustes = async () => {
   if (!exigeSesion('ajustes')) return;
   const [perfil, prefs, cons, cats, negocios, cuenta, metodos] = await Promise.all([
@@ -565,6 +574,9 @@ RUTAS.ajustes = async () => {
           <span>${esc(t(cons?.share_plans !== false
             ? 'Tus amigos ven a qué vas («Voy», una plaza reservada o un código): en cada plan, en tu ficha de amigo y, si lo piden, con un aviso'
             : 'No sales en el «quién va» de tus amigos'))}</span></label></dd>
+        <dt>${esc(t('Mostrar los planes a los que he ido con cada amigo'))}</dt>
+        <dd><label class="check"><input type="checkbox" id="planes-juntos"${cons?.share_plans !== false && cons?.share_plans_together !== false ? ' checked' : ''}${cons?.share_plans === false ? ' disabled' : ''}>
+          <span id="planes-juntos-texto">${esc(textoPlanesJuntos(cons?.share_plans !== false, cons?.share_plans_together !== false))}</span></label></dd>
         <dt>${esc(t('Ubicación'))}</dt>
         <dd id="dd-ubicacion">${cons?.location_consent_at ? `${esc(`${t('Compartida desde el')} ${dia(cons.location_consent_at)}`)}
           <button class="linkbtn" id="sin-ubicacion">${esc(t('Dejar de compartir'))}</button>` : esc(t('No guardamos tu posición'))}</dd>
@@ -684,7 +696,17 @@ RUTAS.ajustes = async () => {
     } catch (e) { caja.checked = !caja.checked; toast(e.message, true); }
   });
   // «Que mis amigos vean mis planes»: apagado, no sales en el «quién va» de
-  // nadie (ni por «Voy» ni por una plaza o un código).
+  // nadie (ni por «Voy» ni por una plaza o un código). Y sin él tampoco vale
+  // «Mostrar los planes a los que he ido con cada amigo» (sale apagado y
+  // quieto, como en la app).
+  let juntosEncendido = cons?.share_plans_together !== false;
+  const pintaJuntos = (comparte) => {
+    const caja = $('#planes-juntos');
+    if (!caja) return;
+    caja.checked = comparte && juntosEncendido;
+    caja.disabled = !comparte;
+    $('#planes-juntos-texto').textContent = textoPlanesJuntos(comparte, juntosEncendido);
+  };
   $('#compartir-planes').addEventListener('change', async (ev) => {
     const caja = ev.currentTarget;
     caja.disabled = true;
@@ -696,6 +718,18 @@ RUTAS.ajustes = async () => {
           ? t('Tus amigos ven a qué vas («Voy», una plaza reservada o un código): en cada plan, en tu ficha de amigo y, si lo piden, con un aviso')
           : t('No sales en el «quién va» de tus amigos');
       }
+      pintaJuntos(caja.checked);
+    } catch (e) { caja.checked = !caja.checked; toast(e.message, true); } finally { caja.disabled = false; }
+  });
+  // «Habéis ido juntos a N planes» en la ficha de cada amigo: si uno de los
+  // dos lo apaga, no lo ve ninguno.
+  $('#planes-juntos').addEventListener('change', async (ev) => {
+    const caja = ev.currentTarget;
+    caja.disabled = true;
+    try {
+      await llamar('set_share_plans_together', { p_value: caja.checked });
+      juntosEncendido = caja.checked;
+      $('#planes-juntos-texto').textContent = textoPlanesJuntos(true, juntosEncendido);
     } catch (e) { caja.checked = !caja.checked; toast(e.message, true); } finally { caja.disabled = false; }
   });
   $('#sin-ubicacion')?.addEventListener('click', async (ev) => {

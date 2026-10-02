@@ -610,6 +610,10 @@ const APP_EN = {
     "Esta publicación ya no está disponible.": "This publication is no longer available.",
     "Que mis amigos vean mis planes": "Let my friends see my plans",
     "No sales en el «quién va» de tus amigos": "You don't appear in your friends' “who's going”",
+    "Mostrar los planes a los que he ido con cada amigo": "Show the plans I've been to with each friend",
+    "En la ficha de cada amigo: «Habéis ido juntos a N planes». Solo el número, sin decir cuáles ni cuándo. Si uno de los dos lo apaga, no lo ve ninguno": "On each friend's page: “You've been to N plans together”. Just the number, not which ones or when. If either of you turns it off, neither of you sees it",
+    "Nadie ve a cuántos planes habéis ido juntos, y tú tampoco lo ves en la ficha de tus amigos": "Nobody sees how many plans you've been to together, and you don't see it on your friends' pages either",
+    "Necesita «Que mis amigos vean mis planes»": "Needs “Let my friends see my plans”",
     "Invitaciones de amigos": "Invitations from friends",
     "Cuando un amigo te invita a un plan o dice que va al tuyo. Apagado, no te pueden invitar.": "When a friend invites you to a plan or says they're going to yours. When off, nobody can invite you.",
     // Volver a aceptar los términos cuando cambia la versión (2026-09-29)

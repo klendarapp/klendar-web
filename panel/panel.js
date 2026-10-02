@@ -54,6 +54,10 @@ const pausado = () => !!BIZ?.paused_until && new Date(BIZ.paused_until) > new Da
 // enseña y se escribe en esa hora, con su cambio de horario, y a la base va
 // el instante exacto. `TZ` cambia al elegir otro local (`preparaNegocio`).
 const KZ = globalThis.KlendarZona;
+// La tarjeta de una publicación, la misma que ve la gente en la web y en la
+// app (/assets/tarjeta.js): «Tus publicaciones», el calendario y la vista
+// previa del formulario la pintan con ella.
+const KT = globalThis.KlendarTarjeta;
 let TZ = KZ.MADRID;
 /** Año, mes, día, hora y minuto que marca el reloj del negocio en ese instante. */
 const partesNegocio = (d) => KZ.partes(d, TZ);
@@ -231,37 +235,12 @@ const PALETA = [
   ['#0EA5E9', 'Azul cielo'], ['#2563EB', 'Azul'], ['#1E3A8A', 'Azul marino'], ['#6D28D9', 'Morado'],
   ['#E879F9', 'Orquídea'], ['#BE185D', 'Frambuesa'], ['#E7D7B8', 'Arena'], ['#111827', 'Negro'],
 ];
-const TINTA = '#0A0A0A';
-const rgbDe = (hex) => { const n = parseInt(String(hex).slice(1), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; };
 const hexDe = (r, g, b) => '#' + [r, g, b].map((x) => x.toString(16).padStart(2, '0')).join('').toUpperCase();
-/** Luminancia relativa WCAG 2.x. */
-function luminancia([r, g, b]) {
-  const l = (c) => { const x = c / 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; };
-  return 0.2126 * l(r) + 0.7152 * l(g) + 0.0722 * l(b);
-}
-const LUM_TINTA = luminancia(rgbDe(TINTA));
-const contrastes = (rgb) => { const l = luminancia(rgb); return [(l + 0.05) / (LUM_TINTA + 0.05), 1.05 / (l + 0.05)]; };
-/** Tinta o blanco: el que más contraste dé sobre el color. */
-function sobreColor(hex) { const [ci, cw] = contrastes(rgbDe(hex)); return ci >= cw ? TINTA : '#FFFFFF'; }
 /** El color con el texto encima legible (AA): si ni la tinta ni el blanco
- * llegan a 4,5:1, se aclara u oscurece en pasos de 1/25 (lo mismo que
- * `color_seguro` en la base y `OfferStyle.safeAccent` en la app). */
-function colorSeguro(hex) {
-  if (!/^#?[0-9a-f]{6}$/i.test(String(hex || ''))) return null;
-  const h = hex.startsWith('#') ? hex.toUpperCase() : `#${hex.toUpperCase()}`;
-  const rgb = rgbDe(h);
-  const pasa = (c) => Math.max(...contrastes(c)) >= 4.5;
-  if (pasa(rgb)) return h;
-  const [ci, cw] = contrastes(rgb);
-  const destino = ci >= cw ? 255 : 0;
-  for (let i = 1; i <= 25; i++) {
-    // (x·(25−i) + destino·i) / 25 nunca cae en ,5 exacto: el mismo redondeo
-    // que Dart y SQL.
-    const m = rgb.map((x) => Math.round((x * (25 - i) + destino * i) / 25));
-    if (pasa(m)) return hexDe(...m);
-  }
-  return h;
-}
+ * llegan a 4,5:1, se aclara u oscurece en pasos de 1/25. El de la tarjeta
+ * (`/assets/tarjeta.js`): el mismo que `color_seguro` en la base y
+ * `OfferStyle.safeAccent` en la app. */
+const colorSeguro = (hex) => KT.colorSeguro(hex);
 /** Los colores con más presencia del logo (32×32, sin grises ni blancos):
  * lo mismo que `dominantColors` en la app. Vacío si no se puede leer. */
 async function coloresDelLogo(url) {
@@ -303,34 +282,10 @@ async function coloresDelLogo(url) {
   return out;
 }
 
-/** Plataformas de entradas conocidas: el botón dirá «Entradas en DICE». La
- * misma lista que la app (`ticket_platforms.dart`). */
-const PLATAFORMAS_ENTRADAS = Object.fromEntries((
-  `dice.fm=DICE|entradium.com=Entradium|eventbrite.com=Eventbrite|eventbrite.es=Eventbrite|eventbrite.co.uk=Eventbrite|eventbrite.ie=Eventbrite|
-  eventbrite.fr=Eventbrite|eventbrite.de=Eventbrite|eventbrite.it=Eventbrite|eventbrite.pt=Eventbrite|ticketmaster.es=Ticketmaster|ticketmaster.com=Ticketmaster|
-  ticketmaster.co.uk=Ticketmaster|ticketmaster.ie=Ticketmaster|ticketmaster.fr=Ticketmaster|ticketmaster.de=Ticketmaster|feverup.com=Fever|fever.com=Fever|
-  wegow.com=Wegow|tiqets.com=Tiqets|taquilla.com=Taquilla.com|ticketea.com=Ticketea|entradas.com=Entradas.com|universe.com=Universe|
-  seetickets.com=See Tickets|ra.co=Resident Advisor|residentadvisor.net=Resident Advisor|xceed.me=Xceed|shotgun.live=Shotgun|ticketswap.es=TicketSwap|
-  ticketswap.com=TicketSwap|giglon.com=Giglon|atrapalo.com=Atrápalo|eventim.es=Eventim|eventim.de=Eventim|eventim.co.uk=Eventim|
-  fnactickets.com=Fnac Tickets|bacantix.com=Bacantix|compralaentrada.com=CompraLaEntrada|redentradas.com=Red Entradas|enterticket.es=Enterticket|notikumi.com=Notikumi|
-  tickentradas.com=Tickentradas|koobin.com=Koobin|ticketib.com=Ticketib`
-).split('|').map((x) => x.trim().split('=')));
-/** { plataforma, dominio } de un enlace de entradas (o null). */
-function plataformaEntradas(url) {
-  let u;
-  const t = String(url || '').trim();
-  if (!t) return null;
-  try { u = new URL(t.includes('://') ? t : `https://${t}`); } catch { return null; }
-  let host = u.hostname.toLowerCase();
-  for (const pre of ['www.', 'm.']) if (host.startsWith(pre)) host = host.slice(pre.length);
-  let plataforma = null;
-  for (const [dom, nombre] of Object.entries(PLATAFORMAS_ENTRADAS)) {
-    if (host === dom || host.endsWith(`.${dom}`)) { plataforma = nombre; break; }
-  }
-  if (!plataforma && (host === 'elcorteingles.es' || host.endsWith('.elcorteingles.es'))
-    && u.pathname.toLowerCase().startsWith('/entradas')) plataforma = 'El Corte Inglés';
-  return { plataforma, dominio: host };
-}
+/** { plataforma, dominio } de un enlace de entradas (o null): el botón dirá
+ * «Entradas en DICE». La lista de la tarjeta, la misma que la app
+ * (`ticket_platforms.dart`). */
+const plataformaEntradas = (url) => KT.plataformaEntradas(url);
 
 /** Metros entre dos puntos. */
 function metrosEntre(a, b) {
@@ -724,7 +679,8 @@ sb.auth.onAuthStateChange((ev) => {
   // contraseña nueva se pone en «Tu cuenta» y se vuelve al panel.
   if (ev === 'PASSWORD_RECOVERY') location.href = '/app/?destino=%2Fpanel%2F#/nueva-clave';
 });
-$('#menuBtn').onclick = () => $('#side').classList.toggle('open');
+$('#menuBtn').onclick = () => abreMenu(!$('#side').classList.contains('open'));
+$('#menuCerrar').onclick = () => abreMenu(false);
 
 // ── Idioma ──────────────────────────────────────────────────────────────────
 // El panel se escribió en español; la versión inglesa se pinta encima (ver
@@ -734,26 +690,102 @@ I18N.translate(document.body);
 if (I18N.lang === 'en') document.title = 'Klendar · Business dashboard';
 
 // ── Navegación ──────────────────────────────────────────────────────────────
+// Iconos que no están en la fuente recortada del panel (Material Symbols,
+// solo los que ya se usaban): en SVG, con los trazos de Material.
+const SVG = {
+  calendario: 'M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 16H5V10h14v10Zm0-12H5V6h14v2Z',
+  izq: 'M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z',
+  der: 'M8.59 16.59 13.17 12 8.59 7.41 10 6l6 6-6 6z',
+  salir: 'M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z',
+  cerrar: 'M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z',
+  vista: 'M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z',
+  rejilla: 'M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm8-2h8v8h-8v-8zm2 2v4h4v-4h-4z',
+  lista: 'M3 5h2v2H3V5zm4 0h14v2H7V5zM3 11h2v2H3v-2zm4 0h14v2H7v-2zm-4 6h2v2H3v-2zm4 0h14v2H7v-2z',
+};
+const svg = (n, s = 20) => `<svg class="ms svg" viewBox="0 0 24 24" width="${s}" height="${s}" aria-hidden="true"><path fill="currentColor" d="${SVG[n]}"/></svg>`;
+const icono = (n) => (SVG[n] ? svg(n) : ms(n));
+
+// El menú, con las secciones y el orden de «Mi negocio» en la app: lo de
+// todos los días arriba; las herramientas en el orden de la app (Informe,
+// Reseñas, Regalo de cumpleaños, Avisar a mis clientes, Tarjetas de sellos,
+// Cartel del local, Carta, Días cerrados, Equipo) con Novedades junto a la
+// Carta; y abajo la ficha, darse de baja (solo el propietario) y la ayuda.
+// `en` dice qué pantallas cuentan como esa entrada (para marcarla).
 const NAV = [
-  ['resumen', 'dashboard', 'Resumen'],
-  ['publicaciones', 'bolt', 'Publicaciones'],
-  ['validar', 'qr_code_scanner', 'Validar códigos'],
-  ['informe', 'bar_chart', 'Informe'],
-  ['resenas', 'reviews', 'Reseñas'],
-  ['sellos', 'loyalty', 'Tarjetas de sellos'],
-  ['carta', 'restaurant_menu', 'Carta'],
-  ['novedades', 'campaign', 'Novedades'],
-  ['mensajes', 'notifications_active', 'Avisar a mis clientes'],
-  ['cumpleanos', 'cake', 'Regalo de cumpleaños'],
-  ['ficha', 'storefront', 'Tu ficha'],
-  ['cerrados', 'event_busy', 'Días cerrados'],
-  ['equipo', 'group', 'Equipo'],
-  ['ayuda', 'help', 'Ayuda'],
+  [null, [
+    ['resumen', 'dashboard', 'Resumen'],
+    ['publicaciones', 'bolt', 'Publicaciones', ['asistentes', 'cartel']],
+    ['calendario', 'calendario', 'Calendario'],
+    ['validar', 'qr_code_scanner', 'Validar códigos'],
+  ]],
+  ['Herramientas', [
+    ['informe', 'bar_chart', 'Informe'],
+    ['resenas', 'reviews', 'Reseñas'],
+    ['cumpleanos', 'cake', 'Regalo de cumpleaños'],
+    ['mensajes', 'notifications_active', 'Avisar a mis clientes'],
+    ['sellos', 'loyalty', 'Tarjetas de sellos'],
+    ['cartel-local', 'qr_code_2', 'Cartel del local'],
+    ['carta', 'restaurant_menu', 'Carta'],
+    ['novedades', 'campaign', 'Novedades'],
+    ['cerrados', 'event_busy', 'Días cerrados'],
+    ['equipo', 'group', 'Equipo'],
+  ]],
+  ['Tu negocio', [
+    ['ficha', 'storefront', 'Tu ficha'],
+    ['baja', 'salir', 'Dar de baja el negocio'],
+    ['ayuda', 'help', 'Ayuda'],
+  ]],
 ];
+/** Las cuatro de todos los días, abajo en el móvil (como las pestañas de la
+ * app); «Más» abre el menú entero. */
+const BARRA = ['resumen', 'publicaciones', 'calendario', 'validar'];
+const visibleEnMenu = (k) => (gestiona() || !SOLO_GESTION.includes(k)) && (k !== 'baja' || esPropietario());
+const marcada = (current, n) => current === n[0] || (n[3] || []).includes(current);
 function renderNav(current) {
-  $('#nav').innerHTML = NAV.filter((n) => gestiona() || !SOLO_GESTION.includes(n[0])).map((n) => `<a class="nav ${current === n[0] ? 'on' : ''}" href="#/${n[0]}">${ms(n[1])}${n[2]}</a>`).join('');
+  let g = 0;
+  $('#nav').innerHTML = NAV.map(([titulo, items]) => {
+    const vis = items.filter((n) => visibleEnMenu(n[0]));
+    if (!vis.length) return '';
+    const id = `navg${g++}`;
+    return `<div class="nav-grupo" ${titulo ? `role="group" aria-labelledby="${id}"` : ''}>
+      ${titulo ? `<p class="group" id="${id}">${esc(titulo)}</p>` : ''}
+      ${vis.map((n) => `<a class="nav ${marcada(current, n) ? 'on' : ''}" href="#/${n[0]}"${marcada(current, n) ? ' aria-current="page"' : ''}>${icono(n[1])}<span>${esc(n[2])}</span></a>`).join('')}
+    </div>`;
+  }).join('');
   I18N.translate($('#nav'));
+  const todas = NAV.flatMap(([, items]) => items);
+  const enBarra = BARRA.some((k) => marcada(current, todas.find((n) => n[0] === k)));
+  $('#tabbar').innerHTML = BARRA.map((k) => todas.find((n) => n[0] === k)).map((n) =>
+    `<a href="#/${n[0]}" class="${marcada(current, n) ? 'on' : ''}"${marcada(current, n) ? ' aria-current="page"' : ''}>${icono(n[1])}<span>${esc(n[2] === 'Validar códigos' ? 'Validar' : n[2])}</span></a>`).join('')
+    + `<button type="button" id="masBtn" class="${enBarra ? '' : 'on'}" aria-expanded="false" aria-controls="side">${ms('more_horiz')}<span>${esc(I18N.t('Más'))}</span></button>`;
+  I18N.translate($('#tabbar'));
+  $('#masBtn').onclick = () => abreMenu(true);
 }
+
+// El menú en el móvil: un cajón que se abre con «Más» (o «Menú» arriba), se
+// cierra con Escape, al pulsar fuera o con su botón, y devuelve el foco.
+let VUELTA_MENU = null;
+function abreMenu(abrir) {
+  const side = $('#side');
+  if (abrir) {
+    VUELTA_MENU = document.activeElement;
+    side.classList.add('open');
+    document.body.classList.add('con-menu');
+    $$('#menuBtn, #masBtn').forEach((b) => b.setAttribute('aria-expanded', 'true'));
+    ($('a.nav.on', side) || $('a.nav', side))?.focus();
+  } else if (side.classList.contains('open')) {
+    side.classList.remove('open');
+    document.body.classList.remove('con-menu');
+    $$('#menuBtn, #masBtn').forEach((b) => b.setAttribute('aria-expanded', 'false'));
+    if (VUELTA_MENU?.isConnected) VUELTA_MENU.focus();
+    VUELTA_MENU = null;
+  }
+}
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') abreMenu(false); });
+document.addEventListener('click', (e) => {
+  const side = $('#side');
+  if (side.classList.contains('open') && !side.contains(e.target) && !e.target.closest('#menuBtn, #masBtn')) abreMenu(false);
+});
 const currentRoute = () => (location.hash.replace(/^#\/?/, '').split('?')[0] || 'resumen').split('/');
 const PAGES = {};
 // Cada pintada lleva su número: si mientras carga una se pide otra (cambiar
@@ -794,7 +826,10 @@ async function route() {
   let [page, param] = currentRoute();
   if (!gestiona() && SOLO_GESTION.includes(page)) page = 'resumen';
   renderNav(page);
-  $('#side').classList.remove('open');
+  // Al ir a otra pantalla desde el menú del móvil, el cajón se cierra y el
+  // foco pasa a la pantalla nueva (no al botón que lo abrió).
+  VUELTA_MENU = null;
+  abreMenu(false);
   // Cada pintada va en su propia caja: si una vieja termina tarde, escribe
   // en una caja que ya no está en la página y no se ve.
   const v = document.createElement('div');
@@ -802,7 +837,16 @@ async function route() {
   $('#view').replaceChildren(v);
   try {
     await (PAGES[page] || PAGES.resumen)(v, param);
-    if (n === RUTA_N) { sinDobleEnvio(v); I18N.translate(v); }
+    if (n === RUTA_N) {
+      sinDobleEnvio(v); I18N.translate(v);
+      // Cambiar de pantalla con el teclado o un lector de pantalla: el foco va
+      // al título de la nueva (si no, se queda en un enlace que ya no está).
+      if (FOCO_AL_TITULO) {
+        FOCO_AL_TITULO = false;
+        const h1 = $('h1', v);
+        if (h1 && !v.contains(document.activeElement)) { h1.tabIndex = -1; h1.focus({ preventScroll: true }); scrollTo(0, 0); }
+      }
+    }
   } catch (e) {
     if (n !== RUTA_N) return;
     console.error(e);
@@ -812,7 +856,8 @@ async function route() {
     I18N.translate(v);
   }
 }
-window.addEventListener('hashchange', route);
+let FOCO_AL_TITULO = false;
+window.addEventListener('hashchange', () => { FOCO_AL_TITULO = true; route(); });
 
 // ── Alta de un negocio (el primero o uno más) ──────────────────────────────
 PAGES.alta = async (v) => {
@@ -1069,8 +1114,8 @@ PAGES.resumen = async (v) => {
         <a class="btn sm" href="https://klendar.app/widget/${esc(BIZ.id)}" target="_blank" rel="noopener">Ver cómo queda</a></p></div>
     <div class="card"><h2>Últimas publicaciones</h2>${table({
       cols: [
-        { h: 'Publicación', r: (o) => `<b class="title">${esc(o.title)}</b><span class="sub">${esc(I18N.t(LABELS[o.kind]))} · ${fmtDate(o.kind === 'flash_offer' ? o.redeem_start_at : o.event_at)}${etiquetaAudiencia(o)}</span>` },
-        { h: 'Estado', r: (o) => tag(estadoVisible(o)) + (o.moderation_status === 'pending' || o.moderation_status === 'rejected' ? ' ' + tag(o.moderation_status) : '') },
+        { h: 'Publicación', r: (o) => `<b class="title" translate="no">${esc(o.title)}</b><span class="sub">${esc(I18N.t(LABELS[o.kind]))} · ${fmtDate(o.kind === 'flash_offer' ? o.redeem_start_at : o.event_at)}${etiquetaAudiencia(o)}</span>` },
+        { h: 'Estado', r: (o) => etiquetaEstado(o) },
         { h: 'Vistas', num: true, r: (o) => fmtNum(o.views) },
         { h: 'Canjes', num: true, r: (o) => fmtNum(o.redemptions_count) },
         { h: '', r: (o) => `<a class="btn sm" href="#/publicaciones/${esc(o.id)}">Abrir</a>` },
@@ -1154,10 +1199,12 @@ PAGES.publicaciones = async (v, param) => {
   if (param === 'nuevo-evento') return offerForm(v, null, 'future_event', desde);
   if (param) return offerForm(v, param);
 
-  const [offers, otros] = await Promise.all([
+  const [offersRaw, otros] = await Promise.all([
     rpc('my_business_offers', { p_id: BIZ.id }),
     rpc('my_publishable_businesses', { p_except: BIZ.id }).catch(() => []),
+    portadaNegocio(),
   ]);
+  const offers = offersRaw || [];
   OTROS_LOCALES = otros || [];
   v.innerHTML = `
     <div class="page-head"><h1>Publicaciones</h1><span class="spacer"></span>
@@ -1166,14 +1213,20 @@ PAGES.publicaciones = async (v, param) => {
       <button class="btn sm ghost" id="csv">Exportar CSV</button></div>
     ${helpBox('¿Oferta o evento?', bi('<p><b>Oferta flash</b>: algo que se canjea hoy, con cuenta atrás y aforo («café + tostada 2,50 € hasta mediodía»). <b>Evento</b>: algo con fecha, que se guarda en la agenda y puede admitir reserva de plaza.</p>',
       '<p><b>Flash offer</b>: something redeemed today, with a countdown and a limit (“coffee + toast €2.50 until noon”). <b>Event</b>: something with a date, which people save to their agenda and where people can reserve a place.</p>'))}
-    <div id="filtroArch"></div>
+    <div class="pubs-barra"><div id="filtroArch"></div><div id="vistaSw"></div></div>
     <div id="list"></div>
     <div id="rules"></div>`;
-  // Las archivadas (se borraron con canjes validados) no salen en la lista:
+  // Las archivadas (se borraron con canjes validados) no salen en «Todas»:
   // solo con el filtro «Archivadas», para ver sus cifras o crear otra a
   // partir de ellas. No se editan ni se vuelven a publicar.
   const archivadas = offers.filter((o) => o.status === 'archived');
-  let verArchivadas = false;
+  // Filtro por estado (como en la app: activa, programada, borrador, en
+  // revisión, agotada, terminada, archivada) y la vista: las tarjetas que verá
+  // la gente o la lista de siempre (más densa). La vista se recuerda.
+  const qf = new URLSearchParams(location.hash.split('?')[1] || '').get('estado');
+  let filtro = FILTROS_PUB.some(([k]) => k === qf) ? qf : 'todas';
+  let vista = 'tarjetas';
+  try { vista = localStorage.getItem('klendar.panel.vista') === 'lista' ? 'lista' : 'tarjetas'; } catch { /* sin permisos */ }
   const DIAS = I18N.lang === 'en'
     ? ['Sundays', 'Mondays', 'Tuesdays', 'Wednesdays', 'Thursdays', 'Fridays', 'Saturdays']
     : ['domingos', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábados'];
@@ -1248,46 +1301,34 @@ PAGES.publicaciones = async (v, param) => {
   }
 
   const render = () => {
-    // El filtro solo aparece si hay alguna archivada.
-    $('#filtroArch').innerHTML = archivadas.length ? `<div class="pills" style="margin:0 0 12px">
-      <button type="button" data-arch="0" class="${verArchivadas ? '' : 'on'}" aria-pressed="${!verArchivadas}">${esc(I18N.t('Publicaciones'))}</button>
-      <button type="button" data-arch="1" class="${verArchivadas ? 'on' : ''}" aria-pressed="${verArchivadas}">${esc(bi(`Archivadas (${archivadas.length})`, `Archived (${archivadas.length})`))}</button>
-    </div>${verArchivadas ? `<p class="hint" style="margin:0 0 12px">${esc(I18N.t('Se borraron con canjes validados: ya no se ven en ninguna parte, pero siguen contando en el Informe.'))}</p>` : ''}` : '';
-    $$('[data-arch]', $('#filtroArch')).forEach((b) => {
-      b.onclick = () => { verArchivadas = b.dataset.arch === '1'; render(); };
+    // Un botón por estado que tenga alguna (las archivadas, solo aquí).
+    const cuenta = (k) => offers.filter((o) => enFiltro(o, k)).length;
+    const chips = FILTROS_PUB.filter(([k]) => k === 'todas' || cuenta(k) > 0);
+    if (!chips.some(([k]) => k === filtro)) filtro = 'todas';
+    $('#filtroArch').innerHTML = chips.length > 1 ? `<div class="pills" role="group" aria-label="${esc(I18N.t('Filtrar por estado'))}">
+      ${chips.map(([k, nombre]) => `<button type="button" data-filtro="${k}" class="${filtro === k ? 'on' : ''}" aria-pressed="${filtro === k}" translate="no">${esc(nombre)} <span class="n">${fmtNum(cuenta(k))}</span></button>`).join('')}
+    </div>${filtro === 'archivada' ? `<p class="hint" style="margin:10px 0 0">${esc(I18N.t('Se borraron con canjes validados: ya no se ven en ninguna parte, pero siguen contando en el Informe.'))}</p>` : ''}` : '';
+    $$('[data-filtro]', $('#filtroArch')).forEach((b) => {
+      b.onclick = () => { filtro = b.dataset.filtro; render(); $(`[data-filtro="${filtro}"]`, $('#filtroArch'))?.focus(); };
     });
-    const desdeEsta = (o) => `#/publicaciones/${o.kind === 'flash_offer' ? 'nueva-flash' : 'nuevo-evento'}?from=${esc(o.id)}`;
-    $('#list').innerHTML = table({
-      cols: [
-        { h: 'Publicación', r: (o) => `${primeraFoto(o.images) ? `<img class="thumb" src="${esc(primeraFoto(o.images))}" alt="" loading="lazy">` : `<span class="ph">${ms((o.images || []).some(esVideo) ? 'play_circle' : o.kind === 'flash_offer' ? 'bolt' : 'event')}</span>`}<b class="title">${esc(o.title)}</b><span class="sub">${esc(I18N.t(LABELS[o.kind]))} · ${fmtDate(o.kind === 'flash_offer' ? o.redeem_start_at : o.event_at)}${etiquetaAudiencia(o)}</span>` },
-        { h: 'Estado', r: (o) => tag(estadoVisible(o)) + (o.moderation_status === 'pending' || o.moderation_status === 'rejected' ? ' ' + tag(o.moderation_status) : '') + (o.publish_at ? ` <span class="tag dim">${esc(bi('programada', 'scheduled'))} ${esc(fmtDate(o.publish_at))}</span>` : '') },
-        { h: 'Plazas', r: (o) => o.max_redemptions == null ? '—' : `<span data-plazas="${esc(o.id)}">${plazasTxt(o, plazasOcupadas(o))}</span>` },
-        { h: 'Vistas', num: true, r: (o) => fmtNum(o.views) },
-        { h: 'Canjes', num: true, r: (o) => fmtNum(o.redemptions_count) },
-        { h: '', r: (o) => o.status === 'archived'
-          // Archivada: solo sus cifras y, a quien publica, crear otra igual.
-          ? `<div class="actions"><button class="btn sm ghost" data-act="stats" data-id="${esc(o.id)}">Cifras</button>${gestiona() ? `<a class="btn sm ghost" href="${desdeEsta(o)}">Crear a partir de esta</a>` : ''}</div>`
-          : !gestiona()
-          ? `<div class="actions"><button class="btn sm ghost" data-act="stats" data-id="${esc(o.id)}">Cifras</button>${o.kind === 'future_event' && o.reservations_enabled ? `<a class="btn sm ghost" href="#/asistentes/${esc(o.id)}">Asistentes</a>` : ''}</div>`
-          : `<div class="actions">
-            <a class="btn sm" href="#/publicaciones/${esc(o.id)}">Editar</a>
-            <button class="btn sm ghost" data-act="stats" data-id="${esc(o.id)}">Cifras</button>
-            ${o.kind === 'future_event' && o.reservations_enabled ? `<a class="btn sm ghost" href="#/asistentes/${esc(o.id)}">Asistentes</a>` : ''}
-            ${estadoVisible(o) === 'active' ? `<button class="btn sm ghost" data-act="pause" data-id="${esc(o.id)}">Pausar</button>` : o.status === 'draft' ? `<button class="btn sm ghost" data-act="activate" data-id="${esc(o.id)}">Activar</button>` : ''}
-            <details class="mas"><summary class="btn sm ghost">Más</summary><div class="mas-menu">
-              <a href="#/publicaciones/${o.kind === 'flash_offer' ? 'nueva-flash' : 'nuevo-evento'}?from=${esc(o.id)}">Crear a partir de esta</a>
-              ${o.kind === 'flash_offer' && o.status === 'active' && new Date(o.redeem_end_at) > new Date() ? `<button type="button" data-act="extend" data-id="${esc(o.id)}">Ampliar 1 h</button>` : ''}
-              ${o.status === 'sold_out' || estadoVisible(o) === 'expired' ? `<a href="#/publicaciones/${o.kind === 'flash_offer' ? 'nueva-flash' : 'nuevo-evento'}?from=${esc(o.id)}&repeat=1">${o.kind === 'flash_offer' ? 'Repetir mañana' : 'Repetir'}</a>` : ''}
-              ${o.kind === 'flash_offer' ? `<button type="button" data-act="repeat" data-id="${esc(o.id)}">Repetir cada semana…</button>` : ''}
-              ${OTROS_LOCALES.length ? `<button type="button" data-act="locales" data-id="${esc(o.id)}">Publicar en otros locales…</button>` : ''}
-              <a href="${I18N.lang === 'en' ? '/en/poster/' : '/cartel/'}${esc(o.id)}" target="_blank" rel="noopener">Cartel para imprimir</a>
-              <button type="button" class="bad" data-act="delete" data-id="${esc(o.id)}">Borrar</button>
-            </div></details>
-          </div>` },
-      ],
-      rows: verArchivadas ? archivadas : offers.filter((o) => o.status !== 'archived'),
-      empty: archivadas.length ? 'Ninguna a la vista: las que tienes están archivadas.' : 'Todavía no has publicado nada.',
+    $('#vistaSw').innerHTML = offers.length ? `<div class="pills vista-sw" role="group" aria-label="${esc(I18N.t('Cómo verlas'))}">
+      <button type="button" data-vista="tarjetas" class="${vista === 'tarjetas' ? 'on' : ''}" aria-pressed="${vista === 'tarjetas'}">${svg('rejilla', 18)}${esc(I18N.t('Tarjetas'))}</button>
+      <button type="button" data-vista="lista" class="${vista === 'lista' ? 'on' : ''}" aria-pressed="${vista === 'lista'}">${svg('lista', 18)}${esc(I18N.t('Lista'))}</button></div>` : '';
+    $$('[data-vista]', $('#vistaSw')).forEach((b) => {
+      b.onclick = () => {
+        vista = b.dataset.vista;
+        try { localStorage.setItem('klendar.panel.vista', vista); } catch { /* sin permisos */ }
+        render(); $(`[data-vista="${vista}"]`, $('#vistaSw'))?.focus();
+      };
     });
+    const filas = offers.filter((o) => enFiltro(o, filtro));
+    $('#list').innerHTML = !offers.length
+      ? `<div class="card sin-pubs"><h2>${esc(I18N.t('Todavía no has publicado nada.'))}</h2>
+          <p class="muted">${esc(I18N.t('Lo que publiques sale aquí con la misma tarjeta que verá la gente, con su estado y sus cifras.'))}</p>
+          ${gestiona() ? `<p class="actions" style="margin:12px 0 0"><a class="btn primary" href="#/publicaciones/nueva-flash">${ms('bolt')}${esc(I18N.t('Nueva oferta flash'))}</a>
+          <a class="btn" href="#/publicaciones/nuevo-evento">${ms('event')}${esc(I18N.t('Nuevo evento'))}</a></p>` : ''}</div>`
+      : vista === 'lista' ? tablaPublicaciones(filas) : tarjetasPublicaciones(filas);
+    activaVideos($('#list'));
     $$('[data-act]', $('#list')).forEach((b) => {
       b.onclick = async () => {
         const id = b.dataset.id;
@@ -1383,6 +1424,148 @@ function plazasOcupadas(o) {
   return o.redemptions_count + (o.holds_seats === false ? 0 : (o.pending_count || 0));
 }
 const plazasTxt = (o, n) => `${fmtNum(n)}/${fmtNum(o.max_redemptions)}`;
+
+// ── La tarjeta que verá la gente, en el panel ──────────────────────────────
+/** La portada del local (la tarjeta la usa si la publicación no trae fotos,
+ * como la base). Se lee una vez por negocio. */
+async function portadaNegocio() {
+  if (BIZ._portada !== undefined) return BIZ._portada;
+  try {
+    const { data } = await sb.from('businesses').select('cover_image_url').eq('id', BIZ.id).maybeSingle();
+    BIZ._portada = data?.cover_image_url || null;
+  } catch { BIZ._portada = null; }
+  return BIZ._portada;
+}
+/** Una fila de `my_business_offers` con lo que la tarjeta pública saca del
+ * negocio (nombre, logo y portada). */
+const conNegocio = (o) => ({ ...o, business_name: BIZ.name, business_logo: BIZ.logo, business_cover: BIZ._portada || null });
+/** La tarjeta, en el idioma del panel y en la hora del local. Va dentro de
+ * `.tjv` (los estilos de /assets/tarjeta.css) y con `translate="no"`: ya sale
+ * en su idioma y el título lo ha escrito el negocio. */
+const tarjetaPanel = (o, opts = {}) => KT.tarjeta(conNegocio(o), I18N.lang === 'en' ? 'en' : 'es', { tz: TZ, h: 'h2', ...opts });
+/** Los vídeos de las tarjetas: el primer fotograma (o la portada) y, si
+ * `mover`, en marcha y en silencio (nunca con «reducir movimiento»). */
+function activaVideos(caja, mover = false) {
+  const quieto = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  for (const vid of $$('video[data-src]', caja)) {
+    if (!vid.getAttribute('src')) vid.setAttribute('src', vid.dataset.src);
+    vid.muted = true;
+    if (mover && !quieto) vid.play?.().catch(() => { /* se queda la portada */ });
+  }
+}
+
+/** El estado de una publicación, uno solo y en el orden de la app
+ * (`business_dashboard_screen`): archivada, rechazada, en revisión, borrador
+ * (o programada, si tiene hora de publicarse), cancelada, terminada, agotada
+ * y activa. */
+function estadoPub(o) {
+  if (o.status === 'archived') return 'archivada';
+  if (o.moderation_status === 'rejected') return 'rechazada';
+  if (o.moderation_status === 'pending') return 'revision';
+  if (o.status === 'draft') return o.publish_at && new Date(o.publish_at) > new Date() ? 'programada' : 'borrador';
+  if (o.status === 'cancelled') return 'cancelada';
+  if (estadoVisible(o) === 'expired') return 'terminada';
+  if (o.status === 'sold_out' || (o.seats_left != null && o.seats_left <= 0)) return 'agotada';
+  return 'activa';
+}
+/** Estado → [nombre, clase de la etiqueta]. Las mismas palabras que la app. */
+const ESTADOS_PUB = {
+  activa: [bi('Activa', 'Active'), 'st-active'],
+  programada: [bi('Programada', 'Scheduled'), 'st-scheduled'],
+  borrador: [bi('Borrador', 'Draft'), 'st-draft'],
+  revision: [bi('En revisión', 'In review'), 'st-pending'],
+  rechazada: [bi('Rechazada', 'Rejected'), 'st-rejected'],
+  agotada: [bi('Agotada', 'Sold out'), 'st-sold_out'],
+  terminada: [bi('Terminada', 'Ended'), 'st-expired'],
+  cancelada: [bi('Cancelada', 'Cancelled'), 'st-cancelled'],
+  archivada: [bi('Archivada', 'Archived'), 'st-archived'],
+};
+/** Los filtros de «Tus publicaciones»: [clave, nombre]. */
+const FILTROS_PUB = [
+  ['todas', bi('Todas', 'All')],
+  ['activa', bi('Activas', 'Active')],
+  ['programada', bi('Programadas', 'Scheduled')],
+  ['borrador', bi('Borradores', 'Drafts')],
+  ['revision', bi('En revisión', 'In review')],
+  ['rechazada', bi('Rechazadas', 'Rejected')],
+  ['agotada', bi('Agotadas', 'Sold out')],
+  ['terminada', bi('Terminadas', 'Ended')],
+  ['archivada', bi('Archivadas', 'Archived')],
+];
+const enFiltro = (o, k) => (k === 'todas' ? o.status !== 'archived'
+  : k === 'terminada' ? ['terminada', 'cancelada'].includes(estadoPub(o)) : estadoPub(o) === k);
+const etiquetaEstado = (o) => {
+  const [nombre, cls] = ESTADOS_PUB[estadoPub(o)];
+  const cuando = estadoPub(o) === 'programada' ? ` · ${fmtDate(o.publish_at)}` : '';
+  return `<span class="tag ${cls}" translate="no">${esc(nombre)}${esc(cuando)}</span>`;
+};
+/** Las cifras de un vistazo: vistas, canjes, plazas, reservas y lista de espera. */
+function cifrasRapidas(o) {
+  const v = o.views || 0;
+  const c = o.redemptions_count || 0;
+  const partes = [
+    esc(bi(`${fmtNum(v)} ${v === 1 ? 'vista' : 'vistas'}`, `${fmtNum(v)} ${v === 1 ? 'view' : 'views'}`)),
+    esc(bi(`${fmtNum(c)} ${c === 1 ? 'canje' : 'canjes'}`, `${fmtNum(c)} ${c === 1 ? 'redemption' : 'redemptions'}`)),
+  ];
+  if (o.max_redemptions != null) partes.push(esc(bi(`${plazasTxt(o, plazasOcupadas(o))} plazas`, `${plazasTxt(o, plazasOcupadas(o))} places`)));
+  if (o.kind === 'future_event' && o.reservations_enabled && o.reserved_seats) partes.push(esc(bi(`${fmtNum(o.reserved_seats)} ${o.reserved_seats === 1 ? 'reservada' : 'reservadas'}`, `${fmtNum(o.reserved_seats)} reserved`)));
+  if (o.waitlist_count) partes.push(esc(bi(`${fmtNum(o.waitlist_count)} en lista de espera`, `${fmtNum(o.waitlist_count)} on the waiting list`)));
+  if (o.views >= 20 && o.redemptions_count) {
+    const c = (o.redemptions_count / o.views * 100).toLocaleString(LOC(), { maximumFractionDigits: 1 });
+    partes.push(esc(bi(`${c} % de conversión`, `${c}% conversion`)));
+  }
+  return `<p class="pub-cifras" translate="no">${partes.join('<span aria-hidden="true"> · </span>')}</p>`;
+}
+/** Las acciones de una publicación (las mismas en las tarjetas y en la lista). */
+function accionesPub(o) {
+  const crear = `#/publicaciones/${o.kind === 'flash_offer' ? 'nueva-flash' : 'nuevo-evento'}?from=${esc(o.id)}`;
+  const asistentes = o.kind === 'future_event' && o.reservations_enabled ? `<a class="btn sm ghost" href="#/asistentes/${esc(o.id)}">Asistentes</a>` : '';
+  // Archivada: solo sus cifras y, a quien publica, crear otra igual.
+  if (o.status === 'archived') {
+    return `<div class="actions"><button type="button" class="btn sm ghost" data-act="stats" data-id="${esc(o.id)}">Cifras</button>${gestiona() ? `<a class="btn sm ghost" href="${crear}">Crear a partir de esta</a>` : ''}</div>`;
+  }
+  if (!gestiona()) return `<div class="actions"><button type="button" class="btn sm ghost" data-act="stats" data-id="${esc(o.id)}">Cifras</button>${asistentes}</div>`;
+  return `<div class="actions">
+    <a class="btn sm" href="#/publicaciones/${esc(o.id)}">Editar</a>
+    <button type="button" class="btn sm ghost" data-act="stats" data-id="${esc(o.id)}">Cifras</button>
+    ${asistentes}
+    ${estadoVisible(o) === 'active' ? `<button type="button" class="btn sm ghost" data-act="pause" data-id="${esc(o.id)}">Pausar</button>` : o.status === 'draft' ? `<button type="button" class="btn sm ghost" data-act="activate" data-id="${esc(o.id)}">Activar</button>` : ''}
+    <details class="mas"><summary class="btn sm ghost">Más</summary><div class="mas-menu">
+      <a href="${crear}">Crear a partir de esta</a>
+      ${o.kind === 'flash_offer' && o.status === 'active' && new Date(o.redeem_end_at) > new Date() ? `<button type="button" data-act="extend" data-id="${esc(o.id)}">Ampliar 1 h</button>` : ''}
+      ${o.status === 'sold_out' || estadoVisible(o) === 'expired' ? `<a href="${crear}&repeat=1">${o.kind === 'flash_offer' ? 'Repetir mañana' : 'Repetir'}</a>` : ''}
+      ${o.kind === 'flash_offer' ? `<button type="button" data-act="repeat" data-id="${esc(o.id)}">Repetir cada semana…</button>` : ''}
+      ${OTROS_LOCALES.length ? `<button type="button" data-act="locales" data-id="${esc(o.id)}">Publicar en otros locales…</button>` : ''}
+      <a href="${I18N.lang === 'en' ? '/en/poster/' : '/cartel/'}${esc(o.id)}" target="_blank" rel="noopener">Cartel para imprimir</a>
+      <button type="button" class="bad" data-act="delete" data-id="${esc(o.id)}">Borrar</button>
+    </div></details>
+  </div>`;
+}
+/** «Tus publicaciones» en tarjetas: la misma que verá la gente y, debajo,
+ * su estado, sus cifras y lo que se puede hacer con ella. Pulsar la tarjeta
+ * la edita (o, a quien no publica, abre su ficha). */
+const tarjetasPublicaciones = (rows) => `<div class="pubs">${rows.map((o) => `
+  <div class="pub-item pub-${estadoPub(o)}">
+    <div class="tjv" translate="no">${tarjetaPanel(o, { href: gestiona() && o.status !== 'archived' ? `#/publicaciones/${o.id}` : `/o/${o.id}` })}</div>
+    <div class="pub-meta">
+      <p class="pub-estado">${etiquetaEstado(o)}${etiquetaAudiencia(o)}${o.adults_only ? ' <span class="tag dim">+18</span>' : ''}</p>
+      ${cifrasRapidas(o)}
+      ${accionesPub(o)}
+    </div>
+  </div>`).join('')}</div>`;
+/** La lista de siempre (más densa), con las mismas acciones. */
+const tablaPublicaciones = (rows) => table({
+  cols: [
+    { h: 'Publicación', r: (o) => `${primeraFoto(o.images) ? `<img class="thumb" src="${esc(primeraFoto(o.images))}" alt="" loading="lazy">` : `<span class="ph">${ms((o.images || []).some(esVideo) ? 'play_circle' : o.kind === 'flash_offer' ? 'bolt' : 'event')}</span>`}<b class="title" translate="no">${esc(o.title)}</b><span class="sub">${esc(I18N.t(LABELS[o.kind]))} · ${fmtDate(o.kind === 'flash_offer' ? o.redeem_start_at : o.event_at)}${etiquetaAudiencia(o)}</span>` },
+    { h: 'Estado', r: (o) => etiquetaEstado(o) },
+    { h: 'Plazas', r: (o) => o.max_redemptions == null ? '—' : `<span data-plazas="${esc(o.id)}">${plazasTxt(o, plazasOcupadas(o))}</span>` },
+    { h: 'Vistas', num: true, r: (o) => fmtNum(o.views) },
+    { h: 'Canjes', num: true, r: (o) => fmtNum(o.redemptions_count) },
+    { h: '', r: (o) => accionesPub(o) },
+  ],
+  rows,
+  empty: 'Ninguna con este filtro.',
+});
 
 /** Antes de un cambio que avisa a quien ya tiene reserva o código (fechas,
  * pausa, +18): la base les manda la notificación al guardar; el negocio lo
@@ -1550,18 +1733,25 @@ async function offerForm(v, id, kindDefault, desde = null) {
     return;
   }
   let o = { kind: kindDefault || 'flash_offer', max_per_user: 1, code_ttl_minutes: 5, images: [], status: 'active' };
+  // La vista previa usa la portada del local si la publicación no trae fotos.
+  await portadaNegocio();
   if (id) {
     const all = await rpc('my_business_offers', { p_id: BIZ.id });
     o = all.find((x) => x.id === id) || o;
   } else if (!desde) {
     // Como la app: una oferta flash empieza ya y dura 3 h; un evento, mañana
     // a las 20:00. Se cambia en un momento; un formulario en blanco frena.
+    // Desde el calendario (?dia=AAAA-MM-DD), ese día: la oferta a las 18:00
+    // (o ya, si es hoy) y el evento a las 20:00, en la hora del local.
     const ahora = new Date(); ahora.setSeconds(0, 0);
+    const pedido = (/[?&]dia=(\d{4}-\d{2}-\d{2})\b/.exec(location.hash) || [])[1];
+    const enDia = pedido && pedido > KZ.hoy(TZ) ? pedido.split('-').map(Number) : null;
     if (o.kind === 'flash_offer') {
-      o.redeem_start_at = ahora.toISOString();
-      o.redeem_end_at = new Date(ahora.getTime() + 3 * 36e5).toISOString();
+      const ini = enDia ? KZ.instante(TZ, enDia[0], enDia[1], enDia[2], 18) : ahora;
+      o.redeem_start_at = ini.toISOString();
+      o.redeem_end_at = new Date(ini.getTime() + 3 * 36e5).toISOString();
     } else {
-      o.event_at = enDiasNegocio(1, 20).toISOString();
+      o.event_at = (enDia ? KZ.instante(TZ, enDia[0], enDia[1], enDia[2], 20) : enDiasNegocio(pedido === KZ.hoy(TZ) ? 0 : 1, 20)).toISOString();
     }
   }
   if (!id && desde) {
@@ -1612,6 +1802,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
         <p class="hint" style="margin:0 0 10px">Lo que suele funcionar en tu tipo de negocio. Rellena el formulario; luego lo cambias a tu gusto.</p>
         <div class="acciones">${ideas.map((t, i) => `<button type="button" class="btn sm" data-idea="${i}">${esc(en ? t.en : t.es)}</button>`).join('')}</div>` : ''}
     </div>` : ''}
+    <div class="pub-editor">
     <form class="card" id="form">
       <div class="form-grid">
         <label class="f full"><span>Título</span><input name="title" value="${esc(o.title || '')}" required maxlength="90" placeholder="${kindDefault === 'future_event' ? 'Concierto de jazz' : 'Café + tostada 2,50 €'}"></label>
@@ -1667,9 +1858,9 @@ async function offerForm(v, id, kindDefault, desde = null) {
       <p class="hint">Hasta 6 fotos o vídeos. La primera es la portada; muévelas con las flechas. Si no pones ninguna, se usa la foto del local. Los vídeos se ven al abrir la publicación (en el feed van las fotos).</p>
       <div class="photos" id="photos"></div>
       <h3 style="margin-top:18px">Diseño del anuncio</h3>
-      <p class="hint">Así se verá en Descubre y en la ficha. Elige el diseño que mejor lo cuente y el color.</p>
+      <p class="hint">Así se verá en Descubre y en la ficha. Elige el diseño que mejor lo cuente y el color.
+        <button type="button" class="linkbtn solo-movil" id="irPrevia">Ver la vista previa</button></p>
       <div class="estilo">
-        <div class="estilo-prev" id="estiloPrev" aria-hidden="true"></div>
         <div class="estilo-opc">
           <div class="pills" id="plantillasEstilo" role="group" aria-label="${esc(I18N.t('Diseño del anuncio'))}"></div>
           <p class="hint" id="plantillaAyuda" style="margin:8px 0 0"></p>
@@ -1694,8 +1885,20 @@ async function offerForm(v, id, kindDefault, desde = null) {
       </div>
       <label class="f" style="margin-top:12px;max-width:360px"><span>O publicarla sola más tarde <small>(opcional)</small></span><input type="datetime-local" name="publish_at" value="${toLocalInput(o.publish_at)}"></label>
       <p class="hint">Se guarda en borrador y se publica sola a esa hora (para dejar preparada la del lunes el viernes).</p>
-      <div class="err" id="formErr"></div>
-    </form>`;
+      <div class="err" id="formErr" role="alert"></div>
+    </form>
+    <aside class="pub-prev" aria-labelledby="prevTitulo">
+      <h2 id="prevTitulo" tabindex="-1">Vista previa</h2>
+      <p class="hint">Así la verá la gente. Cambia al momento con lo que escribas.</p>
+      <div class="pills prev-sw" role="group" aria-label="${esc(I18N.t('Dónde se ve'))}">
+        <button type="button" class="on" aria-pressed="true" data-prev="grande">Descubre</button>
+        <button type="button" aria-pressed="false" data-prev="fila">En la agenda</button>
+      </div>
+      <div class="tjv prev-tarjeta" id="vistaPrevia" translate="no" inert></div>
+      <div id="prevEntradas" translate="no"></div>
+      <p class="hint" id="prevNota"></p>
+    </aside>
+    </div>`;
 
   // Lo que solo tiene sentido en un tipo u otro se enseña y se esconde.
   const syncKind = () => {
@@ -1895,59 +2098,95 @@ async function offerForm(v, id, kindDefault, desde = null) {
   });
   let estilo = limpiaEstilo(o.style);
   const enPaleta = (c) => PALETA.some(([h]) => h === c);
-  const kicker = (f) => {
-    const evento = String(f.get('kind') || kindDefault) === 'future_event';
-    const ini = fromLocalInput(f.get('start'));
-    if (!ini) return '';
-    const dia = (iso) => {
-      const d = new Date(iso);
-      const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
-      const ese = new Date(d); ese.setHours(0, 0, 0, 0);
-      const n = Math.round((ese - hoy) / 864e5);
-      if (n === 0) return bi('Hoy', 'Today');
-      if (n === 1) return bi('Mañana', 'Tomorrow');
-      return d.toLocaleDateString(LOC(), { weekday: 'short', day: 'numeric', month: 'short', timeZone: TZ });
-    };
-    const hm = (iso) => new Date(iso).toLocaleTimeString(LOC(), { hour: '2-digit', minute: '2-digit', timeZone: TZ });
-    const fin = fromLocalInput(f.get('end'));
-    const txt = evento || !fin ? `${dia(ini)} · ${hm(ini)}` : `${dia(ini)} · ${hm(ini)}–${hm(fin)}`;
-    return txt.replace(/\./g, '').toUpperCase();
-  };
-  pintaEstilo = () => {
-    const acento = estilo.accent || '#FF4D6D';
-    const sobre = sobreColor(acento);
+  // ── Vista previa: la tarjeta de verdad (/assets/tarjeta.js), con lo que
+  // hay escrito ahora mismo. A la derecha en el escritorio (fija al bajar) y
+  // debajo en el móvil. Dos formas: la tarjeta grande de Descubre y la fila de
+  // la agenda. Es una copia de lo que ya dice el formulario: `inert` (ni foco
+  // ni lector de pantalla).
+  let formaPrevia = 'grande';
+  const datosPrevia = () => {
     const f = new FormData($('#form'));
-    const evento = String(f.get('kind') || kindDefault) === 'future_event';
+    const kind = String(f.get('kind') || kindDefault || 'flash_offer');
+    const evento = kind === 'future_event';
     const titulo = String(f.get('title') || '').trim() || (I18N.lang === 'en'
       ? (evento ? 'Your event title' : 'Your offer title')
       : (evento ? 'El título de tu evento' : 'El título de tu oferta'));
     const dt = String(f.get('discount_type') || '');
     const dv = String(f.get('discount_value') || '').trim();
-    const precioTxt = String(f.get('price') || '').trim();
-    const etiqueta = dt ? etiquetaDescuento({ type: dt, value: dt === 'other' ? dv : Number(dv.replace(',', '.')) || dv })
-      : precioTxt ? fmtMoney(Math.round(parseFloat(precioTxt.replace(',', '.')) * 100)) : '';
-    const foto = images.find((u) => !isVideo(u));
-    const t = estilo.template;
-    const sitio = lugar.activo()
-      ? (String(f.get('venue_name') || '').trim() || String(f.get('venue_address') || '').split(',')[0].trim())
-      : '';
-    const cabecera = sitio
-      ? `<b class="ep-biz">${ms('location_on')}${esc(sitio)}</b><small class="ep-org">${esc(bi(`Organiza: ${BIZ.name}`, `Organised by ${BIZ.name}`))}</small>`
-      : `<b class="ep-biz">${esc(BIZ.name)}</b>`;
-    const k = t === 'poster' ? kicker(f) : '';
-    $('#estiloPrev', v).innerHTML = `
-      <div class="ep ep-${t}" style="--ac:${acento};--on:${sobre}">
-        <div class="ep-panel">
-          ${k ? `<span class="ep-kicker">${esc(k)}</span>` : ''}
-          ${t === 'poster' ? `<span class="ep-title">${esc(titulo)}</span>${cabecera}` : `${cabecera}<span class="ep-title">${esc(titulo)}</span>`}
-          ${etiqueta ? `<span class="ep-tag">${esc(etiqueta)}</span>` : ''}
-          <span class="ep-cta">${esc(I18N.lang === 'en' ? (evento ? 'See event' : 'Get the code') : (evento ? 'Ver evento' : 'Conseguir el código'))}</span>
-        </div>
-      </div>`;
-    // La foto va por el DOM, no dentro del atributo: una comilla en la
-    // dirección cerraba el `url('…')` (el escape HTML se deshace antes de
-    // leer el CSS). Solo https.
-    if (foto && /^https:\/\//i.test(foto)) $('.ep', $('#estiloPrev', v)).style.backgroundImage = `url(${JSON.stringify(foto)})`;
+    const num = (x) => { const n = parseFloat(String(x || '').replace(',', '.')); return Number.isFinite(n) ? n : null; };
+    const precio = num(f.get('price'));
+    const antes = num(f.get('prior_price'));
+    const ini = fromLocalInput(f.get('start'));
+    const fin = fromLocalInput(f.get('end'));
+    const aforo = Number(f.get('max_redemptions')) || null;
+    // Plazas que quedan: las de verdad si ya existe; si es nueva, todas.
+    const ocupadas = !id ? 0 : o.max_redemptions != null ? (plazasOcupadas(o) || 0)
+      : (o.redemptions_count || 0) + (o.holds_seats === false ? 0 : (o.pending_count || 0));
+    return {
+      id: o.id || 'vista-previa',
+      kind,
+      title: titulo,
+      description: String(f.get('description') || '').trim(),
+      discount: dt ? {
+        type: dt,
+        value: dt === 'other' ? dv : (dv ? (num(dv) ?? dv) : null),
+        currency: 'EUR',
+        ...(antes && ['percent', 'fixed'].includes(dt) ? { compare_at_cents: Math.round(antes * 100) } : {}),
+      } : null,
+      price_cents: precio == null ? null : Math.round(precio * 100),
+      currency: 'EUR',
+      redeem_start_at: evento ? null : ini,
+      redeem_end_at: evento ? null : fin,
+      event_at: evento ? ini : null,
+      event_end_at: evento ? fin : null,
+      images,
+      style: { template: estilo.template, ...(estilo.accent ? { accent: estilo.accent } : {}) },
+      venue_name: lugar.activo() ? String(f.get('venue_name') || '').trim() || null : null,
+      venue_address: lugar.activo() ? String(f.get('venue_address') || '').trim() || null : null,
+      external_url: evento ? String(f.get('external_url') || '').trim() || null : null,
+      seats_left: aforo ? Math.max(0, aforo - ocupadas) : null,
+      status: 'active',
+    };
+  };
+  const pintaPrevia = () => {
+    const caja = $('#vistaPrevia', v);
+    if (!caja) return;
+    const d = datosPrevia();
+    const html = formaPrevia === 'fila'
+      ? `<div class="tj-filas">${tarjetaPanel(d, { forma: 'fila', h: 'h3', href: '#' })}</div>`
+      : tarjetaPanel(d, { desc: true, h: 'h3', href: '#' });
+    // La foto o el vídeo no se vuelven a cargar con cada letra: si no han
+    // cambiado, se queda el mismo (el vídeo sigue por donde iba).
+    const firma = JSON.stringify([formaPrevia, d.kind, images, BIZ._portada]);
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    const viejo = $('.tj-media', caja);
+    if (viejo && caja.dataset.firma === firma) $('.tj-media', tmp)?.replaceWith(viejo);
+    caja.replaceChildren(...tmp.childNodes);
+    if (caja.dataset.firma !== firma) { caja.dataset.firma = firma; activaVideos(caja, true); }
+    // El botón de entradas de la ficha (DISENOS_PUBLICACION.md §6).
+    const p = d.external_url ? plataformaEntradas(d.external_url) : null;
+    $('#prevEntradas', v).innerHTML = p ? `<p class="hint" style="margin:12px 0 6px">${esc(I18N.t('En la ficha, el botón de entradas'))}:</p>
+      <span class="prev-boton">${esc(p.plataforma ? bi(`Entradas en ${p.plataforma}`, `Tickets on ${p.plataforma}`) : bi('Conseguir entradas', 'Get tickets'))}${p.plataforma ? '' : `<small>${esc(p.dominio)}</small>`}</span>` : '';
+    $('#prevNota', v).textContent = !images.length && !BIZ._portada
+      ? I18N.t('Sin fotos se usa la portada de tu local. Añade una foto para que se vea mejor.')
+      : !images.length ? I18N.t('Sin fotos se usa la portada de tu local.') : '';
+  };
+  $$('[data-prev]', v).forEach((b) => {
+    b.onclick = () => {
+      formaPrevia = b.dataset.prev;
+      $$('[data-prev]', v).forEach((x) => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', String(x === b)); });
+      pintaPrevia();
+    };
+  });
+  $('#irPrevia', v).onclick = () => {
+    const h = $('#prevTitulo', v);
+    h.scrollIntoView({ block: 'start', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    h.focus({ preventScroll: true });
+  };
+  pintaEstilo = () => {
+    const acento = estilo.accent || '#FF4D6D';
+    pintaPrevia();
     $('#plantillasEstilo', v).innerHTML = PLANTILLAS.map(([k2, n]) =>
       `<button type="button" class="${estilo.template === k2 ? 'on' : ''}" aria-pressed="${estilo.template === k2}" data-plantilla="${k2}">${esc(I18N.t(n))}</button>`).join('');
     $('#plantillaAyuda', v).textContent = I18N.t(PLANTILLA_AYUDA[estilo.template]);
@@ -1955,8 +2194,9 @@ async function offerForm(v, id, kindDefault, desde = null) {
     $('#colores', v).innerHTML = PALETA.map(([c, n], i) =>
       `<button type="button" class="color ${!marca && acento === c ? 'on' : ''}" aria-pressed="${!marca && acento === c}" data-color="${i === 0 ? '' : c}" style="background:${c}" aria-label="${esc(I18N.t(n))}" title="${esc(I18N.t(n))}"></button>`).join('')
       + `<button type="button" class="color marca-btn ${marca ? 'on' : ''}" aria-pressed="${marca}" data-marca="1" ${marca ? `style="background:${acento}"` : ''} aria-label="${esc(I18N.t('Color de tu marca'))}" title="${esc(I18N.t('Color de tu marca'))}">${marca ? '' : ms('edit')}</button>`;
-    $$('[data-plantilla]', v).forEach((b) => { b.onclick = () => { estilo.template = b.dataset.plantilla; pintaEstilo(); }; });
-    $$('[data-color]', v).forEach((b) => { b.onclick = () => { estilo.accent = b.dataset.color || null; $('#marcaPanel', v).hidden = true; pintaEstilo(); }; });
+    // Al elegir, el botón se vuelve a pintar: el foco sigue en él.
+    $$('[data-plantilla]', v).forEach((b) => { b.onclick = () => { estilo.template = b.dataset.plantilla; pintaEstilo(); $(`[data-plantilla="${estilo.template}"]`, v)?.focus(); }; });
+    $$('[data-color]', v).forEach((b) => { b.onclick = () => { const c = b.dataset.color; estilo.accent = c || null; $('#marcaPanel', v).hidden = true; pintaEstilo(); $(`[data-color="${c}"]`, v)?.focus(); }; });
     $('[data-marca]', v).onclick = () => {
       const panel = $('#marcaPanel', v);
       panel.hidden = !panel.hidden;
@@ -1997,9 +2237,9 @@ async function offerForm(v, id, kindDefault, desde = null) {
       pintaMarca(colores[0], true);
     };
   }
-  $('#form').addEventListener('input', (e) => {
-    if (['title', 'kind', 'price', 'discount_type', 'discount_value', 'start', 'end', 'venue_name', 'venue_address'].includes(e.target.name)) pintaEstilo();
-  });
+  // Cualquier cambio del formulario se ve al momento en la tarjeta.
+  $('#form').addEventListener('input', pintaPrevia);
+  $('#form').addEventListener('change', pintaPrevia);
   pintaEstilo();
 
   // ── Plantillas ──────────────────────────────────────────────────────────
@@ -2279,6 +2519,116 @@ async function offerForm(v, id, kindDefault, desde = null) {
     }
   };
 }
+
+// ── Calendario ──────────────────────────────────────────────────────────────
+// El mes con lo que tiene el negocio (puntos como en Explorar: eventos en
+// coral, ofertas flash en ámbar) y, al lado (debajo en el móvil), lo del día
+// elegido con la misma fila que la agenda de la web, su estado y «Crear este
+// día». Todo en la hora del local. #/calendario/AAAA-MM-DD abre ese día.
+// Cuenta todo lo que no está archivado: también borradores y programadas
+// (el negocio planifica con ellas), cada una con su etiqueta.
+const dosCifras = (n) => String(n).padStart(2, '0');
+const sumaMes = (mes, n) => { const [y, m] = mes.split('-').map(Number); const d = new Date(Date.UTC(y, m - 1 + n, 1)); return `${d.getUTCFullYear()}-${dosCifras(d.getUTCMonth() + 1)}`; };
+const inicioPub = (o) => (o.kind === 'flash_offer' ? o.redeem_start_at : o.event_at);
+
+PAGES.calendario = async (v, param) => {
+  const [offersRaw] = await Promise.all([rpc('my_business_offers', { p_id: BIZ.id }), portadaNegocio()]);
+  const offers = (offersRaw || []).filter((o) => o.status !== 'archived' && inicioPub(o));
+  const hoy = KZ.hoy(TZ);
+  let dia = /^\d{4}-\d{2}-\d{2}$/.test(param || '') ? param : hoy;
+  let mes = dia.slice(0, 7);
+  const porDia = new Map();
+  for (const o of offers) {
+    const d = KZ.dia(inicioPub(o), TZ);
+    if (!porDia.has(d)) porDia.set(d, []);
+    porDia.get(d).push(o);
+  }
+  for (const l of porDia.values()) l.sort((a, b) => String(inicioPub(a)).localeCompare(String(inicioPub(b))));
+  const loc = LOC();
+  const largo = (iso) => KZ.fmt(`${iso}T12:00:00Z`, 'UTC', loc, { weekday: 'long', day: 'numeric', month: 'long' });
+  const mayus = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+  const rel = (iso) => (iso === hoy ? I18N.t('Hoy') : iso === KZ.hoy(TZ, 1) ? I18N.t('Mañana') : '');
+  const semana = [...Array(7)].map((_, i) => KZ.fmt(`2026-10-${dosCifras(5 + i)}T12:00:00Z`, 'UTC', loc, { weekday: 'short' }).replace('.', ''));
+  const cuantas = (n) => bi(n === 1 ? '1 publicación' : `${fmtNum(n)} publicaciones`, n === 1 ? '1 publication' : `${fmtNum(n)} publications`);
+
+  v.innerHTML = `
+    <div class="page-head"><h1>Calendario</h1><span class="spacer"></span>
+      <button type="button" class="btn sm ghost" id="calHoy">Hoy</button></div>
+    <div class="calendario tjv" id="cal"></div>`;
+
+  const pinta = (enfocar) => {
+    const [y, m] = mes.split('-').map(Number);
+    const diasMes = new Date(Date.UTC(y, m, 0)).getUTCDate();
+    const hueco = (new Date(Date.UTC(y, m - 1, 1)).getUTCDay() + 6) % 7; // lunes = 0
+    const titulo = mayus(KZ.fmt(`${mes}-15T12:00:00Z`, 'UTC', loc, { month: 'long', year: 'numeric' }));
+    const celdas = [];
+    for (let i = 0; i < hueco; i++) celdas.push('<span class="cal-dia vacio-dia" aria-hidden="true"></span>');
+    for (let d = 1; d <= diasMes; d++) {
+      const iso = `${mes}-${dosCifras(d)}`;
+      const lista = porDia.get(iso) || [];
+      const ev = lista.some((o) => o.kind !== 'flash_offer');
+      const fl = lista.some((o) => o.kind === 'flash_offer');
+      const puntos = lista.length ? `<span class="cal-puntos" aria-hidden="true">${ev ? '<i class="pe"></i>' : ''}${fl ? '<i class="pf"></i>' : ''}</span>` : '';
+      const cls = `cal-dia${iso === hoy ? ' hoy' : ''}${iso === dia ? ' sel' : ''}${iso < hoy ? ' pasado' : ''}`;
+      const etiqueta = `${largo(iso)}: ${lista.length ? cuantas(lista.length) : bi('nada', 'nothing')}`;
+      celdas.push(`<a class="${cls}" href="#/calendario/${iso}" data-dia="${iso}" aria-label="${esc(etiqueta)}"${iso === dia ? ' aria-current="date"' : ''}>${d}${puntos}</a>`);
+    }
+    const delDia = porDia.get(dia) || [];
+    const proximo = delDia.length ? null : [...porDia.keys()].sort().find((k) => k > dia);
+    const crear = gestiona() ? `<div class="actions cal-crear">
+        <a class="btn sm" href="#/publicaciones/nueva-flash?dia=${dia}">${ms('bolt')}${esc(I18N.t('Oferta flash este día'))}</a>
+        <a class="btn sm" href="#/publicaciones/nuevo-evento?dia=${dia}">${ms('event')}${esc(I18N.t('Evento este día'))}</a></div>` : '';
+    $('#cal', v).innerHTML = `
+      <section class="cal-mes" aria-labelledby="calTitulo">
+        <div class="cal-cab">
+          <button type="button" class="cal-nav" data-mes="-1" aria-label="${esc(I18N.t('Mes anterior'))}">${svg('izq', 22)}</button>
+          <h2 id="calTitulo" aria-live="polite">${esc(titulo)}</h2>
+          <button type="button" class="cal-nav" data-mes="1" aria-label="${esc(I18N.t('Mes siguiente'))}">${svg('der', 22)}</button>
+        </div>
+        <div class="cal-rejilla">
+          ${semana.map((w) => `<span class="cal-sem" aria-hidden="true">${esc(w)}</span>`).join('')}
+          ${celdas.join('')}
+        </div>
+        <p class="cal-leyenda"><span><i class="pe"></i>${esc(I18N.t('Eventos'))}</span><span><i class="pf"></i>${esc(I18N.t('Ofertas flash'))}</span></p>
+      </section>
+      <section class="cal-lista" id="calDia" aria-labelledby="diaTitulo">
+        <div class="cal-lista-cab">
+          <h2 id="diaTitulo" tabindex="-1">${esc(rel(dia) ? `${rel(dia)} · ${largo(dia)}` : mayus(largo(dia)))}</h2>
+          <span class="muted">${esc(cuantas(delDia.length))}</span>
+        </div>
+        ${delDia.length
+          ? `<div class="tj-filas">${delDia.map((o) => `<div class="cal-item">${tarjetaPanel(o, { forma: 'fila', h: 'h3', href: gestiona() && o.status !== 'archived' ? `#/publicaciones/${o.id}` : `/o/${o.id}` })}<p class="cal-item-estado">${estadoPub(o) === 'activa' ? '' : etiquetaEstado(o)}</p></div>`).join('')}</div>`
+          : `<p class="muted cal-nada">${esc(I18N.t(dia < hoy ? 'Ese día no tuviste nada publicado.' : 'Aún no tienes nada para ese día.'))}${proximo ? `<br><a href="#/calendario/${proximo}" data-dia="${proximo}">${esc(bi(`Lo siguiente: ${rel(proximo) || largo(proximo)}`, `Next up: ${rel(proximo) || largo(proximo)}`))} →</a>` : ''}</p>`}
+        ${dia >= hoy ? crear : ''}
+      </section>`;
+    I18N.translate($('#cal', v));
+    activaVideos($('#cal', v));
+    $$('[data-dia]', v).forEach((a) => {
+      a.onclick = (e) => {
+        e.preventDefault();
+        dia = a.dataset.dia;
+        mes = dia.slice(0, 7);
+        // Sin «hashchange»: no se vuelve a pedir nada, pero el enlace vale.
+        history.replaceState(null, '', `${location.pathname}${location.search}#/calendario/${dia}`);
+        pinta('dia');
+      };
+    });
+    $$('[data-mes]', v).forEach((b) => {
+      b.onclick = () => { mes = sumaMes(mes, Number(b.dataset.mes)); pinta(`mes${b.dataset.mes}`); };
+    });
+    // Tras elegir un día, el foco va a su lista (en el móvil está debajo);
+    // tras cambiar de mes, se queda en la flecha.
+    if (enfocar === 'dia') {
+      const h = $('#diaTitulo', v);
+      h.focus({ preventScroll: true });
+      if (window.matchMedia('(max-width: 900px)').matches) h.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    } else if (enfocar?.startsWith('mes')) {
+      $(`[data-mes="${enfocar.slice(3)}"]`, v)?.focus();
+    }
+  };
+  $('#calHoy', v).onclick = () => { dia = hoy; mes = hoy.slice(0, 7); history.replaceState(null, '', `${location.pathname}${location.search}#/calendario/${dia}`); pinta('dia'); };
+  pinta();
+};
 
 // ── Validar códigos ─────────────────────────────────────────────────────────
 /** Por qué no se ha podido validar un código, dicho para la puerta. Lo usan

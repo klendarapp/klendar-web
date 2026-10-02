@@ -71,9 +71,13 @@ tiene sentido dentro de la app). Prueba local: `npx wrangler@3 pages dev .`.
   Filtros (hoja con precio, orden, categoría, distancia…), Dónde, ¿Cuándo? y
   Tipo; en Explorar, además, buscar y Lista · Mapa · Calendario. Todo va en
   la URL y funciona sin JavaScript (`<details>` y formularios GET).
-- Una sola tarjeta de publicación: `tarjeta()` en `functions/_lib/tarjeta.js`
-  (formas `grande` y `fila`; plantillas de `offers.style`). El vídeo, la
-  cuenta atrás y la distancia los pone `/assets/tarjetas.js`.
+- Una sola tarjeta de publicación: `tarjeta()` en `assets/tarjeta.js`
+  (formas `grande` y `fila`; plantillas de `offers.style`), con sus estilos
+  y los del calendario en `assets/tarjeta.css`. La usan la web pública (vía
+  `functions/_lib/tarjeta.js`, que solo la reexporta) y el panel del negocio
+  en el navegador («Tus publicaciones», su calendario y la vista previa del
+  formulario). En la web pública, el vídeo, la cuenta atrás y la distancia
+  los pone `/assets/tarjetas.js`.
 
 ## URLs legales para terceros (`/legal/...`)
 

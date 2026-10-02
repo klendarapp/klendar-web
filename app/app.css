@@ -319,6 +319,9 @@ button.codigo.copiar .ms { font-size: 18px; color: var(--ink-2); letter-spacing:
 .ficha-amigo { text-align: center; margin-bottom: 8px; }
 .ficha-amigo h1 { margin: 12px 0 4px; }
 .ficha-amigo .av-amigo.av-grande { margin-top: 8px; }
+.ficha-amigo .juntos-amigo { display: inline-flex; align-items: center; gap: 8px; margin: 10px 0 0; padding: 8px 14px;
+  background: var(--glass); border: 1px solid var(--glass-border); border-radius: 999px; font-size: 15px; font-weight: 700; color: var(--ink); }
+.ficha-amigo .juntos-amigo .ms { font-size: 18px; }
 .planes-amigo .plan-amigo { display: grid; gap: 8px; }
 .planes-amigo .plan-acc { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 .planes-amigo .plan-va { margin: 0; font-size: 14px; font-weight: 700; color: var(--ink); }

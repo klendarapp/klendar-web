@@ -7,19 +7,17 @@
 // se le puede enseñar a un ayuntamiento o a un bar que aún no se fía.
 
 import KZ from '../../assets/zona.js';
+// Dinero, fechas cortas y el beneficio: los mismos que pinta la tarjeta, en
+// un solo sitio (`assets/tarjeta.js`, que también usa el panel del negocio).
+import KT from '../../assets/tarjeta.js';
 import { BackendDown, CONTADOR, datosDePrueba, erroresScript, esc, html, isUuid, rows } from './page.js';
 
 import { siteFooter, siteHeader } from './chrome.js';
 
 export const BASE = 'https://klendar.app';
 
-export const money = (cents, currency = 'EUR', lang = 'es') =>
-  cents == null
-    ? ''
-    : (cents / 100).toLocaleString(lang === 'en' ? 'en-IE' : 'es-ES', {
-        style: 'currency',
-        currency,
-      });
+/** «12,00 €» (en: «€12.00»). */
+export const { money } = KT;
 
 // Cada fecha va en la hora del negocio (Canarias, una menos que la
 // península). `tz` es su zona; sin ella, Madrid. Ver `assets/zona.js`.
@@ -34,26 +32,10 @@ export const fmtLong = (iso, lang = 'es', tz) => KZ.fmt(iso, tz, loc(lang), {
   weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit',
 });
 
-/** «mié 24 sept» */
-export const fmtDay = (iso, lang = 'es', tz) => KZ.fmt(iso, tz, loc(lang), {
-  weekday: 'short', day: 'numeric', month: 'short',
-});
-
-export const fmtTime = (iso, lang = 'es', tz) => KZ.fmt(iso, tz, loc(lang), {
-  hour: '2-digit', minute: '2-digit',
-});
-
-/** ¿Mismo día en la zona del negocio? */
-export const sameDay = (a, b, tz) => !!a && !!b && KZ.dia(a, tz) === KZ.dia(b, tz);
-
-/** El final de una franja: solo la hora si acaba el mismo día; si no, con el
- *  día delante («dom 27 sept 10:57»). Como `Formatters.timeRange` en la app. */
-export function fmtEnd(startIso, endIso, lang = 'es', tz) {
-  if (!endIso) return '';
-  return sameDay(startIso, endIso, tz)
-    ? fmtTime(endIso, lang, tz)
-    : `${fmtDay(endIso, lang, tz)} ${fmtTime(endIso, lang, tz)}`;
-}
+/** «mié 24 sept», «18:30», ¿mismo día en la zona del negocio? y el final de
+ *  una franja (solo la hora si acaba el mismo día; si no, con el día delante:
+ *  «dom 27 sept 10:57», como `Formatters.timeRange` en la app). */
+export const { fmtDay, fmtTime, sameDay, fmtEnd } = KT;
 
 /** La zona y la dirección (`slug`) de cada negocio de una lista que no las
  *  trae (la agenda de una ciudad, una publicación): `businesses` se puede
@@ -129,27 +111,9 @@ export function decodeSeg(s) {
   try { return decodeURIComponent(s || ''); } catch { return null; }
 }
 
-/** El beneficio en una etiqueta: «−20 %», «2x1», «12 €». */
-export function benefit(d, priceCents, currency, lang = 'es') {
-  if (d) {
-    if (d.type === 'percent') return `−${d.value} %`;
-    if (d.type === 'fixed') {
-      return money(Math.round(Number(d.value) * 100), d.currency || currency, lang);
-    }
-    if (d.type === '2x1') return '2x1';
-    if (d.type === 'free') return lang === 'en' ? 'Free' : 'Gratis';
-    // «Segunda unidad al 50 %» lo escribe el negocio: se enseña tal cual, sin
-    // traducciones inventadas.
-    if (d.type === 'other' && d.value) return String(d.value);
-  }
-  return priceCents == null ? '' : money(priceCents, currency, lang);
-}
-
-/** Precio anterior tachado (obligatorio cuando se anuncia una rebaja). */
-export const priorPrice = (d, lang = 'es') =>
-  d?.compare_at_cents ? money(d.compare_at_cents, d.currency || 'EUR', lang) : '';
-
-export const isVideo = (u) => /\.(mp4|mov|webm)(\?|$)/i.test(u || '');
+/** El beneficio en una etiqueta («−20 %», «2x1», «12 €»), el precio anterior
+ *  tachado (obligatorio cuando se anuncia una rebaja) y si una pieza es vídeo. */
+export const { benefit, priorPrice, isVideo } = KT;
 
 /** Para la vista previa de WhatsApp o Google hace falta una imagen fija. */
 export const firstPhoto = (images) => (images || []).find((u) => !isVideo(u)) || null;
@@ -307,7 +271,8 @@ ${erroresScript()}
 ${preconectar}<link rel="preload" href="/assets/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/assets/site.css?v=20261011">
-<link rel="stylesheet" href="/assets/public.css?v=28">
+<link rel="stylesheet" href="/assets/public.css?v=29">
+<link rel="stylesheet" href="/assets/tarjeta.css?v=1">
 ${cabeza}
 </head>
 <body>

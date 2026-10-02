@@ -28,18 +28,24 @@ function makeI18N(EN) {
     return k && EN[k] ? s.replace(k, EN[k]) : null;
   };
 
+  // Lo marcado con `translate="no"` ya viene en su idioma o lo ha escrito
+  // alguien (la tarjeta de una publicación, pintada en inglés por
+  // /assets/tarjeta.js, con el título que puso el negocio): no se toca.
+  const fuera = (el) => !!el?.closest?.('[translate="no"]');
+
   /** Traduce lo que ya está pintado dentro de `root`. */
   function translate(root = document.body) {
-    if (lang !== 'en' || !root) return;
+    if (lang !== 'en' || !root || fuera(root)) return;
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
     const pending = [];
     for (let n = walker.nextNode(); n; n = walker.nextNode()) {
       const t = one(n.nodeValue);
-      if (t) pending.push([n, t]);
+      if (t && !fuera(n.parentElement)) pending.push([n, t]);
     }
     for (const [n, t] of pending) n.nodeValue = t;
 
     for (const el of root.querySelectorAll('[placeholder],[title],[aria-label],[alt]')) {
+      if (fuera(el)) continue;
       for (const a of ATTRS) {
         const v = el.getAttribute(a);
         const t = v && one(v);

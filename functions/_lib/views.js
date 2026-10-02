@@ -15,7 +15,7 @@ import { decodeSeg,
   carrusel, firstPhoto, fmtEnd, fmtLong, isSlug, isVideo, ldScript, listingLd, money, openInApp,
   priorPrice, publicPage, slugDe, todayBase, zonaDe,
 } from './public.js';
-import { cuandoCorto, rejilla } from './tarjeta.js';
+import { cuandoCorto, plataformaEntradas, rejilla } from './tarjeta.js';
 
 // Iconos de Material (los mismos que la app), en SVG: las páginas públicas
 // no cargan la fuente de iconos.
@@ -222,7 +222,14 @@ export async function offerPage(id, lang) {
           : noEmpezada ? `<span class="pill accent big" aria-disabled="true" style="opacity:.55">${S.notYet}</span>`
           : flash ? `<a class="pill accent big" href="${cuenta(lang)}#/codigo/${id}">${S.code}</a>`
             : o.reservations_enabled ? `<a class="pill accent big" href="${cuenta(lang)}#/reservar/${id}">${S.reserve}</a>`
-              : entradas ? `<a class="pill accent big" href="${esc(entradas)}" rel="nofollow noopener" target="_blank">${esc(o.external_url.replace(/^https?:\/\//, '').split('/')[0])}</a>`
+              : entradas ? (() => {
+                // Como la app: «Entradas en DICE» si es una plataforma conocida;
+                // si no, «Conseguir entradas» con el dominio debajo.
+                const pl = plataformaEntradas(o.external_url);
+                const txt = pl?.plataforma ? (en ? `Tickets on ${pl.plataforma}` : `Entradas en ${pl.plataforma}`) : (en ? 'Get tickets' : 'Conseguir entradas');
+                const sub = !pl?.plataforma && pl?.dominio ? `<small style="display:block;font-weight:500;opacity:.8">${esc(pl.dominio)}</small>` : '';
+                return `<a class="pill accent big" href="${esc(entradas)}" rel="nofollow noopener" target="_blank" aria-label="${esc(txt)}${en ? ' (opens outside Klendar)' : ' (se abre fuera de Klendar)'}">${esc(txt)}${sub}</a>`;
+              })()
                 : voy('pill accent big');
         // «Voy» e «Invitar a un amigo»: la página va en caché y no sabe quién
         // la mira; si ya vas, lo pinta el navegador (/assets/amigos.js).

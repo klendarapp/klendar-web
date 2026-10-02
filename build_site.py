@@ -234,7 +234,7 @@ def head(t, path, page_title=None, page_desc=None, extra=''):
 <link rel="preload" href="/assets/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/assets/site.css?v=20261011">
-<link rel="stylesheet" href="/assets/public.css?v=28">
+<link rel="stylesheet" href="/assets/public.css?v=29">
 {extra}
 </head>
 <body>
