@@ -255,3 +255,59 @@ video.tj-img { background: #0A0A0A; }
 /* Color: panel macizo con sombra. Minimal: liso, borde fino. */
 .tj--pantalla.tj--bold .tj-panel { box-shadow: 0 14px 34px -14px rgba(0,0,0,.6); }
 .tj--pantalla.tj--minimal .tj-panel { box-shadow: 0 10px 30px -18px rgba(0,0,0,.4); }
+
+/* ── La galería en la ficha (cabecera de una publicación o de un negocio) ──
+   La misma que la tarjeta (`galeria` en assets/tarjeta.js), como la
+   cabecera de la ficha en la app: los puntos abajo en el centro, el altavoz
+   abajo a la derecha y «Ver a pantalla completa» arriba a la derecha. Tocar
+   una pieza abre el visor. */
+.tj-galeria--ficha .tj-pieza { cursor: zoom-in; }
+.tj-galeria.tj-galeria--ficha .tj-puntos { top: auto; bottom: 14px; right: auto; left: 50%; transform: translateX(-50%); }
+.tj-galeria.tj-galeria--ficha .tj-sonido { top: auto; bottom: 8px; right: 12px; }
+.tj-ampliar { position: absolute; z-index: 4; top: 12px; right: 12px; width: 40px; height: 40px; display: grid; place-items: center; border: 0; padding: 0;
+  cursor: pointer; border-radius: 50%; background: rgba(10,10,10,.6); color: #fff; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+.tj-ampliar:hover { background: rgba(10,10,10,.78); }
+.tj-ampliar:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+/* ── Visor a pantalla completa (como `showPhotoViewer` en la app) ────────
+   Negro siempre (también en el tema claro): la foto o el vídeo enteros,
+   sin recortar. «Cerrar» arriba a la izquierda y «2 / 3» a la derecha, en
+   cristal oscuro. */
+html.con-visor { overflow: hidden; }
+.visor { position: fixed; inset: 0; width: 100%; height: 100%; max-width: none; max-height: none; margin: 0; padding: 0; border: 0;
+  background: #000; color: #fff; overflow: hidden; }
+.visor::backdrop { background: #000; }
+.visor[open] { animation: visor-entra .2s ease-out; }
+@keyframes visor-entra { from { opacity: 0; } to { opacity: 1; } }
+.visor .tj-galeria { position: absolute; inset: 0; }
+.visor .tj-pista { touch-action: pan-x pinch-zoom; }
+.visor .tj-pieza .tj-img { object-fit: contain; background: transparent; }
+.visor-barra { position: absolute; z-index: 6; top: 0; left: 0; right: 0; display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) 0 max(12px, env(safe-area-inset-left));
+  pointer-events: none; }
+.visor-barra > * { pointer-events: auto; }
+.visor-cerrar { width: 44px; height: 44px; display: grid; place-items: center; border: 0; padding: 0; cursor: pointer; border-radius: 50%;
+  background: rgba(10,10,10,.6); color: #fff; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+.visor-cerrar:hover { background: rgba(40,40,40,.8); }
+.visor-cerrar:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.visor-n { padding: 6px 12px; border-radius: 999px; background: rgba(10,10,10,.6); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  font-weight: 700; font-size: 14px; font-variant-numeric: tabular-nums; }
+.visor .tj-flecha { width: 48px; height: 48px; margin-top: -24px; }
+.visor .tj-ant { left: max(16px, env(safe-area-inset-left)); }
+.visor .tj-sig { right: max(16px, env(safe-area-inset-right)); }
+@media (hover: hover) and (pointer: fine) { .visor .tj-flecha:not(.fuera) { opacity: 1; pointer-events: auto; } }
+.visor .tj-galeria .tj-sonido { top: auto; bottom: max(16px, env(safe-area-inset-bottom)); right: max(16px, env(safe-area-inset-right)); width: 44px; height: 44px; }
+.visor .tj-play { top: 50%; }
+@media (prefers-reduced-motion: reduce) { .visor[open] { animation: none; } }
+
+/* ── Miniaturas que abren el visor (carta, novedades, reseñas) ─────────── */
+.miniaturas { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 0; }
+.mini, .carta-foto, .nov-media, .dish { position: relative; display: block; overflow: hidden; background: var(--soft); cursor: zoom-in; }
+.mini { width: 96px; height: 96px; flex: none; border-radius: 14px; }
+.mini img, .mini video, .carta-foto img, .carta-foto video, .nov-media img, .nov-media video, .dish img, .dish video {
+  width: 100%; height: 100%; object-fit: cover; display: block; }
+.mini video, .carta-foto video, .nov-media video, .dish video { background: #0A0A0A; }
+:is(.mini, .carta-foto, .nov-media, .dish):focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.mini-play { position: absolute; left: 50%; top: 50%; width: 36px; height: 36px; margin: -18px 0 0 -18px; display: grid; place-items: center;
+  border-radius: 50%; background: rgba(10,10,10,.6); color: #fff; pointer-events: none; }
+@media (hover: hover) { :is(.mini, .carta-foto, .nov-media):hover img { filter: brightness(.94); } }

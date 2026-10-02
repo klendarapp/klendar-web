@@ -19,6 +19,9 @@
  *   lados y la rueda pasan de una a otra; ←/→ mueven la galería. La cabecera
  *   sigue a lo que hay detrás (foto: blanco con velo; el final: el tema). Al
  *   llegar al final de la página se trae la siguiente.
+ * - Ficha: la misma galería en grande; tocar una pieza (o «Ver a pantalla
+ *   completa») abre el visor, como en la app. Las miniaturas de la carta, las
+ *   novedades y las reseñas también lo abren.
  * - Filtros: los desplegables y la hoja se cierran al pulsar fuera o con
  *   Escape, y solo hay uno abierto a la vez; «Cerca de mí» y «Estoy aquí»
  *   piden la ubicación (solo al pulsarlos); los enlaces de la propia página
@@ -57,6 +60,7 @@
   // ── Vídeos ─────────────────────────────────────────────────────────────
   var videos = [];
   var aLaVista = new Set();
+  var visor = null; // el visor a pantalla completa, si está abierto
   function carga(v) {
     if (!v.getAttribute('src')) v.setAttribute('src', v.getAttribute('data-src'));
   }
@@ -87,7 +91,9 @@
     }
   }
   function decide(v) {
-    if (aLaVista.has(v) && esLaActual(v) && puedeMoverse()) reproduce(v, false);
+    // Con el visor abierto, solo se mueve lo que hay dentro de él.
+    var tapado = visor && !visor.contains(v);
+    if (!tapado && aLaVista.has(v) && esLaActual(v) && puedeMoverse()) reproduce(v, false);
     else if (!v.paused) v.pause();
   }
   var mira = 'IntersectionObserver' in window ? new IntersectionObserver(function (entradas) {
@@ -115,6 +121,25 @@
     if (son) son.hidden = !v;
     if (play) play.hidden = !v || !v.paused || puedeMoverse();
     g.querySelectorAll('video').forEach(decide);
+    // «Foto 2 de 3» para el lector de pantalla (solo al cambiar) y, en el
+    // visor, «2 / 3» en la barra.
+    if (g.dataset.i !== String(i)) {
+      var primeraVez = g.dataset.i == null;
+      g.dataset.i = String(i);
+      var txt = nombrePieza(Boolean(v), i + 1, n);
+      var estado = g.querySelector('.tj-estado');
+      if (estado && !primeraVez) estado.textContent = txt;
+      var barra = g.closest('.visor') && g.closest('.visor').querySelector('.visor-n');
+      if (barra) {
+        barra.firstElementChild.textContent = (i + 1) + ' / ' + n;
+        if (!primeraVez) barra.lastElementChild.textContent = txt;
+      }
+    }
+  }
+  // Los textos, de assets/tarjeta.js (cargado donde hay ficha o visor).
+  function nombrePieza(video, i, n) {
+    var KT = window.KlendarTarjeta;
+    return KT ? KT.nombrePieza(video, i, n, EN ? 'en' : 'es') : '';
   }
   function mueve(g, d) {
     var pista = g.querySelector('.tj-pista');
@@ -152,7 +177,7 @@
     raiz.querySelectorAll('.tj-galeria').forEach(function (g) {
       if (g.dataset.lista) return;
       g.dataset.lista = '1';
-      g.querySelectorAll('.tj-flecha').forEach(function (b) { b.hidden = false; });
+      g.querySelectorAll('.tj-flecha, .tj-ampliar').forEach(function (b) { b.hidden = false; });
       var pista = g.querySelector('.tj-pista');
       var t = null;
       pista.addEventListener('scroll', function () {
@@ -160,6 +185,12 @@
         t = setTimeout(function () { pintaGaleria(g); }, 60);
       }, { passive: true });
       pintaGaleria(g);
+    });
+    // Miniaturas de vídeo (reseñas, novedades): el primer fotograma, solo al
+    // acercarse y nunca con ahorro de datos (ahí, el triángulo sobre gris).
+    raiz.querySelectorAll('video[data-mini]').forEach(function (v) {
+      if (ahorro()) return;
+      if (cercaMini) cercaMini.observe(v); else v.src = v.getAttribute('data-mini');
     });
     pintaSonido();
     relojes = Array.prototype.slice.call(document.querySelectorAll('.tj-cuando[data-fin]'));
@@ -192,7 +223,22 @@
       var gp = play.closest('.tj-galeria');
       var vp = gp.querySelector('.tj-pista').children[indice(gp)].querySelector('video');
       if (vp) reproduce(vp, true);
+      return;
     }
+    if (t.closest('[data-visor-cierra]')) { e.preventDefault(); cierraVisor(); return; }
+    // En el visor, tocar el vídeo lo para o lo sigue.
+    var vv = visor && t.closest('.visor video');
+    if (vv) { e.preventDefault(); if (vv.paused) reproduce(vv, true); else vv.pause(); return; }
+    var abre = t.closest('[data-visor-abre]');
+    if (abre) {
+      var ga = abre.closest('.tj-galeria');
+      var actualA = ga && ga.querySelector('.tj-pista').children[indice(ga)];
+      if (actualA && abreVisor(actualA.getAttribute('data-visor'), Number(actualA.getAttribute('data-visor-i')) || 0, abre)) e.preventDefault();
+      return;
+    }
+    var pieza = t.closest('a[data-visor]');
+    if (pieza && !e.shiftKey && !e.metaKey && !e.ctrlKey && e.button === 0
+      && abreVisor(pieza.getAttribute('data-visor'), Number(pieza.getAttribute('data-visor-i')) || 0, pieza)) e.preventDefault();
   });
 
   // ── Cuenta atrás de las ofertas flash ──────────────────────────────────
@@ -251,17 +297,111 @@
     try { localStorage.setItem('klendar.cerca', JSON.stringify({ lat: lat, lng: lng, t: Date.now() })); } catch (e) { /* nada */ }
   };
 
-  // ── Carrusel de la ficha: «2/3» al deslizar ────────────────────────────
-  document.querySelectorAll('.ficha-media').forEach(function (caja) {
-    var pista = caja.querySelector('.fm-pista');
-    var n = caja.querySelector('.fm-n');
-    if (!pista || !n) return;
-    var total = pista.children.length;
-    pista.addEventListener('scroll', function () {
-      var i = Math.round(pista.scrollLeft / Math.max(1, pista.clientWidth));
-      n.textContent = Math.min(total, i + 1) + '/' + total;
+  // ── Visor a pantalla completa (como `showPhotoViewer` en la app) ───────
+  // Lo abren las piezas de la galería de una ficha, su botón «Ver a pantalla
+  // completa» y las miniaturas (`[data-visor]`: carta, novedades, reseñas).
+  // Es un <dialog> modal: el foco entra en «Cerrar», lo de detrás queda
+  // inerte, Escape lo cierra y el foco vuelve a donde estaba. ←/→ pasan de
+  // pieza, y en el móvil se desliza (de lado) o se cierra arrastrando hacia
+  // abajo. Lo pinta `assets/tarjeta.js` (la misma galería, entera y en negro).
+  function piezasDe(grupo) {
+    var urls = [];
+    document.querySelectorAll('[data-visor]').forEach(function (a) {
+      if (a.getAttribute('data-visor') !== grupo || (visor && visor.contains(a))) return;
+      var i = Number(a.getAttribute('data-visor-i')) || 0;
+      if (!urls[i]) urls[i] = a.getAttribute('href');
+    });
+    return urls.filter(Boolean);
+  }
+  var deDonde = null; // { foco, galeria }
+  function abreVisor(grupo, i, desde) {
+    var KT = window.KlendarTarjeta;
+    var urls = piezasDe(grupo);
+    if (!KT || !urls.length || visor) return false;
+    var tmp = document.createElement('div');
+    tmp.innerHTML = KT.visor(urls, { lang: EN ? 'en' : 'es', i: i });
+    visor = tmp.firstElementChild;
+    if (typeof visor.showModal !== 'function') { visor = null; return false; }
+    var g = desde && desde.closest('.tj-galeria');
+    deDonde = { foco: g ? g.querySelector('.tj-ampliar') : desde, galeria: g };
+    document.body.appendChild(visor);
+    document.documentElement.classList.add('con-visor');
+    visor.addEventListener('cancel', function (e) { e.preventDefault(); cierraVisor(); });
+    visor.showModal();
+    var pista = visor.querySelector('.tj-pista');
+    pista.scrollLeft = i * pista.clientWidth;
+    videos.forEach(decide); // lo de detrás se para
+    iniciar(visor);
+    arrastre(visor);
+    return true;
+  }
+  function cierraVisor() {
+    if (!visor) return;
+    var g = visor.querySelector('.tj-galeria');
+    var i = g ? indice(g) : 0;
+    visor.querySelectorAll('video').forEach(function (v) {
+      v.pause(); v.removeAttribute('src'); v.load();
+      if (mira) mira.unobserve(v);
+      aLaVista.delete(v);
+    });
+    videos = videos.filter(function (v) { return !visor.contains(v); });
+    visor.close();
+    visor.remove();
+    visor = null;
+    document.documentElement.classList.remove('con-visor');
+    var d = deDonde || {};
+    deDonde = null;
+    // La galería de la ficha se queda en la pieza que se estaba viendo.
+    if (d.galeria) {
+      var p = d.galeria.querySelector('.tj-pista');
+      p.scrollLeft = i * p.clientWidth;
+      pintaGaleria(d.galeria);
+    }
+    videos.forEach(decide);
+    if (d.foco && d.foco.isConnected) d.foco.focus({ preventScroll: true });
+  }
+  // Arrastrar hacia abajo cierra (con el dedo; de lado, la galería).
+  function arrastre(el) {
+    var x0 = 0, y0 = 0, dy = 0, eje = '';
+    var g = el.querySelector('.tj-galeria');
+    el.addEventListener('touchstart', function (e) {
+      if (e.touches.length !== 1) { eje = 'no'; return; }
+      x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; dy = 0; eje = '';
     }, { passive: true });
+    el.addEventListener('touchmove', function (e) {
+      if (eje === 'no' || e.touches.length !== 1) return;
+      var mx = e.touches[0].clientX - x0, my = e.touches[0].clientY - y0;
+      if (!eje && Math.abs(mx) + Math.abs(my) > 10) eje = Math.abs(my) > Math.abs(mx) ? 'y' : 'x';
+      if (eje !== 'y') return;
+      dy = Math.max(0, my);
+      g.style.transform = 'translateY(' + dy + 'px)';
+      el.style.backgroundColor = 'rgba(0,0,0,' + Math.max(0.3, 1 - dy / 400) + ')';
+    }, { passive: true });
+    el.addEventListener('touchend', function () {
+      if (eje === 'y' && dy > 120) { cierraVisor(); return; }
+      g.style.transform = ''; el.style.backgroundColor = '';
+      eje = '';
+    }, { passive: true });
+  }
+  // ←/→: en el visor, y en la galería de una ficha si tiene el foco.
+  document.addEventListener('keydown', function (e) {
+    if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    var t = e.target instanceof Element ? e.target : null;
+    if (t && t.closest('input, textarea, select, [contenteditable]')) return;
+    var g = visor ? visor.querySelector('.tj-galeria') : t && t.closest('.tj-galeria--ficha');
+    if (!g || !g.querySelector('.tj-flecha')) return;
+    e.preventDefault();
+    mueve(g, e.key === 'ArrowRight' ? 1 : -1);
   });
+  var cercaMini = 'IntersectionObserver' in window ? new IntersectionObserver(function (entradas) {
+    entradas.forEach(function (e) {
+      if (!e.isIntersecting) return;
+      cercaMini.unobserve(e.target);
+      e.target.preload = 'metadata';
+      e.target.src = e.target.getAttribute('data-mini');
+    });
+  }, { rootMargin: '300px' }) : null;
 
   // ── Filtros: lo de la propia página no se pisa con lo guardado ─────────
   function marcaPropia() { try { sessionStorage.setItem('klendar.filtros.sin', '1'); } catch (e) { /* nada */ } }

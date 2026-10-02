@@ -12,7 +12,7 @@ import { esc, fmtWhen, html, isUuid, rpc, rpcAll, rows, supabasePublic } from '.
 import KZ from '../../assets/zona.js';
 import { decodeSeg,
   agendaBase, BASE, benefit, bizPath, breadcrumbLd, cityLinks, citySeg, datosDeNegocios, exploreBase,
-  carrusel, firstPhoto, fmtEnd, fmtLong, isSlug, isVideo, ldScript, listingLd, money, openInApp,
+  carrusel, firstPhoto, fmtEnd, fmtLong, isSlug, isVideo, ldScript, listingLd, miniatura, miniaturas, money, openInApp,
   priorPrice, publicPage, slugDe, todayBase, zonaDe,
 } from './public.js';
 import { cuandoCorto, plataformaEntradas, rejilla } from './tarjeta.js';
@@ -131,7 +131,7 @@ export async function offerPage(id, lang) {
   const tag = benefit(o.discount, o.price_cents, o.currency, lang);
   const prior = priorPrice(o.discount, lang);
   const cover = firstPhoto(o.images);
-  const pieces = (o.images || []).slice(0, 4);
+  const pieces = (o.images || []).slice(0, 8);
   const where = [o.business_address, o.business_city].filter(Boolean).join(', ');
   // Las horas, las del sitio: en Canarias, una menos que en la península.
   const tz = zonaDe(o);
@@ -402,6 +402,13 @@ function queSellaFicha(c, S, en) {
   }
   return S.stampsAll;
 }
+/** Las fotos y vídeos de una reseña: miniaturas que abren el visor (con
+ * carrusel y sonido), como en la app. */
+function resenaMedios(r, lang) {
+  const urls = r.photo_url ? [r.photo_url] : [];
+  return miniaturas(urls, { grupo: `resena-${r.id}`, lang, clase: 'miniaturas resena-medios', etiqueta: lang === 'en' ? 'Review' : 'Reseña' });
+}
+
 /** Lo de arriba y, si la tarjeta también sella por visita, dicho. */
 // Los catorce alérgenos, con la clave que guarda la carta y su nombre en cada
 // idioma (los mismos que el panel y la app); una clave desconocida sale tal cual.
@@ -473,7 +480,6 @@ export async function businessPage(param, lang, search = '') {
         stampsOnly: (l) => `Only these count: ${l}`, stampsMore: (l, n) => `${l} and ${n} more`,
         stampsByVisit: 'Also per visit with the venue QR code',
         stampsNoteVisit: 'Each redemption that counts earns a stamp, and so does scanning the venue QR code when the card says so: at most one a day per card. The app keeps count.',
-        dishPhoto: (n) => `Photo: ${n}`,
         hours: 'Opening hours', closed: 'Closed', today: 'today',
         days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
         news: 'News', reviews: 'Reviews', write: 'Write a review', noReviews: 'No reviews yet. Been here? Be the first.',
@@ -510,7 +516,6 @@ export async function businessPage(param, lang, search = '') {
         stampsOnly: (l) => `Solo cuentan: ${l}`, stampsMore: (l, n) => `${l} y ${n} más`,
         stampsByVisit: 'También por visita con el QR del local',
         stampsNoteVisit: 'Cada canje que cuenta deja un sello, y también escanear el QR del local si la tarjeta lo dice: como mucho uno al día por tarjeta. La app lleva la cuenta.',
-        dishPhoto: (n) => `Foto: ${n}`,
         hours: 'Horario', closed: 'Cerrado', today: 'hoy',
         days: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'],
         news: 'Novedades', reviews: 'Reseñas', write: 'Escribir una reseña', noReviews: 'Todavía no hay reseñas. ¿Has estado? Sé la primera persona.',
@@ -648,18 +653,18 @@ export async function businessPage(param, lang, search = '') {
     </aside>
     <div class="d-body">
       ${b.description ? `<h2>${S.about}</h2><p>${esc(b.description).replace(/\n/g, '<br>')}</p>` : ''}
-      ${flash.length ? `<h2 id="ahora">${S.now}</h2>${rejilla(flash, lang, { tz, sinNegocio: true })}` : ''}
-      ${events.length ? `<h2 id="proximamente">${S.soon}</h2>${rejilla(events, lang, { tz, sinNegocio: true })}` : ''}
+      ${flash.length ? `<h2 id="ahora">${S.now}</h2>${rejilla(flash, lang, { tz, sinNegocio: true, galeria: true })}` : ''}
+      ${events.length ? `<h2 id="proximamente">${S.soon}</h2>${rejilla(events, lang, { tz, sinNegocio: true, galeria: true })}` : ''}
       ${offers.length ? '' : `<p class="empty">${S.none}</p>`}
       ${exclusivas}
       ${sellos.length ? `<h2>${sellos.length > 1 ? S.stampsMany : S.stamps}</h2>
         ${sellos.map((c) => `<p class="callout"><b>${esc(c.name)}</b> · ${esc(S.stampsBody(c.goal, c.reward))}<br><small>${esc(queSellaTarjeta(c, S, en))}</small></p>`).join('')}
         <p class="muted">${esc(sellos.some((c) => c.by_visit) ? S.stampsNoteVisit : S.stampsNote)}</p>` : ''}
       ${carta.length ? `<h2 id="carta">${S.menu}</h2>
-        <div class="menu">${carta.map((sec) => `<section>
+        <div class="menu">${carta.map((sec, si) => `<section>
           <h3>${esc(sec.name)}</h3>
-          <ul>${(sec.items || []).map((it) => `<li>
-            ${seguro(it.image_url) ? `<a class="dish" href="${esc(seguro(it.image_url))}" target="_blank" rel="noopener" aria-label="${esc(S.dishPhoto(it.name))}"><img src="${esc(seguro(it.image_url))}" alt="" loading="lazy" width="56" height="56"></a>` : ''}
+          <ul>${(sec.items || []).map((it, ii) => `<li>
+            ${seguro(it.image_url) ? miniatura(seguro(it.image_url), { grupo: `plato-${si}-${ii}`, clase: 'dish', etiqueta: it.name, lang, ancho: 56, alto: 56 }) : ''}
             <span class="plato"><b>${esc(it.name)}</b>${it.description ? `<small>${esc(it.description)}</small>` : ''}
             ${(it.allergens || []).length ? `<small class="alg">${S.allergens}: ${it.allergens.map((a) => esc(nombreAlergeno(a, en))).join(', ')}</small>` : ''}</span>
             <span class="price">${it.price_cents == null ? '' : esc(money(it.price_cents, 'EUR', lang))}</span>
@@ -667,14 +672,17 @@ export async function businessPage(param, lang, search = '') {
         </section>`).join('')}</div>
         <p class="note">${esc(S.menuNote)}</p>` : ''}
       ${fotosCarta.length ? `${carta.length ? '' : `<h2 id="carta">${S.menu}</h2>`}
-        <div class="carta-fotos">${fotosCarta.map((u) => /\.pdf($|\?)/i.test(u)
-          ? `<a class="pill" href="${esc(u)}" target="_blank" rel="noopener">${icono('pdf', 16)} ${S.menuPdf}</a>`
-          : `<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt="${S.menuPhotos}" loading="lazy"></a>`).join('')}</div>` : ''}
+        <div class="carta-fotos">${fotosCarta.filter((u) => /\.pdf($|\?)/i.test(u))
+          .map((u) => `<a class="pill" href="${esc(u)}" target="_blank" rel="noopener">${icono('pdf', 16)} ${S.menuPdf}</a>`).join('')}${(() => {
+          // Las fotos se ven juntas en el visor, como en la app.
+          const fotos = fotosCarta.filter((u) => !/\.pdf($|\?)/i.test(u));
+          return fotos.map((u, i) => miniatura(u, { grupo: 'carta', i, n: fotos.length, clase: 'carta-foto', etiqueta: S.menuPhotos, lang, ancho: 300, alto: 400 })).join('');
+        })()}</div>` : ''}
       ${novedades.length ? `<h2 id="novedades">${S.news}</h2>
         <div class="novedades">${novedades.map((p) => `<article${isUuid(p.id) ? ` id="novedad-${p.id}"` : ''}>
           <p class="muted">${esc(fmtWhen(p.created_at, lang, tz))}</p>
           ${p.body ? `<p>${esc(p.body).replace(/\n/g, '<br>')}</p>` : ''}
-          ${p.image_url ? `<img src="${esc(p.image_url)}" alt="" loading="lazy">` : ''}
+          ${p.image_url ? miniatura(p.image_url, { grupo: `novedad-${p.id}`, clase: 'nov-media', etiqueta: S.news, lang, ancho: 900, alto: 600 }) : ''}
           <a class="denuncia" href="${cuenta(lang)}#/denunciar/post/${encodeURIComponent(p.id)}" rel="nofollow">${S.report}</a>
         </article>`).join('')}</div>` : ''}
       <h2 id="resenas">${S.reviews}${b.rating && b.ratings ? ` <small class="muted">★ ${nota(b.rating, lang)} (${b.ratings})</small>` : ''}</h2>
@@ -690,7 +698,7 @@ export async function businessPage(param, lang, search = '') {
           ${r.verified ? `<details class="verificado"><summary>${icono('voy', 15)}<span>${S.verifiedCustomer}</span></summary>
             <p>${esc(S.verifiedWhat)} <a href="${en ? '/en/community-guidelines/' : '/normas/'}#resenas">${S.howReviews}</a></p></details>` : ''}
           ${r.comment ? `<p>${esc(r.comment)}</p>` : ''}
-          ${r.photo_url ? `<img class="foto" src="${esc(r.photo_url)}" alt="" loading="lazy">` : ''}
+          ${resenaMedios(r, lang)}
           ${r.reply ? `<div class="respuesta"><header>${icono('negocio', 16)}<b>${esc(S.replyFrom(b.name))}</b>${r.reply_at ? `<small class="muted">${esc(fmtWhen(r.reply_at, lang, tz))}</small>` : ''}</header>
             <p>${esc(r.reply).replace(/\n/g, '<br>')}</p></div>` : ''}
           <a class="denuncia" href="${cuenta(lang)}#/denunciar/review/${encodeURIComponent(r.id)}" rel="nofollow">${S.report}</a>${isUuid(r.user_id) ? ` · <a class="denuncia" href="${cuenta(lang)}#/bloquear/${r.user_id}" rel="nofollow">${S.block}</a>` : ''}

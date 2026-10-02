@@ -120,34 +120,30 @@ export const firstPhoto = (images) => (images || []).find((u) => !isVideo(u)) ||
 
 /**
  * La foto o el vídeo de una ficha, en grande (como la cabecera de la ficha
- * en la app): un carrusel que se desliza de lado, con «1/3» encima.
+ * en la app): la misma galería que las tarjetas de Descubre (`galeria` en
+ * assets/tarjeta.js): se desliza de lado, con puntos, flechas en el
+ * escritorio y el altavoz en los vídeos. Tocar una pieza (o «Ver a pantalla
+ * completa») abre el visor, como en la app.
  *
- * El vídeo va en silencio y con controles. Se reproduce solo mientras está a
- * la vista (`/assets/tarjetas.js`), nunca con «reducir movimiento» ni con
- * ahorro de datos; hasta entonces se ve la primera foto de portada y no se
- * pide nada del vídeo. El altavoz del reproductor le pone el sonido.
+ * El vídeo va en silencio y se reproduce solo mientras está a la vista
+ * (`/assets/tarjetas.js`), nunca con «reducir movimiento» ni con ahorro de
+ * datos; hasta entonces se ve la primera foto de portada y no se pide nada
+ * del vídeo.
  *
  * `forma`: 'oferta' (vertical, 4:5, como las fotos que se suben desde la app)
  * o 'negocio' (apaisada, la portada del local).
  */
 export function carrusel(urls, { titulo = '', forma = 'oferta', lang = 'es' } = {}) {
-  const piezas = (urls || []).filter((u) => typeof u === 'string' && /^https:\/\//.test(u)).slice(0, 8);
+  const piezas = KT.soloWeb(urls).slice(0, 8);
   if (!piezas.length) return '';
-  const en = lang === 'en';
-  const poster = piezas.find((u) => !isVideo(u)) || '';
-  const n = piezas.length;
-  const alt = (i, video) => (n > 1
-    ? (en ? `${video ? 'Video' : 'Photo'} ${i + 1} of ${n}: ${titulo}` : `${video ? 'Vídeo' : 'Foto'} ${i + 1} de ${n}: ${titulo}`)
-    : (en ? `${video ? 'Video' : 'Photo'}: ${titulo}` : `${video ? 'Vídeo' : 'Foto'}: ${titulo}`));
-  const pieza = (u, i) => (isVideo(u)
-    ? `<video class="fm-pieza" muted playsinline loop controls preload="${poster ? 'none' : 'metadata'}" ${poster ? `poster="${esc(poster)}"` : ''}
-        data-src="${esc(u)}${poster ? '' : '#t=0.1'}" aria-label="${esc(alt(i, true))}"></video>`
-    : `<img class="fm-pieza" src="${esc(u)}" alt="${esc(alt(i, false))}" width="${forma === 'negocio' ? 1200 : 900}" height="${forma === 'negocio' ? 675 : 1125}" ${i === 0 ? 'fetchpriority="high"' : 'loading="lazy" decoding="async"'}>`);
+  const [ancho, alto] = forma === 'negocio' ? [1200, 675] : [900, 1125];
   return `<div class="ficha-media ficha-media--${forma}">
-    <div class="fm-pista"${n > 1 ? ` tabindex="0" role="region" aria-label="${esc(en ? 'Photos and videos' : 'Fotos y vídeos')}"` : ''}>${piezas.map(pieza).join('')}</div>
-    ${n > 1 ? `<span class="fm-n" aria-hidden="true">1/${n}</span>` : ''}
+    ${KT.galeria(piezas, { modo: 'ficha', lang, titulo, grupo: 'ficha', ancho, alto, primera: true })}
   </div>`;
 }
+
+/** Miniaturas que abren el visor (ver `miniatura` en assets/tarjeta.js). */
+export const { miniatura, miniaturas } = KT;
 
 /** Dónde vive la cartelera en cada idioma. En inglés «agenda» es el orden
  * del día de una reunión, no lo que hay esta semana en la ciudad. */
@@ -242,7 +238,9 @@ export function publicPage({ lang, path, title, description, head = '', body, im
   // resultados, cuando no hay ninguna tarjeta).
   const conAmigos = /\sdata-(o|fav|plan|autor|amigos-filtro)="|id="amigos-ficha"|id="barra"/.test(body);
   // Tarjetas (vídeo a la vista, cuenta atrás, distancia) y desplegables.
-  const conTarjetas = /class="(tj|tjs|ficha-media|desplegable|hoja)[" ]|data-src="/.test(body);
+  const conTarjetas = /class="(tj|tjs|ficha-media|desplegable|hoja)[" ]|data-src="|data-visor="/.test(body);
+  // El visor a pantalla completa pinta su galería con `assets/tarjeta.js`.
+  const conVisor = /data-visor="/.test(body);
   return `<!doctype html>
 <html lang="${en ? 'en' : 'es'}">
 <head>
@@ -271,8 +269,8 @@ ${erroresScript()}
 ${preconectar}<link rel="preload" href="/assets/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/assets/site.css?v=20261011">
-<link rel="stylesheet" href="/assets/public.css?v=31">
-<link rel="stylesheet" href="/assets/tarjeta.css?v=3">
+<link rel="stylesheet" href="/assets/public.css?v=32">
+<link rel="stylesheet" href="/assets/tarjeta.css?v=4">
 ${cabeza}
 </head>
 <body${bodyClass ? ` class="${esc(bodyClass)}"` : ''}>
@@ -280,7 +278,8 @@ ${siteHeader(lang, esc(es), esc(enPath), actual)}
 <main class="pub wrap" id="contenido">${body}</main>
 ${siteFooter(lang)}
 ${conAmigos ? `<script src="/assets/amigos.js?v=12" defer data-lang="${en ? 'en' : 'es'}"></script>
-` : ''}${conTarjetas ? `<script src="/assets/tarjetas.js?v=2" defer></script>
+` : ''}${conVisor ? `<script src="/assets/tarjeta.js?v=3" defer></script>
+` : ''}${conTarjetas ? `<script src="/assets/tarjetas.js?v=3" defer></script>
 ` : ''}${/class="detail[" ]/.test(body) ? `<script src="/assets/barra.js?v=3" defer></script>
 ` : ''}${contador ? CONTADOR : ''}
 </body></html>`;

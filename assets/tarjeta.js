@@ -37,6 +37,9 @@
 // - «Van mis amigos» (20261102*): `/assets/amigos.js` pinta quién va en
 //   `.tj-amigos` (con sesión, en el navegador: la página va en caché y no
 //   sabe quién mira).
+// - La galería (`galeria`) es la misma en la tarjeta, en la cabecera de las
+//   fichas y en el visor a pantalla completa (`visor`); las miniaturas que
+//   abren el visor (carta, novedades, reseñas), `miniatura`/`miniaturas`.
 (function () {
   'use strict';
 
@@ -107,14 +110,18 @@
       seats: (n) => (n === 1 ? 'Queda 1 plaza' : `Quedan ${n} plazas`), soldOut: 'Agotado',
       en: (l) => `en ${l}`, entradas: (p) => `Entradas en ${p}`, video: 'Vídeo',
       organiza: (n) => `Organiza: ${n}`, hoy: 'Hoy', manana: 'Mañana',
-      anterior: 'Foto anterior', siguiente: 'Foto siguiente', sonido: 'Sonido', play: 'Reproducir el vídeo',
+      anterior: 'Foto anterior', siguiente: 'Foto siguiente', sonido: 'Sonido', play: 'Reproducir vídeo',
+      galeria: 'Fotos y vídeos', ampliar: 'Ver a pantalla completa', cerrar: 'Cerrar',
+      pieza: (video, i, n) => `${video ? 'Vídeo' : 'Foto'}${n > 1 ? ` ${i} de ${n}` : ''}`,
     },
     en: {
       flash: 'Flash offer', event: 'Event', verOferta: 'See offer', verEvento: 'See event',
       seats: (n) => (n === 1 ? '1 place left' : `${n} places left`), soldOut: 'Sold out',
       en: (l) => `at ${l}`, entradas: (p) => `Tickets on ${p}`, video: 'Video',
       organiza: (n) => `Organised by ${n}`, hoy: 'Today', manana: 'Tomorrow',
-      anterior: 'Previous photo', siguiente: 'Next photo', sonido: 'Sound', play: 'Play the video',
+      anterior: 'Previous photo', siguiente: 'Next photo', sonido: 'Sound', play: 'Play video',
+      galeria: 'Photos and videos', ampliar: 'View full screen', cerrar: 'Close',
+      pieza: (video, i, n) => `${video ? 'Video' : 'Photo'}${n > 1 ? ` ${i} of ${n}` : ''}`,
     },
   };
 
@@ -128,6 +135,8 @@
     izq: 'M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z',
     mudo: 'M16.5 12A4.5 4.5 0 0 0 14 7.97v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51A8.796 8.796 0 0 0 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3 3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06a8.99 8.99 0 0 0 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4 9.91 6.09 12 8.18V4z',
     sonido: 'M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z',
+    ampliar: 'M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z',
+    cerrar: 'M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z',
   };
   const ic = (n, s = 16) => `<svg class="ic" viewBox="0 0 24 24" width="${s}" height="${s}" aria-hidden="true"><path fill="currentColor" d="${IC[n]}"/></svg>`;
 
@@ -258,31 +267,114 @@
    * Los vídeos empiezan en silencio; el altavoz les pone el sonido
    * (`/assets/tarjetas.js`). Sin JavaScript se deslizan igual. */
   function galeriaTarjeta(o, { primera, ancho, alto, S, href }) {
-    const piezas = (o.images || []).filter((u) => typeof u === 'string' && /^https:\/\//.test(u)).slice(0, 8);
+    const piezas = soloWeb(o.images).slice(0, 8);
     if (piezas.length < 2 && !(piezas[0] && isVideo(piezas[0]))) {
       return `<a class="tj-pieza" href="${esc(href)}" tabindex="-1" aria-hidden="true">${mediaTarjeta(o, { primera, ancho, alto, S })}</a>`;
     }
-    const fotos = piezas.filter((u) => !isVideo(u));
-    const portadaDe = (i) => fotos.find((u) => piezas.indexOf(u) > i) || fotos[0] || o.business_cover || null;
+    return galeria(piezas, { modo: 'tarjeta', primera, ancho, alto, S, href, portada: o.business_cover });
+  }
+
+  /** Solo enlaces https (lo que sube la gente o el negocio nunca es otra cosa). */
+  const soloWeb = (urls) => (urls || []).filter((u) => typeof u === 'string' && /^https:\/\//.test(u));
+
+  /**
+   * La galería de fotos y vídeos: UNA para la tarjeta, la ficha y el visor a
+   * pantalla completa (como `GalleryDots` + `InlineVideo` + `showPhotoViewer`
+   * en la app). El comportamiento (deslizar, puntos, flechas, sonido, el
+   * visor) lo pone `/assets/tarjetas.js`; sin JavaScript se desliza igual.
+   *
+   * - `tarjeta`: cada pieza lleva a la ficha (`href`); los puntos arriba.
+   * - `ficha`: la cabecera de la ficha de una publicación o de un negocio.
+   *   Tocar una pieza (o «Ver a pantalla completa») abre el visor con las
+   *   mismas piezas (`grupo`); sin JavaScript, la pieza abre el archivo.
+   * - `visor`: dentro del visor (`visor()`): la pieza entera (sin recortar),
+   *   flechas siempre en el escritorio y el contador fuera, en la barra.
+   *
+   * Los vídeos empiezan en silencio; el altavoz les pone el sonido. La
+   * portada de un vídeo es la foto siguiente (o la primera, o `portada`).
+   */
+  function galeria(urls, o = {}) {
+    const modo = o.modo === 'ficha' || o.modo === 'visor' ? o.modo : 'tarjeta';
+    const S = o.S || T[o.lang === 'en' ? 'en' : 'es'];
+    const piezas = soloWeb(urls).slice(0, o.max || 8);
     const n = piezas.length;
-    const pieza = (u, i) => {
+    if (!n) return '';
+    const [ancho, alto] = [o.ancho || 900, o.alto || 1125];
+    const fotos = piezas.filter((u) => !isVideo(u));
+    const portadaDe = (i) => fotos.find((u) => piezas.indexOf(u) > i) || fotos[0] || o.portada || null;
+    // En el visor cada pieza se anuncia («Foto 2 de 3»); fuera, el grupo y
+    // el estado ya lo dicen y las piezas no se leen.
+    const nombre = (u, i) => (modo === 'visor' ? `aria-label="${esc(S.pieza(isVideo(u), i + 1, n))}"` : 'aria-hidden="true"');
+    const media = (u, i) => {
       if (isVideo(u)) {
         const p = portadaDe(i);
         return `<video class="tj-img" muted playsinline loop disablepictureinpicture preload="${p ? 'none' : 'metadata'}"
-        ${p ? `poster="${esc(p)}"` : ''} data-src="${esc(u)}${p ? '' : '#t=0.1'}" width="${ancho}" height="${alto}" aria-hidden="true"></video>`;
+        ${p ? `poster="${esc(p)}"` : ''} data-src="${esc(u)}${p ? '' : '#t=0.1'}" width="${ancho}" height="${alto}" ${nombre(u, i)}></video>`;
       }
-      const carga = primera && i === 0 ? 'fetchpriority="high"' : 'loading="lazy" decoding="async"';
-      return `<img class="tj-img" src="${esc(u)}" alt="" width="${ancho}" height="${alto}" ${carga}>`;
+      const carga = o.primera && i === 0 ? 'fetchpriority="high"' : 'loading="lazy" decoding="async"';
+      return `<img class="tj-img" src="${esc(u)}" alt="${modo === 'visor' ? esc(S.pieza(false, i + 1, n)) : ''}" width="${ancho}" height="${alto}" ${carga}>`;
+    };
+    const grupo = esc(o.grupo || 'ficha');
+    const pieza = (u, i) => {
+      const clase = `tj-pieza${isVideo(u) ? ' es-video' : ''}`;
+      if (modo === 'visor') return `<div class="${clase}">${media(u, i)}</div>`;
+      const destino = modo === 'ficha' ? `${esc(u)}" data-visor="${grupo}" data-visor-i="${i}` : esc(o.href || '#');
+      return `<a class="${clase}" href="${destino}" tabindex="-1" aria-hidden="true">${media(u, i)}</a>`;
     };
     const hayVideo = piezas.some(isVideo);
-    return `<div class="tj-galeria" data-n="${n}">
-      <div class="tj-pista">${piezas.map((u, i) => `<a class="tj-pieza${isVideo(u) ? ' es-video' : ''}" href="${esc(href)}" tabindex="-1" aria-hidden="true">${pieza(u, i)}</a>`).join('')}</div>
-      ${n > 1 ? `<span class="tj-puntos" aria-hidden="true">${piezas.map((_, i) => `<i${i === 0 ? ' class="on"' : ''}></i>`).join('')}</span>
-      <button type="button" class="tj-flecha tj-ant" data-galeria="-1" aria-label="${esc(S.anterior)}" hidden>${ic('izq', 22)}</button>
+    const etiqueta = modo === 'tarjeta' ? ''
+      : ` role="group" aria-label="${esc(o.titulo ? `${S.galeria}: ${o.titulo}` : S.galeria)}"`;
+    return `<div class="tj-galeria tj-galeria--${modo}" data-n="${n}"${etiqueta}>
+      <div class="tj-pista">${piezas.map(pieza).join('')}</div>
+      ${n > 1 && modo !== 'visor' ? `<span class="tj-puntos" aria-hidden="true">${piezas.map((_, i) => `<i${i === 0 ? ' class="on"' : ''}></i>`).join('')}</span>` : ''}
+      ${n > 1 ? `<button type="button" class="tj-flecha tj-ant" data-galeria="-1" aria-label="${esc(S.anterior)}" hidden>${ic('izq', 22)}</button>
       <button type="button" class="tj-flecha tj-sig" data-galeria="1" aria-label="${esc(S.siguiente)}" hidden>${ic('flecha', 22)}</button>` : ''}
       ${hayVideo ? `<button type="button" class="tj-sonido" aria-pressed="false" aria-label="${esc(S.sonido)}" title="${esc(S.sonido)}" hidden>${ic('mudo', 20)}${ic('sonido', 20)}</button>
       <button type="button" class="tj-play" aria-label="${esc(S.play)}" hidden>${ic('play', 30)}</button>` : ''}
+      ${modo === 'ficha' ? `<button type="button" class="tj-ampliar" data-visor-abre aria-label="${esc(S.ampliar)}" title="${esc(S.ampliar)}" hidden>${ic('ampliar', 22)}</button>
+      ${n > 1 ? `<span class="sr tj-estado" aria-live="polite"></span>` : ''}` : ''}
     </div>`;
+  }
+
+  /**
+   * Una miniatura que abre el visor (las fotos de la carta, un plato, una
+   * novedad, los medios de una reseña). Las del mismo `grupo` se ven juntas
+   * en el visor, en el orden de `i`. Sin JavaScript abre el archivo.
+   * Un vídeo enseña su primer fotograma (se pide al acercarse, ver
+   * `/assets/tarjetas.js`) con el triángulo de reproducir encima.
+   */
+  function miniatura(u, { grupo, i = 0, n = 1, clase = 'mini', etiqueta = '', lang = 'es', ancho = 192, alto = 192, carga = 'lazy' }) {
+    if (!soloWeb([u]).length) return '';
+    const S = T[lang === 'en' ? 'en' : 'es'];
+    const video = isVideo(u);
+    const nombre = n === 1 && etiqueta ? `${S.ampliar}: ${etiqueta}`
+      : `${S.ampliar}: ${S.pieza(video, i + 1, n)}${etiqueta ? ` · ${etiqueta}` : ''}`;
+    return `<a class="${esc(clase)}${video ? ' es-video' : ''}" href="${esc(u)}" data-visor="${esc(grupo)}" data-visor-i="${i}" aria-label="${esc(nombre)}">${video
+      ? `<video muted playsinline preload="none" data-mini="${esc(u)}#t=0.1" width="${ancho}" height="${alto}" aria-hidden="true"></video><span class="mini-play" aria-hidden="true">${ic('play', 22)}</span>`
+      : `<img src="${esc(u)}" alt="" width="${ancho}" height="${alto}" loading="${carga === 'eager' ? 'eager' : 'lazy'}" decoding="async">`}</a>`;
+  }
+
+  /** Varias miniaturas seguidas, del mismo grupo. */
+  const miniaturas = (urls, { grupo, lang = 'es', clase = 'miniaturas', etiqueta = '' }) => {
+    const l = soloWeb(urls);
+    return l.length ? `<div class="${esc(clase)}">${l.map((u, i) => miniatura(u, { grupo, i, n: l.length, lang, etiqueta })).join('')}</div>` : '';
+  };
+
+  /** El visor a pantalla completa (lo abre `/assets/tarjetas.js`): como
+   * `showPhotoViewer` en la app, fondo negro, «Cerrar» arriba a la izquierda
+   * y «2 / 3» a la derecha. Escape o deslizar hacia abajo lo cierran. */
+  function visor(urls, { lang = 'es', i = 0 } = {}) {
+    const S = T[lang === 'en' ? 'en' : 'es'];
+    const l = soloWeb(urls);
+    const n = l.length;
+    const j = Math.max(0, Math.min(n - 1, i));
+    return `<dialog class="visor" aria-label="${esc(S.galeria)}">
+      <div class="visor-barra">
+        <button type="button" class="visor-cerrar" data-visor-cierra aria-label="${esc(S.cerrar)}" title="${esc(S.cerrar)}" autofocus>${ic('cerrar', 24)}</button>
+        ${n > 1 ? `<span class="visor-n"><span aria-hidden="true">${j + 1} / ${n}</span><span class="sr" aria-live="polite">${esc(S.pieza(isVideo(l[j]), j + 1, n))}</span></span>` : ''}
+      </div>
+      ${galeria(l, { modo: 'visor', lang, ancho: 1080, alto: 1350 })}
+    </dialog>`;
   }
 
   /**
@@ -386,6 +478,8 @@
   const KlendarTarjeta = {
     PLANTILLAS, tarjeta, rejilla, distancia, colorSeguro, estiloDe, sobreAcento, plataformaEntradas, sitioDe,
     cuandoCorto, money, fmtDay, fmtTime, sameDay, fmtEnd, benefit, priorPrice, isVideo, esc,
+    galeria, miniatura, miniaturas, visor, soloWeb,
+    nombrePieza: (video, i, n, lang) => T[lang === 'en' ? 'en' : 'es'].pieza(video, i, n),
   };
   globalThis.KlendarTarjeta = KlendarTarjeta;
   if (typeof module === 'object' && module && module.exports) module.exports = KlendarTarjeta;
