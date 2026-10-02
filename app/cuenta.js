@@ -928,19 +928,113 @@ const campoNombrePublico = () => `
         <input name="nombre" maxlength="40" autocomplete="name"></label>`;
 
 // ── Reseñas ───────────────────────────────────────────────────────────────
+// Con hasta 6 fotos y vídeos (klendar/docs/RESENAS_MEDIOS.md, migración
+// 20261104100000): se suben al elegirlos (`reviews/<tu id>/`), se quitan y se
+// reordenan, y al publicar se manda la lista entera y en orden (`p_media`).
+// Las fotos, reducidas y sin EXIF (assets/fotos.js); los vídeos, sin dónde se
+// grabaron (app/medios.js), con su duración y su fotograma.
+Object.assign(ERRORES, {
+  too_many_media: 'Como mucho 6 fotos y vídeos.',
+  video_too_long: 'El vídeo dura más de 30 segundos.',
+  media_too_big: 'El archivo pesa demasiado (foto 10 MB, vídeo 60 MB).',
+  media_type_mismatch: 'Ese archivo no es una foto o un vídeo que podamos usar.',
+  media_not_found: 'No se ha terminado de subir: vuelve a intentarlo.',
+  video_duration_required: 'No hemos podido medir el vídeo. Prueba con otro.',
+  media_invalid: 'Algo no ha ido bien con las fotos y vídeos. Vuelve a probar.',
+});
+
+/** Los límites (los da la base; estos, si no contesta). */
+const LIM_MEDIOS = { max: 6, videoSeg: 30, videoBytes: 60 * 1024 * 1024, fotoBytes: 10 * 1024 * 1024 };
+async function limitesMedios() {
+  try {
+    const l = await llamar('review_media_limits');
+    if (l && l.max_items) {
+      Object.assign(LIM_MEDIOS, {
+        max: Number(l.max_items), videoSeg: Number(l.video_max_seconds),
+        videoBytes: Number(l.video_max_bytes), fotoBytes: Number(l.photo_max_bytes),
+      });
+    }
+  } catch { /* los de arriba */ }
+  return LIM_MEDIOS;
+}
+
+/** Sube un fichero a tu carpeta de reseñas y devuelve su dirección pública. */
+async function subeAResenas(nombre, blob, tipo) {
+  const ruta = `reviews/${YO.id}/${nombre}`;
+  const { error } = await sb.storage.from('business-images').upload(ruta, blob, { contentType: tipo });
+  if (error) throw Object.assign(new Error(amable(error.message)), { clave: error.message });
+  return sb.storage.from('business-images').getPublicUrl(ruta).data.publicUrl;
+}
+
+/** Una foto o un vídeo elegido, listo para la reseña: `{ url, kind, … }`. */
+async function preparaMedio(archivo) {
+  const id = crypto.randomUUID();
+  const esVideo = /^video\//.test(archivo.type) || /\.(mp4|mov|m4v)$/i.test(archivo.name || '');
+  if (esVideo) {
+    const tipo = /quicktime/.test(archivo.type) || /\.mov$/i.test(archivo.name || '') ? 'video/quicktime' : 'video/mp4';
+    if (archivo.type && !/^video\/(mp4|quicktime)$/.test(archivo.type)) throw new Error(t(ERRORES.media_type_mismatch));
+    if (archivo.size > LIM_MEDIOS.videoBytes) throw new Error(t('El vídeo pesa más de 60 MB.'));
+    const d = await KMedios.datos(archivo);
+    if (!d || !d.duracion) throw new Error(t('Ese vídeo no se puede abrir. Prueba con un MP4.'));
+    if (d.duracion > LIM_MEDIOS.videoSeg + 0.5) throw new Error(t(ERRORES.video_too_long));
+    const { blob, limpio } = await KMedios.limpia(archivo, tipo);
+    const url = await subeAResenas(`${id}.${tipo === 'video/quicktime' ? 'mov' : 'mp4'}`, blob, tipo);
+    const poster = d.portada ? await subeAResenas(`${id}-poster.jpg`, d.portada, 'image/jpeg').catch(() => null) : null;
+    return {
+      url, kind: 'video', poster_url: poster, width: d.ancho, height: d.alto,
+      duration_ms: Math.round(d.duracion * 1000), limpio,
+    };
+  }
+  if (archivo.size > 20 * 1024 * 1024) throw new Error(t('La foto pesa demasiado. Prueba con otra más pequeña.'));
+  const blob = await KFotos.reduce(archivo, KFotos.TAM.resena);
+  if (!/^image\/(jpeg|png|webp)$/.test(blob.type)) throw new Error(t('Esa imagen no se puede abrir. Prueba con una foto JPG o PNG.'));
+  if (blob.size > LIM_MEDIOS.fotoBytes) throw new Error(t('La foto pesa demasiado. Prueba con otra más pequeña.'));
+  const ext = blob.type === 'image/jpeg' ? 'jpg' : blob.type.split('/')[1];
+  return { url: await subeAResenas(`${id}.${ext}`, blob, blob.type), kind: 'photo' };
+}
+
+/** «0:12»: lo que dura un vídeo. */
+const duracionMedio = (ms) => {
+  const sg = Math.max(1, Math.round(ms / 1000));
+  return `${Math.floor(sg / 60)}:${String(sg % 60).padStart(2, '0')}`;
+};
+
+/** «Foto 2 de 3» / «Vídeo 1 de 3». */
+const nombreMedio = (m, i, n) => (EN
+  ? `${m.kind === 'video' ? 'Video' : 'Photo'} ${i + 1} of ${n}`
+  : `${m.kind === 'video' ? 'Vídeo' : 'Foto'} ${i + 1} de ${n}`);
+
+// Iconos de la lista (en SVG: la fuente de iconos de «Tu cuenta» va recortada).
+const IC_MEDIO = {
+  izq: 'M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z',
+  der: 'M8.59 16.59 13.17 12 8.59 7.41 10 6l6 6-6 6z',
+  quitar: 'M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z',
+  play: 'M8 5v14l11-7z',
+};
+const icMedio = (n, s = 18) => `<svg viewBox="0 0 24 24" width="${s}" height="${s}" aria-hidden="true"><path fill="currentColor" d="${IC_MEDIO[n]}"/></svg>`;
+
 RUTAS.opinar = async ([id]) => {
   if (!exigeSesion(`opinar/${id}`)) return;
-  const [fila, resenas, miNombre] = await Promise.all([
+  const [fila, propia, miNombre] = await Promise.all([
     llamar('business_profile', { p_id: id }),
-    llamar('business_reviews', { p_id: id, p_limit: 50 }),
+    // La tuya con sus fotos y vídeos; sin `my_review` (base anterior), de la lista.
+    llamar('my_review', { p_business: id }).catch(() => undefined),
     nombrePublico(),
+    limitesMedios(),
   ]);
   const b = Array.isArray(fila) ? fila[0] : fila;
   if (!b) { pinta(pantallaVacia({ icono: 'storefront', titulo: t('Ese sitio ya no está en Klendar.'), h: 'h1', botones: botonTuCuenta() })); return; }
-  // La tuya, aunque no esté entre las 50 últimas: la ficha trae tu nota, tu
-  // texto y tu foto (si no, editar una reseña antigua empezaba en blanco).
-  const mia = (resenas || []).find((r) => r.is_mine)
-    || (b.my_rating ? { id: true, rating: b.my_rating, comment: b.my_comment, photo_url: b.my_photo_url } : {});
+  let mia = propia || {};
+  if (propia === undefined) {
+    const resenas = await llamar('business_reviews', { p_id: id, p_limit: 50 }).catch(() => []);
+    mia = (resenas || []).find((r) => r.is_mine)
+      || (b.my_rating ? { id: true, rating: b.my_rating, comment: b.my_comment, photo_url: b.my_photo_url } : {});
+  }
+  // Lo que ya tenía: `media` o, en una reseña de antes, su foto.
+  let medios = Array.isArray(mia.media)
+    ? mia.media.map((m) => ({ url: m.url, kind: m.kind, poster_url: m.poster_url, width: m.width, height: m.height, duration_ms: m.duration_ms, in_review: m.in_review }))
+    : (mia.photo_url ? [{ url: mia.photo_url, kind: 'photo' }] : []);
+  const tactil = window.matchMedia('(pointer: coarse)').matches;
   pinta(`
     <p class="crumbs"><a href="${pre}/b/${esc(id)}">${esc(b.name)}</a></p>
     <h1>${esc(mia.id ? t('Editar mi reseña') : t('Escribir una reseña'))}</h1>
@@ -951,43 +1045,156 @@ RUTAS.opinar = async ([id]) => {
       </fieldset>
       <label>${esc(t('¿Qué tal fue?'))} <small>${esc(t('(opcional)'))}</small>
         <textarea name="texto" rows="5" maxlength="500">${esc(mia.comment || '')}</textarea></label>
-      <div class="foto-fila">
-        ${mia.photo_url ? `<img id="prev" src="${esc(mia.photo_url)}" alt="">` : '<img id="prev" alt="" hidden>'}
-        <label class="pill">${esc(mia.photo_url ? t('Cambiar la foto') : t('Añadir una foto'))}<input type="file" name="foto" accept="image/*" hidden></label>
-        ${mia.photo_url ? `<button type="button" class="linkbtn" id="quitaFoto">${esc(t('Quitar la foto'))}</button>` : ''}
-      </div>
+      <fieldset class="medios-resena"><legend>${esc(t('Fotos y vídeos'))} <small class="muted" id="mCuenta"></small></legend>
+        <ul class="medios-lista" id="mLista"></ul>
+        <p class="medios-add" id="mAdd">
+          <button type="button" class="pill" data-elige="mElige">${esc(t('Añadir fotos o vídeos'))}</button>
+          ${tactil ? `<button type="button" class="pill" data-elige="mFoto">${esc(t('Hacer una foto'))}</button>
+          <button type="button" class="pill" data-elige="mVideo">${esc(t('Grabar un vídeo'))}</button>` : ''}
+        </p>
+        <input type="file" id="mElige" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,video/mp4,video/quicktime" multiple hidden>
+        <input type="file" id="mFoto" accept="image/*" capture="environment" hidden>
+        <input type="file" id="mVideo" accept="video/*" capture="environment" hidden>
+        <p class="muted pie-form">${esc(t('Hasta 6 fotos y vídeos; cada vídeo, de 30 segundos como mucho. Les quitamos dónde se hicieron y con qué móvil.'))}</p>
+        <p class="sr" id="mVivo" aria-live="polite"></p>
+      </fieldset>
       ${miNombre === null ? campoNombrePublico() : ''}
       <p class="muted">${esc(t('Tu nombre y tu foto de perfil salen junto a la reseña. Sigue las normas de la comunidad: sin insultos ni datos de nadie.'))}</p>
       <p class="err" id="err" role="alert"></p>
       <button class="pill accent" id="publicar">${esc(t('Publicar'))}</button>
     </form>`);
   const f = $('#f');
-  f.foto.addEventListener('change', () => {
-    const img = $('#prev');
-    const archivo = f.foto.files[0];
-    if (archivo) { img.src = URL.createObjectURL(archivo); img.hidden = false; }
+  const subiendo = () => medios.some((m) => m.subiendo);
+  const vivo = (txt) => { $('#mVivo').textContent = txt; };
+
+  const pintaMedios = (foco) => {
+    const n = medios.length;
+    $('#mCuenta').textContent = EN ? `${n} of ${LIM_MEDIOS.max}` : `${n} de ${LIM_MEDIOS.max}`;
+    $('#mLista').innerHTML = medios.map((m, i) => {
+      const nombre = nombreMedio(m, i, n);
+      const vista = m.subiendo
+        ? `<span class="medio-sube">${esc(t('Subiendo…'))}</span>`
+        : m.kind === 'video'
+          ? `${m.poster_url ? `<img src="${esc(m.poster_url)}" alt="">` : `<video src="${esc(m.url)}#t=0.1" muted playsinline preload="metadata" aria-hidden="true"></video>`}
+            <span class="medio-play">${icMedio('play', 16)}</span>${m.duration_ms ? `<span class="medio-dur">${esc(duracionMedio(m.duration_ms))}</span>` : ''}`
+          : `<img src="${esc(m.local || m.url)}" alt="">`;
+      return `<li class="medio${m.subiendo ? ' subiendo' : ''}" data-i="${i}"${m.subiendo ? '' : ' draggable="true"'}>
+        <span class="medio-vista" role="img" aria-label="${esc(nombre)}">${vista}${m.in_review ? `<span class="medio-rev">${esc(t('En revisión'))}</span>` : ''}</span>
+        <span class="medio-botones">
+          <button type="button" data-mv="-1" aria-label="${esc(`${t('Mover antes')}: ${nombre}`)}" title="${esc(t('Mover antes'))}"${i === 0 || m.subiendo ? ' disabled' : ''}>${icMedio('izq')}</button>
+          <button type="button" data-mv="1" aria-label="${esc(`${t('Mover después')}: ${nombre}`)}" title="${esc(t('Mover después'))}"${i === n - 1 || m.subiendo ? ' disabled' : ''}>${icMedio('der')}</button>
+          <button type="button" data-quita aria-label="${esc(`${t('Quitar')}: ${nombre}`)}" title="${esc(t('Quitar'))}"${m.subiendo ? ' disabled' : ''}>${icMedio('quitar')}</button>
+        </span>
+      </li>`;
+    }).join('');
+    const lleno = n >= LIM_MEDIOS.max;
+    $$('#mAdd [data-elige]').forEach((btn) => { btn.disabled = lleno; });
+    $('#publicar').disabled = subiendo();
+    if (foco) $(foco)?.focus();
+  };
+
+  const mueve = (i, d, sel) => {
+    const j = i + d;
+    if (j < 0 || j >= medios.length) return;
+    [medios[i], medios[j]] = [medios[j], medios[i]];
+    pintaMedios(`#mLista [data-i="${j}"] ${sel}`);
+    vivo(EN ? `Moved: now ${j + 1} of ${medios.length}` : `Movida: ahora es la ${j + 1} de ${medios.length}`);
+  };
+  $('#mLista').addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    const li = btn?.closest('.medio');
+    if (!btn || !li) return;
+    const i = Number(li.dataset.i);
+    if (btn.hasAttribute('data-quita')) {
+      const quitada = medios.splice(i, 1)[0];
+      if (quitada?.local) URL.revokeObjectURL(quitada.local);
+      pintaMedios(medios.length ? `#mLista [data-i="${Math.min(i, medios.length - 1)}"] [data-quita]` : '#mAdd [data-elige]');
+      vivo(t('Quitada'));
+      return;
+    }
+    if (btn.dataset.mv) mueve(i, Number(btn.dataset.mv), `[data-mv="${btn.dataset.mv}"]`);
   });
-  // Quitar la foto que tenía: se manda vacía (sin nada, la base la conserva).
-  let quitar = false;
-  const quita = $('#quitaFoto');
-  if (quita) {
-    quita.onclick = () => { quitar = true; f.foto.value = ''; $('#prev').hidden = true; quita.hidden = true; };
-  }
+  // Arrastrar para ordenar (con ratón; en el móvil y con el teclado, las flechas).
+  let arrastrada = null;
+  $('#mLista').addEventListener('dragstart', (e) => {
+    const li = e.target.closest('.medio');
+    if (!li) return;
+    arrastrada = Number(li.dataset.i);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(arrastrada));
+  });
+  $('#mLista').addEventListener('dragover', (e) => { if (arrastrada != null) e.preventDefault(); });
+  $('#mLista').addEventListener('drop', (e) => {
+    const li = e.target.closest('.medio');
+    if (arrastrada == null || !li) return;
+    e.preventDefault();
+    const destino = Number(li.dataset.i);
+    const [m] = medios.splice(arrastrada, 1);
+    medios.splice(destino, 0, m);
+    arrastrada = null;
+    pintaMedios();
+  });
+  $('#mLista').addEventListener('dragend', () => { arrastrada = null; });
+
+  $$('#mAdd [data-elige]').forEach((btn) => { btn.onclick = () => $(`#${btn.dataset.elige}`).click(); });
+  const alElegir = async (input) => {
+    const libres = LIM_MEDIOS.max - medios.length;
+    const elegidos = [...input.files];
+    input.value = '';
+    if (!elegidos.length) return;
+    if (elegidos.length > libres) toast(t('Como mucho 6 fotos y vídeos.'), true);
+    const tanda = elegidos.slice(0, Math.max(0, libres)).map((archivo) => {
+      const m = { kind: /^video\//.test(archivo.type) ? 'video' : 'photo', subiendo: true };
+      medios.push(m);
+      return [m, archivo];
+    });
+    pintaMedios();
+    let sinLimpiar = false;
+    await Promise.all(tanda.map(async ([m, archivo]) => {
+      try {
+        const listo = await preparaMedio(archivo);
+        if (listo.limpio === false) sinLimpiar = true;
+        delete listo.limpio;
+        Object.assign(m, listo, { subiendo: false });
+        if (m.kind === 'photo') m.local = URL.createObjectURL(archivo);
+      } catch (e) {
+        medios = medios.filter((x) => x !== m);
+        toast(`${archivo.name ? `${archivo.name}: ` : ''}${e.message || amable('')}`, true);
+      }
+      if (f.isConnected) pintaMedios();
+    }));
+    if (sinLimpiar) toast(t('No hemos podido quitar del vídeo dónde se grabó. Si no quieres que se sepa, súbelo desde la app.'), true);
+    if (f.isConnected) vivo(EN ? `${medios.length} of ${LIM_MEDIOS.max}` : `${medios.length} de ${LIM_MEDIOS.max}`);
+  };
+  ['#mElige', '#mFoto', '#mVideo'].forEach((s) => { $(s).addEventListener('change', (e) => alElegir(e.target)); });
+  pintaMedios();
+
   f.addEventListener('submit', (ev) => {
     ev.preventDefault();
     const nota = Number(f.nota.value);
     if (!nota) { $('#err').textContent = t('Elige de una a cinco estrellas.'); return; }
+    if (subiendo()) { $('#err').textContent = t('Espera a que terminen de subirse las fotos y vídeos.'); return; }
     $('#err').textContent = '';
     ocupado($('#publicar'), async () => {
       if (f.nombre?.value.trim()) await guardaNombrePublico(f.nombre.value);
-      const foto = f.foto.files[0] ? await subeFoto('reviews', f.foto.files[0], KFotos.TAM.resena) : (quitar ? '' : null);
-      await llamar('upsert_review', {
-        p_business_id: id, p_rating: nota, p_comment: f.texto.value.trim() || null, p_photo_url: foto,
+      const res = await llamar('upsert_review', {
+        p_business_id: id, p_rating: nota, p_comment: f.texto.value.trim() || null,
+        p_media: medios.map((m) => {
+          const x = { url: m.url, kind: m.kind };
+          if (m.kind === 'video') {
+            if (m.poster_url) x.poster_url = m.poster_url;
+            if (m.duration_ms) x.duration_ms = m.duration_ms;
+          }
+          if (m.width) x.width = m.width;
+          if (m.height) x.height = m.height;
+          return x;
+        }),
       });
+      medios.forEach((m) => { if (m.local) URL.revokeObjectURL(m.local); });
       // Con lenguaje ofensivo queda en revisión: hasta entonces solo la ves tú.
-      const estado = await tabla(sb.from('reviews').select('moderation_status')
-        .eq('business_id', id).eq('user_id', YO.id).maybeSingle()).catch(() => null);
-      const enRevision = estado?.moderation_status === 'pending';
+      const enRevision = res && typeof res === 'object' && 'in_review' in res ? Boolean(res.in_review)
+        : (await tabla(sb.from('reviews').select('moderation_status')
+          .eq('business_id', id).eq('user_id', YO.id).maybeSingle()).catch(() => null))?.moderation_status === 'pending';
       hecho({
         titulo: enRevision ? t('Tu reseña está en revisión') : t('Reseña publicada. ¡Gracias!'),
         texto: enRevision
@@ -1200,10 +1407,13 @@ const MOTIVOS_DE = {
   business: ['spam', 'inappropriate', 'closed', 'illegal', 'child_abuse', 'other'],
   review: ['spam', 'inappropriate', 'illegal', 'child_abuse', 'other'],
   post: ['spam', 'inappropriate', 'illegal', 'child_abuse', 'other'],
+  review_media: ['spam', 'inappropriate', 'illegal', 'child_abuse', 'other'],
 };
 const QUE_SE_DENUNCIA = {
   offer: 'Denunciar una publicación', business: 'Denunciar un negocio',
   review: 'Denunciar una reseña', post: 'Denunciar una novedad',
+  // Una sola foto o un solo vídeo de una reseña (el «Denunciar» del visor).
+  review_media: 'Denunciar una foto o un vídeo',
 };
 // Lo que contesta `report-public` (y `report_public`), dicho para personas.
 const ERR_DENUNCIA = {
@@ -1235,7 +1445,7 @@ async function contenidoDeUrl(texto) {
     || /(^|\.)klendar\.app$|\.klendar-web\.pages\.dev$|^localhost$|^127\.0\.0\.1$/i.test(u.hostname);
   if (!/^https?:$/.test(u.protocol) || !propio) return null;
   const hash = decodeURIComponent(u.hash || '');
-  let m = hash.match(new RegExp(`^#/?denunciar/(offer|business|review|post)/(${UUID_DENUNCIA})`, 'i'));
+  let m = hash.match(new RegExp(`^#/?denunciar/(offer|business|review_media|review|post)/(${UUID_DENUNCIA})`, 'i'));
   if (m) return { tipo: m[1], id: m[2].toLowerCase() };
   const camino = u.pathname.replace(/^\/en(?=\/)/, '');
   m = camino.match(new RegExp(`^/(?:o|cartel|poster|widget)/(${UUID_DENUNCIA})`, 'i'));

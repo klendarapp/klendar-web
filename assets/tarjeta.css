@@ -290,6 +290,12 @@ html.con-visor { overflow: hidden; }
   background: rgba(10,10,10,.6); color: #fff; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
 .visor-cerrar:hover { background: rgba(40,40,40,.8); }
 .visor-cerrar:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.visor-der { display: flex; align-items: center; gap: 8px; }
+.visor-denuncia { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; border-radius: 999px; color: #fff;
+  background: rgba(10,10,10,.6); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); font-weight: 700; font-size: 14px; }
+.visor-denuncia:hover { background: rgba(40,40,40,.8); text-decoration: none; }
+.visor-denuncia:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.visor-denuncia[hidden] { display: none; }
 .visor-n { padding: 6px 12px; border-radius: 999px; background: rgba(10,10,10,.6); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
   font-weight: 700; font-size: 14px; font-variant-numeric: tabular-nums; }
 .visor .tj-flecha { width: 48px; height: 48px; margin-top: -24px; }
@@ -303,7 +309,11 @@ html.con-visor { overflow: hidden; }
 /* ── Miniaturas que abren el visor (carta, novedades, reseñas) ─────────── */
 .miniaturas { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 0; }
 .mini, .carta-foto, .nov-media, .dish { position: relative; display: block; overflow: hidden; background: var(--soft); cursor: zoom-in; }
-.mini { width: 96px; height: 96px; flex: none; border-radius: 14px; }
+/* Cuadradas de 72, como en la app (docs/RESENAS_MEDIOS.md §5). */
+.mini { width: 72px; height: 72px; flex: none; border-radius: 12px; }
+.mini .mini-play { width: 30px; height: 30px; margin: -15px 0 0 -15px; }
+.mini-dur { position: absolute; right: 4px; bottom: 4px; padding: 1px 5px; border-radius: 6px; background: rgba(10,10,10,.7); color: #fff;
+  font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; pointer-events: none; }
 .mini img, .mini video, .carta-foto img, .carta-foto video, .nov-media img, .nov-media video, .dish img, .dish video {
   width: 100%; height: 100%; object-fit: cover; display: block; }
 .mini video, .carta-foto video, .nov-media video, .dish video { background: #0A0A0A; }

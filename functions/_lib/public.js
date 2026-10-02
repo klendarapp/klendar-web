@@ -270,7 +270,7 @@ ${preconectar}<link rel="preload" href="/assets/fonts/manrope-latin.woff2" as="f
 <link rel="preload" href="/assets/fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/assets/site.css?v=20261011">
 <link rel="stylesheet" href="/assets/public.css?v=32">
-<link rel="stylesheet" href="/assets/tarjeta.css?v=4">
+<link rel="stylesheet" href="/assets/tarjeta.css?v=5">
 ${cabeza}
 </head>
 <body${bodyClass ? ` class="${esc(bodyClass)}"` : ''}>
@@ -278,8 +278,8 @@ ${siteHeader(lang, esc(es), esc(enPath), actual)}
 <main class="pub wrap" id="contenido">${body}</main>
 ${siteFooter(lang)}
 ${conAmigos ? `<script src="/assets/amigos.js?v=12" defer data-lang="${en ? 'en' : 'es'}"></script>
-` : ''}${conVisor ? `<script src="/assets/tarjeta.js?v=3" defer></script>
-` : ''}${conTarjetas ? `<script src="/assets/tarjetas.js?v=3" defer></script>
+` : ''}${conVisor ? `<script src="/assets/tarjeta.js?v=4" defer></script>
+` : ''}${conTarjetas ? `<script src="/assets/tarjetas.js?v=4" defer></script>
 ` : ''}${/class="detail[" ]/.test(body) ? `<script src="/assets/barra.js?v=3" defer></script>
 ` : ''}${contador ? CONTADOR : ''}
 </body></html>`;

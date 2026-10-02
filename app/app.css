@@ -357,3 +357,33 @@ button.codigo.copiar .ms { font-size: 18px; color: var(--ink-2); letter-spacing:
 .dialogo-lista { margin: 0 0 16px; padding-left: 20px; font-size: 14px; max-height: 40vh; overflow-y: auto; }
 .dialogo-lista li + li { margin-top: 4px; }
 .dialogo-lista li:first-child { list-style: none; margin-left: -20px; font-weight: 700; }
+
+/* Fotos y vídeos de una reseña (klendar/docs/RESENAS_MEDIOS.md): miniaturas
+   en su orden, cada una con «Mover antes», «Mover después» y «Quitar»; se
+   ordenan también arrastrando con el ratón. */
+.medios-resena { border: 0; padding: 0; margin: 0; min-width: 0; }
+.medios-resena legend { font-weight: 700; padding: 0; margin-bottom: 8px; }
+.medios-lista { list-style: none; display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 10px; padding: 0; }
+.medios-lista:empty { display: none; }
+.medio { display: grid; gap: 4px; width: 96px; }
+.medio[draggable=true] { cursor: grab; }
+.medio-vista { position: relative; display: grid; place-items: center; width: 96px; height: 96px; border-radius: 14px; overflow: hidden;
+  background: var(--soft); }
+.medio-vista img, .medio-vista video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.medio-sube { font-size: 12px; font-weight: 700; color: var(--ink-2); text-align: center; padding: 6px; }
+.medio.subiendo .medio-vista { animation: medio-late 1.2s ease-in-out infinite alternate; }
+@keyframes medio-late { from { opacity: 1; } to { opacity: .55; } }
+@media (prefers-reduced-motion: reduce) { .medio.subiendo .medio-vista { animation: none; } }
+.medio-play { position: absolute; left: 50%; top: 50%; width: 30px; height: 30px; margin: -15px 0 0 -15px; display: grid; place-items: center;
+  border-radius: 50%; background: rgba(10,10,10,.6); color: #fff; }
+.medio-dur, .medio-rev { position: absolute; bottom: 4px; padding: 1px 5px; border-radius: 6px; background: rgba(10,10,10,.7); color: #fff;
+  font-size: 11px; font-weight: 700; }
+.medio-dur { right: 4px; font-variant-numeric: tabular-nums; }
+.medio-rev { left: 4px; top: 4px; bottom: auto; }
+.medio-botones { display: flex; justify-content: space-between; }
+.medio-botones button { width: 30px; height: 30px; display: grid; place-items: center; padding: 0; border-radius: 50%;
+  border: 1px solid var(--glass-border); background: var(--elevated); color: var(--ink); cursor: pointer; }
+.medio-botones button:hover:not(:disabled) { background: var(--soft); }
+.medio-botones button:disabled { opacity: .35; cursor: default; }
+.medio-botones button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.medios-add { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 6px; }

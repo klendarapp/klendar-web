@@ -402,11 +402,19 @@ function queSellaFicha(c, S, en) {
   }
   return S.stampsAll;
 }
-/** Las fotos y vídeos de una reseña: miniaturas que abren el visor (con
- * carrusel y sonido), como en la app. */
+/** Las fotos y vídeos de una reseña (`media`, hasta 6, en su orden;
+ * klendar/docs/RESENAS_MEDIOS.md): miniaturas que abren el visor (con
+ * carrusel y sonido), como en la app. Lo que está en revisión no sale (la
+ * ficha va sin sesión). Sin `media` (antes de 20261104100000), la foto única. */
 function resenaMedios(r, lang) {
-  const urls = r.photo_url ? [r.photo_url] : [];
-  return miniaturas(urls, { grupo: `resena-${r.id}`, lang, clase: 'miniaturas resena-medios', etiqueta: lang === 'en' ? 'Review' : 'Reseña' });
+  const urls = Array.isArray(r.media)
+    ? r.media.filter((m) => m && !m.in_review).map((m) => ({
+        url: m.url, kind: m.kind, poster_url: m.poster_url, duration_ms: m.duration_ms,
+        // En el visor, «Denunciar» esa foto o ese vídeo solo.
+        denuncia: isUuid(m.id) ? `${cuenta(lang)}#/denunciar/review_media/${m.id}` : null,
+      }))
+    : (r.photo_url ? [r.photo_url] : []);
+  return miniaturas(urls, { grupo: `resena-${r.id}`, lang, clase: 'miniaturas resena-medios' });
 }
 
 /** Lo de arriba y, si la tarjeta también sella por visita, dicho. */

@@ -129,6 +129,13 @@
       var txt = nombrePieza(Boolean(v), i + 1, n);
       var estado = g.querySelector('.tj-estado');
       if (estado && !primeraVez) estado.textContent = txt;
+      // «Denunciar» de la pieza que se ve (los medios de una reseña).
+      var den = g.closest('.visor') && g.closest('.visor').querySelector('.visor-denuncia');
+      if (den) {
+        var dd = pieza && pieza.getAttribute('data-denuncia');
+        den.hidden = !dd;
+        if (dd) den.setAttribute('href', dd);
+      }
       var barra = g.closest('.visor') && g.closest('.visor').querySelector('.visor-n');
       if (barra) {
         barra.firstElementChild.textContent = (i + 1) + ' / ' + n;
@@ -309,7 +316,16 @@
     document.querySelectorAll('[data-visor]').forEach(function (a) {
       if (a.getAttribute('data-visor') !== grupo || (visor && visor.contains(a))) return;
       var i = Number(a.getAttribute('data-visor-i')) || 0;
-      if (!urls[i]) urls[i] = a.getAttribute('href');
+      // El tipo y la portada, si la miniatura los sabe (los medios de una
+      // reseña); si no, el tipo sale de la extensión.
+      if (!urls[i]) {
+        urls[i] = {
+          url: a.getAttribute('href'),
+          video: a.hasAttribute('data-visor-video') ? true : null,
+          poster: a.getAttribute('data-visor-poster') || null,
+          denuncia: a.getAttribute('data-visor-denuncia') || null,
+        };
+      }
     });
     return urls.filter(Boolean);
   }

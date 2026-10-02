@@ -111,7 +111,7 @@
       en: (l) => `en ${l}`, entradas: (p) => `Entradas en ${p}`, video: 'Vídeo',
       organiza: (n) => `Organiza: ${n}`, hoy: 'Hoy', manana: 'Mañana',
       anterior: 'Foto anterior', siguiente: 'Foto siguiente', sonido: 'Sonido', play: 'Reproducir vídeo',
-      galeria: 'Fotos y vídeos', ampliar: 'Ver a pantalla completa', cerrar: 'Cerrar',
+      galeria: 'Fotos y vídeos', ampliar: 'Ver a pantalla completa', cerrar: 'Cerrar', denunciar: 'Denunciar',
       pieza: (video, i, n) => `${video ? 'Vídeo' : 'Foto'}${n > 1 ? ` ${i} de ${n}` : ''}`,
     },
     en: {
@@ -120,7 +120,7 @@
       en: (l) => `at ${l}`, entradas: (p) => `Tickets on ${p}`, video: 'Video',
       organiza: (n) => `Organised by ${n}`, hoy: 'Today', manana: 'Tomorrow',
       anterior: 'Previous photo', siguiente: 'Next photo', sonido: 'Sound', play: 'Play video',
-      galeria: 'Photos and videos', ampliar: 'View full screen', cerrar: 'Close',
+      galeria: 'Photos and videos', ampliar: 'View full screen', cerrar: 'Close', denunciar: 'Report',
       pieza: (video, i, n) => `${video ? 'Video' : 'Photo'}${n > 1 ? ` ${i} of ${n}` : ''}`,
     },
   };
@@ -136,6 +136,7 @@
     mudo: 'M16.5 12A4.5 4.5 0 0 0 14 7.97v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51A8.796 8.796 0 0 0 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3 3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06a8.99 8.99 0 0 0 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4 9.91 6.09 12 8.18V4z',
     sonido: 'M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z',
     ampliar: 'M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z',
+    bandera: 'M14.4 6 14 4H5v17h2v-7h5.6l.4 2h7V6z',
     cerrar: 'M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z',
   };
   const ic = (n, s = 16) => `<svg class="ic" viewBox="0 0 24 24" width="${s}" height="${s}" aria-hidden="true"><path fill="currentColor" d="${IC[n]}"/></svg>`;
@@ -296,32 +297,33 @@
   function galeria(urls, o = {}) {
     const modo = o.modo === 'ficha' || o.modo === 'visor' ? o.modo : 'tarjeta';
     const S = o.S || T[o.lang === 'en' ? 'en' : 'es'];
-    const piezas = soloWeb(urls).slice(0, o.max || 8);
+    const piezas = piezasDe(urls).slice(0, o.max || 8);
     const n = piezas.length;
     if (!n) return '';
     const [ancho, alto] = [o.ancho || 900, o.alto || 1125];
-    const fotos = piezas.filter((u) => !isVideo(u));
-    const portadaDe = (i) => fotos.find((u) => piezas.indexOf(u) > i) || fotos[0] || o.portada || null;
+    const fotos = piezas.filter((p) => !p.video).map((p) => p.url);
+    const portadaDe = (i) => piezas[i].poster
+      || fotos.find((u) => piezas.findIndex((p) => p.url === u) > i) || fotos[0] || o.portada || null;
     // En el visor cada pieza se anuncia («Foto 2 de 3»); fuera, el grupo y
     // el estado ya lo dicen y las piezas no se leen.
-    const nombre = (u, i) => (modo === 'visor' ? `aria-label="${esc(S.pieza(isVideo(u), i + 1, n))}"` : 'aria-hidden="true"');
-    const media = (u, i) => {
-      if (isVideo(u)) {
-        const p = portadaDe(i);
-        return `<video class="tj-img" muted playsinline loop disablepictureinpicture preload="${p ? 'none' : 'metadata'}"
-        ${p ? `poster="${esc(p)}"` : ''} data-src="${esc(u)}${p ? '' : '#t=0.1'}" width="${ancho}" height="${alto}" ${nombre(u, i)}></video>`;
+    const nombre = (p, i) => (modo === 'visor' ? `aria-label="${esc(S.pieza(p.video, i + 1, n))}"` : 'aria-hidden="true"');
+    const media = (p, i) => {
+      if (p.video) {
+        const por = portadaDe(i);
+        return `<video class="tj-img" muted playsinline loop disablepictureinpicture preload="${por ? 'none' : 'metadata'}"
+        ${por ? `poster="${esc(por)}"` : ''} data-src="${esc(p.url)}${por ? '' : '#t=0.1'}" width="${ancho}" height="${alto}" ${nombre(p, i)}></video>`;
       }
       const carga = o.primera && i === 0 ? 'fetchpriority="high"' : 'loading="lazy" decoding="async"';
-      return `<img class="tj-img" src="${esc(u)}" alt="${modo === 'visor' ? esc(S.pieza(false, i + 1, n)) : ''}" width="${ancho}" height="${alto}" ${carga}>`;
+      return `<img class="tj-img" src="${esc(p.url)}" alt="${modo === 'visor' ? esc(S.pieza(false, i + 1, n)) : ''}" width="${ancho}" height="${alto}" ${carga}>`;
     };
     const grupo = esc(o.grupo || 'ficha');
-    const pieza = (u, i) => {
-      const clase = `tj-pieza${isVideo(u) ? ' es-video' : ''}`;
-      if (modo === 'visor') return `<div class="${clase}">${media(u, i)}</div>`;
-      const destino = modo === 'ficha' ? `${esc(u)}" data-visor="${grupo}" data-visor-i="${i}` : esc(o.href || '#');
-      return `<a class="${clase}" href="${destino}" tabindex="-1" aria-hidden="true">${media(u, i)}</a>`;
+    const pieza = (p, i) => {
+      const clase = `tj-pieza${p.video ? ' es-video' : ''}`;
+      if (modo === 'visor') return `<div class="${clase}"${p.denuncia ? ` data-denuncia="${esc(p.denuncia)}"` : ''}>${media(p, i)}</div>`;
+      const destino = modo === 'ficha' ? `${esc(p.url)}" data-visor="${grupo}" data-visor-i="${i}` : esc(o.href || '#');
+      return `<a class="${clase}" href="${destino}" tabindex="-1" aria-hidden="true">${media(p, i)}</a>`;
     };
-    const hayVideo = piezas.some(isVideo);
+    const hayVideo = piezas.some((p) => p.video);
     const etiqueta = modo === 'tarjeta' ? ''
       : ` role="group" aria-label="${esc(o.titulo ? `${S.galeria}: ${o.titulo}` : S.galeria)}"`;
     return `<div class="tj-galeria tj-galeria--${modo}" data-n="${n}"${etiqueta}>
@@ -336,42 +338,74 @@
     </div>`;
   }
 
+  /** Las piezas, como `{ url, video, poster }`. Vale una lista de direcciones
+   * (el tipo, por la extensión) o de objetos: `{ url, kind: 'photo'|'video',
+   * poster_url }` (los medios de una reseña) o `{ url, video, poster }`. */
+  function piezasDe(lista) {
+    return (lista || []).map((x) => {
+      if (typeof x === 'string') return { url: x, video: isVideo(x), poster: null };
+      if (!x || typeof x !== 'object') return null;
+      const video = x.video != null ? Boolean(x.video) : x.kind ? x.kind === 'video' : isVideo(x.url);
+      const poster = soloWeb([x.poster || x.poster_url])[0] || null;
+      const ms = Number(x.duration_ms);
+      return {
+        url: x.url, video, poster: video ? poster : null,
+        // Dónde se denuncia esta pieza sola (los medios de una reseña).
+        denuncia: typeof x.denuncia === 'string' && /^\/[^/]/.test(x.denuncia) ? x.denuncia : null,
+        duracion: video && Number.isFinite(ms) && ms > 0 ? ms : null,
+      };
+    }).filter((p) => p && soloWeb([p.url]).length);
+  }
+
   /**
    * Una miniatura que abre el visor (las fotos de la carta, un plato, una
    * novedad, los medios de una reseña). Las del mismo `grupo` se ven juntas
    * en el visor, en el orden de `i`. Sin JavaScript abre el archivo.
-   * Un vídeo enseña su primer fotograma (se pide al acercarse, ver
-   * `/assets/tarjetas.js`) con el triángulo de reproducir encima.
+   * Un vídeo enseña su portada (`poster_url`) o, si no tiene, su primer
+   * fotograma (se pide al acercarse, ver `/assets/tarjetas.js`), con el
+   * triángulo de reproducir encima. `u`: dirección u objeto (ver `piezasDe`).
    */
   function miniatura(u, { grupo, i = 0, n = 1, clase = 'mini', etiqueta = '', lang = 'es', ancho = 192, alto = 192, carga = 'lazy' }) {
-    if (!soloWeb([u]).length) return '';
+    const p = piezasDe([u])[0];
+    if (!p) return '';
     const S = T[lang === 'en' ? 'en' : 'es'];
-    const video = isVideo(u);
     const nombre = n === 1 && etiqueta ? `${S.ampliar}: ${etiqueta}`
-      : `${S.ampliar}: ${S.pieza(video, i + 1, n)}${etiqueta ? ` · ${etiqueta}` : ''}`;
-    return `<a class="${esc(clase)}${video ? ' es-video' : ''}" href="${esc(u)}" data-visor="${esc(grupo)}" data-visor-i="${i}" aria-label="${esc(nombre)}">${video
-      ? `<video muted playsinline preload="none" data-mini="${esc(u)}#t=0.1" width="${ancho}" height="${alto}" aria-hidden="true"></video><span class="mini-play" aria-hidden="true">${ic('play', 22)}</span>`
-      : `<img src="${esc(u)}" alt="" width="${ancho}" height="${alto}" loading="${carga === 'eager' ? 'eager' : 'lazy'}" decoding="async">`}</a>`;
+      : `${S.ampliar}: ${S.pieza(p.video, i + 1, n)}${etiqueta ? ` · ${etiqueta}` : ''}`;
+    const img = (src) => `<img src="${esc(src)}" alt="" width="${ancho}" height="${alto}" loading="${carga === 'eager' ? 'eager' : 'lazy'}" decoding="async">`;
+    const extra = `${p.video ? ' data-visor-video="1"' : ''}${p.poster ? ` data-visor-poster="${esc(p.poster)}"` : ''}${p.denuncia ? ` data-visor-denuncia="${esc(p.denuncia)}"` : ''}`;
+    return `<a class="${esc(clase)}${p.video ? ' es-video' : ''}" href="${esc(p.url)}" data-visor="${esc(grupo)}" data-visor-i="${i}"${extra} aria-label="${esc(nombre)}">${p.video
+      ? `${p.poster ? img(p.poster) : `<video muted playsinline preload="none" data-mini="${esc(p.url)}#t=0.1" width="${ancho}" height="${alto}" aria-hidden="true"></video>`}<span class="mini-play" aria-hidden="true">${ic('play', 22)}</span>${p.duracion ? `<span class="mini-dur" aria-hidden="true">${duracionTxt(p.duracion)}</span>` : ''}`
+      : img(p.url)}</a>`;
   }
+
+  /** «0:12», «1:05»: lo que dura un vídeo. */
+  const duracionTxt = (ms) => {
+    const sg = Math.max(1, Math.round(ms / 1000));
+    return `${Math.floor(sg / 60)}:${String(sg % 60).padStart(2, '0')}`;
+  };
 
   /** Varias miniaturas seguidas, del mismo grupo. */
   const miniaturas = (urls, { grupo, lang = 'es', clase = 'miniaturas', etiqueta = '' }) => {
-    const l = soloWeb(urls);
-    return l.length ? `<div class="${esc(clase)}">${l.map((u, i) => miniatura(u, { grupo, i, n: l.length, lang, etiqueta })).join('')}</div>` : '';
+    const l = piezasDe(urls);
+    return l.length ? `<div class="${esc(clase)}">${l.map((p, i) => miniatura(p, { grupo, i, n: l.length, lang, etiqueta })).join('')}</div>` : '';
   };
 
   /** El visor a pantalla completa (lo abre `/assets/tarjetas.js`): como
    * `showPhotoViewer` en la app, fondo negro, «Cerrar» arriba a la izquierda
-   * y «2 / 3» a la derecha. Escape o deslizar hacia abajo lo cierran. */
+   * y «2 / 3» a la derecha. Escape o deslizar hacia abajo lo cierran.
+   * `urls`: direcciones u objetos (ver `piezasDe`). */
   function visor(urls, { lang = 'es', i = 0 } = {}) {
     const S = T[lang === 'en' ? 'en' : 'es'];
-    const l = soloWeb(urls);
+    const l = piezasDe(urls);
     const n = l.length;
     const j = Math.max(0, Math.min(n - 1, i));
     return `<dialog class="visor" aria-label="${esc(S.galeria)}">
       <div class="visor-barra">
         <button type="button" class="visor-cerrar" data-visor-cierra aria-label="${esc(S.cerrar)}" title="${esc(S.cerrar)}" autofocus>${ic('cerrar', 24)}</button>
-        ${n > 1 ? `<span class="visor-n"><span aria-hidden="true">${j + 1} / ${n}</span><span class="sr" aria-live="polite">${esc(S.pieza(isVideo(l[j]), j + 1, n))}</span></span>` : ''}
+        <span class="visor-der">
+          ${l.some((p) => p.denuncia) ? `<a class="visor-denuncia" href="${esc(l[j].denuncia || '#')}" rel="nofollow"${l[j].denuncia ? '' : ' hidden'}>${ic('bandera', 18)}<span>${esc(S.denunciar)}</span></a>` : ''}
+          ${n > 1 ? `<span class="visor-n"><span aria-hidden="true">${j + 1} / ${n}</span><span class="sr" aria-live="polite">${esc(S.pieza(l[j].video, j + 1, n))}</span></span>` : ''}
+        </span>
       </div>
       ${galeria(l, { modo: 'visor', lang, ancho: 1080, alto: 1350 })}
     </dialog>`;
@@ -478,7 +512,7 @@
   const KlendarTarjeta = {
     PLANTILLAS, tarjeta, rejilla, distancia, colorSeguro, estiloDe, sobreAcento, plataformaEntradas, sitioDe,
     cuandoCorto, money, fmtDay, fmtTime, sameDay, fmtEnd, benefit, priorPrice, isVideo, esc,
-    galeria, miniatura, miniaturas, visor, soloWeb,
+    galeria, miniatura, miniaturas, visor, soloWeb, piezasDe, duracionTxt,
     nombrePieza: (video, i, n, lang) => T[lang === 'en' ? 'en' : 'es'].pieza(video, i, n),
   };
   globalThis.KlendarTarjeta = KlendarTarjeta;
