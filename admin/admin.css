@@ -257,3 +257,10 @@ a.item.den-mini:hover h3 { text-decoration: underline; }
   .den-ficha .item { grid-template-columns: 56px 1fr; }
   .den-ficha .item img, .den-ficha .item .ph, .den-ficha .item video { width: 56px; height: 56px; }
 }
+
+/* Fotos y vídeos de una reseña (Reseñas, «En revisión»). */
+.medios { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 4px; }
+.medios .medio { position: relative; display: block; width: 64px; height: 64px; border-radius: 12px; overflow: hidden; background: var(--soft); }
+.item .medios .medio img, .medios .medio video { width: 64px; height: 64px; border-radius: 0; object-fit: cover; display: block; }
+.medios .medio-play { position: absolute; inset: 0; display: grid; place-items: center; color: #fff; text-shadow: 0 1px 3px rgba(0, 0, 0, .6); }
+.medios .medio.en-revision { outline: 2px dashed var(--warn, #c98a00); outline-offset: -2px; }

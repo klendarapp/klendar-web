@@ -133,6 +133,13 @@ const I18N = makeI18N({
   'de': 'of',
   'Reseñas': 'Reviews',
   'Reseña': 'Review',
+  // Fotos y vídeos de las reseñas (2026-11-04)
+  'Foto o vídeo de una reseña': 'Photo or video in a review',
+  'Fotos y vídeos de reseñas': 'Review photos and videos',
+  'foto o vídeo de reseña': 'review photo or video',
+  'Moderación de imágenes': 'Image moderation',
+  'Foto': 'Photo',
+  'Vídeo': 'Video',
   'Novedades': 'News',
   'Sin novedades.': 'No news.',
   'Ofertas y eventos': 'Offers and events',

@@ -76,7 +76,7 @@ const LABELS = {
   pending: 'pendiente', verified: 'verificado', rejected: 'rechazado', approved: 'aprobada', active: 'activa', expired: 'caducada',
   cancelled: 'cancelada', archived: 'archivada', sold_out: 'agotada', draft: 'borrador', open: 'abierta', reviewing: 'en revisión', resolved: 'resuelta', dismissed: 'desestimada',
   trial: 'prueba', past_due: 'impagada', validated: 'validado', failed: 'fallido', sent: 'enviado', skipped: 'omitido',
-  flash_offer: 'oferta flash', future_event: 'evento', user: 'usuario', business: 'negocio', offer: 'publicación', review: 'reseña', post: 'novedad',
+  flash_offer: 'oferta flash', future_event: 'evento', user: 'usuario', business: 'negocio', offer: 'publicación', review: 'reseña', post: 'novedad', review_media: 'foto o vídeo de reseña',
   owner: 'propietario', manager: 'encargado', staff: 'empleado', free: 'Gratis', basic: 'Básico', pro: 'Pro',
   standard: 'Klendar', founder: 'Fundador', inactive: 'inactivo', banned: 'suspendido', other: 'otra cosa',
   new: 'sin leer', planned: 'la haremos', done: 'hecho', declined: 'descartada',
@@ -89,10 +89,21 @@ const FLAGS = { alcohol: 'alcohol', tobacco: 'tabaco/vapeo', gambling: 'apuestas
 const flagTags = (o) => (o.moderation_flags || []).map((f) => `<span class="tag warn" title="Detectado automáticamente en el texto">${esc(FLAGS[f] || f)}</span>`).join(' ');
 // Lenguaje ofensivo: qué ha encontrado (`text_offensive`) y en qué texto.
 const CAT_OFENSIVA = { insult: 'insultos', profanity: 'palabras malsonantes', sexual: 'contenido sexual', hate: 'odio o discriminación', threat: 'amenazas' };
-const TIPO_TEXTO = { post: 'Novedad', review: 'Reseña', reply: 'Respuesta a una reseña', business_name: 'Nombre del negocio', business_description: 'Descripción del negocio', menu: 'Carta', closure_reason: 'Motivo de días cerrados', birthday_gift: 'Regalo de cumpleaños', stamp_card_name: 'Nombre de una tarjeta de sellos', stamp_card_reward: 'Premio de una tarjeta de sellos' };
-const ICONO_TEXTO = { post: 'article', review: 'chat_bubble', reply: 'reply', business_name: 'storefront', business_description: 'storefront', menu: 'restaurant_menu', closure_reason: 'event_busy', birthday_gift: 'cake', stamp_card_name: 'loyalty', stamp_card_reward: 'loyalty' };
+const TIPO_TEXTO = { post: 'Novedad', review: 'Reseña', reply: 'Respuesta a una reseña', business_name: 'Nombre del negocio', business_description: 'Descripción del negocio', menu: 'Carta', closure_reason: 'Motivo de días cerrados', birthday_gift: 'Regalo de cumpleaños', stamp_card_name: 'Nombre de una tarjeta de sellos', stamp_card_reward: 'Premio de una tarjeta de sellos', review_media: 'Foto o vídeo de una reseña' };
+const ICONO_TEXTO = { post: 'article', review: 'chat_bubble', reply: 'reply', business_name: 'storefront', business_description: 'storefront', menu: 'restaurant_menu', closure_reason: 'event_busy', birthday_gift: 'cake', stamp_card_name: 'loyalty', stamp_card_reward: 'loyalty', review_media: 'photo_library' };
 // Qué se enseña al lado del texto para situarlo.
 const CONTEXTO_TEXTO = { reply: 'Reseña', stamp_card_name: 'Tarjeta', stamp_card_reward: 'Tarjeta', closure_reason: 'Días' };
+// Fotos y vídeos de una reseña (migración 20261104100000; docs/RESENAS_MEDIOS.md
+// en la app): miniaturas en su orden que abren el original en otra pestaña.
+// `in_review`: esperando la moderación automática de imágenes.
+const mediosResena = (media) => (media && media.length ? `<div class="medios">${media.map((m, i) => {
+  const vid = m.kind === 'video';
+  const que = `${I18N.t(vid ? 'Vídeo' : 'Foto')} ${i + 1}/${media.length}${vid && m.duration_ms ? ` · ${Math.round(m.duration_ms / 1000)} s` : ''}${m.in_review ? ` · ${I18N.t('en revisión')}` : ''}`;
+  const img = vid && !m.poster_url
+    ? `<video src="${esc(m.url)}#t=0.5" muted playsinline preload="metadata" aria-hidden="true"></video>`
+    : `<img src="${esc(vid ? m.poster_url : m.url)}" alt="" loading="lazy">`;
+  return `<a class="medio${m.in_review ? ' en-revision' : ''}" href="${esc(m.url)}" target="_blank" rel="noopener" title="${esc(que)}" aria-label="${esc(que)}">${img}${vid ? `<span class="medio-play">${ms('play_arrow')}</span>` : ''}</a>`;
+}).join('')}</div>` : '');
 const debounce = (fn, ms = 350) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
 const qs = (o) => Object.entries(o).filter(([, v]) => v != null && v !== '').map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&');
 
@@ -1678,6 +1689,7 @@ async function decideTexto(x, aprobar) {
     const intro = {
       post: en ? 'The news post is deleted.' : 'La novedad se borra.',
       review: en ? 'The review is deleted.' : 'La reseña se borra.',
+      review_media: en ? 'Only this photo or video is deleted; the review stays.' : 'Solo se borra esa foto o ese vídeo; la reseña se queda.',
       reply: en ? "The reply isn't published (if there was an earlier one, it stays)." : 'La respuesta no se publica (si había otra antes, se queda).',
       business_name: en ? 'The name goes back to the previous one.' : 'El nombre vuelve al anterior.',
       business_description: en ? 'The description goes back to the previous one (or is left empty).' : 'La descripción vuelve a la anterior (o se queda vacía).',
@@ -1729,9 +1741,10 @@ PAGES.resenas = async (v) => {
       const r = await rpc('admin_text_reviews', { p_limit: sC.limit, p_offset: sC.offset });
       const pg = pager(sC, r.total, load);
       $('#list').innerHTML = (r.rows.length ? r.rows.map((x, i) => `<div class="item">${x.image ? `<img src="${esc(x.image)}" alt="">` : `<div class="ph">${ms(ICONO_TEXTO[x.kind] || 'text_fields')}</div>`}<div>
-        <h3>${esc(I18N.t(TIPO_TEXTO[x.kind] || x.kind))} · <a class="link" href="#/negocios/${x.business_id}">${esc(x.business)}</a> ${(x.categories || []).map((c) => `<span class="tag warn" title="Detectado automáticamente en el texto">${esc(I18N.t(CAT_OFENSIVA[c] || c))}</span>`).join(' ')}</h3>
+        <h3>${esc(I18N.t(TIPO_TEXTO[x.kind] || x.kind))} · <a class="link" href="#/negocios/${x.business_id}">${esc(x.business)}</a> ${x.kind === 'review_media' ? `<span class="tag warn">${esc(I18N.t('Moderación de imágenes'))}</span>` : (x.categories || []).map((c) => `<span class="tag warn" title="Detectado automáticamente en el texto">${esc(I18N.t(CAT_OFENSIVA[c] || c))}</span>`).join(' ')}</h3>
         <div class="meta">${x.user_email ? `${esc(x.user_email)} · ` : ''}${fmtDate(x.created_at)}${x.rating ? ` · <span class="stars">${'★'.repeat(x.rating)}${'☆'.repeat(5 - x.rating)}</span>` : ''}</div>
         <p>${esc(x.text || '')}</p>
+        ${mediosResena(x.media)}
         ${x.context ? `<div class="meta">${esc(I18N.t(CONTEXTO_TEXTO[x.kind] || 'Reseña'))}: «${esc(x.context)}»</div>` : ''}
         ${x.previous ? `<div class="meta">${esc(I18N.t(x.kind === 'reply' ? 'Respuesta publicada' : ['birthday_gift', 'stamp_card_name', 'stamp_card_reward'].includes(x.kind) ? 'En uso' : 'Antes'))}: «${esc(x.previous)}»</div>` : ''}
         <div class="actions"><button class="btn sm ok" data-ap="${i}">Aprobar</button><button class="btn sm bad" data-re="${i}">Retirar…</button></div></div></div>`).join('') : '<div class="tbl-wrap"><div class="empty">No hay textos en revisión.</div></div>') + pg.html;
@@ -1744,7 +1757,7 @@ PAGES.resenas = async (v) => {
     if (tab === 'reviews') {
       const r = await rpc('admin_reviews', { p_query: sR.q || null, p_max_rating: sR.rating ? +sR.rating : null, p_limit: sR.limit, p_offset: sR.offset });
       const pg = pager(sR, r.total, load);
-      $('#list').innerHTML = (r.rows.length ? r.rows.map((x) => `<div class="item"><div class="ph">${ms('chat_bubble')}</div><div><h3><span class="stars">${'★'.repeat(x.rating)}${'☆'.repeat(5 - x.rating)}</span> ${I18N.lang === 'en' ? 'at' : 'en'} <a class="link" href="#/negocios/${x.business_id}">${esc(x.business)}</a> ${x.moderation_status === 'pending' ? '<span class="tag warn">en revisión</span>' : ''} ${flagTags(x)} ${x.reply_pending ? '<span class="tag warn">respuesta en revisión</span>' : ''} ${x.open_reports ? `<span class="tag bad">${ms('flag')} ${x.open_reports}</span>` : ''}</h3><div class="meta">${esc(x.user_email || (I18N.lang === 'en' ? 'anonymous' : 'anónimo'))} · ${fmtDate(x.created_at)}</div><p>${esc(x.comment || '(sin texto)')}</p><div class="actions"><button class="btn sm bad" data-del="${x.id}">Borrar…</button></div></div></div>`).join('') : '<div class="tbl-wrap"><div class="empty">Sin reseñas.</div></div>') + pg.html;
+      $('#list').innerHTML = (r.rows.length ? r.rows.map((x) => `<div class="item"><div class="ph">${ms('chat_bubble')}</div><div><h3><span class="stars">${'★'.repeat(x.rating)}${'☆'.repeat(5 - x.rating)}</span> ${I18N.lang === 'en' ? 'at' : 'en'} <a class="link" href="#/negocios/${x.business_id}">${esc(x.business)}</a> ${x.moderation_status === 'pending' ? '<span class="tag warn">en revisión</span>' : ''} ${flagTags(x)} ${x.reply_pending ? '<span class="tag warn">respuesta en revisión</span>' : ''} ${x.open_reports ? `<span class="tag bad">${ms('flag')} ${x.open_reports}</span>` : ''}</h3><div class="meta">${esc(x.user_email || (I18N.lang === 'en' ? 'anonymous' : 'anónimo'))} · ${fmtDate(x.created_at)}</div><p>${esc(x.comment || '(sin texto)')}</p>${mediosResena(x.media)}<div class="actions"><button class="btn sm bad" data-del="${x.id}">Borrar…</button></div></div></div>`).join('') : '<div class="tbl-wrap"><div class="empty">Sin reseñas.</div></div>') + pg.html;
       pg.bind($('#list'));
       $$('#list [data-del]').forEach((b) => { b.onclick = () => esperando(b, () => deleteReview(b.dataset.del)); });
     } else {
@@ -1778,13 +1791,15 @@ const motivoDen = (r) => I18N.t(MOTIVOS_DENUNCIA[r] || r);
 const ESTADO_DEN = { published: ['publicado', 'ok'], review: ['en revisión', 'warn'], removed: ['retirado', 'bad'], hidden: ['no visible', 'dim'], deleted: ['borrado', 'dim'] };
 const estadoDen = (s) => { const e = ESTADO_DEN[s]; return e ? `<span class="tag ${e[1]}">${esc(I18N.t(e[0]))}</span>` : ''; };
 const RESOLUCION_DEN = { removed: 'contenido retirado', no_action: 'cerrada sin retirar', dismissed: 'desestimada' };
-const TIPO_DEN = { offer: 'Publicación', business: 'Negocio', review: 'Reseña', post: 'Novedad' };
+const TIPO_DEN = { offer: 'Publicación', business: 'Negocio', review: 'Reseña', post: 'Novedad', review_media: 'Foto o vídeo de una reseña' };
 /** Dónde se ve en la web pública (reseñas y novedades, con su ancla en la ficha). */
 const urlDenunciado = (tipo, id, t) => {
   const b = (t && (t.slug || t.business_id)) || null;
   if (tipo === 'offer') return `/o/${id}`;
   if (tipo === 'business') return `/b/${(t && t.slug) || id}`;
   if (!b) return '';
+  // Una foto o un vídeo: la reseña que lo lleva.
+  if (tipo === 'review_media') return t.review_id ? `/b/${b}#resena-${t.review_id}` : `/b/${b}`;
   return `/b/${b}#${tipo === 'review' ? 'resena' : 'novedad'}-${id}`;
 };
 /** Su ficha dentro del admin. */
@@ -1795,9 +1810,10 @@ const tituloDen = (tipo, t) => {
   if (!t) return en ? '(content no longer available)' : '(contenido ya no disponible)';
   if (tipo === 'review') return `${'★'.repeat(Math.max(0, Math.min(5, t.rating | 0)))} ${t.title ? `«${t.title}»` : (en ? '(no text)' : '(sin texto)')}`;
   if (tipo === 'post') return t.title ? `«${t.title}»` : (en ? '(photo only)' : '(solo foto)');
+  if (tipo === 'review_media') return `${t.media_kind === 'video' ? (en ? 'Video' : 'Vídeo') : (en ? 'Photo' : 'Foto')} ${en ? 'in a review' : 'de una reseña'}${t.title ? ` · «${t.title}»` : ''}`;
   return t.title || '—';
 };
-const miniDen = (tipo, t) => (t?.image && /\.(mp4|webm|mov)(\?|$)/i.test(t.image) ? `<video src="${esc(t.image)}#t=0.5" muted playsinline preload="metadata" aria-hidden="true"></video>` : t?.image ? `<img src="${esc(t.image)}" alt="" loading="lazy">` : `<div class="ph">${ms({ offer: 'bolt', business: 'storefront', review: 'chat_bubble', post: 'article' }[tipo] || 'flag')}</div>`);
+const miniDen = (tipo, t) => (tipo === 'review_media' && !t?.image && t?.media_url ? `<video src="${esc(t.media_url)}#t=0.5" muted playsinline preload="metadata" aria-hidden="true"></video>` : t?.image && /\.(mp4|webm|mov)(\?|$)/i.test(t.image) ? `<video src="${esc(t.image)}#t=0.5" muted playsinline preload="metadata" aria-hidden="true"></video>` : t?.image ? `<img src="${esc(t.image)}" alt="" loading="lazy">` : `<div class="ph">${ms({ offer: 'bolt', business: 'storefront', review: 'chat_bubble', post: 'article', review_media: 'photo_library' }[tipo] || 'flag')}</div>`);
 
 /** Retirar y cerrar / cerrar sin retirar / desestimar / en revisión, para
  * todas las abiertas de un contenido. true si se hizo. */
@@ -1810,6 +1826,7 @@ async function decideDenuncias(tipo, id, decision, abiertas) {
       business: en ? 'The business is deactivated: its page and publications stop being visible.' : 'El negocio se desactiva: su ficha y sus publicaciones dejan de verse.',
       review: en ? 'The review is deleted.' : 'La reseña se borra.',
       post: en ? 'The news post is deleted.' : 'La novedad se borra.',
+      review_media: en ? 'Only this photo or video is deleted; the review stays.' : 'Solo se borra esa foto o ese vídeo; la reseña se queda.',
     }[tipo];
     const r = await modal({
       title: en ? 'Take down and close all' : 'Retirar y cerrar todas',
@@ -1869,7 +1886,7 @@ PAGES.denuncias = async (v, tipoRuta) => {
       : `<p>Una tarjeta por cada contenido denunciado (publicación, negocio, reseña o novedad), con cuántas denuncias tiene, de cuántas personas distintas (con y sin cuenta), los motivos y si sigue publicado. Ábrelo («Ver las denuncias») para leer cada denuncia y quién la puso. Decide para todas sus denuncias abiertas a la vez: <b>Retirar y cerrar todas</b> (la publicación se retira, el negocio se desactiva, la reseña o la novedad se borran; quien lo publicó recibe el motivo y puede pedir que se revise en 6 meses), <b>Cerrar sin retirar</b> (el contenido cumple) o <b>Desestimar todas</b> (denuncias sin fundamento). A cada denunciante le llega la decisión: en la app si tiene cuenta, por correo si denunció sin ella. Por ley (DSA, art. 16) hay que resolverlas con diligencia y explicar la decisión.</p><p>Quien no tiene cuenta denuncia desde klendar.app («Denunciar contenido ilegal» en el pie, o «Denunciar» en cualquier ficha sin haber entrado). Su nombre y su correo solo se ven aquí.</p>`)}
     <div class="toolbar">
       <select id="status">${[['open', 'Con denuncias abiertas'], ['closed', 'Ya cerradas'], ['all', 'Todo']].map((o) => `<option value="${o[0]}" ${(s.status || 'open') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
-      <select id="type">${[['all', 'Todo tipo'], ['offer', 'Publicaciones'], ['business', 'Negocios'], ['review', 'Reseñas'], ['post', 'Novedades']].map((o) => `<option value="${o[0]}" ${(s.type || 'all') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
+      <select id="type">${[['all', 'Todo tipo'], ['offer', 'Publicaciones'], ['business', 'Negocios'], ['review', 'Reseñas'], ['review_media', 'Fotos y vídeos de reseñas'], ['post', 'Novedades']].map((o) => `<option value="${o[0]}" ${(s.type || 'all') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
     </div>
     <div id="list"><div class="loading">Cargando…</div></div>`;
   const load = async () => {
@@ -1940,6 +1957,7 @@ async function denunciasDe(v, tipo, id) {
       <div class="item" style="border:0;padding:0">${miniDen(tipo, d.target)}<div style="min-width:0">
         <h1 style="margin:0 0 4px;font-size:22px">${esc(tituloDen(tipo, d.target))}</h1>
         <div class="meta">${tag(tipo, 'dim')} ${estadoDen(d.state)} ${g.reviewing ? tag('reviewing') : ''} ${tipo !== 'business' && t.business ? `${en ? 'by' : 'de'} ${t.business_id ? `<a class="link" href="#/negocios/${esc(t.business_id)}">${esc(t.business)}</a>` : esc(t.business)}` : ''}${t.city ? ` · ${esc(t.city)}` : ''}</div>
+        ${tipo === 'review_media' && t.media_url ? `<p class="meta"><a class="link" href="${esc(t.media_url)}" target="_blank" rel="noopener">${t.media_kind === 'video' ? (en ? 'Watch the video' : 'Ver el vídeo') : (en ? 'See the photo' : 'Ver la foto')} ↗</a></p>` : ''}
         ${d.live ? '' : `<p class="meta">${en ? 'It no longer exists: this is how it was when it was reported.' : 'Ya no existe: así estaba cuando lo denunciaron.'}</p>`}
         ${cifrasDen(g, abiertas.length > 0)}
         <div class="den-motivos">${Object.entries(motivos).sort((a, b) => b[1] - a[1]).map(([m, n]) => `<span class="tag ${m === 'child_abuse' || m === 'illegal' ? 'bad' : 'dim'}">${esc(motivoDen(m))} · ${n}</span>`).join(' ')}</div>
