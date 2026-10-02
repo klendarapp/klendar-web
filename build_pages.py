@@ -54,16 +54,16 @@ PAGINAS['para-negocios'] = (
 <h2>Echa la cuenta</h2>
 <p>Con tus números, no con los nuestros. Es una estimación para ver si sale a cuenta, no una promesa.</p>
 <div class="calc" id="calc">
-  <label>Ticket medio <input type="number" id="c-ticket" value="12" min="1" step="0.5"> €</label>
-  <label>Descuento <input type="number" id="c-desc" value="20" min="0" max="90" step="5"> %</label>
-  <label>Personas al mes <input type="number" id="c-gente" value="25" min="1" step="1"></label>
-  <label>Margen sobre el ticket <input type="number" id="c-margen" value="60" min="5" max="100" step="5"> %</label>
-  <output id="c-out"></output>
+  <div class="calc-fila"><label for="c-ticket">Ticket medio</label><span class="calc-campo"><input type="number" id="c-ticket" value="12" min="1" step="0.5" inputmode="decimal"><span class="calc-ud">€</span></span></div>
+  <div class="calc-fila"><label for="c-desc">Descuento</label><span class="calc-campo"><input type="number" id="c-desc" value="20" min="0" max="90" step="5" inputmode="decimal"><span class="calc-ud">%</span></span></div>
+  <div class="calc-fila"><label for="c-gente">Personas al mes</label><span class="calc-campo"><input type="number" id="c-gente" value="25" min="1" step="1" inputmode="decimal"><span class="calc-ud" aria-hidden="true"></span></span></div>
+  <div class="calc-fila"><label for="c-margen">Margen sobre el ticket</label><span class="calc-campo"><input type="number" id="c-margen" value="60" min="5" max="100" step="5" inputmode="decimal"><span class="calc-ud">%</span></span></div>
+  <output id="c-out" for="c-ticket c-desc c-gente c-margen" aria-live="polite"></output>
 </div>
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
-  var eur = function (n) { return n.toLocaleString('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }); };
+  var eur = function (n) { return n.toLocaleString('es-ES', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
   function calc() {
     var t = +$('c-ticket').value || 0, d = +$('c-desc').value || 0;
     var g = +$('c-gente').value || 0, m = +$('c-margen').value || 0;
@@ -122,16 +122,16 @@ PAGINAS['para-negocios'] = (
 <h2>Do the maths</h2>
 <p>With your numbers, not ours. It's an estimate to see whether it adds up, not a promise.</p>
 <div class="calc" id="calc">
-  <label>Average ticket <input type="number" id="c-ticket" value="12" min="1" step="0.5"> €</label>
-  <label>Discount <input type="number" id="c-desc" value="20" min="0" max="90" step="5"> %</label>
-  <label>People per month <input type="number" id="c-gente" value="25" min="1" step="1"></label>
-  <label>Margin on the ticket <input type="number" id="c-margen" value="60" min="5" max="100" step="5"> %</label>
-  <output id="c-out"></output>
+  <div class="calc-fila"><label for="c-ticket">Average ticket</label><span class="calc-campo"><input type="number" id="c-ticket" value="12" min="1" step="0.5" inputmode="decimal"><span class="calc-ud">€</span></span></div>
+  <div class="calc-fila"><label for="c-desc">Discount</label><span class="calc-campo"><input type="number" id="c-desc" value="20" min="0" max="90" step="5" inputmode="decimal"><span class="calc-ud">%</span></span></div>
+  <div class="calc-fila"><label for="c-gente">People per month</label><span class="calc-campo"><input type="number" id="c-gente" value="25" min="1" step="1" inputmode="decimal"><span class="calc-ud" aria-hidden="true"></span></span></div>
+  <div class="calc-fila"><label for="c-margen">Margin on the ticket</label><span class="calc-campo"><input type="number" id="c-margen" value="60" min="5" max="100" step="5" inputmode="decimal"><span class="calc-ud">%</span></span></div>
+  <output id="c-out" for="c-ticket c-desc c-gente c-margen" aria-live="polite"></output>
 </div>
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
-  var eur = function (n) { return n.toLocaleString('en-GB', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }); };
+  var eur = function (n) { return n.toLocaleString('en-GB', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
   function calc() {
     var t = +$('c-ticket').value || 0, d = +$('c-desc').value || 0;
     var g = +$('c-gente').value || 0, m = +$('c-margen').value || 0;

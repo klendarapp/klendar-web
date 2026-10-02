@@ -64,7 +64,9 @@ async function compartirOCopiar(texto, copia) {
 }
 
 // ── Amigos: tu enlace, tu QR y tu lista ───────────────────────────────────
-RUTAS.amigos = async () => {
+// #/amigos/<id>: la ficha de un amigo, con sus próximos planes.
+RUTAS.amigos = async ([idAmigo]) => {
+  if (idAmigo) { await fichaDeAmigo(idAmigo); return; }
   if (!exigeSesion('amigos')) return;
   const [enlace, lista, cons, miNombre] = await Promise.all([
     llamar('my_friend_link', {}),
@@ -109,9 +111,12 @@ RUTAS.amigos = async () => {
       <h2 class="con-cuenta"><span>${esc(t('Tus amigos'))}</span> <span id="cuantos-amigos">${esc(cuantos(amigos.length))}</span></h2>
       <div id="lista-amigos">${amigos.length ? `<div class="lista">${amigos.map((a) => `
         <div class="fila amigo-fila" data-id="${esc(a.id)}">
+          <a class="amigo-ir" href="#/amigos/${esc(a.id)}">
           ${avatarDeAmigo(a, 'av-lista')}
           <span class="fila-t"><b>${esc(nombreDeAmigo(a))}</b>
-            <small>${esc(EN ? `Friends since ${dia(a.since)}` : `Amigos desde ${dia(a.since)}`)}</small></span>
+            <small>${esc(a.plans > 0 ? planesDeAmigo(a.plans)
+              : (EN ? `Friends since ${dia(a.since)}` : `Amigos desde ${dia(a.since)}`))}</small></span>
+          </a>
           <button type="button" class="icono-btn" data-quitar="${esc(a.id)}" data-nombre="${esc(nombreDeAmigo(a))}"
             aria-label="${esc(t('Quitar de tus amigos'))}" title="${esc(t('Quitar de tus amigos'))}">${ic('person_remove')}</button>
           <button type="button" class="icono-btn" data-bloquear="${esc(a.id)}" data-nombre="${esc(nombreDeAmigo(a))}"
@@ -221,6 +226,92 @@ RUTAS.amigos = async () => {
     }
   }));
 };
+
+// ── La ficha de un amigo ──────────────────────────────────────────────────
+/** «Va a 1 plan» · «Va a 3 planes». */
+const planesDeAmigo = (n) => (EN ? `Going to ${n} ${n === 1 ? 'plan' : 'plans'}` : `Va a ${n} ${n === 1 ? 'plan' : 'planes'}`);
+
+/** Sus PRÓXIMOS planes (lo pasado no se guarda aquí), solo lo que tú puedes
+ * ver, y desde cada uno «Voy también» o el botón de la publicación (código o
+ * plaza). Si no comparte sus planes sale vacía, sin decir por qué: lo decide
+ * la base (`friend_plans`). */
+async function fichaDeAmigo(id) {
+  if (!UUID_AMIGOS.test(id || '')) { pinta(pantallaVacia({ icono: 'link', titulo: t('Ese enlace no está completo.'), h: 'h1', botones: botonTuCuenta() })); return; }
+  if (!exigeSesion(`amigos/${id}`)) return;
+  const migas = `<p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a> › <a href="#/amigos">${esc(t('Amigos'))}</a></p>`;
+  let d;
+  try { d = await llamar('friend_plans', { p_friend: id }); } catch (e) {
+    if (e.clave !== 'not_found') throw e;
+    pinta(`${migas}${pantallaVacia({
+      icono: 'group', h: 'h1',
+      titulo: t('Esta persona ya no está en tus amigos'),
+      texto: t('No puedes ver sus planes. Si quieres volver a ser su amigo, pídele su enlace de amigo.'),
+      botones: `<a class="pill accent" href="#/amigos">${esc(t('Ver tus amigos'))}</a>`,
+    })}`);
+    return;
+  }
+  const amigo = d.friend || {};
+  const nombre = nombreDeAmigo(amigo);
+  const planes = d.plans || [];
+  const desde = amigo.since ? fecha(amigo.since, { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+  const accion = (p) => {
+    const ficha = `${pre}/o/${encodeURIComponent(p.id)}`;
+    if (p.going && p.auto) return `<p class="plan-va">${esc(t(p.auto === 'reservation' ? 'Vas: tienes plaza reservada' : 'Vas: tienes el código'))}</p>`;
+    if (p.going) {
+      return `<button type="button" class="pill on" data-voy="${esc(p.id)}" data-va="1"
+        aria-label="${esc(t('Quitar «Voy»'))}" title="${esc(t('Quitar «Voy»'))}">${esc(t('Vas'))}</button>`;
+    }
+    if (p.needs === 'code') return `<a class="pill" href="${esc(ficha)}">${ic('qr_code_2')} ${esc(t('Conseguir el código'))}</a>`;
+    if (p.needs === 'reservation') return `<a class="pill" href="${esc(ficha)}">${ic('local_activity')} ${esc(t('Reservar plaza'))}</a>`;
+    return `<button type="button" class="pill" data-voy="${esc(p.id)}">${ic('add')} ${esc(t('Voy también'))}</button>`;
+  };
+  const pintaPlan = (p) => `<div class="plan-amigo" data-plan-amigo="${esc(p.id)}">${tarjeta(p)}<div class="plan-acc">${accion(p)}</div></div>`;
+  pinta(`${migas}
+    <div class="ficha-amigo">
+      ${avatarDeAmigo(amigo, 'av-grande')}
+      <h1>${esc(nombre)}</h1>
+      ${desde ? `<p class="muted">${esc(EN ? `Friends since ${desde}` : `Amigos desde ${desde}`)}</p>` : ''}
+    </div>
+    ${planes.length ? `<section class="bloque">
+      <h2>${esc(planes.length === 1 ? t('Su próximo plan') : (EN ? `Their next ${planes.length} plans` : `Sus próximos ${planes.length} planes`))}</h2>
+      <p class="muted">${esc(t('Solo lo que puedes ver tú. Lo que ya ha pasado no se guarda aquí.'))}</p>
+      <div class="olist planes-amigo">${planes.map(pintaPlan).join('')}</div>
+    </section>` : pantallaVacia({
+      icono: 'explore',
+      titulo: EN ? `There are no plans from ${nombre} you can see right now` : `Ahora mismo no hay planes de ${nombre} que puedas ver`,
+      texto: t('Cuando vaya a algo y lo comparta, saldrá aquí. Lo que ya ha pasado no se guarda.'),
+    })}`);
+
+  // «Voy también» y «Vas» (quitarlo), aquí mismo y como en la ficha: marcar
+  // también lo guarda en tus planes. Cada botón con lo suyo (al repintar un
+  // plan se vuelve a enlazar).
+  const enlaza = (raiz) => $$('[data-voy]', raiz).forEach((b) => {
+    b.onclick = async () => {
+      const plan = planes.find((p) => p.id === b.dataset.voy);
+      if (!plan) return;
+      const quitar = b.dataset.va === '1';
+      b.disabled = true;
+      try {
+        const r = await llamar('set_going', { p_offer: plan.id, p_going: !quitar });
+        plan.going = !!r.going;
+        plan.auto = r.auto || null;
+        const caja = b.closest('.plan-acc');
+        if (caja) { caja.innerHTML = accion(plan); enlaza(caja); }
+        if (quitar) toast(t('Ya no marcas «Voy»'));
+        else {
+          const cons = await llamar('my_consents', {}).catch(() => null);
+          toast(t(cons?.share_plans === false ? 'Hecho. Está en tus planes.' : '¡Hecho! Tus amigos verán que vas. También está en tus planes.'));
+        }
+      } catch (e) {
+        // Con código o plaza (lo cambió el negocio): a la publicación, a cogerlo.
+        if (e.clave === 'needs_code') { location.href = `${pre}/o/${encodeURIComponent(plan.id)}`; return; }
+        toast(e.message, true);
+        if (b.isConnected) b.disabled = false;
+      }
+    };
+  });
+  enlaza(view);
+}
 
 // ── El enlace de otra persona ─────────────────────────────────────────────
 /** Una pantalla del enlace abierto: avatar (si se sabe de quién es), título,

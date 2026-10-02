@@ -61,6 +61,29 @@
   window.KL_CABECERA = pinta;
   pinta();
 
+  // La pestaña activa (Descubre, Explorar, Planes, Cuenta), arriba y en la
+  // barra de abajo. Las páginas dinámicas ya la traen marcada; aquí se marca
+  // en las estáticas y en «Tu cuenta», que cambia de pestaña sin recargar.
+  function pestanaActiva() {
+    const p = location.pathname;
+    if (/^\/(en\/)?(descubre|discover)\//.test(p)) return 'descubre';
+    if (/^\/(en\/)?(explorar|explore|agenda|whats-on|hoy|today|coleccion|collection)\//.test(p)) return 'explorar';
+    // «Planes» también mientras pide entrar para ir a Planes (#/entrar?siguiente=planes).
+    if (/^\/app\//.test(p)) return /^#\/(planes|guardar)(\/|\?|$)|[?&]siguiente=planes\b/.test(location.hash) ? 'planes' : 'cuenta';
+    return '';
+  }
+  function marcaPestana() {
+    const yaMarcada = document.querySelector('[data-tab][aria-current="page"]');
+    const id = pestanaActiva();
+    if (yaMarcada && !/^\/app\//.test(location.pathname)) return;
+    document.querySelectorAll('[data-tab]').forEach((a) => {
+      if (a.dataset.tab === id) a.setAttribute('aria-current', 'page');
+      else a.removeAttribute('aria-current');
+    });
+  }
+  marcaPestana();
+  window.addEventListener('hashchange', marcaPestana);
+
   // «Saltar al contenido» va a <main id="contenido">; si el <main> de esta
   // página tiene otro nombre (o ninguno), se apunta a él.
   const main = document.querySelector('main');

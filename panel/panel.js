@@ -120,6 +120,9 @@ const ERRORS = {
   auth_required: 'Tu sesión ha caducado. Vuelve a entrar para continuar.',
   invalid_reply: 'Escribe al menos 2 caracteres.',
   offer_archived: 'Una publicación archivada no se vuelve a publicar: crea otra a partir de ella.',
+  // Lugar propio (20261101100000).
+  venue_too_far: 'Ese sitio está a más de 200 km de tu local: revisa la dirección.',
+  venue_location_required: 'Marca el sitio en el mapa.',
   // Edad y suspensión (20261028100000).
   adult_required: 'Para esto hace falta tener 18 años y la fecha de nacimiento en el perfil.',
   min_age_16: 'Para entrar en el equipo de un negocio hace falta tener 16 años.',
@@ -209,6 +212,132 @@ function lugarDe(f) {
   const ciudad = (ctx.find((c) => String(c.id).startsWith('place.')) || (String(f.id).startsWith('place.') ? f : null))?.text || '';
   const calle = f.place_type?.includes('address') ? [f.text, f.address].filter(Boolean).join(' ') : (f.place_type?.includes('poi') ? f.properties?.address || f.text : '');
   return { lng: f.center[0], lat: f.center[1], address: calle, city: ciudad, label: f.place_name || '' };
+}
+
+// ── Diseños de publicación (docs/DISENOS_PUBLICACION.md en la app) ─────────
+/** Plantillas, en el orden del selector: valor y nombre. */
+const PLANTILLAS = [['glass', 'Clásica'], ['photo', 'Foto grande'], ['poster', 'Cartel'], ['bold', 'Color'], ['minimal', 'Minimal']];
+const PLANTILLA_AYUDA = {
+  glass: 'La foto de fondo y todo en un panel de cristal.',
+  photo: 'La foto o el vídeo mandan: los datos van pequeños, abajo.',
+  poster: 'Como un cartel: el título enorme y la fecha arriba. Ideal para eventos.',
+  bold: 'Un panel del color de tu marca.',
+  minimal: 'Sobria: panel liso y el color solo en el precio.',
+};
+/** Paleta de 16 colores con texto encima que pasa AA (igual que la app). */
+const PALETA = [
+  ['#FF4D6D', 'Coral'], ['#E5484D', 'Rojo'], ['#FF8A3D', 'Naranja'], ['#F5B041', 'Ámbar'],
+  ['#C2410C', 'Teja'], ['#34D399', 'Menta'], ['#15803D', 'Verde'], ['#0F766E', 'Verde azulado'],
+  ['#0EA5E9', 'Azul cielo'], ['#2563EB', 'Azul'], ['#1E3A8A', 'Azul marino'], ['#6D28D9', 'Morado'],
+  ['#E879F9', 'Orquídea'], ['#BE185D', 'Frambuesa'], ['#E7D7B8', 'Arena'], ['#111827', 'Negro'],
+];
+const TINTA = '#0A0A0A';
+const rgbDe = (hex) => { const n = parseInt(String(hex).slice(1), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; };
+const hexDe = (r, g, b) => '#' + [r, g, b].map((x) => x.toString(16).padStart(2, '0')).join('').toUpperCase();
+/** Luminancia relativa WCAG 2.x. */
+function luminancia([r, g, b]) {
+  const l = (c) => { const x = c / 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; };
+  return 0.2126 * l(r) + 0.7152 * l(g) + 0.0722 * l(b);
+}
+const LUM_TINTA = luminancia(rgbDe(TINTA));
+const contrastes = (rgb) => { const l = luminancia(rgb); return [(l + 0.05) / (LUM_TINTA + 0.05), 1.05 / (l + 0.05)]; };
+/** Tinta o blanco: el que más contraste dé sobre el color. */
+function sobreColor(hex) { const [ci, cw] = contrastes(rgbDe(hex)); return ci >= cw ? TINTA : '#FFFFFF'; }
+/** El color con el texto encima legible (AA): si ni la tinta ni el blanco
+ * llegan a 4,5:1, se aclara u oscurece en pasos de 1/25 (lo mismo que
+ * `color_seguro` en la base y `OfferStyle.safeAccent` en la app). */
+function colorSeguro(hex) {
+  if (!/^#?[0-9a-f]{6}$/i.test(String(hex || ''))) return null;
+  const h = hex.startsWith('#') ? hex.toUpperCase() : `#${hex.toUpperCase()}`;
+  const rgb = rgbDe(h);
+  const pasa = (c) => Math.max(...contrastes(c)) >= 4.5;
+  if (pasa(rgb)) return h;
+  const [ci, cw] = contrastes(rgb);
+  const destino = ci >= cw ? 255 : 0;
+  for (let i = 1; i <= 25; i++) {
+    // (x·(25−i) + destino·i) / 25 nunca cae en ,5 exacto: el mismo redondeo
+    // que Dart y SQL.
+    const m = rgb.map((x) => Math.round((x * (25 - i) + destino * i) / 25));
+    if (pasa(m)) return hexDe(...m);
+  }
+  return h;
+}
+/** Los colores con más presencia del logo (32×32, sin grises ni blancos):
+ * lo mismo que `dominantColors` en la app. Vacío si no se puede leer. */
+async function coloresDelLogo(url) {
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  await new Promise((ok, ko) => { img.onload = ok; img.onerror = ko; img.src = url; });
+  const lienzo = document.createElement('canvas');
+  lienzo.width = 32; lienzo.height = 32;
+  const ctx = lienzo.getContext('2d', { willReadFrequently: true });
+  ctx.drawImage(img, 0, 0, 32, 32);
+  const px = ctx.getImageData(0, 0, 32, 32).data;
+  const N = 24;
+  const peso = new Array(N).fill(0); const sr = new Array(N).fill(0); const sg = new Array(N).fill(0); const sb2 = new Array(N).fill(0);
+  for (let i = 0; i + 3 < px.length; i += 4) {
+    if (px[i + 3] < 128) continue;
+    const [r, g, b] = [px[i], px[i + 1], px[i + 2]];
+    const max = Math.max(r, g, b) / 255; const min = Math.min(r, g, b) / 255;
+    const luz = (max + min) / 2;
+    const d = max - min;
+    const sat = d === 0 ? 0 : d / (1 - Math.abs(2 * luz - 1));
+    if (luz > 0.92 || luz < 0.08 || sat < 0.25) continue;
+    let tono;
+    const [R, G, B] = [r / 255, g / 255, b / 255];
+    if (max === R) tono = 60 * (((G - B) / d) % 6);
+    else if (max === G) tono = 60 * ((B - R) / d + 2);
+    else tono = 60 * ((R - G) / d + 4);
+    if (tono < 0) tono += 360;
+    const k = Math.floor(tono / 360 * N) % N;
+    peso[k] += sat; sr[k] += r * sat; sg[k] += g * sat; sb2[k] += b * sat;
+  }
+  const orden = [...Array(N).keys()].sort((a, b) => peso[b] - peso[a]);
+  const out = []; const cajas = [];
+  for (const k of orden) {
+    if (peso[k] <= 0 || out.length >= 3) break;
+    if (cajas.some((c) => Math.abs(c - k) <= 1 || Math.abs(c - k) >= N - 1)) continue;
+    cajas.push(k);
+    out.push(hexDe(Math.round(sr[k] / peso[k]), Math.round(sg[k] / peso[k]), Math.round(sb2[k] / peso[k])));
+  }
+  return out;
+}
+
+/** Plataformas de entradas conocidas: el botón dirá «Entradas en DICE». La
+ * misma lista que la app (`ticket_platforms.dart`). */
+const PLATAFORMAS_ENTRADAS = Object.fromEntries((
+  `dice.fm=DICE|entradium.com=Entradium|eventbrite.com=Eventbrite|eventbrite.es=Eventbrite|eventbrite.co.uk=Eventbrite|eventbrite.ie=Eventbrite|
+  eventbrite.fr=Eventbrite|eventbrite.de=Eventbrite|eventbrite.it=Eventbrite|eventbrite.pt=Eventbrite|ticketmaster.es=Ticketmaster|ticketmaster.com=Ticketmaster|
+  ticketmaster.co.uk=Ticketmaster|ticketmaster.ie=Ticketmaster|ticketmaster.fr=Ticketmaster|ticketmaster.de=Ticketmaster|feverup.com=Fever|fever.com=Fever|
+  wegow.com=Wegow|tiqets.com=Tiqets|taquilla.com=Taquilla.com|ticketea.com=Ticketea|entradas.com=Entradas.com|universe.com=Universe|
+  seetickets.com=See Tickets|ra.co=Resident Advisor|residentadvisor.net=Resident Advisor|xceed.me=Xceed|shotgun.live=Shotgun|ticketswap.es=TicketSwap|
+  ticketswap.com=TicketSwap|giglon.com=Giglon|atrapalo.com=Atrápalo|eventim.es=Eventim|eventim.de=Eventim|eventim.co.uk=Eventim|
+  fnactickets.com=Fnac Tickets|bacantix.com=Bacantix|compralaentrada.com=CompraLaEntrada|redentradas.com=Red Entradas|enterticket.es=Enterticket|notikumi.com=Notikumi|
+  tickentradas.com=Tickentradas|koobin.com=Koobin|ticketib.com=Ticketib`
+).split('|').map((x) => x.trim().split('=')));
+/** { plataforma, dominio } de un enlace de entradas (o null). */
+function plataformaEntradas(url) {
+  let u;
+  const t = String(url || '').trim();
+  if (!t) return null;
+  try { u = new URL(t.includes('://') ? t : `https://${t}`); } catch { return null; }
+  let host = u.hostname.toLowerCase();
+  for (const pre of ['www.', 'm.']) if (host.startsWith(pre)) host = host.slice(pre.length);
+  let plataforma = null;
+  for (const [dom, nombre] of Object.entries(PLATAFORMAS_ENTRADAS)) {
+    if (host === dom || host.endsWith(`.${dom}`)) { plataforma = nombre; break; }
+  }
+  if (!plataforma && (host === 'elcorteingles.es' || host.endsWith('.elcorteingles.es'))
+    && u.pathname.toLowerCase().startsWith('/entradas')) plataforma = 'El Corte Inglés';
+  return { plataforma, dominio: host };
+}
+
+/** Metros entre dos puntos. */
+function metrosEntre(a, b) {
+  const rad = (d) => d * Math.PI / 180;
+  const dLat = rad(b.lat - a.lat); const dLng = rad(b.lng - a.lng);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(dLng / 2) ** 2;
+  return 2 * 6371000 * Math.asin(Math.min(1, Math.sqrt(h)));
 }
 
 /** Mapbox GL se carga solo cuando hace falta un mapa (pesa lo suyo). */
@@ -1494,6 +1623,19 @@ async function offerForm(v, id, kindDefault, desde = null) {
           ${CATS.map((c) => `<option value="${esc(c.id)}" ${o.category_id === c.id ? 'selected' : ''}>${esc(c.names?.[I18N.lang] || c.names?.es || '')}</option>`).join('')}</select></label>
         <label class="f"><span>Empieza</span><input type="datetime-local" name="start" value="${toLocalInput(o.kind === 'future_event' ? o.event_at : o.redeem_start_at)}" required></label>
         <label class="f"><span>Termina</span><input type="datetime-local" name="end" value="${toLocalInput(o.kind === 'future_event' ? o.event_end_at : o.redeem_end_at)}"></label>
+        <fieldset class="f full lugar"><legend>Dónde</legend>
+          <label class="opcion"><input type="checkbox" name="venue_on" ${o.venue_address ? 'checked' : ''}><span>Es en otro sitio</span></label>
+          <p class="hint" id="lugarAyuda"></p>
+          <div id="lugarCampos" class="form-grid" ${o.venue_address ? '' : 'hidden'}>
+            <label class="f"><span>Nombre del sitio <small>(opcional)</small></span><input name="venue_name" maxlength="80" value="${esc(o.venue_name || '')}" placeholder="Ej.: Sala Clamores"></label>
+            <label class="f"><span>Dirección del sitio</span><input name="venue_address" maxlength="160" value="${esc(o.venue_address || '')}" placeholder="Calle, número y ciudad"></label>
+            <div class="full">
+              <p style="margin:0 0 8px"><button class="btn sm" type="button" id="buscarLugar">${ms('location_on')}Buscar en el mapa</button>
+                <span class="muted" id="lugarTxt"></span></p>
+              <div class="mapa" id="mapaLugar"></div>
+            </div>
+          </div>
+        </fieldset>
         <label class="f"><span>Precio (opcional)</span><input name="price" inputmode="decimal" value="${o.price_cents == null ? '' : (o.price_cents / 100).toFixed(2).replace('.', ',')}" placeholder="12,00"></label>
         <label class="f"><span>Aforo / unidades</span><input name="max_redemptions" type="number" min="1" value="${o.max_redemptions ?? ''}" placeholder="vacío = sin límite"></label>
         <label class="f" id="plazasRow" hidden><span>Cómo se llenan las plazas <small id="plazasAyuda"></small></span><select name="holds_seats">
@@ -1518,19 +1660,31 @@ async function offerForm(v, id, kindDefault, desde = null) {
         </fieldset>
         <label class="f full"><span>Condiciones (letra pequeña)</span><textarea name="terms" maxlength="300">${esc(o.terms || '')}</textarea></label>
         <label class="f full"><span>Enlace externo (entradas, reservas…)</span><input name="external_url" value="${esc(o.external_url || '')}" placeholder="https://"></label>
+        <p class="hint full" id="entradasAyuda" style="margin:-4px 0 0" hidden></p>
       </div>
       <p class="hint">${TZ === KZ.CANARIAS ? 'Las fechas y horas son las de Canarias, donde está tu local.' : 'Las fechas y horas son las de la península (hora de Madrid), donde está tu local.'}</p>
       <h3 style="margin-top:16px">Fotos y vídeo</h3>
       <p class="hint">Hasta 6 fotos o vídeos. La primera es la portada; muévelas con las flechas. Si no pones ninguna, se usa la foto del local. Los vídeos se ven al abrir la publicación (en el feed van las fotos).</p>
       <div class="photos" id="photos"></div>
       <h3 style="margin-top:18px">Diseño del anuncio</h3>
-      <p class="hint">Así se verá en Descubre. Elige la plantilla y el color que mejor casen con tu marca.</p>
+      <p class="hint">Así se verá en Descubre y en la ficha. Elige el diseño que mejor lo cuente y el color.</p>
       <div class="estilo">
         <div class="estilo-prev" id="estiloPrev" aria-hidden="true"></div>
         <div class="estilo-opc">
-          <div class="pills" id="plantillasEstilo"></div>
-          <p class="hint" style="margin:14px 0 6px">Color de tu marca</p>
-          <div class="colores" id="colores"></div>
+          <div class="pills" id="plantillasEstilo" role="group" aria-label="${esc(I18N.t('Diseño del anuncio'))}"></div>
+          <p class="hint" id="plantillaAyuda" style="margin:8px 0 0"></p>
+          <p class="hint" style="margin:14px 0 6px">Color</p>
+          <div class="colores" id="colores" role="group" aria-label="${esc(I18N.t('Color'))}"></div>
+          <div class="marca" id="marcaPanel" hidden>
+            <p class="hint" style="margin:0 0 6px"><b>Color de tu marca</b></p>
+            <div class="marca-fila">
+              <input type="color" id="marcaColor" aria-label="${esc(I18N.t('Color de tu marca'))}">
+              <input id="marcaHex" maxlength="7" placeholder="#1E79D1" aria-label="${esc(I18N.t('Código del color'))}" spellcheck="false">
+              ${BIZ.logo ? `<button class="btn sm" type="button" id="marcaLogo">${esc(I18N.t('Sacar del logo'))}</button>` : ''}
+            </div>
+            <div class="colores" id="marcaSugeridos" style="margin-top:8px"></div>
+            <p class="hint" id="marcaNota" style="margin:6px 0 0"></p>
+          </div>
         </div>
       </div>
       <div class="actions" style="margin-top:18px">
@@ -1654,27 +1808,114 @@ async function offerForm(v, id, kindDefault, desde = null) {
   };
   renderPhotos();
 
+  // ── Lugar propio: «Es en otro sitio» (docs/DISENOS_PUBLICACION.md §5) ────
+  const lugar = {
+    punto: o.venue_address && o.venue_lat != null ? { lat: o.venue_lat, lng: o.venue_lng } : null,
+    mapa: null,
+    perfil: null,
+    activo: () => $('[name=venue_on]', v).checked,
+  };
+  const pintaLugar = async () => {
+    const on = lugar.activo();
+    $('#lugarCampos', v).hidden = !on;
+    if (!lugar.perfil) {
+      try {
+        const fila = await rpc('business_profile', { p_id: BIZ.id });
+        lugar.perfil = (Array.isArray(fila) ? fila[0] : fila) || {};
+      } catch { lugar.perfil = {}; }
+    }
+    const casa = lugar.perfil;
+    const dirCasa = [casa.address, casa.city].filter(Boolean).join(', ');
+    $('#lugarAyuda', v).textContent = on
+      ? I18N.t('Una sala, un parque, otro local… La distancia, el mapa y «Cómo llegar» llevarán ahí.')
+      : (dirCasa ? bi(`En tu local: ${dirCasa}`, `At your place: ${dirCasa}`) : '');
+    const txt = $('#lugarTxt', v);
+    if (lugar.punto && casa.lat != null) {
+      const m = metrosEntre({ lat: casa.lat, lng: casa.lng }, lugar.punto);
+      const d = m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toFixed(1).replace('.', I18N.lang === 'en' ? '.' : ',')} km`;
+      txt.textContent = bi(`A ${d} de tu local. Si no es exacto, arrastra la chincheta.`, `${d} from your place. If it's not exact, drag the pin.`);
+    } else {
+      txt.textContent = I18N.t('Marca el sitio en el mapa.');
+    }
+    if (on && !lugar.mapa) {
+      lugar.mapa = await mapaPunto($('#mapaLugar', v), lugar.punto, async (p) => {
+        lugar.punto = p;
+        const el = $('[name=venue_address]', v);
+        // Lo que vino del mapa se vuelve a rellenar; lo escrito a mano, no.
+        if (!el.value.trim() || el.dataset.auto === el.value) {
+          const d = await direccionDe(p.lat, p.lng);
+          const linea = d ? [d.address, d.city].filter(Boolean).join(', ') : '';
+          if (linea) { el.value = linea; el.dataset.auto = linea; }
+        }
+        pintaLugar(); pintaEstilo();
+      }) || { mueve() {} };
+      if (!lugar.punto && casa.lat != null) lugar.mapa.mueve({ lat: casa.lat, lng: casa.lng }, 14);
+    }
+  };
+  lugar.pon = (x) => {
+    $('[name=venue_on]', v).checked = !!x;
+    $('[name=venue_name]', v).value = x?.name || '';
+    $('[name=venue_address]', v).value = x?.address || '';
+    lugar.punto = x && x.lat != null ? { lat: x.lat, lng: x.lng } : null;
+    if (lugar.punto) lugar.mapa?.mueve(lugar.punto);
+    pintaLugar();
+  };
+  $('[name=venue_on]', v).onchange = () => { pintaLugar(); pintaEstilo(); };
+  $('#buscarLugar', v).onclick = async () => {
+    const q = String($('[name=venue_address]', v).value || '').trim() || String($('[name=venue_name]', v).value || '').trim();
+    if (!q) { toast('Escribe primero la dirección del sitio.', true); return; }
+    const d = await buscaDireccion(q);
+    if (!d) { toast('No encontramos esa dirección. Prueba a escribirla de otra forma o marca el punto en el mapa.', true); return; }
+    lugar.punto = { lat: d.lat, lng: d.lng };
+    lugar.mapa?.mueve(lugar.punto);
+    pintaLugar(); pintaEstilo();
+  };
+  pintaLugar();
+
+  // ── Botón de entradas: lo que dirá ──────────────────────────────────────
+  const pintaEntradas = () => {
+    const p = plataformaEntradas($('[name=external_url]', v).value);
+    const ayuda = $('#entradasAyuda', v);
+    ayuda.hidden = !p;
+    if (!p) return;
+    const etiqueta = p.plataforma ? bi(`Entradas en ${p.plataforma}`, `Tickets on ${p.plataforma}`)
+      : bi(`Conseguir entradas (${p.dominio})`, `Get tickets (${p.dominio})`);
+    ayuda.textContent = bi(`El botón dirá: ${etiqueta}`, `The button will say: ${etiqueta}`);
+  };
+  $('[name=external_url]', v).addEventListener('input', pintaEntradas);
+  pintaEntradas();
+
   // ── Diseño del anuncio (las mismas plantillas y colores que la app) ──────
-  const PLANTILLAS = [['glass', 'Cristal'], ['bold', 'Color'], ['poster', 'Póster'], ['minimal', 'Limpio']];
-  const COLORES = ['#FF4D6D', '#F5B041', '#0EA5E9', '#7C5CFF', '#34D399', '#FF8A3D', '#E879F9', '#111827'];
   // El estilo viene de la base (lo escribe cualquiera del equipo que
   // gestione): solo plantillas conocidas y un color #rrggbb, que va dentro
   // de un atributo `style`.
-  const limpiaEstilo = (s) => ({
-    template: PLANTILLAS.some(([k]) => k === s?.template) ? s.template : 'glass',
-    accent: /^#[0-9a-f]{6}$/i.test(String(s?.accent || '')) ? s.accent : null,
+  const limpiaEstilo = (s2) => ({
+    template: PLANTILLAS.some(([k]) => k === s2?.template) ? s2.template : 'glass',
+    accent: colorSeguro(s2?.accent),
   });
   let estilo = limpiaEstilo(o.style);
-  // Tinta sobre el color si su luminancia pasa de 0,186 (donde la tinta ya
-  // contrasta más que el blanco), como `OfferStyle.onAccent` en la app.
-  const claro = (hex) => {
-    const n = parseInt(hex.slice(1), 16);
-    const l = (c) => { const x = c / 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; };
-    return 0.2126 * l(n >> 16 & 255) + 0.7152 * l(n >> 8 & 255) + 0.0722 * l(n & 255) > 0.186;
+  const enPaleta = (c) => PALETA.some(([h]) => h === c);
+  const kicker = (f) => {
+    const evento = String(f.get('kind') || kindDefault) === 'future_event';
+    const ini = fromLocalInput(f.get('start'));
+    if (!ini) return '';
+    const dia = (iso) => {
+      const d = new Date(iso);
+      const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+      const ese = new Date(d); ese.setHours(0, 0, 0, 0);
+      const n = Math.round((ese - hoy) / 864e5);
+      if (n === 0) return bi('Hoy', 'Today');
+      if (n === 1) return bi('Mañana', 'Tomorrow');
+      return d.toLocaleDateString(LOC(), { weekday: 'short', day: 'numeric', month: 'short', timeZone: TZ });
+    };
+    const hm = (iso) => new Date(iso).toLocaleTimeString(LOC(), { hour: '2-digit', minute: '2-digit', timeZone: TZ });
+    const fin = fromLocalInput(f.get('end'));
+    const txt = evento || !fin ? `${dia(ini)} · ${hm(ini)}` : `${dia(ini)} · ${hm(ini)}–${hm(fin)}`;
+    return txt.replace(/\./g, '').toUpperCase();
   };
   pintaEstilo = () => {
     const acento = estilo.accent || '#FF4D6D';
-    const sobre = claro(acento) ? '#0A0A0A' : '#FFFFFF';
+    const sobre = sobreColor(acento);
     const f = new FormData($('#form'));
     const evento = String(f.get('kind') || kindDefault) === 'future_event';
     const titulo = String(f.get('title') || '').trim() || (I18N.lang === 'en'
@@ -1687,28 +1928,77 @@ async function offerForm(v, id, kindDefault, desde = null) {
       : precioTxt ? fmtMoney(Math.round(parseFloat(precioTxt.replace(',', '.')) * 100)) : '';
     const foto = images.find((u) => !isVideo(u));
     const t = estilo.template;
+    const sitio = lugar.activo()
+      ? (String(f.get('venue_name') || '').trim() || String(f.get('venue_address') || '').split(',')[0].trim())
+      : '';
+    const cabecera = sitio
+      ? `<b class="ep-biz">${ms('location_on')}${esc(sitio)}</b><small class="ep-org">${esc(bi(`Organiza: ${BIZ.name}`, `Organised by ${BIZ.name}`))}</small>`
+      : `<b class="ep-biz">${esc(BIZ.name)}</b>`;
+    const k = t === 'poster' ? kicker(f) : '';
     $('#estiloPrev', v).innerHTML = `
       <div class="ep ep-${t}" style="--ac:${acento};--on:${sobre}">
         <div class="ep-panel">
-          <b class="ep-biz">${esc(BIZ.name)}</b>
-          <span class="ep-title">${esc(titulo)}</span>
+          ${k ? `<span class="ep-kicker">${esc(k)}</span>` : ''}
+          ${t === 'poster' ? `<span class="ep-title">${esc(titulo)}</span>${cabecera}` : `${cabecera}<span class="ep-title">${esc(titulo)}</span>`}
           ${etiqueta ? `<span class="ep-tag">${esc(etiqueta)}</span>` : ''}
-          <span class="ep-cta">${esc(I18N.lang === 'en' ? 'Get the code' : 'Conseguir el código')}</span>
+          <span class="ep-cta">${esc(I18N.lang === 'en' ? (evento ? 'See event' : 'Get the code') : (evento ? 'Ver evento' : 'Conseguir el código'))}</span>
         </div>
       </div>`;
     // La foto va por el DOM, no dentro del atributo: una comilla en la
     // dirección cerraba el `url('…')` (el escape HTML se deshace antes de
     // leer el CSS). Solo https.
     if (foto && /^https:\/\//i.test(foto)) $('.ep', $('#estiloPrev', v)).style.backgroundImage = `url(${JSON.stringify(foto)})`;
-    $('#plantillasEstilo', v).innerHTML = PLANTILLAS.map(([k, n]) =>
-      `<button type="button" class="${estilo.template === k ? 'on' : ''}" data-plantilla="${k}">${esc(I18N.t(n))}</button>`).join('');
-    $('#colores', v).innerHTML = COLORES.map((c, i) =>
-      `<button type="button" class="color ${(estilo.accent || '#FF4D6D') === c ? 'on' : ''}" data-color="${i === 0 ? '' : c}" style="background:${c}" aria-label="${c}"></button>`).join('');
+    $('#plantillasEstilo', v).innerHTML = PLANTILLAS.map(([k2, n]) =>
+      `<button type="button" class="${estilo.template === k2 ? 'on' : ''}" aria-pressed="${estilo.template === k2}" data-plantilla="${k2}">${esc(I18N.t(n))}</button>`).join('');
+    $('#plantillaAyuda', v).textContent = I18N.t(PLANTILLA_AYUDA[estilo.template]);
+    const marca = !!estilo.accent && !enPaleta(estilo.accent);
+    $('#colores', v).innerHTML = PALETA.map(([c, n], i) =>
+      `<button type="button" class="color ${!marca && acento === c ? 'on' : ''}" aria-pressed="${!marca && acento === c}" data-color="${i === 0 ? '' : c}" style="background:${c}" aria-label="${esc(I18N.t(n))}" title="${esc(I18N.t(n))}"></button>`).join('')
+      + `<button type="button" class="color marca-btn ${marca ? 'on' : ''}" aria-pressed="${marca}" data-marca="1" ${marca ? `style="background:${acento}"` : ''} aria-label="${esc(I18N.t('Color de tu marca'))}" title="${esc(I18N.t('Color de tu marca'))}">${marca ? '' : ms('edit')}</button>`;
     $$('[data-plantilla]', v).forEach((b) => { b.onclick = () => { estilo.template = b.dataset.plantilla; pintaEstilo(); }; });
-    $$('[data-color]', v).forEach((b) => { b.onclick = () => { estilo.accent = b.dataset.color || null; pintaEstilo(); }; });
+    $$('[data-color]', v).forEach((b) => { b.onclick = () => { estilo.accent = b.dataset.color || null; $('#marcaPanel', v).hidden = true; pintaEstilo(); }; });
+    $('[data-marca]', v).onclick = () => {
+      const panel = $('#marcaPanel', v);
+      panel.hidden = !panel.hidden;
+      if (!panel.hidden) pintaMarca(estilo.accent && !enPaleta(estilo.accent) ? estilo.accent : '#1E79D1', true);
+    };
   };
+  // Color de la marca: el selector del navegador, el código o el logo. Se
+  // corrige para que el texto encima se lea (y se dice).
+  const pintaMarca = (hex, aplicar) => {
+    const seguro = colorSeguro(hex);
+    if (!seguro) { $('#marcaNota', v).textContent = I18N.t('Escribe un color como #1E79D1'); return; }
+    $('#marcaColor', v).value = seguro.toLowerCase();
+    if (document.activeElement !== $('#marcaHex', v)) $('#marcaHex', v).value = seguro;
+    $('#marcaNota', v).textContent = seguro !== hex.toUpperCase().replace(/^([^#])/, '#$1')
+      ? I18N.t('Lo hemos ajustado un poco para que el texto encima se lea bien.') : '';
+    if (aplicar) { estilo.accent = seguro; pintaEstilo(); }
+  };
+  $('#marcaColor', v).addEventListener('input', (e) => pintaMarca(e.target.value, true));
+  $('#marcaHex', v).addEventListener('input', (e) => {
+    const t = e.target.value.trim();
+    if (/^#?[0-9a-f]{6}$/i.test(t)) pintaMarca(t.startsWith('#') ? t : `#${t}`, true);
+  });
+  const botonLogo = $('#marcaLogo', v);
+  if (botonLogo) {
+    botonLogo.onclick = async () => {
+      botonLogo.disabled = true;
+      let colores = [];
+      try { colores = await coloresDelLogo(BIZ.logo); } catch { colores = []; }
+      botonLogo.disabled = false;
+      const caja = $('#marcaSugeridos', v);
+      if (!colores.length) {
+        caja.innerHTML = '';
+        $('#marcaNota', v).textContent = I18N.t('No hemos encontrado un color en tu logo. Elígelo a mano.');
+        return;
+      }
+      caja.innerHTML = colores.map((c) => `<button type="button" class="color" data-sugerido="${c}" style="background:${c}" aria-label="${c}" title="${c}"></button>`).join('');
+      $$('[data-sugerido]', caja).forEach((b) => { b.onclick = () => pintaMarca(b.dataset.sugerido, true); });
+      pintaMarca(colores[0], true);
+    };
+  }
   $('#form').addEventListener('input', (e) => {
-    if (['title', 'kind', 'price', 'discount_type', 'discount_value'].includes(e.target.name)) pintaEstilo();
+    if (['title', 'kind', 'price', 'discount_type', 'discount_value', 'start', 'end', 'venue_name', 'venue_address'].includes(e.target.name)) pintaEstilo();
   });
   pintaEstilo();
 
@@ -1748,6 +2038,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
     pon('alcohol', ds.alcohol === true ? 'yes' : ds.alcohol === false ? 'no' : '');
     images = [...(d.images || [])];
     if (d.style) estilo = limpiaEstilo(d.style);
+    lugar.pon(d.venue_address ? { name: d.venue_name, address: d.venue_address, lat: d.venue_lat, lng: d.venue_lng } : null);
     renderPhotos(); syncKind(); syncDiscount(); pintaEstilo();
   };
   $$('[data-idea]', v).forEach((b) => { b.onclick = () => { aplicarIdea(ideas[+b.dataset.idea]); toast('Plantilla aplicada: repasa precio y hora'); }; });
@@ -1804,6 +2095,12 @@ async function offerForm(v, id, kindDefault, desde = null) {
       code_ttl_minutes: f.get('code_ttl_minutes') ? Number(f.get('code_ttl_minutes')) : null,
       reservations_enabled: f.get('kind') !== 'flash_offer' && campo('reservations_enabled').checked,
       images,
+      ...(lugar.activo() ? {
+        venue_name: String(f.get('venue_name') || '').trim() || null,
+        venue_address: String(f.get('venue_address') || '').trim() || null,
+        venue_lat: lugar.punto?.lat ?? null,
+        venue_lng: lugar.punto?.lng ?? null,
+      } : {}),
     };
     try {
       await rpc('save_offer_template', { p_business: BIZ.id, p_name: r.name, p_data: data });
@@ -1822,6 +2119,14 @@ async function offerForm(v, id, kindDefault, desde = null) {
     }
     if (f.get('discount_type') === 'other' && String(f.get('discount_value') || '').trim().length > 24) {
       $('#formErr').textContent = I18N.t('El descuento «Otro» cabe en 24 caracteres («2ª unidad −50 %»).'); return;
+    }
+    if (lugar.activo()) {
+      if (String(f.get('venue_address') || '').trim().length < 5) {
+        $('#formErr').textContent = I18N.t('Escribe la dirección del sitio.'); return;
+      }
+      if (!lugar.punto) {
+        $('#formErr').textContent = I18N.t('Marca el sitio en el mapa.'); return;
+      }
     }
     const programada = fromLocalInput(f.get('publish_at'));
     if (programada && new Date(programada) <= new Date()) {
@@ -1911,6 +2216,10 @@ async function offerForm(v, id, kindDefault, desde = null) {
         : (id && ['expired', 'sold_out', 'cancelled'].includes(o.status) ? o.status : 'draft')),
       publish_at: programada,
       style: { template: estilo.template, ...(estilo.accent ? { accent: estilo.accent } : {}) },
+      // Sin sitio propio, la base pone el punto del negocio.
+      venue_name: lugar.activo() ? (String(f.get('venue_name') || '').trim() || null) : null,
+      venue_address: lugar.activo() ? (String(f.get('venue_address') || '').trim() || null) : null,
+      ...(lugar.activo() && lugar.punto ? { location: `SRID=4326;POINT(${lugar.punto.lng} ${lugar.punto.lat})` } : {}),
     };
     // Los mismos avisos que la app.
     if (flash ? (!data.redeem_start_at || !data.redeem_end_at) : !data.event_at) {

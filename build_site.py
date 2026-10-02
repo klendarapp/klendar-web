@@ -46,7 +46,7 @@ T = {
     hero_eyebrow='Ofertas que se acaban. Planes que empiezan.',
     hero_h1='Ofertas y planes <em>cerca de ti</em>, hoy',
     hero_lead='Ofertas flash con cuenta atrás y eventos de los bares, restaurantes, tiendas y salas de tu barrio, ordenados por cercanía. Gratis y sin anuncios.',
-    cta_explore='Ver qué hay cerca', cta_explore_url='/explorar/',
+    cta_explore='Ver qué hay cerca', cta_explore_url='/descubre/',
     cta_register='Crear cuenta gratis', cta_register_url='/app/#/registro',
     cities_label='Qué hacer hoy en', cities_fallback='tu ciudad', agenda_url='/agenda/',
     app_note='App para Android e iPhone, muy pronto. Mientras tanto, todo funciona desde aquí.',
@@ -116,7 +116,7 @@ T = {
     hero_eyebrow='Deals that run out. Plans that begin.',
     hero_h1='Deals and things to do <em>near you</em>, today',
     hero_lead='Flash offers with a countdown and events from the bars, restaurants, shops and venues around you, sorted by distance. Free, no ads.',
-    cta_explore='See what\'s nearby', cta_explore_url='/en/explore/',
+    cta_explore='See what\'s nearby', cta_explore_url='/en/discover/',
     cta_register='Create a free account', cta_register_url='/app/?lang=en#/registro',
     cities_label='What to do today in', cities_fallback='your city', agenda_url='/en/whats-on/',
     app_note='Android and iPhone app coming soon. Meanwhile, everything works right here.',
@@ -233,8 +233,8 @@ def head(t, path, page_title=None, page_desc=None, extra=''):
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 <link rel="preload" href="/assets/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/site.css?v=20261010">
-<link rel="stylesheet" href="/assets/public.css?v=26">
+<link rel="stylesheet" href="/assets/site.css?v=20261011">
+<link rel="stylesheet" href="/assets/public.css?v=28">
 {extra}
 </head>
 <body>
@@ -456,8 +456,8 @@ def doc_page(t, path, title, desc, body):
 # profundo. Las que se generan al vuelo tienen su sitemap dinámico: ciudades,
 # «hoy» y categorías en /sitemap-agenda.xml y las fichas de negocio (/b/) en
 # /sitemap-negocios.xml (vacíos mientras la web enseña los datos de dev).
-SITEMAP_ES = ['/', '/como-funciona/', '/explorar/', '/agenda/', '/para-negocios/', '/precios/', '/preguntas/', '/prensa/', '/sobre/', '/accesibilidad/', '/estado/', '/negocios/', '/soporte/', '/privacidad/', '/terminos/', '/aviso-legal/', '/cookies/', '/normas/', '/eliminar-cuenta/']
-SITEMAP_EN = ['/en/', '/en/how-it-works/', '/en/explore/', '/en/whats-on/', '/en/for-business/', '/en/pricing/', '/en/faq/', '/en/press/', '/en/about/', '/en/accessibility/', '/en/status/', '/en/business-terms/', '/en/support/', '/en/privacy/', '/en/terms/', '/en/legal-notice/', '/en/cookies/', '/en/community-guidelines/', '/en/delete-account/']
+SITEMAP_ES = ['/', '/como-funciona/', '/descubre/', '/explorar/', '/agenda/', '/para-negocios/', '/precios/', '/preguntas/', '/prensa/', '/sobre/', '/accesibilidad/', '/estado/', '/negocios/', '/soporte/', '/privacidad/', '/terminos/', '/aviso-legal/', '/cookies/', '/normas/', '/eliminar-cuenta/']
+SITEMAP_EN = ['/en/', '/en/how-it-works/', '/en/discover/', '/en/explore/', '/en/whats-on/', '/en/for-business/', '/en/pricing/', '/en/faq/', '/en/press/', '/en/about/', '/en/accessibility/', '/en/status/', '/en/business-terms/', '/en/support/', '/en/privacy/', '/en/terms/', '/en/legal-notice/', '/en/cookies/', '/en/community-guidelines/', '/en/delete-account/']
 ALT_PAIRS = dict(zip(SITEMAP_ES, SITEMAP_EN))
 
 

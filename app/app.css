@@ -309,6 +309,19 @@ button.codigo.copiar .ms { font-size: 18px; color: var(--ink-2); letter-spacing:
 .icono-btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 .icono-btn:disabled { opacity: .5; cursor: progress; }
 .enlace-abierto .acciones { margin-top: 18px; }
+/* Cada amigo de la lista lleva a su ficha (foto y nombre); los botones de
+ * quitar y bloquear van aparte. */
+.amigo-ir { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0; color: inherit; border-radius: 14px; }
+.amigo-ir:hover { text-decoration: none; }
+.amigo-ir:hover .fila-t b { text-decoration: underline; }
+.amigo-ir:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+/* La ficha de un amigo: foto, nombre y sus próximos planes. */
+.ficha-amigo { text-align: center; margin-bottom: 8px; }
+.ficha-amigo h1 { margin: 12px 0 4px; }
+.ficha-amigo .av-amigo.av-grande { margin-top: 8px; }
+.planes-amigo .plan-amigo { display: grid; gap: 8px; }
+.planes-amigo .plan-acc { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.planes-amigo .plan-va { margin: 0; font-size: 14px; font-weight: 700; color: var(--ink); }
 
 /* Invitar: una casilla por amigo, y cómo está cada uno. */
 .inv-lista { margin: 0; }

@@ -155,28 +155,35 @@ export const isVideo = (u) => /\.(mp4|mov|webm)(\?|$)/i.test(u || '');
 export const firstPhoto = (images) => (images || []).find((u) => !isVideo(u)) || null;
 
 /**
- * Una pieza de la galería: foto o vídeo.
+ * La foto o el vídeo de una ficha, en grande (como la cabecera de la ficha
+ * en la app): un carrusel que se desliza de lado, con «1/3» encima.
  *
- * El vídeo no arranca solo (en una página que se abre desde un enlace, un
- * vídeo que suena de golpe es lo peor que te puede pasar) y usa la primera
- * foto de portada mientras no se toca. Empieza en silencio, como en la app;
- * el altavoz del reproductor le pone el sonido (y en el móvil, las teclas de
- * volumen del propio navegador).
+ * El vídeo va en silencio y con controles. Se reproduce solo mientras está a
+ * la vista (`/assets/tarjetas.js`), nunca con «reducir movimiento» ni con
+ * ahorro de datos; hasta entonces se ve la primera foto de portada y no se
+ * pide nada del vídeo. El altavoz del reproductor le pone el sonido.
+ *
+ * `forma`: 'oferta' (vertical, 4:5, como las fotos que se suben desde la app)
+ * o 'negocio' (apaisada, la portada del local).
  */
-export function media(url, poster, primera = false) {
-  if (!isVideo(url)) return imgGaleria(url, primera);
-  // Sin foto de portada, «#t=0.1» hace que el navegador enseñe el primer
-  // fotograma en vez de un rectángulo negro.
-  return `<video src="${esc(url)}${poster ? '' : '#t=0.1'}" ${poster ? `poster="${esc(poster)}"` : ''}
-    controls playsinline preload="metadata" muted></video>`;
+export function carrusel(urls, { titulo = '', forma = 'oferta', lang = 'es' } = {}) {
+  const piezas = (urls || []).filter((u) => typeof u === 'string' && /^https:\/\//.test(u)).slice(0, 8);
+  if (!piezas.length) return '';
+  const en = lang === 'en';
+  const poster = piezas.find((u) => !isVideo(u)) || '';
+  const n = piezas.length;
+  const alt = (i, video) => (n > 1
+    ? (en ? `${video ? 'Video' : 'Photo'} ${i + 1} of ${n}: ${titulo}` : `${video ? 'Vídeo' : 'Foto'} ${i + 1} de ${n}: ${titulo}`)
+    : (en ? `${video ? 'Video' : 'Photo'}: ${titulo}` : `${video ? 'Vídeo' : 'Foto'}: ${titulo}`));
+  const pieza = (u, i) => (isVideo(u)
+    ? `<video class="fm-pieza" muted playsinline loop controls preload="${poster ? 'none' : 'metadata'}" ${poster ? `poster="${esc(poster)}"` : ''}
+        data-src="${esc(u)}${poster ? '' : '#t=0.1'}" aria-label="${esc(alt(i, true))}"></video>`
+    : `<img class="fm-pieza" src="${esc(u)}" alt="${esc(alt(i, false))}" width="${forma === 'negocio' ? 1200 : 900}" height="${forma === 'negocio' ? 675 : 1125}" ${i === 0 ? 'fetchpriority="high"' : 'loading="lazy" decoding="async"'}>`);
+  return `<div class="ficha-media ficha-media--${forma}">
+    <div class="fm-pista"${n > 1 ? ` tabindex="0" role="region" aria-label="${esc(en ? 'Photos and videos' : 'Fotos y vídeos')}"` : ''}>${piezas.map(pieza).join('')}</div>
+    ${n > 1 ? `<span class="fm-n" aria-hidden="true">1/${n}</span>` : ''}
+  </div>`;
 }
-
-/** Una foto de galería. La primera es lo más grande que se ve al abrir la
- *  página (el LCP): se pide ya y con prioridad. Las demás, al acercarse. El
- *  tamaño lo pone el CSS (aspect-ratio), así que no mueve nada al cargar. */
-export const imgGaleria = (url, primera = false) => (primera
-  ? `<img src="${esc(url)}" alt="" fetchpriority="high">`
-  : `<img src="${esc(url)}" alt="" loading="lazy" decoding="async">`);
 
 /** Dónde vive la cartelera en cada idioma. En inglés «agenda» es el orden
  * del día de una reunión, no lo que hay esta semana en la ciudad. */
@@ -205,6 +212,8 @@ export function cityLinks(lang, rawCity, city, cats, actual) {
 
 /** Donde vive cada seccion en cada idioma. */
 export const exploreBase = (lang) => (lang === 'en' ? '/en/explore' : '/explorar');
+/** Descubre: el feed de la pestaña 1 de la app. */
+export const discoverBase = (lang) => (lang === 'en' ? '/en/discover' : '/descubre');
 export const collectionBase = (lang) => (lang === 'en' ? '/en/collection' : '/coleccion');
 
 /** La misma página en el otro idioma: /o/x ⇄ /en/o/x, /agenda/x ⇄ /en/whats-on/x,
@@ -215,6 +224,7 @@ export const altPath = (path, lang) =>
         .replace(/^\/en\/whats-on/, '/agenda')
         .replace(/^\/en\/today/, '/hoy')
         .replace(/^\/en\/explore/, '/explorar')
+        .replace(/^\/en\/discover/, '/descubre')
         .replace(/^\/en\/collection/, '/coleccion')
         .replace(/^\/en\/friend\//, '/amigo/')
         .replace(/^\/en/, '') || '/')
@@ -222,6 +232,7 @@ export const altPath = (path, lang) =>
         .replace(/^\/agenda/, '/whats-on')
         .replace(/^\/hoy/, '/today')
         .replace(/^\/explorar/, '/explore')
+        .replace(/^\/descubre/, '/discover')
         .replace(/^\/coleccion/, '/collection')
         .replace(/^\/amigo\//, '/friend/')}`;
 
@@ -236,7 +247,9 @@ export const altPath = (path, lang) =>
 // `contador: false` en las páginas cuya dirección lleva un código personal
 // (baja de correos, enlace de amigo): así ese código no llega a Cloudflare Web
 // Analytics, que apunta la ruta de cada visita.
-export function publicPage({ lang, path, title, description, head = '', body, image, contador = true }) {
+// `actual`: la pestaña de la app que se marca en la cabecera ('descubre',
+// 'explorar'…); en una ficha, ninguna.
+export function publicPage({ lang, path, title, description, head = '', body, image, contador = true, actual = '' }) {
   const en = lang === 'en';
   const S = en
     ? { how: 'How it works', biz: 'Businesses', sup: 'Support', agenda: "What's on", exp: 'Explore' }
@@ -260,8 +273,12 @@ export function publicPage({ lang, path, title, description, head = '', body, im
   // hay una sesión guardada (ver /assets/amigos.js). También pone en activo
   // «Añadir a favoritos» y «Guardar en Planes» si ya lo tienes.
   // `data-autor`: reseñas, que se esconden si quien mira ha bloqueado a quien
-  // las escribió.
-  const conAmigos = /\sdata-(o|fav|plan|autor)="|id="amigos-ficha"/.test(body);
+  // las escribió. `#barra` (o `data-amigos-filtro`): la barra de filtros de
+  // Explorar y Descubre, donde va el chip «Van mis amigos» (también sin
+  // resultados, cuando no hay ninguna tarjeta).
+  const conAmigos = /\sdata-(o|fav|plan|autor|amigos-filtro)="|id="amigos-ficha"|id="barra"/.test(body);
+  // Tarjetas (vídeo a la vista, cuenta atrás, distancia) y desplegables.
+  const conTarjetas = /class="(tj|tjs|ficha-media|desplegable|hoja)[" ]|data-src="/.test(body);
   return `<!doctype html>
 <html lang="${en ? 'en' : 'es'}">
 <head>
@@ -289,16 +306,17 @@ ${erroresScript()}
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 ${preconectar}<link rel="preload" href="/assets/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/site.css?v=20261010">
-<link rel="stylesheet" href="/assets/public.css?v=26">
+<link rel="stylesheet" href="/assets/site.css?v=20261011">
+<link rel="stylesheet" href="/assets/public.css?v=28">
 ${cabeza}
 </head>
 <body>
-${siteHeader(lang, esc(es), esc(enPath))}
+${siteHeader(lang, esc(es), esc(enPath), actual)}
 <main class="pub wrap" id="contenido">${body}</main>
 ${siteFooter(lang)}
-${conAmigos ? `<script src="/assets/amigos.js?v=9" defer data-lang="${en ? 'en' : 'es'}"></script>
-` : ''}${/class="detail"/.test(body) ? `<script src="/assets/barra.js?v=2" defer></script>
+${conAmigos ? `<script src="/assets/amigos.js?v=11" defer data-lang="${en ? 'en' : 'es'}"></script>
+` : ''}${conTarjetas ? `<script src="/assets/tarjetas.js?v=1" defer></script>
+` : ''}${/class="detail[" ]/.test(body) ? `<script src="/assets/barra.js?v=3" defer></script>
 ` : ''}${contador ? CONTADOR : ''}
 </body></html>`;
 }
@@ -310,33 +328,6 @@ export function openInApp(path, label = 'Abrir en la app', cls = 'pill accent bi
   const intent = `intent://klendar.app${deep}#Intent;scheme=https;package=app.klendar;S.browser_fallback_url=${encodeURIComponent(BASE + '/')};end`;
   return `<a class="${cls}" id="open" data-web="${BASE}${esc(deep)}" href="${esc(intent)}">${esc(label)}</a>
 <script>(function(){var a=document.getElementById('open');if(!a)return;if(!/Android/i.test(navigator.userAgent||''))a.remove();})();</script>`;
-}
-
-/** Tarjeta de publicación para listados (negocio y agenda). `tz` es la zona
- *  de su negocio; si no se da, la de sus coordenadas. */
-export function offerCard(o, lang = 'es', tz = KZ.de(o)) {
-  const en = lang === 'en';
-  const img = firstPhoto(o.images);
-  const ini = o.redeem_start_at || o.starts_at;
-  // El mismo formato corto para eventos y ofertas: «jue, 1 oct · 20:00».
-  const when = o.kind === 'future_event'
-    ? `${fmtDay(o.event_at || o.starts_at, lang, tz)} · ${fmtTime(o.event_at || o.starts_at, lang, tz)}`
-    : `${fmtDay(ini, lang, tz)} · ${fmtTime(ini, lang, tz)} – ${fmtEnd(ini, o.redeem_end_at, lang, tz)}`;
-  const tag = benefit(o.discount, o.price_cents, o.currency, lang);
-  const prior = priorPrice(o.discount, lang);
-  // `data-o`: /assets/amigos.js le añade qué amigos van (con sesión).
-  return `<a class="ocard" href="${en ? '/en' : ''}/o/${esc(o.id)}" data-o="${esc(o.id)}">
-    ${img ? `<img src="${esc(img)}" alt="" loading="lazy" decoding="async" width="96" height="78">` : '<span class="ph">✦</span>'}
-    <span class="ocard-body">
-      <b>${esc(o.title)}</b>
-      <span class="muted">${esc(o.business_name || '')}${o.address ? ` · ${esc(o.address)}` : ''}</span>
-      <span class="ocard-meta">
-        ${tag ? `<span class="tag">${esc(tag)}</span>` : ''}
-        ${prior ? `<s class="muted">${esc(prior)}</s>` : ''}
-        <span class="muted">${esc(when)}</span>
-      </span>
-    </span>
-  </a>`;
 }
 
 /** Cuando el servidor no contesta: decirlo claro y no mentir con un 404.

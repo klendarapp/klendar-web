@@ -41,7 +41,13 @@
   Content-Security-Policy: frame-ancestors *
   X-Robots-Tag: noindex
 
-# Explorar: «Cerca de mí» pide la ubicación (solo al pulsarlo).
+# Explorar y Descubre: «Cerca de mí» pide la ubicación (solo al pulsarlo).
+/descubre/*
+  ! Permissions-Policy
+  Permissions-Policy: geolocation=(self), camera=(), microphone=()
+/en/discover/*
+  ! Permissions-Policy
+  Permissions-Policy: geolocation=(self), camera=(), microphone=()
 /explorar/*
   ! Permissions-Policy
   Permissions-Policy: geolocation=(self), camera=(), microphone=()
@@ -87,6 +93,8 @@
 /assets/auth-errors.js
   Cache-Control: public, max-age=31536000, immutable
 /assets/barra.js
+  Cache-Control: public, max-age=31536000, immutable
+/assets/tarjetas.js
   Cache-Control: public, max-age=31536000, immutable
 /assets/cabecera.js
   Cache-Control: public, max-age=31536000, immutable

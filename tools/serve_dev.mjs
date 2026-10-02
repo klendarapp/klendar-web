@@ -79,6 +79,7 @@ createServer(async (req, res) => {
     else if (/^\/(hoy|today)\/?$/.test(rest)) { mod = await load(`functions/${en}${en ? 'today' : 'hoy'}/index.js`); }
     // Explorar, categoria dentro de una ciudad y colecciones.
     else if ((m = rest.match(/^\/(explorar|explore)\/?$/))) { mod = await load(`functions/${en}${en ? 'explore' : 'explorar'}/index.js`); }
+    else if ((m = rest.match(/^\/(descubre|discover)\/?$/))) { mod = await load(`functions/${en}${en ? 'discover' : 'descubre'}/index.js`); }
     else if ((m = rest.match(/^\/(agenda|whats-on)\/([^/]+)\/([^/]+)\/?$/))) { mod = await load(`functions/${en}${en ? 'whats-on' : 'agenda'}/[city]/[category].js`); params = { city: m[2], category: m[3] }; }
     else if ((m = rest.match(/^\/(coleccion|collection)\/([^/]+)\/([^/]+)\/?$/))) { mod = await load(`functions/${en}${en ? 'collection' : 'coleccion'}/[slug]/[city].js`); params = { slug: m[2], city: m[3] }; }
     else if ((m = rest.match(/^\/(coleccion|collection)\/([^/]+)\/?$/))) { mod = await load(`functions/${en}${en ? 'collection' : 'coleccion'}/[slug].js`); params = { slug: m[2] }; }
@@ -98,7 +99,9 @@ createServer(async (req, res) => {
       const request = new Request(`https://klendar.app${path}${url.search}`, { headers: { 'accept-language': 'es' } });
       const out = await mod.onRequestGet({ request, params, env: process.env });
       res.writeHead(out.status, Object.fromEntries(out.headers));
-      res.end(await out.text());
+      // En local, sin el contador de Cloudflare (su servidor no acepta
+      // localhost y la consola se llenaba de errores que en producción no hay).
+      res.end((await out.text()).replace(/<script defer src="https:\/\/static\.cloudflareinsights\.com[^>]*><\/script>/g, ''));
       return;
     }
 

@@ -57,36 +57,71 @@ section h2 { font-size: clamp(28px, 4vw, 40px); line-height: 1.1; font-weight: 8
 .sub { color: var(--ink-2); font-size: 18px; max-width: 620px; margin: 0 0 34px; }
 
 /* ── Cabecera ─────────────────────────────────────────────────────────── */
+/* Arriba: la marca, las cuatro pestañas de la app (Descubre, Explorar,
+   Planes, Cuenta), «Para negocios», el idioma, «Entrar» y «Más». En el móvil
+   las pestañas bajan a una barra fija abajo (`.tabbar`), como en la app. */
 header.top { position: sticky; top: 0; z-index: 20; backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
   background: var(--glass); border-bottom: 1px solid var(--glass-border); }
 header.top .wrap { display: flex; align-items: center; gap: 14px; height: 64px; position: relative; max-width: 1240px; }
 .brand { display: flex; align-items: center; gap: 10px; color: var(--ink); font-family: var(--display); font-weight: 800; font-size: 20px; letter-spacing: -.6px; }
 .brand:hover { text-decoration: none; }
 .brand img { width: 30px; height: 30px; border-radius: 9px; }
-nav.main { margin-left: 28px; display: flex; align-items: center; gap: 22px; font-weight: 600; font-size: 14px; }
-/* Cada botón en una línea: si no caben todos, sale el menú desplegable. */
-nav.main a { color: var(--ink-2); white-space: nowrap; }
-nav.main a:hover { color: var(--ink); text-decoration: none; }
+.pestanas { display: flex; align-items: center; gap: 2px; margin-left: 18px; }
+.pestana { display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px; border-radius: 999px; color: var(--ink-2);
+  font-weight: 700; font-size: 14px; white-space: nowrap; }
+.pestana svg { width: 20px; height: 20px; flex: none; }
+.pestana:hover { color: var(--ink); background: var(--soft); text-decoration: none; }
+/* La activa, en tinta (selección = tinta; el coral es solo para la oferta). */
+.pestana[aria-current="page"] { color: var(--ink); background: var(--soft); }
+/* «Más»: un desplegable con lo de informarse, en todas las anchuras. */
+nav.main { display: none; position: absolute; right: 20px; top: 60px; z-index: 25; flex-direction: column; align-items: stretch; gap: 2px;
+  min-width: 240px; padding: 8px; border-radius: 20px; background: var(--elevated); border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow); font-weight: 600; font-size: 15px; }
+nav.main a { color: var(--ink); white-space: nowrap; padding: 10px 14px; border-radius: 12px; }
+nav.main a:hover { background: var(--soft); text-decoration: none; }
+#menu:checked ~ nav.main { display: flex; }
 .lang { display: inline-flex; border: 1px solid var(--glass-border); border-radius: 999px; overflow: hidden; font-size: 12px; font-weight: 700; }
 .lang a { padding: 6px 10px; color: var(--ink-2); }
 .lang a.on { background: var(--ink); color: var(--surface); }
-.menu-toggle { display: none; width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--glass-border); background: transparent; cursor: pointer; color: var(--ink); }
+.menu-toggle { display: block; width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--glass-border); background: transparent; cursor: pointer; color: var(--ink); }
 .menu-toggle span { display: block; width: 18px; height: 2px; background: currentColor; margin: 4px auto; border-radius: 2px; }
-#menu { display: none; }
+/* La casilla va encima del icono, invisible: es la que recibe el toque, el
+   tabulador y el lector de pantalla. El icono enseña el foco. */
+#menu { display: block; position: absolute; right: 20px; top: 10px; width: 44px; height: 44px; margin: 0;
+  opacity: 0; z-index: 1; cursor: pointer; }
+#menu:focus-visible ~ .top-acciones .menu-toggle { outline: 2px solid var(--ink); outline-offset: 2px; }
+#menu:checked ~ .top-acciones .menu-toggle { background: var(--soft); }
+.top-negocios { color: var(--ink-2); font-weight: 700; font-size: 14px; white-space: nowrap; }
+.top-negocios:hover { color: var(--ink); text-decoration: none; }
+@media (max-width: 1100px) { .top-negocios { display: none; } }
+@media (max-width: 860px) { .pestana { padding: 8px 10px; } .pestana svg { display: none; } }
 @media (max-width: 960px) {
-  .menu-toggle { display: block; }
-  /* La casilla va encima del icono, invisible: es la que recibe el toque, el
-     tabulador y el lector de pantalla. El icono enseña el foco. */
-  #menu { display: block; position: absolute; right: 20px; top: 10px; width: 44px; height: 44px; margin: 0;
-    opacity: 0; z-index: 1; cursor: pointer; }
-  #menu:focus-visible ~ .top-acciones .menu-toggle { outline: 2px solid var(--ink); outline-offset: 2px; }
-  nav.main { display: none; position: absolute; left: 0; right: 0; top: 64px; flex-direction: column; align-items: flex-start; gap: 4px; padding: 12px 20px 18px;
-    background: var(--surface); border-bottom: 1px solid var(--glass-border); }
-  nav.main a { padding: 10px 6px; font-size: 16px; width: 100%; }
-  nav.main .lang { margin-top: 8px; }
-  nav.main .lang a { width: auto; padding: 8px 14px; }
-  #menu:checked ~ nav.main { display: flex; }
+  nav.main { left: 12px; right: 12px; min-width: 0; }
+  nav.main .lang { margin: 8px 14px 4px; align-self: flex-start; }
+  nav.main .lang a { padding: 8px 14px; border-radius: 0; }
 }
+
+/* La barra de abajo del móvil: las mismas cuatro pestañas, como la app. */
+.tabbar { display: none; }
+@media (max-width: 760px) {
+  .pestanas { display: none; }
+  .tabbar { display: grid; grid-template-columns: repeat(4, 1fr); position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
+    padding: 6px 4px calc(6px + env(safe-area-inset-bottom)); background: color-mix(in srgb, var(--elevated) 92%, transparent);
+    backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border-top: 1px solid var(--glass-border); }
+  .tab { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 2px; min-height: 52px; border-radius: 14px;
+    color: var(--ink-2); font-size: 12px; font-weight: 700; line-height: 1.2; text-align: center; -webkit-tap-highlight-color: transparent; }
+  .tab:hover { text-decoration: none; color: var(--ink); }
+  .tab svg { width: 24px; height: 24px; }
+  .tab[aria-current="page"] { color: var(--ink); font-weight: 800; }
+  .tab[aria-current="page"] svg { background: var(--soft); border-radius: 999px; padding: 2px 14px; width: 54px; height: 28px; box-sizing: border-box; }
+  body:has(> .tabbar) { padding-bottom: calc(66px + env(safe-area-inset-bottom)); }
+  /* En una ficha, cuando sale la barra con el botón principal, ocupa el
+     sitio de las pestañas (como una pantalla de detalle en la app). */
+  body.con-barra-accion .tabbar { display: none; }
+}
+/* Con el teclado abierto en un formulario o una hoja abierta, la barra
+   estorba. */
+body.con-hoja .tabbar { display: none; }
 
 /* ── Botones / píldoras ───────────────────────────────────────────────── */
 .pill { display: inline-flex; align-items: center; gap: 8px; padding: 12px 20px; border-radius: 999px; font-weight: 700; font-size: 15px;
@@ -244,10 +279,17 @@ nav.main a.nav-yo:hover { filter: brightness(1.08); text-decoration: none; }
 .plan.best { border-color: var(--accent); box-shadow: 0 18px 40px rgba(0,0,0,.18); }
 .calc { border: 1px solid var(--glass-border); background: var(--elevated); border-radius: 18px;
   padding: 16px; margin: 16px 0; display: grid; gap: 10px; }
-.calc label { display: flex; align-items: center; gap: 8px; justify-content: space-between;
-  font-size: 15px; color: var(--ink-2); flex-wrap: wrap; }
-.calc input { width: 110px; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--glass-border);
-  background: var(--glass); color: inherit; font: inherit; text-align: right; }
+/* «Echa la cuenta»: etiqueta a la izquierda y los campos en una columna,
+   todos del mismo ancho, con su unidad dentro (también en el móvil). */
+.calc-fila { display: grid; grid-template-columns: minmax(0, 1fr) 9.5rem; align-items: center; gap: 8px 14px; }
+.calc-fila label { font-size: 15px; color: var(--ink-2); }
+.calc-campo { display: flex; align-items: center; height: 44px; border-radius: 12px; border: 1px solid var(--glass-border);
+  background: var(--glass); padding-right: 12px; }
+.calc-campo:focus-within { outline: 2px solid var(--ink); outline-offset: 1px; }
+.calc-campo input { flex: 1; min-width: 0; width: 100%; height: 42px; padding: 0 8px 0 12px; border: 0; background: transparent;
+  color: inherit; font: inherit; font-weight: 700; text-align: right; outline: none; -moz-appearance: textfield; appearance: textfield; }
+.calc-campo input::-webkit-inner-spin-button, .calc-campo input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.calc-ud { width: 1.1em; flex: none; color: var(--ink-2); font-weight: 700; }
 .calc output { display: block; margin-top: 6px; padding-top: 12px; border-top: 1px solid var(--glass-border);
   font-size: 16px; line-height: 1.5; }
 .calc .mu { color: var(--ink-2); font-size: 14px; }
@@ -287,9 +329,7 @@ p:has(> .pill + .pill) { display: flex; flex-wrap: wrap; gap: 10px; align-items:
 @media (max-width: 960px) {
   .top-acciones > .lang { display: none; }
   .top-acciones { gap: 8px; }
-  nav.main { margin-left: 0; }
   nav.main .solo-movil { display: block; }
-  nav.main a.solo-movil { display: block; }
 }
 
 /* ── Portada ─────────────────────────────────────────────────────────────── */

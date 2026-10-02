@@ -60,6 +60,21 @@ vistas previas de WhatsApp, Telegram, X, etc. muestren título, texto e imagen.
 Ids que no existen → 404 `noindex`. `/r/<código>` sigue en `404.html` (solo
 tiene sentido dentro de la app). Prueba local: `npx wrangler@3 pages dev .`.
 
+## La web como la app: Descubre, Explorar, Planes, Cuenta
+
+- Las cuatro pestañas de la app (`TABS` en `functions/_lib/chrome.js`):
+  arriba en el escritorio y en una barra fija abajo en el móvil. Planes y
+  Cuenta viven en «Tu cuenta» (`/app/#/planes`, `/app/`). Lo demás
+  (agenda, cómo funciona, negocios, precios…) va en «Más».
+- Descubre (`/descubre/`, `/en/discover/`) y Explorar (`/explorar/`,
+  `/en/explore/`) los pinta `functions/_lib/explore.js`: una barra con
+  Filtros (hoja con precio, orden, categoría, distancia…), Dónde, ¿Cuándo? y
+  Tipo; en Explorar, además, buscar y Lista · Mapa · Calendario. Todo va en
+  la URL y funciona sin JavaScript (`<details>` y formularios GET).
+- Una sola tarjeta de publicación: `tarjeta()` en `functions/_lib/tarjeta.js`
+  (formas `grande` y `fila`; plantillas de `offers.style`). El vídeo, la
+  cuenta atrás y la distancia los pone `/assets/tarjetas.js`.
+
 ## URLs legales para terceros (`/legal/...`)
 
 `functions/legal/[doc].js` redirige a la versión en el idioma del visitante

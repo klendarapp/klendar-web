@@ -26,7 +26,9 @@
   var botonPlan = document.querySelector('[data-plan]');
   // Reseñas de la ficha de un negocio: las de quien has bloqueado no se ven.
   var resenas = document.querySelectorAll('[data-autor]');
-  if (!ficha && !tarjetas.length && !botonFav && !botonPlan && !resenas.length) return;
+  // Explorar y Descubre: la barra de filtros, donde va «Van mis amigos».
+  var barra = document.querySelector('[data-amigos-filtro]') || document.getElementById('barra');
+  if (!ficha && !tarjetas.length && !botonFav && !botonPlan && !resenas.length && !barra) return;
   var UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   var cuenta = en ? '/app/?lang=en' : '/app/';
 
@@ -48,6 +50,13 @@
     oops: 'Something went wrong. If it happens again, email info@klendar.app.',
     favOn: 'Remove from favourites', planOn: 'Remove from Plans',
     block: function (a) { return 'Block ' + a; },
+    filtro: 'Friends going', cargando: 'Looking at your friends’ plans…',
+    total: function (n) { return n === 1 ? '1 plan your friends are going to' : n + ' plans your friends are going to'; },
+    vacioT: "Your friends aren't going to anything here yet",
+    vacioB: "When a friend taps “I'm going”, gets a code or reserves a place, it'll show up here. Each friend's page shows all their upcoming plans.",
+    sinT: "You don't have any friends on Klendar yet",
+    sinB: 'With “Friends going” you see which plans your friends are going to. Add them with your friend link or QR code: only people who have it can find you.',
+    verAmigos: 'See your friends', anadir: 'Add friends', quitar: 'Turn off “Friends going”', free: 'Free',
   } : {
     someone: 'Usuario de Klendar',
     one: function (a) { return a + ' va'; },
@@ -66,6 +75,13 @@
     oops: 'Algo no ha ido bien. Si vuelve a pasar, escríbenos a info@klendar.app.',
     favOn: 'Quitar de favoritos', planOn: 'Quitar de Planes',
     block: function (a) { return 'Bloquear a ' + a; },
+    filtro: 'Van mis amigos', cargando: 'Mirando los planes de tus amigos…',
+    total: function (n) { return n === 1 ? '1 plan al que van tus amigos' : n + ' planes a los que van tus amigos'; },
+    vacioT: 'Tus amigos aún no van a nada por aquí',
+    vacioB: 'Cuando un amigo marque «Voy», consiga un código o reserve plaza, saldrá aquí. En la ficha de cada amigo ves todos sus próximos planes.',
+    sinT: 'Aún no tienes amigos en Klendar',
+    sinB: 'Con «Van mis amigos» ves a qué planes van tus amigos. Añádelos con tu enlace de amigo o tu QR: solo te encuentra quien lo tiene.',
+    verAmigos: 'Ver tus amigos', anadir: 'Añadir amigos', quitar: 'Quitar «Van mis amigos»', free: 'Gratis',
   };
 
   // ── ¿Hay sesión? Sin llamar a nada: lo que guarda Supabase en el navegador.
@@ -154,6 +170,7 @@
             if (botonFav) yaLoTienes(sb, uid, botonFav, 'favorites', 'business_id', botonFav.getAttribute('data-fav'), '#/seguir/', T.favOn);
             if (botonPlan) yaLoTienes(sb, uid, botonPlan, 'saved_offers', 'offer_id', botonPlan.getAttribute('data-plan'), '#/guardar/', T.planOn);
             if (resenas.length) sinBloqueadas(sb, uid);
+            if (barra) filtroAmigos(sb);
           });
         });
     })
@@ -194,6 +211,177 @@
     }, function () { /* sin red: las reseñas tal cual */ });
   }
 
+  // ── Explorar y Descubre: «Van mis amigos» ───────────────────────────────
+  // Un chip más en la barra de filtros. Encendido (`?amigos=1`), lo que pintó
+  // el servidor se esconde y aquí se pinta lo que devuelve
+  // `friends_plans_feed`: solo publicaciones vivas a las que va algún amigo,
+  // con la privacidad de cada uno decidida en la base. Mismos filtros de la
+  // dirección (tipo, cuándo, precio, descuento, abierto, orden, cerca de mí;
+  // ciudad y búsqueda, aquí); +18 nunca, como el resto de la web pública.
+  // En el mapa, el calendario y «Negocios» no sale.
+  var GRUPO = '<svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>';
+
+  function ventana(cuando) {
+    var ahora = new Date();
+    var dia = function (mas) { return new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() + mas); };
+    switch (cuando) {
+      case 'ahora': case 'now': return [ahora, new Date(ahora.getTime() + 2 * 3600e3)];
+      case 'hoy': case 'today': return [ahora, dia(1)];
+      case 'manana': case 'tomorrow': return [dia(1), dia(2)];
+      case '10dias': case 'next10': return [ahora, dia(11)];
+      default: return [null, null];
+    }
+  }
+
+  function beneficio(o) {
+    var d = o.discount || null;
+    var loc = en ? 'en-GB' : 'es-ES';
+    if (d && d.type === 'percent') return '−' + d.value + ' %';
+    if (d && d.type === '2x1') return '2x1';
+    if (d && d.type === 'free') return T.free;
+    if (d && d.type === 'fixed' && typeof d.value === 'number') {
+      return d.value.toLocaleString(loc, { style: 'currency', currency: d.currency || o.currency || 'EUR' });
+    }
+    if (o.price_cents === 0) return T.free;
+    if (o.price_cents > 0) return (o.price_cents / 100).toLocaleString(loc, { style: 'currency', currency: o.currency || 'EUR' });
+    return '';
+  }
+
+  function cuandoEs(o) {
+    var loc = en ? 'en-GB' : 'es-ES';
+    var largo = { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' };
+    if (o.kind === 'future_event') return o.event_at ? new Date(o.event_at).toLocaleString(loc, largo) : '';
+    if (!o.redeem_start_at) return '';
+    var ini = new Date(o.redeem_start_at);
+    var fin = o.redeem_end_at ? new Date(o.redeem_end_at) : null;
+    var mismo = fin && fin.toDateString() === ini.toDateString();
+    return ini.toLocaleString(loc, largo) + (fin ? ' – ' + fin.toLocaleString(loc, mismo
+      ? { hour: '2-digit', minute: '2-digit' } : largo) : '');
+  }
+
+  function tarjetaDeAmigos(o) {
+    var id = encodeURIComponent(o.id);
+    var foto = (o.images || []).filter(function (u) { return /^https:\/\//.test(u) && !/\.(mp4|mov|webm)(\?|$)/i.test(u); })[0];
+    var tag = beneficio(o);
+    var lugar = o.venue_name ? (en ? 'at ' : 'en ') + o.venue_name : '';
+    return '<a class="ocard" href="' + (en ? '/en' : '') + '/o/' + id + '" data-o="' + esc(o.id) + '">' +
+      (foto ? '<img src="' + esc(foto) + '" alt="" loading="lazy" decoding="async">' : '<span class="ph">✦</span>') +
+      '<span class="ocard-body"><b>' + esc(o.title) + '</b>' +
+      '<span class="muted">' + esc(o.business_name || '') + (lugar ? ' · ' + esc(lugar) : '') + '</span>' +
+      '<span class="ocard-meta">' + (tag ? '<span class="tag">' + esc(tag) + '</span>' : '') +
+      '<span class="muted">' + esc(cuandoEs(o)) + '</span></span>' +
+      '<span class="quien-va mini">' + quienVa(o.friends, o.friends_total) + '</span>' +
+      '</span></a>';
+  }
+
+  function filtroAmigos(sb) {
+    var q = new URLSearchParams(location.search);
+    var de = function () { for (var i = 0; i < arguments.length; i++) { var v = q.get(arguments[i]); if (v) return v; } return ''; };
+    var tipo = de('tipo', 'type');
+    if (/^(mapa|map|calendario|calendar)$/.test(de('vista', 'view')) || /^(negocios|places)$/.test(tipo) ||
+        /^(negocios|places)$/.test(de('ver', 'show'))) return;
+    var on = q.get('amigos') === '1';
+
+    // El chip: enciende o apaga (sin la página: vuelve a la primera).
+    var otra = new URL(location.href);
+    if (on) otra.searchParams.delete('amigos'); else otra.searchParams.set('amigos', '1');
+    otra.searchParams.delete('p');
+    var chip = document.createElement('a');
+    chip.className = 'chip' + (on ? ' on' : '');
+    chip.href = otra.pathname + otra.search;
+    chip.setAttribute('data-amigos-chip', '');
+    if (on) chip.setAttribute('aria-current', 'true');
+    chip.innerHTML = GRUPO + '<span>' + esc(T.filtro) + '</span>';
+    barra.appendChild(chip);
+    if (!on) return;
+
+    // Que cambiar otro filtro no lo apague.
+    barra.querySelectorAll('a[href]').forEach(function (a) {
+      var h = a.getAttribute('href') || '';
+      if (a === chip || h.charAt(0) === '#') return;
+      try {
+        var x = new URL(h, location.href);
+        if (x.origin !== location.origin) return;
+        x.searchParams.set('amigos', '1');
+        a.setAttribute('href', x.pathname + x.search + x.hash);
+      } catch (e) { /* un enlace raro: tal cual */ }
+    });
+    document.querySelectorAll('form[method="get"], form[method="GET"]').forEach(function (f) {
+      if (f.querySelector('input[name="amigos"]')) return;
+      var i = document.createElement('input');
+      i.type = 'hidden'; i.name = 'amigos'; i.value = '1';
+      f.appendChild(i);
+    });
+
+    // Lo que pintó el servidor (resumen, tarjetas, páginas, final) se
+    // esconde; «Más formas de explorar» se queda.
+    var ocultos = [];
+    var el = barra.nextElementSibling;
+    while (el && !el.matches('.mas-formas, script, footer')) {
+      if (!el.matches('#cercaErr, .aviso-error, [data-cerca-aviso]')) ocultos.push(el);
+      el = el.nextElementSibling;
+    }
+    var caja = document.createElement('section');
+    caja.className = 'amigos-resultados';
+    caja.setAttribute('aria-live', 'polite');
+    caja.innerHTML = '<p class="muted">' + esc(T.cargando) + '</p>';
+    barra.parentNode.insertBefore(caja, ocultos[0] || el || null);
+    ocultos.forEach(function (x) { x.hidden = true; });
+
+    var precio = de('precio', 'price');
+    var orden = de('orden', 'sort');
+    var lat = parseFloat(q.get('lat'));
+    var lng = parseFloat(q.get('lng'));
+    var cerca = isFinite(lat) && isFinite(lng);
+    var km = parseInt(q.get('km'), 10);
+    var v = ventana(de('cuando', 'when'));
+    var params = {
+      p_kind: /^(ofertas|offers)$/.test(tipo) ? 'flash_offer' : /^(eventos|events)$/.test(tipo) ? 'future_event' : null,
+      p_max_price_cents: /^(gratis|free)$/.test(precio) ? 0 : /^\d{1,3}$/.test(precio) ? Number(precio) * 100 : null,
+      p_discount_only: de('descuento', 'discount') === '1',
+      p_open_now: de('abierto', 'open') === '1',
+      p_hide_adults: true,
+      p_sort: /^(nuevas|newest)$/.test(orden) ? 'newest' : /^(cerca|nearest)$/.test(orden) || (cerca && !orden) ? 'nearest' : 'soonest',
+      p_from: v[0] ? v[0].toISOString() : null,
+      p_until: v[1] ? v[1].toISOString() : null,
+    };
+    if (cerca) {
+      params.p_lat = lat; params.p_lng = lng;
+      params.p_radius_m = ([1, 3, 5, 10, 25].indexOf(km) >= 0 ? km : 10) * 1000;
+    }
+    var ciudad = de('ciudad', 'city').toLowerCase();
+    var busca = de('q').toLowerCase();
+    var sinTildes = function (s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); };
+
+    Promise.all([
+      sb.rpc('friends_plans_feed', params),
+      sb.rpc('my_friends').then(function (r) { return r.data; }, function () { return null; }),
+    ]).then(function (r) {
+      if (r[0].error) throw r[0].error;
+      var filas = (r[0].data || []).filter(function (o) {
+        if (ciudad && String(o.city || '').toLowerCase() !== ciudad) return false;
+        if (busca && sinTildes(o.title + ' ' + (o.business_name || '')).indexOf(sinTildes(busca)) < 0) return false;
+        return true;
+      });
+      var amigos = r[1] && r[1].friends ? r[1].friends.length : -1;
+      if (filas.length) {
+        caja.innerHTML = '<div class="resumen"><h2 class="resumen-n">' + esc(T.total(filas.length)) + '</h2></div>' +
+          '<div class="olist">' + filas.map(tarjetaDeAmigos).join('') + '</div>';
+        return;
+      }
+      var sinAmigos = amigos === 0;
+      caja.innerHTML = '<section class="vacio"><h2>' + esc(sinAmigos ? T.sinT : T.vacioT) + '</h2>' +
+        '<p>' + esc(sinAmigos ? T.sinB : T.vacioB) + '</p><div class="vacio-botones">' +
+        '<a class="pill accent" href="' + esc(cuenta + '#/amigos') + '">' + esc(sinAmigos ? T.anadir : T.verAmigos) + '</a>' +
+        '<a class="pill" href="' + esc(otra.pathname + otra.search) + '">' + esc(T.quitar) + '</a></div></section>';
+    }).catch(function () {
+      // Sin red o algo raro: se vuelve a enseñar lo de siempre.
+      caja.remove();
+      ocultos.forEach(function (x) { x.hidden = false; });
+      toast(T.oops, true);
+    });
+  }
+
   // ── Tarjetas: qué amigos van a cada una ─────────────────────────────────
   function enTarjetas(sb) {
     var ids = [];
@@ -208,7 +396,8 @@
           if (!fila || !(fila.friends || []).length) return;
           document.querySelectorAll('[data-o="' + fila.offer_id + '"]').forEach(function (card) {
             if (card.querySelector('.quien-va')) return;
-            var cuerpo = card.querySelector('.ocard-body') || card;
+            // Las tarjetas de publicación (functions/_lib/tarjeta.js) traen su hueco.
+            var cuerpo = card.querySelector('.tj-amigos') || card.querySelector('.ocard-body') || card;
             var linea = document.createElement('span');
             linea.className = 'quien-va mini';
             linea.innerHTML = quienVa(fila.friends, fila.total);

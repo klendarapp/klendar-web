@@ -508,6 +508,8 @@ RUTAS.ajustes = async () => {
           <span><b>${esc(t('Sellos y premios'))}</b><br><small>${esc(t('Cuando te llega un sello en una tarjeta y cuando ya tienes el premio.'))}</small></span></label>
         <label class="check"><input type="checkbox" name="amigos"${prefs.notify_friend_invites !== false ? ' checked' : ''}>
           <span><b>${esc(t('Invitaciones de amigos'))}</b><br><small>${esc(t('Cuando un amigo te invita a un plan o dice que va al tuyo. Apagado, no te pueden invitar.'))}</small></span></label>
+        <label class="check"><input type="checkbox" name="planesAmigos"${prefs.notify_friend_plans ? ' checked' : ''}>
+          <span><b>${esc(t('Planes de tus amigos'))}</b><br><small>${esc(t('Cuando un amigo se apunta a un evento. Como mucho un aviso al día.'))}</small></span></label>
         <label class="check"><input type="checkbox" name="cerca"${prefs.notify_nearby ? ' checked' : ''}>
           <span><b>${esc(t('Cerca de ti'))}</b><br><small>${esc(t('Ofertas flash a tu alrededor (como mucho 3 al día)'))}</small></span></label>
         <div id="cerca-mas" ${prefs.notify_nearby ? '' : 'hidden'}>
@@ -561,7 +563,7 @@ RUTAS.ajustes = async () => {
         <dt>${esc(t('Que mis amigos vean mis planes'))}</dt>
         <dd><label class="check"><input type="checkbox" id="compartir-planes"${cons?.share_plans !== false ? ' checked' : ''}>
           <span>${esc(t(cons?.share_plans !== false
-            ? 'Tus amigos ven a qué vas («Voy», una plaza reservada o un código)'
+            ? 'Tus amigos ven a qué vas («Voy», una plaza reservada o un código): en cada plan, en tu ficha de amigo y, si lo piden, con un aviso'
             : 'No sales en el «quién va» de tus amigos'))}</span></label></dd>
         <dt>${esc(t('Ubicación'))}</dt>
         <dd id="dd-ubicacion">${cons?.location_consent_at ? `${esc(`${t('Compartida desde el')} ${dia(cons.location_consent_at)}`)}
@@ -643,6 +645,7 @@ RUTAS.ajustes = async () => {
         notify_business_messages: fa.elements.mensajes.checked,
         notify_birthday: fa.elements.cumple.checked,
         notify_friend_invites: fa.elements.amigos.checked,
+        notify_friend_plans: fa.elements.planesAmigos.checked,
         notify_stamps: fa.elements.sellos.checked,
         nearby_radius_m: Number(fa.radio.value),
         nearby_categories: elegidas.length ? elegidas : null,
@@ -690,7 +693,7 @@ RUTAS.ajustes = async () => {
       const texto = caja.closest('label')?.querySelector('span');
       if (texto) {
         texto.textContent = caja.checked
-          ? t('Tus amigos ven a qué vas («Voy», una plaza reservada o un código)')
+          ? t('Tus amigos ven a qué vas («Voy», una plaza reservada o un código): en cada plan, en tu ficha de amigo y, si lo piden, con un aviso')
           : t('No sales en el «quién va» de tus amigos');
       }
     } catch (e) { caja.checked = !caja.checked; toast(e.message, true); } finally { caja.disabled = false; }

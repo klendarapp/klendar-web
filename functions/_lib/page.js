@@ -164,7 +164,7 @@ ${head}
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 <link rel="preload" href="/assets/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/site.css?v=20261010">
+<link rel="stylesheet" href="/assets/site.css?v=20261011">
 <style>.open .card{max-width:460px}.open .hero-img{width:100%;aspect-ratio:16/10;object-fit:cover;border-radius:18px;margin-bottom:14px}.open .meta{color:var(--ink-2);font-size:14px;margin:0 0 12px}</style>
 </head>
 <body>
