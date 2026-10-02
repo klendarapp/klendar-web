@@ -107,12 +107,14 @@
       seats: (n) => (n === 1 ? 'Queda 1 plaza' : `Quedan ${n} plazas`), soldOut: 'Agotado',
       en: (l) => `en ${l}`, entradas: (p) => `Entradas en ${p}`, video: 'Vídeo',
       organiza: (n) => `Organiza: ${n}`, hoy: 'Hoy', manana: 'Mañana',
+      anterior: 'Foto anterior', siguiente: 'Foto siguiente', sonido: 'Sonido', play: 'Reproducir el vídeo',
     },
     en: {
       flash: 'Flash offer', event: 'Event', verOferta: 'See offer', verEvento: 'See event',
       seats: (n) => (n === 1 ? '1 place left' : `${n} places left`), soldOut: 'Sold out',
       en: (l) => `at ${l}`, entradas: (p) => `Tickets on ${p}`, video: 'Video',
       organiza: (n) => `Organised by ${n}`, hoy: 'Today', manana: 'Tomorrow',
+      anterior: 'Previous photo', siguiente: 'Next photo', sonido: 'Sound', play: 'Play the video',
     },
   };
 
@@ -123,6 +125,9 @@
     lugar: 'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z',
     flecha: 'M8.59 16.59 13.17 12 8.59 7.41 10 6l6 6-6 6z',
     play: 'M8 5v14l11-7z',
+    izq: 'M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z',
+    mudo: 'M16.5 12A4.5 4.5 0 0 0 14 7.97v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51A8.796 8.796 0 0 0 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3 3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06a8.99 8.99 0 0 0 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4 9.91 6.09 12 8.18V4z',
+    sonido: 'M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z',
   };
   const ic = (n, s = 16) => `<svg class="ic" viewBox="0 0 24 24" width="${s}" height="${s}" aria-hidden="true"><path fill="currentColor" d="${IC[n]}"/></svg>`;
 
@@ -247,13 +252,48 @@
     return `<span class="tj-ph" aria-hidden="true">${esc((o.business_name || o.title || '·').trim().charAt(0).toUpperCase())}</span>`;
   }
 
+  /** Todas las fotos y vídeos de la publicación, como la galería de la app:
+   * se deslizan de lado (con el dedo, o con las flechas en el escritorio) y
+   * los puntos dicen cuál es. Cada pieza lleva a la ficha, como la tarjeta.
+   * Los vídeos empiezan en silencio; el altavoz les pone el sonido
+   * (`/assets/tarjetas.js`). Sin JavaScript se deslizan igual. */
+  function galeriaTarjeta(o, { primera, ancho, alto, S, href }) {
+    const piezas = (o.images || []).filter((u) => typeof u === 'string' && /^https:\/\//.test(u)).slice(0, 8);
+    if (piezas.length < 2 && !(piezas[0] && isVideo(piezas[0]))) {
+      return `<a class="tj-pieza" href="${esc(href)}" tabindex="-1" aria-hidden="true">${mediaTarjeta(o, { primera, ancho, alto, S })}</a>`;
+    }
+    const fotos = piezas.filter((u) => !isVideo(u));
+    const portadaDe = (i) => fotos.find((u) => piezas.indexOf(u) > i) || fotos[0] || o.business_cover || null;
+    const n = piezas.length;
+    const pieza = (u, i) => {
+      if (isVideo(u)) {
+        const p = portadaDe(i);
+        return `<video class="tj-img" muted playsinline loop disablepictureinpicture preload="${p ? 'none' : 'metadata'}"
+        ${p ? `poster="${esc(p)}"` : ''} data-src="${esc(u)}${p ? '' : '#t=0.1'}" width="${ancho}" height="${alto}" aria-hidden="true"></video>`;
+      }
+      const carga = primera && i === 0 ? 'fetchpriority="high"' : 'loading="lazy" decoding="async"';
+      return `<img class="tj-img" src="${esc(u)}" alt="" width="${ancho}" height="${alto}" ${carga}>`;
+    };
+    const hayVideo = piezas.some(isVideo);
+    return `<div class="tj-galeria" data-n="${n}">
+      <div class="tj-pista">${piezas.map((u, i) => `<a class="tj-pieza${isVideo(u) ? ' es-video' : ''}" href="${esc(href)}" tabindex="-1" aria-hidden="true">${pieza(u, i)}</a>`).join('')}</div>
+      ${n > 1 ? `<span class="tj-puntos" aria-hidden="true">${piezas.map((_, i) => `<i${i === 0 ? ' class="on"' : ''}></i>`).join('')}</span>
+      <button type="button" class="tj-flecha tj-ant" data-galeria="-1" aria-label="${esc(S.anterior)}" hidden>${ic('izq', 22)}</button>
+      <button type="button" class="tj-flecha tj-sig" data-galeria="1" aria-label="${esc(S.siguiente)}" hidden>${ic('flecha', 22)}</button>` : ''}
+      ${hayVideo ? `<button type="button" class="tj-sonido" aria-pressed="false" aria-label="${esc(S.sonido)}" title="${esc(S.sonido)}" hidden>${ic('mudo', 20)}${ic('sonido', 20)}</button>
+      <button type="button" class="tj-play" aria-label="${esc(S.play)}" hidden>${ic('play', 30)}</button>` : ''}
+    </div>`;
+  }
+
   /**
    * Una tarjeta de publicación.
    *
    * @param {object} o  fila de `public_explore`, `business_offers`, `public_city_agenda`…
    * @param {'es'|'en'} lang
    * @param {object} [opts]
-   * @param {'grande'|'fila'} [opts.forma='grande']
+   * @param {'grande'|'fila'|'pantalla'} [opts.forma='grande']  `pantalla`: una
+   *   por pantalla (el feed de Descubre), con la foto o el vídeo de fondo
+   * @param {boolean} [opts.galeria]  todas las fotos y vídeos (Descubre y Explorar)
    * @param {string} [opts.tz]  zona del negocio (si no, la de sus coordenadas)
    * @param {boolean} [opts.primera]  la primera de la página (LCP): su foto se pide ya
    * @param {'h2'|'h3'} [opts.h='h3']  nivel del título según la página
@@ -314,9 +354,12 @@
     ].filter(Boolean).join('');
     const logo = o.business_logo && /^https:\/\//.test(o.business_logo)
       ? `<img class="tj-logo" src="${esc(o.business_logo)}" alt="" width="24" height="24" loading="lazy" decoding="async">` : '';
-    return `<article class="tj tj--${plantilla}${opts.desc ? ' tj--desc' : ''}" data-o="${esc(o.id)}"${geo}${estilo}>
+    const pantalla = opts.forma === 'pantalla';
+    const [ancho, alto] = pantalla ? [540, 960] : [480, 600];
+    return `<article class="tj tj--${plantilla}${opts.desc ? ' tj--desc' : ''}${pantalla ? ' tj--pantalla' : ''}" data-o="${esc(o.id)}"${geo}${estilo}>
     <div class="tj-media">
-      ${mediaTarjeta(o, { primera: opts.primera, ancho: 480, alto: 600, S })}
+      ${opts.galeria || pantalla ? galeriaTarjeta(o, { primera: opts.primera, ancho, alto, S, href })
+    : mediaTarjeta(o, { primera: opts.primera, ancho, alto, S })}
       <span class="tj-tipo">${esc(flash ? S.flash : S.event)}</span>
     </div>
     <div class="tj-panel">

@@ -84,6 +84,21 @@
   marcaPestana();
   window.addEventListener('hashchange', marcaPestana);
 
+  // Descubre y Explorar comparten los filtros (zona, distancia, tipo,
+  // categoría, precio, cuándo, orden…): las pestañas llevan los últimos que
+  // se pusieron en cualquiera de las dos, hace menos de 6 h (los guarda la
+  // propia página: `guardaFiltros` en functions/_lib/explore.js).
+  try {
+    const g = JSON.parse(localStorage.getItem('klendar.filtros') || 'null');
+    if (g && Date.now() - g.t < 216e5) {
+      document.querySelectorAll('a[data-tab="descubre"], a[data-tab="explorar"]').forEach((a) => {
+        const href = (a.getAttribute('href') || '').split('?')[0];
+        const q = g[/^\/en\//.test(href) ? 'en' : 'es'];
+        if (q) a.setAttribute('href', `${href}?${q}`);
+      });
+    }
+  } catch { /* sin almacenamiento: las pestañas, limpias */ }
+
   // «Saltar al contenido» va a <main id="contenido">; si el <main> de esta
   // página tiene otro nombre (o ninguno), se apunta a él.
   const main = document.querySelector('main');

@@ -1,67 +1,203 @@
-/* Las tarjetas de publicación de la web pública (functions/_lib/tarjeta.js)
- * y los desplegables de Explorar y Descubre.
+/* Las tarjetas de publicación de la web pública (functions/_lib/tarjeta.js),
+ * el feed de Descubre y los filtros de Explorar y Descubre.
  *
- * - Vídeo: se reproduce en silencio mientras la tarjeta está a la vista, como
- *   en Descubre de la app. Nunca con «reducir movimiento» ni con ahorro de
- *   datos (o una conexión lenta): ahí se queda la foto de portada.
+ * - Galería: todas las fotos y vídeos de cada publicación, como en la app. Se
+ *   deslizan de lado; los puntos dicen cuál es y, en el escritorio, hay
+ *   flechas.
+ * - Vídeo: se reproduce en silencio mientras se ve (solo el que está a la
+ *   vista en su galería), como en Descubre de la app. Nunca con «reducir
+ *   movimiento» ni con ahorro de datos (o una conexión lenta): ahí se queda la
+ *   foto de portada con el botón de reproducir. El altavoz le pone el sonido y
+ *   se recuerda mientras navegas (esta pestaña, `sessionStorage`), pero al
+ *   entrar en una página nada suena hasta que la tocas: el navegador tampoco
+ *   lo dejaría. Con sonido, solo suena uno a la vez.
  * - Cuenta atrás: «Ahora · quedan 1 h 20 min» en las ofertas en marcha (la
  *   página va en caché y una hora escrita en el servidor saldría vieja).
  * - Distancia: si has usado «Cerca de mí» hace poco, cada tarjeta dice a
  *   cuánto está. La posición se queda en este navegador (no se manda a nada).
- * - Desplegables (`details.desplegable`) y la hoja de filtros: se cierran al
- *   pulsar fuera o con Escape, y solo hay uno abierto a la vez.
+ * - Descubre: una por pantalla; ↑/↓ (y AvPág/RePág, J/K), los botones de los
+ *   lados y la rueda pasan de una a otra; ←/→ mueven la galería. La cabecera
+ *   sigue a lo que hay detrás (foto: blanco con velo; el final: el tema). Al
+ *   llegar al final de la página se trae la siguiente.
+ * - Filtros: los desplegables y la hoja se cierran al pulsar fuera o con
+ *   Escape, y solo hay uno abierto a la vez; «Cerca de mí» y «Estoy aquí»
+ *   piden la ubicación (solo al pulsarlos); los enlaces de la propia página
+ *   no se pisan con los filtros guardados (ver `guardaFiltros` en
+ *   functions/_lib/explore.js).
  */
 (function () {
   'use strict';
   var EN = document.documentElement.lang === 'en';
   var LOC = EN ? 'en-GB' : 'es-ES';
+  var feed = document.getElementById('feed');
 
-  // ── Vídeo a la vista ────────────────────────────────────────────────────
+  // ── Movimiento, datos y sonido ─────────────────────────────────────────
   var quieto = window.matchMedia('(prefers-reduced-motion: reduce)');
   function ahorro() {
     var c = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
     return Boolean(c && (c.saveData || /(^|-)2g$/.test(c.effectiveType || '')));
   }
   function puedeMoverse() { return !quieto.matches && !ahorro(); }
+  function suave() { return quieto.matches ? 'auto' : 'smooth'; }
 
-  var videos = Array.prototype.slice.call(document.querySelectorAll('video[data-src]'));
-  function carga(v) {
-    if (!v.getAttribute('src')) { v.setAttribute('src', v.getAttribute('data-src')); }
+  var tocado = false; // ¿ha tocado algo la persona en esta página?
+  function activada() {
+    return tocado || Boolean(navigator.userActivation && navigator.userActivation.hasBeenActive);
   }
-  // Sin portada: el primer fotograma, para que no quede un rectángulo negro
-  // (salvo con ahorro de datos: ahí, la inicial del negocio).
-  videos.forEach(function (v) {
-    // El de una ficha lleva controles: con `preload="none"` no se baja nada
-    // hasta que se pulsa, pero así se puede reproducir aunque no arranque solo.
-    if (v.controls) carga(v);
-    if (!v.getAttribute('poster') && !ahorro()) { v.preload = 'metadata'; carga(v); }
-    else if (!v.getAttribute('poster')) {
-      var ph = document.createElement('span');
-      ph.className = 'tj-ph'; ph.setAttribute('aria-hidden', 'true'); ph.textContent = '▶';
-      v.after(ph);
+  ['pointerdown', 'keydown'].forEach(function (t) {
+    document.addEventListener(t, function () { tocado = true; }, { capture: true, passive: true });
+  });
+  function sonidoGuardado() {
+    try { return sessionStorage.getItem('klendar.sonido') === '1'; } catch (e) { return false; }
+  }
+  function guardaSonido(on) {
+    try { if (on) sessionStorage.setItem('klendar.sonido', '1'); else sessionStorage.removeItem('klendar.sonido'); } catch (e) { /* nada */ }
+  }
+
+  // ── Vídeos ─────────────────────────────────────────────────────────────
+  var videos = [];
+  var aLaVista = new Set();
+  function carga(v) {
+    if (!v.getAttribute('src')) v.setAttribute('src', v.getAttribute('data-src'));
+  }
+  function galeriaDe(el) { return el.closest ? el.closest('.tj-galeria') : null; }
+  function indice(g) {
+    var pista = g.querySelector('.tj-pista');
+    return Math.max(0, Math.min(pista.children.length - 1, Math.round(pista.scrollLeft / Math.max(1, pista.clientWidth))));
+  }
+  function esLaActual(v) {
+    var g = galeriaDe(v);
+    if (!g) return true;
+    return g.querySelector('.tj-pista').children[indice(g)] === v.closest('.tj-pieza');
+  }
+  function callaLosDemas(v) {
+    videos.forEach(function (o) { if (o !== v && !o.muted) o.muted = true; });
+  }
+  function reproduce(v, aMano) {
+    carga(v);
+    var conSonido = sonidoGuardado() && (aMano || activada());
+    v.muted = !conSonido;
+    if (conSonido) callaLosDemas(v);
+    var p = v.play();
+    if (p && p.catch) {
+      p.catch(function () {
+        // El navegador no deja con sonido: en silencio; si tampoco, la portada.
+        if (!v.muted) { v.muted = true; v.play().catch(function () { /* la portada */ }); }
+      });
+    }
+  }
+  function decide(v) {
+    if (aLaVista.has(v) && esLaActual(v) && puedeMoverse()) reproduce(v, false);
+    else if (!v.paused) v.pause();
+  }
+  var mira = 'IntersectionObserver' in window ? new IntersectionObserver(function (entradas) {
+    entradas.forEach(function (e) {
+      if (e.isIntersecting && e.intersectionRatio >= 0.6) aLaVista.add(e.target); else aLaVista.delete(e.target);
+      decide(e.target);
+    });
+  }, { threshold: [0, 0.6] }) : null;
+  if (quieto.addEventListener) quieto.addEventListener('change', function () { videos.forEach(decide); });
+
+  // ── Galería ────────────────────────────────────────────────────────────
+  function pintaGaleria(g) {
+    var pista = g.querySelector('.tj-pista');
+    var n = pista.children.length;
+    var i = indice(g);
+    g.querySelectorAll('.tj-puntos i').forEach(function (p, k) { p.classList.toggle('on', k === i); });
+    var ant = g.querySelector('.tj-ant');
+    var sig = g.querySelector('.tj-sig');
+    if (ant) ant.classList.toggle('fuera', i <= 0);
+    if (sig) sig.classList.toggle('fuera', i >= n - 1);
+    var pieza = pista.children[i];
+    var v = pieza && pieza.querySelector('video');
+    var son = g.querySelector('.tj-sonido');
+    var play = g.querySelector('.tj-play');
+    if (son) son.hidden = !v;
+    if (play) play.hidden = !v || !v.paused || puedeMoverse();
+    g.querySelectorAll('video').forEach(decide);
+  }
+  function mueve(g, d) {
+    var pista = g.querySelector('.tj-pista');
+    pista.scrollTo({ left: (indice(g) + d) * pista.clientWidth, behavior: suave() });
+  }
+  function pintaSonido() {
+    var on = sonidoGuardado();
+    document.querySelectorAll('.tj-sonido').forEach(function (b) {
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      b.classList.toggle('on', on);
+    });
+  }
+
+  // ── Arranque de un trozo de página (al cargar y con cada página nueva del feed) ──
+  function iniciar(raiz) {
+    raiz.querySelectorAll('video[data-src]').forEach(function (v) {
+      if (videos.indexOf(v) >= 0) return;
+      videos.push(v);
+      // Sin portada: el primer fotograma, para que no quede un rectángulo
+      // negro (salvo con ahorro de datos: ahí, la inicial del negocio).
+      if (v.controls) carga(v);
+      if (!v.getAttribute('poster') && !ahorro()) { v.preload = 'metadata'; carga(v); }
+      else if (!v.getAttribute('poster')) {
+        var ph = document.createElement('span');
+        ph.className = 'tj-ph'; ph.setAttribute('aria-hidden', 'true'); ph.textContent = '▶';
+        v.after(ph);
+      }
+      var g = galeriaDe(v);
+      if (g) {
+        v.addEventListener('play', function () { pintaGaleria(g); });
+        v.addEventListener('pause', function () { pintaGaleria(g); });
+      }
+      if (mira) mira.observe(v);
+    });
+    raiz.querySelectorAll('.tj-galeria').forEach(function (g) {
+      if (g.dataset.lista) return;
+      g.dataset.lista = '1';
+      g.querySelectorAll('.tj-flecha').forEach(function (b) { b.hidden = false; });
+      var pista = g.querySelector('.tj-pista');
+      var t = null;
+      pista.addEventListener('scroll', function () {
+        clearTimeout(t);
+        t = setTimeout(function () { pintaGaleria(g); }, 60);
+      }, { passive: true });
+      pintaGaleria(g);
+    });
+    pintaSonido();
+    relojes = Array.prototype.slice.call(document.querySelectorAll('.tj-cuando[data-fin]'));
+    tic();
+    distancias(raiz);
+  }
+
+  document.addEventListener('click', function (e) {
+    var t = e.target instanceof Element ? e.target : null;
+    if (!t) return;
+    var flecha = t.closest('[data-galeria]');
+    if (flecha) { e.preventDefault(); mueve(flecha.closest('.tj-galeria'), Number(flecha.getAttribute('data-galeria'))); return; }
+    var son = t.closest('.tj-sonido');
+    if (son) {
+      e.preventDefault();
+      var on = !sonidoGuardado();
+      guardaSonido(on);
+      pintaSonido();
+      var g = son.closest('.tj-galeria');
+      var v = g && g.querySelector('.tj-pista').children[indice(g)].querySelector('video');
+      if (v) {
+        v.muted = !on;
+        if (on) { callaLosDemas(v); if (v.paused) reproduce(v, true); }
+      }
+      return;
+    }
+    var play = t.closest('.tj-play');
+    if (play) {
+      e.preventDefault();
+      var gp = play.closest('.tj-galeria');
+      var vp = gp.querySelector('.tj-pista').children[indice(gp)].querySelector('video');
+      if (vp) reproduce(vp, true);
     }
   });
-  if ('IntersectionObserver' in window && videos.length) {
-    var mira = new IntersectionObserver(function (entradas) {
-      entradas.forEach(function (e) {
-        var v = e.target;
-        if (e.isIntersecting && e.intersectionRatio >= 0.6 && puedeMoverse()) {
-          carga(v);
-          v.muted = true;
-          var p = v.play();
-          if (p && p.catch) p.catch(function () { /* el navegador no deja: se queda la portada */ });
-        } else if (!v.paused) {
-          v.pause();
-        }
-      });
-    }, { threshold: [0, 0.6] });
-    videos.forEach(function (v) { mira.observe(v); });
-    var pararTodo = function () { if (!puedeMoverse()) videos.forEach(function (v) { if (!v.paused) v.pause(); }); };
-    if (quieto.addEventListener) quieto.addEventListener('change', pararTodo);
-  }
 
   // ── Cuenta atrás de las ofertas flash ──────────────────────────────────
-  var relojes = Array.prototype.slice.call(document.querySelectorAll('.tj-cuando[data-fin]'));
+  var relojes = [];
+  var reloj = null;
   function dur(ms) {
     var m = Math.floor(ms / 60000);
     if (m >= 1440) return Math.floor(m / 1440) + ' d';
@@ -69,6 +205,7 @@
     return Math.max(1, m) + ' min';
   }
   function tic() {
+    clearTimeout(reloj);
     var n = Date.now();
     relojes.forEach(function (el) {
       var ini = Date.parse(el.getAttribute('data-ini')) || 0;
@@ -79,15 +216,14 @@
       if (n >= fin) { txt.textContent = EN ? 'Ended' : 'Terminada'; el.classList.remove('ahora'); el.classList.add('fin'); }
       else if (n >= ini) { txt.textContent = EN ? 'Now · ' + dur(fin - n) + ' left' : 'Ahora · quedan ' + dur(fin - n); el.classList.add('ahora'); }
     });
-    if (relojes.length) setTimeout(tic, 30000);
+    if (relojes.length) reloj = setTimeout(tic, 30000);
   }
-  tic();
 
   // ── Distancia, si sabemos dónde estás ──────────────────────────────────
   var aqui = null;
   try {
-    var g = JSON.parse(localStorage.getItem('klendar.cerca') || 'null');
-    if (g && Date.now() - g.t < 6 * 3600e3 && isFinite(g.lat) && isFinite(g.lng)) aqui = g;
+    var gg = JSON.parse(localStorage.getItem('klendar.cerca') || 'null');
+    if (gg && Date.now() - gg.t < 6 * 3600e3 && isFinite(gg.lat) && isFinite(gg.lng)) aqui = gg;
   } catch (e) { /* sin almacenamiento */ }
   function metros(a, b, c, d) {
     var r = Math.PI / 180, x = Math.sin((c - a) * r / 2), y = Math.sin((d - b) * r / 2);
@@ -99,10 +235,11 @@
     var km = m < 10000 ? Math.round(m / 100) / 10 : Math.round(m / 1000);
     return km.toLocaleString(LOC) + ' km';
   }
-  if (aqui) {
-    document.querySelectorAll('[data-lat][data-lng]').forEach(function (el) {
+  function distancias(raiz) {
+    if (!aqui) return;
+    raiz.querySelectorAll('[data-lat][data-lng]').forEach(function (el) {
       var hueco = el.querySelector('.tj-dist') || (el.classList.contains('dist') ? el : null);
-      if (!hueco) return;
+      if (!hueco || hueco.textContent.trim()) return;
       var m = metros(aqui.lat, aqui.lng, +el.getAttribute('data-lat'), +el.getAttribute('data-lng'));
       if (!isFinite(m) || m > 300000) return;
       hueco.textContent = (el.classList.contains('tj-fila') ? ' · ' : '') + fmtDist(m);
@@ -126,6 +263,47 @@
     }, { passive: true });
   });
 
+  // ── Filtros: lo de la propia página no se pisa con lo guardado ─────────
+  function marcaPropia() { try { sessionStorage.setItem('klendar.filtros.sin', '1'); } catch (e) { /* nada */ } }
+  document.addEventListener('click', function (e) {
+    var a = e.target instanceof Element ? e.target.closest('a[href]') : null;
+    if (!a) return;
+    try {
+      var u = new URL(a.getAttribute('href'), location.href);
+      if (u.origin === location.origin && u.pathname === location.pathname && u.search !== location.search) marcaPropia();
+    } catch (x) { /* un enlace raro */ }
+  }, true);
+  document.addEventListener('submit', function (e) {
+    var f = e.target;
+    if (f && f.method && f.method.toLowerCase() === 'get') {
+      try { if (new URL(f.action, location.href).pathname === location.pathname) marcaPropia(); } catch (x) { /* nada */ }
+    }
+  }, true);
+
+  // «Cerca de mí», «Estoy aquí» y «Cercanía»: piden la ubicación y vuelven
+  // con ella (y con lo de `data-mas`), sin ciudad ni página.
+  var errCerca = document.getElementById('cercaErr');
+  document.querySelectorAll('[data-cerca]').forEach(function (b) {
+    if (!navigator.geolocation) return;
+    b.hidden = false;
+    b.addEventListener('click', function () {
+      navigator.geolocation.getCurrentPosition(function (p) {
+        var lat = p.coords.latitude, lng = p.coords.longitude;
+        window.KL_CERCA(lat, lng);
+        var u = new URL(location.href);
+        u.searchParams.set('lat', lat.toFixed(4)); u.searchParams.set('lng', lng.toFixed(4));
+        ['p', 'ciudad', 'city'].forEach(function (k) { u.searchParams.delete(k); });
+        new URLSearchParams(b.getAttribute('data-mas') || '').forEach(function (v, k) { u.searchParams.set(k, v); });
+        marcaPropia();
+        location.href = u.toString();
+      }, function () {
+        if (errCerca) { errCerca.textContent = b.getAttribute('data-err'); errCerca.hidden = false; }
+      }, { maximumAge: 300000, timeout: 10000 });
+    });
+  });
+  var aviso = document.querySelector('[data-cerca-aviso]');
+  if (aviso && navigator.geolocation) aviso.hidden = false;
+
   // ── Desplegables y hoja de filtros ─────────────────────────────────────
   // «Cambiar filtros» (al final de la lista) abre la hoja.
   document.addEventListener('click', function (e) {
@@ -134,6 +312,17 @@
     if (!a || !hoja) return;
     e.preventDefault();
     hoja.open = true;
+  });
+  // «Restablecer»: la hoja vuelve a lo de serie sin salir de ella (como la
+  // app); sin JavaScript es un enlace.
+  document.addEventListener('click', function (e) {
+    var a = e.target instanceof Element ? e.target.closest('[data-restablecer]') : null;
+    if (!a) return;
+    var f = a.closest('form');
+    if (!f) return;
+    e.preventDefault();
+    Array.prototype.forEach.call(f.querySelectorAll('input[type=radio]'), function (r) { r.checked = r.value === ''; });
+    Array.prototype.forEach.call(f.querySelectorAll('input[type=checkbox]'), function (c) { c.checked = false; });
   });
   // La hoja manda solo lo que tiene valor (sin `precio=&orden=` en la URL).
   document.querySelectorAll('form.hoja-cuerpo').forEach(function (f) {
@@ -154,7 +343,7 @@
       cierra(d);
       if (d.classList.contains('hoja')) {
         document.body.classList.add('con-hoja');
-        var primero = d.querySelector('.hoja-cuerpo input, .hoja-cuerpo select, .hoja-cuerpo a, .hoja-cuerpo button');
+        var primero = d.querySelector('.hoja-cuerpo input:checked') || d.querySelector('.hoja-cuerpo input:not([type=hidden])');
         if (primero) setTimeout(function () { primero.focus({ preventScroll: true }); }, 30);
       }
     } else if (d.classList.contains('hoja')) {
@@ -180,4 +369,123 @@
     var s = ultimo.querySelector('summary');
     if (s) s.focus();
   });
+
+  // ── Descubre: una por pantalla ─────────────────────────────────────────
+  if (feed) {
+    var fondo = document.querySelector('.feed-fondo');
+    var actual = null;
+    var pantallas = function () { return Array.prototype.slice.call(feed.querySelectorAll(':scope > .tj, :scope > .feed-fin')); };
+    // Pasado el feed («Más formas de explorar» y el pie), la cabecera vuelve a
+    // ser la de siempre y lo de encima de la foto se va.
+    var fuera = false;
+    var cromo = function () {
+      var conFoto = actual && actual.classList.contains('tj') && Boolean(actual.querySelector('img.tj-img, video.tj-img'));
+      document.body.setAttribute('data-cromo', fuera ? 'fuera' : conFoto ? 'media' : 'tema');
+    };
+    var marca = function (el) {
+      if (!el || el === actual) return;
+      actual = el;
+      cromo();
+      if (fondo) {
+        var img = el.querySelector('.tj-pista > :first-child img, img.tj-img');
+        var src = img ? (img.currentSrc || img.src) : (el.querySelector('video[poster]') || {}).poster;
+        fondo.style.setProperty('--foto', src ? 'url("' + String(src).replace(/["\\]/g, '') + '")' : 'none');
+      }
+    };
+    var ojo = 'IntersectionObserver' in window ? new IntersectionObserver(function (entradas) {
+      entradas.forEach(function (e) { if (e.isIntersecting) marca(e.target); });
+    }, { threshold: 0.55 }) : null;
+    var masFormas = document.querySelector('.mas-formas');
+    if (masFormas && 'IntersectionObserver' in window) {
+      new IntersectionObserver(function (entradas) {
+        entradas.forEach(function (e) { fuera = e.isIntersecting || e.boundingClientRect.top < 0; cromo(); });
+      }, { rootMargin: '0px 0px -40% 0px' }).observe(masFormas);
+    }
+    var vigila = function (raiz) { if (ojo) raiz.querySelectorAll(':scope > .tj, :scope > .feed-fin').forEach(function (el) { ojo.observe(el); }); };
+    vigila(feed);
+    marca(pantallas()[0]);
+
+    var ir = function (d) {
+      var lista = pantallas();
+      var i = Math.max(0, lista.indexOf(actual));
+      var destino = lista[Math.max(0, Math.min(lista.length - 1, i + d))];
+      if (destino && destino !== actual) destino.scrollIntoView({ block: 'start', behavior: suave() });
+    };
+    document.addEventListener('keydown', function (e) {
+      if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
+      var t = e.target;
+      if (t instanceof Element && t.closest('input, textarea, select, [contenteditable], details[open], dialog')) return;
+      if (abiertos().length) return;
+      var k = e.key;
+      if (k === 'ArrowDown' || k === 'PageDown' || k === 'j' || k === 'J') { e.preventDefault(); ir(1); }
+      else if (k === 'ArrowUp' || k === 'PageUp' || k === 'k' || k === 'K') { e.preventDefault(); ir(-1); }
+      else if ((k === 'ArrowLeft' || k === 'ArrowRight') && actual) {
+        var g = actual.querySelector('.tj-galeria');
+        if (g) { e.preventDefault(); mueve(g, k === 'ArrowRight' ? 1 : -1); }
+      }
+    });
+    // La rueda (y el trackpad): una pantalla por gesto, como el dedo en el
+    // móvil. Se espera a que el gesto acabe (la inercia del trackpad manda
+    // muchos eventos seguidos) antes de aceptar otro. En la pantalla final,
+    // hacia abajo, la página sigue normal hasta el pie.
+    var acumulado = 0;
+    var quieta = 0;
+    var tRueda = null;
+    window.addEventListener('wheel', function (e) {
+      if (fuera || e.ctrlKey || abiertos().length || Math.abs(e.deltaY) < Math.abs(e.deltaX)) return;
+      var t = e.target instanceof Element ? e.target : null;
+      if (t && t.closest('.hoja-cuerpo, .menu-d, header.top')) return;
+      if (actual && actual.classList.contains('feed-fin') && e.deltaY > 0) return;
+      e.preventDefault();
+      clearTimeout(tRueda);
+      tRueda = setTimeout(function () { acumulado = 0; quieta = 0; }, 180);
+      if (Date.now() < quieta) return;
+      acumulado += e.deltaMode === 1 ? e.deltaY * 40 : e.deltaY;
+      if (Math.abs(acumulado) < 30) return;
+      ir(acumulado > 0 ? 1 : -1);
+      acumulado = 0;
+      quieta = Date.now() + 100000; // hasta que pare el gesto (el temporizador de arriba)
+    }, { passive: false });
+    document.querySelectorAll('[data-feed-ir]').forEach(function (b) {
+      b.addEventListener('click', function () { ir(Number(b.getAttribute('data-feed-ir'))); });
+    });
+    // «Volver al principio»: a la primera.
+    document.addEventListener('click', function (e) {
+      var a = e.target instanceof Element ? e.target.closest('a[href="#arriba"]') : null;
+      if (!a) return;
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: suave() });
+    });
+
+    // La página siguiente, al acercarse al final (sin JavaScript, «Ver más»).
+    var trae = function (enlace) {
+      if (enlace.dataset.cargando) return;
+      enlace.dataset.cargando = '1';
+      fetch(enlace.href, { credentials: 'same-origin' }).then(function (r) { return r.text(); }).then(function (txt) {
+        var doc = new DOMParser().parseFromString(txt, 'text/html');
+        var nuevo = doc.getElementById('feed');
+        var caja = enlace.closest('.feed-mas');
+        if (!nuevo || !caja) throw new Error('sin feed');
+        var trozo = document.createDocumentFragment();
+        Array.prototype.forEach.call(nuevo.children, function (el, i) {
+          if (i === 0 && el.classList.contains('feed-mas')) return; // «Anterior»
+          trozo.appendChild(document.importNode(el, true));
+        });
+        var tmp = document.createElement('div');
+        tmp.appendChild(trozo);
+        var hijos = Array.prototype.slice.call(tmp.children);
+        caja.replaceWith.apply(caja, hijos);
+        hijos.forEach(function (h) { iniciar(h); if (ojo && (h.classList.contains('tj') || h.classList.contains('feed-fin'))) ojo.observe(h); });
+        hijos.forEach(function (h) { var m = h.querySelector && h.querySelector('[data-feed-mas]'); if (m) observaMas(m); if (h.matches && h.matches('.feed-mas')) { var mm = h.querySelector('[data-feed-mas]'); if (mm) observaMas(mm); } });
+      }).catch(function () { delete enlace.dataset.cargando; });
+    };
+    var cerca = 'IntersectionObserver' in window ? new IntersectionObserver(function (entradas) {
+      entradas.forEach(function (e) { if (e.isIntersecting) { cerca.unobserve(e.target); trae(e.target); } });
+    }, { rootMargin: '150% 0px' }) : null;
+    var observaMas = function (a) { if (cerca) cerca.observe(a); };
+    feed.querySelectorAll('[data-feed-mas]').forEach(observaMas);
+  }
+
+  iniciar(document);
+  window.KlendarTarjetas = { iniciar: iniciar };
 })();

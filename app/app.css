@@ -162,7 +162,7 @@ a.aviso:hover { text-decoration: none; border-color: var(--ink-2); }
    centrada; el mismo cristal en tarjetas, filas y campos; las mismas
    esquinas (22 tarjetas, 20 accesos, 16 campos) y los mismos iconos. */
 .cuenta { max-width: 600px; }
-.cuenta h1 { font-size: clamp(24px, 5vw, 30px); letter-spacing: -.5px; margin: 14px 0 16px; }
+.cuenta h1 { font-size: clamp(26px, 4vw, 32px); line-height: 1.12; letter-spacing: -.5px; margin: 14px 0 16px; }
 .titulo-pagina { margin-top: 18px; }
 .ms { font-family: 'Material Symbols Outlined'; font-weight: normal; font-style: normal; font-size: 24px;
   line-height: 1; letter-spacing: normal; text-transform: none; display: inline-block; white-space: nowrap;

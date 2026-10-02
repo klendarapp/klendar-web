@@ -148,3 +148,71 @@ a.cal-dia:hover { background: var(--soft); text-decoration: none; }
 .cal-lista-cab { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin: 4px 0 12px; }
 :is(.pub, .tjv) .cal-lista-cab h2 { margin: 0; font-size: 20px; }
 .cal-lista .empty a { font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+
+/* ── Galería: todas las fotos y vídeos (Descubre y Explorar) ───────────────
+   Se desliza de lado (dedo o flechas en el escritorio); los puntos van en
+   una cápsula de cristal oscuro, como en la app (blancos sueltos se perdían
+   en una foto clara: el activo da 5,7:1 y los demás 3,8:1 sobre blanco).
+   Cada pieza es un enlace a la ficha (fuera del orden del tabulador: el del
+   título ya lo es). */
+.tj-galeria, .tj-media > .tj-pieza { position: absolute; inset: 0; }
+.tj-pista { display: flex; width: 100%; height: 100%; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory;
+  scrollbar-width: none; overscroll-behavior-x: contain; }
+.tj-pista::-webkit-scrollbar { display: none; }
+.tj-pieza { position: relative; display: block; flex: 0 0 100%; width: 100%; height: 100%; scroll-snap-align: start; scroll-snap-stop: always; }
+.tj-pieza .tj-img { width: 100%; height: 100%; object-fit: cover; }
+video.tj-img { background: #0A0A0A; }
+.tj-puntos { position: absolute; z-index: 3; top: 12px; right: 12px; display: flex; gap: 6px; padding: 5px 6px; border-radius: 999px;
+  background: rgba(10,10,10,.6); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); pointer-events: none; }
+.tj-puntos i { display: block; width: 6px; height: 6px; border-radius: 3px; background: rgba(255,255,255,.7); transition: width .2s ease; }
+.tj-puntos i.on { width: 18px; background: #fff; }
+.tj-flecha, .tj-sonido, .tj-play { position: absolute; z-index: 4; display: grid; place-items: center; border: 0; padding: 0; cursor: pointer;
+  border-radius: 50%; background: rgba(10,10,10,.6); color: #fff; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+.tj-flecha { top: 50%; width: 40px; height: 40px; margin-top: -20px; opacity: 0; pointer-events: none; transition: opacity .15s ease; }
+.tj-ant { left: 10px; }
+.tj-sig { right: 10px; }
+/* Las flechas, solo con ratón (en el móvil se desliza) y al pasar por encima. */
+@media (hover: hover) and (pointer: fine) {
+  .tj-galeria:hover .tj-flecha:not(.fuera), .tj-flecha:focus-visible { opacity: 1; pointer-events: auto; }
+}
+.tj-flecha.fuera { opacity: 0 !important; pointer-events: none !important; }
+.tj-flecha:hover, .tj-sonido:hover, .tj-play:hover { background: rgba(10,10,10,.78); }
+.tj-flecha:focus-visible, .tj-sonido:focus-visible, .tj-play:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+/* El altavoz: tachado mientras está en silencio. */
+.tj-sonido { right: 12px; top: 46px; width: 40px; height: 40px; }
+.tj-galeria:not(:has(.tj-puntos)) .tj-sonido { top: 12px; }
+.tj-sonido .ic + .ic, .tj-sonido.on .ic:first-child { display: none; }
+.tj-sonido.on .ic + .ic { display: block; }
+.tj-play { left: 50%; top: 40%; width: 64px; height: 64px; margin: -32px 0 0 -32px; }
+
+/* ── Una por pantalla (el feed de Descubre) ────────────────────────────────
+   La foto o el vídeo de fondo, a sangre, y el panel abajo como la tarjeta
+   de la app (docs/DISENOS_PUBLICACION.md). `--feed-arriba` es lo que ocupan
+   la cabecera y los filtros encima; `--feed-abajo`, la barra de pestañas. */
+.tj--pantalla { height: var(--feed-alto, 100dvh); overflow: hidden; background: #0A0A0A; }
+.tj--pantalla .tj-media { position: absolute; inset: 0; aspect-ratio: auto; border-radius: 0; background: #0A0A0A; }
+.tj--pantalla:hover .tj-img { transform: none; }
+.tj--pantalla .tj-tipo { top: calc(var(--feed-arriba, 120px) + 6px); left: 16px; }
+.tj--pantalla .tj-puntos { top: calc(var(--feed-arriba, 120px) + 44px); right: auto; left: 50%; transform: translateX(-50%); }
+.tj--pantalla .tj-sonido { top: calc(var(--feed-arriba, 120px) + 2px); right: 14px; }
+.tj--pantalla .tj-galeria:not(:has(.tj-puntos)) .tj-sonido { top: calc(var(--feed-arriba, 120px) + 2px); }
+.tj--pantalla .tj-flecha { width: 44px; height: 44px; margin-top: -22px; }
+.tj--pantalla .tj-panel { position: absolute; left: 12px; right: 12px; bottom: var(--feed-abajo, 16px); margin: 0; padding: 16px 18px 18px;
+  border-radius: 28px; gap: 10px; max-height: calc(var(--feed-alto, 100dvh) - var(--feed-arriba, 120px) - var(--feed-abajo, 16px) - 70px); overflow: hidden; }
+.tj--pantalla.tj--glass .tj-panel { background: rgba(255,255,255,.80); border-color: rgba(255,255,255,.5);
+  backdrop-filter: blur(20px) saturate(1.3); -webkit-backdrop-filter: blur(20px) saturate(1.3); color: #0A0A0A; }
+@media (prefers-color-scheme: dark) {
+  .tj--pantalla.tj--glass .tj-panel { background: rgba(10,10,10,.62); border-color: rgba(255,255,255,.14); color: #FAFAFA; }
+}
+:is(.pub, .tjv) .tj--pantalla .tj-titulo { font-size: 24px; -webkit-line-clamp: 2; }
+.tj--pantalla .tj-cta { min-height: 52px; }
+.tj--pantalla .tj-enlace::after { border-radius: 28px; }
+/* Foto grande y Cartel: el degradado de abajo y el texto encima, hasta la barra. */
+.tj--pantalla.tj--photo .tj-panel, .tj--pantalla.tj--poster .tj-panel { left: 0; right: 0; bottom: 0; border-radius: 0; max-height: none;
+  padding: 120px 18px calc(var(--feed-abajo, 16px) + 6px); }
+.tj--pantalla.tj--poster .tj-panel { padding-top: 45vh; background: linear-gradient(to bottom, transparent, rgba(0,0,0,.72) 45%, rgba(0,0,0,.9)); }
+:is(.pub, .tjv) .tj--pantalla.tj--poster .tj-titulo { font-size: 34px; line-height: 1.02; letter-spacing: -.04em; }
+:is(.pub, .tjv) .tj--pantalla.tj--photo .tj-titulo { font-size: 20px; }
+.tj--pantalla.tj--photo .tj-enlace::after, .tj--pantalla.tj--poster .tj-enlace::after { border-radius: 0; }
+.tj--pantalla.tj--minimal .tj-panel { border-radius: 28px; }
+.tj--pantalla.tj--bold .tj-panel { box-shadow: 0 14px 34px -14px rgba(0,0,0,.6); }

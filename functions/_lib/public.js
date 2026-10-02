@@ -213,7 +213,7 @@ export const altPath = (path, lang) =>
 // Analytics, que apunta la ruta de cada visita.
 // `actual`: la pestaña de la app que se marca en la cabecera ('descubre',
 // 'explorar'…); en una ficha, ninguna.
-export function publicPage({ lang, path, title, description, head = '', body, image, contador = true, actual = '' }) {
+export function publicPage({ lang, path, title, description, head = '', body, image, contador = true, actual = '', bodyClass = '' }) {
   const en = lang === 'en';
   const S = en
     ? { how: 'How it works', biz: 'Businesses', sup: 'Support', agenda: "What's on", exp: 'Explore' }
@@ -271,16 +271,16 @@ ${erroresScript()}
 ${preconectar}<link rel="preload" href="/assets/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/assets/site.css?v=20261011">
-<link rel="stylesheet" href="/assets/public.css?v=29">
-<link rel="stylesheet" href="/assets/tarjeta.css?v=1">
+<link rel="stylesheet" href="/assets/public.css?v=30">
+<link rel="stylesheet" href="/assets/tarjeta.css?v=2">
 ${cabeza}
 </head>
-<body>
+<body${bodyClass ? ` class="${esc(bodyClass)}"` : ''}>
 ${siteHeader(lang, esc(es), esc(enPath), actual)}
 <main class="pub wrap" id="contenido">${body}</main>
 ${siteFooter(lang)}
-${conAmigos ? `<script src="/assets/amigos.js?v=11" defer data-lang="${en ? 'en' : 'es'}"></script>
-` : ''}${conTarjetas ? `<script src="/assets/tarjetas.js?v=1" defer></script>
+${conAmigos ? `<script src="/assets/amigos.js?v=12" defer data-lang="${en ? 'en' : 'es'}"></script>
+` : ''}${conTarjetas ? `<script src="/assets/tarjetas.js?v=2" defer></script>
 ` : ''}${/class="detail[" ]/.test(body) ? `<script src="/assets/barra.js?v=3" defer></script>
 ` : ''}${contador ? CONTADOR : ''}
 </body></html>`;

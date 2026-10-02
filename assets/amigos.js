@@ -292,7 +292,9 @@
     chip.setAttribute('data-amigos-chip', '');
     if (on) chip.setAttribute('aria-current', 'true');
     chip.innerHTML = GRUPO + '<span>' + esc(T.filtro) + '</span>';
-    barra.appendChild(chip);
+    // En su sitio, como en la app: junto a «Estoy aquí» (antes de «Ordenar por»).
+    var hueco = barra.querySelector('[data-amigos-hueco]');
+    if (hueco) barra.insertBefore(chip, hueco); else barra.appendChild(chip);
     if (!on) return;
 
     // Que cambiar otro filtro no lo apague.
@@ -314,18 +316,30 @@
     });
 
     // Lo que pintó el servidor (resumen, tarjetas, páginas, final) se
-    // esconde; «Más formas de explorar» se queda.
+    // esconde; «Más formas de explorar» se queda. En Descubre (el feed, con la
+    // barra encima de la foto) se esconde el feed entero y la lista va en su
+    // sitio, con la página en su aspecto normal.
     var ocultos = [];
     var el = barra.nextElementSibling;
-    while (el && !el.matches('.mas-formas, script, footer')) {
-      if (!el.matches('#cercaErr, .aviso-error, [data-cerca-aviso]')) ocultos.push(el);
-      el = el.nextElementSibling;
-    }
+    var destino = barra.getAttribute('data-amigos-resultados');
+    var feedDestino = destino ? document.querySelector(destino) : null;
     var caja = document.createElement('section');
     caja.className = 'amigos-resultados';
     caja.setAttribute('aria-live', 'polite');
     caja.innerHTML = '<p class="muted">' + esc(T.cargando) + '</p>';
-    barra.parentNode.insertBefore(caja, ocultos[0] || el || null);
+    if (feedDestino) {
+      ocultos.push(feedDestino);
+      document.querySelectorAll('.feed-nav, .feed-fondo').forEach(function (x) { ocultos.push(x); });
+      document.body.classList.remove('pagina-feed');
+      document.body.classList.add('feed-amigos');
+      feedDestino.parentNode.insertBefore(caja, feedDestino);
+    } else {
+      while (el && !el.matches('.mas-formas, script, footer')) {
+        if (!el.matches('#cercaErr, .aviso-error, [data-cerca-aviso]')) ocultos.push(el);
+        el = el.nextElementSibling;
+      }
+      barra.parentNode.insertBefore(caja, ocultos[0] || el || null);
+    }
     ocultos.forEach(function (x) { x.hidden = true; });
 
     var precio = de('precio', 'price');
@@ -378,6 +392,7 @@
       // Sin red o algo raro: se vuelve a enseñar lo de siempre.
       caja.remove();
       ocultos.forEach(function (x) { x.hidden = false; });
+      if (feedDestino) { document.body.classList.add('pagina-feed'); document.body.classList.remove('feed-amigos'); }
       toast(T.oops, true);
     });
   }

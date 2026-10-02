@@ -37,7 +37,7 @@ const T = (en) => en
       places: (n) => `${n} ${n === 1 ? 'place' : 'places'}`,
       prev: '← Previous', next: 'Next →', page: 'Page',
       lead: 'Search, and see it as a list, on the map or on the calendar. No account needed to browse.',
-      discLead: 'Flash offers and events from the businesses around you, closest first. No account needed to browse.',
+      discLead: 'Flash offers and events from the businesses around you. No account needed to browse.',
       biz: 'List your business', app: 'Create a free account',
       catTitle: (c, city) => `${c} in ${city}`,
       catHead: (c, city) => `${c} in ${city}: deals and events`,
@@ -83,6 +83,14 @@ const T = (en) => en
       emptyBodyFiltered: (d) => `Nothing ${d} with the filters you have on. Clear them or widen the search to see more.`,
       emptyBodyAll: "Nothing active right now. Businesses publish every day: check back later or let us tell you.",
       emptyBodyAllFiltered: 'Nothing with the filters you have on. Clear them, or let us tell you when something new comes up.',
+      // La barra y la hoja de filtros: las de la app (feed_filter_bar.dart, filter_sheet.dart).
+      zoneChange: 'Change area', hereNow: "I'm here", hereNowHint: 'Within walking distance and starting in the next two hours',
+      sortBy: 'Sort by', sortNearest: 'Nearest', sortSoonest: 'Soonest', sortNewest: 'Newest',
+      type: 'Type', categories: 'Categories', reset: 'Reset', distHint: 'Applies with “Near you”.',
+      bizSection: 'Businesses', offersSection: 'Offers and events', allPlaces: 'See all businesses',
+      // El feed de Descubre.
+      feedKeys: 'Swipe, scroll or use ↑ ↓ to move on.', feedPos: (i, n) => `${i} of ${n}`,
+      prevItem: 'Previous', nextItem: 'Next', seeMore: 'See more',
     }
   : {
       exp: 'Explorar', disc: 'Descubre', agenda: 'Agenda local', search: 'Buscar', ph: 'Un bar, un mercadillo, «brunch»…',
@@ -93,7 +101,7 @@ const T = (en) => en
       places: (n) => `${n} ${n === 1 ? 'negocio' : 'negocios'}`,
       prev: '← Anterior', next: 'Siguiente →', page: 'Página',
       lead: 'Busca y míralo en lista, en el mapa o en el calendario. Para mirar no hace falta cuenta.',
-      discLead: 'Ofertas flash y planes de los negocios de tu alrededor, lo más cerca primero. Para mirar no hace falta cuenta.',
+      discLead: 'Ofertas flash y planes de los negocios de tu alrededor. Para mirar no hace falta cuenta.',
       biz: 'Publicar mi negocio', app: 'Crear cuenta gratis',
       catTitle: (c, city) => `${c} en ${city}`,
       catHead: (c, city) => `${c} en ${city}: ofertas y planes`,
@@ -138,6 +146,12 @@ const T = (en) => en
       emptyBodyFiltered: (d) => `No hay nada ${d} con los filtros que tienes puestos. Quítalos o amplía la búsqueda para ver más.`,
       emptyBodyAll: 'No hay nada activo ahora mismo. Los negocios publican cada día: vuelve luego o deja que te avisemos.',
       emptyBodyAllFiltered: 'No hay nada con los filtros que tienes puestos. Quítalos o deja que te avisemos cuando haya algo nuevo.',
+      zoneChange: 'Cambiar zona', hereNow: 'Estoy aquí', hereNowHint: 'Lo que pillas andando y empieza en las dos próximas horas',
+      sortBy: 'Ordenar por', sortNearest: 'Cercanía', sortSoonest: 'Más pronto', sortNewest: 'Novedades',
+      type: 'Tipo', categories: 'Categorías', reset: 'Restablecer', distHint: 'Vale con «Cerca de ti».',
+      bizSection: 'Negocios', offersSection: 'Ofertas y eventos', allPlaces: 'Ver todos los negocios',
+      feedKeys: 'Desliza, usa la rueda o ↑ ↓ para pasar.', feedPos: (i, n) => `${i} de ${n}`,
+      prevItem: 'Anterior', nextItem: 'Siguiente', seeMore: 'Ver más',
     };
 
 const catName = (c, en) => (en ? c?.names?.en : c?.names?.es) || c?.slug || '';
@@ -159,6 +173,9 @@ const IC = {
   izq: 'M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z',
   der: 'M8.59 16.59 13.17 12 8.59 7.41 10 6l6 6-6 6z',
   x: 'M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z',
+  aqui: 'M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0 0 13 3.06V1h-2v2.06A8.994 8.994 0 0 0 3.06 11H1v2h2.06A8.994 8.994 0 0 0 11 20.94V23h2v-2.06A8.994 8.994 0 0 0 20.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z',
+  ciudad: 'M15 11V5l-3-3-3 3v2H3v14h18V11h-6zm-8 8H5v-2h2v2zm0-4H5v-2h2v2zm0-4H5V9h2v2zm6 8h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V9h2v2zm0-4h-2V5h2v2zm6 12h-2v-2h2v2zm0-4h-2v-2h2v2z',
+  arriba: 'M12 8l-6 6 1.41 1.41L12 10.83l4.59 4.58L18 14z',
 };
 const ic = (n, s = 18) => `<svg class="ic" viewBox="0 0 24 24" width="${s}" height="${s}" aria-hidden="true"><path fill="currentColor" d="${IC[n]}"/></svg>`;
 
@@ -213,15 +230,15 @@ const mapaHtml = (items, lang, S) => {
 };
 
 /** Las distancias de «Cerca de mí», las mismas que la hoja de filtros de la
- * app. Sin elegir, 10 km. */
+ * app (`FeedFilters.radiusOptionsM`). Sin elegir, 5 km, como la app. */
 const RADIOS_KM = [1, 3, 5, 10, 25];
-const RADIO_KM = 10;
+const RADIO_KM = 5;
 
 /** Al final de la lista (última página): qué se ha visto y qué hacer ahora.
  * Lo mismo que la tarjeta final de Descubre en la app. Con [vacio] (no hay
  * nada desde el principio), las mismas salidas y la misma lógica, pero
  * centradas como una pantalla vacía (`.vacio`), como Descubre vacío. */
-const finalHtml = ({ S, en, lang, cerca, km, city, filtros, link, page, alertaHref, sugerencias, vacio = false }) => {
+const finalHtml = ({ S, en, lang, cerca, km, city, filtros, link, page, alertaHref, sugerencias, vacio = false, limpiar = '', compacto = false }) => {
   const sigKm = cerca ? RADIOS_KM.find((k) => k > km) : null;
   // ¿Se puede mirar más lejos? Con «Cerca de mí», a la distancia siguiente;
   // en una ciudad, en todas.
@@ -233,12 +250,15 @@ const finalHtml = ({ S, en, lang, cerca, km, city, filtros, link, page, alertaHr
     ? (ampliar ? (filtros ? S.emptyBodyFiltered(donde) : S.emptyBody(donde)) : (filtros ? S.emptyBodyAllFiltered : S.emptyBodyAll))
     : ampliar ? (filtros ? S.endBodyFiltered : S.endBody) : (filtros ? S.endBodyAllFiltered : S.endBodyAll);
   const agenda = `${agendaBase(lang)}/${city ? `${CITY(city)}/` : ''}`;
-  const quitar = filtros
-    ? `<a class="pill" href="${esc(link({ q: '', cat: '', kind: '', price: '', when: '', soloDescuento: false, abierto: false }))}">${esc(S.clearF)}</a>`
+  // «Quitar filtros» deja la página limpia: sin filtros, sin zona y sin
+  // distancia (lo que se espera al pulsarlo; también lo guardado).
+  const quitar = limpiar
+    ? `<a class="pill" href="${esc(limpiar)}" data-limpia-filtros>${esc(S.clearF)}</a>`
     : '';
   const sugiere = ampliar ? '' : `<p class="${vacio ? 'vacio-sugiere' : 'fin-sugiere'}"><a href="${esc(`${en ? '/app/?lang=en' : '/app/'}#/sugerencias?texto=${encodeURIComponent(S.recommendDraft)}`)}">${esc(S.recommend)}</a></p>`;
+  // En el feed de Descubre, en filas (caben en la última pantalla).
   const quizas = sugerencias.length ? `<h2 class="fin-h">${esc(S.maybe)}</h2>
-  ${rejilla(sugerencias, lang)}` : '';
+  ${compacto ? `<div class="tj-filas">${sugerencias.map((o) => tarjeta(o, lang, { forma: 'fila' })).join('')}</div>` : rejilla(sugerencias, lang)}` : '';
   if (vacio) {
     // Ampliar (si se puede), quitar filtros (si hay), avisar y la agenda.
     const avisar = `<a class="pill${ampliar ? '' : ' accent'}" href="${esc(alertaHref)}">${esc(S.notifyMe)}</a>`;
@@ -367,77 +387,202 @@ function calendarioHtml({ items, lang, S, link, mes, dia, hoy }) {
 }
 
 // ── Descubre y Explorar ────────────────────────────────────────────────────
+// Los filtros son los de la app (`FeedFilters`, la barra de
+// `feed_filter_bar.dart` y la hoja de `filter_sheet.dart`), los mismos en las
+// dos páginas y con los mismos nombres:
+//   barra: Filtros · <resumen> · Zona · Estoy aquí · [Van mis amigos] · Ordenar
+//   hoja:  Tipo · Categorías · Distancia · Precio · ¿Cuándo? · Abierto ahora ·
+//          Solo con descuento (Restablecer arriba, Ver resultados abajo)
+// («Ocultar contenido +18» no está: la web pública nunca enseña +18. Las
+// categorías son una sola, que es lo que filtra `public_explore`.)
+//
+// Todo va en la URL. Las dos páginas leen las claves de los dos idiomas
+// (`?ciudad=` y `?city=`), así un enlace sirve aunque se cambie de idioma.
+// Lo compartido (zona, distancia, filtros, orden, «Van mis amigos») se guarda
+// en el navegador al entrar en una de las dos y se recupera al llegar a la
+// otra sin filtros en la dirección (`guardaFiltros`); un enlace con filtros
+// manda sobre lo guardado.
+
+/** Las claves de la dirección en cada idioma. */
+const CLAVES = {
+  es: { city: 'ciudad', cat: 'categoria', kind: 'tipo', price: 'precio', when: 'cuando', discount: 'descuento', open: 'abierto', sort: 'orden', view: 'vista', month: 'mes', day: 'dia', show: 'ver' },
+  en: { city: 'city', cat: 'category', kind: 'type', price: 'price', when: 'when', discount: 'discount', open: 'open', sort: 'sort', view: 'view', month: 'month', day: 'day', show: 'show' },
+};
+/** Los valores, por dentro en inglés; en la dirección, en el idioma de la página. */
+const VALORES_ES = {
+  offers: 'ofertas', events: 'eventos', places: 'negocios', free: 'gratis',
+  now: 'ahora', today: 'hoy', tomorrow: 'manana', next10: '10dias',
+  newest: 'nuevas', soonest: 'pronto', nearest: 'cerca', map: 'mapa', calendar: 'calendario',
+};
+const NORMAL = Object.fromEntries(Object.entries(VALORES_ES).map(([k, v]) => [v, k]));
+const norm = (v) => NORMAL[v] || v;
+const enIdioma = (v, en) => (en ? v : VALORES_ES[v] || v);
+/** Orden de la app por defecto: Novedades (`FeedFilters.defaultSort`). */
+const ORDEN_DEFECTO = 'newest';
+
+/** Lee el estado de la dirección (con las claves de cualquiera de los dos idiomas). */
+function leeEstado(qs) {
+  const de = (k, max) => (qs.get(CLAVES.es[k]) || qs.get(CLAVES.en[k]) || '').slice(0, max);
+  let kind = norm(de('kind', 20));
+  // «Negocios» era un tipo más; los enlaces de antes (`?ver=negocios`) siguen valiendo.
+  if (/^(places|negocios)$/.test(de('show', 20))) kind = 'places';
+  if (!['offers', 'events', 'places'].includes(kind)) kind = '';
+  const price = norm(de('price', 10));
+  const when = norm(de('when', 12));
+  const sort = norm(de('sort', 12));
+  const vista = norm(de('view', 12));
+  const lat = Number.parseFloat(qs.get('lat') || '');
+  const lng = Number.parseFloat(qs.get('lng') || '');
+  const cerca = Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
+  const kmPedido = Number.parseInt(qs.get('km') || '', 10);
+  return {
+    q: (qs.get('q') || '').slice(0, 60),
+    city: de('city', 60),
+    cat: de('cat', 40),
+    kind,
+    price: price === 'free' || /^\d{1,3}$/.test(price) ? price : '',
+    when: ['now', 'today', 'tomorrow', 'next10'].includes(when) ? when : '',
+    soloDescuento: de('discount', 2) === '1',
+    abierto: de('open', 2) === '1',
+    sort: ['newest', 'soonest', 'nearest'].includes(sort) && sort !== ORDEN_DEFECTO ? sort : '',
+    vista: ['map', 'calendar'].includes(vista) ? vista : '',
+    cerca, lat: cerca ? lat : null, lng: cerca ? lng : null,
+    km: RADIOS_KM.includes(kmPedido) ? kmPedido : RADIO_KM,
+    amigos: qs.get('amigos') === '1',
+    page: Math.max(1, Math.min(50, parseInt(qs.get('p') || '1', 10) || 1)),
+    mes: de('month', 7),
+    dia: de('day', 10),
+  };
+}
+
+/** La dirección de un estado. `soloCompartido`: solo lo que viaja entre
+ * Descubre y Explorar (sin búsqueda, vista, mes, día ni página). */
+function query(e, lang, { soloCompartido = false } = {}) {
+  const en = lang === 'en';
+  const K = CLAVES[en ? 'en' : 'es'];
+  const p = new URLSearchParams();
+  const neg = e.kind === 'places';
+  if (!soloCompartido && e.q) p.set('q', e.q);
+  if (e.city && !e.cerca) p.set(K.city, e.city);
+  if (e.cat) p.set(K.cat, e.cat);
+  if (e.kind && !(soloCompartido && neg)) p.set(K.kind, enIdioma(e.kind, en));
+  if (e.abierto) p.set(K.open, '1');
+  if (!neg) {
+    if (e.price) p.set(K.price, enIdioma(e.price, en));
+    if (e.when) p.set(K.when, enIdioma(e.when, en));
+    if (e.soloDescuento) p.set(K.discount, '1');
+    if (e.sort) p.set(K.sort, enIdioma(e.sort, en));
+    if (!soloCompartido && e.vista) p.set(K.view, enIdioma(e.vista, en));
+    if (!soloCompartido && e.vista === 'calendar' && e.mes) p.set(K.month, e.mes);
+    if (!soloCompartido && e.vista === 'calendar' && e.dia) p.set(K.day, e.dia);
+    if (e.cerca) {
+      p.set('lat', Number(e.lat).toFixed(4)); p.set('lng', Number(e.lng).toFixed(4));
+      if (e.km !== RADIO_KM) p.set('km', String(e.km));
+    }
+    if (e.amigos) p.set('amigos', '1');
+  }
+  if (!soloCompartido && e.page > 1) p.set('p', String(e.page));
+  return p.toString();
+}
+
+/**
+ * Guardar y recuperar los filtros entre Descubre y Explorar (en el <head>,
+ * antes de pintar nada).
+ *
+ * - Sin filtros en la dirección y con unos guardados hace menos de 6 h (como
+ *   «Cerca de mí»): se va a la misma página con ellos (`location.replace`,
+ *   así «Atrás» no vuelve a la página sin filtros).
+ * - Si no, se guardan los de esta página (en los dos idiomas).
+ * - Los enlaces de la propia página (cambiar un filtro, «Quitar filtros»,
+ *   «Todas las ciudades») dejan una marca para que su resultado no se pise con
+ *   lo guardado (ver /assets/tarjetas.js); tampoco al volver con «Atrás».
+ */
+function guardaFiltros(e, lang, base) {
+  const compartido = { es: query(e, 'es', { soloCompartido: true }), en: query(e, 'en', { soloCompartido: true }) };
+  // Lo que no viaja entre páginas (la búsqueda, la vista y el día del
+  // calendario) se queda en la dirección al recuperar lo guardado.
+  const K = CLAVES[lang === 'en' ? 'en' : 'es'];
+  const resto = new URLSearchParams();
+  if (e.q) resto.set('q', e.q);
+  if (e.vista) resto.set(K.view, enIdioma(e.vista, lang === 'en'));
+  if (e.vista === 'calendar' && e.mes) resto.set(K.month, e.mes);
+  if (e.vista === 'calendar' && e.dia) resto.set(K.day, e.dia);
+  const vacia = !compartido.es;
+  const datos = JSON.stringify({ A: compartido, L: lang, v: vacia, r: resto.toString(), b: `${base}/` }).replace(/</g, '\\u003c');
+  return `<script>(function(d){try{var K='klendar.filtros',s=sessionStorage,ls=localStorage;
+var sin=s.getItem('klendar.filtros.sin');s.removeItem('klendar.filtros.sin');
+var n=(performance.getEntriesByType&&performance.getEntriesByType('navigation')[0])||{};
+var g=JSON.parse(ls.getItem(K)||'null');
+if(d.v&&!sin&&n.type!=='back_forward'&&g&&Date.now()-g.t<216e5&&g[d.L]){location.replace(d.b+'?'+g[d.L]+(d.r?'&'+d.r:'')+location.hash);return;}
+ls.setItem(K,JSON.stringify({t:Date.now(),es:d.A.es,en:d.A.en}));}catch(x){}})(${datos});</script>`;
+}
+
+/** Texto corto con lo puesto, como `filterSummary` en la app: «Todo · 5 km». */
+function resumenFiltros(e, S, catNombre) {
+  const partes = [];
+  if (e.kind === 'offers') partes.push(S.offers);
+  else if (e.kind === 'events') partes.push(S.events);
+  else if (e.kind === 'places') partes.push(S.placesType);
+  if (e.cat) partes.push(catNombre || e.cat);
+  if (!partes.length) partes.push(S.all);
+  if (e.cerca) partes.push(`${e.km} km`);
+  if (e.price) partes.push(e.price === 'free' ? S.free : S.upTo(e.price));
+  if (e.abierto) partes.push(S.openNow);
+  if (e.soloDescuento) partes.push(S.discount);
+  if (e.when) partes.push({ now: S.now, today: S.today, tomorrow: S.tomorrow, next10: S.next10 }[e.when]);
+  return partes.join(' · ');
+}
+
 /**
  * La misma búsqueda pintada de dos maneras: `modo` 'explorar' (buscar, y
- * Lista, Mapa o Calendario) o 'descubre' (el feed de tarjetas grandes).
+ * Lista, Mapa o Calendario) o 'descubre' (el feed a pantalla completa, una
+ * publicación por pantalla, como la pestaña 1 de la app).
  */
 export async function explorePage(url, lang, modo = 'explorar') {
   const en = lang === 'en';
   const S = T(en);
   const descubre = modo === 'descubre';
   const base = descubre ? discoverBase(lang) : exploreBase(lang);
-  const qs = url.searchParams;
-  const q = descubre ? '' : (qs.get('q') || '').slice(0, 60);
-  const city = (qs.get(en ? 'city' : 'ciudad') || '').slice(0, 60);
-  const cat = (qs.get(en ? 'category' : 'categoria') || '').slice(0, 40);
-  let kind = (qs.get(en ? 'type' : 'tipo') || '').slice(0, 20);
-  const page = Math.max(1, Math.min(50, parseInt(qs.get('p') || '1', 10) || 1));
-  // «Negocios» es un tipo más (Todo · Ofertas flash · Eventos · Negocios).
-  // Los enlaces de antes (`?ver=negocios`) siguen valiendo.
-  const verViejo = (qs.get(en ? 'show' : 'ver') || '').slice(0, 20);
-  if (verViejo === 'places' || verViejo === 'negocios') kind = en ? 'places' : 'negocios';
-  const negocios = !descubre && (kind === 'places' || kind === 'negocios');
-  const esOfertas = kind === 'offers' || kind === 'ofertas';
-  const esEventos = kind === 'events' || kind === 'eventos';
-  // Los filtros de la app: precio, cuándo, solo descuento, orden, cerca de mí
-  // y lista, mapa o calendario. Todo en la URL: se comparte y va sin
-  // JavaScript (salvo el mapa y pedir la ubicación).
-  const K = en
-    ? { price: 'price', when: 'when', discount: 'discount', open: 'open', sort: 'sort', view: 'view', month: 'month', day: 'day' }
-    : { price: 'precio', when: 'cuando', discount: 'descuento', open: 'abierto', sort: 'orden', view: 'vista', month: 'mes', day: 'dia' };
-  const price = (qs.get(K.price) || '').slice(0, 10);
-  const when = (qs.get(K.when) || '').slice(0, 12);
-  const soloDescuento = qs.get(K.discount) === '1';
-  // «Abierto ahora»: vale para publicaciones y para negocios (la base mira
-  // el horario en la zona de cada negocio; sin horario no pasa).
-  const abierto = qs.get(K.open) === '1';
-  const sort = (qs.get(K.sort) || '').slice(0, 12);
-  const vista = descubre ? '' : (qs.get(K.view) || '').slice(0, 12);
-  const mapa = !negocios && (vista === 'map' || vista === 'mapa');
-  const calendario = !negocios && (vista === 'calendar' || vista === 'calendario');
-  const lat = Number.parseFloat(qs.get('lat') || '');
-  const lng = Number.parseFloat(qs.get('lng') || '');
-  const cerca = Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
-  // La distancia de «Cerca de mí» (solo las de la lista).
-  const kmPedido = Number.parseInt(qs.get('km') || '', 10);
-  const km = RADIOS_KM.includes(kmPedido) ? kmPedido : RADIO_KM;
+  const e = leeEstado(url.searchParams);
+  if (descubre) { e.q = ''; e.vista = ''; if (e.kind === 'places') e.kind = ''; }
+  const { q, city, cat, kind, price, when, soloDescuento, abierto, cerca, lat, lng, km, page } = e;
+  const negocios = !descubre && kind === 'places';
+  const esOfertas = kind === 'offers';
+  const esEventos = kind === 'events';
+  const sort = e.sort;
+  const mapa = !negocios && e.vista === 'map';
+  const calendario = !negocios && e.vista === 'calendar';
+  const vista = negocios ? '' : e.vista;
   // El calendario: qué mes y qué día (en la hora de Madrid; cada publicación
   // va en el día de su negocio).
   const hoy = KZ.hoy('Europe/Madrid');
-  const mesPedido = (qs.get(K.month) || '').slice(0, 7);
-  const diaPedido = (qs.get(K.day) || '').slice(0, 10);
-  const WHEN = { ahora: 'now', now: 'now', hoy: 'today', today: 'today', manana: 'tomorrow', tomorrow: 'tomorrow', '10dias': 'next10', next10: 'next10' };
-  const SORT = { nuevas: 'newest', newest: 'newest', cerca: 'nearest', nearest: 'nearest' };
+  const mesPedido = e.mes;
+  const diaPedido = e.dia;
+  // Lo que se le pide a la base. El orden: el elegido o Novedades (la app).
+  const ordenBase = sort || ORDEN_DEFECTO;
   const filtros = {
-    ...(price === 'gratis' || price === 'free' ? { free: true } : {}),
+    ...(price === 'free' ? { free: true } : {}),
     ...(/^\d{1,3}$/.test(price) ? { max_price_cents: Number(price) * 100 } : {}),
     // En el calendario manda el día elegido, no «¿Cuándo?».
-    ...(WHEN[when] && !calendario ? { when: WHEN[when] } : {}),
+    ...(when && !calendario ? { when } : {}),
     ...(soloDescuento ? { discount_only: true } : {}),
     ...(abierto ? { open_now: true } : {}),
-    ...(SORT[sort] ? { sort: SORT[sort] } : cerca ? { sort: 'nearest' } : {}),
+    sort: ordenBase === 'nearest' && !cerca ? 'soonest' : ordenBase,
     ...(cerca ? { radius_m: km * 1000 } : {}),
-    // Hueco para «Van mis amigos» (migraciones 20261102*): necesita sesión,
-    // así que no va en esta página (pública y en caché); lo filtra «Tu cuenta».
+    // «Van mis amigos» necesita sesión: no va en esta página (pública y en
+    // caché); lo filtra /assets/amigos.js en el navegador.
   };
   const pKind = esOfertas ? 'flash_offer' : esEventos ? 'future_event' : null;
-  const filtrado = Boolean(q || city || cat || kind || page > 1 || price || when || soloDescuento || abierto || sort || cerca || vista);
+  const filtrado = Boolean(q || city || cat || kind || page > 1 || price || when || soloDescuento || abierto || sort || cerca || vista || e.amigos);
 
   const argsExplore = {
-    p_city: city || null, p_category: cat || null, p_kind: pKind, p_q: q || null,
+    p_city: cerca ? null : city || null, p_category: cat || null, p_kind: pKind, p_q: q || null,
     p_filters: filtros, p_lat: cerca ? lat : null, p_lng: cerca ? lng : null,
   };
-  const [res, cities, cats, cols] = await Promise.all([
+  // Con una búsqueda, arriba los negocios que encajan (como la búsqueda de la
+  // app: «Negocios» y «Ofertas y eventos»).
+  const conNegociosArriba = !descubre && !negocios && !mapa && !calendario && Boolean(q) && page === 1;
+  const [res, cities, cats, cols, sitios] = await Promise.all([
     negocios
       ? rpc('public_businesses', {
         p_city: city || null, p_category: cat || null, p_q: q || null,
@@ -447,8 +592,11 @@ export async function explorePage(url, lang, modo = 'explorar') {
         ? todas(argsExplore).then((items) => ({ items, total: items.length }))
         : rpc('public_explore', { ...argsExplore, p_limit: mapa ? 60 : POR_PAGINA, p_offset: mapa ? 0 : (page - 1) * POR_PAGINA }),
     rpcAll('public_cities', {}),
-    rpcAll('public_categories', { p_city: city || null }),
-    rpcAll('public_collections', { p_city: city || null }),
+    rpcAll('public_categories', { p_city: cerca ? null : city || null }),
+    rpcAll('public_collections', { p_city: cerca ? null : city || null }),
+    conNegociosArriba
+      ? rpc('public_businesses', { p_city: cerca ? null : city || null, p_category: cat || null, p_q: q, p_limit: 4, p_offset: 0, p_open_now: abierto }).catch(() => null)
+      : null,
   ]);
   const items = res?.items || [];
   const total = res?.total || 0;
@@ -474,7 +622,9 @@ export async function explorePage(url, lang, modo = 'explorar') {
   const alFinal = lista && items.length > 0 && page >= paginas;
   // Sin nada desde el principio: la pantalla vacía, con las mismas salidas.
   const vacio = !negocios && !calendario && items.length === 0;
-  const conFiltros = Boolean(q || cat || kind || price || when || soloDescuento || abierto);
+  // Lo que deja fuera publicaciones (`hasNarrowingFilters` en la app): la
+  // zona y la distancia se dicen aparte y el orden no quita nada.
+  const conFiltros = Boolean(q || cat || kind || price || when || soloDescuento || abierto || e.amigos);
   let sugerencias = [];
   if ((alFinal || vacio) && (cerca || city)) {
     const vistos = new Set(items.map((o) => o.id));
@@ -492,137 +642,188 @@ export async function explorePage(url, lang, modo = 'explorar') {
 
   // Los filtros son enlaces: se puede compartir la URL y va sin JavaScript.
   const link = (cambios) => {
-    const p = new URLSearchParams();
-    const b = { q, city, cat, kind, price, when, soloDescuento, abierto, sort, vista, cerca, km, p: 1, mes: calendario ? mes : '', dia: calendario ? dia : '', ...cambios };
-    const neg = b.kind === 'places' || b.kind === 'negocios';
-    if (b.q) p.set('q', b.q);
-    if (b.city) p.set(en ? 'city' : 'ciudad', b.city);
-    if (b.cat) p.set(en ? 'category' : 'categoria', b.cat);
-    if (b.kind) p.set(en ? 'type' : 'tipo', b.kind);
-    if (b.abierto) p.set(K.open, '1');
-    if (!neg) {
-      if (b.price) p.set(K.price, b.price);
-      if (b.when) p.set(K.when, b.when);
-      if (b.soloDescuento) p.set(K.discount, '1');
-      if (b.sort) p.set(K.sort, b.sort);
-      if (b.vista) p.set(K.view, b.vista);
-      if (b.mes && /^cal/.test(b.vista)) p.set(K.month, b.mes);
-      if (b.dia && /^cal/.test(b.vista)) p.set(K.day, b.dia);
-      if (b.cerca) {
-        p.set('lat', lat.toFixed(4)); p.set('lng', lng.toFixed(4));
-        if (b.km !== RADIO_KM) p.set('km', String(b.km));
-      }
-    }
-    if (b.p && b.p > 1) p.set('p', String(b.p));
-    const s = p.toString();
+    const b = { ...e, vista, page: 1, mes: calendario ? mes : '', dia: calendario ? dia : '', ...cambios };
+    if ('p' in cambios) b.page = cambios.p;
+    if (b.cerca === false) { b.lat = null; b.lng = null; }
+    const s = query(b, lang);
     return `${base}/${s ? `?${s}` : ''}`;
   };
+  // Todo fuera, también la zona: la página limpia (y lo guardado, limpio).
+  const limpia = `${base}/`;
 
-  // ── La barra de filtros: lo esencial a la vista, el resto en la hoja ──
-  // Una opción de un desplegable (enlace) o de la hoja (radio o casilla).
-  const opcion = (href, label, on) => `<a class="op${on ? ' on' : ''}" href="${esc(href)}"${on ? ' aria-current="true"' : ''}>${esc(label)}</a>`;
-  const desplegable = (icono, titulo, valor, activo, opciones, extra = '') => `<details class="desplegable">
-      <summary class="chip${activo ? ' on' : ''}">${ic(icono, 16)}<span>${esc(valor || titulo)}</span>${ic('abajo', 16)}</summary>
-      <div class="menu-d" role="group" aria-label="${esc(titulo)}"><p class="menu-d-t" aria-hidden="true">${esc(titulo)}</p>${extra}${opciones}</div>
+  // ── La barra de filtros: la de la app ──
+  // Una opción de un desplegable (enlace).
+  const opcion = (href, label, on, icono = '') => `<a class="op${on ? ' on' : ''}" href="${esc(href)}"${on ? ' aria-current="true"' : ''}>${icono}${esc(label)}</a>`;
+  const desplegable = (icono, titulo, valor, activo, opciones, { cls = '', etiqueta = '' } = {}) => `<details class="desplegable${cls}">
+      <summary class="chip${activo ? ' on' : ''}"${etiqueta ? ` aria-label="${esc(etiqueta)}"` : ''}>${icono ? ic(icono, 16) : ''}<span class="chip-t">${esc(valor || titulo)}</span>${ic('abajo', 16)}</summary>
+      <div class="menu-d" role="group" aria-label="${esc(titulo)}"><p class="menu-d-t" aria-hidden="true">${esc(titulo)}</p>${opciones}</div>
     </details>`;
 
   const ciudades = cities.filter((c) => c.city).slice(0, 20);
-  const dondeValor = cerca ? S.nearOn : city ? PRETTY(city) : S.allCities;
-  const dondeMenu = desplegable('cerca', S.where, dondeValor, cerca || Boolean(city),
-    `${negocios ? '' : `<button type="button" class="op" data-cerca data-err="${esc(S.nearNo)}" hidden>${ic('cerca', 16)} ${esc(S.near)}</button>`}
-     ${cerca ? opcion(link({ cerca: false, sort: sort === 'nearest' || sort === 'cerca' ? '' : sort }), `✕ ${S.nearOn}`, false) : ''}
+  // Pedir la ubicación y volver con ella (más lo de `data-mas`): /assets/tarjetas.js.
+  const botonCerca = (txt, mas = '', cls = 'op') => `<button type="button" class="${cls}" data-cerca${mas ? ` data-mas="${esc(mas)}"` : ''} data-err="${esc(S.nearNo)}" hidden>${ic('cerca', 16)}<span>${esc(txt)}</span></button>`;
+  const zonaValor = cerca ? S.nearOn : city ? PRETTY(city) : S.allCities;
+  const zonaMenu = desplegable(cerca ? 'cerca' : city ? 'ciudad' : 'lugar', S.zoneChange, zonaValor, false,
+    `${negocios ? '' : botonCerca(S.near)}
      ${opcion(link({ city: '', cerca: false }), S.allCities, !city && !cerca)}
-     ${ciudades.map((c) => opcion(link({ city: String(c.city), cerca: false }), PRETTY(c.city), !cerca && city.toLowerCase() === String(c.city).toLowerCase())).join('')}`);
-  const WHENS = [[en ? 'now' : 'ahora', S.now], [en ? 'today' : 'hoy', S.today], [en ? 'tomorrow' : 'manana', S.tomorrow], [en ? 'next10' : '10dias', S.next10]];
-  const whenTxt = (WHENS.find(([k]) => k === when) || [])[1] || '';
-  const cuandoMenu = negocios || calendario ? '' : desplegable('reloj', S.when, whenTxt ? `${S.when.replace(/[¿?]/g, '')} · ${whenTxt}` : S.when, Boolean(whenTxt),
-    `${opcion(link({ when: '' }), S.anytime, !whenTxt)}${WHENS.map(([k, n]) => opcion(link({ when: k }), n, when === k)).join('')}`);
-  const tipoTxt = esOfertas ? S.offers : esEventos ? S.events : negocios ? S.placesType : '';
-  const tipoMenu = desplegable('tipo', S.kind, tipoTxt ? `${S.kind} · ${tipoTxt}` : S.kind, Boolean(tipoTxt),
-    `${opcion(link({ kind: '' }), S.all, !kind)}
-     ${opcion(link({ kind: en ? 'offers' : 'ofertas' }), S.offers, esOfertas)}
-     ${opcion(link({ kind: en ? 'events' : 'eventos' }), S.events, esEventos)}
-     ${descubre ? '' : opcion(link({ kind: en ? 'places' : 'negocios', vista: '' }), S.placesType, negocios)}`);
+     ${ciudades.map((c) => opcion(link({ city: String(c.city), cerca: false }), PRETTY(c.city), !cerca && city.toLowerCase() === String(c.city).toLowerCase())).join('')}`,
+    { etiqueta: `${S.zoneChange}: ${zonaValor}` });
+  // «Estoy aquí»: a un paseo (1 km), lo que empieza ya y lo más cerca
+  // primero. Se quita tocándolo otra vez.
+  const aquiOn = cerca && when === 'now' && km === 1 && sort === 'nearest';
+  const aqui = negocios ? '' : aquiOn
+    ? `<a class="chip on" href="${esc(link({ when: '', km: RADIO_KM, sort: '' }))}" aria-current="true" title="${esc(S.hereNowHint)}">${ic('aqui', 16)}<span>${esc(S.hereNow)}</span></a>`
+    : cerca
+      ? `<a class="chip" href="${esc(link({ when: 'now', km: 1, sort: 'nearest' }))}" title="${esc(S.hereNowHint)}">${ic('aqui', 16)}<span>${esc(S.hereNow)}</span></a>`
+      : `<button type="button" class="chip" data-cerca data-mas="${esc(`${CLAVES[lang].when}=${enIdioma('now', en)}&km=1&${CLAVES[lang].sort}=${enIdioma('nearest', en)}`)}" data-err="${esc(S.nearNo)}" title="${esc(S.hereNowHint)}" hidden>${ic('aqui', 16)}<span>${esc(S.hereNow)}</span></button>`;
+  // «Ordenar por»: un desplegable compacto, como la app (no en el mapa ni en
+  // el calendario, donde no cambia nada).
+  const ordenTxt = { nearest: S.sortNearest, soonest: S.sortSoonest, newest: S.sortNewest };
+  const ordenActual = sort || ORDEN_DEFECTO;
+  const ordenMenu = negocios || mapa || calendario ? '' : desplegable('', S.sortBy, ordenTxt[ordenActual], false,
+    `${cerca
+      ? opcion(link({ sort: 'nearest' }), S.sortNearest, ordenActual === 'nearest')
+      : botonCerca(S.sortNearest, `${CLAVES[lang].sort}=${enIdioma('nearest', en)}`).replace(ic('cerca', 16), '')}
+     ${opcion(link({ sort: 'soonest' }), S.sortSoonest, ordenActual === 'soonest')}
+     ${opcion(link({ sort: '' }), S.sortNewest, ordenActual === 'newest')}`,
+    { cls: ' orden', etiqueta: `${S.sortBy}: ${ordenTxt[ordenActual]}` });
 
-  // La hoja de filtros: un formulario GET (va sin JavaScript) con lo demás.
-  const nFiltros = [price, soloDescuento, abierto, cat, sort && !(cerca && (sort === 'nearest' || sort === 'cerca')),
-    cerca && km !== RADIO_KM].filter(Boolean).length;
+  // La hoja de filtros: un formulario GET (va sin JavaScript), en el orden de la app.
+  const nFiltros = [kind && !negocios, cat, cerca && km !== RADIO_KM, price, soloDescuento, when && !calendario, abierto].filter(Boolean).length;
+  const K = CLAVES[en ? 'en' : 'es'];
   const radio = (name, value, label, on) => `<label class="op-r"><input type="radio" name="${name}" value="${esc(value)}"${on ? ' checked' : ''}><span>${esc(label)}</span></label>`;
   const casilla = (name, label, on) => `<label class="op-r"><input type="checkbox" name="${name}" value="1"${on ? ' checked' : ''}><span>${esc(label)}</span></label>`;
   const ocultos = [
-    ['q', q], [en ? 'city' : 'ciudad', city], [en ? 'type' : 'tipo', kind], [K.when, negocios ? '' : when], [K.view, vista],
+    ['q', q], [K.city, cerca ? '' : city], [K.sort, negocios ? '' : sort ? enIdioma(sort, en) : ''], [K.view, vista ? enIdioma(vista, en) : ''],
     [K.month, calendario ? mes : ''], [K.day, calendario ? dia : ''],
     ['lat', cerca && !negocios ? lat.toFixed(4) : ''], ['lng', cerca && !negocios ? lng.toFixed(4) : ''],
+    ['amigos', e.amigos ? '1' : ''], ...(negocios ? [[K.kind, enIdioma('places', en)]] : []),
   ].filter(([, v]) => v).map(([k, v]) => `<input type="hidden" name="${k}" value="${esc(v)}">`).join('');
-  const sortCerca = sort === 'nearest' || sort === 'cerca' || (!sort && cerca);
+  const catActual = (cats || []).find((c) => c.slug === cat);
+  const resumen = resumenFiltros(e, S, catActual ? catName(catActual, en) : '');
+  const restablecer = link({ kind: negocios ? 'places' : '', cat: '', km: RADIO_KM, price: '', when: '', soloDescuento: false, abierto: false });
   const hoja = `<details class="hoja" id="filtros">
-    <summary class="chip chip-filtros${nFiltros ? ' on' : ''}" aria-label="${esc(nFiltros ? S.filtersN(nFiltros) : S.filters)}">${ic('tune', 16)}<span>${esc(S.filters)}</span>${nFiltros ? `<span class="n" aria-hidden="true">${nFiltros}</span>` : ''}</summary>
-    
+    <summary class="chip chip-filtros${nFiltros ? ' on' : ''}" aria-label="${esc(`${S.filters}: ${resumen.replace(/ · /g, ', ')}`)}">${ic('tune', 16)}<span>${esc(S.filters)}</span><span class="chip-resumen">· ${esc(resumen)}</span></summary>
     <form class="hoja-cuerpo" method="get" action="${base}/" role="dialog" aria-labelledby="hojaTitulo">
       <div class="hoja-cab"><h2 id="hojaTitulo">${esc(S.filters)}</h2>
+        <a class="hoja-reset" href="${esc(restablecer)}" data-restablecer>${esc(S.reset)}</a>
         <a class="hoja-x" href="#filtros" data-cerrar-hoja aria-label="${esc(S.close)}">${ic('x', 22)}</a></div>
       ${ocultos}
       <div class="hoja-scroll">
-      ${negocios ? '' : `<fieldset><legend>${esc(S.sort)}</legend><div class="ops">
-        ${radio(K.sort, '', S.soonest, !sort && !cerca)}
-        ${radio(K.sort, en ? 'newest' : 'nuevas', S.newest, sort === 'newest' || sort === 'nuevas')}
-        ${cerca ? radio(K.sort, en ? 'nearest' : 'cerca', S.nearest, sortCerca) : ''}
+      ${negocios ? '' : `<fieldset><legend>${esc(S.type)}</legend><div class="ops">
+        ${radio(K.kind, '', S.all, !kind)}
+        ${radio(K.kind, enIdioma('offers', en), S.offers, esOfertas)}
+        ${radio(K.kind, enIdioma('events', en), S.events, esEventos)}
+      </div></fieldset>`}
+      ${(cats || []).length ? `<fieldset><legend>${esc(S.categories)}</legend><div class="ops">
+        ${radio(K.cat, '', S.all, !cat)}
+        ${(cats || []).map((c) => radio(K.cat, c.slug, catName(c, en), cat === c.slug)).join('')}
+      </div></fieldset>` : ''}
+      ${negocios ? '' : `<fieldset><legend>${esc(S.distance)}</legend>${cerca ? '' : `<p class="hoja-nota">${esc(S.distHint)}</p>`}<div class="ops">
+        ${RADIOS_KM.map((k) => radio('km', k === RADIO_KM ? '' : String(k), `${k} km`, km === k)).join('')}
       </div></fieldset>
       <fieldset><legend>${esc(S.price)}</legend><div class="ops">
         ${radio(K.price, '', S.any, !price)}
-        ${radio(K.price, en ? 'free' : 'gratis', S.free, price === 'free' || price === 'gratis')}
+        ${radio(K.price, enIdioma('free', en), S.free, price === 'free')}
         ${['10', '25', '50'].map((n) => radio(K.price, n, S.upTo(n), price === n)).join('')}
-      </div>
-      <div class="ops">${casilla(K.discount, S.discount, soloDescuento)}</div></fieldset>`}
-      <fieldset><legend>${esc(S.openNow)}</legend><div class="ops">${casilla(K.open, S.openNow, abierto)}</div></fieldset>
-      ${cerca && !negocios ? `<fieldset><legend>${esc(S.distance)}</legend><div class="ops">
-        ${RADIOS_KM.map((k) => radio('km', k === RADIO_KM ? '' : String(k), `${k} km`, km === k)).join('')}
-      </div></fieldset>` : ''}
-      ${(cats || []).length ? `<fieldset><legend>${esc(S.cat)}</legend><div class="ops">
-        ${radio(en ? 'category' : 'categoria', '', S.all, !cat)}
-        ${(cats || []).map((c) => radio(en ? 'category' : 'categoria', c.slug, negocios ? catName(c, en) : `${catName(c, en)} (${c.n})`, cat === c.slug)).join('')}
-      </div></fieldset>` : ''}
+      </div></fieldset>
+      ${calendario ? '' : `<fieldset><legend>${esc(S.when)}</legend><div class="ops">
+        ${[['', S.anytime], ['today', S.today], ['tomorrow', S.tomorrow], ['now', S.now], ['next10', S.next10]]
+          .map(([v, n]) => radio(K.when, v ? enIdioma(v, en) : '', n, when === v)).join('')}
+      </div></fieldset>`}`}
+      <fieldset class="hoja-casillas"><legend class="sr">${esc(S.openNow)}</legend><div class="ops">
+        ${casilla(K.open, S.openNow, abierto)}
+        ${negocios ? '' : casilla(K.discount, S.discount, soloDescuento)}
+      </div></fieldset>
       </div>
       <div class="hoja-pie">
-        <a class="pill" href="${esc(link({ price: '', soloDescuento: false, abierto: false, cat: '', sort: '', km: RADIO_KM }))}">${esc(S.clearF)}</a>
         <button class="pill accent" type="submit">${esc(S.showResults)}</button>
       </div>
     </form>
   </details>`;
 
   const vistas = descubre ? '' : `<nav class="vistas" aria-label="${esc(S.view)}">
-      ${[['', S.listView, 'lista', !mapa && !calendario], [en ? 'map' : 'mapa', S.mapView, 'mapa', mapa], [en ? 'calendar' : 'calendario', S.calView, 'cal', calendario]]
+      ${[['', S.listView, 'lista', !mapa && !calendario], ['map', S.mapView, 'mapa', mapa], ['calendar', S.calView, 'cal', calendario]]
         .map(([v, n, i, on]) => `<a class="vista${on ? ' on' : ''}" href="${esc(link({ vista: v, kind: negocios ? '' : kind }))}"${on ? ' aria-current="page"' : ''}>${ic(i, 18)}<span>${esc(n)}</span></a>`).join('')}
     </nav>`;
 
   const buscador = descubre ? '' : `<form class="buscador" role="search" method="get" action="${base}/">
     <label class="buscador-campo">${ic('buscar', 20)}<span class="sr">${esc(S.search)}</span>
       <input type="search" name="q" value="${esc(q)}" placeholder="${esc(S.ph)}" enterkeyhint="search"></label>
-    ${[[en ? 'city' : 'ciudad', city], [en ? 'category' : 'categoria', cat], [en ? 'type' : 'tipo', kind], [K.open, abierto ? '1' : '']]
-      .concat(negocios ? [] : [[K.price, price], [K.when, when], [K.discount, soloDescuento ? '1' : ''], [K.sort, sort], [K.view, vista],
-        ['lat', cerca ? lat.toFixed(4) : ''], ['lng', cerca ? lng.toFixed(4) : ''], ['km', cerca && km !== RADIO_KM ? String(km) : '']])
-      .filter(([, val]) => val).map(([k, val]) => `<input type="hidden" name="${k}" value="${esc(val)}">`).join('')}
+    ${new URLSearchParams(query({ ...e, q: '', page: 1, mes: calendario ? mes : '', dia: calendario ? dia : '' }, lang)).toString().split('&').filter(Boolean)
+      .map((kv) => { const [k, v] = kv.split('='); return `<input type="hidden" name="${esc(decodeURIComponent(k))}" value="${esc(decodeURIComponent(v.replace(/\+/g, ' ')))}">`; }).join('')}
     <button class="pill ink" type="submit">${esc(S.search)}</button>
   </form>`;
 
-  const barra = `<div class="barra-filtros" id="barra">
+  // El orden de la app: Filtros · Zona · Estoy aquí · [Van mis amigos] · Ordenar.
+  const barra = `<div class="barra-filtros" id="barra"${descubre ? ' data-amigos-resultados="#feed"' : ''}>
     ${hoja}
-    ${dondeMenu}
-    ${cuandoMenu}
-    ${tipoMenu}
-    ${descubre ? `<a class="chip" href="${exploreBase(lang)}/">${ic('buscar', 16)}<span>${esc(S.search)}</span></a>` : ''}
+    ${zonaMenu}
+    ${aqui}
+    <span data-amigos-hueco hidden></span>
+    ${ordenMenu}
   </div>
   <p id="cercaErr" class="aviso-error" role="alert" hidden></p>`;
 
-  // En Descubre, sin ubicación ni ciudad: «Mira primero lo que tienes más cerca».
-  const invitaCerca = descubre && !cerca && !city
+  // En Explorar, sin ubicación ni ciudad: «Mira primero lo que tienes más cerca».
+  const invitaCerca = !descubre && !negocios && !cerca && !city
     ? `<p class="cerca-aviso" data-cerca-aviso hidden>${ic('cerca', 18)}<span>${esc(S.nearPrompt)}</span>
         <button type="button" class="pill ink" data-cerca data-err="${esc(S.nearNo)}">${esc(S.useLoc)}</button></p>`
     : '';
 
-  // ── Resultados ──
-  const resumen = calendario ? '' : `<div class="resumen"><h2 class="resumen-n">${esc(negocios ? S.places(total) : S.results(total))}</h2>
-    ${conFiltros || cerca || city ? `<a href="${esc(base)}/">${esc(S.clear)}</a>` : ''}</div>`;
+  const alertaHref = `${en ? '/app/?lang=en' : '/app/'}#/alerta/nueva?${new URLSearchParams({
+    origen: descubre ? 'descubre' : 'explorar',
+    ...(esOfertas ? { tipo: 'flash_offer' } : esEventos ? { tipo: 'future_event' } : {}),
+    ...(cat ? { cat } : {}),
+    ...(price === 'free' ? { precio: '0' } : /^\d{1,3}$/.test(price) ? { precio: String(Number(price) * 100) } : {}),
+    ...(soloDescuento ? { descuento: '1' } : {}),
+    ...(cerca ? { radio: String(km * 1000), lat: lat.toFixed(4), lng: lng.toFixed(4) } : {}),
+  })}`;
+  const hayAlgo = conFiltros || cerca || Boolean(city) || Boolean(sort);
+  const final = alFinal || vacio ? finalHtml({
+    S, en, lang, cerca, km, city, filtros: conFiltros, link, page, sugerencias, vacio, alertaHref,
+    limpiar: hayAlgo ? limpia : '', compacto: descubre && !vacio,
+  }) : '';
+
+  // ── Más formas de explorar: las páginas de Google, abajo y en su sitio ──
+  const ciudadSeo = (cerca ? '' : city) || (ciudades.length === 1 ? String(ciudades[0].city) : '');
+  const masFormas = negocios ? '' : `<section class="mas-formas" aria-labelledby="masFormas">
+    <h2 id="masFormas">${esc(S.more)}</h2>
+    ${ciudades.length ? `<div class="mf-fila"><h3>${esc(S.todayIn)}</h3><p>${ciudades.map((c) => `<a href="${todayBase(lang)}/${CITY(c.city)}/">${esc(PRETTY(c.city))}</a>`).join('')}</p></div>
+    <div class="mf-fila"><h3>${esc(S.weekIn)}</h3><p>${ciudades.map((c) => `<a href="${agendaBase(lang)}/${CITY(c.city)}/">${esc(PRETTY(c.city))}</a>`).join('')}</p></div>` : ''}
+    ${ciudadSeo && (cats || []).length ? `<div class="mf-fila"><h3>${esc(S.byCat)} · ${esc(PRETTY(ciudadSeo))}</h3><p>${(cats || []).map((c) => `<a href="${agendaBase(lang)}/${CITY(ciudadSeo)}/${encodeURIComponent(c.slug)}/">${esc(catName(c, en))}</a>`).join('')}</p></div>` : ''}
+    ${cols.length ? `<div class="mf-fila"><h3>${esc(S.picks)}</h3><p>${cols.map((c) => `<a href="${collectionBase(lang)}/${encodeURIComponent(c.slug)}/${city && !cerca ? `${CITY(city)}/` : ''}">${esc(colTitle(c, en))}</a>`).join('')}</p></div>` : ''}
+    <p class="mf-cta"><a class="pill" href="${en ? '/app/?lang=en' : '/app/'}#/registro" data-sin-sesion>${esc(S.app)}</a> <a class="pill" href="${en ? '/en/for-business/' : '/para-negocios/'}">${esc(S.biz)}</a></p>
+  </section>`;
+
+  // Cuántas hay y «Quitar filtros»: la página limpia del todo (también la zona).
+  // (Sin resultados, «Quitar filtros» va con las demás salidas, abajo.)
+  const resumenN = calendario ? '' : `<div class="resumen"><h2 class="resumen-n">${esc(negocios ? S.places(total) : S.results(total))}</h2>
+    ${hayAlgo && !vacio ? `<a href="${esc(limpia)}" data-limpia-filtros>${esc(S.clear)}</a>` : ''}</div>`;
+
+  // Lo que se le dice a Google: la página y su lista (como la agenda).
+  const jsonLd = !filtrado && items.length && !negocios ? ldScript(listingLd({
+    lang, path: `${base}/`, name: descubre ? S.disc : S.exp, description: descubre ? S.discLead : S.lead, city: '', items,
+    migas: [['Klendar', en ? '/en/' : '/'], [descubre ? S.disc : S.exp, `${base}/`]],
+  })) : '';
+  const head = `${guardaFiltros({ ...e, vista }, lang, base)}
+${filtrado ? '<meta name="robots" content="noindex, follow">' : jsonLd}`;
+
+  if (descubre) {
+    return html(publicPage({
+      lang,
+      path: `${base}/`,
+      title: S.disc,
+      description: S.discLead,
+      image: portada(items),
+      body: feedHtml({ S, en, lang, items, page, paginas, link, barra, final, vacio, resumenN, masFormas }),
+      actual: 'descubre',
+      bodyClass: vacio ? 'pagina-descubre' : 'pagina-descubre pagina-feed',
+      head,
+    }), 200, 'public, max-age=120, s-maxage=600');
+  }
+
+  // ── Resultados de Explorar ──
   let resultados;
   if (negocios) {
     resultados = items.length
@@ -632,80 +833,98 @@ export async function explorePage(url, lang, modo = 'explorar') {
   } else if (calendario) {
     resultados = calendarioHtml({ items, lang, S, link, mes, dia, hoy });
   } else if (mapa) {
-    resultados = `${mapaHtml(items, lang, S)}${items.length ? `<h2 class="fin-h">${esc(S.onMap(items.length))}</h2>${rejilla(items, lang)}` : ''}`;
+    resultados = `${mapaHtml(items, lang, S)}${items.length ? `<h2 class="fin-h">${esc(S.onMap(items.length))}</h2>${rejilla(items, lang, { galeria: true })}` : ''}`;
   } else {
-    resultados = vacio ? '' : rejilla(items, lang, { primera: true, desc: descubre, feed: descubre });
+    const negArriba = (sitios?.items || []);
+    resultados = `${negArriba.length ? `<section class="seccion-negocios" aria-labelledby="secNeg">
+      <div class="seccion-cab"><h2 id="secNeg">${esc(S.bizSection)}</h2>${(sitios?.total || 0) > negArriba.length ? `<a href="${esc(link({ kind: 'places', vista: '' }))}">${esc(S.allPlaces)}</a>` : ''}</div>
+      <div class="nlist">${negArriba.map((b) => bizCard(b, lang, S)).join('')}</div></section>
+      ${items.length ? `<h2 class="seccion-t-pub">${esc(S.offersSection)}</h2>` : ''}` : ''}
+    ${vacio ? '' : rejilla(items, lang, { primera: !negArriba.length, galeria: true })}`;
   }
 
-  // ── Más formas de explorar: las páginas de Google, abajo y en su sitio ──
-  const ciudadSeo = city || (ciudades.length === 1 ? String(ciudades[0].city) : '');
-  const masFormas = negocios ? '' : `<section class="mas-formas" aria-labelledby="masFormas">
-    <h2 id="masFormas">${esc(S.more)}</h2>
-    ${ciudades.length ? `<div class="mf-fila"><h3>${esc(S.todayIn)}</h3><p>${ciudades.map((c) => `<a href="${todayBase(lang)}/${CITY(c.city)}/">${esc(PRETTY(c.city))}</a>`).join('')}</p></div>
-    <div class="mf-fila"><h3>${esc(S.weekIn)}</h3><p>${ciudades.map((c) => `<a href="${agendaBase(lang)}/${CITY(c.city)}/">${esc(PRETTY(c.city))}</a>`).join('')}</p></div>` : ''}
-    ${ciudadSeo && (cats || []).length ? `<div class="mf-fila"><h3>${esc(S.byCat)} · ${esc(PRETTY(ciudadSeo))}</h3><p>${(cats || []).map((c) => `<a href="${agendaBase(lang)}/${CITY(ciudadSeo)}/${encodeURIComponent(c.slug)}/">${esc(catName(c, en))}</a>`).join('')}</p></div>` : ''}
-    ${cols.length ? `<div class="mf-fila"><h3>${esc(S.picks)}</h3><p>${cols.map((c) => `<a href="${collectionBase(lang)}/${encodeURIComponent(c.slug)}/${city ? `${CITY(city)}/` : ''}">${esc(colTitle(c, en))}</a>`).join('')}</p></div>` : ''}
-    <p class="mf-cta"><a class="pill" href="${en ? '/app/?lang=en' : '/app/'}#/registro" data-sin-sesion>${esc(S.app)}</a> <a class="pill" href="${en ? '/en/for-business/' : '/para-negocios/'}">${esc(S.biz)}</a></p>
-  </section>`;
-
   const body = `
-  <div class="exp-cab" id="arriba">
-    <div><h1>${esc(descubre ? S.disc : S.exp)}</h1>
-    <p class="muted exp-lead">${esc(descubre ? S.discLead : S.lead)}</p></div>
+  <div class="exp-cab cab-pagina" id="arriba">
+    <div><h1>${esc(S.exp)}</h1>
+    <p class="muted exp-lead">${esc(S.lead)}</p></div>
     ${vistas}
   </div>
   ${buscador}
   ${barra}
   ${invitaCerca}
-  ${resumen}
+  ${resumenN}
   ${resultados}
   ${paginas > 1 ? `<nav class="pager" aria-label="${esc(S.page)}">
     ${page > 1 ? `<a class="pill" href="${esc(link({ p: page - 1 }))}" rel="prev">${esc(S.prev)}</a>` : ''}
     <span class="muted">${esc(S.page)} ${page}/${paginas}</span>
     ${page < paginas ? `<a class="pill" href="${esc(link({ p: page + 1 }))}" rel="next">${esc(S.next)}</a>` : ''}
   </nav>` : ''}
-
-  ${alFinal || vacio ? finalHtml({
-    S, en, lang, cerca, km, city, filtros: conFiltros, link, page, sugerencias, vacio,
-    alertaHref: `${en ? '/app/?lang=en' : '/app/'}#/alerta/nueva?${new URLSearchParams({
-      origen: 'explorar',
-      ...(esOfertas ? { tipo: 'flash_offer' } : esEventos ? { tipo: 'future_event' } : {}),
-      ...(cat ? { cat } : {}),
-      ...(price === 'gratis' || price === 'free' ? { precio: '0' } : /^\d{1,3}$/.test(price) ? { precio: String(Number(price) * 100) } : {}),
-      ...(soloDescuento ? { descuento: '1' } : {}),
-      ...(cerca ? { radio: String(km * 1000), lat: lat.toFixed(4), lng: lng.toFixed(4) } : {}),
-    })}`,
-  }) : ''}
-  ${masFormas}
-  <script>(function(){
-    var err=document.getElementById('cercaErr');
-    var botones=document.querySelectorAll('[data-cerca]');
-    if(!navigator.geolocation)return;
-    function ir(lat,lng){var u=new URL(location.href);u.searchParams.set('lat',lat.toFixed(4));u.searchParams.set('lng',lng.toFixed(4));u.searchParams.delete('p');
-      ${en ? "u.searchParams.delete('city');" : "u.searchParams.delete('ciudad');"}location.href=u.toString();}
-    botones.forEach(function(b){b.hidden=false;b.onclick=function(){navigator.geolocation.getCurrentPosition(function(p){
-      if(window.KL_CERCA)window.KL_CERCA(p.coords.latitude,p.coords.longitude);ir(p.coords.latitude,p.coords.longitude);
-    },function(){if(err){err.textContent=b.dataset.err;err.hidden=false;}},{maximumAge:300000,timeout:10000});};});
-    var aviso=document.querySelector('[data-cerca-aviso]');
-    if(aviso){
-      // Descubre: si ya usaste «Cerca de mí» hace poco, se vuelve a usar (como la app, que recuerda dónde estás).
-      try{var g=JSON.parse(localStorage.getItem('klendar.cerca')||'null');if(g&&Date.now()-g.t<6*3600e3&&!location.search){ir(g.lat,g.lng);return;}}catch(e){}
-      aviso.hidden=false;
-    }
-  })();</script>`;
+  ${final}
+  ${masFormas}`;
 
   // Una búsqueda concreta no aporta nada al índice de Google; la página
   // limpia sí.
   return html(publicPage({
     lang,
     path: `${base}/`,
-    title: descubre ? S.disc : S.exp,
-    description: descubre ? S.discLead : S.lead,
+    title: S.exp,
+    description: S.lead,
     image: portada(items),
     body,
-    actual: descubre ? 'descubre' : 'explorar',
-    head: filtrado ? '<meta name="robots" content="noindex, follow">' : '',
+    actual: 'explorar',
+    bodyClass: 'pagina-explorar',
+    head,
   }), 200, 'public, max-age=120, s-maxage=600');
+}
+
+/**
+ * Descubre: una publicación por pantalla, deslizando hacia abajo (como la
+ * pestaña 1 de la app). La cabecera y los filtros van encima de la foto, en
+ * blanco con un velo negro arriba. En el escritorio, una columna del ancho de
+ * un móvil grande (9:16) en el centro; a los lados, el título y la foto de la
+ * que se está viendo, difuminada. La última pantalla es el final («Has visto
+ * todo…» con sus salidas); sin nada, la pantalla vacía centrada.
+ *
+ * Sin JavaScript se lee igual: es una lista de tarjetas que se desliza.
+ */
+function feedHtml({ S, en, lang, items, page, paginas, link, barra, final, vacio, resumenN, masFormas }) {
+  const cab = `<div class="feed-lado" id="arriba">
+      <h1>${esc(S.disc)}</h1>
+      <p class="muted">${esc(S.discLead)}</p>
+      ${vacio ? '' : `<p class="feed-teclas">${esc(S.feedKeys)}</p>`}
+    </div>`;
+  if (vacio) {
+    return `<div class="feed-vacio">
+    ${cab}
+    ${barra}
+    ${resumenN}
+    ${final}
+    </div>
+    ${masFormas}`;
+  }
+  const pantallas = items.map((o, i) => tarjeta(o, lang, {
+    forma: 'pantalla', primera: page === 1 && i === 0, desc: true, h: 'h2', galeria: true,
+  })).join('');
+  const mas = page < paginas
+    ? `<div class="feed-mas"><a class="pill" href="${esc(link({ p: page + 1 }))}" rel="next" data-feed-mas>${esc(S.seeMore)}</a></div>`
+    : '';
+  return `<div class="feed-fondo" aria-hidden="true"></div>
+  ${cab}
+  <div class="feed-velo" aria-hidden="true"></div>
+  <div class="feed-cab">
+    ${barra}
+  </div>
+  <div class="feed" id="feed" data-pagina="${page}">
+    ${page > 1 ? `<div class="feed-mas"><a class="pill" href="${esc(link({ p: page - 1 }))}" rel="prev">${esc(S.prev)}</a></div>` : ''}
+    ${pantallas}
+    ${mas}
+    ${final ? `<div class="feed-fin">${final}</div>` : ''}
+  </div>
+  <nav class="feed-nav" aria-label="${esc(S.disc)}">
+    <button type="button" class="feed-ir" data-feed-ir="-1" aria-label="${esc(S.prevItem)}">${ic('arriba', 24)}</button>
+    <button type="button" class="feed-ir" data-feed-ir="1" aria-label="${esc(S.nextItem)}">${ic('abajo', 24)}</button>
+  </nav>
+  ${masFormas}`;
 }
 
 // ── Una categoría en una ciudad ────────────────────────────────────────────

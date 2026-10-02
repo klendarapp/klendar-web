@@ -101,17 +101,18 @@ main.pub { padding: 34px 20px 72px; }
   .filters .frow > * { flex: none; white-space: nowrap; }
 }
 .pager { display: flex; gap: 10px; align-items: center; margin: 18px 0; flex-wrap: wrap; }
-/* Final de la lista de Explorar (como la tarjeta final de Descubre). Botones
-   unos debajo de otros y del mismo ancho: nada de filas desiguales. */
-.fin { margin: 22px 0 10px; padding: 22px 20px 18px; border-radius: var(--radius); background: var(--elevated);
-  border: 1px solid var(--glass-border); max-width: 560px; }
-.fin h2 { margin: 12px 0 4px; font-size: 22px; line-height: 1.25; }
-.fin > p { margin: 0; }
-.fin-ic { display: inline-grid; place-items: center; width: 50px; height: 50px; border-radius: 50%;
+/* Final de la lista de Explorar y última pantalla de Descubre (la tarjeta
+   final de Descubre en la app): ocupa toda la fila y va centrado, como una
+   pantalla vacía. Botones uno debajo de otro y del ancho del más largo. */
+.fin { display: flex; flex-direction: column; align-items: center; text-align: center; margin: 26px 0 10px; padding: 30px 20px 26px;
+  border-radius: var(--radius); background: var(--elevated); border: 1px solid var(--glass-border); }
+.fin h2 { margin: 14px 0 6px; font-size: 22px; line-height: 1.25; }
+.fin > p { margin: 0; max-width: 46ch; }
+.fin-ic { display: inline-grid; place-items: center; width: 56px; height: 56px; border-radius: 50%;
   background: var(--glass); border: 1px solid var(--glass-border); color: var(--ink); }
-.fin-botones { display: grid; gap: 10px; margin-top: 18px; }
-.fin-botones .pill { justify-content: center; text-align: center; }
-.fin-sugiere { margin: 14px 0 0; text-align: center; font-weight: 700; }
+.fin-botones { display: grid; grid-template-columns: fit-content(360px); justify-content: center; gap: 10px; margin-top: 20px; max-width: 100%; }
+.fin-botones .pill { justify-content: center; text-align: center; margin: 0; }
+.fin-sugiere { margin: 16px 0 0; text-align: center; font-weight: 700; }
 .fin-sugiere a { text-decoration: underline; text-underline-offset: 3px; }
 .fin-h { margin: 22px 0 10px; font-size: 18px; }
 /* La carta escrita. */
@@ -367,7 +368,7 @@ body.con-hoja { overflow: hidden; }
 .cerca-aviso .pill { padding: 10px 18px; }
 .aviso-error { color: var(--ink); background: var(--soft); border-radius: 14px; padding: 10px 14px; }
 .resumen { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin: 0 0 14px; }
-.pub .resumen-n { margin: 0; font-family: inherit; font-size: 15px; font-weight: 700; line-height: 1.4; letter-spacing: 0; color: var(--ink-2); }
+.pub .resumen-n { margin: 0; font-family: inherit; font-size: 14px; font-weight: 700; line-height: 1.4; letter-spacing: 0; color: var(--ink-2); }
 .resumen a { font-weight: 700; text-decoration: underline; text-underline-offset: 3px; font-size: 14px; }
 
 /* El mapa: chinchetas en coral (eventos) y ámbar (ofertas flash), como el
@@ -472,3 +473,124 @@ video.fm-pieza { object-fit: contain; background: #000; }
 
 /* El aviso de abajo, por encima de las pestañas del móvil. */
 @media (max-width: 760px) { .am-toast { bottom: calc(84px + env(safe-area-inset-bottom)); } }
+
+/* ══ Las cuatro pestañas con el mismo aspecto (2026-10-02) ═══════════════
+   Descubre, Explorar, Planes y Cuenta («Tu cuenta», app/app.css): el mismo
+   título de pantalla (el de la app: grande, Sora 800), a la misma altura y
+   con la misma entradilla. */
+.pub :is(.cab-pagina, .feed-lado) h1 { font-size: clamp(26px, 4vw, 32px); line-height: 1.12; letter-spacing: -.5px; margin: 14px 0 6px; }
+.pub .exp-lead, .pub .feed-lado > p.muted { font-size: 15px; }
+
+/* La barra de filtros, la de la app: Filtros · resumen · Zona · Estoy aquí ·
+   (Van mis amigos) · Ordenar por. */
+.chip-resumen { font-weight: 500; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chip .chip-t { max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.barra-filtros button.chip { font: inherit; font-size: 14px; font-weight: 600; color: inherit; cursor: pointer; }
+.chip.on .chip-resumen { opacity: .85; }
+.desplegable.orden .menu-d { min-width: 200px; }
+.pub button.op { font-family: inherit; }
+.hoja-cab { gap: 8px; }
+.hoja-cab h2 { flex: 1; }
+.pub .hoja-reset { font-weight: 700; padding: 10px 12px; border-radius: 12px; }
+.pub .hoja-reset:hover { background: var(--soft); text-decoration: none; }
+.pub .hoja-nota { margin: -2px 0 8px; font-size: 13px; color: var(--ink-2); }
+.hoja fieldset.hoja-casillas { margin-top: 4px; }
+.hoja-pie .pill { width: 100%; }
+/* Explorar con una búsqueda: los negocios arriba, como la búsqueda de la app. */
+.seccion-negocios { margin: 0 0 22px; padding: 0; }
+.seccion-cab { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0 0 10px; }
+.pub .seccion-cab h2, .pub .seccion-t-pub { margin: 0 0 10px; font-family: inherit; font-size: 14px; font-weight: 700; letter-spacing: 0; color: var(--ink-2); }
+.pub .seccion-cab h2 { margin: 0; }
+.seccion-cab a { font-weight: 700; font-size: 14px; text-decoration: underline; text-underline-offset: 3px; }
+
+/* ══ Descubre: una publicación por pantalla ═════════════════════════════
+   Como la pestaña 1 de la app: la foto o el vídeo de fondo y se pasa
+   deslizando hacia abajo (scroll-snap). La cabecera y los filtros van encima:
+   con foto, en blanco con un velo negro arriba (55 % detrás de la marca y
+   hasta 0 a lo largo de los filtros) y píldoras de cristal oscuro; en la
+   pantalla final, el tema (`data-cromo` lo pone /assets/tarjetas.js).
+   En el escritorio, una columna de 9:16 en el centro y, a los lados, el
+   título, la foto actual difuminada y las flechas. */
+html:has(body.pagina-feed) { scroll-snap-type: y mandatory; }
+body.pagina-feed { --cab: 64px; --feed-w: 100vw; --feed-x: 0px; --feed-alto: 100dvh; --feed-arriba: 116px;
+  --feed-abajo: calc(78px + env(safe-area-inset-bottom)); --velo-arriba: var(--cab); }
+.pagina-feed main.pub { max-width: none; padding: 0; }
+.pagina-feed .feed { position: relative; width: var(--feed-w); margin: 0 auto; }
+.pagina-feed .feed > .tj, .pagina-feed .feed > .feed-fin, .pagina-feed .feed > .feed-mas { scroll-snap-align: start; scroll-snap-stop: always; }
+.pagina-feed .feed > .tj { display: block; }
+.feed-mas { display: grid; place-items: center; min-height: 40vh; padding: calc(var(--feed-arriba) + 10px) 16px 20px; }
+.feed > .feed-mas:last-child, .feed > .tj + .feed-mas { min-height: var(--feed-alto); }
+.feed-fin { min-height: var(--feed-alto); display: flex; flex-direction: column; justify-content: center;
+  padding: calc(var(--feed-arriba) + 8px) 16px calc(var(--feed-abajo) + 8px); background: var(--surface); }
+.feed-fin .fin { margin: 0; border: 0; background: none; padding: 0 0 6px; }
+.feed-fin .fin-h { margin: 22px 0 10px; }
+.pagina-feed .mas-formas { scroll-snap-align: start; max-width: 1080px; margin: 0 auto; padding: calc(var(--cab) + 22px) 20px 0; }
+body.pagina-feed > footer { scroll-snap-align: end; }
+/* El título (para Google y el lector de pantalla): a la vista en el escritorio ancho. */
+.pagina-feed .feed-lado { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.feed-teclas { font-size: 13px; color: var(--ink-2); }
+.feed-fondo, .feed-nav, .feed-velo { display: none; }
+.pagina-feed .feed-velo { display: block; }
+
+/* La cabecera de la web y los filtros, encima de la foto. */
+/* Encima de la barra de pestañas (30) y de la cabecera (26): sus
+   desplegables y la hoja de filtros salen de aquí y han de taparlo todo. */
+.pagina-feed .feed-cab { position: fixed; z-index: 41; top: var(--cab); left: var(--feed-x); width: var(--feed-w); padding: 6px 0 4px; }
+.pagina-feed header.top:has(#menu:checked) { z-index: 45; }
+.feed-velo { position: fixed; z-index: 22; left: var(--feed-x); width: var(--feed-w); top: calc(var(--cab) - var(--velo-arriba)); height: calc(var(--velo-arriba) + 96px); pointer-events: none;
+  background: linear-gradient(to bottom, rgba(0,0,0,.55) 0, rgba(0,0,0,.55) var(--velo-arriba), rgba(0,0,0,.464) calc(var(--velo-arriba) + 24px),
+    rgba(0,0,0,.275) calc(var(--velo-arriba) + 48px), rgba(0,0,0,.086) calc(var(--velo-arriba) + 72px), rgba(0,0,0,0) calc(var(--velo-arriba) + 96px)); }
+.pagina-feed .feed-cab .barra-filtros { position: relative; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 0; padding: 2px 16px; }
+.pagina-feed .feed-cab .barra-filtros::-webkit-scrollbar { display: none; }
+.pagina-feed .feed-cab .aviso-error { position: relative; margin: 6px 16px 0; }
+/* Los desplegables suben desde abajo, del ancho de la columna. */
+.pagina-feed .feed-cab .menu-d { position: fixed; top: auto; bottom: 0; left: var(--feed-x); right: auto; width: var(--feed-w); min-width: 0; max-height: 72vh;
+  border-radius: 26px 26px 0 0; padding: 10px 12px calc(18px + env(safe-area-inset-bottom)); border-bottom: 0; }
+.pagina-feed .feed-cab details.desplegable[open] > summary::after { background: rgba(0,0,0,.5); }
+/* Con foto detrás: blanco sobre cristal oscuro; la elegida, blanca con letra en tinta. */
+body.pagina-feed:not([data-cromo="tema"]):not([data-cromo="fuera"]) .feed-cab .chip { background: rgba(10,10,10,.6); color: #fff; border-color: rgba(255,255,255,.16); }
+body.pagina-feed:not([data-cromo="tema"]):not([data-cromo="fuera"]) .feed-cab :is(a, button).chip { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+body.pagina-feed:not([data-cromo="tema"]):not([data-cromo="fuera"]) .feed-cab .chip.on { background: #fff; color: #0A0A0A; border-color: #fff; }
+body.pagina-feed[data-cromo="tema"] .feed-velo, body.pagina-feed[data-cromo="fuera"] .feed-velo { display: none; }
+body.pagina-feed[data-cromo="fuera"] .feed-cab { visibility: hidden; }
+
+@media (max-width: 760px) {
+  /* La cabecera de la web, encima de la foto (como la de Descubre en la app). */
+  .pagina-feed header.top { position: fixed; left: 0; right: 0; top: 0; z-index: 26; }
+  body.pagina-feed:not([data-cromo="tema"]):not([data-cromo="fuera"]) header.top { background: transparent; border-bottom-color: transparent;
+    backdrop-filter: none; -webkit-backdrop-filter: none; }
+  body.pagina-feed:not([data-cromo="tema"]):not([data-cromo="fuera"]) header.top .brand { color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.35); }
+  body.pagina-feed:not([data-cromo="tema"]):not([data-cromo="fuera"]) header.top .pill.top-entrar { background: #fff; color: #0A0A0A; }
+  body.pagina-feed:not([data-cromo="tema"]):not([data-cromo="fuera"]) header.top .menu-toggle { color: #fff; border-color: rgba(255,255,255,.35); background: rgba(10,10,10,.35); }
+  /* La barra de pestañas, de cristal oscuro sobre la foto. */
+  body.pagina-feed { padding-bottom: 0 !important; }
+  body.pagina-feed:not([data-cromo="tema"]):not([data-cromo="fuera"]) .tabbar { background: rgba(10,10,10,.6); border-top-color: rgba(255,255,255,.12); }
+  body.pagina-feed:not([data-cromo="tema"]):not([data-cromo="fuera"]) .tab { color: rgba(255,255,255,.78); }
+  body.pagina-feed:not([data-cromo="tema"]):not([data-cromo="fuera"]) .tab[aria-current="page"] { color: #fff; }
+  body.pagina-feed:not([data-cromo="tema"]):not([data-cromo="fuera"]) .tab[aria-current="page"] svg { background: rgba(255,255,255,.18); }
+  body.pagina-feed > footer { padding-bottom: calc(86px + env(safe-area-inset-bottom)); }
+}
+@media (min-width: 761px) {
+  html:has(body.pagina-feed) { scroll-padding-top: 65px; }
+  body.pagina-feed { --cab: 65px; --feed-alto: calc(100dvh - var(--cab)); --feed-w: clamp(340px, calc((100dvh - var(--cab)) * 9 / 16), 520px);
+    --feed-x: calc(50% - var(--feed-w) / 2); --feed-arriba: 52px; --feed-abajo: 16px; --velo-arriba: 0px; }
+  .pagina-feed .feed { box-shadow: 0 0 0 1px var(--glass-border), 0 30px 80px -30px rgba(0,0,0,.6); }
+  .pagina-feed header.top { background: var(--surface); }
+  /* A los lados: la foto que se está viendo, difuminada y apagada. */
+  .feed-fondo { display: block; position: fixed; inset: var(--cab) 0 0; z-index: -1; overflow: hidden; }
+  .feed-fondo::before { content: ""; position: absolute; inset: 0; background: var(--foto, none) center / cover no-repeat;
+    filter: blur(48px) saturate(1.15); transform: scale(1.15); opacity: .55; }
+  .feed-fondo::after { content: ""; position: absolute; inset: 0; background: color-mix(in srgb, var(--surface) 45%, transparent); }
+  /* Las flechas para pasar, a la derecha de la columna. */
+  .feed-nav { display: grid; gap: 12px; position: fixed; z-index: 20; top: 50%; transform: translateY(-50%); left: calc(50% + var(--feed-w) / 2 + 24px); }
+  .feed-ir { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; cursor: pointer; color: var(--ink);
+    background: var(--elevated); border: 1px solid var(--glass-border); box-shadow: var(--shadow); }
+  .feed-ir:hover { background: var(--soft); }
+  body.pagina-feed[data-cromo="fuera"] .feed-nav { display: none; }
+}
+@media (min-width: 1180px) {
+  .pagina-feed .feed-lado { position: fixed; z-index: 20; width: auto; height: auto; overflow: visible; clip: auto; white-space: normal;
+    top: calc(var(--cab) + 40px); right: calc(50% + var(--feed-w) / 2 + 40px); max-width: 300px; text-align: right; }
+  .pagina-feed .feed-lado h1 { margin-top: 0; }
+  body.pagina-feed[data-cromo="fuera"] .feed-lado { display: none; }
+}
