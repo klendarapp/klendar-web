@@ -530,31 +530,32 @@ body.pagina-feed > footer { scroll-snap-align: end; }
 .pagina-feed .feed-lado { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .feed-teclas { font-size: 13px; color: var(--ink-2); }
 .feed-fondo, .feed-nav, .feed-velo { display: none; }
-.pagina-feed .feed-velo { display: block; }
+@media (max-width: 760px) { .pagina-feed .feed-velo { display: block; } }
 
-/* La cabecera de la web y los filtros, encima de la foto. */
-/* Encima de la barra de pestañas (30) y de la cabecera (26): sus
+/* La barra de filtros: en el móvil, encima de la foto (como la app); en
+   tablet y escritorio, en su fila encima de la columna, fuera de la imagen.
+   Encima de la barra de pestañas (30) y de la cabecera (26): sus
    desplegables y la hoja de filtros salen de aquí y han de taparlo todo. */
 .pagina-feed .feed-cab { position: fixed; z-index: 41; top: var(--cab); left: var(--feed-x); width: var(--feed-w); padding: 6px 0 4px; }
 .pagina-feed header.top:has(#menu:checked) { z-index: 45; }
-.feed-velo { position: fixed; z-index: 22; left: var(--feed-x); width: var(--feed-w); top: calc(var(--cab) - var(--velo-arriba)); height: calc(var(--velo-arriba) + 96px); pointer-events: none;
-  background: linear-gradient(to bottom, rgba(0,0,0,.55) 0, rgba(0,0,0,.55) var(--velo-arriba), rgba(0,0,0,.464) calc(var(--velo-arriba) + 24px),
-    rgba(0,0,0,.275) calc(var(--velo-arriba) + 48px), rgba(0,0,0,.086) calc(var(--velo-arriba) + 72px), rgba(0,0,0,0) calc(var(--velo-arriba) + 96px)); }
-.pagina-feed .feed-cab .barra-filtros { position: relative; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 0; padding: 2px 16px; }
-.pagina-feed .feed-cab .barra-filtros::-webkit-scrollbar { display: none; }
 .pagina-feed .feed-cab .aviso-error { position: relative; margin: 6px 16px 0; }
-/* Los desplegables suben desde abajo, del ancho de la columna. */
-.pagina-feed .feed-cab .menu-d { position: fixed; top: auto; bottom: 0; left: var(--feed-x); right: auto; width: var(--feed-w); min-width: 0; max-height: 72vh;
-  border-radius: 26px 26px 0 0; padding: 10px 12px calc(18px + env(safe-area-inset-bottom)); border-bottom: 0; }
-.pagina-feed .feed-cab details.desplegable[open] > summary::after { background: rgba(0,0,0,.5); }
-/* Con foto detrás: blanco sobre cristal oscuro; la elegida, blanca con letra en tinta. */
-body.pagina-feed:not([data-cromo="tema"]):not([data-cromo="fuera"]) .feed-cab .chip { background: rgba(10,10,10,.6); color: #fff; border-color: rgba(255,255,255,.16); }
-body.pagina-feed:not([data-cromo="tema"]):not([data-cromo="fuera"]) .feed-cab :is(a, button).chip { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
-body.pagina-feed:not([data-cromo="tema"]):not([data-cromo="fuera"]) .feed-cab .chip.on { background: #fff; color: #0A0A0A; border-color: #fff; }
-body.pagina-feed[data-cromo="tema"] .feed-velo, body.pagina-feed[data-cromo="fuera"] .feed-velo { display: none; }
 body.pagina-feed[data-cromo="fuera"] .feed-cab { visibility: hidden; }
 
 @media (max-width: 760px) {
+  .feed-velo { position: fixed; z-index: 22; left: var(--feed-x); width: var(--feed-w); top: calc(var(--cab) - var(--velo-arriba)); height: calc(var(--velo-arriba) + 96px); pointer-events: none;
+    background: linear-gradient(to bottom, rgba(0,0,0,.55) 0, rgba(0,0,0,.55) var(--velo-arriba), rgba(0,0,0,.464) calc(var(--velo-arriba) + 24px),
+      rgba(0,0,0,.275) calc(var(--velo-arriba) + 48px), rgba(0,0,0,.086) calc(var(--velo-arriba) + 72px), rgba(0,0,0,0) calc(var(--velo-arriba) + 96px)); }
+  body.pagina-feed[data-cromo="tema"] .feed-velo, body.pagina-feed[data-cromo="fuera"] .feed-velo { display: none; }
+  .pagina-feed .feed-cab .barra-filtros { position: relative; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 0; padding: 2px 16px; }
+  .pagina-feed .feed-cab .barra-filtros::-webkit-scrollbar { display: none; }
+  /* Los desplegables suben desde abajo, a lo ancho. */
+  .pagina-feed .feed-cab .menu-d { position: fixed; top: auto; bottom: 0; left: 0; right: 0; width: auto; min-width: 0; max-height: 72vh;
+    border-radius: 26px 26px 0 0; padding: 10px 12px calc(18px + env(safe-area-inset-bottom)); border-bottom: 0; }
+  .pagina-feed .feed-cab details.desplegable[open] > summary::after { background: rgba(0,0,0,.5); }
+  /* Con foto detrás: blanco sobre cristal oscuro; la elegida, blanca con letra en tinta. */
+  body.pagina-feed:not([data-cromo="tema"]):not([data-cromo="fuera"]) .feed-cab .chip { background: rgba(10,10,10,.6); color: #fff; border-color: rgba(255,255,255,.16); }
+  body.pagina-feed:not([data-cromo="tema"]):not([data-cromo="fuera"]) .feed-cab :is(a, button).chip { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+  body.pagina-feed:not([data-cromo="tema"]):not([data-cromo="fuera"]) .feed-cab .chip.on { background: #fff; color: #0A0A0A; border-color: #fff; }
   /* La cabecera de la web, encima de la foto (como la de Descubre en la app). */
   .pagina-feed header.top { position: fixed; left: 0; right: 0; top: 0; z-index: 26; }
   body.pagina-feed:not([data-cromo="tema"]):not([data-cromo="fuera"]) header.top { background: transparent; border-bottom-color: transparent;
@@ -570,27 +571,49 @@ body.pagina-feed[data-cromo="fuera"] .feed-cab { visibility: hidden; }
   body.pagina-feed:not([data-cromo="tema"]):not([data-cromo="fuera"]) .tab[aria-current="page"] svg { background: rgba(255,255,255,.18); }
   body.pagina-feed > footer { padding-bottom: calc(86px + env(safe-area-inset-bottom)); }
 }
+
+/* Tablet y escritorio: la cabecera (65), la fila de filtros (56) y debajo
+   una tarjeta de 9:16 que cabe entera con 12 de aire arriba y abajo (la
+   siguiente empieza fuera de la ventana: no asoma). Todo a la escala de un
+   móvil (`--u` en tarjeta.css). */
 @media (min-width: 761px) {
-  html:has(body.pagina-feed) { scroll-padding-top: 65px; }
-  body.pagina-feed { --cab: 65px; --feed-alto: calc(100dvh - var(--cab)); --feed-w: clamp(340px, calc((100dvh - var(--cab)) * 9 / 16), 520px);
-    --feed-x: calc(50% - var(--feed-w) / 2); --feed-arriba: 52px; --feed-abajo: 16px; --velo-arriba: 0px; }
-  .pagina-feed .feed { box-shadow: 0 0 0 1px var(--glass-border), 0 30px 80px -30px rgba(0,0,0,.6); }
+  html:has(body.pagina-feed) { scroll-padding-top: 133px; }
+  body.pagina-feed { --cab: 65px; --barra: 56px; --hueco: 12px;
+    --feed-alto: calc(100dvh - var(--cab) - var(--barra) - 2 * var(--hueco)); --feed-w: calc(var(--feed-alto) * 9 / 16);
+    --feed-x: calc(50% - var(--feed-w) / 2); --feed-arriba: 0px; --feed-abajo: 12px; }
   .pagina-feed header.top { background: var(--surface); }
+  .pagina-feed .feed { padding-top: calc(var(--barra) + var(--hueco)); }
+  .pagina-feed .feed > .tj, .pagina-feed .feed > .feed-fin, .pagina-feed .feed > .feed-mas { margin-bottom: calc(2 * var(--hueco) + 2px);
+    border-radius: 24px; box-shadow: 0 0 0 1px var(--glass-border), 0 24px 60px -30px rgba(0,0,0,.6); }
+  .pagina-feed .feed > .tj { overflow: hidden; }
+  .pagina-feed .feed > .feed-fin { padding: 24px 20px; }
+  .feed-mas { padding-top: 20px; }
+  /* La fila de filtros, centrada y fuera de la foto, con el fondo de la página. */
+  .pagina-feed .feed-cab { left: 0; width: 100%; height: var(--barra); padding: 8px 20px; display: flex; justify-content: center;
+    border-bottom: 1px solid var(--glass-border); }
+  /* El cristal, en un pseudo: con `backdrop-filter` en la propia barra, la
+     hoja de filtros (fija) se quedaba encerrada en ella. */
+  .pagina-feed .feed-cab::before { content: ""; position: absolute; inset: 0; z-index: -1;
+    background: color-mix(in srgb, var(--surface) 88%, transparent); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
+  .pagina-feed .feed-cab .barra-filtros { margin: 0; flex-wrap: nowrap; max-width: 100%; }
+  .pagina-feed .feed-cab .aviso-error { position: absolute; top: calc(100% + 6px); margin: 0; }
   /* A los lados: la foto que se está viendo, difuminada y apagada. */
   .feed-fondo { display: block; position: fixed; inset: var(--cab) 0 0; z-index: -1; overflow: hidden; }
   .feed-fondo::before { content: ""; position: absolute; inset: 0; background: var(--foto, none) center / cover no-repeat;
     filter: blur(48px) saturate(1.15); transform: scale(1.15); opacity: .55; }
   .feed-fondo::after { content: ""; position: absolute; inset: 0; background: color-mix(in srgb, var(--surface) 45%, transparent); }
-  /* Las flechas para pasar, a la derecha de la columna. */
-  .feed-nav { display: grid; gap: 12px; position: fixed; z-index: 20; top: 50%; transform: translateY(-50%); left: calc(50% + var(--feed-w) / 2 + 24px); }
-  .feed-ir { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; cursor: pointer; color: var(--ink);
-    background: var(--elevated); border: 1px solid var(--glass-border); box-shadow: var(--shadow); }
+  /* Las flechas para pasar, a la derecha de la tarjeta y a su altura. */
+  .feed-nav { display: grid; gap: 10px; position: fixed; z-index: 20; top: calc(var(--cab) + var(--barra) + var(--hueco) + var(--feed-alto) / 2);
+    transform: translateY(-50%); left: calc(50% + var(--feed-w) / 2 + 20px); }
+  .feed-ir { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; cursor: pointer; color: var(--ink);
+    background: var(--elevated); border: 1px solid var(--glass-border); box-shadow: 0 8px 24px -12px rgba(0,0,0,.4); }
+  .feed-ir .ic { width: 22px; height: 22px; }
   .feed-ir:hover { background: var(--soft); }
   body.pagina-feed[data-cromo="fuera"] .feed-nav { display: none; }
 }
 @media (min-width: 1180px) {
   .pagina-feed .feed-lado { position: fixed; z-index: 20; width: auto; height: auto; overflow: visible; clip: auto; white-space: normal;
-    top: calc(var(--cab) + 40px); right: calc(50% + var(--feed-w) / 2 + 40px); max-width: 300px; text-align: right; }
+    top: calc(var(--cab) + var(--barra) + 28px); right: calc(50% + var(--feed-w) / 2 + 40px); max-width: 280px; text-align: right; }
   .pagina-feed .feed-lado h1 { margin-top: 0; }
   body.pagina-feed[data-cromo="fuera"] .feed-lado { display: none; }
 }

@@ -35,7 +35,7 @@
 .tj-negocio .tj-dist { margin-left: auto; padding-left: 6px; color: var(--ink-2); font-weight: 700; white-space: nowrap; }
 :is(.pub, .tjv) .tj .tj-titulo { font: 800 19px/1.2 var(--display); letter-spacing: -.02em; overflow-wrap: anywhere;
   display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-.tj-enlace { color: inherit; }
+.tj-enlace, :is(.pub, .tjv) .tj .tj-enlace { color: inherit; }
 .tj-enlace:hover { text-decoration: none; }
 .tj-enlace::after { content: ""; position: absolute; inset: 0; z-index: 2; border-radius: 26px; }
 .tj-enlace:focus-visible { outline: none; }
@@ -186,33 +186,72 @@ video.tj-img { background: #0A0A0A; }
 .tj-play { left: 50%; top: 40%; width: 64px; height: 64px; margin: -32px 0 0 -32px; }
 
 /* ── Una por pantalla (el feed de Descubre) ────────────────────────────────
-   La foto o el vídeo de fondo, a sangre, y el panel abajo como la tarjeta
-   de la app (docs/DISENOS_PUBLICACION.md). `--feed-arriba` es lo que ocupan
-   la cabecera y los filtros encima; `--feed-abajo`, la barra de pestañas. */
-.tj--pantalla { height: var(--feed-alto, 100dvh); overflow: hidden; background: #0A0A0A; }
+   La foto o el vídeo de fondo, a sangre, y el panel flotante abajo como la
+   tarjeta de la app (docs/DISENOS_PUBLICACION.md), a la escala de un móvil:
+   `--u` es 1 px en una columna de 390 (o más ancha: nunca se amplía) y
+   menos en una más estrecha, así todo guarda la proporción de la app.
+   `--feed-arriba` es lo que ocupan la cabecera y los filtros encima (solo en
+   el móvil); `--feed-abajo`, la barra de pestañas. */
+.feed { container-type: inline-size; }
+.tj--pantalla { --u: min(1px, calc(100cqw / 390)); height: var(--feed-alto, 100dvh); overflow: hidden; background: #0A0A0A; }
 .tj--pantalla .tj-media { position: absolute; inset: 0; aspect-ratio: auto; border-radius: 0; background: #0A0A0A; }
 .tj--pantalla:hover .tj-img { transform: none; }
-.tj--pantalla .tj-tipo { top: calc(var(--feed-arriba, 120px) + 6px); left: 16px; }
-.tj--pantalla .tj-puntos { top: calc(var(--feed-arriba, 120px) + 44px); right: auto; left: 50%; transform: translateX(-50%); }
-.tj--pantalla .tj-sonido { top: calc(var(--feed-arriba, 120px) + 2px); right: 14px; }
-.tj--pantalla .tj-galeria:not(:has(.tj-puntos)) .tj-sonido { top: calc(var(--feed-arriba, 120px) + 2px); }
-.tj--pantalla .tj-flecha { width: 44px; height: 44px; margin-top: -22px; }
-.tj--pantalla .tj-panel { position: absolute; left: 12px; right: 12px; bottom: var(--feed-abajo, 16px); margin: 0; padding: 16px 18px 18px;
-  border-radius: 28px; gap: 10px; max-height: calc(var(--feed-alto, 100dvh) - var(--feed-arriba, 120px) - var(--feed-abajo, 16px) - 70px); overflow: hidden; }
+.tj--pantalla .tj-tipo { top: calc(var(--feed-arriba, 120px) + 10 * var(--u)); left: calc(16 * var(--u)); font-size: calc(12 * var(--u));
+  padding: calc(5 * var(--u)) calc(11 * var(--u)); }
+.tj--pantalla .tj-puntos { top: calc(var(--feed-arriba, 120px) + 46 * var(--u)); right: auto; left: 50%; transform: translateX(-50%);
+  gap: calc(6 * var(--u)); padding: calc(5 * var(--u)) calc(6 * var(--u)); }
+.tj--pantalla .tj-puntos i { width: calc(6 * var(--u)); height: calc(6 * var(--u)); }
+.tj--pantalla .tj-puntos i.on { width: calc(18 * var(--u)); }
+.tj--pantalla .tj-sonido, .tj--pantalla .tj-galeria:not(:has(.tj-puntos)) .tj-sonido { top: calc(var(--feed-arriba, 120px) + 6 * var(--u)); right: calc(14 * var(--u));
+  width: calc(36 * var(--u)); height: calc(36 * var(--u)); }
+.tj--pantalla .tj-sonido .ic { width: calc(18 * var(--u)); height: calc(18 * var(--u)); }
+.tj--pantalla .tj-flecha { width: calc(36 * var(--u)); height: calc(36 * var(--u)); margin-top: calc(-18 * var(--u)); top: 42%; }
+.tj--pantalla .tj-flecha .ic { width: calc(20 * var(--u)); height: calc(20 * var(--u)); }
+.tj--pantalla .tj-ant { left: calc(10 * var(--u)); }
+.tj--pantalla .tj-sig { right: calc(10 * var(--u)); }
+.tj--pantalla .tj-play { width: calc(60 * var(--u)); height: calc(60 * var(--u)); margin: calc(-30 * var(--u)) 0 0 calc(-30 * var(--u)); }
+/* El panel: separado 12 de los bordes, esquinas 28, títulos de 24. */
+.tj--pantalla .tj-panel { position: absolute; left: calc(12 * var(--u)); right: calc(12 * var(--u)); bottom: var(--feed-abajo, 16px); margin: 0;
+  padding: calc(16 * var(--u)) calc(18 * var(--u)) calc(18 * var(--u)); border-radius: calc(28 * var(--u)); gap: calc(10 * var(--u));
+  max-height: calc(var(--feed-alto, 100dvh) - var(--feed-arriba, 120px) - var(--feed-abajo, 16px) - 70px); overflow: hidden; }
+.tj--pantalla .tj-negocio { font-size: calc(14 * var(--u)); gap: calc(8 * var(--u)); }
+.tj--pantalla .tj-logo { width: calc(26 * var(--u)); height: calc(26 * var(--u)); }
+.tj--pantalla .tj-org { font-size: calc(12 * var(--u)); }
+:is(.pub, .tjv) .tj--pantalla .tj-titulo { font-size: calc(24 * var(--u)); letter-spacing: -.035em; -webkit-line-clamp: 2; }
+.tj--pantalla .tj-desc { font-size: calc(14 * var(--u)); }
+.tj--pantalla .tj-datos { gap: calc(6 * var(--u)); }
+.tj--pantalla .tj-precio { font-size: calc(14 * var(--u)); padding: calc(5 * var(--u)) calc(12 * var(--u)); }
+.tj--pantalla .tj-chip { font-size: calc(14 * var(--u)); padding: calc(5 * var(--u)) calc(11 * var(--u)); }
+.tj--pantalla .tj-chip .ic { width: calc(15 * var(--u)); height: calc(15 * var(--u)); }
+.tj--pantalla .tj-antes { font-size: calc(13 * var(--u)); }
+.tj--pantalla .tj-amigos .quien-va { font-size: calc(14 * var(--u)); }
+.tj--pantalla .tj-cta { min-height: calc(52 * var(--u)); font-size: calc(15 * var(--u)); gap: calc(8 * var(--u)); }
+.tj--pantalla .tj-cta .ic { width: calc(18 * var(--u)); height: calc(18 * var(--u)); }
+.tj--pantalla .tj-enlace::after { border-radius: calc(28 * var(--u)); }
+.tj--pantalla .tj-kicker { font-size: calc(13 * var(--u)); padding: calc(4 * var(--u)) calc(9 * var(--u)); }
+/* Clásica: cristal sobre foto (claro .80, oscuro .62). */
 .tj--pantalla.tj--glass .tj-panel { background: rgba(255,255,255,.80); border-color: rgba(255,255,255,.5);
   backdrop-filter: blur(20px) saturate(1.3); -webkit-backdrop-filter: blur(20px) saturate(1.3); color: #0A0A0A; }
 @media (prefers-color-scheme: dark) {
   .tj--pantalla.tj--glass .tj-panel { background: rgba(10,10,10,.62); border-color: rgba(255,255,255,.14); color: #FAFAFA; }
 }
-:is(.pub, .tjv) .tj--pantalla .tj-titulo { font-size: 24px; -webkit-line-clamp: 2; }
-.tj--pantalla .tj-cta { min-height: 52px; }
-.tj--pantalla .tj-enlace::after { border-radius: 28px; }
-/* Foto grande y Cartel: el degradado de abajo y el texto encima, hasta la barra. */
+/* Foto grande y Cartel: sin panel; degradado abajo y el texto encima. */
+/* El degradado, en la parte de abajo de la tarjeta como en la app (Foto
+   grande: el 45 % de abajo; Cartel: el 58 %); si el texto no cabe, sube. */
 .tj--pantalla.tj--photo .tj-panel, .tj--pantalla.tj--poster .tj-panel { left: 0; right: 0; bottom: 0; border-radius: 0; max-height: none;
-  padding: 120px 18px calc(var(--feed-abajo, 16px) + 6px); }
-.tj--pantalla.tj--poster .tj-panel { padding-top: 45vh; background: linear-gradient(to bottom, transparent, rgba(0,0,0,.72) 45%, rgba(0,0,0,.9)); }
-:is(.pub, .tjv) .tj--pantalla.tj--poster .tj-titulo { font-size: 34px; line-height: 1.02; letter-spacing: -.04em; }
-:is(.pub, .tjv) .tj--pantalla.tj--photo .tj-titulo { font-size: 20px; }
+  justify-content: flex-end; padding: calc(24 * var(--u)) calc(16 * var(--u)) calc(var(--feed-abajo, 16px) + 4 * var(--u)); }
+.tj--pantalla.tj--photo .tj-panel { gap: calc(6 * var(--u)); min-height: 45%;
+  background: linear-gradient(to bottom, rgba(0,0,0,0), rgba(0,0,0,.45) 51%, rgba(0,0,0,.72)); }
+:is(.pub, .tjv) .tj--pantalla.tj--photo .tj-titulo { font-size: calc(20 * var(--u)); }
+.tj--pantalla.tj--photo .tj-negocio { font-size: calc(13 * var(--u)); }
+.tj--pantalla.tj--photo .tj-logo { width: calc(22 * var(--u)); height: calc(22 * var(--u)); }
+.tj--pantalla.tj--photo .tj-precio { font-size: calc(13 * var(--u)); padding: calc(3 * var(--u)) calc(10 * var(--u)); }
+.tj--pantalla.tj--photo .tj-chip { font-size: calc(13 * var(--u)); padding: 0; }
+.tj--pantalla.tj--photo .tj-cta { min-height: calc(40 * var(--u)); padding: 0 calc(16 * var(--u)); font-size: calc(14 * var(--u)); }
+.tj--pantalla.tj--poster .tj-panel { min-height: 58%; gap: calc(10 * var(--u));
+  background: linear-gradient(to bottom, rgba(0,0,0,0), rgba(0,0,0,.72) 52%, rgba(0,0,0,.9)); }
+:is(.pub, .tjv) .tj--pantalla.tj--poster .tj-titulo { font-size: calc(34 * var(--u)); line-height: 1.02; letter-spacing: -.04em; }
 .tj--pantalla.tj--photo .tj-enlace::after, .tj--pantalla.tj--poster .tj-enlace::after { border-radius: 0; }
-.tj--pantalla.tj--minimal .tj-panel { border-radius: 28px; }
+/* Color: panel macizo con sombra. Minimal: liso, borde fino. */
 .tj--pantalla.tj--bold .tj-panel { box-shadow: 0 14px 34px -14px rgba(0,0,0,.6); }
+.tj--pantalla.tj--minimal .tj-panel { box-shadow: 0 10px 30px -18px rgba(0,0,0,.4); }

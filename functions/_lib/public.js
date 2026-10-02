@@ -271,8 +271,8 @@ ${erroresScript()}
 ${preconectar}<link rel="preload" href="/assets/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/assets/site.css?v=20261011">
-<link rel="stylesheet" href="/assets/public.css?v=30">
-<link rel="stylesheet" href="/assets/tarjeta.css?v=2">
+<link rel="stylesheet" href="/assets/public.css?v=31">
+<link rel="stylesheet" href="/assets/tarjeta.css?v=3">
 ${cabeza}
 </head>
 <body${bodyClass ? ` class="${esc(bodyClass)}"` : ''}>
