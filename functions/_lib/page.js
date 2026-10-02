@@ -119,8 +119,8 @@ export function discountLabel(d) {
 export function render({ lang, path, kind, title, description, image, ogTitle, ogDescription, jsonLd, notFound = false }) {
   const en = lang === 'en';
   const S = en
-    ? { open: 'Open in the app', gp: 'Google Play · coming soon', as: 'App Store · coming soon', home: 'Go to klendar.app', d: "If you have the app installed, it'll open automatically. If not, download it and open the link again.", nf: 'Page not found', inv: "This link isn't valid.", how: 'How it works', biz: 'Businesses', sup: 'Support' }
-    : { open: 'Abrir en la app', gp: 'Google Play · próximamente', as: 'App Store · próximamente', home: 'Ir a klendar.app', d: 'Si tienes la app instalada, se abrirá sola. Si no, descárgala y vuelve a abrir el enlace.', nf: 'Página no encontrada', inv: 'El enlace no es válido.', how: 'Cómo funciona', biz: 'Negocios', sup: 'Soporte' };
+    ? { open: 'Open in the app', gp: 'Google Play · coming soon', as: 'App Store · coming soon', home: 'Go to klendar.app', d: "If you have the app installed, it'll open automatically. If not, download it and open the link again.", nf: 'Page not found', inv: "This link isn't valid.", near: "See what's nearby", how: 'How it works', biz: 'Businesses', sup: 'Support' }
+    : { open: 'Abrir en la app', gp: 'Google Play · próximamente', as: 'App Store · próximamente', home: 'Ir a klendar.app', d: 'Si tienes la app instalada, se abrirá sola. Si no, descárgala y vuelve a abrir el enlace.', nf: 'Página no encontrada', inv: 'El enlace no es válido.', near: 'Ver qué hay cerca', how: 'Cómo funciona', biz: 'Negocios', sup: 'Soporte' };
   const t = notFound ? S.nf : title;
   const desc = notFound ? S.inv : (description || S.d);
   const og = image || `${BASE}/assets/og.png`;
@@ -145,6 +145,13 @@ export function render({ lang, path, kind, title, description, image, ogTitle, o
   ].join('\n');
   const hero = image && !notFound ? `<img class="hero-img" src="${esc(image)}" alt="" fetchpriority="high">` : '<img class="logo" src="/assets/icon-192.png" alt="Klendar" width="72" height="72">';
   const open = notFound ? '' : `<a id="open" class="pill accent" href="${esc(intent)}" data-web="${BASE}${esc(path)}">${S.open}</a>`;
+  // Sin nada que abrir, una salida (no las tiendas, que aún no están); y los
+  // botones uno debajo de otro, del mismo ancho (`.vacio-botones`).
+  const botones = notFound
+    ? `<a class="pill accent" href="${en ? '/en/explore/' : '/explorar/'}">${S.near}</a>`
+    : `${open}
+  <a class="pill" href="#" aria-disabled="true">${S.gp}</a>
+  <a class="pill" href="#" aria-disabled="true">${S.as}</a>`;
   return `<!doctype html>
 <html lang="${en ? 'en' : 'es'}">
 <head>
@@ -157,7 +164,7 @@ ${head}
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 <link rel="preload" href="/assets/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/site.css?v=20261009">
+<link rel="stylesheet" href="/assets/site.css?v=20261010">
 <style>.open .card{max-width:460px}.open .hero-img{width:100%;aspect-ratio:16/10;object-fit:cover;border-radius:18px;margin-bottom:14px}.open .meta{color:var(--ink-2);font-size:14px;margin:0 0 12px}</style>
 </head>
 <body>
@@ -169,9 +176,7 @@ ${head}
   ${hero}
   <h1>${esc(t)}</h1>
   <p class="meta">${esc(desc)}</p>
-  ${open}
-  <a class="pill" href="#" aria-disabled="true">${S.gp}</a>
-  <a class="pill" href="#" aria-disabled="true">${S.as}</a>
+  <div class="vacio-botones">${botones}</div>
   <p style="margin-top:16px;font-size:13px"><a href="/">${S.home}</a></p>
 </div></div>
 <script>

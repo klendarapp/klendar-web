@@ -525,7 +525,8 @@ async function boot() {
   try {
     BIZZES = await rpc('my_businesses');
   } catch (e) {
-    $('#view').innerHTML = `<div class="card"><h2>${esc(I18N.t('Algo ha fallado'))}</h2><p class="err">${esc(friendly(e.message))}</p><button class="btn" data-recargar>${esc(I18N.t('Reintentar'))}</button></div>`;
+    // La pantalla de error, centrada (`.vacio`, como en la app).
+    $('#view').innerHTML = `<section class="vacio"><h2>${esc(I18N.t('Algo ha fallado'))}</h2><p>${esc(friendly(e.message))}</p><div class="vacio-botones"><button class="btn primary" data-recargar>${esc(I18N.t('Reintentar'))}</button></div></section>`;
     $('[data-recargar]', $('#view')).onclick = () => location.reload();
     return;
   }
@@ -561,7 +562,7 @@ async function noBusiness() {
     sinDobleEnvio(v);
     I18N.translate(v);
   } catch (e) {
-    v.innerHTML = `<div class="card"><h2>Algo ha fallado</h2><p class="err">${esc(friendly(e.message))}</p><button class="btn" data-recargar>Reintentar</button></div>`;
+    v.innerHTML = `<section class="vacio"><h2>Algo ha fallado</h2><p>${esc(friendly(e.message))}</p><div class="vacio-botones"><button class="btn primary" data-recargar>Reintentar</button></div></section>`;
     $('[data-recargar]', v).onclick = () => location.reload();
     I18N.translate(v);
   }
@@ -677,7 +678,7 @@ async function route() {
     if (n !== RUTA_N) return;
     console.error(e);
     // «Reintentar» vuelve a pintar la pantalla, sin recargar todo el panel.
-    v.innerHTML = `<div class="card"><h2>Algo ha fallado</h2><p class="err">${esc(friendly(e?.message))}</p><button class="btn" type="button" data-reintentar>Reintentar</button></div>`;
+    v.innerHTML = `<section class="vacio"><h2>Algo ha fallado</h2><p>${esc(friendly(e?.message))}</p><div class="vacio-botones"><button class="btn primary" type="button" data-reintentar>Reintentar</button></div></section>`;
     $('[data-reintentar]', v).onclick = () => route();
     I18N.translate(v);
   }

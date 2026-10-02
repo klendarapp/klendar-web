@@ -60,7 +60,11 @@ body:has(#view > .cargando) footer { display: none; }
 
 .hecho-ic { width: 64px; height: 64px; margin: 24px auto 0; border-radius: 50%; display: grid;
   place-items: center; font-size: 30px; font-weight: 800; background: var(--ink); color: var(--surface); }
-.ticket .acciones { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+/* Confirmaciones y códigos (centrados): los botones uno debajo de otro y del
+   ancho del más largo, como en las pantallas vacías (nada de filas
+   desiguales). */
+.ticket .acciones { display: grid; grid-template-columns: fit-content(360px); justify-content: center; gap: 10px; }
+.ticket .acciones > .pill { justify-content: center; text-align: center; }
 
 .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 50;
   background: var(--ink); color: var(--bg, #0A0A0A); padding: 12px 18px; border-radius: 14px;

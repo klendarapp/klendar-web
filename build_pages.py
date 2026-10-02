@@ -559,6 +559,7 @@ if __name__ == '__main__':
     # «Esta página no existe». Cloudflare sirve la 404.html más cercana a la
     # ruta pedida: /en/404.html para lo que empieza por /en/, y la de la raíz
     # para lo demás. Con la cabecera y el pie de siempre, y algo que hacer.
+    # Centrada, como toda pantalla de error (`.vacio`, glosario de la app).
     NO_EXISTE = {
         'es': ('/', 'Esta página no existe', 'Puede que el enlace esté mal escrito o que la página se haya movido.',
                [('/explorar/', 'Ver qué hay cerca'), ('/', 'Ir a la portada')], '',
@@ -571,10 +572,12 @@ if __name__ == '__main__':
         pills = ''.join(f'<a class="pill{" accent" if i == 0 else " ghost"}" href="{h}">{l}</a>' for i, (h, l) in enumerate(botones))
         pagina = head(T[lang], path, f'{titulo} · Klendar', texto, extra='<meta name="robots" content="noindex">') + f'''
 <main class="doc" id="contenido">
+<section class="vacio">
 <h1>{titulo}</h1>
-<p class="lead">{texto}</p>
-<p class="acciones" style="margin-top:18px">{pills}</p>
+<p>{texto}</p>
+<div class="vacio-botones">{pills}</div>
 <p class="note">{pie}</p>
+</section>
 </main>
 ''' + footer(T[lang])
         io.open(os.path.join(carpeta, '404.html'), 'w', encoding='utf-8', newline=chr(10)).write(pagina)

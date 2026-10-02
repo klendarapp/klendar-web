@@ -328,7 +328,7 @@ RUTAS.amigo = async ([code]) => {
  * si hay uno, sigues yendo (y se dice). */
 RUTAS.voy = async ([id], params, crudo) => {
   const quitar = params?.get('quitar') === '1';
-  if (!UUID_AMIGOS.test(id || '')) { pinta(`<p class="empty">${esc(t('Ese enlace no está completo.'))}</p>`); return; }
+  if (!UUID_AMIGOS.test(id || '')) { pinta(pantallaVacia({ icono: 'link', titulo: t('Ese enlace no está completo.'), h: 'h1', botones: botonTuCuenta() })); return; }
   if (!exigeSesion(`voy/${id}${quitar ? '?quitar=1' : ''}`)) return;
   // Desde fuera (sin pulsar «Voy» aquí) se pregunta antes: tus amigos lo ven.
   if (!(await confirmaEnlace(crudo, {
@@ -371,7 +371,7 @@ RUTAS.voy = async ([id], params, crudo) => {
 
 // ── Invitar a un amigo ────────────────────────────────────────────────────
 RUTAS.invitar = async ([id]) => {
-  if (!UUID_AMIGOS.test(id || '')) { pinta(`<p class="empty">${esc(t('Ese enlace no está completo.'))}</p>`); return; }
+  if (!UUID_AMIGOS.test(id || '')) { pinta(pantallaVacia({ icono: 'link', titulo: t('Ese enlace no está completo.'), h: 'h1', botones: botonTuCuenta() })); return; }
   if (!exigeSesion(`invitar/${id}`)) return;
   const [fila, social, lista] = await Promise.all([
     llamar('offer_detail', { p_id: id }).catch(() => null),
@@ -384,7 +384,7 @@ RUTAS.invitar = async ([id]) => {
   if (!social?.visible) {
     pinta(`${migas}
       <h1>${esc(t('Invitar a un amigo'))}</h1>
-      <p class="empty">${esc(t('Esta publicación ya no está disponible.'))}</p>`);
+      ${pantallaVacia({ icono: 'explore', titulo: t('Esta publicación ya no está disponible.') })}`);
     return;
   }
   const amigos = lista?.friends || [];
@@ -395,13 +395,13 @@ RUTAS.invitar = async ([id]) => {
   if (!amigos.length) {
     pinta(`${migas}
       <h1>${esc(t('Invitar a un amigo'))}</h1>
-      <div class="empty amigos-vacio">
-        <p>${esc(t('Añádelos con tu enlace de amigo. Mientras, puedes mandar la publicación por cualquier app.'))}</p>
-        <p class="acciones">
-          <a class="pill accent" href="#/amigos">${ic('group_add')} ${esc(t('Añadir amigos'))}</a>
-          <button type="button" class="pill" id="compartir-ficha">${ic('share')} ${esc(t('Compartir el enlace'))}</button>
-        </p>
-      </div>`);
+      ${pantallaVacia({
+        icono: 'group',
+        titulo: t('Aún no tienes amigos en Klendar'),
+        texto: t('Añádelos con tu enlace de amigo. Mientras, puedes mandar la publicación por cualquier app.'),
+        botones: `<a class="pill accent" href="#/amigos">${ic('group_add')} ${esc(t('Añadir amigos'))}</a>
+          <button type="button" class="pill" id="compartir-ficha">${ic('share')} ${esc(t('Compartir el enlace'))}</button>`,
+      })}`);
     $('#compartir-ficha').onclick = compartirFicha;
     return;
   }

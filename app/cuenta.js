@@ -151,10 +151,10 @@ RUTAS.notificaciones = async () => {
   pinta(`
     <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(t('Notificaciones'))}</h1>
-    <p class="acciones">
+    ${lista.length ? `<p class="acciones">
       ${nuevos ? `<button class="pill" id="leidos">${esc(t('Marcar todo como leído'))}</button>` : ''}
       <a class="pill ghost" href="#/ajustes">${esc(t('Qué notificaciones recibo'))}</a>
-    </p>
+    </p>` : ''}
     ${lista.length ? `<div class="avisos">${lista.map((n) => {
       // Con acción, toda la notificación lleva a ella y el botón lo dice.
       const accion = accionAviso(n.data);
@@ -166,7 +166,12 @@ RUTAS.notificaciones = async () => {
         ${accion ? `<span class="acciones"><span class="pill">${esc(accion.txt)}</span></span>` : ''}
       </a>`;
     }).join('')}</div>`
-    : `<p class="empty">${esc(t('Nada por aquí todavía. Añade negocios a favoritos y crea un «Avísame si…» para no perderte nada.'))}</p>`}`);
+    : pantallaVacia({
+      icono: 'notifications',
+      titulo: t('Nada por aquí todavía'),
+      texto: t('Añade negocios a favoritos y crea un «Avísame si…» para no perderte nada.'),
+      botones: `<a class="pill" href="#/ajustes">${esc(t('Qué notificaciones recibo'))}</a>`,
+    })}`);
 
   // Como en la app: las que no habías leído se marcan como leídas al salir
   // de aquí, solo las que han llegado a verse en pantalla. Mientras estás
@@ -894,7 +899,7 @@ RUTAS.opinar = async ([id]) => {
     nombrePublico(),
   ]);
   const b = Array.isArray(fila) ? fila[0] : fila;
-  if (!b) { pinta(`<p class="empty">${esc(t('Ese sitio ya no está en Klendar.'))}</p>`); return; }
+  if (!b) { pinta(pantallaVacia({ icono: 'storefront', titulo: t('Ese sitio ya no está en Klendar.'), h: 'h1', botones: botonTuCuenta() })); return; }
   // La tuya, aunque no esté entre las 50 últimas: la ficha trae tu nota, tu
   // texto y tu foto (si no, editar una reseña antigua empezaba en blanco).
   const mia = (resenas || []).find((r) => r.is_mine)
@@ -1005,14 +1010,14 @@ async function subePrueba(archivo) {
 }
 
 RUTAS.reclamar = async ([id]) => {
-  if (!/^[0-9a-f-]{36}$/i.test(id || '')) { pinta(`<p class="empty">${esc(t('Ese sitio ya no está en Klendar.'))}</p>`); return; }
+  if (!/^[0-9a-f-]{36}$/i.test(id || '')) { pinta(pantallaVacia({ icono: 'storefront', titulo: t('Ese sitio ya no está en Klendar.'), h: 'h1', botones: botonTuCuenta() })); return; }
   if (!exigeSesion(`reclamar/${id}`)) return;
   const [fila, estado] = await Promise.all([
     llamar('business_profile', { p_id: id }),
     llamar('my_business_claim', { p_business: id }),
   ]);
   const b = Array.isArray(fila) ? fila[0] : fila;
-  if (!b) { pinta(`<p class="empty">${esc(t('Ese sitio ya no está en Klendar.'))}</p>`); return; }
+  if (!b) { pinta(pantallaVacia({ icono: 'storefront', titulo: t('Ese sitio ya no está en Klendar.'), h: 'h1', botones: botonTuCuenta() })); return; }
   const ficha = `${pre}/b/${encodeURIComponent(id)}`;
   const cabeza = `
     <p class="crumbs"><a href="${ficha}">${esc(b.name)}</a></p>
@@ -1226,7 +1231,7 @@ async function queSeDenuncia(tipo, id) {
 RUTAS.denunciar = async ([tipo, id]) => {
   const conContenido = Boolean(tipo || id);
   if (conContenido && (!QUE_SE_DENUNCIA[tipo] || !new RegExp(`^${UUID_DENUNCIA}$`, 'i').test(id || ''))) {
-    pinta(`<p class="empty">${esc(t('Ese enlace no está completo.'))}</p>`);
+    pinta(pantallaVacia({ icono: 'link', titulo: t('Ese enlace no está completo.'), h: 'h1', botones: botonTuCuenta() }));
     return;
   }
   const volver = document.referrer && new URL(document.referrer).origin === location.origin
@@ -1395,14 +1400,14 @@ function confirmaBloqueo(nombre) {
 
 RUTAS.bloquear = async ([id]) => {
   if (!/^[0-9a-f-]{36}$/i.test(id || '')) {
-    pinta(`<p class="empty">${esc(t('Ese enlace no está completo.'))}</p>`);
+    pinta(pantallaVacia({ icono: 'link', titulo: t('Ese enlace no está completo.'), h: 'h1', botones: botonTuCuenta() }));
     return;
   }
   if (!exigeSesion(`bloquear/${id}`)) return;
   const volver = document.referrer && new URL(document.referrer).origin === location.origin
     ? document.referrer : `${pre}/`;
   if (id === YO.id) {
-    pinta(`<p class="empty">${esc(t('No puedes bloquearte a ti.'))}</p>`);
+    pinta(pantallaVacia({ icono: 'block', titulo: t('No puedes bloquearte a ti.'), h: 'h1', botones: botonTuCuenta() }));
     return;
   }
   pinta(`
@@ -1604,7 +1609,7 @@ RUTAS.invitaciones = async () => {
           <button class="pill accent" type="button" data-si="${esc(i.id)}">${esc(t('Aceptar'))}</button>
         </p>
       </div>`).join('')}</div>`
-    : (traspasos || []).length ? '' : `<p class="empty">${esc(t('No tienes invitaciones pendientes.'))}</p>`}`);
+    : (traspasos || []).length ? '' : pantallaVacia({ icono: 'group', titulo: t('No tienes invitaciones pendientes.') })}`);
   const contesta = async (id, acepta, boton) => {
     boton.disabled = true;
     try {

@@ -373,10 +373,18 @@ async function navegar() {
     console.error(e);
     // Si ya lo canjeaste, lo útil es llevarte a tus códigos, no a un error.
     const yaEsTuyo = /already_redeemed|max_per_user/.test(e.clave || '');
-    view.innerHTML = `<h1>${esc(t(yaEsTuyo ? 'Ya lo tienes' : 'Algo ha fallado'))}</h1>
-      <p class="muted">${esc(e.message || amable(''))}</p>
-      <p>${yaEsTuyo ? `<a class="pill accent" href="#/codigos">${esc(t('Tus códigos'))}</a> ` : ''}
-        <a class="pill${yaEsTuyo ? '' : ' accent'}" href="#/">${esc(t('Volver'))}</a></p>`;
+    view.innerHTML = pantallaVacia({
+      icono: yaEsTuyo ? 'qr_code_2' : 'refresh',
+      titulo: t(yaEsTuyo ? 'Ya lo tienes' : 'Algo ha fallado'),
+      texto: e.message || amable(''),
+      h: 'h1',
+      botones: yaEsTuyo
+        ? `<a class="pill accent" href="#/codigos">${esc(t('Tus códigos'))}</a>
+           <a class="pill" href="#/">${esc(t('Volver'))}</a>`
+        : `<button type="button" class="pill accent" id="reintentar">${esc(t('Reintentar'))}</button>
+           <a class="pill" href="#/">${esc(t('Volver'))}</a>`,
+    });
+    $('#reintentar')?.addEventListener('click', () => navegar());
   }
   I18N.translate(view);
 }
@@ -435,6 +443,22 @@ const trasEntrar = (siguiente) => {
 // ── Inicio ────────────────────────────────────────────────────────────────
 /** Un icono de Material Symbols: los mismos que la app. */
 const ic = (nombre) => `<span class="ms" aria-hidden="true">${nombre}</span>`;
+
+/** Pantalla vacía o de error que ocupa la página (docs/GLOSARIO.md de la
+ * app, «Aspecto»): icono, título (encabezado), texto y botones, todo
+ * centrado (`.vacio` en site.css). `botones`: HTML de `.pill` (el principal,
+ * `accent`), uno debajo de otro y del ancho del más largo. Los textos llegan
+ * ya traducidos. Dentro de una lista o una sección con más cosas, `.empty`. */
+/** El botón de salida de una página que no se puede enseñar. */
+const botonTuCuenta = () => `<a class="pill accent" href="#/">${esc(t('Tu cuenta'))}</a>`;
+
+const pantallaVacia = ({ icono = '', titulo, texto = '', botones = '', h = 'h2' }) => `
+  <section class="vacio">
+    ${icono ? `<span class="vacio-ic">${ic(icono)}</span>` : ''}
+    <${h}>${esc(titulo)}</${h}>
+    ${texto ? `<p>${esc(texto)}</p>` : ''}
+    ${botones ? `<div class="vacio-botones">${botones}</div>` : ''}
+  </section>`;
 
 /** Una fila de lista como las de la app: icono, título, detalle y flecha. */
 const fila = ({ href, icono, titulo, detalle, fuera = false, id = '' }) => `
@@ -1242,9 +1266,12 @@ RUTAS.planes = async () => {
     pinta(`
       <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
       <h1>${esc(t('Tus planes'))}</h1>
-      <div class="empty"><p><b>${esc(t('Aún no tienes planes'))}</b></p>
-        <p>${esc(t('Cuando algo te guste, dale a «Guardar» y lo tendrás aquí. Tus canjes también aparecerán.'))}</p></div>
-      ${explorar}`);
+      ${pantallaVacia({
+        icono: 'bookmark',
+        titulo: t('Aún no tienes planes'),
+        texto: t('Cuando algo te guste, dale a «Guardar» y lo tendrás aquí. Tus canjes también aparecerán.'),
+        botones: `<a class="pill accent" href="${EN ? '/en/explore/' : '/explorar/'}">${esc(t('Buscar planes'))}</a>`,
+      })}`);
     return;
   }
   const bloque = (titulo, filas, clase = '') => (filas.length
@@ -1334,7 +1361,12 @@ RUTAS.favoritos = async () => {
             ${b.upcoming_events ? `<span class="muted">${esc(cuantas(b.upcoming_events, ['1 evento próximo', 'eventos próximos'], ['1 upcoming event', 'upcoming events']))}</span>` : ''}
             ${!b.active_flash && !b.upcoming_events ? `<span class="muted">${esc(EN ? 'Nothing new right now' : 'Sin novedades ahora mismo')}</span>` : ''}
           </span></span></a>`).join('')}</div>`
-    : `<p class="empty">${esc(t('Todavía no tienes favoritos. En la ficha de un negocio, dale a «Añadir a favoritos» y te avisaremos cuando publique.'))}</p>`}`);
+    : pantallaVacia({
+      icono: 'favorite',
+      titulo: t('Aún no tienes favoritos'),
+      texto: t('En la ficha de un negocio, dale a «Añadir a favoritos» y te avisaremos cuando publique.'),
+      botones: `<a class="pill accent" href="${EN ? '/en/explore/' : '/explorar/'}">${esc(t('Buscar planes'))}</a>`,
+    })}`);
 };
 
 RUTAS.seguir = async ([id], params, crudo) => {
@@ -1475,7 +1507,14 @@ RUTAS.codigos = async () => {
       <div class="olist">${premios.map(filaPremio).join('')}</div>` : ''}
     ${conRegalos || conPremios ? `<h2 class="seccion-t">${esc(t('Tus códigos'))}</h2>` : ''}
     ${(lista || []).length ? `<div class="olist">${lista.map((r) => filaCanje(r, zona(r))).join('')}</div>`
-    : `<p class="empty">${esc(t('Todavía no tienes códigos. Cuando consigas el código de una oferta o reserves plaza en un evento, lo tendrás aquí.'))}</p>`}`);
+    : conRegalos || conPremios
+      ? `<p class="empty">${esc(t('Todavía no tienes códigos. Cuando consigas el código de una oferta o reserves plaza en un evento, lo tendrás aquí.'))}</p>`
+      : pantallaVacia({
+        icono: 'qr_code_2',
+        titulo: t('Todavía no tienes códigos'),
+        texto: t('Cuando consigas el código de una oferta o reserves plaza en un evento, lo tendrás aquí.'),
+        botones: `<a class="pill accent" href="${EN ? '/en/explore/' : '/explorar/'}">${esc(t('Buscar planes'))}</a>`,
+      })}`);
 };
 
 /** Un premio de tarjeta de sellos en «Tus códigos»: pendiente lleva a
@@ -1523,7 +1562,7 @@ RUTAS.regalo = async ([id]) => {
   if (!exigeSesion(`regalo/${id}`)) return;
   const lista = await llamar('my_birthday_gifts', {});
   const g = (lista || []).find((x) => x.id === id);
-  if (!g) { pinta(`<p class="empty">${esc(t('Ese regalo no está.'))}</p><p><a class="pill" href="#/codigos">${esc(t('Tus códigos'))}</a></p>`); return; }
+  if (!g) { pinta(pantallaVacia({ icono: 'cake', titulo: t('Ese regalo no está.'), h: 'h1', botones: `<a class="pill accent" href="#/codigos">${esc(t('Tus códigos'))}</a>` })); return; }
   const tz = g.time_zone || undefined;
   if (g.status === 'validated') {
     pintaCanjeado({ titulo: g.gift, negocio: g.business_name, at: g.validated_at, tz });
@@ -1752,7 +1791,7 @@ RUTAS.reservar = async ([id]) => {
   if (!exigeSesion(`reservar/${id}`)) return;
   const fila = await llamar('offer_detail', { p_id: id });
   const o = Array.isArray(fila) ? fila[0] : fila;
-  if (!o) { pinta(`<p class="empty">${esc(t('Esa publicación ya no existe.'))}</p>`); return; }
+  if (!o) { pinta(pantallaVacia({ icono: 'explore', titulo: t('Esa publicación ya no existe.'), h: 'h1', botones: `<a class="pill accent" href="${EN ? '/en/explore/' : '/explorar/'}">${esc(t('Buscar planes'))}</a>` })); return; }
   if (o.locked) { pintaExclusiva(o.audience, o.business_id, o.business_name); return; }
   const tope = Math.max(1, Math.min(o.max_seats || 1, o.seats_left == null ? 10 : o.seats_left));
   if (tope <= 1) {
@@ -1829,7 +1868,7 @@ RUTAS.recibo = async ([id]) => {
   if (!exigeSesion(`recibo/${id}`)) return;
   const lista = await llamar('my_redemptions', {});
   const r = (lista || []).find((x) => x.id === id);
-  if (!r) { pinta(`<p class="empty">${esc(t('Ese recibo no está.'))}</p>`); return; }
+  if (!r) { pinta(pantallaVacia({ icono: 'description', titulo: t('Ese recibo no está.'), h: 'h1', botones: `<a class="pill accent" href="#/codigos">${esc(t('Tus códigos'))}</a>` })); return; }
   const tz = (await zonasDe([r]))(r);
   const lugar = [r.business_address, r.business_city].filter(Boolean).join(' · ');
   const benef = beneficio(r.discount, r.price_cents, r.currency);
@@ -1895,7 +1934,11 @@ RUTAS.sellos = async () => {
         ${!c.is_active ? `<p class="muted">${esc(t('En pausa: ahora mismo no se dan sellos nuevos. Los tuyos siguen aquí.'))}</p>` : ''}
         ${c.pending_code || c.stamps >= c.goal ? `<button class="pill accent" data-premio="${esc(c.id)}" data-reward="${esc(c.reward)}" data-negocio="${esc(c.business_name)}" data-biz="${esc(c.business_id)}">${esc(c.pending_code ? t('Ver el código') : t('Pedir el premio'))}</button>` : ''}
       </div>`).join('')
-    : `<p class="empty">${esc(t('Todavía no tienes ninguna. Se abren solas con tu primer sello: canjea algo en un sitio que tenga tarjeta o escanea el QR del local.'))}</p>`}`);
+    : pantallaVacia({
+      icono: 'local_activity',
+      titulo: t('Todavía no tienes ninguna'),
+      texto: t('Se abren solas con tu primer sello: canjea algo en un sitio que tenga tarjeta o escanea el QR del local.'),
+    })}`);
 
   $$('[data-premio]').forEach((b) => { b.onclick = () => ocupado(b, async () => {
     const r = await llamar('claim_stamp_reward', { p_card: b.dataset.premio });

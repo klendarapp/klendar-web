@@ -8,6 +8,8 @@ import { guard, publicPage } from '../_lib/public.js';
 // los enlaces por su cuenta daban de baja a gente sin que pulsara nada. La baja
 // se hace con POST: el botón de esta página o la «baja en un clic» de Gmail y
 // Outlook (cabecera List-Unsubscribe-Post, RFC 8058).
+//
+// Una pregunta y una confirmación sueltas: centradas (`.vacio`).
 
 export async function onRequestGet(ctx) {
   configure(ctx.env);
@@ -19,12 +21,14 @@ export async function onRequestGet(ctx) {
     ? { title: 'Unsubscribe', body: 'You will stop getting this email. You can switch it back on in Notification settings.', go: 'Unsubscribe', no: 'Keep getting it' }
     : { title: 'Darse de baja', body: 'Dejarás de recibir este correo. Se puede volver a encender en Ajustes de notificaciones.', go: 'Darme de baja', no: 'Seguir recibiéndolo' };
   const body = `
-  <h1>${esc(S.title)}</h1>
-  <p class="muted" style="max-width:560px">${esc(S.body)}</p>
-  <form method="post" action="/baja/${encodeURIComponent(token)}${en ? '?lang=en' : ''}">
-    <p class="acciones" style="justify-content:flex-start;max-width:560px"><button class="pill accent" type="submit">${esc(S.go)}</button>
-    <a class="pill" href="/${en ? 'en/' : ''}">${esc(S.no)}</a></p>
-  </form>`;
+  <section class="vacio">
+    <h1>${esc(S.title)}</h1>
+    <p>${esc(S.body)}</p>
+    <form class="vacio-botones" method="post" action="/baja/${encodeURIComponent(token)}${en ? '?lang=en' : ''}">
+      <button class="pill accent" type="submit">${esc(S.go)}</button>
+      <a class="pill" href="/${en ? 'en/' : ''}">${esc(S.no)}</a>
+    </form>
+  </section>`;
   return html(publicPage({
     contador: false,
     // Sin el testigo: `path` da la canónica y el og:url, y el enlace de
@@ -67,9 +71,11 @@ export async function onRequestPost(ctx) {
       };
 
   const body = `
-  <h1>${esc(S.title)}</h1>
-  <p class="muted" style="max-width:560px">${esc(S.body)}</p>
-  <p><a class="pill accent" href="/${en ? 'en/' : ''}">${esc(S.home)}</a></p>`;
+  <section class="vacio">
+    <h1>${esc(S.title)}</h1>
+    <p>${esc(S.body)}</p>
+    <div class="vacio-botones"><a class="pill accent" href="/${en ? 'en/' : ''}">${esc(S.home)}</a></div>
+  </section>`;
 
   return html(publicPage({
     contador: false,

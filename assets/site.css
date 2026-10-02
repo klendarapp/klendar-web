@@ -341,3 +341,24 @@ section.junto { padding-top: 0; }
   .app-caja { padding: 22px; }
   .app-caja .stores .pill { flex: 1 1 100%; justify-content: center; }
 }
+
+/* ── Pantalla vacía o de error (la de la app, docs/GLOSARIO.md «Aspecto») ──
+ * Cuando el «no hay nada» o el error ocupa la pantalla o la zona principal:
+ * icono, título, texto y botones centrados, y el bloque centrado en el alto
+ * libre. Un botón, de su ancho; varios, uno debajo de otro y todos del ancho
+ * del más largo (nada de filas desiguales). Dentro de una lista, una tarjeta
+ * o un formulario NO se usa: ahí va alineado con lo demás (`.empty`). */
+.vacio { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+  min-height: min(52vh, 480px); max-width: 520px; margin: 0 auto; padding: 28px 0 36px; }
+.vacio-ic { display: inline-grid; place-items: center; width: 64px; height: 64px; border-radius: 50%; color: var(--ink-2);
+  border: 1px solid var(--glass-border); background: var(--glass); }
+.vacio-ic .ms { font-size: 32px; }
+.vacio-ic svg { width: 30px; height: 30px; }
+.vacio h1, .vacio h2 { margin: 16px 0 6px; font-size: 22px; line-height: 1.25; }
+.vacio h1 { font-size: 26px; letter-spacing: -.4px; }
+.vacio > :first-child { margin-top: 0; }
+.vacio > p { margin: 0; color: var(--ink-2); max-width: 46ch; }
+.vacio-botones { display: grid; grid-template-columns: fit-content(360px); justify-content: center; gap: 10px; margin-top: 22px; max-width: 100%; }
+.vacio-botones > .pill, .vacio-botones > .btn { justify-content: center; text-align: center; margin: 0; }
+.vacio > .vacio-sugiere { margin: 18px 0 0; font-weight: 700; color: var(--ink); }
+.vacio-sugiere a { text-decoration: underline; text-underline-offset: 3px; }

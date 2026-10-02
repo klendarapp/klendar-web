@@ -59,6 +59,12 @@ const T = (en) => en
       backTop: 'Back to the top', notifyMe: "Tell me when there's something new",
       recommend: 'Missing a place? Recommend a business', recommendDraft: "I'd like to see this business on Klendar: ",
       maybe: 'You might like',
+      // Lista vacía (como Descubre vacío en la app): las mismas salidas.
+      emptyTitle: 'Nothing around here yet', emptyTitleFiltered: 'Nothing with those filters',
+      emptyBody: (d) => `Nothing active ${d} right now. Widen the search, check what's on or let us tell you when there's something new.`,
+      emptyBodyFiltered: (d) => `Nothing ${d} with the filters you have on. Clear them or widen the search to see more.`,
+      emptyBodyAll: "Nothing active right now. Businesses publish every day: check back later or let us tell you.",
+      emptyBodyAllFiltered: 'Nothing with the filters you have on. Clear them, or let us tell you when something new comes up.',
     }
   : {
       exp: 'Explorar', agenda: 'Agenda local', search: 'Buscar', ph: 'Un bar, un mercadillo, «brunch»…',
@@ -100,6 +106,12 @@ const T = (en) => en
       backTop: 'Volver al principio', notifyMe: 'Avísame cuando haya algo nuevo',
       recommend: '¿Echas en falta algún sitio? Recomiéndanos un negocio', recommendDraft: 'Me gustaría ver en Klendar este negocio: ',
       maybe: 'Quizá te interese',
+      // Lista vacía (como Descubre vacío en la app): las mismas salidas.
+      emptyTitle: 'Aún no hay nada por aquí', emptyTitleFiltered: 'No hay nada con esos filtros',
+      emptyBody: (d) => `No hay nada activo ${d} ahora mismo. Amplía la búsqueda, mira la agenda o deja que te avisemos cuando haya algo nuevo.`,
+      emptyBodyFiltered: (d) => `No hay nada ${d} con los filtros que tienes puestos. Quítalos o amplía la búsqueda para ver más.`,
+      emptyBodyAll: 'No hay nada activo ahora mismo. Los negocios publican cada día: vuelve luego o deja que te avisemos.',
+      emptyBodyAllFiltered: 'No hay nada con los filtros que tienes puestos. Quítalos o deja que te avisemos cuando haya algo nuevo.',
     };
 
 const catName = (c, en) => (en ? c?.names?.en : c?.names?.es) || c?.slug || '';
@@ -170,20 +182,44 @@ const RADIOS_KM = [1, 3, 5, 10, 25];
 const RADIO_KM = 10;
 
 /** Al final de la lista (última página): qué se ha visto y qué hacer ahora.
- * Lo mismo que la tarjeta final de Descubre en la app. */
-const finalHtml = ({ S, en, lang, cerca, km, city, filtros, link, page, alertaHref, sugerencias }) => {
+ * Lo mismo que la tarjeta final de Descubre en la app. Con [vacio] (no hay
+ * nada desde el principio), las mismas salidas y la misma lógica, pero
+ * centradas como una pantalla vacía (`.vacio`), como Descubre vacío. */
+const finalHtml = ({ S, en, lang, cerca, km, city, filtros, link, page, alertaHref, sugerencias, vacio = false }) => {
   const sigKm = cerca ? RADIOS_KM.find((k) => k > km) : null;
   // ¿Se puede mirar más lejos? Con «Cerca de mí», a la distancia siguiente;
   // en una ciudad, en todas.
   const ampliar = cerca ? (sigKm ? { href: link({ km: sigKm }), txt: S.widen(sigKm) } : null)
     : city ? { href: link({ city: '' }), txt: S.allCitiesBtn } : null;
   const donde = cerca ? S.within(km) : city ? S.inPlace(PRETTY(city)) : '';
-  const titulo = ampliar ? S.endTitle(donde) : S.endTitleAll;
-  const cuerpo = ampliar ? (filtros ? S.endBodyFiltered : S.endBody) : (filtros ? S.endBodyAllFiltered : S.endBodyAll);
+  const titulo = vacio ? (filtros ? S.emptyTitleFiltered : S.emptyTitle) : ampliar ? S.endTitle(donde) : S.endTitleAll;
+  const cuerpo = vacio
+    ? (ampliar ? (filtros ? S.emptyBodyFiltered(donde) : S.emptyBody(donde)) : (filtros ? S.emptyBodyAllFiltered : S.emptyBodyAll))
+    : ampliar ? (filtros ? S.endBodyFiltered : S.endBody) : (filtros ? S.endBodyAllFiltered : S.endBodyAll);
   const agenda = `${agendaBase(lang)}/${city ? `${CITY(city)}/` : ''}`;
   const quitar = filtros
     ? `<a class="pill" href="${esc(link({ q: '', cat: '', kind: '', price: '', when: '', soloDescuento: false, abierto: false }))}">${esc(S.clearF)}</a>`
     : '';
+  const sugiere = ampliar ? '' : `<p class="${vacio ? 'vacio-sugiere' : 'fin-sugiere'}"><a href="${esc(`${en ? '/app/?lang=en' : '/app/'}#/sugerencias?texto=${encodeURIComponent(S.recommendDraft)}`)}">${esc(S.recommend)}</a></p>`;
+  const quizas = sugerencias.length ? `<h2 class="fin-h">${esc(S.maybe)}</h2>
+  <div class="olist">${sugerencias.map((o) => offerCard(o, lang)).join('')}</div>` : '';
+  if (vacio) {
+    // Ampliar (si se puede), quitar filtros (si hay), avisar y la agenda.
+    const avisar = `<a class="pill${ampliar ? '' : ' accent'}" href="${esc(alertaHref)}">${esc(S.notifyMe)}</a>`;
+    return `<section class="vacio" aria-labelledby="finTitulo">
+    <span class="vacio-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16Zm-5.5-2.5 7.51-3.49L17.5 6.5 9.99 9.99 6.5 17.5Zm5.5-6.6a1.1 1.1 0 1 1 0 2.2 1.1 1.1 0 0 1 0-2.2Z"/></svg></span>
+    <h2 id="finTitulo">${esc(titulo)}</h2>
+    <p>${esc(cuerpo)}</p>
+    <div class="vacio-botones">
+      ${ampliar ? `<a class="pill accent" href="${esc(ampliar.href)}">${esc(ampliar.txt)}</a>` : avisar}
+      ${quitar}
+      ${ampliar ? avisar : ''}
+      <a class="pill" href="${esc(agenda)}">${esc(S.seeAgenda)}</a>
+    </div>
+    ${sugiere}
+  </section>
+  ${quizas}`;
+  }
   const botones = ampliar
     ? `<a class="pill accent" href="${esc(ampliar.href)}">${esc(ampliar.txt)}</a>
        ${quitar}
@@ -198,10 +234,9 @@ const finalHtml = ({ S, en, lang, cerca, km, city, filtros, link, page, alertaHr
     <h2 id="finTitulo">${esc(titulo)}</h2>
     <p class="muted">${esc(cuerpo)}</p>
     <div class="fin-botones">${botones}</div>
-    ${ampliar ? '' : `<p class="fin-sugiere"><a href="${esc(`${en ? '/app/?lang=en' : '/app/'}#/sugerencias?texto=${encodeURIComponent(S.recommendDraft)}`)}">${esc(S.recommend)}</a></p>`}
+    ${sugiere}
   </section>
-  ${sugerencias.length ? `<h2 class="fin-h">${esc(S.maybe)}</h2>
-  <div class="olist">${sugerencias.map((o) => offerCard(o, lang)).join('')}</div>` : ''}`;
+  ${quizas}`;
 };
 
 const portada = (items) => items.map((o) => (o.images || []).find((u) => !isVideo(u))).find(Boolean);
@@ -288,9 +323,11 @@ export async function explorePage(url, lang) {
   // de fuera de lo que se está mirando (más lejos que la distancia o en
   // otras ciudades). Sin nada fuera (todas las ciudades), no sale.
   const alFinal = !negocios && !mapa && items.length > 0 && page >= paginas;
+  // Sin nada desde el principio: la pantalla vacía, con las mismas salidas.
+  const vacio = !negocios && !mapa && items.length === 0;
   const conFiltros = Boolean(q || cat || kind || price || when || soloDescuento || abierto);
   let sugerencias = [];
-  if (alFinal && (cerca || city)) {
+  if ((alFinal || vacio) && (cerca || city)) {
     const vistos = new Set(items.map((o) => o.id));
     // Son un extra: si no llegan, la página sale igual (sin ellas).
     const fuera = await (cerca
@@ -298,6 +335,10 @@ export async function explorePage(url, lang) {
       : rpc('public_explore', { p_city: null, p_limit: 24, p_filters: {} }).then((r) => (r?.items || [])
         .filter((o) => String(o.city || '').toLowerCase() !== city.toLowerCase()))).catch(() => []);
     sugerencias = (fuera || []).filter((o) => !vistos.has(o.id)).slice(0, 4);
+  } else if (vacio && conFiltros) {
+    // En todas las ciudades y sin ubicación: lo que hay sin esos filtros.
+    const todo = await rpc('public_explore', { p_city: null, p_limit: 8, p_filters: {} }).catch(() => null);
+    sugerencias = (todo?.items || []).slice(0, 4);
   }
 
   // Los filtros son enlaces: se puede compartir la URL y va sin JavaScript.
@@ -413,16 +454,17 @@ export async function explorePage(url, lang) {
   ${negocios
     ? (items.length
       ? `<div class="olist">${items.map((b) => bizCard(b, lang, S)).join('')}</div>`
-      : `<p class="empty">${esc(S.noPlaces)}</p>`)
-    : mapa ? mapaHtml(items, lang, S) : lista(items, lang, S.none)}
+      : `<section class="vacio"><h2>${esc(S.noPlaces)}</h2>
+        ${conFiltros ? `<div class="vacio-botones"><a class="pill accent" href="${esc(link({ q: '', cat: '', abierto: false }))}">${esc(S.clearF)}</a></div>` : ''}</section>`)
+    : mapa ? mapaHtml(items, lang, S) : vacio ? '' : lista(items, lang, S.none)}
   ${paginas > 1 ? `<nav class="pager">
     ${page > 1 ? `<a class="pill" href="${esc(link({ p: page - 1 }))}">${esc(S.prev)}</a>` : ''}
     <span class="muted">${esc(S.page)} ${page}/${paginas}</span>
     ${page < paginas ? `<a class="pill" href="${esc(link({ p: page + 1 }))}">${esc(S.next)}</a>` : ''}
   </nav>` : ''}
 
-  ${alFinal ? finalHtml({
-    S, en, lang, cerca, km, city, filtros: conFiltros, link, page, sugerencias,
+  ${alFinal || vacio ? finalHtml({
+    S, en, lang, cerca, km, city, filtros: conFiltros, link, page, sugerencias, vacio,
     alertaHref: `${en ? '/app/?lang=en' : '/app/'}#/alerta/nueva?${new URLSearchParams({
       origen: 'explorar',
       ...(kind === 'offers' || kind === 'ofertas' ? { tipo: 'flash_offer' } : kind === 'events' || kind === 'eventos' ? { tipo: 'future_event' } : {}),
@@ -537,8 +579,12 @@ export async function collectionPage(rawSlug, rawCity, lang) {
     <a class="chip${rawc ? '' : ' on'}" href="${collectionBase(lang)}/${encodeURIComponent(slug)}/">${esc(S.everywhere)}</a>
     ${cities.filter((c) => c.city).slice(0, 12).map((c) => `<a class="chip${rawc.toLowerCase() === String(c.city).toLowerCase() ? ' on' : ''}" href="${collectionBase(lang)}/${encodeURIComponent(slug)}/${CITY(c.city)}/">${esc(PRETTY(c.city))}</a>`).join('')}
   </div></div>` : ''}
-  ${lista(items, lang, S.colNone)}
-  <p style="margin-top:22px"><a class="pill accent" href="${exploreBase(lang)}/">${esc(S.exp)}</a> <a class="pill" href="${agendaBase(lang)}/">${esc(S.agenda)}</a></p>`;
+  ${items.length
+    ? `${lista(items, lang, S.colNone)}
+  <p style="margin-top:22px"><a class="pill accent" href="${exploreBase(lang)}/">${esc(S.exp)}</a> <a class="pill" href="${agendaBase(lang)}/">${esc(S.agenda)}</a></p>`
+    // Vacía: la pantalla vacía, centrada, con las mismas salidas.
+    : `<section class="vacio"><h2>${esc(S.colNone)}</h2>
+    <div class="vacio-botones"><a class="pill accent" href="${exploreBase(lang)}/">${esc(S.exp)}</a><a class="pill" href="${agendaBase(lang)}/">${esc(S.agenda)}</a></div></section>`}`;
 
   return html(publicPage({
     lang, path, body, title: h1,

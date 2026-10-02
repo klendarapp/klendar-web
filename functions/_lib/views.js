@@ -46,7 +46,8 @@ const nota = (r, lang) => Number(r).toLocaleString(lang === 'en' ? 'en-GB' : 'es
 
 const seguro = (u) => (/^https?:\/\//i.test(String(u || '')) ? String(u) : '');
 /** Una publicación que ya acabó o se borró, o un negocio que ya no está: con
- * la cabecera y el pie de siempre y algo que hacer, no una página suelta. */
+ * la cabecera y el pie de siempre y algo que hacer, no una página suelta.
+ * Centrada, como toda pantalla vacía o de error (`.vacio`). */
 export const notFound = (lang, path, kind) => {
   const en = lang === 'en';
   const S = en
@@ -67,10 +68,12 @@ export const notFound = (lang, path, kind) => {
   const [titulo, texto] = S[kind] || S.o;
   const body = `
   <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a></p>
-  <h1>${esc(titulo)}</h1>
-  <p class="muted" style="max-width:620px">${esc(texto)}</p>
-  <p><a class="pill accent" href="${exploreBase(lang)}/">${esc(S.exp)}</a>
-     <a class="pill" href="${agendaBase(lang)}/">${esc(S.agenda)}</a></p>`;
+  <section class="vacio">
+    <h1>${esc(titulo)}</h1>
+    <p>${esc(texto)}</p>
+    <div class="vacio-botones"><a class="pill accent" href="${exploreBase(lang)}/">${esc(S.exp)}</a>
+      <a class="pill" href="${agendaBase(lang)}/">${esc(S.agenda)}</a></div>
+  </section>`;
   return html(publicPage({
     lang, path, body, title: titulo, description: texto, head: '<meta name="robots" content="noindex">',
   }), 404, 'no-store');
@@ -91,10 +94,12 @@ async function cerradoPage(lang, ref, path) {
     : `Nos han confirmado que ${c.name} ha cerrado, así que ya no está en Klendar.`;
   const body = `
   <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a></p>
-  <h1>${esc(titulo)}</h1>
-  <p class="muted" style="max-width:620px">${esc(texto)}</p>
-  <p><a class="pill accent" href="${exploreBase(lang)}/">${esc(en ? "See what's on now" : 'Ver qué hay ahora')}</a>
-     <a class="pill" href="${agendaBase(lang)}/">${esc(en ? "What's on" : 'Agenda local')}</a></p>`;
+  <section class="vacio">
+    <h1>${esc(titulo)}</h1>
+    <p>${esc(texto)}</p>
+    <div class="vacio-botones"><a class="pill accent" href="${exploreBase(lang)}/">${esc(en ? "See what's on now" : 'Ver qué hay ahora')}</a>
+      <a class="pill" href="${agendaBase(lang)}/">${esc(en ? "What's on" : 'Agenda local')}</a></div>
+  </section>`;
   return html(publicPage({
     lang, path, body, title: titulo, description: texto, head: '<meta name="robots" content="noindex">',
   }), 410, 'public, max-age=300');

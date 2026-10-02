@@ -773,8 +773,8 @@ async function route() {
     console.error(e);
     const msg = e?.message || window.KL_AUTH_TEXT('sinRed', I18N.lang);
     // Nunca la pantalla en blanco: el error y «Reintentar».
-    v.innerHTML = `<div class="card"><h2>Algo ha fallado</h2><p class="err">${esc(I18N.t(msg))}</p>${/administradora/.test(msg) ? (I18N.lang === 'en' ? '<p class="muted">Ask another administrator to add you in “Administrators”, or run this in Supabase: <code>insert into public.admin_users (user_id) select id from auth.users where email = \'your@email\'</code></p>' : '<p class="muted">Pide a otro administrador que te dé de alta en «Administradores», o ejecuta en Supabase: <code>insert into public.admin_users (user_id) select id from auth.users where email = \'tu@email\'</code></p>') : ''}
-      <p style="margin:12px 0 0"><button class="btn" type="button" data-reintentar>Reintentar</button></p></div>`;
+    v.innerHTML = `<section class="vacio"><h2>Algo ha fallado</h2><p>${esc(I18N.t(msg))}</p>${/administradora/.test(msg) ? (I18N.lang === 'en' ? '<p class="muted">Ask another administrator to add you in “Administrators”, or run this in Supabase: <code>insert into public.admin_users (user_id) select id from auth.users where email = \'your@email\'</code></p>' : '<p class="muted">Pide a otro administrador que te dé de alta en «Administradores», o ejecuta en Supabase: <code>insert into public.admin_users (user_id) select id from auth.users where email = \'tu@email\'</code></p>') : ''}
+      <div class="vacio-botones"><button class="btn primary" type="button" data-reintentar>Reintentar</button></div></section>`;
     $('[data-reintentar]', v).onclick = () => route();
     I18N.translate(v);
   }
