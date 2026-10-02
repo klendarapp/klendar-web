@@ -7,7 +7,9 @@
  *   2 amigos más van»). Solo amigos: nunca recuentos de desconocidos.
  * - En una ficha (`#amigos-ficha`): quién va, el botón «Voy» en activo
  *   («Vas», que lleva a quitarlo) y, si un amigo te ha invitado, la tarjeta
- *   «Ana te invita a este plan» con «Voy» / «No puedo».
+ *   «Ana te invita a este plan» con «Voy» / «No puedo». Con código o
+ *   reserva (`data-codigo`) no hay «Voy»: conseguirlo ya cuenta, y «Voy» en
+ *   la invitación lleva a conseguirlo.
  *
  * Sin sesión guardada no carga nada más: ni la configuración ni Supabase
  * (quien no ha entrado no paga por esto).
@@ -221,8 +223,11 @@
   function social(sb) {
     var id = ficha.getAttribute('data-offer');
     if (!UUID.test(id || '')) return;
+    // 'codigo' | 'reservar' en lo que tiene código o reserva.
+    var conCodigo = ficha.getAttribute('data-codigo');
     var voy = document.getElementById('voy');
     var nota = document.getElementById('voy-auto');
+    var pista = document.getElementById('voy-pista');
     var linea = document.getElementById('quien-va');
     var caja = document.getElementById('invita');
     var cambiando = false;
@@ -236,6 +241,9 @@
       }
       if (voy) {
         var texto = voy.querySelector('span');
+        // Como botón principal, «Vas» va en tinta (lo seleccionado), no en
+        // el color del botón principal.
+        if (voy.classList.contains('big')) voy.classList.toggle('accent', !d.going);
         voy.classList.toggle('on', !!d.going);
         if (texto) texto.textContent = d.going ? T.youGo : T.going;
         voy.setAttribute('href', cuenta + '#/voy/' + id + (d.going ? '?quitar=1' : ''));
@@ -247,6 +255,7 @@
         nota.textContent = d.auto ? (T.auto[d.auto] || '') : '';
         nota.hidden = !d.auto;
       }
+      if (pista) pista.hidden = !!d.going;
       pintaInvitacion(d);
     }
 
@@ -259,7 +268,10 @@
       var titulo = invs.length > 1 ? T.invN(nombre(invs[0].from), invs.length - 1) : T.inv1(nombre(invs[0].from));
       var pendientes = invs.filter(function (i) { return !i.response; });
       var todasNo = invs.every(function (i) { return i.response === 'declined'; });
-      var botones = pendientes.length || cambiando
+      // Dijo «Voy» pero ya no va (anuló el código, quitó «Voy»): se vuelve a
+      // preguntar.
+      var yaNoVa = !d.going && invs.some(function (i) { return i.response === 'going'; });
+      var botones = pendientes.length || cambiando || yaNoVa
         ? '<button type="button" class="pill accent" data-r="1">' + esc(T.yes) + '</button>' +
           '<button type="button" class="pill" data-r="0">' + esc(T.no) + '</button>'
         : '<span class="invita-estado">' + esc(todasNo ? T.saidNo : T.saidYes) + '</span>' +
@@ -280,6 +292,12 @@
     }
 
     function contesta(d, va) {
+      // Con código o reserva, «Voy» es conseguirlo: al tenerlo, la base
+      // contesta la invitación y avisa a quien invitó.
+      if (va && conCodigo) {
+        location.href = cuenta + '#/' + conCodigo + '/' + id;
+        return;
+      }
       var todos = caja.querySelectorAll('button');
       Array.prototype.forEach.call(todos, function (b) { b.disabled = true; });
       var invs = d.invites || [];

@@ -15,6 +15,7 @@
 Object.assign(ERRORES, {
   not_available: 'Esta publicación ya no está disponible.',
   daily_limit: 'Ya has mandado 20 invitaciones hoy. Mañana podrás mandar más.',
+  needs_code: 'Para ir, consigue el código o reserva plaza: eso ya cuenta como que vas.',
 });
 
 const CODIGO_AMIGO = /^[A-Za-z0-9_-]{16}$/;
@@ -330,9 +331,18 @@ RUTAS.voy = async ([id], params, crudo) => {
   const quitar = params?.get('quitar') === '1';
   if (!UUID_AMIGOS.test(id || '')) { pinta(pantallaVacia({ icono: 'link', titulo: t('Ese enlace no está completo.'), h: 'h1', botones: botonTuCuenta() })); return; }
   if (!exigeSesion(`voy/${id}${quitar ? '?quitar=1' : ''}`)) return;
+  // Con código o reserva no hay «Voy» aparte (un solo botón): conseguirlo
+  // ya cuenta como que vas. Un enlace viejo o una invitación llevan ahí.
+  const fila = await llamar('offer_detail', { p_id: id }).catch(() => null);
+  const of = Array.isArray(fila) ? fila[0] : fila;
+  if (!quitar && of && (of.kind === 'flash_offer' || of.reservations_enabled)) {
+    location.replace(`#/${of.kind === 'flash_offer' ? 'codigo' : 'reservar'}/${encodeURIComponent(id)}`);
+    return;
+  }
   // Desde fuera (sin pulsar «Voy» aquí) se pregunta antes: tus amigos lo ven.
   if (!(await confirmaEnlace(crudo, {
-    titulo: t(quitar ? '¿Quitar tu «Voy»?' : '¿Marcar que vas?'), que: await queOferta(id),
+    titulo: t(quitar ? '¿Quitar tu «Voy»?' : '¿Marcar que vas?'),
+    que: of ? [of.title, of.business_name].filter(Boolean).join(' · ') : '',
     texto: quitar ? '' : t('Tus amigos verán que vas y se guardará en tus planes.'),
     boton: t(quitar ? 'Quitar' : 'Voy'), volver: `${pre}/o/${encodeURIComponent(id)}`,
   }))) return;

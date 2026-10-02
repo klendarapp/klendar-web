@@ -142,6 +142,8 @@ export async function offerPage(id, lang) {
         open: 'Open in the app', report: 'Report this publication',
         code: 'Get the code', notYet: 'Not available yet', reserve: 'Reserve a place', wait: 'Join the waiting list', save: 'Save to Plans',
         going: "I'm going", invite: 'Invite a friend',
+        byCode: 'Getting the code counts as going.', byReservation: 'Reserving a place counts as going.',
+        later: 'Not sure yet? Save it to Plans.',
         note: 'From here or from the app, with the same account. The code is single-use and the business validates it on the spot.',
         soldOut: 'Sold out', over: 'Ended', more: 'Everything from', hot: 'Trending',
         prior: 'Lowest price in the last 30 days', canary: 'Canary Islands time',
@@ -152,6 +154,8 @@ export async function offerPage(id, lang) {
         open: 'Abrir en la app', report: 'Denunciar esta publicación',
         code: 'Conseguir el código', notYet: 'Aún no disponible', reserve: 'Reservar plaza', wait: 'Apuntarme a la lista de espera', save: 'Guardar en Planes',
         going: 'Voy', invite: 'Invitar a un amigo',
+        byCode: 'Conseguir el código ya cuenta como que vas.', byReservation: 'Reservar plaza ya cuenta como que vas.',
+        later: 'Si aún no lo tienes claro, guárdalo en Planes.',
         note: 'Desde aquí o desde la app, con la misma cuenta. El código es de un solo uso y lo valida el negocio en el momento.',
         soldOut: 'Agotado', over: 'Terminado', more: 'Todo lo de', hot: 'Con tirón',
         prior: 'Precio más bajo de los últimos 30 días', canary: 'hora de Canarias',
@@ -196,19 +200,27 @@ export async function offerPage(id, lang) {
       ${over ? '' : (() => {
         // Lo mismo que el botón grande de la app, pero sin salir de la web.
         const id = encodeURIComponent(o.id);
+        // Un solo botón de acción. Con código o reserva, conseguirlo ya
+        // cuenta como «vas» (no hay «Voy» aparte). Sin código: con entradas
+        // fuera, conseguirlas manda y «Voy» queda discreto junto a «Invitar a
+        // un amigo»; sin ellas, «Voy» es el botón principal.
+        const conCodigo = flash || !!o.reservations_enabled;
+        const entradas = !conCodigo && seguro(o.external_url);
+        const voy = (clase) => `<a class="${clase}" id="voy" href="${cuenta(lang)}#/voy/${id}" rel="nofollow">${icono('voy', 16)} <span>${S.going}</span></a>`;
         const principal = soldOut ? `<a class="pill accent big" href="${cuenta(lang)}#/espera/${id}">${S.wait}</a>`
           : noEmpezada ? `<span class="pill accent big" aria-disabled="true" style="opacity:.55">${S.notYet}</span>`
           : flash ? `<a class="pill accent big" href="${cuenta(lang)}#/codigo/${id}">${S.code}</a>`
             : o.reservations_enabled ? `<a class="pill accent big" href="${cuenta(lang)}#/reservar/${id}">${S.reserve}</a>`
-              : seguro(o.external_url) ? `<a class="pill accent big" href="${esc(seguro(o.external_url))}" rel="nofollow noopener" target="_blank">${esc(o.external_url.replace(/^https?:\/\//, '').split('/')[0])}</a>`
-                : '';
+              : entradas ? `<a class="pill accent big" href="${esc(entradas)}" rel="nofollow noopener" target="_blank">${esc(o.external_url.replace(/^https?:\/\//, '').split('/')[0])}</a>`
+                : voy('pill accent big');
         // «Voy» e «Invitar a un amigo»: la página va en caché y no sabe quién
         // la mira; si ya vas, lo pinta el navegador (/assets/amigos.js).
         return `${principal}
-          <p class="acciones amigos-acc" id="amigos-ficha" data-offer="${esc(o.id)}">
-            <a class="pill" id="voy" href="${cuenta(lang)}#/voy/${id}" rel="nofollow">${icono('voy', 16)} <span>${S.going}</span></a>
+          <p class="acciones amigos-acc" id="amigos-ficha" data-offer="${esc(o.id)}"${conCodigo ? ` data-codigo="${flash ? 'codigo' : 'reservar'}"` : ''}>
+            ${entradas ? voy('pill') : ''}
             <a class="pill" href="${cuenta(lang)}#/invitar/${id}" rel="nofollow">${icono('invitar', 16)} ${S.invite}</a></p>
           <p class="note" id="voy-auto" hidden></p>
+          ${conCodigo ? `<p class="note" id="voy-pista">${flash ? S.byCode : S.byReservation} ${S.later}</p>` : ''}
           <p class="acciones"><a class="pill" data-plan="${id}" href="${cuenta(lang)}#/guardar/${id}"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg> <span>${S.save}</span></a>
             ${openInApp(path, S.open, 'pill ghost')}</p>`;
       })()}

@@ -34,6 +34,7 @@ const APP_EN = {
   '¿Quitar tu «Voy»?': 'Remove your “Going”?',
   'Voy': 'Going',
   'Tus amigos verán que vas y se guardará en tus planes.': "Your friends will see you're going and it will be saved to your plans.",
+  'Para ir, consigue el código o reserva plaza: eso ya cuenta como que vas.': 'To go, get the code or reserve a place: that already counts as going.',
   'Volver a la publicación': 'Back to the publication',
   'Volver al sitio': "Back to the business",
   'Ver tus planes': 'See your plans',
