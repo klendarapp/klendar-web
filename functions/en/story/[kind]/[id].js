@@ -6,7 +6,9 @@ import { storyPage } from '../../../_lib/historia.js';
 // /en/story/c/<collection> (ver `_lib/historia.js`).
 export const onRequestGet = (ctx) => {
   configure(ctx.env);
-  return guard('en', new URL(ctx.request.url).pathname, () => storyPage(ctx.params.kind, ctx.params.id, 'en'));
+  const url = new URL(ctx.request.url);
+  // `?rp=<código>`: desde la ficha abierta con el enlace de un RRPP.
+  return guard('en', url.pathname, () => storyPage(ctx.params.kind, ctx.params.id, 'en', url.searchParams.get('rp') || ''));
 };
 
 // HEAD igual que GET (el middleware quita el cuerpo).

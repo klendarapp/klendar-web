@@ -4,10 +4,16 @@
 // Es público porque la publicación ya lo es: así lo abre igual el negocio
 // desde la app, desde el panel o desde cualquier ordenador con impresora,
 // sin tener que entrar. El QR se dibuja en el navegador.
+//
+// Una oferta de RRPP solo se abre con el enlace de un RRPP: sin él no hay
+// cartel (su QR llevaría a una ficha que no se abre; el panel y la app no lo
+// ofrecen); con `?rp=<código>` válido, el QR lleva ese `?rp=` y la página es
+// privada (sin buscadores ni caché compartida).
 
 import { erroresScript, esc, html, isUuid, rpc } from './page.js';
 import { benefit, fmtDay, fmtEnd, fmtTime, zonaDe } from './public.js';
 import { notFound } from './views.js';
+import KR from '../../assets/rrpp-enlace.js';
 
 // Sora y Manrope, las de toda la web (assets/site.css), servidas desde
 // klendar.app: el cartel no pide nada a Google Fonts.
@@ -31,12 +37,18 @@ const T = {
   },
 };
 
-export async function posterPage(id, lang) {
+export async function posterPage(id, lang, rpRaw = '') {
   const S = T[lang === 'en' ? 'en' : 'es'];
-  const o = isUuid(id) ? await rpc('offer_detail', { p_id: id }) : null;
-  // Si ya no existe, la misma página que su ficha: con cabecera y algo que hacer.
-  if (!o || !o.title) return notFound(S.lang, `${S.path}/${S.lang === 'en' ? 'poster' : 'cartel'}/${id}`, 'o');
-  const url = `https://klendar.app${S.path}/o/${o.id}`;
+  const rp = KR.codigoValido(rpRaw);
+  const o = isUuid(id) ? await rpc('offer_detail', { p_id: id, p_rp: rp || null }) : null;
+  const prom = o && rp && o.promoter && o.promoter.code ? o.promoter : null;
+  // Si ya no existe (o es de RRPP y no hay enlace), la misma página que su
+  // ficha: con cabecera y algo que hacer.
+  if (!o || !o.title || (o.audience === 'promoters' && !prom)) {
+    return notFound(S.lang, `${S.path}/${S.lang === 'en' ? 'poster' : 'cartel'}/${id}`, 'o');
+  }
+  const rpQ = prom ? `?rp=${encodeURIComponent(prom.code)}` : '';
+  const url = `https://klendar.app${S.path}/o/${o.id}${rpQ}`;
   const tag = benefit(o.discount, o.price_cents, o.currency, S.lang);
   // Cuándo: en un cartel pegado en la puerta es lo primero que se pregunta.
   const tz = zonaDe(o);
@@ -44,13 +56,13 @@ export async function posterPage(id, lang) {
   const cuando = !ini ? '' : o.kind === 'flash_offer' && o.redeem_end_at
     ? `${fmtDay(ini, S.lang, tz)} · ${fmtTime(ini, S.lang, tz)} – ${fmtEnd(ini, o.redeem_end_at, S.lang, tz)}`
     : `${fmtDay(ini, S.lang, tz)} · ${fmtTime(ini, S.lang, tz)}`;
-  return html(`<!doctype html>
+  const res = html(`<!doctype html>
 <html lang="${S.lang}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 ${erroresScript()}
-<meta name="robots" content="noindex">
+${rpQ ? '<meta name="robots" content="noindex, nofollow">\n<meta name="referrer" content="no-referrer">' : '<meta name="robots" content="noindex">'}
 <title>${esc(S.title)} · ${esc(o.title)} · Klendar</title>
 <link rel="icon" href="/favicon.ico" sizes="48x48"><link rel="icon" type="image/png" sizes="96x96" href="/assets/favicon-96.png"><link rel="manifest" href="/site.webmanifest">
 <style>${FUENTES}</style>
@@ -100,7 +112,9 @@ ${erroresScript()}
   document.getElementById('qr').innerHTML = q.createSvgTag({ cellSize: 6, margin: 0, scalable: true });
 </script>
 </body>
-</html>`);
+</html>`, 200, rpQ ? 'private, no-store' : undefined);
+  if (rpQ) res.headers.set('x-robots-tag', 'noindex, nofollow');
+  return res;
 }
 
 // ── El cartel del local ─────────────────────────────────────────────────────

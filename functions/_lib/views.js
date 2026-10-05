@@ -135,9 +135,10 @@ export async function offerPage(id, lang, rpRaw = '') {
   const o = await rpc('offer_detail', { p_id: id, p_rp: rp || null });
   if (!o) return notFound(lang, path, 'o');
   const prom = rp && o.promoter && o.promoter.code ? o.promoter : null;
-  // Con el enlace (o siendo de RRPP), la página no es para los buscadores
-  // ni para compartir: sin canonical ni hreflang, sin «Compartir en
-  // historias» y sin caché compartida.
+  // Con el enlace (o siendo de RRPP), la página no es para los buscadores:
+  // sin canonical ni hreflang y sin caché compartida. «Compartir en
+  // historias» lleva el `?rp=` del enlace (como la app); una de RRPP sin él
+  // no lo ofrece: su imagen llevaría a un enlace que no la abre.
   const deRrpp = o.audience === 'promoters';
   const privada = Boolean(prom) || deRrpp;
   const rpQ = prom ? `?rp=${encodeURIComponent(prom.code)}` : '';
@@ -285,7 +286,7 @@ export async function offerPage(id, lang, rpRaw = '') {
           ${conCodigo ? `<p class="note" id="voy-pista">${flash ? S.byCode : S.byReservation}${deRrpp ? '' : ` ${S.later}`}</p>` : ''}
           <p class="acciones">${deRrpp ? '' : `<a class="pill" data-plan="${id}" href="${cuenta(lang)}#/guardar/${id}"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg> <span>${S.save}</span></a>`}
             ${openInApp(path + rpQ, S.open, 'pill ghost')}</p>
-          ${privada ? '' : `<p class="acciones">${historiaBoton(lang, 'o', o.id)}</p>`}`;
+          ${deRrpp && !prom ? '' : `<p class="acciones">${historiaBoton(lang, 'o', o.id, rpQ)}</p>`}`;
       })()}
       ${serieFicha(serie, o.id, lang)}
       <p class="note">${S.note}</p>

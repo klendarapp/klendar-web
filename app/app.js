@@ -843,7 +843,7 @@ RUTAS.entrar = async (_p, params) => {
       <a class="pill" href="${conSiguiente('codigo-correo', siguiente)}">${esc(t('Entrar con un código por correo'))}</a>
     </div>
     <div id="google" class="google-hueco"></div>
-    <p class="muted">${esc(t('¿No tienes cuenta?'))} <a href="${panel ? '#/registro?para=negocio' : conSiguiente('registro', siguiente)}">${esc(t('Regístrate'))}</a></p>
+    <p class="muted">${esc(t('¿No tienes cuenta?'))} <a href="${panel ? '#/registro?para=negocio' : conSiguiente('registro', siguiente)}">${esc(t('Crear cuenta'))}</a></p>
     ${panel ? '' : `<p class="muted pie-form">${esc(t('¿Llevas un negocio? Es la misma cuenta: entra y ve a tu panel desde «Mi negocio».'))}</p>`}`);
   botonGoogle(siguiente, destinoTrasEntrar() || '/app/');
 

@@ -253,7 +253,7 @@ PAGINAS['precios'] = (
 </ul>
 
 <h2>¿Y para quien usa la app?</h2>
-<p>Gratis, y sin cuenta para mirar. Solo hace falta registrarse para canjear, guardar planes o recibir avisos.</p>
+<p>Gratis, y sin cuenta para mirar. Solo hace falta crear una cuenta para canjear, guardar planes o recibir avisos.</p>
 <p style="margin-top:18px"><a class="pill accent" href="mailto:info@klendar.app?subject=Plan%20de%20Klendar">Preguntar por un plan</a> <a class="pill ghost" href="/para-negocios/">Cómo funciona</a></p>
 ''',
     f'''
@@ -291,7 +291,7 @@ PAGINAS['precios'] = (
 # ── Preguntas frecuentes ────────────────────────────────────────────────────
 FAQ_ES = [
     ('¿Cuánto cuesta usar Klendar?', 'Para quien busca planes, nada. Para los negocios hay un solo plan, y ahora mismo es gratis mientras arrancamos; los detalles están en <a href="/precios/">precios</a>.'),
-    ('¿Hace falta cuenta para mirar?', 'No. Puedes ver ofertas y eventos sin registrarte, en la app y en la web. La cuenta hace falta para canjear, guardar planes o recibir avisos.'),
+    ('¿Hace falta cuenta para mirar?', 'No. Puedes ver ofertas y eventos sin crear una cuenta, en la app y en la web. La cuenta hace falta para canjear, guardar planes o recibir avisos.'),
     ('¿Cómo se canjea una oferta?', 'Pulsas «Conseguir el código» y te sale un código QR de un solo uso. Se lo enseñas al negocio, que lo escanea o escribe el código. Ojo: algunos códigos caducan a los pocos minutos, así que se pide estando ya en el local.'),
     ('Mi código no funciona', 'Suele ser una de tres: ya se usó, caducó (los de barra duran minutos) o es de otro negocio. En «Tus códigos» (en la app o en la web) ves el estado de cada uno. Si algo no cuadra, escríbenos con el código a <a href="mailto:info@klendar.app">info@klendar.app</a>.'),
     ('¿Puedo reservar una plaza en un evento?', 'Si el negocio lo activa, sí: reservas plaza desde la app o desde la web y enseñas tu código en la puerta. La reserva no es un pago; lo que cueste, si cuesta, se paga en el local.'),

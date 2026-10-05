@@ -486,6 +486,12 @@ RUTAS.invitar = async ([id]) => {
     llamar('my_friends', {}),
   ]);
   const o = Array.isArray(fila) ? fila[0] : fila;
+  // Una oferta de RRPP solo se abre con el enlace de un RRPP: su ficha sin él
+  // (la que se mandaría) no se abre. La ficha tampoco ofrece invitar.
+  if (o?.audience === 'promoters') {
+    pinta(pantallaVacia({ icono: 'link', titulo: t('Esta oferta es solo con el enlace de un RRPP.'), h: 'h1', botones: botonTuCuenta() }));
+    return;
+  }
   const ficha = `${pre}/o/${encodeURIComponent(id)}`;
   const migas = `<p class="crumbs"><a href="${esc(ficha)}">${esc(o?.title || t('Volver a la publicación'))}</a></p>`;
   if (!social?.visible) {

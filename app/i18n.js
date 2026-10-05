@@ -77,7 +77,6 @@ const APP_EN = {
   'Entrar con un código por correo': "Log in with an email code",
   'He olvidado la contraseña': "Forgot your password?",
   '¿No tienes cuenta?': "No account yet?",
-  'Regístrate': 'Sign up',
   'Escribe tu correo y tu contraseña.': "Enter your email and password.",
   'Entra con un código': 'Log in with a code',
   'Te mandamos un código de seis cifras a tu correo. Sin contraseñas.': "We'll email you a six-digit code. No passwords.",

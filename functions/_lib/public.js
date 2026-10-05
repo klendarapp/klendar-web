@@ -313,8 +313,10 @@ q.delete('ref');var r=q.toString();history.replaceState(history.state,'',locatio
 }
 
 /** «Compartir en historias»: la imagen vertical para Instagram y compañía
- * (`_lib/historia.js`). */
-export const historiaBoton = (lang, kind, ref) => `<a class="pill" href="${lang === 'en' ? '/en/story' : '/historia'}/${kind}/${encodeURIComponent(ref)}" rel="nofollow"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M7 19h10V4H7v15zm-5-2h4V6H2v11zm16-11v11h4V6h-4z"/></svg> <span>${lang === 'en' ? 'Share to stories' : 'Compartir en historias'}</span></a>`;
+ * (`_lib/historia.js`). `consulta`: `?rp=<código>` si la ficha se ha abierto
+ * con el enlace de un RRPP (el QR de la imagen lo lleva: una oferta de RRPP
+ * sin él no se abre). */
+export const historiaBoton = (lang, kind, ref, consulta = '') => `<a class="pill" href="${lang === 'en' ? '/en/story' : '/historia'}/${kind}/${encodeURIComponent(ref)}${esc(consulta)}" rel="nofollow"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M7 19h10V4H7v15zm-5-2h4V6H2v11zm16-11v11h4V6h-4z"/></svg> <span>${lang === 'en' ? 'Share to stories' : 'Compartir en historias'}</span></a>`;
 
 /** Botón grande para abrir la publicación en la app. */
 export function openInApp(path, label = 'Abrir en la app', cls = 'pill accent big') {

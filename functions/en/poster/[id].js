@@ -5,7 +5,9 @@ import { posterPage } from '../../_lib/poster.js';
 // Printable poster for a publication (see `_lib/poster.js`).
 export const onRequestGet = (ctx) => {
   configure(ctx.env);
-  return guard('en', new URL(ctx.request.url).pathname, () => posterPage(ctx.params.id, 'en'));
+  const url = new URL(ctx.request.url);
+  // `?rp=<código>`: desde la ficha abierta con el enlace de un RRPP.
+  return guard('en', url.pathname, () => posterPage(ctx.params.id, 'en', url.searchParams.get('rp') || ''));
 };
 
 // HEAD igual que GET (el middleware quita el cuerpo): comprobadores de enlaces

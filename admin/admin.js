@@ -1332,7 +1332,7 @@ async function businessAction(a, b, d) {
       const n = await rpc('admin_send_notification', { p_audience: 'ids', p_user_ids: ids, ...textosAviso(r), p_route: '/my-business/' + b.id }); toast(I18N.lang === 'en' ? `Notification sent to ${n} ${n === 1 ? 'person' : 'people'}` : `Notificación enviada a ${n} ${n === 1 ? 'persona' : 'personas'}`);
     }
     if (a === 'addmember') {
-      const r = await modal({ title: 'Añadir persona al equipo', intro: 'Escribe el email exacto con el que se registró.', fields: [{ name: 'email', label: 'Email del usuario', type: 'email', required: true }, { name: 'role', label: 'Rol', type: 'select', value: 'staff', options: [['staff', 'Empleado (valida códigos)'], ['manager', 'Encargado (gestiona publicaciones)'], ['owner', 'Propietario']] }], submit: 'Añadir' });
+      const r = await modal({ title: 'Añadir persona al equipo', intro: 'Escribe el email exacto con el que creó su cuenta.', fields: [{ name: 'email', label: 'Email del usuario', type: 'email', required: true }, { name: 'role', label: 'Rol', type: 'select', value: 'staff', options: [['staff', 'Empleado (valida códigos)'], ['manager', 'Encargado (gestiona publicaciones)'], ['owner', 'Propietario']] }], submit: 'Añadir' });
       if (!r) return;
       const u = await rpc('admin_users', { p_query: r.email, p_limit: 50 });
       const found = u.rows.find((x) => (x.email || '').toLowerCase() === r.email.trim().toLowerCase());
@@ -2969,7 +2969,7 @@ PAGES.administradores = async (v) => {
   const f = MFA?.factor;
   v.innerHTML = `
     <div class="page-head"><h1>Administradores</h1><span class="spacer"></span><button class="btn primary sm" id="add">Añadir administrador…</button></div>
-    ${helpBox('¿Qué hago aquí?', '<p>Quién puede entrar en este panel. Un administrador puede hacerlo todo, así que da acceso solo a personas de confianza, con contraseña fuerte y la verificación en dos pasos activada (columna «2FA»). La persona tiene que haberse registrado antes en la app con ese email. Todas sus acciones quedan en el registro de actividad.</p>')}
+    ${helpBox('¿Qué hago aquí?', '<p>Quién puede entrar en este panel. Un administrador puede hacerlo todo, así que da acceso solo a personas de confianza, con contraseña fuerte y la verificación en dos pasos activada (columna «2FA»). La persona tiene que haber creado antes su cuenta en la app con ese email. Todas sus acciones quedan en el registro de actividad.</p>')}
     <div class="card"><h2>Tu verificación en dos pasos</h2>
       <p style="margin:0 0 10px">${f ? `<span class="tag ok">Activada</span> <span class="muted small">${I18N.lang === 'en' ? 'since' : 'desde'} ${esc(fmtDay(f.created_at))}</span>` : '<span class="tag warn">Sin activar</span>'}</p>
       <p class="muted small" style="margin:0 0 10px">${MFA?.required ? 'Obligatoria para administrar.' : 'Recomendada (todavía no es obligatoria).'}</p>

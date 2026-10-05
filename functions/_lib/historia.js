@@ -17,6 +17,13 @@
 //
 // Rutas: /historia/o/<id> · /historia/b/<slug|id> · /historia/c/<slug> y las
 // mismas en inglés en /en/story/….
+//
+// Una publicación abierta con el enlace de un RRPP (`/historia/o/<id>?rp=…`,
+// desde su ficha con `?rp=`): el QR y «Copiar enlace» llevan el mismo
+// `?rp=`, como la app (quien llegue se apunta a esa lista). Una oferta de
+// RRPP sin un enlace válido no tiene página: su imagen llevaría a una ficha
+// que no se abre. Con el código en la dirección, la página es privada
+// (sin buscadores, sin caché compartida y sin contador).
 
 import { esc, html, isUuid, rows, rpc, rpcAll } from './page.js';
 import {
@@ -24,6 +31,7 @@ import {
 } from './public.js';
 import { estiloDe } from './tarjeta.js';
 import { notFound } from './views.js';
+import KR from '../../assets/rrpp-enlace.js';
 
 const T = {
   es: {
@@ -66,7 +74,7 @@ const venueOf = (name, address) => {
 export const storyPath = (lang, kind, ref) => `${lang === 'en' ? '/en/story' : '/historia'}/${kind}/${encodeURIComponent(ref)}`;
 
 /** La página «Compartir en historias» de [kind] (`o`, `b` o `c`). */
-export async function storyPage(kind, ref, lang) {
+export async function storyPage(kind, ref, lang, rpRaw = '') {
   const en = lang === 'en';
   const S = T[en ? 'en' : 'es'];
   const raw = String(ref || '');
@@ -74,12 +82,18 @@ export async function storyPage(kind, ref, lang) {
   let datos = null;
   let volver = '';
   let lead = S.lead;
+  // `?rp=<código>` del enlace de un RRPP, si la base dice que vale.
+  let rpQ = '';
 
   if (kind === 'o') {
     if (!isUuid(raw)) return notFound(lang, self, 'o');
-    const o = await rpc('offer_detail', { p_id: raw });
+    const rp = KR.codigoValido(rpRaw);
+    const o = await rpc('offer_detail', { p_id: raw, p_rp: rp || null });
     // Una exclusiva bloqueada no tiene nada que enseñar.
     if (!o || !o.title || o.locked) return notFound(lang, self, 'o');
+    const prom = rp && o.promoter && o.promoter.code ? o.promoter : null;
+    if (o.audience === 'promoters' && !prom) return notFound(lang, self, 'o');
+    if (prom) rpQ = `?rp=${encodeURIComponent(prom.code)}`;
     const { plantilla, acento } = estiloDe(o);
     const media = (o.images || []).filter(https);
     const flash = o.kind === 'flash_offer';
@@ -99,7 +113,7 @@ export async function storyPage(kind, ref, lang) {
       tz: zonaDe(o),
       path: `/o/${o.id}`,
     };
-    volver = `${en ? '/en' : ''}/o/${o.id}`;
+    volver = `${en ? '/en' : ''}/o/${o.id}${rpQ}`;
   } else if (kind === 'b') {
     let id = raw;
     let slug = null;
@@ -165,7 +179,7 @@ export async function storyPage(kind, ref, lang) {
   }
 
   // El enlace del QR: siempre klendar.app (también en local), con el origen.
-  datos.link = `${BASE}${datos.path}?ref=stories`;
+  datos.link = `${BASE}${datos.path}${rpQ ? `${rpQ}&` : '?'}ref=stories`;
   datos.display = `${new URL(BASE).host}${datos.path}`;
   datos.lang = en ? 'en' : 'es';
   datos.t = {
@@ -222,6 +236,22 @@ export async function storyPage(kind, ref, lang) {
   }
 </style>`;
 
+  if (rpQ) {
+    const res = html(publicPage({
+      lang,
+      path: self,
+      title: `${S.title} · ${datos.title}`,
+      description: lead,
+      head: estilo.replace('content="noindex, follow"', 'content="noindex, nofollow"')
+        + '\n<meta name="referrer" content="no-referrer">',
+      body,
+      contador: false,
+      privada: true,
+      consulta: rpQ,
+    }), 200, 'private, no-store');
+    res.headers.set('x-robots-tag', 'noindex, nofollow');
+    return res;
+  }
   return html(publicPage({
     lang,
     path: self,

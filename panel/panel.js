@@ -1473,6 +1473,13 @@ const conNegocio = (o) => ({ ...o, business_name: BIZ.name, business_logo: BIZ.l
  * `.tjv` (los estilos de /assets/tarjeta.css) y con `translate="no"`: ya sale
  * en su idioma y el título lo ha escrito el negocio. */
 const tarjetaPanel = (o, opts = {}) => KT.tarjeta(conNegocio(o), I18N.lang === 'en' ? 'en' : 'es', { tz: TZ, h: 'h2', ...opts });
+/** A dónde lleva la tarjeta de una publicación: a editarla o, a quien no
+ * publica (o si está archivada), a su ficha. Una oferta de RRPP no tiene
+ * ficha pública (sin el enlace de un RRPP no se abre): a la sección RRPP,
+ * con sus enlaces, o se queda en Publicaciones. */
+const hrefPub = (o) => (gestiona() && o.status !== 'archived' ? `#/publicaciones/${o.id}`
+  : o.audience !== 'promoters' ? `/o/${o.id}`
+    : gestiona() ? '#/rrpp' : '#/publicaciones');
 /** Los vídeos de las tarjetas: el primer fotograma (o la portada) y, si
  * `mover`, en marcha y en silencio (nunca con «reducir movimiento»). */
 function activaVideos(caja, mover = false) {
@@ -1577,7 +1584,7 @@ function accionesPub(o) {
  * la edita (o, a quien no publica, abre su ficha). */
 const tarjetasPublicaciones = (rows) => `<div class="pubs">${rows.map((o) => `
   <div class="pub-item pub-${estadoPub(o)}">
-    <div class="tjv" translate="no">${tarjetaPanel(o, { href: gestiona() && o.status !== 'archived' ? `#/publicaciones/${o.id}` : `/o/${o.id}` })}</div>
+    <div class="tjv" translate="no">${tarjetaPanel(o, { href: hrefPub(o) })}</div>
     <div class="pub-meta">
       <p class="pub-estado">${etiquetaEstado(o)}${etiquetaAudiencia(o)}${o.adults_only ? ' <span class="tag dim">+18</span>' : ''}</p>
       ${cifrasRapidas(o)}
@@ -2679,7 +2686,7 @@ PAGES.calendario = async (v, param) => {
           <span class="muted">${esc(cuantas(delDia.length))}</span>
         </div>
         ${delDia.length
-          ? `<div class="tj-filas">${delDia.map((o) => `<div class="cal-item">${tarjetaPanel(o, { forma: 'fila', h: 'h3', href: gestiona() && o.status !== 'archived' ? `#/publicaciones/${o.id}` : `/o/${o.id}` })}<p class="cal-item-estado">${estadoPub(o) === 'activa' ? '' : etiquetaEstado(o)}</p></div>`).join('')}</div>`
+          ? `<div class="tj-filas">${delDia.map((o) => `<div class="cal-item">${tarjetaPanel(o, { forma: 'fila', h: 'h3', href: hrefPub(o) })}<p class="cal-item-estado">${estadoPub(o) === 'activa' ? '' : etiquetaEstado(o)}</p></div>`).join('')}</div>`
           : `<p class="muted cal-nada">${esc(I18N.t(dia < hoy ? 'Ese día no tuviste nada publicado.' : 'Aún no tienes nada para ese día.'))}${proximo ? `<br><a href="#/calendario/${proximo}" data-dia="${proximo}">${esc(bi(`Lo siguiente: ${rel(proximo) || largo(proximo)}`, `Next up: ${rel(proximo) || largo(proximo)}`))} →</a>` : ''}</p>`}
         ${dia >= hoy ? crear : ''}
       </section>`;
@@ -3794,7 +3801,9 @@ const textoAHorario = (txt) => String(txt || '').split(',')
 PAGES.cartel = async (v, offerId) => {
   const todas = await rpc('my_business_offers', { p_id: BIZ.id });
   const o = (todas || []).find((x) => x.id === offerId);
-  if (!o) { location.hash = '#/publicaciones'; return; }
+  // Una oferta de RRPP no tiene cartel: sin el enlace de un RRPP, su QR no
+  // la abriría (cada RRPP tiene el suyo en «RRPP»).
+  if (!o || o.audience === 'promoters') { location.hash = o ? '#/rrpp' : '#/publicaciones'; return; }
   const url = `https://klendar.app/o/${o.id}`;
 
   v.innerHTML = `
