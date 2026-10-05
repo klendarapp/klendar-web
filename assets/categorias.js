@@ -149,7 +149,7 @@
 .selcat-campo { display: flex; align-items: center; gap: 12px; width: 100%; box-sizing: border-box; min-height: 52px; padding: 12px 14px; text-align: left;
   border-radius: 16px; border: 1px solid var(--glass-border, rgba(127,127,127,.35)); background: var(--glass, transparent); color: inherit; font: inherit; font-size: 16px; cursor: pointer; }
 .selcat-campo .selcat-v { flex: 1; font-weight: 600; }
-.selcat-campo .selcat-v.vacio { font-weight: 400; color: var(--ink-2, inherit); }
+.selcat-campo .selcat-v.sin-elegir { font-weight: 400; color: var(--ink-2, inherit); }
 .selcat-campo .selcat-f { color: var(--ink-2, inherit); }
 .selcat-campo[disabled] { opacity: .6; cursor: default; }
 .campo-cat { margin: 0 0 14px; }
@@ -280,7 +280,7 @@
         const vacio = !nombres.length;
         const texto = vacio ? (o.vacio || T.elegir)
           : nombres.length <= 2 ? nombres.join(', ') : `${nombres.slice(0, 2).join(', ')} +${nombres.length - 2}`;
-        boton.innerHTML = `<span class="selcat-v${vacio ? ' vacio' : ''}">${esc(texto)}</span><span class="selcat-f" aria-hidden="true">›</span>`;
+        boton.innerHTML = `<span class="selcat-v${vacio ? ' sin-elegir' : ''}">${esc(texto)}</span><span class="selcat-f" aria-hidden="true">›</span>`;
         boton.setAttribute('aria-label', `${o.titulo || T.titulo}: ${texto}`);
         ocultos.innerHTML = o.nombre ? valor.map((v) => `<input type="hidden" name="${esc(o.nombre)}" value="${esc(v)}">`).join('') : '';
       }

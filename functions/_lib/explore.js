@@ -902,7 +902,7 @@ export async function explorePage(url, lang, modo = 'explorar') {
     ${ordenMenu}
   </div>
   <p id="cercaErr" class="aviso-error" role="alert" hidden></p>
-  <script src="/assets/categorias.js?v=1" defer></script>`;
+  <script src="/assets/categorias.js?v=2" defer></script>`;
 
   // En Explorar, sin ubicación ni ciudad: «Mira primero lo que tienes más cerca».
   const invitaCerca = !descubre && !negocios && !cerca && !city

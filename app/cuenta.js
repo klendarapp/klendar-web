@@ -469,7 +469,8 @@ function guardaTraduccionLocal(encendida) {
   try { localStorage.setItem('klendar.traducir', encendida ? '1' : '0'); } catch { /* sin permisos */ }
 }
 
-RUTAS.ajustes = async () => {
+RUTAS.ajustes = async ([sub]) => {
+  if (sub === 'notificaciones') return ajustesNotificaciones();
   if (!exigeSesion('ajustes')) return;
   // Traducción automática: la preferencia (en el perfil, como en la app) y si
   // hay proveedor (sin clave en el servidor, «Llega pronto»).
@@ -478,12 +479,9 @@ RUTAS.ajustes = async () => {
     sb.functions.invoke('translate', { body: { op: 'status' } })
       .then(({ data }) => data?.available === true).catch(() => false),
   ]);
-  const [perfil, prefs, cons, cats, negocios, cuenta, metodos] = await Promise.all([
+  const [perfil, cons, cuenta, metodos] = await Promise.all([
     tabla(sb.from('profiles').select('display_name, avatar_url, locale, birth_date').eq('id', YO.id).maybeSingle()),
-    llamar('my_notification_preferences', {}),
     llamar('my_consents', {}),
-    categorias(),
-    llamar('my_businesses', {}).catch(() => []),
     // Las formas de entrar, recién preguntadas (la sesión guardada puede ser
     // de antes de añadir una contraseña o de enlazar Google).
     sb.auth.getUser().then(({ data }) => data?.user || YO).catch(() => YO),
@@ -498,10 +496,7 @@ RUTAS.ajustes = async () => {
   const metodo = (icono, texto, activa) => `<div class="fila metodo${activa ? '' : ' off'}">
       ${icono}<span class="fila-t"><b>${esc(texto)}</b></span>
       <span class="estado">${esc(activa ? t('Activa') : t('Sin usar'))}</span></div>`;
-  // El resumen del negocio solo le llega a quien lo lleva (dueño o encargado).
-  const llevaNegocio = Array.isArray(negocios) && negocios.some((b) => ['owner', 'manager'].includes(b.role));
   const p = perfil || {};
-  const hora = (v) => (v ? String(v).slice(0, 5) : '');
   const dia = (iso) => fecha(iso, { day: 'numeric', month: 'long', year: 'numeric' });
   const inicial = (p.display_name || YO.email || '?').trim().charAt(0).toUpperCase();
   // La fecha de nacimiento, una vez puesta, no se cambia (como en la app):
@@ -515,6 +510,10 @@ RUTAS.ajustes = async () => {
   pinta(`
     <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(t('Ajustes'))}</h1>
+
+    <div class="lista">
+      ${fila({ href: '#/ajustes/notificaciones', icono: 'notifications', titulo: t('Notificaciones'), detalle: t('Qué te llega, cuándo y en el móvil') })}
+    </div>
 
     <section class="bloque">
       <h2>${esc(t('Tu perfil'))}</h2>
@@ -542,45 +541,6 @@ RUTAS.ajustes = async () => {
     : t('Llega pronto: lo que escriben los negocios, traducido automáticamente al idioma de la web.'))}</small></span></label>
         <p class="err" id="err-perfil" role="alert"></p>
         <button class="pill accent" id="g-perfil">${esc(t('Guardar'))}</button>
-      </form>
-    </section>
-
-    <section class="bloque">
-      <h2>${esc(t('Notificaciones'))}</h2>
-      <form class="formu" id="f-avisos" novalidate>
-        <label class="check"><input type="checkbox" name="fav"${prefs.notify_favorites ? ' checked' : ''}>
-          <span><b>${esc(t('Mis favoritos'))}</b><br><small>${esc(t('Cuando uno de tus favoritos publica una oferta o un evento'))}</small></span></label>
-        <label class="check"><input type="checkbox" name="mensajes"${prefs.notify_business_messages !== false ? ' checked' : ''}>
-          <span><b>${esc(t('Mensajes de mis negocios favoritos'))}</b><br><small>${esc(t('Lo que te cuentan tus favoritos: como mucho uno por semana de cada uno.'))}</small></span></label>
-        <label class="check"><input type="checkbox" name="cumple"${prefs.notify_birthday !== false ? ' checked' : ''}>
-          <span><b>${esc(t('Regalos de cumpleaños'))}</b><br><small>${esc(t('Si uno de tus favoritos hace un regalo por tu cumpleaños, te llega ese día con su código.'))}</small></span></label>
-        <label class="check"><input type="checkbox" name="sellos"${prefs.notify_stamps !== false ? ' checked' : ''}>
-          <span><b>${esc(t('Sellos y premios'))}</b><br><small>${esc(t('Cuando te llega un sello en una tarjeta y cuando ya tienes el premio.'))}</small></span></label>
-        <label class="check"><input type="checkbox" name="amigos"${prefs.notify_friend_invites !== false ? ' checked' : ''}>
-          <span><b>${esc(t('Invitaciones de amigos'))}</b><br><small>${esc(t('Cuando un amigo te invita a un plan o dice que va al tuyo. Apagado, no te pueden invitar.'))}</small></span></label>
-        <label class="check"><input type="checkbox" name="planesAmigos"${prefs.notify_friend_plans ? ' checked' : ''}>
-          <span><b>${esc(t('Planes de tus amigos'))}</b><br><small>${esc(t('Cuando un amigo se apunta a un evento. Como mucho un aviso al día.'))}</small></span></label>
-        <label class="check"><input type="checkbox" name="series"${prefs.notify_series !== false ? ' checked' : ''}>
-          <span><b>${esc(EN ? 'Series you follow' : 'Series que sigues')}</b><br><small>${esc(EN ? 'Each new date, and when a series ends' : 'Cada fecha nueva y si una serie termina')}</small></span></label>
-        <label class="check"><input type="checkbox" name="cerca"${prefs.notify_nearby ? ' checked' : ''}>
-          <span><b>${esc(t('Cerca de ti'))}</b><br><small>${esc(t('Ofertas flash a tu alrededor (como mucho 3 al día)'))}</small></span></label>
-        <div id="cerca-mas" ${prefs.notify_nearby ? '' : 'hidden'}>
-          <label>${esc(t('¿A cuánta distancia?'))}
-            <select name="radio">${[500, 1000, 2000, 5000].map((r) => `<option value="${r}"${prefs.nearby_radius_m === r ? ' selected' : ''}>${esc(distancia(r))}</option>`).join('')}</select></label>
-          <div class="campo-cat"><p class="etq" aria-hidden="true">${esc(t('¿De qué?'))} <small>${esc(t('Sin elegir ninguna, de todo.'))}</small></p>
-            <div id="cats-cerca"></div></div>
-        </div>
-        <fieldset class="horas"><legend>${esc(t('Horas de silencio'))} <small>${esc(t('Lo que llegue en ese tramo te lo mandamos al terminar. Déjalo vacío para no usarlas.'))}</small></legend>
-          <label>${esc(t('Desde'))} <input type="time" name="desde" value="${esc(hora(prefs.quiet_hours_start))}"></label>
-          <label>${esc(t('Hasta'))} <input type="time" name="hasta" value="${esc(hora(prefs.quiet_hours_end))}"></label>
-        </fieldset>
-        <label class="check"><input type="checkbox" name="semanal"${prefs.weekly_email ? ' checked' : ''}>
-          <span><b>${esc(t('Correo semanal'))}</b><br><small>${esc(t('Los jueves, lo que hay estos días en tu ciudad. Uno a la semana y se apaga cuando quieras.'))}</small></span></label>
-        ${llevaNegocio ? `<label class="check"><input type="checkbox" name="negocio"${prefs.business_email !== false ? ' checked' : ''}>
-          <span><b>${esc(t('Resumen semanal de tu negocio'))}</b><br><small>${esc(t('Los lunes, por correo: vistas, canjes, favoritos y reseñas de la semana pasada.'))}</small></span></label>` : ''}
-        <p class="muted">${esc(t('Las notificaciones te llegan al móvil si tienes la app, y siempre las tienes aquí, en «Notificaciones».'))}</p>
-        <p class="err" id="err-avisos" role="alert"></p>
-        <button class="pill accent" id="g-avisos">${esc(t('Guardar'))}</button>
       </form>
     </section>
 
@@ -627,9 +587,6 @@ RUTAS.ajustes = async () => {
         <dt>${esc(t('Ubicación'))}</dt>
         <dd id="dd-ubicacion">${cons?.location_consent_at ? `${esc(`${t('Compartida desde el')} ${dia(cons.location_consent_at)}`)}
           <button class="linkbtn" id="sin-ubicacion">${esc(t('Dejar de compartir'))}</button>` : esc(t('No guardamos tu posición'))}</dd>
-        <dt>${esc(t('Notificaciones en el móvil'))}</dt>
-        <dd id="dd-push">${cons?.push_devices ? `${esc(`${cons.push_devices} ${cons.push_devices === 1 ? t('dispositivo') : t('dispositivos')}`)}
-          <button class="linkbtn" id="sin-push">${esc(t('Desactivarlas'))}</button>` : esc(t('Sin dispositivos registrados'))}</dd>
         <dt>${esc(t('Personas bloqueadas'))}</dt>
         <dd id="dd-bloqueadas">${esc(t('Un momento…'))}</dd>
       </dl>
@@ -692,41 +649,6 @@ RUTAS.ajustes = async () => {
     });
   });
 
-  // Avisos
-  const fa = $('#f-avisos');
-  // «Cerca de ti»: el selector de categorías de toda la web.
-  KlendarCategorias.campo($('#cats-cerca'), {
-    cats, elegidas: prefs.nearby_categories || [], multiple: true, lang: EN ? 'en' : 'es', nombre: 'cat', titulo: t('¿De qué?'), vacio: t('Todo'),
-  });
-  fa.cerca.addEventListener('change', () => { $('#cerca-mas').hidden = !fa.cerca.checked; });
-  fa.addEventListener('submit', (ev) => {
-    ev.preventDefault();
-    const desde = fa.desde.value;
-    const hasta = fa.hasta.value;
-    if (!!desde !== !!hasta) { $('#err-avisos').textContent = t('Pon las dos horas de silencio, o ninguna.'); return; }
-    $('#err-avisos').textContent = '';
-    ocupado($('#g-avisos'), async () => {
-      const elegidas = $$('input[name=cat]', fa).map((x) => x.value);
-      await llamar('update_notification_preferences', { p: {
-        notify_favorites: fa.fav.checked,
-        notify_nearby: fa.cerca.checked,
-        notify_business_messages: fa.elements.mensajes.checked,
-        notify_birthday: fa.elements.cumple.checked,
-        notify_friend_invites: fa.elements.amigos.checked,
-        notify_friend_plans: fa.elements.planesAmigos.checked,
-        notify_series: fa.elements.series.checked,
-        notify_stamps: fa.elements.sellos.checked,
-        nearby_radius_m: Number(fa.radio.value),
-        nearby_categories: elegidas.length ? elegidas : null,
-        quiet_hours_start: desde || null,
-        quiet_hours_end: hasta || null,
-        weekly_email: fa.semanal.checked,
-        ...(fa.negocio ? { business_email: fa.negocio.checked } : {}),
-      } });
-      toast(t('Notificaciones guardadas'));
-    });
-  });
-
   // Privacidad
   pintaBloqueadas();
   $('#marketing').addEventListener('change', async (ev) => {
@@ -735,7 +657,7 @@ RUTAS.ajustes = async () => {
       await llamar('set_marketing_consent', { p_value: caja.checked });
       toast(caja.checked ? t('Te mandaremos novedades de vez en cuando') : t('No te mandaremos más novedades'));
       // Solo cambia su texto: repintar Ajustes entero borraba lo que se
-      // estuviera editando en el perfil o en las notificaciones.
+      // estuviera editando en el perfil.
       const texto = caja.closest('label')?.querySelector('span');
       if (texto) texto.textContent = caja.checked ? `${t('Sí, desde el')} ${dia(new Date().toISOString())}` : t('No recibes novedades ni promociones por correo');
     } catch (e) { caja.checked = !caja.checked; toast(e.message, true); }
@@ -797,31 +719,13 @@ RUTAS.ajustes = async () => {
       aceptar: t('Dejar de compartir'),
     }))) return;
     // Solo cambia lo suyo: repintar Ajustes entero borraba lo que se
-    // estuviera escribiendo en el perfil o en las notificaciones.
+    // estuviera escribiendo en el perfil.
     ocupado(boton, async () => {
       await llamar('revoke_location_consent', {});
       toast(t('Ya no guardamos tu posición'));
       const dd = $('#dd-ubicacion');
       if (dd) dd.textContent = t('No guardamos tu posición');
-      // La base apaga también «Cerca de ti»: el formulario lo refleja.
-      if (fa.elements.cerca.checked) {
-        fa.elements.cerca.checked = false;
-        $('#cerca-mas').hidden = true;
-      }
-    });
-  });
-  $('#sin-push')?.addEventListener('click', async (ev) => {
-    const boton = ev.currentTarget;
-    if (!(await confirma({
-      titulo: t('Desactivar push'),
-      texto: t('Dejarán de llegarte notificaciones a todos tus dispositivos. Podrás volver a activarlas desde la app.'),
-      aceptar: t('Desactivar push'),
-    }))) return;
-    ocupado(boton, async () => {
-      await llamar('revoke_push', {});
-      toast(t('Notificaciones del móvil desactivadas'));
-      const dd = $('#dd-push');
-      if (dd) dd.textContent = t('Sin dispositivos registrados');
+      // La base apaga también «Cerca de ti» (Ajustes → Notificaciones).
     });
   });
   $('#descargar').addEventListener('click', (ev) => ocupado(ev.currentTarget, async () => {
@@ -893,6 +797,151 @@ RUTAS.ajustes = async () => {
   });
 };
 RUTAS.perfil = RUTAS.ajustes;
+
+// ── Ajustes → Notificaciones ─────────────────────────────────────────────
+/** Lo mismo y en el mismo orden que la app (Ajustes → Notificaciones): en el
+ * móvil, de tus favoritos, de tus amigos, para ti, por correo y cuándo. Una
+ * línea por fila y cada cambio se guarda solo (como el resto de Ajustes). */
+async function ajustesNotificaciones() {
+  if (!exigeSesion('ajustes/notificaciones')) return;
+  const [prefs, cons, cats, negocios] = await Promise.all([
+    llamar('my_notification_preferences', {}),
+    llamar('my_consents', {}).catch(() => null),
+    categorias(),
+    llamar('my_businesses', {}).catch(() => []),
+  ]);
+  // El resumen del negocio solo le llega a quien lo lleva (dueño o encargado).
+  const llevaNegocio = Array.isArray(negocios) && negocios.some((b) => ['owner', 'manager'].includes(b.role));
+  const hora = (v) => (v ? String(v).slice(0, 5) : '');
+  const sw = (nombre, titulo, encendido, detalle = '') => `
+    <label class="fila fila-sw">
+      <span class="fila-t"><b>${esc(t(titulo))}</b><small id="det-${nombre}"${detalle ? '' : ' hidden'}>${esc(detalle ? t(detalle) : '')}</small></span>
+      <input type="checkbox" class="interruptor" role="switch" name="${nombre}"${encendido ? ' checked' : ''}>
+    </label>`;
+  const grupo = (titulo, filas) => `<h2 class="seccion-t">${esc(t(titulo))}</h2><div class="lista">${filas}</div>`;
+  const dispositivos = cons?.push_devices || 0;
+  const silencio = !!prefs.quiet_hours_start;
+  const estadoMovil = (n) => (n
+    ? `${t('Activadas')} · ${n} ${n === 1 ? t('dispositivo') : t('dispositivos')}`
+    : t('Desactivadas: se activan desde la app'));
+
+  pinta(`
+    <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a> › <a href="#/ajustes">${esc(t('Ajustes'))}</a></p>
+    <h1>${esc(t('Notificaciones'))}</h1>
+
+    <div class="lista">
+      <div class="fila fila-dato">
+        <span class="fila-t"><b>${esc(t('En el móvil'))}</b><small id="push-estado">${esc(estadoMovil(dispositivos))}</small></span>
+        ${dispositivos ? `<button type="button" class="pill" id="sin-push">${esc(t('Desactivar'))}</button>` : ''}
+      </div>
+    </div>
+
+    <form id="f-avisos" class="avisos" novalidate>
+      ${grupo('De tus favoritos', [
+    sw('fav', 'Publican algo nuevo', prefs.notify_favorites),
+    sw('mensajes', 'Mensajes de los negocios', prefs.notify_business_messages !== false),
+    sw('cumple', 'Regalo de cumpleaños', prefs.notify_birthday !== false),
+    sw('sellos', 'Sellos y premios', prefs.notify_stamps !== false),
+  ].join(''))}
+      ${grupo('De tus amigos', [
+    sw('amigos', 'Te invitan a un plan', prefs.notify_friend_invites !== false, prefs.notify_friend_invites === false ? 'Apagado, no te pueden invitar' : ''),
+    sw('planesAmigos', 'Se apuntan a un evento', prefs.notify_friend_plans, 'Como mucho uno al día'),
+  ].join(''))}
+      ${grupo('Para ti', `${[
+    sw('series', 'Series que sigues', prefs.notify_series !== false),
+    sw('cerca', 'Ofertas flash cerca de ti', prefs.notify_nearby, 'Como mucho 3 al día'),
+  ].join('')}
+        <div id="cerca-mas"${prefs.notify_nearby ? '' : ' hidden'}>
+          <fieldset class="fila radios-distancia"><legend class="sr">${esc(t('Distancia'))}</legend>
+            ${[500, 1000, 2000, 5000].map((r) => `<label class="chip-radio"><input type="radio" name="radio" value="${r}"${(prefs.nearby_radius_m || 1000) === r ? ' checked' : ''}><span>${esc(distancia(r))}</span></label>`).join('')}
+          </fieldset>
+          <div class="fila fila-cats"><span class="fila-t"><b>${esc(t('Categorías'))}</b></span><span id="cats-cerca"></span></div>
+        </div>`)}
+      ${grupo('Por correo', [
+    sw('semanal', 'Correo semanal (jueves)', prefs.weekly_email),
+    llevaNegocio ? sw('negocio', 'Resumen de tu negocio (lunes)', prefs.business_email !== false) : '',
+  ].join(''))}
+      ${grupo('Cuándo', `${sw('silencio', 'Horas de silencio', silencio)}
+        <div id="silencio-mas"${silencio ? '' : ' hidden'}>
+          <label class="fila fila-hora"><span class="fila-t"><b>${esc(t('Desde'))}</b></span><input type="time" name="desde" value="${esc(hora(prefs.quiet_hours_start) || '23:00')}"></label>
+          <label class="fila fila-hora"><span class="fila-t"><b>${esc(t('Hasta'))}</b></span><input type="time" name="hasta" value="${esc(hora(prefs.quiet_hours_end) || '08:00')}"></label>
+        </div>`)}
+      <p class="muted nota">${esc(t('Lo que llegue en ese tramo te lo mandamos al terminar.'))}</p>
+      <p class="muted nota">${esc(t('Las notificaciones te llegan al móvil si tienes la app, y siempre las tienes aquí, en «Notificaciones».'))}</p>
+    </form>`);
+
+  const fa = $('#f-avisos');
+  let elegidas = prefs.nearby_categories || [];
+
+  // Se guarda solo, medio segundo después del último cambio (como la app).
+  let espera = null;
+  let pendiente = false;
+  const enviar = async () => {
+    pendiente = false;
+    const el = fa.elements;
+    const conSilencio = el.silencio.checked && el.desde.value && el.hasta.value;
+    try {
+      await llamar('update_notification_preferences', { p: {
+        notify_favorites: el.fav.checked,
+        notify_business_messages: el.mensajes.checked,
+        notify_birthday: el.cumple.checked,
+        notify_stamps: el.sellos.checked,
+        notify_friend_invites: el.amigos.checked,
+        notify_friend_plans: el.planesAmigos.checked,
+        notify_series: el.series.checked,
+        notify_nearby: el.cerca.checked,
+        nearby_radius_m: Number(fa.querySelector('input[name=radio]:checked')?.value || 1000),
+        nearby_categories: elegidas.length ? elegidas : null,
+        weekly_email: el.semanal.checked,
+        ...(el.negocio ? { business_email: el.negocio.checked } : {}),
+        quiet_hours_start: conSilencio ? el.desde.value : null,
+        quiet_hours_end: conSilencio ? el.hasta.value : null,
+      } });
+      toast(t('Guardado'));
+    } catch (e) { toast(e.message, true); }
+  };
+  const guarda = () => {
+    clearTimeout(espera);
+    pendiente = true;
+    espera = setTimeout(enviar, 500);
+  };
+  // Irse justo después de tocar algo no lo pierde.
+  alSalir(() => { clearTimeout(espera); if (pendiente) enviar(); });
+
+  // «Cerca de ti»: el selector de categorías de toda la web.
+  KlendarCategorias.campo($('#cats-cerca'), {
+    cats, elegidas, multiple: true, lang: EN ? 'en' : 'es', titulo: t('Categorías'), vacio: t('Todas'),
+    alCambiar: (v) => { elegidas = v; guarda(); },
+  });
+
+  fa.addEventListener('change', (ev) => {
+    const el = fa.elements;
+    if (ev.target === el.cerca) $('#cerca-mas').hidden = !el.cerca.checked;
+    if (ev.target === el.silencio) $('#silencio-mas').hidden = !el.silencio.checked;
+    if (ev.target === el.amigos) {
+      const det = $('#det-amigos');
+      det.textContent = el.amigos.checked ? '' : t('Apagado, no te pueden invitar');
+      det.hidden = el.amigos.checked;
+    }
+    guarda();
+  });
+  fa.addEventListener('submit', (ev) => ev.preventDefault());
+
+  $('#sin-push')?.addEventListener('click', async (ev) => {
+    const boton = ev.currentTarget;
+    if (!(await confirma({
+      titulo: t('¿Desactivar las notificaciones?'),
+      texto: t('Dejarán de llegarte a todos tus dispositivos. Las seguirás teniendo en «Notificaciones», y puedes volver a activarlas desde la app.'),
+      aceptar: t('Desactivar'),
+    }))) return;
+    ocupado(boton, async () => {
+      await llamar('revoke_push', {});
+      toast(t('Notificaciones del móvil desactivadas'));
+      $('#push-estado').textContent = estadoMovil(0);
+      boton.remove();
+    });
+  });
+}
 
 // ── Sugerencias y mejoras ─────────────────────────────────────────────────
 const TIPOS_SUGERENCIA = [

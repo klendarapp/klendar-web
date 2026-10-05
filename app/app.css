@@ -402,3 +402,35 @@ button.codigo.copiar .ms { font-size: 18px; color: var(--ink-2); letter-spacing:
 
 /* «Tus códigos» abierto desde una notificación: ese código, con borde de tinta. */
 .ocard.resaltado { box-shadow: 0 0 0 2px var(--ink); }
+
+/* ═══ Ajustes → Notificaciones (como la app: una línea por fila) ════════════ */
+/* Interruptor: la casilla de siempre con aspecto de interruptor (tinta
+   encendido, como en la app). */
+.interruptor { -webkit-appearance: none; appearance: none; position: relative; flex: none; margin: 0;
+  width: 46px; height: 28px; border-radius: 14px; background: var(--soft); border: 1px solid var(--glass-border);
+  cursor: pointer; transition: background .15s; }
+.interruptor::before { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px;
+  border-radius: 50%; background: var(--ink-2); transition: transform .15s, background .15s; }
+.interruptor:checked { background: var(--ink); border-color: var(--ink); }
+.interruptor:checked::before { transform: translateX(18px); background: var(--surface); }
+.interruptor:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.interruptor:disabled { opacity: .5; cursor: default; }
+@media (prefers-reduced-motion: reduce) { .interruptor, .interruptor::before { transition: none; } }
+.fila-sw, .fila-hora { cursor: pointer; }
+.fila-dato:hover, .fila-sw:hover, .fila-hora:hover, .fila-cats:hover, .radios-distancia:hover { background: none; }
+.fila-dato .pill { flex: none; }
+.fila-hora input[type=time] { border: 0; background: none; color: var(--ink-2); font: inherit; font-size: 16px; padding: 4px 0; }
+.radios-distancia { border: 0; margin: 0; flex-wrap: wrap; gap: 8px; padding-top: 4px; min-height: 0; }
+.radios-distancia + .fila, #cerca-mas .fila + .fila, #silencio-mas .fila + .fila { border-top: 1px solid var(--glass-border); }
+#cerca-mas, #silencio-mas { border-top: 1px solid var(--glass-border); }
+.chip-radio { position: relative; }
+.chip-radio input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.chip-radio span { display: inline-block; padding: 7px 14px; border-radius: 999px; border: 1px solid var(--glass-border);
+  background: var(--glass); font-size: 14px; font-weight: 600; }
+.chip-radio input:checked + span { background: var(--ink); color: var(--surface); border-color: var(--ink); font-weight: 700; }
+.chip-radio input:focus-visible + span { outline: 2px solid var(--ink); outline-offset: 2px; }
+.fila-cats #cats-cerca { flex: 0 1 auto; min-width: 0; max-width: 60%; }
+.fila-cats .selcat-campo { width: auto; max-width: 100%; gap: 6px; min-height: 0; padding: 4px 0; border: 0; background: none; color: var(--ink-2); font: inherit; font-size: 15px; justify-content: flex-end; }
+.fila-cats .selcat-campo .selcat-v, .fila-cats .selcat-campo .selcat-v.sin-elegir { font-weight: 400; color: var(--ink-2); text-align: right;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.avisos .nota { margin: 10px 4px 0; font-size: 13px; }
