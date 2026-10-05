@@ -143,9 +143,10 @@ PAGES.rrpp = async (v, param) => {
   if (param) { await rrppFicha(v, param); return; }
   const hoy = rrppNocheHoy();
   const desde = rrppMenos(hoy, RRPP_DIAS);
-  const [lista, informe] = await Promise.all([
+  const [lista, informe, ofertas] = await Promise.all([
     rpc('business_promoters_list', { p_business: BIZ.id }),
     rpc('promoter_report', { p_business: BIZ.id, p_from: desde, p_to: hoy }).then(rrppOk),
+    rpc('business_promoter_offers', { p_business: BIZ.id }).then(rrppOk).catch(() => ({ offers: [] })),
   ]);
   const filas = lista || [];
   const cifras = informe?.promoters || [];
@@ -176,6 +177,15 @@ PAGES.rrpp = async (v, param) => {
     ${filas.some((p) => p.status !== 'invited') ? `<p class="muted small" style="margin:10px 0 0">${esc(bi('Apuntados y han entrado: últimos 30 días.', 'Signed up and got in: last 30 days.'))}</p>` : ''}</div>
 
     <div class="card">
+      <div class="rrpp-cab-card"><h2>${esc(bi('Ofertas para tus RRPP', 'Offers for your promoters'))}</h2><span class="spacer"></span>
+        <a class="btn sm primary" href="#/publicaciones/nueva-flash?rrpp=1">${esc(bi('Nueva oferta para RRPP', 'New offer for promoters'))}</a></div>
+      ${rrppOfertasHtml(ofertas?.offers || [], bi('Aún no tienes ofertas para tus RRPP. Solo se ven con el enlace de uno de tus RRPP.',
+        "You don't have any offers for your promoters yet. They can only be seen through one of your promoters' links."))}
+    </div>
+
+    <div id="rrppListas">${RRPP_LISTAS_VACIA()}</div>
+
+    <div class="card">
       <div class="rrpp-cab-card"><h2>${esc(bi('Cifras', 'Stats'))}</h2><span class="spacer"></span>
         ${[7, 30, 90].map((d) => `<button class="btn sm ${d === RRPP_DIAS ? '' : 'ghost'}" type="button" data-rrpp-dias="${d}" aria-pressed="${d === RRPP_DIAS}">${esc(bi(`${d} días`, `${d} days`))}</button>`).join(' ')}
         <button class="btn sm ghost" type="button" id="rrppCsv">${esc(bi('Exportar CSV', 'Export CSV'))}</button></div>
@@ -197,6 +207,12 @@ PAGES.rrpp = async (v, param) => {
       })}</div>` : ''}
       <p class="muted small" style="margin:12px 0 0">${esc(RRPP_NOTA())}</p>
     </div>`;
+
+  // Las listas de esta noche: buscar y validar (como en «Validar códigos»).
+  const cajaListas = $('#rrppListas', v);
+  rrppPuerta(cajaListas, (res) => {
+    toast(res.ok ? bi('Validado', 'Validated') : rrppError({ clave: res.error }), !res.ok);
+  }).then(() => { if (!cajaListas.innerHTML.trim()) cajaListas.innerHTML = RRPP_LISTAS_VACIA(); });
 
   $('#rrppInvitar', v).onclick = async () => {
     const r = await modal({
@@ -321,6 +337,49 @@ async function rrppHorarioModal(actual, deSerie) {
   return { schedule: Object.fromEntries(dias.map((d) => [String(d), [[f.desde, f.hasta]]])) };
 }
 
+/** «Listas de esta noche» sin nadie apuntado todavía. */
+const RRPP_LISTAS_VACIA = () => `<div class="card"><h2>${esc(bi('Listas de esta noche', "Tonight's lists"))}</h2>
+  <p class="muted" style="margin:0">${esc(bi('Nadie se ha apuntado aún esta noche. Cuando haya alguien, aquí lo buscas y le validas en la puerta.',
+    "Nobody has signed up tonight yet. When someone does, you can find them here and validate them at the door."))}</p></div>`;
+
+// ── Las ofertas de RRPP ─────────────────────────────────────────────────────
+/** «Sábado 12, de 23:00 a 6:00». */
+function rrppCuando(ini, fin) {
+  if (!ini) return '';
+  const dia = KZ.fmt(ini, TZ, LOC(), { weekday: 'long', day: 'numeric' });
+  const d = dia.charAt(0).toUpperCase() + dia.slice(1);
+  const a = rrppHoraCorta(fmtHora(ini));
+  if (!fin) return bi(`${d}, a partir de las ${a}`, `${d}, from ${a}`);
+  const b = rrppHoraCorta(fmtHora(fin));
+  return bi(`${d}, de ${a} a ${b}`, `${d}, ${a} to ${b}`);
+}
+/** Hasta cuándo vale el código, en una frase. */
+function rrppValidezTxt(until, hours) {
+  if (until) {
+    const h = rrppHoraCorta(until);
+    return bi(`El código vale ${h.startsWith('1:') ? 'hasta la' : 'hasta las'} ${h}`, `The code is valid until ${until}`);
+  }
+  if (hours) return bi(`El código vale ${hours === 1 ? '1 hora' : `${hours} horas`} desde que lo consigues`, `The code is valid for ${hours === 1 ? '1 hour' : `${hours} hours`} after you get it`);
+  return bi('El código vale hasta que termine el evento o la oferta.', 'The code is valid until the event or the offer ends.');
+}
+/** Las ofertas de RRPP: cuándo, hasta cuándo vale el código y el cupo que
+ * le queda a cada RRPP. Abrir una la edita. */
+function rrppOfertasHtml(lista, vacio) {
+  if (!lista.length) return `<p class="muted" style="margin:0">${esc(vacio)}</p>`;
+  return table({
+    cols: [
+      { h: bi('Oferta', 'Offer'), r: (o) => `<b class="title">${esc(o.title || '')}</b><span class="sub">${esc([rrppCuando(o.starts_at, o.ends_at), o.live ? '' : bi('Terminada', 'Ended')].filter(Boolean).join(' · '))}</span>` },
+      { h: bi('Validez', 'Valid'), r: (o) => esc(rrppValidezTxt(o.code_until, o.code_hours)) },
+      { h: bi('Cupo', 'Places'), r: (o) => ((o.promoters || []).length ? (o.promoters || []).map((p) => esc(o.quota != null && p.left != null
+        ? bi(`${rrppNombre(p)}: quedan ${p.left} de ${o.quota}`, `${rrppNombre(p)}: ${p.left} of ${o.quota} left`)
+        : bi(`${rrppNombre(p)}: ${p.used} ${p.used === 1 ? 'apuntado' : 'apuntados'} · sin límite`, `${rrppNombre(p)}: ${p.used} signed up · no limit`))).join('<br>')
+        : esc(bi('Ningún RRPP la tiene todavía', 'No promoter has it yet'))) },
+      { h: '', r: (o) => `<div class="actions"><a class="btn sm" href="#/publicaciones/${esc(o.id)}">${esc(bi('Abrir', 'Open'))}</a></div>` },
+    ],
+    rows: lista,
+  });
+}
+
 // ── La ficha de un RRPP ─────────────────────────────────────────────────────
 async function rrppFicha(v, id, noche = null) {
   if (!/^[0-9a-f-]{36}$/i.test(id || '')) { location.hash = '#/rrpp'; return; }
@@ -366,6 +425,11 @@ async function rrppFicha(v, id, noche = null) {
       <p class="muted small" style="margin:6px 0 0">${esc(bi('Fuera de este horario, el enlace dice cuándo abre la lista, no cuenta para el RRPP y su oferta no se puede conseguir. Cada enlace puede tener el suyo.',
         "Outside these hours the link says when the list opens, it doesn't count for the promoter and the offers on the list aren't available. Each link can have its own."))}</p>
     </div>` : ''}
+
+    <div class="card"><h2>${esc(bi('Sus ofertas', 'Their offers'))}</h2>
+      ${rrppOfertasHtml(r.offers || [], bi('No tiene ofertas de RRPP. En «Nueva oferta para RRPP», elige «Todos» o márcalo en «Solo algunos».',
+        'They have no promoter offers. In “New offer for promoters”, choose “All” or tick them under “Only some”.'))}
+    </div>
 
     ${vigente ? `<div class="card">
       <div class="rrpp-cab-card"><h2>${esc(bi('Enlaces y QR', 'Links and QR codes'))}</h2><span class="spacer"></span>
@@ -660,6 +724,9 @@ function rrppFormularioHtml(o, datos) {
       <span>${esc(bi('horas desde que se apunta', 'hours after signing up'))}</span>
     </div>
     <p class="hint" style="margin:6px 0 0">${esc(bi('Nunca pasa del final de la publicación.', 'It never goes past the end of the publication.'))}</p>
+    <div class="card rrpp-resumen" style="margin:12px 0 0;padding:12px 14px" aria-live="polite">
+      <p class="rrpp-preg" style="margin:0 0 4px">${esc(bi('Cómo funcionará', 'How it will work'))}</p>
+      <p id="rrppResumen" style="margin:0"></p></div>
   </div>`;
 }
 
@@ -677,6 +744,33 @@ function rrppFormularioEngancha(v) {
     $('[name=promoter_quota]', v).disabled = sin;
   };
   $$('[name=audience], [name=promoter_scope], [name=rrpp_sin_limite]', v).forEach((el) => el.addEventListener('change', sync));
+  // «Cómo funcionará», en lenguaje normal: cuándo, hasta cuándo vale y a
+  // cuántas personas puede apuntar cada RRPP.
+  const resumen = () => {
+    const el = $('#rrppResumen', v);
+    if (!el) return;
+    const ini = $('[name=start]', v)?.value ? fromLocalInput($('[name=start]', v).value) : null;
+    const fin = $('[name=end]', v)?.value ? fromLocalInput($('[name=end]', v).value) : null;
+    const validez = $('[name=rrpp_validez]:checked', v)?.value || 'siempre';
+    const h = $('[name=promoter_code_until]', v)?.value || '';
+    const n = Number($('[name=promoter_code_hours]', v)?.value) || 0;
+    const sin = $('[name=rrpp_sin_limite]', v)?.checked;
+    const cupo = Number($('[name=promoter_quota]', v)?.value) || 0;
+    const algunos = ($('[name=promoter_scope]:checked', v)?.value || 'all') === 'some';
+    const elegidos = $$('[name=rrpp_elegido]:checked', v).map((x) => x.closest('label')?.querySelector('span')?.firstChild?.textContent?.trim()).filter(Boolean);
+    const partes = [
+      rrppCuando(ini, fin),
+      rrppValidezTxt(validez === 'hasta' ? h : null, validez === 'horas' ? n : null),
+      sin || !cupo ? bi('Sin límite de personas por RRPP', 'No limit on people per promoter')
+        : algunos && elegidos.length === 1 ? bi(`${elegidos[0]} puede apuntar a ${cupo === 1 ? '1 persona' : `${cupo} personas`}`, `${elegidos[0]} can sign up ${cupo === 1 ? '1 person' : `${cupo} people`}`)
+          : bi(`Cada RRPP puede apuntar a ${cupo === 1 ? '1 persona' : `${cupo} personas`}`, `Each promoter can sign up ${cupo === 1 ? '1 person' : `${cupo} people`}`),
+      bi('Las listas funcionan cuando el local está abierto (o en el horario de cada RRPP)', "The lists work while the venue is open (or during each promoter's hours)"),
+    ].filter(Boolean);
+    el.textContent = partes.map((x) => (x.endsWith('.') ? x : `${x}.`)).join(' ');
+  };
+  v.addEventListener('input', resumen);
+  v.addEventListener('change', resumen);
+  resumen();
   // Escribir una hora o unas horas ya elige esa opción.
   $('[name=promoter_code_until]', v).addEventListener('input', () => { $('[name=rrpp_validez][value=hasta]', v).checked = true; });
   $('[name=promoter_code_hours]', v).addEventListener('input', () => { $('[name=rrpp_validez][value=horas]', v).checked = true; });

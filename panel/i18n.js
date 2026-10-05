@@ -32,6 +32,8 @@ const I18N = makeI18N({
     'Validar códigos': 'Validate codes',
     'Informe': 'Report',
     'Series': 'Series',
+    'Series y repeticiones': 'Series and repeats',
+    'Tu local': 'Your venue',
     'Equipo': 'Team',
     'Ayuda': 'Help',
     'Cargando…': 'Loading…',

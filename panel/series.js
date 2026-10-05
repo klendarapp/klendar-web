@@ -43,13 +43,38 @@ async function rpcSerie(fn, args) {
 }
 
 PAGES.series = async (v) => {
-  const lista = await seriesDeNegocio();
   const puede = gestiona();
+  const [lista, reglas] = await Promise.all([
+    seriesDeNegocio(),
+    puede ? rpc('my_offer_rules', { p_business: BIZ.id }).catch(() => []) : Promise.resolve([]),
+  ]);
+  const DIAS = I18N.lang === 'en'
+    ? ['Sundays', 'Mondays', 'Tuesdays', 'Wednesdays', 'Thursdays', 'Fridays', 'Saturdays']
+    : ['domingos', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábados'];
+  // Lo que se publica solo cada semana (antes en Publicaciones): ya es una
+  // serie, así que va aquí, como en la app.
+  const repiten = puede ? `<div class="card"><h2>${esc(bi('Se repiten solas', 'Repeating offers'))}</h2>
+      <p class="muted" style="margin:0 0 10px">${esc((reglas || []).length
+        ? bi('Cada una se publica sola a su hora. Si la de la semana pasada sigue activa, esa semana se salta: no se apilan.', "Each one goes live on its own at its time. If last week's is still active, that week is skipped: they don't pile up.")
+        : bi('En «Más» de una publicación, «Repetir cada semana»: elige días y hora y se publicará sola.', 'In a publication\'s “More”, “Repeat every week”: choose days and time and it will go live on its own.'))}</p>
+      ${(reglas || []).length ? table({
+        cols: [
+          { h: bi('Publicación', 'Publication'), r: (x) => `<b class="title">${esc(x.title || '—')}</b><span class="sub">${esc(bi(`${fmtNum(x.published)} ${x.published === 1 ? 'publicada' : 'publicadas'}`, `${fmtNum(x.published)} published`))}${x.series_id ? ` · ${esc(seguidoresTxt(x.followers || 0))}` : ''}</span>` },
+          { h: bi('Cuándo', 'When'), r: (x) => `${x.weekdays.map((d) => DIAS[d]).join(', ')} ${I18N.lang === 'en' ? 'at' : 'a las'} ${esc(x.start_time)}` },
+          { h: bi('Dura', 'Lasts'), r: (x) => `${Math.round(x.duration_min / 60 * 10) / 10} h` },
+          { h: bi('Estado', 'Status'), r: (x) => tag(x.is_active ? 'active' : 'draft') },
+          { h: '', r: (x) => `<div class="actions">
+              <button class="btn sm ghost" data-rule="${x.is_active ? 'pause' : 'resume'}" data-id="${esc(x.id)}">${esc(x.is_active ? bi('Pausar', 'Pause') : bi('Reanudar', 'Resume'))}</button>
+              <button class="btn sm ghost" data-rule="delete" data-id="${esc(x.id)}">${esc(bi('Quitar', 'Remove'))}</button></div>` },
+        ],
+        rows: reglas,
+      }) : ''}</div>` : '';
   v.innerHTML = `
-    <div class="page-head"><h1>Series</h1></div>
+    <div class="page-head"><h1>${esc(bi('Series y repeticiones', 'Series and repeats'))}</h1></div>
     <p class="muted">${esc(bi('Una serie agrupa las fechas de lo mismo («Micro abierto de los jueves»). Quien la sigue recibe un aviso con cada fecha nueva. Lo que se repite solo ya es una serie.',
       'A series groups the dates of the same thing (“Thursday open mic”). Its followers get a notification with each new date. Anything that repeats automatically is already a series.'))}</p>
-    <div class="card">${table({
+    ${repiten}
+    <div class="card"><h2>${esc(bi('Series', 'Series'))}</h2>${table({
       cols: [
         { h: bi('Serie', 'Series'), r: (s) => `<b class="title">${esc(s.name)}</b><span class="sub">${esc(fechasTxt(s))}</span>` },
         { h: bi('Personas', 'People'), r: (s) => `<b>${esc(seguidoresTxt(s.followers || 0))}</b>` },
@@ -63,6 +88,25 @@ PAGES.series = async (v) => {
       empty: bi('Aún no tienes series. En «Más» de una publicación, «Serie…» la mete en una serie nueva o en una que ya tengas. Lo que se repite solo tiene la suya.',
         "You don't have any series yet. In a publication's “More”, “Series…” adds it to a new series or one you already have. Anything that repeats automatically has its own."),
     })}</div>`;
+  $$('[data-rule]', v).forEach((b) => {
+    b.onclick = async () => {
+      try {
+        if (b.dataset.rule === 'delete') {
+          const regla = (reglas || []).find((x) => x.id === b.dataset.id) || {};
+          const n = regla.followers || 0;
+          if (!await confirmDlg(bi('Quitar la repetición', 'Remove the repeat'), `${esc(I18N.t('Dejará de publicarse sola. Lo que ya se publicó se queda como está.'))}${n ? ` ${esc(bi(
+            n === 1 ? 'La persona que sigue la serie recibirá un aviso de que ha terminado.' : `Las ${n} personas que siguen la serie recibirán un aviso de que ha terminado.`,
+            n === 1 ? 'The person following the series will be notified that it has ended.' : `The ${n} people following the series will be notified that it has ended.`))}` : ''}`, { danger: true, submit: bi('Quitar', 'Remove') })) return;
+          await rpc('delete_offer_rule', { p_id: b.dataset.id });
+          toast(bi('Quitada', 'Removed'));
+        } else {
+          await rpc('set_offer_rule_active', { p_id: b.dataset.id, p_active: b.dataset.rule === 'resume' });
+          toast(bi('Guardado', 'Saved'));
+        }
+        PAGES.series(v);
+      } catch (e) { toast(friendly(e.message), true); }
+    };
+  });
   $$('[data-serie]', v).forEach((b) => {
     b.onclick = async () => {
       const s = lista.find((x) => x.id === b.dataset.id);

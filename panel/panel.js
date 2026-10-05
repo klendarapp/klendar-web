@@ -728,38 +728,49 @@ const SVG = {
   vista: 'M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z',
   rejilla: 'M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm8-2h8v8h-8v-8zm2 2v4h4v-4h-4z',
   lista: 'M3 5h2v2H3V5zm4 0h14v2H7V5zM3 11h2v2H3v-2zm4 0h14v2H7v-2zm-4 6h2v2H3v-2zm4 0h14v2H7v-2z',
+  // Series y repeticiones (event_repeat; no está en la fuente recortada).
+  repite: 'M21 12V6c0-1.1-.9-2-2-2h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h7v-2H5V10h14v2h2zm-5.36 8c.43 1.45 1.77 2.5 3.36 2.5 1.93 0 3.5-1.57 3.5-3.5s-1.57-3.5-3.5-3.5c-.95 0-1.82.38-2.45 1H18v2h-4v-4h2v1.4c.9-.87 2.13-1.4 3.5-1.4 2.76 0 5 2.24 5 5s-2.24 5-5 5c-2.42 0-4.44-1.72-4.9-4h1.54z',
   // RRPP (record_voice_over).
   rrpp: 'M9 13c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0-6c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm0 8c-2.67 0-8 1.34-8 4v3h16v-3c0-2.66-5.33-4-8-4zm6 5H3v-.99C3.2 18.29 6.3 17 9 17s5.8 1.29 6 2v1zM15.08 7.05c.84 1.18.84 2.71 0 3.89l1.68 1.69c2.02-2.02 2.02-5.07 0-7.27l-1.68 1.69zM20.07 2l-1.63 1.63c2.77 3.02 2.77 7.56 0 10.74L20.07 16c3.9-3.89 3.91-9.95 0-14z',
 };
 const svg = (n, s = 20) => `<svg class="ms svg" viewBox="0 0 24 24" width="${s}" height="${s}" aria-hidden="true"><path fill="currentColor" d="${SVG[n]}"/></svg>`;
 const icono = (n) => (SVG[n] ? svg(n) : ms(n));
 
-// El menú, con las secciones y el orden de «Mi negocio» en la app: lo de
-// todos los días arriba; las herramientas en el orden de la app (Informe,
-// Reseñas, Regalo de cumpleaños, Avisar a mis clientes, Tarjetas de sellos,
-// Cartel del local, Carta, Días cerrados, Equipo) con Novedades junto a la
-// Carta; y abajo la ficha, darse de baja (solo el propietario) y la ayuda.
+// El menú, con los grupos de «Mi negocio» en la app: lo de todos los días
+// arriba; Publicar (Publicaciones, Series y repeticiones, Novedades),
+// Clientes (Tarjetas de sellos, Regalo de cumpleaños, Avisar a mis
+// clientes, Reseñas), RRPP, Tu local (Carta, Cartel del local, Días
+// cerrados, Equipo) y Cifras (Informe); y abajo la ficha, darse de baja
+// (solo el propietario) y la ayuda.
 // `en` dice qué pantallas cuentan como esa entrada (para marcarla).
 const NAV = [
   [null, [
     ['resumen', 'dashboard', 'Resumen'],
-    ['publicaciones', 'bolt', 'Publicaciones', ['asistentes', 'cartel']],
     ['calendario', 'calendario', 'Calendario'],
     ['validar', 'qr_code_scanner', 'Validar códigos'],
   ]],
-  ['Herramientas', [
-    ['informe', 'bar_chart', 'Informe'],
-    ['resenas', 'reviews', 'Reseñas'],
-    ['cumpleanos', 'cake', 'Regalo de cumpleaños'],
-    ['series', 'notifications_active', 'Series'],
-    ['mensajes', 'notifications_active', 'Avisar a mis clientes'],
-    ['sellos', 'loyalty', 'Tarjetas de sellos'],
-    ['cartel-local', 'qr_code_2', 'Cartel del local'],
-    ['carta', 'restaurant_menu', 'Carta'],
+  ['Publicar', [
+    ['publicaciones', 'bolt', 'Publicaciones', ['asistentes', 'cartel']],
+    ['series', 'repite', 'Series y repeticiones'],
     ['novedades', 'campaign', 'Novedades'],
+  ]],
+  ['Clientes', [
+    ['sellos', 'loyalty', 'Tarjetas de sellos'],
+    ['cumpleanos', 'cake', 'Regalo de cumpleaños'],
+    ['mensajes', 'notifications_active', 'Avisar a mis clientes'],
+    ['resenas', 'reviews', 'Reseñas'],
+  ]],
+  ['RRPP', [
+    ['rrpp', 'rrpp', 'RRPP'],
+  ]],
+  ['Tu local', [
+    ['carta', 'restaurant_menu', 'Carta'],
+    ['cartel-local', 'qr_code_2', 'Cartel del local'],
     ['cerrados', 'event_busy', 'Días cerrados'],
     ['equipo', 'group', 'Equipo'],
-    ['rrpp', 'rrpp', 'RRPP'],
+  ]],
+  ['Cifras', [
+    ['informe', 'bar_chart', 'Informe'],
   ]],
   ['Tu negocio', [
     ['ficha', 'storefront', 'Tu ficha'],
@@ -1232,6 +1243,7 @@ PAGES.publicaciones = async (v, param) => {
   // como en la app.
   const q = new URLSearchParams(location.hash.split('?')[1] || '');
   const desde = q.get('from') ? { from: q.get('from'), repeat: q.get('repeat') === '1' } : null;
+  if (q.get('rrpp') === '1') { const d = desde || {}; d.rrpp = true; return offerForm(v, null, param === 'nuevo-evento' ? 'future_event' : 'flash_offer', d.from ? d : { rrpp: true }); }
   if (param === 'nueva-flash') return offerForm(v, null, 'flash_offer', desde);
   if (param === 'nuevo-evento') return offerForm(v, null, 'future_event', desde);
   if (param) return offerForm(v, param);
@@ -1264,51 +1276,14 @@ PAGES.publicaciones = async (v, param) => {
   let filtro = FILTROS_PUB.some(([k]) => k === qf) ? qf : 'todas';
   let vista = 'tarjetas';
   try { vista = localStorage.getItem('klendar.panel.vista') === 'lista' ? 'lista' : 'tarjetas'; } catch { /* sin permisos */ }
-  const DIAS = I18N.lang === 'en'
-    ? ['Sundays', 'Mondays', 'Tuesdays', 'Wednesdays', 'Thursdays', 'Fridays', 'Saturdays']
-    : ['domingos', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábados'];
 
-  // Las reglas que publican solas. Se crean desde una publicación que ya
-  // existe («repetir esta cada martes»), no desde un formulario en blanco:
-  // nadie quiere escribirlo todo dos veces.
+  // Lo que se repite solo vive en «Series y repeticiones» (panel/series.js):
+  // aquí, solo cuántas hay y el enlace.
   const renderRules = async () => {
     const reglas = (await rpc('my_offer_rules', { p_business: BIZ.id })) || [];
-    if (!reglas.length) { $('#rules').innerHTML = ''; return; }
-    $('#rules').innerHTML = `<div class="card"><h2>Se repiten solas</h2>
-      <p class="muted" style="margin:0 0 10px">Cada una se publica sola a su hora. Si la de la semana pasada sigue activa, esa semana se salta: no se apilan.</p>
-      ${table({
-        cols: [
-          { h: 'Publicación', r: (x) => `<b class="title">${esc(x.title || '—')}</b><span class="sub">${esc(bi(`${fmtNum(x.published)} ${x.published === 1 ? 'publicada' : 'publicadas'}`, `${fmtNum(x.published)} published`))}${x.series_id ? ` · ${esc(seguidoresTxt(x.followers || 0))}` : ''}</span>` },
-          { h: 'Cuándo', r: (x) => `${x.weekdays.map((d) => DIAS[d]).join(', ')} ${I18N.lang === 'en' ? 'at' : 'a las'} ${esc(x.start_time)}` },
-          { h: 'Dura', r: (x) => `${Math.round(x.duration_min / 60 * 10) / 10} h` },
-          { h: 'Estado', r: (x) => tag(x.is_active ? 'active' : 'draft') },
-          { h: '', r: (x) => `<div class="actions">
-              <button class="btn sm ghost" data-rule="${x.is_active ? 'pause' : 'resume'}" data-id="${esc(x.id)}">${x.is_active ? 'Pausar' : 'Reanudar'}</button>
-              <button class="btn sm ghost" data-rule="delete" data-id="${esc(x.id)}">Quitar</button>
-            </div>` },
-        ],
-        rows: reglas,
-        empty: 'Ninguna.',
-      })}</div>`;
-    $$('[data-rule]', $('#rules')).forEach((b) => {
-      b.onclick = async () => {
-        try {
-          if (b.dataset.rule === 'delete') {
-            const regla = reglas.find((x) => x.id === b.dataset.id) || {};
-            const n = regla.followers || 0;
-            if (!await confirmDlg('Quitar la repetición', `${esc(I18N.t('Dejará de publicarse sola. Lo que ya se publicó se queda como está.'))}${n ? ` ${esc(bi(
-              n === 1 ? 'La persona que sigue la serie recibirá un aviso de que ha terminado.' : `Las ${n} personas que siguen la serie recibirán un aviso de que ha terminado.`,
-              n === 1 ? 'The person following the series will be notified that it has ended.' : `The ${n} people following the series will be notified that it has ended.`))}` : ''}`, { danger: true, submit: 'Quitar' })) return;
-            await rpc('delete_offer_rule', { p_id: b.dataset.id });
-            toast('Quitada');
-          } else {
-            await rpc('set_offer_rule_active', { p_id: b.dataset.id, p_active: b.dataset.rule === 'resume' });
-            toast('Guardado');
-          }
-          renderRules();
-        } catch (e) { toast(friendly(e.message), true); }
-      };
-    });
+    if (!$('#rules')) return;
+    $('#rules').innerHTML = reglas.length ? `<p class="muted small">${esc(bi(`${reglas.length === 1 ? '1 publicación se repite sola' : `${reglas.length} publicaciones se repiten solas`}: las ves en «Series y repeticiones».`,
+      `${reglas.length === 1 ? '1 publication repeats' : `${reglas.length} publications repeat`} automatically: see them in “Series and repeats”.`))} <a class="link" href="#/series">${esc(bi('Abrir', 'Open'))}</a></p>` : '';
   };
 
   async function repetirDialogo(offerId) {
@@ -1805,7 +1780,8 @@ async function offerForm(v, id, kindDefault, desde = null) {
     v.innerHTML = `<div class="card"><p class="muted" style="margin:0">${esc(I18N.t('Solo el propietario y los encargados pueden crear o editar publicaciones.'))}</p></div>`;
     return;
   }
-  let o = { kind: kindDefault || 'flash_offer', max_per_user: 1, code_ttl_minutes: 5, images: [], status: 'active' };
+  let o = { kind: kindDefault || 'flash_offer', max_per_user: 1, code_ttl_minutes: 5, images: [], status: 'active',
+    ...(desde?.rrpp ? { audience: 'promoters' } : {}) };
   // La vista previa usa la portada del local si la publicación no trae fotos.
   await portadaNegocio();
   if (id) {
@@ -1884,7 +1860,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
   }
   const en = I18N.lang === 'en';
   v.innerHTML = `
-    <div class="page-head"><a class="btn sm ghost" href="#/publicaciones">← Volver</a><h1>${id ? 'Editar publicación' : desde?.repeat ? 'Repetir mañana' : desde ? 'A partir de otra publicación' : (kindDefault === 'future_event' ? 'Nuevo evento' : 'Nueva oferta flash')}</h1></div>
+    <div class="page-head"><a class="btn sm ghost" href="#/publicaciones">← Volver</a><h1>${id ? 'Editar publicación' : desde?.repeat ? 'Repetir mañana' : desde?.rrpp && !desde?.from ? bi('Nueva oferta para RRPP', 'New offer for promoters') : desde ? 'A partir de otra publicación' : (kindDefault === 'future_event' ? 'Nuevo evento' : 'Nueva oferta flash')}</h1></div>
     ${ideas.length || guardadas.length ? `<div class="card plantillas" id="plantillas">
       ${guardadas.length ? `<h2>Tus plantillas</h2>
         <div class="acciones">${guardadas.map((t, i) => `<button type="button" class="btn sm" data-tpl="${i}">${esc(t.name)}</button>`).join('')}</div>
