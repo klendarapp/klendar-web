@@ -579,6 +579,8 @@ const APP_EN = {
     "(opcional) Sin nombre, sales como «Usuario de Klendar». Nunca enseñamos tu correo.": "(optional) Without a name, you appear as “Klendar user”. We never show your email.",
     "Quien abra tu enlace verá tu nombre. Sin él, sales como «Usuario de Klendar».": "Whoever opens your link will see your name. Without one, you appear as “Klendar user”.",
     "Nombre guardado": "Name saved",
+    "¿Cómo te llamas?": "What's your name?",
+    "Es lo que verán tus amigos y quien lea tus reseñas. Nunca enseñamos tu correo.": "It's what your friends and anyone reading your reviews will see. We never show your email.",
     "Si aceptas, verás a qué planes va y podrás invitarle a los tuyos (y al revés). Puedes quitarle de tus amigos cuando quieras.": "If you accept, you'll see which plans they're going to and can invite them to yours (and the other way round). You can remove them from your friends at any time.",
     "Aceptar": "Accept",
     "Ahora no": "Not now",

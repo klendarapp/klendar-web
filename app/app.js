@@ -299,7 +299,11 @@ async function botonGoogle(siguiente, destino = '/app/') {
 // → `terms_current` / `terms_outdated`), que además guarda siempre esa al
 // registrarse o aceptar. Esta constante es solo el respaldo que se manda.
 const TERMINOS_VERSION = '2026-09-29';
-let CONSENTIMIENTO = { id: null, ok: true, fecha: true, nueva: false, vigente: null };
+// `nombre`: falta el nombre y no ha dicho «Ahora no» (se pregunta «¿Cómo te
+// llamas?», como en la app); `alta`: aún se está creando la cuenta (sin
+// términos o sin fecha), y entonces el nombre es obligatorio.
+const SIN_PASOS = { id: null, ok: true, fecha: true, nueva: false, vigente: null, nombre: false, alta: false };
+let CONSENTIMIENTO = { ...SIN_PASOS };
 async function faltaConsentimiento() {
   if (!YO) return false;
   if (CONSENTIMIENTO.id !== YO.id) {
@@ -318,13 +322,16 @@ async function faltaConsentimiento() {
         // Ya los aceptó una vez: lo que falta es aceptar la versión nueva.
         nueva: Boolean(c.terms_accepted_at) && c.terms_outdated === true,
         vigente: c.terms_current || null,
+        // Sin nombre (entró con un código, o Apple no lo dio): «¿Cómo te llamas?».
+        nombre: c.has_display_name === false && !c.name_asked_at,
+        alta: !c.terms_accepted_at || c.has_birth_date === false,
       };
-    } catch { CONSENTIMIENTO = { id: YO.id, ok: true, fecha: true, nueva: false, vigente: null }; } // sin red: no se bloquea
+    } catch { CONSENTIMIENTO = { ...SIN_PASOS, id: YO.id }; } // sin red: no se bloquea
   }
   // Sin fecha de nacimiento tampoco: quien entra con un código por correo
   // acepta los términos al continuar, pero la edad mínima (14) hay que
   // comprobarla igual (como en la app).
-  return !CONSENTIMIENTO.ok || !CONSENTIMIENTO.fecha;
+  return !CONSENTIMIENTO.ok || !CONSENTIMIENTO.fecha || CONSENTIMIENTO.nombre;
 }
 
 // ── Rutas ─────────────────────────────────────────────────────────────────
@@ -473,10 +480,8 @@ const fila = ({ href, icono, titulo, detalle, fuera = false, id = '' }) => `
 // la cuenta) vive en Ajustes.
 RUTAS[''] = async () => {
   if (!YO) return RUTAS.entrar([], new URLSearchParams());
-  // Sin nombre, lo mismo que ven los demás (nunca el correo).
-  const nombre = (YO.user_metadata?.display_name || '').trim() || t('Usuario de Klendar');
   const foto = YO.user_metadata?.avatar_url;
-  const [negocios, invitaciones] = await Promise.all([
+  const [negocios, invitaciones, delPerfil] = await Promise.all([
     llamar('my_businesses', {}).catch(() => []),
     // Un negocio te ha invitado a su equipo (o te ofrece ser su
     // propietario): se contesta desde aquí.
@@ -484,7 +489,14 @@ RUTAS[''] = async () => {
       llamar('my_team_invites', {}).catch(() => []),
       llamar('my_business_transfers', {}).catch(() => []),
     ]).then(([a, b]) => [...(a || []), ...(b || [])]),
+    // El de su perfil, que es lo que ven los demás (Google y Apple no lo
+    // dejan en `display_name` de la cuenta).
+    nombrePublico(),
   ]);
+  // Sin nombre, lo mismo que ven los demás (nunca el correo). Sin red, el
+  // de la cuenta.
+  const nombre = (delPerfil === undefined ? (YO.user_metadata?.display_name || '').trim() : delPerfil)
+    || t('Usuario de Klendar');
   const tieneNegocio = Array.isArray(negocios) && negocios.length > 0;
   const nInv = Array.isArray(invitaciones) ? invitaciones.length : 0;
   pinta(`

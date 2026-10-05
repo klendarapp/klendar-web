@@ -923,6 +923,16 @@ async function guardaNombrePublico(nombre) {
   await sb.auth.updateUser({ data: { display_name: n } }).catch(() => {});
 }
 
+/** El nombre que traen los datos de la cuenta (el de Google o Apple), para
+ * rellenar «¿Cómo te llamas?». Nunca el correo. */
+function nombreSugerido(meta) {
+  const limpio = (v) => { const x = typeof v === 'string' ? v.trim() : ''; return x.includes('@') ? '' : x; };
+  const m = meta || {};
+  const n = limpio(m.display_name) || limpio(m.full_name) || limpio(m.name)
+    || limpio([limpio(m.given_name), limpio(m.family_name)].join(' '));
+  return n.slice(0, 40).trim();
+}
+
 const campoNombrePublico = () => `
       <label>${esc(t('Tu nombre'))} <small>${esc(t('(opcional) Sin nombre, sales como «Usuario de Klendar». Nunca enseñamos tu correo.'))}</small>
         <input name="nombre" maxlength="40" autocomplete="name"></label>`;
@@ -1720,9 +1730,58 @@ RUTAS['ultimo-paso'] = async (_p, params) => {
   }
   const salir = async () => {
     await sb.auth.signOut({ scope: 'local' });
-    CONSENTIMIENTO = { id: null, ok: true, fecha: true, nueva: false, vigente: null };
+    CONSENTIMIENTO = { ...SIN_PASOS };
     location.href = `${pre}/`;
   };
+  // «¿Cómo te llamas?», antes que lo demás (como en la app): la cuenta no
+  // tiene nombre (entró con un código por correo, o Apple no lo dio). Al
+  // crearla hay que ponerlo; una cuenta de antes lo ve una vez, con «Ahora no».
+  if (CONSENTIMIENTO.nombre) {
+    const alta = CONSENTIMIENTO.alta;
+    pinta(`
+      <div class="ticket" style="text-align:left">
+        <h1>${esc(t('¿Cómo te llamas?'))}</h1>
+        <p class="muted">${esc(t('Es lo que verán tus amigos y quien lea tus reseñas. Nunca enseñamos tu correo.'))}</p>
+        <form id="fn" class="formu" novalidate>
+          <label>${esc(t('Nombre'))}<input name="name" autocomplete="name" maxlength="40" required value="${esc(nombreSugerido(YO.user_metadata))}"></label>
+          <p id="err" class="err" role="alert"></p>
+          <button class="pill accent" id="seguir">${esc(t('Continuar'))}</button>
+        </form>
+        <p>${alta
+          ? `<button class="linkbtn" id="salir">${esc(t('Cerrar sesión'))}</button>`
+          : `<button class="linkbtn" id="ahora-no">${esc(t('Ahora no'))}</button>`}</p>
+      </div>`);
+    const fn = $('#fn');
+    if (!fn.elements.name.value) fn.elements.name.focus();
+    const sigue = () => {
+      CONSENTIMIENTO = { ...CONSENTIMIENTO, nombre: false };
+      RUTAS['ultimo-paso'](_p, params);
+    };
+    fn.addEventListener('submit', (ev) => {
+      ev.preventDefault();
+      const err = $('#err');
+      err.textContent = '';
+      if (!validaForm(fn, { name: VALIDA.requerido })) return;
+      const nombre = fn.elements.name.value.trim();
+      ocupado($('#seguir'), async () => {
+        // Sin insultos ni palabras malsonantes (la base lo vuelve a mirar).
+        let sirve = true;
+        try { sirve = (await sb.rpc('display_name_allowed', { p_name: nombre })).data !== false; } catch { /* sin red: lo mira la base */ }
+        if (!sirve) { err.textContent = t(ERRORES.offensive_name); return; }
+        try { await guardaNombrePublico(nombre); } catch (e) { err.textContent = e.message; return; }
+        sigue();
+      });
+    });
+    $('#salir')?.addEventListener('click', salir);
+    $('#ahora-no')?.addEventListener('click', (ev) => {
+      ocupado(ev.currentTarget, async () => {
+        await llamar('skip_name_prompt', {});
+        sigue();
+      });
+    });
+    I18N.translate(view);
+    return;
+  }
   // Ya los aceptó, pero una versión anterior (y sabemos su fecha, que
   // `accept_terms` necesita): solo aceptar la nueva, salir o eliminar la cuenta.
   if (CONSENTIMIENTO.nueva && CONSENTIMIENTO.fecha) {
@@ -1768,7 +1827,7 @@ RUTAS['ultimo-paso'] = async (_p, params) => {
       ocupado(boton, async () => {
         await llamar('delete_my_account', {});
         try { await sb.auth.signOut({ scope: 'local' }); } catch { /* la sesión ya no existe */ }
-        CONSENTIMIENTO = { id: null, ok: true, fecha: true, nueva: false, vigente: null };
+        CONSENTIMIENTO = { ...SIN_PASOS };
         pinta(`<div class="ticket"><p class="hecho-ic" aria-hidden="true">✓</p>
           <h1>${esc(t('Tu cuenta se ha eliminado'))}</h1>
           <p class="muted">${esc(t('Gracias por haber usado Klendar. Si algún día vuelves, aquí estaremos.'))}</p>

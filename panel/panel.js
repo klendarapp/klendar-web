@@ -598,7 +598,9 @@ async function boot() {
   try {
     const c = await rpc('my_consents');
     if (!c) { await sb.auth.signOut({ scope: 'local' }).catch(() => {}); return showLogin(); }
-    if (!c.terms_accepted_at || c.terms_outdated === true) {
+    // Y sin nombre (entró con un código por correo): «¿Cómo te llamas?».
+    if (!c.terms_accepted_at || c.terms_outdated === true
+        || (c.has_display_name === false && !c.name_asked_at)) {
       location.href = `/app/?volver=${encodeURIComponent(rutaDeVuelta())}#/ultimo-paso`;
       return;
     }
