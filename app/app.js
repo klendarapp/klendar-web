@@ -546,6 +546,7 @@ RUTAS[''] = async () => {
     <h2 class="seccion-t">${esc(t('Preferencias'))}</h2>
     <div class="lista">
       ${fila({ href: '#/alertas', icono: 'add_alert', titulo: t('Avísame si…'), detalle: t('Que te avisemos cuando salga algo que te interesa cerca') })}
+      ${fila({ href: '#/series', icono: 'notifications', titulo: EN ? 'Series you follow' : 'Series que sigues', detalle: EN ? "We'll tell you about each new date" : 'Te avisamos de cada fecha nueva' })}
       ${fila({ href: '#/ajustes', icono: 'tune', titulo: t('Ajustes'), detalle: t('Idioma, notificaciones, privacidad y cuenta') })}
     </div>
 
@@ -1256,10 +1257,15 @@ RUTAS.planes = async () => {
   if (!exigeSesion('planes')) return;
   // Las mismas dos funciones que la app. Si fallan los canjes, se enseña lo
   // guardado igualmente (la app hace lo mismo).
-  const [guardados, canjes] = await Promise.all([
+  const [guardados, canjes, series] = await Promise.all([
     llamar('my_saved_offers', {}),
     llamar('my_redemptions', {}).catch(() => []),
+    llamar('my_followed_series', {}).catch(() => []),
   ]);
+  // «Sigues 2 series», arriba (sin series, nada), como la app.
+  const nSeries = (series || []).length;
+  const filaSeries = nSeries ? `<div class="lista">${fila({ href: '#/series', icono: 'notifications',
+    titulo: EN ? (nSeries === 1 ? 'You follow 1 series' : `You follow ${nSeries} series`) : (nSeries === 1 ? 'Sigues 1 serie' : `Sigues ${nSeries} series`) })}</div>` : '';
   const saved = guardados || [];
   const reds = canjes || [];
   const zona = await zonasDe([...saved, ...reds]);
@@ -1278,6 +1284,7 @@ RUTAS.planes = async () => {
     pinta(`
       <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
       <h1>${esc(t('Tus planes'))}</h1>
+      ${filaSeries}
       ${pantallaVacia({
         icono: 'bookmark',
         titulo: t('Aún no tienes planes'),
@@ -1291,6 +1298,7 @@ RUTAS.planes = async () => {
   pinta(`
     <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(t('Tus planes'))}</h1>
+    ${filaSeries}
     ${bloque(t('En curso'), enCurso.map((r) => filaCanje(r, zona(r))))}
     ${bloque(t('Próximos'), proximos.map((o) => tarjeta(o, zona(o))))}
     ${bloque(t('Pasados'), pasados.map((p) => p.html), ' pasado')}
@@ -1982,6 +1990,177 @@ RUTAS.visita = async ([token]) => {
   if (!/^[A-Za-z0-9_-]{16}$/.test(token || '')) { vuelve(''); return; }
   if (!exigeSesion(`visita/${token}`)) return;
   location.replace(`/v/${encodeURIComponent(token)}`);
+};
+
+// ── Series («Micro abierto de los jueves») ────────────────────────────────
+// Lo mismo que la app (migración 20261107100000_series): desde la ficha
+// (`/o/<id>` → `#/serie/<id>`) se sigue la serie; quien la sigue recibe un
+// aviso con cada fecha nueva y, si quiere, cada fecha va a sus planes.
+// «Series que sigues» (`#/series`) con dejar de seguir.
+
+/** «los jueves», «lunes, miércoles»…: los días de una regla (0 = domingo),
+ * lunes primero, como la app. */
+function diasSerie(dias) {
+  const s = new Set(dias || []);
+  if (s.size === 7) return EN ? 'every day' : 'todos los días';
+  if (s.size === 5 && [1, 2, 3, 4, 5].every((d) => s.has(d))) return EN ? 'Monday to Friday' : 'de lunes a viernes';
+  if (s.size === 2 && s.has(0) && s.has(6)) return EN ? 'weekends' : 'los fines de semana';
+  // 7 de enero de 2024 fue domingo: sumando días salen todos en orden.
+  return [1, 2, 3, 4, 5, 6, 0].filter((d) => s.has(d))
+    .map((d) => new Date(2024, 0, 7 + d).toLocaleDateString(LOC, { weekday: 'long' })).join(', ');
+}
+/** «Se repite: jueves a las 21:00» (si sale de una regla). */
+const repiteSerie = (x) => (x?.weekdays?.length && x.start_time
+  ? (EN ? `Repeats: ${diasSerie(x.weekdays)} at ${x.start_time}` : `Se repite: ${diasSerie(x.weekdays)} a las ${x.start_time}`) : '');
+const masFechas = (n) => (EN
+  ? (n === 0 ? 'No more dates posted yet' : n === 1 ? '1 more date posted' : `${n} more dates posted`)
+  : (n === 0 ? 'Por ahora no hay más fechas publicadas' : n === 1 ? '1 fecha más publicada' : `${n} fechas más publicadas`));
+const textoGuardadas = (n) => (EN
+  ? (n === 0 ? 'Each new date will go to your plans.' : n === 1 ? "We've saved 1 date to your plans; new ones will go there too." : `We've saved ${n} dates to your plans; new ones will go there too.`)
+  : (n === 0 ? 'Cada fecha nueva irá a tus planes.' : n === 1 ? 'Hemos guardado 1 fecha en tus planes; las nuevas también irán.' : `Hemos guardado ${n} fechas en tus planes; las nuevas también irán.`));
+const errorSerie = (e) => (e?.clave === 'too_many'
+  ? (EN ? "You're following too many series. Unfollow one to follow this one." : 'Sigues demasiadas series. Deja alguna para seguir esta.')
+  : e?.message || amable(''));
+
+/** «Seguir la serie» desde la ficha de una de sus fechas. No hace nada solo:
+ * enseña la serie y el botón (con la casilla «Añadir cada fecha a mis
+ * planes»), así que no hace falta la marca de los enlaces. */
+RUTAS.serie = async ([id]) => {
+  if (!/^[0-9a-f-]{36}$/i.test(id || '')) { vuelve(''); return; }
+  if (!exigeSesion(`serie/${id}`)) return;
+  const s = await llamar('offer_series_info', { p_offer: id });
+  const ficha = `${pre}/o/${encodeURIComponent(id)}`;
+  if (!s) {
+    pinta(pantallaVacia({
+      icono: 'refresh',
+      titulo: EN ? 'This series is no longer available' : 'Esta serie ya no está disponible',
+      texto: EN ? 'It may have ended, or this publication is no longer visible.' : 'Puede que haya terminado o que esta publicación ya no se vea.',
+      h: 'h1',
+      botones: `<a class="pill accent" href="#/series">${esc(EN ? 'Series you follow' : 'Series que sigues')}</a>
+        <a class="pill" href="${esc(ficha)}">${esc(EN ? 'Back to the publication' : 'Volver a la publicación')}</a>`,
+    }));
+    return;
+  }
+  const datos = [s.business_name, repiteSerie(s), masFechas(s.upcoming || 0)].filter(Boolean).join(' · ');
+  const cabeza = `
+    <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a> · <a href="#/series">${esc(EN ? 'Series you follow' : 'Series que sigues')}</a></p>
+    <div class="ticket">
+      <p class="muted">${esc(EN ? 'Part of a series' : 'Forma parte de una serie')}</p>
+      <h1>${esc(s.name)}</h1>
+      <p class="muted">${esc(datos)}</p>`;
+  const auto = (marcado) => `<form class="formu" id="f-serie" novalidate>
+      <label class="check"><input type="checkbox" name="auto"${marcado ? ' checked' : ''}>
+        <span><b>${esc(EN ? 'Add each date to my plans' : 'Añadir cada fecha a mis planes')}</b><br><small>${esc(EN ? "They're saved to Plans automatically, including the ones already posted." : 'Se guardan solas en Planes, también las que ya están publicadas.')}</small></span></label>
+    </form>`;
+  if (s.is_member) {
+    pinta(`${cabeza}
+      <p>${esc(EN ? "You're on this business's team: series notifications don't go to the team." : 'Eres del equipo de este negocio: los avisos de la serie no van al equipo.')}</p>
+      <p class="acciones"><a class="pill accent" href="${esc(ficha)}">${esc(EN ? 'Back to the publication' : 'Volver a la publicación')}</a></p></div>`);
+    return;
+  }
+  if (!s.following) {
+    pinta(`${cabeza}
+      <p>${esc(EN ? "We'll let you know when the next date is posted." : 'Te avisamos cuando se publique la siguiente fecha.')}</p>
+      ${auto(false)}
+      <p class="acciones">
+        <button type="button" class="pill accent" id="seguir-serie">${ic('notifications')} ${esc(EN ? 'Follow the series' : 'Seguir la serie')}</button>
+        <a class="pill" href="${esc(ficha)}">${esc(t('Cancelar'))}</a>
+      </p></div>`);
+    $('#seguir-serie').addEventListener('click', (ev) => ocupado(ev.currentTarget, async () => {
+      const conPlanes = $('#f-serie').elements.auto.checked;
+      try {
+        const r = await llamar('follow_series', { p_offer: id, p_auto_plan: conPlanes });
+        hecho({
+          titulo: EN ? "You're following the series" : 'Sigues la serie',
+          texto: conPlanes ? textoGuardadas(r?.saved || 0)
+            : (EN ? "We'll let you know about each new date." : 'Te avisaremos de cada fecha nueva.'),
+          volver: ficha, volverTxt: EN ? 'Back to the publication' : 'Volver a la publicación',
+          lista: '#/series', listaTxt: EN ? 'Series you follow' : 'Series que sigues',
+        });
+      } catch (e) { toast(errorSerie(e), true); }
+    }));
+    return;
+  }
+  // Ya la sigue: el interruptor y «Dejar de seguir».
+  pinta(`${cabeza}
+    <p><b>${ic('notifications')} ${esc(EN ? "You're following the series" : 'Sigues la serie')}</b></p>
+    ${auto(s.auto_plan)}
+    <p class="acciones">
+      <a class="pill accent" href="${esc(ficha)}">${esc(EN ? 'Back to the publication' : 'Volver a la publicación')}</a>
+      <button type="button" class="pill" id="dejar-serie">${esc(EN ? 'Unfollow' : 'Dejar de seguir')}</button>
+    </p></div>`);
+  enganchaSerie(s.series_id, s.name, $('#f-serie').elements.auto, $('#dejar-serie'), () => vuelve(`serie/${id}`));
+};
+
+/** El interruptor «Añadir cada fecha a mis planes» y «Dejar de seguir» de
+ * una serie (en su página y en la lista). */
+function enganchaSerie(serie, nombre, caja, boton, trasDejar) {
+  caja.addEventListener('change', async () => {
+    caja.disabled = true;
+    try {
+      const r = await llamar('set_series_auto_plan', { p_series: serie, p_on: caja.checked });
+      toast(caja.checked ? textoGuardadas(r?.saved || 0)
+        : (EN ? "New dates won't go to your plans automatically any more." : 'Las fechas nuevas ya no irán solas a tus planes.'));
+    } catch (e) { caja.checked = !caja.checked; toast(errorSerie(e), true); }
+    caja.disabled = false;
+  });
+  boton.addEventListener('click', async () => {
+    const ok = await confirma({
+      titulo: EN ? `Unfollow “${nombre}”?` : `¿Dejar de seguir «${nombre}»?`,
+      texto: EN ? "We won't tell you about new dates. Anything already in your plans stays there."
+        : 'No te avisaremos de las fechas nuevas. Lo que ya está en tus planes se queda.',
+      aceptar: EN ? 'Unfollow' : 'Dejar de seguir', peligro: true,
+    });
+    if (!ok) return;
+    try {
+      await llamar('unfollow_series', { p_series: serie });
+      toast(EN ? "You're no longer following the series." : 'Ya no sigues la serie.');
+      trasDejar();
+    } catch (e) { toast(errorSerie(e), true); }
+  });
+}
+
+/** «Series que sigues». */
+RUTAS.series = async () => {
+  if (!exigeSesion('series')) return;
+  const lista = (await llamar('my_followed_series', {})) || [];
+  const titulo = EN ? 'Series you follow' : 'Series que sigues';
+  if (!lista.length) {
+    pinta(`
+      <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
+      <h1>${esc(titulo)}</h1>
+      ${pantallaVacia({
+        icono: 'notifications',
+        titulo: EN ? "You're not following any series yet" : 'Aún no sigues ninguna serie',
+        texto: EN ? "On the page of something that repeats (“Thursday open mic”), tap “Follow the series” and we'll let you know about each new date."
+          : 'En la ficha de algo que se repite («Micro abierto de los jueves»), toca «Seguir la serie» y te avisamos de cada fecha nueva.',
+        botones: `<a class="pill accent" href="${EN ? '/en/explore/' : '/explorar/'}">${esc(t('Buscar planes'))}</a>`,
+      })}`);
+    return;
+  }
+  const zona = await zonasDe(lista.map((x) => ({ business_id: x.business_id })));
+  pinta(`
+    <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
+    <h1>${esc(titulo)}</h1>
+    <div class="lista series-lista">${lista.map((x, i) => {
+      const n = x.next;
+      const cuando = n?.starts_at ? fecha(n.starts_at, undefined, zona({ business_id: x.business_id })) : '';
+      const proxima = n
+        ? `<div class="lista">${fila({ href: `${pre}/o/${n.offer_id}`, icono: 'explore', titulo: EN ? `Next: ${cuando || n.title}` : `Próxima: ${cuando || n.title}`, detalle: cuando ? n.title : '' })}</div>`
+        : `<p class="muted">${esc(EN ? 'No dates posted yet' : 'Por ahora no hay fechas publicadas')}</p>`;
+      return `<section class="bloque serie" data-i="${i}">
+        <h2>${esc(x.name)}</h2>
+        <p class="muted">${esc([x.business_name, repiteSerie(x)].filter(Boolean).join(' · '))}</p>
+        ${proxima}
+        <form class="formu" novalidate><label class="check"><input type="checkbox" name="auto"${x.auto_plan ? ' checked' : ''}>
+          <span><b>${esc(EN ? 'Add each date to my plans' : 'Añadir cada fecha a mis planes')}</b></span></label></form>
+        <p><button type="button" class="pill" data-dejar>${esc(EN ? 'Unfollow' : 'Dejar de seguir')}</button></p>
+      </section>`;
+    }).join('')}</div>`);
+  $$('.serie').forEach((sec) => {
+    const x = lista[Number(sec.dataset.i)];
+    enganchaSerie(x.series_id, x.name, $('input[name=auto]', sec), $('[data-dejar]', sec), () => RUTAS.series());
+  });
 };
 
 // ── Arranque ──────────────────────────────────────────────────────────────

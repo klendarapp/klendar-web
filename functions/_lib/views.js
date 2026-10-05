@@ -34,6 +34,8 @@ const PATHS = {
   // «Voy» (check_circle) e «Invitar a un amigo» (group_add), como en la app.
   voy: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z',
   invitar: 'M8 10H5V7H3v3H0v2h3v3h2v-3h3v-2zm10 1c1.66 0 2.99-1.34 2.99-3S19.66 5 18 5c-.32 0-.63.05-.91.14.57.81.9 1.79.9 2.86s-.34 2.04-.9 2.86c.28.09.59.14.91.14zm-5 0c1.66 0 2.99-1.34 2.99-3S14.66 5 13 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm6.62 2.16c.83.73 1.38 1.66 1.38 2.84v2h3v-2c0-1.54-2.37-2.49-4.38-2.84zM13 13c-2 0-6 1-6 3v2h12v-2c0-2-4-3-6-3z',
+  // «Forma parte de una serie» (event_repeat).
+  serie: 'M21 12V6c0-1.1-.9-2-2-2h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h7v-2H5V10h14v2h2zm-5.36 8c.43 1.45 1.77 2.5 3.36 2.5 1.93 0 3.5-1.57 3.5-3.5s-1.57-3.5-3.5-3.5c-.95 0-1.82.38-2.45 1H18V18h-4v-4h1.5v1.43c.9-.88 2.14-1.43 3.5-1.43 2.76 0 5 2.24 5 5s-2.24 5-5 5c-2.42 0-4.44-1.72-4.9-4h1.54z',
   resena: 'M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 14v-2.47l6.88-6.88c.2-.2.51-.2.71 0l1.77 1.77c.2.2.2.51 0 .71L8.47 14H6zm12 0h-7.5l2-2H18v2z',
 };
 const icono = (n, size = 18) => `<svg class="ic" viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true"><path fill="currentColor" d="${PATHS[n]}"/></svg>`;
@@ -131,6 +133,9 @@ export async function offerPage(id, lang) {
   // sesión, así que aquí siempre llega bloqueada (sin título, beneficio ni
   // fotos). Se dice qué es, de quién y cómo conseguirla.
   if (o.locked) return lockedOfferPage(o, lang, path, bHref);
+  // La serie de la que forma parte («Seguir la serie»), si tiene. Sin la
+  // función (o sin red), la ficha sale igual.
+  const serie = await rpc('offer_series_info', { p_offer: id }).catch(() => null);
 
   const flash = o.kind === 'flash_offer';
   const soldOut = o.status === 'sold_out' || (o.seats_left != null && o.seats_left <= 0);
@@ -256,6 +261,7 @@ export async function offerPage(id, lang) {
             ${openInApp(path, S.open, 'pill ghost')}</p>
           <p class="acciones">${historiaBoton(lang, 'o', o.id)}</p>`;
       })()}
+      ${serieFicha(serie, o.id, lang)}
       <p class="note">${S.note}</p>
     </aside>
     <div class="d-body">
@@ -321,6 +327,40 @@ el.textContent=n<ini?${JSON.stringify(en ? 'Starts in ' : 'Empieza en ')}+dur(in
 <meta name="robots" content="${o.adults_only ? 'noindex' : 'index, follow'}">
 <script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, '\\u003c')}</script>`,
   }));
+}
+
+/** Días de una regla (0 = domingo), lunes primero: «jueves», «lunes, miércoles». */
+function diasSerie(dias, en) {
+  const s = new Set(dias || []);
+  if (s.size === 7) return en ? 'every day' : 'todos los días';
+  if (s.size === 5 && [1, 2, 3, 4, 5].every((d) => s.has(d))) return en ? 'Monday to Friday' : 'de lunes a viernes';
+  if (s.size === 2 && s.has(0) && s.has(6)) return en ? 'weekends' : 'los fines de semana';
+  const fmt = new Intl.DateTimeFormat(en ? 'en-GB' : 'es-ES', { weekday: 'long', timeZone: 'UTC' });
+  return [1, 2, 3, 4, 5, 6, 0].filter((d) => s.has(d)).map((d) => fmt.format(Date.UTC(2024, 0, 7 + d))).join(', ');
+}
+
+/**
+ * «Forma parte de una serie»: el nombre, cuándo se repite (si sale de una
+ * regla), cuántas fechas más hay y «Seguir la serie», que lleva a «Tu
+ * cuenta» (la página va en caché y no sabe quién mira: allí se ve si ya la
+ * sigues y lo de «Añadir cada fecha a mis planes»). Como la app.
+ */
+function serieFicha(s, offerId, lang) {
+  if (!s || !s.series_id || !s.name) return '';
+  const en = lang === 'en';
+  const n = Number(s.upcoming) || 0;
+  const detalle = [
+    s.weekdays?.length && s.start_time && s.rule_active !== false
+      ? (en ? `Repeats: ${diasSerie(s.weekdays, en)} at ${s.start_time}` : `Se repite: ${diasSerie(s.weekdays, en)} a las ${s.start_time}`)
+      : '',
+    en ? (n === 0 ? 'No more dates posted yet' : n === 1 ? '1 more date posted' : `${n} more dates posted`)
+      : (n === 0 ? 'Por ahora no hay más fechas publicadas' : n === 1 ? '1 fecha más publicada' : `${n} fechas más publicadas`),
+  ].filter(Boolean).join(' · ');
+  return `<div class="serie-ficha">
+        <p class="info-linea">${icono('serie')}<span><small class="muted">${en ? 'Part of a series' : 'Forma parte de una serie'}</small><br><b>${esc(s.name)}</b><br><small class="muted">${esc(detalle)}</small></span></p>
+        <p class="acciones"><a class="pill" href="${cuenta(lang)}#/serie/${encodeURIComponent(offerId)}" rel="nofollow">${en ? 'Follow the series' : 'Seguir la serie'}</a></p>
+        <p class="note">${en ? "We'll let you know when the next date is posted." : 'Te avisamos cuando se publique la siguiente fecha.'}</p>
+      </div>`;
 }
 
 /**

@@ -538,6 +538,8 @@ RUTAS.ajustes = async () => {
           <span><b>${esc(t('Invitaciones de amigos'))}</b><br><small>${esc(t('Cuando un amigo te invita a un plan o dice que va al tuyo. Apagado, no te pueden invitar.'))}</small></span></label>
         <label class="check"><input type="checkbox" name="planesAmigos"${prefs.notify_friend_plans ? ' checked' : ''}>
           <span><b>${esc(t('Planes de tus amigos'))}</b><br><small>${esc(t('Cuando un amigo se apunta a un evento. Como mucho un aviso al día.'))}</small></span></label>
+        <label class="check"><input type="checkbox" name="series"${prefs.notify_series !== false ? ' checked' : ''}>
+          <span><b>${esc(EN ? 'Series you follow' : 'Series que sigues')}</b><br><small>${esc(EN ? 'Each new date, and when a series ends' : 'Cada fecha nueva y si una serie termina')}</small></span></label>
         <label class="check"><input type="checkbox" name="cerca"${prefs.notify_nearby ? ' checked' : ''}>
           <span><b>${esc(t('Cerca de ti'))}</b><br><small>${esc(t('Ofertas flash a tu alrededor (como mucho 3 al día)'))}</small></span></label>
         <div id="cerca-mas" ${prefs.notify_nearby ? '' : 'hidden'}>
@@ -682,6 +684,7 @@ RUTAS.ajustes = async () => {
         notify_birthday: fa.elements.cumple.checked,
         notify_friend_invites: fa.elements.amigos.checked,
         notify_friend_plans: fa.elements.planesAmigos.checked,
+        notify_series: fa.elements.series.checked,
         notify_stamps: fa.elements.sellos.checked,
         nearby_radius_m: Number(fa.radio.value),
         nearby_categories: elegidas.length ? elegidas : null,

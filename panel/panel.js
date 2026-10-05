@@ -724,6 +724,7 @@ const NAV = [
     ['informe', 'bar_chart', 'Informe'],
     ['resenas', 'reviews', 'Reseñas'],
     ['cumpleanos', 'cake', 'Regalo de cumpleaños'],
+    ['series', 'notifications_active', 'Series'],
     ['mensajes', 'notifications_active', 'Avisar a mis clientes'],
     ['sellos', 'loyalty', 'Tarjetas de sellos'],
     ['cartel-local', 'qr_code_2', 'Cartel del local'],
@@ -1243,7 +1244,7 @@ PAGES.publicaciones = async (v, param) => {
       <p class="muted" style="margin:0 0 10px">Cada una se publica sola a su hora. Si la de la semana pasada sigue activa, esa semana se salta: no se apilan.</p>
       ${table({
         cols: [
-          { h: 'Publicación', r: (x) => `<b class="title">${esc(x.title || '—')}</b><span class="sub">${esc(bi(`${fmtNum(x.published)} ${x.published === 1 ? 'publicada' : 'publicadas'}`, `${fmtNum(x.published)} published`))}</span>` },
+          { h: 'Publicación', r: (x) => `<b class="title">${esc(x.title || '—')}</b><span class="sub">${esc(bi(`${fmtNum(x.published)} ${x.published === 1 ? 'publicada' : 'publicadas'}`, `${fmtNum(x.published)} published`))}${x.series_id ? ` · ${esc(seguidoresTxt(x.followers || 0))}` : ''}</span>` },
           { h: 'Cuándo', r: (x) => `${x.weekdays.map((d) => DIAS[d]).join(', ')} ${I18N.lang === 'en' ? 'at' : 'a las'} ${esc(x.start_time)}` },
           { h: 'Dura', r: (x) => `${Math.round(x.duration_min / 60 * 10) / 10} h` },
           { h: 'Estado', r: (x) => tag(x.is_active ? 'active' : 'draft') },
@@ -1259,7 +1260,11 @@ PAGES.publicaciones = async (v, param) => {
       b.onclick = async () => {
         try {
           if (b.dataset.rule === 'delete') {
-            if (!await confirmDlg('Quitar la repetición', 'Dejará de publicarse sola. Lo que ya se publicó se queda como está.', { danger: true, submit: 'Quitar' })) return;
+            const regla = reglas.find((x) => x.id === b.dataset.id) || {};
+            const n = regla.followers || 0;
+            if (!await confirmDlg('Quitar la repetición', `${esc(I18N.t('Dejará de publicarse sola. Lo que ya se publicó se queda como está.'))}${n ? ` ${esc(bi(
+              n === 1 ? 'La persona que sigue la serie recibirá un aviso de que ha terminado.' : `Las ${n} personas que siguen la serie recibirán un aviso de que ha terminado.`,
+              n === 1 ? 'The person following the series will be notified that it has ended.' : `The ${n} people following the series will be notified that it has ended.`))}` : ''}`, { danger: true, submit: 'Quitar' })) return;
             await rpc('delete_offer_rule', { p_id: b.dataset.id });
             toast('Quitada');
           } else {
@@ -1274,19 +1279,32 @@ PAGES.publicaciones = async (v, param) => {
 
   async function repetirDialogo(offerId) {
     const o = offers.find((x) => x.id === offerId) || {};
+    const evento = o.kind === 'future_event';
+    const ini = evento ? o.event_at : o.redeem_start_at;
+    const fin = evento ? o.event_end_at : o.redeem_end_at;
+    const hIni = ini ? partesNegocio(new Date(ini)) : null;
+    const diaIni = ini ? new Date(new Date(ini).toLocaleString('en-US', { timeZone: TZ })).getDay() : null;
+    const durIni = ini && fin ? Math.round((new Date(fin) - new Date(ini)) / 6e4) : null;
+    const durOpts = [['60', '1 hora'], ['120', '2 horas'], ['180', '3 horas'], ['240', '4 horas'], ['480', 'Toda la tarde (8 h)']];
+    if (durIni && durIni >= 15 && durIni <= 1440 && !durOpts.some((d) => Number(d[0]) === durIni)) {
+      durOpts.push([String(durIni), `${Math.round(durIni / 6) / 10} h`]);
+      durOpts.sort((a, b) => Number(a[0]) - Number(b[0]));
+    }
     const r = await modal({
       title: 'Repetir cada semana',
-      intro: bi(`«${esc(o.title || '')}» se publicará sola los días y la hora que elijas, con su cuenta atrás y su aforo. Puedes pausarla cuando quieras.`,
-        `“${esc(o.title || '')}” will be posted on its own on the days and at the time you choose, with its countdown and its limit. You can pause it whenever you like.`),
+      intro: evento
+        ? bi(`«${esc(o.title || '')}» se publicará sola una semana antes de cada fecha, a la misma hora, con su aforo y sus reservas. Puedes pausarla cuando quieras.`,
+          `“${esc(o.title || '')}” will be posted automatically a week before each date, at the same time, with its capacity and bookings. You can pause it whenever you like.`)
+        : bi(`«${esc(o.title || '')}» se publicará sola los días y la hora que elijas, con su cuenta atrás y su aforo. Puedes pausarla cuando quieras.`,
+          `“${esc(o.title || '')}” will be posted on its own on the days and at the time you choose, with its countdown and its limit. You can pause it whenever you like.`),
       submit: 'Crear la repetición',
       // Cualquier combinación de días, como en la app (de lunes a domingo).
       fields: [
         ...[[1, 'Lunes'], [2, 'Martes'], [3, 'Miércoles'], [4, 'Jueves'], [5, 'Viernes'], [6, 'Sábado'], [0, 'Domingo']]
-          .map(([d, n]) => ({ name: `d${d}`, type: 'checkbox', label: n, value: d >= 1 && d <= 5 })),
-        { name: 'hora', type: 'time', label: '¿A qué hora empieza?', value: '17:00', required: true },
-        { name: 'duracion', type: 'select', label: '¿Cuánto dura?', value: '120', options: [
-          ['60', '1 hora'], ['120', '2 horas'], ['180', '3 horas'], ['240', '4 horas'], ['480', 'Toda la tarde (8 h)'],
-        ] },
+          .map(([d, n]) => ({ name: `d${d}`, type: 'checkbox', label: n, value: evento && diaIni != null ? d === diaIni : d >= 1 && d <= 5 })),
+        { name: 'hora', type: 'time', label: '¿A qué hora empieza?', required: true,
+          value: hIni ? `${String(hIni.h).padStart(2, '0')}:${String(hIni.min).padStart(2, '0')}` : '17:00' },
+        { name: 'duracion', type: 'select', label: '¿Cuánto dura?', value: durIni && durOpts.some((d) => Number(d[0]) === durIni) ? String(durIni) : '120', options: durOpts },
       ],
     });
     if (!r) return;
@@ -1335,6 +1353,10 @@ PAGES.publicaciones = async (v, param) => {
       b.onclick = async () => {
         const id = b.dataset.id;
         try {
+          if (b.dataset.act === 'serie') {
+            await serieDialogo(offers.find((x) => x.id === id) || { id });
+            return;
+          }
           if (b.dataset.act === 'repeat') {
             await repetirDialogo(id);
             return;
@@ -1536,7 +1558,8 @@ function accionesPub(o) {
       <a href="${crear}">Crear a partir de esta</a>
       ${o.kind === 'flash_offer' && o.status === 'active' && new Date(o.redeem_end_at) > new Date() ? `<button type="button" data-act="extend" data-id="${esc(o.id)}">Ampliar 1 h</button>` : ''}
       ${o.status === 'sold_out' || estadoVisible(o) === 'expired' ? `<a href="${crear}&repeat=1">${o.kind === 'flash_offer' ? 'Repetir mañana' : 'Repetir'}</a>` : ''}
-      ${o.kind === 'flash_offer' ? `<button type="button" data-act="repeat" data-id="${esc(o.id)}">Repetir cada semana…</button>` : ''}
+      <button type="button" data-act="repeat" data-id="${esc(o.id)}">Repetir cada semana…</button>
+      ${o.status !== 'cancelled' ? `<button type="button" data-act="serie" data-id="${esc(o.id)}">${esc(bi('Serie…', 'Series…'))}</button>` : ''}
       ${OTROS_LOCALES.length ? `<button type="button" data-act="locales" data-id="${esc(o.id)}">Publicar en otros locales…</button>` : ''}
       <a href="${I18N.lang === 'en' ? '/en/poster/' : '/cartel/'}${esc(o.id)}" target="_blank" rel="noopener">Cartel para imprimir</a>
       <button type="button" class="bad" data-act="delete" data-id="${esc(o.id)}">Borrar</button>
@@ -1777,6 +1800,11 @@ async function offerForm(v, id, kindDefault, desde = null) {
       kindDefault = src.kind;
     }
   }
+  // Crear a partir de una fecha de una serie: la nueva sigue en ella (se
+  // puede quitar). Quien la sigue recibirá un aviso cuando se publique.
+  const serieCopia = !id && desde?.from
+    ? (await seriesDeNegocio()).find((s) => s.status === 'active' && (s.offer_ids || []).includes(desde.from)) || null
+    : null;
   const isFlash = () => $('[name=kind]', v).value === 'flash_offer';
   const disc = o.discount || {};
   // Plantillas, como en la app: las de su gremio (mismas ideas, generadas
@@ -1847,6 +1875,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
         <label class="f" id="seatsRow" hidden><span>Plazas por persona <small>(a un evento no se va solo; un código vale por todas)</small></span><select name="max_seats">
           ${[1, 2, 3, 4, 5, 6].map((n) => `<option value="${n}" ${Number(o.max_seats || 1) === n ? 'selected' : ''}>${n === 1 ? esc(I18N.t('1 (solo quien reserva)')) : esc(bi(`${n} personas`, `${n} people`))}</option>`).join('')}</select></label>
         <label class="f full" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="adults_only" ${o.adults_only ? 'checked' : ''}><span>Solo para mayores de 18</span></label>
+        ${serieCopia ? `<label class="f full" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="keep_series" checked><span>${esc(bi(`Forma parte de la serie «${serieCopia.name}»`, `Part of the “${serieCopia.name}” series`))}<br><small class="muted">${esc(bi('Quien la sigue recibirá un aviso cuando se publique.', 'Its followers will be notified when it goes live.'))}</small></span></label>` : ''}
         <fieldset class="f full filtro-sellos"><legend>Quién la ve</legend>
           ${AUDIENCIAS.map(([k, t]) => `<label class="opcion"><input type="radio" name="audience" value="${k}" ${(o.audience || 'all') === k ? 'checked' : ''}><span>${esc(t)}</span></label>`).join('')}
           <p class="hint" id="audAyuda" ${(o.audience || 'all') === 'all' ? 'hidden' : ''}>Solo la ven ellos. Si a otra persona le llega el enlace, la ficha dice que es exclusiva y cómo conseguirla, sin enseñar el beneficio.</p>
@@ -2501,6 +2530,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
         const { error: eFotos } = await sb.from('offer_images').delete().eq('offer_id', id);
         if (eFotos) throw eFotos;
       } else {
+        if (serieCopia && $('[name=keep_series]', v)?.checked) data.series_id = serieCopia.id;
         const { data: row, error } = await sb.from('offers').insert(data).select('id').single();
         if (error) throw error;
         offerId = row.id;
@@ -4466,6 +4496,8 @@ PAGES.informe = async (v, param) => {
     </div>
 
     ${audienciaHtml(aud)}
+
+    ${await informeSeriesHtml()}
 
     <div class="card"><h2>Por publicación</h2><div class="actions" style="margin-bottom:10px"><button class="btn sm" id="csvOffers">Descargar CSV</button></div>
       ${table({
