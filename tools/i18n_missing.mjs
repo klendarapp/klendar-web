@@ -1,6 +1,6 @@
 // Textos de «Tu cuenta» que no tienen traducción inglesa.
 //
-// Busca los t('…') de app.js y cuenta.js, y los textos de las listas que se
+// Busca los t('…') de app.js, cuenta.js y rrpp.js, y los textos de las listas que se
 // traducen al vuelo (motivos, tipos de sugerencia, estados), y dice cuáles no
 // están en APP_EN. Sale con 1 si falta alguno, para poder usarlo de prueba.
 //
@@ -15,7 +15,7 @@ const ctx = {};
 vm.runInNewContext(`${leer('i18n.js')}\nthis.APP_EN = APP_EN;`, ctx);
 const EN = ctx.APP_EN;
 
-const codigo = leer('app.js') + leer('cuenta.js');
+const codigo = leer('app.js') + leer('cuenta.js') + leer('rrpp.js');
 const textos = new Set();
 for (const m of codigo.matchAll(/\bt\(\s*'((?:[^'\\]|\\.)*)'\s*\)/g)) textos.add(m[1].replace(/\\'/g, "'"));
 // Listas: ['clave', 'Texto', 'Ejemplo'] y { clave: 'Texto' } dentro de las

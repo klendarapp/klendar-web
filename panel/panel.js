@@ -703,6 +703,8 @@ const SVG = {
   vista: 'M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z',
   rejilla: 'M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm8-2h8v8h-8v-8zm2 2v4h4v-4h-4z',
   lista: 'M3 5h2v2H3V5zm4 0h14v2H7V5zM3 11h2v2H3v-2zm4 0h14v2H7v-2zm-4 6h2v2H3v-2zm4 0h14v2H7v-2z',
+  // RRPP (record_voice_over).
+  rrpp: 'M9 13c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0-6c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm0 8c-2.67 0-8 1.34-8 4v3h16v-3c0-2.66-5.33-4-8-4zm6 5H3v-.99C3.2 18.29 6.3 17 9 17s5.8 1.29 6 2v1zM15.08 7.05c.84 1.18.84 2.71 0 3.89l1.68 1.69c2.02-2.02 2.02-5.07 0-7.27l-1.68 1.69zM20.07 2l-1.63 1.63c2.77 3.02 2.77 7.56 0 10.74L20.07 16c3.9-3.89 3.91-9.95 0-14z',
 };
 const svg = (n, s = 20) => `<svg class="ms svg" viewBox="0 0 24 24" width="${s}" height="${s}" aria-hidden="true"><path fill="currentColor" d="${SVG[n]}"/></svg>`;
 const icono = (n) => (SVG[n] ? svg(n) : ms(n));
@@ -732,6 +734,7 @@ const NAV = [
     ['novedades', 'campaign', 'Novedades'],
     ['cerrados', 'event_busy', 'Días cerrados'],
     ['equipo', 'group', 'Equipo'],
+    ['rrpp', 'rrpp', 'RRPP'],
   ]],
   ['Tu negocio', [
     ['ficha', 'storefront', 'Tu ficha'],
@@ -819,7 +822,7 @@ function sinDobleEnvio(caja) {
 
 // Lo que no es de un empleado: solo propietario y encargados (como la app).
 // «Regalo de cumpleaños» no está: el personal lo ve, en solo lectura.
-const SOLO_GESTION = ['sellos', 'carta', 'novedades', 'mensajes', 'ficha', 'cerrados', 'equipo', 'cartel-local'];
+const SOLO_GESTION = ['sellos', 'carta', 'novedades', 'mensajes', 'ficha', 'cerrados', 'equipo', 'cartel-local', 'rrpp'];
 
 async function route() {
   paraCamara();
@@ -1435,9 +1438,12 @@ const AUDIENCIAS = [
   ['all', 'Todo el mundo'],
   ['favorites', 'Solo quien tiene tu negocio en favoritos'],
   ['customers', 'Solo clientes con sellos en alguna de tus tarjetas'],
+  // Solo por el enlace o el QR de un RRPP (panel/rrpp.js).
+  ['promoters', bi('Solo con el enlace de un RRPP', "Only through a promoter's link")],
 ];
 const etiquetaAudiencia = (o) => (o?.audience === 'favorites' ? ` <span class="tag dim">${esc(I18N.t('Para favoritos'))}</span>`
-  : o?.audience === 'customers' ? ` <span class="tag dim">${esc(I18N.t('Para clientes'))}</span>` : '');
+  : o?.audience === 'customers' ? ` <span class="tag dim">${esc(I18N.t('Para clientes'))}</span>`
+    : o?.audience === 'promoters' ? ` <span class="tag rrpp-tag">${esc(bi('Oferta de RRPP', 'Promoter offer'))}</span>` : '');
 
 /** Plazas ocupadas (personas) de una publicación con aforo: lo que dice la
  * base (`seats_left`, según guarde plaza o vaya por orden de llegada) o, con
@@ -1561,7 +1567,7 @@ function accionesPub(o) {
       <button type="button" data-act="repeat" data-id="${esc(o.id)}">Repetir cada semana…</button>
       ${o.status !== 'cancelled' ? `<button type="button" data-act="serie" data-id="${esc(o.id)}">${esc(bi('Serie…', 'Series…'))}</button>` : ''}
       ${OTROS_LOCALES.length ? `<button type="button" data-act="locales" data-id="${esc(o.id)}">Publicar en otros locales…</button>` : ''}
-      <a href="${I18N.lang === 'en' ? '/en/poster/' : '/cartel/'}${esc(o.id)}" target="_blank" rel="noopener">Cartel para imprimir</a>
+      ${o.audience === 'promoters' ? '' : `<a href="${I18N.lang === 'en' ? '/en/poster/' : '/cartel/'}${esc(o.id)}" target="_blank" rel="noopener">Cartel para imprimir</a>`}
       <button type="button" class="bad" data-act="delete" data-id="${esc(o.id)}">Borrar</button>
     </div></details>
   </div>`;
@@ -1809,9 +1815,14 @@ async function offerForm(v, id, kindDefault, desde = null) {
   // otra a partir de ella (la copia los conserva).
   const origenLugar = id || desde?.from;
   if (origenLugar) {
-    const { data: lugarPlan } = await sb.from('offers').select('for_kids, setting').eq('id', origenLugar).maybeSingle();
-    if (lugarPlan) { o.for_kids = lugarPlan.for_kids; o.setting = lugarPlan.setting; }
+    // Y lo de RRPP (para qué RRPP, plazas y hasta cuándo vale el código).
+    const { data: lugarPlan } = await sb.from('offers')
+      .select('for_kids, setting, promoter_scope, promoter_quota, promoter_code_until, promoter_code_hours')
+      .eq('id', origenLugar).maybeSingle();
+    if (lugarPlan) Object.assign(o, lugarPlan);
   }
+  // «Solo con el enlace de un RRPP»: los RRPP del negocio y los elegidos.
+  const datosRrpp = await rrppFormularioCarga(origenLugar, o);
   // Crear a partir de una fecha de una serie: la nueva sigue en ella (se
   // puede quitar). Quien la sigue recibirá un aviso cuando se publique.
   const serieCopia = !id && desde?.from
@@ -1895,7 +1906,8 @@ async function offerForm(v, id, kindDefault, desde = null) {
         <p class="hint full" style="margin:-4px 0 0">Solo si este plan es distinto de tu local (p. ej. un taller infantil o un concierto en el patio).</p>
         <fieldset class="f full filtro-sellos"><legend>Quién la ve</legend>
           ${AUDIENCIAS.map(([k, t]) => `<label class="opcion"><input type="radio" name="audience" value="${k}" ${(o.audience || 'all') === k ? 'checked' : ''}><span>${esc(t)}</span></label>`).join('')}
-          <p class="hint" id="audAyuda" ${(o.audience || 'all') === 'all' ? 'hidden' : ''}>Solo la ven ellos. Si a otra persona le llega el enlace, la ficha dice que es exclusiva y cómo conseguirla, sin enseñar el beneficio.</p>
+          <p class="hint" id="audAyuda" ${['all', 'promoters'].includes(o.audience || 'all') ? 'hidden' : ''}>Solo la ven ellos. Si a otra persona le llega el enlace, la ficha dice que es exclusiva y cómo conseguirla, sin enseñar el beneficio.</p>
+          ${rrppFormularioHtml(o, datosRrpp)}
         </fieldset>
         <label class="f full"><span>Condiciones (letra pequeña)</span><textarea name="terms" maxlength="300">${esc(o.terms || '')}</textarea></label>
         <label class="f full"><span>Enlace externo (entradas, reservas…)</span><input name="external_url" value="${esc(o.external_url || '')}" placeholder="https://"></label>
@@ -2008,8 +2020,9 @@ async function offerForm(v, id, kindDefault, desde = null) {
   syncDiscount();
   // La ayuda de «Quién la ve» solo hace falta si no es para todo el mundo.
   $$('[name=audience]', v).forEach((r) => {
-    r.onchange = () => { $('#audAyuda', v).hidden = ($('[name=audience]:checked', v)?.value || 'all') === 'all'; };
+    r.onchange = () => { $('#audAyuda', v).hidden = ['all', 'promoters'].includes($('[name=audience]:checked', v)?.value || 'all'); };
   });
+  rrppFormularioEngancha(v);
 
   // Fotos
   let images = [...(o.images || [])];
@@ -2426,6 +2439,10 @@ async function offerForm(v, id, kindDefault, desde = null) {
         $('#formErr').textContent = I18N.t('Marca el sitio en el mapa.'); return;
       }
     }
+    // De RRPP: para qué RRPP, plazas y hasta cuándo vale (panel/rrpp.js).
+    const audiencia = f.get('audience') || 'all';
+    const rrpp = audiencia === 'promoters' ? rrppFormularioLee(v) : null;
+    if (rrpp?.error) { $('#formErr').textContent = rrpp.error; return; }
     const programada = fromLocalInput(f.get('publish_at'));
     if (programada && new Date(programada) <= new Date()) {
       $('#formErr').textContent = I18N.t('La hora de publicación tiene que ser futura.'); return;
@@ -2510,7 +2527,9 @@ async function offerForm(v, id, kindDefault, desde = null) {
       // null = como el local. Una +18 nunca se marca como apta para niños.
       for_kids: forKids($('[name=adults_only]').checked, f.get('for_kids')),
       setting: f.get('setting') || null,
-      audience: f.get('audience') || 'all',
+      audience: audiencia,
+      // Las columnas de RRPP: las suyas o, si deja de serlo, las de siempre.
+      ...(rrpp ? rrpp.cols : o.audience === 'promoters' ? RRPP_COLUMNAS_FUERA : {}),
       // Sin marcar: borrador, salvo que ya estuviera terminada, agotada o
       // cancelada (se queda así; editarla no la saca del cajón).
       status: programada ? 'draft' : ($('[name=publish]').checked ? 'active'
@@ -2569,6 +2588,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
         const { error: eFotos2 } = await sb.from('offer_images').insert(images.map((url, i) => ({ offer_id: offerId, url, position: i })));
         if (eFotos2) throw eFotos2;
       }
+      if (rrpp?.cols.promoter_scope === 'some') await rrppGuardaElegidos(offerId, rrpp.ids);
       toast(id ? 'Cambios guardados' : 'Publicado');
       location.hash = '#/publicaciones';
     } catch (err) {
@@ -2710,6 +2730,8 @@ const ERR_VALIDAR = {
   offer_removed: 'Klendar ha retirado esta publicación: el código ya no vale.',
   business_inactive: 'Tu negocio está desactivado: no se pueden validar códigos. Escríbenos a info@klendar.app.',
   account_suspended: 'Tu cuenta está suspendida: no puedes validar códigos. Si crees que es un error, escribe a info@klendar.app.',
+  // Validar desde «Buscar en las listas de esta noche» (door_validate).
+  not_on_list: 'Ese código no está en las listas de esta noche.',
 };
 
 /** Qué hay que dar (como `codeDealParts` en la app), en dos trozos: lo que
@@ -2771,10 +2793,17 @@ function tarjetaCodigo(r, estado) {
     lineas.push(ms('timer_off') + esc(`${bi('Caducó', 'Expired')}: ${horaCodigo(r.expires_at)}`));
   }
   const plazas = (r.seats || 1) > 1 && !ajeno;
+  // De la lista de un RRPP: bien a la vista, debajo del título.
+  const nombreRrpp = r.promoter_name || I18N.t('Usuario de Klendar');
+  const rrpp = !ajeno && (r.promoter_id || r.promoter_name)
+    ? `<p class="cod-rrpp">${ms('person')}<span>${esc(bi(`Lista de ${nombreRrpp}`, `${nombreRrpp}'s list`))}${r.promoter_off_offer
+      ? `<small>${esc(bi('fuera de su oferta', 'outside their offer'))}</small>` : ''}</span></p>` : '';
+  const tipoRrpp = r.promoter_offer && !ajeno ? bi('Oferta de RRPP', 'Promoter offer') : '';
   return `<div class="codigo-card ${estado}">
     <div class="cod-top">${foto}<div class="cod-cab">
-      ${tipo || r.business_name ? `<span class="cod-tipo">${esc([tipo, r.business_name].filter(Boolean).join(' · '))}</span>` : ''}
+      ${tipo || r.business_name ? `<span class="cod-tipo">${esc([tipo, tipoRrpp, r.business_name].filter(Boolean).join(' · '))}</span>` : ''}
       <h2 class="cod-titulo">${esc(titulo)}</h2></div></div>
+    ${rrpp}
     ${dar ? `<p class="cod-label">${esc(estado === 'bad' ? bi('Era para', 'It was for') : bi('Aplicar al cliente', 'Apply to the customer'))}</p>
       <p class="cod-dar">${esc(dar)}</p>
       ${antes ? `<p class="cod-antes">${esc(antes)}</p>` : ''}` : ''}
@@ -2811,6 +2840,7 @@ PAGES.validar = async (v) => {
       <div id="result" aria-live="assertive"></div>
       <div id="cola"></div>
     </div>
+    <div id="puertaRrpp"></div>
     <div class="card" style="margin-top:18px"><h2>Últimos validados</h2><div id="recent"></div></div>`;
 
   // ── Sin conexión: los códigos se guardan y se validan al volver la red ──
@@ -2873,7 +2903,7 @@ PAGES.validar = async (v) => {
       cols: [
         { h: 'Cuándo', r: (r) => fmtDate(r.at) },
         { h: 'Qué', r: (r) => `<b class="title">${esc(r.title)}</b><span class="sub">${esc(queValidado(r))}${etiquetaSinConexion(r)}</span>` },
-        { h: 'Persona', r: (r) => esc(personaValidada(r)) },
+        { h: 'Persona', r: (r) => `${esc(personaValidada(r))}${r.promoter_name ? `<span class="sub">${rrppListaDe(r)}</span>` : ''}` },
       ],
       rows: rows || [],
       empty: 'Todavía no has validado ningún código.',
@@ -2940,6 +2970,13 @@ PAGES.validar = async (v) => {
     }
   };
   $('#go').onclick = validate;
+  // Las listas de los RRPP de esta noche (panel/rrpp.js): validar desde la
+  // fila es lo mismo que el escáner.
+  rrppPuerta($('#puertaRrpp'), (res) => {
+    pintaResultado(res, res.ok ? 'ok' : 'bad');
+    if (res.ok) { if (navigator.vibrate) navigator.vibrate(120); loadRecent(); }
+    $('#result')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  });
   pintaCola();
   enviaCola();
   $('#code').addEventListener('keydown', (e) => { if (e.key === 'Enter') validate(); });
@@ -3024,7 +3061,7 @@ PAGES.asistentes = async (v, offerId) => {
     const rows = list.filter((a) => !q || (a.user_name || '').toLowerCase().includes(q) || a.code.toLowerCase().includes(qc));
     $('#list', v).innerHTML = table({
       cols: [
-        { h: 'Persona', r: (a) => `<b class="title">${esc(a.user_name || I18N.t('Invitada'))}</b><span class="sub mono">${esc(a.code.slice(0, 8).toUpperCase())}</span>` },
+        { h: 'Persona', r: (a) => `<b class="title">${esc(a.user_name || I18N.t('Invitada'))}</b><span class="sub mono">${esc(a.code.slice(0, 8).toUpperCase())}</span>${a.promoter_name ? `<span class="sub">${rrppListaDe(a)}</span>` : ''}` },
         { h: 'Plazas', num: true, r: (a) => fmtNum(plazas(a)) },
         { h: 'Estado', r: estado },
         { h: 'Reservó', r: (a) => fmtDate(a.created_at) },
@@ -3055,6 +3092,8 @@ PAGES.asistentes = async (v, offerId) => {
   $('#csv', v).onclick = () => downloadCsv(`asistentes-${offer?.title || ''}`, list, [
     ['user_name', 'nombre'], ['code', 'código'], [(a) => plazas(a), 'plazas'], [(a) => ESTADO_CSV[a.status] || a.status, 'estado'],
     ['created_at', 'reservó'], ['validated_at', 'entró'],
+    ['promoter_name', bi('lista de RRPP', 'promoter list')],
+    [(a) => (a.promoter_off_offer ? bi('sí', 'yes') : ''), bi('fuera de su oferta', 'outside their offer')],
   ]);
   render();
 };

@@ -17,6 +17,7 @@ import { decodeSeg,
 } from './public.js';
 import { cuandoCorto, plataformaEntradas, rejilla } from './tarjeta.js';
 import { SITIO_PLAN, listaSitio } from './sitio.js';
+import KR from '../../assets/rrpp-enlace.js';
 
 // Iconos de Material (los mismos que la app), en SVG: las páginas públicas
 // no cargan la fuente de iconos.
@@ -123,12 +124,23 @@ function traducir(lang, ...pedir) {
   return `<script src="/assets/traducir.js?v=1" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}" data-lang="${lang === 'en' ? 'en' : 'es'}" data-pedir="${esc(pedir.filter(Boolean).join(' '))}"></script>`;
 }
 
-export async function offerPage(id, lang) {
+export async function offerPage(id, lang, rpRaw = '') {
   const path = `${pre(lang)}/o/${id}`;
   const en = lang === 'en';
   if (!isUuid(id)) return notFound(lang, path, 'o');
-  const o = await rpc('offer_detail', { p_id: id });
+  // Abierta desde el enlace de un RRPP (`?rp=<código>`): la base dice de
+  // quién es la lista (`promoter`). Una oferta de RRPP sin un enlace que la
+  // tenga no existe (el 404 de siempre).
+  const rp = KR.codigoValido(rpRaw);
+  const o = await rpc('offer_detail', { p_id: id, p_rp: rp || null });
   if (!o) return notFound(lang, path, 'o');
+  const prom = rp && o.promoter && o.promoter.code ? o.promoter : null;
+  // Con el enlace (o siendo de RRPP), la página no es para los buscadores
+  // ni para compartir: sin canonical ni hreflang, sin «Compartir en
+  // historias» y sin caché compartida.
+  const deRrpp = o.audience === 'promoters';
+  const privada = Boolean(prom) || deRrpp;
+  const rpQ = prom ? `?rp=${encodeURIComponent(prom.code)}` : '';
   // Cómo es el sitio según la publicación o su local (sin deducir nada por
   // la categoría): se pide ya, a la vez que la dirección del negocio.
   const rasgosP = rpcAll('offer_place_traits', { p_offer: id }).catch(() => []);
@@ -137,7 +149,7 @@ export async function offerPage(id, lang) {
   // Exclusiva para favoritos o clientes: la web pública va siempre sin
   // sesión, así que aquí siempre llega bloqueada (sin título, beneficio ni
   // fotos). Se dice qué es, de quién y cómo conseguirla.
-  if (o.locked) return lockedOfferPage(o, lang, path, bHref);
+  if (o.locked) return lockedOfferPage(o, lang, path, bHref, rpQ);
   // La serie de la que forma parte («Seguir la serie»), si tiene. Sin la
   // función (o sin red), la ficha sale igual.
   const serie = await rpc('offer_series_info', { p_offer: id }).catch(() => null);
@@ -194,7 +206,13 @@ export async function offerPage(id, lang) {
     !over && soldOut ? `<span class="badge off">${S.soldOut}</span>` : '',
     o.is_trending ? `<span class="badge">${S.hot}</span>` : '',
     o.adults_only ? '<span class="badge">+18</span>' : '',
+    deRrpp ? `<span class="badge">${en ? 'Promoter offer' : 'Oferta de RRPP'}</span>` : '',
   ].filter(Boolean).join('');
+  // «Te apuntas a la lista de…» (siempre a la vista, junto al botón) y, en
+  // una de RRPP, cuántas plazas quedan en su lista y hasta cuándo vale.
+  const nombreRrpp = prom ? KR.nombreDe(prom, lang) : '';
+  const rrppHtml = prom ? `${KR.aviso(nombreRrpp, prom.business_name || o.business_name, lang)}
+      ${prom.in_offer ? KR.lineas(prom, nombreRrpp, lang).map((l) => `<p class="note">${esc(l)}</p>`).join('') : ''}` : '';
 
   // La misma jerarquía que la ficha de la app: la foto o el vídeo en grande;
   // el tipo, el título y el negocio; el precio o el descuento y cuándo; quién
@@ -244,8 +262,8 @@ export async function offerPage(id, lang) {
         const voy = (clase) => `<a class="${clase}" id="voy" href="${cuenta(lang)}#/voy/${id}" rel="nofollow">${icono('voy', 16)} <span>${S.going}</span></a>`;
         const principal = soldOut ? `<a class="pill accent big" href="${cuenta(lang)}#/espera/${id}">${S.wait}</a>`
           : noEmpezada ? `<span class="pill accent big" aria-disabled="true" style="opacity:.55">${S.notYet}</span>`
-          : flash ? `<a class="pill accent big" href="${cuenta(lang)}#/codigo/${id}">${S.code}</a>`
-            : o.reservations_enabled ? `<a class="pill accent big" href="${cuenta(lang)}#/reservar/${id}">${S.reserve}</a>`
+          : flash ? `<a class="pill accent big" href="${cuenta(lang)}#/codigo/${id}${rpQ}">${S.code}</a>`
+            : o.reservations_enabled ? `<a class="pill accent big" href="${cuenta(lang)}#/reservar/${id}${rpQ}">${S.reserve}</a>`
               : entradas ? (() => {
                 // Como la app: «Entradas en DICE» si es una plataforma conocida;
                 // si no, «Conseguir entradas» con el dominio debajo.
@@ -257,15 +275,17 @@ export async function offerPage(id, lang) {
                 : voy('pill accent big');
         // «Voy» e «Invitar a un amigo»: la página va en caché y no sabe quién
         // la mira; si ya vas, lo pinta el navegador (/assets/amigos.js).
-        return `${principal}
+        // Una de RRPP solo se abre con el enlace: ni invitar a un amigo, ni
+        // guardarla en Planes (luego no se abriría), ni compartirla.
+        return `${rrppHtml}${principal}
           <p class="acciones amigos-acc" id="amigos-ficha" data-offer="${esc(o.id)}"${conCodigo ? ` data-codigo="${flash ? 'codigo' : 'reservar'}"` : ''}>
             ${entradas ? voy('pill') : ''}
-            <a class="pill" href="${cuenta(lang)}#/invitar/${id}" rel="nofollow">${icono('invitar', 16)} ${S.invite}</a></p>
+            ${deRrpp ? '' : `<a class="pill" href="${cuenta(lang)}#/invitar/${id}" rel="nofollow">${icono('invitar', 16)} ${S.invite}</a>`}</p>
           <p class="note" id="voy-auto" hidden></p>
-          ${conCodigo ? `<p class="note" id="voy-pista">${flash ? S.byCode : S.byReservation} ${S.later}</p>` : ''}
-          <p class="acciones"><a class="pill" data-plan="${id}" href="${cuenta(lang)}#/guardar/${id}"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg> <span>${S.save}</span></a>
-            ${openInApp(path, S.open, 'pill ghost')}</p>
-          <p class="acciones">${historiaBoton(lang, 'o', o.id)}</p>`;
+          ${conCodigo ? `<p class="note" id="voy-pista">${flash ? S.byCode : S.byReservation}${deRrpp ? '' : ` ${S.later}`}</p>` : ''}
+          <p class="acciones">${deRrpp ? '' : `<a class="pill" data-plan="${id}" href="${cuenta(lang)}#/guardar/${id}"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg> <span>${S.save}</span></a>`}
+            ${openInApp(path + rpQ, S.open, 'pill ghost')}</p>
+          ${privada ? '' : `<p class="acciones">${historiaBoton(lang, 'o', o.id)}</p>`}`;
       })()}
       ${serieFicha(serie, o.id, lang)}
       <p class="note">${S.note}</p>
@@ -325,6 +345,18 @@ el.textContent=n<ini?${JSON.stringify(en ? 'Starts in ' : 'Empieza en ')}+dur(in
   // la misma persona en 30 minutos (`offer_views_dedupe`).
   const vista = `<script>(function(){try{if(navigator.webdriver)return;fetch(${JSON.stringify(sp.url + '/rest/v1/offer_views')},{method:'POST',keepalive:true,headers:{apikey:${JSON.stringify(sp.key)},Authorization:'Bearer '+${JSON.stringify(sp.key)},'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({offer_id:'${o.id}'})});}catch(e){}})();</script>`;
 
+  if (privada) {
+    const res = html(publicPage({
+      lang, path, image: cover, body: body + cuentaAtras + vista,
+      title: `${o.title} · ${o.business_name}`,
+      description, privada: true, consulta: rpQ, contador: false,
+      head: `${traducir(lang, `offer:${o.id}`)}
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">`,
+    }), 200, 'private, no-store');
+    res.headers.set('x-robots-tag', 'noindex, nofollow');
+    return res;
+  }
   return html(publicPage({
     lang, path, image: cover, body: body + cuentaAtras + vista,
     title: `${o.title} · ${o.business_name}`,
@@ -375,7 +407,7 @@ function serieFicha(s, offerId, lang) {
  * «Tu cuenta»; clientes → la ficha del negocio). Sin beneficio, sin fotos de
  * la oferta, sin JSON-LD y fuera de Google: no hay nada que indexar.
  */
-function lockedOfferPage(o, lang, path, bHref) {
+function lockedOfferPage(o, lang, path, bHref, rpQ = '') {
   const en = lang === 'en';
   const fav = o.audience !== 'customers';
   const n = o.business_name || '';
@@ -411,8 +443,8 @@ function lockedOfferPage(o, lang, path, bHref) {
   // «…o entra con tu cuenta»: el mismo botón que una ficha normal, en
   // «Tu cuenta». Pide entrar si hace falta y allí la base ya sabe quién mira:
   // a quien le toca le da el código; a quien no, le dice por qué.
-  const accion = flash ? [`#/codigo/${encodeURIComponent(o.id)}`, S.code]
-    : o.reservations_enabled ? [`#/reservar/${encodeURIComponent(o.id)}`, S.reserve] : null;
+  const accion = flash ? [`#/codigo/${encodeURIComponent(o.id)}${rpQ}`, S.code]
+    : o.reservations_enabled ? [`#/reservar/${encodeURIComponent(o.id)}${rpQ}`, S.reserve] : null;
   const boton = fav
     ? `<a class="pill accent big" href="${cuenta(lang)}#/seguir/${encodeURIComponent(o.business_id)}"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.8 4.5c2.2 0 3.6 1.2 5.2 3 1.6-1.8 3-3 5.2-3 3.8 0 5.9 3.9 4.4 7.3C19.5 16.4 12 21 12 21z"/></svg> ${esc(S.btn)}</a>`
     : `<a class="pill accent big" href="${esc(bHref)}">${icono('negocio', 16)} ${esc(S.btn)}</a>`;
@@ -436,11 +468,15 @@ function lockedOfferPage(o, lang, path, bHref) {
       <p class="note">${esc(S.note)}</p>
     </aside>
   </div>`;
-  return html(publicPage({
+  // Con el enlace de un RRPP: como las demás abiertas con él, privada.
+  const res = html(publicPage({
     lang, path, body, image: o.business_cover || o.business_logo,
     title: S.page, description: `${S.title}. ${S.text}`.slice(0, 200),
     head: '<meta name="robots" content="noindex">',
-  }));
+    ...(rpQ ? { privada: true, consulta: rpQ, contador: false } : {}),
+  }), 200, rpQ ? 'private, no-store' : undefined);
+  if (rpQ) res.headers.set('x-robots-tag', 'noindex, nofollow');
+  return res;
 }
 
 // ── Negocio ────────────────────────────────────────────────────────────────

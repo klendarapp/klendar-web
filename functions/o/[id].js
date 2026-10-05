@@ -7,7 +7,9 @@ import { offerPage } from '../_lib/views.js';
 
 export const onRequestGet = (ctx) => {
   configure(ctx.env);
-  return guard('es', new URL(ctx.request.url).pathname, () => offerPage(ctx.params.id, 'es'));
+  const url = new URL(ctx.request.url);
+  // `?rp=<código>`: abierta desde el enlace de un RRPP (ver _lib/rrpp.js).
+  return guard('es', url.pathname, () => offerPage(ctx.params.id, 'es', url.searchParams.get('rp') || ''));
 };
 
 // HEAD igual que GET (el middleware quita el cuerpo): comprobadores de enlaces

@@ -387,3 +387,15 @@ button.codigo.copiar .ms { font-size: 18px; color: var(--ink-2); letter-spacing:
 .medio-botones button:disabled { opacity: .35; cursor: default; }
 .medio-botones button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 .medios-add { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 6px; }
+
+/* ── RRPP (app/rrpp.js) ────────────────────────────────────────────────────
+   Neutros: el coral es solo de la oferta y del botón principal. */
+.rrpp-noche-p { margin: 4px 4px 10px; }
+.rrpp-noche { padding: 10px 14px; border-radius: 16px; border: 1px solid var(--glass-border); background: var(--glass); color: var(--ink); font: inherit; font-weight: 700; }
+.rrpp-resumen { margin: 0 4px 10px; font-weight: 700; color: var(--ink); }
+.rrpp-otros { margin-top: 12px; }
+.rrpp-fila { align-items: flex-start; }
+.rrpp-fila .rrpp-estado { flex: none; align-self: center; white-space: nowrap; }
+.tag.rrpp-dentro { background: var(--ink); color: var(--surface); }
+.rrpp-fuera { display: inline-block; justify-self: start; margin-top: 4px; padding: 1px 8px; border-radius: 999px; background: var(--glass); border: 1px solid var(--glass-border); font-weight: 700; }
+.rrpp-pie { font-size: 13px; margin: 14px 4px 0; }

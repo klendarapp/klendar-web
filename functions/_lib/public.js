@@ -217,7 +217,10 @@ export const altPath = (path, lang) =>
 // Analytics, que apunta la ruta de cada visita.
 // `actual`: la pestaña de la app que se marca en la cabecera ('descubre',
 // 'explorar'…); en una ficha, ninguna.
-export function publicPage({ lang, path, title, description, head = '', body, image, contador = true, actual = '', bodyClass = '' }) {
+// `privada`: una página que no es para los buscadores (el enlace de un RRPP,
+// una publicación abierta con él): sin canonical, sin hreflang y sin
+// og:url. `consulta` (`?rp=…`) se queda al cambiar de idioma.
+export function publicPage({ lang, path, title, description, head = '', body, image, contador = true, actual = '', bodyClass = '', privada = false, consulta = '' }) {
   const en = lang === 'en';
   const S = en
     ? { how: 'How it works', biz: 'Businesses', sup: 'Support', agenda: "What's on", exp: 'Explore' }
@@ -225,7 +228,7 @@ export function publicPage({ lang, path, title, description, head = '', body, im
   const og = image || `${BASE}/assets/og.png`;
   // Con los datos de prueba de dev, ninguna página con datos se indexa (y
   // se quita el «index, follow» que traiga, para no mandar dos órdenes).
-  const cabeza = datosDePrueba()
+  const cabeza = datosDePrueba() && !privada
     ? `<meta name="robots" content="noindex, follow">\n${head.replace(/<meta name="robots"[^>]*>\s*/g, '')}`
     : head;
   const es = en ? altPath(path, 'en') : path;
@@ -257,16 +260,16 @@ export function publicPage({ lang, path, title, description, head = '', body, im
 ${erroresScript()}
 <title>${esc(title)} · Klendar</title>
 <meta name="description" content="${esc(description)}">
-<link rel="canonical" href="${BASE}${esc(path)}">
+${privada ? '' : `<link rel="canonical" href="${BASE}${esc(path)}">
 <link rel="alternate" hreflang="es" href="${BASE}${esc(es)}">
 <link rel="alternate" hreflang="en" href="${BASE}${esc(enPath)}">
 <link rel="alternate" hreflang="x-default" href="${BASE}${esc(es)}">
-<meta property="og:site_name" content="Klendar">
+`}<meta property="og:site_name" content="Klendar">
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(description)}">
 <meta property="og:image" content="${esc(og)}">
-<meta property="og:url" content="${BASE}${esc(path)}">
-<meta property="og:locale" content="${en ? 'en_GB' : 'es_ES'}">
+${privada ? '' : `<meta property="og:url" content="${BASE}${esc(path)}">
+`}<meta property="og:locale" content="${en ? 'en_GB' : 'es_ES'}">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${esc(title)}">
 <meta name="twitter:description" content="${esc(description)}">
@@ -282,7 +285,7 @@ ${preconectar}<link rel="preload" href="/assets/fonts/manrope-latin.woff2" as="f
 ${cabeza}
 </head>
 <body${bodyClass ? ` class="${esc(bodyClass)}"` : ''}>
-${siteHeader(lang, esc(es), esc(enPath), actual)}
+${siteHeader(lang, esc(es + consulta), esc(enPath + consulta), actual)}
 <main class="pub wrap" id="contenido">${body}</main>
 ${siteFooter(lang)}
 ${conAmigos ? `<script src="/assets/amigos.js?v=12" defer data-lang="${en ? 'en' : 'es'}"></script>

@@ -1,5 +1,5 @@
 // Servidor de desarrollo mínimo: sirve los ficheros estáticos del repo y
-// ejecuta las Pages Functions de /o/, /b/ (por id o por dirección), /r/, /v/, /amigo/, /cartel/, /agenda/,
+// ejecuta las Pages Functions de /o/, /b/ (por id o por dirección), /r/, /rp/, /v/, /amigo/, /cartel/, /agenda/,
 // /hoy/, /con-ninos/ y los sitemaps de agenda y negocios.
 // No sustituye a Cloudflare; es para ver las páginas mientras se escriben.
 import { createServer } from 'node:http';
@@ -92,6 +92,9 @@ createServer(async (req, res) => {
     else if ((m = path.match(/^\/amigo\/([^/]+)\/?$/))) { mod = await load('functions/amigo/[code].js'); params = { code: m[1] }; }
     else if ((m = path.match(/^\/en\/friend\/([^/]+)\/?$/))) { mod = await load('functions/en/friend/[code].js'); params = { code: m[1] }; }
     else if ((m = path.match(/^\/r\/([^/]+)\/?$/))) { mod = await load('functions/r/[code].js'); params = { code: m[1] }; }
+    // El enlace de un RRPP: /rp/<código> y /en/rp/<código>.
+    else if ((m = path.match(/^\/rp\/([^/]+)\/?$/))) { mod = await load('functions/rp/[code].js'); params = { code: m[1] }; }
+    else if ((m = path.match(/^\/en\/rp\/([^/]+)\/?$/))) { mod = await load('functions/en/rp/[code].js'); params = { code: m[1] }; }
     // El QR del cartel del local: a la ficha del negocio.
     else if ((m = path.match(/^\/v\/([^/]+)\/?$/))) { mod = await load('functions/v/[token].js'); params = { token: m[1] }; }
     else if ((m = path.match(/^\/baja\/([^/]+)\/?$/))) { mod = await load('functions/baja/[token].js'); params = { token: m[1] }; }

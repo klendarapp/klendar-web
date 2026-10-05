@@ -23,9 +23,9 @@ ROOT = Path(__file__).resolve().parent.parent
 
 AREAS = {
     # ideas.js ya trae cada idea en los dos idiomas.
-    'panel': (['panel/panel.js', 'panel/index.html'], 'panel/i18n.js'),
+    'panel': (['panel/panel.js', 'panel/rrpp.js', 'panel/index.html'], 'panel/i18n.js'),
     'admin': (['admin/admin.js', 'admin/index.html'], 'admin/i18n.js'),
-    'cuenta': (['app/app.js', 'app/cuenta.js', 'app/amigos.js', 'app/correo.js'], 'app/i18n.js'),
+    'cuenta': (['app/app.js', 'app/cuenta.js', 'app/amigos.js', 'app/correo.js', 'app/rrpp.js'], 'app/i18n.js'),
 }
 
 # Palabras que delatan una frase en español.

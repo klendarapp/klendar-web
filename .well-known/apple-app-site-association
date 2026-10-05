@@ -9,9 +9,11 @@
           { "/": "/r/*", "comment": "QR de canje" },
           { "/": "/v/*", "comment": "Cartel del local (QR)" },
           { "/": "/amigo/*", "comment": "Enlace de amigo" },
+          { "/": "/rp/*", "comment": "Enlace de un RRPP" },
           { "/": "/en/o/*", "comment": "Offer or event (EN)" },
           { "/": "/en/b/*", "comment": "Business page (EN)" },
-          { "/": "/en/friend/*", "comment": "Friend link (EN)" }
+          { "/": "/en/friend/*", "comment": "Friend link (EN)" },
+          { "/": "/en/rp/*", "comment": "Promoter link (EN)" }
         ]
       }
     ]

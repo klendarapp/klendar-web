@@ -76,6 +76,8 @@ function destinoWeb(ruta) {
   // «Tu mensaje ya se ha enviado» / «…no se ha enviado»: a «Avisar a mis
   // clientes» de ese negocio en el panel.
   if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/message/i))) return `/panel/#/mensajes?biz=${m[1]}`;
+  // «… ya es RRPP de …», «Un RRPP lo deja»: a «RRPP» de ese negocio.
+  if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/promoters/i))) return `/panel/#/rrpp?biz=${m[1]}`;
   if (r.startsWith('/my-business')) return '/panel/';
   // «¡Feliz cumpleaños!»: el regalo, con su QR.
   if ((m = r.match(/^\/gift\/([0-9a-f-]{36})/i))) return `#/regalo/${m[1]}`;
@@ -86,6 +88,8 @@ function destinoWeb(ruta) {
   if (r.startsWith('/friends')) return '#/amigos';
   // «Te invitan a un equipo»: aceptarla o rechazarla.
   if (r.startsWith('/team-invites')) return '#/invitaciones';
+  // «Te han pausado como RRPP», «Vuelves a ser RRPP»: tu lista de ese local.
+  if ((m = r.match(/^\/promoter\/([0-9a-f-]{36})/i))) return `#/rrpp/${m[1]}`;
   return '';
 }
 
@@ -1900,20 +1904,23 @@ RUTAS['ultimo-paso'] = async (_p, params) => {
 
 RUTAS.avisos = (...a) => RUTAS.notificaciones(...a); // enlaces antiguos
 
-// ── Invitaciones de equipo ────────────────────────────────────────────────
-// Un negocio te invita a su equipo y decides tú (antes, con cuenta, entrabas
-// sin que se te preguntara). Como «Invitaciones de equipo» en la app.
+// ── Invitaciones ──────────────────────────────────────────────────────────
+// Un negocio te invita a su equipo (o a ser su propietario, o su RRPP) y
+// decides tú (antes, con cuenta, entrabas sin que se te preguntara). Como
+// «Invitaciones» en la app. Las de RRPP las pinta app/rrpp.js.
 RUTAS.invitaciones = async () => {
   if (!exigeSesion('invitaciones')) return;
-  const [lista, traspasos] = await Promise.all([
+  const [lista, traspasos, deRrpp] = await Promise.all([
     llamar('my_team_invites', {}),
     llamar('my_business_transfers', {}).catch(() => []),
+    llamar('my_promoter_invites', {}).catch(() => []),
   ]);
   const papel = (r) => (r === 'manager' ? t('encargado') : t('empleado'));
   const dia = (s) => new Date(s).toLocaleDateString(EN ? 'en-GB' : 'es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
   pinta(`
     <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
-    <h1>${esc(t('Invitaciones de equipo'))}</h1>
+    <h1>${esc(t('Invitaciones'))}</h1>
+    ${(deRrpp || []).length ? `<div class="invitaciones-eq">${rrppInvitacionesHtml(deRrpp)}</div>` : ''}
     ${(traspasos || []).length ? `<div class="invitaciones-eq">${traspasos.map((i) => `
       <div class="lista inv-eq">
         <p class="inv-eq-t"><b>${esc(EN ? `You’re offered ownership of ${i.business_name}` : `Te ofrecen ser propietario de ${i.business_name}`)}</b>
@@ -1942,11 +1949,15 @@ RUTAS.invitaciones = async () => {
           <button class="pill accent" type="button" data-si="${esc(i.id)}">${esc(t('Aceptar'))}</button>
         </p>
       </div>`).join('')}</div>`
-    : (traspasos || []).length ? '' : pantallaVacia({ icono: 'group', titulo: t('No tienes invitaciones pendientes.') })}`);
+    : (traspasos || []).length || (deRrpp || []).length ? '' : pantallaVacia({ icono: 'group', titulo: t('No tienes invitaciones pendientes.') })}`);
+  rrppEnganchaInvitaciones(deRrpp, () => RUTAS.invitaciones());
   const contesta = async (id, acepta, boton) => {
     boton.disabled = true;
     try {
-      const r = await llamar('respond_team_invite', { p_invite: id, p_accept: acepta });
+      const r = await llamar('respond_team_invite', { p_invite: id, p_accept: acepta }).catch((e) => {
+        if (e.datos?.ok === false) return e.datos;
+        throw e;
+      });
       if (!r?.ok) {
         // Edad y suspensión (20261028100000): la invitación sigue ahí.
         const negocio = r?.business_name || (lista || []).find((x) => x.id === id)?.business_name || '';
@@ -1975,7 +1986,10 @@ RUTAS.invitaciones = async () => {
   const traspaso = async (id, acepta, boton) => {
     boton.disabled = true;
     try {
-      const r = await llamar('respond_business_transfer', { p_transfer: id, p_accept: acepta });
+      const r = await llamar('respond_business_transfer', { p_transfer: id, p_accept: acepta }).catch((e) => {
+        if (e.datos?.ok === false) return e.datos;
+        throw e;
+      });
       if (!r?.ok) {
         toast(r?.error === 'adult_required'
           ? t('Para ser propietario de un negocio hace falta tener 18 años y la fecha de nacimiento en tu perfil. Ponla en Ajustes y vuelve a aceptarlo.')

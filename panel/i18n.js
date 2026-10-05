@@ -1038,4 +1038,7 @@ const I18N = makeI18N({
     "¿Bajo techo o al aire libre?": "Indoors or outdoors?",
     "Las dos cosas": "Both",
     "Solo si este plan es distinto de tu local (p. ej. un taller infantil o un concierto en el patio).": "Only if this plan is different from your place (e.g. a kids' workshop or a gig in the courtyard).",
+    // ── RRPP (2026-10-05): el resto va con bi() en panel/rrpp.js ──────
+    "RRPP": "Promoters",
+    "Ese código no está en las listas de esta noche.": "That code isn't on tonight's lists.",
 });

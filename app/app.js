@@ -238,10 +238,11 @@ async function confirmaEnlace(ruta, { titulo, que, texto, boton, volver }) {
     $('#confirmaEnlace').addEventListener('click', () => sigue(true), { once: true });
   });
 }
-/** El título (y el local) de una publicación para la pantalla de confirmar. */
-async function queOferta(id) {
+/** El título (y el local) de una publicación para la pantalla de confirmar.
+ * `rp`: el código del enlace de un RRPP (una de RRPP solo se abre con él). */
+async function queOferta(id, rp = '') {
   try {
-    const fila = await llamar('offer_detail', { p_id: id });
+    const fila = await llamar('offer_detail', { p_id: id, p_rp: rp || null });
     const o = Array.isArray(fila) ? fila[0] : fila;
     return o ? [o.title, o.business_name].filter(Boolean).join(' · ') : '';
   } catch { return ''; }
@@ -481,24 +482,32 @@ const fila = ({ href, icono, titulo, detalle, fuera = false, id = '' }) => `
 RUTAS[''] = async () => {
   if (!YO) return RUTAS.entrar([], new URLSearchParams());
   const foto = YO.user_metadata?.avatar_url;
-  const [negocios, invitaciones, delPerfil] = await Promise.all([
+  const [negocios, invitaciones, delPerfil, rolesRrpp] = await Promise.all([
     llamar('my_businesses', {}).catch(() => []),
     // Un negocio te ha invitado a su equipo (o te ofrece ser su
-    // propietario): se contesta desde aquí.
+    // propietario, o ser su RRPP): se contesta desde aquí.
     Promise.all([
       llamar('my_team_invites', {}).catch(() => []),
       llamar('my_business_transfers', {}).catch(() => []),
-    ]).then(([a, b]) => [...(a || []), ...(b || [])]),
+      llamar('my_promoter_invites', {}).catch(() => []),
+    ]).then(([a, b, c]) => ({ equipo: [...(a || []), ...(b || [])], rrpp: c || [] })),
     // El de su perfil, que es lo que ven los demás (Google y Apple no lo
     // dejan en `display_name` de la cuenta).
     nombrePublico(),
+    // Los locales en los que eres RRPP (la sección sale solo si hay alguno).
+    llamar('my_promoter_roles', {}).catch(() => []),
   ]);
   // Sin nombre, lo mismo que ven los demás (nunca el correo). Sin red, el
   // de la cuenta.
   const nombre = (delPerfil === undefined ? (YO.user_metadata?.display_name || '').trim() : delPerfil)
     || t('Usuario de Klendar');
   const tieneNegocio = Array.isArray(negocios) && negocios.length > 0;
-  const nInv = Array.isArray(invitaciones) ? invitaciones.length : 0;
+  const nInv = invitaciones.equipo.length + invitaciones.rrpp.length;
+  // Solo de equipo (o traspasos): como siempre; con alguna de RRPP, «Tienes
+  // una invitación» a secas.
+  const textoInv = !invitaciones.rrpp.length
+    ? (nInv === 1 ? t('Tienes una invitación de equipo') : (EN ? `You have ${nInv} team invitations` : `Tienes ${nInv} invitaciones de equipo`))
+    : (nInv === 1 ? t('Tienes una invitación') : (EN ? `You have ${nInv} invitations` : `Tienes ${nInv} invitaciones`));
   pinta(`
     <h1 class="titulo-pagina">${esc(t('Tu cuenta'))}</h1>
     <a class="perfil" href="#/ajustes">
@@ -511,8 +520,7 @@ RUTAS[''] = async () => {
 
     ${nInv ? `<a class="invitacion inv-equipo" href="#/invitaciones">
         <span class="inv-ic">${ic('group_add')}</span>
-        <span class="fila-t"><b>${esc(nInv === 1 ? t('Tienes una invitación de equipo')
-          : (EN ? `You have ${nInv} team invitations` : `Tienes ${nInv} invitaciones de equipo`))}</b>
+        <span class="fila-t"><b>${esc(textoInv)}</b>
           <small>${esc(t('Acéptala o recházala'))}</small></span>
         ${ic('chevron_right')}
       </a>` : ''}
@@ -529,6 +537,8 @@ RUTAS[''] = async () => {
     <div class="lista lista-amigos">
       ${fila({ href: '#/amigos', icono: 'group', titulo: t('Amigos'), detalle: t('Tu enlace de amigo, tu QR y tu lista') })}
     </div>
+
+    ${rrppPortadaHtml(rolesRrpp)}
 
     ${tieneNegocio ? `
       <h2 class="seccion-t">${esc(t('Negocio'))}</h2>
@@ -1679,8 +1689,12 @@ function pintaCanjeado({ titulo, negocio, benef, at, volver = '#/codigos', tz })
 }
 
 RUTAS.codigo = async ([id], params, crudo) => {
+  // `?rp=` se queda en la ruta si antes hay que entrar o crear la cuenta.
   if (!exigeSesion(`codigo/${id}${params.toString() ? `?${params}` : ''}`)) return;
   const plazas = Math.max(1, Math.min(10, parseInt(params.get('plazas') || '1', 10) || 1));
+  // Llegada desde el enlace de un RRPP (app/rrpp.js): cuenta para su lista.
+  const rp = rrppDeParams(params);
+  const conRp = rp ? `?rp=${rp}` : '';
   // Sin red y con el código guardado: se enseña ya (no se pide nada a la base,
   // así que no hace falta confirmar nada).
   const guardado = codigoGuardado(id);
@@ -1688,16 +1702,16 @@ RUTAS.codigo = async ([id], params, crudo) => {
   // Abierto desde fuera, no se saca el código (ni se reservan plazas) sin
   // pulsar: si ya lo tienes, el botón te lo enseña igual.
   if (!(await confirmaEnlace(crudo, {
-    titulo: t(plazas > 1 ? '¿Reservar plazas?' : '¿Sacar tu código?'), que: await queOferta(id),
+    titulo: t(plazas > 1 ? '¿Reservar plazas?' : '¿Sacar tu código?'), que: await queOferta(id, rp),
     texto: plazas > 1 ? (EN ? `For ${plazas} people. The code is valid for all the places.` : `Para ${plazas} personas. El código vale por todas las plazas.`) : '',
-    boton: t(plazas > 1 ? 'Reservar' : 'Sacar el código'), volver: `${pre}/o/${encodeURIComponent(id)}`,
+    boton: t(plazas > 1 ? 'Reservar' : 'Sacar el código'), volver: `${pre}/o/${encodeURIComponent(id)}${conRp}`,
   }))) return;
   // La zona del negocio, para «vale hasta el…» y la hora del canje.
   let tk;
   let tz;
   try {
     [tk, tz] = await Promise.all([
-      llamar('start_redemption', { p_offer_id: id, p_seats: plazas }),
+      llamar('start_redemption', { p_offer_id: id, p_seats: plazas, p_rp: rp || null }),
       llamar('offer_tz', { p_offer: id }).catch(() => null),
     ]);
   } catch (e) {
@@ -1707,6 +1721,9 @@ RUTAS.codigo = async ([id], params, crudo) => {
       pintaExclusiva(e.datos?.audience, e.datos?.business_id, e.datos?.business_name);
       return;
     }
+    // De RRPP (solo con su enlace, sin plazas en su lista, ya es tarde, es
+    // tu propio enlace o eres del equipo): se cuenta en su pantalla.
+    if (await rrppErrorCodigo(e, id, rp)) return;
     // Sin red: el guardado, si lo hay y no ha caducado; si no, el error.
     const g = sinRedCuenta(e) ? codigoGuardado(id) : null;
     if (g) { pintaCodigoGuardado(g); return; }
@@ -1722,6 +1739,7 @@ RUTAS.codigo = async ([id], params, crudo) => {
     <div class="ticket">
       <p class="muted">${esc(tk.business_name || '')}</p>
       <h1>${esc(tk.offer_title || '')}</h1>
+      ${tk.promoter_name ? `<p class="muted">${esc(EN ? `${tk.promoter_name}'s list` : `Lista de ${tk.promoter_name}`)}</p>` : ''}
       ${(tk.seats || 1) > 1 ? `<p class="muted"><b>${tk.seats} ${esc(t('plazas'))}</b></p>` : ''}
       ${benef ? `<p><span class="tag grande">${esc(benef)}</span></p>` : ''}
       ${tk.price_kept ? `<p class="muted">${esc(t('Mantienes el precio de cuando lo conseguiste.'))}</p>` : ''}
@@ -1807,25 +1825,27 @@ RUTAS.codigo = async ([id], params, crudo) => {
 };
 
 // ── Reservar plaza: primero «¿para cuántos?» si el evento deja varias ─────
-RUTAS.reservar = async ([id]) => {
-  if (!exigeSesion(`reservar/${id}`)) return;
-  const fila = await llamar('offer_detail', { p_id: id });
+RUTAS.reservar = async ([id], params) => {
+  const rp = rrppDeParams(params);
+  const conRp = rp ? `?rp=${rp}` : '';
+  if (!exigeSesion(`reservar/${id}${conRp}`)) return;
+  const fila = await llamar('offer_detail', { p_id: id, p_rp: rp || null });
   const o = Array.isArray(fila) ? fila[0] : fila;
   if (!o) { pinta(pantallaVacia({ icono: 'explore', titulo: t('Esa publicación ya no existe.'), h: 'h1', botones: `<a class="pill accent" href="${EN ? '/en/explore/' : '/explorar/'}">${esc(t('Buscar planes'))}</a>` })); return; }
   if (o.locked) { pintaExclusiva(o.audience, o.business_id, o.business_name); return; }
   const tope = Math.max(1, Math.min(o.max_seats || 1, o.seats_left == null ? 10 : o.seats_left));
   if (tope <= 1) {
     // Venía del botón «Reservar» de la ficha: el código no vuelve a preguntar.
-    if (hayIntencion(`reservar/${id}`)) marcaIntencion(`codigo/${encodeURIComponent(id)}`);
-    location.replace(`#/codigo/${encodeURIComponent(id)}`);
+    if (hayIntencion(`reservar/${id}${conRp}`)) marcaIntencion(`codigo/${encodeURIComponent(id)}${conRp}`);
+    location.replace(`#/codigo/${encodeURIComponent(id)}${conRp}`);
     return;
   }
   pinta(`
-    <p class="crumbs"><a href="${pre}/o/${esc(id)}">${esc(o.title)}</a></p>
+    <p class="crumbs"><a href="${pre}/o/${esc(id)}${conRp}">${esc(o.title)}</a></p>
     <h1>${esc(t('¿Para cuántos?'))}</h1>
     <p class="muted">${esc(t('El código vale por todas las plazas: lo enseñas una vez en la puerta.'))}</p>
     <div class="hub">${Array.from({ length: tope }, (_, i) => i + 1).map((n) => `
-      <a class="hub-i" href="#/codigo/${esc(id)}?plazas=${n}"><b>${n === 1 ? esc(t('Solo yo')) : `${n} ${esc(t('personas'))}`}</b></a>`).join('')}
+      <a class="hub-i" href="#/codigo/${esc(id)}?plazas=${n}${rp ? `&rp=${rp}` : ''}"><b>${n === 1 ? esc(t('Solo yo')) : `${n} ${esc(t('personas'))}`}</b></a>`).join('')}
     </div>`);
 };
 
