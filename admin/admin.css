@@ -18,7 +18,7 @@ body.admin-body { background: var(--surface); }
 .side a.nav.on { opacity: 1; background: rgba(255,255,255,.12); color: #fff; }
 .side a.nav .ic { width: 20px; text-align: center; opacity: .9; }
 .side a.nav .badge { margin-left: auto; background: var(--accent); color: var(--on-accent); font-size: 11px; font-weight: 800; padding: 2px 7px; border-radius: 999px; }
-.side .group { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; opacity: .45; margin: 14px 12px 4px; font-weight: 700; }
+.side .group { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; opacity: .7; margin: 14px 12px 4px; font-weight: 700; }
 .side .me { margin-top: auto; padding: 12px; border-top: 1px solid rgba(255,255,255,.1); font-size: 13px; opacity: .85; display: grid; gap: 6px; }
 .side .me b { display: block; word-break: break-all; }
 .side .me a { color: inherit; opacity: .8; }
@@ -264,3 +264,100 @@ a.item.den-mini:hover h3 { text-decoration: underline; }
 .item .medios .medio img, .medios .medio video { width: 64px; height: 64px; border-radius: 0; object-fit: cover; display: block; }
 .medios .medio-play { position: absolute; inset: 0; display: grid; place-items: center; color: #fff; text-shadow: 0 1px 3px rgba(0, 0, 0, .6); }
 .medios .medio.en-revision { outline: 2px dashed var(--warn, #c98a00); outline-offset: -2px; }
+
+/* ── Orden de las fichas (2026-10-05) ───────────────────────────────────── */
+/* Casilla con su texto al lado (formularios). */
+label.f.check { grid-template-columns: auto 1fr; align-items: center; }
+
+/* «Más acciones ▾» y ⋮: menú que se abre bajo el botón. */
+.menu { position: relative; display: inline-flex; }
+.menu-lista { position: absolute; top: calc(100% + 6px); left: 0; z-index: 50; min-width: 240px; max-width: min(320px, calc(100vw - 32px));
+  background: var(--elevated); color: var(--ink); border: 1px solid var(--glass-border); border-radius: 14px;
+  box-shadow: 0 18px 40px -12px rgba(0,0,0,.45); padding: 6px; display: grid; gap: 2px; }
+.menu-lista[hidden] { display: none; }
+.menu-lista.derecha { left: auto; right: 0; }
+.menu-lista.arriba { top: auto; bottom: calc(100% + 6px); }
+.menu-item { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; background: transparent; border: 0; border-radius: 10px;
+  padding: 10px 12px; font: inherit; font-size: 14px; font-weight: 600; color: inherit; cursor: pointer; text-decoration: none; white-space: normal; }
+.menu-item:hover, .menu-item:focus-visible { background: var(--soft); text-decoration: none; }
+.menu-item:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
+.menu-item:disabled { opacity: .5; cursor: default; }
+.menu-item.peligro { color: #b3261e; }
+.menu-sep { height: 1px; background: var(--glass-border); margin: 4px 6px; }
+.btn.menu-kebab { padding: 5px 7px; }
+.btn.menu-kebab .ms { font-size: 20px; }
+.btn[aria-haspopup] .ms { transition: transform .15s ease; }
+.btn[aria-haspopup][aria-expanded="true"]:not(.menu-kebab) .ms { transform: rotate(180deg); }
+@media (prefers-reduced-motion: reduce) { .btn[aria-haspopup] .ms { transition: none; } }
+@media (prefers-color-scheme: dark) { .menu-item.peligro { color: #FF9B9B; } .menu-lista { box-shadow: 0 18px 40px -12px rgba(0,0,0,.8); } }
+
+/* Cabecera de una ficha: «Ver en la app ↗» como enlace, al lado de los botones. */
+.detail-head .actions { align-items: center; }
+a.link.ver-app { font-size: 14px; margin-left: 4px; white-space: nowrap; }
+
+/* Lo que no tiene vuelta atrás, al final de la ficha. */
+.card.zona-delicada { border-color: rgba(211,47,47,.45); }
+.zona-delicada h2 { display: flex; align-items: center; gap: 6px; color: #b3261e; }
+@media (prefers-color-scheme: dark) { .zona-delicada h2 { color: #FF9B9B; } }
+
+/* Resumen: «Pendiente de ti» en filas cortas, por temas. */
+.pend-grupos { display: grid; gap: 14px 18px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.pend-grupo h3 { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); margin: 0 0 6px; }
+.pend-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.pend { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px; border-radius: 12px; background: var(--elevated);
+  border: 1px solid var(--glass-border); color: var(--ink); font: inherit; font-size: 14px; text-align: left; cursor: pointer; text-decoration: none; }
+.pend:hover { text-decoration: none; border-color: var(--ink-2); }
+.pend b { font-family: var(--display); font-size: 16px; min-width: 1.5em; font-variant-numeric: tabular-nums; }
+.pend .txt { flex: 1; min-width: 0; }
+.pend > .ms:first-child { color: var(--ink-2); }
+.pend > .ms:last-child { opacity: .5; }
+.pend.urgente { border-color: rgba(211,47,47,.45); }
+.pend.urgente b, .pend.urgente > .ms:first-child { color: #b3261e; }
+@media (prefers-color-scheme: dark) { .pend.urgente b, .pend.urgente > .ms:first-child { color: #FF9B9B; } }
+
+/* Tarjetas plegables (Resumen) y «Ver más cifras». */
+details.card.plegable > summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 8px; }
+details.card.plegable > summary::-webkit-details-marker, details.mas-cifras > summary::-webkit-details-marker { display: none; }
+details.card.plegable > summary h2 { margin: 0; flex: 1; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+details.card.plegable[open] > summary { margin-bottom: 10px; }
+details.card.plegable > summary > .ms, details.mas-cifras > summary .ms { transition: transform .15s ease; }
+details.card.plegable[open] > summary > .ms, details.mas-cifras[open] > summary .ms { transform: rotate(180deg); }
+details.mas-cifras { margin-top: 12px; }
+details.mas-cifras > summary { list-style: none; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-weight: 700; font-size: 14px;
+  padding: 6px 12px 6px 8px; border-radius: 999px; border: 1px solid var(--glass-border); }
+details.mas-cifras > summary:hover { background: var(--soft); }
+details.mas-cifras .card { background: var(--elevated); }
+@media (prefers-reduced-motion: reduce) { details.card.plegable > summary > .ms, details.mas-cifras > summary .ms { transition: none; } }
+
+/* Formularios por secciones (diálogos y «Enviar notificación»). */
+dialog.modal.ancho { width: min(680px, 94vw); }
+fieldset.grupo, details.grupo { border: 1px solid var(--glass-border); border-radius: 16px; padding: 10px 14px 14px; margin: 0; min-width: 0; }
+fieldset.grupo legend { font-weight: 800; font-size: 14px; padding: 0 6px; margin-left: -6px; }
+details.grupo > summary { font-weight: 800; font-size: 14px; cursor: pointer; padding: 2px 0; }
+details.grupo[open] > summary { margin-bottom: 8px; }
+.grupo-campos { display: grid; gap: 10px; }
+.grupo-campos.c2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.grupo-campos.c2 > .ancho { grid-column: 1 / -1; }
+.grupo-nota { margin: 0 0 8px; }
+@media (max-width: 560px) { .grupo-campos.c2 { grid-template-columns: minmax(0, 1fr); } }
+
+/* Sugerencias: el estado en un desplegable. */
+.estado-sel { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.estado-sel select { padding: 5px 10px; font-size: 13px; border-radius: 999px; font-weight: 700; color: var(--ink); }
+.sug-acciones { align-items: center; }
+
+/* Menú lateral: «Sistema» se pliega. */
+.side .group-toggle { display: flex; align-items: center; gap: 6px; width: calc(100% - 0px); background: none; border: 0; color: inherit; font: inherit;
+  font-size: 11px; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; opacity: .7; margin: 14px 0 4px; padding: 4px 12px; border-radius: 8px; cursor: pointer; text-align: left; }
+.side .group-toggle:hover { opacity: .9; background: rgba(255,255,255,.06); }
+.side .group-toggle:focus-visible { outline: 2px solid #fff; outline-offset: 0; }
+.side .group-toggle .ms { margin-left: auto; font-size: 18px; transition: transform .15s ease; }
+.side .group-toggle[aria-expanded="true"] .ms { transform: rotate(180deg); }
+.side .group-toggle .badge { margin-left: 6px; background: var(--accent); color: var(--on-accent); font-size: 11px; font-weight: 800; padding: 1px 6px; border-radius: 999px; letter-spacing: 0; }
+.side .nav-plegable { display: flex; flex-direction: column; gap: 6px; }
+.side a.nav:focus-visible { outline: 2px solid #fff; outline-offset: -2px; }
+/* Las cifras principales del Resumen: en filas iguales, ninguna sola y estirada. */
+.kpis.principales { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+@media (max-width: 560px) { .kpis.principales { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* En el móvil, las cifras de dos en dos (una por fila alargaba mucho la pantalla). */
+@media (max-width: 560px) { .kpis > * { flex: 1 1 calc(50% - 5px); } }

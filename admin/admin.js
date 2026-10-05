@@ -114,7 +114,9 @@ let RUTA_N = 0;
 class Obsoleta extends Error {
   constructor() { super(''); this.obsoleta = true; }
 }
-const ESCRIBE = /^admin_(set|record|send|delete|upsert|resolve|review|add|remove|push_retry|save|collection_(add|remove|move)|run|update|dismiss|merge)|^set_business_amenities$/;
+// Las RPC que escriben: aunque se cambie de pantalla mientras van, terminan y
+// dicen si ha ido bien (las que solo leen se cortan con `Obsoleta`).
+const ESCRIBE = /^admin_(set|record|send|delete|upsert|resolve|review|add|remove|push_retry|save|collection_(add|remove|move)|run|update|dismiss|merge|handle_cancellation|mark_business_closed|release_suspension_pause|change_user_email)|^set_business_amenities$/;
 async function rpc(fn, args = {}) {
   const n = RUTA_N;
   const { data, error } = await sb.rpc(fn, args);
@@ -182,27 +184,41 @@ function toast(msg, bad = false) {
   setTimeout(() => t.remove(), bad ? 6000 : 3500);
 }
 
-// Modal genérico: campos → valores (o null si se cancela).
+// Modal genérico: campos → valores (o null si se cancela). Un formulario
+// largo va por secciones: `{ grupo: 'Título', campos: [...] }` (con
+// `plegado: true|false` se puede plegar; `cols: 2`, en dos columnas; `nota`,
+// una línea de ayuda). Un campo con `ancho: true` ocupa la fila entera.
 function modal({ title, intro, warn, fields = [], submit = 'Guardar', danger = false, confirmWord = null }) {
   return new Promise((resolve) => {
     const d = $('#modal');
     const field = (f) => {
       const id = 'f_' + f.name;
       const help = f.help ? `<small>${esc(f.help)}</small>` : '';
-      if (f.type === 'select') return `<label class="f"><span>${esc(f.label)} ${help}</span><select name="${f.name}" id="${id}">${f.options.map((o) => `<option value="${esc(o[0])}" ${o[0] == f.value ? 'selected' : ''}>${esc(o[1])}</option>`).join('')}</select></label>`;
-      if (f.type === 'textarea') return `<label class="f"><span>${esc(f.label)} ${help}</span><textarea name="${f.name}" id="${id}" ${f.required ? 'required' : ''}>${esc(f.value ?? '')}</textarea></label>`;
-      if (f.type === 'checkbox') return `<label class="f" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="${f.name}" id="${id}" ${f.value ? 'checked' : ''}><span>${esc(f.label)} ${help}</span></label>`;
-      return `<label class="f"><span>${esc(f.label)} ${help}</span><input name="${f.name}" id="${id}" type="${f.type || 'text'}" value="${esc(f.value ?? '')}" ${f.required ? 'required' : ''} ${f.step ? `step="${f.step}"` : ''} ${f.placeholder ? `placeholder="${esc(f.placeholder)}"` : ''}></label>`;
+      const ancho = f.ancho ? ' ancho' : '';
+      if (f.type === 'select') return `<label class="f${ancho}"><span>${esc(f.label)} ${help}</span><select name="${f.name}" id="${id}">${f.options.map((o) => `<option value="${esc(o[0])}" ${o[0] == f.value ? 'selected' : ''}>${esc(o[1])}</option>`).join('')}</select></label>`;
+      if (f.type === 'textarea') return `<label class="f ancho"><span>${esc(f.label)} ${help}</span><textarea name="${f.name}" id="${id}" ${f.required ? 'required' : ''}>${esc(f.value ?? '')}</textarea></label>`;
+      if (f.type === 'checkbox') return `<label class="f check${ancho}"><input type="checkbox" name="${f.name}" id="${id}" ${f.value ? 'checked' : ''}><span>${esc(f.label)} ${help}</span></label>`;
+      return `<label class="f${ancho}"><span>${esc(f.label)} ${help}</span><input name="${f.name}" id="${id}" type="${f.type || 'text'}" value="${esc(f.value ?? '')}" ${f.required ? 'required' : ''} ${f.step ? `step="${f.step}"` : ''} ${f.placeholder ? `placeholder="${esc(f.placeholder)}"` : ''}></label>`;
     };
+    const grupo = (g) => {
+      const dentro = `${g.nota ? `<p class="muted small grupo-nota">${esc(g.nota)}</p>` : ''}<div class="grupo-campos${g.cols === 2 ? ' c2' : ''}">${g.campos.map(field).join('')}</div>`;
+      return g.plegado == null
+        ? `<fieldset class="grupo"><legend>${esc(g.grupo)}</legend>${dentro}</fieldset>`
+        : `<details class="grupo"${g.plegado ? '' : ' open'}><summary>${esc(g.grupo)}</summary>${dentro}</details>`;
+    };
+    const conGrupos = fields.some((f) => f.campos);
+    const planos = fields.flatMap((f) => f.campos || [f]);
+    d.classList.toggle('ancho', conGrupos);
     d.innerHTML = `<form method="dialog">
       <h2>${esc(title)}</h2>
       ${intro ? `<p class="muted" style="margin:0">${intro}</p>` : ''}
       ${warn ? `<div class="warn">${warn}</div>` : ''}
-      ${fields.map(field).join('')}
+      ${fields.map((f) => (f.campos ? grupo(f) : field(f))).join('')}
       ${confirmWord ? `<label class="f"><span>${I18N.lang === 'en' ? `Type <b>${esc(confirmWord)}</b> to confirm` : `Escribe <b>${esc(confirmWord)}</b> para confirmar`}</span><input name="__confirm" autocomplete="off" required></label>` : ''}
       <div class="foot"><button type="button" class="btn ghost" data-cancel>Cancelar</button><button type="submit" class="btn ${danger ? 'bad' : 'primary'}">${esc(submit)}</button></div>
     </form>`;
     const form = $('form', d);
+    abrePlegadosAlFallar(form);
     const close = (v) => { d.close(); resolve(v); };
     $('[data-cancel]', d).onclick = () => close(null);
     d.oncancel = (e) => { e.preventDefault(); close(null); };
@@ -210,12 +226,17 @@ function modal({ title, intro, warn, fields = [], submit = 'Guardar', danger = f
       e.preventDefault();
       const fd = new FormData(form); const out = {};
       if (confirmWord && (fd.get('__confirm') || '').trim() !== confirmWord) { toast('La palabra de confirmación no coincide.', true); return; }
-      for (const f of fields) out[f.name] = f.type === 'checkbox' ? form.elements[f.name].checked : (fd.get(f.name) ?? '').toString().trim();
+      for (const f of planos) out[f.name] = f.type === 'checkbox' ? form.elements[f.name].checked : (fd.get(f.name) ?? '').toString().trim();
       close(out);
     };
     d.showModal();
     const first = $('input:not([type=checkbox]),select,textarea', d); if (first) first.focus();
   });
+}
+/** Un campo que falta dentro de una sección plegada: se despliega para que el
+ * navegador pueda llevar el foco a él y decir qué falta. */
+function abrePlegadosAlFallar(form) {
+  form.addEventListener('invalid', (e) => { const p = e.target.closest?.('details'); if (p) p.open = true; }, true);
 }
 // «Confirma que eres tú» (assets/identidad.js): antes de eliminar una cuenta,
 // la contraseña actual. Se comprueba con una sesión aparte y la de este
@@ -269,7 +290,7 @@ function pager(state, total, onChange) {
   const page = Math.floor(state.offset / state.limit) + 1;
   const html = `<div class="pager"><span><b>${fmtNum(total)}</b> ${total === 1 ? 'resultado ·' : 'resultados ·'} <span>página</span> <b>${page}</b> <span>de</span> <b>${pages}</b></span><span class="spacer"></span>
     <button class="btn sm" data-pg="prev" ${page <= 1 ? 'disabled' : ''}>← Anterior</button><button class="btn sm" data-pg="next" ${page >= pages ? 'disabled' : ''}>Siguiente →</button>
-    <select data-pg="limit">${[25, 50, 100, 200].map((n) => `<option ${n === state.limit ? 'selected' : ''}>${n}</option>`).join('')}</select></div>`;
+    <select data-pg="limit" aria-label="Resultados por página">${[25, 50, 100, 200].map((n) => `<option ${n === state.limit ? 'selected' : ''}>${n}</option>`).join('')}</select></div>`;
   return { html, bind(root) {
     $$('[data-pg]', root).forEach((el) => {
       if (el.dataset.pg === 'limit') el.onchange = () => { state.limit = +el.value; state.offset = 0; onChange(); };
@@ -280,6 +301,134 @@ function pager(state, total, onChange) {
 const helpBox = (title, body) => `<details class="help"><summary>${esc(title)}</summary>${body}</details>`;
 const img = (url, ph = ms('storefront')) => url ? `<img class="thumb" src="${esc(url)}" alt="" loading="lazy">` : `<span class="ph">${ph}</span>`;
 const appLink = (path, label = I18N.lang === 'en' ? 'View in the app' : 'Ver en la app') => `<a class="btn sm ghost" href="${APP_URL}${path}" target="_blank" rel="noopener">${label} ↗</a>`;
+/** «Ver en la app ↗» como enlace (en la cabecera de una ficha, junto a los botones). */
+const appEnlace = (path) => `<a class="link ver-app" href="${APP_URL}${path}" target="_blank" rel="noopener">${I18N.lang === 'en' ? 'View in the app' : 'Ver en la app'} ↗</a>`;
+
+// ── Menús «Más acciones» ────────────────────────────────────────────────────
+// Lo que se usa poco va en un menú (botón con `aria-haspopup="menu"`): se abre
+// con clic, Intro, Espacio o ↓; dentro, ↑ ↓ Inicio Fin; Escape lo cierra y
+// devuelve el foco al botón; un clic fuera o Tab también lo cierran. Los
+// elementos llevan los mismos `data-*` que los botones de antes, así que cada
+// pantalla los engancha igual.
+let MENU_N = 0;
+/** `items`: HTML de `itemMenu`/`enlaceMenu`; los vacíos se saltan y un guion es una raya. */
+function menuAcciones(items, { label = 'Más acciones', icono = false, sm = false } = {}) {
+  const lista = [];
+  for (const x of items) {
+    if (!x) continue;
+    if (x === '-' && (!lista.length || lista[lista.length - 1] === '-')) continue;
+    lista.push(x);
+  }
+  while (lista[lista.length - 1] === '-') lista.pop();
+  if (!lista.length) return '';
+  const id = `menu-${++MENU_N}`;
+  const boton = icono
+    ? `<button class="btn ${sm ? 'sm ' : ''}ghost menu-kebab" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="${id}" aria-label="${esc(label)}" title="${esc(label)}">${ms('more_vert')}</button>`
+    : `<button class="btn${sm ? ' sm' : ''}" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="${id}">${esc(label)} ${ms('expand_more')}</button>`;
+  return `<div class="menu" data-menu>${boton}<div class="menu-lista" role="menu" id="${id}" hidden>${lista.map((x) => (x === '-' ? '<div class="menu-sep" role="separator"></div>' : x)).join('')}</div></div>`;
+}
+const itemMenu = (attrs, texto, { peligro = false } = {}) => `<button type="button" role="menuitem" tabindex="-1" class="menu-item${peligro ? ' peligro' : ''}" ${attrs}>${texto}</button>`;
+const enlaceMenu = (href, texto, externo = false) => `<a role="menuitem" tabindex="-1" class="menu-item" href="${esc(href)}"${externo ? ' target="_blank" rel="noopener"' : ''}>${texto}</a>`;
+const itemsDe = (menu) => $$('[role=menuitem]:not([disabled])', menu);
+function cierraMenus({ excepto = null, foco = false } = {}) {
+  $$('[data-menu] > [aria-expanded="true"]').forEach((b) => {
+    if (b.parentElement === excepto) return;
+    b.setAttribute('aria-expanded', 'false');
+    b.nextElementSibling.hidden = true;
+    if (foco) b.focus();
+  });
+}
+function abreMenu(menu, foco = 'primero') {
+  cierraMenus({ excepto: menu });
+  const b = menu.firstElementChild;
+  const lista = b.nextElementSibling;
+  b.setAttribute('aria-expanded', 'true');
+  lista.hidden = false;
+  // Que quepa: hacia la izquierda si se sale por la derecha, hacia arriba si
+  // no cabe abajo y arriba sí.
+  lista.classList.remove('derecha', 'arriba');
+  let r = lista.getBoundingClientRect();
+  if (r.right > innerWidth - 8) lista.classList.add('derecha');
+  r = lista.getBoundingClientRect();
+  if (r.left < 8) lista.classList.remove('derecha');
+  if (r.bottom > innerHeight - 8 && b.getBoundingClientRect().top - r.height > 8) lista.classList.add('arriba');
+  const items = itemsDe(lista);
+  (foco === 'ultimo' ? items[items.length - 1] : items[0])?.focus();
+}
+document.addEventListener('click', (e) => {
+  const t = e.target instanceof Element ? e.target : null;
+  const boton = t?.closest('[data-menu] > [aria-haspopup="menu"]');
+  if (boton) {
+    const menu = boton.parentElement;
+    if (boton.getAttribute('aria-expanded') === 'true') cierraMenus();
+    else abreMenu(menu);
+    return;
+  }
+  // Un elemento del menú: se cierra antes de hacer lo suyo y el foco vuelve
+  // al botón (el diálogo que abra lo devolverá ahí al cerrarse).
+  if (t?.closest('[data-menu] [role=menuitem]')) { cierraMenus({ foco: true }); return; }
+  if (!t?.closest('[data-menu]')) cierraMenus();
+}, true);
+document.addEventListener('keydown', (e) => {
+  const t = e.target instanceof Element ? e.target : null;
+  const boton = t?.closest('[data-menu] > [aria-haspopup="menu"]');
+  if (boton && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+    e.preventDefault();
+    abreMenu(boton.parentElement, e.key === 'ArrowUp' ? 'ultimo' : 'primero');
+    return;
+  }
+  const lista = t?.closest('[data-menu] [role=menu]');
+  if (!lista) {
+    if (e.key === 'Escape' && $('[data-menu] > [aria-expanded="true"]')) { e.preventDefault(); cierraMenus({ foco: true }); }
+    return;
+  }
+  const items = itemsDe(lista);
+  const i = items.indexOf(t);
+  const ir = (n) => { e.preventDefault(); items[(n + items.length) % items.length]?.focus(); };
+  // Flechas: el de al lado (dando la vuelta); Inicio y Fin: el primero y el último.
+  const DESTINO = { ArrowDown: i + 1, ArrowUp: i - 1, Home: 0, End: items.length - 1 };
+  if (e.key in DESTINO) ir(DESTINO[e.key]);
+  else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); cierraMenus({ foco: true }); }
+  else if (e.key === 'Tab') cierraMenus();
+});
+
+/** La tarjeta del final de una ficha con lo que no tiene vuelta atrás (o casi). */
+const zonaDelicada = (botones, nota = '') => `<div class="card zona-delicada" role="region" aria-labelledby="zonaDelicadaTit">
+  <h2 id="zonaDelicadaTit">${ms('warning')} ${I18N.lang === 'en' ? 'Sensitive actions' : 'Zona delicada'}</h2>
+  <div class="actions">${botones}</div>${nota ? `<p class="muted small" style="margin:10px 0 0">${nota}</p>` : ''}</div>`;
+
+// ── Filtros en la dirección ─────────────────────────────────────────────────
+// Los desplegables y la pestaña de cada lista van en la dirección
+// (`#/negocios?status=pending`): un enlace, «Atrás» o recargar dejan la lista
+// como estaba. Se reescribe sin recargar (`replaceState` no dispara
+// `hashchange`). Lo escrito en un buscador no se pone: puede ser un correo.
+/** Escribe `valores` (los vacíos o null no) en la dirección de `pagina`, si sigue en ella. */
+function ponUrl(pagina, valores) {
+  if (currentRoute().join('/') !== pagina) return;
+  const q = qs(valores);
+  const nuevo = `#/${pagina}${q ? `?${q}` : ''}`;
+  if (location.hash !== nuevo) history.replaceState(null, '', nuevo);
+}
+/** Lee de la dirección los `claves` de `s` y devuelve cómo escribirlos (sin los
+ * que valen lo de por defecto). */
+function filtrosEnUrl(pagina, s, claves, def = {}) {
+  const p = params();
+  for (const k of claves) if (p[k] != null && p[k] !== '') s[k] = p[k];
+  const escribe = () => ponUrl(pagina, Object.fromEntries(claves.map((k) => [k, s[k] === def[k] ? null : s[k]])));
+  escribe();
+  return escribe;
+}
+
+// ── Buscar en lo cargado ────────────────────────────────────────────────────
+// Denuncias, reclamaciones y mensajes no tienen búsqueda en la base: con algo
+// escrito se piden los 200 más recientes y se filtran aquí (sin tildes ni
+// mayúsculas). Se dice en qué se ha buscado.
+const BUSCA_MAX = 200;
+const normaliza = (t) => String(t ?? '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+const coincide = (q, ...campos) => { const n = normaliza(q); return campos.some((c) => normaliza(c).includes(n)); };
+const notaBusqueda = (n, de) => `<p class="muted small" style="margin:0 0 10px">${I18N.lang === 'en'
+  ? `Searching the ${fmtNum(de)} most recent: ${fmtNum(n)} ${n === 1 ? 'match' : 'matches'}.`
+  : `Buscando entre los ${fmtNum(de)} más recientes: ${n === 1 ? '1 coincide' : `${fmtNum(n)} coinciden`}.`}</p>`;
 
 // ── Sesión ──────────────────────────────────────────────────────────────────
 const insecure = location.protocol === 'http:' && !/^(localhost|127\.0\.0\.1)$/.test(location.hostname);
@@ -361,7 +510,18 @@ sb.auth.onAuthStateChange((ev, s) => {
   if (ev === 'SIGNED_OUT') showLogin();
   if (ev === 'PASSWORD_RECOVERY') location.href = '/app/?destino=%2Fadmin%2F#/nueva-clave';
 });
-$('#menuBtn').onclick = () => $('#side').classList.toggle('open');
+// El menú lateral en el móvil: el botón dice si está abierto y Escape lo cierra.
+function abreMenuLateral(abrir) {
+  const estaba = $('#side').classList.contains('open');
+  $('#side').classList.toggle('open', abrir);
+  $('#menuBtn').setAttribute('aria-expanded', String(abrir));
+  if (abrir) $('#nav a.nav.on, #nav a.nav')?.focus();
+  else if (estaba && $('#side').contains(document.activeElement)) $('#menuBtn').focus();
+}
+$('#menuBtn').setAttribute('aria-controls', 'side');
+$('#menuBtn').setAttribute('aria-expanded', 'false');
+$('#menuBtn').onclick = () => abreMenuLateral(!$('#side').classList.contains('open'));
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && $('#side').classList.contains('open') && !$('dialog[open]')) abreMenuLateral(false); });
 
 // ── Verificación en dos pasos (TOTP) ────────────────────────────────────────
 // Supabase Auth, un factor TOTP por persona (Google Authenticator, 1Password,
@@ -703,16 +863,19 @@ document.addEventListener('click', (e) => { if (e.target instanceof Element && e
 document.addEventListener('keydown', (e) => { if (e.key === '/' && !/input|textarea|select/i.test(e.target.tagName)) { const s = $('#q'); if (s) { e.preventDefault(); s.focus(); } } });
 
 // ── Navegación ──────────────────────────────────────────────────────────────
-const NAV = [
-  ['group', 'Actividad'],
-  ['resumen', 'dashboard', 'Resumen'], ['semanas', 'trending_up', 'Semana a semana'], ['ciudades', 'map', 'Ciudades'], ['negocios', 'storefront', 'Negocios'], ['publicaciones', 'bolt', 'Publicaciones'], ['canjes', 'confirmation_number', 'Canjes'], ['usuarios', 'person', 'Usuarios'], ['inactivas', 'hourglass_empty', 'Cuentas inactivas'],
-  ['group', 'Moderación'],
-  ['denuncias', 'flag', 'Denuncias'], ['mensajes', 'campaign', 'Mensajes a clientes'], ['reclamaciones', 'how_to_reg', 'Reclamaciones'], ['duplicados', 'content_copy', 'Posibles duplicados'], ['resenas', 'chat_bubble', 'Reseñas y novedades'], ['sugerencias', 'lightbulb', 'Sugerencias'],
-  ['group', 'Negocio'],
-  ['planes', 'credit_card', 'Planes y pagos'], ['avisos', 'notifications', 'Notificaciones y push'],
-  ['group', 'Sistema'],
-  ['colecciones', 'auto_awesome', 'Colecciones'], ['categorias', 'category', 'Categorías'], ['configuracion', 'settings', 'Configuración'], ['errores', 'bug_report', 'Errores de la web'], ['administradores', 'shield', 'Administradores'], ['actividad', 'history', 'Registro de actividad'], ['ayuda', 'help', 'Ayuda'],
+// Por temas: cada grupo con un nombre que no repite el de sus pantallas.
+// «Sistema» (lo técnico, que se toca poco) se pliega; se abre solo si estás en
+// una de sus pantallas, y lo pendiente que tenga dentro se suma en su título.
+const NAV_GRUPOS = [
+  { id: 'panorama', t: 'Panorama', items: [['resumen', 'dashboard', 'Resumen'], ['semanas', 'trending_up', 'Semana a semana'], ['ciudades', 'map', 'Ciudades']] },
+  { id: 'negocios', t: 'Negocios y pagos', items: [['negocios', 'storefront', 'Negocios'], ['reclamaciones', 'how_to_reg', 'Reclamaciones'], ['duplicados', 'content_copy', 'Posibles duplicados'], ['planes', 'credit_card', 'Planes y pagos']] },
+  { id: 'contenido', t: 'Contenido', items: [['publicaciones', 'bolt', 'Publicaciones'], ['canjes', 'confirmation_number', 'Canjes'], ['colecciones', 'auto_awesome', 'Colecciones'], ['categorias', 'category', 'Categorías']] },
+  { id: 'personas', t: 'Personas', items: [['usuarios', 'person', 'Usuarios'], ['inactivas', 'hourglass_empty', 'Cuentas inactivas'], ['avisos', 'notifications', 'Notificaciones y push'], ['sugerencias', 'lightbulb', 'Sugerencias']] },
+  { id: 'moderacion', t: 'Moderación', items: [['denuncias', 'flag', 'Denuncias'], ['resenas', 'chat_bubble', 'Reseñas y novedades'], ['mensajes', 'campaign', 'Mensajes a clientes']] },
+  { id: 'sistema', t: 'Sistema', plegable: true, items: [['configuracion', 'settings', 'Configuración'], ['errores', 'bug_report', 'Errores de la web'], ['administradores', 'shield', 'Administradores'], ['actividad', 'history', 'Registro de actividad'], ['ayuda', 'help', 'Ayuda']] },
 ];
+const NAV_SISTEMA = 'klendar.admin.nav.sistema';
+let navSistemaAbierto = null; // null: lo que diga el almacenamiento
 let BADGES = {};
 let WEB_ERR = null;
 let BAJAS = null;
@@ -723,8 +886,26 @@ let CAMBIOS = null;
 let PAUSAS = null;
 function renderNav(current) {
   // (al final se traduce; la lista se arma igual en los dos idiomas)
-  $('#nav').innerHTML = NAV.map((n) => n[0] === 'group' ? `<div class="group">${n[1]}</div>`
-    : `<a class="nav ${current === n[0] ? 'on' : ''}" href="#/${n[0]}"><span class="ic">${ms(n[1])}</span>${n[2]}${BADGES[n[0]] ? `<span class="badge">${BADGES[n[0]]}</span>` : ''}</a>`).join('');
+  if (navSistemaAbierto == null) {
+    try { navSistemaAbierto = localStorage.getItem(NAV_SISTEMA) === '1'; } catch { navSistemaAbierto = false; }
+  }
+  const enlace = (n) => `<a class="nav ${current === n[0] ? 'on' : ''}" href="#/${n[0]}"${current === n[0] ? ' aria-current="page"' : ''}><span class="ic">${ms(n[1])}</span>${n[2]}${BADGES[n[0]] ? `<span class="badge">${BADGES[n[0]]}</span>` : ''}</a>`;
+  $('#nav').innerHTML = NAV_GRUPOS.map((g) => {
+    if (!g.plegable) return `<div class="group" id="nav-${g.id}">${g.t}</div>${g.items.map(enlace).join('')}`;
+    const abierto = !!navSistemaAbierto;
+    const pendientes = g.items.reduce((a, n) => a + (BADGES[n[0]] || 0), 0);
+    return `<button class="group group-toggle" type="button" id="nav-${g.id}" aria-expanded="${abierto}" aria-controls="nav-${g.id}-lista">${g.t}${!abierto && pendientes ? `<span class="badge">${pendientes}</span>` : ''}${ms('expand_more')}</button>
+      <div id="nav-${g.id}-lista" class="nav-plegable"${abierto ? '' : ' hidden'}>${g.items.map(enlace).join('')}</div>`;
+  }).join('');
+  const t = $('#nav .group-toggle');
+  if (t) {
+    t.onclick = () => {
+      navSistemaAbierto = t.getAttribute('aria-expanded') !== 'true';
+      try { localStorage.setItem(NAV_SISTEMA, navSistemaAbierto ? '1' : '0'); } catch { /* sin almacenamiento */ }
+      renderNav(currentRoute()[0]);
+      $('#nav .group-toggle')?.focus();
+    };
+  }
   I18N.translate($('#nav'));
 }
 async function refreshBadges(lanzar = false) {
@@ -766,8 +947,10 @@ async function route() {
   if (!ME || !$('#mfa').hidden) return;
   const n = ++RUTA_N;
   const [page, id] = currentRoute();
+  // En una pantalla de «Sistema», el grupo se ve abierto.
+  if (NAV_GRUPOS.some((g) => g.plegable && g.items.some((n) => n[0] === page))) navSistemaAbierto = true;
   renderNav(page);
-  $('#side').classList.remove('open');
+  abreMenuLateral(false);
   // Cada pintada en su propia caja: si una vieja termina tarde, escribe en
   // una caja que ya no está en la página.
   const v = document.createElement('div');
@@ -778,7 +961,7 @@ async function route() {
   try {
     const fn = PAGES[page] || PAGES.resumen;
     await fn(v, id);
-    if (n === RUTA_N) I18N.translate(v);
+    if (n === RUTA_N) { nombraControles(v); I18N.translate(v); }
   } catch (e) {
     if (n !== RUTA_N || e?.obsoleta) return;
     console.error(e);
@@ -791,6 +974,14 @@ async function route() {
   }
 }
 window.addEventListener('hashchange', route);
+// Los desplegables de los filtros no llevan etiqueta a la vista (la primera
+// opción dice lo que son): para los lectores de pantalla, un nombre.
+const NOMBRES_FILTRO = { status: 'Estado', plan: 'Plan', active: 'Activos o desactivados', sort: 'Orden', moderation: 'Moderación', kind: 'Tipo', type: 'Tipo', banned: 'Suspensión', rating: 'Puntuación', area: 'Área', action: 'Acción' };
+function nombraControles(root) {
+  for (const el of root.querySelectorAll('.toolbar select[id]')) {
+    if (!el.hasAttribute('aria-label') && !el.closest('label') && NOMBRES_FILTRO[el.id]) el.setAttribute('aria-label', NOMBRES_FILTRO[el.id]);
+  }
+}
 // Lo que se recarga dentro de una pantalla (filtros, buscador, páginas,
 // pestañas) no pasa por `route`: si falla, se dice, en vez de dejar la lista
 // a medias sin explicación. Lo de pantallas que ya no están, se calla.
@@ -867,6 +1058,44 @@ PAGES.resumen = async (v) => {
   let calientes = null;
   try { calientes = await rpc('admin_report_groups', { p_status: 'open', p_type: 'all', p_min_open: 3, p_limit: 5, p_offset: 0 }); } catch (e) { if (e?.obsoleta) throw e; }
   const nCal = calientes?.total || 0;
+  // «Pendiente de ti», por temas y en filas cortas: número, qué es y adónde
+  // lleva. Lo que tiene su tarjeta aquí abajo (revisar de nuevo, pausas,
+  // cancelaciones) la despliega; lo demás abre su pantalla.
+  const pl = (n, es1, esN, en1, enN) => (en ? (n === 1 ? en1 : enN) : (n === 1 ? es1 : esN));
+  const fila = ([n, icono, texto, destino, urgente]) => {
+    if (!n) return '';
+    const dentro = `${ms(icono)}<b>${fmtNum(n)}</b><span class="txt">${texto}</span>${ms('chevron_right')}`;
+    return `<li>${destino.startsWith('#')
+      ? `<a class="pend${urgente ? ' urgente' : ''}" href="${destino}">${dentro}</a>`
+      : `<button class="pend${urgente ? ' urgente' : ''}" type="button" data-ir="${destino}">${dentro}</button>`}</li>`;
+  };
+  const GRUPOS_PEND = [
+    [en ? 'Businesses' : 'Negocios', [
+      [k.businesses_pending, 'storefront', pl(k.businesses_pending, 'por verificar', 'por verificar', 'to verify', 'to verify'), '#/negocios?status=pending'],
+      [BAJAS?.pending, 'credit_card_off', pl(BAJAS?.pending, 'cancelación de suscripción por gestionar', 'cancelaciones de suscripción por gestionar', 'subscription cancellation to handle', 'subscription cancellations to handle'), 'bajas', true],
+      [CAMBIOS?.open, 'published_with_changes', pl(CAMBIOS?.open, 'para revisar de nuevo', 'para revisar de nuevo', 'to review again', 'to review again'), 'revisar'],
+      [PAUSAS?.length, 'pause_circle', pl(PAUSAS?.length, 'en pausa por una suspensión ya levantada', 'en pausa por una suspensión ya levantada', 'paused by a suspension that has been lifted', 'paused by a suspension that has been lifted'), 'pausas'],
+      [BADGES.reclamaciones, 'how_to_reg', pl(BADGES.reclamaciones, 'reclamación «¿Es tu negocio?»', 'reclamaciones «¿Es tu negocio?»', '“Is this your business?” claim', '“Is this your business?” claims'), '#/reclamaciones'],
+      [BADGES.duplicados, 'content_copy', pl(BADGES.duplicados, 'posible duplicado', 'posibles duplicados', 'possible duplicate', 'possible duplicates'), '#/duplicados'],
+      [k.subs_expiring_7d, 'credit_card', pl(k.subs_expiring_7d, 'suscripción vence en 7 días', 'suscripciones vencen en 7 días', 'subscription expiring in 7 days', 'subscriptions expiring in 7 days'), '#/planes'],
+    ]],
+    [en ? 'Content' : 'Contenido', [
+      [k.reports_open, 'flag', pl(k.reports_open, 'denuncia abierta', 'denuncias abiertas', 'open report', 'open reports'), '#/denuncias', nCal > 0],
+      [k.offers_pending, 'bolt', pl(k.offers_pending, 'publicación por moderar', 'publicaciones por moderar', 'publication to moderate', 'publications to moderate'), '#/publicaciones?moderation=pending'],
+      [BADGES.resenas, 'chat_bubble', pl(BADGES.resenas, 'texto en revisión', 'textos en revisión', 'text under review', 'texts under review'), '#/resenas?tab=cola'],
+      [BADGES.mensajes, 'campaign', pl(BADGES.mensajes, 'mensaje a clientes por revisar', 'mensajes a clientes por revisar', 'customer message to review', 'customer messages to review'), '#/mensajes'],
+    ]],
+    [en ? 'People and system' : 'Personas y sistema', [
+      [BADGES.sugerencias, 'lightbulb', pl(BADGES.sugerencias, 'sugerencia sin leer', 'sugerencias sin leer', 'unread suggestion', 'unread suggestions'), '#/sugerencias'],
+      [k.push_failed_7d, 'notifications', pl(k.push_failed_7d, 'notificación push fallida (7 d)', 'notificaciones push fallidas (7 d)', 'failed push notification (7 d)', 'failed push notifications (7 d)'), '#/avisos?tab=push'],
+      [BADGES.errores, 'bug_report', pl(BADGES.errores, 'error nuevo en la web (24 h)', 'errores nuevos en la web (24 h)', 'new website error (24 h)', 'new website errors (24 h)'), '#/errores'],
+    ]],
+  ].map(([t, filas]) => [t, filas.filter((f) => f[0])]).filter(([, filas]) => filas.length);
+  // Las cifras de siempre, pero solo las principales a la vista; el resto,
+  // en «Ver más cifras» (se recuerda abierto o cerrado en este navegador).
+  const MAS = 'klendar.admin.resumen.mas';
+  let masAbierto = false;
+  try { masAbierto = localStorage.getItem(MAS) === '1'; } catch { /* sin almacenamiento */ }
   v.innerHTML = `
     <div class="page-head"><h1>Resumen</h1><span class="spacer"></span><span class="muted">${new Date().toLocaleString(LOC(), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: TZ })}</span></div>
     ${nCal ? `<div class="card den-resumen"><h2>${ms('report')} ${en ? 'Content with 3 or more open reports' : 'Contenido con 3 o más denuncias abiertas'}</h2>
@@ -878,21 +1107,15 @@ PAGES.resumen = async (v) => {
       </div></a>`).join('')}
       ${nCal > calientes.rows.length ? `<p style="margin:6px 0 0"><a class="link" href="#/denuncias">${en ? `See all ${nCal}` : `Ver los ${nCal}`}</a></p>` : ''}
     </div>` : ''}
-    ${(k.businesses_pending || k.offers_pending || k.reports_open || k.subs_expiring_7d || k.push_failed_7d || BADGES.sugerencias || BADGES.mensajes || BADGES.errores || BAJAS?.pending || CAMBIOS?.open || PAUSAS?.length) ? `<div class="card"><h2>Pendiente de ti</h2><div class="actions">
-      ${CAMBIOS?.open ? `<button class="btn" type="button" data-ir="revisar">${ms('published_with_changes')} <b>${CAMBIOS.open}</b> ${en ? (CAMBIOS.open === 1 ? 'business to review again' : 'businesses to review again') : (CAMBIOS.open === 1 ? 'negocio para revisar de nuevo' : 'negocios para revisar de nuevo')}</button>` : ''}
-      ${PAUSAS?.length ? `<button class="btn" type="button" data-ir="pausas">${ms('pause_circle')} <b>${PAUSAS.length}</b> ${en ? (PAUSAS.length === 1 ? 'business paused by a suspension that has been lifted' : 'businesses paused by a suspension that has been lifted') : (PAUSAS.length === 1 ? 'negocio en pausa por una suspensión ya levantada' : 'negocios en pausa por una suspensión ya levantada')}</button>` : ''}
-      ${BAJAS?.pending ? `<button class="btn bad" type="button" data-ir-bajas>${ms('credit_card_off')} <b>${BAJAS.pending}</b> ${en ? (BAJAS.pending === 1 ? 'subscription cancellation to handle' : 'subscription cancellations to handle') : (BAJAS.pending === 1 ? 'cancelación de suscripción por gestionar' : 'cancelaciones de suscripción por gestionar')}</button>` : ''}
-      ${nCal ? `<a class="btn bad" href="#/denuncias">${ms('report')} <b>${nCal}</b> ${en ? (nCal === 1 ? 'item with 3+ open reports' : 'items with 3+ open reports') : (nCal === 1 ? 'contenido con 3 o más denuncias' : 'contenidos con 3 o más denuncias')}</a>` : ''}
-      ${k.businesses_pending ? `<a class="btn" href="#/negocios?status=pending">${ms('storefront')} <b>${k.businesses_pending}</b> ${en ? (k.businesses_pending === 1 ? 'business to verify' : 'businesses to verify') : (k.businesses_pending === 1 ? 'negocio por verificar' : 'negocios por verificar')}</a>` : ''}
-      ${k.offers_pending ? `<a class="btn" href="#/publicaciones?moderation=pending">${ms('bolt')} <b>${k.offers_pending}</b> ${en ? (k.offers_pending === 1 ? 'publication to moderate' : 'publications to moderate') : (k.offers_pending === 1 ? 'publicación por moderar' : 'publicaciones por moderar')}</a>` : ''}
-      ${k.reports_open ? `<a class="btn" href="#/denuncias">${ms('flag')} <b>${k.reports_open}</b> ${en ? (k.reports_open === 1 ? 'open report' : 'open reports') : (k.reports_open === 1 ? 'denuncia abierta' : 'denuncias abiertas')}</a>` : ''}
-      ${k.subs_expiring_7d ? `<a class="btn" href="#/planes">${ms('credit_card')} <b>${k.subs_expiring_7d}</b> ${en ? (k.subs_expiring_7d === 1 ? 'subscription expiring in 7 days' : 'subscriptions expiring in 7 days') : (k.subs_expiring_7d === 1 ? 'suscripción vence en 7 días' : 'suscripciones vencen en 7 días')}</a>` : ''}
-      ${k.push_failed_7d ? `<a class="btn" href="#/avisos?tab=push">${ms('notifications')} <b>${k.push_failed_7d}</b> ${en ? (k.push_failed_7d === 1 ? 'failed push notification (7 d)' : 'failed push notifications (7 d)') : (k.push_failed_7d === 1 ? 'notificación push fallida (7 d)' : 'notificaciones push fallidas (7 d)')}</a>` : ''}
-      ${BADGES.mensajes ? `<a class="btn" href="#/mensajes">${ms('campaign')} <b>${BADGES.mensajes}</b> ${en ? (BADGES.mensajes === 1 ? 'customer message to review' : 'customer messages to review') : (BADGES.mensajes === 1 ? 'mensaje a clientes por revisar' : 'mensajes a clientes por revisar')}</a>` : ''}
-      ${BADGES.errores ? `<a class="btn" href="#/errores">${ms('bug_report')} <b>${BADGES.errores}</b> ${en ? (BADGES.errores === 1 ? 'new website error (24 h)' : 'new website errors (24 h)') : (BADGES.errores === 1 ? 'error nuevo en la web (24 h)' : 'errores nuevos en la web (24 h)')}</a>` : ''}
-      ${BADGES.sugerencias ? `<a class="btn" href="#/sugerencias">${ms('lightbulb')} <b>${BADGES.sugerencias}</b> ${en ? (BADGES.sugerencias === 1 ? 'unread suggestion' : 'unread suggestions') : (BADGES.sugerencias === 1 ? 'sugerencia sin leer' : 'sugerencias sin leer')}</a>` : ''}
-    </div></div>${tarjetaBajas(BAJAS?.items || [])}${tarjetaCambios(CAMBIOS?.rows || [])}${tarjetaPausas(PAUSAS || [])}` : '<div class="card"><h2>Todo al día</h2><p class="muted" style="margin:0">No hay negocios por verificar, publicaciones por moderar ni denuncias abiertas.</p></div>'}
-    <div class="grid2">
+    ${GRUPOS_PEND.length ? `<div class="card"><h2>Pendiente de ti</h2><div class="pend-grupos">
+      ${GRUPOS_PEND.map(([t, filas]) => `<div class="pend-grupo" role="group" aria-label="${esc(t)}"><h3>${esc(t)}</h3><ul class="pend-lista">${filas.map(fila).join('')}</ul></div>`).join('')}
+    </div></div>${tarjetaBajas(BAJAS?.items || [], true)}${tarjetaCambios(CAMBIOS?.rows || [], true, true)}${tarjetaPausas(PAUSAS || [], true, true)}` : '<div class="card"><h2>Todo al día</h2><p class="muted" style="margin:0">No hay negocios por verificar, publicaciones por moderar ni denuncias abiertas.</p></div>'}
+    <div class="card"><h2>Cifras principales</h2><div class="kpis principales">
+      ${kpi(k.users_total, 'usuarios en total')} ${kpi(k.wau, 'activos (7 d)')} ${kpi(k.businesses_verified, 'negocios verificados')}
+      ${kpi(k.offers_active, 'publicaciones activas ahora')} ${kpi(k.redemptions_7d, 'canjes (7 d)')} ${kpi(fmtMoney(k.revenue_month_cents), 'cobrado este mes', 'accent')}
+    </div>
+    <details class="mas-cifras" id="masCifras"${masAbierto ? ' open' : ''}><summary>${ms('expand_more')} <span>Ver más cifras</span></summary>
+    <div class="grid2" style="margin-top:12px">
       <div class="card"><h2>Usuarios</h2><div class="kpis">
         ${kpi(k.users_total, 'usuarios en total')} ${kpi(k.users_7d, 'nuevos (7 d)')} ${kpi(k.users_30d, 'nuevos (30 d)')}
         ${kpi(k.dau, 'activos hoy')} ${kpi(k.wau, 'activos (7 d)')} ${kpi(k.mau, 'activos (30 d)')}
@@ -919,24 +1142,30 @@ PAGES.resumen = async (v) => {
       ${WEB_ERR ? `<div class="card"><h2><a class="link" href="#/errores">Errores de la web</a></h2><div class="kpis">
         ${kpi(WEB_ERR.new_24h || 0, 'errores nuevos (24 h)', WEB_ERR.new_24h ? 'accent' : '')} ${kpi(WEB_ERR.open || 0, 'sin resolver')} ${kpi(WEB_ERR.last_hour || 0, 'veces en la última hora')}
       </div></div>` : ''}
-    </div>
+      <div class="card"><h2>Negocios por ciudad</h2>${(k.by_city || []).length ? `<dl class="kv" style="grid-template-columns:1fr auto">${k.by_city.map((c) => `<dt>${esc(c.city)}</dt><dd>${c.verified}/${c.businesses}</dd>`).join('')}</dl><p class="muted small" style="margin:8px 0 0">verificados / total</p>` : '<p class="muted">—</p>'}</div>
+    </div></details></div>
     <div class="card"><div class="page-head" style="margin-bottom:4px"><h2 style="margin:0">Últimos 30 días</h2><span class="spacer"></span>
-      <div class="chart-tabs" id="ctabs">${[['redemptions', 'Canjes'], ['views', 'Vistas'], ['offers', 'Publicaciones'], ['users', 'Altas']].map(([k2, l], i) => `<button class="${i === 0 ? 'on' : ''}" data-k="${k2}">${l}</button>`).join('')}</div></div>
+      <div class="chart-tabs" id="ctabs">${[['redemptions', 'Canjes'], ['views', 'Vistas'], ['offers', 'Publicaciones'], ['users', 'Altas']].map(([k2, l], i) => `<button type="button" class="${i === 0 ? 'on' : ''}" aria-pressed="${i === 0}" data-k="${k2}">${l}</button>`).join('')}</div></div>
       <div id="chart">${bars(series, 'redemptions', (s) => fmtDay(s.day))}</div>
       <div class="chart-legend"><span>${fmtDay(series[0]?.day)}</span><span style="margin-left:auto">${fmtDay(series[series.length - 1]?.day)}</span></div>
     </div>
-    <div class="grid3">
+    <div class="grid2">
       <div class="card"><h2>Top negocios (canjes 30 d)</h2>${(k.top_businesses || []).length ? `<ol style="margin:0;padding-left:18px">${k.top_businesses.map((b) => `<li><a class="link" href="#/negocios/${b.id}">${esc(b.name)}</a> <span class="muted">${esc(b.city || '')} · ${b.redemptions}</span></li>`).join('')}</ol>` : '<p class="muted">Aún sin canjes.</p>'}</div>
       <div class="card"><h2>Top publicaciones (30 d)</h2>${(k.top_offers || []).length ? `<ol style="margin:0;padding-left:18px">${k.top_offers.map((o) => `<li><a class="link" href="#/publicaciones/${o.id}">${esc(o.title)}</a> <span class="muted">${esc(o.business)} · ${en ? `${o.redemptions_count} ${o.redemptions_count === 1 ? 'redemption' : 'redemptions'} · ${o.views_count} ${o.views_count === 1 ? 'view' : 'views'}` : `${o.redemptions_count} ${o.redemptions_count === 1 ? 'canje' : 'canjes'} · ${o.views_count} ${o.views_count === 1 ? 'vista' : 'vistas'}`}</span></li>`).join('')}</ol>` : '<p class="muted">Nada todavía.</p>'}</div>
-      <div class="card"><h2>Negocios por ciudad</h2>${(k.by_city || []).length ? `<dl class="kv" style="grid-template-columns:1fr auto">${k.by_city.map((c) => `<dt>${esc(c.city)}</dt><dd>${c.verified}/${c.businesses}</dd>`).join('')}</dl><p class="muted small" style="margin:8px 0 0">verificados / total</p>` : '<p class="muted">—</p>'}</div>
     </div>`;
-  $('#ctabs').onclick = (e) => { const b = e.target.closest('button'); if (!b) return; $$('#ctabs button').forEach((x) => x.classList.toggle('on', x === b)); $('#chart').innerHTML = bars(series, b.dataset.k, (s) => fmtDay(s.day)); };
+  $('#ctabs').onclick = (e) => { const b = e.target.closest('button'); if (!b) return; $$('#ctabs button').forEach((x) => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', String(x === b)); }); $('#chart').innerHTML = bars(series, b.dataset.k, (s) => fmtDay(s.day)); };
+  $('#masCifras').ontoggle = () => { try { localStorage.setItem(MAS, $('#masCifras').open ? '1' : '0'); } catch { /* sin almacenamiento */ } };
   activaBajas(v);
   activaCambios(v);
   activaPausas(v);
-  $$('[data-ir]', v).forEach((b) => { b.onclick = () => document.getElementById(b.dataset.ir)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
-  const irBajas = $('[data-ir-bajas]', v);
-  if (irBajas) irBajas.onclick = () => document.getElementById('bajas')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  // Las filas de lo que tiene su tarjeta aquí abajo: la despliegan y llevan a ella.
+  $$('[data-ir]', v).forEach((b) => { b.onclick = () => {
+    const t = document.getElementById(b.dataset.ir);
+    if (!t) return;
+    if (t.tagName === 'DETAILS') t.open = true;
+    t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    t.querySelector('summary')?.focus({ preventScroll: true });
+  }; });
 };
 
 // ── Negocios ────────────────────────────────────────────────────────────────
@@ -945,8 +1174,10 @@ const st = { mensajes: { limit: 50, offset: 0 }, sugerencias: { limit: 50, offse
 
 PAGES.negocios = async (v, id) => {
   if (id) return businessDetail(v, id);
-  const p = params(); const s = st.negocios;
-  s.status = p.status || s.status || 'all';
+  const s = st.negocios;
+  const DEF = { status: 'all', plan: 'all', active: '', sort: 'created_desc' };
+  for (const k in DEF) s[k] = s[k] ?? DEF[k];
+  const aUrl = filtrosEnUrl('negocios', s, Object.keys(DEF), DEF);
   v.innerHTML = `
     <div class="page-head"><h1>Negocios</h1><span class="spacer"></span><button class="btn sm ghost" id="csv">Exportar CSV</button></div>
     ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p>Here you see every registered business. <b>Pending</b> ones are new sign-ups you need to review: check that the business exists (website, phone, Google Maps) and press <b>Verify</b>; if it doesn't qualify, <b>Reject</b> it with a reason (the business gets it as a notification). Click a row to see the full business page, change the plan or record a payment.</p>` : '<p>Aquí ves todos los negocios dados de alta. Los <b>pendientes</b> son altas nuevas que tienes que revisar: comprueba que el negocio existe (web, teléfono, Google Maps) y pulsa <b>Verificar</b>; si no procede, <b>Rechazar</b> indicando el motivo (el negocio lo recibe como notificación). Pulsa en una fila para ver la ficha completa, cambiar el plan o registrar un pago.</p>')}
@@ -978,7 +1209,7 @@ PAGES.negocios = async (v, id) => {
     $$('#list tr.row').forEach((tr) => { tr.onclick = () => go(`#/negocios/${rows[tr.dataset.i].id}`); });
   };
   $('#q').oninput = debounce(() => { s.q = $('#q').value.trim(); s.offset = 0; load(); });
-  ['status', 'plan', 'active', 'sort'].forEach((k) => { $('#' + k).onchange = () => { s[k] = $('#' + k).value; s.offset = 0; load(); }; });
+  ['status', 'plan', 'active', 'sort'].forEach((k) => { $('#' + k).onchange = () => { s[k] = $('#' + k).value; s.offset = 0; aUrl(); load(); }; });
   $('#csv').onclick = () => downloadCsv('negocios', rows, [['id', 'id'], ['name', 'nombre'], ['category', 'categoría'], ['city', 'ciudad'], ['address', 'dirección'], ['owner_email', 'email dueño'], ['phone', 'teléfono'], ['website', 'web'], ['verification_status', 'verificación'], [(b) => b.is_active ? 'sí' : 'no', 'activo'], [(b) => b.plan_slug || 'free', 'plan'], ['sub_status', 'suscripción'], ['sub_period_end', 'fin periodo'], ['offers_count', 'publicaciones'], ['redemptions_count', 'canjes'], ['created_at', 'alta']]);
   await load();
 };
@@ -1014,6 +1245,11 @@ async function businessDetail(v, id) {
     ? ((await rpc('admin_suspension_pauses', { p_user: b.owner_id }).catch(() => [])) || []).find((x) => x.id === b.id) || { ...b, owner_banned_at: null }
     : null;
   const porRevisar = (cambios?.rows || []).some((x) => !x.reviewed_at);
+  // Lo que se ve arriba depende de cómo está: pendiente → verificar o
+  // rechazar; verificado → editar; rechazado → verificar o editar. Lo demás,
+  // en «Más acciones», y lo que no tiene vuelta atrás, en «Zona delicada».
+  const pendiente = !['verified', 'rejected'].includes(b.verification_status);
+  const rechazado = b.verification_status === 'rejected';
   const tz = KZ.de(b);
   const cur = d.subscriptions.find((s) => ['trial', 'active', 'past_due'].includes(s.status));
   const social = b.social_links && typeof b.social_links === 'object' ? Object.entries(b.social_links).filter(([, u]) => u) : [];
@@ -1025,16 +1261,19 @@ async function businessDetail(v, id) {
       <div><h1>${esc(b.name)}</h1><div class="tags">${b.closed_permanently_at ? `<span class="tag bad">${I18N.lang === 'en' ? 'closed for good' : 'cerrado de verdad'}</span> ` : ''}${tag(b.verification_status)} ${b.is_active ? tag('active') : tag('inactive', 'st-inactive')} ${tag(cur?.plan || 'free', 'dim')} ${cur ? tag(cur.status) : ''} ${b.adults_only ? '<span class="tag bad">+18</span>' : ''} ${b.closed_indefinitely_at ? `<span class="tag bad">${esc(I18N.lang === 'en' ? 'Closed until further notice' : 'Cerrado hasta nuevo aviso')}</span>` : ''} ${pausa ? `<span class="tag bad">${esc(I18N.lang === 'en' ? 'Paused by a suspension' : 'En pausa por una suspensión')}</span>` : ''} ${porRevisar ? `<span class="tag warn">${esc(I18N.lang === 'en' ? 'Review again' : 'Revisar de nuevo')}</span>` : ''}</div></div>
       <span class="spacer"></span>
       <div class="actions">
-        ${b.verification_status !== 'verified' ? '<button class="btn ok" data-a="verify">✓ Verificar</button>' : ''}
-        ${b.verification_status !== 'rejected' ? '<button class="btn bad" data-a="reject">Rechazar…</button>' : ''}
-        <button class="btn" data-a="active">${b.is_active ? 'Desactivar' : 'Activar'}</button>
-        <button class="btn" data-a="edit">Editar ficha…</button>
-        <button class="btn" data-a="plan">Cambiar plan…</button>
-        <button class="btn" data-a="pay">Registrar pago…</button>
-        <button class="btn" data-a="notify">Enviar notificación al dueño…</button>
-        <button class="btn bad" data-a="delete">Eliminar negocio…</button>
-        ${b.closed_permanently_at ? '<button class="btn" data-a="reopen">Reabrir…</button>' : '<button class="btn bad ghost" data-a="closed">Marcar como cerrado…</button>'}
-        ${appLink('/b/' + b.id)}
+        ${pendiente || rechazado ? '<button class="btn ok" data-a="verify">✓ Verificar</button>' : ''}
+        ${pendiente ? '<button class="btn bad" data-a="reject">Rechazar…</button>' : ''}
+        ${pendiente ? '' : '<button class="btn" data-a="edit">Editar ficha…</button>'}
+        ${menuAcciones([
+          pendiente ? itemMenu('data-a="edit"', 'Editar ficha…') : '',
+          itemMenu('data-a="plan"', 'Cambiar plan…'),
+          itemMenu('data-a="pay"', 'Registrar pago…'),
+          itemMenu('data-a="notify"', 'Enviar notificación al dueño…'),
+          '-',
+          !pendiente && !rechazado ? itemMenu('data-a="reject"', 'Rechazar…', { peligro: true }) : '',
+          itemMenu('data-a="active"', b.is_active ? 'Desactivar…' : 'Activar', { peligro: b.is_active }),
+        ])}
+        ${appEnlace('/b/' + b.id)}
       </div>
     </div>
     ${b.closed_permanently_at ? `<div class="card"><b>${I18N.lang === 'en' ? 'Marked as closed for good on' : 'Marcado como cerrado de verdad el'}</b> ${fmtDate(b.closed_permanently_at, tz)}${b.closed_permanently_note ? ` · ${esc(b.closed_permanently_note)}` : ''}<div class="muted small" style="margin-top:4px">${I18N.lang === 'en' ? 'It no longer appears on Klendar; its address says “This business has closed”. Use “Reopen” if it is a mistake.' : 'Ya no sale en Klendar; su dirección dice «Este negocio ha cerrado». «Reabrir» si es un error.'}</div></div>` : ''}
@@ -1074,7 +1313,7 @@ async function businessDetail(v, id) {
         <div class="card"><h2>Equipo</h2>
           ${table({ cols: [
             { h: 'Persona', r: (m) => `${esc(m.display_name || '—')}<span class="sub"><a class="link" href="#/usuarios/${m.user_id}">${esc(m.email || m.user_id)}</a></span>` },
-            { h: 'Rol', r: (m) => `<select data-role="${m.user_id}">${['owner', 'manager', 'staff'].map((r) => `<option value="${r}" ${m.role === r ? 'selected' : ''}>${LABELS[r]}</option>`).join('')}</select>` },
+            { h: 'Rol', r: (m) => `<select data-role="${m.user_id}" aria-label="${esc(I18N.t('Rol'))}: ${esc(m.display_name || m.email || '')}">${['owner', 'manager', 'staff'].map((r) => `<option value="${r}" ${m.role === r ? 'selected' : ''}>${LABELS[r]}</option>`).join('')}</select>` },
             { h: '', r: (m) => m.role === 'owner' ? '' : `<button class="btn sm ghost" data-rm="${m.user_id}">Quitar</button>` },
           ], rows: d.members, empty: 'Sin miembros.' })}
           <div class="actions" style="margin-top:10px"><button class="btn sm" data-a="addmember">Añadir persona…</button></div>
@@ -1106,7 +1345,11 @@ async function businessDetail(v, id) {
     <div class="grid2">
       <div class="card"><h2>${I18N.lang === 'en' ? 'Related reports' : 'Denuncias relacionadas'} (${d.reports.length})</h2>${d.reports.length ? table({ cols: [{ h: 'Sobre', r: (r) => tag(r.target_type, 'dim') }, { h: 'Motivo', r: (r) => `${esc(r.reason)}<span class="sub">${esc(r.details || '')}</span>` }, { h: 'Estado', r: (r) => tag(r.status) }, { h: 'Fecha', r: (r) => fmtDay(r.created_at) }], rows: d.reports }) : '<p class="muted">Ninguna.</p>'}<p style="margin:10px 0 0"><a class="link" href="#/denuncias">Ir a denuncias →</a></p></div>
       <div class="card"><h2>Registro de cambios</h2>${auditList(d.audit)}</div>
-    </div>`;
+    </div>
+    ${zonaDelicada(`${b.closed_permanently_at ? '<button class="btn" data-a="reopen">Reabrir…</button>' : '<button class="btn bad ghost" data-a="closed">Marcar como cerrado…</button>'}
+      <button class="btn bad" data-a="delete">Eliminar negocio…</button>`, I18N.lang === 'en'
+      ? '<b>Mark as closed</b>: only if it has closed for good (to take it down for breaking the rules, use “Deactivate” in More actions); asks how we know. <b>Delete</b> can’t be undone: you type DELETE and confirm your password.'
+      : '<b>Marcar como cerrado</b>: solo si ha cerrado de verdad (para quitarlo por incumplir las normas, «Desactivar» en «Más acciones»); pide cómo lo sabemos. <b>Eliminar</b> no se puede deshacer: pide escribir ELIMINAR y tu contraseña.')}`;
   $$('#view tr.row').forEach((tr) => { tr.onclick = () => go(`#/publicaciones/${d.offers[tr.dataset.i].id}`); });
   // Cada acción bloquea su botón (o su desplegable) mientras trabaja: un
   // doble clic no la manda dos veces.
@@ -1119,6 +1362,18 @@ async function businessDetail(v, id) {
   activaBajas(document.getElementById('view'));
   activaCambios(document.getElementById('view'));
   activaPausas(document.getElementById('view'));
+  vaHasta(v);
+}
+
+/** `?ver=duplicados` (o revisar, pausas, bajas): baja hasta esa tarjeta. */
+function vaHasta(v) {
+  const ver = params().ver;
+  if (!['duplicados', 'revisar', 'pausas', 'bajas'].includes(ver)) return;
+  const t = v.querySelector(`#${ver}`);
+  if (!t) return;
+  if (t.tagName === 'DETAILS') t.open = true;
+  t.setAttribute('tabindex', '-1');
+  requestAnimationFrame(() => { t.scrollIntoView({ block: 'start' }); t.focus({ preventScroll: true }); });
 }
 
 // ── Cancelaciones de suscripción ───────────────────────────────────────────
@@ -1140,12 +1395,16 @@ function tablaBajas(items, conNegocio = true) {
     { h: '', r: (c) => `${estado(c)}${!c.handled_at && !c.undone_at ? ` <button class="btn sm" data-gestion="${esc(c.id)}">${en ? 'Mark as handled…' : 'Marcar gestionada…'}</button>` : ''}` },
   ], rows: items });
 }
-function tarjetaBajas(items) {
+/** Una tarjeta con título; plegada (en el Resumen), se despliega al pulsarla. */
+const cajaTarjeta = (id, titulo, cuerpo, plegada = false, n = 0) => (plegada
+  ? `<details class="card plegable" id="${id}"><summary><h2>${titulo}${n ? ` <span class="tag">${fmtNum(n)}</span>` : ''}</h2>${ms('expand_more')}</summary>${cuerpo}</details>`
+  : `<div class="card" id="${id}"><h2>${titulo}</h2>${cuerpo}</div>`);
+function tarjetaBajas(items, plegada = false) {
   if (!items.length) return '';
   const en = I18N.lang === 'en';
-  return `<div class="card" id="bajas"><h2>${en ? 'Subscription cancellations' : 'Cancelaciones de suscripción'}</h2>
+  return cajaTarjeta('bajas', en ? 'Subscription cancellations' : 'Cancelaciones de suscripción', `
     <p class="muted" style="margin:0 0 8px">${en ? 'Until there is automatic billing: stop renewing it on its date, tell the owner if needed and mark it as handled.' : 'Hasta que haya cobro automático: no renovarla en su fecha, avisar al dueño si hace falta y marcarla como gestionada.'}</p>
-    ${tablaBajas(items)}</div>`;
+    ${tablaBajas(items)}`, plegada, items.filter((c) => !c.handled_at && !c.undone_at).length);
 }
 function activaBajas(caja) {
   $$('[data-gestion]', caja).forEach((btn) => { btn.onclick = () => esperando(btn, async () => {
@@ -1159,7 +1418,7 @@ function activaBajas(caja) {
 // Un negocio verificado que ha cambiado de nombre de forma notable, de ciudad
 // o de sitio (más de 1 km). No se oculta ni pierde la verificación: se mira
 // que siga siendo el mismo negocio y se marca «Revisado».
-function tarjetaCambios(rows, conNegocio = true) {
+function tarjetaCambios(rows, conNegocio = true, plegada = false) {
   if (!rows.length) return '';
   const en = I18N.lang === 'en';
   const MOTIVO = { name: en ? 'new name' : 'nombre nuevo', city: en ? 'other city' : 'otra ciudad', location: en ? 'moved' : 'se ha mudado' };
@@ -1179,11 +1438,11 @@ function tarjetaCambios(rows, conNegocio = true) {
         ? `<p class="muted small" style="margin:6px 0 0">${en ? 'Reviewed' : 'Revisado'} ${fmtDate(c.reviewed_at)}${c.reviewed_by_email ? ` · ${esc(c.reviewed_by_email)}` : ''}${c.review_note ? ` · ${esc(c.review_note)}` : ''}</p>`
         : `<div class="actions" style="margin-top:8px"><button class="btn sm ok" type="button" data-revisado="${esc(c.id)}">${en ? 'Reviewed…' : 'Revisado…'}</button></div>`}
     </div></div>`;
-  return `<div class="card" id="revisar"><h2>${ms('published_with_changes')} ${en ? 'Review again' : 'Revisar de nuevo'}</h2>
+  return cajaTarjeta('revisar', `${ms('published_with_changes')} ${en ? 'Review again' : 'Revisar de nuevo'}`, `
     <p class="muted" style="margin:0 0 8px">${en
       ? 'Verified businesses that have changed their name, city or location (more than 1 km). They stay visible and verified: check it is still the same business (website, Google Maps, phone) and mark it as reviewed. If it isn’t, deactivate it or reject it from its page.'
       : 'Negocios verificados que han cambiado de nombre, de ciudad o de sitio (más de 1 km). Siguen a la vista y verificados: comprueba que sigue siendo el mismo negocio (web, Google Maps, teléfono) y márcalo como revisado. Si no lo es, desactívalo o recházalo desde su ficha.'}</p>
-    ${rows.map(cambio).join('')}</div>`;
+    ${rows.map(cambio).join('')}`, plegada, rows.filter((c) => !c.reviewed_at).length);
 }
 function activaCambios(caja) {
   $$('[data-revisado]', caja).forEach((btn) => { btn.onclick = () => esperando(btn, async () => {
@@ -1198,7 +1457,7 @@ function activaCambios(caja) {
 // Al suspender a un propietario, Klendar pausa sus negocios («cerrado hasta
 // nuevo aviso»). Al levantar la suspensión, el admin decide: reabrir, o
 // dejarlo cerrado y que lo abra el propietario cuando quiera.
-function tarjetaPausas(rows, conTitulo = true) {
+function tarjetaPausas(rows, conTitulo = true, plegada = false) {
   if (!rows.length) return '';
   const en = I18N.lang === 'en';
   const fila = (x) => `<div class="item" style="grid-template-columns:1fr"><div>
@@ -1208,11 +1467,11 @@ function tarjetaPausas(rows, conTitulo = true) {
       ? `<p class="muted small" style="margin:6px 0 0">${en ? 'The owner is still suspended: when you lift the suspension, you can reopen it here.' : 'El propietario sigue suspendido: cuando levantes la suspensión, podrás reabrirlo desde aquí.'}</p>`
       : `<div class="actions" style="margin-top:8px"><button class="btn sm ok" type="button" data-pausa="${esc(x.id)}" data-reabrir="1">${en ? 'Reopen' : 'Reabrir'}</button><button class="btn sm" type="button" data-pausa="${esc(x.id)}" data-reabrir="0">${en ? 'Let the owner decide' : 'Que lo decida el propietario'}</button></div>`}
   </div></div>`;
-  return `<div class="card" id="pausas"><h2>${ms('pause_circle')} ${en ? 'Paused by a suspension' : 'En pausa por una suspensión'}</h2>
+  return cajaTarjeta('pausas', `${ms('pause_circle')} ${en ? 'Paused by a suspension' : 'En pausa por una suspensión'}`, `
     ${conTitulo ? `<p class="muted" style="margin:0 0 8px">${en
       ? 'We paused these businesses when we suspended their owner, and the suspension has now been lifted. Reopen them, or leave them closed for the owner to reopen whenever they like. Their team gets a notification either way.'
       : 'Los pausamos al suspender a su propietario y la suspensión ya se ha levantado. Reábrelos, o déjalos cerrados para que los abra el propietario cuando quiera. Su equipo recibe una notificación en los dos casos.'}</p>` : ''}
-    ${rows.map(fila).join('')}</div>`;
+    ${rows.map(fila).join('')}`, plegada, rows.length);
 }
 function activaPausas(caja) {
   $$('[data-pausa]', caja).forEach((btn) => { btn.onclick = () => esperando(btn, async () => {
@@ -1267,14 +1526,25 @@ async function businessAction(a, b, d) {
     if (a === 'edit') {
       const cats = await rpc('admin_categories');
       const r = await modal({ title: 'Editar ficha', fields: [
-        { name: 'name', label: 'Nombre', value: b.name, required: true },
-        { name: 'category_id', label: 'Categoría', type: 'select', value: b.category_id || '', options: [['', '—'], ...cats.map((c) => [c.id, (c.names?.[I18N.lang] || c.names?.es || c.slug)])] },
-        { name: 'description', label: 'Descripción', type: 'textarea', value: b.description },
-        { name: 'address', label: 'Dirección', value: b.address }, { name: 'city', label: 'Ciudad', value: b.city },
-        { name: 'phone', label: 'Teléfono', value: b.phone }, { name: 'contact_email', label: 'Email de contacto', type: 'email', value: b.contact_email },
-        { name: 'website', label: 'Web', type: 'url', value: b.website }, { name: 'tax_id', label: 'CIF / NIF', value: b.tax_id },
-        { name: 'lat', label: 'Latitud', value: b.lat ?? '', help: 'Solo si hay que corregir la posición en el mapa.' }, { name: 'lng', label: 'Longitud', value: b.lng ?? '' },
-        { name: 'adults_only', label: 'Solo para mayores de 18', type: 'checkbox', value: b.adults_only },
+        { grupo: 'Lo básico', cols: 2, campos: [
+          { name: 'name', label: 'Nombre', value: b.name, required: true },
+          { name: 'category_id', label: 'Categoría', type: 'select', value: b.category_id || '', options: [['', '—'], ...cats.map((c) => [c.id, (c.names?.[I18N.lang] || c.names?.es || c.slug)])] },
+          { name: 'description', label: 'Descripción', type: 'textarea', value: b.description },
+        ] },
+        { grupo: 'Dónde está', cols: 2, campos: [
+          { name: 'address', label: 'Dirección', value: b.address }, { name: 'city', label: 'Ciudad', value: b.city },
+        ] },
+        { grupo: 'Contacto', cols: 2, campos: [
+          { name: 'phone', label: 'Teléfono', value: b.phone }, { name: 'contact_email', label: 'Email de contacto', type: 'email', value: b.contact_email },
+          { name: 'website', label: 'Web', type: 'url', value: b.website, ancho: true },
+        ] },
+        { grupo: 'Datos fiscales y edad', cols: 2, plegado: false, campos: [
+          { name: 'tax_id', label: 'CIF / NIF', value: b.tax_id },
+          { name: 'adults_only', label: 'Solo para mayores de 18', type: 'checkbox', value: b.adults_only },
+        ] },
+        { grupo: 'Posición en el mapa', cols: 2, plegado: true, nota: 'Solo si hay que corregir la posición en el mapa.', campos: [
+          { name: 'lat', label: 'Latitud', value: b.lat ?? '' }, { name: 'lng', label: 'Longitud', value: b.lng ?? '' },
+        ] },
       ] });
       if (!r) return;
       const patch = { ...r };
@@ -1363,9 +1633,11 @@ const summarize = (o) => Object.entries(o).filter(([, v]) => v != null && v !== 
 // ── Publicaciones ───────────────────────────────────────────────────────────
 PAGES.publicaciones = async (v, id) => {
   if (id) return offerDetail(v, id);
-  const p = params(); const s = st.publicaciones;
-  s.moderation = p.moderation || s.moderation || 'all';
-  if (p.business) s.business = p.business;
+  const s = st.publicaciones;
+  const DEF = { moderation: 'all', status: 'all', kind: 'all' };
+  for (const k in DEF) s[k] = s[k] ?? DEF[k];
+  s.business = params().business || null;
+  const aUrl = filtrosEnUrl('publicaciones', s, ['moderation', 'status', 'kind', 'business'], DEF);
   v.innerHTML = `
     <div class="page-head"><h1>Publicaciones</h1><span class="spacer"></span><button class="btn sm ghost" id="csv">Exportar CSV</button></div>
     ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p>Flash offers and events from every business. The ones <b>pending moderation</b> come from businesses that haven't been verified yet or have been flagged for review: if they meet the <a class="link" href="/en/community-guidelines/" target="_blank">Community guidelines</a> (nothing misleading, their own photos, no alcohol aimed at minors…) press <b>Approve</b>; if not, <b>Take down</b> with a reason, which the business receives along with how to appeal (required by the DSA). The system automatically puts under review the ones that mention <b>alcohol</b> (and also marks them 18+: only adults see them), <b>tobacco/vaping</b> (advertising is banned: take it down), <b>gambling</b> or <b>offensive language</b> (insults, swear words, explicit sexual content, hate or threats); you'll see a tag with the reason.</p>` : '<p>Ofertas flash y eventos de todos los negocios. Las <b>pendientes de moderar</b> son de negocios que aún no han sido verificados o que han sido marcadas para revisión: si cumplen las <a class="link" href="/normas/" target="_blank">Normas de la comunidad</a> (sin contenido engañoso, fotos propias, sin alcohol a menores…) pulsa <b>Aprobar</b>; si no, <b>Retirar</b> con un motivo, que el negocio recibe junto con la vía de recurso (obligatorio por el DSA). El sistema pone en revisión automáticamente las que mencionan <b>alcohol</b> (además las marca +18: solo las ven mayores), <b>tabaco/vapeo</b> (publicidad prohibida: retirar), <b>apuestas</b> o <b>lenguaje ofensivo</b> (insultos, palabras malsonantes, contenido sexual explícito, odio o amenazas); verás la etiqueta del motivo.</p>')}
@@ -1402,7 +1674,7 @@ PAGES.publicaciones = async (v, id) => {
     $$('#list [data-mod]').forEach((btn) => { btn.onclick = () => esperando(btn, async () => { if (await moderateOffer(btn.dataset.mod, btn.dataset.val)) await load(); }); });
   };
   $('#q').oninput = debounce(() => { s.q = $('#q').value.trim(); s.offset = 0; load(); });
-  ['moderation', 'status', 'kind'].forEach((k) => { $('#' + k).onchange = () => { s[k] = $('#' + k).value; s.offset = 0; load(); }; });
+  ['moderation', 'status', 'kind'].forEach((k) => { $('#' + k).onchange = () => { s[k] = $('#' + k).value; s.offset = 0; aUrl(); load(); }; });
   if ($('#clearbiz')) $('#clearbiz').onclick = () => { s.business = null; go('#/publicaciones'); };
   $('#csv').onclick = () => downloadCsv('publicaciones', rows, [['id', 'id'], ['kind', 'tipo'], ['title', 'título'], ['business_name', 'negocio'], ['status', 'estado'], ['moderation_status', 'moderación'], ['redeem_start_at', 'inicio canje'], ['redeem_end_at', 'fin canje'], ['event_at', 'evento'], ['price_cents', 'precio (cts)'], ['views_count', 'vistas'], ['redemptions_count', 'canjes'], ['max_redemptions', 'máx'], ['created_at', 'creada']]);
   await load();
@@ -1505,6 +1777,8 @@ async function offerDetail(v, id) {
 // ── Canjes ─────────────────────────────────────────────────────────────────
 PAGES.canjes = async (v) => {
   const s = st.canjes;
+  s.status = s.status || 'all';
+  const aUrl = filtrosEnUrl('canjes', s, ['status', 'from', 'to'], { status: 'all' });
   v.innerHTML = `
     <div class="page-head"><h1>Canjes</h1><span class="spacer"></span><button class="btn sm ghost" id="csv">Exportar CSV</button></div>
     ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p>Every time someone taps “Get the code”, a single-use code is created (<b>pending</b>) that expires when the business decides (5 minutes for a bar offer, the day of the event for a ticket); when the business scans it, it becomes <b>validated</b>; if not, it <b>expires</b>. Use it to handle complaints (“they charged me and didn't apply the discount”) and to spot abuse: search by email, business, title or code.</p>` : '<p>Cada vez que alguien pulsa «Conseguir el código» se genera un código de un solo uso (<b>pendiente</b>), que caduca cuando decide el negocio (5 minutos en una oferta de barra, hasta el día del evento en una entrada); cuando el negocio lo escanea pasa a <b>validado</b>; si no, <b>caduca</b>. Sirve para atender reclamaciones («me cobraron y no aplicaron el descuento») y detectar abusos: busca por email, negocio, título o código.</p>')}
@@ -1528,7 +1802,7 @@ PAGES.canjes = async (v) => {
     pg.bind($('#list'));
   };
   $('#q').oninput = debounce(() => { s.q = $('#q').value.trim(); s.offset = 0; load(); });
-  ['status', 'from', 'to'].forEach((k) => { $('#' + k).onchange = () => { s[k] = $('#' + k).value; s.offset = 0; load(); }; });
+  ['status', 'from', 'to'].forEach((k) => { $('#' + k).onchange = () => { s[k] = $('#' + k).value; s.offset = 0; aUrl(); load(); }; });
   $('#csv').onclick = () => downloadCsv('canjes', rows, [['id', 'id'], ['title', 'publicación'], ['business', 'negocio'], ['user_email', 'usuario'], ['code', 'código'], ['status', 'estado'], ['created_at', 'generado'], ['validated_at', 'validado'], ['validated_by_email', 'validado por']]);
   await load();
 };
@@ -1537,6 +1811,9 @@ PAGES.canjes = async (v) => {
 PAGES.usuarios = async (v, id) => {
   if (id) return userDetail(v, id);
   const s = st.usuarios;
+  const DEF = { type: 'all', banned: '', sort: 'created_desc' };
+  for (const k in DEF) s[k] = s[k] ?? DEF[k];
+  const aUrl = filtrosEnUrl('usuarios', s, Object.keys(DEF), DEF);
   v.innerHTML = `
     <div class="page-head"><h1>Usuarios</h1><span class="spacer"></span><button class="btn sm ghost" id="csv">Exportar CSV</button></div>
     ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p>Every account in the app. Click one to see its details: consents (GDPR), businesses, redemptions, reviews and reports; from there you can <b>suspend</b> anyone who breaks the rules, give <b>premium</b>, or <b>delete the account</b> if the user asks by email (right to erasure; they can also do it themselves from the app).</p>` : '<p>Todas las cuentas de la app. Pulsa en una para ver su ficha: consentimientos (RGPD), negocios, canjes, reseñas y denuncias; desde allí puedes <b>suspender</b> a quien incumpla las normas, dar <b>premium</b>, o <b>borrar la cuenta</b> si el usuario lo pide por email (derecho de supresión; también puede hacerlo él mismo desde la app).</p>')}
@@ -1562,7 +1839,7 @@ PAGES.usuarios = async (v, id) => {
     $$('#list tr.row').forEach((tr) => { tr.onclick = () => go(`#/usuarios/${rows[tr.dataset.i].id}`); });
   };
   $('#q').oninput = debounce(() => { s.q = $('#q').value.trim(); s.offset = 0; load(); });
-  ['type', 'banned', 'sort'].forEach((k) => { $('#' + k).onchange = () => { s[k] = $('#' + k).value; s.offset = 0; load(); }; });
+  ['type', 'banned', 'sort'].forEach((k) => { $('#' + k).onchange = () => { s[k] = $('#' + k).value; s.offset = 0; aUrl(); load(); }; });
   $('#csv').onclick = () => downloadCsv('usuarios', rows, [['id', 'id'], ['email', 'email'], ['display_name', 'nombre'], ['user_type', 'tipo'], ['locale', 'idioma'], [(u) => u.is_premium ? 'sí' : 'no', 'premium'], [(u) => u.banned_at ? 'sí' : 'no', 'suspendido'], [(u) => u.marketing_consent ? 'sí' : 'no', 'consentimiento marketing'], ['memberships', 'negocios'], ['redemptions', 'canjes'], ['created_at', 'alta'], ['last_sign_in_at', 'último acceso']]);
   await load();
 };
@@ -1585,14 +1862,15 @@ async function userDetail(v, id) {
       <div><h1>${esc(u.display_name || u.email)}</h1><div class="tags">${tag(u.user_type || 'user', 'dim')} ${u.is_admin ? '<span class="tag">administrador</span>' : ''} ${u.is_premium ? `<span class="tag ok">premium${u.premium_until ? ` ${en ? 'until' : 'hasta'} ${fmtDay(u.premium_until)}` : ''}</span>` : ''} ${u.banned_at ? `<span class="tag bad">${en ? 'suspended' : 'suspendido'} ${fmtDay(u.banned_at)}</span>` : ''} ${!u.email_confirmed_at ? '<span class="tag warn">email sin confirmar</span>' : ''} ${correo?.suppressed_at ? `<span class="tag bad" title="${esc(correo.suppression_detail || '')}">${correo.suppressed_reason === 'complaint' ? (en ? 'marked us as spam' : 'nos marcó como spam') : (en ? 'email bounces' : 'correo devuelto')} ${fmtDay(correo.suppressed_at)}</span>` : ''} ${correo?.new_email ? `<span class="tag warn">${en ? 'pending change to' : 'cambio pendiente a'} ${esc(correo.new_email)}</span>` : ''}</div><div class="muted small" style="margin-top:4px">${esc(u.email)}</div></div>
       <span class="spacer"></span>
       <div class="actions">
-        <button class="btn ${u.banned_at ? 'ok' : 'bad'}" data-a="ban">${u.banned_at ? 'Reactivar cuenta' : 'Suspender…'}</button>
-        <button class="btn" data-a="premium">Premium…</button>
-        <button class="btn" data-a="type">Tipo de cuenta…</button>
-        <button class="btn" data-a="birth">Corregir fecha de nacimiento…</button>
-        <button class="btn" data-a="email">Cambiar correo…</button>
         <button class="btn" data-a="notify">Enviar notificación…</button>
-        <button class="btn" data-a="admin">${u.is_admin ? 'Quitar admin' : 'Hacer admin'}</button>
-        <button class="btn bad ghost" data-a="delete">Eliminar cuenta…</button>
+        ${menuAcciones([
+          itemMenu('data-a="premium"', 'Premium…'),
+          itemMenu('data-a="type"', 'Tipo de cuenta…'),
+          itemMenu('data-a="birth"', 'Corregir fecha de nacimiento…'),
+          itemMenu('data-a="email"', 'Cambiar correo…'),
+          '-',
+          itemMenu('data-a="admin"', u.is_admin ? 'Quitar admin…' : 'Hacer admin…', { peligro: u.is_admin }),
+        ])}
       </div>
     </div>
     ${u.banned_reason ? `<div class="card"><b>Motivo de la suspensión:</b> ${esc(u.banned_reason)}</div>` : ''}
@@ -1629,13 +1907,18 @@ async function userDetail(v, id) {
     <div class="grid2">
       <div class="card"><h2>Últimas notificaciones</h2>${d.notifications.length ? `<ul style="margin:0;padding-left:18px;font-size:14px">${d.notifications.map((n) => `<li>${esc(n.title)} <span class="muted small">· ${esc(n.kind)} · ${ago(n.created_at)}${n.read_at ? (en ? ' · read' : ' · leída') : ''}</span></li>`).join('')}</ul>` : '<p class="muted">Ninguna.</p>'}</div>
       <div class="card"><h2>Registro de cambios</h2>${auditList(d.audit)}</div>
-    </div>`;
+    </div>
+    ${zonaDelicada(`<button class="btn ${u.banned_at ? 'ok' : 'bad ghost'}" data-a="ban">${u.banned_at ? 'Reactivar cuenta…' : 'Suspender…'}</button>
+      <button class="btn bad" data-a="delete">Eliminar cuenta…</button>`, en
+      ? '<b>Suspend</b> asks for a reason, which they receive with how to appeal; it can be lifted at any time. <b>Delete</b> can’t be undone: you type DELETE and confirm your password.'
+      : '<b>Suspender</b> pide un motivo, que le llega con la vía de recurso; se puede levantar cuando quieras. <b>Eliminar</b> no se puede deshacer: pide escribir ELIMINAR y tu contraseña.')}`;
   $$('[data-delreview]').forEach((btn) => { btn.onclick = () => esperando(btn, () => deleteReview(btn.dataset.delreview)); });
   $$('[data-a]').forEach((btn) => { btn.onclick = () => esperando(btn, async () => {
     try {
       const a = btn.dataset.a;
       if (a === 'ban') {
         if (u.banned_at) {
+          if (!await confirmDlg(en ? 'Reactivate account' : 'Reactivar cuenta', en ? 'They will be able to use Klendar normally again (redeem, review, report, join a team…).' : 'Podrá volver a usar Klendar con normalidad (canjear, reseñar, denunciar, entrar en un equipo…).', { submit: en ? 'Reactivate' : 'Reactivar' })) return;
           await rpc('admin_set_user_ban', { p_id: u.id, p_banned: false });
           toast((pausas || []).length
             ? (en ? 'Account reactivated. Their businesses are still paused: decide below whether to reopen them.' : 'Cuenta reactivada. Sus negocios siguen en pausa: decide abajo si los reabres.')
@@ -1750,15 +2033,18 @@ async function decideTexto(x, aprobar) {
 }
 
 PAGES.resenas = async (v) => {
-  const p = params(); let tab = p.tab || (BADGES.resenas ? 'cola' : 'reviews');
+  const p = params(); let tab = ['cola', 'reviews', 'posts'].includes(p.tab) ? p.tab : (BADGES.resenas ? 'cola' : 'reviews');
   const sR = st.resenas, sP = st.posts;
+  if (p.rating) sR.rating = p.rating;
+  const aUrl = () => ponUrl('resenas', { tab, rating: tab === 'reviews' ? sR.rating : null });
+  aUrl();
   st.cola = st.cola || { limit: 50, offset: 0 };
   const sC = st.cola;
   v.innerHTML = `
     <div class="page-head"><h1>Reseñas y novedades</h1></div>
     ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p><b>Reviews</b> are written by users about businesses; <b>news posts</b> are published by businesses on their page. Only delete them if they break the rules (insults, personal data, spam, content that isn't about the venue). The author gets the reason.</p>` : '<p>Las <b>reseñas</b> las escriben usuarios sobre negocios; las <b>novedades</b> las publican los negocios en su perfil. Bórralos solo si incumplen las normas (insultos, datos personales, spam, contenido que no es del local). El autor recibe el motivo.</p>')}
     ${helpBox('¿Qué es «En revisión»?', I18N.lang === 'en' ? '<p>Texts the system has stopped automatically for <b>offensive language</b> (insults, swear words, explicit sexual content, hate or threats), with the tag of what it found. News, reviews and replies to reviews are <b>not public</b> until you approve them. A new <b>birthday gift</b> or <b>stamp card</b> name or reward is not used until you approve it (the previous one stays; a new card waits paused), because it reaches customers in notifications. The business name, description, menu and the reason for closed days stay visible in the meantime. <b>Approve</b> if it is fine (a false positive, or strong but acceptable language); <b>Take down</b> if it breaks the Community guidelines: the author gets the reason. The word lists are in the database (<code>offensive_terms</code> and <code>offensive_exceptions</code>).</p>' : '<p>Textos que el sistema ha parado solo por <b>lenguaje ofensivo</b> (insultos, palabras malsonantes, contenido sexual explícito, odio o amenazas), con la etiqueta de lo que ha encontrado. Las novedades, las reseñas y las respuestas a reseñas <b>no se ven</b> hasta que las apruebas. El <b>regalo de cumpleaños</b> y el nombre o el premio de una <b>tarjeta de sellos</b> no se usan hasta que los apruebas (sigue el anterior; una tarjeta nueva espera en pausa), porque llegan a los clientes en notificaciones. El nombre, la descripción y la carta del negocio y el motivo de los días cerrados siguen a la vista mientras tanto. <b>Aprobar</b> si está bien (un falso positivo o algo fuerte pero aceptable); <b>Retirar</b> si incumple las Normas de la comunidad: el autor recibe el motivo. Las listas de palabras están en la base (<code>offensive_terms</code> y <code>offensive_exceptions</code>).</p>')}
-    <div class="tabs"><button data-t="cola" class="${tab === 'cola' ? 'on' : ''}">En revisión${BADGES.resenas ? ` <span class="badge">${BADGES.resenas}</span>` : ''}</button><button data-t="reviews" class="${tab === 'reviews' ? 'on' : ''}">Reseñas</button><button data-t="posts" class="${tab === 'posts' ? 'on' : ''}">Novedades</button></div>
+    <div class="tabs"><button type="button" data-t="cola" aria-pressed="${tab === 'cola'}" class="${tab === 'cola' ? 'on' : ''}">En revisión${BADGES.resenas ? ` <span class="badge">${BADGES.resenas}</span>` : ''}</button><button type="button" data-t="reviews" aria-pressed="${tab === 'reviews'}" class="${tab === 'reviews' ? 'on' : ''}">Reseñas</button><button type="button" data-t="posts" aria-pressed="${tab === 'posts'}" class="${tab === 'posts' ? 'on' : ''}">Novedades</button></div>
     <div class="toolbar" ${tab === 'cola' ? 'hidden' : ''}><input id="q" class="grow" placeholder="Buscar por texto, negocio o email…" value="${esc((tab === 'posts' ? sP.q : sR.q) || '')}"><select id="rating" ${tab === 'posts' ? 'hidden' : ''}>${[['', 'Cualquier puntuación'], ['1', 'Solo 1 ★'], ['2', '≤ 2 ★'], ['3', '≤ 3 ★']].map((o) => `<option value="${o[0]}" ${String(sR.rating || '') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select></div>
     <div id="list"><div class="loading">Cargando…</div></div>`;
   const load = async () => {
@@ -1793,9 +2079,9 @@ PAGES.resenas = async (v) => {
       $$('#list [data-del]').forEach((b) => { b.onclick = () => esperando(b, () => deletePost(b.dataset.del)); });
     }
   };
-  $$('.tabs button').forEach((b) => { b.onclick = () => { tab = b.dataset.t; history.replaceState(null, '', `#/resenas?tab=${tab}`); $$('.tabs button').forEach((x) => x.classList.toggle('on', x === b)); $('#rating').hidden = tab === 'posts'; $('.toolbar', v).hidden = tab === 'cola'; load(); }; });
+  $$('.tabs button').forEach((b) => { b.onclick = () => { tab = b.dataset.t; aUrl(); $$('.tabs button').forEach((x) => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', String(x === b)); }); $('#rating').hidden = tab === 'posts'; $('.toolbar', v).hidden = tab === 'cola'; load(); }; });
   $('#q').oninput = debounce(() => { const q = $('#q').value.trim(); sR.q = q; sP.q = q; sR.offset = sP.offset = 0; load(); });
-  $('#rating').onchange = () => { sR.rating = $('#rating').value; sR.offset = 0; load(); };
+  $('#rating').onchange = () => { sR.rating = $('#rating').value; sR.offset = 0; aUrl(); load(); };
   await load();
 };
 
@@ -1863,13 +2149,22 @@ async function decideDenuncias(tipo, id, decision, abiertas) {
     reason = r.reason;
     if (!reason) { toast('Hace falta indicar un motivo.', true); return false; }
   } else if (decision !== 'reviewing') {
-    const ok = await confirmDlg(
-      decision === 'dismiss' ? (en ? 'Dismiss all' : 'Desestimar todas') : (en ? 'Close without taking down' : 'Cerrar sin retirar'),
-      decision === 'dismiss'
-        ? (en ? `The ${abiertas} open reports are dismissed as unfounded. The content stays up and each reporter is told so.` : `Se desestiman las ${abiertas} denuncias abiertas por no tener fundamento. El contenido sigue publicado y a cada denunciante se le dice.`)
-        : (en ? `The ${abiertas} open reports are closed: the content complies with the rules and stays up. Each reporter is told so.` : `Se cierran las ${abiertas} denuncias abiertas: el contenido cumple las normas y sigue publicado. A cada denunciante se le dice.`),
-      { submit: decision === 'dismiss' ? 'Desestimar todas' : 'Cerrar sin retirar' });
-    if (!ok) return false;
+    // «Cerrar sin retirar» y «Desestimar» acaban igual para quien denunció
+    // (el mismo aviso y el mismo correo: lo hemos revisado, no incumple las
+    // normas y sigue publicado). Solo cambia cómo queda anotado: van juntos
+    // y se elige el motivo dentro.
+    const r = await modal({
+      title: en ? 'Close without taking down' : 'Cerrar sin retirar',
+      intro: esc(en
+        ? `The ${abiertas} open reports are closed and the content stays up. Each reporter gets the same message either way: we have reviewed it, it doesn't break the Community guidelines and it stays up (in the app, or by email if they reported without an account).`
+        : `Se cierran las ${abiertas} denuncias abiertas y el contenido sigue publicado. A cada denunciante le llega lo mismo en los dos casos: que lo hemos revisado, que no incumple las Normas de la comunidad y que sigue publicado (en la app, o por correo si denunció sin cuenta).`),
+      fields: [{ name: 'motivo', label: en ? 'Why it stays up' : 'Por qué sigue publicado', type: 'select', value: decision === 'dismiss' ? 'dismiss' : 'keep',
+        help: en ? 'It only changes how it is recorded.' : 'Solo cambia cómo queda anotado.',
+        options: [['keep', en ? 'It complies with the rules (closed without taking down)' : 'Cumple las normas (cerrada sin retirar)'], ['dismiss', en ? 'The reports are unfounded (dismissed)' : 'Las denuncias no tienen fundamento (desestimadas)']] }],
+      submit: en ? 'Close without taking down' : 'Cerrar sin retirar',
+    });
+    if (!r) return false;
+    decision = r.motivo === 'dismiss' ? 'dismiss' : 'keep';
   }
   try {
     const res = await rpc('admin_resolve_report_group', { p_type: tipo, p_id: id, p_decision: decision, p_reason: reason });
@@ -1879,11 +2174,11 @@ async function decideDenuncias(tipo, id, decision, abiertas) {
   } catch (e) { toast(e.message, true); return false; }
 }
 
-const botonesDen = (g) => g.open_count > 0 ? `
+/** Las dos decisiones a la vista y lo demás (en revisión, abrir…) en ⋮. */
+const botonesDen = (g, extra = []) => `${g.open_count > 0 ? `
   <button class="btn sm bad" data-dec="remove" ${g.state === 'deleted' ? 'disabled' : ''}>${g.state === 'removed' ? 'Cerrar (ya retirado)…' : 'Retirar y cerrar todas…'}</button>
-  <button class="btn sm ok" data-dec="keep">Cerrar sin retirar</button>
-  <button class="btn sm ghost" data-dec="dismiss">Desestimar todas</button>
-  ${g.reviewing ? '' : '<button class="btn sm ghost" data-dec="reviewing">Marcar en revisión</button>'}` : '';
+  <button class="btn sm ok" data-dec="keep">Cerrar sin retirar…</button>` : ''}
+  ${menuAcciones([g.open_count > 0 && !g.reviewing ? itemMenu('data-dec="reviewing"', 'Marcar en revisión') : '', ...extra], { icono: true, sm: true })}`;
 
 /** Las cifras de un grupo: denuncias, personas, con y sin cuenta, fechas. */
 function cifrasDen(g, abiertas = true) {
@@ -1904,21 +2199,27 @@ PAGES.denuncias = async (v, tipoRuta) => {
   if (tipoRuta && TIPO_DEN[tipoD] && /^[0-9a-f-]{36}$/i.test(idD || '')) return denunciasDe(v, tipoD, idD);
   const s = st.denuncias;
   const en = I18N.lang === 'en';
+  const DEF = { status: 'open', type: 'all' };
+  for (const k in DEF) s[k] = s[k] ?? DEF[k];
+  const aUrl = filtrosEnUrl('denuncias', s, Object.keys(DEF), DEF);
   v.innerHTML = `
     <div class="page-head"><h1>Denuncias</h1></div>
     ${helpBox('¿Qué hago aquí?', en
-      ? `<p>One card per reported item (publication, business, review or news post), with how many reports it has, from how many different people (with and without an account), the reasons and whether it's still up. Open it (“See the reports”) to read each report and who made it. Decide for all its open reports at once: <b>Take down and close all</b> (the publication is taken down, the business deactivated, the review or news post deleted; whoever posted it gets the reason and can ask for a review within 6 months), <b>Close without taking down</b> (the content complies) or <b>Dismiss all</b> (unfounded reports). Every reporter is told the decision: in the app if they have an account, by email if they reported without one. By law (DSA, art. 16) reports must be handled diligently and the decision explained.</p><p>People without an account report from klendar.app (“Report illegal content” in the footer, or “Report” on any page without being logged in). Their name and email are only visible here.</p>`
-      : `<p>Una tarjeta por cada contenido denunciado (publicación, negocio, reseña o novedad), con cuántas denuncias tiene, de cuántas personas distintas (con y sin cuenta), los motivos y si sigue publicado. Ábrelo («Ver las denuncias») para leer cada denuncia y quién la puso. Decide para todas sus denuncias abiertas a la vez: <b>Retirar y cerrar todas</b> (la publicación se retira, el negocio se desactiva, la reseña o la novedad se borran; quien lo publicó recibe el motivo y puede pedir que se revise en 6 meses), <b>Cerrar sin retirar</b> (el contenido cumple) o <b>Desestimar todas</b> (denuncias sin fundamento). A cada denunciante le llega la decisión: en la app si tiene cuenta, por correo si denunció sin ella. Por ley (DSA, art. 16) hay que resolverlas con diligencia y explicar la decisión.</p><p>Quien no tiene cuenta denuncia desde klendar.app («Denunciar contenido ilegal» en el pie, o «Denunciar» en cualquier ficha sin haber entrado). Su nombre y su correo solo se ven aquí.</p>`)}
+      ? `<p>One card per reported item (publication, business, review or news post), with how many reports it has, from how many different people (with and without an account), the reasons and whether it's still up. Open it (“See the reports”) to read each report and who made it. Decide for all its open reports at once: <b>Take down and close all</b> (the publication is taken down, the business deactivated, the review or news post deleted; whoever posted it gets the reason and can ask for a review within 6 months) or <b>Close without taking down</b> (it stays up; inside you choose whether it complies or the reports are unfounded: the reporter gets the same message either way). In <b>⋮</b>, “Mark as under review” and open it on the website. Every reporter is told the decision: in the app if they have an account, by email if they reported without one. By law (DSA, art. 16) reports must be handled diligently and the decision explained.</p><p>People without an account report from klendar.app (“Report illegal content” in the footer, or “Report” on any page without being logged in). Their name and email are only visible here.</p>`
+      : `<p>Una tarjeta por cada contenido denunciado (publicación, negocio, reseña o novedad), con cuántas denuncias tiene, de cuántas personas distintas (con y sin cuenta), los motivos y si sigue publicado. Ábrelo («Ver las denuncias») para leer cada denuncia y quién la puso. Decide para todas sus denuncias abiertas a la vez: <b>Retirar y cerrar todas</b> (la publicación se retira, el negocio se desactiva, la reseña o la novedad se borran; quien lo publicó recibe el motivo y puede pedir que se revise en 6 meses) o <b>Cerrar sin retirar</b> (sigue publicado; dentro eliges si cumple las normas o si las denuncias no tienen fundamento: a quien denunció le llega lo mismo). En <b>⋮</b>, «Marcar en revisión» y abrirlo en la web. A cada denunciante le llega la decisión: en la app si tiene cuenta, por correo si denunció sin ella. Por ley (DSA, art. 16) hay que resolverlas con diligencia y explicar la decisión.</p><p>Quien no tiene cuenta denuncia desde klendar.app («Denunciar contenido ilegal» en el pie, o «Denunciar» en cualquier ficha sin haber entrado). Su nombre y su correo solo se ven aquí.</p>`)}
     <div class="toolbar">
+      <input id="q" class="grow" type="search" placeholder="Buscar por título, negocio, ciudad o motivo…" aria-label="Buscar en denuncias" value="${esc(s.q || '')}">
       <select id="status">${[['open', 'Con denuncias abiertas'], ['closed', 'Ya cerradas'], ['all', 'Todo']].map((o) => `<option value="${o[0]}" ${(s.status || 'open') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
       <select id="type">${[['all', 'Todo tipo'], ['offer', 'Publicaciones'], ['business', 'Negocios'], ['review', 'Reseñas'], ['review_media', 'Fotos y vídeos de reseñas'], ['post', 'Novedades']].map((o) => `<option value="${o[0]}" ${(s.type || 'all') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
     </div>
     <div id="list"><div class="loading">Cargando…</div></div>`;
   const load = async () => {
     const abiertas = (s.status || 'open') === 'open';
-    const r = await rpc('admin_report_groups', { p_status: s.status || 'open', p_type: s.type || 'all', p_min_open: 0, p_limit: s.limit, p_offset: s.offset });
-    const pg = pager(s, r.total, load);
-    $('#list').innerHTML = (r.rows.length ? r.rows.map((g) => {
+    const q = (s.q || '').trim();
+    const r = await rpc('admin_report_groups', { p_status: s.status || 'open', p_type: s.type || 'all', p_min_open: 0, p_limit: q ? BUSCA_MAX : s.limit, p_offset: q ? 0 : s.offset });
+    const filas = q ? r.rows.filter((g) => coincide(q, tituloDen(g.target_type, g.target), g.target?.business, g.target?.city, ...(g.reasons || []).map((m) => motivoDen(m.reason)))) : r.rows;
+    const pg = q ? { html: '', bind() {} } : pager(s, r.total, load);
+    $('#list').innerHTML = (q ? notaBusqueda(filas.length, r.rows.length) : '') + (filas.length ? filas.map((g) => {
       const t = g.target || {};
       const url = urlDenunciado(g.target_type, g.target_id, t);
       const det = `#/denuncias/${g.target_type}/${g.target_id}`;
@@ -1930,8 +2231,7 @@ PAGES.denuncias = async (v, tipoRuta) => {
         <div class="den-motivos">${(g.reasons || []).map((m) => `<span class="tag ${m.reason === 'child_abuse' || m.reason === 'illegal' ? 'bad' : 'dim'}">${esc(motivoDen(m.reason))} · ${m.n}</span>`).join(' ')}</div>
         <div class="actions">
           <a class="btn sm" href="${det}">${en ? `See the reports (${g.total_count})` : `Ver las denuncias (${g.total_count})`}</a>
-          ${url ? `<a class="btn sm ghost" href="${APP_URL}${esc(url)}" target="_blank" rel="noopener">${en ? 'Open' : 'Abrir'} ↗</a>` : ''}
-          ${botonesDen(g)}
+          ${botonesDen(g, [url ? enlaceMenu(`${APP_URL}${url}`, `${en ? 'Open on the website' : 'Abrir en la web'} ↗`, true) : ''])}
         </div>
       </div></div>`;
     }).join('') : `<div class="tbl-wrap"><div class="empty">${abiertas ? 'No hay denuncias abiertas.' : 'Sin denuncias con esos filtros.'}</div></div>`) + pg.html;
@@ -1942,7 +2242,8 @@ PAGES.denuncias = async (v, tipoRuta) => {
     }); });
     I18N.translate($('#list'));
   };
-  ['status', 'type'].forEach((k) => { $('#' + k).onchange = () => { s[k] = $('#' + k).value; s.offset = 0; load(); }; });
+  ['status', 'type'].forEach((k) => { $('#' + k).onchange = () => { s[k] = $('#' + k).value; s.offset = 0; aUrl(); load(); }; });
+  $('#q').oninput = debounce(() => { s.q = $('#q').value.trim(); s.offset = 0; load(); });
   await load();
 };
 
@@ -1987,9 +2288,10 @@ async function denunciasDe(v, tipo, id) {
         ${cifrasDen(g, abiertas.length > 0)}
         <div class="den-motivos">${Object.entries(motivos).sort((a, b) => b[1] - a[1]).map(([m, n]) => `<span class="tag ${m === 'child_abuse' || m === 'illegal' ? 'bad' : 'dim'}">${esc(motivoDen(m))} · ${n}</span>`).join(' ')}</div>
         <div class="actions">
-          ${url && d.live ? `<a class="btn sm" href="${APP_URL}${esc(url)}" target="_blank" rel="noopener">${en ? 'Open on the website' : 'Abrir en la web'} ↗</a>` : ''}
-          ${ficha ? `<a class="btn sm ghost" href="${ficha}">${tipo === 'offer' ? (en ? 'Publication in the admin' : 'Publicación en el admin') : (en ? 'Business in the admin' : 'Negocio en el admin')}</a>` : ''}
-          ${botonesDen(g)}
+          ${botonesDen(g, [
+            url && d.live ? enlaceMenu(`${APP_URL}${url}`, `${en ? 'Open on the website' : 'Abrir en la web'} ↗`, true) : '',
+            ficha ? enlaceMenu(ficha, tipo === 'offer' ? (en ? 'Publication in the admin' : 'Publicación en el admin') : (en ? 'Business in the admin' : 'Negocio en el admin')) : '',
+          ])}
         </div>
       </div></div>
     </div>
@@ -2118,7 +2420,7 @@ PAGES.duplicados = async (v) => {
       <h3><a class="link" href="#/negocios/${esc(x.id)}">${esc(x.name)}</a> ${tag(x.verification_status)} <span class="muted small">${esc(x.city || '')} · ${en ? 'joined' : 'alta'} ${fmtDay(x.created_at)}</span></h3>
       ${(x.candidates || []).map((c) => `<div class="meta">↔ <a class="link" href="#/negocios/${esc(c.id)}">${esc(c.name)}</a> ${tag(c.verification_status)} · ${esc(motivoDuplicado(c, en))}
         <button class="btn sm" data-nodup="${esc(x.id)}" data-otra="${esc(c.id)}">${en ? 'Not a duplicate' : 'No es duplicado'}</button></div>`).join('')}
-      <div class="actions"><a class="btn sm" href="#/negocios/${esc(x.id)}#duplicados">${en ? 'Open and decide' : 'Abrir y decidir'}</a></div>
+      <div class="actions"><a class="btn sm" href="#/negocios/${esc(x.id)}?ver=duplicados">${en ? 'Open and decide' : 'Abrir y decidir'}</a></div>
     </div></div>`).join('') : `<div class="tbl-wrap"><div class="empty">${en ? 'No possible duplicates right now.' : 'Ahora no hay posibles duplicados.'}</div></div>`;
   $$('[data-nodup]', v).forEach((b) => { b.onclick = () => esperando(b, async () => { if (await noEsDuplicado(b.dataset.nodup, b.dataset.otra)) { refreshBadges(); route(); } }); });
 };
@@ -2133,22 +2435,23 @@ async function verPrueba(ruta) {
 PAGES.reclamaciones = async (v) => {
   const en = I18N.lang === 'en';
   const s = st.reclamaciones;
-  const p = params();
-  if (p.status) s.status = p.status;
+  const aUrl = filtrosEnUrl('reclamaciones', s, ['status'], { status: 'pending' });
   v.innerHTML = `
     <div class="page-head"><h1>${en ? 'Business claims' : 'Reclamaciones de negocios'}</h1></div>
     ${helpBox(en ? 'What do I do here?' : '¿Qué hago aquí?', en
       ? '<p>“Is this your business?”: someone with an account (18 or over) says they own or run a business whose page someone else created. Compare what they send with the page (phone, email, website): call the business number if in doubt. <b>Approve</b> makes them the owner (like a handover: the previous owner is told by notification and email, and you can leave them as a manager) and the other open claims for that business are rejected. <b>Reject</b> needs a reason, which they see; they can try again after 30 days. The evidence is deleted 6 months after deciding and the claim after 2 years. Everything stays in the activity log.</p>'
       : '<p>«¿Es tu negocio?»: alguien con cuenta (18 años o más) dice que es dueño o que lleva un negocio cuya ficha creó otra persona. Compara lo que manda con la ficha (teléfono, correo, web): si hay dudas, llama al número del negocio. <b>Aprobar</b> le hace propietario (como un traspaso: a quien lo era se le avisa por notificación y correo, y puedes dejarle de encargado) y las demás reclamaciones abiertas de ese negocio quedan rechazadas. <b>Rechazar</b> pide un motivo, que verá; podrá volver a intentarlo a los 30 días. La prueba se borra a los 6 meses de decidir y la reclamación a los 2 años. Todo queda en el registro de actividad.</p>')}
-    <div class="toolbar"><select id="status">${[['pending', en ? 'Pending' : 'Pendientes'], ['approved', en ? 'Approved' : 'Aprobadas'], ['rejected', en ? 'Rejected' : 'Rechazadas'], ['withdrawn', en ? 'Withdrawn' : 'Retiradas'], ['all', en ? 'All' : 'Todas']].map((o) => `<option value="${o[0]}" ${s.status === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select></div>
+    <div class="toolbar"><input id="q" class="grow" type="search" placeholder="${en ? 'Search by business, city, person or email…' : 'Buscar por negocio, ciudad, persona o correo…'}" aria-label="${en ? 'Search claims' : 'Buscar en reclamaciones'}" value="${esc(s.q || '')}"><select id="status">${[['pending', en ? 'Pending' : 'Pendientes'], ['approved', en ? 'Approved' : 'Aprobadas'], ['rejected', en ? 'Rejected' : 'Rechazadas'], ['withdrawn', en ? 'Withdrawn' : 'Retiradas'], ['all', en ? 'All' : 'Todas']].map((o) => `<option value="${o[0]}" ${s.status === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select></div>
     <div id="list"><div class="loading">${en ? 'Loading…' : 'Cargando…'}</div></div>`;
   const ESTADO = { pending: ['warn', en ? 'pending' : 'pendiente'], approved: ['ok', en ? 'approved' : 'aprobada'], rejected: ['bad', en ? 'rejected' : 'rechazada'], withdrawn: ['dim', en ? 'withdrawn' : 'retirada'] };
   const load = async () => {
-    const r = await rpc('admin_business_claims', { p_status: s.status, p_limit: s.limit, p_offset: s.offset });
+    const q = (s.q || '').trim();
+    const r = await rpc('admin_business_claims', { p_status: s.status, p_limit: q ? BUSCA_MAX : s.limit, p_offset: q ? 0 : s.offset });
     const total = s.status === 'all' ? Object.values(r.counts || {}).reduce((a, n) => a + n, 0) : (r.counts || {})[s.status] || 0;
-    const pg = pager(s, total, load);
-    const items = r.items || [];
-    $('#list').innerHTML = (items.length ? items.map((x, i) => {
+    const pg = q ? { html: '', bind() {} } : pager(s, total, load);
+    const todas = r.items || [];
+    const items = q ? todas.filter((x) => coincide(q, x.business_name, x.business_city, x.user_name, x.user_email, x.contact_email, x.contact_phone, x.owner_email)) : todas;
+    $('#list').innerHTML = (q ? notaBusqueda(items.length, todas.length) : '') + (items.length ? items.map((x, i) => {
       const [cls, txt] = ESTADO[x.status] || ['dim', x.status];
       const coincide = (a, b2) => a && b2 && String(a).replace(/\D/g, '').slice(-9) === String(b2).replace(/\D/g, '').slice(-9);
       return `<div class="item"><div class="ph">${ms('how_to_reg')}</div><div>
@@ -2206,7 +2509,8 @@ PAGES.reclamaciones = async (v) => {
       refreshBadges(); load();
     }); });
   };
-  $('#status', v).onchange = () => { s.status = $('#status', v).value; s.offset = 0; history.replaceState(null, '', `#/reclamaciones?status=${s.status}`); load(); };
+  $('#status', v).onchange = () => { s.status = $('#status', v).value; s.offset = 0; aUrl(); load(); };
+  $('#q', v).oninput = debounce(() => { s.q = $('#q', v).value.trim(); s.offset = 0; load(); });
   await load();
 };
 
@@ -2258,21 +2562,26 @@ PAGES.inactivas = async (v) => {
 PAGES.mensajes = async (v) => {
   const s = st.mensajes;
   const en = I18N.lang === 'en';
+  s.status = s.status || 'review';
+  const aUrl = filtrosEnUrl('mensajes', s, ['status'], { status: 'review' });
   v.innerHTML = `
     <div class="page-head"><h1>Mensajes a clientes</h1></div>
     ${helpBox('¿Qué hago aquí?', en
       ? '<p>A business can send one short message a week to people who have it in their favourites (“Message my customers”). If the text mentions <b>alcohol</b>, <b>tobacco</b> or <b>gambling</b>, or has <b>offensive language</b>, it stops here. <b>Send</b> delivers it as it is (with alcohol, only to adults); <b>Reject</b> discards it and the business is told, with the reason if you give one. A rejected message does not use up their week.</p>'
       : '<p>Un negocio puede mandar un mensaje corto a la semana a quien lo tiene en favoritos («Avisar a mis clientes»). Si el texto menciona <b>alcohol</b>, <b>tabaco</b> o <b>apuestas</b>, o tiene <b>lenguaje ofensivo</b>, se para aquí. <b>Enviar</b> lo manda tal cual (con alcohol, solo a mayores de edad); <b>Rechazar</b> lo descarta y se le dice al negocio, con el motivo si lo pones. Uno rechazado no le gasta la semana.</p>')}
     <div class="toolbar">
+      <input id="q" class="grow" type="search" placeholder="Buscar en el texto, el negocio o el correo…" aria-label="Buscar en mensajes a clientes" value="${esc(s.q || '')}">
       <select id="status">${[['all', 'Todos'], ['review', 'En revisión'], ['sent', 'Enviados'], ['rejected', 'No enviados']].map((o) => `<option value="${o[0]}" ${(s.status || 'review') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
     </div>
     <div id="list"><div class="loading">Cargando…</div></div>`;
   const load = async () => {
     const estado = s.status || 'review';
-    const r = await rpc('admin_business_messages', { p_status: estado === 'all' ? null : estado, p_limit: s.limit, p_offset: s.offset });
-    const pg = pager(s, r.total || 0, load);
-    const items = r.items || [];
-    $('#list').innerHTML = (items.length ? items.map((x) => {
+    const q = (s.q || '').trim();
+    const r = await rpc('admin_business_messages', { p_status: estado === 'all' ? null : estado, p_limit: q ? BUSCA_MAX : s.limit, p_offset: q ? 0 : s.offset });
+    const pg = q ? { html: '', bind() {} } : pager(s, r.total || 0, load);
+    const todos = r.items || [];
+    const items = q ? todos.filter((x) => coincide(q, x.title, x.body, x.business_name, x.city, x.author_email, x.offer_title)) : todos;
+    $('#list').innerHTML = (q ? notaBusqueda(items.length, todos.length) : '') + (items.length ? items.map((x) => {
       const [cls, txt] = ESTADO_MENSAJE[x.status] || ['dim', x.status];
       const personas = x.recipients === 1 ? (en ? '1 person' : '1 persona') : `${fmtNum(x.recipients || 0)} ${en ? 'people' : 'personas'}`;
       return `
@@ -2310,14 +2619,18 @@ PAGES.mensajes = async (v) => {
       } catch (e) { toast(e.message, true); }
     }); });
   };
-  $('#status').onchange = () => { s.status = $('#status').value; s.offset = 0; load(); };
+  $('#status').onchange = () => { s.status = $('#status').value; s.offset = 0; aUrl(); load(); };
+  $('#q').oninput = debounce(() => { s.q = $('#q').value.trim(); s.offset = 0; load(); });
   await load();
 };
 
 // ── Sugerencias y fallos ────────────────────────────────────────────────────
+const ESTADOS_SUG = [['new', 'Sin leer'], ['reviewing', 'La estamos viendo'], ['planned', 'La haremos'], ['done', 'Hecho'], ['declined', 'De momento no']];
 PAGES.sugerencias = async (v) => {
   const s = st.sugerencias;
-  s.status = s.status || 'open';
+  const DEF = { status: 'open', kind: 'all' };
+  for (const k in DEF) s[k] = s[k] ?? DEF[k];
+  const aUrl = filtrosEnUrl('sugerencias', s, Object.keys(DEF), DEF);
   v.innerHTML = `
     <div class="page-head"><h1>Sugerencias</h1><span class="spacer"></span><button class="btn sm ghost" id="csv">Exportar CSV</button></div>
     ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p>What people write from the app (Account → “Ideas and feedback”) or the website: ideas, bugs and messages from businesses. <b>Bugs</b> also reach your phone as a notification. Mark each one with what you're going to do —<b>we're looking into it</b>, <b>we'll do it</b>, <b>done</b> or <b>not for now</b>— and, if you like, <b>reply</b>: the person gets your reply as a notification. Nobody outside sees the internal notes.</p>` : '<p>Lo que la gente escribe desde la app (Cuenta → «Sugerencias y mejoras») o la web: ideas, fallos y mensajes de negocios. Los <b>fallos</b> te llegan además como notificación al móvil. Marca cada una con lo que vas a hacer —<b>la estamos viendo</b>, <b>la haremos</b>, <b>hecho</b> o <b>de momento no</b>— y, si quieres, <b>responde</b>: la persona recibe tu respuesta como notificación. Las notas internas no las ve nadie de fuera.</p>')}
@@ -2342,23 +2655,21 @@ PAGES.sugerencias = async (v) => {
     const pg = pager(s, r.total, load);
     $('#list').innerHTML = (rows.length ? rows.map((f) => `
       <div class="item"><div class="ph">${kindIcon[f.kind] || ms('chat_bubble')}</div><div>
-        <h3>${tag(f.kind, 'dim')} ${tag(f.status)} ${f.replied_at ? '<span class="tag ok">respondida</span>' : ''} ${(f.offensive || []).length ? `<span class="tag warn" title="${esc(I18N.t('Detectado automáticamente en el texto'))}">${esc(I18N.t('lenguaje ofensivo'))}: ${esc(f.offensive.map((c) => I18N.t(CAT_OFENSIVA[c] || c)).join(', '))}</span>` : ''}</h3>
+        <h3>${tag(f.kind, 'dim')} ${f.replied_at ? '<span class="tag ok">respondida</span>' : ''} ${(f.offensive || []).length ? `<span class="tag warn" title="${esc(I18N.t('Detectado automáticamente en el texto'))}">${esc(I18N.t('lenguaje ofensivo'))}: ${esc(f.offensive.map((c) => I18N.t(CAT_OFENSIVA[c] || c)).join(', '))}</span>` : ''}</h3>
         <div class="meta">${fmtDate(f.created_at)} · ${f.user_id ? `<a class="link" href="#/usuarios/${f.user_id}">${esc(f.user_email || f.user_name || 'usuario')}</a>` : (I18N.lang === 'en' ? 'no account' : 'sin cuenta')}${f.from_same_user > 1 ? ` · ${f.from_same_user} ${I18N.lang === 'en' ? 'messages from them' : 'mensajes suyos'}` : ''} · ${esc(f.app_version || '?')} · ${esc(f.platform || '?')}${f.locale ? ' · ' + esc(f.locale) : ''}</div>
         <p style="white-space:pre-wrap">${esc(f.message)}</p>
         ${f.admin_note ? `<div class="meta"><b>Nota interna:</b> ${esc(f.admin_note)}</div>` : ''}
-        <div class="actions">
-          <button class="btn sm ghost" data-set="${f.id}" data-status="reviewing">La estamos viendo</button>
-          <button class="btn sm ghost" data-set="${f.id}" data-status="planned">La haremos</button>
-          <button class="btn sm ghost" data-set="${f.id}" data-status="done">Hecho</button>
-          <button class="btn sm ghost" data-set="${f.id}" data-status="declined">De momento no</button>
+        <div class="actions sug-acciones">
+          <label class="estado-sel"><span>Estado</span><select data-estado="${f.id}">${ESTADOS_SUG.map(([k, t]) => `<option value="${k}" ${f.status === k ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
           <button class="btn sm" data-reply="${f.id}">Responder…</button>
-          <button class="btn sm ghost" data-note="${f.id}">Nota interna…</button>
-          <button class="btn sm bad ghost" data-del="${f.id}" style="margin-left:auto">Borrar…</button>
+          ${menuAcciones([itemMenu(`data-note="${f.id}"`, 'Nota interna…'), '-', itemMenu(`data-del="${f.id}"`, 'Borrar…', { peligro: true })], { icono: true, sm: true })}
         </div>
       </div></div>`).join('') : '<div class="tbl-wrap"><div class="empty">Nada por aquí.</div></div>') + pg.html;
     pg.bind($('#list'));
-    $$('#list [data-set]').forEach((b) => { b.onclick = () => esperando(b, async () => {
-      try { await rpc('admin_set_feedback', { p_id: b.dataset.set, p_status: b.dataset.status }); toast('Actualizada'); refreshBadges(); await load(); } catch (e) { toast(e.message, true); }
+    // El estado se cambia en el desplegable: se guarda al elegir y, si falla,
+    // vuelve al de antes.
+    $$('#list [data-estado]').forEach((sel) => { let antes = sel.value; sel.onchange = () => esperando(sel, async () => {
+      try { await rpc('admin_set_feedback', { p_id: sel.dataset.estado, p_status: sel.value }); antes = sel.value; toast('Actualizada'); refreshBadges(); await load(); } catch (e) { sel.value = antes; toast(e.message, true); }
     }); });
     $$('#list [data-reply]').forEach((b) => { b.onclick = () => esperando(b, async () => {
       const r2 = await modal({ title: 'Responder', intro: 'Le llega como notificación en la app (y push si lo tiene activado). Sé concreto y breve.', fields: [
@@ -2381,25 +2692,35 @@ PAGES.sugerencias = async (v) => {
     }); });
   };
   $('#q').oninput = debounce(() => { s.q = $('#q').value.trim(); s.offset = 0; load(); });
-  ['status', 'kind'].forEach((k) => { $('#' + k).onchange = () => { s[k] = $('#' + k).value; s.offset = 0; load(); }; });
+  ['status', 'kind'].forEach((k) => { $('#' + k).onchange = () => { s[k] = $('#' + k).value; s.offset = 0; aUrl(); load(); }; });
   $('#csv').onclick = () => downloadCsv('sugerencias', rows, [['created_at', 'fecha'], ['kind', 'tipo'], ['status', 'estado'], ['message', 'mensaje'], ['user_email', 'usuario'], ['app_version', 'versión'], ['platform', 'plataforma'], ['locale', 'idioma'], ['admin_note', 'nota interna'], ['replied_at', 'respondida']]);
   await load();
 };
 
 // ── Planes y pagos ──────────────────────────────────────────────────────────
 PAGES.planes = async (v) => {
-  const p = params(); let tab = p.tab || 'subs';
+  const p = params(); let tab = ['subs', 'payments', 'plans'].includes(p.tab) ? p.tab : 'subs';
+  if (p.status) st.subs.status = p.status;
+  if (p.from) st.pagos.from = p.from;
+  if (p.to) st.pagos.to = p.to;
+  // La pestaña y sus filtros, en la dirección.
+  const aUrl = () => ponUrl('planes', {
+    tab: tab === 'subs' ? null : tab,
+    status: tab === 'subs' && (st.subs.status || 'current') !== 'current' ? st.subs.status : null,
+    from: tab === 'payments' ? st.pagos.from : null, to: tab === 'payments' ? st.pagos.to : null,
+  });
+  aUrl();
   v.innerHTML = `
     <div class="page-head"><h1>Planes y pagos</h1><span class="spacer"></span><button class="btn sm ghost" id="csv">Exportar CSV</button></div>
     ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p><b>Subscriptions</b>: which plan each business has and when it expires. Until card payments are available, payments are made by bank transfer and recorded by hand on the business page (“Record payment”). <b>Payments</b>: history of payments with monthly totals (for the accounts). <b>Plans</b>: there is a single plan with no limits and no commission per redemption: <b>Klendar</b> (<code>standard</code>, €19.90 a month or €199 a year per venue, after the 30-day free trial) and <b>Launch, free</b> (<code>free</code>, while a city is starting up). <b>Founder</b> (<code>founder</code>, €9.90) was withdrawn: it stays hidden and is not offered to anyone new. Chains pay per venue on a sliding scale (2 to 5 venues €15 each, 6 or more €12 each): apply it when you record the subscription. Changing a plan affects the businesses that have it.</p>` : '<p><b>Suscripciones</b>: qué plan tiene cada negocio y cuándo vence. Mientras no haya pago con tarjeta, los cobros se hacen por transferencia y se anotan a mano en la ficha del negocio («Registrar pago»). <b>Pagos</b>: histórico de cobros con totales por mes (para la contabilidad). <b>Planes</b>: hay un solo plan, sin límites y sin comisión por canje: <b>Klendar</b> (<code>standard</code>, 19,90 € al mes o 199 € al año por local, después de la prueba gratis de 30 días) y <b>Gratis de lanzamiento</b> (<code>free</code>, mientras una ciudad está arrancando). <b>Fundador</b> (<code>founder</code>, 9,90 €) se retiró: queda oculto y no se ofrece a nadie nuevo. Las cadenas pagan por local con escalera (de 2 a 5 locales, 15 € cada uno; 6 o más, 12 €): aplícala al registrar la suscripción. Cambiar un plan afecta a los negocios que lo tengan.</p>')}
-    <div class="tabs">${[['subs', 'Suscripciones'], ['payments', 'Pagos'], ['plans', 'Planes']].map((t) => `<button data-t="${t[0]}" class="${tab === t[0] ? 'on' : ''}">${t[1]}</button>`).join('')}</div>
+    <div class="tabs">${[['subs', 'Suscripciones'], ['payments', 'Pagos'], ['plans', 'Planes']].map((t) => `<button type="button" data-t="${t[0]}" class="${tab === t[0] ? 'on' : ''}" aria-pressed="${tab === t[0]}">${t[1]}</button>`).join('')}</div>
     <div id="tabview"></div>`;
   let rows = [], csvCols = [], csvName = 'suscripciones';
   const load = async () => {
     const tv = $('#tabview'); tv.innerHTML = '<div class="loading">Cargando…</div>';
     if (tab === 'subs') {
       const s = st.subs;
-      tv.innerHTML = `<div class="toolbar"><select id="sstatus">${[['current', 'Vigentes'], ['trial', 'En prueba'], ['active', 'Activas'], ['past_due', 'Impagadas'], ['cancelled', 'Canceladas'], ['all', 'Todas']].map((o) => `<option value="${o[0]}" ${(s.status || 'current') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select></div><div id="list"></div>`;
+      tv.innerHTML = `<div class="toolbar"><select id="sstatus" aria-label="${esc(I18N.t('Estado'))}">${[['current', 'Vigentes'], ['trial', 'En prueba'], ['active', 'Activas'], ['past_due', 'Impagadas'], ['cancelled', 'Canceladas'], ['all', 'Todas']].map((o) => `<option value="${o[0]}" ${(s.status || 'current') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select></div><div id="list"></div>`;
       const r = await rpc('admin_subscriptions', { p_status: s.status || 'current', p_limit: s.limit, p_offset: s.offset });
       rows = r.rows; csvName = 'suscripciones';
       csvCols = [['business', 'negocio'], ['owner_email', 'email'], ['plan', 'plan'], ['status', 'estado'], ['period_start', 'inicio'], ['period_end', 'fin'], ['days_left', 'días restantes'], ['payment_method', 'pago'], [(x) => (x.paid_cents / 100).toFixed(2), 'cobrado (€)']];
@@ -2412,7 +2733,7 @@ PAGES.planes = async (v) => {
         { h: 'Cobrado', num: true, r: (x) => fmtMoney(x.paid_cents) }, { h: 'Pago', r: (x) => esc(x.payment_method || '') },
       ], rows, empty: 'Sin suscripciones.' }) + pg.html;
       pg.bind($('#list'));
-      $('#sstatus').onchange = () => { s.status = $('#sstatus').value; s.offset = 0; load(); };
+      $('#sstatus').onchange = () => { s.status = $('#sstatus').value; s.offset = 0; aUrl(); load(); };
     }
     if (tab === 'payments') {
       const s = st.pagos;
@@ -2429,7 +2750,7 @@ PAGES.planes = async (v) => {
         { h: 'Notas', r: (x) => `${esc(x.notes || '')}<span class="sub">${esc(x.recorded_by || '')}</span>` },
       ], rows, empty: 'Sin pagos registrados.' }) + pg.html;
       pg.bind($('#list'));
-      ['from', 'to'].forEach((k) => { $('#' + k).onchange = () => { s[k] = $('#' + k).value; s.offset = 0; load(); }; });
+      ['from', 'to'].forEach((k) => { $('#' + k).onchange = () => { s[k] = $('#' + k).value; s.offset = 0; aUrl(); load(); }; });
     }
     if (tab === 'plans') {
       const plans = await rpc('admin_plans');
@@ -2443,13 +2764,20 @@ PAGES.planes = async (v) => {
       ], rows: plans });
       const edit = async (pl) => {
         const r = await modal({ title: pl ? 'Editar plan' : 'Nuevo plan', fields: [
-          { name: 'slug', label: 'Identificador (slug)', value: pl?.slug, required: true, help: 'Sin espacios: free, standard…' },
-          { name: 'name_es', label: 'Nombre (ES)', value: pl?.names?.es, required: true }, { name: 'name_en', label: 'Nombre (EN)', value: pl?.names?.en },
-          { name: 'price', label: 'Precio al mes (€)', type: 'number', step: '0.01', value: pl ? (pl.price_cents / 100).toFixed(2) : '0' },
-          { name: 'max', label: 'Máx. publicaciones activas', type: 'number', value: pl?.max_active_offers ?? '', help: 'Vacío = sin límite.' },
-          { name: 'boosts', label: 'Boosts incluidos', type: 'number', value: pl?.boosts_included ?? 0 }, { name: 'position', label: 'Orden', type: 'number', value: pl?.position ?? 99 },
-          { name: 'analytics', label: 'Incluye estadísticas', type: 'checkbox', value: pl?.has_analytics },
-          { name: 'offered', label: 'Se ofrece al cambiar de plan', type: 'checkbox', value: pl ? pl.is_offered !== false : true, help: 'Apagado, quien ya lo tiene lo conserva, pero no se asigna a nadie más.' },
+          { grupo: 'Nombre', cols: 2, campos: [
+            { name: 'slug', label: 'Identificador (slug)', value: pl?.slug, required: true, help: 'Sin espacios: free, standard…', ancho: true },
+            { name: 'name_es', label: 'Nombre (ES)', value: pl?.names?.es, required: true }, { name: 'name_en', label: 'Nombre (EN)', value: pl?.names?.en },
+          ] },
+          { grupo: 'Precio y lo que incluye', cols: 2, campos: [
+            { name: 'price', label: 'Precio al mes (€)', type: 'number', step: '0.01', value: pl ? (pl.price_cents / 100).toFixed(2) : '0' },
+            { name: 'max', label: 'Máx. publicaciones activas', type: 'number', value: pl?.max_active_offers ?? '', help: 'Vacío = sin límite.' },
+            { name: 'boosts', label: 'Boosts incluidos', type: 'number', value: pl?.boosts_included ?? 0 },
+            { name: 'analytics', label: 'Incluye estadísticas', type: 'checkbox', value: pl?.has_analytics },
+          ] },
+          { grupo: 'Cómo se ofrece', plegado: !!pl && pl.is_offered !== false, campos: [
+            { name: 'offered', label: 'Se ofrece al cambiar de plan', type: 'checkbox', value: pl ? pl.is_offered !== false : true, help: 'Apagado, quien ya lo tiene lo conserva, pero no se asigna a nadie más.' },
+            { name: 'position', label: 'Orden', type: 'number', value: pl?.position ?? 99 },
+          ] },
         ] });
         if (!r) return;
         try {
@@ -2461,7 +2789,7 @@ PAGES.planes = async (v) => {
       $$('[data-edit]').forEach((b) => { b.onclick = () => esperando(b, () => edit(plans.find((x) => x.id === b.dataset.edit))); });
     }
   };
-  $$('.tabs button').forEach((b) => { b.onclick = () => { tab = b.dataset.t; $$('.tabs button').forEach((x) => x.classList.toggle('on', x === b)); load(); }; });
+  $$('.tabs button').forEach((b) => { b.onclick = () => { tab = b.dataset.t; aUrl(); $$('.tabs button').forEach((x) => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', String(x === b)); }); load(); }; });
   $('#csv').onclick = () => downloadCsv(csvName, rows, csvCols);
   await load();
 };
@@ -2471,8 +2799,10 @@ PAGES.planes = async (v) => {
 const CAMPOS_AVISO = [
   { name: 'title', label: 'Título', required: true },
   { name: 'body', label: 'Texto', type: 'textarea', required: true },
-  { name: 'title_en', label: 'Título en inglés (opcional)' },
-  { name: 'body_en', label: 'Texto en inglés (opcional)', type: 'textarea', help: 'Lo recibe quien tiene la app en inglés. Si lo dejas vacío, le llega el español.' },
+  { grupo: 'En inglés (opcional)', plegado: true, nota: 'Lo recibe quien tiene la app en inglés. Si lo dejas vacío, le llega el español.', campos: [
+    { name: 'title_en', label: 'Título en inglés' },
+    { name: 'body_en', label: 'Texto en inglés', type: 'textarea' },
+  ] },
 ];
 /** Lo escrito → parámetros de `admin_send_notification` (vacío = sin inglés). */
 const textosAviso = (r) => ({
@@ -2482,26 +2812,39 @@ const textosAviso = (r) => ({
 
 // ── Notificaciones y push ───────────────────────────────────────────────────────────
 PAGES.avisos = async (v) => {
-  const p = params(); let tab = p.tab || 'send';
+  const p = params(); let tab = ['send', 'history', 'push'].includes(p.tab) ? p.tab : 'send';
+  st.push = st.push || { status: 'all' };
+  if (p.status) st.push.status = p.status;
+  const aUrl = () => ponUrl('avisos', { tab: tab === 'send' ? null : tab, status: tab === 'push' && st.push.status !== 'all' ? st.push.status : null });
+  aUrl();
   v.innerHTML = `
     <div class="page-head"><h1>Notificaciones y push</h1></div>
     ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p><b>Send notification</b>: sends a notification (in the app and by push) to every user, users only, businesses only, or the businesses in one city. Use it sparingly (important news, incidents); everything is logged. <b>Push queue</b>: what the system is sending; if something fails (expired token, Firebase error) you'll see why and can retry.</p>` : '<p><b>Enviar notificación</b>: manda una notificación (en la app y por push) a todos los usuarios, solo a usuarios, solo a los negocios, o a los negocios de una ciudad. Úsalo con moderación (novedades importantes, incidencias); todo queda en el registro. <b>Cola de push</b>: lo que el sistema está enviando; si algo falla (token caducado, error de Firebase) verás el motivo y podrás reintentar.</p>')}
-    <div class="tabs">${[['send', 'Enviar notificación'], ['history', 'Enviados'], ['push', 'Cola de push']].map((t) => `<button data-t="${t[0]}" class="${tab === t[0] ? 'on' : ''}">${t[1]}</button>`).join('')}</div>
+    <div class="tabs">${[['send', 'Enviar notificación'], ['history', 'Enviados'], ['push', 'Cola de push']].map((t) => `<button type="button" data-t="${t[0]}" class="${tab === t[0] ? 'on' : ''}" aria-pressed="${tab === t[0]}">${t[1]}</button>`).join('')}</div>
     <div id="tabview"></div>`;
   const load = async () => {
     const tv = $('#tabview'); tv.innerHTML = '<div class="loading">Cargando…</div>';
     if (tab === 'send') {
-      tv.innerHTML = `<div class="card" style="max-width:640px"><form id="sendf" style="display:grid;gap:12px">
-        <label class="f"><span>Destinatarios</span><select name="audience"><option value="all">Todos los usuarios</option><option value="users">Solo usuarios (no negocios)</option><option value="business_owners">Propietarios y encargados de negocios</option><option value="city">Negocios de una ciudad…</option></select></label>
-        <label class="f" id="cityf" hidden><span>Ciudad</span><input name="city" placeholder="Madrid"></label>
-        <label class="f"><span>Título</span><input name="title" required maxlength="80"></label>
-        <label class="f"><span>Texto</span><textarea name="body" required maxlength="300"></textarea></label>
-        <label class="f"><span>Título en inglés <small>(opcional)</small></span><input name="title_en" maxlength="80" lang="en"></label>
-        <label class="f"><span>Texto en inglés <small>(opcional)</small></span><textarea name="body_en" maxlength="300" lang="en"></textarea></label>
-        <p class="muted small" style="margin:-4px 0 0">Lo recibe quien tiene la app en inglés. Si lo dejas vacío, le llega el español.</p>
-        <label class="f"><span>Ruta al pulsar <small>(opcional, p. ej. /explore)</small></span><input name="route" placeholder="/explore"></label>
+      tv.innerHTML = `<div class="card" style="max-width:680px"><form id="sendf" style="display:grid;gap:12px">
+        <fieldset class="grupo"><legend>Destinatarios</legend><div class="grupo-campos c2">
+          <label class="f"><span>A quién</span><select name="audience"><option value="all">Todos los usuarios</option><option value="users">Solo usuarios (no negocios)</option><option value="business_owners">Propietarios y encargados de negocios</option><option value="city">Negocios de una ciudad…</option></select></label>
+          <label class="f" id="cityf" hidden><span>Ciudad</span><input name="city" placeholder="Madrid"></label>
+        </div></fieldset>
+        <fieldset class="grupo"><legend>Mensaje</legend><div class="grupo-campos">
+          <label class="f"><span>Título</span><input name="title" required maxlength="80"></label>
+          <label class="f"><span>Texto</span><textarea name="body" required maxlength="300"></textarea></label>
+        </div></fieldset>
+        <details class="grupo"><summary>En inglés (opcional)</summary>
+          <p class="muted small grupo-nota">Lo recibe quien tiene la app en inglés. Si lo dejas vacío, le llega el español.</p>
+          <div class="grupo-campos">
+            <label class="f"><span>Título en inglés</span><input name="title_en" maxlength="80" lang="en"></label>
+            <label class="f"><span>Texto en inglés</span><textarea name="body_en" maxlength="300" lang="en"></textarea></label>
+          </div></details>
+        <details class="grupo"><summary>Al pulsarla (opcional)</summary>
+          <div class="grupo-campos"><label class="f"><span>Ruta al pulsar <small>(opcional, p. ej. /explore)</small></span><input name="route" placeholder="/explore"></label></div></details>
         <div><button class="btn primary" type="submit">Enviar notificación…</button></div></form></div>`;
       const f = $('#sendf');
+      abrePlegadosAlFallar(f);
       // Los campos, por `elements`: `f.title` o `f.name` chocan con propiedades
       // del propio formulario y se leen distinto según el navegador.
       const c = f.elements;
@@ -2524,16 +2867,17 @@ PAGES.avisos = async (v) => {
       tv.innerHTML = table({ cols: [{ h: 'Fecha', r: (x) => `<span class="nowrap">${fmtDate(x.created_at)}</span>` }, { h: 'Notificación', r: (x) => `<span class="title">${esc(x.details?.title)}<span class="sub">${esc(x.details?.body)}</span></span>` }, { h: 'Destinatarios', r: (x) => `${esc(I18N.t(AUDIENCIAS[x.details?.audience] || x.details?.audience || ''))}${x.details?.city ? ' ' + esc(x.details.city) : ''} · ${x.details?.recipients ?? '?'}` }, { h: 'Por', r: (x) => esc(x.admin_email || '') }], rows: r.rows, empty: 'Todavía no se ha enviado ninguna notificación.' });
     }
     if (tab === 'push') {
-      tv.innerHTML = `<div class="toolbar"><select id="pstatus">${[['all', 'Todos'], ['pending', 'Pendientes'], ['sent', 'Enviados'], ['failed', 'Fallidos'], ['skipped', 'Omitidos']].map((o) => `<option value="${o[0]}">${o[1]}</option>`).join('')}</select></div><div id="list"></div>`;
+      tv.innerHTML = `<div class="toolbar"><select id="pstatus" aria-label="${esc(I18N.t('Estado'))}">${[['all', 'Todos'], ['pending', 'Pendientes'], ['sent', 'Enviados'], ['failed', 'Fallidos'], ['skipped', 'Omitidos']].map((o) => `<option value="${o[0]}" ${st.push.status === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select></div><div id="list"></div>`;
       const loadQ = async () => {
         const rows = await rpc('admin_push_queue', { p_status: $('#pstatus').value, p_limit: 200 });
         $('#list').innerHTML = table({ cols: [{ h: 'Creado', r: (x) => `<span class="nowrap">${fmtDate(x.created_at)}</span>` }, { h: 'Usuario', r: (x) => esc(x.user_email || '—') }, { h: 'Notificación', r: (x) => `<span class="title">${esc(x.title)}<span class="sub">${esc(x.body || '')} · ${esc(x.kind || '')}</span></span>` }, { h: 'Estado', r: (x) => `${tag(x.status)} ${x.attempts ? `<span class="muted small">${x.attempts} ${I18N.lang === 'en' ? (x.attempts === 1 ? 'attempt' : 'attempts') : (x.attempts === 1 ? 'intento' : 'intentos')}</span>` : ''}${x.error ? `<span class="sub">${esc(x.error)}</span>` : ''}` }, { h: 'Enviado', r: (x) => fmtDate(x.sent_at) }, { h: '', r: (x) => ['failed', 'skipped'].includes(x.status) ? `<button class="btn sm" data-retry="${x.id}">Reintentar</button>` : '' }], rows, empty: 'Cola vacía.' });
         $$('#list [data-retry]').forEach((b) => { b.onclick = () => esperando(b, async () => { try { await rpc('admin_push_retry', { p_id: +b.dataset.retry }); toast('Reencolado'); await loadQ(); } catch (e) { toast(e.message, true); } }); });
       };
-      $('#pstatus').onchange = loadQ; await loadQ();
+      $('#pstatus').onchange = () => { st.push.status = $('#pstatus').value; aUrl(); loadQ(); };
+      await loadQ();
     }
   };
-  $$('.tabs button').forEach((b) => { b.onclick = () => { tab = b.dataset.t; $$('.tabs button').forEach((x) => x.classList.toggle('on', x === b)); load(); }; });
+  $$('.tabs button').forEach((b) => { b.onclick = () => { tab = b.dataset.t; aUrl(); $$('.tabs button').forEach((x) => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', String(x === b)); }); load(); }; });
   await load();
 };
 
@@ -2646,16 +2990,20 @@ PAGES.colecciones = async (v, param) => {
       { h: '', r: (c) => `<span class="actions"><a class="btn sm" href="#/colecciones/${c.id}">Elegir a dedo…</a><button class="btn sm" data-edit="${c.id}">Editar…</button><button class="btn sm bad ghost" data-del="${c.id}">Borrar</button></span>` },
     ], rows: cols, empty: 'Todavía no hay colecciones.' })}`;
   const edit = async (c) => {
+    const fechas = !!(c?.city || c?.active_from || c?.active_until);
     const r = await modal({ title: c ? 'Editar colección' : 'Nueva colección', fields: [
-      { name: 'slug', label: 'Slug (identificador)', value: c?.slug, required: true, placeholder: 'planes-finde' },
+      { grupo: 'Nombre y estado', cols: 2, campos: [
+      { name: 'slug', label: 'Slug (identificador)', value: c?.slug, required: true, placeholder: 'planes-finde', ancho: true },
       { name: 'es', label: 'Título (ES)', value: c?.title?.es, required: true },
       { name: 'en', label: 'Título (EN)', value: c?.title?.en },
       { name: 'sub_es', label: 'Subtítulo (ES)', value: c?.subtitle?.es },
       { name: 'sub_en', label: 'Subtítulo (EN)', value: c?.subtitle?.en },
+      { name: 'is_active', label: 'Activa', type: 'checkbox', value: c ? c.is_active : true, ancho: true },
+      ] },
+      { grupo: 'Qué entra (la regla)', cols: 2, plegado: false, nota: 'Si eliges publicaciones a dedo, la regla no se usa.', campos: [
       { name: 'kind', label: 'Qué incluye', type: 'select', value: c?.rules?.kind || '', options: [['', 'Ofertas y eventos'], ['flash_offer', 'Solo ofertas flash'], ['future_event', 'Solo eventos']] },
       { name: 'when', label: 'Cuándo', type: 'select', value: c?.rules?.when || '', options: [['', 'Cualquier momento'], ['today', 'Hoy'], ['weekend', 'Fin de semana'], ['next7', 'Próximos 7 días']] },
       { name: 'max_price', label: 'Precio máximo (€, opcional)', value: c?.rules?.max_price_cents != null ? (c.rules.max_price_cents / 100).toFixed(2) : '' },
-      { name: 'discount_only', label: 'Solo con descuento', type: 'checkbox', value: !!c?.rules?.discount_only },
       { name: 'new_days', label: 'Publicado en los últimos N días (opcional)', type: 'number', value: c?.rules?.new_days ?? '' },
       { name: 'category_id', label: 'Categoría (opcional)', type: 'select', value: c?.rules?.categories?.[0] || '', options: [['', '— todas'], ...cats.map((x) => [x.id, x.names?.[I18N.lang] || x.names?.es || x.slug])] },
       // «El sitio»: uno de los atributos (p. ej. «Apto para niños» = «Planes
@@ -2665,11 +3013,14 @@ PAGES.colecciones = async (v, param) => {
         ...SITIO_ADMIN.map(([k, n]) => [k, n]),
         ...((c?.rules?.traits || []).length > 1 ? [[c.rules.traits.join(','), c.rules.traits.map(nombreSitio).join(' + ')]] : []),
       ] },
+      { name: 'discount_only', label: 'Solo con descuento', type: 'checkbox', value: !!c?.rules?.discount_only, ancho: true },
+      ] },
+      { grupo: 'Dónde, cuándo y en qué orden', cols: 2, plegado: !fechas, nota: 'Una colección con fechas aparece y desaparece sola.', campos: [
       { name: 'city', label: 'Ciudad (opcional)', value: c?.city || '' },
       { name: 'position', label: 'Orden', type: 'number', value: c?.position ?? 50 },
       { name: 'active_from', label: 'Desde (opcional)', type: 'date', value: c?.active_from ? c.active_from.slice(0, 10) : '' },
       { name: 'active_until', label: 'Hasta (opcional)', type: 'date', value: c?.active_until ? c.active_until.slice(0, 10) : '' },
-      { name: 'is_active', label: 'Activa', type: 'checkbox', value: c ? c.is_active : true },
+      ] },
     ] });
     if (!r) return;
     const rules = {};
@@ -2842,9 +3193,10 @@ PAGES.configuracion = async (v) => {
 const AREAS_ERR = { publica: 'Web pública', cuenta: 'Tu cuenta', panel: 'Panel de negocios', admin: 'Administración' };
 const AREA_ICON = { publica: 'public', cuenta: 'person', panel: 'storefront', admin: 'shield' };
 PAGES.errores = async (v) => {
-  const p = params(); const s = st.errores;
-  s.area = p.area || s.area || 'all';
-  s.status = p.status || s.status || 'open';
+  const s = st.errores;
+  const DEF = { area: 'all', status: 'open' };
+  for (const k in DEF) s[k] = s[k] ?? DEF[k];
+  const aUrl = filtrosEnUrl('errores', s, Object.keys(DEF), DEF);
   const en = I18N.lang === 'en';
   v.innerHTML = `
     <div class="page-head"><h1>Errores de la web</h1><span class="spacer"></span><button class="btn sm ghost" id="csv">Exportar CSV</button></div>
@@ -2955,8 +3307,8 @@ PAGES.errores = async (v) => {
         { h: 'Cuerpo', r: (x) => `<span class="mono small">${esc(x.body || '')}</span>` },
       ], rows: http })}` : ''}</div>`;
   };
-  $('#area').onchange = () => { s.area = $('#area').value; s.offset = 0; load(); };
-  $('#status').onchange = () => { s.status = $('#status').value; s.offset = 0; load(); };
+  $('#area').onchange = () => { s.area = $('#area').value; s.offset = 0; aUrl(); load(); };
+  $('#status').onchange = () => { s.status = $('#status').value; s.offset = 0; aUrl(); load(); };
   $('#csv').onclick = () => downloadCsv('errores-web', rows, [['area', 'área'], ['page', 'página'], ['message', 'mensaje'], ['source', 'archivo'], ['line', 'línea'], ['version', 'versión'], ['count', 'veces'], ['first_seen', 'primera vez'], ['last_seen', 'última vez'], ['browser', 'navegador'], ['lang', 'idioma'], ['resolved_at', 'resuelto']]);
   await load();
   await tareas();
@@ -2985,6 +3337,8 @@ PAGES.administradores = async (v) => {
 // ── Registro de actividad ───────────────────────────────────────────────────
 PAGES.actividad = async (v) => {
   const s = st.actividad;
+  s.action = s.action || 'all';
+  const aUrl = filtrosEnUrl('actividad', s, ['action'], { action: 'all' });
   v.innerHTML = `
     <div class="page-head"><h1>Registro de actividad</h1><span class="spacer"></span><button class="btn sm ghost" id="csv">Exportar CSV</button></div>
     ${helpBox('¿Qué hago aquí?', '<p>Todo lo que hacen los administradores queda aquí con fecha, quién y sobre qué: verificaciones, moderación, pagos, cambios de configuración… Sirve para auditoría y para responder ante una reclamación («¿por qué se retiró mi oferta y cuándo?»).</p>')}
@@ -3005,7 +3359,7 @@ PAGES.actividad = async (v) => {
     pg.bind($('#list'));
   };
   $('#q').oninput = debounce(() => { s.q = $('#q').value.trim(); s.offset = 0; load(); });
-  $('#action').onchange = () => { s.action = $('#action').value; s.offset = 0; load(); };
+  $('#action').onchange = () => { s.action = $('#action').value; s.offset = 0; aUrl(); load(); };
   $('#csv').onclick = () => downloadCsv('actividad', rows, [['created_at', 'fecha'], ['admin_email', 'admin'], ['action', 'acción'], ['target_type', 'tipo'], ['target_id', 'id'], ['details', 'detalles']]);
   await load();
 };
