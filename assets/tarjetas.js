@@ -280,6 +280,9 @@
   try {
     var gg = JSON.parse(localStorage.getItem('klendar.cerca') || 'null');
     if (gg && Date.now() - gg.t < 6 * 3600e3 && isFinite(gg.lat) && isFinite(gg.lng)) aqui = gg;
+    // Pasadas las 6 horas ya no sirve: se borra (es tu posición; nada de
+    // guardarla más de lo necesario).
+    else if (gg) localStorage.removeItem('klendar.cerca');
   } catch (e) { /* sin almacenamiento */ }
   function metros(a, b, c, d) {
     var r = Math.PI / 180, x = Math.sin((c - a) * r / 2), y = Math.sin((d - b) * r / 2);

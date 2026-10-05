@@ -219,6 +219,9 @@ footer .bottom { display: flex; flex-wrap: wrap; gap: 10px 20px; justify-content
 /* Un enlace en medio de un texto se distingue por algo más que el color
    (WCAG 1.4.1): subrayado, como en los documentos. */
 footer .bottom a, .doc :is(p, li, td) a:not(.pill) { text-decoration: underline; text-underline-offset: 2px; text-decoration-thickness: 1px; }
+/* Un enlace dentro de un texto gris («¿Tienes cuenta? Entra…»): subrayado, que
+   no dependa solo del color (WCAG 1.4.1; en oscuro el blanco sobre gris no llega a 3:1). */
+p.muted a:not(.pill):not(.btn) { text-decoration: underline; text-underline-offset: 2px; text-decoration-thickness: 1px; }
 @media (max-width: 760px) { footer .cols { grid-template-columns: 1fr; } }
 
 /* ── Documentos legales ──────────────────────────────────────────────── */

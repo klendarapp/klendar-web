@@ -233,8 +233,8 @@ def head(t, path, page_title=None, page_desc=None, extra=''):
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 <link rel="preload" href="/assets/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/site.css?v=20261011">
-<link rel="stylesheet" href="/assets/public.css?v=33">
+<link rel="stylesheet" href="/assets/site.css?v=20261012">
+<link rel="stylesheet" href="/assets/public.css?v=35">
 {extra}
 </head>
 <body>
@@ -526,8 +526,10 @@ if __name__ == '__main__':
     if os.path.exists(ruta):
         app = io.open(ruta, encoding='utf-8').read()
         trozos = {
-            'CABECERA-ES': '<div data-only="es">' + HEADER_TPL['es'].replace('{{ES}}', '/app/?lang=es').replace('{{EN}}', '/app/?lang=en') + '</div>',
-            'CABECERA-EN': '<div data-only="en" hidden>' + HEADER_TPL['en'].replace('{{ES}}', '/app/?lang=es').replace('{{EN}}', '/app/?lang=en') + '</div>',
+            # En «Tu cuenta» el contenido es <main id="view">: «Saltar al
+            # contenido» va ahí (en las demás páginas, a #contenido).
+            'CABECERA-ES': '<div data-only="es">' + HEADER_TPL['es'].replace('{{ES}}', '/app/?lang=es').replace('{{EN}}', '/app/?lang=en').replace('href="#contenido"', 'href="#view"') + '</div>',
+            'CABECERA-EN': '<div data-only="en" hidden>' + HEADER_TPL['en'].replace('{{ES}}', '/app/?lang=es').replace('{{EN}}', '/app/?lang=en').replace('href="#contenido"', 'href="#view"') + '</div>',
             'PIE-ES': '<div data-only="es">' + FOOTER_HTML['es'] + '</div>',
             'PIE-EN': '<div data-only="en" hidden>' + FOOTER_HTML['en'] + '</div>',
         }

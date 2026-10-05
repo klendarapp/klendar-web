@@ -119,13 +119,15 @@ ACTUALIZADO = {
     # suspender una cuenta (decisiones A–D). Informativo o a favor de quien
     # acepta, y la edad se comprueba al dar de alta, al entrar en un equipo y
     # al recibir un traspaso: sin re-aceptación.
-    'normas': {'es': '2 de octubre de 2026', 'en': '2 October 2026'},
+    # 2026-10-05: dato al día (reseñas con hasta 6 fotos o vídeos, que se
+    # denuncian una a una y se borran con la cuenta). Sin cambio de contenido.
+    'normas': {'es': '5 de octubre de 2026', 'en': '5 October 2026'},
     # 2026-10-02 (decisiones E–G): cuentas inactivas (aviso a los 24 meses,
     # borrado a los 36), reclamar un negocio y duplicados, reseñas de
     # «Cliente verificado». Informativo: sin re-aceptación.
     'privacidad': {'es': '2 de octubre de 2026', 'en': '2 October 2026'},
     'cookies': {'es': '1 de octubre de 2026', 'en': '1 October 2026'},
-    'eliminar-cuenta': {'es': '2 de octubre de 2026', 'en': '2 October 2026'},
+    'eliminar-cuenta': {'es': '5 de octubre de 2026', 'en': '5 October 2026'},
     'soporte': {'es': '1 de octubre de 2026', 'en': '1 October 2026'},
     # 2026-10-01 (segunda tanda, R4 de la revisión legal): los términos
     # explican la moderación automática y las condiciones para negocios se
@@ -199,6 +201,10 @@ CAMBIOS = {
          '1 October 2026', 'Up-to-date list of what is stored in your browser (including the separate admin session and the PKCE check when logging in with Google or Apple) and of third-party services; icons and libraries are now served from klendar.app, without Google Fonts or jsDelivr.'),
         _INICIO],
     'normas': [
+        ('5 de octubre de 2026',
+         'Dato al día: las reseñas llevan hasta 6 fotos o vídeos, y cada foto o vídeo se puede denunciar por separado.',
+         '5 October 2026',
+         'Brought up to date: reviews can have up to 6 photos or videos, and each photo or video can be reported separately.'),
         ('2 de octubre de 2026',
          'Cómo funcionan las reseñas y qué significa «Cliente verificado».',
          '2 October 2026',
@@ -213,6 +219,8 @@ CAMBIOS = {
          'Reporting without an account, automatic moderation, blocking someone, languages of the point of contact and 6 months to ask for a decision to be reviewed.'),
         _INICIO],
     'eliminar-cuenta': [
+        ('5 de octubre de 2026', 'Dato al día: las fotos y los vídeos de tus reseñas se eliminan con ellas.',
+         '5 October 2026', 'Brought up to date: the photos and videos in your reviews are deleted with them.'),
         ('2 de octubre de 2026', 'Si eres propietario/a de un negocio, primero hay que darlo de baja o traspasarlo.',
          '2 October 2026', 'If you own a business, you first have to close it or hand it over.'),
         ('1 de octubre de 2026', 'Eliminar también desde la web, confirmar que eres tú y lista al día de lo que se borra.',
@@ -925,13 +933,13 @@ def textos(D, resaltar=False):
 </ul>
 <h2 id="resenas">Reseñas</h2>
 <ul>
-  <li>Cualquiera con cuenta en Klendar puede escribir una reseña de un negocio: una por persona y negocio, con una nota de 1 a 5 y, si quiere, un comentario y una foto. Se puede editar cuando se quiera. Quien trabaja en un negocio no puede reseñarlo.</li>
+  <li>Cualquiera con cuenta en Klendar puede escribir una reseña de un negocio: una por persona y negocio, con una nota de 1 a 5 y, si quiere, un comentario y hasta 6 fotos o vídeos. Se puede editar cuando se quiera. Quien trabaja en un negocio no puede reseñarlo.</li>
   <li>Se muestran todas, las buenas y las malas, de la más reciente a la más antigua. Nadie paga por publicar, ordenar ni quitar reseñas, y un negocio no puede borrar una reseña: puede responderla o denunciarla si incumple estas normas.</li>
   <li>Antes de publicarse pasan por la moderación automática (más abajo), y se retiran las que incumplen estas normas.</li>
   <li><strong>«Cliente verificado»</strong>: una reseña lleva esta etiqueta si quien la escribe tiene al menos un canje validado en ese negocio con Klendar (el código de una oferta o de un evento, un premio de una tarjeta de sellos o un regalo de cumpleaños). Lo comprobamos de forma automática con los canjes que el propio negocio ha validado en el local. La etiqueta no comprueba que la reseña hable de esa visita ni lo que cuenta. Las demás reseñas también son de personas con cuenta, pero no comprobamos que hayan sido clientes. En la ficha de cada negocio puedes ver solo las de clientes verificados.</li>
 </ul>
 <h2>Cómo denunciar</h2>
-<p>Cualquiera puede denunciar, tenga cuenta o no. En cada negocio, publicación, reseña o novedad hay un enlace "Denunciar", y en el pie de la web, "<a href="/app/#/denunciar">Denunciar contenido ilegal</a>". Indica qué contenido es, el motivo y por qué crees que es ilegal o incumple estas normas. Sin cuenta te pediremos tu nombre y tu correo (opcionales si se trata de abuso sexual infantil) y que declares que actúas de buena fe. Te confirmaremos que la hemos recibido y te diremos qué hemos decidido y por qué (en la app o por correo). Si no estás de acuerdo, puedes pedirnos que lo revisemos en un plazo de 6 meses. Quien publicó el contenido no sabrá quién lo denunció. Las decisiones las toma una persona, no un sistema automático.</p>
+<p>Cualquiera puede denunciar, tenga cuenta o no. En cada negocio, publicación, reseña o novedad, y en cada foto o vídeo de una reseña, hay un enlace "Denunciar", y en el pie de la web, "<a href="/app/#/denunciar">Denunciar contenido ilegal</a>". Indica qué contenido es, el motivo y por qué crees que es ilegal o incumple estas normas. Sin cuenta te pediremos tu nombre y tu correo (opcionales si se trata de abuso sexual infantil) y que declares que actúas de buena fe. Te confirmaremos que la hemos recibido y te diremos qué hemos decidido y por qué (en la app o por correo). Si no estás de acuerdo, puedes pedirnos que lo revisemos en un plazo de 6 meses. Quien publicó el contenido no sabrá quién lo denunció. Las decisiones las toma una persona, no un sistema automático.</p>
 <h2>Bloquear a alguien</h2>
 <p>Puedes bloquear a una persona desde su reseña, desde tu lista de amigos o desde una invitación suya. Dejas de ver sus reseñas, dejáis de ser amigos y no puede invitarte ni volver a añadirte. No se le avisa. Lo deshaces en Cuenta → Ajustes → Privacidad y datos → «Personas bloqueadas». Bloquear no retira nada para los demás: si el contenido incumple estas normas, denúncialo.</p>
 <h2>Cómo moderamos</h2>
@@ -964,13 +972,13 @@ def textos(D, resaltar=False):
 </ul>
 <h2 id="resenas">Reviews</h2>
 <ul>
-  <li>Anyone with a Klendar account can write a review of a business: one per person and business, with a rating from 1 to 5 and, if they like, a comment and a photo. It can be edited at any time. People who work at a business cannot review it.</li>
+  <li>Anyone with a Klendar account can write a review of a business: one per person and business, with a rating from 1 to 5 and, if they like, a comment and up to 6 photos or videos. It can be edited at any time. People who work at a business cannot review it.</li>
   <li>All reviews are shown, good and bad, from newest to oldest. Nobody pays to publish, rank or remove reviews, and a business cannot delete a review: it can reply to it or report it if it breaks these guidelines.</li>
   <li>Before going live they go through automatic moderation (see below), and those that break these guidelines are removed.</li>
   <li><strong>“Verified customer”</strong>: a review has this label if the person who wrote it has at least one validated redemption at that business with Klendar (the code for an offer or an event, a stamp-card reward or a birthday gift). We check this automatically against the redemptions the business itself has validated at the venue. The label doesn't check that the review is about that visit or what it says. Other reviews are also from people with an account, but we don't check that they were customers. On each business page you can show only the ones from verified customers.</li>
 </ul>
 <h2>How to report</h2>
-<p>Anyone can report, with or without an account. Every business, publication, review and news post has a "Report" link, and the website footer has "<a href="/app/?lang=en#/denunciar">Report illegal content</a>". Tell us which content it is, the reason and why you believe it is illegal or breaks these guidelines. Without an account, we'll ask for your name and email (optional if it concerns child sexual abuse) and for you to declare that you are acting in good faith. We'll confirm we've received your report and tell you what we've decided and why (in the app or by email). If you disagree, you can ask us to review it within 6 months. The person who posted the content won't know who reported it. Decisions are made by a person, not by an automated system.</p>
+<p>Anyone can report, with or without an account. Every business, publication, review and news post, and every photo or video in a review, has a "Report" link, and the website footer has "<a href="/app/?lang=en#/denunciar">Report illegal content</a>". Tell us which content it is, the reason and why you believe it is illegal or breaks these guidelines. Without an account, we'll ask for your name and email (optional if it concerns child sexual abuse) and for you to declare that you are acting in good faith. We'll confirm we've received your report and tell you what we've decided and why (in the app or by email). If you disagree, you can ask us to review it within 6 months. The person who posted the content won't know who reported it. Decisions are made by a person, not by an automated system.</p>
 <h2>Blocking someone</h2>
 <p>You can block someone from their review, from your friends list or from an invitation they sent you. You stop seeing their reviews, you are no longer friends and they can't invite you or add you again. They aren't told. You can undo it in Account → Settings → Privacy and data → “Blocked people”. Blocking doesn't remove anything for anyone else: if the content breaks these guidelines, report it.</p>
 <h2>How we moderate</h2>
@@ -998,7 +1006,7 @@ def textos(D, resaltar=False):
 <ul>
   <li>Tu perfil (nombre, email, fecha de nacimiento, foto), tus favoritos, tus planes, tus avisos «Avísame si…», tus preferencias y tokens de notificaciones, tus dispositivos de confianza, tu ubicación, tus tarjetas de sellos y tu historial de canjes.</li>
   <li>Tu enlace de amigo, tus amigos, tus «Voy», las invitaciones que has mandado y recibido y las personas que has bloqueado.</li>
-  <li>Tus reseñas se eliminan junto con tu cuenta.</li>
+  <li>Tus reseñas, con sus fotos y vídeos, se eliminan junto con tu cuenta.</li>
   <li>Si eres propietario/a de un negocio, primero tienes que darlo de baja o traspasarlo a alguien de tu equipo desde «Dar de baja el negocio» (en la app o en el panel web): mientras seas propietario/a, la cuenta no se elimina. Al eliminar el negocio avisamos a quien tenga reservas, códigos, sellos o premios pendientes.</li>
 </ul>
 <h2>Qué se conserva y por qué</h2>
@@ -1022,7 +1030,7 @@ def textos(D, resaltar=False):
 <ul>
   <li>Your profile (name, email, date of birth, photo), your favourites, your plans, your “Tell me when…” alerts, your preferences and notification tokens, your trusted devices, your location, your stamp cards and your redemption history.</li>
   <li>Your friend link, your friends, your “I'm going” marks, the invitations you have sent and received and the people you have blocked.</li>
-  <li>Your reviews are deleted together with your account.</li>
+  <li>Your reviews, with their photos and videos, are deleted together with your account.</li>
   <li>If you own a business, you first have to close it or hand it over to someone on your team from “Leave Klendar” (in the app or on the web dashboard): while you own a business, the account isn't deleted. When the business is deleted we tell anyone with pending bookings, codes, stamps or rewards.</li>
 </ul>
 <h2>What is kept and why</h2>
@@ -1065,7 +1073,7 @@ def render(lang, path, title, desc, body, es_path=None):
     courtesy = COURTESY.format(es=es_path) if lang == 'en' else ''
     meta = META[lang].format(date=fecha((es_path or path).strip('/'), lang), v=VERSION)
     return (head(t, path, f'{title} · Klendar', desc)
-            + '<main class="doc">\n<h1>' + title + '</h1>\n'
+            + '<main class="doc" id="contenido">\n<h1>' + title + '</h1>\n'
             + f'<div class="meta">{meta}</div>\n' + courtesy + todo + '\n'
             + body + historial((es_path or path).strip('/'), lang) + '\n</main>\n' + footer(t))
 

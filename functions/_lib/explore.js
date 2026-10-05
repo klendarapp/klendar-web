@@ -914,6 +914,9 @@ ${filtrado ? '<meta name="robots" content="noindex, follow">' : jsonLd}`;
       actual: 'descubre',
       bodyClass: vacio ? 'pagina-descubre' : `pagina-descubre pagina-feed${lineaTiempo ? ' con-tiempo' : ''}`,
       head,
+      // Con «Cerca de mí» la dirección lleva tu posición (?lat=&lng=): esa
+      // página no pasa por el contador de visitas.
+      contador: !cerca,
     }), 200, 'public, max-age=120, s-maxage=600');
   }
 
@@ -969,6 +972,7 @@ ${filtrado ? '<meta name="robots" content="noindex, follow">' : jsonLd}`;
     actual: 'explorar',
     bodyClass: 'pagina-explorar',
     head,
+    contador: !cerca,
   }), 200, 'public, max-age=120, s-maxage=600');
 }
 
@@ -1047,6 +1051,12 @@ export async function categoryPage(rawCity, rawCat, lang) {
   const cat = (cats || []).find((c) => c.slug === slug);
   const items = res?.items || [];
   const lugares = negocios?.items || [];
+  // Una categoría que no existe (escrita a mano en la URL) es un 404, no una
+  // página vacía con 200. Si existe pero aquí no hay nada, la página vacía.
+  if (!cat && !items.length && !lugares.length) {
+    const existe = await rows('categories', `select=slug&slug=eq.${encodeURIComponent(slug)}`).catch(() => [{ slug }]);
+    if (!existe.length) return notFound(lang, path, 'c');
+  }
   const city = PRETTY(items[0]?.city || lugares[0]?.city || rawc);
   const nombre = cat ? catName(cat, en) : PRETTY(slug);
   const h1 = S.catTitle(nombre, city);
@@ -1097,6 +1107,13 @@ export async function collectionPage(rawSlug, rawCity, lang) {
   ]);
   const col = (cols || []).find((c) => c.slug === slug);
   const items = res?.items || [];
+  // Una selección que no existe es un 404. Antes salía con 200 y el título
+  // «Zzz»… y con todas las publicaciones (la base no filtra por una selección
+  // que no conoce).
+  if (!col) {
+    const todas = rawc ? await rpcAll('public_collections', { p_city: null }) : cols;
+    if (!(todas || []).some((c) => c.slug === slug)) return notFound(lang, path, 'c');
+  }
   const titulo = col ? colTitle(col, en) : PRETTY(slug.replace(/-/g, ' '));
   const city = rawc ? PRETTY(items[0]?.city || rawc) : '';
   const h1 = city ? `${titulo} ${S.inCity} ${city}` : titulo;
