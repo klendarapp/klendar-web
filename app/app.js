@@ -421,8 +421,21 @@ const destinoTrasEntrar = () => rutaInterna(new URLSearchParams(location.search)
 
 /** Una dirección de vuelta (`?destino=`, `?volver=`) de esta misma web y sin
  * datos: `/panel/` o `/app/`, como mucho `?lang=`/`?alta=` y una ruta del
- * hash (`#/validar`, `#/publicaciones/<id>`, `?biz=<id>`). Otra web, `//…`,
- * tokens o correos en el hash: fuera. '' = no hay a dónde volver. */
+ * hash (`#/validar`, `#/publicaciones/<id>`) con los parámetros de
+ * `VUELTA_HASH`, cada uno con su forma: el código de un QR escaneado sin
+ * sesión, `?biz=`, «Crear a partir de esta», ampliar, el día del
+ * calendario… (los mismos que deja pasar `rutaDeVuelta()` del panel). Otra
+ * web, `//…`, tokens o correos en el hash: fuera. '' = no hay a dónde volver. */
+const VUELTA_HASH = {
+  biz: /^[0-9a-f-]{36}$/i,
+  code: /^[0-9a-f]{8,64}$/i,
+  from: /^[0-9a-f-]{36}$/i,
+  repeat: /^1$/,
+  extend: /^[0-9a-f-]{36}$/i,
+  estado: /^[a-z_]{1,20}$/,
+  dia: /^\d{4}-\d{2}-\d{2}$/,
+  idea: /^1$/,
+};
 function rutaInterna(v) {
   const s = String(v || '');
   if (!/^\/(panel|app)\//.test(s)) return '';
@@ -435,10 +448,16 @@ function rutaInterna(v) {
     if (x != null && /^[a-z0-9]{1,5}$/i.test(x)) q.set(k, x);
   }
   const [h, hq] = u.hash.split('?');
-  const biz = new URLSearchParams(hq || '').get('biz');
-  const hash = /^#\/[a-z0-9-]{1,30}(\/[A-Za-z0-9-]{1,40}){0,2}$/.test(h || '')
-    ? h + (biz && /^[0-9a-f-]{36}$/i.test(biz) ? `?biz=${biz}` : '')
-    : '';
+  let hash = '';
+  if (/^#\/[a-z0-9-]{1,30}(\/[A-Za-z0-9-]{1,40}){0,2}$/.test(h || '')) {
+    const dentro = new URLSearchParams(hq || '');
+    const fuera = new URLSearchParams();
+    for (const [k, re] of Object.entries(VUELTA_HASH)) {
+      const x = dentro.get(k);
+      if (x && re.test(x)) fuera.set(k, x);
+    }
+    hash = h + (fuera.toString() ? `?${fuera}` : '');
+  }
   return `${u.pathname}${q.toString() ? `?${q}` : ''}${hash}`;
 }
 const vieneDelPanel = () => destinoTrasEntrar().startsWith('/panel/');
@@ -1422,13 +1441,13 @@ RUTAS.seguir = async ([id], params, crudo) => {
 /** Un código o un canje en una lista (Tus códigos y Tus planes), como el
  * RedemptionTile de la app: uno vivo vuelve a su QR, uno usado enseña el
  * recibo y el resto, la publicación. `tz`: la zona del negocio. */
-function filaCanje(r, tz) {
+function filaCanje(r, tz, resaltado = false) {
   const vivo = r.status === 'pending' && new Date(r.expires_at).getTime() > Date.now();
   const estado = r.status === 'validated' ? t('Canjeado')
     : vivo ? t('Código activo') : r.status === 'cancelled' ? t('Anulado') : t('Caducado');
   const destino = vivo ? `#/codigo/${esc(r.offer_id)}` : r.status === 'validated' ? `#/recibo/${esc(r.id)}` : `${pre}/o/${esc(r.offer_id)}`;
   return `
-    <a class="ocard" href="${destino}">
+    <a class="ocard${resaltado ? ' resaltado' : ''}" href="${destino}"${resaltado ? ' id="codigo-pedido"' : ''}>
       ${r.business_logo ? `<img src="${esc(r.business_logo)}" alt="" loading="lazy">` : '<span class="ph">✦</span>'}
       <span class="ocard-body"><b>${esc(r.offer_title)}</b>
         <span class="muted">${esc(r.business_name)} · ${esc(fecha(r.validated_at || (r.status === 'pending' && r.event_at) || r.created_at, undefined, tz))}</span>
@@ -1512,7 +1531,7 @@ function pintaCodigoGuardado(g) {
   $('#qr').innerHTML = qr.createSvgTag({ cellSize: 6, margin: 2, scalable: true });
 }
 
-RUTAS.codigos = async () => {
+RUTAS.codigos = async (_partes, params) => {
   if (!exigeSesion('codigos')) return;
   // Los regalos de cumpleaños van aparte y arriba; si fallan, los códigos
   // salen igual.
@@ -1528,6 +1547,13 @@ RUTAS.codigos = async () => {
     .map((r) => ({ ...r, tz: zona(r) })), true);
   const conRegalos = Array.isArray(regalos) && regalos.length > 0;
   const conPremios = Array.isArray(premios) && premios.length > 0;
+  // Desde una notificación (`#/codigos?offer=<id>`: cambio de fecha,
+  // cancelación…): el código de esa publicación, a la vista y resaltado. El
+  // vivo si hay varios; si no, el más reciente (la lista llega ordenada).
+  const pedido = params?.get('offer') || '';
+  const deLaOferta = (lista || []).filter((r) => r.offer_id === pedido);
+  const resaltado = deLaOferta.find((r) => r.status === 'pending' && new Date(r.expires_at).getTime() > Date.now())
+    || deLaOferta[0] || null;
   pinta(`
     <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(t('Tus códigos'))}</h1>
@@ -1536,7 +1562,7 @@ RUTAS.codigos = async () => {
     ${conPremios ? `<h2 class="seccion-t">${esc(t('Premios de tarjetas de sellos'))}</h2>
       <div class="olist">${premios.map(filaPremio).join('')}</div>` : ''}
     ${conRegalos || conPremios ? `<h2 class="seccion-t">${esc(t('Tus códigos'))}</h2>` : ''}
-    ${(lista || []).length ? `<div class="olist">${lista.map((r) => filaCanje(r, zona(r))).join('')}</div>`
+    ${(lista || []).length ? `<div class="olist">${lista.map((r) => filaCanje(r, zona(r), r === resaltado)).join('')}</div>`
     : conRegalos || conPremios
       ? `<p class="empty">${esc(t('Todavía no tienes códigos. Cuando consigas el código de una oferta o reserves plaza en un evento, lo tendrás aquí.'))}</p>`
       : pantallaVacia({
@@ -1545,6 +1571,7 @@ RUTAS.codigos = async () => {
         texto: t('Cuando consigas el código de una oferta o reserves plaza en un evento, lo tendrás aquí.'),
         botones: `<a class="pill accent" href="${EN ? '/en/explore/' : '/explorar/'}">${esc(t('Buscar planes'))}</a>`,
       })}`);
+  $('#codigo-pedido')?.scrollIntoView({ block: 'center' });
 };
 
 /** Un premio de tarjeta de sellos en «Tus códigos»: pendiente lleva a

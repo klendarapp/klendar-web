@@ -82,6 +82,8 @@ function destinoWeb(ruta) {
   // «¡Feliz cumpleaños!»: el regalo, con su QR.
   if ((m = r.match(/^\/gift\/([0-9a-f-]{36})/i))) return `#/regalo/${m[1]}`;
   // «… se ha cancelado»: la reserva, que sale como «Anulado».
+  // Con `?offer=<id>`, ese código a la vista y resaltado.
+  if ((m = r.match(/^\/my-redemptions\?offer=([0-9a-f-]{36})/i))) return `#/codigos?offer=${m[1]}`;
   if (r.startsWith('/my-redemptions')) return '#/codigos';
   if (r.startsWith('/profile')) return '#/ajustes';
   // «Ana está en tus amigos»: tu lista de amigos.
@@ -162,7 +164,10 @@ RUTAS.notificaciones = async () => {
     ${lista.length ? `<div class="avisos">${lista.map((n) => {
       // Con acción, toda la notificación lleva a ella y el botón lo dice.
       const accion = accionAviso(n.data);
-      const destino = accion?.href || destinoWeb(n.route);
+      // Las de antes de que la ruta llevara `?offer=`: se completa con los datos.
+      const ruta = n.route === '/my-redemptions' && /^[0-9a-f-]{36}$/i.test(n.data?.offer_id || '')
+        ? `${n.route}?offer=${n.data.offer_id}` : n.route;
+      const destino = accion?.href || destinoWeb(ruta);
       return `<a class="aviso${n.read_at ? '' : ' nuevo'}" href="${esc(destino || '#/notificaciones')}" data-id="${esc(n.id)}">
         <b>${esc(n.title)}</b>
         ${n.body ? `<span>${esc(n.body)}</span>` : ''}
@@ -287,7 +292,14 @@ RUTAS.alertas = async () => {
     navegar();
   })));
   $$('[data-borra]').forEach((b) => b.addEventListener('click', async () => {
-    if (!(await confirma({ titulo: t('¿Borrar este aviso?'), aceptar: t('Borrar'), peligro: true }))) return;
+    // Como en la app: con su nombre y la salida de pausarlo.
+    const nombre = lista.find((x) => x.id === b.dataset.borra)?.label || t('Aviso');
+    if (!(await confirma({
+      titulo: EN ? `Delete “${nombre}”?` : `¿Borrar «${nombre}»?`,
+      texto: t('Dejaremos de avisarte de lo que encaje con él. Si solo quieres un descanso, páusalo.'),
+      aceptar: t('Borrar'),
+      peligro: true,
+    }))) return;
     ocupado(b, async () => {
       await tabla(sb.from('offer_alerts').delete().eq('id', b.dataset.borra));
       toast(t('Aviso borrado'));
@@ -588,7 +600,12 @@ RUTAS.ajustes = async () => {
       <dl class="consen">
         <dt>${esc(t('Términos y privacidad'))}</dt>
         <dd>${cons?.terms_accepted_at ? esc(`${t('Aceptados el')} ${dia(cons.terms_accepted_at)}${cons.terms_version ? ` (${t('versión')} ${cons.terms_version})` : ''}`) : esc(t('Sin registro'))}
-          · <a href="${pre}/${EN ? 'terms' : 'terminos'}/" target="_blank">${esc(t('Leer'))}</a></dd>
+          <br>${[
+    // Los tres textos que se aceptan, como en la app.
+    [EN ? 'terms' : 'terminos', 'Términos de uso'],
+    [EN ? 'privacy' : 'privacidad', 'Política de privacidad'],
+    [EN ? 'community-guidelines' : 'normas', 'Normas de la comunidad'],
+  ].map(([ruta, txt]) => `<a href="${pre}/${ruta}/" target="_blank" rel="noopener">${esc(t(txt))}</a>`).join(' · ')}</dd>
         <dt>${esc(t('Comunicaciones comerciales'))}</dt>
         <dd><label class="check"><input type="checkbox" id="marketing"${cons?.marketing_consent ? ' checked' : ''}>
           <span>${esc(cons?.marketing_consent ? `${t('Sí, desde el')} ${dia(cons.marketing_consent_at)}` : t('No recibes novedades ni promociones por correo'))}</span></label></dd>

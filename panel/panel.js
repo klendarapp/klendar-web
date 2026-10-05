@@ -559,14 +559,37 @@ async function preparaNegocio() {
 }
 
 /** A dónde volver después de entrar o de aceptar los términos: la página del
- * panel y nada más. El hash puede traer de todo (un `#access_token=…` de un
- * enlace de acceso, un código escrito…) y viajaba entero en `?volver=`. */
+ * panel con lo que traía (el código de un QR escaneado sin sesión, «Crear a
+ * partir de esta», ampliar una oferta, el día del calendario…) y nada más.
+ * El hash puede traer de todo (un `#access_token=…` de un enlace de acceso)
+ * y viajaba entero en `?volver=`: solo pasan las pantallas del panel y los
+ * parámetros de esta lista, cada uno con su forma. Siempre dentro de /panel/. */
+const VUELTA_PARAMS = {
+  biz: /^[0-9a-f-]{36}$/i,
+  code: /^[0-9a-f]{8,64}$/i,
+  from: /^[0-9a-f-]{36}$/i,
+  repeat: /^1$/,
+  extend: /^[0-9a-f-]{36}$/i,
+  estado: /^[a-z_]{1,20}$/,
+  dia: /^\d{4}-\d{2}-\d{2}$/,
+  idea: /^1$/,
+};
 function rutaDeVuelta() {
   const [h, q] = location.hash.split('?');
-  const biz = new URLSearchParams(q || '').get('biz');
-  const hash = /^#\/[a-z0-9-]{1,30}(\/[A-Za-z0-9-]{1,40}){0,2}$/.test(h || '')
-    ? h + (biz && /^[0-9a-f-]{36}$/i.test(biz) ? `?biz=${biz}` : '')
-    : '';
+  const pagina = (/^#\/([a-z0-9-]{1,30})(\/[A-Za-z0-9-]{1,40}){0,2}$/.exec(h || '') || [])[1];
+  // rrpp.js y series.js se cargan después: sus pantallas también valen.
+  const conocida = pagina && (Object.hasOwn(PAGES, pagina) || ['rrpp', 'series'].includes(pagina));
+  let hash = '';
+  if (conocida) {
+    const dentro = new URLSearchParams(q || '');
+    const fuera = new URLSearchParams();
+    for (const [k, re] of Object.entries(VUELTA_PARAMS)) {
+      const val = dentro.get(k);
+      if (val && re.test(val)) fuera.set(k, val);
+    }
+    const resto = fuera.toString();
+    hash = h + (resto ? `?${resto}` : '');
+  }
   const alta = new URLSearchParams(location.search).has('alta') ? '?alta=1' : '';
   return `/panel/${alta}${hash}`;
 }
@@ -4570,7 +4593,9 @@ PAGES.cumpleanos = async (v) => {
 
 // ── Informe ─────────────────────────────────────────────────────────────────
 // Todo junto y exportable: es lo que el negocio le pasa a su gestor y lo que
-// mira cuando quiere saber si esto le sirve para algo.
+// mira cuando quiere saber si esto le sirve para algo. Un empleado solo ve
+// las cifras: ni la lista de canjes (código y quién validó) ni los CSV; la
+// base tampoco se los manda (`aggregate_only`, migración 20261113100000).
 PAGES.informe = async (v, param) => {
   const days = Number(param) || 30;
   const [r, aud] = await Promise.all([
@@ -4608,7 +4633,7 @@ PAGES.informe = async (v, param) => {
 
     ${await informeSeriesHtml()}
 
-    <div class="card"><h2>Por publicación</h2><div class="actions" style="margin-bottom:10px"><button class="btn sm" id="csvOffers">Descargar CSV</button></div>
+    <div class="card"><h2>Por publicación</h2>${gestiona() ? '<div class="actions" style="margin-bottom:10px"><button class="btn sm" id="csvOffers">Descargar CSV</button></div>' : ''}
       ${table({
         cols: [
           { h: 'Publicación', r: (o) => `<b class="title">${esc(o.title)}</b><span class="sub">${esc(LABELS[o.kind] || o.kind)} · ${fmtDate(o.starts_at)}${o.status === 'archived' ? ` ${tag('archived')}` : ''}</span>` },
@@ -4623,6 +4648,9 @@ PAGES.informe = async (v, param) => {
       })}
     </div>
 
+    ${!gestiona() ? `<div class="card"><h2>Canjes validados</h2><p class="muted" style="margin:0">${esc(bi(
+      'Ves las cifras del negocio. La lista de canjes, con quién validó cada uno, y la descarga en CSV son solo para el propietario y los encargados.',
+      'You can see the business’s figures. The list of redemptions, with who validated each one, and the CSV download are only for the owner and managers.'))}</p></div>` : `
     <div class="card"><h2>Canjes validados</h2><div class="actions" style="margin-bottom:10px"><button class="btn sm" id="csvRed">Descargar CSV</button></div>
       <p class="muted" style="margin:0 0 10px">Cada línea es un código validado en el local, con quién lo validó. Sirve de justificante.</p>
       ${table({
@@ -4639,8 +4667,9 @@ PAGES.informe = async (v, param) => {
         rows: r.redemptions || [],
         empty: 'Todavía no se ha validado ningún código en este periodo.',
       })}
-    </div>`;
+    </div>`}`;
 
+  if (!gestiona()) return;
   $('#csvOffers').onclick = () => downloadCsv(`informe-${BIZ.name}`, r.offers || [], [
     ['title', 'Publicación'], ['kind', 'Tipo'], ['starts_at', 'Fecha'],
     [(o) => (o.price_cents == null ? '' : (o.price_cents / 100).toFixed(2)), 'Precio'],

@@ -399,3 +399,6 @@ button.codigo.copiar .ms { font-size: 18px; color: var(--ink-2); letter-spacing:
 .tag.rrpp-dentro { background: var(--ink); color: var(--surface); }
 .rrpp-fuera { display: inline-block; justify-self: start; margin-top: 4px; padding: 1px 8px; border-radius: 999px; background: var(--glass); border: 1px solid var(--glass-border); font-weight: 700; }
 .rrpp-pie { font-size: 13px; margin: 14px 4px 0; }
+
+/* «Tus códigos» abierto desde una notificación: ese código, con borde de tinta. */
+.ocard.resaltado { box-shadow: 0 0 0 2px var(--ink); }
