@@ -18,7 +18,10 @@
  * - Descubre: una por pantalla; ↑/↓ (y AvPág/RePág, J/K), los botones de los
  *   lados y la rueda pasan de una a otra; ←/→ mueven la galería. La cabecera
  *   sigue a lo que hay detrás (foto: blanco con velo; el final: el tema). Al
- *   llegar al final de la página se trae la siguiente.
+ *   llegar al final de la página se trae la siguiente. El scroll es del
+ *   <body> (ver public.css): aquí se fija el alto de una pantalla una vez (y
+ *   solo cambia si cambia la ventana de verdad) y se piden ya las fotos de
+ *   la tarjeta siguiente para que no lleguen en blanco.
  * - Ficha: la misma galería en grande; tocar una pieza (o «Ver a pantalla
  *   completa») abre el visor, como en la app. Las miniaturas de la carta, las
  *   novedades y las reseñas también lo abren.
@@ -531,18 +534,65 @@
     var fondo = document.querySelector('.feed-fondo');
     var actual = null;
     var pantallas = function () { return Array.prototype.slice.call(feed.querySelectorAll(':scope > .tj, :scope > .feed-fin')); };
+    // Lo que hace scroll: el <body> (public.css); sin `:has()`, el documento.
+    var rueda = function () {
+      var b = document.body;
+      return b.classList.contains('pagina-feed') && /(auto|scroll)/.test(getComputedStyle(b).overflowY) ? b : null;
+    };
+    var caja0 = rueda();
+    // El alto de una pantalla: el del <body>, fijado aquí una vez. Solo se
+    // vuelve a poner si la ventana cambia de verdad (girar el móvil, otra
+    // ventana): el documento no se mueve, así que la barra del navegador no
+    // lo cambia a mitad de gesto.
+    if (caja0) {
+      var altoPuesto = 0;
+      var fijaAlto = function () {
+        var h = caja0.clientHeight;
+        if (!h || Math.abs(h - altoPuesto) < 1) return;
+        altoPuesto = h;
+        caja0.style.setProperty('--feed-vp', h + 'px');
+      };
+      fijaAlto();
+      if ('ResizeObserver' in window) new ResizeObserver(fijaAlto).observe(caja0);
+      else window.addEventListener('resize', fijaAlto, { passive: true });
+      caja0.classList.add('feed-listo');
+    }
     // Pasado el feed («Más formas de explorar» y el pie), la cabecera vuelve a
     // ser la de siempre y lo de encima de la foto se va.
     var fuera = false;
+    var cromoPuesto = '';
     var cromo = function () {
       var conFoto = actual && actual.classList.contains('tj') && Boolean(actual.querySelector('img.tj-img, video.tj-img'));
-      document.body.setAttribute('data-cromo', fuera ? 'fuera' : conFoto ? 'media' : 'tema');
+      var c = fuera ? 'fuera' : conFoto ? 'media' : 'tema';
+      // Cambiarlo recalcula los estilos de toda la página: solo si cambia.
+      if (c !== cromoPuesto) { cromoPuesto = c; document.body.setAttribute('data-cromo', c); }
+    };
+    // Las fotos de la siguiente (y de la anterior) se piden ya, y el vídeo
+    // de la siguiente prepara su principio: al deslizar ya están (con
+    // `loading="lazy"` dentro de una caja con scroll, Safari no las pide
+    // hasta que asoman). De la actual, también la segunda pieza de su
+    // galería. Con ahorro de datos, solo la foto de la siguiente.
+    var prepara = function (el, todo) {
+      if (!el || !el.classList.contains('tj')) return;
+      var piezas = el.querySelectorAll('.tj-pista > .tj-pieza');
+      Array.prototype.forEach.call(piezas, function (p, k) {
+        if (k > (todo ? 1 : 0)) return;
+        var im = p.querySelector('img[loading="lazy"]');
+        if (im) im.loading = 'eager';
+        var v = k === 0 && !todo && p.querySelector('video[data-src]');
+        if (v && !ahorro() && !v.getAttribute('src')) { v.preload = 'metadata'; carga(v); }
+      });
     };
     var marca = function (el) {
       if (!el || el === actual) return;
       actual = el;
       cromo();
-      if (fondo) {
+      var lista = pantallas();
+      var i = lista.indexOf(el);
+      prepara(el, true);
+      prepara(lista[i + 1], false);
+      if (!ahorro()) { prepara(lista[i + 2], false); prepara(lista[i - 1], false); }
+      if (fondo && fondo.offsetParent !== null) {
         var img = el.querySelector('.tj-pista > :first-child img, img.tj-img');
         var src = img ? (img.currentSrc || img.src) : (el.querySelector('video[poster]') || {}).poster;
         fondo.style.setProperty('--foto', src ? 'url("' + String(src).replace(/["\\]/g, '') + '")' : 'none');
@@ -551,11 +601,18 @@
     var ojo = 'IntersectionObserver' in window ? new IntersectionObserver(function (entradas) {
       entradas.forEach(function (e) { if (e.isIntersecting) marca(e.target); });
     }, { threshold: 0.55 }) : null;
+    // «Fuera» cuando «Más formas» ha subido por encima del 60 % de la
+    // pantalla. Se vigilan «Más formas» y el feed: si se salta de golpe al
+    // pie, «Más formas» pasa de no verse a no verse (sin aviso) pero el feed
+    // sí avisa al irse. Al avisar, se mira dónde está de verdad.
     var masFormas = document.querySelector('.mas-formas');
     if (masFormas && 'IntersectionObserver' in window) {
-      new IntersectionObserver(function (entradas) {
-        entradas.forEach(function (e) { fuera = e.isIntersecting || e.boundingClientRect.top < 0; cromo(); });
-      }, { rootMargin: '0px 0px -40% 0px' }).observe(masFormas);
+      var limite = new IntersectionObserver(function () {
+        fuera = masFormas.getBoundingClientRect().top < window.innerHeight * 0.6;
+        cromo();
+      }, { rootMargin: '0px 0px -40% 0px' });
+      limite.observe(masFormas);
+      limite.observe(feed);
     }
     var vigila = function (raiz) { if (ojo) raiz.querySelectorAll(':scope > .tj, :scope > .feed-fin').forEach(function (el) { ojo.observe(el); }); };
     vigila(feed);
@@ -587,11 +644,19 @@
     var acumulado = 0;
     var quieta = 0;
     var tRueda = null;
+    // Lo fijo de encima (filtros, flechas, el fondo de los lados, las
+    // pestañas) no está dentro de lo que hace scroll: el navegador manda su
+    // gesto al documento, que no se mueve. Ahí lo hacemos a mano.
+    var FIJOS = '.feed-cab, .feed-nav, .feed-fondo, .feed-lado, .tabbar';
     window.addEventListener('wheel', function (e) {
-      if (fuera || e.ctrlKey || abiertos().length || Math.abs(e.deltaY) < Math.abs(e.deltaX)) return;
+      if (e.ctrlKey || abiertos().length || Math.abs(e.deltaY) < Math.abs(e.deltaX)) return;
       var t = e.target instanceof Element ? e.target : null;
       if (t && t.closest('.hoja-cuerpo, .menu-d, header.top')) return;
-      if (actual && actual.classList.contains('feed-fin') && e.deltaY > 0) return;
+      if (fuera || (actual && actual.classList.contains('feed-fin') && e.deltaY > 0)) {
+        // Pasado el feed, la página sigue normal hasta el pie.
+        if (caja0 && t && t.closest(FIJOS)) { e.preventDefault(); caja0.scrollBy({ top: e.deltaMode === 1 ? e.deltaY * 40 : e.deltaY }); }
+        return;
+      }
       e.preventDefault();
       clearTimeout(tRueda);
       tRueda = setTimeout(function () { acumulado = 0; quieta = 0; }, 180);
@@ -602,6 +667,29 @@
       acumulado = 0;
       quieta = Date.now() + 100000; // hasta que pare el gesto (el temporizador de arriba)
     }, { passive: false });
+    // Con el dedo pasa lo mismo: deslizar en vertical sobre la cabecera, los
+    // filtros o las pestañas pasa de tarjeta (pasado el feed, mueve la
+    // página). Pasivo: no frena el scroll de lado de los filtros ni los toques.
+    if (caja0) {
+      var dedo = null;
+      document.addEventListener('touchstart', function (e) {
+        dedo = null;
+        var t = e.target instanceof Element ? e.target : null;
+        if (e.touches.length !== 1 || !t || !t.closest('header.top, ' + FIJOS) || t.closest('.menu-d, details[open], nav.main')) return;
+        var menu = document.getElementById('menu');
+        if (abiertos().length || (menu && menu.checked)) return;
+        dedo = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      }, { passive: true });
+      document.addEventListener('touchend', function (e) {
+        if (!dedo || !e.changedTouches.length) return;
+        var dx = e.changedTouches[0].clientX - dedo.x, dy = e.changedTouches[0].clientY - dedo.y;
+        dedo = null;
+        if (Math.abs(dy) < 40 || Math.abs(dy) < Math.abs(dx) * 1.5) return;
+        if (fuera || (actual && actual.classList.contains('feed-fin') && dy < 0)) caja0.scrollBy({ top: -dy * 2, behavior: suave() });
+        else ir(dy < 0 ? 1 : -1);
+      }, { passive: true });
+      document.addEventListener('touchcancel', function () { dedo = null; }, { passive: true });
+    }
     document.querySelectorAll('[data-feed-ir]').forEach(function (b) {
       b.addEventListener('click', function () { ir(Number(b.getAttribute('data-feed-ir'))); });
     });
@@ -610,7 +698,7 @@
       var a = e.target instanceof Element ? e.target.closest('a[href="#arriba"]') : null;
       if (!a) return;
       e.preventDefault();
-      window.scrollTo({ top: 0, behavior: suave() });
+      (rueda() || window).scrollTo({ top: 0, behavior: suave() });
     });
 
     // La página siguiente, al acercarse al final (sin JavaScript, «Ver más»).
@@ -635,9 +723,12 @@
         hijos.forEach(function (h) { var m = h.querySelector && h.querySelector('[data-feed-mas]'); if (m) observaMas(m); if (h.matches && h.matches('.feed-mas')) { var mm = h.querySelector('[data-feed-mas]'); if (mm) observaMas(mm); } });
       }).catch(function () { delete enlace.dataset.cargando; });
     };
+    // Con el <body> haciendo scroll, el margen ha de ser el suyo (con la
+    // ventana de raíz, lo de debajo está recortado por el <body> y nunca se
+    // «acerca»): se trae dos pantallas antes de llegar.
     var cerca = 'IntersectionObserver' in window ? new IntersectionObserver(function (entradas) {
       entradas.forEach(function (e) { if (e.isIntersecting) { cerca.unobserve(e.target); trae(e.target); } });
-    }, { rootMargin: '150% 0px' }) : null;
+    }, { root: caja0, rootMargin: '200% 0px' }) : null;
     var observaMas = function (a) { if (cerca) cerca.observe(a); };
     feed.querySelectorAll('[data-feed-mas]').forEach(observaMas);
   }

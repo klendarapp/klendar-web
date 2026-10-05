@@ -503,10 +503,29 @@ body.con-hoja { overflow: hidden; }
    hasta 0 a lo largo de los filtros) y píldoras de cristal oscuro; en la
    pantalla final, el tema (`data-cromo` lo pone /assets/tarjetas.js).
    En el escritorio, una columna de 9:16 en el centro y, a los lados, el
-   título, la foto actual difuminada y las flechas. */
-html:has(body.pagina-feed) { scroll-snap-type: y mandatory; }
-body.pagina-feed { --cab: 64px; --feed-w: 100vw; --feed-x: 0px; --feed-alto: 100dvh; --feed-arriba: 116px;
-  --feed-abajo: calc(78px + env(safe-area-inset-bottom)); --velo-arriba: var(--cab); }
+   título, la foto actual difuminada y las flechas.
+
+   El scroll es del <body>, no del documento (como TikTok o Reels en la
+   web): el documento no se mueve, así la barra del navegador del móvil no
+   se esconde ni reaparece a mitad de gesto (con el alto en `dvh` cada
+   tarjeta cambiaba de tamaño, todo saltaba y el snap se recolocaba) y el
+   snap no pelea con ella. El alto de una pantalla, `--feed-vp`, es el del
+   <body> (lo fija /assets/tarjetas.js; antes de que cargue, `svh`, que en
+   un documento quieto es lo mismo). «Más formas de explorar» y el pie van
+   dentro, después del final, como antes. Sin `:has()` (navegadores viejos)
+   el documento hace scroll como siempre. */
+html:has(body.pagina-feed) { height: 100%; overflow: hidden; overscroll-behavior: none; }
+body.pagina-feed { --cab: 64px; --feed-w: 100vw; --feed-x: 0px; --feed-vp: 100vh; --feed-alto: var(--feed-vp); --feed-arriba: 116px;
+  --feed-abajo: calc(78px + env(safe-area-inset-bottom)); --velo-arriba: var(--cab);
+  box-sizing: border-box; height: 100%; overflow-x: hidden; overflow-y: auto; overscroll-behavior-y: contain; }
+@supports (height: 100svh) { body.pagina-feed { --feed-vp: 100svh; } }
+/* El snap, cuando la página ya está entera (`feed-listo`, de tarjetas.js):
+   puesto desde el principio, Safari toma como primera parada «Más formas» o
+   el pie (aún no hay tarjetas debajo de las que tirar) y abre la página
+   abajo del todo. Sin JavaScript, la lista se desliza libre. */
+body.pagina-feed.feed-listo { scroll-snap-type: y mandatory; }
+/* Con la hoja de filtros o el visor abiertos, lo de detrás no se mueve. */
+body.pagina-feed.con-hoja, html.con-visor body.pagina-feed { overflow-y: hidden; }
 .pagina-feed main.pub { max-width: none; padding: 0; }
 .pagina-feed .feed { position: relative; width: var(--feed-w); margin: 0 auto; }
 .pagina-feed .feed > .tj, .pagina-feed .feed > .feed-fin, .pagina-feed .feed > .feed-mas { scroll-snap-align: start; scroll-snap-stop: always; }
@@ -570,9 +589,8 @@ body.pagina-feed[data-cromo="fuera"] .feed-cab { visibility: hidden; }
    siguiente empieza fuera de la ventana: no asoma). Todo a la escala de un
    móvil (`--u` en tarjeta.css). */
 @media (min-width: 761px) {
-  html:has(body.pagina-feed) { scroll-padding-top: 133px; }
-  body.pagina-feed { --cab: 65px; --barra: 56px; --hueco: 12px;
-    --feed-alto: calc(100dvh - var(--cab) - var(--barra) - 2 * var(--hueco)); --feed-w: calc(var(--feed-alto) * 9 / 16);
+  body.pagina-feed { --cab: 65px; --barra: 56px; --hueco: 12px; scroll-padding-top: 133px;
+    --feed-alto: calc(var(--feed-vp) - var(--cab) - var(--barra) - 2 * var(--hueco)); --feed-w: calc(var(--feed-alto) * 9 / 16);
     --feed-x: calc(50% - var(--feed-w) / 2); --feed-arriba: 0px; --feed-abajo: 12px; }
   .pagina-feed header.top { background: var(--surface); }
   .pagina-feed .feed { padding-top: calc(var(--barra) + var(--hueco)); }
