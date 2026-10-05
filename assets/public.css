@@ -698,3 +698,24 @@ details.hoja-mas > fieldset { margin: 4px 16px 14px; }
 .op-check { width: 18px; height: 18px; flex: none; border-radius: 5px; border: 2px solid currentColor; display: inline-grid; place-items: center; }
 .op.on .op-check::after { content: '✓'; font-size: 13px; font-weight: 800; line-height: 1; }
 @media (prefers-reduced-motion: reduce) { details.hoja-mas > summary .ic { transition: none; } }
+
+/* ── Menú ⋮ de las fichas (como la app): lo que se usa poco ─────────────── */
+.d-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.d-top .badges { flex: 1; min-width: 0; }
+.mas-menu { position: relative; flex: none; }
+.mas-menu > summary { list-style: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%;
+  border: 1px solid var(--glass-border); background: var(--glass); color: var(--ink); cursor: pointer; }
+.mas-menu > summary::-webkit-details-marker { display: none; }
+.mas-menu > summary:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.mas-menu[open] > summary { background: var(--soft); }
+.mas-lista { position: absolute; right: 0; top: 46px; z-index: 30; min-width: 230px; padding: 6px 0; border-radius: 16px;
+  background: var(--elevated); border: 1px solid var(--glass-border); box-shadow: var(--shadow); }
+.mas-lista a { display: block; padding: 11px 18px; color: var(--ink); font-weight: 600; font-size: 15px; text-decoration: none; }
+.mas-lista a:hover, .mas-lista a:focus-visible { background: var(--soft); outline: none; }
+.mas-lista a.mas-peligro { color: #B3261E; border-top: 1px solid var(--glass-border); margin-top: 4px; padding-top: 13px; }
+@media (prefers-color-scheme: dark) { .mas-lista a.mas-peligro { color: #FF9B9B; } }
+.mas-lista a[hidden] { display: none; }
+/* «¿Por qué ves esto?», al pie de la ficha (el menú lleva aquí). */
+.por-que { margin-top: 28px; font-size: 14px; }
+.por-que summary { cursor: pointer; color: var(--ink-2); font-weight: 600; }
+.por-que p { margin: 8px 0 0; }

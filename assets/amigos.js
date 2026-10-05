@@ -28,7 +28,9 @@
   var resenas = document.querySelectorAll('[data-autor]');
   // Explorar y Descubre: la barra de filtros, donde va «Van mis amigos».
   var barra = document.querySelector('[data-amigos-filtro]') || document.getElementById('barra');
-  if (!ficha && !tarjetas.length && !botonFav && !botonPlan && !resenas.length && !barra) return;
+  // Ficha de una publicación o de un negocio: si quien mira es de su equipo.
+  var equipoEl = document.querySelector('[data-equipo-biz]');
+  if (!ficha && !tarjetas.length && !botonFav && !botonPlan && !resenas.length && !barra && !equipoEl) return;
   var UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   var cuenta = en ? '/app/?lang=en' : '/app/';
 
@@ -171,10 +173,27 @@
             if (botonPlan) yaLoTienes(sb, uid, botonPlan, 'saved_offers', 'offer_id', botonPlan.getAttribute('data-plan'), '#/guardar/', T.planOn);
             if (resenas.length) sinBloqueadas(sb, uid);
             if (barra) filtroAmigos(sb);
+            if (equipoEl) comoEquipo(sb);
           });
         });
     })
     .catch(function () { /* sin red: la página, sin lo de amigos */ });
+
+  // ── El equipo del negocio, en su propia ficha ───────────────────────────
+  // Como la app: no guarda, no añade a favoritos ni denuncia lo suyo; lo
+  // edita en el panel. Lo dice la base (`my_businesses`), no la página, que
+  // va en caché: `[data-solo-publico]` se esconde y `[data-solo-equipo]` sale.
+  function comoEquipo(sb) {
+    var biz = equipoEl.getAttribute('data-equipo-biz');
+    if (!UUID.test(biz || '')) return;
+    sb.rpc('my_businesses', {}).then(function (res) {
+      var mios = (res && res.data) || [];
+      if (!mios.some(function (b) { return b && b.id === biz; })) return;
+      document.querySelectorAll('[data-solo-publico]').forEach(function (e) { e.hidden = true; });
+      document.querySelectorAll('[data-solo-equipo]').forEach(function (e) { e.hidden = false; });
+      document.body.classList.add('es-equipo');
+    }, function () { /* sin red: la ficha de siempre */ });
+  }
 
   // ── «Añadir a favoritos» / «Guardar en Planes» ya puestos ──────────────
   // Solo mira si ya lo tienes; el cambio lo hace «Tu cuenta» (con ?quitar=1

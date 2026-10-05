@@ -38,11 +38,42 @@ const PATHS = {
   invitar: 'M8 10H5V7H3v3H0v2h3v3h2v-3h3v-2zm10 1c1.66 0 2.99-1.34 2.99-3S19.66 5 18 5c-.32 0-.63.05-.91.14.57.81.9 1.79.9 2.86s-.34 2.04-.9 2.86c.28.09.59.14.91.14zm-5 0c1.66 0 2.99-1.34 2.99-3S14.66 5 13 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm6.62 2.16c.83.73 1.38 1.66 1.38 2.84v2h3v-2c0-1.54-2.37-2.49-4.38-2.84zM13 13c-2 0-6 1-6 3v2h12v-2c0-2-4-3-6-3z',
   // «Forma parte de una serie» (event_repeat).
   serie: 'M21 12V6c0-1.1-.9-2-2-2h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h7v-2H5V10h14v2h2zm-5.36 8c.43 1.45 1.77 2.5 3.36 2.5 1.93 0 3.5-1.57 3.5-3.5s-1.57-3.5-3.5-3.5c-.95 0-1.82.38-2.45 1H18V18h-4v-4h1.5v1.43c.9-.88 2.14-1.43 3.5-1.43 2.76 0 5 2.24 5 5s-2.24 5-5 5c-2.42 0-4.44-1.72-4.9-4h1.54z',
+  // ⋮ (more_vert): lo que se usa poco, como en la app.
+  mas: 'M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z',
+  editar: 'M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z',
   resena: 'M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 14v-2.47l6.88-6.88c.2-.2.51-.2.71 0l1.77 1.77c.2.2.2.51 0 .71L8.47 14H6zm12 0h-7.5l2-2H18v2z',
 };
 const icono = (n, size = 18) => `<svg class="ic" viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true"><path fill="currentColor" d="${PATHS[n]}"/></svg>`;
 
 const pre = (lang) => (lang === 'en' ? '/en' : '');
+
+/** El menú ⋮ de las fichas (como la app): lo que se usa poco (añadir al
+ * calendario, «¿Por qué ves esto?», Denunciar) sin competir con Guardar o
+ * Compartir. Un `<details>`: funciona sin JavaScript; con él, se cierra al
+ * tocar fuera o con Escape (`MENU_JS`). `items`: HTML de cada opción. */
+const masMenu = (items, lang) => `<details class="mas-menu">
+      <summary aria-label="${lang === 'en' ? 'More options' : 'Más opciones'}" title="${lang === 'en' ? 'More options' : 'Más opciones'}">${icono('mas', 22)}</summary>
+      <div class="mas-lista">${items.filter(Boolean).join('')}</div>
+    </details>`;
+const MENU_JS = `<script>(function(){var c=function(x){document.querySelectorAll('details.mas-menu[open]').forEach(function(d){if(!x||!d.contains(x))d.open=false;});};
+document.addEventListener('click',function(e){c(e.target);});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'){var d=document.querySelector('details.mas-menu[open]');c(null);if(d)d.querySelector('summary').focus();}});
+document.querySelectorAll('.mas-lista a').forEach(function(a){a.addEventListener('click',function(){c(null);});});
+function pq(){var d=document.getElementById(location.hash.slice(1));if(d&&d.tagName==='DETAILS'&&d.classList.contains('por-que'))d.open=true;}addEventListener('hashchange',pq);pq();})();</script>`;
+
+/** Un .ics para «Añadir al calendario» (sin servidor: un enlace `data:`). */
+function icsHref(o, lugar, url) {
+  const t = (d) => new Date(d).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+  const txt = (v) => String(v || '').replace(/\\/g, '\\\\').replace(/[;,]/g, (m) => `\\${m}`).replace(/\r?\n/g, '\\n');
+  const ini = o.event_at;
+  const fin = o.event_end_at || new Date(new Date(ini).getTime() + 2 * 3600e3).toISOString();
+  const ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Klendar//Klendar//ES', 'BEGIN:VEVENT',
+    `UID:${o.id}@klendar.app`, `DTSTAMP:${t(ini)}`, `DTSTART:${t(ini)}`, `DTEND:${t(fin)}`,
+    `SUMMARY:${txt(o.title)}`, lugar ? `LOCATION:${txt(lugar)}` : '', `URL:${url}`,
+    `DESCRIPTION:${txt([o.description || '', url].filter(Boolean).join('\n\n'))}`,
+    'END:VEVENT', 'END:VCALENDAR'].filter(Boolean).join('\r\n');
+  return `data:text/calendar;charset=utf-8,${encodeURIComponent(ics)}`;
+}
 
 /** «Tu cuenta» en el idioma de la ficha (la cabecera ya lo hace así). */
 const cuenta = (lang) => (lang === 'en' ? '/app/?lang=en' : '/app/');
@@ -175,7 +206,9 @@ export async function offerPage(id, lang, rpRaw = '') {
     ? {
         when: 'When', redeem: 'Redemption window', where: 'Where', seats: 'Places left',
         terms: 'Conditions', about: 'About', biz: 'The business',
-        open: 'Open in the app', report: 'Report this publication',
+        open: 'Open in the app', report: 'Report this publication', reportShort: 'Report', why: 'Why am I seeing this?',
+        whyText: 'On the web you see the same as everyone else: Klendar doesn’t use your data to decide what to show you. Paid featured publications come first and always carry the “Featured” label; after that comes the order you pick in “Sort by”.',
+        boosted: 'The business paid to feature this publication.', edit: 'Edit in the dashboard',
         code: 'Get the code', notYet: 'Not available yet', reserve: 'Reserve a place', wait: 'Join the waiting list', save: 'Save to Plans',
         going: "I'm going", invite: 'Invite a friend',
         byCode: 'Getting the code counts as going.', byReservation: 'Reserving a place counts as going.',
@@ -187,7 +220,9 @@ export async function offerPage(id, lang, rpRaw = '') {
     : {
         when: 'Cuándo', redeem: 'Se canjea', where: 'Dónde', seats: 'Plazas libres',
         terms: 'Condiciones', about: 'Qué es', biz: 'El negocio',
-        open: 'Abrir en la app', report: 'Denunciar esta publicación',
+        open: 'Abrir en la app', report: 'Denunciar esta publicación', reportShort: 'Denunciar', why: '¿Por qué ves esto?',
+        whyText: 'En la web ves lo mismo que todo el mundo: Klendar no usa tus datos para decidir qué enseñarte. Lo destacado de pago sale primero y siempre con la etiqueta «Destacado»; después va el orden que eliges en «Ordenar por».',
+        boosted: 'El negocio ha pagado por destacar esta publicación.', edit: 'Editar en el panel',
         code: 'Conseguir el código', notYet: 'Aún no disponible', reserve: 'Reservar plaza', wait: 'Apuntarme a la lista de espera', save: 'Guardar en Planes',
         going: 'Voy', invite: 'Invitar a un amigo',
         byCode: 'Conseguir el código ya cuenta como que vas.', byReservation: 'Reservar plaza ya cuenta como que vas.',
@@ -224,10 +259,15 @@ export async function offerPage(id, lang, rpRaw = '') {
     : `<span class="fn-ph" aria-hidden="true">${esc((o.business_name || '·').charAt(0).toUpperCase())}</span>`;
   const body = `
   <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a> · <a href="${esc(bHref)}">${esc(o.business_name)}</a></p>
-  <div class="detail ficha${pieces.length ? '' : ' sin-media'}">
+  <div class="detail ficha${pieces.length ? '' : ' sin-media'}" data-equipo-biz="${esc(o.business_id)}">
     ${carrusel(pieces, { titulo: o.title, lang })}
     <div class="d-head">
-      <div class="badges"><span class="badge">${esc(flash ? (en ? 'Flash offer' : 'Oferta flash') : (en ? 'Event' : 'Evento'))}</span>${badges}</div>
+      <div class="d-top"><div class="badges"><span class="badge">${esc(flash ? (en ? 'Flash offer' : 'Oferta flash') : (en ? 'Event' : 'Evento'))}</span>${badges}</div>
+      ${masMenu([
+    !flash && o.event_at && !over ? `<a href="${esc(icsHref(o, o.venue_address || where, `${BASE}${path}`))}" download="${esc((o.title || 'evento').replace(/[^\p{L}\p{N}]+/gu, '-').slice(0, 60))}.ics">${en ? 'Add to calendar' : 'Añadir al calendario'}</a>` : '',
+    `<a href="#por-que">${S.why}</a>`,
+    `<a class="mas-peligro" data-solo-publico href="${cuenta(lang)}#/denunciar/offer/${encodeURIComponent(o.id)}" rel="nofollow">${S.reportShort}</a>`,
+  ], lang)}</div>
       <h1 data-tr="offer:${esc(o.id)}:title">${esc(o.title)}</h1>
       <p data-tr-nota="offer:" hidden></p>
       <a class="ficha-negocio" href="${esc(bHref)}"${Number.isFinite(o.lat) && Number.isFinite(o.lng) ? ` data-lat="${Number(o.lat).toFixed(5)}" data-lng="${Number(o.lng).toFixed(5)}"` : ''}>${logo}
@@ -284,7 +324,8 @@ export async function offerPage(id, lang, rpRaw = '') {
             ${deRrpp ? '' : `<a class="pill" href="${cuenta(lang)}#/invitar/${id}" rel="nofollow">${icono('invitar', 16)} ${S.invite}</a>`}</p>
           <p class="note" id="voy-auto" hidden></p>
           ${conCodigo ? `<p class="note" id="voy-pista">${flash ? S.byCode : S.byReservation}${deRrpp ? '' : ` ${S.later}`}</p>` : ''}
-          <p class="acciones">${deRrpp ? '' : `<a class="pill" data-plan="${id}" href="${cuenta(lang)}#/guardar/${id}"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg> <span>${S.save}</span></a>`}
+          <p class="acciones"><a class="pill" data-solo-equipo hidden href="/panel/#/publicaciones/${id}?biz=${encodeURIComponent(o.business_id)}">${icono('editar', 16)} ${S.edit}</a>
+            ${deRrpp ? '' : `<a class="pill" data-solo-publico data-plan="${id}" href="${cuenta(lang)}#/guardar/${id}"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg> <span>${S.save}</span></a>`}
             ${openInApp(path + rpQ, S.open, 'pill ghost')}</p>
           ${deRrpp && !prom ? '' : `<p class="acciones">${historiaBoton(lang, 'o', o.id, rpQ)}</p>`}`;
       })()}
@@ -299,7 +340,8 @@ export async function offerPage(id, lang, rpRaw = '') {
       <h2>${S.biz}</h2>
       <p>${esc(o.business_name)}${o.business_rating && o.business_ratings ? ` · ★ ${nota(o.business_rating, lang)} (${o.business_ratings})` : ''}</p>
       <p><a href="${esc(bHref)}">${S.more} ${esc(o.business_name)} →</a></p>
-      <p class="denuncia-pie"><a href="${cuenta(lang)}#/denunciar/offer/${encodeURIComponent(o.id)}" rel="nofollow">${S.report}</a></p>
+      <details class="por-que" id="por-que"><summary>${S.why}</summary>
+        <p class="muted">${o.is_boosted ? `${S.boosted} ` : ''}${S.whyText}</p></details>
     </div>
   </div>`;
 
@@ -348,7 +390,7 @@ el.textContent=n<ini?${JSON.stringify(en ? 'Starts in ' : 'Empieza en ')}+dur(in
 
   if (privada) {
     const res = html(publicPage({
-      lang, path, image: cover, body: body + cuentaAtras + vista,
+      lang, path, image: cover, body: body + cuentaAtras + vista + MENU_JS,
       title: `${o.title} · ${o.business_name}`,
       description, privada: true, consulta: rpQ, contador: false,
       head: `${traducir(lang, `offer:${o.id}`)}
@@ -359,7 +401,7 @@ el.textContent=n<ini?${JSON.stringify(en ? 'Starts in ' : 'Empieza en ')}+dur(in
     return res;
   }
   return html(publicPage({
-    lang, path, image: cover, body: body + cuentaAtras + vista,
+    lang, path, image: cover, body: body + cuentaAtras + vista + MENU_JS,
     title: `${o.title} · ${o.business_name}`,
     description,
     head: `${traducir(lang, `offer:${o.id}`)}

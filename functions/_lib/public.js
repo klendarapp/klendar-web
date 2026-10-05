@@ -247,7 +247,7 @@ export function publicPage({ lang, path, title, description, head = '', body, im
   // las escribió. `#barra` (o `data-amigos-filtro`): la barra de filtros de
   // Explorar y Descubre, donde va el chip «Van mis amigos» (también sin
   // resultados, cuando no hay ninguna tarjeta).
-  const conAmigos = /\sdata-(o|fav|plan|autor|amigos-filtro)="|id="amigos-ficha"|id="barra"/.test(body);
+  const conAmigos = /\sdata-(o|fav|plan|autor|amigos-filtro|equipo-biz)="|id="amigos-ficha"|id="barra"/.test(body);
   // Tarjetas (vídeo a la vista, cuenta atrás, distancia) y desplegables.
   const conTarjetas = /class="(tj|tjs|ficha-media|desplegable|hoja)[" ]|data-src="|data-visor="/.test(body);
   // El visor a pantalla completa pinta su galería con `assets/tarjeta.js`.
@@ -280,7 +280,7 @@ ${privada ? '' : `<meta property="og:url" content="${BASE}${esc(path)}">
 ${preconectar}<link rel="preload" href="/assets/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/assets/site.css?v=20261012">
-<link rel="stylesheet" href="/assets/public.css?v=36">
+<link rel="stylesheet" href="/assets/public.css?v=37">
 <link rel="stylesheet" href="/assets/tarjeta.css?v=6">
 ${cabeza}
 </head>
@@ -288,7 +288,7 @@ ${cabeza}
 ${siteHeader(lang, esc(es + consulta), esc(enPath + consulta), actual)}
 <main class="pub wrap" id="contenido">${body}</main>
 ${siteFooter(lang)}
-${conAmigos ? `<script src="/assets/amigos.js?v=13" defer data-lang="${en ? 'en' : 'es'}"></script>
+${conAmigos ? `<script src="/assets/amigos.js?v=14" defer data-lang="${en ? 'en' : 'es'}"></script>
 ` : ''}${conVisor ? `<script src="/assets/tarjeta.js?v=4" defer></script>
 ` : ''}${conTarjetas ? `<script src="/assets/tarjetas.js?v=10" defer></script>
 ` : ''}${/class="detail[" ]/.test(body) ? `<script src="/assets/barra.js?v=3" defer></script>
