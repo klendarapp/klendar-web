@@ -13,7 +13,7 @@ import KZ from '../../assets/zona.js';
 import { decodeSeg,
   agendaBase, BASE, benefit, bizPath, breadcrumbLd, cityLinks, citySeg, datosDeNegocios, exploreBase,
   carrusel, firstPhoto, fmtEnd, fmtLong, isSlug, isVideo, ldScript, listingLd, miniatura, miniaturas, money, openInApp,
-  priorPrice, publicPage, slugDe, todayBase, zonaDe,
+  historiaBoton, priorPrice, publicPage, slugDe, todayBase, zonaDe,
 } from './public.js';
 import { cuandoCorto, plataformaEntradas, rejilla } from './tarjeta.js';
 
@@ -240,7 +240,8 @@ export async function offerPage(id, lang) {
           <p class="note" id="voy-auto" hidden></p>
           ${conCodigo ? `<p class="note" id="voy-pista">${flash ? S.byCode : S.byReservation} ${S.later}</p>` : ''}
           <p class="acciones"><a class="pill" data-plan="${id}" href="${cuenta(lang)}#/guardar/${id}"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg> <span>${S.save}</span></a>
-            ${openInApp(path, S.open, 'pill ghost')}</p>`;
+            ${openInApp(path, S.open, 'pill ghost')}</p>
+          <p class="acciones">${historiaBoton(lang, 'o', o.id)}</p>`;
       })()}
       <p class="note">${S.note}</p>
     </aside>
@@ -649,6 +650,7 @@ export async function businessPage(param, lang, search = '') {
     <aside class="side">
       <a class="pill accent big" data-fav="${esc(b.id)}" href="${cuenta(lang)}#/seguir/${encodeURIComponent(b.id)}"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.8 4.5c2.2 0 3.6 1.2 5.2 3 1.6-1.8 3-3 5.2-3 3.8 0 5.9 3.9 4.4 7.3C19.5 16.4 12 21 12 21z"/></svg> <span>${S.open}</span></a>
       <p class="note" style="margin-bottom:16px">${S.note}</p>
+      <p class="acciones" style="margin:0 0 16px">${historiaBoton(lang, 'b', slug || b.id)}</p>
       <div class="info">
         ${where ? `<div><span>${icono('lugar')}</span><span>${maps ? `<a href="${esc(maps)}" rel="nofollow noopener" target="_blank">${esc(where)}</a>` : esc(where)}</span></div>` : ''}
         ${b.phone ? `<div><span>${icono('telefono')}</span><span><a href="tel:${esc(b.phone)}">${esc(b.phone)}</a></span></div>` : ''}

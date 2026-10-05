@@ -15,8 +15,8 @@
 import { esc, html, rpc, rpcAll } from './page.js';
 import KZ from '../../assets/zona.js';
 import {
-  agendaBase, bizPath, cityLinks, collectionBase, decodeSeg, discoverBase, exploreBase, isVideo, ldScript, listingLd,
-  publicPage, todayBase,
+  agendaBase, bizPath, cityLinks, collectionBase, decodeSeg, discoverBase, exploreBase, historiaBoton, isVideo, ldScript,
+  listingLd, publicPage, todayBase,
 } from './public.js';
 import { rejilla, tarjeta } from './tarjeta.js';
 
@@ -1009,6 +1009,7 @@ export async function collectionPage(rawSlug, rawCity, lang) {
   <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a> · <a href="${exploreBase(lang)}/">${esc(S.exp)}</a></p>
   <h1>${esc(h1)}</h1>
   ${col && colSub(col, en) ? `<p class="muted" style="max-width:640px">${esc(colSub(col, en))}</p>` : ''}
+  ${col && items.length ? `<p class="acciones">${historiaBoton(lang, 'c', slug)}</p>` : ''}
   ${cities.length > 1 ? `<div class="filters"><div class="frow"><span class="flabel">${esc(S.city)}</span>
     <a class="chip${rawc ? '' : ' on'}" href="${collectionBase(lang)}/${encodeURIComponent(slug)}/">${esc(S.everywhere)}</a>
     ${cities.filter((c) => c.city).slice(0, 12).map((c) => `<a class="chip${rawc.toLowerCase() === String(c.city).toLowerCase() ? ' on' : ''}" href="${collectionBase(lang)}/${encodeURIComponent(slug)}/${CITY(c.city)}/">${esc(PRETTY(c.city))}</a>`).join('')}

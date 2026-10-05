@@ -10,7 +10,7 @@ import KZ from '../../assets/zona.js';
 // Dinero, fechas cortas y el beneficio: los mismos que pinta la tarjeta, en
 // un solo sitio (`assets/tarjeta.js`, que también usa el panel del negocio).
 import KT from '../../assets/tarjeta.js';
-import { BackendDown, CONTADOR, datosDePrueba, erroresScript, esc, html, isUuid, rows } from './page.js';
+import { BackendDown, CONTADOR, datosDePrueba, erroresScript, esc, html, isUuid, rows, supabasePublic } from './page.js';
 
 import { siteFooter, siteHeader } from './chrome.js';
 
@@ -187,6 +187,7 @@ export const altPath = (path, lang) =>
         .replace(/^\/en\/discover/, '/descubre')
         .replace(/^\/en\/collection/, '/coleccion')
         .replace(/^\/en\/friend\//, '/amigo/')
+        .replace(/^\/en\/story\//, '/historia/')
         .replace(/^\/en/, '') || '/')
     : `/en${path
         .replace(/^\/agenda/, '/whats-on')
@@ -194,7 +195,8 @@ export const altPath = (path, lang) =>
         .replace(/^\/explorar/, '/explore')
         .replace(/^\/descubre/, '/discover')
         .replace(/^\/coleccion/, '/collection')
-        .replace(/^\/amigo\//, '/friend/')}`;
+        .replace(/^\/amigo\//, '/friend/')
+        .replace(/^\/historia\//, '/story/')}`;
 
 /**
  * Página pública completa: cabecera del sitio, contenido y pie sencillo.
@@ -281,9 +283,29 @@ ${conAmigos ? `<script src="/assets/amigos.js?v=12" defer data-lang="${en ? 'en'
 ` : ''}${conVisor ? `<script src="/assets/tarjeta.js?v=4" defer></script>
 ` : ''}${conTarjetas ? `<script src="/assets/tarjetas.js?v=6" defer></script>
 ` : ''}${/class="detail[" ]/.test(body) ? `<script src="/assets/barra.js?v=3" defer></script>
-` : ''}${contador ? CONTADOR : ''}
+` : ''}${/^\/(en\/)?(o|b|coleccion|collection)\//.test(path) ? desdeHistorias() : ''}${contador ? CONTADOR : ''}
 </body></html>`;
 }
+
+/**
+ * «Compartir en historias»: quien llega desde la imagen (`?ref=stories`)
+ * cuenta para el negocio (`log_ref_visit`, una vez por persona cada 30 min) y
+ * el origen se quita de la dirección, para que si vuelve a compartir el
+ * enlace no se cuente como historia. Sin cookies ni nada guardado.
+ */
+function desdeHistorias() {
+  const sp = supabasePublic();
+  return `<script>(function(){try{var q=new URLSearchParams(location.search);if(q.get('ref')!=='stories'||navigator.webdriver)return;
+var p=location.pathname.split('/').filter(Boolean);if(p[0]==='en')p.shift();
+var k={o:'offer',b:'business',coleccion:'collection',collection:'collection'}[p[0]];if(!k||!p[1])return;
+var key=${JSON.stringify(sp.key)};
+fetch(${JSON.stringify(sp.url + '/rest/v1/rpc/log_ref_visit')},{method:'POST',keepalive:true,headers:{apikey:key,Authorization:'Bearer '+key,'Content-Type':'application/json'},body:JSON.stringify({p_ref:'stories',p_kind:k,p_target:decodeURIComponent(p[1])})}).catch(function(){});
+q.delete('ref');var r=q.toString();history.replaceState(history.state,'',location.pathname+(r?'?'+r:'')+location.hash);}catch(e){}})();</script>`;
+}
+
+/** «Compartir en historias»: la imagen vertical para Instagram y compañía
+ * (`_lib/historia.js`). */
+export const historiaBoton = (lang, kind, ref) => `<a class="pill" href="${lang === 'en' ? '/en/story' : '/historia'}/${kind}/${encodeURIComponent(ref)}" rel="nofollow"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M7 19h10V4H7v15zm-5-2h4V6H2v11zm16-11v11h4V6h-4z"/></svg> <span>${lang === 'en' ? 'Share to stories' : 'Compartir en historias'}</span></a>`;
 
 /** Botón grande para abrir la publicación en la app. */
 export function openInApp(path, label = 'Abrir en la app', cls = 'pill accent big') {

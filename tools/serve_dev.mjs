@@ -70,6 +70,8 @@ createServer(async (req, res) => {
     // El cartel del local: /cartel/local/<código> y /en/poster/venue/<código>.
     else if ((m = rest.match(/^\/(cartel\/local|poster\/venue)\/([^/]+)\/?$/))) { mod = await load(`functions/${en}${en ? 'poster/venue' : 'cartel/local'}/[token].js`); params = { token: m[2] }; }
     else if ((m = rest.match(/^\/(cartel|poster)\/([^/]+)\/?$/))) { mod = await load(`functions/${en}${en ? 'poster' : 'cartel'}/[id].js`); params = { id: m[2] }; }
+    // «Compartir en historias»: /historia/<o|b|c>/<…> y /en/story/<o|b|c>/<…>.
+    else if ((m = rest.match(/^\/(historia|story)\/([obc])\/([^/]+)\/?$/))) { mod = await load(`functions/${en}${en ? 'story' : 'historia'}/[kind]/[id].js`); params = { kind: m[2], id: m[3] }; }
     else if ((m = rest.match(/^\/b\/([^/]+)\/?$/))) { mod = await load(`functions/${en}b/[id].js`); params = { id: m[1] }; }
     // En inglés la cartelera se llama «what's on», no «agenda».
     else if ((m = rest.match(/^\/(agenda|whats-on)\/([^/]+)\/?$/))) { mod = await load(`functions/${en}${en ? 'whats-on' : 'agenda'}/[city].js`); params = { city: m[2] }; }
