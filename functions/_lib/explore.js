@@ -992,6 +992,8 @@ ${filtrado ? '<meta name="robots" content="noindex, follow">' : jsonLd}`;
  * todo…» con sus salidas); sin nada, la pantalla vacía centrada.
  *
  * Sin JavaScript se lee igual: es una lista de tarjetas que se desliza.
+ * Con sesión, arriba la oferta de la lista de un RRPP por la que entró esa
+ * persona (`#rp-fijadas`, la pinta /assets/fijada.js; nadie más la ve).
  */
 function feedHtml({ S, en, lang, items, page, paginas, link, barra, final, vacio, resumenN, masFormas, lineaTiempo = '' }) {
   const cab = `<div class="feed-lado" id="arriba">
@@ -1020,6 +1022,7 @@ function feedHtml({ S, en, lang, items, page, paginas, link, barra, final, vacio
   <div class="feed-cab">
     ${barra}
     ${lineaTiempo}
+    <div id="rp-fijadas" class="feed-fijadas" hidden></div>
   </div>
   <div class="feed" id="feed" data-pagina="${page}">
     ${page > 1 ? `<div class="feed-mas"><a class="pill" href="${esc(link({ p: page - 1 }))}" rel="prev">${esc(S.prev)}</a></div>` : ''}
@@ -1031,7 +1034,8 @@ function feedHtml({ S, en, lang, items, page, paginas, link, barra, final, vacio
     <button type="button" class="feed-ir" data-feed-ir="-1" aria-label="${esc(S.prevItem)}">${ic('arriba', 24)}</button>
     <button type="button" class="feed-ir" data-feed-ir="1" aria-label="${esc(S.nextItem)}">${ic('abajo', 24)}</button>
   </nav>
-  ${masFormas}`;
+  ${masFormas}
+  <script src="/assets/fijada.js?v=1" defer data-lang="${en ? 'en' : 'es'}"></script>`;
 }
 
 // ── Una categoría en una ciudad ────────────────────────────────────────────

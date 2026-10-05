@@ -11,7 +11,8 @@
 // ni pasa por el contador de visitas (la dirección lleva el código). La pinta
 // `assets/rrpp-enlace.js` (el mismo código en el servidor y en el
 // navegador), que en el navegador además abre el enlace con la sesión de
-// «Tu cuenta» si la hay (para apuntar a la persona esta noche).
+// «Tu cuenta» si la hay (para apuntar a la persona en esta sesión del
+// local). Fuera del horario de la lista, dice cuándo abre (`link_closed`).
 
 import { esc, html, rpc, rpcAll, supabasePublic } from './page.js';
 import { datosDeNegocios, publicPage } from './public.js';
@@ -35,7 +36,7 @@ export async function promoterLinkPage(rawCode, lang) {
   const sp = supabasePublic();
   // El script del navegador: la sesión (apuntarse) y, si el servidor no ha
   // podido, abrir el enlace desde aquí.
-  const script = (pendiente) => `${pendiente ? '<script src="/assets/zona.js?v=1" defer></script>\n<script src="/assets/tarjeta.js?v=4" defer></script>\n' : ''}<script src="/assets/rrpp-enlace.js?v=1" defer data-lang="${en ? 'en' : 'es'}" data-url="${esc(sp.url)}" data-key="${esc(sp.key)}"></script>`;
+  const script = (pendiente) => `${pendiente ? '<script src="/assets/zona.js?v=1" defer></script>\n<script src="/assets/tarjeta.js?v=4" defer></script>\n' : ''}<script src="/assets/rrpp-enlace.js?v=2" defer data-lang="${en ? 'en' : 'es'}" data-url="${esc(sp.url)}" data-key="${esc(sp.key)}"></script>`;
   const pagina = ({ body, title, description, status = 200, image }) => privada(publicPage({
     lang, path, body, title, description, image, head: HEAD, contador: false, privada: true,
   }), status);
@@ -54,9 +55,13 @@ export async function promoterLinkPage(rawCode, lang) {
     });
   }
   if (!d || d.ok !== true) {
-    const txt = { link_paused: S.paused, link_expired: S.expired, link_inactive: S.inactive }[d?.error] || S.notFound;
+    // Fuera del horario de la lista: cuándo abre, en la hora del negocio.
+    const tzCerrada = d?.error === 'link_closed' && d.business?.id
+      ? (await datosDeNegocios([d.business.id]).catch(() => null))?.zonas?.get(d.business.id) : null;
+    const txt = d?.error === 'link_closed' ? KR.abre(d.opens_at, lang, tzCerrada)
+      : { link_paused: S.paused, link_expired: S.expired, link_inactive: S.inactive }[d?.error] || S.notFound;
     return pagina({
-      body: KR.noVale(d?.error, d?.business, lang), title: txt, description: txt,
+      body: KR.noVale(d?.error, d?.business, lang, d, tzCerrada), title: txt, description: txt,
       status: !d || d.error === 'link_not_found' ? 404 : 200,
     });
   }

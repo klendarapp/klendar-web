@@ -43,11 +43,21 @@ function rrppHora(hhmm) {
   return EN ? `${String(h).padStart(2, '0')}:${m[2]}` : `${h === 1 ? 'la' : 'las'} ${h}:${m[2]}`;
 }
 
+/** «Esta lista abre hoy a las 22:00» / «el viernes a las 22:00». */
+function rrppAbre(iso) {
+  if (globalThis.KlendarRrpp?.abre) return globalThis.KlendarRrpp.abre(iso, EN ? 'en' : 'es');
+  const f = iso ? new Date(iso) : null;
+  if (!f || Number.isNaN(f.getTime())) return EN ? 'This list is closed right now.' : 'Esta lista está cerrada ahora.';
+  const dia = f.toLocaleDateString(EN ? 'en-GB' : 'es-ES', { weekday: 'long', day: 'numeric', month: 'short' });
+  const hora = f.toLocaleTimeString(EN ? 'en-GB' : 'es-ES', { hour: 'numeric', minute: '2-digit', hour12: false });
+  return EN ? `This list opens on ${dia} at ${hora}` : `Esta lista abre el ${dia} ${hora.startsWith('1:') ? 'a la' : 'a las'} ${hora}`;
+}
+
 /** Los errores nuevos de `start_redemption` con un enlace de RRPP: una
  * pantalla que lo cuenta (no un error suelto). Devuelve true si era uno. */
 async function rrppErrorCodigo(e, id, rp) {
   const clave = e?.clave || '';
-  if (!/^promoter_(only|quota_full|time_over|self|team)$/.test(clave)) return false;
+  if (!/^promoter_(only|quota_full|time_over|self|team|list_closed)$/.test(clave)) return false;
   const d = e.datos || {};
   let nombre = '';
   if (clave === 'promoter_quota_full' && rp) {
@@ -62,6 +72,9 @@ async function rrppErrorCodigo(e, id, rp) {
     promoter_time_over: EN ? `It's too late: it was valid until ${rrppHora(d.until)}.` : `Ya es tarde: valía hasta ${rrppHora(d.until)}.`,
     promoter_self: t('Es tu propio enlace: no puedes apuntarte a tu lista.'),
     promoter_team: t('Eres del equipo de este negocio: no cuentas para ningún RRPP.'),
+    // Fuera del horario de la lista: cuándo abre (la misma frase que la
+    // página del enlace, `assets/rrpp-enlace.js` si está cargado).
+    promoter_list_closed: rrppAbre(d.opens_at),
   }[clave];
   // Sin un enlace que la tenga, su ficha no se abre: al negocio.
   const botones = clave === 'promoter_only'

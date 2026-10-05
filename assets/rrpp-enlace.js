@@ -8,7 +8,9 @@
 // para el navegador (script clásico, `KlendarRrpp` en `window`):
 //
 // - Con una sesión de «Tu cuenta» guardada, vuelve a abrir el enlace con
-//   ella: así la persona queda apuntada con ese RRPP esta noche (como en la
+//   ella: así la persona queda apuntada con ese RRPP en esta sesión del
+//   local (fuera del horario de la lista no apunta y la página dice cuándo
+//   abre; como en la
 //   app) y, si es el propio RRPP o alguien del equipo, se le dice.
 // - Si el servidor no ha podido abrirlo (`rate_limited`: el tope por
 //   conexión, y desde el servidor todas las visitas salen por la misma), lo
@@ -47,6 +49,11 @@
       paused: 'Este enlace está en pausa.',
       expired: 'Este enlace ha caducado.',
       inactive: 'Este enlace ya no funciona.',
+      closedNow: 'Esta lista está cerrada ahora.',
+      opensToday: (h, t) => `Esta lista abre hoy ${h === 1 ? 'a la' : 'a las'} ${t}`,
+      opensTomorrow: (h, t) => `Esta lista abre mañana ${h === 1 ? 'a la' : 'a las'} ${t}`,
+      opensOn: (d, h, t) => `Esta lista abre el ${d} ${h === 1 ? 'a la' : 'a las'} ${t}`,
+      closedBody: 'Hasta entonces no se puede conseguir la oferta de la lista.',
       see: (b) => `Ver ${b}`,
       explore: 'Ver qué hay ahora',
       loading: 'Cargando…',
@@ -70,6 +77,11 @@
       paused: 'This link is paused.',
       expired: 'This link has expired.',
       inactive: 'This link no longer works.',
+      closedNow: 'This list is closed right now.',
+      opensToday: (h, t) => `This list opens today at ${t}`,
+      opensTomorrow: (h, t) => `This list opens tomorrow at ${t}`,
+      opensOn: (d, h, t) => `This list opens on ${d} at ${t}`,
+      closedBody: "Until then, the offers on this list aren't available.",
       see: (b) => `See ${b}`,
       explore: "See what's on now",
       loading: 'Loading…',
@@ -146,21 +158,45 @@
   ${resto.length ? `<div class="tjs">${resto.join('')}</div>` : `<p class="muted">${esc(s.none)}</p>`}`;
   }
 
-  /** Un enlace que no vale: el motivo y, si se sabe, «Ver <negocio>». */
-  function noVale(error, b, lang) {
+  /** «Esta lista abre hoy a las 22:00» / «el viernes a las 22:00» (en la
+   * hora del negocio). Sin fecha: «Esta lista está cerrada ahora.». */
+  function abre(iso, lang, tz) {
     const s = S(lang);
-    const txt = error === 'link_paused' ? s.paused : error === 'link_expired' ? s.expired
-      : error === 'link_inactive' ? s.inactive : s.notFound;
+    const t = iso ? new Date(iso) : null;
+    if (!t || Number.isNaN(t.getTime())) return s.closedNow;
+    const zona = tz || 'Europe/Madrid';
+    const loc = lang === 'en' ? 'en-GB' : 'es-ES';
+    const f = (o) => new Intl.DateTimeFormat(loc, { ...o, timeZone: zona }).format(t);
+    const diaDe = (x) => new Intl.DateTimeFormat('en-CA', { timeZone: zona, year: 'numeric', month: '2-digit', day: '2-digit' }).format(x);
+    const hora = f({ hour: lang === 'en' ? '2-digit' : 'numeric', minute: '2-digit', hour12: false });
+    const h = Number(hora.split(':')[0]);
+    const dia = diaDe(t);
+    if (dia === diaDe(new Date())) return s.opensToday(h, hora);
+    if (dia === diaDe(new Date(Date.now() + 864e5))) return s.opensTomorrow(h, hora);
+    const lejos = t.getTime() - Date.now() > 6 * 864e5;
+    return s.opensOn(f(lejos ? { weekday: 'long', day: 'numeric', month: 'short' } : { weekday: 'long' }), h, hora);
+  }
+
+  /** Un enlace que no vale: el motivo y, si se sabe, «Ver <negocio>». Fuera
+   * del horario de la lista (`link_closed`), cuándo abre y de quién es. */
+  function noVale(error, b, lang, d, tz) {
+    const s = S(lang);
+    const cerrada = error === 'link_closed';
+    const txt = cerrada ? abre(d && d.opens_at, lang, tz)
+      : error === 'link_paused' ? s.paused : error === 'link_expired' ? s.expired
+        : error === 'link_inactive' ? s.inactive : s.notFound;
     const explorar = lang === 'en' ? '/en/explore/' : '/explorar/';
+    const quien = cerrada ? [s.list(nombreDe(d && d.promoter, lang)), b && b.name].filter(Boolean).join(' · ') : '';
     return `
   <section class="vacio">
     <h1>${esc(txt)}</h1>
+    ${cerrada ? `<p>${esc(quien)}</p><p class="muted">${esc(s.closedBody)}</p>` : ''}
     <div class="vacio-botones">${b && b.name ? `<a class="pill accent" href="${esc(fichaNegocio(b, lang))}">${esc(s.see(b.name))}</a>
       <a class="pill" href="${explorar}">${esc(s.explore)}</a>` : `<a class="pill accent" href="${explorar}">${esc(s.explore)}</a>`}</div>
   </section>`;
   }
 
-  const KlendarRrpp = { T, codigoValido, hastaLa, nombreDe, lineas, aviso, cuerpo, noVale, fichaOferta };
+  const KlendarRrpp = { T, codigoValido, hastaLa, nombreDe, lineas, aviso, cuerpo, noVale, abre, fichaOferta };
   globalThis.KlendarRrpp = KlendarRrpp;
   if (typeof module === 'object' && module && module.exports) module.exports = KlendarRrpp;
 
@@ -208,7 +244,7 @@
   function pinta(d, normales) {
     if (!d || d.ok === false) {
       if (d && d.error === 'rate_limited') { error(); return; }
-      caja.innerHTML = noVale(d && d.error, d && d.business, lang);
+      caja.innerHTML = noVale(d && d.error, d && d.business, lang, d);
       return;
     }
     if (!KT()) { error(); return; }

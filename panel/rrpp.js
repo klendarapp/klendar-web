@@ -35,6 +35,7 @@ const RRPP_ERRORES = {
   expires_in_past: () => bi('La caducidad tiene que ser una fecha futura.', 'The expiry has to be a future date.'),
   not_active: () => bi('Esa persona ya no es RRPP de tu negocio.', 'That person is no longer one of your promoters.'),
   not_on_list: () => bi('Ese código no está en las listas de esta noche.', "That code isn't on tonight's lists."),
+  invalid_schedule: () => bi('Elige al menos un día y las dos horas.', 'Choose at least one day and both times.'),
 };
 /** El error dicho para el negocio. `enlaces`: «too_many» habla de enlaces. */
 function rrppError(e, enlaces = false) {
@@ -54,8 +55,10 @@ const rrppAvatar = (p) => (/^https:\/\//.test(p?.avatar || '')
   ? `<img class="thumb rrpp-av" src="${esc(p.avatar)}" alt="" loading="lazy" referrerpolicy="no-referrer">`
   : `<span class="ph rrpp-av" aria-hidden="true">${esc(rrppNombre(p).charAt(0).toUpperCase() || '·')}</span>`);
 
-// ── Las noches: de 6:00 a 6:00 en la hora del negocio ───────────────────────
-/** La noche de ahora («2026-10-03» hasta las 6:00 del sábado). */
+// ── Las noches: cada sesión del local (de la hora de abrir a la de cerrar;
+// sin horario, la de la oferta o el día), con la fecha del día en que abre.
+// La base la da (`tonight`); esto es solo por si no llega.
+/** La noche de ahora, aproximada. */
 const rrppNocheHoy = () => KZ.dia(Date.now() - 6 * 36e5, TZ);
 const rrppMenos = (iso, n) => {
   const [y, m, d] = iso.split('-').map(Number);
@@ -251,6 +254,74 @@ PAGES.rrpp = async (v, param) => {
 };
 
 // ── #/rrpp/<id>: la ficha de un RRPP ─────────────────────────────────────────
+// ── Cuándo funciona la lista ────────────────────────────────────────────────
+// Como el horario del local: {"5": [["22:00", "03:00"]], …} (lunes = 1). Aquí
+// se elige un tramo, el mismo en los días marcados. null = el de serie
+// (cuando el local está abierto; en un enlace, como su RRPP).
+const rrppDiaSem = (d, forma = 'long') => new Intl.DateTimeFormat(LOC(), { weekday: forma, timeZone: 'UTC' })
+  .format(new Date(Date.UTC(2024, 0, d)));
+const rrppHoraCorta = (hhmm) => String(hhmm || '').replace(/^0(\d):/, '$1:');
+/** «Viernes y sábado, de 22:00 a 3:00». */
+function rrppHorarioTxt(s) {
+  const grupos = new Map();
+  for (const d of Object.keys(s || {}).map(Number).sort()) {
+    for (const t of s[d] || []) {
+      const k = `${t[0]}|${t[1]}`;
+      grupos.set(k, [...(grupos.get(k) || []), d]);
+    }
+  }
+  const y = bi(' y ', ' and ');
+  return [...grupos.entries()].map(([k, dias]) => {
+    const [a, b] = k.split('|');
+    const nombres = dias.map((d) => rrppDiaSem(d));
+    let txt = dias.length === 7 ? bi('Todos los días', 'Every day')
+      : nombres.length < 2 ? nombres.join('') : `${nombres.slice(0, -1).join(', ')}${y}${nombres[nombres.length - 1]}`;
+    txt = txt.charAt(0).toUpperCase() + txt.slice(1);
+    return bi(`${txt}, de ${rrppHoraCorta(a)} a ${rrppHoraCorta(b)}`, `${txt}, ${rrppHoraCorta(a)} to ${rrppHoraCorta(b)}`);
+  }).join(' · ');
+}
+/** «Esta lista abre hoy a las 22:00» / «el viernes a las 22:00». */
+function rrppAbreTxt(iso) {
+  if (!iso) return bi('Esta lista está cerrada ahora.', 'This list is closed right now.');
+  const hoy = KZ.hoy(TZ);
+  const dia = KZ.dia(new Date(iso).getTime(), TZ);
+  const hora = fmtHora(iso);
+  const a = Number(String(hora).split(':')[0]) === 1 ? 'a la' : 'a las';
+  if (dia === hoy) return bi(`Esta lista abre hoy ${a} ${hora}`, `This list opens today at ${hora}`);
+  if (dia === rrppMenos(hoy, -1)) return bi(`Esta lista abre mañana ${a} ${hora}`, `This list opens tomorrow at ${hora}`);
+  const nombre = KZ.fmt(iso, TZ, LOC(), { weekday: 'long', day: 'numeric', month: 'short' });
+  return bi(`Esta lista abre el ${nombre} ${a} ${hora}`, `This list opens on ${nombre} at ${hora}`);
+}
+/** Pide el horario. `deSerie`: el texto de la opción de serie. Devuelve
+ * `{ schedule }` (null = el de serie) o null si se cancela. */
+async function rrppHorarioModal(actual, deSerie) {
+  const tramo = actual ? Object.values(actual)[0]?.[0] : null;
+  const f = await modal({
+    title: bi('Cuándo funciona la lista', 'When the list is open'),
+    intro: esc(bi('Fuera de este horario, el enlace dice cuándo abre la lista, no cuenta para el RRPP y su oferta no se puede conseguir.',
+      "Outside these hours the link says when the list opens, it doesn't count for the promoter and the offers on the list aren't available.")),
+    fields: [
+      { name: 'modo', type: 'select', label: bi('Horario', 'Hours'), value: actual ? 'propio' : 'serie',
+        options: [['serie', deSerie], ['propio', bi('Días y horas propios', 'Set days and times')]] },
+      ...[1, 2, 3, 4, 5, 6, 7].map((d) => ({ name: `d${d}`, type: 'checkbox',
+        label: rrppDiaSem(d).charAt(0).toUpperCase() + rrppDiaSem(d).slice(1),
+        value: actual ? !!actual[d] : d >= 5 && d <= 6 })),
+      { name: 'desde', type: 'time', label: bi('Desde', 'From'), value: tramo?.[0] || '22:00' },
+      { name: 'hasta', type: 'time', label: bi('Hasta', 'Until'), value: tramo?.[1] || '03:00' },
+    ],
+    submit: bi('Guardar', 'Save'),
+  });
+  if (!f) return null;
+  if (f.modo !== 'propio') return { schedule: null };
+  const dias = [1, 2, 3, 4, 5, 6, 7].filter((d) => f[`d${d}`]);
+  if (!dias.length || !/^\d{2}:\d{2}$/.test(f.desde) || !/^\d{2}:\d{2}$/.test(f.hasta)) {
+    toast(RRPP_ERRORES.invalid_schedule(), true);
+    return null;
+  }
+  return { schedule: Object.fromEntries(dias.map((d) => [String(d), [[f.desde, f.hasta]]])) };
+}
+
+// ── La ficha de un RRPP ─────────────────────────────────────────────────────
 async function rrppFicha(v, id, noche = null) {
   if (!/^[0-9a-f-]{36}$/i.test(id || '')) { location.hash = '#/rrpp'; return; }
   let r;
@@ -285,6 +356,16 @@ async function rrppFicha(v, id, noche = null) {
           <button class="btn sm bad ghost" type="button" data-rrpp-estado="removed">${esc(bi('Quitar', 'Remove'))}</button></div>` : ''}
       </div>
     </div>
+
+    ${vigente ? `<div class="card">
+      <div class="rrpp-cab-card"><h2>${esc(bi('Cuándo funciona la lista', 'When the list is open'))}</h2><span class="spacer"></span>
+        <button class="btn sm ghost" type="button" id="rrppHorario">${esc(bi('Cambiar', 'Change'))}</button></div>
+      <p style="margin:0">${esc(p.schedule ? rrppHorarioTxt(p.schedule)
+        : p.business_has_hours === false ? bi('Siempre (tu local no tiene horario)', 'Always (your venue has no opening hours)')
+          : bi('Cuando el local está abierto', 'When the venue is open'))}</p>
+      <p class="muted small" style="margin:6px 0 0">${esc(bi('Fuera de este horario, el enlace dice cuándo abre la lista, no cuenta para el RRPP y su oferta no se puede conseguir. Cada enlace puede tener el suyo.',
+        "Outside these hours the link says when the list opens, it doesn't count for the promoter and the offers on the list aren't available. Each link can have its own."))}</p>
+    </div>` : ''}
 
     ${vigente ? `<div class="card">
       <div class="rrpp-cab-card"><h2>${esc(bi('Enlaces y QR', 'Links and QR codes'))}</h2><span class="spacer"></span>
@@ -363,6 +444,34 @@ async function rrppFicha(v, id, noche = null) {
     };
   });
 
+  // Cuándo funciona su lista (y la de cada enlace).
+  const horarioBtn = $('#rrppHorario', v);
+  if (horarioBtn) {
+    horarioBtn.onclick = async () => {
+      const r2 = await rrppHorarioModal(p.schedule || null, p.business_has_hours === false
+        ? bi('Siempre (tu local no tiene horario)', 'Always (your venue has no opening hours)')
+        : bi('Cuando el local está abierto', 'When the venue is open'));
+      if (!r2) return;
+      try {
+        rrppOk(await rpc('set_promoter_schedule', { p_promoter: id, p_schedule: r2.schedule }));
+        toast(bi('Guardado', 'Saved'));
+        repinta();
+      } catch (e) { toast(rrppError(e), true); }
+    };
+  }
+  $$('[data-rrpp-horario-enlace]', v).forEach((b) => {
+    b.onclick = async () => {
+      const l = (r.links || []).find((x) => x.id === b.dataset.id);
+      const r2 = await rrppHorarioModal(l?.schedule || null, bi('Como el RRPP', 'Same as the promoter'));
+      if (!r2) return;
+      try {
+        rrppOk(await rpc('set_promoter_link_schedule', { p_link: b.dataset.id, p_schedule: r2.schedule }));
+        toast(bi('Guardado', 'Saved'));
+        repinta();
+      } catch (e) { toast(rrppError(e, true), true); }
+    };
+  });
+
   // Enlaces: nuevo, copiar, QR, pausar y quitar.
   const nuevoBtn = $('#rrppNuevo', v);
   if (nuevoBtn) {
@@ -416,7 +525,8 @@ function rrppEnlaceHtml(l) {
   const url = rrppUrl(l.code);
   const estado = l.state === 'paused' ? `<span class="tag warn">${esc(bi('En pausa', 'Paused'))}</span>`
     : l.state === 'expired' ? `<span class="tag dim">${esc(bi('Caducado', 'Expired'))}</span>`
-      : l.state === 'inactive' ? `<span class="tag bad">${esc(bi('No funciona', "Doesn't work"))}</span>` : '';
+      : l.state === 'inactive' ? `<span class="tag bad">${esc(bi('No funciona', "Doesn't work"))}</span>`
+        : l.state === 'closed' ? `<span class="tag dim">${esc(bi('Fuera de horario', 'Outside its hours'))}</span>` : '';
   const caduca = !l.expires_at ? bi('Sin caducidad', 'No expiry')
     : l.state === 'expired' ? '' : bi(`Caduca el ${fmtDate(l.expires_at)}`, `Expires on ${fmtDate(l.expires_at)}`);
   const n = Number(l.opens) || 0;
@@ -426,10 +536,12 @@ function rrppEnlaceHtml(l) {
     <div class="rrpp-enlace-t">
       <p style="margin:0"><b>${esc(l.label || l.code)}</b> ${estado}</p>
       <p class="rrpp-url">${esc(url.replace(/^https?:\/\//, ''))}</p>
-      <p class="muted small" style="margin:0">${esc([caduca, visitas].filter(Boolean).join(' · '))}</p>
+      <p class="muted small" style="margin:0">${esc([caduca, l.schedule ? rrppHorarioTxt(l.schedule) : '', visitas].filter(Boolean).join(' · '))}</p>
+      ${l.state === 'closed' ? `<p class="muted small" style="margin:2px 0 0">${esc(rrppAbreTxt(l.opens_at))}</p>` : ''}
       <div class="actions" style="margin-top:10px">
         <button class="btn sm" type="button" data-rrpp-copiar="${esc(url)}">${esc(bi('Copiar enlace', 'Copy link'))}</button>
         <button class="btn sm ghost" type="button" data-rrpp-qr="${esc(l.code)}">${esc(bi('Descargar QR', 'Download QR code'))}</button>
+        <button class="btn sm ghost" type="button" data-rrpp-horario-enlace data-id="${esc(l.id)}">${esc(bi('Horario', 'Hours'))}</button>
         <button class="btn sm ghost" type="button" data-rrpp-pausa="${l.paused ? '0' : '1'}" data-id="${esc(l.id)}">${esc(l.paused ? bi('Reanudar el enlace', 'Resume the link') : bi('Pausar el enlace', 'Pause the link'))}</button>
         <button class="btn sm bad ghost" type="button" data-rrpp-quita-enlace data-id="${esc(l.id)}">${esc(bi('Quitar el enlace', 'Remove the link'))}</button>
       </div>
@@ -516,6 +628,7 @@ function rrppFormularioHtml(o, datos) {
   const aud = o.audience || 'all';
   const scope = o.promoter_scope === 'some' ? 'some' : 'all';
   const hasta = (o.promoter_code_until || '').slice(0, 5);
+  // De serie, «Mientras dure la publicación» (no «hasta la 1:00»).
   const validez = hasta ? 'hasta' : o.promoter_code_hours ? 'horas' : 'siempre';
   const ps = datos?.promotores || [];
   return `<div id="rrppOpc" class="rrpp-opc" ${aud === 'promoters' ? '' : 'hidden'}>
@@ -535,15 +648,18 @@ function rrppFormularioHtml(o, datos) {
     </div>
     <p class="hint">${esc(bi('Los códigos anulados o caducados devuelven la plaza.', 'Cancelled or expired codes give the place back.'))}</p>
     <p class="rrpp-preg">${esc(bi('¿Hasta cuándo vale el código?', 'How long is the code valid?'))}</p>
+    <label class="opcion"><input type="radio" name="rrpp_validez" value="siempre" ${validez === 'siempre' ? 'checked' : ''}><span>${esc(bi('Mientras dure la publicación', 'While the publication lasts'))}</span></label>
+    <p class="hint" style="margin:0 0 6px 28px">${esc(bi('El código vale hasta que termine el evento o la oferta.', 'The code is valid until the event or the offer ends.'))}</p>
     <div class="rrpp-fila">
-      <label class="opcion"><input type="radio" name="rrpp_validez" value="hasta" ${validez === 'hasta' ? 'checked' : ''}><span>${esc(bi('Hasta una hora', 'Until a set time'))}</span></label>
-      <input type="time" name="promoter_code_until" value="${esc(hasta || '01:00')}" aria-label="${esc(bi('Hasta una hora', 'Until a set time'))}">
+      <label class="opcion"><input type="radio" name="rrpp_validez" value="hasta" ${validez === 'hasta' ? 'checked' : ''}><span>${esc(bi('Hasta una hora fija', 'Until a set time'))}</span></label>
+      <input type="time" name="promoter_code_until" value="${esc(hasta || '01:00')}" aria-label="${esc(bi('Hasta una hora fija', 'Until a set time'))}">
     </div>
     <div class="rrpp-fila">
-      <label class="opcion"><input type="radio" name="rrpp_validez" value="horas" ${validez === 'horas' ? 'checked' : ''}><span>${esc(bi('Unas horas desde que se consigue', 'A few hours after getting it'))}</span></label>
+      <label class="opcion"><input type="radio" name="rrpp_validez" value="horas" ${validez === 'horas' ? 'checked' : ''}><span>${esc(bi('Durante', 'For'))}</span></label>
       <input type="number" name="promoter_code_hours" min="1" max="24" step="1" value="${esc(o.promoter_code_hours || 3)}" aria-label="${esc(bi('Horas', 'Hours'))}">
+      <span>${esc(bi('horas desde que se apunta', 'hours after signing up'))}</span>
     </div>
-    <label class="opcion"><input type="radio" name="rrpp_validez" value="siempre" ${validez === 'siempre' ? 'checked' : ''}><span>${esc(bi('Como siempre', 'As usual'))}</span></label>
+    <p class="hint" style="margin:6px 0 0">${esc(bi('Nunca pasa del final de la publicación.', 'It never goes past the end of the publication.'))}</p>
   </div>`;
 }
 
@@ -552,6 +668,10 @@ function rrppFormularioEngancha(v) {
   const sync = () => {
     const aud = $('[name=audience]:checked', v)?.value || 'all';
     $('#rrppOpc', v).hidden = aud !== 'promoters';
+    // En una de RRPP manda «¿Hasta cuándo vale el código?», no los minutos
+    // de «¿Cuánto vale el código QR?» (pensados para enseñarlo en el local).
+    const ttl = $('[name=code_ttl_minutes]', v)?.closest('label');
+    if (ttl) ttl.hidden = aud === 'promoters';
     $('#rrppAlgunos', v).hidden = ($('[name=promoter_scope]:checked', v)?.value || 'all') !== 'some';
     const sin = $('[name=rrpp_sin_limite]', v).checked;
     $('[name=promoter_quota]', v).disabled = sin;
