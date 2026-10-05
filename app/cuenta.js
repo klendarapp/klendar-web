@@ -35,7 +35,9 @@ const distancia = (m) => (m < 1000 ? `${m} m` : `${(m / 1000).toLocaleString(LOC
 let CATEGORIAS = null;
 async function categorias() {
   if (!CATEGORIAS) {
-    CATEGORIAS = await tabla(sb.from('categories').select('id, slug, names, position').order('position'));
+    // Todas las columnas: `category_group` (el grupo del selector) solo existe
+    // con la migración 20261114100000; sin ella, el grupo sale del slug.
+    CATEGORIAS = await tabla(sb.from('categories').select('*').order('position'));
   }
   return CATEGORIAS;
 }
@@ -366,9 +368,8 @@ RUTAS.alerta = async ([id], params, crudo) => {
     <form class="formu" id="f" novalidate>
       <label>${esc(t('Nombre'))} <small>${esc(t('(opcional, p. ej. «sushi cerca de casa»)'))}</small>
         <input name="label" maxlength="60" value="${esc(a.label || '')}"></label>
-      <fieldset class="chips"><legend>${esc(t('¿De qué?'))} <small>${esc(t('Sin elegir ninguna, de todo.'))}</small></legend>
-        ${cats.map((c) => `<label><input type="checkbox" name="cat" value="${esc(c.id)}"${(a.categories || []).includes(c.id) ? ' checked' : ''}> ${esc(nombreCat(c))}</label>`).join('')}
-      </fieldset>
+      <div class="campo-cat"><p class="etq" aria-hidden="true">${esc(t('¿De qué?'))} <small>${esc(t('Sin elegir ninguna, de todo.'))}</small></p>
+        <div id="cats-aviso"></div></div>
       <fieldset class="chips"><legend>${esc(t('¿Ofertas o eventos?'))}</legend>
         ${[['', t('Todo')], ['flash_offer', t('Ofertas flash')], ['future_event', t('Eventos')]].map(([v, l]) =>
           `<label><input type="radio" name="kind" value="${v}"${(a.kind || '') === v ? ' checked' : ''}> ${esc(l)}</label>`).join('')}
@@ -391,6 +392,10 @@ RUTAS.alerta = async ([id], params, crudo) => {
     </form>`);
 
   const f = $('#f');
+  // El selector de categorías de toda la web (/assets/categorias.js).
+  KlendarCategorias.campo($('#cats-aviso'), {
+    cats, elegidas: a.categories || [], multiple: true, lang: EN ? 'en' : 'es', nombre: 'cat', titulo: t('¿De qué?'), vacio: t('Todo'),
+  });
   let lat = a.lat;
   let lng = a.lng;
   const pintaFija = () => {
@@ -432,7 +437,7 @@ RUTAS.alerta = async ([id], params, crudo) => {
       await llamar('save_offer_alert', paramsAlerta({
         id: a.id,
         label: f.label.value.trim(),
-        categories: $$('input[name=cat]:checked', f).map((x) => x.value),
+        categories: $$('input[name=cat]', f).map((x) => x.value),
         kind: f.kind.value || null,
         max_price_cents: precio == null ? null : Math.round(precio * 100),
         discount_only: f.descuento.checked,
@@ -562,9 +567,8 @@ RUTAS.ajustes = async () => {
         <div id="cerca-mas" ${prefs.notify_nearby ? '' : 'hidden'}>
           <label>${esc(t('¿A cuánta distancia?'))}
             <select name="radio">${[500, 1000, 2000, 5000].map((r) => `<option value="${r}"${prefs.nearby_radius_m === r ? ' selected' : ''}>${esc(distancia(r))}</option>`).join('')}</select></label>
-          <fieldset class="chips"><legend>${esc(t('¿De qué?'))} <small>${esc(t('Sin elegir ninguna, de todo.'))}</small></legend>
-            ${cats.map((c) => `<label><input type="checkbox" name="cat" value="${esc(c.id)}"${(prefs.nearby_categories || []).includes(c.id) ? ' checked' : ''}> ${esc(nombreCat(c))}</label>`).join('')}
-          </fieldset>
+          <div class="campo-cat"><p class="etq" aria-hidden="true">${esc(t('¿De qué?'))} <small>${esc(t('Sin elegir ninguna, de todo.'))}</small></p>
+            <div id="cats-cerca"></div></div>
         </div>
         <fieldset class="horas"><legend>${esc(t('Horas de silencio'))} <small>${esc(t('Lo que llegue en ese tramo te lo mandamos al terminar. Déjalo vacío para no usarlas.'))}</small></legend>
           <label>${esc(t('Desde'))} <input type="time" name="desde" value="${esc(hora(prefs.quiet_hours_start))}"></label>
@@ -690,6 +694,10 @@ RUTAS.ajustes = async () => {
 
   // Avisos
   const fa = $('#f-avisos');
+  // «Cerca de ti»: el selector de categorías de toda la web.
+  KlendarCategorias.campo($('#cats-cerca'), {
+    cats, elegidas: prefs.nearby_categories || [], multiple: true, lang: EN ? 'en' : 'es', nombre: 'cat', titulo: t('¿De qué?'), vacio: t('Todo'),
+  });
   fa.cerca.addEventListener('change', () => { $('#cerca-mas').hidden = !fa.cerca.checked; });
   fa.addEventListener('submit', (ev) => {
     ev.preventDefault();
@@ -698,7 +706,7 @@ RUTAS.ajustes = async () => {
     if (!!desde !== !!hasta) { $('#err-avisos').textContent = t('Pon las dos horas de silencio, o ninguna.'); return; }
     $('#err-avisos').textContent = '';
     ocupado($('#g-avisos'), async () => {
-      const elegidas = $$('input[name=cat]:checked', fa).map((x) => x.value);
+      const elegidas = $$('input[name=cat]', fa).map((x) => x.value);
       await llamar('update_notification_preferences', { p: {
         notify_favorites: fa.fav.checked,
         notify_nearby: fa.cerca.checked,

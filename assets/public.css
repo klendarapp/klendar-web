@@ -670,3 +670,31 @@ body.pagina-feed[data-cromo="fuera"] .feed-cab { visibility: hidden; }
   .pagina-feed .feed-cab .tiempo-fuente { display: block; }
   .pagina-feed .feed-cab .tiempo-quitar { margin-left: 6px; }
 }
+
+/* ══ La hoja de filtros por orden de uso (2026-10-06) ═══════════════════════
+   ¿Cuándo? · Qué · Categorías (8 y «Ver todas», que abre el selector de
+   /assets/categorias.js) · Distancia · Precio · «Más filtros» plegado; «Según
+   el tiempo» pasa al menú de orden. Sin JavaScript, el resto de categorías
+   sale debajo, por grupos. */
+.op-mas { min-height: 40px; padding: 8px 14px; border-radius: 999px; border: 1px dashed var(--glass-border); background: none; color: var(--ink);
+  font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+.op-mas:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.cat-mas { margin-top: 6px; }
+.pub .cat-grupo { margin: 12px 0 6px; font-size: 13px; font-weight: 700; color: var(--ink-2); }
+details.hoja-mas { margin: 4px 0 8px; border: 1px solid var(--glass-border); border-radius: 18px; background: var(--glass); }
+details.hoja-mas > summary { display: flex; align-items: center; gap: 10px; padding: 12px 14px 12px 16px; cursor: pointer; list-style: none; min-height: 44px; }
+details.hoja-mas > summary::-webkit-details-marker { display: none; }
+details.hoja-mas > summary:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 18px; }
+.hoja-mas-t { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.hoja-mas-t b { font-size: 15px; }
+.hoja-mas-t small { font-size: 13px; color: var(--ink-2); }
+.hoja-mas-n { flex: none; padding: 3px 10px; border-radius: 999px; background: var(--ink); color: var(--surface); font-size: 13px; font-weight: 700; }
+details.hoja-mas > summary .ic { flex: none; color: var(--ink-2); transition: transform .2s; }
+details.hoja-mas[open] > summary .ic { transform: rotate(180deg); }
+details.hoja-mas > fieldset { margin: 4px 16px 14px; }
+.menu-sep { margin: 6px 4px; border: 0; border-top: 1px solid var(--glass-border); }
+.pub .menu-nota { margin: 2px 12px 8px; max-width: 280px; font-size: 12px; color: var(--ink-2); }
+.menu-nota a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+.op-check { width: 18px; height: 18px; flex: none; border-radius: 5px; border: 2px solid currentColor; display: inline-grid; place-items: center; }
+.op.on .op-check::after { content: '✓'; font-size: 13px; font-weight: 800; line-height: 1; }
+@media (prefers-reduced-motion: reduce) { details.hoja-mas > summary .ic { transition: none; } }

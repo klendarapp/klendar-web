@@ -18,6 +18,7 @@ import {
   agendaBase, bizPath, cityLinks, collectionBase, decodeSeg, discoverBase, exploreBase, historiaBoton, isVideo, kidsBase, ldScript,
   listingLd, publicPage, todayBase,
 } from './public.js';
+import KC from '../../assets/categorias.js';
 import { SITIO, icSitio, icTiempo, nombreSitio, ordenaSitio, sitioAUrl, sitioDeUrl } from './sitio.js';
 import { FUENTE_TIEMPO, dondeTiempo, tiempoDeHoy } from './tiempo.js';
 import { rejilla, tarjeta } from './tarjeta.js';
@@ -56,7 +57,7 @@ const T = (en) => en
       live: (n) => `${n} on right now`,
       picks: 'Selections', seeProfile: 'See the place', more: 'More ways to explore',
       price: 'Price', any: 'Any', free: 'Free', upTo: (n) => `Up to €${n}`,
-      when: 'When?', anytime: 'Any time', now: 'Right now', today: 'Today', tomorrow: 'Tomorrow', next10: 'Next 10 days',
+      when: 'When?', anytime: 'Any time', now: 'Next 2 hours', today: 'Today', tomorrow: 'Tomorrow', next10: 'Next 10 days',
       discount: 'Discounts only', openNow: 'Open now', sort: 'Sort by', soonest: 'Soonest', newest: 'Newest', nearest: 'Nearest',
       near: 'Near me', nearOn: 'Near you', nearNo: "We couldn't get your location. Allow it in your browser and try again.",
       where: 'Where', useLoc: 'Use my location', nearPrompt: 'See what’s closest to you first.',
@@ -102,6 +103,11 @@ const T = (en) => en
       weatherData: 'Weather data:',
       rainLine: "It's raining today: indoor plans first", sunLine: 'Nice weather today: terraces and outdoor plans first',
       weatherOff: 'Turn off',
+      // La hoja por orden de uso (2026-10-06).
+      what: 'What', whatHint: 'Flash offers: deals that last a few hours. Events: on a set day and time.',
+      openNowHint: "The venue, going by today's opening hours",
+      moreF: 'More filters', moreFHint: 'The place (terrace, Wi-Fi…), open now, discounts only', moreFN: (n) => `${n} on`,
+      showN: (n) => (n === 1 ? 'Show 1 result' : `Show ${n} results`), showMany: (n) => `Show more than ${n} results`,
     }
   : {
       exp: 'Explorar', disc: 'Descubre', agenda: 'Agenda local', search: 'Buscar', ph: 'Un bar, un mercadillo, «brunch»…',
@@ -128,7 +134,7 @@ const T = (en) => en
       live: (n) => `${n} ahora mismo`,
       picks: 'Selecciones', seeProfile: 'Ver el sitio', more: 'Más formas de explorar',
       price: 'Precio', any: 'Cualquiera', free: 'Gratis', upTo: (n) => `Hasta ${n} €`,
-      when: '¿Cuándo?', anytime: 'Cuando sea', now: 'Ahora mismo', today: 'Hoy', tomorrow: 'Mañana', next10: 'Próximos 10 días',
+      when: '¿Cuándo?', anytime: 'Cuando sea', now: 'Próximas 2 horas', today: 'Hoy', tomorrow: 'Mañana', next10: 'Próximos 10 días',
       discount: 'Solo con descuento', openNow: 'Abierto ahora', sort: 'Ordenar', soonest: 'Más pronto', newest: 'Novedades', nearest: 'Más cerca',
       near: 'Cerca de mí', nearOn: 'Cerca de ti', nearNo: 'No hemos podido saber dónde estás. Permítelo en el navegador y vuelve a probar.',
       where: 'Dónde', useLoc: 'Usar mi ubicación', nearPrompt: 'Mira primero lo que tienes más cerca.',
@@ -170,6 +176,12 @@ const T = (en) => en
       weatherData: 'Datos del tiempo:',
       rainLine: 'Hoy llueve: primero, planes bajo techo', sunLine: 'Hace buen tiempo: primero, terrazas y aire libre',
       weatherOff: 'Quitar',
+      // La hoja por orden de uso (2026-10-06).
+      what: 'Qué', whatHint: 'Ofertas flash: descuentos que duran unas horas. Eventos: con día y hora.',
+      openNowHint: 'El local, según su horario de hoy',
+      moreF: 'Más filtros', moreFHint: 'El sitio (terraza, wifi…), abierto ahora, solo con descuento',
+      moreFN: (n) => (n === 1 ? '1 activo' : `${n} activos`),
+      showN: (n) => (n === 1 ? 'Ver 1 resultado' : `Ver ${n} resultados`), showMany: (n) => `Ver más de ${n} resultados`,
     };
 
 const catName = (c, en) => (en ? c?.names?.en : c?.names?.es) || c?.slug || '';
@@ -410,9 +422,11 @@ function calendarioHtml({ items, lang, S, link, mes, dia, hoy }) {
 // dos páginas y con los mismos nombres:
 //   barra: Filtros · <resumen> · Zona · Estoy aquí · [Van mis amigos] · Ordenar
 //   barra: … · Estoy aquí · Con niños (el atajo de «Apto para niños») · …
-//   hoja:  Tipo · Categorías (10 y «Ver todas») · Distancia · Precio ·
-//          ¿Cuándo? · El sitio · Abierto ahora · Solo con descuento ·
-//          Según el tiempo (Restablecer arriba, Ver resultados abajo)
+//   hoja:  ¿Cuándo? · Qué · Categorías (las 8 más usadas y «Ver todas», que
+//          abre el selector de `assets/categorias.js`) · Distancia · Precio ·
+//          Más filtros (plegado: El sitio · Abierto ahora · Solo con
+//          descuento), Restablecer arriba y «Ver N resultados» abajo
+//   orden: Cercanía · Más pronto · Novedades · Según el tiempo
 // («Ocultar contenido +18» no está: la web pública nunca enseña +18. Las
 // categorías son una sola, que es lo que filtra `public_explore`.)
 //
@@ -630,6 +644,16 @@ export async function explorePage(url, lang, modo = 'explorar') {
     p_city: cerca ? null : city || null, p_category: cat || null, p_kind: pKind, p_q: q || null,
     p_filters: filtros, p_lat: cerca ? lat : null, p_lng: cerca ? lng : null,
   };
+  // «Ver N resultados»: la hoja pregunta cuántas saldrían con lo que lleva
+  // marcado (`?contar=1`, /assets/tarjetas.js). Solo el número.
+  if (url.searchParams.get('contar') === '1') {
+    const n = negocios || mapa ? null : await rpc('public_explore', { ...argsExplore, p_limit: 1, p_offset: 0 })
+      .then((r) => (typeof r?.total === 'number' ? r.total : null)).catch(() => null);
+    return new Response(JSON.stringify({ total: n }), {
+      headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'public, max-age=60, s-maxage=120', 'x-robots-tag': 'noindex' },
+    });
+  }
+
   // Con una búsqueda, arriba los negocios que encajan (como la búsqueda de la
   // app: «Negocios» y «Ofertas y eventos»).
   const conNegociosArriba = !descubre && !negocios && !mapa && !calendario && Boolean(q) && page === 1;
@@ -657,9 +681,10 @@ export async function explorePage(url, lang, modo = 'explorar') {
       ? rpc('public_businesses', { p_city: cerca ? null : city || null, p_category: cat || null, p_q: q, p_limit: 4, p_offset: 0, p_open_now: abierto }).catch(() => null)
       : null,
     tiempoP,
-    // Todas las categorías, en el orden de la app (la hoja enseña las 10
-    // primeras y «Ver todas»). Si no llegan, las que tienen algo publicado.
-    rows('categories', 'select=slug,names,icon,position&order=position.asc').catch(() => []),
+    // Todas las categorías, en el orden de la app, con su grupo si la base lo
+    // tiene (`select=*`: sin la migración 20261114100000, el grupo sale del
+    // slug). Si no llegan, las que tienen algo publicado.
+    rows('categories', 'select=*&order=position.asc').catch(() => []),
   ]);
   const catsHoja = (todasCats || []).length ? todasCats : (cats || []);
   const items = res?.items || [];
@@ -754,8 +779,11 @@ export async function explorePage(url, lang, modo = 'explorar') {
       ? opcion(link({ sort: 'nearest' }), S.sortNearest, ordenActual === 'nearest')
       : botonCerca(S.sortNearest, `${CLAVES[lang].sort}=${enIdioma('nearest', en)}`).replace(ic('cerca', 16), '')}
      ${opcion(link({ sort: 'soonest' }), S.sortSoonest, ordenActual === 'soonest')}
-     ${opcion(link({ sort: '' }), S.sortNewest, ordenActual === 'newest')}`,
-    { cls: ' orden', etiqueta: `${S.sortBy}: ${ordenTxt[ordenActual]}` });
+     ${opcion(link({ sort: '' }), S.sortNewest, ordenActual === 'newest')}
+     <hr class="menu-sep">
+     ${opcion(link({ tiempoOff: !tiempoOff }), S.byWeather, !tiempoOff, '<span class="op-check" aria-hidden="true"></span>')}
+     <p class="menu-nota">${esc(S.byWeatherHint)} ${esc(S.weatherData)} <a href="${FUENTE_TIEMPO.url}" rel="noopener" target="_blank">${FUENTE_TIEMPO.nombre}</a></p>`,
+    { cls: ' orden', etiqueta: `${S.sortBy}: ${ordenTxt[ordenActual]}${tiempoOff ? '' : `, ${S.byWeather.toLowerCase()}`}` });
 
   // La hoja de filtros: un formulario GET (va sin JavaScript), en el orden de la app.
   const nFiltros = [kind && !negocios, cat, cerca && km !== RADIO_KM, price, soloDescuento, when && !calendario, abierto,
@@ -768,35 +796,55 @@ export async function explorePage(url, lang, modo = 'explorar') {
     [K.month, calendario ? mes : ''], [K.day, calendario ? dia : ''],
     ['lat', cerca && !negocios ? posUrl(lat) : ''], ['lng', cerca && !negocios ? posUrl(lng) : ''],
     ['amigos', e.amigos ? '1' : ''], ...(negocios ? [[K.kind, enIdioma('places', en)]] : []),
-    // En «Negocios» la hoja no tiene «Según el tiempo»: se conserva como estaba.
-    [K.weather, negocios && tiempoOff ? '0' : ''],
+    // «Según el tiempo» vive en el menú de orden: la hoja lo conserva.
+    [K.weather, tiempoOff ? '0' : ''],
   ].filter(([, v]) => v).map(([k, v]) => `<input type="hidden" name="${k}" value="${esc(v)}">`).join('');
   const catActual = catsHoja.find((c) => c.slug === cat) || (cats || []).find((c) => c.slug === cat);
   const resumen = resumenFiltros(e, S, catActual ? catName(catActual, en) : '');
   const restablecer = link({ kind: negocios ? 'places' : '', cat: '', km: RADIO_KM, price: '', when: '', soloDescuento: false, abierto: false, traits: [] });
-  // Categorías: las 10 primeras (en el orden de la app) y «Ver todas (28)»,
-  // que despliega el resto (/assets/tarjetas.js; sin JavaScript salen todas).
-  // La elegida se ve siempre.
-  const CATS_VISIBLES = 10;
-  const catExtra = (c, i) => i >= CATS_VISIBLES && c.slug !== cat;
-  const hayMasCats = catsHoja.some(catExtra);
-  const catsHtml = catsHoja.length ? `<fieldset class="hoja-cats"><legend>${esc(S.categories)}</legend><div class="ops">
+  // Categorías: las 8 más usadas (las que más tienen publicado ahora, como la
+  // app) y la elegida, y «Ver todas (28)», que abre el selector con buscador y
+  // grupos (/assets/categorias.js). Sin JavaScript, el resto sale debajo,
+  // por grupos.
+  const CATS_VISIBLES = 8;
+  const porSlug = new Map(catsHoja.map((c) => [c.slug, c]));
+  const top = [];
+  for (const c of [...(cats || []).map((x) => porSlug.get(x.slug)).filter(Boolean), ...catsHoja]) {
+    if (top.length >= CATS_VISIBLES) break;
+    if (!top.includes(c)) top.push(c);
+  }
+  const elegidaCat = porSlug.get(cat);
+  if (elegidaCat && !top.includes(elegidaCat)) top.push(elegidaCat);
+  const restoCats = catsHoja.filter((c) => !top.includes(c));
+  const radioCat = (c) => `<label class="op-r" data-grupo="${esc(KC.grupoDe(c))}" data-pos="${Number(c.position) || 0}"><input type="radio" name="${K.cat}" value="${esc(c.slug)}"${cat === c.slug ? ' checked' : ''}><span>${esc(catName(c, en))}</span></label>`;
+  const catsHtml = catsHoja.length ? `<fieldset class="hoja-cats" data-selcat-hoja><legend>${esc(S.categories)}</legend>
+      <div class="ops" data-cat-visibles>
         ${radio(K.cat, '', S.all, !cat)}
-        ${catsHoja.map((c, i) => radio(K.cat, c.slug, catName(c, en), cat === c.slug, catExtra(c, i) ? 'cat-extra' : '')).join('')}
-      </div>${hayMasCats ? `<button type="button" class="ver-todas" data-ver-todas data-mas="${esc(S.seeAll(catsHoja.length))}" data-menos="${esc(S.seeLess)}" aria-expanded="false" hidden>${esc(S.seeAll(catsHoja.length))}</button>` : ''}</fieldset>` : '';
+        ${top.map(radioCat).join('')}
+        ${restoCats.length ? `<button type="button" class="op-mas" data-ver-todas data-titulo="${esc(S.categories)}" hidden>${esc(S.seeAll(catsHoja.length))} ›</button>` : ''}
+      </div>
+      ${restoCats.length ? `<div class="cat-mas" data-cat-mas>${KC.agrupa(restoCats, '').filter((g) => g.cats.length).map((g) => `<p class="cat-grupo">${esc(KC.nombreGrupo(g.id, lang))}</p>
+        <div class="ops">${g.cats.map(radioCat).join('')}</div>`).join('')}</div>` : ''}
+    </fieldset>` : '';
   // «El sitio»: los 12 atributos, varios a la vez (tienen que cumplirse todos).
   const sitioHoja = `<fieldset class="hoja-sitio"><legend>${esc(S.place)}</legend><div class="ops">
         ${SITIO.map((x) => `<label class="op-r op-sitio"><input type="checkbox" name="${K.place}" value="${esc(sitioAUrl(x.id, en))}"${traits.includes(x.id) ? ' checked' : ''}><span>${icSitio(x.id, 18)}${esc(en ? x.en : x.es)}</span></label>`).join('')}
       </div></fieldset>`;
-  // «Según el tiempo», el último: encendido de serie. Apagado viaja como
-  // `tiempo=0` (el oculto); encendido, el `1` de la casilla gana (y con
-  // JavaScript no se manda nada: es lo de serie).
-  const tiempoHoja = `<fieldset class="hoja-tiempo"><legend class="sr">${esc(S.byWeather)}</legend>
-        <input type="hidden" name="${K.weather}" value="0" data-tiempo-off>
-        <div class="ops"><label class="op-r"><input type="checkbox" name="${K.weather}" value="1" data-tiempo${tiempoOff ? '' : ' checked'}><span>${esc(S.byWeather)}</span></label></div>
-        <p class="hoja-nota hoja-nota-bajo">${esc(S.byWeatherHint)}</p>
-        <p class="hoja-nota">${esc(S.weatherData)} <a href="${FUENTE_TIEMPO.url}" rel="noopener" target="_blank">${FUENTE_TIEMPO.nombre}</a></p>
-      </fieldset>`;
+  // «Más filtros»: lo que se usa menos, plegado y diciendo cuántos lleva.
+  const nMas = (negocios ? 0 : traits.length) + (abierto ? 1 : 0) + (!negocios && soloDescuento ? 1 : 0);
+  const masHoja = `<details class="hoja-mas"${nMas ? ' data-con-algo' : ''}>
+      <summary><span class="hoja-mas-t"><b>${esc(S.moreF)}</b><small>${esc(S.moreFHint)}</small></span>
+        <span class="hoja-mas-n" data-mas-n data-uno="${esc(S.moreFN(1))}" data-varios="${esc(S.moreFN(2)).replace('2', '{n}')}"${nMas ? '' : ' hidden'}>${esc(S.moreFN(nMas))}</span>${ic('abajo', 20)}</summary>
+      ${negocios ? '' : sitioHoja}
+      <fieldset class="hoja-casillas"><legend class="sr">${esc(S.openNow)}</legend><div class="ops">
+        ${casilla(K.open, S.openNow, abierto)}
+        ${negocios ? '' : casilla(K.discount, S.discount, soloDescuento)}
+      </div><p class="hoja-nota hoja-nota-bajo">${esc(S.openNow)}: ${esc(S.openNowHint)}</p></fieldset>
+    </details>`;
+  // «Ver N resultados»: el número de lo que ya se ve; con JavaScript, se
+  // vuelve a contar al cambiar algo (en el mapa y en «Negocios», sin número).
+  const conNumero = !negocios && !mapa;
+  const verTxt = !conNumero ? S.showResults : total > 100 ? S.showMany(100) : S.showN(total);
   const hoja = `<details class="hoja" id="filtros">
     <summary class="chip chip-filtros${nFiltros ? ' on' : ''}" aria-label="${esc(`${S.filters}: ${resumen.replace(/ · /g, ', ')}`)}">${ic('tune', 16)}<span>${esc(S.filters)}</span><span class="chip-resumen">· ${esc(resumen)}</span></summary>
     <form class="hoja-cuerpo" method="get" action="${base}/" role="dialog" aria-labelledby="hojaTitulo">
@@ -805,11 +853,15 @@ export async function explorePage(url, lang, modo = 'explorar') {
         <a class="hoja-x" href="#filtros" data-cerrar-hoja aria-label="${esc(S.close)}">${ic('x', 22)}</a></div>
       ${ocultos}
       <div class="hoja-scroll">
-      ${negocios ? '' : `<fieldset><legend>${esc(S.type)}</legend><div class="ops">
+      ${negocios || calendario ? '' : `<fieldset><legend>${esc(S.when)}</legend><div class="ops">
+        ${[['', S.anytime], ['now', S.now], ['today', S.today], ['tomorrow', S.tomorrow], ['next10', S.next10]]
+          .map(([v, n]) => radio(K.when, v ? enIdioma(v, en) : '', n, when === v)).join('')}
+      </div></fieldset>`}
+      ${negocios ? '' : `<fieldset><legend>${esc(S.what)}</legend><div class="ops">
         ${radio(K.kind, '', S.all, !kind)}
         ${radio(K.kind, enIdioma('offers', en), S.offers, esOfertas)}
         ${radio(K.kind, enIdioma('events', en), S.events, esEventos)}
-      </div></fieldset>`}
+      </div><p class="hoja-nota hoja-nota-bajo">${esc(S.whatHint)}</p></fieldset>`}
       ${catsHtml}
       ${negocios ? '' : `<fieldset><legend>${esc(S.distance)}</legend>${cerca ? '' : `<p class="hoja-nota">${esc(S.distHint)}</p>`}<div class="ops">
         ${RADIOS_KM.map((k) => radio('km', k === RADIO_KM ? '' : String(k), `${k} km`, km === k)).join('')}
@@ -818,20 +870,11 @@ export async function explorePage(url, lang, modo = 'explorar') {
         ${radio(K.price, '', S.any, !price)}
         ${radio(K.price, enIdioma('free', en), S.free, price === 'free')}
         ${['10', '25', '50'].map((n) => radio(K.price, n, S.upTo(n), price === n)).join('')}
-      </div></fieldset>
-      ${calendario ? '' : `<fieldset><legend>${esc(S.when)}</legend><div class="ops">
-        ${[['', S.anytime], ['today', S.today], ['tomorrow', S.tomorrow], ['now', S.now], ['next10', S.next10]]
-          .map(([v, n]) => radio(K.when, v ? enIdioma(v, en) : '', n, when === v)).join('')}
       </div></fieldset>`}
-      ${sitioHoja}`}
-      <fieldset class="hoja-casillas"><legend class="sr">${esc(S.openNow)}</legend><div class="ops">
-        ${casilla(K.open, S.openNow, abierto)}
-        ${negocios ? '' : casilla(K.discount, S.discount, soloDescuento)}
-      </div></fieldset>
-      ${negocios ? '' : tiempoHoja}
+      ${masHoja}
       </div>
       <div class="hoja-pie">
-        <button class="pill accent" type="submit">${esc(S.showResults)}</button>
+        <button class="pill accent" type="submit"${conNumero ? ` data-ver-n data-uno="${esc(S.showN(1))}" data-varios="${esc(S.showN(2)).replace('2', '{n}')}" data-muchos="${esc(S.showMany(100))}" data-sin="${esc(S.showResults)}" aria-live="polite"` : ''}>${esc(verTxt)}</button>
       </div>
     </form>
   </details>`;
@@ -858,7 +901,8 @@ export async function explorePage(url, lang, modo = 'explorar') {
     <span data-amigos-hueco hidden></span>
     ${ordenMenu}
   </div>
-  <p id="cercaErr" class="aviso-error" role="alert" hidden></p>`;
+  <p id="cercaErr" class="aviso-error" role="alert" hidden></p>
+  <script src="/assets/categorias.js?v=1" defer></script>`;
 
   // En Explorar, sin ubicación ni ciudad: «Mira primero lo que tienes más cerca».
   const invitaCerca = !descubre && !negocios && !cerca && !city

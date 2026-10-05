@@ -651,7 +651,9 @@ async function boot() {
   if (pedido && BIZ.id === pedido) localStorage.setItem('klendar.biz', BIZ.id);
   await preparaNegocio();
   renderBizPicker();
-  try { CATS = (await sb.from('categories').select('id, slug, names, position').order('position')).data || []; } catch { CATS = []; }
+  // Todas las columnas: `category_group` (el grupo del selector de
+  // categorías) solo existe con la migración 20261114100000.
+  try { CATS = (await sb.from('categories').select('*').order('position')).data || []; } catch { CATS = []; }
   route();
 }
 /** Sin sesión: a la pantalla de entrar de siempre (la de «Tu cuenta»), que
@@ -891,7 +893,7 @@ window.addEventListener('hashchange', () => { FOCO_AL_TITULO = true; route(); })
 // ── Alta de un negocio (el primero o uno más) ──────────────────────────────
 PAGES.alta = async (v) => {
   const cats = CATS.length ? CATS
-    : ((await sb.from('categories').select('id, slug, names, position').order('position')).data || []);
+    : ((await sb.from('categories').select('*').order('position')).data || []);
   const otro = BIZZES.length > 0;
   let punto = null;
 
@@ -902,9 +904,7 @@ PAGES.alta = async (v) => {
       <br><span class="muted">¿Te han invitado al equipo de un negocio? Entonces no hace falta: entra con el mismo correo con el que te invitaron y aparecerá solo.</span></div>`}
     <form id="alta" class="form" novalidate>
       <label class="f"><span>Nombre del negocio *</span><input name="name" maxlength="80" required placeholder="Ej. La Taberna del Gato"></label>
-      <label class="f"><span>Categoría *</span><select name="category_id" required>
-        <option value="">Elige una…</option>
-        ${cats.map((c) => `<option value="${esc(c.id)}">${esc(c.names?.[I18N.lang] || c.names?.es || c.slug)}</option>`).join('')}</select></label>
+      <label class="f"><span>Categoría *</span><span data-cat-alta></span></label>
       <label class="f full"><span>De qué va <small>(¿qué ofrece tu negocio? ¿qué lo hace especial?)</small></span><textarea name="description" maxlength="500"></textarea></label>
       <label class="f"><span>Dirección *</span><input name="address" maxlength="120" required placeholder="Calle y número"></label>
       <label class="f"><span>Ciudad *</span><input name="city" maxlength="60" required></label>
@@ -928,6 +928,12 @@ PAGES.alta = async (v) => {
     </form>`;
 
   const f = $('#alta', v);
+  // El selector de categorías de toda la web (/assets/categorias.js): una.
+  const botonCat = () => $('[data-cat-alta] .selcat-campo', v);
+  KlendarCategorias.campo($('[data-cat-alta]', v), {
+    cats, multiple: false, lang: I18N.lang, nombre: 'category_id', titulo: I18N.t('Categoría'),
+    alCambiar: () => KL_CAMPO(botonCat(), null),
+  });
   const txt = $('#punto-txt', v);
   // Lo que se rellena solo desde el mapa se vuelve a rellenar cada vez que
   // se mueve la chincheta o se usa «Estoy en el local»; lo escrito a mano no
@@ -986,9 +992,11 @@ PAGES.alta = async (v) => {
       ['address', !String(d.address || '').trim()],
       ['city', !String(d.city || '').trim()],
     ];
-    for (const [campo, falta] of faltan) KL_CAMPO(f.elements[campo], falta ? obligatorio : null);
+    // La categoría es el botón del selector (lo elegido va en un oculto).
+    const elCampo = (c) => (c === 'category_id' ? botonCat() : f.elements[c]);
+    for (const [campo, falta] of faltan) KL_CAMPO(elCampo(campo), falta ? obligatorio : null);
     const primero = faltan.find(([, falta]) => falta);
-    if (primero) { f.elements[primero[0]].focus(); return; }
+    if (primero) { elCampo(primero[0]).focus(); return; }
     if (!punto) {
       // Sin chincheta: se intenta con la dirección escrita.
       const b = await buscaDireccion(`${d.address}, ${d.city}`);
@@ -4032,7 +4040,7 @@ PAGES.ficha = async (v) => {
   // `business_private` a quien gestiona.
   const [{ data: b }, cats, privado] = await Promise.all([
     sb.from('businesses').select('id, name, description, category_id, address, city, phone, website, contact_email, social_links, logo_url, cover_image_url, gallery, opening_hours, adults_only, verification_status, rejection_reason, is_active, paused_until, amenities').eq('id', BIZ.id).maybeSingle(),
-    sb.from('categories').select('id, slug, names, position').order('position', { ascending: true })
+    sb.from('categories').select('*').order('position', { ascending: true })
       .then(({ data }) => data || []),
     canManage ? rpc('business_private', { p_id: BIZ.id }).catch(() => null) : null,
   ]);
@@ -4055,8 +4063,7 @@ PAGES.ficha = async (v) => {
       '<p>What people see when they open your business: the name, what you do, where you are, how to call you and your opening hours. It\'s the same page you edit from the app.</p><p>The <b>address</b> is looked up on the map when you save. If the pin isn\'t in the right place, drag it in “Location on the map”.</p>'))}
       <form id="f" class="form" novalidate>
         <label class="f"><span>Nombre *</span><input name="name" value="${esc(b.name || '')}" required maxlength="80" ${canManage ? '' : 'disabled'}></label>
-        <label class="f"><span>Categoría</span><select name="category_id" ${canManage ? '' : 'disabled'}>
-          ${(cats || []).map((c) => `<option value="${esc(c.id)}" ${c.id === b.category_id ? 'selected' : ''}>${esc(c.names?.[I18N.lang] || c.names?.es || c.slug)}</option>`).join('')}</select></label>
+        <label class="f"><span>Categoría</span><span data-cat-ficha></span></label>
         <label class="f full"><span>De qué va <small>(dos líneas bastan)</small></span><textarea name="description" maxlength="500" ${canManage ? '' : 'disabled'}>${esc(b.description || '')}</textarea></label>
         <label class="f"><span>Dirección *</span><input name="address" value="${esc(b.address || '')}" maxlength="120" required ${canManage ? '' : 'disabled'}></label>
         <label class="f"><span>Ciudad *</span><input name="city" value="${esc(b.city || '')}" maxlength="60" required ${canManage ? '' : 'disabled'}></label>
@@ -4142,6 +4149,11 @@ PAGES.ficha = async (v) => {
       };
     })();
 
+    // El selector de categorías de toda la web (/assets/categorias.js): una.
+    KlendarCategorias.campo($('[data-cat-ficha]', v), {
+      cats: cats || [], elegidas: [b.category_id], multiple: false, lang: I18N.lang, nombre: 'category_id',
+      titulo: I18N.t('Categoría'), disabled: !canManage, alCambiar: (ids) => { b.category_id = ids[0]; },
+    });
     $('#f', v).onsubmit = async (e) => {
       e.preventDefault();
       const f = new FormData(e.target);

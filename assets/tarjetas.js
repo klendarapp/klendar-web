@@ -501,34 +501,52 @@
     if (!f) return;
     e.preventDefault();
     Array.prototype.forEach.call(f.querySelectorAll('input[type=radio]'), function (r) { r.checked = r.value === ''; });
-    // «Según el tiempo» no se toca: no quita nada, solo ordena.
-    Array.prototype.forEach.call(f.querySelectorAll('input[type=checkbox]:not([data-tiempo])'), function (c) { c.checked = false; });
+    // «Según el tiempo» no está en la hoja (va en el menú de orden): el
+    // oculto que lo conserva no se toca.
+    Array.prototype.forEach.call(f.querySelectorAll('input[type=checkbox]'), function (c) { c.checked = false; });
+    f.dispatchEvent(new Event('change'));
   });
   // La hoja manda solo lo que tiene valor (sin `precio=&orden=` en la URL).
-  // «Según el tiempo» encendido es lo de serie: no se manda; apagado, `tiempo=0`.
   document.querySelectorAll('form.hoja-cuerpo').forEach(function (f) {
     f.addEventListener('submit', function () {
       Array.prototype.forEach.call(f.elements, function (el) {
         if (el.name && !el.value && (el.type !== 'radio' || el.checked)) el.disabled = true;
       });
-      var t = f.querySelector('[data-tiempo]');
-      if (t && t.checked) {
-        t.disabled = true;
-        Array.prototype.forEach.call(f.querySelectorAll('[data-tiempo-off]'), function (h) { h.disabled = true; });
-      }
     });
-  });
-  // Categorías: las 10 primeras y «Ver todas (28)» / «Ver menos» (sin
-  // JavaScript se ven todas). La elegida siempre está entre las visibles.
-  document.querySelectorAll('[data-ver-todas]').forEach(function (b) {
-    var caja = b.closest('fieldset');
-    if (!caja) return;
-    caja.classList.add('plegada');
-    b.hidden = false;
-    b.addEventListener('click', function () {
-      var abierta = caja.classList.toggle('plegada') === false;
-      b.textContent = b.getAttribute(abierta ? 'data-menos' : 'data-mas');
-      b.setAttribute('aria-expanded', abierta ? 'true' : 'false');
+    // «Más filtros (2 activos)» y «Ver 24 resultados» al cambiar algo: el
+    // número lo da la misma página (`?contar=1`), con lo que lleva marcado.
+    var ver = f.querySelector('[data-ver-n]');
+    var masN = f.querySelector('[data-mas-n]');
+    var espera = null;
+    var pedido = 0;
+    f.addEventListener('change', function () {
+      if (masN) {
+        var n = f.querySelectorAll('details.hoja-mas input[type=checkbox]:checked').length;
+        masN.hidden = n === 0;
+        masN.textContent = n === 1 ? masN.getAttribute('data-uno') : masN.getAttribute('data-varios').replace('{n}', n);
+      }
+      if (!ver) return;
+      clearTimeout(espera);
+      espera = setTimeout(function () {
+        var qs = new URLSearchParams();
+        Array.prototype.forEach.call(f.elements, function (el) {
+          if (!el.name || !el.value || el.disabled) return;
+          if ((el.type === 'radio' || el.type === 'checkbox') && !el.checked) return;
+          qs.append(el.name, el.value);
+        });
+        qs.set('contar', '1');
+        var este = ++pedido;
+        fetch((f.getAttribute('action') || location.pathname) + '?' + qs.toString(), { headers: { Accept: 'application/json' } })
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (d) {
+            if (este !== pedido) return;
+            var n = d && typeof d.total === 'number' ? d.total : null;
+            ver.textContent = n == null ? ver.getAttribute('data-sin')
+              : n > 100 ? ver.getAttribute('data-muchos')
+                : n === 1 ? ver.getAttribute('data-uno') : ver.getAttribute('data-varios').replace('{n}', n);
+          })
+          .catch(function () { if (este === pedido) ver.textContent = ver.getAttribute('data-sin'); });
+      }, 350);
     });
   });
   var abiertos = function () { return document.querySelectorAll('details.desplegable[open], details.hoja[open]'); };
