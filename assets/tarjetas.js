@@ -608,7 +608,8 @@
     var masFormas = document.querySelector('.mas-formas');
     if (masFormas && 'IntersectionObserver' in window) {
       var limite = new IntersectionObserver(function () {
-        fuera = masFormas.getBoundingClientRect().top < window.innerHeight * 0.6;
+        // (+4: el navegador redondea el margen a píxeles enteros.)
+        fuera = masFormas.getBoundingClientRect().top < window.innerHeight * 0.6 + 4;
         cromo();
       }, { rootMargin: '0px 0px -40% 0px' });
       limite.observe(masFormas);

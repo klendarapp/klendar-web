@@ -279,7 +279,7 @@ ${siteHeader(lang, esc(es), esc(enPath), actual)}
 ${siteFooter(lang)}
 ${conAmigos ? `<script src="/assets/amigos.js?v=12" defer data-lang="${en ? 'en' : 'es'}"></script>
 ` : ''}${conVisor ? `<script src="/assets/tarjeta.js?v=4" defer></script>
-` : ''}${conTarjetas ? `<script src="/assets/tarjetas.js?v=5" defer></script>
+` : ''}${conTarjetas ? `<script src="/assets/tarjetas.js?v=6" defer></script>
 ` : ''}${/class="detail[" ]/.test(body) ? `<script src="/assets/barra.js?v=3" defer></script>
 ` : ''}${contador ? CONTADOR : ''}
 </body></html>`;
