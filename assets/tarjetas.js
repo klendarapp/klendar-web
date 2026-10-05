@@ -481,14 +481,34 @@
     if (!f) return;
     e.preventDefault();
     Array.prototype.forEach.call(f.querySelectorAll('input[type=radio]'), function (r) { r.checked = r.value === ''; });
-    Array.prototype.forEach.call(f.querySelectorAll('input[type=checkbox]'), function (c) { c.checked = false; });
+    // «Según el tiempo» no se toca: no quita nada, solo ordena.
+    Array.prototype.forEach.call(f.querySelectorAll('input[type=checkbox]:not([data-tiempo])'), function (c) { c.checked = false; });
   });
   // La hoja manda solo lo que tiene valor (sin `precio=&orden=` en la URL).
+  // «Según el tiempo» encendido es lo de serie: no se manda; apagado, `tiempo=0`.
   document.querySelectorAll('form.hoja-cuerpo').forEach(function (f) {
     f.addEventListener('submit', function () {
       Array.prototype.forEach.call(f.elements, function (el) {
         if (el.name && !el.value && (el.type !== 'radio' || el.checked)) el.disabled = true;
       });
+      var t = f.querySelector('[data-tiempo]');
+      if (t && t.checked) {
+        t.disabled = true;
+        Array.prototype.forEach.call(f.querySelectorAll('[data-tiempo-off]'), function (h) { h.disabled = true; });
+      }
+    });
+  });
+  // Categorías: las 10 primeras y «Ver todas (28)» / «Ver menos» (sin
+  // JavaScript se ven todas). La elegida siempre está entre las visibles.
+  document.querySelectorAll('[data-ver-todas]').forEach(function (b) {
+    var caja = b.closest('fieldset');
+    if (!caja) return;
+    caja.classList.add('plegada');
+    b.hidden = false;
+    b.addEventListener('click', function () {
+      var abierta = caja.classList.toggle('plegada') === false;
+      b.textContent = b.getAttribute(abierta ? 'data-menos' : 'data-mas');
+      b.setAttribute('aria-expanded', abierta ? 'true' : 'false');
     });
   });
   var abiertos = function () { return document.querySelectorAll('details.desplegable[open], details.hoja[open]'); };

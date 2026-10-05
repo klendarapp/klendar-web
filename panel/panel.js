@@ -1750,6 +1750,10 @@ async function localesDialogo(offerId) {
   route();
 }
 
+/** «¿Para niños?» → `offers.for_kids`: null (como el local), true o false.
+ * Con +18 nunca true. */
+const forKids = (adultos, valor) => (valor === 'no' ? false : valor === 'si' && !adultos ? true : null);
+
 /** Formulario de publicación (nueva o existente). */
 async function offerForm(v, id, kindDefault, desde = null) {
   // Un empleado valida códigos, no publica (como en la app).
@@ -1799,6 +1803,14 @@ async function offerForm(v, id, kindDefault, desde = null) {
       }
       kindDefault = src.kind;
     }
+  }
+  // «¿Para niños?» y «¿Bajo techo o al aire libre?» no vienen en
+  // `my_business_offers`: se leen de la publicación al editarla o al crear
+  // otra a partir de ella (la copia los conserva).
+  const origenLugar = id || desde?.from;
+  if (origenLugar) {
+    const { data: lugarPlan } = await sb.from('offers').select('for_kids, setting').eq('id', origenLugar).maybeSingle();
+    if (lugarPlan) { o.for_kids = lugarPlan.for_kids; o.setting = lugarPlan.setting; }
   }
   // Crear a partir de una fecha de una serie: la nueva sigue en ella (se
   // puede quitar). Quien la sigue recibirá un aviso cuando se publique.
@@ -1876,6 +1888,11 @@ async function offerForm(v, id, kindDefault, desde = null) {
           ${[1, 2, 3, 4, 5, 6].map((n) => `<option value="${n}" ${Number(o.max_seats || 1) === n ? 'selected' : ''}>${n === 1 ? esc(I18N.t('1 (solo quien reserva)')) : esc(bi(`${n} personas`, `${n} people`))}</option>`).join('')}</select></label>
         <label class="f full" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="adults_only" ${o.adults_only ? 'checked' : ''}><span>Solo para mayores de 18</span></label>
         ${serieCopia ? `<label class="f full" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="keep_series" checked><span>${esc(bi(`Forma parte de la serie «${serieCopia.name}»`, `Part of the “${serieCopia.name}” series`))}<br><small class="muted">${esc(bi('Quien la sigue recibirá un aviso cuando se publique.', 'Its followers will be notified when it goes live.'))}</small></span></label>` : ''}
+        <label class="f" id="ninosRow"><span>¿Para niños?</span><select name="for_kids">
+          ${[['', 'Como el local'], ['si', 'Apto para niños'], ['no', 'No apto para niños']].map(([k, t]) => `<option value="${k}" ${(o.for_kids === true ? 'si' : o.for_kids === false ? 'no' : '') === k ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
+        <label class="f"><span>¿Bajo techo o al aire libre?</span><select name="setting">
+          ${[['', 'Como el local'], ['indoor', 'Bajo techo'], ['outdoor', 'Al aire libre'], ['both', 'Las dos cosas']].map(([k, t]) => `<option value="${k}" ${(o.setting || '') === k ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
+        <p class="hint full" style="margin:-4px 0 0">Solo si este plan es distinto de tu local (p. ej. un taller infantil o un concierto en el patio).</p>
         <fieldset class="f full filtro-sellos"><legend>Quién la ve</legend>
           ${AUDIENCIAS.map(([k, t]) => `<label class="opcion"><input type="radio" name="audience" value="${k}" ${(o.audience || 'all') === k ? 'checked' : ''}><span>${esc(t)}</span></label>`).join('')}
           <p class="hint" id="audAyuda" ${(o.audience || 'all') === 'all' ? 'hidden' : ''}>Solo la ven ellos. Si a otra persona le llega el enlace, la ficha dice que es exclusiva y cómo conseguirla, sin enseñar el beneficio.</p>
@@ -1977,6 +1994,11 @@ async function offerForm(v, id, kindDefault, desde = null) {
   $('[name=holds_seats]', v).onchange = syncPlazas;
   syncPlazas();
   syncKind();
+
+  // Una publicación +18 no es para niños: la pregunta no se hace.
+  const syncNinos = () => { $('#ninosRow', v).hidden = $('[name=adults_only]', v).checked; };
+  $('[name=adults_only]', v).addEventListener('change', syncNinos);
+  syncNinos();
 
   // La pregunta del alcohol solo aparece si el descuento es un 2x1.
   const syncDiscount = () => {
@@ -2302,6 +2324,9 @@ async function offerForm(v, id, kindDefault, desde = null) {
     pon('code_ttl_minutes', d.code_ttl_minutes ?? '');
     campo('adults_only').checked = !!d.adults_only;
     campo('reservations_enabled').checked = !!d.reservations_enabled;
+    pon('for_kids', d.for_kids === true ? 'si' : d.for_kids === false ? 'no' : '');
+    pon('setting', ['indoor', 'outdoor', 'both'].includes(d.setting) ? d.setting : '');
+    syncNinos();
     const ds = d.discount || {};
     pon('discount_type', ds.type || '');
     pon('discount_value', ds.type === 'other' ? ds.value : precioTxt(ds.value));
@@ -2362,6 +2387,8 @@ async function offerForm(v, id, kindDefault, desde = null) {
       holds_seats: f.get('holds_seats') !== 'no',
       max_per_user: Number(f.get('max_per_user') || 1),
       adults_only: campo('adults_only').checked,
+      for_kids: forKids(campo('adults_only').checked, f.get('for_kids')),
+      setting: f.get('setting') || null,
       style: { template: estilo.template, ...(estilo.accent ? { accent: estilo.accent } : {}) },
       code_ttl_minutes: f.get('code_ttl_minutes') ? Number(f.get('code_ttl_minutes')) : null,
       reservations_enabled: f.get('kind') !== 'flash_offer' && campo('reservations_enabled').checked,
@@ -2480,6 +2507,9 @@ async function offerForm(v, id, kindDefault, desde = null) {
       max_seats: !flash && $('[name=reservations_enabled]').checked
         ? Number(f.get('max_seats') || 1) : 1,
       adults_only: $('[name=adults_only]').checked,
+      // null = como el local. Una +18 nunca se marca como apta para niños.
+      for_kids: forKids($('[name=adults_only]').checked, f.get('for_kids')),
+      setting: f.get('setting') || null,
       audience: f.get('audience') || 'all',
       // Sin marcar: borrador, salvo que ya estuviera terminada, agotada o
       // cancelada (se queda así; editarla no la saca del cajón).
@@ -3474,10 +3504,11 @@ const ALERGENOS = [
 const nombreAlergeno = (k) => (ALERGENOS.find((a) => a[0] === k) || [k, k])[1];
 
 /** Lo que va en la carta según el gremio (glosario): comida y bebida →
- * plato; tiendas, discotecas y «Otros» → producto; el resto → servicio. Lo
- * mismo que `menuItemKind` en la app. */
+ * plato; tiendas, discotecas, música, librerías, mercados, gastronomía y
+ * «Otros» → producto; el resto → servicio. Lo mismo que `menuItemKind` en la
+ * app. */
 const palabraCarta = (slug) => (['restaurant', 'cafe', 'bar'].includes(slug) ? 'dish'
-  : (!slug || ['shop', 'nightclub', 'other'].includes(slug)) ? 'product' : 'service');
+  : (!slug || ['shop', 'nightclub', 'music', 'books', 'market', 'gourmet', 'other'].includes(slug)) ? 'product' : 'service');
 const TEXTOS_CARTA = {
   dish: { add: 'Añadir plato', edit: 'Editar plato', col: 'Plato', ej: 'Tortilla de patata', sus: ['sus platos', 'its dishes'] },
   service: { add: 'Añadir servicio', edit: 'Editar servicio', col: 'Servicio', ej: '', sus: ['sus servicios', 'its services'] },
@@ -3914,12 +3945,22 @@ function planCard(sub) {
     <a class="btn sm" href="mailto:info@klendar.app?subject=${asunto}&body=${cuerpo}">${esc(free || trial ? (en ? 'Ask about the plan' : 'Preguntar por el plan') : (en ? 'Change plan or payment method' : 'Cambiar plan o forma de pago'))}</a></div>`;
 }
 
+/** «Cómo es tu local»: los 12 atributos del sitio, en el orden de la app
+ * (`place_attribute_slugs()` en la base), con su icono. Se ven en la ficha
+ * pública y la gente filtra por ellos («El sitio» y «Con niños»). */
+const SITIO_PANEL = [
+  ['terrace', 'Terraza', 'deck'], ['indoor', 'Bajo techo', 'roofing'], ['outdoor', 'Al aire libre', 'park'],
+  ['kids', 'Apto para niños', 'child_friendly'], ['play_area', 'Zona infantil', 'toys'], ['dogs', 'Admite perros', 'pets'],
+  ['wheelchair', 'Accesible en silla de ruedas', 'accessible'], ['wifi', 'Wifi', 'wifi'], ['card', 'Pago con tarjeta', 'credit_card'],
+  ['air_conditioning', 'Aire acondicionado', 'ac_unit'], ['parking', 'Aparcamiento', 'local_parking'], ['veggie', 'Opciones vegetarianas', 'eco'],
+];
+
 PAGES.ficha = async (v) => {
   const canManage = ['owner', 'manager'].includes(BIZ.role);
   // El NIF no se puede leer de la tabla (no es público): lo da
   // `business_private` a quien gestiona.
   const [{ data: b }, cats, privado] = await Promise.all([
-    sb.from('businesses').select('id, name, description, category_id, address, city, phone, website, contact_email, social_links, logo_url, cover_image_url, gallery, opening_hours, adults_only, verification_status, rejection_reason, is_active, paused_until').eq('id', BIZ.id).maybeSingle(),
+    sb.from('businesses').select('id, name, description, category_id, address, city, phone, website, contact_email, social_links, logo_url, cover_image_url, gallery, opening_hours, adults_only, verification_status, rejection_reason, is_active, paused_until, amenities').eq('id', BIZ.id).maybeSingle(),
     sb.from('categories').select('id, slug, names, position').order('position', { ascending: true })
       .then(({ data }) => data || []),
     canManage ? rpc('business_private', { p_id: BIZ.id }).catch(() => null) : null,
@@ -3932,6 +3973,7 @@ PAGES.ficha = async (v) => {
   let logo = b.logo_url || '';
   let portada = b.cover_image_url || '';
   let galeria = b.gallery || [];
+  let sitio = Array.isArray(b.amenities) ? b.amenities : [];
 
   const pinta = () => {
     v.innerHTML = `
@@ -3960,6 +4002,13 @@ PAGES.ficha = async (v) => {
           <span>Solo para mayores de 18 (todo lo que publiques quedará marcado y todo el equipo tiene que ser mayor de edad)</span></label>
         ${canManage ? '<div class="full"><button class="btn primary" type="submit">Guardar la ficha</button> <span id="msg" class="muted"></span></div>' : ''}
       </form>
+
+      <div class="card"><h2>Cómo es tu local</h2>
+        <p class="muted" style="margin:0 0 10px">Marca lo que tenga tu local: sale en tu ficha y la gente lo puede buscar en los filtros.</p>
+        <div class="sitio-ops" role="group" aria-label="${esc(I18N.t('Cómo es tu local'))}">
+          ${SITIO_PANEL.map(([k, nombre, icono]) => `<label class="sitio-op"><input type="checkbox" name="sitio" value="${k}" ${sitio.includes(k) ? 'checked' : ''} ${canManage ? '' : 'disabled'}><span>${ms(icono)}${esc(nombre)}</span></label>`).join('')}
+        </div>
+        ${canManage ? '<p style="margin:12px 0 0"><button class="btn sm primary" id="g-sitio" type="button">Guardar</button> <span class="muted" id="msgs"></span></p>' : ''}</div>
 
       ${canManage ? `<div class="card"><h2>Ubicación en el mapa</h2>
         <p class="muted" style="margin:0 0 10px">Es lo que usa la app para decir a qué distancia estás. Arrastra la chincheta hasta la puerta y guarda.</p>
@@ -4068,6 +4117,18 @@ PAGES.ficha = async (v) => {
         renderBizPicker();
         $('#msg', v).textContent = 'Guardada';
         toast('Ficha guardada');
+      } catch (err) { toast(friendly(err.message), true); }
+    };
+
+    // «Cómo es tu local»: se guarda aparte (`set_business_amenities`).
+    $$('[name=sitio]', v).forEach((c) => { c.onchange = () => { $('#msgs', v).textContent = I18N.t('Sin guardar'); }; });
+    $('#g-sitio', v).onclick = async () => {
+      const marcados = $$('[name=sitio]:checked', v).map((c) => c.value);
+      try {
+        const r = await rpc('set_business_amenities', { p_business: BIZ.id, p_amenities: marcados });
+        sitio = Array.isArray(r) ? r : marcados;
+        $('#msgs', v).textContent = I18N.t('Guardado');
+        toast('Guardado');
       } catch (err) { toast(friendly(err.message), true); }
     };
 

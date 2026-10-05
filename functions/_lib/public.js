@@ -152,11 +152,14 @@ export const agendaBase = (lang) => (lang === 'en' ? '/en/whats-on' : '/agenda')
 /** «Qué hacer hoy en <ciudad>»: /hoy/madrid/ y /en/today/madrid/. */
 export const todayBase = (lang) => (lang === 'en' ? '/en/today' : '/hoy');
 
+/** «Planes con niños en <ciudad>»: /con-ninos/madrid/ y /en/kids/madrid/. */
+export const kidsBase = (lang) => (lang === 'en' ? '/en/kids' : '/con-ninos');
+
 /**
  * Los enlaces entre las páginas de entrada de una ciudad: hoy, la semana y
- * cada categoría con algo publicado. Van en las tres, para que quien llega
+ * los planes con niños y cada categoría con algo publicado. Van en todas, para que quien llega
  * de Google a una encuentre las otras (y Google también). `actual` marca la
- * que se está viendo: 'hoy', 'semana' o el slug de la categoría.
+ * que se está viendo: 'hoy', 'semana', 'ninos' o el slug de la categoría.
  */
 export function cityLinks(lang, rawCity, city, cats, actual) {
   const en = lang === 'en';
@@ -166,6 +169,7 @@ export function cityLinks(lang, rawCity, city, cats, actual) {
   return `<nav class="filters" aria-label="${esc(city)}"><div class="frow">
     ${chip(`${todayBase(lang)}/${c}/`, en ? `Today in ${city}` : `Hoy en ${city}`, actual === 'hoy')}
     ${chip(`${agendaBase(lang)}/${c}/`, en ? 'This week' : 'Esta semana', actual === 'semana')}
+    ${chip(`${kidsBase(lang)}/${c}/`, en ? 'With kids' : 'Con niños', actual === 'ninos')}
     ${(cats || []).filter((k) => k?.slug).map((k) => chip(`${agendaBase(lang)}/${c}/${encodeURIComponent(k.slug)}/`, nombre(k), actual === k.slug)).join('')}
   </div></nav>`;
 }
@@ -177,12 +181,13 @@ export const discoverBase = (lang) => (lang === 'en' ? '/en/discover' : '/descub
 export const collectionBase = (lang) => (lang === 'en' ? '/en/collection' : '/coleccion');
 
 /** La misma página en el otro idioma: /o/x ⇄ /en/o/x, /agenda/x ⇄ /en/whats-on/x,
- * /hoy/x ⇄ /en/today/x. */
+ * /hoy/x ⇄ /en/today/x, /con-ninos/x ⇄ /en/kids/x. */
 export const altPath = (path, lang) =>
   lang === 'en'
     ? (path
         .replace(/^\/en\/whats-on/, '/agenda')
         .replace(/^\/en\/today/, '/hoy')
+        .replace(/^\/en\/kids/, '/con-ninos')
         .replace(/^\/en\/explore/, '/explorar')
         .replace(/^\/en\/discover/, '/descubre')
         .replace(/^\/en\/collection/, '/coleccion')
@@ -192,6 +197,7 @@ export const altPath = (path, lang) =>
     : `/en${path
         .replace(/^\/agenda/, '/whats-on')
         .replace(/^\/hoy/, '/today')
+        .replace(/^\/con-ninos/, '/kids')
         .replace(/^\/explorar/, '/explore')
         .replace(/^\/descubre/, '/discover')
         .replace(/^\/coleccion/, '/collection')
@@ -271,7 +277,7 @@ ${erroresScript()}
 ${preconectar}<link rel="preload" href="/assets/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/assets/site.css?v=20261011">
-<link rel="stylesheet" href="/assets/public.css?v=33">
+<link rel="stylesheet" href="/assets/public.css?v=34">
 <link rel="stylesheet" href="/assets/tarjeta.css?v=5">
 ${cabeza}
 </head>
@@ -281,7 +287,7 @@ ${siteHeader(lang, esc(es), esc(enPath), actual)}
 ${siteFooter(lang)}
 ${conAmigos ? `<script src="/assets/amigos.js?v=12" defer data-lang="${en ? 'en' : 'es'}"></script>
 ` : ''}${conVisor ? `<script src="/assets/tarjeta.js?v=4" defer></script>
-` : ''}${conTarjetas ? `<script src="/assets/tarjetas.js?v=6" defer></script>
+` : ''}${conTarjetas ? `<script src="/assets/tarjetas.js?v=7" defer></script>
 ` : ''}${/class="detail[" ]/.test(body) ? `<script src="/assets/barra.js?v=3" defer></script>
 ` : ''}${/^\/(en\/)?(o|b|coleccion|collection)\//.test(path) ? desdeHistorias() : ''}${contador ? CONTADOR : ''}
 </body></html>`;

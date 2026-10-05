@@ -16,6 +16,7 @@ import { decodeSeg,
   historiaBoton, priorPrice, publicPage, slugDe, todayBase, zonaDe,
 } from './public.js';
 import { cuandoCorto, plataformaEntradas, rejilla } from './tarjeta.js';
+import { SITIO_PLAN, listaSitio } from './sitio.js';
 
 // Iconos de Material (los mismos que la app), en SVG: las páginas públicas
 // no cargan la fuente de iconos.
@@ -41,6 +42,7 @@ const PATHS = {
 const icono = (n, size = 18) => `<svg class="ic" viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true"><path fill="currentColor" d="${PATHS[n]}"/></svg>`;
 
 const pre = (lang) => (lang === 'en' ? '/en' : '');
+
 /** «Tu cuenta» en el idioma de la ficha (la cabecera ya lo hace así). */
 const cuenta = (lang) => (lang === 'en' ? '/app/?lang=en' : '/app/');
 /** Solo enlaces web: lo que escribe un negocio no puede ser un javascript:. */
@@ -127,6 +129,9 @@ export async function offerPage(id, lang) {
   if (!isUuid(id)) return notFound(lang, path, 'o');
   const o = await rpc('offer_detail', { p_id: id });
   if (!o) return notFound(lang, path, 'o');
+  // Cómo es el sitio según la publicación o su local (sin deducir nada por
+  // la categoría): se pide ya, a la vez que la dirección del negocio.
+  const rasgosP = rpcAll('offer_place_traits', { p_offer: id }).catch(() => []);
   // La ficha del negocio, por su dirección con nombre.
   const bHref = bizPath(lang, (await slugDe(o.business_id)) || o.business_id);
   // Exclusiva para favoritos o clientes: la web pública va siempre sin
@@ -216,6 +221,7 @@ export async function offerPage(id, lang) {
         ${o.seats_left != null && !soldOut && !over ? `<span class="dato-chip">${esc(en ? (o.seats_left === 1 ? '1 place left' : `${o.seats_left} places left`) : (o.seats_left === 1 ? 'Queda 1 plaza' : `Quedan ${o.seats_left} plazas`))}</span>` : ''}
       </p>
       ${prior ? `<p class="rule">${S.prior}</p>` : ''}
+      ${listaSitio((await rasgosP).filter((t) => SITIO_PLAN.includes(t)), lang, { cls: 'sitio-linea' })}
       ${over ? '' : '<p class="quien-va" id="quien-va" hidden></p>'}
     </div>
     <aside class="side">
@@ -516,7 +522,7 @@ export async function businessPage(param, lang, search = '') {
   // «Clientes verificados»: solo las reseñas de quien ha canjeado algo aquí
   // (`?resenas=verificadas`, el mismo filtro que la app).
   const soloVerificadas = new URLSearchParams(search).get('resenas') === 'verificadas';
-  const [offers, sellos, carta, opiniones, novedades, cierres, nVerificadas] = await Promise.all([
+  const [offers, sellos, carta, opiniones, novedades, cierres, nVerificadas, sitio] = await Promise.all([
     rpcAll('business_offers', { p_id: id }),
     rpcAll('stamp_cards_of', { p_business: id }).catch(() => []), // opcional: sin ella, la ficha sale igual
     rpcAll('business_menu', { p_business: id }),
@@ -524,6 +530,8 @@ export async function businessPage(param, lang, search = '') {
     rows('business_posts', `select=id,body,image_url,created_at&business_id=eq.${id}&order=created_at.desc&limit=6`),
     rpcAll('business_closures', { p_business: id }),
     rpc('business_verified_review_count', { p_id: id }).then((n) => Number(n) || 0).catch(() => 0),
+    // «El sitio»: lo que marca el negocio (terraza, apto para niños…).
+    rows('businesses', `select=amenities&id=eq.${id}`).then((r) => r[0]?.amenities || []).catch(() => []),
   ]);
 
   const S = en
@@ -532,7 +540,7 @@ export async function businessPage(param, lang, search = '') {
         none: 'Nothing published right now. It changes often — take a look in the app.',
         open: 'Add to favourites', note: "From here or from the app, with the same account. We'll let you know when this business posts something.",
         verified: 'Verified business', since: 'On Klendar since', redeemed: (n) => (n === 1 ? '1 redemption validated' : `${n} redemptions validated`),
-        about: 'About', menu: 'Menu',
+        about: 'About', menu: 'Menu', place: 'The place',
         stamps: 'Stamp card', allergens: 'Allergens',
         menuNote: 'Allergens as declared by the business. If you have an allergy, ask at the venue.',
         stampsMany: 'Stamp cards',
@@ -568,7 +576,7 @@ export async function businessPage(param, lang, search = '') {
         none: 'Ahora mismo no hay nada publicado. Suele cambiar: échale un ojo en la app.',
         open: 'Añadir a favoritos', note: 'Desde aquí o desde la app, con la misma cuenta. Te avisamos cuando este negocio publique algo.',
         verified: 'Negocio verificado', since: 'En Klendar desde', redeemed: (n) => (n === 1 ? '1 canje validado' : `${n} canjes validados`),
-        about: 'Sobre el negocio', menu: 'Carta',
+        about: 'Sobre el negocio', menu: 'Carta', place: 'El sitio',
         stamps: 'Tarjeta de sellos', allergens: 'Alérgenos',
         menuNote: 'Los alérgenos son los que declara el negocio. Si tienes alergia, pregunta en el sitio.',
         stampsMany: 'Tarjetas de sellos',
@@ -718,6 +726,7 @@ export async function businessPage(param, lang, search = '') {
     <div class="d-body">
       ${b.description ? `<h2>${S.about}</h2><p data-tr="business:${esc(b.id)}:description">${esc(b.description).replace(/\n/g, '<br>')}</p>
       <p data-tr-nota="business:" hidden></p>` : ''}
+      ${listaSitio(sitio, lang) ? `<h2>${S.place}</h2>${listaSitio(sitio, lang)}` : ''}
       ${flash.length ? `<h2 id="ahora">${S.now}</h2>${rejilla(flash, lang, { tz, sinNegocio: true, galeria: true })}` : ''}
       ${events.length ? `<h2 id="proximamente">${S.soon}</h2>${rejilla(events, lang, { tz, sinNegocio: true, galeria: true })}` : ''}
       ${offers.length ? '' : `<p class="empty">${S.none}</p>`}

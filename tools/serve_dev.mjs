@@ -1,6 +1,6 @@
 // Servidor de desarrollo mínimo: sirve los ficheros estáticos del repo y
 // ejecuta las Pages Functions de /o/, /b/ (por id o por dirección), /r/, /v/, /amigo/, /cartel/, /agenda/,
-// /hoy/ y los sitemaps de agenda y negocios.
+// /hoy/, /con-ninos/ y los sitemaps de agenda y negocios.
 // No sustituye a Cloudflare; es para ver las páginas mientras se escriben.
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
@@ -79,6 +79,9 @@ createServer(async (req, res) => {
     // «Qué hacer hoy en <ciudad>»: /hoy/<ciudad>/ y /en/today/<city>/.
     else if ((m = rest.match(/^\/(hoy|today)\/([^/]+)\/?$/))) { mod = await load(`functions/${en}${en ? 'today' : 'hoy'}/[city].js`); params = { city: m[2] }; }
     else if (/^\/(hoy|today)\/?$/.test(rest)) { mod = await load(`functions/${en}${en ? 'today' : 'hoy'}/index.js`); }
+    // «Planes con niños en <ciudad>»: /con-ninos/<ciudad>/ y /en/kids/<city>/.
+    else if ((m = rest.match(/^\/(con-ninos|kids)\/([^/]+)\/?$/))) { mod = await load(`functions/${en}${en ? 'kids' : 'con-ninos'}/[city].js`); params = { city: m[2] }; }
+    else if (/^\/(con-ninos|kids)\/?$/.test(rest)) { mod = await load(`functions/${en}${en ? 'kids' : 'con-ninos'}/index.js`); }
     // Explorar, categoria dentro de una ciudad y colecciones.
     else if ((m = rest.match(/^\/(explorar|explore)\/?$/))) { mod = await load(`functions/${en}${en ? 'explore' : 'explorar'}/index.js`); }
     else if ((m = rest.match(/^\/(descubre|discover)\/?$/))) { mod = await load(`functions/${en}${en ? 'discover' : 'descubre'}/index.js`); }

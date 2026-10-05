@@ -628,3 +628,45 @@ body.pagina-feed[data-cromo="fuera"] .feed-cab { visibility: hidden; }
   .pagina-feed .feed-lado h1 { margin-top: 0; }
   body.pagina-feed[data-cromo="fuera"] .feed-lado { display: none; }
 }
+
+/* ══ «El sitio», «Con niños» y «Según el tiempo» (2026-10-05) ════════════
+   Los atributos del local con icono (ficha del negocio; en la de la
+   publicación, una línea discreta), sus píldoras en la hoja de filtros, las
+   categorías plegadas («Ver todas») y la línea del tiempo encima de la lista. */
+.pub ul.sitio { list-style: none; margin: 0 0 18px; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.pub ul.sitio li { display: inline-flex; align-items: center; gap: 7px; padding: 7px 13px; border-radius: 999px; border: 1px solid var(--glass-border);
+  background: var(--glass); font-weight: 600; font-size: 14px; }
+.pub ul.sitio .ic { flex: none; color: var(--ink-2); }
+.pub ul.sitio-linea { gap: 4px 14px; margin: 2px 0 10px; }
+.pub ul.sitio-linea li { padding: 0; border: 0; background: none; gap: 5px; font-size: 13px; color: var(--ink-2); }
+.op-sitio span { gap: 7px; }
+.op-sitio input[type=checkbox]:checked + span::before { content: none; }
+.op-sitio .ic { flex: none; }
+.hoja-cats.plegada .cat-extra { display: none; }
+.pub .ver-todas { margin: 10px 0 0; padding: 6px 2px; border: 0; background: none; color: var(--ink); font: inherit; font-size: 14px; font-weight: 700;
+  text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.pub .hoja-nota-bajo { margin: 8px 0 4px; }
+.hoja-tiempo .hoja-nota a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+.pub .tiempo-linea { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 10px; margin: 0 0 14px; font-size: 14px; font-weight: 600; color: var(--ink-2); }
+.tiempo-linea .ic { flex: none; }
+.pub .tiempo-quitar { font-weight: 700; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+.pub .tiempo-fuente { font-size: 12px; font-weight: 500; }
+.tiempo-fuente a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+/* En Descubre: en el móvil, debajo de los filtros y encima de la foto (en
+   blanco, como lo demás de la cabecera); en tablet y escritorio, a la
+   derecha de la tarjeta, arriba. */
+@media (max-width: 760px) {
+  body.pagina-feed.con-tiempo { --feed-arriba: 172px; }
+  .pagina-feed .feed-cab .tiempo-linea { width: fit-content; max-width: calc(100% - 32px); margin: 6px 16px 0; padding: 6px 12px; gap: 2px 8px;
+    border-radius: 14px; background: rgba(10,10,10,.6); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); font-size: 12px; color: #fff; }
+  .pagina-feed .feed-cab .tiempo-linea a { color: inherit; }
+  body.pagina-feed[data-cromo="tema"] .feed-cab .tiempo-linea { background: var(--soft); color: var(--ink-2); }
+  body.pagina-feed[data-cromo="tema"] .feed-cab .tiempo-quitar { color: var(--ink); }
+}
+@media (min-width: 761px) {
+  .pagina-feed .feed-cab .tiempo-linea { position: absolute; top: calc(100% + var(--hueco)); left: calc(50% + var(--feed-w) / 2 + 20px);
+    width: min(260px, calc(50% - var(--feed-w) / 2 - 40px)); margin: 0; font-size: 13px; display: block; line-height: 1.6; }
+  .pagina-feed .feed-cab .tiempo-linea .ic { vertical-align: -3px; margin-right: 6px; }
+  .pagina-feed .feed-cab .tiempo-fuente { display: block; }
+  .pagina-feed .feed-cab .tiempo-quitar { margin-left: 6px; }
+}

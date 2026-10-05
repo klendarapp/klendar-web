@@ -521,3 +521,14 @@ a.cal-dia { text-decoration: none; }
 }
 /* Solo para el lector de pantalla (lo usa la tarjeta: «Oferta flash», «Vídeo»). */
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+/* «Cómo es tu local» (Tu ficha): píldoras con icono que se marcan, como las
+   de «El sitio» en los filtros de la web y la app. */
+.sitio-ops { display: flex; flex-wrap: wrap; gap: 8px; }
+.sitio-op { position: relative; display: inline-flex; }
+.sitio-op input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
+.sitio-op span { display: inline-flex; align-items: center; gap: 7px; min-height: 40px; padding: 8px 14px; border-radius: 999px;
+  border: 1px solid var(--glass-border); background: var(--glass); color: var(--ink); font-weight: 600; font-size: 14px; cursor: pointer; }
+.sitio-op .ms { font-size: 20px; }
+.sitio-op input:checked + span { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.sitio-op input:focus-visible + span { outline: 2px solid var(--ink); outline-offset: 2px; }
+.sitio-op input:disabled + span { cursor: default; opacity: .75; }

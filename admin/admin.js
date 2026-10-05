@@ -114,7 +114,7 @@ let RUTA_N = 0;
 class Obsoleta extends Error {
   constructor() { super(''); this.obsoleta = true; }
 }
-const ESCRIBE = /^admin_(set|record|send|delete|upsert|resolve|review|add|remove|push_retry|save|collection_(add|remove|move)|run|update|dismiss|merge)/;
+const ESCRIBE = /^admin_(set|record|send|delete|upsert|resolve|review|add|remove|push_retry|save|collection_(add|remove|move)|run|update|dismiss|merge)|^set_business_amenities$/;
 async function rpc(fn, args = {}) {
   const n = RUTA_N;
   const { data, error } = await sb.rpc(fn, args);
@@ -983,6 +983,18 @@ PAGES.negocios = async (v, id) => {
   await load();
 };
 
+/** «El sitio»: los 12 atributos del local (`place_attribute_slugs()`), en el
+ * orden de la app, con su icono. El negocio los marca en «Tu ficha»; aquí se
+ * ven y se pueden cambiar (`set_business_amenities` vale para el admin). Las
+ * selecciones pueden pedirlos en su regla (`traits`). */
+const SITIO_ADMIN = [
+  ['terrace', 'Terraza', 'deck'], ['indoor', 'Bajo techo', 'roofing'], ['outdoor', 'Al aire libre', 'park'],
+  ['kids', 'Apto para niños', 'child_friendly'], ['play_area', 'Zona infantil', 'toys'], ['dogs', 'Admite perros', 'pets'],
+  ['wheelchair', 'Accesible en silla de ruedas', 'accessible'], ['wifi', 'Wifi', 'wifi'], ['card', 'Pago con tarjeta', 'credit_card'],
+  ['air_conditioning', 'Aire acondicionado', 'ac_unit'], ['parking', 'Aparcamiento', 'local_parking'], ['veggie', 'Opciones vegetarianas', 'eco'],
+];
+const nombreSitio = (k) => I18N.t((SITIO_ADMIN.find((x) => x[0] === k) || [k, k])[1]);
+
 async function businessDetail(v, id) {
   const [d, bajas, traspaso, cambios, duplicados] = await Promise.all([
     rpc('admin_business_detail', { p_id: id }),
@@ -993,6 +1005,10 @@ async function businessDetail(v, id) {
   ]);
   const b = d.business;
   if (!b) throw new Error('Negocio no encontrado.');
+  if (!Array.isArray(b.amenities)) {
+    const { data: am } = await sb.from('businesses').select('amenities').eq('id', b.id).maybeSingle();
+    b.amenities = Array.isArray(am?.amenities) ? am.amenities : [];
+  }
   // Pausado por Klendar al suspender a su propietario: ¿sigue suspendido?
   const pausa = b.suspension_paused_at
     ? ((await rpc('admin_suspension_pauses', { p_user: b.owner_id }).catch(() => [])) || []).find((x) => x.id === b.id) || { ...b, owner_banned_at: null }
@@ -1042,6 +1058,8 @@ async function businessDetail(v, id) {
         <dt>Zona horaria</dt><dd>${zonaTxt(tz)}</dd>
         <dt>Horario</dt><dd>${hours.length ? hours.map(([k, val]) => `${esc(k)}: ${esc(Array.isArray(val) ? val.map((x) => Array.isArray(x) ? x.join('–') : JSON.stringify(x)).join(', ') : JSON.stringify(val))}`).join('<br>') : '—'}</dd>
         <dt>Descripción</dt><dd>${esc(b.description || '—')}</dd>
+        <dt>El sitio</dt><dd>${b.amenities.length ? `<span class="sitio-admin">${SITIO_ADMIN.filter(([k]) => b.amenities.includes(k)).map(([k, n, ic]) => `<span class="tag dim" style="display:inline-flex;align-items:center;gap:4px;margin:0 4px 4px 0"><span class="ms" aria-hidden="true" style="font-size:16px">${ic}</span>${esc(n)}</span>`).join('')}</span>` : '—'}
+          <button class="btn sm ghost" data-a="sitio">Cambiar…</button></dd>
         <dt>Id</dt><dd><code>${b.id}</code></dd>
       </dl>
       ${(b.gallery || []).length ? `<h3 style="margin-top:12px">Galería</h3><div class="gallery">${b.gallery.filter(urlSegura).map((u) => `<a href="${esc(urlSegura(u))}" target="_blank" rel="noopener noreferrer"><img src="${esc(urlSegura(u))}" alt=""></a>`).join('')}</div>` : ''}
@@ -1262,6 +1280,13 @@ async function businessAction(a, b, d) {
       const patch = { ...r };
       if (!patch.lat || !patch.lng) { delete patch.lat; delete patch.lng; }
       await rpc('admin_update_business', { p_id: b.id, p_patch: patch }); toast('Ficha actualizada');
+    }
+    if (a === 'sitio') {
+      const r = await modal({ title: 'El sitio', intro: esc(I18N.t('Lo que marca el negocio en «Tu ficha»: sale en su ficha y en los filtros.')),
+        fields: SITIO_ADMIN.map(([k, n]) => ({ name: `s_${k}`, label: n, type: 'checkbox', value: (b.amenities || []).includes(k) })) });
+      if (!r) return;
+      await rpc('set_business_amenities', { p_business: b.id, p_amenities: SITIO_ADMIN.map(([k]) => k).filter((k) => r[`s_${k}`]) });
+      toast('Ficha actualizada');
     }
     if (a === 'plan') {
       const plans = await rpc('admin_plans');
@@ -2608,6 +2633,7 @@ PAGES.colecciones = async (v, param) => {
     r.discount_only ? (en ? 'discounted only' : 'solo con descuento') : null,
     r.new_days ? (en ? `published in the last ${r.new_days} days` : `publicado en ${r.new_days} días`) : null,
     r.categories?.length ? (en ? `${r.categories.length} ${r.categories.length === 1 ? 'category' : 'categories'}` : `${r.categories.length} ${r.categories.length === 1 ? 'categoría' : 'categorías'}`) : null,
+    Array.isArray(r.traits) && r.traits.length ? r.traits.map(nombreSitio).join(' + ') : null,
   ].filter(Boolean).join(' · ') || (en ? 'everything nearby' : 'todo lo que haya cerca');
   v.innerHTML = `
     <div class="page-head"><h1>Colecciones</h1><span class="spacer"></span><button class="btn primary sm" id="new">Nueva colección…</button></div>
@@ -2632,6 +2658,13 @@ PAGES.colecciones = async (v, param) => {
       { name: 'discount_only', label: 'Solo con descuento', type: 'checkbox', value: !!c?.rules?.discount_only },
       { name: 'new_days', label: 'Publicado en los últimos N días (opcional)', type: 'number', value: c?.rules?.new_days ?? '' },
       { name: 'category_id', label: 'Categoría (opcional)', type: 'select', value: c?.rules?.categories?.[0] || '', options: [['', '— todas'], ...cats.map((x) => [x.id, x.names?.[I18N.lang] || x.names?.es || x.slug])] },
+      // «El sitio»: uno de los atributos (p. ej. «Apto para niños» = «Planes
+      // con niños»). Si la regla ya pedía varios, se conservan como opción.
+      { name: 'traits', label: 'El sitio (opcional)', type: 'select', value: (c?.rules?.traits || []).join(','), options: [
+        ['', '— cualquiera'],
+        ...SITIO_ADMIN.map(([k, n]) => [k, n]),
+        ...((c?.rules?.traits || []).length > 1 ? [[c.rules.traits.join(','), c.rules.traits.map(nombreSitio).join(' + ')]] : []),
+      ] },
       { name: 'city', label: 'Ciudad (opcional)', value: c?.city || '' },
       { name: 'position', label: 'Orden', type: 'number', value: c?.position ?? 50 },
       { name: 'active_from', label: 'Desde (opcional)', type: 'date', value: c?.active_from ? c.active_from.slice(0, 10) : '' },
@@ -2646,6 +2679,7 @@ PAGES.colecciones = async (v, param) => {
     if (r.discount_only) rules.discount_only = true;
     if (r.new_days) rules.new_days = +r.new_days;
     if (r.category_id) rules.categories = [r.category_id];
+    if (r.traits) rules.traits = r.traits.split(',').filter(Boolean);
     try {
       await rpc('admin_save_collection', {
         p_id: c?.id || null, p_slug: r.slug,
