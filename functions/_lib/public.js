@@ -291,7 +291,7 @@ ${siteFooter(lang)}
 ${conAmigos ? `<script src="/assets/amigos.js?v=14" defer data-lang="${en ? 'en' : 'es'}"></script>
 ` : ''}${conVisor ? `<script src="/assets/tarjeta.js?v=4" defer></script>
 ` : ''}${conTarjetas ? `<script src="/assets/tarjetas.js?v=10" defer></script>
-` : ''}${/class="detail[" ]/.test(body) ? `<script src="/assets/barra.js?v=3" defer></script>
+` : ''}${/class="detail[" ]/.test(body) ? `<script src="/assets/barra.js?v=4" defer></script>
 ` : ''}${/^\/(en\/)?(o|b|coleccion|collection)\//.test(path) ? desdeHistorias() : ''}${contador ? CONTADOR : ''}
 </body></html>`;
 }

@@ -458,6 +458,8 @@ body.con-hoja { overflow: hidden; }
 @media (max-width: 640px) {
   .neg-secciones { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 16px -20px 0; padding: 2px 20px; }
   .neg-secciones::-webkit-scrollbar { display: none; }
+  /* Como las pestañas de la app: un degradado al borde dice que hay más. */
+  .neg-secciones { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent); }
   .neg-secciones .chip { flex: none; white-space: nowrap; }
 }
 .negocio .d-body > h2[id], .ficha .d-body > h2[id] { scroll-margin-top: 84px; }
@@ -719,3 +721,6 @@ details.hoja-mas > fieldset { margin: 4px 16px 14px; }
 .por-que { margin-top: 28px; font-size: 14px; }
 .por-que summary { cursor: pointer; color: var(--ink-2); font-weight: 600; }
 .por-que p { margin: 8px 0 0; }
+.neg-id.d-top { align-items: flex-end; justify-content: flex-start; }
+.neg-id.d-top > div { flex: 1; }
+.neg-id .mas-menu { align-self: flex-start; }

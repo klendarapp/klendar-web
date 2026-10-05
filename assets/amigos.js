@@ -188,9 +188,16 @@
     if (!UUID.test(biz || '')) return;
     sb.rpc('my_businesses', {}).then(function (res) {
       var mios = (res && res.data) || [];
-      if (!mios.some(function (b) { return b && b.id === biz; })) return;
+      var yo = mios.filter(function (b) { return b && b.id === biz; })[0];
+      if (!yo) return;
+      // `data-solo-equipo="gestion"`: propietario o encargado (editan la
+      // ficha); `="empleado"`: el resto del equipo; vacío: todos.
+      var grupo = yo.role === 'owner' || yo.role === 'manager' ? 'gestion' : 'empleado';
       document.querySelectorAll('[data-solo-publico]').forEach(function (e) { e.hidden = true; });
-      document.querySelectorAll('[data-solo-equipo]').forEach(function (e) { e.hidden = false; });
+      document.querySelectorAll('[data-solo-equipo]').forEach(function (e) {
+        var para = e.getAttribute('data-solo-equipo');
+        if (!para || para === grupo) e.hidden = false;
+      });
       document.body.classList.add('es-equipo');
     }, function () { /* sin red: la ficha de siempre */ });
   }

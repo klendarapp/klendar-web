@@ -10,8 +10,15 @@
  */
 (function () {
   'use strict';
-  var original = document.querySelector('.detail .side .pill.big');
-  if (!original) return;
+  // El primero que se vea: al equipo del negocio, amigos.js le cambia el
+  // favorito por «Editar ficha» (los otros quedan con `hidden`).
+  var botones = document.querySelectorAll('.detail .side .pill.big');
+  if (!botones.length) return;
+  var original = botones[0];
+  function elVisible() {
+    for (var i = 0; i < botones.length; i++) if (!botones[i].hidden) return botones[i];
+    return null;
+  }
   var movil = window.matchMedia('(max-width: 860px)');
 
   var barra = document.createElement('div');
@@ -22,6 +29,7 @@
   document.body.appendChild(barra);
 
   function copia() {
+    original = elVisible() || original;
     boton.className = original.className;
     boton.removeAttribute('id');
     boton.innerHTML = original.innerHTML;
@@ -32,7 +40,8 @@
   var visible = false;
   function pinta() {
     // Solo cuando ya lo has pasado (queda por encima), no si aún no has llegado.
-    var ver = movil.matches && original.getBoundingClientRect().bottom < 64;
+    var actual = elVisible();
+    var ver = !!actual && movil.matches && actual.getBoundingClientRect().bottom < 64;
     if (ver === visible) return;
     visible = ver;
     if (ver) copia();

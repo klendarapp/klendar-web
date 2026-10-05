@@ -51,7 +51,7 @@ const pre = (lang) => (lang === 'en' ? '/en' : '');
  * calendario, «¿Por qué ves esto?», Denunciar) sin competir con Guardar o
  * Compartir. Un `<details>`: funciona sin JavaScript; con él, se cierra al
  * tocar fuera o con Escape (`MENU_JS`). `items`: HTML de cada opción. */
-const masMenu = (items, lang) => `<details class="mas-menu">
+const masMenu = (items, lang, { soloPublico = false } = {}) => `<details class="mas-menu"${soloPublico ? ' data-solo-publico' : ''}>
       <summary aria-label="${lang === 'en' ? 'More options' : 'Más opciones'}" title="${lang === 'en' ? 'More options' : 'Más opciones'}">${icono('mas', 22)}</summary>
       <div class="mas-lista">${items.filter(Boolean).join('')}</div>
     </details>`;
@@ -633,7 +633,7 @@ export async function businessPage(param, lang, search = '') {
         hours: 'Opening hours', closed: 'Closed', today: 'today',
         days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
         news: 'News', reviews: 'Reviews', write: 'Write a review', noReviews: 'No reviews yet. Been here? Be the first.',
-        user: 'Klendar user', report: 'Report', block: 'Block', reportBiz: 'Report this business', menuPhotos: 'Photos of the menu', menuPdf: 'Menu (PDF)',
+        user: 'Klendar user', report: 'Report', reportShort: 'Report', editBiz: 'Edit your page', myBiz: 'Go to the dashboard', block: 'Block', reportBiz: 'Report this business', menuPhotos: 'Photos of the menu', menuPdf: 'Menu (PDF)',
         verifiedCustomer: 'Verified customer',
         verifiedWhat: "They've redeemed something at this business with Klendar: an offer, an event, a stamp reward or a birthday gift. We check it against the redemptions validated at the venue.",
         howReviews: 'How reviews work', allReviews: 'All',
@@ -669,7 +669,7 @@ export async function businessPage(param, lang, search = '') {
         hours: 'Horario', closed: 'Cerrado', today: 'hoy',
         days: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'],
         news: 'Novedades', reviews: 'Reseñas', write: 'Escribir una reseña', noReviews: 'Todavía no hay reseñas. ¿Has estado? Sé la primera persona.',
-        user: 'Usuario de Klendar', report: 'Denunciar', block: 'Bloquear', reportBiz: 'Denunciar este negocio', menuPhotos: 'Fotos de la carta', menuPdf: 'Carta (PDF)',
+        user: 'Usuario de Klendar', report: 'Denunciar', reportShort: 'Denunciar', editBiz: 'Editar ficha', myBiz: 'Ir al panel', block: 'Bloquear', reportBiz: 'Denunciar este negocio', menuPhotos: 'Fotos de la carta', menuPdf: 'Carta (PDF)',
         verifiedCustomer: 'Cliente verificado',
         verifiedWhat: 'Ha canjeado algo en este negocio con Klendar: una oferta, un evento, un premio de sellos o un regalo de cumpleaños. Lo comprobamos con los canjes validados en el local.',
         howReviews: 'Cómo funcionan las reseñas', allReviews: 'Todas',
@@ -764,13 +764,14 @@ export async function businessPage(param, lang, search = '') {
 
   const body = `
   <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a>${city ? ` · <a href="${city}">${esc(b.city)}</a>` : ''}</p>
-  <div class="detail negocio${b.cover || galeria.length ? '' : ' sin-media'}">
+  <div class="detail negocio${b.cover || galeria.length ? '' : ' sin-media'}" data-equipo-biz="${esc(b.id)}">
     ${carrusel([b.cover, ...galeria].filter(Boolean), { titulo: b.name, forma: 'negocio', lang })}
     <div class="d-head">
-      <div class="neg-id">
+      <div class="neg-id d-top">
         ${b.logo && /^https:\/\//.test(b.logo) ? `<img class="neg-logo" src="${esc(b.logo)}" alt="" width="88" height="88">` : `<span class="neg-logo" aria-hidden="true">${esc((b.name || '·').charAt(0).toUpperCase())}</span>`}
         <div><h1>${esc(b.name)}</h1>
           <p class="muted"${b.lat ? ` data-lat="${Number(b.lat).toFixed(5)}" data-lng="${Number(b.lng).toFixed(5)}"` : ''}>${esc(b.city || '')}<span class="tj-dist" hidden></span></p></div>
+        ${masMenu([`<a class="mas-peligro" data-solo-publico href="${cuenta(lang)}#/denunciar/business/${encodeURIComponent(b.id)}" rel="nofollow">${S.reportShort}</a>`], lang, { soloPublico: true })}
       </div>
       ${where ? `<a class="neg-dir" href="${esc(maps || '#')}" rel="nofollow noopener" target="_blank">${icono('lugar')}<span>${esc(b.address || where)}</span><svg class="ic" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M8.59 16.59 13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg></a>` : ''}
       ${b.rating && b.ratings ? `<p class="neg-nota"><a href="#resenas"><span class="stars-mini" aria-hidden="true">★</span> ${nota(b.rating, lang)} · ${esc(en ? (b.ratings === 1 ? '1 review' : `${b.ratings} reviews`) : (b.ratings === 1 ? '1 reseña' : `${b.ratings} reseñas`))}</a></p>` : ''}
@@ -789,8 +790,10 @@ export async function businessPage(param, lang, search = '') {
       </nav>
     </div>
     <aside class="side">
-      <a class="pill accent big" data-fav="${esc(b.id)}" href="${cuenta(lang)}#/seguir/${encodeURIComponent(b.id)}"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.8 4.5c2.2 0 3.6 1.2 5.2 3 1.6-1.8 3-3 5.2-3 3.8 0 5.9 3.9 4.4 7.3C19.5 16.4 12 21 12 21z"/></svg> <span>${S.open}</span></a>
-      <p class="note" style="margin-bottom:16px">${S.note}</p>
+      <a class="pill big" data-solo-equipo="gestion" hidden href="/panel/#/ficha?biz=${encodeURIComponent(b.id)}">${icono('editar', 16)} <span>${S.editBiz}</span></a>
+      <a class="pill big" data-solo-equipo="empleado" hidden href="/panel/?biz=${encodeURIComponent(b.id)}">${icono('negocio', 16)} <span>${S.myBiz}</span></a>
+      <a class="pill accent big" data-solo-publico data-fav="${esc(b.id)}" href="${cuenta(lang)}#/seguir/${encodeURIComponent(b.id)}"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.8 4.5c2.2 0 3.6 1.2 5.2 3 1.6-1.8 3-3 5.2-3 3.8 0 5.9 3.9 4.4 7.3C19.5 16.4 12 21 12 21z"/></svg> <span>${S.open}</span></a>
+      <p class="note" data-solo-publico style="margin-bottom:16px">${S.note}</p>
       <p class="acciones" style="margin:0 0 16px">${historiaBoton(lang, 'b', slug || b.id)}</p>
       <div class="info">
         ${where ? `<div><span>${icono('lugar')}</span><span>${maps ? `<a href="${esc(maps)}" rel="nofollow noopener" target="_blank">${esc(where)}</a>` : esc(where)}</span></div>` : ''}
@@ -859,7 +862,7 @@ export async function businessPage(param, lang, search = '') {
           <a class="denuncia" href="${cuenta(lang)}#/denunciar/review/${encodeURIComponent(r.id)}" rel="nofollow">${S.report}</a>${isUuid(r.user_id) ? ` · <a class="denuncia" href="${cuenta(lang)}#/bloquear/${r.user_id}" rel="nofollow">${S.block}</a>` : ''}
         </article>`).join('')}</div>` : `<p class="empty">${soloVerificadas ? S.noVerified : S.noReviews}</p>`}
       ${b.city ? `<p class="muted">${esc(S.moreIn(b.city))} <a href="${cityToday}">${esc(S.cityToday)}</a> · <a href="${city}">${esc(S.cityWeek)}</a></p>` : ''}
-      <p class="denuncia-pie"><a href="${cuenta(lang)}#/reclamar/${encodeURIComponent(b.id)}" rel="nofollow">${S.claim}</a> · <a href="${cuenta(lang)}#/denunciar/business/${encodeURIComponent(b.id)}" rel="nofollow">${S.reportBiz}</a></p>
+      <p class="denuncia-pie" data-solo-publico><a href="${cuenta(lang)}#/reclamar/${encodeURIComponent(b.id)}" rel="nofollow">${S.claim}</a></p>
     </div>
   </div>`;
 
@@ -902,7 +905,7 @@ export async function businessPage(param, lang, search = '') {
 <script src="/assets/visita.js?v=3" defer data-token="${esc(visita)}" data-lang="${en ? 'en' : 'es'}"></script>`
     : '';
   return html(publicPage({
-    lang, path, body, title: conCiudad ? `${b.name} · ${b.city}` : b.name, description, image: b.cover || b.logo,
+    lang, path, body: body + MENU_JS, title: conCiudad ? `${b.name} · ${b.city}` : b.name, description, image: b.cover || b.logo,
     head: `<meta name="robots" content="${b.adults_only || conVisita || b.closed_indefinitely ? 'noindex' : 'index, follow'}">
 ${ldScript(jsonLd)}${horario ? '\n<script src="/assets/zona.js?v=1" defer></script>\n<script src="/assets/horario.js?v=1" defer></script>' : ''}${conVisita ? `\n${conVisita}` : ''}
 ${traducir(lang, `business:${b.id}`, carta.length ? `menu:${b.id}` : '')}`,
