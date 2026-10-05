@@ -19,7 +19,7 @@ import {
   listingLd, publicPage, todayBase,
 } from './public.js';
 import { SITIO, icSitio, icTiempo, nombreSitio, ordenaSitio, sitioAUrl, sitioDeUrl } from './sitio.js';
-import { dondeTiempo, tiempoDeHoy } from './tiempo.js';
+import { FUENTE_TIEMPO, dondeTiempo, tiempoDeHoy } from './tiempo.js';
 import { rejilla, tarjeta } from './tarjeta.js';
 import { notFound } from './views.js';
 
@@ -788,7 +788,7 @@ export async function explorePage(url, lang, modo = 'explorar') {
         <input type="hidden" name="${K.weather}" value="0" data-tiempo-off>
         <div class="ops"><label class="op-r"><input type="checkbox" name="${K.weather}" value="1" data-tiempo${tiempoOff ? '' : ' checked'}><span>${esc(S.byWeather)}</span></label></div>
         <p class="hoja-nota hoja-nota-bajo">${esc(S.byWeatherHint)}</p>
-        <p class="hoja-nota">${esc(S.weatherData)} <a href="https://open-meteo.com/" rel="noopener" target="_blank">Open-Meteo.com</a></p>
+        <p class="hoja-nota">${esc(S.weatherData)} <a href="${FUENTE_TIEMPO.url}" rel="noopener" target="_blank">${FUENTE_TIEMPO.nombre}</a></p>
       </fieldset>`;
   const hoja = `<details class="hoja" id="filtros">
     <summary class="chip chip-filtros${nFiltros ? ' on' : ''}" aria-label="${esc(`${S.filters}: ${resumen.replace(/ · /g, ', ')}`)}">${ic('tune', 16)}<span>${esc(S.filters)}</span><span class="chip-resumen">· ${esc(resumen)}</span></summary>
@@ -869,10 +869,10 @@ export async function explorePage(url, lang, modo = 'explorar') {
   })}`;
   const hayAlgo = conFiltros || cerca || Boolean(city) || Boolean(sort);
   // «Según el tiempo», encima de la lista: qué se ha hecho, «Quitar» (lo
-  // apaga) y de dónde salen los datos (Open-Meteo pide la atribución).
+  // apaga) y de dónde salen los datos (MET Norway pide la atribución).
   const lineaTiempo = tiempo && enLista && !vacio ? `<p class="tiempo-linea">${icTiempo(tiempo, 16)}<span>${esc(tiempo === 'rain' ? S.rainLine : S.sunLine)}</span>
     <a class="tiempo-quitar" href="${esc(link({ tiempoOff: true }))}">${esc(S.weatherOff)}</a>
-    <small class="tiempo-fuente">${esc(S.weatherData)} <a href="https://open-meteo.com/" rel="noopener" target="_blank">Open-Meteo.com</a></small></p>` : '';
+    <small class="tiempo-fuente">${esc(S.weatherData)} <a href="${FUENTE_TIEMPO.url}" rel="noopener" target="_blank">${FUENTE_TIEMPO.nombre}</a></small></p>` : '';
   const final = alFinal || vacio ? finalHtml({
     S, en, lang, cerca, km, city, filtros: conFiltros, link, page, sugerencias, vacio, alertaHref,
     limpiar: hayAlgo ? limpia : '', compacto: descubre && !vacio,

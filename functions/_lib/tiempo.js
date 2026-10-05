@@ -1,17 +1,21 @@
 // «Según el tiempo»: el tiempo de hoy para ordenar Descubre y Explorar.
 //
 // Lo pide la Pages Function (no el navegador) a la Edge Function pública
-// `weather` de Supabase, que a su vez pregunta a Open-Meteo desde su servidor
+// `weather` de Supabase, que a su vez pregunta a MET Norway desde su servidor
 // y guarda cada celda un rato. Aquí solo sale una posición redondeada a 0,1°
 // (unos 11 × 8 km): con «Cerca de mí», la de la persona redondeada; con una
 // ciudad elegida, la de la ciudad (la tabla de abajo). Si no se sabe, o la
 // función no contesta a tiempo, no hay tiempo y no se reordena nada.
 //
 // Solo cuenta «rain» y «sun»: con «neutral» (o un fallo) la página sale como
-// siempre. Los datos son de Open-Meteo.com (CC BY 4.0): quien los enseña pone
-// «Datos del tiempo: Open-Meteo.com» con su enlace.
+// siempre. Los datos son de MET Norway (api.met.no, CC BY 4.0; gratis también
+// para uso comercial): quien los enseña pone «Datos del tiempo: MET Norway»
+// con su enlace (FUENTE_TIEMPO).
 
 import { supabasePublic } from './page.js';
+
+/** La atribución de los datos del tiempo (la Edge Function usa MET Norway). */
+export const FUENTE_TIEMPO = { nombre: 'MET Norway', url: 'https://www.met.no/en' };
 
 /** El centro de las ciudades más grandes y de las capitales de provincia,
  * redondeado a 0,1° (no hace falta más: la previsión va por celdas de 0,1°).
