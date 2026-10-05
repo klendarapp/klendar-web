@@ -443,6 +443,11 @@ const enIdioma = (v, en) => (en ? v : VALORES_ES[v] || v);
 /** Orden de la app por defecto: Novedades (`FeedFilters.defaultSort`). */
 const ORDEN_DEFECTO = 'newest';
 
+/** Posición para la dirección: 3 decimales (unos 100 m), nunca más precisa.
+ * La distancia de cada tarjeta la calcula el navegador con la suya. */
+const redondeaPos = (x) => (Number.isFinite(x) ? Math.round(x * 1000) / 1000 : x);
+const posUrl = (x) => redondeaPos(Number(x)).toFixed(3);
+
 /** Lee el estado de la dirección (con las claves de cualquiera de los dos idiomas). */
 function leeEstado(qs) {
   const de = (k, max) => (qs.get(CLAVES.es[k]) || qs.get(CLAVES.en[k]) || '').slice(0, max);
@@ -454,8 +459,10 @@ function leeEstado(qs) {
   const when = norm(de('when', 12));
   const sort = norm(de('sort', 12));
   const vista = norm(de('view', 12));
-  const lat = Number.parseFloat(qs.get('lat') || '');
-  const lng = Number.parseFloat(qs.get('lng') || '');
+  // La posición de «Cerca de mí» va en la dirección con 3 decimales (unos
+  // 100 m); un enlace de antes con más se redondea al leerlo.
+  const lat = redondeaPos(Number.parseFloat(qs.get('lat') || ''));
+  const lng = redondeaPos(Number.parseFloat(qs.get('lng') || ''));
   const cerca = Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
   const kmPedido = Number.parseInt(qs.get('km') || '', 10);
   // Varios valores (`?sitio=a&sitio=b`) o separados por comas.
@@ -507,7 +514,7 @@ function query(e, lang, { soloCompartido = false } = {}) {
     if (!soloCompartido && e.vista === 'calendar' && e.mes) p.set(K.month, e.mes);
     if (!soloCompartido && e.vista === 'calendar' && e.dia) p.set(K.day, e.dia);
     if (e.cerca) {
-      p.set('lat', Number(e.lat).toFixed(4)); p.set('lng', Number(e.lng).toFixed(4));
+      p.set('lat', posUrl(e.lat)); p.set('lng', posUrl(e.lng));
       if (e.km !== RADIO_KM) p.set('km', String(e.km));
     }
     if (e.amigos) p.set('amigos', '1');
@@ -759,7 +766,7 @@ export async function explorePage(url, lang, modo = 'explorar') {
   const ocultos = [
     ['q', q], [K.city, cerca ? '' : city], [K.sort, negocios ? '' : sort ? enIdioma(sort, en) : ''], [K.view, vista ? enIdioma(vista, en) : ''],
     [K.month, calendario ? mes : ''], [K.day, calendario ? dia : ''],
-    ['lat', cerca && !negocios ? lat.toFixed(4) : ''], ['lng', cerca && !negocios ? lng.toFixed(4) : ''],
+    ['lat', cerca && !negocios ? posUrl(lat) : ''], ['lng', cerca && !negocios ? posUrl(lng) : ''],
     ['amigos', e.amigos ? '1' : ''], ...(negocios ? [[K.kind, enIdioma('places', en)]] : []),
     // En «Negocios» la hoja no tiene «Según el tiempo»: se conserva como estaba.
     [K.weather, negocios && tiempoOff ? '0' : ''],
@@ -865,7 +872,7 @@ export async function explorePage(url, lang, modo = 'explorar') {
     ...(cat ? { cat } : {}),
     ...(price === 'free' ? { precio: '0' } : /^\d{1,3}$/.test(price) ? { precio: String(Number(price) * 100) } : {}),
     ...(soloDescuento ? { descuento: '1' } : {}),
-    ...(cerca ? { radio: String(km * 1000), lat: lat.toFixed(4), lng: lng.toFixed(4) } : {}),
+    ...(cerca ? { radio: String(km * 1000), lat: posUrl(lat), lng: posUrl(lng) } : {}),
   })}`;
   const hayAlgo = conFiltros || cerca || Boolean(city) || Boolean(sort);
   // «Según el tiempo», encima de la lista: qué se ha hecho, «Quitar» (lo

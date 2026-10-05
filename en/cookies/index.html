@@ -27,6 +27,7 @@
 
 </head>
 <body>
+<!--email_off-->
 <a class="saltar" href="#contenido">Skip to content</a>
 <header class="top"><div class="wrap">
   <a class="brand" href="/en/"><img src="/assets/symbol-96.png" alt="" width="30" height="30"> Klendar</a>
@@ -58,10 +59,10 @@
 <script src="/assets/cabecera.js?v=8" defer></script>
 <main class="doc" id="contenido">
 <h1>Cookie policy</h1>
-<div class="meta">Last updated: 1 October 2026 · Version 2026-09-29</div>
+<div class="meta">Last updated: 5 October 2026 · Version 2026-09-29</div>
 <p class="notice">This is a courtesy translation provided for information only. In case of any discrepancy, the <a href="/cookies/">Spanish version</a> prevails.</p>
 
-<p><strong>In short.</strong> klendar.app does not use cookies. It only stores in your browser what is essential for what you ask it to do (your session, your language, codes a business validates offline) and it counts visits without cookies and without identifying you. None of this is used for advertising or to follow you across other sites, so we don't ask for your consent (art. 22.2 of the Spanish LSSI-CE). If we ever add anything that needs it, we will ask you first.</p>
+<p><strong>In short.</strong> klendar.app does not use cookies. It only stores in your browser what is essential for what you ask it to do (your session, your language, your filters, the codes a business validates offline) and it counts visits without cookies and without identifying you. None of this is used for advertising or to follow you across other sites, so we don't ask for your consent (art. 22.2 of the Spanish LSSI-CE). If we ever add anything that needs it, we will ask you first.</p>
 <h2>What is stored in your browser</h2>
 <table>
 <tr><th>Name</th><th>Where</th><th>Purpose</th><th>How long</th><th>Type</th></tr>
@@ -74,11 +75,18 @@
 <tr><td><code>klendar.intencion</code></td><td>Publication and business pages and “Your account” (session storage)</td><td>Remember the button you just pressed (save, reserve, get the code…) so it's done once you've logged in, and never done if you arrive through an outside link</td><td>Until it's used, 15 minutes at most or until the tab is closed</td><td>Technical (security)</td></tr>
 <tr><td><code>klendar.biz</code></td><td>Business dashboard</td><td>Remember which business you were managing</td><td>Until you log out</td><td>Technical</td></tr>
 <tr><td><code>klendar.cola.…</code></td><td>Business dashboard</td><td>Keep codes validated offline until the connection is back</td><td>Until they are sent or you log out</td><td>Technical</td></tr>
+<tr><td><code>klendar.filtros</code></td><td>Discover and Explore (local storage)</td><td>Remember the filters you set (city, type, categories, price…) so they're there when you open Discover or Explore again</td><td>Used for 6 hours; replaced when you change them and deleted with “Clear filters”</td><td>Preference you chose</td></tr>
+<tr><td><code>klendar.filtros.sin</code></td><td>Discover and Explore (session storage)</td><td>Make sure the saved filters don't come back right after “Clear filters”</td><td>Until the next page</td><td>Technical</td></tr>
+<tr><td><code>klendar.cerca</code></td><td>Discover, Explore and publication pages (local storage)</td><td>Your position (latitude and longitude) when you tap “Near me” or “Use my location”, to sort by distance and show how far away each place is</td><td>6 hours (then deleted)</td><td>Technical (you ask for it, with the browser's location permission)</td></tr>
+<tr><td><code>klendar.sonido</code></td><td>Discover, Explore and publication pages (session storage)</td><td>Remember that you've turned on video sound while you browse</td><td>Until you close the tab</td><td>Preference you chose</td></tr>
+<tr><td><code>klendar.traducir</code></td><td>“Your account” and publication pages (local storage)</td><td>Remember whether you want businesses' text translated when you're not logged in</td><td>Until you change it</td><td>Preference you chose</td></tr>
+<tr><td><code>klendar.codigos.…</code></td><td>“Your account” (local storage)</td><td>A copy of your codes and bookings so you can show them at the door even without a connection</td><td>Until you log out</td><td>Technical</td></tr>
+<tr><td><code>klendar.panel.vista</code></td><td>Business dashboard (local storage)</td><td>How you want to see your publications (cards or list)</td><td>Until you change it</td><td>Preference you chose</td></tr>
 <tr><td>two-step verification flag</td><td>Admin (session storage)</td><td>Not asking again in that tab</td><td>Until the tab is closed</td><td>Technical (security)</td></tr>
 <tr><td><code>mapbox.eventData…</code> (if present)</td><td>Maps in Explore and the dashboard (local storage, set by Mapbox)</td><td>A random identifier that changes every 24 hours, used by Mapbox to count map loads (billing)</td><td>24 hours</td><td>Technical, for the map service</td></tr>
 </table>
 <h2>Visit statistics</h2>
-<p>We use <strong>Cloudflare Web Analytics</strong>, which uses no cookies and stores nothing in your browser: a small script sends Cloudflare, on our behalf, the page viewed, the site you came from, your browser and device type, your country and load times. We only see aggregate figures, without identifying you or tracking you across sites, and Cloudflare does not use them for anything else. It isn't used in “Your account”, the business dashboard or admin, or on email unsubscribe links and friend links.</p>
+<p>We use <strong>Cloudflare Web Analytics</strong>, which uses no cookies and stores nothing in your browser: a small script sends Cloudflare, on our behalf, the page viewed, the site you came from, your browser and device type, your country and load times. We only see aggregate figures, without identifying you or tracking you across sites, and Cloudflare does not use them for anything else. It isn't used in “Your account”, the business dashboard or admin, or on email unsubscribe links and friend links. Nor on pages whose address contains your position (“Near me”) or a promoter's link.</p>
 <h2>Third-party services loaded on some pages</h2>
 <p>They receive your IP address, like any website you visit, and set no cookies:</p>
 <ul>
@@ -87,12 +95,13 @@
 </ul>
 <p>Fonts, icons and libraries (including the one that connects “Your account”, the business dashboard and admin to our database) are served from klendar.app, without going through Google Fonts or any other service.</p>
 <h2>How to delete it</h2>
-<p>Logging out deletes the session and the dashboard data. You can delete everything else in your browser settings (“Clear browsing data” or “Site data”).</p>
+<p>When you log out, your session, the copy of your codes and the dashboard data are deleted. You can delete everything else in your browser settings (“Clear browsing data” or “Site data”).</p>
 <h2>The app</h2>
 <p>The <strong>mobile app</strong> does not use cookies. It uses device identifiers for notifications (only if you turn them on) and for crash reports and, only if you agree (when signing up or in Account → Settings → Privacy and data), for app usage statistics. You can withdraw it at any time from the app or from “Your account” on the website. More detail in the <a href="/en/privacy/">Privacy policy</a>.</p>
 
 <h2 class="cambios">Change history</h2>
 <ul>
+  <li><strong>5 October 2026</strong>: Seven more keys: your filters, your “Near me” position (deleted after 6 hours), video sound, translation, the copy of your codes and the dashboard view; where visits aren't counted and what is deleted when you log out.</li>
   <li><strong>1 October 2026</strong>: Up-to-date list of what is stored in your browser (including the separate admin session and the PKCE check when logging in with Google or Apple) and of third-party services; icons and libraries are now served from klendar.app, without Google Fonts or jsDelivr.</li>
   <li><strong>29 September 2026</strong>: Current version of the terms (2026-09-29).</li>
 </ul>
@@ -108,7 +117,7 @@
   </div>
   <div class="bottom">
     <span>© 2026 Klendar. All rights reserved.</span>
-    <span><a href="mailto:info@klendar.app">info@klendar.app</a> · Made in Spain</span>
+    <span><!--email_off--><a href="mailto:info@klendar.app">info@klendar.app</a><!--/email_off--> · Made in Spain</span>
   </div>
 </div></footer>
 <script>
@@ -118,4 +127,5 @@
 })();
 </script>
 
+<!--/email_off-->
 </body></html>

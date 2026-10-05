@@ -344,8 +344,9 @@
 
     var precio = de('precio', 'price');
     var orden = de('orden', 'sort');
-    var lat = parseFloat(q.get('lat'));
-    var lng = parseFloat(q.get('lng'));
+    // Con 3 decimales (unos 100 m), como la dirección: un enlace de antes con más se redondea.
+    var lat = Math.round(parseFloat(q.get('lat')) * 1000) / 1000;
+    var lng = Math.round(parseFloat(q.get('lng')) * 1000) / 1000;
     var cerca = isFinite(lat) && isFinite(lng);
     var km = parseInt(q.get('km'), 10);
     var v = ventana(de('cuando', 'when'));

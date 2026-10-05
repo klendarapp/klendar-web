@@ -170,7 +170,7 @@ export function siteFooter(lang) {
   </div>
   <div class="bottom">
     <span>${T.derechos}</span>
-    <span><a href="mailto:info@klendar.app">info@klendar.app</a> · ${T.hecho}</span>
+    <span><!--email_off--><a href="mailto:info@klendar.app">info@klendar.app</a><!--/email_off--> · ${T.hecho}</span>
   </div>
 </div></footer>`;
 }

@@ -310,6 +310,23 @@
     try { localStorage.setItem('klendar.cerca', JSON.stringify({ lat: lat, lng: lng, t: Date.now() })); } catch (e) { /* nada */ }
   };
 
+  // En la dirección, la posición de «Cerca de mí» va con 3 decimales (unos
+  // 100 m), nunca más precisa: la distancia de cada tarjeta se calcula aquí
+  // con la de `klendar.cerca`. Un enlace de antes con más decimales se
+  // redondea también en la barra de direcciones (el servidor ya lo redondea
+  // al leerlo).
+  function posUrl(x) { return (Math.round(x * 1000) / 1000).toFixed(3); }
+  (function () {
+    try {
+      var u = new URL(location.href), cambia = false;
+      ['lat', 'lng'].forEach(function (k) {
+        var v = u.searchParams.get(k), n = parseFloat(v);
+        if (v && isFinite(n) && /\.\d{4,}/.test(v)) { u.searchParams.set(k, posUrl(n)); cambia = true; }
+      });
+      if (cambia) history.replaceState(history.state, '', u.toString());
+    } catch (e) { /* nada */ }
+  })();
+
   // ── Visor a pantalla completa (como `showPhotoViewer` en la app) ───────
   // Lo abren las piezas de la galería de una ficha, su botón «Ver a pantalla
   // completa» y las miniaturas (`[data-visor]`: carta, novedades, reseñas).
@@ -453,7 +470,7 @@
         var lat = p.coords.latitude, lng = p.coords.longitude;
         window.KL_CERCA(lat, lng);
         var u = new URL(location.href);
-        u.searchParams.set('lat', lat.toFixed(4)); u.searchParams.set('lng', lng.toFixed(4));
+        u.searchParams.set('lat', posUrl(lat)); u.searchParams.set('lng', posUrl(lng));
         ['p', 'ciudad', 'city'].forEach(function (k) { u.searchParams.delete(k); });
         new URLSearchParams(b.getAttribute('data-mas') || '').forEach(function (v, k) { u.searchParams.set(k, v); });
         marcaPropia();

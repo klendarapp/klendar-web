@@ -312,8 +312,9 @@ function alertaDesdeParams(params, cats) {
   if (params.get('descuento') === '1') a.discount_only = true;
   const radio = Number.parseInt(params.get('radio') || '', 10);
   if (Number.isFinite(radio) && radio >= 500 && radio <= 25000) a.radius_m = radio;
-  const lat = Number.parseFloat(params.get('lat') || '');
-  const lng = Number.parseFloat(params.get('lng') || '');
+  // La posición llega con 3 decimales (unos 100 m); un enlace de antes con más se redondea.
+  const lat = Math.round(Number.parseFloat(params.get('lat') || '') * 1000) / 1000;
+  const lng = Math.round(Number.parseFloat(params.get('lng') || '') * 1000) / 1000;
   if (Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180) {
     a.lat = lat; a.lng = lng; a.place_label = t('Aquí');
   }

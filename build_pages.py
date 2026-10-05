@@ -295,7 +295,7 @@ FAQ_ES = [
     ('¿Cómo se canjea una oferta?', 'Pulsas «Conseguir el código» y te sale un código QR de un solo uso. Se lo enseñas al negocio, que lo escanea o escribe el código. Ojo: algunos códigos caducan a los pocos minutos, así que se pide estando ya en el local.'),
     ('Mi código no funciona', 'Suele ser una de tres: ya se usó, caducó (los de barra duran minutos) o es de otro negocio. En «Tus códigos» (en la app o en la web) ves el estado de cada uno. Si algo no cuadra, escríbenos con el código a <a href="mailto:info@klendar.app">info@klendar.app</a>.'),
     ('¿Puedo reservar una plaza en un evento?', 'Si el negocio lo activa, sí: reservas plaza desde la app o desde la web y enseñas tu código en la puerta. La reserva no es un pago; lo que cueste, si cuesta, se paga en el local.'),
-    ('¿Por qué veo unas cosas y no otras?', 'Por cercanía, por lo que empieza pronto y por tus favoritos. Si un negocio paga por destacar una publicación, sale primero y siempre con la etiqueta «Destacado»; el resto del orden lo eliges tú en los filtros. Si cerca no hay nada, la app te sugiere cosas según tus últimas búsquedas y las categorías que más miras, que se guardan en tu móvil. No usamos datos de otras webs. En cada ficha hay un «¿Por qué ves esto?» que lo explica.'),
+    ('¿Por qué veo unas cosas y no otras?', 'Por cercanía, por lo que empieza pronto y por tus favoritos. Si un negocio paga por destacar una publicación, sale primero y siempre con la etiqueta «Destacado». Con «Según el tiempo» (encendido de serie, se apaga en Filtros), si hoy llueve sale primero lo de hoy bajo techo y, si hace buen tiempo, las terrazas y el aire libre; no quita nada. El resto del orden lo eliges tú en los filtros. Si cerca no hay nada, la app te sugiere cosas según tus últimas búsquedas y las categorías que más miras, que se guardan en tu móvil. No usamos datos de otras webs. En cada ficha hay un «¿Por qué ves esto?» que lo explica.'),
     ('¿Qué pasa con mis datos?', 'Lo contamos entero en la <a href="/privacidad/">política de privacidad</a>. En resumen: se usan para que la app funcione, no se venden, y puedes descargarlos o borrar tu cuenta desde la app o desde «Tu cuenta» en la web.'),
     ('¿Cómo borro mi cuenta?', 'Desde Cuenta → Ajustes → Eliminar mi cuenta, en la app o en «Tu cuenta» de la web. Se borra todo lo tuyo. También puedes pedirlo por correo: <a href="/eliminar-cuenta/">cómo hacerlo</a>.'),
     ('Soy un negocio, ¿cómo me doy de alta?', 'Desde la app (Cuenta → ¿Quieres registrar tu negocio?) o desde el <a href="/panel/">panel web</a>; hace falta la ubicación exacta del local. Lo revisamos y te verificamos, normalmente en 24-48 horas. Luego puedes publicar desde el móvil o desde el ordenador.'),
@@ -309,7 +309,7 @@ FAQ_EN = [
     ('How do I redeem a deal?', 'Tap “Get the code” and you get a single-use QR code. Show it to the business, and they scan it or type in the code. Careful: some codes expire within minutes, so get it once you\'re at the venue.'),
     ('My code doesn\'t work', 'Usually one of three things: it\'s already been used, it\'s expired (codes at a bar last minutes) or it belongs to another business. In “Your codes” (in the app or on the web) you can see the status of each one. If something is off, email us the code at <a href="mailto:info@klendar.app">info@klendar.app</a>.'),
     ('Can I reserve a place at an event?', 'If the business turns it on, yes: you reserve a place from the app or the website and show your code at the door. Reserving isn\'t a payment; whatever it costs, if anything, is paid at the venue.'),
-    ('Why do I see some things and not others?', 'Because of how close they are, what starts soon and your favourites. If a business pays to feature a publication, it comes first and always carries the “Featured” label; you choose the rest of the order in the filters. If there\'s nothing nearby, the app suggests things based on your recent searches and the categories you look at most, which are stored on your phone. We don\'t use data from other sites. Each publication has a “Why are you seeing this?” that explains it.'),
+    ('Why do I see some things and not others?', 'Because of how close they are, what starts soon and your favourites. If a business pays to feature a publication, it comes first and always carries the “Featured” label. With “Based on the weather” (on by default, turn it off in Filters), if it\'s raining today indoor plans for today come first and, if the weather is nice, terraces and outdoor plans; nothing is removed. You choose the rest of the order in the filters. If there\'s nothing nearby, the app suggests things based on your recent searches and the categories you look at most, which are stored on your phone. We don\'t use data from other sites. Each publication has a “Why are you seeing this?” that explains it.'),
     ('What happens to my data?', 'It\'s all in the <a href="/en/privacy/">privacy policy</a>. In short: it\'s used to make the app work, it\'s never sold, and you can download it or delete your account from the app or from “Your account” on the website.'),
     ('How do I delete my account?', 'From Account → Settings → Delete my account, in the app or in “Your account” on the website. Everything of yours is deleted. You can also ask by email: <a href="/en/delete-account/">how to do it</a>.'),
     ('I run a business. How do I register?', 'From the app (Account → Want to register your business?) or from the <a href="/panel/">web dashboard</a>; it needs the venue’s exact location. We review and verify it, usually within 24–48 hours. After that you can publish from your phone or from a computer.'),
@@ -513,7 +513,7 @@ PAGINAS['sobre'] = (
 <h2>Lo que no vamos a hacer</h2>
 <ul>
   <li>Inventar urgencia: si quedan diez plazas, pone diez.</li>
-  <li>Colar lo pagado sin decirlo: si un negocio paga por destacar algo, sale primero y con la etiqueta «Destacado»; el resto del orden lo eliges tú en los filtros.</li>
+  <li>Colar lo pagado sin decirlo: si un negocio paga por destacar algo, sale primero y con la etiqueta «Destacado». Lo demás lo ordenan tus filtros y, si lo dejas encendido, el tiempo que hace hoy.</li>
   <li>Perfilarte con datos de otras webs. Si cerca no hay nada, la app te sugiere cosas según tus últimas búsquedas, que se quedan en tu móvil.</li>
   <li>Pedirte más datos de los que hacen falta para que esto funcione.</li>
 </ul>
@@ -533,7 +533,7 @@ PAGINAS['sobre'] = (
 <h2>What we won't do</h2>
 <ul>
   <li>Invent urgency: if ten places are left, it says ten.</li>
-  <li>Sneak in paid placements: if a business pays to feature something, it comes first and carries the “Featured” label; you choose the rest of the order in the filters.</li>
+  <li>Sneak in paid placements: if a business pays to feature something, it comes first and carries the “Featured” label. The rest is ordered by your filters and, if you leave it on, today's weather.</li>
   <li>Profile you with data from other sites. If there's nothing nearby, the app suggests things based on your recent searches, which stay on your phone.</li>
   <li>Ask you for more data than this needs to work.</li>
 </ul>

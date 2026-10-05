@@ -197,11 +197,25 @@ SUPPORT_EN = ('Support', 'Klendar help: how to redeem a deal, list your business
 <p>Check Account → Settings → Notifications and the system notification permission. “Nearby” only alerts you about flash offers within your chosen radius, at most 3 times a day.</p>
 <h3>I can't log in to my account</h3>
 <p>On “Log in”, tap “Forgot your password?” and we'll send you a link to create a new one, or choose “Log in with an email code” and get in without a password. If you created the account with Google or Apple, log in with that same button. If you can no longer open that email, write to <a href="mailto:info@klendar.app">info@klendar.app</a> from another address and tell us which email you signed up with.</p>
+<h3>A promoter gave me their link: what do they see about me?</h3>
+<p>Your name and photo, when you signed up, which offer you got and whether and when you got in. Never your email, phone number or date of birth. If you don't want to be on their list, open the venue's page without their link.</p>
+<h3>Unfollowing a series</h3>
+<p>On the page of any date in the series tap “You're following the series” → “Unfollow”, or go to Account → “Series you follow”. To stop notifications for all series: Settings → Notifications → “Series you follow”.</p>
 <h3>I run a business and want to sign up</h3>
 <p>In the app: Account → “Want to register your business?”, or on the web from the <a href="/panel/">dashboard</a>. We review it within 24–48 h. You can also email us.</p>
 <h2>Legal documents</h2>
 <p><a href="/en/privacy/">Privacy policy</a> · <a href="/en/terms/">Terms of use</a> · <a href="/en/business-terms/">Business terms</a> · <a href="/en/community-guidelines/">Community guidelines</a> · <a href="/en/delete-account/">Delete your account</a>. English versions are courtesy translations; the Spanish originals are the governing text.</p>
 ''')
+
+
+# Cloudflare «Email Address Obfuscation» cambia cada correo por
+# «[email protected]» y un enlace a /cdn-cgi/l/email-protection que sin
+# JavaScript no se lee (y el aviso legal tiene que dar un correo que se lea
+# siempre: LSSI art. 10.1.a). Todo lo que va entre estos dos comentarios lo
+# deja tal cual: en las páginas que salen de aquí (legales, soporte,
+# preguntas, portada…) envuelven todo el <body>; el pie de la web lo lleva
+# también alrededor de su correo (functions/_lib/chrome.js).
+EMAIL_OFF, EMAIL_ON = '<!--email_off-->', '<!--/email_off-->'
 
 
 def head(t, path, page_title=None, page_desc=None, extra=''):
@@ -238,6 +252,7 @@ def head(t, path, page_title=None, page_desc=None, extra=''):
 {extra}
 </head>
 <body>
+{EMAIL_OFF}
 {HEADER_TPL[t['lang']].replace('{{ES}}', es_path).replace('{{EN}}', en_path)}
 '''
 
@@ -292,6 +307,7 @@ def footer(t, only_footer=True):
 }})();
 </script>
 {'' if only_footer else LIVE_SCRIPTS}
+{EMAIL_ON}
 </body></html>
 '''
 

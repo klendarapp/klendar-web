@@ -27,6 +27,7 @@
 
 </head>
 <body>
+<!--email_off-->
 <a class="saltar" href="#contenido">Saltar al contenido</a>
 <header class="top"><div class="wrap">
   <a class="brand" href="/"><img src="/assets/symbol-96.png" alt="" width="30" height="30"> Klendar</a>
@@ -58,10 +59,10 @@
 <script src="/assets/cabecera.js?v=8" defer></script>
 <main class="doc" id="contenido">
 <h1>Política de cookies</h1>
-<div class="meta">Última actualización: 1 de octubre de 2026 · Versión 2026-09-29</div>
+<div class="meta">Última actualización: 5 de octubre de 2026 · Versión 2026-09-29</div>
 
 
-<p><strong>En resumen.</strong> klendar.app no usa cookies. Guarda en tu navegador solo lo imprescindible para que funcione lo que pides (tu sesión, tu idioma, los códigos que un negocio valida sin conexión) y cuenta las visitas sin cookies ni identificarte. Nada de esto sirve para publicidad ni para seguirte por otras webs, así que no te pedimos consentimiento (art. 22.2 de la LSSI-CE). Si algún día añadimos algo que lo necesite, te lo pediremos antes.</p>
+<p><strong>En resumen.</strong> klendar.app no usa cookies. Guarda en tu navegador solo lo imprescindible para que funcione lo que pides (tu sesión, tu idioma, tus filtros, los códigos que un negocio valida sin conexión) y cuenta las visitas sin cookies ni identificarte. Nada de esto sirve para publicidad ni para seguirte por otras webs, así que no te pedimos consentimiento (art. 22.2 de la LSSI-CE). Si algún día añadimos algo que lo necesite, te lo pediremos antes.</p>
 <h2>Qué se guarda en tu navegador</h2>
 <table>
 <tr><th>Nombre</th><th>Dónde</th><th>Para qué</th><th>Cuánto dura</th><th>Tipo</th></tr>
@@ -74,11 +75,18 @@
 <tr><td><code>klendar.intencion</code></td><td>Fichas y «Tu cuenta» (almacenamiento de sesión)</td><td>Recordar el botón que acabas de pulsar (guardar, reservar, conseguir el código…) para hacerlo al volver de entrar, y no hacerlo nunca si llegas por un enlace de fuera</td><td>Hasta usarlo, 15 minutos como mucho o cerrar la pestaña</td><td>Técnica (seguridad)</td></tr>
 <tr><td><code>klendar.biz</code></td><td>Panel del negocio</td><td>Recordar qué negocio estabas gestionando</td><td>Hasta que cierres sesión</td><td>Técnica</td></tr>
 <tr><td><code>klendar.cola.…</code></td><td>Panel del negocio</td><td>Guardar los códigos validados sin conexión hasta que vuelva la red</td><td>Hasta que se envían o cierras sesión</td><td>Técnica</td></tr>
+<tr><td><code>klendar.filtros</code></td><td>Descubre y Explorar (almacenamiento local)</td><td>Recordar los filtros que pusiste (ciudad, tipo, categorías, precio…) para volver a ellos al abrir otra vez Descubre o Explorar</td><td>Se usa durante 6 horas; se sustituye al cambiarlos y se borra con «Quitar filtros»</td><td>Preferencia elegida por ti</td></tr>
+<tr><td><code>klendar.filtros.sin</code></td><td>Descubre y Explorar (almacenamiento de sesión)</td><td>Que, justo después de «Quitar filtros», no vuelvan los guardados</td><td>Hasta la siguiente página</td><td>Técnica</td></tr>
+<tr><td><code>klendar.cerca</code></td><td>Descubre, Explorar y las fichas (almacenamiento local)</td><td>Tu posición (latitud y longitud) cuando pulsas «Cerca de mí» o «Usar mi ubicación», para ordenar por cercanía y enseñarte a qué distancia está cada sitio</td><td>6 horas (después se borra)</td><td>Técnica (la pides tú, con el permiso de ubicación del navegador)</td></tr>
+<tr><td><code>klendar.sonido</code></td><td>Descubre, Explorar y las fichas (almacenamiento de sesión)</td><td>Recordar que has activado el sonido de los vídeos mientras navegas</td><td>Hasta cerrar la pestaña</td><td>Preferencia elegida por ti</td></tr>
+<tr><td><code>klendar.traducir</code></td><td>«Tu cuenta» y las fichas (almacenamiento local)</td><td>Recordar si quieres ver traducidos los textos de los negocios cuando no has entrado</td><td>Hasta que lo cambies</td><td>Preferencia elegida por ti</td></tr>
+<tr><td><code>klendar.codigos.…</code></td><td>«Tu cuenta» (almacenamiento local)</td><td>Una copia de tus códigos y reservas para enseñarlos en la puerta aunque no haya conexión</td><td>Hasta que cierres sesión</td><td>Técnica</td></tr>
+<tr><td><code>klendar.panel.vista</code></td><td>Panel del negocio (almacenamiento local)</td><td>Cómo quieres ver tus publicaciones (tarjetas o lista)</td><td>Hasta que lo cambies</td><td>Preferencia elegida por ti</td></tr>
 <tr><td>marca de verificación en dos pasos</td><td>Administración (almacenamiento de sesión)</td><td>No volver a preguntar en esa pestaña</td><td>Hasta cerrar la pestaña</td><td>Técnica (seguridad)</td></tr>
 <tr><td><code>mapbox.eventData…</code> (si aparece)</td><td>Mapas de Explorar y del panel (almacenamiento local, lo pone Mapbox)</td><td>Un identificador aleatorio que cambia cada 24 horas y que Mapbox usa para contar cuántos mapas se cargan (facturación)</td><td>24 horas</td><td>Técnica del servicio de mapas</td></tr>
 </table>
 <h2>Estadísticas de visitas</h2>
-<p>Usamos <strong>Cloudflare Web Analytics</strong>, que no usa cookies ni guarda nada en tu navegador: un pequeño script envía a Cloudflare, por encargo nuestro, la página vista, la web de la que vienes, el tipo de navegador y dispositivo, el país y los tiempos de carga. Solo vemos cifras agregadas, sin identificarte ni seguirte entre sitios, y Cloudflare no las usa para nada más. No se usa en «Tu cuenta», en el panel ni en la administración, ni en las direcciones de baja de los correos o los enlaces de amigo.</p>
+<p>Usamos <strong>Cloudflare Web Analytics</strong>, que no usa cookies ni guarda nada en tu navegador: un pequeño script envía a Cloudflare, por encargo nuestro, la página vista, la web de la que vienes, el tipo de navegador y dispositivo, el país y los tiempos de carga. Solo vemos cifras agregadas, sin identificarte ni seguirte entre sitios, y Cloudflare no las usa para nada más. No se usa en «Tu cuenta», en el panel ni en la administración, ni en las direcciones de baja de los correos o los enlaces de amigo. Tampoco en las páginas cuya dirección lleva tu posición («Cerca de mí») o el enlace de un RRPP.</p>
 <h2>Servicios de terceros que se cargan en algunas páginas</h2>
 <p>Reciben tu dirección IP, como cualquier web que visitas, y no guardan cookies:</p>
 <ul>
@@ -87,12 +95,13 @@
 </ul>
 <p>Las fuentes, los iconos y las librerías (también la que conecta «Tu cuenta», el panel y la administración con nuestra base de datos) se sirven desde klendar.app, sin pasar por Google Fonts ni por otros servicios.</p>
 <h2>Cómo borrarlo</h2>
-<p>Al cerrar sesión se borran la sesión y lo del panel. Todo lo demás lo puedes borrar desde la configuración de tu navegador («Borrar datos de navegación» o «Datos de sitios»).</p>
+<p>Al cerrar sesión se borran la sesión, la copia de tus códigos y lo del panel. Todo lo demás lo puedes borrar desde la configuración de tu navegador («Borrar datos de navegación» o «Datos de sitios»).</p>
 <h2>La app</h2>
 <p>La <strong>app móvil</strong> no usa cookies. Usa identificadores del dispositivo para las notificaciones (solo si las activas) y para los informes de errores y, solo si lo aceptas (al crear la cuenta o en Cuenta → Ajustes → Privacidad y datos), para estadísticas de uso de la app. Puedes retirarlo cuando quieras desde la app o desde «Tu cuenta» en la web. Más detalle en la <a href="/privacidad/">Política de privacidad</a>.</p>
 
 <h2 class="cambios">Historial de cambios</h2>
 <ul>
+  <li><strong>5 de octubre de 2026</strong>: Siete claves más: tus filtros, tu posición de «Cerca de mí» (se borra a las 6 horas), el sonido de los vídeos, la traducción, la copia de tus códigos y la vista del panel; dónde no se cuentan visitas y qué se borra al cerrar sesión.</li>
   <li><strong>1 de octubre de 2026</strong>: Inventario al día de lo que se guarda en el navegador (también la sesión aparte de la administración y la comprobación PKCE al entrar con Google o Apple) y de los servicios de terceros; los iconos y las librerías ya se sirven desde klendar.app, sin Google Fonts ni jsDelivr.</li>
   <li><strong>29 de septiembre de 2026</strong>: Versión vigente de los términos (2026-09-29).</li>
 </ul>
@@ -108,7 +117,7 @@
   </div>
   <div class="bottom">
     <span>© 2026 Klendar. Todos los derechos reservados.</span>
-    <span><a href="mailto:info@klendar.app">info@klendar.app</a> · Hecho en España</span>
+    <span><!--email_off--><a href="mailto:info@klendar.app">info@klendar.app</a><!--/email_off--> · Hecho en España</span>
   </div>
 </div></footer>
 <script>
@@ -118,4 +127,5 @@
 })();
 </script>
 
+<!--/email_off-->
 </body></html>
