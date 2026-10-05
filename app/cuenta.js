@@ -441,8 +441,21 @@ function textoPlanesJuntos(comparte, encendido) {
     : t('Nadie ve a cuántos planes habéis ido juntos, y tú tampoco lo ves en la ficha de tus amigos');
 }
 
+/** Copia de «Traducir publicaciones a mi idioma» para las fichas públicas
+ * (`/assets/traducir.js` la lee sin sesión ni peticiones). */
+function guardaTraduccionLocal(encendida) {
+  try { localStorage.setItem('klendar.traducir', encendida ? '1' : '0'); } catch { /* sin permisos */ }
+}
+
 RUTAS.ajustes = async () => {
   if (!exigeSesion('ajustes')) return;
+  // Traducción automática: la preferencia (en el perfil, como en la app) y si
+  // hay proveedor (sin clave en el servidor, «Llega pronto»).
+  const traduccion = Promise.all([
+    llamar('my_translation_settings', {}).catch(() => null),
+    sb.functions.invoke('translate', { body: { op: 'status' } })
+      .then(({ data }) => data?.available === true).catch(() => false),
+  ]);
   const [perfil, prefs, cons, cats, negocios, cuenta, metodos] = await Promise.all([
     tabla(sb.from('profiles').select('display_name, avatar_url, locale, birth_date').eq('id', YO.id).maybeSingle()),
     llamar('my_notification_preferences', {}),
@@ -457,6 +470,8 @@ RUTAS.ajustes = async () => {
     llamar('my_auth_methods', {}).catch(() => null),
   ]);
   const vias = new Set((cuenta?.identities || []).map((i) => i.provider));
+  const [trad, tradOk] = await traduccion;
+  if (trad) guardaTraduccionLocal(trad.translate_content === true);
   const tieneClave = metodos?.has_password ?? vias.has('email');
   const metodo = (icono, texto, activa) => `<div class="fila metodo${activa ? '' : ' off'}">
       ${icono}<span class="fila-t"><b>${esc(texto)}</b></span>
@@ -499,6 +514,10 @@ RUTAS.ajustes = async () => {
             <option value="es"${p.locale === 'es' ? ' selected' : ''}>Español</option>
             <option value="en"${p.locale === 'en' ? ' selected' : ''}>English</option>
           </select></label>
+        <label class="check"><input type="checkbox" name="traducir"${tradOk && trad?.translate_content ? ' checked' : ''}${tradOk ? '' : ' disabled'}>
+          <span><b>${esc(t('Traducir publicaciones a mi idioma'))}</b><br><small>${esc(tradOk
+    ? t('Lo que escriben los negocios (publicaciones, novedades, su ficha y su carta), traducido automáticamente al idioma de la web. Las reseñas y los nombres no se traducen. Solo se envían esos textos a un servicio de traducción, nunca datos tuyos.')
+    : t('Llega pronto: lo que escriben los negocios, traducido automáticamente al idioma de la web.'))}</small></span></label>
         <p class="err" id="err-perfil" role="alert"></p>
         <button class="pill accent" id="g-perfil">${esc(t('Guardar'))}</button>
       </form>
@@ -625,6 +644,11 @@ RUTAS.ajustes = async () => {
       const cambio = { display_name: nombre, locale: idioma };
       if (avatar) cambio.avatar_url = avatar;
       await tabla(sb.from('profiles').update(cambio).eq('id', YO.id));
+      if (!fp.elements.traducir.disabled) {
+        const traducir = fp.elements.traducir.checked;
+        await llamar('set_translate_content', { p_value: traducir });
+        guardaTraduccionLocal(traducir);
+      }
       // El idioma viaja también en la cuenta: los correos lo leen de ahí.
       const { error: eCuenta } = await sb.auth.updateUser({ data: cambio });
       if (eCuenta) throw new Error(errAuth(eCuenta));

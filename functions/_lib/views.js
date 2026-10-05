@@ -107,6 +107,18 @@ async function cerradoPage(lang, ref, path) {
 }
 
 // ── Publicación ────────────────────────────────────────────────────────────
+/**
+ * Traducción automática para quien la tiene encendida («Tu cuenta» →
+ * Ajustes): `/assets/traducir.js` no hace nada (ni pide nada) si no. Se le
+ * dice qué pedir (`offer:<id>`, `business:<id>`, `menu:<id>`); el texto lo
+ * saca el servidor. Lo traducible lleva `data-tr` y el aviso «Traducido
+ * automáticamente · Ver original», `data-tr-nota`.
+ */
+function traducir(lang, ...pedir) {
+  const sp = supabasePublic();
+  return `<script src="/assets/traducir.js?v=1" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}" data-lang="${lang === 'en' ? 'en' : 'es'}" data-pedir="${esc(pedir.filter(Boolean).join(' '))}"></script>`;
+}
+
 export async function offerPage(id, lang) {
   const path = `${pre(lang)}/o/${id}`;
   const en = lang === 'en';
@@ -187,7 +199,8 @@ export async function offerPage(id, lang) {
     ${carrusel(pieces, { titulo: o.title, lang })}
     <div class="d-head">
       <div class="badges"><span class="badge">${esc(flash ? (en ? 'Flash offer' : 'Oferta flash') : (en ? 'Event' : 'Evento'))}</span>${badges}</div>
-      <h1>${esc(o.title)}</h1>
+      <h1 data-tr="offer:${esc(o.id)}:title">${esc(o.title)}</h1>
+      <p data-tr-nota="offer:" hidden></p>
       <a class="ficha-negocio" href="${esc(bHref)}"${Number.isFinite(o.lat) && Number.isFinite(o.lng) ? ` data-lat="${Number(o.lat).toFixed(5)}" data-lng="${Number(o.lng).toFixed(5)}"` : ''}>${logo}
         <span><b>${esc(o.business_name)}</b><span class="muted">${o.business_rating && o.business_ratings ? `<span class="stars-mini" aria-hidden="true">★</span> ${nota(o.business_rating, lang)} (${o.business_ratings})` : esc(o.business_city || '')}<span class="tj-dist" hidden></span></span></span>
         <svg class="ic" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M8.59 16.59 13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg></a>
@@ -246,8 +259,8 @@ export async function offerPage(id, lang) {
       <p class="note">${S.note}</p>
     </aside>
     <div class="d-body">
-      ${o.description ? `<h2>${S.about}</h2><p>${esc(o.description).replace(/\n/g, '<br>')}</p>` : ''}
-      ${o.terms ? `<h2>${S.terms}</h2><p class="muted">${esc(o.terms).replace(/\n/g, '<br>')}</p>` : ''}
+      ${o.description ? `<h2>${S.about}</h2><p data-tr="offer:${esc(o.id)}:description">${esc(o.description).replace(/\n/g, '<br>')}</p>` : ''}
+      ${o.terms ? `<h2>${S.terms}</h2><p class="muted" data-tr="offer:${esc(o.id)}:terms">${esc(o.terms).replace(/\n/g, '<br>')}</p>` : ''}
       ${where ? `<h2>${S.where}</h2>
       <p class="info-linea">${icono('lugar')}<span>${o.lat ? `<a href="${esc(`https://www.google.com/maps/search/?api=1&query=${o.lat},${o.lng}`)}" rel="nofollow noopener" target="_blank">${esc(where)}</a>` : esc(where)}</span></p>` : ''}
       <h2>${S.biz}</h2>
@@ -304,7 +317,8 @@ el.textContent=n<ini?${JSON.stringify(en ? 'Starts in ' : 'Empieza en ')}+dur(in
     lang, path, image: cover, body: body + cuentaAtras + vista,
     title: `${o.title} · ${o.business_name}`,
     description,
-    head: `<meta name="robots" content="${o.adults_only ? 'noindex' : 'index, follow'}">
+    head: `${traducir(lang, `offer:${o.id}`)}
+<meta name="robots" content="${o.adults_only ? 'noindex' : 'index, follow'}">
 <script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, '\\u003c')}</script>`,
   }));
 }
@@ -662,7 +676,8 @@ export async function businessPage(param, lang, search = '') {
       ${horario ? `<h2 class="side-h">${S.hours}</h2><p class="estado-hoy" hidden data-horario="${esc(JSON.stringify(horas))}" data-cierres="${esc(JSON.stringify(cierres.map((c) => ({ starts_on: c.starts_on, ends_on: c.ends_on }))))}" data-tz="${esc(tz)}" data-lang="${en ? 'en' : 'es'}"></p>${horario}` : ''}
     </aside>
     <div class="d-body">
-      ${b.description ? `<h2>${S.about}</h2><p>${esc(b.description).replace(/\n/g, '<br>')}</p>` : ''}
+      ${b.description ? `<h2>${S.about}</h2><p data-tr="business:${esc(b.id)}:description">${esc(b.description).replace(/\n/g, '<br>')}</p>
+      <p data-tr-nota="business:" hidden></p>` : ''}
       ${flash.length ? `<h2 id="ahora">${S.now}</h2>${rejilla(flash, lang, { tz, sinNegocio: true, galeria: true })}` : ''}
       ${events.length ? `<h2 id="proximamente">${S.soon}</h2>${rejilla(events, lang, { tz, sinNegocio: true, galeria: true })}` : ''}
       ${offers.length ? '' : `<p class="empty">${S.none}</p>`}
@@ -671,11 +686,12 @@ export async function businessPage(param, lang, search = '') {
         ${sellos.map((c) => `<p class="callout"><b>${esc(c.name)}</b> · ${esc(S.stampsBody(c.goal, c.reward))}<br><small>${esc(queSellaTarjeta(c, S, en))}</small></p>`).join('')}
         <p class="muted">${esc(sellos.some((c) => c.by_visit) ? S.stampsNoteVisit : S.stampsNote)}</p>` : ''}
       ${carta.length ? `<h2 id="carta">${S.menu}</h2>
+        <p data-tr-nota="menu_" hidden></p>
         <div class="menu">${carta.map((sec, si) => `<section>
-          <h3>${esc(sec.name)}</h3>
+          <h3${isUuid(sec.id) ? ` data-tr="menu_section:${sec.id}:name"` : ''}>${esc(sec.name)}</h3>
           <ul>${(sec.items || []).map((it, ii) => `<li>
             ${seguro(it.image_url) ? miniatura(seguro(it.image_url), { grupo: `plato-${si}-${ii}`, clase: 'dish', etiqueta: it.name, lang, ancho: 56, alto: 56 }) : ''}
-            <span class="plato"><b>${esc(it.name)}</b>${it.description ? `<small>${esc(it.description)}</small>` : ''}
+            <span class="plato"><b${isUuid(it.id) ? ` data-tr="menu_item:${it.id}:name"` : ''}>${esc(it.name)}</b>${it.description ? `<small${isUuid(it.id) ? ` data-tr="menu_item:${it.id}:description"` : ''}>${esc(it.description)}</small>` : ''}
             ${(it.allergens || []).length ? `<small class="alg">${S.allergens}: ${it.allergens.map((a) => esc(nombreAlergeno(a, en))).join(', ')}</small>` : ''}</span>
             <span class="price">${it.price_cents == null ? '' : esc(money(it.price_cents, 'EUR', lang))}</span>
           </li>`).join('')}</ul>
@@ -689,9 +705,10 @@ export async function businessPage(param, lang, search = '') {
           return fotos.map((u, i) => miniatura(u, { grupo: 'carta', i, n: fotos.length, clase: 'carta-foto', etiqueta: S.menuPhotos, lang, ancho: 300, alto: 400 })).join('');
         })()}</div>` : ''}
       ${novedades.length ? `<h2 id="novedades">${S.news}</h2>
+        <p data-tr-nota="post:" hidden></p>
         <div class="novedades">${novedades.map((p) => `<article${isUuid(p.id) ? ` id="novedad-${p.id}"` : ''}>
           <p class="muted">${esc(fmtWhen(p.created_at, lang, tz))}</p>
-          ${p.body ? `<p>${esc(p.body).replace(/\n/g, '<br>')}</p>` : ''}
+          ${p.body ? `<p${isUuid(p.id) ? ` data-tr="post:${p.id}:body"` : ''}>${esc(p.body).replace(/\n/g, '<br>')}</p>` : ''}
           ${p.image_url ? miniatura(p.image_url, { grupo: `novedad-${p.id}`, clase: 'nov-media', etiqueta: S.news, lang, ancho: 900, alto: 600 }) : ''}
           <a class="denuncia" href="${cuenta(lang)}#/denunciar/post/${encodeURIComponent(p.id)}" rel="nofollow">${S.report}</a>
         </article>`).join('')}</div>` : ''}
@@ -759,7 +776,8 @@ export async function businessPage(param, lang, search = '') {
   return html(publicPage({
     lang, path, body, title: conCiudad ? `${b.name} · ${b.city}` : b.name, description, image: b.cover || b.logo,
     head: `<meta name="robots" content="${b.adults_only || conVisita || b.closed_indefinitely ? 'noindex' : 'index, follow'}">
-${ldScript(jsonLd)}${horario ? '\n<script src="/assets/zona.js?v=1" defer></script>\n<script src="/assets/horario.js?v=1" defer></script>' : ''}${conVisita ? `\n${conVisita}` : ''}`,
+${ldScript(jsonLd)}${horario ? '\n<script src="/assets/zona.js?v=1" defer></script>\n<script src="/assets/horario.js?v=1" defer></script>' : ''}${conVisita ? `\n${conVisita}` : ''}
+${traducir(lang, `business:${b.id}`, carta.length ? `menu:${b.id}` : '')}`,
   }), 200, conVisita ? 'no-store' : undefined);
 }
 
