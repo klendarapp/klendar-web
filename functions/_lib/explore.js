@@ -478,9 +478,9 @@ function calendarioHtml({ items, lang, S, link, mes, dia, hoy }) {
 /** Las claves de la dirección en cada idioma. */
 const CLAVES = {
   es: { city: 'ciudad', cat: 'categoria', kind: 'tipo', price: 'precio', when: 'cuando', discount: 'descuento', open: 'abierto', sort: 'orden', view: 'vista', month: 'mes', day: 'dia', show: 'ver', place: 'sitio', weather: 'tiempo',
-    age: 'edad', vprice: 'precio-local', card: 'descuento-para', solo: 'solo', charity: 'solidario', closing: 'antes-de-cerrar' },
+    age: 'edad', vprice: 'precio-local', card: 'descuento-para', solo: 'solo', charity: 'solidario', entity: 'agenda-publica', closing: 'antes-de-cerrar' },
   en: { city: 'city', cat: 'category', kind: 'type', price: 'price', when: 'when', discount: 'discount', open: 'open', sort: 'sort', view: 'view', month: 'month', day: 'day', show: 'show', place: 'place', weather: 'weather',
-    age: 'age', vprice: 'venue-price', card: 'discount-for', solo: 'solo', charity: 'charity', closing: 'before-closing' },
+    age: 'age', vprice: 'venue-price', card: 'discount-for', solo: 'solo', charity: 'charity', entity: 'public-listings', closing: 'before-closing' },
 };
 /** Marcas (tanda A) en la dirección: edades «4-8», carné en cada idioma. */
 const EDAD_URL = { '0-3': '0_3', '4-8': '4_8', '9-12': '9_12', '13-17': '13_17' };
@@ -495,6 +495,8 @@ const traitsMarcas = (e) => [
   ...(e.carne ? [`card_${e.carne}`] : []),
   ...(e.solo ? ['solo'] : []),
   ...(e.solidario ? ['charity'] : []),
+  // «Agenda pública»: lo de entidades (migración 20261130100000).
+  ...(e.entidad ? ['entity'] : []),
 ];
 /** Los valores, por dentro en inglés; en la dirección, en el idioma de la página. */
 const VALORES_ES = {
@@ -558,6 +560,7 @@ function leeEstado(qs) {
     carne: CARNE_URL[de('card', 20)] || '',
     solo: de('solo', 2) === '1',
     solidario: de('charity', 2) === '1',
+    entidad: de('entity', 2) === '1',
     // «Antes de cerrar»: lo que sobra del día (`before_closing` en
     // `offer_traits`, migración 20261121100000).
     antesCierre: de('closing', 2) === '1',
@@ -604,6 +607,7 @@ function query(e, lang, { soloCompartido = false } = {}) {
     if (e.carne) p.set(K.card, carneAUrl(e.carne, en));
     if (e.solo) p.set(K.solo, '1');
     if (e.solidario) p.set(K.charity, '1');
+    if (e.entidad) p.set(K.entity, '1');
     if (e.antesCierre) p.set(K.closing, '1');
   }
   if (e.tiempoOff) p.set(K.weather, '0');
@@ -916,7 +920,7 @@ export async function explorePage(url, lang, modo = 'explorar') {
   // «· Todo · 5 km» (lo de siempre): así el chip cabe en 360 sin deslizar.
   const resumen = resumenFiltros(e, S, catActual ? catName(catActual, en) : '');
   const restablecer = link({ kind: negocios ? 'places' : '', cat: '', km: RADIO_KM, price: '', when: '', soloDescuento: false, abierto: false, traits: [],
-    edades: [], precioLocal: 0, carne: '', solo: false, solidario: false, antesCierre: false });
+    edades: [], precioLocal: 0, carne: '', solo: false, solidario: false, entidad: false, antesCierre: false });
   // Categorías: las 8 más usadas (las que más tienen publicado ahora, como la
   // app) y la elegida, y «Ver todas (31)», que abre el selector con buscador y
   // grupos (/assets/categorias.js). Sin JavaScript, el resto sale debajo,
@@ -962,7 +966,9 @@ export async function explorePage(url, lang, modo = 'explorar') {
       <fieldset class="hoja-casillas"><legend class="sr">${esc(M.solo)}</legend><div class="ops">
         ${casilla(K.solo, M.solo, e.solo)}
         ${casilla(K.charity, M.charity, e.solidario)}
-      </div><p class="hoja-nota hoja-nota-bajo">${esc(M.charity)}: ${esc(M.charityHint)}</p></fieldset>`;
+        ${casilla(K.entity, M.entity, e.entidad)}
+      </div><p class="hoja-nota hoja-nota-bajo">${esc(M.charity)}: ${esc(M.charityHint)}</p>
+      <p class="hoja-nota hoja-nota-bajo">${esc(M.entity)}: ${esc(M.entityHint)}</p></fieldset>`;
   // «Más filtros»: lo que se usa menos, plegado y diciendo cuántos lleva.
   const nMas = (negocios ? 0 : traits.length + traitsMarcas(e).length) + (abierto ? 1 : 0) + (!negocios && soloDescuento ? 1 : 0);
   const masHoja = `<details class="hoja-mas"${nMas ? ' data-con-algo' : ''}>

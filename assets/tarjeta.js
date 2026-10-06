@@ -111,6 +111,9 @@
       antes: 'Antes de cerrar', bolsas: (n) => (n === 1 ? 'Queda 1 bolsa' : `Quedan ${n} bolsas`),
       en: (l) => `en ${l}`, entradas: (p) => `Entradas en ${p}`, video: 'Vídeo',
       organiza: (n) => `Organiza: ${n}`, hoy: 'Hoy', manana: 'Mañana',
+      // Quién publica, si es una entidad (migración 20261130100000).
+      entidad: { council: 'Ayuntamiento', district: 'Junta de distrito', merchants: 'Asociación de comerciantes',
+        neighbours: 'Asociación vecinal', ngo: 'ONG', public_agenda: 'Agenda pública' },
       anterior: 'Foto anterior', siguiente: 'Foto siguiente', sonido: 'Sonido', play: 'Reproducir vídeo',
       galeria: 'Fotos y vídeos', ampliar: 'Ver a pantalla completa', cerrar: 'Cerrar', denunciar: 'Denunciar',
       pieza: (video, i, n) => `${video ? 'Vídeo' : 'Foto'}${n > 1 ? ` ${i} de ${n}` : ''}`,
@@ -121,6 +124,8 @@
       antes: 'Before closing', bolsas: (n) => (n === 1 ? '1 bag left' : `${n} bags left`),
       en: (l) => `at ${l}`, entradas: (p) => `Tickets on ${p}`, video: 'Video',
       organiza: (n) => `Organised by ${n}`, hoy: 'Today', manana: 'Tomorrow',
+      entidad: { council: 'Council', district: 'District council', merchants: "Traders' association",
+        neighbours: "Residents' association", ngo: 'NGO', public_agenda: 'Public listings' },
       anterior: 'Previous photo', siguiente: 'Next photo', sonido: 'Sound', play: 'Play video',
       galeria: 'Photos and videos', ampliar: 'View full screen', cerrar: 'Close', denunciar: 'Report',
       pieza: (video, i, n) => `${video ? 'Video' : 'Photo'}${n > 1 ? ` ${i} of ${n}` : ''}`,
@@ -140,6 +145,8 @@
     ampliar: 'M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z',
     bandera: 'M14.4 6 14 4H5v17h2v-7h5.6l.4 2h7V6z',
     cerrar: 'M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z',
+    // account_balance (outlined): el sello de las entidades, como la app.
+    entidad: 'M6.5 10h-2v7h2v-7zm6 0h-2v7h2v-7zm8.5 9H2v2h19v-2zm-2.5-9h-2v7h2v-7zm-7-6.74L16.71 6H6.29l5.21-2.74m0-2.26L2 6v2h19V6l-9.5-5z',
   };
   const ic = (n, s = 16) => `<svg class="ic" viewBox="0 0 24 24" width="${s}" height="${s}" aria-hidden="true"><path fill="currentColor" d="${IC[n]}"/></svg>`;
 
@@ -236,7 +243,11 @@
   function cuandoCorto(o, lang = 'es', tz = KZ().de(o)) {
     if (o.kind === 'future_event') {
       const ev = o.event_at || o.starts_at;
-      return `${fmtDay(ev, lang, tz)} · ${fmtTime(ev, lang, tz)}`;
+      // Lo de una entidad sin hora (la agenda pública: todo el día) llega a
+      // las 00:00: solo el día, como la app.
+      const hora = fmtTime(ev, lang, tz);
+      if (o.entity_kind && /^0?0[:.]00$/.test(hora)) return fmtDay(ev, lang, tz);
+      return `${fmtDay(ev, lang, tz)} · ${hora}`;
     }
     const ini = o.redeem_start_at || o.starts_at;
     return `${fmtDay(ini, lang, tz)} · ${fmtTime(ini, lang, tz)}${o.redeem_end_at ? ` – ${fmtEnd(ini, o.redeem_end_at, lang, tz)}` : ''}`;
@@ -492,6 +503,10 @@
     // sellos de la app: arriba, entre los filtros y los avisos, tapaba la
     // foto (Iván, 2026-10-06). Ahí van también «De la lista de…» (fijada.js).
     const tipo = `<span class="tj-tipo">${esc(antesCierre ? S.antes : flash ? S.flash : S.event)}</span>`;
+    // Ayuntamiento, asociación, ONG o la agenda pública: en Descubre, con los
+    // sellos; en la rejilla, una línea encima del negocio.
+    const entidad = S.entidad[o.entity_kind] || '';
+    const selloEntidad = entidad ? `<span class="tj-sello tj-sello--entidad">${ic('entidad', 14)}<span>${esc(entidad)}</span></span>` : '';
     const [ancho, alto] = pantalla ? [540, 960] : [480, 600];
     return `<article class="tj tj--${plantilla}${opts.desc ? ' tj--desc' : ''}${pantalla ? ' tj--pantalla' : ''}" data-o="${esc(o.id)}"${geo}${estilo}>
     <div class="tj-media">
@@ -500,7 +515,7 @@
       ${pantalla ? '' : tipo}
     </div>
     <div class="tj-panel">
-      ${pantalla ? `<p class="tj-sellos">${tipo}</p>` : ''}${kicker}${plantilla === 'poster' ? titulo : ''}
+      ${pantalla ? `<p class="tj-sellos">${tipo}${selloEntidad}</p>` : ''}${!pantalla && entidad && !opts.sinNegocio ? `<p class="tj-entidad">${ic('entidad', 14)}<span>${esc(entidad)}</span></p>` : ''}${kicker}${plantilla === 'poster' ? titulo : ''}
       ${sitio
       // En otro sitio: el sitio y, debajo, quién lo organiza.
       ? `<p class="tj-negocio">${logo}<span class="tj-nombre">${ic('lugar', 14)}${esc(sitio)}</span><span class="tj-dist">${dist ? esc(dist) : ''}</span></p>

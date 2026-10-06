@@ -5,6 +5,7 @@
 //
 // Los filtros van por los mismos `traits` que «El sitio» (offer_traits), con
 // identificadores que solo sirven para filtrar: solo · charity ·
+// entity («Agenda pública», migración 20261130100000) ·
 // age_0_3 / age_4_8 / age_9_12 / age_13_17 · card_student / card_youth /
 // card_senior · price_le_1 / price_le_2 / price_le_3 («hasta €€»).
 //
@@ -28,6 +29,7 @@
       solo: 'Ideal para ir solo',
       soloHint: 'Planes en los que se está a gusto sin compañía o se conoce gente: una cata en barra, un taller, un club de lectura.',
       charity: 'Solidario', charityHint: 'Benéfico o a favor de una causa del barrio.',
+      entity: 'Agenda pública', entityHint: 'Solo lo que publican ayuntamientos, juntas de distrito, asociaciones y ONG, y la agenda municipal.',
       kidAgesTitle: 'Edad recomendada',
       kidAgesHint: 'Puedes marcar varias. Sin marcar ninguna, vale para cualquier edad.',
       kidAge: (r) => `${r} años`, kidAgesLine: (a) => `Edad recomendada: ${a}`,
@@ -61,6 +63,7 @@
       solo: 'Good for going solo',
       soloHint: 'Plans that are easy to enjoy on your own or to meet people at: a tasting at the bar, a workshop, a book club.',
       charity: 'Charity', charityHint: 'For charity or a local cause.',
+      entity: 'Public listings', entityHint: "Only what councils, district councils, associations and NGOs publish, and the council's own listings.",
       kidAgesTitle: 'Recommended age',
       kidAgesHint: 'You can tick more than one. With none ticked, it’s for any age.',
       kidAge: (r) => `Ages ${r}`, kidAgesLine: (a) => `Recommended age: ${a}`,
@@ -158,12 +161,13 @@
   const PRECIOS = [1, 2, 3];
   const precioDe = (traits) => PRECIOS.find((l) => (traits || []).includes(`price_le_${l}`)) || 0;
   const carneDe = (traits) => CARDS.find((c) => (traits || []).includes(`card_${c}`)) || '';
-  const esMarca = (x) => x === 'solo' || x === 'charity' || /^(price_le_[1-3]|card_(student|youth|senior)|age_(0_3|4_8|9_12|13_17))$/.test(x);
+  const esMarca = (x) => x === 'solo' || x === 'charity' || x === 'entity' || /^(price_le_[1-3]|card_(student|youth|senior)|age_(0_3|4_8|9_12|13_17))$/.test(x);
   /** El nombre corto de un filtro de marca (para el resumen). */
   function nombreFiltro(x, lang) {
     const s = t(lang);
     if (x === 'solo') return s.solo;
     if (x === 'charity') return s.charity;
+    if (x === 'entity') return s.entity;
     let m = /^price_le_([1-3])$/.exec(x);
     if (m) return m[1] === '1' ? '€' : s.fUpTo('€'.repeat(+m[1]));
     m = /^card_(\w+)$/.exec(x);

@@ -555,6 +555,79 @@ PAGINAS['sobre'] = (
 )
 
 
+# ── Fuentes y licencias ─────────────────────────────────────────────────────
+# Los datos de otros que enseña Klendar y lo que pide cada licencia. La agenda
+# pública importada de datos abiertos (tabla `public_agenda_sources` y Edge
+# Function `agenda-import` del repo de la app): la misma atribución sale en la
+# ficha de cada evento importado. Al añadir una fuente, añadirla aquí.
+FUENTES_AGENDA = [
+    # (ciudad, quién, conjunto, url del conjunto, licencia ES, licencia EN, url de la licencia, cita ES, cita EN)
+    ('Madrid', 'Ayuntamiento de Madrid',
+     'Actividades culturales y de ocio municipal en los próximos 100 días',
+     'https://datos.madrid.es/dataset/206974-0-agenda-eventos-culturales-100',
+     'CC BY 4.0', 'CC BY 4.0', 'https://creativecommons.org/licenses/by/4.0/deed.es',
+     'Fuente: Ayuntamiento de Madrid, datos.madrid.es', 'Source: Madrid City Council, datos.madrid.es'),
+    ('Zaragoza', 'Ayuntamiento de Zaragoza', 'Agenda de Zaragoza',
+     'https://www.zaragoza.es/sede/portal/datos-abiertos/servicio/catalogo/282',
+     'Condiciones generales de reutilización del Ayuntamiento de Zaragoza',
+     'Zaragoza City Council general reuse conditions',
+     'https://www.zaragoza.es/sede/portal/aviso-legal#condiciones',
+     'Origen de los datos: Ayuntamiento de Zaragoza', 'Data source: Zaragoza City Council'),
+]
+
+
+def _filas_fuentes(en):
+    out = []
+    for ciudad, quien, conjunto, url, lic_es, lic_en, lic_url, cita_es, cita_en in FUENTES_AGENDA:
+        out.append(
+            f'<tr><td>{ciudad}</td><td>{quien}<br><a href="{url}" rel="noopener" target="_blank">{conjunto}</a></td>'
+            f'<td><a href="{lic_url}" rel="license noopener" target="_blank">{lic_en if en else lic_es}</a></td>'
+            f'<td>«{cita_en if en else cita_es}»</td></tr>')
+    return ''.join(out)
+
+
+PAGINAS['fuentes'] = (
+    'sources',
+    'Fuentes y licencias', 'Sources and licences',
+    'De dónde salen los datos de otros que enseña Klendar (la agenda pública de cada ciudad, el tiempo) y con qué licencia.',
+    "Where the third-party data on Klendar comes from (each city's public listings, the weather) and under which licence.",
+    f'''
+<p class="lead">Casi todo lo que ves en Klendar lo publican los negocios y las entidades. Además, en algunas ciudades enseñamos la agenda municipal, que los ayuntamientos publican como datos abiertos, y usamos la previsión del tiempo de un servicio público. Aquí está de dónde sale cada cosa y con qué licencia.</p>
+
+<h2>Agenda pública de cada ciudad</h2>
+<p>Cada día importamos la agenda cultural y de ocio de estas fuentes y la publicamos en la cuenta «Agenda pública de &lt;ciudad&gt;» (o en la del ayuntamiento, si está en Klendar). Klendar no organiza esos eventos: adaptamos las fechas al formato de la app, elegimos una categoría, recortamos los textos largos y, como las fuentes no traen fotos con licencia clara, usamos una imagen genérica de la categoría. En la ficha de cada evento sale su fuente, su licencia, la fecha de actualización y el enlace al original. Que un ayuntamiento publique sus datos abiertos no quiere decir que participe en Klendar ni que lo patrocine.</p>
+<table>
+<thead><tr><th>Ciudad</th><th>Quién y qué</th><th>Licencia</th><th>Cómo se cita</th></tr></thead>
+<tbody>{_filas_fuentes(False)}</tbody>
+</table>
+<p>Si un evento está mal, ha cambiado o se ha cancelado, manda la fuente: Klendar lo actualiza al día siguiente. Para pedirnos que quitemos algo o una fuente entera, escríbenos a <a href="mailto:info@klendar.app">info@klendar.app</a>.</p>
+
+<h2>El tiempo</h2>
+<p>«Según el tiempo» usa la previsión de <a href="https://api.met.no/" rel="noopener" target="_blank">MET Norway</a> (Instituto Meteorológico de Noruega), con licencia <a href="https://creativecommons.org/licenses/by/4.0/deed.es" rel="license noopener" target="_blank">CC BY 4.0</a>.</p>
+
+<h2>Iconos</h2>
+<p>Los iconos son <a href="https://fonts.google.com/icons" rel="noopener" target="_blank">Material Icons</a> de Google, con licencia <a href="https://www.apache.org/licenses/LICENSE-2.0" rel="license noopener" target="_blank">Apache 2.0</a>.</p>
+''',
+    f'''
+<p class="lead">Almost everything on Klendar is published by businesses and organisations. In some cities we also show the council's listings, which councils publish as open data, and we use the weather forecast from a public service. Here's where each thing comes from and under which licence.</p>
+
+<h2>Each city's public listings</h2>
+<p>Every day we import the cultural and leisure listings from these sources and publish them on the “Public listings” account of each city (or on the council's own, if it's on Klendar). Klendar doesn't organise those events: we adapt the dates to the app's format, choose a category, shorten long texts and, as the sources don't come with photos under a clear licence, we use a generic image for the category. Each event's page shows its source, licence, update date and a link to the original. A council publishing open data doesn't mean it takes part in or sponsors Klendar.</p>
+<table>
+<thead><tr><th>City</th><th>Who and what</th><th>Licence</th><th>How it's credited</th></tr></thead>
+<tbody>{_filas_fuentes(True)}</tbody>
+</table>
+<p>If an event is wrong, has changed or has been cancelled, the source rules: Klendar updates it the next day. To ask us to remove something or a whole source, write to <a href="mailto:info@klendar.app">info@klendar.app</a>.</p>
+
+<h2>Weather</h2>
+<p>“Based on the weather” uses the forecast from <a href="https://api.met.no/" rel="noopener" target="_blank">MET Norway</a> (Norwegian Meteorological Institute), under a <a href="https://creativecommons.org/licenses/by/4.0/" rel="license noopener" target="_blank">CC BY 4.0</a> licence.</p>
+
+<h2>Icons</h2>
+<p>Icons are Google's <a href="https://fonts.google.com/icons" rel="noopener" target="_blank">Material Icons</a>, under the <a href="https://www.apache.org/licenses/LICENSE-2.0" rel="license noopener" target="_blank">Apache 2.0</a> licence.</p>
+''',
+)
+
+
 if __name__ == '__main__':
     for es_slug, (en_slug, t_es, t_en, d_es, d_en, b_es, b_en) in PAGINAS.items():
         for lang, slug, title, desc, body in (

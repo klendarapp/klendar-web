@@ -26,6 +26,7 @@ ALT = {
     '/prensa/': '/en/press/',
     '/accesibilidad/': '/en/accessibility/',
     '/estado/': '/en/status/',
+    '/fuentes/': '/en/sources/',
     '/sobre/': '/en/about/',
     '/como-funciona/': '/en/how-it-works/',
 }
@@ -105,7 +106,7 @@ T = {
     cta_h2='Lo que pasa cerca, en tu bolsillo', cta_sub='Muy pronto en Google Play y App Store.',
     foot_product='Producto', foot_legal='Legal', foot_contact='Contacto',
     foot_links_product=[('/#como', 'Cómo funciona'), ('/explorar/', 'Explorar'), ('/agenda/', 'Agenda local'), ('/para-negocios/', 'Para negocios'), ('/precios/', 'Precios'), ('/panel/', 'Acceso para negocios'), ('/preguntas/', 'Preguntas frecuentes'), ('/soporte/', 'Soporte'), ('/sobre/', 'Sobre Klendar'), ('/prensa/', 'Prensa'), ('/en/', 'English')],
-    foot_links_legal=[('/aviso-legal/', 'Aviso legal'), ('/privacidad/', 'Privacidad'), ('/terminos/', 'Términos de uso'), ('/negocios/', 'Condiciones para negocios'), ('/cookies/', 'Cookies'), ('/normas/', 'Normas de la comunidad'), ('/eliminar-cuenta/', 'Eliminar cuenta'), ('/accesibilidad/', 'Accesibilidad'), ('/estado/', 'Estado del servicio')],
+    foot_links_legal=[('/aviso-legal/', 'Aviso legal'), ('/privacidad/', 'Privacidad'), ('/terminos/', 'Términos de uso'), ('/negocios/', 'Condiciones para negocios'), ('/cookies/', 'Cookies'), ('/normas/', 'Normas de la comunidad'), ('/eliminar-cuenta/', 'Eliminar cuenta'), ('/accesibilidad/', 'Accesibilidad'), ('/estado/', 'Estado del servicio'), ('/fuentes/', 'Fuentes y licencias')],
     foot_rights=f'© {YEAR} Klendar. Todos los derechos reservados.', foot_made='Hecho en España',
     support_url='/soporte/', biz_terms_url='/negocios/',
   ),
@@ -175,7 +176,7 @@ T = {
     cta_h2='What\'s happening nearby, in your pocket', cta_sub='Coming soon to Google Play and the App Store.',
     foot_product='Product', foot_legal='Legal', foot_contact='Contact',
     foot_links_product=[('/en/#how-it-works', 'How it works'), ('/en/explore/', 'Explore'), ('/en/whats-on/', "What's on"), ('/en/for-business/', 'For businesses'), ('/en/pricing/', 'Pricing'), ('/panel/', 'Business login'), ('/en/faq/', 'FAQ'), ('/en/support/', 'Support'), ('/en/about/', 'About'), ('/en/press/', 'Press'), ('/', 'Español')],
-    foot_links_legal=[('/en/legal-notice/', 'Legal notice'), ('/en/privacy/', 'Privacy policy'), ('/en/terms/', 'Terms of use'), ('/en/business-terms/', 'Business terms'), ('/en/cookies/', 'Cookies'), ('/en/community-guidelines/', 'Community guidelines'), ('/en/delete-account/', 'Delete account'), ('/en/accessibility/', 'Accessibility'), ('/en/status/', 'Service status')],
+    foot_links_legal=[('/en/legal-notice/', 'Legal notice'), ('/en/privacy/', 'Privacy policy'), ('/en/terms/', 'Terms of use'), ('/en/business-terms/', 'Business terms'), ('/en/cookies/', 'Cookies'), ('/en/community-guidelines/', 'Community guidelines'), ('/en/delete-account/', 'Delete account'), ('/en/accessibility/', 'Accessibility'), ('/en/status/', 'Service status'), ('/en/sources/', 'Sources and licences')],
     foot_rights=f'© {YEAR} Klendar. All rights reserved.', foot_made='Made in Spain',
     support_url='/en/support/', biz_terms_url='/en/business-terms/',
   ),
@@ -457,8 +458,8 @@ def doc_page(t, path, title, desc, body):
 # profundo. Las que se generan al vuelo tienen su sitemap dinámico: ciudades,
 # «hoy» y categorías en /sitemap-agenda.xml y las fichas de negocio (/b/) en
 # /sitemap-negocios.xml (vacíos mientras la web enseña los datos de dev).
-SITEMAP_ES = ['/', '/como-funciona/', '/descubre/', '/explorar/', '/agenda/', '/para-negocios/', '/precios/', '/preguntas/', '/prensa/', '/sobre/', '/accesibilidad/', '/estado/', '/negocios/', '/soporte/', '/privacidad/', '/terminos/', '/aviso-legal/', '/cookies/', '/normas/', '/eliminar-cuenta/']
-SITEMAP_EN = ['/en/', '/en/how-it-works/', '/en/discover/', '/en/explore/', '/en/whats-on/', '/en/for-business/', '/en/pricing/', '/en/faq/', '/en/press/', '/en/about/', '/en/accessibility/', '/en/status/', '/en/business-terms/', '/en/support/', '/en/privacy/', '/en/terms/', '/en/legal-notice/', '/en/cookies/', '/en/community-guidelines/', '/en/delete-account/']
+SITEMAP_ES = ['/', '/como-funciona/', '/descubre/', '/explorar/', '/agenda/', '/para-negocios/', '/precios/', '/preguntas/', '/prensa/', '/sobre/', '/accesibilidad/', '/estado/', '/fuentes/', '/negocios/', '/soporte/', '/privacidad/', '/terminos/', '/aviso-legal/', '/cookies/', '/normas/', '/eliminar-cuenta/']
+SITEMAP_EN = ['/en/', '/en/how-it-works/', '/en/discover/', '/en/explore/', '/en/whats-on/', '/en/for-business/', '/en/pricing/', '/en/faq/', '/en/press/', '/en/about/', '/en/accessibility/', '/en/status/', '/en/sources/', '/en/business-terms/', '/en/support/', '/en/privacy/', '/en/terms/', '/en/legal-notice/', '/en/cookies/', '/en/community-guidelines/', '/en/delete-account/']
 ALT_PAIRS = dict(zip(SITEMAP_ES, SITEMAP_EN))
 
 
