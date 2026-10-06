@@ -60,6 +60,7 @@ RUTAS.equipos = async (_partes, params) => {
     history.replaceState(null, '', `${location.pathname}${location.search}#/equipos`);
     try {
       await llamar('follow_broadcast_team', { p_team: seguir });
+      guardaZonaPartidos();
       toast(textoSigues(quien));
     } catch (e) { toast(errorEquipo(e), true); }
   }
@@ -157,6 +158,7 @@ function buscaEquipo(alCerrar) {
     b.disabled = true;
     llamar(on ? 'unfollow_broadcast_team' : 'follow_broadcast_team', { p_team: b.dataset.equipo }).then(() => {
       cambiado = true;
+      if (!on) guardaZonaPartidos();
       b.setAttribute('aria-pressed', on ? 'false' : 'true');
       b.classList.toggle('on', !on);
       b.textContent = on ? S.follow(nom) : S.following(nom);
@@ -168,4 +170,21 @@ function buscaEquipo(alCerrar) {
   d.addEventListener('close', () => { d.remove(); if (cambiado && alCerrar) alCerrar(); });
   d.showModal();
   campo.focus();
+}
+
+/** La zona de los filtros de Explorar (la de este navegador) para el aviso
+ * antes de los partidos: la distancia y, con una ciudad, esa ciudad
+ * (migración 20261203100002 de la app). La base solo la guarda si sigue
+ * algún equipo. No falla nunca. */
+function guardaZonaPartidos() {
+  const z = { p_radius_m: 5000, p_lat: null, p_lng: null, p_city: null };
+  try {
+    const g = JSON.parse(localStorage.getItem('klendar.filtros') || 'null');
+    const a = new URLSearchParams((g && g[EN ? 'en' : 'es']) || '');
+    const km = Number.parseInt(a.get('km') || '', 10);
+    if ([1, 3, 5, 10, 25].includes(km)) z.p_radius_m = km * 1000;
+    const c = a.get('ciudad') || a.get('city');
+    if (!(a.get('lat') && a.get('lng')) && c) z.p_city = c;
+  } catch { /* sin almacenamiento: la de siempre */ }
+  return llamar('set_broadcast_area', z).catch(() => null);
 }

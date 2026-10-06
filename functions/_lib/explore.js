@@ -24,7 +24,7 @@ import { FUENTE_TIEMPO, dondeTiempo, tiempoDeHoy } from './tiempo.js';
 import { rejilla, tarjeta } from './tarjeta.js';
 import KM from '../../assets/marcas.js';
 import { notFound, sitioAhoraScripts } from './views.js';
-import { PARTIDOS_CSS, icPartido, origenDeZona, partidosBase, partidosEnBusqueda, zonaDeExplorar } from './partidos.js';
+import { PARTIDOS_CSS, icPartido, origenDeZona, partidosBase, partidosEnBusqueda, zonaBaseDeExplorar, zonaDeExplorar } from './partidos.js';
 import KE from '../../assets/emisiones.js';
 
 /** Una dirección mal codificada no es un 500: se manda al listado (302). */
@@ -780,7 +780,7 @@ export async function explorePage(url, lang, modo = 'explorar') {
     // Con una búsqueda: «Dónde ver el partido», como mucho 3 partidos que
     // pone algún bar cerca (como la búsqueda de la app). Es un extra.
     conNegociosArriba
-      ? ciudadesP.then((ck) => partidosEnBusqueda({ q, lang, origen: origenDeZona(e, ck), zona: zonaDeExplorar(e, lang) })).catch(() => '')
+      ? ciudadesP.then((ck) => partidosEnBusqueda({ q, lang, origen: origenDeZona(e, ck), zona: zonaDeExplorar(e, lang), zonaBase: zonaBaseDeExplorar(e) })).catch(() => '')
       : '',
   ]);
   const catsHoja = (todasCats || []).length ? todasCats : (cats || []);

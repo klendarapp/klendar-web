@@ -57,7 +57,7 @@ export const PARTIDOS_CSS = '<link rel="stylesheet" href="/assets/partidos.css?v
 /** Lo personal (Tus equipos, seguir desde aquí): solo hace algo con sesión. */
 const partidosScript = (lang) => {
   const sp = supabasePublic();
-  return `<script src="/assets/partidos.js?v=2" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}" data-lang="${lang === 'en' ? 'en' : 'es'}"></script>`;
+  return `<script src="/assets/partidos.js?v=3" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}" data-lang="${lang === 'en' ? 'en' : 'es'}"></script>`;
 };
 
 /** «350 m», «1,2 km». */
@@ -78,12 +78,29 @@ function leeEstado(qs) {
   const lng = redondea(Number.parseFloat(qs.get('lng') || ''));
   const cerca = Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
   const sport = de('sport', 20);
+  // La distancia de los filtros (la de Explorar, `?km=`), solo con «Cerca de
+  // mí»; sin ella, la de siempre (5 km).
+  const km = Number.parseInt(qs.get('km') || '', 10);
   return {
     q: (qs.get('q') || '').trim().slice(0, 60),
     city: cerca ? '' : de('city', 60),
     sport: KE.DEPORTES.includes(sport) ? sport : '',
     cerca, lat: cerca ? lat : null, lng: cerca ? lng : null,
+    km: cerca && RADIOS_KM.includes(km) ? km : RADIO_KM,
   };
+}
+
+// Las distancias de los filtros de Explorar (y de la app).
+const RADIOS_KM = [1, 3, 5, 10, 25];
+const RADIO_KM = 5;
+
+/** Los parámetros de la zona para la base, como Explorar: «Cerca de mí» con
+ * la distancia de los filtros; una ciudad, los bares de esa ciudad; sin
+ * zona, los de todas partes (migración 20261203100002 de la app). */
+function zonaRpc(e) {
+  if (e.cerca) return { p_lat: e.lat, p_lng: e.lng, p_radius_m: (e.km || RADIO_KM) * 1000, p_city: null };
+  if (e.city) return { p_lat: null, p_lng: null, p_radius_m: null, p_city: e.city };
+  return { p_lat: null, p_lng: null, p_radius_m: null, p_city: null };
 }
 
 /** La dirección de un estado (en el idioma de la página). */
@@ -91,12 +108,15 @@ function query(e, lang, { sinQ = false, sinDeporte = false } = {}) {
   const K = CLAVES[lang === 'en' ? 'en' : 'es'];
   const p = new URLSearchParams();
   if (!sinQ && e.q) p.set('q', e.q);
-  if (e.cerca) { p.set('lat', posUrl(e.lat)); p.set('lng', posUrl(e.lng)); } else if (e.city) p.set(K.city, e.city);
+  if (e.cerca) {
+    p.set('lat', posUrl(e.lat)); p.set('lng', posUrl(e.lng));
+    if (e.km && e.km !== RADIO_KM) p.set('km', String(e.km));
+  } else if (e.city) p.set(K.city, e.city);
   if (!sinDeporte && e.sport) p.set(K.sport, e.sport);
   return p.toString();
 }
 /** Solo la zona (para los enlaces al detalle y a la lista). */
-const zonaQs = (e, lang) => query({ city: e.city, cerca: e.cerca, lat: e.lat, lng: e.lng }, lang);
+const zonaQs = (e, lang) => query({ city: e.city, cerca: e.cerca, lat: e.lat, lng: e.lng, km: e.km }, lang);
 const conQs = (path, qs) => (qs ? `${path}?${qs}` : path);
 
 /** El punto desde el que se cuentan los bares: tu posición o el centro de la
@@ -116,7 +136,8 @@ function zonaMenu(e, lang, ciudades, link) {
   const Z = en
     ? { change: 'Change area', near: 'Near me', nearOn: 'Near you', all: 'Every city', nearNo: "We couldn't get your location. Allow it in your browser and try again." }
     : { change: 'Cambiar zona', near: 'Cerca de mí', nearOn: 'Cerca de ti', all: 'Todas las ciudades', nearNo: 'No hemos podido saber dónde estás. Permítelo en el navegador y vuelve a probar.' };
-  const valor = e.cerca ? Z.nearOn : e.city ? PRETTY(e.city) : Z.all;
+  // «Cerca de ti · 5 km»: la distancia con la que se cuentan los bares.
+  const valor = e.cerca ? `${Z.nearOn} · ${e.km || RADIO_KM} km` : e.city ? PRETTY(e.city) : Z.all;
   const op = (href, label, on) => `<a class="op${on ? ' on' : ''}" href="${esc(href)}"${on ? ' aria-current="true"' : ''}>${esc(label)}</a>`;
   return `<details class="desplegable">
       <summary class="chip" aria-label="${esc(`${Z.change}: ${valor}`)}">${ic(e.cerca ? 'cerca' : e.city ? 'ciudad' : 'lugar', 16)}<span class="chip-t">${esc(valor)}</span>${ic('abajo', 16)}</summary>
@@ -137,7 +158,7 @@ if(q.has('lat')||q.has('ciudad')||q.has('city'))return;var s=sessionStorage;var 
 var n=(performance.getEntriesByType&&performance.getEntriesByType('navigation')[0])||{};if(n.type==='back_forward')return;
 var g=JSON.parse(localStorage.getItem('klendar.filtros')||'null');if(!g||Date.now()-g.t>216e5)return;
 var a=new URLSearchParams(g[/^\\/en\\//.test(location.pathname)?'en':'es']||'');var z=new URLSearchParams();
-if(a.get('lat')&&a.get('lng')){z.set('lat',a.get('lat'));z.set('lng',a.get('lng'));}else{var c=a.get('ciudad')||a.get('city');if(c)z.set(/^\\/en\\//.test(location.pathname)?'city':'ciudad',c);}
+if(a.get('lat')&&a.get('lng')){z.set('lat',a.get('lat'));z.set('lng',a.get('lng'));if(a.get('km'))z.set('km',a.get('km'));}else{var c=a.get('ciudad')||a.get('city');if(c)z.set(/^\\/en\\//.test(location.pathname)?'city':'ciudad',c);}
 if(!z.toString())return;q.forEach(function(v,k){z.set(k,v);});location.replace(location.pathname+'?'+z.toString()+location.hash);}catch(x){}})();</script>`;
 
 // ── Una fila de partido ───────────────────────────────────────────────────
@@ -196,7 +217,7 @@ export async function partidosPage(url, lang) {
   // Sin deporte: así se saben los deportes que hay (los chips) y se filtra aquí.
   const conTexto = e.q.length >= 2;
   const todos = await rpcAll('where_to_watch', {
-    p_q: conTexto ? e.q : null, p_lat: origen?.lat ?? null, p_lng: origen?.lng ?? null, p_lang: lang, p_limit: 120,
+    p_q: conTexto ? e.q : null, ...zonaRpc(e), p_lang: lang, p_limit: 120,
   });
   const deportes = KE.DEPORTES.filter((s) => todos.some((b) => b.sport === s));
   const lista = e.sport ? todos.filter((b) => b.sport === e.sport) : todos;
@@ -324,7 +345,7 @@ export async function partidoPage(rawId, url, lang) {
     rows('cities', 'select=id,name,lat,lng&order=position.asc').catch(() => []),
   ]);
   const origen = origenDe(e, ciudadesK);
-  const d = await rpc('broadcast_detail', { p_broadcast: id, p_lat: origen?.lat ?? null, p_lng: origen?.lng ?? null, p_lang: lang });
+  const d = await rpc('broadcast_detail', { p_broadcast: id, ...zonaRpc(e), p_lang: lang });
   if (!d || !d.id) return noEsta(lang);
   const zona = zonaQs(e, lang);
   // Fusionado con otro: la dirección buena (una sola por partido).
@@ -420,11 +441,11 @@ export async function partidosDelBar(businessId, lang, tz) {
 // ── En la búsqueda de Explorar ────────────────────────────────────────────
 /** Con texto: como mucho 3 partidos que pone algún bar cerca y «Ver todos».
  * `origen`: tu posición o el centro de la ciudad (o nada). '' si no hay. */
-export async function partidosEnBusqueda({ q, lang, origen, zona }) {
+export async function partidosEnBusqueda({ q, lang, origen, zona, zonaBase }) {
   if (String(q || '').trim().length < 2) return '';
   let lista = [];
   try {
-    lista = await rpcAll('where_to_watch', { p_q: q, p_lat: origen?.lat ?? null, p_lng: origen?.lng ?? null, p_lang: lang, p_limit: 20 });
+    lista = await rpcAll('where_to_watch', { p_q: q, ...zonaRpc(zonaBase || {}), p_lang: lang, p_limit: 20 });
   } catch { return ''; }
   const conBares = lista.filter((b) => Number(b.bars) > 0).slice(0, 3);
   if (!conBares.length) return '';
@@ -444,4 +465,6 @@ export async function partidosEnBusqueda({ q, lang, origen, zona }) {
 /** El punto de una zona de Explorar (para `partidosEnBusqueda`). */
 export const origenDeZona = (e, ciudadesK) => origenDe({ cerca: e.cerca, lat: e.lat, lng: e.lng, city: e.city || '' }, ciudadesK);
 /** La zona de Explorar en las claves de estas páginas. */
-export const zonaDeExplorar = (e, lang) => zonaQs({ cerca: e.cerca, lat: e.lat, lng: e.lng, city: e.city || '' }, lang);
+export const zonaDeExplorar = (e, lang) => zonaQs({ cerca: e.cerca, lat: e.lat, lng: e.lng, city: e.city || '', km: e.km }, lang);
+/** La zona de Explorar, para contar los bares igual que allí. */
+export const zonaBaseDeExplorar = (e) => ({ cerca: e.cerca, lat: e.lat, lng: e.lng, city: e.city || '', km: e.km });

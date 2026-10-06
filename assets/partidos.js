@@ -140,8 +140,25 @@
           return;
         }
         pinta(!on);
+        if (!on) sb.rpc('set_broadcast_area', zonaParaAvisos()).then(function () {}, function () {});
         toast(on ? T.off(nombre) : T.on(nombre));
       }).catch(function () { toast(T.oops, true); }).then(function () { ocupado = false; });
     });
+  }
+  /** La zona de los filtros de Explorar (la que se guarda en este navegador)
+   * para el aviso antes de los partidos: la distancia y, con una ciudad, esa
+   * ciudad (migración 20261203100002 de la app). La base solo la guarda si
+   * sigue algún equipo. */
+  function zonaParaAvisos() {
+    var z = { p_radius_m: 5000, p_lat: null, p_lng: null, p_city: null };
+    try {
+      var g = JSON.parse(localStorage.getItem('klendar.filtros') || 'null');
+      var a = new URLSearchParams((g && (g[/^\/en\//.test(location.pathname) ? 'en' : 'es'])) || '');
+      var km = parseInt(a.get('km') || '', 10);
+      if ([1, 3, 5, 10, 25].indexOf(km) >= 0) z.p_radius_m = km * 1000;
+      var c = a.get('ciudad') || a.get('city');
+      if (!(a.get('lat') && a.get('lng')) && c) z.p_city = c;
+    } catch (x) { /* sin almacenamiento: la de siempre */ }
+    return z;
   }
 })();
