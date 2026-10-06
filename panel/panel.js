@@ -1773,6 +1773,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
           <label class="f"><span id="iniTxt"></span><input type="datetime-local" name="start" value="${toLocalInput(o.kind === 'future_event' ? o.event_at : o.redeem_start_at)}" required></label>
           <label class="f"><span id="finTxt"></span><input type="datetime-local" name="end" value="${toLocalInput(o.kind === 'future_event' ? o.event_end_at : o.redeem_end_at)}"></label>
         </div>
+        <p class="hint" id="finAuto" hidden></p>
         <p class="hint">${TZ === KZ.CANARIAS ? 'Las fechas y horas son las de Canarias, donde está tu local.' : 'Las fechas y horas son las de la península (hora de Madrid), donde está tu local.'}</p>
       </fieldset>
       <fieldset class="f plano" id="descuento"><legend>Descuento</legend>
@@ -1957,7 +1958,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
       const ini = fromLocalInput(campo('start').value);
       if (ini) pon('end', toLocalInput(new Date(new Date(ini).getTime() + 3 * 36e5).toISOString()));
     }
-    pintaTipo(); syncKind(); pintaPrevia(); resumenes();
+    pintaTipo(); syncKind(); pintaPrevia(); resumenes(); pintaFinAuto();
   };
 
   // Lo que solo tiene sentido en un tipo u otro se enseña y se esconde.
@@ -1990,6 +1991,28 @@ async function offerForm(v, id, kindDefault, desde = null) {
   });
   campo('max_redemptions').addEventListener('input', syncKind);
   $$('[name=holds_seats], [name=audience]', v).forEach((r) => r.addEventListener('change', syncKind));
+
+  // Un evento sin hora de fin termina al cierre del local (o 6 horas después
+  // si ese día no tiene horario): se dice, con la misma cuenta que la base.
+  let finAutoClave = null;
+  const pintaFinAuto = async () => {
+    const caja = $('#finAuto', v);
+    const ini = fromLocalInput(campo('start').value);
+    const clave = !isFlash() && !campo('end').value && ini ? `${ini}|${lugar.activo()}` : null;
+    if (clave === finAutoClave) return;
+    finAutoClave = clave;
+    if (!clave) { caja.hidden = true; return; }
+    let r = null;
+    try { r = await rpc('event_default_end', { p_business: BIZ.id, p_at: ini, p_elsewhere: lugar.activo() }); } catch { r = null; }
+    if (clave !== finAutoClave) return;
+    if (!r?.ends_at) { caja.hidden = true; return; }
+    const h = KZ.fmt(r.ends_at, TZ, LOC(), { hour: 'numeric', minute: '2-digit' });
+    caja.textContent = r.at_close
+      ? bi(`Termina: al cierre del local (${h})`, `Ends: when your place closes (${h})`)
+      : bi(`Termina: 6 horas después de empezar (${h})`, `Ends: 6 hours after it starts (${h})`);
+    caja.hidden = false;
+  };
+  for (const n of ['start', 'end', 'venue_on']) campo(n).addEventListener('change', () => pintaFinAuto());
 
   // Una publicación +18 no es para niños: la pregunta no se hace.
   const syncNinos = () => { $('#ninosRow', v).hidden = campo('adults_only').checked; };
@@ -2767,6 +2790,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
   syncNinos();
   pintaEstilo();
   pintaBarra();
+  pintaFinAuto();
   // Desde «Primeros pasos»: ya rellena con la primera de su gremio.
   if (!id && /[?&]idea=1\b/.test(location.hash) && ideas.length) aplicarIdea(ideas[0]);
 

@@ -36,6 +36,7 @@ const RRPP_ERRORES = {
   not_active: () => bi('Esa persona ya no es RRPP de tu negocio.', 'That person is no longer one of your promoters.'),
   not_on_list: () => bi('Ese código no está en las listas de esta noche.', "That code isn't on tonight's lists."),
   invalid_schedule: () => bi('Elige al menos un día y las dos horas.', 'Choose at least one day and both times.'),
+  invalid_quota: () => bi('Las plazas por RRPP van de 1 a 10.000 (o vacío para el general).', 'Places per promoter go from 1 to 10,000 (or empty for the general one).'),
 };
 /** El error dicho para el negocio. `enlaces`: «too_many» habla de enlaces. */
 function rrppError(e, enlaces = false) {
@@ -370,15 +371,50 @@ function rrppOfertasHtml(lista, vacio) {
     cols: [
       { h: bi('Oferta', 'Offer'), r: (o) => `<b class="title">${esc(o.title || '')}</b><span class="sub">${esc([rrppCuando(o.starts_at, o.ends_at), o.live ? '' : bi('Terminada', 'Ended')].filter(Boolean).join(' · '))}</span>` },
       { h: bi('Validez', 'Valid'), r: (o) => esc(rrppValidezTxt(o.code_until, o.code_hours)) },
-      { h: bi('Cupo', 'Places'), r: (o) => ((o.promoters || []).length ? (o.promoters || []).map((p) => esc(o.quota != null && p.left != null
-        ? bi(`${rrppNombre(p)}: quedan ${p.left} de ${o.quota}`, `${rrppNombre(p)}: ${p.left} of ${o.quota} left`)
-        : bi(`${rrppNombre(p)}: ${p.used} ${p.used === 1 ? 'apuntado' : 'apuntados'} · sin límite`, `${rrppNombre(p)}: ${p.used} signed up · no limit`))).join('<br>')
+      // El cupo de cada RRPP: tocarlo lo cambia para él («Marta: 80») o lo
+      // devuelve al general (migración 20261115100002).
+      { h: bi('Cupo', 'Places'), r: (o) => ((o.promoters || []).length ? (o.promoters || []).map((p) => {
+        const cupo = p.quota !== undefined ? p.quota : o.quota;
+        const txt = cupo != null && p.left != null
+          ? bi(`${rrppNombre(p)}: quedan ${p.left} de ${cupo}`, `${rrppNombre(p)}: ${p.left} of ${cupo} left`)
+          : bi(`${rrppNombre(p)}: ${p.used} ${p.used === 1 ? 'apuntado' : 'apuntados'} · sin límite`, `${rrppNombre(p)}: ${p.used} signed up · no limit`);
+        const propio = p.custom ? bi(' (propio)', ' (own limit)') : '';
+        return `<button type="button" class="linkbtn rrpp-cupo" data-cupo-oferta="${esc(o.id)}" data-cupo-rrpp="${esc(p.id)}" data-cupo-nombre="${esc(rrppNombre(p))}"
+          data-cupo-general="${o.quota ?? ''}" data-cupo-propio="${p.custom ? esc(cupo ?? '') : ''}" title="${esc(bi('Cambiar el cupo', 'Change the limit'))}">${esc(txt + propio)}</button>`;
+      }).join('<br>')
         : esc(bi('Ningún RRPP la tiene todavía', 'No promoter has it yet'))) },
       { h: '', r: (o) => `<div class="actions"><a class="btn sm" href="#/publicaciones/${esc(o.id)}">${esc(bi('Abrir', 'Open'))}</a></div>` },
     ],
     rows: lista,
   });
 }
+
+/** «Cupo de Marta»: lo que puede apuntar un RRPP en una oferta. Vacío vuelve
+ * al general. Vale para «Ofertas para tus RRPP» y la ficha del RRPP. */
+document.addEventListener('click', async (e) => {
+  const b = e.target.closest?.('[data-cupo-rrpp]');
+  if (!b) return;
+  e.preventDefault();
+  const general = b.dataset.cupoGeneral;
+  const r = await modal({
+    title: bi(`Cupo de ${b.dataset.cupoNombre}`, `${b.dataset.cupoNombre}'s limit`),
+    fields: [{ name: 'cupo', label: bi('Personas que puede apuntar', 'People they can sign up'), type: 'number', min: 1, max: 10000,
+      value: b.dataset.cupoPropio, placeholder: general || bi('Sin límite', 'No limit'),
+      help: general ? bi(`Vacío: el general (${general}).`, `Empty: the general one (${general}).`) : bi('Vacío: sin límite, como el resto.', 'Empty: no limit, like the rest.') }],
+    submit: bi('Guardar', 'Save'),
+  });
+  if (!r) return;
+  const n = r.cupo === '' ? null : Number(r.cupo);
+  if (n !== null && (!Number.isInteger(n) || n < 1 || n > 10000)) {
+    toast(bi('Las plazas por RRPP van de 1 a 10.000 (o vacío para el general).', 'Places per promoter go from 1 to 10,000 (or empty for the general one).'), true);
+    return;
+  }
+  try {
+    rrppOk(await rpc('set_offer_promoter_quota', { p_offer: b.dataset.cupoOferta, p_promoter: b.dataset.cupoRrpp, p_quota: n }));
+    toast(bi('Cupo guardado', 'Limit saved'));
+    route();
+  } catch (err) { toast(rrppError(err), true); }
+});
 
 // ── La ficha de un RRPP ─────────────────────────────────────────────────────
 async function rrppFicha(v, id, noche = null) {
@@ -717,7 +753,7 @@ function rrppFormularioHtml(o, datos) {
       <label class="opcion"><input type="checkbox" name="rrpp_sin_limite" ${o.promoter_quota ? '' : 'checked'}><span>${esc(bi('Sin límite', 'No limit'))}</span></label>
       <input type="number" name="promoter_quota" min="1" max="10000" step="1" value="${esc(o.promoter_quota ?? '')}" aria-label="${esc(bi('Plazas por RRPP', 'Places per promoter'))}" ${o.promoter_quota ? '' : 'disabled'}>
     </div>
-    <p class="hint">${esc(bi('Los códigos anulados o caducados devuelven la plaza.', 'Cancelled or expired codes give the place back.'))}</p>
+    <p class="hint">${esc(bi('Los códigos anulados o caducados devuelven la plaza. Puedes cambiarlo para un RRPP concreto en «RRPP».', 'Cancelled or expired codes give the place back. You can change it for a particular promoter in “Promoters”.'))}</p>
     <p class="rrpp-preg">${esc(bi('¿Hasta cuándo vale el código?', 'How long is the code valid?'))}</p>
     <label class="opcion"><input type="radio" name="rrpp_validez" value="siempre" ${validez === 'siempre' ? 'checked' : ''}><span>${esc(bi('Mientras dure la publicación', 'While the publication lasts'))}</span></label>
     <p class="hint" style="margin:0 0 6px 28px">${esc(bi('El código vale hasta que termine el evento o la oferta.', 'The code is valid until the event or the offer ends.'))}</p>

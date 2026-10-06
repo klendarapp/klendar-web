@@ -188,8 +188,13 @@ export async function offerPage(id, lang, rpRaw = '') {
 
   const flash = o.kind === 'flash_offer';
   const soldOut = o.status === 'sold_out' || (o.seats_left != null && o.seats_left <= 0);
-  // Un evento sin hora de fin sigue abierto 6 h (lo mismo que dura su código).
-  const fin = o.redeem_end_at || o.event_end_at
+  // Un evento sin hora de fin sigue abierto hasta el cierre del local (o 6 h
+  // si ese día no tiene horario): lo mismo que dura su código, la cuenta de la
+  // base (`event_default_end`).
+  const finAuto = !o.redeem_end_at && !o.event_end_at && o.event_at
+    ? await rpc('event_default_end', { p_business: o.business_id, p_at: o.event_at, p_elsewhere: !!o.venue_address }).catch(() => null)
+    : null;
+  const fin = o.redeem_end_at || o.event_end_at || finAuto?.ends_at
     || (o.event_at ? new Date(new Date(o.event_at).getTime() + 6 * 3600e3).toISOString() : 0);
   const over = new Date(fin || 0) < new Date();
   const noEmpezada = flash && o.redeem_start_at && new Date(o.redeem_start_at) > new Date();
