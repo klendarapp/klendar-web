@@ -68,7 +68,11 @@ async function rrppErrorCodigo(e, id, rp) {
   }
   const titulo = {
     promoter_only: t('Esta oferta es solo con el enlace de un RRPP.'),
-    promoter_quota_full: EN ? `There are no places left on ${nombre}'s list.` : `Ya no quedan plazas en la lista de ${nombre}.`,
+    // Quedan plazas, pero menos de las pedidas: cuántas (como la app).
+    promoter_quota_full: Number(d.seats_left) > 0
+      ? (EN ? `${nombre}'s list only has ${d.seats_left} ${Number(d.seats_left) === 1 ? 'place' : 'places'} left. Try fewer.`
+            : `En la lista de ${nombre} solo ${Number(d.seats_left) === 1 ? 'queda 1 plaza' : `quedan ${d.seats_left} plazas`}. Prueba con menos.`)
+      : (EN ? `There are no places left on ${nombre}'s list.` : `Ya no quedan plazas en la lista de ${nombre}.`),
     promoter_time_over: EN ? `It's too late: it was valid until ${rrppHora(d.until)}.` : `Ya es tarde: valía hasta ${rrppHora(d.until)}.`,
     promoter_self: t('Es tu propio enlace: no puedes apuntarte a tu lista.'),
     promoter_team: t('Eres del equipo de este negocio: no cuentas para ningún RRPP.'),

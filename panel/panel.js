@@ -1134,7 +1134,10 @@ async function pintaAforo(caja, estado = null) {
   }
   if (!KMa || !st || !st.enabled) { caja.innerHTML = ''; return; }
   const M = KMa.t(I18N.lang);
-  const actual = st.live ? st.level : null;
+  // Cerrado, lo marcado en las últimas 2 horas también sale marcado: se
+  // verá al abrir (si no, el botón parecía no hacer nada). Como la app.
+  const reciente = st.set_at && Date.now() - new Date(st.set_at).getTime() < 2 * 3600 * 1000;
+  const actual = st.live || (!st.open_now && reciente) ? st.level : null;
   const linea = !st.open_now ? bi('Ahora estás cerrado: no se ve hasta que abras.', "You're closed now: it won't show until you open.")
     : actual && st.set_at ? bi(`Marcado ${KMa.hace(st.set_at, 'es')}. Se quita solo a las 2 horas.`, `Set ${KMa.hace(st.set_at, 'en')}. Clears itself after 2 hours.`)
       : st.level ? bi('Lo último que marcaste ya no se ve: ha pasado más de 2 horas.', "What you last set no longer shows: it's been over 2 hours.")
@@ -2724,6 +2727,9 @@ async function offerForm(v, id, kindDefault, desde = null) {
     }
     if (alas && new Date(alas) <= new Date()) { toast(I18N.t('La hora de publicación tiene que ser futura.'), true); return; }
     if (alas && new Date(alas) > Date.now() + 60 * 864e5) { toast(I18N.t('Se puede dejar programada como mucho a 60 días.'), true); return; }
+    // Programada para cuando ya habría terminado: saldría caducada (como la app).
+    const acaba = finF || (flash ? null : iniF);
+    if (alas && acaba && new Date(alas) >= new Date(acaba)) { toast(I18N.t('Se publicaría cuando ya ha terminado: cambia las fechas o la hora de publicar.'), true); return; }
     const price = (f.get('price') || '').toString().replace(',', '.');
     const dValue = (f.get('discount_value') || '').toString().replace(',', '.');
     // Bajar el precio con códigos sin usar no es gratis: quien los tenga

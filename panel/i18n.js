@@ -545,6 +545,7 @@ const I18N = makeI18N({
     "El título necesita al menos 3 caracteres.": "The title needs at least 3 characters.",
     "El descuento «Otro» cabe en 24 caracteres («2ª unidad −50 %»).": "The “Other” discount fits in 24 characters (“2nd unit −50%”).",
     "La hora de publicación tiene que ser futura.": "The publishing time must be in the future.",
+    "Se publicaría cuando ya ha terminado: cambia las fechas o la hora de publicar.": "It would go live after it has already ended: change the dates or the publishing time.",
     "Como mucho 6 fotos o vídeos por publicación.": "Up to 6 photos or videos per publication.",
     "Borrar plantillas…": "Delete templates…",
     "Borrar plantillas": "Delete templates",

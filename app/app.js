@@ -1923,7 +1923,11 @@ RUTAS.reservar = async ([id], params) => {
   const o = Array.isArray(fila) ? fila[0] : fila;
   if (!o) { pinta(pantallaVacia({ icono: 'explore', titulo: t('Esa publicación ya no existe.'), h: 'h1', botones: `<a class="pill accent" href="${EN ? '/en/explore/' : '/explorar/'}">${esc(t('Buscar planes'))}</a>` })); return; }
   if (o.locked) { pintaExclusiva(o.audience, o.business_id, o.business_name); return; }
-  const tope = Math.max(1, Math.min(o.max_seats || 1, o.seats_left == null ? 10 : o.seats_left));
+  // Con el enlace de un RRPP, tampoco más de las que quedan en su lista
+  // (como la app: si no, «3 personas» acababa en «no quedan plazas»).
+  const pr = o.promoter;
+  const lista = pr && pr.in_offer && !pr.self && !pr.team && pr.quota_left != null ? Number(pr.quota_left) : null;
+  const tope = Math.max(1, Math.min(o.max_seats || 1, o.seats_left == null ? 10 : o.seats_left, lista > 0 ? lista : 10));
   if (tope <= 1) {
     // Venía del botón «Reservar» de la ficha: el código no vuelve a preguntar.
     if (hayIntencion(`reservar/${id}${conRp}`)) marcaIntencion(`codigo/${encodeURIComponent(id)}${conRp}`);
