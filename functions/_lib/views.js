@@ -55,7 +55,7 @@ const pre = (lang) => (lang === 'en' ? '/en' : '');
  * marcado caduca a las 2 h): /assets/sitio-ahora.js. */
 export const sitioAhoraScripts = (lang) => {
   const sp = supabasePublic();
-  return `<script src="/assets/marcas.js?v=2" defer></script>
+  return `<script src="/assets/marcas.js?v=3" defer></script>
 <script src="/assets/sitio-ahora.js?v=1" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}" data-lang="${lang === 'en' ? 'en' : 'es'}"></script>`;
 };
 

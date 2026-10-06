@@ -286,7 +286,7 @@ ${preconectar}<link rel="preload" href="/assets/fonts/manrope-latin.woff2" as="f
 <link rel="preload" href="/assets/fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/assets/site.css?v=20261012">
 <link rel="stylesheet" href="/assets/public.css?v=41">
-<link rel="stylesheet" href="/assets/tarjeta.css?v=8">
+<link rel="stylesheet" href="/assets/tarjeta.css?v=9">
 ${cabeza}
 </head>
 <body${bodyClass ? ` class="${esc(bodyClass)}"` : ''}>
@@ -294,7 +294,7 @@ ${siteHeader(lang, esc(es + consulta), esc(enPath + consulta), actual)}
 <main class="pub wrap" id="contenido">${body}</main>
 ${siteFooter(lang)}
 ${conAmigos ? `<script src="/assets/amigos.js?v=15" defer data-lang="${en ? 'en' : 'es'}"></script>
-` : ''}${conVisor ? `<script src="/assets/tarjeta.js?v=7" defer></script>
+` : ''}${conVisor ? `<script src="/assets/tarjeta.js?v=8" defer></script>
 ` : ''}${conTarjetas ? `<script src="/assets/tarjetas.js?v=13" defer></script>
 ` : ''}${/class="detail[" ]/.test(body) ? `<script src="/assets/barra.js?v=4" defer></script>
 ` : ''}${/^\/(en\/)?(o|b|coleccion|collection)\//.test(path) ? desdeHistorias() : ''}${contador ? CONTADOR : ''}

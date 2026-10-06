@@ -1066,7 +1066,7 @@ export async function explorePage(url, lang, modo = 'explorar') {
   </div>
   <p id="cercaErr" class="aviso-error" role="alert" hidden></p>
   <script src="/assets/categorias.js?v=4" defer></script>
-  <script src="/assets/gustos.js?v=3" defer data-lang="${en ? 'en' : 'es'}"></script>`;
+  <script src="/assets/gustos.js?v=4" defer data-lang="${en ? 'en' : 'es'}"></script>`;
 
   // En Explorar, sin ubicación ni ciudad: «Mira primero lo que tienes más cerca».
   const invitaCerca = !descubre && !negocios && !cerca && !city
@@ -1262,7 +1262,7 @@ function feedHtml({ S, en, lang, items, page, paginas, link, barra, final, vacio
     <button type="button" class="feed-ir" data-feed-ir="1" aria-label="${esc(S.nextItem)}">${ic('abajo', 24)}</button>
   </nav>
   ${masFormas}
-  ${page === 1 ? `<script src="/assets/fijada.js?v=2" defer data-lang="${en ? 'en' : 'es'}"></script>` : ''}`;
+  ${page === 1 ? `<script src="/assets/fijada.js?v=3" defer data-lang="${en ? 'en' : 'es'}"></script>` : ''}`;
 }
 
 // ── Una categoría en una ciudad ────────────────────────────────────────────

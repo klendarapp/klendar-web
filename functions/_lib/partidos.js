@@ -52,12 +52,12 @@ export const icPartido = (s = 18) => ic('balon', s);
 export const atribucion = () => `<p class="fuente-datos"><a href="${KE.FUENTE.url}" rel="noopener" target="_blank">${esc(KE.FUENTE.texto)}</a></p>`;
 
 /** Los estilos de estas piezas (también en la ficha del bar y en Explorar). */
-export const PARTIDOS_CSS = '<link rel="stylesheet" href="/assets/partidos.css?v=1">';
+export const PARTIDOS_CSS = '<link rel="stylesheet" href="/assets/partidos.css?v=2">';
 
 /** Lo personal (Tus equipos, seguir desde aquí): solo hace algo con sesión. */
 const partidosScript = (lang) => {
   const sp = supabasePublic();
-  return `<script src="/assets/partidos.js?v=1" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}" data-lang="${lang === 'en' ? 'en' : 'es'}"></script>`;
+  return `<script src="/assets/partidos.js?v=2" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}" data-lang="${lang === 'en' ? 'en' : 'es'}"></script>`;
 };
 
 /** «350 m», «1,2 km». */
