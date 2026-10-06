@@ -710,3 +710,29 @@ details.bloque .b-cuerpo { display: grid; gap: 14px; padding: 0 16px 16px; }
 .pub-form [aria-invalid="true"] { border-color: #b3261e; }
 .tpl-menu .mas-menu { position: absolute; right: 0; z-index: 6; }
 .tpl-menu { position: relative; }
+
+/* «Cuánto te ha traído Klendar» (Informe) e «Importe del ticket» (Validar). */
+.trajo .trajo-min { margin: 0; color: var(--ink-2); font-size: 13px; font-weight: 600; }
+.trajo .trajo-cifra { margin: 0; font-size: 34px; font-weight: 800; letter-spacing: -0.5px; line-height: 1.1; }
+.ticket-caja { margin-top: 14px; }
+.ticket-caja .f { margin: 0; }
+.ticket-fila { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ticket-fila .ticket-in { flex: 1 1 120px; max-width: 180px; }
+.ticket-msg.err { color: #b3261e; font-weight: 600; }
+@media (prefers-color-scheme: dark) { .ticket-msg.err { color: #FF9B9B; } }
+.ticket-celda { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.ticket-celda .ticket-caja { margin: 0; }
+
+/* «Antes de cerrar»: lo de la última vez, las bolsas y la hora. */
+.antes-ultima { display: flex; gap: 12px; align-items: center; margin-bottom: 14px; }
+.antes-ultima img, .antes-ultima .antes-ic { width: 56px; height: 56px; border-radius: 12px; object-fit: cover; flex: none; }
+.antes-ultima .antes-ic { display: grid; place-items: center; background: var(--glass, rgba(127,127,127,.12)); }
+.antes-ultima b, .antes-ultima small, .antes-ultima .antes-trato { display: block; }
+.antes-trato { color: var(--accent-text, #D6264A); font-weight: 700; }
+.antes-fila { display: flex; align-items: center; gap: 10px; margin: 6px 0 12px; }
+.antes-fila .etq { flex: 1; margin: 0; }
+.antes-fila .btn { min-width: 44px; min-height: 44px; justify-content: center; }
+.antes-fila output { min-width: 80px; text-align: center; font-weight: 800; }
+/* El importe no es un código: letra normal, a la izquierda. */
+.scan-box .ticket-in, .ticket-celda .ticket-in { font-size: 16px; letter-spacing: normal; text-align: left; font-family: inherit; }
+.antes .f { max-width: 220px; }

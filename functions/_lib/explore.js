@@ -97,6 +97,7 @@ const T = (en) => en
       feedKeys: 'Swipe, scroll or use ↑ ↓ to move on.', feedPos: (i, n) => `${i} of ${n}`,
       prevItem: 'Previous', nextItem: 'Next', seeMore: 'See more',
       // «El sitio», «Con niños» y «Según el tiempo».
+      beforeClosing: 'Before closing', beforeClosingHint: 'What’s left at the end of the day in bakeries, cafés and restaurants, at a discount. You pay at the venue.',
       place: 'The place', withKids: 'With kids', kidsIn: 'Plans with kids in', placeN: (n) => `The place (${n})`,
       seeAll: (n) => `See all (${n})`, seeLess: 'See less',
       byWeather: 'Based on the weather',
@@ -175,6 +176,7 @@ const T = (en) => en
       bizSection: 'Negocios', offersSection: 'Ofertas y eventos', allPlaces: 'Ver todos los negocios',
       feedKeys: 'Desliza, usa la rueda o ↑ ↓ para pasar.', feedPos: (i, n) => `${i} de ${n}`,
       prevItem: 'Anterior', nextItem: 'Siguiente', seeMore: 'Ver más',
+      beforeClosing: 'Antes de cerrar', beforeClosingHint: 'Lo que sobra del día en panaderías, cafeterías y restaurantes, con descuento. Se paga en el local.',
       place: 'El sitio', withKids: 'Con niños', kidsIn: 'Planes con niños en', placeN: (n) => `El sitio (${n})`,
       seeAll: (n) => `Ver todas (${n})`, seeLess: 'Ver menos',
       byWeather: 'Según el tiempo',
@@ -214,6 +216,8 @@ const IC = {
   izq: 'M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z',
   der: 'M8.59 16.59 13.17 12 8.59 7.41 10 6l6 6-6 6z',
   x: 'M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z',
+  // «Antes de cerrar» (shopping_bag).
+  bolsa: 'M18 6h-2c0-2.21-1.79-4-4-4S8 3.79 8 6H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6-2c1.1 0 2 .9 2 2h-4c0-1.1.9-2 2-2zm6 16H6V8h2v2c0 .55.45 1 1 1s1-.45 1-1V8h4v2c0 .55.45 1 1 1s1-.45 1-1V8h2v12z',
   aqui: 'M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0 0 13 3.06V1h-2v2.06A8.994 8.994 0 0 0 3.06 11H1v2h2.06A8.994 8.994 0 0 0 11 20.94V23h2v-2.06A8.994 8.994 0 0 0 20.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z',
   ciudad: 'M15 11V5l-3-3-3 3v2H3v14h18V11h-6zm-8 8H5v-2h2v2zm0-4H5v-2h2v2zm0-4H5V9h2v2zm6 8h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V9h2v2zm0-4h-2V5h2v2zm6 12h-2v-2h2v2zm0-4h-2v-2h2v2z',
   arriba: 'M12 8l-6 6 1.41 1.41L12 10.83l4.59 4.58L18 14z',
@@ -472,9 +476,9 @@ function calendarioHtml({ items, lang, S, link, mes, dia, hoy }) {
 /** Las claves de la dirección en cada idioma. */
 const CLAVES = {
   es: { city: 'ciudad', cat: 'categoria', kind: 'tipo', price: 'precio', when: 'cuando', discount: 'descuento', open: 'abierto', sort: 'orden', view: 'vista', month: 'mes', day: 'dia', show: 'ver', place: 'sitio', weather: 'tiempo',
-    age: 'edad', vprice: 'precio-local', card: 'descuento-para', solo: 'solo', charity: 'solidario' },
+    age: 'edad', vprice: 'precio-local', card: 'descuento-para', solo: 'solo', charity: 'solidario', closing: 'antes-de-cerrar' },
   en: { city: 'city', cat: 'category', kind: 'type', price: 'price', when: 'when', discount: 'discount', open: 'open', sort: 'sort', view: 'view', month: 'month', day: 'day', show: 'show', place: 'place', weather: 'weather',
-    age: 'age', vprice: 'venue-price', card: 'discount-for', solo: 'solo', charity: 'charity' },
+    age: 'age', vprice: 'venue-price', card: 'discount-for', solo: 'solo', charity: 'charity', closing: 'before-closing' },
 };
 /** Marcas (tanda A) en la dirección: edades «4-8», carné en cada idioma. */
 const EDAD_URL = { '0-3': '0_3', '4-8': '4_8', '9-12': '9_12', '13-17': '13_17' };
@@ -552,6 +556,9 @@ function leeEstado(qs) {
     carne: CARNE_URL[de('card', 20)] || '',
     solo: de('solo', 2) === '1',
     solidario: de('charity', 2) === '1',
+    // «Antes de cerrar»: lo que sobra del día (`before_closing` en
+    // `offer_traits`, migración 20261121100000).
+    antesCierre: de('closing', 2) === '1',
     // Apagado solo si lo dice la dirección (la hoja sin JavaScript manda
     // `tiempo=0&tiempo=1` cuando está encendido).
     tiempoOff: tiempo.includes('0') && !tiempo.includes('1'),
@@ -595,6 +602,7 @@ function query(e, lang, { soloCompartido = false } = {}) {
     if (e.carne) p.set(K.card, carneAUrl(e.carne, en));
     if (e.solo) p.set(K.solo, '1');
     if (e.solidario) p.set(K.charity, '1');
+    if (e.antesCierre) p.set(K.closing, '1');
   }
   if (e.tiempoOff) p.set(K.weather, '0');
   if (!soloCompartido && e.page > 1) p.set('p', String(e.page));
@@ -676,7 +684,7 @@ export async function explorePage(url, lang, modo = 'explorar') {
   const base = descubre ? discoverBase(lang) : exploreBase(lang);
   const e = leeEstado(url.searchParams);
   if (descubre) { e.q = ''; e.vista = ''; if (e.kind === 'places') e.kind = ''; }
-  const { q, city, cat, kind, price, when, soloDescuento, abierto, cerca, lat, lng, km, page, traits, tiempoOff, gustos } = e;
+  const { q, city, cat, kind, price, when, soloDescuento, abierto, cerca, lat, lng, km, page, traits, tiempoOff, gustos, antesCierre } = e;
   const negocios = !descubre && kind === 'places';
   const esOfertas = kind === 'offers';
   const esEventos = kind === 'events';
@@ -699,7 +707,8 @@ export async function explorePage(url, lang, modo = 'explorar') {
     ...(soloDescuento ? { discount_only: true } : {}),
     ...(abierto ? { open_now: true } : {}),
     // «El sitio» y «Con niños»: todos los marcados a la vez.
-    ...(traits.length || traitsMarcas(e).length ? { traits: [...traits, ...traitsMarcas(e)] } : {}),
+    ...(traits.length || traitsMarcas(e).length || antesCierre
+      ? { traits: [...traits, ...traitsMarcas(e), ...(antesCierre ? ['before_closing'] : [])] } : {}),
     sort: ordenBase === 'nearest' && !cerca ? 'soonest' : ordenBase,
     ...(cerca ? { radius_m: km * 1000 } : {}),
     // «Tus gustos»: pesan en el orden, sin esconder nada (como la app).
@@ -709,7 +718,7 @@ export async function explorePage(url, lang, modo = 'explorar') {
   };
   const pKind = esOfertas ? 'flash_offer' : esEventos ? 'future_event' : null;
   const filtrado = Boolean(q || city || cat || kind || page > 1 || price || when || soloDescuento || abierto || sort || cerca || vista || e.amigos
-    || traits.length || traitsMarcas(e).length || tiempoOff || gustos.length);
+    || traits.length || traitsMarcas(e).length || antesCierre || tiempoOff || gustos.length);
 
   const argsExplore = {
     p_city: cerca ? null : city || null, p_category: cat || null, p_kind: pKind, p_q: q || null,
@@ -789,7 +798,7 @@ export async function explorePage(url, lang, modo = 'explorar') {
   // Lo que deja fuera publicaciones (`hasNarrowingFilters` en la app): la
   // zona y la distancia se dicen aparte y el orden no quita nada.
   const conFiltros = Boolean(q || cat || kind || price || when || soloDescuento || abierto || e.amigos || traits.length
-    || traitsMarcas(e).length);
+    || traitsMarcas(e).length || antesCierre);
   let sugerencias = [];
   if ((alFinal || vacio) && (cerca || city)) {
     const vistos = new Set(items.map((o) => o.id));
@@ -862,6 +871,10 @@ export async function explorePage(url, lang, modo = 'explorar') {
   // hoja, en «El sitio»). Se quita tocándolo otra vez.
   const ninosOn = traits.includes('kids');
   const conNinos = negocios ? '' : `<a class="chip${ninosOn ? ' on' : ''}" href="${esc(link({ traits: ninosOn ? traits.filter((t) => t !== 'kids') : ordenaSitio([...traits, 'kids']), edades: [] }))}"${ninosOn ? ' aria-current="true"' : ''}>${icSitio('kids', 16)}<span>${esc(S.withKids)}</span></a>`;
+  // «Antes de cerrar»: lo que sobra del día, a un toque (el mismo filtro que
+  // el de «Qué» en la hoja). Se quita tocándolo otra vez; encendido, va junto
+  // a Filtros (como «Van mis amigos»).
+  const antes = negocios ? '' : `<a class="chip${antesCierre ? ' on' : ''}" href="${esc(link({ antesCierre: !antesCierre }))}"${antesCierre ? ' aria-current="true"' : ''} title="${esc(S.beforeClosingHint)}">${ic('bolsa', 16)}<span>${esc(S.beforeClosing)}</span></a>`;
   // «Ordenar por»: un desplegable compacto, como la app (no en el mapa ni en
   // el calendario, donde no cambia nada).
   const ordenTxt = { nearest: S.sortNearest, soonest: S.sortSoonest, newest: S.sortNewest };
@@ -894,7 +907,7 @@ export async function explorePage(url, lang, modo = 'explorar') {
   const catActual = catsHoja.find((c) => c.slug === cat) || (cats || []).find((c) => c.slug === cat);
   const resumen = resumenFiltros(e, S, catActual ? catName(catActual, en) : '');
   const restablecer = link({ kind: negocios ? 'places' : '', cat: '', km: RADIO_KM, price: '', when: '', soloDescuento: false, abierto: false, traits: [],
-    edades: [], precioLocal: 0, carne: '', solo: false, solidario: false });
+    edades: [], precioLocal: 0, carne: '', solo: false, solidario: false, antesCierre: false });
   // Categorías: las 8 más usadas (las que más tienen publicado ahora, como la
   // app) y la elegida, y «Ver todas (28)», que abre el selector con buscador y
   // grupos (/assets/categorias.js). Sin JavaScript, el resto sale debajo,
@@ -973,7 +986,8 @@ export async function explorePage(url, lang, modo = 'explorar') {
         ${radio(K.kind, '', S.all, !kind)}
         ${radio(K.kind, enIdioma('offers', en), S.offers, esOfertas)}
         ${radio(K.kind, enIdioma('events', en), S.events, esEventos)}
-      </div><p class="hoja-nota hoja-nota-bajo">${esc(S.whatHint)}</p></fieldset>`}
+      </div><p class="hoja-nota hoja-nota-bajo">${esc(S.whatHint)}</p>
+      <div class="ops">${casilla(K.closing, S.beforeClosing, antesCierre)}</div><p class="hoja-nota hoja-nota-bajo">${esc(S.beforeClosingHint)}</p></fieldset>`}
       ${catsHtml}
       ${negocios ? '' : `<fieldset><legend>${esc(S.distance)}</legend>${cerca ? '' : `<p class="hoja-nota">${esc(S.distHint)}</p>`}<div class="ops">
         ${RADIOS_KM.map((k) => radio('km', k === RADIO_KM ? '' : String(k), `${k} km`, km === k)).join('')}
@@ -1014,9 +1028,11 @@ export async function explorePage(url, lang, modo = 'explorar') {
   // El orden de la app: Filtros · Zona · Estoy aquí · Con niños · [Van mis amigos] · Ordenar.
   const barra = `<div class="barra-filtros" id="barra"${descubre ? ' data-amigos-resultados="#feed"' : ''}>
     ${hoja}
+    ${antesCierre ? antes : ''}
     ${zonaMenu}
     ${aqui}
     ${conNinos}
+    ${antesCierre ? '' : antes}
     <span data-amigos-hueco hidden></span>
     ${ordenMenu}
   </div>

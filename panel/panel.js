@@ -542,7 +542,15 @@ async function preparaNegocio() {
     } catch { /* Madrid */ }
   }
   TZ = KZ.de(BIZ);
+  // «Antes de cerrar» en el menú: se sabe al momento, sin esperar.
+  ANTES = null;
+  const negocio = BIZ.id;
+  rpc('before_closing_setup', { p_business: negocio })
+    .then((r) => { if (BIZ?.id === negocio) { ANTES = r; if (ME) renderNav(currentRoute()[0]); } })
+    .catch(() => {});
 }
+/** Lo de «Antes de cerrar» del negocio (`before_closing_setup`). */
+let ANTES = null;
 
 /** A dónde volver después de entrar o de aceptar los términos: la página del
  * panel con lo que traía (el código de un QR escaneado sin sesión, «Crear a
@@ -558,7 +566,7 @@ const VUELTA_PARAMS = {
   extend: /^[0-9a-f-]{36}$/i,
   estado: /^[a-z_]{1,20}$/,
   dia: /^\d{4}-\d{2}-\d{2}$/,
-  idea: /^1$/,
+  idea: /^(1|before_closing)$/,
 };
 function rutaDeVuelta() {
   const [h, q] = location.hash.split('?');
@@ -718,6 +726,8 @@ const SVG = {
   lista: 'M3 5h2v2H3V5zm4 0h14v2H7V5zM3 11h2v2H3v-2zm4 0h14v2H7v-2zm-4 6h2v2H3v-2zm4 0h14v2H7v-2z',
   // Series y repeticiones (event_repeat; no está en la fuente recortada).
   repite: 'M21 12V6c0-1.1-.9-2-2-2h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h7v-2H5V10h14v2h2zm-5.36 8c.43 1.45 1.77 2.5 3.36 2.5 1.93 0 3.5-1.57 3.5-3.5s-1.57-3.5-3.5-3.5c-.95 0-1.82.38-2.45 1H18v2h-4v-4h2v1.4c.9-.87 2.13-1.4 3.5-1.4 2.76 0 5 2.24 5 5s-2.24 5-5 5c-2.42 0-4.44-1.72-4.9-4h1.54z',
+  // «Antes de cerrar» (shopping_bag).
+  bolsa: 'M18 6h-2c0-2.21-1.79-4-4-4S8 3.79 8 6H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6-2c1.1 0 2 .9 2 2h-4c0-1.1.9-2 2-2zm6 16H6V8h2v2c0 .55.45 1 1 1s1-.45 1-1V8h4v2c0 .55.45 1 1 1s1-.45 1-1V8h2v12z',
   // RRPP (record_voice_over).
   rrpp: 'M9 13c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0-6c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm0 8c-2.67 0-8 1.34-8 4v3h16v-3c0-2.66-5.33-4-8-4zm6 5H3v-.99C3.2 18.29 6.3 17 9 17s5.8 1.29 6 2v1zM15.08 7.05c.84 1.18.84 2.71 0 3.89l1.68 1.69c2.02-2.02 2.02-5.07 0-7.27l-1.68 1.69zM20.07 2l-1.63 1.63c2.77 3.02 2.77 7.56 0 10.74L20.07 16c3.9-3.89 3.91-9.95 0-14z',
 };
@@ -739,6 +749,9 @@ const NAV = [
   ]],
   ['Publicar', [
     ['publicaciones', 'bolt', 'Publicaciones', ['asistentes', 'cartel']],
+    // Lo que sobra del día, en dos toques (gremios de comida o si ya ha
+    // publicado alguna: `before_closing_setup` → suggested).
+    ['antes-de-cerrar', 'bolsa', 'Antes de cerrar'],
     ['series', 'repite', 'Series y repeticiones'],
     ['novedades', 'campaign', 'Novedades'],
   ]],
@@ -769,7 +782,8 @@ const NAV = [
 /** Las cuatro de todos los días, abajo en el móvil (como las pestañas de la
  * app); «Más» abre el menú entero. */
 const BARRA = ['resumen', 'publicaciones', 'calendario', 'validar'];
-const visibleEnMenu = (k) => (gestiona() || !SOLO_GESTION.includes(k)) && (k !== 'baja' || esPropietario());
+const visibleEnMenu = (k) => (gestiona() || !SOLO_GESTION.includes(k)) && (k !== 'baja' || esPropietario())
+  && (k !== 'antes-de-cerrar' || !!ANTES?.suggested);
 const marcada = (current, n) => current === n[0] || (n[3] || []).includes(current);
 function renderNav(current) {
   let g = 0;
@@ -846,7 +860,7 @@ function sinDobleEnvio(caja) {
 
 // Lo que no es de un empleado: solo propietario y encargados (como la app).
 // «Regalo de cumpleaños» no está: el personal lo ve, en solo lectura.
-const SOLO_GESTION = ['sellos', 'carta', 'novedades', 'mensajes', 'ficha', 'cerrados', 'equipo', 'cartel-local', 'rrpp'];
+const SOLO_GESTION = ['sellos', 'carta', 'novedades', 'mensajes', 'ficha', 'cerrados', 'equipo', 'cartel-local', 'rrpp', 'antes-de-cerrar'];
 
 // ── Salir con cambios sin guardar ───────────────────────────────────────────
 // Una vista con cambios se apunta aquí: si se va a otra pantalla, se vuelve
@@ -1900,6 +1914,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
         ])}`)}
 
       ${bloque('bMas', I18N.t('Más opciones'), `
+        <label class="opcion bl-fila" id="antesRow"><input type="checkbox" name="before_closing" ${o.style?.badge === 'before_closing' ? 'checked' : ''}><span><b>Antes de cerrar</b><br><small class="muted">Lo que te sobra del día, con descuento y para recoger hasta el cierre. Sale con su sello y en el filtro «Antes de cerrar».</small></span></label>
         <fieldset class="f full filtro-sellos"><legend>Quién la ve</legend>
           ${AUDIENCIAS.map(([k, t]) => `<label class="opcion"><input type="radio" name="audience" value="${k}" ${(o.audience || 'all') === k ? 'checked' : ''}><span>${esc(t)}</span></label>`).join('')}
           <p class="hint" id="audAyuda" ${['all', 'promoters'].includes(o.audience || 'all') ? 'hidden' : ''}>Los demás ven que es exclusiva, sin el beneficio.</p>
@@ -2041,6 +2056,8 @@ async function offerForm(v, id, kindDefault, desde = null) {
     $('#seatsRow', v).hidden = !conReserva;
     $('#ttlRow', v).hidden = !conCodigo || deRrpp;
     $('#porPersonaRow', v).hidden = !flash;
+    // «Antes de cerrar»: solo en una oferta flash para todo el mundo.
+    $('#antesRow', v).hidden = !flash || deRrpp;
     $('#plazasRow', v).hidden = !conAforo || !conCodigo;
     $('#esperaNota', v).hidden = !conAforo || !conCodigo;
     $('#cuandoTit', v).textContent = flash ? I18N.t('Cuándo se puede canjear') : I18N.t('Cuándo');
@@ -2262,8 +2279,16 @@ async function offerForm(v, id, kindDefault, desde = null) {
   const limpiaEstilo = (s2) => ({
     template: PLANTILLAS.some(([k]) => k === s2?.template) ? s2.template : 'glass',
     accent: colorSeguro(s2?.accent),
+    // «Antes de cerrar»: el sello va en el aspecto (`style.badge`).
+    before_closing: s2?.badge === 'before_closing',
   });
   let estilo = limpiaEstilo(o.style);
+  /** Lo que se guarda en `offers.style`: el sello solo en una oferta flash. */
+  const estiloJson = () => ({
+    template: estilo.template,
+    ...(estilo.accent ? { accent: estilo.accent } : {}),
+    ...(estilo.before_closing && kind === 'flash_offer' ? { badge: 'before_closing' } : {}),
+  });
   const enPaleta = (c) => PALETA.some(([h]) => h === c);
   // ── Vista previa: la tarjeta de verdad (/assets/tarjeta.js), con lo que
   // hay escrito ahora mismo. A la derecha en el escritorio (fija al bajar) y
@@ -2306,7 +2331,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
       event_at: evento ? ini : null,
       event_end_at: evento ? fin : null,
       images,
-      style: { template: estilo.template, ...(estilo.accent ? { accent: estilo.accent } : {}) },
+      style: estiloJson(),
       venue_name: lugar.activo() ? String(f.get('venue_name') || '').trim() || null : null,
       venue_address: lugar.activo() ? String(f.get('venue_address') || '').trim() || null : null,
       external_url: evento ? String(f.get('external_url') || '').trim() || null : null,
@@ -2443,6 +2468,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
     const ninos = val('for_kids');
     const set = val('setting');
     $('#bMasRes', v).innerHTML = t([
+      ...(isFlash() && estilo.before_closing ? [bi('Antes de cerrar', 'Before closing')] : []),
       { all: bi('Para todo el mundo', 'For everyone'), favorites: bi('Solo favoritos', 'Favourites only'), customers: bi('Solo clientes', 'Customers only'), promoters: bi('Solo RRPP', 'Promoters only') }[aud],
       !lugar.activo() ? bi('en tu local', 'at your place') : sitio || bi('en otro sitio', 'somewhere else'),
       ...(adultos ? ['+18'] : []),
@@ -2460,6 +2486,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
 
   // Cualquier cambio del formulario se ve al momento en la tarjeta y en los
   // resúmenes.
+  campo('before_closing').addEventListener('change', () => { estilo.before_closing = campo('before_closing').checked; });
   $('#form').addEventListener('input', () => { pintaPrevia(); resumenes(); });
   $('#form').addEventListener('change', () => { pintaPrevia(); resumenes(); });
 
@@ -2471,12 +2498,23 @@ async function offerForm(v, id, kindDefault, desde = null) {
     if (desc) pon('description', desc);
     pon('discount_type', t.discount === 'none' ? '' : t.discount);
     pon('discount_value', precioTxt(t.value));
+    const cond = en ? t.termsEn : t.termsEs;
+    if (cond) pon('terms', cond);
+    if (t.seats) pon('max_redemptions', t.seats);
+    // «Antes de cerrar»: con su sello y hasta el cierre del local.
+    estilo.before_closing = !!t.beforeClosing && t.kind === 'flash_offer';
+    campo('before_closing').checked = estilo.before_closing;
     if (t.kind === 'flash_offer') {
       const ahora = new Date();
       pon('start', toLocalInput(ahora.toISOString()));
       pon('end', toLocalInput(new Date(ahora.getTime() + t.hours * 3600e3).toISOString()));
+      if (t.beforeClosing) {
+        rpc('event_default_end', { p_business: BIZ.id, p_at: ahora.toISOString(), p_elsewhere: false })
+          .then((r) => { if (r?.at_close && r.ends_at && v.isConnected) { pon('end', toLocalInput(r.ends_at)); pintaPrevia(); resumenes(); } })
+          .catch(() => {});
+      }
     }
-    syncDiscount(); pintaPrevia(); resumenes();
+    syncKind(); syncDiscount(); pintaPrevia(); resumenes();
   };
   // Lo que guarda la app como plantilla (offer_templates.data): todo menos
   // fechas y estado. Mismo formato en los dos lados.
@@ -2506,6 +2544,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
     pon('alcohol', ds.alcohol === true ? 'yes' : ds.alcohol === false ? 'no' : '');
     images = [...(d.images || [])];
     if (d.style) estilo = limpiaEstilo(d.style);
+    campo('before_closing').checked = !!estilo.before_closing;
     lugar.pon(d.venue_address ? { name: d.venue_name, address: d.venue_address, lat: d.venue_lat, lng: d.venue_lng } : null);
     renderPhotos(); pintaTipo(); syncKind(); syncDiscount(); pintaEstilo();
   };
@@ -2572,7 +2611,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
       for_kids: forKids(campo('adults_only').checked, val('for_kids')),
       setting: val('setting') || null,
       ...marcasDe(),
-      style: { template: estilo.template, ...(estilo.accent ? { accent: estilo.accent } : {}) },
+      style: estiloJson(),
       code_ttl_minutes: val('code_ttl_minutes') ? Number(val('code_ttl_minutes')) : null,
       reservations_enabled: kind !== 'flash_offer' && campo('reservations_enabled').checked,
       images,
@@ -2749,7 +2788,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
       status: alas ? 'draft' : (publicar ? 'active'
         : (id && ['expired', 'sold_out', 'cancelled'].includes(o.status) ? o.status : 'draft')),
       publish_at: alas,
-      style: { template: estilo.template, ...(estilo.accent ? { accent: estilo.accent } : {}) },
+      style: estiloJson(),
       // Sin sitio propio, la base pone el punto del negocio.
       venue_name: lugar.activo() ? (String(f.get('venue_name') || '').trim() || null) : null,
       venue_address: lugar.activo() ? (String(f.get('venue_address') || '').trim() || null) : null,
@@ -2903,6 +2942,14 @@ async function offerForm(v, id, kindDefault, desde = null) {
   pintaFinAuto();
   // Desde «Primeros pasos»: ya rellena con la primera de su gremio.
   if (!id && /[?&]idea=1\b/.test(location.hash) && ideas.length) aplicarIdea(ideas[0]);
+  // Desde «Antes de cerrar» la primera vez: con esa idea (aunque su gremio
+  // no la tenga).
+  if (!id && /[?&]idea=before_closing\b/.test(location.hash)) {
+    const IDEAS = window.KLENDAR_IDEAS || { general: [], bySlug: {} };
+    const idea = ideas.find((t) => t.beforeClosing)
+      || Object.values(IDEAS.bySlug).flat().find((t) => t.beforeClosing);
+    if (idea) aplicarIdea(idea);
+  }
 
   // ── Cambios sin guardar: se pregunta al salir (y al cerrar la pestaña) ───
   const estado = () => JSON.stringify([[...new FormData($('#form')).entries()], images, estilo, lugar.punto, kind, programada]);
@@ -3018,6 +3065,108 @@ PAGES.calendario = async (v, param) => {
   };
   $('#calHoy', v).onclick = () => { dia = hoy; mes = hoy.slice(0, 7); history.replaceState(null, '', `${location.pathname}${location.search}#/calendario/${dia}`); pinta('dia'); };
   pinta();
+};
+
+// ── Antes de cerrar ─────────────────────────────────────────────────────────
+// Lo que sobra del día, con descuento y pagando en el local (migración
+// 20261121100000). La primera vez, el formulario con la idea «Antes de
+// cerrar»; después, en dos toques con lo de la última vez ya puesto
+// (cambiar las bolsas o la hora es opcional). Y el recordatorio diario,
+// apagado de serie. Lo mismo que la hoja de «Mi negocio» en la app.
+PAGES['antes-de-cerrar'] = async (v) => {
+  let s = await rpc('before_closing_setup', { p_business: BIZ.id });
+  ANTES = s;
+  if (!s?.last) {
+    location.replace('#/publicaciones/nueva-flash?idea=before_closing');
+    return;
+  }
+  const u = s.last;
+  const hora = (iso) => new Date(iso).toLocaleTimeString(LOC(), { hour: '2-digit', minute: '2-digit', timeZone: TZ });
+  const hhmm = (iso) => new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: TZ });
+  const bolsasTxt = (n) => bi(n === 1 ? '1 bolsa' : `${n} bolsas`, n === 1 ? '1 bag' : `${n} bags`);
+  const quedanTxt = (n) => (n === 0 ? bi('Agotado', 'Sold out') : bi(n === 1 ? 'Queda 1 bolsa' : `Quedan ${n} bolsas`, n === 1 ? '1 bag left' : `${n} bags left`));
+  const trato = u.discount ? I18N.t(etiquetaDescuento(u.discount)) : (u.price_cents != null ? fmtMoney(u.price_cents, u.currency) : '');
+  let bolsas = Math.max(1, Math.min(500, u.seats || 6));
+  const ventana = () => (s.window.at_close
+    ? bi(`De ${hora(s.window.from)} al cierre (${hora(s.window.until)})`, `From ${hora(s.window.from)} until closing (${hora(s.window.until)})`)
+    : bi(`De ${hora(s.window.from)} a ${hora(s.window.until)}`, `From ${hora(s.window.from)} to ${hora(s.window.until)}`));
+  v.innerHTML = `
+    <div class="page-head"><h1>Antes de cerrar</h1></div>
+    <p class="muted" style="margin:-6px 0 14px">${esc(bi('Lo que te ha sobrado hoy, con lo de la última vez ya puesto. Se paga en el local.',
+      'What you have left today, with last time’s details already filled in. People pay at the venue.'))}</p>
+    ${s.live ? `<div class="scan-result warn">${ms('info')}${esc(bi(`Ya tienes una publicada: ${quedanTxt(s.live.seats_left ?? 0).toLowerCase()}, hasta las ${hora(s.live.until)}.`,
+      `You already have one live: ${quedanTxt(s.live.seats_left ?? 0)}, until ${hora(s.live.until)}.`))}</div>` : ''}
+    <div class="card antes">
+      <div class="antes-ultima">
+        ${u.image ? `<img src="${esc(u.image)}" alt="" loading="lazy">` : `<span class="antes-ic">${svg('bolsa', 26)}</span>`}
+        <div><b>${esc(u.title)}</b>${trato ? `<span class="antes-trato">${esc(trato)}</span>` : ''}${u.terms ? `<small class="muted">${esc(u.terms)}</small>` : ''}</div>
+      </div>
+      <div class="antes-fila">
+        <span class="etq">${esc(bi('Bolsas', 'Bags'))}</span>
+        <button class="btn sm" type="button" data-bolsas="-1" aria-label="${esc(bi('Una bolsa menos', 'One bag fewer'))}">−</button>
+        <output id="bolsas" aria-live="polite">${esc(bolsasTxt(bolsas))}</output>
+        <button class="btn sm" type="button" data-bolsas="1" aria-label="${esc(bi('Una bolsa más', 'One more bag'))}">+</button>
+      </div>
+      <label class="f"><span>${esc(bi('Recogida desde', 'Pick-up from'))}</span><input type="time" id="desde" value="${esc(hhmm(s.window.from))}"></label>
+      <p class="hint" id="ventana">${esc(ventana())}</p>
+      <button class="btn primary grande" type="button" id="publicaAntes">${esc(I18N.t('Publicar'))}</button>
+      <p style="margin:10px 0 0;text-align:center"><a class="link" href="#/publicaciones/nueva-flash?from=${esc(u.id)}">${esc(bi('Cambiar más cosas', 'Change more details'))}</a></p>
+    </div>
+    <div class="card"><h2>${esc(bi('Recordármelo cada día', 'Remind me every day'))}</h2>
+      <label class="opcion"><input type="checkbox" id="recOn" ${s.reminder_at ? 'checked' : ''}><span id="recTxt"></span></label>
+      <label class="f" style="max-width:200px"><span>${esc(bi('Hora', 'Time'))}</span><input type="time" id="recHora" min="06:00" max="23:00" value="${esc(s.reminder_at || u.from_time || '20:00')}"></label>
+      <p class="hint">${esc(bi('Llega a quien puede publicar (propietario y encargados), si ese día no está cerrado y aún no has publicado la de hoy.',
+        'It goes to whoever can post (owner and managers), unless you’re closed that day or have already posted today’s.'))}</p>
+    </div>`;
+  const pintaRec = () => {
+    $('#recTxt', v).textContent = s.reminder_at
+      ? bi(`A las ${s.reminder_at}: «¿Te ha sobrado algo hoy?»`, `At ${s.reminder_at}: “Anything left over today?”`)
+      : bi('Apagado. Te avisamos a la hora que elijas.', 'Off. We’ll remind you at the time you choose.');
+  };
+  pintaRec();
+  $$('[data-bolsas]', v).forEach((b) => {
+    b.onclick = () => {
+      bolsas = Math.max(1, Math.min(500, bolsas + Number(b.dataset.bolsas)));
+      $('#bolsas', v).textContent = bolsasTxt(bolsas);
+    };
+  });
+  $('#desde', v).onchange = async () => {
+    const [h, m] = String($('#desde', v).value || '').split(':').map(Number);
+    if (!Number.isFinite(h)) return;
+    const [y, mo, d] = KZ.hoy(TZ).split('-').map(Number);
+    const desde = KZ.instante(TZ, y, mo, d, h, m || 0);
+    try {
+      s = await rpc('before_closing_setup', { p_business: BIZ.id, p_from: desde.toISOString() });
+      $('#ventana', v).textContent = ventana();
+    } catch (e) { toast(friendly(e.message), true); }
+  };
+  $('#publicaAntes', v).onclick = async (e) => {
+    const b = e.currentTarget;
+    b.disabled = true;
+    try {
+      const r = await rpc('publish_before_closing', { p_business: BIZ.id, p_seats: bolsas, p_from: s.window.from });
+      if (!r?.ok) {
+        toast(r?.error === 'invalid_window' ? bi('A esa hora ya no da tiempo: elige una hora antes del cierre.',
+          'It’s too late for that time: choose a time before closing.') : friendly(r?.error), true);
+        return;
+      }
+      toast(bi('Publicada: ya sale en Descubre con el sello «Antes de cerrar».', 'Posted: it’s on Discover now with the “Before closing” badge.'));
+      location.hash = '#/publicaciones';
+    } catch (err) {
+      toast(friendly(err.message), true);
+    } finally { b.disabled = false; }
+  };
+  const guardaRec = async () => {
+    const on = $('#recOn', v).checked;
+    try {
+      const r = await rpc('set_before_closing_reminder', { p_business: BIZ.id, p_at: on ? $('#recHora', v).value : null });
+      if (!r?.ok) { toast(r?.error === 'invalid_time' ? bi('Elige una hora entre las 6:00 y las 23:00.', 'Choose a time between 6:00 and 23:00.') : friendly(r?.error), true); $('#recOn', v).checked = !!s.reminder_at; return; }
+      s.reminder_at = r.reminder_at || null;
+      pintaRec();
+    } catch (err) { toast(friendly(err.message), true); }
+  };
+  $('#recOn', v).onchange = guardaRec;
+  $('#recHora', v).onchange = () => { if ($('#recOn', v).checked) guardaRec(); };
 };
 
 // ── Validar códigos ─────────────────────────────────────────────────────────
@@ -3142,6 +3291,60 @@ const etiquetaSinConexion = (r) => (r.offline ? ` <span class="tag dim">${esc(bi
  * eliminada» si ya no tiene cuenta (el canje se queda, sin nadie detrás). */
 const personaValidada = (r) => (r.deleted_account ? I18N.t('Cuenta eliminada') : (r.person || I18N.t('Usuario de Klendar')));
 
+// ── Importe del ticket y «Cuánto te ha traído Klendar» ───────────────────
+// Lo que paga la persona al canjear (opcional): lo apunta cualquiera del
+// equipo al validar o después en «Últimos validados», durante 24 h
+// (`set_redemption_ticket`, migración 20261121100000). Igual que la app.
+const ERR_TICKET = {
+  invalid_amount: 'Escribe un importe, por ejemplo 12,50.',
+  ticket_too_late: 'Han pasado más de 24 horas: ya no se puede cambiar.',
+  not_validated: 'Ese código aún no está validado.',
+};
+/** «12,50», «12.50», «12 €» → céntimos; null si no es un importe. */
+const centimosTicket = (txt) => {
+  const t = String(txt || '').replace(/[\s€]|EUR/gi, '').replace(',', '.');
+  if (!/^\d{1,6}(\.\d{1,2})?$/.test(t)) return null;
+  const c = Math.round(parseFloat(t) * 100);
+  return c > 0 && c <= 10000000 ? c : null;
+};
+const textoTicket = (c) => (c == null ? '' : (c / 100).toFixed(2).replace('.', I18N.lang === 'en' ? '.' : ','));
+/** Euros enteros para los totales: «1143 €». */
+const eurosEnteros = (c, cur = 'EUR') => Math.round((c || 0) / 100)
+  .toLocaleString(LOC(), { style: 'currency', currency: cur || 'EUR', minimumFractionDigits: 0, maximumFractionDigits: 0 });
+/** Guarda (o quita, vacío) el importe del ticket de [code]. Devuelve
+ * {ok, ticket_cents} o {ok:false, error}. */
+async function guardaTicket(code, texto) {
+  const vacio = !String(texto || '').trim();
+  const cents = vacio ? null : centimosTicket(texto);
+  if (!vacio && cents == null) return { ok: false, error: 'invalid_amount' };
+  try {
+    return await rpc('set_redemption_ticket', { p_code: code, p_cents: cents });
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+}
+/** El campo pequeño «Importe del ticket (opcional)» bajo un código recién
+ * validado. No es un paso más: se puede dejar en blanco. */
+function cajaTicket(caja, code, inicial = null) {
+  caja.innerHTML = `<div class="ticket-caja">
+    <label class="f"><span>${esc(I18N.t('Importe del ticket (opcional)'))}</span>
+      <span class="ticket-fila"><input class="ticket-in" inputmode="decimal" autocomplete="off" placeholder="12,50" value="${esc(textoTicket(inicial))}"><span aria-hidden="true">€</span>
+      <button class="btn sm" type="button">${esc(I18N.t('Guardar el importe'))}</button></span></label>
+    <p class="hint ticket-msg" aria-live="polite">${esc(I18N.t('Lo que ha pagado en total. Afina «Cuánto te ha traído Klendar».'))}</p></div>`;
+  const input = $('.ticket-in', caja);
+  const msg = $('.ticket-msg', caja);
+  const guarda = async () => {
+    const r = await guardaTicket(code, input.value);
+    msg.classList.toggle('err', !r?.ok);
+    msg.textContent = r?.ok
+      ? I18N.t(r.ticket_cents == null ? 'Importe quitado' : 'Importe guardado')
+      : I18N.t(ERR_TICKET[r?.error] || friendly(r?.error));
+    if (r?.ok && $('#recent')) $('#recent').dispatchEvent(new Event('recargar'));
+  };
+  $('button', caja).onclick = guarda;
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); guarda(); } });
+}
+
 PAGES.validar = async (v) => {
   v.innerHTML = `
     <div class="page-head"><h1>Validar códigos</h1></div>
@@ -3155,7 +3358,9 @@ PAGES.validar = async (v) => {
       <div id="cola"></div>
     </div>
     <div id="puertaRrpp"></div>
-    <div class="card" style="margin-top:18px"><h2>Últimos validados</h2><div id="recent"></div></div>`;
+    <div class="card" style="margin-top:18px"><h2>Últimos validados</h2>
+      <p class="muted" style="margin:0 0 10px">${esc(I18N.t('Durante 24 horas puedes apuntar o corregir el importe del ticket de cada canje.'))}</p>
+      <div id="recent"></div></div>`;
 
   // ── Sin conexión: los códigos se guardan y se validan al volver la red ──
   // (como en la app). Se guardan por negocio en este navegador.
@@ -3218,9 +3423,25 @@ PAGES.validar = async (v) => {
         { h: 'Cuándo', r: (r) => fmtDate(r.at) },
         { h: 'Qué', r: (r) => `<b class="title">${esc(r.title)}</b><span class="sub">${esc(queValidado(r))}${etiquetaSinConexion(r)}</span>` },
         { h: 'Persona', r: (r) => `${esc(personaValidada(r))}${r.promoter_name ? `<span class="sub">${rrppListaDe(r)}</span>` : ''}` },
+        // El ticket (24 h para apuntarlo o corregirlo) o, si no, lo estimado.
+        { h: 'Ticket', r: (r) => {
+          const editable = r.ticket_until && new Date(r.ticket_until) > new Date();
+          const valor = r.ticket_cents != null ? `<b>${esc(fmtMoney(r.ticket_cents, r.currency))}</b>`
+            : r.estimate_cents != null ? `<span class="muted">${esc(bi('Estimado', 'Estimated'))}: ${esc(fmtMoney(r.estimate_cents, r.currency))}</span>` : '';
+          const boton = editable ? `<button class="btn sm ghost" type="button" data-ticket="${esc(r.code)}" data-cents="${r.ticket_cents ?? ''}">${esc(I18N.t(r.ticket_cents != null ? 'Cambiar' : 'Añadir ticket'))}</button>` : '';
+          return `<span class="ticket-celda">${valor}${valor && boton ? ' ' : ''}${boton}</span>`;
+        } },
       ],
       rows: rows || [],
       empty: 'Todavía no has validado ningún código.',
+    });
+    // Apuntar o corregir el ticket ahí mismo.
+    $$('[data-ticket]', caja).forEach((b) => {
+      b.onclick = () => {
+        const celda = b.closest('.ticket-celda');
+        cajaTicket(celda, b.dataset.ticket, b.dataset.cents ? Number(b.dataset.cents) : null);
+        $('.ticket-in', celda)?.focus();
+      };
     });
   };
 
@@ -3247,7 +3468,7 @@ PAGES.validar = async (v) => {
     if (!navigator.onLine) { aLaCola(); return; }
     try {
       const res = await rpc('validate_redemption', { p_code: code });
-      pintaResultado(res, res.ok ? 'ok' : 'bad');
+      pintaResultado({ ...res, code_input: code }, res.ok ? 'ok' : 'bad');
       if (res.ok) {
         if (navigator.vibrate) navigator.vibrate(120);
         $('#code').value = '';
@@ -3269,7 +3490,10 @@ PAGES.validar = async (v) => {
           ? `<small>${esc(bi('Se validó el', 'Validated on'))} ${esc(fmtDate(res.validated_at))}</small>` : ''}`;
     $('#result').innerHTML = `<div class="scan-result ${estado === 'ready' ? 'warn' : estado}">${cab}</div>
       ${res.offer_title ? tarjetaCodigo(res, estado) : ''}
-      ${estado === 'ready' ? `<button class="btn primary grande" id="validaYa" type="button">${ms('check')}${esc(I18N.t('Validar'))}</button>` : ''}`;
+      ${estado === 'ready' ? `<button class="btn primary grande" id="validaYa" type="button">${ms('check')}${esc(I18N.t('Validar'))}</button>` : ''}
+      <div id="ticketVal"></div>`;
+    // Recién validado el código de una publicación: el importe del ticket.
+    if (estado === 'ok' && (res.kind || 'offer') === 'offer' && res.code_input) cajaTicket($('#ticketVal'), res.code_input);
     const b = $('#validaYa');
     if (b) b.onclick = () => { $('#code').value = res.code_input || $('#code').value; validate(); };
   };
@@ -3284,6 +3508,7 @@ PAGES.validar = async (v) => {
     }
   };
   $('#go').onclick = validate;
+  $('#recent').addEventListener('recargar', () => loadRecent());
   // Las listas de los RRPP de esta noche (panel/rrpp.js): validar desde la
   // fila es lo mismo que el escáner.
   rrppPuerta($('#puertaRrpp'), (res) => {
@@ -4630,10 +4855,29 @@ PAGES.informe = async (v, param) => {
   const best = hours.slice().sort((a, b) => b.redeemed - a.redeemed)[0];
   const maxDay = Math.max(1, ...(r.daily || []).map((d) => Math.max(d.views, d.codes)));
 
+  // «Cuánto te ha traído Klendar»: al menos tantos euros en tantas visitas.
+  const visitas = (n) => bi(n === 1 ? '1 visita' : `${fmtNum(n)} visitas`, n === 1 ? '1 visit' : `${fmtNum(n)} visits`);
+  const conTicket = t.brought_with_ticket > 0
+    ? ` (${bi(`${fmtNum(t.brought_with_ticket)} con ticket real`, `${fmtNum(t.brought_with_ticket)} with a real receipt`)})` : '';
+  const cifraTrajo = eurosEnteros(t.brought_cents, t.currency);
+  const grande = t.brought_visits > 0 && t.brought_priced > 0;
+  const fraseTrajo = !t.brought_visits ? bi('Cuando valides códigos, aquí verás lo que te traen tus ofertas.', 'When you validate codes, you’ll see here what your offers bring in.')
+    : !t.brought_priced ? bi(`Tus ofertas trajeron ${visitas(t.brought_visits)}. Ninguna tenía precio, así que no sumamos euros.`, `Your offers brought in ${visitas(t.brought_visits)}. None had a price, so we don’t add up euros.`)
+      : bi(`Tus ofertas trajeron al menos ${cifraTrajo}${conTicket} en ${visitas(t.brought_visits)}.`, `Your offers brought in at least ${cifraTrajo}${conTicket} from ${visitas(t.brought_visits)}.`);
+  const comoTrajo = helpBox(I18N.t('¿Cómo se calcula?'), bi(
+    '<p>Por cada código validado sumamos el precio de la oferta por persona (el que tenía cuando la persona consiguió el código) por las plazas.</p><p>Si alguien del equipo apunta el importe del ticket al validar, o después en «Últimos validados», usamos ese importe en lugar de la estimación.</p><p>Las ofertas sin precio (gratis o solo un descuento) cuentan como visitas, pero no suman euros. Cada código validado es una visita, aunque entren varias personas con él.</p><p>Por eso es un mínimo: lo que la gente gasta además, o en otras visitas, no lo vemos.</p>',
+    '<p>For each validated code we add the offer’s price per person (the one it had when the person got the code) times the number of places.</p><p>If someone on the team enters the receipt total when validating, or later in “Recently validated”, we use that amount instead of the estimate.</p><p>Offers without a price (free or just a discount) count as visits but don’t add euros. Each validated code is one visit, even if several people come in with it.</p><p>That’s why it’s a minimum: we can’t see what people spend on top of that, or on other visits.</p>'));
+
   v.innerHTML = `
     <div class="page-head"><h1>Informe</h1><span class="spacer"></span>
       ${[7, 30, 90, 365].map((d) => `<a class="btn sm ${d === days ? '' : 'ghost'}" href="#/informe/${d}">${d === 365 ? bi('1 año', '1 year') : bi(`${d} días`, `${d} days`)}</a>`).join(' ')}
     </div>
+    <div class="card trajo"><h2>Cuánto te ha traído Klendar</h2>
+      ${grande ? `<p class="trajo-min">${esc(bi('Al menos', 'At least'))}</p><p class="trajo-cifra">${esc(cifraTrajo)}</p>` : ''}
+      <p class="${grande ? 'muted' : ''}" style="margin:4px 0 10px">${esc(fraseTrajo)}</p>
+      ${comoTrajo}
+    </div>
+
     <div class="card"><h2>El periodo en cuatro cifras</h2>
       <div class="kpis">
         <div class="kpi"><b>${fmtNum(t.views)}</b><span>Vistas</span></div>
@@ -4663,6 +4907,7 @@ PAGES.informe = async (v, param) => {
           { h: 'Vistas', num: true, r: (o) => fmtNum(o.views) },
           { h: 'Códigos', num: true, r: (o) => fmtNum(o.codes) },
           { h: 'Canjes', num: true, r: (o) => fmtNum(o.redeemed) },
+          { h: 'Ha traído', num: true, r: (o) => (o.brought_cents ? esc(eurosEnteros(o.brought_cents, o.currency)) : '—') },
           { h: 'Plazas libres', num: true, r: (o) => (o.max_redemptions == null ? '—' : `${o.seats_left}/${o.max_redemptions}`) },
         ],
         rows: r.offers || [],
@@ -4684,6 +4929,8 @@ PAGES.informe = async (v, param) => {
           // Lo que se pagó por plaza: el precio de cuando se consiguió el
           // código si luego subió.
           { h: 'Precio', num: true, r: (x) => (x.paid_cents == null ? '—' : fmtMoney(x.paid_cents, x.currency)) },
+          // El importe del ticket, si alguien del equipo lo apuntó.
+          { h: 'Ticket', num: true, r: (x) => (x.ticket_cents == null ? '—' : fmtMoney(x.ticket_cents, x.currency)) },
           { h: 'Validado por', r: (x) => esc(x.by) },
         ],
         rows: r.redemptions || [],
@@ -4696,11 +4943,13 @@ PAGES.informe = async (v, param) => {
     ['title', 'Publicación'], ['kind', 'Tipo'], ['starts_at', 'Fecha'],
     [(o) => (o.price_cents == null ? '' : (o.price_cents / 100).toFixed(2)), 'Precio'],
     ['views', 'Vistas'], ['codes', 'Códigos'], ['redeemed', 'Canjes'],
+    [(o) => ((o.brought_cents || 0) / 100).toFixed(2), 'Ha traído al menos (€)'],
     ['max_redemptions', 'Aforo'], ['seats_left', 'Plazas libres'],
   ]);
   $('#csvRed').onclick = () => downloadCsv(`canjes-${BIZ.name}`, r.redemptions || [], [
     ['at', 'Fecha y hora'], [(x) => queValidado(x), 'Tipo'], ['title', 'Qué'], ['code', 'Código'], [(x) => x.seats ?? 1, 'Plazas'],
-    [(x) => (x.paid_cents == null ? '' : (x.paid_cents / 100).toFixed(2)), 'Precio'], ['by', 'Validado por'],
+    [(x) => (x.paid_cents == null ? '' : (x.paid_cents / 100).toFixed(2)), 'Precio'],
+    [(x) => (x.ticket_cents == null ? '' : (x.ticket_cents / 100).toFixed(2)), 'Ticket'], ['by', 'Validado por'],
     [(x) => (x.offline ? bi('sí', 'yes') : ''), 'Sin conexión'],
   ]);
 };
@@ -5013,6 +5262,9 @@ async function descargaDatos(formato) {
     ['codes', I18N.t('Códigos')],
     ['redeemed', I18N.t('Canjes')],
     [(p) => p.max_redemptions ?? '', I18N.t('Aforo')],
+    [(p) => ((p.brought_cents || 0) / 100).toFixed(2), I18N.t('Ha traído al menos (€)')],
+    [(p) => p.tickets ?? '', I18N.t('Con ticket')],
+    [(p) => (p.before_closing ? bi('sí', 'yes') : ''), I18N.t('Antes de cerrar')],
   ]);
 }
 

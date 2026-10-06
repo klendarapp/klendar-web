@@ -63,6 +63,20 @@ window.KLENDAR_IDEAS = {
     "kind": "flash_offer"
    },
    {
+    "es": "Bolsa sorpresa antes de cerrar",
+    "en": "Surprise bag before closing",
+    "discount": "fixed",
+    "descEs": "Lo que nos ha sobrado hoy, a buen precio. Pásate antes de que cerremos.",
+    "descEn": "What we have left today, at a good price. Drop by before we close.",
+    "termsEs": "Lo que sobra del día; el contenido varía.",
+    "termsEn": "What is left at the end of the day; contents vary.",
+    "value": 4,
+    "hours": 2,
+    "kind": "flash_offer",
+    "seats": 6,
+    "beforeClosing": true
+   },
+   {
     "es": "Postre gratis con el menú",
     "en": "Free dessert with the menu",
     "discount": "other",
@@ -86,6 +100,20 @@ window.KLENDAR_IDEAS = {
     "value": 2.5,
     "hours": 3,
     "kind": "flash_offer"
+   },
+   {
+    "es": "Bolsa sorpresa antes de cerrar",
+    "en": "Surprise bag before closing",
+    "discount": "fixed",
+    "descEs": "Lo que nos ha sobrado hoy, a buen precio. Pásate antes de que cerremos.",
+    "descEn": "What we have left today, at a good price. Drop by before we close.",
+    "termsEs": "Lo que sobra del día; el contenido varía.",
+    "termsEn": "What is left at the end of the day; contents vary.",
+    "value": 4,
+    "hours": 2,
+    "kind": "flash_offer",
+    "seats": 6,
+    "beforeClosing": true
    },
    {
     "es": "−25 % en repostería",
@@ -336,6 +364,20 @@ window.KLENDAR_IDEAS = {
     "kind": "flash_offer"
    },
    {
+    "es": "Bolsa sorpresa antes de cerrar",
+    "en": "Surprise bag before closing",
+    "discount": "fixed",
+    "descEs": "Lo que nos ha sobrado hoy, a buen precio. Pásate antes de que cerremos.",
+    "descEn": "What we have left today, at a good price. Drop by before we close.",
+    "termsEs": "Lo que sobra del día; el contenido varía.",
+    "termsEn": "What is left at the end of the day; contents vary.",
+    "value": 4,
+    "hours": 2,
+    "kind": "flash_offer",
+    "seats": 6,
+    "beforeClosing": true
+   },
+   {
     "es": "Segunda botella a mitad de precio",
     "en": "Second bottle at half price",
     "discount": "other",
@@ -358,6 +400,20 @@ window.KLENDAR_IDEAS = {
     "value": 30,
     "hours": 2,
     "kind": "flash_offer"
+   },
+   {
+    "es": "Bolsa sorpresa antes de cerrar",
+    "en": "Surprise bag before closing",
+    "discount": "fixed",
+    "descEs": "Lo que nos ha sobrado hoy, a buen precio. Pásate antes de que cerremos.",
+    "descEn": "What we have left today, at a good price. Drop by before we close.",
+    "termsEs": "Lo que sobra del día; el contenido varía.",
+    "termsEn": "What is left at the end of the day; contents vary.",
+    "value": 4,
+    "hours": 2,
+    "kind": "flash_offer",
+    "seats": 6,
+    "beforeClosing": true
    },
    {
     "es": "Degustación gratis",

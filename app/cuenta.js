@@ -80,6 +80,8 @@ function destinoWeb(ruta) {
   if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/message/i))) return `/panel/#/mensajes?biz=${m[1]}`;
   // «… ya es RRPP de …», «Un RRPP lo deja»: a «RRPP» de ese negocio.
   if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/promoters/i))) return `/panel/#/rrpp?biz=${m[1]}`;
+  // «¿Te ha sobrado algo hoy?»: a «Antes de cerrar» de ese negocio.
+  if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\?before_closing=1/i))) return `/panel/#/antes-de-cerrar?biz=${m[1]}`;
   if (r.startsWith('/my-business')) return '/panel/';
   // «¡Feliz cumpleaños!»: el regalo, con su QR.
   if ((m = r.match(/^\/gift\/([0-9a-f-]{36})/i))) return `#/regalo/${m[1]}`;

@@ -108,6 +108,7 @@
     es: {
       flash: 'Oferta flash', event: 'Evento', verOferta: 'Ver oferta', verEvento: 'Ver evento',
       seats: (n) => (n === 1 ? 'Queda 1 plaza' : `Quedan ${n} plazas`), soldOut: 'Agotado',
+      antes: 'Antes de cerrar', bolsas: (n) => (n === 1 ? 'Queda 1 bolsa' : `Quedan ${n} bolsas`),
       en: (l) => `en ${l}`, entradas: (p) => `Entradas en ${p}`, video: 'Vídeo',
       organiza: (n) => `Organiza: ${n}`, hoy: 'Hoy', manana: 'Mañana',
       anterior: 'Foto anterior', siguiente: 'Foto siguiente', sonido: 'Sonido', play: 'Reproducir vídeo',
@@ -117,6 +118,7 @@
     en: {
       flash: 'Flash offer', event: 'Event', verOferta: 'See offer', verEvento: 'See event',
       seats: (n) => (n === 1 ? '1 place left' : `${n} places left`), soldOut: 'Sold out',
+      antes: 'Before closing', bolsas: (n) => (n === 1 ? '1 bag left' : `${n} bags left`),
       en: (l) => `at ${l}`, entradas: (p) => `Tickets on ${p}`, video: 'Video',
       organiza: (n) => `Organised by ${n}`, hoy: 'Today', manana: 'Tomorrow',
       anterior: 'Previous photo', siguiente: 'Next photo', sonido: 'Sound', play: 'Play video',
@@ -442,6 +444,10 @@
     const lugar = sitio ? S.en(sitio) : '';
     const plataforma = o.ticket_platform || plataformaEntradas(o.external_url)?.plataforma || null;
     const agotado = o.status === 'sold_out' || (o.seats_left != null && Number(o.seats_left) <= 0);
+    // «Antes de cerrar» (`style.badge`): lo que sobra del día. Su sello va
+    // donde el tipo y las plazas son bolsas.
+    const antesCierre = flash && o.style?.badge === 'before_closing';
+    const quedan = (n) => (antesCierre ? S.bolsas(n) : S.seats(n));
     // Distancia en el navegador si la página no la sabe (ver /assets/tarjetas.js).
     const geo = !dist && Number.isFinite(o.lat) && Number.isFinite(o.lng)
       ? ` data-lat="${Number(o.lat).toFixed(5)}" data-lng="${Number(o.lng).toFixed(5)}"` : '';
@@ -453,7 +459,7 @@
       return `<article class="tj tj-fila" data-o="${esc(o.id)}"${geo}>
     <div class="tj-media">${mediaTarjeta(o, { primera: false, ancho: 72, alto: 72, S })}</div>
     <div class="tj-cuerpo">
-      <p class="tj-datos"><span class="tj-hora">${esc(hora)}</span>${flash ? `<span class="tj-rayo" title="${esc(S.flash)}">${ic('rayo', 14)}<span class="sr">${esc(S.flash)}</span></span>` : ''}${precio ? `<span class="tj-precio">${esc(precio)}</span>` : ''}${agotado ? `<span class="tj-chip">${esc(S.soldOut)}</span>` : ''}</p>
+      <p class="tj-datos"><span class="tj-hora">${esc(hora)}</span>${flash ? `<span class="tj-rayo" title="${esc(S.flash)}">${ic('rayo', 14)}<span class="sr">${esc(S.flash)}</span></span>` : ''}${antesCierre ? `<span class="tj-chip">${esc(S.antes)}</span>` : ''}${precio ? `<span class="tj-precio">${esc(precio)}</span>` : ''}${agotado ? `<span class="tj-chip">${esc(S.soldOut)}</span>` : ''}</p>
       <${h} class="tj-titulo"><a class="tj-enlace" href="${esc(href)}">${esc(o.title)}</a></${h}>
       <p class="tj-negocio">${esc(o.business_name || '')}${lugar ? ` · ${esc(lugar)}` : ''}<span class="tj-dist">${dist ? ` · ${esc(dist)}` : ''}</span></p>
       <div class="tj-amigos"></div>
@@ -475,7 +481,7 @@
       plantilla === 'poster' && !flash ? ''
         : `<span class="tj-chip tj-cuando"${cuentaAtras}>${ic(flash ? 'rayo' : 'cal', 15)}<span>${esc(cuandoCorto(o, lang, tz))}</span></span>`,
       agotado ? `<span class="tj-chip">${esc(S.soldOut)}</span>`
-        : o.seats_left != null && Number(o.seats_left) <= 20 ? `<span class="tj-chip">${esc(S.seats(Number(o.seats_left)))}</span>` : '',
+        : o.seats_left != null && Number(o.seats_left) <= 20 ? `<span class="tj-chip">${esc(quedan(Number(o.seats_left)))}</span>` : '',
       plataforma ? `<span class="tj-chip">${esc(S.entradas(plataforma))}</span>` : '',
     ].filter(Boolean).join('');
     const logo = o.business_logo && /^https:\/\//.test(o.business_logo)
@@ -486,7 +492,7 @@
     <div class="tj-media">
       ${opts.galeria || pantalla ? galeriaTarjeta(o, { primera: opts.primera, ancho, alto, S, href })
     : mediaTarjeta(o, { primera: opts.primera, ancho, alto, S })}
-      <span class="tj-tipo">${esc(flash ? S.flash : S.event)}</span>
+      <span class="tj-tipo">${esc(antesCierre ? S.antes : flash ? S.flash : S.event)}</span>
     </div>
     <div class="tj-panel">
       ${kicker}${plantilla === 'poster' ? titulo : ''}
