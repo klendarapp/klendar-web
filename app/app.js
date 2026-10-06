@@ -555,8 +555,6 @@ RUTAS[''] = async () => {
       ${ic('chevron_right')}
     </a>
 
-    <div id="aviso-correo"></div>
-
     ${nInv ? `<a class="invitacion inv-equipo" href="#/invitaciones">
         <span class="inv-ic">${ic('group_add')}</span>
         <span class="fila-t"><b>${esc(textoInv)}</b>
@@ -564,20 +562,22 @@ RUTAS[''] = async () => {
         ${ic('chevron_right')}
       </a>` : ''}
 
+    ${rrppPortadaHtml(rolesRrpp)}
+
+    <div id="aviso-correo"></div>
+
+    <!-- Los mismos cuatro accesos y en el mismo orden que la app («Tus
+         planes» y «Explorar» ya están en la barra de pestañas). -->
     <div class="rapidos">
-      <a class="rapido" href="#/planes">${ic('bookmark')}<b>${esc(t('Tus planes'))}</b></a>
       <a class="rapido" href="#/codigos">${ic('qr_code_2')}<b>${esc(t('Tus códigos'))}</b></a>
       <a class="rapido" href="#/favoritos">${ic('favorite')}<b>${esc(t('Favoritos'))}</b></a>
       <a class="rapido" href="#/sellos">${ic('local_activity')}<b>${esc(t('Tarjetas de sellos'))}</b></a>
       <a class="rapido" href="#/notificaciones">${ic('notifications')}<b>${esc(t('Notificaciones'))}</b><span class="badge-n" id="sin-leer" hidden></span></a>
-      <a class="rapido" href="${EN ? '/en/explore/' : '/explorar/'}">${ic('explore')}<b>${esc(t('Explorar'))}</b></a>
     </div>
 
     <div class="lista lista-amigos">
-      ${fila({ href: '#/amigos', icono: 'group', titulo: t('Amigos'), detalle: t('Tu enlace de amigo, tu QR y tu lista') })}
+      ${fila({ href: '#/amigos', icono: 'group', titulo: t('Amigos'), detalle: t('Tu lista, tu enlace y tu QR') })}
     </div>
-
-    ${rrppPortadaHtml(rolesRrpp)}
 
     ${tieneNegocio ? `
       <h2 class="seccion-t">${esc(t('Negocio'))}</h2>
@@ -603,12 +603,31 @@ RUTAS[''] = async () => {
     <div class="lista">
       ${fila({ href: '#/sugerencias', icono: 'lightbulb', titulo: t('Sugerencias y mejoras'), detalle: t('Cuéntanos qué cambiarías o qué falla') })}
       ${fila({ href: 'mailto:info@klendar.app', icono: 'mail', titulo: t('Contacto y soporte'), detalle: 'info@klendar.app' })}
-      ${fila({ href: EN ? '/en/terms/' : '/terminos/', icono: 'description', titulo: t('Términos de uso'), fuera: true })}
-      ${fila({ href: EN ? '/en/privacy/' : '/privacidad/', icono: 'privacy_tip', titulo: t('Política de privacidad'), fuera: true })}
+      <!-- Los tres textos legales, en una sola fila (como la app). -->
+      <button type="button" class="fila fila-btn" id="legal">${ic('description')}
+        <span class="fila-t"><b>${esc(t('Legal'))}</b><small>${esc(t('Términos, privacidad y normas'))}</small></span>${ic('chevron_right')}</button>
     </div>
 
     <button class="pill ancho" id="salir">${ic('logout')} ${esc(t('Cerrar sesión'))}</button>`);
   pintaSinLeer();
+  $('#legal').onclick = () => {
+    const d = document.createElement('dialog');
+    d.className = 'dialogo hoja-legal';
+    d.setAttribute('aria-labelledby', 'legal-t');
+    d.innerHTML = `<button type="button" class="cerrar-hoja" aria-label="${esc(t('Cerrar'))}">×</button>
+      <h2 id="legal-t">${esc(t('Legal'))}</h2>
+      <div class="lista">
+        ${fila({ href: EN ? '/en/terms/' : '/terminos/', icono: 'description', titulo: t('Términos de uso'), fuera: true })}
+        ${fila({ href: EN ? '/en/privacy/' : '/privacidad/', icono: 'privacy_tip', titulo: t('Política de privacidad'), fuera: true })}
+        ${fila({ href: EN ? '/en/community-guidelines/' : '/normas/', icono: 'description', titulo: t('Normas de la comunidad'), fuera: true })}
+      </div>`;
+    document.body.appendChild(d);
+    d.querySelector('.cerrar-hoja').onclick = () => d.close();
+    d.querySelectorAll('a').forEach((a) => { a.addEventListener('click', () => d.close()); });
+    d.addEventListener('click', (e) => { if (e.target === d) d.close(); });
+    d.addEventListener('close', () => d.remove());
+    d.showModal();
+  };
   // Su correo nos devuelve los mensajes: que lo revise o lo cambie.
   correoAvisoPortada($('#aviso-correo'));
   $('#salir').onclick = async () => {

@@ -840,4 +840,8 @@ const APP_EN = {
   "Más opciones": "More options",
   "Cerrar": "Close",
   "Añadir un amigo": "Add a friend",
+  // Cuenta
+  "Términos, privacidad y normas": "Terms, privacy and guidelines",
+  "Tu lista, tu enlace y tu QR": "Your list, your link and your QR code",
+  "Legal": "Legal",
 };

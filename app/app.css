@@ -450,3 +450,9 @@ button.codigo.copiar .ms { font-size: 18px; color: var(--ink-2); letter-spacing:
   background: var(--soft); color: var(--ink); font-size: 22px; line-height: 1; cursor: pointer; }
 .cerrar-hoja:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 
+/* «Legal»: una fila que abre los tres textos (como la app). */
+.fila-btn { width: 100%; background: none; border: 0; border-top: 1px solid var(--glass-border); font: inherit; color: inherit; text-align: left; cursor: pointer; }
+.lista > .fila-btn:first-child { border-top: 0; }
+.hoja-legal { position: relative; width: min(420px, calc(100vw - 32px)); }
+.hoja-legal h2 { padding-right: 36px; margin-bottom: 14px; }
+
