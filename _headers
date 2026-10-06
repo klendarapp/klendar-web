@@ -64,6 +64,13 @@
 /en/explore/*
   ! Permissions-Policy
   Permissions-Policy: geolocation=(self), camera=(), microphone=()
+# «Dónde ver el partido»: «Cerca de mí», igual que Explorar.
+/partidos/*
+  ! Permissions-Policy
+  Permissions-Policy: geolocation=(self), camera=(), microphone=()
+/en/matches/*
+  ! Permissions-Policy
+  Permissions-Policy: geolocation=(self), camera=(), microphone=()
 
 # Clave de IndexNow: los buscadores comprueban que este archivo contiene la
 # clave con la que la base les avisa de páginas nuevas (pública por diseño).

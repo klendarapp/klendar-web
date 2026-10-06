@@ -51,7 +51,7 @@ export async function onRequest(ctx) {
     // La ficha abierta desde el QR del local (`?visita=`) mira si estás en
     // el local para darte el sello: solo entonces puede pedir la ubicación.
     const desdeQr = /^\/(en\/)?b\//.test(pathname) && searchParams.has('visita');
-    const ubicacion = desdeQr || /^\/(explorar|descubre|en\/explore|en\/discover|app|panel)\//.test(pathname) ? '(self)' : '()';
+    const ubicacion = desdeQr || /^\/(explorar|descubre|partidos|en\/explore|en\/discover|en\/matches|app|panel)\//.test(pathname) ? '(self)' : '()';
     cabeceras.set('permissions-policy', `geolocation=${ubicacion}, camera=${pathname.startsWith('/panel/') ? '(self)' : '()'}, microphone=()`);
   }
   // 4. Zonas con sesión (Tu cuenta, panel, admin): sin el contador de

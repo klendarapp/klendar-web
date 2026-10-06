@@ -13,6 +13,9 @@
  *   en este navegador: `klendar.busquedas`, se borra una o todas) y «Lo más
  *   buscado en <ciudad>» (`popular_searches`: agregado, sin saber quién). Cada
  *   búsqueda cuenta en su ciudad con `log_search`, sin persona ni IP.
+ *   Arriba del todo, el acceso a «Dónde ver el partido» con su subtítulo
+ *   («Bares que ponen el fútbol, la F1 y más»), como el buscador en reposo
+ *   de la app (`textos.partidos`).
  *
  * Las ciudades salen de la base (`cities`, las mismas que la app).
  * `window.KlendarGustos` lo usa también «Tu cuenta» (`app/cuenta.js`).
@@ -204,7 +207,9 @@
     + '.busq-chip button{border:0;background:none;color:inherit;font:inherit;font-weight:600;font-size:14px;min-height:40px;padding:0 14px;cursor:pointer}'
     + '.busq-chip button.busq-x{padding:0 12px 0 2px;min-width:40px;font-weight:400;color:var(--ink-2)}'
     + '.busq-panel small{display:block;color:var(--ink-2);font-size:13px;margin-top:6px}'
-    + '.busq-borrar{border:0;background:none;color:var(--ink);font:inherit;font-weight:600;font-size:14px;min-height:40px;padding:0 4px;cursor:pointer}';
+    + '.busq-borrar{border:0;background:none;color:var(--ink);font:inherit;font-weight:600;font-size:14px;min-height:40px;padding:0 4px;cursor:pointer}'
+    + '.busq-atajo{display:flex;align-items:center;gap:12px;min-height:48px;color:var(--ink);text-decoration:none}.busq-atajo:hover{text-decoration:none}'
+    + '.busq-atajo svg{flex:none;color:var(--ink-2)}.busq-atajo span{display:grid;gap:2px;min-width:0;flex:1}.busq-atajo b{font-size:15px}.busq-atajo small{margin:0}';
   document.head.appendChild(estilo);
 
   var panel = document.createElement('div');
@@ -236,9 +241,16 @@
     if (form.requestSubmit) form.requestSubmit(); else form.submit();
   }
 
+  // «Dónde ver el partido» (sports_soccer de Material, Apache 2.0).
+  var BALON = 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 3.3 1.35-.95c1.82.56 3.37 1.76 4.38 3.34l-.39 1.34-1.35.46L13 6.7V5.3zm-3.35-.95L11 5.3v1.4L7.01 9.49l-1.35-.46-.39-1.34c1.01-1.57 2.56-2.77 4.38-3.34zM7.08 17.11l-1.14.1C4.73 15.81 4 13.99 4 12c0-.12.01-.23.02-.35l1-.73 1.38.48 1.46 4.34-.78 1.37zm7.42 2.48c-.79.26-1.63.41-2.5.41s-1.71-.15-2.5-.41l-.69-1.49.64-1.1h5.11l.64 1.11-.7 1.48zM14.27 15H9.73l-1.35-4.02L12 8.44l3.63 2.54L14.27 15zm3.79 2.21-1.14-.1-.79-1.37 1.46-4.34 1.39-.47 1 .73c.01.11.02.22.02.34 0 1.99-.73 3.81-1.94 5.21z';
   function pinta(pop) {
     var rec = recientes();
     var html = '';
+    var P = T.partidos;
+    if (P && P.t && /^\/(en\/matches|partidos)\//.test(String(P.href || ''))) {
+      html += '<section><a class="busq-atajo" href="' + esc(P.href) + '"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="' + BALON + '"/></svg>'
+        + '<span><b>' + esc(P.t) + '</b><small>' + esc(P.s || '') + '</small></span></a></section>';
+    }
     if (rec.length) {
       html += '<section><h2><span>' + esc(T.recent) + '</span><button type="button" class="busq-borrar" data-borrar-todo>' + esc(T.clear) + '</button></h2>'
         + '<div class="busq-chips">' + rec.map(function (t) {

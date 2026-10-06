@@ -184,7 +184,7 @@ export const discoverBase = (lang) => (lang === 'en' ? '/en/discover' : '/descub
 export const collectionBase = (lang) => (lang === 'en' ? '/en/collection' : '/coleccion');
 
 /** La misma página en el otro idioma: /o/x ⇄ /en/o/x, /agenda/x ⇄ /en/whats-on/x,
- * /hoy/x ⇄ /en/today/x, /con-ninos/x ⇄ /en/kids/x. */
+ * /hoy/x ⇄ /en/today/x, /con-ninos/x ⇄ /en/kids/x, /partidos/x ⇄ /en/matches/x. */
 export const altPath = (path, lang) =>
   lang === 'en'
     ? (path
@@ -196,6 +196,7 @@ export const altPath = (path, lang) =>
         .replace(/^\/en\/collection/, '/coleccion')
         .replace(/^\/en\/friend\//, '/amigo/')
         .replace(/^\/en\/story\//, '/historia/')
+        .replace(/^\/en\/matches/, '/partidos')
         .replace(/^\/en/, '') || '/')
     : `/en${path
         .replace(/^\/agenda/, '/whats-on')
@@ -205,7 +206,8 @@ export const altPath = (path, lang) =>
         .replace(/^\/descubre/, '/discover')
         .replace(/^\/coleccion/, '/collection')
         .replace(/^\/amigo\//, '/friend/')
-        .replace(/^\/historia\//, '/story/')}`;
+        .replace(/^\/historia\//, '/story/')
+        .replace(/^\/partidos/, '/matches')}`;
 
 /**
  * Página pública completa: cabecera del sitio, contenido y pie sencillo.

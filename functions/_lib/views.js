@@ -21,6 +21,7 @@ import { FUENTE_TIEMPO } from './tiempo.js';
 import KR from '../../assets/rrpp-enlace.js';
 import KM from '../../assets/marcas.js';
 import { fuenteHtml, selloEntidad } from './entidades.js';
+import { PARTIDOS_CSS, partidosDelBar } from './partidos.js';
 
 // Iconos de Material (los mismos que la app), en SVG: las páginas públicas
 // no cargan la fuente de iconos.
@@ -657,7 +658,7 @@ export async function businessPage(param, lang, search = '') {
   // «Clientes verificados»: solo las reseñas de quien ha canjeado algo aquí
   // (`?resenas=verificadas`, el mismo filtro que la app).
   const soloVerificadas = new URLSearchParams(search).get('resenas') === 'verificadas';
-  const [offers, sellos, carta, opiniones, novedades, cierres, nVerificadas, local] = await Promise.all([
+  const [offers, sellos, carta, opiniones, novedades, cierres, nVerificadas, local, partidos] = await Promise.all([
     rpcAll('business_offers', { p_id: id }),
     rpcAll('stamp_cards_of', { p_business: id }).catch(() => []), // opcional: sin ella, la ficha sale igual
     rpcAll('business_menu', { p_business: id }),
@@ -667,6 +668,8 @@ export async function businessPage(param, lang, search = '') {
     rpc('business_verified_review_count', { p_id: id }).then((n) => Number(n) || 0).catch(() => 0),
     // «El sitio»: lo que marca el negocio (terraza, apto para niños…).
     rows('businesses', `select=amenities,price_level,crowd_enabled,entity_kind&id=eq.${id}`).then((r) => r[0] || {}).catch(() => ({})),
+    // «Pone el partido»: lo que pone los próximos 7 días (opcional).
+    partidosDelBar(id, lang, zonaDe(b)).catch(() => ''),
   ]);
   // «El sitio», el rango de precio («€€») y si dice «¿Hay sitio ahora?».
   const sitio = Array.isArray(local.amenities) ? local.amenities : [];
@@ -709,6 +712,7 @@ export async function businessPage(param, lang, search = '') {
         hiddenCust: (n) => (n === 1 ? "There's 1 exclusive publication for their customers with stamps."
           : `There are ${n} exclusive publications for their customers with stamps.`),
         birthday: 'Birthday gift for people who have it in their favourites',
+        matches: 'Matches',
       }
     : {
         now: 'Ahora mismo', soon: 'Próximamente',
@@ -745,6 +749,7 @@ export async function businessPage(param, lang, search = '') {
         hiddenCust: (n) => (n === 1 ? 'Hay 1 publicación exclusiva para sus clientes con sellos.'
           : `Hay ${n} publicaciones exclusivas para sus clientes con sellos.`),
         birthday: 'Regalo de cumpleaños para quien lo tiene en favoritos',
+        matches: 'Partidos',
       };
 
   const flash = offers.filter((o) => o.kind === 'flash_offer');
@@ -849,6 +854,7 @@ export async function businessPage(param, lang, search = '') {
       <nav class="neg-secciones" aria-label="${esc(b.name)}">
         ${flash.length ? `<a class="chip" href="#ahora">${esc(S.now)} <span class="muted">${flash.length}</span></a>` : ''}
         ${events.length ? `<a class="chip" href="#proximamente">${esc(S.soon)} <span class="muted">${events.length}</span></a>` : ''}
+        ${partidos ? `<a class="chip" href="#partidos">${esc(S.matches)}</a>` : ''}
         ${novedades.length ? `<a class="chip" href="#novedades">${esc(S.news)}</a>` : ''}
         ${carta.length || fotosCarta.length ? `<a class="chip" href="#carta">${esc(S.menu)}</a>` : ''}
         <a class="chip" href="#resenas">${esc(S.reviews)}</a>
@@ -878,6 +884,7 @@ export async function businessPage(param, lang, search = '') {
       ${events.length ? `<h2 id="proximamente">${S.soon}</h2>${rejilla(events, lang, { tz, sinNegocio: true, galeria: true })}` : ''}
       ${offers.length ? '' : `<p class="empty">${S.none}</p>`}
       ${exclusivas}
+      ${partidos}
       ${sellos.length ? `<h2>${sellos.length > 1 ? S.stampsMany : S.stamps}</h2>
         ${sellos.map((c) => `<p class="callout"><b>${esc(c.name)}</b> · ${esc(S.stampsBody(c.goal, c.reward))}<br><small>${esc(queSellaTarjeta(c, S, en))}</small></p>`).join('')}
         <p class="muted">${esc(sellos.some((c) => c.by_visit) ? S.stampsNoteVisit : S.stampsNote)}</p>` : ''}
@@ -973,7 +980,8 @@ export async function businessPage(param, lang, search = '') {
     lang, path, body: body + MENU_JS, title: conCiudad ? `${b.name} · ${b.city}` : b.name, description, image: b.cover || b.logo,
     head: `<meta name="robots" content="${b.adults_only || conVisita || b.closed_indefinitely ? 'noindex' : 'index, follow'}">
 ${ldScript(jsonLd)}${horario ? '\n<script src="/assets/zona.js?v=1" defer></script>\n<script src="/assets/horario.js?v=1" defer></script>' : ''}${conVisita ? `\n${conVisita}` : ''}${local.crowd_enabled ? `\n${sitioAhoraScripts(lang)}` : ''}
-${traducir(lang, `business:${b.id}`, carta.length ? `menu:${b.id}` : '')}`,
+${traducir(lang, `business:${b.id}`, carta.length ? `menu:${b.id}` : '')}${partidos ? `
+${PARTIDOS_CSS}` : ''}`,
   }), 200, conVisita ? 'no-store' : undefined);
 }
 
