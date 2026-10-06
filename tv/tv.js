@@ -53,6 +53,8 @@
     empiezaDia: function (d, h) { return 'Starts ' + d + ' at ' + h; },
     empiezaEn: function (m) { return 'Starts in ' + m + ' min'; },
     termina: function (h) { return 'Until ' + h; },
+    terminaManana: function (h) { return 'Until tomorrow at ' + h; },
+    terminaDia: function (d, h) { return 'Until ' + d + ' at ' + h; },
     quedan: function (t) { return t + ' left'; },
     ahora: 'Happening now', hoy: 'Today', manana: 'Tomorrow',
     plazas: function (n) { return n === 1 ? '1 place left' : n + ' places left'; },
@@ -79,6 +81,8 @@
     empiezaDia: function (d, h) { return 'Empieza el ' + d + ' a las ' + h; },
     empiezaEn: function (m) { return 'Empieza en ' + m + ' min'; },
     termina: function (h) { return 'Hasta las ' + h; },
+    terminaManana: function (h) { return 'Hasta mañana a las ' + h; },
+    terminaDia: function (d, h) { return 'Hasta el ' + d + ' a las ' + h; },
     quedan: function (t) { return 'Quedan ' + t; },
     ahora: 'Está pasando ahora', hoy: 'Hoy', manana: 'Mañana',
     plazas: function (n) { return n === 1 ? 'Queda 1 plaza' : 'Quedan ' + n + ' plazas'; },
@@ -506,7 +510,13 @@
       if (s < 3600) return { texto: T.quedan(Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2)), urgente: true };
       var h = Math.floor(s / 3600);
       var m = Math.floor((s % 3600) / 60);
-      return { texto: T.termina(hora(o.redeem_end_at, tz)) + ' · ' + T.quedan(h + ' h' + (m ? ' ' + m + ' min' : '')), urgente: false };
+      // Si acaba otro día, se dice cuál («Hasta las 20:44» con 23 h por delante
+      // parecía hoy).
+      var hf = hora(o.redeem_end_at, tz);
+      var hasta = mismoDia(o.redeem_end_at, new Date(t).toISOString(), tz) ? T.termina(hf)
+        : mismoDia(o.redeem_end_at, new Date(t + 86400000).toISOString(), tz) ? T.terminaManana(hf)
+          : T.terminaDia(dia(o.redeem_end_at, tz), hf);
+      return { texto: hasta + ' · ' + T.quedan(h + ' h' + (m ? ' ' + m + ' min' : '')), urgente: false };
     }
     var ev = o.event_at;
     if (Date.parse(ev) <= t) return { texto: T.ahora, urgente: true };

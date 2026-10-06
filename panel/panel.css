@@ -768,4 +768,4 @@ details.bloque .b-cuerpo { display: grid; gap: 14px; padding: 0 16px 16px; }
 .bono-usos { list-style: none; padding: 0; margin: 0; display: grid; gap: 4px; }
 .bono-usos li { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .bono-usos li.deshecho span { text-decoration: line-through; color: var(--ink-2); }
-.bono-quedan { color: var(--ink); }
+.bono-quedan { color: var(--ink); white-space: nowrap; }
