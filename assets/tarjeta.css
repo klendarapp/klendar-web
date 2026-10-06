@@ -203,6 +203,10 @@ video.tj-img { background: #0A0A0A; }
 .tj-sello { display: inline-flex; align-items: center; gap: 4px; border-radius: 999px; font-size: 12px; font-weight: 800;
   background: rgba(10,10,10,.62); color: #fff; }
 .tj-sello .ic { flex: none; }
+.tj--pantalla .tj-sellos .tj-sello--entidad { padding: calc(5 * var(--u)) calc(11 * var(--u)); }
+/* Quién publica, si es una entidad: sobrio, en tinta secundaria. */
+.tj-entidad { display: flex; align-items: center; gap: 4px; margin: 0; font-size: 12px; font-weight: 800; color: var(--ink-2); }
+.tj-entidad .ic { flex: none; }
 .tj-sello button { position: relative; z-index: 3; display: grid; place-items: center; width: 28px; height: 28px; margin: -6px -8px -6px 0;
   padding: 0; border: 0; border-radius: 50%; background: none; color: inherit; cursor: pointer; }
 .tj-sello button::after { content: ""; position: absolute; inset: -8px; }

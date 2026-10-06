@@ -63,6 +63,7 @@ export const FOOT_LEGAL = [
   { es: 'Eliminar cuenta', en: 'Delete account', hrefEs: '/eliminar-cuenta/', hrefEn: '/en/delete-account/' },
   { es: 'Accesibilidad', en: 'Accessibility', hrefEs: '/accesibilidad/', hrefEn: '/en/accessibility/' },
   { es: 'Estado del servicio', en: 'Service status', hrefEs: '/estado/', hrefEn: '/en/status/' },
+  { es: 'Fuentes y licencias', en: 'Sources and licences', hrefEs: '/fuentes/', hrefEn: '/en/sources/' },
 ];
 
 const TEXTOS = {

@@ -869,7 +869,7 @@ document.addEventListener('keydown', (e) => { if (e.key === '/' && !/input|texta
 const NAV_GRUPOS = [
   { id: 'panorama', t: 'Panorama', items: [['resumen', 'dashboard', 'Resumen'], ['semanas', 'trending_up', 'Semana a semana'], ['cifras', 'insights', 'Cifras'], ['ciudades', 'map', 'Ciudades']] },
   { id: 'negocios', t: 'Negocios y pagos', items: [['negocios', 'storefront', 'Negocios'], ['reclamaciones', 'how_to_reg', 'Reclamaciones'], ['duplicados', 'content_copy', 'Posibles duplicados'], ['planes', 'credit_card', 'Planes y pagos']] },
-  { id: 'contenido', t: 'Contenido', items: [['publicaciones', 'bolt', 'Publicaciones'], ['canjes', 'confirmation_number', 'Canjes'], ['colecciones', 'auto_awesome', 'Colecciones'], ['categorias', 'category', 'Categorías']] },
+  { id: 'contenido', t: 'Contenido', items: [['publicaciones', 'bolt', 'Publicaciones'], ['agenda', 'account_balance', 'Agenda pública'], ['canjes', 'confirmation_number', 'Canjes'], ['colecciones', 'auto_awesome', 'Colecciones'], ['categorias', 'category', 'Categorías']] },
   { id: 'personas', t: 'Personas', items: [['usuarios', 'person', 'Usuarios'], ['inactivas', 'hourglass_empty', 'Cuentas inactivas'], ['avisos', 'notifications', 'Notificaciones y push'], ['sugerencias', 'lightbulb', 'Sugerencias']] },
   { id: 'moderacion', t: 'Moderación', items: [['denuncias', 'flag', 'Denuncias'], ['resenas', 'chat_bubble', 'Reseñas y novedades'], ['mensajes', 'campaign', 'Mensajes a clientes']] },
   { id: 'sistema', t: 'Sistema', plegable: true, items: [['configuracion', 'settings', 'Configuración'], ['errores', 'bug_report', 'Errores de la web'], ['administradores', 'shield', 'Administradores'], ['actividad', 'history', 'Registro de actividad'], ['ayuda', 'help', 'Ayuda']] },
@@ -943,6 +943,15 @@ async function refreshBadges(lanzar = false) {
 }
 const currentRoute = () => (location.hash.replace(/^#\/?/, '').split('?')[0] || 'resumen').split('/');
 const PAGES = {};
+
+// ── Entidades (migración 20261130100000) ────────────────────────────────────
+const ENTIDADES = {
+  council: ['Ayuntamiento', 'Council'], district: ['Junta de distrito', 'District council'],
+  merchants: ['Asociación de comerciantes', "Traders' association"], neighbours: ['Asociación vecinal', "Residents' association"],
+  ngo: ['ONG', 'NGO'], public_agenda: ['Agenda pública', 'Public listings'],
+};
+const nombreEntidad = (k) => (ENTIDADES[k] ? ENTIDADES[k][I18N.lang === 'en' ? 1 : 0] : '');
+
 async function route() {
   if (!ME || !$('#mfa').hidden) return;
   const n = ++RUTA_N;
@@ -1509,7 +1518,7 @@ async function businessDetail(v, id) {
     <div class="page-head"><a class="btn sm ghost" href="#/negocios">← Negocios</a></div>
     <div class="detail-head">
       ${b.logo_url ? `<img src="${esc(b.logo_url)}" alt="">` : `<div class="ph">${ms('storefront')}</div>`}
-      <div><h1>${esc(b.name)}</h1><div class="tags">${b.closed_permanently_at ? `<span class="tag bad">${I18N.lang === 'en' ? 'closed for good' : 'cerrado de verdad'}</span> ` : ''}${tag(b.verification_status)} ${b.is_active ? tag('active') : tag('inactive', 'st-inactive')} ${tag(cur?.plan || 'free', 'dim')} ${cur ? tag(cur.status) : ''} ${b.adults_only ? '<span class="tag bad">+18</span>' : ''} ${b.closed_indefinitely_at ? `<span class="tag bad">${esc(I18N.lang === 'en' ? 'Closed until further notice' : 'Cerrado hasta nuevo aviso')}</span>` : ''} ${pausa ? `<span class="tag bad">${esc(I18N.lang === 'en' ? 'Paused by a suspension' : 'En pausa por una suspensión')}</span>` : ''} ${porRevisar ? `<span class="tag warn">${esc(I18N.lang === 'en' ? 'Review again' : 'Revisar de nuevo')}</span>` : ''}</div></div>
+      <div><h1>${esc(b.name)}</h1><div class="tags">${b.closed_permanently_at ? `<span class="tag bad">${I18N.lang === 'en' ? 'closed for good' : 'cerrado de verdad'}</span> ` : ''}${tag(b.verification_status)} ${b.is_active ? tag('active') : tag('inactive', 'st-inactive')} ${tag(cur?.plan || 'free', 'dim')} ${cur ? tag(cur.status) : ''} ${b.adults_only ? '<span class="tag bad">+18</span>' : ''} ${b.entity_kind ? `<span class="tag">${esc(nombreEntidad(b.entity_kind))}</span>` : ''} ${b.entity_requested ? `<span class="tag warn">${esc(I18N.lang === 'en' ? 'Asks to be an organisation' : 'Pide ser entidad')}</span>` : ''} ${b.closed_indefinitely_at ? `<span class="tag bad">${esc(I18N.lang === 'en' ? 'Closed until further notice' : 'Cerrado hasta nuevo aviso')}</span>` : ''} ${pausa ? `<span class="tag bad">${esc(I18N.lang === 'en' ? 'Paused by a suspension' : 'En pausa por una suspensión')}</span>` : ''} ${porRevisar ? `<span class="tag warn">${esc(I18N.lang === 'en' ? 'Review again' : 'Revisar de nuevo')}</span>` : ''}</div></div>
       <span class="spacer"></span>
       <div class="actions">
         ${pendiente || rechazado ? '<button class="btn ok" data-a="verify">✓ Verificar</button>' : ''}
@@ -1520,6 +1529,7 @@ async function businessDetail(v, id) {
           itemMenu('data-a="plan"', 'Cambiar plan…'),
           itemMenu('data-a="pay"', 'Registrar pago…'),
           itemMenu('data-a="notify"', 'Enviar notificación al dueño…'),
+          b.entity_kind === 'public_agenda' ? '' : itemMenu('data-a="entity"', I18N.lang === 'en' ? 'Organisation account…' : 'Cuenta de entidad…'),
           '-',
           !pendiente && !rechazado ? itemMenu('data-a="reject"', 'Rechazar…', { peligro: true }) : '',
           itemMenu('data-a="active"', b.is_active ? 'Desactivar…' : 'Activar', { peligro: b.is_active }),
@@ -1528,6 +1538,9 @@ async function businessDetail(v, id) {
       </div>
     </div>
     ${b.closed_permanently_at ? `<div class="card"><b>${I18N.lang === 'en' ? 'Marked as closed for good on' : 'Marcado como cerrado de verdad el'}</b> ${fmtDate(b.closed_permanently_at, tz)}${b.closed_permanently_note ? ` · ${esc(b.closed_permanently_note)}` : ''}<div class="muted small" style="margin-top:4px">${I18N.lang === 'en' ? 'It no longer appears on Klendar; its address says “This business has closed”. Use “Reopen” if it is a mistake.' : 'Ya no sale en Klendar; su dirección dice «Este negocio ha cerrado». «Reabrir» si es un error.'}</div></div>` : ''}
+    ${b.entity_requested ? `<div class="card"><b>${I18N.lang === 'en' ? 'Asks for an organisation account' : 'Pide la cuenta de entidad'}:</b> ${esc(nombreEntidad(b.entity_requested))}${b.entity_requested_at ? ` · ${fmtDate(b.entity_requested_at, tz)}` : ''}${b.entity_request_note ? `<p style="margin:6px 0 0">«${esc(b.entity_request_note)}»</p>` : ''}
+      <p class="muted small" style="margin:6px 0 0">${I18N.lang === 'en' ? 'Check who they are before marking it: an email from the official domain, a document signed by the secretary or the registry entry, or a call to the phone on their official website.' : 'Comprueba quién es antes de marcarla: un correo del dominio oficial, un documento firmado por la secretaría o la inscripción en el registro, o una llamada al teléfono de su web oficial.'}</p>
+      <p class="actions" style="margin:8px 0 0"><button class="btn sm" data-a="entity">${I18N.lang === 'en' ? 'Decide…' : 'Decidir…'}</button></p></div>` : ''}
     ${b.review_requested_at && b.verification_status === 'pending' ? `<div class="card"><b>${I18N.lang === 'en' ? 'Asked for another review on' : 'Pidió otra revisión el'}</b> ${fmtDate(b.review_requested_at, tz)}${b.review_request_note ? `<p style="margin:6px 0 0">«${esc(b.review_request_note)}»</p>` : ''}</div>` : ''}
     ${pausa ? tarjetaPausas([pausa], false) : ''}
     ${(cambios?.rows || []).length ? tarjetaCambios(cambios.rows, false) : ''}
@@ -1755,6 +1768,18 @@ async function businessAction(a, b, d) {
       if (!await confirmDlg('Reabrir negocio', I18N.lang === 'en' ? 'It will appear on Klendar again (if it is verified). Cancelled publications stay cancelled. The team gets a notification.' : 'Vuelve a salir en Klendar (si está verificado). Las publicaciones canceladas siguen canceladas. El equipo recibe una notificación.', { submit: 'Reabrir' })) return;
       await rpc('admin_mark_business_closed', { p_id: b.id, p_closed: false });
       toast('Negocio reabierto');
+    }
+    if (a === 'entity') {
+      const r = await modal({ title: I18N.lang === 'en' ? 'Organisation account' : 'Cuenta de entidad',
+        intro: I18N.lang === 'en'
+          ? 'Councils, district councils, associations and NGOs carry their own badge on their page and publications, show up under the “Public listings” filter and, for now, pay no fee (their plan becomes the free one with no end date). Only mark it once you have checked who they are.'
+          : 'Ayuntamientos, juntas de distrito, asociaciones y ONG llevan su sello en la ficha y en sus publicaciones, salen en el filtro «Agenda pública» y, de momento, no pagan cuota (su plan pasa a gratis sin fecha de fin). Márcala solo después de comprobar quién es.',
+        fields: [{ name: 'kind', label: I18N.lang === 'en' ? 'Type' : 'Tipo', type: 'select', value: b.entity_kind || b.entity_requested || '',
+          options: [['', I18N.lang === 'en' ? '— Not an organisation' : '— No es una entidad'], ...['council', 'district', 'merchants', 'neighbours', 'ngo'].map((k) => [k, nombreEntidad(k)])] }],
+        submit: I18N.lang === 'en' ? 'Save' : 'Guardar' });
+      if (!r) return;
+      await rpc('admin_set_entity', { p_business: b.id, p_kind: r.kind || null });
+      toast(r.kind ? (I18N.lang === 'en' ? 'Marked as an organisation' : 'Marcada como entidad') : (I18N.lang === 'en' ? 'No longer an organisation' : 'Ya no es una entidad'));
     }
     if (a === 'verify') {
       if (!await confirmDlg('Verificar negocio', I18N.lang === 'en' ? `“${esc(b.name)}” will become verified and active: its publications will appear in the app and the owner will get a notification.` : `«${esc(b.name)}» pasará a verificado y activo: sus publicaciones aparecerán en la app y el propietario recibirá una notificación.`, { submit: 'Verificar' })) return;
@@ -3163,6 +3188,87 @@ PAGES.categorias = async (v) => {
   $('#new').onclick = () => edit(null);
   $$('[data-edit]').forEach((b) => { b.onclick = () => esperando(b, () => edit(byId[b.dataset.edit])); });
   $$('[data-del]').forEach((b) => { b.onclick = () => esperando(b, async () => { if (!await confirmDlg('Borrar categoría', 'Solo se puede si no la usa ningún negocio ni publicación.', { danger: true, submit: 'Borrar' })) return; try { await rpc('admin_delete_category', { p_id: b.dataset.del }); toast('Borrada'); route(); } catch (e) { toast(e.message, true); } }); });
+};
+
+// ── Agenda pública (migración 20261130100001) ───────────────────────────────
+// Lo importado de datos abiertos: cada fuente con su licencia y su última
+// vuelta, «Importar ahora», ocultar una fuente entera y, abajo, los eventos
+// para ocultar uno.
+const AGENDA = { source: '', q: '', status: 'all', page: 0 };
+PAGES.agenda = async (v) => {
+  const en = I18N.lang === 'en';
+  const fuentes = (await rpc('admin_agenda_sources')) || [];
+  const lista = await rpc('admin_agenda_items', { p_source: AGENDA.source || null, p_query: AGENDA.q || null, p_status: AGENDA.status, p_limit: 50, p_offset: AGENDA.page * 50 });
+  const cuenta = (c) => {
+    if (!c) return '—';
+    const x = c.last_error_counts ? c.last_error_counts : c;
+    return [
+      x.read != null ? `${fmtNum(x.read)} ${en ? 'read' : 'leídos'}` : '',
+      x.inserted ? `${fmtNum(x.inserted)} ${en ? 'new' : 'nuevos'}` : '',
+      x.updated ? `${fmtNum(x.updated)} ${en ? 'changed' : 'cambiados'}` : '',
+      x.removed ? `${fmtNum(x.removed)} ${en ? 'removed' : 'quitados'}` : '',
+      x.skipped_flagged ? `${fmtNum(x.skipped_flagged)} ${en ? 'not imported (automatic moderation)' : 'sin importar (moderación automática)'}` : '',
+      x.removal_skipped ? (en ? 'nothing removed: the source came back with less than half' : 'no se ha quitado nada: la fuente trajo menos de la mitad') : '',
+    ].filter(Boolean).join(' · ');
+  };
+  const estado = (i) => (i.hidden_at ? `<span class="tag bad">${en ? 'hidden' : 'oculto'}</span>`
+    : i.status === 'active' ? tag('active') : tag(i.status))
+    + (i.human_edited_at ? ` <span class="tag warn">${en ? 'edited by hand' : 'editado a mano'}</span>` : '')
+    + (i.gone_at ? ` <span class="tag dim">${en ? 'no longer in the source' : 'ya no está en la fuente'}</span>` : '');
+  const ayuda = en
+    ? '<p>Every day (4:10–6:10 UTC) the cultural and leisure listings that councils publish as open data are imported into Klendar, on the council’s organisation account if it exists or on “Public listings of &lt;city&gt;”. Nothing imported sends notifications, at most one in five publications in Discover is imported, and what someone edits by hand is not overwritten. “Hide” takes an event (or a whole source) off Klendar until you show it again. Licences and attribution: klendar.app/en/sources/.</p>'
+    : '<p>Cada día (4:10–6:10 UTC) se importa la agenda cultural y de ocio que los ayuntamientos publican como datos abiertos, en la cuenta de entidad del ayuntamiento si existe o en «Agenda pública de &lt;ciudad&gt;». Lo importado no manda avisos, en Descubre es como mucho una de cada cinco publicaciones y lo que alguien edita a mano no se vuelve a pisar. «Ocultar» quita un evento (o una fuente entera) de Klendar hasta que lo vuelvas a mostrar. Licencias y atribución: klendar.app/fuentes/.</p>';
+  v.innerHTML = `
+    <div class="page-head"><h1>${en ? 'Public listings' : 'Agenda pública'}</h1><span class="spacer"></span>
+      <button class="btn primary sm" data-run="">${en ? 'Import all now' : 'Importar todo ahora'}</button></div>
+    ${helpBox(en ? 'What is this?' : '¿Qué es esto?', ayuda)}
+    <div class="card"><h2>${en ? 'Sources' : 'Fuentes'}</h2>${table({ cols: [
+      { h: en ? 'City' : 'Ciudad', r: (f) => `<b>${esc(f.city)}</b><span class="sub">${esc(f.publisher)} · <a class="link" data-sin-fila href="${esc(f.dataset_url)}" target="_blank" rel="noopener">${esc(f.site)} ↗</a></span>` },
+      { h: en ? 'Licence' : 'Licencia', r: (f) => `<a class="link" data-sin-fila href="${esc(f.license_url)}" target="_blank" rel="noopener">${esc(f.license)}</a>` },
+      { h: en ? 'Account' : 'Cuenta', r: (f) => (f.business_id ? `<a class="link" data-sin-fila href="#/negocios/${esc(f.business_id)}">${esc(f.business_name || '')}</a>` : '—') },
+      { h: en ? 'Events' : 'Eventos', num: true, r: (f) => `${fmtNum(f.visible)} <span class="muted small">/ ${fmtNum(f.total)}</span>` },
+      { h: en ? 'Last run' : 'Última vuelta', r: (f) => `${f.running ? `<span class="tag warn">${en ? 'running' : 'en marcha'}</span> ` : ''}${f.last_status === 'ok' ? `<span class="tag st-active">${en ? 'OK' : 'Bien'}</span>` : f.last_status ? `<span class="tag bad">${en ? 'Incomplete' : 'Incompleta'}</span>` : ''} ${fmtDate(f.last_run_at)}<span class="sub">${esc(cuenta(f.last_counts))}${f.last_error ? ` · ${esc(f.last_error)}` : ''}</span>` },
+      { h: '', r: (f) => `<span class="actions"><button class="btn sm" data-run="${esc(f.id)}">${en ? 'Import now' : 'Importar ahora'}</button>${menuAcciones([
+        itemMenu(`data-enabled="${esc(f.id)}" data-v="${f.enabled ? '0' : '1'}"`, f.enabled ? (en ? 'Stop the daily import' : 'Parar la importación diaria') : (en ? 'Import every day' : 'Importar cada día')),
+        itemMenu(`data-hide-src="${esc(f.id)}" data-v="${f.hidden ? '0' : '1'}"`, f.hidden ? (en ? 'Show the whole source' : 'Mostrar la fuente entera') : (en ? 'Hide the whole source…' : 'Ocultar la fuente entera…'), { peligro: !f.hidden }),
+      ], { icono: true, sm: true })}</span>` },
+    ], rows: fuentes, empty: en ? 'No sources.' : 'Sin fuentes.' })}</div>
+    <div class="card"><h2>${en ? 'Imported events' : 'Eventos importados'} <span class="muted small">(${fmtNum(lista.total)})</span></h2>
+      <form class="filters" id="agf">
+        <select name="source" aria-label="${en ? 'Source' : 'Fuente'}"><option value="">${en ? 'All sources' : 'Todas las fuentes'}</option>${fuentes.map((f) => `<option value="${esc(f.id)}" ${AGENDA.source === f.id ? 'selected' : ''}>${esc(f.city)}</option>`).join('')}</select>
+        <select name="status" aria-label="${en ? 'Status' : 'Estado'}">${[['all', en ? 'All' : 'Todos'], ['visible', en ? 'Visible' : 'A la vista'], ['hidden', en ? 'Hidden' : 'Ocultos'], ['edited', en ? 'Edited by hand' : 'Editados a mano'], ['gone', en ? 'No longer in the source' : 'Ya no están en la fuente']].map(([k, t]) => `<option value="${k}" ${AGENDA.status === k ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select>
+        <input name="q" type="search" aria-label="${en ? 'Search' : 'Buscar'}" placeholder="${en ? 'Search title or venue' : 'Buscar título o lugar'}" value="${esc(AGENDA.q)}">
+        <button class="btn sm" type="submit">${en ? 'Search' : 'Buscar'}</button>
+      </form>
+      ${table({ cols: [
+        { h: en ? 'Event' : 'Evento', r: (i) => `<a class="link" data-sin-fila href="#/publicaciones/${esc(i.offer_id)}"><b>${esc(i.title)}</b></a><span class="sub">${esc(i.venue_name || '')} · ${esc(i.category || '')}${i.source_url ? ` · <a class="link" data-sin-fila href="${esc(i.source_url)}" target="_blank" rel="noopener">${en ? 'source' : 'fuente'} ↗</a>` : ''}</span>` },
+        { h: en ? 'When' : 'Cuándo', r: (i) => `${fmtDate(i.event_at)}${i.event_end_at ? `<span class="sub">${en ? 'until' : 'hasta'} ${fmtDay(i.event_end_at)}</span>` : ''}` },
+        { h: en ? 'Status' : 'Estado', r: estado },
+        { h: '', r: (i) => `<button class="btn sm${i.hidden_at ? '' : ' bad ghost'}" data-hide="${esc(i.offer_id)}" data-v="${i.hidden_at ? '0' : '1'}">${i.hidden_at ? (en ? 'Show' : 'Mostrar') : (en ? 'Hide' : 'Ocultar')}</button>` },
+      ], rows: lista.items || [], empty: en ? 'Nothing imported with these filters.' : 'Nada importado con estos filtros.' })}
+      <p class="actions">${AGENDA.page > 0 ? `<button class="btn sm" data-pag="-1">← ${en ? 'Previous' : 'Anteriores'}</button>` : ''}${(AGENDA.page + 1) * 50 < lista.total ? `<button class="btn sm" data-pag="1">${en ? 'Next' : 'Siguientes'} →</button>` : ''}</p>
+    </div>`;
+  $('#agf', v).onsubmit = (e) => {
+    e.preventDefault();
+    const x = Object.fromEntries(new FormData(e.target));
+    Object.assign(AGENDA, { source: x.source || '', status: x.status || 'all', q: String(x.q || '').trim(), page: 0 });
+    route();
+  };
+  $$('[data-pag]', v).forEach((b) => { b.onclick = () => { AGENDA.page = Math.max(0, AGENDA.page + Number(b.dataset.pag)); route(); }; });
+  $$('[data-run]', v).forEach((b) => { b.onclick = () => esperando(b, async () => {
+    try { await rpc('admin_agenda_run', { p_source: b.dataset.run || null }); toast(en ? 'Import started: reload in a minute to see how it went' : 'Importación en marcha: vuelve a cargar en un minuto para ver cómo ha ido'); } catch (e) { toast(e.message, true); }
+  }); });
+  $$('[data-enabled]', v).forEach((b) => { b.onclick = () => esperando(b, async () => {
+    try { await rpc('admin_agenda_set_source', { p_source: b.dataset.enabled, p_enabled: b.dataset.v === '1', p_hidden: null }); route(); } catch (e) { toast(e.message, true); }
+  }); });
+  $$('[data-hide-src]', v).forEach((b) => { b.onclick = () => esperando(b, async () => {
+    const ocultar = b.dataset.v === '1';
+    if (ocultar && !await confirmDlg(en ? 'Hide the whole source' : 'Ocultar la fuente entera', en ? 'All its events stop showing on Klendar (those edited by hand stay as they are) and new ones come in hidden until you show it again.' : 'Todos sus eventos dejan de verse en Klendar (los editados a mano se quedan como están) y los nuevos entran ocultos hasta que la vuelvas a mostrar.', { danger: true, submit: en ? 'Hide' : 'Ocultar' })) return;
+    try { await rpc('admin_agenda_set_source', { p_source: b.dataset.hideSrc, p_enabled: null, p_hidden: ocultar }); route(); } catch (e) { toast(e.message, true); }
+  }); });
+  $$('[data-hide]', v).forEach((b) => { b.onclick = () => esperando(b, async () => {
+    try { await rpc('admin_agenda_hide_item', { p_offer: b.dataset.hide, p_hidden: b.dataset.v === '1' }); route(); } catch (e) { toast(e.message, true); }
+  }); });
 };
 
 // ── Ciudades ────────────────────────────────────────────────────────────────

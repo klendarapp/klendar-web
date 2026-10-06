@@ -12,7 +12,7 @@ import { esc, fmtWhen, html, isUuid, rpc, rpcAll, rows, supabasePublic } from '.
 import KZ from '../../assets/zona.js';
 import { decodeSeg,
   agendaBase, BASE, benefit, bizPath, breadcrumbLd, cityLinks, citySeg, datosDeNegocios, exploreBase,
-  carrusel, firstPhoto, fmtEnd, fmtLong, isSlug, isVideo, ldScript, listingLd, miniatura, miniaturas, money, openInApp,
+  carrusel, firstPhoto, fmtDay, fmtEnd, fmtLong, fmtTime, sameDay, isSlug, isVideo, ldScript, listingLd, miniatura, miniaturas, money, openInApp,
   historiaBoton, priorPrice, publicPage, slugDe, todayBase, zonaDe,
 } from './public.js';
 import { cuandoCorto, plataformaEntradas, rejilla } from './tarjeta.js';
@@ -20,6 +20,7 @@ import { SITIO_PLAN, listaSitio } from './sitio.js';
 import { FUENTE_TIEMPO } from './tiempo.js';
 import KR from '../../assets/rrpp-enlace.js';
 import KM from '../../assets/marcas.js';
+import { fuenteHtml, selloEntidad } from './entidades.js';
 
 // Iconos de Material (los mismos que la app), en SVG: las páginas públicas
 // no cargan la fuente de iconos.
@@ -53,7 +54,7 @@ const pre = (lang) => (lang === 'en' ? '/en' : '');
  * marcado caduca a las 2 h): /assets/sitio-ahora.js. */
 export const sitioAhoraScripts = (lang) => {
   const sp = supabasePublic();
-  return `<script src="/assets/marcas.js?v=1" defer></script>
+  return `<script src="/assets/marcas.js?v=2" defer></script>
 <script src="/assets/sitio-ahora.js?v=1" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}" data-lang="${lang === 'en' ? 'en' : 'es'}"></script>`;
 };
 
@@ -189,8 +190,13 @@ export async function offerPage(id, lang, rpRaw = '') {
   // Solo, solidario, edades, carné y «Escúchalo antes» (sin ellas, la ficha
   // sale igual).
   const marcasP = rpc('offer_marks', { p_offer: id }).catch(() => null);
-  // La ficha del negocio, por su dirección con nombre.
-  const bHref = bizPath(lang, (await slugDe(o.business_id)) || o.business_id);
+  // Evento importado de datos abiertos: su fuente y licencia (atribución).
+  const fuenteP = rpc('offer_source', { p_offer: id }).catch(() => null);
+  // La ficha del negocio, por su dirección con nombre, y si es una entidad.
+  const datosNeg = await datosDeNegocios([o.business_id]);
+  const bHref = bizPath(lang, datosNeg.slugs.get(o.business_id) || o.business_id);
+  const entidad = datosNeg.entidades.get(o.business_id) || null;
+  if (entidad) o.entity_kind = entidad;
   // Exclusiva para favoritos o clientes: la web pública va siempre sin
   // sesión, así que aquí siempre llega bloqueada (sin título, beneficio ni
   // fotos). Se dice qué es, de quién y cómo conseguirla.
@@ -216,7 +222,11 @@ export async function offerPage(id, lang, rpRaw = '') {
   const prior = priorPrice(o.discount, lang);
   const cover = firstPhoto(o.images);
   const pieces = (o.images || []).slice(0, 8);
-  const where = [o.business_address, o.business_city].filter(Boolean).join(', ');
+  // En otro sitio (una sala, un parque), su nombre y su dirección, como la
+  // app; si no, la del local.
+  const where = o.venue_address
+    ? [o.venue_name, o.venue_address].filter(Boolean).join(', ')
+    : [o.business_address, o.business_city].filter(Boolean).join(', ');
   // Las horas, las del sitio: en Canarias, una menos que en la península.
   const tz = zonaDe(o);
 
@@ -252,9 +262,15 @@ export async function offerPage(id, lang, rpRaw = '') {
         prior: 'Precio más bajo de los últimos 30 días', canary: 'hora de Canarias',
       };
 
+  // Sin hora, el día entero (de 00:00 a 23:59, como llega la agenda
+  // pública): solo los días, como la app.
+  const diaEntero = !flash && o.event_at && o.event_end_at
+    && /^0?0[:.]00$/.test(fmtTime(o.event_at, lang, tz)) && /^23[:.]59$/.test(fmtTime(o.event_end_at, lang, tz));
   const when = flash
     ? `${fmtLong(o.redeem_start_at, lang, tz)} – ${fmtEnd(o.redeem_start_at, o.redeem_end_at, lang, tz)}`
-    : fmtLong(o.event_at, lang, tz) + (o.event_end_at ? ` – ${fmtEnd(o.event_at, o.event_end_at, lang, tz)}` : '');
+    : diaEntero
+      ? fmtDay(o.event_at, lang, tz) + (sameDay(o.event_at, o.event_end_at, tz) ? '' : ` – ${fmtDay(o.event_end_at, lang, tz)}`)
+      : fmtLong(o.event_at, lang, tz) + (o.event_end_at ? ` – ${fmtEnd(o.event_at, o.event_end_at, lang, tz)}` : '');
 
   // El beneficio sale en su píldora (coral), junto a cuándo: aquí, el estado.
   const badges = [
@@ -263,7 +279,9 @@ export async function offerPage(id, lang, rpRaw = '') {
     o.is_trending ? `<span class="badge">${S.hot}</span>` : '',
     o.adults_only ? '<span class="badge">+18</span>' : '',
     deRrpp ? `<span class="badge">${en ? 'Promoter offer' : 'Oferta de RRPP'}</span>` : '',
+    selloEntidad(entidad, lang),
   ].filter(Boolean).join('');
+  const fuente = await fuenteP;
   // Las marcas de la publicación (las mismas que la app).
   const M = KM.t(lang);
   const marcas = (await marcasP) || {};
@@ -373,6 +391,7 @@ export async function offerPage(id, lang, rpRaw = '') {
       ${o.terms ? `<h2>${S.terms}</h2><p class="muted" data-tr="offer:${esc(o.id)}:terms">${esc(o.terms).replace(/\n/g, '<br>')}</p>` : ''}
       ${where ? `<h2>${S.where}</h2>
       <p class="info-linea">${icono('lugar')}<span>${o.lat ? `<a href="${esc(`https://www.google.com/maps/search/?api=1&query=${o.lat},${o.lng}`)}" rel="nofollow noopener" target="_blank">${esc(where)}</a>` : esc(where)}</span></p>` : ''}
+      ${fuenteHtml(fuente, lang)}
       <h2>${S.biz}</h2>
       <p>${esc(o.business_name)}${o.business_rating && o.business_ratings ? ` · ★ ${nota(o.business_rating, lang)} (${o.business_ratings})` : ''}</p>
       <p><a href="${esc(bHref)}">${S.more} ${esc(o.business_name)} →</a></p>
@@ -442,7 +461,7 @@ el.textContent=n<ini?${JSON.stringify(en ? 'Starts in ' : 'Empieza en ')}+dur(in
     title: `${o.title} · ${o.business_name}`,
     description,
     head: `${traducir(lang, `offer:${o.id}`)}
-<meta name="robots" content="${o.adults_only ? 'noindex' : 'index, follow'}">
+<meta name="robots" content="${o.adults_only || fuente ? 'noindex' : 'index, follow'}">
 <script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, '\\u003c')}</script>`,
   }));
 }
@@ -647,7 +666,7 @@ export async function businessPage(param, lang, search = '') {
     rpcAll('business_closures', { p_business: id }),
     rpc('business_verified_review_count', { p_id: id }).then((n) => Number(n) || 0).catch(() => 0),
     // «El sitio»: lo que marca el negocio (terraza, apto para niños…).
-    rows('businesses', `select=amenities,price_level,crowd_enabled&id=eq.${id}`).then((r) => r[0] || {}).catch(() => ({})),
+    rows('businesses', `select=amenities,price_level,crowd_enabled,entity_kind&id=eq.${id}`).then((r) => r[0] || {}).catch(() => ({})),
   ]);
   // «El sitio», el rango de precio («€€») y si dice «¿Hay sitio ahora?».
   const sitio = Array.isArray(local.amenities) ? local.amenities : [];
@@ -730,6 +749,8 @@ export async function businessPage(param, lang, search = '') {
 
   const flash = offers.filter((o) => o.kind === 'flash_offer');
   const events = offers.filter((o) => o.kind !== 'flash_offer');
+  // De una entidad: su fecha sin hora sale como «todo el día» (la tarjeta).
+  if (local.entity_kind) for (const o of offers) o.entity_kind = local.entity_kind;
   // Lo que la ficha no enseña a quien mira sin sesión: las exclusivas para
   // favoritos o clientes (solo cuántas hay) y el regalo de cumpleaños. Es la
   // razón para añadirlo a favoritos, así que se dice.
@@ -819,6 +840,7 @@ export async function businessPage(param, lang, search = '') {
     : precioHtml ? `<p class="neg-nota">${precioHtml}</p>` : ''}
       ${local.crowd_enabled ? `<p class="sitio-ahora" data-sitio-ahora="${esc(b.id)}" hidden></p>` : ''}
       <div class="badges">
+        ${selloEntidad(local.entity_kind, lang)}
         ${b.is_verified ? `<span class="badge ok">✓ ${S.verified}</span>` : ''}
         ${b.redemptions_total ? `<span class="badge">${esc(S.redeemed(Number(b.redemptions_total)))}</span>` : ''}
         ${since ? `<span class="badge">${S.since} ${esc(since)}</span>` : ''}
@@ -905,7 +927,7 @@ export async function businessPage(param, lang, search = '') {
           <a class="denuncia" href="${cuenta(lang)}#/denunciar/review/${encodeURIComponent(r.id)}" rel="nofollow">${S.report}</a>${isUuid(r.user_id) ? ` · <a class="denuncia" href="${cuenta(lang)}#/bloquear/${r.user_id}" rel="nofollow">${S.block}</a>` : ''}
         </article>`).join('')}</div>` : `<p class="empty">${soloVerificadas ? S.noVerified : S.noReviews}</p>`}
       ${b.city ? `<p class="muted">${esc(S.moreIn(b.city))} <a href="${cityToday}">${esc(S.cityToday)}</a> · <a href="${city}">${esc(S.cityWeek)}</a></p>` : ''}
-      <p class="denuncia-pie" data-solo-publico><a href="${cuenta(lang)}#/reclamar/${encodeURIComponent(b.id)}" rel="nofollow">${S.claim}</a></p>
+      ${local.entity_kind === 'public_agenda' ? '' : `<p class="denuncia-pie" data-solo-publico><a href="${cuenta(lang)}#/reclamar/${encodeURIComponent(b.id)}" rel="nofollow">${S.claim}</a></p>`}
     </div>
   </div>`;
 

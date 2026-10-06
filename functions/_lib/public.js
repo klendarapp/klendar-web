@@ -45,15 +45,18 @@ export async function datosDeNegocios(ids) {
   const unicos = [...new Set((ids || []).filter(isUuid))].slice(0, 100);
   const zonas = new Map();
   const slugs = new Map();
-  if (!unicos.length) return { zonas, slugs };
+  // Ayuntamiento, asociación, ONG o la agenda pública (el sello).
+  const entidades = new Map();
+  if (!unicos.length) return { zonas, slugs, entidades };
   try {
-    const filas = await rows('businesses', `select=id,time_zone,slug&id=in.(${unicos.join(',')})`);
+    const filas = await rows('businesses', `select=id,time_zone,slug,entity_kind&id=in.(${unicos.join(',')})`);
     for (const f of filas) {
       if (KZ.valida(f.time_zone)) zonas.set(f.id, f.time_zone);
       if (isSlug(f.slug)) slugs.set(f.id, f.slug);
+      if (f.entity_kind) entidades.set(f.id, f.entity_kind);
     }
   } catch { /* sin datos: Madrid y enlaces por id */ }
-  return { zonas, slugs };
+  return { zonas, slugs, entidades };
 }
 
 export const zonasDeNegocios = async (ids) => (await datosDeNegocios(ids)).zonas;
@@ -281,7 +284,7 @@ ${preconectar}<link rel="preload" href="/assets/fonts/manrope-latin.woff2" as="f
 <link rel="preload" href="/assets/fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/assets/site.css?v=20261012">
 <link rel="stylesheet" href="/assets/public.css?v=41">
-<link rel="stylesheet" href="/assets/tarjeta.css?v=7">
+<link rel="stylesheet" href="/assets/tarjeta.css?v=8">
 ${cabeza}
 </head>
 <body${bodyClass ? ` class="${esc(bodyClass)}"` : ''}>
@@ -289,7 +292,7 @@ ${siteHeader(lang, esc(es + consulta), esc(enPath + consulta), actual)}
 <main class="pub wrap" id="contenido">${body}</main>
 ${siteFooter(lang)}
 ${conAmigos ? `<script src="/assets/amigos.js?v=15" defer data-lang="${en ? 'en' : 'es'}"></script>
-` : ''}${conVisor ? `<script src="/assets/tarjeta.js?v=6" defer></script>
+` : ''}${conVisor ? `<script src="/assets/tarjeta.js?v=7" defer></script>
 ` : ''}${conTarjetas ? `<script src="/assets/tarjetas.js?v=13" defer></script>
 ` : ''}${/class="detail[" ]/.test(body) ? `<script src="/assets/barra.js?v=4" defer></script>
 ` : ''}${/^\/(en\/)?(o|b|coleccion|collection)\//.test(path) ? desdeHistorias() : ''}${contador ? CONTADOR : ''}

@@ -251,6 +251,21 @@ const htmlKlendar = (d) => `
   <p class="muted full" style="margin:0">Lo usamos para comprobar que el negocio es tuyo. No sale en tu ficha ni lo ve nadie fuera de Klendar.</p>
   <label class="f"><span>NIF / CIF</span><input name="tax_id" maxlength="20" placeholder="B12345678" value="${esc(d.tax_id || '')}"></label>`;
 
+/** «Somos una entidad» (solo el alta): ayuntamiento, junta de distrito,
+ * asociación u ONG. Lo comprueba administración (`request_entity`); igual
+ * que la app (`EntityRequestField`). */
+const TIPOS_ENTIDAD = [['council', 'Ayuntamiento'], ['district', 'Junta de distrito'], ['merchants', 'Asociación de comerciantes'], ['neighbours', 'Asociación vecinal'], ['ngo', 'ONG']];
+const htmlEntidad = (d) => `
+  <label class="f full casilla"><input type="checkbox" name="entity_on" ${d.entity ? 'checked' : ''}>
+    <span>${esc(bi('Somos una entidad', "We're an organisation"))} <small class="muted">${esc(bi(
+    'Ayuntamiento, junta de distrito, asociación de comerciantes o vecinal, u ONG. Lo comprobamos antes de poner el sello de entidad en tu ficha y te podemos pedir un documento. De momento, las entidades no pagan cuota.',
+    "Council, district council, traders' or residents' association, or NGO. We check it before adding the organisation badge to your page and may ask you for a document. For now, organisations don't pay a fee."))}</small></span></label>
+  <div class="full" data-entidad ${d.entity ? '' : 'hidden'}>
+    <label class="f"><span>${esc(bi('Tipo de entidad', 'Type of organisation'))}</span><select name="entity_kind">
+      ${TIPOS_ENTIDAD.map(([k, es]) => `<option value="${k}" ${(d.entity || 'council') === k ? 'selected' : ''}>${esc(I18N.t(es))}</option>`).join('')}</select></label>
+    <label class="f"><span>${esc(bi('Quiénes sois (opcional)', 'Who you are (optional)'))}</span><input name="entity_note" maxlength="300" placeholder="${esc(bi('Por ejemplo: Concejalía de Cultura del Ayuntamiento de Getafe', 'For example: Culture department, Getafe Council'))}" value="${esc(d.entity_note || '')}"></label>
+  </div>`;
+
 const htmlMayores = (d) => `
   <label class="f full casilla"><input type="checkbox" name="adults_only" ${d.adults_only ? 'checked' : ''}>
     <span>Solo para mayores de 18 <small class="muted">Si lo que publicas menciona alcohol, se marca +18 solo y se revisa antes de salir. La publicidad de tabaco, vapeo o apuestas no está permitida. En un negocio +18, todo el equipo tiene que ser mayor de edad.</small></span></label>`;
@@ -629,7 +644,7 @@ async function parteFicha(v, parte, b, cats) {
 let ALTA = null;
 const altaNueva = () => ({
   name: '', category_id: null, description: '', address: '', city: '', punto: null, horas: null, sitio: [], precio: 0, aforo: false,
-  phone: '', website: '', contact_email: '', instagram: '', tiktok: '', facebook: '', tax_id: '', adults_only: false, terms: false,
+  phone: '', website: '', contact_email: '', instagram: '', tiktok: '', facebook: '', tax_id: '', adults_only: false, terms: false, entity: '', entity_note: '',
   fotos: { logo: '', portada: '', galeria: [] },
 });
 const altaConAlgo = () => !!ALTA && JSON.stringify(ALTA) !== JSON.stringify(altaNueva());
@@ -665,6 +680,7 @@ PAGES.alta = async (v, param) => {
       ${htmlFotos(A.fotos)}
       <div class="full"><h2 class="alta-sub">Contacto y redes</h2></div>${htmlContacto(A)}
       <div class="full"><h2 class="alta-sub">Datos para Klendar</h2></div>${htmlKlendar(A)}
+      ${htmlEntidad(A)}
       ${htmlMayores(A)}
       <label class="f full casilla"><input type="checkbox" name="terms" ${A.terms ? 'checked' : ''}>
         <span>Acepto las <a href="${APP_URL}/negocios/" target="_blank" rel="noopener">condiciones para negocios</a> *</span></label>`,
@@ -678,6 +694,12 @@ PAGES.alta = async (v, param) => {
       if (f.elements[k]) A[k] = String(x[k] || '');
     }
     if (f.elements.adults_only) A.adults_only = f.elements.adults_only.checked;
+    if (f.elements.entity_on) {
+      A.entity = f.elements.entity_on.checked ? (f.elements.entity_kind?.value || 'council') : '';
+      A.entity_note = String(x.entity_note || '');
+      const caja = $('[data-entidad]', f);
+      if (caja) caja.hidden = !A.entity;
+    }
     if (f.elements.terms) A.terms = f.elements.terms.checked;
     if (paso === 2) {
       A.sitio = $$('[name=sitio]:checked', f).map((c) => c.value);
@@ -775,6 +797,8 @@ PAGES.alta = async (v, param) => {
       });
       // El negocio ya existe: si esto falla, se marca luego en la ficha.
       if (A.sitio.length) await rpc('set_business_amenities', { p_business: id, p_amenities: A.sitio }).catch(() => null);
+      // «Somos una entidad»: lo decide administración. Si falla, se puede pedir escribiéndonos.
+      if (A.entity) await rpc('request_entity', { p_business: id, p_kind: A.entity, p_note: A.entity_note.trim() || null }).catch(() => null);
       if (A.precio || A.aforo) {
         await rpc('set_business_place_extras', { p_business: id, p_price_level: A.precio || null, p_crowd_enabled: A.aforo }).catch(() => null);
       }
