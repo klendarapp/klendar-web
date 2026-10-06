@@ -1,0 +1,88 @@
+/* «Dónde ver el partido» en la web pública: la lista, el detalle, la sección
+   de la ficha del bar y la de la búsqueda de Explorar
+   (functions/_lib/partidos.js). Neutros; coral solo en lo que es de una
+   oferta («1 con oferta», «Oferta: …»). */
+
+/* Sin el relleno ni los títulos grandes de las <section> de la portada (site.css). */
+section.partidos-dia, section.pone-partidos, section.seccion-partidos { padding: 0; }
+
+/* La lista, por días. */
+.partidos-dia { margin: 0 0 8px; }
+.partidos-dia h2 { font-size: 18px; line-height: 1.3; font-weight: 800; margin: 20px 0 10px; }
+.partidos-lista { display: grid; gap: 10px; }
+.partido { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 22px; background: var(--glass);
+  border: 1px solid var(--glass-border); color: var(--ink); min-width: 0; }
+.partido:hover { text-decoration: none; border-color: var(--ink-2); }
+.partido-hora { flex: none; width: 50px; font-family: var(--display); font-weight: 800; font-size: 17px; font-variant-numeric: tabular-nums; }
+.partido-cuerpo { display: grid; gap: 3px; min-width: 0; flex: 1; }
+.partido-t { font-size: 16px; line-height: 1.3; overflow-wrap: anywhere; }
+.partido-cuerpo .muted { font-size: 13px; }
+.partido-bares { font-size: 13px; font-weight: 700; }
+.partido-bares.sin { font-weight: 500; color: var(--ink-2); }
+.partido-oferta { color: var(--accent-text); white-space: nowrap; }
+.partido-ir { color: var(--ink-2); display: inline-flex; flex: none; }
+@media (max-width: 400px) {
+  .partido { gap: 10px; padding: 12px 14px; }
+  .partido-hora { width: 44px; font-size: 15px; }
+}
+
+/* «Tus equipos»: una línea y su botón (con sesión, tus equipos). */
+.mis-equipos { display: flex; align-items: center; gap: 10px 14px; flex-wrap: wrap; margin: 0 0 6px; padding: 12px 16px;
+  border-radius: 22px; border: 1px solid var(--glass-border); }
+.mis-equipos p { margin: 0; flex: 1 1 260px; color: var(--ink-2); font-size: 14px; }
+.mis-equipos .pill { padding: 9px 16px; font-size: 14px; }
+.mis-equipos-t { margin: 0; font-weight: 800; font-size: 14px; flex: none; }
+.mis-equipos-chips { display: flex; flex-wrap: wrap; gap: 8px; flex: 1 1 200px; }
+.mis-equipos-chips .chip { font-size: 14px; }
+
+/* La atribución de football-data.org: pequeña, gris, al final. */
+.fuente-datos { margin: 22px 0 8px; font-size: 12px; color: var(--ink-2); }
+.pub .fuente-datos a { color: var(--ink-2); text-decoration: underline; text-underline-offset: 2px; }
+
+/* El detalle. */
+.partido-cab { margin: 4px 0 16px; }
+.partido-cab .eyebrow { margin-bottom: 6px; }
+.partido-cab h1 { font-size: clamp(26px, 6vw, 40px); line-height: 1.15; overflow-wrap: anywhere; }
+.partido-cuando { margin: 8px 0 14px; color: var(--ink-2); font-weight: 600; }
+.partido-cuando b { color: var(--ink); }
+/* «Seguir a …»: los de una fila, iguales (en el móvil estrecho, uno debajo de otro). */
+.seguir-equipos { display: grid; grid-template-columns: repeat(var(--n, 1), minmax(0, 1fr)); gap: 10px; max-width: 560px; }
+.seguir-equipos .pill { justify-content: center; text-align: center; padding: 11px 14px; font-size: 14px; min-width: 0; }
+.seguir-equipos .pill[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: transparent; }
+@media (max-width: 420px) { .seguir-equipos { grid-template-columns: 1fr; } }
+.partido-h { font-size: 20px; margin: 6px 0 12px; }
+.bares-partido { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr)); }
+.bar-partido { border-radius: 22px; background: var(--glass); border: 1px solid var(--glass-border); overflow: hidden; min-width: 0; }
+.bar-partido-neg { display: flex; align-items: center; gap: 12px; padding: 12px 14px; color: var(--ink); }
+.bar-partido-neg:hover { text-decoration: none; background: var(--soft); }
+.bar-partido-neg img, .bar-partido-neg .ph { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; flex: none; background: var(--soft);
+  display: inline-grid; place-items: center; font-weight: 800; font-size: 20px; }
+.bar-partido-t { display: grid; gap: 2px; min-width: 0; flex: 1; }
+.bar-partido-t b { font-size: 16px; overflow-wrap: anywhere; }
+.bar-partido-t .muted { font-size: 13px; }
+/* La oferta del bar para el partido: información de oferta, en coral. */
+.pub .bar-partido-oferta { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-top: 1px solid var(--glass-border);
+  color: var(--accent-text); font-weight: 700; font-size: 14px; }
+.bar-partido-oferta:hover { text-decoration: underline; text-underline-offset: 3px; }
+.bar-partido-oferta span { min-width: 0; overflow-wrap: anywhere; }
+.partido-sin-bares { padding: 16px 18px; border-radius: 22px; border: 1px dashed var(--glass-border); }
+.partido-sin-bares p { margin: 0; }
+.partido-sin-bares p + p { margin-top: 4px; }
+
+/* «Pone el partido» en la ficha del bar. */
+.pone-partidos { margin: 0 0 8px; }
+.pone-lista { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+.pone-lista li { border-radius: 18px; border: 1px solid var(--glass-border); background: var(--glass); overflow: hidden; }
+.pone-lista li > a:first-child { display: flex; align-items: center; gap: 10px; padding: 12px 14px; color: var(--ink); }
+.pone-lista li > a:first-child:hover { text-decoration: none; background: var(--soft); }
+.pone-lista li > a:first-child span { min-width: 0; overflow-wrap: anywhere; }
+.pone-lista .ic { flex: none; color: var(--ink-2); }
+.pone-partidos .fuente-datos { margin-top: 10px; }
+
+/* En la búsqueda de Explorar: como mucho 3 y «Ver todos». */
+.seccion-partidos { margin: 0 0 22px; }
+.seccion-partidos .fuente-datos { margin-top: 10px; }
+/* El acceso discreto bajo el título de Explorar. */
+.exp-atajo { margin: 8px 0 0; font-size: 14px; }
+.exp-atajo a { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+.exp-atajo .ic { flex: none; }

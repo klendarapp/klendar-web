@@ -33,6 +33,14 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://klendar.app/explorar/"/>
   </url>
   <url>
+    <loc>https://klendar.app/partidos/</loc>
+    <lastmod>2026-10-06</lastmod>
+    <priority>0.5</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://klendar.app/partidos/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://klendar.app/en/matches/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://klendar.app/partidos/"/>
+  </url>
+  <url>
     <loc>https://klendar.app/agenda/</loc>
     <lastmod>2026-10-05</lastmod>
     <priority>0.5</priority>
@@ -191,6 +199,14 @@
     <xhtml:link rel="alternate" hreflang="es" href="https://klendar.app/explorar/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://klendar.app/en/explore/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://klendar.app/explorar/"/>
+  </url>
+  <url>
+    <loc>https://klendar.app/en/matches/</loc>
+    <lastmod>2026-10-06</lastmod>
+    <priority>0.5</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://klendar.app/partidos/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://klendar.app/en/matches/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://klendar.app/partidos/"/>
   </url>
   <url>
     <loc>https://klendar.app/en/whats-on/</loc>

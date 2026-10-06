@@ -24,6 +24,8 @@ import { FUENTE_TIEMPO, dondeTiempo, tiempoDeHoy } from './tiempo.js';
 import { rejilla, tarjeta } from './tarjeta.js';
 import KM from '../../assets/marcas.js';
 import { notFound, sitioAhoraScripts } from './views.js';
+import { PARTIDOS_CSS, icPartido, origenDeZona, partidosBase, partidosEnBusqueda, zonaDeExplorar } from './partidos.js';
+import KE from '../../assets/emisiones.js';
 
 /** Una dirección mal codificada no es un 500: se manda al listado (302). */
 const aListado = (loc) => new Response(null, { status: 302, headers: { Location: loc, 'Cache-Control': 'no-store' } });
@@ -744,7 +746,10 @@ export async function explorePage(url, lang, modo = 'explorar') {
   // buen tiempo, la base pone primero lo de hoy que encaja; no quita nada.
   const enLista = !negocios && !mapa && !calendario;
   const tiempoP = !tiempoOff && enLista ? tiempoDeHoy(dondeTiempo({ cerca, lat, lng, city })) : Promise.resolve(null);
-  const [res, cities, cats, cols, sitios, tiempo, todasCats, klendarCities] = await Promise.all([
+  // Las ciudades de Klendar (`cities`): de cuál es una búsqueda y, para «Dónde
+  // ver el partido», el punto desde el que se cuentan los bares.
+  const ciudadesP = rows('cities', 'select=id,name,lat,lng&order=position.asc').catch(() => []);
+  const [res, cities, cats, cols, sitios, tiempo, todasCats, klendarCities, seccionPartidos] = await Promise.all([
     negocios
       ? rpc('public_businesses', {
         p_city: city || null, p_category: cat || null, p_q: q || null,
@@ -767,8 +772,12 @@ export async function explorePage(url, lang, modo = 'explorar') {
     // tiene (`select=*`: sin la migración 20261114100000, el grupo sale del
     // slug). Si no llegan, las que tienen algo publicado.
     rows('categories', 'select=*&order=position.asc').catch(() => []),
-    // Las ciudades de Klendar (`cities`): de cuál es una búsqueda.
-    rows('cities', 'select=id,name,lat,lng&order=position.asc').catch(() => []),
+    ciudadesP,
+    // Con una búsqueda: «Dónde ver el partido», como mucho 3 partidos que
+    // pone algún bar cerca (como la búsqueda de la app). Es un extra.
+    conNegociosArriba
+      ? ciudadesP.then((ck) => partidosEnBusqueda({ q, lang, origen: origenDeZona(e, ck), zona: zonaDeExplorar(e, lang) })).catch(() => '')
+      : '',
   ]);
   const catsHoja = (todasCats || []).length ? todasCats : (cats || []);
   const items = res?.items || [];
@@ -1024,6 +1033,8 @@ export async function explorePage(url, lang, modo = 'explorar') {
   const textosBusqueda = JSON.stringify({
     recent: S.searchRecent, clear: S.searchClear, local: S.searchLocal,
     popular: S.searchPopular, popularHint: S.searchPopularHint, remove: S.searchRemove,
+    // «Dónde ver el partido» con su subtítulo, arriba del panel en reposo.
+    partidos: { t: KE.t(lang).title, s: KE.t(lang).lead, href: `${partidosBase(lang)}/${zonaDeExplorar(e, lang) ? `?${zonaDeExplorar(e, lang)}` : ''}` },
   });
   const buscador = descubre ? '' : `<form class="buscador" role="search" method="get" action="${base}/" data-busqueda
     data-ciudad="${esc(ciudadK?.id || '')}" data-ciudad-nombre="${esc(ciudadK?.name || '')}" data-textos="${esc(textosBusqueda)}">
@@ -1049,7 +1060,7 @@ export async function explorePage(url, lang, modo = 'explorar') {
   </div>
   <p id="cercaErr" class="aviso-error" role="alert" hidden></p>
   <script src="/assets/categorias.js?v=4" defer></script>
-  <script src="/assets/gustos.js?v=2" defer data-lang="${en ? 'en' : 'es'}"></script>`;
+  <script src="/assets/gustos.js?v=3" defer data-lang="${en ? 'en' : 'es'}"></script>`;
 
   // En Explorar, sin ubicación ni ciudad: «Mira primero lo que tienes más cerca».
   const invitaCerca = !descubre && !negocios && !cerca && !city
@@ -1099,7 +1110,8 @@ export async function explorePage(url, lang, modo = 'explorar') {
     migas: [['Klendar', en ? '/en/' : '/'], [descubre ? S.disc : S.exp, `${base}/`]],
   })) : '';
   const head = `${guardaFiltros({ ...e, vista }, lang, base)}
-${filtrado ? '<meta name="robots" content="noindex, follow">' : jsonLd}`;
+${filtrado ? '<meta name="robots" content="noindex, follow">' : jsonLd}${descubre ? '' : `
+${PARTIDOS_CSS}`}`;
 
   // Los avisos de Descubre (docs/GLOSARIO.md, «Avisos de Descubre»): bajo
   // los filtros, como mucho UNO a la vez, en una línea y con su ×. Por orden:
@@ -1148,15 +1160,17 @@ ${filtrado ? '<meta name="robots" content="noindex, follow">' : jsonLd}`;
     const negArriba = (sitios?.items || []);
     resultados = `${negArriba.length ? `<section class="seccion-negocios" aria-labelledby="secNeg">
       <div class="seccion-cab"><h2 id="secNeg">${esc(S.bizSection)}</h2>${(sitios?.total || 0) > negArriba.length ? `<a href="${esc(link({ kind: 'places', vista: '' }))}">${esc(S.allPlaces)}</a>` : ''}</div>
-      <div class="nlist">${negArriba.map((b) => bizCard(b, lang, S)).join('')}</div></section>
-      ${items.length ? `<h2 class="seccion-t-pub">${esc(S.offersSection)}</h2>` : ''}` : ''}
-    ${vacio ? '' : rejilla(items, lang, { primera: !negArriba.length, galeria: true })}`;
+      <div class="nlist">${negArriba.map((b) => bizCard(b, lang, S)).join('')}</div></section>` : ''}
+    ${seccionPartidos}
+    ${(negArriba.length || seccionPartidos) && items.length ? `<h2 class="seccion-t-pub">${esc(S.offersSection)}</h2>` : ''}
+    ${vacio ? '' : rejilla(items, lang, { primera: !negArriba.length && !seccionPartidos, galeria: true })}`;
   }
 
   const body = `
   <div class="exp-cab cab-pagina" id="arriba">
     <div><h1>${esc(S.exp)}</h1>
-    <p class="muted exp-lead">${esc(S.lead)}</p></div>
+    <p class="muted exp-lead">${esc(S.lead)}</p>
+    <p class="exp-atajo"><a href="${esc(`${partidosBase(lang)}/${zonaDeExplorar(e, lang) ? `?${zonaDeExplorar(e, lang)}` : ''}`)}">${icPartido(16)}<span>${esc(KE.t(lang).title)}</span></a></p></div>
     ${vistas}
   </div>
   ${buscador}
