@@ -413,7 +413,7 @@
       var sinAmigos = amigos === 0;
       caja.innerHTML = '<section class="vacio"><h2>' + esc(sinAmigos ? T.sinT : T.vacioT) + '</h2>' +
         '<p>' + esc(sinAmigos ? T.sinB : T.vacioB) + '</p><div class="vacio-botones">' +
-        '<a class="pill accent" href="' + esc(cuenta + '#/amigos') + '">' + esc(sinAmigos ? T.anadir : T.verAmigos) + '</a>' +
+        '<a class="pill accent" href="' + esc(cuenta + (sinAmigos ? '#/amigos/anadir' : '#/amigos')) + '">' + esc(sinAmigos ? T.anadir : T.verAmigos) + '</a>' +
         '<a class="pill" href="' + esc(otra.pathname + otra.search) + '">' + esc(T.quitar) + '</a></div></section>';
     }).catch(function () {
       // Sin red o algo raro: se vuelve a enseñar lo de siempre.

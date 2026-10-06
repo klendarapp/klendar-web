@@ -487,6 +487,26 @@ const pantallaVacia = ({ icono = '', titulo, texto = '', botones = '', h = 'h2' 
     ${botones ? `<div class="vacio-botones">${botones}</div>` : ''}
   </section>`;
 
+/** El menú ⋮ (como la app): lo que se usa poco, sin competir con lo demás.
+ * `opciones`: [{ texto, attrs (data-… del botón), peligro }]. Es un
+ * `<details>` (estilos en public.css); se cierra al tocar fuera, al elegir
+ * una opción o con Escape. */
+const SVG_MAS = '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>';
+const menuMas = (opciones, etiqueta = t('Más opciones')) => `<details class="mas-menu">
+    <summary aria-label="${esc(etiqueta)}" title="${esc(etiqueta)}">${SVG_MAS}</summary>
+    <div class="mas-lista">${opciones.map((o) => `<button type="button"${o.peligro ? ' class="mas-peligro"' : ''} ${o.attrs || ''}>${esc(o.texto)}</button>`).join('')}</div>
+  </details>`;
+document.addEventListener('click', (ev) => {
+  for (const d of $$('details.mas-menu[open]')) {
+    if (!d.contains(ev.target) || ev.target.closest('.mas-lista button, .mas-lista a')) d.open = false;
+  }
+});
+document.addEventListener('keydown', (ev) => {
+  if (ev.key !== 'Escape') return;
+  const d = $('details.mas-menu[open]');
+  if (d) { d.open = false; d.querySelector('summary').focus(); }
+});
+
 /** Una fila de lista como las de la app: icono, título, detalle y flecha. */
 const fila = ({ href, icono, titulo, detalle, fuera = false, id = '' }) => `
   <a class="fila" href="${esc(href)}"${fuera ? ' target="_blank" rel="noopener"' : ''}${id ? ` id="${id}"` : ''}>

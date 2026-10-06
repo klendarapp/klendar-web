@@ -434,3 +434,19 @@ button.codigo.copiar .ms { font-size: 18px; color: var(--ink-2); letter-spacing:
 .fila-cats .selcat-campo .selcat-v, .fila-cats .selcat-campo .selcat-v.sin-elegir { font-weight: 400; color: var(--ink-2); text-align: right;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .avisos .nota { margin: 10px 4px 0; font-size: 13px; }
+
+/* ═══ Amigos: la lista primero y «＋ Añadir» arriba (como la app) ═════════ */
+.titulo-acc { display: flex; align-items: center; gap: 10px; }
+.titulo-acc h1 { flex: 1; min-width: 0; }
+.titulo-acc .pill { flex: none; }
+.amigo-fila .mas-menu > summary { width: 36px; height: 36px; border: 0; background: none; color: var(--ink-2); }
+.amigo-fila .mas-menu > summary:hover { background: var(--soft); }
+.hoja-amigo { position: relative; max-width: min(460px, calc(100vw - 32px)); }
+.hoja-amigo h2 { padding-right: 36px; }
+.hoja-amigo .enlace-amigo { margin-top: 0; background: none; border: 0; padding: 0; }
+@media (max-width: 460px) { .hoja-amigo .enlace-acc { grid-template-columns: 1fr; } }
+.hoja-amigo .enlace-url { color: var(--ink-2); font-size: 14px; overflow-wrap: anywhere; }
+.cerrar-hoja { position: absolute; top: 14px; right: 14px; width: 36px; height: 36px; border-radius: 50%; border: 0;
+  background: var(--soft); color: var(--ink); font-size: 22px; line-height: 1; cursor: pointer; }
+.cerrar-hoja:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+

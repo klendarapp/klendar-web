@@ -712,11 +712,13 @@ details.hoja-mas > fieldset { margin: 4px 16px 14px; }
 .mas-menu[open] > summary { background: var(--soft); }
 .mas-lista { position: absolute; right: 0; top: 46px; z-index: 30; min-width: 230px; padding: 6px 0; border-radius: 16px;
   background: var(--elevated); border: 1px solid var(--glass-border); box-shadow: var(--shadow); }
-.mas-lista a { display: block; padding: 11px 18px; color: var(--ink); font-weight: 600; font-size: 15px; text-decoration: none; }
-.mas-lista a:hover, .mas-lista a:focus-visible { background: var(--soft); outline: none; }
-.mas-lista a.mas-peligro { color: #B3261E; border-top: 1px solid var(--glass-border); margin-top: 4px; padding-top: 13px; }
-@media (prefers-color-scheme: dark) { .mas-lista a.mas-peligro { color: #FF9B9B; } }
-.mas-lista a[hidden] { display: none; }
+.mas-lista a, .mas-lista button { display: block; width: 100%; box-sizing: border-box; padding: 11px 18px; color: var(--ink); font: inherit;
+  font-weight: 600; font-size: 15px; text-decoration: none; text-align: left; background: none; border: 0; cursor: pointer; }
+.mas-lista a:hover, .mas-lista a:focus-visible, .mas-lista button:hover, .mas-lista button:focus-visible { background: var(--soft); outline: none; }
+.mas-lista .mas-peligro + .mas-peligro { border-top: 0; margin-top: 0; padding-top: 11px; }
+.mas-lista .mas-peligro { color: #B3261E; border-top: 1px solid var(--glass-border); margin-top: 4px; padding-top: 13px; }
+@media (prefers-color-scheme: dark) { .mas-lista .mas-peligro { color: #FF9B9B; } }
+.mas-lista [hidden] { display: none; }
 /* «¿Por qué ves esto?», al pie de la ficha (el menú lleva aquí). */
 .por-que { margin-top: 28px; font-size: 14px; }
 .por-que summary { cursor: pointer; color: var(--ink-2); font-weight: 600; }

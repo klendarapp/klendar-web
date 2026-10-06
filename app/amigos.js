@@ -63,53 +63,42 @@ async function compartirOCopiar(texto, copia) {
   try { await navigator.clipboard.writeText(copia); toast(t('Enlace copiado')); } catch { toast(t('No se ha podido copiar'), true); }
 }
 
-// ── Amigos: tu enlace, tu QR y tu lista ───────────────────────────────────
-// #/amigos/<id>: la ficha de un amigo, con sus próximos planes.
+// ── Amigos: tu lista primero; tu enlace y tu QR, en «＋ Añadir» ──────────
+// Como la app: la lista arriba (quitar y bloquear, en ⋮ en cada fila); el
+// QR, «Compartir el enlace» y «Copiar», en «Añadir un amigo» (también
+// `#/amigos/anadir`, desde «Añadir amigos» de otras pantallas); «Cambiar el
+// enlace», en el ⋮ de arriba. #/amigos/<id>: la ficha de un amigo.
 RUTAS.amigos = async ([idAmigo]) => {
-  if (idAmigo) { await fichaDeAmigo(idAmigo); return; }
-  if (!exigeSesion('amigos')) return;
-  const [enlace, lista, cons, miNombre] = await Promise.all([
+  if (idAmigo && idAmigo !== 'anadir') { await fichaDeAmigo(idAmigo); return; }
+  if (!exigeSesion(idAmigo ? 'amigos/anadir' : 'amigos')) return;
+  const [enlace, lista, cons] = await Promise.all([
     llamar('my_friend_link', {}),
     llamar('my_friends', {}),
     llamar('my_consents', {}).catch(() => null),
-    nombrePublico(),
   ]);
   const amigos = lista?.friends || [];
   const tope = lista?.limit || 500;
   const comparte = cons?.share_plans !== false;
   const dia = (iso) => fecha(iso, { day: 'numeric', month: 'short', year: 'numeric' });
   const cuantos = (n) => (EN ? `${n} of ${tope}` : `${n} de ${tope}`);
+  const vacio = () => pantallaVacia({
+    icono: 'group',
+    titulo: t('Aún no tienes amigos en Klendar'),
+    texto: t('Manda tu enlace o enseña tu QR a quien quieras. Cuando lo acepte, sabrás a qué planes va y podrás invitarle a los tuyos.'),
+    botones: `<button type="button" class="pill accent" data-anadir>${ic('group_add')} ${esc(t('Añadir amigos'))}</button>`,
+  });
 
   pinta(`
     <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
-    <h1>${esc(t('Amigos'))}</h1>
+    <div class="titulo-acc">
+      <h1>${esc(t('Amigos'))}</h1>
+      <button type="button" class="pill on" data-anadir>${ic('add')} ${esc(t('Añadir'))}</button>
+      ${menuMas([{ texto: t('Cambiar el enlace'), attrs: 'id="cambiar-enlace"' }])}
+    </div>
 
-    <section class="bloque bloque-amigos">
-      <h2>${esc(t('Tu enlace de amigo'))}</h2>
-      <div class="enlace-amigo">
-        <div class="qr" id="qr-amigo" role="img" aria-label="${esc(t('Tu enlace de amigo'))}"></div>
-        <p><button type="button" class="enlace-txt" id="copiar-enlace">${ic('link')} <span id="enlace-url"></span></button></p>
-        <p class="muted">${esc(t('Quien lo abra con su cuenta podrá hacerse tu amigo. No hay buscador: solo te encuentra quien tiene tu enlace o escanea tu QR.'))}</p>
-        <div class="acciones enlace-acc">
-          <button type="button" class="pill accent" id="compartir-enlace">${ic('share')} ${esc(t('Compartir el enlace'))}</button>
-          <button type="button" class="pill" id="copiar-enlace-2">${ic('content_copy')} ${esc(t('Copiar'))}</button>
-        </div>
-        <p><button type="button" class="linkbtn" id="cambiar-enlace">${esc(t('Cambiar el enlace'))}</button></p>
-      </div>
-      ${miNombre === null ? `<form class="formu nombre-publico" id="f-nombre" novalidate>
-        <p class="muted">${esc(t('Quien abra tu enlace verá tu nombre. Sin él, sales como «Usuario de Klendar».'))}</p>
-        ${campoNombrePublico()}
-        <button class="pill" id="g-nombre">${esc(t('Guardar'))}</button>
-      </form>` : ''}
-      <p class="muted aviso-planes">${ic(comparte ? 'visibility' : 'visibility_off')}
-        <span>${esc(t(comparte
-          ? 'Tus amigos ven a qué planes vas. Puedes apagarlo en Ajustes → Privacidad.'
-          : 'No compartes tus planes: tus amigos no ven a qué vas. Se cambia en Ajustes → Privacidad.'))}</span></p>
-    </section>
-
-    <section class="bloque bloque-amigos">
-      <h2 class="con-cuenta"><span>${esc(t('Tus amigos'))}</span> <span id="cuantos-amigos">${esc(cuantos(amigos.length))}</span></h2>
-      <div id="lista-amigos">${amigos.length ? `<div class="lista">${amigos.map((a) => `
+    <div id="con-amigos"${amigos.length ? '' : ' hidden'}>
+      <h2 class="seccion-t">${esc(t('Tus amigos'))} · <span id="cuantos-amigos">${esc(cuantos(amigos.length))}</span></h2>
+      <div class="lista">${amigos.map((a) => `
         <div class="fila amigo-fila" data-id="${esc(a.id)}">
           <a class="amigo-ir" href="#/amigos/${esc(a.id)}">
           ${avatarDeAmigo(a, 'av-lista')}
@@ -117,50 +106,78 @@ RUTAS.amigos = async ([idAmigo]) => {
             <small>${esc(a.plans > 0 ? planesDeAmigo(a.plans)
               : (EN ? `Friends since ${dia(a.since)}` : `Amigos desde ${dia(a.since)}`))}</small></span>
           </a>
-          <button type="button" class="icono-btn" data-quitar="${esc(a.id)}" data-nombre="${esc(nombreDeAmigo(a))}"
-            aria-label="${esc(t('Quitar de tus amigos'))}" title="${esc(t('Quitar de tus amigos'))}">${ic('person_remove')}</button>
-          <button type="button" class="icono-btn" data-bloquear="${esc(a.id)}" data-nombre="${esc(nombreDeAmigo(a))}"
-            aria-label="${esc(t('Bloquear'))}" title="${esc(t('Bloquear'))}">${ic('block')}</button>
-        </div>`).join('')}</div>` : ''}</div>
-      <div class="empty amigos-vacio" id="amigos-vacio"${amigos.length ? ' hidden' : ''}>
-        <p><b>${esc(t('Aún no tienes amigos en Klendar'))}</b></p>
-        <p>${esc(t('Manda tu enlace o enseña tu QR a quien quieras. Cuando lo acepte, sabrás a qué planes va y podrás invitarle a los tuyos.'))}</p>
-      </div>
-    </section>`);
+          ${menuMas([
+    { texto: t('Quitar de tus amigos'), attrs: `data-quitar="${esc(a.id)}" data-nombre="${esc(nombreDeAmigo(a))}"` },
+    { texto: t('Bloquear'), attrs: `data-bloquear="${esc(a.id)}" data-nombre="${esc(nombreDeAmigo(a))}"`, peligro: true },
+  ], EN ? `More options: ${nombreDeAmigo(a)}` : `Más opciones: ${nombreDeAmigo(a)}`)}
+        </div>`).join('')}</div>
+      <p class="muted aviso-planes">${ic(comparte ? 'visibility' : 'visibility_off')}
+        <span>${esc(t(comparte
+          ? 'Tus amigos ven a qué planes vas. Puedes apagarlo en Ajustes → Privacidad.'
+          : 'No compartes tus planes: tus amigos no ven a qué vas. Se cambia en Ajustes → Privacidad.'))}</span></p>
+    </div>
+    <div id="amigos-vacio"${amigos.length ? ' hidden' : ''}>${amigos.length ? '' : vacio()}</div>`);
 
-  let url = '';
-  const pintaEnlace = (code) => {
-    url = enlaceDeAmigo(code);
-    $('#enlace-url').textContent = url.replace(/^https?:\/\//, '');
+  let url = enlaceDeAmigo(enlace.code);
+  const qrSvg = () => {
     const qr = window.qrcode(0, 'M');
     qr.addData(url);
     qr.make();
-    $('#qr-amigo').innerHTML = qr.createSvgTag({ cellSize: 6, margin: 2, scalable: true });
+    return qr.createSvgTag({ cellSize: 6, margin: 2, scalable: true });
   };
-  pintaEnlace(enlace.code);
+  const copia = async () => {
+    try { await navigator.clipboard.writeText(url); toast(t('Enlace copiado')); } catch { toast(t('No se ha podido copiar'), true); }
+  };
 
-  // Sin nombre: se pone aquí mismo, antes de mandar el enlace.
-  const fn = $('#f-nombre');
-  if (fn) {
-    fn.addEventListener('submit', (ev) => {
+  // «Añadir un amigo»: el QR para que lo escaneen y el enlace para mandarlo.
+  const abreAnadir = async () => {
+    const miNombre = await nombrePublico().catch(() => '');
+    const d = document.createElement('dialog');
+    d.className = 'dialogo hoja-amigo';
+    d.setAttribute('aria-labelledby', 'anadir-t');
+    d.innerHTML = `<button type="button" class="cerrar-hoja" aria-label="${esc(t('Cerrar'))}">×</button>
+      <h2 id="anadir-t">${esc(t('Añadir un amigo'))}</h2>
+      <p class="muted">${esc(t('Quien lo abra con su cuenta podrá hacerse tu amigo. No hay buscador: solo te encuentra quien tiene tu enlace o escanea tu QR.'))}</p>
+      <div class="enlace-amigo">
+        <div class="qr" role="img" aria-label="${esc(t('Tu enlace de amigo'))}">${qrSvg()}</div>
+        <p class="enlace-url">${esc(url.replace(/^https?:\/\//, ''))}</p>
+        <div class="acciones enlace-acc">
+          <button type="button" class="pill" data-compartir>${ic('share')} ${esc(t('Compartir el enlace'))}</button>
+          <button type="button" class="pill" data-copiar>${ic('content_copy')} ${esc(t('Copiar'))}</button>
+        </div>
+      </div>
+      ${miNombre === null ? `<form class="formu nombre-publico" novalidate>
+        <p class="muted">${esc(t('Quien abra tu enlace verá tu nombre. Sin él, sales como «Usuario de Klendar».'))}</p>
+        ${campoNombrePublico()}
+        <button class="pill">${esc(t('Guardar'))}</button>
+      </form>` : ''}`;
+    document.body.appendChild(d);
+    d.querySelector('.cerrar-hoja').onclick = () => d.close();
+    d.querySelector('[data-copiar]').onclick = copia;
+    d.querySelector('[data-compartir]').onclick = () => compartirOCopiar(
+      EN ? `Be my friend on Klendar so we can see which plans we're going to: ${url}`
+        : `Hazte mi amigo en Klendar y vemos a qué planes vamos: ${url}`, url);
+    const fn = d.querySelector('form');
+    fn?.addEventListener('submit', (ev) => {
       ev.preventDefault();
       if (!fn.nombre.value.trim()) { fn.nombre.focus(); return; }
-      ocupado($('#g-nombre'), async () => {
+      ocupado(fn.querySelector('button'), async () => {
         await guardaNombrePublico(fn.nombre.value);
         fn.remove();
         toast(t('Nombre guardado'));
       });
     });
-  }
-
-  const copia = async () => {
-    try { await navigator.clipboard.writeText(url); toast(t('Enlace copiado')); } catch { toast(t('No se ha podido copiar'), true); }
+    d.addEventListener('click', (e) => { if (e.target === d) d.close(); });
+    d.addEventListener('close', () => {
+      d.remove();
+      if (location.hash.startsWith('#/amigos/anadir')) history.replaceState(null, '', '#/amigos');
+    });
+    alSalir(() => { if (d.open) d.close(); });
+    d.showModal();
   };
-  $('#copiar-enlace').onclick = copia;
-  $('#copiar-enlace-2').onclick = copia;
-  $('#compartir-enlace').onclick = () => compartirOCopiar(
-    EN ? `Be my friend on Klendar so we can see which plans we're going to: ${url}`
-      : `Hazte mi amigo en Klendar y vemos a qué planes vamos: ${url}`, url);
+  $$('[data-anadir]').forEach((b) => { b.onclick = abreAnadir; });
+  if (idAmigo === 'anadir') abreAnadir();
+
   $('#cambiar-enlace').onclick = async (ev) => {
     const boton = ev.currentTarget;
     if (!(await confirma({
@@ -171,7 +188,7 @@ RUTAS.amigos = async ([idAmigo]) => {
     ocupado(boton, async () => {
       try {
         const r = await llamar('rotate_friend_link', {});
-        pintaEnlace(r.code);
+        url = enlaceDeAmigo(r.code);
         toast(t('Enlace cambiado. El anterior ya no vale.'));
       } catch (e) {
         throw e.clave === 'rate_limited' ? new Error(t('Demasiados intentos. Espera un rato y vuelve a probar.')) : e;
@@ -180,6 +197,17 @@ RUTAS.amigos = async ([idAmigo]) => {
   };
 
   let quedan = amigos.length;
+  const quita = (b) => {
+    b.closest('.amigo-fila')?.remove();
+    quedan -= 1;
+    $('#cuantos-amigos').textContent = cuantos(quedan);
+    if (quedan <= 0) {
+      $('#con-amigos').hidden = true;
+      $('#amigos-vacio').innerHTML = vacio();
+      $('#amigos-vacio').hidden = false;
+      $$('#amigos-vacio [data-anadir]').forEach((x) => { x.onclick = abreAnadir; });
+    }
+  };
   $$('[data-quitar]').forEach((b) => b.addEventListener('click', async () => {
     const nombre = b.dataset.nombre;
     if (!(await confirma({
@@ -192,13 +220,7 @@ RUTAS.amigos = async ([idAmigo]) => {
     try {
       await llamar('remove_friend', { p_user: b.dataset.quitar });
       toast(EN ? `${nombre} is no longer one of your friends` : `${nombre} ya no está en tus amigos`);
-      const filaAmigo = b.closest('.amigo-fila');
-      const caja = filaAmigo?.parentElement;
-      filaAmigo?.remove();
-      if (caja && !caja.children.length) caja.remove();
-      quedan -= 1;
-      $('#cuantos-amigos').textContent = cuantos(quedan);
-      $('#amigos-vacio').hidden = quedan > 0;
+      quita(b);
     } catch (e) {
       toast(e.message, true);
       if (b.isConnected) b.disabled = false;
@@ -213,13 +235,7 @@ RUTAS.amigos = async ([idAmigo]) => {
     try {
       await llamar('block_user', { p_user: b.dataset.bloquear });
       toast(EN ? `You've blocked ${nombre}` : `Has bloqueado a ${nombre}`);
-      const filaAmigo = b.closest('.amigo-fila');
-      const caja = filaAmigo?.parentElement;
-      filaAmigo?.remove();
-      if (caja && !caja.children.length) caja.remove();
-      quedan -= 1;
-      $('#cuantos-amigos').textContent = cuantos(quedan);
-      $('#amigos-vacio').hidden = quedan > 0;
+      quita(b);
     } catch (e) {
       toast(e.message, true);
       if (b.isConnected) b.disabled = false;
@@ -512,7 +528,7 @@ RUTAS.invitar = async ([id]) => {
         icono: 'group',
         titulo: t('Aún no tienes amigos en Klendar'),
         texto: t('Añádelos con tu enlace de amigo. Mientras, puedes mandar la publicación por cualquier app.'),
-        botones: `<a class="pill accent" href="#/amigos">${ic('group_add')} ${esc(t('Añadir amigos'))}</a>
+        botones: `<a class="pill accent" href="#/amigos/anadir">${ic('group_add')} ${esc(t('Añadir amigos'))}</a>
           <button type="button" class="pill" id="compartir-ficha">${ic('share')} ${esc(t('Compartir el enlace'))}</button>`,
       })}`);
     $('#compartir-ficha').onclick = compartirFicha;
@@ -556,7 +572,7 @@ function pintaInvitar({ id, o, migas, social, amigos, compartirFicha, aviso = ''
       <button class="pill accent" type="submit" id="mandar-inv" disabled>${esc(t('Invitar a un amigo'))}</button>
     </form>
     <p class="acciones">
-      <a class="pill" href="#/amigos">${ic('group_add')} ${esc(t('Añadir amigos'))}</a>
+      <a class="pill" href="#/amigos/anadir">${ic('group_add')} ${esc(t('Añadir amigos'))}</a>
       <button type="button" class="pill" id="compartir-ficha">${ic('share')} ${esc(t('Compartir el enlace'))}</button>
     </p>`);
   $('#compartir-ficha').onclick = compartirFicha;

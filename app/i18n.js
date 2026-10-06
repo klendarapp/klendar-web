@@ -836,4 +836,8 @@ const APP_EN = {
   "Guardado": "Saved",
   "¿Desactivar las notificaciones?": "Turn off notifications?",
   "Dejarán de llegarte a todos tus dispositivos. Las seguirás teniendo en «Notificaciones», y puedes volver a activarlas desde la app.": "They'll stop reaching all your devices. You'll still have them in “Notifications”, and you can turn them back on in the app.",
+  // Amigos y menú ⋮
+  "Más opciones": "More options",
+  "Cerrar": "Close",
+  "Añadir un amigo": "Add a friend",
 };
