@@ -97,6 +97,8 @@ createServer(async (req, res) => {
     else if ((m = path.match(/^\/en\/rp\/([^/]+)\/?$/))) { mod = await load('functions/en/rp/[code].js'); params = { code: m[1] }; }
     // El QR del cartel del local: a la ficha del negocio.
     else if ((m = path.match(/^\/v\/([^/]+)\/?$/))) { mod = await load('functions/v/[token].js'); params = { token: m[1] }; }
+    // «Tus planes en tu calendario»: /cal/<token>.ics.
+    else if ((m = path.match(/^\/cal\/([^/]+)$/))) { mod = await load('functions/cal/[token].js'); params = { token: m[1] }; }
     else if ((m = path.match(/^\/baja\/([^/]+)\/?$/))) { mod = await load('functions/baja/[token].js'); params = { token: m[1] }; }
     else if ((m = path.match(/^\/widget\/([^/]+)\/?$/))) { mod = await load('functions/widget/[id].js'); params = { id: m[1] }; }
     else if (path === '/api/mapbox-token') { mod = await load('functions/api/mapbox-token.js'); }

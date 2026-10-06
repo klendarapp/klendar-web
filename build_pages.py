@@ -288,57 +288,68 @@ PAGINAS['precios'] = (
 )
 
 
-# ── Preguntas frecuentes ────────────────────────────────────────────────────
-FAQ_ES = [
-    ('¿Cuánto cuesta usar Klendar?', 'Para quien busca planes, nada. Para los negocios hay un solo plan, y ahora mismo es gratis mientras arrancamos; los detalles están en <a href="/precios/">precios</a>.'),
-    ('¿Hace falta cuenta para mirar?', 'No. Puedes ver ofertas y eventos sin crear una cuenta, en la app y en la web. La cuenta hace falta para canjear, guardar planes o recibir avisos.'),
-    ('¿Cómo se canjea una oferta?', 'Pulsas «Conseguir el código» y te sale un código QR de un solo uso. Se lo enseñas al negocio, que lo escanea o escribe el código. Ojo: algunos códigos caducan a los pocos minutos, así que se pide estando ya en el local.'),
-    ('Mi código no funciona', 'Suele ser una de tres: ya se usó, caducó (los de barra duran minutos) o es de otro negocio. En «Tus códigos» (en la app o en la web) ves el estado de cada uno. Si algo no cuadra, escríbenos con el código a <a href="mailto:info@klendar.app">info@klendar.app</a>.'),
-    ('¿Puedo reservar una plaza en un evento?', 'Si el negocio lo activa, sí: reservas plaza desde la app o desde la web y enseñas tu código en la puerta. La reserva no es un pago; lo que cueste, si cuesta, se paga en el local.'),
-    ('¿Por qué veo unas cosas y no otras?', 'Por cercanía, por lo que empieza pronto y por tus favoritos. Si un negocio paga por destacar una publicación, sale primero y siempre con la etiqueta «Destacado». Con «Según el tiempo» (encendido de serie, se apaga en Filtros), si hoy llueve sale primero lo de hoy bajo techo y, si hace buen tiempo, las terrazas y el aire libre; no quita nada. El resto del orden lo eliges tú en los filtros. Si cerca no hay nada, la app te sugiere cosas según tus últimas búsquedas y las categorías que más miras, que se guardan en tu móvil. No usamos datos de otras webs. En cada ficha hay un «¿Por qué ves esto?» que lo explica.'),
-    ('¿Qué pasa con mis datos?', 'Lo contamos entero en la <a href="/privacidad/">política de privacidad</a>. En resumen: se usan para que la app funcione, no se venden, y puedes descargarlos o borrar tu cuenta desde la app o desde «Tu cuenta» en la web.'),
-    ('¿Cómo borro mi cuenta?', 'Desde Cuenta → Ajustes → Eliminar mi cuenta, en la app o en «Tu cuenta» de la web. Se borra todo lo tuyo. También puedes pedirlo por correo: <a href="/eliminar-cuenta/">cómo hacerlo</a>.'),
-    ('Soy un negocio, ¿cómo me doy de alta?', 'Desde la app (Cuenta → ¿Quieres registrar tu negocio?) o desde el <a href="/panel/">panel web</a>; hace falta la ubicación exacta del local. Lo revisamos y te verificamos, normalmente en 24-48 horas. Luego puedes publicar desde el móvil o desde el ordenador.'),
-    ('¿Klendar se lleva una comisión de lo que vendo?', 'No. Lo que cobras en tu local es tuyo entero; Klendar no toca el dinero.'),
-    ('Vi algo que no debería estar ahí', 'En cada ficha, en la app y en la web, hay un botón para denunciar, y no hace falta tener cuenta: también puedes usar <a href="/app/#/denunciar">el formulario de denuncias</a>. Lo revisamos y, si hay que retirarlo, se retira con un motivo y el negocio puede recurrir.'),
-    ('¿En qué ciudades está?', 'Estamos empezando. Si en la tuya todavía no hay nada, en <a href="/agenda/">la agenda</a> lo verás vacío: escríbenos y lo arrancamos.'),
-]
-FAQ_EN = [
-    ('How much does Klendar cost?', 'For people looking for plans, nothing. For businesses there is a single plan, and right now it\'s free while we\'re launching; the details are in <a href="/en/pricing/">pricing</a>.'),
-    ('Do I need an account to look?', 'No. You can see deals and events without signing up, both in the app and on the web. An account is needed to redeem, save plans or get alerts.'),
-    ('How do I redeem a deal?', 'Tap “Get the code” and you get a single-use QR code. Show it to the business, and they scan it or type in the code. Careful: some codes expire within minutes, so get it once you\'re at the venue.'),
-    ('My code doesn\'t work', 'Usually one of three things: it\'s already been used, it\'s expired (codes at a bar last minutes) or it belongs to another business. In “Your codes” (in the app or on the web) you can see the status of each one. If something is off, email us the code at <a href="mailto:info@klendar.app">info@klendar.app</a>.'),
-    ('Can I reserve a place at an event?', 'If the business turns it on, yes: you reserve a place from the app or the website and show your code at the door. Reserving isn\'t a payment; whatever it costs, if anything, is paid at the venue.'),
-    ('Why do I see some things and not others?', 'Because of how close they are, what starts soon and your favourites. If a business pays to feature a publication, it comes first and always carries the “Featured” label. With “Based on the weather” (on by default, turn it off in Filters), if it\'s raining today indoor plans for today come first and, if the weather is nice, terraces and outdoor plans; nothing is removed. You choose the rest of the order in the filters. If there\'s nothing nearby, the app suggests things based on your recent searches and the categories you look at most, which are stored on your phone. We don\'t use data from other sites. Each publication has a “Why are you seeing this?” that explains it.'),
-    ('What happens to my data?', 'It\'s all in the <a href="/en/privacy/">privacy policy</a>. In short: it\'s used to make the app work, it\'s never sold, and you can download it or delete your account from the app or from “Your account” on the website.'),
-    ('How do I delete my account?', 'From Account → Settings → Delete my account, in the app or in “Your account” on the website. Everything of yours is deleted. You can also ask by email: <a href="/en/delete-account/">how to do it</a>.'),
-    ('I run a business. How do I register?', 'From the app (Account → Want to register your business?) or from the <a href="/panel/">web dashboard</a>; it needs the venue’s exact location. We review and verify it, usually within 24–48 hours. After that you can publish from your phone or from a computer.'),
-    ('Does Klendar take a commission on what I sell?', 'No. What you charge at your venue is yours; Klendar never touches the money.'),
-    ('I saw something that shouldn\'t be there', 'On every publication, in the app and on the website, there\'s a button to report it, and you don\'t need an account: you can also use <a href="/app/?lang=en#/denunciar">the report form</a>. We review it and, if it has to come down, it comes down with a reason and the business can appeal.'),
-    ('Which cities is it in?', 'We\'re just getting started. If nothing is happening in yours yet, <a href="/en/whats-on/">what\'s on</a> will look empty: email us and we\'ll get it going.'),
-]
+# ── Preguntas frecuentes (centro de ayuda) ───────────────────────────────────
+# El contenido vive en `ayuda.py` (una sola fuente para esta página, Soporte y
+# la app, que se descarga `assets/ayuda.json`). Aquí solo se pinta: pestañas
+# «Para ti» / «Para negocios» y buscador (`assets/ayuda.js`, `assets/ayuda.css`).
+import ayuda  # noqa: E402
+
+AYUDA_V = 1  # ?v= de assets/ayuda.js y ayuda.css
+
+AYUDA_T = {
+    'es': dict(lead='Lo que más nos preguntan, para quien busca planes y para los negocios.',
+               buscar='Buscar en la ayuda', ph='Buscar: código, reserva, calendario…',
+               pestanas='Preguntas frecuentes', nada_h='¿No lo encuentras?',
+               nada_p='Escríbenos y te respondemos en 2 días laborables como mucho. Si es algo que se pregunta a menudo, lo añadimos aquí.',
+               boton='Escríbenos', sugerencias='/app/#/sugerencias',
+               correo='O por correo a <a href="mailto:info@klendar.app">info@klendar.app</a> · <a href="/soporte/">Soporte</a>'),
+    'en': dict(lead='What we get asked most, for people looking for plans and for businesses.',
+               buscar='Search help', ph='Search: code, reservation, calendar…',
+               pestanas='Frequently asked questions', nada_h="Can't find it?",
+               nada_p="Write to us and we'll reply within 2 working days at most. If it's something people often ask, we'll add it here.",
+               boton='Write to us', sugerencias='/app/?lang=en#/sugerencias',
+               correo='Or by email at <a href="mailto:info@klendar.app">info@klendar.app</a> · <a href="/en/support/">Support</a>'),
+}
 
 
-def faq_html(items):
-    return '\n'.join(
-        f'<details class="faq"><summary>{q}</summary><p>{a}</p></details>' for q, a in items)
+def ayuda_html(lang):
+    t = AYUDA_T[lang]
+    nombres = ayuda.PESTANAS[lang]
+    pestanas = ''.join(
+        f'<button type="button" role="tab" id="tab-{k}" aria-controls="ayuda-{k}" aria-selected="{str(i == 0).lower()}">{nombres[k]}</button>'
+        for i, k in enumerate(('ti', 'negocios')))
+    paneles = ''.join(
+        f'<section id="ayuda-{k}" role="tabpanel" aria-labelledby="tab-{k}">\n'
+        f'<h2 class="ayuda-titulo">{nombres[k]}</h2>\n'
+        + '\n'.join(f'<details class="faq" id="{p["id"]}"><summary>{p[f"q_{lang}"]}</summary><p>{p[f"a_{lang}"]}</p></details>'
+                    for p in ayuda.de(k))
+        + '\n</section>\n'
+        for k in ('ti', 'negocios'))
+    return f'''
+<link rel="stylesheet" href="/assets/ayuda.css?v={AYUDA_V}">
+<p class="lead">{t['lead']}</p>
+<div class="ayuda" data-ayuda>
+<label class="ayuda-buscar" data-solo-js hidden><span class="ayuda-titulo">{t['buscar']}</span><input type="search" id="ayuda-q" placeholder="{t['ph']}" autocomplete="off" enterkeyhint="search"></label>
+<div class="ayuda-pestanas" role="tablist" aria-label="{t['pestanas']}" data-solo-js hidden>{pestanas}</div>
+<div class="ayuda-estado" role="status" aria-live="polite"></div>
+{paneles}<section class="ayuda-escribenos">
+<h2>{t['nada_h']}</h2>
+<p>{t['nada_p']}</p>
+<a class="pill accent" href="{t['sugerencias']}">{t['boton']}</a>
+<p class="note">{t['correo']}</p>
+</section>
+</div>
+<script src="/assets/ayuda.js?v={AYUDA_V}" defer></script>
+'''
 
 
 PAGINAS['preguntas'] = (
     'faq',
     'Preguntas frecuentes', 'Frequently asked questions',
-    'Cómo se canjea una oferta, qué pasa si el código no funciona, cómo se da de alta un negocio y qué hacemos con tus datos.',
-    'How to redeem a deal, what to do if a code doesn\'t work, how a business registers and what we do with your data.',
-    f'''
-<p class="lead">Lo que más nos preguntan. Si lo tuyo no está aquí, escríbenos a <a href="mailto:info@klendar.app">info@klendar.app</a> y lo añadimos.</p>
-{faq_html(FAQ_ES)}
-<p class="note" style="margin-top:22px">¿Necesitas ayuda con algo concreto? <a href="/soporte/">Soporte</a>.</p>
-''',
-    f'''
-<p class="lead">What we get asked most. If yours isn't here, email <a href="mailto:info@klendar.app">info@klendar.app</a> and we'll add it.</p>
-{faq_html(FAQ_EN)}
-<p class="note" style="margin-top:22px">Need help with something specific? <a href="/en/support/">Support</a>.</p>
-''',
+    'Cómo se canjea una oferta, qué pasa si el código no funciona, cómo llevar tus planes al calendario, cómo se da de alta un negocio y qué hacemos con tus datos.',
+    "How to redeem a deal, what to do if a code doesn't work, how to get your plans into your calendar, how a business registers and what we do with your data.",
+    ayuda_html('es'),
+    ayuda_html('en'),
 )
 
 
@@ -555,6 +566,13 @@ if __name__ == '__main__':
             io.open(os.path.join(slug, 'index.html'), 'w', encoding='utf-8', newline='\n').write(
                 doc_page(T[lang], path, title, desc, body))
         print('ok', es_slug, '·', en_slug)
+
+    # El centro de ayuda para la app (la descarga y la guarda; lleva una
+    # copia dentro: `python tool/sync_help.py` en el repo de la app).
+    import json
+    io.open(os.path.join('assets', 'ayuda.json'), 'w', encoding='utf-8', newline='\n').write(
+        json.dumps(ayuda.json_para_la_app(), ensure_ascii=False, indent=1) + '\n')
+    print('ok assets/ayuda.json')
 
     # «Esta página no existe». Cloudflare sirve la 404.html más cercana a la
     # ruta pedida: /en/404.html para lo que empieza por /en/, y la de la raíz

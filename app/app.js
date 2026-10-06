@@ -601,6 +601,7 @@ RUTAS[''] = async () => {
 
     <h2 class="seccion-t">${esc(t('Ayuda'))}</h2>
     <div class="lista">
+      ${filaSvg({ href: EN ? '/en/faq/' : '/preguntas/', icono: 'ayuda', titulo: t('Preguntas frecuentes'), detalle: t('Para ti y para negocios, con buscador') })}
       ${fila({ href: '#/sugerencias', icono: 'lightbulb', titulo: t('Sugerencias y mejoras'), detalle: t('Cuéntanos qué cambiarías o qué falla') })}
       ${fila({ href: 'mailto:info@klendar.app', icono: 'mail', titulo: t('Contacto y soporte'), detalle: 'info@klendar.app' })}
       <!-- Los tres textos legales, en una sola fila (como la app). -->

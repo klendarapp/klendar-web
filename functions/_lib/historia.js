@@ -47,6 +47,12 @@ const T = {
     back: 'Volver', preview: 'Vista previa de la imagen para historias',
     see: 'Míralo en Klendar', organisedBy: 'Organiza: {x}', today: 'Hoy', tomorrow: 'Mañana',
     collection: 'Colección', plans: (n) => (n === 1 ? '1 plan' : `${n} planes`),
+    // Estado de WhatsApp: la misma imagen, con `?ref=whatsapp`.
+    tabs: 'Dónde la vas a compartir', tabStories: 'Historias', tabWa: 'Estado de WhatsApp',
+    titleWa: 'Estado de WhatsApp',
+    leadWa: 'La misma imagen vertical de 1080 × 1920, con un QR que lleva aquí, para tu estado de WhatsApp.',
+    downloadWa: 'Descargar para tu estado',
+    howWa: 'En WhatsApp: «Novedades» → «Añadir estado» → elige esta imagen. Pega en el texto el enlace («Copiar enlace»).',
   },
   en: {
     title: 'Share to stories',
@@ -61,6 +67,11 @@ const T = {
     back: 'Back', preview: 'Preview of the story image',
     see: 'See it on Klendar', organisedBy: 'Organised by {x}', today: 'Today', tomorrow: 'Tomorrow',
     collection: 'Collection', plans: (n) => (n === 1 ? '1 plan' : `${n} plans`),
+    tabs: 'Where you’ll share it', tabStories: 'Stories', tabWa: 'WhatsApp status',
+    titleWa: 'WhatsApp status',
+    leadWa: 'The same 1080 × 1920 portrait image, with a QR code that brings people here, for your WhatsApp status.',
+    downloadWa: 'Download for your status',
+    howWa: 'In WhatsApp: “Updates” → “Add status” → pick this image. Paste the link (“Copy link”) in the text.',
   },
 };
 
@@ -73,10 +84,14 @@ const venueOf = (name, address) => {
 
 export const storyPath = (lang, kind, ref) => `${lang === 'en' ? '/en/story' : '/historia'}/${kind}/${encodeURIComponent(ref)}`;
 
-/** La página «Compartir en historias» de [kind] (`o`, `b` o `c`). */
-export async function storyPage(kind, ref, lang, rpRaw = '') {
+/** La página «Compartir en historias» de [kind] (`o`, `b` o `c`). Con
+ * `para = 'whatsapp'`, la misma imagen para el estado de WhatsApp: su QR y su
+ * enlace llevan `?ref=whatsapp` (las visitas se cuentan con las de historias,
+ * con su origen) y las instrucciones son las de WhatsApp. */
+export async function storyPage(kind, ref, lang, rpRaw = '', para = '') {
   const en = lang === 'en';
   const S = T[en ? 'en' : 'es'];
+  const wa = para === 'whatsapp';
   const raw = String(ref || '');
   const self = storyPath(lang, kind, raw);
   let datos = null;
@@ -179,7 +194,7 @@ export async function storyPage(kind, ref, lang, rpRaw = '') {
   }
 
   // El enlace del QR: siempre klendar.app (también en local), con el origen.
-  datos.link = `${BASE}${datos.path}${rpQ ? `${rpQ}&` : '?'}ref=stories`;
+  datos.link = `${BASE}${datos.path}${rpQ ? `${rpQ}&` : '?'}ref=${wa ? 'whatsapp' : 'stories'}`;
   datos.display = `${new URL(BASE).host}${datos.path}`;
   datos.lang = en ? 'en' : 'es';
   datos.t = {
@@ -191,8 +206,12 @@ export async function storyPage(kind, ref, lang, rpRaw = '') {
 
   const body = `
   <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a> · <a href="${esc(volver)}">${esc(datos.title)}</a></p>
-  <h1>${esc(S.title)}</h1>
-  <p class="muted historia-lead">${esc(lead)}</p>
+  <h1>${esc(wa ? S.titleWa : S.title)}</h1>
+  <nav class="historia-para" aria-label="${esc(S.tabs)}">
+    <a href="${esc(self + (rpQ || ''))}"${wa ? '' : ' aria-current="page"'}>${esc(S.tabStories)}</a>
+    <a href="${esc(self + (rpQ ? `${rpQ}&` : '?') + 'para=whatsapp')}"${wa ? ' aria-current="page"' : ''}>${esc(S.tabWa)}</a>
+  </nav>
+  <p class="muted historia-lead">${esc(wa ? S.leadWa : lead)}</p>
   <div class="historia">
     <figure class="historia-lienzo">
       <canvas id="historia" width="1080" height="1920" role="img" aria-label="${esc(`${S.preview}: ${datos.title}`)}"></canvas>
@@ -201,9 +220,9 @@ export async function storyPage(kind, ref, lang, rpRaw = '') {
     </figure>
     <div class="historia-acciones">
       <button type="button" class="pill accent big" id="historia-compartir" hidden disabled>${esc(S.share)}</button>
-      <a class="pill accent big" id="historia-descargar" download="${esc(archivo)}" href="#" aria-disabled="true">${esc(S.download)}</a>
+      <a class="pill accent big" id="historia-descargar" download="${esc(archivo)}" href="#" aria-disabled="true">${esc(wa ? S.downloadWa : S.download)}</a>
       <button type="button" class="pill" id="historia-copiar">${esc(S.copy)}</button>
-      <p class="note">${esc(S.how)}</p>
+      <p class="note">${esc(wa ? S.howWa : S.how)}</p>
       <p class="note" id="historia-aviso" role="status" aria-live="polite"></p>
       <p><a href="${esc(volver)}">← ${esc(S.back)}</a></p>
     </div>
@@ -216,6 +235,11 @@ export async function storyPage(kind, ref, lang, rpRaw = '') {
   const estilo = `<meta name="robots" content="noindex, follow">
 <style>
   .historia-lead { max-width: 640px; }
+  .historia-para { display: inline-grid; grid-template-columns: auto auto; gap: 4px; padding: 4px; margin: 4px 0 6px;
+    border-radius: 999px; background: var(--glass); border: 1px solid var(--glass-border); max-width: 100%; }
+  .historia-para a { display: flex; align-items: center; justify-content: center; min-height: 40px; padding: 8px 16px;
+    border-radius: 999px; color: var(--ink-2); font-weight: 700; text-decoration: none; text-align: center; white-space: nowrap; }
+  .historia-para a[aria-current="page"] { background: var(--ink); color: var(--surface); }
   .historia { display: grid; grid-template-columns: minmax(0, 360px) minmax(0, 1fr); gap: 28px; align-items: start; margin-top: 18px; }
   .historia-lienzo { position: relative; margin: 0; border-radius: 18px; overflow: hidden; background: #171717;
     box-shadow: 0 20px 60px -30px rgba(10,10,10,.5); aspect-ratio: 9 / 16; }
@@ -240,8 +264,8 @@ export async function storyPage(kind, ref, lang, rpRaw = '') {
     const res = html(publicPage({
       lang,
       path: self,
-      title: `${S.title} · ${datos.title}`,
-      description: lead,
+      title: `${wa ? S.titleWa : S.title} · ${datos.title}`,
+      description: wa ? S.leadWa : lead,
       head: estilo.replace('content="noindex, follow"', 'content="noindex, nofollow"')
         + '\n<meta name="referrer" content="no-referrer">',
       body,
@@ -255,8 +279,8 @@ export async function storyPage(kind, ref, lang, rpRaw = '') {
   return html(publicPage({
     lang,
     path: self,
-    title: `${S.title} · ${datos.title}`,
-    description: lead,
+    title: `${wa ? S.titleWa : S.title} · ${datos.title}`,
+    description: wa ? S.leadWa : lead,
     head: estilo,
     body,
     contador: true,

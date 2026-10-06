@@ -4737,6 +4737,9 @@ PAGES.ayuda = async (v) => {
         <li>Pon el código «sin caducidad» para que valga como entrada.</li>
         <li>El día del evento, usa «Asistentes» para dar entrada.</li></ul></div>
     </div>
+    <div class="card"><h2>Preguntas frecuentes</h2>
+      <p class="muted">Lo que más nos preguntan los negocios (y la gente), con buscador. Lo mismo que en la app, en «Mi negocio» → Ayuda.</p>
+      <p style="margin:8px 0 0"><a class="btn sm" href="${I18N.lang === 'en' ? '/en/faq/' : '/preguntas/'}#negocios">${ms('help')}${esc(I18N.t('Ver las preguntas frecuentes'))}</a></p></div>
     <div class="card"><h2>¿Algo no cuadra?</h2><p class="muted" style="margin:0">Escríbenos a <a class="link" href="mailto:info@klendar.app">info@klendar.app</a> y lo miramos.</p></div>`;
 };
 

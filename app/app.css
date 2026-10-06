@@ -470,3 +470,12 @@ button.codigo.copiar .ms { font-size: 18px; color: var(--ink-2); letter-spacing:
 .alerta-fila.pausada .alerta-t { opacity: .6; }
 
 .aviso.alerta-fila.pausada { opacity: 1; }
+
+/* «Tus planes en tu calendario» (app/calendario.js) y filas con icono SVG
+   (los que no están en la fuente recortada: calendario y ayuda). */
+.ms-svg { flex: 0 0 auto; width: 24px; height: 24px; }
+.botones-cal { display: grid; gap: 8px; }
+.botones-cal .pill { width: 100%; justify-content: center; display: inline-flex; align-items: center; gap: 8px; min-height: 48px; }
+.nota-cal { margin: 10px 0 0; font-size: 14px; }
+.fila.peligro-t, .fila.peligro-t .fila-t b, .fila.peligro-t .ms { color: #B3261E; }
+@media (prefers-color-scheme: dark) { .fila.peligro-t, .fila.peligro-t .fila-t b, .fila.peligro-t .ms { color: #FF9B9B; } }

@@ -181,28 +181,13 @@ T = {
   ),
 }
 
+from ayuda import soporte_html  # noqa: E402  (las preguntas de Soporte, del centro de ayuda)
+
 SUPPORT_EN = ('Support', 'Klendar help: how to redeem a deal, list your business, recover your account or report content. We reply within 2 working days.', '''
 <h2>Contact</h2>
 <p>Email us at <a href="mailto:info@klendar.app">info@klendar.app</a>. We reply within 2 working days.</p>
 <h2>Frequently asked questions</h2>
-<h3>I can't redeem a deal</h3>
-<p>Check that the deal is still active (it has a time window and a capacity), that you're logged in and that you haven't used up the redemptions per person the business allows.</p>
-<h3>The QR code has expired</h3>
-<p>Codes expire after a while (usually a few minutes; each business chooses). Tap “Generate a new code” on the same screen.</p>
-<h3>A business didn't honour its deal</h3>
-<p>Report it from its profile (flag icon) with the reason “The offer isn't as advertised”. We review it and, if it happens again, the business is suspended.</p>
-<h3>Report illegal content</h3>
-<p>If you see something illegal or that breaks the <a href="/en/community-guidelines/">Community guidelines</a>, tap “Report” on that business, publication, review or news post, or use the <a href="/app/?lang=en#/denunciar">report form</a> (also in the footer of every page: “Report illegal content”). You don't need an account. We'll confirm we've received it and tell you what we've decided and why. If someone is in danger right now, call 112.</p>
-<h3>I don't get notifications</h3>
-<p>Check Account → Settings → Notifications and the system notification permission. “Nearby” only alerts you about flash offers within your chosen radius, at most 3 times a day.</p>
-<h3>I can't log in to my account</h3>
-<p>On “Log in”, tap “Forgot your password?” and we'll send you a link to create a new one, or choose “Log in with an email code” and get in without a password. If you created the account with Google or Apple, log in with that same button. If you can no longer open that email, write to <a href="mailto:info@klendar.app">info@klendar.app</a> from another address and tell us which email you signed up with.</p>
-<h3>A promoter gave me their link: what do they see about me?</h3>
-<p>Your name and photo, when you signed up, which offer you got and whether and when you got in. Never your email, phone number or date of birth. If you don't want to be on their list, open the venue's page without their link.</p>
-<h3>Unfollowing a series</h3>
-<p>On the page of any date in the series tap “You're following the series” → “Unfollow”, or go to Account → “Series you follow”. To stop notifications for all series: Settings → Notifications → “Series you follow”.</p>
-<h3>I run a business and want to sign up</h3>
-<p>In the app: Account → “Want to register your business?”, or on the web from the <a href="/panel/">dashboard</a>. We review it within 24–48 h. You can also email us.</p>
+''' + soporte_html('en') + '''
 <h2>Legal documents</h2>
 <p><a href="/en/privacy/">Privacy policy</a> · <a href="/en/terms/">Terms of use</a> · <a href="/en/business-terms/">Business terms</a> · <a href="/en/community-guidelines/">Community guidelines</a> · <a href="/en/delete-account/">Delete your account</a>. English versions are courtesy translations; the Spanish originals are the governing text.</p>
 ''')
@@ -484,6 +469,7 @@ def robots():
         'Allow: /',
         'Disallow: /admin/',
         'Disallow: /r/',
+        'Disallow: /cal/',  # «Tus planes en tu calendario»: enlaces secretos
         'Disallow: /legal/',
         '',
         f'Sitemap: {BASE}/sitemap.xml',

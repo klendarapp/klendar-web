@@ -8,7 +8,8 @@ export const onRequestGet = (ctx) => {
   configure(ctx.env);
   const url = new URL(ctx.request.url);
   // `?rp=<código>`: desde la ficha abierta con el enlace de un RRPP.
-  return guard('en', url.pathname, () => storyPage(ctx.params.kind, ctx.params.id, 'en', url.searchParams.get('rp') || ''));
+  // `?para=whatsapp`: la misma imagen para el estado de WhatsApp.
+  return guard('en', url.pathname, () => storyPage(ctx.params.kind, ctx.params.id, 'en', url.searchParams.get('rp') || '', url.searchParams.get('para') || ''));
 };
 
 // HEAD igual que GET (el middleware quita el cuerpo).

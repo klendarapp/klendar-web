@@ -478,6 +478,7 @@ function guardaTraduccionLocal(encendida) {
 
 RUTAS.ajustes = async ([sub]) => {
   if (sub === 'notificaciones') return ajustesNotificaciones();
+  if (sub === 'calendario') return ajustesCalendario();
   if (!exigeSesion('ajustes')) return;
   // Traducción automática: la preferencia (en el perfil, como en la app) y si
   // hay proveedor (sin clave en el servidor, «Llega pronto»).
@@ -520,6 +521,7 @@ RUTAS.ajustes = async ([sub]) => {
 
     <div class="lista">
       ${fila({ href: '#/ajustes/notificaciones', icono: 'notifications', titulo: t('Notificaciones'), detalle: t('Qué te llega, cuándo y en el móvil') })}
+      ${filaSvg({ href: '#/ajustes/calendario', icono: 'calendario', titulo: t('Tus planes en tu calendario'), detalle: t('Google Calendar, Apple y otros, siempre al día') })}
     </div>
 
     <section class="bloque">

@@ -1170,4 +1170,8 @@ const I18N = makeI18N({
     "A todo color": "Full colour",
     "Hay cambios en esta publicación que todavía no has guardado.": "This publication has changes you haven't saved yet.",
     "Idea aplicada: repasa precio y hora": "Idea applied: check the price and time",
+    // Ayuda: preguntas frecuentes (tanda A, 2026-10-06)
+    "Preguntas frecuentes": "Frequently asked questions",
+    "Lo que más nos preguntan los negocios (y la gente), con buscador. Lo mismo que en la app, en «Mi negocio» → Ayuda.": "What businesses (and people) ask us most, with search. The same as in the app, in “My business” → Help.",
+    "Ver las preguntas frecuentes": "See the frequently asked questions",
 });

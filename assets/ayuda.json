@@ -1,0 +1,830 @@
+{
+ "version": "56468a30f32c",
+ "contact": "info@klendar.app",
+ "tabs": {
+  "es": {
+   "ti": "Para ti",
+   "negocios": "Para negocios"
+  },
+  "en": {
+   "ti": "For you",
+   "negocios": "For businesses"
+  }
+ },
+ "es": {
+  "ti": [
+   {
+    "id": "cuanto-cuesta",
+    "q": "¿Cuánto cuesta usar Klendar?",
+    "a": [
+     {
+      "t": "Para quien busca planes, nada. Para los negocios hay un solo plan, y ahora mismo es gratis mientras arrancamos; los detalles están en "
+     },
+     {
+      "t": "precios",
+      "u": "https://klendar.app/precios/"
+     },
+     {
+      "t": "."
+     }
+    ]
+   },
+   {
+    "id": "cuenta-para-mirar",
+    "q": "¿Hace falta cuenta para mirar?",
+    "a": [
+     {
+      "t": "No. Puedes ver ofertas y eventos sin crear una cuenta, en la app y en la web. La cuenta hace falta para canjear, guardar planes o recibir avisos."
+     }
+    ]
+   },
+   {
+    "id": "canjear",
+    "q": "¿Cómo se canjea una oferta?",
+    "a": [
+     {
+      "t": "Pulsas «Conseguir el código» y te sale un código QR de un solo uso. Se lo enseñas al negocio, que lo escanea o escribe el código. Ojo: algunos códigos caducan a los pocos minutos, así que se pide estando ya en el local."
+     }
+    ]
+   },
+   {
+    "id": "no-me-deja-canjear",
+    "q": "No me deja canjear una oferta",
+    "a": [
+     {
+      "t": "Comprueba que la oferta sigue activa (tiene una ventana horaria y un aforo), que has entrado en tu cuenta y que no has gastado los canjes por persona que permite el negocio."
+     }
+    ]
+   },
+   {
+    "id": "codigo-no-funciona",
+    "q": "Mi código no funciona",
+    "a": [
+     {
+      "t": "Suele ser una de tres: ya se usó, caducó (los de barra duran minutos) o es de otro negocio. En «Tus códigos» (en la app o en la web) ves el estado de cada uno. Si algo no cuadra, escríbenos con el código a "
+     },
+     {
+      "t": "info@klendar.app",
+      "u": "mailto:info@klendar.app"
+     },
+     {
+      "t": "."
+     }
+    ]
+   },
+   {
+    "id": "codigo-caducado",
+    "q": "El código QR ha caducado",
+    "a": [
+     {
+      "t": "Los códigos caducan al cabo de un rato (normalmente pocos minutos; lo elige cada negocio). Pulsa \"Generar otro código\" en la misma pantalla."
+     }
+    ]
+   },
+   {
+    "id": "reservar-plaza",
+    "q": "¿Puedo reservar una plaza en un evento?",
+    "a": [
+     {
+      "t": "Si el negocio lo activa, sí: reservas plaza desde la app o desde la web y enseñas tu código en la puerta. La reserva no es un pago; lo que cueste, si cuesta, se paga en el local."
+     }
+    ]
+   },
+   {
+    "id": "voy",
+    "q": "¿Para qué sirve «Voy»?",
+    "a": [
+     {
+      "t": "Para apuntarte a un plan sin código, como un concierto gratis o con entradas en otra web: lo guarda en Planes y, si compartes tus planes, lo ven tus amigos. En lo que tiene código o reserva no hay «Voy»: conseguir el código o reservar plaza ya cuenta."
+     }
+    ]
+   },
+   {
+    "id": "planes-en-el-calendario",
+    "q": "¿Puedo ver mis planes en el calendario del móvil?",
+    "a": [
+     {
+      "t": "Sí. En Cuenta → Ajustes → «Tus planes en tu calendario» (en la web, en «Tu cuenta» → Ajustes) elige Google Calendar, Apple / iPhone o copia el enlace para cualquier otro calendario. Salen los eventos a los que vas, tus reservas, los códigos con hora y las fechas que añaden las series que sigues, y se actualizan solos: si algo se anula, desaparece. Google puede tardar unas horas en mostrar los cambios. Quien tenga el enlace ve tus planes: si se te escapa, cámbialo desde ahí."
+     }
+    ]
+   },
+   {
+    "id": "dejar-de-seguir-serie",
+    "q": "Dejar de seguir una serie",
+    "a": [
+     {
+      "t": "En la ficha de cualquier fecha de la serie pulsa «Sigues la serie» → «Dejar de seguir», o en Cuenta → «Series que sigues». Para no recibir avisos de ninguna serie: Ajustes → Notificaciones → «Series que sigues»."
+     }
+    ]
+   },
+   {
+    "id": "compartir-historias-whatsapp",
+    "q": "¿Cómo comparto un plan en mis historias o en mi estado de WhatsApp?",
+    "a": [
+     {
+      "t": "En la ficha, pulsa Compartir y elige «Compartir en historias» o «Estado de WhatsApp»: es una imagen vertical con el diseño del plan y un QR que lleva a su ficha. En la web, en la ficha, «Compartir en historias» y allí «Estado de WhatsApp» la descarga para que la subas desde WhatsApp."
+     }
+    ]
+   },
+   {
+    "id": "por-que-veo-esto",
+    "q": "¿Por qué veo unas cosas y no otras?",
+    "a": [
+     {
+      "t": "Por cercanía, por lo que empieza pronto y por tus favoritos. Si un negocio paga por destacar una publicación, sale primero y siempre con la etiqueta «Destacado». Con «Según el tiempo» (encendido de serie, se apaga en Filtros), si hoy llueve sale primero lo de hoy bajo techo y, si hace buen tiempo, las terrazas y el aire libre; no quita nada. El resto del orden lo eliges tú en los filtros. Si cerca no hay nada, la app te sugiere cosas según tus últimas búsquedas y las categorías que más miras, que se guardan en tu móvil. No usamos datos de otras webs. En cada ficha hay un «¿Por qué ves esto?» que lo explica."
+     }
+    ]
+   },
+   {
+    "id": "notificaciones",
+    "q": "No recibo notificaciones",
+    "a": [
+     {
+      "t": "Revisa Cuenta → Ajustes → Notificaciones y los permisos de notificaciones del sistema. \"Cerca de ti\" solo avisa de ofertas flash dentro del radio elegido y como máximo 3 veces al día."
+     }
+    ]
+   },
+   {
+    "id": "no-puedo-entrar",
+    "q": "No puedo entrar en mi cuenta",
+    "a": [
+     {
+      "t": "En «Entrar», pulsa «¿Has olvidado la contraseña?» y te mandamos un enlace para crear una nueva, o elige «Entrar con un código por correo» y entra sin contraseña. Si creaste la cuenta con Google o con Apple, entra con ese mismo botón. Si ya no puedes abrir ese correo, escríbenos a "
+     },
+     {
+      "t": "info@klendar.app",
+      "u": "mailto:info@klendar.app"
+     },
+     {
+      "t": " desde otra dirección y dinos con qué correo creaste la cuenta."
+     }
+    ]
+   },
+   {
+    "id": "rrpp-que-ve",
+    "q": "Un RRPP me ha pasado su enlace: ¿qué ve de mí?",
+    "a": [
+     {
+      "t": "Tu nombre y tu foto, cuándo te apuntaste, qué oferta has conseguido y si has entrado y a qué hora. Nunca tu correo, tu teléfono ni tu fecha de nacimiento. Si no quieres estar en su lista, entra a la ficha del local sin su enlace."
+     }
+    ]
+   },
+   {
+    "id": "mis-datos",
+    "q": "¿Qué pasa con mis datos?",
+    "a": [
+     {
+      "t": "Lo contamos entero en la "
+     },
+     {
+      "t": "política de privacidad",
+      "u": "https://klendar.app/privacidad/"
+     },
+     {
+      "t": ". En resumen: se usan para que la app funcione, no se venden, y puedes descargarlos o borrar tu cuenta desde la app o desde «Tu cuenta» en la web."
+     }
+    ]
+   },
+   {
+    "id": "ubicacion",
+    "q": "¿Qué hacéis con mi ubicación?",
+    "a": [
+     {
+      "t": "Se usa para ordenar por cercanía y, si lo activas, para avisarte de ofertas cerca (con la última ubicación conocida, que se borra a los 7 días; no guardamos un historial). Nunca se comparte con otros usuarios, y los negocios solo ven cifras agregadas de distancia, sin saber de quién son."
+     }
+    ]
+   },
+   {
+    "id": "borrar-cuenta",
+    "q": "¿Cómo borro mi cuenta?",
+    "a": [
+     {
+      "t": "Desde Cuenta → Ajustes → Eliminar mi cuenta, en la app o en «Tu cuenta» de la web. Se borra todo lo tuyo. También puedes pedirlo por correo: "
+     },
+     {
+      "t": "cómo hacerlo",
+      "u": "https://klendar.app/eliminar-cuenta/"
+     },
+     {
+      "t": "."
+     }
+    ]
+   },
+   {
+    "id": "algo-que-no-deberia",
+    "q": "Vi algo que no debería estar ahí",
+    "a": [
+     {
+      "t": "En cada ficha, en la app y en la web, hay un botón para denunciar, y no hace falta tener cuenta: también puedes usar "
+     },
+     {
+      "t": "el formulario de denuncias",
+      "u": "https://klendar.app/app/#/denunciar"
+     },
+     {
+      "t": ". Lo revisamos y, si hay que retirarlo, se retira con un motivo y el negocio puede recurrir."
+     }
+    ]
+   },
+   {
+    "id": "contenido-ilegal",
+    "q": "Denunciar contenido ilegal",
+    "a": [
+     {
+      "t": "Si ves algo ilegal o que incumple las "
+     },
+     {
+      "t": "Normas de la comunidad",
+      "u": "https://klendar.app/normas/"
+     },
+     {
+      "t": ", pulsa «Denunciar» en ese negocio, publicación, reseña o novedad, o usa el "
+     },
+     {
+      "t": "formulario de denuncias",
+      "u": "https://klendar.app/app/#/denunciar"
+     },
+     {
+      "t": " (también en el pie de cada página: «Denunciar contenido ilegal»). No hace falta tener cuenta. Te confirmamos que la hemos recibido y te contamos qué hemos decidido y por qué. Si alguien está en peligro ahora mismo, llama al 112."
+     }
+    ]
+   },
+   {
+    "id": "oferta-no-respetada",
+    "q": "Un negocio no ha respetado su oferta",
+    "a": [
+     {
+      "t": "Denúncialo desde su ficha (icono de bandera) con el motivo \"La oferta no es como se anuncia\". Lo revisamos y, si se repite, el negocio queda suspendido."
+     }
+    ]
+   },
+   {
+    "id": "ciudades",
+    "q": "¿En qué ciudades está?",
+    "a": [
+     {
+      "t": "Estamos empezando. Si en la tuya todavía no hay nada, en "
+     },
+     {
+      "t": "la agenda",
+      "u": "https://klendar.app/agenda/"
+     },
+     {
+      "t": " lo verás vacío: escríbenos y lo arrancamos."
+     }
+    ]
+   }
+  ],
+  "negocios": [
+   {
+    "id": "alta-negocio",
+    "q": "Soy un negocio, ¿cómo me doy de alta?",
+    "a": [
+     {
+      "t": "Desde la app (Cuenta → ¿Quieres registrar tu negocio?) o desde el "
+     },
+     {
+      "t": "panel web",
+      "u": "https://klendar.app/panel/"
+     },
+     {
+      "t": "; hace falta la ubicación exacta del local. Lo revisamos y te verificamos, normalmente en 24-48 horas. Luego puedes publicar desde el móvil o desde el ordenador."
+     }
+    ]
+   },
+   {
+    "id": "precio-negocio",
+    "q": "¿Cuánto me cuesta?",
+    "a": [
+     {
+      "t": "Lo pruebas gratis: 30 días con todo al darte de alta, sin tarjeta, y gratis mientras arrancamos en tu ciudad. Después, un solo plan de 19,90 € al mes sin límites, sin permanencia y sin comisión por canje. "
+     },
+     {
+      "t": "Ver precios",
+      "u": "https://klendar.app/precios/"
+     },
+     {
+      "t": "."
+     }
+    ]
+   },
+   {
+    "id": "comision",
+    "q": "¿Klendar se lleva una comisión de lo que vendo?",
+    "a": [
+     {
+      "t": "No. Lo que cobras en tu local es tuyo entero; Klendar no toca el dinero."
+     }
+    ]
+   },
+   {
+    "id": "publicar",
+    "q": "¿Cómo publico una oferta o un evento?",
+    "a": [
+     {
+      "t": "Desde la app (Mi negocio → Publicaciones) o desde el "
+     },
+     {
+      "t": "panel del ordenador",
+      "u": "https://klendar.app/panel/"
+     },
+     {
+      "t": ": una oferta flash, con cuenta atrás y aforo, o un evento con fecha. Al crear una en blanco tienes «Ideas» de tu gremio para empezar, y puedes guardar las tuyas como plantillas."
+     }
+    ]
+   },
+   {
+    "id": "repetir-cada-semana",
+    "q": "¿Puedo repetir una oferta o un evento cada semana?",
+    "a": [
+     {
+      "t": "Sí: «Repetir cada semana» (en «Series y repeticiones»). Las ofertas flash salen solas a su hora y los eventos, cada fecha, una semana antes. Cada repetición es una serie que la gente puede seguir; si la quitas, se termina y se avisa a quien la sigue."
+     }
+    ]
+   },
+   {
+    "id": "validar-codigos",
+    "q": "¿Cómo valido un código?",
+    "a": [
+     {
+      "t": "En «Validar códigos», con la cámara del móvil o escribiendo el código (también en el panel web, con la cámara del ordenador). El aforo baja solo."
+     }
+    ]
+   },
+   {
+    "id": "equipo",
+    "q": "¿Puede mi equipo validar códigos?",
+    "a": [
+     {
+      "t": "Sí. En «Equipo» invitas a quien esté en barra: como empleado valida códigos sin acceso a lo demás; como encargado también publica y gestiona. Cada persona acepta la invitación desde su cuenta."
+     }
+    ]
+   },
+   {
+    "id": "cifras",
+    "q": "¿Cómo sé qué ha funcionado?",
+    "a": [
+     {
+      "t": "Cada publicación tiene sus «Cifras» (vistas, códigos y canjes) y el negocio, su «Informe», exportable para tu gestor. Si alguien comparte tu publicación en sus historias o en su estado de WhatsApp, verás cuántas visitas llegan desde ahí."
+     }
+    ]
+   },
+   {
+    "id": "orden",
+    "q": "¿Puedo salir el primero si pago más?",
+    "a": [
+     {
+      "t": "No vendemos tus datos ni los de tus clientes, no cobramos por canje y no ponemos tu oferta por delante de otra porque pagues más: en la app el orden lo elige la persona (cerca de ti, empieza antes o nuevas). Se pueden destacar publicaciones, y cuando pasa se dice."
+     }
+    ]
+   },
+   {
+    "id": "permanencia",
+    "q": "¿Hay permanencia?",
+    "a": [
+     {
+      "t": "No. Lo dejas cuando quieras."
+     }
+    ]
+   },
+   {
+    "id": "kit",
+    "q": "¿Tenéis algo para poner en el local?",
+    "a": [
+     {
+      "t": "Sí: una "
+     },
+     {
+      "t": "guía de 1 página (PDF)",
+      "u": "https://klendar.app/assets/kit/klendar-guia-negocios.pdf"
+     },
+     {
+      "t": " y un "
+     },
+     {
+      "t": "cartel con QR (PDF)",
+      "u": "https://klendar.app/assets/kit/klendar-cartel.pdf"
+     },
+     {
+      "t": ". Lo legal, en las "
+     },
+     {
+      "t": "condiciones para negocios",
+      "u": "https://klendar.app/negocios/"
+     },
+     {
+      "t": "."
+     }
+    ]
+   }
+  ]
+ },
+ "en": {
+  "ti": [
+   {
+    "id": "cuanto-cuesta",
+    "q": "How much does Klendar cost?",
+    "a": [
+     {
+      "t": "For people looking for plans, nothing. For businesses there is a single plan, and right now it's free while we're launching; the details are in "
+     },
+     {
+      "t": "pricing",
+      "u": "https://klendar.app/en/pricing/"
+     },
+     {
+      "t": "."
+     }
+    ]
+   },
+   {
+    "id": "cuenta-para-mirar",
+    "q": "Do I need an account to look?",
+    "a": [
+     {
+      "t": "No. You can see deals and events without signing up, both in the app and on the web. An account is needed to redeem, save plans or get alerts."
+     }
+    ]
+   },
+   {
+    "id": "canjear",
+    "q": "How do I redeem a deal?",
+    "a": [
+     {
+      "t": "Tap “Get the code” and you get a single-use QR code. Show it to the business, and they scan it or type in the code. Careful: some codes expire within minutes, so get it once you're at the venue."
+     }
+    ]
+   },
+   {
+    "id": "no-me-deja-canjear",
+    "q": "I can't redeem a deal",
+    "a": [
+     {
+      "t": "Check that the deal is still active (it has a time window and a capacity), that you're logged in and that you haven't used up the redemptions per person the business allows."
+     }
+    ]
+   },
+   {
+    "id": "codigo-no-funciona",
+    "q": "My code doesn't work",
+    "a": [
+     {
+      "t": "Usually one of three things: it's already been used, it's expired (codes at a bar last minutes) or it belongs to another business. In “Your codes” (in the app or on the web) you can see the status of each one. If something is off, email us the code at "
+     },
+     {
+      "t": "info@klendar.app",
+      "u": "mailto:info@klendar.app"
+     },
+     {
+      "t": "."
+     }
+    ]
+   },
+   {
+    "id": "codigo-caducado",
+    "q": "The QR code has expired",
+    "a": [
+     {
+      "t": "Codes expire after a while (usually a few minutes; each business chooses). Tap “Generate a new code” on the same screen."
+     }
+    ]
+   },
+   {
+    "id": "reservar-plaza",
+    "q": "Can I reserve a place at an event?",
+    "a": [
+     {
+      "t": "If the business turns it on, yes: you reserve a place from the app or the website and show your code at the door. Reserving isn't a payment; whatever it costs, if anything, is paid at the venue."
+     }
+    ]
+   },
+   {
+    "id": "voy",
+    "q": "What is “I'm going” for?",
+    "a": [
+     {
+      "t": "To sign up for a plan without a code, like a free gig or one with tickets on another site: it saves it in Plans and, if you share your plans, your friends see it. Things with a code or a reservation don't have “I'm going”: getting the code or reserving a place already counts."
+     }
+    ]
+   },
+   {
+    "id": "planes-en-el-calendario",
+    "q": "Can I see my plans in my phone's calendar?",
+    "a": [
+     {
+      "t": "Yes. In Account → Settings → “Your plans in your calendar” (on the web, in “Your account” → Settings) choose Google Calendar, Apple / iPhone or copy the link for any other calendar. It shows the events you're going to, your reservations, codes with a time and the dates added by the series you follow, and it updates itself: if something is cancelled, it disappears. Google can take a few hours to show changes. Anyone with the link can see your plans: if it gets out, change it there."
+     }
+    ]
+   },
+   {
+    "id": "dejar-de-seguir-serie",
+    "q": "Unfollowing a series",
+    "a": [
+     {
+      "t": "On the page of any date in the series tap “You're following the series” → “Unfollow”, or go to Account → “Series you follow”. To stop notifications for all series: Settings → Notifications → “Series you follow”."
+     }
+    ]
+   },
+   {
+    "id": "compartir-historias-whatsapp",
+    "q": "How do I share a plan in my stories or my WhatsApp status?",
+    "a": [
+     {
+      "t": "On the page, tap Share and choose “Share to stories” or “WhatsApp status”: it's a vertical image with the plan's design and a QR code that leads to its page. On the web, on the page, “Share to stories” and then “WhatsApp status” downloads it so you can post it from WhatsApp."
+     }
+    ]
+   },
+   {
+    "id": "por-que-veo-esto",
+    "q": "Why do I see some things and not others?",
+    "a": [
+     {
+      "t": "Because of how close they are, what starts soon and your favourites. If a business pays to feature a publication, it comes first and always carries the “Featured” label. With “Based on the weather” (on by default, turn it off in Filters), if it's raining today indoor plans for today come first and, if the weather is nice, terraces and outdoor plans; nothing is removed. You choose the rest of the order in the filters. If there's nothing nearby, the app suggests things based on your recent searches and the categories you look at most, which are stored on your phone. We don't use data from other sites. Each publication has a “Why are you seeing this?” that explains it."
+     }
+    ]
+   },
+   {
+    "id": "notificaciones",
+    "q": "I don't get notifications",
+    "a": [
+     {
+      "t": "Check Account → Settings → Notifications and the system notification permission. “Nearby” only alerts you about flash offers within your chosen radius, at most 3 times a day."
+     }
+    ]
+   },
+   {
+    "id": "no-puedo-entrar",
+    "q": "I can't log in to my account",
+    "a": [
+     {
+      "t": "On “Log in”, tap “Forgot your password?” and we'll send you a link to create a new one, or choose “Log in with an email code” and get in without a password. If you created the account with Google or Apple, log in with that same button. If you can no longer open that email, write to "
+     },
+     {
+      "t": "info@klendar.app",
+      "u": "mailto:info@klendar.app"
+     },
+     {
+      "t": " from another address and tell us which email you signed up with."
+     }
+    ]
+   },
+   {
+    "id": "rrpp-que-ve",
+    "q": "A promoter gave me their link: what do they see about me?",
+    "a": [
+     {
+      "t": "Your name and photo, when you signed up, which offer you got and whether and when you got in. Never your email, phone number or date of birth. If you don't want to be on their list, open the venue's page without their link."
+     }
+    ]
+   },
+   {
+    "id": "mis-datos",
+    "q": "What happens to my data?",
+    "a": [
+     {
+      "t": "It's all in the "
+     },
+     {
+      "t": "privacy policy",
+      "u": "https://klendar.app/en/privacy/"
+     },
+     {
+      "t": ". In short: it's used to make the app work, it's never sold, and you can download it or delete your account from the app or from “Your account” on the website."
+     }
+    ]
+   },
+   {
+    "id": "ubicacion",
+    "q": "What do you do with my location?",
+    "a": [
+     {
+      "t": "It's used to sort by distance and, if you turn it on, to alert you about deals nearby (with your last known location, which is deleted after 7 days; we don't keep a history). It's never shared with other users, and businesses only see aggregated distance figures, without knowing whose they are."
+     }
+    ]
+   },
+   {
+    "id": "borrar-cuenta",
+    "q": "How do I delete my account?",
+    "a": [
+     {
+      "t": "From Account → Settings → Delete my account, in the app or in “Your account” on the website. Everything of yours is deleted. You can also ask by email: "
+     },
+     {
+      "t": "how to do it",
+      "u": "https://klendar.app/en/delete-account/"
+     },
+     {
+      "t": "."
+     }
+    ]
+   },
+   {
+    "id": "algo-que-no-deberia",
+    "q": "I saw something that shouldn't be there",
+    "a": [
+     {
+      "t": "On every publication, in the app and on the website, there's a button to report it, and you don't need an account: you can also use "
+     },
+     {
+      "t": "the report form",
+      "u": "https://klendar.app/app/?lang=en#/denunciar"
+     },
+     {
+      "t": ". We review it and, if it has to come down, it comes down with a reason and the business can appeal."
+     }
+    ]
+   },
+   {
+    "id": "contenido-ilegal",
+    "q": "Report illegal content",
+    "a": [
+     {
+      "t": "If you see something illegal or that breaks the "
+     },
+     {
+      "t": "Community guidelines",
+      "u": "https://klendar.app/en/community-guidelines/"
+     },
+     {
+      "t": ", tap “Report” on that business, publication, review or news post, or use the "
+     },
+     {
+      "t": "report form",
+      "u": "https://klendar.app/app/?lang=en#/denunciar"
+     },
+     {
+      "t": " (also in the footer of every page: “Report illegal content”). You don't need an account. We'll confirm we've received it and tell you what we've decided and why. If someone is in danger right now, call 112."
+     }
+    ]
+   },
+   {
+    "id": "oferta-no-respetada",
+    "q": "A business didn't honour its deal",
+    "a": [
+     {
+      "t": "Report it from its profile (flag icon) with the reason “The offer isn't as advertised”. We review it and, if it happens again, the business is suspended."
+     }
+    ]
+   },
+   {
+    "id": "ciudades",
+    "q": "Which cities is it in?",
+    "a": [
+     {
+      "t": "We're just getting started. If nothing is happening in yours yet, "
+     },
+     {
+      "t": "what's on",
+      "u": "https://klendar.app/en/whats-on/"
+     },
+     {
+      "t": " will look empty: email us and we'll get it going."
+     }
+    ]
+   }
+  ],
+  "negocios": [
+   {
+    "id": "alta-negocio",
+    "q": "I run a business. How do I register?",
+    "a": [
+     {
+      "t": "From the app (Account → Want to register your business?) or from the "
+     },
+     {
+      "t": "web dashboard",
+      "u": "https://klendar.app/panel/"
+     },
+     {
+      "t": "; it needs the venue’s exact location. We review and verify it, usually within 24–48 hours. After that you can publish from your phone or from a computer."
+     }
+    ]
+   },
+   {
+    "id": "precio-negocio",
+    "q": "How much does it cost me?",
+    "a": [
+     {
+      "t": "You try it free: 30 days with everything when you register, no card, and free while we're launching in your city. After that, one plan at €19.90 a month with no limits, no lock-in and no commission per redemption. "
+     },
+     {
+      "t": "See pricing",
+      "u": "https://klendar.app/en/pricing/"
+     },
+     {
+      "t": "."
+     }
+    ]
+   },
+   {
+    "id": "comision",
+    "q": "Does Klendar take a commission on what I sell?",
+    "a": [
+     {
+      "t": "No. What you charge at your venue is yours; Klendar never touches the money."
+     }
+    ]
+   },
+   {
+    "id": "publicar",
+    "q": "How do I publish a deal or an event?",
+    "a": [
+     {
+      "t": "From the app (My business → Publications) or from the "
+     },
+     {
+      "t": "dashboard on a computer",
+      "u": "https://klendar.app/panel/"
+     },
+     {
+      "t": ": a flash offer, with a countdown and a capacity, or an event with a date. When you create one from scratch you get “Ideas” from your trade to start with, and you can save your own as templates."
+     }
+    ]
+   },
+   {
+    "id": "repetir-cada-semana",
+    "q": "Can I repeat a deal or an event every week?",
+    "a": [
+     {
+      "t": "Yes: “Repeat every week” (in “Series and repeats”). Flash offers go out on their own at their time and events, each date, a week before. Each repeat is a series people can follow; if you remove it, it ends and its followers are told."
+     }
+    ]
+   },
+   {
+    "id": "validar-codigos",
+    "q": "How do I validate a code?",
+    "a": [
+     {
+      "t": "In “Validate codes”, with your phone's camera or by typing the code (also on the web dashboard, with your computer's camera). The capacity updates automatically."
+     }
+    ]
+   },
+   {
+    "id": "equipo",
+    "q": "Can my team validate codes?",
+    "a": [
+     {
+      "t": "Yes. In “Team” you invite whoever is behind the bar: as staff they validate codes without access to anything else; as a manager they can also publish and manage. Each person accepts the invitation from their own account."
+     }
+    ]
+   },
+   {
+    "id": "cifras",
+    "q": "How do I know what worked?",
+    "a": [
+     {
+      "t": "Each publication has its “Stats” (views, codes and redemptions) and the business has its “Report”, which you can export for your accountant. If someone shares your publication in their stories or WhatsApp status, you'll see how many visits come from there."
+     }
+    ]
+   },
+   {
+    "id": "orden",
+    "q": "Can I come first if I pay more?",
+    "a": [
+     {
+      "t": "We don't sell your data or your customers' data, we don't charge per redemption and we don't put your offer ahead of another because you pay more: in the app people choose the order (near you, starting soonest or newest). Publications can be featured, and when that happens it says so."
+     }
+    ]
+   },
+   {
+    "id": "permanencia",
+    "q": "Is there a lock-in?",
+    "a": [
+     {
+      "t": "No. Leave whenever you like."
+     }
+    ]
+   },
+   {
+    "id": "kit",
+    "q": "Do you have anything to put up at the venue?",
+    "a": [
+     {
+      "t": "Yes: a "
+     },
+     {
+      "t": "1-page guide (PDF)",
+      "u": "https://klendar.app/assets/kit/klendar-guia-negocios.pdf"
+     },
+     {
+      "t": " and a "
+     },
+     {
+      "t": "poster with a QR code (PDF)",
+      "u": "https://klendar.app/assets/kit/klendar-cartel.pdf"
+     },
+     {
+      "t": ". The legal side is in the "
+     },
+     {
+      "t": "business terms",
+      "u": "https://klendar.app/en/business-terms/"
+     },
+     {
+      "t": "."
+     }
+    ]
+   }
+  ]
+ }
+}

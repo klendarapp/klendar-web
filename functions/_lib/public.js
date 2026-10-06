@@ -297,18 +297,19 @@ ${conAmigos ? `<script src="/assets/amigos.js?v=15" defer data-lang="${en ? 'en'
 }
 
 /**
- * «Compartir en historias»: quien llega desde la imagen (`?ref=stories`)
+ * «Compartir en historias» y «Estado de WhatsApp»: quien llega desde la
+ * imagen (`?ref=stories` o `?ref=whatsapp`)
  * cuenta para el negocio (`log_ref_visit`, una vez por persona cada 30 min) y
  * el origen se quita de la dirección, para que si vuelve a compartir el
  * enlace no se cuente como historia. Sin cookies ni nada guardado.
  */
 function desdeHistorias() {
   const sp = supabasePublic();
-  return `<script>(function(){try{var q=new URLSearchParams(location.search);if(q.get('ref')!=='stories'||navigator.webdriver)return;
+  return `<script>(function(){try{var q=new URLSearchParams(location.search);var ref=q.get('ref');if((ref!=='stories'&&ref!=='whatsapp')||navigator.webdriver)return;
 var p=location.pathname.split('/').filter(Boolean);if(p[0]==='en')p.shift();
 var k={o:'offer',b:'business',coleccion:'collection',collection:'collection'}[p[0]];if(!k||!p[1])return;
 var key=${JSON.stringify(sp.key)};
-fetch(${JSON.stringify(sp.url + '/rest/v1/rpc/log_ref_visit')},{method:'POST',keepalive:true,headers:{apikey:key,Authorization:'Bearer '+key,'Content-Type':'application/json'},body:JSON.stringify({p_ref:'stories',p_kind:k,p_target:decodeURIComponent(p[1])})}).catch(function(){});
+fetch(${JSON.stringify(sp.url + '/rest/v1/rpc/log_ref_visit')},{method:'POST',keepalive:true,headers:{apikey:key,Authorization:'Bearer '+key,'Content-Type':'application/json'},body:JSON.stringify({p_ref:ref,p_kind:k,p_target:decodeURIComponent(p[1])})}).catch(function(){});
 q.delete('ref');var r=q.toString();history.replaceState(history.state,'',location.pathname+(r?'?'+r:'')+location.hash);}catch(e){}})();</script>`;
 }
 

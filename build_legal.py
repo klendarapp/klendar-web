@@ -10,6 +10,7 @@ import html, io, os, re, sys
 from types import SimpleNamespace
 
 from build_site import head, footer, T, ALT
+from ayuda import soporte_html
 
 # ════════════════════════════════════════════════════════════════════════════
 # DATOS DEL TITULAR — el único sitio que se toca cuando cambia quién está
@@ -1148,24 +1149,7 @@ def textos(D, resaltar=False):
 <h2>Contacto</h2>
 <p>Escríbenos a <a href="mailto:{E}">{E}</a>. Respondemos en un máximo de 2 días laborables.</p>
 <h2>Preguntas frecuentes</h2>
-<h3>No me deja canjear una oferta</h3>
-<p>Comprueba que la oferta sigue activa (tiene una ventana horaria y un aforo), que has entrado en tu cuenta y que no has gastado los canjes por persona que permite el negocio.</p>
-<h3>El código QR ha caducado</h3>
-<p>Los códigos caducan al cabo de un rato (normalmente pocos minutos; lo elige cada negocio). Pulsa "Generar otro código" en la misma pantalla.</p>
-<h3>Un negocio no ha respetado su oferta</h3>
-<p>Denúncialo desde su ficha (icono de bandera) con el motivo "La oferta no es como se anuncia". Lo revisamos y, si se repite, el negocio queda suspendido.</p>
-<h3>Denunciar contenido ilegal</h3>
-<p>Si ves algo ilegal o que incumple las <a href="/normas/">Normas de la comunidad</a>, pulsa «Denunciar» en ese negocio, publicación, reseña o novedad, o usa el <a href="/app/#/denunciar">formulario de denuncias</a> (también en el pie de cada página: «Denunciar contenido ilegal»). No hace falta tener cuenta. Te confirmamos que la hemos recibido y te contamos qué hemos decidido y por qué. Si alguien está en peligro ahora mismo, llama al 112.</p>
-<h3>No recibo notificaciones</h3>
-<p>Revisa Cuenta → Ajustes → Notificaciones y los permisos de notificaciones del sistema. "Cerca de ti" solo avisa de ofertas flash dentro del radio elegido y como máximo 3 veces al día.</p>
-<h3>No puedo entrar en mi cuenta</h3>
-<p>En «Entrar», pulsa «¿Has olvidado la contraseña?» y te mandamos un enlace para crear una nueva, o elige «Entrar con un código por correo» y entra sin contraseña. Si creaste la cuenta con Google o con Apple, entra con ese mismo botón. Si ya no puedes abrir ese correo, escríbenos a <a href="mailto:{E}">{E}</a> desde otra dirección y dinos con qué correo creaste la cuenta.</p>
-<h3>Un RRPP me ha pasado su enlace: ¿qué ve de mí?</h3>
-<p>Tu nombre y tu foto, cuándo te apuntaste, qué oferta has conseguido y si has entrado y a qué hora. Nunca tu correo, tu teléfono ni tu fecha de nacimiento. Si no quieres estar en su lista, entra a la ficha del local sin su enlace.</p>
-<h3>Dejar de seguir una serie</h3>
-<p>En la ficha de cualquier fecha de la serie pulsa «Sigues la serie» → «Dejar de seguir», o en Cuenta → «Series que sigues». Para no recibir avisos de ninguna serie: Ajustes → Notificaciones → «Series que sigues».</p>
-<h3>Soy un negocio y quiero darme de alta</h3>
-<p>En la app: Cuenta → «¿Quieres registrar tu negocio?», o en la web desde el <a href="/panel/">panel</a>. Lo revisamos en 24-48 h. También puedes escribirnos.</p>
+{soporte_html('es', E)}
 ''')
     return ES, EN
 

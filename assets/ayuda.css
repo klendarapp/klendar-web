@@ -1,0 +1,22 @@
+/* Centro de ayuda (/preguntas/, /en/faq/): pestañas «Para ti» / «Para
+   negocios» y buscador. Sin JavaScript se ven las dos listas seguidas, con
+   su título, y sin buscador. Sobrio: neutros, la pestaña elegida en tinta. */
+.ayuda-buscar { display: block; margin: 18px 0 12px; }
+.ayuda-buscar input { width: 100%; box-sizing: border-box; padding: 12px 16px; border-radius: 999px;
+  border: 1px solid var(--glass-border); background: var(--elevated); color: var(--ink); font: inherit; font-size: 16px; }
+.ayuda-buscar input:focus { outline: 2px solid var(--ink); outline-offset: 1px; }
+.ayuda-pestanas { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; margin: 0 0 6px;
+  border-radius: 999px; background: var(--glass); border: 1px solid var(--glass-border); }
+.ayuda-pestanas button { appearance: none; border: 0; border-radius: 999px; padding: 10px 12px; min-height: 44px;
+  background: transparent; color: var(--ink-2); font: inherit; font-weight: 700; cursor: pointer; }
+.ayuda-pestanas button[aria-selected="true"] { background: var(--ink); color: var(--surface); }
+.ayuda-pestanas button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.ayuda.js .ayuda-titulo { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.ayuda-estado { margin: 10px 0 0; color: var(--ink-2); }
+.ayuda-estado:empty { display: none; }
+.ayuda-otra { margin: 12px 0 0; }
+.ayuda-escribenos { margin-top: 34px; padding-top: 22px; border-top: 1px solid var(--glass-border); text-align: center; }
+.ayuda-escribenos h2 { margin: 0 0 6px; }
+.ayuda-escribenos p { margin: 0 0 14px; color: var(--ink-2); }
+.ayuda-escribenos .note { margin: 14px 0 0; }
+.ayuda mark { background: var(--accent-soft); color: inherit; border-radius: 3px; }
