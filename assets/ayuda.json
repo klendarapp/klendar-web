@@ -1,5 +1,5 @@
 {
- "version": "accf85cc96c5",
+ "version": "0883fd966db7",
  "contact": "info@klendar.app",
  "tabs": {
   "es": {
@@ -131,7 +131,25 @@
     "q": "¿Por qué veo unas cosas y no otras?",
     "a": [
      {
-      "t": "Por cercanía, por lo que empieza pronto y por tus favoritos. Si un negocio paga por destacar una publicación, sale primero y siempre con la etiqueta «Destacado». Con «Según el tiempo» (encendido de serie, se apaga en Filtros), si hoy llueve sale primero lo de hoy bajo techo y, si hace buen tiempo, las terrazas y el aire libre; no quita nada. El resto del orden lo eliges tú en los filtros. Si cerca no hay nada, la app te sugiere cosas según tus últimas búsquedas y las categorías que más miras, que se guardan en tu móvil. No usamos datos de otras webs. En cada ficha hay un «¿Por qué ves esto?» que lo explica."
+      "t": "Por cercanía, por lo que empieza pronto y por tus favoritos. Si un negocio paga por destacar una publicación, sale primero y siempre con la etiqueta «Destacado». Con «Según el tiempo» (encendido de serie, se apaga en el menú de orden, junto a Filtros), si hoy llueve sale primero lo de hoy bajo techo y, si hace buen tiempo, las terrazas y el aire libre; no quita nada. Si eliges tus gustos (Ajustes → Lo que ves), lo de esas categorías sale antes, sin esconder lo demás. El resto del orden lo eliges tú en los filtros. Si cerca no hay nada, la app te sugiere cosas según tus últimas búsquedas y las categorías que más miras, que se guardan en tu móvil. No usamos datos de otras webs. En cada ficha hay un «¿Por qué ves esto?» que lo explica."
+     }
+    ]
+   },
+   {
+    "id": "antes-de-cerrar",
+    "q": "¿Qué es «Antes de cerrar»?",
+    "a": [
+     {
+      "t": "Lo que sobra del día en panaderías, cafeterías y restaurantes, con descuento (por ejemplo, una bolsa sorpresa). Consigues el código en Klendar, vas antes de la hora que pone y lo pagas en el local. Para ver solo eso, toca «Antes de cerrar» junto a Filtros."
+     }
+    ]
+   },
+   {
+    "id": "carne",
+    "q": "Me pide carné de estudiante, carné joven o ser mayor de 65",
+    "a": [
+     {
+      "t": "Algunas ofertas son solo para quien lo enseñe: lo verás en la ficha y al conseguir el código. Enséñalo en el local al canjear; lo comprueba el negocio, no Klendar. Para ver solo esas, en Filtros → Más filtros → «Descuentos para»."
      }
     ]
    },
@@ -370,6 +388,33 @@
     ]
    },
    {
+    "id": "cuanto-te-ha-traido",
+    "q": "¿Qué es «Cuánto te ha traído Klendar»?",
+    "a": [
+     {
+      "t": "Lo que ha gastado en tu local la gente que vino con Klendar, en el Informe. Al validar un código puedes apuntar el importe del ticket (opcional); también en «Últimos validados» durante 24 horas. Si no lo apuntas, contamos el precio de la oferta por las plazas: por eso dice «al menos»."
+     }
+    ]
+   },
+   {
+    "id": "hay-sitio",
+    "q": "¿Cómo funciona «¿Hay sitio ahora?»?",
+    "a": [
+     {
+      "t": "Actívalo en tu ficha, en «Cómo es tu local». Luego cualquiera de tu equipo marca desde Mi negocio, con un toque, cómo está el local: Tranquilo, Animado o Lleno. Sale en tu ficha y en el mapa mientras estás abierto y se quita solo a las 2 horas."
+     }
+    ]
+   },
+   {
+    "id": "antes-de-cerrar-negocio",
+    "q": "¿Cómo publico lo que me sobra del día?",
+    "a": [
+     {
+      "t": "Con «Antes de cerrar», en Mi negocio (panaderías, cafeterías, restaurantes y parecidos): se publica en dos toques con lo de la última vez, hasta la hora de cierre, y se paga en tu local. Puedes pedir que te lo recordemos cada día."
+     }
+    ]
+   },
+   {
     "id": "orden",
     "q": "¿Puedo salir el primero si pago más?",
     "a": [
@@ -539,7 +584,25 @@
     "q": "Why do I see some things and not others?",
     "a": [
      {
-      "t": "Because of how close they are, what starts soon and your favourites. If a business pays to feature a publication, it comes first and always carries the “Featured” label. With “Based on the weather” (on by default, turn it off in Filters), if it's raining today indoor plans for today come first and, if the weather is nice, terraces and outdoor plans; nothing is removed. You choose the rest of the order in the filters. If there's nothing nearby, the app suggests things based on your recent searches and the categories you look at most, which are stored on your phone. We don't use data from other sites. Each publication has a “Why are you seeing this?” that explains it."
+      "t": "Because of how close they are, what starts soon and your favourites. If a business pays to feature a publication, it comes first and always carries the “Featured” label. With “Based on the weather” (on by default, turn it off in the sort menu, next to Filters), if it's raining today indoor plans for today come first and, if the weather is nice, terraces and outdoor plans; nothing is removed. If you choose your interests (Settings → What you see), those categories come first, without hiding anything else. You choose the rest of the order in the filters. If there's nothing nearby, the app suggests things based on your recent searches and the categories you look at most, which are stored on your phone. We don't use data from other sites. Each publication has a “Why are you seeing this?” that explains it."
+     }
+    ]
+   },
+   {
+    "id": "antes-de-cerrar",
+    "q": "What is “Before closing”?",
+    "a": [
+     {
+      "t": "What's left over at the end of the day in bakeries, cafés and restaurants, at a discount (a surprise bag, for example). You get the code on Klendar, go before the time shown and pay at the venue. To see only these, tap “Before closing” next to Filters."
+     }
+    ]
+   },
+   {
+    "id": "carne",
+    "q": "It asks for a student card, a youth card or being over 65",
+    "a": [
+     {
+      "t": "Some offers are only for people who show it: you'll see it on the page and when you get the code. Show it at the venue when you redeem; the business checks it, not Klendar. To see only those, go to Filters → More filters → “Discounts for”."
      }
     ]
    },
@@ -774,6 +837,33 @@
     "a": [
      {
       "t": "Each publication has its “Stats” (views, codes and redemptions) and the business has its “Report”, which you can export for your accountant. If someone shares your publication in their stories or WhatsApp status, you'll see how many visits come from there."
+     }
+    ]
+   },
+   {
+    "id": "cuanto-te-ha-traido",
+    "q": "What is “What Klendar has brought you”?",
+    "a": [
+     {
+      "t": "What people who came with Klendar spent at your place, in the Report. When you validate a code you can enter the receipt total (optional); also in “Recently validated” for 24 hours. If you don't, we count the offer's price times the places: that's why it says “at least”."
+     }
+    ]
+   },
+   {
+    "id": "hay-sitio",
+    "q": "How does “Room right now?” work?",
+    "a": [
+     {
+      "t": "Turn it on in your business page, in “About your place”. Then anyone on your team marks how busy it is from My business with one tap: Quiet, Lively or Full. It shows on your page and on the map while you're open and clears itself after 2 hours."
+     }
+    ]
+   },
+   {
+    "id": "antes-de-cerrar-negocio",
+    "q": "How do I post what's left over at the end of the day?",
+    "a": [
+     {
+      "t": "With “Before closing”, in My business (bakeries, cafés, restaurants and similar): it's published in two taps with last time's details, until closing time, and paid at your place. You can ask us to remind you every day."
      }
     ]
    },
