@@ -356,7 +356,9 @@ export async function offerPage(id, lang, rpRaw = '') {
         const voy = (clase) => `<a class="${clase}" id="voy" href="${cuenta(lang)}#/voy/${id}" rel="nofollow">${icono('voy', 16)} <span>${S.going}</span></a>`;
         const principal = soldOut ? `<a class="pill accent big" href="${cuenta(lang)}#/espera/${id}">${S.wait}</a>`
           : noEmpezada ? `<span class="pill accent big" aria-disabled="true" style="opacity:.55">${S.notYet}</span>`
-          : flash ? `<a class="pill accent big" href="${cuenta(lang)}#/codigo/${id}${rpQ}">${S.code}</a>`
+          // Si deja coger varias plazas, «¿Para cuántos?» antes (`#/reservar`,
+          // que con una sola va directa al código), como la app.
+          : flash ? `<a class="pill accent big" href="${cuenta(lang)}#/${(o.max_seats || 1) > 1 ? 'reservar' : 'codigo'}/${id}${rpQ}">${S.code}</a>`
             : o.reservations_enabled ? `<a class="pill accent big" href="${cuenta(lang)}#/reservar/${id}${rpQ}">${S.reserve}</a>`
               : entradas ? (() => {
                 // Como la app: «Entradas en DICE» si es una plataforma conocida;
@@ -543,7 +545,7 @@ function lockedOfferPage(o, lang, path, bHref, rpQ = '') {
   // «…o entra con tu cuenta»: el mismo botón que una ficha normal, en
   // «Tu cuenta». Pide entrar si hace falta y allí la base ya sabe quién mira:
   // a quien le toca le da el código; a quien no, le dice por qué.
-  const accion = flash ? [`#/codigo/${encodeURIComponent(o.id)}${rpQ}`, S.code]
+  const accion = flash ? [`#/${(o.max_seats || 1) > 1 ? 'reservar' : 'codigo'}/${encodeURIComponent(o.id)}${rpQ}`, S.code]
     : o.reservations_enabled ? [`#/reservar/${encodeURIComponent(o.id)}${rpQ}`, S.reserve] : null;
   const boton = fav
     ? `<a class="pill accent big" href="${cuenta(lang)}#/seguir/${encodeURIComponent(o.business_id)}"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.8 4.5c2.2 0 3.6 1.2 5.2 3 1.6-1.8 3-3 5.2-3 3.8 0 5.9 3.9 4.4 7.3C19.5 16.4 12 21 12 21z"/></svg> ${esc(S.btn)}</a>`
