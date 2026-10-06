@@ -862,7 +862,7 @@ async function ajustesNotificaciones() {
     <div class="lista">
       <div class="fila fila-dato">
         <span class="fila-t"><b>${esc(t('En el móvil'))}</b><small id="push-estado">${esc(estadoMovil(dispositivos))}</small></span>
-        ${dispositivos ? `<button type="button" class="pill" id="sin-push">${esc(t('Desactivar'))}</button>` : ''}
+        ${dispositivos ? `<button type="button" class="pill" id="sin-push">${esc(t('Desactivar en todos'))}</button>` : ''}
       </div>
     </div>
 
@@ -965,9 +965,9 @@ async function ajustesNotificaciones() {
   $('#sin-push')?.addEventListener('click', async (ev) => {
     const boton = ev.currentTarget;
     if (!(await confirma({
-      titulo: t('¿Desactivar las notificaciones?'),
-      texto: t('Dejarán de llegarte a todos tus dispositivos. Las seguirás teniendo en «Notificaciones», y puedes volver a activarlas desde la app.'),
-      aceptar: t('Desactivar'),
+      titulo: t('¿Desactivar en todos tus dispositivos?'),
+      texto: t('Dejarán de llegar a todos los móviles y tabletas donde tengas Klendar. Las seguirás teniendo en «Notificaciones», y puedes volver a activarlas desde la app en cada uno.'),
+      aceptar: t('Desactivar en todos'),
     }))) return;
     ocupado(boton, async () => {
       await llamar('revoke_push', {});

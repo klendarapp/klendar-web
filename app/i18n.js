@@ -299,6 +299,9 @@ const APP_EN = {
   "Notificaciones en el móvil": "Phone notifications",
   "dispositivo": "device",
   "dispositivos": "devices",
+  "Desactivar en todos": "Turn off on all",
+  "¿Desactivar en todos tus dispositivos?": "Turn off on all your devices?",
+  "Dejarán de llegar a todos los móviles y tabletas donde tengas Klendar. Las seguirás teniendo en «Notificaciones», y puedes volver a activarlas desde la app en cada uno.": "They'll stop reaching every phone and tablet where you use Klendar. You'll still have them in “Notifications”, and you can turn them back on from the app on each one.",
   "Desactivarlas": "Turn them off",
   "Sin dispositivos registrados": "No devices registered",
   "Descargar mis datos": "Download my data",
@@ -834,8 +837,6 @@ const APP_EN = {
   "Resumen de tu negocio (lunes)": "Your business summary (Mondays)",
   "Lo que llegue en ese tramo te lo mandamos al terminar.": "Anything that arrives in that window is sent when it ends.",
   "Guardado": "Saved",
-  "¿Desactivar las notificaciones?": "Turn off notifications?",
-  "Dejarán de llegarte a todos tus dispositivos. Las seguirás teniendo en «Notificaciones», y puedes volver a activarlas desde la app.": "They'll stop reaching all your devices. You'll still have them in “Notifications”, and you can turn them back on in the app.",
   // Amigos y menú ⋮
   "Más opciones": "More options",
   "Cerrar": "Close",
