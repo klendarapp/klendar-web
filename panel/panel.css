@@ -239,7 +239,7 @@ table.tbl .actions { align-items: flex-start; }
   /* La publicación: icono a la izquierda, título y fecha al lado. */
   table.tbl td:first-child { position: relative; min-height: 40px; padding: 0 0 10px 52px; text-align: left; }
   table.tbl td:first-child > .ph, table.tbl td:first-child > .thumb { position: absolute; left: 0; top: 0; transform: none; margin: 0; }
-  table.tbl td:first-child > .title, table.tbl td:first-child > .sub { display: block; margin: 0; }
+  table.tbl td:first-child > .title, table.tbl td:first-child > .sub { display: block; margin: 0; overflow-wrap: anywhere; }
   /* Sin foto (días cerrados, equipo…), el texto empieza en el borde. */
   table.tbl td:first-child:not(:has(> .ph, > .thumb)) { padding-left: 0; min-height: 0; }
   table.tbl td:not([data-label]), table.tbl td[data-label=""] { padding-top: 10px; }

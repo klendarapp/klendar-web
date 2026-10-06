@@ -750,3 +750,8 @@ details.hoja-mas > fieldset { margin: 4px 16px 14px; }
 .neg-id.d-top { align-items: flex-end; justify-content: flex-start; }
 .neg-id.d-top > div { flex: 1; }
 .neg-id .mas-menu { align-self: flex-start; }
+
+/* La columna de la ficha: Invitar, Guardar en Planes, Compartir en historias…
+   cada uno en su fila, todos del mismo ancho (como en la app). Antes, el
+   «Editar» oculto contaba en `:nth-child` y salían de anchos distintos. */
+.side .acciones > :not(.escucha) { flex: 1 1 100%; }

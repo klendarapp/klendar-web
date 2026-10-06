@@ -84,8 +84,13 @@ async function ajustesCalendario() {
           }
           dibuja();
         } catch (err) {
-          toast(err.message || t('No se ha podido copiar'), true);
-          botones.forEach((x) => { x.disabled = false; });
+          // El portapapeles puede negarse (permiso del navegador): su mensaje
+          // viene en inglés y crudo. Si el enlace ya se creó, se pinta igual
+          // para que se pueda copiar a mano o cambiar.
+          const portapapeles = err && (err.name === 'NotAllowedError' || /clipboard/i.test(err.message || ''));
+          toast(portapapeles ? t('No se ha podido copiar') : (err.message || t('No se ha podido copiar')), true);
+          if (feed) dibuja();
+          else botones.forEach((x) => { x.disabled = false; });
         }
       };
     });

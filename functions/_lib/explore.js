@@ -912,6 +912,8 @@ export async function explorePage(url, lang, modo = 'explorar') {
     [K.weather, tiempoOff ? '0' : ''],
   ].filter(([, v]) => v).map(([k, v]) => `<input type="hidden" name="${k}" value="${esc(v)}">`).join('');
   const catActual = catsHoja.find((c) => c.slug === cat) || (cats || []).find((c) => c.slug === cat);
+  // Sin nada puesto y con el chip del tiempo adelantado, Filtros va sin
+  // «· Todo · 5 km» (lo de siempre): así el chip cabe en 360 sin deslizar.
   const resumen = resumenFiltros(e, S, catActual ? catName(catActual, en) : '');
   const restablecer = link({ kind: negocios ? 'places' : '', cat: '', km: RADIO_KM, price: '', when: '', soloDescuento: false, abierto: false, traits: [],
     edades: [], precioLocal: 0, carne: '', solo: false, solidario: false, antesCierre: false });
@@ -978,7 +980,7 @@ export async function explorePage(url, lang, modo = 'explorar') {
   const conNumero = !negocios && !mapa;
   const verTxt = !conNumero ? S.showResults : total > 100 ? S.showMany(100) : S.showN(total);
   const hoja = `<details class="hoja" id="filtros">
-    <summary class="chip chip-filtros${nFiltros ? ' on' : ''}" aria-label="${esc(`${S.filters}: ${resumen.replace(/ · /g, ', ')}`)}">${ic('tune', 16)}<span>${esc(S.filters)}</span><span class="chip-resumen">· ${esc(resumen)}</span></summary>
+    <summary class="chip chip-filtros${nFiltros ? ' on' : ''}" aria-label="${esc(nFiltros || !(tiempoTxt && ordenMenu) ? `${S.filters}: ${resumen.replace(/ · /g, ', ')}` : S.filters)}">${ic('tune', 16)}<span>${esc(S.filters)}</span>${nFiltros || !(tiempoTxt && ordenMenu) ? `<span class="chip-resumen">· ${esc(resumen)}</span>` : ''}</summary>
     <form class="hoja-cuerpo" method="get" action="${base}/" role="dialog" aria-labelledby="hojaTitulo">
       <div class="hoja-cab"><h2 id="hojaTitulo">${esc(S.filters)}</h2>
         <a class="hoja-reset" href="${esc(restablecer)}" data-restablecer>${esc(S.reset)}</a>
