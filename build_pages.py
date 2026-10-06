@@ -524,7 +524,7 @@ PAGINAS['sobre'] = (
 <h2>Lo que no vamos a hacer</h2>
 <ul>
   <li>Inventar urgencia: si quedan diez plazas, pone diez.</li>
-  <li>Colar lo pagado sin decirlo: si un negocio paga por destacar algo, sale primero y con la etiqueta «Destacado». Lo demás lo ordenan tus filtros y, si lo dejas encendido, el tiempo que hace hoy.</li>
+  <li>Colar lo pagado sin decirlo: si un negocio paga por destacar algo, sale primero y con la etiqueta «Destacado». Lo demás lo ordenan tus filtros, tus gustos si los eliges y, si lo dejas encendido, el tiempo que hace hoy.</li>
   <li>Perfilarte con datos de otras webs. Si cerca no hay nada, la app te sugiere cosas según tus últimas búsquedas, que se quedan en tu móvil.</li>
   <li>Pedirte más datos de los que hacen falta para que esto funcione.</li>
 </ul>
@@ -544,7 +544,7 @@ PAGINAS['sobre'] = (
 <h2>What we won't do</h2>
 <ul>
   <li>Invent urgency: if ten places are left, it says ten.</li>
-  <li>Sneak in paid placements: if a business pays to feature something, it comes first and carries the “Featured” label. The rest is ordered by your filters and, if you leave it on, today's weather.</li>
+  <li>Sneak in paid placements: if a business pays to feature something, it comes first and carries the “Featured” label. The rest is ordered by your filters, your interests if you choose them and, if you leave it on, today's weather.</li>
   <li>Profile you with data from other sites. If there's nothing nearby, the app suggests things based on your recent searches, which stay on your phone.</li>
   <li>Ask you for more data than this needs to work.</li>
 </ul>

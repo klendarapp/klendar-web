@@ -59,7 +59,7 @@
 <script src="/assets/cabecera.js?v=8" defer></script>
 <main class="doc" id="contenido">
 <h1>Cookie policy</h1>
-<div class="meta">Last updated: 5 October 2026 · Version 2026-09-29</div>
+<div class="meta">Last updated: 6 October 2026 · Version 2026-09-29</div>
 <p class="notice">This is a courtesy translation provided for information only. In case of any discrepancy, the <a href="/cookies/">Spanish version</a> prevails.</p>
 
 <p><strong>In short.</strong> klendar.app does not use cookies. It only stores in your browser what is essential for what you ask it to do (your session, your language, your filters, the codes a business validates offline) and it counts visits without cookies and without identifying you. None of this is used for advertising or to follow you across other sites, so we don't ask for your consent (art. 22.2 of the Spanish LSSI-CE). If we ever add anything that needs it, we will ask you first.</p>
@@ -80,6 +80,10 @@
 <tr><td><code>klendar.cerca</code></td><td>Discover, Explore and publication pages (local storage)</td><td>Your position (latitude and longitude) when you tap “Near me” or “Use my location”, to sort by distance and show how far away each place is</td><td>6 hours (then deleted)</td><td>Technical (you ask for it, with the browser's location permission)</td></tr>
 <tr><td><code>klendar.sonido</code></td><td>Discover, Explore and publication pages (session storage)</td><td>Remember that you've turned on video sound while you browse</td><td>Until you close the tab</td><td>Preference you chose</td></tr>
 <tr><td><code>klendar.traducir</code></td><td>“Your account” and publication pages (local storage)</td><td>Remember whether you want businesses' text translated when you're not logged in</td><td>Until you change it</td><td>Preference you chose</td></tr>
+<tr><td><code>klendar.gustos</code></td><td>Discover, Explore and “Your account” (local storage)</td><td>A copy of your interests and your city, to order Discover and Explore and for the travel notice</td><td>Until you log out or change them</td><td>Preference you chose</td></tr>
+<tr><td><code>klendar.busquedas</code></td><td>Explore (local storage)</td><td>Your last 10 searches, to show them when you tap the search box</td><td>Until you clear them (one or all)</td><td>Preference you chose</td></tr>
+<tr><td><code>klendar.viaje</code></td><td>Discover (local storage)</td><td>The date you closed the travel notice, so it doesn't show again that day (not where you were)</td><td>Until the next day (replaced)</td><td>Preference you chose</td></tr>
+<tr><td><code>klendar.ciudades</code></td><td>Discover, Explore and “Your account” (session storage)</td><td>The list of Klendar's cities, so it isn't requested on every page</td><td>Until you close the tab</td><td>Technical</td></tr>
 <tr><td><code>klendar.codigos.…</code></td><td>“Your account” (local storage)</td><td>A copy of your codes and bookings so you can show them at the door even without a connection</td><td>Until you log out</td><td>Technical</td></tr>
 <tr><td><code>klendar.panel.vista</code></td><td>Business dashboard (local storage)</td><td>How you want to see your publications (cards or list)</td><td>Until you change it</td><td>Preference you chose</td></tr>
 <tr><td>two-step verification flag</td><td>Admin (session storage)</td><td>Not asking again in that tab</td><td>Until the tab is closed</td><td>Technical (security)</td></tr>
@@ -95,12 +99,13 @@
 </ul>
 <p>Fonts, icons and libraries (including the one that connects “Your account”, the business dashboard and admin to our database) are served from klendar.app, without going through Google Fonts or any other service.</p>
 <h2>How to delete it</h2>
-<p>When you log out, your session, the copy of your codes and the dashboard data are deleted. You can delete everything else in your browser settings (“Clear browsing data” or “Site data”).</p>
+<p>When you log out, your session, the copy of your codes, your interests and the dashboard data are deleted. You can delete everything else in your browser settings (“Clear browsing data” or “Site data”).</p>
 <h2>The app</h2>
 <p>The <strong>mobile app</strong> does not use cookies. It uses device identifiers for notifications (only if you turn them on) and for crash reports and, only if you agree (when signing up or in Account → Settings → Privacy and data), for app usage statistics. You can withdraw it at any time from the app or from “Your account” on the website. More detail in the <a href="/en/privacy/">Privacy policy</a>.</p>
 
 <h2 class="cambios">Change history</h2>
 <ul>
+  <li><strong>6 October 2026</strong>: Four more keys: your interests and your city, your recent searches, the date you closed the travel notice and the list of cities; your interests are also deleted when you log out.</li>
   <li><strong>5 October 2026</strong>: Seven more keys: your filters, your “Near me” position (deleted after 6 hours), video sound, translation, the copy of your codes and the dashboard view; where visits aren't counted and what is deleted when you log out.</li>
   <li><strong>1 October 2026</strong>: Up-to-date list of what is stored in your browser (including the separate admin session and the PKCE check when logging in with Google or Apple) and of third-party services; icons and libraries are now served from klendar.app, without Google Fonts or jsDelivr.</li>
   <li><strong>29 September 2026</strong>: Current version of the terms (2026-09-29).</li>
