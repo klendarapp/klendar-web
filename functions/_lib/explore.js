@@ -105,9 +105,7 @@ const T = (en) => en
       weatherData: 'Weather data:',
       rainLine: "It's raining today: indoor plans first", sunLine: 'Nice weather today: terraces and outdoor plans first',
       weatherOff: 'Turn off',
-      // Una línea en Descubre la primera vez del día, y el chip de orden.
-      rainNotice: 'Rainy today: indoor plans first', sunNotice: 'Nice out: outdoor plans first',
-      sortRain: 'Indoors first', sortSun: 'Outdoors first', noticeClose: 'Dismiss',
+      sortRain: 'Indoors first', sortSun: 'Outdoors first',
       // Modo viaje y el buscador (/assets/gustos.js).
       travelLabel: 'Away from {home}', travelTitle: "You're in {city} · Today's best", travelClose: 'Dismiss',
       searchRecent: 'What you searched for', searchClear: 'Clear', searchLocal: 'Stored only in this browser.',
@@ -187,9 +185,7 @@ const T = (en) => en
       weatherData: 'Datos del tiempo:',
       rainLine: 'Hoy llueve: primero, planes bajo techo', sunLine: 'Hace buen tiempo: primero, terrazas y aire libre',
       weatherOff: 'Quitar',
-      // Una línea en Descubre la primera vez del día, y el chip de orden.
-      rainNotice: 'Llueve hoy: primero, bajo techo', sunNotice: 'Hace bueno: primero, al aire libre',
-      sortRain: 'Bajo techo primero', sortSun: 'Al aire libre primero', noticeClose: 'Quitar el aviso',
+      sortRain: 'Bajo techo primero', sortSun: 'Al aire libre primero',
       // Modo viaje y el buscador (/assets/gustos.js).
       travelLabel: 'Lejos de {home}', travelTitle: 'Estás en {city} · Lo mejor de hoy', travelClose: 'Quitar el aviso',
       searchRecent: 'Lo que buscaste', searchClear: 'Borrar', searchLocal: 'Se guarda solo en este navegador.',
@@ -886,7 +882,8 @@ export async function explorePage(url, lang, modo = 'explorar') {
   const ordenTxt = { nearest: S.sortNearest, soonest: S.sortSoonest, newest: S.sortNewest };
   const ordenActual = sort || ORDEN_DEFECTO;
   // Cuando «Según el tiempo» reordena hoy, el chip lo dice («☂ Bajo techo
-  // primero»): no hace falta un aviso fijo encima de la publicación.
+  // primero») y va justo detrás de Filtros, a la vista sin deslizar: no hace
+  // falta un aviso encima de la publicación.
   const tiempoTxt = tiempo && enLista ? (tiempo === 'rain' ? S.sortRain : S.sortSun) : '';
   const ordenMenu = negocios || mapa || calendario ? '' : desplegable('', S.sortBy, tiempoTxt || ordenTxt[ordenActual], false,
     `${cerca
@@ -1035,16 +1032,18 @@ export async function explorePage(url, lang, modo = 'explorar') {
     <button class="pill ink" type="submit">${esc(S.search)}</button>
   </form>`;
 
-  // El orden de la app: Filtros · Zona · Estoy aquí · Con niños · [Van mis amigos] · Ordenar.
+  // El orden de la app: Filtros · Zona · Estoy aquí · Con niños · [Van mis amigos] · Ordenar
+  // (con el tiempo reordenando, Ordenar va segundo).
   const barra = `<div class="barra-filtros" id="barra"${descubre ? ' data-amigos-resultados="#feed"' : ''}>
     ${hoja}
+    ${tiempoTxt ? ordenMenu : ''}
     ${antesCierre ? antes : ''}
     ${zonaMenu}
     ${aqui}
     ${conNinos}
     ${antesCierre ? '' : antes}
     <span data-amigos-hueco hidden></span>
-    ${ordenMenu}
+    ${tiempoTxt ? '' : ordenMenu}
   </div>
   <p id="cercaErr" class="aviso-error" role="alert" hidden></p>
   <script src="/assets/categorias.js?v=4" defer></script>
@@ -1103,20 +1102,17 @@ ${filtrado ? '<meta name="robots" content="noindex, follow">' : jsonLd}`;
   // Los avisos de Descubre (docs/GLOSARIO.md, «Avisos de Descubre»): bajo
   // los filtros, como mucho UNO a la vez, en una línea y con su ×. Por orden:
   // el modo viaje (con tu posición, si estás lejos de tu ciudad: lo dice
-  // /assets/gustos.js, porque la página va en caché y no sabe cuál es) y el
-  // tiempo (la primera vez del día; luego basta el chip de orden). Quién se
-  // enseña lo decide /assets/avisos.js. La oferta fijada de un RRPP no es un
+  // /assets/gustos.js, porque la página va en caché y no sabe cuál es).
+  // «Según el tiempo» no es un aviso: lo dice el chip de orden, que entonces
+  // va justo detrás de Filtros. Quién se enseña lo decide /assets/avisos.js. La oferta fijada de un RRPP no es un
   // aviso: es la primera tarjeta (/assets/fijada.js).
   const viaje = descubre && cerca && !vacio
     ? `<div id="viaje" class="feed-aviso" data-aviso="viaje" hidden data-lat="${esc(posUrl(lat))}" data-lng="${esc(posUrl(lng))}"
         data-hoy="${esc(link({ when: 'today' }))}" data-textos="${esc(JSON.stringify({ label: S.travelLabel, title: S.travelTitle, close: S.travelClose }))}"></div>`
     : '';
-  const avisoTiempo = descubre && tiempo && !vacio
-    ? `<p class="feed-aviso" data-aviso="tiempo" hidden><button type="button" class="feed-aviso-t" data-abre-orden title="${esc(`${S.weatherData} ${FUENTE_TIEMPO.nombre}`)}">${icTiempo(tiempo, 16)}<span>${esc(tiempo === 'rain' ? S.rainNotice : S.sunNotice)}</span></button><button type="button" class="feed-aviso-x" data-cierra aria-label="${esc(S.noticeClose)}" title="${esc(S.noticeClose)}">${ic('x', 18)}</button></p>`
-    : '';
-  const avisos = viaje || avisoTiempo
-    ? `<div class="feed-avisos" id="feed-avisos" hidden>${viaje}${avisoTiempo}</div>
-  <script src="/assets/avisos.js?v=1" defer></script>`
+  const avisos = viaje
+    ? `<div class="feed-avisos" id="feed-avisos" hidden>${viaje}</div>
+  <script src="/assets/avisos.js?v=2" defer></script>`
     : '';
   if (descubre) {
     return html(publicPage({
