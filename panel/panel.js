@@ -4448,9 +4448,9 @@ PAGES.tele = async (v) => {
     '<p>Open <b>klendar.app/tv</b> in the TV’s browser (or on a Chromecast or Fire TV). A 6-digit code will appear: type it in here or scan the QR code with your phone camera.</p><p>The TV shows your active publications full screen, with their design and the flash offer countdown, plus a QR code so people can get them or add you to their favourites. It moves on by itself and updates itself when you publish something or it ends. With nothing published, it shows your logo. It never shows promoter offers, exclusives or anything 18+ unless your place is 18+.</p><p>The TV doesn’t log in with your account: it can only show what’s public about your place. If you move it or sell it, unlink it here.</p>'))}
     <div class="card">
       <h2 style="margin-top:0">Enlazar una tele</h2>
+      <!-- Como la app: solo el código; el nombre («Tele 1») se cambia en Ajustes. -->
       <form id="enlazar" class="form" autocomplete="off">
         <label class="f"><span>Código de la tele</span><input name="code" inputmode="numeric" maxlength="7" placeholder="123 456" value="${esc(codigo)}" required aria-describedby="teleAyuda"></label>
-        <label class="f"><span>Nombre <small>(opcional)</small></span><input name="name" maxlength="40" placeholder="${esc(I18N.t('Barra, terraza…'))}"></label>
         <p class="hint full" id="teleAyuda">${esc(I18N.t('El que sale en la tele al abrir klendar.app/tv. Cambia cada 10 minutos.'))}</p>
         <div class="full"><button class="btn primary" type="submit">Enlazar</button> <span id="msg" class="err" role="alert"></span></div>
       </form>
@@ -4472,7 +4472,7 @@ PAGES.tele = async (v) => {
     msg.textContent = '';
     const code = String(f.elements.code.value || '').replace(/\D/g, '');
     if (code.length !== 6) { msg.textContent = I18N.t('Escribe las 6 cifras que salen en la tele.'); f.elements.code.focus(); return; }
-    const r = await rpc('tv_pair_claim', { p_code: code, p_business: BIZ.id, p_name: f.elements.name.value.trim() || null })
+    const r = await rpc('tv_pair_claim', { p_code: code, p_business: BIZ.id, p_name: null })
       .catch((err) => ({ ok: false, error: err.message }));
     if (!r?.ok) { msg.textContent = I18N.t(ERR_TELE[r?.error] || friendly(r?.error)); return; }
     toast(I18N.t('¡Listo! La tele ya enseña tus publicaciones.'));

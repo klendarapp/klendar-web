@@ -1206,7 +1206,6 @@ const I18N = makeI18N({
     "No se ha podido cargar. Prueba otra vez.": "Couldn't load it. Try again.",
     "Enlazar una tele": "Link a TV",
     "Código de la tele": "TV code",
-    "Barra, terraza…": "Bar, terrace…",
     "El que sale en la tele al abrir klendar.app/tv. Cambia cada 10 minutos.": "The one on the TV when you open klendar.app/tv. It changes every 10 minutes.",
     "Enlazar": "Link",
     "Tus teles": "Your TVs",
