@@ -345,8 +345,8 @@ export async function partidoPage(rawId, url, lang) {
   const estado = d.live ? '' : d.status === 'postponed' ? (en ? 'Postponed' : 'Aplazado')
     : d.status === 'cancelled' ? (en ? 'Cancelled' : 'Cancelado') : (en ? 'It has finished' : 'Ya ha terminado');
   const equipos = (d.teams || []).filter((t) => isUuid(t.id) && t.name);
-  // «Seguir a Real Madrid» / «Seguir a Barça»: los de una fila, iguales.
-  const seguir = equipos.length ? `<div class="seguir-equipos" style="--n:${Math.min(equipos.length, 2)}">${equipos.map((t) => `<a class="pill" href="${esc(seguirHref(lang, t))}"
+  // «Seguir a Real Madrid» / «Seguir a Barça»: neutros, uno debajo de otro y del mismo ancho.
+  const seguir = equipos.length ? `<div class="seguir-equipos">${equipos.map((t) => `<a class="pill" href="${esc(seguirHref(lang, t))}"
       data-seguir-equipo="${esc(t.id)}" data-nombre="${esc(t.name)}" data-si="${esc(S.following(t.name))}" data-no="${esc(S.follow(t.name))}" aria-pressed="false">${esc(S.follow(t.name))}</a>`).join('')}</div>` : '';
 
   const barHtml = (bz) => {

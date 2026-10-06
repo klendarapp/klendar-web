@@ -96,6 +96,11 @@ function destinoWeb(ruta) {
   if (r.startsWith('/team-invites')) return '#/invitaciones';
   // «Te han pausado como RRPP», «Vuelves a ser RRPP»: tu lista de ese local.
   if ((m = r.match(/^\/promoter\/([0-9a-f-]{36})/i))) return `#/rrpp/${m[1]}`;
+  // «Real Madrid – Barça, hoy a las 21:00»: la página pública del partido,
+  // con los bares que lo ponen. «Equipos que sigues», a la suya.
+  if (r.startsWith('/partidos/equipos')) return '#/equipos';
+  if ((m = r.match(/^\/partidos\/([0-9a-f-]{36})/i))) return `${EN ? '/en/matches/' : '/partidos/'}${m[1]}`;
+  if (r.startsWith('/partidos')) return EN ? '/en/matches/' : '/partidos/';
   return '';
 }
 
@@ -872,6 +877,8 @@ async function ajustesNotificaciones() {
   ].join(''))}
       ${grupo('Para ti', `${[
     sw('series', 'Series que sigues', prefs.notify_series !== false),
+    // «Partidos de tus equipos» (encendido de serie), justo debajo, como la app.
+    sw('equipos', KlendarEmisiones.t(EN ? 'en' : 'es').prefTeams, prefs.notify_teams !== false),
     sw('cerca', 'Ofertas flash cerca de ti', prefs.notify_nearby, 'Como mucho 3 al día'),
   ].join('')}
         <div id="cerca-mas"${prefs.notify_nearby ? '' : ' hidden'}>
@@ -912,6 +919,7 @@ async function ajustesNotificaciones() {
         notify_friend_invites: el.amigos.checked,
         notify_friend_plans: el.planesAmigos.checked,
         notify_series: el.series.checked,
+        notify_teams: el.equipos.checked,
         notify_nearby: el.cerca.checked,
         nearby_radius_m: Number(fa.querySelector('input[name=radio]:checked')?.value || 1000),
         nearby_categories: elegidas.length ? elegidas : null,

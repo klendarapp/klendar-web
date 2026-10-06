@@ -481,3 +481,22 @@ button.codigo.copiar .ms { font-size: 18px; color: var(--ink-2); letter-spacing:
 .nota-cal { margin: 10px 0 0; font-size: 14px; }
 .fila.peligro-t, .fila.peligro-t .fila-t b, .fila.peligro-t .ms { color: #B3261E; }
 @media (prefers-color-scheme: dark) { .fila.peligro-t, .fila.peligro-t .fila-t b, .fila.peligro-t .ms { color: #FF9B9B; } }
+
+/* «Equipos que sigues» (app/partidos.js): la lista y el buscador «Seguir a un equipo». */
+.equipos-lista .bloque { padding: 6px 0 0; margin-top: 18px; }
+.equipos-lista .bloque h2 { font-family: var(--display); font-size: 18px; color: var(--ink); margin: 12px 0 2px; }
+.equipos-lista .bloque .muted { margin: 2px 0 10px; }
+.hoja-equipos { position: relative; width: min(480px, calc(100vw - 32px)); max-width: min(480px, calc(100vw - 32px)); }
+.hoja-equipos h2 { padding-right: 36px; }
+.hoja-equipos .formu { margin: 12px 0 8px; }
+.hoja-equipos .formu input[type=search] { width: 100%; box-sizing: border-box; padding: 12px 14px; border-radius: 16px; border: 1px solid var(--glass-border);
+  background: var(--elevated); color: var(--ink); font: inherit; font-size: 16px; }
+.hoja-equipos .formu input[type=search]:focus { outline: 2px solid var(--ink); outline-offset: 1px; }
+.eq-res { display: grid; gap: 0; max-height: 52vh; overflow-y: auto; }
+.eq-fila { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; padding: 12px 0; border-top: 1px solid var(--glass-border); }
+.eq-fila:first-child { border-top: 0; }
+.eq-t { display: grid; gap: 2px; min-width: 0; flex: 1 1 160px; }
+.eq-t small { color: var(--ink-2); font-size: 13px; }
+.eq-fila .pill { padding: 9px 14px; font-size: 14px; }
+.hoja-equipos p.eq-nada { margin: 8px 0 0; }
+.hoja-equipos p.eq-err { margin: 0 0 8px; color: #B3261E; font-size: 14px; }
