@@ -88,6 +88,11 @@ PAGES.partidos = async (v, param) => {
     }
     // Dentro, por fecha.
     for (const g of grupos) g.items.sort((x, y) => String(x.starts_at).localeCompare(String(y.starts_at)));
+    // Las competiciones, en el orden de la app (lo que más se pone primero:
+    // LaLiga, Champions, Premier…); las demás, por nombre.
+    const ORDEN = ['PD', 'CL', 'PL', 'SA', 'BL1', 'FL1', 'PPL', 'DED', 'ELC', 'BSA', 'WC', 'EC'];
+    const rango = (g) => { const i = ORDEN.indexOf(g.items[0]?.competition_code); return i < 0 ? 100 : i; };
+    grupos.sort((a, b) => rango(a) - rango(b) || a.nombre.localeCompare(b.nombre));
     caja.innerHTML = grupos.map((g, gi) => {
       const on = g.items.filter((b) => b.on).length;
       const todos = on === g.items.length;
