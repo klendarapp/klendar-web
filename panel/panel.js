@@ -160,10 +160,8 @@ function friendly(msg) {
   if (Object.values(ERRORS).includes(m) || /[áéíóúñ¿¡]/i.test(m)) return m;
   return 'No se ha podido guardar. Si vuelve a pasar, escríbenos a info@klendar.app.';
 }
-/** Una dirección escrita → su punto en el mapa (Mapbox).
- *
- * Si no hay token o no se encuentra, se devuelve null y la ficha se guarda
- * igual: mejor una dirección sin punto que no poder guardar. */
+/** El token público de Mapbox (lo da la web; vacío si no hay): sin él no
+ * hay mapa ni búsqueda de direcciones y se marca el punto de otra forma. */
 let MAPBOX_TOKEN = null;
 async function tokenMapbox() {
   if (MAPBOX_TOKEN !== null) return MAPBOX_TOKEN;
@@ -172,18 +170,6 @@ async function tokenMapbox() {
     MAPBOX_TOKEN = r.ok ? (await r.json()).token || '' : '';
   } catch { MAPBOX_TOKEN = ''; }
   return MAPBOX_TOKEN;
-}
-
-async function geocodifica(texto) {
-  const token = await tokenMapbox();
-  if (!token || !String(texto).trim()) return null;
-  try {
-    const r = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(texto)}.json?limit=1&country=es&language=es&access_token=${token}`);
-    if (!r.ok) return null;
-    const j = await r.json();
-    const c = j.features?.[0]?.center;
-    return Array.isArray(c) ? { lng: c[0], lat: c[1] } : null;
-  } catch { return null; }
 }
 
 /** Una dirección → punto, calle y ciudad (para rellenar el formulario). */
@@ -740,8 +726,8 @@ const icono = (n) => (SVG[n] ? svg(n) : ms(n));
 // arriba; Publicar (Publicaciones, Series y repeticiones, Novedades),
 // Clientes (Tarjetas de sellos, Regalo de cumpleaños, Avisar a mis
 // clientes, Reseñas), RRPP, Tu local (Carta, Cartel del local, Días
-// cerrados, Equipo) y Cifras (Informe); y abajo la ficha, darse de baja
-// (solo el propietario) y la ayuda.
+// cerrados, Equipo) y Cifras (Informe); y abajo la ficha (con darse de
+// baja dentro, solo el propietario) y la ayuda.
 // `en` dice qué pantallas cuentan como esa entrada (para marcarla).
 const NAV = [
   [null, [
@@ -773,8 +759,8 @@ const NAV = [
     ['informe', 'bar_chart', 'Informe'],
   ]],
   ['Tu negocio', [
-    ['ficha', 'storefront', 'Tu ficha'],
-    ['baja', 'salir', 'Dar de baja el negocio'],
+    // «Dar de baja el negocio» está en la «Zona delicada» de «Tu ficha».
+    ['ficha', 'storefront', 'Tu ficha', ['baja']],
     ['ayuda', 'help', 'Ayuda'],
   ]],
 ];
@@ -860,8 +846,35 @@ function sinDobleEnvio(caja) {
 // «Regalo de cumpleaños» no está: el personal lo ve, en solo lectura.
 const SOLO_GESTION = ['sellos', 'carta', 'novedades', 'mensajes', 'ficha', 'cerrados', 'equipo', 'cartel-local', 'rrpp'];
 
+// ── Salir con cambios sin guardar ───────────────────────────────────────────
+// Una vista con cambios se apunta aquí: si se va a otra pantalla, se vuelve
+// a la de antes y se pregunta. `dentro(hash)` dice qué rutas no cuentan como
+// salir (los pasos del alta entre sí).
+let GUARDA = null;
+let HASH_ANTES = location.hash;
+async function confirmaSalir() {
+  return confirmDlg(I18N.t('¿Salir sin guardar?'), I18N.t('Hay cambios que todavía no has guardado.'),
+    { submit: I18N.t('Salir sin guardar'), danger: true });
+}
+window.addEventListener('beforeunload', (e) => {
+  if (GUARDA && GUARDA.sucia()) { e.preventDefault(); e.returnValue = ''; }
+});
+/** El enrutador pregunta aquí antes de pintar otra pantalla. */
+async function puedeSalir() {
+  const destino = location.hash;
+  if (!GUARDA || !GUARDA.sucia() || (GUARDA.dentro && GUARDA.dentro(destino))) { HASH_ANTES = destino; return true; }
+  // Se vuelve a la pantalla de antes sin pintarla otra vez y se pregunta.
+  history.replaceState(null, '', HASH_ANTES || '#/resumen');
+  if (!(await confirmaSalir())) return false;
+  GUARDA = null;
+  HASH_ANTES = destino;
+  history.replaceState(null, '', destino);
+  return true;
+}
+
 async function route() {
   paraCamara();
+  GUARDA = null;
   if (!ME) return;
   if (!BIZ) return noBusiness();
   const n = ++RUTA_N;
@@ -899,156 +912,12 @@ async function route() {
   }
 }
 let FOCO_AL_TITULO = false;
-window.addEventListener('hashchange', () => { FOCO_AL_TITULO = true; route(); });
+window.addEventListener('hashchange', async () => {
+  if (!(await puedeSalir())) return;
+  FOCO_AL_TITULO = true; route();
+});
 
-// ── Alta de un negocio (el primero o uno más) ──────────────────────────────
-PAGES.alta = async (v) => {
-  const cats = CATS.length ? CATS
-    : ((await sb.from('categories').select('*').order('position')).data || []);
-  const otro = BIZZES.length > 0;
-  let punto = null;
-
-  v.innerHTML = `
-    <div class="page-head"><h1>${otro ? 'Dar de alta otro local' : 'Da de alta tu negocio'}</h1></div>
-    ${otro ? '' : `<div class="help"><b>Bienvenido/a.</b> Cuéntanos sobre tu negocio: lo revisamos antes de hacerlo público (normalmente en 24-48 h). Mientras, ya puedes preparar publicaciones.
-      <br><span class="muted">Para dar de alta un negocio hace falta tener 18 años.</span>
-      <br><span class="muted">¿Te han invitado al equipo de un negocio? Entonces no hace falta: entra con el mismo correo con el que te invitaron y aparecerá solo.</span></div>`}
-    <form id="alta" class="form" novalidate>
-      <label class="f"><span>Nombre del negocio *</span><input name="name" maxlength="80" required placeholder="Ej. La Taberna del Gato"></label>
-      <label class="f"><span>Categoría *</span><span data-cat-alta></span></label>
-      <label class="f full"><span>De qué va <small>(¿qué ofrece tu negocio? ¿qué lo hace especial?)</small></span><textarea name="description" maxlength="500"></textarea></label>
-      <label class="f"><span>Dirección *</span><input name="address" maxlength="120" required placeholder="Calle y número"></label>
-      <label class="f"><span>Ciudad *</span><input name="city" maxlength="60" required></label>
-      <div class="full">
-        <p style="margin:0 0 8px"><button class="btn sm" type="button" id="buscar">${ms('location_on')}Buscar en el mapa</button>
-          <button class="btn sm" type="button" id="aqui">Estoy en el local</button>
-          <span class="muted" id="punto-txt">Marca dónde está la puerta: la gente te encuentra por la distancia.</span></p>
-        <div class="mapa" id="mapa"></div>
-      </div>
-      <label class="f"><span>Teléfono</span><input name="phone" maxlength="20" inputmode="tel"></label>
-      <label class="f"><span>Web</span><input name="website" type="url" placeholder="https://"></label>
-      <label class="f"><span>Correo de contacto <small>(lo ven los clientes: mejor uno del negocio que el tuyo personal)</small></span><input name="contact_email" type="email" maxlength="254" placeholder="hola@tunegocio.com"></label>
-      <label class="f"><span>NIF / CIF <small>(para la verificación; no se publica)</small></span><input name="tax_id" maxlength="20"></label>
-      <label class="f full" style="grid-template-columns:auto 1fr;align-items:start">
-        <input type="checkbox" name="adults_only">
-        <span>Solo para mayores de 18 <small class="muted">Si lo que publicas menciona alcohol, se marca +18 solo y se revisa antes de salir. La publicidad de tabaco, vapeo o apuestas no está permitida.</small></span></label>
-      <label class="f full" style="grid-template-columns:auto 1fr;align-items:start">
-        <input type="checkbox" name="terms" required>
-        <span>Acepto las <a href="${APP_URL}/negocios/" target="_blank" rel="noopener">condiciones para negocios</a> *</span></label>
-      <div class="full"><button class="btn primary" type="submit" id="enviar">Enviar solicitud</button> <span id="err" class="err"></span></div>
-    </form>`;
-
-  const f = $('#alta', v);
-  // El selector de categorías de toda la web (/assets/categorias.js): una.
-  const botonCat = () => $('[data-cat-alta] .selcat-campo', v);
-  KlendarCategorias.campo($('[data-cat-alta]', v), {
-    cats, multiple: false, lang: I18N.lang, nombre: 'category_id', titulo: I18N.t('Categoría'),
-    alCambiar: () => KL_CAMPO(botonCat(), null),
-  });
-  const txt = $('#punto-txt', v);
-  // Lo que se rellena solo desde el mapa se vuelve a rellenar cada vez que
-  // se mueve la chincheta o se usa «Estoy en el local»; lo escrito a mano no
-  // se toca nunca.
-  const autoRellena = (campo, valor) => {
-    const el = f.elements[campo];
-    if (!valor || !el) return;
-    if (!el.value.trim() || el.dataset.auto === el.value) {
-      el.value = valor;
-      el.dataset.auto = valor;
-      KL_CAMPO(el, null);
-    }
-  };
-  const marca = async (p, rellenar) => {
-    punto = { lat: p.lat, lng: p.lng };
-    txt.textContent = I18N.t('Ubicación marcada. Si no es exacta, arrastra la chincheta.');
-    if (rellenar) {
-      const d = await direccionDe(p.lat, p.lng);
-      if (d) {
-        autoRellena('address', d.address);
-        autoRellena('city', d.city);
-      }
-    }
-  };
-  const mapa = await mapaPunto($('#mapa', v), null, (p) => marca(p, true));
-
-  $('#buscar', v).onclick = async () => {
-    const q = [f.address.value, f.city.value].map((x) => x.trim()).filter(Boolean).join(', ');
-    if (!q) { toast('Escribe primero la dirección y la ciudad.', true); return; }
-    const d = await buscaDireccion(q);
-    if (!d) { toast('No encontramos esa dirección. Prueba a escribirla de otra forma o marca el punto en el mapa.', true); return; }
-    autoRellena('city', d.city);
-    mapa?.mueve(d);
-    marca(d, false);
-  };
-  $('#aqui', v).onclick = () => {
-    if (!navigator.geolocation) { toast('Este navegador no deja saber dónde estás.', true); return; }
-    navigator.geolocation.getCurrentPosition((pos) => {
-      const p = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-      mapa?.mueve(p);
-      marca(p, true);
-    }, () => toast('No hemos podido saber dónde estás. Revisa el permiso de ubicación del navegador.', true),
-    { enableHighAccuracy: true, timeout: 12000 });
-  };
-
-  f.onsubmit = async (e) => {
-    e.preventDefault();
-    const err = $('#err', v);
-    err.textContent = '';
-    const d = Object.fromEntries(new FormData(f));
-    // Como la app: «Obligatorio» debajo de cada campo que falta.
-    const obligatorio = KL_VALIDA.MSG[I18N.lang === 'en' ? 'en' : 'es'].obligatorio;
-    const faltan = [
-      ['name', String(d.name || '').trim().length < 2],
-      ['category_id', !d.category_id],
-      ['address', !String(d.address || '').trim()],
-      ['city', !String(d.city || '').trim()],
-    ];
-    // La categoría es el botón del selector (lo elegido va en un oculto).
-    const elCampo = (c) => (c === 'category_id' ? botonCat() : f.elements[c]);
-    for (const [campo, falta] of faltan) KL_CAMPO(elCampo(campo), falta ? obligatorio : null);
-    const primero = faltan.find(([, falta]) => falta);
-    if (primero) { elCampo(primero[0]).focus(); return; }
-    if (!punto) {
-      // Sin chincheta: se intenta con la dirección escrita.
-      const b = await buscaDireccion(`${d.address}, ${d.city}`);
-      if (!b) { err.textContent = I18N.t('Marca en el mapa dónde está el local (o pulsa «Buscar en el mapa»).'); return; }
-      punto = { lat: b.lat, lng: b.lng };
-    }
-    KL_CAMPO(f.terms, f.terms.checked ? null : I18N.t('Tienes que aceptar las condiciones para negocios.'));
-    if (!f.terms.checked) { f.terms.focus(); return; }
-    const boton = $('#enviar', v);
-    boton.disabled = true;
-    try {
-      const id = await rpc('register_business', {
-        p_name: String(d.name).trim(), p_category_id: d.category_id,
-        p_lat: punto.lat, p_lng: punto.lng,
-        p_address: String(d.address).trim(), p_city: String(d.city).trim(),
-        p_description: String(d.description || '').trim() || null,
-        p_phone: String(d.phone || '').trim() || null,
-        p_website: String(d.website || '').trim() || null,
-        p_tax_id: String(d.tax_id || '').trim() || null,
-        p_contact_email: String(d.contact_email || '').trim() || null,
-        p_adults_only: f.adults_only.checked,
-      });
-      BIZZES = await rpc('my_businesses');
-      BIZ = BIZZES.find((b) => b.id === id) || BIZZES[0];
-      localStorage.setItem('klendar.biz', BIZ.id);
-      // Recién dado de alta: su zona sale del punto marcado en el mapa.
-      if (BIZ.id === id) BIZ.time_zone = KZ.porCoordenadas(punto.lat, punto.lng);
-      await preparaNegocio();
-      $('.bizpick').hidden = false;
-      renderBizPicker();
-      if (!CATS.length) CATS = cats;
-      toast('Solicitud enviada. Ahora completa la ficha: logo, portada y horarios.');
-      // Si ya estaba en #/ficha no hay «hashchange»: se pinta a mano (y solo
-      // entonces, para no pintarla dos veces).
-      if (location.hash === '#/ficha') route(); else location.hash = '#/ficha';
-    } catch (e2) {
-      err.textContent = I18N.t(friendly(e2.message));
-      boton.disabled = false;
-    }
-  };
-};
+// El alta (`#/alta/1…3`) y «Tu ficha» (`#/ficha/…`) están en ficha.js.
 
 // ── Resumen ─────────────────────────────────────────────────────────────────
 /** En revisión o rechazado: qué pasa y cómo escribirnos, como en la app. Si
@@ -1124,7 +993,7 @@ PAGES.resumen = async (v) => {
     ${BIZ.verification_status !== 'verified' ? avisoVerificacion() : ''}
     ${primeros ? `<div class="card primeros"><h2>Primeros pasos</h2>
       <p class="muted" style="margin:0 0 8px">Tres cosas y tu negocio está listo para que la gente lo encuentre.</p>
-      ${paso(1, conFotos, 'Pon tu logo y una foto', '', '#/ficha')}
+      ${paso(1, conFotos, 'Pon tu logo y una foto', '', '#/ficha/fotos')}
       ${paso(2, false, 'Publica tu primera oferta', 'Te la dejamos casi hecha: cambia el precio y la hora.', '#/publicaciones/nueva-flash?idea=1')}
       ${paso(3, false, 'Cuéntalo en tus redes', '', '#', 'data-compartir')}
     </div>` : ''}
@@ -3788,23 +3657,6 @@ PAGES.carta = async (v) => {
   pinta();
 };
 
-const SEMANA = [
-  [1, 'Lunes'], [2, 'Martes'], [3, 'Miércoles'], [4, 'Jueves'],
-  [5, 'Viernes'], [6, 'Sábado'], [7, 'Domingo'],
-];
-
-/** «09:00-14:00, 17:00-21:00» ⇄ [["09:00","14:00"],["17:00","21:00"]].
- *
- * Es el mismo formato que guarda la app; escribirlo a mano es más rápido que
- * pelearse con catorce desplegables, y lo que no se entienda se ignora en vez
- * de romper el horario entero. */
-const horarioATexto = (tramos) => (tramos || []).map((t) => `${t[0]}-${t[1]}`).join(', ');
-const textoAHorario = (txt) => String(txt || '').split(',')
-  .map((x) => x.trim()).filter(Boolean)
-  .map((x) => x.split('-').map((y) => y.trim()))
-  .filter((p) => p.length === 2 && /^\d{1,2}:\d{2}$/.test(p[0]) && /^\d{1,2}:\d{2}$/.test(p[1]))
-  .map((p) => p.map((y) => (y.length === 4 ? '0' + y : y)));
-
 PAGES.cartel = async (v, offerId) => {
   const todas = await rpc('my_business_offers', { p_id: BIZ.id });
   const o = (todas || []).find((x) => x.id === offerId);
@@ -3999,255 +3851,6 @@ function planCard(sub) {
     <p style="margin:0 0 12px">${esc(uso)}</p>
     <a class="btn sm" href="mailto:info@klendar.app?subject=${asunto}&body=${cuerpo}">${esc(free || trial ? (en ? 'Ask about the plan' : 'Preguntar por el plan') : (en ? 'Change plan or payment method' : 'Cambiar plan o forma de pago'))}</a></div>`;
 }
-
-/** «Cómo es tu local»: los 12 atributos del sitio, en el orden de la app
- * (`place_attribute_slugs()` en la base), con su icono. Se ven en la ficha
- * pública y la gente filtra por ellos («El sitio» y «Con niños»). */
-const SITIO_PANEL = [
-  ['terrace', 'Terraza', 'deck'], ['indoor', 'Bajo techo', 'roofing'], ['outdoor', 'Al aire libre', 'park'],
-  ['kids', 'Apto para niños', 'child_friendly'], ['play_area', 'Zona infantil', 'toys'], ['dogs', 'Admite perros', 'pets'],
-  ['wheelchair', 'Accesible en silla de ruedas', 'accessible'], ['wifi', 'Wifi', 'wifi'], ['card', 'Pago con tarjeta', 'credit_card'],
-  ['air_conditioning', 'Aire acondicionado', 'ac_unit'], ['parking', 'Aparcamiento', 'local_parking'], ['veggie', 'Opciones vegetarianas', 'eco'],
-];
-
-PAGES.ficha = async (v) => {
-  const canManage = ['owner', 'manager'].includes(BIZ.role);
-  // El NIF no se puede leer de la tabla (no es público): lo da
-  // `business_private` a quien gestiona.
-  const [{ data: b }, cats, privado] = await Promise.all([
-    sb.from('businesses').select('id, name, description, category_id, address, city, phone, website, contact_email, social_links, logo_url, cover_image_url, gallery, opening_hours, adults_only, verification_status, rejection_reason, is_active, paused_until, amenities').eq('id', BIZ.id).maybeSingle(),
-    sb.from('categories').select('*').order('position', { ascending: true })
-      .then(({ data }) => data || []),
-    canManage ? rpc('business_private', { p_id: BIZ.id }).catch(() => null) : null,
-  ]);
-  if (!b) { v.innerHTML = '<div class="card">No hemos podido cargar tu ficha.</div>'; return; }
-  b.tax_id = privado?.tax_id || '';
-
-  const redes = b.social_links || {};
-  const horas = b.opening_hours || {};
-  let logo = b.logo_url || '';
-  let portada = b.cover_image_url || '';
-  let galeria = b.gallery || [];
-  let sitio = Array.isArray(b.amenities) ? b.amenities : [];
-
-  const pinta = () => {
-    v.innerHTML = `
-      <div class="page-head"><h1>Tu ficha</h1><span class="spacer"></span>
-        <a class="btn sm ghost" href="#/cartel-local">Imprimir el cartel del local</a>
-        <a class="btn sm" href="https://klendar.app/b/${esc(BIZ.id)}" target="_blank" rel="noopener">Ver cómo se ve ↗</a></div>
-      ${helpBox('¿Qué es esto?', bi('<p>Lo que ve la gente cuando entra en tu negocio: el nombre, de qué va, dónde estás, cómo llamarte y tus horarios. Es la misma ficha que editas desde la app.</p><p>La <b>dirección</b> se busca en el mapa al guardar. Si el punto no queda donde debe, arrastra la chincheta en «Ubicación en el mapa».</p>',
-      '<p>What people see when they open your business: the name, what you do, where you are, how to call you and your opening hours. It\'s the same page you edit from the app.</p><p>The <b>address</b> is looked up on the map when you save. If the pin isn\'t in the right place, drag it in “Location on the map”.</p>'))}
-      <form id="f" class="form" novalidate>
-        <label class="f"><span>Nombre *</span><input name="name" value="${esc(b.name || '')}" required maxlength="80" ${canManage ? '' : 'disabled'}></label>
-        <label class="f"><span>Categoría</span><span data-cat-ficha></span></label>
-        <label class="f full"><span>De qué va <small>(dos líneas bastan)</small></span><textarea name="description" maxlength="500" ${canManage ? '' : 'disabled'}>${esc(b.description || '')}</textarea></label>
-        <label class="f"><span>Dirección *</span><input name="address" value="${esc(b.address || '')}" maxlength="120" required ${canManage ? '' : 'disabled'}></label>
-        <label class="f"><span>Ciudad *</span><input name="city" value="${esc(b.city || '')}" maxlength="60" required ${canManage ? '' : 'disabled'}></label>
-        ${canManage ? '<p class="hint full">Si cambias el nombre, la ciudad o te mudas a más de 1 km, lo revisamos de nuevo. Tu negocio sigue a la vista mientras tanto y lo que tengas publicado se muda contigo.</p>' : ''}
-        <label class="f"><span>Teléfono</span><input name="phone" value="${esc(b.phone || '')}" maxlength="20" ${canManage ? '' : 'disabled'}></label>
-        <label class="f"><span>Web</span><input name="website" type="url" value="${esc(b.website || '')}" ${canManage ? '' : 'disabled'}></label>
-        <label class="f"><span>Correo de contacto <small>(lo ven los clientes: mejor uno del negocio que el tuyo personal)</small></span><input name="contact_email" type="email" maxlength="254" placeholder="hola@tunegocio.com" value="${esc(b.contact_email || '')}" ${canManage ? '' : 'disabled'}></label>
-        <label class="f"><span>NIF/CIF</span><input name="tax_id" value="${esc(b.tax_id || '')}" maxlength="20" ${canManage ? '' : 'disabled'}></label>
-        <label class="f"><span>Instagram</span><input name="instagram" value="${esc(redes.instagram || '')}" ${canManage ? '' : 'disabled'}></label>
-        <label class="f"><span>TikTok</span><input name="tiktok" value="${esc(redes.tiktok || '')}" ${canManage ? '' : 'disabled'}></label>
-        <label class="f"><span>Facebook</span><input name="facebook" value="${esc(redes.facebook || '')}" ${canManage ? '' : 'disabled'}></label>
-        <label class="f full" style="grid-template-columns:auto 1fr;align-items:center">
-          <input type="checkbox" name="adults_only" ${b.adults_only ? 'checked' : ''} ${canManage ? '' : 'disabled'}>
-          <span>Solo para mayores de 18 (todo lo que publiques quedará marcado y todo el equipo tiene que ser mayor de edad)</span></label>
-        ${canManage ? '<div class="full"><button class="btn primary" type="submit">Guardar la ficha</button> <span id="msg" class="muted"></span></div>' : ''}
-      </form>
-
-      <div class="card"><h2>Cómo es tu local</h2>
-        <p class="muted" style="margin:0 0 10px">Marca lo que tenga tu local: sale en tu ficha y la gente lo puede buscar en los filtros.</p>
-        <div class="sitio-ops" role="group" aria-label="${esc(I18N.t('Cómo es tu local'))}">
-          ${SITIO_PANEL.map(([k, nombre, icono]) => `<label class="sitio-op"><input type="checkbox" name="sitio" value="${k}" ${sitio.includes(k) ? 'checked' : ''} ${canManage ? '' : 'disabled'}><span>${ms(icono)}${esc(nombre)}</span></label>`).join('')}
-        </div>
-        ${canManage ? '<p style="margin:12px 0 0"><button class="btn sm primary" id="g-sitio" type="button">Guardar</button> <span class="muted" id="msgs"></span></p>' : ''}</div>
-
-      ${canManage ? `<div class="card"><h2>Ubicación en el mapa</h2>
-        <p class="muted" style="margin:0 0 10px">Es lo que usa la app para decir a qué distancia estás. Arrastra la chincheta hasta la puerta y guarda.</p>
-        <div class="mapa" id="mapa-ficha"></div>
-        <p style="margin:10px 0 0"><button class="btn sm" id="g-punto" disabled>Guardar la ubicación</button> <span class="muted" id="msgp"></span></p></div>` : ''}
-
-      <div class="card"><h2>Horarios</h2>
-        <p class="muted" style="margin:0 0 10px">Escribe los tramos como «09:00-14:00, 17:00-21:00». Déjalo vacío el día que cierres.</p>
-        <form id="h" class="form">
-          ${SEMANA.map(([n, nombre]) => `<label class="f"><span>${nombre}</span>
-            <input name="d${n}" value="${esc(horarioATexto(horas[String(n)]))}" placeholder="09:00-14:00, 17:00-21:00" ${canManage ? '' : 'disabled'}></label>`).join('')}
-          ${canManage ? '<div class="full"><button class="btn primary" type="submit">Guardar horarios</button> <span id="msgh" class="muted"></span></div>' : ''}
-        </form></div>
-
-      <div class="card"><h2>Imágenes</h2>
-        <p class="muted" style="margin:0 0 10px">${bi('El <b>logo</b> sale redondo y pequeño; la <b>portada</b>, ancha arriba del todo. La galería son fotos del sitio.', 'The <b>logo</b> is shown small and round; the <b>cover</b>, wide at the very top. The gallery is photos of the place.')}</p>
-        <div class="thumbs">
-          <div class="thumb"><img src="${esc(logo || '/assets/symbol.png')}" alt="">
-            ${canManage ? '<button class="btn sm" data-img="logo">Cambiar logo</button>' : ''}</div>
-          <div class="thumb"><img src="${esc(portada || '/assets/og.png')}" alt="">
-            ${canManage ? '<button class="btn sm" data-img="cover">Cambiar portada</button>' : ''}</div>
-        </div>
-        <h3 style="margin:16px 0 8px">Galería</h3>
-        <div class="thumbs">${galeria.map((u, i) => `<div class="thumb"><img src="${esc(u)}" alt="">
-          ${canManage ? `<button class="btn sm bad ghost" data-gal-del="${i}">Quitar</button>` : ''}</div>`).join('')}</div>
-        ${canManage ? (galeria.length < TOPE.galeria
-          ? `<p style="margin:10px 0 0"><button class="btn sm" data-img="gallery">Añadir fotos</button> <span class="muted small">${esc(topeHasta(TOPE.galeria))}</span></p>`
-          : `<p class="muted" style="margin:10px 0 0">${esc(topeLleno(TOPE.galeria))}</p>`) : ''}</div>
-      ${esPropietario() ? `${tarjetaDescarga()}
-      <div class="card"><h2>Dar de baja el negocio</h2>
-        <p class="muted" style="margin:0 0 10px">Cerrar hasta nuevo aviso, cancelar la suscripción, traspasarlo o eliminarlo.</p>
-        <a class="btn bad ghost" href="#/baja">Dar de baja el negocio</a></div>` : ''}`;
-    activaDescarga(v);
-
-    if (!canManage) return;
-
-    // El mapa de la ficha: el punto de ahora, y guardar si se mueve.
-    (async () => {
-      const perfil = await rpc('business_profile', { p_id: BIZ.id }).catch(() => null);
-      const actual = Array.isArray(perfil) ? perfil[0] : perfil;
-      let nuevo = null;
-      const caja = $('#mapa-ficha', v);
-      if (!caja || caja.dataset.listo) return;
-      caja.dataset.listo = '1';
-      await mapaPunto(caja, actual && actual.lat != null ? { lat: actual.lat, lng: actual.lng } : null, (p) => {
-        nuevo = p;
-        $('#g-punto', v).disabled = false;
-        $('#msgp', v).textContent = I18N.t('Sin guardar');
-      });
-      $('#g-punto', v).onclick = async () => {
-        if (!nuevo) return;
-        try {
-          await rpc('update_business', { p_id: BIZ.id, p_patch: { lat: nuevo.lat, lng: nuevo.lng } });
-          // Otro sitio puede ser otra zona (la base la recalcula igual).
-          BIZ.time_zone = KZ.porCoordenadas(nuevo.lat, nuevo.lng); TZ = KZ.de(BIZ);
-          $('#g-punto', v).disabled = true;
-          $('#msgp', v).textContent = I18N.t('Guardada');
-          toast('Ubicación guardada');
-        } catch (err) { toast(friendly(err.message), true); }
-      };
-    })();
-
-    // El selector de categorías de toda la web (/assets/categorias.js): una.
-    KlendarCategorias.campo($('[data-cat-ficha]', v), {
-      cats: cats || [], elegidas: [b.category_id], multiple: false, lang: I18N.lang, nombre: 'category_id',
-      titulo: I18N.t('Categoría'), disabled: !canManage, alCambiar: (ids) => { b.category_id = ids[0]; },
-    });
-    $('#f', v).onsubmit = async (e) => {
-      e.preventDefault();
-      const f = new FormData(e.target);
-      // Lo mismo que la app (y que el alta): nombre de dos letras o más, y
-      // dirección y ciudad obligatorias; «Obligatorio» debajo de cada campo.
-      const obligatorio = KL_VALIDA.MSG[I18N.lang === 'en' ? 'en' : 'es'].obligatorio;
-      const faltan = [
-        ['name', String(f.get('name') || '').trim().length < 2],
-        ['address', !String(f.get('address') || '').trim()],
-        ['city', !String(f.get('city') || '').trim()],
-      ];
-      for (const [campo, falta] of faltan) KL_CAMPO(e.target.elements[campo], falta ? obligatorio : null);
-      const primero = faltan.find(([, falta]) => falta);
-      if (primero) { e.target.elements[primero[0]].focus(); return; }
-      const patch = {
-        name: String(f.get('name') || '').trim(),
-        category_id: f.get('category_id') || null,
-        description: String(f.get('description') || '').trim(),
-        address: String(f.get('address') || '').trim(),
-        city: String(f.get('city') || '').trim(),
-        phone: String(f.get('phone') || '').trim(),
-        website: String(f.get('website') || '').trim(),
-        contact_email: String(f.get('contact_email') || '').trim(),
-        tax_id: String(f.get('tax_id') || '').trim(),
-        social_links: {
-          instagram: String(f.get('instagram') || '').trim(),
-          tiktok: String(f.get('tiktok') || '').trim(),
-          facebook: String(f.get('facebook') || '').trim(),
-        },
-        adults_only: $('[name=adults_only]', v).checked,
-      };
-      // Si la dirección ha cambiado, se busca el punto en el mapa.
-      if (patch.address && patch.address !== (b.address || '')) {
-        const punto = await geocodifica(`${patch.address}, ${patch.city || ''}`);
-        if (punto) { patch.lat = punto.lat; patch.lng = punto.lng; }
-        else toast('No hemos encontrado esa dirección en el mapa: arrastra la chincheta en «Ubicación en el mapa».', true);
-      }
-      try {
-        await rpc('update_business', { p_id: BIZ.id, p_patch: patch });
-        // El nombre nuevo, ya en el selector de locales y en el resumen; y la
-        // zona, si la dirección nueva ha movido el punto.
-        BIZ.name = patch.name;
-        if (patch.lat != null) { BIZ.time_zone = KZ.porCoordenadas(patch.lat, patch.lng); TZ = KZ.de(BIZ); }
-        renderBizPicker();
-        $('#msg', v).textContent = 'Guardada';
-        toast('Ficha guardada');
-      } catch (err) { toast(friendly(err.message), true); }
-    };
-
-    // «Cómo es tu local»: se guarda aparte (`set_business_amenities`).
-    $$('[name=sitio]', v).forEach((c) => { c.onchange = () => { $('#msgs', v).textContent = I18N.t('Sin guardar'); }; });
-    $('#g-sitio', v).onclick = async () => {
-      const marcados = $$('[name=sitio]:checked', v).map((c) => c.value);
-      try {
-        const r = await rpc('set_business_amenities', { p_business: BIZ.id, p_amenities: marcados });
-        sitio = Array.isArray(r) ? r : marcados;
-        $('#msgs', v).textContent = I18N.t('Guardado');
-        toast('Guardado');
-      } catch (err) { toast(friendly(err.message), true); }
-    };
-
-    $('#h', v).onsubmit = async (e) => {
-      e.preventDefault();
-      const f = new FormData(e.target);
-      const nuevo = {};
-      for (const [n] of SEMANA) nuevo[String(n)] = textoAHorario(f.get(`d${n}`));
-      try {
-        await rpc('update_business', { p_id: BIZ.id, p_patch: { opening_hours: nuevo } });
-        $('#msgh', v).textContent = 'Guardados';
-        toast('Horarios guardados');
-      } catch (err) { toast(friendly(err.message), true); }
-    };
-
-    $$('[data-img]', v).forEach((btn) => { btn.onclick = () => {
-      const que = btn.dataset.img;
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = 'image/*';
-      input.multiple = que === 'gallery';
-      input.onchange = async () => {
-        const nuevas = [];
-        const elegidas = que === 'gallery' ? caben(input.files, galeria.length, TOPE.galeria) : [...input.files].slice(0, 1);
-        for (const elegida of elegidas) {
-          const f = await KFotos.reduce(elegida, que === 'logo' ? KFotos.TAM.logo : KFotos.TAM.foto);
-          if (f.size > 5 * 1024 * 1024) { toast('Esa foto pesa más de 5 MB.', true); continue; }
-          const ext = (f.name.split('.').pop() || 'jpg').toLowerCase();
-          const path = `${BIZ.id}/${que}-${crypto.randomUUID()}.${ext}`;
-          const { error } = await sb.storage.from(BUCKET).upload(path, f, { contentType: f.type });
-          if (error) { toast(friendly(error.message), true); continue; }
-          nuevas.push(sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl);
-        }
-        if (!nuevas.length) return;
-        const patch = que === 'logo' ? { logo_url: nuevas[0] }
-          : que === 'cover' ? { cover_image_url: nuevas[0] }
-            : { gallery: [...galeria, ...nuevas] };
-        try {
-          await rpc('update_business', { p_id: BIZ.id, p_patch: patch });
-          if (que === 'logo') logo = nuevas[0];
-          else if (que === 'cover') portada = nuevas[0];
-          else galeria = [...galeria, ...nuevas];
-          toast('Guardado'); pinta();
-        } catch (err) { toast(friendly(err.message), true); }
-      };
-      input.click();
-    }; });
-
-    $$('[data-gal-del]', v).forEach((btn) => { btn.onclick = async () => {
-      const i = +btn.dataset.galDel;
-      const siguiente = galeria.filter((_, j) => j !== i);
-      try {
-        await rpc('update_business', { p_id: BIZ.id, p_patch: { gallery: siguiente } });
-        galeria = siguiente; toast('Quitada'); pinta();
-      } catch (err) { toast(friendly(err.message), true); }
-    }; });
-  };
-
-  pinta();
-};
 
 PAGES.equipo = async (v) => {
   const [team, invites] = await Promise.all([
