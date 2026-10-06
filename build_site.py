@@ -472,6 +472,8 @@ def robots():
         'Allow: /',
         'Disallow: /admin/',
         'Disallow: /r/',
+        # El QR de cliente de los bonos: un enlace de un solo uso.
+        'Disallow: /c/',
         'Disallow: /cal/',  # «Tus planes en tu calendario»: enlaces secretos
         'Disallow: /legal/',
         '',
