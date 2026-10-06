@@ -1168,4 +1168,9 @@ const I18N = makeI18N({
   'Puntuación': 'Rating',
   'Área': 'Area',
   'Resultados por página': 'Results per page',
+  // Grupo de una categoría (2026-10)
+  "Elige el grupo de la categoría.": "Choose the category group.",
+  "Grupo (en el selector de categorías)": "Group (in the category picker)",
+  "— elige uno": "— choose one",
+  "Ese grupo de categorías no existe.": "That category group doesn't exist.",
 });

@@ -687,7 +687,11 @@ async function rrppFormularioCarga(origen, o) {
   };
 }
 
-/** Las opciones, dentro de «Quién la ve» (se ven solo con esa opción). */
+/** Las opciones de RRPP del formulario de publicación, en tres trozos (se
+ * ven solo con «Solo con el enlace de un RRPP»): `quien` (para qué RRPP, en
+ * «Más opciones» › «Quién la ve»), `codigo` (plazas por RRPP y hasta cuándo
+ * vale el código, en «Plazas y código»: la única caducidad del código en una
+ * de RRPP) y `resumen` («Cómo funcionará», debajo de los bloques). */
 function rrppFormularioHtml(o, datos) {
   const aud = o.audience || 'all';
   const scope = o.promoter_scope === 'some' ? 'some' : 'all';
@@ -695,9 +699,10 @@ function rrppFormularioHtml(o, datos) {
   // De serie, «Mientras dure la publicación» (no «hasta la 1:00»).
   const validez = hasta ? 'hasta' : o.promoter_code_hours ? 'horas' : 'siempre';
   const ps = datos?.promotores || [];
-  return `<div id="rrppOpc" class="rrpp-opc" ${aud === 'promoters' ? '' : 'hidden'}>
-    <p class="hint">${esc(bi('No sale en Descubre, Explorar ni en tu ficha: solo la ve quien entra por el enlace o el QR de uno de tus RRPP.',
-      "It doesn't appear in Discover, Explore or on your page: only people who come in through one of your promoters' links or QR codes can see it."))}</p>
+  const oculto = aud === 'promoters' ? '' : 'hidden';
+  const quien = `<div id="rrppOpc" class="rrpp-opc" ${oculto}>
+    <p class="hint">${esc(bi('Solo la ve quien entra por el enlace o el QR de un RRPP.',
+      "Only people who come in through a promoter's link or QR see it."))}</p>
     <p class="rrpp-preg">${esc(bi('¿Para qué RRPP?', 'Which promoters?'))}</p>
     <label class="opcion"><input type="radio" name="promoter_scope" value="all" ${scope === 'all' ? 'checked' : ''}><span>${esc(bi('Todos', 'All'))}</span></label>
     <label class="opcion"><input type="radio" name="promoter_scope" value="some" ${scope === 'some' ? 'checked' : ''}><span>${esc(bi('Solo algunos', 'Only some'))}</span></label>
@@ -705,6 +710,8 @@ function rrppFormularioHtml(o, datos) {
       ${ps.length ? ps.map((p) => `<label class="opcion"><input type="checkbox" name="rrpp_elegido" value="${esc(p.id)}" ${datos.elegidos.has(p.id) ? 'checked' : ''}><span>${esc(rrppNombre(p))}${p.status === 'paused' ? ` <small class="muted">· ${esc(bi('En pausa', 'Paused'))}</small>` : ''}</span></label>`).join('')
         : `<p class="hint">${esc(bi('Aún no tienes RRPP: invítalos en «RRPP».', 'You have no promoters yet: invite them in “Promoters”.'))}</p>`}
     </div>
+  </div>`;
+  const codigo = `<div id="rrppCod" class="rrpp-opc bl-fila" ${oculto}>
     <p class="rrpp-preg">${esc(bi('Plazas por RRPP', 'Places per promoter'))}</p>
     <div class="rrpp-fila">
       <label class="opcion"><input type="checkbox" name="rrpp_sin_limite" ${o.promoter_quota ? '' : 'checked'}><span>${esc(bi('Sin límite', 'No limit'))}</span></label>
@@ -724,21 +731,22 @@ function rrppFormularioHtml(o, datos) {
       <span>${esc(bi('horas desde que se apunta', 'hours after signing up'))}</span>
     </div>
     <p class="hint" style="margin:6px 0 0">${esc(bi('Nunca pasa del final de la publicación.', 'It never goes past the end of the publication.'))}</p>
-    <div class="card rrpp-resumen" style="margin:12px 0 0;padding:12px 14px" aria-live="polite">
-      <p class="rrpp-preg" style="margin:0 0 4px">${esc(bi('Cómo funcionará', 'How it will work'))}</p>
-      <p id="rrppResumen" style="margin:0"></p></div>
   </div>`;
+  const resumen = `<div class="card rrpp-resumen" id="rrppRes" style="margin:14px 0 0;padding:12px 14px" aria-live="polite" ${oculto}>
+      <p class="rrpp-preg" style="margin:0 0 4px">${esc(bi('Cómo funcionará', 'How it will work'))}</p>
+      <p id="rrppResumen" style="margin:0"></p></div>`;
+  return { quien, codigo, resumen };
 }
 
 /** Enseña u oculta las opciones según «Quién la ve» y «¿Para qué RRPP?». */
 function rrppFormularioEngancha(v) {
   const sync = () => {
     const aud = $('[name=audience]:checked', v)?.value || 'all';
-    $('#rrppOpc', v).hidden = aud !== 'promoters';
+    for (const sel of ['#rrppOpc', '#rrppCod', '#rrppRes']) { const el = $(sel, v); if (el) el.hidden = aud !== 'promoters'; }
     // En una de RRPP manda «¿Hasta cuándo vale el código?», no los minutos
-    // de «¿Cuánto vale el código QR?» (pensados para enseñarlo en el local).
-    const ttl = $('[name=code_ttl_minutes]', v)?.closest('label');
-    if (ttl) ttl.hidden = aud === 'promoters';
+    // de «¿Cuánto vale el código?» (pensados para enseñarlo en el local).
+    const ttl = $('#ttlRow', v);
+    if (ttl && aud === 'promoters') ttl.hidden = true;
     $('#rrppAlgunos', v).hidden = ($('[name=promoter_scope]:checked', v)?.value || 'all') !== 'some';
     const sin = $('[name=rrpp_sin_limite]', v).checked;
     $('[name=promoter_quota]', v).disabled = sin;
@@ -782,21 +790,21 @@ function rrppFormularioEngancha(v) {
 function rrppFormularioLee(v) {
   const scope = $('[name=promoter_scope]:checked', v)?.value === 'some' ? 'some' : 'all';
   const ids = $$('[name=rrpp_elegido]:checked', v).map((el) => el.value);
-  if (scope === 'some' && !ids.length) return { error: bi('Marca al menos un RRPP o elige «Todos».', 'Tick at least one promoter or choose “All”.') };
+  if (scope === 'some' && !ids.length) return { error: bi('Marca al menos un RRPP o elige «Todos».', 'Tick at least one promoter or choose “All”.'), el: $('[name=promoter_scope][value=some]', v) };
   let quota = null;
   if (!$('[name=rrpp_sin_limite]', v).checked) {
     quota = Number($('[name=promoter_quota]', v).value);
-    if (!Number.isInteger(quota) || quota < 1 || quota > 10000) return { error: bi('Las plazas por RRPP van de 1 a 10.000 (o «Sin límite»).', 'Places per promoter go from 1 to 10,000 (or “No limit”).') };
+    if (!Number.isInteger(quota) || quota < 1 || quota > 10000) return { error: bi('Las plazas por RRPP van de 1 a 10.000 (o «Sin límite»).', 'Places per promoter go from 1 to 10,000 (or “No limit”).'), el: $('[name=promoter_quota]', v) };
   }
   const validez = $('[name=rrpp_validez]:checked', v)?.value || 'siempre';
   let until = null;
   let hours = null;
   if (validez === 'hasta') {
     until = String($('[name=promoter_code_until]', v).value || '').slice(0, 5);
-    if (!/^\d{2}:\d{2}$/.test(until)) return { error: bi('Elige hasta qué hora vale el código.', 'Choose the time the code is valid until.') };
+    if (!/^\d{2}:\d{2}$/.test(until)) return { error: bi('Elige hasta qué hora vale el código.', 'Choose the time the code is valid until.'), el: $('[name=promoter_code_until]', v) };
   } else if (validez === 'horas') {
     hours = Number($('[name=promoter_code_hours]', v).value);
-    if (!Number.isInteger(hours) || hours < 1 || hours > 24) return { error: bi('El código puede valer de 1 a 24 horas.', 'The code can be valid for 1 to 24 hours.') };
+    if (!Number.isInteger(hours) || hours < 1 || hours > 24) return { error: bi('El código puede valer de 1 a 24 horas.', 'The code can be valid for 1 to 24 hours.'), el: $('[name=promoter_code_hours]', v) };
   }
   return {
     cols: { promoter_scope: scope, promoter_quota: quota, promoter_code_until: until, promoter_code_hours: hours },

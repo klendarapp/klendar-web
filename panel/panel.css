@@ -630,3 +630,67 @@ label.f.casilla small { display: block; font-weight: 500; margin-top: 2px; }
 .foto-portada.vacia, .foto-logo.vacia { display: grid; place-items: center; background: var(--glass); color: var(--ink-2); font-size: 28px; }
 .foto-acc { display: flex; flex-wrap: wrap; gap: 8px; }
 @media (max-width: 560px) { .fotos-ficha { grid-template-columns: 1fr; } }
+/* ── Formulario de publicación (rediseño 2026-10): lo esencial arriba, tres
+   bloques plegables con su resumen y la barra fija con «Guardar borrador» y
+   «Publicar ▾». El mismo orden y los mismos nombres que la app. */
+.tipo-linea { margin: -6px 0 14px; color: var(--ink-2); font-size: 14px; }
+.tipo-linea .linkbtn { font-weight: 700; }
+.pub-form { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; padding-bottom: 0; min-width: 0; }
+.pub-form > *, .pub-editor > * { min-width: 0; }
+/* Editando una publicación, la barra del formulario sustituye a la de abajo
+   del móvil (como en la app, que la abre a pantalla completa). */
+@media (max-width: 900px) {
+  body.con-barra-pub .tabbar { display: none; }
+  body.con-barra-pub main.content { padding-bottom: 24px; }
+  body.con-barra-pub .toasts { bottom: calc(110px + env(safe-area-inset-bottom)); }
+}
+.pub-form .etq { margin: 0 0 6px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.pub-form fieldset.plano { border: 0; padding: 0; margin: 0; min-width: 0; display: grid; gap: 8px; }
+.pub-form fieldset.plano > legend { padding: 0; margin-bottom: 6px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.pub-form .dos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.pub-form .dos[hidden], .pub-form [hidden] { display: none !important; }
+.pub-form .bl-fila { margin: 0; }
+.pub-form .help { margin: 0; }
+.ideas .ideas-fila { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+.ideas .ideas-fila::-webkit-scrollbar { display: none; }
+.ideas .ideas-fila .btn { flex: none; white-space: nowrap; }
+/* Una elección en píldoras (radio): la marcada en tinta. */
+.elige { display: flex; flex-wrap: wrap; gap: 8px; }
+.elige label { position: relative; display: inline-flex; }
+.elige input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
+.elige span { display: inline-flex; align-items: center; min-height: 40px; padding: 8px 14px; border-radius: 999px; box-sizing: border-box;
+  border: 1px solid var(--glass-border); background: var(--glass); color: var(--ink); font-weight: 600; font-size: 14px; cursor: pointer; }
+.elige input:checked + span { background: var(--ink); color: var(--surface); border-color: var(--ink); font-weight: 700; }
+.elige input:focus-visible + span { outline: 2px solid var(--ink); outline-offset: 2px; }
+/* Bloques plegables: cerrados dicen lo que llevan dentro. */
+details.bloque { border: 1px solid var(--glass-border); border-radius: 18px; margin: 0; }
+details.bloque > summary { list-style: none; cursor: pointer; display: grid; grid-template-columns: 1fr auto; column-gap: 10px; padding: 14px 16px; }
+details.bloque > summary::-webkit-details-marker { display: none; }
+/* La flecha, dibujada (el icono no está en la fuente recortada del panel). */
+details.bloque > summary::after { content: ''; width: 9px; height: 9px; border-right: 2px solid var(--ink-2); border-bottom: 2px solid var(--ink-2);
+  transform: rotate(45deg); grid-column: 2; grid-row: 1 / span 2; align-self: center; margin: -4px 6px 0; transition: transform .2s; }
+details.bloque[open] > summary::after { transform: rotate(225deg); margin-top: 4px; }
+@media (prefers-reduced-motion: reduce) { details.bloque > summary::after { transition: none; } }
+details.bloque > summary:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 18px; }
+details.bloque .b-tit { font-weight: 800; font-size: 16px; color: var(--ink); }
+details.bloque .b-res { color: var(--ink-2); font-size: 13px; margin-top: 2px; }
+details.bloque[open] .b-res { display: none; }
+details.bloque .b-cuerpo { display: grid; gap: 14px; padding: 0 16px 16px; }
+/* La barra fija de abajo. */
+.barra-pub { position: sticky; bottom: 0; z-index: 5; margin: 4px -20px 0; padding: 12px 20px calc(12px + env(safe-area-inset-bottom));
+  background: var(--elevated); border-top: 1px solid var(--glass-border); border-radius: 0 0 20px 20px; }
+.barra-pub .err:empty { display: none; }
+.barra-pub .err { margin: 0 0 8px; }
+.barra-botones { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.barra-botones .btn { width: 100%; justify-content: center; min-height: 48px; }
+.pub-grupo { position: relative; }
+.menu-pub { position: absolute; right: 0; bottom: calc(100% + 6px); display: grid; gap: 2px; padding: 6px; min-width: 220px;
+  border-radius: 14px; background: var(--elevated); border: 1px solid var(--glass-border); box-shadow: 0 12px 30px rgba(0,0,0,.25); }
+.menu-pub button { text-align: left; padding: 10px 12px; border-radius: 10px; border: 0; background: none; color: var(--ink); font: inherit; font-size: 15px; cursor: pointer; }
+.menu-pub button:hover, .menu-pub button:focus-visible { background: var(--soft, rgba(127,127,127,.12)); outline: none; }
+.programada { margin: 0 0 8px; font-size: 14px; color: var(--ink-2); }
+.pub-form .err-campo { margin: 4px 0 0; color: #b3261e; font-size: 13px; font-weight: 600; }
+@media (prefers-color-scheme: dark) { .pub-form .err-campo { color: #FF9B9B; } }
+.pub-form [aria-invalid="true"] { border-color: #b3261e; }
+.tpl-menu .mas-menu { position: absolute; right: 0; z-index: 6; }
+.tpl-menu { position: relative; }

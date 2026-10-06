@@ -205,8 +205,8 @@ function lugarDe(f) {
 }
 
 // ── Diseños de publicación (docs/DISENOS_PUBLICACION.md en la app) ─────────
-/** Plantillas, en el orden del selector: valor y nombre. */
-const PLANTILLAS = [['glass', 'Clásica'], ['photo', 'Foto grande'], ['poster', 'Cartel'], ['bold', 'Color'], ['minimal', 'Minimal']];
+/** Diseños, en el orden del selector: valor y nombre. */
+const PLANTILLAS = [['glass', 'Clásica'], ['photo', 'Foto grande'], ['poster', 'Cartel'], ['bold', 'A todo color'], ['minimal', 'Minimal']];
 const PLANTILLA_AYUDA = {
   glass: 'La foto de fondo y todo en un panel de cristal.',
   photo: 'La foto o el vídeo mandan: los datos van pequeños, abajo.',
@@ -667,6 +667,7 @@ async function noBusiness() {
 function renderBizPicker() {
   $('#bizSelect').innerHTML = BIZZES.map((b) => `<option value="${esc(b.id)}" ${b.id === BIZ.id ? 'selected' : ''}>${esc(b.name)}</option>`).join('');
   $('#bizSelect').onchange = async () => {
+    if (!await puedeSalir()) { $('#bizSelect').value = BIZ.id; return; }
     BIZ = BIZZES.find((b) => b.id === $('#bizSelect').value);
     localStorage.setItem('klendar.biz', BIZ.id);
     await preparaNegocio();
@@ -679,6 +680,7 @@ function renderBizPicker() {
 let saliendo = false;
 $('#logout').onclick = async (e) => {
   e.preventDefault();
+  if (!await puedeSalir()) return;
   saliendo = true;
   olvidaColas();
   await sb.auth.signOut({ scope: 'local' }); // solo este navegador
@@ -878,6 +880,8 @@ async function route() {
   if (!ME) return;
   if (!BIZ) return noBusiness();
   const n = ++RUTA_N;
+  // Con la barra de abajo del móvil, que el formulario de publicación esconde.
+  document.body.classList.remove('con-barra-pub');
   let [page, param] = currentRoute();
   if (!gestiona() && SOLO_GESTION.includes(page)) page = 'resumen';
   renderNav(page);
@@ -1656,7 +1660,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
   if (id) {
     const all = await rpc('my_business_offers', { p_id: BIZ.id });
     o = all.find((x) => x.id === id) || o;
-  } else if (!desde) {
+  } else if (!desde?.from) {
     // Como la app: una oferta flash empieza ya y dura 3 h; un evento, mañana
     // a las 20:00. Se cambia en un momento; un formulario en blanco frena.
     // Desde el calendario (?dia=AAAA-MM-DD), ese día: la oferta a las 18:00
@@ -1672,7 +1676,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
       o.event_at = (enDia ? KZ.instante(TZ, enDia[0], enDia[1], enDia[2], 20) : enDiasNegocio(pedido === KZ.hoy(TZ) ? 0 : 1, 20)).toISOString();
     }
   }
-  if (!id && desde) {
+  if (!id && desde?.from) {
     // Nueva, rellena con otra: textos, fotos, precio, aforo y diseño. Las
     // fechas no (siempre cambian), salvo «Repetir mañana»: a la misma hora.
     const all = await rpc('my_business_offers', { p_id: BIZ.id });
@@ -1690,7 +1694,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
       } else {
         o.redeem_start_at = null; o.redeem_end_at = null; o.event_at = null; o.event_end_at = null;
       }
-      kindDefault = src.kind;
+      if (desde.rrpp) o.audience = 'promoters';
     }
   }
   // «¿Para niños?» y «¿Bajo techo o al aire libre?» no vienen en
@@ -1706,129 +1710,202 @@ async function offerForm(v, id, kindDefault, desde = null) {
   }
   // «Solo con el enlace de un RRPP»: los RRPP del negocio y los elegidos.
   const datosRrpp = await rrppFormularioCarga(origenLugar, o);
+  const rrppHtml = rrppFormularioHtml(o, datosRrpp);
   // Crear a partir de una fecha de una serie: la nueva sigue en ella (se
   // puede quitar). Quien la sigue recibirá un aviso cuando se publique.
   const serieCopia = !id && desde?.from
     ? (await seriesDeNegocio()).find((s) => s.status === 'active' && (s.offer_ids || []).includes(desde.from)) || null
     : null;
-  const isFlash = () => $('[name=kind]', v).value === 'flash_offer';
+  let kind = o.kind === 'future_event' ? 'future_event' : 'flash_offer';
+  const isFlash = () => kind === 'flash_offer';
   const disc = o.discount || {};
-  // Plantillas, como en la app: las de su gremio (mismas ideas, generadas
-  // desde la app en ideas.js) y las que el negocio ha guardado.
+  // «Ideas» (las de su gremio, generadas desde la app en ideas.js; solo en
+  // una nueva en blanco) y «Tus plantillas» (lo que el negocio ha guardado).
   let ideas = [];
-  let guardadas = [];
+  const [{ data: yo }, { data: tpl }] = await Promise.all([
+    !id && !desde ? sb.from('businesses').select('category_id').eq('id', BIZ.id).maybeSingle() : Promise.resolve({ data: null }),
+    sb.from('offer_templates').select('id, name, data, updated_at').eq('business_id', BIZ.id).order('updated_at', { ascending: false }),
+  ]);
   if (!id && !desde) {
-    const [{ data: yo }, { data: tpl }] = await Promise.all([
-      sb.from('businesses').select('category_id').eq('id', BIZ.id).maybeSingle(),
-      sb.from('offer_templates').select('id, name, data, updated_at').eq('business_id', BIZ.id).order('updated_at', { ascending: false }),
-    ]);
     const slug = CATS.find((c) => c.id === yo?.category_id)?.slug;
     const IDEAS = window.KLENDAR_IDEAS || { general: [], bySlug: {} };
-    ideas = (IDEAS.bySlug[slug] || IDEAS.general).filter((t) => t.kind === o.kind);
-    guardadas = tpl || [];
+    ideas = (IDEAS.bySlug[slug] || IDEAS.general).filter((t) => t.kind === kind);
   }
+  let guardadas = tpl || [];
   const en = I18N.lang === 'en';
+  document.body.classList.add('con-barra-pub');
+  // En vivo: lo que estaba publicado se edita con «Guardar cambios».
+  const enVivo = !!id && o.status === 'active';
+  let programada = id && o.status === 'draft' && o.publish_at ? o.publish_at : null;
+
+  const titulo = () => (kind === 'future_event'
+    ? (id ? I18N.t('Editar evento') : desde?.rrpp ? bi('Nuevo evento para RRPP', 'New event for promoters') : I18N.t('Nuevo evento'))
+    : (id ? I18N.t('Editar oferta flash') : desde?.rrpp ? bi('Nueva oferta para RRPP', 'New offer for promoters') : I18N.t('Nueva oferta flash')));
+  // Una elección en píldoras (radio): la marcada en tinta, como en la app.
+  const elige = (name, opciones, actual, etiqueta) => `<div class="elige" role="radiogroup" aria-label="${esc(etiqueta)}">${opciones.map(([val, txt]) =>
+    `<label><input type="radio" name="${name}" value="${esc(val)}" ${String(actual ?? '') === String(val) ? 'checked' : ''}><span>${esc(txt)}</span></label>`).join('')}</div>`;
+  const ayuda = (temas) => helpBox(I18N.t('¿Cómo funciona?'), temas.map(([h, t]) => `<p><b>${esc(h)}</b><br>${esc(t)}</p>`).join(''));
+  const bloque = (bid, tit, cuerpo) => `<details class="bloque" id="${bid}"><summary><span class="b-tit">${esc(tit)}</span><span class="b-res" id="${bid}Res"></span></summary><div class="b-cuerpo">${cuerpo}</div></details>`;
+  const kidsVal = o.for_kids === true ? 'si' : o.for_kids === false ? 'no' : '';
+
   v.innerHTML = `
-    <div class="page-head"><a class="btn sm ghost" href="#/publicaciones">← Volver</a><h1>${id ? 'Editar publicación' : desde?.repeat ? 'Repetir mañana' : desde?.rrpp && !desde?.from ? bi('Nueva oferta para RRPP', 'New offer for promoters') : desde ? 'A partir de otra publicación' : (kindDefault === 'future_event' ? 'Nuevo evento' : 'Nueva oferta flash')}</h1></div>
-    ${ideas.length || guardadas.length ? `<div class="card plantillas" id="plantillas">
-      ${guardadas.length ? `<h2>Tus plantillas</h2>
-        <div class="acciones">${guardadas.map((t, i) => `<button type="button" class="btn sm" data-tpl="${i}">${esc(t.name)}</button>`).join('')}</div>
-        <p style="margin:8px 0 0"><button type="button" class="linkbtn" id="borraTpl">Borrar plantillas…</button></p>` : ''}
-      ${ideas.length ? `<h2 ${guardadas.length ? 'style="margin-top:14px"' : ''}>Plantillas</h2>
-        <p class="hint" style="margin:0 0 10px">Lo que suele funcionar en tu tipo de negocio. Rellena el formulario; luego lo cambias a tu gusto.</p>
-        <div class="acciones">${ideas.map((t, i) => `<button type="button" class="btn sm" data-idea="${i}">${esc(en ? t.en : t.es)}</button>`).join('')}</div>` : ''}
-    </div>` : ''}
+    <div class="page-head"><a class="btn sm ghost" href="#/publicaciones">← Volver</a><h1 id="pubTitulo">${esc(titulo())}</h1><span class="spacer"></span>
+      <details class="mas tpl-menu"><summary class="btn sm ghost">Tus plantillas</summary>
+        <div class="mas-menu" role="menu">
+          <button type="button" role="menuitem" id="usarTpl">Usar una plantilla…</button>
+          <button type="button" role="menuitem" id="saveTpl">Guardar como plantilla…</button>
+          <button type="button" role="menuitem" id="borraTpl">Borrar plantillas…</button>
+        </div></details></div>
+    <p class="tipo-linea"><span id="tipoPregunta"></span> <button type="button" class="linkbtn" id="cambiaTipo"></button></p>
     <div class="pub-editor">
-    <form class="card" id="form">
-      <div class="form-grid">
-        <label class="f full"><span>Título</span><input name="title" value="${esc(o.title || '')}" required maxlength="90" placeholder="${kindDefault === 'future_event' ? 'Concierto de jazz' : 'Café + tostada 2,50 €'}"></label>
-        <label class="f full"><span>Descripción</span><textarea name="description" maxlength="600">${esc(o.description || '')}</textarea></label>
-        <label class="f"><span>Tipo</span><select name="kind">
-          <option value="flash_offer" ${o.kind === 'flash_offer' ? 'selected' : ''}>Oferta flash</option>
-          <option value="future_event" ${o.kind === 'future_event' ? 'selected' : ''}>Evento</option></select></label>
-        <label class="f"><span>Categoría</span><select name="category_id"><option value="">La del negocio</option>
-          ${CATS.map((c) => `<option value="${esc(c.id)}" ${o.category_id === c.id ? 'selected' : ''}>${esc(c.names?.[I18N.lang] || c.names?.es || '')}</option>`).join('')}</select></label>
-        <label class="f"><span>Empieza</span><input type="datetime-local" name="start" value="${toLocalInput(o.kind === 'future_event' ? o.event_at : o.redeem_start_at)}" required></label>
-        <label class="f"><span>Termina</span><input type="datetime-local" name="end" value="${toLocalInput(o.kind === 'future_event' ? o.event_end_at : o.redeem_end_at)}"></label>
-        <fieldset class="f full lugar"><legend>Dónde</legend>
+    <form class="card pub-form" id="form" novalidate>
+      <input type="hidden" name="kind" value="${kind}">
+      ${ideas.length ? `<div class="ideas" id="ideas"><p class="etq">Ideas</p>
+        <div class="ideas-fila">${ideas.map((t, i) => `<button type="button" class="btn sm" data-idea="${i}">${esc(en ? t.en : t.es)}</button>`).join('')}</div>
+        <p class="hint">Toca una y cámbiala a tu gusto.</p></div>` : ''}
+      <label class="f"><span>Título</span><input name="title" value="${esc(o.title || '')}" required maxlength="90" placeholder="${kind === 'future_event' ? 'Concierto de jazz' : 'Café + tostada 2,50 €'}"></label>
+      <label class="f"><span>Descripción <small>(opcional)</small></span><textarea name="description" rows="3" maxlength="600" placeholder="${esc(I18N.t('Qué incluye, cómo es…'))}">${esc(o.description || '')}</textarea></label>
+      <div class="bl-fila"><p class="etq">Fotos y vídeo</p>
+        <div class="photos" id="photos"></div>
+        <p class="hint">La primera es la portada; muévelas con las flechas. Sin fotos, se usa la del local.</p></div>
+      <fieldset class="f plano" id="cuando"><legend id="cuandoTit"></legend>
+        <div class="dos">
+          <label class="f"><span id="iniTxt"></span><input type="datetime-local" name="start" value="${toLocalInput(o.kind === 'future_event' ? o.event_at : o.redeem_start_at)}" required></label>
+          <label class="f"><span id="finTxt"></span><input type="datetime-local" name="end" value="${toLocalInput(o.kind === 'future_event' ? o.event_end_at : o.redeem_end_at)}"></label>
+        </div>
+        <p class="hint">${TZ === KZ.CANARIAS ? 'Las fechas y horas son las de Canarias, donde está tu local.' : 'Las fechas y horas son las de la península (hora de Madrid), donde está tu local.'}</p>
+      </fieldset>
+      <fieldset class="f plano" id="descuento"><legend>Descuento</legend>
+        ${elige('discount_type', [['', I18N.t('Sin descuento')], ['percent', '%'], ['fixed', I18N.t('Precio fijo')], ['2x1', '2x1'], ['free', I18N.t('Gratis')], ['other', I18N.t('Otro')]], disc.type || '', I18N.t('Descuento'))}
+        <div class="dos" id="descFila">
+          <label class="f" id="valorRow"><span class="sr">Valor del descuento</span><input name="discount_value" value="${esc(disc.value ?? '')}" aria-label="${esc(I18N.t('Valor del descuento'))}"></label>
+          <label class="f" id="antesRow"><span class="sr">Precio anterior</span><input name="prior_price" inputmode="decimal" value="${disc.compare_at_cents != null ? (disc.compare_at_cents / 100).toFixed(2).replace('.', ',') : ''}" placeholder="${esc(I18N.t('Precio anterior (€)'))}" aria-label="${esc(I18N.t('Precio anterior'))}"></label>
+        </div>
+        <p class="hint" id="antesAyuda">El más bajo de los últimos 30 días.</p>
+        <div id="alcRow" class="bl-fila">
+          <p class="etq">¿Incluye bebidas alcohólicas?</p>
+          ${elige('alcohol', [['no', I18N.t('No lleva alcohol')], ['yes', I18N.t('Sí, lleva alcohol')]], disc.alcohol === true ? 'yes' : disc.alcohol === false ? 'no' : '', I18N.t('¿Incluye bebidas alcohólicas?'))}
+          <p class="hint" id="alcAyuda">Solo la verán mayores de 18. Comprueba que tu comunidad lo permite.</p>
+        </div>
+      </fieldset>
+      <label class="f"><span>Precio <small>(opcional)</small></span><input name="price" inputmode="decimal" value="${o.price_cents == null ? '' : (o.price_cents / 100).toFixed(2).replace('.', ',')}" placeholder="12,00"></label>
+      <label class="f" id="entradasRow"><span>Enlace de entradas <small>(opcional)</small></span><input name="external_url" value="${esc(o.external_url || '')}" placeholder="https://"></label>
+      <p class="hint" id="entradasAyuda" hidden></p>
+      ${ayuda([
+        [I18N.t('Oferta flash'), I18N.t('Canjeable con QR durante una ventana de tiempo. Ideal para huecos de última hora.')],
+        [I18N.t('Evento'), I18N.t('Con fecha y hora. Puede tener precio y enlace para entradas.')],
+        [I18N.t('Precio anterior'), I18N.t('Obligatorio al anunciar una rebaja: tiene que ser el precio más bajo que hayas tenido en los últimos 30 días.')],
+        [I18N.t('¿Incluye bebidas alcohólicas?'), I18N.t('Hay que responder: varias comunidades prohíben el 2x1 en bebidas alcohólicas y la sanción es para el negocio. Si el 2x1 es de comida, refrescos o servicios, marca «No lleva alcohol».')],
+        [I18N.t('Programar publicación'), I18N.t('Un borrador no lo ve nadie hasta que lo publiques. «Programar» lo deja en borrador y lo publica solo a la hora que elijas (hasta 60 días).')],
+      ])}
+
+      ${bloque('bAspecto', I18N.t('Aspecto del anuncio'), `
+        <p class="hint" style="margin:0 0 10px">Así se verá en Descubre y en la ficha.
+          <button type="button" class="linkbtn solo-movil" id="irPrevia">Ver la vista previa</button></p>
+        <div class="estilo">
+          <div class="estilo-opc">
+            <p class="etq">Diseño</p>
+            <div class="pills" id="plantillasEstilo" role="group" aria-label="${esc(I18N.t('Diseño'))}"></div>
+            <p class="hint" id="plantillaAyuda" style="margin:8px 0 0"></p>
+            <p class="etq" style="margin-top:14px">Color</p>
+            <div class="colores" id="colores" role="group" aria-label="${esc(I18N.t('Color'))}"></div>
+            <div class="marca" id="marcaPanel" hidden>
+              <p class="hint" style="margin:0 0 6px"><b>Color de tu marca</b></p>
+              <div class="marca-fila">
+                <input type="color" id="marcaColor" aria-label="${esc(I18N.t('Color de tu marca'))}">
+                <input id="marcaHex" maxlength="7" placeholder="#1E79D1" aria-label="${esc(I18N.t('Código del color'))}" spellcheck="false">
+                ${BIZ.logo ? `<button class="btn sm" type="button" id="marcaLogo">${esc(I18N.t('Sacar del logo'))}</button>` : ''}
+              </div>
+              <div class="colores" id="marcaSugeridos" style="margin-top:8px"></div>
+              <p class="hint" id="marcaNota" style="margin:6px 0 0"></p>
+            </div>
+          </div>
+        </div>`)}
+
+      ${bloque('bPlazas', I18N.t('Plazas y código'), `
+        <label class="f"><span>Aforo / unidades</span><input name="max_redemptions" type="number" min="1" value="${o.max_redemptions ?? ''}" placeholder="${esc(I18N.t('Vacío = sin límite'))}"></label>
+        <div id="plazasRow" class="bl-fila">
+          <p class="etq">Cómo se llenan las plazas</p>
+          ${elige('holds_seats', [['si', I18N.t('El código guarda la plaza')], ['no', I18N.t('Por orden de llegada')]], o.holds_seats === false ? 'no' : 'si', I18N.t('Cómo se llenan las plazas'))}
+          <p class="hint" id="plazasAyuda"></p>
+        </div>
+        <p class="hint" id="esperaNota">Si se llena, la gente puede apuntarse a la lista de espera.</p>
+        <div id="reservaRow" class="bl-fila">
+          <label class="opcion"><input type="checkbox" name="reservations_enabled" ${o.reservations_enabled ? 'checked' : ''}><span><b>Reserva de plaza (sin pago)</b><br><small class="muted">Reservan desde la app y enseñan el código en la puerta.</small></span></label>
+          <label class="f" id="seatsRow"><span>Plazas por persona <small>(con un mismo código)</small></span><select name="max_seats">
+            ${[1, 2, 3, 4, 5, 6].map((n) => `<option value="${n}" ${Number(o.max_seats || 1) === n ? 'selected' : ''}>${n === 1 ? esc(I18N.t('1 (solo quien reserva)')) : esc(bi(`${n} personas`, `${n} people`))}</option>`).join('')}</select></label>
+        </div>
+        ${rrppHtml.codigo}
+        <div id="ttlRow" class="bl-fila">
+          <p class="etq">¿Cuánto vale el código?</p>
+          ${elige('code_ttl_minutes', [[5, I18N.t('5 minutos')], [30, I18N.t('30 minutos')], [180, I18N.t('3 horas')], [1440, I18N.t('1 día')], ['', I18N.t('Sin caducidad')]], o.code_ttl_minutes ?? '', I18N.t('¿Cuánto vale el código?'))}
+          <p class="hint">Desde que la persona lo consigue.</p>
+        </div>
+        <label class="f" id="porPersonaRow"><span>Canjes por persona</span><input name="max_per_user" type="number" min="1" max="20" value="${o.max_per_user ?? 1}"></label>
+        ${ayuda([
+          [I18N.t('El código guarda la plaza'), I18N.t('Quien tiene código tiene sitio. Para talleres, cenas o mesas. Si alguien no va y no anula, su plaza se queda sin usar.')],
+          [I18N.t('Por orden de llegada'), I18N.t('El código no guarda sitio: cuentan los que entran. Para conciertos o fiestas, donde siempre falla alguien. Cuando se llena, los que lleguen después ya no pasan.')],
+          [I18N.t('Lista de espera'), I18N.t('Cuando se acaban las plazas, la gente puede apuntarse. Si se libera una, avisamos por orden y cada persona tiene un rato para cogerla (30 minutos en una oferta flash, 2 horas en un evento).')],
+          [I18N.t('Reserva de plaza (sin pago)'), I18N.t('La gente reserva desde la app y enseña su código en la puerta. Si el evento se paga, se cobra allí como siempre. A un evento no se va solo: con un mismo código se reservan varias plazas.')],
+          [I18N.t('¿Cuánto vale el código?'), I18N.t('Desde que la persona lo genera. Para una oferta de barra, pocos minutos; para una entrada que se guarda hasta el día del evento, «sin caducidad».')],
+          [I18N.t('Canjes por persona'), I18N.t('Cada canje genera un código QR de un solo uso. Sube el número si quieres que la misma persona pueda repetir (por ejemplo, un café al día).')],
+        ])}`)}
+
+      ${bloque('bMas', I18N.t('Más opciones'), `
+        <fieldset class="f full filtro-sellos"><legend>Quién la ve</legend>
+          ${AUDIENCIAS.map(([k, t]) => `<label class="opcion"><input type="radio" name="audience" value="${k}" ${(o.audience || 'all') === k ? 'checked' : ''}><span>${esc(t)}</span></label>`).join('')}
+          <p class="hint" id="audAyuda" ${['all', 'promoters'].includes(o.audience || 'all') ? 'hidden' : ''}>Los demás ven que es exclusiva, sin el beneficio.</p>
+          ${rrppHtml.quien}
+        </fieldset>
+        <fieldset class="f full lugar plano"><legend>Dónde</legend>
           <label class="opcion"><input type="checkbox" name="venue_on" ${o.venue_address ? 'checked' : ''}><span>Es en otro sitio</span></label>
           <p class="hint" id="lugarAyuda"></p>
           <div id="lugarCampos" class="form-grid" ${o.venue_address ? '' : 'hidden'}>
             <label class="f"><span>Nombre del sitio <small>(opcional)</small></span><input name="venue_name" maxlength="80" value="${esc(o.venue_name || '')}" placeholder="Ej.: Sala Clamores"></label>
             <label class="f"><span>Dirección del sitio</span><input name="venue_address" maxlength="160" value="${esc(o.venue_address || '')}" placeholder="Calle, número y ciudad"></label>
-            <div class="full">
+            <div class="full" id="lugarMapaCaja">
               <p style="margin:0 0 8px"><button class="btn sm" type="button" id="buscarLugar">${ms('location_on')}Buscar en el mapa</button>
                 <span class="muted" id="lugarTxt"></span></p>
               <div class="mapa" id="mapaLugar"></div>
             </div>
           </div>
         </fieldset>
-        <label class="f"><span>Precio (opcional)</span><input name="price" inputmode="decimal" value="${o.price_cents == null ? '' : (o.price_cents / 100).toFixed(2).replace('.', ',')}" placeholder="12,00"></label>
-        <label class="f"><span>Aforo / unidades</span><input name="max_redemptions" type="number" min="1" value="${o.max_redemptions ?? ''}" placeholder="vacío = sin límite"></label>
-        <label class="f" id="plazasRow" hidden><span>Cómo se llenan las plazas <small id="plazasAyuda"></small></span><select name="holds_seats">
-          <option value="si" ${o.holds_seats === false ? '' : 'selected'}>El código guarda la plaza</option>
-          <option value="no" ${o.holds_seats === false ? 'selected' : ''}>Por orden de llegada</option></select></label>
-        <label class="f"><span>Descuento</span><select name="discount_type">
-          ${[['', 'Sin descuento'], ['percent', 'Porcentaje'], ['fixed', 'Precio fijo'], ['2x1', '2x1'], ['free', 'Gratis'], ['other', 'Otro (lo escribes tú)']].map((d) => `<option value="${d[0]}" ${disc.type === d[0] ? 'selected' : ''}>${d[1]}</option>`).join('')}</select></label>
-        <label class="f"><span>Valor del descuento</span><input name="discount_value" value="${esc(disc.value ?? '')}" placeholder="20"></label>
-        <label class="f full"><span>Precio anterior <small>(obligatorio si pones un % o un precio rebajado; ha de ser el más bajo de los últimos 30 días)</small></span><input name="prior_price" inputmode="decimal" value="${disc.compare_at_cents != null ? (disc.compare_at_cents / 100).toFixed(2).replace('.', ',') : ''}" placeholder="12,00"></label>
-        <label class="f full" id="alcRow" hidden><span>¿El 2x1 incluye bebidas alcohólicas? <small>(hay que responder; si dices que sí, la publicación solo la verán mayores de 18 y tendrás que comprobar que tu comunidad lo permite: la sanción sería para tu negocio)</small></span><select name="alcohol">
-          ${[['', 'Elige una opción'], ['no', 'No lleva alcohol'], ['yes', 'Sí, lleva alcohol']].map((a) => `<option value="${a[0]}" ${(disc.alcohol === true ? 'yes' : disc.alcohol === false ? 'no' : '') === a[0] ? 'selected' : ''}>${a[1]}</option>`).join('')}</select></label>
-        <label class="f"><span>¿Cuánto vale el código QR?</span><select name="code_ttl_minutes">
-          ${[[5, '5 minutos'], [30, '30 minutos'], [180, '3 horas'], [1440, '1 día'], ['', 'Sin caducidad']].map((t) => `<option value="${t[0]}" ${String(o.code_ttl_minutes ?? '') === String(t[0]) ? 'selected' : ''}>${t[1]}</option>`).join('')}</select></label>
-        <label class="f"><span>Canjes por persona</span><input name="max_per_user" type="number" min="1" max="20" value="${o.max_per_user ?? 1}"></label>
-        <label class="f full" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="reservations_enabled" ${o.reservations_enabled ? 'checked' : ''}><span>${bi('Evento con <b>reserva de plaza</b> (sin pago): la gente reserva desde la app y enseña su código en la puerta', 'Event where people <b>reserve a place</b> (no payment): they reserve from the app and show their code at the door')}</span></label>
-        <label class="f" id="seatsRow" hidden><span>Plazas por persona <small>(a un evento no se va solo; un código vale por todas)</small></span><select name="max_seats">
-          ${[1, 2, 3, 4, 5, 6].map((n) => `<option value="${n}" ${Number(o.max_seats || 1) === n ? 'selected' : ''}>${n === 1 ? esc(I18N.t('1 (solo quien reserva)')) : esc(bi(`${n} personas`, `${n} people`))}</option>`).join('')}</select></label>
-        <label class="f full" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="adults_only" ${o.adults_only ? 'checked' : ''}><span>Solo para mayores de 18</span></label>
-        ${serieCopia ? `<label class="f full" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="keep_series" checked><span>${esc(bi(`Forma parte de la serie «${serieCopia.name}»`, `Part of the “${serieCopia.name}” series`))}<br><small class="muted">${esc(bi('Quien la sigue recibirá un aviso cuando se publique.', 'Its followers will be notified when it goes live.'))}</small></span></label>` : ''}
-        <label class="f" id="ninosRow"><span>¿Para niños?</span><select name="for_kids">
-          ${[['', 'Como el local'], ['si', 'Apto para niños'], ['no', 'No apto para niños']].map(([k, t]) => `<option value="${k}" ${(o.for_kids === true ? 'si' : o.for_kids === false ? 'no' : '') === k ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
-        <label class="f"><span>¿Bajo techo o al aire libre?</span><select name="setting">
-          ${[['', 'Como el local'], ['indoor', 'Bajo techo'], ['outdoor', 'Al aire libre'], ['both', 'Las dos cosas']].map(([k, t]) => `<option value="${k}" ${(o.setting || '') === k ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
-        <p class="hint full" style="margin:-4px 0 0">Solo si este plan es distinto de tu local (p. ej. un taller infantil o un concierto en el patio).</p>
-        <fieldset class="f full filtro-sellos"><legend>Quién la ve</legend>
-          ${AUDIENCIAS.map(([k, t]) => `<label class="opcion"><input type="radio" name="audience" value="${k}" ${(o.audience || 'all') === k ? 'checked' : ''}><span>${esc(t)}</span></label>`).join('')}
-          <p class="hint" id="audAyuda" ${['all', 'promoters'].includes(o.audience || 'all') ? 'hidden' : ''}>Solo la ven ellos. Si a otra persona le llega el enlace, la ficha dice que es exclusiva y cómo conseguirla, sin enseñar el beneficio.</p>
-          ${rrppFormularioHtml(o, datosRrpp)}
-        </fieldset>
-        <label class="f full"><span>Condiciones (letra pequeña)</span><textarea name="terms" maxlength="300">${esc(o.terms || '')}</textarea></label>
-        <label class="f full"><span>Enlace externo (entradas, reservas…)</span><input name="external_url" value="${esc(o.external_url || '')}" placeholder="https://"></label>
-        <p class="hint full" id="entradasAyuda" style="margin:-4px 0 0" hidden></p>
-      </div>
-      <p class="hint">${TZ === KZ.CANARIAS ? 'Las fechas y horas son las de Canarias, donde está tu local.' : 'Las fechas y horas son las de la península (hora de Madrid), donde está tu local.'}</p>
-      <h3 style="margin-top:16px">Fotos y vídeo</h3>
-      <p class="hint">Hasta 6 fotos o vídeos. La primera es la portada; muévelas con las flechas. Si no pones ninguna, se usa la foto del local. Los vídeos se ven al abrir la publicación (en el feed van las fotos).</p>
-      <div class="photos" id="photos"></div>
-      <h3 style="margin-top:18px">Diseño del anuncio</h3>
-      <p class="hint">Así se verá en Descubre y en la ficha. Elige el diseño que mejor lo cuente y el color.
-        <button type="button" class="linkbtn solo-movil" id="irPrevia">Ver la vista previa</button></p>
-      <div class="estilo">
-        <div class="estilo-opc">
-          <div class="pills" id="plantillasEstilo" role="group" aria-label="${esc(I18N.t('Diseño del anuncio'))}"></div>
-          <p class="hint" id="plantillaAyuda" style="margin:8px 0 0"></p>
-          <p class="hint" style="margin:14px 0 6px">Color</p>
-          <div class="colores" id="colores" role="group" aria-label="${esc(I18N.t('Color'))}"></div>
-          <div class="marca" id="marcaPanel" hidden>
-            <p class="hint" style="margin:0 0 6px"><b>Color de tu marca</b></p>
-            <div class="marca-fila">
-              <input type="color" id="marcaColor" aria-label="${esc(I18N.t('Color de tu marca'))}">
-              <input id="marcaHex" maxlength="7" placeholder="#1E79D1" aria-label="${esc(I18N.t('Código del color'))}" spellcheck="false">
-              ${BIZ.logo ? `<button class="btn sm" type="button" id="marcaLogo">${esc(I18N.t('Sacar del logo'))}</button>` : ''}
+        <div class="bl-fila"><p class="etq">Categoría</p><div data-cat-oferta></div></div>
+        <div id="ninosRow" class="bl-fila">
+          <p class="etq">¿Para niños?</p>
+          ${elige('for_kids', [['', I18N.t('Como el local')], ['si', I18N.t('Apto para niños')], ['no', I18N.t('No apto para niños')]], kidsVal, I18N.t('¿Para niños?'))}
+        </div>
+        <div class="bl-fila">
+          <p class="etq">¿Bajo techo o al aire libre?</p>
+          ${elige('setting', [['', I18N.t('Como el local')], ['indoor', I18N.t('Bajo techo')], ['outdoor', I18N.t('Al aire libre')], ['both', I18N.t('Las dos cosas')]], ['indoor', 'outdoor', 'both'].includes(o.setting) ? o.setting : '', I18N.t('¿Bajo techo o al aire libre?'))}
+          <p class="hint">Solo si es distinto de tu local.</p>
+        </div>
+        <label class="opcion bl-fila"><input type="checkbox" name="adults_only" ${o.adults_only ? 'checked' : ''}><span><b>Solo para mayores de 18</b><br><small class="muted">Si menciona alcohol, se marca +18 solo y se revisa antes de salir.</small></span></label>
+        <label class="f bl-fila"><span>Condiciones <small>(letra pequeña)</small></span><textarea name="terms" rows="2" maxlength="300" placeholder="${esc(I18N.t('Ej. Solo en el local. No acumulable.'))}">${esc(o.terms || '')}</textarea></label>
+        ${serieCopia ? `<label class="opcion bl-fila"><input type="checkbox" name="keep_series" checked><span>${esc(bi(`Forma parte de la serie «${serieCopia.name}»`, `Part of the “${serieCopia.name}” series`))}<br><small class="muted">${esc(bi('Quien la sigue recibirá un aviso cuando se publique.', 'Its followers will be notified when it goes live.'))}</small></span></label>` : ''}
+        ${ayuda([
+          [I18N.t('Quién la ve'), I18N.t('Solo la ven ellos. Si a otra persona le llega el enlace, la ficha dice que es exclusiva y cómo conseguirla, sin enseñar el beneficio.')],
+          [bi('Solo con el enlace de un RRPP', "Only through a promoter's link"), bi('No sale en Descubre, Explorar ni en tu ficha: solo la ve quien entra por el enlace o el QR de uno de tus RRPP.', "It doesn't appear in Discover, Explore or on your page: only people who come in through one of your promoters' links or QR codes can see it.")],
+          [I18N.t('¿Para niños?'), I18N.t('Solo si este plan es distinto de tu local (p. ej. un taller infantil o un concierto en el patio).')],
+          [I18N.t('Solo para mayores de 18'), I18N.t('Si el texto menciona bebidas alcohólicas se marca +18 automáticamente y se revisa antes de publicarse (normalmente en menos de 24 h). La publicidad de tabaco, vapeo o apuestas no está permitida.')],
+        ])}`)}
+
+      ${rrppHtml.resumen}
+
+      <div class="barra-pub" id="barraPub">
+        <p class="programada" id="programadaTxt" hidden><span id="programadaCuando"></span> <button type="button" class="linkbtn" id="quitaProg">Quitar</button></p>
+        <div class="err" id="formErr" role="alert"></div>
+        <div class="barra-botones">
+          <button type="button" class="btn" id="btnBorrador"></button>
+          <div class="pub-grupo">
+            <button type="button" class="btn primary" id="btnPublicar"></button>
+            <div class="menu-pub" id="menuPub" role="menu" hidden>
+              <button type="button" role="menuitem" id="pubAhora">Publicar ahora</button>
+              <button type="button" role="menuitem" id="pubProgramar"></button>
             </div>
-            <div class="colores" id="marcaSugeridos" style="margin-top:8px"></div>
-            <p class="hint" id="marcaNota" style="margin:6px 0 0"></p>
           </div>
         </div>
       </div>
-      <div class="actions" style="margin-top:18px">
-        <button class="btn primary" type="submit" id="enviarPub">${id ? 'Guardar cambios' : 'Publicar'}</button>
-        <button class="btn" type="button" id="saveTpl">Guardar como plantilla</button>
-        <label class="f" style="grid-template-columns:auto 1fr;align-items:center;margin:0"><input type="checkbox" name="publish" ${o.status === 'active' ? 'checked' : ''}><span>Publicar ahora (desactívalo para dejarlo en borrador)</span></label>
-      </div>
-      <label class="f" style="margin-top:12px;max-width:360px"><span>O publicarla sola más tarde <small>(opcional)</small></span><input type="datetime-local" name="publish_at" value="${toLocalInput(o.publish_at)}"></label>
-      <p class="hint">Se guarda en borrador y se publica sola a esa hora (para dejar preparada la del lunes el viernes).</p>
-      <div class="err" id="formErr" role="alert"></div>
     </form>
     <aside class="pub-prev" aria-labelledby="prevTitulo">
       <h2 id="prevTitulo" tabindex="-1">Vista previa</h2>
@@ -1843,67 +1920,104 @@ async function offerForm(v, id, kindDefault, desde = null) {
     </aside>
     </div>`;
 
+  const campo = (n) => $(`[name=${n}]`, v);
+  /** El valor de un campo o de un grupo de píldoras (radio). */
+  const val = (n) => {
+    const marcado = $(`[name=${n}]:checked`, v);
+    if (marcado) return marcado.value;
+    const el = campo(n);
+    return el && el.type !== 'radio' ? el.value : '';
+  };
+  const pon = (n, x) => {
+    const els = $$(`[name=${n}]`, v);
+    if (!els.length) return;
+    if (els[0].type === 'radio') els.forEach((r) => { r.checked = r.value === String(x ?? ''); });
+    else els[0].value = x ?? '';
+  };
+
+  // ── Categoría (el selector de toda la web; vacía = la del negocio) ──────
+  KlendarCategorias.campo($('[data-cat-oferta]', v), {
+    cats: CATS, multiple: false, lang: I18N.lang, nombre: 'category_id', titulo: I18N.t('Categoría'),
+    vacio: I18N.t('La de tu negocio'), elegidas: o.category_id ? [o.category_id] : [],
+    alCambiar: () => { resumenes(); },
+  });
+
+  // ── El tipo: en el título, y aquí se corrige ────────────────────────────
+  const pintaTipo = () => {
+    $('#pubTitulo', v).textContent = titulo();
+    $('#tipoPregunta', v).textContent = isFlash() ? I18N.t('¿Era un evento?') : I18N.t('¿Era una oferta flash?');
+    $('#cambiaTipo', v).textContent = isFlash() ? I18N.t('Cambiar a evento') : I18N.t('Cambiar a oferta flash');
+  };
+  $('#cambiaTipo', v).onclick = () => {
+    kind = isFlash() ? 'future_event' : 'flash_offer';
+    campo('kind').value = kind;
+    if (kind === 'future_event') {
+      pon('end', '');
+    } else if (!campo('end').value && campo('start').value) {
+      const ini = fromLocalInput(campo('start').value);
+      if (ini) pon('end', toLocalInput(new Date(new Date(ini).getTime() + 3 * 36e5).toISOString()));
+    }
+    pintaTipo(); syncKind(); pintaPrevia(); resumenes();
+  };
+
   // Lo que solo tiene sentido en un tipo u otro se enseña y se esconde.
   const syncKind = () => {
-    const flash = $('[name=kind]', v).value === 'flash_offer';
-    const resRow = $('[name=reservations_enabled]', v).closest('label');
-    resRow.style.display = flash ? 'none' : '';
-    $('[name=external_url]', v).closest('label').style.display = flash ? 'none' : '';
-    // Solo tiene sentido si hay reserva: en una oferta de barra, cada uno
-    // enseña la suya.
-    const conReserva = !flash && $('[name=reservations_enabled]', v).checked;
+    const flash = isFlash();
+    const conReserva = !flash && campo('reservations_enabled').checked;
+    const conCodigo = flash || conReserva;
+    const deRrpp = (val('audience') || 'all') === 'promoters';
+    const conAforo = !!String(campo('max_redemptions').value || '').trim();
+    $('#entradasRow', v).hidden = flash;
+    if (flash) $('#entradasAyuda', v).hidden = true; else pintaEntradas();
+    $('#reservaRow', v).hidden = flash;
     $('#seatsRow', v).hidden = !conReserva;
-    $('[name=end]', v).closest('label').querySelector('span').textContent =
-      flash ? 'Termina (obligatorio)' : 'Termina (opcional)';
-    $('[name=start]', v).closest('label').querySelector('span').textContent =
-      flash ? 'Empieza' : 'Día y hora del evento';
+    $('#ttlRow', v).hidden = !conCodigo || deRrpp;
+    $('#porPersonaRow', v).hidden = !flash;
+    $('#plazasRow', v).hidden = !conAforo || !conCodigo;
+    $('#esperaNota', v).hidden = !conAforo || !conCodigo;
+    $('#cuandoTit', v).textContent = flash ? I18N.t('Cuándo se puede canjear') : I18N.t('Cuándo');
+    $('#iniTxt', v).textContent = flash ? I18N.t('Empieza') : I18N.t('Fecha y hora');
+    $('#finTxt', v).textContent = flash ? I18N.t('Termina') : I18N.t('Termina (opcional)');
+    $('#plazasAyuda', v).textContent = val('holds_seats') === 'no'
+      ? I18N.t('Entran los primeros en llegar.') : I18N.t('Quien tiene código tiene sitio.');
   };
-  $('[name=kind]', v).onchange = syncKind;
-  // Una nueva sin «Publicar ahora» se queda en borrador (o se programa): el
-  // botón lo dice, para que nadie crea que ya está publicada.
-  if (!id) {
-    const syncEnviar = () => {
-      const programada = !!$('[name=publish_at]', v).value;
-      $('#enviarPub', v).textContent = programada ? 'Programar' : $('[name=publish]', v).checked ? 'Publicar' : 'Guardar borrador';
-    };
-    $('[name=publish]', v).addEventListener('change', syncEnviar);
-    $('[name=publish_at]', v).addEventListener('input', syncEnviar);
-    syncEnviar();
-  }
-  $('[name=reservations_enabled]', v).onchange = () => {
+  campo('reservations_enabled').addEventListener('change', () => {
     // Una reserva de evento se guarda hasta el día: con los 5 minutos de las
     // ofertas flash (lo que viene marcado), la plaza se perdía al rato de
     // reservarla. Lo mismo que la app.
-    const ttl = $('[name=code_ttl_minutes]', v);
-    if ($('[name=reservations_enabled]', v).checked && ttl.value === '5') ttl.value = '';
+    if (campo('reservations_enabled').checked && val('code_ttl_minutes') === '5') pon('code_ttl_minutes', '');
     syncKind();
-  };
-  // Con aforo: si el código guarda la plaza o se entra por orden de llegada.
-  const syncPlazas = () => {
-    $('#plazasRow', v).hidden = !String($('[name=max_redemptions]', v).value || '').trim();
-    $('#plazasAyuda', v).textContent = I18N.t($('[name=holds_seats]', v).value === 'no'
-      ? '(no guarda sitio: cuentan los que entran; cuando se llena, los que lleguen después ya no pasan)'
-      : '(quien tiene código tiene sitio; si no va y no anula, su plaza se queda sin usar)');
-  };
-  $('[name=max_redemptions]', v).addEventListener('input', syncPlazas);
-  $('[name=holds_seats]', v).onchange = syncPlazas;
-  syncPlazas();
-  syncKind();
+  });
+  campo('max_redemptions').addEventListener('input', syncKind);
+  $$('[name=holds_seats], [name=audience]', v).forEach((r) => r.addEventListener('change', syncKind));
 
   // Una publicación +18 no es para niños: la pregunta no se hace.
-  const syncNinos = () => { $('#ninosRow', v).hidden = $('[name=adults_only]', v).checked; };
-  $('[name=adults_only]', v).addEventListener('change', syncNinos);
-  syncNinos();
+  const syncNinos = () => { $('#ninosRow', v).hidden = campo('adults_only').checked; };
+  campo('adults_only').addEventListener('change', syncNinos);
 
-  // La pregunta del alcohol solo aparece si el descuento es un 2x1.
+  // El descuento: el valor (si lo lleva), el precio anterior (rebajas) y la
+  // pregunta del alcohol (2x1).
   const syncDiscount = () => {
-    $('#alcRow', v).hidden = $('[name=discount_type]', v).value !== '2x1';
+    const t = val('discount_type');
+    const conValor = ['percent', 'fixed', 'free', 'other'].includes(t);
+    const rebaja = ['percent', 'fixed'].includes(t);
+    $('#descFila', v).hidden = !conValor;
+    $('#antesRow', v).hidden = !rebaja;
+    $('#antesAyuda', v).hidden = !rebaja;
+    $('#alcRow', v).hidden = t !== '2x1';
+    $('#alcAyuda', v).hidden = val('alcohol') !== 'yes';
+    const ph = {
+      percent: I18N.t('Porcentaje, ej. 20'), fixed: I18N.t('Precio en euros, ej. 6'),
+      free: I18N.t('¿Qué es gratis? ej. tapa, entrada'), other: I18N.t('Escríbelo tú: «2ª unidad −50 %», «Menú 9,90»…'),
+    }[t] || '';
+    campo('discount_value').placeholder = ph;
+    campo('discount_value').setAttribute('inputmode', ['percent', 'fixed'].includes(t) ? 'decimal' : 'text');
+    campo('discount_value').maxLength = t === 'other' ? 24 : 40;
   };
-  $('[name=discount_type]', v).onchange = syncDiscount;
-  syncDiscount();
+  $$('[name=discount_type], [name=alcohol]', v).forEach((r) => r.addEventListener('change', syncDiscount));
   // La ayuda de «Quién la ve» solo hace falta si no es para todo el mundo.
   $$('[name=audience]', v).forEach((r) => {
-    r.onchange = () => { $('#audAyuda', v).hidden = ['all', 'promoters'].includes($('[name=audience]:checked', v)?.value || 'all'); };
+    r.addEventListener('change', () => { $('#audAyuda', v).hidden = ['all', 'promoters'].includes(val('audience') || 'all'); });
   });
   rrppFormularioEngancha(v);
 
@@ -1928,6 +2042,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
       + (images.length < TOPE.publicacion
         ? `<label class="add">+ Añadir foto o vídeo<input type="file" accept="image/*,video/mp4,video/quicktime" multiple></label>`
         : `<p class="hint">${esc(topeLleno(TOPE.publicacion))}</p>`);
+    I18N.translate($('#photos'));
     $$('#photos .rm').forEach((b) => { b.onclick = () => { images.splice(+b.dataset.i, 1); renderPhotos(); }; });
     pintaEstilo();
     $$('#photos [data-mv]').forEach((b) => {
@@ -1958,14 +2073,13 @@ async function offerForm(v, id, kindDefault, desde = null) {
       renderPhotos();
     };
   };
-  renderPhotos();
 
   // ── Lugar propio: «Es en otro sitio» (docs/DISENOS_PUBLICACION.md §5) ────
   const lugar = {
     punto: o.venue_address && o.venue_lat != null ? { lat: o.venue_lat, lng: o.venue_lng } : null,
     mapa: null,
     perfil: null,
-    activo: () => $('[name=venue_on]', v).checked,
+    activo: () => campo('venue_on').checked,
   };
   const pintaLugar = async () => {
     const on = lugar.activo();
@@ -1989,32 +2103,34 @@ async function offerForm(v, id, kindDefault, desde = null) {
     } else {
       txt.textContent = I18N.t('Marca el sitio en el mapa.');
     }
-    if (on && !lugar.mapa) {
+    // El mapa solo con el bloque abierto: cerrado no tiene tamaño.
+    if (on && !lugar.mapa && $('#bMas', v).open) {
       lugar.mapa = await mapaPunto($('#mapaLugar', v), lugar.punto, async (p) => {
         lugar.punto = p;
-        const el = $('[name=venue_address]', v);
+        const el = campo('venue_address');
         // Lo que vino del mapa se vuelve a rellenar; lo escrito a mano, no.
         if (!el.value.trim() || el.dataset.auto === el.value) {
           const d = await direccionDe(p.lat, p.lng);
           const linea = d ? [d.address, d.city].filter(Boolean).join(', ') : '';
           if (linea) { el.value = linea; el.dataset.auto = linea; }
         }
-        pintaLugar(); pintaEstilo();
+        pintaLugar(); pintaEstilo(); resumenes();
       }) || { mueve() {} };
       if (!lugar.punto && casa.lat != null) lugar.mapa.mueve({ lat: casa.lat, lng: casa.lng }, 14);
     }
   };
   lugar.pon = (x) => {
-    $('[name=venue_on]', v).checked = !!x;
-    $('[name=venue_name]', v).value = x?.name || '';
-    $('[name=venue_address]', v).value = x?.address || '';
+    campo('venue_on').checked = !!x;
+    pon('venue_name', x?.name || '');
+    pon('venue_address', x?.address || '');
     lugar.punto = x && x.lat != null ? { lat: x.lat, lng: x.lng } : null;
     if (lugar.punto) lugar.mapa?.mueve(lugar.punto);
     pintaLugar();
   };
-  $('[name=venue_on]', v).onchange = () => { pintaLugar(); pintaEstilo(); };
+  campo('venue_on').onchange = () => { pintaLugar(); pintaEstilo(); };
+  $('#bMas', v).addEventListener('toggle', () => { if ($('#bMas', v).open) pintaLugar(); });
   $('#buscarLugar', v).onclick = async () => {
-    const q = String($('[name=venue_address]', v).value || '').trim() || String($('[name=venue_name]', v).value || '').trim();
+    const q = String(campo('venue_address').value || '').trim() || String(campo('venue_name').value || '').trim();
     if (!q) { toast('Escribe primero la dirección del sitio.', true); return; }
     const d = await buscaDireccion(q);
     if (!d) { toast('No encontramos esa dirección. Prueba a escribirla de otra forma o marca el punto en el mapa.', true); return; }
@@ -2022,25 +2138,23 @@ async function offerForm(v, id, kindDefault, desde = null) {
     lugar.mapa?.mueve(lugar.punto);
     pintaLugar(); pintaEstilo();
   };
-  pintaLugar();
 
   // ── Botón de entradas: lo que dirá ──────────────────────────────────────
-  const pintaEntradas = () => {
-    const p = plataformaEntradas($('[name=external_url]', v).value);
-    const ayuda = $('#entradasAyuda', v);
-    ayuda.hidden = !p;
+  function pintaEntradas() {
+    const p = plataformaEntradas(campo('external_url').value);
+    const ayudaE = $('#entradasAyuda', v);
+    ayudaE.hidden = !p || isFlash();
     if (!p) return;
     const etiqueta = p.plataforma ? bi(`Entradas en ${p.plataforma}`, `Tickets on ${p.plataforma}`)
       : bi(`Conseguir entradas (${p.dominio})`, `Get tickets (${p.dominio})`);
-    ayuda.textContent = bi(`El botón dirá: ${etiqueta}`, `The button will say: ${etiqueta}`);
-  };
-  $('[name=external_url]', v).addEventListener('input', pintaEntradas);
-  pintaEntradas();
+    ayudaE.textContent = bi(`El botón dirá: ${etiqueta}`, `The button will say: ${etiqueta}`);
+  }
+  campo('external_url').addEventListener('input', pintaEntradas);
 
-  // ── Diseño del anuncio (las mismas plantillas y colores que la app) ──────
+  // ── Diseño del anuncio (los mismos diseños y colores que la app) ─────────
   // El estilo viene de la base (lo escribe cualquiera del equipo que
-  // gestione): solo plantillas conocidas y un color #rrggbb, que va dentro
-  // de un atributo `style`.
+  // gestione): solo diseños conocidos y un color #rrggbb, que va dentro de
+  // un atributo `style`.
   const limpiaEstilo = (s2) => ({
     template: PLANTILLAS.some(([k]) => k === s2?.template) ? s2.template : 'glass',
     accent: colorSeguro(s2?.accent),
@@ -2055,12 +2169,11 @@ async function offerForm(v, id, kindDefault, desde = null) {
   let formaPrevia = 'grande';
   const datosPrevia = () => {
     const f = new FormData($('#form'));
-    const kind = String(f.get('kind') || kindDefault || 'flash_offer');
     const evento = kind === 'future_event';
-    const titulo = String(f.get('title') || '').trim() || (I18N.lang === 'en'
+    const tituloP = String(f.get('title') || '').trim() || (I18N.lang === 'en'
       ? (evento ? 'Your event title' : 'Your offer title')
       : (evento ? 'El título de tu evento' : 'El título de tu oferta'));
-    const dt = String(f.get('discount_type') || '');
+    const dt = val('discount_type');
     const dv = String(f.get('discount_value') || '').trim();
     const num = (x) => { const n = parseFloat(String(x || '').replace(',', '.')); return Number.isFinite(n) ? n : null; };
     const precio = num(f.get('price'));
@@ -2074,7 +2187,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
     return {
       id: o.id || 'vista-previa',
       kind,
-      title: titulo,
+      title: tituloP,
       description: String(f.get('description') || '').trim(),
       discount: dt ? {
         type: dt,
@@ -2097,7 +2210,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
       status: 'active',
     };
   };
-  const pintaPrevia = () => {
+  function pintaPrevia() {
     const caja = $('#vistaPrevia', v);
     if (!caja) return;
     const d = datosPrevia();
@@ -2120,7 +2233,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
     $('#prevNota', v).textContent = !images.length && !BIZ._portada
       ? I18N.t('Sin fotos se usa la portada de tu local. Añade una foto para que se vea mejor.')
       : !images.length ? I18N.t('Sin fotos se usa la portada de tu local.') : '';
-  };
+  }
   $$('[data-prev]', v).forEach((b) => {
     b.onclick = () => {
       formaPrevia = b.dataset.prev;
@@ -2151,6 +2264,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
       panel.hidden = !panel.hidden;
       if (!panel.hidden) pintaMarca(estilo.accent && !enPaleta(estilo.accent) ? estilo.accent : '#1E79D1', true);
     };
+    resumenes();
   };
   // Color de la marca: el selector del navegador, el código o el logo. Se
   // corrige para que el texto encima se lea (y se dice).
@@ -2186,14 +2300,62 @@ async function offerForm(v, id, kindDefault, desde = null) {
       pintaMarca(colores[0], true);
     };
   }
-  // Cualquier cambio del formulario se ve al momento en la tarjeta.
-  $('#form').addEventListener('input', pintaPrevia);
-  $('#form').addEventListener('change', pintaPrevia);
-  pintaEstilo();
 
-  // ── Plantillas ──────────────────────────────────────────────────────────
-  const campo = (n) => $(`[name=${n}]`, v);
-  const pon = (n, val) => { const el = campo(n); if (el) el.value = val ?? ''; };
+  // ── Lo que dice cada bloque cerrado (como la app) ───────────────────────
+  function resumenes() {
+    const t = (s) => esc(s);
+    const nombreDiseno = I18N.t((PLANTILLAS.find(([k]) => k === estilo.template) || PLANTILLAS[0])[1]);
+    const color = estilo.accent && !enPaleta(estilo.accent) ? I18N.t('Color de tu marca')
+      : I18N.t((PALETA.find(([h]) => h === (estilo.accent || '#FF4D6D')) || PALETA[0])[1]);
+    $('#bAspectoRes', v).innerHTML = t(`${nombreDiseno} · ${color}`);
+
+    const flash = isFlash();
+    const reserva = !flash && campo('reservations_enabled').checked;
+    const rrpp = (val('audience') || 'all') === 'promoters';
+    const cap = Number(campo('max_redemptions').value) || null;
+    const ttl = val('code_ttl_minutes');
+    const ttlTxt = { 5: bi('5 minutos', '5 minutes'), 30: bi('30 minutos', '30 minutes'), 180: bi('3 horas', '3 hours'), 1440: bi('1 día', '1 day') }[ttl] || `${ttl} min`;
+    const porPersona = Number(campo('max_per_user').value) || 1;
+    const asientos = Number(campo('max_seats').value) || 1;
+    const cupo = rrpp && !$('[name=rrpp_sin_limite]', v)?.checked ? Number($('[name=promoter_quota]', v)?.value) || null : null;
+    const validez = $('[name=rrpp_validez]:checked', v)?.value || 'siempre';
+    const horas = Number($('[name=promoter_code_hours]', v)?.value) || 3;
+    const hasta = String($('[name=promoter_code_until]', v)?.value || '01:00').replace(/^0(\d)/, '$1');
+    $('#bPlazasRes', v).innerHTML = t([
+      cap ? bi(cap === 1 ? '1 plaza' : `${cap} plazas`, cap === 1 ? '1 place' : `${cap} places`) : bi('Sin límite', 'No limit'),
+      ...(flash ? [] : [reserva ? bi('con reserva', 'with reservations') : bi('sin reserva', 'no reservations')]),
+      ...(cupo ? [bi(cupo === 1 ? '1 persona por RRPP' : `${cupo} personas por RRPP`, cupo === 1 ? '1 person per promoter' : `${cupo} people per promoter`)] : []),
+      ...(rrpp ? [validez === 'hasta' ? bi(`el código vale hasta las ${hasta}`, `the code lasts until ${hasta}`)
+        : validez === 'horas' ? bi(horas === 1 ? 'el código vale 1 hora' : `el código vale ${horas} horas`, horas === 1 ? 'the code lasts 1 hour' : `the code lasts ${horas} hours`)
+          : bi('el código vale hasta el final', 'the code lasts until the end')]
+        : (flash || reserva) ? [ttl === '' ? bi('el código no caduca', "the code doesn't expire") : bi(`el código vale ${ttlTxt}`, `the code lasts ${ttlTxt}`)] : []),
+      ...(flash ? [bi(porPersona === 1 ? '1 por persona' : `hasta ${porPersona} por persona`, porPersona === 1 ? '1 per person' : `up to ${porPersona} per person`)] : []),
+      ...(reserva ? [bi(asientos === 1 ? '1 plaza por código' : `hasta ${asientos} plazas por código`, asientos === 1 ? '1 place per code' : `up to ${asientos} places per code`)] : []),
+    ].join(' · '));
+
+    const aud = val('audience') || 'all';
+    const sitio = String(campo('venue_name').value || '').trim();
+    const adultos = campo('adults_only').checked;
+    const ninos = val('for_kids');
+    const set = val('setting');
+    $('#bMasRes', v).innerHTML = t([
+      { all: bi('Para todo el mundo', 'For everyone'), favorites: bi('Solo favoritos', 'Favourites only'), customers: bi('Solo clientes', 'Customers only'), promoters: bi('Solo RRPP', 'Promoters only') }[aud],
+      !lugar.activo() ? bi('en tu local', 'at your place') : sitio || bi('en otro sitio', 'somewhere else'),
+      ...(adultos ? ['+18'] : []),
+      ...(!adultos && ninos === 'si' ? [bi('apto para niños', 'child-friendly')] : []),
+      ...(!adultos && ninos === 'no' ? [bi('no apto para niños', 'not for children')] : []),
+      ...({ indoor: [bi('bajo techo', 'indoor')], outdoor: [bi('al aire libre', 'outdoors')], both: [bi('bajo techo / al aire libre', 'indoor / outdoors')] }[set] || []),
+      ...(String(campo('terms').value || '').trim() ? [bi('con condiciones', 'with terms')] : []),
+      ...(serieCopia && campo('keep_series')?.checked ? [bi(`en la serie «${serieCopia.name}»`, `in the “${serieCopia.name}” series`)] : []),
+    ].join(' · '));
+  }
+
+  // Cualquier cambio del formulario se ve al momento en la tarjeta y en los
+  // resúmenes.
+  $('#form').addEventListener('input', () => { pintaPrevia(); resumenes(); });
+  $('#form').addEventListener('change', () => { pintaPrevia(); resumenes(); });
+
+  // ── Ideas y «Tus plantillas» ────────────────────────────────────────────
   const precioTxt = (x) => (x == null || x === '' ? '' : String(x).replace('.', ','));
   const aplicarIdea = (t) => {
     pon('title', en ? t.en : t.es);
@@ -2206,13 +2368,14 @@ async function offerForm(v, id, kindDefault, desde = null) {
       pon('start', toLocalInput(ahora.toISOString()));
       pon('end', toLocalInput(new Date(ahora.getTime() + t.hours * 3600e3).toISOString()));
     }
-    syncDiscount();
+    syncDiscount(); pintaPrevia(); resumenes();
   };
   // Lo que guarda la app como plantilla (offer_templates.data): todo menos
   // fechas y estado. Mismo formato en los dos lados.
   const aplicarGuardada = (t) => {
     const d = t.data || {};
-    pon('kind', d.kind === 'future_event' ? 'future_event' : 'flash_offer');
+    kind = d.kind === 'future_event' ? 'future_event' : 'flash_offer';
+    pon('kind', kind);
     pon('title', d.title); pon('description', d.description); pon('terms', d.terms);
     pon('price', d.price); pon('external_url', d.external_url);
     pon('max_redemptions', d.max_redemptions); pon('max_per_user', d.max_per_user || 1);
@@ -2231,42 +2394,52 @@ async function offerForm(v, id, kindDefault, desde = null) {
     images = [...(d.images || [])];
     if (d.style) estilo = limpiaEstilo(d.style);
     lugar.pon(d.venue_address ? { name: d.venue_name, address: d.venue_address, lat: d.venue_lat, lng: d.venue_lng } : null);
-    renderPhotos(); syncKind(); syncDiscount(); pintaEstilo();
+    renderPhotos(); pintaTipo(); syncKind(); syncDiscount(); pintaEstilo();
   };
-  $$('[data-idea]', v).forEach((b) => { b.onclick = () => { aplicarIdea(ideas[+b.dataset.idea]); toast('Plantilla aplicada: repasa precio y hora'); }; });
-  const borraTpl = $('#borraTpl', v);
-  if (borraTpl) {
-    borraTpl.onclick = async () => {
-      const r = await modal({
-        title: 'Borrar plantillas',
-        intro: esc(I18N.t('Marca las que ya no uses. Las publicaciones hechas con ellas no cambian.')),
-        fields: guardadas.map((t, i) => ({ name: `t${i}`, type: 'checkbox', label: t.name, value: false })),
-        submit: 'Borrar', danger: true,
-      });
-      if (!r) return;
-      const ids = guardadas.filter((_, i) => r[`t${i}`]).map((t) => t.id);
-      if (!ids.length) return;
-      const { error } = await sb.from('offer_templates').delete().in('id', ids);
-      if (error) { toast(friendly(error.message), true); return; }
-      toast(ids.length === 1 ? 'Plantilla borrada' : 'Plantillas borradas');
-      route();
-    };
-  }
-  $$('[data-tpl]', v).forEach((b) => { b.onclick = () => { aplicarGuardada(guardadas[+b.dataset.tpl]); toast('Plantilla aplicada: repasa precio y hora'); }; });
-  // Desde «Primeros pasos»: ya rellena con la primera de su gremio.
-  if (!id && /[?&]idea=1\b/.test(location.hash) && ideas.length) aplicarIdea(ideas[0]);
+  $$('[data-idea]', v).forEach((b) => { b.onclick = () => { aplicarIdea(ideas[+b.dataset.idea]); toast('Idea aplicada: repasa precio y hora'); }; });
+  const cierraMenuTpl = () => { const d = $('.tpl-menu', v); if (d) d.open = false; };
+  $('#usarTpl', v).onclick = async () => {
+    cierraMenuTpl();
+    if (!guardadas.length) {
+      await modal({ title: I18N.t('Tus plantillas'), intro: esc(I18N.t('Todavía no has guardado ninguna. Rellena una publicación y guárdala como plantilla: la próxima vez la lanzas en dos toques.')), submit: I18N.t('Entendido'), cancel: '' });
+      return;
+    }
+    const r = await modal({ title: I18N.t('Usar una plantilla'), submit: I18N.t('Usar'),
+      fields: [{ name: 't', label: I18N.t('Plantilla'), type: 'select', value: '0', options: guardadas.map((t, i) => [String(i), t.name]) }] });
+    if (!r) return;
+    aplicarGuardada(guardadas[+r.t]);
+    toast('Plantilla aplicada: repasa precio y hora');
+  };
+  $('#borraTpl', v).onclick = async () => {
+    cierraMenuTpl();
+    if (!guardadas.length) { toast(I18N.t('Todavía no has guardado ninguna.')); return; }
+    const r = await modal({
+      title: 'Borrar plantillas',
+      intro: esc(I18N.t('Marca las que ya no uses. Las publicaciones hechas con ellas no cambian.')),
+      fields: guardadas.map((t, i) => ({ name: `t${i}`, type: 'checkbox', label: t.name, value: false })),
+      submit: 'Borrar', danger: true,
+    });
+    if (!r) return;
+    const ids = guardadas.filter((_, i) => r[`t${i}`]).map((t) => t.id);
+    if (!ids.length) return;
+    const { error } = await sb.from('offer_templates').delete().in('id', ids);
+    if (error) { toast(friendly(error.message), true); return; }
+    guardadas = guardadas.filter((t) => !ids.includes(t.id));
+    toast(ids.length === 1 ? 'Plantilla borrada' : 'Plantillas borradas');
+  };
 
   $('#saveTpl', v).onclick = async () => {
+    cierraMenuTpl();
     const f = new FormData($('#form'));
     const title = String(f.get('title') || '').trim();
     if (!title) { toast('Pon al menos el título antes de guardarla.', true); return; }
     const r = await modal({ title: 'Guardar como plantilla', fields: [{ name: 'name', label: 'Nombre de la plantilla', value: title, required: true, maxlength: 60 }] });
     if (!r || !r.name) return;
-    const dType = f.get('discount_type');
+    const dType = val('discount_type');
     const dVal = String(f.get('discount_value') || '').trim();
     const priorRaw = String(f.get('prior_price') || '').replace(',', '.');
     const data = {
-      kind: f.get('kind'),
+      kind,
       title,
       description: String(f.get('description') || '').trim() || null,
       terms: String(f.get('terms') || '').trim() || null,
@@ -2275,19 +2448,19 @@ async function offerForm(v, id, kindDefault, desde = null) {
         value: dType === 'other' || dType === 'free' ? (dVal || null) : (dVal ? Number(dVal.replace(',', '.')) : null),
         ...(dType === 'fixed' ? { currency: 'EUR' } : {}),
         ...(priorRaw && ['percent', 'fixed'].includes(dType) ? { compare_at_cents: Math.round(parseFloat(priorRaw) * 100) } : {}),
-        ...(dType === '2x1' && f.get('alcohol') ? { alcohol: f.get('alcohol') === 'yes' } : {}),
+        ...(dType === '2x1' && val('alcohol') ? { alcohol: val('alcohol') === 'yes' } : {}),
       } : null,
       price: String(f.get('price') || '').trim(),
       external_url: String(f.get('external_url') || '').trim() || null,
       max_redemptions: String(f.get('max_redemptions') || '').trim() || null,
-      holds_seats: f.get('holds_seats') !== 'no',
+      holds_seats: val('holds_seats') !== 'no',
       max_per_user: Number(f.get('max_per_user') || 1),
       adults_only: campo('adults_only').checked,
-      for_kids: forKids(campo('adults_only').checked, f.get('for_kids')),
-      setting: f.get('setting') || null,
+      for_kids: forKids(campo('adults_only').checked, val('for_kids')),
+      setting: val('setting') || null,
       style: { template: estilo.template, ...(estilo.accent ? { accent: estilo.accent } : {}) },
-      code_ttl_minutes: f.get('code_ttl_minutes') ? Number(f.get('code_ttl_minutes')) : null,
-      reservations_enabled: f.get('kind') !== 'flash_offer' && campo('reservations_enabled').checked,
+      code_ttl_minutes: val('code_ttl_minutes') ? Number(val('code_ttl_minutes')) : null,
+      reservations_enabled: kind !== 'flash_offer' && campo('reservations_enabled').checked,
       images,
       ...(lugar.activo() ? {
         venue_name: String(f.get('venue_name') || '').trim() || null,
@@ -2298,65 +2471,90 @@ async function offerForm(v, id, kindDefault, desde = null) {
     };
     try {
       await rpc('save_offer_template', { p_business: BIZ.id, p_name: r.name, p_data: data });
+      const { data: tpl2 } = await sb.from('offer_templates').select('id, name, data, updated_at').eq('business_id', BIZ.id).order('updated_at', { ascending: false });
+      guardadas = tpl2 || guardadas;
       toast('Plantilla guardada');
     } catch (err) { toast(friendly(err.message), true); }
   };
 
-  $('#form').onsubmit = async (e) => {
-    e.preventDefault();
-    $('#formErr').textContent = '';
+  // ── Errores: el bloque se abre solo y lleva hasta el campo ───────────────
+  const limpiaErrores = () => {
+    $('#formErr', v).textContent = '';
+    $$('.err-campo', v).forEach((x) => x.remove());
+    $$('[aria-invalid]', v).forEach((x) => x.removeAttribute('aria-invalid'));
+  };
+  const fallo = (el, texto) => {
+    $('#formErr', v).textContent = texto;
+    if (!el) return;
+    const bloqueEl = el.closest('details.bloque');
+    if (bloqueEl && !bloqueEl.open) bloqueEl.open = true;
+    const caja = el.closest('label.f, fieldset, .bl-fila') || el.parentElement;
+    const p = document.createElement('p');
+    p.className = 'err-campo';
+    p.textContent = texto;
+    caja.appendChild(p);
+    if (/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) el.setAttribute('aria-invalid', 'true');
+    const suave = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    el.scrollIntoView({ block: 'center', behavior: suave ? 'smooth' : 'auto' });
+    el.focus({ preventScroll: true });
+  };
+
+  // ── Guardar: borrador, publicar ya o programada ─────────────────────────
+  const guarda = async ({ publicar, alas = null }) => {
+    limpiaErrores();
     const f = new FormData($('#form'));
-    const flash = f.get('kind') === 'flash_offer';
-    // Mismas reglas que la app (y que la base).
+    const flash = kind === 'flash_offer';
+    // Mismas reglas que la app (y que la base), en el orden del formulario.
     if (String(f.get('title') || '').trim().length < 3) {
-      $('#formErr').textContent = I18N.t('El título necesita al menos 3 caracteres.'); return;
-    }
-    if (f.get('discount_type') === 'other' && String(f.get('discount_value') || '').trim().length > 24) {
-      $('#formErr').textContent = I18N.t('El descuento «Otro» cabe en 24 caracteres («2ª unidad −50 %»).'); return;
-    }
-    if (lugar.activo()) {
-      if (String(f.get('venue_address') || '').trim().length < 5) {
-        $('#formErr').textContent = I18N.t('Escribe la dirección del sitio.'); return;
-      }
-      if (!lugar.punto) {
-        $('#formErr').textContent = I18N.t('Marca el sitio en el mapa.'); return;
-      }
-    }
-    // De RRPP: para qué RRPP, plazas y hasta cuándo vale (panel/rrpp.js).
-    const audiencia = f.get('audience') || 'all';
-    const rrpp = audiencia === 'promoters' ? rrppFormularioLee(v) : null;
-    if (rrpp?.error) { $('#formErr').textContent = rrpp.error; return; }
-    const programada = fromLocalInput(f.get('publish_at'));
-    if (programada && new Date(programada) <= new Date()) {
-      $('#formErr').textContent = I18N.t('La hora de publicación tiene que ser futura.'); return;
-    }
-    if (programada && new Date(programada) > Date.now() + 60 * 864e5) {
-      $('#formErr').textContent = I18N.t('Se puede dejar programada como mucho a 60 días.'); return;
+      fallo(campo('title'), I18N.t('El título necesita al menos 3 caracteres.')); return;
     }
     // 8 · Fechas con sentido, como el selector de la app (de ayer a un año).
     {
       const ini0 = fromLocalInput(f.get('start'));
       const antes0 = id && toLocalInput(o.kind === 'future_event' ? o.event_at : o.redeem_start_at) === f.get('start');
       if (ini0 && !antes0 && (new Date(ini0) < Date.now() - 864e5 || new Date(ini0) > Date.now() + 365 * 864e5)) {
-        $('#formErr').textContent = I18N.t('La fecha tiene que estar entre ayer y dentro de un año.'); return;
+        fallo(campo('start'), I18N.t('La fecha tiene que estar entre ayer y dentro de un año.')); return;
       }
     }
-    const price = (f.get('price') || '').toString().replace(',', '.');
-    const dType = f.get('discount_type');
-    const dValue = (f.get('discount_value') || '').toString().replace(',', '.');
+    const iniF = fromLocalInput(f.get('start'));
+    const finF = fromLocalInput(f.get('end'));
+    if (!iniF || (flash && !finF)) {
+      fallo(!iniF ? campo('start') : campo('end'), I18N.t('Falta cuándo: elige el inicio (y el final, si es una oferta flash).')); return;
+    }
+    if (finF && new Date(finF) <= new Date(iniF)) {
+      fallo(campo('end'), I18N.t('El fin debe ser posterior al inicio.')); return;
+    }
+    const dType = val('discount_type');
+    if (dType === 'other' && String(f.get('discount_value') || '').trim().length > 24) {
+      fallo(campo('discount_value'), I18N.t('El descuento «Otro» cabe en 24 caracteres («2ª unidad −50 %»).')); return;
+    }
     const priorRaw = (f.get('prior_price') || '').toString().replace(',', '.');
     const prior = priorRaw ? Math.round(parseFloat(priorRaw) * 100) : null;
     if (['percent', 'fixed'].includes(dType) && !prior) {
-      $('#formErr').textContent = I18N.t('Pon el precio anterior: la ley obliga a enseñarlo junto al descuento.');
-      return;
+      fallo(campo('prior_price'), I18N.t('Pon el precio anterior: la ley obliga a enseñarlo junto al descuento.')); return;
     }
     // El 2x1 obliga a declarar si hay alcohol: por el texto no se sabe
     // («2x1 en bebidas» no dice nada) y la multa se la lleva el negocio.
-    const alcohol = f.get('alcohol');
+    const alcohol = val('alcohol');
     if (dType === '2x1' && !alcohol) {
-      $('#formErr').textContent = I18N.t('Di si el 2x1 incluye bebidas alcohólicas.');
-      return;
+      fallo($('[name=alcohol]', v), I18N.t('Di si el 2x1 incluye bebidas alcohólicas.')); return;
     }
+    // De RRPP: para qué RRPP, plazas y hasta cuándo vale (panel/rrpp.js).
+    const audiencia = val('audience') || 'all';
+    const rrpp = audiencia === 'promoters' ? rrppFormularioLee(v) : null;
+    if (rrpp?.error) { fallo(rrpp.el, rrpp.error); return; }
+    if (lugar.activo()) {
+      if (String(f.get('venue_address') || '').trim().length < 5) {
+        fallo(campo('venue_address'), I18N.t('Escribe la dirección del sitio.')); return;
+      }
+      if (!lugar.punto) {
+        fallo($('#buscarLugar', v), I18N.t('Marca el sitio en el mapa.')); return;
+      }
+    }
+    if (alas && new Date(alas) <= new Date()) { toast(I18N.t('La hora de publicación tiene que ser futura.'), true); return; }
+    if (alas && new Date(alas) > Date.now() + 60 * 864e5) { toast(I18N.t('Se puede dejar programada como mucho a 60 días.'), true); return; }
+    const price = (f.get('price') || '').toString().replace(',', '.');
+    const dValue = (f.get('discount_value') || '').toString().replace(',', '.');
     // Bajar el precio con códigos sin usar no es gratis: quien los tenga
     // pagará el nuevo. El negocio lo decide sabiéndolo.
     const newCents = price ? Math.round(parseFloat(price) * 100) : null;
@@ -2375,9 +2573,10 @@ async function offerForm(v, id, kindDefault, desde = null) {
       }
     }
 
+    const reservas = !flash && campo('reservations_enabled').checked;
     const data = {
       business_id: BIZ.id,
-      kind: f.get('kind'),
+      kind,
       title: f.get('title'),
       description: f.get('description') || null,
       terms: f.get('terms') || null,
@@ -2395,43 +2594,34 @@ async function offerForm(v, id, kindDefault, desde = null) {
         ...(prior ? { compare_at_cents: prior } : {}),
         ...(dType === '2x1' ? { alcohol: alcohol === 'yes' } : {}),
       } : null,
-      redeem_start_at: flash ? fromLocalInput(f.get('start')) : null,
-      redeem_end_at: flash ? fromLocalInput(f.get('end')) : null,
-      event_at: flash ? null : fromLocalInput(f.get('start')),
-      event_end_at: flash ? null : fromLocalInput(f.get('end')),
+      redeem_start_at: flash ? iniF : null,
+      redeem_end_at: flash ? finF : null,
+      event_at: flash ? null : iniF,
+      event_end_at: flash ? null : finF,
       max_redemptions: f.get('max_redemptions') ? Number(f.get('max_redemptions')) : null,
-      holds_seats: f.get('holds_seats') !== 'no',
+      holds_seats: val('holds_seats') !== 'no',
       max_per_user: Number(f.get('max_per_user') || 1),
-      code_ttl_minutes: f.get('code_ttl_minutes') ? Number(f.get('code_ttl_minutes')) : null,
-      reservations_enabled: !flash && $('[name=reservations_enabled]').checked,
-      max_seats: !flash && $('[name=reservations_enabled]').checked
-        ? Number(f.get('max_seats') || 1) : 1,
-      adults_only: $('[name=adults_only]').checked,
+      code_ttl_minutes: val('code_ttl_minutes') ? Number(val('code_ttl_minutes')) : null,
+      reservations_enabled: reservas,
+      max_seats: reservas ? Number(f.get('max_seats') || 1) : 1,
+      adults_only: campo('adults_only').checked,
       // null = como el local. Una +18 nunca se marca como apta para niños.
-      for_kids: forKids($('[name=adults_only]').checked, f.get('for_kids')),
-      setting: f.get('setting') || null,
+      for_kids: forKids(campo('adults_only').checked, val('for_kids')),
+      setting: val('setting') || null,
       audience: audiencia,
       // Las columnas de RRPP: las suyas o, si deja de serlo, las de siempre.
       ...(rrpp ? rrpp.cols : o.audience === 'promoters' ? RRPP_COLUMNAS_FUERA : {}),
-      // Sin marcar: borrador, salvo que ya estuviera terminada, agotada o
-      // cancelada (se queda así; editarla no la saca del cajón).
-      status: programada ? 'draft' : ($('[name=publish]').checked ? 'active'
+      // Borrador, salvo que ya estuviera terminada, agotada o cancelada (se
+      // queda así; editarla no la saca del cajón).
+      status: alas ? 'draft' : (publicar ? 'active'
         : (id && ['expired', 'sold_out', 'cancelled'].includes(o.status) ? o.status : 'draft')),
-      publish_at: programada,
+      publish_at: alas,
       style: { template: estilo.template, ...(estilo.accent ? { accent: estilo.accent } : {}) },
       // Sin sitio propio, la base pone el punto del negocio.
       venue_name: lugar.activo() ? (String(f.get('venue_name') || '').trim() || null) : null,
       venue_address: lugar.activo() ? (String(f.get('venue_address') || '').trim() || null) : null,
       ...(lugar.activo() && lugar.punto ? { location: `SRID=4326;POINT(${lugar.punto.lng} ${lugar.punto.lat})` } : {}),
     };
-    // Los mismos avisos que la app.
-    if (flash ? (!data.redeem_start_at || !data.redeem_end_at) : !data.event_at) {
-      $('#formErr').textContent = I18N.t('Falta cuándo: elige el inicio (y el final, si es una oferta flash).'); return;
-    }
-    const [ini, fin] = flash ? [data.redeem_start_at, data.redeem_end_at] : [data.event_at, data.event_end_at];
-    if (fin && new Date(fin) <= new Date(ini)) {
-      $('#formErr').textContent = I18N.t('El fin debe ser posterior al inicio.'); return;
-    }
     // Cambios que la base avisa a quien ya tiene reserva o código (la misma
     // regla que `offers_codes_follow`): cuándo es (alargar el final no
     // cuenta), pausarla o marcarla +18. Se dice antes de guardar.
@@ -2462,7 +2652,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
         const { error: eFotos } = await sb.from('offer_images').delete().eq('offer_id', id);
         if (eFotos) throw eFotos;
       } else {
-        if (serieCopia && $('[name=keep_series]', v)?.checked) data.series_id = serieCopia.id;
+        if (serieCopia && campo('keep_series')?.checked) data.series_id = serieCopia.id;
         const { data: row, error } = await sb.from('offers').insert(data).select('id').single();
         if (error) throw error;
         offerId = row.id;
@@ -2472,17 +2662,118 @@ async function offerForm(v, id, kindDefault, desde = null) {
         if (eFotos2) throw eFotos2;
       }
       if (rrpp?.cols.promoter_scope === 'some') await rrppGuardaElegidos(offerId, rrpp.ids);
-      toast(id ? 'Cambios guardados' : 'Publicado');
+      toast(alas ? bi(`Programada: se publica el ${fmtProgramada(alas)}`, `Scheduled: goes live on ${fmtProgramada(alas)}`)
+        : data.status === 'active' ? (enVivo ? I18N.t('Cambios guardados') : I18N.t('Publicada'))
+          : I18N.t('Guardada en borrador'));
+      // Guardado: ya no hay nada que perder al salir.
+      GUARDA = null;
       location.hash = '#/publicaciones';
     } catch (err) {
       // El aforo no baja de lo ya reservado o usado: la base dice cuánto es.
-      const ocupadas = /capacity_below_reserved:(\d+)/.exec(String(err.message || ''));
-      $('#formErr').textContent = ocupadas
-        ? bi(`No puedes bajar el aforo a menos de ${ocupadas[1]}: ya hay ${ocupadas[1]} plazas reservadas o usadas.`,
-          `You can't lower the capacity below ${ocupadas[1]}: ${ocupadas[1]} places are already reserved or used.`)
-        : I18N.t(friendly(err.message));
+      const msg = String(err.message || '');
+      const ocupadas = /capacity_below_reserved:(\d+)/.exec(msg);
+      if (ocupadas) {
+        fallo(campo('max_redemptions'), bi(`No puedes bajar el aforo a menos de ${ocupadas[1]}: ya hay ${ocupadas[1]} plazas reservadas o usadas.`,
+          `You can't lower the capacity below ${ocupadas[1]}: ${ocupadas[1]} places are already reserved or used.`));
+      } else if (/venue_too_far/.test(msg)) {
+        fallo(campo('venue_address'), I18N.t(friendly(msg)));
+      } else {
+        $('#formErr').textContent = I18N.t(friendly(msg));
+      }
     }
   };
+  // Intro en un campo no publica: se decide con la barra de abajo.
+  $('#form').onsubmit = (e) => e.preventDefault();
+
+  // ── La barra: «Guardar borrador» y «Publicar ▾» (ahora o programada) ─────
+  const fmtProgramada = (iso) => KZ.fmt(iso, TZ, LOC(), { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  // Un guardado a la vez: los botones de la barra se apagan mientras tanto.
+  let ocupado = false;
+  const ocupa = async (trabajo) => {
+    if (ocupado) return;
+    ocupado = true;
+    const botones = $$('#barraPub button', v);
+    botones.forEach((b) => { b.disabled = true; });
+    try { await trabajo(); } finally {
+      ocupado = false;
+      botones.forEach((b) => { b.disabled = false; });
+    }
+  };
+  const menu = $('#menuPub', v);
+  const botonPub = $('#btnPublicar', v);
+  const abreMenuPub = (abrir) => {
+    menu.hidden = !abrir;
+    botonPub.setAttribute('aria-expanded', String(abrir));
+    if (abrir) $('button', menu).focus();
+  };
+  const pintaBarra = () => {
+    $('#btnBorrador', v).textContent = enVivo ? I18N.t('Pasar a borrador') : programada ? I18N.t('Guardar') : I18N.t('Guardar borrador');
+    $('#programadaTxt', v).hidden = enVivo || !programada;
+    if (programada) $('#programadaCuando', v).textContent = bi(`Se publica el ${fmtProgramada(programada)}`, `Goes live on ${fmtProgramada(programada)}`);
+    if (enVivo) {
+      botonPub.textContent = I18N.t('Guardar cambios');
+      botonPub.removeAttribute('aria-haspopup');
+      botonPub.removeAttribute('aria-expanded');
+    } else {
+      botonPub.innerHTML = `${esc(I18N.t('Publicar'))} <span aria-hidden="true">▾</span>`;
+      botonPub.setAttribute('aria-haspopup', 'menu');
+      botonPub.setAttribute('aria-expanded', 'false');
+      $('#pubProgramar', v).textContent = programada ? I18N.t('Cambiar la hora…') : I18N.t('Programar…');
+    }
+  };
+  $('#btnBorrador', v).onclick = (e) => ocupa(() => (programada && !enVivo
+    ? guarda({ publicar: true, alas: programada })
+    : guarda({ publicar: false })));
+  botonPub.onclick = (e) => {
+    if (enVivo) { ocupa(() => guarda({ publicar: true })); return; }
+    abreMenuPub(menu.hidden);
+  };
+  $('#pubAhora', v).onclick = () => { abreMenuPub(false); ocupa(() => guarda({ publicar: true })); };
+  $('#pubProgramar', v).onclick = async () => {
+    abreMenuPub(false);
+    const r = await modal({
+      title: I18N.t('Programar publicación'),
+      intro: esc(I18N.t('Se guarda en borrador y se publica sola a esa hora.')),
+      fields: [{ name: 'cuando', label: I18N.t('Día y hora'), type: 'datetime-local', required: true, value: toLocalInput(programada || new Date(Date.now() + 36e5).toISOString()) }],
+      submit: I18N.t('Programar'),
+    });
+    if (!r?.cuando) return;
+    const alas = fromLocalInput(r.cuando);
+    if (!alas || new Date(alas) <= new Date()) { toast(I18N.t('La hora de publicación tiene que ser futura.'), true); return; }
+    if (new Date(alas) > Date.now() + 60 * 864e5) { toast(I18N.t('Se puede dejar programada como mucho a 60 días.'), true); return; }
+    programada = alas;
+    pintaBarra();
+    ocupa(() => guarda({ publicar: true, alas }));
+  };
+  $('#quitaProg', v).onclick = () => { programada = null; pintaBarra(); };
+  // El menú se cierra con Escape o al tocar fuera.
+  menu.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { abreMenuPub(false); botonPub.focus(); }
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      const items = $$('button', menu);
+      const i = items.indexOf(document.activeElement);
+      items[(i + (e.key === 'ArrowDown' ? 1 : items.length - 1)) % items.length].focus();
+    }
+  });
+  document.addEventListener('click', (e) => { if (!menu.hidden && !e.target.closest('.pub-grupo')) abreMenuPub(false); });
+
+  renderPhotos();
+  pintaLugar();
+  pintaEntradas();
+  pintaTipo();
+  syncKind();
+  syncDiscount();
+  syncNinos();
+  pintaEstilo();
+  pintaBarra();
+  // Desde «Primeros pasos»: ya rellena con la primera de su gremio.
+  if (!id && /[?&]idea=1\b/.test(location.hash) && ideas.length) aplicarIdea(ideas[0]);
+
+  // ── Cambios sin guardar: se pregunta al salir (y al cerrar la pestaña) ───
+  const estado = () => JSON.stringify([[...new FormData($('#form')).entries()], images, estilo, lugar.punto, kind, programada]);
+  const foto = estado();
+  GUARDA = { sucia: () => v.isConnected && estado() !== foto };
 }
 
 // ── Calendario ──────────────────────────────────────────────────────────────

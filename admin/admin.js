@@ -171,7 +171,7 @@ const RPC_ERRORS = {
   paused_by_klendar: 'Klendar pausó este negocio al suspender a su propietario: quita la pausa desde su ficha.',
   invalid_plan: 'Plan no válido.', invalid_status: 'Estado no válido.', no_subscription: 'El negocio no tiene suscripción vigente; asigna primero un plan.',
   user_not_found: 'No existe ningún usuario con ese email.', cannot_remove_self: 'No puedes quitarte a ti mismo.', last_admin: 'Tiene que quedar al menos un administrador.',
-  category_in_use: 'La categoría está en uso (negocios, publicaciones o subcategorías).', slug_required: 'El identificador (slug) es obligatorio.',
+  category_in_use: 'La categoría está en uso (negocios, publicaciones o subcategorías).', slug_required: 'El identificador (slug) es obligatorio.', invalid_category_group: 'Ese grupo de categorías no existe.',
   title_body_required: 'Título y texto son obligatorios.', unknown_key: 'Clave de configuración desconocida.', invalid_amount: 'Importe no válido.', invalid_period: 'El fin del periodo es anterior al inicio.',
   not_found: 'No encontrado.', invalid_type: 'Tipo de cuenta no válido.', invalid_birth_date: 'Esa fecha de nacimiento no es válida.', account_suspended: 'Tu cuenta está suspendida. Si crees que es un error, escríbenos a info@klendar.app.',
 };
@@ -2889,19 +2889,25 @@ PAGES.categorias = async (v) => {
     <div class="page-head"><h1>Categorías</h1><span class="spacer"></span><button class="btn primary sm" id="new">Nueva categoría…</button></div>
     ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p>The categories used to classify businesses and publications (the app's filters). The <b>slug</b> is the internal identifier (don't change it if it's already in use); the icon is a Material Symbols name, as in the app (local_bar, restaurant…). Only an empty category can be deleted.</p>` : '<p>Las categorías con las que se clasifican negocios y publicaciones (filtros de la app). El <b>slug</b> es el identificador interno (no lo cambies si ya está en uso); el icono es el nombre de un icono de Material Symbols, como en la app (local_bar, restaurant…). Solo se puede borrar una categoría vacía.</p>')}
     ${table({ cols: [
-      { h: 'Categoría', r: (c) => `<span class="ph" style="font-size:20px">${c.icon ? ms(esc(c.icon)) : '·'}</span><span class="title">${esc(c.names?.[I18N.lang] || c.names?.es || c.slug)}<span class="sub">${esc(c.slug)} · EN: ${esc(c.names?.en || '—')}${c.parent_id ? ` · ${I18N.lang === 'en' ? 'under' : 'dentro de'} ${esc(byId[c.parent_id]?.names?.es || '')}` : ''}</span></span>` },
+      { h: 'Categoría', r: (c) => `<span class="ph" style="font-size:20px">${c.icon ? ms(esc(c.icon)) : '·'}</span><span class="title">${esc(c.names?.[I18N.lang] || c.names?.es || c.slug)}<span class="sub">${esc(KlendarCategorias.nombreGrupo(KlendarCategorias.grupoDe(c), I18N.lang))} · ${esc(c.slug)} · EN: ${esc(c.names?.en || '—')}${c.parent_id ? ` · ${I18N.lang === 'en' ? 'under' : 'dentro de'} ${esc(byId[c.parent_id]?.names?.es || '')}` : ''}</span></span>` },
       { h: 'Orden', num: true, r: (c) => c.position }, { h: 'Negocios', num: true, r: (c) => c.businesses }, { h: 'Publicaciones', num: true, r: (c) => c.offers },
       { h: '', r: (c) => `<span class="actions"><button class="btn sm" data-edit="${c.id}">Editar…</button>${(c.businesses || c.offers) ? '' : `<button class="btn sm bad ghost" data-del="${c.id}">Borrar</button>`}</span>` },
     ], rows: cats, empty: 'Sin categorías.' })}`;
   const edit = async (c) => {
-    const r = await modal({ title: c ? 'Editar categoría' : 'Nueva categoría', fields: [
+    const nueva = !c || c._nueva;
+    const r = await modal({ title: nueva ? 'Nueva categoría' : 'Editar categoría', fields: [
       { name: 'slug', label: 'Slug', value: c?.slug, required: true }, { name: 'icon', label: 'Icono (nombre de Material Symbols, como en la app: local_bar, restaurant…)', value: c?.icon },
       { name: 'es', label: 'Nombre (ES)', value: c?.names?.es, required: true }, { name: 'en', label: 'Nombre (EN)', value: c?.names?.en },
+      // El grupo del selector de categorías (app y web): sin él, una nueva
+      // caía en «Tiendas y servicios».
+      { name: 'category_group', label: 'Grupo (en el selector de categorías)', type: 'select', value: nueva ? '' : KlendarCategorias.grupoDe(c),
+        options: [...(nueva ? [['', '— elige uno']] : []), ...KlendarCategorias.GRUPOS.map((g) => [g.id, I18N.lang === 'en' ? g.en : g.es])] },
       { name: 'parent_id', label: 'Categoría superior', type: 'select', value: c?.parent_id || '', options: [['', '— (principal)'], ...cats.filter((x) => x.id !== c?.id).map((x) => [x.id, x.names?.[I18N.lang] || x.names?.es || x.slug])] },
       { name: 'position', label: 'Orden', type: 'number', value: c?.position ?? 99 },
     ] });
     if (!r) return;
-    try { await rpc('admin_upsert_category', { p: { id: c?.id, slug: r.slug, icon: r.icon || null, names: { es: r.es, en: r.en || r.es }, parent_id: r.parent_id || null, position: +r.position || 99 } }); toast('Categoría guardada'); route(); } catch (e) { toast(e.message, true); }
+    if (!r.category_group) { toast(I18N.t('Elige el grupo de la categoría.'), true); return edit({ ...(c || {}), ...r, names: { es: r.es, en: r.en }, _nueva: nueva }); }
+    try { await rpc('admin_upsert_category', { p: { id: c?._nueva ? undefined : c?.id, slug: r.slug, icon: r.icon || null, names: { es: r.es, en: r.en || r.es }, parent_id: r.parent_id || null, position: +r.position || 99, category_group: r.category_group } }); toast('Categoría guardada'); route(); } catch (e) { toast(e.message, true); }
   };
   $('#new').onclick = () => edit(null);
   $$('[data-edit]').forEach((b) => { b.onclick = () => esperando(b, () => edit(byId[b.dataset.edit])); });
