@@ -1289,4 +1289,12 @@ const I18N = makeI18N({
   "Ningún proveedor activo.": "No active provider.",
   "Falta la clave del proveedor en las Edge Functions.": "The provider's key is missing from the Edge Functions.",
   "Cerrar": "Close",
+  // Agenda pública y entidades (tanda B)
+  "Agenda pública": "Public listings",
+  "Ayuntamiento": "Council",
+  "Junta de distrito": "District council",
+  "Asociación de comerciantes": "Traders' association",
+  "Council": "Council",
+  "District council": "District council",
+  "Public listings": "Public listings",
 });
