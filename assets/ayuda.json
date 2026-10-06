@@ -1,5 +1,5 @@
 {
- "version": "56468a30f32c",
+ "version": "accf85cc96c5",
  "contact": "info@klendar.app",
  "tabs": {
   "es": {
@@ -101,7 +101,7 @@
    },
    {
     "id": "planes-en-el-calendario",
-    "q": "¿Puedo ver mis planes en el calendario del móvil?",
+    "q": "¿Puedo ver Tus planes en el calendario del móvil?",
     "a": [
      {
       "t": "Sí. En Cuenta → Ajustes → «Tus planes en tu calendario» (en la web, en «Tu cuenta» → Ajustes) elige Google Calendar, Apple / iPhone o copia el enlace para cualquier otro calendario. Salen los eventos a los que vas, tus reservas, los códigos con hora y las fechas que añaden las series que sigues, y se actualizan solos: si algo se anula, desaparece. Google puede tardar unas horas en mostrar los cambios. Quien tenga el enlace ve tus planes: si se te escapa, cámbialo desde ahí."
@@ -389,7 +389,7 @@
    },
    {
     "id": "kit",
-    "q": "¿Tenéis algo para poner en el local?",
+    "q": "¿Hay algo para poner en el local?",
     "a": [
      {
       "t": "Sí: una "
