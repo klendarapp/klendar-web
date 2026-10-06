@@ -602,6 +602,7 @@ RUTAS[''] = async () => {
     <div class="lista">
       ${fila({ href: '#/alertas', icono: 'add_alert', titulo: t('Avísame si…'), detalle: t('Que te avisemos cuando salga algo que te interesa cerca') })}
       ${fila({ href: '#/series', icono: 'notifications', titulo: EN ? 'Series you follow' : 'Series que sigues', detalle: EN ? "We'll tell you about each new date" : 'Te avisamos de cada fecha nueva' })}
+      ${typeof filaEquipos === 'function' ? filaEquipos() : ''}
       ${fila({ href: '#/ajustes', icono: 'tune', titulo: t('Ajustes'), detalle: t('Idioma, notificaciones, privacidad y cuenta') })}
     </div>
 

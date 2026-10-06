@@ -1220,4 +1220,6 @@ const I18N = makeI18N({
     "Cambia cada": "Changes every",
     "Enseñar «¿Hay sitio ahora?»": "Show “Room right now?”",
     "Ajustes de la tele": "TV settings",
+    // Dónde ver el partido (tanda B, 2026-10-06)
+    "Partidos que pones": "Matches you're showing",
 });

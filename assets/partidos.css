@@ -45,11 +45,10 @@ section.partidos-dia, section.pone-partidos, section.seccion-partidos { padding:
 .partido-cab h1 { font-size: clamp(26px, 6vw, 40px); line-height: 1.15; overflow-wrap: anywhere; }
 .partido-cuando { margin: 8px 0 14px; color: var(--ink-2); font-weight: 600; }
 .partido-cuando b { color: var(--ink); }
-/* «Seguir a …»: los de una fila, iguales (en el móvil estrecho, uno debajo de otro). */
-.seguir-equipos { display: grid; grid-template-columns: repeat(var(--n, 1), minmax(0, 1fr)); gap: 10px; max-width: 560px; }
+/* «Seguir a …»: neutros con borde, uno debajo de otro y del mismo ancho. */
+.seguir-equipos { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; max-width: 420px; }
 .seguir-equipos .pill { justify-content: center; text-align: center; padding: 11px 14px; font-size: 14px; min-width: 0; }
 .seguir-equipos .pill[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: transparent; }
-@media (max-width: 420px) { .seguir-equipos { grid-template-columns: 1fr; } }
 .partido-h { font-size: 20px; margin: 6px 0 12px; }
 .bares-partido { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr)); }
 .bar-partido { border-radius: 22px; background: var(--glass); border: 1px solid var(--glass-border); overflow: hidden; min-width: 0; }

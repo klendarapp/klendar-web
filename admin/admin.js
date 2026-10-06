@@ -116,7 +116,7 @@ class Obsoleta extends Error {
 }
 // Las RPC que escriben: aunque se cambie de pantalla mientras van, terminan y
 // dicen si ha ido bien (las que solo leen se cortan con `Obsoleta`).
-const ESCRIBE = /^admin_(set|record|send|delete|upsert|resolve|review|add|remove|push_retry|save|collection_(add|remove|move)|run|update|dismiss|merge|handle_cancellation|mark_business_closed|release_suspension_pause|change_user_email)|^set_business_amenities$/;
+const ESCRIBE = /^admin_(set|record|send|delete|upsert|resolve|review|add|remove|push_retry|save|hide|collection_(add|remove|move)|run|update|dismiss|merge|handle_cancellation|mark_business_closed|release_suspension_pause|change_user_email)|^set_business_amenities$/;
 async function rpc(fn, args = {}) {
   const n = RUTA_N;
   const { data, error } = await sb.rpc(fn, args);
@@ -869,7 +869,7 @@ document.addEventListener('keydown', (e) => { if (e.key === '/' && !/input|texta
 const NAV_GRUPOS = [
   { id: 'panorama', t: 'Panorama', items: [['resumen', 'dashboard', 'Resumen'], ['semanas', 'trending_up', 'Semana a semana'], ['cifras', 'insights', 'Cifras'], ['ciudades', 'map', 'Ciudades']] },
   { id: 'negocios', t: 'Negocios y pagos', items: [['negocios', 'storefront', 'Negocios'], ['reclamaciones', 'how_to_reg', 'Reclamaciones'], ['duplicados', 'content_copy', 'Posibles duplicados'], ['planes', 'credit_card', 'Planes y pagos']] },
-  { id: 'contenido', t: 'Contenido', items: [['publicaciones', 'bolt', 'Publicaciones'], ['canjes', 'confirmation_number', 'Canjes'], ['colecciones', 'auto_awesome', 'Colecciones'], ['categorias', 'category', 'Categorías']] },
+  { id: 'contenido', t: 'Contenido', items: [['publicaciones', 'bolt', 'Publicaciones'], ['canjes', 'confirmation_number', 'Canjes'], ['colecciones', 'auto_awesome', 'Colecciones'], ['emisiones', 'sports_soccer', 'Emisiones'], ['categorias', 'category', 'Categorías']] },
   { id: 'personas', t: 'Personas', items: [['usuarios', 'person', 'Usuarios'], ['inactivas', 'hourglass_empty', 'Cuentas inactivas'], ['avisos', 'notifications', 'Notificaciones y push'], ['sugerencias', 'lightbulb', 'Sugerencias']] },
   { id: 'moderacion', t: 'Moderación', items: [['denuncias', 'flag', 'Denuncias'], ['resenas', 'chat_bubble', 'Reseñas y novedades'], ['mensajes', 'campaign', 'Mensajes a clientes']] },
   { id: 'sistema', t: 'Sistema', plegable: true, items: [['configuracion', 'settings', 'Configuración'], ['errores', 'bug_report', 'Errores de la web'], ['administradores', 'shield', 'Administradores'], ['actividad', 'history', 'Registro de actividad'], ['ayuda', 'help', 'Ayuda']] },

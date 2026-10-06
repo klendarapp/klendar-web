@@ -548,9 +548,16 @@ async function preparaNegocio() {
   rpc('before_closing_setup', { p_business: negocio })
     .then((r) => { if (BIZ?.id === negocio) { ANTES = r; if (ME) renderNav(currentRoute()[0]); } })
     .catch(() => {});
+  // «Partidos que pones» en el menú: si es de su gremio o ya pone alguno.
+  PARTIDOS_NAV = null;
+  rpc('business_broadcast_week', { p_business: negocio, p_days: 1, p_lang: I18N.lang })
+    .then((r) => { if (BIZ?.id === negocio) { PARTIDOS_NAV = r; if (ME) renderNav(currentRoute()[0]); } })
+    .catch(() => {});
 }
 /** Lo de «Antes de cerrar» del negocio (`before_closing_setup`). */
 let ANTES = null;
+/** Si «Partidos que pones» sale en el menú (`business_broadcast_week`). */
+let PARTIDOS_NAV = null;
 
 /** A dónde volver después de entrar o de aceptar los términos: la página del
  * panel con lo que traía (el código de un QR escaneado sin sesión, «Crear a
@@ -567,12 +574,13 @@ const VUELTA_PARAMS = {
   estado: /^[a-z_]{1,20}$/,
   dia: /^\d{4}-\d{2}-\d{2}$/,
   idea: /^(1|before_closing)$/,
+  partido: /^[0-9a-f-]{36}$/i,
 };
 function rutaDeVuelta() {
   const [h, q] = location.hash.split('?');
   const pagina = (/^#\/([a-z0-9-]{1,30})(\/[A-Za-z0-9-]{1,40}){0,2}$/.exec(h || '') || [])[1];
-  // rrpp.js y series.js se cargan después: sus pantallas también valen.
-  const conocida = pagina && (Object.hasOwn(PAGES, pagina) || ['rrpp', 'series'].includes(pagina));
+  // rrpp.js, series.js y partidos.js se cargan después: sus pantallas también valen.
+  const conocida = pagina && (Object.hasOwn(PAGES, pagina) || ['rrpp', 'series', 'partidos'].includes(pagina));
   let hash = '';
   if (conocida) {
     const dentro = new URLSearchParams(q || '');
@@ -728,6 +736,8 @@ const SVG = {
   repite: 'M21 12V6c0-1.1-.9-2-2-2h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h7v-2H5V10h14v2h2zm-5.36 8c.43 1.45 1.77 2.5 3.36 2.5 1.93 0 3.5-1.57 3.5-3.5s-1.57-3.5-3.5-3.5c-.95 0-1.82.38-2.45 1H18v2h-4v-4h2v1.4c.9-.87 2.13-1.4 3.5-1.4 2.76 0 5 2.24 5 5s-2.24 5-5 5c-2.42 0-4.44-1.72-4.9-4h1.54z',
   // «Antes de cerrar» (shopping_bag).
   bolsa: 'M18 6h-2c0-2.21-1.79-4-4-4S8 3.79 8 6H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6-2c1.1 0 2 .9 2 2h-4c0-1.1.9-2 2-2zm6 16H6V8h2v2c0 .55.45 1 1 1s1-.45 1-1V8h4v2c0 .55.45 1 1 1s1-.45 1-1V8h2v12z',
+  // «Partidos que pones» (sports_soccer).
+  partido: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 3.3 1.35-.95c1.82.56 3.37 1.76 4.38 3.34l-.39 1.34-1.35.46L13 6.7V5.3zm-3.35-.95L11 5.3v1.4L7.01 9.49l-1.35-.46-.39-1.34c1.01-1.57 2.56-2.77 4.38-3.34zM7.08 17.11l-1.14.1C4.73 15.81 4 13.99 4 12c0-.12.01-.23.02-.35l1-.73 1.38.48 1.46 4.34-.78 1.37zm7.42 2.48c-.79.26-1.63.41-2.5.41s-1.71-.15-2.5-.41l-.69-1.49.64-1.1h5.11l.64 1.11-.7 1.48zM14.27 15H9.73l-1.35-4.02L12 8.44l3.63 2.54L14.27 15zm3.79 2.21-1.14-.1-.79-1.37 1.46-4.34 1.39-.47 1 .73c.01.11.02.22.02.34 0 1.99-.73 3.81-1.94 5.21z',
   // RRPP (record_voice_over).
   // «Poner en la tele» (tv; no está en la fuente recortada).
   tele: 'M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 1.99-.9 1.99-2L23 5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z',
@@ -755,6 +765,9 @@ const NAV = [
     // publicado alguna: `before_closing_setup` → suggested).
     ['antes-de-cerrar', 'bolsa', 'Antes de cerrar'],
     ['series', 'repite', 'Series y repeticiones'],
+    // Los partidos que pone el bar (gremios de bar, restaurante… o si ya ha
+    // marcado alguno: `business_broadcast_week` → suggested).
+    ['partidos', 'partido', 'Partidos que pones'],
     ['novedades', 'campaign', 'Novedades'],
   ]],
   ['Clientes', [
@@ -786,7 +799,8 @@ const NAV = [
  * app); «Más» abre el menú entero. */
 const BARRA = ['resumen', 'publicaciones', 'calendario', 'validar'];
 const visibleEnMenu = (k) => (gestiona() || !SOLO_GESTION.includes(k)) && (k !== 'baja' || esPropietario())
-  && (k !== 'antes-de-cerrar' || !!ANTES?.suggested);
+  && (k !== 'antes-de-cerrar' || !!ANTES?.suggested)
+  && (k !== 'partidos' || !!PARTIDOS_NAV?.suggested);
 const marcada = (current, n) => current === n[0] || (n[3] || []).includes(current);
 function renderNav(current) {
   let g = 0;
@@ -1759,6 +1773,21 @@ async function offerForm(v, id, kindDefault, desde = null) {
       if (desde.rrpp) o.audience = 'promoters';
     }
   }
+  // «Oferta para el partido» (Partidos que pones, `?partido=<id>`): la oferta
+  // flash ya rellena con el partido, de 30 min antes al final de la emisión.
+  // Al guardarla se une a él (`set_business_broadcast_offer`).
+  const partidoId = !id && !desde?.from ? (/[?&]partido=([0-9a-f-]{36})(?:&|$)/i.exec(location.hash) || [])[1] : null;
+  const partido = partidoId ? await rpc('broadcast_basic', { p_broadcast: partidoId, p_lang: I18N.lang }).catch(() => null) : null;
+  if (partido?.id) {
+    const SPx = globalThis.KlendarEmisiones.t(I18N.lang);
+    o.kind = 'flash_offer';
+    o.title = SPx.offerTitle(partido.title).slice(0, 90);
+    o.description = SPx.offerDesc;
+    const ini = new Date(Math.max(Date.now(), new Date(partido.starts_at).getTime() - 30 * 6e4));
+    ini.setSeconds(0, 0);
+    o.redeem_start_at = ini.toISOString();
+    o.redeem_end_at = partido.ends_at || new Date(new Date(partido.starts_at).getTime() + 2 * 36e5).toISOString();
+  }
   // «¿Para niños?» y «¿Bajo techo o al aire libre?» no vienen en
   // `my_business_offers`: se leen de la publicación al editarla o al crear
   // otra a partir de ella (la copia los conserva).
@@ -1793,6 +1822,8 @@ async function offerForm(v, id, kindDefault, desde = null) {
     const IDEAS = window.KLENDAR_IDEAS || { general: [], bySlug: {} };
     ideas = (IDEAS.bySlug[slug] || IDEAS.general).filter((t) => t.kind === kind);
   }
+  // La del partido ya viene rellena: sin ideas encima.
+  if (partido?.id) ideas = [];
   let guardadas = tpl || [];
   const en = I18N.lang === 'en';
   document.body.classList.add('con-barra-pub');
@@ -2843,12 +2874,17 @@ async function offerForm(v, id, kindDefault, desde = null) {
         if (eFotos2) throw eFotos2;
       }
       if (rrpp?.cols.promoter_scope === 'some') await rrppGuardaElegidos(offerId, rrpp.ids);
+      // La del partido: unida a él (y el partido, marcado «Lo ponemos»).
+      if (partido?.id) {
+        const unida = await rpc('set_business_broadcast_offer', { p_business: BIZ.id, p_broadcast: partido.id, p_offer: offerId }).catch((e3) => ({ ok: false, error: e3.message }));
+        if (unida?.ok === false) toast(friendly(unida.error), true);
+      }
       toast(alas ? bi(`Programada: se publica el ${fmtProgramada(alas)}`, `Scheduled: goes live on ${fmtProgramada(alas)}`)
         : data.status === 'active' ? (enVivo ? I18N.t('Cambios guardados') : I18N.t('Publicada'))
           : I18N.t('Guardada en borrador'));
       // Guardado: ya no hay nada que perder al salir.
       GUARDA = null;
-      location.hash = '#/publicaciones';
+      location.hash = partido?.id ? '#/partidos' : '#/publicaciones';
     } catch (err) {
       // El aforo no baja de lo ya reservado o usado: la base dice cuánto es.
       const msg = String(err.message || '');
@@ -2949,6 +2985,8 @@ async function offerForm(v, id, kindDefault, desde = null) {
   pintaEstilo();
   pintaBarra();
   pintaFinAuto();
+  // La del partido vuelve a «Partidos que pones».
+  if (partido?.id) { const atras = $('.page-head a.btn', v); if (atras) atras.setAttribute('href', '#/partidos'); }
   // Desde «Primeros pasos»: ya rellena con la primera de su gremio.
   if (!id && /[?&]idea=1\b/.test(location.hash) && ideas.length) aplicarIdea(ideas[0]);
   // Desde «Antes de cerrar» la primera vez: con esa idea (aunque su gremio

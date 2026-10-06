@@ -1,0 +1,33 @@
+/* «Partidos que pones» (panel/partidos.js). Neutros; coral solo en la
+   información de la oferta («Oferta: …») y en el botón principal. */
+.pt-filtros { display: grid; gap: 10px; margin: 0 0 14px; }
+.pt-buscar { max-width: 460px; }
+.pt-buscar input { width: 100%; }
+.pt-solo { margin: 0 0 14px; }
+.pt-grupo { padding: 4px 18px 6px; }
+.pt-cab { display: flex; align-items: center; justify-content: space-between; gap: 6px 12px; flex-wrap: wrap; padding: 12px 0 8px; }
+.card .pt-cab h2, .pt-cab h2 { margin: 0; font-size: 16px; }
+.pt-fila { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--glass-border); }
+.pt-info { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.pt-info b { overflow-wrap: anywhere; }
+.pt-cuando { font-size: 13px; color: var(--ink-2); font-weight: 600; }
+.pt-linea { margin-top: 4px; }
+.pt-oferta { color: var(--accent-text); font-weight: 700; font-size: 14px; background: none; border: 0; padding: 0; font-family: inherit; text-align: left; }
+button.pt-oferta { cursor: pointer; }
+button.pt-oferta:hover { text-decoration: underline; text-underline-offset: 3px; }
+.pt-oferta-nueva { font-size: 14px; }
+/* «Lo ponemos»: un chip que se marca (con ✓), como en la app. */
+.pt-chip { position: relative; display: inline-flex; flex: none; }
+.pt-chip input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
+.pt-chip span { display: inline-flex; align-items: center; min-height: 40px; padding: 8px 14px; border-radius: 999px; box-sizing: border-box;
+  border: 1px solid var(--glass-border); background: var(--elevated); color: var(--ink); font-weight: 600; font-size: 14px; white-space: nowrap; cursor: pointer; }
+.pt-chip input:checked + span { background: var(--ink); color: var(--surface); border-color: var(--ink); font-weight: 700; }
+.pt-chip input:checked + span::before { content: '✓'; margin-right: 6px; }
+.pt-chip input:focus-visible + span { outline: 2px solid var(--ink); outline-offset: 2px; }
+.pt-chip input:disabled + span { cursor: default; opacity: .8; }
+/* La hoja de la oferta: los botones uno debajo de otro y del mismo ancho. */
+.pt-hoja { display: grid; gap: 10px; margin: 16px 0 4px; }
+.pt-hoja .btn { width: 100%; justify-content: center; white-space: normal; text-align: center; }
+.pt-fuente { font-size: 12px; color: var(--ink-2); margin: 14px 0 0; }
+.pt-fuente a { color: var(--ink-2); text-decoration: underline; text-underline-offset: 2px; }
+.pt-nuevo { max-width: 640px; display: grid; gap: 14px; }
