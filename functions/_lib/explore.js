@@ -104,6 +104,11 @@ const T = (en) => en
       weatherData: 'Weather data:',
       rainLine: "It's raining today: indoor plans first", sunLine: 'Nice weather today: terraces and outdoor plans first',
       weatherOff: 'Turn off',
+      // Modo viaje y el buscador (/assets/gustos.js).
+      travelLabel: 'Away from {home}', travelTitle: "You're in {city}: today's best", travelClose: 'Dismiss',
+      searchRecent: 'What you searched for', searchClear: 'Clear', searchLocal: 'Stored only in this browser.',
+      searchPopular: 'Most searched in {city}', searchPopularHint: 'What people searched for most this week. Without knowing who.',
+      searchRemove: 'Remove “{q}”',
       // La hoja por orden de uso (2026-10-06).
       what: 'What', whatHint: 'Flash offers: deals that last a few hours. Events: on a set day and time.',
       openNowHint: "The venue, going by today's opening hours",
@@ -177,6 +182,11 @@ const T = (en) => en
       weatherData: 'Datos del tiempo:',
       rainLine: 'Hoy llueve: primero, planes bajo techo', sunLine: 'Hace buen tiempo: primero, terrazas y aire libre',
       weatherOff: 'Quitar',
+      // Modo viaje y el buscador (/assets/gustos.js).
+      travelLabel: 'Lejos de {home}', travelTitle: 'Estás en {city}: lo mejor de hoy', travelClose: 'Quitar el aviso',
+      searchRecent: 'Lo que buscaste', searchClear: 'Borrar', searchLocal: 'Se guarda solo en este navegador.',
+      searchPopular: 'Lo más buscado en {city}', searchPopularHint: 'Lo que más ha buscado la gente esta semana. Sin saber quién.',
+      searchRemove: 'Quitar «{q}»',
       // La hoja por orden de uso (2026-10-06).
       what: 'Qué', whatHint: 'Ofertas flash: descuentos que duran unas horas. Eventos: con día y hora.',
       openNowHint: 'El local, según su horario de hoy',
@@ -548,6 +558,9 @@ function leeEstado(qs) {
     page: Math.max(1, Math.min(50, parseInt(qs.get('p') || '1', 10) || 1)),
     mes: de('month', 7),
     dia: de('day', 10),
+    // «Tus gustos» (slugs, como mucho 5): pesan en el orden, no filtran. Los
+    // pone el navegador desde lo guardado (ver `guardaFiltros`).
+    gustos: [...new Set((qs.get('gustos') || '').split(',').filter((x) => /^[a-z0-9-]{1,40}$/.test(x)))].slice(0, 5),
   };
 }
 
@@ -585,6 +598,7 @@ function query(e, lang, { soloCompartido = false } = {}) {
   }
   if (e.tiempoOff) p.set(K.weather, '0');
   if (!soloCompartido && e.page > 1) p.set('p', String(e.page));
+  if (!soloCompartido && e.gustos?.length) p.set('gustos', e.gustos.join(','));
   return p.toString();
 }
 
@@ -611,13 +625,16 @@ function guardaFiltros(e, lang, base) {
   if (e.vista === 'calendar' && e.mes) resto.set(K.month, e.mes);
   if (e.vista === 'calendar' && e.dia) resto.set(K.day, e.dia);
   const vacia = !compartido.es;
-  const datos = JSON.stringify({ A: compartido, L: lang, v: vacia, r: resto.toString(), b: `${base}/` }).replace(/</g, '\\u003c');
+  const datos = JSON.stringify({ A: compartido, L: lang, v: vacia, r: resto.toString(), b: `${base}/`, g: (e.gustos || []).join(',') }).replace(/</g, '\\u003c');
   return `<script>(function(d){try{var K='klendar.filtros',s=sessionStorage,ls=localStorage;
 var sin=s.getItem('klendar.filtros.sin');s.removeItem('klendar.filtros.sin');
 var n=(performance.getEntriesByType&&performance.getEntriesByType('navigation')[0])||{};
 var g=JSON.parse(ls.getItem(K)||'null');
-if(d.v&&!sin&&n.type!=='back_forward'&&g&&Date.now()-g.t<216e5&&g[d.L]){location.replace(d.b+'?'+g[d.L]+(d.r?'&'+d.r:'')+location.hash);return;}
-ls.setItem(K,JSON.stringify({t:Date.now(),es:d.A.es,en:d.A.en}));}catch(x){}})(${datos});</script>`;
+var gu=JSON.parse(ls.getItem('klendar.gustos')||'null'),gq=gu&&Array.isArray(gu.c)?gu.c.filter(function(x){return /^[a-z0-9-]{1,40}$/.test(x);}).slice(0,5).join(','):'';
+var conG=function(u){var q=new URL(u,location.href);if(gq)q.searchParams.set('gustos',gq);else q.searchParams.delete('gustos');return q.pathname+q.search+q.hash;};
+if(d.v&&!sin&&n.type!=='back_forward'&&g&&Date.now()-g.t<216e5&&g[d.L]){location.replace(conG(d.b+'?'+g[d.L]+(d.r?'&'+d.r:'')+location.hash));return;}
+ls.setItem(K,JSON.stringify({t:Date.now(),es:d.A.es,en:d.A.en}));
+if(gq!==d.g)location.replace(conG(location.href));}catch(x){}})(${datos});</script>`;
 }
 
 /** «El sitio» que cuenta en el resumen y en la insignia de Filtros: todo
@@ -659,7 +676,7 @@ export async function explorePage(url, lang, modo = 'explorar') {
   const base = descubre ? discoverBase(lang) : exploreBase(lang);
   const e = leeEstado(url.searchParams);
   if (descubre) { e.q = ''; e.vista = ''; if (e.kind === 'places') e.kind = ''; }
-  const { q, city, cat, kind, price, when, soloDescuento, abierto, cerca, lat, lng, km, page, traits, tiempoOff } = e;
+  const { q, city, cat, kind, price, when, soloDescuento, abierto, cerca, lat, lng, km, page, traits, tiempoOff, gustos } = e;
   const negocios = !descubre && kind === 'places';
   const esOfertas = kind === 'offers';
   const esEventos = kind === 'events';
@@ -685,12 +702,14 @@ export async function explorePage(url, lang, modo = 'explorar') {
     ...(traits.length || traitsMarcas(e).length ? { traits: [...traits, ...traitsMarcas(e)] } : {}),
     sort: ordenBase === 'nearest' && !cerca ? 'soonest' : ordenBase,
     ...(cerca ? { radius_m: km * 1000 } : {}),
+    // «Tus gustos»: pesan en el orden, sin esconder nada (como la app).
+    ...(gustos.length ? { prefer: gustos } : {}),
     // «Van mis amigos» necesita sesión: no va en esta página (pública y en
     // caché); lo filtra /assets/amigos.js en el navegador.
   };
   const pKind = esOfertas ? 'flash_offer' : esEventos ? 'future_event' : null;
   const filtrado = Boolean(q || city || cat || kind || page > 1 || price || when || soloDescuento || abierto || sort || cerca || vista || e.amigos
-    || traits.length || traitsMarcas(e).length || tiempoOff);
+    || traits.length || traitsMarcas(e).length || tiempoOff || gustos.length);
 
   const argsExplore = {
     p_city: cerca ? null : city || null, p_category: cat || null, p_kind: pKind, p_q: q || null,
@@ -714,7 +733,7 @@ export async function explorePage(url, lang, modo = 'explorar') {
   // buen tiempo, la base pone primero lo de hoy que encaja; no quita nada.
   const enLista = !negocios && !mapa && !calendario;
   const tiempoP = !tiempoOff && enLista ? tiempoDeHoy(dondeTiempo({ cerca, lat, lng, city })) : Promise.resolve(null);
-  const [res, cities, cats, cols, sitios, tiempo, todasCats] = await Promise.all([
+  const [res, cities, cats, cols, sitios, tiempo, todasCats, klendarCities] = await Promise.all([
     negocios
       ? rpc('public_businesses', {
         p_city: city || null, p_category: cat || null, p_q: q || null,
@@ -737,6 +756,8 @@ export async function explorePage(url, lang, modo = 'explorar') {
     // tiene (`select=*`: sin la migración 20261114100000, el grupo sale del
     // slug). Si no llegan, las que tienen algo publicado.
     rows('categories', 'select=*&order=position.asc').catch(() => []),
+    // Las ciudades de Klendar (`cities`): de cuál es una búsqueda.
+    rows('cities', 'select=id,name,lat,lng&order=position.asc').catch(() => []),
   ]);
   const catsHoja = (todasCats || []).length ? todasCats : (cats || []);
   const items = res?.items || [];
@@ -774,7 +795,10 @@ export async function explorePage(url, lang, modo = 'explorar') {
     const vistos = new Set(items.map((o) => o.id));
     // Son un extra: si no llegan, la página sale igual (sin ellas).
     const fuera = await (cerca
-      ? rpcAll('recommended_offers', { p_lat: lat, p_lng: lng, p_min_distance_m: km * 1000, p_limit: 8 })
+      ? rpcAll('recommended_offers', {
+        p_lat: lat, p_lng: lng, p_min_distance_m: km * 1000, p_limit: 8,
+        ...(gustos.length ? { p_categories: (todasCats || []).filter((c) => gustos.includes(c.slug)).map((c) => c.id) } : {}),
+      })
       : rpc('public_explore', { p_city: null, p_limit: 24, p_filters: {} }).then((r) => (r?.items || [])
         .filter((o) => String(o.city || '').toLowerCase() !== city.toLowerCase()))).catch(() => []);
     sugerencias = (fuera || []).filter((o) => !vistos.has(o.id)).slice(0, 4);
@@ -805,6 +829,19 @@ export async function explorePage(url, lang, modo = 'explorar') {
     </details>`;
 
   const ciudades = cities.filter((c) => c.city).slice(0, 20);
+  // La ciudad de Klendar de lo que se mira (para «Lo más buscado»): la que
+  // hay donde estás (a menos de 30 km de su centro) o la elegida.
+  const plano = (x) => String(x || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+  const ciudadK = (() => {
+    const lista = klendarCities || [];
+    if (cerca) {
+      const rad = (d) => (d * Math.PI) / 180;
+      const dist = (c) => 6371 * 2 * Math.asin(Math.min(1, Math.sqrt(Math.sin(rad(c.lat - lat) / 2) ** 2
+        + Math.cos(rad(lat)) * Math.cos(rad(c.lat)) * Math.sin(rad(c.lng - lng) / 2) ** 2)));
+      return lista.map((c) => ({ c, d: dist(c) })).filter((x) => x.d <= 30).sort((a, b) => a.d - b.d)[0]?.c || null;
+    }
+    return city ? lista.find((c) => c.id === plano(city) || plano(c.name) === plano(city)) || null : null;
+  })();
   // Pedir la ubicación y volver con ella (más lo de `data-mas`): /assets/tarjetas.js.
   const botonCerca = (txt, mas = '', cls = 'op') => `<button type="button" class="${cls}" data-cerca${mas ? ` data-mas="${esc(mas)}"` : ''} data-err="${esc(S.nearNo)}" hidden>${ic('cerca', 16)}<span>${esc(txt)}</span></button>`;
   const zonaValor = cerca ? S.nearOn : city ? PRETTY(city) : S.allCities;
@@ -959,7 +996,14 @@ export async function explorePage(url, lang, modo = 'explorar') {
         .map(([v, n, i, on]) => `<a class="vista${on ? ' on' : ''}" href="${esc(link({ vista: v, kind: negocios ? '' : kind }))}"${on ? ' aria-current="page"' : ''}>${ic(i, 18)}<span>${esc(n)}</span></a>`).join('')}
     </nav>`;
 
-  const buscador = descubre ? '' : `<form class="buscador" role="search" method="get" action="${base}/">
+  // Al tocar el buscador: lo que buscaste (en este navegador) y «Lo más
+  // buscado en <ciudad>» (/assets/gustos.js).
+  const textosBusqueda = JSON.stringify({
+    recent: S.searchRecent, clear: S.searchClear, local: S.searchLocal,
+    popular: S.searchPopular, popularHint: S.searchPopularHint, remove: S.searchRemove,
+  });
+  const buscador = descubre ? '' : `<form class="buscador" role="search" method="get" action="${base}/" data-busqueda
+    data-ciudad="${esc(ciudadK?.id || '')}" data-ciudad-nombre="${esc(ciudadK?.name || '')}" data-textos="${esc(textosBusqueda)}">
     <label class="buscador-campo">${ic('buscar', 20)}<span class="sr">${esc(S.search)}</span>
       <input type="search" name="q" value="${esc(q)}" placeholder="${esc(S.ph)}" enterkeyhint="search"></label>
     ${new URLSearchParams(query({ ...e, q: '', page: 1, mes: calendario ? mes : '', dia: calendario ? dia : '' }, lang)).toString().split('&').filter(Boolean)
@@ -977,7 +1021,8 @@ export async function explorePage(url, lang, modo = 'explorar') {
     ${ordenMenu}
   </div>
   <p id="cercaErr" class="aviso-error" role="alert" hidden></p>
-  <script src="/assets/categorias.js?v=2" defer></script>`;
+  <script src="/assets/categorias.js?v=3" defer></script>
+  <script src="/assets/gustos.js?v=1" defer data-lang="${en ? 'en' : 'es'}"></script>`;
 
   // En Explorar, sin ubicación ni ciudad: «Mira primero lo que tienes más cerca».
   const invitaCerca = !descubre && !negocios && !cerca && !city
@@ -1029,6 +1074,12 @@ export async function explorePage(url, lang, modo = 'explorar') {
   const head = `${guardaFiltros({ ...e, vista }, lang, base)}
 ${filtrado ? '<meta name="robots" content="noindex, follow">' : jsonLd}`;
 
+  // Modo viaje: con tu posición («Cerca de mí»), si estás lejos de tu ciudad
+  // lo dice /assets/gustos.js (la página va en caché y no sabe cuál es).
+  const viaje = descubre && cerca && !vacio
+    ? `<div id="viaje" class="feed-fijadas" hidden data-lat="${esc(posUrl(lat))}" data-lng="${esc(posUrl(lng))}"
+        data-hoy="${esc(link({ when: 'today' }))}" data-textos="${esc(JSON.stringify({ label: S.travelLabel, title: S.travelTitle, close: S.travelClose }))}"></div>`
+    : '';
   if (descubre) {
     return html(publicPage({
       lang,
@@ -1036,7 +1087,7 @@ ${filtrado ? '<meta name="robots" content="noindex, follow">' : jsonLd}`;
       title: S.disc,
       description: S.discLead,
       image: portada(items),
-      body: feedHtml({ S, en, lang, items, page, paginas, link, barra, final, vacio, resumenN, masFormas, lineaTiempo }),
+      body: feedHtml({ S, en, lang, items, page, paginas, link, barra, final, vacio, resumenN, masFormas, lineaTiempo, viaje }),
       actual: 'descubre',
       bodyClass: vacio ? 'pagina-descubre' : `pagina-descubre pagina-feed${lineaTiempo ? ' con-tiempo' : ''}`,
       head,
@@ -1114,7 +1165,7 @@ ${filtrado ? '<meta name="robots" content="noindex, follow">' : jsonLd}`;
  * Con sesión, arriba la oferta de la lista de un RRPP por la que entró esa
  * persona (`#rp-fijadas`, la pinta /assets/fijada.js; nadie más la ve).
  */
-function feedHtml({ S, en, lang, items, page, paginas, link, barra, final, vacio, resumenN, masFormas, lineaTiempo = '' }) {
+function feedHtml({ S, en, lang, items, page, paginas, link, barra, final, vacio, resumenN, masFormas, lineaTiempo = '', viaje = '' }) {
   const cab = `<div class="feed-lado" id="arriba">
       <h1>${esc(S.disc)}</h1>
       <p class="muted">${esc(S.discLead)}</p>
@@ -1140,6 +1191,7 @@ function feedHtml({ S, en, lang, items, page, paginas, link, barra, final, vacio
   <div class="feed-velo" aria-hidden="true"></div>
   <div class="feed-cab">
     ${barra}
+    ${viaje}
     ${lineaTiempo}
     <div id="rp-fijadas" class="feed-fijadas" hidden></div>
   </div>

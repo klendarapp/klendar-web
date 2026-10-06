@@ -72,6 +72,7 @@
       n: (n) => (n === 1 ? '1 elegida' : `${n} elegidas`),
       mas: (n) => `${n} más`, masSr: (n, g) => `Ver ${n} más de ${g}`,
       nada: (q) => `Ninguna categoría encaja con «${q}».`,
+      max: (n) => `Como mucho ${n}: quita una para elegir otra.`,
     },
     en: {
       titulo: 'Category', buscar: 'Search: bar, hairdresser, theatre…', buscarSr: 'Search for a category',
@@ -80,6 +81,7 @@
       n: (n) => `${n} selected`,
       mas: (n) => `${n} more`, masSr: (n, g) => `Show ${n} more in ${g}`,
       nada: (q) => `No category matches “${q}”.`,
+      max: (n) => `${n} at most: remove one to pick another.`,
     },
   };
   const textos = (lang) => TEXTOS[lang === 'en' ? 'en' : 'es'];
@@ -166,7 +168,8 @@
 
     /**
      * Abre el selector. `opciones`: { cats, elegidas (ids), multiple, lang,
-     * titulo, vacioEsTodas, id (qué campo es el id: 'id' o 'slug') }.
+     * titulo, vacioEsTodas, id (qué campo es el id: 'id' o 'slug'), max (de
+     * varias, cuántas como mucho: «Tus gustos», 5) }.
      * Devuelve los ids elegidos; de varias, también al cerrarlo (no se pierde
      * lo marcado); de una, al tocarla, o null si se cierra sin elegir.
      */
@@ -231,7 +234,12 @@
         const id = b.dataset.cat;
         if (!id) return;
         if (!o.multiple) { elegida = id; d.close('ok'); return; }
-        if (elegidas.has(id)) elegidas.delete(id); else elegidas.add(id);
+        if (elegidas.has(id)) elegidas.delete(id);
+        else if (o.max && elegidas.size >= o.max) {
+          pinta();
+          if (contador) contador.textContent = T.max(o.max);
+          return;
+        } else elegidas.add(id);
         pinta();
         const otra = caja.querySelector(`[data-cat="${CSS.escape(id)}"]`);
         if (otra) otra.focus();
@@ -261,7 +269,7 @@
      * el selector. Escribe un `<input type=hidden name=…>` por cada id, así
      * `FormData` lo lee como siempre. `opciones`: { cats, elegidas, multiple,
      * lang, nombre (del input), titulo, vacio (texto sin nada), disabled,
-     * alCambiar }. Devuelve { valor(): [ids] }.
+     * alCambiar, max, id ('id' o 'slug') }. Devuelve { valor(): [ids] }.
      */
     KlendarCategorias.campo = function campo(contenedor, opciones) {
       ponEstilo();
@@ -276,7 +284,7 @@
       const ocultos = document.createElement('span');
       contenedor.replaceChildren(boton, ocultos);
       function pinta() {
-        const nombres = (o.cats || []).filter((c) => valor.includes(String(c.id))).map((c) => nombre(c, o.lang));
+        const nombres = (o.cats || []).filter((c) => valor.includes(String(c[o.id || 'id']))).map((c) => nombre(c, o.lang));
         const vacio = !nombres.length;
         const texto = vacio ? (o.vacio || T.elegir)
           : nombres.length <= 2 ? nombres.join(', ') : `${nombres.slice(0, 2).join(', ')} +${nombres.length - 2}`;
@@ -287,6 +295,7 @@
       boton.addEventListener('click', async () => {
         const r = await KlendarCategorias.abrir({
           cats: o.cats, elegidas: valor, multiple: o.multiple, lang: o.lang, titulo: o.titulo, vacioEsTodas: Boolean(o.vacio),
+          max: o.max, id: o.id || 'id',
         });
         if (r == null) { boton.focus(); return; }
         valor = o.multiple ? r : [r];

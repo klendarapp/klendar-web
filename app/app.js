@@ -189,6 +189,8 @@ sb.auth.onAuthStateChange((ev, s) => {
         if (k && (k.startsWith('klendar.cola.') || k.startsWith('klendar.codigos.'))) localStorage.removeItem(k);
       }
       localStorage.removeItem('klendar.biz');
+      // Tus gustos en la web son de la cuenta: fuera al salir.
+      localStorage.removeItem('klendar.gustos');
     } catch { /* sin permisos */ }
   }
 });
@@ -521,7 +523,7 @@ const fila = ({ href, icono, titulo, detalle, fuera = false, id = '' }) => `
 RUTAS[''] = async () => {
   if (!YO) return RUTAS.entrar([], new URLSearchParams());
   const foto = YO.user_metadata?.avatar_url;
-  const [negocios, invitaciones, delPerfil, rolesRrpp] = await Promise.all([
+  const [negocios, invitaciones, delPerfil, rolesRrpp, preguntarGustos] = await Promise.all([
     llamar('my_businesses', {}).catch(() => []),
     // Un negocio te ha invitado a su equipo (o te ofrece ser su
     // propietario, o ser su RRPP): se contesta desde aquí.
@@ -535,7 +537,11 @@ RUTAS[''] = async () => {
     nombrePublico(),
     // Los locales en los que eres RRPP (la sección sale solo si hay alguno).
     llamar('my_promoter_roles', {}).catch(() => []),
+    // Tus gustos: se copian a este navegador; si nunca se te preguntó, el
+    // paso «¿Qué te gusta?» (una vez, con «Ahora no»), como en la app.
+    gustosDeLaCuenta(),
   ]);
+  if (preguntarGustos) { location.hash = '#/gustos?primera=1'; return; }
   // Sin nombre, lo mismo que ven los demás (nunca el correo). Sin red, el
   // de la cuenta.
   const nombre = (delPerfil === undefined ? (YO.user_metadata?.display_name || '').trim() : delPerfil)

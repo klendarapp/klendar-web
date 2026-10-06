@@ -487,7 +487,7 @@ RUTAS.ajustes = async ([sub]) => {
     sb.functions.invoke('translate', { body: { op: 'status' } })
       .then(({ data }) => data?.available === true).catch(() => false),
   ]);
-  const [perfil, cons, cuenta, metodos] = await Promise.all([
+  const [perfil, cons, cuenta, metodos, cats, ciudades] = await Promise.all([
     tabla(sb.from('profiles').select('display_name, avatar_url, locale, birth_date').eq('id', YO.id).maybeSingle()),
     llamar('my_consents', {}),
     // Las formas de entrar, recién preguntadas (la sesión guardada puede ser
@@ -496,6 +496,10 @@ RUTAS.ajustes = async ([sub]) => {
     // Si hay contraseña lo sabe la base: la identidad «email» existe también
     // en cuentas creadas con un código por correo.
     llamar('my_auth_methods', {}).catch(() => null),
+    // «Lo que ves → Tus gustos»: lo de la cuenta, copiado aquí.
+    categorias().catch(() => []),
+    KlendarGustos.ciudades(),
+    gustosDeLaCuenta(),
   ]);
   const vias = new Set((cuenta?.identities || []).map((i) => i.provider));
   const [trad, tradOk] = await traduccion;
@@ -551,6 +555,14 @@ RUTAS.ajustes = async ([sub]) => {
         <p class="err" id="err-perfil" role="alert"></p>
         <button class="pill accent" id="g-perfil">${esc(t('Guardar'))}</button>
       </form>
+    </section>
+
+    <section class="bloque">
+      <h2>${esc(t('Lo que ves'))}</h2>
+      <div class="lista">
+        ${fila({ href: '#/gustos', icono: 'favorite', titulo: t('Tus gustos'), detalle: resumenGustos(KlendarGustos.lee(), cats, ciudades), id: 'fila-gustos' })}
+      </div>
+      <p class="muted">${esc(t('Lo de esas categorías sale antes en Descubre, sin esconder lo demás. Tu ciudad sirve para avisarte cuando estés de viaje.'))}</p>
     </section>
 
     <section class="bloque" id="correo-cuenta"></section>
@@ -2105,3 +2117,125 @@ async function pintaSinLeer() {
     if (n) { el.textContent = n > 99 ? '99+' : String(n); el.hidden = false; }
   } catch { /* sin número, sin más */ }
 }
+
+// ── Tus gustos (tanda A, como la app) ──────────────────────────────────────
+// De 3 a 5 categorías y tu ciudad: Descubre y Explorar dan más peso a esas
+// categorías (sin esconder nada) y la ciudad sirve para el aviso de viaje.
+// En la cuenta (`user_tastes`) y una copia en este navegador para las
+// páginas públicas (`/assets/gustos.js`). La primera vez que entras en «Tu
+// cuenta» se pregunta, con «Ahora no».
+
+/** Lo de la cuenta → este navegador. */
+function gustosALocal(srv) {
+  if (!srv || !window.KlendarGustos) return;
+  KlendarGustos.guarda({
+    c: srv.category_slugs || [], city: srv.home_city || null, asked: true,
+    t: Date.parse(srv.updated_at || '') || Date.now(),
+  });
+}
+
+/** Al abrir «Tu cuenta»: los gustos de la cuenta, copiados aquí. `true` si
+ * nunca se le ha preguntado (toca el paso). Sin red, no se pregunta. */
+async function gustosDeLaCuenta() {
+  try {
+    const srv = await llamar('my_tastes', {});
+    if (srv) { gustosALocal(srv); return false; }
+    return true;
+  } catch { return false; }
+}
+
+const resumenGustos = (g, cats, ciudades) => {
+  const nombres = (g.c || []).map((s) => cats.find((c) => c.slug === s)).filter(Boolean).map(nombreCat);
+  const ciudad = ciudades.find((c) => c.id === g.city);
+  const partes = [nombres.join(', '), ciudad ? ciudad.name : ''].filter(Boolean);
+  return partes.length ? partes.join(' · ') : t('Elige lo que más te gusta y tu ciudad');
+};
+
+RUTAS.gustos = async (_p, params) => {
+  if (!exigeSesion('gustos')) return;
+  const primera = params.get('primera') === '1';
+  const [cats, ciudades, srv] = await Promise.all([
+    categorias(),
+    KlendarGustos.ciudades(),
+    llamar('my_tastes', {}).catch(() => null),
+  ]);
+  if (srv) gustosALocal(srv);
+  const g = KlendarGustos.lee();
+  let elegidas = (srv?.category_slugs || g.c || []).filter((s) => cats.some((c) => c.slug === s));
+  const tiene = elegidas.length > 0 || Boolean(srv?.home_city || g.city);
+  const ciudadActual = srv ? srv.home_city : g.city;
+  pinta(`
+    ${primera ? '' : `<p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a> › <a href="#/ajustes">${esc(t('Ajustes'))}</a></p>`}
+    <div class="ticket" style="text-align:left">
+      <h1>${esc(t(primera ? '¿Qué te gusta?' : 'Tus gustos'))}</h1>
+      <p class="muted">${esc(t('Elige de 3 a 5 y te lo enseñamos antes en Descubre. Lo demás sigue saliendo.'))}</p>
+      <form id="fg" class="formu" novalidate>
+        <div class="campo-cat"><p class="etq">${esc(t('Categorías'))} <small id="g-n" aria-live="polite"></small></p><div id="cats-gustos"></div></div>
+        <label>${esc(t('Tu ciudad'))} <small>${esc(t('Si abres Klendar lejos de ella, te enseñamos lo mejor de donde estés. No guardamos dónde estás.'))}</small>
+          <select name="ciudad">
+            <option value="">${esc(t('Sin ciudad'))}</option>
+            ${ciudades.map((c) => `<option value="${esc(c.id)}"${c.id === ciudadActual ? ' selected' : ''}>${esc(c.name)}</option>`).join('')}
+          </select></label>
+        <p><button type="button" class="linkbtn" id="g-ubic">${esc(t('Usar mi ubicación'))}</button></p>
+        <p class="muted" id="g-nota" role="status"></p>
+        <p class="err" id="err" role="alert"></p>
+        <button class="pill accent" id="g-guardar">${esc(t('Guardar'))}</button>
+      </form>
+      <p>${primera
+    ? `<button class="linkbtn" id="g-saltar">${esc(t('Ahora no'))}</button>`
+    : tiene ? `<button class="linkbtn" id="g-borrar">${esc(t('Borrar mis gustos'))}</button>` : ''}</p>
+      ${primera ? `<p class="muted">${esc(t('Puedes cambiarlo cuando quieras en Ajustes → Lo que ves.'))}</p>` : ''}
+    </div>`);
+  const fg = $('#fg');
+  const cuenta = () => {
+    const n = elegidas.length;
+    $('#g-n').textContent = n < 3 ? `${n} ${EN ? 'of' : 'de'} 5 · ${t('Elige al menos 3')}` : `${n} ${EN ? 'of' : 'de'} 5`;
+    $('#g-guardar').disabled = n < 3 || n > 5;
+  };
+  // El selector de categorías de toda la web, de varias y como mucho 5.
+  KlendarCategorias.campo($('#cats-gustos'), {
+    cats, elegidas, multiple: true, lang: EN ? 'en' : 'es', titulo: t('¿Qué te gusta?'), vacio: t('Elige de 3 a 5'),
+    max: 5, id: 'slug', alCambiar: (v) => { elegidas = v; cuenta(); },
+  });
+  cuenta();
+  // «Usar mi ubicación»: la ciudad de Klendar en la que estás, sin guardar
+  // la posición.
+  $('#g-ubic').addEventListener('click', () => {
+    const nota = $('#g-nota');
+    nota.textContent = '';
+    if (!navigator.geolocation) { nota.textContent = t('No hemos podido saber dónde estás: elígela de la lista.'); return; }
+    navigator.geolocation.getCurrentPosition((pos) => {
+      const c = KlendarGustos.ciudadCerca(pos.coords.latitude, pos.coords.longitude, ciudades);
+      if (c) fg.ciudad.value = c.id;
+      else nota.textContent = t('No estás cerca de ninguna ciudad de Klendar: elígela de la lista.');
+    }, () => { nota.textContent = t('No hemos podido saber dónde estás: elígela de la lista.'); },
+    { enableHighAccuracy: false, timeout: 10000, maximumAge: 600000 });
+  });
+  const listo = (msg) => {
+    if (msg) toast(msg);
+    vuelve(primera ? (params.get('siguiente') || '') : 'ajustes');
+  };
+  const guarda = async (slugs, ciudad) => {
+    const ids = slugs.map((s) => cats.find((c) => c.slug === s)?.id).filter(Boolean);
+    const r = await llamar('save_tastes', { p_categories: ids, p_home_city: ciudad || null });
+    gustosALocal(r);
+  };
+  fg.addEventListener('submit', (ev) => {
+    ev.preventDefault();
+    $('#err').textContent = '';
+    if (elegidas.length < 3) { $('#err').textContent = t('Elige al menos 3'); return; }
+    ocupado($('#g-guardar'), async () => {
+      await guarda(elegidas, fg.ciudad.value);
+      listo(t('Guardado'));
+    });
+  });
+  $('#g-saltar')?.addEventListener('click', async () => {
+    await llamar('mark_tastes_asked', {}).catch(() => {});
+    KlendarGustos.guarda({ ...KlendarGustos.lee(), asked: true });
+    listo('');
+  });
+  $('#g-borrar')?.addEventListener('click', () => ocupado($('#g-borrar'), async () => {
+    await guarda([], null);
+    listo(t('Gustos borrados'));
+  }));
+};

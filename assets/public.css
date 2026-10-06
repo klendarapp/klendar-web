@@ -686,6 +686,22 @@ body.pagina-feed[data-cromo="fuera"] .feed-cab { visibility: hidden; }
   .pagina-feed .feed-cab .tiempo-quitar { margin-left: 6px; }
 }
 
+/* Modo viaje en Descubre («Estás en Valencia: lo mejor de hoy»,
+   /assets/gustos.js): en el móvil, bajo los filtros con el margen de lo
+   demás; en tablet y escritorio, a la derecha de la tarjeta, arriba (y el
+   tiempo, debajo). */
+.pagina-feed .feed-cab #viaje .viaje-aviso { margin: 8px 0 0; }
+@media (max-width: 760px) {
+  .pagina-feed .feed-cab #viaje { margin: 0 16px; }
+}
+@media (min-width: 761px) {
+  .pagina-feed .feed-cab #viaje { position: absolute; top: calc(100% + var(--hueco)); left: calc(50% + var(--feed-w) / 2 + 20px);
+    width: min(300px, calc(50% - var(--feed-w) / 2 - 40px)); }
+  .pagina-feed .feed-cab #viaje .viaje-aviso { margin: 0; }
+  .pagina-feed .feed-cab #viaje .viaje-aviso b { white-space: normal !important; }
+  .pagina-feed .feed-cab #viaje:not([hidden]) ~ .tiempo-linea { top: calc(100% + var(--hueco) + 104px); }
+}
+
 /* ══ La hoja de filtros por orden de uso (2026-10-06) ═══════════════════════
    ¿Cuándo? · Qué · Categorías (8 y «Ver todas», que abre el selector de
    /assets/categorias.js) · Distancia · Precio · «Más filtros» plegado; «Según
