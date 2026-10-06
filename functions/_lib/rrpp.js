@@ -36,7 +36,7 @@ export async function promoterLinkPage(rawCode, lang) {
   const sp = supabasePublic();
   // El script del navegador: la sesión (apuntarse) y, si el servidor no ha
   // podido, abrir el enlace desde aquí.
-  const script = (pendiente) => `${pendiente ? '<script src="/assets/zona.js?v=1" defer></script>\n<script src="/assets/tarjeta.js?v=5" defer></script>\n' : ''}<script src="/assets/rrpp-enlace.js?v=2" defer data-lang="${en ? 'en' : 'es'}" data-url="${esc(sp.url)}" data-key="${esc(sp.key)}"></script>`;
+  const script = (pendiente) => `${pendiente ? '<script src="/assets/zona.js?v=1" defer></script>\n<script src="/assets/tarjeta.js?v=6" defer></script>\n' : ''}<script src="/assets/rrpp-enlace.js?v=2" defer data-lang="${en ? 'en' : 'es'}" data-url="${esc(sp.url)}" data-key="${esc(sp.key)}"></script>`;
   const pagina = ({ body, title, description, status = 200, image }) => privada(publicPage({
     lang, path, body, title, description, image, head: HEAD, contador: false, privada: true,
   }), status);

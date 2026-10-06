@@ -196,8 +196,17 @@ video.tj-img { background: #0A0A0A; }
 .tj--pantalla { --u: min(1px, calc(100cqw / 390)); height: var(--feed-alto, 100dvh); overflow: hidden; background: #0A0A0A; }
 .tj--pantalla .tj-media { position: absolute; inset: 0; aspect-ratio: auto; border-radius: 0; background: #0A0A0A; }
 .tj--pantalla:hover .tj-img { transform: none; }
-.tj--pantalla .tj-tipo { top: calc(var(--feed-arriba, 120px) + 10 * var(--u)); left: calc(16 * var(--u)); font-size: calc(12 * var(--u));
+/* Los sellos, pegados arriba del panel (no flotando bajo la cabecera). */
+.tj-sellos { display: flex; flex-wrap: wrap; align-items: center; gap: calc(6 * var(--u, 1px)); }
+.tj--pantalla .tj-sellos .tj-tipo, .tj--pantalla .tj-sellos .tj-sello { position: static; font-size: calc(12 * var(--u));
   padding: calc(5 * var(--u)) calc(11 * var(--u)); }
+.tj-sello { display: inline-flex; align-items: center; gap: 4px; border-radius: 999px; font-size: 12px; font-weight: 800;
+  background: rgba(10,10,10,.62); color: #fff; }
+.tj-sello .ic { flex: none; }
+.tj-sello button { position: relative; z-index: 3; display: grid; place-items: center; width: 28px; height: 28px; margin: -6px -8px -6px 0;
+  padding: 0; border: 0; border-radius: 50%; background: none; color: inherit; cursor: pointer; }
+.tj-sello button::after { content: ""; position: absolute; inset: -8px; }
+.tj-sello button:focus-visible { outline: 2px solid #fff; outline-offset: 0; }
 .tj--pantalla .tj-puntos { top: calc(var(--feed-arriba, 120px) + 46 * var(--u)); right: auto; left: 50%; transform: translateX(-50%);
   gap: calc(6 * var(--u)); padding: calc(5 * var(--u)) calc(6 * var(--u)); }
 .tj--pantalla .tj-puntos i { width: calc(6 * var(--u)); height: calc(6 * var(--u)); }

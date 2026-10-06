@@ -691,6 +691,17 @@
     }
     var vigila = function (raiz) { if (ojo) raiz.querySelectorAll(':scope > .tj, :scope > .feed-fin').forEach(function (el) { ojo.observe(el); }); };
     vigila(feed);
+    // Las que llegan después (la oferta fijada de un RRPP, /assets/fijada.js,
+    // va la primera): también se vigilan.
+    if (ojo && 'MutationObserver' in window) {
+      new MutationObserver(function (cambios) {
+        cambios.forEach(function (c) {
+          Array.prototype.forEach.call(c.addedNodes, function (n) {
+            if (n.nodeType === 1 && n.matches('.tj, .feed-fin')) ojo.observe(n);
+          });
+        });
+      }).observe(feed, { childList: true });
+    }
     marca(pantallas()[0]);
 
     var ir = function (d) {

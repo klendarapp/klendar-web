@@ -105,8 +105,11 @@ const T = (en) => en
       weatherData: 'Weather data:',
       rainLine: "It's raining today: indoor plans first", sunLine: 'Nice weather today: terraces and outdoor plans first',
       weatherOff: 'Turn off',
+      // Una línea en Descubre la primera vez del día, y el chip de orden.
+      rainNotice: 'Rainy today: indoor plans first', sunNotice: 'Nice out: outdoor plans first',
+      sortRain: 'Indoors first', sortSun: 'Outdoors first', noticeClose: 'Dismiss',
       // Modo viaje y el buscador (/assets/gustos.js).
-      travelLabel: 'Away from {home}', travelTitle: "You're in {city}: today's best", travelClose: 'Dismiss',
+      travelLabel: 'Away from {home}', travelTitle: "You're in {city} · Today's best", travelClose: 'Dismiss',
       searchRecent: 'What you searched for', searchClear: 'Clear', searchLocal: 'Stored only in this browser.',
       searchPopular: 'Most searched in {city}', searchPopularHint: 'What people searched for most this week. Without knowing who.',
       searchRemove: 'Remove “{q}”',
@@ -184,8 +187,11 @@ const T = (en) => en
       weatherData: 'Datos del tiempo:',
       rainLine: 'Hoy llueve: primero, planes bajo techo', sunLine: 'Hace buen tiempo: primero, terrazas y aire libre',
       weatherOff: 'Quitar',
+      // Una línea en Descubre la primera vez del día, y el chip de orden.
+      rainNotice: 'Llueve hoy: primero, bajo techo', sunNotice: 'Hace bueno: primero, al aire libre',
+      sortRain: 'Bajo techo primero', sortSun: 'Al aire libre primero', noticeClose: 'Quitar el aviso',
       // Modo viaje y el buscador (/assets/gustos.js).
-      travelLabel: 'Lejos de {home}', travelTitle: 'Estás en {city}: lo mejor de hoy', travelClose: 'Quitar el aviso',
+      travelLabel: 'Lejos de {home}', travelTitle: 'Estás en {city} · Lo mejor de hoy', travelClose: 'Quitar el aviso',
       searchRecent: 'Lo que buscaste', searchClear: 'Borrar', searchLocal: 'Se guarda solo en este navegador.',
       searchPopular: 'Lo más buscado en {city}', searchPopularHint: 'Lo que más ha buscado la gente esta semana. Sin saber quién.',
       searchRemove: 'Quitar «{q}»',
@@ -879,7 +885,10 @@ export async function explorePage(url, lang, modo = 'explorar') {
   // el calendario, donde no cambia nada).
   const ordenTxt = { nearest: S.sortNearest, soonest: S.sortSoonest, newest: S.sortNewest };
   const ordenActual = sort || ORDEN_DEFECTO;
-  const ordenMenu = negocios || mapa || calendario ? '' : desplegable('', S.sortBy, ordenTxt[ordenActual], false,
+  // Cuando «Según el tiempo» reordena hoy, el chip lo dice («☂ Bajo techo
+  // primero»): no hace falta un aviso fijo encima de la publicación.
+  const tiempoTxt = tiempo && enLista ? (tiempo === 'rain' ? S.sortRain : S.sortSun) : '';
+  const ordenMenu = negocios || mapa || calendario ? '' : desplegable('', S.sortBy, tiempoTxt || ordenTxt[ordenActual], false,
     `${cerca
       ? opcion(link({ sort: 'nearest' }), S.sortNearest, ordenActual === 'nearest')
       : botonCerca(S.sortNearest, `${CLAVES[lang].sort}=${enIdioma('nearest', en)}`).replace(ic('cerca', 16), '')}
@@ -888,7 +897,8 @@ export async function explorePage(url, lang, modo = 'explorar') {
      <hr class="menu-sep">
      ${opcion(link({ tiempoOff: !tiempoOff }), S.byWeather, !tiempoOff, '<span class="op-check" aria-hidden="true"></span>')}
      <p class="menu-nota">${esc(S.byWeatherHint)} ${esc(S.weatherData)} <a href="${FUENTE_TIEMPO.url}" rel="noopener" target="_blank">${FUENTE_TIEMPO.nombre}</a></p>`,
-    { cls: ' orden', etiqueta: `${S.sortBy}: ${ordenTxt[ordenActual]}${tiempoOff ? '' : `, ${S.byWeather.toLowerCase()}`}` });
+    { cls: ' orden', etiqueta: `${S.sortBy}: ${ordenTxt[ordenActual]}${tiempoTxt ? `, ${tiempoTxt.toLowerCase()} (${S.byWeather.toLowerCase()})` : tiempoOff ? '' : `, ${S.byWeather.toLowerCase()}`}` })
+    .replace('<span class="chip-t">', tiempoTxt ? `${icTiempo(tiempo, 16)}<span class="chip-t">` : '<span class="chip-t">');
 
   // La hoja de filtros: un formulario GET (va sin JavaScript), en el orden de la app.
   const nFiltros = [kind && !negocios, cat, cerca && km !== RADIO_KM, price, soloDescuento, when && !calendario, abierto,
@@ -1038,7 +1048,7 @@ export async function explorePage(url, lang, modo = 'explorar') {
   </div>
   <p id="cercaErr" class="aviso-error" role="alert" hidden></p>
   <script src="/assets/categorias.js?v=4" defer></script>
-  <script src="/assets/gustos.js?v=1" defer data-lang="${en ? 'en' : 'es'}"></script>`;
+  <script src="/assets/gustos.js?v=2" defer data-lang="${en ? 'en' : 'es'}"></script>`;
 
   // En Explorar, sin ubicación ni ciudad: «Mira primero lo que tienes más cerca».
   const invitaCerca = !descubre && !negocios && !cerca && !city
@@ -1090,11 +1100,23 @@ export async function explorePage(url, lang, modo = 'explorar') {
   const head = `${guardaFiltros({ ...e, vista }, lang, base)}
 ${filtrado ? '<meta name="robots" content="noindex, follow">' : jsonLd}`;
 
-  // Modo viaje: con tu posición («Cerca de mí»), si estás lejos de tu ciudad
-  // lo dice /assets/gustos.js (la página va en caché y no sabe cuál es).
+  // Los avisos de Descubre (docs/GLOSARIO.md, «Avisos de Descubre»): bajo
+  // los filtros, como mucho UNO a la vez, en una línea y con su ×. Por orden:
+  // el modo viaje (con tu posición, si estás lejos de tu ciudad: lo dice
+  // /assets/gustos.js, porque la página va en caché y no sabe cuál es) y el
+  // tiempo (la primera vez del día; luego basta el chip de orden). Quién se
+  // enseña lo decide /assets/avisos.js. La oferta fijada de un RRPP no es un
+  // aviso: es la primera tarjeta (/assets/fijada.js).
   const viaje = descubre && cerca && !vacio
-    ? `<div id="viaje" class="feed-fijadas" hidden data-lat="${esc(posUrl(lat))}" data-lng="${esc(posUrl(lng))}"
+    ? `<div id="viaje" class="feed-aviso" data-aviso="viaje" hidden data-lat="${esc(posUrl(lat))}" data-lng="${esc(posUrl(lng))}"
         data-hoy="${esc(link({ when: 'today' }))}" data-textos="${esc(JSON.stringify({ label: S.travelLabel, title: S.travelTitle, close: S.travelClose }))}"></div>`
+    : '';
+  const avisoTiempo = descubre && tiempo && !vacio
+    ? `<p class="feed-aviso" data-aviso="tiempo" hidden><button type="button" class="feed-aviso-t" data-abre-orden title="${esc(`${S.weatherData} ${FUENTE_TIEMPO.nombre}`)}">${icTiempo(tiempo, 16)}<span>${esc(tiempo === 'rain' ? S.rainNotice : S.sunNotice)}</span></button><button type="button" class="feed-aviso-x" data-cierra aria-label="${esc(S.noticeClose)}" title="${esc(S.noticeClose)}">${ic('x', 18)}</button></p>`
+    : '';
+  const avisos = viaje || avisoTiempo
+    ? `<div class="feed-avisos" id="feed-avisos" hidden>${viaje}${avisoTiempo}</div>
+  <script src="/assets/avisos.js?v=1" defer></script>`
     : '';
   if (descubre) {
     return html(publicPage({
@@ -1103,9 +1125,9 @@ ${filtrado ? '<meta name="robots" content="noindex, follow">' : jsonLd}`;
       title: S.disc,
       description: S.discLead,
       image: portada(items),
-      body: feedHtml({ S, en, lang, items, page, paginas, link, barra, final, vacio, resumenN, masFormas, lineaTiempo, viaje }),
+      body: feedHtml({ S, en, lang, items, page, paginas, link, barra, final, vacio, resumenN, masFormas, avisos }),
       actual: 'descubre',
-      bodyClass: vacio ? 'pagina-descubre' : `pagina-descubre pagina-feed${lineaTiempo ? ' con-tiempo' : ''}`,
+      bodyClass: vacio ? 'pagina-descubre' : 'pagina-descubre pagina-feed',
       head,
       // Con «Cerca de mí» la dirección lleva tu posición (?lat=&lng=): esa
       // página no pasa por el contador de visitas.
@@ -1178,10 +1200,12 @@ ${filtrado ? '<meta name="robots" content="noindex, follow">' : jsonLd}`;
  * todo…» con sus salidas); sin nada, la pantalla vacía centrada.
  *
  * Sin JavaScript se lee igual: es una lista de tarjetas que se desliza.
- * Con sesión, arriba la oferta de la lista de un RRPP por la que entró esa
- * persona (`#rp-fijadas`, la pinta /assets/fijada.js; nadie más la ve).
+ * Encima de la publicación, solo los filtros y como mucho un aviso de una
+ * línea ([avisos]). Con sesión, la oferta de la lista de un RRPP por la que
+ * entró esa persona es la primera tarjeta (la pone /assets/fijada.js; nadie
+ * más la ve).
  */
-function feedHtml({ S, en, lang, items, page, paginas, link, barra, final, vacio, resumenN, masFormas, lineaTiempo = '', viaje = '' }) {
+function feedHtml({ S, en, lang, items, page, paginas, link, barra, final, vacio, resumenN, masFormas, avisos = '' }) {
   const cab = `<div class="feed-lado" id="arriba">
       <h1>${esc(S.disc)}</h1>
       <p class="muted">${esc(S.discLead)}</p>
@@ -1207,9 +1231,7 @@ function feedHtml({ S, en, lang, items, page, paginas, link, barra, final, vacio
   <div class="feed-velo" aria-hidden="true"></div>
   <div class="feed-cab">
     ${barra}
-    ${viaje}
-    ${lineaTiempo}
-    <div id="rp-fijadas" class="feed-fijadas" hidden></div>
+    ${avisos}
   </div>
   <div class="feed" id="feed" data-pagina="${page}">
     ${page > 1 ? `<div class="feed-mas"><a class="pill" href="${esc(link({ p: page - 1 }))}" rel="prev">${esc(S.prev)}</a></div>` : ''}
@@ -1222,7 +1244,7 @@ function feedHtml({ S, en, lang, items, page, paginas, link, barra, final, vacio
     <button type="button" class="feed-ir" data-feed-ir="1" aria-label="${esc(S.nextItem)}">${ic('abajo', 24)}</button>
   </nav>
   ${masFormas}
-  <script src="/assets/fijada.js?v=1" defer data-lang="${en ? 'en' : 'es'}"></script>`;
+  ${page === 1 ? `<script src="/assets/fijada.js?v=2" defer data-lang="${en ? 'en' : 'es'}"></script>` : ''}`;
 }
 
 // ── Una categoría en una ciudad ────────────────────────────────────────────

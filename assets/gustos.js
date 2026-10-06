@@ -5,7 +5,8 @@
  *   cabecera de Descubre y Explorar los pone en la dirección (`?gustos=`)
  *   para que pesen en el orden sin esconder nada (`public_explore`).
  * - Modo viaje (Descubre con «Cerca de mí»): si estás a más de 50 km de tu
- *   ciudad y en otra ciudad de Klendar, «Estás en Valencia: lo mejor de hoy».
+ *   ciudad y en otra ciudad de Klendar, «Estás en Valencia · Lo mejor de hoy
+ *   ›», en una línea (/assets/avisos.js decide si sale: un aviso a la vez).
  *   Se compara en el momento: no se guarda la posición. La × lo quita hasta
  *   mañana (`klendar.viaje` guarda solo la fecha).
  * - El buscador de Explorar: al tocarlo, lo que buscaste (como mucho 10, solo
@@ -141,19 +142,28 @@
         if (!aqui) return;
         var T = {};
         try { T = JSON.parse(caja.dataset.textos || '{}'); } catch (e) { /* sin textos */ }
-        caja.innerHTML = '<div class="exclusiva rp-fijada viaje-aviso" style="display:flex;align-items:center;gap:8px;margin:8px 0 0;padding:8px 8px 8px 14px">'
-          + '<a href="' + esc(caja.dataset.hoy) + '" data-viaje-hoy style="flex:1;min-width:0;color:inherit;text-decoration:none">'
-          + '<small style="display:block;font-weight:700;opacity:.75">' + esc(rellena(T.label, { home: casa.name })) + '</small>'
-          + '<b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(rellena(T.title, { city: aqui.name })) + '</b></a>'
-          + '<button type="button" class="pill" data-viaje-x aria-label="' + esc(T.close) + '" title="' + esc(T.close) + '" style="min-width:44px;min-height:44px">×</button>'
-          + '</div>';
-        caja.hidden = false;
+        // Una línea: «Estás en Valencia · Lo mejor de hoy ›» y la ×. Sale si
+        // no hay otro aviso que mande más (/assets/avisos.js).
+        var titulo = rellena(T.title, { city: aqui.name });
+        caja.innerHTML = '<a class="feed-aviso-t" href="' + esc(caja.dataset.hoy) + '" data-viaje-hoy aria-label="'
+          + esc(rellena(T.label, { home: casa.name }) + '. ' + titulo) + '">'
+          + '<svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M9.5 18H8V9h1.5v9zm3.25 0h-1.5V9h1.5v9zM16 18h-1.5V9H16v9zm1-12h-2V3c0-.55-.45-1-1-1h-4c-.55 0-1 .45-1 1v3H7c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2 0 .55.45 1 1 1s1-.45 1-1h6c0 .55.45 1 1 1s1-.45 1-1c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zM10.5 3.5h3V6h-3V3.5zM17 19H7V8h10v11z"/></svg>'
+          + '<span>' + esc(titulo) + '</span><span aria-hidden="true">›</span></a>'
+          + '<button type="button" class="feed-aviso-x" data-viaje-x aria-label="' + esc(T.close) + '" title="' + esc(T.close) + '">'
+          + '<svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>';
+        caja.setAttribute('data-quiere', '');
+        var pinta = function () {
+          if (window.KlendarAvisos) window.KlendarAvisos.pinta();
+          else caja.hidden = !caja.hasAttribute('data-quiere');
+        };
+        pinta();
         var cierra = function () { pon(KV, hoy()); };
         caja.querySelector('[data-viaje-hoy]').addEventListener('click', cierra);
         caja.querySelector('[data-viaje-x]').addEventListener('click', function () {
           cierra();
-          caja.hidden = true;
+          caja.removeAttribute('data-quiere');
           caja.innerHTML = '';
+          pinta();
         });
       });
     }

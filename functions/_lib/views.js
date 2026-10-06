@@ -17,6 +17,7 @@ import { decodeSeg,
 } from './public.js';
 import { cuandoCorto, plataformaEntradas, rejilla } from './tarjeta.js';
 import { SITIO_PLAN, listaSitio } from './sitio.js';
+import { FUENTE_TIEMPO } from './tiempo.js';
 import KR from '../../assets/rrpp-enlace.js';
 import KM from '../../assets/marcas.js';
 
@@ -225,6 +226,7 @@ export async function offerPage(id, lang, rpRaw = '') {
         terms: 'Conditions', about: 'About', biz: 'The business',
         open: 'Open in the app', report: 'Report this publication', reportShort: 'Report', why: 'Why am I seeing this?',
         whyText: 'Klendar doesn’t use your messages or data from other sites to decide what to show you. Paid featured publications come first and always carry the “Featured” label; after that comes the order you pick in “Sort by”. If you’ve picked your interests in “Your account”, those categories weigh more in that order, without hiding anything else.',
+        whyWeather: 'With “Based on the weather” (on by default, in the sort menu), if it rains today where you’re looking, today’s indoor plans come first; if it’s nice out, terraces and outdoor plans. Weather data:',
         boosted: 'The business paid to feature this publication.', edit: 'Edit in the dashboard',
         code: 'Get the code', notYet: 'Not available yet', reserve: 'Reserve a place', wait: 'Join the waiting list', save: 'Save to Plans',
         going: "I'm going", invite: 'Invite a friend',
@@ -239,6 +241,7 @@ export async function offerPage(id, lang, rpRaw = '') {
         terms: 'Condiciones', about: 'Qué es', biz: 'El negocio',
         open: 'Abrir en la app', report: 'Denunciar esta publicación', reportShort: 'Denunciar', why: '¿Por qué ves esto?',
         whyText: 'Klendar no usa tus mensajes ni datos de otras webs para decidir qué enseñarte. Lo destacado de pago sale primero y siempre con la etiqueta «Destacado»; después va el orden que eliges en «Ordenar por». Si has elegido tus gustos en «Tu cuenta», lo de esas categorías pesa más en ese orden, sin esconder lo demás.',
+        whyWeather: 'Con «Según el tiempo» (encendido de serie, en el menú de orden), si hoy llueve donde miras, lo de hoy bajo techo va antes; si hace bueno, las terrazas y el aire libre. Datos del tiempo:',
         boosted: 'El negocio ha pagado por destacar esta publicación.', edit: 'Editar en el panel',
         code: 'Conseguir el código', notYet: 'Aún no disponible', reserve: 'Reservar plaza', wait: 'Apuntarme a la lista de espera', save: 'Guardar en Planes',
         going: 'Voy', invite: 'Invitar a un amigo',
@@ -374,7 +377,8 @@ export async function offerPage(id, lang, rpRaw = '') {
       <p>${esc(o.business_name)}${o.business_rating && o.business_ratings ? ` · ★ ${nota(o.business_rating, lang)} (${o.business_ratings})` : ''}</p>
       <p><a href="${esc(bHref)}">${S.more} ${esc(o.business_name)} →</a></p>
       <details class="por-que" id="por-que"><summary>${S.why}</summary>
-        <p class="muted">${o.is_boosted ? `${S.boosted} ` : ''}${S.whyText}</p></details>
+        <p class="muted">${o.is_boosted ? `${S.boosted} ` : ''}${S.whyText}</p>
+        <p class="muted">${S.whyWeather} <a href="${FUENTE_TIEMPO.url}" rel="noopener" target="_blank">${FUENTE_TIEMPO.nombre}</a></p></details>
     </div>
   </div>`;
 

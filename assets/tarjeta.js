@@ -487,15 +487,20 @@
     const logo = o.business_logo && /^https:\/\//.test(o.business_logo)
       ? `<img class="tj-logo" src="${esc(o.business_logo)}" alt="" width="24" height="24" loading="lazy" decoding="async">` : '';
     const pantalla = opts.forma === 'pantalla';
+    // El tipo («Evento», «Oferta flash», «Antes de cerrar»): sobre la foto en
+    // la rejilla; en Descubre (una por pantalla), pegado al panel, como los
+    // sellos de la app: arriba, entre los filtros y los avisos, tapaba la
+    // foto (Iván, 2026-10-06). Ahí van también «De la lista de…» (fijada.js).
+    const tipo = `<span class="tj-tipo">${esc(antesCierre ? S.antes : flash ? S.flash : S.event)}</span>`;
     const [ancho, alto] = pantalla ? [540, 960] : [480, 600];
     return `<article class="tj tj--${plantilla}${opts.desc ? ' tj--desc' : ''}${pantalla ? ' tj--pantalla' : ''}" data-o="${esc(o.id)}"${geo}${estilo}>
     <div class="tj-media">
       ${opts.galeria || pantalla ? galeriaTarjeta(o, { primera: opts.primera, ancho, alto, S, href })
     : mediaTarjeta(o, { primera: opts.primera, ancho, alto, S })}
-      <span class="tj-tipo">${esc(antesCierre ? S.antes : flash ? S.flash : S.event)}</span>
+      ${pantalla ? '' : tipo}
     </div>
     <div class="tj-panel">
-      ${kicker}${plantilla === 'poster' ? titulo : ''}
+      ${pantalla ? `<p class="tj-sellos">${tipo}</p>` : ''}${kicker}${plantilla === 'poster' ? titulo : ''}
       ${sitio
       // En otro sitio: el sitio y, debajo, quién lo organiza.
       ? `<p class="tj-negocio">${logo}<span class="tj-nombre">${ic('lugar', 14)}${esc(sitio)}</span><span class="tj-dist">${dist ? esc(dist) : ''}</span></p>

@@ -1,11 +1,14 @@
-/* Descubre: la oferta de la lista de un RRPP, fijada arriba.
+/* Descubre: la oferta de la lista de un RRPP, la primera publicación.
  *
  * Solo para quien entró por el enlace de un RRPP (con sesión de «Tu
  * cuenta»): `my_promoter_pins` da las ofertas de esa lista hasta que saca el
  * código, se acaba la oferta o cierra el local en la sesión de la oferta.
  * Nadie más la ve (la página va en caché y no sabe quién mira: lo pinta el
- * navegador). Cada una lleva «De la lista de Marta», su ficha con el enlace
- * (`?rp=`) y una × que la quita (`dismiss_promoter_pin`, también en la app).
+ * navegador). Es una publicación, no un aviso: va como la primera tarjeta
+ * del feed (la misma de `assets/tarjeta.js`), con «De la lista de Marta» y
+ * una × entre sus sellos que la quita (`dismiss_promoter_pin`, también en la
+ * app), y su ficha lleva el enlace (`?rp=`). Si también venía en el feed, no
+ * sale dos veces.
  *
  * Sin sesión guardada no carga nada más: ni la configuración ni Supabase.
  * Lo mismo que la app (migración 20261112100001).
@@ -13,8 +16,8 @@
 (function () {
   'use strict';
   var yo = document.currentScript;
-  var caja = document.getElementById('rp-fijadas');
-  if (!yo || !caja) return;
+  var feed = document.getElementById('feed');
+  if (!yo || !feed) return;
   var en = yo.dataset.lang === 'en';
   var T = en
     ? { from: function (n) { return 'From ' + n + "'s list"; }, user: 'Klendar user', remove: 'Remove from Discover' }
@@ -47,27 +50,45 @@
     });
   }
 
+  var PIN = '<svg class="ic" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M14 4v5c0 1.12.37 2.16 1 3H9c.65-.86 1-1.9 1-3V4h4m3-2H7c-.55 0-1 .45-1 1s.45 1 1 1h1v5c0 1.66-1.34 3-3 3v2h5.97v7l1 1 1-1v-7H19v-2c-1.66 0-3-1.34-3-3V4h1c.55 0 1-.45 1-1s-.45-1-1-1z"/></svg>';
+  var X = '<svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>';
+
   function pinta(sb, pins) {
-    if (!pins.length) { caja.hidden = true; caja.innerHTML = ''; return; }
-    caja.innerHTML = pins.slice(0, 2).map(function (p) {
+    var KT = window.KlendarTarjeta;
+    if (!KT || !pins.length) return;
+    // Si se está en la primera, la fijada pasa a ser la que se ve (el
+    // navegador, por no mover lo que se mira, la dejaría encima, fuera).
+    var rueda = document.scrollingElement || document.documentElement;
+    var arriba = document.body.scrollTop < 8 && rueda.scrollTop < 8;
+    // Al principio de la lista, en su orden (como mucho dos).
+    pins.slice(0, 2).reverse().forEach(function (p) {
       var nombre = String(p.promoter_name || '').trim() || T.user;
       var href = (en ? '/en' : '') + '/o/' + encodeURIComponent(p.id) + (p.rp ? '?rp=' + encodeURIComponent(p.rp) : '');
-      return '<div class="exclusiva rp-fijada" style="display:flex;align-items:center;gap:8px;margin:8px 0 0;padding:8px 8px 8px 14px">' +
-        '<a href="' + esc(href) + '" style="flex:1;min-width:0;color:inherit;text-decoration:none">' +
-        '<small style="display:block;font-weight:700;opacity:.75">' + esc(T.from(nombre)) + '</small>' +
-        '<b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' +
-        esc([p.title, p.business_name].filter(Boolean).join(' · ')) + '</b></a>' +
-        '<button type="button" class="pill" data-quita="' + esc(p.id) + '" aria-label="' + esc(T.remove) + '" title="' + esc(T.remove) + '" style="min-width:44px;min-height:44px">×</button>' +
-        '</div>';
-    }).join('');
-    caja.hidden = false;
-    Array.prototype.forEach.call(caja.querySelectorAll('[data-quita]'), function (b) {
-      b.onclick = function () {
-        var id = b.getAttribute('data-quita');
-        pinta(sb, pins.filter(function (x) { return x.id !== id; }));
-        sb.rpc('dismiss_promoter_pin', { p_offer: id }).then(null, function () { /* vuelve a salir otro día */ });
-      };
+      var tmp = document.createElement('div');
+      tmp.innerHTML = KT.tarjeta(p, en ? 'en' : 'es', { forma: 'pantalla', desc: true, h: 'h2', galeria: true, href: href });
+      var el = tmp.firstElementChild;
+      if (!el) return;
+      el.classList.add('tj--fijada');
+      var sellos = el.querySelector('.tj-sellos');
+      if (sellos) {
+        sellos.insertAdjacentHTML('afterbegin', '<span class="tj-sello tj-sello--fijada">' + PIN + '<span>' + esc(T.from(nombre)) + '</span>'
+          + '<button type="button" data-quita="' + esc(p.id) + '" aria-label="' + esc(T.remove) + '" title="' + esc(T.remove) + '">' + X + '</button></span>');
+      }
+      // Si también venía en el feed, no sale dos veces.
+      Array.prototype.forEach.call(feed.querySelectorAll(':scope > .tj[data-o="' + String(p.id).replace(/"/g, '') + '"]'), function (x) { x.remove(); });
+      var primera = feed.querySelector(':scope > .tj, :scope > .feed-fin');
+      feed.insertBefore(el, primera || null);
+      var quita = el.querySelector('[data-quita]');
+      if (quita) {
+        quita.addEventListener('click', function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          el.remove();
+          sb.rpc('dismiss_promoter_pin', { p_offer: p.id }).then(null, function () { /* vuelve a salir otro día */ });
+        });
+      }
     });
+    if (arriba) { document.body.scrollTop = 0; rueda.scrollTop = 0; }
   }
 
   (window.KLENDAR_ENV ? Promise.resolve() : carga('/config.js?v=3'))
@@ -83,8 +104,11 @@
       return sb.auth.getSession().then(function (r) {
         if (!r.data || !r.data.session) return null;
         return sb.rpc('my_promoter_pins', {}).then(function (res) {
-          if (res.error || !Array.isArray(res.data)) return;
-          pinta(sb, res.data);
+          if (res.error || !Array.isArray(res.data) || !res.data.length) return null;
+          // La tarjeta es la de toda la web (assets/tarjeta.js).
+          return (window.KlendarZona ? Promise.resolve() : carga('/assets/zona.js?v=1'))
+            .then(function () { return window.KlendarTarjeta ? null : carga('/assets/tarjeta.js?v=6'); })
+            .then(function () { pinta(sb, res.data); });
         });
       });
     })

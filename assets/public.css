@@ -667,39 +667,34 @@ body.pagina-feed[data-cromo="fuera"] .feed-cab { visibility: hidden; }
 .pub .tiempo-quitar { font-weight: 700; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
 .pub .tiempo-fuente { font-size: 12px; font-weight: 500; }
 .tiempo-fuente a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
-/* En Descubre: en el móvil, debajo de los filtros y encima de la foto (en
-   blanco, como lo demás de la cabecera); en tablet y escritorio, a la
-   derecha de la tarjeta, arriba. */
+/* ══ Los avisos de Descubre (2026-10-06) ═════════════════════════════════
+   Encima de la publicación, solo los filtros y como mucho UN aviso de una
+   línea, del alto de un chip, con su × (/assets/avisos.js decide cuál: el
+   viaje antes que el tiempo). En el móvil, bajo los filtros y sobre la foto
+   (cristal oscuro, como los chips); en tablet y escritorio, a la derecha de
+   la tarjeta, arriba, fuera de la foto. */
+.feed-avisos { display: flex; }
+.feed-avisos[hidden], .feed-aviso[hidden] { display: none !important; }
+.feed-aviso { display: inline-flex; align-items: center; max-width: 100%; min-height: 36px; margin: 0; border-radius: 999px;
+  border: 1px solid var(--glass-border); background: var(--elevated); color: var(--ink); font-size: 14px; font-weight: 700; }
+.feed-aviso-t { display: inline-flex; align-items: center; gap: 8px; min-width: 0; min-height: 36px; padding: 0 4px 0 12px; border: 0; background: none;
+  color: inherit; font: inherit; text-decoration: none; cursor: pointer; }
+.feed-aviso-t:hover { text-decoration: none; }
+.feed-aviso-t span:not([aria-hidden]) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.feed-aviso-t .ic { flex: none; }
+.feed-aviso-x { position: relative; flex: none; display: grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 0; border-radius: 50%;
+  background: none; color: inherit; cursor: pointer; }
+.feed-aviso-x::after { content: ""; position: absolute; inset: -6px; }
+.feed-aviso :is(.feed-aviso-t, .feed-aviso-x):focus-visible { outline: 2px solid currentColor; outline-offset: -2px; border-radius: 999px; }
 @media (max-width: 760px) {
-  body.pagina-feed.con-tiempo { --feed-arriba: 172px; }
-  .pagina-feed .feed-cab .tiempo-linea { width: fit-content; max-width: calc(100% - 32px); margin: 6px 16px 0; padding: 6px 12px; gap: 2px 8px;
-    border-radius: 14px; background: rgba(10,10,10,.6); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); font-size: 12px; color: #fff; }
-  .pagina-feed .feed-cab .tiempo-linea a { color: inherit; }
-  body.pagina-feed[data-cromo="tema"] .feed-cab .tiempo-linea { background: var(--soft); color: var(--ink-2); }
-  body.pagina-feed[data-cromo="tema"] .feed-cab .tiempo-quitar { color: var(--ink); }
+  body.pagina-feed.con-aviso { --feed-arriba: 158px; }
+  .pagina-feed .feed-cab .feed-avisos { margin: 4px 16px 0; }
+  body.pagina-feed:not([data-cromo="tema"]):not([data-cromo="fuera"]) .feed-cab .feed-aviso { background: rgba(10,10,10,.6); color: #fff;
+    border-color: rgba(255,255,255,.16); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
 }
 @media (min-width: 761px) {
-  .pagina-feed .feed-cab .tiempo-linea { position: absolute; top: calc(100% + var(--hueco)); left: calc(50% + var(--feed-w) / 2 + 20px);
-    width: min(260px, calc(50% - var(--feed-w) / 2 - 40px)); margin: 0; font-size: 13px; display: block; line-height: 1.6; }
-  .pagina-feed .feed-cab .tiempo-linea .ic { vertical-align: -3px; margin-right: 6px; }
-  .pagina-feed .feed-cab .tiempo-fuente { display: block; }
-  .pagina-feed .feed-cab .tiempo-quitar { margin-left: 6px; }
-}
-
-/* Modo viaje en Descubre («Estás en Valencia: lo mejor de hoy»,
-   /assets/gustos.js): en el móvil, bajo los filtros con el margen de lo
-   demás; en tablet y escritorio, a la derecha de la tarjeta, arriba (y el
-   tiempo, debajo). */
-.pagina-feed .feed-cab #viaje .viaje-aviso { margin: 8px 0 0; }
-@media (max-width: 760px) {
-  .pagina-feed .feed-cab #viaje { margin: 0 16px; }
-}
-@media (min-width: 761px) {
-  .pagina-feed .feed-cab #viaje { position: absolute; top: calc(100% + var(--hueco)); left: calc(50% + var(--feed-w) / 2 + 20px);
-    width: min(300px, calc(50% - var(--feed-w) / 2 - 40px)); }
-  .pagina-feed .feed-cab #viaje .viaje-aviso { margin: 0; }
-  .pagina-feed .feed-cab #viaje .viaje-aviso b { white-space: normal !important; }
-  .pagina-feed .feed-cab #viaje:not([hidden]) ~ .tiempo-linea { top: calc(100% + var(--hueco) + 104px); }
+  .pagina-feed .feed-cab .feed-avisos { position: absolute; top: calc(100% + var(--hueco)); left: calc(50% + var(--feed-w) / 2 + 20px);
+    max-width: min(320px, calc(50% - var(--feed-w) / 2 - 40px)); }
 }
 
 /* ══ La hoja de filtros por orden de uso (2026-10-06) ═══════════════════════
