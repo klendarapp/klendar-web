@@ -38,7 +38,7 @@ insert into public.admin_users (user_id)
 select id from auth.users where email = 'tu@email';
 ```
 
-Secciones: Resumen (KPIs, pendientes, series de 30 días), Negocios (ficha
+Secciones: Resumen (KPIs, pendientes, series de 30 días), Cifras (registros, activación, retención, sitios, negocios y origen de las visitas; `admin_stats_*`, todo agregado), Negocios (ficha
 completa: verificar, rechazar, editar, equipo, plan, pagos, aviso), Publicaciones
 (moderación, estado, boost, canjeos), Canjeos, Usuarios (consentimientos RGPD,
 suspender, premium, borrar cuenta), Reseñas y posts, Denuncias (DSA), Planes y
@@ -99,3 +99,16 @@ un idioma:
 
 No se indexan (robots.txt las excluye): lo indexable son las páginas por idioma,
 que ya llevan canonical y hreflang.
+
+## Klendar en la tele (`/tv/`)
+
+`tv/index.html` + `tv.css` + `tv.js`, sin depender de nada más que `config.js`
+y el QR (`assets/vendor/qrcode.js`), escrito para navegadores de tele algo
+viejos. La tele pide un código (`tv_pair_start`), lo enseña con un QR a
+`/tv/enlazar/<código>` (`functions/tv/enlazar/[code].js` → panel `#/tele`; la
+app lo abre como App Link) y, cuando alguien del local lo escribe en «Poner
+en la tele» (`tv_pair_claim`), recoge su llave (`tv_pair_poll`) y pide lo que
+enseña cada minuto (`tv_feed`). Guarda en el navegador la llave y lo último
+que enseñó (`klendar.tv.llave`, `klendar.tv.ultimo`). Migración
+`20261129100001_tele` del repo de la app; diseño en
+`docs/DISENOS_PUBLICACION.md` §8.

@@ -58,7 +58,7 @@ export async function onRequest(ctx) {
   //    Cloudflare. `no-transform` no basta: Pages lo mete igual en el HTML
   //    estático (comprobado en producción, 2026-09-30), la CSP lo tendría que
   //    bloquear y la consola se llenaría de avisos. Se quita aquí.
-  const conSesion = /^\/(app|panel|admin)\//.test(pathname);
+  const conSesion = /^\/(app|panel|admin|tv)\//.test(pathname);
   if (!head && conSesion && typeof HTMLRewriter === 'function' && /text\/html/i.test(cabeceras.get('content-type') || '')) {
     cabeceras.delete('content-length'); // el cuerpo cambia de tamaño
     const limpio = new HTMLRewriter()

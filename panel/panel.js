@@ -729,6 +729,8 @@ const SVG = {
   // «Antes de cerrar» (shopping_bag).
   bolsa: 'M18 6h-2c0-2.21-1.79-4-4-4S8 3.79 8 6H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6-2c1.1 0 2 .9 2 2h-4c0-1.1.9-2 2-2zm6 16H6V8h2v2c0 .55.45 1 1 1s1-.45 1-1V8h4v2c0 .55.45 1 1 1s1-.45 1-1V8h2v12z',
   // RRPP (record_voice_over).
+  // «Poner en la tele» (tv; no está en la fuente recortada).
+  tele: 'M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 1.99-.9 1.99-2L23 5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z',
   rrpp: 'M9 13c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0-6c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm0 8c-2.67 0-8 1.34-8 4v3h16v-3c0-2.66-5.33-4-8-4zm6 5H3v-.99C3.2 18.29 6.3 17 9 17s5.8 1.29 6 2v1zM15.08 7.05c.84 1.18.84 2.71 0 3.89l1.68 1.69c2.02-2.02 2.02-5.07 0-7.27l-1.68 1.69zM20.07 2l-1.63 1.63c2.77 3.02 2.77 7.56 0 10.74L20.07 16c3.9-3.89 3.91-9.95 0-14z',
 };
 const svg = (n, s = 20) => `<svg class="ms svg" viewBox="0 0 24 24" width="${s}" height="${s}" aria-hidden="true"><path fill="currentColor" d="${SVG[n]}"/></svg>`;
@@ -737,8 +739,8 @@ const icono = (n) => (SVG[n] ? svg(n) : ms(n));
 // El menú, con los grupos de «Mi negocio» en la app: lo de todos los días
 // arriba; Publicar (Publicaciones, Series y repeticiones, Novedades),
 // Clientes (Tarjetas de sellos, Regalo de cumpleaños, Avisar a mis
-// clientes, Reseñas), RRPP, Tu local (Carta, Cartel del local, Días
-// cerrados, Equipo) y Cifras (Informe); y abajo la ficha (con darse de
+// clientes, Reseñas), RRPP, Tu local (Carta, Cartel del local, Poner en la
+// tele, Días cerrados, Equipo) y Cifras (Informe); y abajo la ficha (con darse de
 // baja dentro, solo el propietario) y la ayuda.
 // `en` dice qué pantallas cuentan como esa entrada (para marcarla).
 const NAV = [
@@ -767,6 +769,7 @@ const NAV = [
   ['Tu local', [
     ['carta', 'restaurant_menu', 'Carta'],
     ['cartel-local', 'qr_code_2', 'Cartel del local'],
+    ['tele', 'tele', 'Poner en la tele'],
     ['cerrados', 'event_busy', 'Días cerrados'],
     ['equipo', 'group', 'Equipo'],
   ]],
@@ -860,7 +863,7 @@ function sinDobleEnvio(caja) {
 
 // Lo que no es de un empleado: solo propietario y encargados (como la app).
 // «Regalo de cumpleaños» no está: el personal lo ve, en solo lectura.
-const SOLO_GESTION = ['sellos', 'carta', 'novedades', 'mensajes', 'ficha', 'cerrados', 'equipo', 'cartel-local', 'rrpp', 'antes-de-cerrar'];
+const SOLO_GESTION = ['sellos', 'carta', 'novedades', 'mensajes', 'ficha', 'cerrados', 'equipo', 'cartel-local', 'tele', 'rrpp', 'antes-de-cerrar'];
 
 // ── Salir con cambios sin guardar ───────────────────────────────────────────
 // Una vista con cambios se apunta aquí: si se va a otra pantalla, se vuelve
@@ -4406,6 +4409,104 @@ PAGES['cartel-local'] = async (v) => {
       route();
     };
   }
+};
+
+// ── Poner en la tele ────────────────────────────────────────────────────────
+// «Klendar en la tele del local»: klendar.app/tv abierto en la tele enseña un
+// código de 6 cifras (y un QR a klendar.app/tv/enlazar/<código>, que trae
+// aquí con `?codigo=`). Al escribirlo, esa tele queda enlazada a este local
+// y enseña sus publicaciones activas. Desvincular la deja al momento sin
+// nada. Lo mismo que «Poner en la tele» en «Mi negocio» de la app.
+const ERR_TELE = {
+  code_not_found: 'Ese código no existe o ha caducado. Mira el que sale ahora en la tele.',
+  too_many_screens: 'Ya tienes 10 teles enlazadas. Desvincula alguna para enlazar otra.',
+  rate_limited: 'Demasiados intentos. Espera unos minutos y vuelve a probar.',
+  forbidden: 'Solo el propietario o un encargado pueden enlazar teles.',
+  invalid_seconds: 'Elige 8, 12, 20 o 30 segundos.',
+  name_too_long: 'El nombre puede tener 40 caracteres como mucho.',
+};
+const haceTele = (iso) => {
+  if (!iso) return I18N.t('Aún no se ha conectado');
+  const min = Math.round((Date.now() - Date.parse(iso)) / 60000);
+  if (min < 60) return bi(`Vista por última vez hace ${Math.max(1, min)} min`, `Last seen ${Math.max(1, min)} min ago`);
+  const h = Math.round(min / 60);
+  if (h < 48) return bi(`Vista por última vez hace ${h} h`, `Last seen ${h} h ago`);
+  return bi(`Vista por última vez el ${fmtDate(iso)}`, `Last seen on ${fmtDate(iso)}`);
+};
+PAGES.tele = async (v) => {
+  const codigo = (new URLSearchParams(location.hash.split('?')[1] || '').get('codigo') || '').replace(/\D/g, '').slice(0, 6);
+  const [lista, sitio] = await Promise.all([
+    rpc('tv_screens_list', { p_business: BIZ.id }),
+    rpc('business_crowd_status', { p_business: BIZ.id }).catch(() => null),
+  ]);
+  if (lista?.ok === false) throw new Error(I18N.t(ERR_TELE[lista.error] || 'No se ha podido cargar. Prueba otra vez.'));
+  const teles = lista?.screens || [];
+  v.innerHTML = `
+    <div class="page-head"><h1>Poner en la tele</h1></div>
+    ${helpBox('¿Cómo funciona?', bi(
+    '<p>Abre <b>klendar.app/tv</b> en el navegador de la tele (o en un Chromecast o un Fire TV). Saldrá un código de 6 cifras: escríbelo aquí o escanea el QR con la cámara del móvil.</p><p>La tele enseña tus publicaciones activas a pantalla completa, con su diseño y la cuenta atrás de las ofertas flash, y un QR para que la gente las consiga o te añada a favoritos. Cambia sola y se actualiza sola cuando publicas algo o termina. Sin publicaciones, enseña tu logo. No enseña ofertas de RRPP, ni exclusivas, ni nada +18 si tu local no es +18.</p><p>La tele no entra con tu cuenta: solo puede enseñar lo público de tu local. Si la cambias de sitio o la vendes, desvincúlala aquí.</p>',
+    '<p>Open <b>klendar.app/tv</b> in the TV’s browser (or on a Chromecast or Fire TV). A 6-digit code will appear: type it in here or scan the QR code with your phone camera.</p><p>The TV shows your active publications full screen, with their design and the flash offer countdown, plus a QR code so people can get them or add you to their favourites. It moves on by itself and updates itself when you publish something or it ends. With nothing published, it shows your logo. It never shows promoter offers, exclusives or anything 18+ unless your place is 18+.</p><p>The TV doesn’t log in with your account: it can only show what’s public about your place. If you move it or sell it, unlink it here.</p>'))}
+    <div class="card">
+      <h2 style="margin-top:0">Enlazar una tele</h2>
+      <form id="enlazar" class="form" autocomplete="off">
+        <label class="f"><span>Código de la tele</span><input name="code" inputmode="numeric" maxlength="7" placeholder="123 456" value="${esc(codigo)}" required aria-describedby="teleAyuda"></label>
+        <label class="f"><span>Nombre <small>(opcional)</small></span><input name="name" maxlength="40" placeholder="${esc(I18N.t('Barra, terraza…'))}"></label>
+        <p class="hint full" id="teleAyuda">${esc(I18N.t('El que sale en la tele al abrir klendar.app/tv. Cambia cada 10 minutos.'))}</p>
+        <div class="full"><button class="btn primary" type="submit">Enlazar</button> <span id="msg" class="err" role="alert"></span></div>
+      </form>
+    </div>
+    <div class="card">
+      <h2 style="margin-top:0">Tus teles</h2>
+      ${teles.length ? `<ul class="teles">${teles.map((t, i) => `<li class="tele">
+        <span class="tele-ic">${svg('tele', 24)}</span>
+        <div class="tele-txt"><b>${esc(t.name)}</b>
+          <span class="muted small">${t.online ? `<span class="tele-on">${esc(I18N.t('Conectada ahora'))}</span>` : esc(haceTele(t.last_seen_at))} · ${esc(bi(`Cambia cada ${t.seconds} s`, `Changes every ${t.seconds} s`))}</span></div>
+        <span class="actions"><button class="btn sm" type="button" data-ajustes="${i}">Ajustes</button><button class="btn sm" type="button" data-quitar="${i}">Desvincular</button></span>
+      </li>`).join('')}</ul>` : `<p class="muted" style="margin:0">${esc(I18N.t('Todavía no has enlazado ninguna tele.'))}</p>`}
+    </div>`;
+
+  const f = $('#enlazar', v);
+  f.onsubmit = async (e) => {
+    e.preventDefault();
+    const msg = $('#msg', f);
+    msg.textContent = '';
+    const code = String(f.elements.code.value || '').replace(/\D/g, '');
+    if (code.length !== 6) { msg.textContent = I18N.t('Escribe las 6 cifras que salen en la tele.'); f.elements.code.focus(); return; }
+    const r = await rpc('tv_pair_claim', { p_code: code, p_business: BIZ.id, p_name: f.elements.name.value.trim() || null })
+      .catch((err) => ({ ok: false, error: err.message }));
+    if (!r?.ok) { msg.textContent = I18N.t(ERR_TELE[r?.error] || friendly(r?.error)); return; }
+    toast(I18N.t('¡Listo! La tele ya enseña tus publicaciones.'));
+    // Sin `?codigo=` en la dirección: si se recarga, no vuelve a probarlo.
+    if (location.hash.includes('?')) history.replaceState(null, '', '#/tele');
+    route();
+  };
+
+  $$('[data-quitar]', v).forEach((b) => { b.onclick = async () => {
+    const t = teles[+b.dataset.quitar];
+    if (!(await confirmDlg(bi(`¿Desvincular «${t.name}»?`, `Unlink “${t.name}”?`),
+      esc(I18N.t('La tele dejará de enseñar tus publicaciones al momento y volverá a enseñar un código.')),
+      { submit: 'Desvincular', danger: true }))) return;
+    const r = await rpc('tv_unlink', { p_screen: t.id }).catch(() => null);
+    if (!r?.ok) { toast(I18N.t(ERR_TELE[r?.error] || 'No se ha podido guardar'), true); return; }
+    toast(I18N.t('Tele desvinculada')); route();
+  }; });
+
+  $$('[data-ajustes]', v).forEach((b) => { b.onclick = async () => {
+    const t = teles[+b.dataset.ajustes];
+    const campos = [
+      { name: 'name', label: 'Nombre', value: t.name, maxlength: 40, required: true },
+      { name: 'seconds', label: 'Cambia cada', type: 'select', value: String(t.seconds), options: [8, 12, 20, 30].map((n) => [String(n), `${n} s`]) },
+    ];
+    // «¿Hay sitio ahora?» solo si el local lo usa (Tu ficha → Cómo es tu local).
+    if (sitio?.enabled) campos.push({ name: 'crowd', label: I18N.t('Enseñar «¿Hay sitio ahora?»'), type: 'checkbox', value: t.show_crowd });
+    const d = await modal({ title: I18N.t('Ajustes de la tele'), fields: campos });
+    if (!d) return;
+    const r = await rpc('tv_screen_update', {
+      p_screen: t.id, p_name: d.name, p_seconds: Number(d.seconds), p_show_crowd: sitio?.enabled ? !!d.crowd : null,
+    }).catch(() => null);
+    if (!r?.ok) { toast(I18N.t(ERR_TELE[r?.error] || 'No se ha podido guardar'), true); return; }
+    toast('Guardado'); route();
+  }; });
 };
 
 PAGES.novedades = async (v) => {

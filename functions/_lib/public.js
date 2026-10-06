@@ -298,14 +298,16 @@ ${conAmigos ? `<script src="/assets/amigos.js?v=15" defer data-lang="${en ? 'en'
 
 /**
  * «Compartir en historias» y «Estado de WhatsApp»: quien llega desde la
- * imagen (`?ref=stories` o `?ref=whatsapp`)
+ * imagen (`?ref=stories` o `?ref=whatsapp`), desde el QR de la tele del
+ * local (`?ref=tv`) o desde el del cartel del local (`?ref=local_qr`, lo
+ * pone `/v/`)
  * cuenta para el negocio (`log_ref_visit`, una vez por persona cada 30 min) y
  * el origen se quita de la dirección, para que si vuelve a compartir el
  * enlace no se cuente como historia. Sin cookies ni nada guardado.
  */
 function desdeHistorias() {
   const sp = supabasePublic();
-  return `<script>(function(){try{var q=new URLSearchParams(location.search);var ref=q.get('ref');if((ref!=='stories'&&ref!=='whatsapp')||navigator.webdriver)return;
+  return `<script>(function(){try{var q=new URLSearchParams(location.search);var ref=q.get('ref');if(['stories','whatsapp','tv','local_qr'].indexOf(ref)<0||navigator.webdriver)return;
 var p=location.pathname.split('/').filter(Boolean);if(p[0]==='en')p.shift();
 var k={o:'offer',b:'business',coleccion:'collection',collection:'collection'}[p[0]];if(!k||!p[1])return;
 var key=${JSON.stringify(sp.key)};

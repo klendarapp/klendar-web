@@ -166,6 +166,22 @@
   .cl-qr { max-width: 220px; }
 }
 
+/* Poner en la tele: cada tele en una fila (icono, nombre y estado, y sus dos
+   botones iguales); en el móvil, los botones debajo y a lo ancho. */
+.teles { list-style: none; margin: 0; padding: 0; }
+.tele { display: flex; align-items: center; gap: 14px; padding: 12px 0; border-top: 1px solid var(--glass-border); }
+.tele:first-child { border-top: 0; padding-top: 0; }
+.tele-ic { flex: none; width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; background: var(--soft); color: var(--ink); }
+.tele-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.tele-txt b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tele-on { color: var(--ink); font-weight: 700; }
+.tele-on::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--ink); margin-right: 6px; vertical-align: 1px; }
+.tele .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+@media (max-width: 640px) {
+  .tele { flex-wrap: wrap; }
+  .tele .actions { flex-basis: 100%; }
+}
+
 @media print {
   body * { visibility: hidden; }
   .cartel, .cartel * { visibility: visible; }

@@ -867,7 +867,7 @@ document.addEventListener('keydown', (e) => { if (e.key === '/' && !/input|texta
 // «Sistema» (lo técnico, que se toca poco) se pliega; se abre solo si estás en
 // una de sus pantallas, y lo pendiente que tenga dentro se suma en su título.
 const NAV_GRUPOS = [
-  { id: 'panorama', t: 'Panorama', items: [['resumen', 'dashboard', 'Resumen'], ['semanas', 'trending_up', 'Semana a semana'], ['ciudades', 'map', 'Ciudades']] },
+  { id: 'panorama', t: 'Panorama', items: [['resumen', 'dashboard', 'Resumen'], ['semanas', 'trending_up', 'Semana a semana'], ['cifras', 'insights', 'Cifras'], ['ciudades', 'map', 'Ciudades']] },
   { id: 'negocios', t: 'Negocios y pagos', items: [['negocios', 'storefront', 'Negocios'], ['reclamaciones', 'how_to_reg', 'Reclamaciones'], ['duplicados', 'content_copy', 'Posibles duplicados'], ['planes', 'credit_card', 'Planes y pagos']] },
   { id: 'contenido', t: 'Contenido', items: [['publicaciones', 'bolt', 'Publicaciones'], ['canjes', 'confirmation_number', 'Canjes'], ['colecciones', 'auto_awesome', 'Colecciones'], ['categorias', 'category', 'Categorías']] },
   { id: 'personas', t: 'Personas', items: [['usuarios', 'person', 'Usuarios'], ['inactivas', 'hourglass_empty', 'Cuentas inactivas'], ['avisos', 'notifications', 'Notificaciones y push'], ['sugerencias', 'lightbulb', 'Sugerencias']] },
@@ -1047,6 +1047,257 @@ PAGES.semanas = async (v) => {
         rows: dorm,
         empty: 'Ninguno: todos han publicado este mes.',
       })}</div>`;
+};
+
+// ── Cifras ──────────────────────────────────────────────────────────────────
+// Para decidir dónde empujar al lanzar: registros, activación, retención,
+// sitios, negocios y de dónde llegan las visitas. Todo agregado (ninguna
+// persona en pantalla; los negocios sí, con su nombre), con fechas y ciudad
+// en la dirección (`#/cifras?desde=&hasta=&ciudad=`) y CSV de cada bloque.
+// Lo calcula la base: `admin_stats_*` (migración 20261129100000).
+const ORIGENES = [['stories', 'Historias'], ['whatsapp', 'WhatsApp'], ['rrpp', 'RRPP'], ['local_qr', 'QR del local'], ['tv', 'Tele']];
+const pct = (a, b) => (!b ? '—' : `${(Math.round((1000 * a) / b) / 10).toLocaleString(LOC())} %`);
+const diaCorto = (d) => new Date(`${d}T00:00:00`).toLocaleDateString(LOC(), { day: 'numeric', month: 'short' });
+const mesCorto = (d) => new Date(`${d}T00:00:00`).toLocaleDateString(LOC(), { month: 'short', year: '2-digit' });
+const horasTxt = (h) => {
+  if (h == null) return '—';
+  if (h < 1) return I18N.lang === 'en' ? `${Math.max(1, Math.round(h * 60))} min` : `${Math.max(1, Math.round(h * 60))} min`;
+  if (h < 48) return `${Math.round(h).toLocaleString(LOC())} h`;
+  const d = Math.round(h / 24);
+  return I18N.lang === 'en' ? `${d} days` : `${d} días`;
+};
+/** «CP 28004» o la celda de la rejilla («≈ 40,42 · −3,70», con el mapa). */
+const zonaTxt2 = (z) => {
+  if (!z) return `<span class="muted">${esc(I18N.t('Sin ubicación'))}</span>`;
+  if (z.startsWith('cp:')) return `CP ${esc(z.slice(3))}`;
+  const [lat, lng] = z.slice(2).split(',').map(Number);
+  const t = `≈ ${lat.toLocaleString(LOC(), { minimumFractionDigits: 2 })} · ${lng.toLocaleString(LOC(), { minimumFractionDigits: 2 })}`;
+  return `<a class="link" href="https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=15/${lat}/${lng}" target="_blank" rel="noopener" title="${esc(I18N.t('Ver la zona en el mapa'))}">${esc(t)} ↗</a>`;
+};
+/** Barras de una serie (o apiladas, con `partes`): tinta sobre la superficie,
+ * cada barra con su número al pasar el ratón o el foco. */
+function barrasCifras(filas, { valor, partes = null, etiqueta, ariaLabel, detalle = null }) {
+  const total = (f) => (partes ? partes.reduce((a, p) => a + (f[p[0]] || 0), 0) : (f[valor] || 0));
+  const max = Math.max(1, ...filas.map(total));
+  const titulo = (f) => `${etiqueta(f)}: ${partes ? partes.map((p) => `${I18N.t(p[1])} ${fmtNum(f[p[0]] || 0)}`).join(' · ') : fmtNum(f[valor] || 0)}${detalle ? ` · ${detalle(f)}` : ''}`;
+  return `<div class="cf-barras" role="img" aria-label="${esc(ariaLabel)}">${filas.map((f) => `<div class="cf-barra" tabindex="0" title="${esc(titulo(f))}" data-tip="${esc(titulo(f))}">${partes
+    ? partes.map((p, i) => `<i class="cf-s${i}" style="height:${((f[p[0]] || 0) / max) * 100}%"></i>`).reverse().join('')
+    : `<i class="cf-s0" style="height:${(total(f) / max) * 100}%"></i>`}</div>`).join('')}</div>
+    <div class="chart-legend"><span>${esc(etiqueta(filas[0] || {}))}</span>${partes ? partes.map((p, i) => `<span class="cf-ley"><i class="cf-s${i}"></i>${esc(I18N.t(p[1]))}</span>`).join('') : ''}<span style="margin-left:auto">${esc(etiqueta(filas[filas.length - 1] || {}))}</span></div>`;
+}
+/** Una barra horizontal con su número y su porcentaje (activación, origen). */
+const filaBarra = (txt, n, de, extra = '') => `<div class="cf-fila"><span class="cf-fila-t">${esc(txt)}</span>
+  <span class="cf-fila-b"><i style="width:${de ? Math.min(100, (100 * n) / de) : 0}%"></i></span>
+  <b>${fmtNum(n)}</b><span class="muted small">${pct(n, de)}</span>${extra}</div>`;
+const csvBtn = (id, que = '') => `<button class="btn sm ghost" type="button" data-csv="${id}">${ms('download')} CSV${que ? ` <span>${esc(I18N.t(que))}</span>` : ''}</button>`;
+
+PAGES.cifras = async (v) => {
+  const en = I18N.lang === 'en';
+  const hoy = diaMadridISO();
+  const p = params();
+  const f = {
+    desde: /^\d{4}-\d{2}-\d{2}$/.test(p.desde || '') ? p.desde : diaMadridISO(-29),
+    hasta: /^\d{4}-\d{2}-\d{2}$/.test(p.hasta || '') ? p.hasta : hoy,
+    ciudad: p.ciudad || '',
+    serie: ['day', 'week', 'month'].includes(p.serie) ? p.serie : 'week',
+    ret: p.ret === 'month' ? 'month' : 'week',
+  };
+  if (f.desde > f.hasta) f.desde = f.hasta;
+  const escribe = () => ponUrl('cifras', {
+    desde: f.desde === diaMadridISO(-29) ? null : f.desde,
+    hasta: f.hasta === hoy ? null : f.hasta,
+    ciudad: f.ciudad || null,
+    serie: f.serie === 'week' ? null : f.serie,
+    ret: f.ret === 'week' ? null : f.ret,
+  });
+  escribe();
+  const args = { p_from: f.desde, p_to: f.hasta, p_city: f.ciudad || null };
+  const [ciudades, s, a, r, pl, b, o] = await Promise.all([
+    rpc('admin_stats_cities'),
+    rpc('admin_stats_signups', args),
+    rpc('admin_stats_activation', args),
+    rpc('admin_stats_retention', { p_period: f.ret, p_from: null, p_to: f.hasta, p_city: f.ciudad || null }),
+    rpc('admin_stats_places', args),
+    rpc('admin_stats_businesses', args),
+    rpc('admin_stats_sources', args),
+  ]);
+  const rapidos = [[7, '7 días'], [30, '30 días'], [90, '90 días'], [365, '12 meses']];
+  const rapidoOn = (n) => f.hasta === hoy && f.desde === diaMadridISO(-(n - 1));
+  const etSerie = { day: (x) => diaCorto(x.d), week: (x) => (en ? `Week of ${diaCorto(x.d)}` : `Semana del ${diaCorto(x.d)}`), month: (x) => mesCorto(x.d) };
+  const pasos = [['code', 'Sacan su primer código'], ['validated', 'Validan su primer canje'], ['saved', 'Guardan o añaden a favoritos']];
+  const st = a.steps || {};
+  const colsRet = f.ret === 'month' ? [1, 2, 3, 6, 12] : [1, 2, 3, 4, 6, 8, 12];
+  const cohortes = (r.cohorts || []).filter((c) => c.size > 0);
+  const ahoraPeriodo = (c, k) => c.back[k + 1] === null || c.back[k + 1] === undefined;
+  const origenTotal = ORIGENES.reduce((x, [k]) => x + ((o.totals || {})[k] || 0), 0);
+  const zonas = (pl.zones || []).slice(0, 40);
+  const traenTotal = (b.top || []).reduce((x, t) => x + (t.brought_cents || 0), 0);
+
+  v.innerHTML = `
+    <div class="page-head"><h1>Cifras</h1></div>
+    <form class="card cf-filtros toolbar" id="cfFiltros" aria-label="${esc(I18N.t('Filtros'))}">
+      <label class="f"><span>Desde</span><input type="date" name="desde" value="${esc(f.desde)}" max="${esc(hoy)}"></label>
+      <label class="f"><span>Hasta</span><input type="date" name="hasta" value="${esc(f.hasta)}" max="${esc(hoy)}"></label>
+      <label class="f"><span>Ciudad</span><select name="ciudad"><option value="">Todas</option>${(ciudades || []).map((c) => `<option value="${esc(c.city)}" ${c.city === f.ciudad ? 'selected' : ''}>${esc(c.city)} (${fmtNum(c.businesses)})</option>`).join('')}</select></label>
+      <div class="chart-tabs cf-rapidos" role="group" aria-label="${esc(I18N.t('Periodo'))}">${rapidos.map(([n, t]) => `<button type="button" data-dias="${n}" class="${rapidoOn(n) ? 'on' : ''}" aria-pressed="${rapidoOn(n)}">${t}</button>`).join('')}</div>
+      <button class="btn primary" type="submit">Aplicar</button>
+    </form>
+    ${helpBox('¿Qué miro aquí?', en
+    ? '<p>Everything is aggregated: no person appears here. Dates are Madrid time. The <b>city</b> of a person is the one of the nearest business to their last location (if they allowed it) or of the first business they used; of a business, the one on its page.</p><p><b>Activation</b> follows the people who signed up in the period (not business accounts). <b>Retention</b>: of those who signed up in a week (or month), how many came back 1, 2, 4… weeks later (they opened the app or the website). Before 6 October 2026 coming back is counted from what they did (codes, saves, favourites, views). <b>Zone</b>: the postcode if the address has one; if not, a cell of about 1 km.</p><p>Visits from promoters, the venue QR code and the TV are counted from 6 October 2026.</p>'
+    : '<p>Todo agregado: aquí no sale ninguna persona. Fechas en hora de Madrid. La <b>ciudad</b> de una persona es la del negocio más cercano a su última ubicación (si dio permiso) o la del primer negocio que usó; la de un negocio, la de su ficha.</p><p><b>Activación</b> sigue a las personas que se registraron en el periodo (sin cuentas de negocio). <b>Retención</b>: de los que se registraron una semana (o un mes), cuántos volvieron 1, 2, 4… semanas después (abrieron la app o la web). Antes del 6 de octubre de 2026 la vuelta se cuenta por lo que hicieron (códigos, guardadas, favoritos, vistas). <b>Zona</b>: el código postal si la dirección lo lleva; si no, una celda de alrededor de 1 km.</p><p>Las visitas desde RRPP, el QR del local y la tele se cuentan desde el 6 de octubre de 2026.</p>')}
+
+    <section class="card" aria-labelledby="cfReg">
+      <div class="page-head cf-cab"><h2 id="cfReg">Registros</h2><span class="spacer"></span>
+        <div class="chart-tabs" id="cfSerie" role="group" aria-label="${esc(I18N.t('Agrupar por'))}">${[['day', 'Día'], ['week', 'Semana'], ['month', 'Mes']].map(([k, t]) => `<button type="button" data-k="${k}" class="${f.serie === k ? 'on' : ''}" aria-pressed="${f.serie === k}">${t}</button>`).join('')}</div>${csvBtn('registros')}</div>
+      <div class="kpis">${[[s.total, 'registros'], [s.people, 'personas'], [s.businesses, 'cuentas de negocio']].map(([n, t]) => `<div class="kpi"><b>${fmtNum(n)}</b><span>${esc(I18N.t(t))}</span></div>`).join('')}</div>
+      <div id="cfSerieChart">${barrasCifras(s[f.serie] || [], { partes: [['people', 'Personas'], ['businesses', 'Cuentas de negocio']], etiqueta: etSerie[f.serie], ariaLabel: I18N.t('Registros') })}</div>
+      ${!f.ciudad && (s.by_city || []).length ? `<h3 class="cf-h3">Personas por ciudad</h3><div class="cf-filas">${s.by_city.slice(0, 12).map((c) => filaBarra(c.city || I18N.t('Sin ciudad'), c.n, s.people)).join('')}</div>` : ''}
+    </section>
+
+    <section class="card" aria-labelledby="cfAct">
+      <div class="page-head cf-cab"><h2 id="cfAct">Activación</h2><span class="spacer"></span>${csvBtn('activacion')}</div>
+      <p class="muted small" style="margin:0 0 10px">${esc(en ? `Of the ${fmtNum(a.people)} people who signed up in the period:` : `De las ${fmtNum(a.people)} personas que se registraron en el periodo:`)}</p>
+      ${table({
+    cols: [
+      { h: 'Paso', r: (x) => `<b>${esc(I18N.t(x[1]))}</b>` },
+      { h: 'Personas', num: true, r: (x) => fmtNum((st[x[0]] || {}).n || 0) },
+      { h: '%', num: true, r: (x) => `<span class="cf-pct"><i style="width:${a.people ? Math.min(100, (100 * ((st[x[0]] || {}).n || 0)) / a.people) : 0}%"></i></span>${pct((st[x[0]] || {}).n || 0, a.people)}` },
+      { h: 'En 24 h', num: true, r: (x) => pct((st[x[0]] || {}).d1 || 0, a.people) },
+      { h: 'En 7 días', num: true, r: (x) => pct((st[x[0]] || {}).d7 || 0, a.people) },
+      { h: 'Tiempo (mediana)', num: true, r: (x) => horasTxt((st[x[0]] || {}).median_hours) },
+    ],
+    rows: pasos,
+  })}
+      ${(a.weeks || []).length > 1 ? `<details class="cf-mas"><summary>${esc(I18N.t('Por semana de registro'))}</summary>${table({
+    cols: [
+      { h: 'Semana', r: (x) => diaCorto(x.week) },
+      { h: 'Personas', num: true, r: (x) => fmtNum(x.people) },
+      { h: 'Primer código', num: true, r: (x) => pct(x.code, x.people) },
+      { h: 'Primer canje', num: true, r: (x) => pct(x.validated, x.people) },
+      { h: 'Guardan o favoritos', num: true, r: (x) => pct(x.saved, x.people) },
+    ],
+    rows: a.weeks.slice().reverse(),
+  })}</details>` : ''}
+    </section>
+
+    <section class="card" aria-labelledby="cfRet">
+      <div class="page-head cf-cab"><h2 id="cfRet">Retención</h2><span class="spacer"></span>
+        <div class="chart-tabs" id="cfRetTabs" role="group" aria-label="${esc(I18N.t('Cohortes'))}">${[['week', 'Semanas'], ['month', 'Meses']].map(([k, t]) => `<button type="button" data-k="${k}" class="${f.ret === k ? 'on' : ''}" aria-pressed="${f.ret === k}">${t}</button>`).join('')}</div>${csvBtn('retencion')}</div>
+      <p class="muted small" style="margin:0 0 10px">${esc(f.ret === 'month'
+    ? (en ? 'Of those who signed up each month, the share who came back 1, 2, 3… months later. Up to the end date.' : 'De los que se registraron cada mes, qué parte volvió 1, 2, 3… meses después. Hasta la fecha final.')
+    : (en ? 'Of those who signed up each week, the share who came back 1, 2, 3… weeks later. The last 12 weeks up to the end date.' : 'De los que se registraron cada semana, qué parte volvió 1, 2, 3… semanas después. Las 12 últimas semanas hasta la fecha final.'))}</p>
+      ${cohortes.length ? `<div class="tbl-wrap"><table class="tbl cf-cohortes"><thead><tr><th>${esc(I18N.t(f.ret === 'month' ? 'Mes' : 'Semana'))}</th><th class="num">${esc(I18N.t('Registros'))}</th>${colsRet.map((k) => `<th class="num">+${k}</th>`).join('')}</tr></thead><tbody>
+        ${cohortes.map((c) => `<tr><td>${esc(f.ret === 'month' ? mesCorto(c.cohort) : diaCorto(c.cohort))}</td><td class="num">${fmtNum(c.size)}</td>${colsRet.map((k) => {
+    const n = c.back[k];
+    if (n === null || n === undefined) return '<td class="num cf-cel vacia" aria-label="—"></td>';
+    const x = c.size ? Math.min(1, n / c.size) : 0;
+    const curso = ahoraPeriodo(c, k);
+    return `<td class="num cf-cel${x >= 0.5 ? ' fuerte' : ''}" style="--x:${x.toFixed(3)}" title="${esc(`${fmtNum(n)} / ${fmtNum(c.size)}${curso ? ` · ${I18N.t('en curso')}` : ''}`)}"><span>${pct(n, c.size)}</span>${curso ? '<sup>*</sup>' : ''}</td>`;
+  }).join('')}</tr>`).join('')}
+      </tbody></table></div><p class="muted small" style="margin:8px 0 0">${esc(I18N.t('* periodo en curso: aún puede subir.'))}</p>` : `<div class="tbl-wrap"><div class="empty">${esc(I18N.t('Nadie se registró en estas fechas.'))}</div></div>`}
+    </section>
+
+    <section class="card" aria-labelledby="cfDonde">
+      <div class="page-head cf-cab"><h2 id="cfDonde">Dónde</h2><span class="spacer"></span>${csvBtn('ciudades', 'por ciudad')} ${csvBtn('zonas', 'por zona')}</div>
+      ${table({
+    cols: [
+      { h: 'Ciudad', r: (c) => `<a class="link" href="#/cifras?${qs({ desde: f.desde, hasta: f.hasta, ciudad: c.city })}"><b>${esc(c.city)}</b></a>` },
+      { h: 'Negocios', num: true, r: (c) => `${fmtNum(c.businesses)} <span class="muted small">(${fmtNum(c.verified)})</span>` },
+      { h: 'Vistas', num: true, r: (c) => fmtNum(c.vistas) },
+      { h: 'Códigos', num: true, r: (c) => fmtNum(c.codigos) },
+      { h: 'Canjes', num: true, r: (c) => fmtNum(c.canjes) },
+      { h: 'Canjes por cada 100 vistas', num: true, r: (c) => (c.vistas ? (Math.round((1000 * c.canjes) / c.vistas) / 10).toLocaleString(LOC()) : '—') },
+      { h: 'Visitas con origen', num: true, r: (c) => fmtNum(c.visitas) },
+    ],
+    rows: pl.cities || [],
+    empty: 'Ninguna ciudad con negocios.',
+  })}
+      <h3 class="cf-h3">${esc(I18N.t(f.ciudad ? 'Por zona' : 'Por zona (todas las ciudades)'))}</h3>
+      ${table({
+    cols: [
+      { h: 'Zona', r: (z) => zonaTxt2(z.zone) },
+      ...(f.ciudad ? [] : [{ h: 'Ciudad', r: (z) => esc(z.city) }]),
+      { h: 'Negocios', num: true, r: (z) => fmtNum(z.businesses) },
+      { h: 'Vistas', num: true, r: (z) => fmtNum(z.vistas) },
+      { h: 'Códigos', num: true, r: (z) => fmtNum(z.codigos) },
+      { h: 'Canjes', num: true, r: (z) => fmtNum(z.canjes) },
+      { h: 'Visitas con origen', num: true, r: (z) => fmtNum(z.visitas) },
+    ],
+    rows: zonas,
+    empty: 'Sin zonas.',
+  })}
+      ${(pl.zones || []).length > zonas.length ? `<p class="muted small">${esc(en ? `The ${zonas.length} with the most redemptions; all of them in the CSV.` : `Las ${zonas.length} con más canjes; todas, en el CSV.`)}</p>` : ''}
+    </section>
+
+    <section class="card" aria-labelledby="cfNeg">
+      <div class="page-head cf-cab"><h2 id="cfNeg">Negocios</h2><span class="spacer"></span>${csvBtn('negocios', 'por semana')} ${csvBtn('traen', 'los que más traen')}</div>
+      <div class="kpis">${[
+    [b.new, 'altas en el periodo'], [b.verified, 'verificados en el periodo'], [b.verified_total, 'verificados en total'],
+    [b.active_30d, en ? `active (published in the 30 days up to ${diaCorto(f.hasta)})` : `activos (publicaron en los 30 días hasta el ${diaCorto(f.hasta)})`],
+  ].map(([n, t]) => `<div class="kpi"><b>${fmtNum(n)}</b><span>${esc(I18N.t(t))}</span></div>`).join('')}</div>
+      <h3 class="cf-h3">Publicaciones por semana</h3>
+      ${barrasCifras(b.weeks || [], { valor: 'publications', etiqueta: (x) => (x.week ? (en ? `Week of ${diaCorto(x.week)}` : `Semana del ${diaCorto(x.week)}`) : ''), ariaLabel: I18N.t('Publicaciones por semana'), detalle: (x) => (en ? `${fmtNum(x.publishing)} businesses published, ${fmtNum(x.new)} joined` : `publicaron ${fmtNum(x.publishing)} negocios, ${fmtNum(x.new)} altas`) })}
+      <p class="muted small" style="margin:6px 0 0">${esc(en ? 'Hover over a bar to see how many businesses published that week.' : 'Pasa por encima de una barra para ver cuántos negocios publicaron esa semana.')}</p>
+      <h3 class="cf-h3">Los que más traen</h3>
+      <p class="muted small" style="margin:0 0 8px">${esc(en ? 'What Klendar brought them in the period: the receipt if it was entered, otherwise price × places. Always “at least”.' : 'Lo que les ha traído Klendar en el periodo: el ticket si se apuntó y, si no, precio × plazas. Siempre «al menos».')}</p>
+      ${table({
+    cols: [
+      { h: 'Negocio', r: (t) => `<a class="link" href="#/negocios/${esc(t.id)}"><b>${esc(t.name)}</b></a><span class="sub">${esc(t.city || '')}</span>` },
+      { h: 'Al menos', num: true, r: (t) => `<b>${fmtMoney(t.brought_cents)}</b>` },
+      { h: 'Canjes', num: true, r: (t) => fmtNum(t.redemptions) },
+      { h: 'Con ticket', num: true, r: (t) => fmtNum(t.with_ticket) },
+      { h: 'Del total', num: true, r: (t) => pct(t.brought_cents, traenTotal) },
+    ],
+    rows: b.top || [],
+    empty: 'Ningún canje validado en estas fechas.',
+  })}
+    </section>
+
+    <section class="card" aria-labelledby="cfOri">
+      <div class="page-head cf-cab"><h2 id="cfOri">Origen de las visitas</h2><span class="spacer"></span>${csvBtn('origen')}</div>
+      <div class="cf-filas">${ORIGENES.map(([k, t]) => filaBarra(I18N.t(t), (o.totals || {})[k] || 0, origenTotal)).join('')}</div>
+      <p class="muted small" style="margin:10px 0 0">${esc(en
+    ? `${fmtNum(origenTotal)} ${origenTotal === 1 ? 'visit' : 'visits'} with a known origin, out of ${fmtNum(o.views)} publication views in the period. Through promoters: ${fmtNum(o.rrpp_codes)} codes and ${fmtNum(o.rrpp_redemptions)} redemptions.`
+    : `${fmtNum(origenTotal)} ${origenTotal === 1 ? 'visita' : 'visitas'} con origen conocido, de ${fmtNum(o.views)} vistas de publicaciones en el periodo. Por RRPP: ${fmtNum(o.rrpp_codes)} códigos y ${fmtNum(o.rrpp_redemptions)} canjes.`)}</p>
+      ${(o.weeks || []).length > 1 ? `<details class="cf-mas"><summary>${esc(I18N.t('Por semana'))}</summary>${table({
+    cols: [{ h: 'Semana', r: (x) => diaCorto(x.week) }, ...ORIGENES.map(([k, t]) => ({ h: t, num: true, r: (x) => fmtNum((x.refs || {})[k] || 0) }))],
+    rows: o.weeks.slice().reverse(),
+  })}</details>` : ''}
+    </section>`;
+
+  // Filtros: aplicar, atajos de periodo.
+  const form = $('#cfFiltros', v);
+  const recarga = () => { escribe(); route(); };
+  form.onsubmit = (e) => {
+    e.preventDefault();
+    const d = Object.fromEntries(new FormData(form));
+    f.desde = d.desde || f.desde; f.hasta = d.hasta || f.hasta; f.ciudad = d.ciudad || '';
+    if (f.desde > f.hasta) [f.desde, f.hasta] = [f.hasta, f.desde];
+    recarga();
+  };
+  $$('[data-dias]', form).forEach((btn) => { btn.onclick = () => { f.hasta = hoy; f.desde = diaMadridISO(-(Number(btn.dataset.dias) - 1)); f.ciudad = form.elements.ciudad.value; recarga(); }; });
+  $('#cfSerie', v).onclick = (e) => {
+    const btn = e.target.closest('button'); if (!btn) return;
+    f.serie = btn.dataset.k; escribe();
+    $$('#cfSerie button', v).forEach((x) => { x.classList.toggle('on', x === btn); x.setAttribute('aria-pressed', String(x === btn)); });
+    $('#cfSerieChart', v).innerHTML = barrasCifras(s[f.serie] || [], { partes: [['people', 'Personas'], ['businesses', 'Cuentas de negocio']], etiqueta: etSerie[f.serie], ariaLabel: I18N.t('Registros') });
+    I18N.translate($('#cfSerieChart', v));
+  };
+  $('#cfRetTabs', v).onclick = (e) => { const btn = e.target.closest('button'); if (!btn || btn.dataset.k === f.ret) return; f.ret = btn.dataset.k; recarga(); };
+
+  // CSV de cada bloque, con el periodo y la ciudad en el nombre.
+  const sufijo = `${f.desde}_${f.hasta}${f.ciudad ? `-${f.ciudad.toLowerCase().replace(/[^a-z0-9]+/g, '-')}` : ''}`;
+  const CSV = {
+    registros: () => downloadCsv(`cifras-registros-${f.serie}-${sufijo}`, s[f.serie] || [], [['d', 'Desde'], ['people', 'Personas'], ['businesses', 'Cuentas de negocio']]),
+    activacion: () => downloadCsv(`cifras-activacion-${sufijo}`, (a.weeks || []), [['week', 'Semana'], ['people', 'Personas'], ['code', 'Primer código'], ['validated', 'Primer canje'], ['saved', 'Guardan o favoritos']]),
+    retencion: () => downloadCsv(`cifras-retencion-${f.ret}-${sufijo}`, cohortes, [['cohort', f.ret === 'month' ? 'Mes' : 'Semana'], ['size', 'Registros'], ...Array.from({ length: 13 }, (_, k) => [(c) => c.back[k], `+${k}`])]),
+    ciudades: () => downloadCsv(`cifras-ciudades-${sufijo}`, pl.cities || [], [['city', 'Ciudad'], ['businesses', 'Negocios'], ['verified', 'Verificados'], ['vistas', 'Vistas'], ['codigos', 'Códigos'], ['canjes', 'Canjes'], ['visitas', 'Visitas con origen']]),
+    zonas: () => downloadCsv(`cifras-zonas-${sufijo}`, pl.zones || [], [['city', 'Ciudad'], [(z) => (z.zone || '').replace(/^cp:/, 'CP ').replace(/^g:/, '≈ '), 'Zona'], ['businesses', 'Negocios'], ['verified', 'Verificados'], ['vistas', 'Vistas'], ['codigos', 'Códigos'], ['canjes', 'Canjes'], ['visitas', 'Visitas con origen']]),
+    negocios: () => downloadCsv(`cifras-negocios-semanas-${sufijo}`, b.weeks || [], [['week', 'Semana'], ['new', 'Altas'], ['publications', 'Publicaciones'], ['publishing', 'Negocios que publicaron']]),
+    traen: () => downloadCsv(`cifras-los-que-mas-traen-${sufijo}`, b.top || [], [['name', 'Negocio'], ['city', 'Ciudad'], [(t) => (t.brought_cents / 100).toFixed(2), 'Al menos (€)'], ['redemptions', 'Canjes'], ['with_ticket', 'Con ticket']]),
+    origen: () => downloadCsv(`cifras-origen-${sufijo}`, o.weeks || [], [['week', 'Semana'], ...ORIGENES.map(([k, t]) => [(x) => (x.refs || {})[k] || 0, t])]),
+  };
+  $$('[data-csv]', v).forEach((btn) => { btn.onclick = () => CSV[btn.dataset.csv](); });
 };
 
 PAGES.resumen = async (v) => {

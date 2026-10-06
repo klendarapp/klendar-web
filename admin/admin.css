@@ -361,3 +361,46 @@ details.grupo[open] > summary { margin-bottom: 8px; }
 @media (max-width: 560px) { .kpis.principales { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 /* En el móvil, las cifras de dos en dos (una por fila alargaba mucho la pantalla). */
 @media (max-width: 560px) { .kpis > * { flex: 1 1 calc(50% - 5px); } }
+
+/* ── Cifras ───────────────────────────────────────────────────────────────
+   Sobrio: tinta sobre la superficie, una sola serie por gráfica (dos
+   apiladas en Registros, con leyenda) y la retención en un mapa de calor de
+   un solo tono. Cada barra dice su número al pasar el ratón o el foco. */
+.cf-filtros { align-items: flex-end; }
+.cf-filtros .f { margin: 0; min-width: 150px; }
+.cf-rapidos { margin-left: auto; }
+.cf-cab { margin-bottom: 8px; gap: 8px; flex-wrap: wrap; }
+.cf-cab h2 { margin: 0; }
+.cf-h3 { font-size: 14px; margin: 18px 0 8px; }
+.cf-barras { display: flex; justify-content: space-around; align-items: flex-end; height: 140px; margin-top: 12px; border-bottom: 1px solid var(--glass-border); }
+.cf-barra { flex: 1 1 0; min-width: 2px; max-width: 64px; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; padding: 0 1px; outline: none; }
+.cf-barra i { display: block; min-height: 0; border-radius: 3px 3px 0 0; }
+.cf-barra i + i { border-radius: 0; margin-top: 0; }
+.cf-barra i.cf-s0 { background: var(--ink); opacity: .85; }
+.cf-barra i.cf-s1 { background: var(--ink); opacity: .35; border-bottom: 2px solid var(--surface); }
+.cf-barra:hover i, .cf-barra:focus-visible i { opacity: 1; }
+.cf-barra:focus-visible { box-shadow: inset 0 0 0 2px var(--ink); border-radius: 4px; }
+.cf-ley { display: inline-flex; align-items: center; gap: 5px; }
+.cf-ley i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; background: var(--ink); }
+.cf-ley i.cf-s0 { opacity: .85; } .cf-ley i.cf-s1 { opacity: .35; }
+.cf-filas { display: grid; gap: 6px; }
+.cf-fila { display: grid; grid-template-columns: minmax(120px, 220px) 1fr 70px 70px; gap: 10px; align-items: center; font-size: 14px; }
+.cf-fila b { text-align: right; font-variant-numeric: tabular-nums; }
+.cf-fila .muted { text-align: right; font-variant-numeric: tabular-nums; }
+.cf-fila-b, .cf-pct { display: block; height: 8px; border-radius: 999px; background: var(--soft); overflow: hidden; }
+.cf-fila-b i, .cf-pct i { display: block; height: 100%; background: var(--ink); border-radius: 999px; }
+.cf-pct { display: inline-block; width: 70px; margin-right: 8px; vertical-align: middle; }
+.cf-mas { margin-top: 12px; }
+.cf-mas summary { cursor: pointer; font-weight: 700; font-size: 14px; margin-bottom: 8px; }
+table.cf-cohortes td.cf-cel { position: relative; font-variant-numeric: tabular-nums; }
+table.cf-cohortes td.cf-cel::before { content: ''; position: absolute; inset: 3px; border-radius: 6px; background: var(--ink); opacity: calc(.06 + var(--x, 0) * .6); }
+table.cf-cohortes td.cf-cel span, table.cf-cohortes td.cf-cel sup { position: relative; }
+table.cf-cohortes td.cf-cel.vacia::before { display: none; }
+table.cf-cohortes td.cf-cel.fuerte { color: var(--surface); font-weight: 700; }
+@media (max-width: 640px) {
+  .cf-fila { grid-template-columns: 1fr 60px 60px; }
+  .cf-fila .cf-fila-b { grid-column: 1 / -1; grid-row: 2; }
+  .cf-rapidos { margin-left: 0; }
+  /* En el móvil las tablas se deslizan de lado: sin partir palabras. */
+  [aria-labelledby^="cf"] table.tbl td, [aria-labelledby^="cf"] table.tbl th { white-space: nowrap; }
+}

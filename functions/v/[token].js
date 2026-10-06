@@ -21,7 +21,9 @@ export const onRequestGet = (ctx) => {
     if (!slug) {
       return html(render({ lang, path, kind: 'b', notFound: true }), 404, 'no-store');
     }
-    const ficha = `${lang === 'en' ? '/en' : ''}/b/${encodeURIComponent(slug)}?visita=${encodeURIComponent(token)}`;
+    // `ref=local_qr`: la ficha cuenta la visita como llegada desde el cartel
+    // del local (las «Cifras» del admin) y quita el parámetro.
+    const ficha = `${lang === 'en' ? '/en' : ''}/b/${encodeURIComponent(slug)}?visita=${encodeURIComponent(token)}&ref=local_qr`;
     // Relativa: se queda en el mismo sitio (klendar.app o el de pruebas).
     return new Response(null, {
       status: 302,
