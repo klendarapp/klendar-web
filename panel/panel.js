@@ -772,6 +772,9 @@ const NAV = [
   ]],
   ['Clientes', [
     ['sellos', 'loyalty', 'Tarjetas de sellos'],
+    // Bonos pagados en el local (panel/bonos.js): el personal los ve para
+    // venderlos; crear y pausar es de propietario y encargado.
+    ['bonos', 'redeem', 'Bonos'],
     ['cumpleanos', 'cake', 'Regalo de cumpleaños'],
     ['mensajes', 'notifications_active', 'Avisar a mis clientes'],
     ['resenas', 'reviews', 'Reseñas'],
@@ -3395,7 +3398,7 @@ function cajaTicket(caja, code, inicial = null) {
 PAGES.validar = async (v) => {
   v.innerHTML = `
     <div class="page-head"><h1>Validar códigos</h1></div>
-    ${helpBox('¿Cómo funciona?', '<p>Escanea el QR con la cámara (la del móvil o la del portátil) o escribe el código que la persona tiene debajo del QR. Cada código vale una vez: al validarlo queda marcado y el aforo baja.</p><p>Si es una reserva para varios, te decimos cuántas personas entran con ese código.</p>')}
+    ${helpBox('¿Cómo funciona?', `<p>Escanea el QR con la cámara (la del móvil o la del portátil) o escribe el código que la persona tiene debajo del QR. Cada código vale una vez: al validarlo queda marcado y el aforo baja.</p><p>Si es una reserva para varios, te decimos cuántas personas entran con ese código.</p><p>${bi('Con el <b>QR de cliente</b> de alguien ves sus bonos de tu negocio: puedes cargarle uno o descontar un uso.', 'With someone’s <b>customer QR code</b> you see their passes from your business: you can add one or use one.')}</p>`)}
     <div class="scan-box">
       <button class="btn" id="camara" type="button">${ms('photo_camera')}Escanear con la cámara</button>
       <div class="camara" id="camara-caja" hidden><video id="video" muted playsinline></video><span class="mira" aria-hidden="true"></span></div>
@@ -3502,6 +3505,9 @@ PAGES.validar = async (v) => {
     try { await validaUno(raw); } finally { validando = false; $('#go').disabled = false; }
   };
   const validaUno = async (raw) => {
+    // El QR de cliente (bonos): sus bonos, para cargar uno o descontar un
+    // uso (panel/bonos.js). Necesita red: no va a la cola.
+    if (await bonoCliente($('#result'), raw)) { $('#code').value = ''; return; }
     // Tecleado se ve en grupos de cuatro («0882 7EC7 …»): fuera espacios y guiones.
     const code = raw.includes('/r/') ? raw.split('/r/').pop().split(/[?#]/)[0] : raw.replace(/[\s-]/g, '');
     const aLaCola = () => {
@@ -3570,6 +3576,13 @@ PAGES.validar = async (v) => {
   // sin la app): el código llega puesto y se enseña qué es; se valida con el
   // botón «Validar». La cámara de aquí sí valida directamente.
   const desdeQr = new URLSearchParams(location.hash.split('?')[1] || '').get('code');
+  // Desde klendar.app/c/<…> (el QR de cliente leído con la cámara del móvil):
+  // sus bonos, al momento.
+  const cliente = new URLSearchParams(location.hash.split('?')[1] || '').get('cliente');
+  if (cliente && bonoToken(cliente)) {
+    history.replaceState(null, '', `${location.pathname}#/validar`);
+    bonoCliente($('#result'), cliente);
+  }
   if (desdeQr && /^[0-9a-f]{8,64}$/i.test(desdeQr)) {
     $('#code').value = desdeQr;
     history.replaceState(null, '', `${location.pathname}#/validar`);
@@ -5005,13 +5018,20 @@ PAGES.informe = async (v, param) => {
   const conTicket = t.brought_with_ticket > 0
     ? ` (${bi(`${fmtNum(t.brought_with_ticket)} con ticket real`, `${fmtNum(t.brought_with_ticket)} with a real receipt`)})` : '';
   const cifraTrajo = eurosEnteros(t.brought_cents, t.currency);
-  const grande = t.brought_visits > 0 && t.brought_priced > 0;
-  const fraseTrajo = !t.brought_visits ? bi('Cuando valides códigos, aquí verás lo que te traen tus ofertas.', 'When you validate codes, you’ll see here what your offers bring in.')
+  // Bonos vendidos en el local: ya suman en `brought_cents`, una vez, con su
+  // precio (los usos no suman).
+  const pases = t.passes || {};
+  const pasesTxt = pases.sold > 0 ? bi(pases.sold === 1 ? '1 bono vendido' : `${fmtNum(pases.sold)} bonos vendidos`, pases.sold === 1 ? '1 pass sold' : `${fmtNum(pases.sold)} passes sold`) : '';
+  const pasesFrase = pases.sold > 0 ? bi(` Incluye ${pasesTxt} en tu local (${eurosEnteros(pases.sold_cents, t.currency)}).`, ` Includes ${pasesTxt} at your venue (${eurosEnteros(pases.sold_cents, t.currency)}).`) : '';
+  const grande = (t.brought_visits > 0 && t.brought_priced > 0) || pases.sold > 0;
+  const fraseTrajo = !t.brought_visits ? (pases.sold > 0 ? bi(`Has vendido ${pasesTxt} por ${eurosEnteros(pases.sold_cents, t.currency)} en tu local.`, `You've sold ${pasesTxt} for ${eurosEnteros(pases.sold_cents, t.currency)} at your venue.`)
+    : bi('Cuando valides códigos, aquí verás lo que te traen tus ofertas.', 'When you validate codes, you’ll see here what your offers bring in.'))
     : !t.brought_priced ? bi(`Tus ofertas trajeron ${visitas(t.brought_visits)}. Ninguna tenía precio, así que no sumamos euros.`, `Your offers brought in ${visitas(t.brought_visits)}. None had a price, so we don’t add up euros.`)
       : bi(`Tus ofertas trajeron al menos ${cifraTrajo}${conTicket} en ${visitas(t.brought_visits)}.`, `Your offers brought in at least ${cifraTrajo}${conTicket} from ${visitas(t.brought_visits)}.`);
+  const fraseTrajoTodo = t.brought_visits ? fraseTrajo + pasesFrase : fraseTrajo;
   const comoTrajo = helpBox(I18N.t('¿Cómo se calcula?'), bi(
-    '<p>Por cada código validado sumamos el precio de la oferta por persona (el que tenía cuando la persona consiguió el código) por las plazas.</p><p>Si alguien del equipo apunta el importe del ticket al validar, o después en «Últimos validados», usamos ese importe en lugar de la estimación.</p><p>Las ofertas sin precio (gratis o solo un descuento) cuentan como visitas, pero no suman euros. Cada código validado es una visita, aunque entren varias personas con él.</p><p>Por eso es un mínimo: lo que la gente gasta además, o en otras visitas, no lo vemos.</p>',
-    '<p>For each validated code we add the offer’s price per person (the one it had when the person got the code) times the number of places.</p><p>If someone on the team enters the receipt total when validating, or later in “Recently validated”, we use that amount instead of the estimate.</p><p>Offers without a price (free or just a discount) count as visits but don’t add euros. Each validated code is one visit, even if several people come in with it.</p><p>That’s why it’s a minimum: we can’t see what people spend on top of that, or on other visits.</p>'));
+    '<p>Por cada código validado sumamos el precio de la oferta por persona (el que tenía cuando la persona consiguió el código) por las plazas.</p><p>Si alguien del equipo apunta el importe del ticket al validar, o después en «Últimos validados», usamos ese importe en lugar de la estimación.</p><p>Las ofertas sin precio (gratis o solo un descuento) cuentan como visitas, pero no suman euros. Cada código validado es una visita, aunque entren varias personas con él.</p><p>Por eso es un mínimo: lo que la gente gasta además, o en otras visitas, no lo vemos.</p><p>Los bonos que vendes en tu local suman una vez, al venderlos, con el precio que has puesto; cada uso no suma.</p>',
+    '<p>For each validated code we add the offer’s price per person (the one it had when the person got the code) times the number of places.</p><p>If someone on the team enters the receipt total when validating, or later in “Recently validated”, we use that amount instead of the estimate.</p><p>Offers without a price (free or just a discount) count as visits but don’t add euros. Each validated code is one visit, even if several people come in with it.</p><p>That’s why it’s a minimum: we can’t see what people spend on top of that, or on other visits.</p><p>Passes you sell at your venue count once, when you sell them, at the price you set; uses don’t add anything.</p>'));
 
   v.innerHTML = `
     <div class="page-head"><h1>Informe</h1><span class="spacer"></span>
@@ -5019,7 +5039,7 @@ PAGES.informe = async (v, param) => {
     </div>
     <div class="card trajo"><h2>Cuánto te ha traído Klendar</h2>
       ${grande ? `<p class="trajo-min">${esc(bi('Al menos', 'At least'))}</p><p class="trajo-cifra">${esc(cifraTrajo)}</p>` : ''}
-      <p class="${grande ? 'muted' : ''}" style="margin:4px 0 10px">${esc(fraseTrajo)}</p>
+      <p class="${grande ? 'muted' : ''}" style="margin:4px 0 10px">${esc(fraseTrajoTodo)}</p>
       ${comoTrajo}
     </div>
 
@@ -5041,6 +5061,13 @@ PAGES.informe = async (v, param) => {
     </div>
 
     ${audienciaHtml(aud)}
+
+    ${pases.sold || pases.uses || pases.active ? `<div class="card"><h2>Bonos</h2>
+      <div class="kpis">
+        <div class="kpi"><b>${fmtNum(pases.sold)}</b><span>Bonos vendidos</span></div>
+        <div class="kpi"><b>${fmtNum(pases.uses)}</b><span>Usos</span></div>
+        <div class="kpi"><b>${fmtNum(pases.active)}</b><span>Bonos activos</span></div>
+      </div></div>` : ''}
 
     ${await informeSeriesHtml()}
 
@@ -5554,6 +5581,7 @@ async function eliminarNegocio(v) {
     ['qr_code_2', 'Códigos sin usar', s.codes],
     ['cake', 'Regalos de cumpleaños sin usar', s.birthday_gifts],
     ['loyalty', 'Clientes con sellos o un premio sin canjear', s.stamp_customers],
+    ['redeem', 'Clientes con bonos sin gastar (tienes que cumplirlos)', s.pass_customers || 0],
     ['person', 'Personas que lo tienen en favoritos', s.favorites],
     ['reviews', 'Reseñas', s.reviews],
     ['bolt', 'Publicaciones', s.publications],

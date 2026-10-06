@@ -1582,11 +1582,13 @@ RUTAS.codigos = async (_partes, params) => {
   if (!exigeSesion('codigos')) return;
   // Los regalos de cumpleaños van aparte y arriba; si fallan, los códigos
   // salen igual.
-  const [lista, regalos, premios] = await Promise.all([
+  const [lista, regalos, premios, bonos] = await Promise.all([
     llamar('my_redemptions', {}),
     llamar('my_birthday_gifts', {}).catch(() => []),
     // Los premios de las tarjetas de sellos, también aparte.
     llamar('my_stamp_rewards', {}).catch(() => []),
+    // Los bonos pagados en el local (app/bonos.js), arriba del todo.
+    llamar('my_passes', {}).catch(() => []),
   ]);
   const zona = await zonasDe(lista);
   // Los vivos, guardados para enseñarlos sin cobertura (y fuera los demás).
@@ -1594,6 +1596,8 @@ RUTAS.codigos = async (_partes, params) => {
     .map((r) => ({ ...r, tz: zona(r) })), true);
   const conRegalos = Array.isArray(regalos) && regalos.length > 0;
   const conPremios = Array.isArray(premios) && premios.length > 0;
+  const conBonos = Array.isArray(bonos) && bonos.length > 0;
+  const nada = !(lista || []).length && !conRegalos && !conPremios && !conBonos;
   // Desde una notificación (`#/codigos?offer=<id>`: cambio de fecha,
   // cancelación…): el código de esa publicación, a la vista y resaltado. El
   // vivo si hay varios; si no, el más reciente (la lista llega ordenada).
@@ -1605,6 +1609,9 @@ RUTAS.codigos = async (_partes, params) => {
   pinta(`
     <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(t('Tus códigos'))}</h1>
+    ${nada ? '' : `<div class="olist">${bonoFilaQr()}</div>`}
+    ${conBonos ? `<h2 class="seccion-t">${esc(t('Bonos'))}</h2>
+      <div class="olist">${bonos.map(bonoFila).join('')}</div>` : ''}
     ${conRegalos ? `<h2 class="seccion-t">${esc(t('Regalos de cumpleaños'))}</h2>
       <div class="olist">${regalos.map(filaRegalo).join('')}</div>` : ''}
     ${conPremios ? `<h2 class="seccion-t">${esc(t('Premios de tarjetas de sellos'))}</h2>
@@ -1616,13 +1623,16 @@ RUTAS.codigos = async (_partes, params) => {
     [t('Pasados'), lista.filter((r) => !vivo(r))],
   ].map(([titulo, parte]) => (parte.length ? `<h2 class="seccion-t">${esc(titulo)}</h2>
       <div class="olist">${parte.map((r) => filaCanje(r, zona(r), r === resaltado)).join('')}</div>` : '')).join('')
-    : conRegalos || conPremios
+    : conRegalos || conPremios || conBonos
       ? `<p class="empty">${esc(t('Todavía no tienes códigos. Cuando consigas el código de una oferta o reserves plaza en un evento, lo tendrás aquí.'))}</p>`
       : pantallaVacia({
         icono: 'qr_code_2',
         titulo: t('Todavía no tienes códigos'),
         texto: t('Cuando consigas el código de una oferta o reserves plaza en un evento, lo tendrás aquí.'),
-        botones: `<a class="pill accent" href="${EN ? '/en/explore/' : '/explorar/'}">${esc(t('Buscar planes'))}</a>`,
+        // Sin nada, el QR de cliente sigue a mano: es lo que se enseña para
+        // comprar el primer bono.
+        botones: `<a class="pill accent" href="${EN ? '/en/explore/' : '/explorar/'}">${esc(t('Buscar planes'))}</a>
+          <a class="pill" href="#/qr-cliente">${esc(t('Tu QR de cliente'))}</a>`,
       })}`);
   $('#codigo-pedido')?.scrollIntoView({ block: 'center' });
 };

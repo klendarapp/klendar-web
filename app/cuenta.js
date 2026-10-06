@@ -89,6 +89,8 @@ function destinoWeb(ruta) {
   // Con `?offer=<id>`, ese código a la vista y resaltado.
   if ((m = r.match(/^\/my-redemptions\?offer=([0-9a-f-]{36})/i))) return `#/codigos?offer=${m[1]}`;
   if (r.startsWith('/my-redemptions')) return '#/codigos';
+  // Bonos: «Bono cargado», pocos usos, caduca pronto… → ese bono.
+  if ((m = r.match(/^\/passes\/([0-9a-f-]{36})/i))) return `#/bono/${m[1]}`;
   if (r.startsWith('/profile')) return '#/ajustes';
   // «Ana está en tus amigos»: tu lista de amigos.
   if (r.startsWith('/friends')) return '#/amigos';
@@ -870,6 +872,7 @@ async function ajustesNotificaciones() {
     sw('mensajes', 'Mensajes de los negocios', prefs.notify_business_messages !== false),
     sw('cumple', 'Regalo de cumpleaños', prefs.notify_birthday !== false),
     sw('sellos', 'Sellos y premios', prefs.notify_stamps !== false),
+    sw('bonos', 'Tus bonos', prefs.notify_passes !== false, 'Pocos usos, caducidad y usos a mano'),
   ].join(''))}
       ${grupo('De tus amigos', [
     sw('amigos', 'Te invitan a un plan', prefs.notify_friend_invites !== false, prefs.notify_friend_invites === false ? 'Apagado, no te pueden invitar' : ''),
@@ -916,6 +919,7 @@ async function ajustesNotificaciones() {
         notify_business_messages: el.mensajes.checked,
         notify_birthday: el.cumple.checked,
         notify_stamps: el.sellos.checked,
+        notify_passes: el.bonos.checked,
         notify_friend_invites: el.amigos.checked,
         notify_friend_plans: el.planesAmigos.checked,
         notify_series: el.series.checked,

@@ -752,3 +752,20 @@ details.bloque .b-cuerpo { display: grid; gap: 14px; padding: 0 16px 16px; }
 /* El importe no es un código: letra normal, a la izquierda. */
 .scan-box .ticket-in, .ticket-celda .ticket-in { font-size: 16px; letter-spacing: normal; text-align: left; font-family: inherit; }
 .antes .f { max-width: 220px; }
+
+/* Bonos pagados en el local (panel/bonos.js): «Quedan 7 de 10» con su barra
+   neutra, el cliente delante en «Validar códigos» y el historial de usos. */
+.bono-quedan { display: block; font-weight: 800; margin: 2px 0; }
+.bono-quedan.grande { font-size: 22px; }
+.bono-barra { display: block; height: 6px; border-radius: 4px; background: color-mix(in srgb, var(--ink-2) 22%, transparent); overflow: hidden; margin: 6px 0; max-width: 360px; }
+.bono-barra > span { display: block; height: 100%; background: var(--ink); border-radius: 4px; }
+.bono-cliente { margin-top: 14px; }
+.bono-cliente h2 { margin: 0 0 4px; }
+.bono-pase { border-top: 1px solid var(--line, rgba(127,127,127,.25)); padding: 12px 0; display: grid; gap: 6px; }
+.bono-pase h3 { margin: 0; font-size: 16px; }
+.bono-pase p { margin: 0; }
+.bono-cliente .btn.grande { width: 100%; justify-content: center; }
+.bono-usos { list-style: none; padding: 0; margin: 0; display: grid; gap: 4px; }
+.bono-usos li { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.bono-usos li.deshecho span { text-decoration: line-through; color: var(--ink-2); }
+.bono-quedan { color: var(--ink); }

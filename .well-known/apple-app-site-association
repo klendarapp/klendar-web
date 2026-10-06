@@ -11,6 +11,7 @@
           { "/": "/amigo/*", "comment": "Enlace de amigo" },
           { "/": "/rp/*", "comment": "Enlace de un RRPP" },
           { "/": "/tv/enlazar/*", "comment": "Enlazar una tele del local (Poner en la tele)" },
+          { "/": "/c/*", "comment": "QR de cliente (bonos)" },
           { "/": "/en/o/*", "comment": "Offer or event (EN)" },
           { "/": "/en/b/*", "comment": "Business page (EN)" },
           { "/": "/en/friend/*", "comment": "Friend link (EN)" },

@@ -95,6 +95,8 @@ createServer(async (req, res) => {
     else if ((m = path.match(/^\/amigo\/([^/]+)\/?$/))) { mod = await load('functions/amigo/[code].js'); params = { code: m[1] }; }
     else if ((m = path.match(/^\/en\/friend\/([^/]+)\/?$/))) { mod = await load('functions/en/friend/[code].js'); params = { code: m[1] }; }
     else if ((m = path.match(/^\/r\/([^/]+)\/?$/))) { mod = await load('functions/r/[code].js'); params = { code: m[1] }; }
+    // El QR de cliente (bonos): /c/<clave>.<ventana>.<firma>.
+    else if ((m = path.match(/^\/c\/([^/]+)\/?$/))) { mod = await load('functions/c/[token].js'); params = { token: m[1] }; }
     // El enlace de un RRPP: /rp/<código> y /en/rp/<código>.
     else if ((m = path.match(/^\/rp\/([^/]+)\/?$/))) { mod = await load('functions/rp/[code].js'); params = { code: m[1] }; }
     else if ((m = path.match(/^\/en\/rp\/([^/]+)\/?$/))) { mod = await load('functions/en/rp/[code].js'); params = { code: m[1] }; }

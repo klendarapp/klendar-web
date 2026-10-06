@@ -2,6 +2,7 @@ User-agent: *
 Allow: /
 Disallow: /admin/
 Disallow: /r/
+Disallow: /c/
 Disallow: /cal/
 Disallow: /legal/
 
