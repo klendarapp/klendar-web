@@ -1803,6 +1803,16 @@ RUTAS.codigo = async ([id], params, crudo) => {
     throw e;
   }
   recuerdaCodigos([{ ...tk, offer_id: id, tz }]);
+  // Con carné: «Lleva el carné de estudiante: te lo pedirán en el local.»
+  // (lo comprueba el local, como en la app). Aparte: un fallo no estorba.
+  llamar('offer_marks', { p_offer: id }).then((m) => {
+    const KMt = window.KlendarMarcas;
+    const caja = $('#notaCarne');
+    const docs = KMt && m ? KMt.documentos(m.card_requirements, EN ? 'en' : 'es') : '';
+    if (!caja || !docs) return;
+    caja.textContent = KMt.t(EN ? 'en' : 'es').cardBring(docs);
+    caja.hidden = false;
+  }).catch(() => null);
   const url = `https://klendar.app/r/${tk.code}`;
   const caduca = new Date(tk.expires_at);
   const largo = caduca.getTime() - Date.now() > 3600 * 1000;
@@ -1816,6 +1826,7 @@ RUTAS.codigo = async ([id], params, crudo) => {
       ${(tk.seats || 1) > 1 ? `<p class="muted"><b>${tk.seats} ${esc(t('plazas'))}</b></p>` : ''}
       ${benef ? `<p><span class="tag grande">${esc(benef)}</span></p>` : ''}
       ${tk.price_kept ? `<p class="muted">${esc(t('Mantienes el precio de cuando lo conseguiste.'))}</p>` : ''}
+      <p class="nota-carne" id="notaCarne" hidden></p>
       ${(tk.seats || 1) > 1 && !tk.discount && tk.price_cents != null
         ? `<p class="muted">${esc(EN
           ? `${money(tk.price_cents, tk.currency)} each · ${money(tk.price_cents * tk.seats, tk.currency)} in total`

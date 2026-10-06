@@ -1006,6 +1006,7 @@ PAGES.resumen = async (v) => {
       <button data-go="nuevo-evento"><span class="ic ms" aria-hidden="true">event</span>Nuevo evento<small>Con fecha, aforo y reserva de plaza</small></button>` : ''}
       <button ${gestiona() ? '' : 'class="primary" '}data-go="validar"><span class="ic ms" aria-hidden="true">qr_code_scanner</span>Validar un código<small>Con la cámara o escribiendo el código</small></button>
     </div>
+    <div id="aforoCaja"></div>
     <div class="card" style="margin-top:14px"><h2>Cómo va</h2>
       <div class="kpis">
         <div class="kpi"><b>${fmtNum(s.views_30d)}</b><span>Vistas (30 días)</span></div>
@@ -1049,6 +1050,7 @@ PAGES.resumen = async (v) => {
       <button class="btn bad ghost" type="button" id="salir-equipo">Salir del equipo</button></div>`}`;
   const otra = $('#otra-revision', v);
   if (otra) otra.onclick = () => pideOtraRevision(otra);
+  pintaAforo($('#aforoCaja', v));
   const salirEq = $('#salir-equipo', v);
   if (salirEq) {
     salirEq.onclick = async () => {
@@ -1104,6 +1106,46 @@ PAGES.resumen = async (v) => {
     };
   }
 };
+
+/** «¿Hay sitio ahora?» en el resumen: tres botones iguales (Tranquilo ·
+ * Animado · Lleno), lo marcado y cuándo, y «Quitar». Cualquiera del equipo;
+ * solo si el negocio lo ha activado en «Cómo es tu local». Como `CrowdPanel`
+ * en la app. */
+async function pintaAforo(caja, estado = null) {
+  if (!caja) return;
+  const KMa = window.KlendarMarcas;
+  let st = estado;
+  if (!st) {
+    try { st = await rpc('business_crowd_status', { p_business: BIZ.id }); } catch { st = null; }
+  }
+  if (!KMa || !st || !st.enabled) { caja.innerHTML = ''; return; }
+  const M = KMa.t(I18N.lang);
+  const actual = st.live ? st.level : null;
+  const linea = !st.open_now ? bi('Ahora estás cerrado: no se ve hasta que abras.', "You're closed now: it won't show until you open.")
+    : actual && st.set_at ? bi(`Marcado ${KMa.hace(st.set_at, 'es')}. Se quita solo a las 2 horas.`, `Set ${KMa.hace(st.set_at, 'en')}. Clears itself after 2 hours.`)
+      : st.level ? bi('Lo último que marcaste ya no se ve: ha pasado más de 2 horas.', "What you last set no longer shows: it's been over 2 hours.")
+        : bi('Sin marcar: en tu ficha no sale nada.', 'Not set: nothing shows on your page.');
+  caja.innerHTML = `<div class="card aforo"><div class="aforo-cab"><h2>${esc(M.crowdTitle)}</h2>
+      ${st.level ? `<button type="button" class="linkbtn" data-aforo="">${esc(bi('Quitar', 'Clear'))}</button>` : ''}</div>
+    <div class="aforo-botones" role="group" aria-label="${esc(M.crowdTitle)}">
+      ${KMa.CROWD.map((l) => `<button type="button" class="btn${actual === l ? ' on' : ''}" data-aforo="${l}" aria-pressed="${actual === l}">${esc(M.crowd[l])}</button>`).join('')}
+    </div>
+    <p class="muted" style="margin:8px 0 0">${esc(linea)}</p></div>`;
+  $$('[data-aforo]', caja).forEach((b) => {
+    b.onclick = async () => {
+      const nivel = b.dataset.aforo || null;
+      $$('[data-aforo]', caja).forEach((x) => { x.disabled = true; });
+      try {
+        const nuevo = await rpc('set_business_crowd', { p_business: BIZ.id, p_level: nivel });
+        toast(nivel ? bi(`Marcado: ${M.crowd[nivel]}`, `Set: ${M.crowd[nivel]}`) : bi('Quitado', 'Cleared'));
+        pintaAforo(caja, nuevo);
+      } catch (e) {
+        toast(friendly(e.message), true);
+        $$('[data-aforo]', caja).forEach((x) => { x.disabled = false; });
+      }
+    };
+  });
+}
 
 // ── Publicaciones ───────────────────────────────────────────────────────────
 PAGES.publicaciones = async (v, param) => {
@@ -1704,7 +1746,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
   if (origenLugar) {
     // Y lo de RRPP (para qué RRPP, plazas y hasta cuándo vale el código).
     const { data: lugarPlan } = await sb.from('offers')
-      .select('for_kids, setting, promoter_scope, promoter_quota, promoter_code_until, promoter_code_hours')
+      .select('for_kids, setting, promoter_scope, promoter_quota, promoter_code_until, promoter_code_hours, solo_friendly, charity, kid_ages, card_requirements, listen_url')
       .eq('id', origenLugar).maybeSingle();
     if (lugarPlan) Object.assign(o, lugarPlan);
   }
@@ -1747,6 +1789,11 @@ async function offerForm(v, id, kindDefault, desde = null) {
   const ayuda = (temas) => helpBox(I18N.t('¿Cómo funciona?'), temas.map(([h, t]) => `<p><b>${esc(h)}</b><br>${esc(t)}</p>`).join(''));
   const bloque = (bid, tit, cuerpo) => `<details class="bloque" id="${bid}"><summary><span class="b-tit">${esc(tit)}</span><span class="b-res" id="${bid}Res"></span></summary><div class="b-cuerpo">${cuerpo}</div></details>`;
   const kidsVal = o.for_kids === true ? 'si' : o.for_kids === false ? 'no' : '';
+  // Marcas (tanda A): varias a la vez, en píldoras como `elige`.
+  const KMp = window.KlendarMarcas;
+  const MK = KMp.t(I18N.lang);
+  const eligeVarios = (name, opciones, actuales, etiqueta) => `<div class="elige" role="group" aria-label="${esc(etiqueta)}">${opciones.map(([val, txt]) =>
+    `<label><input type="checkbox" name="${name}" value="${esc(val)}" ${(actuales || []).includes(val) ? 'checked' : ''}><span>${esc(txt)}</span></label>`).join('')}</div>`;
 
   v.innerHTML = `
     <div class="page-head"><a class="btn sm ghost" href="#/publicaciones">← Volver</a><h1 id="pubTitulo">${esc(titulo())}</h1><span class="spacer"></span>
@@ -1858,6 +1905,11 @@ async function offerForm(v, id, kindDefault, desde = null) {
           <p class="hint" id="audAyuda" ${['all', 'promoters'].includes(o.audience || 'all') ? 'hidden' : ''}>Los demás ven que es exclusiva, sin el beneficio.</p>
           ${rrppHtml.quien}
         </fieldset>
+        <div class="bl-fila">
+          <p class="etq">${esc(MK.cardTitle)}</p>
+          ${eligeVarios('card_requirements', KMp.CARDS.map((c) => [c, MK.card[c]]), o.card_requirements, MK.cardTitle)}
+          <p class="hint">${esc(MK.cardHint)}</p>
+        </div>
         <fieldset class="f full lugar plano"><legend>Dónde</legend>
           <label class="opcion"><input type="checkbox" name="venue_on" ${o.venue_address ? 'checked' : ''}><span>Es en otro sitio</span></label>
           <p class="hint" id="lugarAyuda"></p>
@@ -1875,19 +1927,32 @@ async function offerForm(v, id, kindDefault, desde = null) {
         <div id="ninosRow" class="bl-fila">
           <p class="etq">¿Para niños?</p>
           ${elige('for_kids', [['', I18N.t('Como el local')], ['si', I18N.t('Apto para niños')], ['no', I18N.t('No apto para niños')]], kidsVal, I18N.t('¿Para niños?'))}
+          <div id="edadRow" ${kidsVal === 'si' ? '' : 'hidden'}>
+            <p class="etq" style="margin-top:12px">${esc(MK.kidAgesTitle)}</p>
+            ${eligeVarios('kid_ages', KMp.KID_AGES.map(([id, r]) => [id, MK.kidAge(r)]), o.kid_ages, MK.kidAgesTitle)}
+            <p class="hint">${esc(MK.kidAgesHint)}</p>
+          </div>
         </div>
         <div class="bl-fila">
           <p class="etq">¿Bajo techo o al aire libre?</p>
           ${elige('setting', [['', I18N.t('Como el local')], ['indoor', I18N.t('Bajo techo')], ['outdoor', I18N.t('Al aire libre')], ['both', I18N.t('Las dos cosas')]], ['indoor', 'outdoor', 'both'].includes(o.setting) ? o.setting : '', I18N.t('¿Bajo techo o al aire libre?'))}
           <p class="hint">Solo si es distinto de tu local.</p>
         </div>
+        <label class="opcion bl-fila"><input type="checkbox" name="solo_friendly" ${o.solo_friendly ? 'checked' : ''}><span><b>${esc(MK.solo)}</b><br><small class="muted">${esc(MK.soloHint)}</small></span></label>
+        <label class="opcion bl-fila" id="solidarioRow"><input type="checkbox" name="charity" ${o.charity ? 'checked' : ''}><span><b>${esc(MK.charity)}</b><br><small class="muted">${esc(MK.charityHint)}</small></span></label>
         <label class="opcion bl-fila"><input type="checkbox" name="adults_only" ${o.adults_only ? 'checked' : ''}><span><b>Solo para mayores de 18</b><br><small class="muted">Si menciona alcohol, se marca +18 solo y se revisa antes de salir.</small></span></label>
+        <label class="f bl-fila" id="escuchaRow"><span>${esc(MK.listenField)}</span><input name="listen_url" type="url" inputmode="url" maxlength="300" autocomplete="off" spellcheck="false" placeholder="https://open.spotify.com/…" value="${esc(o.listen_url || '')}">
+          <small class="hint" id="escuchaAyuda">${esc(MK.listenHint)}</small></label>
         <label class="f bl-fila"><span>Condiciones <small>(letra pequeña)</small></span><textarea name="terms" rows="2" maxlength="300" placeholder="${esc(I18N.t('Ej. Solo en el local. No acumulable.'))}">${esc(o.terms || '')}</textarea></label>
         ${serieCopia ? `<label class="opcion bl-fila"><input type="checkbox" name="keep_series" checked><span>${esc(bi(`Forma parte de la serie «${serieCopia.name}»`, `Part of the “${serieCopia.name}” series`))}<br><small class="muted">${esc(bi('Quien la sigue recibirá un aviso cuando se publique.', 'Its followers will be notified when it goes live.'))}</small></span></label>` : ''}
         ${ayuda([
           [I18N.t('Quién la ve'), I18N.t('Solo la ven ellos. Si a otra persona le llega el enlace, la ficha dice que es exclusiva y cómo conseguirla, sin enseñar el beneficio.')],
           [bi('Solo con el enlace de un RRPP', "Only through a promoter's link"), bi('No sale en Descubre, Explorar ni en tu ficha: solo la ve quien entra por el enlace o el QR de uno de tus RRPP.', "It doesn't appear in Discover, Explore or on your page: only people who come in through one of your promoters' links or QR codes can see it.")],
           [I18N.t('¿Para niños?'), I18N.t('Solo si este plan es distinto de tu local (p. ej. un taller infantil o un concierto en el patio).')],
+          [MK.cardTitle, MK.cardHint],
+          [MK.solo, MK.soloHint],
+          [MK.charity, MK.charityHint],
+          [MK.listenTitle, MK.listenHint],
           [I18N.t('Solo para mayores de 18'), I18N.t('Si el texto menciona bebidas alcohólicas se marca +18 automáticamente y se revisa antes de publicarse (normalmente en menos de 24 h). La publicidad de tabaco, vapeo o apuestas no está permitida.')],
         ])}`)}
 
@@ -1969,6 +2034,8 @@ async function offerForm(v, id, kindDefault, desde = null) {
     const deRrpp = (val('audience') || 'all') === 'promoters';
     const conAforo = !!String(campo('max_redemptions').value || '').trim();
     $('#entradasRow', v).hidden = flash;
+    $('#solidarioRow', v).hidden = flash;
+    $('#escuchaRow', v).hidden = flash;
     if (flash) $('#entradasAyuda', v).hidden = true; else pintaEntradas();
     $('#reservaRow', v).hidden = flash;
     $('#seatsRow', v).hidden = !conReserva;
@@ -2015,8 +2082,22 @@ async function offerForm(v, id, kindDefault, desde = null) {
   for (const n of ['start', 'end', 'venue_on']) campo(n).addEventListener('change', () => pintaFinAuto());
 
   // Una publicación +18 no es para niños: la pregunta no se hace.
-  const syncNinos = () => { $('#ninosRow', v).hidden = campo('adults_only').checked; };
+  const syncNinos = () => {
+    $('#ninosRow', v).hidden = campo('adults_only').checked;
+    $('#edadRow', v).hidden = val('for_kids') !== 'si';
+  };
   campo('adults_only').addEventListener('change', syncNinos);
+  $$('[name=for_kids]', v).forEach((r) => r.addEventListener('change', syncNinos));
+  // «Escúchalo antes»: qué dirá el botón, o por qué no vale.
+  const pintaEscucha = () => {
+    const raw = String(campo('listen_url').value || '').trim();
+    const s = raw ? KMp.servicio(KMp.normaliza(raw)) : null;
+    const ayuda = $('#escuchaAyuda', v);
+    ayuda.textContent = !raw ? MK.listenHint : s ? MK.listenWillSay(MK.listenOn(s.nombre)) : MK.listenInvalid;
+    ayuda.classList.toggle('err-txt', !!raw && !s);
+  };
+  campo('listen_url').addEventListener('input', pintaEscucha);
+  pintaEscucha();
 
   // El descuento: el valor (si lo lleva), el precio anterior (rebajas) y la
   // pregunta del alcohol (2x1).
@@ -2368,6 +2449,10 @@ async function offerForm(v, id, kindDefault, desde = null) {
       ...(!adultos && ninos === 'si' ? [bi('apto para niños', 'child-friendly')] : []),
       ...(!adultos && ninos === 'no' ? [bi('no apto para niños', 'not for children')] : []),
       ...({ indoor: [bi('bajo techo', 'indoor')], outdoor: [bi('al aire libre', 'outdoors')], both: [bi('bajo techo / al aire libre', 'indoor / outdoors')] }[set] || []),
+      ...($$('[name=card_requirements]:checked', v).length ? [bi('con carné', 'with ID')] : []),
+      ...(campo('solo_friendly').checked ? [bi('ideal para ir solo', 'good for going solo')] : []),
+      ...(!flash && campo('charity').checked ? [bi('solidario', 'charity')] : []),
+      ...(!flash && String(campo('listen_url').value || '').trim() ? [bi('para escuchar antes', 'listen first')] : []),
       ...(String(campo('terms').value || '').trim() ? [bi('con condiciones', 'with terms')] : []),
       ...(serieCopia && campo('keep_series')?.checked ? [bi(`en la serie «${serieCopia.name}»`, `in the “${serieCopia.name}” series`)] : []),
     ].join(' · '));
@@ -2408,7 +2493,12 @@ async function offerForm(v, id, kindDefault, desde = null) {
     campo('reservations_enabled').checked = !!d.reservations_enabled;
     pon('for_kids', d.for_kids === true ? 'si' : d.for_kids === false ? 'no' : '');
     pon('setting', ['indoor', 'outdoor', 'both'].includes(d.setting) ? d.setting : '');
-    syncNinos();
+    campo('solo_friendly').checked = !!d.solo_friendly;
+    campo('charity').checked = !!d.charity;
+    $$('[name=card_requirements]', v).forEach((c) => { c.checked = (d.card_requirements || []).includes(c.value); });
+    $$('[name=kid_ages]', v).forEach((c) => { c.checked = (d.kid_ages || []).includes(c.value); });
+    pon('listen_url', d.listen_url || '');
+    syncNinos(); pintaEscucha();
     const ds = d.discount || {};
     pon('discount_type', ds.type || '');
     pon('discount_value', ds.type === 'other' ? ds.value : precioTxt(ds.value));
@@ -2481,6 +2571,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
       adults_only: campo('adults_only').checked,
       for_kids: forKids(campo('adults_only').checked, val('for_kids')),
       setting: val('setting') || null,
+      ...marcasDe(),
       style: { template: estilo.template, ...(estilo.accent ? { accent: estilo.accent } : {}) },
       code_ttl_minutes: val('code_ttl_minutes') ? Number(val('code_ttl_minutes')) : null,
       reservations_enabled: kind !== 'flash_offer' && campo('reservations_enabled').checked,
@@ -2498,6 +2589,20 @@ async function offerForm(v, id, kindDefault, desde = null) {
       guardadas = tpl2 || guardadas;
       toast('Plantilla guardada');
     } catch (err) { toast(friendly(err.message), true); }
+  };
+
+  // Las marcas, como las guarda la app: la edad solo con «Apto para niños»;
+  // «Solidario» y «Escúchalo antes», solo en eventos (la base lo exige).
+  const marcasDe = () => {
+    const evento = kind === 'future_event';
+    const raw = String(campo('listen_url').value || '').trim();
+    return {
+      solo_friendly: campo('solo_friendly').checked,
+      card_requirements: $$('[name=card_requirements]:checked', v).map((c) => c.value).sort(),
+      kid_ages: !campo('adults_only').checked && val('for_kids') === 'si' ? $$('[name=kid_ages]:checked', v).map((c) => c.value).sort() : [],
+      charity: evento && campo('charity').checked,
+      listen_url: evento && raw ? KMp.normaliza(raw) : null,
+    };
   };
 
   // ── Errores: el bloque se abre solo y lleva hasta el campo ───────────────
@@ -2574,6 +2679,10 @@ async function offerForm(v, id, kindDefault, desde = null) {
         fallo($('#buscarLugar', v), I18N.t('Marca el sitio en el mapa.')); return;
       }
     }
+    if (kind === 'future_event' && String(campo('listen_url').value || '').trim()
+      && !KMp.servicio(KMp.normaliza(campo('listen_url').value))) {
+      fallo(campo('listen_url'), MK.listenInvalid); return;
+    }
     if (alas && new Date(alas) <= new Date()) { toast(I18N.t('La hora de publicación tiene que ser futura.'), true); return; }
     if (alas && new Date(alas) > Date.now() + 60 * 864e5) { toast(I18N.t('Se puede dejar programada como mucho a 60 días.'), true); return; }
     const price = (f.get('price') || '').toString().replace(',', '.');
@@ -2631,6 +2740,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
       // null = como el local. Una +18 nunca se marca como apta para niños.
       for_kids: forKids(campo('adults_only').checked, val('for_kids')),
       setting: val('setting') || null,
+      ...marcasDe(),
       audience: audiencia,
       // Las columnas de RRPP: las suyas o, si deja de serlo, las de siempre.
       ...(rrpp ? rrpp.cols : o.audience === 'promoters' ? RRPP_COLUMNAS_FUERA : {}),
@@ -2997,11 +3107,17 @@ function tarjetaCodigo(r, estado) {
     ? `<p class="cod-rrpp">${ms('person')}<span>${esc(bi(`Lista de ${nombreRrpp}`, `${nombreRrpp}'s list`))}${r.promoter_off_offer
       ? `<small>${esc(bi('fuera de su oferta', 'outside their offer'))}</small>` : ''}</span></p>` : '';
   const tipoRrpp = r.promoter_offer && !ajeno ? bi('Oferta de RRPP', 'Promoter offer') : '';
+  // Con carné: «Pide el carné de estudiante», bien visible (lo comprueba el
+  // local; la app no puede). Como `CardAskBanner` en la app.
+  const KMc = window.KlendarMarcas;
+  const docs = KMc && !ajeno && estado !== 'bad' ? KMc.documentos(r.card_requirements, I18N.lang) : '';
+  const carne = docs ? `<p class="cod-carne" role="status">${ms('school')}<b>${esc(KMc.t(I18N.lang).cardAsk(docs))}</b></p>` : '';
   return `<div class="codigo-card ${estado}">
     <div class="cod-top">${foto}<div class="cod-cab">
       ${tipo || r.business_name ? `<span class="cod-tipo">${esc([tipo, tipoRrpp, r.business_name].filter(Boolean).join(' · '))}</span>` : ''}
       <h2 class="cod-titulo">${esc(titulo)}</h2></div></div>
     ${rrpp}
+    ${carne}
     ${dar ? `<p class="cod-label">${esc(estado === 'bad' ? bi('Era para', 'It was for') : bi('Aplicar al cliente', 'Apply to the customer'))}</p>
       <p class="cod-dar">${esc(dar)}</p>
       ${antes ? `<p class="cod-antes">${esc(antes)}</p>` : ''}` : ''}

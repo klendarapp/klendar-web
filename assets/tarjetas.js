@@ -520,8 +520,19 @@
     var espera = null;
     var pedido = 0;
     f.addEventListener('change', function () {
+      // «Edad de los niños» solo con «Apto para niños» marcado (y sin él se
+      // desmarca: la base no la usaría).
+      var edades = f.querySelector('[data-con-ninos]');
+      if (edades) {
+        var ninos = f.querySelector('.hoja-sitio input[value="ninos"], .hoja-sitio input[value="kids"]');
+        var con = Boolean(ninos && ninos.checked);
+        edades.hidden = !con;
+        if (!con) Array.prototype.forEach.call(edades.querySelectorAll('input'), function (c) { c.checked = false; });
+      }
       if (masN) {
-        var n = f.querySelectorAll('details.hoja-mas input[type=checkbox]:checked').length;
+        // Casillas marcadas y opciones elegidas que no son «Cualquiera».
+        var n = f.querySelectorAll('details.hoja-mas input[type=checkbox]:checked').length
+          + Array.prototype.filter.call(f.querySelectorAll('details.hoja-mas input[type=radio]:checked'), function (r) { return r.value !== ''; }).length;
         masN.hidden = n === 0;
         masN.textContent = n === 1 ? masN.getAttribute('data-uno') : masN.getAttribute('data-varios').replace('{n}', n);
       }

@@ -18,6 +18,7 @@ import { decodeSeg,
 import { cuandoCorto, plataformaEntradas, rejilla } from './tarjeta.js';
 import { SITIO_PLAN, listaSitio } from './sitio.js';
 import KR from '../../assets/rrpp-enlace.js';
+import KM from '../../assets/marcas.js';
 
 // Iconos de Material (los mismos que la app), en SVG: las páginas públicas
 // no cargan la fuente de iconos.
@@ -46,6 +47,14 @@ const PATHS = {
 const icono = (n, size = 18) => `<svg class="ic" viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true"><path fill="currentColor" d="${PATHS[n]}"/></svg>`;
 
 const pre = (lang) => (lang === 'en' ? '/en' : '');
+
+/** «¿Hay sitio ahora?» lo pinta el navegador (la página va en caché y lo
+ * marcado caduca a las 2 h): /assets/sitio-ahora.js. */
+export const sitioAhoraScripts = (lang) => {
+  const sp = supabasePublic();
+  return `<script src="/assets/marcas.js?v=1" defer></script>
+<script src="/assets/sitio-ahora.js?v=1" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}" data-lang="${lang === 'en' ? 'en' : 'es'}"></script>`;
+};
 
 /** El menú ⋮ de las fichas (como la app): lo que se usa poco (añadir al
  * calendario, «¿Por qué ves esto?», Denunciar) sin competir con Guardar o
@@ -176,6 +185,9 @@ export async function offerPage(id, lang, rpRaw = '') {
   // Cómo es el sitio según la publicación o su local (sin deducir nada por
   // la categoría): se pide ya, a la vez que la dirección del negocio.
   const rasgosP = rpcAll('offer_place_traits', { p_offer: id }).catch(() => []);
+  // Solo, solidario, edades, carné y «Escúchalo antes» (sin ellas, la ficha
+  // sale igual).
+  const marcasP = rpc('offer_marks', { p_offer: id }).catch(() => null);
   // La ficha del negocio, por su dirección con nombre.
   const bHref = bizPath(lang, (await slugDe(o.business_id)) || o.business_id);
   // Exclusiva para favoritos o clientes: la web pública va siempre sin
@@ -249,6 +261,18 @@ export async function offerPage(id, lang, rpRaw = '') {
     o.adults_only ? '<span class="badge">+18</span>' : '',
     deRrpp ? `<span class="badge">${en ? 'Promoter offer' : 'Oferta de RRPP'}</span>` : '',
   ].filter(Boolean).join('');
+  // Las marcas de la publicación (las mismas que la app).
+  const M = KM.t(lang);
+  const marcas = (await marcasP) || {};
+  const sellosMarca = [
+    marcas.charity ? `<span class="badge" title="${esc(M.charityHint)}">${esc(M.charity)}</span>` : '',
+    marcas.solo ? `<span class="badge">${esc(M.solo)}</span>` : '',
+  ].join('');
+  const carnes = KM.carnes(marcas.card_requirements);
+  const notaCarne = carnes.length
+    ? `<p class="nota-marca"><b>${esc(carnes.map((c) => M.card[c]).join(' · '))}</b><span class="muted">${esc(M.cardChecked)}</span></p>` : '';
+  const edadesTxt = KM.edadesTexto(marcas.kid_ages, lang);
+  const escucha = KM.servicio(marcas.listen_url);
   // «Te apuntas a la lista de…» (siempre a la vista, junto al botón) y, en
   // una de RRPP, cuántas plazas quedan en su lista y hasta cuándo vale.
   const nombreRrpp = prom ? KR.nombreDe(prom, lang) : '';
@@ -267,7 +291,7 @@ export async function offerPage(id, lang, rpRaw = '') {
   <div class="detail ficha${pieces.length ? '' : ' sin-media'}" data-equipo-biz="${esc(o.business_id)}">
     ${carrusel(pieces, { titulo: o.title, lang })}
     <div class="d-head">
-      <div class="d-top"><div class="badges"><span class="badge">${esc(flash ? (en ? 'Flash offer' : 'Oferta flash') : (en ? 'Event' : 'Evento'))}</span>${badges}</div>
+      <div class="d-top"><div class="badges"><span class="badge">${esc(flash ? (en ? 'Flash offer' : 'Oferta flash') : (en ? 'Event' : 'Evento'))}</span>${badges}${sellosMarca}</div>
       ${masMenu([
     !flash && o.event_at && !over ? `<a href="${esc(icsHref(o, o.venue_address || where, `${BASE}${path}`))}" download="${esc((o.title || 'evento').replace(/[^\p{L}\p{N}]+/gu, '-').slice(0, 60))}.ics">${en ? 'Add to calendar' : 'Añadir al calendario'}</a>` : '',
     `<a href="#por-que">${S.why}</a>`,
@@ -285,7 +309,9 @@ export async function offerPage(id, lang, rpRaw = '') {
         ${o.seats_left != null && !soldOut && !over ? `<span class="dato-chip">${esc(en ? (o.seats_left === 1 ? '1 place left' : `${o.seats_left} places left`) : (o.seats_left === 1 ? 'Queda 1 plaza' : `Quedan ${o.seats_left} plazas`))}</span>` : ''}
       </p>
       ${prior ? `<p class="rule">${S.prior}</p>` : ''}
+      ${notaCarne}
       ${listaSitio((await rasgosP).filter((t) => SITIO_PLAN.includes(t)), lang, { cls: 'sitio-linea' })}
+      ${edadesTxt ? `<p class="note edades">${esc(M.kidAgesLine(edadesTxt))}</p>` : ''}
       ${over ? '' : '<p class="quien-va" id="quien-va" hidden></p>'}
     </div>
     <aside class="side">
@@ -339,6 +365,8 @@ export async function offerPage(id, lang, rpRaw = '') {
     </aside>
     <div class="d-body">
       ${o.description ? `<h2>${S.about}</h2><p data-tr="offer:${esc(o.id)}:description">${esc(o.description).replace(/\n/g, '<br>')}</p>` : ''}
+      ${escucha ? `<h2>${esc(M.listenTitle)}</h2>
+      <p class="acciones"><a class="pill escucha" href="${esc(marcas.listen_url)}" rel="nofollow noopener" target="_blank" aria-label="${esc(`${M.listenOn(escucha.nombre)} (${M.opensOutside})`)}">${KM.icono(escucha, 18)} <span>${esc(M.listenOn(escucha.nombre))}</span></a></p>` : ''}
       ${o.terms ? `<h2>${S.terms}</h2><p class="muted" data-tr="offer:${esc(o.id)}:terms">${esc(o.terms).replace(/\n/g, '<br>')}</p>` : ''}
       ${where ? `<h2>${S.where}</h2>
       <p class="info-linea">${icono('lugar')}<span>${o.lat ? `<a href="${esc(`https://www.google.com/maps/search/?api=1&query=${o.lat},${o.lng}`)}" rel="nofollow noopener" target="_blank">${esc(where)}</a>` : esc(where)}</span></p>` : ''}
@@ -606,7 +634,7 @@ export async function businessPage(param, lang, search = '') {
   // «Clientes verificados»: solo las reseñas de quien ha canjeado algo aquí
   // (`?resenas=verificadas`, el mismo filtro que la app).
   const soloVerificadas = new URLSearchParams(search).get('resenas') === 'verificadas';
-  const [offers, sellos, carta, opiniones, novedades, cierres, nVerificadas, sitio] = await Promise.all([
+  const [offers, sellos, carta, opiniones, novedades, cierres, nVerificadas, local] = await Promise.all([
     rpcAll('business_offers', { p_id: id }),
     rpcAll('stamp_cards_of', { p_business: id }).catch(() => []), // opcional: sin ella, la ficha sale igual
     rpcAll('business_menu', { p_business: id }),
@@ -615,8 +643,12 @@ export async function businessPage(param, lang, search = '') {
     rpcAll('business_closures', { p_business: id }),
     rpc('business_verified_review_count', { p_id: id }).then((n) => Number(n) || 0).catch(() => 0),
     // «El sitio»: lo que marca el negocio (terraza, apto para niños…).
-    rows('businesses', `select=amenities&id=eq.${id}`).then((r) => r[0]?.amenities || []).catch(() => []),
+    rows('businesses', `select=amenities,price_level,crowd_enabled&id=eq.${id}`).then((r) => r[0] || {}).catch(() => ({})),
   ]);
+  // «El sitio», el rango de precio («€€») y si dice «¿Hay sitio ahora?».
+  const sitio = Array.isArray(local.amenities) ? local.amenities : [];
+  const precio = KM.simbolo(Number(local.price_level));
+  const precioHtml = precio ? `<span class="precio-local" aria-label="${esc(KM.t(lang).priceA11y + KM.significado(Number(local.price_level), lang))}">${precio}</span>` : '';
 
   const S = en
     ? {
@@ -779,7 +811,9 @@ export async function businessPage(param, lang, search = '') {
         ${masMenu([`<a class="mas-peligro" data-solo-publico href="${cuenta(lang)}#/denunciar/business/${encodeURIComponent(b.id)}" rel="nofollow">${S.reportShort}</a>`], lang, { soloPublico: true })}
       </div>
       ${where ? `<a class="neg-dir" href="${esc(maps || '#')}" rel="nofollow noopener" target="_blank">${icono('lugar')}<span>${esc(b.address || where)}</span><svg class="ic" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M8.59 16.59 13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg></a>` : ''}
-      ${b.rating && b.ratings ? `<p class="neg-nota"><a href="#resenas"><span class="stars-mini" aria-hidden="true">★</span> ${nota(b.rating, lang)} · ${esc(en ? (b.ratings === 1 ? '1 review' : `${b.ratings} reviews`) : (b.ratings === 1 ? '1 reseña' : `${b.ratings} reseñas`))}</a></p>` : ''}
+      ${b.rating && b.ratings ? `<p class="neg-nota"><a href="#resenas"><span class="stars-mini" aria-hidden="true">★</span> ${nota(b.rating, lang)} · ${esc(en ? (b.ratings === 1 ? '1 review' : `${b.ratings} reviews`) : (b.ratings === 1 ? '1 reseña' : `${b.ratings} reseñas`))}</a>${precioHtml ? ` <span aria-hidden="true">·</span> ${precioHtml}` : ''}</p>`
+    : precioHtml ? `<p class="neg-nota">${precioHtml}</p>` : ''}
+      ${local.crowd_enabled ? `<p class="sitio-ahora" data-sitio-ahora="${esc(b.id)}" hidden></p>` : ''}
       <div class="badges">
         ${b.is_verified ? `<span class="badge ok">✓ ${S.verified}</span>` : ''}
         ${b.redemptions_total ? `<span class="badge">${esc(S.redeemed(Number(b.redemptions_total)))}</span>` : ''}
@@ -912,7 +946,7 @@ export async function businessPage(param, lang, search = '') {
   return html(publicPage({
     lang, path, body: body + MENU_JS, title: conCiudad ? `${b.name} · ${b.city}` : b.name, description, image: b.cover || b.logo,
     head: `<meta name="robots" content="${b.adults_only || conVisita || b.closed_indefinitely ? 'noindex' : 'index, follow'}">
-${ldScript(jsonLd)}${horario ? '\n<script src="/assets/zona.js?v=1" defer></script>\n<script src="/assets/horario.js?v=1" defer></script>' : ''}${conVisita ? `\n${conVisita}` : ''}
+${ldScript(jsonLd)}${horario ? '\n<script src="/assets/zona.js?v=1" defer></script>\n<script src="/assets/horario.js?v=1" defer></script>' : ''}${conVisita ? `\n${conVisita}` : ''}${local.crowd_enabled ? `\n${sitioAhoraScripts(lang)}` : ''}
 ${traducir(lang, `business:${b.id}`, carta.length ? `menu:${b.id}` : '')}`,
   }), 200, conVisita ? 'no-store' : undefined);
 }

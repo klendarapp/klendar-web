@@ -569,6 +569,22 @@ a.cal-dia { text-decoration: none; }
   background: var(--ink); color: var(--surface); font-size: 18px; font-weight: 800; }
 .cod-rrpp .ms { font-size: 22px; }
 .cod-rrpp small { display: block; font-size: 14px; font-weight: 600; opacity: .85; }
+/* Con carné: «Pide el carné de estudiante» en el escáner, bien visible (ámbar,
+   como un aviso; el coral es de la oferta). */
+.cod-carne { display: flex; align-items: center; gap: 10px; margin-top: 14px !important; padding: 12px 14px; border-radius: 16px;
+  border: 2px solid #E8A33D; background: color-mix(in srgb, #E8A33D 14%, transparent); font-size: 18px; }
+.cod-carne .ms { font-size: 26px; }
+/* «Cómo es tu local»: el título del rango de precio. */
+.f-tit { margin: 0 0 8px; font-size: 14px; font-weight: 600; }
+.hint.err-txt, small.err-txt { color: #b3261e; }
+@media (prefers-color-scheme: dark) { .hint.err-txt, small.err-txt { color: #FF9B9B; } }
+/* «¿Hay sitio ahora?» en el resumen: tres botones iguales; el marcado, en tinta. */
+.card.aforo { margin-top: 14px; }
+.aforo-cab { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.aforo-cab h2 { margin: 0; }
+.aforo-botones { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
+.aforo-botones .btn { justify-content: center; min-height: 44px; }
+.aforo-botones .btn.on { background: var(--ink); color: var(--surface); border-color: var(--ink); }
 
 /* ── «Tu ficha» por apartados y el alta en tres pasos (ficha.js) ───────── */
 .form.ficha-form { max-width: 680px; }

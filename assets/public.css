@@ -194,6 +194,7 @@ footer.pub-foot a { color: var(--ink-2); }
 .mapa-explorar .mapboxgl-popup-tip { display: none; }
 .pop { display: grid; gap: 2px; color: var(--ink); text-decoration: none; max-width: 220px; }
 .pop span { color: var(--ink-2); font-size: 13px; }
+.pop .pop-ahora { color: var(--ink); font-size: 12px; font-weight: 700; }
 button.chip { font-family: inherit; cursor: pointer; }
 
 /* ── Planes con amigos ────────────────────────────────────────────────── */
@@ -642,6 +643,18 @@ body.pagina-feed[data-cromo="fuera"] .feed-cab { visibility: hidden; }
 .pub ul.sitio-linea { gap: 4px 14px; margin: 2px 0 10px; }
 .pub ul.sitio-linea li { padding: 0; border: 0; background: none; gap: 5px; font-size: 13px; color: var(--ink-2); }
 .op-sitio span { gap: 7px; }
+/* Marcas (tanda A): el requisito de carné, la edad recomendada, el rango de
+   precio del local, «¿Hay sitio ahora?» y «Escúchalo antes». Neutros: el
+   coral queda para la oferta y el botón principal. */
+.pub .nota-marca { display: flex; flex-direction: column; gap: 2px; margin: 10px 0; padding: 12px 14px;
+  border: 1px solid var(--glass-border); border-radius: 16px; }
+.pub .nota-marca .muted { font-size: 13px; }
+.pub .note.edades { margin: 0 0 10px; font-weight: 600; color: var(--ink); }
+.pub .precio-local { font-weight: 800; letter-spacing: .02em; }
+.pub .sitio-ahora { display: inline-flex; align-items: center; gap: 6px; margin: 4px 0 10px; padding: 6px 12px;
+  border-radius: 999px; border: 1px solid var(--glass-border); background: var(--glass); font-weight: 700; font-size: 14px; }
+.pub .sitio-ahora[hidden] { display: none; }
+.pub .pill.escucha .ic { flex: none; }
 .op-sitio input[type=checkbox]:checked + span::before { content: none; }
 .op-sitio .ic { flex: none; }
 .hoja-cats.plegada .cat-extra { display: none; }

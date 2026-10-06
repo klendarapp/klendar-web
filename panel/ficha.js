@@ -255,11 +255,24 @@ const htmlMayores = (d) => `
   <label class="f full casilla"><input type="checkbox" name="adults_only" ${d.adults_only ? 'checked' : ''}>
     <span>Solo para mayores de 18 <small class="muted">Si lo que publicas menciona alcohol, se marca +18 solo y se revisa antes de salir. La publicidad de tabaco, vapeo o apuestas no está permitida. En un negocio +18, todo el equipo tiene que ser mayor de edad.</small></span></label>`;
 
-const htmlSitio = (sitio) => `
+/** «Cómo es tu local»: El sitio, el rango de precio y «¿Hay sitio ahora?»
+ * (`extra` = { precio, aforo }), como el apartado de la app. */
+const htmlSitio = (sitio, extra = {}) => {
+  const M = KlendarMarcas.t(I18N.lang);
+  const precio = Number(extra.precio) || 0;
+  return `
   <p class="muted full" style="margin:0">Marca lo que tenga tu local: sale en tu ficha y la gente lo puede buscar en los filtros.</p>
   <div class="sitio-ops full" role="group" aria-label="${esc(I18N.t('Cómo es tu local'))}">
     ${SITIO_PANEL.map(([k, nombre, icono]) => `<label class="sitio-op"><input type="checkbox" name="sitio" value="${k}" ${sitio.includes(k) ? 'checked' : ''}><span>${ms(icono)}${esc(nombre)}</span></label>`).join('')}
-  </div>`;
+  </div>
+  <div class="full"><p class="f-tit">${esc(M.priceTitle)}</p>
+    <div class="sitio-ops" role="radiogroup" aria-label="${esc(M.priceTitle)}">
+      ${[0, 1, 2, 3, 4].map((n) => `<label class="sitio-op"><input type="radio" name="price_level" value="${n || ''}" ${precio === n ? 'checked' : ''}><span${n ? ` aria-label="${esc(`${KlendarMarcas.simbolo(n)}, ${KlendarMarcas.significado(n, I18N.lang)}`)}"` : ''}>${esc(n ? KlendarMarcas.simbolo(n) : M.priceNone)}</span></label>`).join('')}
+    </div>
+    <p class="muted" style="margin:6px 0 0">${esc(M.priceHint)}</p></div>
+  <label class="f full casilla"><input type="checkbox" name="crowd_enabled" ${extra.aforo ? 'checked' : ''}>
+    <span>${esc(M.crowdTitle)} <small class="muted">${esc(M.crowdSettingHint)}</small></span></label>`;
+};
 
 /** Logo, portada y las fotos del local. `est` = { logo, portada, galeria }. */
 const htmlFotos = (est) => `
@@ -415,7 +428,7 @@ function fichaCompleta(b, { sitio, carta }) {
 // ── «Tu ficha»: el índice y cada apartado ───────────────────────────────────
 async function datosFicha() {
   const [{ data: b }, cats, privado, carta] = await Promise.all([
-    sb.from('businesses').select('id, name, description, category_id, address, city, phone, website, contact_email, social_links, logo_url, cover_image_url, gallery, opening_hours, adults_only, amenities, menu_url, menu_images').eq('id', BIZ.id).maybeSingle(),
+    sb.from('businesses').select('id, name, description, category_id, address, city, phone, website, contact_email, social_links, logo_url, cover_image_url, gallery, opening_hours, adults_only, amenities, price_level, crowd_enabled, menu_url, menu_images').eq('id', BIZ.id).maybeSingle(),
     CATS.length ? CATS : sb.from('categories').select('*').order('position', { ascending: true }).then(({ data }) => data || []),
     // El NIF no se puede leer de la tabla (no es público): lo da
     // `business_private` a quien gestiona.
@@ -455,7 +468,8 @@ function indiceFicha(v, b, cats, carta) {
   const desc = String(b.description || '').trim().replace(/\s+/g, ' ');
   const redes = Object.entries(b.social_links || {}).filter(([k, x]) => k !== 'web' && String(x || '').trim())
     .map(([k]) => ({ instagram: 'Instagram', tiktok: 'TikTok', facebook: 'Facebook' }[k] || k));
-  const sitioNombres = SITIO_PANEL.filter(([k]) => b.amenities.includes(k)).map(([, n]) => I18N.t(n));
+  const sitioNombres = [KlendarMarcas.simbolo(Number(b.price_level)),
+    ...SITIO_PANEL.filter(([k]) => b.amenities.includes(k)).map(([, n]) => I18N.t(n))].filter(Boolean);
   const resumen = {
     fotos: une([b.cover_image_url && I18N.t('Portada'), b.logo_url && I18N.t('Logo'), (b.gallery || []).length && foto(b.gallery.length)].filter(Boolean), 'Sin fotos todavía'),
     basico: [nombreCat || (b.category_id ? '' : I18N.t('Sin categoría')), desc || I18N.t('sin descripción')].filter(Boolean).join(' · '),
@@ -522,7 +536,7 @@ async function parteFicha(v, parte, b, cats) {
     donde: () => `${htmlDonde(d)}<p class="hint full">Si cambias la ciudad o te mudas a más de 1 km, lo revisamos de nuevo. Tu negocio sigue a la vista mientras tanto y lo que tengas publicado se muda contigo.</p>`,
     horario: () => '<div class="full" data-horario></div>',
     contacto: () => htmlContacto(d),
-    local: () => htmlSitio(b.amenities),
+    local: () => htmlSitio(b.amenities, { precio: b.price_level, aforo: b.crowd_enabled }),
     klendar: () => htmlKlendar(d),
     mayores: () => htmlMayores(d),
   }[parte];
@@ -538,7 +552,8 @@ async function parteFicha(v, parte, b, cats) {
       donde: () => ({ address: String(x.address || '').trim(), city: String(x.city || '').trim(), ...(d.punto ? { lat: d.punto.lat, lng: d.punto.lng } : {}) }),
       horario: () => ({ opening_hours: horario ? horario.valor() : null }),
       contacto: () => ({ phone: String(x.phone || '').trim(), website: String(x.website || '').trim(), contact_email: String(x.contact_email || '').trim(), social_links: socialDe(x) }),
-      local: () => ({ amenities: $$('[name=sitio]:checked', v).map((c) => c.value).sort() }),
+      local: () => ({ amenities: $$('[name=sitio]:checked', v).map((c) => c.value).sort(),
+        price_level: Number(x.price_level) || null, crowd_enabled: !!f().elements.crowd_enabled.checked }),
       klendar: () => ({ tax_id: String(x.tax_id || '').trim() }),
       mayores: () => ({ adults_only: !!f().elements.adults_only.checked }),
     }[parte]();
@@ -587,7 +602,9 @@ async function parteFicha(v, parte, b, cats) {
     }
     try {
       if (parte === 'local') {
-        await rpc('set_business_amenities', { p_business: BIZ.id, p_amenities: patch().amenities });
+        const p = patch();
+        await rpc('set_business_amenities', { p_business: BIZ.id, p_amenities: p.amenities });
+        await rpc('set_business_place_extras', { p_business: BIZ.id, p_price_level: p.price_level, p_crowd_enabled: p.crowd_enabled });
       } else {
         const p = patch();
         await rpc('update_business', { p_id: BIZ.id, p_patch: p });
@@ -611,7 +628,7 @@ async function parteFicha(v, parte, b, cats) {
 // ── Alta en tres pasos ──────────────────────────────────────────────────────
 let ALTA = null;
 const altaNueva = () => ({
-  name: '', category_id: null, description: '', address: '', city: '', punto: null, horas: null, sitio: [],
+  name: '', category_id: null, description: '', address: '', city: '', punto: null, horas: null, sitio: [], precio: 0, aforo: false,
   phone: '', website: '', contact_email: '', instagram: '', tiktok: '', facebook: '', tax_id: '', adults_only: false, terms: false,
   fotos: { logo: '', portada: '', galeria: [] },
 });
@@ -643,7 +660,7 @@ PAGES.alta = async (v, param) => {
       ${htmlBasico(A)}`,
     2: () => `${htmlDonde(A)}
       <div class="full"><h2 class="alta-sub">Horario</h2><p class="muted" style="margin:0 0 10px">Si aún no lo tienes claro, puedes ponerlo luego.</p><div data-horario></div></div>
-      <div class="full"><h2 class="alta-sub">Cómo es tu local</h2></div>${htmlSitio(A.sitio)}`,
+      <div class="full"><h2 class="alta-sub">Cómo es tu local</h2></div>${htmlSitio(A.sitio, A)}`,
     3: () => `<div class="full"><h2 class="alta-sub">Fotos</h2><p class="muted" style="margin:0">Opcional: lo puedes completar después desde Tu ficha.</p></div>
       ${htmlFotos(A.fotos)}
       <div class="full"><h2 class="alta-sub">Contacto y redes</h2></div>${htmlContacto(A)}
@@ -662,7 +679,11 @@ PAGES.alta = async (v, param) => {
     }
     if (f.elements.adults_only) A.adults_only = f.elements.adults_only.checked;
     if (f.elements.terms) A.terms = f.elements.terms.checked;
-    if (paso === 2) A.sitio = $$('[name=sitio]:checked', f).map((c) => c.value);
+    if (paso === 2) {
+      A.sitio = $$('[name=sitio]:checked', f).map((c) => c.value);
+      A.precio = Number(x.price_level) || 0;
+      A.aforo = !!f.elements.crowd_enabled?.checked;
+    }
   };
 
   const pinta = (foco) => {
@@ -754,6 +775,9 @@ PAGES.alta = async (v, param) => {
       });
       // El negocio ya existe: si esto falla, se marca luego en la ficha.
       if (A.sitio.length) await rpc('set_business_amenities', { p_business: id, p_amenities: A.sitio }).catch(() => null);
+      if (A.precio || A.aforo) {
+        await rpc('set_business_place_extras', { p_business: id, p_price_level: A.precio || null, p_crowd_enabled: A.aforo }).catch(() => null);
+      }
       const punto = A.punto;
       ALTA = null;
       GUARDA = null;
