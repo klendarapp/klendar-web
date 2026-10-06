@@ -909,7 +909,7 @@ export async function explorePage(url, lang, modo = 'explorar') {
   const restablecer = link({ kind: negocios ? 'places' : '', cat: '', km: RADIO_KM, price: '', when: '', soloDescuento: false, abierto: false, traits: [],
     edades: [], precioLocal: 0, carne: '', solo: false, solidario: false, antesCierre: false });
   // Categorías: las 8 más usadas (las que más tienen publicado ahora, como la
-  // app) y la elegida, y «Ver todas (28)», que abre el selector con buscador y
+  // app) y la elegida, y «Ver todas (31)», que abre el selector con buscador y
   // grupos (/assets/categorias.js). Sin JavaScript, el resto sale debajo,
   // por grupos.
   const CATS_VISIBLES = 8;
@@ -1037,7 +1037,7 @@ export async function explorePage(url, lang, modo = 'explorar') {
     ${ordenMenu}
   </div>
   <p id="cercaErr" class="aviso-error" role="alert" hidden></p>
-  <script src="/assets/categorias.js?v=3" defer></script>
+  <script src="/assets/categorias.js?v=4" defer></script>
   <script src="/assets/gustos.js?v=1" defer data-lang="${en ? 'en' : 'es'}"></script>`;
 
   // En Explorar, sin ubicación ni ciudad: «Mira primero lo que tienes más cerca».
@@ -1251,13 +1251,16 @@ export async function categoryPage(rawCity, rawCat, lang) {
   const lugares = negocios?.items || [];
   await conPrecios(lugares);
   // Una categoría que no existe (escrita a mano en la URL) es un 404, no una
-  // página vacía con 200. Si existe pero aquí no hay nada, la página vacía.
-  if (!cat && !items.length && !lugares.length) {
-    const existe = await rows('categories', `select=slug&slug=eq.${encodeURIComponent(slug)}`).catch(() => [{ slug }]);
-    if (!existe.length) return notFound(lang, path, 'c');
+  // página vacía con 200. Si existe pero aquí no hay nada, la página vacía,
+  // con su nombre («Panaderías y pastelerías en Madrid», no «Bakery»).
+  let fila = null;
+  if (!cat) {
+    const existe = await rows('categories', `select=slug,names&slug=eq.${encodeURIComponent(slug)}`).catch(() => [{ slug }]);
+    if (!existe.length && !items.length && !lugares.length) return notFound(lang, path, 'c');
+    fila = existe[0]?.names ? existe[0] : null;
   }
   const city = PRETTY(items[0]?.city || lugares[0]?.city || rawc);
-  const nombre = cat ? catName(cat, en) : PRETTY(slug);
+  const nombre = cat || fila ? catName(cat || fila, en) : PRETTY(slug);
   const h1 = S.catTitle(nombre, city);
 
   const body = `

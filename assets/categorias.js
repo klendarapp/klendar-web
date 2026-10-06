@@ -1,7 +1,7 @@
 // El selector de categorías: uno solo para toda la web, igual que en la app
 // (`lib/features/categories/presentation/category_picker.dart`).
 //
-// Buscador y las 28 categorías en cinco grupos (Comer y beber · Noche,
+// Buscador y las 31 categorías en cinco grupos (Comer y beber · Noche,
 // música y cultura · Ocio, deporte y familia · Belleza y salud · Tiendas y
 // servicios), de una (alta y «Tu ficha» del panel; la hoja de filtros de
 // Explorar y Descubre) o de varias («Avísame si…» y «Cerca de ti» en «Tu
@@ -23,12 +23,13 @@
     { id: 'services', es: 'Tiendas y servicios', en: 'Shops and services' },
   ];
 
-  /** El reparto de la migración (si cambia, cambiar los tres sitios). */
+  /** El reparto de las migraciones 20261114100000 y 20261125100000 (si
+   * cambia, cambiar los tres sitios). */
   const POR_SLUG = {
-    bar: 'food', restaurant: 'food', cafe: 'food', gourmet: 'food', market: 'food',
+    bar: 'food', restaurant: 'food', cafe: 'food', bakery: 'food', icecream: 'food', gourmet: 'food', market: 'food',
     nightclub: 'night', music: 'night', stage: 'night', culture: 'night', art: 'night',
     games: 'leisure', experiences: 'leisure', family: 'leisure', sport: 'leisure', gym: 'leisure', learning: 'leisure', lodging: 'leisure',
-    wellness: 'care', beauty: 'care', hairdresser: 'care', health: 'care',
+    wellness: 'care', beauty: 'care', hairdresser: 'care', tattoo: 'care', health: 'care',
     books: 'services', shop: 'services', pets: 'services', workshop: 'services', home: 'services', civic: 'services', other: 'services',
   };
 
@@ -38,7 +39,9 @@
     bar: ['tapas', 'cerveza', 'cana', 'vermut', 'pub', 'beer', 'pint'],
     restaurant: ['comer', 'cena', 'comida', 'menu', 'dinner', 'lunch', 'food'],
     cafe: ['cafe', 'desayuno', 'brunch', 'merienda', 'coffee', 'breakfast'],
-    gourmet: ['vino', 'cata', 'bodega', 'wine', 'tasting', 'delicatessen'],
+    bakery: ['pan', 'panaderia', 'pasteleria', 'bolleria', 'tartas', 'croissant', 'dulces', 'obrador', 'horno', 'bakery', 'bread', 'cake', 'pastry'],
+    icecream: ['helado', 'heladeria', 'horchata', 'granizado', 'gelato', 'ice cream', 'frozen yogurt'],
+    gourmet: ['vino', 'cata', 'bodega', 'vinoteca', 'wine', 'tasting', 'delicatessen'],
     market: ['mercadillo', 'feria', 'rastro', 'flea'],
     nightclub: ['copas', 'fiesta', 'discoteca', 'club', 'party', 'cocktail'],
     music: ['concierto', 'jazz', 'dj', 'gig', 'concert'],
@@ -53,10 +56,11 @@
     wellness: ['spa', 'masaje', 'yoga', 'pilates', 'massage', 'relax'],
     beauty: ['unas', 'manicura', 'pedicura', 'estetica', 'nails', 'makeup'],
     hairdresser: ['peluqueria', 'barberia', 'barber', 'corte', 'haircut'],
-    health: ['fisio', 'dentista', 'clinica', 'optica', 'dentist', 'physio'],
+    tattoo: ['tatuaje', 'tatuador', 'tattoo', 'piercing', 'perforacion'],
+    health: ['fisio', 'fisioterapia', 'dentista', 'clinica', 'optica', 'dentist', 'physio'],
     learning: ['clase', 'curso', 'taller', 'academia', 'idiomas', 'course'],
     books: ['libros', 'libreria', 'books', 'comic'],
-    shop: ['ropa', 'moda', 'regalos', 'zapatos', 'clothes', 'fashion'],
+    shop: ['ropa', 'moda', 'complementos', 'regalos', 'zapatos', 'flores', 'floristeria', 'clothes', 'fashion', 'flowers'],
     pets: ['perro', 'gato', 'veterinario', 'dog', 'cat', 'vet'],
     workshop: ['coche', 'moto', 'mecanico', 'taller', 'car', 'garage'],
     home: ['fontanero', 'electricista', 'limpieza', 'reformas', 'plumber'],
@@ -310,7 +314,7 @@
     /**
      * La hoja de filtros de Explorar y Descubre (pintada en el servidor, va
      * sin JavaScript): las categorías que no son de las 8 más usadas se
-     * pliegan y «Ver todas (28)» abre el selector con todas. Elegir una marca
+     * pliegan y «Ver todas (31)» abre el selector con todas. Elegir una marca
      * su radio (y la deja a la vista).
      */
     KlendarCategorias.mejoraHoja = function mejoraHoja(fs) {

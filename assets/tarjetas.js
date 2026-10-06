@@ -586,10 +586,15 @@
       if (h) { e.preventDefault(); h.open = false; h.querySelector('summary').focus(); }
       return;
     }
-    if (!t.closest('details.desplegable, details.hoja')) cierra(null);
+    // Lo que pasa en un diálogo abierto desde la hoja (el selector de
+    // categorías va en un <dialog> fuera de ella) no la cierra: al elegir
+    // una categoría se vuelve a la hoja, como en la app.
+    if (!t.closest('details.desplegable, details.hoja, dialog')) cierra(null);
   });
   document.addEventListener('keydown', function (e) {
     if (e.key !== 'Escape') return;
+    // Escape en el selector cierra solo el selector.
+    if (e.target instanceof Element && e.target.closest('dialog')) return;
     var lista = abiertos();
     if (!lista.length) return;
     var ultimo = lista[lista.length - 1];

@@ -131,6 +131,82 @@ window.KLENDAR_IDEAS = {
     "kind": "flash_offer"
    }
   ],
+  "bakery": [
+   {
+    "es": "Bolsa sorpresa antes de cerrar",
+    "en": "Surprise bag before closing",
+    "discount": "fixed",
+    "descEs": "Lo que nos ha sobrado hoy, a buen precio. Pásate antes de que cerremos.",
+    "descEn": "What we have left today, at a good price. Drop by before we close.",
+    "termsEs": "Lo que sobra del día; el contenido varía.",
+    "termsEn": "What is left at the end of the day; contents vary.",
+    "value": 4,
+    "hours": 2,
+    "kind": "flash_offer",
+    "seats": 6,
+    "beforeClosing": true
+   },
+   {
+    "es": "Última hornada: −30 % en bollería",
+    "en": "Last batch: −30% on pastries",
+    "discount": "percent",
+    "value": 30,
+    "hours": 2,
+    "kind": "flash_offer"
+   },
+   {
+    "es": "2x1 en croissants",
+    "en": "2-for-1 on croissants",
+    "discount": "2x1",
+    "hours": 3,
+    "kind": "flash_offer"
+   },
+   {
+    "es": "Taller de pan de masa madre",
+    "en": "Sourdough bread workshop",
+    "discount": "none",
+    "hours": 3,
+    "kind": "future_event"
+   }
+  ],
+  "icecream": [
+   {
+    "es": "2x1 en tarrinas",
+    "en": "2-for-1 on tubs",
+    "discount": "2x1",
+    "hours": 3,
+    "kind": "flash_offer"
+   },
+   {
+    "es": "Bola extra gratis en tu cucurucho",
+    "en": "Free extra scoop on your cone",
+    "discount": "other",
+    "hours": 4,
+    "kind": "flash_offer"
+   },
+   {
+    "es": "Bolsa sorpresa antes de cerrar",
+    "en": "Surprise bag before closing",
+    "discount": "fixed",
+    "descEs": "Lo que nos ha sobrado hoy, a buen precio. Pásate antes de que cerremos.",
+    "descEn": "What we have left today, at a good price. Drop by before we close.",
+    "termsEs": "Lo que sobra del día; el contenido varía.",
+    "termsEn": "What is left at the end of the day; contents vary.",
+    "value": 4,
+    "hours": 2,
+    "kind": "flash_offer",
+    "seats": 6,
+    "beforeClosing": true
+   },
+   {
+    "es": "Hora tranquila: −25 % en helados",
+    "en": "Quiet hour: −25% on ice cream",
+    "discount": "percent",
+    "value": 25,
+    "hours": 2,
+    "kind": "flash_offer"
+   }
+  ],
   "nightclub": [
    {
     "es": "Entrada gratis antes de la una",
@@ -161,6 +237,34 @@ window.KLENDAR_IDEAS = {
     "en": "Free styling with colour",
     "discount": "other",
     "hours": 5,
+    "kind": "flash_offer"
+   }
+  ],
+  "tattoo": [
+   {
+    "es": "Día de flash: tatuajes pequeños a 50 €",
+    "en": "Flash day: small tattoos for €50",
+    "discount": "fixed",
+    "descEs": "Diseños de nuestra hoja de flash, por orden de llegada.",
+    "descEn": "Designs from our flash sheet, first come, first served.",
+    "value": 50,
+    "hours": 3,
+    "kind": "future_event"
+   },
+   {
+    "es": "Hueco libre esta tarde: −20 %",
+    "en": "Free slot this afternoon: −20%",
+    "discount": "percent",
+    "value": 20,
+    "hours": 4,
+    "kind": "flash_offer"
+   },
+   {
+    "es": "−25 % en piercing",
+    "en": "−25% on piercings",
+    "discount": "percent",
+    "value": 25,
+    "hours": 6,
     "kind": "flash_offer"
    }
   ],
