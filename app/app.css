@@ -456,3 +456,17 @@ button.codigo.copiar .ms { font-size: 18px; color: var(--ink-2); letter-spacing:
 .hoja-legal { position: relative; width: min(420px, calc(100vw - 32px)); }
 .hoja-legal h2 { padding-right: 36px; margin-bottom: 14px; }
 
+/* Un título de sección con su enlace a la derecha («Ver todos»). */
+.seccion-t.con-enlace { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.seccion-t.con-enlace a { font-size: 14px; font-weight: 700; color: var(--ink); }
+
+/* «Avísame si…»: una fila con el interruptor y ⋮ (Editar, Borrar), como la app. */
+.alerta-fila { display: flex; align-items: center; gap: 10px; }
+.alerta-fila .alerta-t { flex: 1; min-width: 0; display: grid; gap: 2px; color: inherit; }
+.alerta-fila .alerta-t:hover { text-decoration: none; }
+.alerta-fila .alerta-t:hover b { text-decoration: underline; }
+.alerta-fila .alerta-t span { color: var(--ink-2); font-size: 14px; }
+.alerta-fila .mas-menu > summary { width: 36px; height: 36px; border: 0; background: none; color: var(--ink-2); }
+.alerta-fila.pausada .alerta-t { opacity: .6; }
+
+.aviso.alerta-fila.pausada { opacity: 1; }

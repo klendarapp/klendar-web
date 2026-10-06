@@ -276,23 +276,30 @@ RUTAS.alertas = async () => {
     <p class="muted">${esc(t('Te avisamos cuando se publique algo que encaje. Como mucho tres notificaciones al día, y puedes apagar cada aviso por separado.'))}</p>
     <p><a class="pill accent" href="#/alerta/nueva">${ic('add')} ${esc(t('Nuevo aviso'))}</a></p>
     ${(lista || []).length ? `<div class="avisos">${lista.map((a) => `
-      <div class="aviso alerta${a.active ? '' : ' pausada'}">
-        <b>${esc(a.label || t('Aviso'))}${a.active ? '' : ` <span class="tag off">${esc(t('En pausa'))}</span>`}</b>
-        <span>${esc(resumenAlerta(a, cats))}</span>
-        <span class="acciones">
-          <a class="pill" href="#/alerta/${esc(a.id)}">${esc(t('Editar'))}</a>
-          <button class="pill" data-pausa="${esc(a.id)}">${esc(a.active ? t('Pausar') : t('Activar'))}</button>
-          <button class="pill ghost" data-borra="${esc(a.id)}">${esc(t('Borrar'))}</button>
-        </span>
+      <div class="aviso alerta alerta-fila${a.active ? '' : ' pausada'}">
+        <a class="alerta-t" href="#/alerta/${esc(a.id)}"><b>${esc(a.label || t('Aviso'))}</b>
+          <span>${esc(resumenAlerta(a, cats))}</span></a>
+        <input type="checkbox" class="interruptor" role="switch" data-activo="${esc(a.id)}"${a.active ? ' checked' : ''}
+          aria-label="${esc(EN ? `On: ${a.label || 'Alert'}` : `Activo: ${a.label || 'Aviso'}`)}">
+        ${menuMas([
+    { texto: t('Editar'), attrs: `data-edita="${esc(a.id)}"` },
+    { texto: t('Borrar'), attrs: `data-borra="${esc(a.id)}"`, peligro: true },
+  ], EN ? `More options: ${a.label || 'Alert'}` : `Más opciones: ${a.label || 'Aviso'}`)}
       </div>`).join('')}</div>`
     : `<p class="empty">${esc(t('Todavía no tienes avisos. Crea uno y te escribimos cuando salga algo que encaje: «sushi a menos de 1 km», «conciertos el finde».'))}</p>`}`);
 
-  $$('[data-pausa]').forEach((b) => b.addEventListener('click', () => ocupado(b, async () => {
-    const a = lista.find((x) => x.id === b.dataset.pausa);
-    await llamar('save_offer_alert', paramsAlerta({ ...a, active: !a.active }));
-    toast(a.active ? t('Aviso en pausa') : t('Aviso activado'));
-    navegar();
-  })));
+  // Como la app: un interruptor para pausarlo; editar y borrar, en ⋮.
+  $$('[data-activo]').forEach((caja) => caja.addEventListener('change', async () => {
+    const a = lista.find((x) => x.id === caja.dataset.activo);
+    caja.disabled = true;
+    try {
+      await llamar('save_offer_alert', paramsAlerta({ ...a, active: caja.checked }));
+      a.active = caja.checked;
+      caja.closest('.alerta')?.classList.toggle('pausada', !a.active);
+      toast(a.active ? t('Aviso activado') : t('Aviso en pausa'));
+    } catch (e) { caja.checked = !caja.checked; toast(e.message, true); } finally { caja.disabled = false; }
+  }));
+  $$('[data-edita]').forEach((b) => b.addEventListener('click', () => { location.hash = `#/alerta/${b.dataset.edita}`; }));
   $$('[data-borra]').forEach((b) => b.addEventListener('click', async () => {
     // Como en la app: con su nombre y la salida de pausarlo.
     const nombre = lista.find((x) => x.id === b.dataset.borra)?.label || t('Aviso');
@@ -1421,7 +1428,7 @@ RUTAS.reclamar = async ([id]) => {
   }
 
   pinta(`${cabeza}
-    <p class="muted">${esc(t('Si este negocio es tuyo o lo llevas tú y la ficha la creó otra persona, pide su propiedad: podrás gestionar la ficha, publicar y validar códigos. Lo comprobamos a mano antes de traspasarlo y te avisamos.'))}</p>
+    <p class="muted">${esc(t('¿Lo llevas tú y la ficha la creó otra persona? Pide su propiedad: lo comprobamos a mano y te avisamos.'))}</p>
     <form class="formu" id="f" novalidate>
       <label>${esc(t('Tu cargo'))}
         <input name="rol" maxlength="60" required autocomplete="organization-title" placeholder="${esc(t('Propietaria, gerente, encargado…'))}"></label>
@@ -1429,9 +1436,9 @@ RUTAS.reclamar = async ([id]) => {
         <input name="tel" type="tel" maxlength="25" autocomplete="tel"></label>
       <label>${esc(t('Correo del negocio'))}
         <input name="mail" type="email" maxlength="254" autocomplete="email"></label>
-      <p class="muted">${esc(t('Al menos uno de los dos. Puede que te llamemos o te escribamos para comprobarlo.'))}</p>
+      <p class="muted">${esc(t('Al menos uno. Puede que lo usemos para comprobarlo.'))}</p>
       <fieldset><legend>${esc(t('Prueba'))}</legend>
-        <p class="muted">${esc(t('Una foto o un PDF de algo que lo demuestre (licencia de apertura, una factura a nombre del negocio, el alta en Hacienda…) o cuéntanos cómo podemos comprobarlo. Con una de las dos basta.'))}</p>
+        <p class="muted">${esc(t('Una foto o un PDF (licencia de apertura, factura a nombre del negocio, alta en Hacienda…) o cómo podemos comprobarlo. Basta con una.'))}</p>
         <div class="foto-fila">
           <img id="prev" alt="" hidden>
           <span id="pdf" class="muted" hidden></span>
@@ -1444,7 +1451,7 @@ RUTAS.reclamar = async ([id]) => {
       <label class="check"><input type="checkbox" name="decl"> ${esc(t('Declaro que los datos son ciertos y que puedo representar a este negocio.'))}</label>
       <p class="err" id="err" role="alert"></p>
       <button class="pill accent" id="enviar">${esc(t('Enviar la reclamación'))}</button>
-      <p class="muted">${esc(t('Solo lo ve el equipo de Klendar para comprobarlo. La prueba se borra 6 meses después de resolver la reclamación.'))}
+      <p class="muted">${esc(t('Solo lo ve el equipo de Klendar. La prueba se borra 6 meses después de resolver la reclamación.'))}
         <a href="${EN ? '/en/privacy/' : '/privacidad/'}">${esc(t('Política de privacidad'))}</a></p>
     </form>`);
 

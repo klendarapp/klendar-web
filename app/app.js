@@ -1361,13 +1361,13 @@ RUTAS.planes = async () => {
       })}`);
     return;
   }
-  const bloque = (titulo, filas, clase = '') => (filas.length
-    ? `<h2 class="seccion-t">${esc(titulo)}</h2><div class="olist${clase}">${filas.join('')}</div>` : '');
+  const bloque = (titulo, filas, clase = '', extra = '') => (filas.length
+    ? `<h2 class="seccion-t${extra ? ' con-enlace' : ''}"><span>${esc(titulo)}</span>${extra}</h2><div class="olist${clase}">${filas.join('')}</div>` : '');
   pinta(`
     <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(t('Tus planes'))}</h1>
     ${filaSeries}
-    ${bloque(t('En curso'), enCurso.map((r) => filaCanje(r, zona(r))))}
+    ${bloque(t('Para usar ahora'), enCurso.map((r) => filaCanje(r, zona(r))), '', `<a href="#/codigos">${esc(t('Ver todos'))}</a>`)}
     ${bloque(t('Próximos'), proximos.map((o) => tarjeta(o, zona(o))))}
     ${bloque(t('Pasados'), pasados.map((p) => p.html), ' pasado')}
     ${explorar}`);
@@ -1589,6 +1589,7 @@ RUTAS.codigos = async (_partes, params) => {
   // Desde una notificación (`#/codigos?offer=<id>`: cambio de fecha,
   // cancelación…): el código de esa publicación, a la vista y resaltado. El
   // vivo si hay varios; si no, el más reciente (la lista llega ordenada).
+  const vivo = (r) => r.status === 'pending' && new Date(r.expires_at).getTime() > Date.now();
   const pedido = params?.get('offer') || '';
   const deLaOferta = (lista || []).filter((r) => r.offer_id === pedido);
   const resaltado = deLaOferta.find((r) => r.status === 'pending' && new Date(r.expires_at).getTime() > Date.now())
@@ -1600,8 +1601,13 @@ RUTAS.codigos = async (_partes, params) => {
       <div class="olist">${regalos.map(filaRegalo).join('')}</div>` : ''}
     ${conPremios ? `<h2 class="seccion-t">${esc(t('Premios de tarjetas de sellos'))}</h2>
       <div class="olist">${premios.map(filaPremio).join('')}</div>` : ''}
-    ${conRegalos || conPremios ? `<h2 class="seccion-t">${esc(t('Tus códigos'))}</h2>` : ''}
-    ${(lista || []).length ? `<div class="olist">${lista.map((r) => filaCanje(r, zona(r), r === resaltado)).join('')}</div>`
+    ${(lista || []).length ? [
+    // Los que aún se pueden usar, aparte de los pasados (usados, caducados
+    // o anulados), como la app.
+    [t('Para usar'), lista.filter(vivo)],
+    [t('Pasados'), lista.filter((r) => !vivo(r))],
+  ].map(([titulo, parte]) => (parte.length ? `<h2 class="seccion-t">${esc(titulo)}</h2>
+      <div class="olist">${parte.map((r) => filaCanje(r, zona(r), r === resaltado)).join('')}</div>` : '')).join('')
     : conRegalos || conPremios
       ? `<p class="empty">${esc(t('Todavía no tienes códigos. Cuando consigas el código de una oferta o reserves plaza en un evento, lo tendrás aquí.'))}</p>`
       : pantallaVacia({

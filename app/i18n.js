@@ -844,4 +844,13 @@ const APP_EN = {
   "Términos, privacidad y normas": "Terms, privacy and guidelines",
   "Tu lista, tu enlace y tu QR": "Your list, your link and your QR code",
   "Legal": "Legal",
+  // Planes y Tus códigos
+  "Para usar": "Ready to use",
+  "Para usar ahora": "Ready to use now",
+  "Ver todos": "See all",
+  // Reclamar un negocio (textos cortos)
+  "¿Lo llevas tú y la ficha la creó otra persona? Pide su propiedad: lo comprobamos a mano y te avisamos.": "Do you run it and someone else created the page? Ask for ownership: we check it by hand and let you know.",
+  "Al menos uno. Puede que lo usemos para comprobarlo.": "At least one. We may use it to check.",
+  "Una foto o un PDF (licencia de apertura, factura a nombre del negocio, alta en Hacienda…) o cómo podemos comprobarlo. Basta con una.": "A photo or a PDF (opening licence, an invoice in the business name, tax registration…) or how we can check. One is enough.",
+  "Solo lo ve el equipo de Klendar. La prueba se borra 6 meses después de resolver la reclamación.": "Only the Klendar team sees this. The evidence is deleted 6 months after the claim is resolved.",
 };
