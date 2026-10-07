@@ -7,7 +7,7 @@
 // Como el resto de páginas públicas: se pinta en el servidor, va sin
 // JavaScript (el buscador y los filtros son enlaces y formularios GET) y la
 // zona es una ciudad o «Cerca de mí» (`?lat=&lng=`, con 3 decimales). Con
-// JavaScript y una sesión guardada, /assets/partidos.js pinta «Tus equipos»
+// JavaScript y una sesión guardada, /assets/seguir.js pinta «Tus equipos»
 // y deja seguir a un equipo desde aquí; sin sesión, «Seguir a…» lleva a «Tu
 // cuenta» (`#/equipos?seguir=<id>`).
 //
@@ -54,10 +54,11 @@ export const atribucion = () => `<p class="fuente-datos"><a href="${KE.FUENTE.ur
 /** Los estilos de estas piezas (también en la ficha del bar y en Explorar). */
 export const PARTIDOS_CSS = '<link rel="stylesheet" href="/assets/partidos.css?v=3">';
 
-/** Lo personal (Tus equipos, seguir desde aquí): solo hace algo con sesión. */
-const partidosScript = (lang) => {
+/** Lo personal (Tus equipos, seguir a un equipo o a un artista desde aquí):
+ *  solo hace algo con sesión. */
+export const seguirScript = (lang) => {
   const sp = supabasePublic();
-  return `<script src="/assets/partidos.js?v=3" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}" data-lang="${lang === 'en' ? 'en' : 'es'}"></script>`;
+  return `<script src="/assets/seguir.js?v=1" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}" data-lang="${lang === 'en' ? 'en' : 'es'}"></script>`;
 };
 
 /** «350 m», «1,2 km». */
@@ -252,7 +253,7 @@ export async function partidosPage(url, lang) {
   <p id="cercaErr" class="aviso-error" role="alert" hidden></p>`;
 
   // «Tus equipos»: sin sesión (la página va en caché), la línea y el botón;
-  // con sesión, /assets/partidos.js pone tus equipos.
+  // con sesión, /assets/seguir.js pone tus equipos.
   const misEquipos = `<div class="mis-equipos" id="mis-equipos" data-titulo="${esc(S.yourTeams)}" data-base="${esc(`${base}/`)}" data-zona="${esc(zona)}">
       <p>${esc(S.noTeams)}</p>
       <a class="pill" href="${esc(`${cuentaBase(lang)}#/equipos`)}">${esc(S.followTeam)}</a>
@@ -309,7 +310,7 @@ export async function partidosPage(url, lang) {
     head: `${PARTIDOS_CSS}
 ${recuperaZona()}
 ${filtrada ? '<meta name="robots" content="noindex, follow">' : ldScript({ '@context': 'https://schema.org', ...breadcrumbLd(migas) })}
-${partidosScript(lang)}`,
+${seguirScript(lang)}`,
     contador: !e.cerca,
   }), 200, 'public, max-age=120, s-maxage=300');
 }
@@ -413,7 +414,7 @@ export async function partidoPage(rawId, url, lang) {
     actual: 'explorar',
     head: `${PARTIDOS_CSS}
 ${zona || !d.live ? '<meta name="robots" content="noindex, follow">' : ldScript({ '@context': 'https://schema.org', ...breadcrumbLd(migas) })}
-${partidosScript(lang)}`,
+${seguirScript(lang)}`,
     contador: !e.cerca,
   }), 200, 'public, max-age=120, s-maxage=300');
 }

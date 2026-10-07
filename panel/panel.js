@@ -127,6 +127,10 @@ const ERRORS = {
   // Lugar propio (20261101100000).
   venue_too_far: 'Ese sitio está a más de 200 km de tu local: revisa la dirección.',
   venue_location_required: 'Marca el sitio en el mapa.',
+  // Organizador sin local fijo (20261205100001).
+  offers_at_venue: 'Antes, pasa a «en otro sitio» o retira lo que tienes publicado en el local.',
+  address_required: 'Escribe la dirección del local.',
+  venue_required: 'Di dónde es: como no tienes local fijo, cada publicación lleva su sitio.',
   // Edad y suspensión (20261028100000).
   adult_required: 'Para esto hace falta tener 18 años y la fecha de nacimiento en el perfil.',
   min_age_16: 'Para entrar en el equipo de un negocio hace falta tener 16 años.',
@@ -542,6 +546,12 @@ async function preparaNegocio() {
     } catch { /* Madrid */ }
   }
   TZ = KZ.de(BIZ);
+  // Organizador sin local fijo (`no_fixed_venue`): sin las herramientas que
+  // necesitan un local y con «Dónde» siempre en otro sitio. Sin la función,
+  // como un negocio con local.
+  const conLocal = BIZ.id;
+  const org = await rpc('business_is_organizer', { p_business: conLocal }).catch(() => false);
+  if (BIZ?.id === conLocal) BIZ.no_fixed_venue = org === true;
   // «Antes de cerrar» en el menú: se sabe al momento, sin esperar.
   ANTES = null;
   const negocio = BIZ.id;
@@ -556,6 +566,10 @@ async function preparaNegocio() {
 }
 /** Lo de «Antes de cerrar» del negocio (`before_closing_setup`). */
 let ANTES = null;
+/** ¿El negocio activo es un organizador sin local fijo? (`preparaNegocio`). */
+const esOrganizador = () => BIZ?.no_fixed_venue === true;
+/** Lo que el panel no enseña a un organizador: necesita un local (tanda C). */
+const SIN_LOCAL_FIJO = ['partidos', 'antes-de-cerrar', 'cartel-local', 'cerrados'];
 /** Si «Partidos que pones» sale en el menú (`business_broadcast_week`). */
 let PARTIDOS_NAV = null;
 
@@ -834,7 +848,8 @@ const NAV = [
 const BARRA = ['resumen', 'publicaciones', 'calendario', 'validar'];
 const visibleEnMenu = (k) => (gestiona() || !SOLO_GESTION.includes(k)) && (k !== 'baja' || esPropietario())
   && (k !== 'antes-de-cerrar' || !!ANTES?.suggested)
-  && (k !== 'partidos' || !!PARTIDOS_NAV?.suggested);
+  && (k !== 'partidos' || !!PARTIDOS_NAV?.suggested)
+  && !(esOrganizador() && SIN_LOCAL_FIJO.includes(k));
 const marcada = (current, n) => current === n[0] || (n[3] || []).includes(current);
 function renderNav(current) {
   let g = 0;
@@ -949,6 +964,7 @@ async function route() {
   document.body.classList.remove('con-barra-pub');
   let [page, param] = currentRoute();
   if (!gestiona() && SOLO_GESTION.includes(page)) page = 'resumen';
+  if (esOrganizador() && SIN_LOCAL_FIJO.includes(page)) page = 'resumen';
   renderNav(page);
   // Al ir a otra pantalla desde el menú del móvil, el cajón se cierra y el
   // foco pasa a la pantalla nueva (no al botón que lo abrió).
@@ -1840,6 +1856,12 @@ async function offerForm(v, id, kindDefault, desde = null) {
   }
   // «Solo con el enlace de un RRPP»: los RRPP del negocio y los elegidos.
   const datosRrpp = await rrppFormularioCarga(origenLugar, o);
+  // «Quién actúa» (panel/artistas.js): los que ya tiene (o la que se copia).
+  const artistasIni = await artistasDe(origenLugar);
+  const teniaArtistas = !!id && artistasIni.length > 0;
+  // Organizador sin local fijo: todo lo suyo es «en otro sitio» (con el sitio
+  // obligatorio), y «Dónde» va en lo esencial, sin poder quitarlo.
+  const organizador = esOrganizador();
   const rrppHtml = rrppFormularioHtml(o, datosRrpp);
   // Crear a partir de una fecha de una serie: la nueva sigue en ella (se
   // puede quitar). Quien la sigue recibirá un aviso cuando se publique.
@@ -1885,6 +1907,23 @@ async function offerForm(v, id, kindDefault, desde = null) {
   const eligeVarios = (name, opciones, actuales, etiqueta) => `<div class="elige" role="group" aria-label="${esc(etiqueta)}">${opciones.map(([val, txt]) =>
     `<label><input type="checkbox" name="${name}" value="${esc(val)}" ${(actuales || []).includes(val) ? 'checked' : ''}><span>${esc(txt)}</span></label>`).join('')}</div>`;
 
+  // «Dónde»: en «Más opciones»; a un organizador, en lo esencial (tras
+  // «Cuándo»), siempre «en otro sitio» y sin el interruptor.
+  const conSitio = organizador || !!o.venue_address;
+  const dondeHtml = `
+        <fieldset class="f full lugar plano" id="lugarSet"><legend>Dónde</legend>
+          <label class="opcion"${organizador ? ' hidden' : ''}><input type="checkbox" name="venue_on" ${conSitio ? 'checked' : ''}><span>Es en otro sitio</span></label>
+          <p class="hint" id="lugarAyuda"></p>
+          <div id="lugarCampos" class="form-grid" ${conSitio ? '' : 'hidden'}>
+            <label class="f"><span>Nombre del sitio <small>(opcional)</small></span><input name="venue_name" maxlength="80" value="${esc(o.venue_name || '')}" placeholder="Ej.: Sala Clamores"></label>
+            <label class="f"><span>Dirección del sitio</span><input name="venue_address" maxlength="160" value="${esc(o.venue_address || '')}" placeholder="Calle, número y ciudad"></label>
+            <div class="full" id="lugarMapaCaja">
+              <p style="margin:0 0 8px"><button class="btn sm" type="button" id="buscarLugar">${ms('location_on')}Buscar en el mapa</button>
+                <span class="muted" id="lugarTxt"></span></p>
+              <div class="mapa" id="mapaLugar"></div>
+            </div>
+          </div>
+        </fieldset>`;
   v.innerHTML = `
     <div class="page-head"><a class="btn sm ghost" href="#/publicaciones">← Volver</a><h1 id="pubTitulo">${esc(titulo())}</h1><span class="spacer"></span>
       <details class="mas tpl-menu"><summary class="btn sm ghost">Tus plantillas</summary>
@@ -1913,6 +1952,8 @@ async function offerForm(v, id, kindDefault, desde = null) {
         <p class="hint" id="finAuto" hidden></p>
         <p class="hint">${TZ === KZ.CANARIAS ? 'Las fechas y horas son las de Canarias, donde está tu local.' : 'Las fechas y horas son las de la península (hora de Madrid), donde está tu local.'}</p>
       </fieldset>
+      ${organizador ? dondeHtml : ''}
+      ${quienActuaHtml()}
       <fieldset class="f plano" id="descuento"><legend>Descuento</legend>
         ${elige('discount_type', [['', I18N.t('Sin descuento')], ['percent', '%'], ['fixed', I18N.t('Precio fijo')], ['2x1', '2x1'], ['free', I18N.t('Gratis')], ['other', I18N.t('Otro')]], disc.type || '', I18N.t('Descuento'))}
         <div class="dos" id="descFila">
@@ -1990,7 +2031,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
         ])}`)}
 
       ${bloque('bMas', I18N.t('Más opciones'), `
-        <label class="opcion bl-fila" id="antesRow"><input type="checkbox" name="before_closing" ${o.style?.badge === 'before_closing' ? 'checked' : ''}><span><b>Antes de cerrar</b><br><small class="muted">Lo que te sobra del día, con descuento y para recoger hasta el cierre. Sale con su sello y en el filtro «Antes de cerrar».</small></span></label>
+        <label class="opcion bl-fila" id="cierreRow"><input type="checkbox" name="before_closing" ${o.style?.badge === 'before_closing' ? 'checked' : ''}><span><b>Antes de cerrar</b><br><small class="muted">Lo que te sobra del día, con descuento y para recoger hasta el cierre. Sale con su sello y en el filtro «Antes de cerrar».</small></span></label>
         <fieldset class="f full filtro-sellos"><legend>Quién la ve</legend>
           ${AUDIENCIAS.map(([k, t]) => `<label class="opcion"><input type="radio" name="audience" value="${k}" ${(o.audience || 'all') === k ? 'checked' : ''}><span>${esc(t)}</span></label>`).join('')}
           <p class="hint" id="audAyuda" ${['all', 'promoters'].includes(o.audience || 'all') ? 'hidden' : ''}>Los demás ven que es exclusiva, sin el beneficio.</p>
@@ -2001,19 +2042,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
           ${eligeVarios('card_requirements', KMp.CARDS.map((c) => [c, MK.card[c]]), o.card_requirements, MK.cardTitle)}
           <p class="hint">${esc(MK.cardHint)}</p>
         </div>
-        <fieldset class="f full lugar plano"><legend>Dónde</legend>
-          <label class="opcion"><input type="checkbox" name="venue_on" ${o.venue_address ? 'checked' : ''}><span>Es en otro sitio</span></label>
-          <p class="hint" id="lugarAyuda"></p>
-          <div id="lugarCampos" class="form-grid" ${o.venue_address ? '' : 'hidden'}>
-            <label class="f"><span>Nombre del sitio <small>(opcional)</small></span><input name="venue_name" maxlength="80" value="${esc(o.venue_name || '')}" placeholder="Ej.: Sala Clamores"></label>
-            <label class="f"><span>Dirección del sitio</span><input name="venue_address" maxlength="160" value="${esc(o.venue_address || '')}" placeholder="Calle, número y ciudad"></label>
-            <div class="full" id="lugarMapaCaja">
-              <p style="margin:0 0 8px"><button class="btn sm" type="button" id="buscarLugar">${ms('location_on')}Buscar en el mapa</button>
-                <span class="muted" id="lugarTxt"></span></p>
-              <div class="mapa" id="mapaLugar"></div>
-            </div>
-          </div>
-        </fieldset>
+        ${organizador ? '' : dondeHtml}
         <div class="bl-fila"><p class="etq">Categoría</p><div data-cat-oferta></div></div>
         <div id="ninosRow" class="bl-fila">
           <p class="etq">¿Para niños?</p>
@@ -2132,8 +2161,11 @@ async function offerForm(v, id, kindDefault, desde = null) {
     $('#seatsRow', v).hidden = !conReserva;
     $('#ttlRow', v).hidden = !conCodigo || deRrpp;
     $('#porPersonaRow', v).hidden = !flash;
-    // «Antes de cerrar»: solo en una oferta flash para todo el mundo.
-    $('#antesRow', v).hidden = !flash || deRrpp;
+    // «Antes de cerrar»: solo en una oferta flash para todo el mundo (y de un
+    // local: «hasta el cierre» no va con un organizador sin local fijo).
+    $('#cierreRow', v).hidden = !flash || deRrpp || organizador;
+    // «Quién actúa»: solo en eventos.
+    $('#quienActua', v).hidden = flash;
     $('#plazasRow', v).hidden = !conAforo || !conCodigo;
     $('#esperaNota', v).hidden = !conAforo || !conCodigo;
     $('#cuandoTit', v).textContent = flash ? I18N.t('Cuándo se puede canjear') : I18N.t('Cuándo');
@@ -2217,6 +2249,8 @@ async function offerForm(v, id, kindDefault, desde = null) {
     r.addEventListener('change', () => { $('#audAyuda', v).hidden = ['all', 'promoters'].includes(val('audience') || 'all'); });
   });
   rrppFormularioEngancha(v);
+  // «Quién actúa» (panel/artistas.js): chips, buscador y «Añadir … como nuevo».
+  const artistas = quienActuaEngancha(v, artistasIni);
 
   // Fotos
   let images = [...(o.images || [])];
@@ -2289,19 +2323,21 @@ async function offerForm(v, id, kindDefault, desde = null) {
     }
     const casa = lugar.perfil;
     const dirCasa = [casa.address, casa.city].filter(Boolean).join(', ');
-    $('#lugarAyuda', v).textContent = on
+    $('#lugarAyuda', v).textContent = organizador ? SAp().venueAlways : on
       ? I18N.t('Una sala, un parque, otro local… La distancia, el mapa y «Cómo llegar» llevarán ahí.')
       : (dirCasa ? bi(`En tu local: ${dirCasa}`, `At your place: ${dirCasa}`) : '');
     const txt = $('#lugarTxt', v);
     if (lugar.punto && casa.lat != null) {
       const m = metrosEntre({ lat: casa.lat, lng: casa.lng }, lugar.punto);
       const d = m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toFixed(1).replace('.', I18N.lang === 'en' ? '.' : ',')} km`;
-      txt.textContent = bi(`A ${d} de tu local. Si no es exacto, arrastra la chincheta.`, `${d} from your place. If it's not exact, drag the pin.`);
+      txt.textContent = organizador
+        ? bi(`A ${d} de tu zona. Si no es exacto, arrastra la chincheta.`, `${d} from your area. If it's not exact, drag the pin.`)
+        : bi(`A ${d} de tu local. Si no es exacto, arrastra la chincheta.`, `${d} from your place. If it's not exact, drag the pin.`);
     } else {
       txt.textContent = I18N.t('Marca el sitio en el mapa.');
     }
     // El mapa solo con el bloque abierto: cerrado no tiene tamaño.
-    if (on && !lugar.mapa && $('#bMas', v).open) {
+    if (on && !lugar.mapa && (organizador || $('#bMas', v).open)) {
       lugar.mapa = await mapaPunto($('#mapaLugar', v), lugar.punto, async (p) => {
         lugar.punto = p;
         const el = campo('venue_address');
@@ -2317,7 +2353,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
     }
   };
   lugar.pon = (x) => {
-    campo('venue_on').checked = !!x;
+    campo('venue_on').checked = !!x || organizador;
     pon('venue_name', x?.name || '');
     pon('venue_address', x?.address || '');
     lugar.punto = x && x.lat != null ? { lat: x.lat, lng: x.lng } : null;
@@ -2546,7 +2582,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
     $('#bMasRes', v).innerHTML = t([
       ...(isFlash() && estilo.before_closing ? [bi('Antes de cerrar', 'Before closing')] : []),
       { all: bi('Para todo el mundo', 'For everyone'), favorites: bi('Solo favoritos', 'Favourites only'), customers: bi('Solo clientes', 'Customers only'), promoters: bi('Solo RRPP', 'Promoters only') }[aud],
-      !lugar.activo() ? bi('en tu local', 'at your place') : sitio || bi('en otro sitio', 'somewhere else'),
+      ...(organizador ? [] : [!lugar.activo() ? bi('en tu local', 'at your place') : sitio || bi('en otro sitio', 'somewhere else')]),
       ...(adultos ? ['+18'] : []),
       ...(!adultos && ninos === 'si' ? [bi('apto para niños', 'child-friendly')] : []),
       ...(!adultos && ninos === 'no' ? [bi('no apto para niños', 'not for children')] : []),
@@ -2913,6 +2949,9 @@ async function offerForm(v, id, kindDefault, desde = null) {
         if (eFotos2) throw eFotos2;
       }
       if (rrpp?.cols.promoter_scope === 'some') await rrppGuardaElegidos(offerId, rrpp.ids);
+      // «Quién actúa», con la publicación ya guardada. Si falla, ella queda
+      // guardada y se dice qué nombre no se ha podido poner.
+      await artistas.guarda(offerId, kind === 'future_event', teniaArtistas);
       // La del partido: unida a él (y el partido, marcado «Lo ponemos»).
       if (partido?.id) {
         const unida = await rpc('set_business_broadcast_offer', { p_business: BIZ.id, p_broadcast: partido.id, p_offer: offerId }).catch((e3) => ({ ok: false, error: e3.message }));
@@ -2932,7 +2971,9 @@ async function offerForm(v, id, kindDefault, desde = null) {
         fallo(campo('max_redemptions'), bi(`No puedes bajar el aforo a menos de ${ocupadas[1]}: ya hay ${ocupadas[1]} plazas reservadas o usadas.`,
           `You can't lower the capacity below ${ocupadas[1]}: ${ocupadas[1]} places are already reserved or used.`));
       } else if (/venue_too_far/.test(msg)) {
-        fallo(campo('venue_address'), I18N.t(friendly(msg)));
+        fallo(campo('venue_address'), organizador ? SAp().venueTooFar : I18N.t(friendly(msg)));
+      } else if (/venue_required/.test(msg)) {
+        fallo(campo('venue_address'), SAp().venueRequired);
       } else {
         $('#formErr').textContent = I18N.t(friendly(msg));
       }
@@ -3038,7 +3079,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
   }
 
   // ── Cambios sin guardar: se pregunta al salir (y al cerrar la pestaña) ───
-  const estado = () => JSON.stringify([[...new FormData($('#form')).entries()], images, estilo, lugar.punto, kind, programada]);
+  const estado = () => JSON.stringify([[...new FormData($('#form')).entries()], images, estilo, lugar.punto, kind, programada, artistas.lista()]);
   const foto = estado();
   GUARDA = { sucia: () => v.isConnected && estado() !== foto };
 }
@@ -3857,7 +3898,7 @@ PAGES.sellos = async (v, param) => {
   const lleno = cards.length >= (d.max || 5);
   v.innerHTML = `
     <div class="page-head"><h1>Tarjetas de sellos</h1><span class="spacer"></span>
-      <a class="btn sm ghost" href="#/cartel-local">Imprimir el cartel del local</a>
+      ${esOrganizador() ? '' : '<a class="btn sm ghost" href="#/cartel-local">Imprimir el cartel del local</a>'}
       <button class="btn sm primary" type="button" id="nueva" ${lleno ? 'disabled' : ''}>Nueva tarjeta</button></div>
     ${helpBox('¿Cómo funciona?', bi(`<p>Cada tarjeta tiene su meta, su premio y lo que da sello: todas las publicaciones, solo las ofertas flash, solo los eventos, ciertas categorías o ciertas publicaciones. Cuando validas un código, <b>cada tarjeta encendida que encaje da su sello</b>, como mucho uno al día por persona y tarjeta.</p>
       <p>Si marcas <b>«También por visita con el QR del local»</b>, quien escanee el cartel del local en tu negocio se lleva además un sello, con el mismo tope de uno al día.</p>
@@ -3922,7 +3963,7 @@ async function tarjetaForm(v, id) {
           ${ofertas.map((o) => `<label class="opcion"><input type="checkbox" data-off="${esc(o.id)}" ${offs.has(o.id) ? 'checked' : ''}><span>${esc(o.title)} <small class="muted">${esc(I18N.t(o.kind === 'future_event' ? 'Evento' : 'Oferta flash'))}${o.repeats ? ` · ${esc(I18N.t('Se repite cada semana'))}` : ''}</small></span></label>`).join('')}`
         : `<p class="hint">Todavía no tienes publicaciones. Publica alguna y vuelve, o elige otra opción.</p>`}
       </div>
-      <label class="f full" style="grid-template-columns:auto 1fr;align-items:center">
+      <label class="f full" style="grid-template-columns:auto 1fr;align-items:center"${esOrganizador() && !c?.by_visit ? ' hidden' : ''}>
         <input type="checkbox" name="by_visit" ${c?.by_visit ? 'checked' : ''}>
         <span>También por visita con el QR del local <small class="muted">Quien escanee el cartel del local en tu negocio se lleva un sello, como mucho uno al día.</small></span></label>
       <label class="f full" style="grid-template-columns:auto 1fr;align-items:center">

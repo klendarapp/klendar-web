@@ -404,3 +404,15 @@ table.cf-cohortes td.cf-cel.fuerte { color: var(--surface); font-weight: 700; }
   /* En el móvil las tablas se deslizan de lado: sin partir palabras. */
   [aria-labelledby^="cf"] table.tbl td, [aria-labelledby^="cf"] table.tbl th { white-space: nowrap; }
 }
+
+/* «Artistas» (admin/artistas.js): la foto redonda (o la inicial) junto al
+   nombre, el editor de la ficha y los pares de «Repetidos». */
+.art-celda { display: inline-flex; align-items: center; gap: 10px; min-width: 0; }
+.art-celda .title { display: block; min-width: 0; overflow-wrap: anywhere; }
+table.tbl .art-thumb, .art-celda .art-thumb { border-radius: 50%; margin: 0; flex: none; font-weight: 800; color: var(--ink-2); }
+.art-par .art-thumb { width: 48px; height: 48px; display: inline-grid; place-items: center; background: var(--soft); object-fit: cover; }
+.art-par-lados { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.art-foto-fila { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.art-foto-fila .art-thumb { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; background: var(--soft);
+  display: inline-grid; place-items: center; font-size: 28px; font-weight: 800; color: var(--ink-2); }
+.art-foto-fila label.btn { cursor: pointer; }

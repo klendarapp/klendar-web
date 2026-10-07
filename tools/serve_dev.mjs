@@ -1,5 +1,5 @@
 // Servidor de desarrollo mínimo: sirve los ficheros estáticos del repo y
-// ejecuta las Pages Functions de /o/, /b/ (por id o por dirección), /r/, /rp/, /v/, /cola/, /amigo/, /cartel/, /agenda/,
+// ejecuta las Pages Functions de /o/, /b/ (por id o por dirección), /r/, /rp/, /v/, /cola/, /a/, /amigo/, /cartel/, /agenda/,
 // /hoy/, /con-ninos/, /partidos/, /grupos/, /sorteos/, /sorteo/ y los sitemaps de
 // agenda y negocios.
 // No sustituye a Cloudflare; es para ver las páginas mientras se escriben.
@@ -78,6 +78,8 @@ createServer(async (req, res) => {
     // «Compartir en historias»: /historia/<o|b|c|s>/<…> y /en/story/<o|b|c|s>/<…>.
     else if ((m = rest.match(/^\/(historia|story)\/([obcs])\/([^/]+)\/?$/))) { mod = await load(`functions/${en}${en ? 'story' : 'historia'}/[kind]/[id].js`); params = { kind: m[2], id: m[3] }; }
     else if ((m = rest.match(/^\/b\/([^/]+)\/?$/))) { mod = await load(`functions/${en}b/[id].js`); params = { id: m[1] }; }
+    // La página de un artista: /a/<slug> y /en/a/<slug>.
+    else if ((m = rest.match(/^\/a\/([^/]+)\/?$/))) { mod = await load(`functions/${en}a/[slug].js`); params = { slug: m[1] }; }
     // En inglés la cartelera se llama «what's on», no «agenda».
     else if ((m = rest.match(/^\/(agenda|whats-on)\/([^/]+)\/?$/))) { mod = await load(`functions/${en}${en ? 'whats-on' : 'agenda'}/[city].js`); params = { city: m[2] }; }
     else if (/^\/(agenda|whats-on)\/?$/.test(rest)) { mod = await load(`functions/${en}${en ? 'whats-on' : 'agenda'}/index.js`); }

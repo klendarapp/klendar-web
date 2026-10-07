@@ -23,9 +23,9 @@ ROOT = Path(__file__).resolve().parent.parent
 
 AREAS = {
     # ideas.js ya trae cada idea en los dos idiomas.
-    'panel': (['panel/panel.js', 'panel/rrpp.js', 'panel/ficha.js', 'panel/partidos.js', 'panel/bonos.js', 'panel/grupos.js', 'panel/sorteos.js', 'panel/cola.js', 'panel/index.html'], 'panel/i18n.js'),
-    'admin': (['admin/admin.js', 'admin/emisiones.js', 'admin/index.html'], 'admin/i18n.js'),
-    'cuenta': (['app/app.js', 'app/cuenta.js', 'app/amigos.js', 'app/correo.js', 'app/rrpp.js', 'app/partidos.js', 'app/bonos.js', 'app/grupos.js', 'app/sorteos.js', 'app/cola.js'], 'app/i18n.js'),
+    'panel': (['panel/panel.js', 'panel/rrpp.js', 'panel/ficha.js', 'panel/partidos.js', 'panel/bonos.js', 'panel/grupos.js', 'panel/sorteos.js', 'panel/cola.js', 'panel/artistas.js', 'panel/index.html'], 'panel/i18n.js'),
+    'admin': (['admin/admin.js', 'admin/emisiones.js', 'admin/artistas.js', 'admin/index.html'], 'admin/i18n.js'),
+    'cuenta': (['app/app.js', 'app/cuenta.js', 'app/amigos.js', 'app/correo.js', 'app/rrpp.js', 'app/partidos.js', 'app/artistas.js', 'app/bonos.js', 'app/grupos.js', 'app/sorteos.js', 'app/cola.js'], 'app/i18n.js'),
 }
 
 # Palabras que delatan una frase en español.
@@ -36,7 +36,7 @@ BILINGUE = re.compile(r"\b(en|EN)\s*\?|I18N\.lang === 'en'|lang === 'en'|\bbi\(|
 # Nombres propios y palabras que son iguales en inglés.
 MARCAS = {'Klendar', 'Supabase', 'Google', 'Apple', 'Stripe', 'Mapbox', 'Resend', 'Cloudflare', 'Madrid', 'Barcelona',
           'Pro', 'Error', 'Email', 'Web', 'Premium', 'Instagram', 'Facebook', 'Twitter', 'Android', 'Total', 'Normal',
-          'Material', 'Local', 'General', 'Final', 'Hola', 'Enter', 'Escape', 'Tab'}
+          'Material', 'Local', 'General', 'Final', 'Hola', 'Enter', 'Escape', 'Tab', 'Backspace'}
 # Lo que no se enseña o ya va en los dos idiomas.
 IGNORAR = {'sin configuración', 'Idioma / Language', 'Español', 'English', 'Invalid login credentials',
            'User already registered', 'Payload too large', 'Klendar · Panel del negocio', 'Klendar · Administración'}

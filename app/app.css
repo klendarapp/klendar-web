@@ -501,6 +501,15 @@ button.codigo.copiar .ms { font-size: 18px; color: var(--ink-2); letter-spacing:
 .hoja-equipos p.eq-nada { margin: 8px 0 0; }
 .hoja-equipos p.eq-err { margin: 0 0 8px; color: #B3261E; font-size: 14px; }
 
+/* «Artistas que sigues» (app/artistas.js): la foto (o la inicial) junto al
+   nombre, en la lista y en el buscador. */
+.art-av { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; flex: none; background: var(--soft);
+  display: inline-grid; place-items: center; font-weight: 800; color: var(--ink-2); }
+.art-fila { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
+.equipos-lista .art-fila h2 { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.art-fila h2 a { color: inherit; }
+.eq-fila .art-av { width: 40px; height: 40px; }
+
 /* Bonos pagados en el local (app/bonos.js): «Te quedan 7 de 10» y su barra,
    neutra (el texto lo dice todo). */
 .bono-quedan { display: block; font-weight: 800; margin-top: 6px; }

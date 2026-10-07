@@ -14,12 +14,14 @@
           { "/": "/c/*", "comment": "QR de cliente (bonos)" },
           { "/": "/sorteo/*", "comment": "Sorteo (página y bases)" },
           { "/": "/cola/*", "comment": "Cola virtual (cartel para la puerta)" },
+          { "/": "/a/*", "comment": "Página de un artista" },
           { "/": "/en/o/*", "comment": "Offer or event (EN)" },
           { "/": "/en/b/*", "comment": "Business page (EN)" },
           { "/": "/en/friend/*", "comment": "Friend link (EN)" },
           { "/": "/en/rp/*", "comment": "Promoter link (EN)" },
           { "/": "/en/giveaway/*", "comment": "Giveaway (EN)" },
-          { "/": "/en/queue/*", "comment": "Virtual queue (EN)" }
+          { "/": "/en/queue/*", "comment": "Virtual queue (EN)" },
+          { "/": "/en/a/*", "comment": "Artist page (EN)" }
         ]
       }
     ]

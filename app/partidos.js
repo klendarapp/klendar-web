@@ -7,7 +7,7 @@
  * - `#/equipos?seguir=<id>&nombre=<nombre>`: lo que manda «Seguir a Real
  *   Madrid» desde la web pública sin sesión. Al entrar, se sigue; si el
  *   enlace no viene de un botón de esta web (sin la marca de
- *   /assets/partidos.js), primero se pregunta (`confirmaEnlace`).
+ *   /assets/seguir.js), primero se pregunta (`confirmaEnlace`).
  * - La fila de la portada de la cuenta (`filaEquipos`), debajo de «Series que
  *   sigues».
  *
@@ -60,7 +60,7 @@ RUTAS.equipos = async (_partes, params) => {
     history.replaceState(null, '', `${location.pathname}${location.search}#/equipos`);
     try {
       await llamar('follow_broadcast_team', { p_team: seguir });
-      guardaZonaPartidos();
+      guardaZonaAvisos();
       toast(textoSigues(quien));
     } catch (e) { toast(errorEquipo(e), true); }
   }
@@ -113,12 +113,34 @@ RUTAS.equipos = async (_partes, params) => {
 function buscaEquipo(alCerrar) {
   const S = SE();
   const lang = EN ? 'en' : 'es';
+  hojaSeguir({
+    titulo: S.followTeam,
+    etiqueta: S.searchTeam,
+    nada: S.noTeamFound,
+    buscar: (q) => llamar('broadcast_team_search', { p_q: q, p_limit: 20 }),
+    fila: (x) => ({
+      detalle: [x.full_name && x.full_name !== x.name ? x.full_name : '', KEm.deporte(x.sport, lang)].filter(Boolean).join(' · '),
+      si: S.following(x.name), no: S.follow(x.name),
+    }),
+    cambia: (id, on) => llamar(on ? 'unfollow_broadcast_team' : 'follow_broadcast_team', { p_team: id }),
+    error: errorEquipo,
+    alCerrar,
+  });
+}
+
+/** La hoja de «Seguir a un equipo» y «Seguir a un artista» (app/artistas.js):
+ * un buscador y, por cada resultado, su nombre, una línea y el botón de seguir
+ * (en activo si ya lo sigues), que sigue o deja de seguir sin cerrarla. Al
+ * seguir, se guarda la zona para los avisos (`guardaZonaAvisos`). Al cerrar,
+ * `alCerrar` si ha cambiado algo.
+ * `fila(x)` → { detalle, si, no, foto? } (`foto`: HTML a la izquierda). */
+function hojaSeguir({ titulo, etiqueta, nada, buscar, fila, cambia, error, alCerrar, clase = 'hoja-equipos' }) {
   const d = document.createElement('dialog');
-  d.className = 'dialogo hoja-equipos';
+  d.className = `dialogo ${clase}`;
   d.setAttribute('aria-labelledby', 'eq-t');
   d.innerHTML = `<button type="button" class="cerrar-hoja" aria-label="${esc(t('Cerrar'))}">×</button>
-    <h2 id="eq-t">${esc(S.followTeam)}</h2>
-    <form class="formu" novalidate><label>${esc(S.searchTeam)}<input name="q" type="search" autocomplete="off" maxlength="40" enterkeyhint="search"></label></form>
+    <h2 id="eq-t">${esc(titulo)}</h2>
+    <form class="formu" novalidate><label>${esc(etiqueta)}<input name="q" type="search" autocomplete="off" maxlength="40" enterkeyhint="search"></label></form>
     <p class="eq-err" role="alert" hidden></p>
     <div class="eq-res" aria-live="polite"></div>`;
   document.body.appendChild(d);
@@ -132,18 +154,21 @@ function buscaEquipo(alCerrar) {
   let espera = null;
   const pintaRes = (lista, q) => {
     if (q.length < 2) { res.innerHTML = ''; return; }
-    if (!lista.length) { res.innerHTML = `<p class="muted eq-nada">${esc(S.noTeamFound)}</p>`; return; }
-    res.innerHTML = lista.map((x) => `<div class="eq-fila">
-        <span class="eq-t"><b>${esc(x.name)}</b><small>${esc([x.full_name && x.full_name !== x.name ? x.full_name : '', KEm.deporte(x.sport, lang)].filter(Boolean).join(' · '))}</small></span>
-        <button type="button" class="pill${x.following ? ' on' : ''}" data-equipo="${esc(x.id)}" data-nombre="${esc(x.name)}" aria-pressed="${x.following ? 'true' : 'false'}">${esc(x.following ? S.following(x.name) : S.follow(x.name))}</button>
-      </div>`).join('');
+    if (!lista.length) { res.innerHTML = `<p class="muted eq-nada">${esc(nada)}</p>`; return; }
+    res.innerHTML = lista.map((x) => {
+      const f = fila(x);
+      return `<div class="eq-fila">
+        ${f.foto || ''}<span class="eq-t"><b>${esc(x.name)}</b>${f.detalle ? `<small>${esc(f.detalle)}</small>` : ''}</span>
+        <button type="button" class="pill${x.following ? ' on' : ''}" data-equipo="${esc(x.id)}" data-si="${esc(f.si)}" data-no="${esc(f.no)}" aria-pressed="${x.following ? 'true' : 'false'}">${esc(x.following ? f.si : f.no)}</button>
+      </div>`;
+    }).join('');
   };
   const busca = async () => {
     const q = campo.value.trim();
     const n = ++pedido;
     if (q.length < 2) { pintaRes([], q); return; }
     try {
-      const lista = (await llamar('broadcast_team_search', { p_q: q, p_limit: 20 })) || [];
+      const lista = (await buscar(q)) || [];
       if (n === pedido) pintaRes(lista, q);
     } catch (e) { if (n === pedido) res.innerHTML = `<p class="muted">${esc(e.message || amable(''))}</p>`; }
   };
@@ -154,16 +179,15 @@ function buscaEquipo(alCerrar) {
     if (!b || b.disabled) return;
     // Sin `ocupado`: el botón cambia de texto al terminar («Sigues a …»).
     const on = b.getAttribute('aria-pressed') === 'true';
-    const nom = b.dataset.nombre || '';
     b.disabled = true;
-    llamar(on ? 'unfollow_broadcast_team' : 'follow_broadcast_team', { p_team: b.dataset.equipo }).then(() => {
+    cambia(b.dataset.equipo, on).then(() => {
       cambiado = true;
-      if (!on) guardaZonaPartidos();
+      if (!on) guardaZonaAvisos();
       b.setAttribute('aria-pressed', on ? 'false' : 'true');
       b.classList.toggle('on', !on);
-      b.textContent = on ? S.follow(nom) : S.following(nom);
+      b.textContent = on ? b.dataset.no : b.dataset.si;
       err.hidden = true;
-    }, (e2) => falla(errorEquipo(e2))).then(() => { b.disabled = false; });
+    }, (e2) => falla(error(e2))).then(() => { b.disabled = false; });
   });
   d.querySelector('.cerrar-hoja').onclick = () => d.close();
   d.addEventListener('click', (e) => { if (e.target === d) d.close(); });
@@ -172,11 +196,12 @@ function buscaEquipo(alCerrar) {
   campo.focus();
 }
 
-/** La zona de los filtros de Explorar (la de este navegador) para el aviso
- * antes de los partidos: la distancia y, con una ciudad, esa ciudad
- * (migración 20261203100002 de la app). La base solo la guarda si sigue
- * algún equipo. No falla nunca. */
-function guardaZonaPartidos() {
+/** La zona de los filtros de Explorar (la de este navegador) para los avisos
+ * de lo que sigues (antes de los partidos de tus equipos y las fechas nuevas
+ * de tus artistas): la distancia y, con una ciudad, esa ciudad (migración
+ * 20261203100002 de la app). La base solo la guarda si sigue algún equipo o
+ * artista. No falla nunca. */
+function guardaZonaAvisos() {
   const z = { p_radius_m: 5000, p_lat: null, p_lng: null, p_city: null };
   try {
     const g = JSON.parse(localStorage.getItem('klendar.filtros') || 'null');

@@ -25,6 +25,8 @@ import { rejilla, tarjeta } from './tarjeta.js';
 import KM from '../../assets/marcas.js';
 import { notFound, sitioAhoraScripts } from './views.js';
 import { PARTIDOS_CSS, icPartido, origenDeZona, partidosBase, partidosEnBusqueda, zonaBaseDeExplorar, zonaDeExplorar } from './partidos.js';
+import { artistasEnBusqueda } from './artistas.js';
+import KA from '../../assets/artistas.js';
 import KE from '../../assets/emisiones.js';
 import KG from '../../assets/textos-grupos.js';
 import KS from '../../assets/textos-sorteos.js';
@@ -244,9 +246,17 @@ const ic = (n, s = 18) => `<svg class="ic" viewBox="0 0 24 24" width="${s}" heig
 async function conPrecios(lista) {
   const ids = [...new Set((lista || []).map((b) => b.id).filter((id) => /^[0-9a-f-]{36}$/i.test(id || '')))].slice(0, 100);
   if (!ids.length) return;
-  const filas = await rows('businesses', `select=id,price_level&id=in.(${ids.join(',')})`).catch(() => []);
+  // Y los organizadores sin local fijo (`public_organizers`, una lista
+  // corta): su tarjeta no lleva dirección sino «Organiza en distintos sitios».
+  const [filas, organizadores] = await Promise.all([
+    rows('businesses', `select=id,price_level&id=in.(${ids.join(',')})`).catch(() => []),
+    rpcAll('public_organizers', {}).then((x) => new Set(x)).catch(() => new Set()),
+  ]);
   const por = new Map(filas.map((f) => [f.id, f.price_level]));
-  for (const b of lista) if (por.get(b.id)) b.price_level = por.get(b.id);
+  for (const b of lista) {
+    if (por.get(b.id)) b.price_level = por.get(b.id);
+    if (organizadores.has(b.id)) { b.organizer = true; b.address = null; }
+  }
 }
 
 /** Tarjeta de negocio, para «Tipo: Negocios». */
@@ -259,6 +269,7 @@ const bizCard = (b, lang, S) => {
     <span class="ncard-body">
       <b>${esc(b.name)}</b>
       <span class="muted">${esc(nombre)}${precio ? ` · <span aria-label="${esc(KM.t(lang).priceA11y + KM.significado(Number(b.price_level), lang))}">${precio}</span>` : ''}${b.address ? ` · ${esc(b.address)}` : ''}</span>
+      ${b.organizer ? `<span class="muted">${esc(KA.t(lang).organises)}</span>` : ''}
       ${b.live ? `<span class="tag">${esc(S.live(b.live))}</span>` : ''}
     </span>
     <span class="ncard-ir" aria-hidden="true">${ic('der', 20)}</span>
@@ -841,7 +852,7 @@ export async function explorePage(url, lang, modo = 'explorar') {
   // Las ciudades de Klendar (`cities`): de cuál es una búsqueda y, para «Dónde
   // ver el partido», el punto desde el que se cuentan los bares.
   const ciudadesP = rows('cities', 'select=id,name,lat,lng&order=position.asc').catch(() => []);
-  const [res, cities, cats, cols, sitios, tiempo, todasCats, klendarCities, seccionPartidos] = await Promise.all([
+  const [res, cities, cats, cols, sitios, tiempo, todasCats, klendarCities, seccionPartidos, seccionArtistas] = await Promise.all([
     negocios
       ? rpc('public_businesses', {
         p_city: city || null, p_category: cat || null, p_q: q || null,
@@ -870,6 +881,8 @@ export async function explorePage(url, lang, modo = 'explorar') {
     conNegociosArriba
       ? ciudadesP.then((ck) => partidosEnBusqueda({ q, lang, origen: origenDeZona(e, ck), zona: zonaDeExplorar(e, lang), zonaBase: zonaBaseDeExplorar(e) })).catch(() => '')
       : '',
+    // Y «Artistas»: los que encajan, cada uno a su página (como la app).
+    conNegociosArriba ? artistasEnBusqueda({ q, lang }).catch(() => '') : '',
   ]);
   const catsHoja = (todasCats || []).length ? todasCats : (cats || []);
   const items = res?.items || [];
@@ -1293,9 +1306,10 @@ ${GRUPOS_CSS}` : ''}`;
     resultados = `${negArriba.length ? `<section class="seccion-negocios" aria-labelledby="secNeg">
       <div class="seccion-cab"><h2 id="secNeg">${esc(S.bizSection)}</h2>${(sitios?.total || 0) > negArriba.length ? `<a href="${esc(link({ kind: 'places', vista: '' }))}">${esc(S.allPlaces)}</a>` : ''}</div>
       <div class="nlist">${negArriba.map((b) => bizCard(b, lang, S)).join('')}</div></section>` : ''}
+    ${seccionArtistas}
     ${seccionPartidos}
-    ${(negArriba.length || seccionPartidos) && items.length ? `<h2 class="seccion-t-pub">${esc(S.offersSection)}</h2>` : ''}
-    ${vacio ? '' : rejilla(items, lang, { primera: !negArriba.length && !seccionPartidos, galeria: true })}`;
+    ${(negArriba.length || seccionPartidos || seccionArtistas) && items.length ? `<h2 class="seccion-t-pub">${esc(S.offersSection)}</h2>` : ''}
+    ${vacio ? '' : rejilla(items, lang, { primera: !negArriba.length && !seccionPartidos && !seccionArtistas, galeria: true })}`;
   }
 
   const body = `

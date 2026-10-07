@@ -1,0 +1,63 @@
+/* Artistas y organizadores sin local fijo en la web pública
+   (functions/_lib/artistas.js): la página de un artista, «Actúa: …» en la
+   ficha de un evento y «Próximas fechas» (también la de un organizador en
+   /b/). Neutros: el coral, solo para el botón principal y la oferta. */
+
+/* La cabecera: foto (o inicial), nombre y «Seguir». */
+.art-cab { display: flex; align-items: center; gap: 18px; margin: 6px 0 14px; }
+.art-foto { width: 112px; height: 112px; border-radius: 50%; object-fit: cover; flex: none; background: var(--soft);
+  display: inline-grid; place-items: center; font-family: var(--display); font-weight: 800; font-size: 40px; color: var(--ink-2); }
+.art-cab-t { min-width: 0; flex: 1; }
+.art-cab-t .eyebrow { margin-bottom: 4px; }
+.art-cab-t h1 { margin: 0 0 12px; overflow-wrap: anywhere; }
+/* «Seguir» ⇄ «Siguiendo»: neutro con borde; siguiendo, en tinta. */
+.art-seguir .pill { justify-content: center; min-width: 140px; padding: 10px 18px; font-size: 14px; }
+.art-seguir .pill[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: transparent; }
+@media (max-width: 520px) {
+  .art-cab { gap: 14px; }
+  .art-foto { width: 84px; height: 84px; font-size: 30px; }
+}
+.art-bio { max-width: 680px; margin: 0 0 14px; color: var(--ink); line-height: 1.55; overflow-wrap: anywhere; }
+.art-enlaces { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 8px; }
+.art-enlaces .pill { padding: 8px 14px; font-size: 14px; }
+.pub .art-h { font-size: 20px; margin: 22px 0 12px; }
+.art-sin-fechas { padding: 16px 18px; border-radius: 22px; border: 1px dashed var(--glass-border); max-width: 680px; }
+.art-sin-fechas p { margin: 0; }
+.art-sin-fechas p + p { margin-top: 4px; }
+
+/* «Próximas fechas»: una fila por fecha, a su ficha. */
+.fechas-lista { list-style: none; padding: 0; margin: 0 0 8px; display: grid; gap: 10px; max-width: 760px; }
+.fechas-lista a { display: flex; align-items: center; gap: 14px; padding: 12px 14px 12px 16px; border-radius: 20px; background: var(--glass);
+  border: 1px solid var(--glass-border); color: var(--ink); min-width: 0; }
+.fechas-lista a:hover { text-decoration: none; border-color: var(--ink-2); }
+.fecha-cuando { flex: none; width: 96px; display: grid; font-size: 14px; line-height: 1.3; font-variant-numeric: tabular-nums; }
+.fecha-cuando b { font-weight: 800; }
+.fecha-cuando span { color: var(--ink-2); font-weight: 700; }
+.fecha-t { display: grid; gap: 2px; min-width: 0; flex: 1; }
+.fecha-t b { font-size: 16px; line-height: 1.3; overflow-wrap: anywhere; }
+.fecha-t small { font-size: 13px; overflow-wrap: anywhere; }
+.fecha-ir { color: var(--ink-2); display: inline-flex; flex: none; }
+@media (max-width: 420px) {
+  .fechas-lista a { flex-wrap: wrap; gap: 4px 10px; }
+  .fecha-cuando { width: 100%; display: block; }
+  .fecha-cuando span::before { content: ' · '; }
+  .fecha-ir { display: none; }
+}
+/* En la columna de la ficha de un organizador, más estrecha. */
+.side .fechas-lista { gap: 8px; }
+.side .fechas-lista a { flex-wrap: wrap; gap: 2px 10px; padding: 10px 12px; border-radius: 16px; }
+.side .fecha-cuando { width: 100%; display: block; font-size: 13px; }
+.side .fecha-cuando b, .side .fecha-cuando span { color: var(--ink-2); font-weight: 700; }
+.side .fecha-cuando span::before { content: ' · '; }
+.side .fecha-ir { display: none; }
+.side-h.fechas-h { margin-top: 0; }
+
+
+/* «Actúa: DJ Nano ›» en la ficha de un evento. */
+.pub .actua { margin: 10px 0 14px; font-size: 15px; line-height: 1.45; color: var(--ink); overflow-wrap: anywhere; }
+.pub a.actua { display: flex; align-items: center; gap: 6px; width: fit-content; max-width: 100%; }
+.pub p.actua { display: block; }
+a.actua:hover { text-decoration: none; }
+a.actua:hover b { text-decoration: underline; text-underline-offset: 3px; }
+a.actua .ic { color: var(--ink-2); }
+p.actua a { font-weight: 700; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }

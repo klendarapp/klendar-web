@@ -226,16 +226,43 @@ const htmlBasico = (d) => `
   <label class="f full"><span>Categoría *</span><span data-campo-cat></span></label>
   <label class="f full"><span>De qué va <small>(¿qué ofrece tu negocio? ¿qué lo hace especial?)</small></span><textarea name="description" maxlength="500" rows="4">${esc(d.description || '')}</textarea></label>`;
 
-/** Dirección, ciudad y el punto en el mapa. */
-const htmlDonde = (d) => `
-  <label class="f full"><span>Dirección *</span><input name="address" maxlength="120" required placeholder="Calle y número" value="${esc(d.address || '')}"></label>
+/** Dirección, ciudad y el punto en el mapa. Con «No tengo local fijo»
+ * (organizador: fiestas, promotoras), sin dirección: el punto es la zona
+ * donde organiza (su ciudad) y cada evento lleva su sitio (tanda C). */
+const htmlDonde = (d) => {
+  const SAf = globalThis.KlendarArtistas.t(I18N.lang);
+  const sin = !!d.sin_local;
+  return `
+  <label class="f full casilla"><input type="checkbox" name="no_fixed_venue" ${sin ? 'checked' : ''}><span>${esc(SAf.noVenue)}</span></label>
+  <label class="f full" data-dir${sin ? ' hidden' : ''}><span>Dirección *</span><input name="address" maxlength="120" required placeholder="Calle y número" value="${esc(d.address || '')}"></label>
   <label class="f full"><span>Ciudad *</span><input name="city" maxlength="60" required value="${esc(d.city || '')}"></label>
   <div class="full" data-punto-caja>
+    <p class="zona-t" data-zona-t${sin ? '' : ' hidden'}><b>${esc(SAf.zoneLabel)} *</b></p>
     <p class="mapa-botones"><button class="btn sm" type="button" data-buscar>${ms('location_on')}Buscar en el mapa</button>
-      <button class="btn sm" type="button" data-aqui>Estoy en el local</button></p>
-    <p class="muted" data-punto-txt style="margin:0 0 8px">${d.punto ? 'Ubicación marcada. Si no es exacta, arrastra la chincheta.' : 'Marca dónde está la puerta: la gente te encuentra por la distancia.'}</p>
+      <button class="btn sm" type="button" data-aqui${sin ? ' hidden' : ''}>Estoy en el local</button></p>
+    <p class="muted" data-punto-txt style="margin:0 0 8px">${esc(textoPunto(sin, !!d.punto))}</p>
     <div class="mapa" data-mapa></div>
   </div>`;
+};
+/** Lo que se dice junto al mapa. */
+function textoPunto(sinLocal, marcado) {
+  if (sinLocal) return globalThis.KlendarArtistas.t(I18N.lang).zoneHint;
+  return I18N.t(marcado ? 'Ubicación marcada. Si no es exacta, arrastra la chincheta.' : 'Marca dónde está la puerta: la gente te encuentra por la distancia.');
+}
+/** ¿Está marcado «No tengo local fijo»? */
+const sinLocalFijo = (f) => !!f.elements.no_fixed_venue?.checked;
+/** Al marcar o desmarcar «No tengo local fijo»: fuera (o de vuelta) la
+ * dirección, «Estoy en el local», el horario y «Cómo es tu local»; el punto
+ * pasa a ser la «Zona donde organizas». */
+function pintaSinLocal(f, est) {
+  const sin = sinLocalFijo(f);
+  const caja = f.closest('form') || f;
+  $$('[data-dir], [data-aqui], [data-con-local]', caja).forEach((x) => { x.hidden = sin; });
+  $$('[data-zona-t]', caja).forEach((x) => { x.hidden = !sin; });
+  const txt = $('[data-punto-txt]', caja);
+  if (txt && !txt.classList.contains('err')) txt.textContent = textoPunto(sin, !!est?.punto);
+  if (sin && f.elements.address) KL_CAMPO(f.elements.address, null);
+}
 
 /** Teléfono, web, correo de contacto (lo ve la gente) y redes. */
 const htmlContacto = (d) => `
@@ -371,7 +398,7 @@ async function activaDonde(caja, f, est, alCambiar = () => {}) {
   };
   const marca = async (p, rellenar) => {
     est.punto = { lat: p.lat, lng: p.lng };
-    txt.textContent = I18N.t('Ubicación marcada. Si no es exacta, arrastra la chincheta.');
+    txt.textContent = sinLocalFijo(f) ? textoPunto(true, true) : I18N.t('Ubicación marcada. Si no es exacta, arrastra la chincheta.');
     txt.classList.remove('err');
     if (rellenar) {
       const d = await direccionDe(p.lat, p.lng);
@@ -381,12 +408,13 @@ async function activaDonde(caja, f, est, alCambiar = () => {}) {
   };
   const mapa = await mapaPunto($('[data-mapa]', caja), est.punto, (p) => marca(p, true));
   $('[data-buscar]', caja).onclick = async () => {
-    const q = [f.elements.address.value, f.elements.city.value].map((x) => x.trim()).filter(Boolean).join(', ');
-    if (!q) { toast('Escribe primero la dirección y la ciudad.', true); return; }
+    const q = [sinLocalFijo(f) ? '' : f.elements.address.value, f.elements.city.value].map((x) => x.trim()).filter(Boolean).join(', ');
+    if (!q) { toast(sinLocalFijo(f) ? 'Escribe primero la ciudad.' : 'Escribe primero la dirección y la ciudad.', true); return; }
     const d = await buscaDireccion(q);
     if (!d) { toast('No encontramos esa dirección. Prueba a escribirla de otra forma o marca el punto en el mapa.', true); return; }
     autoRellena('city', d.city);
-    mapa?.mueve(d);
+    // Una ciudad entera se ve más lejos que un portal.
+    mapa?.mueve(d, sinLocalFijo(f) ? 11 : undefined);
     marca(d, false);
   };
   $('[data-aqui]', caja).onclick = () => {
@@ -404,11 +432,13 @@ async function activaDonde(caja, f, est, alCambiar = () => {}) {
  * qué falta junto al mapa (`panelFormMissingLocation` en la app). */
 async function aseguraPunto(caja, f, est) {
   if (est.punto) return true;
-  const q = `${f.elements.address.value.trim()}, ${f.elements.city.value.trim()}`;
+  const q = sinLocalFijo(f) ? f.elements.city.value.trim() : `${f.elements.address.value.trim()}, ${f.elements.city.value.trim()}`;
   const b = await buscaDireccion(q).catch(() => null);
   if (b) { est.punto = { lat: b.lat, lng: b.lng }; return true; }
   const txt = $('[data-punto-txt]', caja);
-  txt.textContent = I18N.t('Marca en el mapa dónde está el local (o pulsa «Buscar en el mapa»).');
+  txt.textContent = sinLocalFijo(f)
+    ? bi('Marca en el mapa tu zona (o pulsa «Buscar en el mapa» con la ciudad escrita).', 'Mark your area on the map (or type the city and tap “Search on the map”).')
+    : I18N.t('Marca en el mapa dónde está el local (o pulsa «Buscar en el mapa»).');
   txt.classList.add('err');
   $('[data-buscar]', caja).focus();
   txt.scrollIntoView({ block: 'center', behavior: 'smooth' });
@@ -430,13 +460,15 @@ const socialDe = (d) => Object.fromEntries(['instagram', 'tiktok', 'facebook']
 /** Lo que falta para estar completa, en las mismas ocho cosas que la app
  * (`profileCompleteness`). */
 function fichaCompleta(b, { sitio, carta }) {
+  // Un organizador sin local fijo no tiene horario ni «Cómo es tu local».
+  const org = esOrganizador();
   const checks = [
     !!b.logo_url, !!b.cover_image_url, (b.gallery || []).length > 0, !!String(b.description || '').trim(),
-    hayHorario(b.opening_hours),
+    org ? null : hayHorario(b.opening_hours),
     !!(b.phone || b.website || b.contact_email || Object.values(b.social_links || {}).some((x) => String(x || '').trim())),
-    sitio.length > 0,
+    org ? null : sitio.length > 0,
     !!(b.menu_url || (b.menu_images || []).length || (carta || []).length),
-  ];
+  ].filter((x) => x !== null);
   return Math.round(checks.filter(Boolean).length * 100 / checks.length);
 }
 
@@ -464,6 +496,8 @@ PAGES.ficha = async (v, parte) => {
   if (parte === 'carta') { location.hash = '#/carta'; return; }
   if (parte && !PARTES_FICHA.some((p) => p[0] === parte) && parte !== 'datos') { location.hash = '#/ficha'; return; }
   if (parte === 'datos' && !esPropietario()) { location.hash = '#/ficha'; return; }
+  // Un organizador sin local fijo no tiene horario ni «Cómo es tu local».
+  if (esOrganizador() && ['horario', 'local'].includes(parte)) { location.hash = '#/ficha'; return; }
   const { b, cats, carta } = await datosFicha();
   if (!b) {
     v.innerHTML = `<section class="vacio"><h2>${esc(I18N.t('No hemos podido cargar tu ficha.'))}</h2><div class="vacio-botones"><button class="btn primary" type="button" data-reintentar>${esc(I18N.t('Reintentar'))}</button></div></section>`;
@@ -488,7 +522,9 @@ function indiceFicha(v, b, cats, carta) {
   const resumen = {
     fotos: une([b.cover_image_url && I18N.t('Portada'), b.logo_url && I18N.t('Logo'), (b.gallery || []).length && foto(b.gallery.length)].filter(Boolean), 'Sin fotos todavía'),
     basico: [nombreCat || (b.category_id ? '' : I18N.t('Sin categoría')), desc || I18N.t('sin descripción')].filter(Boolean).join(' · '),
-    donde: [[b.address, b.city].filter(Boolean).join(', '), I18N.t('en el mapa')].filter(Boolean).join(' · '),
+    donde: esOrganizador()
+      ? [globalThis.KlendarArtistas.t(I18N.lang).zoneLabel, b.city].filter(Boolean).join(' · ')
+      : [[b.address, b.city].filter(Boolean).join(', '), I18N.t('en el mapa')].filter(Boolean).join(' · '),
     horario: resumenHorario(b.opening_hours),
     contacto: une([b.phone && I18N.t('Teléfono'), b.website && I18N.t('Web'), b.contact_email && I18N.t('Correo'), ...redes].filter(Boolean), 'Sin teléfono, web ni redes'),
     carta: une([(carta || []).length && bi(carta.length === 1 ? '1 sección' : `${carta.length} secciones`, carta.length === 1 ? '1 section' : `${carta.length} sections`),
@@ -498,7 +534,7 @@ function indiceFicha(v, b, cats, carta) {
     mayores: b.adults_only ? I18N.t('Sí') : I18N.t('No'),
   };
   const sinCategoria = !b.category_id;
-  const sinDireccion = !b.address || !b.city;
+  const sinDireccion = esOrganizador() ? !b.city : (!b.address || !b.city);
   const fila = (k, titulo, texto, { mal = false, peligro = false, href = null } = {}) => `<a class="indice-fila${peligro ? ' peligro' : ''}" href="${href || `#/${k === 'carta' ? 'carta' : `ficha/${k}`}`}">
     <span><b>${esc(I18N.t(titulo))}</b>${texto ? `<small${mal ? ' class="mal"' : ''}>${esc(texto)}</small>` : ''}</span>${ms('chevron_right')}</a>`;
 
@@ -512,7 +548,7 @@ function indiceFicha(v, b, cats, carta) {
     ${sinCategoria || sinDireccion ? `<a class="aviso-falta" href="#/ficha/${sinCategoria ? 'basico' : 'donde'}">${ms('cancel')}<span>${esc(I18N.t(sinCategoria ? 'Elige una categoría.' : 'Falta la dirección o la ciudad.'))}</span>${ms('chevron_right')}</a>` : ''}
     <p class="muted" style="margin:0 0 10px">Toca un apartado para cambiarlo. Cada uno se guarda por separado.</p>
     <nav class="card indice" aria-label="${esc(I18N.t('Apartados de la ficha'))}">
-      ${PARTES_FICHA.map(([k, titulo]) => fila(k, titulo, resumen[k], { mal: (k === 'basico' && sinCategoria) || (k === 'donde' && sinDireccion) })).join('')}
+      ${PARTES_FICHA.filter(([k]) => !(esOrganizador() && ['horario', 'local'].includes(k))).map(([k, titulo]) => fila(k, titulo, resumen[k], { mal: (k === 'basico' && sinCategoria) || (k === 'donde' && sinDireccion) })).join('')}
     </nav>
     ${esPropietario() ? `<section class="card indice zona-delicada" aria-labelledby="zonaFicha">
       <h2 id="zonaFicha">Zona delicada · solo el propietario</h2>
@@ -535,6 +571,7 @@ async function parteFicha(v, parte, b, cats) {
   const redes = b.social_links || {};
   const d = {
     ...b, instagram: redes.instagram || '', tiktok: redes.tiktok || '', facebook: redes.facebook || '', punto: null,
+    sin_local: esOrganizador(),
   };
   const est = { logo: b.logo_url || '', portada: b.cover_image_url || '', galeria: [...(b.gallery || [])] };
   let horario = null;
@@ -564,7 +601,10 @@ async function parteFicha(v, parte, b, cats) {
     return {
       fotos: () => ({ logo_url: est.logo, cover_image_url: est.portada, gallery: est.galeria }),
       basico: () => ({ name: String(x.name || '').trim(), category_id: x.category_id || null, description: String(x.description || '').trim() }),
-      donde: () => ({ address: String(x.address || '').trim(), city: String(x.city || '').trim(), ...(d.punto ? { lat: d.punto.lat, lng: d.punto.lng } : {}) }),
+      // Sin local fijo, sin dirección (la base la vacía): la ciudad y la zona.
+      donde: () => (f().elements.no_fixed_venue?.checked
+        ? { city: String(x.city || '').trim(), ...(d.punto ? { lat: d.punto.lat, lng: d.punto.lng } : {}), no_fixed_venue: true }
+        : { address: String(x.address || '').trim(), city: String(x.city || '').trim(), ...(d.punto ? { lat: d.punto.lat, lng: d.punto.lng } : {}), no_fixed_venue: false }),
       horario: () => ({ opening_hours: horario ? horario.valor() : null }),
       contacto: () => ({ phone: String(x.phone || '').trim(), website: String(x.website || '').trim(), contact_email: String(x.contact_email || '').trim(), social_links: socialDe(x) }),
       local: () => ({ amenities: $$('[name=sitio]:checked', v).map((c) => c.value).sort(),
@@ -585,7 +625,10 @@ async function parteFicha(v, parte, b, cats) {
         alCambiar: (ids) => { d.category_id = ids[0]; KL_CAMPO($('.selcat-campo', v), null); },
       });
     }
-    if (parte === 'donde') activaDonde($('[data-punto-caja]', v), f(), d);
+    if (parte === 'donde') {
+      activaDonde($('[data-punto-caja]', v), f(), d);
+      f().elements.no_fixed_venue.addEventListener('change', () => pintaSinLocal(f(), d));
+    }
     if (parte === 'horario') horario = editorHorario($('[data-horario]', v), horario ? horario.valor() : b.opening_hours);
     if (parte === 'fotos') activaFotos(v, est, (sel) => { pinta(sel); });
     f().onsubmit = guardar;
@@ -603,7 +646,7 @@ async function parteFicha(v, parte, b, cats) {
     ])) return;
     if (parte === 'donde') {
       if (!marcaFaltan([
-        [form.elements.address, !String(x.address || '').trim() ? obligatorioTxt() : null],
+        [form.elements.address, !sinLocalFijo(form) && !String(x.address || '').trim() ? obligatorioTxt() : null],
         [form.elements.city, !String(x.city || '').trim() ? obligatorioTxt() : null],
       ])) return;
       if (!(await aseguraPunto($('[data-punto-caja]', v), form, d))) return;
@@ -626,6 +669,9 @@ async function parteFicha(v, parte, b, cats) {
         // El nombre nuevo, ya en el selector de locales; y la zona, si el
         // punto se ha movido (la base la recalcula igual).
         if (p.name) { BIZ.name = p.name; renderBizPicker(); }
+        // Con o sin local fijo: el menú cambia (sin «Partidos que pones»,
+        // «Antes de cerrar», el cartel del local ni «Días cerrados»).
+        if (typeof p.no_fixed_venue === 'boolean') { BIZ.no_fixed_venue = p.no_fixed_venue; renderNav('ficha'); }
         if (p.lat != null) { BIZ.time_zone = KZ.porCoordenadas(p.lat, p.lng); TZ = KZ.de(BIZ); }
       }
       inicial = JSON.stringify(patch());
@@ -643,7 +689,7 @@ async function parteFicha(v, parte, b, cats) {
 // ── Alta en tres pasos ──────────────────────────────────────────────────────
 let ALTA = null;
 const altaNueva = () => ({
-  name: '', category_id: null, description: '', address: '', city: '', punto: null, horas: null, sitio: [], precio: 0, aforo: false,
+  name: '', category_id: null, description: '', address: '', city: '', punto: null, horas: null, sitio: [], precio: 0, aforo: false, sin_local: false,
   phone: '', website: '', contact_email: '', instagram: '', tiktok: '', facebook: '', tax_id: '', adults_only: false, terms: false, entity: '', entity_note: '',
   fotos: { logo: '', portada: '', galeria: [] },
 });
@@ -654,7 +700,10 @@ const PASOS_ALTA = ['Lo básico', 'Dónde y cuándo', 'Fotos y contacto'];
  * dirección). Sin tocar la página. */
 function pasoAltaIncompleto(n) {
   if (n === 1) return ALTA.name.trim().length < 2 || !ALTA.category_id;
-  if (n === 2) return !ALTA.address.trim() || !ALTA.city.trim() || !ALTA.punto || diasMalHorario(ALTA.horas).length > 0;
+  if (n === 2) {
+    return (!ALTA.sin_local && !ALTA.address.trim()) || !ALTA.city.trim() || !ALTA.punto
+      || (!ALTA.sin_local && diasMalHorario(ALTA.horas).length > 0);
+  }
   return false;
 }
 
@@ -673,9 +722,11 @@ PAGES.alta = async (v, param) => {
         <br><span class="muted">Para dar de alta un negocio hace falta tener 18 años.</span>
         <br><span class="muted">¿Te han invitado al equipo de un negocio? Entonces no hace falta: entra con el mismo correo con el que te invitaron y aparecerá solo.</span></div>`}
       ${htmlBasico(A)}`,
+    // Sin local fijo: ni horario ni «Cómo es tu local» (la base los vacía).
     2: () => `${htmlDonde(A)}
+      <div class="conlocal" data-con-local${A.sin_local ? ' hidden' : ''}>
       <div class="full"><h2 class="alta-sub">Horario</h2><p class="muted" style="margin:0 0 10px">Si aún no lo tienes claro, puedes ponerlo luego.</p><div data-horario></div></div>
-      <div class="full"><h2 class="alta-sub">Cómo es tu local</h2></div>${htmlSitio(A.sitio, A)}`,
+      <div class="full"><h2 class="alta-sub">Cómo es tu local</h2></div>${htmlSitio(A.sitio, A)}</div>`,
     3: () => `<div class="full"><h2 class="alta-sub">Fotos</h2><p class="muted" style="margin:0">Opcional: lo puedes completar después desde Tu ficha.</p></div>
       ${htmlFotos(A.fotos)}
       <div class="full"><h2 class="alta-sub">Contacto y redes</h2></div>${htmlContacto(A)}
@@ -701,6 +752,7 @@ PAGES.alta = async (v, param) => {
       if (caja) caja.hidden = !A.entity;
     }
     if (f.elements.terms) A.terms = f.elements.terms.checked;
+    if (f.elements.no_fixed_venue) A.sin_local = f.elements.no_fixed_venue.checked;
     if (paso === 2) {
       A.sitio = $$('[name=sitio]:checked', f).map((c) => c.value);
       A.precio = Number(x.price_level) || 0;
@@ -733,6 +785,7 @@ PAGES.alta = async (v, param) => {
     }
     if (paso === 2) {
       activaDonde($('[data-punto-caja]', v), f, A);
+      f.elements.no_fixed_venue.addEventListener('change', () => { lee(f); pintaSinLocal(f, A); });
       editorHorario($('[data-horario]', v), A.horas, (h) => { A.horas = h; });
     }
     if (paso === 3) activaFotos(v, A.fotos, (sel) => { lee(f); pinta(sel); }, true);
@@ -756,11 +809,11 @@ PAGES.alta = async (v, param) => {
     }
     if (paso === 2) {
       if (!marcaFaltan([
-        [f.elements.address, !A.address.trim() ? obligatorioTxt() : null],
+        [f.elements.address, !A.sin_local && !A.address.trim() ? obligatorioTxt() : null],
         [f.elements.city, !A.city.trim() ? obligatorioTxt() : null],
       ])) return;
       if (!(await aseguraPunto($('[data-punto-caja]', v), f, A))) return;
-      const mal = diasMalHorario(A.horas);
+      const mal = A.sin_local ? [] : diasMalHorario(A.horas);
       if (mal.length) { toast(avisoHorarioMal(mal), true); $('.hdia.mal input', v)?.focus(); return; }
     }
     if (paso === 3) {
@@ -781,7 +834,7 @@ PAGES.alta = async (v, param) => {
       const id = await rpc('register_business', {
         p_name: A.name.trim(), p_category_id: A.category_id,
         p_lat: A.punto.lat, p_lng: A.punto.lng,
-        p_address: A.address.trim(), p_city: A.city.trim(),
+        p_address: A.sin_local ? null : A.address.trim(), p_city: A.city.trim(),
         p_description: A.description.trim() || null,
         p_phone: A.phone.trim() || null,
         p_website: A.website.trim() || null,
@@ -793,13 +846,20 @@ PAGES.alta = async (v, param) => {
         ...(A.fotos.portada ? { p_cover_image_url: A.fotos.portada } : {}),
         ...(A.fotos.galeria.length ? { p_gallery: A.fotos.galeria } : {}),
         p_social_links: social,
-        ...(A.horas ? { p_opening_hours: A.horas } : {}),
+        ...(A.horas && !A.sin_local ? { p_opening_hours: A.horas } : {}),
       });
+      // «No tengo local fijo»: justo después del alta (como la app). Si
+      // falla, el negocio ya existe: se dice y se marca en «Tu ficha».
+      if (A.sin_local) {
+        await rpc('update_business', { p_id: id, p_patch: { no_fixed_venue: true } }).catch(() => toast(bi(
+          'Tu negocio se ha creado, pero no hemos podido marcar «No tengo local fijo». Márcalo en Tu ficha › Dónde está.',
+          "Your business has been created, but we couldn't tick “I don't have a fixed venue”. Tick it in Your page › Location."), true));
+      }
       // El negocio ya existe: si esto falla, se marca luego en la ficha.
-      if (A.sitio.length) await rpc('set_business_amenities', { p_business: id, p_amenities: A.sitio }).catch(() => null);
+      if (A.sitio.length && !A.sin_local) await rpc('set_business_amenities', { p_business: id, p_amenities: A.sitio }).catch(() => null);
       // «Somos una entidad»: lo decide administración. Si falla, se puede pedir escribiéndonos.
       if (A.entity) await rpc('request_entity', { p_business: id, p_kind: A.entity, p_note: A.entity_note.trim() || null }).catch(() => null);
-      if (A.precio || A.aforo) {
+      if ((A.precio || A.aforo) && !A.sin_local) {
         await rpc('set_business_place_extras', { p_business: id, p_price_level: A.precio || null, p_crowd_enabled: A.aforo }).catch(() => null);
       }
       const punto = A.punto;

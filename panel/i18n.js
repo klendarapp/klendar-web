@@ -623,6 +623,11 @@ const I18N = makeI18N({
     "Escribe la dirección del sitio.": "Type the venue address.",
     "Marca el sitio en el mapa.": "Mark the venue on the map.",
     "Ese sitio está a más de 200 km de tu local: revisa la dirección.": "That venue is over 200 km from your place: check the address.",
+    // Organizador sin local fijo (tanda C).
+    'Antes, pasa a «en otro sitio» o retira lo que tienes publicado en el local.': 'First, switch to “somewhere else” or take down what you have published at your venue.',
+    'Escribe la dirección del local.': "Type your venue's address.",
+    'Di dónde es: como no tienes local fijo, cada publicación lleva su sitio.': "Say where it is: since you don't have a fixed venue, every publication has its own place.",
+    'Escribe primero la ciudad.': 'Type the city first.',
     "El Corte Inglés": "El Corte Inglés",
     "Sin conexión: código guardado": "No connection: code saved",
     "Se validará solo en cuanto vuelva la cobertura.": "It'll be validated as soon as you're back online.",

@@ -24,6 +24,8 @@ import { fuenteHtml, selloEntidad } from './entidades.js';
 import { PARTIDOS_CSS, partidosDelBar } from './partidos.js';
 import { GRUPOS_CSS, grupoEnFicha } from './grupos.js';
 import { sorteosEnFicha } from './sorteos.js';
+import { ARTISTAS_CSS, actuaEnOferta, listaFechas, performersLd } from './artistas.js';
+import KA from '../../assets/artistas.js';
 
 // Iconos de Material (los mismos que la app), en SVG: las páginas públicas
 // no cargan la fuente de iconos.
@@ -195,6 +197,9 @@ export async function offerPage(id, lang, rpRaw = '') {
   const marcasP = rpc('offer_marks', { p_offer: id }).catch(() => null);
   // Evento importado de datos abiertos: su fuente y licencia (atribución).
   const fuenteP = rpc('offer_source', { p_offer: id }).catch(() => null);
+  // «Quién actúa» («Actúa: DJ Nano ›»), cada uno a su página. Sin la función
+  // (o sin red), la ficha sale igual.
+  const actuaP = actuaEnOferta(id, lang).catch(() => ({ html: '', lista: [] }));
   // La ficha del negocio, por su dirección con nombre, y si es una entidad.
   const datosNeg = await datosDeNegocios([o.business_id]);
   const bHref = bizPath(lang, datosNeg.slugs.get(o.business_id) || o.business_id);
@@ -285,6 +290,7 @@ export async function offerPage(id, lang, rpRaw = '') {
     selloEntidad(entidad, lang),
   ].filter(Boolean).join('');
   const fuente = await fuenteP;
+  const actua = await actuaP;
   // Las marcas de la publicación (las mismas que la app).
   const M = KM.t(lang);
   const marcas = (await marcasP) || {};
@@ -326,6 +332,7 @@ export async function offerPage(id, lang, rpRaw = '') {
       <a class="ficha-negocio" href="${esc(bHref)}"${Number.isFinite(o.lat) && Number.isFinite(o.lng) ? ` data-lat="${Number(o.lat).toFixed(5)}" data-lng="${Number(o.lng).toFixed(5)}"` : ''}>${logo}
         <span><b>${esc(o.business_name)}</b><span class="muted">${o.business_rating && o.business_ratings ? `<span class="stars-mini" aria-hidden="true">★</span> ${nota(o.business_rating, lang)} (${o.business_ratings})` : esc(o.business_city || '')}<span class="tj-dist" hidden></span></span></span>
         <svg class="ic" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M8.59 16.59 13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg></a>
+      ${actua.html}
       <p class="ficha-datos">
         ${precioTxt ? `<span class="precio-pill">${esc(precioTxt)}</span>` : ''}
         ${prior ? `<s class="muted">${esc(prior)}</s>` : ''}
@@ -422,8 +429,9 @@ export async function offerPage(id, lang, rpRaw = '') {
         '@context': 'https://schema.org', '@type': 'Event', name: o.title, description: o.description || undefined,
         url: `${BASE}${path}`, image: cover || undefined, startDate: o.event_at, endDate: o.event_end_at || undefined,
         eventStatus: 'https://schema.org/EventScheduled', eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
-        location: { '@type': 'Place', name: o.business_name, url: `${BASE}${bHref}`, address: where || undefined },
+        location: { '@type': 'Place', name: o.venue_name || o.business_name, url: `${BASE}${bHref}`, address: where || undefined },
         organizer: { '@type': 'Organization', name: o.business_name, url: `${BASE}${bHref}` },
+        performer: performersLd(actua.lista, lang),
         offers: o.reservations_enabled
           ? {
               '@type': 'Offer', url: `${BASE}${path}`, availability,
@@ -454,7 +462,8 @@ el.textContent=n<ini?${JSON.stringify(en ? 'Starts in ' : 'Empieza en ')}+dur(in
       lang, path, image: cover, body: body + cuentaAtras + vista + MENU_JS,
       title: `${o.title} · ${o.business_name}`,
       description, privada: true, consulta: rpQ, contador: false,
-      head: `${traducir(lang, `offer:${o.id}`)}
+      head: `${traducir(lang, `offer:${o.id}`)}${actua.html ? `
+${ARTISTAS_CSS}` : ''}
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">`,
     }), 200, 'private, no-store');
@@ -465,7 +474,8 @@ el.textContent=n<ini?${JSON.stringify(en ? 'Starts in ' : 'Empieza en ')}+dur(in
     lang, path, image: cover, body: body + cuentaAtras + vista + MENU_JS,
     title: `${o.title} · ${o.business_name}`,
     description,
-    head: `${traducir(lang, `offer:${o.id}`)}
+    head: `${traducir(lang, `offer:${o.id}`)}${actua.html ? `
+${ARTISTAS_CSS}` : ''}
 <meta name="robots" content="${o.adults_only || fuente ? 'noindex' : 'index, follow'}">
 <script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, '\\u003c')}</script>`,
   }));
@@ -662,7 +672,7 @@ export async function businessPage(param, lang, search = '') {
   // «Clientes verificados»: solo las reseñas de quien ha canjeado algo aquí
   // (`?resenas=verificadas`, el mismo filtro que la app).
   const soloVerificadas = new URLSearchParams(search).get('resenas') === 'verificadas';
-  const [offers, sellos, carta, opiniones, novedades, cierres, nVerificadas, local, partidos, grupoInfo, sorteos] = await Promise.all([
+  const [offers, sellos, carta, opiniones, novedades, cierres, nVerificadas, local, partidos, grupoInfo, sorteos, organizador] = await Promise.all([
     rpcAll('business_offers', { p_id: id }),
     rpcAll('stamp_cards_of', { p_business: id }).catch(() => []), // opcional: sin ella, la ficha sale igual
     rpcAll('business_menu', { p_business: id }),
@@ -677,6 +687,9 @@ export async function businessPage(param, lang, search = '') {
     // «Acepta grupos» y sus sorteos abiertos (tanda C; opcionales).
     rpc('business_group_info', { p_business: id }).catch(() => null),
     rpcAll('business_public_giveaways', { p_business: id }).catch(() => []),
+    // Organizador sin local fijo (fiestas, promotoras): su punto es la zona
+    // donde organiza, no un sitio al que ir. Sin la función, como siempre.
+    rpc('business_is_organizer', { p_business: id }).then((x) => x === true).catch(() => false),
   ]);
   const grupoHtml = grupoEnFicha(grupoInfo, id, lang);
   const sorteosHtml = sorteosEnFicha(sorteos, lang);
@@ -775,9 +788,18 @@ export async function businessPage(param, lang, search = '') {
     nCli > 0 ? `<p class="exclusiva">${icono('candado')}<span>${esc(S.hiddenCust(nCli))}</span></p>` : '',
     b.birthday_gift ? `<p class="exclusiva">${icono('regalo')}<span>${esc(S.birthday)}</span></p>` : '',
   ].join('');
-  const where = [b.address, b.city].filter(Boolean).join(', ');
+  // Un organizador no tiene dirección (ni mapa, horario, «Abierto ahora»,
+  // «¿Hay sitio ahora?», «Cómo llegar» ni distancia): cada evento lleva su
+  // sitio. En su lugar, «Próximas fechas» y «Organiza en distintos sitios».
+  const where = organizador ? '' : [b.address, b.city].filter(Boolean).join(', ');
   // Todo lo de la ficha, en la hora del negocio (Canarias, una menos).
   const tz = zonaDe(b);
+  const SA = KA.t(lang);
+  const fechasOrg = organizador ? events
+    .map((o) => ({ offer_id: o.id, title: o.title, starts_at: o.event_at || o.redeem_start_at, time_zone: tz,
+      venue_name: o.venue_name, venue_address: o.venue_address, business_name: b.name, city: b.city }))
+    .filter((d) => d.starts_at && isUuid(d.offer_id))
+    .sort((x, y) => new Date(x.starts_at) - new Date(y.starts_at)) : [];
 
   // Días cerrados (vacaciones, festivos): el que está en curso o, si cae en
   // el próximo mes, el siguiente. Igual que en la app. Fechas de calendario,
@@ -806,7 +828,7 @@ export async function businessPage(param, lang, search = '') {
 
   // Horario: {"1": [["09:00","14:00"], …], …, "7": []} (1 = lunes). Hoy, en
   // la hora del negocio, va marcado.
-  const horas = b.opening_hours && typeof b.opening_hours === 'object' ? b.opening_hours : null;
+  const horas = !organizador && b.opening_hours && typeof b.opening_hours === 'object' ? b.opening_hours : null;
   const hoy = KZ.diaSemana(tz);
   const horario = horas && Object.keys(horas).length
     ? `<table class="horario">${[1, 2, 3, 4, 5, 6, 7].map((d) => {
@@ -834,7 +856,7 @@ export async function businessPage(param, lang, search = '') {
   const galeria = (b.gallery || []).filter((u) => typeof u === 'string' && u);
   const estrellas = (n) => `<span class="stars" aria-label="${n}/5">${'★'.repeat(n)}<span>${'★'.repeat(5 - n)}</span></span>`;
   const since = KZ.fmt(b.member_since, tz, en ? 'en-GB' : 'es-ES', { month: 'long', year: 'numeric' });
-  const maps = b.lat ? `https://www.google.com/maps/search/?api=1&query=${b.lat},${b.lng}` : null;
+  const maps = b.lat && !organizador ? `https://www.google.com/maps/search/?api=1&query=${b.lat},${b.lng}` : null;
   const city = b.city ? `${agendaBase(lang)}/${citySeg(b.city)}/` : null;
   const cityToday = b.city ? `${todayBase(lang)}/${citySeg(b.city)}/` : null;
 
@@ -846,14 +868,15 @@ export async function businessPage(param, lang, search = '') {
       <div class="neg-id d-top">
         ${b.logo && /^https:\/\//.test(b.logo) ? `<img class="neg-logo" src="${esc(b.logo)}" alt="" width="88" height="88">` : `<span class="neg-logo" aria-hidden="true">${esc((b.name || '·').charAt(0).toUpperCase())}</span>`}
         <div><h1>${esc(b.name)}</h1>
-          <p class="muted"${b.lat ? ` data-lat="${Number(b.lat).toFixed(5)}" data-lng="${Number(b.lng).toFixed(5)}"` : ''}>${esc(b.city || '')}<span class="tj-dist" hidden></span></p></div>
+          <p class="muted"${b.lat && !organizador ? ` data-lat="${Number(b.lat).toFixed(5)}" data-lng="${Number(b.lng).toFixed(5)}"` : ''}>${esc(b.city || '')}<span class="tj-dist" hidden></span></p></div>
         ${masMenu([`<a class="mas-peligro" data-solo-publico href="${cuenta(lang)}#/denunciar/business/${encodeURIComponent(b.id)}" rel="nofollow">${S.reportShort}</a>`], lang, { soloPublico: true })}
       </div>
       ${where ? `<a class="neg-dir" href="${esc(maps || '#')}" rel="nofollow noopener" target="_blank">${icono('lugar')}<span>${esc(b.address || where)}</span><svg class="ic" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M8.59 16.59 13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg></a>` : ''}
       ${b.rating && b.ratings ? `<p class="neg-nota"><a href="#resenas"><span class="stars-mini" aria-hidden="true">★</span> ${nota(b.rating, lang)} · ${esc(en ? (b.ratings === 1 ? '1 review' : `${b.ratings} reviews`) : (b.ratings === 1 ? '1 reseña' : `${b.ratings} reseñas`))}</a>${precioHtml ? ` <span aria-hidden="true">·</span> ${precioHtml}` : ''}</p>`
     : precioHtml ? `<p class="neg-nota">${precioHtml}</p>` : ''}
-      ${local.crowd_enabled ? `<p class="sitio-ahora" data-sitio-ahora="${esc(b.id)}" hidden></p>` : ''}
+      ${local.crowd_enabled && !organizador ? `<p class="sitio-ahora" data-sitio-ahora="${esc(b.id)}" hidden></p>` : ''}
       <div class="badges">
+        ${organizador ? `<span class="badge organiza">${esc(SA.organises)}</span>` : ''}
         ${selloEntidad(local.entity_kind, lang)}
         ${b.is_verified ? `<span class="badge ok">✓ ${S.verified}</span>` : ''}
         ${b.redemptions_total ? `<span class="badge">${esc(S.redeemed(Number(b.redemptions_total)))}</span>` : ''}
@@ -876,6 +899,8 @@ export async function businessPage(param, lang, search = '') {
       <a class="pill accent big" data-solo-publico data-fav="${esc(b.id)}" href="${cuenta(lang)}#/seguir/${encodeURIComponent(b.id)}"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.8 4.5c2.2 0 3.6 1.2 5.2 3 1.6-1.8 3-3 5.2-3 3.8 0 5.9 3.9 4.4 7.3C19.5 16.4 12 21 12 21z"/></svg> <span>${S.open}</span></a>
       <p class="note" data-solo-publico style="margin-bottom:16px">${S.note}</p>
       <p class="acciones" style="margin:0 0 16px">${historiaBoton(lang, 'b', slug || b.id)}</p>
+      ${organizador ? `<h2 class="side-h fechas-h">${esc(SA.upcoming)}</h2>
+      ${fechasOrg.length ? listaFechas(fechasOrg, lang, { conNegocio: false }) : `<p class="muted">${esc(SA.noDatesBiz)}</p>`}` : ''}
       <div class="info">
         ${where ? `<div><span>${icono('lugar')}</span><span>${maps ? `<a href="${esc(maps)}" rel="nofollow noopener" target="_blank">${esc(where)}</a>` : esc(where)}</span></div>` : ''}
         ${b.phone ? `<div><span>${icono('telefono')}</span><span><a href="tel:${esc(b.phone)}">${esc(b.phone)}</a></span></div>` : ''}
@@ -955,9 +980,26 @@ export async function businessPage(param, lang, search = '') {
   if (flash.length) bits.push(`${uno(flash.length, 'oferta flash', 'ofertas flash', 'flash offer', 'flash offers')} ${en ? 'now' : 'ahora'}`);
   if (events.length) bits.push(uno(events.length, 'evento', 'eventos', 'event', 'events'));
   if (where) bits.push(where);
+  else if (organizador && b.city) bits.push(b.city);
   const description = `${bits.join(' · ')}${b.description ? ` — ${b.description}` : ''}`.slice(0, 200);
 
-  const negocioLd = {
+  // Un organizador, como `Organization`: sin dirección ni coordenadas (su
+  // punto es una zona), con sus próximas fechas.
+  const negocioLd = organizador ? {
+    '@type': 'Organization', '@id': `${BASE}/b/${slug || id}#negocio`, name: b.name, description: b.description || undefined,
+    url: `${BASE}${path}`, logo: b.logo || undefined, image: b.cover || b.logo || undefined, telephone: b.phone || undefined,
+    areaServed: b.city ? { '@type': 'City', name: b.city } : undefined,
+    aggregateRating: b.rating && b.ratings
+      ? { '@type': 'AggregateRating', ratingValue: Number(b.rating).toFixed(1), reviewCount: b.ratings }
+      : undefined,
+    sameAs: seguro(b.website) ? [b.website] : undefined,
+    event: fechasOrg.length ? fechasOrg.slice(0, 20).map((d) => {
+      const w = KA.donde(d);
+      return { '@type': 'Event', name: d.title, startDate: d.starts_at, url: `${BASE}${pre(lang)}/o/${d.offer_id}`,
+        eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+        location: { '@type': 'Place', name: w.sitio || b.name, address: d.venue_address || b.city || undefined } };
+    }) : undefined,
+  } : {
     '@type': 'LocalBusiness', '@id': `${BASE}/b/${slug || id}#negocio`, name: b.name, description: b.description || undefined,
     url: `${BASE}${path}`, image: b.cover || b.logo || undefined, telephone: b.phone || undefined,
     address: where
@@ -993,7 +1035,8 @@ export async function businessPage(param, lang, search = '') {
 ${ldScript(jsonLd)}${horario ? '\n<script src="/assets/zona.js?v=1" defer></script>\n<script src="/assets/horario.js?v=1" defer></script>' : ''}${conVisita ? `\n${conVisita}` : ''}${local.crowd_enabled ? `\n${sitioAhoraScripts(lang)}` : ''}
 ${traducir(lang, `business:${b.id}`, carta.length ? `menu:${b.id}` : '')}${partidos ? `
 ${PARTIDOS_CSS}` : ''}${grupoHtml || sorteosHtml ? `
-${GRUPOS_CSS}` : ''}`,
+${GRUPOS_CSS}` : ''}${organizador ? `
+${ARTISTAS_CSS}` : ''}`,
   }), 200, conVisita ? 'no-store' : undefined);
 }
 

@@ -841,3 +841,25 @@ details.bloque .b-cuerpo { display: grid; gap: 14px; padding: 0 16px 16px; }
 .fila-inicio > .ms:last-child { color: var(--ink-2); }
 .cola-mas[open] { flex-basis: auto; }
 .cola-cartel .cola-acciones { margin-top: 12px; }
+
+/* «Quién actúa» (panel/artistas.js): los elegidos en chips (× para quitar),
+   el buscador y sus sugerencias debajo. Neutros. */
+.quien-actua .art-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.art-chip { display: inline-flex; align-items: center; gap: 4px; padding: 6px 6px 6px 12px; border-radius: 999px; background: var(--soft);
+  border: 1px solid var(--glass-border); font-weight: 600; font-size: 14px; max-width: 100%; overflow-wrap: anywhere; }
+.art-chip button { border: 0; background: transparent; color: var(--ink-2); font-size: 18px; line-height: 1; width: 28px; height: 28px;
+  border-radius: 50%; cursor: pointer; flex: none; }
+.art-chip button:hover, .art-chip button:focus-visible { background: var(--glass-border); color: var(--ink); }
+.art-buscar { position: relative; }
+.art-buscar input { width: 100%; box-sizing: border-box; }
+.art-sug { position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 20; background: var(--elevated); border: 1px solid var(--glass-border);
+  border-radius: 14px; box-shadow: 0 12px 30px -12px rgba(0,0,0,.35); padding: 6px; max-height: 280px; overflow-y: auto; }
+.art-sug [role=option] { display: block; width: 100%; text-align: left; border: 0; background: transparent; color: var(--ink); font: inherit;
+  padding: 9px 10px; border-radius: 10px; cursor: pointer; overflow-wrap: anywhere; }
+.art-sug [role=option]:hover, .art-sug [role=option][aria-selected=true] { background: var(--soft); }
+.art-sug [role=option].nuevo { font-weight: 700; }
+.art-sug-t, .art-sug-nada { margin: 4px 10px 6px; font-size: 12px; font-weight: 700; color: var(--ink-2); }
+.art-sug-nada { font-weight: 500; font-size: 14px; }
+/* Alta y «Dónde está» sin local fijo: el título de la zona sobre el mapa. */
+.zona-t { margin: 0 0 8px; }
+.conlocal { display: contents; }

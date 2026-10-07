@@ -116,6 +116,10 @@ function destinoWeb(ruta) {
   if (r.startsWith('/partidos/equipos')) return '#/equipos';
   if ((m = r.match(/^\/partidos\/([0-9a-f-]{36})/i))) return `${EN ? '/en/matches/' : '/partidos/'}${m[1]}`;
   if (r.startsWith('/partidos')) return EN ? '/en/matches/' : '/partidos/';
+  // «DJ Nano actúa cerca» va a la publicación (`/offer/<id>`, arriba). La
+  // página de un artista y «Artistas que sigues», por si llegan.
+  if ((m = r.match(/^\/artists?\/([a-z0-9-]+)$/i)) && m[1] !== 'following') return `${pre}/a/${m[1].toLowerCase()}`;
+  if (r.startsWith('/artists')) return '#/artistas';
   return '';
 }
 
@@ -895,6 +899,8 @@ async function ajustesNotificaciones() {
     sw('series', 'Series que sigues', prefs.notify_series !== false),
     // «Partidos de tus equipos» (encendido de serie), justo debajo, como la app.
     sw('equipos', KlendarEmisiones.t(EN ? 'en' : 'es').prefTeams, prefs.notify_teams !== false),
+    // «Artistas que sigues» (encendido de serie), justo después, como la app.
+    sw('artistas', KlendarArtistas.t(EN ? 'en' : 'es').youFollow, prefs.notify_artists !== false),
     // Grupos y empresas y Sorteos (tanda C), detrás de los partidos, como la app.
     sw('grupos', 'Grupos y empresas', prefs.notify_groups !== false, 'Respuestas a tus peticiones y, si tienes un negocio, peticiones nuevas'),
     sw('sorteos', 'Sorteos', prefs.notify_giveaways !== false, 'Resultados de los sorteos en los que participas. Si ganas, te avisamos siempre.'),
@@ -940,6 +946,7 @@ async function ajustesNotificaciones() {
         notify_friend_plans: el.planesAmigos.checked,
         notify_series: el.series.checked,
         notify_teams: el.equipos.checked,
+        notify_artists: el.artistas.checked,
         notify_groups: el.grupos.checked,
         notify_giveaways: el.sorteos.checked,
         notify_nearby: el.cerca.checked,
