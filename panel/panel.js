@@ -3250,7 +3250,7 @@ PAGES['antes-de-cerrar'] = async (v) => {
  * el escáner y «Dar entrada» en Asistentes. */
 const ERR_VALIDAR = {
   invalid_code: 'Ese código no existe.',
-  not_authorized: 'Ese código no es de tus negocios.',
+  not_authorized: 'Este código es de otro negocio.',
   already_validated: 'Ese código ya se usó.',
   code_expired: 'El código ha caducado: pide que generen otro.',
   // Anulada por quien reservó o al cancelar el evento: su plaza ya no es suya.
@@ -3267,15 +3267,18 @@ const ERR_VALIDAR = {
   not_on_list: 'Ese código no está en las listas de esta noche.',
 };
 
-/** Por qué no vale un código. Si es de un local en el que no trabajas, cuál
- * («Este código es de Bar X, no de tus negocios»), como en la app. */
+/** Por qué no vale un código («Este código es de otro negocio.»). */
 function textoErrorValidar(res) {
-  if (res.error === 'not_authorized' && res.business_name) {
-    return bi(`Este código es de ${res.business_name}, no de tus negocios.`,
-      `This code is from ${res.business_name}, not from your businesses.`);
-  }
   return I18N.t(ERR_VALIDAR[res.error] || friendly(res.error));
 }
+
+/** Debajo de «Este código es de otro negocio», en pequeño: «Es de Bar X»,
+ * para poder decírselo al cliente. Es lo único que se dice de un código de un
+ * local en el que no trabajas: ni la publicación, ni la persona, ni lo que hay
+ * que dar (la base tampoco lo manda: migración 20261209100000). Como en la
+ * app. */
+const deOtroNegocio = (res) => (res.error === 'not_authorized' && res.business_name
+  ? bi(`Es de ${res.business_name}`, `It's from ${res.business_name}`) : '');
 
 /** Pasa el panel a otro de tus locales (como el selector de arriba, que
  * también lo recuerda para la próxima vez). */
@@ -3588,10 +3591,14 @@ PAGES.validar = async (v) => {
     const cab = estado === 'ok' ? `${ms('check_circle')}${esc(I18N.t('Validado'))}`
       : estado === 'ready' ? `${ms('qr_code_2')}${esc(bi('Código sin usar', 'Unused code'))}<small>${esc(bi(
         'Todavía no está validado. Compruébalo y pulsa «Validar».', 'It hasn’t been validated yet. Check it and tap “Validate”.'))}</small>`
-        : `${ms('cancel')}${esc(textoErrorValidar(res))}${!res.offer_title && res.validated_at
-          ? `<small>${esc(bi('Se validó el', 'Validated on'))} ${esc(fmtDate(res.validated_at))}</small>` : ''}`;
+        : `${ms('cancel')}${esc(textoErrorValidar(res))}${deOtroNegocio(res)
+          ? `<small>${esc(deOtroNegocio(res))}</small>` : !res.offer_title && res.validated_at
+            ? `<small>${esc(bi('Se validó el', 'Validated on'))} ${esc(fmtDate(res.validated_at))}</small>` : ''}`;
+    // Un código de otro negocio no se enseña: ni foto, ni tipo, ni título,
+    // ni precio, ni a nombre de quién.
+    const ajeno = res.error === 'not_authorized';
     $('#result').innerHTML = `<div class="scan-result ${estado === 'ready' ? 'warn' : estado}">${cab}</div>
-      ${res.offer_title ? tarjetaCodigo(res, estado) : ''}
+      ${res.offer_title && !ajeno ? tarjetaCodigo(res, estado) : ''}
       ${estado === 'ready' ? `<button class="btn primary grande" id="validaYa" type="button">${ms('check')}${esc(I18N.t('Validar'))}</button>` : ''}
       <div id="ticketVal"></div>`;
     // Recién validado el código de una publicación: el importe del ticket.
