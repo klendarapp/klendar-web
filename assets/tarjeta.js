@@ -117,6 +117,9 @@
       anterior: 'Foto anterior', siguiente: 'Foto siguiente', sonido: 'Sonido', play: 'Reproducir vídeo',
       galeria: 'Fotos y vídeos', ampliar: 'Ver a pantalla completa', cerrar: 'Cerrar', denunciar: 'Denunciar',
       pieza: (video, i, n) => `${video ? 'Vídeo' : 'Foto'}${n > 1 ? ` ${i} de ${n}` : ''}`,
+      // «Ver solo la foto» en Descubre (como `feedHideInfo`… en la app).
+      ocultar: 'Ocultar la información', mostrar: 'Mostrar la información',
+      oculta: 'Información oculta', aLaVista: 'Información a la vista',
     },
     en: {
       flash: 'Flash offer', event: 'Event', verOferta: 'See offer', verEvento: 'See event',
@@ -129,6 +132,8 @@
       anterior: 'Previous photo', siguiente: 'Next photo', sonido: 'Sound', play: 'Play video',
       galeria: 'Photos and videos', ampliar: 'View full screen', cerrar: 'Close', denunciar: 'Report',
       pieza: (video, i, n) => `${video ? 'Video' : 'Photo'}${n > 1 ? ` ${i} of ${n}` : ''}`,
+      ocultar: 'Hide the details', mostrar: 'Show the details',
+      oculta: 'Details hidden', aLaVista: 'Details showing',
     },
   };
 
@@ -143,6 +148,9 @@
     mudo: 'M16.5 12A4.5 4.5 0 0 0 14 7.97v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51A8.796 8.796 0 0 0 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3 3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06a8.99 8.99 0 0 0 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4 9.91 6.09 12 8.18V4z',
     sonido: 'M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z',
     ampliar: 'M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z',
+    // «Ver solo la foto»: expandir (open_in_full) y recoger (close_fullscreen).
+    expandir: 'M21 11V3h-8l3.29 3.29-10 10L3 13v8h8l-3.29-3.29 10-10z',
+    recoger: 'M22 3.41 16.71 8.7 20 12h-8V4l3.29 3.29L20.59 2 22 3.41zM3.41 22l5.29-5.29L12 20v-8H4l3.29 3.29L2 20.59 3.41 22z',
     bandera: 'M14.4 6 14 4H5v17h2v-7h5.6l.4 2h7V6z',
     cerrar: 'M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z',
     // account_balance (outlined): el sello de las entidades, como la app.
@@ -508,11 +516,20 @@
     const entidad = S.entidad[o.entity_kind] || '';
     const selloEntidad = entidad ? `<span class="tj-sello tj-sello--entidad">${ic('entidad', 14)}<span>${esc(entidad)}</span></span>` : '';
     const [ancho, alto] = pantalla ? [540, 960] : [480, 600];
+    // «Ver solo la foto» (Descubre, con foto o vídeo): esconde el panel, los
+    // sellos y lo de encima de la foto, y el mismo botón lo devuelve. Lo
+    // enseña y lo maneja /assets/tarjetas.js en Descubre (sin JavaScript, o
+    // en la vista previa del panel, no sale).
+    const solo = pantalla && soloWeb(o.images).length > 0;
+    const botonSolo = solo
+      ? `<button type="button" class="tj-solo" aria-label="${esc(S.ocultar)}" title="${esc(S.ocultar)}" data-ocultar="${esc(S.ocultar)}" data-mostrar="${esc(S.mostrar)}" data-oculta="${esc(S.oculta)}" data-vista="${esc(S.aLaVista)}" hidden>${ic('expandir', 20)}${ic('recoger', 20)}</button>`
+      : '';
     return `<article class="tj tj--${plantilla}${opts.desc ? ' tj--desc' : ''}${pantalla ? ' tj--pantalla' : ''}" data-o="${esc(o.id)}"${geo}${estilo}>
     <div class="tj-media">
       ${opts.galeria || pantalla ? galeriaTarjeta(o, { primera: opts.primera, ancho, alto, S, href })
     : mediaTarjeta(o, { primera: opts.primera, ancho, alto, S })}
       ${pantalla ? '' : tipo}
+      ${botonSolo}
     </div>
     <div class="tj-panel">
       ${pantalla ? `<p class="tj-sellos">${tipo}${selloEntidad}</p>` : ''}${!pantalla && entidad && !opts.sinNegocio ? `<p class="tj-entidad">${ic('entidad', 14)}<span>${esc(entidad)}</span></p>` : ''}${kicker}${plantilla === 'poster' ? titulo : ''}

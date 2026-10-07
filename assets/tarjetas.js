@@ -22,6 +22,10 @@
  *   <body> (ver public.css): aquí se fija el alto de una pantalla una vez (y
  *   solo cambia si cambia la ventana de verdad) y se piden ya las fotos de
  *   la tarjeta siguiente para que no lleguen en blanco.
+ * - «Ver solo la foto» (Descubre): el botón de cristal de cada tarjeta
+ *   esconde el panel, los sellos y (en el móvil) la cabecera y los filtros;
+ *   el mismo botón, tocar la foto o Escape los devuelven. Sigue al pasar de
+ *   publicación y se quita al salir de la página (también del bfcache).
  * - Ficha: la misma galería en grande; tocar una pieza (o «Ver a pantalla
  *   completa») abre el visor, como en la app. Las miniaturas de la carta, las
  *   novedades y las reseñas también lo abren.
@@ -697,12 +701,60 @@
       new MutationObserver(function (cambios) {
         cambios.forEach(function (c) {
           Array.prototype.forEach.call(c.addedNodes, function (n) {
-            if (n.nodeType === 1 && n.matches('.tj, .feed-fin')) ojo.observe(n);
+            if (n.nodeType === 1 && n.matches('.tj, .feed-fin')) { ojo.observe(n); if (preparaSolo) preparaSolo(n); }
           });
         });
       }).observe(feed, { childList: true });
     }
     marca(pantallas()[0]);
+
+    // «Ver solo la foto»: el modo es de la página (`solo-foto` en el
+    // <body>, ver public.css), no de la tarjeta: sigue al pasar de una a
+    // otra. El lector de pantalla oye el estado («Información oculta»).
+    var soloFoto = false;
+    var avisoSolo = document.createElement('span');
+    avisoSolo.className = 'sr';
+    avisoSolo.setAttribute('aria-live', 'polite');
+    document.body.appendChild(avisoSolo);
+    var pintaBotonSolo = function (b) {
+      var t = b.getAttribute(soloFoto ? 'data-mostrar' : 'data-ocultar');
+      b.setAttribute('aria-label', t);
+      b.title = t;
+      b.classList.toggle('on', soloFoto);
+    };
+    var preparaSolo = function (raiz) {
+      Array.prototype.forEach.call(raiz.querySelectorAll('.tj--pantalla .tj-solo[hidden]'), function (b) {
+        b.hidden = false;
+        b.closest('.tj').classList.add('con-solo');
+        pintaBotonSolo(b);
+      });
+    };
+    var ponSolo = function (on, anuncia) {
+      if (on === soloFoto) return;
+      soloFoto = on;
+      document.body.classList.toggle('solo-foto', on);
+      document.querySelectorAll('.tj-solo').forEach(pintaBotonSolo);
+      var b = document.querySelector('.tj-solo');
+      if (anuncia && b) avisoSolo.textContent = b.getAttribute(on ? 'data-oculta' : 'data-vista');
+    };
+    preparaSolo(feed);
+    feed.addEventListener('click', function (e) {
+      var t = e.target instanceof Element ? e.target : null;
+      if (!t) return;
+      if (t.closest('.tj-solo')) { e.preventDefault(); ponSolo(!soloFoto, true); return; }
+      // Escondida la información, tocar la foto la devuelve (no abre la
+      // ficha: sin el panel no se sabe qué se abriría). Deslizar la galería
+      // o pasar de publicación no es un clic: siguen igual.
+      if (soloFoto && t.closest('.tj.con-solo .tj-media') && !t.closest('button')) {
+        e.preventDefault();
+        ponSolo(false, true);
+      }
+    });
+    document.addEventListener('keydown', function (e) {
+      if (soloFoto && e.key === 'Escape' && !e.defaultPrevented && !abiertos().length && !visor) ponSolo(false, true);
+    });
+    // Al salir de Descubre se quita (si se vuelve con «Atrás», todo a la vista).
+    window.addEventListener('pagehide', function () { ponSolo(false, false); });
 
     var ir = function (d) {
       var lista = pantallas();

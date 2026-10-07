@@ -632,6 +632,28 @@ body.pagina-feed[data-cromo="fuera"] .feed-cab { visibility: hidden; }
   body.pagina-feed[data-cromo="fuera"] .feed-lado { display: none; }
 }
 
+/* ══ «Ver solo la foto» (Iván, 2026-10-07) ═══════════════════════════════
+   El botón de cristal de la tarjeta (`.tj-solo`) esconde con un fundido lo
+   que tapa la foto o el vídeo: el panel con sus sellos y, en el móvil, la
+   cabecera, los filtros, su aviso y el velo. En tablet y escritorio la fila
+   de filtros y el aviso no tapan la foto (van fuera de la columna) y se
+   quedan, como la rejilla de la app. Se mantiene al pasar de publicación
+   (`solo-foto` en el <body>, /assets/tarjetas.js) y se quita al salir de la
+   página. Quedan los puntos, el altavoz, el botón y la barra de pestañas.
+   Sobre una publicación sin foto o el final, todo a la vista. */
+.tj--pantalla .tj-panel { transition: opacity .22s ease; }
+body.pagina-feed.solo-foto .tj--pantalla.con-solo .tj-panel { opacity: 0; visibility: hidden; transition: opacity .22s ease, visibility 0s linear .22s; }
+@media (max-width: 760px) {
+  body.pagina-feed header.top, .pagina-feed .feed-cab, .pagina-feed .feed-velo { transition: opacity .22s ease; }
+  body.pagina-feed.solo-foto[data-cromo="media"] :is(header.top, .feed-cab, .feed-velo) { opacity: 0; visibility: hidden;
+    transition: opacity .22s ease, visibility 0s linear .22s; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tj--pantalla .tj-panel, body.pagina-feed.solo-foto .tj--pantalla.con-solo .tj-panel,
+  body.pagina-feed header.top, .pagina-feed .feed-cab, .pagina-feed .feed-velo,
+  body.pagina-feed.solo-foto[data-cromo="media"] :is(header.top, .feed-cab, .feed-velo) { transition: none; }
+}
+
 /* ══ «El sitio», «Con niños» y «Según el tiempo» (2026-10-05) ════════════
    Los atributos del local con icono (ficha del negocio; en la de la
    publicación, una línea discreta), sus píldoras en la hoja de filtros, las

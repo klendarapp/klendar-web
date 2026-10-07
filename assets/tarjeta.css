@@ -218,6 +218,22 @@ video.tj-img { background: #0A0A0A; }
 .tj--pantalla .tj-sonido, .tj--pantalla .tj-galeria:not(:has(.tj-puntos)) .tj-sonido { top: calc(var(--feed-arriba, 120px) + 6 * var(--u)); right: calc(14 * var(--u));
   width: calc(36 * var(--u)); height: calc(36 * var(--u)); }
 .tj--pantalla .tj-sonido .ic { width: calc(18 * var(--u)); height: calc(18 * var(--u)); }
+/* «Ver solo la foto» (lo enseña /assets/tarjetas.js, que pone `con-solo`):
+   un círculo de cristal como el altavoz, en la esquina de la fila de los
+   puntos; el altavoz pasa a su izquierda (el botón no se mueve al pasar a un
+   vídeo de la galería). Expandir con la información a la vista; recoger con
+   ella escondida. */
+.tj-solo { position: absolute; z-index: 4; display: grid; place-items: center; border: 0; padding: 0; cursor: pointer; border-radius: 50%;
+  background: rgba(10,10,10,.6); color: #fff; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  top: calc(var(--feed-arriba, 120px) + 6 * var(--u, 1px)); right: calc(14 * var(--u, 1px)); width: calc(36 * var(--u, 1px)); height: calc(36 * var(--u, 1px)); }
+.tj-solo[hidden] { display: none; }
+.tj-solo::after { content: ""; position: absolute; inset: calc(-6 * var(--u, 1px)); }
+.tj-solo .ic { width: calc(18 * var(--u, 1px)); height: calc(18 * var(--u, 1px)); }
+.tj-solo .ic + .ic, .tj-solo.on .ic:first-child { display: none; }
+.tj-solo.on .ic + .ic { display: block; }
+.tj-solo:hover { background: rgba(10,10,10,.78); }
+.tj-solo:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.tj--pantalla.con-solo .tj-sonido, .tj--pantalla.con-solo .tj-galeria:not(:has(.tj-puntos)) .tj-sonido { right: calc(58 * var(--u)); }
 .tj--pantalla .tj-flecha { width: calc(36 * var(--u)); height: calc(36 * var(--u)); margin-top: calc(-18 * var(--u)); top: 42%; }
 .tj--pantalla .tj-flecha .ic { width: calc(20 * var(--u)); height: calc(20 * var(--u)); }
 .tj--pantalla .tj-ant { left: calc(10 * var(--u)); }

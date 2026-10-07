@@ -1262,7 +1262,7 @@ function feedHtml({ S, en, lang, items, page, paginas, link, barra, final, vacio
     <button type="button" class="feed-ir" data-feed-ir="1" aria-label="${esc(S.nextItem)}">${ic('abajo', 24)}</button>
   </nav>
   ${masFormas}
-  ${page === 1 ? `<script src="/assets/fijada.js?v=3" defer data-lang="${en ? 'en' : 'es'}"></script>` : ''}`;
+  ${page === 1 ? `<script src="/assets/fijada.js?v=4" defer data-lang="${en ? 'en' : 'es'}"></script>` : ''}`;
 }
 
 // ── Una categoría en una ciudad ────────────────────────────────────────────

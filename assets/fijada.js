@@ -107,7 +107,7 @@
           if (res.error || !Array.isArray(res.data) || !res.data.length) return null;
           // La tarjeta es la de toda la web (assets/tarjeta.js).
           return (window.KlendarZona ? Promise.resolve() : carga('/assets/zona.js?v=1'))
-            .then(function () { return window.KlendarTarjeta ? null : carga('/assets/tarjeta.js?v=8'); })
+            .then(function () { return window.KlendarTarjeta ? null : carga('/assets/tarjeta.js?v=9'); })
             .then(function () { pinta(sb, res.data); });
         });
       });
