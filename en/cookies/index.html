@@ -59,7 +59,7 @@
 <script src="/assets/cabecera.js?v=8" defer></script>
 <main class="doc" id="contenido">
 <h1>Cookie policy</h1>
-<div class="meta">Last updated: 6 October 2026 · Version 2026-09-29</div>
+<div class="meta">Last updated: 7 October 2026 · Version 2026-09-29</div>
 <p class="notice">This is a courtesy translation provided for information only. In case of any discrepancy, the <a href="/cookies/">Spanish version</a> prevails.</p>
 
 <p><strong>In short.</strong> klendar.app does not use cookies. It only stores in your browser what is essential for what you ask it to do (your session, your language, your filters, the codes a business validates offline) and it counts visits without cookies and without identifying you. None of this is used for advertising or to follow you across other sites, so we don't ask for your consent (art. 22.2 of the Spanish LSSI-CE). If we ever add anything that needs it, we will ask you first.</p>
@@ -86,11 +86,13 @@
 <tr><td><code>klendar.ciudades</code></td><td>Discover, Explore and “Your account” (session storage)</td><td>The list of Klendar's cities, so it isn't requested on every page</td><td>Until you close the tab</td><td>Technical</td></tr>
 <tr><td><code>klendar.codigos.…</code></td><td>“Your account” (local storage)</td><td>A copy of your codes and bookings so you can show them at the door even without a connection</td><td>Until you log out</td><td>Technical</td></tr>
 <tr><td><code>klendar.panel.vista</code></td><td>Business dashboard (local storage)</td><td>How you want to see your publications (cards or list)</td><td>Until you change it</td><td>Preference you chose</td></tr>
+<tr><td><code>klendar.tv.llave</code></td><td>Klendar on the TV (local storage)</td><td>The key that links that TV to a venue, to show its publications without logging in to any account</td><td>Until the business unlinks the TV (then it deletes itself)</td><td>Technical</td></tr>
+<tr><td><code>klendar.tv.ultimo</code></td><td>Klendar on the TV (local storage)</td><td>What it last showed (the venue's public publications), to keep going if the connection drops</td><td>Until the next update (every minute) or until unlinked</td><td>Technical</td></tr>
 <tr><td>two-step verification flag</td><td>Admin (session storage)</td><td>Not asking again in that tab</td><td>Until the tab is closed</td><td>Technical (security)</td></tr>
 <tr><td><code>mapbox.eventData…</code> (if present)</td><td>Maps in Explore and the dashboard (local storage, set by Mapbox)</td><td>A random identifier that changes every 24 hours, used by Mapbox to count map loads (billing)</td><td>24 hours</td><td>Technical, for the map service</td></tr>
 </table>
 <h2>Visit statistics</h2>
-<p>We use <strong>Cloudflare Web Analytics</strong>, which uses no cookies and stores nothing in your browser: a small script sends Cloudflare, on our behalf, the page viewed, the site you came from, your browser and device type, your country and load times. We only see aggregate figures, without identifying you or tracking you across sites, and Cloudflare does not use them for anything else. It isn't used in “Your account”, the business dashboard or admin, or on email unsubscribe links and friend links. Nor on pages whose address contains your position (“Near me”) or a promoter's link.</p>
+<p>We use <strong>Cloudflare Web Analytics</strong>, which uses no cookies and stores nothing in your browser: a small script sends Cloudflare, on our behalf, the page viewed, the site you came from, your browser and device type, your country and load times. We only see aggregate figures, without identifying you or tracking you across sites, and Cloudflare does not use them for anything else. It isn't used in “Your account”, the business dashboard or admin, or on email unsubscribe links and friend links. Nor on pages whose address contains your position (“Near me”) or a promoter's link, or on Klendar on the TV (<code>/tv/</code>).</p>
 <h2>Third-party services loaded on some pages</h2>
 <p>They receive your IP address, like any website you visit, and set no cookies:</p>
 <ul>
@@ -105,6 +107,7 @@
 
 <h2 class="cambios">Change history</h2>
 <ul>
+  <li><strong>7 October 2026</strong>: Two keys for Klendar on the TV, stored by the browser of the venue's TV (not yours): the key that links it to the venue and what it last showed; that page doesn't count visits.</li>
   <li><strong>6 October 2026</strong>: Four more keys: your interests and your city, your recent searches, the date you closed the travel notice and the list of cities; your interests are also deleted when you log out.</li>
   <li><strong>5 October 2026</strong>: Seven more keys: your filters, your “Near me” position (deleted after 6 hours), video sound, translation, the copy of your codes and the dashboard view; where visits aren't counted and what is deleted when you log out.</li>
   <li><strong>1 October 2026</strong>: Up-to-date list of what is stored in your browser (including the separate admin session and the PKCE check when logging in with Google or Apple) and of third-party services; icons and libraries are now served from klendar.app, without Google Fonts or jsDelivr.</li>

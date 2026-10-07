@@ -1,5 +1,5 @@
 {
- "version": "0883fd966db7",
+ "version": "bfd2b7c6f92f",
  "contact": "info@klendar.app",
  "tabs": {
   "es": {
@@ -131,7 +131,7 @@
     "q": "¿Por qué veo unas cosas y no otras?",
     "a": [
      {
-      "t": "Por cercanía, por lo que empieza pronto y por tus favoritos. Si un negocio paga por destacar una publicación, sale primero y siempre con la etiqueta «Destacado». Con «Según el tiempo» (encendido de serie, se apaga en el menú de orden, junto a Filtros), si hoy llueve sale primero lo de hoy bajo techo y, si hace buen tiempo, las terrazas y el aire libre; no quita nada. Si eliges tus gustos (Ajustes → Lo que ves), lo de esas categorías sale antes, sin esconder lo demás. El resto del orden lo eliges tú en los filtros. Si cerca no hay nada, la app te sugiere cosas según tus últimas búsquedas y las categorías que más miras, que se guardan en tu móvil. No usamos datos de otras webs. En cada ficha hay un «¿Por qué ves esto?» que lo explica."
+      "t": "Por cercanía, por lo que empieza pronto y por tus favoritos. Si un negocio paga por destacar una publicación, sale primero y siempre con la etiqueta «Destacado». Con «Según el tiempo» (encendido de serie, se apaga en el menú de orden, junto a Filtros), si hoy llueve sale primero lo de hoy bajo techo y, si hace buen tiempo, las terrazas y el aire libre; no quita nada. Si eliges tus gustos (Ajustes → Lo que ves), lo de esas categorías sale antes, sin esconder lo demás. La agenda pública de tu ayuntamiento sale intercalada: como mucho una de cada cinco. El resto del orden lo eliges tú en los filtros. Si cerca no hay nada, la app te sugiere cosas según tus últimas búsquedas y las categorías que más miras, que se guardan en tu móvil. No usamos datos de otras webs. En cada ficha hay un «¿Por qué ves esto?» que lo explica."
      }
     ]
    },
@@ -584,7 +584,7 @@
     "q": "Why do I see some things and not others?",
     "a": [
      {
-      "t": "Because of how close they are, what starts soon and your favourites. If a business pays to feature a publication, it comes first and always carries the “Featured” label. With “Based on the weather” (on by default, turn it off in the sort menu, next to Filters), if it's raining today indoor plans for today come first and, if the weather is nice, terraces and outdoor plans; nothing is removed. If you choose your interests (Settings → What you see), those categories come first, without hiding anything else. You choose the rest of the order in the filters. If there's nothing nearby, the app suggests things based on your recent searches and the categories you look at most, which are stored on your phone. We don't use data from other sites. Each publication has a “Why are you seeing this?” that explains it."
+      "t": "Because of how close they are, what starts soon and your favourites. If a business pays to feature a publication, it comes first and always carries the “Featured” label. With “Based on the weather” (on by default, turn it off in the sort menu, next to Filters), if it's raining today indoor plans for today come first and, if the weather is nice, terraces and outdoor plans; nothing is removed. If you choose your interests (Settings → What you see), those categories come first, without hiding anything else. Your council's public listings are interleaved: at most one in five. You choose the rest of the order in the filters. If there's nothing nearby, the app suggests things based on your recent searches and the categories you look at most, which are stored on your phone. We don't use data from other sites. Each publication has a “Why are you seeing this?” that explains it."
      }
     ]
    },

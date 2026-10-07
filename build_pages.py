@@ -589,10 +589,10 @@ def _filas_fuentes(en):
 PAGINAS['fuentes'] = (
     'sources',
     'Fuentes y licencias', 'Sources and licences',
-    'De dónde salen los datos de otros que enseña Klendar (la agenda pública de cada ciudad, el tiempo) y con qué licencia.',
-    "Where the third-party data on Klendar comes from (each city's public listings, the weather) and under which licence.",
+    'De dónde salen los datos de otros que enseña Klendar (la agenda pública de cada ciudad, los partidos, el tiempo) y con qué licencia.',
+    "Where the third-party data on Klendar comes from (each city's public listings, matches, the weather) and under which licence.",
     f'''
-<p class="lead">Casi todo lo que ves en Klendar lo publican los negocios y las entidades. Además, en algunas ciudades enseñamos la agenda municipal, que los ayuntamientos publican como datos abiertos, y usamos la previsión del tiempo de un servicio público. Aquí está de dónde sale cada cosa y con qué licencia.</p>
+<p class="lead">Casi todo lo que ves en Klendar lo publican los negocios y las entidades. Además, en algunas ciudades enseñamos la agenda municipal, que los ayuntamientos publican como datos abiertos, y usamos los horarios de los partidos de un servicio externo y la previsión del tiempo de un servicio público. Aquí está de dónde sale cada cosa y con qué licencia.</p>
 
 <h2>Agenda pública de cada ciudad</h2>
 <p>Cada día importamos la agenda cultural y de ocio de estas fuentes y la publicamos en la cuenta «Agenda pública de &lt;ciudad&gt;» (o en la del ayuntamiento, si está en Klendar). Klendar no organiza esos eventos: adaptamos las fechas al formato de la app, elegimos una categoría, recortamos los textos largos y, como las fuentes no traen fotos con licencia clara, usamos una imagen genérica de la categoría. En la ficha de cada evento sale su fuente, su licencia, la fecha de actualización y el enlace al original. Que un ayuntamiento publique sus datos abiertos no quiere decir que participe en Klendar ni que lo patrocine.</p>
@@ -602,6 +602,9 @@ PAGINAS['fuentes'] = (
 </table>
 <p>Si un evento está mal, ha cambiado o se ha cancelado, manda la fuente: Klendar lo actualiza al día siguiente. Para pedirnos que quitemos algo o una fuente entera, escríbenos a <a href="mailto:info@klendar.app">info@klendar.app</a>.</p>
 
+<h2>Partidos y eventos televisados</h2>
+<p>Los partidos de fútbol (LaLiga, Champions League, Premier League y otras competiciones) y sus horarios vienen de <a href="https://www.football-data.org/" rel="noopener" target="_blank">football-data.org</a>: «Football data provided by the Football-Data.org API». Los demás eventos (Fórmula 1, MotoGP, baloncesto, Eurovisión…) los añade Klendar a mano, y cada bar puede añadir lo que pone. Los horarios pueden cambiar: confírmalos con el bar.</p>
+
 <h2>El tiempo</h2>
 <p>«Según el tiempo» usa la previsión de <a href="https://api.met.no/" rel="noopener" target="_blank">MET Norway</a> (Instituto Meteorológico de Noruega), con licencia <a href="https://creativecommons.org/licenses/by/4.0/deed.es" rel="license noopener" target="_blank">CC BY 4.0</a>.</p>
 
@@ -609,7 +612,7 @@ PAGINAS['fuentes'] = (
 <p>Los iconos son <a href="https://fonts.google.com/icons" rel="noopener" target="_blank">Material Icons</a> de Google, con licencia <a href="https://www.apache.org/licenses/LICENSE-2.0" rel="license noopener" target="_blank">Apache 2.0</a>.</p>
 ''',
     f'''
-<p class="lead">Almost everything on Klendar is published by businesses and organisations. In some cities we also show the council's listings, which councils publish as open data, and we use the weather forecast from a public service. Here's where each thing comes from and under which licence.</p>
+<p class="lead">Almost everything on Klendar is published by businesses and organisations. In some cities we also show the council's listings, which councils publish as open data, and we use match times from an external service and the weather forecast from a public service. Here's where each thing comes from and under which licence.</p>
 
 <h2>Each city's public listings</h2>
 <p>Every day we import the cultural and leisure listings from these sources and publish them on the “Public listings” account of each city (or on the council's own, if it's on Klendar). Klendar doesn't organise those events: we adapt the dates to the app's format, choose a category, shorten long texts and, as the sources don't come with photos under a clear licence, we use a generic image for the category. Each event's page shows its source, licence, update date and a link to the original. A council publishing open data doesn't mean it takes part in or sponsors Klendar.</p>
@@ -618,6 +621,9 @@ PAGINAS['fuentes'] = (
 <tbody>{_filas_fuentes(True)}</tbody>
 </table>
 <p>If an event is wrong, has changed or has been cancelled, the source rules: Klendar updates it the next day. To ask us to remove something or a whole source, write to <a href="mailto:info@klendar.app">info@klendar.app</a>.</p>
+
+<h2>Matches and televised events</h2>
+<p>Football matches (LaLiga, Champions League, Premier League and other competitions) and their kick-off times come from <a href="https://www.football-data.org/" rel="noopener" target="_blank">football-data.org</a>: “Football data provided by the Football-Data.org API”. Other events (Formula 1, MotoGP, basketball, Eurovision…) are added by Klendar by hand, and each bar can add what it's showing. Times can change: check with the bar.</p>
 
 <h2>Weather</h2>
 <p>“Based on the weather” uses the forecast from <a href="https://api.met.no/" rel="noopener" target="_blank">MET Norway</a> (Norwegian Meteorological Institute), under a <a href="https://creativecommons.org/licenses/by/4.0/" rel="license noopener" target="_blank">CC BY 4.0</a> licence.</p>
