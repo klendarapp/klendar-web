@@ -669,6 +669,7 @@ function showLogin() {
 async function noBusiness() {
   $('#nav').innerHTML = '';
   $('.bizpick').hidden = true;
+  $('#bizTop').hidden = true;
   const v = $('#view');
   try {
     await PAGES.alta(v);
@@ -680,17 +681,32 @@ async function noBusiness() {
     I18N.translate(v);
   }
 }
+/** El selector de local: en la barra lateral y, en el móvil, arriba (donde
+ * la app pone «Nails & Co ▾»). Tus locales y, al final, «Nuevo negocio» (el
+ * alta). Recuerda el último usado (`klendar.biz`). */
 function renderBizPicker() {
-  $('#bizSelect').innerHTML = BIZZES.map((b) => `<option value="${esc(b.id)}" ${b.id === BIZ.id ? 'selected' : ''}>${esc(b.name)}</option>`).join('');
-  $('#bizSelect').onchange = async () => {
-    if (!await puedeSalir()) { $('#bizSelect').value = BIZ.id; return; }
-    BIZ = BIZZES.find((b) => b.id === $('#bizSelect').value);
-    localStorage.setItem('klendar.biz', BIZ.id);
-    await preparaNegocio();
-    const [pag, param] = currentRoute();
-    if (param) { location.hash = `#/${pag}`; return; }
-    route();
-  };
+  const opciones = BIZZES.map((b) => `<option value="${esc(b.id)}" ${b.id === BIZ.id ? 'selected' : ''}>${esc(b.name)}</option>`).join('')
+    + `<option value="__nuevo">${esc(bi('+ Nuevo negocio', '+ New business'))}</option>`;
+  for (const sel of $$('#bizSelect, #bizTop')) {
+    sel.innerHTML = opciones;
+    sel.hidden = false;
+    sel.onchange = async () => {
+      const elegido = sel.value;
+      if (elegido === '__nuevo') {
+        sel.value = BIZ.id;
+        location.hash = '#/alta';
+        return;
+      }
+      if (!await puedeSalir()) { sel.value = BIZ.id; return; }
+      BIZ = BIZZES.find((b) => b.id === elegido);
+      localStorage.setItem('klendar.biz', BIZ.id);
+      for (const otro of $$('#bizSelect, #bizTop')) otro.value = BIZ.id;
+      await preparaNegocio();
+      const [pag, param] = currentRoute();
+      if (param) { location.hash = `#/${pag}`; return; }
+      route();
+    };
+  }
 }
 
 let saliendo = false;
@@ -1035,10 +1051,12 @@ PAGES.resumen = async (v) => {
       ${paso(2, false, 'Publica tu primera oferta', 'Te la dejamos casi hecha: cambia el precio y la hora.', '#/publicaciones/nueva-flash?idea=1')}
       ${paso(3, false, 'Cuéntalo en tus redes', '', '#', 'data-compartir')}
     </div>` : ''}
+    <!-- Publicar y validar, en coral los dos (como «Crear» y «Validar
+         códigos» arriba del todo en «Mi negocio» de la app). -->
     <div class="quick">
       ${gestiona() ? `<button class="primary" data-go="nueva-flash"><span class="ic ms" aria-hidden="true">bolt</span>Nueva oferta flash<small>Canjeable con QR durante unas horas</small></button>
       <button data-go="nuevo-evento"><span class="ic ms" aria-hidden="true">event</span>Nuevo evento<small>Con fecha, aforo y reserva de plaza</small></button>` : ''}
-      <button ${gestiona() ? '' : 'class="primary" '}data-go="validar"><span class="ic ms" aria-hidden="true">qr_code_scanner</span>Validar un código<small>Con la cámara o escribiendo el código</small></button>
+      <button class="primary" data-go="validar"><span class="ic ms" aria-hidden="true">qr_code_scanner</span>Validar códigos<small>Con la cámara o escribiendo el código</small></button>
     </div>
     <div id="aforoCaja"></div>
     <div class="card" style="margin-top:14px"><h2>Cómo va</h2>
@@ -3224,7 +3242,7 @@ PAGES['antes-de-cerrar'] = async (v) => {
  * el escáner y «Dar entrada» en Asistentes. */
 const ERR_VALIDAR = {
   invalid_code: 'Ese código no existe.',
-  not_authorized: 'Ese código no es de tu negocio.',
+  not_authorized: 'Ese código no es de tus negocios.',
   already_validated: 'Ese código ya se usó.',
   code_expired: 'El código ha caducado: pide que generen otro.',
   // Anulada por quien reservó o al cancelar el evento: su plaza ya no es suya.
@@ -3240,6 +3258,25 @@ const ERR_VALIDAR = {
   // Validar desde «Buscar en las listas de esta noche» (door_validate).
   not_on_list: 'Ese código no está en las listas de esta noche.',
 };
+
+/** Por qué no vale un código. Si es de un local en el que no trabajas, cuál
+ * («Este código es de Bar X, no de tus negocios»), como en la app. */
+function textoErrorValidar(res) {
+  if (res.error === 'not_authorized' && res.business_name) {
+    return bi(`Este código es de ${res.business_name}, no de tus negocios.`,
+      `This code is from ${res.business_name}, not from your businesses.`);
+  }
+  return I18N.t(ERR_VALIDAR[res.error] || friendly(res.error));
+}
+
+/** Pasa el panel a otro de tus locales (como el selector de arriba, que
+ * también lo recuerda para la próxima vez). */
+function cambiaDeLocal(id) {
+  const sel = $('#bizSelect');
+  if (!sel || !BIZZES.some((b) => b.id === id) || BIZ?.id === id) return;
+  sel.value = id;
+  sel.dispatchEvent(new Event('change'));
+}
 
 /** Qué hay que dar (como `codeDealParts` en la app), en dos trozos: lo que
  * se aplica («−25 % · 3,00 €», «2x1», «Gratis», «12,00 €»; en un premio o un
@@ -3289,8 +3326,12 @@ function tarjetaCodigo(r, estado) {
     lineas.push(`${ms('person')}<b>${esc(r.user_name)}</b>${r.obtained_at
       ? ` · ${esc(bi('lo consiguió', 'got it'))}: ${esc(horaCodigo(r.obtained_at))}` : ''}`);
   }
-  if (ajeno && r.business_name) {
-    lineas.push(ms('storefront') + esc(bi(`Es de ${r.business_name}, no de tu negocio.`, `It belongs to ${r.business_name}, not your business.`)));
+  // De otro de tus locales (validar no pide negocio: el código dice de cuál
+  // es). Lo de un local ajeno ya va en el título.
+  if (!ajeno && r.business_id && BIZ && r.business_id !== BIZ.id && BIZZES.some((b) => b.id === r.business_id)) {
+    lineas.push(ms('storefront') + esc(bi(`Es de ${r.business_name || ''}, otro de tus locales: sale en sus «Últimos validados».`,
+      `It's from ${r.business_name || ''}, another of your venues: it shows in its “Recently validated”.`))
+      + ` <button class="btn sm ghost" type="button" data-otro-local="${esc(r.business_id)}">${esc(bi(`Ir a ${r.business_name || ''}`, `Go to ${r.business_name || ''}`))}</button>`);
   }
   if (r.validated_at && estado !== 'ready') {
     lineas.push(ms('check_circle') + esc(`${bi('Se validó', 'Validated')}: ${horaCodigo(r.validated_at)}${r.validated_by_name
@@ -3539,7 +3580,7 @@ PAGES.validar = async (v) => {
     const cab = estado === 'ok' ? `${ms('check_circle')}${esc(I18N.t('Validado'))}`
       : estado === 'ready' ? `${ms('qr_code_2')}${esc(bi('Código sin usar', 'Unused code'))}<small>${esc(bi(
         'Todavía no está validado. Compruébalo y pulsa «Validar».', 'It hasn’t been validated yet. Check it and tap “Validate”.'))}</small>`
-        : `${ms('cancel')}${esc(I18N.t(ERR_VALIDAR[res.error] || friendly(res.error)))}${!res.offer_title && res.validated_at
+        : `${ms('cancel')}${esc(textoErrorValidar(res))}${!res.offer_title && res.validated_at
           ? `<small>${esc(bi('Se validó el', 'Validated on'))} ${esc(fmtDate(res.validated_at))}</small>` : ''}`;
     $('#result').innerHTML = `<div class="scan-result ${estado === 'ready' ? 'warn' : estado}">${cab}</div>
       ${res.offer_title ? tarjetaCodigo(res, estado) : ''}
@@ -3549,6 +3590,8 @@ PAGES.validar = async (v) => {
     if (estado === 'ok' && (res.kind || 'offer') === 'offer' && res.code_input) cajaTicket($('#ticketVal'), res.code_input);
     const b = $('#validaYa');
     if (b) b.onclick = () => { $('#code').value = res.code_input || $('#code').value; validate(); };
+    const otro = $('[data-otro-local]', $('#result'));
+    if (otro) otro.onclick = () => cambiaDeLocal(otro.dataset.otroLocal);
   };
   // Desde el enlace del código: primero se mira, sin validar (un enlace
   // tocado sin querer, o abierto por el propio cliente, ya no lo gasta).
@@ -3680,7 +3723,7 @@ PAGES.asistentes = async (v, offerId) => {
         try {
           // Lo mismo que el escáner: las cifras cuadran igual.
           const res = await rpc('validate_redemption', { p_code: b.dataset.code });
-          if (!res?.ok) { toast(ERR_VALIDAR[res?.error] || friendly(res?.error), true); b.disabled = false; return; }
+          if (!res?.ok) { toast(textoErrorValidar(res || {}), true); b.disabled = false; return; }
           toast(bi(`${nombre} ha entrado`, `${nombre} is in`));
           route();
         } catch (e) { toast(friendly(e.message), true); b.disabled = false; }

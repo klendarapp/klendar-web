@@ -267,9 +267,17 @@ async function bonoCliente(caja, raw) {
   // escanear mientras dure la ventana de 10 minutos.
   if (BONO_CLIENTE?.key === clave && BONO_CLIENTE.scan && new Date(BONO_CLIENTE.scan.scan_until) > new Date()
     && caja.querySelector('.bono-cliente')) return true;
+  await bonoAbre(caja, token, BIZ.id);
+  return true;
+}
+
+/** Abre el cliente en [negocio]: de serie, el local del panel (el último
+ * usado); con varios locales, se puede pasar a otro sin volver a escanear,
+ * como en la app. */
+async function bonoAbre(caja, token, negocio) {
   try {
-    const s = await bonoRpc('pass_scan', { p_business: BIZ.id, p_token: token });
-    BONO_CLIENTE = { key: clave, scan: s };
+    const s = await bonoRpc('pass_scan', { p_business: negocio, p_token: token });
+    BONO_CLIENTE = { key: token.split('.')[0], scan: s, token, negocio };
     bonoVibra(60);
     bonoPintaCliente(caja);
   } catch (e) {
@@ -277,14 +285,19 @@ async function bonoCliente(caja, raw) {
     bonoVibra([60, 60, 60]);
     caja.innerHTML = `<div class="scan-result bad">${ms('cancel')}${esc(e.message)}</div>`;
   }
-  return true;
 }
 
 function bonoPintaCliente(caja) {
   const s = BONO_CLIENTE?.scan;
   if (!s) return;
   const nombre = s.customer?.name || I18N.t('Usuario de Klendar');
+  const negocio = BONO_CLIENTE.negocio || BIZ.id;
+  // Con varios locales: de cuál son los bonos, y pasar a otro.
+  const locales = BIZZES.length > 1
+    ? `<div class="bono-locales" role="group" aria-label="${esc(bi('Local', 'Venue'))}" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px">${BIZZES.map((b) => `<button type="button" class="btn sm${b.id === negocio ? '' : ' ghost'}" data-bono-local="${esc(b.id)}" aria-pressed="${b.id === negocio}">${esc(b.name)}</button>`).join('')}</div>`
+    : '';
   caja.innerHTML = `<div class="bono-cliente card">
+    ${locales}
     <h2>${esc(nombre)}</h2>
     <p class="muted">${esc(I18N.t('Durante 10 minutos puedes cargar o descontar sin volver a escanear. Cada venta y cada uso se pueden deshacer en ese rato.'))}</p>
     ${(s.passes || []).length ? s.passes.map((p) => {
@@ -313,6 +326,11 @@ function bonoPintaCliente(caja) {
       bonoPintaCliente(caja);
     } catch (e) { toast(e.message, true); }
   };
+  $$('[data-bono-local]', caja).forEach((b) => {
+    b.onclick = () => {
+      if (b.dataset.bonoLocal !== negocio) bonoAbre(caja, BONO_CLIENTE.token, b.dataset.bonoLocal);
+    };
+  });
   $$('[data-usa]', caja).forEach((b) => {
     b.onclick = async () => {
       b.disabled = true;

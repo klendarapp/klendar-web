@@ -291,7 +291,7 @@ const I18N = makeI18N({
     'Todavía no has validado ningún código.': "You haven't validated any codes yet.",
     'Ese código no existe.': "That code doesn't exist.",
     'Ese código ya se usó.': "That code has already been used.",
-    'Ese código no es de tu negocio.': "That code doesn't belong to your business.",
+    'Ese código no es de tus negocios.': "That code isn't from any of your businesses.",
     'El código ha caducado: pide que generen otro.':
       "The code has expired: ask the customer to generate a new one.",
     'Reserva anulada: este código ya no vale.': 'Booking cancelled: this code is no longer valid.',

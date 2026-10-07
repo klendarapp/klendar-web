@@ -11,6 +11,13 @@
   font-weight: 700;
 }
 
+/* En el móvil, el local también arriba (como «Nails & Co ▾» en la app):
+   el logo, el selector y el idioma. En el ordenador va en la barra lateral. */
+.topbar .biztop { flex: 1 1 auto; min-width: 0; max-width: 100%; font-weight: 700; font-size: 16px;
+  padding: 8px 10px; border-radius: 12px; background: var(--elevated); color: var(--ink); border: 1px solid var(--glass-border); }
+.topbar:has(.biztop:not([hidden])) .brand-txt,
+.topbar:has(.biztop:not([hidden])) .spacer { display: none; }
+
 /* Acciones grandes de la portada del panel */
 .quick { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
 .quick button {
