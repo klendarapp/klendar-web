@@ -1,5 +1,5 @@
 {
- "version": "bfd2b7c6f92f",
+ "version": "dd5b7f2ba532",
  "contact": "info@klendar.app",
  "tabs": {
   "es": {
@@ -87,6 +87,24 @@
     "a": [
      {
       "t": "Si el negocio lo activa, sí: reservas plaza desde la app o desde la web y enseñas tu código en la puerta. La reserva no es un pago; lo que cueste, si cuesta, se paga en el local."
+     }
+    ]
+   },
+   {
+    "id": "cola-virtual",
+    "q": "¿Cómo funciona la cola virtual?",
+    "a": [
+     {
+      "t": "Si un local tiene cola virtual, en la puerta hay un cartel con un QR. Lo escaneas, dices cuántos sois y coges número (con tu cuenta, en la app o en la web). Ves cuántos tienes delante y una espera aproximada, y cuando te toca te avisamos en el móvil: tienes unos minutos para presentarte. Si te vas, «Salir de la cola». La lista se borra al acabar el día."
+     }
+    ]
+   },
+   {
+    "id": "reservar-mesa",
+    "q": "¿Cómo reservo mesa?",
+    "a": [
+     {
+      "t": "Si el local lo tiene activado, en su ficha verás «Reservar mesa». Eliges día, hora y cuántos sois, y dejas tu teléfono: solo lo ve ese local y solo para esa reserva, por si tiene que llamarte, y se borra al terminar. El local acepta, te propone otra hora o te dice que no; si no contesta a tiempo, la petición caduca y te avisamos. La tienes en Planes y desde ahí la puedes anular. Reservar no es un pago."
      }
     ]
    },
@@ -406,6 +424,31 @@
     ]
    },
    {
+    "id": "cola-virtual-negocio",
+    "q": "¿Cómo pongo una cola virtual en la puerta?",
+    "a": [
+     {
+      "t": "En Mi negocio → «Cola virtual» (también en el "
+     },
+     {
+      "t": "panel web",
+      "u": "https://klendar.app/panel/"
+     },
+     {
+      "t": "): imprime el «Cartel para la puerta» y abre la cola cada día con el tope de personas y los minutos que tiene cada uno para presentarse. Quien llega escanea el cartel y coge número; tú solo tocas «Avisar al siguiente» y le avisamos en el móvil. A quien no tenga la app lo apuntas tú. La lista se borra sola al acabar el día (a las 6:00) o al pulsar «Terminar por hoy»."
+     }
+    ]
+   },
+   {
+    "id": "reservas-mesa-negocio",
+    "q": "¿Cómo funcionan las reservas de mesa?",
+    "a": [
+     {
+      "t": "Actívalas en Mi negocio → «Reservas de mesa» con las horas a las que se puede reservar, el grupo máximo, la antelación mínima y el tiempo que tienes para contestar. Te llega un aviso con cada petición y aceptas, propones otra hora o dices que no; si no contestas a tiempo, caduca y se lo decimos a la persona. Ves su teléfono por si tienes que llamarle: es solo para esa reserva y se borra al terminar. Sin pagos ni comisiones."
+     }
+    ]
+   },
+   {
     "id": "antes-de-cerrar-negocio",
     "q": "¿Cómo publico lo que me sobra del día?",
     "a": [
@@ -540,6 +583,24 @@
     "a": [
      {
       "t": "If the business turns it on, yes: you reserve a place from the app or the website and show your code at the door. Reserving isn't a payment; whatever it costs, if anything, is paid at the venue."
+     }
+    ]
+   },
+   {
+    "id": "cola-virtual",
+    "q": "How does the virtual queue work?",
+    "a": [
+     {
+      "t": "If a venue has a virtual queue, there's a poster with a QR code on the door. Scan it, say how many of you there are and get a number (with your account, in the app or on the web). You see how many people are ahead of you and an estimated wait, and when it's your turn we let you know on your phone: you have a few minutes to get there. If you leave, tap “Leave the queue”. The list is deleted at the end of the day."
+     }
+    ]
+   },
+   {
+    "id": "reservar-mesa",
+    "q": "How do I book a table?",
+    "a": [
+     {
+      "t": "If the venue has it turned on, you'll see “Book a table” on its page. Choose the day, the time and how many of you there are, and leave your phone number: only that venue sees it, and only for that booking, in case they need to call you, and it's deleted when it's over. The venue accepts, suggests another time or says no; if they don't reply in time, the request expires and we let you know. You'll find it in Plans, where you can also cancel it. Booking isn't a payment."
      }
     ]
    },
@@ -855,6 +916,31 @@
     "a": [
      {
       "t": "Turn it on in your business page, in “About your place”. Then anyone on your team marks how busy it is from My business with one tap: Quiet, Lively or Full. It shows on your page and on the map while you're open and clears itself after 2 hours."
+     }
+    ]
+   },
+   {
+    "id": "cola-virtual-negocio",
+    "q": "How do I set up a virtual queue at the door?",
+    "a": [
+     {
+      "t": "In My business → “Virtual queue” (also on the "
+     },
+     {
+      "t": "web dashboard",
+      "u": "https://klendar.app/panel/"
+     },
+     {
+      "t": "): print the “Poster for the door” and open the queue each day with the maximum number of people and the minutes each person has to show up. People scan the poster when they arrive and get a number; you just tap “Call the next one” and we let them know on their phone. You add anyone without the app yourself. The list deletes itself at the end of the day (at 6:00) or when you tap “Finish for today”."
+     }
+    ]
+   },
+   {
+    "id": "reservas-mesa-negocio",
+    "q": "How do table bookings work?",
+    "a": [
+     {
+      "t": "Turn them on in My business → “Table bookings” with the times people can book, the maximum group, the minimum notice and the time you have to reply. You get a notification with each request and you accept, suggest another time or say no; if you don't reply in time, it expires and we tell the person. You see their phone number in case you need to call them: it's only for that booking and is deleted when it's over. No payments or commissions."
      }
     ]
    },

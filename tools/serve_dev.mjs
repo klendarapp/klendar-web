@@ -1,5 +1,5 @@
 // Servidor de desarrollo mínimo: sirve los ficheros estáticos del repo y
-// ejecuta las Pages Functions de /o/, /b/ (por id o por dirección), /r/, /rp/, /v/, /amigo/, /cartel/, /agenda/,
+// ejecuta las Pages Functions de /o/, /b/ (por id o por dirección), /r/, /rp/, /v/, /cola/, /amigo/, /cartel/, /agenda/,
 // /hoy/, /con-ninos/, /partidos/ y los sitemaps de agenda y negocios.
 // No sustituye a Cloudflare; es para ver las páginas mientras se escriben.
 import { createServer } from 'node:http';
@@ -69,6 +69,10 @@ createServer(async (req, res) => {
     if ((m = rest.match(/^\/o\/([^/]+)\/?$/))) { mod = await load(`functions/${en}o/[id].js`); params = { id: m[1] }; }
     // El cartel del local: /cartel/local/<código> y /en/poster/venue/<código>.
     else if ((m = rest.match(/^\/(cartel\/local|poster\/venue)\/([^/]+)\/?$/))) { mod = await load(`functions/${en}${en ? 'poster/venue' : 'cartel/local'}/[token].js`); params = { token: m[2] }; }
+    // El cartel de la cola virtual: /cartel/cola/<código> y /en/poster/queue/<código>.
+    else if ((m = rest.match(/^\/(cartel\/cola|poster\/queue)\/([^/]+)\/?$/))) { mod = await load(`functions/${en}${en ? 'poster/queue' : 'cartel/cola'}/[code].js`); params = { code: m[2] }; }
+    // La cola virtual (el QR del cartel): /cola/<código> y /en/queue/<código>.
+    else if ((m = rest.match(en ? /^\/(queue)\/([^/]+)\/?$/ : /^\/(cola)\/([^/]+)\/?$/))) { mod = await load(`functions/${en}${en ? 'queue' : 'cola'}/[code].js`); params = { code: m[2] }; }
     else if ((m = rest.match(/^\/(cartel|poster)\/([^/]+)\/?$/))) { mod = await load(`functions/${en}${en ? 'poster' : 'cartel'}/[id].js`); params = { id: m[2] }; }
     // «Compartir en historias»: /historia/<o|b|c>/<…> y /en/story/<o|b|c>/<…>.
     else if ((m = rest.match(/^\/(historia|story)\/([obc])\/([^/]+)\/?$/))) { mod = await load(`functions/${en}${en ? 'story' : 'historia'}/[kind]/[id].js`); params = { kind: m[2], id: m[3] }; }

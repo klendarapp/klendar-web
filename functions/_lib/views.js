@@ -46,6 +46,8 @@ const PATHS = {
   mas: 'M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z',
   editar: 'M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z',
   resena: 'M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 14v-2.47l6.88-6.88c.2-.2.51-.2.71 0l1.77 1.77c.2.2.2.51 0 .71L8.47 14H6zm12 0h-7.5l2-2H18v2z',
+  // «Reservar mesa» (table_restaurant).
+  mesa: 'M21.96 9.73l-1.43-5C20.41 4.3 20.02 4 19.57 4H4.43c-.45 0-.84.3-.96.73l-1.43 5c-.18.63.3 1.27.96 1.27h2.2L4 20h2l.67-5h10.67l.66 5h2l-1.2-9H21c.66 0 1.14-.64.96-1.27zM6.93 13l.27-2h9.6l.27 2H6.93z',
 };
 const icono = (n, size = 18) => `<svg class="ic" viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true"><path fill="currentColor" d="${PATHS[n]}"/></svg>`;
 
@@ -660,7 +662,7 @@ export async function businessPage(param, lang, search = '') {
   // «Clientes verificados»: solo las reseñas de quien ha canjeado algo aquí
   // (`?resenas=verificadas`, el mismo filtro que la app).
   const soloVerificadas = new URLSearchParams(search).get('resenas') === 'verificadas';
-  const [offers, sellos, carta, opiniones, novedades, cierres, nVerificadas, local, partidos] = await Promise.all([
+  const [offers, sellos, carta, opiniones, novedades, cierres, nVerificadas, local, partidos, mesas] = await Promise.all([
     rpcAll('business_offers', { p_id: id }),
     rpcAll('stamp_cards_of', { p_business: id }).catch(() => []), // opcional: sin ella, la ficha sale igual
     rpcAll('business_menu', { p_business: id }),
@@ -672,6 +674,11 @@ export async function businessPage(param, lang, search = '') {
     rows('businesses', `select=amenities,price_level,crowd_enabled,entity_kind&id=eq.${id}`).then((r) => r[0] || {}).catch(() => ({})),
     // «Pone el partido»: lo que pone los próximos 7 días (opcional).
     partidosDelBar(id, lang, zonaDe(b)).catch(() => ''),
+    // «Reservar mesa»: si el negocio tiene activada la reserva de mesa
+    // (opcional; sin ella, la ficha sale igual). Va en la página, que sale de
+    // la caché unos minutos: lo que se ve son los días de ese momento, pero
+    // el botón solo lleva al formulario, que los pide al abrirse.
+    rpc('business_table_booking', { p_business: id }).catch(() => null),
   ]);
   // «El sitio», el rango de precio («€€») y si dice «¿Hay sitio ahora?».
   const sitio = Array.isArray(local.amenities) ? local.amenities : [];
@@ -714,7 +721,7 @@ export async function businessPage(param, lang, search = '') {
         hiddenCust: (n) => (n === 1 ? "There's 1 exclusive publication for their customers with stamps."
           : `There are ${n} exclusive publications for their customers with stamps.`),
         birthday: 'Birthday gift for people who have it in their favourites',
-        matches: 'Matches',
+        matches: 'Matches', bookTable: 'Book a table',
       }
     : {
         now: 'Ahora mismo', soon: 'Próximamente',
@@ -751,7 +758,7 @@ export async function businessPage(param, lang, search = '') {
         hiddenCust: (n) => (n === 1 ? 'Hay 1 publicación exclusiva para sus clientes con sellos.'
           : `Hay ${n} publicaciones exclusivas para sus clientes con sellos.`),
         birthday: 'Regalo de cumpleaños para quien lo tiene en favoritos',
-        matches: 'Partidos',
+        matches: 'Partidos', bookTable: 'Reservar mesa',
       };
 
   const flash = offers.filter((o) => o.kind === 'flash_offer');
@@ -867,6 +874,7 @@ export async function businessPage(param, lang, search = '') {
       <a class="pill big" data-solo-equipo="empleado" hidden href="/panel/?biz=${encodeURIComponent(b.id)}">${icono('negocio', 16)} <span>${S.myBiz}</span></a>
       <a class="pill accent big" data-solo-publico data-fav="${esc(b.id)}" href="${cuenta(lang)}#/seguir/${encodeURIComponent(b.id)}"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.8 4.5c2.2 0 3.6 1.2 5.2 3 1.6-1.8 3-3 5.2-3 3.8 0 5.9 3.9 4.4 7.3C19.5 16.4 12 21 12 21z"/></svg> <span>${S.open}</span></a>
       <p class="note" data-solo-publico style="margin-bottom:16px">${S.note}</p>
+      ${mesas?.enabled ? `<p class="acciones" data-solo-publico style="margin:0 0 10px"><a class="pill big" href="${cuenta(lang)}#/mesa/${encodeURIComponent(b.id)}" rel="nofollow">${icono('mesa', 16)} <span>${S.bookTable}</span></a></p>` : ''}
       <p class="acciones" style="margin:0 0 16px">${historiaBoton(lang, 'b', slug || b.id)}</p>
       <div class="info">
         ${where ? `<div><span>${icono('lugar')}</span><span>${maps ? `<a href="${esc(maps)}" rel="nofollow noopener" target="_blank">${esc(where)}</a>` : esc(where)}</span></div>` : ''}

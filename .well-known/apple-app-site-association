@@ -12,10 +12,12 @@
           { "/": "/rp/*", "comment": "Enlace de un RRPP" },
           { "/": "/tv/enlazar/*", "comment": "Enlazar una tele del local (Poner en la tele)" },
           { "/": "/c/*", "comment": "QR de cliente (bonos)" },
+          { "/": "/cola/*", "comment": "Cola virtual (cartel para la puerta)" },
           { "/": "/en/o/*", "comment": "Offer or event (EN)" },
           { "/": "/en/b/*", "comment": "Business page (EN)" },
           { "/": "/en/friend/*", "comment": "Friend link (EN)" },
-          { "/": "/en/rp/*", "comment": "Promoter link (EN)" }
+          { "/": "/en/rp/*", "comment": "Promoter link (EN)" },
+          { "/": "/en/queue/*", "comment": "Virtual queue (EN)" }
         ]
       }
     ]

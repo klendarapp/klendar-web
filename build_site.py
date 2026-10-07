@@ -474,6 +474,9 @@ def robots():
         'Disallow: /r/',
         # El QR de cliente de los bonos: un enlace de un solo uso.
         'Disallow: /c/',
+        # La cola virtual de un local: la dirección lleva el código del cartel.
+        'Disallow: /cola/',
+        'Disallow: /en/queue/',
         'Disallow: /cal/',  # «Tus planes en tu calendario»: enlaces secretos
         'Disallow: /legal/',
         '',

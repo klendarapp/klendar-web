@@ -3,6 +3,8 @@ Allow: /
 Disallow: /admin/
 Disallow: /r/
 Disallow: /c/
+Disallow: /cola/
+Disallow: /en/queue/
 Disallow: /cal/
 Disallow: /legal/
 

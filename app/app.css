@@ -512,3 +512,42 @@ button.codigo.copiar .ms { font-size: 18px; color: var(--ink-2); letter-spacing:
 .bono-usos li { display: flex; align-items: center; gap: 8px; padding: 6px 0; }
 .bono-estado { display: block; font-weight: 700; }
 .bono-quedan { color: var(--ink); }
+
+/* Cola virtual y reserva de mesa (app/cola.js, app/mesas.js): neutros; el
+   coral, solo en el botón principal. */
+.cola-kicker { margin: 0; font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); }
+.vacio .cola-kicker { margin-bottom: 4px; }
+.cola-h1 { overflow-wrap: anywhere; margin: 2px 0 14px; }
+.cola-turno { text-align: center; border: 1px solid var(--glass-border); background: var(--glass); border-radius: 24px; padding: 24px 18px; margin: 0 0 14px; }
+.cola-turno h2 { margin: 0 0 6px; font-size: 22px; }
+.cola-turno p { margin: 0 0 6px; }
+.cola-turno.llamado { border: 2px solid var(--ink); }
+.cola-tu { font-weight: 800; }
+.cola-toca { font-family: var(--display); font-weight: 800; font-size: 30px; letter-spacing: -.02em; }
+.cola-turno .cola-numero { font-family: var(--display); font-weight: 800; font-size: 64px; line-height: 1; letter-spacing: -.03em; margin: 6px 0 14px; }
+.cola-cuenta { font-variant-numeric: tabular-nums; font-weight: 800; font-size: 22px; }
+.cola-cuantos { font-family: var(--display); font-size: 28px; font-weight: 800; line-height: 1.2; letter-spacing: -.02em; }
+.cola-form { margin: 16px auto 0; max-width: 300px; text-align: left; gap: 12px; }
+.cola-form .pill { justify-content: center; }
+.cola-turno .cola-ayuda { font-size: 14px; margin: 12px auto 0; max-width: 40ch; }
+.cola-nota { text-align: center; font-size: 14px; margin: 0 0 4px; }
+.cola-botones, .mesa-botones { display: grid; grid-template-columns: fit-content(360px); justify-content: center; gap: 10px; margin: 14px 0; }
+.cola-botones > .pill, .mesa-botones > .pill { justify-content: center; text-align: center; }
+.mesa-botones.dos { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); justify-content: stretch; max-width: 460px; margin-left: auto; margin-right: auto; }
+.cola-tarjetas { margin-bottom: 14px; }
+.cola-tarjeta .ocard-body b, .mesa-fila .ocard-body b { overflow-wrap: anywhere; }
+.cola-tarjeta > .ms:last-child { margin-left: auto; color: var(--ink-2); }
+.cola-tarjeta.llamado { border: 2px solid var(--ink); }
+.cola-toca-linea { font-weight: 800; font-size: 14px; }
+.ocard .ph .ms-svg { width: 30px; height: 30px; }
+.tag.ink { background: var(--ink); color: var(--surface); }
+.mesa-estado { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 0 0 14px; }
+.mesa-estado a { font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+.mesa-datos { margin-bottom: 14px; }
+.mesa-datos .fila-t b { overflow-wrap: anywhere; }
+.mesa-msg { padding: 12px 14px; border-radius: 16px; border: 1px solid var(--glass-border); background: var(--glass); overflow-wrap: anywhere; }
+.mesa-caja { margin: 14px 0 0; text-align: center; }
+.mesa-propuesta { padding: 16px; border-radius: 20px; border: 2px solid var(--ink); }
+.mesa-propuesta p { margin: 0 0 6px; }
+.mesa-form .mesa-plazo { margin: 0; font-size: 14px; }
+.mesa-form > .err:empty { display: none; }

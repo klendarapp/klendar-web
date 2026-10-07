@@ -82,7 +82,15 @@ function destinoWeb(ruta) {
   if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/promoters/i))) return `/panel/#/rrpp?biz=${m[1]}`;
   // «¿Te ha sobrado algo hoy?»: a «Antes de cerrar» de ese negocio.
   if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\?before_closing=1/i))) return `/panel/#/antes-de-cerrar?biz=${m[1]}`;
+  // «Nueva petición de mesa», «… ha caducado»: a «Reservas de mesa» de ese negocio.
+  if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/tables/i))) return `/panel/#/mesas?biz=${m[1]}`;
   if (r.startsWith('/my-business')) return '/panel/';
+  // Cola virtual: «¡Te toca!», «Se ha pasado tu turno»… → el turno.
+  if ((m = r.match(/^\/cola\/([A-Za-z0-9_-]{16})/))) return `#/cola/${m[1]}`;
+  // Reserva de mesa: confirmada, otra hora, caducada… → esa reserva; si el
+  // negocio ya no está, a Planes.
+  if ((m = r.match(/^\/table-bookings\/([0-9a-f-]{36})/i))) return `#/mesas/${m[1]}`;
+  if (r.startsWith('/plans')) return '#/planes';
   // «¡Feliz cumpleaños!»: el regalo, con su QR.
   if ((m = r.match(/^\/gift\/([0-9a-f-]{36})/i))) return `#/regalo/${m[1]}`;
   // «… se ha cancelado»: la reserva, que sale como «Anulado».

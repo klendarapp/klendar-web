@@ -769,3 +769,51 @@ details.bloque .b-cuerpo { display: grid; gap: 14px; padding: 0 16px 16px; }
 .bono-usos li { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .bono-usos li.deshecho span { text-decoration: line-through; color: var(--ink-2); }
 .bono-quedan { color: var(--ink); white-space: nowrap; }
+
+/* Cola virtual (panel/cola.js) y reservas de mesa (panel/mesas.js). */
+.cola-cifras { text-align: center; }
+.cola-cifras .cola-n { color: var(--ink); font-family: var(--display); font-weight: 800; font-size: 24px; letter-spacing: -.02em; margin: 0 0 4px; }
+.cola-cifras p { margin: 0 0 6px; }
+.btn.cola-avisar { width: 100%; justify-content: center; padding: 16px 20px; font-size: 17px; margin-top: 10px; white-space: normal; }
+.cola-pausa { margin-bottom: 14px; }
+.cola-h2 { font-size: 15px; margin: 18px 0 8px; }
+.cola-lista { padding: 4px 16px; }
+.cola-fila { display: flex; align-items: center; gap: 10px 14px; flex-wrap: wrap; padding: 12px 0; }
+.cola-fila + .cola-fila { border-top: 1px solid var(--glass-border); }
+.cola-fila-t { display: grid; gap: 2px; min-width: 0; flex: 1 1 200px; }
+.cola-fila-t b { overflow-wrap: anywhere; }
+.cola-fila-t .muted { font-size: 13px; }
+.cola-queda { margin: 0; font-weight: 800; font-variant-numeric: tabular-nums; }
+.cola-dos { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; flex: 1 1 100%; }
+.cola-dos .btn, .mesa-tres .btn, .cola-acciones .btn, .mesa-una .btn { justify-content: center; }
+.cola-mas .mas-menu { position: absolute; right: 0; z-index: 6; }
+.cola-mas { position: relative; }
+.cola-hechos { margin-top: 14px; }
+.cola-hechos .cola-lista { padding: 0; }
+.cola-acciones { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; }
+.cola-acciones .btn { white-space: normal; text-align: center; }
+.cola-cartel h2 { margin-top: 0; }
+.mesa-pestanas { margin: 0 0 14px; }
+.mesa-res h2 { margin: 0; overflow-wrap: anywhere; }
+.mesa-res p { margin: 6px 0 0; }
+.mesa-res .ts-top { flex-wrap: wrap; }
+.mesa-res.por-contestar { border-color: var(--ink); }
+.mesa-nota { overflow-wrap: anywhere; }
+.mesa-tel { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.mesa-plazo { font-weight: 800; }
+.mesa-tres { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+.mesa-tres .btn { white-space: normal; text-align: center; padding-left: 8px; padding-right: 8px; }
+.mesa-una { margin-top: 12px; display: grid; grid-template-columns: minmax(0, 220px); }
+.mesa-campo-t { margin: 0 0 4px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.mesa-ajustes label.f.check { display: flex; gap: 10px; align-items: center; color: var(--ink); font-size: 15px; }
+.mesa-rapido { font-weight: 700; }
+.filas-inicio { display: grid; gap: 8px; margin: 0 0 14px; }
+.fila-inicio { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 16px;
+  background: var(--glass); border: 1px solid var(--glass-border); color: var(--ink); font-weight: 700; }
+.fila-inicio:hover { text-decoration: none; border-color: var(--ink-2); }
+.fila-inicio > span:not(.ms) { flex: 1; min-width: 0; }
+.fila-inicio > .ms, .fila-inicio > svg { flex: none; }
+.fila-inicio > .ms:last-child { color: var(--ink-2); }
+.fila-inicio.destacada { border: 2px solid var(--ink); font-weight: 800; }
+.cola-mas[open] { flex-basis: auto; }
+.cola-cartel .cola-acciones { margin-top: 12px; }

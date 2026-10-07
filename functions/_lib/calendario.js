@@ -2,7 +2,9 @@
 //
 // La base dice qué entra (`calendar_feed`, migración 20261120100001 de la
 // app): eventos guardados o con «Voy» (también las fechas que añade una
-// serie), reservas y ofertas flash con hora. Aquí solo se pinta.
+// serie), reservas y ofertas flash con hora, y las mesas confirmadas
+// (`kind: 'table_booking'`, migración 20261207100000: «Mesa en {negocio}»,
+// dos horas, con enlace a la ficha del negocio). Aquí solo se pinta.
 //
 // - Una entrada por publicación con UID estable (`plan-<id>@klendar.app`): si
 //   cambia la hora, el calendario mueve la misma; si se anula, deja de venir
@@ -44,6 +46,8 @@ const TEXTOS = {
     saved: 'Guardado en Planes.',
     organiza: (b) => `Organiza: ${b}.`,
     ver: 'Míralo en Klendar',
+    mesa: (b) => `Mesa en ${b}`,
+    mesaPara: (n) => `Mesa para ${n}.`,
   },
   en: {
     nombre: 'Klendar · Your plans',
@@ -55,6 +59,8 @@ const TEXTOS = {
     saved: 'Saved in Plans.',
     organiza: (b) => `Hosted by ${b}.`,
     ver: 'See it on Klendar',
+    mesa: (b) => `Table at ${b}`,
+    mesaPara: (n) => `Table for ${n}.`,
   },
 };
 
@@ -141,12 +147,19 @@ export function icsDePlanes(datos, { base = 'https://klendar.app', ahora = new D
   for (const i of items) {
     if (!i?.id || !i.starts_at || !i.ends_at) continue;
     const tz = i.time_zone || 'Europe/Madrid';
-    const url = `${base}${lang === 'en' ? '/en' : ''}/o/${i.id}`;
-    const estado = i.how === 'reservation' ? T.reservation(i.seats || 1)
-      : i.how === 'code' ? (i.code_used ? T.codeUsed : T.code)
-        : i.how === 'going' ? T.going : T.saved;
+    // Una mesa confirmada: el enlace es la ficha del negocio (no hay
+    // publicación) y el título, «Mesa en {negocio}».
+    const mesa = i.kind === 'table_booking' || i.how === 'table';
+    const negocio = i.business || i.title || '';
+    const url = mesa
+      ? `${base}${lang === 'en' ? '/en' : ''}/b/${encodeURIComponent(i.slug || '')}`
+      : `${base}${lang === 'en' ? '/en' : ''}/o/${i.id}`;
+    const estado = mesa ? T.mesaPara(Math.max(1, Number(i.seats) || 1))
+      : i.how === 'reservation' ? T.reservation(i.seats || 1)
+        : i.how === 'code' ? (i.code_used ? T.codeUsed : T.code)
+          : i.how === 'going' ? T.going : T.saved;
     const lugar = [i.place, i.address].filter(Boolean).filter((v, k, a) => a.indexOf(v) === k).join(', ');
-    const desc = [estado, i.business && i.business !== i.place ? T.organiza(i.business) : '', `${T.ver}: ${url}`]
+    const desc = [estado, !mesa && i.business && i.business !== i.place ? T.organiza(i.business) : '', `${T.ver}: ${url}`]
       .filter(Boolean).join('\n');
     lineas.push(
       'BEGIN:VEVENT',
@@ -156,7 +169,7 @@ export function icsDePlanes(datos, { base = 'https://klendar.app', ahora = new D
       `SEQUENCE:${secuencia(i.updated_at)}`,
       fecha('DTSTART', i.starts_at, tz),
       fecha('DTEND', i.ends_at, tz),
-      `SUMMARY:${textoIcs(i.title || 'Klendar')}`,
+      `SUMMARY:${textoIcs(mesa ? T.mesa(negocio) : (i.title || 'Klendar'))}`,
       ...(lugar ? [`LOCATION:${textoIcs(lugar)}`] : []),
       ...(Number.isFinite(i.lat) && Number.isFinite(i.lng) ? [`GEO:${i.lat.toFixed(6)};${i.lng.toFixed(6)}`] : []),
       `URL:${url}`,

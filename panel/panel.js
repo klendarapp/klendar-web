@@ -579,8 +579,9 @@ const VUELTA_PARAMS = {
 function rutaDeVuelta() {
   const [h, q] = location.hash.split('?');
   const pagina = (/^#\/([a-z0-9-]{1,30})(\/[A-Za-z0-9-]{1,40}){0,2}$/.exec(h || '') || [])[1];
-  // rrpp.js, series.js y partidos.js se cargan después: sus pantallas también valen.
-  const conocida = pagina && (Object.hasOwn(PAGES, pagina) || ['rrpp', 'series', 'partidos'].includes(pagina));
+  // rrpp.js, series.js, partidos.js, cola.js y mesas.js se cargan después:
+  // sus pantallas también valen.
+  const conocida = pagina && (Object.hasOwn(PAGES, pagina) || ['rrpp', 'series', 'partidos', 'bonos', 'cola', 'mesas'].includes(pagina));
   let hash = '';
   if (conocida) {
     const dentro = new URLSearchParams(q || '');
@@ -742,6 +743,10 @@ const SVG = {
   // «Poner en la tele» (tv; no está en la fuente recortada).
   tele: 'M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 1.99-.9 1.99-2L23 5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z',
   rrpp: 'M9 13c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0-6c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm0 8c-2.67 0-8 1.34-8 4v3h16v-3c0-2.66-5.33-4-8-4zm6 5H3v-.99C3.2 18.29 6.3 17 9 17s5.8 1.29 6 2v1zM15.08 7.05c.84 1.18.84 2.71 0 3.89l1.68 1.69c2.02-2.02 2.02-5.07 0-7.27l-1.68 1.69zM20.07 2l-1.63 1.63c2.77 3.02 2.77 7.56 0 10.74L20.07 16c3.9-3.89 3.91-9.95 0-14z',
+  // «Cola virtual» (format_list_numbered).
+  cola: 'M2 17h2v.5H3v1h1v.5H2v1h3v-4H2v1zm1-9h1V4H2v1h1v3zm-1 3h1.8L2 13.1v.9h3v-1H3.2L5 10.9V10H2v1zm5-6v2h14V5H7zm0 14h14v-2H7v2zm0-6h14v-2H7v2z',
+  // «Reservas de mesa» (table_restaurant).
+  mesa: 'M21.96 9.73l-1.43-5C20.41 4.3 20.02 4 19.57 4H4.43c-.45 0-.84.3-.96.73l-1.43 5c-.18.63.3 1.27.96 1.27h2.2L4 20h2l.67-5h10.67l.66 5h2l-1.2-9H21c.66 0 1.14-.64.96-1.27zM6.93 13l.27-2h9.6l.27 2H6.93z',
 };
 const svg = (n, s = 20) => `<svg class="ms svg" viewBox="0 0 24 24" width="${s}" height="${s}" aria-hidden="true"><path fill="currentColor" d="${SVG[n]}"/></svg>`;
 const icono = (n) => (SVG[n] ? svg(n) : ms(n));
@@ -775,6 +780,11 @@ const NAV = [
     // Bonos pagados en el local (panel/bonos.js): el personal los ve para
     // venderlos; crear y pausar es de propietario y encargado.
     ['bonos', 'redeem', 'Bonos'],
+    // Cola virtual y reservas de mesa (panel/cola.js, panel/mesas.js):
+    // opcionales; todo el equipo las ve y las lleva, y abrir, cerrar o
+    // cambiar los ajustes es de propietario y encargado.
+    ['cola', 'cola', 'Cola virtual'],
+    ['mesas', 'mesa', 'Reservas de mesa'],
     ['cumpleanos', 'cake', 'Regalo de cumpleaños'],
     ['mensajes', 'notifications_active', 'Avisar a mis clientes'],
     ['resenas', 'reviews', 'Reseñas'],
@@ -1029,6 +1039,7 @@ PAGES.resumen = async (v) => {
       <a class="btn sm ghost" href="${APP_URL}/b/${esc(BIZ.id)}" target="_blank" rel="noopener">Ver ficha pública ↗</a></div>
     ${cerradoDeVerdad ? avisoCerrado() : ''}
     ${BIZ.verification_status !== 'verified' ? avisoVerificacion() : ''}
+    <div id="colaMesasCaja"></div>
     ${primeros ? `<div class="card primeros"><h2>Primeros pasos</h2>
       <p class="muted" style="margin:0 0 8px">Tres cosas y tu negocio está listo para que la gente lo encuentre.</p>
       ${paso(1, conFotos, 'Pon tu logo y una foto', '', '#/ficha/fotos')}
@@ -1085,6 +1096,8 @@ PAGES.resumen = async (v) => {
   const otra = $('#otra-revision', v);
   if (otra) otra.onclick = () => pideOtraRevision(otra);
   pintaAforo($('#aforoCaja', v));
+  // Cola virtual abierta y peticiones de mesa por contestar (panel/mesas.js).
+  if (typeof resumenColaMesas === 'function') resumenColaMesas($('#colaMesasCaja', v));
   const salirEq = $('#salir-equipo', v);
   if (salirEq) {
     salirEq.onclick = async () => {
