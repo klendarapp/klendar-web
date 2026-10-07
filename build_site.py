@@ -459,9 +459,11 @@ def doc_page(t, path, title, desc, body):
 # «hoy» y categorías en /sitemap-agenda.xml y las fichas de negocio (/b/) en
 # /sitemap-negocios.xml (vacíos mientras la web enseña los datos de dev).
 # «Dónde ver el partido» (/partidos/) es dinámica, pero su dirección es fija:
-# va aquí; cada partido (/partidos/<id>) cambia y pasa, y no se lista.
-SITEMAP_ES = ['/', '/como-funciona/', '/descubre/', '/explorar/', '/partidos/', '/agenda/', '/para-negocios/', '/precios/', '/preguntas/', '/prensa/', '/sobre/', '/accesibilidad/', '/estado/', '/fuentes/', '/negocios/', '/soporte/', '/privacidad/', '/terminos/', '/aviso-legal/', '/cookies/', '/normas/', '/eliminar-cuenta/']
-SITEMAP_EN = ['/en/', '/en/how-it-works/', '/en/discover/', '/en/explore/', '/en/matches/', '/en/whats-on/', '/en/for-business/', '/en/pricing/', '/en/faq/', '/en/press/', '/en/about/', '/en/accessibility/', '/en/status/', '/en/sources/', '/en/business-terms/', '/en/support/', '/en/privacy/', '/en/terms/', '/en/legal-notice/', '/en/cookies/', '/en/community-guidelines/', '/en/delete-account/']
+# va aquí; cada partido (/partidos/<id>) cambia y pasa, y no se lista. Igual
+# «Grupos y empresas» (/grupos/) y «Sorteos» (/sorteos/); los sorteos abiertos
+# van en /sitemap-negocios.xml y sus bases no se indexan.
+SITEMAP_ES = ['/', '/como-funciona/', '/descubre/', '/explorar/', '/partidos/', '/grupos/', '/sorteos/', '/agenda/', '/para-negocios/', '/precios/', '/preguntas/', '/prensa/', '/sobre/', '/accesibilidad/', '/estado/', '/fuentes/', '/negocios/', '/soporte/', '/privacidad/', '/terminos/', '/aviso-legal/', '/cookies/', '/normas/', '/eliminar-cuenta/']
+SITEMAP_EN = ['/en/', '/en/how-it-works/', '/en/discover/', '/en/explore/', '/en/matches/', '/en/groups/', '/en/giveaways/', '/en/whats-on/', '/en/for-business/', '/en/pricing/', '/en/faq/', '/en/press/', '/en/about/', '/en/accessibility/', '/en/status/', '/en/sources/', '/en/business-terms/', '/en/support/', '/en/privacy/', '/en/terms/', '/en/legal-notice/', '/en/cookies/', '/en/community-guidelines/', '/en/delete-account/']
 ALT_PAIRS = dict(zip(SITEMAP_ES, SITEMAP_EN))
 
 

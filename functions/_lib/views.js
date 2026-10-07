@@ -22,6 +22,8 @@ import KR from '../../assets/rrpp-enlace.js';
 import KM from '../../assets/marcas.js';
 import { fuenteHtml, selloEntidad } from './entidades.js';
 import { PARTIDOS_CSS, partidosDelBar } from './partidos.js';
+import { GRUPOS_CSS, grupoEnFicha } from './grupos.js';
+import { sorteosEnFicha } from './sorteos.js';
 
 // Iconos de Material (los mismos que la app), en SVG: las páginas públicas
 // no cargan la fuente de iconos.
@@ -63,11 +65,11 @@ export const sitioAhoraScripts = (lang) => {
  * calendario, «¿Por qué ves esto?», Denunciar) sin competir con Guardar o
  * Compartir. Un `<details>`: funciona sin JavaScript; con él, se cierra al
  * tocar fuera o con Escape (`MENU_JS`). `items`: HTML de cada opción. */
-const masMenu = (items, lang, { soloPublico = false } = {}) => `<details class="mas-menu"${soloPublico ? ' data-solo-publico' : ''}>
+export const masMenu = (items, lang, { soloPublico = false } = {}) => `<details class="mas-menu"${soloPublico ? ' data-solo-publico' : ''}>
       <summary aria-label="${lang === 'en' ? 'More options' : 'Más opciones'}" title="${lang === 'en' ? 'More options' : 'Más opciones'}">${icono('mas', 22)}</summary>
       <div class="mas-lista">${items.filter(Boolean).join('')}</div>
     </details>`;
-const MENU_JS = `<script>(function(){var c=function(x){document.querySelectorAll('details.mas-menu[open]').forEach(function(d){if(!x||!d.contains(x))d.open=false;});};
+export const MENU_JS = `<script>(function(){var c=function(x){document.querySelectorAll('details.mas-menu[open]').forEach(function(d){if(!x||!d.contains(x))d.open=false;});};
 document.addEventListener('click',function(e){c(e.target);});
 document.addEventListener('keydown',function(e){if(e.key==='Escape'){var d=document.querySelector('details.mas-menu[open]');c(null);if(d)d.querySelector('summary').focus();}});
 document.querySelectorAll('.mas-lista a').forEach(function(a){a.addEventListener('click',function(){c(null);});});
@@ -660,7 +662,7 @@ export async function businessPage(param, lang, search = '') {
   // «Clientes verificados»: solo las reseñas de quien ha canjeado algo aquí
   // (`?resenas=verificadas`, el mismo filtro que la app).
   const soloVerificadas = new URLSearchParams(search).get('resenas') === 'verificadas';
-  const [offers, sellos, carta, opiniones, novedades, cierres, nVerificadas, local, partidos] = await Promise.all([
+  const [offers, sellos, carta, opiniones, novedades, cierres, nVerificadas, local, partidos, grupoInfo, sorteos] = await Promise.all([
     rpcAll('business_offers', { p_id: id }),
     rpcAll('stamp_cards_of', { p_business: id }).catch(() => []), // opcional: sin ella, la ficha sale igual
     rpcAll('business_menu', { p_business: id }),
@@ -672,7 +674,12 @@ export async function businessPage(param, lang, search = '') {
     rows('businesses', `select=amenities,price_level,crowd_enabled,entity_kind&id=eq.${id}`).then((r) => r[0] || {}).catch(() => ({})),
     // «Pone el partido»: lo que pone los próximos 7 días (opcional).
     partidosDelBar(id, lang, zonaDe(b)).catch(() => ''),
+    // «Acepta grupos» y sus sorteos abiertos (tanda C; opcionales).
+    rpc('business_group_info', { p_business: id }).catch(() => null),
+    rpcAll('business_public_giveaways', { p_business: id }).catch(() => []),
   ]);
+  const grupoHtml = grupoEnFicha(grupoInfo, id, lang);
+  const sorteosHtml = sorteosEnFicha(sorteos, lang);
   // «El sitio», el rango de precio («€€») y si dice «¿Hay sitio ahora?».
   const sitio = Array.isArray(local.amenities) ? local.amenities : [];
   const precio = KM.simbolo(Number(local.price_level));
@@ -853,6 +860,7 @@ export async function businessPage(param, lang, search = '') {
         ${since ? `<span class="badge">${S.since} ${esc(since)}</span>` : ''}
       </div>
       ${cierre}
+      ${sorteosHtml}
       <nav class="neg-secciones" aria-label="${esc(b.name)}">
         ${flash.length ? `<a class="chip" href="#ahora">${esc(S.now)} <span class="muted">${flash.length}</span></a>` : ''}
         ${events.length ? `<a class="chip" href="#proximamente">${esc(S.soon)} <span class="muted">${events.length}</span></a>` : ''}
@@ -887,6 +895,7 @@ export async function businessPage(param, lang, search = '') {
       ${offers.length ? '' : `<p class="empty">${S.none}</p>`}
       ${exclusivas}
       ${partidos}
+      ${grupoHtml}
       ${sellos.length ? `<h2>${sellos.length > 1 ? S.stampsMany : S.stamps}</h2>
         ${sellos.map((c) => `<p class="callout"><b>${esc(c.name)}</b> · ${esc(S.stampsBody(c.goal, c.reward))}<br><small>${esc(queSellaTarjeta(c, S, en))}</small></p>`).join('')}
         <p class="muted">${esc(sellos.some((c) => c.by_visit) ? S.stampsNoteVisit : S.stampsNote)}</p>` : ''}
@@ -983,7 +992,8 @@ export async function businessPage(param, lang, search = '') {
     head: `<meta name="robots" content="${b.adults_only || conVisita || b.closed_indefinitely ? 'noindex' : 'index, follow'}">
 ${ldScript(jsonLd)}${horario ? '\n<script src="/assets/zona.js?v=1" defer></script>\n<script src="/assets/horario.js?v=1" defer></script>' : ''}${conVisita ? `\n${conVisita}` : ''}${local.crowd_enabled ? `\n${sitioAhoraScripts(lang)}` : ''}
 ${traducir(lang, `business:${b.id}`, carta.length ? `menu:${b.id}` : '')}${partidos ? `
-${PARTIDOS_CSS}` : ''}`,
+${PARTIDOS_CSS}` : ''}${grupoHtml || sorteosHtml ? `
+${GRUPOS_CSS}` : ''}`,
   }), 200, conVisita ? 'no-store' : undefined);
 }
 

@@ -44,7 +44,7 @@ const IC = {
   // local_offer: la oferta del bar para el partido.
   oferta: 'm21.41 11.58-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z',
 };
-const ic = (n, s = 18) => `<svg class="ic" viewBox="0 0 24 24" width="${s}" height="${s}" aria-hidden="true"><path fill="currentColor" d="${IC[n]}"/></svg>`;
+export const ic = (n, s = 18) => `<svg class="ic" viewBox="0 0 24 24" width="${s}" height="${s}" aria-hidden="true"><path fill="currentColor" d="${IC[n]}"/></svg>`;
 /** El balón (para el acceso de Explorar). */
 export const icPartido = (s = 18) => ic('balon', s);
 
@@ -52,7 +52,7 @@ export const icPartido = (s = 18) => ic('balon', s);
 export const atribucion = () => `<p class="fuente-datos"><a href="${KE.FUENTE.url}" rel="noopener" target="_blank">${esc(KE.FUENTE.texto)}</a></p>`;
 
 /** Los estilos de estas piezas (también en la ficha del bar y en Explorar). */
-export const PARTIDOS_CSS = '<link rel="stylesheet" href="/assets/partidos.css?v=2">';
+export const PARTIDOS_CSS = '<link rel="stylesheet" href="/assets/partidos.css?v=3">';
 
 /** Lo personal (Tus equipos, seguir desde aquí): solo hace algo con sesión. */
 const partidosScript = (lang) => {
@@ -131,7 +131,7 @@ const zonaHora = (o) => (o ? KZ.porCoordenadas(o.lat, o.lng) || KZ.MADRID : KZ.M
 
 /** El desplegable de la zona, como el de Explorar: «Cerca de mí», todas las
  * ciudades y cada una. «Cerca de mí» lo hace /assets/tarjetas.js. */
-function zonaMenu(e, lang, ciudades, link) {
+export function zonaMenu(e, lang, ciudades, link) {
   const en = lang === 'en';
   const Z = en
     ? { change: 'Change area', near: 'Near me', nearOn: 'Near you', all: 'Every city', nearNo: "We couldn't get your location. Allow it in your browser and try again." }
@@ -153,7 +153,7 @@ function zonaMenu(e, lang, ciudades, link) {
  * de 6 h) y sin zona en la dirección: se vuelve a la misma página con ella,
  * como en Explorar. Los enlaces de la propia página dejan una marca para no
  * pisarse (`klendar.filtros.sin`, /assets/tarjetas.js). */
-const recuperaZona = () => `<script>(function(){try{var q=new URLSearchParams(location.search);
+export const recuperaZona = () => `<script>(function(){try{var q=new URLSearchParams(location.search);
 if(q.has('lat')||q.has('ciudad')||q.has('city'))return;var s=sessionStorage;var sin=s.getItem('klendar.filtros.sin');s.removeItem('klendar.filtros.sin');if(sin)return;
 var n=(performance.getEntriesByType&&performance.getEntriesByType('navigation')[0])||{};if(n.type==='back_forward')return;
 var g=JSON.parse(localStorage.getItem('klendar.filtros')||'null');if(!g||Date.now()-g.t>216e5)return;

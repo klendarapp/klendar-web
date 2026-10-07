@@ -15,7 +15,8 @@
 // La misma especificación que la app: docs/DISENOS_PUBLICACION.md §7 (repo de
 // la app). Solo datos públicos: nunca nada de quien comparte.
 //
-// Rutas: /historia/o/<id> · /historia/b/<slug|id> · /historia/c/<slug> y las
+// Rutas: /historia/o/<id> · /historia/b/<slug|id> · /historia/c/<slug> ·
+// /historia/s/<id> (un sorteo abierto) y las
 // mismas en inglés en /en/story/….
 //
 // Una publicación abierta con el enlace de un RRPP (`/historia/o/<id>?rp=…`,
@@ -32,6 +33,9 @@ import {
 import { estiloDe } from './tarjeta.js';
 import { notFound } from './views.js';
 import KR from '../../assets/rrpp-enlace.js';
+import KS from '../../assets/textos-sorteos.js';
+import KZ from '../../assets/zona.js';
+import { sorteoPath } from './sorteos.js';
 
 const T = {
   es: {
@@ -39,6 +43,7 @@ const T = {
     lead: 'Una imagen vertical de 1080 × 1920 con el diseño de la publicación y un QR que lleva aquí. Para Instagram, WhatsApp, TikTok…',
     leadB: 'Una imagen vertical de 1080 × 1920 con tu foto, tu logo y un QR que lleva a tu ficha. Para Instagram, WhatsApp, TikTok…',
     leadC: 'Una imagen vertical de 1080 × 1920 con la colección y un QR que lleva aquí. Para Instagram, WhatsApp, TikTok…',
+    leadS: 'Una imagen vertical de 1080 × 1920 con el sorteo y un QR que lleva a su página. Para Instagram, WhatsApp, TikTok…',
     download: 'Descargar para historias', share: 'Compartir imagen', copy: 'Copiar enlace', copied: 'Enlace copiado',
     how: 'En Instagram: crea una historia, elige esta imagen y añade el sticker «Enlace» con el enlace copiado.',
     preparing: 'Preparando la imagen…',
@@ -59,6 +64,7 @@ const T = {
     lead: 'A 1080 × 1920 portrait image with the publication’s design and a QR code that brings people here. For Instagram, WhatsApp, TikTok…',
     leadB: 'A 1080 × 1920 portrait image with your photo, your logo and a QR code to your page. For Instagram, WhatsApp, TikTok…',
     leadC: 'A 1080 × 1920 portrait image with the collection and a QR code that brings people here. For Instagram, WhatsApp, TikTok…',
+    leadS: 'A 1080 × 1920 portrait image with the giveaway and a QR code to its page. For Instagram, WhatsApp, TikTok…',
     download: 'Download for stories', share: 'Share image', copy: 'Copy link', copied: 'Link copied',
     how: 'On Instagram: create a story, pick this image and add the “Link” sticker with the copied link.',
     preparing: 'Preparing the image…',
@@ -189,6 +195,28 @@ export async function storyPage(kind, ref, lang, rpRaw = '', para = '') {
     };
     volver = `${collectionBase(lang)}/${encodeURIComponent(slug)}/`;
     lead = S.leadC;
+  } else if (kind === 's') {
+    // Un sorteo abierto (tanda C): antetítulo «SORTEO», el premio, «Termina
+    // el …» y el negocio; el QR, a la página del sorteo (`?ref=stories`: la
+    // visita cuenta para el negocio).
+    if (!isUuid(raw)) return notFound(lang, self, 'o');
+    const g = await rpc('giveaway_detail', { p_id: raw });
+    if (!g || !g.id || g.status !== 'active' || KS.terminado(g)) return notFound(lang, self, 'o');
+    const bz = g.business || {};
+    const tz = KZ.zona(bz.time_zone || KZ.porCoordenadas(bz.lat, bz.lng) || KZ.MADRID);
+    datos = {
+      kind: 'giveaway', id: g.id, template: 'poster', accent: '#FFFFFF',
+      title: g.prize,
+      eyebrow: KS.t(lang).eyebrow,
+      subtitle: KS.t(lang).endsOn(KS.cuando(g.ends_at, lang, tz)),
+      business: bz.name || '',
+      logo: https(bz.logo_url),
+      media: https(bz.cover_image_url),
+      fallback: null,
+      path: sorteoPath(lang, g.id),
+    };
+    volver = sorteoPath(lang, g.id);
+    lead = S.leadS;
   } else {
     return notFound(lang, self, 'o');
   }
@@ -230,7 +258,7 @@ export async function storyPage(kind, ref, lang, rpRaw = '', para = '') {
   <script type="application/json" id="historia-datos">${JSON.stringify(datos).replace(/</g, '\\u003c')}</script>
   <script src="/assets/zona.js?v=1" defer></script>
   <script src="/assets/vendor/qrcode.js?v=1" defer></script>
-  <script src="/assets/historia.js?v=1" defer></script>`;
+  <script src="/assets/historia.js?v=2" defer></script>`;
 
   const estilo = `<meta name="robots" content="noindex, follow">
 <style>

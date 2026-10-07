@@ -921,4 +921,9 @@ const APP_EN = {
   "Pocos usos, caducidad y usos a mano": "Few uses left, expiry and manual uses",
   "Ese QR ya no vale.": "That QR code is no longer valid.",
   "No es un QR de cliente de Klendar.": "It isn't a Klendar customer QR code.",
+  // Ajustes → Notificaciones → Para ti (tanda C)
+  "Grupos y empresas": "Groups and companies",
+  "Respuestas a tus peticiones y, si tienes un negocio, peticiones nuevas": "Replies to your requests and, if you have a business, new requests",
+  "Sorteos": "Giveaways",
+  "Resultados de los sorteos en los que participas. Si ganas, te avisamos siempre.": "Results of the giveaways you've entered. If you win, we'll always let you know.",
 };

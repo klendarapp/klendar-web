@@ -776,3 +776,36 @@ details.bloque .b-cuerpo { display: grid; gap: 14px; padding: 0 16px 16px; }
 .bono-usos li { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .bono-usos li.deshecho span { text-decoration: line-through; color: var(--ink-2); }
 .bono-quedan { color: var(--ink); white-space: nowrap; }
+
+/* ── Tanda C: Grupos y empresas (panel/grupos.js) y Sorteos (panel/sorteos.js) ── */
+.seg { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; }
+.grupo-h { margin: 22px 0 10px; font-size: 20px; }
+.grupo-para-que, .sorteo-organiza { border: 0; margin: 0; padding: 0; display: grid; gap: 8px; min-width: 0; }
+.grupo-para-que legend, .sorteo-organiza legend { font-weight: 700; font-size: 14px; margin: 0 0 4px; padding: 0; }
+.grupo-peticiones { display: grid; gap: 10px; }
+.grupo-pet h3 { margin: 0 0 4px; font-size: 16px; overflow-wrap: anywhere; }
+.grupo-pet p { margin: 4px 0; overflow-wrap: anywhere; }
+.grupo-nota { color: var(--ink-2); }
+.grupo-tu-propuesta { padding: 10px 12px; border-radius: 14px; background: var(--soft); margin: 6px 0; }
+/* «Enviar propuesta» / «No podemos» (y «Escribir» / «Llamar»): uno debajo de otro, del mismo ancho. */
+.grupo-botones { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; margin-top: 8px; max-width: 360px; }
+.grupo-plegable { margin-top: 18px; max-width: 720px; }
+.grupo-plegable > summary { cursor: pointer; display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+.grupo-plegable[open] > summary { margin-bottom: 14px; }
+.grupo-plegable .form { margin: 0; }
+.grupo-botones .btn { justify-content: center; }
+.sorteo-item h2 { overflow-wrap: anywhere; }
+.sorteo-ganadores { list-style: none; padding: 0; margin: 8px 0 12px; display: grid; gap: 10px; }
+.sorteo-ganador { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.sorteo-ganador img, .sorteo-ganador .ph { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; background: var(--soft); flex: none; }
+.sorteo-ganador > span { display: grid; flex: 1 1 200px; min-width: 0; }
+.sorteo-ganador small { font-size: 13px; }
+.sorteo-acciones { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; margin: 12px 0; }
+.sorteo-acciones .btn { justify-content: center; text-align: center; }
+.sorteo-irpf { margin: 0; padding: 10px 14px; border-radius: 14px; background: var(--soft); font-weight: 600; font-size: 14px; }
+.sorteo-obligaciones { align-items: flex-start; }
+.sorteo-obligaciones input { margin-top: 3px; }
+.form.grupo-ajustes, .form.sorteo-form { grid-template-columns: minmax(0, 1fr); max-width: 680px; }
+.seg .btn[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: transparent; }
+.sorteo-form .opcion, .grupo-ajustes .opcion { align-items: flex-start; }
+.sorteo-form .opcion input, .grupo-ajustes .opcion input { width: 18px; height: 18px; flex: none; margin-top: 3px; }

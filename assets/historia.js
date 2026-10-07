@@ -295,9 +295,11 @@
     const kicker = D.eyebrow || (poster && when ? when.toUpperCase() : '');
 
     function filaQuien(organiza) {
-      const principal = organiza
-        ? (D.venue || D.t.organisedBy.replace('{x}', D.business))
-        : (D.venue || D.business);
+      // Un sorteo: el negocio, tal cual (sin «Organiza:»).
+      const principal = D.kind === 'giveaway' ? D.business
+        : organiza
+          ? (D.venue || D.t.organisedBy.replace('{x}', D.business))
+          : (D.venue || D.business);
       const h = D.venue ? 36 : 30;
       if (pinta) {
         logo(imgs.logo, D.business, x, cy + (h - 30) / 2, 30, false);

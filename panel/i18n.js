@@ -1304,4 +1304,8 @@ const I18N = makeI18N({
     "Cóbralo en el local antes de cargarlo: Klendar no cobra nada. Si te equivocas, lo puedes deshacer durante 10 minutos.": "Take payment at your venue before adding it: Klendar doesn't charge anything. If you make a mistake, you can undo it for 10 minutes.",
     "Clientes con bonos sin gastar (tienes que cumplirlos)": "Customers with unused passes (you must honour them)",
     "← Bonos": "← Passes",
+    // Tanda C: Sorteos y Grupos y empresas (el resto de sus textos vienen ya
+    // en el idioma de assets/textos-*.js o con bi()).
+    "Sorteos": "Giveaways",
+    "Grupos y empresas": "Groups and companies",
 });

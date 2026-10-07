@@ -82,7 +82,18 @@ function destinoWeb(ruta) {
   if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/promoters/i))) return `/panel/#/rrpp?biz=${m[1]}`;
   // «¿Te ha sobrado algo hoy?»: a «Antes de cerrar» de ese negocio.
   if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\?before_closing=1/i))) return `/panel/#/antes-de-cerrar?biz=${m[1]}`;
+  // Grupos y Sorteos (tanda C): la bandeja de peticiones y los sorteos del
+  // negocio, en el panel.
+  if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/groups/i))) return `/panel/#/grupos?biz=${m[1]}`;
+  if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/giveaways/i))) return `/panel/#/sorteos?biz=${m[1]}`;
   if (r.startsWith('/my-business')) return '/panel/';
+  // «X te ha enviado una propuesta»: la petición. «¡Has ganado…!»: la página
+  // del sorteo, que con tu sesión enseña lo tuyo.
+  if ((m = r.match(/^\/groups\/requests\/([0-9a-f-]{36})/i))) return `#/grupos/${m[1]}`;
+  if (r.startsWith('/groups/requests')) return '#/grupos';
+  if (r.startsWith('/groups')) return EN ? '/en/groups/' : '/grupos/';
+  if ((m = r.match(/^\/giveaways\/([0-9a-f-]{36})/i))) return `${EN ? '/en/giveaway/' : '/sorteo/'}${m[1]}`;
+  if (r.startsWith('/giveaways')) return EN ? '/en/giveaways/' : '/sorteos/';
   // «¡Feliz cumpleaños!»: el regalo, con su QR.
   if ((m = r.match(/^\/gift\/([0-9a-f-]{36})/i))) return `#/regalo/${m[1]}`;
   // «… se ha cancelado»: la reserva, que sale como «Anulado».
@@ -882,6 +893,9 @@ async function ajustesNotificaciones() {
     sw('series', 'Series que sigues', prefs.notify_series !== false),
     // «Partidos de tus equipos» (encendido de serie), justo debajo, como la app.
     sw('equipos', KlendarEmisiones.t(EN ? 'en' : 'es').prefTeams, prefs.notify_teams !== false),
+    // Grupos y empresas y Sorteos (tanda C), detrás de los partidos, como la app.
+    sw('grupos', 'Grupos y empresas', prefs.notify_groups !== false, 'Respuestas a tus peticiones y, si tienes un negocio, peticiones nuevas'),
+    sw('sorteos', 'Sorteos', prefs.notify_giveaways !== false, 'Resultados de los sorteos en los que participas. Si ganas, te avisamos siempre.'),
     sw('cerca', 'Ofertas flash cerca de ti', prefs.notify_nearby, 'Como mucho 3 al día'),
   ].join('')}
         <div id="cerca-mas"${prefs.notify_nearby ? '' : ' hidden'}>
@@ -924,6 +938,8 @@ async function ajustesNotificaciones() {
         notify_friend_plans: el.planesAmigos.checked,
         notify_series: el.series.checked,
         notify_teams: el.equipos.checked,
+        notify_groups: el.grupos.checked,
+        notify_giveaways: el.sorteos.checked,
         notify_nearby: el.cerca.checked,
         nearby_radius_m: Number(fa.querySelector('input[name=radio]:checked')?.value || 1000),
         nearby_categories: elegidas.length ? elegidas : null,
@@ -1626,7 +1642,10 @@ async function queSeDenuncia(tipo, id) {
   return '';
 }
 
-RUTAS.denunciar = async ([tipo, id]) => {
+RUTAS.denunciar = async ([tipo, id], params) => {
+  // `?detalle=`: lo que se sabe de qué se denuncia (desde la página de un
+  // sorteo, «Sorteo: <premio>»), escrito ya en «Detalles».
+  const detalle = String(params?.get('detalle') || '').slice(0, 200);
   const conContenido = Boolean(tipo || id);
   if (conContenido && (!QUE_SE_DENUNCIA[tipo] || !new RegExp(`^${UUID_DENUNCIA}$`, 'i').test(id || ''))) {
     pinta(pantallaVacia({ icono: 'link', titulo: t('Ese enlace no está completo.'), h: 'h1', botones: botonTuCuenta() }));
@@ -1654,7 +1673,8 @@ RUTAS.denunciar = async ([tipo, id]) => {
     <form class="formu" id="f" novalidate>${campoUrl}
       <fieldset class="motivos"><legend>${esc(t('Motivo'))}</legend>${motivos(listaMotivos)}</fieldset>
       <label>${esc(t('Detalles'))} <small>${esc(t('(opcional)'))}</small>
-        <textarea name="det" rows="4" maxlength="2000"></textarea></label>
+        <textarea name="det" rows="4" maxlength="2000">${esc(detalle ? `${detalle}
+` : '')}</textarea></label>
       <p class="err" id="err" role="alert"></p>
       <button class="pill accent" id="enviar">${esc(t('Enviar denuncia'))}</button>
     </form>`);
@@ -1688,7 +1708,8 @@ RUTAS.denunciar = async ([tipo, id]) => {
       <fieldset class="motivos" id="motivos"><legend>${esc(t('Motivo'))}</legend>${motivos(listaMotivos)}</fieldset>
       <label>${esc(t('Explica por qué lo denuncias'))}
         <small>${esc(t('Qué es exactamente y por qué crees que es ilegal o incumple las normas. Si es ilegal, di qué ley crees que incumple si lo sabes.'))}</small>
-        <textarea name="det" rows="5" minlength="10" maxlength="2000" required></textarea></label>
+        <textarea name="det" rows="5" minlength="10" maxlength="2000" required>${esc(detalle ? `${detalle}
+` : '')}</textarea></label>
       <label>${esc(t('Tu nombre'))} <small data-opc hidden>${esc(t('(opcional)'))}</small>
         <input name="nombre" autocomplete="name" maxlength="120"></label>
       <label>${esc(t('Tu correo'))} <small data-opc hidden>${esc(t('(opcional)'))}</small>

@@ -1,8 +1,10 @@
 import { configure, datosDePrueba, rows } from './_lib/page.js';
 import { BASE, isSlug } from './_lib/public.js';
 import { sitemapVacio, urlPar, urlset } from './_lib/sitemap.js';
+import { sorteosAbiertos } from './_lib/sorteos.js';
 
-// Sitemap de las fichas de negocio (/b/<dirección> y /en/b/<dirección>).
+// Sitemap de las fichas de negocio (/b/<dirección> y /en/b/<dirección>) y de
+// los sorteos abiertos (/sorteo/<id> y /en/giveaway/<id>).
 //
 // Solo los negocios que cualquiera puede ver (activos y verificados: lo que
 // deja leer la base sin cuenta) y ninguno +18, cuya ficha va con noindex.
@@ -31,6 +33,15 @@ export async function onRequestGet(ctx) {
     `${BASE}/en/b/${b.slug}`,
     { lastmod: String(b.updated_at || '').slice(0, 10) || undefined, freq: 'weekly', prio: '0.6' },
   ));
+
+  // Los sorteos abiertos (/sorteo/<id> y /en/giveaway/<id>): pasan pronto,
+  // pero mientras duran se buscan. Sus bases no (van con noindex).
+  try {
+    for (const g of await sorteosAbiertos()) {
+      urls.push(urlPar(`${BASE}/sorteo/${g.id}`, `${BASE}/en/giveaway/${g.id}`,
+        { lastmod: String(g.starts_at || '').slice(0, 10) || undefined, freq: 'daily', prio: '0.5' }));
+    }
+  } catch { /* sin sorteos: las fichas igual */ }
 
   return urlset(urls, 'public, max-age=3600, s-maxage=21600');
 }

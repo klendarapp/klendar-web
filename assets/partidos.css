@@ -82,6 +82,6 @@ section.partidos-dia, section.pone-partidos, section.seccion-partidos { padding:
 .seccion-partidos { margin: 0 0 22px; }
 .seccion-partidos .fuente-datos { margin-top: 10px; }
 /* El acceso discreto bajo el título de Explorar. */
-.exp-atajo { margin: 8px 0 0; font-size: 14px; }
+.exp-atajo { margin: 8px 0 0; font-size: 14px; display: flex; flex-wrap: wrap; gap: 6px 18px; }
 .exp-atajo a { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
 .exp-atajo .ic { flex: none; }

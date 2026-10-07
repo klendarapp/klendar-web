@@ -1,0 +1,150 @@
+/* «Grupos y empresas», «Sorteos» y «Esta noche se mueve» en la web pública
+   (tanda C: functions/_lib/grupos.js, functions/_lib/sorteos.js y el mapa de
+   functions/_lib/explore.js). Neutros: el coral solo en el botón principal. */
+
+/* ── Grupos y empresas ─────────────────────────────────────────────────── */
+.grupos-personas { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin: 0 0 14px; }
+.grupos-personas label { font-weight: 700; font-size: 14px; }
+.grupos-personas input { width: 96px; min-height: 42px; padding: 8px 12px; border-radius: 999px; border: 1px solid var(--glass-border);
+  background: var(--elevated); color: var(--ink); font: inherit; }
+.grupos-personas .pill { padding: 9px 16px; font-size: 14px; }
+
+.grupos-lista { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(min(330px, 100%), 1fr)); margin: 0 0 24px; }
+.grupo-neg { display: grid; gap: 8px; align-content: start; padding: 14px 16px 16px; border-radius: 22px; background: var(--glass);
+  border: 1px solid var(--glass-border); min-width: 0; }
+.grupo-neg-cab { display: flex; align-items: center; gap: 12px; color: var(--ink); min-width: 0; }
+.grupo-neg-cab:hover { text-decoration: none; }
+.grupo-neg-cab img, .grupo-neg-cab .ph, .sorteo-tj img, .sorteo-tj .ph { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; flex: none;
+  background: var(--soft); display: inline-grid; place-items: center; font-weight: 800; font-size: 20px; }
+.grupo-neg-t { display: grid; gap: 2px; min-width: 0; }
+.grupo-neg-t b { font-size: 16px; overflow-wrap: anywhere; }
+.grupo-neg-t .muted { font-size: 13px; }
+.grupo-neg p { margin: 0; font-size: 14px; }
+.grupo-neg-nota { color: var(--ink-2); overflow-wrap: anywhere; }
+/* «Elegir» ⇄ «✓ Elegido»: la casilla va dentro y no se ve. */
+.grupo-elegir { justify-content: center; cursor: pointer; padding: 10px 16px; font-size: 14px; justify-self: start; min-width: 132px; position: relative; }
+.grupo-elegir input { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
+.grupo-elegir:has(input:focus-visible) { outline: 2px solid var(--ink); outline-offset: 2px; }
+.grupo-elegir .grupo-elegir-si { display: none; }
+.grupo-elegir.on, .grupo-elegir:has(input:checked) { background: var(--ink); color: var(--surface); border-color: transparent; }
+.grupo-elegir.on .grupo-elegir-si, .grupo-elegir:has(input:checked) .grupo-elegir-si { display: inline; }
+.grupo-elegir.on .grupo-elegir-no, .grupo-elegir:has(input:checked) .grupo-elegir-no { display: none; }
+/* «Pedir presupuesto (2)», fija abajo (encima de las pestañas en el móvil). */
+.grupos-pedir { position: fixed; left: 0; right: 0; bottom: 16px; z-index: 31; display: flex; justify-content: center; padding: 0 16px; pointer-events: none; }
+.grupos-pedir .pill { pointer-events: auto; justify-content: center; min-width: min(360px, 100%); box-shadow: 0 14px 40px -16px rgba(0,0,0,.5); }
+body.con-barra-grupos { padding-bottom: 80px; }
+@media (max-width: 760px) {
+  .grupos-pedir { bottom: calc(74px + env(safe-area-inset-bottom)); }
+  .grupos-pedir .pill { width: 100%; }
+  body.con-barra-grupos { padding-bottom: calc(140px + env(safe-area-inset-bottom)); }
+}
+
+/* En la ficha del negocio. */
+section.grupo-ficha { padding: 14px 16px; margin: 0 0 18px; border-radius: 22px; border: 1px solid var(--glass-border); background: var(--glass); }
+.grupo-ficha p { margin: 0 0 4px; }
+.grupo-ficha .grupo-ficha-t { display: flex; align-items: center; gap: 8px; font-size: 16px; }
+.grupo-ficha .grupo-ficha-t .ic { flex: none; color: var(--ink-2); }
+.grupo-ficha .pill { margin-top: 8px; padding: 10px 18px; font-size: 14px; }
+
+/* ── Sorteos ───────────────────────────────────────────────────────────── */
+/* «Cerca» · «En los que participas». */
+.seg-pub { display: inline-grid; grid-template-columns: auto auto; gap: 4px; padding: 4px; margin: 0 0 12px; border-radius: 999px;
+  background: var(--glass); border: 1px solid var(--glass-border); max-width: 100%; }
+.seg-pub a { display: flex; align-items: center; justify-content: center; min-height: 40px; padding: 8px 16px; border-radius: 999px;
+  color: var(--ink-2); font-weight: 700; text-align: center; font-size: 14px; }
+.seg-pub a:hover { text-decoration: none; color: var(--ink); }
+.seg-pub a[aria-current="page"] { background: var(--ink); color: var(--surface); }
+
+.sorteos-lista { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(min(360px, 100%), 1fr)); margin: 0 0 24px; }
+.sorteo-tj { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 22px; background: var(--glass);
+  border: 1px solid var(--glass-border); color: var(--ink); min-width: 0; }
+.sorteo-tj:hover { text-decoration: none; border-color: var(--ink-2); }
+.sorteo-tj-t { display: grid; gap: 2px; min-width: 0; flex: 1; }
+.sorteo-tj-t b { font-size: 16px; line-height: 1.3; overflow-wrap: anywhere; }
+.sorteo-tj-t small { font-size: 13px; }
+.sorteo-tj-ante { font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); margin-right: 4px; }
+.sorteo-tj-yo { font-weight: 800; color: var(--ink); }
+.sorteo-tj-ir { color: var(--ink-2); display: inline-flex; flex: none; }
+
+/* En la ficha del negocio: una por sorteo abierto. */
+.sorteos-ficha { display: grid; gap: 8px; margin: 4px 0 12px; }
+.sorteo-ficha { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 18px; border: 1px solid var(--glass-border);
+  background: var(--glass); color: var(--ink); }
+.sorteo-ficha:hover { text-decoration: none; border-color: var(--ink-2); }
+.sorteo-ficha > span { display: grid; gap: 1px; min-width: 0; flex: 1; }
+.sorteo-ficha b { font-size: 15px; overflow-wrap: anywhere; }
+.sorteo-ficha small { font-size: 13px; }
+.sorteo-ficha .ic { flex: none; color: var(--ink-2); }
+
+/* La página del sorteo: la portada del negocio arriba, de lado a lado (es
+   apaisada), y debajo lo de siempre de una ficha. */
+@media (min-width: 861px) {
+  .detail.ficha.sorteo:not(.sin-media) { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); grid-template-areas: "media media" "head side" "body side"; }
+  .detail.ficha.sorteo > .ficha-media { position: relative; top: auto; }
+}
+/* El acceso discreto bajo el título (como en Explorar). */
+.exp-atajo { margin: 8px 0 0; font-size: 14px; }
+.exp-atajo a { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+.sorteo .d-head h1 { overflow-wrap: anywhere; }
+.sorteo-desc { margin: 12px 0 0; overflow-wrap: anywhere; }
+.sorteo-datos { list-style: none; padding: 0; margin: 14px 0 0; display: grid; gap: 4px; color: var(--ink-2); font-weight: 600; font-size: 15px; }
+.sorteo-datos li::before { content: "·"; margin-right: 8px; color: var(--ink-2); }
+.sorteo-accion { display: grid; gap: 8px; margin: 0 0 12px; }
+.sorteo-accion .pill.big { margin: 0; }
+.sorteo-accion .note, .sorteo-accion p { margin: 0; }
+.sorteo-estado { padding: 12px 14px; border-radius: 18px; background: var(--soft); overflow-wrap: anywhere; }
+.sorteo-gana { display: grid; gap: 4px; }
+.sorteo-gana b { font-family: var(--display); font-size: 22px; }
+.sorteo-extra { display: grid; gap: 8px; justify-items: start; }
+.sorteo-extra .pill { justify-content: center; }
+.side .sorteo-extra .pill { width: 100%; }
+.enlace-discreto { background: none; border: 0; padding: 4px 0; color: var(--ink-2); font: inherit; font-size: 14px; text-decoration: underline;
+  text-underline-offset: 3px; cursor: pointer; }
+.enlace-discreto:hover { color: var(--ink); }
+.sorteo-compartir { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; margin: 0 0 10px; }
+.sorteo-compartir .pill { justify-content: center; margin: 0; }
+.sorteo-bases { margin: 0 0 12px; font-size: 14px; }
+.sorteo-bases a { text-decoration: underline; text-underline-offset: 3px; }
+.sorteo-condiciones, .sorteo-como { margin: 0 0 16px; border: 1px solid var(--glass-border); border-radius: 18px; padding: 12px 16px; }
+.sorteo-condiciones summary, .sorteo-como summary { cursor: pointer; font-weight: 700; }
+.sorteo-condiciones p, .sorteo-como p { margin: 10px 0 0; overflow-wrap: anywhere; }
+section.sorteo-ver { padding: 0; margin: 8px 0 0; }
+.sorteo-ver h2 { margin-top: 0; }
+.sorteo-ver-datos { margin: 12px 0; display: grid; gap: 10px; }
+.sorteo-ver-datos div { display: grid; gap: 2px; }
+.sorteo-ver-datos dt { font-weight: 700; font-size: 14px; }
+.sorteo-ver-datos dd { margin: 0; }
+.sorteo-ver-datos code { font-size: 12.5px; overflow-wrap: anywhere; word-break: break-all; color: var(--ink-2); }
+.sorteo-ver-lista { margin: 0 0 12px; padding-left: 20px; }
+.sorteo-ver-res { font-weight: 700; margin: 0 0 12px; }
+.sorteo-ver-res:empty { display: none; }
+.sorteo-ver-res.mal { color: #D32F2F; }
+.sorteo-bases-doc h2 { font-size: 18px; margin: 22px 0 6px; }
+.sorteo-bases-doc p { overflow-wrap: anywhere; }
+
+.sorteo-dialogo { border: 1px solid var(--glass-border); border-radius: 24px; padding: 24px; max-width: min(420px, calc(100vw - 32px));
+  background: var(--elevated); color: var(--ink); box-shadow: 0 20px 60px rgba(0,0,0,.35); }
+.sorteo-dialogo::backdrop { background: rgba(0,0,0,.55); }
+.sorteo-dialogo p { margin: 0 0 20px; }
+.sorteo-dialogo .dialogo-botones { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.sorteo-dialogo .dialogo-botones .pill { justify-content: center; }
+.pill.peligro-lleno { background: #D32F2F; border-color: transparent; color: #fff; }
+
+/* ── «Esta noche se mueve» (Explorar › Mapa) ───────────────────────────── */
+.ambiente-fila { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 0 0 10px; }
+.ambiente-chk { display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: 999px; border: 1px solid var(--glass-border);
+  background: var(--glass); font-weight: 700; font-size: 14px; cursor: pointer; color: var(--ink); }
+.ambiente-chk input { width: 18px; height: 18px; margin: 0; }
+.ambiente-chk:has(input:checked) { background: var(--ink); color: var(--surface); border-color: transparent; }
+.ambiente-chk:has(input:checked) input { accent-color: var(--surface); }
+.ambiente-chk:has(input:focus-visible) { outline: 2px solid var(--ink); outline-offset: 2px; }
+.ambiente-aviso { margin: 0 0 10px; font-size: 14px; color: var(--ink-2); line-height: 1.4; }
+.ambiente-aviso button { background: none; border: 0; padding: 0; font: inherit; font-weight: 700; color: var(--ink); text-decoration: underline;
+  text-underline-offset: 3px; cursor: pointer; }
+.ambiente-porque { margin: 6px 0 0; }
+.ambiente-leyenda { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin: 8px 0 0; font-size: 13px; color: var(--ink-2); }
+.ambiente-leyenda span { display: inline-flex; align-items: center; gap: 6px; }
+.ambiente-leyenda i { display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: var(--ink); }
+.ambiente-leyenda i.n1 { opacity: .22; }
+.ambiente-leyenda i.n2 { opacity: .45; }
+.ambiente-leyenda i.n3 { opacity: .7; }

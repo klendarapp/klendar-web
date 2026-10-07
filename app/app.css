@@ -512,3 +512,32 @@ button.codigo.copiar .ms { font-size: 18px; color: var(--ink-2); letter-spacing:
 .bono-usos li { display: flex; align-items: center; gap: 8px; padding: 6px 0; }
 .bono-estado { display: block; font-weight: 700; }
 .bono-quedan { color: var(--ink); }
+
+/* ── Grupos y empresas (app/grupos.js; tanda C) ─────────────────────────── */
+.grupo-campo { border: 0; margin: 0; padding: 0; min-width: 0; }
+.grupo-campo legend { font-weight: 600; font-size: 15px; margin: 0 0 8px; padding: 0; }
+.grupo-paras { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.grupo-para { display: inline-flex; align-items: center; gap: 8px; padding: 5px 6px 5px 5px; border-radius: 999px; border: 1px solid var(--glass-border);
+  background: var(--glass); max-width: 100%; min-width: 0; }
+.grupo-para img, .grupo-para .ph { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; flex: none; background: var(--soft);
+  display: inline-grid; place-items: center; font-weight: 800; font-size: 13px; }
+.grupo-para b { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; padding-right: 4px; }
+.grupo-quita { width: 28px; height: 28px; border-radius: 50%; border: 0; background: var(--soft); color: var(--ink); font-size: 18px; line-height: 1;
+  cursor: pointer; flex: none; }
+.grupo-otro { font-weight: 700; font-size: 14px; padding: 8px 10px; text-decoration: underline; text-underline-offset: 3px; }
+.grupo-tipos { display: flex; flex-wrap: wrap; gap: 8px; }
+.grupo-pet .ph { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; color: var(--ink-2); }
+.grupo-resps { display: grid; gap: 12px; margin: 16px 0; }
+.grupo-resp { display: grid; gap: 8px; padding: 14px 16px; border-radius: 22px; border: 1px solid var(--glass-border); background: var(--glass); }
+.grupo-resp p { margin: 0; }
+.grupo-resp-neg { display: flex; align-items: center; gap: 10px; color: var(--ink); min-width: 0; }
+.grupo-resp-neg:hover { text-decoration: none; }
+.grupo-resp-neg img, .grupo-resp-neg .ph { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex: none; background: var(--soft);
+  display: inline-grid; place-items: center; font-weight: 800; }
+.grupo-resp-neg span { display: grid; min-width: 0; }
+.grupo-resp-neg b { overflow-wrap: anywhere; }
+.grupo-propuesta { display: grid; gap: 6px; padding: 10px 12px; border-radius: 16px; background: var(--soft); overflow-wrap: anywhere; }
+.grupo-resp .pill { justify-self: start; }
+.grupo-hoja .formu { margin: 0; gap: 12px; }
+.grupo-hoja .formu h2 { margin: 0; }
+.grupo-hoja .formu .err:empty { display: none; }

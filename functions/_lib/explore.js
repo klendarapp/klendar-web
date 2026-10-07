@@ -12,7 +12,7 @@
 // - Explorar (/explorar/, /en/explore/): buscar, y verlo en Lista, Mapa o
 //   Calendario (la pestaña 2 de la app: calendario + mapa).
 
-import { esc, html, rows, rpc, rpcAll } from './page.js';
+import { esc, html, rows, rpc, rpcAll, supabasePublic } from './page.js';
 import KZ from '../../assets/zona.js';
 import {
   agendaBase, bizPath, cityLinks, collectionBase, decodeSeg, discoverBase, exploreBase, historiaBoton, isVideo, kidsBase, ldScript,
@@ -26,6 +26,10 @@ import KM from '../../assets/marcas.js';
 import { notFound, sitioAhoraScripts } from './views.js';
 import { PARTIDOS_CSS, icPartido, origenDeZona, partidosBase, partidosEnBusqueda, zonaBaseDeExplorar, zonaDeExplorar } from './partidos.js';
 import KE from '../../assets/emisiones.js';
+import KG from '../../assets/textos-grupos.js';
+import KS from '../../assets/textos-sorteos.js';
+import { GRUPOS_CSS, gruposBase, icGrupos } from './grupos.js';
+import { icSorteo, sorteosBase } from './sorteos.js';
 
 /** Una dirección mal codificada no es un 500: se manda al listado (302). */
 const aListado = (loc) => new Response(null, { status: 302, headers: { Location: loc, 'Cache-Control': 'no-store' } });
@@ -254,6 +258,54 @@ const bizCard = (b, lang, S) => {
   </a>`;
 };
 
+/** La zona de Explorar en las claves de «Grupos y empresas» y «Sorteos»
+ * (tu posición o la ciudad; la distancia allí es la suya, 10 km). */
+const zonaGrupos = (e, lang) => {
+  const p = new URLSearchParams();
+  if (e.cerca) { p.set('lat', posUrl(e.lat)); p.set('lng', posUrl(e.lng)); } else if (e.city) p.set(lang === 'en' ? 'city' : 'ciudad', e.city);
+  return p.toString();
+};
+
+/** «Esta noche se mueve» (tanda C), solo en el mapa de Explorar: la casilla
+ * (`?ambiente=1`, en inglés `?buzz=1`), el aviso de una línea (sin
+ * movimiento, o con el mapa muy alejado) y la leyenda bajo el mapa. Las
+ * zonas las pide y las pinta /assets/ambiente.js (`nightlife_now` con lo que
+ * se ve del mapa, otra vez al moverlo): círculos neutros, en tinta. */
+function ambienteHtml(e, lang, link) {
+  const en = lang === 'en';
+  const sp = supabasePublic();
+  const T = en
+    ? {
+        chk: 'Buzzing tonight', empty: 'Not enough going on around here yet to show it.', why: 'Why?',
+        whyText: (n, h) => `We only show areas where at least ${n} different people have been in the last ${h} (redemptions and visits), so nobody can tell who is where. No names or businesses.`,
+        wide: 'Zoom in to see where it’s buzzing.',
+        legend: (h) => `A bit of buzz · Busy · Buzzing · last ${h}`,
+        levels: ['A bit of buzz', 'Busy', 'Buzzing'],
+        hours: (n) => (n === 1 ? '1 h' : `${n} h`), mins: (n) => `${n} min`,
+      }
+    : {
+        chk: 'Esta noche se mueve', empty: 'Aún no hay bastante movimiento por aquí para enseñarlo.', why: '¿Por qué?',
+        whyText: (n, h) => `Solo enseñamos zonas donde ha habido al menos ${n} personas distintas en las últimas ${h} (canjes y visitas), para que nadie pueda saber quién está dónde. Sin nombres ni negocios.`,
+        wide: 'Acerca el mapa para ver dónde se mueve.',
+        legend: (h) => `Algo · Bastante · Mucho ambiente · últimas ${h}`,
+        levels: ['Algo de ambiente', 'Bastante ambiente', 'Mucho ambiente'],
+        hours: (n) => (n === 1 ? '1 h' : `${n} h`), mins: (n) => `${n} min`,
+      };
+  const textos = {
+    empty: T.empty, why: T.why, wide: T.wide, levels: T.levels,
+    whyText: T.whyText('{n}', '{h}'), legend: T.legend('{h}'),
+    // «2 h» con lo que diga la base (`window_minutes`).
+    h: T.hours(9).replace('9', '{n}'), m: T.mins(9).replace('9', '{n}'),
+  };
+  return `<div class="ambiente-fila">
+    <label class="ambiente-chk"><input type="checkbox" id="ambiente"${e.ambiente ? ' checked' : ''}
+      data-on="${esc(link({ ambiente: true }))}" data-off="${esc(link({ ambiente: false }))}"> <span>${esc(T.chk)}</span></label>
+  </div>
+  <p class="ambiente-aviso" id="ambiente-aviso" role="status" aria-live="polite" hidden></p>
+  <script type="application/json" id="ambiente-textos">${JSON.stringify(textos).replace(/</g, '\\u003c')}</script>
+  <script src="/assets/ambiente.js?v=1" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}"></script>`;
+}
+
 /** Mapa con una chincheta por publicación. Si Mapbox no carga (sin token,
  * sin red), se dice: debajo está la lista con lo mismo. */
 const mapaHtml = (items, lang, S) => {
@@ -264,11 +316,12 @@ const mapaHtml = (items, lang, S) => {
     ...(o.venue_address ? {} : { n: o.business_id }),
   }));
   return `<div id="mapa" class="mapa-explorar" role="region" aria-label="${esc(S.mapView)}" data-no="${esc(S.mapNo)}"></div>
+  <p class="ambiente-leyenda" id="ambiente-leyenda" hidden></p>
   ${sitioAhoraScripts(lang).replace(/ defer/g, '')}
   <script type="application/json" id="mapaPuntos">${JSON.stringify(puntos).replace(/</g, '\\u003c')}</script>
   <script>(async function(){
     var caja=document.getElementById('mapa');var puntos=JSON.parse(document.getElementById('mapaPuntos').textContent||'[]');
-    function falla(){caja.innerHTML='<p class="empty">'+caja.dataset.no+'</p>';caja.classList.add('sin-mapa');}
+    function falla(){caja.innerHTML='<p class="empty">'+caja.dataset.no+'</p>';caja.classList.add('sin-mapa');document.dispatchEvent(new CustomEvent('klendar-mapa-falla'));}
     try{
       var tk=(await (await fetch('/api/mapbox-token')).json()).token;if(!tk)return falla();
       await new Promise(function(ok,ko){var c=document.createElement('link');c.rel='stylesheet';c.href='https://api.mapbox.com/mapbox-gl-js/v3.15.0/mapbox-gl.css';document.head.append(c);
@@ -277,6 +330,7 @@ const mapaHtml = (items, lang, S) => {
       var oscuro=matchMedia('(prefers-color-scheme: dark)').matches;
       var m=new mapboxgl.Map({container:caja,style:oscuro?'mapbox://styles/mapbox/dark-v11':'mapbox://styles/mapbox/light-v11',center:puntos.length?[puntos[0].lng,puntos[0].lat]:[-3.7038,40.4168],zoom:12,performanceMetricsCollection:false,collectResourceTiming:false,cooperativeGestures:matchMedia('(pointer: coarse)').matches});
       m.addControl(new mapboxgl.NavigationControl({showCompass:false}));
+      window.KlendarMapa=m;document.dispatchEvent(new CustomEvent('klendar-mapa'));
       var bounds=new mapboxgl.LngLatBounds();var pops=[];
       puntos.forEach(function(p){bounds.extend([p.lng,p.lat]);
         var el=document.createElement('a');el.className='chincheta'+(p.k==='f'?' flash':'');el.href=p.u;el.setAttribute('aria-label',p.t);
@@ -480,9 +534,9 @@ function calendarioHtml({ items, lang, S, link, mes, dia, hoy }) {
 /** Las claves de la dirección en cada idioma. */
 const CLAVES = {
   es: { city: 'ciudad', cat: 'categoria', kind: 'tipo', price: 'precio', when: 'cuando', discount: 'descuento', open: 'abierto', sort: 'orden', view: 'vista', month: 'mes', day: 'dia', show: 'ver', place: 'sitio', weather: 'tiempo',
-    age: 'edad', vprice: 'precio-local', card: 'descuento-para', solo: 'solo', charity: 'solidario', entity: 'agenda-publica', closing: 'antes-de-cerrar' },
+    age: 'edad', vprice: 'precio-local', card: 'descuento-para', solo: 'solo', charity: 'solidario', entity: 'agenda-publica', closing: 'antes-de-cerrar', buzz: 'ambiente' },
   en: { city: 'city', cat: 'category', kind: 'type', price: 'price', when: 'when', discount: 'discount', open: 'open', sort: 'sort', view: 'view', month: 'month', day: 'day', show: 'show', place: 'place', weather: 'weather',
-    age: 'age', vprice: 'venue-price', card: 'discount-for', solo: 'solo', charity: 'charity', entity: 'public-listings', closing: 'before-closing' },
+    age: 'age', vprice: 'venue-price', card: 'discount-for', solo: 'solo', charity: 'charity', entity: 'public-listings', closing: 'before-closing', buzz: 'buzz' },
 };
 /** Marcas (tanda A) en la dirección: edades «4-8», carné en cada idioma. */
 const EDAD_URL = { '0-3': '0_3', '4-8': '4_8', '9-12': '9_12', '13-17': '13_17' };
@@ -566,6 +620,8 @@ function leeEstado(qs) {
     // «Antes de cerrar»: lo que sobra del día (`before_closing` en
     // `offer_traits`, migración 20261121100000).
     antesCierre: de('closing', 2) === '1',
+    // «Esta noche se mueve» (solo en el mapa de Explorar; tanda C).
+    ambiente: de('buzz', 2) === '1',
     // Apagado solo si lo dice la dirección (la hoja sin JavaScript manda
     // `tiempo=0&tiempo=1` cuando está encendido).
     tiempoOff: tiempo.includes('0') && !tiempo.includes('1'),
@@ -611,6 +667,7 @@ function query(e, lang, { soloCompartido = false } = {}) {
     if (e.solidario) p.set(K.charity, '1');
     if (e.entidad) p.set(K.entity, '1');
     if (e.antesCierre) p.set(K.closing, '1');
+    if (!soloCompartido && e.vista === 'map' && e.ambiente) p.set(K.buzz, '1');
   }
   if (e.tiempoOff) p.set(K.weather, '0');
   if (!soloCompartido && e.page > 1) p.set('p', String(e.page));
@@ -640,6 +697,7 @@ function guardaFiltros(e, lang, base) {
   if (e.vista) resto.set(K.view, enIdioma(e.vista, lang === 'en'));
   if (e.vista === 'calendar' && e.mes) resto.set(K.month, e.mes);
   if (e.vista === 'calendar' && e.dia) resto.set(K.day, e.dia);
+  if (e.vista === 'map' && e.ambiente) resto.set(K.buzz, '1');
   const vacia = !compartido.es;
   const datos = JSON.stringify({ A: compartido, L: lang, v: vacia, r: resto.toString(), b: `${base}/`, g: (e.gustos || []).join(',') }).replace(/</g, '\\u003c');
   return `<script>(function(d){try{var K='klendar.filtros',s=sessionStorage,ls=localStorage;
@@ -1041,6 +1099,9 @@ export async function explorePage(url, lang, modo = 'explorar') {
     popular: S.searchPopular, popularHint: S.searchPopularHint, remove: S.searchRemove,
     // «Dónde ver el partido» con su subtítulo, arriba del panel en reposo.
     partidos: { t: KE.t(lang).title, s: KE.t(lang).lead, href: `${partidosBase(lang)}/${zonaDeExplorar(e, lang) ? `?${zonaDeExplorar(e, lang)}` : ''}` },
+    // «Grupos y empresas» y «Sorteos» (tanda C), detrás, como en la app.
+    grupos: { t: KG.t(lang).title, s: KG.t(lang).sub, href: `${gruposBase(lang)}/${zonaGrupos(e, lang) ? `?${zonaGrupos(e, lang)}` : ''}` },
+    sorteos: { t: KS.t(lang).title, s: KS.t(lang).sub, href: `${sorteosBase(lang)}/${zonaGrupos(e, lang) ? `?${zonaGrupos(e, lang)}` : ''}` },
   });
   const buscador = descubre ? '' : `<form class="buscador" role="search" method="get" action="${base}/" data-busqueda
     data-ciudad="${esc(ciudadK?.id || '')}" data-ciudad-nombre="${esc(ciudadK?.name || '')}" data-textos="${esc(textosBusqueda)}">
@@ -1066,7 +1127,7 @@ export async function explorePage(url, lang, modo = 'explorar') {
   </div>
   <p id="cercaErr" class="aviso-error" role="alert" hidden></p>
   <script src="/assets/categorias.js?v=4" defer></script>
-  <script src="/assets/gustos.js?v=4" defer data-lang="${en ? 'en' : 'es'}"></script>`;
+  <script src="/assets/gustos.js?v=5" defer data-lang="${en ? 'en' : 'es'}"></script>`;
 
   // En Explorar, sin ubicación ni ciudad: «Mira primero lo que tienes más cerca».
   const invitaCerca = !descubre && !negocios && !cerca && !city
@@ -1117,7 +1178,8 @@ export async function explorePage(url, lang, modo = 'explorar') {
   })) : '';
   const head = `${guardaFiltros({ ...e, vista }, lang, base)}
 ${filtrado ? '<meta name="robots" content="noindex, follow">' : jsonLd}${descubre ? '' : `
-${PARTIDOS_CSS}`}`;
+${PARTIDOS_CSS}`}${mapa ? `
+${GRUPOS_CSS}` : ''}`;
 
   // Los avisos de Descubre (docs/GLOSARIO.md, «Avisos de Descubre»): bajo
   // los filtros, como mucho UNO a la vez, en una línea y con su ×. Por orden:
@@ -1161,7 +1223,7 @@ ${PARTIDOS_CSS}`}`;
   } else if (calendario) {
     resultados = calendarioHtml({ items, lang, S, link, mes, dia, hoy });
   } else if (mapa) {
-    resultados = `${mapaHtml(items, lang, S)}${items.length ? `<h2 class="fin-h">${esc(S.onMap(items.length))}</h2>${rejilla(items, lang, { galeria: true })}` : ''}`;
+    resultados = `${ambienteHtml(e, lang, link)}${mapaHtml(items, lang, S)}${items.length ? `<h2 class="fin-h">${esc(S.onMap(items.length))}</h2>${rejilla(items, lang, { galeria: true })}` : ''}`;
   } else {
     const negArriba = (sitios?.items || []);
     resultados = `${negArriba.length ? `<section class="seccion-negocios" aria-labelledby="secNeg">
@@ -1176,7 +1238,9 @@ ${PARTIDOS_CSS}`}`;
   <div class="exp-cab cab-pagina" id="arriba">
     <div><h1>${esc(S.exp)}</h1>
     <p class="muted exp-lead">${esc(S.lead)}</p>
-    <p class="exp-atajo"><a href="${esc(`${partidosBase(lang)}/${zonaDeExplorar(e, lang) ? `?${zonaDeExplorar(e, lang)}` : ''}`)}">${icPartido(16)}<span>${esc(KE.t(lang).title)}</span></a></p></div>
+    <p class="exp-atajo"><a href="${esc(`${partidosBase(lang)}/${zonaDeExplorar(e, lang) ? `?${zonaDeExplorar(e, lang)}` : ''}`)}">${icPartido(16)}<span>${esc(KE.t(lang).title)}</span></a>
+      <a href="${esc(`${gruposBase(lang)}/${zonaGrupos(e, lang) ? `?${zonaGrupos(e, lang)}` : ''}`)}">${icGrupos(16)}<span>${esc(KG.t(lang).title)}</span></a>
+      <a href="${esc(`${sorteosBase(lang)}/${zonaGrupos(e, lang) ? `?${zonaGrupos(e, lang)}` : ''}`)}">${icSorteo(16)}<span>${esc(KS.t(lang).title)}</span></a></p></div>
     ${vistas}
   </div>
   ${buscador}

@@ -184,7 +184,9 @@ export const discoverBase = (lang) => (lang === 'en' ? '/en/discover' : '/descub
 export const collectionBase = (lang) => (lang === 'en' ? '/en/collection' : '/coleccion');
 
 /** La misma página en el otro idioma: /o/x ⇄ /en/o/x, /agenda/x ⇄ /en/whats-on/x,
- * /hoy/x ⇄ /en/today/x, /con-ninos/x ⇄ /en/kids/x, /partidos/x ⇄ /en/matches/x. */
+ * /hoy/x ⇄ /en/today/x, /con-ninos/x ⇄ /en/kids/x, /partidos/x ⇄ /en/matches/x,
+ * /grupos/ ⇄ /en/groups/, /sorteos/ ⇄ /en/giveaways/, /sorteo/x ⇄ /en/giveaway/x
+ * y /sorteo/x/bases ⇄ /en/giveaway/x/rules. */
 export const altPath = (path, lang) =>
   lang === 'en'
     ? (path
@@ -197,6 +199,10 @@ export const altPath = (path, lang) =>
         .replace(/^\/en\/friend\//, '/amigo/')
         .replace(/^\/en\/story\//, '/historia/')
         .replace(/^\/en\/matches/, '/partidos')
+        .replace(/^\/en\/groups/, '/grupos')
+        .replace(/^\/en\/giveaway\/([^/]+)\/rules/, '/sorteo/$1/bases')
+        .replace(/^\/en\/giveaways/, '/sorteos')
+        .replace(/^\/en\/giveaway\//, '/sorteo/')
         .replace(/^\/en/, '') || '/')
     : `/en${path
         .replace(/^\/agenda/, '/whats-on')
@@ -207,7 +213,11 @@ export const altPath = (path, lang) =>
         .replace(/^\/coleccion/, '/collection')
         .replace(/^\/amigo\//, '/friend/')
         .replace(/^\/historia\//, '/story/')
-        .replace(/^\/partidos/, '/matches')}`;
+        .replace(/^\/partidos/, '/matches')
+        .replace(/^\/grupos/, '/groups')
+        .replace(/^\/sorteo\/([^/]+)\/bases/, '/giveaway/$1/rules')
+        .replace(/^\/sorteos/, '/giveaways')
+        .replace(/^\/sorteo\//, '/giveaway/')}`;
 
 /**
  * Página pública completa: cabecera del sitio, contenido y pie sencillo.
@@ -297,7 +307,7 @@ ${conAmigos ? `<script src="/assets/amigos.js?v=15" defer data-lang="${en ? 'en'
 ` : ''}${conVisor ? `<script src="/assets/tarjeta.js?v=9" defer></script>
 ` : ''}${conTarjetas ? `<script src="/assets/tarjetas.js?v=14" defer></script>
 ` : ''}${/class="detail[" ]/.test(body) ? `<script src="/assets/barra.js?v=4" defer></script>
-` : ''}${/^\/(en\/)?(o|b|coleccion|collection)\//.test(path) ? desdeHistorias() : ''}${contador ? CONTADOR : ''}
+` : ''}${/^\/(en\/)?(o|b|coleccion|collection)\//.test(path) || /^\/(sorteo|en\/giveaway)\/[^/]+$/.test(path) ? desdeHistorias() : ''}${contador ? CONTADOR : ''}
 </body></html>`;
 }
 
@@ -306,7 +316,8 @@ ${conAmigos ? `<script src="/assets/amigos.js?v=15" defer data-lang="${en ? 'en'
  * imagen (`?ref=stories` o `?ref=whatsapp`), desde el QR de la tele del
  * local (`?ref=tv`) o desde el del cartel del local (`?ref=local_qr`, lo
  * pone `/v/`)
- * cuenta para el negocio (`log_ref_visit`, una vez por persona cada 30 min) y
+ * cuenta para el negocio (desde la página de un sorteo, `/sorteo/<id>`, para
+ * el negocio que lo organiza) (`log_ref_visit`, una vez por persona cada 30 min) y
  * el origen se quita de la dirección, para que si vuelve a compartir el
  * enlace no se cuente como historia. Sin cookies ni nada guardado.
  */
@@ -314,7 +325,8 @@ function desdeHistorias() {
   const sp = supabasePublic();
   return `<script>(function(){try{var q=new URLSearchParams(location.search);var ref=q.get('ref');if(['stories','whatsapp','tv','local_qr'].indexOf(ref)<0||navigator.webdriver)return;
 var p=location.pathname.split('/').filter(Boolean);if(p[0]==='en')p.shift();
-var k={o:'offer',b:'business',coleccion:'collection',collection:'collection'}[p[0]];if(!k||!p[1])return;
+var k={o:'offer',b:'business',coleccion:'collection',collection:'collection',sorteo:'business',giveaway:'business'}[p[0]];if(!k||!p[1])return;
+if(p[0]==='sorteo'||p[0]==='giveaway'){var n=document.querySelector('[data-ref-negocio]');p[1]=n&&n.getAttribute('data-ref-negocio');if(!p[1]||p.length>2)return;}
 var key=${JSON.stringify(sp.key)};
 fetch(${JSON.stringify(sp.url + '/rest/v1/rpc/log_ref_visit')},{method:'POST',keepalive:true,headers:{apikey:key,Authorization:'Bearer '+key,'Content-Type':'application/json'},body:JSON.stringify({p_ref:ref,p_kind:k,p_target:decodeURIComponent(p[1])})}).catch(function(){});
 q.delete('ref');var r=q.toString();history.replaceState(history.state,'',location.pathname+(r?'?'+r:'')+location.hash);}catch(e){}})();</script>`;
