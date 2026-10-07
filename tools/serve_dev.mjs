@@ -125,6 +125,7 @@ createServer(async (req, res) => {
     else if (path === '/api/mapbox-token') { mod = await load('functions/api/mapbox-token.js'); }
     else if (path === '/sitemap-agenda.xml') { mod = await load('functions/sitemap-agenda.xml.js'); }
     else if (path === '/sitemap-negocios.xml') { mod = await load('functions/sitemap-negocios.xml.js'); }
+    else if (path === '/sitemap-artistas.xml') { mod = await load('functions/sitemap-artistas.xml.js'); }
 
     if (mod) {
       const request = new Request(`https://klendar.app${path}${url.search}`, { headers: { 'accept-language': 'es' } });
