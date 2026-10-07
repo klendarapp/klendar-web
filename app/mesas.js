@@ -247,7 +247,7 @@ RUTAS.mesas = async ([id]) => {
           <button type="button" class="pill accent" data-resp="1">${esc(t('Me va bien'))}</button>
           <button type="button" class="pill" data-resp="0">${esc(t('No me va bien'))}</button>
         </div>
-        <p class="muted">${esc(EN ? `Reply before ${colaHora(r.reply_by, tz)}` : `Contesta antes de las ${colaHora(r.reply_by, tz)}`)}</p>
+        <p class="muted">${esc(EN ? `Reply by ${colaHora(r.reply_by, tz)}` : `Contesta antes de las ${colaHora(r.reply_by, tz)}`)}</p>
       </div>`;
   } else if (r.status === 'confirmed' && !pasada) {
     caja = `<div class="mesa-botones${telNegocio ? ' dos' : ''}">${telNegocio}<button type="button" class="pill" id="mesa-anular">${esc(t('Anular la reserva'))}</button></div>`;

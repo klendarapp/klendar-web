@@ -89,9 +89,9 @@ PAGES.mesas = async (v, param) => {
         ${r.phone ? `<p class="mesa-tel"><span>${esc(r.phone)}</span> <a class="btn sm" href="tel:${esc(mesaTel(r.phone))}">${esc(I18N.t('Llamar'))}</a></p>` : ''}
         ${r.responded_by ? `<p class="muted">${esc(bi(`Contestó ${r.responded_by}`, `Answered by ${r.responded_by}`))}</p>` : ''}
         ${r.business_message ? `<p class="muted">${esc(bi(`Tu mensaje: «${r.business_message}»`, `Your message: “${r.business_message}”`))}</p>` : ''}
-        ${r.status === 'pending' ? `<p class="mesa-plazo">${esc(bi(`Contesta antes de las ${fmtHora(r.reply_by)}`, `Reply before ${fmtHora(r.reply_by)}`))}</p>
+        ${r.status === 'pending' ? `<p class="mesa-plazo">${esc(bi(`Contesta antes de las ${fmtHora(r.reply_by)}`, `Reply by ${fmtHora(r.reply_by)}`))}</p>
           <div class="mesa-tres">
-            <button class="btn primary" type="button" data-mesa="confirm">${esc(I18N.t('Aceptar'))}</button>
+            <button class="btn" type="button" data-mesa="confirm">${esc(I18N.t('Aceptar'))}</button>
             <button class="btn" type="button" data-mesa="propose">${esc(I18N.t('Otra hora'))}</button>
             <button class="btn" type="button" data-mesa="decline">${esc(I18N.t('No puedo'))}</button>
           </div>` : ''}
