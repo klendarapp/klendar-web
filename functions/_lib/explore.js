@@ -120,7 +120,12 @@ const T = (en) => en
       // La hoja por orden de uso (2026-10-06).
       what: 'What', whatHint: 'Flash offers: deals that last a few hours. Events: on a set day and time.',
       openNowHint: "The venue, going by today's opening hours",
-      moreF: 'More filters', moreFHint: 'The place (terrace, Wi-Fi…), price, student discounts, open now…', moreFN: (n) => `${n} on`,
+      // La hoja en cuatro bloques (2026-10-07): Lo básico abierto; Para quién,
+      // El sitio y Más plegados, con cuántos lleva cada uno.
+      basics: 'The basics', forWhom: "Who it's for", forWhomHint: 'With kids, going solo, student discounts…',
+      placeHint: 'Open now, venue price, terrace, Wi-Fi…', moreB: 'More', moreBHint: 'Charity, public listings, discounts only',
+      withKidsHint: 'Only child-friendly plans', friends: 'Friends going',
+      whereTitle: 'Where should we look?', orCity: 'Or pick a city', removeF: (n) => `Remove “${n}”`,
       showN: (n) => (n === 1 ? 'Show 1 result' : `Show ${n} results`), showMany: (n) => `Show more than ${n} results`,
     }
   : {
@@ -200,8 +205,10 @@ const T = (en) => en
       // La hoja por orden de uso (2026-10-06).
       what: 'Qué', whatHint: 'Ofertas flash: descuentos que duran unas horas. Eventos: con día y hora.',
       openNowHint: 'El local, según su horario de hoy',
-      moreF: 'Más filtros', moreFHint: 'El sitio (terraza, wifi…), precio, descuentos para estudiantes, abierto ahora…',
-      moreFN: (n) => (n === 1 ? '1 activo' : `${n} activos`),
+      basics: 'Lo básico', forWhom: 'Para quién', forWhomHint: 'Con niños, ir solo, descuentos para estudiantes…',
+      placeHint: 'Abierto ahora, precio del local, terraza, wifi…', moreB: 'Más', moreBHint: 'Solidario, agenda pública, solo con descuento',
+      withKidsHint: 'Solo planes aptos para ir con niños', friends: 'Van mis amigos',
+      whereTitle: '¿Dónde miramos?', orCity: 'O elige una ciudad', removeF: (n) => `Quitar «${n}»`,
       showN: (n) => (n === 1 ? 'Ver 1 resultado' : `Ver ${n} resultados`), showMany: (n) => `Ver más de ${n} resultados`,
     };
 
@@ -509,14 +516,23 @@ function calendarioHtml({ items, lang, S, link, mes, dia, hoy }) {
 
 // ── Descubre y Explorar ────────────────────────────────────────────────────
 // Los filtros son los de la app (`FeedFilters`, la barra de
-// `feed_filter_bar.dart` y la hoja de `filter_sheet.dart`), los mismos en las
-// dos páginas y con los mismos nombres:
-//   barra: Filtros · <resumen> · Zona · Estoy aquí · [Van mis amigos] · Ordenar
-//   barra: … · Estoy aquí · Con niños (el atajo de «Apto para niños») · …
-//   hoja:  ¿Cuándo? · Qué · Categorías (las 8 más usadas y «Ver todas», que
-//          abre el selector de `assets/categorias.js`) · Distancia · Precio ·
-//          Más filtros (plegado: El sitio · Abierto ahora · Solo con
-//          descuento), Restablecer arriba y «Ver N resultados» abajo
+// `feed_filter_bar.dart`, la hoja de `filter_sheet.dart` y el «dónde» de
+// `location_sheet.dart`), los mismos en las dos páginas y con los mismos
+// nombres (docs/GLOSARIO.md, «Los filtros»):
+//   barra: tres botones fijos, Filtros (N) · el dónde («Cerca de ti · 5 km») ·
+//          el orden; detrás de Filtros, solo los atajos encendidos, como chips
+//          con × para quitarlos (Estoy aquí · Antes de cerrar · Con niños ·
+//          Van mis amigos). Con el tiempo reordenando, el orden va detrás (antes del dónde).
+//   dónde: Usar mi ubicación · Estoy aquí · Distancia · O elige una ciudad
+//   hoja:  Lo básico, abierto (¿Cuándo? · Qué, con «Antes de cerrar» ·
+//          Categorías: las 8 más usadas y «Ver todas», que abre el selector de
+//          `assets/categorias.js` · Precio); y plegados, cada uno con cuántos
+//          lleva y abierto si lleva algo: Para quién (Con niños y la edad ·
+//          Ideal para ir solo · Descuentos para · Van mis amigos, con sesión) ·
+//          El sitio (Abierto ahora · Precio del local · terraza, wifi…) · Más
+//          (Solidario · Agenda pública · Solo con descuento). Restablecer
+//          arriba y «Ver N resultados» abajo. Un filtro nuevo va en uno de los
+//          cuatro bloques.
 //   orden: Cercanía · Más pronto · Novedades · Según el tiempo
 // («Ocultar contenido +18» no está: la web pública nunca enseña +18. Las
 // categorías son una sola, que es lo que filtra `public_explore`.)
@@ -711,31 +727,45 @@ ls.setItem(K,JSON.stringify({t:Date.now(),es:d.A.es,en:d.A.en}));
 if(gq!==d.g)location.replace(conG(location.href));}catch(x){}})(${datos});</script>`;
 }
 
-/** «El sitio» que cuenta en el resumen y en la insignia de Filtros: todo
- * menos «Apto para niños» (tiene su atajo en la barra). */
+/** «El sitio» de la hoja: todo menos «Apto para niños», que es «Con niños»
+ * (en «Para quién»). */
 const sitioSinNinos = (e) => (e.traits || []).filter((t) => t !== 'kids');
 
-/** Texto corto con lo puesto, como `filterSummary` en la app: «Todo · 5 km». */
+/** Lo puesto en la hoja, por bloques y en su orden (como `filterSummary` en
+ * la app): «Hoy, Ofertas flash, Con niños, Terraza». Va en la etiqueta de
+ * Filtros para el lector de pantalla; sin nada, vacío. La zona y la distancia
+ * van aparte, en el «dónde». */
 function resumenFiltros(e, S, catNombre) {
+  const lang = S.place === 'The place' ? 'en' : 'es';
+  const marca = (t) => KM.nombreFiltro(t, lang);
   const partes = [];
+  // Lo básico.
+  if (e.when) partes.push({ now: S.now, today: S.today, tomorrow: S.tomorrow, next10: S.next10 }[e.when]);
   if (e.kind === 'offers') partes.push(S.offers);
   else if (e.kind === 'events') partes.push(S.events);
   else if (e.kind === 'places') partes.push(S.placesType);
+  if (e.antesCierre) partes.push(S.beforeClosing);
   if (e.cat) partes.push(catNombre || e.cat);
-  if (!partes.length) partes.push(S.all);
-  if (e.cerca) partes.push(`${e.km} km`);
   if (e.price) partes.push(e.price === 'free' ? S.free : S.upTo(e.price));
+  // Para quién.
+  if ((e.traits || []).includes('kids')) {
+    const edades = (e.edades || []).map((a) => marca(`age_${a}`)).filter(Boolean);
+    partes.push(edades.length ? `${S.withKids} (${edades.join(', ')})` : S.withKids);
+  }
+  if (e.solo) partes.push(marca('solo'));
+  if (e.carne) partes.push(marca(`card_${e.carne}`));
+  if (e.amigos) partes.push(S.friends);
+  // El sitio.
   if (e.abierto) partes.push(S.openNow);
-  if (e.soloDescuento) partes.push(S.discount);
-  if (e.when) partes.push({ now: S.now, today: S.today, tomorrow: S.tomorrow, next10: S.next10 }[e.when]);
-  // «El sitio» sin «Apto para niños», que ya se ve en su atajo («Con niños»).
+  if (e.precioLocal) partes.push(marca(`price_le_${e.precioLocal}`));
   const sitio = sitioSinNinos(e);
-  if (sitio.length === 1) partes.push(nombreSitio(sitio[0], S.place === 'The place'));
+  if (sitio.length === 1) partes.push(nombreSitio(sitio[0], lang === 'en'));
   else if (sitio.length > 1) partes.push(S.placeN(sitio.length));
-  // Las marcas, como `filterSummary` en la app.
-  const lang = S.place === 'The place' ? 'en' : 'es';
-  for (const t of traitsMarcas(e)) { const n = KM.nombreFiltro(t, lang); if (n) partes.push(n); }
-  return partes.join(' · ');
+  // Más.
+  if (e.solidario) partes.push(marca('charity'));
+  if (e.entidad) partes.push(marca('entity'));
+  if (e.soloDescuento) partes.push(S.discount);
+  return partes.filter(Boolean).join(' · ');
 }
 
 /**
@@ -925,29 +955,45 @@ export async function explorePage(url, lang, modo = 'explorar') {
     return city ? lista.find((c) => c.id === plano(city) || plano(c.name) === plano(city)) || null : null;
   })();
   // Pedir la ubicación y volver con ella (más lo de `data-mas`): /assets/tarjetas.js.
-  const botonCerca = (txt, mas = '', cls = 'op') => `<button type="button" class="${cls}" data-cerca${mas ? ` data-mas="${esc(mas)}"` : ''} data-err="${esc(S.nearNo)}" hidden>${ic('cerca', 16)}<span>${esc(txt)}</span></button>`;
+  const botonCerca = (txt, mas = '', cls = 'op', icono = 'cerca') => `<button type="button" class="${cls}" data-cerca${mas ? ` data-mas="${esc(mas)}"` : ''} data-err="${esc(S.nearNo)}" hidden>${icono ? ic(icono, 16) : ''}<span>${esc(txt)}</span></button>`;
+  // «Estoy aquí»: a un paseo (1 km), lo que empieza ya y lo más cerca
+  // primero. Vive en el «dónde» y, encendido, sale además como chip con ×.
+  const aquiOn = cerca && when === 'now' && km === 1 && sort === 'nearest';
+  const quitaAqui = link({ when: '', km: RADIO_KM, sort: '' });
+  const aquiOp = aquiOn
+    ? `<a class="op on" href="${esc(quitaAqui)}" aria-current="true">${ic('aqui', 16)}<span>${esc(S.hereNow)}</span></a>`
+    : cerca
+      ? `<a class="op" href="${esc(link({ when: 'now', km: 1, sort: 'nearest' }))}">${ic('aqui', 16)}<span>${esc(S.hereNow)}</span></a>`
+      : botonCerca(S.hereNow, `${CLAVES[lang].when}=${enIdioma('now', en)}&km=1&${CLAVES[lang].sort}=${enIdioma('nearest', en)}`, 'op', 'aqui');
+  // El «dónde»: la zona y la distancia en un solo botón («Cerca de ti ·
+  // 5 km»), con «Estoy aquí» dentro, como la hoja de ubicación de la app. La
+  // distancia solo cuenta con «Cerca de ti»: sin ubicación, elegir una la pide.
   const zonaValor = cerca ? S.nearOn : city ? PRETTY(city) : S.allCities;
-  const zonaMenu = desplegable(cerca ? 'cerca' : city ? 'ciudad' : 'lugar', S.zoneChange, zonaValor, false,
-    `${negocios ? '' : botonCerca(S.near)}
+  const zonaTxt = cerca && !negocios ? `${zonaValor} · ${km} km` : zonaValor;
+  const distancias = `<p class="menu-d-t">${esc(S.distance)}</p>
+     <div class="menu-km" role="group" aria-label="${esc(S.distance)}">${RADIOS_KM.map((k) => (cerca
+      ? `<a class="op-km${km === k ? ' on' : ''}" href="${esc(link({ km: k }))}"${km === k ? ' aria-current="true"' : ''}>${k} km</a>`
+      : `<button type="button" class="op-km" data-cerca data-mas="km=${k}" data-err="${esc(S.nearNo)}" hidden>${k} km</button>`)).join('')}</div>
+     ${cerca ? '' : `<p class="menu-nota">${esc(S.distHint)}</p>`}`;
+  const zonaMenu = desplegable(cerca ? 'cerca' : city ? 'ciudad' : 'lugar', S.whereTitle, zonaTxt, false,
+    `${negocios ? '' : `${botonCerca(S.useLoc, '', cerca ? 'op on' : 'op')}
+     ${aquiOp}
+     <p class="menu-nota">${esc(S.hereNowHint)}</p>
+     ${distancias}
+     <p class="menu-d-t">${esc(S.orCity)}</p>`}
      ${opcion(link({ city: '', cerca: false }), S.allCities, !city && !cerca)}
      ${ciudades.map((c) => opcion(link({ city: String(c.city), cerca: false }), PRETTY(c.city), !cerca && city.toLowerCase() === String(c.city).toLowerCase())).join('')}`,
-    { etiqueta: `${S.zoneChange}: ${zonaValor}` });
-  // «Estoy aquí»: a un paseo (1 km), lo que empieza ya y lo más cerca
-  // primero. Se quita tocándolo otra vez.
-  const aquiOn = cerca && when === 'now' && km === 1 && sort === 'nearest';
-  const aqui = negocios ? '' : aquiOn
-    ? `<a class="chip on" href="${esc(link({ when: '', km: RADIO_KM, sort: '' }))}" aria-current="true" title="${esc(S.hereNowHint)}">${ic('aqui', 16)}<span>${esc(S.hereNow)}</span></a>`
-    : cerca
-      ? `<a class="chip" href="${esc(link({ when: 'now', km: 1, sort: 'nearest' }))}" title="${esc(S.hereNowHint)}">${ic('aqui', 16)}<span>${esc(S.hereNow)}</span></a>`
-      : `<button type="button" class="chip" data-cerca data-mas="${esc(`${CLAVES[lang].when}=${enIdioma('now', en)}&km=1&${CLAVES[lang].sort}=${enIdioma('nearest', en)}`)}" data-err="${esc(S.nearNo)}" title="${esc(S.hereNowHint)}" hidden>${ic('aqui', 16)}<span>${esc(S.hereNow)}</span></button>`;
-  // «Con niños»: el atajo de «Apto para niños» (lo mismo que marcarlo en la
-  // hoja, en «El sitio»). Se quita tocándolo otra vez.
+    { cls: ' zona', etiqueta: `${S.zoneChange}: ${zonaTxt}` });
+  // Los atajos, solo encendidos: un chip con × que lo quita (se encienden en
+  // la hoja o en el «dónde»). Van justo detrás de Filtros, a la vista; «Van
+  // mis amigos» lo pone /assets/amigos.js en su hueco.
   const ninosOn = traits.includes('kids');
-  const conNinos = negocios ? '' : `<a class="chip${ninosOn ? ' on' : ''}" href="${esc(link({ traits: ninosOn ? traits.filter((t) => t !== 'kids') : ordenaSitio([...traits, 'kids']), edades: [] }))}"${ninosOn ? ' aria-current="true"' : ''}>${icSitio('kids', 16)}<span>${esc(S.withKids)}</span></a>`;
-  // «Antes de cerrar»: lo que sobra del día, a un toque (el mismo filtro que
-  // el de «Qué» en la hoja). Se quita tocándolo otra vez; encendido, va junto
-  // a Filtros (como «Van mis amigos»).
-  const antes = negocios ? '' : `<a class="chip${antesCierre ? ' on' : ''}" href="${esc(link({ antesCierre: !antesCierre }))}"${antesCierre ? ' aria-current="true"' : ''} title="${esc(S.beforeClosingHint)}">${ic('bolsa', 16)}<span>${esc(S.beforeClosing)}</span></a>`;
+  const quitarChip = (href, icono, txt) => `<a class="chip on chip-quitar" href="${esc(href)}" aria-label="${esc(S.removeF(txt))}">${icono}<span>${esc(txt)}</span>${ic('x', 16)}</a>`;
+  const activos = negocios ? '' : [
+    aquiOn ? quitarChip(quitaAqui, ic('aqui', 16), S.hereNow) : '',
+    antesCierre ? quitarChip(link({ antesCierre: false }), ic('bolsa', 16), S.beforeClosing) : '',
+    ninosOn ? quitarChip(link({ traits: traits.filter((t) => t !== 'kids'), edades: [] }), icSitio('kids', 16), S.withKids) : '',
+  ].join('');
   // «Ordenar por»: un desplegable compacto, como la app (no en el mapa ni en
   // el calendario, donde no cambia nada).
   const ordenTxt = { nearest: S.sortNearest, soonest: S.sortSoonest, newest: S.sortNewest };
@@ -968,9 +1014,15 @@ export async function explorePage(url, lang, modo = 'explorar') {
     { cls: ' orden', etiqueta: `${S.sortBy}: ${ordenTxt[ordenActual]}${tiempoTxt ? `, ${tiempoTxt.toLowerCase()} (${S.byWeather.toLowerCase()})` : tiempoOff ? '' : `, ${S.byWeather.toLowerCase()}`}` })
     .replace('<span class="chip-t">', tiempoTxt ? `${icTiempo(tiempo, 16)}<span class="chip-t">` : '<span class="chip-t">');
 
-  // La hoja de filtros: un formulario GET (va sin JavaScript), en el orden de la app.
-  const nFiltros = [kind && !negocios, cat, cerca && km !== RADIO_KM, price, soloDescuento, when && !calendario, abierto,
-    !negocios && (sitioSinNinos(e).length > 0 || traitsMarcas(e).length > 0)].filter(Boolean).length;
+  // La hoja de filtros: un formulario GET (va sin JavaScript), en cuatro
+  // bloques como la app. Cuántos lleva cada bloque (lo mismo que cuenta la
+  // app: `FeedFilters.basicsCount`, `forWhomCount`, `placeCount` y
+  // `moreCount`); Filtros (N) es la suma. La distancia va en el «dónde».
+  const nBasico = [kind && !negocios, cat, !negocios && price, when && !calendario, !negocios && antesCierre].filter(Boolean).length;
+  const nParaQuien = negocios ? 0 : [ninosOn, e.solo, e.carne, e.amigos].filter(Boolean).length;
+  const nSitio = (abierto ? 1 : 0) + (negocios ? 0 : (e.precioLocal ? 1 : 0) + sitioSinNinos(e).length);
+  const nMas = negocios ? 0 : [e.solidario, e.entidad, soloDescuento].filter(Boolean).length;
+  const nFiltros = nBasico + nParaQuien + nSitio + nMas;
   const K = CLAVES[en ? 'en' : 'es'];
   const radio = (name, value, label, on, cls = '') => `<label class="op-r${cls ? ` ${cls}` : ''}"><input type="radio" name="${name}" value="${esc(value)}"${on ? ' checked' : ''}><span>${esc(label)}</span></label>`;
   const casilla = (name, label, on) => `<label class="op-r"><input type="checkbox" name="${name}" value="1"${on ? ' checked' : ''}><span>${esc(label)}</span></label>`;
@@ -978,16 +1030,20 @@ export async function explorePage(url, lang, modo = 'explorar') {
     ['q', q], [K.city, cerca ? '' : city], [K.sort, negocios ? '' : sort ? enIdioma(sort, en) : ''], [K.view, vista ? enIdioma(vista, en) : ''],
     [K.month, calendario ? mes : ''], [K.day, calendario ? dia : ''],
     ['lat', cerca && !negocios ? posUrl(lat) : ''], ['lng', cerca && !negocios ? posUrl(lng) : ''],
+    // La distancia se elige en el «dónde»: la hoja la conserva.
+    ['km', cerca && !negocios && km !== RADIO_KM ? String(km) : ''],
+    // «Van mis amigos»: con sesión, /assets/amigos.js lo cambia por su casilla
+    // en «Para quién».
     ['amigos', e.amigos ? '1' : ''], ...(negocios ? [[K.kind, enIdioma('places', en)]] : []),
     // «Según el tiempo» vive en el menú de orden: la hoja lo conserva.
     [K.weather, tiempoOff ? '0' : ''],
-  ].filter(([, v]) => v).map(([k, v]) => `<input type="hidden" name="${k}" value="${esc(v)}">`).join('');
+  ].filter(([, v]) => v).map(([k, v]) => `<input type="hidden" name="${k}" value="${esc(v)}"${k === 'amigos' ? ' data-amigos-oculto' : ''}>`).join('');
   const catActual = catsHoja.find((c) => c.slug === cat) || (cats || []).find((c) => c.slug === cat);
-  // Sin nada puesto y con el chip del tiempo adelantado, Filtros va sin
-  // «· Todo · 5 km» (lo de siempre): así el chip cabe en 360 sin deslizar.
   const resumen = resumenFiltros(e, S, catActual ? catName(catActual, en) : '');
-  const restablecer = link({ kind: negocios ? 'places' : '', cat: '', km: RADIO_KM, price: '', when: '', soloDescuento: false, abierto: false, traits: [],
-    edades: [], precioLocal: 0, carne: '', solo: false, solidario: false, entidad: false, antesCierre: false });
+  // «Restablecer»: lo de la hoja de serie. La distancia y la zona (en el
+  // «dónde»), el orden y «Según el tiempo» se quedan como estén.
+  const restablecer = link({ kind: negocios ? 'places' : '', cat: '', price: '', when: '', soloDescuento: false, abierto: false, traits: [],
+    edades: [], precioLocal: 0, carne: '', solo: false, solidario: false, entidad: false, antesCierre: false, amigos: false });
   // Categorías: las 8 más usadas (las que más tienen publicado ahora, como la
   // app) y la elegida, y «Ver todas (31)», que abre el selector con buscador y
   // grupos (/assets/categorias.js). Sin JavaScript, el resto sale debajo,
@@ -1012,54 +1068,64 @@ export async function explorePage(url, lang, modo = 'explorar') {
       ${restoCats.length ? `<div class="cat-mas" data-cat-mas>${KC.agrupa(restoCats, '').filter((g) => g.cats.length).map((g) => `<p class="cat-grupo">${esc(KC.nombreGrupo(g.id, lang))}</p>
         <div class="ops">${g.cats.map(radioCat).join('')}</div>`).join('')}</div>` : ''}
     </fieldset>` : '';
-  // «El sitio»: los 12 atributos, varios a la vez (tienen que cumplirse todos).
-  const sitioHoja = `<fieldset class="hoja-sitio"><legend>${esc(S.place)}</legend><div class="ops">
-        ${SITIO.map((x) => `<label class="op-r op-sitio"><input type="checkbox" name="${K.place}" value="${esc(sitioAUrl(x.id, en))}"${traits.includes(x.id) ? ' checked' : ''}><span>${icSitio(x.id, 18)}${esc(en ? x.en : x.es)}</span></label>`).join('')}
-      </div></fieldset>`;
-  // Marcas (tanda A), en el orden de la app: con «Con niños», la edad;
-  // precio del local; descuentos para; ideal para ir solo; solidario.
   const M = KM.t(lang);
-  const marcasHoja = `<fieldset class="hoja-edades" data-con-ninos${ninosOn ? '' : ' hidden'}><legend>${esc(M.fKidAges)}</legend><div class="ops">
-        ${KM.KID_AGES.map(([id, r]) => `<label class="op-r"><input type="checkbox" name="${K.age}" value="${esc(edadAUrl(id))}"${e.edades.includes(id) ? ' checked' : ''}><span>${esc(M.kidAge(r))}</span></label>`).join('')}
+  // Un bloque plegado: «Para quién · 1», con su ayuda; abierto si lleva algo.
+  // El número lo pone al día /assets/tarjetas.js al marcar.
+  const bloque = (id, titulo, ayuda, n, cuerpo) => `<details class="hoja-bloque" data-bloque="${id}"${n ? ' open' : ''}>
+      <summary><span class="hoja-bloque-t"><h3 id="bloque-${id}">${esc(titulo)}<span class="hoja-bloque-n" data-bloque-n${n ? '' : ' hidden'}> · ${n}</span></h3><small>${esc(ayuda)}</small></span>${ic('abajo', 20)}</summary>
+      <div class="hoja-bloque-c" role="group" aria-labelledby="bloque-${id}">${cuerpo}</div>
+    </details>`;
+  // Para quién: Con niños (y la edad), Ideal para ir solo, Descuentos para y,
+  // con sesión, «Van mis amigos» (lo pone /assets/amigos.js en su hueco).
+  const paraQuien = bloque('para-quien', S.forWhom, S.forWhomHint, nParaQuien, `
+      <fieldset class="hoja-casillas"><legend class="sr">${esc(S.withKids)}</legend><div class="ops">
+        <label class="op-r op-sitio"><input type="checkbox" name="${K.place}" value="${esc(sitioAUrl('kids', en))}" data-ninos${ninosOn ? ' checked' : ''}><span>${icSitio('kids', 18)}${esc(S.withKids)}</span></label>
+      </div><p class="hoja-nota hoja-nota-bajo">${esc(S.withKidsHint)}</p></fieldset>
+      <fieldset class="hoja-edades" data-con-ninos${ninosOn ? '' : ' hidden'}><legend>${esc(M.fKidAges)}</legend><div class="ops">
+        ${KM.KID_AGES.map(([id, r]) => `<label class="op-r"><input type="checkbox" name="${K.age}" value="${esc(edadAUrl(id))}" data-no-cuenta${e.edades.includes(id) ? ' checked' : ''}><span>${esc(M.kidAge(r))}</span></label>`).join('')}
       </div><p class="hoja-nota hoja-nota-bajo">${esc(M.fKidAgesHint)}</p></fieldset>
-      <fieldset><legend>${esc(M.fPriceLevel)}</legend><div class="ops">
-        ${radio(K.vprice, '', M.fAny, !e.precioLocal)}
-        ${KM.PRECIOS.map((l) => radio(K.vprice, String(l), l === 1 ? '€' : M.fUpTo('€'.repeat(l)), e.precioLocal === l)).join('')}
-      </div><p class="hoja-nota hoja-nota-bajo">${esc(M.fPriceHint)}</p></fieldset>
+      <fieldset class="hoja-casillas"><legend class="sr">${esc(M.solo)}</legend><div class="ops">
+        ${casilla(K.solo, M.solo, e.solo)}
+        <span data-amigos-hoja hidden></span>
+      </div></fieldset>
       <fieldset><legend>${esc(M.fCards)}</legend><div class="ops">
         ${radio(K.card, '', M.fCardsAny, !e.carne)}
         ${KM.CARDS.map((c) => radio(K.card, carneAUrl(c, en), M.cardFor[c], e.carne === c)).join('')}
-      </div></fieldset>
-      <fieldset class="hoja-casillas"><legend class="sr">${esc(M.solo)}</legend><div class="ops">
-        ${casilla(K.solo, M.solo, e.solo)}
-        ${casilla(K.charity, M.charity, e.solidario)}
-        ${casilla(K.entity, M.entity, e.entidad)}
-      </div><p class="hoja-nota hoja-nota-bajo">${esc(M.charity)}: ${esc(M.charityHint)}</p>
-      <p class="hoja-nota hoja-nota-bajo">${esc(M.entity)}: ${esc(M.entityHint)}</p></fieldset>`;
-  // «Más filtros»: lo que se usa menos, plegado y diciendo cuántos lleva.
-  const nMas = (negocios ? 0 : traits.length + traitsMarcas(e).length) + (abierto ? 1 : 0) + (!negocios && soloDescuento ? 1 : 0);
-  const masHoja = `<details class="hoja-mas"${nMas ? ' data-con-algo' : ''}>
-      <summary><span class="hoja-mas-t"><b>${esc(S.moreF)}</b><small>${esc(S.moreFHint)}</small></span>
-        <span class="hoja-mas-n" data-mas-n data-uno="${esc(S.moreFN(1))}" data-varios="${esc(S.moreFN(2)).replace('2', '{n}')}"${nMas ? '' : ' hidden'}>${esc(S.moreFN(nMas))}</span>${ic('abajo', 20)}</summary>
-      ${negocios ? '' : sitioHoja}
-      ${negocios ? '' : marcasHoja}
+      </div></fieldset>`);
+  // El sitio: Abierto ahora, Precio del local y cómo es (los atributos menos
+  // «Apto para niños», que es «Con niños»; tienen que cumplirse todos).
+  const sitioBloque = bloque('sitio', S.place, S.placeHint, nSitio, `
       <fieldset class="hoja-casillas"><legend class="sr">${esc(S.openNow)}</legend><div class="ops">
         ${casilla(K.open, S.openNow, abierto)}
-        ${negocios ? '' : casilla(K.discount, S.discount, soloDescuento)}
-      </div><p class="hoja-nota hoja-nota-bajo">${esc(S.openNow)}: ${esc(S.openNowHint)}</p></fieldset>
-    </details>`;
+      </div><p class="hoja-nota hoja-nota-bajo">${esc(S.openNowHint)}</p></fieldset>
+      ${negocios ? '' : `<fieldset><legend>${esc(M.fPriceLevel)}</legend><div class="ops">
+        ${radio(K.vprice, '', M.fAny, !e.precioLocal)}
+        ${KM.PRECIOS.map((l) => radio(K.vprice, String(l), l === 1 ? '€' : M.fUpTo('€'.repeat(l)), e.precioLocal === l)).join('')}
+      </div><p class="hoja-nota hoja-nota-bajo">${esc(M.fPriceHint)}</p></fieldset>
+      <fieldset class="hoja-sitio"><legend class="sr">${esc(S.place)}</legend><div class="ops">
+        ${SITIO.filter((x) => x.id !== 'kids').map((x) => `<label class="op-r op-sitio"><input type="checkbox" name="${K.place}" value="${esc(sitioAUrl(x.id, en))}"${traits.includes(x.id) ? ' checked' : ''}><span>${icSitio(x.id, 18)}${esc(en ? x.en : x.es)}</span></label>`).join('')}
+      </div></fieldset>`}`);
+  // Más: Solidario, Agenda pública y Solo con descuento.
+  const masBloque = bloque('mas', S.moreB, S.moreBHint, nMas, `
+      <fieldset class="hoja-casillas"><legend class="sr">${esc(S.moreB)}</legend><div class="ops">
+        ${casilla(K.charity, M.charity, e.solidario)}
+        ${casilla(K.entity, M.entity, e.entidad)}
+        ${casilla(K.discount, S.discount, soloDescuento)}
+      </div><p class="hoja-nota hoja-nota-bajo">${esc(M.charity)}: ${esc(M.charityHint)}</p>
+      <p class="hoja-nota hoja-nota-bajo">${esc(M.entity)}: ${esc(M.entityHint)}</p></fieldset>`);
   // «Ver N resultados»: el número de lo que ya se ve; con JavaScript, se
   // vuelve a contar al cambiar algo (en el mapa y en «Negocios», sin número).
   const conNumero = !negocios && !mapa;
   const verTxt = !conNumero ? S.showResults : total > 100 ? S.showMany(100) : S.showN(total);
   const hoja = `<details class="hoja" id="filtros">
-    <summary class="chip chip-filtros${nFiltros ? ' on' : ''}" aria-label="${esc(nFiltros || !(tiempoTxt && ordenMenu) ? `${S.filters}: ${resumen.replace(/ · /g, ', ')}` : S.filters)}">${ic('tune', 16)}<span>${esc(S.filters)}</span>${nFiltros || !(tiempoTxt && ordenMenu) ? `<span class="chip-resumen">· ${esc(resumen)}</span>` : ''}</summary>
+    <summary class="chip chip-filtros${nFiltros ? ' on' : ''}" aria-label="${esc(nFiltros ? `${S.filtersN(nFiltros)}: ${resumen.replace(/ · /g, ', ')}` : S.filters)}">${ic('tune', 16)}<span>${esc(S.filters)}</span>${nFiltros ? `<span class="n" aria-hidden="true">${nFiltros}</span>` : ''}</summary>
     <form class="hoja-cuerpo" method="get" action="${base}/" role="dialog" aria-labelledby="hojaTitulo">
       <div class="hoja-cab"><h2 id="hojaTitulo">${esc(S.filters)}</h2>
         <a class="hoja-reset" href="${esc(restablecer)}" data-restablecer>${esc(S.reset)}</a>
         <a class="hoja-x" href="#filtros" data-cerrar-hoja aria-label="${esc(S.close)}">${ic('x', 22)}</a></div>
       ${ocultos}
       <div class="hoja-scroll">
+      <div class="hoja-basico" role="group" aria-labelledby="bloque-basico"><h3 id="bloque-basico" class="hoja-basico-t">${esc(S.basics)}</h3>
       ${negocios || calendario ? '' : `<fieldset><legend>${esc(S.when)}</legend><div class="ops">
         ${[['', S.anytime], ['now', S.now], ['today', S.today], ['tomorrow', S.tomorrow], ['next10', S.next10]]
           .map(([v, n]) => radio(K.when, v ? enIdioma(v, en) : '', n, when === v)).join('')}
@@ -1071,15 +1137,15 @@ export async function explorePage(url, lang, modo = 'explorar') {
       </div><p class="hoja-nota hoja-nota-bajo">${esc(S.whatHint)}</p>
       <div class="ops">${casilla(K.closing, S.beforeClosing, antesCierre)}</div><p class="hoja-nota hoja-nota-bajo">${esc(S.beforeClosingHint)}</p></fieldset>`}
       ${catsHtml}
-      ${negocios ? '' : `<fieldset><legend>${esc(S.distance)}</legend>${cerca ? '' : `<p class="hoja-nota">${esc(S.distHint)}</p>`}<div class="ops">
-        ${RADIOS_KM.map((k) => radio('km', k === RADIO_KM ? '' : String(k), `${k} km`, km === k)).join('')}
-      </div></fieldset>
-      <fieldset><legend>${esc(S.price)}</legend><div class="ops">
+      ${negocios ? '' : `<fieldset><legend>${esc(S.price)}</legend><div class="ops">
         ${radio(K.price, '', S.any, !price)}
         ${radio(K.price, enIdioma('free', en), S.free, price === 'free')}
         ${['10', '25', '50'].map((n) => radio(K.price, n, S.upTo(n), price === n)).join('')}
       </div></fieldset>`}
-      ${masHoja}
+      </div>
+      ${negocios ? '' : paraQuien}
+      ${sitioBloque}
+      ${negocios ? '' : masBloque}
       </div>
       <div class="hoja-pie">
         <button class="pill accent" type="submit"${conNumero ? ` data-ver-n data-uno="${esc(S.showN(1))}" data-varios="${esc(S.showN(2)).replace('2', '{n}')}" data-muchos="${esc(S.showMany(100))}" data-sin="${esc(S.showResults)}" aria-live="polite"` : ''}>${esc(verTxt)}</button>
@@ -1112,17 +1178,15 @@ export async function explorePage(url, lang, modo = 'explorar') {
     <button class="pill ink" type="submit">${esc(S.search)}</button>
   </form>`;
 
-  // El orden de la app: Filtros · Zona · Estoy aquí · Con niños · [Van mis amigos] · Ordenar
-  // (con el tiempo reordenando, Ordenar va segundo).
+  // Tres botones fijos, como la app: Filtros (N) · el dónde · el orden; detrás
+  // de Filtros, solo los atajos encendidos, con su ×, y luego (con el tiempo
+  // reordenando) el orden, antes del dónde, a la vista.
   const barra = `<div class="barra-filtros" id="barra"${descubre ? ' data-amigos-resultados="#feed"' : ''}>
     ${hoja}
-    ${tiempoTxt ? ordenMenu : ''}
-    ${antesCierre ? antes : ''}
-    ${zonaMenu}
-    ${aqui}
-    ${conNinos}
-    ${antesCierre ? '' : antes}
+    ${activos}
     <span data-amigos-hueco hidden></span>
+    ${tiempoTxt ? ordenMenu : ''}
+    ${zonaMenu}
     ${tiempoTxt ? '' : ordenMenu}
   </div>
   <p id="cercaErr" class="aviso-error" role="alert" hidden></p>

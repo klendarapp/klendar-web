@@ -247,6 +247,8 @@
   // En el mapa, el calendario y «Negocios» no sale.
   var GRUPO = '<svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>';
 
+  var X = '<svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>';
+
   function ventana(cuando) {
     var ahora = new Date();
     var dia = function (mas) { return new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() + mas); };
@@ -308,20 +310,33 @@
         /^(negocios|places)$/.test(de('ver', 'show'))) return;
     var on = q.get('amigos') === '1';
 
-    // El chip: enciende o apaga (sin la página: vuelve a la primera).
+    // En la hoja, en «Para quién»: su casilla (en lugar del oculto que lo
+    // conservaba). Cuenta en su bloque y en Filtros (N), como en la app.
+    var hojaHueco = document.querySelector('[data-amigos-hoja]');
+    if (hojaHueco) {
+      var oculto = document.querySelector('input[data-amigos-oculto]');
+      if (oculto) oculto.remove();
+      var casilla = document.createElement('label');
+      casilla.className = 'op-r op-sitio';
+      casilla.innerHTML = '<input type="checkbox" name="amigos" value="1"' + (on ? ' checked' : '') + '><span>' + GRUPO + esc(T.filtro) + '</span>';
+      hojaHueco.parentNode.insertBefore(casilla, hojaHueco);
+      var bloque = hojaHueco.closest('details.hoja-bloque');
+      if (on && bloque) bloque.open = true;
+    }
+    // En la barra, solo encendido: un chip con × que lo quita (sin la página:
+    // vuelve a la primera), junto a los otros atajos encendidos.
+    if (!on) return;
     var otra = new URL(location.href);
-    if (on) otra.searchParams.delete('amigos'); else otra.searchParams.set('amigos', '1');
+    otra.searchParams.delete('amigos');
     otra.searchParams.delete('p');
     var chip = document.createElement('a');
-    chip.className = 'chip' + (on ? ' on' : '');
+    chip.className = 'chip on chip-quitar';
     chip.href = otra.pathname + otra.search;
     chip.setAttribute('data-amigos-chip', '');
-    if (on) chip.setAttribute('aria-current', 'true');
-    chip.innerHTML = GRUPO + '<span>' + esc(T.filtro) + '</span>';
-    // En su sitio, como en la app: junto a «Estoy aquí» (antes de «Ordenar por»).
+    chip.setAttribute('aria-label', T.quitar);
+    chip.innerHTML = GRUPO + '<span>' + esc(T.filtro) + '</span>' + X;
     var hueco = barra.querySelector('[data-amigos-hueco]');
     if (hueco) barra.insertBefore(chip, hueco); else barra.appendChild(chip);
-    if (!on) return;
 
     // Que cambiar otro filtro no lo apague.
     barra.querySelectorAll('a[href]').forEach(function (a) {

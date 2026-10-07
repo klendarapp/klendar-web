@@ -479,10 +479,8 @@ body.con-hoja { overflow: hidden; }
 
 /* La barra de filtros, la de la app: Filtros · resumen · Zona · Estoy aquí ·
    (Van mis amigos) · Ordenar por. */
-.chip-resumen { font-weight: 500; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .chip .chip-t { max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .barra-filtros button.chip { font: inherit; font-size: 14px; font-weight: 600; color: inherit; cursor: pointer; }
-.chip.on .chip-resumen { opacity: .85; }
 .desplegable.orden .menu-d { min-width: 200px; }
 .pub button.op { font-family: inherit; }
 .hoja-cab { gap: 8px; }
@@ -633,25 +631,17 @@ body.pagina-feed[data-cromo="fuera"] .feed-cab { visibility: hidden; }
 }
 
 /* ══ «Ver solo la foto» (Iván, 2026-10-07) ═══════════════════════════════
-   El botón de cristal de la tarjeta (`.tj-solo`) esconde con un fundido lo
-   que tapa la foto o el vídeo: el panel con sus sellos y, en el móvil, la
-   cabecera, los filtros, su aviso y el velo. En tablet y escritorio la fila
-   de filtros y el aviso no tapan la foto (van fuera de la columna) y se
-   quedan, como la rejilla de la app. Se mantiene al pasar de publicación
-   (`solo-foto` en el <body>, /assets/tarjetas.js) y se quita al salir de la
-   página. Quedan los puntos, el altavoz, el botón y la barra de pestañas.
-   Sobre una publicación sin foto o el final, todo a la vista. */
+   El botón de cristal de la tarjeta (`.tj-solo`) esconde con un fundido solo
+   la información de la publicación: el panel con sus sellos. La cabecera de
+   arriba (la marca, la fila de filtros, el aviso y el velo oscuro) se queda
+   siempre, también en el móvil. Se mantiene al pasar de publicación
+   (`solo-foto` en el <body>, /assets/tarjetas.js) hasta volver a tocar el
+   botón (o la foto, o Escape) o recargar la página. Sobre una publicación
+   sin foto o el final, todo a la vista. */
 .tj--pantalla .tj-panel { transition: opacity .22s ease; }
 body.pagina-feed.solo-foto .tj--pantalla.con-solo .tj-panel { opacity: 0; visibility: hidden; transition: opacity .22s ease, visibility 0s linear .22s; }
-@media (max-width: 760px) {
-  body.pagina-feed header.top, .pagina-feed .feed-cab, .pagina-feed .feed-velo { transition: opacity .22s ease; }
-  body.pagina-feed.solo-foto[data-cromo="media"] :is(header.top, .feed-cab, .feed-velo) { opacity: 0; visibility: hidden;
-    transition: opacity .22s ease, visibility 0s linear .22s; }
-}
 @media (prefers-reduced-motion: reduce) {
-  .tj--pantalla .tj-panel, body.pagina-feed.solo-foto .tj--pantalla.con-solo .tj-panel,
-  body.pagina-feed header.top, .pagina-feed .feed-cab, .pagina-feed .feed-velo,
-  body.pagina-feed.solo-foto[data-cromo="media"] :is(header.top, .feed-cab, .feed-velo) { transition: none; }
+  .tj--pantalla .tj-panel, body.pagina-feed.solo-foto .tj--pantalla.con-solo .tj-panel { transition: none; }
 }
 
 /* ══ «El sitio», «Con niños» y «Según el tiempo» (2026-10-05) ════════════
@@ -729,23 +719,37 @@ body.pagina-feed.solo-foto .tj--pantalla.con-solo .tj-panel { opacity: 0; visibi
 .op-mas:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 .cat-mas { margin-top: 6px; }
 .pub .cat-grupo { margin: 12px 0 6px; font-size: 13px; font-weight: 700; color: var(--ink-2); }
-details.hoja-mas { margin: 4px 0 8px; border: 1px solid var(--glass-border); border-radius: 18px; background: var(--glass); }
-details.hoja-mas > summary { display: flex; align-items: center; gap: 10px; padding: 12px 14px 12px 16px; cursor: pointer; list-style: none; min-height: 44px; }
-details.hoja-mas > summary::-webkit-details-marker { display: none; }
-details.hoja-mas > summary:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 18px; }
-.hoja-mas-t { flex: 1; display: flex; flex-direction: column; gap: 2px; }
-.hoja-mas-t b { font-size: 15px; }
-.hoja-mas-t small { font-size: 13px; color: var(--ink-2); }
-.hoja-mas-n { flex: none; padding: 3px 10px; border-radius: 999px; background: var(--ink); color: var(--surface); font-size: 13px; font-weight: 700; }
-details.hoja-mas > summary .ic { flex: none; color: var(--ink-2); transition: transform .2s; }
-details.hoja-mas[open] > summary .ic { transform: rotate(180deg); }
-details.hoja-mas > fieldset { margin: 4px 16px 14px; }
+/* La hoja en cuatro bloques (como la app): «Lo básico» abierto y, debajo,
+   «Para quién», «El sitio» y «Más» plegados, con cuántos lleva cada uno. */
+.pub .hoja-basico-t, .hoja-bloque-t h3 { margin: 0; font-size: 16px; font-weight: 800; letter-spacing: -.01em; }
+.pub .hoja-basico-t { margin: 4px 0 12px; }
+details.hoja-bloque { margin: 0 0 10px; border: 1px solid var(--glass-border); border-radius: 18px; background: var(--glass); }
+details.hoja-bloque > summary { display: flex; align-items: center; gap: 10px; padding: 12px 14px 12px 16px; cursor: pointer; list-style: none; min-height: 48px; }
+details.hoja-bloque > summary::-webkit-details-marker { display: none; }
+details.hoja-bloque > summary::marker { content: ''; }
+details.hoja-bloque > summary:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 18px; }
+.hoja-bloque-t { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.hoja-bloque-t small { font-size: 13px; color: var(--ink-2); }
+.hoja-bloque-n { font-weight: 800; }
+details.hoja-bloque > summary .ic { flex: none; color: var(--ink-2); transition: transform .2s; }
+details.hoja-bloque[open] > summary .ic { transform: rotate(180deg); }
+.hoja-bloque-c { padding: 4px 16px 2px; }
+.hoja-bloque-c fieldset { margin-bottom: 14px; }
+@media (prefers-reduced-motion: reduce) { details.hoja-bloque > summary .ic { transition: none; } }
+/* El «dónde»: la distancia en una fila de píldoras dentro del menú. */
+.menu-km { display: flex; flex-wrap: wrap; gap: 6px; padding: 2px 8px 6px; }
+.pub .op-km { min-height: 40px; min-width: 52px; padding: 0 12px; display: inline-grid; place-items: center; border-radius: 999px; border: 1px solid var(--glass-border);
+  background: var(--glass); color: var(--ink); font: inherit; font-weight: 600; font-size: 14px; cursor: pointer; }
+.pub .op-km:hover { text-decoration: none; border-color: var(--ink-2); }
+.pub .op-km.on { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.desplegable.zona .menu-d { min-width: 280px; }
+/* Un atajo encendido: chip con × para quitarlo. */
+.chip-quitar .ic:last-child { margin: 0 -4px 0 -2px; opacity: .8; }
 .menu-sep { margin: 6px 4px; border: 0; border-top: 1px solid var(--glass-border); }
 .pub .menu-nota { margin: 2px 12px 8px; max-width: 280px; font-size: 12px; color: var(--ink-2); }
 .menu-nota a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
 .op-check { width: 18px; height: 18px; flex: none; border-radius: 5px; border: 2px solid currentColor; display: inline-grid; place-items: center; }
 .op.on .op-check::after { content: '✓'; font-size: 13px; font-weight: 800; line-height: 1; }
-@media (prefers-reduced-motion: reduce) { details.hoja-mas > summary .ic { transition: none; } }
 
 /* ── Menú ⋮ de las fichas (como la app): lo que se usa poco ─────────────── */
 .d-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }

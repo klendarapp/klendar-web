@@ -517,29 +517,32 @@
         if (el.name && !el.value && (el.type !== 'radio' || el.checked)) el.disabled = true;
       });
     });
-    // «Más filtros (2 activos)» y «Ver 24 resultados» al cambiar algo: el
-    // número lo da la misma página (`?contar=1`), con lo que lleva marcado.
+    // «Para quién · 1» en cada bloque y «Ver 24 resultados» al cambiar algo:
+    // el número lo da la misma página (`?contar=1`), con lo que lleva marcado.
     var ver = f.querySelector('[data-ver-n]');
-    var masN = f.querySelector('[data-mas-n]');
     var espera = null;
     var pedido = 0;
     f.addEventListener('change', function () {
-      // «Edad de los niños» solo con «Apto para niños» marcado (y sin él se
+      // «Edad de los niños» solo con «Con niños» marcado (y sin él se
       // desmarca: la base no la usaría).
       var edades = f.querySelector('[data-con-ninos]');
       if (edades) {
-        var ninos = f.querySelector('.hoja-sitio input[value="ninos"], .hoja-sitio input[value="kids"]');
+        var ninos = f.querySelector('[data-ninos]');
         var con = Boolean(ninos && ninos.checked);
         edades.hidden = !con;
         if (!con) Array.prototype.forEach.call(edades.querySelectorAll('input'), function (c) { c.checked = false; });
       }
-      if (masN) {
-        // Casillas marcadas y opciones elegidas que no son «Cualquiera».
-        var n = f.querySelectorAll('details.hoja-mas input[type=checkbox]:checked').length
-          + Array.prototype.filter.call(f.querySelectorAll('details.hoja-mas input[type=radio]:checked'), function (r) { return r.value !== ''; }).length;
-        masN.hidden = n === 0;
-        masN.textContent = n === 1 ? masN.getAttribute('data-uno') : masN.getAttribute('data-varios').replace('{n}', n);
-      }
+      // Cada bloque plegado: casillas marcadas y opciones elegidas que no
+      // son «Cualquiera» (la edad va con «Con niños», no cuenta aparte).
+      Array.prototype.forEach.call(f.querySelectorAll('details.hoja-bloque'), function (b) {
+        var n = Array.prototype.filter.call(b.querySelectorAll('input:checked'), function (i) {
+          return !i.hasAttribute('data-no-cuenta') && (i.type === 'checkbox' || i.value !== '');
+        }).length;
+        var el = b.querySelector('[data-bloque-n]');
+        if (!el) return;
+        el.hidden = n === 0;
+        el.textContent = ' · ' + n;
+      });
       if (!ver) return;
       clearTimeout(espera);
       espera = setTimeout(function () {
@@ -710,7 +713,7 @@
 
     // «Ver solo la foto»: el modo es de la página (`solo-foto` en el
     // <body>, ver public.css), no de la tarjeta: sigue al pasar de una a
-    // otra. El lector de pantalla oye el estado («Información oculta»).
+    // otra. Esconde solo el panel; la cabecera se queda. El lector de pantalla oye el estado («Información oculta»).
     var soloFoto = false;
     var avisoSolo = document.createElement('span');
     avisoSolo.className = 'sr';
@@ -753,8 +756,8 @@
     document.addEventListener('keydown', function (e) {
       if (soloFoto && e.key === 'Escape' && !e.defaultPrevented && !abiertos().length && !visor) ponSolo(false, true);
     });
-    // Al salir de Descubre se quita (si se vuelve con «Atrás», todo a la vista).
-    window.addEventListener('pagehide', function () { ponSolo(false, false); });
+    // Se mantiene hasta volver a tocarlo o recargar la página (como la app,
+    // que lo mantiene al cambiar de pestaña): no se quita al salir.
 
     var ir = function (d) {
       var lista = pantallas();
