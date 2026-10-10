@@ -1333,11 +1333,14 @@ RUTAS.planes = async () => {
   if (!exigeSesion('planes')) return;
   // Las mismas dos funciones que la app. Si fallan los canjes, se enseña lo
   // guardado igualmente (la app hace lo mismo).
-  const [guardados, canjes, series] = await Promise.all([
+  const [guardados, canjes, series, turnos] = await Promise.all([
     llamar('my_saved_offers', {}),
     llamar('my_redemptions', {}).catch(() => []),
     llamar('my_followed_series', {}).catch(() => []),
+    // Tu turno en una cola virtual, arriba (app/cola.js).
+    llamar('my_queue_turns', {}).catch(() => []),
   ]);
+  const turnoHtml = await colaTarjetasHtml(turnos);
   // «Sigues 2 series», arriba (sin series, nada), como la app.
   const nSeries = (series || []).length;
   const filaSeries = nSeries ? `<div class="lista">${fila({ href: '#/series', icono: 'notifications',
@@ -1360,6 +1363,7 @@ RUTAS.planes = async () => {
     pinta(`
       <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
       <h1>${esc(t('Tus planes'))}</h1>
+      ${turnoHtml}
       ${filaSeries}
       ${pantallaVacia({
         icono: 'bookmark',
@@ -1374,6 +1378,7 @@ RUTAS.planes = async () => {
   pinta(`
     <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(t('Tus planes'))}</h1>
+    ${turnoHtml}
     ${filaSeries}
     ${bloque(t('Para usar ahora'), enCurso.map((r) => filaCanje(r, zona(r))), '', `<a href="#/codigos">${esc(t('Ver todos'))}</a>`)}
     ${bloque(t('Próximos'), proximos.map((o) => tarjeta(o, zona(o))))}
@@ -1582,15 +1587,18 @@ RUTAS.codigos = async (_partes, params) => {
   if (!exigeSesion('codigos')) return;
   // Los regalos de cumpleaños van aparte y arriba; si fallan, los códigos
   // salen igual.
-  const [lista, regalos, premios, bonos] = await Promise.all([
+  const [lista, regalos, premios, bonos, turnos] = await Promise.all([
     llamar('my_redemptions', {}),
     llamar('my_birthday_gifts', {}).catch(() => []),
     // Los premios de las tarjetas de sellos, también aparte.
     llamar('my_stamp_rewards', {}).catch(() => []),
     // Los bonos pagados en el local (app/bonos.js), arriba del todo.
     llamar('my_passes', {}).catch(() => []),
+    // Tu turno en una cola virtual (app/cola.js), encima de todo.
+    llamar('my_queue_turns', {}).catch(() => []),
   ]);
   const zona = await zonasDe(lista);
+  const turnoHtml = await colaTarjetasHtml(turnos);
   // Los vivos, guardados para enseñarlos sin cobertura (y fuera los demás).
   recuerdaCodigos((lista || []).filter((r) => r.status === 'pending')
     .map((r) => ({ ...r, tz: zona(r) })), true);
@@ -1609,6 +1617,7 @@ RUTAS.codigos = async (_partes, params) => {
   pinta(`
     <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(t('Tus códigos'))}</h1>
+    ${turnoHtml}
     ${nada ? '' : `<div class="olist">${bonoFilaQr()}</div>`}
     ${conBonos ? `<h2 class="seccion-t">${esc(t('Bonos'))}</h2>
       <div class="olist">${bonos.map(bonoFila).join('')}</div>` : ''}

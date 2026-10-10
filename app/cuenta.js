@@ -94,6 +94,8 @@ function destinoWeb(ruta) {
   if (r.startsWith('/groups')) return EN ? '/en/groups/' : '/grupos/';
   if ((m = r.match(/^\/giveaways\/([0-9a-f-]{36})/i))) return `${EN ? '/en/giveaway/' : '/sorteo/'}${m[1]}`;
   if (r.startsWith('/giveaways')) return EN ? '/en/giveaways/' : '/sorteos/';
+  // Cola virtual: «¡Te toca!», «Se ha pasado tu turno»… → el turno.
+  if ((m = r.match(/^\/cola\/([A-Za-z0-9_-]{16})/))) return `#/cola/${m[1]}`;
   // «¡Feliz cumpleaños!»: el regalo, con su QR.
   if ((m = r.match(/^\/gift\/([0-9a-f-]{36})/i))) return `#/regalo/${m[1]}`;
   // «… se ha cancelado»: la reserva, que sale como «Anulado».

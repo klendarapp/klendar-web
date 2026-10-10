@@ -541,3 +541,28 @@ button.codigo.copiar .ms { font-size: 18px; color: var(--ink-2); letter-spacing:
 .grupo-hoja .formu { margin: 0; gap: 12px; }
 .grupo-hoja .formu h2 { margin: 0; }
 .grupo-hoja .formu .err:empty { display: none; }
+/* Cola virtual (app/cola.js): neutros; el coral, solo en el botón principal. */
+.cola-kicker { margin: 0; font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); }
+.vacio .cola-kicker { margin-bottom: 4px; }
+.cola-h1 { overflow-wrap: anywhere; margin: 2px 0 14px; }
+.cola-turno { text-align: center; border: 1px solid var(--glass-border); background: var(--glass); border-radius: 24px; padding: 24px 18px; margin: 0 0 14px; }
+.cola-turno h2 { margin: 0 0 6px; font-size: 22px; }
+.cola-turno p { margin: 0 0 6px; }
+.cola-turno.llamado { border: 2px solid var(--ink); }
+.cola-tu { font-weight: 800; }
+.cola-toca { font-family: var(--display); font-weight: 800; font-size: 30px; letter-spacing: -.02em; }
+.cola-turno .cola-numero { font-family: var(--display); font-weight: 800; font-size: 64px; line-height: 1; letter-spacing: -.03em; margin: 6px 0 14px; }
+.cola-cuenta { font-variant-numeric: tabular-nums; font-weight: 800; font-size: 22px; }
+.cola-cuantos { font-family: var(--display); font-size: 28px; font-weight: 800; line-height: 1.2; letter-spacing: -.02em; }
+.cola-form { margin: 16px auto 0; max-width: 300px; text-align: left; gap: 12px; }
+.cola-form .pill { justify-content: center; }
+.cola-turno .cola-ayuda { font-size: 14px; margin: 12px auto 0; max-width: 40ch; }
+.cola-nota { text-align: center; font-size: 14px; margin: 0 0 4px; }
+.cola-botones { display: grid; grid-template-columns: fit-content(360px); justify-content: center; gap: 10px; margin: 14px 0; }
+.cola-botones > .pill { justify-content: center; text-align: center; }
+.cola-tarjetas { margin-bottom: 14px; }
+.cola-tarjeta .ocard-body b { overflow-wrap: anywhere; }
+.cola-tarjeta > .ms:last-child { margin-left: auto; color: var(--ink-2); }
+.cola-tarjeta.llamado { border: 2px solid var(--ink); }
+.cola-toca-linea { font-weight: 800; font-size: 14px; }
+.ocard .ph .ms-svg { width: 30px; height: 30px; }

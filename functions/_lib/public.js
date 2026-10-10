@@ -187,6 +187,7 @@ export const collectionBase = (lang) => (lang === 'en' ? '/en/collection' : '/co
  * /hoy/x ⇄ /en/today/x, /con-ninos/x ⇄ /en/kids/x, /partidos/x ⇄ /en/matches/x,
  * /grupos/ ⇄ /en/groups/, /sorteos/ ⇄ /en/giveaways/, /sorteo/x ⇄ /en/giveaway/x
  * y /sorteo/x/bases ⇄ /en/giveaway/x/rules. */
+ * /cola/x ⇄ /en/queue/x. */
 export const altPath = (path, lang) =>
   lang === 'en'
     ? (path
@@ -203,6 +204,7 @@ export const altPath = (path, lang) =>
         .replace(/^\/en\/giveaway\/([^/]+)\/rules/, '/sorteo/$1/bases')
         .replace(/^\/en\/giveaways/, '/sorteos')
         .replace(/^\/en\/giveaway\//, '/sorteo/')
+        .replace(/^\/en\/queue\//, '/cola/')
         .replace(/^\/en/, '') || '/')
     : `/en${path
         .replace(/^\/agenda/, '/whats-on')
@@ -218,6 +220,7 @@ export const altPath = (path, lang) =>
         .replace(/^\/sorteo\/([^/]+)\/bases/, '/giveaway/$1/rules')
         .replace(/^\/sorteos/, '/giveaways')
         .replace(/^\/sorteo\//, '/giveaway/')}`;
+        .replace(/^\/cola\//, '/queue/')}`;
 
 /**
  * Página pública completa: cabecera del sitio, contenido y pie sencillo.

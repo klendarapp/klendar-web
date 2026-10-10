@@ -580,8 +580,9 @@ const VUELTA_PARAMS = {
 function rutaDeVuelta() {
   const [h, q] = location.hash.split('?');
   const pagina = (/^#\/([a-z0-9-]{1,30})(\/[A-Za-z0-9-]{1,40}){0,2}$/.exec(h || '') || [])[1];
-  // rrpp.js, series.js, partidos.js, sorteos.js y grupos.js se cargan después: sus pantallas también valen.
-  const conocida = pagina && (Object.hasOwn(PAGES, pagina) || ['rrpp', 'series', 'partidos', 'sorteos', 'grupos'].includes(pagina));
+  // rrpp.js, series.js, partidos.js, bonos.js, sorteos.js, grupos.js y
+  // cola.js se cargan después: sus pantallas también valen.
+  const conocida = pagina && (Object.hasOwn(PAGES, pagina) || ['rrpp', 'series', 'partidos', 'bonos', 'sorteos', 'grupos', 'cola'].includes(pagina));
   let hash = '';
   if (conocida) {
     const dentro = new URLSearchParams(q || '');
@@ -762,6 +763,8 @@ const SVG = {
   sorteo: 'M22 10V6c0-1.11-.9-2-2-2H4c-1.1 0-1.99.89-1.99 2v4c1.1 0 1.99.9 1.99 2s-.89 2-2 2v4c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2v-4c-1.1 0-2-.9-2-2s.9-2 2-2zm-2-1.46c-1.19.69-2 1.99-2 3.46s.81 2.77 2 3.46V18H4v-2.54c1.19-.69 2-1.99 2-3.46 0-1.48-.8-2.77-1.99-3.46L4 6h16v2.54zM11 15h2v2h-2zm0-4h2v2h-2zm0-4h2v2h-2z',
   grupos: 'M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z',
   rrpp: 'M9 13c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0-6c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm0 8c-2.67 0-8 1.34-8 4v3h16v-3c0-2.66-5.33-4-8-4zm6 5H3v-.99C3.2 18.29 6.3 17 9 17s5.8 1.29 6 2v1zM15.08 7.05c.84 1.18.84 2.71 0 3.89l1.68 1.69c2.02-2.02 2.02-5.07 0-7.27l-1.68 1.69zM20.07 2l-1.63 1.63c2.77 3.02 2.77 7.56 0 10.74L20.07 16c3.9-3.89 3.91-9.95 0-14z',
+  // «Cola virtual» (format_list_numbered).
+  cola: 'M2 17h2v.5H3v1h1v.5H2v1h3v-4H2v1zm1-9h1V4H2v1h1v3zm-1 3h1.8L2 13.1v.9h3v-1H3.2L5 10.9V10H2v1zm5-6v2h14V5H7zm0 14h14v-2H7v2zm0-6h14v-2H7v2z',
 };
 const svg = (n, s = 20) => `<svg class="ms svg" viewBox="0 0 24 24" width="${s}" height="${s}" aria-hidden="true"><path fill="currentColor" d="${SVG[n]}"/></svg>`;
 const icono = (n) => (SVG[n] ? svg(n) : ms(n));
@@ -799,6 +802,10 @@ const NAV = [
     // C): los sorteos los ve todo el equipo; los grupos, solo quien gestiona.
     ['sorteos', 'sorteo', 'Sorteos'],
     ['grupos', 'grupos', 'Grupos y empresas'],
+    // Cola virtual (panel/cola.js): opcional; todo el equipo la ve y la
+    // lleva, y abrirla, cerrarla o cambiar el código es de propietario y
+    // encargado.
+    ['cola', 'cola', 'Cola virtual'],
     ['cumpleanos', 'cake', 'Regalo de cumpleaños'],
     ['mensajes', 'notifications_active', 'Avisar a mis clientes'],
     ['resenas', 'reviews', 'Reseñas'],
@@ -1053,6 +1060,7 @@ PAGES.resumen = async (v) => {
       <a class="btn sm ghost" href="${APP_URL}/b/${esc(BIZ.id)}" target="_blank" rel="noopener">Ver ficha pública ↗</a></div>
     ${cerradoDeVerdad ? avisoCerrado() : ''}
     ${BIZ.verification_status !== 'verified' ? avisoVerificacion() : ''}
+    <div id="colaCaja"></div>
     ${primeros ? `<div class="card primeros"><h2>Primeros pasos</h2>
       <p class="muted" style="margin:0 0 8px">Tres cosas y tu negocio está listo para que la gente lo encuentre.</p>
       ${paso(1, conFotos, 'Pon tu logo y una foto', '', '#/ficha/fotos')}
@@ -1111,6 +1119,8 @@ PAGES.resumen = async (v) => {
   const otra = $('#otra-revision', v);
   if (otra) otra.onclick = () => pideOtraRevision(otra);
   pintaAforo($('#aforoCaja', v));
+  // «Cola virtual · N esperando», si está abierta (panel/cola.js).
+  if (typeof resumenCola === 'function') resumenCola($('#colaCaja', v));
   const salirEq = $('#salir-equipo', v);
   if (salirEq) {
     salirEq.onclick = async () => {
