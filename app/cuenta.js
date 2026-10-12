@@ -86,6 +86,9 @@ function destinoWeb(ruta) {
   // negocio, en el panel.
   if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/groups/i))) return `/panel/#/grupos?biz=${m[1]}`;
   if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/giveaways/i))) return `/panel/#/sorteos?biz=${m[1]}`;
+  // «Tus clientes más fieles del mes» (Fidelizar): agradecer a los habituales.
+  if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/loyalty\/thanks/i))) return `/panel/#/habituales?biz=${m[1]}`;
+  if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/loyalty/i))) return `/panel/#/fidelizar?biz=${m[1]}`;
   if (r.startsWith('/my-business')) return '/panel/';
   // «X te ha enviado una propuesta»: la petición. «¡Has ganado…!»: la página
   // del sorteo, que con tu sesión enseña lo tuyo.
@@ -888,6 +891,9 @@ async function ajustesNotificaciones() {
     sw('fav', 'Publican algo nuevo', prefs.notify_favorites),
     sw('mensajes', 'Mensajes de los negocios', prefs.notify_business_messages !== false),
     sw('cumple', 'Regalo de cumpleaños', prefs.notify_birthday !== false),
+    // Cupones para la próxima visita y regalos a los habituales: apagado,
+    // llegan igual a «Tus códigos», sin aviso.
+    sw('fidelizar', 'Cupones y regalos', prefs.notify_loyalty !== false),
     sw('sellos', 'Sellos y premios', prefs.notify_stamps !== false),
     sw('bonos', 'Tus bonos', prefs.notify_passes !== false, 'Pocos usos, caducidad y usos a mano'),
   ].join(''))}
@@ -940,6 +946,7 @@ async function ajustesNotificaciones() {
         notify_favorites: el.fav.checked,
         notify_business_messages: el.mensajes.checked,
         notify_birthday: el.cumple.checked,
+        notify_loyalty: el.fidelizar.checked,
         notify_stamps: el.sellos.checked,
         notify_passes: el.bonos.checked,
         notify_friend_invites: el.amigos.checked,

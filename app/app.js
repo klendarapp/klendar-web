@@ -581,6 +581,8 @@ RUTAS[''] = async () => {
       <a class="rapido" href="#/notificaciones">${ic('notifications')}<b>${esc(t('Notificaciones'))}</b><span class="badge-n" id="sin-leer" hidden></span></a>
     </div>
 
+    <div class="lista" id="ahorro-fila" hidden></div>
+
     <div class="lista lista-amigos">
       ${fila({ href: '#/amigos', icono: 'group', titulo: t('Amigos'), detalle: t('Tu lista, tu enlace y tu QR') })}
     </div>
@@ -619,6 +621,7 @@ RUTAS[''] = async () => {
 
     <button class="pill ancho" id="salir">${ic('logout')} ${esc(t('Cerrar sesión'))}</button>`);
   pintaSinLeer();
+  if (typeof pintaAhorroFila === 'function') pintaAhorroFila();
   $('#legal').onclick = () => {
     const d = document.createElement('dialog');
     d.className = 'dialogo hoja-legal';
@@ -1591,7 +1594,7 @@ RUTAS.codigos = async (_partes, params) => {
   // salen igual.
   const [lista, regalos, premios, bonos, turnos] = await Promise.all([
     llamar('my_redemptions', {}),
-    llamar('my_birthday_gifts', {}).catch(() => []),
+    misRegalos().catch(() => []),
     // Los premios de las tarjetas de sellos, también aparte.
     llamar('my_stamp_rewards', {}).catch(() => []),
     // Los bonos pagados en el local (app/bonos.js), arriba del todo.
@@ -1623,7 +1626,7 @@ RUTAS.codigos = async (_partes, params) => {
     ${nada ? '' : `<div class="olist">${bonoFilaQr()}</div>`}
     ${conBonos ? `<h2 class="seccion-t">${esc(t('Bonos'))}</h2>
       <div class="olist">${bonos.map(bonoFila).join('')}</div>` : ''}
-    ${conRegalos ? `<h2 class="seccion-t">${esc(t('Regalos de cumpleaños'))}</h2>
+    ${conRegalos ? `<h2 class="seccion-t">${esc(t('Regalos y cupones'))}</h2>
       <div class="olist">${regalos.map(filaRegalo).join('')}</div>` : ''}
     ${conPremios ? `<h2 class="seccion-t">${esc(t('Premios de tarjetas de sellos'))}</h2>
       <div class="olist">${premios.map(filaPremio).join('')}</div>` : ''}
@@ -1665,7 +1668,26 @@ function filaPremio(p) {
   return vivo ? `<a class="ocard" href="#/sellos">${dentro}</a>` : `<div class="ocard">${dentro}</div>`;
 }
 
-// ── Regalos de cumpleaños ─────────────────────────────────────────────────
+// ── Regalos de cumpleaños, cupones y regalos a los habituales ────────────
+/** Los regalos de la persona: los de cumpleaños (`my_birthday_gifts`), los
+ * cupones para la próxima visita y los regalos a los habituales
+ * (`my_loyalty_gifts`, Fidelizar). Primero los que se pueden usar; luego, los
+ * más nuevos. Como la app. */
+async function misRegalos() {
+  const [a, b] = await Promise.all([
+    llamar('my_birthday_gifts', {}),
+    llamar('my_loyalty_gifts', {}).catch(() => []),
+  ]);
+  const vivo = (g) => (g.status === 'pending' && g.code ? 1 : 0);
+  return [...(a || []), ...(b || [])]
+    .sort((x, y) => vivo(y) - vivo(x) || new Date(y.created_at) - new Date(x.created_at));
+}
+/** El icono y el título de cada tipo de regalo. */
+const iconoRegalo = (g) => (g.kind === 'visit_coupon' ? 'redeem' : g.kind === 'thanks_gift' ? 'volunteer_activism' : 'cake');
+const tituloRegalo = (g) => (g.kind === 'visit_coupon' ? t('Cupón para tu próxima visita')
+  : g.kind === 'thanks_gift' ? t('¡Gracias por venir!') : t('¡Feliz cumpleaños!'));
+/** Aún no vale: el cupón es para la próxima visita (desde mañana). */
+const aunNoVale = (g) => !!g.starts_at && new Date(g.starts_at).getTime() > Date.now();
 /** El último día que vale un regalo: `expires_at` es el final de ese día
  * (medianoche del siguiente), así que se escribe un segundo antes. En la
  * zona del negocio: «5 de octubre». */
@@ -1677,7 +1699,7 @@ function filaRegalo(g) {
   const vivo = g.status === 'pending' && !!g.code;
   const estado = g.status === 'validated' ? t('Canjeado') : vivo ? t('Código activo') : t('Caducado');
   const dentro = `
-      ${g.business_logo ? `<img src="${esc(g.business_logo)}" alt="" loading="lazy">` : `<span class="ph">${ic('cake')}</span>`}
+      ${g.business_logo ? `<img src="${esc(g.business_logo)}" alt="" loading="lazy">` : `<span class="ph">${ic(iconoRegalo(g))}</span>`}
       <span class="ocard-body"><b>${esc(g.gift)}</b>
         <span class="muted">${esc(EN ? `From ${g.business_name} · valid until ${ultimoDiaRegalo(g)}` : `De ${g.business_name} · vale hasta el ${ultimoDiaRegalo(g)}`)}</span>
         <span class="ocard-meta"><span class="tag${vivo ? '' : ' off'}">${esc(estado)}</span></span>
@@ -1691,7 +1713,7 @@ function filaRegalo(g) {
  * `my_birthday_gifts` cada pocos segundos. */
 RUTAS.regalo = async ([id]) => {
   if (!exigeSesion(`regalo/${id}`)) return;
-  const lista = await llamar('my_birthday_gifts', {});
+  const lista = await misRegalos();
   const g = (lista || []).find((x) => x.id === id);
   if (!g) { pinta(pantallaVacia({ icono: 'cake', titulo: t('Ese regalo no está.'), h: 'h1', botones: `<a class="pill accent" href="#/codigos">${esc(t('Tus códigos'))}</a>` })); return; }
   const tz = g.time_zone || undefined;
@@ -1715,20 +1737,25 @@ RUTAS.regalo = async ([id]) => {
   pinta(`
     <p class="crumbs"><a href="#/codigos">${esc(t('Tus códigos'))}</a></p>
     <div class="ticket">
-      <p class="hecho-ic" aria-hidden="true">${ic('cake')}</p>
-      <h1>${esc(t('¡Feliz cumpleaños!'))}</h1>
+      <p class="hecho-ic" aria-hidden="true">${ic(iconoRegalo(g))}</p>
+      <h1>${esc(tituloRegalo(g))}</h1>
       <p class="muted">${esc(EN ? `A gift from ${g.business_name}` : `Un regalo de ${g.business_name}`)}</p>
+      ${g.message ? `<p><i>«${esc(g.message)}»</i></p>` : ''}
       <p><span class="tag grande">${esc(g.gift)}</span></p>
+      ${g.terms ? `<p class="muted">${esc(g.terms)}</p>` : ''}
       <div class="qr" role="img" aria-label="${esc(t('Código QR para que el negocio valide tu canje'))}">${qr.createSvgTag({ cellSize: 6, margin: 2, scalable: true })}</div>
       <p><button type="button" class="codigo copiar" id="copiar" aria-label="${esc(t('Copiar el código'))}">${esc(codigoLegible(g.code))} ${ic('content_copy')}</button></p>
-      <p class="muted">${esc(EN ? `Show it at the place until ${ultimoDiaRegalo(g)}. It works once.` : `Enséñalo en el sitio hasta el ${ultimoDiaRegalo(g)}. Vale una vez.`)}</p>
+      <p class="muted">${esc(aunNoVale(g)
+    ? (EN ? `Valid from ${fecha(g.starts_at, { day: 'numeric', month: 'long' }, tz)} until ${ultimoDiaRegalo(g)}. Show it at the venue; it can be used once.`
+      : `Vale desde el ${fecha(g.starts_at, { day: 'numeric', month: 'long' }, tz)} hasta el ${ultimoDiaRegalo(g)}. Enséñalo en el sitio; vale una vez.`)
+    : (EN ? `Show it at the place until ${ultimoDiaRegalo(g)}. It works once.` : `Enséñalo en el sitio hasta el ${ultimoDiaRegalo(g)}. Vale una vez.`))}</p>
     </div>`);
   $('#copiar')?.addEventListener('click', async () => {
     try { await navigator.clipboard.writeText(g.code); toast(t('Código copiado')); } catch { toast(t('No se ha podido copiar'), true); }
   });
   const sondeo = setInterval(async () => {
     try {
-      const ahora = ((await llamar('my_birthday_gifts', {})) || []).find((x) => x.id === id);
+      const ahora = ((await misRegalos()) || []).find((x) => x.id === id);
       if (ahora?.status !== 'validated') return;
       clearInterval(sondeo);
       pintaCanjeado({ titulo: g.gift, negocio: g.business_name, at: ahora.validated_at, tz });

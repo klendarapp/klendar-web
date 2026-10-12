@@ -1068,6 +1068,10 @@ const I18N = makeI18N({
     // ── RRPP (2026-10-05): el resto va con bi() en panel/rrpp.js ──────
     "RRPP": "Promoters",
     "Ese código no está en las listas de esta noche.": "That code isn't on tonight's lists.",
+    'Es solo para la primera visita y ya ha canjeado aquí.': "First visit only, and they've already redeemed here.",
+    'Es para la próxima visita: todavía no vale.': "It's for the next visit: not valid yet.",
+    'Cupones y regalos sin usar': 'Unused coupons and gifts',
+    'Fidelizar': 'Loyalty',
     // ── «Tu ficha» por apartados y el alta en tres pasos (2026-10-06) ──
     "¿Salir sin guardar?": "Leave without saving?",
     "Hay cambios que todavía no has guardado.": "You have changes you haven't saved yet.",

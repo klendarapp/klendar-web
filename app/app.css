@@ -575,3 +575,8 @@ button.codigo.copiar .ms { font-size: 18px; color: var(--ink-2); letter-spacing:
 .cola-tarjeta.llamado { border: 2px solid var(--ink); }
 .cola-toca-linea { font-weight: 800; font-size: 14px; }
 .ocard .ph .ms-svg { width: 30px; height: 30px; }
+
+/* «¿Cómo se calcula?» de «Lo que has ahorrado» (app/ahorro.js). */
+.ayuda-plegable { margin: 8px 0 14px; }
+.ayuda-plegable summary { cursor: pointer; font-weight: 700; }
+.ayuda-plegable p { margin: 8px 0 0; color: var(--ink-2); }

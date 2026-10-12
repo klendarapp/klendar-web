@@ -1,0 +1,22 @@
+/* Material Symbols Outlined (Google, licencia Apache 2.0), servida desde
+ * klendar.app: el navegador no pide nada a Google Fonts. opsz 24, wght 400,
+ * FILL 0, GRAD 0. Solo los iconos que usa el panel de negocios (/panel), con
+ * sus alias:
+ * ac_unit, accessible, bar_chart, bolt, cake, camera_alt, campaign, cancel, card_giftcard, check, check_circle, check_circle_filled, check_circle_outline, chevron_right, child_friendly, cloud_off, create, credit_card, dashboard, deck, delete, delete_outline, eco, edit, email, event, event_busy, favorite, fmd_good, grain, group, help, help_outline, highlight_off, insert_invitation, local_dining, local_drink, local_offer, local_parking, location_on, location_pin, lock_clock, loyalty, mail, mail_outline, markunread, menu, mode, mode_edit, mode_edit_outline, more_horiz, notifications_active, park, payment, people, people_alt, people_outline, perm_identity, person, person_filled, person_outline, pets, photo_camera, place, play_circle, qr_code_2, qr_code_scanner, redeem, reply, restaurant, restaurant_menu, reviews, roofing, room, spa, storefront, timer_off, toys, try, verified_user, volunteer_activism, waving_hand, wifi, workspace_premium.
+ * v375c (2026-10-12): más los de Fidelizar (waving_hand,
+ * volunteer_activism, local_offer, favorite), igual que la v375b.
+ * v375b (2026-10-12): la v375 más los de «Alérgenos y dietas» (spa, grain,
+ * verified_user, local_drink, restaurant). Recortada con fontTools de la
+ * fuente entera del admin (material-symbols-admin-v374.woff2), sin
+ * descargar nada: `pyftsubset` con los glifos de esas ligaduras y
+ * `layout_closure` apagado (si no, entran todas las ligaduras).
+ * Un icono nuevo hay que añadirlo a la lista y volver a generarla.
+ * Cómo regenerarla: docs/RUNBOOK.md de la app, §2e. El nombre lleva la
+ * versión: /assets/fonts/ se guarda en caché para siempre (immutable). */
+@font-face {
+  font-family: 'Material Symbols Outlined';
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url(/assets/fonts/material-symbols-panel-v375c.woff2) format('woff2');
+}

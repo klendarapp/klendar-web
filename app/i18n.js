@@ -553,6 +553,12 @@ const APP_EN = {
     "Es para quien tiene sellos en alguna de sus tarjetas. Consigue el primero canjeando una de sus ofertas o con el QR del local.": "It's for people with stamps on one of their cards. Get your first one by redeeming one of their offers or with the venue QR code.",
     "Regalos de cumpleaños": "Birthday gifts",
     "¡Feliz cumpleaños!": "Happy birthday!",
+    // Fidelizar (tanda C): cupón para la próxima visita y regalo a los
+    // habituales, en «Tus códigos»; su preferencia en Notificaciones.
+    "Regalos y cupones": "Gifts and coupons",
+    "Cupón para tu próxima visita": "Coupon for your next visit",
+    "¡Gracias por venir!": "Thanks for coming!",
+    "Cupones y regalos": "Coupons and gifts",
     "Ese regalo no está.": "This gift is no longer available.",
     "Mensajes de mis negocios favoritos": "Messages from my favourite businesses",
     "Lo que te cuentan tus favoritos: como mucho uno por semana de cada uno.": "What your favourites tell you: at most one a week from each.",

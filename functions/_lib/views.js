@@ -341,7 +341,9 @@ export async function offerPage(id, lang, rpRaw = '') {
         ${prior ? `<s class="muted">${esc(prior)}</s>` : ''}
         <span class="dato-chip${flash ? ' oferta' : ''}"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="${flash ? 'M7 2v11h3v9l7-12h-4l4-8z' : 'M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 16H5V10h14v10Zm0-12H5V6h14v2Z'}"/></svg>${esc(cuandoCorto(o, lang, tz))}</span>
         ${o.seats_left != null && !soldOut && !over ? `<span class="dato-chip">${esc(en ? (o.seats_left === 1 ? '1 place left' : `${o.seats_left} places left`) : (o.seats_left === 1 ? 'Queda 1 plaza' : `Quedan ${o.seats_left} plazas`))}</span>` : ''}
+        ${o.style?.first_visit === true ? `<span class="dato-chip">${esc(en ? 'First visit' : 'Primera visita')}</span>` : ''}
       </p>
+      ${o.style?.first_visit === true ? `<p class="rule">${esc(en ? `Only for people who have never redeemed anything at ${o.business_name || ''}.` : `Solo para quien no ha canjeado nunca nada en ${o.business_name || ''}.`)}</p>` : ''}
       ${prior ? `<p class="rule">${S.prior}</p>` : ''}
       ${notaCarne}
       ${listaSitio((await rasgosP).filter((t) => SITIO_PLAN.includes(t)), lang, { cls: 'sitio-linea' })}

@@ -602,6 +602,7 @@ const VUELTA_PARAMS = {
   estado: /^[a-z_]{1,20}$/,
   dia: /^\d{4}-\d{2}-\d{2}$/,
   idea: /^(1|before_closing)$/,
+  primera: /^1$/,
   partido: /^[0-9a-f-]{36}$/i,
   editar: /^1$/,
 };
@@ -610,7 +611,7 @@ function rutaDeVuelta() {
   const pagina = (/^#\/([a-z0-9-]{1,30})(\/[A-Za-z0-9-]{1,40}){0,2}$/.exec(h || '') || [])[1];
   // rrpp.js, series.js, partidos.js, bonos.js, sorteos.js, grupos.js y
   // cola.js se cargan después: sus pantallas también valen.
-  const conocida = pagina && (Object.hasOwn(PAGES, pagina) || ['rrpp', 'series', 'partidos', 'bonos', 'sorteos', 'grupos', 'cola'].includes(pagina));
+  const conocida = pagina && (Object.hasOwn(PAGES, pagina) || ['rrpp', 'series', 'partidos', 'bonos', 'sorteos', 'grupos', 'cola', 'fidelizar', 'cupon', 'habituales'].includes(pagina));
   let hash = '';
   if (conocida) {
     const dentro = new URLSearchParams(q || '');
@@ -840,6 +841,12 @@ const NAV = [
   ]],
   ['RRPP', [
     ['rrpp', 'rrpp', 'RRPP'],
+  ]],
+  // Fidelizar (panel/fidelizar.js): primera visita, cupón para la próxima
+  // visita y agradecer a los habituales. Lo ve todo el equipo; cambiarlo,
+  // propietario y encargado.
+  ['Fidelizar', [
+    ['fidelizar', 'favorite', 'Fidelizar', ['cupon', 'habituales']],
   ]],
   ['Tu local', [
     ['carta', 'restaurant_menu', 'Carta'],
@@ -2051,6 +2058,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
           <p class="hint" id="audAyuda" ${['all', 'promoters'].includes(o.audience || 'all') ? 'hidden' : ''}>Los demás ven que es exclusiva, sin el beneficio.</p>
           ${rrppHtml.quien}
         </fieldset>
+        <label class="opcion bl-fila" id="primeraRow"><input type="checkbox" name="first_visit" ${o.style?.first_visit === true || /[?&]primera=1\b/.test(location.hash) ? 'checked' : ''}><span><b>${esc(bi('Solo para quien viene por primera vez', 'First-time visitors only'))}</b><br><small class="muted">${esc(bi('Solo la podrá sacar quien no haya canjeado nunca nada en tu negocio. Tu equipo no cuenta.', "Only people who have never redeemed anything at your business can get it. Your team doesn't count."))}</small></span></label>
         <div class="bl-fila">
           <p class="etq">${esc(MK.cardTitle)}</p>
           ${eligeVarios('card_requirements', KMp.CARDS.map((c) => [c, MK.card[c]]), o.card_requirements, MK.cardTitle)}
@@ -2407,13 +2415,19 @@ async function offerForm(v, id, kindDefault, desde = null) {
     accent: colorSeguro(s2?.accent),
     // «Antes de cerrar»: el sello va en el aspecto (`style.badge`).
     before_closing: s2?.badge === 'before_closing',
+    // Solo para la primera visita: la base lo refleja aquí desde
+    // `offers.first_visit_only` (el sello de la tarjeta).
+    first_visit: s2?.first_visit === true,
   });
   let estilo = limpiaEstilo(o.style);
+  // Desde «Fidelizar» › «Crear oferta de primera visita» (?primera=1).
+  if (!id && /[?&]primera=1\b/.test(location.hash)) estilo.first_visit = true;
   /** Lo que se guarda en `offers.style`: el sello solo en una oferta flash. */
   const estiloJson = () => ({
     template: estilo.template,
     ...(estilo.accent ? { accent: estilo.accent } : {}),
     ...(estilo.before_closing && kind === 'flash_offer' ? { badge: 'before_closing' } : {}),
+    ...(estilo.first_visit && (val('audience') || 'all') !== 'promoters' ? { first_visit: true } : {}),
   });
   const enPaleta = (c) => PALETA.some(([h]) => h === c);
   // ── Vista previa: la tarjeta de verdad (/assets/tarjeta.js), con lo que
@@ -2595,6 +2609,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
     const set = val('setting');
     $('#bMasRes', v).innerHTML = t([
       ...(isFlash() && estilo.before_closing ? [bi('Antes de cerrar', 'Before closing')] : []),
+      ...(estilo.first_visit && aud !== 'promoters' ? [bi('Primera visita', 'First visit')] : []),
       { all: bi('Para todo el mundo', 'For everyone'), favorites: bi('Solo favoritos', 'Favourites only'), customers: bi('Solo clientes', 'Customers only'), promoters: bi('Solo RRPP', 'Promoters only') }[aud],
       ...(organizador ? [] : [!lugar.activo() ? bi('en tu local', 'at your place') : sitio || bi('en otro sitio', 'somewhere else')]),
       ...(adultos ? ['+18'] : []),
@@ -2613,6 +2628,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
   // Cualquier cambio del formulario se ve al momento en la tarjeta y en los
   // resúmenes.
   campo('before_closing').addEventListener('change', () => { estilo.before_closing = campo('before_closing').checked; });
+  campo('first_visit').addEventListener('change', () => { estilo.first_visit = campo('first_visit').checked; });
   $('#form').addEventListener('input', () => { pintaPrevia(); resumenes(); });
   $('#form').addEventListener('change', () => { pintaPrevia(); resumenes(); });
 
@@ -2671,6 +2687,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
     images = [...(d.images || [])];
     if (d.style) estilo = limpiaEstilo(d.style);
     campo('before_closing').checked = !!estilo.before_closing;
+    campo('first_visit').checked = !!estilo.first_visit;
     lugar.pon(d.venue_address ? { name: d.venue_name, address: d.venue_address, lat: d.venue_lat, lng: d.venue_lng } : null);
     renderPhotos(); pintaTipo(); syncKind(); syncDiscount(); pintaEstilo();
   };
@@ -2910,6 +2927,8 @@ async function offerForm(v, id, kindDefault, desde = null) {
       setting: val('setting') || null,
       ...marcasDe(),
       audience: audiencia,
+      // Solo para la primera visita (la base pone el sello en `style`).
+      first_visit_only: audiencia !== 'promoters' && !!estilo.first_visit,
       // Las columnas de RRPP: las suyas o, si deja de serlo, las de siempre.
       ...(rrpp ? rrpp.cols : o.audience === 'promoters' ? RRPP_COLUMNAS_FUERA : {}),
       // Borrador, salvo que ya estuviera terminada, agotada o cancelada (se
@@ -3330,6 +3349,9 @@ const ERR_VALIDAR = {
   account_suspended: 'Tu cuenta está suspendida: no puedes validar códigos. Si crees que es un error, escribe a info@klendar.app.',
   // Validar desde «Buscar en las listas de esta noche» (door_validate).
   not_on_list: 'Ese código no está en las listas de esta noche.',
+  // Fidelizar (20261211100000): primera visita y cupón de la próxima visita.
+  first_visit_used: 'Es solo para la primera visita y ya ha canjeado aquí.',
+  not_started: 'Es para la próxima visita: todavía no vale.',
 };
 
 /** Por qué no vale un código («Este código es de otro negocio.»). */
@@ -3359,7 +3381,7 @@ function cambiaDeLocal(id) {
  * regalo, el premio) y el precio de antes («en vez de 4,00 €»), que va
  * debajo. */
 function partesDelCanje(r) {
-  if (r.kind === 'stamp_reward' || r.kind === 'birthday_gift') return [r.offer_title || '', ''];
+  if (['stamp_reward', 'birthday_gift', 'visit_coupon', 'thanks_gift'].includes(r.kind)) return [r.offer_title || '', ''];
   const cur = r.currency || 'EUR';
   const pagar = r.pay_cents != null ? fmtMoney(r.pay_cents, cur) : '';
   const antes = r.compare_at_cents != null ? fmtMoney(r.compare_at_cents, cur) : '';
@@ -3388,13 +3410,16 @@ function horaCodigo(iso) {
  * `CodeDetailsView` en la app. `estado`: ok | ready | bad. */
 function tarjetaCodigo(r, estado) {
   const ajeno = r.error === 'not_authorized';
+  const regalo = r.kind === 'birthday_gift' ? bi('Regalo de cumpleaños', 'Birthday gift')
+    : r.kind === 'visit_coupon' ? bi('Cupón próxima visita', 'Next-visit coupon')
+      : r.kind === 'thanks_gift' ? bi('Regalo a habituales', "Regulars' gift") : '';
   const tipo = r.kind === 'stamp_reward' ? I18N.t('Tarjeta de sellos')
-    : r.kind === 'birthday_gift' ? bi('Regalo de cumpleaños', 'Birthday gift')
-      : r.offer_kind === 'future_event' ? I18N.t('Evento') : r.offer_kind ? I18N.t('Oferta flash') : '';
+    : regalo || (r.offer_kind === 'future_event' ? I18N.t('Evento') : r.offer_kind ? I18N.t('Oferta flash') : '');
   const titulo = r.kind === 'stamp_reward' && r.card_name ? bi(`Premio de «${r.card_name}»`, `Reward from “${r.card_name}”`)
-    : r.kind === 'birthday_gift' ? bi('Regalo de cumpleaños', 'Birthday gift') : (r.offer_title || '');
+    : regalo || (r.offer_title || '');
   const icono = r.kind === 'stamp_reward' ? 'loyalty' : r.kind === 'birthday_gift' ? 'cake'
-    : r.offer_kind === 'future_event' ? 'event' : 'redeem';
+    : r.kind === 'visit_coupon' ? 'local_offer' : r.kind === 'thanks_gift' ? 'volunteer_activism'
+      : r.offer_kind === 'future_event' ? 'event' : 'redeem';
   const foto = r.offer_image ? `<img src="${esc(r.offer_image)}" alt="" loading="lazy">` : `<span class="cod-ic">${ms(icono)}</span>`;
   const [dar, antes] = ajeno ? ['', ''] : partesDelCanje(r);
   const lineas = [];
@@ -3434,6 +3459,7 @@ function tarjetaCodigo(r, estado) {
       <h2 class="cod-titulo">${esc(titulo)}</h2></div></div>
     ${rrpp}
     ${carne}
+    ${r.first_visit && !ajeno ? `<p class="cod-linea">${ms('waving_hand')}${esc(bi('Primera visita', 'First visit'))}</p>` : ''}
     ${dar ? `<p class="cod-label">${esc(estado === 'bad' ? bi('Era para', 'It was for') : bi('Aplicar al cliente', 'Apply to the customer'))}</p>
       <p class="cod-dar">${esc(dar)}</p>
       ${antes ? `<p class="cod-antes">${esc(antes)}</p>` : ''}` : ''}
@@ -3450,7 +3476,9 @@ function tarjetaCodigo(r, estado) {
 const queValidado = (r) => (r.kind === 'stamp_reward'
   ? `${I18N.t('Tarjeta de sellos')}${r.detail ? ` «${r.detail}»` : ''}`
   : r.kind === 'birthday_gift' ? I18N.t('Regalo de cumpleaños')
-    : I18N.t(r.kind === 'future_event' ? 'Evento' : 'Oferta flash'));
+    : r.kind === 'visit_coupon' ? bi('Cupón próxima visita', 'Next-visit coupon')
+      : r.kind === 'thanks_gift' ? bi('Regalo a habituales', "Regulars' gift")
+        : I18N.t(r.kind === 'future_event' ? 'Evento' : 'Oferta flash'));
 /** «sin conexión»: se escaneó sin red y se validó después, a la hora del
  * escaneo (`offline` en `business_recent_validations` y `business_report`). */
 const etiquetaSinConexion = (r) => (r.offline ? ` <span class="tag dim">${esc(bi('sin conexión', 'offline'))}</span>` : '');
@@ -5266,6 +5294,21 @@ PAGES.cumpleanos = async (v) => {
 // mira cuando quiere saber si esto le sirve para algo. Un empleado solo ve
 // las cifras: ni la lista de canjes (código y quién validó) ni los CSV; la
 // base tampoco se los manda (`aggregate_only`, migración 20261113100000).
+/** Fidelizar en el Informe (`business_report` → `loyalty`): clientes que
+ * repiten, cupones y regalos canjeados. Como en la app. */
+function informeFidelizarHtml(l) {
+  if (!l || !(l.customers || l.coupons_given || l.thanks_given || l.birthday_redeemed)) return '';
+  const nuevos = l.new_customers || 0;
+  return `<div class="card"><h2>${esc(bi('Fidelizar', 'Loyalty'))}</h2>
+    <div class="kpis">
+      <div class="kpi"><b>${fmtNum(l.repeat_customers)}/${fmtNum(l.customers)}</b><span>${esc(bi('Clientes que repiten', 'Returning customers'))}</span></div>
+      <div class="kpi"><b>${fmtNum(l.coupons_redeemed)}/${fmtNum(l.coupons_given)}</b><span>${esc(bi('Cupones canjeados', 'Coupons redeemed'))}</span></div>
+      <div class="kpi"><b>${fmtNum((l.thanks_redeemed || 0) + (l.birthday_redeemed || 0))}</b><span>${esc(bi('Regalos canjeados', 'Gifts redeemed'))}</span></div>
+    </div>
+    <p class="muted" style="margin:10px 0 0">${esc(bi(`Repiten: ya habían canjeado aquí antes. ${nuevos === 0 ? 'Ningún cliente nuevo' : nuevos === 1 ? '1 cliente nuevo' : `${fmtNum(nuevos)} clientes nuevos`} en el periodo. Regalos: de cumpleaños y a los habituales.`,
+    `Returning: they had redeemed here before. ${nuevos === 0 ? 'No new customers' : nuevos === 1 ? '1 new customer' : `${fmtNum(nuevos)} new customers`} in the period. Gifts: birthday and regulars' gifts.`))}</p></div>`;
+}
+
 /** «Toques en tus enlaces»: cuántas veces se han tocado «Reservar», «Pedir…»
  * y la carta (archivos y enlace) en el periodo, por tipo y servicio o
  * dominio: «Reservar · TheFork — 12». Sin personas: solo cifras. */
@@ -5361,6 +5404,8 @@ PAGES.informe = async (v, param) => {
         <div class="kpi"><b>${fmtNum(pases.uses)}</b><span>Usos</span></div>
         <div class="kpi"><b>${fmtNum(pases.active)}</b><span>Bonos activos</span></div>
       </div></div>` : ''}
+
+    ${informeFidelizarHtml(r.loyalty)}
 
     ${await informeSeriesHtml()}
 
@@ -5873,6 +5918,7 @@ async function eliminarNegocio(v) {
     ['event', 'Reservas para eventos que aún no han pasado', s.reservations],
     ['qr_code_2', 'Códigos sin usar', s.codes],
     ['cake', 'Regalos de cumpleaños sin usar', s.birthday_gifts],
+    ['local_offer', 'Cupones y regalos sin usar', s.loyalty_gifts],
     ['loyalty', 'Clientes con sellos o un premio sin canjear', s.stamp_customers],
     ['redeem', 'Clientes con bonos sin gastar (tienes que cumplirlos)', s.pass_customers || 0],
     ['person', 'Personas que lo tienen en favoritos', s.favorites],
