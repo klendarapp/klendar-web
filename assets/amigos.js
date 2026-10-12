@@ -289,7 +289,8 @@
 
   function tarjetaDeAmigos(o) {
     var id = encodeURIComponent(o.id);
-    var foto = (o.images || []).filter(function (u) { return /^https:\/\//.test(u) && !/\.(mp4|mov|webm)(\?|$)/i.test(u); })[0];
+    // (La genérica de la agenda pública no es una foto: assets/tarjeta.js, `arteDe`.)
+    var foto = (o.images || []).filter(function (u) { return /^https:\/\//.test(u) && !/\.(mp4|mov|webm)(\?|$)/i.test(u) && !/\/business-images\/agenda\//.test(u); })[0];
     var tag = beneficio(o);
     var lugar = o.venue_name ? (en ? 'at ' : 'en ') + o.venue_name : '';
     return '<a class="ocard" href="' + (en ? '/en' : '') + '/o/' + id + '" data-o="' + esc(o.id) + '">' +

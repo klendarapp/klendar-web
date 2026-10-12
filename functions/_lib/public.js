@@ -118,8 +118,20 @@ export function decodeSeg(s) {
  *  tachado (obligatorio cuando se anuncia una rebaja) y si una pieza es vídeo. */
 export const { benefit, priorPrice, isVideo } = KT;
 
-/** Para la vista previa de WhatsApp o Google hace falta una imagen fija. */
-export const firstPhoto = (images) => (images || []).find((u) => !isVideo(u)) || null;
+/** Para la vista previa de WhatsApp o Google hace falta una imagen fija.
+ *  La genérica de la agenda pública no cuenta como foto (ver `arteDe`). */
+export const firstPhoto = (images) => (images || []).find((u) => typeof u === 'string' && !isVideo(u) && !KT.esGenerica(u)) || null;
+
+/** La agenda pública sin foto: el fondo del color de su categoría (como
+ *  `AgendaArt` en la app). `esGenerica`: la imagen genérica de la importación. */
+export const { arteDe, arteHtml, esGenerica } = KT;
+export const AGENDA_COLOR = (cat) => (KT.AGENDA_ARTE[cat] || [])[0] || null;
+
+/** La cabecera de la ficha de algo de la agenda pública sin foto. */
+export function arteFicha(o) {
+  const cat = KT.arteDe(o);
+  return cat ? `<div class="ficha-media ficha-media--oferta ficha-arte">${KT.arteHtml(cat)}</div>` : '';
+}
 
 /**
  * La foto o el vídeo de una ficha, en grande (como la cabecera de la ficha
@@ -297,16 +309,16 @@ ${privada ? '' : `<meta property="og:url" content="${BASE}${esc(path)}">
 ${preconectar}<link rel="preload" href="/assets/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/assets/site.css?v=20261012">
-<link rel="stylesheet" href="/assets/public.css?v=43">
-<link rel="stylesheet" href="/assets/tarjeta.css?v=10">
+<link rel="stylesheet" href="/assets/public.css?v=44">
+<link rel="stylesheet" href="/assets/tarjeta.css?v=11">
 ${cabeza}
 </head>
 <body${bodyClass ? ` class="${esc(bodyClass)}"` : ''}>
 ${siteHeader(lang, esc(es + consulta), esc(enPath + consulta), actual)}
 <main class="pub wrap" id="contenido">${body}</main>
 ${siteFooter(lang)}
-${conAmigos ? `<script src="/assets/amigos.js?v=16" defer data-lang="${en ? 'en' : 'es'}"></script>
-` : ''}${conVisor ? `<script src="/assets/tarjeta.js?v=9" defer></script>
+${conAmigos ? `<script src="/assets/amigos.js?v=17" defer data-lang="${en ? 'en' : 'es'}"></script>
+` : ''}${conVisor ? `<script src="/assets/tarjeta.js?v=10" defer></script>
 ` : ''}${conTarjetas ? `<script src="/assets/tarjetas.js?v=15" defer></script>
 ` : ''}${/class="detail[" ]/.test(body) ? `<script src="/assets/barra.js?v=4" defer></script>
 ` : ''}${/^\/(en\/)?(o|b|coleccion|collection)\//.test(path) || /^\/(sorteo|en\/giveaway)\/[^/]+$/.test(path) ? desdeHistorias() : ''}${contador ? CONTADOR : ''}

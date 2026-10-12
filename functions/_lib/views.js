@@ -12,7 +12,7 @@ import { esc, fmtWhen, html, isUuid, rpc, rpcAll, rows, supabasePublic } from '.
 import KZ from '../../assets/zona.js';
 import { decodeSeg,
   agendaBase, BASE, benefit, bizPath, breadcrumbLd, cityLinks, citySeg, datosDeNegocios, exploreBase,
-  carrusel, firstPhoto, fmtDay, fmtEnd, fmtLong, fmtTime, sameDay, isSlug, isVideo, ldScript, listingLd, miniatura, miniaturas, money, openInApp,
+  arteFicha, carrusel, esGenerica, firstPhoto, fmtDay, fmtEnd, fmtLong, fmtTime, sameDay, isSlug, isVideo, ldScript, listingLd, miniatura, miniaturas, money, openInApp,
   historiaBoton, priorPrice, publicPage, slugDe, todayBase, zonaDe,
 } from './public.js';
 import { cuandoCorto, plataformaEntradas, rejilla } from './tarjeta.js';
@@ -228,8 +228,11 @@ export async function offerPage(id, lang, rpRaw = '') {
   const availability = soldOut ? 'https://schema.org/SoldOut' : 'https://schema.org/InStock';
   const tag = benefit(o.discount, o.price_cents, o.currency, lang);
   const prior = priorPrice(o.discount, lang);
-  const cover = firstPhoto(o.images);
-  const pieces = (o.images || []).slice(0, 8);
+  // La vista previa de un enlace: la foto o, sin ella, la genérica de la
+  // agenda pública (en la página, el fondo del color de su categoría).
+  const cover = firstPhoto(o.images) || (o.images || []).find(esGenerica) || null;
+  const pieces = (o.images || []).filter((u) => !esGenerica(u)).slice(0, 8);
+  const arte = pieces.length ? '' : arteFicha(o);
   // En otro sitio (una sala, un parque), su nombre y su dirección, como la
   // app; si no, la del local.
   const where = o.venue_address
@@ -318,8 +321,8 @@ export async function offerPage(id, lang, rpRaw = '') {
     : `<span class="fn-ph" aria-hidden="true">${esc((o.business_name || '·').charAt(0).toUpperCase())}</span>`;
   const body = `
   <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a> · <a href="${esc(bHref)}">${esc(o.business_name)}</a></p>
-  <div class="detail ficha${pieces.length ? '' : ' sin-media'}" data-equipo-biz="${esc(o.business_id)}">
-    ${carrusel(pieces, { titulo: o.title, lang })}
+  <div class="detail ficha${pieces.length || arte ? '' : ' sin-media'}" data-equipo-biz="${esc(o.business_id)}">
+    ${arte || carrusel(pieces, { titulo: o.title, lang })}
     <div class="d-head">
       <div class="d-top"><div class="badges"><span class="badge">${esc(flash ? (en ? 'Flash offer' : 'Oferta flash') : (en ? 'Event' : 'Evento'))}</span>${badges}${sellosMarca}</div>
       ${masMenu([
@@ -1144,7 +1147,7 @@ export async function agendaPage(rawCity, lang) {
     lang, actual: 'explorar', path, body,
     title: S.title,
     description,
-    image: offers.map((o) => (o.images || []).find((u) => !isVideo(u))).find(Boolean),
+    image: offers.map((o) => firstPhoto(o.images)).find(Boolean),
     head: jsonLd ? ldScript(jsonLd) : '<meta name="robots" content="noindex, follow">',
   }), 200, 'public, max-age=300, s-maxage=900');
 }

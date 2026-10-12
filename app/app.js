@@ -1303,7 +1303,8 @@ function pintaExclusiva(aud, negocioId, negocio) {
 }
 
 function tarjeta(o, tz) {
-  const img = (o.images || []).find((u) => !/\.(mp4|mov|webm)(\?|$)/i.test(u));
+  // (La genérica de la agenda pública no es una foto: assets/tarjeta.js, `arteDe`.)
+  const img = (o.images || []).find((u) => !/\.(mp4|mov|webm)(\?|$)/i.test(u) && !/\/business-images\/agenda\//.test(u));
   // Si acaba otro día, el final lleva también el día (como en la app).
   const diaMes = { day: 'numeric', month: 'numeric' };
   const mismoDia = fecha(o.redeem_start_at, diaMes, tz) === fecha(o.redeem_end_at, diaMes, tz);

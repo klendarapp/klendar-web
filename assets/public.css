@@ -406,6 +406,8 @@ body.con-hoja { overflow: hidden; }
 .ficha-media { position: relative; width: 100%; aspect-ratio: 4 / 5; max-height: calc(100vh - 140px); border-radius: 28px; overflow: hidden;
   background: var(--soft); min-width: 0; }
 .ficha-media--negocio { aspect-ratio: 21 / 9; max-height: 440px; }
+/* La agenda pública sin foto: el color de su categoría (`arteFicha`). */
+.ficha-arte .tj-arte svg { transform: translateY(-6%); }
 
 .detail.ficha { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 44px; row-gap: 22px;
   grid-template-areas: "media head" "media side" "media body"; }

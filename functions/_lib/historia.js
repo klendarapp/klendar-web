@@ -28,7 +28,7 @@
 
 import { esc, html, isUuid, rows, rpc, rpcAll } from './page.js';
 import {
-  BASE, benefit, bizPath, collectionBase, firstPhoto, isSlug, isVideo, publicPage, slugDe, zonaDe,
+  arteDe, AGENDA_COLOR, BASE, benefit, bizPath, collectionBase, esGenerica, firstPhoto, isSlug, isVideo, publicPage, slugDe, zonaDe,
 } from './public.js';
 import { estiloDe } from './tarjeta.js';
 import { notFound } from './views.js';
@@ -116,16 +116,19 @@ export async function storyPage(kind, ref, lang, rpRaw = '', para = '') {
     if (o.audience === 'promoters' && !prom) return notFound(lang, self, 'o');
     if (prom) rpQ = `?rp=${encodeURIComponent(prom.code)}`;
     const { plantilla, acento } = estiloDe(o);
-    const media = (o.images || []).filter(https);
+    const media = (o.images || []).filter((u) => https(u) && !esGenerica(u));
+    // La agenda pública sin foto: el fondo oscuro con el resplandor del
+    // color de su categoría (no la portada del ayuntamiento), como la app.
+    const arte = media.length ? null : arteDe(o);
     const flash = o.kind === 'flash_offer';
     datos = {
-      kind: 'offer', id: o.id, template: plantilla, accent: acento || '#FF4D6D',
+      kind: 'offer', id: o.id, template: plantilla, accent: (arte && AGENDA_COLOR(arte)) || acento || '#FF4D6D',
       title: o.title,
       business: o.business_name || '',
       venue: o.venue_address ? venueOf(o.venue_name, o.venue_address) : null,
       logo: https(o.business_logo),
       media: media[0] || null,
-      fallback: firstPhoto(media) || https(o.business_cover),
+      fallback: arte ? null : firstPhoto(media) || https(o.business_cover),
       benefit: benefit(o.discount, o.price_cents, o.currency, lang) || null,
       // El cuándo se escribe en el navegador («Hoy», «Mañana»): esta página
       // va en caché y un «Hoy» de ayer sería mentira.

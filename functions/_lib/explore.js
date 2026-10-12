@@ -15,7 +15,7 @@
 import { esc, html, rows, rpc, rpcAll, supabasePublic } from './page.js';
 import KZ from '../../assets/zona.js';
 import {
-  agendaBase, bizPath, cityLinks, collectionBase, decodeSeg, discoverBase, exploreBase, historiaBoton, isVideo, kidsBase, ldScript,
+  agendaBase, bizPath, cityLinks, collectionBase, decodeSeg, discoverBase, exploreBase, firstPhoto, historiaBoton, isVideo, kidsBase, ldScript,
   listingLd, publicPage, todayBase,
 } from './public.js';
 import KC from '../../assets/categorias.js';
@@ -434,7 +434,7 @@ const finalHtml = ({ S, en, lang, cerca, km, city, filtros, link, page, alertaHr
   ${quizas}`;
 };
 
-const portada = (items) => items.map((o) => (o.images || []).find((u) => !isVideo(u))).find(Boolean);
+const portada = (items) => items.map((o) => firstPhoto(o.images)).find(Boolean);
 
 /** Todas las de un filtro (para el calendario): la base da 60 por llamada. */
 async function todas(args, max = 240) {

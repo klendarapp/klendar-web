@@ -45,7 +45,8 @@
     }
     return money(price, cur);
   };
-  const foto = (imgs) => (imgs || []).find((u) => !/\.(mp4|mov|webm)(\?|$)/i.test(u));
+  // (La genérica de la agenda pública no es una foto: assets/tarjeta.js, `arteDe`.)
+  const foto = (imgs) => (imgs || []).find((u) => !/\.(mp4|mov|webm)(\?|$)/i.test(u) && !/\/business-images\/agenda\//.test(u));
 
   const rpc = async (fn, body) => {
     const r = await fetch(`${env.url}/rest/v1/rpc/${fn}`, {

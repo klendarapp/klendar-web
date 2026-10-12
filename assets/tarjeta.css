@@ -18,6 +18,16 @@
 .tj:hover .tj-img { transform: scale(1.03); }
 .tj-ph { position: absolute; inset: 0; display: grid; place-items: center; font: 800 64px/1 var(--display); color: var(--ink-2);
   background: linear-gradient(140deg, var(--soft), transparent 70%); }
+/* La agenda pública sin foto (`arteHtml`, como `AgendaArtBackground` en la
+   app): el color de su categoría en degradado y su icono en grande, apagado,
+   donde no lo tapa el panel. En una miniatura, el icono a la vista. */
+.tj-arte { position: absolute; inset: 0; display: grid; place-items: center; color: #fff; background: var(--arte, #3A4654);
+  background: radial-gradient(90% 55% at 50% 30%, rgba(255,255,255,.10), rgba(255,255,255,0) 70%),
+    linear-gradient(135deg, color-mix(in srgb, var(--arte, #3A4654) 94%, #fff), color-mix(in srgb, var(--arte, #3A4654) 62%, #000)); }
+.tj-arte svg { display: block; width: 40%; max-width: 240px; height: auto; opacity: .16; transform: translateY(-18%); }
+.tj--pantalla .tj-arte { align-items: start; padding-top: 30%; }
+.tj--pantalla .tj-arte svg { width: 36%; transform: none; }
+.tj-arte--mini svg { width: 52%; opacity: .88; transform: none; }
 .tj-tipo, .tj-video { position: absolute; top: 12px; z-index: 1; display: inline-flex; align-items: center; gap: 4px; padding: 5px 11px;
   border-radius: 999px; font-size: 12px; font-weight: 800; background: rgba(10,10,10,.62); color: #fff;
   backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }

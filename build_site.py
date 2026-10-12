@@ -254,7 +254,7 @@ ERRORES = '<script src="/assets/errores.js?v=1" async></script>'
 LIVE_SCRIPTS = (
     '<script src="/config.js?v=3"></script>'
     '<script src="/assets/zona.js?v=1" defer></script>'
-    '<script src="/assets/live.js?v=5" defer></script>'
+    '<script src="/assets/live.js?v=6" defer></script>'
 )
 
 
