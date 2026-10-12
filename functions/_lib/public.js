@@ -185,9 +185,8 @@ export const collectionBase = (lang) => (lang === 'en' ? '/en/collection' : '/co
 
 /** La misma página en el otro idioma: /o/x ⇄ /en/o/x, /agenda/x ⇄ /en/whats-on/x,
  * /hoy/x ⇄ /en/today/x, /con-ninos/x ⇄ /en/kids/x, /partidos/x ⇄ /en/matches/x,
- * /grupos/ ⇄ /en/groups/, /sorteos/ ⇄ /en/giveaways/, /sorteo/x ⇄ /en/giveaway/x
- * y /sorteo/x/bases ⇄ /en/giveaway/x/rules. */
- * /cola/x ⇄ /en/queue/x. */
+ * /grupos/ ⇄ /en/groups/, /sorteos/ ⇄ /en/giveaways/, /sorteo/x ⇄ /en/giveaway/x,
+ * /sorteo/x/bases ⇄ /en/giveaway/x/rules y /cola/x ⇄ /en/queue/x. */
 export const altPath = (path, lang) =>
   lang === 'en'
     ? (path
@@ -219,7 +218,7 @@ export const altPath = (path, lang) =>
         .replace(/^\/grupos/, '/groups')
         .replace(/^\/sorteo\/([^/]+)\/bases/, '/giveaway/$1/rules')
         .replace(/^\/sorteos/, '/giveaways')
-        .replace(/^\/sorteo\//, '/giveaway/')}`;
+        .replace(/^\/sorteo\//, '/giveaway/')
         .replace(/^\/cola\//, '/queue/')}`;
 
 /**
