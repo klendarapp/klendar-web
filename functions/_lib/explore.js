@@ -106,7 +106,7 @@ const T = (en) => en
       prevItem: 'Previous', nextItem: 'Next', seeMore: 'See more',
       // «El sitio», «Con niños» y «Según el tiempo».
       beforeClosing: 'Before closing', beforeClosingHint: 'What’s left at the end of the day in bakeries, cafés and restaurants, at a discount. You pay at the venue.',
-      placeAttrs: "What it's like", diets: 'Allergens and diets', dietsHint: 'Declared by each business.',
+      placeAttrs: "What it's like", diets: 'Allergens and diets', dietsHint: 'Each business declares this: if you have an allergy, check with the venue.',
       place: 'The place', withKids: 'With kids', kidsIn: 'Plans with kids in', placeN: (n) => `The place (${n})`,
       seeAll: (n) => `See all (${n})`, seeLess: 'See less',
       byWeather: 'Based on the weather',
@@ -192,7 +192,7 @@ const T = (en) => en
       feedKeys: 'Desliza, usa la rueda o ↑ ↓ para pasar.', feedPos: (i, n) => `${i} de ${n}`,
       prevItem: 'Anterior', nextItem: 'Siguiente', seeMore: 'Ver más',
       beforeClosing: 'Antes de cerrar', beforeClosingHint: 'Lo que sobra del día en panaderías, cafeterías y restaurantes, con descuento. Se paga en el local.',
-      placeAttrs: 'Cómo es', diets: 'Alérgenos y dietas', dietsHint: 'Lo declara cada negocio.',
+      placeAttrs: 'Cómo es', diets: 'Alérgenos y dietas', dietsHint: 'Lo declara cada negocio: si tienes alergia, confírmalo en el local.',
       place: 'El sitio', withKids: 'Con niños', kidsIn: 'Planes con niños en', placeN: (n) => `El sitio (${n})`,
       seeAll: (n) => `Ver todas (${n})`, seeLess: 'Ver menos',
       byWeather: 'Según el tiempo',

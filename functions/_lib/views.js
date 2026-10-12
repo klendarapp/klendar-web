@@ -1049,7 +1049,7 @@ export async function businessPage(param, lang, search = '') {
     lang, path, body: body + MENU_JS, title: conCiudad ? `${b.name} · ${b.city}` : b.name, description, image: b.cover || b.logo,
     head: `<meta name="robots" content="${b.adults_only || conVisita || b.closed_indefinitely ? 'noindex' : 'index, follow'}">
 ${ldScript(jsonLd)}${cuentaToques ? `
-<script src="/assets/enlaces.js?v=1" defer data-url="${esc(supabasePublic().url)}" data-key="${esc(supabasePublic().key)}" data-biz="${esc(b.id)}"></script>` : ''}${horario ? '\n<script src="/assets/zona.js?v=1" defer></script>\n<script src="/assets/horario.js?v=1" defer></script>' : ''}${conVisita ? `\n${conVisita}` : ''}${local.crowd_enabled ? `\n${sitioAhoraScripts(lang)}` : ''}
+<script src="/assets/enlaces.js?v=2" defer data-url="${esc(supabasePublic().url)}" data-key="${esc(supabasePublic().key)}" data-biz="${esc(b.id)}"></script>` : ''}${horario ? '\n<script src="/assets/zona.js?v=1" defer></script>\n<script src="/assets/horario.js?v=1" defer></script>' : ''}${conVisita ? `\n${conVisita}` : ''}${local.crowd_enabled ? `\n${sitioAhoraScripts(lang)}` : ''}
 ${traducir(lang, `business:${b.id}`, carta.length ? `menu:${b.id}` : '')}${partidos ? `
 ${PARTIDOS_CSS}` : ''}${grupoHtml || sorteosHtml ? `
 ${GRUPOS_CSS}` : ''}${organizador ? `

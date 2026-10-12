@@ -38,7 +38,7 @@
     en: {
       book: 'Book', delivery: 'Order delivery', order: 'Order at the venue', other: 'Other (with its own name)',
       fuera: 'Opens outside Klendar', en: (a, s) => `${a} on ${s}`,
-      pdf: 'See the full menu (PDF)', carta: 'See the full menu',
+      pdf: 'See full menu (PDF)', carta: 'See full menu',
     },
   };
   const t = (lang) => (lang === 'en' ? T.en : T.es);
