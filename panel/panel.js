@@ -138,6 +138,20 @@ const ERRORS = {
   paused_by_klendar: 'Klendar ha pausado este negocio y no se puede abrir desde aquí. Si tienes dudas, escríbenos a info@klendar.app.',
   account_suspended: 'Tu cuenta está suspendida: no puedes publicar ni cambiar nada del negocio. Si crees que es un error, escribe a info@klendar.app.',
   member_suspended: 'Esa cuenta está suspendida y no puede entrar en un equipo.',
+  // Enlaces de la ficha y archivos de la carta (20261210100000).
+  invalid_link_url: 'El enlace tiene que empezar por https:// y ser una dirección web válida.',
+  invalid_link_label: 'Ponle un nombre de 2 a 30 caracteres.',
+  offensive_link_label: 'Ese nombre no se puede usar.',
+  too_many_links: 'Como mucho 8 enlaces.',
+  menu_too_many_files: 'Como mucho 12 archivos.',
+  menu_file_too_big: 'Cada archivo puede pesar como mucho 10 MB.',
+  menu_files_too_big: 'Entre todos, como mucho 40 MB.',
+  menu_file_type: 'Solo fotos (JPG, PNG, WebP o HEIC) y PDF.',
+  // Los demás, el genérico (si no, «not_found» diría «Eso ya no existe.»).
+  invalid_link_kind: 'No se ha podido guardar. Si vuelve a pasar, escríbenos a info@klendar.app.',
+  menu_file_not_found: 'No se ha podido guardar. Si vuelve a pasar, escríbenos a info@klendar.app.',
+  menu_file_not_allowed: 'No se ha podido guardar. Si vuelve a pasar, escríbenos a info@klendar.app.',
+  image_not_allowed: 'No se ha podido guardar. Si vuelve a pasar, escríbenos a info@klendar.app.',
   // Lo que devuelve Storage al subir una foto.
   'Payload too large': 'Esa foto pesa demasiado. Prueba con otra más pequeña.',
   'maximum allowed size': 'Esa foto pesa demasiado. Prueba con otra más pequeña.',
@@ -413,10 +427,10 @@ async function escanerQR(video, alLeer) {
   return PARA_CAMARA;
 }
 
-/** Las fotos que caben: los mismos topes que la app (carta 8, galería 12,
- * publicación 6). Si se eligen más, se dice cuántas se quedan fuera en vez de
- * perderlas en silencio. */
-const TOPE = { carta: 8, galeria: 12, publicacion: 6 };
+/** Las fotos que caben: los mismos topes que la app (galería 12, publicación
+ * 6; los archivos de la carta, 12, van en `KlendarEnlaces`). Si se eligen
+ * más, se dice cuántas se quedan fuera en vez de perderlas en silencio. */
+const TOPE = { galeria: 12, publicacion: 6 };
 const topeLleno = (max) => bi(`Ya tienes ${max}, el máximo. Quita alguna para poner otra.`, `You already have ${max}, the maximum. Remove one to add another.`);
 const topeHasta = (max) => bi(`Hasta ${max} fotos.`, `Up to ${max} photos.`);
 function caben(archivos, hay, max) {
@@ -4262,29 +4276,166 @@ const TEXTOS_CARTA = {
   product: { add: 'Añadir producto', edit: 'Editar producto', col: 'Producto', ej: '', sus: ['sus productos', 'its products'] },
 };
 
+// ── Archivos de la carta (fotos y PDF) ──────────────────────────────────────
+// Lo mismo que la app (migración 20261210100000): hasta 12, 10 MB cada uno y
+// 40 MB entre todos (se avisa antes de subir). El tipo se mira en los
+// primeros bytes, no en la extensión: JPEG, PNG, WebP, HEIC o PDF, nada más
+// (ni ejecutables, ni HTML, ni SVG). Las fotos se vuelven a codificar en JPEG
+// (2000 px de lado como mucho, calidad 0,85): eso quita el EXIF (el GPS). El
+// HEIC, solo si el navegador sabe abrirlo (Safari). Los PDF van tal cual. Se
+// suben a `<negocio>/carta/<uuid>.jpg|.pdf`.
+const ACEPTA_CARTA = 'image/jpeg,image/png,image/webp,image/heic,image/heif,application/pdf';
+
+/** Qué es un archivo por sus primeros bytes: 'image/jpeg', 'image/png',
+ * 'image/webp', 'image/heic', 'application/pdf' o null (no se admite). */
+async function tipoReal(file) {
+  const h = new Uint8Array(await file.slice(0, 16).arrayBuffer());
+  const en = (i, sig) => (typeof sig === 'string' ? [...sig].map((c) => c.charCodeAt(0)) : sig).every((x, k) => h[i + k] === x);
+  if (en(0, [0xFF, 0xD8, 0xFF])) return 'image/jpeg';
+  if (en(0, [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A])) return 'image/png';
+  if (en(0, 'RIFF') && en(8, 'WEBP')) return 'image/webp';
+  if (en(4, 'ftyp') && ['heic', 'heix', 'hevc', 'heim', 'heis', 'mif1', 'msf1'].some((b) => en(8, b))) return 'image/heic';
+  if (en(0, '%PDF-')) return 'application/pdf';
+  return null;
+}
+
+/** Una foto, otra vez en JPEG (2000 px de lado como mucho, calidad 0,85) y
+ * sin metadatos. null si el navegador no sabe abrirla (un HEIC en Chrome). */
+async function fotoCartaJpeg(file) {
+  let img = null;
+  try { img = await createImageBitmap(file, { imageOrientation: 'from-image' }); } catch { /* sigue */ }
+  if (!img) {
+    const url = URL.createObjectURL(file);
+    try {
+      const el = new Image();
+      el.src = url;
+      await el.decode();
+      img = el;
+    } catch { img = null; } finally { URL.revokeObjectURL(url); }
+  }
+  if (!img) return null;
+  const w = img.naturalWidth || img.width;
+  const h = img.naturalHeight || img.height;
+  if (!w || !h) return null;
+  const k = Math.min(1, 2000 / Math.max(w, h));
+  const lienzo = document.createElement('canvas');
+  lienzo.width = Math.max(1, Math.round(w * k));
+  lienzo.height = Math.max(1, Math.round(h * k));
+  const ctx = lienzo.getContext('2d');
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, lienzo.width, lienzo.height);
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(img, 0, 0, lienzo.width, lienzo.height);
+  if (typeof img.close === 'function') img.close();
+  const blob = await new Promise((ok) => { try { lienzo.toBlob(ok, 'image/jpeg', 0.85); } catch { ok(null); } });
+  return blob ? new File([blob], 'carta.jpg', { type: 'image/jpeg' }) : null;
+}
+
+/** Comprueba, prepara y sube los archivos elegidos. Devuelve los subidos
+ * ({ kind, url, name, bytes }) en el orden elegido; lo que no vale lo dice. */
+async function subeArchivosCarta(elegidos, hay, estado = () => {}) {
+  const E = KlendarEnlaces;
+  if (!elegidos.length) return [];
+  const hueco = E.MAX_ARCHIVOS - hay.length;
+  if (elegidos.length > hueco) {
+    toast(hueco > 0 ? bi(`Caben ${hueco} más (como mucho 12 archivos). Los demás no se han subido.`, `Only ${hueco} more fit (12 files at most). The rest weren't uploaded.`)
+      : friendly('menu_too_many_files'), true);
+    elegidos = elegidos.slice(0, Math.max(0, hueco));
+  }
+  // Primero se prepara todo (tipo real, foto en JPEG) y se suman los pesos:
+  // si no cabe, se avisa antes de subir nada.
+  const listos = [];
+  for (const f of elegidos) {
+    const tipo = await tipoReal(f).catch(() => null);
+    if (!tipo) { toast(`${f.name}: ${I18N.t(friendly('menu_file_type'))}`, true); continue; }
+    if (tipo === 'application/pdf') {
+      if (f.size > E.MAX_BYTES) { toast(`${f.name}: ${I18N.t(friendly('menu_file_too_big'))}`, true); continue; }
+      const nombre = String(f.name || '').split(/[\\/]/).pop().slice(0, 120);
+      // Con su tipo puesto: Storage guarda el de la subida y la base lo mira.
+      listos.push({ kind: 'pdf', file: new File([f], nombre || 'carta.pdf', { type: 'application/pdf' }), name: nombre, ext: 'pdf', type: 'application/pdf' });
+      continue;
+    }
+    estado(I18N.t('Preparando…'));
+    const jpg = await fotoCartaJpeg(f);
+    if (!jpg) { toast(I18N.t('No se puede leer esta foto en este navegador: conviértela a JPG.'), true); continue; }
+    if (jpg.size > E.MAX_BYTES) { toast(`${f.name}: ${I18N.t(friendly('menu_file_too_big'))}`, true); continue; }
+    listos.push({ kind: 'image', file: jpg, name: null, ext: 'jpg', type: 'image/jpeg' });
+  }
+  const yaPesan = hay.reduce((t, x) => t + (Number(x.bytes) || 0), 0);
+  let total = yaPesan;
+  const entran = [];
+  for (const x of listos) {
+    if (total + x.file.size > E.MAX_TOTAL) { toast(friendly('menu_files_too_big'), true); break; }
+    total += x.file.size;
+    entran.push(x);
+  }
+  const subidos = [];
+  for (const [i, x] of entran.entries()) {
+    estado(bi(`Subiendo ${i + 1} de ${entran.length}…`, `Uploading ${i + 1} of ${entran.length}…`));
+    const path = `${BIZ.id}/carta/${crypto.randomUUID()}.${x.ext}`;
+    const { error } = await sb.storage.from(BUCKET).upload(path, x.file, { contentType: x.type });
+    if (error) { toast(friendly(error.message), true); continue; }
+    subidos.push({ kind: x.kind, url: sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl, ...(x.name ? { name: x.name } : {}), bytes: x.file.size });
+  }
+  estado('');
+  return subidos;
+}
+
+/** La lista de archivos de la carta: miniatura (o el icono del PDF), nombre,
+ * tamaño, «En revisión» si espera la moderación, y subir/bajar/quitar. */
+function htmlArchivosCarta(archivos, canManage) {
+  const E = KlendarEnlaces;
+  if (!archivos.length) return `<p class="muted" style="margin:0">${esc(I18N.t('Todavía no has subido ningún archivo.'))}</p>`;
+  return `<ul class="archivos-carta">${archivos.map((x, i) => {
+    const pdf = x.kind === 'pdf';
+    // Las fotos se numeran entre ellas («Foto 2»), sin contar los PDF.
+    const nFoto = archivos.slice(0, i + 1).filter((y) => y.kind !== 'pdf').length;
+    const nombre = pdf ? (x.name || 'PDF') : bi(`Foto ${nFoto}`, `Photo ${nFoto}`);
+    return `<li>
+      ${pdf ? `<a class="arch-mini pdf" href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">${E.iconoPdf(26)}</a>`
+        : `<a class="arch-mini" href="${esc(x.url)}" target="_blank" rel="noopener noreferrer"><img src="${esc(x.url)}" alt="" loading="lazy"></a>`}
+      <span class="arch-txt"><b>${esc(nombre)}</b><small>${esc([pdf ? 'PDF' : '', E.tamano(x.bytes, I18N.lang)].filter(Boolean).join(' · '))}${x.pending ? ` <span class="tag st-pending">${esc(I18N.t('En revisión'))}</span>` : ''}</small></span>
+      ${canManage ? `<span class="arch-acc"><button type="button" class="btn sm ghost" data-arch-sube="${i}" ${i === 0 ? 'disabled' : ''} aria-label="${esc(bi(`Subir «${nombre}»`, `Move “${nombre}” up`))}">↑</button>
+        <button type="button" class="btn sm ghost" data-arch-baja="${i}" ${i === archivos.length - 1 ? 'disabled' : ''} aria-label="${esc(bi(`Bajar «${nombre}»`, `Move “${nombre}” down`))}">↓</button>
+        <button type="button" class="btn sm ghost" data-arch-quitar="${i}" aria-label="${esc(bi(`Quitar «${nombre}»`, `Remove “${nombre}”`))}">${esc(I18N.t('Quitar'))}</button></span>` : ''}
+    </li>`;
+  }).join('')}</ul>`;
+}
+
 PAGES.carta = async (v) => {
   const canManage = ['owner', 'manager'].includes(BIZ.role);
-  const ficha = await sb.from('businesses')
-    .select('menu_url, menu_images, category_id').eq('id', BIZ.id).maybeSingle();
+  const [ficha, enlacesNeg] = await Promise.all([
+    sb.from('businesses').select('menu_url, menu_images, category_id').eq('id', BIZ.id).maybeSingle(),
+    rpc('business_links', { p_id: BIZ.id }).catch(() => null),
+  ]);
   const tc = TEXTOS_CARTA[palabraCarta(CATS.find((c) => c.id === ficha.data?.category_id)?.slug)];
   let carta = await rpc('business_menu', { p_business: BIZ.id }).catch(() => []);
   let enlace = ficha.data?.menu_url || '';
-  let fotos = ficha.data?.menu_images || [];
+  // «Archivos de la carta»: fotos y PDF, en el orden en que se ven
+  // (`business_menu_files`; el equipo ve también los que esperan la
+  // moderación). Sin `business_links`, las fotos de antes.
+  let archivos = Array.isArray(enlacesNeg?.menu_files)
+    ? enlacesNeg.menu_files.map((x) => ({ ...x }))
+    : (ficha.data?.menu_images || []).map((url) => ({ kind: 'image', url, bytes: 0 }));
   let sucia = false;
 
-  // El enlace y las fotos se guardan en la ficha; la carta escrita, en su
-  // propia tabla. Se guarda todo junto para que sea un solo botón.
-  // Por `update_business`, como el resto de la ficha: la tabla no se escribe
-  // directamente (antes, a un encargado no se le guardaba y no decía nada).
-  const guardaFicha = () => rpc('update_business', {
-    p_id: BIZ.id, p_patch: { menu_url: enlace.trim(), menu_images: fotos },
-  });
+  // El enlace se guarda en la ficha (`update_business`, como el resto: ya no
+  // se manda `menu_images`, que rellena la base con las fotos aprobadas); los
+  // archivos, con `set_menu_files` (la lista entera, en orden); la carta
+  // escrita, en su propia tabla. Todo con un solo botón.
+  const guardaFicha = async () => {
+    await rpc('update_business', { p_id: BIZ.id, p_patch: { menu_url: enlace.trim() } });
+    const guardados = await rpc('set_menu_files', {
+      p_business: BIZ.id, p_files: archivos.map((x) => ({ url: x.url, ...(x.name ? { name: x.name } : {}) })),
+    });
+    if (Array.isArray(guardados)) archivos = guardados;
+  };
 
   // Un solo envío a la vez: el botón se bloquea mientras guarda (un segundo
   // clic mandaba la carta dos veces) y sigue bloqueado aunque se repinte.
   // Lo que se toque mientras tanto no se da por guardado.
   let guardando = false;
-  const estadoCarta = () => JSON.stringify({ enlace: enlace.trim(), fotos, carta });
+  const estadoCarta = () => JSON.stringify({ enlace: enlace.trim(), archivos: archivos.map((x) => [x.url, x.name || '']), carta });
   const guardar = async () => {
     if (guardando) return;
     guardando = true;
@@ -4319,23 +4470,21 @@ PAGES.carta = async (v) => {
       <div class="page-head"><h1>Carta</h1><span class="spacer"></span>
         ${canManage ? `<button class="btn sm" id="add-sec">Añadir sección</button>
         <button class="btn sm primary" id="save" ${sucia && !guardando ? '' : 'disabled'}>${guardando ? 'Guardando…' : 'Guardar la carta'}</button>` : ''}</div>
-      ${helpBox('Tú eliges cómo ponerla', bi('<p>Tres maneras, y puedes usar las que quieras a la vez: <b>escribirla</b> aquí, subir <b>fotos</b> de la carta de papel o poner un <b>enlace</b> a tu web o a un PDF.</p><p>Escribirla es lo que mejor se lee en el móvil, se puede buscar y la lee un lector de pantalla; si la escribes, es lo primero que se ve y las fotos y el enlace se quedan debajo. Si no te apetece, con una foto vas servido.</p><p>Los <b>alérgenos</b> son los catorce que obliga a declarar el Reglamento 1169/2011. Pon solo los que sepas seguro: aquí equivocarse no es una errata.</p>',
-        '<p>Three ways, and you can use as many as you like at once: <b>type it</b> here, upload <b>photos</b> of the paper menu or add a <b>link</b> to your website or a PDF.</p><p>Typing it is what reads best on a phone, it can be searched and screen readers can read it; if you type it, it is shown first and the photos and the link go below. If you would rather not, a photo is enough.</p><p>The <b>allergens</b> are the fourteen that Regulation (EU) 1169/2011 requires you to declare. Only mark the ones you are sure about: a mistake here is not just a typo.</p>'))}
+      ${helpBox('Tú eliges cómo ponerla', bi('<p>Tres maneras, y puedes usar las que quieras a la vez: <b>escribirla</b> aquí, subir <b>fotos o un PDF</b> de tu carta o poner un <b>enlace</b> a tu web. Escrita es lo que mejor se lee en el móvil.</p><p>Escrita, además, se puede buscar y la lee un lector de pantalla; si la escribes, es lo primero que se ve y los archivos y el enlace se quedan debajo. Si no te apetece, con una foto o un PDF vas servido.</p><p>Los <b>alérgenos</b> son los catorce que obliga a declarar el Reglamento 1169/2011. Pon solo los que sepas seguro: aquí equivocarse no es una errata.</p>',
+        '<p>Three ways, and you can use as many as you like at once: <b>type it</b> here, upload <b>photos or a PDF</b> of your menu or add a <b>link</b> to your website. Typed is what reads best on a phone.</p><p>Typed, it can also be searched and screen readers can read it; if you type it, it is shown first and the files and the link go below. If you would rather not, a photo or a PDF is enough.</p><p>The <b>allergens</b> are the fourteen that Regulation (EU) 1169/2011 requires you to declare. Only mark the ones you are sure about: a mistake here is not just a typo.</p>'))}
 
-      <div class="card"><h2>Un enlace o un PDF</h2>
-        <p class="muted" style="margin:0 0 8px">Si tu carta ya está en tu web o en un PDF, con pegar la dirección vale.</p>
+      <div class="card"><h2>Archivos de la carta</h2>
+        <p class="muted" style="margin:0 0 8px">Fotos de la carta de papel o un PDF. Hasta 12 archivos, 10 MB cada uno.</p>
+        ${htmlArchivosCarta(archivos, canManage)}
+        ${canManage ? (archivos.length < KlendarEnlaces.MAX_ARCHIVOS
+          ? `<p style="margin:10px 0 0"><label class="btn sm">${esc(I18N.t('Añadir fotos o PDF'))}<input type="file" id="menu-file" accept="${ACEPTA_CARTA}" multiple hidden></label>
+            <span class="muted small" id="menu-subiendo" role="status"></span></p>`
+          : `<p class="muted" style="margin:10px 0 0">${esc(I18N.t('Como mucho 12 archivos.'))}</p>`) : ''}</div>
+
+      <div class="card"><h2>Enlace a la carta</h2>
+        <p class="muted" style="margin:0 0 8px">Si tu carta ya está en tu web, con pegar la dirección vale.</p>
         <label class="f"><span>Dirección</span>
           <input id="menu-url" type="url" value="${esc(enlace)}" placeholder="https://tubar.com/carta" ${canManage ? '' : 'disabled'}></label></div>
-
-      <div class="card"><h2>Fotos de la carta</h2>
-        <p class="muted" style="margin:0 0 8px">La de la pizarra o la de papel, tal cual. Se ven en tu ficha, una debajo de otra.</p>
-        <div id="menu-fotos" class="thumbs">${fotos.map((u, i) => `
-          <div class="thumb"><img src="${esc(u)}" alt="">
-            ${canManage ? `<button class="btn sm bad ghost" data-foto-del="${i}">Quitar</button>` : ''}</div>`).join('')}
-        </div>
-        ${canManage ? (fotos.length < TOPE.carta
-          ? `<p style="margin:10px 0 0"><label class="btn sm">${esc(I18N.t('Añadir fotos'))}<input type="file" id="menu-file" accept="image/*" multiple hidden></label> <span class="muted small">${esc(topeHasta(TOPE.carta))}</span></p>`
-          : `<p class="muted" style="margin:10px 0 0">${esc(topeLleno(TOPE.carta))}</p>`) : ''}</div>
       <h2 style="margin:24px 0 8px">Escrita</h2>
       ${carta.length ? carta.map((sec, si) => `
         <div class="card">
@@ -4372,20 +4521,27 @@ PAGES.carta = async (v) => {
       enlace = e.target.value;
       if (!sucia) { sucia = true; $('#save', v).disabled = guardando; }
     };
-    $$('[data-foto-del]', v).forEach((b) => { b.onclick = () => {
-      fotos.splice(+b.dataset.fotoDel, 1); sucia = true; pinta();
+    // Archivos de la carta: subir/bajar, quitar y añadir (se suben al
+    // momento; la lista se guarda con «Guardar la carta»).
+    const mueve = (i, j, foco) => {
+      [archivos[i], archivos[j]] = [archivos[j], archivos[i]];
+      sucia = true; pinta();
+      const el = $(foco, v);
+      (el && !el.disabled ? el : $('#menu-file', v)?.closest('label'))?.focus();
+    };
+    $$('[data-arch-sube]', v).forEach((b) => { b.onclick = () => { const i = +b.dataset.archSube; mueve(i, i - 1, `[data-arch-sube="${i - 1}"]`); }; });
+    $$('[data-arch-baja]', v).forEach((b) => { b.onclick = () => { const i = +b.dataset.archBaja; mueve(i, i + 1, `[data-arch-baja="${i + 1}"]`); }; });
+    $$('[data-arch-quitar]', v).forEach((b) => { b.onclick = () => {
+      archivos.splice(+b.dataset.archQuitar, 1); sucia = true; pinta();
     }; });
     const file = $('#menu-file', v);
     if (file) file.onchange = async (e) => {
-      for (const elegida of caben(e.target.files, fotos.length, TOPE.carta)) {
-        const f = await KFotos.reduce(elegida, KFotos.TAM.foto);
-        if (f.size > 5 * 1024 * 1024) { toast('Esa foto pesa más de 5 MB.', true); continue; }
-        const ext = (f.name.split('.').pop() || 'jpg').toLowerCase();
-        const path = `${BIZ.id}/carta-${crypto.randomUUID()}.${ext}`;
-        const { error } = await sb.storage.from(BUCKET).upload(path, f, { contentType: f.type });
-        if (error) { toast(friendly(error.message), true); continue; }
-        fotos = [...fotos, sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl];
-      }
+      const nuevos = await subeArchivosCarta([...e.target.files], archivos, (txt) => {
+        const st = $('#menu-subiendo', v);
+        if (st) st.textContent = txt;
+      });
+      if (!nuevos.length) { pinta(); return; }
+      archivos = [...archivos, ...nuevos];
       sucia = true; pinta();
     };
     $('#add-sec', v).onclick = async () => {
@@ -5110,11 +5266,37 @@ PAGES.cumpleanos = async (v) => {
 // mira cuando quiere saber si esto le sirve para algo. Un empleado solo ve
 // las cifras: ni la lista de canjes (código y quién validó) ni los CSV; la
 // base tampoco se los manda (`aggregate_only`, migración 20261113100000).
+/** «Toques en tus enlaces»: cuántas veces se han tocado «Reservar», «Pedir…»
+ * y la carta (archivos y enlace) en el periodo, por tipo y servicio o
+ * dominio: «Reservar · TheFork — 12». Sin personas: solo cifras. */
+function toquesEnlacesHtml(filas) {
+  if (!Array.isArray(filas)) return '';
+  const E = KlendarEnlaces;
+  const lineas = [];
+  let carta = 0;
+  for (const f of filas) {
+    const n = Number(f.taps) || 0;
+    if (!n) continue;
+    if (f.kind === 'menu') { carta += n; continue; }
+    const s = f.host ? E.servicio(`https://${f.host}`) : null;
+    const quien = s ? s.nombre : String(f.host || '').replace(/^www\./, '');
+    const tipo = f.kind === 'other' ? I18N.t('Otro') : E.nombreTipo(f.kind, I18N.lang);
+    lineas.push([[tipo, quien].filter(Boolean).join(' · '), n]);
+  }
+  if (carta) lineas.push([I18N.t('Carta'), carta]);
+  lineas.sort((a, b) => b[1] - a[1]);
+  return `<div class="card"><h2>Toques en tus enlaces</h2>
+    ${lineas.length ? `<ul class="toques-enlaces">${lineas.map(([t, n]) => `<li><span>${esc(t)}</span> <span class="muted" aria-hidden="true">—</span> <b>${fmtNum(n)}</b></li>`).join('')}</ul>
+      <p class="muted" style="margin:8px 0 0">${esc(I18N.t('Las veces que alguien ha abierto, desde tu ficha, tus enlaces de «Reservar y pedir» o tu carta (archivos y enlace). Lo que haga tu equipo no cuenta.'))}</p>`
+    : `<p class="muted" style="margin:0">${esc(I18N.t('Todavía nadie ha tocado tus enlaces.'))}</p>`}</div>`;
+}
+
 PAGES.informe = async (v, param) => {
   const days = Number(param) || 30;
-  const [r, aud] = await Promise.all([
+  const [r, aud, toques] = await Promise.all([
     rpc('business_report', { p_id: BIZ.id, p_days: days }).then((x) => x || {}),
     rpc('business_audience', { p_id: BIZ.id, p_days: days }).catch(() => null),
+    rpc('business_link_taps_report', { p_business: BIZ.id, p_days: days }).catch(() => null),
   ]);
   const t = r.totals || {};
   const pct = (a, b) => (!b ? '—' : Math.round((a * 100) / b) + ' %');
@@ -5170,6 +5352,8 @@ PAGES.informe = async (v, param) => {
     </div>
 
     ${audienciaHtml(aud)}
+
+    ${toquesEnlacesHtml(toques)}
 
     ${pases.sold || pases.uses || pases.active ? `<div class="card"><h2>Bonos</h2>
       <div class="kpis">

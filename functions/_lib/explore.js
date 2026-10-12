@@ -19,7 +19,7 @@ import {
   listingLd, publicPage, todayBase,
 } from './public.js';
 import KC from '../../assets/categorias.js';
-import { SITIO, icSitio, icTiempo, nombreSitio, ordenaSitio, sitioAUrl, sitioDeUrl } from './sitio.js';
+import { SITIO, esDieta, icSitio, icTiempo, nombreSitio, ordenaSitio, sitioAUrl, sitioDeUrl } from './sitio.js';
 import { FUENTE_TIEMPO, dondeTiempo, tiempoDeHoy } from './tiempo.js';
 import { rejilla, tarjeta } from './tarjeta.js';
 import KM from '../../assets/marcas.js';
@@ -106,6 +106,7 @@ const T = (en) => en
       prevItem: 'Previous', nextItem: 'Next', seeMore: 'See more',
       // «El sitio», «Con niños» y «Según el tiempo».
       beforeClosing: 'Before closing', beforeClosingHint: 'What’s left at the end of the day in bakeries, cafés and restaurants, at a discount. You pay at the venue.',
+      placeAttrs: "What it's like", diets: 'Allergens and diets', dietsHint: 'Declared by each business.',
       place: 'The place', withKids: 'With kids', kidsIn: 'Plans with kids in', placeN: (n) => `The place (${n})`,
       seeAll: (n) => `See all (${n})`, seeLess: 'See less',
       byWeather: 'Based on the weather',
@@ -191,6 +192,7 @@ const T = (en) => en
       feedKeys: 'Desliza, usa la rueda o ↑ ↓ para pasar.', feedPos: (i, n) => `${i} de ${n}`,
       prevItem: 'Anterior', nextItem: 'Siguiente', seeMore: 'Ver más',
       beforeClosing: 'Antes de cerrar', beforeClosingHint: 'Lo que sobra del día en panaderías, cafeterías y restaurantes, con descuento. Se paga en el local.',
+      placeAttrs: 'Cómo es', diets: 'Alérgenos y dietas', dietsHint: 'Lo declara cada negocio.',
       place: 'El sitio', withKids: 'Con niños', kidsIn: 'Planes con niños en', placeN: (n) => `El sitio (${n})`,
       seeAll: (n) => `Ver todas (${n})`, seeLess: 'Ver menos',
       byWeather: 'Según el tiempo',
@@ -1105,6 +1107,8 @@ export async function explorePage(url, lang, modo = 'explorar') {
         ${radio(K.card, '', M.fCardsAny, !e.carne)}
         ${KM.CARDS.map((c) => radio(K.card, carneAUrl(c, en), M.cardFor[c], e.carne === c)).join('')}
       </div></fieldset>`);
+  // Una casilla de «El sitio» (con su icono).
+  const opSitio = (x) => `<label class="op-r op-sitio"><input type="checkbox" name="${K.place}" value="${esc(sitioAUrl(x.id, en))}"${traits.includes(x.id) ? ' checked' : ''}><span>${icSitio(x.id, 18)}${esc(en ? x.en : x.es)}</span></label>`;
   // El sitio: Abierto ahora, Precio del local y cómo es (los atributos menos
   // «Apto para niños», que es «Con niños»; tienen que cumplirse todos).
   const sitioBloque = bloque('sitio', S.place, S.placeHint, nSitio, `
@@ -1115,9 +1119,12 @@ export async function explorePage(url, lang, modo = 'explorar') {
         ${radio(K.vprice, '', M.fAny, !e.precioLocal)}
         ${KM.PRECIOS.map((l) => radio(K.vprice, String(l), l === 1 ? '€' : M.fUpTo('€'.repeat(l)), e.precioLocal === l)).join('')}
       </div><p class="hoja-nota hoja-nota-bajo">${esc(M.fPriceHint)}</p></fieldset>
-      <fieldset class="hoja-sitio"><legend class="sr">${esc(S.place)}</legend><div class="ops">
-        ${SITIO.filter((x) => x.id !== 'kids').map((x) => `<label class="op-r op-sitio"><input type="checkbox" name="${K.place}" value="${esc(sitioAUrl(x.id, en))}"${traits.includes(x.id) ? ' checked' : ''}><span>${icSitio(x.id, 18)}${esc(en ? x.en : x.es)}</span></label>`).join('')}
-      </div></fieldset>`}`);
+      <fieldset class="hoja-sitio"><legend>${esc(S.placeAttrs)}</legend><div class="ops">
+        ${SITIO.filter((x) => x.id !== 'kids' && !esDieta(x.id)).map(opSitio).join('')}
+      </div></fieldset>
+      <fieldset class="hoja-sitio hoja-dietas"><legend>${esc(S.diets)}</legend><div class="ops">
+        ${SITIO.filter((x) => esDieta(x.id)).map(opSitio).join('')}
+      </div><p class="hoja-nota hoja-nota-bajo">${esc(S.dietsHint)}</p></fieldset>`}`);
   // Más: Solidario, Agenda pública y Solo con descuento.
   const masBloque = bloque('mas', S.moreB, S.moreBHint, nMas, `
       <fieldset class="hoja-casillas"><legend class="sr">${esc(S.moreB)}</legend><div class="ops">

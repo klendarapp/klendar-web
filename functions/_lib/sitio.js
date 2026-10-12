@@ -1,10 +1,13 @@
 // «El sitio»: cómo es el local (terraza, bajo techo, apto para niños…).
 //
-// Los mismos 12 atributos que la app y la base (`place_attribute_slugs()`),
+// Los mismos 17 atributos que la app y la base (`place_attribute_slugs()`),
 // en el mismo orden, con su nombre en los dos idiomas y su icono de Material
 // Symbols en SVG (las páginas públicas no cargan la fuente de iconos). Los
 // trazados salen de la propia fuente (Material Symbols Outlined v374, opsz 24,
-// wght 400; Apache 2.0), por eso van en `viewBox="0 -960 960 960"`.
+// wght 400; Apache 2.0), por eso van en `viewBox="0 -960 960 960"`. Los de
+// «Alérgenos y dietas» (migración 20261210100000), de Material Icons (los
+// mismos que la app: spa, grain, verified_user, local_drink, restaurant), van
+// en `viewBox="0 0 24 24"` (`vb: 24`).
 //
 // Lo usan la ficha del negocio y la de la publicación (views.js) y la hoja de
 // filtros de Descubre y Explorar (explore.js). El panel y el admin tienen su
@@ -37,6 +40,17 @@ export const SITIO = [
     d: 'M240 -120V-840H520Q620 -840 690 -770Q760 -700 760 -600Q760 -500 690 -430Q620 -360 520 -360H400V-120ZM400 -520H528Q561 -520 584.5 -543.5Q608 -567 608 -600Q608 -633 584.5 -656.5Q561 -680 528 -680H400Z' },
   { id: 'veggie', es: 'Opciones vegetarianas', en: 'Vegetarian options', icon: 'eco',
     d: 'M216 -176Q171 -221 145.5 -280Q120 -339 120 -402Q120 -465 144 -526.5Q168 -588 222 -642Q257 -677 308.5 -702Q360 -727 430.5 -741.5Q501 -756 591.5 -759Q682 -762 794 -752Q802 -646 799 -557Q796 -468 782.5 -396.5Q769 -325 744.5 -271.5Q720 -218 684 -182Q631 -129 571.5 -104.5Q512 -80 450 -80Q385 -80 323 -105.5Q261 -131 216 -176ZM328 -192Q357 -175 387.5 -167.5Q418 -160 450 -160Q496 -160 541 -178.5Q586 -197 627 -238Q645 -256 663.5 -288.5Q682 -321 695.5 -373.5Q709 -426 716 -500.5Q723 -575 718 -678Q669 -680 607.5 -679.5Q546 -679 485 -670Q424 -661 369 -641Q314 -621 279 -586Q234 -541 217 -497Q200 -453 200 -412Q200 -353 222.5 -308.5Q245 -264 262 -246Q304 -326 373 -399.5Q442 -473 534 -520Q462 -457 408.5 -377.5Q355 -298 328 -192ZM328 -192Q328 -192 328 -192Q328 -192 328 -192Q328 -192 328 -192Q328 -192 328 -192Q328 -192 328 -192Q328 -192 328 -192Q328 -192 328 -192Q328 -192 328 -192Q328 -192 328 -192Q328 -192 328 -192ZM328 -192Q328 -192 328 -192Q328 -192 328 -192Q328 -192 328 -192Q328 -192 328 -192Q328 -192 328 -192Q328 -192 328 -192Q328 -192 328 -192Q328 -192 328 -192Q328 -192 328 -192Q328 -192 328 -192Q328 -192 328 -192Q328 -192 328 -192Q328 -192 328 -192Q328 -192 328 -192Q328 -192 328 -192Q328 -192 328 -192Q328 -192 328 -192Q328 -192 328 -192Q328 -192 328 -192Q328 -192 328 -192Z' },
+  // Alérgenos y dietas: lo declara el negocio (van aparte, con su nota).
+  { id: 'vegan', es: 'Opciones veganas', en: 'Vegan options', icon: 'spa', vb: 24,
+    d: 'M15.47 9.61C15.33 6.84 14.2 4.12 12.05 2.02C9.94 4.12 8.72 6.84 8.53 9.61C9.8 10.31 10.97 11.2 12 12.28C13.03 11.2 14.2 10.31 15.47 9.61ZM12.05 5.2C12.7 6.23 13.12 7.36 13.36 8.58C12.89 8.86 12.42 9.19 12 9.56C11.58 9.19 11.16 8.86 10.69 8.58C10.92 7.36 11.39 6.23 12.05 5.2ZM12 15.47C11.2 14.2 10.12 13.12 8.95 12.23C8.81 12.14 8.67 12.09 8.53 12C8.67 12.09 8.81 12.14 8.95 12.23C6.98 10.83 4.59 9.98 2.02 9.98C2.02 15.33 5.34 19.83 10.03 21.47C10.64 21.7 11.3 21.89 12 21.98C12.7 21.89 13.31 21.7 13.97 21.47C18.66 19.83 21.98 15.33 21.98 9.98C17.81 9.98 14.16 12.19 12 15.47ZM13.31 19.59C12.89 19.73 12.42 19.88 12 19.97C11.53 19.88 11.11 19.78 10.69 19.59C7.41 18.42 5.02 15.61 4.27 12.28C5.34 12.52 6.42 12.98 7.36 13.59C7.5 13.69 7.64 13.78 7.73 13.83L7.83 13.88C8.81 14.62 9.66 15.52 10.31 16.55L12 19.08L13.69 16.55C14.34 15.52 15.23 14.58 16.22 13.88L16.27 13.83C16.36 13.78 16.45 13.73 16.55 13.69V13.64C17.53 12.98 18.61 12.52 19.73 12.23C18.98 15.61 16.59 18.42 13.31 19.59ZM9 12.28C8.95 12.28 8.95 12.23 8.95 12.23C8.95 12.28 8.95 12.28 9 12.28Z' },
+  { id: 'gluten_free', es: 'Opciones sin gluten', en: 'Gluten-free options', icon: 'grain', vb: 24,
+    d: 'M9.98 12C8.91 12 8.02 12.89 8.02 14.02C8.02 15.09 8.91 15.98 9.98 15.98C11.11 15.98 12 15.09 12 14.02C12 12.89 11.11 12 9.98 12ZM6 8.02C4.92 8.02 3.98 8.91 3.98 9.98C3.98 11.11 4.92 12 6 12C7.08 12 8.02 11.11 8.02 9.98C8.02 8.91 7.08 8.02 6 8.02ZM6 15.98C4.92 15.98 3.98 16.92 3.98 18C3.98 19.08 4.92 20.02 6 20.02C7.08 20.02 8.02 19.08 8.02 18C8.02 16.92 7.08 15.98 6 15.98ZM18 8.02C19.08 8.02 20.02 7.08 20.02 6C20.02 4.92 19.08 3.98 18 3.98C16.92 3.98 15.98 4.92 15.98 6C15.98 7.08 16.92 8.02 18 8.02ZM14.02 15.98C12.89 15.98 12 16.92 12 18C12 19.08 12.89 20.02 14.02 20.02C15.09 20.02 15.98 19.08 15.98 18C15.98 16.92 15.09 15.98 14.02 15.98ZM18 12C16.92 12 15.98 12.89 15.98 14.02C15.98 15.09 16.92 15.98 18 15.98C19.08 15.98 20.02 15.09 20.02 14.02C20.02 12.89 19.08 12 18 12ZM14.02 8.02C12.89 8.02 12 8.91 12 9.98C12 11.11 12.89 12 14.02 12C15.09 12 15.98 11.11 15.98 9.98C15.98 8.91 15.09 8.02 14.02 8.02ZM9.98 3.98C8.91 3.98 8.02 4.92 8.02 6C8.02 7.08 8.91 8.02 9.98 8.02C11.11 8.02 12 7.08 12 6C12 4.92 11.11 3.98 9.98 3.98Z' },
+  { id: 'celiac', es: 'Apto para celíacos', en: 'Coeliac-friendly', icon: 'verified_user', vb: 24,
+    d: 'M12 0.98 3 5.02V11.02C3 16.55 6.84 21.75 12 23.02C17.16 21.75 21 16.55 21 11.02V5.02L12 0.98ZM18.98 11.02C18.98 15.52 16.03 19.69 12 20.95C7.97 19.69 5.02 15.52 5.02 11.02V6.28L12 3.19L18.98 6.28V11.02ZM7.41 11.58 6 12.98 9.98 17.02 18 9 16.59 7.59 9.98 14.16 7.41 11.58Z' },
+  { id: 'lactose_free', es: 'Opciones sin lactosa', en: 'Lactose-free options', icon: 'local_drink', vb: 24,
+    d: 'M3 2.02 5.02 20.25C5.11 21.23 5.95 21.98 6.98 21.98H17.02C18.05 21.98 18.89 21.23 18.98 20.25L21 2.02H3ZM17.02 20.02H6.98L5.91 9.98H18.09L17.02 20.02ZM18.33 8.02H5.67L5.25 3.98H18.75L18.33 8.02ZM12 18.98C13.64 18.98 15 17.67 15 15.98C15 14.02 12 10.59 12 10.59C12 10.59 9 14.02 9 15.98C9 17.67 10.36 18.98 12 18.98ZM12 13.92C12.61 14.81 12.98 15.66 12.98 15.98C12.98 16.55 12.56 17.02 12 17.02C11.44 17.02 11.02 16.55 11.02 15.98C11.02 15.61 11.39 14.81 12 13.92Z' },
+  { id: 'halal', es: 'Halal', en: 'Halal', icon: 'restaurant', vb: 24,
+    d: 'M15.98 6V14.02H18.98V21.98H21V2.02C18.23 2.02 15.98 4.22 15.98 6ZM11.02 9H9V2.02H6.98V9H5.02V2.02H3V9C3 11.2 4.78 12.98 6.98 12.98V21.98H9V12.98C11.2 12.98 12.98 11.2 12.98 9V2.02H11.02V9Z' },
 ];
 
 const POR_ID = Object.fromEntries(SITIO.map((s) => [s.id, s]));
@@ -49,7 +63,8 @@ export const nombreSitio = (id, en) => (POR_ID[id] ? POR_ID[id][en ? 'en' : 'es'
 export const SITIO_ES = {
   terrace: 'terraza', indoor: 'bajo-techo', outdoor: 'aire-libre', kids: 'ninos', play_area: 'zona-infantil',
   dogs: 'perros', wheelchair: 'silla-de-ruedas', wifi: 'wifi', card: 'tarjeta', air_conditioning: 'aire-acondicionado',
-  parking: 'aparcamiento', veggie: 'vegetariano',
+  parking: 'aparcamiento', veggie: 'vegetariano', vegan: 'vegano', gluten_free: 'sin-gluten', celiac: 'celiacos',
+  lactose_free: 'sin-lactosa', halal: 'halal',
 };
 const DESDE_ES = Object.fromEntries(Object.entries(SITIO_ES).map(([k, v]) => [v, k]));
 /** Un valor de la dirección (en cualquiera de los dos idiomas) → identificador, o ''. */
@@ -64,9 +79,14 @@ export const sitioAUrl = (id, en) => (en ? id : SITIO_ES[id] || id);
  * o el aparcamiento son cosa del local (su ficha). */
 export const SITIO_PLAN = ['kids', 'play_area', 'indoor', 'outdoor', 'terrace', 'dogs', 'wheelchair'];
 
+/** Alérgenos y dietas: van en su propio grupo (en «Cómo es tu local», en
+ * los filtros y en la ficha, con la nota de que lo declara el negocio). */
+export const DIETAS = ['veggie', 'vegan', 'gluten_free', 'celiac', 'lactose_free', 'halal'];
+export const esDieta = (id) => DIETAS.includes(id);
+
 /** El icono de un atributo, en SVG. */
 export const icSitio = (id, size = 18) => (POR_ID[id]
-  ? `<svg class="ic" viewBox="0 -960 960 960" width="${size}" height="${size}" aria-hidden="true"><path fill="currentColor" d="${POR_ID[id].d}"/></svg>`
+  ? `<svg class="ic" viewBox="${POR_ID[id].vb === 24 ? '0 0 24 24' : '0 -960 960 960'}" width="${size}" height="${size}" aria-hidden="true"><path fill="currentColor" d="${POR_ID[id].d}"/></svg>`
   : '');
 
 /** Iconos del tiempo (umbrella y sunny, de la misma fuente). */
@@ -90,4 +110,17 @@ export function listaSitio(ids, lang, { cls = '' } = {}) {
   const buenos = ordenaSitio(ids);
   if (!buenos.length) return '';
   return `<ul class="sitio${cls ? ` ${cls}` : ''}">${buenos.map((id) => `<li>${icSitio(id, 18)}<span>${esc(nombreSitio(id, en))}</span></li>`).join('')}</ul>`;
+}
+
+/** «El sitio» de la ficha del negocio: lo del local y, aparte, «Alérgenos y
+ * dietas» con su nota (lo declara el negocio). '' si no hay nada. */
+export function sitioFicha(ids, lang) {
+  const en = lang === 'en';
+  const buenos = ordenaSitio(ids);
+  const local = listaSitio(buenos.filter((id) => !esDieta(id)), lang);
+  const dietas = listaSitio(buenos.filter(esDieta), lang);
+  if (!local && !dietas) return '';
+  return `${local}${dietas ? `<h3 class="sitio-dietas-t">${en ? 'Allergens and diets' : 'Alérgenos y dietas'}</h3>${dietas}
+    <p class="note sitio-dietas-nota">${en ? 'Allergens and diets: declared by the business. If you have an allergy or coeliac disease, check with the venue.'
+    : 'Alérgenos y dietas: lo declara el negocio. Si tienes alergia o celiaquía, confírmalo en el local.'}</p>` : ''}`;
 }

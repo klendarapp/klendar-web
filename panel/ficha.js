@@ -11,15 +11,20 @@
    Script clásico: comparte ámbito con panel.js (PAGES, rpc, BIZ, esc…). */
 'use strict';
 
-/** «Cómo es tu local»: los 12 atributos del sitio, en el orden de la app
+/** «Cómo es tu local»: los 17 atributos del sitio, en el orden de la app
  * (`place_attribute_slugs()` en la base), con su icono. Se ven en la ficha
- * pública y la gente filtra por ellos («El sitio» y «Con niños»). */
+ * pública y la gente filtra por ellos («El sitio» y «Con niños»). Los de
+ * «Alérgenos y dietas» (`DIETAS_PANEL`, migración 20261210100000) van en su
+ * propio grupo, con la nota de que los declara el negocio. */
 const SITIO_PANEL = [
   ['terrace', 'Terraza', 'deck'], ['indoor', 'Bajo techo', 'roofing'], ['outdoor', 'Al aire libre', 'park'],
   ['kids', 'Apto para niños', 'child_friendly'], ['play_area', 'Zona infantil', 'toys'], ['dogs', 'Admite perros', 'pets'],
   ['wheelchair', 'Accesible en silla de ruedas', 'accessible'], ['wifi', 'Wifi', 'wifi'], ['card', 'Pago con tarjeta', 'credit_card'],
   ['air_conditioning', 'Aire acondicionado', 'ac_unit'], ['parking', 'Aparcamiento', 'local_parking'], ['veggie', 'Opciones vegetarianas', 'eco'],
+  ['vegan', 'Opciones veganas', 'spa'], ['gluten_free', 'Opciones sin gluten', 'grain'], ['celiac', 'Apto para celíacos', 'verified_user'],
+  ['lactose_free', 'Opciones sin lactosa', 'local_drink'], ['halal', 'Halal', 'restaurant'],
 ];
+const DIETAS_PANEL = ['veggie', 'vegan', 'gluten_free', 'celiac', 'lactose_free', 'halal'];
 
 /** Los apartados, en el orden del índice: [ruta, título]. «Carta» lleva a
  * su pantalla de siempre (`#/carta`). */
@@ -273,6 +278,101 @@ const htmlContacto = (d) => `
   <label class="f"><span>TikTok</span><input name="tiktok" placeholder="@usuario" value="${esc(d.tiktok || '')}"></label>
   <label class="f"><span>Facebook</span><input name="facebook" value="${esc(d.facebook || '')}"></label>`;
 
+// ── «Reservar y pedir»: los enlaces de la ficha ─────────────────────────────
+// Lo mismo que la app: «Reservar» (TheFork, Booksy…), «Pedir a domicilio»
+// (Glovo, Just Eat…), «Pedir en el local» (pedidos desde la mesa o la app del
+// negocio; la carta va aparte) y uno libre con su nombre. Solo https, hasta 8,
+// en el orden en que se ven. Se guardan con el «Guardar» de «Contacto y
+// redes» (`set_business_links`, después de `update_business`). Las reglas
+// (`assets/enlaces.js`) son las de la base.
+const KEn = globalThis.KlendarEnlaces;
+/** La dirección, corta: sin https://, sin «www.» y sin la barra del final. */
+const enlaceCorto = (u) => {
+  const x = String(u || '').replace(/^https?:\/\//i, '').replace(/^www\./i, '').replace(/\/$/, '');
+  return x.length > 42 ? `${x.slice(0, 40)}…` : x;
+};
+const nombreEnlace = (l) => (l.kind === 'other' ? String(l.label || '') : KEn.nombreTipo(l.kind, I18N.lang));
+
+const htmlEnlaces = (lista) => `<h2 class="alta-sub" id="enlacesTit">Reservar y pedir</h2>
+  <p class="muted" style="margin:0 0 10px">Reservar: TheFork, Booksy, Treatwell, CoverManager, tu web… Pedir a domicilio: Glovo, Just Eat, Uber Eats… Pedir en el local: tu sistema de pedidos desde la mesa o tu app (la carta va aparte, en «Carta»).</p>
+  ${lista.length ? `<ul class="enlaces-lista" aria-labelledby="enlacesTit">${lista.map((l, i) => {
+    const nombre = nombreEnlace(l);
+    return `<li>${KEn.icono(l, 20)}<span class="enl-txt"><b>${esc(nombre)}</b><small>${esc(enlaceCorto(l.url))}</small></span>
+      <span class="enl-acc"><button type="button" class="btn sm ghost" data-enl-sube="${i}" ${i === 0 ? 'disabled' : ''} aria-label="${esc(bi(`Subir «${nombre}»`, `Move “${nombre}” up`))}">↑</button>
+        <button type="button" class="btn sm ghost" data-enl-baja="${i}" ${i === lista.length - 1 ? 'disabled' : ''} aria-label="${esc(bi(`Bajar «${nombre}»`, `Move “${nombre}” down`))}">↓</button>
+        <button type="button" class="btn sm ghost" data-enl-quitar="${i}" aria-label="${esc(bi(`Quitar «${nombre}»`, `Remove “${nombre}”`))}">${esc(I18N.t('Quitar'))}</button></span></li>`;
+  }).join('')}</ul>` : `<p class="muted" style="margin:0 0 8px">${esc(I18N.t('Todavía no has puesto ningún enlace.'))}</p>`}
+  ${lista.length < KEn.MAX_ENLACES
+    ? `<p style="margin:8px 0 0"><button type="button" class="btn sm" data-enl-anadir>${esc(I18N.t('Añadir enlace'))}</button> <span class="muted small">${esc(bi(`Hasta ${KEn.MAX_ENLACES}.`, `Up to ${KEn.MAX_ENLACES}.`))}</span></p>`
+    : `<p class="muted" style="margin:8px 0 0">${esc(I18N.t('Como mucho 8 enlaces.'))}</p>`}`;
+
+/** Pide un enlace nuevo (tipo, dirección y, solo en «Otro», su nombre). Lo
+ * comprueba como la base; si algo falla, lo dice y vuelve a preguntar con lo
+ * escrito. null si se cancela. */
+async function pideEnlace(lista) {
+  let val = { kind: 'book', url: '', label: '' };
+  for (;;) {
+    const pendiente = modal({
+      title: I18N.t('Añadir enlace'),
+      fields: [
+        { type: 'select', name: 'kind', label: I18N.t('Tipo'), value: val.kind,
+          options: KEn.TIPOS.map((k) => [k, KEn.nombreTipo(k, I18N.lang)]) },
+        { name: 'url', label: I18N.t('Dirección'), value: val.url, placeholder: 'https://', maxlength: 500 },
+        { name: 'label', label: I18N.t('Nombre'), value: val.label, maxlength: 30, placeholder: bi('Ej. Tarjeta regalo', 'E.g. Gift card') },
+      ],
+      submit: I18N.t('Añadir'),
+    });
+    const dlg = $('#modal');
+    const tipo = dlg.querySelector('[name=kind]');
+    const caja = dlg.querySelector('[name=label]').closest('label');
+    const ver = () => { caja.hidden = tipo.value !== 'other'; };
+    tipo.onchange = ver;
+    ver();
+    I18N.translate(dlg);
+    const r = await pendiente;
+    if (!r) return null;
+    val = r;
+    const l = { kind: r.kind, url: KEn.normaliza(r.url), ...(r.kind === 'other' ? { label: r.label.replace(/\s+/g, ' ').trim() } : {}) };
+    const e = KEn.error(l);
+    if (e) { toast(friendly(e), true); continue; }
+    if (lista.some((x) => x.url.toLowerCase() === l.url.toLowerCase())) { toast(I18N.t('Ese enlace ya está en la lista.'), true); continue; }
+    return l;
+  }
+}
+
+/** Los botones de la lista de enlaces (`caja` se repinta sola). */
+function activaEnlaces(caja, lista, alCambiar = () => {}) {
+  const pinta = (foco) => {
+    caja.innerHTML = htmlEnlaces(lista);
+    I18N.translate(caja);
+    $$('[data-enl-sube]', caja).forEach((b) => { b.onclick = () => {
+      const i = +b.dataset.enlSube;
+      [lista[i - 1], lista[i]] = [lista[i], lista[i - 1]];
+      pinta(`[data-enl-sube="${i - 1}"]`); alCambiar();
+    }; });
+    $$('[data-enl-baja]', caja).forEach((b) => { b.onclick = () => {
+      const i = +b.dataset.enlBaja;
+      [lista[i + 1], lista[i]] = [lista[i], lista[i + 1]];
+      pinta(`[data-enl-baja="${i + 1}"]`); alCambiar();
+    }; });
+    $$('[data-enl-quitar]', caja).forEach((b) => { b.onclick = () => {
+      lista.splice(+b.dataset.enlQuitar, 1);
+      pinta('[data-enl-anadir]'); alCambiar();
+    }; });
+    const anadir = $('[data-enl-anadir]', caja);
+    if (anadir) anadir.onclick = async () => {
+      const l = await pideEnlace(lista);
+      if (l) { lista.push(l); alCambiar(); }
+      pinta('[data-enl-anadir]');
+    };
+    if (foco) {
+      const el = $(foco, caja);
+      (el && !el.disabled ? el : $('[data-enl-anadir]', caja))?.focus();
+    }
+  };
+  pinta();
+}
+
 /** El NIF/CIF: para comprobar que el negocio es tuyo; no se publica. */
 const htmlKlendar = (d) => `
   <p class="muted full" style="margin:0">Lo usamos para comprobar que el negocio es tuyo. No sale en tu ficha ni lo ve nadie fuera de Klendar.</p>
@@ -301,12 +401,18 @@ const htmlMayores = (d) => `
  * (`extra` = { precio, aforo }), como el apartado de la app. */
 const htmlSitio = (sitio, extra = {}) => {
   const M = KlendarMarcas.t(I18N.lang);
+  const opSitio = ([k, nombre, icono]) => `<label class="sitio-op"><input type="checkbox" name="sitio" value="${k}" ${sitio.includes(k) ? 'checked' : ''}><span>${ms(icono)}${esc(I18N.t(nombre))}</span></label>`;
   const precio = Number(extra.precio) || 0;
   return `
   <p class="muted full" style="margin:0">Marca lo que tenga tu local: sale en tu ficha y la gente lo puede buscar en los filtros.</p>
   <div class="sitio-ops full" role="group" aria-label="${esc(I18N.t('Cómo es tu local'))}">
-    ${SITIO_PANEL.map(([k, nombre, icono]) => `<label class="sitio-op"><input type="checkbox" name="sitio" value="${k}" ${sitio.includes(k) ? 'checked' : ''}><span>${ms(icono)}${esc(nombre)}</span></label>`).join('')}
+    ${SITIO_PANEL.filter(([k]) => !DIETAS_PANEL.includes(k)).map(opSitio).join('')}
   </div>
+  <div class="full"><h3 class="f-tit" id="dietasTit" style="margin:4px 0 4px">Alérgenos y dietas</h3>
+    <p class="muted" style="margin:0 0 10px">Márcalo solo si lo ofreces siempre. «Sin gluten» y «Apto para celíacos» son menciones reguladas: las declaras tú, bajo tu responsabilidad.</p>
+    <div class="sitio-ops" role="group" aria-labelledby="dietasTit">
+      ${SITIO_PANEL.filter(([k]) => DIETAS_PANEL.includes(k)).map(opSitio).join('')}
+    </div></div>
   <div class="full"><p class="f-tit">${esc(M.priceTitle)}</p>
     <div class="sitio-ops" role="radiogroup" aria-label="${esc(M.priceTitle)}">
       ${[0, 1, 2, 3, 4].map((n) => `<label class="sitio-op"><input type="radio" name="price_level" value="${n || ''}" ${precio === n ? 'checked' : ''}><span${n ? ` aria-label="${esc(`${KlendarMarcas.simbolo(n)}, ${KlendarMarcas.significado(n, I18N.lang)}`)}"` : ''}>${esc(n ? KlendarMarcas.simbolo(n) : M.priceNone)}</span></label>`).join('')}
@@ -467,22 +573,26 @@ function fichaCompleta(b, { sitio, carta }) {
     org ? null : hayHorario(b.opening_hours),
     !!(b.phone || b.website || b.contact_email || Object.values(b.social_links || {}).some((x) => String(x || '').trim())),
     org ? null : sitio.length > 0,
-    !!(b.menu_url || (b.menu_images || []).length || (carta || []).length),
+    !!(b.menu_url || (b.menu_images || []).length || (b.menu_files || []).length || (carta || []).length),
   ].filter((x) => x !== null);
   return Math.round(checks.filter(Boolean).length * 100 / checks.length);
 }
 
 // ── «Tu ficha»: el índice y cada apartado ───────────────────────────────────
 async function datosFicha() {
-  const [{ data: b }, cats, privado, carta] = await Promise.all([
+  const [{ data: b }, cats, privado, carta, enlaces] = await Promise.all([
     sb.from('businesses').select('id, name, description, category_id, address, city, phone, website, contact_email, social_links, logo_url, cover_image_url, gallery, opening_hours, adults_only, amenities, price_level, crowd_enabled, menu_url, menu_images').eq('id', BIZ.id).maybeSingle(),
     CATS.length ? CATS : sb.from('categories').select('*').order('position', { ascending: true }).then(({ data }) => data || []),
     // El NIF no se puede leer de la tabla (no es público): lo da
     // `business_private` a quien gestiona.
     rpc('business_private', { p_id: BIZ.id }).catch(() => null),
     rpc('business_menu', { p_business: BIZ.id }).catch(() => null),
+    // Los enlaces de «Reservar y pedir» y los archivos de la carta.
+    rpc('business_links', { p_id: BIZ.id }).catch(() => null),
   ]);
   if (b) {
+    b.links = Array.isArray(enlaces?.links) ? enlaces.links : [];
+    b.menu_files = Array.isArray(enlaces?.menu_files) ? enlaces.menu_files : null;
     b.tax_id = privado?.tax_id || '';
     b.tax_known = !!privado;
     b.amenities = Array.isArray(b.amenities) ? b.amenities : [];
@@ -517,6 +627,9 @@ function indiceFicha(v, b, cats, carta) {
   const desc = String(b.description || '').trim().replace(/\s+/g, ' ');
   const redes = Object.entries(b.social_links || {}).filter(([k, x]) => k !== 'web' && String(x || '').trim())
     .map(([k]) => ({ instagram: 'Instagram', tiktok: 'TikTok', facebook: 'Facebook' }[k] || k));
+  // Los archivos de la carta (sin `business_links`, las fotos de antes).
+  const nFotosCarta = b.menu_files ? b.menu_files.filter((f) => f.kind === 'image').length : (b.menu_images || []).length;
+  const nPdfCarta = b.menu_files ? b.menu_files.filter((f) => f.kind === 'pdf').length : 0;
   const sitioNombres = [KlendarMarcas.simbolo(Number(b.price_level)),
     ...SITIO_PANEL.filter(([k]) => b.amenities.includes(k)).map(([, n]) => I18N.t(n))].filter(Boolean);
   const resumen = {
@@ -526,9 +639,10 @@ function indiceFicha(v, b, cats, carta) {
       ? [globalThis.KlendarArtistas.t(I18N.lang).zoneLabel, b.city].filter(Boolean).join(' · ')
       : [[b.address, b.city].filter(Boolean).join(', '), I18N.t('en el mapa')].filter(Boolean).join(' · '),
     horario: resumenHorario(b.opening_hours),
-    contacto: une([b.phone && I18N.t('Teléfono'), b.website && I18N.t('Web'), b.contact_email && I18N.t('Correo'), ...redes].filter(Boolean), 'Sin teléfono, web ni redes'),
+    contacto: une([b.phone && I18N.t('Teléfono'), b.website && I18N.t('Web'), b.contact_email && I18N.t('Correo'), ...redes,
+      b.links.length && bi(b.links.length === 1 ? '1 enlace' : `${b.links.length} enlaces`, b.links.length === 1 ? '1 link' : `${b.links.length} links`)].filter(Boolean), 'Sin teléfono, web ni redes'),
     carta: une([(carta || []).length && bi(carta.length === 1 ? '1 sección' : `${carta.length} secciones`, carta.length === 1 ? '1 section' : `${carta.length} sections`),
-      (b.menu_images || []).length && foto(b.menu_images.length), b.menu_url && I18N.t('Enlace')].filter(Boolean), 'Nada todavía'),
+      nFotosCarta && foto(nFotosCarta), nPdfCarta && (nPdfCarta === 1 ? '1 PDF' : `${nPdfCarta} PDF`), b.menu_url && I18N.t('Enlace')].filter(Boolean), 'Nada todavía'),
     local: sitioNombres.length ? [...sitioNombres.slice(0, 3), sitioNombres.length > 3 ? `+${sitioNombres.length - 3}` : ''].filter(Boolean).join(', ') : I18N.t('Sin marcar'),
     klendar: !b.tax_known || b.tax_id ? I18N.t('NIF/CIF · no lo ve la gente') : I18N.t('Falta el NIF/CIF'),
     mayores: b.adults_only ? I18N.t('Sí') : I18N.t('No'),
@@ -574,6 +688,9 @@ async function parteFicha(v, parte, b, cats) {
     sin_local: esOrganizador(),
   };
   const est = { logo: b.logo_url || '', portada: b.cover_image_url || '', galeria: [...(b.gallery || [])] };
+  // «Reservar y pedir» (solo en «Contacto y redes»): se cambia aquí y se
+  // guarda con el mismo «Guardar».
+  const enlaces = (b.links || []).map((l) => ({ ...l }));
   let horario = null;
   if (parte === 'donde') {
     // El punto de ahora (la tabla lo guarda como geografía).
@@ -587,7 +704,7 @@ async function parteFicha(v, parte, b, cats) {
     basico: () => `${htmlBasico(d)}<p class="hint full">Si cambias el nombre, lo revisamos de nuevo. Tu negocio sigue a la vista mientras tanto.</p>`,
     donde: () => `${htmlDonde(d)}<p class="hint full">Si cambias la ciudad o te mudas a más de 1 km, lo revisamos de nuevo. Tu negocio sigue a la vista mientras tanto y lo que tengas publicado se muda contigo.</p>`,
     horario: () => '<div class="full" data-horario></div>',
-    contacto: () => htmlContacto(d),
+    contacto: () => `${htmlContacto(d)}<div class="full enlaces-ficha" data-enlaces></div>`,
     local: () => htmlSitio(b.amenities, { precio: b.price_level, aforo: b.crowd_enabled }),
     klendar: () => htmlKlendar(d),
     mayores: () => htmlMayores(d),
@@ -631,6 +748,7 @@ async function parteFicha(v, parte, b, cats) {
     }
     if (parte === 'horario') horario = editorHorario($('[data-horario]', v), horario ? horario.valor() : b.opening_hours);
     if (parte === 'fotos') activaFotos(v, est, (sel) => { pinta(sel); });
+    if (parte === 'contacto') activaEnlaces($('[data-enlaces]', v), enlaces);
     f().onsubmit = guardar;
     sinDobleEnvio(v);
     if (foco) $(foco, v)?.focus();
@@ -666,6 +784,11 @@ async function parteFicha(v, parte, b, cats) {
       } else {
         const p = patch();
         await rpc('update_business', { p_id: BIZ.id, p_patch: p });
+        if (parte === 'contacto') {
+          const guardados = await rpc('set_business_links', { p_business: BIZ.id, p_links: enlaces.map((l) => ({
+            ...(l.id ? { id: l.id } : {}), kind: l.kind, url: l.url, ...(l.kind === 'other' ? { label: l.label } : {}) })) });
+          if (Array.isArray(guardados)) enlaces.splice(0, enlaces.length, ...guardados);
+        }
         // El nombre nuevo, ya en el selector de locales; y la zona, si el
         // punto se ha movido (la base la recalcula igual).
         if (p.name) { BIZ.name = p.name; renderBizPicker(); }
@@ -674,16 +797,18 @@ async function parteFicha(v, parte, b, cats) {
         if (typeof p.no_fixed_venue === 'boolean') { BIZ.no_fixed_venue = p.no_fixed_venue; renderNav('ficha'); }
         if (p.lat != null) { BIZ.time_zone = KZ.porCoordenadas(p.lat, p.lng); TZ = KZ.de(BIZ); }
       }
-      inicial = JSON.stringify(patch());
+      inicial = estado();
       GUARDA = null;
       toast('Guardado');
       location.hash = '#/ficha';
     } catch (err) { toast(friendly(err.message), true); }
   }
 
+  // Lo que hay que guardar (en «Contacto y redes», también los enlaces).
+  const estado = () => JSON.stringify(parte === 'contacto' ? [patch(), enlaces] : patch());
   pinta();
-  inicial = JSON.stringify(patch());
-  GUARDA = { sucia: () => !!f() && JSON.stringify(patch()) !== inicial };
+  inicial = estado();
+  GUARDA = { sucia: () => !!f() && estado() !== inicial };
 }
 
 // ── Alta en tres pasos ──────────────────────────────────────────────────────

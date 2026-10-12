@@ -1474,7 +1474,7 @@ PAGES.negocios = async (v, id) => {
   await load();
 };
 
-/** «El sitio»: los 12 atributos del local (`place_attribute_slugs()`), en el
+/** «El sitio»: los 17 atributos del local (`place_attribute_slugs()`), en el
  * orden de la app, con su icono. El negocio los marca en «Tu ficha»; aquí se
  * ven y se pueden cambiar (`set_business_amenities` vale para el admin). Las
  * selecciones pueden pedirlos en su regla (`traits`). */
@@ -1483,6 +1483,9 @@ const SITIO_ADMIN = [
   ['kids', 'Apto para niños', 'child_friendly'], ['play_area', 'Zona infantil', 'toys'], ['dogs', 'Admite perros', 'pets'],
   ['wheelchair', 'Accesible en silla de ruedas', 'accessible'], ['wifi', 'Wifi', 'wifi'], ['card', 'Pago con tarjeta', 'credit_card'],
   ['air_conditioning', 'Aire acondicionado', 'ac_unit'], ['parking', 'Aparcamiento', 'local_parking'], ['veggie', 'Opciones vegetarianas', 'eco'],
+  // Alérgenos y dietas (migración 20261210100000): lo declara el negocio.
+  ['vegan', 'Opciones veganas', 'spa'], ['gluten_free', 'Opciones sin gluten', 'grain'], ['celiac', 'Apto para celíacos', 'verified_user'],
+  ['lactose_free', 'Opciones sin lactosa', 'local_drink'], ['halal', 'Halal', 'restaurant'],
 ];
 const nombreSitio = (k) => I18N.t((SITIO_ADMIN.find((x) => x[0] === k) || [k, k])[1]);
 

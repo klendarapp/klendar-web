@@ -1335,4 +1335,10 @@ const I18N = makeI18N({
   'Esa imagen no se puede abrir. Prueba con una foto JPG o PNG.': "That image can't be opened. Try a JPG or PNG photo.",
   'Ningún artista con esos filtros.': 'No artists with those filters.',
   'Todavía no hay artistas: aparecen cuando un negocio pone «Quién actúa» en un evento.': "No artists yet: they appear when a business fills in “Who's performing” on an event.",
+    // Ficha: enlaces («Reservar y pedir»), alérgenos y dietas y archivos de la carta (20261210100000).
+    "Opciones veganas": "Vegan options",
+    "Opciones sin gluten": "Gluten-free options",
+    "Apto para celíacos": "Coeliac-friendly",
+    "Opciones sin lactosa": "Lactose-free options",
+    "Halal": "Halal",
 });

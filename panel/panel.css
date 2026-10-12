@@ -549,7 +549,7 @@ a.cal-dia { text-decoration: none; }
 .sitio-ops { display: flex; flex-wrap: wrap; gap: 8px; }
 .sitio-op { position: relative; display: inline-flex; }
 .sitio-op input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
-.sitio-op span { display: inline-flex; align-items: center; gap: 7px; min-height: 40px; padding: 8px 14px; border-radius: 999px;
+.sitio-op > span { display: inline-flex; align-items: center; gap: 7px; min-height: 40px; padding: 8px 14px; border-radius: 999px;
   border: 1px solid var(--glass-border); background: var(--glass); color: var(--ink); font-weight: 600; font-size: 14px; cursor: pointer; }
 .sitio-op .ms { font-size: 20px; }
 .sitio-op input:checked + span { background: var(--ink); color: var(--surface); border-color: var(--ink); }
@@ -863,3 +863,25 @@ details.bloque .b-cuerpo { display: grid; gap: 14px; padding: 0 16px 16px; }
 /* Alta y «Dónde está» sin local fijo: el título de la zona sobre el mapa. */
 .zona-t { margin: 0 0 8px; }
 .conlocal { display: contents; }
+/* «Reservar y pedir» (Contacto y redes) y «Archivos de la carta» (Carta): una
+   fila por elemento con su icono o miniatura, el nombre y la dirección o el
+   tamaño, y los mismos tres botones (↑, ↓, Quitar). */
+.enlaces-lista, .archivos-carta { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.enlaces-lista li, .archivos-carta li { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 14px;
+  border: 1px solid var(--glass-border); background: var(--soft); min-width: 0; }
+.enlaces-lista .ic { flex: none; color: var(--ink); }
+.enl-txt, .arch-txt { flex: 1; min-width: 0; display: grid; }
+.enl-txt b, .arch-txt b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.enl-txt small, .arch-txt small { color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.enl-acc, .arch-acc { flex: none; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; }
+.enl-acc .btn, .arch-acc .btn { justify-content: center; }
+.arch-mini { flex: none; width: 48px; height: 60px; border-radius: 8px; overflow: hidden; display: grid; place-items: center;
+  background: var(--elevated); color: var(--ink); }
+.arch-mini img { width: 100%; height: 100%; object-fit: cover; }
+@media (max-width: 520px) {
+  .enlaces-lista li, .archivos-carta li { flex-wrap: wrap; }
+  .enl-acc, .arch-acc { margin-left: auto; }
+}
+/* Informe: «Toques en tus enlaces». */
+.toques-enlaces { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.toques-enlaces li { display: flex; gap: 6px; align-items: baseline; }

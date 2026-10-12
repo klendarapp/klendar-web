@@ -783,3 +783,25 @@ details.hoja-bloque[open] > summary .ic { transform: rotate(180deg); }
    cada uno en su fila, todos del mismo ancho (como en la app). Antes, el
    «Editar» oculto contaba en `:nth-child` y salían de anchos distintos. */
 .side .acciones > :not(.escucha) { flex: 1 1 100%; }
+
+/* Enlaces de la ficha del negocio («Reservar», «Pedir a domicilio»…): en la
+   columna, uno por fila, todos iguales y neutros (sin coral), como en la
+   app. El texto largo («Pedir a domicilio · Just Eat») se corta con «…». */
+.side .neg-enlaces { margin: 0 0 8px; }
+.neg-enlaces .enlace-neg { min-width: 0; max-width: 100%; white-space: nowrap; }
+.neg-enlaces .enlace-neg span { overflow: hidden; text-overflow: ellipsis; }
+.neg-enlaces .enlace-neg .ic { flex: none; margin: 0; }
+/* Archivos de la carta que abren fuera: cada PDF y el «Enlace a la carta». */
+.carta-archivos { display: grid; gap: 8px; margin: 10px 0 18px; }
+.carta-archivo { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px;
+  border: 1px solid var(--glass-border); background: var(--glass); color: var(--ink); text-decoration: none; }
+.carta-archivo:hover { text-decoration: none; background: var(--soft); }
+.carta-archivo:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.carta-archivo > span { flex: 1; min-width: 0; display: grid; }
+.carta-archivo b { font-weight: 700; }
+.carta-archivo small { color: var(--ink-2); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.carta-archivo .ic { flex: none; }
+.carta-archivo .ic:last-child { color: var(--ink-2); }
+/* «Alérgenos y dietas» en «El sitio»: aparte y con su nota. */
+.sitio-dietas-t { font-size: 15px; margin: 4px 0 8px; }
+.pub .sitio-dietas-nota { margin: -8px 0 18px; }

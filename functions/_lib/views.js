@@ -16,10 +16,11 @@ import { decodeSeg,
   historiaBoton, priorPrice, publicPage, slugDe, todayBase, zonaDe,
 } from './public.js';
 import { cuandoCorto, plataformaEntradas, rejilla } from './tarjeta.js';
-import { SITIO_PLAN, listaSitio } from './sitio.js';
+import { SITIO_PLAN, listaSitio, sitioFicha } from './sitio.js';
 import { FUENTE_TIEMPO } from './tiempo.js';
 import KR from '../../assets/rrpp-enlace.js';
 import KM from '../../assets/marcas.js';
+import KE from '../../assets/enlaces.js';
 import { fuenteHtml, selloEntidad } from './entidades.js';
 import { PARTIDOS_CSS, partidosDelBar } from './partidos.js';
 import { GRUPOS_CSS, grupoEnFicha } from './grupos.js';
@@ -36,7 +37,6 @@ const PATHS = {
   carta: 'M8.1 13.34l2.83-2.83L3.91 3.5c-1.56 1.56-1.56 4.09 0 5.66l4.19 4.18zm6.78-1.81c1.53.71 3.68.21 5.27-1.38 1.91-1.91 2.28-4.65.81-6.12-1.46-1.46-4.2-1.1-6.12.81-1.59 1.59-2.09 3.74-1.38 5.27L3.7 19.87l1.41 1.41L12 14.41l6.88 6.88 1.41-1.41L13.41 13l1.47-1.47z',
   correo: 'M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z',
   redes: 'M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z',
-  pdf: 'M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z',
   cerrado: 'M9.31 17l2.44-2.44L14.19 17l1.06-1.06-2.44-2.44 2.44-2.44L14.19 10l-2.44 2.44L9.31 10l-1.06 1.06 2.44 2.44-2.44 2.44L9.31 17zM19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z',
   negocio: 'M20 4H4v2h16V4zm1 10v-2l-1-5H4l-1 5v2h1v6h10v-6h4v6h2v-6h1zm-9 4H6v-4h6v4z',
   candado: 'M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z',
@@ -675,7 +675,7 @@ export async function businessPage(param, lang, search = '') {
   // «Clientes verificados»: solo las reseñas de quien ha canjeado algo aquí
   // (`?resenas=verificadas`, el mismo filtro que la app).
   const soloVerificadas = new URLSearchParams(search).get('resenas') === 'verificadas';
-  const [offers, sellos, carta, opiniones, novedades, cierres, nVerificadas, local, partidos, grupoInfo, sorteos, organizador] = await Promise.all([
+  const [offers, sellos, carta, opiniones, novedades, cierres, nVerificadas, local, partidos, grupoInfo, sorteos, organizador, enlacesNeg] = await Promise.all([
     rpcAll('business_offers', { p_id: id }),
     rpcAll('stamp_cards_of', { p_business: id }).catch(() => []), // opcional: sin ella, la ficha sale igual
     rpcAll('business_menu', { p_business: id }),
@@ -693,6 +693,9 @@ export async function businessPage(param, lang, search = '') {
     // Organizador sin local fijo (fiestas, promotoras): su punto es la zona
     // donde organiza, no un sitio al que ir. Sin la función, como siempre.
     rpc('business_is_organizer', { p_business: id }).then((x) => x === true).catch(() => false),
+    // «Reservar», «Pedir…» y los archivos de la carta (fotos y PDF; migración
+    // 20261210100000). Opcional: sin ella, las fotos de `menu_images`.
+    rpc('business_links', { p_id: id }).catch(() => null),
   ]);
   const grupoHtml = grupoEnFicha(grupoInfo, id, lang);
   const sorteosHtml = sorteosEnFicha(sorteos, lang);
@@ -721,7 +724,7 @@ export async function businessPage(param, lang, search = '') {
         hours: 'Opening hours', closed: 'Closed', today: 'today',
         days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
         news: 'News', reviews: 'Reviews', write: 'Write a review', noReviews: 'No reviews yet. Been here? Be the first.',
-        user: 'Klendar user', report: 'Report', reportShort: 'Report', editBiz: 'Edit your page', myBiz: 'Go to the dashboard', block: 'Block', reportBiz: 'Report this business', menuPhotos: 'Photos of the menu', menuPdf: 'Menu (PDF)',
+        user: 'Klendar user', report: 'Report', reportShort: 'Report', editBiz: 'Edit your page', myBiz: 'Go to the dashboard', block: 'Block', reportBiz: 'Report this business', menuPhotos: 'Photos of the menu',
         verifiedCustomer: 'Verified customer',
         verifiedWhat: "They've redeemed something at this business with Klendar: an offer, an event, a stamp reward or a birthday gift. We check it against the redemptions validated at the venue.",
         howReviews: 'How reviews work', allReviews: 'All',
@@ -758,7 +761,7 @@ export async function businessPage(param, lang, search = '') {
         hours: 'Horario', closed: 'Cerrado', today: 'hoy',
         days: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'],
         news: 'Novedades', reviews: 'Reseñas', write: 'Escribir una reseña', noReviews: 'Todavía no hay reseñas. ¿Has estado? Sé la primera persona.',
-        user: 'Usuario de Klendar', report: 'Denunciar', reportShort: 'Denunciar', editBiz: 'Editar ficha', myBiz: 'Ir al panel', block: 'Bloquear', reportBiz: 'Denunciar este negocio', menuPhotos: 'Fotos de la carta', menuPdf: 'Carta (PDF)',
+        user: 'Usuario de Klendar', report: 'Denunciar', reportShort: 'Denunciar', editBiz: 'Editar ficha', myBiz: 'Ir al panel', block: 'Bloquear', reportBiz: 'Denunciar este negocio', menuPhotos: 'Fotos de la carta',
         verifiedCustomer: 'Cliente verificado',
         verifiedWhat: 'Ha canjeado algo en este negocio con Klendar: una oferta, un evento, un premio de sellos o un regalo de cumpleaños. Lo comprobamos con los canjes validados en el local.',
         howReviews: 'Cómo funcionan las reseñas', allReviews: 'Todas',
@@ -855,7 +858,19 @@ export async function businessPage(param, lang, search = '') {
     .filter(([k, v]) => k !== 'web' && typeof v === 'string' && v.trim())
     .map(([k, v]) => `<a href="${esc(redUrl(k, v))}" rel="nofollow noopener" target="_blank">${esc(redNombre[k] || k)}</a>`);
 
-  const fotosCarta = (b.menu_images || []).filter((u) => typeof u === 'string' && seguro(u));
+  // Los archivos de la carta, en su orden: las fotos (galería con zoom) y
+  // cada PDF como una fila que lo abre fuera. Lo que espera la moderación no
+  // sale (la ficha va sin sesión).
+  const archivos = enlacesNeg && Array.isArray(enlacesNeg.menu_files)
+    ? enlacesNeg.menu_files.filter((f) => f && !f.pending && /^https:\/\//.test(String(f.url || '')) && ['image', 'pdf'].includes(f.kind))
+    : (b.menu_images || []).filter((u) => typeof u === 'string' && seguro(u)).map((url) => ({ kind: /\.pdf($|\?)/i.test(url) ? 'pdf' : 'image', url }));
+  const fotosCarta = archivos.filter((f) => f.kind === 'image').map((f) => f.url);
+  const pdfsCarta = archivos.filter((f) => f.kind === 'pdf');
+  const enlaceCarta = seguro(b.menu_url);
+  const hayCarta = carta.length > 0 || fotosCarta.length > 0 || pdfsCarta.length > 0 || !!enlaceCarta;
+  // «Reservar», «Pedir a domicilio»…: botones iguales y neutros (sin coral).
+  const enlacesHtml = KE.botones(enlacesNeg?.links, lang);
+  const cuentaToques = !!(enlacesHtml || pdfsCarta.length || enlaceCarta);
   const galeria = (b.gallery || []).filter((u) => typeof u === 'string' && u);
   const estrellas = (n) => `<span class="stars" aria-label="${n}/5">${'★'.repeat(n)}<span>${'★'.repeat(5 - n)}</span></span>`;
   const since = KZ.fmt(b.member_since, tz, en ? 'en-GB' : 'es-ES', { month: 'long', year: 'numeric' });
@@ -892,7 +907,7 @@ export async function businessPage(param, lang, search = '') {
         ${events.length ? `<a class="chip" href="#proximamente">${esc(S.soon)} <span class="muted">${events.length}</span></a>` : ''}
         ${partidos ? `<a class="chip" href="#partidos">${esc(S.matches)}</a>` : ''}
         ${novedades.length ? `<a class="chip" href="#novedades">${esc(S.news)}</a>` : ''}
-        ${carta.length || fotosCarta.length ? `<a class="chip" href="#carta">${esc(S.menu)}</a>` : ''}
+        ${hayCarta ? `<a class="chip" href="#carta">${esc(S.menu)}</a>` : ''}
         <a class="chip" href="#resenas">${esc(S.reviews)}</a>
       </nav>
     </div>
@@ -901,6 +916,7 @@ export async function businessPage(param, lang, search = '') {
       <a class="pill big" data-solo-equipo="empleado" hidden href="/panel/?biz=${encodeURIComponent(b.id)}">${icono('negocio', 16)} <span>${S.myBiz}</span></a>
       <a class="pill accent big" data-solo-publico data-fav="${esc(b.id)}" href="${cuenta(lang)}#/seguir/${encodeURIComponent(b.id)}"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.8 4.5c2.2 0 3.6 1.2 5.2 3 1.6-1.8 3-3 5.2-3 3.8 0 5.9 3.9 4.4 7.3C19.5 16.4 12 21 12 21z"/></svg> <span>${S.open}</span></a>
       <p class="note" data-solo-publico style="margin-bottom:16px">${S.note}</p>
+      ${enlacesHtml ? `<div class="acciones neg-enlaces">${enlacesHtml}</div>` : ''}
       <p class="acciones" style="margin:0 0 16px">${historiaBoton(lang, 'b', slug || b.id)}</p>
       ${organizador ? `<h2 class="side-h fechas-h">${esc(SA.upcoming)}</h2>
       ${fechasOrg.length ? listaFechas(fechasOrg, lang, { conNegocio: false }) : `<p class="muted">${esc(SA.noDatesBiz)}</p>`}` : ''}
@@ -908,7 +924,7 @@ export async function businessPage(param, lang, search = '') {
         ${where ? `<div><span>${icono('lugar')}</span><span>${maps ? `<a href="${esc(maps)}" rel="nofollow noopener" target="_blank">${esc(where)}</a>` : esc(where)}</span></div>` : ''}
         ${b.phone ? `<div><span>${icono('telefono')}</span><span><a href="tel:${esc(b.phone)}">${esc(b.phone)}</a></span></div>` : ''}
         ${seguro(b.website) ? `<div><span>${icono('web')}</span><span><a href="${esc(seguro(b.website))}" rel="nofollow noopener" target="_blank">${esc(String(b.website).replace(/^https?:\/\//, ''))}</a></span></div>` : ''}
-        ${seguro(b.menu_url) ? `<div><span>${icono('carta')}</span><span><a href="${esc(seguro(b.menu_url))}" rel="nofollow noopener" target="_blank">${S.menu}</a></span></div>` : ''}
+        ${enlaceCarta ? `<div><span>${icono('carta')}</span><span><a href="#carta">${S.menu}</a></span></div>` : ''}
         ${b.contact_email ? `<div><span>${icono('correo')}</span><span><a href="mailto:${esc(b.contact_email)}">${esc(b.contact_email)}</a></span></div>` : ''}
         ${redes.length ? `<div><span>${icono('redes')}</span><span>${redes.join(' · ')}</span></div>` : ''}
       </div>
@@ -917,7 +933,7 @@ export async function businessPage(param, lang, search = '') {
     <div class="d-body">
       ${b.description ? `<h2>${S.about}</h2><p data-tr="business:${esc(b.id)}:description">${esc(b.description).replace(/\n/g, '<br>')}</p>
       <p data-tr-nota="business:" hidden></p>` : ''}
-      ${listaSitio(sitio, lang) ? `<h2>${S.place}</h2>${listaSitio(sitio, lang)}` : ''}
+      ${sitioFicha(sitio, lang) ? `<h2>${S.place}</h2>${sitioFicha(sitio, lang)}` : ''}
       ${flash.length ? `<h2 id="ahora">${S.now}</h2>${rejilla(flash, lang, { tz, sinNegocio: true, galeria: true })}` : ''}
       ${events.length ? `<h2 id="proximamente">${S.soon}</h2>${rejilla(events, lang, { tz, sinNegocio: true, galeria: true })}` : ''}
       ${offers.length ? '' : `<p class="empty">${S.none}</p>`}
@@ -939,13 +955,9 @@ export async function businessPage(param, lang, search = '') {
           </li>`).join('')}</ul>
         </section>`).join('')}</div>
         <p class="note">${esc(S.menuNote)}</p>` : ''}
-      ${fotosCarta.length ? `${carta.length ? '' : `<h2 id="carta">${S.menu}</h2>`}
-        <div class="carta-fotos">${fotosCarta.filter((u) => /\.pdf($|\?)/i.test(u))
-          .map((u) => `<a class="pill" href="${esc(u)}" target="_blank" rel="noopener">${icono('pdf', 16)} ${S.menuPdf}</a>`).join('')}${(() => {
-          // Las fotos se ven juntas en el visor, como en la app.
-          const fotos = fotosCarta.filter((u) => !/\.pdf($|\?)/i.test(u));
-          return fotos.map((u, i) => miniatura(u, { grupo: 'carta', i, n: fotos.length, clase: 'carta-foto', etiqueta: S.menuPhotos, lang, ancho: 300, alto: 400 })).join('');
-        })()}</div>` : ''}
+      ${fotosCarta.length || pdfsCarta.length || enlaceCarta ? `${carta.length ? '' : `<h2 id="carta">${S.menu}</h2>`}
+        ${fotosCarta.length ? `<div class="carta-fotos">${fotosCarta.map((u, i) => miniatura(u, { grupo: 'carta', i, n: fotosCarta.length, clase: 'carta-foto', etiqueta: S.menuPhotos, lang, ancho: 300, alto: 400 })).join('')}</div>` : ''}
+        ${pdfsCarta.length || enlaceCarta ? `<div class="carta-archivos">${pdfsCarta.map((f) => KE.filaCarta(f.url, lang, { pdf: true, nombre: f.name, bytes: f.bytes })).join('')}${enlaceCarta ? KE.filaCarta(enlaceCarta, lang) : ''}</div>` : ''}` : ''}
       ${novedades.length ? `<h2 id="novedades">${S.news}</h2>
         <p data-tr-nota="post:" hidden></p>
         <div class="novedades">${novedades.map((p) => `<article${isUuid(p.id) ? ` id="novedad-${p.id}"` : ''}>
@@ -1013,6 +1025,7 @@ export async function businessPage(param, lang, search = '') {
       ? { '@type': 'AggregateRating', ratingValue: Number(b.rating).toFixed(1), reviewCount: b.ratings }
       : undefined,
     sameAs: seguro(b.website) ? [b.website] : undefined,
+    hasMenu: enlaceCarta || (pdfsCarta[0] && pdfsCarta[0].url) || (carta.length ? `${BASE}${path}#carta` : undefined),
   };
   const migas = [['Klendar', en ? '/en/' : '/']];
   if (city) migas.push([b.city, city]);
@@ -1035,7 +1048,8 @@ export async function businessPage(param, lang, search = '') {
   return html(publicPage({
     lang, path, body: body + MENU_JS, title: conCiudad ? `${b.name} · ${b.city}` : b.name, description, image: b.cover || b.logo,
     head: `<meta name="robots" content="${b.adults_only || conVisita || b.closed_indefinitely ? 'noindex' : 'index, follow'}">
-${ldScript(jsonLd)}${horario ? '\n<script src="/assets/zona.js?v=1" defer></script>\n<script src="/assets/horario.js?v=1" defer></script>' : ''}${conVisita ? `\n${conVisita}` : ''}${local.crowd_enabled ? `\n${sitioAhoraScripts(lang)}` : ''}
+${ldScript(jsonLd)}${cuentaToques ? `
+<script src="/assets/enlaces.js?v=1" defer data-url="${esc(supabasePublic().url)}" data-key="${esc(supabasePublic().key)}" data-biz="${esc(b.id)}"></script>` : ''}${horario ? '\n<script src="/assets/zona.js?v=1" defer></script>\n<script src="/assets/horario.js?v=1" defer></script>' : ''}${conVisita ? `\n${conVisita}` : ''}${local.crowd_enabled ? `\n${sitioAhoraScripts(lang)}` : ''}
 ${traducir(lang, `business:${b.id}`, carta.length ? `menu:${b.id}` : '')}${partidos ? `
 ${PARTIDOS_CSS}` : ''}${grupoHtml || sorteosHtml ? `
 ${GRUPOS_CSS}` : ''}${organizador ? `
