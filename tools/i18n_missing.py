@@ -429,13 +429,20 @@ def variantes(toks, profundidad=0):
             return (a + b)[:MAX_VARIANTES]
         return []
     # `x || 'texto'`: la parte con texto.
+    # (`${nombre || ''}` dentro de una plantilla: el dato es un hueco, no '').
     for op in ('||', '??'):
         trozos = partes_prof0(toks, op)
         if len(trozos) > 1:
             out = []
+            alguno = False
             for tr in trozos:
-                out += variantes(tr, profundidad + 1)
-            return out[:MAX_VARIANTES]
+                v = [x for x in variantes(tr, profundidad + 1) if any(isinstance(y, Hueco) or y for y in x)]
+                if v:
+                    alguno = True
+                    out += v
+                else:
+                    out.append([Hueco(tr)])
+            return out[:MAX_VARIANTES] if alguno else []
     # Sumas: el producto de las partes.
     trozos = partes_prof0(toks, '+')
     if len(trozos) > 1:
@@ -457,7 +464,7 @@ def variantes(toks, profundidad=0):
                 acum = [a + [p] for a in acum]
             else:
                 v = variantes(p, profundidad + 1)
-                if v and all(all(isinstance(x, str) for x in vv) for vv in v) and len(v) <= 3:
+                if v and len(v) <= 3:
                     acum = [a + b for a in acum for b in v][:MAX_VARIANTES]
                 else:
                     acum = [a + [Hueco(p)] for a in acum]

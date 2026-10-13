@@ -228,8 +228,10 @@ function makeI18N(EN, opts = {}) {
     document.documentElement.lang = lang;
   }
 
-  /** Para textos que se crean a mano (avisos, confirmaciones). */
-  const t = (s) => (lang !== 'es' && typeof s === 'string' && trad(s)) || s;
+  /** Para textos que se crean a mano (avisos, confirmaciones). Como al
+   * traducir lo pintado, sin los espacios de los lados: `bi('Poner en la
+   * tele · ', …) + n` se quedaba en español en los idiomas nuevos. */
+  const t = (s) => (lang !== 'es' && typeof s === 'string' && (trad(s) || one(s))) || s;
 
   function setLang(next) {
     try { localStorage.setItem('klendar_lang', next); } catch { /* sin permisos */ }
