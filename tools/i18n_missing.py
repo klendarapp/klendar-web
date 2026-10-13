@@ -469,7 +469,15 @@ def variantes(toks, profundidad=0):
     if (len(toks) >= 5 and toks[0].v == 'I18N' and toks[1].v == '.' and toks[2].v == 't' and toks[3].v == '('
             and cierre(toks, 3) == len(toks) - 1):
         return variantes(toks[4:-1], profundidad + 1)
-    # Una función flecha: su cuerpo.
+    # Una función flecha: su cuerpo. Con los parámetros entre paréntesis
+    # (`(n) => …`, lo normal en las tablas {es, en} de /assets) también.
+    if toks[0].k == 'p' and toks[0].v == '(':
+        k = cierre(toks, 0)
+        if k + 1 < len(toks) and toks[k + 1].k == 'p' and toks[k + 1].v == '=>':
+            cuerpo = toks[k + 2:]
+            if cuerpo and cuerpo[0].v == '{':
+                return []
+            return variantes(cuerpo, profundidad + 1)
     for k, t in enumerate(toks):
         if t.k == 'p' and t.v == '=>':
             cuerpo = toks[k + 1:]
@@ -794,6 +802,9 @@ def textos_area(area: str) -> dict[str, tuple[str | None, str]]:
     return {k: v for k, v in todo.items() if k not in ya_ingles}
 
 
+HUECO = re.compile(r'\{\w+\}')
+
+
 def main_nuevos(areas: list[str], langs: list[str]) -> int:
     como_json = '--json' in sys.argv
     total = 0
@@ -802,7 +813,10 @@ def main_nuevos(areas: list[str], langs: list[str]) -> int:
         todo = textos_area(area)
         for lang in langs:
             ya = dic_nuevo(ROOT / NUEVAS_AREAS[area][3] / f'{lang}.js')
-            faltan = {k: v for k, v in todo.items() if k not in ya}
+            # Los huecos casan por posición, no por nombre (klTraductor en
+            # assets/i18n.js): «Hasta {n}» ya vale para «Hasta {s}».
+            ya_huecos = {HUECO.sub('{}', k) for k in ya}
+            faltan = {k: v for k, v in todo.items() if k not in ya and HUECO.sub('{}', k) not in ya_huecos}
             total += len(faltan)
             for k, (en, _) in faltan.items():
                 if union.get(k) is None:
