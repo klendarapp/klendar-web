@@ -173,6 +173,7 @@ const RPC_ERRORS = {
   user_not_found: 'No existe ningún usuario con ese email.', cannot_remove_self: 'No puedes quitarte a ti mismo.', last_admin: 'Tiene que quedar al menos un administrador.',
   category_in_use: 'La categoría está en uso (negocios, publicaciones o subcategorías).', slug_required: 'El identificador (slug) es obligatorio.', invalid_category_group: 'Ese grupo de categorías no existe.',
   title_body_required: 'Título y texto son obligatorios.', unknown_key: 'Clave de configuración desconocida.', invalid_amount: 'Importe no válido.', invalid_period: 'El fin del periodo es anterior al inicio.',
+  stripe_managed: 'Este negocio paga con tarjeta (Stripe): cancela antes su suscripción en Stripe o desde su panel.', invalid_config: 'Algún ajuste del cobro no es válido (días o ids de Stripe).', invalid_tiers: 'La escalera no es válida: tramos de menor a mayor, el último sin tope.', invalid_price_id: 'Ese id de precio de Stripe no es válido (price_…).',
   not_found: 'No encontrado.', invalid_type: 'Tipo de cuenta no válido.', invalid_birth_date: 'Esa fecha de nacimiento no es válida.', account_suspended: 'Tu cuenta está suspendida. Si crees que es un error, escríbenos a info@klendar.app.',
 };
 
@@ -2992,14 +2993,14 @@ PAGES.planes = async (v) => {
   v.innerHTML = `
     <div class="page-head"><h1>Planes y pagos</h1><span class="spacer"></span><button class="btn sm ghost" id="csv">Exportar CSV</button></div>
     ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p><b>Subscriptions</b>: which plan each business has and when it expires. Until card payments are available, payments are made by bank transfer and recorded by hand on the business page (“Record payment”). <b>Payments</b>: history of payments with monthly totals (for the accounts). <b>Plans</b>: there is a single plan with everything included, no limits and no commission per redemption: <b>Klendar</b> (<code>standard</code>, €19.90 + VAT a month or €199 + VAT a year per venue, after the 30-day free trial; prices here are before VAT) and <b>Launch, free</b> (<code>free</code>, while a city is starting up). <b>Founder</b> (<code>founder</code>, €9.90) was withdrawn: it stays hidden and is not offered to anyone new. Chains pay per venue on a sliding scale: the first venue €19.90; the 2nd to the 5th, €15 each; from the 6th, €12 each (+ VAT). Apply it when you record the subscription (3 venues: €49.90 + VAT a month). Changing a plan affects the businesses that have it.</p>` : '<p><b>Suscripciones</b>: qué plan tiene cada negocio y cuándo vence. Mientras no haya pago con tarjeta, los cobros se hacen por transferencia y se anotan a mano en la ficha del negocio («Registrar pago»). <b>Pagos</b>: histórico de cobros con totales por mes (para la contabilidad). <b>Planes</b>: hay un solo plan, con todo incluido, sin límites y sin comisión por canje: <b>Klendar</b> (<code>standard</code>, 19,90 € + IVA al mes o 199 € + IVA al año por local, después de la prueba gratis de 30 días; aquí los precios van sin IVA) y <b>Gratis de lanzamiento</b> (<code>free</code>, mientras una ciudad está arrancando). <b>Fundador</b> (<code>founder</code>, 9,90 €) se retiró: queda oculto y no se ofrece a nadie nuevo. Las cadenas pagan por local con escalera: el primer local, 19,90 €; del 2.º al 5.º, 15 € cada uno; desde el 6.º, 12 € cada uno (+ IVA). Aplícala al registrar la suscripción (3 locales: 49,90 € + IVA al mes). Cambiar un plan afecta a los negocios que lo tengan.</p>')}
-    <div class="tabs">${[['subs', 'Suscripciones'], ['payments', 'Pagos'], ['plans', 'Planes']].map((t) => `<button type="button" data-t="${t[0]}" class="${tab === t[0] ? 'on' : ''}" aria-pressed="${tab === t[0]}">${t[1]}</button>`).join('')}</div>
+    <div class="tabs">${[['subs', 'Suscripciones'], ['payments', 'Pagos'], ['plans', 'Planes'], ['stripe', 'Cobro con tarjeta']].map((t) => `<button type="button" data-t="${t[0]}" class="${tab === t[0] ? 'on' : ''}" aria-pressed="${tab === t[0]}">${t[1]}</button>`).join('')}</div>
     <div id="tabview"></div>`;
   let rows = [], csvCols = [], csvName = 'suscripciones';
   const load = async () => {
     const tv = $('#tabview'); tv.innerHTML = '<div class="loading">Cargando…</div>';
     if (tab === 'subs') {
       const s = st.subs;
-      tv.innerHTML = `<div class="toolbar"><select id="sstatus" aria-label="${esc(I18N.t('Estado'))}">${[['current', 'Vigentes'], ['trial', 'En prueba'], ['active', 'Activas'], ['past_due', 'Impagadas'], ['cancelled', 'Canceladas'], ['all', 'Todas']].map((o) => `<option value="${o[0]}" ${(s.status || 'current') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select></div><div id="list"></div>`;
+      tv.innerHTML = `<div class="toolbar"><select id="sstatus" aria-label="${esc(I18N.t('Estado'))}">${[['current', 'Vigentes'], ['trial', 'En prueba'], ['active', 'Activas'], ['past_due', 'Impagadas'], ['paused', 'En pausa'], ['cancelled', 'Canceladas'], ['all', 'Todas']].map((o) => `<option value="${o[0]}" ${(s.status || 'current') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select></div><div id="list"></div>`;
       const r = await rpc('admin_subscriptions', { p_status: s.status || 'current', p_limit: s.limit, p_offset: s.offset });
       rows = r.rows; csvName = 'suscripciones';
       csvCols = [['business', 'negocio'], ['owner_email', 'email'], ['plan', 'plan'], ['status', 'estado'], ['period_start', 'inicio'], ['period_end', 'fin'], ['days_left', 'días restantes'], ['payment_method', 'pago'], [(x) => (x.paid_cents / 100).toFixed(2), 'cobrado (€)']];
@@ -3066,6 +3067,95 @@ PAGES.planes = async (v) => {
       };
       $('#newplan').onclick = () => edit(null);
       $$('[data-edit]').forEach((b) => { b.onclick = () => esperando(b, () => edit(plans.find((x) => x.id === b.dataset.edit))); });
+    }
+    if (tab === 'stripe') {
+      // Cobro con Stripe (migración 20261216100000): ajustes, precios sin IVA
+      // con su escalera por locales y los avisos que llegan de Stripe.
+      const bd = await rpc('admin_billing');
+      const cfg = bd.config || {};
+      const tax = cfg.tax || {};
+      const EN = I18N.lang === 'en';
+      rows = bd.events; csvName = 'stripe-avisos';
+      csvCols = [['received_at', 'recibido'], ['type', 'tipo'], ['result', 'resultado'], ['id', 'id']];
+      const escalera = (t) => (t || []).map((x) => `${x.up_to ? (EN ? `up to ${x.up_to}` : `hasta ${x.up_to}`) : (EN ? 'more' : 'más')}: ${fmtMoney(x.unit_cents)}`).join(' · ');
+      const listos = bd.prices.filter((x) => x.stripe_price_id).length;
+      tv.innerHTML = `
+        ${helpBox('¿Cómo se enciende?', EN
+          ? '<p>1) Create the Stripe account and run <code>tool/stripe_setup.py</code> with the test key: it creates the products, the prices from this table, VAT, the customer portal and the webhook, and saves the ids here. 2) Put <code>STRIPE_SECRET_KEY</code> and <code>STRIPE_WEBHOOK_SECRET</code> in the Edge Functions. 3) Try it with test cards. 4) Switch on “Card payment”. Step by step: RUNBOOK §2j. Paying by transfer (“Record payment”) still works.</p>'
+          : '<p>1) Crea la cuenta de Stripe y lanza <code>tool/stripe_setup.py</code> con la clave de pruebas: crea los productos, los precios de esta tabla, el IVA, el portal de cliente y el webhook, y guarda aquí sus ids. 2) Pon <code>STRIPE_SECRET_KEY</code> y <code>STRIPE_WEBHOOK_SECRET</code> en las Edge Functions. 3) Pruébalo con tarjetas de prueba. 4) Enciende «Pago con tarjeta». Paso a paso: RUNBOOK §2j. El pago por transferencia («Registrar pago») sigue valiendo.</p>')}
+        <div class="card"><h2>Ajustes</h2>
+          <p class="muted small" style="margin:0 0 10px">${esc(EN ? `${listos} of ${bd.prices.length} prices have their Stripe id.` : `${listos} de ${bd.prices.length} precios tienen su id de Stripe.`)}</p>
+          <form id="sbf" style="display:grid;gap:10px">
+            <label class="f" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="enabled" ${cfg.enabled ? 'checked' : ''}><span>Pago con tarjeta (los propietarios ven «Pagar el plan con tarjeta» en el panel)</span></label>
+            <label class="f"><span>Días de gracia tras un cobro fallido</span><input name="grace" type="number" min="1" max="60" value="${esc(cfg.grace_days ?? 7)}"><small class="muted">Después, las publicaciones del negocio dejan de verse hasta que pague (no se borra nada).</small></label>
+            <label class="f"><span>Días de pausa por cierre al año</span><input name="pmax" type="number" min="0" max="365" value="${esc(cfg.pause_max_days ?? 90)}"></label>
+            <label class="f"><span>Pausa mínima (días)</span><input name="pmin" type="number" min="1" max="90" value="${esc(cfg.pause_min_days ?? 7)}"></label>
+            <label class="f"><span>IVA</span><select name="tax"><option value="rate" ${tax.mode !== 'automatic' && tax.mode !== 'none' ? 'selected' : ''}>Tipo fijo (21 %, sin incluir en el precio)</option><option value="automatic" ${tax.mode === 'automatic' ? 'selected' : ''}>Stripe Tax (automático, +0,5 % por cobro)</option><option value="none" ${tax.mode === 'none' ? 'selected' : ''}>Sin impuesto</option></select></label>
+            <label class="f"><span>Id del impuesto (txr_…)</span><input name="rate" value="${esc(tax.rate_id || '')}" autocomplete="off"></label>
+            <label class="f"><span>Id del impuesto en Canarias (vacío = sin IVA)</span><input name="ratec" value="${esc(tax.rate_id_canarias || '')}" autocomplete="off"></label>
+            <label class="f"><span>Configuración del portal (bpc_…)</span><input name="portal" value="${esc(cfg.portal_configuration || '')}" autocomplete="off"></label>
+            <label class="f" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="promo" ${cfg.allow_promotion_codes ? 'checked' : ''}><span>Admitir códigos promocionales de Stripe en el pago</span></label>
+            <div><button class="btn sm">Guardar</button></div>
+          </form></div>
+        <div class="card"><h2>Precios (sin IVA)</h2>${table({ cols: [
+          { h: 'Plan', r: (x) => `${esc(x.plan_names?.es || x.plan)} ${x.is_offered ? '' : tag(EN ? 'not offered' : 'no se ofrece', 'dim')}` },
+          { h: 'Periodo', r: (x) => esc(x.interval === 'year' ? (EN ? 'year' : 'año') : (EN ? 'month' : 'mes')) },
+          { h: 'Escalera por locales', r: (x) => esc(escalera(x.tiers)) },
+          { h: 'Stripe', r: (x) => (x.stripe_price_id ? `<code class="small">${esc(x.stripe_price_id)}</code>` : tag(EN ? 'no id' : 'sin id', 'warn')) },
+          { h: '', r: (x) => `<button class="btn sm" data-price="${x.id}">Editar…</button>` },
+        ], rows: bd.prices })}</div>
+        <div class="card"><h2>Impagos y pausas</h2>
+          ${table({ cols: [
+            { h: 'Negocio', r: (x) => `<a class="link" href="#/negocios/${x.id}">${esc(x.name)}</a>` },
+            { h: 'Pago pendiente desde', r: (x) => fmtDate(x.since) }, { h: 'Pago', r: (x) => esc(x.method || '') },
+          ], rows: bd.past_due, empty: 'Ningún pago pendiente.' })}
+          ${table({ cols: [
+            { h: 'Negocio', r: (x) => `<a class="link" href="#/negocios/${x.id}">${esc(x.name)}</a><span class="sub">${esc(x.city || '')}</span>` },
+            { h: 'Publicaciones en pausa', r: (x) => `${tag(x.hold === 'unpaid' ? (EN ? 'unpaid' : 'impago') : (EN ? 'closed' : 'cierre'), x.hold === 'unpaid' ? 'bad' : 'dim')} <span class="sub">${fmtDate(x.since)}</span>` },
+            { h: '', r: (x) => (x.hold === 'unpaid' ? `<button class="btn sm" data-hold="${x.id}">Quitar la pausa…</button>` : '') },
+          ], rows: bd.holds, empty: 'Ningún negocio con las publicaciones en pausa por el cobro.' })}</div>
+        <div class="card"><h2>Avisos de Stripe</h2><p class="muted small" style="margin:0 0 8px">${esc(EN ? `Subscriptions in Stripe: ${bd.subscriptions.total}` : `Suscripciones en Stripe: ${bd.subscriptions.total}`)} ${Object.entries(bd.subscriptions.by_status || {}).map(([k, n]) => `${tag(k)} ${n}`).join(' ')}</p>
+          ${table({ cols: [
+            { h: 'Recibido', r: (x) => `<span class="nowrap">${fmtDate(x.received_at)}</span>` },
+            { h: 'Tipo', r: (x) => `<code class="small">${esc(x.type)}</code>${x.livemode === false ? ` ${tag(EN ? 'test' : 'prueba', 'dim')}` : ''}` },
+            { h: 'Resultado', r: (x) => esc(x.result || '') },
+          ], rows: bd.events, empty: 'Todavía no ha llegado ningún aviso de Stripe.' })}</div>`;
+      $('#sbf').onsubmit = (e) => {
+        e.preventDefault();
+        const f = e.currentTarget;
+        const c = f.elements;
+        esperando($('button', f), async () => {
+          if (c.enabled.checked && !cfg.enabled && !await confirmDlg('Encender el pago con tarjeta', EN ? 'Owners will be able to pay for the plan with Stripe. Have you tried it with test cards?' : 'Los propietarios podrán pagar el plan con Stripe. ¿Lo has probado con las tarjetas de prueba?', { submit: 'Encender' })) return;
+          try {
+            await rpc('admin_set_billing_config', { p: {
+              enabled: c.enabled.checked, grace_days: Number(c.grace.value), pause_max_days: Number(c.pmax.value), pause_min_days: Number(c.pmin.value),
+              allow_promotion_codes: c.promo.checked, portal_configuration: c.portal.value.trim(),
+              tax: { mode: c.tax.value, rate_id: c.rate.value.trim(), rate_id_canarias: c.ratec.value.trim() },
+            } });
+            toast('Guardado'); load();
+          } catch (err) { toast(err.message, true); }
+        });
+      };
+      $$('[data-price]').forEach((b) => { b.onclick = () => esperando(b, async () => {
+        const pr = bd.prices.find((x) => x.id === b.dataset.price);
+        const r = await modal({ title: `${pr.plan_names?.es || pr.plan} · ${pr.interval === 'year' ? 'año' : 'mes'}`, intro: esc(EN
+          ? 'Prices without VAT, per venue. Format: “1:19,90; 5:15; :12” (up to 1 venue €19.90 each; up to 5, €15; more, €12). Stripe prices can’t be edited: to change an amount, clear the id, save and run tool/stripe_setup.py again.'
+          : 'Precios sin IVA, por local. Formato: «1:19,90; 5:15; :12» (hasta 1 local, 19,90 € cada uno; hasta 5, 15 €; más, 12 €). Los precios de Stripe no se editan: para cambiar un importe, vacía el id, guarda y vuelve a lanzar tool/stripe_setup.py.'), fields: [
+          { name: 'tiers', label: 'Escalera', value: (pr.tiers || []).map((t) => `${t.up_to ?? ''}:${String(t.unit_cents / 100).replace('.', ',')}`).join('; '), required: true },
+          { name: 'pid', label: 'Id del precio en Stripe (price_…)', value: pr.stripe_price_id || '' },
+          { name: 'active', label: 'Activo', type: 'checkbox', value: pr.active },
+        ] });
+        if (!r) return;
+        const tiers = r.tiers.split(';').map((x) => x.trim()).filter(Boolean).map((x) => {
+          const [up, euros] = x.split(':');
+          return { up_to: up.trim() === '' ? null : Number(up), unit_cents: Math.round(parseFloat(String(euros).replace(',', '.')) * 100) };
+        });
+        try { await rpc('admin_upsert_billing_price', { p: { id: pr.id, tiers, stripe_price_id: r.pid.trim(), active: r.active } }); toast('Guardado'); load(); } catch (err) { toast(err.message, true); }
+      }); });
+      $$('[data-hold]').forEach((b) => { b.onclick = () => esperando(b, async () => {
+        if (!await confirmDlg('Quitar la pausa', EN ? 'Its publications will show again even though the payment is still pending in Stripe. Do it if the business paid another way.' : 'Sus publicaciones volverán a verse aunque el pago siga pendiente en Stripe. Hazlo si el negocio pagó de otra forma.', { submit: 'Quitar la pausa' })) return;
+        try { await rpc('admin_clear_billing_hold', { p_business: b.dataset.hold }); toast('Hecho'); load(); } catch (err) { toast(err.message, true); }
+      }); });
     }
   };
   $$('.tabs button').forEach((b) => { b.onclick = () => { tab = b.dataset.t; aUrl(); $$('.tabs button').forEach((x) => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', String(x === b)); }); load(); }; });

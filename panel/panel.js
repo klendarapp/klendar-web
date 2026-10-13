@@ -839,6 +839,8 @@ const NAV = [
     // «Más herramientas» (panel/herramientas.js): lo opcional.
     ['herramientas', 'herramientas', 'Más herramientas', ['cola', 'tele', 'partidos', 'grupos', 'antes-de-cerrar', 'series', 'carta', 'cartel-local']],
     ['equipo', 'group', 'Equipo'],
+    // «Tu plan» (panel/plan.js): estado del plan y, para el propietario, pagar.
+    ['plan', 'workspace_premium', 'Tu plan'],
     ['resenas', 'reviews', 'Reseñas'],
     ['cerrados', 'event_busy', 'Días cerrados'],
     ['ayuda', 'help', 'Ayuda'],
@@ -927,7 +929,7 @@ function sinDobleEnvio(caja) {
 
 // Lo que no es de un empleado: solo propietario y encargados (como la app).
 // «Regalo de cumpleaños» no está: el personal lo ve, en solo lectura.
-const SOLO_GESTION = ['sellos', 'carta', 'novedades', 'mensajes', 'ficha', 'cerrados', 'equipo', 'cartel-local', 'tele', 'rrpp', 'antes-de-cerrar', 'grupos'];
+const SOLO_GESTION = ['sellos', 'carta', 'novedades', 'mensajes', 'ficha', 'cerrados', 'equipo', 'cartel-local', 'tele', 'rrpp', 'antes-de-cerrar', 'grupos', 'plan'];
 
 // ── Salir con cambios sin guardar ───────────────────────────────────────────
 // Una vista con cambios se apunta aquí: si se va a otra pantalla, se vuelve
@@ -1067,6 +1069,14 @@ function avisoCerrado() {
     <p style="margin:8px 0 0"><a class="btn sm" href="mailto:info@klendar.app?subject=${asunto}&body=${cuerpo}">${ms('mail')}${esc(I18N.t('Escribir a soporte'))}</a></p></div>`;
 }
 
+/** Pago pendiente o publicaciones en pausa por el cobro: una línea y a «Tu plan». */
+function avisoCobro(sub) {
+  const pausa = sub.billing?.hold === 'unpaid';
+  return `<div class="help"><b>${esc(pausa ? bi('Publicaciones en pausa por un pago pendiente.', 'Publications paused because of an outstanding payment.')
+    : bi('Pago pendiente del plan.', 'Plan payment due.'))}</b>
+    <a href="#/plan">${esc(bi('Ver tu plan', 'See your plan'))}</a></div>`;
+}
+
 /** «Pedir otra revisión»: tras corregir lo del rechazo, otra vez a la cola
  * del admin, con lo que ha cambiado si lo cuenta (`request_business_review`). */
 async function pideOtraRevision(boton) {
@@ -1116,6 +1126,7 @@ PAGES.resumen = async (v) => {
   const aviso = cerradoDeVerdad ? avisoCerrado()
     : condiciones ? avisoCondiciones(condiciones)
     : BIZ.verification_status !== 'verified' ? avisoVerificacion()
+      : gestiona() && (sub?.billing?.hold === 'unpaid' || sub?.status === 'past_due') ? avisoCobro(sub)
       : cerradoIndef() ? `<div class="card pausa"><div>
         <h2 style="margin:0">Cerrado hasta nuevo aviso</h2>
         <p class="muted" style="margin:4px 0 0">${esPropietario()
@@ -4966,31 +4977,22 @@ PAGES.novedades = async (v) => {
   }; });
 };
 
-/** «Tu plan»: lo mismo que la tarjeta del panel en la app. */
+/** «Tu plan» en el resumen: el estado, como la tarjeta de la app, y la
+ * entrada a #/plan (panel/plan.js), donde se paga y se gestiona. */
 function planCard(sub) {
   const en = I18N.lang === 'en';
-  const name = sub.plan_names?.[I18N.lang] || sub.plan_names?.[I18N.pub] || sub.plan_names?.es || sub.plan_slug || '';
-  const free = sub.plan_slug === 'free';
-  const trial = sub.status === 'trial';
-  const until = sub.period_end
-    ? new Date(sub.period_end).toLocaleDateString(LOC(), { day: 'numeric', month: 'short', year: 'numeric', timeZone: TZ }) : '';
-  const estado = trial && until
-    ? (en ? `Everything included until ${until}, no card and no automatic renewal. While your city is launching, it stays free.`
-      : `Prueba con todo hasta el ${until}, sin tarjeta y sin renovación automática. Mientras tu ciudad arranca, sigues gratis.`)
-    : free ? (en ? 'Free while your city is launching, with no limit on publications. We\u2019ll give you a month\u2019s notice before charging.'
-      : 'Gratis mientras tu ciudad arranca, sin límite de publicaciones. Te avisaremos con un mes de antelación antes de cobrar.')
-      : (en ? `${fmtMoney(sub.price_cents)} + VAT a month, no commission per redemption.` : `${fmtMoney(sub.price_cents)} + IVA al mes, sin comisión por canje.`);
+  const name = planNombre(sub.plan_names, sub.plan_slug);
+  const bill = sub.billing || {};
+  const [tono, etiqueta, frase] = planEstado(sub, bill, bill.provider === 'stripe');
   const usadas = sub.active_offers ?? 0;
   const uso = sub.max_active_offers == null
     ? (en ? `${usadas} active publication${usadas === 1 ? '' : 's'} · unlimited`
       : `${usadas} ${usadas === 1 ? 'publicación activa' : 'publicaciones activas'} · sin límite`)
     : (en ? `${usadas} of ${sub.max_active_offers} active publications` : `${usadas} de ${sub.max_active_offers} publicaciones activas`);
-  const asunto = encodeURIComponent(en ? 'Change of plan' : 'Cambio de plan');
-  const cuerpo = encodeURIComponent(`${en ? 'Business' : 'Negocio'}: ${BIZ.id}`);
-  return `<div class="card"><h2>${ms('workspace_premium')} ${esc(en ? `${name} plan` : `Plan ${name}`)}${trial ? ` <span class="tag st-trial">${en ? 'TRIAL' : 'PRUEBA'}</span>` : ''}</h2>
-    <p class="muted" style="margin:0 0 6px">${esc(estado)}</p>
+  return `<div class="card"><h2>${ms('workspace_premium')} ${esc(en ? `${name} plan` : `Plan ${name}`)} <span class="tag ${esc(tono)}">${esc(etiqueta)}</span></h2>
+    <p class="muted" style="margin:0 0 6px">${esc(frase)}</p>
     <p style="margin:0 0 12px">${esc(uso)}</p>
-    <a class="btn sm" href="mailto:info@klendar.app?subject=${asunto}&body=${cuerpo}">${esc(free || trial ? (en ? 'Ask about the plan' : 'Preguntar por el plan') : (en ? 'Change plan or payment method' : 'Cambiar plan o forma de pago'))}</a></div>`;
+    <a class="btn sm" href="#/plan">${esc(bi('Ver tu plan', 'See your plan'))}</a></div>`;
 }
 
 PAGES.equipo = async (v) => {
@@ -5932,6 +5934,7 @@ PAGES.baja = async (v, param) => {
     ${tarjetaDescarga()}
     <div class="card"><h2>Cerrar hasta nuevo aviso</h2>
       <p class="muted" style="margin:0 0 10px">Nadie verá tu ficha ni tus publicaciones en Descubre, el mapa o la búsqueda; quien tenga el enlace verá «Cerrado temporalmente». Lo abres de nuevo cuando quieras. Cerrar no cancela la suscripción.</p>
+      <p class="muted small" style="margin:0 0 10px">Si pagas el plan con tarjeta, puedes pausarlo mientras esté cerrado. <a href="#/plan">Ver tu plan</a></p>
       ${s.closed_since ? `<p style="margin:0 0 10px"><b>${esc(I18N.t('Cerrado hasta nuevo aviso'))}</b> · ${esc(bi(`Desde el ${diaLargoFecha(s.closed_since)}. No se ve nada de tu negocio.`, `Since ${diaLargoFecha(s.closed_since)}. Nothing from your business is showing.`))}</p>
         <button class="btn primary" type="button" data-accion="abrir">Abrir de nuevo</button>`
         : '<button class="btn" type="button" data-accion="cerrar">Cerrar hasta nuevo aviso</button>'}</div>

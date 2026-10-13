@@ -956,3 +956,28 @@ details.plegable[open] > summary { margin-bottom: 12px; }
    «Entendido», iguales y uno al lado del otro. */
 .aviso-condiciones .botones-iguales { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .aviso-condiciones .botones-iguales > .btn { justify-content: center; text-align: center; width: 100%; margin: 0; justify-self: stretch; box-sizing: border-box; }
+
+/* «Tu plan» (panel/plan.js): datos en dos columnas, los dos botones iguales,
+ * y el formulario de pagar con sus opciones a lo ancho. */
+.plan-datos { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 0; }
+.plan-datos dt { color: var(--ink-2); font-weight: 600; }
+.plan-datos dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.plan-botones { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
+.plan-botones .btn { justify-content: center; text-align: center; white-space: normal; }
+.plan-form { display: grid; gap: 14px; }
+.plan-form fieldset { border: 0; margin: 0; padding: 0; display: grid; gap: 6px; }
+.plan-form legend { font-weight: 700; margin-bottom: 6px; padding: 0; }
+.plan-form .opc { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 14px;
+  border: 1px solid var(--glass-border); background: var(--glass); cursor: pointer; }
+.plan-form .opc:has(input:checked) { border-color: var(--ink); }
+.plan-form .opc:has(input:disabled:not(:checked)) { opacity: .5; cursor: default; }
+.plan-total { margin: 0; font-weight: 700; font-size: 17px; }
+.plan-form > .btn { justify-self: start; }
+.plan-mas { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px; }
+.plan-mas .btn { justify-content: center; text-align: center; white-space: normal; }
+@media (max-width: 640px) {
+  .plan-datos { grid-template-columns: 1fr; gap: 2px; }
+  .plan-datos dd { margin-bottom: 8px; }
+  .plan-botones { grid-template-columns: 1fr; }
+  .plan-form > .btn { justify-self: stretch; justify-content: center; }
+}
