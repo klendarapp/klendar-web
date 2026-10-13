@@ -28,6 +28,16 @@ const I18N = makeI18N({
     'Ese vídeo dura más de 45 segundos. Recórtalo y vuelve a subirlo.': 'That video is longer than 45 seconds. Trim it and upload it again.',
     'Menú': 'Menu',
     'Resumen': 'Overview',
+    // «Mi negocio» ordenado (panel/herramientas.js)
+    'Lo esencial': 'The essentials',
+    'Tu negocio': 'Your business',
+    'Más herramientas': 'More tools',
+    'Cifras': 'Stats',
+    'Crear': 'Create',
+    'Oferta flash, evento o novedad': 'Flash offer, event or update',
+    '1 se publica sola': '1 publishes itself',
+    'se publican solas': 'publish themselves',
+    '1 publicación': '1 publication',
     'Publicaciones': 'Publications',
     'Validar códigos': 'Validate codes',
     'Informe': 'Report',
@@ -761,9 +771,9 @@ const I18N = makeI18N({
     // Publicaciones archivadas, avisos al cambiar algo con reservas y validar
     // sin conexión (2026-10-26).
     "Archivada": "Archived",
-    "Se borraron con canjes validados: ya no se ven en ninguna parte, pero siguen contando en el Informe.": "They were deleted with validated redemptions: they no longer show anywhere, but they still count in the Report.",
+    "Se borraron con canjes validados: ya no se ven en ninguna parte, pero siguen contando en Cifras.": "They were deleted with validated redemptions: they no longer show anywhere, but they still count in Stats.",
     "Ninguna a la vista: las que tienes están archivadas.": "Nothing showing: the ones you have are archived.",
-    "Tiene canjes validados, así que no se borra: se archiva. Deja de verse, sigue contando en el Informe y puedes crear otra a partir de ella.": "It has validated redemptions, so it isn't deleted: it's archived. It stops showing, still counts in the Report and you can create another from it.",
+    "Tiene canjes validados, así que no se borra: se archiva. Deja de verse, sigue contando en Cifras y puedes crear otra a partir de ella.": "It has validated redemptions, so it isn't deleted: it's archived. It stops showing, still counts in Stats and you can create another from it.",
     "Una publicación archivada no se vuelve a publicar: crea otra a partir de ella.": "An archived publication can't be published again: create another from it.",
     "Se escaneó hace más de 24 horas: ya no se puede validar.": "It was scanned more than 24 hours ago: it can no longer be validated.",
     "Esta publicación está cancelada: el código ya no vale.": "This publication has been cancelled: the code is no longer valid.",

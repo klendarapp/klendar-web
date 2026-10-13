@@ -3,7 +3,10 @@
  * opcionales para que la gente vuelva, cada una con una frase de para qué
  * sirve.
  *
- * - #/fidelizar: las tres tarjetas (`business_loyalty`).
+ * - #/fidelizar: todo lo de fidelizar, por orden de uso (sellos, cupón,
+ *   cumpleaños, avisar a los clientes, primera visita, exclusivas,
+ *   habituales, bonos y sorteos), con `business_loyalty` y el estado de
+ *   `business_tools_overview` (panel/herramientas.js).
  *   · Ofertas de primera visita: es una opción de cada oferta («Más
  *     opciones» del formulario); el botón abre una nueva ya marcada
  *     (#/publicaciones/nueva-flash?primera=1).
@@ -47,20 +50,26 @@ const fielMes = (iso) => (iso ? new Date(`${iso}T12:00:00Z`).toLocaleDateString(
 const fielLectura = () => `<div class="help" style="max-width:820px">${esc(bi('Solo el propietario o un encargado pueden cambiarlo.', 'Only the owner or a manager can change it.'))}</div>`;
 
 /** Una tarjeta: título, para qué sirve, cómo está y su botón. */
-function fielTarjeta({ icono, titulo, frase, estado, on, detalle, boton, href }) {
+function fielTarjeta({ icono: ic, titulo, frase, estado, on, detalle, boton, href }) {
   return `<div class="card fiel-card">
-    <h2 style="display:flex;align-items:center;gap:8px;margin:0 0 6px">${ms(icono)}<span>${esc(titulo)}</span></h2>
+    <h2 style="display:flex;align-items:center;gap:8px;margin:0 0 6px">${icono(ic)}<span>${esc(titulo)}</span></h2>
     <p class="muted" style="margin:0">${esc(frase)}</p>
-    ${estado ? `<p style="margin:10px 0 0;font-weight:700;display:flex;align-items:center;gap:6px">${on ? ms('check_circle') : ''}<span>${esc(estado)}</span></p>` : ''}
+    ${estado ? `<p class="herr-estado">${on ? ms('check_circle') : '<span class="herr-off" aria-hidden="true"></span>'}<span>${esc(estado)}</span></p>` : ''}
     ${detalle ? `<p class="muted" style="margin:4px 0 0">${esc(detalle)}</p>` : ''}
     ${boton ? `<p class="actions" style="margin:12px 0 0"><a class="btn" href="${esc(href)}">${esc(boton)}</a></p>` : ''}
   </div>`;
 }
 
 PAGES.fidelizar = async (v) => {
-  const d = await fielRpc('business_loyalty', { p_business: BIZ.id });
+  // El estado de lo demás (sellos, bonos…) llega aparte: si falla, las
+  // tarjetas salen igual, sin su línea de estado.
+  const [d, o] = await Promise.all([
+    fielRpc('business_loyalty', { p_business: BIZ.id }),
+    typeof herrEstado === 'function' ? herrEstado() : null,
+  ]);
   const c = d.coupon || {};
   const t = d.thanks || {};
+  const edit = d.can_edit === true;
   const regalo = c.kind === 'percent' ? (c.percent ? `−${c.percent} %` : '') : (c.gift || '');
   const mes = fielMes(t.month);
   const dados = c.given_month || 0;
@@ -73,39 +82,106 @@ PAGES.fidelizar = async (v) => {
       `${mes} gift sent to ${n === 1 ? '1 person' : `${fmtNum(n)} people`} · ${fmtNum(t.redeemed)} redeemed`)
       : (t.candidates || 0) > 0 ? bi(`Tus clientes más fieles de ${mes} están listos.`, `Your most loyal customers from ${mes} are ready.`)
         : bi(`Nadie a quien agradecer de ${mes}: el mes que viene te avisamos.`, `No one to thank from ${mes}: we'll let you know next month.`);
+  const num = (k, f) => Number(o?.[k]?.[f]) || 0;
+  const apagado = bi('Apagado', 'Off');
+  const ahora = (x) => (x === 0 ? bi('Ninguna activa ahora', 'None live right now') : bi(x === 1 ? '1 activa ahora' : `${x} activas ahora`, `${x} live right now`));
+  const sello = num('stamps', 'active');
+  const bonos = num('passes', 'on_sale');
+  const sorteos = num('giveaways', 'active');
+  const prox = o?.messages?.next_at
+    ? new Date(o.messages.next_at).toLocaleDateString(I18N.lang === 'en' ? 'en-GB' : 'es-ES', { day: 'numeric', month: 'long', timeZone: TZ })
+    : null;
+  const configurar = edit ? bi('Configurar', 'Set up') : bi('Ver', 'View');
+  // Por orden de lo que más usa un negocio pequeño (como la app).
   v.innerHTML = `
     <div class="page-head"><h1>${esc(bi('Fidelizar', 'Loyalty'))}</h1></div>
     <p class="muted" style="max-width:640px">${esc(bi('Herramientas opcionales para que la gente vuelva. Activa solo las que te encajen.', 'Optional tools to bring people back. Turn on only the ones that suit you.'))}</p>
     <div class="fiel-lista" style="display:grid;gap:12px;max-width:820px">
       ${fielTarjeta({
-    icono: 'waving_hand',
-    titulo: bi('Ofertas de primera visita', 'First-visit offers'),
-    frase: bi('Para atraer clientes nuevos: una oferta que solo puede usar quien no ha canjeado nunca nada en tu negocio.', 'To attract new customers: an offer that only people who have never redeemed anything at your business can use.'),
-    boton: d.can_edit ? bi('Crear oferta de primera visita', 'Create a first-visit offer') : '',
-    href: '#/publicaciones/nueva-flash?primera=1',
+    icono: 'loyalty',
+    titulo: bi('Tarjetas de sellos', 'Stamp cards'),
+    frase: bi('Para premiar a quien repite: cada canje (o cada visita con el QR del local) suma un sello y al llegar a la meta hay premio.', 'To reward people who come back: each redemption (or visit with the venue QR) adds a stamp, and reaching the goal earns a prize.'),
+    estado: o ? (sello ? bi(sello === 1 ? '1 tarjeta activa' : `${sello} tarjetas activas`, sello === 1 ? '1 active card' : `${sello} active cards`) : apagado) : '',
+    on: sello > 0,
+    boton: edit ? bi('Configurar', 'Set up') : '',
+    href: '#/sellos',
   })}
       ${fielTarjeta({
     icono: 'local_offer',
     titulo: bi('Cupón para la próxima visita', 'Coupon for the next visit'),
     frase: bi('Para que vuelvan: al validar un canje, la persona recibe un cupón para su próxima visita.', 'To bring them back: when you validate a redemption, the person gets a coupon for their next visit.'),
-    estado: c.enabled && regalo ? bi(`Activado: ${regalo} · ${fielDias(c.valid_days)}`, `On: ${regalo} · ${fielDias(c.valid_days)}`) : bi('Apagado', 'Off'),
+    estado: c.enabled && regalo ? bi(`Activado: ${regalo} · ${fielDias(c.valid_days)}`, `On: ${regalo} · ${fielDias(c.valid_days)}`) : apagado,
     on: !!c.enabled,
     detalle: c.enabled || dados ? mesCupon : '',
-    boton: d.can_edit ? bi('Configurar', 'Set up') : bi('Ver', 'View'),
+    boton: configurar,
     href: '#/cupon',
+  })}
+      ${fielTarjeta({
+    icono: 'cake',
+    titulo: bi('Regalo de cumpleaños', 'Birthday gift'),
+    frase: bi('Para tener un detalle en su cumpleaños: a quien te tiene en favoritos le llega un regalo para canjear.', 'A treat on their birthday: people who have you in favourites get a gift to redeem.'),
+    estado: o ? (o.birthday?.enabled ? bi('Activado', 'On') : apagado) : '',
+    on: o?.birthday?.enabled === true,
+    boton: configurar,
+    href: '#/cumpleanos',
+  })}
+      ${fielTarjeta({
+    icono: 'campaign',
+    titulo: bi('Avisar a mis clientes', 'Message my customers'),
+    frase: bi('Para contar algo a tus favoritos y clientes con una notificación. Uno por semana.', 'To tell your favourites and customers something with a notification. One a week.'),
+    estado: o ? (prox ? bi(`Podrás mandar otro el ${prox}`, `You can send another on ${prox}`) : bi('Puedes mandar uno ahora', 'You can send one now')) : '',
+    on: !!prox,
+    boton: edit ? bi('Abrir', 'Open') : '',
+    href: '#/mensajes',
+  })}
+      ${fielTarjeta({
+    icono: 'waving_hand',
+    titulo: bi('Ofertas de primera visita', 'First-visit offers'),
+    frase: bi('Para atraer clientes nuevos: una oferta que solo puede usar quien no ha canjeado nunca nada en tu negocio.', 'To attract new customers: an offer that only people who have never redeemed anything at your business can use.'),
+    estado: o ? ahora(num('first_visit', 'live')) : '',
+    on: num('first_visit', 'live') > 0,
+    boton: edit ? bi('Crear oferta de primera visita', 'Create a first-visit offer') : '',
+    href: '#/publicaciones/nueva-flash?primera=1',
+  })}
+      ${fielTarjeta({
+    icono: 'candado',
+    titulo: bi('Exclusivas para favoritos o clientes', 'Exclusives for favourites or customers'),
+    frase: bi('Para premiar a los tuyos: una oferta que solo ve entera quien te tiene en favoritos o ya es cliente.', 'To reward your people: an offer only those who have you in favourites, or are already customers, see in full.'),
+    estado: o ? ahora(num('exclusives', 'live')) : '',
+    on: num('exclusives', 'live') > 0,
+    boton: edit ? bi('Crear una exclusiva', 'Create an exclusive') : '',
+    href: '#/publicaciones/nueva-flash?exclusiva=1',
   })}
       ${fielTarjeta({
     icono: 'volunteer_activism',
     titulo: bi('Agradecer a los habituales', 'Thank your regulars'),
     frase: bi('Para cuidar a quien más viene: una vez al mes, regala algo a tus 10 clientes más fieles con un mensaje.', 'To look after the people who come most: once a month, send your 10 most loyal customers a gift with a message.'),
-    estado: t.enabled ? bi('Activado', 'On') : bi('Apagado', 'Off'),
+    estado: t.enabled ? bi('Activado', 'On') : apagado,
     on: !!t.enabled,
     detalle: detalleGracias,
-    boton: d.can_edit ? bi('Ver y agradecer', 'View and thank') : '',
+    boton: edit ? bi('Ver y agradecer', 'View and thank') : '',
     href: '#/habituales',
   })}
+      ${fielTarjeta({
+    icono: 'redeem',
+    titulo: bi('Bonos', 'Passes'),
+    frase: bi('Para vender en tu local bonos de varios usos (5 cafés, 10 clases…). Cada uso se descuenta con el QR del cliente.', 'To sell multi-use passes at your venue (5 coffees, 10 classes…). Each use is taken off with the customer’s QR.'),
+    estado: o ? (bonos ? bi(bonos === 1 ? '1 bono a la venta' : `${bonos} bonos a la venta`, bonos === 1 ? '1 pass on sale' : `${bonos} passes on sale`) : apagado) : '',
+    on: bonos > 0,
+    boton: configurar,
+    href: '#/bonos',
+  })}
+      ${fielTarjeta({
+    icono: 'sorteo',
+    titulo: bi('Sorteos', 'Giveaways'),
+    frase: bi('Para darte a conocer: un sorteo gratis en el que participa quien te añade a favoritos.', 'To get known: a free giveaway people enter by adding you to their favourites.'),
+    estado: o ? (sorteos ? bi(sorteos === 1 ? '1 sorteo abierto' : `${sorteos} sorteos abiertos`, sorteos === 1 ? '1 open giveaway' : `${sorteos} open giveaways`) : apagado) : '',
+    on: sorteos > 0,
+    boton: bi('Abrir', 'Open'),
+    href: '#/sorteos',
+  })}
     </div>
-    ${d.can_edit ? '' : fielLectura()}`;
+    ${edit ? '' : fielLectura()}`;
 };
 
 PAGES.cupon = async (v) => {

@@ -603,6 +603,7 @@ const VUELTA_PARAMS = {
   dia: /^\d{4}-\d{2}-\d{2}$/,
   idea: /^(1|before_closing)$/,
   primera: /^1$/,
+  exclusiva: /^1$/,
   partido: /^[0-9a-f-]{36}$/i,
   editar: /^1$/,
 };
@@ -798,69 +799,37 @@ const SVG = {
 const svg = (n, s = 20) => `<svg class="ms svg" viewBox="0 0 24 24" width="${s}" height="${s}" aria-hidden="true"><path fill="currentColor" d="${SVG[n]}"/></svg>`;
 const icono = (n) => (SVG[n] ? svg(n) : ms(n));
 
-// El menú, con los grupos de «Mi negocio» en la app: lo de todos los días
-// arriba; Publicar (Publicaciones, Series y repeticiones, Novedades),
-// Clientes (Tarjetas de sellos, Regalo de cumpleaños, Avisar a mis
-// clientes, Reseñas), RRPP, Tu local (Carta, Cartel del local, Poner en la
-// tele, Días cerrados, Equipo) y Cifras (Informe); y abajo la ficha (con darse de
-// baja dentro, solo el propietario) y la ayuda.
+// El menú, ordenado como «Mi negocio» en la app (Iván, 2026-10-10: nada se
+// quita, todo ordenado): arriba lo de todos los días (Resumen, Calendario,
+// Validar códigos y Publicaciones, con las novedades dentro); «Lo esencial»
+// (Tu ficha, Fidelizar, Cifras y RRPP) y «Tu negocio» (Más herramientas,
+// Equipo, Reseñas, Días cerrados y Ayuda). Lo de Fidelizar (sellos, bonos,
+// cumpleaños, avisar a los clientes, sorteos, cupón y habituales) y lo de
+// «Más herramientas» (cola, tele, partidos, grupos, antes de cerrar, series,
+// carta y cartel del local) se abre desde su pantalla y marca su entrada.
 // `en` dice qué pantallas cuentan como esa entrada (para marcarla).
 const NAV = [
   [null, [
     ['resumen', 'dashboard', 'Resumen'],
     ['calendario', 'calendario', 'Calendario'],
     ['validar', 'qr_code_scanner', 'Validar códigos'],
+    ['publicaciones', 'bolt', 'Publicaciones', ['asistentes', 'cartel', 'novedades']],
   ]],
-  ['Publicar', [
-    ['publicaciones', 'bolt', 'Publicaciones', ['asistentes', 'cartel']],
-    // Lo que sobra del día, en dos toques (gremios de comida o si ya ha
-    // publicado alguna: `before_closing_setup` → suggested).
-    ['antes-de-cerrar', 'bolsa', 'Antes de cerrar'],
-    ['series', 'repite', 'Series y repeticiones'],
-    // Los partidos que pone el bar (gremios de bar, restaurante… o si ya ha
-    // marcado alguno: `business_broadcast_week` → suggested).
-    ['partidos', 'partido', 'Partidos que pones'],
-    ['novedades', 'campaign', 'Novedades'],
-  ]],
-  ['Clientes', [
-    ['sellos', 'loyalty', 'Tarjetas de sellos'],
-    // Bonos pagados en el local (panel/bonos.js): el personal los ve para
-    // venderlos; crear y pausar es de propietario y encargado.
-    ['bonos', 'redeem', 'Bonos'],
-    // Sorteos y Grupos y empresas (panel/sorteos.js y panel/grupos.js; tanda
-    // C): los sorteos los ve todo el equipo; los grupos, solo quien gestiona.
-    ['sorteos', 'sorteo', 'Sorteos'],
-    ['grupos', 'grupos', 'Grupos y empresas'],
-    // Cola virtual (panel/cola.js): opcional; todo el equipo la ve y la
-    // lleva, y abrirla, cerrarla o cambiar el código es de propietario y
-    // encargado.
-    ['cola', 'cola', 'Cola virtual'],
-    ['cumpleanos', 'cake', 'Regalo de cumpleaños'],
-    ['mensajes', 'notifications_active', 'Avisar a mis clientes'],
-    ['resenas', 'reviews', 'Reseñas'],
-  ]],
-  ['RRPP', [
-    ['rrpp', 'rrpp', 'RRPP'],
-  ]],
-  // Fidelizar (panel/fidelizar.js): primera visita, cupón para la próxima
-  // visita y agradecer a los habituales. Lo ve todo el equipo; cambiarlo,
-  // propietario y encargado.
-  ['Fidelizar', [
-    ['fidelizar', 'favorite', 'Fidelizar', ['cupon', 'habituales']],
-  ]],
-  ['Tu local', [
-    ['carta', 'restaurant_menu', 'Carta'],
-    ['cartel-local', 'qr_code_2', 'Cartel del local'],
-    ['tele', 'tele', 'Poner en la tele'],
-    ['cerrados', 'event_busy', 'Días cerrados'],
-    ['equipo', 'group', 'Equipo'],
-  ]],
-  ['Cifras', [
-    ['informe', 'bar_chart', 'Informe'],
-  ]],
-  ['Tu negocio', [
+  ['Lo esencial', [
     // «Dar de baja el negocio» está en la «Zona delicada» de «Tu ficha».
     ['ficha', 'storefront', 'Tu ficha', ['baja']],
+    // Fidelizar (panel/fidelizar.js): lo ve todo el equipo; cambiarlo,
+    // propietario y encargado.
+    ['fidelizar', 'favorite', 'Fidelizar', ['cupon', 'habituales', 'sellos', 'bonos', 'cumpleanos', 'mensajes', 'sorteos']],
+    ['informe', 'bar_chart', 'Cifras'],
+    ['rrpp', 'rrpp', 'RRPP'],
+  ]],
+  ['Tu negocio', [
+    // «Más herramientas» (panel/herramientas.js): lo opcional.
+    ['herramientas', 'herramientas', 'Más herramientas', ['cola', 'tele', 'partidos', 'grupos', 'antes-de-cerrar', 'series', 'carta', 'cartel-local']],
+    ['equipo', 'group', 'Equipo'],
+    ['resenas', 'reviews', 'Reseñas'],
+    ['cerrados', 'event_busy', 'Días cerrados'],
     ['ayuda', 'help', 'Ayuda'],
   ]],
 ];
@@ -1092,53 +1061,45 @@ PAGES.resumen = async (v) => {
   const conFotos = !!ficha.logo_url && (!!ficha.cover_image_url || (ficha.gallery || []).length > 0);
   const paso = (n, hecho, titulo, pista, href, attrs = '') => `<a class="paso${hecho ? ' hecho' : ''}" ${hecho ? '' : `href="${href}" ${attrs}`}>
       <span class="n">${hecho ? ms('check') : n}</span><span><b>${titulo}</b>${pista && !hecho ? `<small>${pista}</small>` : ''}</span>${hecho ? '' : ms('chevron_right')}</a>`;
+  // Un solo aviso arriba: lo más grave primero (cerrado por Klendar, en
+  // revisión o rechazado, cerrado hasta nuevo aviso). Como la app.
+  const aviso = cerradoDeVerdad ? avisoCerrado()
+    : BIZ.verification_status !== 'verified' ? avisoVerificacion()
+      : cerradoIndef() ? `<div class="card pausa"><div>
+        <h2 style="margin:0">Cerrado hasta nuevo aviso</h2>
+        <p class="muted" style="margin:4px 0 0">${esPropietario()
+          ? esc(I18N.t('Ahora mismo no se ve nada de tu negocio. Lo abres de nuevo cuando quieras.'))
+          : esc(I18N.t('Solo el propietario puede abrirlo de nuevo.'))}</p></div>
+        ${esPropietario() ? '<a class="btn primary" href="#/baja">Abrir de nuevo</a>' : ''}</div>` : '';
+  // Lo de «Tu negocio» (el resto está en el menú): botones iguales.
+  const negocioBtn = (href, icon, txt) => `<a class="herr-btn" href="${href}">${icono(icon)}<span>${esc(I18N.t(txt))}</span></a>`;
   v.innerHTML = `
     <div class="page-head"><h1>${esc(BIZ.name)}</h1><span class="tag st-${esc(BIZ.verification_status)}">${esc(BIZ_LABELS[BIZ.verification_status] || BIZ.verification_status)}</span><span class="spacer"></span>
       <a class="btn sm ghost" href="${APP_URL}/b/${esc(BIZ.id)}" target="_blank" rel="noopener">Ver ficha pública ↗</a></div>
-    ${cerradoDeVerdad ? avisoCerrado() : ''}
-    ${BIZ.verification_status !== 'verified' ? avisoVerificacion() : ''}
-    <div id="colaCaja"></div>
-    ${primeros ? `<div class="card primeros"><h2>Primeros pasos</h2>
+    ${aviso}
+    <!-- Crear y validar, en coral los dos e iguales (como «Crear» y
+         «Validar códigos» arriba del todo en «Mi negocio» de la app). Un
+         empleado no publica: solo «Validar códigos». -->
+    <div class="quick quick-2">
+      ${gestiona() ? `<button class="primary" data-go="crear"><span class="ic ms" aria-hidden="true">create</span>Crear<small>Oferta flash, evento o novedad</small></button>` : ''}
+      <button class="primary" data-go="validar"><span class="ic ms" aria-hidden="true">qr_code_scanner</span>Validar códigos<small>Con la cámara o escribiendo el código</small></button>
+    </div>
+    ${primeros ? `<div class="card primeros" style="margin-top:14px"><h2>Primeros pasos</h2>
       <p class="muted" style="margin:0 0 8px">Tres cosas y tu negocio está listo para que la gente lo encuentre.</p>
       ${paso(1, conFotos, 'Pon tu logo y una foto', '', '#/ficha/fotos')}
       ${paso(2, false, 'Publica tu primera oferta', 'Te la dejamos casi hecha: cambia el precio y la hora.', '#/publicaciones/nueva-flash?idea=1')}
       ${paso(3, false, 'Cuéntalo en tus redes', '', '#', 'data-compartir')}
     </div>` : ''}
-    <!-- Publicar y validar, en coral los dos (como «Crear» y «Validar
-         códigos» arriba del todo en «Mi negocio» de la app). -->
-    <div class="quick">
-      ${gestiona() ? `<button class="primary" data-go="nueva-flash"><span class="ic ms" aria-hidden="true">bolt</span>Nueva oferta flash<small>Canjeable con QR durante unas horas</small></button>
-      <button data-go="nuevo-evento"><span class="ic ms" aria-hidden="true">event</span>Nuevo evento<small>Con fecha, aforo y reserva de plaza</small></button>` : ''}
-      <button class="primary" data-go="validar"><span class="ic ms" aria-hidden="true">qr_code_scanner</span>Validar códigos<small>Con la cámara o escribiendo el código</small></button>
-    </div>
+    ${herrEsencialHtml(s)}
     <div id="aforoCaja"></div>
-    <div class="card" style="margin-top:14px"><h2>Cómo va</h2>
-      <div class="kpis">
-        <div class="kpi"><b>${fmtNum(s.views_30d)}</b><span>Vistas (30 días)</span></div>
-        <div class="kpi"><b>${fmtNum(s.redemptions_30d)}</b><span>Canjes (30 días)</span></div>
-        <div class="kpi"><b>${fmtNum(s.favorites)}</b><span>Favoritos</span></div>
-        <div class="kpi"><b>${s.ratings ? `${Number(s.rating).toLocaleString(LOC(), { minimumFractionDigits: 1, maximumFractionDigits: 1 })} (${s.ratings})` : '—'}</b><span>Valoración</span></div>
-        <div class="kpi"><b>${fmtNum(pending.length)}</b><span>Publicaciones activas</span></div>
-      </div>
-    </div>
-    ${cerradoIndef() ? `<div class="card pausa"><div>
-        <h2 style="margin:0">Cerrado hasta nuevo aviso</h2>
-        <p class="muted" style="margin:4px 0 0">${esPropietario()
-          ? esc(I18N.t('Ahora mismo no se ve nada de tu negocio. Lo abres de nuevo cuando quieras.'))
-          : esc(I18N.t('Solo el propietario puede abrirlo de nuevo.'))}</p></div>
-        ${esPropietario() ? '<a class="btn primary" href="#/baja">Abrir de nuevo</a>' : ''}</div>`
-    : gestiona() && BIZ.verification_status === 'verified' ? `<div class="card pausa"><div>
+    <div id="colaCaja"></div>
+    <div id="filasCaja"></div>
+    ${!cerradoIndef() && gestiona() && BIZ.verification_status === 'verified' ? `<div class="card pausa"><div>
         <h2 style="margin:0">Cerrado por hoy</h2>
         <p class="muted" style="margin:4px 0 0">${pausado()
           ? esc(I18N.t('Ahora mismo no se ve nada de tu negocio. Mañana vuelve a verse solo.'))
           : esc(I18N.t('Si hoy no puedes atender, esconde todo de una vez. Mañana vuelve a verse solo.'))}</p></div>
         <button class="btn ${pausado() ? 'primary' : ''}" id="pausa">${pausado() ? 'Abrir de nuevo' : 'Cerrar por hoy'}</button></div>` : ''}
-    ${sub && gestiona() ? planCard(sub) : ''}
-    <div class="card"><h2>Klendar en tu web</h2>
-      <p class="muted" style="margin:0 0 8px">Pega esta línea donde quieras que salga lo que tienes publicado. Se actualiza solo: no tienes que tocar nada más.</p>
-      <pre id="wcode" class="code">&lt;script src="https://klendar.app/widget.js" data-klendar="${esc(BIZ.id)}"&gt;&lt;/script&gt;</pre>
-      <p style="margin:8px 0 0"><button class="btn sm" id="wcopy">Copiar</button>
-        <a class="btn sm" href="https://klendar.app/widget/${esc(BIZ.id)}" target="_blank" rel="noopener">Ver cómo queda</a></p></div>
     <div class="card"><h2>Últimas publicaciones</h2>${table({
       cols: [
         { h: 'Publicación', r: (o) => `<b class="title" translate="no">${esc(o.title)}</b><span class="sub">${esc(I18N.t(LABELS[o.kind]))} · ${fmtDate(o.kind === 'flash_offer' ? o.redeem_start_at : o.event_at)}${etiquetaAudiencia(o)}</span>` },
@@ -1149,10 +1110,22 @@ PAGES.resumen = async (v) => {
       ],
       rows: offers.slice(0, 8),
       empty: 'Todavía no has publicado nada.',
-    })}</div>
+    })}
+      <p style="margin:10px 0 0"><a class="link" href="#/publicaciones">${esc(bi(`Ver todas (${fmtNum(offers.length)}) · ${fmtNum(pending.length)} activas`, `See all (${fmtNum(offers.length)}) · ${fmtNum(pending.length)} active`))}</a></p></div>
+    <a class="mas-herr" href="#/herramientas">${icono('herramientas')}<span><b>${esc(bi('Más herramientas', 'More tools'))}</b>
+      <small>${esc(bi('Cola virtual, tele, partidos, carta… Activa lo que te sirva.', 'Virtual queue, TV, matches, menu… Turn on whatever helps.'))}</small></span>${ms('chevron_right')}</a>
+    <h2 class="grupo-titulo">${esc(bi('Tu negocio', 'Your business'))}</h2>
+    <div class="herr-grid">
+      ${gestiona() ? negocioBtn('#/equipo', 'group', 'Equipo') : ''}
+      ${negocioBtn('#/resenas', 'reviews', 'Reseñas')}
+      ${gestiona() && !esOrganizador() ? negocioBtn('#/cerrados', 'event_busy', 'Días cerrados') : ''}
+      ${negocioBtn('#/ayuda', 'help', 'Ayuda')}
+    </div>
+    ${sub && gestiona() ? planCard(sub) : ''}
     ${esPropietario() ? '' : `<div class="card"><h2>Salir del equipo</h2>
       <p class="muted" style="margin:0 0 10px">Dejarás de ver este panel y de validar sus códigos. Avisaremos al propietario.</p>
       <button class="btn bad ghost" type="button" id="salir-equipo">Salir del equipo</button></div>`}`;
+  herrResumen(v, { cajaFilas: $('#filasCaja', v) });
   const otra = $('#otra-revision', v);
   if (otra) otra.onclick = () => pideOtraRevision(otra);
   pintaAforo($('#aforoCaja', v));
@@ -1167,17 +1140,10 @@ PAGES.resumen = async (v) => {
       salirEq.disabled = false;
     };
   }
-  const wcopy = $('#wcopy', v);
-  if (wcopy) {
-    wcopy.onclick = async () => {
-      try { await navigator.clipboard.writeText($('#wcode', v).textContent); } catch { toast('No se ha podido copiar', true); return; }
-      wcopy.textContent = I18N.t('Copiado');
-      setTimeout(() => { wcopy.textContent = I18N.t('Copiar'); }, 1500);
-    };
-  }
   $$('[data-go]', v).forEach((b) => {
     b.onclick = () => {
       const g = b.dataset.go;
+      if (g === 'crear') { herrCrear(); return; }
       location.hash = g === 'validar' ? '#/validar'
         : g === 'nueva-flash' ? '#/publicaciones/nueva-flash' : '#/publicaciones/nuevo-evento';
     };
@@ -1361,7 +1327,7 @@ PAGES.publicaciones = async (v, param) => {
     if (!chips.some(([k]) => k === filtro)) filtro = 'todas';
     $('#filtroArch').innerHTML = chips.length > 1 ? `<div class="pills" role="group" aria-label="${esc(I18N.t('Filtrar por estado'))}">
       ${chips.map(([k, nombre]) => `<button type="button" data-filtro="${k}" class="${filtro === k ? 'on' : ''}" aria-pressed="${filtro === k}" translate="no">${esc(nombre)} <span class="n">${fmtNum(cuenta(k))}</span></button>`).join('')}
-    </div>${filtro === 'archivada' ? `<p class="hint" style="margin:10px 0 0">${esc(I18N.t('Se borraron con canjes validados: ya no se ven en ninguna parte, pero siguen contando en el Informe.'))}</p>` : ''}` : '';
+    </div>${filtro === 'archivada' ? `<p class="hint" style="margin:10px 0 0">${esc(I18N.t('Se borraron con canjes validados: ya no se ven en ninguna parte, pero siguen contando en Cifras.'))}</p>` : ''}` : '';
     $$('[data-filtro]', $('#filtroArch')).forEach((b) => {
       b.onclick = () => { filtro = b.dataset.filtro; render(); $(`[data-filtro="${filtro}"]`, $('#filtroArch'))?.focus(); };
     });
@@ -1412,7 +1378,7 @@ PAGES.publicaciones = async (v, param) => {
             // son del negocio y cuentan en el Informe). Se dice antes.
             const conCanjes = (offers.find((x) => x.id === id)?.redemptions_count || 0) > 0;
             if (!await confirmDlg('Borrar publicación', conCanjes
-              ? 'Tiene canjes validados, así que no se borra: se archiva. Deja de verse, sigue contando en el Informe y puedes crear otra a partir de ella.'
+              ? 'Tiene canjes validados, así que no se borra: se archiva. Deja de verse, sigue contando en Cifras y puedes crear otra a partir de ella.'
               : 'Se borra para siempre, junto con sus estadísticas. Si solo quieres que deje de verse, púlsale a «Pausar».', { danger: true, submit: 'Borrar' })) return;
             const { error } = await sb.from('offers').delete().eq('id', id);
             if (error) {
@@ -1806,7 +1772,10 @@ async function offerForm(v, id, kindDefault, desde = null) {
     return;
   }
   let o = { kind: kindDefault || 'flash_offer', max_per_user: 1, code_ttl_minutes: 5, images: [], status: 'active',
-    ...(desde?.rrpp ? { audience: 'promoters' } : {}) };
+    ...(desde?.rrpp ? { audience: 'promoters' } : {}),
+    // Desde «Fidelizar» › «Crear una exclusiva» (?exclusiva=1): solo para
+    // quien te tiene en favoritos (se cambia a clientes en «Más opciones»).
+    ...(!desde && /[?&]exclusiva=1/.test(location.hash) ? { audience: 'favorites' } : {}) };
   // La vista previa usa la portada del local si la publicación no trae fotos.
   await portadaNegocio();
   if (id) {
@@ -2267,6 +2236,9 @@ async function offerForm(v, id, kindDefault, desde = null) {
   };
   $$('[name=discount_type], [name=alcohol]', v).forEach((r) => r.addEventListener('change', syncDiscount));
   // La ayuda de «Quién la ve» solo hace falta si no es para todo el mundo.
+  // Una exclusiva recién pedida desde «Fidelizar»: «Más opciones» abierto,
+  // para ver a quién va.
+  if (!id && /[?&]exclusiva=1/.test(location.hash) && $('#bMas', v)) $('#bMas', v).open = true;
   $$('[name=audience]', v).forEach((r) => {
     r.addEventListener('change', () => { $('#audAyuda', v).hidden = ['all', 'promoters'].includes(val('audience') || 'all'); });
   });
@@ -5334,6 +5306,29 @@ function toquesEnlacesHtml(filas) {
     : `<p class="muted" style="margin:0">${esc(I18N.t('Todavía nadie ha tocado tus enlaces.'))}</p>`}</div>`;
 }
 
+/** Las tarjetas del detalle de «Cifras», plegables (`<details>`), con su
+ * título y su resumen de una línea (`data-res`); `data-abierto`, abierta. */
+function cifrasPlegar(caja) {
+  if (!caja) return;
+  for (const card of [...caja.children].filter((c) => c.classList.contains('card'))) {
+    const h2 = card.querySelector(':scope > h2');
+    if (!h2) continue;
+    const d = document.createElement('details');
+    d.className = 'card plegable';
+    if (card.hasAttribute('data-abierto')) d.open = true;
+    const sum = document.createElement('summary');
+    const tit = document.createElement('span');
+    tit.className = 'pl-tit';
+    tit.append(...h2.childNodes);
+    sum.append(tit);
+    const res = card.getAttribute('data-res');
+    if (res) { const r = document.createElement('small'); r.className = 'pl-res'; r.textContent = res; sum.append(r); }
+    h2.remove();
+    d.append(sum, ...card.childNodes);
+    card.replaceWith(d);
+  }
+}
+
 PAGES.informe = async (v, param) => {
   const days = Number(param) || 30;
   const [r, aud, toques] = await Promise.all([
@@ -5367,52 +5362,15 @@ PAGES.informe = async (v, param) => {
     '<p>Por cada código validado sumamos el precio de la oferta por persona (el que tenía cuando la persona consiguió el código) por las plazas.</p><p>Si alguien del equipo apunta el importe del ticket al validar, o después en «Últimos validados», usamos ese importe en lugar de la estimación.</p><p>Las ofertas sin precio (gratis o solo un descuento) cuentan como visitas, pero no suman euros. Cada código validado es una visita, aunque entren varias personas con él.</p><p>Por eso es un mínimo: lo que la gente gasta además, o en otras visitas, no lo vemos.</p><p>Los bonos que vendes en tu local suman una vez, al venderlos, con el precio que has puesto; cada uso no suma.</p>',
     '<p>For each validated code we add the offer’s price per person (the one it had when the person got the code) times the number of places.</p><p>If someone on the team enters the receipt total when validating, or later in “Recently validated”, we use that amount instead of the estimate.</p><p>Offers without a price (free or just a discount) count as visits but don’t add euros. Each validated code is one visit, even if several people come in with it.</p><p>That’s why it’s a minimum: we can’t see what people spend on top of that, or on other visits.</p><p>Passes you sell at your venue count once, when you sell them, at the price you set; uses don’t add anything.</p>'));
 
-  v.innerHTML = `
-    <div class="page-head"><h1>Informe</h1><span class="spacer"></span>
-      ${[7, 30, 90, 365].map((d) => `<a class="btn sm ${d === days ? '' : 'ghost'}" href="#/informe/${d}">${d === 365 ? bi('1 año', '1 year') : bi(`${d} días`, `${d} days`)}</a>`).join(' ')}
-    </div>
-    <div class="card trajo"><h2>Cuánto te ha traído Klendar</h2>
-      ${grande ? `<p class="trajo-min">${esc(bi('Al menos', 'At least'))}</p><p class="trajo-cifra">${esc(cifraTrajo)}</p>` : ''}
-      <p class="${grande ? 'muted' : ''}" style="margin:4px 0 10px">${esc(fraseTrajoTodo)}</p>
-      ${comoTrajo}
-    </div>
-
-    <div class="card"><h2>El periodo en cuatro cifras</h2>
-      <div class="kpis">
-        <div class="kpi"><b>${fmtNum(t.views)}</b><span>Vistas</span></div>
-        <div class="kpi"><b>${fmtNum(t.codes)}</b><span>Códigos generados</span></div>
-        <div class="kpi"><b>${fmtNum(t.redeemed)}</b><span>Canjes validados</span></div>
-        <div class="kpi"><b>${pct(t.redeemed, t.codes)}</b><span>De código a canje</span></div>
-      </div>
-      <p class="muted" style="margin:10px 0 0">${bi(`<b>${fmtNum(t.unused)}</b> ${t.unused === 1 ? 'código se quedó' : 'códigos se quedaron'} sin usar.${best ? ` La hora a la que más se canjea es a las <b>${String(best.hour).padStart(2, '0')}:00</b>.` : ''}`, `<b>${fmtNum(t.unused)}</b> ${t.unused === 1 ? 'code was' : 'codes were'} never used.${best ? ` The busiest redemption hour is <b>${String(best.hour).padStart(2, '0')}:00</b>.` : ''}`)}</p>
-      ${t.offline > 0 ? `<p class="muted" style="margin:4px 0 0">${esc(bi(`${fmtNum(t.offline)} ${t.offline === 1 ? 'validado' : 'validados'} sin conexión (a la hora en que se escanearon).`,
-        `${fmtNum(t.offline)} validated offline (at the time they were scanned).`))}</p>` : ''}
-    </div>
-
-    <div class="card"><h2>Día a día</h2>
-      <div class="spark">${(r.daily || []).map((d) => `<i title="${d.day}: ${d.views} ${bi('vistas', 'views')}, ${d.redeemed} ${bi('canjes', 'redemptions')}" style="height:${Math.round((d.views / maxDay) * 100)}%"><u style="height:${d.views ? Math.round((d.redeemed / Math.max(d.views, 1)) * 100) : 0}%"></u></i>`).join('')}</div>
-      <p class="muted" style="margin:8px 0 0">Cada barra es un día: la altura son las vistas y la parte rellena, los canjes.</p>
-    </div>
-
-    ${audienciaHtml(aud)}
-
-    ${toquesEnlacesHtml(toques)}
-
-    ${pases.sold || pases.uses || pases.active ? `<div class="card"><h2>Bonos</h2>
-      <div class="kpis">
-        <div class="kpi"><b>${fmtNum(pases.sold)}</b><span>Bonos vendidos</span></div>
-        <div class="kpi"><b>${fmtNum(pases.uses)}</b><span>Usos</span></div>
-        <div class="kpi"><b>${fmtNum(pases.active)}</b><span>Bonos activos</span></div>
-      </div></div>` : ''}
-
-    ${informeFidelizarHtml(r.loyalty)}
-
-    ${await informeSeriesHtml()}
-
-    <div class="card"><h2>Por publicación</h2>${gestiona() ? '<div class="actions" style="margin-bottom:10px"><button class="btn sm" id="csvOffers">Descargar CSV</button></div>' : ''}
+  const loy = r.loyalty || {};
+  const toquesTotal = Array.isArray(toques) ? toques.reduce((a, f) => a + (Number(f.taps) || 0), 0) : 0;
+  // Por publicación: al tocar una, sus cifras (comparación con las de tu
+  // zona, día a día y asistencia), como la hoja de la app.
+  const porPublicacion = `<div class="card"><h2>Por publicación</h2>${gestiona() ? '<div class="actions" style="margin-bottom:10px"><button class="btn sm" id="csvOffers">Descargar CSV</button></div>' : ''}
+      <p class="muted" style="margin:0 0 10px">${esc(bi('Toca una para ver su detalle, de dónde llegan y cómo va frente a las de tu zona.', 'Tap one to see its details, where people come from and how it compares with others nearby.'))}</p>
       ${table({
         cols: [
-          { h: 'Publicación', r: (o) => `<b class="title">${esc(o.title)}</b><span class="sub">${esc(LABELS[o.kind] || o.kind)} · ${fmtDate(o.starts_at)}${o.status === 'archived' ? ` ${tag('archived')}` : ''}</span>` },
+          { h: 'Publicación', r: (o) => `${o.status === 'archived' ? `<b class="title">${esc(o.title)}</b>` : `<button type="button" class="linkbtn title" data-cifras-of="${esc(o.id)}">${esc(o.title)}</button>`}<span class="sub">${esc(LABELS[o.kind] || o.kind)} · ${fmtDate(o.starts_at)}${o.status === 'archived' ? ` ${tag('archived')}` : ''}</span>` },
           { h: 'Precio', num: true, r: (o) => fmtMoney(o.price_cents, o.currency) },
           { h: 'Vistas', num: true, r: (o) => fmtNum(o.views) },
           { h: 'Códigos', num: true, r: (o) => fmtNum(o.codes) },
@@ -5424,11 +5382,90 @@ PAGES.informe = async (v, param) => {
         empty: 'No hay publicaciones en este periodo.',
       })}
     </div>
+`;
+  // Cada bloque del detalle lleva su resumen de una línea (`data-res`): se
+  // ve con el bloque cerrado, como en la app.
+  const conRes = (html, res) => (html ? html.replace('<div class="card"', `<div class="card" data-res="${esc(res)}"`) : '');
+  // RRPP (propietario y encargado): apuntados y quién ha entrado.
+  let rrppHtml = '';
+  if (gestiona() && typeof rrppNocheHoy === 'function') {
+    const hoyR = rrppNocheHoy();
+    const rep = await rpc('promoter_report', { p_business: BIZ.id, p_from: rrppMenos(hoyR, days), p_to: hoyR }).catch(() => null);
+    const filasR = rep?.promoters || [];
+    if (filasR.length) {
+      const fir = filasR.reduce((a, x) => a + (x.signed || 0), 0);
+      const ent = filasR.reduce((a, x) => a + (x.entered || 0), 0);
+      rrppHtml = conRes(`<div class="card"><h2>RRPP</h2>${table({
+        cols: [
+          { h: bi('RRPP', 'Promoter'), r: (x) => `<b class="title">${esc(rrppNombre(x))}</b>` },
+          { h: bi('Apuntados', 'Signed up'), num: true, r: (x) => fmtNum(x.signed) },
+          { h: bi('Han entrado', 'Got in'), num: true, r: (x) => fmtNum(x.entered) },
+          { h: bi('Conversión', 'Conversion'), num: true, r: (x) => pct(x.entered || 0, x.signed || 0) },
+          { h: bi('Fuera de su oferta', 'Outside their offer'), num: true, r: (x) => fmtNum(x.off_offer) },
+        ],
+        rows: filasR,
+      })}<p style="margin:10px 0 0"><a class="btn" href="#/rrpp">${esc(bi('Abrir RRPP', 'Open Promoters'))}</a></p></div>`,
+      bi(`Apuntados: ${fmtNum(fir)} · Han entrado: ${fmtNum(ent)}`, `Signed up: ${fmtNum(fir)} · Got in: ${fmtNum(ent)}`));
+    }
+  }
+  v.innerHTML = `
+    <div class="page-head"><h1>Cifras</h1><span class="spacer"></span>
+      ${[7, 30, 90, 365].map((d) => `<a class="btn sm ${d === days ? '' : 'ghost'}" href="#/informe/${d}">${d === 365 ? bi('1 año', '1 year') : bi(`${d} días`, `${d} days`)}</a>`).join(' ')}
+    </div>
+    <div class="card trajo"><h2>Cuánto te ha traído Klendar</h2>
+      ${grande ? `<p class="trajo-min">${esc(bi('Al menos', 'At least'))}</p><p class="trajo-cifra">${esc(cifraTrajo)}</p>` : ''}
+      <p class="${grande ? 'muted' : ''}" style="margin:4px 0 10px">${esc(fraseTrajoTodo)}</p>
+      ${comoTrajo}
+    </div>
 
-    ${!gestiona() ? `<div class="card"><h2>Canjes validados</h2><p class="muted" style="margin:0">${esc(bi(
+    <div class="kpis kpis-top">
+      <div class="kpi"><b>${fmtNum(t.brought_visits)}</b><span>${esc(bi('Visitas', 'Visits'))}</span></div>
+      <div class="kpi"><b>${fmtNum(loy.new_customers)}</b><span>${esc(bi('Clientes nuevos', 'New customers'))}</span></div>
+      <div class="kpi"><b>${fmtNum(loy.repeat_customers)}</b><span>${esc(bi('Repiten', 'Come back'))}</span></div>
+      <div class="kpi"><b>${t.ratings ? `${Number(t.rating).toLocaleString(LOC(), { minimumFractionDigits: 1, maximumFractionDigits: 1 })} (${t.ratings})` : '—'}</b><span>${esc(I18N.t('Valoración'))}</span></div>
+    </div>
+
+    <div id="cifrasDetalle">
+    <div class="card" data-abierto data-res="${esc(bi(`${fmtNum(t.views)} vistas · ${fmtNum(t.redeemed)} canjes`, `${fmtNum(t.views)} views · ${fmtNum(t.redeemed)} redemptions`))}"><h2>${esc(bi('Vistas y canjes', 'Views and redemptions'))}</h2>
+      <div class="kpis">
+        <div class="kpi"><b>${fmtNum(t.views)}</b><span>Vistas</span></div>
+        <div class="kpi"><b>${fmtNum(t.codes)}</b><span>Códigos generados</span></div>
+        <div class="kpi"><b>${fmtNum(t.redeemed)}</b><span>Canjes validados</span></div>
+        <div class="kpi"><b>${pct(t.redeemed, t.codes)}</b><span>De código a canje</span></div>
+      </div>
+      <p class="muted" style="margin:10px 0 0">${bi(`<b>${fmtNum(t.unused)}</b> ${t.unused === 1 ? 'código se quedó' : 'códigos se quedaron'} sin usar.${best ? ` La hora a la que más se canjea es a las <b>${String(best.hour).padStart(2, '0')}:00</b>.` : ''}`, `<b>${fmtNum(t.unused)}</b> ${t.unused === 1 ? 'code was' : 'codes were'} never used.${best ? ` The busiest redemption hour is <b>${String(best.hour).padStart(2, '0')}:00</b>.` : ''}`)}</p>
+      ${t.offline > 0 ? `<p class="muted" style="margin:4px 0 0">${esc(bi(`${fmtNum(t.offline)} ${t.offline === 1 ? 'validado' : 'validados'} sin conexión (a la hora en que se escanearon).`,
+        `${fmtNum(t.offline)} validated offline (at the time they were scanned).`))}</p>` : ''}
+      <p class="muted" style="margin:4px 0 0">${esc(I18N.t('Favoritos'))}: ${fmtNum(t.favorites)}</p>
+      <h3 style="margin:14px 0 6px">Día a día</h3>
+      <div class="spark">${(r.daily || []).map((d) => `<i title="${d.day}: ${d.views} ${bi('vistas', 'views')}, ${d.redeemed} ${bi('canjes', 'redemptions')}" style="height:${Math.round((d.views / maxDay) * 100)}%"><u style="height:${d.views ? Math.round((d.redeemed / Math.max(d.views, 1)) * 100) : 0}%"></u></i>`).join('')}</div>
+      <p class="muted" style="margin:8px 0 0">Cada barra es un día: la altura son las vistas y la parte rellena, los canjes.</p>
+    </div>
+
+    ${conRes(porPublicacion, herrPl((r.offers || []).length, ['1 publicación', 'publicaciones'], ['1 publication', 'publications']))}
+
+    ${conRes(audienciaHtml(aud), herrPl(aud?.people || 0, ['1 persona', 'personas'], ['1 person', 'people']))}
+
+    ${conRes(informeFidelizarHtml(r.loyalty), bi(`Repiten: ${fmtNum(loy.repeat_customers)}/${fmtNum(loy.customers)}`, `Come back: ${fmtNum(loy.repeat_customers)}/${fmtNum(loy.customers)}`))}
+
+    ${pases.sold || pases.uses || pases.active ? `<div class="card" data-res="${esc(bi(`Bonos vendidos: ${fmtNum(pases.sold)}`, `Passes sold: ${fmtNum(pases.sold)}`))}"><h2>Bonos</h2>
+      <div class="kpis">
+        <div class="kpi"><b>${fmtNum(pases.sold)}</b><span>Bonos vendidos</span></div>
+        <div class="kpi"><b>${fmtNum(pases.uses)}</b><span>Usos</span></div>
+        <div class="kpi"><b>${fmtNum(pases.active)}</b><span>Bonos activos</span></div>
+      </div></div>` : ''}
+
+    ${conRes(toquesEnlacesHtml(toques), herrPl(toquesTotal, ['1 toque', 'toques'], ['1 tap', 'taps']))}
+
+    ${rrppHtml}
+
+    ${conRes(await informeSeriesHtml(), '')}
+
+
+    ${!gestiona() ? `<div class="card" data-res="${esc(bi('Solo cifras', 'Figures only'))}"><h2>Canjes validados</h2><p class="muted" style="margin:0">${esc(bi(
       'Ves las cifras del negocio. La lista de canjes, con quién validó cada uno, y la descarga en CSV son solo para el propietario y los encargados.',
       'You can see the business’s figures. The list of redemptions, with who validated each one, and the CSV download are only for the owner and managers.'))}</p></div>` : `
-    <div class="card"><h2>Canjes validados</h2><div class="actions" style="margin-bottom:10px"><button class="btn sm" id="csvRed">Descargar CSV</button></div>
+    <div class="card" data-res="${esc(herrPl((r.redemptions || []).length, ['1 canje', 'canjes'], ['1 redemption', 'redemptions']))}"><h2>Canjes validados</h2><div class="actions" style="margin-bottom:10px"><button class="btn sm" id="csvRed">Descargar CSV</button></div>
       <p class="muted" style="margin:0 0 10px">Cada línea es un código validado en el local, con quién lo validó. Sirve de justificante.</p>
       ${table({
         cols: [
@@ -5446,10 +5483,18 @@ PAGES.informe = async (v, param) => {
         rows: r.redemptions || [],
         empty: 'Todavía no se ha validado ningún código en este periodo.',
       })}
-    </div>`}`;
+    </div>`}
+    </div>`;
+  cifrasPlegar($('#cifrasDetalle', v));
 
+  $$('[data-cifras-of]', v).forEach((b) => {
+    b.onclick = async () => {
+      const lista = await rpc('my_business_offers', { p_id: BIZ.id }).catch(() => []);
+      cifrasDialogo((lista || []).find((x) => x.id === b.dataset.cifrasOf));
+    };
+  });
   if (!gestiona()) return;
-  $('#csvOffers').onclick = () => downloadCsv(`informe-${BIZ.name}`, r.offers || [], [
+  $('#csvOffers').onclick = () => downloadCsv(`cifras-${BIZ.name}`, r.offers || [], [
     ['title', 'Publicación'], ['kind', 'Tipo'], ['starts_at', 'Fecha'],
     [(o) => (o.price_cents == null ? '' : (o.price_cents / 100).toFixed(2)), 'Precio'],
     ['views', 'Vistas'], ['codes', 'Códigos'], ['redeemed', 'Canjes'],

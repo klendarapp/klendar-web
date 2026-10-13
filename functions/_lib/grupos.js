@@ -20,7 +20,7 @@ const cuentaBase = (lang) => (lang === 'en' ? '/app/?lang=en' : '/app/');
 /** «Pedir presupuesto» a esos negocios: el formulario de «Tu cuenta». */
 export const pedirHref = (lang, ids) => `${cuentaBase(lang)}#/grupos/pedir?b=${ids.map(encodeURIComponent).join(',')}`;
 
-export const GRUPOS_CSS = '<link rel="stylesheet" href="/assets/grupos-sorteos.css?v=1">';
+export const GRUPOS_CSS = '<link rel="stylesheet" href="/assets/grupos-sorteos.css?v=2">';
 
 const CLAVES = {
   es: { city: 'ciudad', kind: 'tipo', people: 'personas' },

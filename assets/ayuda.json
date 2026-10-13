@@ -1,5 +1,5 @@
 {
- "version": "8a31672d226e",
+ "version": "499f043ec199",
  "contact": "info@klendar.app",
  "tabs": {
   "es": {
@@ -392,7 +392,7 @@
     "q": "¿Cómo sé qué ha funcionado?",
     "a": [
      {
-      "t": "Cada publicación tiene sus «Cifras» (vistas, códigos y canjes) y el negocio, su «Informe», exportable para tu gestor. Si alguien comparte tu publicación en sus historias o en su estado de WhatsApp, verás cuántas visitas llegan desde ahí."
+      "t": "En «Mi negocio» › «Cifras» tienes todo en una pantalla: arriba, cuánto te ha traído Klendar, las visitas y los clientes nuevos y los que repiten; debajo, cada publicación (con su comparación con las de tu zona), de dónde viene tu gente y los canjes validados, exportables para tu gestor. Si alguien comparte tu publicación en sus historias o en su estado de WhatsApp, verás cuántas visitas llegan desde ahí."
      }
     ]
    },
@@ -401,7 +401,7 @@
     "q": "¿Qué es «Cuánto te ha traído Klendar»?",
     "a": [
      {
-      "t": "Lo que ha gastado en tu local la gente que vino con Klendar, en el Informe. Al validar un código puedes apuntar el importe del ticket (opcional); también en «Últimos validados» durante 24 horas. Si no lo apuntas, contamos el precio de la oferta por las plazas: por eso dice «al menos»."
+      "t": "Lo que ha gastado en tu local la gente que vino con Klendar, arriba de «Cifras». Al validar un código puedes apuntar el importe del ticket (opcional); también en «Últimos validados» durante 24 horas. Si no lo apuntas, contamos el precio de la oferta por las plazas: por eso dice «al menos»."
      }
     ]
    },
@@ -870,7 +870,7 @@
     "q": "How do I know what worked?",
     "a": [
      {
-      "t": "Each publication has its “Stats” (views, codes and redemptions) and the business has its “Report”, which you can export for your accountant. If someone shares your publication in their stories or WhatsApp status, you'll see how many visits come from there."
+      "t": "In “My business” › “Stats” you have everything on one screen: at the top, what Klendar has brought you, visits, and new and returning customers; below, each publication (compared with others nearby), where your people come from and the validated redemptions, which you can export for your accountant. If someone shares your publication in their stories or WhatsApp status, you'll see how many visits come from there."
      }
     ]
    },
@@ -879,7 +879,7 @@
     "q": "What is “What Klendar has brought you”?",
     "a": [
      {
-      "t": "What people who came with Klendar spent at your place, in the Report. When you validate a code you can enter the receipt total (optional); also in “Recently validated” for 24 hours. If you don't, we count the offer's price times the places: that's why it says “at least”."
+      "t": "What people who came with Klendar spent at your place, at the top of “Stats”. When you validate a code you can enter the receipt total (optional); also in “Recently validated” for 24 hours. If you don't, we count the offer's price times the places: that's why it says “at least”."
      }
     ]
    },

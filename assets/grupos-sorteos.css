@@ -132,6 +132,7 @@ section.sorteo-ver { padding: 0; margin: 8px 0 0; }
 
 /* ── «Esta noche se mueve» (Explorar › Mapa) ───────────────────────────── */
 .ambiente-fila { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 0 0 10px; }
+.ambiente-fila[hidden] { display: none; }
 .ambiente-chk { display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: 999px; border: 1px solid var(--glass-border);
   background: var(--glass); font-weight: 700; font-size: 14px; cursor: pointer; color: var(--ink); }
 .ambiente-chk input { width: 18px; height: 18px; margin: 0; }

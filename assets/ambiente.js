@@ -8,6 +8,10 @@
  * ambiente». Sin nombres ni negocios. Sin zonas, un aviso de una línea encima
  * del mapa con «¿Por qué?»; con el mapa muy alejado, «Acerca el mapa…». La
  * casilla cambia la dirección (para compartirla) sin recargar.
+ *
+ * Depende de que haya gente: apagada, la casilla no se enseña hasta que hay
+ * alguna zona con ambiente a unos 30 km del centro del mapa (se mira al
+ * cargar y al moverlo). Como la app.
  */
 (function () {
   'use strict';
@@ -126,11 +130,34 @@
     espera = setTimeout(pide, 350);
   }
 
+  // ¿Hay ambiente cerca? Solo con la casilla apagada y escondida.
+  var fila = chk.closest('.ambiente-fila');
+  var mirado = null;
+  function miraCerca() {
+    if (!fila || !fila.hidden || chk.checked || !mapa) return;
+    var c = mapa.getCenter();
+    var clave = Math.round(c.lat * 10) + ':' + Math.round(c.lng * 10);
+    if (clave === mirado) return;
+    mirado = clave;
+    fetch(URL_SB + '/rest/v1/rpc/nightlife_now', {
+      method: 'POST',
+      headers: { apikey: KEY, Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_min_lat: c.lat - 0.3, p_min_lng: c.lng - 0.4, p_max_lat: c.lat + 0.3, p_max_lng: c.lng + 0.4 }),
+    }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+      if (d && d.enabled !== false && Array.isArray(d.zones) && d.zones.length) fila.hidden = false;
+    }).catch(function () { /* sin datos, escondida */ });
+  }
+  var esperaCerca = null;
+
   function engancha(m) {
     mapa = m;
     var listo = function () {
-      m.on('moveend', function () { if (chk.checked) pideLuego(); });
-      if (chk.checked) pide();
+      m.on('moveend', function () {
+        if (chk.checked) { pideLuego(); return; }
+        clearTimeout(esperaCerca);
+        esperaCerca = setTimeout(miraCerca, 800);
+      });
+      if (chk.checked) pide(); else miraCerca();
     };
     if (m.loaded()) listo(); else m.once('load', listo);
   }

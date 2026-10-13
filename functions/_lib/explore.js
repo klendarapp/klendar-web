@@ -290,7 +290,8 @@ const zonaGrupos = (e, lang) => {
  * (`?ambiente=1`, en inglés `?buzz=1`), el aviso de una línea (sin
  * movimiento, o con el mapa muy alejado) y la leyenda bajo el mapa. Las
  * zonas las pide y las pinta /assets/ambiente.js (`nightlife_now` con lo que
- * se ve del mapa, otra vez al moverlo): círculos neutros, en tinta. */
+ * se ve del mapa, otra vez al moverlo): círculos neutros, en tinta. La fila
+ * no se enseña hasta que hay alguna zona con ambiente cerca. */
 function ambienteHtml(e, lang, link) {
   const en = lang === 'en';
   const sp = supabasePublic();
@@ -317,13 +318,16 @@ function ambienteHtml(e, lang, link) {
     // «2 h» con lo que diga la base (`window_minutes`).
     h: T.hours(9).replace('9', '{n}'), m: T.mins(9).replace('9', '{n}'),
   };
-  return `<div class="ambiente-fila">
+  // Sin la casilla encendida, la fila sale escondida: depende de que haya
+  // gente, y /assets/ambiente.js solo la enseña si hay alguna zona con
+  // ambiente cerca (unos 30 km del centro del mapa). Sin datos, nada.
+  return `<div class="ambiente-fila"${e.ambiente ? '' : ' hidden'}>
     <label class="ambiente-chk"><input type="checkbox" id="ambiente"${e.ambiente ? ' checked' : ''}
       data-on="${esc(link({ ambiente: true }))}" data-off="${esc(link({ ambiente: false }))}"> <span>${esc(T.chk)}</span></label>
   </div>
   <p class="ambiente-aviso" id="ambiente-aviso" role="status" aria-live="polite" hidden></p>
   <script type="application/json" id="ambiente-textos">${JSON.stringify(textos).replace(/</g, '\\u003c')}</script>
-  <script src="/assets/ambiente.js?v=1" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}"></script>`;
+  <script src="/assets/ambiente.js?v=2" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}"></script>`;
 }
 
 /** Mapa con una chincheta por publicación. Si Mapbox no carga (sin token,

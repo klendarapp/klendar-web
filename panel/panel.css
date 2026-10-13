@@ -885,3 +885,57 @@ details.bloque .b-cuerpo { display: grid; gap: 14px; padding: 0 16px 16px; }
 /* Informe: «Toques en tus enlaces». */
 .toques-enlaces { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .toques-enlaces li { display: flex; gap: 6px; align-items: baseline; }
+
+/* ── «Mi negocio» ordenado (panel/herramientas.js) ─────────────────────── */
+/* «Crear» y «Validar códigos»: los dos iguales, uno al lado del otro. */
+.quick.quick-2 { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+/* «Lo esencial»: cuatro iguales, dos por fila en el móvil. */
+.esencial { display: grid; gap: 10px; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 14px 0; }
+@media (max-width: 760px) { .esencial { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.esencial-tile { display: grid; align-content: end; gap: 2px; min-height: 104px; padding: 14px 14px 12px; border-radius: 18px;
+  background: var(--glass); border: 1px solid var(--glass-border); color: var(--ink); }
+.esencial-tile:hover { text-decoration: none; border-color: var(--ink-2); }
+.esencial-tile > .ms, .esencial-tile > svg { font-size: 24px; margin-bottom: auto; }
+.esencial-tile b { font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.esencial-tile small { color: var(--ink-2); font-weight: 500; min-height: 1.3em; }
+/* «Más herramientas»: una fila grande. */
+.mas-herr { display: flex; align-items: center; gap: 14px; padding: 16px 18px; margin: 4px 0 18px; border-radius: 18px;
+  background: var(--glass); border: 1px solid var(--glass-border); color: var(--ink); }
+.mas-herr:hover { text-decoration: none; border-color: var(--ink-2); }
+.mas-herr > span:not(.ms) { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.mas-herr b { font-size: 16px; }
+.mas-herr small { color: var(--ink-2); font-weight: 500; }
+.mas-herr > .ms:last-child { color: var(--ink-2); }
+/* «Tu negocio»: botones iguales. */
+.grupo-titulo { font-size: 17px; margin: 6px 0 10px; }
+.herr-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); margin-bottom: 14px; }
+.herr-btn { display: grid; justify-items: center; align-content: center; gap: 6px; min-height: 84px; padding: 12px; border-radius: 18px;
+  text-align: center; background: var(--glass); border: 1px solid var(--glass-border); color: var(--ink); font-weight: 600; }
+.herr-btn:hover { text-decoration: none; border-color: var(--ink-2); }
+/* La línea de estado de cada herramienta y sus botones (dos, iguales). */
+.herr-estado { margin: 10px 0 0; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+.herr-estado .ms { color: #2ECC71; font-size: 18px; }
+.herr-off { width: 12px; height: 12px; margin: 0 3px; border-radius: 50%; border: 2px solid var(--ink-2); flex: none; }
+.herr-botones { display: grid; gap: 8px; margin-top: 12px; grid-template-columns: 1fr; }
+.herr-botones.n2 { grid-template-columns: 1fr 1fr; }
+.herr-botones .btn { justify-content: center; text-align: center; white-space: normal; }
+.fiel-card .code { white-space: pre-wrap; word-break: break-all; }
+/* «Crear»: qué publicar. */
+.crear-ops { display: grid; gap: 8px; margin: 12px 0 4px; }
+.crear-op { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px;
+  border: 1px solid var(--glass-border); color: var(--ink); }
+.crear-op:hover { text-decoration: none; border-color: var(--ink-2); }
+.crear-op > span:not(.ms) { flex: 1; display: grid; gap: 2px; }
+.crear-op small { color: var(--ink-2); font-weight: 500; }
+/* «Cifras»: lo importante arriba y el detalle en bloques plegables. */
+.kpis.kpis-top { margin: 0 0 14px; }
+details.plegable > summary { list-style: none; cursor: pointer; display: grid; gap: 2px; padding-right: 28px; position: relative; }
+details.plegable > summary::-webkit-details-marker { display: none; }
+details.plegable > summary::after { content: ''; position: absolute; right: 4px; top: 6px; width: 9px; height: 9px;
+  border-right: 2px solid var(--ink-2); border-bottom: 2px solid var(--ink-2); transform: rotate(45deg); transition: transform .2s; }
+details.plegable[open] > summary::after { transform: rotate(-135deg); top: 10px; }
+details.plegable > summary .pl-tit { font-size: 17px; font-weight: 800; }
+details.plegable > summary .pl-res { color: var(--ink-2); }
+details.plegable[open] > summary .pl-res { display: none; }
+details.plegable[open] > summary { margin-bottom: 12px; }
+@media (prefers-reduced-motion: reduce) { details.plegable > summary::after { transition: none; } }
