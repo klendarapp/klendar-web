@@ -2596,7 +2596,7 @@ KL_DIC('de', {
   "{people} personas con sellos · 1 premio entregado": "{people} Personen mit Stempeln · 1 Prämie ausgegeben",
   "{people} personas con sellos · ningún premio entregado": "{people} Personen mit Stempeln · keine Prämie ausgegeben",
   "{people} personas con sellos · {rewards_given} premios entregados": "{people} Personen mit Stempeln · {rewards_given} Prämien ausgegeben",
-  "{price_cents} al mes, sin comisiones por venta.": "{price_cents} pro Monat, ohne Provision auf Verkäufe.",
+  "{price_cents} + IVA al mes, sin comisión por canje.": "{price_cents} zzgl. MwSt. im Monat, ohne Provision pro Einlösung.",
   "{published} publicada": "{published} veröffentlicht",
   "{published} publicadas": "{published} veröffentlicht",
   "{p} · oferta del partido": "{p} · Angebot zum Spiel",

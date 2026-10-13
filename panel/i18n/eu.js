@@ -2596,7 +2596,7 @@ KL_DIC('eu', {
   "{people} personas con sellos · 1 premio entregado": "{people} pertsona zigiluekin · sari 1 emanda",
   "{people} personas con sellos · ningún premio entregado": "{people} pertsona zigiluekin · ez da saririk eman",
   "{people} personas con sellos · {rewards_given} premios entregados": "{people} pertsona zigiluekin · {rewards_given} sari emanda",
-  "{price_cents} al mes, sin comisiones por venta.": "{price_cents} hilean, salmenta-komisiorik gabe.",
+  "{price_cents} + IVA al mes, sin comisión por canje.": "{price_cents} + BEZ hilean, trukeko komisiorik gabe.",
   "{published} publicada": "{published} argitaratuta",
   "{published} publicadas": "{published} argitaratuta",
   "{p} · oferta del partido": "{p} · partidaren eskaintza",

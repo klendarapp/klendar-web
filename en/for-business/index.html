@@ -76,11 +76,11 @@
   <li><strong>New customers.</strong> The app shows what's nearby and starting soon, not whoever pays most.</li>
   <li><strong>You know what worked.</strong> Views, codes and redemptions for each publication, with who validated each one; exportable for your accountant.</li>
   <li><strong>Your team, with its own access.</strong> Whoever is behind the bar can validate codes without getting access to everything else.</li>
-  <li><strong>No lock-in.</strong> Leave whenever you like.</li>
+  <li><strong>No lock-in.</strong> Cancel whenever you like: you keep everything until the end of the period you've paid for and it doesn't renew.</li>
 </ul>
 
 <h2>What it costs</h2>
-<p>You <strong>try it free</strong>: 30 days with everything when you register, no card, and free while we're launching in your city. After that, one plan at €19.90 a month with no limits, no lock-in and no commission per redemption. <a href="/en/pricing/">See pricing</a>.</p>
+<p>You <strong>try it free</strong>: 30 days with everything when you register, no card, and free while we're launching in your city. After that, one plan with everything included: €19.90 + VAT a month per venue (€24.08 incl. VAT), with no limits, no lock-in and no commission per redemption. <a href="/en/pricing/">See pricing</a>.</p>
 
 <h2>Do the maths</h2>
 <p>With your numbers, not ours. It's an estimate to see whether it adds up, not a promise.</p>
@@ -104,7 +104,7 @@
     var plan = 19.9;
     var paraPagarlo = cobras * m / 100 > 0 ? Math.ceil(plan / (cobras * m / 100)) : 0;
     $('c-out').innerHTML = '<b>' + eur(ingresos) + ' a month</b> through the till from that offer, '
-      + eur(margen) + ' in margin. The plan costs ' + eur(plan) + ': '
+      + eur(margen) + ' in margin. The plan costs ' + eur(plan) + ' + VAT: '
       + '<b>' + paraPagarlo + (paraPagarlo === 1 ? ' redemption' : ' redemptions') + '</b> a month pays for it.'
       + '<br><span class="mu">Each person pays you ' + eur(cobras) + ' instead of ' + eur(t) + '. '
       + 'If they were coming anyway, the discount costs you ' + eur(t * d / 100 * g) + '.</span>';

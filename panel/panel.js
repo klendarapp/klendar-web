@@ -4928,7 +4928,7 @@ function planCard(sub) {
       : `Prueba con todo hasta el ${until}, sin tarjeta y sin renovación automática. Mientras tu ciudad arranca, sigues gratis.`)
     : free ? (en ? 'Free while your city is launching, with no limit on publications. We\u2019ll give you a month\u2019s notice before charging.'
       : 'Gratis mientras tu ciudad arranca, sin límite de publicaciones. Te avisaremos con un mes de antelación antes de cobrar.')
-      : (en ? `${fmtMoney(sub.price_cents)} per month, no sales commission.` : `${fmtMoney(sub.price_cents)} al mes, sin comisiones por venta.`);
+      : (en ? `${fmtMoney(sub.price_cents)} + VAT a month, no commission per redemption.` : `${fmtMoney(sub.price_cents)} + IVA al mes, sin comisión por canje.`);
   const usadas = sub.active_offers ?? 0;
   const uso = sub.max_active_offers == null
     ? (en ? `${usadas} active publication${usadas === 1 ? '' : 's'} · unlimited`

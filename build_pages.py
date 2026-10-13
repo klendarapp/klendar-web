@@ -16,8 +16,11 @@ PLANES = [
     # quitaron: castigaban justo lo que llena el mapa, que es publicar. El
     # precio de fundador se retiró el 2026-09-29 (el plan sigue en la base,
     # oculto, por si alguien lo tuviera).
+    # Precios sin IVA y la cifra con IVA al lado (decisión de 2026-10-14:
+    # plan único de 19,90 € + IVA con todo incluido).
     ('standard', 'Klendar', 'Klendar', '19,90 €', '€19.90',
-     '199 €/año (dos meses gratis)', '€199/year (two months free)'),
+     '24,08 € con IVA · o 199 € + IVA al año (dos meses gratis)',
+     '€24.08 incl. VAT · or €199 + VAT a year (two months free)'),
 ]
 
 PAGINAS = {}  # slug ES -> (slug EN, título ES, título EN, desc ES, desc EN, cuerpo ES, cuerpo EN)
@@ -45,11 +48,11 @@ PAGINAS['para-negocios'] = (
   <li><strong>Clientes nuevos.</strong> La app enseña lo que está cerca y empieza pronto, no lo que más paga.</li>
   <li><strong>Sabes qué funcionó.</strong> Vistas, códigos y canjes de cada publicación, con el detalle de quién validó cada uno; exportable para tu gestor.</li>
   <li><strong>Tu equipo, con su sitio.</strong> Puedes dar acceso a quien esté en barra para que valide códigos, sin darle acceso a lo demás.</li>
-  <li><strong>Sin permanencia.</strong> Lo dejas cuando quieras.</li>
+  <li><strong>Sin permanencia.</strong> Cancelas cuando quieras: sigues hasta el final del periodo pagado y no se renueva.</li>
 </ul>
 
 <h2>Lo que cuesta</h2>
-<p>Lo <strong>pruebas gratis</strong>: 30 días con todo al darte de alta, sin tarjeta, y gratis mientras arrancamos en tu ciudad. Después, un solo plan de 19,90 € al mes sin límites, sin permanencia y sin comisión por canje. <a href="/precios/">Ver precios</a>.</p>
+<p>Lo <strong>pruebas gratis</strong>: 30 días con todo al darte de alta, sin tarjeta, y gratis mientras arrancamos en tu ciudad. Después, un solo plan con todo incluido: 19,90 € + IVA al mes por local (24,08 € con IVA), sin límites, sin permanencia y sin comisión por canje. <a href="/precios/">Ver precios</a>.</p>
 
 <h2>Echa la cuenta</h2>
 <p>Con tus números, no con los nuestros. Es una estimación para ver si sale a cuenta, no una promesa.</p>
@@ -73,7 +76,7 @@ PAGINAS['para-negocios'] = (
     var plan = 19.9;
     var paraPagarlo = cobras * m / 100 > 0 ? Math.ceil(plan / (cobras * m / 100)) : 0;
     $('c-out').innerHTML = '<b>' + eur(ingresos) + ' al mes</b> de caja con esa oferta, '
-      + eur(margen) + ' de margen. El plan cuesta ' + eur(plan) + ': lo pagas con '
+      + eur(margen) + ' de margen. El plan cuesta ' + eur(plan) + ' + IVA: lo pagas con '
       + '<b>' + paraPagarlo + (paraPagarlo === 1 ? ' canje' : ' canjes') + '</b> al mes.'
       + '<br><span class="mu">Cada persona te paga ' + eur(cobras) + ' en vez de ' + eur(t) + '. '
       + 'Si esa gente iba a venir igual, el descuento te cuesta ' + eur(t * d / 100 * g) + '.</span>';
@@ -113,11 +116,11 @@ PAGINAS['para-negocios'] = (
   <li><strong>New customers.</strong> The app shows what's nearby and starting soon, not whoever pays most.</li>
   <li><strong>You know what worked.</strong> Views, codes and redemptions for each publication, with who validated each one; exportable for your accountant.</li>
   <li><strong>Your team, with its own access.</strong> Whoever is behind the bar can validate codes without getting access to everything else.</li>
-  <li><strong>No lock-in.</strong> Leave whenever you like.</li>
+  <li><strong>No lock-in.</strong> Cancel whenever you like: you keep everything until the end of the period you've paid for and it doesn't renew.</li>
 </ul>
 
 <h2>What it costs</h2>
-<p>You <strong>try it free</strong>: 30 days with everything when you register, no card, and free while we're launching in your city. After that, one plan at €19.90 a month with no limits, no lock-in and no commission per redemption. <a href="/en/pricing/">See pricing</a>.</p>
+<p>You <strong>try it free</strong>: 30 days with everything when you register, no card, and free while we're launching in your city. After that, one plan with everything included: €19.90 + VAT a month per venue (€24.08 incl. VAT), with no limits, no lock-in and no commission per redemption. <a href="/en/pricing/">See pricing</a>.</p>
 
 <h2>Do the maths</h2>
 <p>With your numbers, not ours. It's an estimate to see whether it adds up, not a promise.</p>
@@ -141,7 +144,7 @@ PAGINAS['para-negocios'] = (
     var plan = 19.9;
     var paraPagarlo = cobras * m / 100 > 0 ? Math.ceil(plan / (cobras * m / 100)) : 0;
     $('c-out').innerHTML = '<b>' + eur(ingresos) + ' a month</b> through the till from that offer, '
-      + eur(margen) + ' in margin. The plan costs ' + eur(plan) + ': '
+      + eur(margen) + ' in margin. The plan costs ' + eur(plan) + ' + VAT: '
       + '<b>' + paraPagarlo + (paraPagarlo === 1 ? ' redemption' : ' redemptions') + '</b> a month pays for it.'
       + '<br><span class="mu">Each person pays you ' + eur(cobras) + ' instead of ' + eur(t) + '. '
       + 'If they were coming anyway, the discount costs you ' + eur(t * d / 100 * g) + '.</span>';
@@ -175,14 +178,14 @@ def tabla_planes(lang):
         'Canjes sin límite y <strong>sin comisión</strong>',
         'Estadísticas, informe exportable y lista de asistentes',
         'Ficha del negocio, galería y panel para tu equipo',
-        'Sin permanencia: lo dejas cuando quieras',
+        'Sin permanencia: cancelas cuando quieras',
     ]
     ventajas_en = [
         'Unlimited publications: flash offers, events and place reservations',
         'Unlimited redemptions and <strong>no commission</strong>',
         'Stats, exportable report and attendee list',
         'Business page, gallery and a dashboard for your team',
-        'No lock-in: leave whenever you like',
+        'No lock-in: cancel whenever you like',
     ]
     # Primero la prueba (no es un plan: es cómo se empieza) y luego el plan.
     prueba = [
@@ -211,7 +214,7 @@ def tabla_planes(lang):
     <div class="plan best">
       <p class="tag">{'Después' if es else 'After that'}</p>
       <h2>{nombre}</h2>
-      <p class="price"><b>{precio}</b><span>{'/mes' if es else '/month'}</span></p>
+      <p class="price"><b>{precio}</b><span>{'+ IVA/mes' if es else '+ VAT/month'}</span></p>
       <p class="note">{extra}</p>
       <ul>
         {''.join(f'<li>{p}</li>' for p in puntos)}
@@ -223,30 +226,31 @@ def tabla_planes(lang):
 PAGINAS['precios'] = (
     'pricing',
     'Precios', 'Pricing',
-    'Pruébalo gratis y, después, un solo plan de 19,90 €/mes sin límites (menos por local si tienes varios). '
+    'Pruébalo gratis y, después, un solo plan con todo: 19,90 € + IVA al mes por local (menos por local si tienes varios). '
     'Sin comisiones por canje y sin permanencia.',
-    'Try it free, then one plan at €19.90/month with no limits (less per venue if you have several). '
+    'Try it free, then one plan with everything: €19.90 + VAT a month per venue (less per venue if you have several). '
     'No commission per redemption and no lock-in.',
     f'''
-<p class="lead">Un solo plan, sin límites y sin comisiones por canje. Lo que cobras en tu local es tuyo entero.</p>
+<p class="lead">Un solo plan con todo incluido, sin límites y sin comisiones por canje. Lo que cobras en tu local es tuyo entero.</p>
 <p class="callout"><strong>Ahora mismo es gratis.</strong> Mientras una ciudad está arrancando no le cobramos a nadie: un mapa vacío no le sirve ni a los negocios ni a la gente. Cuando vayamos a empezar a cobrar en tu ciudad, te avisamos con un mes de antelación.</p>
 {tabla_planes('es')}
-<p class="note">Precio por local, IVA no incluido.</p>
+<p class="note">Precio por local, IVA no incluido: 19,90 € + 21 % de IVA son 24,08 € al mes.</p>
 
 <h2>¿Varios locales?</h2>
-<p>El precio es <strong>por local</strong>, porque cada uno tiene su público, sus códigos y sus números. A partir del segundo baja:</p>
+<p>El precio es <strong>por local</strong>, porque cada uno tiene su público, sus códigos y sus números. El primero paga el precio entero y, a partir del segundo, cada local más paga menos:</p>
 <table class="tiers">
-  <tr><td>1 local</td><td><b>19,90 €</b> al mes</td></tr>
-  <tr><td>2 a 5 locales</td><td><b>15 €</b> al mes por local</td></tr>
-  <tr><td>6 o más</td><td><b>12 €</b> al mes por local, con una persona de contacto</td></tr>
+  <tr><td>El&nbsp;primer&nbsp;local</td><td style="padding-left:14px"><b>19,90 €</b> al mes</td></tr>
+  <tr><td>Del&nbsp;2.º&nbsp;al&nbsp;5.º</td><td style="padding-left:14px"><b>15 €</b> al mes cada uno</td></tr>
+  <tr><td>Desde&nbsp;el&nbsp;6.º</td><td style="padding-left:14px"><b>12 €</b> al mes cada uno, con una persona de contacto</td></tr>
 </table>
+<p class="note">Todo + IVA. Por ejemplo, con 3 locales pagas 19,90 + 15 + 15 = 49,90 € + IVA al mes; con 6, 19,90 + 4 × 15 + 12 = 91,90 € + IVA.</p>
 <p><strong>Publicar en varios locales a la vez va incluido.</strong> Escribes la oferta una vez, marcas en qué locales la quieres y cada uno recibe la suya, con su dirección y su propio código; las cifras las ves por separado y sumadas. No cobramos aparte por ahorrarte el trabajo de escribirlo tres veces.</p>
 
 <h2>La letra pequeña, en dos líneas</h2>
 <ul>
   <li><strong>Prueba.</strong> Al dar de alta el negocio tienes 30 días con todo, sin tarjeta y sin que se renueve solo.</li>
   <li><strong>Cómo se paga.</strong> Mientras no tengamos pago con tarjeta, por transferencia: escribes a <a href="mailto:info@klendar.app">info@klendar.app</a> y lo dejamos activado.</li>
-  <li><strong>Cambiar o dejarlo.</strong> Cuando quieras, en el mismo correo. No hay permanencia ni penalización, y no cobramos el mes empezado si te vas.</li>
+  <li><strong>Cancela cuando quieras:</strong> sigues hasta el final del periodo pagado y no se renueva. Sin permanencia ni penalización; desde el panel («Dar de baja el negocio») o en el mismo correo.</li>
   <li><strong>Nunca cobramos por canje.</strong> Ni porcentaje ni euros por código: si te funciona bien, pagas lo mismo.</li>
   <li><strong>Qué es un «destacado».</strong> Una publicación que aparece arriba durante un rato; va aparte y se pide por correo. Cuando una está destacada, la app lo dice: no se disfraza de recomendación.</li>
   <li><strong>El plan no cambia lo que ve la gente</strong> más allá de eso: el orden lo elige cada persona en los filtros.</li>
@@ -254,28 +258,29 @@ PAGINAS['precios'] = (
 
 <h2>¿Y para quien usa la app?</h2>
 <p>Gratis, y sin cuenta para mirar. Solo hace falta crear una cuenta para canjear, guardar planes o recibir avisos.</p>
-<p style="margin-top:18px"><a class="pill accent" href="mailto:info@klendar.app?subject=Plan%20de%20Klendar">Preguntar por un plan</a> <a class="pill ghost" href="/para-negocios/">Cómo funciona</a></p>
+<p style="margin-top:18px"><a class="pill accent" href="mailto:info@klendar.app?subject=Plan%20de%20Klendar">Preguntar por el plan</a> <a class="pill ghost" href="/para-negocios/">Cómo funciona</a></p>
 ''',
     f'''
-<p class="lead">One plan, no limits and no commission per redemption. What you charge at your venue is yours.</p>
+<p class="lead">One plan with everything included, no limits and no commission per redemption. What you charge at your venue is yours.</p>
 <p class="callout"><strong>Right now it's free.</strong> While a city is launching, we don't charge anyone: an empty map is no use to businesses or to people. Before we start charging in your city, we'll give you a month's notice.</p>
 {tabla_planes('en')}
-<p class="note">Price per venue, VAT not included.</p>
+<p class="note">Price per venue, VAT not included: €19.90 + 21% VAT comes to €24.08 a month.</p>
 
 <h2>Several venues?</h2>
-<p>The price is <strong>per venue</strong>, because each one has its own audience, its own codes and its own numbers. From the second one, it goes down:</p>
+<p>The price is <strong>per venue</strong>, because each one has its own audience, its own codes and its own numbers. The first venue pays the full price and, from the second one on, each extra venue pays less:</p>
 <table class="tiers">
-  <tr><td>1 venue</td><td><b>€19.90</b> a month</td></tr>
-  <tr><td>2 to 5 venues</td><td><b>€15</b> a month per venue</td></tr>
-  <tr><td>6 or more</td><td><b>€12</b> a month per venue, with a dedicated contact</td></tr>
+  <tr><td>Your&nbsp;first&nbsp;venue</td><td style="padding-left:14px"><b>€19.90</b> a month</td></tr>
+  <tr><td>2nd&nbsp;to&nbsp;5th</td><td style="padding-left:14px"><b>€15</b> a month each</td></tr>
+  <tr><td>6th&nbsp;onwards</td><td style="padding-left:14px"><b>€12</b> a month each, with a dedicated contact</td></tr>
 </table>
+<p class="note">All + VAT. For example, with 3 venues you pay 19.90 + 15 + 15 = €49.90 + VAT a month; with 6, 19.90 + 4 × 15 + 12 = €91.90 + VAT.</p>
 <p><strong>Publishing to several venues at once is included.</strong> You write the offer once, tick the venues you want and each one gets its own, with its own address and its own code; you see the numbers per venue and added up. We don't charge extra for saving you from typing it three times.</p>
 
 <h2>The small print, in two lines</h2>
 <ul>
   <li><strong>Trial.</strong> When you register your business you get 30 days with everything, no card and no automatic renewal.</li>
   <li><strong>How you pay.</strong> Until we have card payments, by bank transfer: email <a href="mailto:info@klendar.app">info@klendar.app</a> and we'll activate it.</li>
-  <li><strong>Changing or leaving.</strong> Whenever you want, at the same address. No lock-in, no penalty, and we don't charge for the month you're in if you leave.</li>
+  <li><strong>Cancel whenever you like:</strong> you keep everything until the end of the period you've paid for and it doesn't renew. No lock-in, no penalty; from the dashboard (“Leave Klendar”) or at the same address.</li>
   <li><strong>We never charge per redemption.</strong> No percentage, no euros per code: if it works well for you, you pay the same.</li>
   <li><strong>What “featured” means.</strong> A publication that shows at the top for a while; it's charged separately and you request it by email. When one is featured, the app says so: it isn't dressed up as a recommendation.</li>
   <li><strong>Your plan doesn't change what people see</strong> beyond that: the order is chosen by each person in the filters.</li>
@@ -283,7 +288,7 @@ PAGINAS['precios'] = (
 
 <h2>And for people using the app?</h2>
 <p>Free, and no account needed to browse. You only sign up to redeem, save plans or get alerts.</p>
-<p style="margin-top:18px"><a class="pill accent" href="mailto:info@klendar.app?subject=Klendar%20plan">Ask about a plan</a> <a class="pill ghost" href="/en/for-business/">How it works</a></p>
+<p style="margin-top:18px"><a class="pill accent" href="mailto:info@klendar.app?subject=Klendar%20plan">Ask about the plan</a> <a class="pill ghost" href="/en/for-business/">How it works</a></p>
 ''',
 )
 

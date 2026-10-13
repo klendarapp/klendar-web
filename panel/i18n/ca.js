@@ -2596,7 +2596,7 @@ KL_DIC('ca', {
   "{people} personas con sellos · 1 premio entregado": "{people} persones amb segells · 1 premi lliurat",
   "{people} personas con sellos · ningún premio entregado": "{people} persones amb segells · cap premi lliurat",
   "{people} personas con sellos · {rewards_given} premios entregados": "{people} persones amb segells · {rewards_given} premis lliurats",
-  "{price_cents} al mes, sin comisiones por venta.": "{price_cents} al mes, sense comissions per venda.",
+  "{price_cents} + IVA al mes, sin comisión por canje.": "{price_cents} + IVA al mes, sense comissió per bescanvi.",
   "{published} publicada": "{published} publicada",
   "{published} publicadas": "{published} publicades",
   "{p} · oferta del partido": "{p} · oferta del partit",

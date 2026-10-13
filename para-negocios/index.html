@@ -76,11 +76,11 @@
   <li><strong>Clientes nuevos.</strong> La app enseña lo que está cerca y empieza pronto, no lo que más paga.</li>
   <li><strong>Sabes qué funcionó.</strong> Vistas, códigos y canjes de cada publicación, con el detalle de quién validó cada uno; exportable para tu gestor.</li>
   <li><strong>Tu equipo, con su sitio.</strong> Puedes dar acceso a quien esté en barra para que valide códigos, sin darle acceso a lo demás.</li>
-  <li><strong>Sin permanencia.</strong> Lo dejas cuando quieras.</li>
+  <li><strong>Sin permanencia.</strong> Cancelas cuando quieras: sigues hasta el final del periodo pagado y no se renueva.</li>
 </ul>
 
 <h2>Lo que cuesta</h2>
-<p>Lo <strong>pruebas gratis</strong>: 30 días con todo al darte de alta, sin tarjeta, y gratis mientras arrancamos en tu ciudad. Después, un solo plan de 19,90 € al mes sin límites, sin permanencia y sin comisión por canje. <a href="/precios/">Ver precios</a>.</p>
+<p>Lo <strong>pruebas gratis</strong>: 30 días con todo al darte de alta, sin tarjeta, y gratis mientras arrancamos en tu ciudad. Después, un solo plan con todo incluido: 19,90 € + IVA al mes por local (24,08 € con IVA), sin límites, sin permanencia y sin comisión por canje. <a href="/precios/">Ver precios</a>.</p>
 
 <h2>Echa la cuenta</h2>
 <p>Con tus números, no con los nuestros. Es una estimación para ver si sale a cuenta, no una promesa.</p>
@@ -104,7 +104,7 @@
     var plan = 19.9;
     var paraPagarlo = cobras * m / 100 > 0 ? Math.ceil(plan / (cobras * m / 100)) : 0;
     $('c-out').innerHTML = '<b>' + eur(ingresos) + ' al mes</b> de caja con esa oferta, '
-      + eur(margen) + ' de margen. El plan cuesta ' + eur(plan) + ': lo pagas con '
+      + eur(margen) + ' de margen. El plan cuesta ' + eur(plan) + ' + IVA: lo pagas con '
       + '<b>' + paraPagarlo + (paraPagarlo === 1 ? ' canje' : ' canjes') + '</b> al mes.'
       + '<br><span class="mu">Cada persona te paga ' + eur(cobras) + ' en vez de ' + eur(t) + '. '
       + 'Si esa gente iba a venir igual, el descuento te cuesta ' + eur(t * d / 100 * g) + '.</span>';
