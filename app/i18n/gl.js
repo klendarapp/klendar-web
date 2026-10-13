@@ -936,6 +936,7 @@ KL_DIC('gl', {
   "Notificaciones guardadas": "Notificacións gardadas",
   "Nueva contraseña": "Novo contrasinal",
   "Nuevo aviso": "Novo aviso",
+  "Nº {n}": "N.º {n}",
   "Número de teléfono": "Número de teléfono",
   "Números anulados: {l}": "Números anulados: {l}",
   "O escribe aquí el código de 6 cifras del correo": "Ou escribe aquí o código de 6 cifras do correo",

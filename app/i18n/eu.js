@@ -936,6 +936,7 @@ KL_DIC('eu', {
   "Notificaciones guardadas": "Jakinarazpenak gorde dira",
   "Nueva contraseña": "Pasahitz berria",
   "Nuevo aviso": "Abisu berria",
+  "Nº {n}": "{n}. zk.",
   "Número de teléfono": "Telefono-zenbakia",
   "Números anulados: {l}": "Baliogabetutako zenbakiak: {l}",
   "O escribe aquí el código de 6 cifras del correo": "Edo idatzi hemen mezuko 6 digituko kodea",

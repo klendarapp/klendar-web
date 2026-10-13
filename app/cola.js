@@ -35,7 +35,7 @@ const colaError = (e) => (COLA_ERR[e?.clave] ? t(COLA_ERR[e.clave]) : (e?.messag
  * fuente recortada de «Tu cuenta». */
 const COLA_SVG = '<svg class="ms-svg" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M2 17h2v.5H3v1h1v.5H2v1h3v-4H2v1zm1-9h1V4H2v1h1v3zm-1 3h1.8L2 13.1v.9h3v-1H3.2L5 10.9V10H2v1zm5-6v2h14V5H7zm0 14h14v-2H7v2zm0-6h14v-2H7v2z"/></svg>';
 
-const colaNumero = (n) => (EN ? `No. ${n}` : `Nº ${n}`);
+const colaNumero = (n) => (EN ? `No. ${n}` : t(`Nº ${n}`));
 const colaEsperando = (n) => (EN
   ? (n === 0 ? 'Nobody is waiting' : n === 1 ? '1 person waiting' : `${n} people waiting`)
   : (n === 0 ? 'No hay nadie esperando' : n === 1 ? '1 persona esperando' : `${n} personas esperando`));
@@ -313,13 +313,14 @@ async function colaTarjetasHtml(turnos) {
     const b = x.business || {};
     const tz = zona({ business_id: b.id });
     const linea = x.status === 'called'
-      ? `${t('¡Te toca!')} ${EN ? `Before ${colaHora(x.call_deadline, tz)}` : `Antes de las ${colaHora(x.call_deadline, tz)}`}`
+      ? `${t('¡Te toca!')} ${EN ? `Before ${colaHora(x.call_deadline, tz)}` : t(`Antes de las ${colaHora(x.call_deadline, tz)}`)}`
       : [colaNumero(x.number),
-        x.ahead ? (EN ? `${x.ahead} ahead` : `${x.ahead} delante`) : (EN ? "You're next" : 'Eres el siguiente'),
-        x.wait_minutes != null ? (EN ? `about ${x.wait_minutes} min` : `unos ${x.wait_minutes} min`) : ''].filter(Boolean).join(' · ');
+        // Cada trozo por el diccionario: unidos con « · » ya no casan con él.
+        x.ahead ? (EN ? `${x.ahead} ahead` : t(`${x.ahead} delante`)) : (EN ? "You're next" : t('Eres el siguiente')),
+        x.wait_minutes != null ? (EN ? `about ${x.wait_minutes} min` : t(`unos ${x.wait_minutes} min`)) : ''].filter(Boolean).join(' · ');
     return `<a class="ocard cola-tarjeta${x.status === 'called' ? ' llamado' : ''}" href="#/cola/${esc(x.code)}">
         ${b.logo_url ? `<img src="${esc(b.logo_url)}" alt="" loading="lazy">` : `<span class="ph">${COLA_SVG}</span>`}
-        <span class="ocard-body"><b>${esc(EN ? `Your turn at ${b.name || ''}` : `Tu turno en ${b.name || ''}`)}</b>
+        <span class="ocard-body"><b>${esc(EN ? `Your turn at ${b.name || ''}` : t(`Tu turno en ${b.name || ''}`))}</b>
           <span class="${x.status === 'called' ? 'cola-toca-linea' : 'muted'}">${esc(linea)}</span>
         </span>
         ${ic('chevron_right')}

@@ -1607,6 +1607,7 @@ KL_DIC('fr', {
   "Nuevo evento": "Nouvel événement",
   "Nuevo evento para RRPP": "Nouvel événement promoteurs",
   "Nunca pasa del final de la publicación.": "Jamais au-delà de la fin de la publication.",
+  "Nº {n}": "N° {n}",
   "Número de ganadores": "Nombre de gagnants",
   "Número de usos": "Nombre d’utilisations",
   "Números anulados: {l}": "Numéros annulés : {l}",

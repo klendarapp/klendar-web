@@ -936,6 +936,7 @@ KL_DIC('de', {
   "Notificaciones guardadas": "Mitteilungen gespeichert",
   "Nueva contraseña": "Neues Passwort",
   "Nuevo aviso": "Neuer Alarm",
+  "Nº {n}": "Nr. {n}",
   "Número de teléfono": "Telefonnummer",
   "Números anulados: {l}": "Ungültige Nummern: {l}",
   "O escribe aquí el código de 6 cifras del correo": "Oder gib hier den 6-stelligen Code aus der E-Mail ein",

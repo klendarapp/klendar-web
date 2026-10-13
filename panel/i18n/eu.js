@@ -1607,6 +1607,7 @@ KL_DIC('eu', {
   "Nuevo evento": "Ekitaldi berria",
   "Nuevo evento para RRPP": "RRPPentzako ekitaldi berria",
   "Nunca pasa del final de la publicación.": "Inoiz ez da argitalpenaren amaieratik haratago joaten.",
+  "Nº {n}": "{n}. zk.",
   "Número de ganadores": "Irabazle kopurua",
   "Número de usos": "Erabilera kopurua",
   "Números anulados: {l}": "Baliogabetutako zenbakiak: {l}",

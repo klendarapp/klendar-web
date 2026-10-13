@@ -1607,6 +1607,7 @@ KL_DIC('gl', {
   "Nuevo evento": "Novo evento",
   "Nuevo evento para RRPP": "Novo evento para RRPP",
   "Nunca pasa del final de la publicación.": "Nunca pasa do final da publicación.",
+  "Nº {n}": "N.º {n}",
   "Número de ganadores": "Número de gañadores",
   "Número de usos": "Número de usos",
   "Números anulados: {l}": "Números anulados: {l}",
