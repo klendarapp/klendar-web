@@ -2,6 +2,9 @@
 'use strict';
 
 const APP_EN = {
+  // Series que sigues: las fechas que quedan («masFechas», app.js)
+  'Por ahora no hay más fechas publicadas': 'No more dates posted yet',
+  '1 fecha más publicada': '1 more date posted',
   // Traducción automática (Ajustes)
   'Traducir publicaciones a mi idioma': 'Translate publications into my language',
   'Lo que escriben los negocios (publicaciones, novedades, su ficha y su carta), traducido automáticamente al idioma de la web. Las reseñas y los nombres no se traducen. Solo se envían esos textos a un servicio de traducción, nunca datos tuyos.': "What businesses write (publications, news, their page and their menu), translated automatically into the website's language. Reviews and names aren't translated. Only those texts are sent to a translation service, never your data.",

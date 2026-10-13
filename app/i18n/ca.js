@@ -400,6 +400,8 @@ KL_DIC('ca', {
   "El correo o la contraseña no coinciden.": "El correu o la contrasenya no coincideixen.",
   "El código ha caducado": "El codi ha caducat",
   "El código vale 1 hora desde que lo consigues": "El codi val 1 hora des que l’aconsegueixes",
+  "El código vale hasta la {h}": "El codi val fins a la {h}",
+  "El código vale hasta las {h}": "El codi val fins a les {h}",
   "El código vale hasta {code_until}": "El codi val fins a {code_until}",
   "El código vale por todas las plazas: lo enseñas una vez en la puerta.": "El codi val per a totes les places: l'ensenyes una vegada a la porta.",
   "El código vale {code_hours} hora desde que lo consigues": "El codi val {code_hours} hora des que l'aconsegueixes",

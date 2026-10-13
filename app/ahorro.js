@@ -67,7 +67,7 @@ RUTAS.ahorro = async () => {
     <div class="olist">${items.map((i) => {
     const partes = [i.business_name, fecha(i.validated_at, { day: 'numeric', month: 'short' }, i.time_zone || undefined)];
     if (i.before_cents != null && i.paid_cents != null) partes.push(`${money(i.before_cents)} → ${money(i.paid_cents)}`);
-    if ((i.seats || 1) > 1) partes.push(EN ? `${i.seats} places` : `${i.seats} plazas`);
+    if ((i.seats || 1) > 1) partes.push(EN ? `${i.seats} places` : t(`${i.seats} plazas`));
     const dentro = `<span class="ocard-body"><b>${esc(i.offer_title)}</b>
         <span class="muted">${esc(partes.join(' · '))}</span>
         <span class="ocard-meta"><span class="tag">−${esc(money(i.saved_cents))}</span></span></span>`;

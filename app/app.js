@@ -2213,10 +2213,10 @@ function diasSerie(dias) {
 }
 /** «Se repite: jueves a las 21:00» (si sale de una regla). */
 const repiteSerie = (x) => (x?.weekdays?.length && x.start_time
-  ? (EN ? `Repeats: ${diasSerie(x.weekdays)} at ${x.start_time}` : `Se repite: ${diasSerie(x.weekdays)} a las ${x.start_time}`) : '');
+  ? (EN ? `Repeats: ${diasSerie(x.weekdays)} at ${x.start_time}` : t(`Se repite: ${diasSerie(x.weekdays)} a las ${x.start_time}`)) : '');
 const masFechas = (n) => (EN
   ? (n === 0 ? 'No more dates posted yet' : n === 1 ? '1 more date posted' : `${n} more dates posted`)
-  : (n === 0 ? 'Por ahora no hay más fechas publicadas' : n === 1 ? '1 fecha más publicada' : `${n} fechas más publicadas`));
+  : t(n === 0 ? 'Por ahora no hay más fechas publicadas' : n === 1 ? '1 fecha más publicada' : `${n} fechas más publicadas`));
 const textoGuardadas = (n) => (EN
   ? (n === 0 ? 'Each new date will go to your plans.' : n === 1 ? "We've saved 1 date to your plans; new ones will go there too." : `We've saved ${n} dates to your plans; new ones will go there too.`)
   : (n === 0 ? 'Cada fecha nueva irá a tus planes.' : n === 1 ? 'Hemos guardado 1 fecha en tus planes; las nuevas también irán.' : `Hemos guardado ${n} fechas en tus planes; las nuevas también irán.`));

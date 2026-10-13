@@ -172,10 +172,10 @@ RUTAS.rrpp = async ([id], params) => {
       <h2>${esc(t('Tus ofertas'))}</h2>
       <div class="lista">${d.offers.map((o) => {
         const cupo = o.quota == null ? t('Sin límite')
-          : (EN ? `${o.used} of ${o.quota} places` : `${o.used} de ${o.quota} plazas`);
-        const vale = o.code_until ? (EN ? `The code is valid until ${rrppHora(o.code_until)}` : `El código vale hasta ${rrppHora(o.code_until)}`)
+          : (EN ? `${o.used} of ${o.quota} places` : t(`${o.used} de ${o.quota} plazas`));
+        const vale = o.code_until ? (EN ? `The code is valid until ${rrppHora(o.code_until)}` : t(`El código vale hasta ${rrppHora(o.code_until)}`))
           : o.code_hours ? (EN ? `The code is valid for ${o.code_hours} ${o.code_hours === 1 ? 'hour' : 'hours'} after you get it`
-            : `El código vale ${o.code_hours} ${o.code_hours === 1 ? 'hora' : 'horas'} desde que lo consigues`) : '';
+            : t(`El código vale ${o.code_hours} ${o.code_hours === 1 ? 'hora' : 'horas'} desde que lo consigues`)) : '';
         const cuando = fecha(o.kind === 'future_event' ? o.event_at : o.redeem_start_at, undefined, tz);
         return `<a class="fila" href="${pre}/o/${esc(o.id)}${principal ? `?rp=${esc(principal.code)}` : ''}">
           ${ic(o.kind === 'future_event' ? 'local_activity' : 'qr_code_2')}
@@ -209,8 +209,8 @@ RUTAS.rrpp = async ([id], params) => {
         <div class="fila rrpp-fila">
           ${avatarDeAmigo({ name: r.name, avatar: r.avatar }, 'av-lista')}
           <span class="fila-t"><b>${esc(rrppNombre(r))}</b>
-            <small>${esc([EN ? `Signed up at ${hora(r.joined_at)}` : `Se apuntó a las ${hora(r.joined_at)}`, r.offer_title,
-              EN ? `${r.seats} ${r.seats === 1 ? 'place' : 'places'}` : `${r.seats} ${r.seats === 1 ? 'plaza' : 'plazas'}`].filter(Boolean).join(' · '))}</small>
+            <small>${esc([EN ? `Signed up at ${hora(r.joined_at)}` : t(`Se apuntó a las ${hora(r.joined_at)}`), r.offer_title,
+              EN ? `${r.seats} ${r.seats === 1 ? 'place' : 'places'}` : t(`${r.seats} ${r.seats === 1 ? 'plaza' : 'plazas'}`)].filter(Boolean).join(' · '))}</small>
             ${r.off_offer ? `<small class="rrpp-fuera">${esc(t('fuera de tu oferta'))}</small>` : ''}</span>
           <span class="tag rrpp-estado${r.status === 'validated' ? ' rrpp-dentro' : ' off'}">${esc(estado(r))}</span>
         </div>`).join('')}</div>`

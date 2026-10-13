@@ -400,6 +400,8 @@ KL_DIC('eu', {
   "El correo o la contraseña no coinciden.": "Helbide elektronikoa edo pasahitza ez dira zuzenak.",
   "El código ha caducado": "Kodea iraungi da",
   "El código vale 1 hora desde que lo consigues": "Kodeak ordu 1 balio du lortzen duzunetik",
+  "El código vale hasta la {h}": "Kodeak ordu honetara arte balio du: {h}",
+  "El código vale hasta las {h}": "Kodeak ordu honetara arte balio du: {h}",
   "El código vale hasta {code_until}": "Kodeak balio du data honetara arte: {code_until}",
   "El código vale por todas las plazas: lo enseñas una vez en la puerta.": "Kodeak plaza guztietarako balio du: behin erakutsiko duzu atean.",
   "El código vale {code_hours} hora desde que lo consigues": "Kodeak {code_hours} orduz balio du lortzen duzunetik",
