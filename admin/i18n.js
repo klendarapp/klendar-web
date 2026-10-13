@@ -421,6 +421,15 @@ const I18N = makeI18N({
     "Solo cuentas dadas de alta como administradoras.": "Only accounts registered as administrators.",
   // ── Errores del servidor y confirmaciones ─────────────────────────────
   "No se puede suspender a un administrador.": "An administrator can't be suspended.",
+  // ── Condiciones para negocios (admin/condiciones.js) ──────────────
+  "El identificador es la fecha de publicación (AAAA-MM-DD), y si hay dos el mismo día, con un sufijo: 2026-11-02-b.": "The identifier is the publication date (YYYY-MM-DD) and, if there are two on the same day, a suffix: 2026-11-02-b.",
+  "Faltan las fechas.": "The dates are missing.",
+  "Se aplica como pronto 15 días después de publicarla (un mes si cambia el precio).": "It can apply 15 days after publication at the earliest (a month if the price changes).",
+  "Escribe el resumen en español y en inglés.": "Write the summary in Spanish and in English.",
+  "El resumen cabe en 1.000 caracteres.": "The summary fits in 1,000 characters.",
+  "El aviso de esta versión ya se mandó: no se cambia ni se repite.": "This version has already been notified: it cannot be changed or sent again.",
+  "Aún no se ha publicado: se avisa el día que sale en la web.": "It hasn't been published yet: notify on the day it goes live on the website.",
+  "Ya se aplica: el aviso tenía que salir 15 días antes.": "It already applies: the notice had to go out 15 days before.",
   "No puedes eliminar tu propia cuenta desde aquí.": "You can't delete your own account from here.",
   "Quita primero los permisos de administrador.": "Remove the administrator permissions first.",
   "Hace falta indicar un motivo.": "A reason is required.",

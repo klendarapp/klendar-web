@@ -951,3 +951,8 @@ details.plegable[open] > summary { margin-bottom: 12px; }
 /* Un botón suelto con una frase larga (en alemán no cabía en 360 px y
  * empujaba la página): que parta la línea en vez de salirse. */
 .btn.envuelve { white-space: normal; max-width: 100%; text-align: left; }
+
+/* Cambian las condiciones para negocios: «Dar de baja el negocio» y
+   «Entendido», iguales y uno al lado del otro. */
+.aviso-condiciones .botones-iguales { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.aviso-condiciones .botones-iguales > .btn { justify-content: center; text-align: center; width: 100%; margin: 0; justify-self: stretch; box-sizing: border-box; }

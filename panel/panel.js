@@ -1022,6 +1022,41 @@ function avisoVerificacion() {
       ${rechazado && gestiona() ? `<button class="btn sm primary" type="button" id="otra-revision">${ms('check')}${esc(I18N.t('Pedir otra revisión'))}</button>` : ''}</p></div>`;
 }
 
+/** Cambian las condiciones para negocios (Reglamento (UE) 2019/1150, art.
+ * 3.2; `business_terms_notice`): qué cambia, desde cuándo, las condiciones y
+ * su historial, «Dar de baja el negocio» (sin coste hasta esa fecha) y
+ * «Entendido», que lo quita. El correo sale aunque no se marque. Como la app.
+ * El resumen lo escribe administración en español y en inglés; las
+ * condiciones solo existen en esos dos idiomas. */
+function avisoCondiciones(t) {
+  const en = I18N.pub === 'en';
+  const dia = new Date(`${String(t.applies_on).slice(0, 10)}T12:00:00Z`)
+    .toLocaleDateString(LOC(), { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+  const url = `${APP_URL}${en ? '/en/business-terms/' : '/negocios/'}`;
+  const resumen = (en && t.summary_en) || t.summary_es || '';
+  const n = t.more || 0;
+  const otros = n > 0
+    ? ' ' + bi(n === 1 ? 'Hay 1 cambio más en el historial.' : `Hay ${n} cambios más en el historial.`,
+      n === 1 ? "There's 1 more change in the history." : `There are ${n} more changes in the history.`)
+    : '';
+  const cuando = t.applied
+    ? bi(`Se aplican desde el ${dia}.`, `They apply from ${dia}.`)
+    : bi(`Se aplican desde el ${dia}. Si no estás de acuerdo, puedes dar de baja el negocio sin coste antes de esa fecha.`,
+      `They apply from ${dia}. If you don't agree, you can close your business on Klendar at no cost before then.`);
+  // En catalán, gallego, euskera, francés, alemán e italiano: en qué idioma
+  // está lo que se abre.
+  const nota = I18N.lang !== 'es' && I18N.lang !== 'en'
+    ? `<p class="muted small" style="margin:2px 0 0">${esc(en ? I18N.t('Las condiciones se abren en inglés. La versión que vale es la española.') : I18N.t('Las condiciones están en español, que es la versión que vale.'))}</p>`
+    : '';
+  return `<div class="help aviso-condiciones"><b>${esc(I18N.t('Cambian las condiciones para negocios'))}</b>
+    <p style="margin:6px 0 0" translate="no">${esc(resumen)}</p>${nota}
+    <p class="muted" style="margin:6px 0 0">${esc(cuando + otros)}</p>
+    <p style="margin:8px 0 0"><a class="link" href="${esc(url)}" target="_blank" rel="noopener">${esc(I18N.t('Ver las condiciones'))}</a>
+      &nbsp;·&nbsp; <a class="link" href="${esc(url)}#historial" target="_blank" rel="noopener">${esc(I18N.t('Historial de cambios'))}</a></p>
+    <p class="botones-iguales" style="margin:10px 0 0"><a class="btn sm" href="#/baja">${esc(I18N.t('Dar de baja el negocio'))}</a>
+      <button class="btn sm" type="button" id="condiciones-ok">${esc(I18N.t('Entendido'))}</button></p></div>`;
+}
+
 /** Administración lo ha marcado como cerrado de verdad (`business_closure_state`). */
 function avisoCerrado() {
   const en = I18N.lang === 'en';
@@ -1055,11 +1090,14 @@ async function pideOtraRevision(boton) {
 }
 
 PAGES.resumen = async (v) => {
-  const [stats, offers, sub, cerradoDeVerdad] = await Promise.all([
+  const [stats, offers, sub, cerradoDeVerdad, condiciones] = await Promise.all([
     rpc('business_stats', { p_id: BIZ.id }),
     rpc('my_business_offers', { p_id: BIZ.id }),
     rpc('my_subscription', { p_business: BIZ.id }).catch(() => null),
     rpc('business_closure_state', { p_ref: BIZ.id }).catch(() => null),
+    // Un cambio en las condiciones (solo al propietario; la base lo apunta
+    // como visto). Si no llega, no sale: nunca tapa el resumen.
+    esPropietario() ? rpc('business_terms_notice', { p_business: BIZ.id }).catch(() => null) : null,
   ]);
   const pending = offers.filter((o) => o.status === 'active');
   const s = stats || {};
@@ -1072,9 +1110,11 @@ PAGES.resumen = async (v) => {
   const conFotos = !!ficha.logo_url && (!!ficha.cover_image_url || (ficha.gallery || []).length > 0);
   const paso = (n, hecho, titulo, pista, href, attrs = '') => `<a class="paso${hecho ? ' hecho' : ''}" ${hecho ? '' : `href="${href}" ${attrs}`}>
       <span class="n">${hecho ? ms('check') : n}</span><span><b>${titulo}</b>${pista && !hecho ? `<small>${pista}</small>` : ''}</span>${hecho ? '' : ms('chevron_right')}</a>`;
-  // Un solo aviso arriba: lo más grave primero (cerrado por Klendar, en
-  // revisión o rechazado, cerrado hasta nuevo aviso). Como la app.
+  // Un solo aviso arriba: lo más grave primero (cerrado por Klendar, un
+  // cambio en las condiciones, en revisión o rechazado, cerrado hasta nuevo
+  // aviso). Como la app.
   const aviso = cerradoDeVerdad ? avisoCerrado()
+    : condiciones ? avisoCondiciones(condiciones)
     : BIZ.verification_status !== 'verified' ? avisoVerificacion()
       : cerradoIndef() ? `<div class="card pausa"><div>
         <h2 style="margin:0">Cerrado hasta nuevo aviso</h2>
@@ -1139,6 +1179,17 @@ PAGES.resumen = async (v) => {
   herrResumen(v, { cajaFilas: $('#filasCaja', v) });
   const otra = $('#otra-revision', v);
   if (otra) otra.onclick = () => pideOtraRevision(otra);
+  const entendido = $('#condiciones-ok', v);
+  if (entendido) {
+    entendido.onclick = async () => {
+      if (entendido.disabled) return;
+      entendido.disabled = true;
+      try {
+        await rpc('acknowledge_business_terms', { p_business: BIZ.id });
+        route();
+      } catch (e) { toast(friendly(e.message), true); entendido.disabled = false; }
+    };
+  }
   pintaAforo($('#aforoCaja', v));
   // «Cola virtual · N esperando», si está abierta (panel/cola.js).
   if (typeof resumenCola === 'function') resumenCola($('#colaCaja', v));

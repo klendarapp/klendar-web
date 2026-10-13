@@ -379,7 +379,7 @@ def historial(slug, lang):
         return ''
     i = 0 if lang == 'es' else 2
     items = ''.join(f'\n  <li><strong>{f[i]}</strong>: {html.escape(f[i + 1], quote=False)}</li>' for f in filas)
-    return f'\n<h2 class="cambios">{CAMBIOS_TITULO[lang]}</h2>\n<ul>{items}\n</ul>\n'
+    return f'\n<h2 class="cambios" id="historial">{CAMBIOS_TITULO[lang]}</h2>\n<ul>{items}\n</ul>\n'
 
 
 # ════════════════════════════════════════════════════════════════════════════

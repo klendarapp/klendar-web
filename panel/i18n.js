@@ -1182,6 +1182,12 @@ const I18N = makeI18N({
     "Escríbelo tú: «2ª unidad −50 %», «Menú 9,90»…": "Write it yourself: “2nd item −50%”, “Set menu €9.90”…",
     "Todavía no has guardado ninguna. Rellena una publicación y guárdala como plantilla: la próxima vez la lanzas en dos toques.": "You haven't saved any yet. Fill in a publication and save it as a template: next time, it's two taps away.",
     "Entendido": "Got it",
+    // ── Cambian las condiciones para negocios (P2B art. 3.2) ──────────
+    "Cambian las condiciones para negocios": "The business terms are changing",
+    "Ver las condiciones": "Read the terms",
+    "Historial de cambios": "Change history",
+    "Las condiciones se abren en inglés. La versión que vale es la española.": "The terms open in English. The Spanish version is the one that counts.",
+    "Las condiciones están en español, que es la versión que vale.": "The terms are in Spanish, which is the version that counts.",
     "Usar una plantilla": "Use a template",
     "Usar": "Use",
     "Plantilla": "Template",
