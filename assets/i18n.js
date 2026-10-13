@@ -305,3 +305,105 @@ function makeI18N(EN, opts = {}) {
     translate, t, setLang, pickers,
   };
 }
+
+/* ── Fechas en gallego y euskera ────────────────────────────────────────────
+ * Chrome (escritorio y Android) no trae los datos de fecha de `gl` ni de `eu`:
+ * `Intl.DateTimeFormat('gl-ES', { month: 'long' })` sale «M11» o en inglés.
+ * Si al navegador le faltan, se formatea en español y se cambian los nombres
+ * de los meses y de los días por los de cada idioma (el orden queda el del
+ * español: «20 de novembro», «20 de azaroa»). WebKit sí los trae y no se toca
+ * nada. Vale para `Intl.DateTimeFormat` y para `Date#toLocale*String`. */
+(function klFechasGlEu() {
+  if (typeof Intl === 'undefined' || !Intl.DateTimeFormat) return;
+  const Orig = Intl.DateTimeFormat;
+  const faltan = ['gl', 'eu'].filter((l) => {
+    try {
+      return Orig.supportedLocalesOf([l]).length === 0
+        || /M11|Nov/.test(new Orig(l + '-ES', { month: 'long' }).format(new Date(2026, 10, 20)));
+    } catch (_) { return true; }
+  });
+  if (!faltan.length) return;
+  const NOMBRES = {
+    gl: {
+      month: {
+        long: ['xaneiro', 'febreiro', 'marzo', 'abril', 'maio', 'xuño', 'xullo', 'agosto', 'setembro', 'outubro', 'novembro', 'decembro'],
+        short: ['xan.', 'feb.', 'mar.', 'abr.', 'maio', 'xuñ.', 'xul.', 'ago.', 'set.', 'out.', 'nov.', 'dec.'],
+      },
+      weekday: {
+        long: ['domingo', 'luns', 'martes', 'mércores', 'xoves', 'venres', 'sábado'],
+        short: ['dom.', 'luns', 'mar.', 'mér.', 'xov.', 'ven.', 'sáb.'],
+      },
+    },
+    eu: {
+      month: {
+        long: ['urtarrila', 'otsaila', 'martxoa', 'apirila', 'maiatza', 'ekaina', 'uztaila', 'abuztua', 'iraila', 'urria', 'azaroa', 'abendua'],
+        short: ['urt.', 'ots.', 'mar.', 'api.', 'mai.', 'eka.', 'uzt.', 'abu.', 'ira.', 'urr.', 'aza.', 'abe.'],
+      },
+      weekday: {
+        long: ['igandea', 'astelehena', 'asteartea', 'asteazkena', 'osteguna', 'ostirala', 'larunbata'],
+        short: ['ig.', 'al.', 'ar.', 'az.', 'og.', 'or.', 'lr.'],
+      },
+    },
+  };
+  // Los nombres en español de cada estilo, para saber qué mes o qué día es.
+  const es = {};
+  const lista = (tipo, estilo) => {
+    const k = tipo + estilo;
+    if (es[k]) return es[k];
+    const f = new Orig('es-ES', { [tipo]: estilo, timeZone: 'UTC' });
+    es[k] = tipo === 'month'
+      ? Array.from({ length: 12 }, (_, i) => f.format(Date.UTC(2026, i, 15)).toLowerCase())
+      : Array.from({ length: 7 }, (_, i) => f.format(Date.UTC(2026, 2, 1 + i)).toLowerCase()); // 1-3-2026 es domingo
+    return es[k];
+  };
+  const cambia = (lang, parts) => parts.map((p) => {
+    if (p.type !== 'month' && p.type !== 'weekday') return p;
+    const v = p.value.toLowerCase();
+    for (const estilo of ['long', 'short']) {
+      const i = lista(p.type, estilo).indexOf(v);
+      if (i >= 0) {
+        let n = NOMBRES[lang][p.type][estilo][i];
+        if (p.value[0] !== p.value[0].toLowerCase()) n = n[0].toUpperCase() + n.slice(1);
+        return { type: p.type, value: n };
+      }
+    }
+    return p;
+  });
+  const idiomaDe = (loc) => {
+    const l = String((Array.isArray(loc) ? loc[0] : loc) || '').slice(0, 2).toLowerCase();
+    return faltan.includes(l) ? l : null;
+  };
+  function DateTimeFormat(loc, opts) {
+    const lang = idiomaDe(loc);
+    if (!lang) return new Orig(loc, opts);
+    const f = new Orig('es-ES', opts);
+    const partes = (d) => cambia(lang, f.formatToParts(d));
+    return {
+      format: (d) => partes(d).map((p) => p.value).join(''),
+      formatToParts: partes,
+      formatRange: (a, b) => f.formatRange(a, b),
+      formatRangeToParts: (a, b) => f.formatRangeToParts(a, b),
+      resolvedOptions: () => ({ ...f.resolvedOptions(), locale: lang + '-ES' }),
+    };
+  }
+  DateTimeFormat.supportedLocalesOf = Orig.supportedLocalesOf.bind(Orig);
+  DateTimeFormat.prototype = Orig.prototype;
+  Intl.DateTimeFormat = DateTimeFormat;
+
+  const CAMPOS = ['weekday', 'era', 'year', 'month', 'day', 'hour', 'minute', 'second',
+    'dayPeriod', 'fractionalSecondDigits', 'dateStyle', 'timeStyle'];
+  const FECHA = { year: 'numeric', month: 'numeric', day: 'numeric' };
+  const HORA = { hour: 'numeric', minute: '2-digit', second: '2-digit' };
+  const parchea = (metodo, porDefecto) => {
+    const antes = Date.prototype[metodo];
+    Date.prototype[metodo] = function (loc, opts) {
+      if (!idiomaDe(loc)) return antes.call(this, loc, opts);
+      const o = { ...(opts || {}) };
+      if (!CAMPOS.some((c) => c in o)) Object.assign(o, porDefecto);
+      return DateTimeFormat(loc, o).format(this);
+    };
+  };
+  parchea('toLocaleDateString', FECHA);
+  parchea('toLocaleTimeString', HORA);
+  parchea('toLocaleString', { ...FECHA, ...HORA });
+})();
