@@ -53,7 +53,7 @@ AREAS = {
 ES = re.compile(r"[áéíóúñ¿¡]|\b(el|la|los|las|de|del|que|con|para|por|una?|sin|más|esta?|este|hay|tu|tus|se|ya|en|al|y|o|lo|es|son)\b", re.I)
 # …y en inglés (los textos ya en inglés no se cuentan).
 EN = re.compile(r"\b(the|and|to|of|your|you|is|are|with|for|in|on|this|it|at|an?|or|be|no|not|can|will|from|by)\b", re.I)
-BILINGUE = re.compile(r"\b(en|EN)\s*\?|I18N\.lang === 'en'|lang === 'en'|\bbi\(|^\s*[?:] [`'\"\[(]")
+BILINGUE = re.compile(r"\b(en|EN)\s*\?|I18N\.lang === 'en'|lang === 'en'|\bbi(Trozos)?\(|^\s*[?:] [`'\"\[(]")
 # Nombres propios y palabras que son iguales en inglés.
 MARCAS = {'Klendar', 'Supabase', 'Google', 'Apple', 'Stripe', 'Mapbox', 'Resend', 'Cloudflare', 'Madrid', 'Barcelona',
           'Pro', 'Error', 'Email', 'Web', 'Premium', 'Instagram', 'Facebook', 'Twitter', 'Android', 'Total', 'Normal',
@@ -653,7 +653,7 @@ def recorre(toks, pares):
                 pares += emparejados(toks[dp + 1:fin], toks[q + 1:dp])
             continue
         # bi(español, inglés)
-        if t.k == 'id' and t.v == 'bi' and i + 1 < n and toks[i + 1].v == '(' and (i == 0 or toks[i - 1].v != '.'):
+        if t.k == 'id' and t.v in ('bi', 'biTrozos') and i + 1 < n and toks[i + 1].v == '(' and (i == 0 or toks[i - 1].v != '.'):
             fin = cierre(toks, i + 1)
             args = partes_prof0(toks[i + 2:fin], ',')
             if len(args) >= 2:

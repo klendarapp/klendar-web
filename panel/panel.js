@@ -528,6 +528,11 @@ function table({ cols, rows, empty = 'Nada por aquí.' }) {
  * En los idiomas nuevos va el español por su diccionario (con huecos: «{n}
  * vistas»), porque muchos se pintan dentro de `translate="no"`. */
 const bi = (es, en) => (I18N.lang === 'en' ? en : I18N.t(es));
+/** Lo mismo con HTML dentro (`<b>44</b> códigos…`) pintado fuera de
+ * `translate="no"`: en los idiomas nuevos va el español tal cual y lo traduce
+ * el repaso de lo pintado, trozo a trozo. Con `bi`, una plantilla suelta del
+ * diccionario («{x} a las {y}») cogía el HTML entero y lo dejaba a medias. */
+const biTrozos = (es, en) => (I18N.lang === 'en' ? en : es);
 const helpBox = (title, body) => `<details class="help"><summary>${esc(title)}</summary>${body}</details>`;
 
 // ── Sesión y negocio activo ─────────────────────────────────────────────────
@@ -5439,7 +5444,7 @@ PAGES.informe = async (v, param) => {
         <div class="kpi"><b>${fmtNum(t.redeemed)}</b><span>Canjes validados</span></div>
         <div class="kpi"><b>${pct(t.redeemed, t.codes)}</b><span>De código a canje</span></div>
       </div>
-      <p class="muted" style="margin:10px 0 0">${bi(`<b>${fmtNum(t.unused)}</b> ${t.unused === 1 ? 'código se quedó' : 'códigos se quedaron'} sin usar.${best ? ` La hora a la que más se canjea es a las <b>${String(best.hour).padStart(2, '0')}:00</b>.` : ''}`, `<b>${fmtNum(t.unused)}</b> ${t.unused === 1 ? 'code was' : 'codes were'} never used.${best ? ` The busiest redemption hour is <b>${String(best.hour).padStart(2, '0')}:00</b>.` : ''}`)}</p>
+      <p class="muted" style="margin:10px 0 0">${biTrozos(`<b>${fmtNum(t.unused)}</b> ${t.unused === 1 ? 'código se quedó' : 'códigos se quedaron'} sin usar.${best ? ` La hora a la que más se canjea es a las <b>${String(best.hour).padStart(2, '0')}:00</b>.` : ''}`, `<b>${fmtNum(t.unused)}</b> ${t.unused === 1 ? 'code was' : 'codes were'} never used.${best ? ` The busiest redemption hour is <b>${String(best.hour).padStart(2, '0')}:00</b>.` : ''}`)}</p>
       ${t.offline > 0 ? `<p class="muted" style="margin:4px 0 0">${esc(bi(`${fmtNum(t.offline)} ${t.offline === 1 ? 'validado' : 'validados'} sin conexión (a la hora en que se escanearon).`,
         `${fmtNum(t.offline)} validated offline (at the time they were scanned).`))}</p>` : ''}
       <p class="muted" style="margin:4px 0 0">${esc(I18N.t('Favoritos'))}: ${fmtNum(t.favorites)}</p>
