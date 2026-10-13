@@ -59,14 +59,14 @@
 <script src="/assets/cabecera.js?v=8" defer></script>
 <main class="doc" id="contenido">
 <h1>Cookie policy</h1>
-<div class="meta">Last updated: 7 October 2026 · Version 2026-09-29</div>
+<div class="meta">Last updated: 13 October 2026 · Version 2026-09-29</div>
 <p class="notice">This is a courtesy translation provided for information only. In case of any discrepancy, the <a href="/cookies/">Spanish version</a> prevails.</p>
 
 <p><strong>In short.</strong> klendar.app does not use cookies. It only stores in your browser what is essential for what you ask it to do (your session, your language, your filters, the codes a business validates offline) and it counts visits without cookies and without identifying you. None of this is used for advertising or to follow you across other sites, so we don't ask for your consent (art. 22.2 of the Spanish LSSI-CE). If we ever add anything that needs it, we will ask you first.</p>
 <h2>What is stored in your browser</h2>
 <table>
 <tr><th>Name</th><th>Where</th><th>Purpose</th><th>How long</th><th>Type</th></tr>
-<tr><td><code>klendar_lang</code></td><td>All of klendar.app (local storage)</td><td>Remember the language you pick with ES/EN</td><td>Until you delete it</td><td>Preference you chose</td></tr>
+<tr><td><code>klendar_lang</code></td><td>All of klendar.app (local storage)</td><td>Remember the language you pick: Spanish or English on the public pages and, in “Your account” and the dashboard, also català, galego, euskara, français, Deutsch or italiano</td><td>Until you delete it</td><td>Preference you chose</td></tr>
 <tr><td><code>sb-…-auth-token</code></td><td>“Your account” and business dashboard (local storage)</td><td>Keep you logged in</td><td>Until you log out</td><td>Technical (authentication)</td></tr>
 <tr><td><code>sb-…-auth-token-…code-verifier</code></td><td>“Your account” and business dashboard (local storage)</td><td>A one-time secret that checks that the return from Google or Apple reaches the same browser where you started logging in (PKCE)</td><td>Until you finish logging in or log out</td><td>Technical (security)</td></tr>
 <tr><td><code>sb-…-admin-auth-token</code></td><td>Admin (local storage)</td><td>Keep the admin session, separate from the “Your account” one</td><td>Until you log out, after 30 minutes of inactivity or after 12 hours</td><td>Technical (authentication)</td></tr>
@@ -84,6 +84,7 @@
 <tr><td><code>klendar.busquedas</code></td><td>Explore (local storage)</td><td>Your last 10 searches, to show them when you tap the search box</td><td>Until you clear them (one or all)</td><td>Preference you chose</td></tr>
 <tr><td><code>klendar.viaje</code></td><td>Discover (local storage)</td><td>The date you closed the travel notice, so it doesn't show again that day (not where you were)</td><td>Until the next day (replaced)</td><td>Preference you chose</td></tr>
 <tr><td><code>klendar.ciudades</code></td><td>Discover, Explore and “Your account” (session storage)</td><td>The list of Klendar's cities, so it isn't requested on every page</td><td>Until you close the tab</td><td>Technical</td></tr>
+<tr><td><code>klendar.grupos.elegidos</code></td><td>“Groups and companies” and “Your account” (session storage)</td><td>Remember the places you pick (up to 3) to ask them for a quote while you prepare the request</td><td>Until you close the tab</td><td>Technical</td></tr>
 <tr><td><code>klendar.codigos.…</code></td><td>“Your account” (local storage)</td><td>A copy of your codes and bookings so you can show them at the door even without a connection</td><td>Until you log out</td><td>Technical</td></tr>
 <tr><td><code>klendar.panel.vista</code></td><td>Business dashboard (local storage)</td><td>How you want to see your publications (cards or list)</td><td>Until you change it</td><td>Preference you chose</td></tr>
 <tr><td><code>klendar.tv.llave</code></td><td>Klendar on the TV (local storage)</td><td>The key that links that TV to a venue, to show its publications without logging in to any account</td><td>Until the business unlinks the TV (then it deletes itself)</td><td>Technical</td></tr>
@@ -107,6 +108,7 @@
 
 <h2 class="cambios">Change history</h2>
 <ul>
+  <li><strong>13 October 2026</strong>: One more key: the places you pick in “Groups and companies” to ask them for a quote (until you close the tab); the language saved by “Your account” and the dashboard can also be Catalan, Galician, Basque, French, German or Italian.</li>
   <li><strong>7 October 2026</strong>: Two keys for Klendar on the TV, stored by the browser of the venue's TV (not yours): the key that links it to the venue and what it last showed; that page doesn't count visits.</li>
   <li><strong>6 October 2026</strong>: Four more keys: your interests and your city, your recent searches, the date you closed the travel notice and the list of cities; your interests are also deleted when you log out.</li>
   <li><strong>5 October 2026</strong>: Seven more keys: your filters, your “Near me” position (deleted after 6 hours), video sound, translation, the copy of your codes and the dashboard view; where visits aren't counted and what is deleted when you log out.</li>
