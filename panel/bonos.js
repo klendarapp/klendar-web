@@ -112,7 +112,7 @@ PAGES.bonos = async (v, param) => {
     : `<div class="empty"><b>${esc(I18N.t('Aún no vendes bonos'))}</b><br>${esc(d.can_manage
       ? bi('Crea uno, por ejemplo «10 cafés por 12 €» o «5 clases por 40 €». Lo cobras tú en el local y Klendar lleva la cuenta de los usos.', 'Create one, for example “10 coffees for €12” or “5 classes for €40”. You charge for it at your venue and Klendar keeps count of the uses.')
       : I18N.t('Cuando quien lleva el negocio cree un bono, lo verás aquí para venderlo.'))}</div>`}
-    <p><a class="btn ghost" href="#/validar">${ms('qr_code_scanner')}Vender o usar un bono: Validar códigos</a></p>`;
+    <p><a class="btn ghost envuelve" href="#/validar">${ms('qr_code_scanner')}Vender o usar un bono: Validar códigos</a></p>`;
 };
 
 /** Crear (id null) o cambiar un bono. */
