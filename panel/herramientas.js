@@ -34,8 +34,12 @@ async function herrEstado() {
 }
 const herrNum = (o, k, f) => Number(o?.[k]?.[f]) || 0;
 const herrSi = (o, k, f) => o?.[k]?.[f] === true;
-/** Plural sencillo en los dos idiomas: herrPl(n, ['1 tele', 'teles'], ['1 TV', 'TVs']). */
-const herrPl = (n, [es1, esN], [en1, enN]) => bi(n === 1 ? es1 : `${fmtNum(n)} ${esN}`, n === 1 ? en1 : `${fmtNum(n)} ${enN}`);
+/** Plural sencillo: herrPl(n, ['1 tele', 'teles'], ['1 TV', 'TVs']). Con
+ * varios se traduce la plantilla «{n} teles» (en los idiomas nuevos, el
+ * diccionario la tiene así) y luego se pone el número. */
+const herrPl = (n, [es1, esN], [en1, enN]) => (n === 1
+  ? bi(es1, en1)
+  : bi(`{n} ${esN}`, `{n} ${enN}`).replace('{n}', fmtNum(n)));
 
 // ── «Crear»: qué publicar ───────────────────────────────────────────────────
 /** Como la hoja de «Crear» de la app: tres opciones con su frase. */

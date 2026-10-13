@@ -41,7 +41,7 @@ async function categorias() {
   }
   return CATEGORIAS;
 }
-const nombreCat = (c) => (c.names && (c.names[EN ? 'en' : 'es'] || c.names.es)) || c.slug;
+const nombreCat = (c) => (c.names && (c.names[LANG] || c.names[I18N.pub] || c.names.es)) || c.slug;
 
 /** Reduce la foto en el navegador antes de subirla, como la app (menos
  * datos, menos espera; `assets/fotos.js`), y la sube a la carpeta de la
@@ -94,9 +94,9 @@ function destinoWeb(ruta) {
   // del sorteo, que con tu sesión enseña lo tuyo.
   if ((m = r.match(/^\/groups\/requests\/([0-9a-f-]{36})/i))) return `#/grupos/${m[1]}`;
   if (r.startsWith('/groups/requests')) return '#/grupos';
-  if (r.startsWith('/groups')) return EN ? '/en/groups/' : '/grupos/';
-  if ((m = r.match(/^\/giveaways\/([0-9a-f-]{36})/i))) return `${EN ? '/en/giveaway/' : '/sorteo/'}${m[1]}`;
-  if (r.startsWith('/giveaways')) return EN ? '/en/giveaways/' : '/sorteos/';
+  if (r.startsWith('/groups')) return PUB_EN ? '/en/groups/' : '/grupos/';
+  if ((m = r.match(/^\/giveaways\/([0-9a-f-]{36})/i))) return `${PUB_EN ? '/en/giveaway/' : '/sorteo/'}${m[1]}`;
+  if (r.startsWith('/giveaways')) return PUB_EN ? '/en/giveaways/' : '/sorteos/';
   // Cola virtual: «¡Te toca!», «Se ha pasado tu turno»… → el turno.
   if ((m = r.match(/^\/cola\/([A-Za-z0-9_-]{16})/))) return `#/cola/${m[1]}`;
   // «¡Feliz cumpleaños!»: el regalo, con su QR.
@@ -117,8 +117,8 @@ function destinoWeb(ruta) {
   // «Real Madrid – Barça, hoy a las 21:00»: la página pública del partido,
   // con los bares que lo ponen. «Equipos que sigues», a la suya.
   if (r.startsWith('/partidos/equipos')) return '#/equipos';
-  if ((m = r.match(/^\/partidos\/([0-9a-f-]{36})/i))) return `${EN ? '/en/matches/' : '/partidos/'}${m[1]}`;
-  if (r.startsWith('/partidos')) return EN ? '/en/matches/' : '/partidos/';
+  if ((m = r.match(/^\/partidos\/([0-9a-f-]{36})/i))) return `${PUB_EN ? '/en/matches/' : '/partidos/'}${m[1]}`;
+  if (r.startsWith('/partidos')) return PUB_EN ? '/en/matches/' : '/partidos/';
   // «DJ Nano actúa cerca» va a la publicación (`/offer/<id>`, arriba). La
   // página de un artista y «Artistas que sigues», por si llegan.
   if ((m = r.match(/^\/artists?\/([a-z0-9-]+)$/i)) && m[1] !== 'following') return `${pre}/a/${m[1].toLowerCase()}`;
@@ -430,7 +430,7 @@ RUTAS.alerta = async ([id], params, crudo) => {
   const f = $('#f');
   // El selector de categorías de toda la web (/assets/categorias.js).
   KlendarCategorias.campo($('#cats-aviso'), {
-    cats, elegidas: a.categories || [], multiple: true, lang: EN ? 'en' : 'es', nombre: 'cat', titulo: t('¿De qué?'), vacio: t('Todo'),
+    cats, elegidas: a.categories || [], multiple: true, lang: LANG, nombre: 'cat', titulo: t('¿De qué?'), vacio: t('Todo'),
   });
   let lat = a.lat;
   let lng = a.lng;
@@ -574,8 +574,7 @@ RUTAS.ajustes = async ([sub]) => {
         <label>${esc(t('Idioma'))} <small>${esc(t('De la web, la app y las notificaciones y correos que te enviamos'))}</small>
           <select name="idioma">
             <option value=""${!p.locale ? ' selected' : ''}>${esc(t('El del móvil o el navegador'))}</option>
-            <option value="es"${p.locale === 'es' ? ' selected' : ''}>Español</option>
-            <option value="en"${p.locale === 'en' ? ' selected' : ''}>English</option>
+            ${KL_IDIOMAS.map((l) => `<option value="${l}" lang="${l}"${p.locale === l ? ' selected' : ''}>${KL_NOMBRE_IDIOMA[l]}</option>`).join('')}
           </select></label>
         <label class="check"><input type="checkbox" name="traducir"${tradOk && trad?.translate_content ? ' checked' : ''}${tradOk ? '' : ' disabled'}>
           <span><b>${esc(t('Traducir publicaciones a mi idioma'))}</b><br><small>${esc(tradOk
@@ -616,10 +615,10 @@ RUTAS.ajustes = async ([sub]) => {
         <dd>${cons?.terms_accepted_at ? esc(`${t('Aceptados el')} ${dia(cons.terms_accepted_at)}${cons.terms_version ? ` (${t('versión')} ${cons.terms_version})` : ''}`) : esc(t('Sin registro'))}
           <br>${[
     // Los tres textos que se aceptan, como en la app.
-    [EN ? 'terms' : 'terminos', 'Términos de uso'],
-    [EN ? 'privacy' : 'privacidad', 'Política de privacidad'],
-    [EN ? 'community-guidelines' : 'normas', 'Normas de la comunidad'],
-  ].map(([ruta, txt]) => `<a href="${pre}/${ruta}/" target="_blank" rel="noopener">${esc(t(txt))}</a>`).join(' · ')}</dd>
+    [PUB_EN ? 'terms' : 'terminos', 'Términos de uso'],
+    [PUB_EN ? 'privacy' : 'privacidad', 'Política de privacidad'],
+    [PUB_EN ? 'community-guidelines' : 'normas', 'Normas de la comunidad'],
+  ].map(([ruta, txt]) => `<a href="${pre}/${ruta}/" target="_blank" rel="noopener">${esc(t(txt))}</a>`).join(' · ')}${notaLegal()}</dd>
         <dt>${esc(t('Comunicaciones comerciales'))}</dt>
         <dd><label class="check"><input type="checkbox" id="marketing"${cons?.marketing_consent ? ' checked' : ''}>
           <span>${esc(cons?.marketing_consent ? `${t('Sí, desde el')} ${dia(cons.marketing_consent_at)}` : t('No recibes novedades ni promociones por correo'))}</span></label></dd>
@@ -689,7 +688,7 @@ RUTAS.ajustes = async ([sub]) => {
       if (eCuenta) throw new Error(errAuth(eCuenta));
       foto = null;
       toast(t('Perfil guardado'));
-      if (idioma && idioma !== (EN ? 'en' : 'es')) {
+      if (idioma && idioma !== LANG) {
         try { localStorage.setItem('klendar_lang', idioma); } catch { /* sin permisos */ }
         location.reload();
       } else if (nac) {
@@ -904,9 +903,9 @@ async function ajustesNotificaciones() {
       ${grupo('Para ti', `${[
     sw('series', 'Series que sigues', prefs.notify_series !== false),
     // «Partidos de tus equipos» (encendido de serie), justo debajo, como la app.
-    sw('equipos', KlendarEmisiones.t(EN ? 'en' : 'es').prefTeams, prefs.notify_teams !== false),
+    sw('equipos', KlendarEmisiones.t(LANG).prefTeams, prefs.notify_teams !== false),
     // «Artistas que sigues» (encendido de serie), justo después, como la app.
-    sw('artistas', KlendarArtistas.t(EN ? 'en' : 'es').youFollow, prefs.notify_artists !== false),
+    sw('artistas', KlendarArtistas.t(LANG).youFollow, prefs.notify_artists !== false),
     // Grupos y empresas y Sorteos (tanda C), detrás de los partidos, como la app.
     sw('grupos', 'Grupos y empresas', prefs.notify_groups !== false, 'Respuestas a tus peticiones y, si tienes un negocio, peticiones nuevas'),
     sw('sorteos', 'Sorteos', prefs.notify_giveaways !== false, 'Resultados de los sorteos en los que participas. Si ganas, te avisamos siempre.'),
@@ -977,7 +976,7 @@ async function ajustesNotificaciones() {
 
   // «Cerca de ti»: el selector de categorías de toda la web.
   KlendarCategorias.campo($('#cats-cerca'), {
-    cats, elegidas, multiple: true, lang: EN ? 'en' : 'es', titulo: t('Categorías'), vacio: t('Todas'),
+    cats, elegidas, multiple: true, lang: LANG, titulo: t('Categorías'), vacio: t('Todas'),
     alCambiar: (v) => { elegidas = v; guarda(); },
   });
 
@@ -1063,7 +1062,7 @@ RUTAS.sugerencias = async (_p, params, crudo) => {
     ocupado($('#enviar'), async () => {
       await llamar('send_feedback', {
         p_message: msg, p_kind: f.tipo.value, p_platform: 'web',
-        p_app_version: 'web', p_locale: EN ? 'en' : 'es', p_route: document.referrer
+        p_app_version: 'web', p_locale: LANG, p_route: document.referrer
           // Solo la ruta, y sin el código de un enlace personal (/amigo/…).
           ? new URL(document.referrer).pathname.replace(/(\/(en\/)?(amigo|friend|r|baja|unsubscribe|v|cartel\/local|poster\/venue))\/[\w-]{6,}/g, '$1/*')
           : null,
@@ -1512,7 +1511,7 @@ RUTAS.reclamar = async ([id]) => {
       <p class="err" id="err" role="alert"></p>
       <button class="pill accent" id="enviar">${esc(t('Enviar la reclamación'))}</button>
       <p class="muted">${esc(t('Solo lo ve el equipo de Klendar. La prueba se borra 6 meses después de resolver la reclamación.'))}
-        <a href="${EN ? '/en/privacy/' : '/privacidad/'}">${esc(t('Política de privacidad'))}</a></p>
+        <a href="${PUB_EN ? '/en/privacy/' : '/privacidad/'}">${esc(t('Política de privacidad'))}</a></p>${notaLegal()}
     </form>`);
 
   const f = $('#f');
@@ -1734,7 +1733,7 @@ RUTAS.denunciar = async ([tipo, id], params) => {
       <p class="muted pie-form" id="csam" hidden>${esc(t('En una denuncia por abuso sexual infantil, tu nombre y tu correo son opcionales. Si nos dejas el correo, te contaremos qué hemos hecho.'))}</p>
       <label class="check"><input type="checkbox" name="fe"> ${esc(t('Declaro de buena fe que la información y las afirmaciones de esta denuncia son exactas y completas.'))}</label>
       <p class="muted pie-form">${esc(t('Usamos tu nombre y tu correo solo para tramitar la denuncia y contestarte; no se los damos a quien publicó el contenido.'))}
-        <a href="${EN ? '/en/privacy/' : '/privacidad/'}" target="_blank">${esc(t('Política de privacidad'))}</a></p>
+        <a href="${PUB_EN ? '/en/privacy/' : '/privacidad/'}" target="_blank">${esc(t('Política de privacidad'))}</a></p>${notaLegal()}
       <p class="err" id="err" role="alert"></p>
       <button class="pill accent" id="enviar">${esc(t('Enviar denuncia'))}</button>
     </form>
@@ -1788,7 +1787,7 @@ RUTAS.denunciar = async ([tipo, id], params) => {
           headers: { 'Content-Type': 'application/json', apikey: window.KLENDAR_ENV.key },
           body: JSON.stringify({
             type: destino.tipo, id: destino.id, reason: f.motivo.value, details: det,
-            name: nombre || null, email: correo || null, lang: EN ? 'en' : 'es',
+            name: nombre || null, email: correo || null, lang: LANG,
             good_faith: el.fe.checked, captcha: robot.token || null,
           }),
         });
@@ -1969,10 +1968,10 @@ RUTAS['ultimo-paso'] = async (_p, params) => {
         <h1>${esc(t('Hemos actualizado los términos y la privacidad'))}</h1>
         <p class="muted">${esc(t('Hemos cambiado los términos de uso y la política de privacidad. Léelos y, si estás de acuerdo, acéptalos para seguir usando Klendar.'))}</p>
         <ul>
-          ${doc(EN ? 'terms' : 'terminos', 'Términos de uso')}
-          ${doc(EN ? 'privacy' : 'privacidad', 'Política de privacidad')}
-          ${volverSeguro.startsWith('/panel/') ? doc(EN ? 'business-terms' : 'negocios', 'Condiciones para negocios') : ''}
-        </ul>
+          ${doc(PUB_EN ? 'terms' : 'terminos', 'Términos de uso')}
+          ${doc(PUB_EN ? 'privacy' : 'privacidad', 'Política de privacidad')}
+          ${volverSeguro.startsWith('/panel/') ? doc(PUB_EN ? 'business-terms' : 'negocios', 'Condiciones para negocios') : ''}
+        </ul>${notaLegal()}
         <p id="err" class="err" role="alert"></p>
         <p><button class="pill accent" id="seguir">${esc(t('Aceptar y seguir'))}</button></p>
         <p class="muted">${esc(t('Si no estás de acuerdo, puedes cerrar sesión o eliminar tu cuenta.'))}</p>
@@ -2063,7 +2062,7 @@ RUTAS.invitaciones = async () => {
     llamar('my_promoter_invites', {}).catch(() => []),
   ]);
   const papel = (r) => (r === 'manager' ? t('encargado') : t('empleado'));
-  const dia = (s) => new Date(s).toLocaleDateString(EN ? 'en-GB' : 'es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+  const dia = (s) => new Date(s).toLocaleDateString(LOC, { day: 'numeric', month: 'long', year: 'numeric' });
   pinta(`
     <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(t('Invitaciones'))}</h1>
@@ -2240,12 +2239,13 @@ RUTAS.gustos = async (_p, params) => {
   const fg = $('#fg');
   const cuenta = () => {
     const n = elegidas.length;
-    $('#g-n').textContent = n < 3 ? `${n} ${EN ? 'of' : 'de'} 5 · ${t('Elige al menos 3')}` : `${n} ${EN ? 'of' : 'de'} 5`;
+    const deCinco = EN ? `${n} of 5` : t(`${n} de 5`);
+    $('#g-n').textContent = n < 3 ? `${deCinco} · ${t('Elige al menos 3')}` : deCinco;
     $('#g-guardar').disabled = n < 3 || n > 5;
   };
   // El selector de categorías de toda la web, de varias y como mucho 5.
   KlendarCategorias.campo($('#cats-gustos'), {
-    cats, elegidas, multiple: true, lang: EN ? 'en' : 'es', titulo: t('¿Qué te gusta?'), vacio: t('Elige de 3 a 5'),
+    cats, elegidas, multiple: true, lang: LANG, titulo: t('¿Qué te gusta?'), vacio: t('Elige de 3 a 5'),
     max: 5, id: 'slug', alCambiar: (v) => { elegidas = v; cuenta(); },
   });
   cuenta();

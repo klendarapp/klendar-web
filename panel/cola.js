@@ -57,7 +57,7 @@ const colaQueda = (iso) => {
   const s = Math.max(0, Math.round((new Date(iso).getTime() - Date.now()) / 1000));
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 };
-const colaCartelUrl = (code) => `${I18N.lang === 'en' ? '/en/poster/queue/' : '/cartel/cola/'}${encodeURIComponent(code || '')}`;
+const colaCartelUrl = (code) => `${I18N.pub === 'en' ? '/en/poster/queue/' : '/cartel/cola/'}${encodeURIComponent(code || '')}`;
 
 PAGES.cola = async (v) => {
   let d = await colaRpc('business_queue', { p_business: BIZ.id });

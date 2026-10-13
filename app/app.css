@@ -580,3 +580,11 @@ button.codigo.copiar .ms { font-size: 18px; color: var(--ink-2); letter-spacing:
 .ayuda-plegable { margin: 8px 0 14px; }
 .ayuda-plegable summary { cursor: pointer; font-weight: 700; }
 .ayuda-plegable p { margin: 8px 0 0; color: var(--ink-2); }
+
+/* Los ocho idiomas en un desplegable (cabecera y menú del móvil); en las
+   páginas públicas sigue ES/EN. */
+.lang .lang-sel { appearance: auto; border: 0; background: transparent; color: var(--ink-2);
+  font: inherit; font-weight: 700; padding: 5px 8px; cursor: pointer; max-width: 9.5em; }
+.lang .lang-sel option { color: #111; background: #fff; }
+/* «Los textos legales están en español/inglés», en los idiomas nuevos. */
+.nota-legal { font-size: 13px; margin: 8px 0 0; }

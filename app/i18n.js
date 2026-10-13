@@ -20,6 +20,10 @@ const APP_EN = {
   'Dentro': "You're in",
   'Ya lo tienes': 'You already have it',
   'Deshacer': 'Undo',
+  'Condiciones para negocios': 'Business terms',
+  // En los idiomas sin textos legales propios (ver `notaLegal` en app.js).
+  'Los textos legales están en español.': 'The legal texts are in Spanish.',
+  'Los textos legales están en inglés.': 'The legal texts are in English.',
   // Confirmar una acción que llega por enlace
   '¿Guardar en tus planes?': 'Save to your plans?',
   '¿Quitar de tus planes?': 'Remove from your plans?',

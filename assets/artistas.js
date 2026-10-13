@@ -11,9 +11,13 @@
 // `assets/zona.js` tiene que estar cargado antes.
 (function () {
   'use strict';
+  // «Tu cuenta» y el panel, en un idioma sin tabla propia (catalán, francés…):
+  // la española, pasada por el diccionario que ha cargado /assets/i18n.js.
+  const klBi = (x, lang) => (lang === 'en' ? x.en : globalThis.KL_TABLA ? globalThis.KL_TABLA(x.es, lang) : x.es);
+  const klLoc = (lang) => (globalThis.KL_LOCALE ? globalThis.KL_LOCALE(lang) : lang === 'en' ? 'en-GB' : 'es-ES');
 
   const KZ = () => globalThis.KlendarZona;
-  const loc = (lang) => (lang === 'en' ? 'en-GB' : 'es-ES');
+  const loc = klLoc;
 
   /** Enlaces de la ficha de un artista, en el orden de la app (y de la base,
    *  `artist_clean_links`). */
@@ -138,7 +142,7 @@
       noDatesBiz: 'No dates published right now.',
     },
   };
-  const t = (lang) => T[lang === 'en' ? 'en' : 'es'];
+  const t = (lang) => klBi(T, lang);
 
   /** El mensaje de un error de las funciones de artistas (`{ok:false, error}`). */
   function error(clave, lang, nombre = '') {

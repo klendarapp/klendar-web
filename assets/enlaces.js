@@ -20,6 +20,10 @@
 // (`[data-toque]`) con `log_business_link_tap`, sin esperar la respuesta.
 (function () {
   'use strict';
+  // «Tu cuenta» y el panel, en un idioma sin tabla propia (catalán, francés…):
+  // la española, pasada por el diccionario que ha cargado /assets/i18n.js.
+  const klBi = (x, lang) => (lang === 'en' ? x.en : globalThis.KL_TABLA ? globalThis.KL_TABLA(x.es, lang) : x.es);
+  const klLoc = (lang) => (globalThis.KL_LOCALE ? globalThis.KL_LOCALE(lang) : lang === 'en' ? 'en-GB' : 'es-ES');
 
   const URL_OK = /^https:\/\/([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,24}(:[0-9]{2,5})?([/?#][^\s]*)?$/i;
   const MAX_ENLACES = 8;
@@ -41,7 +45,7 @@
       pdf: 'See full menu (PDF)', carta: 'See full menu',
     },
   };
-  const t = (lang) => (lang === 'en' ? T.en : T.es);
+  const t = (lang) => klBi(T, lang);
 
   // Iconos de Material (los mismos que la app: event_available,
   // delivery_dining, room_service, link, picture_as_pdf, open_in_new), en SVG.

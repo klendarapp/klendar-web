@@ -22,12 +22,12 @@
 'use strict';
 
 const KAr = globalThis.KlendarArtistas;
-const SA = () => KAr.t(EN ? 'en' : 'es');
+const SA = () => KAr.t(LANG);
 /** music_note (Material Icons, Apache 2.0): no está en la fuente recortada. */
 const NOTA_SVG = 'M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z';
 const icArtista = (s = 24) => `<svg class="ms-svg" viewBox="0 0 24 24" width="${s}" height="${s}" aria-hidden="true"><path fill="currentColor" d="${NOTA_SVG}"/></svg>`;
 const UUID_AR = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const artistaWeb = (slug) => `${EN ? '/en' : ''}/a/${encodeURIComponent(slug)}`;
+const artistaWeb = (slug) => `${PUB_EN ? '/en' : ''}/a/${encodeURIComponent(slug)}`;
 /** La foto (o la inicial) de un artista, pequeña. */
 const avatarArtista = (a) => (KAr.seguro(a.photo_url)
   ? `<img class="art-av" src="${esc(a.photo_url)}" alt="" width="44" height="44" loading="lazy" decoding="async">`
@@ -93,7 +93,7 @@ RUTAS.artistas = async (_partes, params) => {
         const conPagina = !x.hidden && KAr.esSlug(x.slug);
         const proximo = x.hidden ? `<p class="muted">${esc(S.notPublic)}</p>`
           : n && UUID_AR.test(n.offer_id || '')
-            ? `<div class="lista">${fila({ href: `${pre}/o/${n.offer_id}`, icono: 'local_activity', titulo: n.title, detalle: KAr.linea(n, EN ? 'en' : 'es') })}</div>`
+            ? `<div class="lista">${fila({ href: `${pre}/o/${n.offer_id}`, icono: 'local_activity', titulo: n.title, detalle: KAr.linea(n, LANG) })}</div>`
             : `<p class="muted">${esc(S.noNext)}</p>`;
         return `<section class="bloque equipo artista">
           <div class="art-fila">${avatarArtista(x)}

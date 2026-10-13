@@ -46,7 +46,7 @@ RUTAS.ahorro = async () => {
       titulo: EN ? "You haven't saved with Klendar yet" : 'Aún no has ahorrado con Klendar',
       texto: EN ? "When you redeem an offer with a previous price, you'll see what you saved here."
         : 'Cuando canjees una oferta con precio de antes, aquí verás lo que te has ahorrado.',
-      botones: `<a class="pill accent" href="${EN ? '/en/explore/' : '/explorar/'}">${esc(EN ? 'See offers' : 'Ver ofertas')}</a>`,
+      botones: `<a class="pill accent" href="${PUB_EN ? '/en/explore/' : '/explorar/'}">${esc(EN ? 'See offers' : 'Ver ofertas')}</a>`,
     }));
     return;
   }
@@ -71,7 +71,7 @@ RUTAS.ahorro = async () => {
     const dentro = `<span class="ocard-body"><b>${esc(i.offer_title)}</b>
         <span class="muted">${esc(partes.join(' · '))}</span>
         <span class="ocard-meta"><span class="tag">−${esc(money(i.saved_cents))}</span></span></span>`;
-    return i.offer_id ? `<a class="ocard" href="${EN ? '/en/o/' : '/o/'}${esc(i.offer_id)}">${dentro}</a>` : `<div class="ocard">${dentro}</div>`;
+    return i.offer_id ? `<a class="ocard" href="${PUB_EN ? '/en/o/' : '/o/'}${esc(i.offer_id)}">${dentro}</a>` : `<div class="ocard">${dentro}</div>`;
   }).join('')}</div>
     ${sinPrecio ? `<p class="muted nota">${esc(EN
     ? (sinPrecio === 1 ? "1 redemption with no previous price doesn't count." : `${sinPrecio} redemptions with no previous price don't count.`)

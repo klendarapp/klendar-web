@@ -17,6 +17,8 @@ const I18N = makeI18N({
     'Conexión no segura': "Connection not secure",
     'Este panel solo funciona por HTTPS:': 'This dashboard only works over HTTPS:',
 
+    'Panel del negocio': 'Business dashboard',
+
     // ── Barra y navegación ────────────────────────────────────────────────
     'negocios': 'business',
     '· negocios': '· business',

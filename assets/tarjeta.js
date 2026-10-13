@@ -42,6 +42,10 @@
 //   abren el visor (carta, novedades, reseñas), `miniatura`/`miniaturas`.
 (function () {
   'use strict';
+  // «Tu cuenta» y el panel, en un idioma sin tabla propia (catalán, francés…):
+  // la española, pasada por el diccionario que ha cargado /assets/i18n.js.
+  const klBi = (x, lang) => (lang === 'en' ? x.en : globalThis.KL_TABLA ? globalThis.KL_TABLA(x.es, lang) : x.es);
+  const klLoc = (lang) => (globalThis.KL_LOCALE ? globalThis.KL_LOCALE(lang) : lang === 'en' ? 'en-GB' : 'es-ES');
 
   const KZ = () => globalThis.KlendarZona;
 
@@ -51,12 +55,12 @@
   const money = (cents, currency = 'EUR', lang = 'es') =>
     cents == null
       ? ''
-      : (cents / 100).toLocaleString(lang === 'en' ? 'en-IE' : 'es-ES', {
+      : (cents / 100).toLocaleString(lang === 'en' ? 'en-IE' : klLoc(lang), {
           style: 'currency',
           currency,
         });
 
-  const loc = (lang) => (lang === 'en' ? 'en-GB' : 'es-ES');
+  const loc = klLoc;
 
   /** «mié 24 sept» */
   const fmtDay = (iso, lang = 'es', tz) => KZ().fmt(iso, tz, loc(lang), {
@@ -87,7 +91,7 @@
         return money(Math.round(Number(d.value) * 100), d.currency || currency, lang);
       }
       if (d.type === '2x1') return '2x1';
-      if (d.type === 'free') return lang === 'en' ? 'Free' : 'Gratis';
+      if (d.type === 'free') return klBi({ es: { x: 'Gratis' }, en: { x: 'Free' } }, lang).x;
       // «Segunda unidad al 50 %» lo escribe el negocio: se enseña tal cual, sin
       // traducciones inventadas.
       if (d.type === 'other' && d.value) return String(d.value);
@@ -165,7 +169,7 @@
     if (!Number.isFinite(m) || m < 0) return '';
     if (m < 1000) return `${Math.max(10, Math.round(m / 10) * 10)} m`;
     const km = m < 10000 ? (Math.round(m / 100) / 10) : Math.round(m / 1000);
-    return `${km.toLocaleString(lang === 'en' ? 'en-GB' : 'es-ES')} km`;
+    return `${km.toLocaleString(klLoc(lang))} km`;
   }
 
   // ── Color con contraste (DISENOS_PUBLICACION.md §4) ─────────────────────────
@@ -360,7 +364,7 @@
    */
   function galeria(urls, o = {}) {
     const modo = o.modo === 'ficha' || o.modo === 'visor' ? o.modo : 'tarjeta';
-    const S = o.S || T[o.lang === 'en' ? 'en' : 'es'];
+    const S = o.S || klBi(T, o.lang);
     const piezas = piezasDe(urls).slice(0, o.max || 8);
     const n = piezas.length;
     if (!n) return '';
@@ -432,7 +436,7 @@
   function miniatura(u, { grupo, i = 0, n = 1, clase = 'mini', etiqueta = '', lang = 'es', ancho = 192, alto = 192, carga = 'lazy' }) {
     const p = piezasDe([u])[0];
     if (!p) return '';
-    const S = T[lang === 'en' ? 'en' : 'es'];
+    const S = klBi(T, lang);
     const nombre = n === 1 && etiqueta ? `${S.ampliar}: ${etiqueta}`
       : `${S.ampliar}: ${S.pieza(p.video, i + 1, n)}${etiqueta ? ` · ${etiqueta}` : ''}`;
     const img = (src) => `<img src="${esc(src)}" alt="" width="${ancho}" height="${alto}" loading="${carga === 'eager' ? 'eager' : 'lazy'}" decoding="async">`;
@@ -459,7 +463,7 @@
    * y «2 / 3» a la derecha. Escape o deslizar hacia abajo lo cierran.
    * `urls`: direcciones u objetos (ver `piezasDe`). */
   function visor(urls, { lang = 'es', i = 0 } = {}) {
-    const S = T[lang === 'en' ? 'en' : 'es'];
+    const S = klBi(T, lang);
     const l = piezasDe(urls);
     const n = l.length;
     const j = Math.max(0, Math.min(n - 1, i));
@@ -492,12 +496,11 @@
    * @param {string} [opts.href]  a dónde lleva (el panel: editarla); si no, su ficha
    */
   function tarjeta(o, lang = 'es', opts = {}) {
-    const en = lang === 'en';
-    const S = T[en ? 'en' : 'es'];
+    const S = klBi(T, lang);
     const tz = opts.tz || KZ().de(o);
     const h = opts.h === 'h2' ? 'h2' : 'h3';
     const flash = o.kind === 'flash_offer';
-    const href = opts.href || `${en ? '/en' : ''}/o/${encodeURIComponent(o.id)}`;
+    const href = opts.href || `${/^(en|fr|de|it)$/.test(lang) ? '/en' : ''}/o/${encodeURIComponent(o.id)}`;
     const precio = benefit(o.discount, o.price_cents, o.currency, lang);
     const antes = priorPrice(o.discount, lang);
     const dist = o.distance_m == null ? '' : distancia(Number(o.distance_m), lang);
@@ -602,7 +605,7 @@
     PLANTILLAS, tarjeta, rejilla, distancia, colorSeguro, estiloDe, sobreAcento, plataformaEntradas, sitioDe,
     cuandoCorto, money, fmtDay, fmtTime, sameDay, fmtEnd, benefit, priorPrice, isVideo, esc,
     galeria, miniatura, miniaturas, visor, soloWeb, piezasDe, duracionTxt, arteDe, arteHtml, esGenerica, AGENDA_ARTE,
-    nombrePieza: (video, i, n, lang) => T[lang === 'en' ? 'en' : 'es'].pieza(video, i, n),
+    nombrePieza: (video, i, n, lang) => klBi(T, lang).pieza(video, i, n),
   };
   globalThis.KlendarTarjeta = KlendarTarjeta;
   if (typeof module === 'object' && module && module.exports) module.exports = KlendarTarjeta;

@@ -15,17 +15,17 @@
 'use strict';
 
 const KSo = globalThis.KlendarSorteos;
-const sorteoLang = () => (EN ? 'en' : 'es');
+const sorteoLang = () => LANG;
 const SORTEO_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const sorteoPagina = (id) => `${EN ? '/en/giveaway/' : '/sorteo/'}${encodeURIComponent(id)}`;
+const sorteoPagina = (id) => `${PUB_EN ? '/en/giveaway/' : '/sorteo/'}${encodeURIComponent(id)}`;
 
 RUTAS.sorteos = async () => {
-  location.replace(EN ? '/en/giveaways/?mine=1' : '/sorteos/?mios=1');
+  location.replace(PUB_EN ? '/en/giveaways/?mine=1' : '/sorteos/?mios=1');
 };
 
 RUTAS.sorteo = async ([id]) => {
   const S = KSo.t(sorteoLang());
-  const lista = EN ? '/en/giveaways/' : '/sorteos/';
+  const lista = PUB_EN ? '/en/giveaways/' : '/sorteos/';
   if (!SORTEO_UUID.test(id || '')) {
     pinta(pantallaVacia({ icono: 'link', titulo: S.notHere, h: 'h1', texto: S.notHereText,
       botones: `<a class="pill accent" href="${lista}">${esc(S.title)}</a>` }));

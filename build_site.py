@@ -300,8 +300,10 @@ def footer(t, only_footer=True):
 
 LANG_REDIRECT = '''<script>
 // Primera visita a la portada: si el navegador está en inglés, a /en/ (recordamos la elección).
-(function(){try{var p=location.pathname;if(p!=='/')return;var s=localStorage.getItem('klendar_lang');if(s==='es')return;
-if(s==='en'||(!s&&/^en\\b/i.test(navigator.language||''))){location.replace('/en/'+location.hash);}}catch(e){}})();
+// Francés, alemán e italiano también van a la inglesa; catalán, gallego y euskera, a la española
+// (la web pública solo está en español e inglés; «Tu cuenta» y el panel, en los ocho idiomas).
+(function(){try{var p=location.pathname;if(p!=='/')return;var s=localStorage.getItem('klendar_lang');
+if(s?/^(en|fr|de|it)$/.test(s):/^(en|fr|de|it)\\b/i.test(navigator.language||'')){location.replace('/en/'+location.hash);}}catch(e){}})();
 </script>'''
 
 

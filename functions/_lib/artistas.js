@@ -25,7 +25,7 @@ const seguirHref = (lang, a) => `${cuentaBase(lang)}#/artistas?seguir=${encodeUR
 export const ARTISTAS_CSS = '<link rel="stylesheet" href="/assets/artistas.css?v=1">';
 /** Los textos (para /assets/seguir.js) van antes que el script de seguir. */
 const scripts = (lang) => `<script src="/assets/zona.js?v=1" defer></script>
-<script src="/assets/artistas.js?v=1" defer></script>
+<script src="/assets/artistas.js?v=2" defer></script>
 ${seguirScript(lang)}`;
 
 const CHEVRON = '<svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M8.59 16.59 13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>';

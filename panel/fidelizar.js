@@ -46,7 +46,7 @@ async function fielRpc(fn, args) {
 }
 const fielDias = (n) => bi(n === 1 ? '1 día' : `${n} días`, n === 1 ? '1 day' : `${n} days`);
 /** «septiembre» / «September», del día 1 del mes que se agradece. */
-const fielMes = (iso) => (iso ? new Date(`${iso}T12:00:00Z`).toLocaleDateString(I18N.lang === 'en' ? 'en-GB' : 'es-ES', { month: 'long', timeZone: 'UTC' }) : '');
+const fielMes = (iso) => (iso ? new Date(`${iso}T12:00:00Z`).toLocaleDateString(I18N.locale, { month: 'long', timeZone: 'UTC' }) : '');
 const fielLectura = () => `<div class="help" style="max-width:820px">${esc(bi('Solo el propietario o un encargado pueden cambiarlo.', 'Only the owner or a manager can change it.'))}</div>`;
 
 /** Una tarjeta: título, para qué sirve, cómo está y su botón. */

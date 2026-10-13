@@ -19,7 +19,7 @@
 'use strict';
 
 const KGp = globalThis.KlendarGrupos;
-const grupoL = () => (I18N.lang === 'en' ? 'en' : 'es');
+const grupoL = () => I18N.lang;
 const grupoT = () => KGp.t(grupoL());
 let GRUPO_FILTRO = 'open';
 

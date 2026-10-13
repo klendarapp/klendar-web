@@ -45,11 +45,11 @@ function rrppHora(hhmm) {
 
 /** «Esta lista abre hoy a las 22:00» / «el viernes a las 22:00». */
 function rrppAbre(iso) {
-  if (globalThis.KlendarRrpp?.abre) return globalThis.KlendarRrpp.abre(iso, EN ? 'en' : 'es');
+  if (globalThis.KlendarRrpp?.abre) return globalThis.KlendarRrpp.abre(iso, LANG);
   const f = iso ? new Date(iso) : null;
   if (!f || Number.isNaN(f.getTime())) return EN ? 'This list is closed right now.' : 'Esta lista está cerrada ahora.';
-  const dia = f.toLocaleDateString(EN ? 'en-GB' : 'es-ES', { weekday: 'long', day: 'numeric', month: 'short' });
-  const hora = f.toLocaleTimeString(EN ? 'en-GB' : 'es-ES', { hour: 'numeric', minute: '2-digit', hour12: false });
+  const dia = f.toLocaleDateString(LOC, { weekday: 'long', day: 'numeric', month: 'short' });
+  const hora = f.toLocaleTimeString(LOC, { hour: 'numeric', minute: '2-digit', hour12: false });
   return EN ? `This list opens on ${dia} at ${hora}` : `Esta lista abre el ${dia} ${hora.startsWith('1:') ? 'a la' : 'a las'} ${hora}`;
 }
 
@@ -261,7 +261,7 @@ RUTAS.rrpp = async ([id], params) => {
 // ── Invitaciones para ser RRPP (en «Invitaciones», cuenta.js) ────────────────
 /** Las tarjetas de las invitaciones de RRPP. */
 function rrppInvitacionesHtml(lista) {
-  const dia = (s) => new Date(s).toLocaleDateString(EN ? 'en-GB' : 'es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+  const dia = (s) => new Date(s).toLocaleDateString(LOC, { day: 'numeric', month: 'long', year: 'numeric' });
   return (lista || []).map((i) => `
       <div class="lista inv-eq">
         <p class="inv-eq-t"><b>${esc(EN ? `${i.business_name} invites you to be a promoter` : `${i.business_name} te invita a ser RRPP`)}</b>

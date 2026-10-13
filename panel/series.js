@@ -50,7 +50,7 @@ PAGES.series = async (v) => {
   ]);
   const DIAS = I18N.lang === 'en'
     ? ['Sundays', 'Mondays', 'Tuesdays', 'Wednesdays', 'Thursdays', 'Fridays', 'Saturdays']
-    : ['domingos', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábados'];
+    : ['domingos', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábados'].map((d) => I18N.t(d));
   // Lo que se publica solo cada semana (antes en Publicaciones): ya es una
   // serie, así que va aquí, como en la app.
   const repiten = puede ? `<div class="card"><h2>${esc(bi('Se repiten solas', 'Repeating offers'))}</h2>
@@ -60,7 +60,7 @@ PAGES.series = async (v) => {
       ${(reglas || []).length ? table({
         cols: [
           { h: bi('Publicación', 'Publication'), r: (x) => `<b class="title">${esc(x.title || '—')}</b><span class="sub">${esc(bi(`${fmtNum(x.published)} ${x.published === 1 ? 'publicada' : 'publicadas'}`, `${fmtNum(x.published)} published`))}${x.series_id ? ` · ${esc(seguidoresTxt(x.followers || 0))}` : ''}</span>` },
-          { h: bi('Cuándo', 'When'), r: (x) => `${x.weekdays.map((d) => DIAS[d]).join(', ')} ${I18N.lang === 'en' ? 'at' : 'a las'} ${esc(x.start_time)}` },
+          { h: bi('Cuándo', 'When'), r: (x) => esc(bi(`${x.weekdays.map((d) => DIAS[d]).join(', ')} a las ${x.start_time}`, `${x.weekdays.map((d) => DIAS[d]).join(', ')} at ${x.start_time}`)) },
           { h: bi('Dura', 'Lasts'), r: (x) => `${Math.round(x.duration_min / 60 * 10) / 10} h` },
           { h: bi('Estado', 'Status'), r: (x) => tag(x.is_active ? 'active' : 'draft') },
           { h: '', r: (x) => `<div class="actions">

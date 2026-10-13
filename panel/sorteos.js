@@ -21,7 +21,7 @@
 'use strict';
 
 const KSp = globalThis.KlendarSorteos;
-const sorteoL = () => (I18N.lang === 'en' ? 'en' : 'es');
+const sorteoL = () => I18N.lang;
 /** Lo que dice la base cuando algo no se puede, en palabras. */
 const SORTEO_ERR = () => ({
   obligations_required: bi('Marca la casilla: te comprometes a entregar el premio y cumplir las bases.', 'Tick the box: you commit to handing over the prize and following the rules.'),
@@ -49,8 +49,8 @@ async function sorteoRpc(fn, args) {
   if (r && r.ok === false) throw Object.assign(new Error(sorteoError(r.error)), { clave: r.error });
   return r;
 }
-const sorteoPub = (id) => `${sorteoL() === 'en' ? '/en/giveaway/' : '/sorteo/'}${id}`;
-const sorteoHistoria = (id) => `${sorteoL() === 'en' ? '/en/story/s/' : '/historia/s/'}${id}`;
+const sorteoPub = (id) => `${I18N.pub === 'en' ? '/en/giveaway/' : '/sorteo/'}${id}`;
+const sorteoHistoria = (id) => `${I18N.pub === 'en' ? '/en/story/s/' : '/historia/s/'}${id}`;
 const sorteoAbierto = (g) => g.status === 'active' && new Date(g.ends_at) > new Date();
 /** «Abierto · termina el 14 de octubre, 21:00» / «Terminado» / «Cancelado». */
 const sorteoEstado = (g) => (g.status === 'cancelled' ? bi('Cancelado', 'Cancelled')

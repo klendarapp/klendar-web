@@ -43,7 +43,7 @@ const zonaDe = (g) => KZ.zona(g?.business?.time_zone || KZ.porCoordenadas(g?.bus
 /** Lo personal lo pone el navegador (solo con sesión). */
 const sorteoScript = (lang) => {
   const sp = supabasePublic();
-  return `<script src="/assets/textos-sorteos.js?v=1" defer></script>
+  return `<script src="/assets/textos-sorteos.js?v=2" defer></script>
 <script src="/assets/sorteo.js?v=1" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}" data-lang="${lang === 'en' ? 'en' : 'es'}"></script>`;
 };
 

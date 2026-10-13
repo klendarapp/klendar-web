@@ -13,10 +13,20 @@
 
 const I18N = makeI18N(APP_EN);
 const t = I18N.t;
-const EN = I18N.lang === 'en';
+// El idioma de verdad (es, en, ca, gl, eu, fr, de, it). `EN` es solo el
+// inglés: los textos se escriben `EN ? 'inglés' : 'español'` y, en los demás
+// idiomas, se pintan en español y los traduce el motor (/assets/i18n.js) con
+// su diccionario (/app/i18n/<lang>.js).
+const LANG = I18N.lang;
+const EN = LANG === 'en';
+// Las páginas públicas solo están en español e inglés: `PUB_EN` dice si toca
+// la inglesa (inglés, francés, alemán, italiano). `NUEVO`: uno de los idiomas
+// sin versión propia de las páginas públicas ni de los textos legales.
+const PUB_EN = I18N.pub === 'en';
+const NUEVO = LANG !== 'es' && LANG !== 'en';
 // El «Cargando…» del HTML, mientras llega la primera pantalla.
 I18N.translate(document.getElementById('view'));
-const LOC = EN ? 'en-GB' : 'es-ES';
+const LOC = I18N.locale;
 // PKCE y los enlaces de los correos: /assets/acceso.js. El enlace (si lo
 // hay) se canjea al cargar, antes de mirar la sesión.
 const sb = window.KL_SUPABASE();
@@ -31,15 +41,39 @@ const view = $('#view');
 
 // ── Idioma: solo queda la cabecera y el pie que tocan ─────────────────────
 // Se quitan del documento los del otro idioma (no basta con ocultarlos: el
-// menú del móvil va por un id y habría dos iguales).
-for (const el of $$(`[data-only="${EN ? 'es' : 'en'}"]`)) el.remove();
-for (const el of $$(`[data-only="${EN ? 'en' : 'es'}"]`)) el.hidden = false;
-for (const a of $$('.lang a[data-lang]')) {
-  a.addEventListener('click', () => {
-    try { localStorage.setItem('klendar_lang', a.dataset.lang); } catch { /* sin permisos */ }
-  });
-}
-document.documentElement.lang = EN ? 'en' : 'es';
+// menú del móvil va por un id y habría dos iguales). En un idioma nuevo se
+// queda la española, que traduce el motor, pero sus enlaces a páginas
+// públicas van a la versión que le toca (`PUB_EN`: la inglesa).
+(() => {
+  const queda = LANG;
+  const otra = EN ? 'es' : 'en';
+  if (NUEVO && PUB_EN) {
+    // Las dos cabeceras (y los dos pies) son iguales enlace por enlace.
+    const es = $$('[data-only="es"]');
+    const en = $$('[data-only="en"]');
+    es.forEach((bloque, i) => {
+      const a1 = $$('a[href]', bloque);
+      const a2 = en[i] ? $$('a[href]', en[i]) : [];
+      if (a1.length !== a2.length) return;
+      a1.forEach((a, j) => {
+        const h = a.getAttribute('href');
+        // «Tu cuenta», los avisos y el enlace a «English» se quedan como están.
+        if (!/^\/(?!app\/|en\/$)/.test(h)) return;
+        a.setAttribute('href', a2[j].getAttribute('href'));
+      });
+    });
+  }
+  for (const el of $$(`[data-only="${otra}"]`)) el.remove();
+  for (const el of $$(`[data-only="${queda}"]`)) {
+    el.hidden = false;
+    if (!NUEVO) continue;
+    for (const b of $$('[data-cuenta-txt]', el)) b.dataset.cuentaTxt = t('Tu cuenta');
+    I18N.translate(el);
+  }
+  // El selector de idioma: aquí, los ocho (las páginas públicas, ES/EN).
+  I18N.pickers($$('.lang'));
+})();
+document.documentElement.lang = LANG;
 document.title = `${t('Tu cuenta')} · Klendar`;
 
 // ── Formatos ──────────────────────────────────────────────────────────────
@@ -81,7 +115,12 @@ function beneficio(d, precio, moneda) {
   if (precio === 0) return t('Gratis');
   return precio != null ? money(precio, moneda) : '';
 }
-const pre = EN ? '/en' : '';
+const pre = PUB_EN ? '/en' : '';
+/** Los textos legales solo están en español (el que vale) y en inglés: en
+ * los demás idiomas, debajo de cada enlace a ellos, una línea lo dice. */
+const notaLegal = () => (NUEVO
+  ? `<p class="muted nota-legal">${esc(t(PUB_EN ? 'Los textos legales están en inglés.' : 'Los textos legales están en español.'))}</p>`
+  : '');
 
 // ── Avisos y errores, en cristiano ────────────────────────────────────────
 function toast(msg, malo = false) {
@@ -119,7 +158,7 @@ const ERRORES = {
   not_enough_stamps: 'Todavía te faltan sellos para el premio.',
 };
 /** Un error de acceso (entrar, registrarse, códigos) dicho como en la app. */
-const errAuth = (error) => window.KL_AUTH_ERROR(error, EN ? 'en' : 'es');
+const errAuth = (error) => window.KL_AUTH_ERROR(error, LANG);
 
 /** La comprobación anti-robots antes de pedir nada a Supabase Auth
  * (`KL_CAPTCHA`, en assets/auth-errors.js). Sin clave en el entorno no hace
@@ -361,7 +400,7 @@ async function navegar() {
   await sesion();
   // Un enlace del correo que no ha servido (caducado, ya usado…), aquí o en
   // el panel antes de mandar a entrar: se dice una vez.
-  const aviso = window.KL_ENLACE.aviso(EN ? 'en' : 'es');
+  const aviso = window.KL_ENLACE.aviso(LANG);
   if (aviso) toast(aviso, true);
   // Vuelta de Google (o de un enlace de correo): «?siguiente=» dice adónde.
   const q = new URLSearchParams(location.search);
@@ -611,7 +650,7 @@ RUTAS[''] = async () => {
 
     <h2 class="seccion-t">${esc(t('Ayuda'))}</h2>
     <div class="lista">
-      ${filaSvg({ href: EN ? '/en/faq/' : '/preguntas/', icono: 'ayuda', titulo: t('Preguntas frecuentes'), detalle: t('Para ti y para negocios, con buscador') })}
+      ${filaSvg({ href: PUB_EN ? '/en/faq/' : '/preguntas/', icono: 'ayuda', titulo: t('Preguntas frecuentes'), detalle: t('Para ti y para negocios, con buscador') })}
       ${fila({ href: '#/sugerencias', icono: 'lightbulb', titulo: t('Sugerencias y mejoras'), detalle: t('Cuéntanos qué cambiarías o qué falla') })}
       ${fila({ href: 'mailto:info@klendar.app', icono: 'mail', titulo: t('Contacto y soporte'), detalle: 'info@klendar.app' })}
       <!-- Los tres textos legales, en una sola fila (como la app). -->
@@ -629,10 +668,10 @@ RUTAS[''] = async () => {
     d.innerHTML = `<button type="button" class="cerrar-hoja" aria-label="${esc(t('Cerrar'))}">×</button>
       <h2 id="legal-t">${esc(t('Legal'))}</h2>
       <div class="lista">
-        ${fila({ href: EN ? '/en/terms/' : '/terminos/', icono: 'description', titulo: t('Términos de uso'), fuera: true })}
-        ${fila({ href: EN ? '/en/privacy/' : '/privacidad/', icono: 'privacy_tip', titulo: t('Política de privacidad'), fuera: true })}
-        ${fila({ href: EN ? '/en/community-guidelines/' : '/normas/', icono: 'description', titulo: t('Normas de la comunidad'), fuera: true })}
-      </div>`;
+        ${fila({ href: PUB_EN ? '/en/terms/' : '/terminos/', icono: 'description', titulo: t('Términos de uso'), fuera: true })}
+        ${fila({ href: PUB_EN ? '/en/privacy/' : '/privacidad/', icono: 'privacy_tip', titulo: t('Política de privacidad'), fuera: true })}
+        ${fila({ href: PUB_EN ? '/en/community-guidelines/' : '/normas/', icono: 'description', titulo: t('Normas de la comunidad'), fuera: true })}
+      </div>${notaLegal()}`;
     document.body.appendChild(d);
     d.querySelector('.cerrar-hoja').onclick = () => d.close();
     d.querySelectorAll('a').forEach((a) => { a.addEventListener('click', () => d.close()); });
@@ -684,10 +723,10 @@ function edadDe(nac) {
 
 /** La casilla de términos, igual en el alta y en «un último paso». */
 const casillaTerminos = () => `<label class="check"><input type="checkbox" name="terms" required>
-  <span>${esc(t('He leído y acepto los'))} <a href="${EN ? '/en/terms/' : '/terminos/'}" target="_blank">${esc(t('Términos de uso'))}</a>
-    ${esc(t('y la'))} <a href="${EN ? '/en/privacy/' : '/privacidad/'}" target="_blank">${esc(t('Política de privacidad'))}</a></span></label>
+  <span>${esc(t('He leído y acepto los'))} <a href="${PUB_EN ? '/en/terms/' : '/terminos/'}" target="_blank">${esc(t('Términos de uso'))}</a>
+    ${esc(t('y la'))} <a href="${PUB_EN ? '/en/privacy/' : '/privacidad/'}" target="_blank">${esc(t('Política de privacidad'))}</a></span></label>
   <label class="check"><input type="checkbox" name="marketing">
-  <span>${esc(t('Quiero recibir novedades y ofertas destacadas por correo (opcional).'))}</span></label>`;
+  <span>${esc(t('Quiero recibir novedades y ofertas destacadas por correo (opcional).'))}</span></label>${notaLegal()}`;
 
 function errorCampo(el, msg) {
   const label = el.closest('label') || el.parentElement;
@@ -886,11 +925,11 @@ function reenvio(boton, enviar) {
 
 /** Lo que manda la app al crear la cuenta con un código (el texto legal de
  * debajo dice que al continuar se aceptan los términos). */
-const DATOS_ALTA = () => ({ terms_accepted: true, terms_version: TERMINOS_VERSION, user_type: 'user', locale: EN ? 'en' : 'es' });
+const DATOS_ALTA = () => ({ terms_accepted: true, terms_version: TERMINOS_VERSION, user_type: 'user', locale: LANG });
 const conSiguiente = (ruta, siguiente) => `#/${ruta}${siguiente ? `?siguiente=${encodeURIComponent(siguiente)}` : ''}`;
 const legalCodigo = () => `<p class="muted pie-form">${esc(t('Si es tu primera vez, se creará tu cuenta al entrar. Al continuar aceptas los términos y la política de privacidad.'))}
-  <a href="${EN ? '/en/terms/' : '/terminos/'}" target="_blank">${esc(t('Términos de uso'))}</a> ·
-  <a href="${EN ? '/en/privacy/' : '/privacidad/'}" target="_blank">${esc(t('Política de privacidad'))}</a></p>`;
+  <a href="${PUB_EN ? '/en/terms/' : '/terminos/'}" target="_blank">${esc(t('Términos de uso'))}</a> ·
+  <a href="${PUB_EN ? '/en/privacy/' : '/privacidad/'}" target="_blank">${esc(t('Política de privacidad'))}</a></p>${notaLegal()}`;
 
 // ── Entrar ────────────────────────────────────────────────────────────────
 RUTAS.entrar = async (_p, params) => {
@@ -1148,7 +1187,7 @@ RUTAS.registro = async (_p, params) => {
             terms_version: TERMINOS_VERSION,
             marketing_consent: form.marketing.checked,
             user_type: 'user',
-            locale: EN ? 'en' : 'es',
+            locale: LANG,
           },
         },
       });
@@ -1363,7 +1402,7 @@ RUTAS.planes = async () => {
     ...saved.filter(pasado).map((o) => ({ cuando: momentoPlan(o), html: tarjeta(o, zona(o)) })),
   ].sort((a, b) => b.cuando - a.cuando);
 
-  const explorar = `<p><a class="pill" href="${EN ? '/en/explore/' : '/explorar/'}">${esc(t('Buscar planes'))}</a></p>`;
+  const explorar = `<p><a class="pill" href="${PUB_EN ? '/en/explore/' : '/explorar/'}">${esc(t('Buscar planes'))}</a></p>`;
   if (!enCurso.length && !proximos.length && !pasados.length) {
     pinta(`
       <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
@@ -1374,7 +1413,7 @@ RUTAS.planes = async () => {
         icono: 'bookmark',
         titulo: t('Aún no tienes planes'),
         texto: t('Cuando algo te guste, dale a «Guardar» y lo tendrás aquí. Tus canjes también aparecerán.'),
-        botones: `<a class="pill accent" href="${EN ? '/en/explore/' : '/explorar/'}">${esc(t('Buscar planes'))}</a>`,
+        botones: `<a class="pill accent" href="${PUB_EN ? '/en/explore/' : '/explorar/'}">${esc(t('Buscar planes'))}</a>`,
       })}`);
     return;
   }
@@ -1471,7 +1510,7 @@ RUTAS.favoritos = async () => {
       icono: 'favorite',
       titulo: t('Aún no tienes favoritos'),
       texto: t('En la ficha de un negocio, dale a «Añadir a favoritos» y te avisaremos cuando publique.'),
-      botones: `<a class="pill accent" href="${EN ? '/en/explore/' : '/explorar/'}">${esc(t('Buscar planes'))}</a>`,
+      botones: `<a class="pill accent" href="${PUB_EN ? '/en/explore/' : '/explorar/'}">${esc(t('Buscar planes'))}</a>`,
     })}`);
 };
 
@@ -1645,7 +1684,7 @@ RUTAS.codigos = async (_partes, params) => {
         texto: t('Cuando consigas el código de una oferta o reserves plaza en un evento, lo tendrás aquí.'),
         // Sin nada, el QR de cliente sigue a mano: es lo que se enseña para
         // comprar el primer bono.
-        botones: `<a class="pill accent" href="${EN ? '/en/explore/' : '/explorar/'}">${esc(t('Buscar planes'))}</a>
+        botones: `<a class="pill accent" href="${PUB_EN ? '/en/explore/' : '/explorar/'}">${esc(t('Buscar planes'))}</a>
           <a class="pill" href="#/qr-cliente">${esc(t('Tu QR de cliente'))}</a>`,
       })}`);
   $('#codigo-pedido')?.scrollIntoView({ block: 'center' });
@@ -1863,9 +1902,9 @@ RUTAS.codigo = async ([id], params, crudo) => {
   llamar('offer_marks', { p_offer: id }).then((m) => {
     const KMt = window.KlendarMarcas;
     const caja = $('#notaCarne');
-    const docs = KMt && m ? KMt.documentos(m.card_requirements, EN ? 'en' : 'es') : '';
+    const docs = KMt && m ? KMt.documentos(m.card_requirements, LANG) : '';
     if (!caja || !docs) return;
-    caja.textContent = KMt.t(EN ? 'en' : 'es').cardBring(docs);
+    caja.textContent = KMt.t(LANG).cardBring(docs);
     caja.hidden = false;
   }).catch(() => null);
   const url = `https://klendar.app/r/${tk.code}`;
@@ -1970,7 +2009,7 @@ RUTAS.reservar = async ([id], params) => {
   if (!exigeSesion(`reservar/${id}${conRp}`)) return;
   const fila = await llamar('offer_detail', { p_id: id, p_rp: rp || null });
   const o = Array.isArray(fila) ? fila[0] : fila;
-  if (!o) { pinta(pantallaVacia({ icono: 'explore', titulo: t('Esa publicación ya no existe.'), h: 'h1', botones: `<a class="pill accent" href="${EN ? '/en/explore/' : '/explorar/'}">${esc(t('Buscar planes'))}</a>` })); return; }
+  if (!o) { pinta(pantallaVacia({ icono: 'explore', titulo: t('Esa publicación ya no existe.'), h: 'h1', botones: `<a class="pill accent" href="${PUB_EN ? '/en/explore/' : '/explorar/'}">${esc(t('Buscar planes'))}</a>` })); return; }
   if (o.locked) { pintaExclusiva(o.audience, o.business_id, o.business_name); return; }
   // Con el enlace de un RRPP, tampoco más de las que quedan en su lista
   // (como la app: si no, «3 personas» acababa en «no quedan plazas»).
@@ -2027,7 +2066,7 @@ RUTAS.espera = async ([id], params, crudo) => {
   const { puesto: dentro } = await ponOQuita('offer_waitlist', 'offer_id', id, quitar,
     () => llamar('toggle_waitlist', { p_offer: id }));
   const hora = antes?.notified_until
-    ? new Date(antes.notified_until).toLocaleTimeString(EN ? 'en-GB' : 'es-ES', { hour: '2-digit', minute: '2-digit' }) : '';
+    ? new Date(antes.notified_until).toLocaleTimeString(LOC, { hour: '2-digit', minute: '2-digit' }) : '';
   const estado = !dentro ? ''
     : antes?.state === 'notified' && hora
       ? (antes.notices >= 2
@@ -2086,7 +2125,7 @@ function queSellaBase(c) {
   if (c.applies_to === 'future_event') return t('Solo cuentan los eventos');
   if (c.applies_to === 'categories' || c.applies_to === 'offers') {
     const nombres = c.applies_to === 'categories'
-      ? (c.category_names || []).map((n) => (EN ? n.en : n.es) || n.es || '').filter(Boolean)
+      ? (c.category_names || []).map((n) => n[LANG] || n[I18N.pub] || n.es || '').filter(Boolean)
       : (c.offer_titles || []);
     if (!nombres.length) return t(c.applies_to === 'categories' ? 'Solo cuentan algunas categorías' : 'Solo cuentan algunas publicaciones');
     const resto = nombres.length - 3;
@@ -2297,7 +2336,7 @@ RUTAS.series = async () => {
         titulo: EN ? "You're not following any series yet" : 'Aún no sigues ninguna serie',
         texto: EN ? "On the page of something that repeats (“Thursday open mic”), tap “Follow the series” and we'll let you know about each new date."
           : 'En la ficha de algo que se repite («Micro abierto de los jueves»), toca «Seguir la serie» y te avisamos de cada fecha nueva.',
-        botones: `<a class="pill accent" href="${EN ? '/en/explore/' : '/explorar/'}">${esc(t('Buscar planes'))}</a>`,
+        botones: `<a class="pill accent" href="${PUB_EN ? '/en/explore/' : '/explorar/'}">${esc(t('Buscar planes'))}</a>`,
       })}`);
     return;
   }

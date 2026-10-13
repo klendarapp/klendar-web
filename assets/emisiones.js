@@ -10,6 +10,10 @@
 // negocio; sin nada, Madrid): `assets/zona.js` tiene que estar cargado antes.
 (function () {
   'use strict';
+  // «Tu cuenta» y el panel, en un idioma sin tabla propia (catalán, francés…):
+  // la española, pasada por el diccionario que ha cargado /assets/i18n.js.
+  const klBi = (x, lang) => (lang === 'en' ? x.en : globalThis.KL_TABLA ? globalThis.KL_TABLA(x.es, lang) : x.es);
+  const klLoc = (lang) => (globalThis.KL_LOCALE ? globalThis.KL_LOCALE(lang) : lang === 'en' ? 'en-GB' : 'es-ES');
 
   /** Deportes, en el orden de la base (`broadcast_sports()`). */
   const DEPORTES = ['football', 'basketball', 'motor', 'tennis', 'combat', 'american_football', 'other'];
@@ -153,9 +157,9 @@
   };
 
   const en = (lang) => lang === 'en';
-  const t = (lang) => T[en(lang) ? 'en' : 'es'];
-  const deporte = (s, lang) => NOMBRES[en(lang) ? 'en' : 'es'][s] || NOMBRES[en(lang) ? 'en' : 'es'].other;
-  const loc = (lang) => (en(lang) ? 'en-GB' : 'es-ES');
+  const t = (lang) => klBi(T, lang);
+  const deporte = (s, lang) => klBi(NOMBRES, lang)[s] || klBi(NOMBRES, lang).other;
+  const loc = klLoc;
   const KZ = () => globalThis.KlendarZona;
 
   /** ¿Hay datos de football-data.org? Entonces va la atribución. */

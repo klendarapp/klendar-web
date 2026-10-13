@@ -939,3 +939,8 @@ details.plegable > summary .pl-res { color: var(--ink-2); }
 details.plegable[open] > summary .pl-res { display: none; }
 details.plegable[open] > summary { margin-bottom: 12px; }
 @media (prefers-reduced-motion: reduce) { details.plegable > summary::after { transition: none; } }
+/* Los ocho idiomas en un desplegable (arriba y en el menú). */
+.lang .lang-sel { appearance: auto; border: 0; background: transparent; color: var(--ink-2);
+  font: inherit; font-weight: 700; padding: 4px 8px; cursor: pointer; max-width: 9.5em; }
+.me .lang .lang-sel { color: inherit; }
+.lang .lang-sel option { color: #111; background: #fff; }

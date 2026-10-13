@@ -47,10 +47,13 @@ const SEMANA = [
   [1, 'Lunes'], [2, 'Martes'], [3, 'Miércoles'], [4, 'Jueves'],
   [5, 'Viernes'], [6, 'Sábado'], [7, 'Domingo'],
 ];
-// En inglés, el nombre del día lo da el navegador (2026-09-14 es lunes).
-const nombreDia = (d) => (I18N.lang === 'en'
-  ? new Intl.DateTimeFormat('en-GB', { weekday: 'long' }).format(new Date(2026, 8, 13 + d))
-  : SEMANA[d - 1][1]);
+// En los demás idiomas, el nombre del día lo da el navegador (2026-09-14 es
+// lunes), con mayúscula como en la lista.
+const nombreDia = (d) => {
+  if (I18N.lang === 'es') return SEMANA[d - 1][1];
+  const s = new Intl.DateTimeFormat(I18N.locale, { weekday: 'long' }).format(new Date(2026, 8, 13 + d));
+  return s.charAt(0).toLocaleUpperCase(I18N.locale) + s.slice(1);
+};
 const aMinutos = (t) => { const [h, m] = String(t).split(':').map(Number); return (h % 24) * 60 + m; };
 const deMinutos = (m) => `${String(Math.floor(m / 60) % 24).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
 const tramoValido = (t) => Array.isArray(t) && t.length === 2 && /^\d{1,2}:\d{2}$/.test(t[0]) && /^\d{1,2}:\d{2}$/.test(t[1]);
@@ -81,8 +84,11 @@ const avisoHorarioMal = (dias) => bi(`Revisa ${diasMalTexto(dias)}: hay tramos q
  * `OpeningHours.summary` en la app). */
 function resumenHorario(horas) {
   if (!hayHorario(horas)) return I18N.t('Sin horario');
-  const ini = I18N.lang === 'en' ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] : ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
-  const cerrado = I18N.lang === 'en' ? 'closed' : 'cerrado';
+  const ini = I18N.lang === 'en' ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    : I18N.lang === 'es' ? ['L', 'M', 'X', 'J', 'V', 'S', 'D']
+      // Los idiomas nuevos: la abreviatura del navegador («dl.», «lun.», «Mo»).
+      : [1, 2, 3, 4, 5, 6, 7].map((d) => new Intl.DateTimeFormat(I18N.locale, { weekday: 'short' }).format(new Date(2026, 8, 13 + d)));
+  const cerrado = bi('cerrado', 'closed');
   const hora = (t) => { const m = aMinutos(t); return m % 60 ? `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}` : String(Math.floor(m / 60)); };
   const dia = (d) => { const tr = tramosDe(horas, d); return tr.length ? tr.map((t) => `${hora(t[0])}–${hora(t[1])}`).join(', ') : cerrado; };
   const partes = [];
@@ -222,7 +228,7 @@ function editorHorario(caja, inicial, alCambiar = () => {}) {
 }
 
 // ── Lo que tiene cada apartado ──────────────────────────────────────────────
-const obligatorioTxt = () => KL_VALIDA.MSG[I18N.lang === 'en' ? 'en' : 'es'].obligatorio;
+const obligatorioTxt = () => (I18N.lang === 'en' ? KL_VALIDA.MSG.en : KL_VALIDA.MSG.es).obligatorio;
 const pareceCorreo = (v) => !v || /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v);
 
 /** Nombre, categoría (el selector de toda la web) y de qué va. */
@@ -620,7 +626,7 @@ PAGES.ficha = async (v, parte) => {
 
 function indiceFicha(v, b, cats, carta) {
   const cat = cats.find((c) => c.id === b.category_id);
-  const nombreCat = cat ? ((cat.names || {})[I18N.lang] || (cat.names || {}).es || cat.slug) : '';
+  const nombreCat = cat ? ((cat.names || {})[I18N.lang] || (cat.names || {})[I18N.pub] || (cat.names || {}).es || cat.slug) : '';
   const pct = fichaCompleta(b, { sitio: b.amenities, carta });
   const une = (partes, vacio) => (partes.length ? partes.join(' · ') : I18N.t(vacio));
   const foto = (n) => bi(n === 1 ? '1 foto' : `${n} fotos`, n === 1 ? '1 photo' : `${n} photos`);

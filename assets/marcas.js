@@ -14,6 +14,10 @@
 // '../../assets/marcas.js'`), como assets/zona.js.
 (function () {
   'use strict';
+  // «Tu cuenta» y el panel, en un idioma sin tabla propia (catalán, francés…):
+  // la española, pasada por el diccionario que ha cargado /assets/i18n.js.
+  const klBi = (x, lang) => (lang === 'en' ? x.en : globalThis.KL_TABLA ? globalThis.KL_TABLA(x.es, lang) : x.es);
+  const klLoc = (lang) => (globalThis.KL_LOCALE ? globalThis.KL_LOCALE(lang) : lang === 'en' ? 'en-GB' : 'es-ES');
 
   const T = {
     es: {
@@ -85,7 +89,7 @@
       fKidAges: 'Children’s age', fKidAgesHint: 'Plans that suit every age you tick.',
     },
   };
-  const t = (lang) => T[lang === 'en' ? 'en' : 'es'];
+  const t = (lang) => klBi(T, lang);
 
   const KID_AGES = [['0_3', '0–3'], ['4_8', '4–8'], ['9_12', '9–12'], ['13_17', '13–17']];
   const CARDS = ['student', 'youth', 'senior'];

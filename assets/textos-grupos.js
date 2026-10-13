@@ -8,6 +8,10 @@
 // en todos los sitios a la vez.
 (function () {
   'use strict';
+  // «Tu cuenta» y el panel, en un idioma sin tabla propia (catalán, francés…):
+  // la española, pasada por el diccionario que ha cargado /assets/i18n.js.
+  const klBi = (x, lang) => (lang === 'en' ? x.en : globalThis.KL_TABLA ? globalThis.KL_TABLA(x.es, lang) : x.es);
+  const klLoc = (lang) => (globalThis.KL_LOCALE ? globalThis.KL_LOCALE(lang) : lang === 'en' ? 'en-GB' : 'es-ES');
 
   /** Los tipos de plan, en el orden de la base (`group_kinds()`). */
   const KINDS = ['company_dinner', 'afterwork', 'team_activity', 'celebration'];
@@ -256,17 +260,17 @@
   };
 
   const L = (lang) => (lang === 'en' ? 'en' : 'es');
-  const t = (lang) => T[L(lang)];
-  const plural = (k, lang) => PLURAL[L(lang)][k] || k;
-  const singular = (k, lang) => SINGULAR[L(lang)][k] || k;
+  const t = (lang) => klBi(T, lang);
+  const plural = (k, lang) => klBi(PLURAL, lang)[k] || k;
+  const singular = (k, lang) => klBi(SINGULAR, lang)[k] || k;
   /** El error en palabras ('' si no es uno de estos). */
   function error(code, lang, datos) {
-    const e = ERR[L(lang)][code];
+    const e = klBi(ERR, lang)[code];
     if (!e) return '';
     return typeof e === 'function' ? e(datos || {}) : e;
   }
 
-  const loc = (lang) => (L(lang) === 'en' ? 'en-GB' : 'es-ES');
+  const loc = klLoc;
   /** «14 de noviembre» de una fecha sin hora («AAAA-MM-DD»). */
   function fecha(d, lang) {
     const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(d || ''));

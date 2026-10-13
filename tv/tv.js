@@ -34,8 +34,9 @@
   var CADA_POLL = 4 * 1000;
 
   var consulta = new URLSearchParams(location.search);
-  var EN = consulta.get('lang') ? consulta.get('lang') === 'en'
-    : String((navigator.languages && navigator.languages[0]) || navigator.language || 'es').toLowerCase().indexOf('en') === 0;
+  // Solo español e inglés: francés, alemán e italiano, en inglés (como la web pública).
+  var EN = /^(en|fr|de|it)(?![a-z])/.test(String(consulta.get('lang')
+    || (navigator.languages && navigator.languages[0]) || navigator.language || 'es').toLowerCase());
   var LOC = EN ? 'en-GB' : 'es-ES';
   document.documentElement.lang = EN ? 'en' : 'es';
 

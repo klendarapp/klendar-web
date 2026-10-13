@@ -15,6 +15,10 @@
 // tantos como `picked_numbers`. Y además sha256(semilla) = `seed_hash`.
 (function () {
   'use strict';
+  // «Tu cuenta» y el panel, en un idioma sin tabla propia (catalán, francés…):
+  // la española, pasada por el diccionario que ha cargado /assets/i18n.js.
+  const klBi = (x, lang) => (lang === 'en' ? x.en : globalThis.KL_TABLA ? globalThis.KL_TABLA(x.es, lang) : x.es);
+  const klLoc = (lang) => (globalThis.KL_LOCALE ? globalThis.KL_LOCALE(lang) : lang === 'en' ? 'en-GB' : 'es-ES');
 
   const T = {
     es: {
@@ -208,9 +212,9 @@
   };
 
   const L = (lang) => (lang === 'en' ? 'en' : 'es');
-  const t = (lang) => T[L(lang)];
-  const error = (code, lang) => ERR[L(lang)][code] || '';
-  const loc = (lang) => (L(lang) === 'en' ? 'en-GB' : 'es-ES');
+  const t = (lang) => klBi(T, lang);
+  const error = (code, lang) => klBi(ERR, lang)[code] || '';
+  const loc = klLoc;
 
   /** «14 de octubre, 21:00» (o con el año: «14 de octubre de 2026, 21:00»),
    * en la hora del negocio. */

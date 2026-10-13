@@ -5,6 +5,7 @@
 // WhatsApp, Telegram, X, etc. muestren una vista previa útil.
 
 import KZ from '../../assets/zona.js';
+import { idiomaDeCabecera } from './idioma.js';
 
 // A qué Supabase apuntamos. Lo mandan las variables de Cloudflare Pages
 // (SUPABASE_URL / SUPABASE_KEY) y, si no están, se usa dev, que es lo que hay
@@ -191,9 +192,10 @@ ${CONTADOR}
 </body></html>`;
 }
 
+/** 'es' o 'en' según el navegador (francés, alemán, italiano → inglés;
+ * catalán, gallego, euskera → español: ver _lib/idioma.js). */
 export function pickLang(request) {
-  const al = request.headers.get('accept-language') || '';
-  return /^en/i.test(al) ? 'en' : 'es';
+  return idiomaDeCabecera(request.headers.get('accept-language'));
 }
 
 export const html = (body, status = 200, cache = 'public, max-age=60, s-maxage=300') =>

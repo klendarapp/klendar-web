@@ -9,6 +9,10 @@
  * Uso: KL_AUTH_ERROR(error, 'es' | 'en') → frase lista para enseñar.
  */
 (function () {
+  // «Tu cuenta» y el panel, en un idioma sin tabla propia (catalán, francés…):
+  // la española, pasada por el diccionario que ha cargado /assets/i18n.js.
+  const klBi = (x, lang) => (lang === 'en' ? x.en : globalThis.KL_TABLA ? globalThis.KL_TABLA(x.es, lang) : x.es);
+  const klLoc = (lang) => (globalThis.KL_LOCALE ? globalThis.KL_LOCALE(lang) : lang === 'en' ? 'en-GB' : 'es-ES');
   const TEXTOS = {
     es: {
       credenciales: 'Correo o contraseña incorrectos',
@@ -75,13 +79,17 @@
     return 'generico';
   }
 
-  window.KL_AUTH_ERROR = (error, lang) => TEXTOS[lang === 'en' ? 'en' : 'es'][clave(error)];
-  window.KL_AUTH_TEXT = (k, lang) => TEXTOS[lang === 'en' ? 'en' : 'es'][k];
+  window.KL_AUTH_ERROR = (error, lang) => klBi(TEXTOS, lang)[clave(error)];
+  window.KL_AUTH_TEXT = (k, lang) => klBi(TEXTOS, lang)[k];
 })();
 
 /* El error de un campo, debajo de él, como en la app (y en «Tu cuenta»). Lo
  * usan el panel y el admin, que no comparten código con «Tu cuenta». */
 (function () {
+  // «Tu cuenta» y el panel, en un idioma sin tabla propia (catalán, francés…):
+  // la española, pasada por el diccionario que ha cargado /assets/i18n.js.
+  const klBi = (x, lang) => (lang === 'en' ? x.en : globalThis.KL_TABLA ? globalThis.KL_TABLA(x.es, lang) : x.es);
+  const klLoc = (lang) => (globalThis.KL_LOCALE ? globalThis.KL_LOCALE(lang) : lang === 'en' ? 'en-GB' : 'es-ES');
   const MSG = {
     es: { obligatorio: 'Obligatorio', correo: 'Ese correo no parece válido', minimo: 'Mínimo 8 caracteres', noCoinciden: 'Las contraseñas no coinciden' },
     en: { obligatorio: 'Required', correo: "That email doesn't look valid", minimo: 'At least 8 characters', noCoinciden: "Passwords don't match" },
@@ -108,7 +116,7 @@
 
   /** Valida un correo (y, si se pasa, una contraseña) y marca cada campo. */
   function correoYClave(lang, email, clave) {
-    const m = MSG[lang === 'en' ? 'en' : 'es'];
+    const m = klBi(MSG, lang);
     const v = email.value.trim();
     const e1 = !v ? m.obligatorio : CORREO_OK.test(v) ? null : m.correo;
     campo(email, e1);
@@ -165,7 +173,8 @@
       id = window.turnstile.render(caja, {
         sitekey: clave,
         appearance: 'interaction-only',
-        language: document.documentElement.lang === 'en' ? 'en' : 'es',
+        // Turnstile habla francés, alemán e italiano; catalán, gallego y euskera, no: español.
+        language: /^(en|fr|de|it)$/.test(document.documentElement.lang) ? document.documentElement.lang : 'es',
         callback: (token) => { quita(); ok(token); },
         'error-callback': () => { falla(); return true; },
         'expired-callback': falla,

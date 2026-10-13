@@ -26,6 +26,10 @@
  */
 (function () {
   'use strict';
+  // «Tu cuenta» y el panel, en un idioma sin tabla propia (catalán, francés…):
+  // la española, pasada por el diccionario que ha cargado /assets/i18n.js.
+  const klBi = (x, lang) => (lang === 'en' ? x.en : globalThis.KL_TABLA ? globalThis.KL_TABLA(x.es, lang) : x.es);
+  const klLoc = (lang) => (globalThis.KL_LOCALE ? globalThis.KL_LOCALE(lang) : lang === 'en' ? 'en-GB' : 'es-ES');
   var TIPOS = ['signup', 'invite', 'magiclink', 'recovery', 'email_change', 'email'];
   var AVISO = 'klendar.acceso.aviso';
   var TEXTOS = {
@@ -159,6 +163,6 @@
   window.KL_ENLACE.aviso = function (lang) {
     var k = null;
     try { k = sessionStorage.getItem(AVISO); sessionStorage.removeItem(AVISO); } catch (e) { /* sin almacenamiento */ }
-    return k ? TEXTOS[lang === 'en' ? 'en' : 'es'][k] || '' : '';
+    return k ? klBi(TEXTOS, lang)[k] || '' : '';
   };
 })();

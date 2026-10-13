@@ -14,6 +14,27 @@ Web pública de Klendar: landing, páginas legales y páginas de enlace (`/o/<id
 - `python build_legal.py` → páginas legales en ES (idioma que prevalece) y su traducción informativa en `/en/{legal-notice,privacy,terms,business-terms,cookies,community-guidelines,delete-account}/` con aviso de cortesía; el mapa de rutas ES↔EN está en `ALT` (`build_site.py`) y alimenta hreflang y el selector de idioma.
 - Capturas de la app en `assets/screens/*.webp` (540 px de ancho, sacadas del emulador en español).
 - Idioma: `/` es ES; en la primera visita, si el navegador está en inglés, redirige a `/en/` y se recuerda la elección del selector ES/EN (`localStorage.klendar_lang`). `hreflang` en todas las páginas.
+  Francés, alemán e italiano van también a la versión inglesa y catalán, gallego y euskera a la española (`esOEn`).
+
+## Idiomas de «Tu cuenta» y del panel
+
+«Tu cuenta» (`/app/`) y el panel (`/panel/`) van en ocho idiomas: español (la
+fuente), inglés y catalán, gallego, euskera, francés, alemán e italiano. El
+admin y las páginas públicas, solo en español e inglés.
+
+- El motor es `assets/i18n.js`: traduce lo que se ve con un diccionario
+  español → idioma. El inglés va dentro de cada herramienta (`app/i18n.js`,
+  `panel/i18n.js`); los demás, en `app/i18n/<lang>.js` y `panel/i18n/<lang>.js`,
+  que solo se descargan si es el idioma elegido (los escribe el motor con
+  `document.write` según `data-dic` de su `<script>`). Las claves admiten huecos
+  (`'Quedan {n} plazas'`).
+- En el código, `EN ? 'inglés' : 'español'` sigue igual: en un idioma nuevo se
+  pinta el español y lo traduce el motor. `LANG`/`I18N.lang` es el idioma real
+  (fechas con `Intl`, `profiles.locale`) y `PUB_EN`/`I18N.pub` dice qué versión de
+  las páginas públicas enlazar.
+- `python tools/i18n_missing.py --lang all` lista lo que falta en cada idioma
+  (`--json` para los traductores) y `python tools/i18n_merge.py <cuenta|panel> <lang> <fichero.json>`
+  mete las traducciones y sube el `data-dic-v`.
 
 ## Hosting
 

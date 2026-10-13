@@ -1341,4 +1341,4 @@ const I18N = makeI18N({
     "Apto para celíacos": "Coeliac-friendly",
     "Opciones sin lactosa": "Lactose-free options",
     "Halal": "Halal",
-});
+}, { idiomas: ['es', 'en'] }); // herramienta interna: solo español e inglés

@@ -128,7 +128,7 @@ RUTAS.bono = async ([id]) => {
   pinta(`
     <p class="crumbs"><a href="#/codigos">${esc(t('Tus códigos'))}</a></p>
     <h1>${esc(p.name)}</h1>
-    <p class="muted">${p.business_slug ? `<a href="${EN ? '/en' : ''}/b/${esc(p.business_slug)}">${esc(p.business_name)}</a>` : esc(p.business_name || '')}</p>
+    <p class="muted">${p.business_slug ? `<a href="${PUB_EN ? '/en' : ''}/b/${esc(p.business_slug)}">${esc(p.business_name)}</a>` : esc(p.business_name || '')}</p>
     <div class="bono-caja">
       <p class="bono-quedan grande">${esc(bonoQuedan(p.uses_left, p.uses_total))}</p>
       ${bonoBarra(p)}

@@ -14,6 +14,10 @@
 // '../../assets/categorias.js'`), que solo usan los grupos y los nombres.
 (function () {
   'use strict';
+  // «Tu cuenta» y el panel, en un idioma sin tabla propia (catalán, francés…):
+  // la española, pasada por el diccionario que ha cargado /assets/i18n.js.
+  const klBi = (x, lang) => (lang === 'en' ? x.en : globalThis.KL_TABLA ? globalThis.KL_TABLA(x.es, lang) : x.es);
+  const klLoc = (lang) => (globalThis.KL_LOCALE ? globalThis.KL_LOCALE(lang) : lang === 'en' ? 'en-GB' : 'es-ES');
 
   const GRUPOS = [
     { id: 'food', es: 'Comer y beber', en: 'Food and drink' },
@@ -88,7 +92,7 @@
       max: (n) => `${n} at most: remove one to pick another.`,
     },
   };
-  const textos = (lang) => TEXTOS[lang === 'en' ? 'en' : 'es'];
+  const textos = (lang) => klBi(TEXTOS, lang);
 
   /** El grupo de una categoría: el de la base o, si no lo trae, el de su slug. */
   function grupoDe(c) {
@@ -98,9 +102,11 @@
   }
   const nombreGrupo = (id, lang) => {
     const g = GRUPOS.find((x) => x.id === id) || GRUPOS[GRUPOS.length - 1];
-    return lang === 'en' ? g.en : g.es;
+    return klBi({ es: { x: g.es }, en: { x: g.en } }, lang).x;
   };
-  const nombre = (c, lang) => (c && c.names && ((lang === 'en' ? c.names.en : c.names.es) || c.names.es)) || (c && c.slug) || '';
+  // La base trae el nombre en cada idioma ({es, en, ca, gl, eu, fr, de, it});
+  // si falta el suyo, el de la versión pública que le toca y, si no, el español.
+  const nombre = (c, lang) => (c && c.names && (c.names[lang] || c.names[/^(en|fr|de|it)$/.test(lang) ? 'en' : 'es'] || c.names.es)) || (c && c.slug) || '';
 
   /** En minúsculas y sin tildes. */
   const pliega = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();

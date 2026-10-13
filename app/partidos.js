@@ -18,12 +18,12 @@
 'use strict';
 
 const KEm = globalThis.KlendarEmisiones;
-const SE = () => KEm.t(EN ? 'en' : 'es');
+const SE = () => KEm.t(LANG);
 /** sports_soccer (Material Icons, Apache 2.0): no está en la fuente recortada. */
 const BALON_SVG = 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 3.3 1.35-.95c1.82.56 3.37 1.76 4.38 3.34l-.39 1.34-1.35.46L13 6.7V5.3zm-3.35-.95L11 5.3v1.4L7.01 9.49l-1.35-.46-.39-1.34c1.01-1.57 2.56-2.77 4.38-3.34zM7.08 17.11l-1.14.1C4.73 15.81 4 13.99 4 12c0-.12.01-.23.02-.35l1-.73 1.38.48 1.46 4.34-.78 1.37zm7.42 2.48c-.79.26-1.63.41-2.5.41s-1.71-.15-2.5-.41l-.69-1.49.64-1.1h5.11l.64 1.11-.7 1.48zM14.27 15H9.73l-1.35-4.02L12 8.44l3.63 2.54L14.27 15zm3.79 2.21-1.14-.1-.79-1.37 1.46-4.34 1.39-.47 1 .73c.01.11.02.22.02.34 0 1.99-.73 3.81-1.94 5.21z';
 const icBalon = (s = 24) => `<svg class="ms-svg" viewBox="0 0 24 24" width="${s}" height="${s}" aria-hidden="true"><path fill="currentColor" d="${BALON_SVG}"/></svg>`;
 const UUID_EQ = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const partidoWeb = (id) => `${EN ? '/en/matches/' : '/partidos/'}${encodeURIComponent(id)}`;
+const partidoWeb = (id) => `${PUB_EN ? '/en/matches/' : '/partidos/'}${encodeURIComponent(id)}`;
 
 /** La fila de la portada de «Tu cuenta» (grupo Preferencias). */
 function filaEquipos() {
@@ -65,7 +65,7 @@ RUTAS.equipos = async (_partes, params) => {
     } catch (e) { toast(errorEquipo(e), true); }
   }
 
-  const lista = (await llamar('my_followed_teams', { p_lang: EN ? 'en' : 'es' })) || [];
+  const lista = (await llamar('my_followed_teams', { p_lang: LANG })) || [];
   const cabeza = `<p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(S.teamsYouFollow)}</h1>`;
   // Neutro con borde (el coral, solo para el botón principal y las ofertas).
@@ -80,7 +80,7 @@ RUTAS.equipos = async (_partes, params) => {
       </section>`);
   } else {
     const tz = KZ ? KZ.MADRID : undefined;
-    const lang = EN ? 'en' : 'es';
+    const lang = LANG;
     pinta(`${cabeza}
       <p class="acciones">${botonSeguir}</p>
       <div class="equipos-lista">${lista.map((x) => {
@@ -112,7 +112,7 @@ RUTAS.equipos = async (_partes, params) => {
  * dejar de seguir desde la lista. Al cerrar, `alCerrar` (si ha cambiado algo). */
 function buscaEquipo(alCerrar) {
   const S = SE();
-  const lang = EN ? 'en' : 'es';
+  const lang = LANG;
   hojaSeguir({
     titulo: S.followTeam,
     etiqueta: S.searchTeam,
@@ -205,7 +205,7 @@ function guardaZonaAvisos() {
   const z = { p_radius_m: 5000, p_lat: null, p_lng: null, p_city: null };
   try {
     const g = JSON.parse(localStorage.getItem('klendar.filtros') || 'null');
-    const a = new URLSearchParams((g && g[EN ? 'en' : 'es']) || '');
+    const a = new URLSearchParams((g && g[I18N.pub]) || ''); // los filtros se guardan por versión de la web pública
     const km = Number.parseInt(a.get('km') || '', 10);
     if ([1, 3, 5, 10, 25].includes(km)) z.p_radius_m = km * 1000;
     const c = a.get('ciudad') || a.get('city');

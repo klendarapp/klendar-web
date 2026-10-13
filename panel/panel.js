@@ -26,7 +26,7 @@ const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 // Iconos de Material Symbols, como en «Tu cuenta» y en la app (no emojis).
 const ms = (name) => `<span class="ms" aria-hidden="true">${name}</span>`;
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const LOC = () => (I18N.lang === 'en' ? 'en-GB' : 'es-ES');
+const LOC = () => I18N.locale;
 // Publicar, el plan y la ficha son de propietarios y encargados; el personal
 // valida códigos. La base lo hace cumplir igual: esto solo evita botones que
 // no van a funcionar.
@@ -524,8 +524,10 @@ function table({ cols, rows, empty = 'Nada por aquí.' }) {
   if (!rows.length) return `<div class="tbl-wrap"><div class="empty">${esc(empty)}</div></div>`;
   return `<div class="tbl-wrap"><table class="tbl"><thead><tr>${cols.map((c) => `<th ${c.num ? 'class="num"' : ''}>${esc(c.h)}</th>`).join('')}</tr></thead><tbody>${rows.map((r, i) => `<tr data-i="${i}">${cols.map((c) => `<td ${c.num ? 'class="num"' : ''}${c.h ? ` data-label="${esc(I18N.t(c.h))}"` : ''}>${c.r(r, i)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
 }
-/** Un texto con negritas o datos dentro, que no se puede traducir trozo a trozo. */
-const bi = (es, en) => (I18N.lang === 'en' ? en : es);
+/** Un texto con negritas o datos dentro, que no se puede traducir trozo a trozo.
+ * En los idiomas nuevos va el español por su diccionario (con huecos: «{n}
+ * vistas»), porque muchos se pintan dentro de `translate="no"`. */
+const bi = (es, en) => (I18N.lang === 'en' ? en : I18N.t(es));
 const helpBox = (title, body) => `<details class="help"><summary>${esc(title)}</summary>${body}</details>`;
 
 // ── Sesión y negocio activo ─────────────────────────────────────────────────
@@ -696,7 +698,10 @@ async function boot() {
 function showLogin() {
   ME = null;
   const aqui = rutaDeVuelta();
-  location.replace(`/app/?destino=${encodeURIComponent(aqui)}#/entrar`);
+  // El idioma del panel sigue en la pantalla de entrar (llegar con
+  // `?lang=fr` desde un correo y acabar en español no tiene sentido).
+  const idioma = I18N.lang !== 'es' ? `lang=${encodeURIComponent(I18N.lang)}&` : '';
+  location.replace(`/app/?${idioma}destino=${encodeURIComponent(aqui)}#/entrar`);
 }
 async function noBusiness() {
   $('#nav').innerHTML = '';
@@ -766,7 +771,8 @@ $('#menuCerrar').onclick = () => abreMenu(false);
 // i18n.js). Lo que no esté traducido se queda en español, nunca en blanco.
 I18N.pickers(['#lang', '#langSide']);
 I18N.translate(document.body);
-if (I18N.lang === 'en') document.title = 'Klendar · Business dashboard';
+document.documentElement.lang = I18N.lang;
+document.title = I18N.lang === 'en' ? 'Klendar · Business dashboard' : `Klendar · ${I18N.t('Panel del negocio')}`;
 
 // ── Navegación ──────────────────────────────────────────────────────────────
 // Iconos que no están en la fuente recortada del panel (Material Symbols,
@@ -999,7 +1005,7 @@ window.addEventListener('hashchange', async () => {
  * lo rechazamos, el motivo (en inglés si el admin lo escribió). */
 function avisoVerificacion() {
   const rechazado = BIZ.verification_status === 'rejected';
-  const motivo = (I18N.lang === 'en' && BIZ.rejection_reason_en) || BIZ.rejection_reason || '';
+  const motivo = (I18N.pub === 'en' && BIZ.rejection_reason_en) || BIZ.rejection_reason || '';
   const en = I18N.lang === 'en';
   const asunto = encodeURIComponent(en ? 'Klendar · my business verification' : 'Klendar · verificación de mi negocio');
   const cuerpo = encodeURIComponent(en ? `Business: ${BIZ.id}` : `Negocio: ${BIZ.id}`);
@@ -1469,7 +1475,7 @@ const conNegocio = (o) => ({ ...o, business_name: BIZ.name, business_logo: BIZ.l
 /** La tarjeta, en el idioma del panel y en la hora del local. Va dentro de
  * `.tjv` (los estilos de /assets/tarjeta.css) y con `translate="no"`: ya sale
  * en su idioma y el título lo ha escrito el negocio. */
-const tarjetaPanel = (o, opts = {}) => KT.tarjeta(conNegocio(o), I18N.lang === 'en' ? 'en' : 'es', { tz: TZ, h: 'h2', ...opts });
+const tarjetaPanel = (o, opts = {}) => KT.tarjeta(conNegocio(o), I18N.lang, { tz: TZ, h: 'h2', ...opts });
 /** A dónde lleva la tarjeta de una publicación: a editarla o, a quien no
  * publica (o si está archivada), a su ficha. Una oferta de RRPP no tiene
  * ficha pública (sin el enlace de un RRPP no se abre): a la sección RRPP,
@@ -1571,7 +1577,7 @@ function accionesPub(o) {
       <button type="button" data-act="repeat" data-id="${esc(o.id)}">Repetir cada semana…</button>
       ${o.status !== 'cancelled' ? `<button type="button" data-act="serie" data-id="${esc(o.id)}">${esc(bi('Serie…', 'Series…'))}</button>` : ''}
       ${OTROS_LOCALES.length ? `<button type="button" data-act="locales" data-id="${esc(o.id)}">Publicar en otros locales…</button>` : ''}
-      ${o.audience === 'promoters' ? '' : `<a href="${I18N.lang === 'en' ? '/en/poster/' : '/cartel/'}${esc(o.id)}" target="_blank" rel="noopener">Cartel para imprimir</a>`}
+      ${o.audience === 'promoters' ? '' : `<a href="${I18N.pub === 'en' ? '/en/poster/' : '/cartel/'}${esc(o.id)}" target="_blank" rel="noopener">Cartel para imprimir</a>`}
       <button type="button" class="bad" data-act="delete" data-id="${esc(o.id)}">Borrar</button>
     </div></details>
   </div>`;
@@ -1927,7 +1933,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
     <form class="card pub-form" id="form" novalidate>
       <input type="hidden" name="kind" value="${kind}">
       ${ideas.length ? `<div class="ideas" id="ideas"><p class="etq">Ideas</p>
-        <div class="ideas-fila">${ideas.map((t, i) => `<button type="button" class="btn sm" data-idea="${i}">${esc(en ? t.en : t.es)}</button>`).join('')}</div>
+        <div class="ideas-fila">${ideas.map((t, i) => `<button type="button" class="btn sm" data-idea="${i}">${esc(en ? t.en : I18N.t(t.es))}</button>`).join('')}</div>
         <p class="hint">Toca una y cámbiala a tu gusto.</p></div>` : ''}
       <label class="f"><span>Título</span><input name="title" value="${esc(o.title || '')}" required maxlength="90" placeholder="${kind === 'future_event' ? 'Concierto de jazz' : 'Café + tostada 2,50 €'}"></label>
       <label class="f"><span>Descripción <small>(opcional)</small></span><textarea name="description" rows="3" maxlength="600" placeholder="${esc(I18N.t('Qué incluye, cómo es…'))}">${esc(o.description || '')}</textarea></label>
@@ -2607,12 +2613,12 @@ async function offerForm(v, id, kindDefault, desde = null) {
   // ── Ideas y «Tus plantillas» ────────────────────────────────────────────
   const precioTxt = (x) => (x == null || x === '' ? '' : String(x).replace('.', ','));
   const aplicarIdea = (t) => {
-    pon('title', en ? t.en : t.es);
-    const desc = en ? t.descEn : t.descEs;
+    pon('title', en ? t.en : I18N.t(t.es));
+    const desc = en ? t.descEn : t.descEs && I18N.t(t.descEs);
     if (desc) pon('description', desc);
     pon('discount_type', t.discount === 'none' ? '' : t.discount);
     pon('discount_value', precioTxt(t.value));
-    const cond = en ? t.termsEn : t.termsEs;
+    const cond = en ? t.termsEn : t.termsEs && I18N.t(t.termsEs);
     if (cond) pon('terms', cond);
     if (t.seats) pon('max_redemptions', t.seats);
     // «Antes de cerrar»: con su sello y hasta el cierre del local.
@@ -3835,7 +3841,7 @@ const FILTROS_SELLO = [
   ['categories', 'Ciertas categorías'],
   ['offers', 'Ciertas publicaciones'],
 ];
-const nombreCategoria = (k) => k?.names?.[I18N.lang] || k?.names?.es || k?.slug || '';
+const nombreCategoria = (k) => k?.names?.[I18N.lang] || k?.names?.[I18N.pub] || k?.names?.es || k?.slug || '';
 const ERR_SELLOS = {
   bad_name: 'Ponle un nombre (de 2 a 40 letras).',
   name_taken: 'Ya tienes una tarjeta con ese nombre.',
@@ -4675,7 +4681,7 @@ PAGES.cartel = async (v, offerId) => {
 PAGES['cartel-local'] = async (v) => {
   const d = await rpc('business_visit_qr', { p_business: BIZ.id });
   if (d?.ok === false) throw new Error(friendly(d.error));
-  const base = I18N.lang === 'en' ? '/en/poster/venue/' : '/cartel/local/';
+  const base = I18N.pub === 'en' ? '/en/poster/venue/' : '/cartel/local/';
   const url = `https://klendar.app/v/${d.token}`;
   const tarjetas = d.visit_cards || [];
   const nombres = tarjetas.map((c) => c.name).join(', ');
@@ -4907,7 +4913,7 @@ PAGES.novedades = async (v) => {
 /** «Tu plan»: lo mismo que la tarjeta del panel en la app. */
 function planCard(sub) {
   const en = I18N.lang === 'en';
-  const name = sub.plan_names?.[I18N.lang] || sub.plan_names?.es || sub.plan_slug || '';
+  const name = sub.plan_names?.[I18N.lang] || sub.plan_names?.[I18N.pub] || sub.plan_names?.es || sub.plan_slug || '';
   const free = sub.plan_slug === 'free';
   const trial = sub.status === 'trial';
   const until = sub.period_end
@@ -5659,7 +5665,7 @@ PAGES.ayuda = async (v) => {
     </div>
     <div class="card"><h2>Preguntas frecuentes</h2>
       <p class="muted">Lo que más nos preguntan los negocios (y la gente), con buscador. Lo mismo que en la app, en «Mi negocio» → Ayuda.</p>
-      <p style="margin:8px 0 0"><a class="btn sm" href="${I18N.lang === 'en' ? '/en/faq/' : '/preguntas/'}#negocios">${ms('help')}${esc(I18N.t('Ver las preguntas frecuentes'))}</a></p></div>
+      <p style="margin:8px 0 0"><a class="btn sm" href="${I18N.pub === 'en' ? '/en/faq/' : '/preguntas/'}#negocios">${ms('help')}${esc(I18N.t('Ver las preguntas frecuentes'))}</a></p></div>
     <div class="card"><h2>¿Algo no cuadra?</h2><p class="muted" style="margin:0">Escríbenos a <a class="link" href="mailto:info@klendar.app">info@klendar.app</a> y lo miramos.</p></div>`;
 };
 
