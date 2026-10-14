@@ -384,21 +384,6 @@ const htmlKlendar = (d) => `
   <p class="muted full" style="margin:0">Lo usamos para comprobar que el negocio es tuyo. No sale en tu ficha ni lo ve nadie fuera de Klendar.</p>
   <label class="f"><span>NIF / CIF</span><input name="tax_id" maxlength="20" placeholder="B12345678" value="${esc(d.tax_id || '')}"></label>`;
 
-/** «Somos una entidad» (solo el alta): ayuntamiento, junta de distrito,
- * asociación u ONG. Lo comprueba administración (`request_entity`); igual
- * que la app (`EntityRequestField`). */
-const TIPOS_ENTIDAD = [['council', 'Ayuntamiento'], ['district', 'Junta de distrito'], ['merchants', 'Asociación de comerciantes'], ['neighbours', 'Asociación vecinal'], ['ngo', 'ONG']];
-const htmlEntidad = (d) => `
-  <label class="f full casilla"><input type="checkbox" name="entity_on" ${d.entity ? 'checked' : ''}>
-    <span>${esc(bi('Somos una entidad', "We're an organisation"))} <small class="muted">${esc(bi(
-    'Ayuntamiento, junta de distrito, asociación de comerciantes o vecinal, u ONG. Lo comprobamos antes de poner el sello de entidad en tu ficha y te podemos pedir un documento. De momento, las entidades no pagan cuota.',
-    "Council, district council, traders' or residents' association, or NGO. We check it before adding the organisation badge to your page and may ask you for a document. For now, organisations don't pay a fee."))}</small></span></label>
-  <div class="full" data-entidad ${d.entity ? '' : 'hidden'}>
-    <label class="f"><span>${esc(bi('Tipo de entidad', 'Type of organisation'))}</span><select name="entity_kind">
-      ${TIPOS_ENTIDAD.map(([k, es]) => `<option value="${k}" ${(d.entity || 'council') === k ? 'selected' : ''}>${esc(I18N.t(es))}</option>`).join('')}</select></label>
-    <label class="f"><span>${esc(bi('Quiénes sois (opcional)', 'Who you are (optional)'))}</span><input name="entity_note" maxlength="300" placeholder="${esc(bi('Por ejemplo: Concejalía de Cultura del Ayuntamiento de Getafe', 'For example: Culture department, Getafe Council'))}" value="${esc(d.entity_note || '')}"></label>
-  </div>`;
-
 const htmlMayores = (d) => `
   <label class="f full casilla"><input type="checkbox" name="adults_only" ${d.adults_only ? 'checked' : ''}>
     <span>Solo para mayores de 18 <small class="muted">Si lo que publicas menciona alcohol, se marca +18 solo y se revisa antes de salir. La publicidad de tabaco, vapeo o apuestas no está permitida. En un negocio +18, todo el equipo tiene que ser mayor de edad.</small></span></label>`;
@@ -610,7 +595,7 @@ PAGES.ficha = async (v, parte) => {
   if (!gestiona()) { location.hash = '#/resumen'; return; }
   // Un apartado que no existe (un enlace viejo o mal escrito): el índice.
   if (parte === 'carta') { location.hash = '#/carta'; return; }
-  if (parte && !PARTES_FICHA.some((p) => p[0] === parte) && parte !== 'datos') { location.hash = '#/ficha'; return; }
+  if (parte && !PARTES_FICHA.some((p) => p[0] === parte) && !['datos', 'entidad'].includes(parte)) { location.hash = '#/ficha'; return; }
   if (parte === 'datos' && !esPropietario()) { location.hash = '#/ficha'; return; }
   // Un organizador sin local fijo no tiene horario ni «Cómo es tu local».
   if (esOrganizador() && ['horario', 'local'].includes(parte)) { location.hash = '#/ficha'; return; }
@@ -621,6 +606,8 @@ PAGES.ficha = async (v, parte) => {
     return;
   }
   if (!parte) return indiceFicha(v, b, cats, carta);
+  // «Cuenta de entidad» (entidades.js).
+  if (parte === 'entidad') return entFicha(v, b);
   return parteFicha(v, parte, b, cats);
 };
 
@@ -668,7 +655,9 @@ function indiceFicha(v, b, cats, carta) {
     ${sinCategoria || sinDireccion ? `<a class="aviso-falta" href="#/ficha/${sinCategoria ? 'basico' : 'donde'}">${ms('cancel')}<span>${esc(I18N.t(sinCategoria ? 'Elige una categoría.' : 'Falta la dirección o la ciudad.'))}</span>${ms('chevron_right')}</a>` : ''}
     <p class="muted" style="margin:0 0 10px">Toca un apartado para cambiarlo. Cada uno se guarda por separado.</p>
     <nav class="card indice" aria-label="${esc(I18N.t('Apartados de la ficha'))}">
-      ${PARTES_FICHA.filter(([k]) => !(esOrganizador() && ['horario', 'local'].includes(k))).map(([k, titulo]) => fila(k, titulo, resumen[k], { mal: (k === 'basico' && sinCategoria) || (k === 'donde' && sinDireccion) })).join('')}
+      ${PARTES_FICHA.filter(([k]) => !((esOrganizador() || esEntidad()) && ['horario', 'local'].includes(k))).map(([k, titulo]) => fila(k, titulo, resumen[k], { mal: (k === 'basico' && sinCategoria) || (k === 'donde' && sinDireccion) })).join('')}
+      ${fila('entidad', 'Cuenta de entidad', BIZ.entity?.kind ? entSello(BIZ.entity.kind)
+        : BIZ.entity?.application?.status === 'pending' ? I18N.t('Pendiente de comprobar') : I18N.t('Ayuntamiento, asociación u ONG: pídela'))}
     </nav>
     ${esPropietario() ? `<section class="card indice zona-delicada" aria-labelledby="zonaFicha">
       <h2 id="zonaFicha">Zona delicada · solo el propietario</h2>
@@ -821,7 +810,7 @@ async function parteFicha(v, parte, b, cats) {
 let ALTA = null;
 const altaNueva = () => ({
   name: '', category_id: null, description: '', address: '', city: '', punto: null, horas: null, sitio: [], precio: 0, aforo: false, sin_local: false,
-  phone: '', website: '', contact_email: '', instagram: '', tiktok: '', facebook: '', tax_id: '', adults_only: false, terms: false, entity: '', entity_note: '',
+  phone: '', website: '', contact_email: '', instagram: '', tiktok: '', facebook: '', tax_id: '', adults_only: false, terms: false,
   fotos: { logo: '', portada: '', galeria: [] },
 });
 const altaConAlgo = () => !!ALTA && JSON.stringify(ALTA) !== JSON.stringify(altaNueva());
@@ -839,6 +828,13 @@ function pasoAltaIncompleto(n) {
 }
 
 PAGES.alta = async (v, param) => {
+  // `#/alta`: «¿Qué vas a dar de alta?»; `#/alta/entidad/N`: el alta de una
+  // entidad (entidades.js). Sin negocio, `noBusiness` llama sin el paso: se
+  // saca de la dirección.
+  const partes = currentRoute()[0] === 'alta' ? currentRoute().slice(1) : [];
+  if (param === undefined) param = partes[0];
+  if (param === 'entidad') return entAlta(v, partes[1]);
+  if (!param) return entElegir(v);
   const cats = CATS.length ? CATS
     : ((await sb.from('categories').select('*').order('position', { ascending: true })).data || []);
   if (!ALTA) ALTA = altaNueva();
@@ -862,7 +858,6 @@ PAGES.alta = async (v, param) => {
       ${htmlFotos(A.fotos)}
       <div class="full"><h2 class="alta-sub">Contacto y redes</h2></div>${htmlContacto(A)}
       <div class="full"><h2 class="alta-sub">Datos para Klendar</h2></div>${htmlKlendar(A)}
-      ${htmlEntidad(A)}
       ${htmlMayores(A)}
       <label class="f full casilla"><input type="checkbox" name="terms" ${A.terms ? 'checked' : ''}>
         <span>Acepto las <a href="${APP_URL}/negocios/" target="_blank" rel="noopener">condiciones para negocios</a> *</span></label>`,
@@ -876,12 +871,6 @@ PAGES.alta = async (v, param) => {
       if (f.elements[k]) A[k] = String(x[k] || '');
     }
     if (f.elements.adults_only) A.adults_only = f.elements.adults_only.checked;
-    if (f.elements.entity_on) {
-      A.entity = f.elements.entity_on.checked ? (f.elements.entity_kind?.value || 'council') : '';
-      A.entity_note = String(x.entity_note || '');
-      const caja = $('[data-entidad]', f);
-      if (caja) caja.hidden = !A.entity;
-    }
     if (f.elements.terms) A.terms = f.elements.terms.checked;
     if (f.elements.no_fixed_venue) A.sin_local = f.elements.no_fixed_venue.checked;
     if (paso === 2) {
@@ -899,8 +888,8 @@ PAGES.alta = async (v, param) => {
         <div class="alta-barra" role="progressbar" aria-label="${esc(bi('Progreso del alta', 'Sign-up progress'))}" aria-valuemin="1" aria-valuemax="3" aria-valuenow="${paso}"><span style="width:${Math.round(paso * 100 / 3)}%"></span></div>
       </div>
       <form id="alta" class="form ficha-form" novalidate>${cuerpo()}
-        <div class="full alta-botones${paso > 1 ? '' : ' uno'}">
-          ${paso > 1 ? '<button class="btn" type="button" data-atras>Atrás</button>' : ''}
+        <div class="full alta-botones">
+          <button class="btn" type="button" data-atras>Atrás</button>
           <button class="btn primary" type="submit" id="enviar">${paso < 3 ? 'Siguiente' : 'Enviar solicitud'}</button></div>
         <p id="err" class="err full" role="alert"></p>
       </form>`;
@@ -921,7 +910,8 @@ PAGES.alta = async (v, param) => {
     }
     if (paso === 3) activaFotos(v, A.fotos, (sel) => { lee(f); pinta(sel); }, true);
     const atras = $('[data-atras]', v);
-    if (atras) atras.onclick = () => { lee(f); location.hash = `#/alta/${paso - 1}`; };
+    // Del primer paso, otra vez a «¿Qué vas a dar de alta?».
+    if (atras) atras.onclick = () => { lee(f); location.hash = paso > 1 ? `#/alta/${paso - 1}` : '#/alta'; };
     f.onsubmit = siguiente;
     sinDobleEnvio(v);
     if (foco) $(foco, v)?.focus();
@@ -988,8 +978,6 @@ PAGES.alta = async (v, param) => {
       }
       // El negocio ya existe: si esto falla, se marca luego en la ficha.
       if (A.sitio.length && !A.sin_local) await rpc('set_business_amenities', { p_business: id, p_amenities: A.sitio }).catch(() => null);
-      // «Somos una entidad»: lo decide administración. Si falla, se puede pedir escribiéndonos.
-      if (A.entity) await rpc('request_entity', { p_business: id, p_kind: A.entity, p_note: A.entity_note.trim() || null }).catch(() => null);
       if ((A.precio || A.aforo) && !A.sin_local) {
         await rpc('set_business_place_extras', { p_business: id, p_price_level: A.precio || null, p_crowd_enabled: A.aforo }).catch(() => null);
       }

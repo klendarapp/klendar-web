@@ -9,11 +9,11 @@ import { esc } from './page.js';
 const NOMBRES = {
   es: {
     council: 'Ayuntamiento', district: 'Junta de distrito', merchants: 'Asociación de comerciantes',
-    neighbours: 'Asociación vecinal', ngo: 'ONG', public_agenda: 'Agenda pública',
+    neighbours: 'Asociación vecinal', ngo: 'ONG', other: 'Entidad', public_agenda: 'Agenda pública',
   },
   en: {
     council: 'Council', district: 'District council', merchants: "Traders' association",
-    neighbours: "Residents' association", ngo: 'NGO', public_agenda: 'Public listings',
+    neighbours: "Residents' association", ngo: 'NGO', other: 'Organisation', public_agenda: 'Public listings',
   },
 };
 

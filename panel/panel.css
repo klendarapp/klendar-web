@@ -566,6 +566,9 @@ a.cal-dia { text-decoration: none; }
 .rrpp-av { border-radius: 50% !important; }
 .ph.rrpp-av { font-weight: 800; font-size: 16px; color: var(--ink); }
 .tag.rrpp-tag { background: var(--ink); color: var(--surface); }
+/* El sello de una entidad (ayuntamiento, asociación, ONG): sobrio, en tinta. */
+.tag.badge-entidad { display: inline-flex; align-items: center; gap: 4px; background: var(--soft); color: var(--ink); }
+.tag.badge-entidad .svg { width: 14px; height: 14px; }
 .rrpp-cab-card { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
 .rrpp-cab-card h2 { margin: 0; }
 .rrpp-cab-card .spacer { flex: 1; }

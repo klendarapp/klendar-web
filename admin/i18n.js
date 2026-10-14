@@ -1101,6 +1101,13 @@ const I18N = makeI18N({
   "Klendar pausó este negocio al suspender a su propietario: quita la pausa desde su ficha.": "Klendar paused this business when it suspended its owner: lift the pause from its page.",
   // ── ¿Es tu negocio?, duplicados e inactivas ──
   'Reclamaciones': 'Claims',
+  'Entidades por verificar': 'Organisations to verify',
+  'Se dio de alta como entidad: decídelo en «Entidades por verificar», con el documento.': 'It signed up as an organisation: decide it in “Organisations to verify”, with the document.',
+  'Ya está decidida.': 'It has already been decided.',
+  'Entidad': 'Organisation',
+  'Organisation': 'Organisation',
+  'entidad por verificar': 'organisation to verify',
+  'entidades por verificar': 'organisations to verify',
   'Posibles duplicados': 'Possible duplicates',
   'Cuentas inactivas': 'Inactive accounts',
   // «El sitio» (2026-10-05): ficha del negocio y reglas de las selecciones.

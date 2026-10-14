@@ -573,6 +573,9 @@ async function preparaNegocio() {
   const conLocal = BIZ.id;
   const org = await rpc('business_is_organizer', { p_business: conLocal }).catch(() => false);
   if (BIZ?.id === conLocal) BIZ.no_fixed_venue = org === true;
+  // Ayuntamiento, asociación u ONG (o a punto de serlo): su panel no enseña
+  // plan, Fidelizar, RRPP ni partidos (entidades.js).
+  if (typeof entCarga === 'function') await entCarga();
   // «Antes de cerrar» en el menú: se sabe al momento, sin esperar.
   ANTES = null;
   const negocio = BIZ.id;
@@ -852,7 +855,8 @@ const BARRA = ['resumen', 'publicaciones', 'calendario', 'validar'];
 const visibleEnMenu = (k) => (gestiona() || !SOLO_GESTION.includes(k)) && (k !== 'baja' || esPropietario())
   && (k !== 'antes-de-cerrar' || !!ANTES?.suggested)
   && (k !== 'partidos' || !!PARTIDOS_NAV?.suggested)
-  && !(esOrganizador() && SIN_LOCAL_FIJO.includes(k));
+  && !(esOrganizador() && SIN_LOCAL_FIJO.includes(k))
+  && !(typeof esEntidad === 'function' && esEntidad() && SIN_ENTIDAD.includes(k));
 const marcada = (current, n) => current === n[0] || (n[3] || []).includes(current);
 function renderNav(current) {
   let g = 0;
@@ -968,6 +972,7 @@ async function route() {
   let [page, param] = currentRoute();
   if (!gestiona() && SOLO_GESTION.includes(page)) page = 'resumen';
   if (esOrganizador() && SIN_LOCAL_FIJO.includes(page)) page = 'resumen';
+  if (typeof esEntidad === 'function' && esEntidad() && SIN_ENTIDAD.includes(page)) page = 'resumen';
   renderNav(page);
   // Al ir a otra pantalla desde el menú del móvil, el cajón se cierra y el
   // foco pasa a la pantalla nueva (no al botón que lo abrió).
@@ -1021,7 +1026,10 @@ function avisoVerificacion() {
       ? (motivo ? `<span>${esc(I18N.t('Motivo:'))}</span> <span>${esc(motivo)}</span>` : esc(I18N.t('No hemos podido verificar el negocio. Escríbenos a info@klendar.app.')))
       : esc(I18N.t('Estamos revisando tu negocio; normalmente tardamos 24–48 h. Mientras tanto puedes preparar la ficha y tus publicaciones: se harán públicas al verificarlo. Si pasan más de 48 h sin noticias, escríbenos.'))}
     <p style="margin:8px 0 0"><a class="btn sm" href="mailto:info@klendar.app?subject=${asunto}&body=${cuerpo}">${ms('mail')}${esc(I18N.t('Escribir a soporte'))}</a>
-      ${rechazado && gestiona() ? `<button class="btn sm primary" type="button" id="otra-revision">${ms('check')}${esc(I18N.t('Pedir otra revisión'))}</button>` : ''}</p></div>`;
+      ${rechazado && gestiona() && BIZ.entity?.application?.status === 'rejected'
+    // Una entidad rechazada lo vuelve a pedir con otro documento.
+    ? `<a class="btn sm primary" href="#/ficha/entidad">${esc(I18N.t('Volver a pedirlo'))}</a>`
+    : rechazado && gestiona() ? `<button class="btn sm primary" type="button" id="otra-revision">${ms('check')}${esc(I18N.t('Pedir otra revisión'))}</button>` : ''}</p></div>`;
 }
 
 /** Cambian las condiciones para negocios (Reglamento (UE) 2019/1150, art.
@@ -1122,9 +1130,12 @@ PAGES.resumen = async (v) => {
       <span class="n">${hecho ? ms('check') : n}</span><span><b>${titulo}</b>${pista && !hecho ? `<small>${pista}</small>` : ''}</span>${hecho ? '' : ms('chevron_right')}</a>`;
   // Un solo aviso arriba: lo más grave primero (cerrado por Klendar, un
   // cambio en las condiciones, en revisión o rechazado, cerrado hasta nuevo
-  // aviso). Como la app.
+  // aviso). Como la app. Una entidad que se dio de alta y aún no hemos
+  // comprobado lo dice en su lugar (entidades.js).
+  const entidad = esEntidad();
   const aviso = cerradoDeVerdad ? avisoCerrado()
     : condiciones ? avisoCondiciones(condiciones)
+    : BIZ.verification_status !== 'verified' && BIZ.entity?.pending ? entAvisoPendiente()
     : BIZ.verification_status !== 'verified' ? avisoVerificacion()
       : gestiona() && (sub?.billing?.hold === 'unpaid' || sub?.status === 'past_due') ? avisoCobro(sub)
       : cerradoIndef() ? `<div class="card pausa"><div>
@@ -1136,7 +1147,7 @@ PAGES.resumen = async (v) => {
   // Lo de «Tu negocio» (el resto está en el menú): botones iguales.
   const negocioBtn = (href, icon, txt) => `<a class="herr-btn" href="${href}">${icono(icon)}<span>${esc(I18N.t(txt))}</span></a>`;
   v.innerHTML = `
-    <div class="page-head"><h1>${esc(BIZ.name)}</h1><span class="tag st-${esc(BIZ.verification_status)}">${esc(BIZ_LABELS[BIZ.verification_status] || BIZ.verification_status)}</span><span class="spacer"></span>
+    <div class="page-head"><h1>${esc(BIZ.name)}</h1>${BIZ.entity?.kind ? `<span class="tag badge-entidad">${icono('entidad')} ${esc(entSello(BIZ.entity.kind))}</span>` : ''}<span class="tag st-${esc(BIZ.verification_status)}">${esc(BIZ_LABELS[BIZ.verification_status] || BIZ.verification_status)}</span><span class="spacer"></span>
       <a class="btn sm ghost" href="${APP_URL}/b/${esc(BIZ.id)}" target="_blank" rel="noopener">Ver ficha pública ↗</a></div>
     ${aviso}
     <!-- Crear y validar, en coral los dos e iguales (como «Crear» y
@@ -1180,10 +1191,10 @@ PAGES.resumen = async (v) => {
     <div class="herr-grid">
       ${gestiona() ? negocioBtn('#/equipo', 'group', 'Equipo') : ''}
       ${negocioBtn('#/resenas', 'reviews', 'Reseñas')}
-      ${gestiona() && !esOrganizador() ? negocioBtn('#/cerrados', 'event_busy', 'Días cerrados') : ''}
+      ${gestiona() && !esOrganizador() && !entidad ? negocioBtn('#/cerrados', 'event_busy', 'Días cerrados') : ''}
       ${negocioBtn('#/ayuda', 'help', 'Ayuda')}
     </div>
-    ${sub && gestiona() ? planCard(sub) : ''}
+    ${sub && gestiona() && !entidad ? planCard(sub) : ''}
     ${esPropietario() ? '' : `<div class="card"><h2>Salir del equipo</h2>
       <p class="muted" style="margin:0 0 10px">Dejarás de ver este panel y de validar sus códigos. Avisaremos al propietario.</p>
       <button class="btn bad ghost" type="button" id="salir-equipo">Salir del equipo</button></div>`}`;
@@ -1216,6 +1227,8 @@ PAGES.resumen = async (v) => {
   $$('[data-go]', v).forEach((b) => {
     b.onclick = () => {
       const g = b.dataset.go;
+      // Una entidad aún sin comprobar no publica (la base tampoco lo deja).
+      if (g === 'crear' && BIZ.entity?.pending) { toast(I18N.t('Podrás publicar cuando verifiquemos la entidad.'), true); return; }
       if (g === 'crear') { herrCrear(); return; }
       location.hash = g === 'validar' ? '#/validar'
         : g === 'nueva-flash' ? '#/publicaciones/nueva-flash' : '#/publicaciones/nuevo-evento';

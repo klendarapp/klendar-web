@@ -162,6 +162,7 @@ async function rpc(fn, args = {}) {
 const RPC_ERRORS = {
   cannot_ban_admin: 'No se puede suspender a un administrador.', cannot_delete_self: 'No puedes eliminar tu propia cuenta desde aquí.',
   cannot_delete_admin: 'Quita primero los permisos de administrador.', reason_required: 'Hace falta indicar un motivo.',
+  entity_application_pending: 'Se dio de alta como entidad: decídelo en «Entidades por verificar», con el documento.', already_resolved: 'Ya está decidida.',
   owner_needs_transfer: 'Al propietario no se le cambia el rol: nombra antes a otra persona propietaria.',
   adult_required: 'Para ser propietario hace falta tener 18 años y la fecha de nacimiento en el perfil.',
   min_age_16: 'Para entrar en un equipo hace falta tener 16 años y la fecha de nacimiento en el perfil.',
@@ -869,7 +870,7 @@ document.addEventListener('keydown', (e) => { if (e.key === '/' && !/input|texta
 // una de sus pantallas, y lo pendiente que tenga dentro se suma en su título.
 const NAV_GRUPOS = [
   { id: 'panorama', t: 'Panorama', items: [['resumen', 'dashboard', 'Resumen'], ['semanas', 'trending_up', 'Semana a semana'], ['cifras', 'insights', 'Cifras'], ['ciudades', 'map', 'Ciudades']] },
-  { id: 'negocios', t: 'Negocios y pagos', items: [['negocios', 'storefront', 'Negocios'], ['reclamaciones', 'how_to_reg', 'Reclamaciones'], ['duplicados', 'content_copy', 'Posibles duplicados'], ['planes', 'credit_card', 'Planes y pagos'], ['condiciones', 'gavel', 'Condiciones para negocios']] },
+  { id: 'negocios', t: 'Negocios y pagos', items: [['negocios', 'storefront', 'Negocios'], ['reclamaciones', 'how_to_reg', 'Reclamaciones'], ['entidades', 'account_balance', 'Entidades por verificar'], ['duplicados', 'content_copy', 'Posibles duplicados'], ['planes', 'credit_card', 'Planes y pagos'], ['condiciones', 'gavel', 'Condiciones para negocios']] },
   { id: 'contenido', t: 'Contenido', items: [['publicaciones', 'bolt', 'Publicaciones'], ['agenda', 'account_balance', 'Agenda pública'], ['canjes', 'confirmation_number', 'Canjes'], ['colecciones', 'auto_awesome', 'Colecciones'], ['emisiones', 'sports_soccer', 'Emisiones'], ['artistas', 'music_note', 'Artistas'], ['categorias', 'category', 'Categorías']] },
   { id: 'personas', t: 'Personas', items: [['usuarios', 'person', 'Usuarios'], ['inactivas', 'hourglass_empty', 'Cuentas inactivas'], ['avisos', 'notifications', 'Notificaciones y push'], ['sugerencias', 'lightbulb', 'Sugerencias']] },
   { id: 'moderacion', t: 'Moderación', items: [['denuncias', 'flag', 'Denuncias'], ['resenas', 'chat_bubble', 'Reseñas y novedades'], ['mensajes', 'campaign', 'Mensajes a clientes']] },
@@ -929,9 +930,12 @@ async function refreshBadges(lanzar = false) {
     // «¿Es tu negocio?» pendientes y posibles duplicados (20261029100001).
     let reclam = 0;
     try { reclam = (await rpc('admin_business_claims', { p_status: 'pending', p_limit: 1, p_offset: 0 })).counts?.pending || 0; } catch { /* sin la función */ }
+    // Ayuntamientos, asociaciones y ONG por verificar (20261219100000).
+    let ents = 0;
+    try { ents = (await rpc('admin_entity_applications', { p_status: 'pending', p_limit: 1, p_offset: 0 })).counts?.pending || 0; } catch { /* sin la función */ }
     let dups = 0;
     try { dups = ((await rpc('admin_duplicate_alerts', { p_limit: 200 })) || []).filter((x) => x.pending).length; } catch { /* sin la función */ }
-    BADGES = { reclamaciones: reclam, duplicados: dups, negocios: (k.businesses_pending || 0) + (CAMBIOS?.open || 0) + (PAUSAS?.length || 0), publicaciones: k.offers_pending || 0, denuncias: k.reports_open || 0, mensajes: msj, resenas: textos, sugerencias: sug, errores: WEB_ERR?.new_24h || 0 };
+    BADGES = { reclamaciones: reclam, entidades: ents, duplicados: dups, negocios: (k.businesses_pending || 0) + (CAMBIOS?.open || 0) + (PAUSAS?.length || 0), publicaciones: k.offers_pending || 0, denuncias: k.reports_open || 0, mensajes: msj, resenas: textos, sugerencias: sug, errores: WEB_ERR?.new_24h || 0 };
     Object.keys(BADGES).forEach((x) => { if (!BADGES[x]) delete BADGES[x]; });
     renderNav(currentRoute()[0]);
     return k;
@@ -949,7 +953,7 @@ const PAGES = {};
 const ENTIDADES = {
   council: ['Ayuntamiento', 'Council'], district: ['Junta de distrito', 'District council'],
   merchants: ['Asociación de comerciantes', "Traders' association"], neighbours: ['Asociación vecinal', "Residents' association"],
-  ngo: ['ONG', 'NGO'], public_agenda: ['Agenda pública', 'Public listings'],
+  ngo: ['ONG', 'NGO'], other: ['Entidad', 'Organisation'], public_agenda: ['Agenda pública', 'Public listings'],
 };
 const nombreEntidad = (k) => (ENTIDADES[k] ? ENTIDADES[k][I18N.lang === 'en' ? 1 : 0] : '');
 
@@ -1337,6 +1341,7 @@ PAGES.resumen = async (v) => {
       [CAMBIOS?.open, 'published_with_changes', pl(CAMBIOS?.open, 'para revisar de nuevo', 'para revisar de nuevo', 'to review again', 'to review again'), 'revisar'],
       [PAUSAS?.length, 'pause_circle', pl(PAUSAS?.length, 'en pausa por una suspensión ya levantada', 'en pausa por una suspensión ya levantada', 'paused by a suspension that has been lifted', 'paused by a suspension that has been lifted'), 'pausas'],
       [BADGES.reclamaciones, 'how_to_reg', pl(BADGES.reclamaciones, 'reclamación «¿Es tu negocio?»', 'reclamaciones «¿Es tu negocio?»', '“Is this your business?” claim', '“Is this your business?” claims'), '#/reclamaciones'],
+      [BADGES.entidades, 'account_balance', pl(BADGES.entidades, 'entidad por verificar', 'entidades por verificar', 'organisation to verify', 'organisations to verify'), '#/entidades'],
       [BADGES.duplicados, 'content_copy', pl(BADGES.duplicados, 'posible duplicado', 'posibles duplicados', 'possible duplicate', 'possible duplicates'), '#/duplicados'],
       [k.subs_expiring_7d, 'credit_card', pl(k.subs_expiring_7d, 'suscripción vence en 7 días', 'suscripciones vencen en 7 días', 'subscription expiring in 7 days', 'subscriptions expiring in 7 days'), '#/planes'],
     ]],
@@ -1544,7 +1549,7 @@ async function businessDetail(v, id) {
     ${b.closed_permanently_at ? `<div class="card"><b>${I18N.lang === 'en' ? 'Marked as closed for good on' : 'Marcado como cerrado de verdad el'}</b> ${fmtDate(b.closed_permanently_at, tz)}${b.closed_permanently_note ? ` · ${esc(b.closed_permanently_note)}` : ''}<div class="muted small" style="margin-top:4px">${I18N.lang === 'en' ? 'It no longer appears on Klendar; its address says “This business has closed”. Use “Reopen” if it is a mistake.' : 'Ya no sale en Klendar; su dirección dice «Este negocio ha cerrado». «Reabrir» si es un error.'}</div></div>` : ''}
     ${b.entity_requested ? `<div class="card"><b>${I18N.lang === 'en' ? 'Asks for an organisation account' : 'Pide la cuenta de entidad'}:</b> ${esc(nombreEntidad(b.entity_requested))}${b.entity_requested_at ? ` · ${fmtDate(b.entity_requested_at, tz)}` : ''}${b.entity_request_note ? `<p style="margin:6px 0 0">«${esc(b.entity_request_note)}»</p>` : ''}
       <p class="muted small" style="margin:6px 0 0">${I18N.lang === 'en' ? 'Check who they are before marking it: an email from the official domain, a document signed by the secretary or the registry entry, or a call to the phone on their official website.' : 'Comprueba quién es antes de marcarla: un correo del dominio oficial, un documento firmado por la secretaría o la inscripción en el registro, o una llamada al teléfono de su web oficial.'}</p>
-      <p class="actions" style="margin:8px 0 0"><button class="btn sm" data-a="entity">${I18N.lang === 'en' ? 'Decide…' : 'Decidir…'}</button></p></div>` : ''}
+      <p class="actions" style="margin:8px 0 0"><a class="btn sm" href="#/entidades">${I18N.lang === 'en' ? 'See the request and the document' : 'Ver la solicitud y el documento'}</a> <button class="btn sm" data-a="entity">${I18N.lang === 'en' ? 'Decide without a request…' : 'Decidir sin solicitud…'}</button></p></div>` : ''}
     ${b.review_requested_at && b.verification_status === 'pending' ? `<div class="card"><b>${I18N.lang === 'en' ? 'Asked for another review on' : 'Pidió otra revisión el'}</b> ${fmtDate(b.review_requested_at, tz)}${b.review_request_note ? `<p style="margin:6px 0 0">«${esc(b.review_request_note)}»</p>` : ''}</div>` : ''}
     ${pausa ? tarjetaPausas([pausa], false) : ''}
     ${(cambios?.rows || []).length ? tarjetaCambios(cambios.rows, false) : ''}
@@ -1779,7 +1784,7 @@ async function businessAction(a, b, d) {
           ? 'Councils, district councils, associations and NGOs carry their own badge on their page and publications, show up under the “Public listings” filter and, for now, pay no fee (their plan becomes the free one with no end date). Only mark it once you have checked who they are.'
           : 'Ayuntamientos, juntas de distrito, asociaciones y ONG llevan su sello en la ficha y en sus publicaciones, salen en el filtro «Agenda pública» y, de momento, no pagan cuota (su plan pasa a gratis sin fecha de fin). Márcala solo después de comprobar quién es.',
         fields: [{ name: 'kind', label: I18N.lang === 'en' ? 'Type' : 'Tipo', type: 'select', value: b.entity_kind || b.entity_requested || '',
-          options: [['', I18N.lang === 'en' ? '— Not an organisation' : '— No es una entidad'], ...['council', 'district', 'merchants', 'neighbours', 'ngo'].map((k) => [k, nombreEntidad(k)])] }],
+          options: [['', I18N.lang === 'en' ? '— Not an organisation' : '— No es una entidad'], ...['council', 'district', 'merchants', 'neighbours', 'ngo', 'other'].map((k) => [k, nombreEntidad(k)])] }],
         submit: I18N.lang === 'en' ? 'Save' : 'Guardar' });
       if (!r) return;
       await rpc('admin_set_entity', { p_business: b.id, p_kind: r.kind || null });
@@ -2786,6 +2791,95 @@ PAGES.reclamaciones = async (v) => {
       if (!r2) return;
       await rpc('admin_resolve_business_claim', { p_id: x.id, p_approve: false, p_reason: r2.reason, p_reason_en: r2.reason_en || null, p_keep_previous: false });
       toast(en ? 'Claim rejected' : 'Reclamación rechazada');
+      refreshBadges(); load();
+    }); });
+  };
+  $('#status', v).onchange = () => { s.status = $('#status', v).value; s.offset = 0; aUrl(); load(); };
+  $('#q', v).oninput = debounce(() => { s.q = $('#q', v).value.trim(); s.offset = 0; load(); });
+  await load();
+};
+
+// ── Entidades por verificar (20261219100000) ───────────────────────────────
+// Ayuntamientos, juntas, asociaciones y ONG: las que se dan de alta como
+// entidad (la ficha no se ve hasta aprobarla) y los negocios que lo piden
+// desde su ficha. Procedimiento: RUNBOOK §4e (TB5).
+st.entidades = { status: 'pending', limit: 50, offset: 0 };
+
+PAGES.entidades = async (v) => {
+  const en = I18N.lang === 'en';
+  const s = st.entidades;
+  const aUrl = filtrosEnUrl('entidades', s, ['status'], { status: 'pending' });
+  v.innerHTML = `
+    <div class="page-head"><h1>${en ? 'Organisations to verify' : 'Entidades por verificar'}</h1></div>
+    ${helpBox(en ? 'What do I do here?' : '¿Qué hago aquí?', en
+      ? '<p>Councils, district councils, associations and NGOs: those that <b>signed up as an organisation</b> (their page is not public and they cannot publish until you approve) and businesses that <b>ask from their page</b>. Open the document and follow RUNBOOK §4e: the <b>official website</b> and the <b>phone or email on the official e-office</b> (never one given by the applicant), the register of associations, or the NIF G of the foundation or association. The CIF must match the organisation. <b>Approve</b> marks the type (you can correct it), verifies the page and moves it to the free plan with no end date. <b>Reject</b> needs a reason they will see; if it was a sign-up, the page stays rejected with that reason and they can ask again with another document. The document is deleted 6 months after deciding. Everything stays in the activity log.</p>'
+      : '<p>Ayuntamientos, juntas de distrito, asociaciones y ONG: las que <b>se dan de alta como entidad</b> (su ficha no se ve y no pueden publicar hasta que apruebes) y los negocios que <b>lo piden desde su ficha</b>. Abre el documento y sigue el RUNBOOK §4e: la <b>web oficial</b> y el <b>teléfono o correo de la sede electrónica oficial</b> (nunca uno que dé quien lo pide), el registro de asociaciones, o el NIF G de la fundación o asociación. El CIF tiene que ser el de la entidad. <b>Aprobar</b> marca el tipo (lo puedes corregir), verifica la ficha y la pasa al plan gratis sin fin. <b>Rechazar</b> pide un motivo, que verá; si era un alta, la ficha queda rechazada con ese motivo y puede volver a pedirlo con otro documento. El documento se borra a los 6 meses de decidir. Todo queda en el registro de actividad.</p>')}
+    <div class="toolbar"><input id="q" class="grow" type="search" placeholder="${en ? 'Search by name, CIF, city, person or email…' : 'Buscar por nombre, CIF, ciudad, persona o correo…'}" aria-label="${en ? 'Search organisations' : 'Buscar en entidades'}" value="${esc(s.q || '')}"><select id="status">${[['pending', en ? 'Pending' : 'Pendientes'], ['approved', en ? 'Approved' : 'Aprobadas'], ['rejected', en ? 'Rejected' : 'Rechazadas'], ['withdrawn', en ? 'Withdrawn' : 'Retiradas'], ['all', en ? 'All' : 'Todas']].map((o) => `<option value="${o[0]}" ${s.status === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select></div>
+    <div id="list"><div class="loading">${en ? 'Loading…' : 'Cargando…'}</div></div>`;
+  const ESTADO = { pending: ['warn', en ? 'pending' : 'pendiente'], approved: ['ok', en ? 'approved' : 'aprobada'], rejected: ['bad', en ? 'rejected' : 'rechazada'], withdrawn: ['dim', en ? 'withdrawn' : 'retirada'] };
+  const TIPOS = ['council', 'district', 'merchants', 'neighbours', 'ngo', 'other'];
+  const load = async () => {
+    const q = (s.q || '').trim();
+    const r = await rpc('admin_entity_applications', { p_status: s.status, p_limit: q ? BUSCA_MAX : s.limit, p_offset: q ? 0 : s.offset });
+    const total = s.status === 'all' ? Object.values(r.counts || {}).reduce((a, n) => a + n, 0) : (r.counts || {})[s.status] || 0;
+    const pg = q ? { html: '', bind() {} } : pager(s, total, load);
+    const todas = r.items || [];
+    const items = q ? todas.filter((x) => coincide(q, x.official_name, x.tax_id, x.business_name, x.business_city, x.area, x.contact_name, x.user_name, x.user_email)) : todas;
+    $('#list').innerHTML = (q ? notaBusqueda(items.length, todas.length) : '') + (items.length ? items.map((x, i) => {
+      const [cls, txt] = ESTADO[x.status] || ['dim', x.status];
+      return `<div class="item"><div class="ph">${ms('account_balance')}</div><div>
+        <h3>${esc(x.official_name)} <span class="tag ${cls}">${esc(txt)}</span> <span class="tag">${esc(nombreEntidad(x.kind))}</span> <span class="muted small">${esc(x.origin === 'signup' ? (en ? 'sign-up as an organisation' : 'alta como entidad') : (en ? 'asked from the page' : 'pedida desde la ficha'))}</span></h3>
+        <div class="meta"><a class="link" href="#/negocios/${esc(x.business_id)}">${esc(x.business_name || '—')}</a> ${tag(x.business_status)} · ${esc(x.business_city || '')} · ${fmtDate(x.created_at)}${x.business_applications > 1 ? ` · ${fmtNum(x.business_applications)} ${en ? 'requests from this page' : 'solicitudes de esta ficha'}` : ''}</div>
+        <dl class="kv">
+          <dt>CIF</dt><dd translate="no">${esc(x.tax_id)}</dd>
+          <dt>${en ? 'Official website' : 'Web oficial'}</dt><dd>${enlaceExterno(x.website)}</dd>
+          <dt>${en ? 'Area' : 'Zona'}</dt><dd>${esc(x.area || '—')}</dd>
+          <dt>${en ? 'Registered by' : 'Quién la da de alta'}</dt><dd>${esc(x.contact_name)} · ${esc(x.contact_role)} · <a class="link" href="#/usuarios/${esc(x.user_id)}">${esc(x.user_email || '—')}</a> · ${en ? 'account since' : 'cuenta desde'} ${fmtDay(x.user_since)}</dd>
+          <dt>${en ? 'Document' : 'Documento'}</dt><dd>${x.proof_path ? `<button class="btn sm" data-doc="${i}">${ms('attach_file')} ${en ? 'View the document' : 'Ver el documento'}</button>` : ''}${x.proof_deleted_at ? `<span class="muted small">${en ? 'deleted' : 'borrado'} ${fmtDay(x.proof_deleted_at)}</span>` : ''}${!x.proof_path && !x.proof_deleted_at ? '—' : ''}</dd>
+          ${x.status !== 'pending' ? `<dt>${en ? 'Decision' : 'Decisión'}</dt><dd>${fmtDate(x.resolved_at)}${x.resolved_by_email ? ` · ${esc(x.resolved_by_email)}` : ''}${x.reason ? ` · ${esc(x.reason)}` : ''}</dd>` : ''}
+        </dl>
+        ${x.status === 'pending' ? `<div class="actions">
+          <button class="btn sm ok" data-aprobar="${i}">${en ? 'Approve…' : 'Aprobar…'}</button>
+          <button class="btn sm bad" data-rechazar="${i}">${en ? 'Reject…' : 'Rechazar…'}</button>
+        </div>` : ''}
+      </div></div>`;
+    }).join('') : `<div class="tbl-wrap"><div class="empty">${en ? 'No organisations with that filter.' : 'Ninguna entidad con ese filtro.'}</div></div>`) + pg.html;
+    pg.bind($('#list'));
+    $$('#list [data-doc]').forEach((b) => { b.onclick = () => esperando(b, () => verPrueba(items[b.dataset.doc].proof_path)); });
+    $$('#list [data-aprobar]').forEach((b) => { b.onclick = () => esperando(b, async () => {
+      const x = items[b.dataset.aprobar];
+      const r2 = await modal({
+        title: en ? 'Approve the organisation' : 'Aprobar la entidad',
+        intro: esc(en
+          ? `“${x.official_name}” gets the organisation badge${x.origin === 'signup' ? ', its page is verified (it can publish)' : ''} and moves to the free plan with no end date. Only approve after checking the document as in RUNBOOK §4e.`
+          : `«${x.official_name}» lleva el sello de entidad${x.origin === 'signup' ? ', su ficha queda verificada (ya puede publicar)' : ''} y pasa al plan gratis sin fin. Aprueba solo después de comprobar el documento como dice el RUNBOOK §4e.`),
+        fields: [
+          { name: 'kind', label: en ? 'Type' : 'Tipo', type: 'select', value: x.kind, options: TIPOS.map((k) => [k, nombreEntidad(k)]) },
+          { name: 'note', label: en ? 'How you checked it (for the record)' : 'Cómo lo has comprobado (para el registro)', type: 'textarea', required: true },
+        ],
+        submit: en ? 'Approve' : 'Aprobar',
+      });
+      if (!r2) return;
+      await rpc('admin_resolve_entity_application', { p_id: x.id, p_approve: true, p_reason: r2.note, p_reason_en: null, p_kind: r2.kind });
+      toast(en ? 'Organisation approved' : 'Entidad aprobada');
+      refreshBadges(); load();
+    }); });
+    $$('#list [data-rechazar]').forEach((b) => { b.onclick = () => esperando(b, async () => {
+      const x = items[b.dataset.rechazar];
+      const r2 = await modal({
+        title: en ? 'Reject the organisation' : 'Rechazar la entidad',
+        intro: esc(en
+          ? (x.origin === 'signup' ? 'They will see the reason; the page stays rejected and they can ask again with another document.' : 'They will see the reason; the business stays as it was and can ask again from its page.')
+          : (x.origin === 'signup' ? 'Verá el motivo; la ficha queda rechazada y puede volver a pedirlo con otro documento.' : 'Verá el motivo; el negocio sigue como estaba y puede volver a pedirlo desde su ficha.')),
+        fields: [
+          { name: 'reason', label: en ? 'Reason (Spanish)' : 'Motivo (español)', type: 'textarea', required: true },
+          { name: 'reason_en', label: en ? 'Reason in English (optional)' : 'Motivo en inglés (opcional)', type: 'textarea' },
+        ],
+        submit: en ? 'Reject' : 'Rechazar', danger: true,
+      });
+      if (!r2) return;
+      await rpc('admin_resolve_entity_application', { p_id: x.id, p_approve: false, p_reason: r2.reason, p_reason_en: r2.reason_en || null, p_kind: null });
+      toast(en ? 'Organisation rejected' : 'Entidad rechazada');
       refreshBadges(); load();
     }); });
   };

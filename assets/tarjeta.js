@@ -118,7 +118,7 @@
       organiza: (n) => `Organiza: ${n}`, hoy: 'Hoy', manana: 'Mañana',
       // Quién publica, si es una entidad (migración 20261130100000).
       entidad: { council: 'Ayuntamiento', district: 'Junta de distrito', merchants: 'Asociación de comerciantes',
-        neighbours: 'Asociación vecinal', ngo: 'ONG', public_agenda: 'Agenda pública' },
+        neighbours: 'Asociación vecinal', ngo: 'ONG', other: 'Entidad', public_agenda: 'Agenda pública' },
       anterior: 'Foto anterior', siguiente: 'Foto siguiente', sonido: 'Sonido', play: 'Reproducir vídeo',
       galeria: 'Fotos y vídeos', ampliar: 'Ver a pantalla completa', cerrar: 'Cerrar', denunciar: 'Denunciar',
       pieza: (video, i, n) => `${video ? 'Vídeo' : 'Foto'}${n > 1 ? ` ${i} de ${n}` : ''}`,
@@ -134,7 +134,7 @@
       en: (l) => `at ${l}`, entradas: (p) => `Tickets on ${p}`, video: 'Video',
       organiza: (n) => `Organised by ${n}`, hoy: 'Today', manana: 'Tomorrow',
       entidad: { council: 'Council', district: 'District council', merchants: "Traders' association",
-        neighbours: "Residents' association", ngo: 'NGO', public_agenda: 'Public listings' },
+        neighbours: "Residents' association", ngo: 'NGO', other: 'Organisation', public_agenda: 'Public listings' },
       anterior: 'Previous photo', siguiente: 'Next photo', sonido: 'Sound', play: 'Play video',
       galeria: 'Photos and videos', ampliar: 'View full screen', cerrar: 'Close', denunciar: 'Report',
       pieza: (video, i, n) => `${video ? 'Video' : 'Photo'}${n > 1 ? ` ${i} of ${n}` : ''}`,

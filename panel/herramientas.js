@@ -70,6 +70,18 @@ const herrTile = (href, icon, titulo, linea, id = '') => `<a class="esencial-til
  * `business_stats` (para «N canjes · 30 días»). */
 function herrEsencialHtml(stats) {
   const canjes = Number(stats?.redemptions_30d) || 0;
+  // Una entidad (ayuntamiento, asociación, ONG): sin Fidelizar ni RRPP; su
+  // agenda (series) y su equipo.
+  if (esEntidad()) {
+    return `<nav class="esencial" aria-label="${esc(bi('Lo esencial', 'The essentials'))}">
+    ${gestiona()
+    ? herrTile('#/ficha', 'storefront', bi('Tu ficha', 'Your page'), '', 'esFicha')
+    : herrTile(`${APP_URL}/b/${encodeURIComponent(BIZ.id)}`, 'storefront', bi('Tu ficha', 'Your page'), bi('Ver cómo se ve', 'See how it looks'))}
+    ${herrTile('#/informe', 'bar_chart', bi('Cifras', 'Stats'), herrPl(canjes, ['1 canje · 30 días', 'canjes · 30 días'], ['1 redemption · 30 days', 'redemptions · 30 days']))}
+    ${herrTile('#/series', 'repite', bi('Series y repeticiones', 'Series and repeats'), '', 'esSeries')}
+    ${gestiona() ? herrTile('#/equipo', 'group', bi('Equipo', 'Team'), '', 'esEquipo') : ''}
+  </nav>`;
+  }
   return `<nav class="esencial" aria-label="${esc(bi('Lo esencial', 'The essentials'))}">
     ${gestiona()
     ? herrTile('#/ficha', 'storefront', bi('Tu ficha', 'Your page'), '', 'esFicha')
@@ -103,11 +115,17 @@ async function herrResumen(v, { cajaFilas }) {
     linea('esFiel', n === 0 ? bi('Nada activado', 'Nothing on yet') : bi(n === 1 ? '1 activada' : `${n} activadas`, `${n} on`));
   }
   if (o) {
+    const reglas = herrNum(o, 'series', 'rules_active');
+    linea('esSeries', reglas === 0 ? bi('Nada se publica solo', 'Nothing publishes itself') : herrPl(reglas, ['1 se publica sola', 'se publican solas'], ['1 publishes itself', 'publish themselves']));
+    const eq = herrNum(o, 'team', 'members');
+    linea('esEquipo', eq <= 1 ? bi('Solo tú', 'Just you') : herrPl(eq, ['1 persona', 'personas'], ['1 person', 'people']));
     const r = herrNum(o, 'promoters', 'active');
     linea('esRrpp', r === 0 ? bi('Invita al primero', 'Invite your first') : herrPl(r, ['1 RRPP activo', 'RRPP activos'], ['1 active promoter', 'active promoters']));
   }
   if (!o || !cajaFilas) return;
-  const org = esOrganizador();
+  // Sin local (organizador o entidad): sin antes de cerrar ni partidos.
+  const ent = esEntidad();
+  const org = esOrganizador() || ent;
   const fila = (href, icon, texto, attrs = '') => `<a class="fila-inicio" href="${href}" ${attrs}>${icono(icon)}<span>${esc(texto)}</span>${ms('chevron_right')}</a>`;
   const pend = herrNum(o, 'groups', 'pending');
   const resenas = herrNum(o, 'reviews', 'unanswered');
@@ -115,8 +133,8 @@ async function herrResumen(v, { cajaFilas }) {
   const filas = [
     // La cola abierta ya sale en su fila (panel/cola.js); si la usa y ahora
     // está cerrada, la fila para abrirla.
-    !herrSi(o, 'queue', 'open') && herrSi(o, 'queue', 'used_30d') ? fila('#/cola', 'cola', bi('Cola virtual · cerrada', 'Virtual queue · closed')) : '',
-    gestiona() && herrSi(o, 'groups', 'enabled') ? fila('#/grupos', 'grupos', bi(
+    !ent && !herrSi(o, 'queue', 'open') && herrSi(o, 'queue', 'used_30d') ? fila('#/cola', 'cola', bi('Cola virtual · cerrada', 'Virtual queue · closed')) : '',
+    !ent && gestiona() && herrSi(o, 'groups', 'enabled') ? fila('#/grupos', 'grupos', bi(
       `Grupos y empresas · ${pend === 0 ? 'sin peticiones' : pend === 1 ? '1 sin contestar' : `${pend} sin contestar`}`,
       `Groups and companies · ${pend === 0 ? 'no requests' : pend === 1 ? '1 to answer' : `${pend} to answer`}`)) : '',
     resenas > 0 ? fila('#/resenas', 'reviews', bi(`Reseñas · ${resenas === 1 ? '1 sin responder' : `${resenas} sin responder`}`, `Reviews · ${resenas} unanswered`)) : '',
@@ -125,7 +143,7 @@ async function herrResumen(v, { cajaFilas }) {
       : bi(`Antes de cerrar · aviso a las ${bc.reminder_at}`, `Before closing · reminder at ${bc.reminder_at}`)) : '',
     !org && herrNum(o, 'broadcasts', 'upcoming') > 0 ? fila('#/partidos', 'partido', bi(`Partidos que pones · ${herrNum(o, 'broadcasts', 'upcoming')} esta semana`, `Matches you're showing · ${herrNum(o, 'broadcasts', 'upcoming')} this week`)) : '',
     gestiona() && herrNum(o, 'tv', 'screens') > 0 ? fila('#/tele', 'tele', bi('Poner en la tele · ', 'Show on TV · ') + herrPl(herrNum(o, 'tv', 'screens'), ['1 tele', 'teles'], ['1 TV', 'TVs'])) : '',
-    herrNum(o, 'series', 'rules_active') > 0 ? fila('#/series', 'repite', bi('Series y repeticiones · ', 'Series and repeats · ')
+    !ent && herrNum(o, 'series', 'rules_active') > 0 ? fila('#/series', 'repite', bi('Series y repeticiones · ', 'Series and repeats · ')
       + herrPl(herrNum(o, 'series', 'rules_active'), ['1 se publica sola', 'se publican solas'], ['1 publishes itself', 'publish themselves'])) : '',
   ].filter(Boolean);
   cajaFilas.innerHTML = filas.length ? `<div class="filas-inicio">${filas.join('')}</div>` : '';
@@ -151,7 +169,9 @@ PAGES.herramientas = async (v) => {
   const o = await rpc('business_tools_overview', { p_business: BIZ.id });
   if (!o || o.ok === false) throw new Error(o?.error || 'not_authorized');
   const edit = o.can_edit === true;
-  const local = !esOrganizador();
+  // Sin local (organizador o entidad): fuera lo que necesita un local.
+  const ent = esEntidad();
+  const local = !esOrganizador() && !ent;
   const onOff = (x) => (x ? bi('Activado', 'On') : bi('Apagado', 'Off'));
   const sinPreparar = bi('Sin preparar', 'Not set up');
   const configurar = bi('Configurar', 'Set up');
@@ -200,7 +220,7 @@ PAGES.herramientas = async (v) => {
       estado: onOff(herrSi(o, 'crowd', 'enabled')), on: herrSi(o, 'crowd', 'enabled'),
       botones: edit ? [[herrSi(o, 'crowd', 'enabled') ? configurar : activar, '#/ficha/local']] : [],
     }) : '',
-    herrTarjeta({
+    ent ? '' : herrTarjeta({
       icon: 'cola', titulo: bi('Cola virtual', 'Virtual queue'),
       frase: bi('Para que no hagan cola en la puerta: se apuntan con el QR del cartel y les avisamos cuando les toca.', 'So nobody queues at the door: people join with the poster’s QR and we tell them when it’s their turn.'),
       estado: herrSi(o, 'queue', 'open') ? bi(`Abierta · ${espera} esperando`, `Open · ${espera} waiting`)
@@ -219,7 +239,7 @@ PAGES.herramientas = async (v) => {
       estado: teles ? herrPl(teles, ['1 tele enlazada', 'teles enlazadas'], ['1 TV linked', 'TVs linked']) : bi('Apagado', 'Off'),
       on: teles > 0, botones: [[configurar, '#/tele']],
     }) : '',
-    edit ? herrTarjeta({
+    edit && !ent ? herrTarjeta({
       icon: 'grupos', titulo: bi('Grupos y empresas', 'Groups and companies'),
       frase: bi('Para recibir peticiones de grupos y empresas (cenas, cumpleaños, comidas de equipo) y mandar tu propuesta.', 'To get requests from groups and companies (dinners, birthdays, team meals) and send your proposal.'),
       estado: onOff(herrSi(o, 'groups', 'enabled')), on: herrSi(o, 'groups', 'enabled'),
