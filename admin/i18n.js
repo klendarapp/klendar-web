@@ -1437,4 +1437,11 @@ const I18N = makeI18N({
     "Crecer": "Growth",
     "Locales pedidos": "Requested places",
     "Dónde crecer": "Where to grow",
+    // Cobro: arranque del bloqueo y «Gratis de lanzamiento» con un mes.
+    "El bloqueo tiene que empezar con margen para los avisos de 7 días y 1 día: elige un día más tarde.": "The block has to start with enough time for the 7-day and 1-day notices: choose a later day.",
+    "El «Gratis de lanzamiento» se avisa con un mes: pon un fin dentro de 30 días como pronto (alargar uno ya avisado sí se puede).": "“Launch, free” is announced a month ahead: set an end at least 30 days from now (extending one already announced is fine).",
+    "ya había acabado: arranque del bloqueo": "had already ended: the block starts",
+    "Bloquear los negocios que no pagan desde el día": "Block businesses that don't pay from",
+    "Fecha del bloqueo": "Block date",
+    "Vacío = sin fecha de fin. «Gratis de lanzamiento»: como pronto dentro de 30 días (se avisa al negocio al momento por push, correo y en «Mi negocio», y otra vez 7 días y 1 día antes).": "Leave empty for no end date. “Launch, free”: at least 30 days from now (the business is told straight away by push, email and in “My business”, and again 7 days and 1 day before).",
 }, { idiomas: ['es', 'en'] }); // herramienta interna: solo español e inglés

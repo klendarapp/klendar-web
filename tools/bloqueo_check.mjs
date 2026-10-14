@@ -15,6 +15,10 @@
 //  6. Admin, «Planes y pagos → Cobro con tarjeta»: bloqueados y en pausa,
 //     «Se bloquean pronto», «Desbloquear hasta…», «Comprobar ahora» y los
 //     ajustes (bloqueo, pausa, formas de pago, IVA no sujeto).
+//  8. El arranque del bloqueo (`block_from`): «Mi negocio» con el aviso de
+//     quien ya tenía la prueba acabada (motivo `start`) y el del «Gratis de
+//     lanzamiento» con fecha de fin (se avisa con un mes); el admin enseña y
+//     guarda la fecha del bloqueo.
 //  7. La ficha pública (`/b/<id>`, las Functions de verdad con un Supabase de
 //     mentira): «No disponible ahora mismo» / «Cerrado temporalmente hasta
 //     el…», sin publicaciones ni novedades y con `noindex`.
@@ -105,6 +109,15 @@ const CASOS = {
   },
   pagado: () => {
     const s = sub({}, {});
+    return { role: 'owner', sub: s, ov: overview(s) };
+  },
+  arranque: () => {
+    const s = sub({ status: 'trial', period_end: masDias(-20), payment_method: null }, { block_kind: 'start', block_on: masDias(6), block_soon: true, block_from: masDias(6) });
+    return { role: 'owner', sub: s, ov: overview(s) };
+  },
+  gratis: () => {
+    const s = sub({ plan_slug: 'free', plan_names: { es: 'Gratis de lanzamiento', en: 'Launch, free' }, price_cents: 0, period_end: masDias(35), payment_method: null },
+      { block_kind: 'free', block_on: masDias(36), block_from: masDias(6) });
     return { role: 'owner', sub: s, ov: overview(s) };
   },
 };
@@ -254,6 +267,26 @@ async function panelPausa(nav, nombre, t, vp) {
   await ctx.close();
 }
 
+async function panelArranque(nav, nombre, t, vp) {
+  for (const caso of ['arranque', 'gratis']) {
+    const { ctx, p, errores } = await contextoPanel(nav, vp, caso);
+    await p.goto(`${BASE}/panel/`, { waitUntil: 'networkidle' });
+    await p.waitForSelector('.aviso-cobro');
+    const v = await texto(p);
+    ok(await p.locator('.aviso-cobro').count() === 1, `${nombre}/${t} ${caso}: un solo aviso arriba`);
+    if (caso === 'arranque') {
+      ok(/Tu negocio se bloquea el/.test(v) && /ya ha terminado: desde ese día hay que tener el plan pagado/.test(v),
+        `${nombre}/${t} arranque: «Tu negocio se bloquea el…» y que la prueba ya acabó`);
+    } else {
+      ok(/Tu «Gratis de lanzamiento» termina el/.test(v) && (await p.locator('.aviso-cobro a.btn').getAttribute('href')) === '#/plan',
+        `${nombre}/${t} gratis con fin: el aviso y «Ver tu plan»`);
+    }
+    await p.screenshot({ path: `${OUT}/web-${caso}-resumen-${nombre}-${t}.png`, fullPage: false });
+    ok(errores.length === 0, `${nombre}/${t} ${caso} sin errores JS ${errores.join(' | ')}`);
+    await ctx.close();
+  }
+}
+
 async function panelPronto(nav, nombre, t, vp) {
   for (const caso of ['pronto', 'devuelto']) {
     const { ctx, p, errores } = await contextoPanel(nav, vp, caso);
@@ -325,7 +358,7 @@ async function admin(nav, nombre, t, vp) {
     is_admin: true,
     admin_mfa_status: { required: false, enrolled: true },
     admin_billing: {
-      config: { enabled: true, block_enabled: true, pause_enabled: true, grace_days: 7, warn_days: 7, pause_max_days: 183, pause_min_days: 1,
+      config: { enabled: true, block_enabled: false, block_from: masDias(15), pause_enabled: true, grace_days: 7, warn_days: 7, pause_max_days: 183, pause_min_days: 1,
         payment_methods: ['card', 'sepa_debit'], tax: { mode: 'rate', rate_id: 'txr_123', rate_id_exempt: 'txr_456' }, portal_configuration: '', allow_promotion_codes: false },
       prices: [], subscriptions: { total: 0, by_status: {} }, events: [], past_due: [],
       holds: [
@@ -363,14 +396,19 @@ async function admin(nav, nombre, t, vp) {
   await p.waitForTimeout(500);
   ok(estado.run === 1, `${nombre}/${t} admin: «Comprobar ahora»`);
   await p.waitForSelector('#sbf');
+  ok(/El bloqueo empieza el/.test(await p.locator('#view').innerText()) && await p.inputValue('#sbf [name=block_from]') === masDias(15),
+    `${nombre}/${t} admin: enseña la fecha del bloqueo`);
+  await p.fill('#sbf [name=block_from]', masDias(20));
   await p.uncheck('#sbf [name=pause]');
   ok(await p.locator('#sbf .pausa-campos').isHidden(), `${nombre}/${t} admin: la pausa apagada esconde sus ajustes`);
   await p.uncheck('#sbf [name=pm_sepa]');
   await p.fill('#sbf [name=ratec]', 'txr_789');
   await p.click('#sbf button');
+  await p.waitForSelector('#modal[open] button[type=submit]');
+  await p.click('#modal[open] button[type=submit]');
   await p.waitForTimeout(500);
   const c = estado.config || {};
-  ok(c.block_enabled === true && c.pause_enabled === false && JSON.stringify(c.payment_methods) === '["card"]' && c.tax?.rate_id_exempt === 'txr_789' && c.warn_days === 7,
+  ok(c.block_from === masDias(20) && !('block_enabled' in c) && c.pause_enabled === false && JSON.stringify(c.payment_methods) === '["card"]' && c.tax?.rate_id_exempt === 'txr_789' && c.warn_days === 7,
     `${nombre}/${t} admin: guarda bloqueo, pausa, formas de pago e IVA no sujeto ${JSON.stringify(c)}`);
   ok(errores.length === 0, `${nombre}/${t} admin sin errores JS ${errores.join(' | ')}`);
   await ctx.close();
@@ -436,7 +474,7 @@ if (!SOLO || SOLO.includes('ficha')) {
   await new Promise((ok2) => setTimeout(ok2, 1500));
 }
 
-const PRUEBAS = { idioma: panelIdioma, bloqueado: panelBloqueado, encargado: panelEncargado, pausa: panelPausa, pronto: panelPronto, pausar: panelPausar, admin, ficha: fichas };
+const PRUEBAS = { idioma: panelIdioma, bloqueado: panelBloqueado, encargado: panelEncargado, pausa: panelPausa, pronto: panelPronto, arranque: panelArranque, pausar: panelPausar, admin, ficha: fichas };
 for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
   const nav = await tipo.launch();
   for (const [t, vp] of [['movil', { width: 390, height: 844 }], ['escritorio', { width: 1280, height: 900 }]]) {

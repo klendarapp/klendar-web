@@ -1151,6 +1151,8 @@ function motivoBloqueo(kind, yaBloqueado) {
     ended: ['Se ha acabado tu plan.', 'Your plan has ended.'],
   } : {
     trial: ['Tu prueba gratis está a punto de acabar.', 'Your free trial is about to end.'],
+    // Lo suyo ya había acabado y manda el día en que arranca el bloqueo.
+    start: ['Tu prueba (o lo que tenías pagado) ya ha terminado: desde ese día hay que tener el plan pagado.', 'Your trial (or what you had paid for) has already ended: from that day the plan has to be paid.'],
     free: ['El gratis de lanzamiento está a punto de acabar.', 'The free launch period is about to end.'],
     period: ['Lo que tienes pagado está a punto de acabarse.', 'What you’ve paid for is about to run out.'],
     cancel: ['Cancelaste la suscripción y está a punto de acabarse.', 'You cancelled the subscription and it’s about to end.'],
@@ -1178,6 +1180,16 @@ function avisoBloqueoPronto(bill) {
     : bi('Si no se paga antes, tus publicaciones dejarán de verse y solo podrás validar los códigos y bonos que ya tiene la gente. No se borra nada.',
       'If it isn’t paid before then, your publications will stop showing and you’ll only be able to validate the codes and passes people already have. Nothing is deleted.'))}
     ${boton ? `<p style="margin:8px 0 0">${boton}</p>` : ''}</div>`;
+}
+
+/** El «Gratis de lanzamiento» ya tiene fecha de fin (se avisa con un mes): una
+ * línea arriba hasta que quedan 7 días y entra el aviso del bloqueo. Como
+ * «Mi negocio» en la app. */
+function avisoGratisFin(sub) {
+  const dia = diaLargoFecha(sub.period_end);
+  return `<div class="help aviso-cobro">${esc(bi(`Tu «Gratis de lanzamiento» termina el ${dia}. Después, para seguir hay que pagar el plan; si no, el negocio quedará bloqueado (no se borra nada).`,
+    `Your free launch period ends on ${dia}. After that, to carry on the plan has to be paid; otherwise the business will be blocked (nothing is deleted).`))}
+    ${esPropietario() ? `<p style="margin:8px 0 0"><a class="btn sm" href="#/plan">${ms('credit_card')}${esc(bi('Ver tu plan', 'See your plan'))}</a></p>` : ''}</div>`;
 }
 
 /** El negocio parado: bloqueado por no pagar o en pausa por cierre. Lo único
@@ -1324,6 +1336,8 @@ PAGES.resumen = async (v) => {
       // Se bloquea en 7 días o menos (prueba, gratis, lo pagado o un impago).
       : gestiona() && sub?.billing?.block_soon && sub.billing.block_on ? avisoBloqueoPronto(sub.billing)
       : gestiona() && sub?.status === 'past_due' ? avisoCobro()
+      // El «Gratis de lanzamiento» con fecha de fin (avisado con un mes).
+      : gestiona() && sub?.plan_slug === 'free' && sub.period_end && ['active', 'trial'].includes(sub.status) ? avisoGratisFin(sub)
       : cerradoIndef() ? `<div class="card pausa"><div>
         <h2 style="margin:0">Cerrado hasta nuevo aviso</h2>
         <p class="muted" style="margin:4px 0 0">${esPropietario()

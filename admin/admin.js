@@ -174,6 +174,8 @@ const RPC_ERRORS = {
   user_not_found: 'No existe ningún usuario con ese email.', cannot_remove_self: 'No puedes quitarte a ti mismo.', last_admin: 'Tiene que quedar al menos un administrador.',
   category_in_use: 'La categoría está en uso (negocios, publicaciones o subcategorías).', slug_required: 'El identificador (slug) es obligatorio.', invalid_category_group: 'Ese grupo de categorías no existe.',
   title_body_required: 'Título y texto son obligatorios.', unknown_key: 'Clave de configuración desconocida.', invalid_amount: 'Importe no válido.', invalid_period: 'El fin del periodo es anterior al inicio.',
+  free_end_too_soon: 'El «Gratis de lanzamiento» se avisa con un mes: pon un fin dentro de 30 días como pronto (alargar uno ya avisado sí se puede).',
+  block_from_too_soon: 'El bloqueo tiene que empezar con margen para los avisos de 7 días y 1 día: elige un día más tarde.',
   stripe_managed: 'Este negocio paga con tarjeta (Stripe): cancela antes su suscripción en Stripe o desde su panel.', invalid_config: 'Algún ajuste del cobro no es válido (días o ids de Stripe).', invalid_tiers: 'La escalera no es válida: tramos de menor a mayor, el último sin tope.', invalid_price_id: 'Ese id de precio de Stripe no es válido (price_…).',
   not_found: 'No encontrado.', invalid_type: 'Tipo de cuenta no válido.', invalid_birth_date: 'Esa fecha de nacimiento no es válida.', account_suspended: 'Tu cuenta está suspendida. Si crees que es un error, escríbenos a info@klendar.app.',
 };
@@ -1855,7 +1857,7 @@ async function businessAction(a, b, d) {
         // Los planes retirados (`is_offered` = false, p. ej. «Fundador») solo salen a quien ya lo tiene.
         { name: 'plan', label: 'Plan', type: 'select', value: cur?.plan || 'standard', options: plans.filter((p) => p.is_offered !== false || p.slug === cur?.plan).map((p) => [p.slug, `${p.names?.es || p.slug} · ${fmtMoney(p.price_cents)}/${I18N.lang === 'en' ? 'month' : 'mes'}`]) },
         { name: 'status', label: 'Estado', type: 'select', value: 'active', options: [['active', 'Activa (pagada)'], ['trial', 'Prueba gratuita'], ['past_due', 'Impagada'], ['cancelled', 'Cancelada']] },
-        { name: 'period_end', label: 'Fin del periodo', type: 'date', value: cur?.period_end || '', help: 'Vacío = sin fecha de fin.' },
+        { name: 'period_end', label: 'Fin del periodo', type: 'date', value: cur?.period_end || '', help: 'Vacío = sin fecha de fin. «Gratis de lanzamiento»: como pronto dentro de 30 días (se avisa al negocio al momento por push, correo y en «Mi negocio», y otra vez 7 días y 1 día antes).' },
         { name: 'method', label: 'Forma de pago', type: 'select', value: 'transfer', options: [['transfer', 'Transferencia'], ['cash', 'Efectivo'], ['card', 'Tarjeta'], ['none', 'Ninguna']] },
       ] });
       if (!r) return;
@@ -3184,10 +3186,14 @@ PAGES.planes = async (v) => {
         trial: 'fin de la prueba', free: 'fin del gratis de lanzamiento', period: 'fin de lo pagado',
         cancel: 'suscripción cancelada', unpaid: 'impago', dispute: 'recibo devuelto', ended: 'sin plan',
         paused: 'pausa por cierre', processing: 'domiciliación en proceso',
+        start: 'ya había acabado: arranque del bloqueo',
       };
       const motivo = (k) => (k ? `<span class="sub">${esc(I18N.t(MOTIVO[k] || k))}</span>` : '');
       const metodos = Array.isArray(cfg.payment_methods) ? cfg.payment_methods : ['card'];
       const pausaOn = cfg.pause_enabled === true;
+      // Desde qué día se bloquea (`block_from`, hora de Madrid); vacío = apagado.
+      const bloqueoDesde = typeof cfg.block_from === 'string' ? cfg.block_from : '';
+      const desdeMin = diaMadridISO(Number(cfg.warn_days ?? 7) + 1);
       const holds = bd.holds || [];
       // Con la pausa apagada, sus filas solo salen si hay alguna abierta.
       const bloqueados = holds.filter((x) => x.hold !== 'paused');
@@ -3197,11 +3203,14 @@ PAGES.planes = async (v) => {
           ? '<p>1) Create the Stripe account and run <code>tool/stripe_setup.py</code> with the test key: it creates the products, the prices from this table, VAT, the customer portal and the webhook, and saves the ids here. 2) Put <code>STRIPE_SECRET_KEY</code> and <code>STRIPE_WEBHOOK_SECRET</code> in the Edge Functions. 3) Try it with test cards. 4) Switch on “Card payment”. Step by step: RUNBOOK §2j. Paying by transfer (“Record payment”) still works.</p>'
           : '<p>1) Crea la cuenta de Stripe y lanza <code>tool/stripe_setup.py</code> con la clave de pruebas: crea los productos, los precios de esta tabla, el IVA, el portal de cliente y el webhook, y guarda aquí sus ids. 2) Pon <code>STRIPE_SECRET_KEY</code> y <code>STRIPE_WEBHOOK_SECRET</code> en las Edge Functions. 3) Pruébalo con tarjetas de prueba. 4) Enciende «Pago con tarjeta». Paso a paso: RUNBOOK §2j. El pago por transferencia («Registrar pago») sigue valiendo.</p>')}
         ${helpBox('¿Cómo funciona el bloqueo?', EN
-          ? `<p>With the block switched on, when a business runs out of what it paid for, its trial or its dated free launch period without paying (or the grace days of a failed payment pass), it is <b>blocked</b>: its publications are hidden, its page says “Not available right now” and nobody on the team can publish or change anything. It can only pay, download its data, close its account and validate the codes and passes people already have. Nothing is deleted; once it pays, everything comes back on its own. Notices: ${esc(cfg.warn_days ?? 7)} days and 1 day before (push and email) and in its dashboard. “Unblock until…” gives it extra days (for example, if it paid by transfer and it isn’t recorded yet). “Check now” runs the daily pass straight away.</p>${pausaOn ? '<p><b>Pause while closed</b>: the owner asks for it in “Your plan” with a return date or with no date (at most the days below). While it lasts, the business is on hold just like a blocked one; the paid days are frozen and used when it comes back. Only the business can end it (“Reopen”).</p>' : ''}`
-          : `<p>Con el bloqueo encendido, cuando a un negocio se le acaba lo pagado, la prueba o el gratis de lanzamiento con fecha sin pagar (o pasan los días de gracia de un impago), queda <b>bloqueado</b>: sus publicaciones no se ven, su ficha dice «No disponible ahora mismo» y nadie del equipo puede publicar ni cambiar nada. Solo puede pagar, descargar sus datos, darse de baja y validar los códigos y bonos que ya tiene la gente. No se borra nada; al pagar, todo vuelve solo. Avisos: ${esc(cfg.warn_days ?? 7)} días y 1 día antes (push y correo) y en su panel. «Desbloquear hasta…» le da unos días más (por ejemplo, si pagó por transferencia y aún no está registrado). «Comprobar ahora» hace la pasada diaria al momento.</p>${pausaOn ? '<p><b>Pausa por cierre</b>: la pide el propietario en «Tu plan» con fecha de vuelta o sin fecha (como mucho los días de abajo). Mientras dura, el negocio está parado igual que uno bloqueado; los días pagados se congelan y se gastan al volver. Solo la quita el negocio («Volver a abrir»).</p>' : ''}`)}
+          ? `<p>From the block date (“Block businesses that don’t pay from”), when a business runs out of what it paid for, its trial or its dated free launch period without paying (or the grace days of a failed payment pass), it is <b>blocked</b>: its publications are hidden, its page says “Not available right now” and nobody on the team can publish or change anything. It can only pay, download its data, close its account and validate the codes and passes people already have. Nothing is deleted; once it pays, everything comes back on its own. Notices: ${esc(cfg.warn_days ?? 7)} days and 1 day before (push and email) and in its dashboard. “Unblock until…” gives it extra days (for example, if it paid by transfer and it isn’t recorded yet). “Check now” runs the daily pass straight away.</p>${pausaOn ? '<p><b>Pause while closed</b>: the owner asks for it in “Your plan” with a return date or with no date (at most the days below). While it lasts, the business is on hold just like a blocked one; the paid days are frozen and used when it comes back. Only the business can end it (“Reopen”).</p>' : ''}`
+          : `<p>Desde el día del bloqueo («Bloquear los negocios que no pagan desde el día»), cuando a un negocio se le acaba lo pagado, la prueba o el gratis de lanzamiento con fecha sin pagar (o pasan los días de gracia de un impago), queda <b>bloqueado</b>: sus publicaciones no se ven, su ficha dice «No disponible ahora mismo» y nadie del equipo puede publicar ni cambiar nada. Solo puede pagar, descargar sus datos, darse de baja y validar los códigos y bonos que ya tiene la gente. No se borra nada; al pagar, todo vuelve solo. Avisos: ${esc(cfg.warn_days ?? 7)} días y 1 día antes (push y correo) y en su panel. «Desbloquear hasta…» le da unos días más (por ejemplo, si pagó por transferencia y aún no está registrado). «Comprobar ahora» hace la pasada diaria al momento.</p>${pausaOn ? '<p><b>Pausa por cierre</b>: la pide el propietario en «Tu plan» con fecha de vuelta o sin fecha (como mucho los días de abajo). Mientras dura, el negocio está parado igual que uno bloqueado; los días pagados se congelan y se gastan al volver. Solo la quita el negocio («Volver a abrir»).</p>' : ''}`)}
         <div class="toolbar"><span class="spacer"></span><button class="btn sm" type="button" id="cobro-run">Comprobar ahora</button></div>
         <div class="card"><h2>${pausaOn || enPausa.length ? 'Bloqueados y en pausa' : 'Bloqueados'}</h2>
-          ${cfg.block_enabled ? '' : `<p class="muted small" style="margin:0 0 8px">${esc(I18N.t('El bloqueo está apagado: nadie se bloquea por no pagar.'))}</p>`}
+          ${bloqueoDesde ? (bloqueoDesde > diaMadridISO() ? `<p class="muted small" style="margin:0 0 8px">${esc(EN
+            ? `The block starts on ${fmtDay(`${bloqueoDesde}T12:00:00Z`)}: nobody is blocked before then; the notices go out ${cfg.warn_days ?? 7} days and 1 day before.`
+            : `El bloqueo empieza el ${fmtDay(`${bloqueoDesde}T12:00:00Z`)}: antes no se bloquea a nadie; los avisos salen ${cfg.warn_days ?? 7} días y 1 día antes.`)}</p>` : '')
+            : cfg.block_enabled ? '' : `<p class="muted small" style="margin:0 0 8px">${esc(I18N.t('El bloqueo está apagado: nadie se bloquea por no pagar.'))}</p>`}
           ${table({ cols: [
             { h: 'Negocio', r: (x) => `<a class="link" href="#/negocios/${x.id}">${esc(x.name)}</a><span class="sub">${esc(x.city || '')}</span>` },
             { h: 'Estado', r: (x) => `${x.hold === 'paused' ? tag(EN ? 'paused' : 'en pausa', 'dim') : tag(EN ? 'blocked' : 'bloqueado', 'bad')}${motivo(x.kind || (x.hold === 'paused' ? 'paused' : x.hold === 'unpaid' ? 'unpaid' : 'ended'))}` },
@@ -3230,7 +3239,9 @@ PAGES.planes = async (v) => {
           <p class="muted small" style="margin:0 0 10px">${esc(EN ? `${listos} of ${bd.prices.length} prices have their Stripe id.` : `${listos} de ${bd.prices.length} precios tienen su id de Stripe.`)}</p>
           <form id="sbf" style="display:grid;gap:10px">
             <label class="f" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="enabled" ${cfg.enabled ? 'checked' : ''}><span>Pago con tarjeta o domiciliación (los propietarios ven «Pagar el plan» en el panel)</span></label>
-            <label class="f" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="block" ${cfg.block_enabled ? 'checked' : ''}><span>Bloquear los negocios que no pagan</span></label>
+            <label class="f"><span>Bloquear los negocios que no pagan desde el día</span><input name="block_from" type="date" value="${esc(bloqueoDesde)}" min="${esc(bloqueoDesde && bloqueoDesde < desdeMin ? bloqueoDesde : desdeMin)}"><small class="muted">${esc(EN
+              ? 'Madrid time. Before that day nobody is blocked; those whose trial or paid period has already ended get the notices before it. Empty = switched off. At least the notice days + 1 from today.'
+              : 'Hora de Madrid. Antes de ese día no se bloquea a nadie; a quien ya se le acabó la prueba o lo pagado le llegan los avisos antes. Vacío = apagado. Como pronto, los días de aviso + 1 desde hoy.')}${cfg.block_enabled ? esc(EN ? ' Now switched on with no date (block_enabled, for tests).' : ' Ahora encendido sin fecha (block_enabled, para pruebas).') : ''}</small></label>
             <label class="f" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="pause" ${pausaOn ? 'checked' : ''}><span>Pausa por cierre (los propietarios pueden pausar desde «Tu plan»)</span></label>
             <fieldset class="f" style="border:0;margin:0;padding:0;display:grid;gap:6px"><legend style="padding:0;margin-bottom:4px;font-weight:600">Formas de pago</legend>
               <label class="f" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="pm_card" checked disabled><span>Tarjeta (siempre)</span></label>
@@ -3270,12 +3281,12 @@ PAGES.planes = async (v) => {
         const c = f.elements;
         esperando($('button', f), async () => {
           if (c.enabled.checked && !cfg.enabled && !await confirmDlg('Encender el pago con tarjeta', EN ? 'Owners will be able to pay for the plan with Stripe. Have you tried it with test cards?' : 'Los propietarios podrán pagar el plan con Stripe. ¿Lo has probado con las tarjetas de prueba?', { submit: 'Encender' })) return;
-          if (c.block.checked && !cfg.block_enabled && !await confirmDlg('Encender el bloqueo', EN
-            ? 'Businesses that run out of their trial, free launch period or what they paid for without paying will be blocked (after the notices). Switch it on once the new business terms apply (15 days after publishing them).'
-            : 'Los negocios a los que se les acabe la prueba, el gratis de lanzamiento o lo pagado sin pagar quedarán bloqueados (después de los avisos). Enciéndelo cuando se apliquen las condiciones nuevas (15 días después de publicarlas).', { submit: 'Encender' })) return;
+          if (c.block_from.value && c.block_from.value !== bloqueoDesde && !await confirmDlg('Fecha del bloqueo', EN
+            ? 'From that day, businesses that have run out of their trial, free launch period or what they paid for without paying will be blocked (after the notices). It can’t be earlier than the date the new business terms apply.'
+            : 'Desde ese día, los negocios a los que se les haya acabado la prueba, el gratis de lanzamiento o lo pagado sin pagar quedarán bloqueados (después de los avisos). No puede ser antes del día en que se aplican las condiciones nuevas.', { submit: 'Guardar' })) return;
           try {
             await rpc('admin_set_billing_config', { p: {
-              enabled: c.enabled.checked, block_enabled: c.block.checked, pause_enabled: c.pause.checked,
+              enabled: c.enabled.checked, block_from: c.block_from.value, pause_enabled: c.pause.checked,
               grace_days: Number(c.grace.value), warn_days: Number(c.warn.value),
               pause_max_days: Number(c.pmax.value), pause_min_days: Number(c.pmin.value),
               payment_methods: c.pm_sepa.checked ? ['card', 'sepa_debit'] : ['card'],

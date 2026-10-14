@@ -105,10 +105,9 @@ def guide():
     x2 = M + colw + 6 * mm
     c.setFillColor(CARD); c.roundRect(x2, y - 60 * mm, colw, 66 * mm, 4 * mm, fill=1, stroke=0)
     c.setFillColor(INK); c.setFont('Onest-Bold', 12.5); c.drawString(x2 + 6 * mm, y - 2 * mm, 'Lo que cuesta')
-    para(c, '<b><font color="#FF4D6D">Prueba gratis de 30 días</font></b> con todo incluido al darte de alta, sin tarjeta, '
-            'y gratis mientras arrancamos en tu ciudad. '
+    para(c, '<b><font color="#FF4D6D">Prueba gratis de 30 días</font></b> con todo incluido al darte de alta, sin tarjeta. '
             'Después, un solo plan con todo: <b>19,90 € + IVA al mes</b> por local (24,08 € con IVA), sin límites y <b>sin comisiones</b> por canje. '
-            'Te avisamos un mes antes de cobrar. Cancelas cuando quieras: sigues hasta el final de lo pagado y no se renueva.<br/><br/>'
+            'Te avisamos 7 días y 1 día antes de que acabe la prueba. Cancelas cuando quieras: sigues hasta el final de lo pagado y no se renueva.<br/><br/>'
             'Condiciones completas en <b>klendar.app/negocios</b>.',
          x2 + 6 * mm, y - 7 * mm, colw - 12 * mm, size=9.8, leading=13.5)
 
