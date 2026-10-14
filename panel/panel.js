@@ -1191,8 +1191,8 @@ function avisoParado(bill) {
     ? bi(`Cerrado temporalmente hasta el ${planDia(bill.paused_until)}`, `Temporarily closed until ${planDia(bill.paused_until)}`)
     : bi('Tu negocio está bloqueado', 'Your business is blocked');
   const texto = pausa
-    ? bi('Tus publicaciones no se ven y tu ficha lo dice. No se cobra nada y los días que tenías pagados se guardan para cuando vuelvas. Vuelve solo ese día y avisamos a tus seguidores.',
-      'Your publications are hidden and your page says so. Nothing is charged and the days you’d already paid for are kept for when you’re back. It reopens on its own that day and we let your followers know.')
+    ? bi('Tus publicaciones no se ven y tu ficha lo dice. No se cobra nada y los días que tenías pagados se guardan para cuando vuelvas. Vuelve solo ese día y avisamos a quien te tiene en favoritos.',
+      'Your publications are hidden and your page says so. Nothing is charged and the days you’d already paid for are kept for when you’re back. It reopens on its own that day and we let the people who have you in their favourites know.')
     : `${motivoBloqueo(bill.block_kind, true)} ${dispute
       ? bi('Escríbenos a info@klendar.app para ponerlo al día.', 'Write to us at info@klendar.app to sort it out.')
       : ''} ${bi('Tus publicaciones no se ven y tu ficha dice «No disponible ahora mismo». Hasta que se pague, nadie del equipo puede publicar ni cambiar nada. No se ha borrado nada: al pagar, todo vuelve solo.',
@@ -1249,8 +1249,8 @@ function pintaParado(v) {
  * la quita, y los días guardados se empiezan a gastar. */
 async function volverAAbrir(boton) {
   if (!(await confirmDlg(bi('¿Volver a abrir?', 'Reopen?'),
-    esc(bi('Tus publicaciones vuelven a verse ahora y empiezan a gastarse los días que tenías guardados. Avisamos a tus seguidores.',
-      'Your publications show again straight away and the days you had saved start being used. We let your followers know.')),
+    esc(bi('Tus publicaciones vuelven a verse ahora y empiezan a gastarse los días que tenías guardados. Avisamos a quien te tiene en favoritos.',
+      'Your publications show again straight away and the days you had saved start being used. We let the people who have you in their favourites know.')),
     { submit: bi('Volver a abrir', 'Reopen') }))) return;
   boton.disabled = true;
   try {

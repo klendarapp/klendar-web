@@ -1558,7 +1558,7 @@ KL_DIC('fr', {
   "Mi correo ({e})": "Mon e-mail ({e})",
   "Mientras dure la publicación": "Tant que la publication dure",
   "Mientras dure no se cobra nada y tus publicaciones no se ven (los códigos y reservas que ya tiene la gente siguen valiendo). Se reanuda solo ese día.": "Pendant la pause, rien n’est facturé et tes publications sont masquées (les codes et réservations déjà obtenus restent valables). Elle reprend toute seule ce jour-là.",
-  "Mientras dure, tu negocio queda parado como si estuviera bloqueado: tus publicaciones no se ven, tu ficha dirá «Cerrado temporalmente hasta el {X}» y solo podrás validar los códigos y bonos que ya tiene la gente. No se cobra nada y los días que ya tenías pagados se guardan para cuando vuelvas. Al volver avisamos a tus seguidores.": "Pendant ce temps, ton commerce est à l'arrêt comme s'il était bloqué : tes publications ne sont plus visibles, ta fiche indiquera « Fermé temporairement jusqu'au {X} » et tu pourras seulement valider les codes et les carnets que les gens ont déjà. Rien n'est facturé et les jours que tu avais déjà payés sont conservés pour ton retour. À ton retour, nous prévenons tes abonnés.",
+  "Mientras dure, tu negocio queda parado como si estuviera bloqueado: tus publicaciones no se ven, tu ficha dirá «Cerrado temporalmente hasta el {X}» y solo podrás validar los códigos y bonos que ya tiene la gente. No se cobra nada y los días que ya tenías pagados se guardan para cuando vuelvas. Al volver avisamos a quien te tiene en favoritos.": "Pendant ce temps, ton commerce est à l'arrêt comme s'il était bloqué : tes publications ne sont plus visibles, ta fiche indiquera « Fermé temporairement jusqu'au {X} » et tu pourras seulement valider les codes et les carnets que les gens ont déjà. Rien n'est facturé et les jours que tu avais déjà payés sont conservés pour ton retour. À ton retour, nous prévenons les personnes qui t’ont dans leurs favoris.",
   "Mientras esté en pausa, sus enlaces no funcionan y nadie cuenta para su lista. Le avisamos.": "Pendant la pause, ses liens ne fonctionnent pas et personne ne compte pour sa liste. On le prévient.",
   "Minimal": "Minimal",
   "Minutos para presentarse": "Minutes pour se présenter",
@@ -1677,7 +1677,7 @@ KL_DIC('fr', {
   "No puedes bajar el aforo a menos de {ocupadas}: ya hay {ocupadas} plazas reservadas o usadas.": "Tu ne peux pas descendre la capacité en dessous de {ocupadas} : {ocupadas} places sont déjà réservées ou utilisées.",
   "No sale en Descubre, Explorar ni en tu ficha: solo la ve quien entra por el enlace o el QR de uno de tus RRPP.": "N’apparaît ni dans Découvrir, ni dans Explorer, ni sur ta fiche : seuls ceux qui passent par le lien ou le QR d’un de tes promoteurs la voient.",
   "No se cobra nada hasta que acabe tu prueba, el {period_end}. Sin permanencia: cancelas cuando quieras.": "Rien n’est facturé avant la fin de ton essai, le {period_end}. Sans engagement : tu résilies quand tu veux.",
-  "No se cobra nada y los días que tenías pagados se guardan: se gastan al volver. Vuelve solo ese día, o antes si quieres, y avisamos a tus seguidores.": "Rien n'est facturé et les jours que tu avais payés sont conservés : ils sont utilisés à ton retour. Il rouvre tout seul ce jour-là, ou avant si tu veux, et nous prévenons tes abonnés.",
+  "No se cobra nada y los días que tenías pagados se guardan: se gastan al volver. Vuelve solo ese día, o antes si quieres, y avisamos a quien te tiene en favoritos.": "Rien n'est facturé et les jours que tu avais payés sont conservés : ils sont utilisés à ton retour. Il rouvre tout seul ce jour-là, ou avant si tu veux, et nous prévenons les personnes qui t’ont dans leurs favoris.",
   "No se ha podido abrir la cámara. Escribe el código a mano.": "Impossible d’ouvrir la caméra. Saisis le code à la main.",
   "No se ha podido cargar. Prueba otra vez.": "Impossible de charger. Réessaie.",
   "No se ha podido copiar": "Impossible de copier",
@@ -2555,8 +2555,8 @@ KL_DIC('fr', {
   "Tus plantillas": "Tes modèles",
   "Tus publicaciones no se ven y tu ficha dice «No disponible ahora mismo». Hasta que se pague, nadie del equipo puede publicar ni cambiar nada. No se ha borrado nada: al pagar, todo vuelve solo.": "Tes publications ne sont plus visibles et ta fiche indique « Indisponible pour le moment ». Tant que ce n'est pas payé, personne dans l'équipe ne peut publier ni rien modifier. Rien n'a été supprimé : une fois payé, tout revient tout seul.",
   "Tus publicaciones no se ven y tu ficha dice «No disponible ahora mismo». No se ha borrado nada: al pagar, todo vuelve solo.": "Tes publications ne sont plus visibles et ta fiche indique « Indisponible pour le moment ». Rien n'a été supprimé : une fois payé, tout revient tout seul.",
-  "Tus publicaciones no se ven y tu ficha lo dice. No se cobra nada y los días que tenías pagados se guardan para cuando vuelvas. Vuelve solo ese día y avisamos a tus seguidores.": "Tes publications ne sont plus visibles et ta fiche l'indique. Rien n'est facturé et les jours que tu avais payés sont conservés pour ton retour. Il rouvre tout seul ce jour-là et nous prévenons tes abonnés.",
-  "Tus publicaciones vuelven a verse ahora y empiezan a gastarse los días que tenías guardados. Avisamos a tus seguidores.": "Tes publications sont de nouveau visibles dès maintenant et les jours que tu avais mis de côté commencent à être utilisés. Nous prévenons tes abonnés.",
+  "Tus publicaciones no se ven y tu ficha lo dice. No se cobra nada y los días que tenías pagados se guardan para cuando vuelvas. Vuelve solo ese día y avisamos a quien te tiene en favoritos.": "Tes publications ne sont plus visibles et ta fiche l'indique. Rien n'est facturé et les jours que tu avais payés sont conservés pour ton retour. Il rouvre tout seul ce jour-là et nous prévenons les personnes qui t’ont dans leurs favoris.",
+  "Tus publicaciones vuelven a verse ahora y empiezan a gastarse los días que tenías guardados. Avisamos a quien te tiene en favoritos.": "Tes publications sont de nouveau visibles dès maintenant et les jours que tu avais mis de côté commencent à être utilisés. Nous prévenons les personnes qui t’ont dans leurs favoris.",
   "Tus publicaciones vuelven a verse esos días.": "Tes publications seront de nouveau visibles ces jours-là.",
   "Tus RRPP traen gente con su enlace o su QR. No pueden cambiar nada de tu negocio: solo ven su lista.": "Tes promoteurs amènent du monde avec leur lien ou leur QR. Ils ne peuvent rien modifier dans ton établissement : ils ne voient que leur liste.",
   "Tus teles": "Tes télés",
@@ -3004,5 +3004,8 @@ KL_DIC('fr', {
   "−25 % en manicura": "−25 % sur la manucure",
   "−25 % en piercing": "−25 % sur les piercings",
   "−25 % en repostería": "−25 % sur les pâtisseries",
-  "−30 % en la primera cuota": "−30 % sur la première mensualité"
+  "−30 % en la primera cuota": "−30 % sur la première mensualité",
+  "Ahora mismo no se puede: el plan tiene que estar pagado y al día.": "Ce n’est pas possible pour l’instant : le forfait doit être payé et à jour.",
+  "Los locales de Canarias, Ceuta y Melilla van sin IVA: págalos en una suscripción aparte de los demás.": "Les établissements des Canaries, de Ceuta et de Melilla sont sans TVA : paie-les dans un abonnement à part des autres.",
+  "Confirma el pago en Stripe para terminar el cambio.": "Confirme le paiement sur Stripe pour terminer le changement."
 });

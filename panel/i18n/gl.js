@@ -1558,7 +1558,7 @@ KL_DIC('gl', {
   "Mi correo ({e})": "O meu correo ({e})",
   "Mientras dure la publicación": "Mentres dure a publicación",
   "Mientras dure no se cobra nada y tus publicaciones no se ven (los códigos y reservas que ya tiene la gente siguen valiendo). Se reanuda solo ese día.": "Mentres dure non se cobra nada e as túas publicacións non se ven (os códigos e reservas que xa ten a xente seguen valendo). Retómase só ese día.",
-  "Mientras dure, tu negocio queda parado como si estuviera bloqueado: tus publicaciones no se ven, tu ficha dirá «Cerrado temporalmente hasta el {X}» y solo podrás validar los códigos y bonos que ya tiene la gente. No se cobra nada y los días que ya tenías pagados se guardan para cuando vuelvas. Al volver avisamos a tus seguidores.": "Mentres dure, o teu negocio queda parado coma se estivese bloqueado: as túas publicacións non se ven, a túa ficha dirá «Pechado temporalmente ata o {X}» e só poderás validar os códigos e bonos que xa ten a xente. Non se cobra nada e os días que xa tiñas pagados gárdanse para cando volvas. Ao volver avisamos aos teus seguidores.",
+  "Mientras dure, tu negocio queda parado como si estuviera bloqueado: tus publicaciones no se ven, tu ficha dirá «Cerrado temporalmente hasta el {X}» y solo podrás validar los códigos y bonos que ya tiene la gente. No se cobra nada y los días que ya tenías pagados se guardan para cuando vuelvas. Al volver avisamos a quien te tiene en favoritos.": "Mentres dure, o teu negocio queda parado coma se estivese bloqueado: as túas publicacións non se ven, a túa ficha dirá «Pechado temporalmente ata o {X}» e só poderás validar os códigos e bonos que xa ten a xente. Non se cobra nada e os días que xa tiñas pagados gárdanse para cando volvas. Ao volver avisamos a quen te ten nos favoritos.",
   "Mientras esté en pausa, sus enlaces no funcionan y nadie cuenta para su lista. Le avisamos.": "Mentres estea en pausa, as súas ligazóns non funcionan e ninguén conta para a súa lista. Avisámolo.",
   "Minimal": "Minimal",
   "Minutos para presentarse": "Minutos para presentarse",
@@ -1677,7 +1677,7 @@ KL_DIC('gl', {
   "No puedes bajar el aforo a menos de {ocupadas}: ya hay {ocupadas} plazas reservadas o usadas.": "Non podes baixar o aforo a menos de {ocupadas}: xa hai {ocupadas} prazas reservadas ou usadas.",
   "No sale en Descubre, Explorar ni en tu ficha: solo la ve quien entra por el enlace o el QR de uno de tus RRPP.": "Non sae en Descubre, Explorar nin na túa ficha: só a ve quen entra pola ligazón ou o QR dun dos teus RRPP.",
   "No se cobra nada hasta que acabe tu prueba, el {period_end}. Sin permanencia: cancelas cuando quieras.": "Non se cobra nada ata que remate a túa proba, o {period_end}. Sen permanencia: cancelas cando queiras.",
-  "No se cobra nada y los días que tenías pagados se guardan: se gastan al volver. Vuelve solo ese día, o antes si quieres, y avisamos a tus seguidores.": "Non se cobra nada e os días que tiñas pagados gárdanse: gástanse ao volver. Volve só ese día, ou antes se queres, e avisamos aos teus seguidores.",
+  "No se cobra nada y los días que tenías pagados se guardan: se gastan al volver. Vuelve solo ese día, o antes si quieres, y avisamos a quien te tiene en favoritos.": "Non se cobra nada e os días que tiñas pagados gárdanse: gástanse ao volver. Volve só ese día, ou antes se queres, e avisamos a quen te ten nos favoritos.",
   "No se ha podido abrir la cámara. Escribe el código a mano.": "Non se puido abrir a cámara. Escribe o código a man.",
   "No se ha podido cargar. Prueba otra vez.": "Non se puido cargar. Proba outra vez.",
   "No se ha podido copiar": "Non se puido copiar",
@@ -2555,8 +2555,8 @@ KL_DIC('gl', {
   "Tus plantillas": "Os teus modelos",
   "Tus publicaciones no se ven y tu ficha dice «No disponible ahora mismo». Hasta que se pague, nadie del equipo puede publicar ni cambiar nada. No se ha borrado nada: al pagar, todo vuelve solo.": "As túas publicacións non se ven e a túa ficha di «Non dispoñible agora mesmo». Ata que se pague, ninguén do equipo pode publicar nin cambiar nada. Non se borrou nada: ao pagar, todo volve só.",
   "Tus publicaciones no se ven y tu ficha dice «No disponible ahora mismo». No se ha borrado nada: al pagar, todo vuelve solo.": "As túas publicacións non se ven e a túa ficha di «Non dispoñible agora mesmo». Non se borrou nada: ao pagar, todo volve só.",
-  "Tus publicaciones no se ven y tu ficha lo dice. No se cobra nada y los días que tenías pagados se guardan para cuando vuelvas. Vuelve solo ese día y avisamos a tus seguidores.": "As túas publicacións non se ven e a túa ficha dío. Non se cobra nada e os días que tiñas pagados gárdanse para cando volvas. Volve só ese día e avisamos aos teus seguidores.",
-  "Tus publicaciones vuelven a verse ahora y empiezan a gastarse los días que tenías guardados. Avisamos a tus seguidores.": "As túas publicacións volven verse agora e comezan a gastarse os días que tiñas gardados. Avisamos aos teus seguidores.",
+  "Tus publicaciones no se ven y tu ficha lo dice. No se cobra nada y los días que tenías pagados se guardan para cuando vuelvas. Vuelve solo ese día y avisamos a quien te tiene en favoritos.": "As túas publicacións non se ven e a túa ficha dío. Non se cobra nada e os días que tiñas pagados gárdanse para cando volvas. Volve só ese día e avisamos a quen te ten nos favoritos.",
+  "Tus publicaciones vuelven a verse ahora y empiezan a gastarse los días que tenías guardados. Avisamos a quien te tiene en favoritos.": "As túas publicacións volven verse agora e comezan a gastarse os días que tiñas gardados. Avisamos a quen te ten nos favoritos.",
   "Tus publicaciones vuelven a verse esos días.": "As túas publicacións volven verse eses días.",
   "Tus RRPP traen gente con su enlace o su QR. No pueden cambiar nada de tu negocio: solo ven su lista.": "Os teus RRPP traen xente coa súa ligazón ou o seu QR. Non poden cambiar nada do teu negocio: só ven a súa lista.",
   "Tus teles": "As túas teles",
@@ -3004,5 +3004,8 @@ KL_DIC('gl', {
   "−25 % en manicura": "−25 % en manicura",
   "−25 % en piercing": "−25 % en piercing",
   "−25 % en repostería": "−25 % en repostaría",
-  "−30 % en la primera cuota": "−30 % na primeira cota"
+  "−30 % en la primera cuota": "−30 % na primeira cota",
+  "Ahora mismo no se puede: el plan tiene que estar pagado y al día.": "Agora mesmo non se pode: o plan ten que estar pagado e ao día.",
+  "Los locales de Canarias, Ceuta y Melilla van sin IVA: págalos en una suscripción aparte de los demás.": "Os locais de Canarias, Ceuta e Melilla van sen IVE: págaos nunha subscrición á parte dos demais.",
+  "Confirma el pago en Stripe para terminar el cambio.": "Confirma o pagamento en Stripe para rematar o cambio."
 });

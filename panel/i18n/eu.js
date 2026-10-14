@@ -1558,7 +1558,7 @@ KL_DIC('eu', {
   "Mi correo ({e})": "Nire posta ({e})",
   "Mientras dure la publicación": "Argitalpenak irauten duen bitartean",
   "Mientras dure no se cobra nada y tus publicaciones no se ven (los códigos y reservas que ya tiene la gente siguen valiendo). Se reanuda solo ese día.": "Irauten duen bitartean ez da ezer kobratzen eta zure argitalpenak ez dira ikusten (jendeak dituen kodeek eta erreserbek balio dute). Egun horretan bera berriro abiaraziko da.",
-  "Mientras dure, tu negocio queda parado como si estuviera bloqueado: tus publicaciones no se ven, tu ficha dirá «Cerrado temporalmente hasta el {X}» y solo podrás validar los códigos y bonos que ya tiene la gente. No se cobra nada y los días que ya tenías pagados se guardan para cuando vuelvas. Al volver avisamos a tus seguidores.": "Irauten duen bitartean, zure negozioa blokeatuta balego bezala geldirik geratzen da: zure argitalpenak ez dira ikusten, zure fitxak «Aldi baterako itxita {X} arte» esango du eta jendeak dituen kodeak eta bonuak baino ezin izango dituzu balidatu. Ez da ezer kobratzen eta ordainduta zenituen egunak gordetzen dira itzultzen zarenerako. Itzultzean zure jarraitzaileei abisatuko diegu.",
+  "Mientras dure, tu negocio queda parado como si estuviera bloqueado: tus publicaciones no se ven, tu ficha dirá «Cerrado temporalmente hasta el {X}» y solo podrás validar los códigos y bonos que ya tiene la gente. No se cobra nada y los días que ya tenías pagados se guardan para cuando vuelvas. Al volver avisamos a quien te tiene en favoritos.": "Irauten duen bitartean, zure negozioa blokeatuta balego bezala geldirik geratzen da: zure argitalpenak ez dira ikusten, zure fitxak «Aldi baterako itxita {X} arte» esango du eta jendeak dituen kodeak eta bonuak baino ezin izango dituzu balidatu. Ez da ezer kobratzen eta ordainduta zenituen egunak gordetzen dira itzultzen zarenerako. Itzultzean gogokoetan zaituztenei abisatuko diegu.",
   "Mientras esté en pausa, sus enlaces no funcionan y nadie cuenta para su lista. Le avisamos.": "Pausatuta dagoen bitartean, haren estekek ez dute funtzionatzen eta inor ez da haren zerrendarako kontatzen. Abisatuko diogu.",
   "Minimal": "Minimala",
   "Minutos para presentarse": "Aurkezteko minutuak",
@@ -1677,7 +1677,7 @@ KL_DIC('eu', {
   "No puedes bajar el aforo a menos de {ocupadas}: ya hay {ocupadas} plazas reservadas o usadas.": "Ezin duzu edukiera {ocupadas} baino gutxiagora jaitsi: dagoeneko {ocupadas} plaza daude erreserbatuta edo erabilita.",
   "No sale en Descubre, Explorar ni en tu ficha: solo la ve quien entra por el enlace o el QR de uno de tus RRPP.": "Ez da agertzen Aurkitu edo Arakatu ataletan, ezta zure fitxan ere: zure RRPPetako baten esteka edo QRaren bidez sartzen denak bakarrik ikusten du.",
   "No se cobra nada hasta que acabe tu prueba, el {period_end}. Sin permanencia: cancelas cuando quieras.": "Ez da ezer kobratzen zure proba amaitu arte, {period_end}. Iraupen-konpromisorik gabe: nahi duzunean utz dezakezu.",
-  "No se cobra nada y los días que tenías pagados se guardan: se gastan al volver. Vuelve solo ese día, o antes si quieres, y avisamos a tus seguidores.": "Ez da ezer kobratzen eta ordainduta zenituen egunak gordetzen dira: itzultzean erabiltzen dira. Egun horretan berez irekiko da, edo lehenago nahi baduzu, eta zure jarraitzaileei abisatuko diegu.",
+  "No se cobra nada y los días que tenías pagados se guardan: se gastan al volver. Vuelve solo ese día, o antes si quieres, y avisamos a quien te tiene en favoritos.": "Ez da ezer kobratzen eta ordainduta zenituen egunak gordetzen dira: itzultzean erabiltzen dira. Egun horretan berez irekiko da, edo lehenago nahi baduzu, eta gogokoetan zaituztenei abisatuko diegu.",
   "No se ha podido abrir la cámara. Escribe el código a mano.": "Ezin izan da kamera ireki. Idatzi kodea eskuz.",
   "No se ha podido cargar. Prueba otra vez.": "Ezin izan da kargatu. Saiatu berriro.",
   "No se ha podido copiar": "Ezin izan da kopiatu",
@@ -2555,8 +2555,8 @@ KL_DIC('eu', {
   "Tus plantillas": "Zure txantiloiak",
   "Tus publicaciones no se ven y tu ficha dice «No disponible ahora mismo». Hasta que se pague, nadie del equipo puede publicar ni cambiar nada. No se ha borrado nada: al pagar, todo vuelve solo.": "Zure argitalpenak ez dira ikusten eta zure fitxak «Ez dago eskuragarri orain» dio. Ordaindu arte, taldeko inork ezin du ezer argitaratu ezta aldatu ere. Ez da ezer ezabatu: ordaintzean, dena berez itzultzen da.",
   "Tus publicaciones no se ven y tu ficha dice «No disponible ahora mismo». No se ha borrado nada: al pagar, todo vuelve solo.": "Zure argitalpenak ez dira ikusten eta zure fitxak «Ez dago eskuragarri orain» dio. Ez da ezer ezabatu: ordaintzean, dena berez itzultzen da.",
-  "Tus publicaciones no se ven y tu ficha lo dice. No se cobra nada y los días que tenías pagados se guardan para cuando vuelvas. Vuelve solo ese día y avisamos a tus seguidores.": "Zure argitalpenak ez dira ikusten eta zure fitxak hala dio. Ez da ezer kobratzen eta ordainduta zenituen egunak gordetzen dira itzultzen zarenerako. Egun horretan berez irekiko da eta zure jarraitzaileei abisatuko diegu.",
-  "Tus publicaciones vuelven a verse ahora y empiezan a gastarse los días que tenías guardados. Avisamos a tus seguidores.": "Zure argitalpenak berriro ikusten dira orain eta gordeta zenituen egunak erabiltzen hasten dira. Zure jarraitzaileei abisatuko diegu.",
+  "Tus publicaciones no se ven y tu ficha lo dice. No se cobra nada y los días que tenías pagados se guardan para cuando vuelvas. Vuelve solo ese día y avisamos a quien te tiene en favoritos.": "Zure argitalpenak ez dira ikusten eta zure fitxak hala dio. Ez da ezer kobratzen eta ordainduta zenituen egunak gordetzen dira itzultzen zarenerako. Egun horretan berez irekiko da eta gogokoetan zaituztenei abisatuko diegu.",
+  "Tus publicaciones vuelven a verse ahora y empiezan a gastarse los días que tenías guardados. Avisamos a quien te tiene en favoritos.": "Zure argitalpenak berriro ikusten dira orain eta gordeta zenituen egunak erabiltzen hasten dira. Gogokoetan zaituztenei abisatuko diegu.",
   "Tus publicaciones vuelven a verse esos días.": "Zure argitalpenak berriro ikusiko dira egun horietan.",
   "Tus RRPP traen gente con su enlace o su QR. No pueden cambiar nada de tu negocio: solo ven su lista.": "Zure RRPPek jendea ekartzen dute beren esteka edo QRarekin. Ezin dute ezer aldatu zure negozioan: beren zerrenda baino ez dute ikusten.",
   "Tus teles": "Zure telebistak",
@@ -3004,5 +3004,8 @@ KL_DIC('eu', {
   "−25 % en manicura": "−% 25 manikuran",
   "−25 % en piercing": "−% 25 piercingetan",
   "−25 % en repostería": "−% 25 gozogintzan",
-  "−30 % en la primera cuota": "−% 30 lehen kuotan"
+  "−30 % en la primera cuota": "−% 30 lehen kuotan",
+  "Ahora mismo no se puede: el plan tiene que estar pagado y al día.": "Oraintxe ezin da: planak ordainduta eta egunean egon behar du.",
+  "Los locales de Canarias, Ceuta y Melilla van sin IVA: págalos en una suscripción aparte de los demás.": "Kanarietako, Ceutako eta Melillako lokalak BEZik gabe doaz: ordaindu itzazu gainerakoetatik bereizitako harpidetza batean.",
+  "Confirma el pago en Stripe para terminar el cambio.": "Berretsi ordainketa Stripen aldaketa amaitzeko."
 });

@@ -45,13 +45,14 @@ const PLAN_ERR = {
   past_due: 'Primero hay que ponerse al día con el pago.',
   payment_processing: 'No se puede pausar con un pago por domiciliación en proceso.',
   invoice_open: 'Primero hay que pagar la factura pendiente.',
-  not_active: 'Se puede pausar cuando el plan está pagado y al día.',
+  not_active: 'Ahora mismo no se puede: el plan tiene que estar pagado y al día.',
   not_paused: 'Tu negocio no está en pausa.',
   already_paused: 'Tu negocio ya está en pausa.',
   last_location: 'Es el único local de la suscripción: para dejar de pagar, cancela la suscripción.',
   same_plan: 'Ya tienes ese plan.',
   invalid_plan: 'Ese plan no está disponible.',
   invalid_businesses: 'Solo puedes incluir locales de los que eres propietario.',
+  tax_region_mix: 'Los locales de Canarias, Ceuta y Melilla van sin IVA: págalos en una suscripción aparte de los demás.',
   stripe_error: 'Stripe no ha podido hacerlo. Prueba otra vez en un momento.',
 };
 
@@ -228,7 +229,7 @@ PAGES.plan = async (v) => {
       ${pagarYa ? `<p style="margin:12px 0 0"><a class="btn primary" href="${esc(factura.hosted_invoice_url)}" target="_blank" rel="noopener">${ms('credit_card')}${esc(bi('Pagar la factura pendiente', 'Pay the outstanding invoice'))}</a></p>` : ''}
       ${duena && dispute ? `<p style="margin:12px 0 0"><a class="btn primary" href="${esc(correoCobro())}">${ms('mail')}${esc(I18N.t('Escribir a soporte'))}</a></p>` : ''}
       ${duena && st ? `<div class="plan-botones">
-        <button class="btn" type="button" id="plan-cambiar">${ms('edit')}${esc(bi('Cambiar de plan', 'Change plan'))}</button>
+        ${!enPausa ? `<button class="btn" type="button" id="plan-cambiar">${ms('edit')}${esc(bi('Cambiar de plan', 'Change plan'))}</button>` : ''}
         <button class="btn" type="button" id="plan-portal">${ms('credit_card')}${esc(bi('Gestionar el pago', 'Manage payment'))}</button>
       </div>
       <p class="muted small" style="margin:8px 0 0">${esc(bi('«Gestionar el pago» abre Stripe: tarjeta, datos de la factura (nombre fiscal, NIF y dirección) y tus facturas.', '“Manage payment” opens Stripe: card, invoice details (legal name, tax ID and address) and your invoices.'))}</p>` : ''}
@@ -244,8 +245,8 @@ PAGES.plan = async (v) => {
     html += `<div class="card"><h2>${ms('event_busy')} ${esc(bi('Pausa por cierre', 'Pause while closed'))}</h2>
       ${enPausa
         ? `<p style="margin:0 0 6px"><b>${esc(bi(`Cerrado temporalmente hasta el ${planDia(p.open?.until || bill.paused_until)}.`, `Temporarily closed until ${planDia(p.open?.until || bill.paused_until)}.`))}</b></p>
-           <p class="muted" style="margin:0 0 12px">${esc(bi('No se cobra nada y los días que tenías pagados se guardan: se gastan al volver. Vuelve solo ese día, o antes si quieres, y avisamos a tus seguidores.',
-            'Nothing is charged and the days you’d already paid for are kept: they’re used when you’re back. It reopens on its own that day, or earlier if you like, and we let your followers know.'))}</p>
+           <p class="muted" style="margin:0 0 12px">${esc(bi('No se cobra nada y los días que tenías pagados se guardan: se gastan al volver. Vuelve solo ese día, o antes si quieres, y avisamos a quien te tiene en favoritos.',
+            'Nothing is charged and the days you’d already paid for are kept: they’re used when you’re back. It reopens on its own that day, or earlier if you like, and we let the people who have you in their favourites know.'))}</p>
            <button class="btn primary" type="button" id="plan-reanudar">${ms('play_circle')}${esc(bi('Volver a abrir', 'Reopen'))}</button>`
         : `<p class="muted" style="margin:0 0 10px">${esc(bi(`Si cierras por vacaciones, obras o temporada, pausa tu negocio: no se cobra nada mientras dure y los días que ya tenías pagados se guardan para cuando vuelvas. Mientras, queda parado como si estuviera bloqueado: tus publicaciones no se ven y solo podrás validar los códigos y bonos que ya tiene la gente. Como mucho ${p.max_days} días cada vez.`,
           `If you close for holidays, works or the season, pause your business: nothing is charged while it lasts and the days you’d already paid for are kept for when you’re back. Meanwhile it’s on hold as if it were blocked: your publications are hidden and you can only validate the codes and passes people already have. Up to ${p.max_days} days each time.`))}</p>
@@ -255,7 +256,10 @@ PAGES.plan = async (v) => {
   }
 
   // Pagar (aún sin suscripción de Stripe): con tarjeta o domiciliación.
-  const libres = (ov.locales || []).filter((l) => !l.covered && !l.free_forever);
+  // Con el mismo IVA que este local: Canarias, Ceuta y Melilla van aparte
+  // (la base no deja mezclarlos, `tax_region_mix`).
+  const libres = (ov.locales || []).filter((l) => !l.covered && !l.free_forever
+    && (l.tax_exempt === undefined || l.tax_exempt === exento));
   const gratisSiempre = (ov.locales || []).find((l) => l.id === BIZ.id)?.free_forever;
   const formas = conSepa ? bi('Con tarjeta o con domiciliación bancaria (SEPA).', 'By card or by direct debit (SEPA).') : bi('Con tarjeta.', 'By card.');
   if (duena && !st && ov.ready && ov.can_add_to && !enPausa) {
@@ -264,7 +268,10 @@ PAGES.plan = async (v) => {
         'You already pay for another venue by card. Add this one to that subscription: the price per venue drops with the sliding scale and Stripe adjusts the next invoice.'))}</p>
       <button class="btn primary" type="button" id="plan-anadir">${ms('storefront')}${esc(bi('Añadir este local', 'Add this venue'))}</button></div>`;
   } else if (duena && !st && ov.ready && !gratisSiempre && !enPausa && (ov.plans || []).length) {
-    const enPrueba = sub.status === 'trial' && sub.period_end;
+    // Con menos de 48 h de prueba Stripe cobra ya (`trial_min_hours`, lo mismo
+    // que `billing_checkout_prepare`): entonces no se dice «no se cobra nada».
+    const finPrueba = sub.period_end ? Date.parse(`${planMasDias(sub.period_end, 1)}T00:00:00Z`) : 0;
+    const enPrueba = sub.status === 'trial' && sub.period_end && finPrueba - Date.now() >= 48 * 3600e3;
     html += `<div class="card" id="plan-pagar-caja"><h2>${ms('credit_card')} ${esc(bi('Pagar el plan', 'Pay for the plan'))}</h2>
       <p class="muted" style="margin:0 0 12px">${esc(`${formas} ${parado
         ? bi('Al pagar, tu negocio vuelve a funcionar solo. Sin permanencia: cancelas cuando quieras.', 'Once paid, your business is back on its own. No minimum term: cancel whenever you like.')
@@ -345,12 +352,12 @@ PAGES.plan = async (v) => {
       const opciones = [];
       for (const p of ov.plans || []) {
         for (const iv of ['month', 'year']) {
-          if (!p.prices?.[iv]) continue;
+          if (!p.prices?.[iv] || (p.slug === sub.plan_slug && iv === st.interval)) continue;
           const pr = planPrecio(p.prices[iv].tiers, st.quantity, p.prices[iv].mode);
           opciones.push([`${p.slug}|${iv}`, `${planNombre(p.names, p.slug)} · ${planMasIva(pr.total, iv, exento)}`]);
         }
       }
-      if (opciones.length < 2) { toast(I18N.t('Ahora mismo no hay otro plan al que cambiar.')); return; }
+      if (!opciones.length) { toast(I18N.t('Ahora mismo no hay otro plan al que cambiar.')); return; }
       const r = await modal({
         title: bi('Cambiar de plan', 'Change plan'),
         intro: esc(`${bi('El cambio vale desde ya: Stripe descuenta lo que no has usado del plan de ahora y cobra la diferencia.',
@@ -360,7 +367,15 @@ PAGES.plan = async (v) => {
       });
       if (!r) return;
       const [plan, interval] = r.p.split('|');
-      await espera(cambiar, async () => { await planFn('change_plan', { plan, interval }); toast(I18N.t('Plan cambiado')); route(); });
+      await espera(cambiar, async () => {
+        const hecho = await planFn('change_plan', { plan, interval });
+        // De mes a año se cobra la diferencia ya: si el banco pide confirmarlo
+        // (3DS) o no ha pasado, a la factura de Stripe para pagarla ahí.
+        if (hecho?.pay_url) { toast(bi('Confirma el pago en Stripe para terminar el cambio.', 'Confirm the payment on Stripe to finish the change.')); vete(hecho.pay_url); return; }
+        toast(I18N.t('Plan cambiado'));
+        await cargaCobro();
+        route();
+      });
     };
   }
 
@@ -400,8 +415,8 @@ PAGES.plan = async (v) => {
       }
       const X = diaLargoFecha(vuelta);
       if (!(await confirmDlg(bi('¿Pausar el plan?', 'Pause the plan?'),
-        esc(bi(`Mientras dure, tu negocio queda parado como si estuviera bloqueado: tus publicaciones no se ven, tu ficha dirá «Cerrado temporalmente hasta el ${X}» y solo podrás validar los códigos y bonos que ya tiene la gente. No se cobra nada y los días que ya tenías pagados se guardan para cuando vuelvas. Al volver avisamos a tus seguidores.`,
-          `While it lasts, your business is on hold as if it were blocked: your publications are hidden, your page will say “Temporarily closed until ${X}” and you can only validate the codes and passes people already have. Nothing is charged and the days you’d already paid for are kept for when you’re back. When you reopen, we let your followers know.`)),
+        esc(bi(`Mientras dure, tu negocio queda parado como si estuviera bloqueado: tus publicaciones no se ven, tu ficha dirá «Cerrado temporalmente hasta el ${X}» y solo podrás validar los códigos y bonos que ya tiene la gente. No se cobra nada y los días que ya tenías pagados se guardan para cuando vuelvas. Al volver avisamos a quien te tiene en favoritos.`,
+          `While it lasts, your business is on hold as if it were blocked: your publications are hidden, your page will say “Temporarily closed until ${X}” and you can only validate the codes and passes people already have. Nothing is charged and the days you’d already paid for are kept for when you’re back. When you reopen, we let the people who have you in their favourites know.`)),
         { submit: bi('Pausar', 'Pause') }))) return;
       await espera(pausar, async () => {
         await planFn('pause', { days: dias });

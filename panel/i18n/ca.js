@@ -1558,7 +1558,7 @@ KL_DIC('ca', {
   "Mi correo ({e})": "El meu correu ({e})",
   "Mientras dure la publicación": "Mentre duri la publicació",
   "Mientras dure no se cobra nada y tus publicaciones no se ven (los códigos y reservas que ya tiene la gente siguen valiendo). Se reanuda solo ese día.": "Mentre duri no es cobra res i les teves publicacions no es veuen (els codis i reserves que ja té la gent continuen sent vàlids). Es reprèn sol aquell dia.",
-  "Mientras dure, tu negocio queda parado como si estuviera bloqueado: tus publicaciones no se ven, tu ficha dirá «Cerrado temporalmente hasta el {X}» y solo podrás validar los códigos y bonos que ya tiene la gente. No se cobra nada y los días que ya tenías pagados se guardan para cuando vuelvas. Al volver avisamos a tus seguidores.": "Mentre duri, el teu negoci queda aturat com si estigués bloquejat: les teves publicacions no es veuen, la teva fitxa dirà «Tancat temporalment fins al {X}» i només podràs validar els codis i bons que ja té la gent. No es cobra res i els dies que ja tenies pagats es guarden per a quan tornis. En tornar avisem els teus seguidors.",
+  "Mientras dure, tu negocio queda parado como si estuviera bloqueado: tus publicaciones no se ven, tu ficha dirá «Cerrado temporalmente hasta el {X}» y solo podrás validar los códigos y bonos que ya tiene la gente. No se cobra nada y los días que ya tenías pagados se guardan para cuando vuelvas. Al volver avisamos a quien te tiene en favoritos.": "Mentre duri, el teu negoci queda aturat com si estigués bloquejat: les teves publicacions no es veuen, la teva fitxa dirà «Tancat temporalment fins al {X}» i només podràs validar els codis i bons que ja té la gent. No es cobra res i els dies que ja tenies pagats es guarden per a quan tornis. En tornar avisem qui et té als preferits.",
   "Mientras esté en pausa, sus enlaces no funcionan y nadie cuenta para su lista. Le avisamos.": "Mentre estigui en pausa, els seus enllaços no funcionen i ningú no compta per a la seva llista. L'avisem.",
   "Minimal": "Minimal",
   "Minutos para presentarse": "Minuts per presentar-se",
@@ -1677,7 +1677,7 @@ KL_DIC('ca', {
   "No puedes bajar el aforo a menos de {ocupadas}: ya hay {ocupadas} plazas reservadas o usadas.": "No pots abaixar l'aforament a menys de {ocupadas}: ja hi ha {ocupadas} places reservades o fetes servir.",
   "No sale en Descubre, Explorar ni en tu ficha: solo la ve quien entra por el enlace o el QR de uno de tus RRPP.": "No surt a Descobreix, a Explora ni a la teva fitxa: només la veu qui entra per l'enllaç o el QR d'un dels teus RRPP.",
   "No se cobra nada hasta que acabe tu prueba, el {period_end}. Sin permanencia: cancelas cuando quieras.": "No es cobra res fins que acabi la teva prova, el {period_end}. Sense permanència: cancel·les quan vulguis.",
-  "No se cobra nada y los días que tenías pagados se guardan: se gastan al volver. Vuelve solo ese día, o antes si quieres, y avisamos a tus seguidores.": "No es cobra res i els dies que tenies pagats es guarden: es gasten en tornar. Torna sol aquell dia, o abans si vols, i avisem els teus seguidors.",
+  "No se cobra nada y los días que tenías pagados se guardan: se gastan al volver. Vuelve solo ese día, o antes si quieres, y avisamos a quien te tiene en favoritos.": "No es cobra res i els dies que tenies pagats es guarden: es gasten en tornar. Torna sol aquell dia, o abans si vols, i avisem qui et té als preferits.",
   "No se ha podido abrir la cámara. Escribe el código a mano.": "No s'ha pogut obrir la càmera. Escriu el codi a mà.",
   "No se ha podido cargar. Prueba otra vez.": "No s'ha pogut carregar. Torna-ho a provar.",
   "No se ha podido copiar": "No s'ha pogut copiar",
@@ -2555,8 +2555,8 @@ KL_DIC('ca', {
   "Tus plantillas": "Les teves plantilles",
   "Tus publicaciones no se ven y tu ficha dice «No disponible ahora mismo». Hasta que se pague, nadie del equipo puede publicar ni cambiar nada. No se ha borrado nada: al pagar, todo vuelve solo.": "Les teves publicacions no es veuen i la teva fitxa diu «No disponible ara mateix». Fins que es pagui, ningú de l'equip pot publicar ni canviar res. No s'ha esborrat res: en pagar, tot torna sol.",
   "Tus publicaciones no se ven y tu ficha dice «No disponible ahora mismo». No se ha borrado nada: al pagar, todo vuelve solo.": "Les teves publicacions no es veuen i la teva fitxa diu «No disponible ara mateix». No s'ha esborrat res: en pagar, tot torna sol.",
-  "Tus publicaciones no se ven y tu ficha lo dice. No se cobra nada y los días que tenías pagados se guardan para cuando vuelvas. Vuelve solo ese día y avisamos a tus seguidores.": "Les teves publicacions no es veuen i la teva fitxa ho diu. No es cobra res i els dies que tenies pagats es guarden per a quan tornis. Torna sol aquell dia i avisem els teus seguidors.",
-  "Tus publicaciones vuelven a verse ahora y empiezan a gastarse los días que tenías guardados. Avisamos a tus seguidores.": "Les teves publicacions tornen a veure's ara i comencen a gastar-se els dies que tenies guardats. Avisem els teus seguidors.",
+  "Tus publicaciones no se ven y tu ficha lo dice. No se cobra nada y los días que tenías pagados se guardan para cuando vuelvas. Vuelve solo ese día y avisamos a quien te tiene en favoritos.": "Les teves publicacions no es veuen i la teva fitxa ho diu. No es cobra res i els dies que tenies pagats es guarden per a quan tornis. Torna sol aquell dia i avisem qui et té als preferits.",
+  "Tus publicaciones vuelven a verse ahora y empiezan a gastarse los días que tenías guardados. Avisamos a quien te tiene en favoritos.": "Les teves publicacions tornen a veure's ara i comencen a gastar-se els dies que tenies guardats. Avisem qui et té als preferits.",
   "Tus publicaciones vuelven a verse esos días.": "Les teves publicacions es tornen a veure aquests dies.",
   "Tus RRPP traen gente con su enlace o su QR. No pueden cambiar nada de tu negocio: solo ven su lista.": "Els teus RRPP porten gent amb el seu enllaç o el seu QR. No poden canviar res del teu negoci: només veuen la seva llista.",
   "Tus teles": "Les teves teles",
@@ -3004,5 +3004,8 @@ KL_DIC('ca', {
   "−25 % en manicura": "−25 % en manicura",
   "−25 % en piercing": "−25 % en pírcings",
   "−25 % en repostería": "−25 % en rebosteria",
-  "−30 % en la primera cuota": "−30 % en la primera quota"
+  "−30 % en la primera cuota": "−30 % en la primera quota",
+  "Ahora mismo no se puede: el plan tiene que estar pagado y al día.": "Ara mateix no es pot: el pla ha d’estar pagat i al dia.",
+  "Los locales de Canarias, Ceuta y Melilla van sin IVA: págalos en una suscripción aparte de los demás.": "Els locals de Canàries, Ceuta i Melilla van sense IVA: paga’ls en una subscripció a part de la resta.",
+  "Confirma el pago en Stripe para terminar el cambio.": "Confirma el pagament a Stripe per acabar el canvi."
 });

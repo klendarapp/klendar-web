@@ -1466,6 +1466,8 @@ const I18N = makeI18N({
     "No se puede pausar con un pago por domiciliación en proceso.": "You can't pause while a direct debit payment is in progress.",
     "Primero hay que pagar la factura pendiente.": "The outstanding invoice needs to be paid first.",
     "Se puede pausar cuando el plan está pagado y al día.": "You can pause once the plan is paid and up to date.",
+    "Ahora mismo no se puede: el plan tiene que estar pagado y al día.": "That isn’t possible right now: the plan needs to be paid and up to date.",
+    "Los locales de Canarias, Ceuta y Melilla van sin IVA: págalos en una suscripción aparte de los demás.": "Venues in the Canary Islands, Ceuta and Melilla are charged without VAT: pay for them in a separate subscription from the others.",
     "Tu negocio no está en pausa.": "Your business isn't paused.",
     "Tu negocio ya está en pausa.": "Your business is already paused.",
     // Cuentas de entidad: el alta, «Cuenta de entidad» y el resumen (panel/entidades.js)
