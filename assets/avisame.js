@@ -13,7 +13,8 @@
  *    confirmación: ya es tuya). Sin sesión, un formulario de correo con su
  *    nota de privacidad y «Entrar»; la base manda un correo para confirmarlo
  *    (doble confirmación) y responde siempre «mira tu correo», sin decir si
- *    ese correo ya estaba.
+ *    ese correo ya estaba. Va por la Edge Function `city-waitlist-join`,
+ *    con la comprobación anti-robots (Turnstile) si el entorno la tiene.
  *  - «Elegir una ciudad»: abre el «dónde» de la barra de filtros.
  * Sin JavaScript, el botón lleva a «Tu cuenta» (`#/avisame`), que lo hace al
  * entrar. Los textos llegan de la página (`#avisame-textos`).
@@ -126,8 +127,19 @@
     hueco.style.textAlign = 'center';
     titulo.focus();
   }
+  /** El token anti-robots (Turnstile) para lo que va sin cuenta: la clave
+   * del sitio vive en /config.js y `KL_CAPTCHA` en /assets/auth-errors.js
+   * (los de «Tu cuenta»); se cargan solo al mandar el correo. Sin clave,
+   * nada (undefined). */
+  function robot() {
+    var listo = window.KL_CAPTCHA ? Promise.resolve()
+      : (window.KLENDAR_ENV ? Promise.resolve() : carga('/config.js?v=3'))
+        .then(function () { return carga('/assets/auth-errors.js?v=4'); });
+    return listo.then(function () { return window.KL_CAPTCHA ? window.KL_CAPTCHA() : undefined; });
+  }
   function mensajeError(e) {
-    var m = String((e && (e.message || e.error)) || e || '');
+    var m = String((e && (e.message || e.error || e.code)) || e || '');
+    if (/captcha/.test(m)) return T.captcha || T.oops;
     if (/invalid_email/.test(m)) return T.badEmail;
     if (/too_many|rate/.test(m)) return T.tooMany;
     return T.oops;
@@ -177,14 +189,19 @@
       if (boton.disabled) return;
       var antes = boton.textContent;
       boton.disabled = true; boton.textContent = T.busy;
-      fetch(URL_SB + '/rest/v1/rpc/join_city_waitlist', {
-        method: 'POST',
-        headers: { apikey: KEY, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ p_lat: lat, p_lng: lng, p_zone: zona || null, p_email: correo, p_lang: en ? 'en' : 'es', p_source: 'web' }),
+      // Sin cuenta va por la Edge Function `city-waitlist-join`, que antes
+      // comprueba que no es un robot (Turnstile, como las denuncias sin
+      // cuenta; sin clave en el entorno no se pide nada).
+      robot().then(function (captcha) {
+        return fetch(URL_SB + '/functions/v1/city-waitlist-join', {
+          method: 'POST',
+          headers: { apikey: KEY, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ lat: lat, lng: lng, zone: zona || null, email: correo, lang: en ? 'en' : 'es', source: 'web', captcha: captcha || null }),
+        });
       }).then(function (r) {
         return r.json().catch(function () { return {}; }).then(function (d) {
-          if (!r.ok) throw new Error((d && d.message) || String(r.status));
-          return Array.isArray(d) ? d[0] : d;
+          if (!r.ok || (d && d.ok === false)) throw new Error((d && (d.error || d.message)) || String(r.status));
+          return d;
         });
       }).then(function (d) {
         if (d && d.status === 'live') { trasApuntarse(d); return; }
