@@ -201,7 +201,9 @@ PAGES.plan = async (v) => {
   // Datos: próxima factura, locales, forma de pago.
   const datos = [];
   if (st && bill.next_billing_at && bill.next_amount_cents != null) {
-    datos.push([bi('Próxima factura', 'Next invoice'), `${planDia(bill.next_billing_at)} · ${planMasIva(bill.next_amount_cents, st.interval, exento)}`]);
+    // La cuota de siempre; luego, si Stripe contesta, la factura de verdad
+    // (con el prorrateo de un cambio de plan o de locales).
+    datos.push([bi('Próxima factura', 'Next invoice'), `${planDia(bill.next_billing_at)} · ${planMasIva(bill.next_amount_cents, st.interval, exento)}`, 'plan-proxima']);
   }
   if (st) {
     datos.push([bi('Locales', 'Venues'), st.businesses.map((b) => b.name).join(', ')]);
@@ -224,7 +226,8 @@ PAGES.plan = async (v) => {
       <h2>${ms('workspace_premium')} ${esc(I18N.lang === 'en' ? `${nombre} plan` : `Plan ${nombre}`)} <span class="tag ${esc(tono)}">${esc(etiqueta)}</span></h2>
       <p class="muted" style="margin:0 0 10px">${esc(frase)}</p>
       ${pronto ? `<p class="plan-aviso" style="margin:0 0 10px"><b>${esc(pronto)}</b></p>` : ''}
-      ${datos.length ? `<dl class="plan-datos">${datos.map(([k, x]) => `<dt>${esc(k)}</dt><dd>${esc(x)}</dd>`).join('')}</dl>` : ''}
+      ${datos.length ? `<dl class="plan-datos">${datos.map(([k, x, id]) => `<dt>${esc(k)}</dt><dd${id ? ` id="${id}"` : ''}>${esc(x)}</dd>`).join('')}</dl>
+      <p class="muted small" id="plan-proxima-nota" style="margin:6px 0 0" hidden></p>` : ''}
       ${exento && st ? `<p class="muted small" style="margin:8px 0 0">${esc(planNotaExento())}</p>` : ''}
       ${pagarYa ? `<p style="margin:12px 0 0"><a class="btn primary" href="${esc(factura.hosted_invoice_url)}" target="_blank" rel="noopener">${ms('credit_card')}${esc(bi('Pagar la factura pendiente', 'Pay the outstanding invoice'))}</a></p>` : ''}
       ${duena && dispute ? `<p style="margin:12px 0 0"><a class="btn primary" href="${esc(correoCobro())}">${ms('mail')}${esc(I18N.t('Escribir a soporte'))}</a></p>` : ''}
@@ -262,17 +265,27 @@ PAGES.plan = async (v) => {
     && (l.tax_exempt === undefined || l.tax_exempt === exento));
   const gratisSiempre = (ov.locales || []).find((l) => l.id === BIZ.id)?.free_forever;
   const formas = conSepa ? bi('Con tarjeta o con domiciliación bancaria (SEPA).', 'By card or by direct debit (SEPA).') : bi('Con tarjeta.', 'By card.');
-  if (duena && !st && ov.ready && ov.can_add_to && !enPausa) {
-    html += `<div class="card"><h2>${ms('storefront')} ${esc(bi('Añadir este local a tu suscripción', 'Add this venue to your subscription'))}</h2>
-      <p class="muted" style="margin:0 0 10px">${esc(bi('Ya pagas el plan de otro local con tarjeta. Súmalo a esa suscripción: el precio por local baja con la escalera y Stripe ajusta la próxima factura.',
-        'You already pay for another venue by card. Add this one to that subscription: the price per venue drops with the sliding scale and Stripe adjusts the next invoice.'))}</p>
-      <button class="btn primary" type="button" id="plan-anadir">${ms('storefront')}${esc(bi('Añadir este local', 'Add this venue'))}</button></div>`;
-  } else if (duena && !st && ov.ready && !gratisSiempre && !enPausa && (ov.plans || []).length) {
+  // Con una suscripción ya pagada, dos caminos: sumar este local a ella
+  // (mismos datos de factura) o pagarlo aparte, con otros datos (otra
+  // empresa, otro NIF): un Checkout nuevo con su propio cliente de Stripe.
+  const anadible = duena && !st && ov.ready && ov.can_add_to && !enPausa;
+  if (anadible) {
+    const de = (ov.can_add_to_locales || []).join(', ');
+    html += `<div class="card"><h2>${ms('storefront')} ${esc(bi('Añadir a mi suscripción', 'Add to my subscription'))}</h2>
+      <p class="muted" style="margin:0 0 10px">${esc(de
+        ? bi(`Súmalo a la suscripción que ya pagas (${de}), con los mismos datos de factura: el precio por local baja con la escalera y Stripe ajusta la próxima factura.`,
+          `Add it to the subscription you already pay for (${de}), with the same invoice details: the price per venue drops with the sliding scale and Stripe adjusts the next invoice.`)
+        : bi('Súmalo a la suscripción que ya pagas, con los mismos datos de factura: el precio por local baja con la escalera y Stripe ajusta la próxima factura.',
+          'Add it to the subscription you already pay for, with the same invoice details: the price per venue drops with the sliding scale and Stripe adjusts the next invoice.'))}</p>
+      <button class="btn primary" type="button" id="plan-anadir">${ms('storefront')}${esc(bi('Añadir a mi suscripción', 'Add to my subscription'))}</button></div>`;
+  }
+  if (duena && !st && ov.ready && !gratisSiempre && !enPausa && (ov.plans || []).length) {
     // Con menos de 48 h de prueba Stripe cobra ya (`trial_min_hours`, lo mismo
     // que `billing_checkout_prepare`): entonces no se dice «no se cobra nada».
     const finPrueba = sub.period_end ? Date.parse(`${planMasDias(sub.period_end, 1)}T00:00:00Z`) : 0;
     const enPrueba = sub.status === 'trial' && sub.period_end && finPrueba - Date.now() >= 48 * 3600e3;
-    html += `<div class="card" id="plan-pagar-caja"><h2>${ms('credit_card')} ${esc(bi('Pagar el plan', 'Pay for the plan'))}</h2>
+    html += `<div class="card" id="plan-pagar-caja"><h2>${ms('credit_card')} ${esc(anadible ? bi('Pagar aparte, con otros datos de factura', 'Pay separately, with other invoice details') : bi('Pagar el plan', 'Pay for the plan'))}</h2>
+      ${anadible ? `<p class="muted" style="margin:0 0 8px">${esc(bi('Para otra empresa o con otro NIF: una suscripción nueva, con sus propios datos de factura y su forma de pago.', 'For another company or tax ID: a new subscription, with its own invoice details and payment method.'))}</p>` : ''}
       <p class="muted" style="margin:0 0 12px">${esc(`${formas} ${parado
         ? bi('Al pagar, tu negocio vuelve a funcionar solo. Sin permanencia: cancelas cuando quieras.', 'Once paid, your business is back on its own. No minimum term: cancel whenever you like.')
         : enPrueba
@@ -287,7 +300,7 @@ PAGES.plan = async (v) => {
         ${libres.length > 1 ? `<fieldset><legend>${esc(bi('Locales', 'Venues'))}</legend>${libres.map((l) => `<label class="opc"><input type="checkbox" name="loc" value="${esc(l.id)}" ${l.id === BIZ.id ? 'checked disabled' : ''}> ${esc(l.name)}${l.city ? ` <span class="muted">· ${esc(l.city)}</span>` : ''}</label>`).join('')}
           <small class="muted">${esc(bi('El primer local paga la cuota entera; los siguientes, menos.', 'The first venue pays the full fee; the others pay less.'))}</small></fieldset>` : ''}
         <p class="plan-total" id="plan-total" aria-live="polite"></p>
-        <button class="btn primary" type="submit">${ms('payment')}${esc(bi('Continuar al pago', 'Continue to payment'))}</button>
+        <button class="btn ${anadible ? '' : 'primary'}" type="submit">${ms('payment')}${esc(bi('Continuar al pago', 'Continue to payment'))}</button>
         <small class="muted">${esc(conSepa
           ? bi('El pago lo hace Stripe: Klendar no ve ni guarda tu tarjeta ni tu cuenta. Te pedirá el nombre fiscal, el NIF y la dirección para la factura. Un cobro por domiciliación tarda unos días en confirmarse; mientras, tu negocio funciona con normalidad.',
             'Payment is handled by Stripe: Klendar never sees or stores your card or account. It will ask for your legal name, tax ID and address for the invoice. A direct debit takes a few days to confirm; meanwhile, your business works as normal.')
@@ -303,6 +316,24 @@ PAGES.plan = async (v) => {
     </div></div>`;
   }
   v.innerHTML = html;
+
+  // Próxima factura según Stripe (sin bloquear la página; si no contesta, la
+  // cuota de siempre).
+  const proxima = $('#plan-proxima', v);
+  if (proxima) {
+    planFn('preview').then((r) => {
+      const f = r?.preview;
+      if (!f || !v.isConnected) return;
+      proxima.textContent = `${planDia(f.at || bill.next_billing_at)} · ${exento
+        ? fmtMoney(f.total)
+        : bi(`${fmtMoney(f.total_excluding_tax)} + IVA (${fmtMoney(f.total)} en total)`, `${fmtMoney(f.total_excluding_tax)} + VAT (${fmtMoney(f.total)} in total)`)}`;
+      if (f.proration) {
+        const nota = $('#plan-proxima-nota', v);
+        nota.textContent = bi('Incluye el ajuste del último cambio de plan o de locales.', 'Includes the adjustment for the last change of plan or venues.');
+        nota.hidden = false;
+      }
+    }).catch(() => { /* se queda la cuota */ });
+  }
 
   // ── Acciones ──────────────────────────────────────────────────────────────
   const espera = async (boton, trabajo) => {
@@ -432,7 +463,7 @@ PAGES.plan = async (v) => {
   const anadir = $('#plan-anadir', v);
   if (anadir) {
     anadir.onclick = async () => {
-      if (!(await confirmDlg(bi('Añadir este local', 'Add this venue'), esc(bi('Stripe sumará este local a tu suscripción y ajustará la próxima factura con la parte proporcional.', 'Stripe will add this venue to your subscription and adjust the next invoice proportionally.')), { submit: bi('Añadir', 'Add') }))) return;
+      if (!(await confirmDlg(bi('Añadir a mi suscripción', 'Add to my subscription'), esc(bi('Stripe sumará este local a tu suscripción y ajustará la próxima factura con la parte proporcional.', 'Stripe will add this venue to your subscription and adjust the next invoice proportionally.')), { submit: bi('Añadir', 'Add') }))) return;
       await espera(anadir, async () => { await planFn('add_location'); toast(I18N.t('Local añadido a tu suscripción')); await cargaCobro(); route(); });
     };
   }

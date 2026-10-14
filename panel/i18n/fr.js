@@ -3007,5 +3007,12 @@ KL_DIC('fr', {
   "−30 % en la primera cuota": "−30 % sur la première mensualité",
   "Ahora mismo no se puede: el plan tiene que estar pagado y al día.": "Ce n’est pas possible pour l’instant : le forfait doit être payé et à jour.",
   "Los locales de Canarias, Ceuta y Melilla van sin IVA: págalos en una suscripción aparte de los demás.": "Les établissements des Canaries, de Ceuta et de Melilla sont sans TVA : paie-les dans un abonnement à part des autres.",
-  "Confirma el pago en Stripe para terminar el cambio.": "Confirme le paiement sur Stripe pour terminer le changement."
+  "Confirma el pago en Stripe para terminar el cambio.": "Confirme le paiement sur Stripe pour terminer le changement.",
+  "Añadir a mi suscripción": "Ajouter à mon abonnement",
+  "Súmalo a la suscripción que ya pagas ({de}), con los mismos datos de factura: el precio por local baja con la escalera y Stripe ajusta la próxima factura.": "Ajoute-le à l’abonnement que tu paies déjà ({de}), avec les mêmes informations de facturation : le prix par établissement baisse avec le barème et Stripe ajuste la prochaine facture.",
+  "Súmalo a la suscripción que ya pagas, con los mismos datos de factura: el precio por local baja con la escalera y Stripe ajusta la próxima factura.": "Ajoute-le à l’abonnement que tu paies déjà, avec les mêmes informations de facturation : le prix par établissement baisse avec le barème et Stripe ajuste la prochaine facture.",
+  "Pagar aparte, con otros datos de factura": "Payer à part, avec d’autres informations de facturation",
+  "Para otra empresa o con otro NIF: una suscripción nueva, con sus propios datos de factura y su forma de pago.": "Pour une autre entreprise ou un autre numéro fiscal : un nouvel abonnement, avec ses propres informations de facturation et son moyen de paiement.",
+  "{total_excluding_tax} + IVA ({total} en total)": "{total_excluding_tax} HT ({total} au total)",
+  "Incluye el ajuste del último cambio de plan o de locales.": "Inclut l’ajustement du dernier changement de forfait ou d’établissements."
 });

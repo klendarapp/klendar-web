@@ -3007,5 +3007,12 @@ KL_DIC('it', {
   "−30 % en la primera cuota": "−30% sulla prima quota",
   "Ahora mismo no se puede: el plan tiene que estar pagado y al día.": "Al momento non si può: il piano deve essere pagato e in regola.",
   "Los locales de Canarias, Ceuta y Melilla van sin IVA: págalos en una suscripción aparte de los demás.": "I locali delle Canarie, di Ceuta e Melilla sono senza IVA: pagali in un abbonamento a parte rispetto agli altri.",
-  "Confirma el pago en Stripe para terminar el cambio.": "Conferma il pagamento su Stripe per completare il cambio."
+  "Confirma el pago en Stripe para terminar el cambio.": "Conferma il pagamento su Stripe per completare il cambio.",
+  "Añadir a mi suscripción": "Aggiungi al mio abbonamento",
+  "Súmalo a la suscripción que ya pagas ({de}), con los mismos datos de factura: el precio por local baja con la escalera y Stripe ajusta la próxima factura.": "Aggiungilo all’abbonamento che paghi già ({de}), con gli stessi dati di fatturazione: il prezzo per locale scende con lo scaglione e Stripe adegua la prossima fattura.",
+  "Súmalo a la suscripción que ya pagas, con los mismos datos de factura: el precio por local baja con la escalera y Stripe ajusta la próxima factura.": "Aggiungilo all’abbonamento che paghi già, con gli stessi dati di fatturazione: il prezzo per locale scende con lo scaglione e Stripe adegua la prossima fattura.",
+  "Pagar aparte, con otros datos de factura": "Paga a parte, con altri dati di fatturazione",
+  "Para otra empresa o con otro NIF: una suscripción nueva, con sus propios datos de factura y su forma de pago.": "Per un’altra azienda o con un altro codice fiscale: un nuovo abbonamento, con i suoi dati di fatturazione e il suo metodo di pagamento.",
+  "{total_excluding_tax} + IVA ({total} en total)": "{total_excluding_tax} + IVA ({total} in totale)",
+  "Incluye el ajuste del último cambio de plan o de locales.": "Include l’adeguamento dell’ultimo cambio di piano o di locali."
 });

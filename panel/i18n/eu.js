@@ -3007,5 +3007,12 @@ KL_DIC('eu', {
   "−30 % en la primera cuota": "−% 30 lehen kuotan",
   "Ahora mismo no se puede: el plan tiene que estar pagado y al día.": "Oraintxe ezin da: planak ordainduta eta egunean egon behar du.",
   "Los locales de Canarias, Ceuta y Melilla van sin IVA: págalos en una suscripción aparte de los demás.": "Kanarietako, Ceutako eta Melillako lokalak BEZik gabe doaz: ordaindu itzazu gainerakoetatik bereizitako harpidetza batean.",
-  "Confirma el pago en Stripe para terminar el cambio.": "Berretsi ordainketa Stripen aldaketa amaitzeko."
+  "Confirma el pago en Stripe para terminar el cambio.": "Berretsi ordainketa Stripen aldaketa amaitzeko.",
+  "Añadir a mi suscripción": "Gehitu nire harpidetzara",
+  "Súmalo a la suscripción que ya pagas ({de}), con los mismos datos de factura: el precio por local baja con la escalera y Stripe ajusta la próxima factura.": "Gehitu dagoeneko ordaintzen duzun harpidetzara ({de}), faktura-datu berberekin: lokal bakoitzeko prezioa jaitsi egiten da eskalarekin eta Stripek hurrengo faktura doitzen du.",
+  "Súmalo a la suscripción que ya pagas, con los mismos datos de factura: el precio por local baja con la escalera y Stripe ajusta la próxima factura.": "Gehitu dagoeneko ordaintzen duzun harpidetzara, faktura-datu berberekin: lokal bakoitzeko prezioa jaitsi egiten da eskalarekin eta Stripek hurrengo faktura doitzen du.",
+  "Pagar aparte, con otros datos de factura": "Ordaindu bereizita, beste faktura-datu batzuekin",
+  "Para otra empresa o con otro NIF: una suscripción nueva, con sus propios datos de factura y su forma de pago.": "Beste enpresa baterako edo beste IFZ batekin: harpidetza berri bat, bere faktura-datuekin eta ordaintzeko moduarekin.",
+  "{total_excluding_tax} + IVA ({total} en total)": "{total_excluding_tax} + BEZ ({total} guztira)",
+  "Incluye el ajuste del último cambio de plan o de locales.": "Plan edo lokalen azken aldaketaren doikuntza barne."
 });
