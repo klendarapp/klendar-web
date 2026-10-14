@@ -1,5 +1,5 @@
 {
- "version": "71ba92cd5b48",
+ "version": "50e3a7182def",
  "contact": "info@klendar.app",
  "tabs": {
   "es": {
@@ -18,7 +18,7 @@
     "q": "¿Cuánto cuesta usar Klendar?",
     "a": [
      {
-      "t": "Para quien busca planes, nada. Para los negocios hay un solo plan, y ahora mismo es gratis mientras arrancamos; los detalles están en "
+      "t": "Para quien busca planes, nada. Para los negocios hay un solo plan, después de 30 días de prueba gratis; los detalles están en "
      },
      {
       "t": "precios",
@@ -324,7 +324,7 @@
     "q": "¿Cuánto me cuesta?",
     "a": [
      {
-      "t": "Lo pruebas gratis: 30 días con todo al darte de alta, sin tarjeta, y gratis mientras arrancamos en tu ciudad. Después, un solo plan con todo incluido: 19,90 € + IVA al mes por local (24,08 € con IVA), sin límites, sin permanencia y sin comisión por canje. "
+      "t": "Lo pruebas gratis: 30 días con todo al darte de alta, sin tarjeta. Después, un solo plan con todo incluido: 19,90 € + IVA al mes por local (24,08 € con IVA), sin límites, sin permanencia y sin comisión por canje. "
      },
      {
       "t": "Ver precios",
@@ -341,6 +341,24 @@
     "a": [
      {
       "t": "No. Lo que cobras en tu local es tuyo entero; Klendar no toca el dinero."
+     }
+    ]
+   },
+   {
+    "id": "si-no-pago",
+    "q": "¿Qué pasa si no pago?",
+    "a": [
+     {
+      "t": "Te avisamos 7 días y 1 día antes de que se acabe tu prueba o lo que tienes pagado. Si llega el día sin pagar, tu negocio se bloquea: tus publicaciones no se ven, tu ficha dice «No disponible ahora mismo» y no puedes publicar ni editar. No se borra nada: en cuanto pagas en «Tu plan» (klendar.app/panel), todo vuelve solo. Mientras tanto puedes validar en la puerta los códigos y bonos que ya tiene la gente, descargar tus datos o darte de baja. Si un cobro falla (o el banco devuelve un recibo), tienes 7 días para ponerlo al día."
+     }
+    ]
+   },
+   {
+    "id": "pausar-plan",
+    "q": "¿Puedo pausar el plan si cierro una temporada?",
+    "a": [
+     {
+      "t": "Sí. En «Tu plan» (app o panel), «Pausar el plan»: eliges el día de vuelta o «sin fecha» (hasta 6 meses). No se cobra nada y los días que ya tenías pagados se guardan: al volver se gastan primero. Mientras dura, tu negocio está parado (como bloqueado): tus publicaciones no se ven, tu ficha dice «Cerrado temporalmente hasta el día X» y solo puedes validar lo que ya tiene la gente, descargar tus datos, darte de baja o «Volver a abrir». Vuelve solo el día elegido (te avisamos 7 días antes) y avisamos a quien te tiene en favoritos. No se puede pausar con un pago pendiente o en proceso."
      }
     ]
    },
@@ -496,7 +514,7 @@
     "q": "How much does Klendar cost?",
     "a": [
      {
-      "t": "For people looking for plans, nothing. For businesses there is a single plan, and right now it's free while we're launching; the details are in "
+      "t": "For people looking for plans, nothing. For businesses there is a single plan, after a 30-day free trial; the details are in "
      },
      {
       "t": "pricing",
@@ -802,7 +820,7 @@
     "q": "How much does it cost me?",
     "a": [
      {
-      "t": "You try it free: 30 days with everything when you register, no card, and free while we're launching in your city. After that, one plan with everything included: €19.90 + VAT a month per venue (€24.08 incl. VAT), with no limits, no lock-in and no commission per redemption. "
+      "t": "You try it free: 30 days with everything when you register, no card. After that, one plan with everything included: €19.90 + VAT a month per venue (€24.08 incl. VAT), with no limits, no lock-in and no commission per redemption. "
      },
      {
       "t": "See pricing",
@@ -819,6 +837,24 @@
     "a": [
      {
       "t": "No. What you charge at your venue is yours; Klendar never touches the money."
+     }
+    ]
+   },
+   {
+    "id": "si-no-pago",
+    "q": "What happens if I don't pay?",
+    "a": [
+     {
+      "t": "We remind you 7 days and 1 day before your trial or what you've paid for ends. If the day comes without payment, your business is blocked: your publications are hidden, your page says “Not available right now” and you can't publish or edit. Nothing is deleted: as soon as you pay in “Your plan” (klendar.app/panel), everything comes back on its own. In the meantime you can validate at the door the codes and passes people already have, download your data or leave Klendar. If a charge fails (or the bank returns a direct debit), you have 7 days to sort it out."
+     }
+    ]
+   },
+   {
+    "id": "pausar-plan",
+    "q": "Can I pause the plan if I close for a while?",
+    "a": [
+     {
+      "t": "Yes. In “Your plan” (app or dashboard), “Pause the plan”: choose the return date or “no date” (up to 6 months). Nothing is charged and the days you'd already paid for are kept: they're used first when you come back. While it lasts, your business is stopped (as if blocked): your publications are hidden, your page says “Temporarily closed until [date]” and you can only validate what people already have, download your data, leave Klendar or “Reopen”. It comes back on its own on the chosen day (we remind you 7 days before) and we let the people who have you in their favourites know. You can't pause with a payment outstanding or being processed."
      }
     ]
    },

@@ -1151,6 +1151,8 @@ function motivoBloqueo(kind, yaBloqueado) {
     ended: ['Se ha acabado tu plan.', 'Your plan has ended.'],
   } : {
     trial: ['Tu prueba gratis está a punto de acabar.', 'Your free trial is about to end.'],
+    // Lo suyo ya había acabado y manda el día en que arranca el bloqueo.
+    start: ['Tu prueba (o lo que tenías pagado) ya ha terminado: desde ese día hay que tener el plan pagado.', 'Your trial (or what you had paid for) has already ended: from that day the plan has to be paid.'],
     free: ['El gratis de lanzamiento está a punto de acabar.', 'The free launch period is about to end.'],
     period: ['Lo que tienes pagado está a punto de acabarse.', 'What you’ve paid for is about to run out.'],
     cancel: ['Cancelaste la suscripción y está a punto de acabarse.', 'You cancelled the subscription and it’s about to end.'],
@@ -1180,6 +1182,16 @@ function avisoBloqueoPronto(bill) {
     ${boton ? `<p style="margin:8px 0 0">${boton}</p>` : ''}</div>`;
 }
 
+/** El «Gratis de lanzamiento» ya tiene fecha de fin (se avisa con un mes): una
+ * línea arriba hasta que quedan 7 días y entra el aviso del bloqueo. Como
+ * «Mi negocio» en la app. */
+function avisoGratisFin(sub) {
+  const dia = diaLargoFecha(sub.period_end);
+  return `<div class="help aviso-cobro">${esc(bi(`Tu «Gratis de lanzamiento» termina el ${dia}. Después, para seguir hay que pagar el plan; si no, el negocio quedará bloqueado (no se borra nada).`,
+    `Your free launch period ends on ${dia}. After that, to carry on the plan has to be paid; otherwise the business will be blocked (nothing is deleted).`))}
+    ${esPropietario() ? `<p style="margin:8px 0 0"><a class="btn sm" href="#/plan">${ms('credit_card')}${esc(bi('Ver tu plan', 'See your plan'))}</a></p>` : ''}</div>`;
+}
+
 /** El negocio parado: bloqueado por no pagar o en pausa por cierre. Lo único
  * que se puede hacer: pagar (o volver a abrir), validar, descargar los datos
  * y darse de baja. Como «Mi negocio» en la app. */
@@ -1191,8 +1203,8 @@ function avisoParado(bill) {
     ? bi(`Cerrado temporalmente hasta el ${planDia(bill.paused_until)}`, `Temporarily closed until ${planDia(bill.paused_until)}`)
     : bi('Tu negocio está bloqueado', 'Your business is blocked');
   const texto = pausa
-    ? bi('Tus publicaciones no se ven y tu ficha lo dice. No se cobra nada y los días que tenías pagados se guardan para cuando vuelvas. Vuelve solo ese día y avisamos a tus seguidores.',
-      'Your publications are hidden and your page says so. Nothing is charged and the days you’d already paid for are kept for when you’re back. It reopens on its own that day and we let your followers know.')
+    ? bi('Tus publicaciones no se ven y tu ficha lo dice. No se cobra nada y los días que tenías pagados se guardan para cuando vuelvas. Vuelve solo ese día y avisamos a quien te tiene en favoritos.',
+      'Your publications are hidden and your page says so. Nothing is charged and the days you’d already paid for are kept for when you’re back. It reopens on its own that day and we let the people who have you in their favourites know.')
     : `${motivoBloqueo(bill.block_kind, true)} ${dispute
       ? bi('Escríbenos a info@klendar.app para ponerlo al día.', 'Write to us at info@klendar.app to sort it out.')
       : ''} ${bi('Tus publicaciones no se ven y tu ficha dice «No disponible ahora mismo». Hasta que se pague, nadie del equipo puede publicar ni cambiar nada. No se ha borrado nada: al pagar, todo vuelve solo.',
@@ -1249,8 +1261,8 @@ function pintaParado(v) {
  * la quita, y los días guardados se empiezan a gastar. */
 async function volverAAbrir(boton) {
   if (!(await confirmDlg(bi('¿Volver a abrir?', 'Reopen?'),
-    esc(bi('Tus publicaciones vuelven a verse ahora y empiezan a gastarse los días que tenías guardados. Avisamos a tus seguidores.',
-      'Your publications show again straight away and the days you had saved start being used. We let your followers know.')),
+    esc(bi('Tus publicaciones vuelven a verse ahora y empiezan a gastarse los días que tenías guardados. Avisamos a quien te tiene en favoritos.',
+      'Your publications show again straight away and the days you had saved start being used. We let the people who have you in their favourites know.')),
     { submit: bi('Volver a abrir', 'Reopen') }))) return;
   boton.disabled = true;
   try {
@@ -1324,6 +1336,8 @@ PAGES.resumen = async (v) => {
       // Se bloquea en 7 días o menos (prueba, gratis, lo pagado o un impago).
       : gestiona() && sub?.billing?.block_soon && sub.billing.block_on ? avisoBloqueoPronto(sub.billing)
       : gestiona() && sub?.status === 'past_due' ? avisoCobro()
+      // El «Gratis de lanzamiento» con fecha de fin (avisado con un mes).
+      : gestiona() && sub?.plan_slug === 'free' && sub.period_end && ['active', 'trial'].includes(sub.status) ? avisoGratisFin(sub)
       : cerradoIndef() ? `<div class="card pausa"><div>
         <h2 style="margin:0">Cerrado hasta nuevo aviso</h2>
         <p class="muted" style="margin:4px 0 0">${esPropietario()

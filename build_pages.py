@@ -52,7 +52,7 @@ PAGINAS['para-negocios'] = (
 </ul>
 
 <h2>Lo que cuesta</h2>
-<p>Lo <strong>pruebas gratis</strong>: 30 días con todo al darte de alta, sin tarjeta, y gratis mientras arrancamos en tu ciudad. Después, un solo plan con todo incluido: 19,90 € + IVA al mes por local (24,08 € con IVA), sin límites, sin permanencia y sin comisión por canje. <a href="/precios/">Ver precios</a>.</p>
+<p>Lo <strong>pruebas gratis</strong>: 30 días con todo al darte de alta, sin tarjeta. Después, un solo plan con todo incluido: 19,90 € + IVA al mes por local (24,08 € con IVA), sin límites, sin permanencia y sin comisión por canje. <a href="/precios/">Ver precios</a>.</p>
 
 <h2>Echa la cuenta</h2>
 <p>Con tus números, no con los nuestros. Es una estimación para ver si sale a cuenta, no una promesa.</p>
@@ -120,7 +120,7 @@ PAGINAS['para-negocios'] = (
 </ul>
 
 <h2>What it costs</h2>
-<p>You <strong>try it free</strong>: 30 days with everything when you register, no card, and free while we're launching in your city. After that, one plan with everything included: €19.90 + VAT a month per venue (€24.08 incl. VAT), with no limits, no lock-in and no commission per redemption. <a href="/en/pricing/">See pricing</a>.</p>
+<p>You <strong>try it free</strong>: 30 days with everything when you register, no card. After that, one plan with everything included: €19.90 + VAT a month per venue (€24.08 incl. VAT), with no limits, no lock-in and no commission per redemption. <a href="/en/pricing/">See pricing</a>.</p>
 
 <h2>Do the maths</h2>
 <p>With your numbers, not ours. It's an estimate to see whether it adds up, not a promise.</p>
@@ -189,11 +189,11 @@ def tabla_planes(lang):
     ]
     # Primero la prueba (no es un plan: es cómo se empieza) y luego el plan.
     prueba = [
-        'Todo lo del plan, sin límites', 'Y gratis mientras arrancamos en tu ciudad',
-        'Te avisamos un mes antes de empezar a cobrar',
+        'Todo lo del plan, sin límites', 'Te avisamos 7 días y 1 día antes de que acabe',
+        'Si no eliges cómo pagar, tu negocio se bloquea (no se borra nada)',
     ] if es else [
-        'Everything in the plan, no limits', 'And free while we\'re launching in your city',
-        'We\'ll give you a month\'s notice before charging',
+        'Everything in the plan, no limits', 'We remind you 7 days and 1 day before it ends',
+        'If you don\'t choose how to pay, your business is blocked (nothing is deleted)',
     ]
     filas = [f'''
     <div class="plan">
@@ -232,7 +232,7 @@ PAGINAS['precios'] = (
     'No commission per redemption and no lock-in.',
     f'''
 <p class="lead">Un solo plan con todo incluido, sin límites y sin comisiones por canje. Lo que cobras en tu local es tuyo entero.</p>
-<p class="callout"><strong>Ahora mismo es gratis.</strong> Mientras una ciudad está arrancando no le cobramos a nadie: un mapa vacío no le sirve ni a los negocios ni a la gente. Cuando vayamos a empezar a cobrar en tu ciudad, te avisamos con un mes de antelación.</p>
+<p class="callout"><strong>Gratis de lanzamiento.</strong> Mientras Klendar arranca en una ciudad, podemos dar a sus negocios más tiempo gratis: un mapa vacío no le sirve ni a los negocios ni a la gente. El día en que termina te lo decimos con al menos un mes de antelación, y te lo recordamos 7 días y 1 día antes.</p>
 {tabla_planes('es')}
 <p class="note">Precio por local, IVA no incluido: 19,90 € + 21 % de IVA son 24,08 € al mes.</p>
 
@@ -246,10 +246,12 @@ PAGINAS['precios'] = (
 <p class="note">Todo + IVA. Por ejemplo, con 3 locales pagas 19,90 + 15 + 15 = 49,90 € + IVA al mes; con 6, 19,90 + 4 × 15 + 12 = 91,90 € + IVA.</p>
 <p><strong>Publicar en varios locales a la vez va incluido.</strong> Escribes la oferta una vez, marcas en qué locales la quieres y cada uno recibe la suya, con su dirección y su propio código; las cifras las ves por separado y sumadas. No cobramos aparte por ahorrarte el trabajo de escribirlo tres veces.</p>
 
-<h2>La letra pequeña, en dos líneas</h2>
+<h2>La letra pequeña</h2>
 <ul>
   <li><strong>Prueba.</strong> Al dar de alta el negocio tienes 30 días con todo, sin tarjeta y sin que se renueve solo.</li>
-  <li><strong>Cómo se paga.</strong> Mientras no tengamos pago con tarjeta, por transferencia: escribes a <a href="mailto:info@klendar.app">info@klendar.app</a> y lo dejamos activado.</li>
+  <li><strong>Cómo se paga.</strong> Mientras no tengamos pago con tarjeta, por transferencia: escribes a <a href="mailto:info@klendar.app">info@klendar.app</a> y lo dejamos activado. En Canarias, Ceuta y Melilla, sin IVA.</li>
+  <li><strong>Si no pagas</strong>, tu negocio se bloquea hasta que pagues: no se borra nada y puedes seguir validando lo que ya tiene la gente. Te avisamos 7 días y 1 día antes.</li>
+  <li><strong>Pausa por cierre.</strong> Hasta 6 meses sin pagar; lo que ya tenías pagado se guarda para cuando vuelvas. Mientras, tu negocio está parado.</li>
   <li><strong>Cancela cuando quieras:</strong> sigues hasta el final del periodo pagado y no se renueva. Sin permanencia ni penalización; desde el panel («Dar de baja el negocio») o en el mismo correo.</li>
   <li><strong>Nunca cobramos por canje.</strong> Ni porcentaje ni euros por código: si te funciona bien, pagas lo mismo.</li>
   <li><strong>Qué es un «destacado».</strong> Una publicación que aparece arriba durante un rato; va aparte y se pide por correo. Cuando una está destacada, la app lo dice: no se disfraza de recomendación.</li>
@@ -262,7 +264,7 @@ PAGINAS['precios'] = (
 ''',
     f'''
 <p class="lead">One plan with everything included, no limits and no commission per redemption. What you charge at your venue is yours.</p>
-<p class="callout"><strong>Right now it's free.</strong> While a city is launching, we don't charge anyone: an empty map is no use to businesses or to people. Before we start charging in your city, we'll give you a month's notice.</p>
+<p class="callout"><strong>Launch, free.</strong> While Klendar is starting in a city, we may give its businesses more free time: an empty map is no use to businesses or to people. We tell you the day it ends at least a month in advance, and remind you 7 days and 1 day before.</p>
 {tabla_planes('en')}
 <p class="note">Price per venue, VAT not included: €19.90 + 21% VAT comes to €24.08 a month.</p>
 
@@ -276,10 +278,12 @@ PAGINAS['precios'] = (
 <p class="note">All + VAT. For example, with 3 venues you pay 19.90 + 15 + 15 = €49.90 + VAT a month; with 6, 19.90 + 4 × 15 + 12 = €91.90 + VAT.</p>
 <p><strong>Publishing to several venues at once is included.</strong> You write the offer once, tick the venues you want and each one gets its own, with its own address and its own code; you see the numbers per venue and added up. We don't charge extra for saving you from typing it three times.</p>
 
-<h2>The small print, in two lines</h2>
+<h2>The small print</h2>
 <ul>
   <li><strong>Trial.</strong> When you register your business you get 30 days with everything, no card and no automatic renewal.</li>
-  <li><strong>How you pay.</strong> Until we have card payments, by bank transfer: email <a href="mailto:info@klendar.app">info@klendar.app</a> and we'll activate it.</li>
+  <li><strong>How you pay.</strong> Until we have card payments, by bank transfer: email <a href="mailto:info@klendar.app">info@klendar.app</a> and we'll activate it. In the Canary Islands, Ceuta and Melilla, no VAT.</li>
+  <li><strong>If you don't pay</strong>, your business is blocked until you do: nothing is deleted and you can still validate what people already have. We remind you 7 days and 1 day before.</li>
+  <li><strong>Seasonal pause.</strong> Up to 6 months without paying; what you'd already paid for is kept for when you come back. Meanwhile, your business is stopped.</li>
   <li><strong>Cancel whenever you like:</strong> you keep everything until the end of the period you've paid for and it doesn't renew. No lock-in, no penalty; from the dashboard (“Leave Klendar”) or at the same address.</li>
   <li><strong>We never charge per redemption.</strong> No percentage, no euros per code: if it works well for you, you pay the same.</li>
   <li><strong>What “featured” means.</strong> A publication that shows at the top for a while; it's charged separately and you request it by email. When one is featured, the app says so: it isn't dressed up as a recommendation.</li>

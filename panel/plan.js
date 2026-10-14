@@ -244,8 +244,8 @@ PAGES.plan = async (v) => {
     html += `<div class="card"><h2>${ms('event_busy')} ${esc(bi('Pausa por cierre', 'Pause while closed'))}</h2>
       ${enPausa
         ? `<p style="margin:0 0 6px"><b>${esc(bi(`Cerrado temporalmente hasta el ${planDia(p.open?.until || bill.paused_until)}.`, `Temporarily closed until ${planDia(p.open?.until || bill.paused_until)}.`))}</b></p>
-           <p class="muted" style="margin:0 0 12px">${esc(bi('No se cobra nada y los días que tenías pagados se guardan: se gastan al volver. Vuelve solo ese día, o antes si quieres, y avisamos a tus seguidores.',
-            'Nothing is charged and the days you’d already paid for are kept: they’re used when you’re back. It reopens on its own that day, or earlier if you like, and we let your followers know.'))}</p>
+           <p class="muted" style="margin:0 0 12px">${esc(bi('No se cobra nada y los días que tenías pagados se guardan: se gastan al volver. Vuelve solo ese día, o antes si quieres, y avisamos a quien te tiene en favoritos.',
+            'Nothing is charged and the days you’d already paid for are kept: they’re used when you’re back. It reopens on its own that day, or earlier if you like, and we let the people who have you in their favourites know.'))}</p>
            <button class="btn primary" type="button" id="plan-reanudar">${ms('play_circle')}${esc(bi('Volver a abrir', 'Reopen'))}</button>`
         : `<p class="muted" style="margin:0 0 10px">${esc(bi(`Si cierras por vacaciones, obras o temporada, pausa tu negocio: no se cobra nada mientras dure y los días que ya tenías pagados se guardan para cuando vuelvas. Mientras, queda parado como si estuviera bloqueado: tus publicaciones no se ven y solo podrás validar los códigos y bonos que ya tiene la gente. Como mucho ${p.max_days} días cada vez.`,
           `If you close for holidays, works or the season, pause your business: nothing is charged while it lasts and the days you’d already paid for are kept for when you’re back. Meanwhile it’s on hold as if it were blocked: your publications are hidden and you can only validate the codes and passes people already have. Up to ${p.max_days} days each time.`))}</p>
@@ -400,8 +400,8 @@ PAGES.plan = async (v) => {
       }
       const X = diaLargoFecha(vuelta);
       if (!(await confirmDlg(bi('¿Pausar el plan?', 'Pause the plan?'),
-        esc(bi(`Mientras dure, tu negocio queda parado como si estuviera bloqueado: tus publicaciones no se ven, tu ficha dirá «Cerrado temporalmente hasta el ${X}» y solo podrás validar los códigos y bonos que ya tiene la gente. No se cobra nada y los días que ya tenías pagados se guardan para cuando vuelvas. Al volver avisamos a tus seguidores.`,
-          `While it lasts, your business is on hold as if it were blocked: your publications are hidden, your page will say “Temporarily closed until ${X}” and you can only validate the codes and passes people already have. Nothing is charged and the days you’d already paid for are kept for when you’re back. When you reopen, we let your followers know.`)),
+        esc(bi(`Mientras dure, tu negocio queda parado como si estuviera bloqueado: tus publicaciones no se ven, tu ficha dirá «Cerrado temporalmente hasta el ${X}» y solo podrás validar los códigos y bonos que ya tiene la gente. No se cobra nada y los días que ya tenías pagados se guardan para cuando vuelvas. Al volver avisamos a quien te tiene en favoritos.`,
+          `While it lasts, your business is on hold as if it were blocked: your publications are hidden, your page will say “Temporarily closed until ${X}” and you can only validate the codes and passes people already have. Nothing is charged and the days you’d already paid for are kept for when you’re back. When you reopen, we let the people who have you in their favourites know.`)),
         { submit: bi('Pausar', 'Pause') }))) return;
       await espera(pausar, async () => {
         await planFn('pause', { days: dias });
