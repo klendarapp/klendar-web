@@ -3079,7 +3079,7 @@ PAGES.sugerencias = async (v) => {
 
 // ── Planes y pagos ──────────────────────────────────────────────────────────
 PAGES.planes = async (v) => {
-  const p = params(); let tab = ['subs', 'payments', 'plans'].includes(p.tab) ? p.tab : 'subs';
+  const p = params(); let tab = ['subs', 'payments', 'plans', 'stripe'].includes(p.tab) ? p.tab : 'subs';
   if (p.status) st.subs.status = p.status;
   if (p.from) st.pagos.from = p.from;
   if (p.to) st.pagos.to = p.to;
@@ -3179,20 +3179,71 @@ PAGES.planes = async (v) => {
       csvCols = [['received_at', 'recibido'], ['type', 'tipo'], ['result', 'resultado'], ['id', 'id']];
       const escalera = (t) => (t || []).map((x) => `${x.up_to ? (EN ? `up to ${x.up_to}` : `hasta ${x.up_to}`) : (EN ? 'more' : 'más')}: ${fmtMoney(x.unit_cents)}`).join(' · ');
       const listos = bd.prices.filter((x) => x.stripe_price_id).length;
+      // Por qué se bloquea (o se ha bloqueado) un negocio (`billing_block_status.kind`).
+      const MOTIVO = {
+        trial: 'fin de la prueba', free: 'fin del gratis de lanzamiento', period: 'fin de lo pagado',
+        cancel: 'suscripción cancelada', unpaid: 'impago', dispute: 'recibo devuelto', ended: 'sin plan',
+        paused: 'pausa por cierre', processing: 'domiciliación en proceso',
+      };
+      const motivo = (k) => (k ? `<span class="sub">${esc(I18N.t(MOTIVO[k] || k))}</span>` : '');
+      const metodos = Array.isArray(cfg.payment_methods) ? cfg.payment_methods : ['card'];
+      const pausaOn = cfg.pause_enabled === true;
+      const holds = bd.holds || [];
+      // Con la pausa apagada, sus filas solo salen si hay alguna abierta.
+      const bloqueados = holds.filter((x) => x.hold !== 'paused');
+      const enPausa = holds.filter((x) => x.hold === 'paused');
       tv.innerHTML = `
         ${helpBox('¿Cómo se enciende?', EN
           ? '<p>1) Create the Stripe account and run <code>tool/stripe_setup.py</code> with the test key: it creates the products, the prices from this table, VAT, the customer portal and the webhook, and saves the ids here. 2) Put <code>STRIPE_SECRET_KEY</code> and <code>STRIPE_WEBHOOK_SECRET</code> in the Edge Functions. 3) Try it with test cards. 4) Switch on “Card payment”. Step by step: RUNBOOK §2j. Paying by transfer (“Record payment”) still works.</p>'
           : '<p>1) Crea la cuenta de Stripe y lanza <code>tool/stripe_setup.py</code> con la clave de pruebas: crea los productos, los precios de esta tabla, el IVA, el portal de cliente y el webhook, y guarda aquí sus ids. 2) Pon <code>STRIPE_SECRET_KEY</code> y <code>STRIPE_WEBHOOK_SECRET</code> en las Edge Functions. 3) Pruébalo con tarjetas de prueba. 4) Enciende «Pago con tarjeta». Paso a paso: RUNBOOK §2j. El pago por transferencia («Registrar pago») sigue valiendo.</p>')}
+        ${helpBox('¿Cómo funciona el bloqueo?', EN
+          ? `<p>With the block switched on, when a business runs out of what it paid for, its trial or its dated free launch period without paying (or the grace days of a failed payment pass), it is <b>blocked</b>: its publications are hidden, its page says “Not available right now” and nobody on the team can publish or change anything. It can only pay, download its data, close its account and validate the codes and passes people already have. Nothing is deleted; once it pays, everything comes back on its own. Notices: ${esc(cfg.warn_days ?? 7)} days and 1 day before (push and email) and in its dashboard. “Unblock until…” gives it extra days (for example, if it paid by transfer and it isn’t recorded yet). “Check now” runs the daily pass straight away.</p>${pausaOn ? '<p><b>Pause while closed</b>: the owner asks for it in “Your plan” with a return date or with no date (at most the days below). While it lasts, the business is on hold just like a blocked one; the paid days are frozen and used when it comes back. Only the business can end it (“Reopen”).</p>' : ''}`
+          : `<p>Con el bloqueo encendido, cuando a un negocio se le acaba lo pagado, la prueba o el gratis de lanzamiento con fecha sin pagar (o pasan los días de gracia de un impago), queda <b>bloqueado</b>: sus publicaciones no se ven, su ficha dice «No disponible ahora mismo» y nadie del equipo puede publicar ni cambiar nada. Solo puede pagar, descargar sus datos, darse de baja y validar los códigos y bonos que ya tiene la gente. No se borra nada; al pagar, todo vuelve solo. Avisos: ${esc(cfg.warn_days ?? 7)} días y 1 día antes (push y correo) y en su panel. «Desbloquear hasta…» le da unos días más (por ejemplo, si pagó por transferencia y aún no está registrado). «Comprobar ahora» hace la pasada diaria al momento.</p>${pausaOn ? '<p><b>Pausa por cierre</b>: la pide el propietario en «Tu plan» con fecha de vuelta o sin fecha (como mucho los días de abajo). Mientras dura, el negocio está parado igual que uno bloqueado; los días pagados se congelan y se gastan al volver. Solo la quita el negocio («Volver a abrir»).</p>' : ''}`)}
+        <div class="toolbar"><span class="spacer"></span><button class="btn sm" type="button" id="cobro-run">Comprobar ahora</button></div>
+        <div class="card"><h2>${pausaOn || enPausa.length ? 'Bloqueados y en pausa' : 'Bloqueados'}</h2>
+          ${cfg.block_enabled ? '' : `<p class="muted small" style="margin:0 0 8px">${esc(I18N.t('El bloqueo está apagado: nadie se bloquea por no pagar.'))}</p>`}
+          ${table({ cols: [
+            { h: 'Negocio', r: (x) => `<a class="link" href="#/negocios/${x.id}">${esc(x.name)}</a><span class="sub">${esc(x.city || '')}</span>` },
+            { h: 'Estado', r: (x) => `${x.hold === 'paused' ? tag(EN ? 'paused' : 'en pausa', 'dim') : tag(EN ? 'blocked' : 'bloqueado', 'bad')}${motivo(x.kind || (x.hold === 'paused' ? 'paused' : x.hold === 'unpaid' ? 'unpaid' : 'ended'))}` },
+            { h: 'Desde', r: (x) => `<span class="nowrap">${fmtDay(x.since)}</span>` },
+            { h: 'Hasta', r: (x) => (x.hold === 'paused' && x.until ? `<span class="nowrap">${fmtDay(x.until)}</span>` : '—') },
+            { h: '', r: (x) => (x.hold === 'paused' ? '' : `<button class="btn sm" type="button" data-desbloquear="${x.id}">Desbloquear hasta…</button>`) },
+          ], rows: [...bloqueados, ...enPausa], empty: pausaOn ? 'Ningún negocio bloqueado ni en pausa.' : 'Ningún negocio bloqueado.' })}</div>
+        <div class="card"><h2>Se bloquean pronto</h2>
+          <p class="muted small" style="margin:0 0 8px">${esc(I18N.t('Los que se bloquean en los próximos 14 días si no pagan.'))}</p>
+          ${table({ cols: [
+            { h: 'Negocio', r: (x) => `<a class="link" href="#/negocios/${x.id}">${esc(x.name)}</a><span class="sub">${esc(x.city || '')}</span>` },
+            { h: 'Motivo', r: (x) => esc(I18N.t(MOTIVO[x.kind] || x.kind || '')) },
+            { h: 'Se bloquea el', r: (x) => `<span class="nowrap">${fmtDay(`${x.on_date}T12:00:00Z`)}</span>` },
+            { h: '', r: (x) => `<button class="btn sm" type="button" data-desbloquear="${x.id}" data-desde="${esc(x.on_date || '')}">Aplazar hasta…</button>` },
+          ], rows: bd.upcoming || [], empty: 'Ninguno en los próximos 14 días.' })}
+          ${(bd.unblocked || []).length ? `<h3 class="small" style="margin:14px 0 6px">${esc(I18N.t('Desbloqueados a mano'))}</h3>${table({ cols: [
+            { h: 'Negocio', r: (x) => `<a class="link" href="#/negocios/${x.id}">${esc(x.name)}</a>` },
+            { h: 'Hasta', r: (x) => `<span class="nowrap">${fmtDay(`${x.until}T12:00:00Z`)}</span>` },
+          ], rows: bd.unblocked })}` : ''}</div>
+        <div class="card"><h2>Pagos pendientes</h2>
+          ${table({ cols: [
+            { h: 'Negocio', r: (x) => `<a class="link" href="#/negocios/${x.id}">${esc(x.name)}</a>` },
+            { h: 'Pago pendiente desde', r: (x) => fmtDate(x.since) }, { h: 'Pago', r: (x) => esc(x.method || '') },
+          ], rows: bd.past_due || [], empty: 'Ningún pago pendiente.' })}</div>
         <div class="card"><h2>Ajustes</h2>
           <p class="muted small" style="margin:0 0 10px">${esc(EN ? `${listos} of ${bd.prices.length} prices have their Stripe id.` : `${listos} de ${bd.prices.length} precios tienen su id de Stripe.`)}</p>
           <form id="sbf" style="display:grid;gap:10px">
-            <label class="f" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="enabled" ${cfg.enabled ? 'checked' : ''}><span>Pago con tarjeta (los propietarios ven «Pagar el plan con tarjeta» en el panel)</span></label>
-            <label class="f"><span>Días de gracia tras un cobro fallido</span><input name="grace" type="number" min="1" max="60" value="${esc(cfg.grace_days ?? 7)}"><small class="muted">Después, las publicaciones del negocio dejan de verse hasta que pague (no se borra nada).</small></label>
-            <label class="f"><span>Días de pausa por cierre al año</span><input name="pmax" type="number" min="0" max="365" value="${esc(cfg.pause_max_days ?? 90)}"></label>
-            <label class="f"><span>Pausa mínima (días)</span><input name="pmin" type="number" min="1" max="90" value="${esc(cfg.pause_min_days ?? 7)}"></label>
+            <label class="f" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="enabled" ${cfg.enabled ? 'checked' : ''}><span>Pago con tarjeta o domiciliación (los propietarios ven «Pagar el plan» en el panel)</span></label>
+            <label class="f" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="block" ${cfg.block_enabled ? 'checked' : ''}><span>Bloquear los negocios que no pagan</span></label>
+            <label class="f" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="pause" ${pausaOn ? 'checked' : ''}><span>Pausa por cierre (los propietarios pueden pausar desde «Tu plan»)</span></label>
+            <fieldset class="f" style="border:0;margin:0;padding:0;display:grid;gap:6px"><legend style="padding:0;margin-bottom:4px;font-weight:600">Formas de pago</legend>
+              <label class="f" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="pm_card" checked disabled><span>Tarjeta (siempre)</span></label>
+              <label class="f" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="pm_sepa" ${metodos.includes('sepa_debit') ? 'checked' : ''}><span>Domiciliación bancaria (SEPA)</span></label></fieldset>
+            <label class="f"><span>Días de gracia tras un cobro fallido</span><input name="grace" type="number" min="1" max="60" value="${esc(cfg.grace_days ?? 7)}"><small class="muted">Después, el negocio queda bloqueado hasta que pague (no se borra nada).</small></label>
+            <label class="f"><span>Avisar antes del bloqueo (días)</span><input name="warn" type="number" min="1" max="30" value="${esc(cfg.warn_days ?? 7)}"><small class="muted">Y otra vez el día antes.</small></label>
+            <div class="pausa-campos" style="display:grid;gap:10px" ${pausaOn ? '' : 'hidden'}>
+              <label class="f"><span>Días como mucho por pausa (sin fecha = estos)</span><input name="pmax" type="number" min="7" max="366" value="${esc(cfg.pause_max_days ?? 183)}"></label>
+              <label class="f"><span>Pausa mínima (días)</span><input name="pmin" type="number" min="1" max="30" value="${esc(cfg.pause_min_days ?? 1)}"></label>
+            </div>
             <label class="f"><span>IVA</span><select name="tax"><option value="rate" ${tax.mode !== 'automatic' && tax.mode !== 'none' ? 'selected' : ''}>Tipo fijo (21 %, sin incluir en el precio)</option><option value="automatic" ${tax.mode === 'automatic' ? 'selected' : ''}>Stripe Tax (automático, +0,5 % por cobro)</option><option value="none" ${tax.mode === 'none' ? 'selected' : ''}>Sin impuesto</option></select></label>
             <label class="f"><span>Id del impuesto (txr_…)</span><input name="rate" value="${esc(tax.rate_id || '')}" autocomplete="off"></label>
-            <label class="f"><span>Id del impuesto en Canarias (vacío = sin IVA)</span><input name="ratec" value="${esc(tax.rate_id_canarias || '')}" autocomplete="off"></label>
+            <label class="f"><span>Id del impuesto no sujeto: Canarias, Ceuta y Melilla (txr_…)</span><input name="ratec" value="${esc(tax.rate_id_exempt || tax.rate_id_canarias || '')}" autocomplete="off"><small class="muted">Un tipo del 0 % que pone en la factura «Operación no sujeta al IVA». Vacío = sin impuesto.</small></label>
             <label class="f"><span>Configuración del portal (bpc_…)</span><input name="portal" value="${esc(cfg.portal_configuration || '')}" autocomplete="off"></label>
             <label class="f" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="promo" ${cfg.allow_promotion_codes ? 'checked' : ''}><span>Admitir códigos promocionales de Stripe en el pago</span></label>
             <div><button class="btn sm">Guardar</button></div>
@@ -3204,33 +3255,32 @@ PAGES.planes = async (v) => {
           { h: 'Stripe', r: (x) => (x.stripe_price_id ? `<code class="small">${esc(x.stripe_price_id)}</code>` : tag(EN ? 'no id' : 'sin id', 'warn')) },
           { h: '', r: (x) => `<button class="btn sm" data-price="${x.id}">Editar…</button>` },
         ], rows: bd.prices })}</div>
-        <div class="card"><h2>Impagos y pausas</h2>
-          ${table({ cols: [
-            { h: 'Negocio', r: (x) => `<a class="link" href="#/negocios/${x.id}">${esc(x.name)}</a>` },
-            { h: 'Pago pendiente desde', r: (x) => fmtDate(x.since) }, { h: 'Pago', r: (x) => esc(x.method || '') },
-          ], rows: bd.past_due, empty: 'Ningún pago pendiente.' })}
-          ${table({ cols: [
-            { h: 'Negocio', r: (x) => `<a class="link" href="#/negocios/${x.id}">${esc(x.name)}</a><span class="sub">${esc(x.city || '')}</span>` },
-            { h: 'Publicaciones en pausa', r: (x) => `${tag(x.hold === 'unpaid' ? (EN ? 'unpaid' : 'impago') : (EN ? 'closed' : 'cierre'), x.hold === 'unpaid' ? 'bad' : 'dim')} <span class="sub">${fmtDate(x.since)}</span>` },
-            { h: '', r: (x) => (x.hold === 'unpaid' ? `<button class="btn sm" data-hold="${x.id}">Quitar la pausa…</button>` : '') },
-          ], rows: bd.holds, empty: 'Ningún negocio con las publicaciones en pausa por el cobro.' })}</div>
         <div class="card"><h2>Avisos de Stripe</h2><p class="muted small" style="margin:0 0 8px">${esc(EN ? `Subscriptions in Stripe: ${bd.subscriptions.total}` : `Suscripciones en Stripe: ${bd.subscriptions.total}`)} ${Object.entries(bd.subscriptions.by_status || {}).map(([k, n]) => `${tag(k)} ${n}`).join(' ')}</p>
           ${table({ cols: [
             { h: 'Recibido', r: (x) => `<span class="nowrap">${fmtDate(x.received_at)}</span>` },
             { h: 'Tipo', r: (x) => `<code class="small">${esc(x.type)}</code>${x.livemode === false ? ` ${tag(EN ? 'test' : 'prueba', 'dim')}` : ''}` },
             { h: 'Resultado', r: (x) => esc(x.result || '') },
           ], rows: bd.events, empty: 'Todavía no ha llegado ningún aviso de Stripe.' })}</div>`;
-      $('#sbf').onsubmit = (e) => {
+      const sbf = $('#sbf');
+      // La pausa apagada esconde sus ajustes.
+      sbf.elements.pause.onchange = () => { $('.pausa-campos', sbf).hidden = !sbf.elements.pause.checked; };
+      sbf.onsubmit = (e) => {
         e.preventDefault();
         const f = e.currentTarget;
         const c = f.elements;
         esperando($('button', f), async () => {
           if (c.enabled.checked && !cfg.enabled && !await confirmDlg('Encender el pago con tarjeta', EN ? 'Owners will be able to pay for the plan with Stripe. Have you tried it with test cards?' : 'Los propietarios podrán pagar el plan con Stripe. ¿Lo has probado con las tarjetas de prueba?', { submit: 'Encender' })) return;
+          if (c.block.checked && !cfg.block_enabled && !await confirmDlg('Encender el bloqueo', EN
+            ? 'Businesses that run out of their trial, free launch period or what they paid for without paying will be blocked (after the notices). Switch it on once the new business terms apply (15 days after publishing them).'
+            : 'Los negocios a los que se les acabe la prueba, el gratis de lanzamiento o lo pagado sin pagar quedarán bloqueados (después de los avisos). Enciéndelo cuando se apliquen las condiciones nuevas (15 días después de publicarlas).', { submit: 'Encender' })) return;
           try {
             await rpc('admin_set_billing_config', { p: {
-              enabled: c.enabled.checked, grace_days: Number(c.grace.value), pause_max_days: Number(c.pmax.value), pause_min_days: Number(c.pmin.value),
+              enabled: c.enabled.checked, block_enabled: c.block.checked, pause_enabled: c.pause.checked,
+              grace_days: Number(c.grace.value), warn_days: Number(c.warn.value),
+              pause_max_days: Number(c.pmax.value), pause_min_days: Number(c.pmin.value),
+              payment_methods: c.pm_sepa.checked ? ['card', 'sepa_debit'] : ['card'],
               allow_promotion_codes: c.promo.checked, portal_configuration: c.portal.value.trim(),
-              tax: { mode: c.tax.value, rate_id: c.rate.value.trim(), rate_id_canarias: c.ratec.value.trim() },
+              tax: { mode: c.tax.value, rate_id: c.rate.value.trim(), rate_id_exempt: c.ratec.value.trim() },
             } });
             toast('Guardado'); load();
           } catch (err) { toast(err.message, true); }
@@ -3252,10 +3302,33 @@ PAGES.planes = async (v) => {
         });
         try { await rpc('admin_upsert_billing_price', { p: { id: pr.id, tiers, stripe_price_id: r.pid.trim(), active: r.active } }); toast('Guardado'); load(); } catch (err) { toast(err.message, true); }
       }); });
-      $$('[data-hold]').forEach((b) => { b.onclick = () => esperando(b, async () => {
-        if (!await confirmDlg('Quitar la pausa', EN ? 'Its publications will show again even though the payment is still pending in Stripe. Do it if the business paid another way.' : 'Sus publicaciones volverán a verse aunque el pago siga pendiente en Stripe. Hazlo si el negocio pagó de otra forma.', { submit: 'Quitar la pausa' })) return;
-        try { await rpc('admin_clear_billing_hold', { p_business: b.dataset.hold }); toast('Hecho'); load(); } catch (err) { toast(err.message, true); }
+      // «Desbloquear hasta…» (bloqueado) y «Aplazar hasta…» (se bloquea pronto):
+      // `admin_unblock_business` con un día (por defecto, hoy + 7) y una nota.
+      $$('[data-desbloquear]').forEach((b) => { b.onclick = () => esperando(b, async () => {
+        const hoy = KZ.hoy(TZ);
+        const base = b.dataset.desde && b.dataset.desde > hoy ? b.dataset.desde : hoy;
+        const sugerido = new Date(Date.parse(`${base}T00:00:00Z`) + 7 * 864e5).toISOString().slice(0, 10);
+        const r = await modal({ title: b.dataset.desde ? 'Aplazar el bloqueo' : 'Desbloquear', intro: esc(EN
+          ? 'Until that day (included) it works as normal even if it hasn’t paid. If it still hasn’t paid by then, it’s blocked again. Use it when it has paid another way or a returned direct debit is already sorted.'
+          : 'Hasta ese día (incluido) funciona con normalidad aunque no haya pagado. Si para entonces sigue sin pagar, se vuelve a bloquear. Úsalo cuando haya pagado de otra forma o un recibo devuelto ya esté resuelto.'), fields: [
+          { name: 'until', label: 'Hasta el día', type: 'date', value: sugerido, required: true },
+          { name: 'note', label: 'Nota (para el registro)', type: 'textarea' },
+        ], submit: b.dataset.desde ? 'Aplazar' : 'Desbloquear' });
+        if (!r) return;
+        try {
+          await rpc('admin_unblock_business', { p_business: b.dataset.desbloquear, p_until: r.until, p_note: r.note || null });
+          toast('Hecho'); load();
+        } catch (err) { toast(err.message, true); }
       }); });
+      const run = $('#cobro-run');
+      run.onclick = () => esperando(run, async () => {
+        try {
+          const r = await rpc('admin_billing_run');
+          const n = Number(r?.changed) || 0;
+          toast(EN ? (n === 1 ? 'Done: 1 business changed' : `Done: ${n} businesses changed`) : (n === 1 ? 'Hecho: 1 negocio ha cambiado' : `Hecho: ${n} negocios han cambiado`));
+          load();
+        } catch (err) { toast(err.message, true); }
+      });
     }
   };
   $$('.tabs button').forEach((b) => { b.onclick = () => { tab = b.dataset.t; aUrl(); $$('.tabs button').forEach((x) => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', String(x === b)); }); load(); }; });

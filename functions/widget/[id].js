@@ -10,8 +10,10 @@ import { benefit, bizPath, firstPhoto, fmtDay, fmtEnd, fmtLong, fmtTime, guard, 
 const BASE = 'https://klendar.app';
 
 const T = (en) => en
-  ? { none: 'Nothing on right now.', all: 'See everything', on: 'On right now', by: 'on Klendar' }
-  : { none: 'Ahora mismo no hay nada.', all: 'Ver todo', on: 'Ahora mismo', by: 'en Klendar' };
+  ? { none: 'Nothing on right now.', all: 'See everything', on: 'On right now', by: 'on Klendar',
+      unavailable: 'Not available right now.', closed: 'Temporarily closed.' }
+  : { none: 'Ahora mismo no hay nada.', all: 'Ver todo', on: 'Ahora mismo', by: 'en Klendar',
+      unavailable: 'No disponible ahora mismo.', closed: 'Cerrado temporalmente.' };
 
 export async function onRequestGet(ctx) {
   configure(ctx.env);
@@ -34,7 +36,8 @@ export async function onRequestGet(ctx) {
 
   // Las horas, las del negocio (en Canarias, una menos que en la península).
   const tz = zonaDe(b);
-  const items = offers.slice(0, limit).map((o) => {
+  // Bloqueado o en pausa por cierre (`unavailable`): sin publicaciones.
+  const items = (b.unavailable ? [] : offers).slice(0, limit).map((o) => {
     const img = firstPhoto(o.images);
     const when = o.kind === 'future_event'
       ? fmtLong(o.event_at, lang, tz)
@@ -84,7 +87,7 @@ ${erroresScript()}
 </style></head>
 <body><div class="box" id="box">
   <div class="hd"><b>${esc(b.name)}</b><span class="mu">· ${esc(S.on)}</span></div>
-  ${items || `<p class="empty">${esc(S.none)}</p>`}
+  ${items || `<p class="empty">${esc(b.unavailable === 'paused' ? S.closed : b.unavailable ? S.unavailable : S.none)}</p>`}
   <div class="ft">
     <a href="${BASE}${esc(bizPath(lang, slug || id))}" target="_blank" rel="noopener">${esc(S.all)} →</a>
     <span class="mu">${esc(S.by)}</span>

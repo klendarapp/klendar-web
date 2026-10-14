@@ -677,7 +677,7 @@ export async function businessPage(param, lang, search = '') {
   // «Clientes verificados»: solo las reseñas de quien ha canjeado algo aquí
   // (`?resenas=verificadas`, el mismo filtro que la app).
   const soloVerificadas = new URLSearchParams(search).get('resenas') === 'verificadas';
-  const [offers, sellos, carta, opiniones, novedades, cierres, nVerificadas, local, partidos, grupoInfo, sorteos, organizador, enlacesNeg] = await Promise.all([
+  const [offers, sellos, carta, opiniones, novedades, cierres, nVerificadas, local, partidosBar, grupoInfo, sorteos, organizador, enlacesNeg] = await Promise.all([
     rpcAll('business_offers', { p_id: id }),
     rpcAll('stamp_cards_of', { p_business: id }).catch(() => []), // opcional: sin ella, la ficha sale igual
     rpcAll('business_menu', { p_business: id }),
@@ -699,7 +699,14 @@ export async function businessPage(param, lang, search = '') {
     // 20261210100000). Opcional: sin ella, las fotos de `menu_images`.
     rpc('business_links', { p_id: id }).catch(() => null),
   ]);
-  const grupoHtml = grupoEnFicha(grupoInfo, id, lang);
+  // Bloqueado (sin pagar) o en pausa por cierre (`unavailable`, migración
+  // 20261222100000): la ficha lo dice («No disponible ahora mismo» o
+  // «Cerrado temporalmente hasta el día X») y no enseña publicaciones,
+  // partidos, sorteos, grupos ni novedades. Va con `noindex`. Como la app.
+  const parado = b.unavailable === 'blocked' || b.unavailable === 'paused';
+  if (parado) { offers.length = 0; novedades.length = 0; sorteos.length = 0; }
+  const partidos = parado ? '' : partidosBar;
+  const grupoHtml = parado ? '' : grupoEnFicha(grupoInfo, id, lang);
   const sorteosHtml = sorteosEnFicha(sorteos, lang);
   // «El sitio», el rango de precio («€€») y si dice «¿Hay sitio ahora?».
   const sitio = Array.isArray(local.amenities) ? local.amenities : [];
@@ -735,6 +742,9 @@ export async function businessPage(param, lang, search = '') {
         replyFrom: (n) => `Reply from ${n}`,
         closedToday: 'Closed today', closedUntil: (d) => `Closed until ${d}`,
         closedTemp: 'Temporarily closed', closedTempBody: "This business has closed for a while and isn't posting anything right now.",
+        closedTempUntil: (d) => `Temporarily closed until ${d}`,
+        unavailable: 'Not available right now', unavailableBody: "This business isn't posting anything right now.",
+        keptCodes: 'If you have one of its codes or passes, it is still valid.',
         closingDay: (d) => `Closing on ${d}`, closing: (a, b) => `Closing from ${a} to ${b}`,
         moreIn: (c) => `More in ${c}:`, cityToday: 'things to do today', cityWeek: 'this week',
         hiddenFav: (n) => (n === 1 ? "There's 1 exclusive publication for people who have it in their favourites."
@@ -772,6 +782,9 @@ export async function businessPage(param, lang, search = '') {
         replyFrom: (n) => `Respuesta de ${n}`,
         closedToday: 'Cerrado hoy', closedUntil: (d) => `Cerrado hasta el ${d}`,
         closedTemp: 'Cerrado temporalmente', closedTempBody: 'Este negocio ha cerrado por un tiempo y ahora no publica nada.',
+        closedTempUntil: (d) => `Cerrado temporalmente hasta el ${d}`,
+        unavailable: 'No disponible ahora mismo', unavailableBody: 'Este negocio ahora no publica nada.',
+        keptCodes: 'Si tienes un código o un bono suyo, sigue valiendo.',
         closingDay: (d) => `Cerrará el ${d}`, closing: (a, b) => `Cerrará del ${a} al ${b}`,
         moreIn: (c) => `Más en ${c}:`, cityToday: 'qué hacer hoy', cityWeek: 'esta semana',
         hiddenFav: (n) => (n === 1 ? 'Hay 1 publicación exclusiva para quien lo tiene en favoritos.'
@@ -791,7 +804,7 @@ export async function businessPage(param, lang, search = '') {
   // razón para añadirlo a favoritos, así que se dice.
   const nFav = Number(b.hidden_for_favorites) || 0;
   const nCli = Number(b.hidden_for_customers) || 0;
-  const exclusivas = [
+  const exclusivas = parado ? '' : [
     nFav > 0 ? `<p class="exclusiva">${icono('candado')}<span>${esc(S.hiddenFav(nFav))}</span></p>` : '',
     nCli > 0 ? `<p class="exclusiva">${icono('candado')}<span>${esc(S.hiddenCust(nCli))}</span></p>` : '',
     b.birthday_gift ? `<p class="exclusiva">${icono('regalo')}<span>${esc(S.birthday)}</span></p>` : '',
@@ -813,6 +826,16 @@ export async function businessPage(param, lang, search = '') {
   // el próximo mes, el siguiente. Igual que en la app. Fechas de calendario,
   // sin hora: se comparan como texto AAAA-MM-DD con el hoy del negocio.
   const cierre = (() => {
+    const dia = (iso) => new Intl.DateTimeFormat(en ? 'en-GB' : 'es-ES', { day: 'numeric', month: 'long', timeZone: 'UTC' })
+      .format(new Date(`${iso}T00:00:00Z`));
+    // Bloqueado o en pausa por cierre: manda sobre todo lo demás.
+    if (b.unavailable === 'paused') {
+      const vuelta = /^\d{4}-\d{2}-\d{2}/.test(String(b.reopens_on || '')) ? String(b.reopens_on).slice(0, 10) : '';
+      return `<p class="cierre ahora">${icono('cerrado', 18)}<span><b>${esc(vuelta ? S.closedTempUntil(dia(vuelta)) : S.closedTemp)}</b> · ${esc(S.closedTempBody)} ${esc(S.keptCodes)}</span></p>`;
+    }
+    if (b.unavailable === 'blocked') {
+      return `<p class="cierre ahora">${icono('cerrado', 18)}<span><b>${esc(S.unavailable)}</b> · ${esc(S.unavailableBody)} ${esc(S.keptCodes)}</span></p>`;
+    }
     // Cerrado hasta nuevo aviso (desde «Dar de baja el negocio»): manda sobre
     // los días cerrados.
     if (b.closed_indefinitely) {
@@ -821,8 +844,6 @@ export async function businessPage(param, lang, search = '') {
     const c = cierres[0];
     if (!c) return '';
     const hoyIso = KZ.hoy(tz);
-    const dia = (iso) => new Intl.DateTimeFormat(en ? 'en-GB' : 'es-ES', { day: 'numeric', month: 'long', timeZone: 'UTC' })
-      .format(new Date(`${iso}T00:00:00Z`));
     const ahora = c.starts_on <= hoyIso && hoyIso <= c.ends_on;
     const dias = (new Date(`${c.starts_on}T00:00:00Z`) - new Date(`${hoyIso}T00:00:00Z`)) / 864e5;
     if (!ahora && dias > 30) return '';
@@ -938,7 +959,7 @@ export async function businessPage(param, lang, search = '') {
       ${sitioFicha(sitio, lang) ? `<h2>${S.place}</h2>${sitioFicha(sitio, lang)}` : ''}
       ${flash.length ? `<h2 id="ahora">${S.now}</h2>${rejilla(flash, lang, { tz, sinNegocio: true, galeria: true })}` : ''}
       ${events.length ? `<h2 id="proximamente">${S.soon}</h2>${rejilla(events, lang, { tz, sinNegocio: true, galeria: true })}` : ''}
-      ${offers.length ? '' : `<p class="empty">${S.none}</p>`}
+      ${offers.length || parado ? '' : `<p class="empty">${S.none}</p>`}
       ${exclusivas}
       ${partidos}
       ${grupoHtml}
@@ -1049,7 +1070,7 @@ export async function businessPage(param, lang, search = '') {
     : '';
   return html(publicPage({
     lang, path, body: body + MENU_JS, title: conCiudad ? `${b.name} · ${b.city}` : b.name, description, image: b.cover || b.logo,
-    head: `<meta name="robots" content="${b.adults_only || conVisita || b.closed_indefinitely ? 'noindex' : 'index, follow'}">
+    head: `<meta name="robots" content="${b.adults_only || conVisita || b.closed_indefinitely || parado ? 'noindex' : 'index, follow'}">
 ${ldScript(jsonLd)}${cuentaToques ? `
 <script src="/assets/enlaces.js?v=3" defer data-url="${esc(supabasePublic().url)}" data-key="${esc(supabasePublic().key)}" data-biz="${esc(b.id)}"></script>` : ''}${horario ? '\n<script src="/assets/zona.js?v=1" defer></script>\n<script src="/assets/horario.js?v=1" defer></script>' : ''}${conVisita ? `\n${conVisita}` : ''}${local.crowd_enabled ? `\n${sitioAhoraScripts(lang)}` : ''}
 ${traducir(lang, `business:${b.id}`, carta.length ? `menu:${b.id}` : '')}${partidos ? `

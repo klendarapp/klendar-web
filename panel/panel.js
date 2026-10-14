@@ -46,6 +46,28 @@ const primeraFoto = (lista) => (lista || []).find((u) => !esVideo(u)) || null;
 
 const gestiona = () => ['owner', 'manager'].includes(BIZ?.role);
 const pausado = () => !!BIZ?.paused_until && new Date(BIZ.paused_until) > new Date();
+// ── Bloqueado (sin pagar) o en pausa por cierre ─────────────────────────────
+// `my_subscription(...).billing` (migración 20261222100000): `blocked` = el
+// negocio está parado, por no pagar (`hold` 'unpaid' | 'ended') o por la
+// pausa por cierre ('paused'). Parado, nadie del equipo gestiona nada: el
+// panel solo deja pagar («Tu plan»), descargar los datos, darse de baja y
+// validar los códigos y bonos que ya tiene la gente. Lo carga
+// `preparaNegocio` y lo refresca el resumen. Como la app.
+let SUB = null;
+const cobro = () => SUB?.billing || {};
+const bloqueado = () => cobro().blocked === true;
+const enPausaCierre = () => bloqueado() && cobro().hold === 'paused';
+/** Lo único que se abre con el negocio parado (lo demás, al resumen, que
+ * enseña el aviso). `alta` es otro negocio. */
+const RUTAS_BLOQUEO = ['resumen', 'validar', 'plan', 'baja', 'alta'];
+async function cargaCobro() {
+  const negocio = BIZ?.id;
+  if (!negocio) { SUB = null; return; }
+  try {
+    const s = await rpc('my_subscription', { p_business: negocio });
+    if (BIZ?.id === negocio) SUB = s;
+  } catch { if (BIZ?.id === negocio) SUB = null; }
+}
 // ── La hora, la del negocio ─────────────────────────────────────────────────
 // Una oferta de 18:00 es a las 18:00 del local, abra quien abra el panel (un
 // encargado de viaje, un portátil con la hora de fábrica en UTC…). Canarias
@@ -94,6 +116,8 @@ const ERRORS = {
   invalid_name: 'Pon el nombre del negocio (dos letras como mínimo).',
   invalid_location: 'Marca en el mapa dónde está el local.',
   not_authorized: 'No tienes permiso para esto. Pídeselo a quien lleve el negocio.',
+  // Bloqueado o en pausa por cierre (migración 20261222100000).
+  business_blocked: 'Tu negocio está parado: ahora solo puedes validar los códigos y bonos que ya tiene la gente.',
   user_not_found: 'No hay ninguna cuenta con ese correo.',
   owner_untouchable: 'Al propietario no se le cambia el rol desde aquí.',
   not_a_member: 'Esa persona ya no está en el equipo.',
@@ -552,7 +576,10 @@ let CATS = [];
  * entrar y cada vez que se cambia de local; si falla, se deduce de las
  * coordenadas y, sin ellas, Madrid. */
 async function preparaNegocio() {
+  SUB = null;
   if (!BIZ) { TZ = KZ.MADRID; return; }
+  // Bloqueado o en pausa: se sabe antes de pintar nada (el menú y las rutas).
+  const cobroListo = cargaCobro();
   if (!KZ.valida(BIZ.time_zone)) {
     try {
       const { data } = await sb.from('businesses').select('time_zone, rejection_reason_en').eq('id', BIZ.id).maybeSingle();
@@ -576,6 +603,7 @@ async function preparaNegocio() {
   // Ayuntamiento, asociación u ONG (o a punto de serlo): su panel no enseña
   // plan, Fidelizar, RRPP ni partidos (entidades.js).
   if (typeof entCarga === 'function') await entCarga();
+  await cobroListo;
   // «Antes de cerrar» en el menú: se sabe al momento, sin esperar.
   ANTES = null;
   const negocio = BIZ.id;
@@ -855,6 +883,18 @@ const NAV = [
 /** Las cuatro de todos los días, abajo en el móvil (como las pestañas de la
  * app); «Más» abre el menú entero. */
 const BARRA = ['resumen', 'publicaciones', 'calendario', 'validar'];
+/** Con el negocio parado (bloqueado o en pausa), el menú solo lleva lo que se
+ * puede hacer: el aviso (en el resumen), validar, «Tu plan» y darse de baja. */
+const NAV_BLOQUEO = [
+  [null, [
+    ['resumen', 'dashboard', 'Resumen'],
+    ['validar', 'qr_code_scanner', 'Validar códigos'],
+    ['plan', 'workspace_premium', 'Tu plan'],
+    ['baja', 'salir', 'Dar de baja el negocio'],
+  ]],
+];
+const menuActual = () => (bloqueado() ? NAV_BLOQUEO : NAV);
+const barraActual = () => (bloqueado() ? ['resumen', 'validar', ...(gestiona() ? ['plan'] : [])] : BARRA);
 const visibleEnMenu = (k) => (gestiona() || !SOLO_GESTION.includes(k)) && (k !== 'baja' || esPropietario())
   && (k !== 'antes-de-cerrar' || !!ANTES?.suggested)
   && (k !== 'partidos' || !!PARTIDOS_NAV?.suggested)
@@ -863,7 +903,8 @@ const visibleEnMenu = (k) => (gestiona() || !SOLO_GESTION.includes(k)) && (k !==
 const marcada = (current, n) => current === n[0] || (n[3] || []).includes(current);
 function renderNav(current) {
   let g = 0;
-  $('#nav').innerHTML = NAV.map(([titulo, items]) => {
+  const nav = menuActual();
+  $('#nav').innerHTML = nav.map(([titulo, items]) => {
     const vis = items.filter((n) => visibleEnMenu(n[0]));
     if (!vis.length) return '';
     const id = `navg${g++}`;
@@ -873,11 +914,13 @@ function renderNav(current) {
     </div>`;
   }).join('');
   I18N.translate($('#nav'));
-  const todas = NAV.flatMap(([, items]) => items);
-  const enBarra = BARRA.some((k) => marcada(current, todas.find((n) => n[0] === k)));
-  $('#tabbar').innerHTML = BARRA.map((k) => todas.find((n) => n[0] === k)).map((n) =>
+  const todas = nav.flatMap(([, items]) => items);
+  const barra = barraActual();
+  const enBarra = barra.some((k) => marcada(current, todas.find((n) => n[0] === k)));
+  $('#tabbar').innerHTML = barra.map((k) => todas.find((n) => n[0] === k)).map((n) =>
     `<a href="#/${n[0]}" class="${marcada(current, n) ? 'on' : ''}"${marcada(current, n) ? ' aria-current="page"' : ''}>${icono(n[1])}<span>${esc(n[2] === 'Validar códigos' ? 'Validar' : n[2])}</span></a>`).join('')
     + `<button type="button" id="masBtn" class="${enBarra ? '' : 'on'}" aria-expanded="false" aria-controls="side">${ms('more_horiz')}<span>${esc(I18N.t('Más'))}</span></button>`;
+  $('#tabbar').style.setProperty('--n', String(barra.length + 1));
   I18N.translate($('#tabbar'));
   $('#masBtn').onclick = () => abreMenu(true);
 }
@@ -976,6 +1019,12 @@ async function route() {
   if (!gestiona() && SOLO_GESTION.includes(page)) page = 'resumen';
   if (esOrganizador() && SIN_LOCAL_FIJO.includes(page)) page = 'resumen';
   if (typeof esEntidad === 'function' && esEntidad() && SIN_ENTIDAD.includes(page)) page = 'resumen';
+  // Parado (bloqueado o en pausa): lo demás lleva al resumen, que lo explica.
+  if (bloqueado() && !RUTAS_BLOQUEO.includes(page)) {
+    page = 'resumen';
+    param = undefined;
+    if (location.hash && !/^#\/?(resumen)?(\?|$)/.test(location.hash)) history.replaceState(null, '', '#/resumen');
+  }
   renderNav(page);
   // Al ir a otra pantalla desde el menú del móvil, el cajón se cierra y el
   // foco pasa a la pantalla nueva (no al botón que lo abrió).
@@ -1080,12 +1129,136 @@ function avisoCerrado() {
     <p style="margin:8px 0 0"><a class="btn sm" href="mailto:info@klendar.app?subject=${asunto}&body=${cuerpo}">${ms('mail')}${esc(I18N.t('Escribir a soporte'))}</a></p></div>`;
 }
 
-/** Pago pendiente o publicaciones en pausa por el cobro: una línea y a «Tu plan». */
-function avisoCobro(sub) {
-  const pausa = sub.billing?.hold === 'unpaid';
-  return `<div class="help"><b>${esc(pausa ? bi('Publicaciones en pausa por un pago pendiente.', 'Publications paused because of an outstanding payment.')
-    : bi('Pago pendiente del plan.', 'Plan payment due.'))}</b>
+/** Pago pendiente del plan (aún en el margen): una línea y a «Tu plan». */
+function avisoCobro() {
+  return `<div class="help"><b>${esc(bi('Pago pendiente del plan.', 'Plan payment due.'))}</b>
     <a href="#/plan">${esc(bi('Ver tu plan', 'See your plan'))}</a></div>`;
+}
+
+/** El correo a soporte con el negocio dentro (un recibo devuelto se arregla
+ * escribiendo: no hay factura que pagar). */
+const correoCobro = () => `mailto:info@klendar.app?subject=${encodeURIComponent(bi('Klendar · el pago de mi plan', 'Klendar · my plan payment'))}&body=${encodeURIComponent(`${bi('Negocio', 'Business')}: ${BIZ.id}`)}`;
+
+/** Por qué se bloquea (o se ha bloqueado) el negocio, en una frase. */
+function motivoBloqueo(kind, yaBloqueado) {
+  const M = yaBloqueado ? {
+    trial: ['Ha terminado tu prueba gratis y el plan no está pagado.', 'Your free trial has ended and the plan isn’t paid.'],
+    free: ['Ha terminado el gratis de lanzamiento y el plan no está pagado.', 'The free launch period has ended and the plan isn’t paid.'],
+    period: ['Se ha acabado lo que tenías pagado.', 'What you had paid for has run out.'],
+    cancel: ['Cancelaste la suscripción y ya se ha acabado.', 'You cancelled the subscription and it has now ended.'],
+    unpaid: ['Hay un pago pendiente del plan.', 'There’s an outstanding plan payment.'],
+    dispute: ['El banco ha devuelto el recibo del plan.', 'The bank has returned the plan direct debit.'],
+    ended: ['Se ha acabado tu plan.', 'Your plan has ended.'],
+  } : {
+    trial: ['Tu prueba gratis está a punto de acabar.', 'Your free trial is about to end.'],
+    free: ['El gratis de lanzamiento está a punto de acabar.', 'The free launch period is about to end.'],
+    period: ['Lo que tienes pagado está a punto de acabarse.', 'What you’ve paid for is about to run out.'],
+    cancel: ['Cancelaste la suscripción y está a punto de acabarse.', 'You cancelled the subscription and it’s about to end.'],
+    unpaid: ['Hay un pago pendiente del plan.', 'There’s an outstanding plan payment.'],
+    dispute: ['El banco ha devuelto el recibo del plan.', 'The bank has returned the plan direct debit.'],
+    ended: ['Se ha acabado tu plan.', 'Your plan has ended.'],
+  };
+  const [es, en] = M[kind] || M.ended;
+  return bi(es, en);
+}
+
+/** Antes del bloqueo (7 días, `block_soon`): un aviso arriba, el único, con
+ * «Pagar» para el propietario (a «Tu plan»). Un recibo devuelto se arregla
+ * escribiéndonos. */
+function avisoBloqueoPronto(bill) {
+  const dia = diaLargoFecha(bill.block_on);
+  const dispute = bill.block_kind === 'dispute' || bill.dispute;
+  const boton = !esPropietario() ? ''
+    : dispute ? `<a class="btn sm primary" href="${esc(correoCobro())}">${ms('mail')}${esc(I18N.t('Escribir a soporte'))}</a>`
+      : `<a class="btn sm primary" href="#/plan">${ms('credit_card')}${esc(bi('Pagar', 'Pay'))}</a>`;
+  return `<div class="help aviso-cobro"><b>${esc(bi(`Tu negocio se bloquea el ${dia}.`, `Your business will be blocked on ${dia}.`))}</b>
+    ${esc(motivoBloqueo(bill.block_kind, false))} ${esc(dispute
+    ? bi('Escríbenos a info@klendar.app para ponerlo al día. Si no, tus publicaciones dejarán de verse y solo podrás validar los códigos y bonos que ya tiene la gente. No se borra nada.',
+      'Write to us at info@klendar.app to sort it out. Otherwise your publications will stop showing and you’ll only be able to validate the codes and passes people already have. Nothing is deleted.')
+    : bi('Si no se paga antes, tus publicaciones dejarán de verse y solo podrás validar los códigos y bonos que ya tiene la gente. No se borra nada.',
+      'If it isn’t paid before then, your publications will stop showing and you’ll only be able to validate the codes and passes people already have. Nothing is deleted.'))}
+    ${boton ? `<p style="margin:8px 0 0">${boton}</p>` : ''}</div>`;
+}
+
+/** El negocio parado: bloqueado por no pagar o en pausa por cierre. Lo único
+ * que se puede hacer: pagar (o volver a abrir), validar, descargar los datos
+ * y darse de baja. Como «Mi negocio» en la app. */
+function avisoParado(bill) {
+  const pausa = bill.hold === 'paused';
+  const dispute = bill.block_kind === 'dispute' || bill.dispute;
+  const dueno = esPropietario();
+  const titulo = pausa
+    ? bi(`Cerrado temporalmente hasta el ${planDia(bill.paused_until)}`, `Temporarily closed until ${planDia(bill.paused_until)}`)
+    : bi('Tu negocio está bloqueado', 'Your business is blocked');
+  const texto = pausa
+    ? bi('Tus publicaciones no se ven y tu ficha lo dice. No se cobra nada y los días que tenías pagados se guardan para cuando vuelvas. Vuelve solo ese día y avisamos a tus seguidores.',
+      'Your publications are hidden and your page says so. Nothing is charged and the days you’d already paid for are kept for when you’re back. It reopens on its own that day and we let your followers know.')
+    : `${motivoBloqueo(bill.block_kind, true)} ${dispute
+      ? bi('Escríbenos a info@klendar.app para ponerlo al día.', 'Write to us at info@klendar.app to sort it out.')
+      : ''} ${bi('Tus publicaciones no se ven y tu ficha dice «No disponible ahora mismo». Hasta que se pague, nadie del equipo puede publicar ni cambiar nada. No se ha borrado nada: al pagar, todo vuelve solo.',
+      'Your publications are hidden and your page says “Not available right now”. Until it’s paid, nobody on the team can publish or change anything. Nothing has been deleted: once paid, everything comes back on its own.')}`;
+  const excepcion = bi('Sí puedes validar los códigos y bonos que ya tiene la gente: lo que ya diste se respeta (bonos vendidos, sellos, premios, códigos y sorteos abiertos).',
+    'You can still validate the codes and passes people already have: what you’ve already given is honoured (passes sold, stamps, rewards, codes and open giveaways).');
+  const boton = pausa
+    ? (dueno ? `<button class="btn primary" type="button" id="volver-abrir">${ms('play_circle')}${esc(bi('Volver a abrir', 'Reopen'))}</button>`
+      : `<p class="muted small" style="margin:0">${esc(bi('Solo el propietario puede volver a abrirlo.', 'Only the owner can reopen it.'))}</p>`)
+    : !dueno ? `<p class="muted small" style="margin:0">${esc(I18N.t('Solo el propietario del negocio puede pagar el plan.'))}</p>`
+      : dispute ? `<a class="btn primary" href="${esc(correoCobro())}">${ms('mail')}${esc(I18N.t('Escribir a soporte'))}</a>`
+        : `<a class="btn primary" href="#/plan">${ms('credit_card')}${esc(bi('Pagar', 'Pay'))}</a>`;
+  return `<div class="card aviso-parado" role="status">
+    <h2>${ms(pausa ? 'event_busy' : 'lock_clock')} ${esc(titulo)}</h2>
+    <p style="margin:0 0 8px">${esc(texto.replace(/\s+/g, ' ').trim())}</p>
+    <p class="muted" style="margin:0 0 12px">${esc(excepcion)}</p>
+    ${boton}</div>`;
+}
+
+/** El resumen de un negocio parado: el aviso, «Validar códigos» y, para el
+ * propietario, descargar los datos y darse de baja. */
+function pintaParado(v) {
+  const bill = cobro();
+  const dueno = esPropietario();
+  v.innerHTML = `
+    <div class="page-head"><h1>${esc(BIZ.name)}</h1><span class="spacer"></span></div>
+    ${avisoParado(bill)}
+    <div class="quick quick-2 parado-validar">
+      <button type="button" data-go="validar"><span class="ic ms" aria-hidden="true">qr_code_scanner</span>Validar códigos<small>${esc(bi('Los códigos y bonos que ya tiene la gente', 'The codes and passes people already have'))}</small></button>
+    </div>
+    ${dueno ? tarjetaDescarga() : ''}
+    ${dueno ? `<div class="card"><h2>Dar de baja el negocio</h2>
+      <p class="muted" style="margin:0 0 10px">${esc(bi('Si dejas Klendar: cancelar la suscripción, traspasar el negocio o eliminarlo.', 'If you’re leaving Klendar: cancel the subscription, transfer the business or delete it.'))}</p>
+      <a class="btn" href="#/baja">Dar de baja el negocio</a></div>` : ''}
+    ${dueno ? '' : `<div class="card"><h2>Salir del equipo</h2>
+      <p class="muted" style="margin:0 0 10px">Dejarás de ver este panel y de validar sus códigos. Avisaremos al propietario.</p>
+      <button class="btn bad ghost" type="button" id="salir-equipo">Salir del equipo</button></div>`}`;
+  $('[data-go="validar"]', v).onclick = () => { location.hash = '#/validar'; };
+  activaDescarga(v);
+  const volver = $('#volver-abrir', v);
+  if (volver) volver.onclick = () => volverAAbrir(volver);
+  const salirEq = $('#salir-equipo', v);
+  if (salirEq) {
+    salirEq.onclick = async () => {
+      if (salirEq.disabled) return;
+      salirEq.disabled = true;
+      try { await salirDelEquipo(); } catch (e) { toast(e.message, true); }
+      salirEq.disabled = false;
+    };
+  }
+}
+
+/** «Volver a abrir» (pausa por cierre): la Edge Function `billing` (`resume`)
+ * la quita, y los días guardados se empiezan a gastar. */
+async function volverAAbrir(boton) {
+  if (!(await confirmDlg(bi('¿Volver a abrir?', 'Reopen?'),
+    esc(bi('Tus publicaciones vuelven a verse ahora y empiezan a gastarse los días que tenías guardados. Avisamos a tus seguidores.',
+      'Your publications show again straight away and the days you had saved start being used. We let your followers know.')),
+    { submit: bi('Volver a abrir', 'Reopen') }))) return;
+  boton.disabled = true;
+  try {
+    await planFn('resume');
+    toast(bi('Has vuelto a abrir', 'You’re open again'));
+    await cargaCobro();
+    route();
+  } catch (e) { toast(e.message, true); boton.disabled = false; }
 }
 
 /** «Pedir otra revisión»: tras corregir lo del rechazo, otra vez a la cola
@@ -1111,15 +1284,23 @@ async function pideOtraRevision(boton) {
 }
 
 PAGES.resumen = async (v) => {
+  // Parado (bloqueado o en pausa): solo el aviso y lo que se puede hacer. Lo
+  // de gestión lo niega la base, así que su error solo cuenta si no lo está.
+  if (bloqueado()) { await cargaCobro(); if (bloqueado()) { renderNav('resumen'); return pintaParado(v); } }
+  let fallo = null;
   const [stats, offers, sub, cerradoDeVerdad, condiciones] = await Promise.all([
-    rpc('business_stats', { p_id: BIZ.id }),
-    rpc('my_business_offers', { p_id: BIZ.id }),
+    rpc('business_stats', { p_id: BIZ.id }).catch((e) => { fallo = e; return null; }),
+    rpc('my_business_offers', { p_id: BIZ.id }).catch((e) => { fallo = e; return []; }),
     rpc('my_subscription', { p_business: BIZ.id }).catch(() => null),
     rpc('business_closure_state', { p_ref: BIZ.id }).catch(() => null),
     // Un cambio en las condiciones (solo al propietario; la base lo apunta
     // como visto). Si no llega, no sale: nunca tapa el resumen.
     esPropietario() ? rpc('business_terms_notice', { p_business: BIZ.id }).catch(() => null) : null,
   ]);
+  if (sub) SUB = sub;
+  // Se acaba de bloquear (o de pausar desde otro sitio): a lo que se puede hacer.
+  if (bloqueado()) { renderNav('resumen'); return pintaParado(v); }
+  if (fallo) throw fallo;
   const pending = offers.filter((o) => o.status === 'active');
   const s = stats || {};
   // Primeros pasos: recién aprobado y sin nada publicado. Lo mismo que en la
@@ -1140,7 +1321,9 @@ PAGES.resumen = async (v) => {
     : condiciones ? avisoCondiciones(condiciones)
     : BIZ.verification_status !== 'verified' && BIZ.entity?.pending ? entAvisoPendiente()
     : BIZ.verification_status !== 'verified' ? avisoVerificacion()
-      : gestiona() && (sub?.billing?.hold === 'unpaid' || sub?.status === 'past_due') ? avisoCobro(sub)
+      // Se bloquea en 7 días o menos (prueba, gratis, lo pagado o un impago).
+      : gestiona() && sub?.billing?.block_soon && sub.billing.block_on ? avisoBloqueoPronto(sub.billing)
+      : gestiona() && sub?.status === 'past_due' ? avisoCobro()
       : cerradoIndef() ? `<div class="card pausa"><div>
         <h2 style="margin:0">Cerrado hasta nuevo aviso</h2>
         <p class="muted" style="margin:4px 0 0">${esPropietario()
@@ -3606,6 +3789,9 @@ function cajaTicket(caja, code, inicial = null) {
 PAGES.validar = async (v) => {
   v.innerHTML = `
     <div class="page-head"><h1>Validar códigos</h1></div>
+    ${bloqueado() ? `<div class="help">${esc(enPausaCierre()
+    ? bi('Estás cerrado temporalmente: puedes validar los códigos y bonos que ya tiene la gente, pero no cargar bonos nuevos.', 'You’re temporarily closed: you can validate the codes and passes people already have, but not add new passes.')
+    : bi('Tu negocio está bloqueado: puedes validar los códigos y bonos que ya tiene la gente, pero no cargar bonos nuevos.', 'Your business is blocked: you can validate the codes and passes people already have, but not add new passes.'))}</div>` : ''}
     ${helpBox('¿Cómo funciona?', `<p>Escanea el QR con la cámara (la del móvil o la del portátil) o escribe el código que la persona tiene debajo del QR. Cada código vale una vez: al validarlo queda marcado y el aforo baja.</p><p>Si es una reserva para varios, te decimos cuántas personas entran con ese código.</p><p>${bi('Con el <b>QR de cliente</b> de alguien ves sus bonos de tu negocio: puedes cargarle uno o descontar un uso.', 'With someone’s <b>customer QR code</b> you see their passes from your business: you can add one or use one.')}</p>`)}
     <div class="scan-box">
       <button class="btn" id="camara" type="button">${ms('photo_camera')}Escanear con la cámara</button>

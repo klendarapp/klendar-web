@@ -454,7 +454,7 @@ main.content:focus { outline: none; }
 /* Barra de abajo en el móvil: lo de todos los días y «Más» (el menú). */
 .tabbar { display: none; }
 @media (max-width: 900px) {
-  .tabbar { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); position: fixed; left: 0; right: 0; bottom: 0; z-index: 35;
+  .tabbar { display: grid; grid-template-columns: repeat(var(--n, 5), minmax(0, 1fr)); position: fixed; left: 0; right: 0; bottom: 0; z-index: 35;
     padding: 6px 4px calc(6px + env(safe-area-inset-bottom)); background: var(--elevated); border-top: 1px solid var(--glass-border);
     box-shadow: 0 -8px 24px -18px rgba(0,0,0,.4); }
   .tabbar a, .tabbar button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 52px;
@@ -984,3 +984,10 @@ details.plegable[open] > summary { margin-bottom: 12px; }
   .plan-botones { grid-template-columns: 1fr; }
   .plan-form > .btn { justify-self: stretch; justify-content: center; }
 }
+
+/* Negocio parado (bloqueado sin pagar o en pausa por cierre): el aviso con
+   su botón (coral solo «Pagar» o «Volver a abrir») y «Validar códigos». */
+.aviso-parado h2 { margin: 0 0 8px; display: flex; align-items: center; gap: 8px; }
+.aviso-parado .btn.primary { min-width: 180px; justify-content: center; }
+.parado-validar { margin: 0 0 16px; }
+.aviso-cobro .btn { margin: 0; }
