@@ -176,6 +176,9 @@ function entActivaDocumento(caja, d) {
       entQuitaDocumento(d.proof_path);
       d.proof_path = ruta;
       d.proof_name = archivo.name.slice(0, 120);
+      // Lo que decía que faltaba el documento ya no vale.
+      const err = $('#err', caja);
+      if (err) err.textContent = '';
     } catch (e) {
       toast(e.message, true);
     } finally {
