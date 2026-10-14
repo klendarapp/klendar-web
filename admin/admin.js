@@ -2840,6 +2840,7 @@ PAGES.entidades = async (v) => {
           <dt>${en ? 'Official website' : 'Web oficial'}</dt><dd>${enlaceExterno(x.website)}</dd>
           <dt>${en ? 'Area' : 'Zona'}</dt><dd>${esc(x.area || '—')}</dd>
           <dt>${en ? 'Registered by' : 'Quién la da de alta'}</dt><dd>${esc(x.contact_name)} · ${esc(x.contact_role)} · <a class="link" href="#/usuarios/${esc(x.user_id)}">${esc(x.user_email || '—')}</a> · ${en ? 'account since' : 'cuenta desde'} ${fmtDay(x.user_since)}</dd>
+          <dt>${en ? 'Declaration' : 'Declaración'}</dt><dd>${x.declared_at ? `${en ? '“I declare that this information is true and that I can represent this organisation” ✓' : '«Declaro que los datos son ciertos y que puedo representar a esta entidad» ✓'} <span class="muted small">${fmtDate(x.declared_at)}</span>` : `<span class="muted small">${en ? 'not recorded (request from before 14-10-2026)' : 'sin guardar (solicitud de antes del 14-10-2026)'}</span>`}</dd>
           <dt>${en ? 'Document' : 'Documento'}</dt><dd>${x.proof_path ? `<button class="btn sm" data-doc="${i}">${ms('attach_file')} ${en ? 'View the document' : 'Ver el documento'}</button>` : ''}${x.proof_deleted_at ? `<span class="muted small">${en ? 'deleted' : 'borrado'} ${fmtDay(x.proof_deleted_at)}</span>` : ''}${!x.proof_path && !x.proof_deleted_at ? '—' : ''}</dd>
           ${x.status !== 'pending' ? `<dt>${en ? 'Decision' : 'Decisión'}</dt><dd>${fmtDate(x.resolved_at)}${x.resolved_by_email ? ` · ${esc(x.resolved_by_email)}` : ''}${x.reason ? ` · ${esc(x.reason)}` : ''}</dd>` : ''}
         </dl>

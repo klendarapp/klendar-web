@@ -139,7 +139,7 @@ async function panel(nav, nombre, t, vp) {
   ok(a.p_kind === 'merchants' && a.p_tax_id === 'G28000000' && a.p_official_name === 'Asociación de Comerciantes de Prueba'
     && a.p_website === 'comerciantes-prueba.es' && a.p_city === 'Getafe' && a.p_area === 'Barrio de Prueba'
     && a.p_contact_name === 'Ana Prueba' && a.p_contact_role === 'Presidenta' && a.p_proof_path === estado.subidas[0]
-    && Math.abs(a.p_lat - 40.305) < 1e-6, `${nombre}/${t} register_entity con todo ${JSON.stringify(a)}`);
+    && Math.abs(a.p_lat - 40.305) < 1e-6 && a.p_declaration === true, `${nombre}/${t} register_entity con todo (también la declaración) ${JSON.stringify(a)}`);
   const menu = await p.locator('#nav').textContent();
   ok(!/Fidelizar|RRPP|Días cerrados/.test(menu) && /Equipo/.test(menu), `${nombre}/${t} el menú de una entidad`);
   const resumen = await p.locator('#view').innerText();
@@ -159,6 +159,7 @@ async function admin(nav, nombre, t, vp) {
     contact_role: 'Técnica de Cultura', website: 'https://prueba.example.org', area: 'Getafe', created_at: '2026-10-14T09:00:00Z',
     proof_path: `${U}/doc.pdf`, business_id: BIZ, business_name: 'Ayuntamiento de Prueba', business_city: 'Getafe',
     business_status: 'pending', user_id: U, user_email: 'entidad.prueba@example.com', user_since: '2026-10-14T08:00:00Z', business_applications: 1,
+    declared_at: origin === 'signup' ? '2026-10-14T09:00:00Z' : null,
   });
   const estado = { subidas: [], llamadas: [], bizzes: [], rpc: {} };
   Object.assign(estado.rpc, {
@@ -173,6 +174,8 @@ async function admin(nav, nombre, t, vp) {
   await p.goto(`${BASE}/admin/#/entidades`, { waitUntil: 'networkidle' });
   await p.waitForSelector('text=Entidades por verificar');
   await p.waitForSelector('[data-aprobar]');
+  const cola = await p.locator('#list').innerText();
+  ok(/Declaro que los datos son ciertos/.test(cola) && /sin guardar \(solicitud de antes/.test(cola), `${nombre}/${t} la cola enseña la declaración (y cuándo no se guardó)`);
   ok(await p.locator('[data-doc]').count() === 2, `${nombre}/${t} admin: el documento de cada solicitud`);
   await p.screenshot({ path: `${OUT}/web-admin-entidades-${nombre}-${t}.png`, fullPage: true });
   const pop = p.waitForEvent('popup', { timeout: 5000 }).catch(() => null);

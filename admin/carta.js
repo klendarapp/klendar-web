@@ -10,7 +10,7 @@
   var zona = String(q.get('zona') || '').slice(0, 80);
   var pon = function (id, txt) { var el = document.getElementById(id); if (el) el.textContent = txt; };
   pon('numero', n.toLocaleString('es-ES'));
-  pon('titulo', n === 1 ? 'persona de tu barrio quiere verte en Klendar' : 'personas de tu barrio quieren verte en Klendar');
+  pon('titulo', n === 1 ? 'persona ha pedido verte en Klendar' : 'personas han pedido verte en Klendar');
   pon('local', local);
   pon('zona', zona);
   pon('frase1', (n === 1 ? 'Una persona ha pedido' : n.toLocaleString('es-ES') + ' personas han pedido')

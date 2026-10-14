@@ -66,6 +66,7 @@ const ENT_ERRORES = {
   invalid_city: 'Marca en el mapa dónde actuáis.',
   invalid_location: 'Marca en el mapa dónde actuáis.',
   not_allowed: 'La cuenta de entidad la pide quien es propietario o encargado del negocio.',
+  declaration_required: 'Marca la declaración para enviarla.',
 };
 const entError = (code) => I18N.t(ENT_ERRORES[code] || 'Algo ha fallado');
 
@@ -229,6 +230,8 @@ const entParams = (d, areaPorDefecto = '') => ({
   p_proof_path: d.proof_path,
   p_website: d.website.trim(),
   p_area: (d.area || '').trim() || areaPorDefecto,
+  // «Declaro que…»: la base guarda cuándo se marcó (`declared_at`).
+  p_declaration: d.declaration === true,
 });
 
 // ── «¿Qué vas a dar de alta?» ───────────────────────────────────────────────

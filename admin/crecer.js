@@ -55,7 +55,7 @@ const crError = (e) => {
  * (docs/negocios/correos.md de la app). */
 function crCarta(g) {
   const n = Number(g.people) || 0;
-  const titulo = n === 1 ? `Una persona de tu barrio quiere verte en Klendar` : `${fmtNum(n)} personas de tu barrio quieren verte en Klendar`;
+  const titulo = n === 1 ? `Una persona ha pedido verte en Klendar` : `${fmtNum(n)} personas han pedido verte en Klendar`;
   const quien = n === 1 ? `Una persona ha pedido` : `${fmtNum(n)} personas han pedido`;
   const donde = crDonde(g) !== '—' ? ` (${crDonde(g)})` : '';
   // Una sola plantilla (sin comillas): la carta va siempre en español.
