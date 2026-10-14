@@ -501,6 +501,7 @@ KL_DIC('fr', {
   "Cola virtual · cerrada": "File d’attente virtuelle · fermée",
   "Cola virtual · {n} esperando": "File d’attente virtuelle · {n} en attente",
   "Cola virtual, tele, partidos, carta… Activa lo que te sirva.": "File d’attente virtuelle, télé, matchs, carte… Active ce qui t’est utile.",
+  "Series, tele, enlaces, tu web… Activa lo que te sirva.": "Séries, télé, liens, ton site web… Active ce qui t’est utile.",
   "Color": "Couleur",
   "Color de tu marca": "Couleur de ta marque",
   "Comer y beber": "Manger et boire",

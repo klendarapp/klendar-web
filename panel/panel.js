@@ -809,6 +809,9 @@ const SVG = {
   rrpp: 'M9 13c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0-6c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm0 8c-2.67 0-8 1.34-8 4v3h16v-3c0-2.66-5.33-4-8-4zm6 5H3v-.99C3.2 18.29 6.3 17 9 17s5.8 1.29 6 2v1zM15.08 7.05c.84 1.18.84 2.71 0 3.89l1.68 1.69c2.02-2.02 2.02-5.07 0-7.27l-1.68 1.69zM20.07 2l-1.63 1.63c2.77 3.02 2.77 7.56 0 10.74L20.07 16c3.9-3.89 3.91-9.95 0-14z',
   // «Cola virtual» (format_list_numbered).
   cola: 'M2 17h2v.5H3v1h1v.5H2v1h3v-4H2v1zm1-9h1V4H2v1h1v3zm-1 3h1.8L2 13.1v.9h3v-1H3.2L5 10.9V10H2v1zm5-6v2h14V5H7zm0 14h14v-2H7v2zm0-6h14v-2H7v2z',
+  // Aviso (info) y carné que hay que enseñar (school).
+  info: 'M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z',
+  school: 'M12 3 1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3zm6.82 6L12 12.72 5.18 9 12 5.28 18.82 9zM17 15.99l-5 2.73-5-2.73v-3.72L12 15l5-2.73v3.72z',
 };
 const svg = (n, s = 20) => `<svg class="ms svg" viewBox="0 0 24 24" width="${s}" height="${s}" aria-hidden="true"><path fill="currentColor" d="${SVG[n]}"/></svg>`;
 const icono = (n) => (SVG[n] ? svg(n) : ms(n));
@@ -1186,7 +1189,9 @@ PAGES.resumen = async (v) => {
     })}
       <p style="margin:10px 0 0"><a class="link" href="#/publicaciones">${esc(bi(`Ver todas (${fmtNum(offers.length)}) · ${fmtNum(pending.length)} activas`, `See all (${fmtNum(offers.length)}) · ${fmtNum(pending.length)} active`))}</a></p></div>
     <a class="mas-herr" href="#/herramientas">${icono('herramientas')}<span><b>${esc(bi('Más herramientas', 'More tools'))}</b>
-      <small>${esc(bi('Cola virtual, tele, partidos, carta… Activa lo que te sirva.', 'Virtual queue, TV, matches, menu… Turn on whatever helps.'))}</small></span>${ms('chevron_right')}</a>
+      <small>${esc(typeof esEntidad === 'function' && esEntidad()
+        ? bi('Series, tele, enlaces, tu web… Activa lo que te sirva.', 'Series, TV, links, your website… Turn on whatever helps.')
+        : bi('Cola virtual, tele, partidos, carta… Activa lo que te sirva.', 'Virtual queue, TV, matches, menu… Turn on whatever helps.'))}</small></span>${ms('chevron_right')}</a>
     <h2 class="grupo-titulo">${esc(bi('Tu negocio', 'Your business'))}</h2>
     <div class="herr-grid">
       ${gestiona() ? negocioBtn('#/equipo', 'group', 'Equipo') : ''}
@@ -3312,7 +3317,7 @@ PAGES['antes-de-cerrar'] = async (v) => {
     <div class="page-head"><h1>Antes de cerrar</h1></div>
     <p class="muted" style="margin:-6px 0 14px">${esc(bi('Lo que te ha sobrado hoy, con lo de la última vez ya puesto. Se paga en el local.',
       'What you have left today, with last time’s details already filled in. People pay at the venue.'))}</p>
-    ${s.live ? `<div class="scan-result warn">${ms('info')}${esc(bi(`Ya tienes una publicada: ${quedanTxt(s.live.seats_left ?? 0).toLowerCase()}, hasta las ${hora(s.live.until)}.`,
+    ${s.live ? `<div class="scan-result warn">${icono('info')}${esc(bi(`Ya tienes una publicada: ${quedanTxt(s.live.seats_left ?? 0).toLowerCase()}, hasta las ${hora(s.live.until)}.`,
       `You already have one live: ${quedanTxt(s.live.seats_left ?? 0)}, until ${hora(s.live.until)}.`))}</div>` : ''}
     <div class="card antes">
       <div class="antes-ultima">
@@ -3510,7 +3515,7 @@ function tarjetaCodigo(r, estado) {
   // local; la app no puede). Como `CardAskBanner` en la app.
   const KMc = window.KlendarMarcas;
   const docs = KMc && !ajeno && estado !== 'bad' ? KMc.documentos(r.card_requirements, I18N.lang) : '';
-  const carne = docs ? `<p class="cod-carne" role="status">${ms('school')}<b>${esc(KMc.t(I18N.lang).cardAsk(docs))}</b></p>` : '';
+  const carne = docs ? `<p class="cod-carne" role="status">${icono('school')}<b>${esc(KMc.t(I18N.lang).cardAsk(docs))}</b></p>` : '';
   return `<div class="codigo-card ${estado}">
     <div class="cod-top">${foto}<div class="cod-cab">
       ${tipo || r.business_name ? `<span class="cod-tipo">${esc([tipo, tipoRrpp, r.business_name].filter(Boolean).join(' · '))}</span>` : ''}

@@ -501,6 +501,7 @@ KL_DIC('de', {
   "Cola virtual · cerrada": "Virtuelle Warteschlange · geschlossen",
   "Cola virtual · {n} esperando": "Virtuelle Warteschlange · {n} wartend",
   "Cola virtual, tele, partidos, carta… Activa lo que te sirva.": "Virtuelle Warteschlange, Fernseher, Spiele, Speisekarte… Schalte ein, was dir nützt.",
+  "Series, tele, enlaces, tu web… Activa lo que te sirva.": "Serien, Fernseher, Links, deine Website… Schalte ein, was dir nützt.",
   "Color": "Farbe",
   "Color de tu marca": "Deine Markenfarbe",
   "Comer y beber": "Essen und Trinken",

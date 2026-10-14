@@ -501,6 +501,7 @@ KL_DIC('gl', {
   "Cola virtual · cerrada": "Cola virtual · pechada",
   "Cola virtual · {n} esperando": "Cola virtual · {n} agardando",
   "Cola virtual, tele, partidos, carta… Activa lo que te sirva.": "Cola virtual, tele, partidos, carta… Activa o que che sirva.",
+  "Series, tele, enlaces, tu web… Activa lo que te sirva.": "Series, tele, ligazóns, a túa web… Activa o que che sirva.",
   "Color": "Cor",
   "Color de tu marca": "Cor da túa marca",
   "Comer y beber": "Comer e beber",

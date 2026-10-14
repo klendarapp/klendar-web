@@ -501,6 +501,7 @@ KL_DIC('ca', {
   "Cola virtual · cerrada": "Cua virtual · tancada",
   "Cola virtual · {n} esperando": "Cua virtual · {n} esperant",
   "Cola virtual, tele, partidos, carta… Activa lo que te sirva.": "Cua virtual, tele, partits, carta… Activa el que et serveixi.",
+  "Series, tele, enlaces, tu web… Activa lo que te sirva.": "Sèries, tele, enllaços, el teu web… Activa el que et serveixi.",
   "Color": "Color",
   "Color de tu marca": "Color de la teva marca",
   "Comer y beber": "Menjar i beure",

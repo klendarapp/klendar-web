@@ -501,6 +501,7 @@ KL_DIC('eu', {
   "Cola virtual · cerrada": "Ilara birtuala · itxita",
   "Cola virtual · {n} esperando": "Ilara birtuala · {n} zain",
   "Cola virtual, tele, partidos, carta… Activa lo que te sirva.": "Ilara birtuala, telebista, partidak, karta… Aktibatu behar duzuna.",
+  "Series, tele, enlaces, tu web… Activa lo que te sirva.": "Serieak, telebista, estekak, zure webgunea… Aktibatu behar duzuna.",
   "Color": "Kolorea",
   "Color de tu marca": "Zure markaren kolorea",
   "Comer y beber": "Jan eta edan",

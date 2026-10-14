@@ -501,6 +501,7 @@ KL_DIC('it', {
   "Cola virtual · cerrada": "Coda virtuale · chiusa",
   "Cola virtual · {n} esperando": "Coda virtuale · {n} in attesa",
   "Cola virtual, tele, partidos, carta… Activa lo que te sirva.": "Coda virtuale, TV, partite, menù… Attiva quello che ti serve.",
+  "Series, tele, enlaces, tu web… Activa lo que te sirva.": "Serie, TV, link, il tuo sito… Attiva quello che ti serve.",
   "Color": "Colore",
   "Color de tu marca": "Colore del tuo brand",
   "Comer y beber": "Mangiare e bere",
