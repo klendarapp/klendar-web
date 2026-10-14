@@ -74,7 +74,7 @@ const entError = (code) => I18N.t(ENT_ERRORES[code] || 'Algo ha fallado');
 const esEntidad = () => !!(BIZ?.entity?.kind || BIZ?.entity?.pending);
 /** Lo que un panel de entidad no enseña (el menú y las rutas). */
 const SIN_ENTIDAD = ['fidelizar', 'rrpp', 'partidos', 'antes-de-cerrar', 'cartel-local', 'cerrados', 'cola', 'grupos',
-  'sellos', 'bonos', 'cumpleanos', 'mensajes', 'sorteos', 'cupon', 'habituales'];
+  'sellos', 'bonos', 'cumpleanos', 'mensajes', 'sorteos', 'cupon', 'habituales', 'plan'];
 
 /** Cómo va lo de la entidad del negocio de ahora (para el menú, el resumen y
  * «Tu ficha»). Sin la función (o sin permiso), como un negocio más. */
