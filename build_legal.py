@@ -165,7 +165,9 @@ ACTUALIZADO = {
     # borrado a los 36), reclamar un negocio y duplicados, reseñas de
     # «Cliente verificado». Informativo: sin re-aceptación.
     'privacidad': {'es': '13 de octubre de 2026', 'en': '13 October 2026'},
-    'cookies': {'es': '13 de octubre de 2026', 'en': '13 October 2026'},
+    # 2026-10-14 (C52, aprobado por Iván el 14-10): dos claves de la
+    # administración que faltaban en la tabla. Informativo.
+    'cookies': {'es': '14 de octubre de 2026', 'en': '14 October 2026'},
     'eliminar-cuenta': {'es': '13 de octubre de 2026', 'en': '13 October 2026'},
     'soporte': {'es': '5 de octubre de 2026', 'en': '5 October 2026'},
     # 2026-10-01 (segunda tanda, R4 de la revisión legal): los términos
@@ -288,6 +290,10 @@ CAMBIOS = {
          'Service description brought up to date (section 2); honouring stamp rewards and the birthday gift, final price including VAT and the 30-day previous price in reductions (section 3); automatic moderation and 6 months to ask for a review (section 6).'),
         _INICIO],
     'cookies': [
+        ('14 de octubre de 2026',
+         'Dos claves más de la administración: recuerdan si dejaste abiertos el grupo «Sistema» del menú y «Más» del resumen.',
+         '14 October 2026',
+         'Two more admin keys: they remember whether you left the “System” menu group and “More” in the summary open.'),
         ('13 de octubre de 2026',
          'Una clave más: los negocios que eliges en «Grupos y empresas» para pedirles presupuesto (hasta cerrar la pestaña); el idioma que guardan «Tu cuenta» y el panel puede ser también catalán, gallego, euskera, francés, alemán o italiano.',
          '13 October 2026',
@@ -1238,6 +1244,7 @@ def textos(D, resaltar=False):
 <tr><td><code>sb-…-auth-token-…code-verifier</code></td><td>«Tu cuenta» y panel (almacenamiento local)</td><td>Un secreto de un solo uso que comprueba que la vuelta de Google o Apple llega al mismo navegador en el que empezaste a entrar (PKCE)</td><td>Hasta terminar de entrar o cerrar sesión</td><td>Técnica (seguridad)</td></tr>
 <tr><td><code>sb-…-admin-auth-token</code></td><td>Administración (almacenamiento local)</td><td>Mantener la sesión de administración, aparte de la de «Tu cuenta»</td><td>Hasta que cierres sesión, tras 30 minutos sin actividad o a las 12 horas</td><td>Técnica (autenticación)</td></tr>
 <tr><td><code>klendar.admin.actividad</code>, <code>klendar.admin.cierre</code></td><td>Administración (almacenamiento local)</td><td>Cuándo hubo actividad por última vez (para cerrar la sesión tras 30 minutos sin ella) y por qué se cerró, para decírtelo</td><td>Hasta la siguiente vez que entres</td><td>Técnica (seguridad)</td></tr>
+<tr><td><code>klendar.admin.nav.sistema</code>, <code>klendar.admin.resumen.mas</code></td><td>Administración (almacenamiento local)</td><td>Recordar si dejaste abiertos el grupo «Sistema» del menú y «Más» del resumen</td><td>Hasta que lo cambies</td><td>Preferencia elegida por ti</td></tr>
 <tr><td><code>klendar.acceso.aviso</code></td><td>«Tu cuenta» y panel (almacenamiento de sesión)</td><td>Avisarte si un enlace del correo ha caducado o ya se usó</td><td>Hasta enseñar el aviso o cerrar la pestaña</td><td>Técnica</td></tr>
 <tr><td><code>klendar.intencion</code></td><td>Fichas y «Tu cuenta» (almacenamiento de sesión)</td><td>Recordar el botón que acabas de pulsar (guardar, reservar, conseguir el código…) para hacerlo al volver de entrar, y no hacerlo nunca si llegas por un enlace de fuera</td><td>Hasta usarlo, 15 minutos como mucho o cerrar la pestaña</td><td>Técnica (seguridad)</td></tr>
 <tr><td><code>klendar.biz</code></td><td>Panel del negocio</td><td>Recordar qué negocio estabas gestionando</td><td>Hasta que cierres sesión</td><td>Técnica</td></tr>
@@ -1284,6 +1291,7 @@ def textos(D, resaltar=False):
 <tr><td><code>sb-…-auth-token-…code-verifier</code></td><td>“Your account” and business dashboard (local storage)</td><td>A one-time secret that checks that the return from Google or Apple reaches the same browser where you started logging in (PKCE)</td><td>Until you finish logging in or log out</td><td>Technical (security)</td></tr>
 <tr><td><code>sb-…-admin-auth-token</code></td><td>Admin (local storage)</td><td>Keep the admin session, separate from the “Your account” one</td><td>Until you log out, after 30 minutes of inactivity or after 12 hours</td><td>Technical (authentication)</td></tr>
 <tr><td><code>klendar.admin.actividad</code>, <code>klendar.admin.cierre</code></td><td>Admin (local storage)</td><td>When there was last activity (to log out after 30 minutes without any) and why the session was closed, so we can tell you</td><td>Until the next time you log in</td><td>Technical (security)</td></tr>
+<tr><td><code>klendar.admin.nav.sistema</code>, <code>klendar.admin.resumen.mas</code></td><td>Admin (local storage)</td><td>Remember whether you left the “System” menu group and “More” in the summary open</td><td>Until you change it</td><td>Preference you chose</td></tr>
 <tr><td><code>klendar.acceso.aviso</code></td><td>“Your account” and business dashboard (session storage)</td><td>Tell you if an email link has expired or was already used</td><td>Until the notice is shown or the tab is closed</td><td>Technical</td></tr>
 <tr><td><code>klendar.intencion</code></td><td>Publication and business pages and “Your account” (session storage)</td><td>Remember the button you just pressed (save, reserve, get the code…) so it's done once you've logged in, and never done if you arrive through an outside link</td><td>Until it's used, 15 minutes at most or until the tab is closed</td><td>Technical (security)</td></tr>
 <tr><td><code>klendar.biz</code></td><td>Business dashboard</td><td>Remember which business you were managing</td><td>Until you log out</td><td>Technical</td></tr>

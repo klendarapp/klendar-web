@@ -122,6 +122,9 @@ function destinoWeb(ruta) {
   // «DJ Nano actúa cerca» va a la publicación (`/offer/<id>`, arriba). La
   // página de un artista y «Artistas que sigues», por si llegan.
   if ((m = r.match(/^\/artists?\/([a-z0-9-]+)$/i)) && m[1] !== 'following') return `${pre}/a/${m[1].toLowerCase()}`;
+  // «Klendar ya está en Teruel» (crecer): a Descubre. «[Local] ya está en
+  // Klendar» va a su ficha (`/business/<id>`, arriba).
+  if (r === '/') return PUB_EN ? '/en/discover/' : '/descubre/';
   if (r.startsWith('/artists')) return '#/artistas';
   return '';
 }
@@ -909,6 +912,8 @@ async function ajustesNotificaciones() {
     // Grupos y empresas y Sorteos (tanda C), detrás de los partidos, como la app.
     sw('grupos', 'Grupos y empresas', prefs.notify_groups !== false, 'Respuestas a tus peticiones y, si tienes un negocio, peticiones nuevas'),
     sw('sorteos', 'Sorteos', prefs.notify_giveaways !== false, 'Resultados de los sorteos en los que participas. Si ganas, te avisamos siempre.'),
+    // «Pedir un local» (crecer): cuando llega a Klendar uno que pediste.
+    sw('pedidos', 'Locales que has pedido', prefs.notify_requests !== false, 'Cuando llega a Klendar uno que pediste'),
     sw('cerca', 'Ofertas flash cerca de ti', prefs.notify_nearby, 'Como mucho 3 al día'),
   ].join('')}
         <div id="cerca-mas"${prefs.notify_nearby ? '' : ' hidden'}>
@@ -955,6 +960,7 @@ async function ajustesNotificaciones() {
         notify_artists: el.artistas.checked,
         notify_groups: el.grupos.checked,
         notify_giveaways: el.sorteos.checked,
+        notify_requests: el.pedidos.checked,
         notify_nearby: el.cerca.checked,
         nearby_radius_m: Number(fa.querySelector('input[name=radio]:checked')?.value || 1000),
         nearby_categories: elegidas.length ? elegidas : null,

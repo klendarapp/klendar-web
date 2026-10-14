@@ -645,6 +645,7 @@ RUTAS[''] = async () => {
       ${fila({ href: '#/series', icono: 'notifications', titulo: EN ? 'Series you follow' : 'Series que sigues', detalle: EN ? "We'll tell you about each new date" : 'Te avisamos de cada fecha nueva' })}
       ${typeof filaEquipos === 'function' ? filaEquipos() : ''}
       ${typeof filaArtistas === 'function' ? filaArtistas() : ''}
+      ${typeof filaPedidos === 'function' ? filaPedidos() : ''}
       ${fila({ href: '#/ajustes', icono: 'tune', titulo: t('Ajustes'), detalle: t('Idioma, notificaciones, privacidad y cuenta') })}
     </div>
 

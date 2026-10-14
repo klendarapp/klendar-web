@@ -588,3 +588,16 @@ button.codigo.copiar .ms { font-size: 18px; color: var(--ink-2); letter-spacing:
 .lang .lang-sel option { color: #111; background: #fff; }
 /* «Los textos legales están en español/inglés», en los idiomas nuevos. */
 .nota-legal { font-size: 13px; margin: 8px 0 0; }
+
+/* «Pedir un local» y «Lo que has pedido» (crecer, app/crecer.js). Neutro:
+   el coral, solo en el botón principal. */
+.pedir-mapa { border: 1px solid var(--glass-border); border-radius: 16px; padding: 12px 14px; background: var(--elevated); }
+.pedir-mapa summary { cursor: pointer; font-weight: 700; }
+.pedir-mapa summary small { font-weight: 400; color: var(--ink-2); }
+.pedir-mapa > p { margin: 10px 0 0; font-size: 14px; }
+.pedir-mapa .acciones { margin: 10px 0 0; }
+.mapa-local { height: 280px; border-radius: 14px; overflow: hidden; margin-top: 10px; background: var(--soft); }
+.mapa-local.sin-mapa { height: auto; padding: 12px; }
+.nota-pedir { font-size: 14px; margin: 0; }
+.aviso.pedido small { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.tag.tag-tinta { background: var(--ink); color: var(--surface); }

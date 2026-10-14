@@ -59,7 +59,7 @@
 <script src="/assets/cabecera.js?v=8" defer></script>
 <main class="doc" id="contenido">
 <h1>Cookie policy</h1>
-<div class="meta">Last updated: 13 October 2026 · Version 2026-09-29</div>
+<div class="meta">Last updated: 14 October 2026 · Version 2026-09-29</div>
 <p class="notice">This is a courtesy translation provided for information only. In case of any discrepancy, the <a href="/cookies/">Spanish version</a> prevails.</p>
 
 <p><strong>In short.</strong> klendar.app does not use cookies. It only stores in your browser what is essential for what you ask it to do (your session, your language, your filters, the codes a business validates offline) and it counts visits without cookies and without identifying you. None of this is used for advertising or to follow you across other sites, so we don't ask for your consent (art. 22.2 of the Spanish LSSI-CE). If we ever add anything that needs it, we will ask you first.</p>
@@ -71,6 +71,7 @@
 <tr><td><code>sb-…-auth-token-…code-verifier</code></td><td>“Your account” and business dashboard (local storage)</td><td>A one-time secret that checks that the return from Google or Apple reaches the same browser where you started logging in (PKCE)</td><td>Until you finish logging in or log out</td><td>Technical (security)</td></tr>
 <tr><td><code>sb-…-admin-auth-token</code></td><td>Admin (local storage)</td><td>Keep the admin session, separate from the “Your account” one</td><td>Until you log out, after 30 minutes of inactivity or after 12 hours</td><td>Technical (authentication)</td></tr>
 <tr><td><code>klendar.admin.actividad</code>, <code>klendar.admin.cierre</code></td><td>Admin (local storage)</td><td>When there was last activity (to log out after 30 minutes without any) and why the session was closed, so we can tell you</td><td>Until the next time you log in</td><td>Technical (security)</td></tr>
+<tr><td><code>klendar.admin.nav.sistema</code>, <code>klendar.admin.resumen.mas</code></td><td>Admin (local storage)</td><td>Remember whether you left the “System” menu group and “More” in the summary open</td><td>Until you change it</td><td>Preference you chose</td></tr>
 <tr><td><code>klendar.acceso.aviso</code></td><td>“Your account” and business dashboard (session storage)</td><td>Tell you if an email link has expired or was already used</td><td>Until the notice is shown or the tab is closed</td><td>Technical</td></tr>
 <tr><td><code>klendar.intencion</code></td><td>Publication and business pages and “Your account” (session storage)</td><td>Remember the button you just pressed (save, reserve, get the code…) so it's done once you've logged in, and never done if you arrive through an outside link</td><td>Until it's used, 15 minutes at most or until the tab is closed</td><td>Technical (security)</td></tr>
 <tr><td><code>klendar.biz</code></td><td>Business dashboard</td><td>Remember which business you were managing</td><td>Until you log out</td><td>Technical</td></tr>
@@ -108,6 +109,7 @@
 
 <h2 class="cambios" id="historial">Change history</h2>
 <ul>
+  <li><strong>14 October 2026</strong>: Two more admin keys: they remember whether you left the “System” menu group and “More” in the summary open.</li>
   <li><strong>13 October 2026</strong>: One more key: the places you pick in “Groups and companies” to ask them for a quote (until you close the tab); the language saved by “Your account” and the dashboard can also be Catalan, Galician, Basque, French, German or Italian.</li>
   <li><strong>7 October 2026</strong>: Two keys for Klendar on the TV, stored by the browser of the venue's TV (not yours): the key that links it to the venue and what it last showed; that page doesn't count visits.</li>
   <li><strong>6 October 2026</strong>: Four more keys: your interests and your city, your recent searches, the date you closed the travel notice and the list of cities; your interests are also deleted when you log out.</li>

@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Carta · Klendar</title>
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<!-- La carta de «Locales pedidos» (admin/crecer.js, «Carta para imprimir
+     (PDF)»): A4, para imprimirla o guardarla en PDF desde el navegador. Solo
+     lleva el número de personas, el nombre del sitio y la zona (en la
+     dirección); nunca quién lo pidió. Identidad sobria: tinta, grises y el
+     punto de «Klendar.» en coral. -->
+<style>
+@font-face { font-family: Manrope; font-weight: 400 800; font-display: swap; src: url(/assets/fonts/manrope-latin.woff2) format('woff2'); }
+@font-face { font-family: Sora; font-weight: 600 800; font-display: swap; src: url(/assets/fonts/sora-latin.woff2) format('woff2'); }
+@page { size: A4; margin: 0; }
+* { box-sizing: border-box; }
+html, body { margin: 0; background: #E9E9E9; color: #0A0A0A; font-family: Manrope, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+.hoja { width: 210mm; min-height: 297mm; margin: 24px auto; background: #fff; padding: 22mm 22mm 18mm; display: flex; flex-direction: column; box-shadow: 0 20px 60px -30px rgba(0,0,0,.35); }
+.marca { font-family: Sora, system-ui, sans-serif; font-weight: 800; font-size: 26px; letter-spacing: -.8px; }
+.marca i { color: #FF4D6D; font-style: normal; }
+.numero { font-family: Sora, system-ui, sans-serif; font-weight: 800; font-size: 128px; line-height: .9; letter-spacing: -6px; margin: 30mm 0 4mm; }
+.titulo { font-family: Sora, system-ui, sans-serif; font-weight: 700; font-size: 30px; line-height: 1.15; letter-spacing: -.6px; max-width: 150mm; margin: 0; }
+.local { margin: 10mm 0 0; font-size: 20px; font-weight: 800; }
+.zona { margin: 2px 0 0; color: #636363; font-size: 16px; }
+.cuerpo { margin-top: 14mm; font-size: 15px; line-height: 1.6; max-width: 150mm; }
+.cuerpo p { margin: 0 0 4mm; }
+.pie { margin-top: auto; padding-top: 10mm; border-top: 1px solid #DADADA; display: flex; justify-content: space-between; gap: 12px; font-size: 13px; color: #636363; }
+.pie b { color: #0A0A0A; }
+.barra { max-width: 210mm; margin: 16px auto 0; display: flex; gap: 10px; align-items: center; justify-content: space-between; padding: 0 4px; font-size: 14px; color: #3A3A3A; }
+.barra button { font: inherit; font-weight: 700; padding: 10px 18px; border-radius: 999px; border: 0; background: #0A0A0A; color: #fff; cursor: pointer; }
+@media print { html, body { background: #fff; } .barra { display: none; } .hoja { margin: 0; box-shadow: none; } }
+@media (max-width: 820px) { .hoja { width: auto; min-height: 0; margin: 12px; padding: 24px; } .numero { font-size: 88px; margin-top: 32px; } .titulo { font-size: 24px; } }
+</style>
+</head>
+<body>
+<div class="barra"><span id="ayuda">Imprímela o guárdala en PDF (en «Destino», «Guardar como PDF»).</span><button type="button" id="imprimir">Imprimir o guardar en PDF</button></div>
+<main class="hoja">
+  <div class="marca">Klendar<i>.</i></div>
+  <div class="numero" id="numero">0</div>
+  <h1 class="titulo" id="titulo">personas de tu barrio quieren verte en Klendar</h1>
+  <p class="local" id="local"></p>
+  <p class="zona" id="zona"></p>
+  <div class="cuerpo">
+    <p id="frase1"></p>
+    <p>Klendar es una app y una web donde los negocios de cada ciudad publican ofertas flash con cuenta atrás y eventos con reserva de plaza. La gente los descubre por cercanía y los canjea con un código QR de un solo uso que validas con tu móvil. Darte de alta lleva unos minutos y te echamos una mano.</p>
+    <p>Lo pruebas gratis, sin tarjeta, y nunca cobramos comisión por canje. Sin permanencia.</p>
+    <p>Si te interesa, entra en <b>klendar.app/para-negocios</b> o escríbenos. Si no, no te volveremos a escribir.</p>
+  </div>
+  <div class="pie"><span><b>Klendar</b> · klendar.app/para-negocios</span><span>info@klendar.app</span></div>
+</main>
+<script src="/admin/carta.js?v=1"></script>
+</body>
+</html>

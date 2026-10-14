@@ -88,7 +88,12 @@ const T = (en) => en
       widen: (km) => `Widen to ${km} km`, allCitiesBtn: 'See every city',
       clearF: 'Clear filters', changeF: 'Change filters', seeAgenda: "See what's on",
       backTop: 'Back to the top', notifyMe: "Tell me when there's something new",
-      recommend: 'Missing a place? Recommend a business', recommendDraft: "I'd like to see this business on Klendar: ",
+      // «Pedir un local» (crecer, 2026-10-14): a «Tu cuenta», #/pedir-local.
+      recommend: 'Missing a place? Ask for it on Klendar', askFor: (q) => `Can't find “${q}”? Ask for it on Klendar`,
+      // Sin Klendar en la zona (`klendar_coverage`): «Avísame cuando llegue».
+      notHere: "Klendar isn't here yet", notHereIn: (z) => `Klendar isn't in ${z} yet`,
+      notHereBody: "We're opening city by city. If you like, we'll let you know once when we get there.",
+      notifyArrive: 'Tell me when it arrives', pickCity: 'Pick a city', askVenue: 'Ask for a place',
       maybe: 'You might like',
       // Lista vacía (como Descubre vacío en la app): las mismas salidas.
       emptyTitle: 'Nothing around here yet', emptyTitleFiltered: 'Nothing with those filters',
@@ -177,7 +182,10 @@ const T = (en) => en
       widen: (km) => `Ampliar a ${km} km`, allCitiesBtn: 'Ver todas las ciudades',
       clearF: 'Quitar filtros', changeF: 'Cambiar filtros', seeAgenda: 'Ver la agenda',
       backTop: 'Volver al principio', notifyMe: 'Avísame cuando haya algo nuevo',
-      recommend: '¿Echas en falta algún sitio? Recomiéndanos un negocio', recommendDraft: 'Me gustaría ver en Klendar este negocio: ',
+      recommend: '¿Echas en falta algún sitio? Pide que esté en Klendar', askFor: (q) => `¿No encuentras «${q}»? Pide que esté en Klendar`,
+      notHere: 'Klendar aún no ha llegado aquí', notHereIn: (z) => `Klendar aún no ha llegado a ${z}`,
+      notHereBody: 'Vamos abriendo ciudad a ciudad. Si quieres, te avisamos una sola vez cuando lleguemos.',
+      notifyArrive: 'Avísame cuando llegue', pickCity: 'Elegir una ciudad', askVenue: 'Pedir un local',
       maybe: 'Quizá te interese',
       // Lista vacía (como Descubre vacío en la app): las mismas salidas.
       emptyTitle: 'Aún no hay nada por aquí', emptyTitleFiltered: 'No hay nada con esos filtros',
@@ -379,11 +387,91 @@ const mapaHtml = (items, lang, S) => {
 const RADIOS_KM = [1, 3, 5, 10, 25];
 const RADIO_KM = 5;
 
+/** «Pedir un local» en «Tu cuenta» (`#/pedir-local`), con el nombre ya
+ * escrito si viene de una búsqueda. */
+const pedirHref = (lang, nombre = '') => `${lang === 'en' ? '/app/?lang=en' : '/app/'}#/pedir-local${nombre ? `?nombre=${encodeURIComponent(String(nombre).slice(0, 80))}` : ''}`;
+
+/** «Klendar aún no ha llegado a {zona}» (crecer, 2026-10-14): con «Cerca de
+ * ti», la lista vacía y `klendar_coverage` diciendo que aquí no hay Klendar
+ * (ningún negocio a 25 km). La pantalla vacía de siempre (`.vacio`, centrada
+ * y con salidas): «Avísame cuando llegue» (el principal), «Elegir una
+ * ciudad» (abre el «dónde») y «Pedir un local». La zona: la ciudad de
+ * Klendar que viene (`coming`) o «aquí», que /assets/avisame.js afina con la
+ * geocodificación inversa de Mapbox (el punto redondeado). Ese script hace
+ * también el «Avísame»: con sesión de «Tu cuenta», directo; sin ella, un
+ * correo con doble confirmación. Sin JavaScript, el botón lleva a «Tu
+ * cuenta» (`#/avisame`), que lo hace al entrar. No se enseña «Quizá te
+ * interese» (sería de otra ciudad) ni el aviso del modo viaje. */
+const sinKlendarHtml = ({ S, lang, lat, lng, cobertura, link }) => {
+  const en = lang === 'en';
+  const zona = cobertura?.status === 'coming' && cobertura.city_name ? String(cobertura.city_name) : '';
+  const sp = supabasePublic();
+  const pos = { lat: posUrl(lat), lng: posUrl(lng) };
+  const app = `${en ? '/app/?lang=en' : '/app/'}#/avisame?${new URLSearchParams({ ...pos, ...(zona ? { zona } : {}) })}`;
+  const textos = { notHere: S.notHere, notHereIn: S.notHereIn('{zona}'), ...avisameTextos(en) };
+  return `${AVISAME_CSS}<section class="vacio avisame" aria-labelledby="finTitulo" data-avisame data-lat="${esc(pos.lat)}" data-lng="${esc(pos.lng)}" data-zona="${esc(zona)}">
+    <span class="vacio-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="${IC.lugar}"/></svg></span>
+    <h2 id="finTitulo" tabindex="-1" data-avisame-titulo>${esc(zona ? S.notHereIn(zona) : S.notHere)}</h2>
+    <p data-avisame-texto>${esc(S.notHereBody)}</p>
+    <div class="vacio-botones" data-avisame-botones>
+      <a class="pill accent" href="${esc(app)}" data-avisame-si>${esc(S.notifyArrive)}</a>
+      <a class="pill" href="${esc(`${link({ cerca: false, city: '' })}#barra`)}" data-elige-ciudad>${esc(S.pickCity)}</a>
+      <a class="pill" href="${esc(pedirHref(lang))}">${esc(S.askVenue)}</a>
+    </div>
+    <div class="avisame-caja" data-avisame-caja hidden></div>
+  </section>
+  <script type="application/json" id="avisame-textos">${JSON.stringify(textos).replace(/</g, '\\u003c')}</script>
+  <script src="/assets/avisame.js?v=1" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}" data-lang="${en ? 'en' : 'es'}"></script>`;
+};
+
+/** Lo que dice /assets/avisame.js (el formulario y lo que pasa después). */
+const avisameTextos = (en) => (en
+  ? {
+      email: 'Your email', send: 'Tell me', login: 'Log in', busy: 'One moment…',
+      note: "Only to let you know once. You'll get an email to confirm it and you can remove yourself whenever you like.",
+      privacy: 'Privacy', privacyUrl: '/en/privacy/',
+      badEmail: "That email doesn't look right", tooMany: 'Too many tries in a row. Wait a while and try again.',
+      oops: 'Something went wrong. If it happens again, email info@klendar.app.',
+      checkTitle: 'Check your email to confirm it',
+      checkBody: "We've sent a link to {correo}. Until you confirm it we won't add you (and if you don't within 7 days, we'll delete it).",
+      okTitle: "Done: we'll let you know when Klendar arrives in {zona}",
+      okBody: 'Just once. You can remove it in Your account → What you have asked for.',
+      alreadyBody: 'You were already on the list. You can remove it in Your account → What you have asked for.',
+      seeMine: 'See what you have asked for', liveTitle: 'Klendar is already here', liveBody: 'Reload the page to see it.', reload: 'Reload',
+    }
+  : {
+      email: 'Tu correo', send: 'Avísame', login: 'Entrar', busy: 'Un momento…',
+      note: 'Solo para avisarte una vez; te llegará un correo para confirmarlo y podrás borrarte cuando quieras.',
+      privacy: 'Privacidad', privacyUrl: '/privacidad/',
+      badEmail: 'Ese correo no parece válido', tooMany: 'Demasiados intentos seguidos. Espera un rato y vuelve a probar.',
+      oops: 'Algo no ha ido bien. Si vuelve a pasar, escríbenos a info@klendar.app.',
+      checkTitle: 'Mira tu correo para confirmarlo',
+      checkBody: 'Te hemos mandado un enlace a {correo}. Hasta que no lo confirmes no te apuntamos (y si no lo haces en 7 días, lo borramos).',
+      okTitle: 'Listo: te avisaremos cuando Klendar llegue a {zona}',
+      okBody: 'Una sola vez. Lo puedes quitar en Tu cuenta → Lo que has pedido.',
+      alreadyBody: 'Ya estabas en la lista. Lo puedes quitar en Tu cuenta → Lo que has pedido.',
+      seeMine: 'Ver lo que has pedido', liveTitle: 'Klendar ya está aquí', liveBody: 'Vuelve a cargar la página para verlo.', reload: 'Volver a cargar',
+    });
+
+/** Estilos del formulario de «Avísame» (solo en esa pantalla). */
+const AVISAME_CSS = `<style>
+.avisame-caja { width: min(420px, 100%); margin-top: 22px; text-align: left; }
+.avisame-form { display: grid; gap: 12px; }
+.avisame-form label { display: grid; gap: 6px; font-weight: 700; font-size: 14px; }
+.avisame-form input { font: inherit; font-size: 16px; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--glass-border); background: var(--elevated); color: var(--ink); }
+.avisame-form input:focus { outline: 2px solid var(--ink); outline-offset: 1px; }
+.avisame-nota { margin: 0; color: var(--ink-2); font-size: 13px; }
+.avisame-nota a { text-decoration: underline; text-underline-offset: 2px; color: inherit; }
+.avisame-err { margin: 0; color: #C81E42; font-size: 14px; font-weight: 700; }
+.avisame-form .vacio-botones { margin-top: 4px; }
+@media (prefers-color-scheme: dark) { .avisame-err { color: #FF9B9B; } }
+</style>`;
+
 /** Al final de la lista (última página): qué se ha visto y qué hacer ahora.
  * Lo mismo que la tarjeta final de Descubre en la app. Con [vacio] (no hay
  * nada desde el principio), las mismas salidas y la misma lógica, pero
  * centradas como una pantalla vacía (`.vacio`), como Descubre vacío. */
-const finalHtml = ({ S, en, lang, cerca, km, city, filtros, link, page, alertaHref, sugerencias, vacio = false, limpiar = '', compacto = false }) => {
+const finalHtml = ({ S, en, lang, cerca, km, city, filtros, link, page, alertaHref, sugerencias, vacio = false, limpiar = '', compacto = false, pedirQ = '', sinSugiere = false }) => {
   const sigKm = cerca ? RADIOS_KM.find((k) => k > km) : null;
   // ¿Se puede mirar más lejos? Con «Cerca de mí», a la distancia siguiente;
   // en una ciudad, en todas.
@@ -400,7 +488,10 @@ const finalHtml = ({ S, en, lang, cerca, km, city, filtros, link, page, alertaHr
   const quitar = limpiar
     ? `<a class="pill" href="${esc(limpiar)}" data-limpia-filtros>${esc(S.clearF)}</a>`
     : '';
-  const sugiere = ampliar ? '' : `<p class="${vacio ? 'vacio-sugiere' : 'fin-sugiere'}"><a href="${esc(`${en ? '/app/?lang=en' : '/app/'}#/sugerencias?texto=${encodeURIComponent(S.recommendDraft)}`)}">${esc(S.recommend)}</a></p>`;
+  // «Pedir un local» (en la distancia mayor, o con una búsqueda sin negocios
+  // que encajen: «¿No encuentras «X»? Pide que esté en Klendar»).
+  const sugiere = sinSugiere || (ampliar && !pedirQ) ? ''
+    : `<p class="${vacio ? 'vacio-sugiere' : 'fin-sugiere'}"><a href="${esc(pedirHref(lang, pedirQ))}">${esc(pedirQ ? S.askFor(pedirQ) : S.recommend)}</a></p>`;
   // En el feed de Descubre, en filas (caben en la última pantalla).
   const quizas = sugerencias.length ? `<h2 class="fin-h">${esc(S.maybe)}</h2>
   ${compacto ? `<div class="tj-filas">${sugerencias.map((o) => tarjeta(o, lang, { forma: 'fila' })).join('')}</div>` : rejilla(sugerencias, lang)}` : '';
@@ -921,8 +1012,16 @@ export async function explorePage(url, lang, modo = 'explorar') {
   // zona y la distancia se dicen aparte y el orden no quita nada.
   const conFiltros = Boolean(q || cat || kind || price || when || soloDescuento || abierto || e.amigos || traits.length
     || traitsMarcas(e).length || antesCierre);
+  // «Cerca de ti» y nada: ¿es que aquí aún no hay Klendar? (`klendar_coverage`,
+  // ningún negocio a 25 km). Entonces, «Avísame cuando llegue» en vez del
+  // vacío de siempre. Si no contesta, el vacío de siempre.
+  const cobertura = vacio && cerca && !negocios
+    ? await rpc('klendar_coverage', { p_lat: lat, p_lng: lng }).catch(() => null) : null;
+  const sinKlendar = Boolean(cobertura?.status) && cobertura.status !== 'live';
   let sugerencias = [];
-  if ((alFinal || vacio) && (cerca || city)) {
+  if (sinKlendar) {
+    // Nada de «Quizá te interese»: sería de otra ciudad.
+  } else if ((alFinal || vacio) && (cerca || city)) {
     const vistos = new Set(items.map((o) => o.id));
     // Son un extra: si no llegan, la página sale igual (sin ellas).
     const fuera = await (cerca
@@ -1237,10 +1336,18 @@ export async function explorePage(url, lang, modo = 'explorar') {
   const lineaTiempo = tiempo && enLista && !vacio ? `<p class="tiempo-linea">${icTiempo(tiempo, 16)}<span>${esc(tiempo === 'rain' ? S.rainLine : S.sunLine)}</span>
     <a class="tiempo-quitar" href="${esc(link({ tiempoOff: true }))}">${esc(S.weatherOff)}</a>
     <small class="tiempo-fuente">${esc(S.weatherData)} <a href="${FUENTE_TIEMPO.url}" rel="noopener" target="_blank">${FUENTE_TIEMPO.nombre}</a></small></p>` : '';
-  const final = alFinal || vacio ? finalHtml({
-    S, en, lang, cerca, km, city, filtros: conFiltros, link, page, sugerencias, vacio, alertaHref,
-    limpiar: hayAlgo ? limpia : '', compacto: descubre && !vacio,
-  }) : '';
+  // Con una búsqueda y ningún negocio que encaje: «¿No encuentras «X»? Pide
+  // que esté en Klendar» (a «Pedir un local», con el nombre escrito). Con
+  // resultados, una línea debajo de ellos; sin nada, en la pantalla vacía.
+  const pedirQ = q && !descubre && (negocios ? items.length === 0 && page === 1 : conNegociosArriba && !(sitios?.items || []).length) ? q : '';
+  const lineaPedir = pedirQ && !negocios && !vacio
+    ? `<p class="fin-sugiere"><a href="${esc(pedirHref(lang, pedirQ))}">${esc(S.askFor(pedirQ))}</a></p>` : '';
+  const final = sinKlendar ? sinKlendarHtml({ S, lang, lat, lng, cobertura, link })
+    : alFinal || vacio ? finalHtml({
+      S, en, lang, cerca, km, city, filtros: conFiltros, link, page, sugerencias, vacio, alertaHref,
+      limpiar: hayAlgo ? limpia : '', compacto: descubre && !vacio,
+      pedirQ: vacio ? pedirQ : '', sinSugiere: Boolean(lineaPedir),
+    }) : '';
 
   // ── Más formas de explorar: las páginas de Google, abajo y en su sitio ──
   const ciudadSeo = (cerca ? '' : city) || (ciudades.length === 1 ? String(ciudades[0].city) : '');
@@ -1307,7 +1414,8 @@ ${GRUPOS_CSS}` : ''}`;
     resultados = items.length
       ? `<div class="nlist">${items.map((b) => bizCard(b, lang, S)).join('')}</div>`
       : `<section class="vacio"><h2>${esc(S.noPlaces)}</h2>
-        ${conFiltros ? `<div class="vacio-botones"><a class="pill accent" href="${esc(link({ q: '', cat: '', abierto: false }))}">${esc(S.clearF)}</a></div>` : ''}</section>`;
+        ${conFiltros ? `<div class="vacio-botones"><a class="pill accent" href="${esc(link({ q: '', cat: '', abierto: false }))}">${esc(S.clearF)}</a></div>` : ''}
+        <p class="vacio-sugiere"><a href="${esc(pedirHref(lang, pedirQ))}">${esc(pedirQ ? S.askFor(pedirQ) : S.recommend)}</a></p></section>`;
   } else if (calendario) {
     resultados = calendarioHtml({ items, lang, S, link, mes, dia, hoy });
   } else if (mapa) {
@@ -1320,7 +1428,8 @@ ${GRUPOS_CSS}` : ''}`;
     ${seccionArtistas}
     ${seccionPartidos}
     ${(negArriba.length || seccionPartidos || seccionArtistas) && items.length ? `<h2 class="seccion-t-pub">${esc(S.offersSection)}</h2>` : ''}
-    ${vacio ? '' : rejilla(items, lang, { primera: !negArriba.length && !seccionPartidos && !seccionArtistas, galeria: true })}`;
+    ${vacio ? '' : rejilla(items, lang, { primera: !negArriba.length && !seccionPartidos && !seccionArtistas, galeria: true })}
+    ${lineaPedir}`;
   }
 
   const body = `
@@ -1618,7 +1727,7 @@ export async function kidsPage(rawCity, lang) {
       <a class="pill" href="${esc(agendaCiudad)}">${esc(S.seeAgenda)}</a>
       <a class="pill" href="${esc(explorar)}">${esc(K.inExplore)}</a>
     </div>
-    <p class="vacio-sugiere"><a href="${esc(`${en ? '/app/?lang=en' : '/app/'}#/sugerencias?texto=${encodeURIComponent(S.recommendDraft)}`)}">${esc(S.recommend)}</a></p>
+    <p class="vacio-sugiere"><a href="${esc(pedirHref(lang))}">${esc(S.recommend)}</a></p>
   </section>`}
   ${sitios}
   <p class="muted" style="font-size:13px">${esc(K.note)}</p>

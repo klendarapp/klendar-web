@@ -59,7 +59,7 @@
 <script src="/assets/cabecera.js?v=8" defer></script>
 <main class="doc" id="contenido">
 <h1>Política de cookies</h1>
-<div class="meta">Última actualización: 13 de octubre de 2026 · Versión 2026-09-29</div>
+<div class="meta">Última actualización: 14 de octubre de 2026 · Versión 2026-09-29</div>
 
 
 <p><strong>En resumen.</strong> klendar.app no usa cookies. Guarda en tu navegador solo lo imprescindible para que funcione lo que pides (tu sesión, tu idioma, tus filtros, los códigos que un negocio valida sin conexión) y cuenta las visitas sin cookies ni identificarte. Nada de esto sirve para publicidad ni para seguirte por otras webs, así que no te pedimos consentimiento (art. 22.2 de la LSSI-CE). Si algún día añadimos algo que lo necesite, te lo pediremos antes.</p>
@@ -71,6 +71,7 @@
 <tr><td><code>sb-…-auth-token-…code-verifier</code></td><td>«Tu cuenta» y panel (almacenamiento local)</td><td>Un secreto de un solo uso que comprueba que la vuelta de Google o Apple llega al mismo navegador en el que empezaste a entrar (PKCE)</td><td>Hasta terminar de entrar o cerrar sesión</td><td>Técnica (seguridad)</td></tr>
 <tr><td><code>sb-…-admin-auth-token</code></td><td>Administración (almacenamiento local)</td><td>Mantener la sesión de administración, aparte de la de «Tu cuenta»</td><td>Hasta que cierres sesión, tras 30 minutos sin actividad o a las 12 horas</td><td>Técnica (autenticación)</td></tr>
 <tr><td><code>klendar.admin.actividad</code>, <code>klendar.admin.cierre</code></td><td>Administración (almacenamiento local)</td><td>Cuándo hubo actividad por última vez (para cerrar la sesión tras 30 minutos sin ella) y por qué se cerró, para decírtelo</td><td>Hasta la siguiente vez que entres</td><td>Técnica (seguridad)</td></tr>
+<tr><td><code>klendar.admin.nav.sistema</code>, <code>klendar.admin.resumen.mas</code></td><td>Administración (almacenamiento local)</td><td>Recordar si dejaste abiertos el grupo «Sistema» del menú y «Más» del resumen</td><td>Hasta que lo cambies</td><td>Preferencia elegida por ti</td></tr>
 <tr><td><code>klendar.acceso.aviso</code></td><td>«Tu cuenta» y panel (almacenamiento de sesión)</td><td>Avisarte si un enlace del correo ha caducado o ya se usó</td><td>Hasta enseñar el aviso o cerrar la pestaña</td><td>Técnica</td></tr>
 <tr><td><code>klendar.intencion</code></td><td>Fichas y «Tu cuenta» (almacenamiento de sesión)</td><td>Recordar el botón que acabas de pulsar (guardar, reservar, conseguir el código…) para hacerlo al volver de entrar, y no hacerlo nunca si llegas por un enlace de fuera</td><td>Hasta usarlo, 15 minutos como mucho o cerrar la pestaña</td><td>Técnica (seguridad)</td></tr>
 <tr><td><code>klendar.biz</code></td><td>Panel del negocio</td><td>Recordar qué negocio estabas gestionando</td><td>Hasta que cierres sesión</td><td>Técnica</td></tr>
@@ -108,6 +109,7 @@
 
 <h2 class="cambios" id="historial">Historial de cambios</h2>
 <ul>
+  <li><strong>14 de octubre de 2026</strong>: Dos claves más de la administración: recuerdan si dejaste abiertos el grupo «Sistema» del menú y «Más» del resumen.</li>
   <li><strong>13 de octubre de 2026</strong>: Una clave más: los negocios que eliges en «Grupos y empresas» para pedirles presupuesto (hasta cerrar la pestaña); el idioma que guardan «Tu cuenta» y el panel puede ser también catalán, gallego, euskera, francés, alemán o italiano.</li>
   <li><strong>7 de octubre de 2026</strong>: Dos claves de Klendar en la tele, que guarda el navegador de la tele del local (no el tuyo): la llave que la une al local y lo último que enseñó; esa página no cuenta visitas.</li>
   <li><strong>6 de octubre de 2026</strong>: Cuatro claves más: tus gustos y tu ciudad, tus búsquedas recientes, la fecha en que cerraste el aviso de viaje y la lista de ciudades; tus gustos también se borran al cerrar sesión.</li>

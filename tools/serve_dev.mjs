@@ -121,6 +121,8 @@ createServer(async (req, res) => {
     // «Tus planes en tu calendario»: /cal/<token>.ics.
     else if ((m = path.match(/^\/cal\/([^/]+)$/))) { mod = await load('functions/cal/[token].js'); params = { token: m[1] }; }
     else if ((m = path.match(/^\/baja\/([^/]+)\/?$/))) { mod = await load('functions/baja/[token].js'); params = { token: m[1] }; }
+    // Los enlaces del correo de «Avísame cuando Klendar llegue».
+    else if ((m = path.match(/^\/avisame\/(confirmar|baja)\/([^/]+)\/?$/))) { mod = await load(`functions/avisame/${m[1]}/[token].js`); params = { token: m[2] }; }
     else if ((m = path.match(/^\/widget\/([^/]+)\/?$/))) { mod = await load('functions/widget/[id].js'); params = { id: m[1] }; }
     else if (path === '/api/mapbox-token') { mod = await load('functions/api/mapbox-token.js'); }
     else if (path === '/sitemap-agenda.xml') { mod = await load('functions/sitemap-agenda.xml.js'); }
@@ -128,8 +130,10 @@ createServer(async (req, res) => {
     else if (path === '/sitemap-artistas.xml') { mod = await load('functions/sitemap-artistas.xml.js'); }
 
     if (mod) {
-      const request = new Request(`https://klendar.app${path}${url.search}`, { headers: { 'accept-language': 'es' } });
-      const out = await mod.onRequestGet({ request, params, env: process.env });
+      // POST (los botones de /baja/ y /avisame/), si la página lo tiene.
+      const post = req.method === 'POST' && mod.onRequestPost;
+      const request = new Request(`https://klendar.app${path}${url.search}`, { method: post ? 'POST' : 'GET', headers: { 'accept-language': 'es' } });
+      const out = await (post ? mod.onRequestPost : mod.onRequestGet)({ request, params, env: process.env });
       res.writeHead(out.status, Object.fromEntries(out.headers));
       // En local, sin el contador de Cloudflare (su servidor no acepta
       // localhost y la consola se llenaba de errores que en producción no hay).

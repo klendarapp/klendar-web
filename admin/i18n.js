@@ -1399,4 +1399,8 @@ const I18N = makeI18N({
     "Escalera": "Sliding scale",
     "Id del precio en Stripe (price_…)": "Stripe price id (price_…)",
     "Activo": "Active",
+    // «Crecer» (admin/crecer.js): el menú.
+    "Crecer": "Growth",
+    "Locales pedidos": "Requested places",
+    "Dónde crecer": "Where to grow",
 }, { idiomas: ['es', 'en'] }); // herramienta interna: solo español e inglés
