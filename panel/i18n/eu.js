@@ -3014,5 +3014,16 @@ KL_DIC('eu', {
   "Pagar aparte, con otros datos de factura": "Ordaindu bereizita, beste faktura-datu batzuekin",
   "Para otra empresa o con otro NIF: una suscripción nueva, con sus propios datos de factura y su forma de pago.": "Beste enpresa baterako edo beste IFZ batekin: harpidetza berri bat, bere faktura-datuekin eta ordaintzeko moduarekin.",
   "{total_excluding_tax} + IVA ({total} en total)": "{total_excluding_tax} + BEZ ({total} guztira)",
-  "Incluye el ajuste del último cambio de plan o de locales.": "Plan edo lokalen azken aldaketaren doikuntza barne."
+  "Incluye el ajuste del último cambio de plan o de locales.": "Plan edo lokalen azken aldaketaren doikuntza barne.",
+  "Se suma a tu suscripción el {due_on}, cuando acabe su prueba.": "Zure harpidetzara gehituko da {due_on}(e)an, proba amaitzean.",
+  "Hasta entonces sigue en prueba. Ese día se suma a la suscripción que ya pagas ({de}) y Stripe ajusta la próxima factura.": "Ordura arte proban jarraitzen du. Egun horretan dagoeneko ordaintzen duzun harpidetzara gehituko da ({de}) eta Stripek hurrengo faktura doituko du.",
+  "Hasta entonces sigue en prueba. Ese día se suma a la suscripción que ya pagas y Stripe ajusta la próxima factura.": "Ordura arte proban jarraitzen du. Egun horretan dagoeneko ordaintzen duzun harpidetzara gehituko da eta Stripek hurrengo faktura doituko du.",
+  "Sumarlo ya…": "Gehitu orain…",
+  "Le quedan {diasPrueba} días de prueba: se suma el {sumaEl}, cuando acaben, y hasta entonces no se cobra nada por él.": "{diasPrueba} proba-egun geratzen zaizkio: {sumaEl}(e)an gehituko da, amaitzean, eta ordura arte ez da ezer kobratuko.",
+  "Sumarlo ya, sin esperar…": "Gehitu orain, itxaron gabe…",
+  "Stripe lo suma hoy y ajusta la próxima factura con la parte proporcional. Pierde los {diasPrueba} días de prueba que le quedan.": "Stripek gaur gehituko du eta hurrengo faktura doituko du dagokion zatiarekin. Geratzen zaizkion {diasPrueba} proba-egunak galduko ditu.",
+  "Se sumará el {sumaEl}, cuando acabe su prueba; hasta entonces sigue en prueba y no se cobra nada por él. Puedes deshacerlo antes.": "{sumaEl}(e)an gehituko da, proba amaitzean; ordura arte proban jarraitzen du eta ez da ezer kobratuko. Lehenago desegin dezakezu.",
+  "Se sumará el {sumaEl}": "{sumaEl}(e)an gehituko da",
+  "Ya no se sumará": "Ez da gehituko",
+  "Con todo hasta el {fin}. El {due_on} se suma a tu suscripción, sin cortes.": "Dena barne {fin} arte. {due_on}(e)an zure harpidetzara gehituko da, etenik gabe."
 });

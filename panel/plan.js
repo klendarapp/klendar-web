@@ -105,7 +105,7 @@ const planMasDias = (iso, n) => new Date(Date.parse(`${iso}T00:00:00Z`) + n * 86
 const planDiasEntre = (a, b) => Math.round((Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / 864e5);
 
 /** Etiqueta y frase del estado (las mismas que la app). */
-function planEstado(sub, bill, st) {
+function planEstado(sub, bill, st, pendiente = null) {
   const fin = sub.period_end ? planDia(sub.period_end) : '';
   const bloqueoEl = bill.block_on ? diaLargoFecha(bill.block_on) : '';
   const conBloqueo = bill.block_enabled === true;
@@ -140,6 +140,12 @@ function planEstado(sub, bill, st) {
     return ['warn', bi('CANCELADO', 'CANCELLED'),
       bi(`Cancelado: sigue con todo hasta el ${planDia(bill.ends_at)} y después no se renueva.`,
         `Cancelled: everything stays on until ${planDia(bill.ends_at)} and then it won't renew.`)];
+  }
+  // Apuntado para sumarse a la suscripción cuando acabe la prueba.
+  if (pendiente && (sub.status === 'trial' || sub.plan_slug === 'free')) {
+    return ['st-trial', sub.status === 'trial' ? bi('PRUEBA', 'TRIAL') : bi('GRATIS', 'FREE'),
+      bi(`Con todo hasta el ${fin}. El ${diaLargoFecha(pendiente.due_on)} se suma a tu suscripción, sin cortes.`,
+        `Everything included until ${fin}. On ${diaLargoFecha(pendiente.due_on)} it joins your subscription, with no break.`)];
   }
   if (sub.status === 'trial') {
     return ['st-trial', bi('PRUEBA', 'TRIAL'), st
@@ -187,7 +193,7 @@ PAGES.plan = async (v) => {
   const st = ov.stripe;
   const duena = ov.is_owner;
   const exento = planExento(ov);
-  const [tono, etiqueta, frase] = planEstado(sub, bill, st);
+  const [tono, etiqueta, frase] = planEstado(sub, bill, st, ov.is_owner && !st ? ov.pending_add : null);
   const nombre = planNombre(sub.plan_names, sub.plan_slug);
   const asunto = encodeURIComponent(I18N.lang === 'en' ? 'Klendar plan' : 'Plan de Klendar');
   const cuerpo = encodeURIComponent(`${I18N.lang === 'en' ? 'Business' : 'Negocio'}: ${BIZ.id}`);
@@ -268,7 +274,26 @@ PAGES.plan = async (v) => {
   // Con una suscripción ya pagada, dos caminos: sumar este local a ella
   // (mismos datos de factura) o pagarlo aparte, con otros datos (otra
   // empresa, otro NIF): un Checkout nuevo con su propio cliente de Stripe.
-  const anadible = duena && !st && ov.ready && ov.can_add_to && !enPausa;
+  // Un local con prueba (o gratis con fecha) que queda: se apunta para
+  // sumarse el día que acaba, sin perder esos días (`billing_add_schedule`;
+  // lo suma el cron). Si el dueño quiere, lo suma ya y los pierde.
+  const pendiente = duena && !st ? ov.pending_add : null;
+  const conPrueba = (sub.status === 'trial' || (sub.plan_slug === 'free' && sub.period_end)) && sub.period_end;
+  const sumaEl = conPrueba ? planMasDias(sub.period_end, 1) : null;
+  const diasPrueba = sumaEl ? planDiasEntre(planHoy(), sumaEl) : 0;
+  if (pendiente) {
+    const de = (pendiente.locales || []).join(', ');
+    html += `<div class="card"><h2>${ms('storefront')} ${esc(bi('Añadir a mi suscripción', 'Add to my subscription'))}</h2>
+      <p style="margin:0 0 6px"><b>${esc(bi(`Se suma a tu suscripción el ${diaLargoFecha(pendiente.due_on)}, cuando acabe su prueba.`, `It joins your subscription on ${diaLargoFecha(pendiente.due_on)}, when its trial ends.`))}</b></p>
+      <p class="muted" style="margin:0 0 10px">${esc(de
+        ? bi(`Hasta entonces sigue en prueba. Ese día se suma a la suscripción que ya pagas (${de}) y Stripe ajusta la próxima factura.`, `Until then it stays on trial. That day it joins the subscription you already pay for (${de}) and Stripe adjusts the next invoice.`)
+        : bi('Hasta entonces sigue en prueba. Ese día se suma a la suscripción que ya pagas y Stripe ajusta la próxima factura.', 'Until then it stays on trial. That day it joins the subscription you already pay for and Stripe adjusts the next invoice.'))}</p>
+      <div class="plan-botones">
+        <button class="btn" type="button" id="plan-pendiente-deshacer">${ms('cancel')}${esc(bi('Deshacer', 'Undo'))}</button>
+        <button class="btn" type="button" id="plan-anadir-ya">${ms('storefront')}${esc(bi('Sumarlo ya…', 'Add it now…'))}</button>
+      </div></div>`;
+  }
+  const anadible = duena && !st && ov.ready && ov.can_add_to && !enPausa && !pendiente;
   if (anadible) {
     const de = (ov.can_add_to_locales || []).join(', ');
     html += `<div class="card"><h2>${ms('storefront')} ${esc(bi('Añadir a mi suscripción', 'Add to my subscription'))}</h2>
@@ -277,9 +302,11 @@ PAGES.plan = async (v) => {
           `Add it to the subscription you already pay for (${de}), with the same invoice details: the price per venue drops with the sliding scale and Stripe adjusts the next invoice.`)
         : bi('Súmalo a la suscripción que ya pagas, con los mismos datos de factura: el precio por local baja con la escalera y Stripe ajusta la próxima factura.',
           'Add it to the subscription you already pay for, with the same invoice details: the price per venue drops with the sliding scale and Stripe adjusts the next invoice.'))}</p>
-      <button class="btn primary" type="button" id="plan-anadir">${ms('storefront')}${esc(bi('Añadir a mi suscripción', 'Add to my subscription'))}</button></div>`;
+      ${diasPrueba > 0 ? `<p class="muted small" style="margin:0 0 10px">${esc(bi(`Le quedan ${diasPrueba} días de prueba: se suma el ${diaLargoFecha(sumaEl)}, cuando acaben, y hasta entonces no se cobra nada por él.`, `It has ${diasPrueba} trial days left: it joins on ${diaLargoFecha(sumaEl)}, when they end, and nothing is charged for it until then.`))}</p>` : ''}
+      <button class="btn primary" type="button" id="plan-anadir">${ms('storefront')}${esc(bi('Añadir a mi suscripción', 'Add to my subscription'))}</button>
+      ${diasPrueba > 0 ? `<p style="margin:10px 0 0"><button class="btn sm ghost" type="button" id="plan-anadir-ya">${esc(bi('Sumarlo ya, sin esperar…', 'Add it now, without waiting…'))}</button></p>` : ''}</div>`;
   }
-  if (duena && !st && ov.ready && !gratisSiempre && !enPausa && (ov.plans || []).length) {
+  if (duena && !st && ov.ready && !gratisSiempre && !enPausa && !pendiente && (ov.plans || []).length) {
     // Con menos de 48 h de prueba Stripe cobra ya (`trial_min_hours`, lo mismo
     // que `billing_checkout_prepare`): entonces no se dice «no se cobra nada».
     const finPrueba = sub.period_end ? Date.parse(`${planMasDias(sub.period_end, 1)}T00:00:00Z`) : 0;
@@ -460,12 +487,45 @@ PAGES.plan = async (v) => {
   const reanudar = $('#plan-reanudar', v);
   if (reanudar) reanudar.onclick = () => volverAAbrir(reanudar);
 
+  // Sumarlo ya (con prueba, pierde los días que le quedan).
+  const sumaYa = async (boton) => {
+    const texto = diasPrueba > 0
+      ? bi(`Stripe lo suma hoy y ajusta la próxima factura con la parte proporcional. Pierde los ${diasPrueba} días de prueba que le quedan.`,
+        `Stripe adds it today and adjusts the next invoice proportionally. It loses the ${diasPrueba} trial days it has left.`)
+      : bi('Stripe sumará este local a tu suscripción y ajustará la próxima factura con la parte proporcional.', 'Stripe will add this venue to your subscription and adjust the next invoice proportionally.');
+    if (!(await confirmDlg(bi('Añadir a mi suscripción', 'Add to my subscription'), esc(texto), { submit: bi('Añadir', 'Add') }))) return;
+    await espera(boton, async () => { await planFn('add_location'); toast(I18N.t('Local añadido a tu suscripción')); await cargaCobro(); route(); });
+  };
   const anadir = $('#plan-anadir', v);
   if (anadir) {
     anadir.onclick = async () => {
-      if (!(await confirmDlg(bi('Añadir a mi suscripción', 'Add to my subscription'), esc(bi('Stripe sumará este local a tu suscripción y ajustará la próxima factura con la parte proporcional.', 'Stripe will add this venue to your subscription and adjust the next invoice proportionally.')), { submit: bi('Añadir', 'Add') }))) return;
-      await espera(anadir, async () => { await planFn('add_location'); toast(I18N.t('Local añadido a tu suscripción')); await cargaCobro(); route(); });
+      if (diasPrueba <= 0) { await sumaYa(anadir); return; }
+      if (!(await confirmDlg(bi('Añadir a mi suscripción', 'Add to my subscription'),
+        esc(bi(`Se sumará el ${diaLargoFecha(sumaEl)}, cuando acabe su prueba; hasta entonces sigue en prueba y no se cobra nada por él. Puedes deshacerlo antes.`,
+          `It will join on ${diaLargoFecha(sumaEl)}, when its trial ends; until then it stays on trial and nothing is charged for it. You can undo it before then.`)),
+        { submit: bi('Añadir', 'Add') }))) return;
+      await espera(anadir, async () => {
+        try {
+          await rpc('billing_add_schedule', { p_business: BIZ.id });
+          toast(bi(`Se sumará el ${diaLargoFecha(sumaEl)}`, `It will join on ${diaLargoFecha(sumaEl)}`));
+          route();
+        } catch (e) {
+          // La prueba acaba hoy: se suma ya.
+          if (/no_trial/.test(e.clave || '')) { await planFn('add_location'); toast(I18N.t('Local añadido a tu suscripción')); await cargaCobro(); route(); return; }
+          throw e;
+        }
+      });
     };
+  }
+  const anadirYa = $('#plan-anadir-ya', v);
+  if (anadirYa) anadirYa.onclick = () => sumaYa(anadirYa);
+  const deshacerPend = $('#plan-pendiente-deshacer', v);
+  if (deshacerPend) {
+    deshacerPend.onclick = () => espera(deshacerPend, async () => {
+      await rpc('billing_add_schedule', { p_business: BIZ.id, p_undo: true });
+      toast(bi('Ya no se sumará', 'It will no longer join'));
+      route();
+    });
   }
   const quitar = $('#plan-quitar', v);
   if (quitar) {

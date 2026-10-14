@@ -3014,5 +3014,16 @@ KL_DIC('ca', {
   "Pagar aparte, con otros datos de factura": "Pagar a part, amb altres dades de factura",
   "Para otra empresa o con otro NIF: una suscripción nueva, con sus propios datos de factura y su forma de pago.": "Per a una altra empresa o amb un altre NIF: una subscripció nova, amb les seves pròpies dades de factura i la seva forma de pagament.",
   "{total_excluding_tax} + IVA ({total} en total)": "{total_excluding_tax} + IVA ({total} en total)",
-  "Incluye el ajuste del último cambio de plan o de locales.": "Inclou l'ajust de l'últim canvi de pla o de locals."
+  "Incluye el ajuste del último cambio de plan o de locales.": "Inclou l'ajust de l'últim canvi de pla o de locals.",
+  "Se suma a tu suscripción el {due_on}, cuando acabe su prueba.": "Se suma a la teva subscripció el {due_on}, quan acabi la prova.",
+  "Hasta entonces sigue en prueba. Ese día se suma a la suscripción que ya pagas ({de}) y Stripe ajusta la próxima factura.": "Fins aleshores continua en prova. Aquell dia se suma a la subscripció que ja pagues ({de}) i Stripe ajusta la propera factura.",
+  "Hasta entonces sigue en prueba. Ese día se suma a la suscripción que ya pagas y Stripe ajusta la próxima factura.": "Fins aleshores continua en prova. Aquell dia se suma a la subscripció que ja pagues i Stripe ajusta la propera factura.",
+  "Sumarlo ya…": "Sumar-lo ja…",
+  "Le quedan {diasPrueba} días de prueba: se suma el {sumaEl}, cuando acaben, y hasta entonces no se cobra nada por él.": "Li queden {diasPrueba} dies de prova: se suma el {sumaEl}, quan acabin, i fins aleshores no es cobra res per ell.",
+  "Sumarlo ya, sin esperar…": "Sumar-lo ja, sense esperar…",
+  "Stripe lo suma hoy y ajusta la próxima factura con la parte proporcional. Pierde los {diasPrueba} días de prueba que le quedan.": "Stripe el suma avui i ajusta la propera factura amb la part proporcional. Perd els {diasPrueba} dies de prova que li queden.",
+  "Se sumará el {sumaEl}, cuando acabe su prueba; hasta entonces sigue en prueba y no se cobra nada por él. Puedes deshacerlo antes.": "Se sumarà el {sumaEl}, quan acabi la prova; fins aleshores continua en prova i no es cobra res per ell. Pots desfer-ho abans.",
+  "Se sumará el {sumaEl}": "Se sumarà el {sumaEl}",
+  "Ya no se sumará": "Ja no se sumarà",
+  "Con todo hasta el {fin}. El {due_on} se suma a tu suscripción, sin cortes.": "Amb tot fins al {fin}. El {due_on} se suma a la teva subscripció, sense talls."
 });

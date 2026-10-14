@@ -3014,5 +3014,16 @@ KL_DIC('gl', {
   "Pagar aparte, con otros datos de factura": "Pagar á parte, con outros datos de factura",
   "Para otra empresa o con otro NIF: una suscripción nueva, con sus propios datos de factura y su forma de pago.": "Para outra empresa ou con outro NIF: unha subscrición nova, cos seus propios datos de factura e a súa forma de pagamento.",
   "{total_excluding_tax} + IVA ({total} en total)": "{total_excluding_tax} + IVE ({total} en total)",
-  "Incluye el ajuste del último cambio de plan o de locales.": "Inclúe o axuste do último cambio de plan ou de locais."
+  "Incluye el ajuste del último cambio de plan o de locales.": "Inclúe o axuste do último cambio de plan ou de locais.",
+  "Se suma a tu suscripción el {due_on}, cuando acabe su prueba.": "Súmase á túa subscrición o {due_on}, cando remate a proba.",
+  "Hasta entonces sigue en prueba. Ese día se suma a la suscripción que ya pagas ({de}) y Stripe ajusta la próxima factura.": "Ata entón segue en proba. Ese día súmase á subscrición que xa pagas ({de}) e Stripe axusta a próxima factura.",
+  "Hasta entonces sigue en prueba. Ese día se suma a la suscripción que ya pagas y Stripe ajusta la próxima factura.": "Ata entón segue en proba. Ese día súmase á subscrición que xa pagas e Stripe axusta a próxima factura.",
+  "Sumarlo ya…": "Sumalo xa…",
+  "Le quedan {diasPrueba} días de prueba: se suma el {sumaEl}, cuando acaben, y hasta entonces no se cobra nada por él.": "Quédanlle {diasPrueba} días de proba: súmase o {sumaEl}, cando rematen, e ata entón non se cobra nada por el.",
+  "Sumarlo ya, sin esperar…": "Sumalo xa, sen agardar…",
+  "Stripe lo suma hoy y ajusta la próxima factura con la parte proporcional. Pierde los {diasPrueba} días de prueba que le quedan.": "Stripe súmao hoxe e axusta a próxima factura coa parte proporcional. Perde os {diasPrueba} días de proba que lle quedan.",
+  "Se sumará el {sumaEl}, cuando acabe su prueba; hasta entonces sigue en prueba y no se cobra nada por él. Puedes deshacerlo antes.": "Sumarase o {sumaEl}, cando remate a proba; ata entón segue en proba e non se cobra nada por el. Podes desfacelo antes.",
+  "Se sumará el {sumaEl}": "Sumarase o {sumaEl}",
+  "Ya no se sumará": "Xa non se sumará",
+  "Con todo hasta el {fin}. El {due_on} se suma a tu suscripción, sin cortes.": "Con todo ata o {fin}. O {due_on} súmase á túa subscrición, sen cortes."
 });

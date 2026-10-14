@@ -3014,5 +3014,16 @@ KL_DIC('it', {
   "Pagar aparte, con otros datos de factura": "Paga a parte, con altri dati di fatturazione",
   "Para otra empresa o con otro NIF: una suscripción nueva, con sus propios datos de factura y su forma de pago.": "Per un’altra azienda o con un altro codice fiscale: un nuovo abbonamento, con i suoi dati di fatturazione e il suo metodo di pagamento.",
   "{total_excluding_tax} + IVA ({total} en total)": "{total_excluding_tax} + IVA ({total} in totale)",
-  "Incluye el ajuste del último cambio de plan o de locales.": "Include l’adeguamento dell’ultimo cambio di piano o di locali."
+  "Incluye el ajuste del último cambio de plan o de locales.": "Include l’adeguamento dell’ultimo cambio di piano o di locali.",
+  "Se suma a tu suscripción el {due_on}, cuando acabe su prueba.": "Si aggiunge al tuo abbonamento il {due_on}, quando finisce la prova.",
+  "Hasta entonces sigue en prueba. Ese día se suma a la suscripción que ya pagas ({de}) y Stripe ajusta la próxima factura.": "Fino ad allora resta in prova. Quel giorno si aggiunge all’abbonamento che paghi già ({de}) e Stripe adegua la prossima fattura.",
+  "Hasta entonces sigue en prueba. Ese día se suma a la suscripción que ya pagas y Stripe ajusta la próxima factura.": "Fino ad allora resta in prova. Quel giorno si aggiunge all’abbonamento che paghi già e Stripe adegua la prossima fattura.",
+  "Sumarlo ya…": "Aggiungilo subito…",
+  "Le quedan {diasPrueba} días de prueba: se suma el {sumaEl}, cuando acaben, y hasta entonces no se cobra nada por él.": "Gli restano {diasPrueba} giorni di prova: si aggiunge il {sumaEl}, quando finiscono, e fino ad allora non si addebita nulla.",
+  "Sumarlo ya, sin esperar…": "Aggiungilo subito, senza aspettare…",
+  "Stripe lo suma hoy y ajusta la próxima factura con la parte proporcional. Pierde los {diasPrueba} días de prueba que le quedan.": "Stripe lo aggiunge oggi e adegua la prossima fattura in proporzione. Perde i {diasPrueba} giorni di prova che gli restano.",
+  "Se sumará el {sumaEl}, cuando acabe su prueba; hasta entonces sigue en prueba y no se cobra nada por él. Puedes deshacerlo antes.": "Si aggiungerà il {sumaEl}, quando finisce la prova; fino ad allora resta in prova e non si addebita nulla. Puoi annullarlo prima.",
+  "Se sumará el {sumaEl}": "Si aggiungerà il {sumaEl}",
+  "Ya no se sumará": "Non si aggiungerà più",
+  "Con todo hasta el {fin}. El {due_on} se suma a tu suscripción, sin cortes.": "Tutto incluso fino al {fin}. Il {due_on} si aggiunge al tuo abbonamento, senza interruzioni."
 });

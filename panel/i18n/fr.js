@@ -3014,5 +3014,16 @@ KL_DIC('fr', {
   "Pagar aparte, con otros datos de factura": "Payer à part, avec d’autres informations de facturation",
   "Para otra empresa o con otro NIF: una suscripción nueva, con sus propios datos de factura y su forma de pago.": "Pour une autre entreprise ou un autre numéro fiscal : un nouvel abonnement, avec ses propres informations de facturation et son moyen de paiement.",
   "{total_excluding_tax} + IVA ({total} en total)": "{total_excluding_tax} HT ({total} au total)",
-  "Incluye el ajuste del último cambio de plan o de locales.": "Inclut l’ajustement du dernier changement de forfait ou d’établissements."
+  "Incluye el ajuste del último cambio de plan o de locales.": "Inclut l’ajustement du dernier changement de forfait ou d’établissements.",
+  "Se suma a tu suscripción el {due_on}, cuando acabe su prueba.": "Il rejoint ton abonnement le {due_on}, à la fin de son essai.",
+  "Hasta entonces sigue en prueba. Ese día se suma a la suscripción que ya pagas ({de}) y Stripe ajusta la próxima factura.": "D’ici là, il reste en essai. Ce jour-là, il rejoint l’abonnement que tu paies déjà ({de}) et Stripe ajuste la prochaine facture.",
+  "Hasta entonces sigue en prueba. Ese día se suma a la suscripción que ya pagas y Stripe ajusta la próxima factura.": "D’ici là, il reste en essai. Ce jour-là, il rejoint l’abonnement que tu paies déjà et Stripe ajuste la prochaine facture.",
+  "Sumarlo ya…": "L’ajouter maintenant…",
+  "Le quedan {diasPrueba} días de prueba: se suma el {sumaEl}, cuando acaben, y hasta entonces no se cobra nada por él.": "Il lui reste {diasPrueba} jours d’essai : il rejoint l’abonnement le {sumaEl}, à leur fin, et rien n’est facturé pour lui d’ici là.",
+  "Sumarlo ya, sin esperar…": "L’ajouter maintenant, sans attendre…",
+  "Stripe lo suma hoy y ajusta la próxima factura con la parte proporcional. Pierde los {diasPrueba} días de prueba que le quedan.": "Stripe l’ajoute aujourd’hui et ajuste la prochaine facture au prorata. Il perd les {diasPrueba} jours d’essai qui lui restent.",
+  "Se sumará el {sumaEl}, cuando acabe su prueba; hasta entonces sigue en prueba y no se cobra nada por él. Puedes deshacerlo antes.": "Il rejoindra l’abonnement le {sumaEl}, à la fin de son essai ; d’ici là il reste en essai et rien n’est facturé pour lui. Tu peux annuler avant.",
+  "Se sumará el {sumaEl}": "Il rejoindra l’abonnement le {sumaEl}",
+  "Ya no se sumará": "Il ne rejoindra plus l’abonnement",
+  "Con todo hasta el {fin}. El {due_on} se suma a tu suscripción, sin cortes.": "Tout compris jusqu’au {fin}. Le {due_on}, il rejoint ton abonnement, sans interruption."
 });
