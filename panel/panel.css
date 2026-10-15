@@ -793,6 +793,8 @@ details.bloque .b-cuerpo { display: grid; gap: 14px; padding: 0 16px 16px; }
 .grupo-pet h3 { margin: 0 0 4px; font-size: 16px; overflow-wrap: anywhere; }
 .grupo-pet p { margin: 4px 0; overflow-wrap: anywhere; }
 .grupo-nota { color: var(--ink-2); }
+/* «Denunciar», discreto al pie de la petición (en la app, en ⋮). */
+.grupo-pet .grupo-denunciar { margin: 10px 0 0; text-align: end; font-size: 13px; }
 .grupo-tu-propuesta { padding: 10px 12px; border-radius: 14px; background: var(--soft); margin: 6px 0; }
 /* «Enviar propuesta» / «No podemos» (y «Escribir» / «Llamar»): uno debajo de otro, del mismo ancho. */
 .grupo-botones { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; margin-top: 8px; max-width: 360px; }

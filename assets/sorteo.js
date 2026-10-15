@@ -161,7 +161,9 @@
     var est = '';
     var btn = null; // { texto, hace }
     var mas = '';
-    if (g.status === 'cancelled') {
+    if (g.status === 'removed') {
+      est = '<b>' + esc(S.removedTag) + '</b><br>' + esc(S.removed);
+    } else if (g.status === 'cancelled') {
       est = esc(S.cancelled(g.cancel_reason || ''));
     } else if (g.status === 'drawn') {
       var p = me.prize;
@@ -281,10 +283,21 @@
     var logo = /^https:\/\//.test(b.logo_url || '') ? '<img src="' + esc(b.logo_url) + '" alt="" width="56" height="56" loading="lazy" decoding="async">'
       : '<span class="ph" aria-hidden="true">' + esc((b.name || '·').charAt(0).toUpperCase()) + '</span>';
     var linea = KS.terminado(g)
-      ? (g.status === 'cancelled' ? S.cancelled('') : g.status === 'drawn' ? S.ended : S.drawing)
+      ? (g.status === 'removed' ? S.removedTag : g.status === 'cancelled' ? S.cancelled('') : g.status === 'drawn' ? S.ended : S.drawing)
       : S.endsOn(KS.cuando(g.ends_at, lang, tz)) + ' · ' + S.entrants(Number(g.entries) || 0);
-    var yoTxt = g.me && g.me.prize && g.me.prize.status === 'pending' ? S.won
-      : g.me && g.me.number ? S.youreIn(g.me.number) : '';
+    var quitado = g.status === 'removed';
+    var yoTxt = quitado ? S.removed
+      : g.me && g.me.prize && g.me.prize.status === 'pending' ? S.won
+        : g.me && g.me.number ? S.youreIn(g.me.number) : '';
+    // Retirado por Klendar: su página ya no se publica; se queda en la
+    // lista, con el aviso, sin enlace.
+    if (quitado) {
+      return '<div class="sorteo-tj sorteo-tj-retirado">' + logo
+        + '<span class="sorteo-tj-t"><small class="muted">' + esc(b.name || '') + '</small>'
+        + '<b><span class="sorteo-tj-ante">' + esc(S.word) + '</span> ' + esc(g.prize) + '</b>'
+        + '<small class="muted"><b>' + esc(linea) + '</b></small>'
+        + '<small class="muted">' + esc(yoTxt) + '</small></span></div>';
+    }
     return '<a class="sorteo-tj" href="' + base() + esc(g.id) + '" data-sorteo="' + esc(g.id) + '">' + logo
       + '<span class="sorteo-tj-t"><small class="muted">' + esc(b.name || '') + '</small>'
       + '<b><span class="sorteo-tj-ante">' + esc(S.word) + '</span> ' + esc(g.prize) + '</b>'

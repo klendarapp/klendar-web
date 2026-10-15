@@ -76,7 +76,7 @@ const LABELS = {
   pending: 'pendiente', verified: 'verificado', rejected: 'rechazado', approved: 'aprobada', active: 'activa', expired: 'caducada',
   cancelled: 'cancelada', archived: 'archivada', sold_out: 'agotada', draft: 'borrador', open: 'abierta', reviewing: 'en revisión', resolved: 'resuelta', dismissed: 'desestimada',
   trial: 'prueba', past_due: 'impagada', validated: 'validado', failed: 'fallido', sent: 'enviado', skipped: 'omitido',
-  flash_offer: 'oferta flash', future_event: 'evento', user: 'usuario', business: 'negocio', offer: 'publicación', review: 'reseña', post: 'novedad', review_media: 'foto o vídeo de reseña',
+  flash_offer: 'oferta flash', future_event: 'evento', user: 'usuario', business: 'negocio', offer: 'publicación', review: 'reseña', post: 'novedad', review_media: 'foto o vídeo de reseña', group_request: 'petición de grupo',
   owner: 'propietario', manager: 'encargado', staff: 'empleado', free: 'Gratis', basic: 'Básico', pro: 'Pro',
   standard: 'Klendar', founder: 'Fundador', inactive: 'inactivo', banned: 'suspendido', other: 'otra cosa',
   new: 'sin leer', planned: 'la haremos', done: 'hecho', declined: 'descartada',
@@ -877,7 +877,7 @@ const NAV_GRUPOS = [
   { id: 'crecer', t: 'Crecer', items: [['pedidos', 'add_business', 'Locales pedidos'], ['crecer', 'travel_explore', 'Dónde crecer']] },
   { id: 'contenido', t: 'Contenido', items: [['publicaciones', 'bolt', 'Publicaciones'], ['agenda', 'account_balance', 'Agenda pública'], ['canjes', 'confirmation_number', 'Canjes'], ['colecciones', 'auto_awesome', 'Colecciones'], ['emisiones', 'sports_soccer', 'Emisiones'], ['artistas', 'music_note', 'Artistas'], ['categorias', 'category', 'Categorías']] },
   { id: 'personas', t: 'Personas', items: [['usuarios', 'person', 'Usuarios'], ['inactivas', 'hourglass_empty', 'Cuentas inactivas'], ['avisos', 'notifications', 'Notificaciones y push'], ['sugerencias', 'lightbulb', 'Sugerencias']] },
-  { id: 'moderacion', t: 'Moderación', items: [['denuncias', 'flag', 'Denuncias'], ['resenas', 'chat_bubble', 'Reseñas y novedades'], ['mensajes', 'campaign', 'Mensajes a clientes']] },
+  { id: 'moderacion', t: 'Moderación', items: [['denuncias', 'flag', 'Denuncias'], ['sorteos', 'redeem', 'Sorteos'], ['resenas', 'chat_bubble', 'Reseñas y novedades'], ['mensajes', 'campaign', 'Mensajes a clientes']] },
   { id: 'sistema', t: 'Sistema', plegable: true, items: [['configuracion', 'settings', 'Configuración'], ['errores', 'bug_report', 'Errores de la web'], ['administradores', 'shield', 'Administradores'], ['actividad', 'history', 'Registro de actividad'], ['ayuda', 'help', 'Ayuda']] },
 ];
 const NAV_SISTEMA = 'klendar.admin.nav.sistema';
@@ -1620,6 +1620,7 @@ async function businessDetail(v, id) {
       <div class="card"><h2>${I18N.lang === 'en' ? 'Reviews' : 'Reseñas'} (${d.reviews.length})</h2>${d.reviews.length ? d.reviews.map((r) => `<div class="item" style="grid-template-columns:1fr"><div><span class="stars">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</span> <span class="muted small">${esc(r.user_email || '')} · ${ago(r.created_at)}</span><p>${esc(r.comment || '')}</p><div class="actions"><button class="btn sm bad" data-delreview="${r.id}">Borrar…</button></div></div></div>`).join('') : '<p class="muted">Sin reseñas.</p>'}</div>
       <div class="card"><h2>${I18N.lang === 'en' ? 'News' : 'Novedades'} (${d.posts.length})</h2>${d.posts.length ? d.posts.map((p) => `<div class="item">${p.image_url ? `<img src="${esc(p.image_url)}" alt="">` : `<div class="ph">${ms('article')}</div>`}<div><span class="muted small">${ago(p.created_at)}</span><p>${esc(p.body || '')}</p><div class="actions"><button class="btn sm bad" data-delpost="${p.id}">Borrar…</button></div></div></div>`).join('') : '<p class="muted">Sin novedades.</p>'}</div>
     </div>
+    <div id="sorteosNegocio"></div>
     <div class="grid2">
       <div class="card"><h2>${I18N.lang === 'en' ? 'Related reports' : 'Denuncias relacionadas'} (${d.reports.length})</h2>${d.reports.length ? table({ cols: [{ h: 'Sobre', r: (r) => tag(r.target_type, 'dim') }, { h: 'Motivo', r: (r) => `${esc(r.reason)}<span class="sub">${esc(r.details || '')}</span>` }, { h: 'Estado', r: (r) => tag(r.status) }, { h: 'Fecha', r: (r) => fmtDay(r.created_at) }], rows: d.reports }) : '<p class="muted">Ninguna.</p>'}<p style="margin:10px 0 0"><a class="link" href="#/denuncias">Ir a denuncias →</a></p></div>
       <div class="card"><h2>Registro de cambios</h2>${auditList(d.audit)}</div>
@@ -1633,6 +1634,8 @@ async function businessDetail(v, id) {
   // doble clic no la manda dos veces.
   $$('[data-role]').forEach((sel) => { let antes = sel.value; sel.onchange = () => esperando(sel, async () => { try { await rpc('admin_set_member_role', { p_business: id, p_user: sel.dataset.role, p_role: sel.value }); antes = sel.value; toast('Rol actualizado'); } catch (e) { sel.value = antes; toast(e.message, true); } }); });
   enlazaDuplicados(v, b, duplicados);
+  // Sus sorteos, con «Retirar…» (admin/sorteos.js).
+  if (typeof sorteosDelNegocioAdmin === 'function') sorteosDelNegocioAdmin($('#sorteosNegocio', v), id);
   $$('[data-rm]').forEach((btn) => { btn.onclick = () => esperando(btn, async () => { if (!await confirmDlg('Quitar del equipo', 'Esta persona dejará de poder gestionar el negocio ni validar códigos.', { danger: true, submit: 'Quitar' })) return; try { await rpc('admin_set_member_role', { p_business: id, p_user: btn.dataset.rm, p_role: null }); toast('Quitado'); route(); } catch (e) { toast(e.message, true); } }); });
   $$('[data-delreview]').forEach((btn) => { btn.onclick = () => esperando(btn, () => deleteReview(btn.dataset.delreview)); });
   $$('[data-delpost]').forEach((btn) => { btn.onclick = () => esperando(btn, () => deletePost(btn.dataset.delpost)); });
@@ -1917,7 +1920,7 @@ const ACTIONS = {
   'category.upsert': 'Categoría guardada', 'category.delete': 'Categoría borrada', 'admin.add': 'Administrador añadido', 'admin.remove': 'Administrador quitado', 'maintenance.expire_offers': 'Caducidad forzada',
   'business_message_approve': 'Mensaje a clientes aprobado', 'business_message_reject': 'Mensaje a clientes rechazado', 'collection_save': 'Colección guardada', 'collection_delete': 'Colección borrada',
   'feedback.update': 'Sugerencia actualizada', 'feedback.delete': 'Sugerencia borrada',
-  'web_error.resolve': 'Error de la web resuelto',
+  'web_error.resolve': 'Error de la web resuelto', 'giveaway.remove': 'Sorteo retirado',
   'business.delete': 'Negocio eliminado (admin)', 'business.self_delete': 'Negocio eliminado por su propietario', 'subscription.cancel_handled': 'Cancelación de suscripción gestionada',
 };
 const summarize = (o) => Object.entries(o).filter(([, v]) => v != null && v !== '').map(([k, v]) => `${k}: ${typeof v === 'object' ? JSON.stringify(v) : v}`).join(' · ').slice(0, 300);
@@ -2394,11 +2397,21 @@ const motivoDen = (r) => I18N.t(MOTIVOS_DENUNCIA[r] || r);
 const ESTADO_DEN = { published: ['publicado', 'ok'], review: ['en revisión', 'warn'], removed: ['retirado', 'bad'], hidden: ['no visible', 'dim'], deleted: ['borrado', 'dim'] };
 const estadoDen = (s) => { const e = ESTADO_DEN[s]; return e ? `<span class="tag ${e[1]}">${esc(I18N.t(e[0]))}</span>` : ''; };
 const RESOLUCION_DEN = { removed: 'contenido retirado', no_action: 'cerrada sin retirar', dismissed: 'desestimada' };
-const TIPO_DEN = { offer: 'Publicación', business: 'Negocio', review: 'Reseña', post: 'Novedad', review_media: 'Foto o vídeo de una reseña' };
+const TIPO_DEN = { offer: 'Publicación', business: 'Negocio', review: 'Reseña', post: 'Novedad', review_media: 'Foto o vídeo de una reseña', group_request: 'Petición de grupo' };
+// Una petición de grupo («Grupos y empresas»): la denuncia un negocio que la
+// ha recibido; no se ve en la web pública (solo quien pide y los negocios).
+const TIPO_GRUPO_DEN = { company_dinner: ['Cena de empresa', 'Company dinner'], afterwork: ['Afterwork', 'Afterwork'], team_activity: ['Actividad de equipo', 'Team activity'], celebration: ['Celebración', 'Celebration'] };
+const lineaGrupoDen = (t) => {
+  const en = I18N.lang === 'en';
+  const k = (TIPO_GRUPO_DEN[t?.kind] || [t?.kind || '', t?.kind || ''])[en ? 1 : 0];
+  const dia = t?.event_date ? new Date(`${t.event_date}T12:00:00`).toLocaleDateString(LOC(), { day: 'numeric', month: 'long' }) : '';
+  return [k, t?.people ? (en ? `${t.people} people` : `${t.people} personas`) : '', dia].filter(Boolean).join(' · ');
+};
 /** Dónde se ve en la web pública (reseñas y novedades, con su ancla en la ficha). */
 const urlDenunciado = (tipo, id, t) => {
   const b = (t && (t.slug || t.business_id)) || null;
   if (tipo === 'offer') return `/o/${id}`;
+  if (tipo === 'group_request') return '';
   if (tipo === 'business') return `/b/${(t && t.slug) || id}`;
   if (!b) return '';
   // Una foto o un vídeo: la reseña que lo lleva.
@@ -2406,7 +2419,7 @@ const urlDenunciado = (tipo, id, t) => {
   return `/b/${b}#${tipo === 'review' ? 'resena' : 'novedad'}-${id}`;
 };
 /** Su ficha dentro del admin. */
-const adminDenunciado = (tipo, id, t) => (tipo === 'offer' ? `#/publicaciones/${id}` : tipo === 'business' ? `#/negocios/${id}` : t?.business_id ? `#/negocios/${t.business_id}` : '');
+const adminDenunciado = (tipo, id, t) => (tipo === 'group_request' ? '' : tipo === 'offer' ? `#/publicaciones/${id}` : tipo === 'business' ? `#/negocios/${id}` : t?.business_id ? `#/negocios/${t.business_id}` : '');
 /** El título que se enseña: el de la publicación, el nombre del negocio o el texto de la reseña o la novedad. */
 const tituloDen = (tipo, t) => {
   const en = I18N.lang === 'en';
@@ -2414,9 +2427,17 @@ const tituloDen = (tipo, t) => {
   if (tipo === 'review') return `${'★'.repeat(Math.max(0, Math.min(5, t.rating | 0)))} ${t.title ? `«${t.title}»` : (en ? '(no text)' : '(sin texto)')}`;
   if (tipo === 'post') return t.title ? `«${t.title}»` : (en ? '(photo only)' : '(solo foto)');
   if (tipo === 'review_media') return `${t.media_kind === 'video' ? (en ? 'Video' : 'Vídeo') : (en ? 'Photo' : 'Foto')} ${en ? 'in a review' : 'de una reseña'}${t.title ? ` · «${t.title}»` : ''}`;
+  if (tipo === 'group_request') return `${lineaGrupoDen(t)}${t.title ? ` · «${t.title}»` : (en ? ' · (no note)' : ' · (sin nota)')}`;
   return t.title || '—';
 };
-const miniDen = (tipo, t) => (tipo === 'review_media' && !t?.image && t?.media_url ? `<video src="${esc(t.media_url)}#t=0.5" muted playsinline preload="metadata" aria-hidden="true"></video>` : t?.image && /\.(mp4|webm|mov)(\?|$)/i.test(t.image) ? `<video src="${esc(t.image)}#t=0.5" muted playsinline preload="metadata" aria-hidden="true"></video>` : t?.image ? `<img src="${esc(t.image)}" alt="" loading="lazy">` : `<div class="ph">${ms({ offer: 'bolt', business: 'storefront', review: 'chat_bubble', post: 'article', review_media: 'photo_library' }[tipo] || 'flag')}</div>`);
+const miniDen = (tipo, t) => (tipo === 'review_media' && !t?.image && t?.media_url ? `<video src="${esc(t.media_url)}#t=0.5" muted playsinline preload="metadata" aria-hidden="true"></video>` : t?.image && /\.(mp4|webm|mov)(\?|$)/i.test(t.image) ? `<video src="${esc(t.image)}#t=0.5" muted playsinline preload="metadata" aria-hidden="true"></video>` : t?.image ? `<img src="${esc(t.image)}" alt="" loading="lazy">` : `<div class="ph">${ms({ offer: 'bolt', business: 'storefront', review: 'chat_bubble', post: 'article', review_media: 'photo_library', group_request: 'groups' }[tipo] || 'flag')}</div>`);
+/** «de Negocio» o, en una petición de grupo, «para Negocio, Otro». */
+const deQuienDen = (tipo, t) => {
+  const en = I18N.lang === 'en';
+  if (tipo === 'business' || !t?.business) return '';
+  const nombre = tipo !== 'group_request' && t.business_id ? `<a class="link" href="#/negocios/${esc(t.business_id)}">${esc(t.business)}</a>` : esc(t.business);
+  return `${tipo === 'group_request' ? (en ? 'to' : 'para') : (en ? 'by' : 'de')} ${nombre}`;
+};
 
 /** Retirar y cerrar / cerrar sin retirar / desestimar / en revisión, para
  * todas las abiertas de un contenido. true si se hizo. */
@@ -2430,6 +2451,7 @@ async function decideDenuncias(tipo, id, decision, abiertas) {
       review: en ? 'The review is deleted.' : 'La reseña se borra.',
       post: en ? 'The news post is deleted.' : 'La novedad se borra.',
       review_media: en ? 'Only this photo or video is deleted; the review stays.' : 'Solo se borra esa foto o ese vídeo; la reseña se queda.',
+      group_request: en ? 'The request is closed for every business it went to and its note is deleted (what was reported stays here).' : 'La petición se cierra para todos los negocios a los que se mandó y se borra su nota (lo denunciado se queda aquí).',
     }[tipo];
     const r = await modal({
       title: en ? 'Take down and close all' : 'Retirar y cerrar todas',
@@ -2497,12 +2519,12 @@ PAGES.denuncias = async (v, tipoRuta) => {
   v.innerHTML = `
     <div class="page-head"><h1>Denuncias</h1></div>
     ${helpBox('¿Qué hago aquí?', en
-      ? `<p>One card per reported item (publication, business, review or news post), with how many reports it has, from how many different people (with and without an account), the reasons and whether it's still up. Open it (“See the reports”) to read each report and who made it. Decide for all its open reports at once: <b>Take down and close all</b> (the publication is taken down, the business deactivated, the review or news post deleted; whoever posted it gets the reason and can ask for a review within 6 months) or <b>Close without taking down</b> (it stays up; inside you choose whether it complies or the reports are unfounded: the reporter gets the same message either way). In <b>⋮</b>, “Mark as under review” and open it on the website. Every reporter is told the decision: in the app if they have an account, by email if they reported without one. By law (DSA, art. 16) reports must be handled diligently and the decision explained.</p><p>People without an account report from klendar.app (“Report illegal content” in the footer, or “Report” on any page without being logged in). Their name and email are only visible here.</p>`
-      : `<p>Una tarjeta por cada contenido denunciado (publicación, negocio, reseña o novedad), con cuántas denuncias tiene, de cuántas personas distintas (con y sin cuenta), los motivos y si sigue publicado. Ábrelo («Ver las denuncias») para leer cada denuncia y quién la puso. Decide para todas sus denuncias abiertas a la vez: <b>Retirar y cerrar todas</b> (la publicación se retira, el negocio se desactiva, la reseña o la novedad se borran; quien lo publicó recibe el motivo y puede pedir que se revise en 6 meses) o <b>Cerrar sin retirar</b> (sigue publicado; dentro eliges si cumple las normas o si las denuncias no tienen fundamento: a quien denunció le llega lo mismo). En <b>⋮</b>, «Marcar en revisión» y abrirlo en la web. A cada denunciante le llega la decisión: en la app si tiene cuenta, por correo si denunció sin ella. Por ley (DSA, art. 16) hay que resolverlas con diligencia y explicar la decisión.</p><p>Quien no tiene cuenta denuncia desde klendar.app («Denunciar contenido ilegal» en el pie, o «Denunciar» en cualquier ficha sin haber entrado). Su nombre y su correo solo se ven aquí.</p>`)}
+      ? `<p>One card per reported item (publication, business, review, news post or group request), with how many reports it has, from how many different people (with and without an account), the reasons and whether it's still up. Open it (“See the reports”) to read each report and who made it. Decide for all its open reports at once: <b>Take down and close all</b> (the publication is taken down, the business deactivated, the review or news post deleted, the group request closed; whoever posted it gets the reason and can ask for a review within 6 months) or <b>Close without taking down</b> (it stays up; inside you choose whether it complies or the reports are unfounded: the reporter gets the same message either way). In <b>⋮</b>, “Mark as under review” and open it on the website. Every reporter is told the decision: in the app if they have an account, by email if they reported without one. By law (DSA, art. 16) reports must be handled diligently and the decision explained.</p><p>People without an account report from klendar.app (“Report illegal content” in the footer, or “Report” on any page without being logged in). Their name and email are only visible here.</p>`
+      : `<p>Una tarjeta por cada contenido denunciado (publicación, negocio, reseña, novedad o petición de grupo), con cuántas denuncias tiene, de cuántas personas distintas (con y sin cuenta), los motivos y si sigue publicado. Ábrelo («Ver las denuncias») para leer cada denuncia y quién la puso. Decide para todas sus denuncias abiertas a la vez: <b>Retirar y cerrar todas</b> (la publicación se retira, el negocio se desactiva, la reseña o la novedad se borran, la petición de grupo se cierra; quien lo publicó recibe el motivo y puede pedir que se revise en 6 meses) o <b>Cerrar sin retirar</b> (sigue publicado; dentro eliges si cumple las normas o si las denuncias no tienen fundamento: a quien denunció le llega lo mismo). En <b>⋮</b>, «Marcar en revisión» y abrirlo en la web. A cada denunciante le llega la decisión: en la app si tiene cuenta, por correo si denunció sin ella. Por ley (DSA, art. 16) hay que resolverlas con diligencia y explicar la decisión.</p><p>Quien no tiene cuenta denuncia desde klendar.app («Denunciar contenido ilegal» en el pie, o «Denunciar» en cualquier ficha sin haber entrado). Su nombre y su correo solo se ven aquí.</p>`)}
     <div class="toolbar">
       <input id="q" class="grow" type="search" placeholder="Buscar por título, negocio, ciudad o motivo…" aria-label="Buscar en denuncias" value="${esc(s.q || '')}">
       <select id="status">${[['open', 'Con denuncias abiertas'], ['closed', 'Ya cerradas'], ['all', 'Todo']].map((o) => `<option value="${o[0]}" ${(s.status || 'open') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
-      <select id="type">${[['all', 'Todo tipo'], ['offer', 'Publicaciones'], ['business', 'Negocios'], ['review', 'Reseñas'], ['review_media', 'Fotos y vídeos de reseñas'], ['post', 'Novedades']].map((o) => `<option value="${o[0]}" ${(s.type || 'all') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
+      <select id="type">${[['all', 'Todo tipo'], ['offer', 'Publicaciones'], ['business', 'Negocios'], ['review', 'Reseñas'], ['review_media', 'Fotos y vídeos de reseñas'], ['post', 'Novedades'], ['group_request', 'Peticiones de grupo']].map((o) => `<option value="${o[0]}" ${(s.type || 'all') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
     </div>
     <div id="list"><div class="loading">Cargando…</div></div>`;
   const load = async () => {
@@ -2518,7 +2540,7 @@ PAGES.denuncias = async (v, tipoRuta) => {
       return `
       <div class="item den-grupo${g.open_count >= 3 ? ' den-caliente' : ''}" data-tipo="${esc(g.target_type)}" data-id="${esc(g.target_id)}" data-abiertas="${g.open_count}">${miniDen(g.target_type, t)}<div style="min-width:0">
         <h3><a class="link" href="${det}">${esc(tituloDen(g.target_type, g.target))}</a></h3>
-        <div class="meta">${tag(g.target_type, 'dim')} ${estadoDen(g.state)} ${g.reviewing ? tag('reviewing') : ''} ${g.target_type !== 'business' && t.business ? `${en ? 'by' : 'de'} ${t.business_id ? `<a class="link" href="#/negocios/${esc(t.business_id)}">${esc(t.business)}</a>` : esc(t.business)}` : ''}${t.city ? ` · ${esc(t.city)}` : ''}</div>
+        <div class="meta">${tag(g.target_type, 'dim')} ${estadoDen(g.state)} ${g.reviewing ? tag('reviewing') : ''} ${deQuienDen(g.target_type, t)}${t.city ? ` · ${esc(t.city)}` : ''}</div>
         ${cifrasDen(g, abiertas)}
         <div class="den-motivos">${(g.reasons || []).map((m) => `<span class="tag ${m.reason === 'child_abuse' || m.reason === 'illegal' ? 'bad' : 'dim'}">${esc(motivoDen(m.reason))} · ${m.n}</span>`).join(' ')}</div>
         <div class="actions">
@@ -2574,7 +2596,7 @@ async function denunciasDe(v, tipo, id) {
     <div class="card den-ficha">
       <div class="item" style="border:0;padding:0">${miniDen(tipo, d.target)}<div style="min-width:0">
         <h1 style="margin:0 0 4px;font-size:22px">${esc(tituloDen(tipo, d.target))}</h1>
-        <div class="meta">${tag(tipo, 'dim')} ${estadoDen(d.state)} ${g.reviewing ? tag('reviewing') : ''} ${tipo !== 'business' && t.business ? `${en ? 'by' : 'de'} ${t.business_id ? `<a class="link" href="#/negocios/${esc(t.business_id)}">${esc(t.business)}</a>` : esc(t.business)}` : ''}${t.city ? ` · ${esc(t.city)}` : ''}</div>
+        <div class="meta">${tag(tipo, 'dim')} ${estadoDen(d.state)} ${g.reviewing ? tag('reviewing') : ''} ${deQuienDen(tipo, t)}${t.city ? ` · ${esc(t.city)}` : ''}</div>
         ${tipo === 'review_media' && t.media_url ? `<p class="meta"><a class="link" href="${esc(t.media_url)}" target="_blank" rel="noopener">${t.media_kind === 'video' ? (en ? 'Watch the video' : 'Ver el vídeo') : (en ? 'See the photo' : 'Ver la foto')} ↗</a></p>` : ''}
         ${d.live ? '' : `<p class="meta">${en ? 'It no longer exists: this is how it was when it was reported.' : 'Ya no existe: así estaba cuando lo denunciaron.'}</p>`}
         ${cifrasDen(g, abiertas.length > 0)}
@@ -3982,10 +4004,10 @@ PAGES.actividad = async (v) => {
   v.innerHTML = `
     <div class="page-head"><h1>Registro de actividad</h1><span class="spacer"></span><button class="btn sm ghost" id="csv">Exportar CSV</button></div>
     ${helpBox('¿Qué hago aquí?', '<p>Todo lo que hacen los administradores queda aquí con fecha, quién y sobre qué: verificaciones, moderación, pagos, cambios de configuración… Sirve para auditoría y para responder ante una reclamación («¿por qué se retiró mi oferta y cuándo?»).</p>')}
-    <div class="toolbar"><input id="q" class="grow" placeholder="Buscar por email del admin, id del objeto o texto…" value="${esc(s.q || '')}"><select id="action">${[['all', 'Todas las acciones'], ['business', 'Negocios'], ['offer', 'Publicaciones'], ['report', 'Denuncias'], ['user', 'Usuarios'], ['review', 'Reseñas'], ['post', 'Novedades'], ['notification', 'Notificaciones'], ['config', 'Configuración'], ['plan', 'Planes'], ['category', 'Categorías'], ['admin', 'Administradores']].map((o) => `<option value="${o[0]}" ${(s.action || 'all') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select></div>
+    <div class="toolbar"><input id="q" class="grow" placeholder="Buscar por email del admin, id del objeto o texto…" value="${esc(s.q || '')}"><select id="action">${[['all', 'Todas las acciones'], ['business', 'Negocios'], ['offer', 'Publicaciones'], ['report', 'Denuncias'], ['giveaway', 'Sorteos'], ['user', 'Usuarios'], ['review', 'Reseñas'], ['post', 'Novedades'], ['notification', 'Notificaciones'], ['config', 'Configuración'], ['plan', 'Planes'], ['category', 'Categorías'], ['admin', 'Administradores']].map((o) => `<option value="${o[0]}" ${(s.action || 'all') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select></div>
     <div id="list"></div>`;
   let rows = [];
-  const linkFor = (l) => l.target_type === 'business' ? `#/negocios/${l.target_id}` : l.target_type === 'offer' ? `#/publicaciones/${l.target_id}` : l.target_type === 'user' ? `#/usuarios/${l.target_id}` : null;
+  const linkFor = (l) => l.target_type === 'giveaway' && l.details?.business_id ? `#/negocios/${l.details.business_id}` : l.target_type === 'business' ? `#/negocios/${l.target_id}` : l.target_type === 'offer' ? `#/publicaciones/${l.target_id}` : l.target_type === 'user' ? `#/usuarios/${l.target_id}` : null;
   const load = async () => {
     const r = await rpc('admin_audit', { p_query: s.q || null, p_action: s.action || 'all', p_limit: s.limit, p_offset: s.offset });
     rows = r.rows;

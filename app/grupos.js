@@ -223,6 +223,7 @@ async function grupoDetalle(id) {
     <p class="crumbs"><a href="#/grupos">${esc(S.yourRequests)}</a></p>
     <h1>${esc(KGr.linea(r, L))}</h1>
     <p class="ocard-meta"><span class="tag off">${esc(S.status[r.status] || r.status)}</span></p>
+    ${r.status === 'removed' ? `<p class="muted">${esc(S.removedText)}</p>` : ''}
     ${r.budget_cents != null ? `<p class="muted">${esc(S.about(KGr.dinero(r.budget_cents, L)))}</p>` : ''}
     ${r.note ? `<p class="muted">«${esc(r.note)}»</p>` : ''}
     <div class="grupo-resps">${(r.targets || []).map(tarjeta).join('')}</div>

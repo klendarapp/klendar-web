@@ -71,6 +71,9 @@
       declined: 'Renunciaste al premio',
       noLuck: 'Esta vez no te ha tocado.',
       cancelled: (r) => (r ? `Sorteo cancelado: ${r}` : 'Sorteo cancelado'),
+      // Retirado por Klendar (migración 20261226100000 de la app).
+      removedTag: 'Retirado',
+      removed: 'Klendar ha retirado este sorteo porque incumplía las Normas de la comunidad. No se sorteará.',
       verTitle: 'Sorteo verificable',
       verText: 'Antes de empezar publicamos el resumen de una semilla secreta. Al terminar publicamos la semilla: con ella cualquiera puede repetir el sorteo y ver que sale lo mismo.',
       hash: 'Resumen (SHA-256)',
@@ -153,6 +156,8 @@
       declined: 'You declined the prize',
       noLuck: 'No luck this time.',
       cancelled: (r) => (r ? `Giveaway cancelled: ${r}` : 'Giveaway cancelled'),
+      removedTag: 'Removed',
+      removed: "Klendar has removed this giveaway because it broke the Community guidelines. It won't be drawn.",
       verTitle: 'Verifiable draw',
       verText: 'Before it starts we publish the hash of a secret seed. When it ends we publish the seed: with it anyone can repeat the draw and see that it comes out the same.',
       hash: 'Hash (SHA-256)',

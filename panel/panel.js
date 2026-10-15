@@ -2275,6 +2275,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
               </div>
               <div class="colores" id="marcaSugeridos" style="margin-top:8px"></div>
               <p class="hint" id="marcaNota" style="margin:6px 0 0"></p>
+              <p class="hint" style="margin:6px 0 0">${esc(bi('Lo guardamos en tu negocio para las próximas publicaciones.', 'We’ll save it to your business for your next publications.'))}</p>
             </div>
           </div>
         </div>`)}
@@ -2690,6 +2691,24 @@ async function offerForm(v, id, kindDefault, desde = null) {
     ...(estilo.first_visit && (val('audience') || 'all') !== 'promoters' ? { first_visit: true } : {}),
   });
   const enPaleta = (c) => PALETA.some(([h]) => h === c);
+  // El color de marca guardado en el negocio (`businesses.brand_color`):
+  // «Color de tu marca» lo pone con un toque, como en la app. Al elegir otro
+  // se guarda (propietario o encargado; si no se puede, la publicación lo
+  // lleva igual).
+  let marcaGuardada = null;
+  sb.from('businesses').select('brand_color').eq('id', BIZ.id).maybeSingle()
+    .then(({ data }) => { marcaGuardada = data?.brand_color || null; if (marcaGuardada && pintaEstilo) pintaEstilo(); })
+    .catch(() => {});
+  let guardaMarcaT = null;
+  const guardaMarca = (hex) => {
+    clearTimeout(guardaMarcaT);
+    guardaMarcaT = setTimeout(() => {
+      if (!hex || hex === marcaGuardada) return;
+      rpc('set_business_brand_color', { p_business: BIZ.id, p_color: hex })
+        .then((r) => { if (r?.ok) marcaGuardada = r.brand_color; })
+        .catch(() => {});
+    }, 800);
+  };
   // ── Vista previa: la tarjeta de verdad (/assets/tarjeta.js), con lo que
   // hay escrito ahora mismo. A la derecha en el escritorio (fija al bajar) y
   // debajo en el móvil. Dos formas: la tarjeta grande de Descubre y la fila de
@@ -2784,20 +2803,27 @@ async function offerForm(v, id, kindDefault, desde = null) {
     const marca = !!estilo.accent && !enPaleta(estilo.accent);
     $('#colores', v).innerHTML = PALETA.map(([c, n], i) =>
       `<button type="button" class="color ${!marca && acento === c ? 'on' : ''}" aria-pressed="${!marca && acento === c}" data-color="${i === 0 ? '' : c}" style="background:${c}" aria-label="${esc(I18N.t(n))}" title="${esc(I18N.t(n))}"></button>`).join('')
-      + `<button type="button" class="color marca-btn ${marca ? 'on' : ''}" aria-pressed="${marca}" data-marca="1" ${marca ? `style="background:${acento}"` : ''} aria-label="${esc(I18N.t('Color de tu marca'))}" title="${esc(I18N.t('Color de tu marca'))}">${marca ? '' : ms('edit')}</button>`;
+      + `<button type="button" class="color marca-btn ${marca ? 'on' : ''}" aria-pressed="${marca}" data-marca="1" ${marca || marcaGuardada ? `style="background:${marca ? acento : marcaGuardada}"` : ''} aria-label="${esc(I18N.t('Color de tu marca'))}" title="${esc(I18N.t('Color de tu marca'))}">${marca || marcaGuardada ? '' : ms('edit')}</button>`;
     // Al elegir, el botón se vuelve a pintar: el foco sigue en él.
     $$('[data-plantilla]', v).forEach((b) => { b.onclick = () => { estilo.template = b.dataset.plantilla; pintaEstilo(); $(`[data-plantilla="${estilo.template}"]`, v)?.focus(); }; });
     $$('[data-color]', v).forEach((b) => { b.onclick = () => { const c = b.dataset.color; estilo.accent = c || null; $('#marcaPanel', v).hidden = true; pintaEstilo(); $(`[data-color="${c}"]`, v)?.focus(); }; });
     $('[data-marca]', v).onclick = () => {
+      // Con uno guardado y sin elegir aún: se pone directamente.
+      if (marcaGuardada && !(estilo.accent && !enPaleta(estilo.accent))) {
+        estilo.accent = marcaGuardada;
+        pintaEstilo();
+        $('[data-marca]', v)?.focus();
+        return;
+      }
       const panel = $('#marcaPanel', v);
       panel.hidden = !panel.hidden;
-      if (!panel.hidden) pintaMarca(estilo.accent && !enPaleta(estilo.accent) ? estilo.accent : '#1E79D1', true);
+      if (!panel.hidden) pintaMarca(estilo.accent && !enPaleta(estilo.accent) ? estilo.accent : marcaGuardada || '#1E79D1', true, false);
     };
     resumenes();
   };
   // Color de la marca: el selector del navegador, el código o el logo. Se
   // corrige para que el texto encima se lea (y se dice).
-  const pintaMarca = (hex, aplicar) => {
+  const pintaMarca = (hex, aplicar, guardar = aplicar) => {
     const seguro = colorSeguro(hex);
     if (!seguro) { $('#marcaNota', v).textContent = I18N.t('Escribe un color como #1E79D1'); return; }
     $('#marcaColor', v).value = seguro.toLowerCase();
@@ -2805,6 +2831,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
     $('#marcaNota', v).textContent = seguro !== hex.toUpperCase().replace(/^([^#])/, '#$1')
       ? I18N.t('Lo hemos ajustado un poco para que el texto encima se lea bien.') : '';
     if (aplicar) { estilo.accent = seguro; pintaEstilo(); }
+    if (guardar) guardaMarca(seguro);
   };
   $('#marcaColor', v).addEventListener('input', (e) => pintaMarca(e.target.value, true));
   $('#marcaHex', v).addEventListener('input', (e) => {

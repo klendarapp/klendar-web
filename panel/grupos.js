@@ -95,6 +95,7 @@ PAGES.grupos = async (v) => {
   $$('[data-propuesta]', v).forEach((b) => {
     b.onclick = () => grupoPropuesta((lista || []).find((x) => x.id === b.dataset.propuesta), v);
   });
+  $$('[data-denunciar]', v).forEach((b) => { b.onclick = () => grupoDenunciar(b.dataset.denunciar); });
   $$('[data-no-podemos]', v).forEach((b) => {
     b.onclick = async () => {
       const r = await modal({
@@ -149,7 +150,38 @@ function grupoTarjeta(x) {
       ${x.others > 0 && ['pending', 'proposed'].includes(x.status) ? `<p class="muted">${esc(S.others(Number(x.others)))}</p>` : ''}
       ${estado}
       ${botones}
+      <p class="grupo-denunciar"><button type="button" class="linkbtn muted" data-denunciar="${esc(x.id)}">${esc(bi('Denunciar', 'Report'))}</button></p>
     </article>`;
+}
+
+/** Denunciar una petición (publicidad, insultos…): la revisa el equipo de
+ * Klendar en el admin, como las demás denuncias (`report_target` con el id
+ * de la fila del negocio; la base guarda el de la petición). Como «Denunciar»
+ * en la app. */
+async function grupoDenunciar(id) {
+  const motivos = [
+    ['spam', bi('Spam o publicidad engañosa', 'Spam or misleading advertising')],
+    ['inappropriate', bi('Contenido inapropiado u ofensivo', 'Inappropriate or offensive content')],
+    ['illegal', bi('Contenido ilegal', 'Illegal content')],
+    ['child_abuse', bi('Abuso sexual infantil', 'Child sexual abuse')],
+    ['other', bi('Otro motivo', 'Other reason')],
+  ];
+  const r = await modal({
+    title: bi('Denunciar', 'Report'),
+    intro: esc(bi('Dinos qué pasa con esta petición. La revisará una persona del equipo de Klendar.',
+      'Tell us what’s wrong with this request. A person on the Klendar team will review it.')),
+    fields: [
+      { type: 'select', name: 'motivo', label: bi('Motivo', 'Reason'), value: 'spam', options: motivos },
+      { type: 'textarea', name: 'detalles', label: bi('Detalles (opcional)', 'Details (optional)'), maxlength: 500, rows: 3 },
+    ],
+    submit: bi('Enviar', 'Send'),
+    danger: true,
+  });
+  if (!r) return;
+  try {
+    await rpc('report_target', { p_type: 'group_request', p_id: id, p_reason: r.motivo, p_details: r.detalles || null });
+    toast(bi('Denuncia enviada. Gracias por avisar.', 'Report sent. Thanks for letting us know.'));
+  } catch (e) { toast(friendly(e.message), true); }
 }
 
 /** La hoja de la propuesta (nueva o «Corregir»). */

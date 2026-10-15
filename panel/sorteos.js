@@ -54,6 +54,7 @@ const sorteoHistoria = (id) => `${I18N.pub === 'en' ? '/en/story/s/' : '/histori
 const sorteoAbierto = (g) => g.status === 'active' && new Date(g.ends_at) > new Date();
 /** «Abierto · termina el 14 de octubre, 21:00» / «Terminado» / «Cancelado». */
 const sorteoEstado = (g) => (g.status === 'cancelled' ? bi('Cancelado', 'Cancelled')
+  : g.status === 'removed' ? bi('Retirado', 'Removed')
   : sorteoAbierto(g) ? bi(`Abierto · termina el ${KSp.cuando(g.ends_at, 'es', TZ)}`, `Open · ends on ${KSp.cuando(g.ends_at, 'en', TZ)}`)
     : bi('Terminado', 'Ended'));
 const sorteoCifras = (s) => bi(`${fmtNum(s?.participants)} participantes · ${fmtNum(s?.new_favorites)} favoritos nuevos`,
@@ -127,6 +128,11 @@ async function sorteoDetalle(v, d, g) {
     <div class="page-head"><h1>${esc(g.prize)}</h1><span class="spacer"></span><a class="btn sm ghost" href="#/sorteos">← ${esc(KSp.t(sorteoL()).title)}</a></div>
     <p><span class="tag ${sorteoAbierto(g) ? 'st-active' : 'off'}">${esc(sorteoEstado(g))}</span></p>
     ${g.status === 'cancelled' && g.cancel_reason ? `<p class="muted">${esc(g.cancel_reason)}</p>` : ''}
+    ${g.status === 'removed' ? `<p class="muted">${esc(g.removed_reason
+    ? bi(`Klendar lo ha retirado: ${g.removed_reason}. Si no estás de acuerdo, escríbenos a info@klendar.app en un plazo de 6 meses y lo revisamos.`,
+      `Klendar has removed it: ${g.removed_reason}. If you disagree, email info@klendar.app within 6 months and we'll review it.`)
+    : bi('Klendar ha retirado este sorteo porque incumplía las Normas de la comunidad. No se sorteará.',
+      "Klendar has removed this giveaway because it broke the Community guidelines. It won't be drawn."))}</p>` : ''}
     <div class="kpis">
       <div class="kpi"><b>${fmtNum(s.participants)}</b><span>${esc(bi('Participantes', 'Entries'))}</span></div>
       <div class="kpi"><b>${fmtNum(s.new_favorites)}</b><span>${esc(bi('Favoritos nuevos', 'New favourites'))}</span></div>
