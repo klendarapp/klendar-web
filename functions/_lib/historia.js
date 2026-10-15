@@ -259,7 +259,7 @@ export async function storyPage(kind, ref, lang, rpRaw = '', para = '') {
     </div>
   </div>
   <script type="application/json" id="historia-datos">${JSON.stringify(datos).replace(/</g, '\\u003c')}</script>
-  <script src="/assets/zona.js?v=1" defer></script>
+  <script src="/assets/zona.js?v=2" defer></script>
   <script src="/assets/vendor/qrcode.js?v=1" defer></script>
   <script src="/assets/historia.js?v=2" defer></script>`;
 

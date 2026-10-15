@@ -72,7 +72,34 @@ async function mira({ url, key }) {
 
 const bienTodo = (p) => Object.entries(p).every(([k, v]) => k === 'ms' || v !== 'fallo');
 
-export async function onRequestGet({ env }) {
+// Además de en memoria (que es de cada copia de la Function), en la caché de
+// Cloudflare: los tres monitores y cualquiera que la pida en bucle comparten
+// el resultado 30 s aunque caigan en copias distintas (cada consulta son 6
+// peticiones a Supabase).
+const CLAVE_CACHE = 'https://klendar.app/salud?cache=1';
+
+async function deCache() {
+  try {
+    const r = await globalThis.caches?.default?.match(CLAVE_CACHE);
+    if (!r) return null;
+    const en = Number(r.headers.get('x-salud-en')) || 0;
+    if (Date.now() - en > RECUERDA_MS) return null;
+    return { en, estado: Number(r.headers.get('x-salud-estado')) || 503, cuerpo: await r.text() };
+  } catch { return null; }
+}
+
+function aCache(u, ctx) {
+  const cache = globalThis.caches?.default;
+  if (!cache) return;
+  const guardar = cache.put(CLAVE_CACHE, new Response(u.cuerpo, {
+    headers: { 'cache-control': `public, max-age=${RECUERDA_MS / 1000}`, 'x-salud-en': String(u.en), 'x-salud-estado': String(u.estado) },
+  })).catch(() => {});
+  if (typeof ctx?.waitUntil === 'function') ctx.waitUntil(guardar);
+}
+
+export async function onRequestGet(ctx) {
+  const { env } = ctx;
+  if (!ultimo || Date.now() - ultimo.en > RECUERDA_MS) ultimo = (await deCache()) || ultimo;
   if (!ultimo || Date.now() - ultimo.en > RECUERDA_MS) {
     configure(env);
     const web = supabasePublic();
@@ -90,6 +117,7 @@ export async function onRequestGet({ env }) {
         ...(deProd ? { prod: deProd } : {}),
       }),
     };
+    aCache(ultimo, ctx);
   }
   return new Response(ultimo.cuerpo, {
     status: ultimo.estado,

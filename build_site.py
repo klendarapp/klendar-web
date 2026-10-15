@@ -253,7 +253,7 @@ ERRORES = '<script src="/assets/errores.js?v=1" async></script>'
 # Solo la portada trae contenido en vivo; los documentos no lo necesitan.
 LIVE_SCRIPTS = (
     '<script src="/config.js?v=3"></script>'
-    '<script src="/assets/zona.js?v=1" defer></script>'
+    '<script src="/assets/zona.js?v=2" defer></script>'
     '<script src="/assets/live.js?v=6" defer></script>'
 )
 

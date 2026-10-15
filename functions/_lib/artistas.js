@@ -24,7 +24,7 @@ const seguirHref = (lang, a) => `${cuentaBase(lang)}#/artistas?seguir=${encodeUR
 /** Los estilos de estas piezas (página del artista, «Actúa», fechas). */
 export const ARTISTAS_CSS = '<link rel="stylesheet" href="/assets/artistas.css?v=1">';
 /** Los textos (para /assets/seguir.js) van antes que el script de seguir. */
-const scripts = (lang) => `<script src="/assets/zona.js?v=1" defer></script>
+const scripts = (lang) => `<script src="/assets/zona.js?v=2" defer></script>
 <script src="/assets/artistas.js?v=2" defer></script>
 ${seguirScript(lang)}`;
 

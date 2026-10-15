@@ -1,9 +1,13 @@
+# La CSP mínima de /* es la misma que pone functions/_middleware.js a lo que
+# pasa por las Functions: lo estático ya no pasa por ahí (`_routes.json`).
+# Las zonas con su propia CSP la quitan antes (`! Content-Security-Policy`).
 /*
   Strict-Transport-Security: max-age=31536000; includeSubDomains
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: geolocation=(), camera=(), microphone=()
+  Content-Security-Policy: base-uri 'self'; object-src 'none'; frame-ancestors 'none'
 # Zonas con sesión (admin, panel, «Tu cuenta»):
 # - `no-transform`: Cloudflare no les mete su contador de visitas. (Desde
 #   2026-10-01 la web usa PKCE y los enlaces de los correos van con
@@ -17,10 +21,12 @@
 #   klendar.app solo quedan Mapbox (mapa del panel y «Avísame si…»),
 #   Turnstile y Supabase.
 /admin/*
+  ! Content-Security-Policy
   X-Robots-Tag: noindex, nofollow
   Cache-Control: no-store, no-transform
   Content-Security-Policy: default-src 'self'; script-src 'self' https://api.mapbox.com https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://api.mapbox.com; font-src 'self'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.mapbox.com https://events.mapbox.com; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; base-uri 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'none'
 /panel/*
+  ! Content-Security-Policy
   X-Robots-Tag: noindex, nofollow
   Cache-Control: no-store, no-transform
   Content-Security-Policy: default-src 'self'; script-src 'self' https://api.mapbox.com https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://api.mapbox.com; font-src 'self'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.mapbox.com https://events.mapbox.com; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; base-uri 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'none'
@@ -31,6 +37,7 @@
 # deja abierta días) y la misma CSP estricta que las zonas con sesión. La
 # tele solo habla con Supabase y pinta fotos y vídeos de su Storage.
 /tv/*
+  ! Content-Security-Policy
   X-Robots-Tag: noindex, nofollow
   Cache-Control: no-cache, no-transform
   Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://*.supabase.co; base-uri 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'none'
@@ -40,6 +47,7 @@
 # «Mi Klendar»: la ubicación solo para «Avísame si…» (zona fija), y siempre
 # a petición de la persona.
 /app/*
+  ! Content-Security-Policy
   X-Robots-Tag: noindex, nofollow
   Cache-Control: public, max-age=0, must-revalidate, no-transform
   Content-Security-Policy: default-src 'self'; script-src 'self' https://api.mapbox.com https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://api.mapbox.com; font-src 'self'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.mapbox.com https://events.mapbox.com; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; base-uri 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'none'
@@ -47,6 +55,7 @@
   Permissions-Policy: geolocation=(self), camera=(), microphone=()
 
 /widget/*
+  ! Content-Security-Policy
   ! X-Frame-Options
   Content-Security-Policy: frame-ancestors *
   X-Robots-Tag: noindex

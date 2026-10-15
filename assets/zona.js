@@ -73,10 +73,22 @@
     return formatos.get(tz);
   }
 
+  // `formatToParts` es lo más caro de una tarjeta (cada una pregunta varias
+  // veces por el mismo instante): se recuerdan los últimos.
+  const vistas = new Map();
+
   /** Año, mes, día, hora, minuto y segundo que marca el reloj de esa zona. */
   function partes(instante, tz) {
-    const p = Object.fromEntries(formato(zona(tz)).formatToParts(new Date(instante)).map((x) => [x.type, x.value]));
-    return { y: +p.year, m: +p.month, d: +p.day, h: +p.hour % 24, min: +p.minute, s: +p.second };
+    const z = zona(tz);
+    const t = new Date(instante).getTime();
+    const clave = `${z}|${t}`;
+    const ya = vistas.get(clave);
+    if (ya) return { ...ya };
+    const p = Object.fromEntries(formato(z).formatToParts(new Date(t)).map((x) => [x.type, x.value]));
+    const r = { y: +p.year, m: +p.month, d: +p.day, h: +p.hour % 24, min: +p.minute, s: +p.second };
+    if (vistas.size >= 2000) vistas.clear();
+    vistas.set(clave, r);
+    return { ...r };
   }
 
   /** Milisegundos que la zona va por delante de UTC en ese instante. */
@@ -136,11 +148,23 @@
     return instante(zona(tz), +m[1], +m[2], +m[3], +m[4], +m[5]).toISOString();
   }
 
+  // Un formateador por idioma, zona y opciones: crear un Intl.DateTimeFormat
+  // cuesta mucho más que usarlo (en una agenda de 300 tarjetas era casi todo
+  // el tiempo de CPU de la página; Cloudflare corta a los 10 ms).
+  const fmts = new Map();
+
   /** Una fecha escrita con `Intl` en esa zona ('' si no se puede). */
   function fmt(iso, tz, locale, opciones) {
     if (!iso) return '';
     try {
-      return new Intl.DateTimeFormat(locale, { ...opciones, timeZone: zona(tz) }).format(new Date(iso));
+      const z = zona(tz);
+      const clave = `${locale}|${z}|${JSON.stringify(opciones || {})}`;
+      let f = fmts.get(clave);
+      if (!f) {
+        f = new Intl.DateTimeFormat(locale, { ...opciones, timeZone: z });
+        fmts.set(clave, f);
+      }
+      return f.format(new Date(iso));
     } catch { return ''; }
   }
 

@@ -106,8 +106,8 @@
         return sb.rpc('my_promoter_pins', {}).then(function (res) {
           if (res.error || !Array.isArray(res.data) || !res.data.length) return null;
           // La tarjeta es la de toda la web (assets/tarjeta.js).
-          return (window.KlendarZona ? Promise.resolve() : carga('/assets/zona.js?v=1'))
-            .then(function () { return window.KlendarTarjeta ? null : carga('/assets/tarjeta.js?v=13'); })
+          return (window.KlendarZona ? Promise.resolve() : carga('/assets/zona.js?v=2'))
+            .then(function () { return window.KlendarTarjeta ? null : carga('/assets/tarjeta.js?v=14'); })
             .then(function () { pinta(sb, res.data); });
         });
       });

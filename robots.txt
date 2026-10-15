@@ -7,6 +7,12 @@ Disallow: /cola/
 Disallow: /en/queue/
 Disallow: /cal/
 Disallow: /legal/
+# Explorar y Descubre con filtros: noindex y con canonical a la página sin
+# filtros; las combinaciones son infinitas y cada una se pinta al momento.
+Disallow: /explorar/?
+Disallow: /descubre/?
+Disallow: /en/explore/?
+Disallow: /en/discover/?
 
 Sitemap: https://klendar.app/sitemap.xml
 Sitemap: https://klendar.app/sitemap-agenda.xml

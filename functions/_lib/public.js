@@ -10,7 +10,7 @@ import KZ from '../../assets/zona.js';
 // Dinero, fechas cortas y el beneficio: los mismos que pinta la tarjeta, en
 // un solo sitio (`assets/tarjeta.js`, que también usa el panel del negocio).
 import KT from '../../assets/tarjeta.js';
-import { BackendDown, CONTADOR, datosDePrueba, erroresScript, esc, html, isUuid, rows, supabasePublic } from './page.js';
+import { BackendDown, CONTADOR, datosDePrueba, erroresScript, esc, fmtWhen, html, isUuid, rows, supabasePublic } from './page.js';
 
 import { siteFooter, siteHeader } from './chrome.js';
 
@@ -36,6 +36,28 @@ export const fmtLong = (iso, lang = 'es', tz) => KZ.fmt(iso, tz, loc(lang), {
  *  una franja (solo la hora si acaba el mismo día; si no, con el día delante:
  *  «dom 27 sept 10:57», como `Formatters.timeRange` en la app). */
 export const { fmtDay, fmtTime, sameDay, fmtEnd } = KT;
+
+// Intl en caliente desde que arranca la Function, fuera de cualquier petición.
+// El primer Intl.DateTimeFormat de una copia recién creada carga los datos del
+// idioma y de la zona horaria: unos 15 ms de CPU que se comía la primera
+// visita de cada copia (el plan gratis de Cloudflare corta a los 10 ms y el
+// arranque tiene su propio límite, de un segundo). Se crean aquí los
+// formateadores que usan las tarjetas y las fichas, que quedan guardados en
+// assets/zona.js y assets/tarjeta.js.
+try {
+  const ahora = new Date().toISOString();
+  for (const tz of [KZ.MADRID, KZ.CANARIAS]) {
+    KZ.dia(ahora, tz);
+    for (const lang of ['es', 'en']) {
+      fmtDay(ahora, lang, tz);
+      fmtTime(ahora, lang, tz);
+      fmtLong(ahora, lang, tz);
+      fmtWhen(ahora, lang, tz);
+    }
+  }
+  KT.money(0, 'EUR', 'es');
+  KT.money(0, 'EUR', 'en');
+} catch { /* solo es para ir más rápido */ }
 
 /** La zona y la dirección (`slug`) de cada negocio de una lista que no las
  *  trae (la agenda de una ciudad, una publicación): `businesses` se puede
@@ -318,7 +340,7 @@ ${siteHeader(lang, esc(es + consulta), esc(enPath + consulta), actual)}
 <main class="pub wrap" id="contenido">${body}</main>
 ${siteFooter(lang)}
 ${conAmigos ? `<script src="/assets/amigos.js?v=17" defer data-lang="${en ? 'en' : 'es'}"></script>
-` : ''}${conVisor ? `<script src="/assets/tarjeta.js?v=13" defer></script>
+` : ''}${conVisor ? `<script src="/assets/tarjeta.js?v=14" defer></script>
 ` : ''}${conTarjetas ? `<script src="/assets/tarjetas.js?v=15" defer></script>
 ` : ''}${/class="detail[" ]/.test(body) ? `<script src="/assets/barra.js?v=4" defer></script>
 ` : ''}${/^\/(en\/)?(o|b|coleccion|collection)\//.test(path) || /^\/(sorteo|en\/giveaway)\/[^/]+$/.test(path) ? desdeHistorias() : ''}${contador ? CONTADOR : ''}

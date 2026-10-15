@@ -52,13 +52,20 @@
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
   // ── Dinero y fechas (en la hora del negocio: ver assets/zona.js) ──────────
-  const money = (cents, currency = 'EUR', lang = 'es') =>
-    cents == null
-      ? ''
-      : (cents / 100).toLocaleString(lang === 'en' ? 'en-IE' : klLoc(lang), {
-          style: 'currency',
-          currency,
-        });
+  // Un formateador por idioma y moneda (`toLocaleString` con opciones crea
+  // uno nuevo en cada llamada, y eso es lo caro).
+  const monedas = new Map();
+  const money = (cents, currency = 'EUR', lang = 'es') => {
+    if (cents == null) return '';
+    const locale = lang === 'en' ? 'en-IE' : klLoc(lang);
+    const clave = `${locale}|${currency}`;
+    let f = monedas.get(clave);
+    if (!f) {
+      f = new Intl.NumberFormat(locale, { style: 'currency', currency });
+      monedas.set(clave, f);
+    }
+    return f.format(cents / 100);
+  };
 
   const loc = klLoc;
 
