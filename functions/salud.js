@@ -22,7 +22,9 @@
 
 import { configure, supabasePublic } from './_lib/page.js';
 
-const ESPERA_MS = 5000;
+// 9 s: prod en frío tardó 4,7 s la primera vez (2026-10-15) y UptimeRobot
+// espera 30 s, así que hay margen sin dar falsos avisos.
+const ESPERA_MS = 9000;
 const RECUERDA_MS = 30000;
 let ultimo = null; // { en, estado, cuerpo }
 
