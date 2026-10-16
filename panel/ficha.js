@@ -753,7 +753,7 @@ async function parteFicha(v, parte, b, cats) {
     }
     if (parte === 'horario') {
       horario = editorHorario($('[data-horario]', v), horario ? horario.valor() : b.opening_hours);
-    // Encima, si alguien lo encontró cerrado: el aviso y «Está bien así» (quetal.js).
+      if (typeof qtAvisoHorario === 'function') qtAvisoHorario($('[data-qt-aviso]', v));
       cocina = editorHorario($('[data-cocina]', v), cocina ? cocina.valor() : (b.kitchen_hours || b.opening_hours));
       $('#cocinaOn', v).onchange = (e) => { cocinaOn = e.target.checked; $('[data-cocina]', v).hidden = !cocinaOn; };
     }
