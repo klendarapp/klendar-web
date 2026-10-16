@@ -199,11 +199,12 @@ export async function venuePosterPage(token, lang, mesa) {
  * línea encima de la invitación: «Cola virtual»), la invitación, el QR, la
  * dirección corta y klendar.app; arriba, la barra con la ayuda, `nav` y
  * «Imprimir». Lo comparten el cartel del local y el de la cola. */
-function paginaCartel({ S, b, url, mesa = false, nav = '', titulo, que = '', invita, ayuda }) {
+function paginaCartel({ S, b, url, mesa = false, nav = '', titulo, que = '', invita, ayuda, numeros = [], extra = '' }) {
   const dir = direccionCorta(b.address, b.city);
   const logo = b.logo_url || '';
-  const cartel = `
+  const cartel = (num = '') => `
     <section class="cartel">
+      ${num ? `<p class="num">${esc(num)}</p>` : ''}
       ${logo ? `<img class="logo" src="${esc(logo)}" alt="">` : ''}
       <h1>${esc(b.name)}</h1>
       ${que ? `<p class="que">${esc(que)}</p>` : ''}
@@ -236,9 +237,11 @@ function paginaCartel({ S, b, url, mesa = false, nav = '', titulo, que = '', inv
   .mesa .cartel .logo { width: 7cqw; height: 7cqw; margin-bottom: 1.3cqw; }
   .cartel h1 { font-family: Sora, sans-serif; font-weight: 800; font-size: 7cqw; line-height: 1.1; letter-spacing: -.02em; margin: 0 0 2.2cqw; }
   .mesa .cartel h1 { font-size: 3.5cqw; margin-bottom: 1.1cqw; }
+  .cartel .num { font-weight: 800; font-size: 2.2cqw; letter-spacing: .06em; text-transform: uppercase; margin: 0 0 1cqw; }
   .cartel .que { font-family: Sora, sans-serif; font-weight: 800; font-size: 4.4cqw; letter-spacing: .04em; text-transform: uppercase; margin: 0 0 1.8cqw; }
   .cartel .invita { font-weight: 600; font-size: 3.6cqw; line-height: 1.3; margin: 0; max-width: 80%; }
   .mesa .cartel .invita { font-size: 1.8cqw; }
+  .mesa .cartel .que { font-size: 2.6cqw; margin-bottom: .9cqw; }
   .cartel .qr { width: 52cqw; margin: auto 0 2.6cqw; }
   .mesa .cartel .qr { width: 26cqw; margin-bottom: 1.3cqw; }
   .cartel .qr svg { width: 100%; height: auto; display: block; }
@@ -254,7 +257,8 @@ function paginaCartel({ S, b, url, mesa = false, nav = '', titulo, que = '', inv
   @media print {
     body { background: #fff; }
     .barra { display: none; }
-    .folio { width: 210mm; height: 297mm; aspect-ratio: auto; box-shadow: none; border-radius: 0; margin: 0; }
+    .folio { width: 210mm; height: 297mm; aspect-ratio: auto; box-shadow: none; border-radius: 0; margin: 0; break-after: page; }
+    .folio:last-of-type { break-after: auto; }
   }
 </style>
 </head>
@@ -264,7 +268,10 @@ function paginaCartel({ S, b, url, mesa = false, nav = '', titulo, que = '', inv
   ${nav}
   <button onclick="print()">${esc(S.print)}</button>
 </div>
-<main class="folio${mesa ? ' mesa' : ''}">${mesa ? cartel.repeat(4) : cartel}</main>
+${numeros.length
+    ? Array.from({ length: Math.ceil(numeros.length / 4) }, (_, i) =>
+        `<main class="folio mesa">${numeros.slice(i * 4, i * 4 + 4).map((n) => cartel(n)).join('')}</main>`).join('')
+    : `<main class="folio${mesa ? ' mesa' : ''}">${mesa ? cartel().repeat(4) : cartel()}</main>`}${extra}
 <script src="/assets/vendor/qrcode.js?v=1"></script>
 <script>
   var q = qrcode(0, 'M'); q.addData(${JSON.stringify(url)}); q.make();
@@ -273,6 +280,51 @@ function paginaCartel({ S, b, url, mesa = false, nav = '', titulo, que = '', inv
 </script>
 </body>
 </html>`, 200, 'no-store');
+}
+
+// ── Los carteles de mesa (QR de mesa con el wifi) ──────────────────────────
+// Cuatro por folio, para recortar, con «📶 Wifi gratis · Escanea aquí» o, sin
+// wifi, «Ofertas y carta · Escanea aquí», el QR (klendar.app/m/<código>: sin
+// la contraseña), el nombre del local y, con `?mesas=12`, «Mesa 1»…«Mesa 12»
+// (tres folios). Si el local ha cambiado el enlace, «Este cartel ya no vale».
+// Lo abre el panel o la app («Wifi para clientes»). Se imprime o se guarda
+// en PDF desde el navegador.
+
+const TM = {
+  es: {
+    lang: 'es', title: 'Carteles de mesa', point: 'Apunta con la cámara del móvil', print: 'Imprimir',
+    wifi: '📶 Wifi gratis', menu: 'Ofertas y carta', scan: 'Escanea aquí', table: 'Mesa',
+    help: 'Cuatro por folio: recórtalos por las líneas y ponlos en las mesas. Se imprimen igual en blanco y negro.',
+    changed: 'Este cartel ya no vale', changedBody: 'El local ha cambiado el enlace de sus carteles de mesa. Imprime los nuevos desde el panel o desde la app.',
+  },
+  en: {
+    lang: 'en', title: 'Table cards', point: 'Point your phone camera here', print: 'Print',
+    wifi: '📶 Free Wi-Fi', menu: 'Offers and menu', scan: 'Scan here', table: 'Table',
+    help: 'Four per sheet: cut along the lines and put them on the tables. They print fine in black and white.',
+    changed: 'This card no longer works', changedBody: 'The venue has changed the link on its table cards. Print the new ones from the dashboard or the app.',
+  },
+};
+
+export async function tablePosterPage(token, lang, mesas) {
+  const S = TM[lang === 'en' ? 'en' : 'es'];
+  const valido = /^[A-Za-z0-9_-]{16}$/.test(token || '');
+  const info = valido ? await rpc('table_qr_info', { p_token: token }) : null;
+  if (info?.error === 'token_changed') {
+    return html(`${CABEZA(S, S.changed)}
+<link rel="stylesheet" href="/assets/site.css?v=20261012">
+</head>
+<body><main class="open"><div class="card" style="max-width:460px;margin:60px auto;padding:24px;text-align:center">
+<h1>${esc(S.changed)}</h1><p class="muted">${esc(info.business_name || '')}</p><p>${esc(S.changedBody)}</p>
+</div></main></body></html>`, 410, 'no-store');
+  }
+  const b = info?.ok ? info.business : null;
+  if (!b?.name) return notFound(S.lang, `${lang === 'en' ? '/en/poster/table' : '/cartel/mesa'}/${token}`, 'b');
+  const n = Math.min(Math.max(parseInt(mesas, 10) || 0, 0), 200);
+  const numeros = n > 0 ? Array.from({ length: n }, (_, i) => `${S.table} ${i + 1}`) : ['', '', '', ''];
+  return paginaCartel({
+    S, b, url: `https://klendar.app/m/${token}`, mesa: true, titulo: `${S.title} · ${b.name}`,
+    que: info.has_wifi ? S.wifi : S.menu, invita: S.scan, ayuda: S.help, numeros,
+  });
 }
 
 // ── El cartel de la cola virtual ────────────────────────────────────────────

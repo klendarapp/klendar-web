@@ -35,7 +35,7 @@ const SEGURIDAD = {
 // tardar el navegador en ver un cambio): una publicación agotada o editada
 // no se ve más vieja que antes. Lo privado (`private, no-store`: lo abierto
 // con un enlace de RRPP, etc.) nunca entra.
-const EN_CACHE = /^\/(en\/)?(o|b|a|agenda|whats-on|hoy|today|con-ninos|kids|coleccion|collection|explorar|explore|descubre|discover|partidos|matches|grupos|groups|sorteos|giveaways|sorteo|giveaway|cartel|poster|historia|story|widget)\/|^\/sitemap-[a-z]+\.xml$/;
+const EN_CACHE = /^\/(en\/)?(o|b|a|agenda|whats-on|hoy|today|con-ninos|kids|coleccion|collection|explorar|explore|descubre|discover|partidos|matches|grupos|groups|sorteos|giveaways|sorteo|giveaway|cartel|poster|historia|story|widget|m)\/|^\/sitemap-[a-z]+\.xml$/;
 
 /** Segundos que se puede guardar en el borde (0: no se guarda). */
 function segundosEnCache(res) {

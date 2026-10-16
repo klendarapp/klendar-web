@@ -6,6 +6,9 @@
 // (`lib/core/utils/opening_hours.dart`): un tramo que acaba antes de empezar
 // cruza la medianoche, y «Cierra pronto» / «Abre pronto» si cambia en menos
 // de una hora. Un día cerrado (vacaciones, festivo) manda sobre el horario.
+// Con horario de cocina (`data-cocina`, opcional; migración 20261230100000),
+// debajo y con el local abierto: «Cocina: hasta las 23:00» o «Cocina
+// cerrada», como la app.
 (function () {
   'use strict';
   const KZ = window.KlendarZona;
@@ -14,9 +17,11 @@
 
   let horas;
   let cierres;
+  let cocina = null;
   try {
     horas = JSON.parse(el.getAttribute('data-horario') || '{}');
     cierres = JSON.parse(el.getAttribute('data-cierres') || '[]');
+    if (el.hasAttribute('data-cocina')) cocina = JSON.parse(el.getAttribute('data-cocina'));
   } catch { return; }
   const tz = KZ.zona(el.getAttribute('data-tz'));
   const en = el.getAttribute('data-lang') === 'en';
@@ -25,11 +30,15 @@
         closesAt: (t) => `closes at ${t}`, closesLate: (t) => `closes at ${t} (after midnight)`,
         opensAt: (t) => `opens at ${t}`, opensTomorrow: (t) => `opens tomorrow at ${t}`,
         opensOn: (d, t) => `opens on ${d} at ${t}`,
+        kitchenUntil: (t) => `Kitchen: until ${t}`, kitchenOpen: 'Kitchen open', kitchenClosed: 'Kitchen closed',
+        kitchenOpensAt: (t) => `Kitchen closed · opens at ${t}`,
         days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] }
     : { open: 'Abierto', closed: 'Cerrado', closingSoon: 'Cierra pronto', openingSoon: 'Abre pronto',
         closesAt: (t) => `cierra a las ${t}`, closesLate: (t) => `cierra a las ${t} (madrugada)`,
         opensAt: (t) => `abre a las ${t}`, opensTomorrow: (t) => `abre mañana a las ${t}`,
         opensOn: (d, t) => `abre el ${d} a las ${t}`,
+        kitchenUntil: (t) => `Cocina: hasta las ${t}`, kitchenOpen: 'Cocina abierta', kitchenClosed: 'Cocina cerrada',
+        kitchenOpensAt: (t) => `Cocina cerrada · abre a las ${t}`,
         days: ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'] };
 
   const min = (s) => {
@@ -37,9 +46,31 @@
     return m && +m[1] <= 24 && +m[2] <= 59 ? (+m[1] % 24) * 60 + +m[2] : null;
   };
   const hhmm = (m) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
-  const tramos = (d) => (Array.isArray(horas[d]) ? horas[d] : [])
+  const tramosDe = (h, d) => (Array.isArray(h[d]) ? h[d] : [])
     .map((t) => (Array.isArray(t) ? [min(t[0]), min(t[1])] : [null, null]))
     .filter(([a, b]) => a != null && b != null);
+
+  const tramos = (d) => tramosDe(horas, d);
+
+  /** La cocina con el local abierto: abierta hasta X o cerrada (y si abre
+   * hoy más tarde). */
+  function cocinaAhora() {
+    if (!cocina) return '';
+    const p = KZ.partes(Date.now(), tz);
+    const ahora = p.h * 60 + p.min;
+    const hoy = KZ.diaSemana(tz);
+    for (const [a, b] of tramosDe(cocina, hoy)) {
+      if (b <= a ? ahora >= a : ahora >= a && ahora < b) return T.kitchenUntil(hhmm(b));
+    }
+    const ayer = hoy === 1 ? 7 : hoy - 1;
+    for (const [a, b] of tramosDe(cocina, ayer)) {
+      if (b <= a && ahora < b) return T.kitchenUntil(hhmm(b));
+    }
+    for (const [a] of tramosDe(cocina, hoy)) {
+      if (a > ahora) return T.kitchenOpensAt(hhmm(a));
+    }
+    return T.kitchenClosed;
+  }
 
   function estado() {
     const p = KZ.partes(Date.now(), tz);
@@ -80,6 +111,14 @@
     b.textContent = titulo;
     el.appendChild(b);
     if (e.texto) el.appendChild(document.createTextNode(` · ${e.texto}`));
+    const k = e.abierto ? cocinaAhora() : '';
+    if (k) {
+      const s = document.createElement('small');
+      s.className = 'cocina';
+      s.textContent = k;
+      el.appendChild(document.createElement('br'));
+      el.appendChild(s);
+    }
     el.hidden = false;
   }
 

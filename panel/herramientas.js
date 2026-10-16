@@ -27,11 +27,19 @@ Object.assign(SVG, {
   candado: 'M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6zm9 14H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z',
 });
 
+/** El último estado leído (para «Crear»: «Menú del día» solo a los sitios
+ * de comida). */
+let herrUltimo = null;
+
 /** El estado de las herramientas del negocio de ahora (null si falla). */
 async function herrEstado() {
   const r = await rpc('business_tools_overview', { p_business: BIZ.id }).catch(() => null);
-  return r && r.ok !== false ? r : null;
+  herrUltimo = r && r.ok !== false ? { ...r, biz: BIZ.id } : null;
+  return herrUltimo;
 }
+/** «Menú del día» sugerido (sitio de comida o ya ha publicado uno). */
+const herrMenuSugerido = () => herrUltimo?.biz === BIZ?.id && gestiona() && !esOrganizador() && !esEntidad()
+  && herrSi(herrUltimo, 'daily_menu', 'suggested');
 const herrNum = (o, k, f) => Number(o?.[k]?.[f]) || 0;
 const herrSi = (o, k, f) => o?.[k]?.[f] === true;
 /** Plural sencillo: herrPl(n, ['1 tele', 'teles'], ['1 TV', 'TVs']). Con
@@ -51,6 +59,7 @@ function herrCrear() {
     <div class="crear-ops">
       ${op('#/publicaciones/nueva-flash', 'bolt', bi('Oferta flash', 'Flash offer'), bi('Canjeable con QR durante unas horas', 'Redeemable with a QR for a few hours'))}
       ${op('#/publicaciones/nuevo-evento', 'event', bi('Evento', 'Event'), bi('Con fecha, aforo y reserva de plaza', 'With a date, a limit and place booking'))}
+      ${herrMenuSugerido() ? op('#/menu-del-dia', 'restaurant_menu', bi('Menú del día', 'Daily menu'), bi('Foto de la pizarra y precio: hasta el cierre, en un toque.', 'Photo of the board and price: until closing, in one tap.')) : ''}
       ${op('#/novedades', 'campaign', bi('Novedad', 'Update'), bi('Una nota corta en tu ficha: «hoy hay pulpo»', 'A short note on your page: “octopus today”'))}
     </div>
     <div class="foot"><button type="button" class="btn ghost" data-cancel>${esc(bi('Cancelar', 'Cancel'))}</button></div></form>`;
@@ -130,7 +139,13 @@ async function herrResumen(v, { cajaFilas }) {
   const pend = herrNum(o, 'groups', 'pending');
   const resenas = herrNum(o, 'reviews', 'unanswered');
   const bc = o.before_closing || {};
+  const dm = o.daily_menu || {};
+  const horaMenu = dm.live_until ? new Date(dm.live_until).toLocaleTimeString(LOC(), { hour: '2-digit', minute: '2-digit', timeZone: TZ }) : '';
   const filas = [
+    // Menú del día: a mano, en los sitios de comida (una fila).
+    gestiona() && !org && dm.suggested ? fila('#/menu-del-dia', 'restaurant_menu', horaMenu
+      ? bi(`Menú del día · hasta las ${horaMenu}`, `Daily menu · until ${horaMenu}`)
+      : bi('Menú del día · publicar el de hoy', 'Daily menu · publish today’s')) : '',
     // La cola abierta ya sale en su fila (panel/cola.js); si la usa y ahora
     // está cerrada, la fila para abrirla.
     !ent && !herrSi(o, 'queue', 'open') && herrSi(o, 'queue', 'used_30d') ? fila('#/cola', 'cola', bi('Cola virtual · cerrada', 'Virtual queue · closed')) : '',
@@ -181,6 +196,11 @@ PAGES.herramientas = async (v) => {
   const archivos = herrNum(o, 'menu', 'files');
   const enlaces = herrNum(o, 'links', 'count');
   const bc = o.before_closing || {};
+  const dm = o.daily_menu || {};
+  const tq = o.table_qr || {};
+  const diasMenu = herrNum(o, 'daily_menu', 'plan_days');
+  const horaMenu = dm.live_until ? new Date(dm.live_until).toLocaleTimeString(LOC(), { hour: '2-digit', minute: '2-digit', timeZone: TZ }) : '';
+  const escaneos = herrNum(o, 'table_qr', 'scans_month');
   const reglas = herrNum(o, 'series', 'rules_active');
   const series = herrNum(o, 'series', 'active');
   const espera = herrNum(o, 'queue', 'waiting');
@@ -200,6 +220,13 @@ PAGES.herramientas = async (v) => {
       frase: bi('Para que reserven o pidan donde ya trabajas (TheFork, Glovo…): botones en tu ficha.', 'So people book or order where you already work (TheFork, Glovo…): buttons on your page.'),
       estado: enlaces ? herrPl(enlaces, ['1 enlace', 'enlaces'], ['1 link', 'links']) : sinPreparar,
       on: enlaces > 0, botones: [[configurar, '#/ficha/contacto']],
+    }) : '',
+    edit && local && dm.suggested ? herrTarjeta({
+      icon: 'restaurant_menu', titulo: bi('Menú del día', 'Daily menu'),
+      frase: bi('La foto de la pizarra y el precio: sale hasta que cierra la cocina y desaparece solo.', 'The photo of the board and the price: it shows until the kitchen closes and disappears by itself.'),
+      estado: dm.live_until ? bi(`Publicado hasta las ${horaMenu}`, `Live until ${horaMenu}`)
+        : diasMenu > 0 ? herrPl(diasMenu, ['Se publica solo 1 día a la semana', 'días a la semana, se publica solo'], ['Publishes itself 1 day a week', 'days a week, publishes itself']) : '',
+      on: !!dm.live_until || diasMenu > 0, botones: [[abrir, '#/menu-del-dia']],
     }) : '',
     edit && local && bc.suggested ? herrTarjeta({
       icon: 'bolsa', titulo: bi('Antes de cerrar', 'Before closing'),
@@ -245,6 +272,12 @@ PAGES.herramientas = async (v) => {
       estado: onOff(herrSi(o, 'groups', 'enabled')), on: herrSi(o, 'groups', 'enabled'),
       detalle: herrSi(o, 'groups', 'enabled') ? (pend === 0 ? bi('Sin peticiones ahora', 'No requests right now') : herrPl(pend, ['1 petición sin contestar', 'peticiones sin contestar'], ['1 request to answer', 'requests to answer'])) : '',
       botones: [[herrSi(o, 'groups', 'enabled') ? abrir : activar, '#/grupos']],
+    }) : '',
+    edit && local ? herrTarjeta({
+      icon: 'wifi', titulo: bi('Wifi para clientes', 'Wi-Fi for customers'),
+      frase: bi('Carteles de mesa con un QR: tu wifi, tus ofertas de hoy y la carta. Sin wifi, sirven de QR de mesa.', 'Table cards with a QR code: your Wi-Fi, today’s offers and the menu. Without Wi-Fi, they work as a table QR.'),
+      estado: tq.has ? herrPl(escaneos, ['1 escaneo este mes', 'escaneos este mes'], ['1 scan this month', 'scans this month']) : sinPreparar,
+      on: !!(tq.wifi || tq.has), botones: [[abrir, '#/wifi-clientes']],
     }) : '',
     edit && local ? herrTarjeta({
       icon: 'qr_code_2', titulo: bi('Cartel del local', 'Venue poster'),

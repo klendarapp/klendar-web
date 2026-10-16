@@ -70,6 +70,11 @@ createServer(async (req, res) => {
     if ((m = rest.match(/^\/o\/([^/]+)\/?$/))) { mod = await load(`functions/${en}o/[id].js`); params = { id: m[1] }; }
     // El cartel del local: /cartel/local/<código> y /en/poster/venue/<código>.
     else if ((m = rest.match(/^\/(cartel\/local|poster\/venue)\/([^/]+)\/?$/))) { mod = await load(`functions/${en}${en ? 'poster/venue' : 'cartel/local'}/[token].js`); params = { token: m[2] }; }
+    // Los carteles de mesa: /cartel/mesa/<código> y /en/poster/table/<código>.
+    else if ((m = rest.match(/^\/(cartel\/mesa|poster\/table)\/([^/]+)\/?$/))) { mod = await load(`functions/${en}${en ? 'poster/table' : 'cartel/mesa'}/[token].js`); params = { token: m[2] }; }
+    // /m/<…>: el QR de mesa (/m/<código>, /en/m/<código>) y «Dar en el
+    // momento» (/m/<clave>.<ventana>.<firma>, a «Tu cuenta»).
+    else if ((m = rest.match(/^\/m\/([^/]+)\/?$/))) { mod = await load(`functions/${en}m/[token].js`); params = { token: m[1] }; }
     // El cartel de la cola virtual: /cartel/cola/<código> y /en/poster/queue/<código>.
     else if ((m = rest.match(/^\/(cartel\/cola|poster\/queue)\/([^/]+)\/?$/))) { mod = await load(`functions/${en}${en ? 'poster/queue' : 'cartel/cola'}/[code].js`); params = { code: m[2] }; }
     // La cola virtual (el QR del cartel): /cola/<código> y /en/queue/<código>.
@@ -111,8 +116,6 @@ createServer(async (req, res) => {
     else if ((m = path.match(/^\/r\/([^/]+)\/?$/))) { mod = await load('functions/r/[code].js'); params = { code: m[1] }; }
     // El QR de cliente (bonos): /c/<clave>.<ventana>.<firma>.
     else if ((m = path.match(/^\/c\/([^/]+)\/?$/))) { mod = await load('functions/c/[token].js'); params = { token: m[1] }; }
-    // «Dar en el momento»: /m/<clave>.<ventana>.<firma>, a «Tu cuenta».
-    else if ((m = path.match(/^\/m\/([^/]+)\/?$/))) { mod = await load('functions/m/[token].js'); params = { token: m[1] }; }
     // El enlace de un RRPP: /rp/<código> y /en/rp/<código>.
     else if ((m = path.match(/^\/rp\/([^/]+)\/?$/))) { mod = await load('functions/rp/[code].js'); params = { code: m[1] }; }
     else if ((m = path.match(/^\/en\/rp\/([^/]+)\/?$/))) { mod = await load('functions/en/rp/[code].js'); params = { code: m[1] }; }

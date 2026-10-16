@@ -111,6 +111,8 @@ const T = (en) => en
       prevItem: 'Previous', nextItem: 'Next', seeMore: 'See more',
       // «El sitio», «Con niños» y «Según el tiempo».
       beforeClosing: 'Before closing', beforeClosingHint: 'What’s left at the end of the day in bakeries, cafés and restaurants, at a discount. You pay at the venue.',
+      dailyMenu: 'Daily menu', dailyMenuHint: 'Today’s set menu at places to eat, with its price.',
+      eatNow: 'Food served now', eatNowHint: 'Places to eat with the kitchen open, going by their kitchen hours or, if none, the venue’s',
       placeAttrs: "What it's like", diets: 'Allergens and diets', dietsHint: 'Each business declares this: if you have an allergy, check with the venue.',
       place: 'The place', withKids: 'With kids', kidsIn: 'Plans with kids in', placeN: (n) => `The place (${n})`,
       seeAll: (n) => `See all (${n})`, seeLess: 'See less',
@@ -200,6 +202,8 @@ const T = (en) => en
       feedKeys: 'Desliza, usa la rueda o ↑ ↓ para pasar.', feedPos: (i, n) => `${i} de ${n}`,
       prevItem: 'Anterior', nextItem: 'Siguiente', seeMore: 'Ver más',
       beforeClosing: 'Antes de cerrar', beforeClosingHint: 'Lo que sobra del día en panaderías, cafeterías y restaurantes, con descuento. Se paga en el local.',
+      dailyMenu: 'Menú del día', dailyMenuHint: 'El menú de hoy de los sitios de comida, con su precio.',
+      eatNow: 'Se puede comer ahora', eatNowHint: 'Sitios de comida con la cocina abierta, según su horario de cocina o, si no tienen, el del local',
       placeAttrs: 'Cómo es', diets: 'Alérgenos y dietas', dietsHint: 'Lo declara cada negocio: si tienes alergia, confírmalo en el local.',
       place: 'El sitio', withKids: 'Con niños', kidsIn: 'Planes con niños en', placeN: (n) => `El sitio (${n})`,
       seeAll: (n) => `Ver todas (${n})`, seeLess: 'Ver menos',
@@ -244,6 +248,7 @@ const IC = {
   der: 'M8.59 16.59 13.17 12 8.59 7.41 10 6l6 6-6 6z',
   x: 'M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z',
   // «Antes de cerrar» (shopping_bag).
+  carta: 'M8.1 13.34l2.83-2.83L3.91 3.5c-1.56 1.56-1.56 4.09 0 5.66l4.19 4.18zm6.78-1.81c1.53.71 3.68.21 5.27-1.38 1.91-1.91 2.28-4.65.81-6.12-1.46-1.46-4.2-1.1-6.12.81-1.59 1.59-2.09 3.74-1.38 5.27L3.7 19.87l1.41 1.41L12 14.41l6.88 6.88 1.41-1.41L13.41 13l1.47-1.47z',
   bolsa: 'M18 6h-2c0-2.21-1.79-4-4-4S8 3.79 8 6H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6-2c1.1 0 2 .9 2 2h-4c0-1.1.9-2 2-2zm6 16H6V8h2v2c0 .55.45 1 1 1s1-.45 1-1V8h4v2c0 .55.45 1 1 1s1-.45 1-1V8h2v12z',
   aqui: 'M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0 0 13 3.06V1h-2v2.06A8.994 8.994 0 0 0 3.06 11H1v2h2.06A8.994 8.994 0 0 0 11 20.94V23h2v-2.06A8.994 8.994 0 0 0 20.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z',
   ciudad: 'M15 11V5l-3-3-3 3v2H3v14h18V11h-6zm-8 8H5v-2h2v2zm0-4H5v-2h2v2zm0-4H5V9h2v2zm6 8h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V9h2v2zm0-4h-2V5h2v2zm6 12h-2v-2h2v2zm0-4h-2v-2h2v2z',
@@ -660,9 +665,9 @@ function calendarioHtml({ items, lang, S, link, mes, dia, hoy }) {
 /** Las claves de la dirección en cada idioma. */
 const CLAVES = {
   es: { city: 'ciudad', cat: 'categoria', kind: 'tipo', price: 'precio', when: 'cuando', discount: 'descuento', open: 'abierto', sort: 'orden', view: 'vista', month: 'mes', day: 'dia', show: 'ver', place: 'sitio', weather: 'tiempo',
-    age: 'edad', vprice: 'precio-local', card: 'descuento-para', solo: 'solo', charity: 'solidario', entity: 'agenda-publica', closing: 'antes-de-cerrar', buzz: 'ambiente' },
+    age: 'edad', vprice: 'precio-local', card: 'descuento-para', solo: 'solo', charity: 'solidario', entity: 'agenda-publica', closing: 'antes-de-cerrar', buzz: 'ambiente', menu: 'menu-del-dia', eat: 'comer-ahora' },
   en: { city: 'city', cat: 'category', kind: 'type', price: 'price', when: 'when', discount: 'discount', open: 'open', sort: 'sort', view: 'view', month: 'month', day: 'day', show: 'show', place: 'place', weather: 'weather',
-    age: 'age', vprice: 'venue-price', card: 'discount-for', solo: 'solo', charity: 'charity', entity: 'public-listings', closing: 'before-closing', buzz: 'buzz' },
+    age: 'age', vprice: 'venue-price', card: 'discount-for', solo: 'solo', charity: 'charity', entity: 'public-listings', closing: 'before-closing', buzz: 'buzz', menu: 'daily-menu', eat: 'food-now' },
 };
 /** Marcas (tanda A) en la dirección: edades «4-8», carné en cada idioma. */
 const EDAD_URL = { '0-3': '0_3', '4-8': '4_8', '9-12': '9_12', '13-17': '13_17' };
@@ -746,6 +751,10 @@ function leeEstado(qs) {
     // «Antes de cerrar»: lo que sobra del día (`before_closing` en
     // `offer_traits`, migración 20261121100000).
     antesCierre: de('closing', 2) === '1',
+    // «Menú del día» (`daily_menu`, migración 20261230100001) y «Se puede
+    // comer ahora» (`eat_now`, migración 20261230100000), como la app.
+    menuDia: de('menu', 2) === '1',
+    comerAhora: de('eat', 2) === '1',
     // «Esta noche se mueve» (solo en el mapa de Explorar; tanda C).
     ambiente: de('buzz', 2) === '1',
     // Apagado solo si lo dice la dirección (la hoja sin JavaScript manda
@@ -793,6 +802,8 @@ function query(e, lang, { soloCompartido = false } = {}) {
     if (e.solidario) p.set(K.charity, '1');
     if (e.entidad) p.set(K.entity, '1');
     if (e.antesCierre) p.set(K.closing, '1');
+    if (e.menuDia) p.set(K.menu, '1');
+    if (e.comerAhora) p.set(K.eat, '1');
     if (!soloCompartido && e.vista === 'map' && e.ambiente) p.set(K.buzz, '1');
   }
   if (e.tiempoOff) p.set(K.weather, '0');
@@ -855,6 +866,7 @@ function resumenFiltros(e, S, catNombre) {
   else if (e.kind === 'events') partes.push(S.events);
   else if (e.kind === 'places') partes.push(S.placesType);
   if (e.antesCierre) partes.push(S.beforeClosing);
+  if (e.menuDia) partes.push(S.dailyMenu);
   if (e.cat) partes.push(catNombre || e.cat);
   if (e.price) partes.push(e.price === 'free' ? S.free : S.upTo(e.price));
   // Para quién.
@@ -867,6 +879,7 @@ function resumenFiltros(e, S, catNombre) {
   if (e.amigos) partes.push(S.friends);
   // El sitio.
   if (e.abierto) partes.push(S.openNow);
+  if (e.comerAhora) partes.push(S.eatNow);
   if (e.precioLocal) partes.push(marca(`price_le_${e.precioLocal}`));
   const sitio = sitioSinNinos(e);
   if (sitio.length === 1) partes.push(nombreSitio(sitio[0], lang === 'en'));
@@ -890,7 +903,7 @@ export async function explorePage(url, lang, modo = 'explorar') {
   const base = descubre ? discoverBase(lang) : exploreBase(lang);
   const e = leeEstado(url.searchParams);
   if (descubre) { e.q = ''; e.vista = ''; if (e.kind === 'places') e.kind = ''; }
-  const { q, city, cat, kind, price, when, soloDescuento, abierto, cerca, lat, lng, km, page, traits, tiempoOff, gustos, antesCierre } = e;
+  const { q, city, cat, kind, price, when, soloDescuento, abierto, cerca, lat, lng, km, page, traits, tiempoOff, gustos, antesCierre, menuDia, comerAhora } = e;
   const negocios = !descubre && kind === 'places';
   const esOfertas = kind === 'offers';
   const esEventos = kind === 'events';
@@ -913,8 +926,9 @@ export async function explorePage(url, lang, modo = 'explorar') {
     ...(soloDescuento ? { discount_only: true } : {}),
     ...(abierto ? { open_now: true } : {}),
     // «El sitio» y «Con niños»: todos los marcados a la vez.
-    ...(traits.length || traitsMarcas(e).length || antesCierre
-      ? { traits: [...traits, ...traitsMarcas(e), ...(antesCierre ? ['before_closing'] : [])] } : {}),
+    ...(traits.length || traitsMarcas(e).length || antesCierre || menuDia || comerAhora
+      ? { traits: [...traits, ...traitsMarcas(e), ...(antesCierre ? ['before_closing'] : []),
+          ...(menuDia ? ['daily_menu'] : []), ...(comerAhora ? ['eat_now'] : [])] } : {}),
     sort: ordenBase === 'nearest' && !cerca ? 'soonest' : ordenBase,
     ...(cerca ? { radius_m: km * 1000 } : {}),
     // «Tus gustos»: pesan en el orden, sin esconder nada (como la app).
@@ -924,7 +938,7 @@ export async function explorePage(url, lang, modo = 'explorar') {
   };
   const pKind = esOfertas ? 'flash_offer' : esEventos ? 'future_event' : null;
   const filtrado = Boolean(q || city || cat || kind || page > 1 || price || when || soloDescuento || abierto || sort || cerca || vista || e.amigos
-    || traits.length || traitsMarcas(e).length || antesCierre || tiempoOff || gustos.length);
+    || traits.length || traitsMarcas(e).length || antesCierre || menuDia || comerAhora || tiempoOff || gustos.length);
 
   const argsExplore = {
     p_city: cerca ? null : city || null, p_category: cat || null, p_kind: pKind, p_q: q || null,
@@ -1013,7 +1027,7 @@ export async function explorePage(url, lang, modo = 'explorar') {
   // Lo que deja fuera publicaciones (`hasNarrowingFilters` en la app): la
   // zona y la distancia se dicen aparte y el orden no quita nada.
   const conFiltros = Boolean(q || cat || kind || price || when || soloDescuento || abierto || e.amigos || traits.length
-    || traitsMarcas(e).length || antesCierre);
+    || traitsMarcas(e).length || antesCierre || e.menuDia || e.comerAhora);
   // «Cerca de ti» y nada: ¿es que aquí aún no hay Klendar? (`klendar_coverage`,
   // ningún negocio a 25 km). Entonces, «Avísame cuando llegue» en vez del
   // vacío de siempre. Si no contesta, el vacío de siempre.
@@ -1112,6 +1126,7 @@ export async function explorePage(url, lang, modo = 'explorar') {
   const activos = negocios ? '' : [
     aquiOn ? quitarChip(quitaAqui, ic('aqui', 16), S.hereNow) : '',
     antesCierre ? quitarChip(link({ antesCierre: false }), ic('bolsa', 16), S.beforeClosing) : '',
+    e.menuDia ? quitarChip(link({ menuDia: false }), ic('carta', 16), S.dailyMenu) : '',
     ninosOn ? quitarChip(link({ traits: traits.filter((t) => t !== 'kids'), edades: [] }), icSitio('kids', 16), S.withKids) : '',
   ].join('');
   // «Ordenar por»: un desplegable compacto, como la app (no en el mapa ni en
@@ -1138,9 +1153,9 @@ export async function explorePage(url, lang, modo = 'explorar') {
   // bloques como la app. Cuántos lleva cada bloque (lo mismo que cuenta la
   // app: `FeedFilters.basicsCount`, `forWhomCount`, `placeCount` y
   // `moreCount`); Filtros (N) es la suma. La distancia va en el «dónde».
-  const nBasico = [kind && !negocios, cat, !negocios && price, when && !calendario, !negocios && antesCierre].filter(Boolean).length;
+  const nBasico = [kind && !negocios, cat, !negocios && price, when && !calendario, !negocios && antesCierre, !negocios && e.menuDia].filter(Boolean).length;
   const nParaQuien = negocios ? 0 : [ninosOn, e.solo, e.carne, e.amigos].filter(Boolean).length;
-  const nSitio = (abierto ? 1 : 0) + (negocios ? 0 : (e.precioLocal ? 1 : 0) + sitioSinNinos(e).length);
+  const nSitio = (abierto ? 1 : 0) + (negocios ? 0 : (e.precioLocal ? 1 : 0) + (e.comerAhora ? 1 : 0) + sitioSinNinos(e).length);
   const nMas = negocios ? 0 : [e.solidario, e.entidad, soloDescuento].filter(Boolean).length;
   const nFiltros = nBasico + nParaQuien + nSitio + nMas;
   const K = CLAVES[en ? 'en' : 'es'];
@@ -1163,7 +1178,7 @@ export async function explorePage(url, lang, modo = 'explorar') {
   // «Restablecer»: lo de la hoja de serie. La distancia y la zona (en el
   // «dónde»), el orden y «Según el tiempo» se quedan como estén.
   const restablecer = link({ kind: negocios ? 'places' : '', cat: '', price: '', when: '', soloDescuento: false, abierto: false, traits: [],
-    edades: [], precioLocal: 0, carne: '', solo: false, solidario: false, entidad: false, antesCierre: false, amigos: false });
+    edades: [], precioLocal: 0, carne: '', solo: false, solidario: false, entidad: false, antesCierre: false, menuDia: false, comerAhora: false, amigos: false });
   // Categorías: las 8 más usadas (las que más tienen publicado ahora, como la
   // app) y la elegida, y «Ver todas (31)», que abre el selector con buscador y
   // grupos (/assets/categorias.js). Sin JavaScript, el resto sale debajo,
@@ -1220,6 +1235,9 @@ export async function explorePage(url, lang, modo = 'explorar') {
       <fieldset class="hoja-casillas"><legend class="sr">${esc(S.openNow)}</legend><div class="ops">
         ${casilla(K.open, S.openNow, abierto)}
       </div><p class="hoja-nota hoja-nota-bajo">${esc(S.openNowHint)}</p></fieldset>
+      ${negocios ? '' : `<fieldset class="hoja-casillas"><legend class="sr">${esc(S.eatNow)}</legend><div class="ops">
+        ${casilla(K.eat, S.eatNow, e.comerAhora)}
+      </div><p class="hoja-nota hoja-nota-bajo">${esc(S.eatNowHint)}</p></fieldset>`}
       ${negocios ? '' : `<fieldset><legend>${esc(M.fPriceLevel)}</legend><div class="ops">
         ${radio(K.vprice, '', M.fAny, !e.precioLocal)}
         ${KM.PRECIOS.map((l) => radio(K.vprice, String(l), l === 1 ? '€' : M.fUpTo('€'.repeat(l)), e.precioLocal === l)).join('')}
@@ -1260,7 +1278,8 @@ export async function explorePage(url, lang, modo = 'explorar') {
         ${radio(K.kind, enIdioma('offers', en), S.offers, esOfertas)}
         ${radio(K.kind, enIdioma('events', en), S.events, esEventos)}
       </div><p class="hoja-nota hoja-nota-bajo">${esc(S.whatHint)}</p>
-      <div class="ops">${casilla(K.closing, S.beforeClosing, antesCierre)}</div><p class="hoja-nota hoja-nota-bajo">${esc(S.beforeClosingHint)}</p></fieldset>`}
+      <div class="ops">${casilla(K.closing, S.beforeClosing, antesCierre)}</div><p class="hoja-nota hoja-nota-bajo">${esc(S.beforeClosingHint)}</p>
+      <div class="ops">${casilla(K.menu, S.dailyMenu, e.menuDia)}</div><p class="hoja-nota hoja-nota-bajo">${esc(S.dailyMenuHint)}</p></fieldset>`}
       ${catsHtml}
       ${negocios ? '' : `<fieldset><legend>${esc(S.price)}</legend><div class="ops">
         ${radio(K.price, '', S.any, !price)}
@@ -1526,7 +1545,7 @@ function feedHtml({ S, en, lang, items, page, paginas, link, barra, final, vacio
     <button type="button" class="feed-ir" data-feed-ir="1" aria-label="${esc(S.nextItem)}">${ic('abajo', 24)}</button>
   </nav>
   ${masFormas}
-  ${page === 1 ? `<script src="/assets/fijada.js?v=8" defer data-lang="${en ? 'en' : 'es'}"></script>` : ''}`;
+  ${page === 1 ? `<script src="/assets/fijada.js?v=9" defer data-lang="${en ? 'en' : 'es'}"></script>` : ''}`;
 }
 
 // ── Una categoría en una ciudad ────────────────────────────────────────────

@@ -324,7 +324,9 @@ export async function offerPage(id, lang, rpRaw = '') {
   <div class="detail ficha${pieces.length || arte ? '' : ' sin-media'}" data-equipo-biz="${esc(o.business_id)}">
     ${arte || carrusel(pieces, { titulo: o.title, lang })}
     <div class="d-head">
-      <div class="d-top"><div class="badges"><span class="badge">${esc(flash ? (en ? 'Flash offer' : 'Oferta flash') : (en ? 'Event' : 'Evento'))}</span>${badges}${sellosMarca}</div>
+      <div class="d-top"><div class="badges"><span class="badge">${esc(flash && o.style?.badge === 'daily_menu'
+        ? `${en ? 'Daily menu' : 'Menú del día'}${{ lunch: en ? ' · Lunch' : ' · Comida', dinner: en ? ' · Dinner' : ' · Cena', both: en ? ' · Lunch and dinner' : ' · Comida y cena' }[o.style?.meal] || ''}`
+        : flash ? (en ? 'Flash offer' : 'Oferta flash') : (en ? 'Event' : 'Evento'))}</span>${badges}${sellosMarca}</div>
       ${masMenu([
     !flash && o.event_at && !over ? `<a href="${esc(icsHref(o, o.venue_address || where, `${BASE}${path}`))}" download="${esc((o.title || 'evento').replace(/[^\p{L}\p{N}]+/gu, '-').slice(0, 60))}.ics">${en ? 'Add to calendar' : 'Añadir al calendario'}</a>` : '',
     `<a href="#por-que">${S.why}</a>`,
@@ -686,7 +688,7 @@ export async function businessPage(param, lang, search = '') {
     rpcAll('business_closures', { p_business: id }),
     rpc('business_verified_review_count', { p_id: id }).then((n) => Number(n) || 0).catch(() => 0),
     // «El sitio»: lo que marca el negocio (terraza, apto para niños…).
-    rows('businesses', `select=amenities,price_level,crowd_enabled,entity_kind&id=eq.${id}`).then((r) => r[0] || {}).catch(() => ({})),
+    rows('businesses', `select=amenities,price_level,crowd_enabled,entity_kind,kitchen_hours&id=eq.${id}`).then((r) => r[0] || {}).catch(() => ({})),
     // «Pone el partido»: lo que pone los próximos 7 días (opcional).
     partidosDelBar(id, lang, zonaDe(b)).catch(() => ''),
     // «Acepta grupos» y sus sorteos abiertos (tanda C; opcionales).
@@ -730,7 +732,7 @@ export async function businessPage(param, lang, search = '') {
         stampsOnly: (l) => `Only these count: ${l}`, stampsMore: (l, n) => `${l} and ${n} more`,
         stampsByVisit: 'Also per visit with the venue QR code',
         stampsNoteVisit: 'Each redemption that counts earns a stamp, and so does scanning the venue QR code when the card says so: at most one a day per card. The app keeps count.',
-        hours: 'Opening hours', closed: 'Closed', today: 'today',
+        hours: 'Opening hours', kitchen: 'Kitchen', closed: 'Closed', today: 'today',
         days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
         news: 'News', reviews: 'Reviews', write: 'Write a review', noReviews: 'No reviews yet. Been here? Be the first.',
         user: 'Klendar user', report: 'Report', reportShort: 'Report', editBiz: 'Edit your page', myBiz: 'Go to the dashboard', block: 'Block', reportBiz: 'Report this business', menuPhotos: 'Photos of the menu',
@@ -770,7 +772,7 @@ export async function businessPage(param, lang, search = '') {
         stampsOnly: (l) => `Solo cuentan: ${l}`, stampsMore: (l, n) => `${l} y ${n} más`,
         stampsByVisit: 'También por visita con el QR del local',
         stampsNoteVisit: 'Cada canje que cuenta deja un sello, y también escanear el QR del local si la tarjeta lo dice: como mucho uno al día por tarjeta. La app lleva la cuenta.',
-        hours: 'Horario', closed: 'Cerrado', today: 'hoy',
+        hours: 'Horario', kitchen: 'Cocina', closed: 'Cerrado', today: 'hoy',
         days: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'],
         news: 'Novedades', reviews: 'Reseñas', write: 'Escribir una reseña', noReviews: 'Todavía no hay reseñas. ¿Has estado? Sé la primera persona.',
         user: 'Usuario de Klendar', report: 'Denunciar', reportShort: 'Denunciar', editBiz: 'Editar ficha', myBiz: 'Ir al panel', block: 'Bloquear', reportBiz: 'Denunciar este negocio', menuPhotos: 'Fotos de la carta',
@@ -866,6 +868,17 @@ export async function businessPage(param, lang, search = '') {
         return `<tr${d === hoy ? ' class="hoy"' : ''}><th>${S.days[d - 1]}${d === hoy ? ` <small>(${S.today})</small>` : ''}</th><td>${txt}</td></tr>`;
       }).join('')}</table>`
     : '';
+  // Horario de cocina (opcional): su semana debajo y «Cocina: hasta las 23:00»
+  // con el local abierto (`assets/horario.js`).
+  const cocina = horas && local.kitchen_hours && typeof local.kitchen_hours === 'object' && Object.keys(local.kitchen_hours).length
+    ? local.kitchen_hours : null;
+  const horarioCocina = cocina
+    ? `<h3 class="side-h">${S.kitchen}</h3><table class="horario">${[1, 2, 3, 4, 5, 6, 7].map((d) => {
+        const tramos = Array.isArray(cocina[d]) ? cocina[d] : (Array.isArray(cocina[String(d)]) ? cocina[String(d)] : []);
+        const txt = tramos.length ? tramos.map((t) => `${esc(t[0])}–${esc(t[1])}`).join(', ') : S.closed;
+        return `<tr${d === hoy ? ' class="hoy"' : ''}><th>${S.days[d - 1]}</th><td>${txt}</td></tr>`;
+      }).join('')}</table>`
+    : '';
 
   // Redes: el negocio puede guardar el @ o el enlace entero.
   const redUrl = (red, v) => {
@@ -951,7 +964,7 @@ export async function businessPage(param, lang, search = '') {
         ${b.contact_email ? `<div><span>${icono('correo')}</span><span><a href="mailto:${esc(b.contact_email)}">${esc(b.contact_email)}</a></span></div>` : ''}
         ${redes.length ? `<div><span>${icono('redes')}</span><span>${redes.join(' · ')}</span></div>` : ''}
       </div>
-      ${horario ? `<h2 class="side-h">${S.hours}</h2><p class="estado-hoy" hidden data-horario="${esc(JSON.stringify(horas))}" data-cierres="${esc(JSON.stringify(cierres.map((c) => ({ starts_on: c.starts_on, ends_on: c.ends_on }))))}" data-tz="${esc(tz)}" data-lang="${en ? 'en' : 'es'}"></p>${horario}
+      ${horario ? `<h2 class="side-h">${S.hours}</h2><p class="estado-hoy" hidden data-horario="${esc(JSON.stringify(horas))}" data-cierres="${esc(JSON.stringify(cierres.map((c) => ({ starts_on: c.starts_on, ends_on: c.ends_on }))))}" data-tz="${esc(tz)}" data-lang="${en ? 'en' : 'es'}"${cocina ? ` data-cocina="${esc(JSON.stringify(cocina))}"` : ''}></p>${horario}${horarioCocina}
       <div class="horario-check" hidden data-solo-publico data-cerrado="${esc(b.id)}" data-lang="${en ? 'en' : 'es'}" data-url="${esc(supabasePublic().url)}" data-key="${esc(supabasePublic().key)}"></div>` : ''}
     </aside>
     <div class="d-body">
@@ -1073,7 +1086,7 @@ export async function businessPage(param, lang, search = '') {
     lang, path, body: body + MENU_JS, title: conCiudad ? `${b.name} · ${b.city}` : b.name, description, image: b.cover || b.logo,
     head: `<meta name="robots" content="${b.adults_only || conVisita || b.closed_indefinitely || parado ? 'noindex' : 'index, follow'}">
 ${ldScript(jsonLd)}${cuentaToques ? `
-<script src="/assets/enlaces.js?v=3" defer data-url="${esc(supabasePublic().url)}" data-key="${esc(supabasePublic().key)}" data-biz="${esc(b.id)}"></script>` : ''}${horario ? '\n<script src="/assets/zona.js?v=2" defer></script>\n<script src="/assets/horario.js?v=1" defer></script>\n<script src="/assets/cerrado.js?v=1" defer></script>' : ''}${conVisita ? `\n${conVisita}` : ''}${local.crowd_enabled ? `\n${sitioAhoraScripts(lang)}` : ''}
+<script src="/assets/enlaces.js?v=3" defer data-url="${esc(supabasePublic().url)}" data-key="${esc(supabasePublic().key)}" data-biz="${esc(b.id)}"></script>` : ''}${horario ? '\n<script src="/assets/zona.js?v=2" defer></script>\n<script src="/assets/horario.js?v=2" defer></script>\n<script src="/assets/cerrado.js?v=1" defer></script>' : ''}${conVisita ? `\n${conVisita}` : ''}${local.crowd_enabled ? `\n${sitioAhoraScripts(lang)}` : ''}
 ${traducir(lang, `business:${b.id}`, carta.length ? `menu:${b.id}` : '')}${partidos ? `
 ${PARTIDOS_CSS}` : ''}${grupoHtml || sorteosHtml ? `
 ${GRUPOS_CSS}` : ''}${organizador ? `

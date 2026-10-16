@@ -572,7 +572,7 @@ function fichaCompleta(b, { sitio, carta }) {
 // ── «Tu ficha»: el índice y cada apartado ───────────────────────────────────
 async function datosFicha() {
   const [{ data: b }, cats, privado, carta, enlaces] = await Promise.all([
-    sb.from('businesses').select('id, name, description, category_id, address, city, phone, website, contact_email, social_links, logo_url, cover_image_url, gallery, opening_hours, adults_only, amenities, price_level, crowd_enabled, menu_url, menu_images').eq('id', BIZ.id).maybeSingle(),
+    sb.from('businesses').select('id, name, description, category_id, address, city, phone, website, contact_email, social_links, logo_url, cover_image_url, gallery, opening_hours, kitchen_hours, adults_only, amenities, price_level, crowd_enabled, menu_url, menu_images').eq('id', BIZ.id).maybeSingle(),
     CATS.length ? CATS : sb.from('categories').select('*').order('position', { ascending: true }).then(({ data }) => data || []),
     // El NIF no se puede leer de la tabla (no es público): lo da
     // `business_private` a quien gestiona.
@@ -687,6 +687,10 @@ async function parteFicha(v, parte, b, cats) {
   // guarda con el mismo «Guardar».
   const enlaces = (b.links || []).map((l) => ({ ...l }));
   let horario = null;
+  // Horario de cocina, opcional (migración 20261230100000): sin él, la
+  // cocina va con el horario del local. Se guarda aparte (`set_kitchen_hours`).
+  let cocina = null;
+  let cocinaOn = hayHorario(b.kitchen_hours);
   if (parte === 'donde') {
     // El punto de ahora (la tabla lo guarda como geografía).
     const perfil = await rpc('business_profile', { p_id: BIZ.id }).catch(() => null);
@@ -699,7 +703,11 @@ async function parteFicha(v, parte, b, cats) {
     basico: () => `${htmlBasico(d)}<p class="hint full">Si cambias el nombre, lo revisamos de nuevo. Tu negocio sigue a la vista mientras tanto.</p>`,
     donde: () => `${htmlDonde(d)}<p class="hint full">Si cambias la ciudad o te mudas a más de 1 km, lo revisamos de nuevo. Tu negocio sigue a la vista mientras tanto y lo que tengas publicado se muda contigo.</p>`,
     // Encima, si alguien lo encontró cerrado: el aviso y «Está bien así» (quetal.js).
-    horario: () => '<div class="full" data-qt-aviso></div><div class="full" data-horario></div>',
+    horario: () => `<div class="full" data-qt-aviso></div><div class="full" data-horario></div>
+      <div class="full"><label class="opcion"><input type="checkbox" id="cocinaOn" ${cocinaOn ? 'checked' : ''}><span>${esc(bi('La cocina tiene otro horario', 'The kitchen has different hours'))}</span></label>
+        <p class="hint">${esc(bi('Opcional. Si no lo pones, la cocina va con el horario del local. Se usa en la ficha, en «Se puede comer ahora» y en el Menú del día.',
+    'Optional. If you don’t set it, the kitchen follows the venue’s hours. Used on your page, in “Food served now” and in the daily menu.'))}</p>
+        <div data-cocina ${cocinaOn ? '' : 'hidden'}></div></div>`,
     contacto: () => `${htmlContacto(d)}<div class="full enlaces-ficha" data-enlaces></div>`,
     local: () => htmlSitio(b.amenities, { precio: b.price_level, aforo: b.crowd_enabled }),
     klendar: () => htmlKlendar(d),
@@ -719,6 +727,7 @@ async function parteFicha(v, parte, b, cats) {
         ? { city: String(x.city || '').trim(), ...(d.punto ? { lat: d.punto.lat, lng: d.punto.lng } : {}), no_fixed_venue: true }
         : { address: String(x.address || '').trim(), city: String(x.city || '').trim(), ...(d.punto ? { lat: d.punto.lat, lng: d.punto.lng } : {}), no_fixed_venue: false }),
       horario: () => ({ opening_hours: horario ? horario.valor() : null }),
+      // (la cocina va aparte; aquí solo para saber si hay cambios sin guardar)
       contacto: () => ({ phone: String(x.phone || '').trim(), website: String(x.website || '').trim(), contact_email: String(x.contact_email || '').trim(), social_links: socialDe(x) }),
       local: () => ({ amenities: $$('[name=sitio]:checked', v).map((c) => c.value).sort(),
         price_level: Number(x.price_level) || null, crowd_enabled: !!f().elements.crowd_enabled.checked }),
@@ -744,7 +753,9 @@ async function parteFicha(v, parte, b, cats) {
     }
     if (parte === 'horario') {
       horario = editorHorario($('[data-horario]', v), horario ? horario.valor() : b.opening_hours);
-      if (typeof qtAvisoHorario === 'function') qtAvisoHorario($('[data-qt-aviso]', v));
+    // Encima, si alguien lo encontró cerrado: el aviso y «Está bien así» (quetal.js).
+      cocina = editorHorario($('[data-cocina]', v), cocina ? cocina.valor() : (b.kitchen_hours || b.opening_hours));
+      $('#cocinaOn', v).onchange = (e) => { cocinaOn = e.target.checked; $('[data-cocina]', v).hidden = !cocinaOn; };
     }
     if (parte === 'fotos') activaFotos(v, est, (sel) => { pinta(sel); });
     if (parte === 'contacto') activaEnlaces($('[data-enlaces]', v), enlaces);
@@ -774,6 +785,8 @@ async function parteFicha(v, parte, b, cats) {
     if (parte === 'horario') {
       const mal = diasMalHorario(horario.valor());
       if (mal.length) { toast(avisoHorarioMal(mal), true); $('.hdia.mal input', v)?.focus(); return; }
+      const malCocina = cocinaOn && cocina ? diasMalHorario(cocina.valor()) : [];
+      if (malCocina.length) { toast(avisoHorarioMal(malCocina), true); $('[data-cocina] .hdia.mal input', v)?.focus(); return; }
     }
     try {
       if (parte === 'local') {
@@ -783,6 +796,13 @@ async function parteFicha(v, parte, b, cats) {
       } else {
         const p = patch();
         await rpc('update_business', { p_id: BIZ.id, p_patch: p });
+        if (parte === 'horario') {
+          // Sin horario del local no hay cocina aparte.
+          const k = cocinaOn && horario?.valor() && cocina?.valor() ? cocina.valor() : null;
+          const r = await rpc('set_kitchen_hours', { p_business: BIZ.id, p_hours: k });
+          if (r && r.ok === false) throw new Error(r.error);
+          b.kitchen_hours = k;
+        }
         if (parte === 'contacto') {
           const guardados = await rpc('set_business_links', { p_business: BIZ.id, p_links: enlaces.map((l) => ({
             ...(l.id ? { id: l.id } : {}), kind: l.kind, url: l.url, ...(l.kind === 'other' ? { label: l.label } : {}) })) });
@@ -806,7 +826,8 @@ async function parteFicha(v, parte, b, cats) {
   }
 
   // Lo que hay que guardar (en «Contacto y redes», también los enlaces).
-  const estado = () => JSON.stringify(parte === 'contacto' ? [patch(), enlaces] : patch());
+  const estado = () => JSON.stringify(parte === 'contacto' ? [patch(), enlaces]
+    : parte === 'horario' ? [patch(), cocinaOn, cocinaOn && cocina ? cocina.valor() : null] : patch());
   pinta();
   inicial = estado();
   GUARDA = { sucia: () => !!f() && estado() !== inicial };

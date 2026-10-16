@@ -120,7 +120,7 @@
       flash: 'Oferta flash', event: 'Evento', verOferta: 'Ver oferta', verEvento: 'Ver evento',
       seats: (n) => (n === 1 ? 'Queda 1 plaza' : `Quedan ${n} plazas`), soldOut: 'Agotado',
       antes: 'Antes de cerrar', bolsas: (n) => (n === 1 ? 'Queda 1 bolsa' : `Quedan ${n} bolsas`),
-      primera: 'Primera visita',
+      primera: 'Primera visita', menu: 'Menú del día',
       en: (l) => `en ${l}`, entradas: (p) => `Entradas en ${p}`, video: 'Vídeo',
       organiza: (n) => `Organiza: ${n}`, hoy: 'Hoy', manana: 'Mañana',
       // Quién publica, si es una entidad (migración 20261130100000).
@@ -137,7 +137,7 @@
       flash: 'Flash offer', event: 'Event', verOferta: 'See offer', verEvento: 'See event',
       seats: (n) => (n === 1 ? '1 place left' : `${n} places left`), soldOut: 'Sold out',
       antes: 'Before closing', bolsas: (n) => (n === 1 ? '1 bag left' : `${n} bags left`),
-      primera: 'First visit',
+      primera: 'First visit', menu: 'Daily menu',
       en: (l) => `at ${l}`, entradas: (p) => `Tickets on ${p}`, video: 'Video',
       organiza: (n) => `Organised by ${n}`, hoy: 'Today', manana: 'Tomorrow',
       entidad: { council: 'Council', district: 'District council', merchants: "Traders' association",
@@ -519,6 +519,8 @@
     // «Antes de cerrar» (`style.badge`): lo que sobra del día. Su sello va
     // donde el tipo y las plazas son bolsas.
     const antesCierre = flash && o.style?.badge === 'before_closing';
+    // «Menú del día» (migración 20261230100001): su sello en vez de «Oferta flash».
+    const menuDia = flash && o.style?.badge === 'daily_menu';
     const quedan = (n) => (antesCierre ? S.bolsas(n) : S.seats(n));
     // Solo para la primera visita (`style.first_visit`, lo pone la base).
     const primera = o.style?.first_visit === true ? `<span class="tj-chip">${esc(S.primera)}</span>` : '';
@@ -533,7 +535,7 @@
       return `<article class="tj tj-fila" data-o="${esc(o.id)}"${geo}>
     <div class="tj-media">${mediaTarjeta(o, { primera: false, ancho: 72, alto: 72, S })}</div>
     <div class="tj-cuerpo">
-      <p class="tj-datos"><span class="tj-hora">${esc(hora)}</span>${flash ? `<span class="tj-rayo" title="${esc(S.flash)}">${ic('rayo', 14)}<span class="sr">${esc(S.flash)}</span></span>` : ''}${antesCierre ? `<span class="tj-chip">${esc(S.antes)}</span>` : ''}${primera}${precio ? `<span class="tj-precio">${esc(precio)}</span>` : ''}${agotado ? `<span class="tj-chip">${esc(S.soldOut)}</span>` : ''}</p>
+      <p class="tj-datos"><span class="tj-hora">${esc(hora)}</span>${flash ? `<span class="tj-rayo" title="${esc(S.flash)}">${ic('rayo', 14)}<span class="sr">${esc(S.flash)}</span></span>` : ''}${antesCierre ? `<span class="tj-chip">${esc(S.antes)}</span>` : ''}${menuDia ? `<span class="tj-chip">${esc(S.menu)}</span>` : ''}${primera}${precio ? `<span class="tj-precio">${esc(precio)}</span>` : ''}${agotado ? `<span class="tj-chip">${esc(S.soldOut)}</span>` : ''}</p>
       <${h} class="tj-titulo"><a class="tj-enlace" href="${esc(href)}">${esc(o.title)}</a></${h}>
       <p class="tj-negocio">${esc(o.business_name || '')}${lugar ? ` · ${esc(lugar)}` : ''}<span class="tj-dist">${dist ? ` · ${esc(dist)}` : ''}</span></p>
       <div class="tj-amigos"></div>
@@ -566,7 +568,7 @@
     // la rejilla; en Descubre (una por pantalla), pegado al panel, como los
     // sellos de la app: arriba, entre los filtros y los avisos, tapaba la
     // foto (Iván, 2026-10-06). Ahí van también «De la lista de…» (fijada.js).
-    const tipo = `<span class="tj-tipo">${esc(antesCierre ? S.antes : flash ? S.flash : S.event)}</span>`;
+    const tipo = `<span class="tj-tipo">${esc(antesCierre ? S.antes : menuDia ? S.menu : flash ? S.flash : S.event)}</span>`;
     // Ayuntamiento, asociación, ONG o la agenda pública: en Descubre, con los
     // sellos; en la rejilla, una línea encima del negocio.
     const entidad = S.entidad[o.entity_kind] || '';

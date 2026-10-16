@@ -621,7 +621,7 @@ let ANTES = null;
 /** ¿El negocio activo es un organizador sin local fijo? (`preparaNegocio`). */
 const esOrganizador = () => BIZ?.no_fixed_venue === true;
 /** Lo que el panel no enseña a un organizador: necesita un local (tanda C). */
-const SIN_LOCAL_FIJO = ['partidos', 'antes-de-cerrar', 'cartel-local', 'cerrados'];
+const SIN_LOCAL_FIJO = ['partidos', 'antes-de-cerrar', 'cartel-local', 'cerrados', 'menu-del-dia', 'wifi-clientes'];
 /** Si «Partidos que pones» sale en el menú (`business_broadcast_week`). */
 let PARTIDOS_NAV = null;
 
@@ -871,7 +871,7 @@ const NAV = [
   ]],
   ['Tu negocio', [
     // «Más herramientas» (panel/herramientas.js): lo opcional.
-    ['herramientas', 'herramientas', 'Más herramientas', ['cola', 'tele', 'partidos', 'grupos', 'antes-de-cerrar', 'series', 'carta', 'cartel-local']],
+    ['herramientas', 'herramientas', 'Más herramientas', ['cola', 'tele', 'partidos', 'grupos', 'antes-de-cerrar', 'series', 'carta', 'cartel-local', 'menu-del-dia', 'wifi-clientes']],
     ['equipo', 'group', 'Equipo'],
     // «Tu plan» (panel/plan.js): estado del plan y, para el propietario, pagar.
     ['plan', 'workspace_premium', 'Tu plan'],
@@ -979,7 +979,7 @@ function sinDobleEnvio(caja) {
 
 // Lo que no es de un empleado: solo propietario y encargados (como la app).
 // «Regalo de cumpleaños» no está: el personal lo ve, en solo lectura.
-const SOLO_GESTION = ['sellos', 'carta', 'novedades', 'mensajes', 'ficha', 'cerrados', 'equipo', 'cartel-local', 'tele', 'rrpp', 'antes-de-cerrar', 'grupos', 'plan'];
+const SOLO_GESTION = ['sellos', 'carta', 'novedades', 'mensajes', 'ficha', 'cerrados', 'equipo', 'cartel-local', 'tele', 'rrpp', 'antes-de-cerrar', 'grupos', 'plan', 'menu-del-dia', 'wifi-clientes'];
 
 // ── Salir con cambios sin guardar ───────────────────────────────────────────
 // Una vista con cambios se apunta aquí: si se va a otra pantalla, se vuelve
@@ -5791,6 +5791,7 @@ PAGES.informe = async (v, param) => {
 
     ${typeof qtCifrasHtml === 'function' ? conRes(qtCifrasHtml(queTal), qtResumen(queTal)) : ''}
     ${conRes(toquesEnlacesHtml(toques), herrPl(toquesTotal, ['1 toque', 'toques'], ['1 tap', 'taps']))}
+    <div id="informeMesa"></div>
 
     ${rrppHtml}
 
@@ -5828,6 +5829,8 @@ PAGES.informe = async (v, param) => {
       cifrasDialogo((lista || []).find((x) => x.id === b.dataset.cifrasOf));
     };
   });
+  // «QR de mesa · 142 escaneos este mes» (panel/mesa.js), si lo tiene.
+  if (typeof mesaCifras === 'function') mesaCifras($('#informeMesa', v));
   if (!gestiona()) return;
   $('#csvOffers').onclick = () => downloadCsv(`cifras-${BIZ.name}`, r.offers || [], [
     ['title', 'Publicación'], ['kind', 'Tipo'], ['starts_at', 'Fecha'],

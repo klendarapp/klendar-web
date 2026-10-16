@@ -39,6 +39,11 @@ const I18N = makeI18N({
     'Oferta flash, evento o novedad': 'Flash offer, event or update',
     '1 se publica sola': '1 publishes itself',
     'se publican solas': 'publish themselves',
+    // Menú del día y Wifi para clientes (panel/herramientas.js, panel/mesa.js)
+    'Se publica solo 1 día a la semana': 'Publishes itself 1 day a week',
+    'días a la semana, se publica solo': 'days a week, publishes itself',
+    '1 escaneo este mes': '1 scan this month',
+    'escaneos este mes': 'scans this month',
     '1 publicación': '1 publication',
     'Publicaciones': 'Publications',
     'Validar códigos': 'Validate codes',

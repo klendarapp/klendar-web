@@ -12,7 +12,7 @@
           { "/": "/rp/*", "comment": "Enlace de un RRPP" },
           { "/": "/tv/enlazar/*", "comment": "Enlazar una tele del local (Poner en la tele)" },
           { "/": "/c/*", "comment": "QR de cliente (bonos)" },
-          { "/": "/m/*", "comment": "Dar en el momento (QR del negocio)" },
+          { "/": "/m/*", "comment": "Dar en el momento (QR del negocio) y QR de mesa (wifi, ofertas de hoy y carta)" },
           { "/": "/sorteo/*", "comment": "Sorteo (página y bases)" },
           { "/": "/cola/*", "comment": "Cola virtual (cartel para la puerta)" },
           { "/": "/a/*", "comment": "Página de un artista" },
@@ -22,7 +22,8 @@
           { "/": "/en/rp/*", "comment": "Promoter link (EN)" },
           { "/": "/en/giveaway/*", "comment": "Giveaway (EN)" },
           { "/": "/en/queue/*", "comment": "Virtual queue (EN)" },
-          { "/": "/en/a/*", "comment": "Artist page (EN)" }
+          { "/": "/en/a/*", "comment": "Artist page (EN)" },
+          { "/": "/en/m/*", "comment": "Table QR (EN)" }
         ]
       }
     ]
