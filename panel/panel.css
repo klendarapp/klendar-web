@@ -993,3 +993,18 @@ details.plegable[open] > summary { margin-bottom: 12px; }
 .aviso-parado .btn.primary { min-width: 180px; justify-content: center; }
 .parado-validar { margin: 0 0 16px; }
 .aviso-cobro .btn { margin: 0; }
+
+/* «Dar en el momento» (panel/momento.js) */
+.momento-entrada { margin: 0 0 14px; }
+.momento-form [data-para] { margin-top: 6px; }
+.momento-recientes { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 4px; }
+.momento-qr { text-align: center; }
+.momento-que { margin: 2px 0 10px; font-size: 1.6rem; }
+.momento-caja { width: min(300px, 100%); margin: 8px auto; padding: 14px; background: #fff; border-radius: 24px; }
+.momento-caja svg { display: block; width: 100%; height: auto; }
+.momento-fin { color: #0a0a0a; display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 40px 0; font-weight: 700; }
+.momento-cuantos { font-weight: 700; margin: 16px 0 6px; }
+.momento-lista { list-style: none; padding: 0; margin: 0 auto 16px; max-width: 360px; text-align: left; }
+.momento-lista li { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
+.momento-lista li span:not(.ms) { flex: 1; }
+.momento-lista .ms { color: #1e9e57; }

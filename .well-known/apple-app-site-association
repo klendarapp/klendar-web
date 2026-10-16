@@ -12,6 +12,7 @@
           { "/": "/rp/*", "comment": "Enlace de un RRPP" },
           { "/": "/tv/enlazar/*", "comment": "Enlazar una tele del local (Poner en la tele)" },
           { "/": "/c/*", "comment": "QR de cliente (bonos)" },
+          { "/": "/m/*", "comment": "Dar en el momento (QR del negocio)" },
           { "/": "/sorteo/*", "comment": "Sorteo (página y bases)" },
           { "/": "/cola/*", "comment": "Cola virtual (cartel para la puerta)" },
           { "/": "/a/*", "comment": "Página de un artista" },

@@ -59,7 +59,7 @@ const bloqueado = () => cobro().blocked === true;
 const enPausaCierre = () => bloqueado() && cobro().hold === 'paused';
 /** Lo único que se abre con el negocio parado (lo demás, al resumen, que
  * enseña el aviso). `alta` es otro negocio. */
-const RUTAS_BLOQUEO = ['resumen', 'validar', 'plan', 'baja', 'alta'];
+const RUTAS_BLOQUEO = ['resumen', 'validar', 'momento', 'plan', 'baja', 'alta'];
 async function cargaCobro() {
   const negocio = BIZ?.id;
   if (!negocio) { SUB = null; return; }
@@ -3765,7 +3765,13 @@ const queValidado = (r) => (r.kind === 'stamp_reward'
   : r.kind === 'birthday_gift' ? I18N.t('Regalo de cumpleaños')
     : r.kind === 'visit_coupon' ? bi('Cupón próxima visita', 'Next-visit coupon')
       : r.kind === 'thanks_gift' ? bi('Regalo a habituales', "Regulars' gift")
-        : I18N.t(r.kind === 'future_event' ? 'Evento' : 'Oferta flash'));
+        : r.kind === 'spot' ? momentoDetalle(r)
+          : I18N.t(r.kind === 'future_event' ? 'Evento' : 'Oferta flash'));
+/** Lo dado con «Dar en el momento» (panel/momento.js): «Del momento · 2
+ * sellos», «Del momento · Uso de bono» o «Del momento». */
+const momentoDetalle = (r) => I18N.t(r.detail === 'stamps'
+  ? (Number(r.seats) > 1 ? `Del momento · ${r.seats} sellos` : r.seats ? 'Del momento · 1 sello' : 'Del momento · Sellos')
+  : r.detail === 'pass_use' ? 'Del momento · Uso de bono' : 'Del momento');
 /** «sin conexión»: se escaneó sin red y se validó después, a la hora del
  * escaneo (`offline` en `business_recent_validations` y `business_report`). */
 const etiquetaSinConexion = (r) => (r.offline ? ` <span class="tag dim">${esc(bi('sin conexión', 'offline'))}</span>` : '');
@@ -3833,7 +3839,8 @@ PAGES.validar = async (v) => {
     ${bloqueado() ? `<div class="help">${esc(enPausaCierre()
     ? bi('Estás cerrado temporalmente: puedes validar los códigos y bonos que ya tiene la gente, pero no cargar bonos nuevos.', 'You’re temporarily closed: you can validate the codes and passes people already have, but not add new passes.')
     : bi('Tu negocio está bloqueado: puedes validar los códigos y bonos que ya tiene la gente, pero no cargar bonos nuevos.', 'Your business is blocked: you can validate the codes and passes people already have, but not add new passes.'))}</div>` : ''}
-    ${helpBox('¿Cómo funciona?', `<p>Escanea el QR con la cámara (la del móvil o la del portátil) o escribe el código que la persona tiene debajo del QR. Cada código vale una vez: al validarlo queda marcado y el aforo baja.</p><p>Si es una reserva para varios, te decimos cuántas personas entran con ese código.</p><p>${bi('Con el <b>QR de cliente</b> de alguien ves sus bonos de tu negocio: puedes cargarle uno o descontar un uso.', 'With someone’s <b>customer QR code</b> you see their passes from your business: you can add one or use one.')}</p>`)}
+    ${helpBox('¿Cómo funciona?', `<p>Escanea el QR con la cámara (la del móvil o la del portátil) o escribe el código que la persona tiene debajo del QR. Cada código vale una vez: al validarlo queda marcado y el aforo baja.</p><p>Si es una reserva para varios, te decimos cuántas personas entran con ese código.</p><p>${bi('Con el <b>QR de cliente</b> de alguien ves sus bonos de tu negocio: puedes cargarle uno o descontar un uso.', 'With someone’s <b>customer QR code</b> you see their passes from your business: you can add one or use one.')}</p><p>${esc(I18N.t('Con «Dar en el momento» das sellos, un uso de un bono o algo del momento sin que el cliente enseñe nada: él escanea tu QR.'))}</p>`)}
+    <p class="momento-entrada"><a class="btn" href="#/momento">${ms('volunteer_activism')}Dar en el momento</a></p>
     <div class="scan-box">
       <button class="btn" id="camara" type="button">${ms('photo_camera')}Escanear con la cámara</button>
       <div class="camara" id="camara-caja" hidden><video id="video" muted playsinline></video><span class="mira" aria-hidden="true"></span></div>
@@ -3940,6 +3947,12 @@ PAGES.validar = async (v) => {
     try { await validaUno(raw); } finally { validando = false; $('#go').disabled = false; }
   };
   const validaUno = async (raw) => {
+    // El QR de «Dar en el momento» es para el cliente (panel/momento.js).
+    if (momentoEsQr(raw)) {
+      $('#result').innerHTML = `<div class="scan-result warn">${ms('volunteer_activism')}${esc(I18N.t('Es el QR de «Dar en el momento»: lo escanea el cliente.'))}</div>`;
+      $('#code').value = '';
+      return;
+    }
     // El QR de cliente (bonos): sus bonos, para cargar uno o descontar un
     // uso (panel/bonos.js). Necesita red: no va a la cola.
     if (await bonoCliente($('#result'), raw)) { $('#code').value = ''; return; }
@@ -4176,7 +4189,9 @@ function filtroSellos(c, offers = []) {
 /** «De ellos: 60 por canje · 30 por visita · 6 a mano», como la app. */
 const origenSellos = (c) => bi(
   `De ellos: ${fmtNum(c.stamps_redemption || 0)} por canje · ${fmtNum(c.stamps_visit || 0)} por visita · ${fmtNum(c.stamps_manual || 0)} a mano`,
-  `Of those: ${fmtNum(c.stamps_redemption || 0)} from redemptions · ${fmtNum(c.stamps_visit || 0)} from visits · ${fmtNum(c.stamps_manual || 0)} by hand`);
+  `Of those: ${fmtNum(c.stamps_redemption || 0)} from redemptions · ${fmtNum(c.stamps_visit || 0)} from visits · ${fmtNum(c.stamps_manual || 0)} by hand`)
+  // Y los de «Dar en el momento» (panel/momento.js), si los hay.
+  + (c.stamps_spot ? ` · ${bi(`${fmtNum(c.stamps_spot)} en el momento`, `${fmtNum(c.stamps_spot)} on the spot`)}` : '');
 function filtroSellosBase(c, offers = []) {
   if (c.applies_to === 'flash_offer') return I18N.t('Solo cuentan las ofertas flash');
   if (c.applies_to === 'future_event') return I18N.t('Solo cuentan los eventos');
@@ -5668,8 +5683,8 @@ PAGES.informe = async (v, param) => {
       : bi(`Tus ofertas trajeron al menos ${cifraTrajo}${conTicket} en ${visitas(t.brought_visits)}.`, `Your offers brought in at least ${cifraTrajo}${conTicket} from ${visitas(t.brought_visits)}.`);
   const fraseTrajoTodo = t.brought_visits ? fraseTrajo + pasesFrase : fraseTrajo;
   const comoTrajo = helpBox(I18N.t('¿Cómo se calcula?'), bi(
-    '<p>Por cada código validado sumamos el precio de la oferta por persona (el que tenía cuando la persona consiguió el código) por las plazas.</p><p>Si alguien del equipo apunta el importe del ticket al validar, o después en «Últimos validados», usamos ese importe en lugar de la estimación.</p><p>Las ofertas sin precio (gratis o solo un descuento) cuentan como visitas, pero no suman euros. Cada código validado es una visita, aunque entren varias personas con él.</p><p>Por eso es un mínimo: lo que la gente gasta además, o en otras visitas, no lo vemos.</p><p>Los bonos que vendes en tu local suman una vez, al venderlos, con el precio que has puesto; cada uso no suma.</p>',
-    '<p>For each validated code we add the offer’s price per person (the one it had when the person got the code) times the number of places.</p><p>If someone on the team enters the receipt total when validating, or later in “Recently validated”, we use that amount instead of the estimate.</p><p>Offers without a price (free or just a discount) count as visits but don’t add euros. Each validated code is one visit, even if several people come in with it.</p><p>That’s why it’s a minimum: we can’t see what people spend on top of that, or on other visits.</p><p>Passes you sell at your venue count once, when you sell them, at the price you set; uses don’t add anything.</p>'));
+    '<p>Por cada código validado sumamos el precio de la oferta por persona (el que tenía cuando la persona consiguió el código) por las plazas.</p><p>Si alguien del equipo apunta el importe del ticket al validar, o después en «Últimos validados», usamos ese importe en lugar de la estimación.</p><p>Las ofertas sin precio (gratis o solo un descuento) cuentan como visitas, pero no suman euros. Cada código validado es una visita, aunque entren varias personas con él.</p><p>Por eso es un mínimo: lo que la gente gasta además, o en otras visitas, no lo vemos.</p><p>Los bonos que vendes en tu local suman una vez, al venderlos, con el precio que has puesto; cada uso no suma.</p><p>Lo que das con «Dar en el momento» cuenta como visita (una por persona y día), pero no suma euros.</p>',
+    '<p>For each validated code we add the offer’s price per person (the one it had when the person got the code) times the number of places.</p><p>If someone on the team enters the receipt total when validating, or later in “Recently validated”, we use that amount instead of the estimate.</p><p>Offers without a price (free or just a discount) count as visits but don’t add euros. Each validated code is one visit, even if several people come in with it.</p><p>That’s why it’s a minimum: we can’t see what people spend on top of that, or on other visits.</p><p>Passes you sell at your venue count once, when you sell them, at the price you set; uses don’t add anything.</p><p>Whatever you give with “Give on the spot” counts as a visit (one per person per day), but doesn’t add any euros.</p>'));
 
   const loy = r.loyalty || {};
   const toquesTotal = Array.isArray(toques) ? toques.reduce((a, f) => a + (Number(f.taps) || 0), 0) : 0;
@@ -5763,6 +5778,14 @@ PAGES.informe = async (v, param) => {
         <div class="kpi"><b>${fmtNum(pases.uses)}</b><span>Usos</span></div>
         <div class="kpi"><b>${fmtNum(pases.active)}</b><span>Bonos activos</span></div>
       </div></div>` : ''}
+
+    ${(t.spot || {}).given ? `<div class="card" data-res="${esc(I18N.t(t.spot.given === 1 ? '1 dado' : `${fmtNum(t.spot.given)} dados`))}"><h2>Del momento</h2>
+      <div class="kpis">
+        <div class="kpi"><b>${fmtNum(t.spot.gifts)}</b><span>Detalles</span></div>
+        <div class="kpi"><b>${fmtNum(t.spot.stamps)}</b><span>Sellos</span></div>
+        <div class="kpi"><b>${fmtNum(t.spot.pass_uses)}</b><span>Usos de bono</span></div>
+      </div>
+      <p class="muted" style="margin:10px 0 0">Lo que das con «Dar en el momento». Cada persona cuenta como visita una vez al día, sin sumar euros.</p></div>` : ''}
 
     ${conRes(toquesEnlacesHtml(toques), herrPl(toquesTotal, ['1 toque', 'toques'], ['1 tap', 'taps']))}
 

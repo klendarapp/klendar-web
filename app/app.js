@@ -1632,7 +1632,7 @@ RUTAS.codigos = async (_partes, params) => {
   if (!exigeSesion('codigos')) return;
   // Los regalos de cumpleaños van aparte y arriba; si fallan, los códigos
   // salen igual.
-  const [lista, regalos, premios, bonos, turnos] = await Promise.all([
+  const [lista, regalos, premios, bonos, turnos, dados] = await Promise.all([
     llamar('my_redemptions', {}),
     misRegalos().catch(() => []),
     // Los premios de las tarjetas de sellos, también aparte.
@@ -1641,6 +1641,8 @@ RUTAS.codigos = async (_partes, params) => {
     llamar('my_passes', {}).catch(() => []),
     // Tu turno en una cola virtual (app/cola.js), encima de todo.
     llamar('my_queue_turns', {}).catch(() => []),
+    // Lo que te dieron con «Dar en el momento» (app/momento.js), ya canjeado.
+    llamar('my_spot_gifts', {}).catch(() => []),
   ]);
   const zona = await zonasDe(lista);
   const turnoHtml = await colaTarjetasHtml(turnos);
@@ -1650,7 +1652,8 @@ RUTAS.codigos = async (_partes, params) => {
   const conRegalos = Array.isArray(regalos) && regalos.length > 0;
   const conPremios = Array.isArray(premios) && premios.length > 0;
   const conBonos = Array.isArray(bonos) && bonos.length > 0;
-  const nada = !(lista || []).length && !conRegalos && !conPremios && !conBonos;
+  const conDados = Array.isArray(dados) && dados.length > 0;
+  const nada = !(lista || []).length && !conRegalos && !conPremios && !conBonos && !conDados;
   // Desde una notificación (`#/codigos?offer=<id>`: cambio de fecha,
   // cancelación…): el código de esa publicación, a la vista y resaltado. El
   // vivo si hay varios; si no, el más reciente (la lista llega ordenada).
@@ -1670,6 +1673,8 @@ RUTAS.codigos = async (_partes, params) => {
       <div class="olist">${regalos.map(filaRegalo).join('')}</div>` : ''}
     ${conPremios ? `<h2 class="seccion-t">${esc(t('Premios de tarjetas de sellos'))}</h2>
       <div class="olist">${premios.map(filaPremio).join('')}</div>` : ''}
+    ${conDados ? `<h2 class="seccion-t">${esc(t('Te dieron'))}</h2>
+      <div class="olist">${dados.map(momentoFila).join('')}</div>` : ''}
     ${(lista || []).length ? [
     // Los que aún se pueden usar, aparte de los pasados (usados, caducados
     // o anulados), como la app.
@@ -1677,7 +1682,7 @@ RUTAS.codigos = async (_partes, params) => {
     [t('Pasados'), lista.filter((r) => !vivo(r))],
   ].map(([titulo, parte]) => (parte.length ? `<h2 class="seccion-t">${esc(titulo)}</h2>
       <div class="olist">${parte.map((r) => filaCanje(r, zona(r), r === resaltado)).join('')}</div>` : '')).join('')
-    : conRegalos || conPremios || conBonos
+    : conRegalos || conPremios || conBonos || conDados
       ? `<p class="empty">${esc(t('Todavía no tienes códigos. Cuando consigas el código de una oferta o reserves plaza en un evento, lo tendrás aquí.'))}</p>`
       : pantallaVacia({
         icono: 'qr_code_2',

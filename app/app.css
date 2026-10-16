@@ -601,3 +601,9 @@ button.codigo.copiar .ms { font-size: 18px; color: var(--ink-2); letter-spacing:
 .nota-pedir { font-size: 14px; margin: 0; }
 .aviso.pedido small { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .tag.tag-tinta { background: var(--ink); color: var(--surface); }
+
+/* «Dar en el momento» (app/momento.js): el logo del negocio arriba. */
+.momento-logo { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; display: grid;
+  place-items: center; margin: 16px auto 8px; background: var(--elevated); color: var(--ink-2); }
+.momento-logo.ph .ms, .momento-logo.ph span { font-size: 32px; }
+.momento .grande { font-size: 1.05rem; padding: 12px 28px; }
