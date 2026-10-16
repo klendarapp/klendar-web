@@ -5655,10 +5655,12 @@ function cifrasPlegar(caja) {
 
 PAGES.informe = async (v, param) => {
   const days = Number(param) || 30;
-  const [r, aud, toques] = await Promise.all([
+  const [r, aud, toques, queTal] = await Promise.all([
     rpc('business_report', { p_id: BIZ.id, p_days: days }).then((x) => x || {}),
     rpc('business_audience', { p_id: BIZ.id, p_days: days }).catch(() => null),
     rpc('business_link_taps_report', { p_business: BIZ.id, p_days: days }).catch(() => null),
+    // «¿Qué tal?: 42 👍 · 5 👎» (quetal.js).
+    rpc('business_quetal', { p_business: BIZ.id, p_days: days }).catch(() => null),
   ]);
   const t = r.totals || {};
   const pct = (a, b) => (!b ? '—' : Math.round((a * 100) / b) + ' %');
@@ -5787,6 +5789,7 @@ PAGES.informe = async (v, param) => {
       </div>
       <p class="muted" style="margin:10px 0 0">Lo que das con «Dar en el momento». Cada persona cuenta como visita una vez al día, sin sumar euros.</p></div>` : ''}
 
+    ${typeof qtCifrasHtml === 'function' ? conRes(qtCifrasHtml(queTal), qtResumen(queTal)) : ''}
     ${conRes(toquesEnlacesHtml(toques), herrPl(toquesTotal, ['1 toque', 'toques'], ['1 tap', 'taps']))}
 
     ${rrppHtml}

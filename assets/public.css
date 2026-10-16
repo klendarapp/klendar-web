@@ -805,3 +805,9 @@ details.hoja-bloque[open] > summary .ic { transform: rotate(180deg); }
 /* «Alérgenos y dietas» en «El sitio»: aparte y con su nota. */
 .sitio-dietas-t { font-size: 15px; margin: 4px 0 8px; }
 .pub .sitio-dietas-nota { margin: -8px 0 18px; }
+/* «Horario sin confirmar» y «Estaba cerrado» (assets/cerrado.js). */
+.horario-check { margin-top: 10px; display: grid; gap: 8px; font-size: 14px; }
+.horario-check p { margin: 0; }
+.horario-cerrado { display: grid; gap: 8px; }
+.horario-cerrado-botones { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.horario-cerrado-botones .pill, .horario-cerrado > .pill { justify-content: center; text-align: center; }

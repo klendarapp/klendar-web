@@ -607,3 +607,21 @@ button.codigo.copiar .ms { font-size: 18px; color: var(--ink-2); letter-spacing:
   place-items: center; margin: 16px auto 8px; background: var(--elevated); color: var(--ink-2); }
 .momento-logo.ph .ms, .momento-logo.ph span { font-size: 32px; }
 .momento .grande { font-size: 1.05rem; padding: 12px 28px; }
+
+/* ═══ «¿Qué tal?» (app/quetal.js) ═══════════════════════════════════════════ */
+.ocard.qt-tarjeta { display: block; }
+.qt-cabeza { display: flex; gap: 14px; align-items: center; color: inherit; }
+.qt-cabeza:hover { text-decoration: none; }
+/* 👍 / 👎: dos botones iguales. */
+.qt-botones { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+.qt-botones .pill { justify-content: center; text-align: center; display: inline-flex; align-items: center; min-height: 48px; }
+.qt-botones .pill.activo { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.qt-negocio { display: flex; gap: 14px; align-items: center; margin: 4px 0 18px; }
+.qt-negocio img, .qt-negocio .ph { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; flex: none;
+  display: grid; place-items: center; background: var(--glass); }
+.qt-negocio h2 { margin: 0; }
+.qt-negocio p { margin: 2px 0 0; }
+.qt-burbuja { padding: 12px 14px; border-radius: 16px; border: 1px solid var(--glass-border); background: var(--glass); margin: 0 0 10px; }
+.qt-burbuja p { margin: 4px 0 0; }
+.qt-enlace { text-align: center; margin: 14px 0 0; }
+.qt-enlace button { background: none; border: 0; color: var(--ink); font: inherit; text-decoration: underline; cursor: pointer; }

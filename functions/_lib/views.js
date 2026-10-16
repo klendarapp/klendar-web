@@ -951,7 +951,8 @@ export async function businessPage(param, lang, search = '') {
         ${b.contact_email ? `<div><span>${icono('correo')}</span><span><a href="mailto:${esc(b.contact_email)}">${esc(b.contact_email)}</a></span></div>` : ''}
         ${redes.length ? `<div><span>${icono('redes')}</span><span>${redes.join(' · ')}</span></div>` : ''}
       </div>
-      ${horario ? `<h2 class="side-h">${S.hours}</h2><p class="estado-hoy" hidden data-horario="${esc(JSON.stringify(horas))}" data-cierres="${esc(JSON.stringify(cierres.map((c) => ({ starts_on: c.starts_on, ends_on: c.ends_on }))))}" data-tz="${esc(tz)}" data-lang="${en ? 'en' : 'es'}"></p>${horario}` : ''}
+      ${horario ? `<h2 class="side-h">${S.hours}</h2><p class="estado-hoy" hidden data-horario="${esc(JSON.stringify(horas))}" data-cierres="${esc(JSON.stringify(cierres.map((c) => ({ starts_on: c.starts_on, ends_on: c.ends_on }))))}" data-tz="${esc(tz)}" data-lang="${en ? 'en' : 'es'}"></p>${horario}
+      <div class="horario-check" hidden data-solo-publico data-cerrado="${esc(b.id)}" data-lang="${en ? 'en' : 'es'}" data-url="${esc(supabasePublic().url)}" data-key="${esc(supabasePublic().key)}"></div>` : ''}
     </aside>
     <div class="d-body">
       ${b.description ? `<h2>${S.about}</h2><p data-tr="business:${esc(b.id)}:description">${esc(b.description).replace(/\n/g, '<br>')}</p>
@@ -1072,7 +1073,7 @@ export async function businessPage(param, lang, search = '') {
     lang, path, body: body + MENU_JS, title: conCiudad ? `${b.name} · ${b.city}` : b.name, description, image: b.cover || b.logo,
     head: `<meta name="robots" content="${b.adults_only || conVisita || b.closed_indefinitely || parado ? 'noindex' : 'index, follow'}">
 ${ldScript(jsonLd)}${cuentaToques ? `
-<script src="/assets/enlaces.js?v=3" defer data-url="${esc(supabasePublic().url)}" data-key="${esc(supabasePublic().key)}" data-biz="${esc(b.id)}"></script>` : ''}${horario ? '\n<script src="/assets/zona.js?v=2" defer></script>\n<script src="/assets/horario.js?v=1" defer></script>' : ''}${conVisita ? `\n${conVisita}` : ''}${local.crowd_enabled ? `\n${sitioAhoraScripts(lang)}` : ''}
+<script src="/assets/enlaces.js?v=3" defer data-url="${esc(supabasePublic().url)}" data-key="${esc(supabasePublic().key)}" data-biz="${esc(b.id)}"></script>` : ''}${horario ? '\n<script src="/assets/zona.js?v=2" defer></script>\n<script src="/assets/horario.js?v=1" defer></script>\n<script src="/assets/cerrado.js?v=1" defer></script>' : ''}${conVisita ? `\n${conVisita}` : ''}${local.crowd_enabled ? `\n${sitioAhoraScripts(lang)}` : ''}
 ${traducir(lang, `business:${b.id}`, carta.length ? `menu:${b.id}` : '')}${partidos ? `
 ${PARTIDOS_CSS}` : ''}${grupoHtml || sorteosHtml ? `
 ${GRUPOS_CSS}` : ''}${organizador ? `

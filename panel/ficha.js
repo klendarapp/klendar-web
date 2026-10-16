@@ -698,7 +698,8 @@ async function parteFicha(v, parte, b, cats) {
     fotos: () => htmlFotos(est),
     basico: () => `${htmlBasico(d)}<p class="hint full">Si cambias el nombre, lo revisamos de nuevo. Tu negocio sigue a la vista mientras tanto.</p>`,
     donde: () => `${htmlDonde(d)}<p class="hint full">Si cambias la ciudad o te mudas a más de 1 km, lo revisamos de nuevo. Tu negocio sigue a la vista mientras tanto y lo que tengas publicado se muda contigo.</p>`,
-    horario: () => '<div class="full" data-horario></div>',
+    // Encima, si alguien lo encontró cerrado: el aviso y «Está bien así» (quetal.js).
+    horario: () => '<div class="full" data-qt-aviso></div><div class="full" data-horario></div>',
     contacto: () => `${htmlContacto(d)}<div class="full enlaces-ficha" data-enlaces></div>`,
     local: () => htmlSitio(b.amenities, { precio: b.price_level, aforo: b.crowd_enabled }),
     klendar: () => htmlKlendar(d),
@@ -741,7 +742,10 @@ async function parteFicha(v, parte, b, cats) {
       activaDonde($('[data-punto-caja]', v), f(), d);
       f().elements.no_fixed_venue.addEventListener('change', () => pintaSinLocal(f(), d));
     }
-    if (parte === 'horario') horario = editorHorario($('[data-horario]', v), horario ? horario.valor() : b.opening_hours);
+    if (parte === 'horario') {
+      horario = editorHorario($('[data-horario]', v), horario ? horario.valor() : b.opening_hours);
+      if (typeof qtAvisoHorario === 'function') qtAvisoHorario($('[data-qt-aviso]', v));
+    }
     if (parte === 'fotos') activaFotos(v, est, (sel) => { pinta(sel); });
     if (parte === 'contacto') activaEnlaces($('[data-enlaces]', v), enlaces);
     f().onsubmit = guardar;
@@ -787,6 +791,8 @@ async function parteFicha(v, parte, b, cats) {
         // El nombre nuevo, ya en el selector de locales; y la zona, si el
         // punto se ha movido (la base la recalcula igual).
         if (p.name) { BIZ.name = p.name; renderBizPicker(); }
+        // Guardar el horario cuenta como revisarlo («Estaba cerrado»).
+        if (parte === 'horario' && typeof qtHorarioGuardado === 'function') await qtHorarioGuardado();
         // Con o sin local fijo: el menú cambia (sin «Partidos que pones»,
         // «Antes de cerrar», el cartel del local ni «Días cerrados»).
         if (typeof p.no_fixed_venue === 'boolean') { BIZ.no_fixed_venue = p.no_fixed_venue; renderNav('ficha'); }

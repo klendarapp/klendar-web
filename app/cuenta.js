@@ -69,7 +69,15 @@ function destinoWeb(ruta) {
   const r = String(ruta || '');
   let m;
   if ((m = r.match(/^\/offer\/([0-9a-f-]{36})/i))) return `${pre}/o/${m[1]}`;
-  if ((m = r.match(/^\/business\/([0-9a-f-]{36})\?review=1/i))) return `#/opinar/${m[1]}`;
+  // La reseña (con `&stars=5`, desde «¿Qué tal?» 👍: las estrellas de partida).
+  if ((m = r.match(/^\/business\/([0-9a-f-]{36})\?review=1(?:&stars=([1-5]))?/i))) {
+    return `#/opinar/${m[1]}${m[2] ? `?nota=${m[2]}` : ''}`;
+  }
+  // «¿Qué tal en …?» y «… te ha contestado»: la pregunta.
+  if ((m = r.match(/^\/que-tal\/([0-9a-f-]{36})/i))) return `#/que-tal/${m[1]}`;
+  // «¿Qué tal?» y «Estaba cerrado» del negocio, en el panel.
+  if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/que-tal/i))) return `/panel/#/que-tal?biz=${m[1]}`;
+  if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/estaba-cerrado/i))) return `/panel/#/estaba-cerrado?biz=${m[1]}`;
   if ((m = r.match(/^\/business\/([0-9a-f-]{36})/i))) return `${pre}/b/${m[1]}`;
   // «Tu oferta termina en 1 h»: al panel, con la pregunta de ampliarla hecha.
   if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\?extend=([0-9a-f-]{36})/i))) {
@@ -913,6 +921,7 @@ async function ajustesNotificaciones() {
     sw('grupos', 'Grupos y empresas', prefs.notify_groups !== false, 'Respuestas a tus peticiones y, si tienes un negocio, peticiones nuevas'),
     sw('sorteos', 'Sorteos', prefs.notify_giveaways !== false, 'Resultados de los sorteos en los que participas. Si ganas, te avisamos siempre.'),
     // «Pedir un local» (crecer): cuando llega a Klendar uno que pediste.
+    sw('quetal', '¿Qué tal? al día siguiente', prefs.notify_quetal !== false, 'Tras usar algo en un local, una pregunta de un toque'),
     sw('pedidos', 'Locales que has pedido', prefs.notify_requests !== false, 'Cuando llega a Klendar uno que pediste'),
     sw('cerca', 'Ofertas flash cerca de ti', prefs.notify_nearby, 'Como mucho 3 al día'),
   ].join('')}
@@ -961,6 +970,7 @@ async function ajustesNotificaciones() {
         notify_groups: el.grupos.checked,
         notify_giveaways: el.sorteos.checked,
         notify_requests: el.pedidos.checked,
+        notify_quetal: el.quetal.checked,
         notify_nearby: el.cerca.checked,
         nearby_radius_m: Number(fa.querySelector('input[name=radio]:checked')?.value || 1000),
         nearby_categories: elegidas.length ? elegidas : null,
@@ -1199,9 +1209,16 @@ const IC_MEDIO = {
   quitar: 'M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z',
   play: 'M8 5v14l11-7z',
 };
+/** `?nota=5` (desde «¿Qué tal?» 👍): las estrellas de partida si aún no
+ * hay reseña; se pueden cambiar. */
+const notaDePartida = (params) => {
+  const n = Number(params?.get?.('nota'));
+  return Number.isInteger(n) && n >= 1 && n <= 5 ? n : 0;
+};
+
 const icMedio = (n, s = 18) => `<svg viewBox="0 0 24 24" width="${s}" height="${s}" aria-hidden="true"><path fill="currentColor" d="${IC_MEDIO[n]}"/></svg>`;
 
-RUTAS.opinar = async ([id]) => {
+RUTAS.opinar = async ([id], params) => {
   if (!exigeSesion(`opinar/${id}`)) return;
   const [fila, propia, miNombre] = await Promise.all([
     llamar('business_profile', { p_id: id }),
@@ -1229,7 +1246,7 @@ RUTAS.opinar = async ([id]) => {
     <p class="muted">${esc(t('Una reseña por persona y negocio. Puedes editarla cuando quieras.'))}</p>
     <form class="formu" id="f" novalidate>
       <fieldset class="estrellas"><legend>${esc(t('¿Qué nota le pones?'))}</legend>
-        ${[5, 4, 3, 2, 1].map((n) => `<input type="radio" name="nota" id="n${n}" value="${n}"${mia.rating === n ? ' checked' : ''}><label for="n${n}" title="${n}/5"><span class="sr">${n} ${esc(t('de 5'))}</span>★</label>`).join('')}
+        ${[5, 4, 3, 2, 1].map((n) => `<input type="radio" name="nota" id="n${n}" value="${n}"${(mia.rating || notaDePartida(params)) === n ? ' checked' : ''}><label for="n${n}" title="${n}/5"><span class="sr">${n} ${esc(t('de 5'))}</span>★</label>`).join('')}
       </fieldset>
       <label>${esc(t('¿Qué tal fue?'))} <small>${esc(t('(opcional)'))}</small>
         <textarea name="texto" rows="5" maxlength="500">${esc(mia.comment || '')}</textarea></label>
