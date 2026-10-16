@@ -199,7 +199,7 @@ export async function venuePosterPage(token, lang, mesa) {
  * línea encima de la invitación: «Cola virtual»), la invitación, el QR, la
  * dirección corta y klendar.app; arriba, la barra con la ayuda, `nav` y
  * «Imprimir». Lo comparten el cartel del local y el de la cola. */
-function paginaCartel({ S, b, url, mesa = false, nav = '', titulo, que = '', invita, ayuda, numeros = [], extra = '' }) {
+function paginaCartel({ S, b, url, mesa = false, nav = '', titulo, que = '', queIcono = '', invita, ayuda, numeros = [] }) {
   const dir = direccionCorta(b.address, b.city);
   const logo = b.logo_url || '';
   const cartel = (num = '') => `
@@ -207,7 +207,7 @@ function paginaCartel({ S, b, url, mesa = false, nav = '', titulo, que = '', inv
       ${num ? `<p class="num">${esc(num)}</p>` : ''}
       ${logo ? `<img class="logo" src="${esc(logo)}" alt="">` : ''}
       <h1>${esc(b.name)}</h1>
-      ${que ? `<p class="que">${esc(que)}</p>` : ''}
+      ${que ? `<p class="que">${queIcono}${esc(que)}</p>` : ''}
       <p class="invita">${esc(invita)}</p>
       <div class="qr" role="img" aria-label="QR ${esc(url)}"></div>
       <p class="apunta">${esc(S.point)}</p>
@@ -237,6 +237,7 @@ function paginaCartel({ S, b, url, mesa = false, nav = '', titulo, que = '', inv
   .mesa .cartel .logo { width: 7cqw; height: 7cqw; margin-bottom: 1.3cqw; }
   .cartel h1 { font-family: Sora, sans-serif; font-weight: 800; font-size: 7cqw; line-height: 1.1; letter-spacing: -.02em; margin: 0 0 2.2cqw; }
   .mesa .cartel h1 { font-size: 3.5cqw; margin-bottom: 1.1cqw; }
+  .cartel .que .ic-wifi { width: 1.1em; height: 1.1em; vertical-align: -0.15em; margin-right: .3em; }
   .cartel .num { font-weight: 800; font-size: 2.2cqw; letter-spacing: .06em; text-transform: uppercase; margin: 0 0 1cqw; }
   .cartel .que { font-family: Sora, sans-serif; font-weight: 800; font-size: 4.4cqw; letter-spacing: .04em; text-transform: uppercase; margin: 0 0 1.8cqw; }
   .cartel .invita { font-weight: 600; font-size: 3.6cqw; line-height: 1.3; margin: 0; max-width: 80%; }
@@ -271,7 +272,7 @@ function paginaCartel({ S, b, url, mesa = false, nav = '', titulo, que = '', inv
 ${numeros.length
     ? Array.from({ length: Math.ceil(numeros.length / 4) }, (_, i) =>
         `<main class="folio mesa">${numeros.slice(i * 4, i * 4 + 4).map((n) => cartel(n)).join('')}</main>`).join('')
-    : `<main class="folio${mesa ? ' mesa' : ''}">${mesa ? cartel().repeat(4) : cartel()}</main>`}${extra}
+    : `<main class="folio${mesa ? ' mesa' : ''}">${mesa ? cartel().repeat(4) : cartel()}</main>`}
 <script src="/assets/vendor/qrcode.js?v=1"></script>
 <script>
   var q = qrcode(0, 'M'); q.addData(${JSON.stringify(url)}); q.make();
@@ -293,13 +294,13 @@ ${numeros.length
 const TM = {
   es: {
     lang: 'es', title: 'Carteles de mesa', point: 'Apunta con la cámara del móvil', print: 'Imprimir',
-    wifi: '📶 Wifi gratis', menu: 'Ofertas y carta', scan: 'Escanea aquí', table: 'Mesa',
+    wifi: 'Wifi gratis', menu: 'Ofertas y carta', scan: 'Escanea aquí', table: 'Mesa',
     help: 'Cuatro por folio: recórtalos por las líneas y ponlos en las mesas. Se imprimen igual en blanco y negro.',
     changed: 'Este cartel ya no vale', changedBody: 'El local ha cambiado el enlace de sus carteles de mesa. Imprime los nuevos desde el panel o desde la app.',
   },
   en: {
     lang: 'en', title: 'Table cards', point: 'Point your phone camera here', print: 'Print',
-    wifi: '📶 Free Wi-Fi', menu: 'Offers and menu', scan: 'Scan here', table: 'Table',
+    wifi: 'Free Wi-Fi', menu: 'Offers and menu', scan: 'Scan here', table: 'Table',
     help: 'Four per sheet: cut along the lines and put them on the tables. They print fine in black and white.',
     changed: 'This card no longer works', changedBody: 'The venue has changed the link on its table cards. Print the new ones from the dashboard or the app.',
   },
@@ -324,6 +325,8 @@ export async function tablePosterPage(token, lang, mesas) {
   return paginaCartel({
     S, b, url: `https://klendar.app/m/${token}`, mesa: true, titulo: `${S.title} · ${b.name}`,
     que: info.has_wifi ? S.wifi : S.menu, invita: S.scan, ayuda: S.help, numeros,
+    // En blanco y negro, como el resto del cartel (nada de emojis de color).
+    queIcono: info.has_wifi ? '<svg class="ic-wifi" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>' : '',
   });
 }
 

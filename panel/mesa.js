@@ -114,9 +114,9 @@ PAGES['menu-del-dia'] = async (v) => {
         <input type="text" inputmode="decimal" id="precio" placeholder="${esc(bi('Ej. 12,50', 'E.g. 12.50'))}" value="${esc(precioIni)}" required></label>
       <label class="f"><span>${esc(bi('Qué incluye (opcional)', 'What’s included (optional)'))}</span>
         <input type="text" id="linea" maxlength="200" placeholder="${esc(bi('Primeros, segundos, bebida y postre', 'Starters, mains, drink and dessert'))}" value="${esc(lineaIni)}"></label>
-      <fieldset class="f"><legend>${esc(bi('Para', 'For'))}</legend><div class="opciones-fila">
-        ${['lunch', 'dinner', 'both'].map((m) => `<label class="opcion"><input type="radio" name="comida" value="${m}" ${m === comida ? 'checked' : ''}><span>${esc(mesaComida(m))}</span></label>`).join('')}
-      </div></fieldset>
+      <div class="f"><span>${esc(bi('Para', 'For'))}</span><div class="elige" role="radiogroup" aria-label="${esc(bi('Para', 'For'))}">
+        ${['lunch', 'dinner', 'both'].map((m) => `<label><input type="radio" name="comida" value="${m}" ${m === comida ? 'checked' : ''}><span>${esc(mesaComida(m))}</span></label>`).join('')}
+      </div></div>
       <label class="f" style="max-width:220px"><span>${esc(bi('Hasta', 'Until'))}</span><input type="time" id="hasta"></label>
       <p class="hint" id="finTxt">${esc(finTxt())}</p>
       <button class="btn primary grande" type="button" id="publicar" ${s.can_publish ? '' : 'disabled'}>${esc(I18N.t('Publicar'))}</button>
@@ -125,8 +125,8 @@ PAGES['menu-del-dia'] = async (v) => {
       <label class="opcion"><input type="checkbox" id="planOn" ${plan.weekdays?.length ? 'checked' : ''} ${s.can_publish ? '' : 'disabled'}>
         <span>${esc(bi('Mismo precio cada día (por ejemplo, de lunes a viernes): se publica solo y tú solo cambias la foto.',
           'Same price every day (e.g. Monday to Friday): it publishes itself and you only change the photo.'))}</span></label>
-      <div id="planDias" class="opciones-fila" ${plan.weekdays?.length ? '' : 'hidden'}>
-        ${dias.map((d, i) => `<label class="opcion"><input type="checkbox" name="dia" value="${i + 1}" ${(plan.weekdays || []).includes(i + 1) ? 'checked' : ''}><span>${esc(I18N.lang === 'en' ? diasEn[i] : d)}</span></label>`).join('')}
+      <div id="planDias" class="elige" style="margin:10px 0" role="group" aria-label="${esc(bi('Días', 'Days'))}" ${plan.weekdays?.length ? '' : 'hidden'}>
+        ${dias.map((d, i) => `<label><input type="checkbox" name="dia" value="${i + 1}" ${(plan.weekdays || []).includes(i + 1) ? 'checked' : ''}><span>${esc(I18N.lang === 'en' ? diasEn[i] : d)}</span></label>`).join('')}
       </div>
       <label class="f" style="max-width:200px" ${plan.weekdays?.length ? '' : 'hidden'} id="planHoraF"><span>${esc(bi('Se publica a las', 'Published at'))}</span>
         <input type="time" id="planHora" min="06:00" max="22:00" value="${esc(plan.at || '11:00')}"></label>
