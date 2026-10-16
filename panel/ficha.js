@@ -702,8 +702,8 @@ async function parteFicha(v, parte, b, cats) {
     fotos: () => htmlFotos(est),
     basico: () => `${htmlBasico(d)}<p class="hint full">Si cambias el nombre, lo revisamos de nuevo. Tu negocio sigue a la vista mientras tanto.</p>`,
     donde: () => `${htmlDonde(d)}<p class="hint full">Si cambias la ciudad o te mudas a más de 1 km, lo revisamos de nuevo. Tu negocio sigue a la vista mientras tanto y lo que tengas publicado se muda contigo.</p>`,
-    // Encima, si alguien lo encontró cerrado: el aviso y «Está bien así» (quetal.js).
-    horario: () => `<div class="full" data-qt-aviso></div><div class="full" data-horario></div>
+    // Encima, si alguien lo encontró cerrado: el aviso y «Está bien así» (cerrado.js).
+    horario: () => `<div class="full" data-cerr-aviso></div><div class="full" data-horario></div>
       <div class="full"><label class="opcion"><input type="checkbox" id="cocinaOn" ${cocinaOn ? 'checked' : ''}><span>${esc(bi('La cocina tiene otro horario', 'The kitchen has different hours'))}</span></label>
         <p class="hint">${esc(bi('Opcional. Si no lo pones, la cocina va con el horario del local. Se usa en la ficha, en «Se puede comer ahora» y en el Menú del día.',
     'Optional. If you don’t set it, the kitchen follows the venue’s hours. Used on your page, in “Food served now” and in the daily menu.'))}</p>
@@ -753,7 +753,7 @@ async function parteFicha(v, parte, b, cats) {
     }
     if (parte === 'horario') {
       horario = editorHorario($('[data-horario]', v), horario ? horario.valor() : b.opening_hours);
-      if (typeof qtAvisoHorario === 'function') qtAvisoHorario($('[data-qt-aviso]', v));
+      if (typeof cerrAvisoHorario === 'function') cerrAvisoHorario($('[data-cerr-aviso]', v));
       cocina = editorHorario($('[data-cocina]', v), cocina ? cocina.valor() : (b.kitchen_hours || b.opening_hours));
       $('#cocinaOn', v).onchange = (e) => { cocinaOn = e.target.checked; $('[data-cocina]', v).hidden = !cocinaOn; };
     }
@@ -812,7 +812,7 @@ async function parteFicha(v, parte, b, cats) {
         // punto se ha movido (la base la recalcula igual).
         if (p.name) { BIZ.name = p.name; renderBizPicker(); }
         // Guardar el horario cuenta como revisarlo («Estaba cerrado»).
-        if (parte === 'horario' && typeof qtHorarioGuardado === 'function') await qtHorarioGuardado();
+        if (parte === 'horario' && typeof cerrHorarioGuardado === 'function') await cerrHorarioGuardado();
         // Con o sin local fijo: el menú cambia (sin «Partidos que pones»,
         // «Antes de cerrar», el cartel del local ni «Días cerrados»).
         if (typeof p.no_fixed_venue === 'boolean') { BIZ.no_fixed_venue = p.no_fixed_venue; renderNav('ficha'); }

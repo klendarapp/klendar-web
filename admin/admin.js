@@ -76,7 +76,7 @@ const LABELS = {
   pending: 'pendiente', verified: 'verificado', rejected: 'rechazado', approved: 'aprobada', active: 'activa', expired: 'caducada',
   cancelled: 'cancelada', archived: 'archivada', sold_out: 'agotada', draft: 'borrador', open: 'abierta', reviewing: 'en revisión', resolved: 'resuelta', dismissed: 'desestimada',
   trial: 'prueba', past_due: 'impagada', validated: 'validado', failed: 'fallido', sent: 'enviado', skipped: 'omitido',
-  flash_offer: 'oferta flash', future_event: 'evento', user: 'usuario', business: 'negocio', offer: 'publicación', review: 'reseña', post: 'novedad', review_media: 'foto o vídeo de reseña', group_request: 'petición de grupo', quetal_message: 'mensaje privado',
+  flash_offer: 'oferta flash', future_event: 'evento', user: 'usuario', business: 'negocio', offer: 'publicación', review: 'reseña', post: 'novedad', review_media: 'foto o vídeo de reseña', group_request: 'petición de grupo',
   owner: 'propietario', manager: 'encargado', staff: 'empleado', free: 'Gratis', basic: 'Básico', pro: 'Pro',
   standard: 'Klendar', founder: 'Fundador', inactive: 'inactivo', banned: 'suspendido', other: 'otra cosa',
   new: 'sin leer', planned: 'la haremos', done: 'hecho', declined: 'descartada',
@@ -1637,7 +1637,7 @@ async function businessDetail(v, id) {
   enlazaDuplicados(v, b, duplicados);
   // Sus sorteos, con «Retirar…» (admin/sorteos.js).
   if (typeof sorteosDelNegocioAdmin === 'function') sorteosDelNegocioAdmin($('#sorteosNegocio', v), id);
-  // «Estaba cerrado» y «¿Qué tal?» (admin/quetal.js).
+  // «Estaba cerrado» (admin/cerrado.js).
   if (typeof cerradoEnFicha === 'function') cerradoEnFicha($('#cerradoNegocio', v), id).catch(() => {});
   $$('[data-rm]').forEach((btn) => { btn.onclick = () => esperando(btn, async () => { if (!await confirmDlg('Quitar del equipo', 'Esta persona dejará de poder gestionar el negocio ni validar códigos.', { danger: true, submit: 'Quitar' })) return; try { await rpc('admin_set_member_role', { p_business: id, p_user: btn.dataset.rm, p_role: null }); toast('Quitado'); route(); } catch (e) { toast(e.message, true); } }); });
   $$('[data-delreview]').forEach((btn) => { btn.onclick = () => esperando(btn, () => deleteReview(btn.dataset.delreview)); });
@@ -2400,7 +2400,7 @@ const motivoDen = (r) => I18N.t(MOTIVOS_DENUNCIA[r] || r);
 const ESTADO_DEN = { published: ['publicado', 'ok'], review: ['en revisión', 'warn'], removed: ['retirado', 'bad'], hidden: ['no visible', 'dim'], deleted: ['borrado', 'dim'] };
 const estadoDen = (s) => { const e = ESTADO_DEN[s]; return e ? `<span class="tag ${e[1]}">${esc(I18N.t(e[0]))}</span>` : ''; };
 const RESOLUCION_DEN = { removed: 'contenido retirado', no_action: 'cerrada sin retirar', dismissed: 'desestimada' };
-const TIPO_DEN = { offer: 'Publicación', business: 'Negocio', review: 'Reseña', post: 'Novedad', review_media: 'Foto o vídeo de una reseña', group_request: 'Petición de grupo', quetal_message: 'Mensaje privado (¿Qué tal?)' };
+const TIPO_DEN = { offer: 'Publicación', business: 'Negocio', review: 'Reseña', post: 'Novedad', review_media: 'Foto o vídeo de una reseña', group_request: 'Petición de grupo' };
 // Una petición de grupo («Grupos y empresas»): la denuncia un negocio que la
 // ha recibido; no se ve en la web pública (solo quien pide y los negocios).
 const TIPO_GRUPO_DEN = { company_dinner: ['Cena de empresa', 'Company dinner'], afterwork: ['Afterwork', 'Afterwork'], team_activity: ['Actividad de equipo', 'Team activity'], celebration: ['Celebración', 'Celebration'] };
@@ -2414,7 +2414,7 @@ const lineaGrupoDen = (t) => {
 const urlDenunciado = (tipo, id, t) => {
   const b = (t && (t.slug || t.business_id)) || null;
   if (tipo === 'offer') return `/o/${id}`;
-  if (tipo === 'group_request' || tipo === 'quetal_message') return '';
+  if (tipo === 'group_request') return '';
   if (tipo === 'business') return `/b/${(t && t.slug) || id}`;
   if (!b) return '';
   // Una foto o un vídeo: la reseña que lo lleva.
@@ -2430,18 +2430,16 @@ const tituloDen = (tipo, t) => {
   if (tipo === 'review') return `${'★'.repeat(Math.max(0, Math.min(5, t.rating | 0)))} ${t.title ? `«${t.title}»` : (en ? '(no text)' : '(sin texto)')}`;
   if (tipo === 'post') return t.title ? `«${t.title}»` : (en ? '(photo only)' : '(solo foto)');
   if (tipo === 'review_media') return `${t.media_kind === 'video' ? (en ? 'Video' : 'Vídeo') : (en ? 'Photo' : 'Foto')} ${en ? 'in a review' : 'de una reseña'}${t.title ? ` · «${t.title}»` : ''}`;
-  // Un mensaje privado de «¿Qué tal?» (👎): solo lo ven el negocio y aquí.
-  if (tipo === 'quetal_message') return t.title ? `«${t.title}»` : (en ? '(message deleted)' : '(mensaje borrado)');
   if (tipo === 'group_request') return `${lineaGrupoDen(t)}${t.title ? ` · «${t.title}»` : (en ? ' · (no note)' : ' · (sin nota)')}`;
   return t.title || '—';
 };
-const miniDen = (tipo, t) => (tipo === 'review_media' && !t?.image && t?.media_url ? `<video src="${esc(t.media_url)}#t=0.5" muted playsinline preload="metadata" aria-hidden="true"></video>` : t?.image && /\.(mp4|webm|mov)(\?|$)/i.test(t.image) ? `<video src="${esc(t.image)}#t=0.5" muted playsinline preload="metadata" aria-hidden="true"></video>` : t?.image ? `<img src="${esc(t.image)}" alt="" loading="lazy">` : `<div class="ph">${ms({ offer: 'bolt', business: 'storefront', review: 'chat_bubble', post: 'article', review_media: 'photo_library', group_request: 'groups', quetal_message: 'chat_bubble' }[tipo] || 'flag')}</div>`);
+const miniDen = (tipo, t) => (tipo === 'review_media' && !t?.image && t?.media_url ? `<video src="${esc(t.media_url)}#t=0.5" muted playsinline preload="metadata" aria-hidden="true"></video>` : t?.image && /\.(mp4|webm|mov)(\?|$)/i.test(t.image) ? `<video src="${esc(t.image)}#t=0.5" muted playsinline preload="metadata" aria-hidden="true"></video>` : t?.image ? `<img src="${esc(t.image)}" alt="" loading="lazy">` : `<div class="ph">${ms({ offer: 'bolt', business: 'storefront', review: 'chat_bubble', post: 'article', review_media: 'photo_library', group_request: 'groups' }[tipo] || 'flag')}</div>`);
 /** «de Negocio» o, en una petición de grupo, «para Negocio, Otro». */
 const deQuienDen = (tipo, t) => {
   const en = I18N.lang === 'en';
   if (tipo === 'business' || !t?.business) return '';
   const nombre = tipo !== 'group_request' && t.business_id ? `<a class="link" href="#/negocios/${esc(t.business_id)}">${esc(t.business)}</a>` : esc(t.business);
-  return `${tipo === 'group_request' || tipo === 'quetal_message' ? (en ? 'to' : 'para') : (en ? 'by' : 'de')} ${nombre}`;
+  return `${tipo === 'group_request' ? (en ? 'to' : 'para') : (en ? 'by' : 'de')} ${nombre}`;
 };
 
 /** Retirar y cerrar / cerrar sin retirar / desestimar / en revisión, para
@@ -2456,7 +2454,6 @@ async function decideDenuncias(tipo, id, decision, abiertas) {
       review: en ? 'The review is deleted.' : 'La reseña se borra.',
       post: en ? 'The news post is deleted.' : 'La novedad se borra.',
       review_media: en ? 'Only this photo or video is deleted; the review stays.' : 'Solo se borra esa foto o ese vídeo; la reseña se queda.',
-      quetal_message: en ? 'The text of the private message (and the business’s reply) is deleted; the 👎 still counts.' : 'Se borra el texto del mensaje privado (y la respuesta del negocio); el 👎 sigue contando.',
       group_request: en ? 'The request is closed for every business it went to and its note is deleted (what was reported stays here).' : 'La petición se cierra para todos los negocios a los que se mandó y se borra su nota (lo denunciado se queda aquí).',
     }[tipo];
     const r = await modal({
@@ -2530,7 +2527,7 @@ PAGES.denuncias = async (v, tipoRuta) => {
     <div class="toolbar">
       <input id="q" class="grow" type="search" placeholder="Buscar por título, negocio, ciudad o motivo…" aria-label="Buscar en denuncias" value="${esc(s.q || '')}">
       <select id="status">${[['open', 'Con denuncias abiertas'], ['closed', 'Ya cerradas'], ['all', 'Todo']].map((o) => `<option value="${o[0]}" ${(s.status || 'open') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
-      <select id="type">${[['all', 'Todo tipo'], ['offer', 'Publicaciones'], ['business', 'Negocios'], ['review', 'Reseñas'], ['review_media', 'Fotos y vídeos de reseñas'], ['post', 'Novedades'], ['group_request', 'Peticiones de grupo'], ['quetal_message', 'Mensajes privados (¿Qué tal?)']].map((o) => `<option value="${o[0]}" ${(s.type || 'all') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
+      <select id="type">${[['all', 'Todo tipo'], ['offer', 'Publicaciones'], ['business', 'Negocios'], ['review', 'Reseñas'], ['review_media', 'Fotos y vídeos de reseñas'], ['post', 'Novedades'], ['group_request', 'Peticiones de grupo']].map((o) => `<option value="${o[0]}" ${(s.type || 'all') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
     </div>
     <div id="list"><div class="loading">Cargando…</div></div>`;
   const load = async () => {

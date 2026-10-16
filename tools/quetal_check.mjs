@@ -1,18 +1,13 @@
 // Prueba de «¿Qué tal?» y «Estaba cerrado» en la web local, con una sesión
 // simulada (Supabase contestado aquí: no toca dev ni manda nada):
 //
-//  1. Tu cuenta › «Tus códigos»: la pregunta con 👍 / 👎 en lo ya usado.
-//  2. Tu cuenta › `#/que-tal/<id>?a=up`: cuenta la respuesta y lleva a la
-//     reseña con 5 estrellas (`#/opinar/<id>?nota=5`, ya marcadas).
-//  3. Tu cuenta › 👎: el mensaje privado (ofensivo no sale; bien, se manda) y
-//     «Prefiero dejar una reseña» siempre a la vista.
-//  4. Tu cuenta › Ajustes → Notificaciones: «¿Qué tal? al día siguiente».
-//  5. Panel › Cifras: «¿Qué tal?: 42 👍 · 5 👎» y «Mensajes privados».
-//  6. Panel › `#/que-tal`: contestar una vez y denunciar.
-//  7. Panel › `#/estaba-cerrado`: «Horario» y «Era un cierre puntual».
-//  8. Panel › Tu ficha › Horario: el aviso y «Está bien así».
-//  9. Admin › Denuncias: un mensaje privado denunciado y su filtro.
-// 10. Ficha pública (Functions de verdad contra un Supabase falso): sin
+//  1. Tu cuenta › Ajustes → Notificaciones: «¿Qué tal? al día siguiente».
+//  2. El aviso del día siguiente (`/business/<id>?review=1&from=quetal`)
+//     lleva a `#/opinar/<id>?desde=quetal`: la reseña sin estrellas marcadas
+//     y con «Ahora no»; sin venir del aviso, sin «Ahora no».
+//  3. Panel › `#/estaba-cerrado`: «Horario» y «Era un cierre puntual».
+//  4. Panel › Tu ficha › Horario: el aviso y «Está bien así».
+//  5. Ficha pública (Functions de verdad contra un Supabase falso): sin
 //     sesión, «Horario sin confirmar» sin botón; con sesión, «Estaba
 //     cerrado» → `report_closed`.
 //
@@ -35,9 +30,6 @@ const REF = 'dpbbtgwxrlqlplbrtjuq';
 const SUPA = `https://${REF}.supabase.co`;
 const U = '0e7717e0-0000-4000-8000-0000000097a1';
 const BIZ = 'b1000000-0000-4000-8000-0000000097a1';
-const Q1 = 'a1000000-0000-4000-8000-0000000097a1';
-const Q2 = 'a2000000-0000-4000-8000-0000000097a2';
-const M1 = 'c1000000-0000-4000-8000-0000000097c1';
 let fallos = 0;
 const ok = (c, m) => { if (!c) { fallos++; console.log('FALLO:', m); } else console.log('ok:', m); };
 
@@ -48,7 +40,6 @@ const jwt = () => `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64({
 })}.firma`;
 const USER = { id: U, aud: 'authenticated', role: 'authenticated', email: 'quetal@example.com', app_metadata: { provider: 'email' }, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' };
 const sesion = () => JSON.stringify({ access_token: jwt(), refresh_token: 'r', token_type: 'bearer', expires_in: 3600, expires_at: 4102444800, user: USER });
-const ayer = () => { const d = new Date(Date.now() - 864e5); return d.toISOString().slice(0, 10); };
 
 function supabaseFalso(estado) {
   return async (route) => {
@@ -91,86 +82,10 @@ async function contexto(nav, vp, clave, rpc) {
   return { ctx, p, estado, errores };
 }
 
-const pregunta = (x = {}) => ({
-  id: Q1, business_id: BIZ, business_name: 'Bar Sonda', business_logo: null, business_slug: 'bar-sonda-madrid',
-  source: 'redemption', what: 'Vermú + tapa', visit_day: ayer(), answer: null, message: null, message_removed: false,
-  reply: null, reply_at: null, can_answer: true, can_message: true, reviewed: false, ...x,
-});
 const CUENTA = (x = {}) => ({
   my_consents: { terms_accepted_at: '2026-01-01T00:00:00Z', terms_outdated: false, has_display_name: true },
-  my_redemptions: [], my_stamp_rewards: [], my_passes: [], my_queue_turns: [], my_birthday_gifts: [], my_loyalty_gifts: [],
   ...x,
 });
-
-async function cuentaCodigos(nav, nombre, t, vp) {
-  const { ctx, p, errores } = await contexto(nav, vp, `sb-${REF}-auth-token`, CUENTA({
-    my_quetal: [pregunta(), pregunta({ id: Q2, business_name: 'Café Central', answer: 'down', message: 'Tardaron mucho', reply: 'Lo sentimos', can_message: false })],
-  }));
-  await p.goto(`${BASE}/app/#/codigos`, { waitUntil: 'networkidle' });
-  await p.waitForSelector('.qt-tarjeta');
-  const v = await p.locator('#view').innerText();
-  ok(/Pasados/.test(v) && /¿Qué tal en Bar Sonda\?/.test(v) && /Ayer · Vermú \+ tapa/.test(v), `${nombre}/${t} Tus códigos: la pregunta en lo ya usado`);
-  ok(await p.locator(`a[href="#/que-tal/${Q1}?a=up"]`).count() === 1 && await p.locator(`a[href="#/que-tal/${Q1}?a=down"]`).count() === 1, `${nombre}/${t} Tus códigos: 👍 y 👎`);
-  ok(/Te han contestado/.test(v), `${nombre}/${t} Tus códigos: la contestada dice que hay respuesta`);
-  await p.screenshot({ path: `${OUT}/web-codigos-que-tal-${nombre}-${t}.png`, fullPage: true });
-  ok(errores.length === 0, `${nombre}/${t} Tus códigos sin errores JS ${errores.join(' | ')}`);
-  await ctx.close();
-}
-
-async function cuentaBien(nav, nombre, t, vp) {
-  let q = pregunta();
-  const { ctx, p, estado, errores } = await contexto(nav, vp, `sb-${REF}-auth-token`, CUENTA({
-    my_quetal: () => [q],
-    quetal_answer: (b) => { q = { ...q, answer: b.p_answer }; return { ok: true, item: q }; },
-    business_profile: [{ id: BIZ, name: 'Bar Sonda', city: 'Madrid', time_zone: 'Europe/Madrid' }],
-    my_review: null, business_reviews: [],
-  }));
-  await p.goto(`${BASE}/app/#/que-tal/${Q1}?a=up`, { waitUntil: 'networkidle' });
-  await p.waitForSelector('.qt-negocio');
-  const v = await p.locator('#view').innerText();
-  const l = estado.llamadas.find(([fn]) => fn === 'quetal_answer');
-  ok(l && l[1].p_answer === 'up' && l[1].p_id === Q1, `${nombre}/${t} ¿Qué tal? 👍: cuenta la respuesta ${JSON.stringify(l)}`);
-  ok(/¡Qué bien!/.test(v) && await p.locator(`a[href="#/opinar/${BIZ}?nota=5"]`).count() === 1, `${nombre}/${t} ¿Qué tal? 👍: invita a reseñar con 5 estrellas`);
-  ok(/Cambiar mi respuesta/.test(v), `${nombre}/${t} ¿Qué tal? 👍: se puede cambiar`);
-  await p.screenshot({ path: `${OUT}/web-que-tal-bien-${nombre}-${t}.png`, fullPage: true });
-  await p.click(`a[href="#/opinar/${BIZ}?nota=5"]`);
-  await p.waitForSelector('#n5');
-  ok(await p.locator('#n5').isChecked(), `${nombre}/${t} reseña: 5 estrellas de partida`);
-  ok(errores.length === 0, `${nombre}/${t} ¿Qué tal? 👍 sin errores JS ${errores.join(' | ')}`);
-  await ctx.close();
-}
-
-async function cuentaMal(nav, nombre, t, vp) {
-  let q = pregunta();
-  const { ctx, p, estado, errores } = await contexto(nav, vp, `sb-${REF}-auth-token`, CUENTA({
-    my_quetal: () => [q],
-    quetal_answer: (b) => { q = { ...q, answer: b.p_answer }; return { ok: true, item: q }; },
-    quetal_send_message: (b) => (/gilipollas/.test(b.p_text) ? { ok: false, error: 'offensive_text' }
-      : (q = { ...q, message: b.p_text, can_message: false }, { ok: true, item: q })),
-  }));
-  await p.goto(`${BASE}/app/#/que-tal/${Q1}`, { waitUntil: 'networkidle' });
-  await p.waitForSelector('[data-qt=down]');
-  ok(/Escribir una reseña/.test(await p.locator('#view').innerText()), `${nombre}/${t} ¿Qué tal?: reseñar a la vista antes de contestar`);
-  await p.screenshot({ path: `${OUT}/web-que-tal-${nombre}-${t}.png`, fullPage: true });
-  await p.click('[data-qt=down]');
-  await p.waitForSelector('#qtForm textarea');
-  let v = await p.locator('#view').innerText();
-  ok(/Vaya\. ¿Qué ha fallado\?/.test(v) && /Prefiero dejar una reseña/.test(v), `${nombre}/${t} ¿Qué tal? 👎: mensaje privado y «Prefiero dejar una reseña»`);
-  await p.screenshot({ path: `${OUT}/web-que-tal-mal-${nombre}-${t}.png`, fullPage: true });
-  await p.fill('#qtForm textarea', 'el camarero es un gilipollas');
-  await p.click('#qtForm button[type=submit]');
-  await p.waitForTimeout(300);
-  ok(/palabras que no se permiten/.test(await p.locator('#toast').innerText()), `${nombre}/${t} ¿Qué tal? 👎: lo ofensivo no sale`);
-  await p.fill('#qtForm textarea', 'Tardaron 40 minutos en traer la cuenta');
-  await p.click('#qtForm button[type=submit]');
-  await p.waitForSelector('.qt-burbuja');
-  v = await p.locator('#view').innerText();
-  const l = estado.llamadas.filter(([fn]) => fn === 'quetal_send_message').pop();
-  ok(l && l[1].p_text === 'Tardaron 40 minutos en traer la cuenta' && /Tu mensaje/.test(v) && /aún no ha contestado/.test(v) && /Prefiero dejar una reseña/.test(v),
-    `${nombre}/${t} ¿Qué tal? 👎: mensaje enviado y reseñar sigue a la vista`);
-  ok(errores.length === 0, `${nombre}/${t} ¿Qué tal? 👎 sin errores JS ${errores.join(' | ')}`);
-  await ctx.close();
-}
 
 async function cuentaAjustes(nav, nombre, t, vp) {
   const { ctx, p, estado, errores } = await contexto(nav, vp, `sb-${REF}-auth-token`, CUENTA({
@@ -179,12 +94,36 @@ async function cuentaAjustes(nav, nombre, t, vp) {
   }));
   await p.goto(`${BASE}/app/#/ajustes/notificaciones`, { waitUntil: 'networkidle' });
   await p.waitForSelector('input[name=quetal]');
-  ok(/¿Qué tal\? al día siguiente/.test(await p.locator('#view').innerText()) && await p.locator('input[name=quetal]').isChecked(), `${nombre}/${t} Ajustes: «¿Qué tal? al día siguiente», encendido`);
+  const vA = await p.locator('#view').innerText();
+  ok(/¿Qué tal\? al día siguiente/.test(vA) && /te pedimos tu reseña/.test(vA) && await p.locator('input[name=quetal]').isChecked(), `${nombre}/${t} Ajustes: «¿Qué tal? al día siguiente», encendido`);
   await p.locator('input[name=quetal]').click({ force: true });
   await p.waitForTimeout(1200);
   const l = estado.llamadas.filter(([fn]) => fn === 'update_notification_preferences').pop();
   ok(l && l[1].p && l[1].p.notify_quetal === false, `${nombre}/${t} Ajustes: lo apaga ${JSON.stringify(l && l[1].p && l[1].p.notify_quetal)}`);
   ok(errores.length === 0, `${nombre}/${t} Ajustes sin errores JS ${errores.join(' | ')}`);
+  await ctx.close();
+}
+
+async function cuentaResena(nav, nombre, t, vp) {
+  const { ctx, p, errores } = await contexto(nav, vp, `sb-${REF}-auth-token`, CUENTA({
+    business_profile: [{ id: BIZ, name: 'Bar Sonda', city: 'Madrid', time_zone: 'Europe/Madrid' }],
+    my_review: null, business_reviews: [],
+  }));
+  await p.goto(`${BASE}/app/#/`, { waitUntil: 'networkidle' });
+  const destino = await p.evaluate((b) => destinoWeb(`/business/${b}?review=1&from=quetal`), BIZ);
+  ok(destino === `#/opinar/${BIZ}?desde=quetal`, `${nombre}/${t} el aviso lleva a la reseña con «Ahora no» (${destino})`);
+  await p.goto(`${BASE}/app/#/opinar/${BIZ}?desde=quetal`, { waitUntil: 'networkidle' });
+  await p.waitForSelector('#n5');
+  const marcadas = await p.locator('input[name=nota]:checked').count();
+  ok(marcadas === 0, `${nombre}/${t} reseña desde el aviso: sin estrellas marcadas`);
+  ok(await p.locator(`.ahora-no a[href$="/b/${BIZ}"]`).count() === 1, `${nombre}/${t} reseña desde el aviso: «Ahora no»`);
+  await p.screenshot({ path: `${OUT}/web-resena-que-tal-${nombre}-${t}.png`, fullPage: true });
+  await p.goto(`${BASE}/app/#/opinar/${BIZ}`, { waitUntil: 'networkidle' });
+  await p.waitForSelector('#n5');
+  // Solo cambia el `#`: se espera a que se vuelva a pintar.
+  await p.waitForFunction(() => !document.querySelector('.ahora-no'), null, { timeout: 5000 }).catch(() => {});
+  ok(await p.locator('.ahora-no').count() === 0, `${nombre}/${t} reseña normal: sin «Ahora no»`);
+  ok(errores.length === 0, `${nombre}/${t} reseña sin errores JS ${errores.join(' | ')}`);
   await ctx.close();
 }
 
@@ -196,52 +135,6 @@ const PANEL = (x = {}) => ({
   business_tools_overview: { ok: true, can_edit: true, team: { members: 1 }, series: { rules_active: 0 } },
   ...x,
 });
-const negocioQueTal = (x = {}) => ({
-  up: 42, down: 5, can_manage: true, can_reply: true, unread: 1,
-  messages: [{ id: M1, name: 'Lucía', message: 'Tardaron 40 minutos en traer la cuenta.', message_at: new Date().toISOString(), visit_day: ayer(), what: 'Vermú + tapa', read: false, reply: null, reply_at: null, reported: false }],
-  ...x,
-});
-
-async function panelCifras(nav, nombre, t, vp) {
-  const { ctx, p, errores, estado } = await contexto(nav, vp, `sb-${REF}-auth-token`, PANEL({
-    business_report: { totals: {}, loyalty: {}, daily: [], offers: [], by_hour: [], redemptions: [] },
-    business_quetal: negocioQueTal(),
-  }));
-  await p.goto(`${BASE}/panel/#/informe`, { waitUntil: 'networkidle' });
-  await p.waitForSelector('#cifrasDetalle');
-  const html = await p.locator('#cifrasDetalle').innerHTML();
-  ok(/¿Qué tal\?: 42 👍 · 5 👎/.test(html) && /#\/que-tal/.test(html) && /1 sin leer/.test(html), `${nombre}/${t} Cifras: «¿Qué tal?: 42 👍 · 5 👎» y los mensajes`);
-  ok(errores.length === 0, `${nombre}/${t} Cifras sin errores JS ${errores.join(' | ')}`);
-  await ctx.close();
-}
-
-async function panelQueTal(nav, nombre, t, vp) {
-  const { ctx, p, estado, errores } = await contexto(nav, vp, `sb-${REF}-auth-token`, PANEL({
-    business_quetal: negocioQueTal(), quetal_reply: { ok: true }, quetal_mark_read: null, report_target: null,
-  }));
-  await p.goto(`${BASE}/panel/#/que-tal`, { waitUntil: 'networkidle' });
-  await p.waitForSelector('[data-qt-resp]');
-  const v = await p.locator('#view').innerText();
-  ok(/Lucía/.test(v) && /Tardaron 40 minutos/.test(v) && /Sin leer/.test(v), `${nombre}/${t} panel ¿Qué tal?: el mensaje con el nombre visible`);
-  await p.screenshot({ path: `${OUT}/web-panel-que-tal-${nombre}-${t}.png`, fullPage: true });
-  await p.click('[data-qt-resp]');
-  await p.waitForSelector('#modal textarea[name=reply]');
-  await p.fill('#modal textarea[name=reply]', 'Lo sentimos mucho, ya lo hemos hablado con el equipo');
-  await p.click('#modal button[type=submit]');
-  await p.waitForTimeout(500);
-  const l = estado.llamadas.find(([fn]) => fn === 'quetal_reply');
-  ok(l && l[1].p_id === M1 && /Lo sentimos/.test(l[1].p_text), `${nombre}/${t} panel ¿Qué tal?: contesta ${JSON.stringify(l)}`);
-  await p.waitForSelector('[data-qt-den]');
-  await p.click('[data-qt-den]');
-  await p.waitForSelector('#modal select[name=motivo]');
-  await p.click('#modal button[type=submit]');
-  await p.waitForTimeout(500);
-  const d = estado.llamadas.find(([fn]) => fn === 'report_target');
-  ok(d && d[1].p_type === 'quetal_message' && d[1].p_id === M1 && d[1].p_reason === 'inappropriate', `${nombre}/${t} panel ¿Qué tal?: denuncia el mensaje ${JSON.stringify(d)}`);
-  ok(errores.length === 0, `${nombre}/${t} panel ¿Qué tal? sin errores JS ${errores.join(' | ')}`);
-  await ctx.close();
-}
-
 async function panelCerrado(nav, nombre, t, vp) {
   const { ctx, p, estado, errores } = await contexto(nav, vp, `sb-${REF}-auth-token`, PANEL({
     business_closed_reports: { reports: [{ at: new Date().toISOString(), local: '2026-10-15T18:00', after_check: true }, { at: new Date().toISOString(), local: '2026-10-14T17:40', after_check: true }, { at: new Date().toISOString(), local: '2026-10-09T19:15', after_check: true }],
@@ -249,13 +142,13 @@ async function panelCerrado(nav, nombre, t, vp) {
     confirm_business_hours: null, business_closures: [],
   }));
   await p.goto(`${BASE}/panel/#/estaba-cerrado`, { waitUntil: 'networkidle' });
-  await p.waitForSelector('#qtPuntual');
+  await p.waitForSelector('#cerrPuntual');
   const v = await p.locator('#view').innerText();
   ok(/Alguien encontró cerrado tu local el jueves a las 18:00\. ¿Está bien tu horario\?/.test(v) && /Horario sin confirmar/.test(v) && /3 personas desde que revisaste el horario/.test(v),
     `${nombre}/${t} panel Estaba cerrado: el aviso, el estado y cuántas personas`);
   ok(await p.locator('a[href="#/ficha/horario"]').count() === 1, `${nombre}/${t} panel Estaba cerrado: «Horario»`);
   await p.screenshot({ path: `${OUT}/web-panel-estaba-cerrado-${nombre}-${t}.png`, fullPage: true });
-  await p.click('#qtPuntual');
+  await p.click('#cerrPuntual');
   await p.waitForTimeout(600);
   ok(estado.llamadas.some(([fn]) => fn === 'confirm_business_hours') && /#\/cerrados/.test(p.url()), `${nombre}/${t} panel Estaba cerrado: «Era un cierre puntual» confirma y abre «Días cerrados»`);
   ok(errores.length === 0, `${nombre}/${t} panel Estaba cerrado sin errores JS ${errores.join(' | ')}`);
@@ -269,33 +162,13 @@ async function panelHorario(nav, nombre, t, vp) {
     business_private: { tax_id: null },
   }));
   await p.goto(`${BASE}/panel/#/ficha/horario`, { waitUntil: 'networkidle' });
-  await p.waitForSelector('#qtBien');
+  await p.waitForSelector('#cerrBien');
   ok(/Alguien encontró cerrado tu local/.test(await p.locator('#view').innerText()), `${nombre}/${t} panel Horario: el aviso encima del editor`);
   await p.screenshot({ path: `${OUT}/web-panel-horario-aviso-${nombre}-${t}.png`, fullPage: true });
-  await p.click('#qtBien');
+  await p.click('#cerrBien');
   await p.waitForTimeout(400);
-  ok(estado.llamadas.some(([fn]) => fn === 'confirm_business_hours') && await p.locator('#qtBien').count() === 0, `${nombre}/${t} panel Horario: «Está bien así» lo confirma`);
+  ok(estado.llamadas.some(([fn]) => fn === 'confirm_business_hours') && await p.locator('#cerrBien').count() === 0, `${nombre}/${t} panel Horario: «Está bien así» lo confirma`);
   ok(errores.length === 0, `${nombre}/${t} panel Horario sin errores JS ${errores.join(' | ')}`);
-  await ctx.close();
-}
-
-async function adminDenuncia(nav, nombre, t, vp) {
-  const den = {
-    target_type: 'quetal_message', target_id: M1, n: 1, open_count: 1, total_count: 1, people: 1, with_account: 1, without_account: 0,
-    first_at: new Date().toISOString(), last_at: new Date().toISOString(), reviewing: false, state: 'published', live: true,
-    target: { title: 'Sois unos ladrones', business: 'Bar Sonda', business_id: BIZ, city: 'Madrid' }, reasons: [{ reason: 'inappropriate', n: 1 }],
-  };
-  const { ctx, p, errores } = await contexto(nav, vp, `sb-${REF}-admin-auth-token`, {
-    is_admin: true, admin_mfa_status: { required: false, enrolled: true }, admin_kpis: {},
-    admin_report_groups: { total: 1, rows: [den], hot: 0 },
-  });
-  await p.goto(`${BASE}/admin/#/denuncias`, { waitUntil: 'networkidle' });
-  await p.waitForSelector('.den-grupo');
-  const v = await p.locator('#view').innerText();
-  ok(/mensaje privado/i.test(v) && /«Sois unos ladrones»/.test(v) && /para Bar Sonda/.test(v), `${nombre}/${t} admin: el mensaje privado denunciado`);
-  ok(await p.locator('#type option[value=quetal_message]').count() === 1, `${nombre}/${t} admin: filtro «Mensajes privados (¿Qué tal?)»`);
-  await p.screenshot({ path: `${OUT}/web-admin-denuncia-quetal-${nombre}-${t}.png`, fullPage: true });
-  ok(errores.length === 0, `${nombre}/${t} admin sin errores JS ${errores.join(' | ')}`);
   await ctx.close();
 }
 
@@ -373,7 +246,7 @@ if (!SOLO || SOLO.includes('ficha')) {
   await new Promise((r) => setTimeout(r, 2000));
 }
 
-const PRUEBAS = { cuentaCodigos, cuentaBien, cuentaMal, cuentaAjustes, panelCifras, panelQueTal, panelCerrado, panelHorario, adminDenuncia, ficha };
+const PRUEBAS = { cuentaAjustes, cuentaResena, panelCerrado, panelHorario, ficha };
 for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
   const nav = await tipo.launch();
   for (const [t, vp] of [['movil', { width: 390, height: 844 }], ['escritorio', { width: 1280, height: 900 }]]) {

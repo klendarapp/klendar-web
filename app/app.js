@@ -1632,7 +1632,7 @@ RUTAS.codigos = async (_partes, params) => {
   if (!exigeSesion('codigos')) return;
   // Los regalos de cumpleaños van aparte y arriba; si fallan, los códigos
   // salen igual.
-  const [lista, regalos, premios, bonos, turnos, dados, queTal] = await Promise.all([
+  const [lista, regalos, premios, bonos, turnos, dados] = await Promise.all([
     llamar('my_redemptions', {}),
     misRegalos().catch(() => []),
     // Los premios de las tarjetas de sellos, también aparte.
@@ -1643,8 +1643,6 @@ RUTAS.codigos = async (_partes, params) => {
     llamar('my_queue_turns', {}).catch(() => []),
     // Lo que te dieron con «Dar en el momento» (app/momento.js), ya canjeado.
     llamar('my_spot_gifts', {}).catch(() => []),
-    // «¿Qué tal?» de las visitas de estos días (app/quetal.js), con lo usado.
-    llamar('my_quetal', {}).catch(() => []),
   ]);
   const zona = await zonasDe(lista);
   const turnoHtml = await colaTarjetasHtml(turnos);
@@ -1655,8 +1653,7 @@ RUTAS.codigos = async (_partes, params) => {
   const conPremios = Array.isArray(premios) && premios.length > 0;
   const conBonos = Array.isArray(bonos) && bonos.length > 0;
   const conDados = Array.isArray(dados) && dados.length > 0;
-  const conQueTal = Array.isArray(queTal) && queTal.length > 0;
-  const nada = !(lista || []).length && !conRegalos && !conPremios && !conBonos && !conDados && !conQueTal;
+  const nada = !(lista || []).length && !conRegalos && !conPremios && !conBonos && !conDados;
   // Desde una notificación (`#/codigos?offer=<id>`: cambio de fecha,
   // cancelación…): el código de esa publicación, a la vista y resaltado. El
   // vivo si hay varios; si no, el más reciente (la lista llega ordenada).
@@ -1678,13 +1675,13 @@ RUTAS.codigos = async (_partes, params) => {
       <div class="olist">${premios.map(filaPremio).join('')}</div>` : ''}
     ${conDados ? `<h2 class="seccion-t">${esc(t('Te dieron'))}</h2>
       <div class="olist">${dados.map(momentoFila).join('')}</div>` : ''}
-    ${(lista || []).length || conQueTal ? [
+    ${(lista || []).length ? [
     // Los que aún se pueden usar, aparte de los pasados (usados, caducados
-    // o anulados), como la app. En los pasados, primero «¿Qué tal?».
-    [t('Para usar'), (lista || []).filter(vivo), ''],
-    [t('Pasados'), (lista || []).filter((r) => !vivo(r)), qtTarjetas(queTal)],
-  ].map(([titulo, parte, antes]) => (parte.length || antes ? `<h2 class="seccion-t">${esc(titulo)}</h2>
-      <div class="olist">${antes}${parte.map((r) => filaCanje(r, zona(r), r === resaltado)).join('')}</div>` : '')).join('')
+    // o anulados), como la app.
+    [t('Para usar'), lista.filter(vivo)],
+    [t('Pasados'), lista.filter((r) => !vivo(r))],
+  ].map(([titulo, parte]) => (parte.length ? `<h2 class="seccion-t">${esc(titulo)}</h2>
+      <div class="olist">${parte.map((r) => filaCanje(r, zona(r), r === resaltado)).join('')}</div>` : '')).join('')
     : conRegalos || conPremios || conBonos || conDados
       ? `<p class="empty">${esc(t('Todavía no tienes códigos. Cuando consigas el código de una oferta o reserves plaza en un evento, lo tendrás aquí.'))}</p>`
       : pantallaVacia({

@@ -1009,9 +1009,8 @@ details.plegable[open] > summary { margin-bottom: 12px; }
 .momento-lista li span:not(.ms) { flex: 1; }
 .momento-lista .ms { color: #1e9e57; }
 
-/* «¿Qué tal?» y «Estaba cerrado» (panel/quetal.js). */
-.qt-dos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
-.qt-dos .btn { justify-content: center; text-align: center; }
-.qt-lista { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
-.qt-nuevo { border-color: var(--ink-2); }
-.qt-aviso { margin-bottom: 4px; }
+/* «Estaba cerrado» (panel/cerrado.js). */
+.cerr-dos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+.cerr-dos .btn { justify-content: center; text-align: center; }
+.cerr-lista { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
+.cerr-aviso { margin-bottom: 4px; }
