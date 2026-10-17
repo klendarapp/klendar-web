@@ -1,5 +1,5 @@
 {
- "version": "50e3a7182def",
+ "version": "c89263acb8e9",
  "contact": "info@klendar.app",
  "tabs": {
   "es": {
@@ -168,6 +168,15 @@
     "a": [
      {
       "t": "Revisa Cuenta → Ajustes → Notificaciones y los permisos de notificaciones del sistema. \"Cerca de ti\" solo avisa de ofertas flash dentro del radio elegido y como máximo 3 veces al día."
+     }
+    ]
+   },
+   {
+    "id": "que-tal",
+    "q": "¿Por qué me preguntáis «¿Qué tal?»?",
+    "a": [
+     {
+      "t": "Al día siguiente de usar algo en un local te preguntamos si quieres reseñarlo; si ya tienes una reseña antigua, si quieres actualizarla. Es opcional («Ahora no») y no insistimos. Se apaga en Ajustes → Notificaciones."
      }
     ]
    },
@@ -458,6 +467,15 @@
     ]
    },
    {
+    "id": "horario-sin-confirmar",
+    "q": "¿Qué es «Horario sin confirmar»?",
+    "a": [
+     {
+      "t": "Sale en tu ficha cuando 3 personas distintas encuentran cerrado tu local en 14 días con tu horario diciendo abierto. Se quita en cuanto guardas el horario, añades días cerrados o pulsas «Está bien así». Nunca sabrás quién avisó."
+     }
+    ]
+   },
+   {
     "id": "orden",
     "q": "¿Puedo salir el primero si pago más?",
     "a": [
@@ -664,6 +682,15 @@
     "a": [
      {
       "t": "Check Account → Settings → Notifications and the system notification permission. “Nearby” only alerts you about flash offers within your chosen radius, at most 3 times a day."
+     }
+    ]
+   },
+   {
+    "id": "que-tal",
+    "q": "Why do you ask me “How was it?”?",
+    "a": [
+     {
+      "t": "The day after you use something at a venue we ask whether you'd like to review it; if you already have an old review, whether you'd like to update it. It's optional (“Not now”) and we don't insist. You can turn it off in Settings → Notifications."
      }
     ]
    },
@@ -950,6 +977,15 @@
     "a": [
      {
       "t": "With “Before closing”, in My business (bakeries, cafés, restaurants and similar): it's published in two taps with last time's details, until closing time, and paid at your place. You can ask us to remind you every day."
+     }
+    ]
+   },
+   {
+    "id": "horario-sin-confirmar",
+    "q": "What is “Opening hours not confirmed”?",
+    "a": [
+     {
+      "t": "It appears on your page when 3 different people find your venue closed within 14 days while your opening hours said open. It goes away as soon as you save your hours, add closed days or tap “They’re right”. You'll never know who reported it."
      }
     ]
    },
