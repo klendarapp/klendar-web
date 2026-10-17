@@ -1,5 +1,5 @@
 {
- "version": "c89263acb8e9",
+ "version": "0902ab4d2aa8",
  "contact": "info@klendar.app",
  "tabs": {
   "es": {
@@ -173,7 +173,7 @@
    },
    {
     "id": "que-tal",
-    "q": "¿Por qué me preguntáis «¿Qué tal?»?",
+    "q": "¿Por qué me llega «¿Qué tal?»?",
     "a": [
      {
       "t": "Al día siguiente de usar algo en un local te preguntamos si quieres reseñarlo; si ya tienes una reseña antigua, si quieres actualizarla. Es opcional («Ahora no») y no insistimos. Se apaga en Ajustes → Notificaciones."

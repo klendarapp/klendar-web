@@ -121,7 +121,7 @@ PREGUNTAS = [
       'Check Account → Settings → Notifications and the system notification permission. “Nearby” only alerts you about flash offers within your chosen radius, at most 3 times a day.',
       soporte=5),
     P('que-tal', 'ti',
-      '¿Por qué me preguntáis «¿Qué tal?»?',
+      '¿Por qué me llega «¿Qué tal?»?',
       'Al día siguiente de usar algo en un local te preguntamos si quieres reseñarlo; si ya tienes una reseña antigua, si quieres actualizarla. Es opcional («Ahora no») y no insistimos. Se apaga en Ajustes → Notificaciones.',
       'Why do you ask me “How was it?”?',
       "The day after you use something at a venue we ask whether you'd like to review it; if you already have an old review, whether you'd like to update it. It's optional (“Not now”) and we don't insist. You can turn it off in Settings → Notifications."),
