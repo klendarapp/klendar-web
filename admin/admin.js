@@ -278,6 +278,25 @@ function downloadCsv(name, rows, cols) {
   a.download = `${name}-${diaMadridISO()}.csv`; a.click();
 }
 
+/** «Exportar todo»: todas las filas con los filtros de ahora, página a
+ * página (`p_limit`, `p_offset`), no solo las que se ven (docs/RUNBOOK.md
+ * §3g). `args`: lo último que se pidió a `fn`. */
+async function exportaTodo(boton, name, fn, args, cols) {
+  if (!args) return;
+  boton.disabled = true;
+  try {
+    const filas = [];
+    const tam = 200;
+    for (;;) {
+      const r = await rpc(fn, { ...args, p_limit: tam, p_offset: filas.length });
+      const parte = r?.rows || [];
+      filas.push(...parte);
+      if (!parte.length || parte.length < tam || filas.length >= (Number(r?.total) || Infinity) || filas.length >= 50000) break;
+    }
+    downloadCsv(name, filas, cols);
+  } catch (e) { toast(e.message, true); } finally { boton.disabled = false; }
+}
+
 // Gráfica de barras simple.
 function bars(series, key, labelFn) {
   const max = Math.max(1, ...series.map((s) => s[key] || 0));
@@ -1449,7 +1468,7 @@ PAGES.negocios = async (v, id) => {
   for (const k in DEF) s[k] = s[k] ?? DEF[k];
   const aUrl = filtrosEnUrl('negocios', s, Object.keys(DEF), DEF);
   v.innerHTML = `
-    <div class="page-head"><h1>Negocios</h1><span class="spacer"></span><button class="btn sm ghost" id="csv">Exportar CSV</button></div>
+    <div class="page-head"><h1>Negocios</h1><span class="spacer"></span><button class="btn sm ghost" id="csv">Exportar todo</button></div>
     ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p>Here you see every registered business. <b>Pending</b> ones are new sign-ups you need to review: check that the business exists (website, phone, Google Maps) and press <b>Verify</b>; if it doesn't qualify, <b>Reject</b> it with a reason (the business gets it as a notification). Click a row to see the full business page, change the plan or record a payment.</p>` : '<p>Aquí ves todos los negocios dados de alta. Los <b>pendientes</b> son altas nuevas que tienes que revisar: comprueba que el negocio existe (web, teléfono, Google Maps) y pulsa <b>Verificar</b>; si no procede, <b>Rechazar</b> indicando el motivo (el negocio lo recibe como notificación). Pulsa en una fila para ver la ficha completa, cambiar el plan o registrar un pago.</p>')}
     <div class="toolbar">
       <input id="q" class="grow" placeholder="Buscar por nombre, ciudad, email del dueño, CIF o id…" value="${esc(s.q || '')}">
@@ -1460,8 +1479,9 @@ PAGES.negocios = async (v, id) => {
     </div>
     <div id="list"><div class="loading">Cargando…</div></div>`;
   let rows = [];
+  let ultimos = null; // lo último que se pidió (para «Exportar todo»)
   const load = async () => {
-    const r = await rpc('admin_businesses_page', { p_status: s.status, p_query: s.q || null, p_plan: s.plan || 'all', p_active: s.active === '' || s.active == null ? null : s.active === 'true', p_sort: s.sort || 'created_desc', p_limit: s.limit, p_offset: s.offset });
+    const r = await rpc('admin_businesses_page', ultimos = { p_status: s.status, p_query: s.q || null, p_plan: s.plan || 'all', p_active: s.active === '' || s.active == null ? null : s.active === 'true', p_sort: s.sort || 'created_desc', p_limit: s.limit, p_offset: s.offset });
     rows = r.rows;
     const pg = pager(s, r.total, load);
     $('#list').innerHTML = table({
@@ -1480,7 +1500,7 @@ PAGES.negocios = async (v, id) => {
   };
   $('#q').oninput = debounce(() => { s.q = $('#q').value.trim(); s.offset = 0; load(); });
   ['status', 'plan', 'active', 'sort'].forEach((k) => { $('#' + k).onchange = () => { s[k] = $('#' + k).value; s.offset = 0; aUrl(); load(); }; });
-  $('#csv').onclick = () => downloadCsv('negocios', rows, [['id', 'id'], ['name', 'nombre'], ['category', 'categoría'], ['city', 'ciudad'], ['address', 'dirección'], ['owner_email', 'email dueño'], ['phone', 'teléfono'], ['website', 'web'], ['verification_status', 'verificación'], [(b) => b.is_active ? 'sí' : 'no', 'activo'], [(b) => b.plan_slug || 'free', 'plan'], ['sub_status', 'suscripción'], ['sub_period_end', 'fin periodo'], ['offers_count', 'publicaciones'], ['redemptions_count', 'canjes'], ['created_at', 'alta']]);
+  $('#csv').onclick = () => exportaTodo($('#csv'), 'negocios', 'admin_businesses_page', ultimos, [['id', 'id'], ['name', 'nombre'], ['category', 'categoría'], ['city', 'ciudad'], ['address', 'dirección'], ['owner_email', 'email dueño'], ['phone', 'teléfono'], ['website', 'web'], ['verification_status', 'verificación'], [(b) => b.is_active ? 'sí' : 'no', 'activo'], [(b) => b.plan_slug || 'free', 'plan'], ['sub_status', 'suscripción'], ['sub_period_end', 'fin periodo'], ['offers_count', 'publicaciones'], ['redemptions_count', 'canjes'], ['created_at', 'alta']]);
   await load();
 };
 
@@ -1937,7 +1957,7 @@ PAGES.publicaciones = async (v, id) => {
   s.business = params().business || null;
   const aUrl = filtrosEnUrl('publicaciones', s, ['moderation', 'status', 'kind', 'business'], DEF);
   v.innerHTML = `
-    <div class="page-head"><h1>Publicaciones</h1><span class="spacer"></span><button class="btn sm ghost" id="csv">Exportar CSV</button></div>
+    <div class="page-head"><h1>Publicaciones</h1><span class="spacer"></span><button class="btn sm ghost" id="csv">Exportar todo</button></div>
     ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p>Flash offers and events from every business. The ones <b>pending moderation</b> come from businesses that haven't been verified yet or have been flagged for review: if they meet the <a class="link" href="/en/community-guidelines/" target="_blank">Community guidelines</a> (nothing misleading, their own photos, no alcohol aimed at minors…) press <b>Approve</b>; if not, <b>Take down</b> with a reason, which the business receives along with how to appeal (required by the DSA). The system automatically puts under review the ones that mention <b>alcohol</b> (and also marks them 18+: only adults see them), <b>tobacco/vaping</b> (advertising is banned: take it down), <b>gambling</b> or <b>offensive language</b> (insults, swear words, explicit sexual content, hate or threats); you'll see a tag with the reason.</p>` : '<p>Ofertas flash y eventos de todos los negocios. Las <b>pendientes de moderar</b> son de negocios que aún no han sido verificados o que han sido marcadas para revisión: si cumplen las <a class="link" href="/normas/" target="_blank">Normas de la comunidad</a> (sin contenido engañoso, fotos propias, sin alcohol a menores…) pulsa <b>Aprobar</b>; si no, <b>Retirar</b> con un motivo, que el negocio recibe junto con la vía de recurso (obligatorio por el DSA). El sistema pone en revisión automáticamente las que mencionan <b>alcohol</b> (además las marca +18: solo las ven mayores), <b>tabaco/vapeo</b> (publicidad prohibida: retirar), <b>apuestas</b> o <b>lenguaje ofensivo</b> (insultos, palabras malsonantes, contenido sexual explícito, odio o amenazas); verás la etiqueta del motivo.</p>')}
     <div class="toolbar">
       <input id="q" class="grow" placeholder="Buscar por título, negocio o id…" value="${esc(s.q || '')}">
@@ -1948,8 +1968,9 @@ PAGES.publicaciones = async (v, id) => {
     </div>
     <div id="list"><div class="loading">Cargando…</div></div>`;
   let rows = [];
+  let ultimos = null; // lo último que se pidió (para «Exportar todo»)
   const load = async () => {
-    const r = await rpc('admin_offers_page', { p_moderation: s.moderation, p_status: s.status || 'all', p_kind: s.kind || 'all', p_query: s.q || null, p_business: s.business || null, p_limit: s.limit, p_offset: s.offset });
+    const r = await rpc('admin_offers_page', ultimos = { p_moderation: s.moderation, p_status: s.status || 'all', p_kind: s.kind || 'all', p_query: s.q || null, p_business: s.business || null, p_limit: s.limit, p_offset: s.offset });
     rows = r.rows;
     const pg = pager(s, r.total, load);
     $('#list').innerHTML = table({
@@ -1974,7 +1995,7 @@ PAGES.publicaciones = async (v, id) => {
   $('#q').oninput = debounce(() => { s.q = $('#q').value.trim(); s.offset = 0; load(); });
   ['moderation', 'status', 'kind'].forEach((k) => { $('#' + k).onchange = () => { s[k] = $('#' + k).value; s.offset = 0; aUrl(); load(); }; });
   if ($('#clearbiz')) $('#clearbiz').onclick = () => { s.business = null; go('#/publicaciones'); };
-  $('#csv').onclick = () => downloadCsv('publicaciones', rows, [['id', 'id'], ['kind', 'tipo'], ['title', 'título'], ['business_name', 'negocio'], ['status', 'estado'], ['moderation_status', 'moderación'], ['redeem_start_at', 'inicio canje'], ['redeem_end_at', 'fin canje'], ['event_at', 'evento'], ['price_cents', 'precio (cts)'], ['views_count', 'vistas'], ['redemptions_count', 'canjes'], ['max_redemptions', 'máx'], ['created_at', 'creada']]);
+  $('#csv').onclick = () => exportaTodo($('#csv'), 'publicaciones', 'admin_offers_page', ultimos, [['id', 'id'], ['kind', 'tipo'], ['title', 'título'], ['business_name', 'negocio'], ['status', 'estado'], ['moderation_status', 'moderación'], ['redeem_start_at', 'inicio canje'], ['redeem_end_at', 'fin canje'], ['event_at', 'evento'], ['price_cents', 'precio (cts)'], ['views_count', 'vistas'], ['redemptions_count', 'canjes'], ['max_redemptions', 'máx'], ['created_at', 'creada']]);
   await load();
 };
 const discountLabel = (d) => {
@@ -2078,7 +2099,7 @@ PAGES.canjes = async (v) => {
   s.status = s.status || 'all';
   const aUrl = filtrosEnUrl('canjes', s, ['status', 'from', 'to'], { status: 'all' });
   v.innerHTML = `
-    <div class="page-head"><h1>Canjes</h1><span class="spacer"></span><button class="btn sm ghost" id="csv">Exportar CSV</button></div>
+    <div class="page-head"><h1>Canjes</h1><span class="spacer"></span><button class="btn sm ghost" id="csv">Exportar todo</button></div>
     ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p>Every time someone taps “Get the code”, a single-use code is created (<b>pending</b>) that expires when the business decides (5 minutes for a bar offer, the day of the event for a ticket); when the business scans it, it becomes <b>validated</b>; if not, it <b>expires</b>. Use it to handle complaints (“they charged me and didn't apply the discount”) and to spot abuse: search by email, business, title or code.</p>` : '<p>Cada vez que alguien pulsa «Conseguir el código» se genera un código de un solo uso (<b>pendiente</b>), que caduca cuando decide el negocio (5 minutos en una oferta de barra, hasta el día del evento en una entrada); cuando el negocio lo escanea pasa a <b>validado</b>; si no, <b>caduca</b>. Sirve para atender reclamaciones («me cobraron y no aplicaron el descuento») y detectar abusos: busca por email, negocio, título o código.</p>')}
     <div class="toolbar">
       <input id="q" class="grow" placeholder="Buscar por email, negocio, título o código…" value="${esc(s.q || '')}">
@@ -2088,8 +2109,9 @@ PAGES.canjes = async (v) => {
     </div>
     <div id="list"><div class="loading">Cargando…</div></div>`;
   let rows = [];
+  let ultimos = null; // lo último que se pidió (para «Exportar todo»)
   const load = async () => {
-    const r = await rpc('admin_redemptions', { p_status: s.status || 'all', p_query: s.q || null, p_from: s.from || null, p_to: s.to || null, p_limit: s.limit, p_offset: s.offset });
+    const r = await rpc('admin_redemptions', ultimos = { p_status: s.status || 'all', p_query: s.q || null, p_from: s.from || null, p_to: s.to || null, p_limit: s.limit, p_offset: s.offset });
     rows = r.rows;
     const pg = pager(s, r.total, load);
     $('#list').innerHTML = table({ cols: [
@@ -2101,7 +2123,7 @@ PAGES.canjes = async (v) => {
   };
   $('#q').oninput = debounce(() => { s.q = $('#q').value.trim(); s.offset = 0; load(); });
   ['status', 'from', 'to'].forEach((k) => { $('#' + k).onchange = () => { s[k] = $('#' + k).value; s.offset = 0; aUrl(); load(); }; });
-  $('#csv').onclick = () => downloadCsv('canjes', rows, [['id', 'id'], ['title', 'publicación'], ['business', 'negocio'], ['user_email', 'usuario'], ['code', 'código'], ['status', 'estado'], ['created_at', 'generado'], ['validated_at', 'validado'], ['validated_by_email', 'validado por']]);
+  $('#csv').onclick = () => exportaTodo($('#csv'), 'canjes', 'admin_redemptions', ultimos, [['id', 'id'], ['title', 'publicación'], ['business', 'negocio'], ['user_email', 'usuario'], ['code', 'código'], ['status', 'estado'], ['created_at', 'generado'], ['validated_at', 'validado'], ['validated_by_email', 'validado por']]);
   await load();
 };
 
@@ -2113,7 +2135,7 @@ PAGES.usuarios = async (v, id) => {
   for (const k in DEF) s[k] = s[k] ?? DEF[k];
   const aUrl = filtrosEnUrl('usuarios', s, Object.keys(DEF), DEF);
   v.innerHTML = `
-    <div class="page-head"><h1>Usuarios</h1><span class="spacer"></span><button class="btn sm ghost" id="csv">Exportar CSV</button></div>
+    <div class="page-head"><h1>Usuarios</h1><span class="spacer"></span><button class="btn sm ghost" id="csv">Exportar todo</button></div>
     ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p>Every account in the app. Click one to see its details: consents (GDPR), businesses, redemptions, reviews and reports; from there you can <b>suspend</b> anyone who breaks the rules, give <b>premium</b>, or <b>delete the account</b> if the user asks by email (right to erasure; they can also do it themselves from the app).</p>` : '<p>Todas las cuentas de la app. Pulsa en una para ver su ficha: consentimientos (RGPD), negocios, canjes, reseñas y denuncias; desde allí puedes <b>suspender</b> a quien incumpla las normas, dar <b>premium</b>, o <b>borrar la cuenta</b> si el usuario lo pide por email (derecho de supresión; también puede hacerlo él mismo desde la app).</p>')}
     <div class="toolbar">
       <input id="q" class="grow" placeholder="Buscar por email, nombre o id…" value="${esc(s.q || '')}">
@@ -2123,8 +2145,9 @@ PAGES.usuarios = async (v, id) => {
     </div>
     <div id="list"><div class="loading">Cargando…</div></div>`;
   let rows = [];
+  let ultimos = null; // lo último que se pidió (para «Exportar todo»)
   const load = async () => {
-    const r = await rpc('admin_users', { p_query: s.q || null, p_type: s.type || 'all', p_banned: s.banned === '' || s.banned == null ? null : s.banned === 'true', p_sort: s.sort || 'created_desc', p_limit: s.limit, p_offset: s.offset });
+    const r = await rpc('admin_users', ultimos = { p_query: s.q || null, p_type: s.type || 'all', p_banned: s.banned === '' || s.banned == null ? null : s.banned === 'true', p_sort: s.sort || 'created_desc', p_limit: s.limit, p_offset: s.offset });
     rows = r.rows;
     const pg = pager(s, r.total, load);
     $('#list').innerHTML = table({ cols: [
@@ -2138,7 +2161,7 @@ PAGES.usuarios = async (v, id) => {
   };
   $('#q').oninput = debounce(() => { s.q = $('#q').value.trim(); s.offset = 0; load(); });
   ['type', 'banned', 'sort'].forEach((k) => { $('#' + k).onchange = () => { s[k] = $('#' + k).value; s.offset = 0; aUrl(); load(); }; });
-  $('#csv').onclick = () => downloadCsv('usuarios', rows, [['id', 'id'], ['email', 'email'], ['display_name', 'nombre'], ['user_type', 'tipo'], ['locale', 'idioma'], [(u) => u.is_premium ? 'sí' : 'no', 'premium'], [(u) => u.banned_at ? 'sí' : 'no', 'suspendido'], [(u) => u.marketing_consent ? 'sí' : 'no', 'consentimiento marketing'], ['memberships', 'negocios'], ['redemptions', 'canjes'], ['created_at', 'alta'], ['last_sign_in_at', 'último acceso']]);
+  $('#csv').onclick = () => exportaTodo($('#csv'), 'usuarios', 'admin_users', ultimos, [['id', 'id'], ['email', 'email'], ['display_name', 'nombre'], ['user_type', 'tipo'], ['locale', 'idioma'], [(u) => u.is_premium ? 'sí' : 'no', 'premium'], [(u) => u.banned_at ? 'sí' : 'no', 'suspendido'], [(u) => u.marketing_consent ? 'sí' : 'no', 'consentimiento marketing'], ['memberships', 'negocios'], ['redemptions', 'canjes'], ['created_at', 'alta'], ['last_sign_in_at', 'último acceso']]);
   await load();
 };
 
@@ -2534,10 +2557,12 @@ PAGES.denuncias = async (v, tipoRuta) => {
   const load = async () => {
     const abiertas = (s.status || 'open') === 'open';
     const q = (s.q || '').trim();
-    const r = await rpc('admin_report_groups', { p_status: s.status || 'open', p_type: s.type || 'all', p_min_open: 0, p_limit: q ? BUSCA_MAX : s.limit, p_offset: q ? 0 : s.offset });
-    const filas = q ? r.rows.filter((g) => coincide(q, tituloDen(g.target_type, g.target), g.target?.business, g.target?.city, ...(g.reasons || []).map((m) => motivoDen(m.reason)))) : r.rows;
-    const pg = q ? { html: '', bind() {} } : pager(s, r.total, load);
-    $('#list').innerHTML = (q ? notaBusqueda(filas.length, r.rows.length) : '') + (filas.length ? filas.map((g) => {
+    // La búsqueda la hace la base, con todas (título, negocio, ciudad,
+    // motivo o id de lo denunciado), y va por páginas como sin buscar.
+    const r = await rpc('admin_report_groups', { p_status: s.status || 'open', p_type: s.type || 'all', p_min_open: 0, p_limit: s.limit, p_offset: s.offset, p_query: q || null });
+    const filas = r.rows;
+    const pg = pager(s, r.total, load);
+    $('#list').innerHTML = (filas.length ? filas.map((g) => {
       const t = g.target || {};
       const url = urlDenunciado(g.target_type, g.target_id, t);
       const det = `#/denuncias/${g.target_type}/${g.target_id}`;
@@ -3040,7 +3065,7 @@ PAGES.sugerencias = async (v) => {
   for (const k in DEF) s[k] = s[k] ?? DEF[k];
   const aUrl = filtrosEnUrl('sugerencias', s, Object.keys(DEF), DEF);
   v.innerHTML = `
-    <div class="page-head"><h1>Sugerencias</h1><span class="spacer"></span><button class="btn sm ghost" id="csv">Exportar CSV</button></div>
+    <div class="page-head"><h1>Sugerencias</h1><span class="spacer"></span><button class="btn sm ghost" id="csv">Exportar todo</button></div>
     ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p>What people write from the app (Account → “Ideas and feedback”) or the website: ideas, bugs and messages from businesses. <b>Bugs</b> also reach your phone as a notification. Mark each one with what you're going to do —<b>we're looking into it</b>, <b>we'll do it</b>, <b>done</b> or <b>not for now</b>— and, if you like, <b>reply</b>: the person gets your reply as a notification. Nobody outside sees the internal notes.</p>` : '<p>Lo que la gente escribe desde la app (Cuenta → «Sugerencias y mejoras») o la web: ideas, fallos y mensajes de negocios. Los <b>fallos</b> te llegan además como notificación al móvil. Marca cada una con lo que vas a hacer —<b>la estamos viendo</b>, <b>la haremos</b>, <b>hecho</b> o <b>de momento no</b>— y, si quieres, <b>responde</b>: la persona recibe tu respuesta como notificación. Las notas internas no las ve nadie de fuera.</p>')}
     <div id="counts"></div>
     <div class="toolbar">
@@ -3050,9 +3075,10 @@ PAGES.sugerencias = async (v) => {
     </div>
     <div id="list"><div class="loading">Cargando…</div></div>`;
   let rows = [];
+  let ultimos = null; // lo último que se pidió (para «Exportar todo»)
   const kindIcon = { suggestion: ms('lightbulb'), bug: ms('bug_report'), business: ms('storefront'), other: ms('chat_bubble') };
   const load = async () => {
-    const r = await rpc('admin_feedback', { p_status: s.status, p_kind: s.kind || 'all', p_query: s.q || null, p_limit: s.limit, p_offset: s.offset });
+    const r = await rpc('admin_feedback', ultimos = { p_status: s.status, p_kind: s.kind || 'all', p_query: s.q || null, p_limit: s.limit, p_offset: s.offset });
     rows = r.rows;
     const c = r.counts || {};
     $('#counts').innerHTML = `<div class="kpis" style="margin-bottom:14px">
@@ -3101,7 +3127,7 @@ PAGES.sugerencias = async (v) => {
   };
   $('#q').oninput = debounce(() => { s.q = $('#q').value.trim(); s.offset = 0; load(); });
   ['status', 'kind'].forEach((k) => { $('#' + k).onchange = () => { s[k] = $('#' + k).value; s.offset = 0; aUrl(); load(); }; });
-  $('#csv').onclick = () => downloadCsv('sugerencias', rows, [['created_at', 'fecha'], ['kind', 'tipo'], ['status', 'estado'], ['message', 'mensaje'], ['user_email', 'usuario'], ['app_version', 'versión'], ['platform', 'plataforma'], ['locale', 'idioma'], ['admin_note', 'nota interna'], ['replied_at', 'respondida']]);
+  $('#csv').onclick = () => exportaTodo($('#csv'), 'sugerencias', 'admin_feedback', ultimos, [['created_at', 'fecha'], ['kind', 'tipo'], ['status', 'estado'], ['message', 'mensaje'], ['user_email', 'usuario'], ['app_version', 'versión'], ['platform', 'plataforma'], ['locale', 'idioma'], ['admin_note', 'nota interna'], ['replied_at', 'respondida']]);
   await load();
 };
 
@@ -3119,18 +3145,19 @@ PAGES.planes = async (v) => {
   });
   aUrl();
   v.innerHTML = `
-    <div class="page-head"><h1>Planes y pagos</h1><span class="spacer"></span><button class="btn sm ghost" id="csv">Exportar CSV</button></div>
+    <div class="page-head"><h1>Planes y pagos</h1><span class="spacer"></span><button class="btn sm ghost" id="csv">Exportar todo</button></div>
     ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p><b>Subscriptions</b>: which plan each business has and when it expires. Until card payments are available, payments are made by bank transfer and recorded by hand on the business page (“Record payment”). <b>Payments</b>: history of payments with monthly totals (for the accounts). <b>Plans</b>: there is a single plan with everything included, no limits and no commission per redemption: <b>Klendar</b> (<code>standard</code>, €19.90 + VAT a month or €199 + VAT a year per venue, after the 30-day free trial; prices here are before VAT) and <b>Launch, free</b> (<code>free</code>, while a city is starting up). <b>Founder</b> (<code>founder</code>, €9.90) was withdrawn: it stays hidden and is not offered to anyone new. Chains pay per venue on a sliding scale: the first venue €19.90; the 2nd to the 5th, €15 each; from the 6th, €12 each (+ VAT). Apply it when you record the subscription (3 venues: €49.90 + VAT a month). Changing a plan affects the businesses that have it.</p>` : '<p><b>Suscripciones</b>: qué plan tiene cada negocio y cuándo vence. Mientras no haya pago con tarjeta, los cobros se hacen por transferencia y se anotan a mano en la ficha del negocio («Registrar pago»). <b>Pagos</b>: histórico de cobros con totales por mes (para la contabilidad). <b>Planes</b>: hay un solo plan, con todo incluido, sin límites y sin comisión por canje: <b>Klendar</b> (<code>standard</code>, 19,90 € + IVA al mes o 199 € + IVA al año por local, después de la prueba gratis de 30 días; aquí los precios van sin IVA) y <b>Gratis de lanzamiento</b> (<code>free</code>, mientras una ciudad está arrancando). <b>Fundador</b> (<code>founder</code>, 9,90 €) se retiró: queda oculto y no se ofrece a nadie nuevo. Las cadenas pagan por local con escalera: el primer local, 19,90 €; del 2.º al 5.º, 15 € cada uno; desde el 6.º, 12 € cada uno (+ IVA). Aplícala al registrar la suscripción (3 locales: 49,90 € + IVA al mes). Cambiar un plan afecta a los negocios que lo tengan.</p>')}
     <div class="tabs">${[['subs', 'Suscripciones'], ['payments', 'Pagos'], ['plans', 'Planes'], ['stripe', 'Cobro con tarjeta']].map((t) => `<button type="button" data-t="${t[0]}" class="${tab === t[0] ? 'on' : ''}" aria-pressed="${tab === t[0]}">${t[1]}</button>`).join('')}</div>
     <div id="tabview"></div>`;
+  let csvFn = null; let ultimos = null;
   let rows = [], csvCols = [], csvName = 'suscripciones';
   const load = async () => {
     const tv = $('#tabview'); tv.innerHTML = '<div class="loading">Cargando…</div>';
     if (tab === 'subs') {
       const s = st.subs;
       tv.innerHTML = `<div class="toolbar"><select id="sstatus" aria-label="${esc(I18N.t('Estado'))}">${[['current', 'Vigentes'], ['trial', 'En prueba'], ['active', 'Activas'], ['past_due', 'Impagadas'], ['paused', 'En pausa'], ['cancelled', 'Canceladas'], ['all', 'Todas']].map((o) => `<option value="${o[0]}" ${(s.status || 'current') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select></div><div id="list"></div>`;
-      const r = await rpc('admin_subscriptions', { p_status: s.status || 'current', p_limit: s.limit, p_offset: s.offset });
-      rows = r.rows; csvName = 'suscripciones';
+      const r = await rpc('admin_subscriptions', ultimos = { p_status: s.status || 'current', p_limit: s.limit, p_offset: s.offset });
+      rows = r.rows; csvName = 'suscripciones'; csvFn = 'admin_subscriptions';
       csvCols = [['business', 'negocio'], ['owner_email', 'email'], ['plan', 'plan'], ['status', 'estado'], ['period_start', 'inicio'], ['period_end', 'fin'], ['days_left', 'días restantes'], ['payment_method', 'pago'], [(x) => (x.paid_cents / 100).toFixed(2), 'cobrado (€)']];
       const pg = pager(s, r.total, load);
       $('#list').innerHTML = table({ cols: [
@@ -3146,8 +3173,8 @@ PAGES.planes = async (v) => {
     if (tab === 'payments') {
       const s = st.pagos;
       tv.innerHTML = `<div class="toolbar"><label class="f" style="grid-auto-flow:column;align-items:center">Desde <input type="date" id="from" value="${esc(s.from || '')}"></label><label class="f" style="grid-auto-flow:column;align-items:center">Hasta <input type="date" id="to" value="${esc(s.to || '')}"></label></div><div id="sum"></div><div id="list"></div>`;
-      const r = await rpc('admin_payments', { p_from: s.from || null, p_to: s.to || null, p_limit: s.limit, p_offset: s.offset });
-      rows = r.rows; csvName = 'pagos';
+      const r = await rpc('admin_payments', ultimos = { p_from: s.from || null, p_to: s.to || null, p_limit: s.limit, p_offset: s.offset });
+      rows = r.rows; csvName = 'pagos'; csvFn = 'admin_payments';
       csvCols = [['paid_at', 'fecha'], ['business', 'negocio'], ['plan', 'plan'], [(x) => (x.amount_cents / 100).toFixed(2), 'importe (€)'], ['currency', 'moneda'], ['method', 'método'], ['period_start', 'periodo inicio'], ['period_end', 'periodo fin'], ['notes', 'notas'], ['recorded_by', 'registrado por']];
       const months = r.by_month || [];
       $('#sum').innerHTML = `<div class="card"><div class="kpis"><div class="kpi accent"><b>${fmtMoney(r.sum_cents)}</b><span>${I18N.lang === 'en' ? `total for the period (${fmtNum(r.total)} ${r.total === 1 ? 'payment' : 'payments'})` : `total en el periodo (${fmtNum(r.total)} ${r.total === 1 ? 'pago' : 'pagos'})`}</span></div></div>${months.length ? `<p class="muted small" style="margin:10px 0 0">Por mes (12 meses)</p>${bars(months.map((m) => ({ ...m, cents: m.cents })), 'cents', (m) => `${m.month} · ${fmtMoney(m.cents)} (${m.n})`)}<div class="chart-legend">${months.map((m) => `<span>${m.month.slice(5)}: ${fmtMoney(m.cents)}</span>`).join('')}</div>` : ''}</div>`;
@@ -3369,7 +3396,7 @@ PAGES.planes = async (v) => {
     }
   };
   $$('.tabs button').forEach((b) => { b.onclick = () => { tab = b.dataset.t; aUrl(); $$('.tabs button').forEach((x) => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', String(x === b)); }); load(); }; });
-  $('#csv').onclick = () => downloadCsv(csvName, rows, csvCols);
+  $('#csv').onclick = () => (['suscripciones', 'pagos'].includes(csvName) && csvFn ? exportaTodo($('#csv'), csvName, csvFn, ultimos, csvCols) : downloadCsv(csvName, rows, csvCols));
   await load();
 };
 
@@ -3865,7 +3892,7 @@ PAGES.errores = async (v) => {
   const aUrl = filtrosEnUrl('errores', s, Object.keys(DEF), DEF);
   const en = I18N.lang === 'en';
   v.innerHTML = `
-    <div class="page-head"><h1>Errores de la web</h1><span class="spacer"></span><button class="btn sm ghost" id="csv">Exportar CSV</button></div>
+    <div class="page-head"><h1>Errores de la web</h1><span class="spacer"></span><button class="btn sm ghost" id="csv">Exportar todo</button></div>
     ${helpBox('¿Qué hago aquí?', en
       ? `<p>What breaks in people's browsers on klendar.app: the public pages, Your account, the business dashboard and this panel. The same error is <b>grouped</b> (same place and message) and adds up <b>times</b> instead of repeating. No personal data is kept: only the page (without the address details), the browser, the language and the error, with emails, keys and long numbers removed.</p><p>What to do: start with the <b>new</b> ones and the ones repeated most, open the <b>stack</b> to see where it breaks, fix it and, once it's published, press <b>Mark as resolved</b>. If it happens again, it reopens by itself and is marked <b>back again</b>. A few odd ones (old browsers, bots) can be marked as resolved without doing anything. Browser extensions, network drops and similar noise are never recorded. Everything is deleted after 30 days without happening.</p><p><b>Email alert</b> (at the bottom): if an error repeats a lot in one hour, or many new ones appear in a day, an email goes to the address you set, at most once every few hours.</p>`
       : `<p>Lo que falla en el navegador de la gente en klendar.app: las páginas públicas, «Tu cuenta», el panel de negocios y este panel. El mismo error se <b>agrupa</b> (mismo sitio y mismo mensaje) y suma <b>veces</b> en vez de repetirse. No se guarda nada personal: solo la página (sin los datos de la dirección), el navegador, el idioma y el error, con correos, claves y números largos quitados.</p><p>Qué hacer: empieza por los <b>nuevos</b> y los que más se repiten, abre la <b>pila</b> para ver dónde se rompe, arréglalo y, cuando esté publicado, pulsa <b>Marcar como resuelto</b>. Si vuelve a pasar, se reabre solo y sale marcado como <b>ha vuelto</b>. Alguno raro (navegadores muy viejos, robots) se puede marcar como resuelto sin hacer nada. Las extensiones del navegador, los cortes de red y ruido parecido no se apuntan nunca. Todo se borra a los 30 días sin volver a pasar.</p><p><b>Aviso por correo</b> (abajo): si un error se repite mucho en una hora, o salen muchos nuevos en un día, llega un correo a la dirección que pongas, como mucho uno cada pocas horas.</p>`)}
@@ -3878,6 +3905,7 @@ PAGES.errores = async (v) => {
     <div id="aviso"></div>
     <div id="tareas"></div>`;
   let rows = [];
+  let ultimos = null; // lo último que se pidió (para «Exportar todo»)
   let avisoPintado = false;
   const donde = (e) => e.source ? `<code>${esc(e.source)}${e.line != null ? ':' + e.line : ''}${e.col != null ? ':' + e.col : ''}</code>${e.version ? ` <span class="muted">v${esc(e.version)}</span>` : ''}` : '';
   const veces = (e) => en
@@ -3921,7 +3949,7 @@ PAGES.errores = async (v) => {
     };
   };
   const load = async () => {
-    const r = await rpc('admin_web_errors', { p_area: s.area === 'all' ? null : s.area, p_limit: s.limit, p_offset: s.offset, p_status: s.status });
+    const r = await rpc('admin_web_errors', ultimos = { p_area: s.area === 'all' ? null : s.area, p_limit: s.limit, p_offset: s.offset, p_status: s.status });
     rows = r.rows || [];
     const c = r.counts || {};
     $('#counts').innerHTML = `<div class="kpis" style="margin-bottom:14px">
@@ -3975,7 +4003,7 @@ PAGES.errores = async (v) => {
   };
   $('#area').onchange = () => { s.area = $('#area').value; s.offset = 0; aUrl(); load(); };
   $('#status').onchange = () => { s.status = $('#status').value; s.offset = 0; aUrl(); load(); };
-  $('#csv').onclick = () => downloadCsv('errores-web', rows, [['area', 'área'], ['page', 'página'], ['message', 'mensaje'], ['source', 'archivo'], ['line', 'línea'], ['version', 'versión'], ['count', 'veces'], ['first_seen', 'primera vez'], ['last_seen', 'última vez'], ['browser', 'navegador'], ['lang', 'idioma'], ['resolved_at', 'resuelto']]);
+  $('#csv').onclick = () => exportaTodo($('#csv'), 'errores-web', 'admin_web_errors', ultimos, [['area', 'área'], ['page', 'página'], ['message', 'mensaje'], ['source', 'archivo'], ['line', 'línea'], ['version', 'versión'], ['count', 'veces'], ['first_seen', 'primera vez'], ['last_seen', 'última vez'], ['browser', 'navegador'], ['lang', 'idioma'], ['resolved_at', 'resuelto']]);
   await load();
   await tareas();
 };
@@ -4006,14 +4034,15 @@ PAGES.actividad = async (v) => {
   s.action = s.action || 'all';
   const aUrl = filtrosEnUrl('actividad', s, ['action'], { action: 'all' });
   v.innerHTML = `
-    <div class="page-head"><h1>Registro de actividad</h1><span class="spacer"></span><button class="btn sm ghost" id="csv">Exportar CSV</button></div>
+    <div class="page-head"><h1>Registro de actividad</h1><span class="spacer"></span><button class="btn sm ghost" id="csv">Exportar todo</button></div>
     ${helpBox('¿Qué hago aquí?', '<p>Todo lo que hacen los administradores queda aquí con fecha, quién y sobre qué: verificaciones, moderación, pagos, cambios de configuración… Sirve para auditoría y para responder ante una reclamación («¿por qué se retiró mi oferta y cuándo?»).</p>')}
     <div class="toolbar"><input id="q" class="grow" placeholder="Buscar por email del admin, id del objeto o texto…" value="${esc(s.q || '')}"><select id="action">${[['all', 'Todas las acciones'], ['business', 'Negocios'], ['offer', 'Publicaciones'], ['report', 'Denuncias'], ['giveaway', 'Sorteos'], ['user', 'Usuarios'], ['review', 'Reseñas'], ['post', 'Novedades'], ['notification', 'Notificaciones'], ['config', 'Configuración'], ['plan', 'Planes'], ['category', 'Categorías'], ['admin', 'Administradores']].map((o) => `<option value="${o[0]}" ${(s.action || 'all') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select></div>
     <div id="list"></div>`;
   let rows = [];
+  let ultimos = null; // lo último que se pidió (para «Exportar todo»)
   const linkFor = (l) => l.target_type === 'giveaway' && l.details?.business_id ? `#/negocios/${l.details.business_id}` : l.target_type === 'business' ? `#/negocios/${l.target_id}` : l.target_type === 'offer' ? `#/publicaciones/${l.target_id}` : l.target_type === 'user' ? `#/usuarios/${l.target_id}` : null;
   const load = async () => {
-    const r = await rpc('admin_audit', { p_query: s.q || null, p_action: s.action || 'all', p_limit: s.limit, p_offset: s.offset });
+    const r = await rpc('admin_audit', ultimos = { p_query: s.q || null, p_action: s.action || 'all', p_limit: s.limit, p_offset: s.offset });
     rows = r.rows;
     const pg = pager(s, r.total, load);
     $('#list').innerHTML = table({ cols: [
@@ -4026,7 +4055,7 @@ PAGES.actividad = async (v) => {
   };
   $('#q').oninput = debounce(() => { s.q = $('#q').value.trim(); s.offset = 0; load(); });
   $('#action').onchange = () => { s.action = $('#action').value; s.offset = 0; aUrl(); load(); };
-  $('#csv').onclick = () => downloadCsv('actividad', rows, [['created_at', 'fecha'], ['admin_email', 'admin'], ['action', 'acción'], ['target_type', 'tipo'], ['target_id', 'id'], ['details', 'detalles']]);
+  $('#csv').onclick = () => exportaTodo($('#csv'), 'actividad', 'admin_audit', ultimos, [['created_at', 'fecha'], ['admin_email', 'admin'], ['action', 'acción'], ['target_type', 'tipo'], ['target_id', 'id'], ['details', 'detalles']]);
   await load();
 };
 

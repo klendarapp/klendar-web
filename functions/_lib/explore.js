@@ -1654,7 +1654,7 @@ export async function categoryPage(rawCity, rawCat, lang) {
 }
 
 // ── Una colección ──────────────────────────────────────────────────────────
-export async function collectionPage(rawSlug, rawCity, lang) {
+export async function collectionPage(rawSlug, rawCity, lang, search = '') {
   const en = lang === 'en';
   const S = T(en);
   const decSlug = decodeSeg(rawSlug);
@@ -1664,13 +1664,17 @@ export async function collectionPage(rawSlug, rawCity, lang) {
   const rawc = decCity.replace(/\/+$/, '');
   const path = `${collectionBase(lang)}/${encodeURIComponent(slug)}/${rawc ? `${CITY(rawc)}/` : ''}`;
 
+  // Por páginas (`?p=`, como Explorar): 24 de cada vez. Antes, 48 y ya.
+  const page = Math.max(1, Math.min(50, parseInt(new URLSearchParams(search).get('p') || '1', 10) || 1));
   const [cols, res, cities] = await Promise.all([
     rpcAll('public_collections', { p_city: rawc || null }),
-    rpc('public_explore', { p_city: rawc || null, p_collection: slug, p_limit: 48 }),
+    rpc('public_explore', { p_city: rawc || null, p_collection: slug, p_limit: POR_PAGINA, p_offset: (page - 1) * POR_PAGINA }),
     rpcAll('public_cities', {}),
   ]);
   const col = (cols || []).find((c) => c.slug === slug);
   const items = res?.items || [];
+  const paginas = Math.max(1, Math.min(50, Math.ceil((Number(res?.total) || items.length) / POR_PAGINA)));
+  const enlace = (n) => (n > 1 ? `${path}?p=${n}` : path);
   // Una selección que no existe es un 404. Antes salía con 200 y el título
   // «Zzz»… y con todas las publicaciones (la base no filtra por una selección
   // que no conoce).
@@ -1692,7 +1696,12 @@ export async function collectionPage(rawSlug, rawCity, lang) {
     ${cities.filter((c) => c.city).slice(0, 12).map((c) => `<a class="chip${rawc.toLowerCase() === String(c.city).toLowerCase() ? ' on' : ''}" href="${collectionBase(lang)}/${encodeURIComponent(slug)}/${CITY(c.city)}/">${esc(PRETTY(c.city))}</a>`).join('')}
   </div></div>` : ''}
   ${items.length
-    ? `${rejilla(items, lang, { primera: true, h: 'h2' })}
+    ? `${rejilla(items, lang, { primera: page === 1, h: 'h2' })}
+  ${paginas > 1 ? `<nav class="pager" aria-label="${esc(S.page)}">
+    ${page > 1 ? `<a class="pill" href="${esc(enlace(page - 1))}" rel="prev">${esc(S.prev)}</a>` : ''}
+    <span class="muted">${esc(S.page)} ${page}/${paginas}</span>
+    ${page < paginas ? `<a class="pill" href="${esc(enlace(page + 1))}" rel="next">${esc(S.next)}</a>` : ''}
+  </nav>` : ''}
   <p style="margin-top:22px"><a class="pill accent" href="${exploreBase(lang)}/">${esc(S.exp)}</a> <a class="pill" href="${agendaBase(lang)}/">${esc(S.agenda)}</a></p>`
     // Vacía: la pantalla vacía, centrada, con las mismas salidas.
     : `<section class="vacio"><h2>${esc(S.colNone)}</h2>
@@ -1703,7 +1712,8 @@ export async function collectionPage(rawSlug, rawCity, lang) {
     description: (col && colSub(col, en)) || S.lead,
     image: portada(items),
     actual: 'explorar',
-    head: items.length ? '' : '<meta name="robots" content="noindex, follow">',
+    consulta: page > 1 ? `?p=${page}` : '',
+    head: items.length && page === 1 ? '' : '<meta name="robots" content="noindex, follow">',
   }), 200, 'public, max-age=300, s-maxage=900');
 }
 

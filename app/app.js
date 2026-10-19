@@ -1374,12 +1374,19 @@ const momentoPlan = (o) => {
   const iso = o.kind === 'future_event' ? o.event_at : o.redeem_end_at;
   return iso ? new Date(iso).getTime() : null;
 };
+// Lo guardado que ya pasó llega por partes: 20 y «Ver más» (cursor `moment`,
+// `id` de `my_saved_offers`); lo próximo, entero.
+const PASADOS_POR_PARTE = 20;
+const pasadosParte = (ultimo) => llamar('my_saved_offers', {
+  p_when: 'past', p_limit: PASADOS_POR_PARTE, ...(ultimo ? { p_before: ultimo.moment, p_before_id: ultimo.id } : {}),
+});
 RUTAS.planes = async () => {
   if (!exigeSesion('planes')) return;
   // Las mismas dos funciones que la app. Si fallan los canjes, se enseña lo
   // guardado igualmente (la app hace lo mismo).
-  const [guardados, canjes, series, turnos] = await Promise.all([
-    llamar('my_saved_offers', {}),
+  const [guardados, guardadosPasados, canjes, series, turnos] = await Promise.all([
+    llamar('my_saved_offers', { p_when: 'upcoming' }),
+    pasadosParte(null).catch(() => []),
     llamar('my_redemptions', {}).catch(() => []),
     llamar('my_followed_series', {}).catch(() => []),
     // Tu turno en una cola virtual, arriba (app/cola.js).
@@ -1391,8 +1398,9 @@ RUTAS.planes = async () => {
   const filaSeries = nSeries ? `<div class="lista">${fila({ href: '#/series', icono: 'notifications',
     titulo: EN ? (nSeries === 1 ? 'You follow 1 series' : `You follow ${nSeries} series`) : (nSeries === 1 ? 'Sigues 1 serie' : `Sigues ${nSeries} series`) })}</div>` : '';
   const saved = guardados || [];
+  const savedPast = guardadosPasados || [];
   const reds = canjes || [];
-  const zona = await zonasDe([...saved, ...reds]);
+  const zona = await zonasDe([...saved, ...savedPast, ...reds]);
   const ahora = Date.now();
   const pasado = (o) => { const m = momentoPlan(o); return m != null && m < ahora; };
   const enCurso = reds.filter((r) => r.status === 'pending' && new Date(r.expires_at).getTime() > ahora);
@@ -1401,6 +1409,7 @@ RUTAS.planes = async () => {
     ...reds.filter((r) => r.status === 'validated')
       .map((r) => ({ cuando: new Date(r.validated_at || r.created_at).getTime(), html: filaCanje(r, zona(r)) })),
     ...saved.filter(pasado).map((o) => ({ cuando: momentoPlan(o), html: tarjeta(o, zona(o)) })),
+    ...savedPast.map((o) => ({ cuando: momentoPlan(o), html: tarjeta(o, zona(o)) })),
   ].sort((a, b) => b.cuando - a.cuando);
 
   const explorar = `<p><a class="pill" href="${PUB_EN ? '/en/explore/' : '/explorar/'}">${esc(t('Buscar planes'))}</a></p>`;
@@ -1428,7 +1437,27 @@ RUTAS.planes = async () => {
     ${bloque(t('Para usar ahora'), enCurso.map((r) => filaCanje(r, zona(r))), '', `<a href="#/codigos">${esc(t('Ver todos'))}</a>`)}
     ${bloque(t('Próximos'), proximos.map((o) => tarjeta(o, zona(o))))}
     ${bloque(t('Pasados'), pasados.map((p) => p.html), ' pasado')}
+    ${savedPast.length >= PASADOS_POR_PARTE ? `<p class="ver-mas"><button type="button" class="pill" data-ver-mas="pasados">${esc(t('Ver más'))}</button></p>` : ''}
     ${explorar}`);
+  // «Ver más»: lo guardado más antiguo, al final de «Pasados».
+  const cargados = [...savedPast];
+  const mas = $('[data-ver-mas="pasados"]');
+  if (mas) {
+    mas.onclick = async () => {
+      mas.disabled = true;
+      try {
+        const parte = (await pasadosParte(cargados[cargados.length - 1])) || [];
+        cargados.push(...parte);
+        const z = await zonasDe(parte);
+        const caja = $('.olist.pasado');
+        const antes = caja ? caja.children.length : 0;
+        caja?.insertAdjacentHTML('beforeend', parte.map((o) => tarjeta(o, z(o))).join(''));
+        caja?.children[antes]?.querySelector('a')?.focus();
+        if (parte.length < PASADOS_POR_PARTE) mas.closest('.ver-mas').remove();
+        else mas.disabled = false;
+      } catch (e) { mas.disabled = false; toast(e.message || String(e), true); }
+    };
+  }
 };
 
 /** Guardar, seguir y la lista de espera cambian algo y te lo confirman aquí
@@ -1628,12 +1657,15 @@ function pintaCodigoGuardado(g) {
   $('#qr').innerHTML = qr.createSvgTag({ cellSize: 6, margin: 2, scalable: true });
 }
 
+// «Tus códigos» llega por partes: los 50 más recientes y, al final de
+// «Pasados», «Ver más» con los siguientes (`my_redemptions`, `p_offset`).
+const CODIGOS_POR_PARTE = 50;
 RUTAS.codigos = async (_partes, params) => {
   if (!exigeSesion('codigos')) return;
   // Los regalos de cumpleaños van aparte y arriba; si fallan, los códigos
   // salen igual.
   const [lista, regalos, premios, bonos, turnos, dados] = await Promise.all([
-    llamar('my_redemptions', {}),
+    llamar('my_redemptions', { p_limit: CODIGOS_POR_PARTE }),
     misRegalos().catch(() => []),
     // Los premios de las tarjetas de sellos, también aparte.
     llamar('my_stamp_rewards', {}).catch(() => []),
@@ -1680,8 +1712,9 @@ RUTAS.codigos = async (_partes, params) => {
     // o anulados), como la app.
     [t('Para usar'), lista.filter(vivo)],
     [t('Pasados'), lista.filter((r) => !vivo(r))],
-  ].map(([titulo, parte]) => (parte.length ? `<h2 class="seccion-t">${esc(titulo)}</h2>
-      <div class="olist">${parte.map((r) => filaCanje(r, zona(r), r === resaltado)).join('')}</div>` : '')).join('')
+  ].map(([titulo, parte], i) => (parte.length ? `<h2 class="seccion-t">${esc(titulo)}</h2>
+      <div class="olist"${i === 1 ? ' id="codigosPasados"' : ''}>${parte.map((r) => filaCanje(r, zona(r), r === resaltado)).join('')}</div>` : '')).join('')
+    + ((lista || []).length >= CODIGOS_POR_PARTE ? `<p class="ver-mas"><button type="button" class="pill" data-ver-mas="codigos">${esc(t('Ver más'))}</button></p>` : '')
     : conRegalos || conPremios || conBonos || conDados
       ? `<p class="empty">${esc(t('Todavía no tienes códigos. Cuando consigas el código de una oferta o reserves plaza en un evento, lo tendrás aquí.'))}</p>`
       : pantallaVacia({
@@ -1694,6 +1727,30 @@ RUTAS.codigos = async (_partes, params) => {
           <a class="pill" href="#/qr-cliente">${esc(t('Tu QR de cliente'))}</a>`,
       })}`);
   $('#codigo-pedido')?.scrollIntoView({ block: 'center' });
+  // Los siguientes (más antiguos): se añaden a «Pasados».
+  let cargados = (lista || []).length;
+  const mas = $('[data-ver-mas="codigos"]');
+  if (mas) {
+    mas.onclick = async () => {
+      mas.disabled = true;
+      try {
+        const parte = (await llamar('my_redemptions', { p_limit: CODIGOS_POR_PARTE, p_offset: cargados })) || [];
+        cargados += parte.length;
+        const z = await zonasDe(parte);
+        const pasados = parte.filter((r) => !vivo(r));
+        let caja = $('#codigosPasados');
+        if (!caja && pasados.length) {
+          mas.closest('.ver-mas').insertAdjacentHTML('beforebegin', `<h2 class="seccion-t">${esc(t('Pasados'))}</h2><div class="olist" id="codigosPasados"></div>`);
+          caja = $('#codigosPasados');
+        }
+        const antes = caja ? caja.children.length : 0;
+        caja?.insertAdjacentHTML('beforeend', pasados.map((r) => filaCanje(r, z(r), false)).join(''));
+        caja?.children[antes]?.focus?.();
+        if (parte.length < CODIGOS_POR_PARTE) mas.closest('.ver-mas').remove();
+        else mas.disabled = false;
+      } catch (e) { mas.disabled = false; toast(e.message || String(e), true); }
+    };
+  }
 };
 
 /** Un premio de tarjeta de sellos en «Tus códigos»: pendiente lleva a

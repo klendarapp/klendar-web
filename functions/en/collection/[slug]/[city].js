@@ -7,7 +7,7 @@ import { collectionPage } from '../../../_lib/explore.js';
 
 export const onRequestGet = (ctx) => {
   configure(ctx.env);
-  return guard('en', new URL(ctx.request.url).pathname, () => collectionPage(ctx.params.slug, ctx.params.city, 'en'));
+  return guard('en', new URL(ctx.request.url).pathname, () => collectionPage(ctx.params.slug, ctx.params.city, 'en', new URL(ctx.request.url).search));
 };
 
 // HEAD igual que GET (el middleware quita el cuerpo): comprobadores de enlaces

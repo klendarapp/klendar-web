@@ -222,6 +222,7 @@ const I18N = makeI18N({
   '← Anterior': '← Previous',
   'Siguiente →': 'Next →',
   'Exportar CSV': 'Export CSV',
+  'Exportar todo': 'Export all',
   'Ver ↗': 'View ↗',
   'Editar…': 'Edit…',
   'Guardar': 'Save',

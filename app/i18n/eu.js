@@ -1562,6 +1562,7 @@ KL_DIC('eu', {
   "Ver la petición": "Ikusi eskaera",
   "Ver los de cerca": "Ikusi inguruan daudenak",
   "Ver mi código": "Ikusi nire kodea",
+  "Ver más": "Ikusi gehiago",
   "Ver ofertas": "Ikusi eskaintzak",
   "Ver recibo": "Ikusi frogagiria",
   "Ver su ficha": "Ikusi haren fitxa",

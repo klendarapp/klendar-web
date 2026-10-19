@@ -157,6 +157,7 @@ const APP_EN = {
   'En curso': 'Live now',
   'Próximos': 'Upcoming',
   'Pasados': 'Past',
+  'Ver más': 'See more',
   'Aún no tienes planes': 'No plans yet',
   'Cuando algo te guste, dale a «Guardar» y lo tendrás aquí. Tus canjes también aparecerán.': "When you like something, tap “Save” and it'll appear here. Your redemptions will show up too.",
   'Buscar planes': 'Find plans',

@@ -2895,6 +2895,7 @@ KL_DIC('eu', {
   "Ver las condiciones": "Ikusi baldintzak",
   "Ver las preguntas frecuentes": "Ikusi ohiko galderak",
   "Ver los de cerca": "Ikusi inguruan daudenak",
+  "Ver más": "Ikusi gehiago",
   "Ver oferta": "Ikusi eskaintza",
   "Ver todas ({offers}) · {pending} activas": "Ikusi guztiak ({offers}) · {pending} aktibo",
   "Ver todas las ciudades": "Ikusi hiri guztiak",

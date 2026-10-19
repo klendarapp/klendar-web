@@ -659,6 +659,11 @@ const queSellaTarjeta = (c, S, en) => (c.by_visit ? `${queSellaFicha(c, S, en)} 
  * dirección con nombre con un 301, y una dirección vieja (el negocio cambió
  * de nombre) a la actual: una sola URL por negocio para Google.
  */
+/** Publicaciones por página de la ficha (`?p=`) y filas por página de sus
+ * listas enteras (`?ver=novedades|resenas`). */
+const POR_PAGINA_FICHA = 24;
+const POR_PAGINA_LISTA = 24;
+
 export async function businessPage(param, lang, search = '') {
   const en = lang === 'en';
   const raw = String(param || '');
@@ -683,12 +688,24 @@ export async function businessPage(param, lang, search = '') {
   // «Clientes verificados»: solo las reseñas de quien ha canjeado algo aquí
   // (`?resenas=verificadas`, el mismo filtro que la app).
   const soloVerificadas = new URLSearchParams(search).get('resenas') === 'verificadas';
-  const [offers, sellos, carta, opiniones, novedades, cierres, nVerificadas, local, partidosBar, grupoInfo, sorteos, organizador, enlacesNeg, fichaInfo] = await Promise.all([
-    rpcAll('business_offers', { p_id: id }),
+  // Por partes (docs/RUNBOOK.md §3g): las publicaciones de POR_PAGINA_FICHA en
+  // POR_PAGINA_FICHA con `?p=` (como Explorar), y «Ver todas (N)» de las
+  // novedades y las reseñas abre su lista entera, también por páginas
+  // (`?ver=novedades`, `?ver=resenas`). Antes salían hasta 200 tarjetas de
+  // golpe (la agenda pública de Madrid pesaba ~500 KB).
+  const qs = new URLSearchParams(search);
+  const ver = ['novedades', 'resenas'].includes(qs.get('ver')) ? qs.get('ver') : '';
+  const pagina = Math.max(1, Math.min(100, parseInt(qs.get('p') || '1', 10) || 1));
+  const desde = (pagina - 1) * (ver ? POR_PAGINA_LISTA : POR_PAGINA_FICHA);
+  const [offers, cuentas, sellos, carta, opiniones, novedades, cierres, nVerificadas, local, partidosBar, grupoInfo, sorteos, organizador, enlacesNeg, fichaInfo] = await Promise.all([
+    ver ? [] : rpcAll('business_offers_page', { p_id: id, p_limit: POR_PAGINA_FICHA, p_offset: desde }),
+    ver ? null : rpc('business_offer_counts', { p_id: id }).catch(() => null),
     rpcAll('stamp_cards_of', { p_business: id }).catch(() => []), // opcional: sin ella, la ficha sale igual
     rpcAll('business_menu', { p_business: id }),
-    rpcAll('business_reviews', { p_id: id, p_limit: 12, ...(soloVerificadas ? { p_verified_only: true } : {}) }),
-    rows('business_posts', `select=id,body,image_url,created_at&business_id=eq.${id}&order=created_at.desc&limit=6`),
+    ver === 'novedades' ? []
+      : rpcAll('business_reviews', { p_id: id, p_limit: ver ? POR_PAGINA_LISTA : 12, p_offset: ver ? desde : 0, ...(soloVerificadas ? { p_verified_only: true } : {}) }),
+    ver === 'resenas' ? []
+      : rows('business_posts', `select=id,body,image_url,created_at&business_id=eq.${id}&order=created_at.desc,id.desc&limit=${ver ? POR_PAGINA_LISTA : 6}&offset=${ver ? desde : 0}`),
     rpcAll('business_closures', { p_business: id }),
     rpc('business_verified_review_count', { p_id: id }).then((n) => Number(n) || 0).catch(() => 0),
     // «El sitio»: lo que marca el negocio (terraza, apto para niños…).
@@ -765,6 +782,8 @@ export async function businessPage(param, lang, search = '') {
         highlights: 'What to order here',
         holidayOpens: (d, h) => `Open on the ${d} holiday (${h})`, holidayClosed: (d) => `Closed on the ${d} holiday`,
         holidayUnknown: (d) => `${d} holiday: hours not confirmed`,
+        seeAll: (n) => `See all (${n})`, back: 'Back to the page', prev: '← Previous', next: 'Next →', page: 'Page',
+        allAgenda: (c) => `See everything on in ${c}`,
       }
     : {
         now: 'Ahora mismo', soon: 'Próximamente',
@@ -808,10 +827,23 @@ export async function businessPage(param, lang, search = '') {
         highlights: 'Qué pedir aquí',
         holidayOpens: (d, h) => `Abre el festivo del ${d} (${h})`, holidayClosed: (d) => `Cerrado el festivo del ${d}`,
         holidayUnknown: (d) => `Festivo del ${d}: horario sin confirmar`,
+        seeAll: (n) => `Ver todas (${n})`, back: 'Volver a la ficha', prev: '← Anterior', next: 'Siguiente →', page: 'Página',
+        allAgenda: (c) => `Ver toda la agenda de ${c}`,
       };
 
   const flash = offers.filter((o) => o.kind === 'flash_offer');
   const events = offers.filter((o) => o.kind !== 'flash_offer');
+  // Cuántas hay de verdad (no las de esta página): los chips, la descripción
+  // y las páginas.
+  const nFlash = parado ? 0 : Number(cuentas?.flash ?? flash.length) || 0;
+  const nEvents = parado ? 0 : Number(cuentas?.events ?? events.length) || 0;
+  const paginas = Math.max(1, Math.ceil((nFlash + nEvents) / POR_PAGINA_FICHA));
+  const enlacePagina = (n) => (n > 1 ? `${path}?p=${n}` : path);
+  const paginador = (actual, total, enlace) => (total > 1 ? `<nav class="pager" aria-label="${esc(S.page)}">
+    ${actual > 1 ? `<a class="pill" href="${esc(enlace(actual - 1))}" rel="prev">${esc(S.prev)}</a>` : ''}
+    <span class="muted">${esc(S.page)} ${actual}/${total}</span>
+    ${actual < total ? `<a class="pill" href="${esc(enlace(actual + 1))}" rel="next">${esc(S.next)}</a>` : ''}
+  </nav>` : '');
   // De una entidad: su fecha sin hora sale como «todo el día» (la tarjeta).
   if (local.entity_kind) for (const o of offers) o.entity_kind = local.entity_kind;
   // Lo que la ficha no enseña a quien mira sin sesión: las exclusivas para
@@ -955,6 +987,54 @@ export async function businessPage(param, lang, search = '') {
   const city = b.city ? `${agendaBase(lang)}/${citySeg(b.city)}/` : null;
   const cityToday = b.city ? `${todayBase(lang)}/${citySeg(b.city)}/` : null;
 
+  // Una novedad y una reseña (la ficha y sus listas enteras, `?ver=`).
+  const novedadHtml = (p) => `<article${isUuid(p.id) ? ` id="novedad-${p.id}"` : ''}>
+          <p class="muted">${esc(fmtWhen(p.created_at, lang, tz))}</p>
+          ${p.body ? `<p${isUuid(p.id) ? ` data-tr="post:${p.id}:body"` : ''}>${esc(p.body).replace(/\n/g, '<br>')}</p>` : ''}
+          ${p.image_url ? miniatura(p.image_url, { grupo: `novedad-${p.id}`, clase: 'nov-media', etiqueta: S.news, lang, ancho: 900, alto: 600 }) : ''}
+          <a class="denuncia" href="${cuenta(lang)}#/denunciar/post/${encodeURIComponent(p.id)}" rel="nofollow">${S.report}</a>
+        </article>`;
+  const resenaHtml = (r) => `<article${isUuid(r.id) ? ` id="resena-${r.id}"` : ''}${isUuid(r.user_id) ? ` data-autor="${r.user_id}"` : ''}>
+          <header>${r.avatar_url ? `<img class="av" src="${esc(r.avatar_url)}" alt="" loading="lazy">` : `<span class="av">${esc((r.display_name || S.user).trim().charAt(0).toUpperCase())}</span>`}
+            <span><b>${esc(r.display_name || S.user)}</b><small class="muted">${esc(fmtWhen(r.created_at, lang, tz))}</small></span>
+            ${estrellas(Math.max(0, Math.min(5, r.rating | 0)))}</header>
+          ${r.verified ? `<details class="verificado"><summary>${icono('voy', 15)}<span>${S.verifiedCustomer}</span></summary>
+            <p>${esc(S.verifiedWhat)} <a href="${en ? '/en/community-guidelines/' : '/normas/'}#resenas">${S.howReviews}</a></p></details>` : ''}
+          ${r.comment ? `<p>${esc(r.comment)}</p>` : ''}
+          ${resenaMedios(r, lang)}
+          ${r.reply ? `<div class="respuesta"><header>${icono('negocio', 16)}<b>${esc(S.replyFrom(b.name))}</b>${r.reply_at ? `<small class="muted">${esc(fmtWhen(r.reply_at, lang, tz))}</small>` : ''}</header>
+            <p>${esc(r.reply).replace(/\n/g, '<br>')}</p></div>` : ''}
+          <a class="denuncia" href="${cuenta(lang)}#/denunciar/review/${encodeURIComponent(r.id)}" rel="nofollow">${S.report}</a>${isUuid(r.user_id) ? ` · <a class="denuncia" href="${cuenta(lang)}#/bloquear/${r.user_id}" rel="nofollow">${S.block}</a>` : ''}
+        </article>`;
+  const nResenas = soloVerificadas ? nVerificadas : Number(b.ratings) || 0;
+  // «Ver todas (N)» de las novedades o de las reseñas: solo esa lista, por
+  // páginas, sin indexar (la ficha es la buena).
+  if (ver) {
+    const total = ver === 'novedades' ? (parado ? 0 : Number(b.posts) || 0) : nResenas;
+    const lista = ver === 'novedades' ? (parado ? [] : novedades) : opiniones;
+    const pags = Math.max(1, Math.ceil(total / POR_PAGINA_LISTA));
+    const filtro = soloVerificadas ? '&resenas=verificadas' : '';
+    const enlace = (n) => `${path}?ver=${ver}${filtro}${n > 1 ? `&p=${n}` : ''}`;
+    const titulo = ver === 'novedades' ? S.news : S.reviews;
+    const cuerpo = `
+  <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a>${city ? ` · <a href="${city}">${esc(b.city)}</a>` : ''} · <a href="${path}">${esc(b.name)}</a></p>
+  <div class="detail negocio sin-media lista-entera">
+    <h1>${esc(titulo)} · ${esc(b.name)}</h1>
+    ${ver === 'resenas' ? `<p><a class="pill" href="${cuenta(lang)}#/opinar/${encodeURIComponent(b.id)}">${icono('resena', 16)} ${S.write}</a></p>` : ''}
+    ${lista.length
+      ? (ver === 'novedades' ? `<p data-tr-nota="post:" hidden></p><div class="novedades">${lista.map(novedadHtml).join('')}</div>` : `<div class="resenas">${lista.map(resenaHtml).join('')}</div>`)
+      : `<p class="empty">${ver === 'novedades' ? '' : soloVerificadas ? S.noVerified : S.noReviews}</p>`}
+    ${paginador(pagina, pags, enlace)}
+    <p><a class="pill" href="${path}">${esc(S.back)}</a></p>
+  </div>`;
+    return html(publicPage({
+      lang, path, body: cuerpo + MENU_JS, title: `${titulo} · ${b.name}`, description: `${titulo} · ${b.name}`, image: b.cover || b.logo,
+      consulta: `?ver=${ver}${filtro}${pagina > 1 ? `&p=${pagina}` : ''}`,
+      head: `<meta name="robots" content="noindex, follow">
+${traducir(lang, `business:${b.id}`, '')}`,
+    }));
+  }
+
   const body = `
   <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a>${city ? ` · <a href="${city}">${esc(b.city)}</a>` : ''}</p>
   <div class="detail negocio${b.cover || galeria.length ? '' : ' sin-media'}" data-equipo-biz="${esc(b.id)}">
@@ -981,8 +1061,8 @@ export async function businessPage(param, lang, search = '') {
       ${cierre}
       ${sorteosHtml}
       <nav class="neg-secciones" aria-label="${esc(b.name)}">
-        ${flash.length ? `<a class="chip" href="#ahora">${esc(S.now)} <span class="muted">${flash.length}</span></a>` : ''}
-        ${events.length ? `<a class="chip" href="#proximamente">${esc(S.soon)} <span class="muted">${events.length}</span></a>` : ''}
+        ${nFlash ? `<a class="chip" href="#ahora">${esc(S.now)} <span class="muted">${nFlash}</span></a>` : ''}
+        ${nEvents ? `<a class="chip" href="#proximamente">${esc(S.soon)} <span class="muted">${nEvents}</span></a>` : ''}
         ${partidos ? `<a class="chip" href="#partidos">${esc(S.matches)}</a>` : ''}
         ${novedades.length ? `<a class="chip" href="#novedades">${esc(S.news)}</a>` : ''}
         ${hayCarta ? `<a class="chip" href="#carta">${esc(S.menu)}</a>` : ''}
@@ -1016,7 +1096,9 @@ export async function businessPage(param, lang, search = '') {
       ${sitioFicha(sitio, lang) || momentosHtml ? `<h2>${S.place}</h2>${sitioFicha(sitio, lang)}${momentosHtml}` : ''}
       ${flash.length ? `<h2 id="ahora">${S.now}</h2>${rejilla(flash, lang, { tz, sinNegocio: true, galeria: true })}` : ''}
       ${events.length ? `<h2 id="proximamente">${S.soon}</h2>${rejilla(events, lang, { tz, sinNegocio: true, galeria: true })}` : ''}
-      ${offers.length || parado ? '' : `<p class="empty">${S.none}</p>`}
+      ${paginador(pagina, paginas, enlacePagina)}
+      ${local.entity_kind === 'public_agenda' && b.city && nFlash + nEvents > POR_PAGINA_FICHA ? `<p><a class="pill" href="${city}">${esc(S.allAgenda(b.city))}</a></p>` : ''}
+      ${offers.length || nFlash + nEvents || parado ? '' : `<p class="empty">${S.none}</p>`}
       ${exclusivas}
       ${partidos}
       ${grupoHtml}
@@ -1040,30 +1122,16 @@ export async function businessPage(param, lang, search = '') {
         ${pdfsCarta.length || enlaceCarta ? `<div class="carta-archivos">${pdfsCarta.map((f) => KE.filaCarta(f.url, lang, { pdf: true, nombre: f.name, bytes: f.bytes })).join('')}${enlaceCarta ? KE.filaCarta(enlaceCarta, lang) : ''}</div>` : ''}` : ''}
       ${novedades.length ? `<h2 id="novedades">${S.news}</h2>
         <p data-tr-nota="post:" hidden></p>
-        <div class="novedades">${novedades.map((p) => `<article${isUuid(p.id) ? ` id="novedad-${p.id}"` : ''}>
-          <p class="muted">${esc(fmtWhen(p.created_at, lang, tz))}</p>
-          ${p.body ? `<p${isUuid(p.id) ? ` data-tr="post:${p.id}:body"` : ''}>${esc(p.body).replace(/\n/g, '<br>')}</p>` : ''}
-          ${p.image_url ? miniatura(p.image_url, { grupo: `novedad-${p.id}`, clase: 'nov-media', etiqueta: S.news, lang, ancho: 900, alto: 600 }) : ''}
-          <a class="denuncia" href="${cuenta(lang)}#/denunciar/post/${encodeURIComponent(p.id)}" rel="nofollow">${S.report}</a>
-        </article>`).join('')}</div>` : ''}
+        <div class="novedades">${novedades.map(novedadHtml).join('')}</div>
+        ${Number(b.posts) > novedades.length ? `<p><a class="pill" href="${path}?ver=novedades">${esc(S.seeAll(Number(b.posts)))}</a></p>` : ''}` : ''}
       <h2 id="resenas">${S.reviews}${b.rating && b.ratings ? ` <small class="muted">★ ${nota(b.rating, lang)} (${b.ratings})</small>` : ''}</h2>
       <p><a class="pill" href="${cuenta(lang)}#/opinar/${encodeURIComponent(b.id)}">${icono('resena', 16)} ${S.write}</a></p>
       ${nVerificadas > 0 || soloVerificadas ? `<nav class="filtro-resenas" aria-label="${esc(S.reviews)}">
         <a class="pill${soloVerificadas ? '' : ' on'}" href="${path}#resenas"${soloVerificadas ? '' : ' aria-current="true"'}>${S.allReviews}</a>
         <a class="pill${soloVerificadas ? ' on' : ''}" href="${path}?resenas=verificadas#resenas" rel="nofollow"${soloVerificadas ? ' aria-current="true"' : ''}>${esc(S.verifiedReviews(nVerificadas))}</a>
       </nav>` : ''}
-      ${opiniones.length ? `<div class="resenas">${opiniones.map((r) => `<article${isUuid(r.id) ? ` id="resena-${r.id}"` : ''}${isUuid(r.user_id) ? ` data-autor="${r.user_id}"` : ''}>
-          <header>${r.avatar_url ? `<img class="av" src="${esc(r.avatar_url)}" alt="" loading="lazy">` : `<span class="av">${esc((r.display_name || S.user).trim().charAt(0).toUpperCase())}</span>`}
-            <span><b>${esc(r.display_name || S.user)}</b><small class="muted">${esc(fmtWhen(r.created_at, lang, tz))}</small></span>
-            ${estrellas(Math.max(0, Math.min(5, r.rating | 0)))}</header>
-          ${r.verified ? `<details class="verificado"><summary>${icono('voy', 15)}<span>${S.verifiedCustomer}</span></summary>
-            <p>${esc(S.verifiedWhat)} <a href="${en ? '/en/community-guidelines/' : '/normas/'}#resenas">${S.howReviews}</a></p></details>` : ''}
-          ${r.comment ? `<p>${esc(r.comment)}</p>` : ''}
-          ${resenaMedios(r, lang)}
-          ${r.reply ? `<div class="respuesta"><header>${icono('negocio', 16)}<b>${esc(S.replyFrom(b.name))}</b>${r.reply_at ? `<small class="muted">${esc(fmtWhen(r.reply_at, lang, tz))}</small>` : ''}</header>
-            <p>${esc(r.reply).replace(/\n/g, '<br>')}</p></div>` : ''}
-          <a class="denuncia" href="${cuenta(lang)}#/denunciar/review/${encodeURIComponent(r.id)}" rel="nofollow">${S.report}</a>${isUuid(r.user_id) ? ` · <a class="denuncia" href="${cuenta(lang)}#/bloquear/${r.user_id}" rel="nofollow">${S.block}</a>` : ''}
-        </article>`).join('')}</div>` : `<p class="empty">${soloVerificadas ? S.noVerified : S.noReviews}</p>`}
+      ${opiniones.length ? `<div class="resenas">${opiniones.map(resenaHtml).join('')}</div>
+        ${nResenas > opiniones.length ? `<p><a class="pill" href="${path}?ver=resenas${soloVerificadas ? '&amp;resenas=verificadas' : ''}">${esc(S.seeAll(nResenas))}</a></p>` : ''}` : `<p class="empty">${soloVerificadas ? S.noVerified : S.noReviews}</p>`}
       ${b.city ? `<p class="muted">${esc(S.moreIn(b.city))} <a href="${cityToday}">${esc(S.cityToday)}</a> · <a href="${city}">${esc(S.cityWeek)}</a></p>` : ''}
       ${local.entity_kind === 'public_agenda' ? '' : `<p class="denuncia-pie" data-solo-publico><a href="${cuenta(lang)}#/reclamar/${encodeURIComponent(b.id)}" rel="nofollow">${S.claim}</a></p>`}
     </div>
@@ -1072,8 +1140,8 @@ export async function businessPage(param, lang, search = '') {
   const bits = [];
   if (b.rating && b.ratings) bits.push(`★ ${nota(b.rating, lang)} (${b.ratings})`);
   const uno = (n, es1, esN, en1, enN) => `${n} ${n === 1 ? (en ? en1 : es1) : (en ? enN : esN)}`;
-  if (flash.length) bits.push(`${uno(flash.length, 'oferta flash', 'ofertas flash', 'flash offer', 'flash offers')} ${en ? 'now' : 'ahora'}`);
-  if (events.length) bits.push(uno(events.length, 'evento', 'eventos', 'event', 'events'));
+  if (nFlash) bits.push(`${uno(nFlash, 'oferta flash', 'ofertas flash', 'flash offer', 'flash offers')} ${en ? 'now' : 'ahora'}`);
+  if (nEvents) bits.push(uno(nEvents, 'evento', 'eventos', 'event', 'events'));
   if (where) bits.push(where);
   else if (organizador && b.city) bits.push(b.city);
   const description = `${bits.join(' · ')}${b.description ? ` — ${b.description}` : ''}`.slice(0, 200);
@@ -1127,7 +1195,8 @@ export async function businessPage(param, lang, search = '') {
     : '';
   return html(publicPage({
     lang, path, body: body + MENU_JS, title: conCiudad ? `${b.name} · ${b.city}` : b.name, description, image: b.cover || b.logo,
-    head: `<meta name="robots" content="${b.adults_only || conVisita || b.closed_indefinitely || parado ? 'noindex' : 'index, follow'}">
+    consulta: pagina > 1 ? `?p=${pagina}` : '',
+    head: `<meta name="robots" content="${b.adults_only || conVisita || b.closed_indefinitely || parado ? 'noindex' : pagina > 1 ? 'noindex, follow' : 'index, follow'}">
 ${ldScript(jsonLd)}${cuentaToques ? `
 <script src="/assets/enlaces.js?v=3" defer data-url="${esc(supabasePublic().url)}" data-key="${esc(supabasePublic().key)}" data-biz="${esc(b.id)}"></script>` : ''}${horario ? '\n<script src="/assets/zona.js?v=2" defer></script>\n<script src="/assets/horario.js?v=3" defer></script>\n<script src="/assets/cerrado.js?v=1" defer></script>' : ''}${conVisita ? `\n${conVisita}` : ''}${local.crowd_enabled ? `\n${sitioAhoraScripts(lang)}` : ''}
 ${traducir(lang, `business:${b.id}`, carta.length ? `menu:${b.id}` : '')}${partidos ? `

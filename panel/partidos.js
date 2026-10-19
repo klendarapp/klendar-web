@@ -196,7 +196,8 @@ function hojaOferta(item) {
         // agotadas (no las de RRPP), como dice la base.
         d.close();
         let lista = [];
-        try { lista = (await rpc('my_business_offers', { p_id: BIZ.id })) || []; } catch (e) { toast(e.message, true); fin(null); return; }
+        // Las 100 más nuevas que sirven (la base filtra: `vigentes`).
+        try { lista = await misPublicaciones('vigentes', 100); } catch (e) { toast(e.message, true); fin(null); return; }
         const sirven = lista.filter((o) => ['draft', 'active', 'sold_out'].includes(o.status) && o.audience !== 'promoters');
         if (!sirven.length) {
           toast(bi('No tienes publicaciones en borrador ni activas. Crea una para el partido.', "You don't have any draft or live publications. Create one for the match."), true);

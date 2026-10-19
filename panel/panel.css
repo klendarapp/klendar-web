@@ -1027,3 +1027,5 @@ details.plegable[open] > summary { margin-bottom: 12px; }
 .ped-tres .btn { justify-content: center; text-align: center; }
 @media (min-width: 720px) { .ped-tres { grid-template-columns: repeat(3, 1fr); } }
 .ped-otro { margin-top: 12px; }
+/* Listas por partes: «Ver más» al pie (docs/RUNBOOK.md §3g). */
+.ver-mas { display: flex; justify-content: center; margin: 14px 0 0; }

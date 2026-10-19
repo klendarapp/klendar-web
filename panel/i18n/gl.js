@@ -2895,6 +2895,7 @@ KL_DIC('gl', {
   "Ver las condiciones": "Ver as condicións",
   "Ver las preguntas frecuentes": "Ver as preguntas frecuentes",
   "Ver los de cerca": "Ver os de preto",
+  "Ver más": "Ver máis",
   "Ver oferta": "Ver oferta",
   "Ver todas ({offers}) · {pending} activas": "Ver todas ({offers}) · {pending} activas",
   "Ver todas las ciudades": "Ver todas as cidades",

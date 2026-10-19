@@ -1562,6 +1562,7 @@ KL_DIC('gl', {
   "Ver la petición": "Ver a petición",
   "Ver los de cerca": "Ver os de preto",
   "Ver mi código": "Ver o meu código",
+  "Ver más": "Ver máis",
   "Ver ofertas": "Ver ofertas",
   "Ver recibo": "Ver recibo",
   "Ver su ficha": "Ver a súa ficha",

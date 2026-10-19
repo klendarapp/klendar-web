@@ -189,13 +189,39 @@ function accionAviso(d) {
   return null;
 }
 
+/** Una notificación de la bandeja. */
+function filaAviso(n) {
+  // Con acción, toda la notificación lleva a ella y el botón lo dice.
+  const accion = accionAviso(n.data);
+  // Las de antes de que la ruta llevara `?offer=`: se completa con los datos.
+  const ruta = n.route === '/my-redemptions' && /^[0-9a-f-]{36}$/i.test(n.data?.offer_id || '')
+    ? `${n.route}?offer=${n.data.offer_id}` : n.route;
+  const destino = accion?.href || destinoWeb(ruta);
+  return `<a class="aviso${n.read_at ? '' : ' nuevo'}" href="${esc(destino || '#/notificaciones')}" data-id="${esc(n.id)}">
+    <b>${esc(n.title)}</b>
+    ${n.body ? `<span>${esc(n.body)}</span>` : ''}
+    <small class="muted">${esc(fecha(n.created_at))}</small>
+    ${accion ? `<span class="acciones"><span class="pill">${esc(accion.txt)}</span></span>` : ''}
+  </a>`;
+}
+
+// La bandeja llega por partes: las 30 más nuevas y «Ver más» con las
+// anteriores (cursor `created_at`, `id`). Las no leídas las cuenta la base.
+const AVISOS_POR_PARTE = 30;
+const avisosParte = (ultima) => {
+  let q = sb.from('notifications').select('id, kind, title, body, route, data, read_at, created_at');
+  if (ultima) q = q.or(`created_at.lt.${ultima.created_at},and(created_at.eq.${ultima.created_at},id.lt.${ultima.id})`);
+  return tabla(q.order('created_at', { ascending: false }).order('id', { ascending: false }).limit(AVISOS_POR_PARTE));
+};
 RUTAS.notificaciones = async () => {
   if (!exigeSesion('notificaciones')) return;
   await MARCA_LEIDAS; // las que se acaban de dar por vistas ya no salen como nuevas
-  const lista = await tabla(sb.from('notifications')
-    .select('id, kind, title, body, route, data, read_at, created_at')
-    .order('created_at', { ascending: false }).limit(50));
-  const nuevos = lista.filter((n) => !n.read_at).length;
+  const [lista, sinLeer] = await Promise.all([
+    avisosParte(null),
+    sb.from('notifications').select('id', { count: 'exact', head: true }).is('read_at', null)
+      .then((r) => r.count).catch(() => null),
+  ]);
+  const nuevos = sinLeer ?? lista.filter((n) => !n.read_at).length;
   pinta(`
     <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(t('Notificaciones'))}</h1>
@@ -203,20 +229,7 @@ RUTAS.notificaciones = async () => {
       ${nuevos ? `<button class="pill" id="leidos">${esc(t('Marcar todo como leído'))}</button>` : ''}
       <a class="pill ghost" href="#/ajustes">${esc(t('Qué notificaciones recibo'))}</a>
     </p>` : ''}
-    ${lista.length ? `<div class="avisos">${lista.map((n) => {
-      // Con acción, toda la notificación lleva a ella y el botón lo dice.
-      const accion = accionAviso(n.data);
-      // Las de antes de que la ruta llevara `?offer=`: se completa con los datos.
-      const ruta = n.route === '/my-redemptions' && /^[0-9a-f-]{36}$/i.test(n.data?.offer_id || '')
-        ? `${n.route}?offer=${n.data.offer_id}` : n.route;
-      const destino = accion?.href || destinoWeb(ruta);
-      return `<a class="aviso${n.read_at ? '' : ' nuevo'}" href="${esc(destino || '#/notificaciones')}" data-id="${esc(n.id)}">
-        <b>${esc(n.title)}</b>
-        ${n.body ? `<span>${esc(n.body)}</span>` : ''}
-        <small class="muted">${esc(fecha(n.created_at))}</small>
-        ${accion ? `<span class="acciones"><span class="pill">${esc(accion.txt)}</span></span>` : ''}
-      </a>`;
-    }).join('')}</div>`
+    ${lista.length ? `<div class="avisos" id="avisos">${lista.map(filaAviso).join('')}</div>${lista.length >= AVISOS_POR_PARTE ? `<p class="ver-mas"><button type="button" class="pill" data-ver-mas="avisos">${esc(t('Ver más'))}</button></p>` : ''}`
     : pantallaVacia({
       icono: 'notifications',
       titulo: t('Nada por aquí todavía'),
@@ -228,20 +241,15 @@ RUTAS.notificaciones = async () => {
   // de aquí, solo las que han llegado a verse en pantalla. Mientras estás
   // dentro siguen resaltadas, para saber qué es nuevo.
   const vistas = new Set();
-  let vigia = null;
-  const nuevas = $$('.aviso.nuevo');
-  if (nuevas.length && 'IntersectionObserver' in window) {
-    vigia = new IntersectionObserver((entradas) => {
-      for (const e of entradas) {
-        if (!e.isIntersecting) continue;
-        vistas.add(e.target.dataset.id);
-        vigia.unobserve(e.target);
-      }
-    }, { threshold: 0.5 });
-    nuevas.forEach((a) => vigia.observe(a));
-  } else {
-    nuevas.forEach((a) => vistas.add(a.dataset.id));
-  }
+  const vigia = 'IntersectionObserver' in window ? new IntersectionObserver((entradas) => {
+    for (const e of entradas) {
+      if (!e.isIntersecting) continue;
+      vistas.add(e.target.dataset.id);
+      vigia.unobserve(e.target);
+    }
+  }, { threshold: 0.5 }) : null;
+  const vigila = (filas) => filas.forEach((a) => (vigia ? vigia.observe(a) : vistas.add(a.dataset.id)));
+  vigila($$('.aviso.nuevo'));
   let marcadas = false;
   const alIrse = (cerrando) => {
     if (marcadas) return;
@@ -262,7 +270,7 @@ RUTAS.notificaciones = async () => {
   }));
   // Tocar una es haberla leído: se marca ya, sin esperar a salir. Si no lleva
   // a ningún sitio, se queda aquí.
-  $$('.aviso').forEach((a) => a.addEventListener('click', async (ev) => {
+  const conecta = (filas) => filas.forEach((a) => a.addEventListener('click', async (ev) => {
     // «Ver mi código» viene de aquí, no de un enlace de fuera: el código se
     // enseña sin la pantalla de confirmar (`confirmaEnlace`).
     const ir = a.getAttribute('href') || '';
@@ -277,6 +285,28 @@ RUTAS.notificaciones = async () => {
       if (href.startsWith('#')) location.hash = href; else location.href = href;
     }
   }));
+  conecta($$('.aviso'));
+  // «Ver más»: las anteriores, debajo.
+  const cargadas = [...lista];
+  const mas = $('[data-ver-mas="avisos"]');
+  if (mas) {
+    mas.onclick = async () => {
+      mas.disabled = true;
+      try {
+        const parte = await avisosParte(cargadas[cargadas.length - 1]);
+        cargadas.push(...parte);
+        const caja = $('#avisos');
+        const antes = caja.children.length;
+        caja.insertAdjacentHTML('beforeend', parte.map(filaAviso).join(''));
+        const nuevasFilas = [...caja.children].slice(antes);
+        conecta(nuevasFilas);
+        vigila(nuevasFilas.filter((a) => a.classList.contains('nuevo')));
+        nuevasFilas[0]?.focus();
+        if (parte.length < AVISOS_POR_PARTE) mas.closest('.ver-mas').remove();
+        else mas.disabled = false;
+      } catch (e) { mas.disabled = false; toast(e.message || String(e), true); }
+    };
+  }
 };
 
 // ── Avísame si… ───────────────────────────────────────────────────────────

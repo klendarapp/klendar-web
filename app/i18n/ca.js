@@ -1562,6 +1562,7 @@ KL_DIC('ca', {
   "Ver la petición": "Mira la petició",
   "Ver los de cerca": "Mira els de prop",
   "Ver mi código": "Mostra el meu codi",
+  "Ver más": "Mostra-ne més",
   "Ver ofertas": "Mostra ofertes",
   "Ver recibo": "Mira el rebut",
   "Ver su ficha": "Veure'n la fitxa",

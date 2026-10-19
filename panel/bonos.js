@@ -205,10 +205,16 @@ function bonoListaUsos(p) {
     </li>`).join('')}</ul>`;
 }
 
-/** «Bonos vendidos» (propietario y encargado). */
-async function bonoVendidos(v, soloActivos = true) {
+/** «Bonos vendidos» (propietario y encargado), por partes: 50 y «Ver más». */
+const BONOS_POR_PARTE = 50;
+const bonosVendidosParte = (soloActivos, ultimo) => rpc('business_sold_passes', {
+  p_business: BIZ.id, p_state: soloActivos ? 'active' : null, p_limit: BONOS_POR_PARTE, ...cursorDe(ultimo, 'sold_at'),
+}).then((x) => x || []);
+async function bonoVendidos(v, soloActivos = true, cargados = null, masPrevio = null) {
   if (!gestiona()) { location.hash = '#/bonos'; return; }
-  const lista = await rpc('business_sold_passes', { p_business: BIZ.id, p_state: soloActivos ? 'active' : null });
+  // Al volver a pintar tras descontar o deshacer, los que ya se veían.
+  const lista = cargados || await bonosVendidosParte(soloActivos, null);
+  const hayMas = masPrevio ?? lista.length >= BONOS_POR_PARTE;
   v.innerHTML = `
     <div class="page-head"><h1>Bonos vendidos</h1><span class="spacer"></span><a class="btn sm ghost" href="#/bonos">← Bonos</a></div>
     <div class="seg" role="group" aria-label="${esc(I18N.t('Bonos vendidos'))}">
@@ -225,8 +231,18 @@ async function bonoVendidos(v, soloActivos = true) {
     ],
     rows: lista || [],
     empty: 'Cuando vendas un bono, lo verás aquí con quién lo vendió y cada uso.',
-  })}`;
+  })}${hayMas ? botonVerMas('bonos') : ''}`;
   $$('[data-f]', v).forEach((b) => { b.onclick = () => bonoVendidos(v, b.dataset.f === '1'); });
+  const mas = $('[data-ver-mas="bonos"]', v);
+  if (mas) {
+    mas.onclick = async () => {
+      mas.disabled = true;
+      try {
+        const parte = await bonosVendidosParte(soloActivos, lista[lista.length - 1]);
+        await bonoVendidos(v, soloActivos, [...lista, ...parte], parte.length >= BONOS_POR_PARTE);
+      } catch (e) { toast(friendly(e.message), true); mas.disabled = false; }
+    };
+  }
   $$('[data-a-mano]', v).forEach((b) => {
     b.onclick = async () => {
       const nombre = b.dataset.nombre || I18N.t('Usuario de Klendar');

@@ -2895,6 +2895,7 @@ KL_DIC('it', {
   "Ver las condiciones": "Vedi le condizioni",
   "Ver las preguntas frecuentes": "Vedi le domande frequenti",
   "Ver los de cerca": "Vedi quelli vicini",
+  "Ver más": "Vedi altro",
   "Ver oferta": "Vedi l’offerta",
   "Ver todas ({offers}) · {pending} activas": "Vedi tutte ({offers}) · {pending} attive",
   "Ver todas las ciudades": "Vedi tutte le città",

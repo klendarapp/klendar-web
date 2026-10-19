@@ -492,6 +492,32 @@ async function rpc(fn, args = {}) {
   return res.data;
 }
 
+// ── Listas por partes (docs/RUNBOOK.md §3g) ────────────────────────────────
+// Nada se pide entero: las listas llegan de POR_PARTE en POR_PARTE («Ver
+// más» al final), los recuentos y las medias los da la base y las descargas
+// en CSV piden todo, parte a parte.
+const POR_PARTE = 24;
+/** El cursor de la parte siguiente: el instante y el id de la última. */
+const cursorDe = (ultima, campo = 'created_at') => (ultima ? { p_before: ultima[campo], p_before_id: ultima.id } : {});
+/** Todas, parte a parte: `pide(ultima, tam)` da la parte siguiente a `ultima`. */
+async function todasLasPartes(pide, tam = 100, max = 20000) {
+  const todas = [];
+  for (;;) {
+    const parte = (await pide(todas[todas.length - 1], tam)) || [];
+    todas.push(...parte);
+    if (parte.length < tam || todas.length >= max) return todas;
+  }
+}
+/** «Ver más» al pie de una lista por partes (`data-ver-mas`). */
+const botonVerMas = (id) => `<p class="ver-mas"><button type="button" class="btn sm" data-ver-mas="${esc(id)}">${esc(bi('Ver más', 'See more'))}</button></p>`;
+/** Las publicaciones del negocio por partes (`my_business_offers_page`):
+ * `todas` (sin archivadas), `archivada`, `vigentes`, `cualquiera` o un estado. */
+const misPublicaciones = (status = 'todas', limite = POR_PARTE, ultima = null) => rpc('my_business_offers_page', {
+  p_business: BIZ.id, p_status: status, p_limit: limite, ...cursorDe(ultima),
+}).then((x) => x || []);
+/** Una publicación del negocio (`my_business_offer`), o null. */
+const miPublicacion = async (id) => (id ? ((await rpc('my_business_offer', { p_id: id })) || [])[0] || null : null);
+
 /** Fecha para <input type="datetime-local">: la hora del negocio, sin zona. */
 const toLocalInput = (iso) => KZ.aInput(iso, TZ);
 /** Lo escrito en un datetime-local se lee como hora del negocio (no la del
@@ -1300,24 +1326,27 @@ PAGES.resumen = async (v) => {
   // de gestión lo niega la base, así que su error solo cuenta si no lo está.
   if (bloqueado()) { await cargaCobro(); if (bloqueado()) { renderNav('resumen'); return pintaParado(v); } }
   let fallo = null;
-  const [stats, offers, sub, cerradoDeVerdad, condiciones] = await Promise.all([
+  const [stats, offers, sub, cerradoDeVerdad, condiciones, cuentas] = await Promise.all([
     rpc('business_stats', { p_id: BIZ.id }).catch((e) => { fallo = e; return null; }),
-    rpc('my_business_offers', { p_id: BIZ.id }).catch((e) => { fallo = e; return []; }),
+    misPublicaciones('todas', 8).catch((e) => { fallo = e; return []; }),
     rpc('my_subscription', { p_business: BIZ.id }).catch(() => null),
     rpc('business_closure_state', { p_ref: BIZ.id }).catch(() => null),
     // Un cambio en las condiciones (solo al propietario; la base lo apunta
     // como visto). Si no llega, no sale: nunca tapa el resumen.
     esPropietario() ? rpc('business_terms_notice', { p_business: BIZ.id }).catch(() => null) : null,
+    // «Ver todas (N) · M activas»: lo cuenta la base, no lo que se ha traído.
+    rpc('my_business_offer_counts', { p_business: BIZ.id }).catch(() => null),
   ]);
   if (sub) SUB = sub;
   // Se acaba de bloquear (o de pausar desde otro sitio): a lo que se puede hacer.
   if (bloqueado()) { renderNav('resumen'); return pintaParado(v); }
   if (fallo) throw fallo;
-  const pending = offers.filter((o) => o.status === 'active');
+  const nTodas = cuentas?.todas ?? offers.length;
+  const nActivas = cuentas?.activa ?? offers.filter((o) => estadoPub(o) === 'activa').length;
   const s = stats || {};
   // Primeros pasos: recién aprobado y sin nada publicado. Lo mismo que en la
   // app; desaparece al publicar.
-  const primeros = gestiona() && BIZ.verification_status === 'verified' && !offers.length;
+  const primeros = gestiona() && BIZ.verification_status === 'verified' && !offers.length && !(cuentas?.total);
   const ficha = primeros
     ? (await sb.from('businesses').select('logo_url, cover_image_url, gallery').eq('id', BIZ.id).maybeSingle()).data || {}
     : {};
@@ -1382,10 +1411,10 @@ PAGES.resumen = async (v) => {
         { h: 'Canjes', num: true, r: (o) => fmtNum(o.redemptions_count) },
         { h: '', r: (o) => `<a class="btn sm" href="#/publicaciones/${esc(o.id)}">Abrir</a>` },
       ],
-      rows: offers.slice(0, 8),
+      rows: offers,
       empty: 'Todavía no has publicado nada.',
     })}
-      <p style="margin:10px 0 0"><a class="link" href="#/publicaciones">${esc(bi(`Ver todas (${fmtNum(offers.length)}) · ${fmtNum(pending.length)} activas`, `See all (${fmtNum(offers.length)}) · ${fmtNum(pending.length)} active`))}</a></p></div>
+      <p style="margin:10px 0 0"><a class="link" href="#/publicaciones">${esc(bi(`Ver todas (${fmtNum(nTodas)}) · ${fmtNum(nActivas)} activas`, `See all (${fmtNum(nTodas)}) · ${fmtNum(nActivas)} active`))}</a></p></div>
     <a class="mas-herr" href="#/herramientas">${icono('herramientas')}<span><b>${esc(bi('Más herramientas', 'More tools'))}</b>
       <small>${esc(typeof esEntidad === 'function' && esEntidad()
         ? bi('Series, tele, enlaces, tu web… Activa lo que te sirva.', 'Series, TV, links, your website… Turn on whatever helps.')
@@ -1544,12 +1573,20 @@ PAGES.publicaciones = async (v, param) => {
   if (param === 'nuevo-evento') return offerForm(v, null, 'future_event', desde);
   if (param) return offerForm(v, param);
 
-  const [offersRaw, otros] = await Promise.all([
-    rpc('my_business_offers', { p_id: BIZ.id }),
+  // Por partes: los recuentos de cada estado los da la base y la lista llega
+  // de 24 en 24, ya filtrada («Ver más» al final).
+  const qf = new URLSearchParams(location.hash.split('?')[1] || '').get('estado');
+  let filtro = FILTROS_PUB.some(([k]) => k === qf) ? qf : 'todas';
+  const [cuentasRaw, primera, otros] = await Promise.all([
+    rpc('my_business_offer_counts', { p_business: BIZ.id }),
+    misPublicaciones(filtro),
     rpc('my_publishable_businesses', { p_except: BIZ.id }).catch(() => []),
     portadaNegocio(),
   ]);
-  const offers = offersRaw || [];
+  const cuentas = cuentasRaw || {};
+  // Las cargadas del filtro elegido; las acciones buscan aquí la suya.
+  const offers = [...primera];
+  let hayMas = primera.length >= POR_PARTE;
   OTROS_LOCALES = otros || [];
   v.innerHTML = `
     <div class="page-head"><h1>Publicaciones</h1><span class="spacer"></span>
@@ -1564,12 +1601,9 @@ PAGES.publicaciones = async (v, param) => {
   // Las archivadas (se borraron con canjes validados) no salen en «Todas»:
   // solo con el filtro «Archivadas», para ver sus cifras o crear otra a
   // partir de ellas. No se editan ni se vuelven a publicar.
-  const archivadas = offers.filter((o) => o.status === 'archived');
   // Filtro por estado (como en la app: activa, programada, borrador, en
   // revisión, agotada, terminada, archivada) y la vista: las tarjetas que verá
   // la gente o la lista de siempre (más densa). La vista se recuerda.
-  const qf = new URLSearchParams(location.hash.split('?')[1] || '').get('estado');
-  let filtro = FILTROS_PUB.some(([k]) => k === qf) ? qf : 'todas';
   let vista = 'tarjetas';
   try { vista = localStorage.getItem('klendar.panel.vista') === 'lista' ? 'lista' : 'tarjetas'; } catch { /* sin permisos */ }
 
@@ -1625,18 +1659,32 @@ PAGES.publicaciones = async (v, param) => {
     } catch (e) { toast(friendly(e.message), true); }
   }
 
+  // Otro filtro: la primera parte de ese estado.
+  const cambiaFiltro = async (k) => {
+    filtro = k;
+    const parte = await misPublicaciones(filtro);
+    offers.length = 0;
+    offers.push(...parte);
+    hayMas = parte.length >= POR_PARTE;
+    render();
+  };
   const render = () => {
     // Un botón por estado que tenga alguna (las archivadas, solo aquí).
-    const cuenta = (k) => offers.filter((o) => enFiltro(o, k)).length;
+    const cuenta = (k) => Number(cuentas[k]) || 0;
+    const nTotal = Number(cuentas.total) || 0;
     const chips = FILTROS_PUB.filter(([k]) => k === 'todas' || cuenta(k) > 0);
-    if (!chips.some(([k]) => k === filtro)) filtro = 'todas';
+    if (!chips.some(([k]) => k === filtro)) { cambiaFiltro('todas').catch((e) => toast(friendly(e.message), true)); return; }
     $('#filtroArch').innerHTML = chips.length > 1 ? `<div class="pills" role="group" aria-label="${esc(I18N.t('Filtrar por estado'))}">
       ${chips.map(([k, nombre]) => `<button type="button" data-filtro="${k}" class="${filtro === k ? 'on' : ''}" aria-pressed="${filtro === k}" translate="no">${esc(nombre)} <span class="n">${fmtNum(cuenta(k))}</span></button>`).join('')}
     </div>${filtro === 'archivada' ? `<p class="hint" style="margin:10px 0 0">${esc(I18N.t('Se borraron con canjes validados: ya no se ven en ninguna parte, pero siguen contando en Cifras.'))}</p>` : ''}` : '';
     $$('[data-filtro]', $('#filtroArch')).forEach((b) => {
-      b.onclick = () => { filtro = b.dataset.filtro; render(); $(`[data-filtro="${filtro}"]`, $('#filtroArch'))?.focus(); };
+      b.onclick = async () => {
+        b.disabled = true;
+        try { await cambiaFiltro(b.dataset.filtro); } catch (e) { toast(friendly(e.message), true); b.disabled = false; return; }
+        $(`[data-filtro="${filtro}"]`, $('#filtroArch'))?.focus();
+      };
     });
-    $('#vistaSw').innerHTML = offers.length ? `<div class="pills vista-sw" role="group" aria-label="${esc(I18N.t('Cómo verlas'))}">
+    $('#vistaSw').innerHTML = nTotal ? `<div class="pills vista-sw" role="group" aria-label="${esc(I18N.t('Cómo verlas'))}">
       <button type="button" data-vista="tarjetas" class="${vista === 'tarjetas' ? 'on' : ''}" aria-pressed="${vista === 'tarjetas'}">${svg('rejilla', 18)}${esc(I18N.t('Tarjetas'))}</button>
       <button type="button" data-vista="lista" class="${vista === 'lista' ? 'on' : ''}" aria-pressed="${vista === 'lista'}">${svg('lista', 18)}${esc(I18N.t('Lista'))}</button></div>` : '';
     $$('[data-vista]', $('#vistaSw')).forEach((b) => {
@@ -1646,14 +1694,29 @@ PAGES.publicaciones = async (v, param) => {
         render(); $(`[data-vista="${vista}"]`, $('#vistaSw'))?.focus();
       };
     });
-    const filas = offers.filter((o) => enFiltro(o, filtro));
-    $('#list').innerHTML = !offers.length
+    const filas = offers;
+    $('#list').innerHTML = !nTotal && !offers.length
       ? `<div class="card sin-pubs"><h2>${esc(I18N.t('Todavía no has publicado nada.'))}</h2>
           <p class="muted">${esc(I18N.t('Lo que publiques sale aquí con la misma tarjeta que verá la gente, con su estado y sus cifras.'))}</p>
           ${gestiona() ? `<p class="actions" style="margin:12px 0 0"><a class="btn primary" href="#/publicaciones/nueva-flash">${ms('bolt')}${esc(I18N.t('Nueva oferta flash'))}</a>
           <a class="btn" href="#/publicaciones/nuevo-evento">${ms('event')}${esc(I18N.t('Nuevo evento'))}</a></p>` : ''}</div>`
-      : vista === 'lista' ? tablaPublicaciones(filas) : tarjetasPublicaciones(filas);
+      : (vista === 'lista' ? tablaPublicaciones(filas) : tarjetasPublicaciones(filas)) + (hayMas ? botonVerMas('pubs') : '');
     activaVideos($('#list'));
+    const mas = $('[data-ver-mas="pubs"]', $('#list'));
+    if (mas) {
+      mas.onclick = async () => {
+        mas.disabled = true;
+        try {
+          const antes = offers.length;
+          const parte = await misPublicaciones(filtro, POR_PARTE, offers[offers.length - 1]);
+          offers.push(...parte);
+          hayMas = parte.length >= POR_PARTE;
+          render();
+          // El foco, en la primera de las nuevas (o en lo que quede).
+          ($$('.tj, tbody tr a', $('#list'))[antes] || $('[data-ver-mas="pubs"]', $('#list')))?.focus?.();
+        } catch (e) { toast(friendly(e.message), true); mas.disabled = false; }
+      };
+    }
     $$('[data-act]', $('#list')).forEach((b) => {
       b.onclick = async () => {
         const id = b.dataset.id;
@@ -1718,16 +1781,24 @@ PAGES.publicaciones = async (v, param) => {
       };
     });
   };
-  $('#csv').onclick = () => downloadCsv(`klendar-${BIZ.name}`, offers, [
+  // Todas (también las archivadas), parte a parte: nunca solo lo que se ve.
+  $('#csv').onclick = async () => {
+    const b = $('#csv');
+    b.disabled = true;
+    let todas;
+    try { todas = await todasLasPartes((ultima, tam) => misPublicaciones('cualquiera', tam, ultima)); } catch (e) { toast(friendly(e.message), true); b.disabled = false; return; }
+    b.disabled = false;
+    downloadCsv(`klendar-${BIZ.name}`, todas, [
     ['title', 'publicación'], [(o) => I18N.t(LABELS[o.kind]), 'tipo'], [(o) => I18N.t(LABELS[estadoVisible(o)]), 'estado'],
     ['views', 'vistas'], ['redemptions_count', 'canjes'], ['max_redemptions', 'aforo'], [(o) => plazasOcupadas(o), 'plazas ocupadas'],
     [(o) => o.kind === 'flash_offer' ? o.redeem_start_at : o.event_at, 'cuándo'],
   ]);
+  };
   render();
   if (gestiona()) renderRules().catch((e) => toast(friendly(e.message), true));
   // Desde el aviso «tu oferta termina en 1 h» (Tu cuenta → notificaciones).
   const qx = new URLSearchParams(location.hash.split('?')[1] || '');
-  const aAmpliar = qx.get('extend') && offers.find((x) => x.id === qx.get('extend'));
+  const aAmpliar = qx.get('extend') && (offers.find((x) => x.id === qx.get('extend')) || await miPublicacion(qx.get('extend')).catch(() => null));
   if (aAmpliar) {
     history.replaceState(null, '', `${location.pathname}#/publicaciones`);
     ampliarDialogo(aAmpliar);
@@ -1831,8 +1902,6 @@ const FILTROS_PUB = [
   ['terminada', bi('Terminadas', 'Ended')],
   ['archivada', bi('Archivadas', 'Archived')],
 ];
-const enFiltro = (o, k) => (k === 'todas' ? o.status !== 'archived'
-  : k === 'terminada' ? ['terminada', 'cancelada'].includes(estadoPub(o)) : estadoPub(o) === k);
 const etiquetaEstado = (o) => {
   const [nombre, cls] = ESTADOS_PUB[estadoPub(o)];
   const cuando = estadoPub(o) === 'programada' ? ` · ${fmtDate(o.publish_at)}` : '';
@@ -2084,8 +2153,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
   // La vista previa usa la portada del local si la publicación no trae fotos.
   await portadaNegocio();
   if (id) {
-    const all = await rpc('my_business_offers', { p_id: BIZ.id });
-    o = all.find((x) => x.id === id) || o;
+    o = (await miPublicacion(id)) || o;
   } else if (!desde?.from) {
     // Como la app: una oferta flash empieza ya y dura 3 h; un evento, mañana
     // a las 20:00. Se cambia en un momento; un formulario en blanco frena.
@@ -2105,8 +2173,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
   if (!id && desde?.from) {
     // Nueva, rellena con otra: textos, fotos, precio, aforo y diseño. Las
     // fechas no (siempre cambian), salvo «Repetir mañana»: a la misma hora.
-    const all = await rpc('my_business_offers', { p_id: BIZ.id });
-    const src = all.find((x) => x.id === desde.from);
+    const src = await miPublicacion(desde.from);
     if (src) {
       o = { ...src, id: undefined, status: 'active', publish_at: null };
       if (desde.repeat && src.kind === 'flash_offer' && src.redeem_start_at) {
@@ -3433,18 +3500,34 @@ const sumaMes = (mes, n) => { const [y, m] = mes.split('-').map(Number); const d
 const inicioPub = (o) => (o.kind === 'flash_offer' ? o.redeem_start_at : o.event_at);
 
 PAGES.calendario = async (v, param) => {
-  const [offersRaw] = await Promise.all([rpc('my_business_offers', { p_id: BIZ.id }), portadaNegocio()]);
-  const offers = (offersRaw || []).filter((o) => o.status !== 'archived' && inicioPub(o));
   const hoy = KZ.hoy(TZ);
   let dia = /^\d{4}-\d{2}-\d{2}$/.test(param || '') ? param : hoy;
   let mes = dia.slice(0, 7);
+  // Mes a mes: lo que empieza en el mes que se ve (sin archivadas), y se
+  // guarda por si se vuelve a él. Antes se pedían todas las publicaciones.
   const porDia = new Map();
-  for (const o of offers) {
-    const d = KZ.dia(inicioPub(o), TZ);
-    if (!porDia.has(d)) porDia.set(d, []);
-    porDia.get(d).push(o);
-  }
-  for (const l of porDia.values()) l.sort((a, b) => String(inicioPub(a)).localeCompare(String(inicioPub(b))));
+  const meses = new Set();
+  const cargaMes = async (m) => {
+    if (meses.has(m)) return;
+    const [y, mm] = m.split('-').map(Number);
+    const ultimo = new Date(Date.UTC(y, mm, 0)).getUTCDate();
+    const filas = (await rpc('my_business_offers_range', { p_business: BIZ.id, p_from: `${m}-01`, p_to: `${m}-${dosCifras(ultimo)}` })) || [];
+    meses.add(m);
+    for (const o of filas) {
+      if (!inicioPub(o)) continue;
+      const d = KZ.dia(inicioPub(o), TZ);
+      if (!porDia.has(d)) porDia.set(d, []);
+      if (!porDia.get(d).some((x) => x.id === o.id)) porDia.get(d).push(o);
+    }
+    for (const l of porDia.values()) l.sort((a, b) => String(inicioPub(a)).localeCompare(String(inicioPub(b))));
+  };
+  // «Lo siguiente: …» cuando el día elegido no tiene nada.
+  const siguientes = new Map();
+  const siguienteDe = async (d) => {
+    if (!siguientes.has(d)) siguientes.set(d, await rpc('my_business_offer_next_day', { p_business: BIZ.id, p_after: d }).catch(() => null));
+    return siguientes.get(d);
+  };
+  await Promise.all([cargaMes(mes), portadaNegocio()]);
   const loc = LOC();
   const largo = (iso) => KZ.fmt(`${iso}T12:00:00Z`, 'UTC', loc, { weekday: 'long', day: 'numeric', month: 'long' });
   const mayus = (s) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -3457,7 +3540,8 @@ PAGES.calendario = async (v, param) => {
       <button type="button" class="btn sm ghost" id="calHoy">Hoy</button></div>
     <div class="calendario tjv" id="cal"></div>`;
 
-  const pinta = (enfocar) => {
+  const pinta = async (enfocar) => {
+    await cargaMes(mes);
     const [y, m] = mes.split('-').map(Number);
     const diasMes = new Date(Date.UTC(y, m, 0)).getUTCDate();
     const hueco = (new Date(Date.UTC(y, m - 1, 1)).getUTCDay() + 6) % 7; // lunes = 0
@@ -3475,7 +3559,7 @@ PAGES.calendario = async (v, param) => {
       celdas.push(`<a class="${cls}" href="#/calendario/${iso}" data-dia="${iso}" aria-label="${esc(etiqueta)}"${iso === dia ? ' aria-current="date"' : ''}>${d}${puntos}</a>`);
     }
     const delDia = porDia.get(dia) || [];
-    const proximo = delDia.length ? null : [...porDia.keys()].sort().find((k) => k > dia);
+    const proximo = delDia.length ? null : await siguienteDe(dia);
     const crear = gestiona() ? `<div class="actions cal-crear">
         <a class="btn sm" href="#/publicaciones/nueva-flash?dia=${dia}">${ms('bolt')}${esc(I18N.t('Oferta flash este día'))}</a>
         <a class="btn sm" href="#/publicaciones/nuevo-evento?dia=${dia}">${ms('event')}${esc(I18N.t('Evento este día'))}</a></div>` : '';
@@ -3511,11 +3595,15 @@ PAGES.calendario = async (v, param) => {
         mes = dia.slice(0, 7);
         // Sin «hashchange»: no se vuelve a pedir nada, pero el enlace vale.
         history.replaceState(null, '', `${location.pathname}${location.search}#/calendario/${dia}`);
-        pinta('dia');
+        pinta('dia').catch((e) => toast(friendly(e.message), true));
       };
     });
     $$('[data-mes]', v).forEach((b) => {
-      b.onclick = () => { mes = sumaMes(mes, Number(b.dataset.mes)); pinta(`mes${b.dataset.mes}`); };
+      b.onclick = () => {
+        b.disabled = true;
+        mes = sumaMes(mes, Number(b.dataset.mes));
+        pinta(`mes${b.dataset.mes}`).catch((e) => { toast(friendly(e.message), true); b.disabled = false; });
+      };
     });
     // Tras elegir un día, el foco va a su lista (en el móvil está debajo);
     // tras cambiar de mes, se queda en la flecha.
@@ -3527,8 +3615,8 @@ PAGES.calendario = async (v, param) => {
       $(`[data-mes="${enfocar.slice(3)}"]`, v)?.focus();
     }
   };
-  $('#calHoy', v).onclick = () => { dia = hoy; mes = hoy.slice(0, 7); history.replaceState(null, '', `${location.pathname}${location.search}#/calendario/${dia}`); pinta('dia'); };
-  pinta();
+  $('#calHoy', v).onclick = () => { dia = hoy; mes = hoy.slice(0, 7); history.replaceState(null, '', `${location.pathname}${location.search}#/calendario/${dia}`); pinta('dia').catch((e) => toast(friendly(e.message), true)); };
+  await pinta();
 };
 
 // ── Antes de cerrar ─────────────────────────────────────────────────────────
@@ -3923,8 +4011,16 @@ PAGES.validar = async (v) => {
   // Todo lo que se valida aquí, de la publicación que sea (antes solo las 5
   // más recientes): también premios de sellos y regalos de cumpleaños. Lo
   // mismo que «Canjes validados» del informe, en la app y aquí.
-  const loadRecent = async () => {
-    const rows = await rpc('business_recent_validations', { p_business: BIZ.id, p_limit: 15 }).catch(() => []);
+  // Los 15 últimos y «Ver más» con los anteriores (`p_before`).
+  let recientes = [];
+  let recientesMas = false;
+  const loadRecent = async (mas = false) => {
+    const nuevos = await rpc('business_recent_validations', {
+      p_business: BIZ.id, p_limit: 15, ...(mas && recientes.length ? { p_before: recientes[recientes.length - 1].at } : {}),
+    }).catch(() => []);
+    recientes = mas ? [...recientes, ...(nuevos || [])] : (nuevos || []);
+    recientesMas = (nuevos || []).length >= 15;
+    const rows = recientes;
     const caja = $('#recent');
     if (!caja) return; // ya estás en otra pantalla
     caja.innerHTML = table({
@@ -3943,7 +4039,9 @@ PAGES.validar = async (v) => {
       ],
       rows: rows || [],
       empty: 'Todavía no has validado ningún código.',
-    });
+    }) + (recientesMas ? botonVerMas('recientes') : '');
+    const verMas = $('[data-ver-mas="recientes"]', caja);
+    if (verMas) verMas.onclick = () => { verMas.disabled = true; loadRecent(true); };
     // Apuntar o corregir el ticket ahí mismo.
     $$('[data-ticket]', caja).forEach((b) => {
       b.onclick = () => {
@@ -4097,17 +4195,25 @@ PAGES.validar = async (v) => {
 PAGES.asistentes = async (v, offerId) => {
   // Sin evento (enlace cortado o escrito a mano): a Publicaciones, no a un error.
   if (!offerId) { location.hash = '#/publicaciones'; return; }
-  const [offers, list] = await Promise.all([
-    rpc('my_business_offers', { p_id: BIZ.id }),
-    rpc('offer_attendees', { p_offer: offerId }),
+  // Por partes (50 y «Ver más») y con la búsqueda en la base; las cuentas,
+  // con todos (`offer_attendees_summary`).
+  const POR = 50;
+  const parte = (q, desde, tam = POR) => rpc('offer_attendees', { p_offer: offerId, p_q: q || null, p_limit: tam, p_offset: desde }).then((x) => x || []);
+  const [offer, primera, resumen] = await Promise.all([
+    miPublicacion(offerId),
+    parte('', 0),
+    rpc('offer_attendees_summary', { p_offer: offerId }).catch(() => null),
   ]);
-  const offer = offers.find((o) => o.id === offerId);
+  const list = [...primera];
+  let hayMas = primera.length >= POR;
+  let busca = '';
   const plazas = (a) => Math.max(1, Number(a.seats) || 1);
-  const dentro = list.filter((a) => a.status === 'validated');
   // En la puerta se cuentan personas, no códigos: un código vale por todas
-  // las plazas que reservó.
-  const personasDentro = dentro.reduce((n, a) => n + plazas(a), 0);
-  const personas = list.filter((a) => a.status !== 'cancelled' && a.status !== 'expired').reduce((n, a) => n + plazas(a), 0);
+  // las plazas que reservó. Con todos, no solo los cargados.
+  const dentro = { length: Number(resumen?.codes_in ?? list.filter((a) => a.status === 'validated').length) || 0 };
+  const nCodigos = Number(resumen?.codes ?? list.length) || 0;
+  const personasDentro = Number(resumen?.people_in ?? 0) || 0;
+  const personas = Number(resumen?.people ?? 0) || 0;
   // Los mismos nombres que la app: Dentro, Reservada, Caducada (y Anulada,
   // si quien reservó dijo «Ya no voy»).
   const estado = (a) => (a.status === 'validated' ? '<span class="tag ok">Dentro</span>'
@@ -4120,15 +4226,12 @@ PAGES.asistentes = async (v, offerId) => {
       <button class="btn sm ghost" id="csv">Exportar CSV</button></div>
     <div class="card"><h2>${esc(offer?.title || '')}</h2>
       <p class="muted" style="margin:0">${esc(bi(
-        `${fmtNum(dentro.length)} de ${fmtNum(list.length)} han entrado · ${fmtNum(personasDentro)} de ${fmtNum(personas)} ${personas === 1 ? 'persona' : 'personas'}${offer?.max_redemptions ? ` · aforo ${fmtNum(offer.max_redemptions)}` : ''}`,
-        `${fmtNum(dentro.length)} of ${fmtNum(list.length)} checked in · ${fmtNum(personasDentro)} of ${fmtNum(personas)} ${personas === 1 ? 'person' : 'people'}${offer?.max_redemptions ? ` · capacity ${fmtNum(offer.max_redemptions)}` : ''}`))}</p></div>
+        `${fmtNum(dentro.length)} de ${fmtNum(nCodigos)} han entrado · ${fmtNum(personasDentro)} de ${fmtNum(personas)} ${personas === 1 ? 'persona' : 'personas'}${offer?.max_redemptions ? ` · aforo ${fmtNum(offer.max_redemptions)}` : ''}`,
+        `${fmtNum(dentro.length)} of ${fmtNum(nCodigos)} checked in · ${fmtNum(personasDentro)} of ${fmtNum(personas)} ${personas === 1 ? 'person' : 'people'}${offer?.max_redemptions ? ` · capacity ${fmtNum(offer.max_redemptions)}` : ''}`))}</p></div>
     <div class="toolbar"><input id="q" class="grow" placeholder="Buscar por nombre o código"></div>
     <div id="list"></div>`;
   const render = () => {
-    const q = $('#q', v).value.trim().toLowerCase();
-    // El código se busca como se lee («0882 7EC7»), con o sin espacios.
-    const qc = q.replace(/\s/g, '');
-    const rows = list.filter((a) => !q || (a.user_name || '').toLowerCase().includes(q) || a.code.toLowerCase().includes(qc));
+    const rows = list;
     $('#list', v).innerHTML = table({
       cols: [
         { h: 'Persona', r: (a) => `<b class="title">${esc(a.user_name || I18N.t('Invitada'))}</b><span class="sub mono">${esc(a.code.slice(0, 8).toUpperCase())}</span>${a.promoter_name ? `<span class="sub">${rrppListaDe(a)}</span>` : ''}` },
@@ -4139,9 +4242,21 @@ PAGES.asistentes = async (v, offerId) => {
         { h: '', r: (a) => a.status === 'pending' ? `<button class="btn sm" data-code="${esc(a.code)}">Dar entrada</button>` : '' },
       ],
       rows,
-      empty: 'Todavía no hay nadie apuntado.',
-    });
+      empty: busca ? 'Nadie con ese nombre.' : 'Todavía no hay nadie apuntado.',
+    }) + (hayMas ? botonVerMas('asistentes') : '');
     I18N.translate($('#list', v));
+    const mas = $('[data-ver-mas="asistentes"]', v);
+    if (mas) {
+      mas.onclick = async () => {
+        mas.disabled = true;
+        try {
+          const nuevos = await parte(busca, list.length);
+          list.push(...nuevos);
+          hayMas = nuevos.length >= POR;
+          render();
+        } catch (e) { toast(friendly(e.message), true); mas.disabled = false; }
+      };
+    }
     $$('#list [data-code]', v).forEach((b) => {
       b.onclick = async () => {
         if (b.disabled) return;
@@ -4158,13 +4273,41 @@ PAGES.asistentes = async (v, offerId) => {
       };
     });
   };
-  $('#q', v).oninput = render;
-  $('#csv', v).onclick = () => downloadCsv(`asistentes-${offer?.title || ''}`, list, [
+  // La búsqueda (nombre o código, con o sin espacios) la hace la base.
+  let espera = null;
+  $('#q', v).oninput = () => {
+    clearTimeout(espera);
+    espera = setTimeout(async () => {
+      const q = $('#q', v).value.trim();
+      if (q === busca) return;
+      busca = q;
+      const nuevos = await parte(q, 0).catch(() => null);
+      if (!nuevos || busca !== q) return;
+      list.splice(0, list.length, ...nuevos);
+      hayMas = nuevos.length >= POR;
+      render();
+    }, 300);
+  };
+  // Todos (sin la búsqueda), parte a parte.
+  $('#csv', v).onclick = async () => {
+    const b = $('#csv', v);
+    b.disabled = true;
+    const todos = [];
+    try {
+      for (;;) {
+        const p = await parte('', todos.length, 500);
+        todos.push(...p);
+        if (p.length < 500) break;
+      }
+    } catch (e) { toast(friendly(e.message), true); b.disabled = false; return; }
+    b.disabled = false;
+    downloadCsv(`asistentes-${offer?.title || ''}`, todos, [
     ['user_name', 'nombre'], ['code', 'código'], [(a) => plazas(a), 'plazas'], [(a) => ESTADO_CSV[a.status] || a.status, 'estado'],
     ['created_at', 'reservó'], ['validated_at', 'entró'],
     ['promoter_name', bi('lista de RRPP', 'promoter list')],
     [(a) => (a.promoter_off_offer ? bi('sí', 'yes') : ''), bi('fuera de su oferta', 'outside their offer')],
   ]);
+  };
   render();
 };
 
@@ -4427,9 +4570,15 @@ async function tarjetaForm(v, id) {
 }
 
 /** Una tarjeta por dentro: cómo va, quién la lleva y lo que se hace a mano. */
+// Quién lleva la tarjeta llega por partes (50 y «Ver más») y la búsqueda
+// por nombre la hace la base (`stamp_card_customers`, con `total`).
+const CLIENTES_POR_PARTE = 50;
+const clientesTarjeta = (id, q = '', desde = 0, tam = CLIENTES_POR_PARTE) => rpc('stamp_card_customers', {
+  p_card: id, p_q: q || null, p_limit: tam, p_offset: desde,
+});
 async function tarjetaClientes(v, id) {
   const [d, todas] = await Promise.all([
-    rpc('stamp_card_customers', { p_card: id }),
+    clientesTarjeta(id),
     rpc('business_stamp_cards', { p_business: BIZ.id }).catch(() => null),
   ]);
   if (d?.ok === false) {
@@ -4439,7 +4588,11 @@ async function tarjetaClientes(v, id) {
   const c = (todas?.cards || []).find((x) => x.id === id) || d.card;
   // Cada persona con su meta: quien empezó antes de subirla conserva la suya
   // (`stamp_card_customers` la trae; si no, la de la tarjeta).
-  const gente = (d.customers || []).map((p) => ({ ...p, goal: p.goal || c.goal }));
+  const conMeta = (p) => ({ ...p, goal: p.goal || c.goal });
+  const gente = (d.customers || []).map(conMeta);
+  // Cuántas hay (sin buscar) y cuántas coinciden con lo que se busca.
+  const totalTodas = Number(d.total ?? gente.length) || 0;
+  let total = totalTodas;
   let elegido = null;   // la persona abierta
   let q = '';
 
@@ -4457,13 +4610,13 @@ async function tarjetaClientes(v, id) {
         <input type="search" id="qNuevos" placeholder="Buscar por nombre" aria-label="Buscar por nombre">
         <div id="nuevos"></div>
       </div>
-      ${gente.length > 6 ? '<input type="search" id="qGente" placeholder="Buscar por nombre" aria-label="Buscar por nombre" style="margin-bottom:10px">' : ''}
+      ${totalTodas > 6 ? '<input type="search" id="qGente" placeholder="Buscar por nombre" aria-label="Buscar por nombre" style="margin-bottom:10px">' : ''}
       <div id="gente"></div>
     </div>`;
 
   const pintaGente = () => {
-    const lista = q ? gente.filter((p) => (p.name || '').toLowerCase().includes(q)) : gente;
-    $('#gente', v).innerHTML = !gente.length
+    const lista = gente;
+    $('#gente', v).innerHTML = !totalTodas
       ? `<p class="muted">${esc(I18N.t('Todavía nadie tiene sellos en esta tarjeta. Caen solos al validar códigos, o ponlos tú con «Añadir a alguien».'))}</p>`
       : !lista.length ? `<p class="muted">${esc(I18N.t('Nadie con ese nombre.'))}</p>`
       : table({
@@ -4473,10 +4626,21 @@ async function tarjetaClientes(v, id) {
           { h: '', r: (p) => `<button class="btn sm ghost" type="button" data-abre="${esc(p.user_id)}">${esc(I18N.t('Gestionar'))}</button>` },
         ],
         rows: lista,
-      });
+      }) + (gente.length < total ? botonVerMas('gente') : '');
     $$('[data-abre]', v).forEach((b) => {
       b.onclick = () => { elegido = gente.find((p) => p.user_id === b.dataset.abre); pintaPersona(); };
     });
+    const mas = $('[data-ver-mas="gente"]', v);
+    if (mas) {
+      mas.onclick = async () => {
+        mas.disabled = true;
+        const n = await clientesTarjeta(id, q, gente.length).catch((e) => { toast(friendly(e.message), true); return null; });
+        if (!n?.ok) { mas.disabled = false; return; }
+        gente.push(...(n.customers || []).map(conMeta));
+        total = Number(n.total ?? total) || total;
+        pintaGente();
+      };
+    }
   };
 
   // Las cifras de arriba también cambian al poner o quitar sellos a mano.
@@ -4496,13 +4660,15 @@ async function tarjetaClientes(v, id) {
 
   const recarga = async () => {
     const [n, t] = await Promise.all([
-      rpc('stamp_card_customers', { p_card: id }).catch(() => null),
+      // Las que ya se veían (con la búsqueda), otra vez.
+      clientesTarjeta(id, q, 0, Math.max(CLIENTES_POR_PARTE, gente.length)).catch(() => null),
       rpc('business_stamp_cards', { p_business: BIZ.id }).catch(() => null),
     ]);
     const nueva = (t?.cards || []).find((x) => x.id === id);
     if (nueva) { Object.assign(c, nueva); pintaCifras(); }
     if (!n?.ok) return;
-    gente.splice(0, gente.length, ...(n.customers || []).map((p) => ({ ...p, goal: p.goal || c.goal })));
+    total = Number(n.total ?? total) || total;
+    gente.splice(0, gente.length, ...(n.customers || []).map(conMeta));
     if (elegido) elegido = gente.find((p) => p.user_id === elegido.user_id) || elegido;
     pintaGente();
     pintaPersona();
@@ -4599,7 +4765,23 @@ async function tarjetaClientes(v, id) {
   };
   $('#qNuevos', v).oninput = () => { clearTimeout(espera); espera = setTimeout(buscaNuevos, 300); };
   const qg = $('#qGente', v);
-  if (qg) qg.oninput = () => { q = qg.value.trim().toLowerCase(); pintaGente(); };
+  // La búsqueda la hace la base (con todas, no solo las cargadas).
+  let esperaGente = null;
+  if (qg) {
+    qg.oninput = () => {
+      clearTimeout(esperaGente);
+      esperaGente = setTimeout(async () => {
+        const nq = qg.value.trim();
+        if (nq === q) return;
+        q = nq;
+        const n = await clientesTarjeta(id, q).catch(() => null);
+        if (!n?.ok || q !== nq) return;
+        total = Number(n.total ?? 0) || 0;
+        gente.splice(0, gente.length, ...(n.customers || []).map(conMeta));
+        pintaGente();
+      }, 300);
+    };
+  }
   pintaGente();
 }
 
@@ -4989,8 +5171,7 @@ PAGES.carta = async (v) => {
 };
 
 PAGES.cartel = async (v, offerId) => {
-  const todas = await rpc('my_business_offers', { p_id: BIZ.id });
-  const o = (todas || []).find((x) => x.id === offerId);
+  const o = await miPublicacion(offerId);
   // Una oferta de RRPP no tiene cartel: sin el enlace de un RRPP, su QR no
   // la abriría (cada RRPP tiene el suyo en «RRPP»).
   if (!o || o.audience === 'promoters') { location.hash = o ? '#/rrpp' : '#/publicaciones'; return; }
@@ -5670,6 +5851,29 @@ function cifrasPlegar(caja) {
   }
 }
 
+// «Canjes validados» por partes (`business_redemptions_page`): la base da los
+// del periodo de 50 en 50; el total lo dice el informe (`redemptions_total`).
+const CANJES_POR_PARTE = 50;
+const tablaCanjes = (rows) => table({
+  cols: [
+    { h: 'Cuándo', r: (x) => fmtDate(x.at) },
+    { h: 'Qué', r: (x) => `<b class="title">${esc(x.title)}</b><span class="sub">${esc(queValidado(x))}${etiquetaSinConexion(x)}</span>` },
+    { h: 'Código', r: (x) => `<code>${esc(x.code)}</code>` },
+    { h: 'Plazas', num: true, r: (x) => fmtNum(x.seats || 1) },
+    // Lo que se pagó por plaza: el precio de cuando se consiguió el
+    // código si luego subió.
+    { h: 'Precio', num: true, r: (x) => (x.paid_cents == null ? '—' : fmtMoney(x.paid_cents, x.currency)) },
+    // El importe del ticket, si alguien del equipo lo apuntó.
+    { h: 'Ticket', num: true, r: (x) => (x.ticket_cents == null ? '—' : fmtMoney(x.ticket_cents, x.currency)) },
+    { h: 'Validado por', r: (x) => esc(x.by) },
+  ],
+  rows,
+  empty: 'Todavía no se ha validado ningún código en este periodo.',
+});
+const canjesParte = (desde, ultima, tam = CANJES_POR_PARTE) => rpc('business_redemptions_page', {
+  p_business: BIZ.id, p_from: desde, p_limit: tam, ...cursorDe(ultima, 'at'),
+}).then((x) => x || []);
+
 PAGES.informe = async (v, param) => {
   const days = Number(param) || 30;
   const [r, aud, toques] = await Promise.all([
@@ -5678,6 +5882,12 @@ PAGES.informe = async (v, param) => {
     rpc('business_link_taps_report', { p_business: BIZ.id, p_days: days }).catch(() => null),
   ]);
   const t = r.totals || {};
+  // Los primeros canjes, con su id (el cursor de los siguientes); sin la
+  // función nueva, los del informe.
+  const canjes = gestiona() && r.from
+    ? await canjesParte(r.from).catch(() => (r.redemptions || []).slice(0, CANJES_POR_PARTE))
+    : (r.redemptions || []);
+  let canjesHayMas = gestiona() && Number(r.redemptions_total ?? 0) > canjes.length && !!canjes[canjes.length - 1]?.id;
   const pct = (a, b) => (!b ? '—' : Math.round((a * 100) / b) + ' %');
   const hours = r.by_hour || [];
   const best = hours.slice().sort((a, b) => b.redeemed - a.redeemed)[0];
@@ -5816,32 +6026,16 @@ PAGES.informe = async (v, param) => {
     ${!gestiona() ? `<div class="card" data-res="${esc(bi('Solo cifras', 'Figures only'))}"><h2>Canjes validados</h2><p class="muted" style="margin:0">${esc(bi(
       'Ves las cifras del negocio. La lista de canjes, con quién validó cada uno, y la descarga en CSV son solo para el propietario y los encargados.',
       'You can see the business’s figures. The list of redemptions, with who validated each one, and the CSV download are only for the owner and managers.'))}</p></div>` : `
-    <div class="card" data-res="${esc(herrPl((r.redemptions || []).length, ['1 canje', 'canjes'], ['1 redemption', 'redemptions']))}"><h2>Canjes validados</h2><div class="actions" style="margin-bottom:10px"><button class="btn sm" id="csvRed">Descargar CSV</button></div>
+    <div class="card" data-res="${esc(herrPl(Number(r.redemptions_total ?? (r.redemptions || []).length), ['1 canje', 'canjes'], ['1 redemption', 'redemptions']))}"><h2>Canjes validados</h2><div class="actions" style="margin-bottom:10px"><button class="btn sm" id="csvRed">Descargar CSV</button></div>
       <p class="muted" style="margin:0 0 10px">Cada línea es un código validado en el local, con quién lo validó. Sirve de justificante.</p>
-      ${table({
-        cols: [
-          { h: 'Cuándo', r: (x) => fmtDate(x.at) },
-          { h: 'Qué', r: (x) => `<b class="title">${esc(x.title)}</b><span class="sub">${esc(queValidado(x))}${etiquetaSinConexion(x)}</span>` },
-          { h: 'Código', r: (x) => `<code>${esc(x.code)}</code>` },
-        { h: 'Plazas', num: true, r: (x) => fmtNum(x.seats || 1) },
-          // Lo que se pagó por plaza: el precio de cuando se consiguió el
-          // código si luego subió.
-          { h: 'Precio', num: true, r: (x) => (x.paid_cents == null ? '—' : fmtMoney(x.paid_cents, x.currency)) },
-          // El importe del ticket, si alguien del equipo lo apuntó.
-          { h: 'Ticket', num: true, r: (x) => (x.ticket_cents == null ? '—' : fmtMoney(x.ticket_cents, x.currency)) },
-          { h: 'Validado por', r: (x) => esc(x.by) },
-        ],
-        rows: r.redemptions || [],
-        empty: 'Todavía no se ha validado ningún código en este periodo.',
-      })}
+      <div id="canjesTabla">${tablaCanjes(canjes.slice(0, CANJES_POR_PARTE))}</div>${canjesHayMas ? botonVerMas('canjes') : ''}
     </div>`}
     </div>`;
   cifrasPlegar($('#cifrasDetalle', v));
 
   $$('[data-cifras-of]', v).forEach((b) => {
     b.onclick = async () => {
-      const lista = await rpc('my_business_offers', { p_id: BIZ.id }).catch(() => []);
-      cifrasDialogo((lista || []).find((x) => x.id === b.dataset.cifrasOf));
+      cifrasDialogo(await miPublicacion(b.dataset.cifrasOf).catch(() => null));
     };
   });
   // «QR de mesa · 142 escaneos este mes» (panel/mesa.js), si lo tiene.
@@ -5856,12 +6050,37 @@ PAGES.informe = async (v, param) => {
     [(o) => ((o.brought_cents || 0) / 100).toFixed(2), 'Ha traído al menos (€)'],
     ['max_redemptions', 'Aforo'], ['seats_left', 'Plazas libres'],
   ]);
-  $('#csvRed').onclick = () => downloadCsv(`canjes-${BIZ.name}`, r.redemptions || [], [
+  const masCanjes = () => {
+    const b = $('[data-ver-mas="canjes"]', v);
+    if (!b) return;
+    b.onclick = async () => {
+      b.disabled = true;
+      try {
+        const parte = await canjesParte(r.from, canjes[canjes.length - 1]);
+        canjes.push(...parte);
+        canjesHayMas = parte.length >= CANJES_POR_PARTE;
+        $('#canjesTabla', v).innerHTML = tablaCanjes(canjes);
+        b.closest('.ver-mas').remove();
+        if (canjesHayMas) { $('#canjesTabla', v).insertAdjacentHTML('afterend', botonVerMas('canjes')); masCanjes(); }
+        I18N.translate($('#canjesTabla', v));
+      } catch (e) { toast(friendly(e.message), true); b.disabled = false; }
+    };
+  };
+  masCanjes();
+  // Todos los del periodo, parte a parte: nunca solo los que se ven.
+  $('#csvRed').onclick = async () => {
+    const b = $('#csvRed');
+    b.disabled = true;
+    let todos;
+    try { todos = r.from ? await todasLasPartes((ultima, tam) => canjesParte(r.from, ultima, tam), 200) : (r.redemptions || []); } catch (e) { toast(friendly(e.message), true); b.disabled = false; return; }
+    b.disabled = false;
+    downloadCsv(`canjes-${BIZ.name}`, todos, [
     ['at', 'Fecha y hora'], [(x) => queValidado(x), 'Tipo'], ['title', 'Qué'], ['code', 'Código'], [(x) => x.seats ?? 1, 'Plazas'],
     [(x) => (x.paid_cents == null ? '' : (x.paid_cents / 100).toFixed(2)), 'Precio'],
     [(x) => (x.ticket_cents == null ? '' : (x.ticket_cents / 100).toFixed(2)), 'Ticket'], ['by', 'Validado por'],
     [(x) => (x.offline ? bi('sí', 'yes') : ''), 'Sin conexión'],
   ]);
+  };
 };
 
 // ── Reseñas ─────────────────────────────────────────────────────────────────
@@ -5869,19 +6088,22 @@ PAGES.informe = async (v, param) => {
 // app: la respuesta se ve debajo, para todo el mundo, y a quien escribió le
 // llega una notificación la primera vez.
 const estrellas = (n) => `<span class="stars" aria-label="${n}/5">${'★'.repeat(n)}<span>${'★'.repeat(5 - n)}</span></span>`;
+// La media, cuántas y las «sin responder» las cuenta la base con todas
+// (`business_review_summary`); la lista llega por partes («Ver más»).
+const RESENAS_POR_PARTE = 20;
+const resenasParte = (ultima) => rpc('business_reviews', { p_id: BIZ.id, p_limit: RESENAS_POR_PARTE, ...cursorDe(ultima) }).then((x) => x || []);
 PAGES.resenas = async (v) => {
-  const lista = await rpc('business_reviews', { p_id: BIZ.id, p_limit: 50 });
-  const media = lista.length ? lista.reduce((s, r) => s + r.rating, 0) / lista.length : 0;
-  const sin = lista.filter((r) => !r.reply).length;
+  const [primera, resumen] = await Promise.all([
+    resenasParte(null),
+    rpc('business_review_summary', { p_business: BIZ.id }).catch(() => null),
+  ]);
+  const lista = [...primera];
+  let hayMas = primera.length >= RESENAS_POR_PARTE;
+  const total = Number(resumen?.count ?? lista.length) || 0;
+  const media = resumen?.avg != null ? Number(resumen.avg) : (lista.length ? lista.reduce((s, r) => s + r.rating, 0) / lista.length : 0);
+  const sin = Number(resumen?.unanswered ?? lista.filter((r) => !r.reply).length) || 0;
   const media1 = media.toFixed(1).replace('.', I18N.lang === 'en' ? '.' : ',');
-  v.innerHTML = `
-    <div class="page-head"><h1>Reseñas</h1><span class="spacer"></span>
-      <a class="btn sm ghost" href="${APP_URL}/b/${esc(BIZ.id)}#resenas" target="_blank" rel="noopener">Ver en tu ficha ↗</a></div>
-    ${helpBox('¿Para qué contestar?', '<p>Una reseña mala contestada con educación pesa mucho menos que una sin contestar, y una buena con un «gracias» anima a volver. La respuesta se ve debajo de la reseña, en la app y en la web, y a quien la escribió le llega una notificación.</p><p>Puedes cambiarla cuando quieras. Si la dejas vacía, se borra.</p>')}
-    ${lista.length ? `<div class="card resumen-resenas">${estrellas(Math.round(media))}
-      <b>${esc(I18N.lang === 'en' ? `${media1} average · ${lista.length} review${lista.length === 1 ? '' : 's'}` : `${media1} de media · ${lista.length} reseña${lista.length === 1 ? '' : 's'}`)}</b>
-      <span class="spacer"></span>${sin ? `<span class="tag st-pending">${esc(I18N.lang === 'en' ? `${sin} unanswered` : `${sin} sin responder`)}</span>` : ''}</div>` : ''}
-    ${lista.length ? `<div class="resenas-panel">${lista.map((r, i) => `<article class="card">
+  const fila = (r, i) => `<article class="card">
         <header><span class="av">${r.avatar_url ? `<img src="${esc(r.avatar_url)}" alt="">` : esc((r.display_name || 'U').trim().charAt(0).toUpperCase())}</span>
           <span><b>${esc(r.display_name || 'Usuario de Klendar')}</b><small class="muted">${esc(fmtDate(r.created_at))}</small></span>${estrellas(r.rating)}</header>
         ${r.comment ? `<p>${esc(r.comment)}</p>` : ''}
@@ -5889,10 +6111,18 @@ PAGES.resenas = async (v) => {
         ${r.reply ? `<div class="respuesta"><b>Respuesta de <span>${esc(BIZ.name)}</span></b>${r.reply_at ? `<small class="muted"> · ${esc(fmtDate(r.reply_at))}</small>` : ''}<p>${esc(r.reply).replace(/\n/g, '<br>')}</p></div>` : ''}
         ${r.reply_pending ? `<div class="respuesta"><b>Tu respuesta, en revisión</b> <span class="tag st-pending">En revisión</span><p>${esc(r.reply_pending).replace(/\n/g, '<br>')}</p></div>` : ''}
         ${gestiona() ? `<div class="pie"><button class="btn sm" data-resp="${i}">${ms(r.reply ? 'edit' : 'reply')}${r.reply ? 'Editar respuesta' : 'Responder'}</button></div>` : ''}
-      </article>`).join('')}</div>`
+      </article>`;
+  v.innerHTML = `
+    <div class="page-head"><h1>Reseñas</h1><span class="spacer"></span>
+      <a class="btn sm ghost" href="${APP_URL}/b/${esc(BIZ.id)}#resenas" target="_blank" rel="noopener">Ver en tu ficha ↗</a></div>
+    ${helpBox('¿Para qué contestar?', '<p>Una reseña mala contestada con educación pesa mucho menos que una sin contestar, y una buena con un «gracias» anima a volver. La respuesta se ve debajo de la reseña, en la app y en la web, y a quien la escribió le llega una notificación.</p><p>Puedes cambiarla cuando quieras. Si la dejas vacía, se borra.</p>')}
+    ${total ? `<div class="card resumen-resenas">${estrellas(Math.round(media))}
+      <b>${esc(I18N.lang === 'en' ? `${media1} average · ${total} review${total === 1 ? '' : 's'}` : `${media1} de media · ${total} reseña${total === 1 ? '' : 's'}`)}</b>
+      <span class="spacer"></span>${sin ? `<span class="tag st-pending">${esc(I18N.lang === 'en' ? `${sin} unanswered` : `${sin} sin responder`)}</span>` : ''}</div>` : ''}
+    ${lista.length ? `<div class="resenas-panel" id="resenasLista">${lista.map(fila).join('')}</div>${hayMas ? botonVerMas('resenas') : ''}`
     : '<div class="card"><p class="muted" style="margin:0">Todavía no tienes reseñas. Llegan cuando la gente canjea y vuelve a contarlo.</p></div>'}`;
 
-  $$('[data-resp]', v).forEach((b) => { b.onclick = async () => {
+  const conecta = () => $$('[data-resp]', v).forEach((b) => { b.onclick = async () => {
     const r = lista[+b.dataset.resp];
     const out = await modal({
       title: 'Responder a la reseña',
@@ -5916,6 +6146,28 @@ PAGES.resenas = async (v) => {
       : texto ? 'Respuesta publicada' : 'Respuesta borrada');
     route();
   }; });
+  conecta();
+  const mas = () => {
+    const b = $('[data-ver-mas="resenas"]', v);
+    if (!b) return;
+    b.onclick = async () => {
+      b.disabled = true;
+      try {
+        const desde = lista.length;
+        const parte = await resenasParte(lista[lista.length - 1]);
+        lista.push(...parte);
+        hayMas = parte.length >= RESENAS_POR_PARTE;
+        $('#resenasLista', v).insertAdjacentHTML('beforeend', parte.map((r, k) => fila(r, desde + k)).join(''));
+        b.closest('.ver-mas').remove();
+        if (hayMas) { $('#resenasLista', v).insertAdjacentHTML('afterend', botonVerMas('resenas')); mas(); }
+        I18N.translate($('#resenasLista', v));
+        conecta();
+        $$('#resenasLista > article', v)[desde]?.setAttribute('tabindex', '-1');
+        $$('#resenasLista > article', v)[desde]?.focus();
+      } catch (e) { toast(friendly(e.message), true); b.disabled = false; }
+    };
+  };
+  mas();
 };
 
 // ── Días cerrados ───────────────────────────────────────────────────────────

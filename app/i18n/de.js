@@ -1562,6 +1562,7 @@ KL_DIC('de', {
   "Ver la petición": "Anfrage ansehen",
   "Ver los de cerca": "In der Nähe ansehen",
   "Ver mi código": "Meinen Code zeigen",
+  "Ver más": "Mehr anzeigen",
   "Ver ofertas": "Angebote ansehen",
   "Ver recibo": "Beleg ansehen",
   "Ver su ficha": "Seite ansehen",
