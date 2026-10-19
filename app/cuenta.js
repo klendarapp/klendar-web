@@ -927,6 +927,9 @@ async function ajustesNotificaciones() {
     // «Pedir un local» (crecer): cuando llega a Klendar uno que pediste.
     sw('quetal', '¿Qué tal? al día siguiente', prefs.notify_quetal !== false, 'Tras usar algo en un local, te pedimos tu reseña'),
     sw('pedidos', 'Locales que has pedido', prefs.notify_requests !== false, 'Cuando llega a Klendar uno que pediste'),
+    // «Avísame cuando haya sitio» (aforo en directo): llega aunque sean
+    // horas de silencio, porque lo has pedido tú esa noche.
+    sw('sitio', 'Cuando haya sitio', prefs.notify_room !== false, 'Cuando pides «Avísame cuando haya sitio» en un local lleno. Llega aunque estés en horas de silencio, porque lo has pedido tú.'),
     sw('cerca', 'Ofertas flash cerca de ti', prefs.notify_nearby, 'Como mucho 3 al día'),
   ].join('')}
         <div id="cerca-mas"${prefs.notify_nearby ? '' : ' hidden'}>
@@ -978,6 +981,7 @@ async function ajustesNotificaciones() {
         notify_requests: el.pedidos.checked,
         notify_quetal: el.quetal.checked,
         notify_word_alerts: el.palabras.checked,
+        notify_room: el.sitio.checked,
         notify_nearby: el.cerca.checked,
         nearby_radius_m: Number(fa.querySelector('input[name=radio]:checked')?.value || 1000),
         nearby_categories: elegidas.length ? elegidas : null,

@@ -1,5 +1,5 @@
 {
- "version": "0902ab4d2aa8",
+ "version": "5898bcb765a2",
  "contact": "info@klendar.app",
  "tabs": {
   "es": {
@@ -168,6 +168,15 @@
     "a": [
      {
       "t": "Revisa Cuenta → Ajustes → Notificaciones y los permisos de notificaciones del sistema. \"Cerca de ti\" solo avisa de ofertas flash dentro del radio elegido y como máximo 3 veces al día."
+     }
+    ]
+   },
+   {
+    "id": "avisame-hay-sitio",
+    "q": "¿Qué es «Avísame cuando haya sitio»?",
+    "a": [
+     {
+      "t": "Si un local marca «Casi lleno» o «Lleno», en su ficha (y en su tarjeta del mapa) puedes pedir «Avísame cuando haya sitio», con tu cuenta. Te avisamos una vez en cuanto haya sitio, aunque sean tus horas de silencio, porque lo has pedido tú. Caduca a las 3 horas o al cerrar el local, y puedes esperar aviso de 5 sitios a la vez. Se apaga en Ajustes → Notificaciones → «Cuando haya sitio»."
      }
     ]
    },
@@ -437,7 +446,23 @@
     "q": "¿Cómo funciona «¿Hay sitio ahora?»?",
     "a": [
      {
-      "t": "Actívalo en tu ficha, en «Cómo es tu local». Luego cualquiera de tu equipo marca desde Mi negocio, con un toque, cómo está el local: Tranquilo, Animado o Lleno. Sale en tu ficha y en el mapa mientras estás abierto y se quita solo a las 2 horas."
+      "t": "Actívalo en tu ficha, en «Cómo es tu local». Luego cualquiera de tu equipo marca desde Mi negocio, con un toque, cómo está el local: Hay sitio, Casi lleno o Lleno. Sale en tu ficha y en el mapa mientras estás abierto y se quita solo a las 2 horas. Con el aforo en directo, se pone solo."
+     }
+    ]
+   },
+   {
+    "id": "aforo-en-directo",
+    "q": "¿Cómo funciona el aforo en directo?",
+    "a": [
+     {
+      "t": "En Mi negocio → «Más herramientas» → «Aforo en directo» (también en el "
+     },
+     {
+      "t": "panel web",
+      "u": "https://klendar.app/panel/"
+     },
+     {
+      "t": "): pon tu aforo máximo y, en la puerta, cualquiera de tu equipo cuenta con +1 y −1, desde varios móviles a la vez. «¿Hay sitio ahora?» se pone solo: Hay sitio por debajo del 70 %, Casi lleno hasta el 95 % y Lleno a partir de ahí (los porcentajes los cambias tú). Si marcas algo a mano, manda 30 minutos. Al cerrar, «Poner a 0»; al empezar otro día vuelve a 0 solo. En «Cifras» ves a qué hora se llenó cada noche. Solo números, nunca quién entra. El aforo lo pones tú y tiene que ser real: Klendar no controla el aforo legal de tu local."
      }
     ]
    },
@@ -682,6 +707,15 @@
     "a": [
      {
       "t": "Check Account → Settings → Notifications and the system notification permission. “Nearby” only alerts you about flash offers within your chosen radius, at most 3 times a day."
+     }
+    ]
+   },
+   {
+    "id": "avisame-hay-sitio",
+    "q": "What is “Tell me when there’s room”?",
+    "a": [
+     {
+      "t": "If a venue shows “Nearly full” or “Full”, on its page (and its card on the map) you can ask “Tell me when there’s room”, with your account. We let you know once as soon as there's room, even during your quiet hours, because you asked for it. It expires after 3 hours or when the venue closes, and you can wait to hear from 5 places at a time. You can turn it off in Settings → Notifications → “When there’s room”."
      }
     ]
    },
@@ -951,7 +985,23 @@
     "q": "How does “Room right now?” work?",
     "a": [
      {
-      "t": "Turn it on in your business page, in “About your place”. Then anyone on your team marks how busy it is from My business with one tap: Quiet, Lively or Full. It shows on your page and on the map while you're open and clears itself after 2 hours."
+      "t": "Turn it on in your business page, in “About your place”. Then anyone on your team marks how busy it is from My business with one tap: There’s room, Nearly full or Full. It shows on your page and on the map while you're open and clears itself after 2 hours. With live head count, it sets itself."
+     }
+    ]
+   },
+   {
+    "id": "aforo-en-directo",
+    "q": "How does live head count work?",
+    "a": [
+     {
+      "t": "In My business → “More tools” → “Live head count” (also in the "
+     },
+     {
+      "t": "web dashboard",
+      "u": "https://klendar.app/panel/"
+     },
+     {
+      "t": "): set your maximum capacity and, at the door, anyone on your team counts with +1 and −1, from several phones at once. “Room right now?” sets itself: There’s room below 70%, Nearly full up to 95% and Full from there (you can change the percentages). If you set it by hand, that counts for 30 minutes. When you close, “Set to 0”; it also goes back to 0 by itself when a new day starts. In “Stats” you can see what time it filled up each night. Only numbers, never who comes in. You set the capacity and it has to be real: Klendar doesn't check your venue's legal capacity."
      }
     ]
    },

@@ -621,7 +621,7 @@ let ANTES = null;
 /** ¿El negocio activo es un organizador sin local fijo? (`preparaNegocio`). */
 const esOrganizador = () => BIZ?.no_fixed_venue === true;
 /** Lo que el panel no enseña a un organizador: necesita un local (tanda C). */
-const SIN_LOCAL_FIJO = ['partidos', 'antes-de-cerrar', 'cartel-local', 'cerrados', 'menu-del-dia', 'wifi-clientes'];
+const SIN_LOCAL_FIJO = ['partidos', 'antes-de-cerrar', 'cartel-local', 'cerrados', 'menu-del-dia', 'wifi-clientes', 'aforo'];
 /** Si «Partidos que pones» sale en el menú (`business_broadcast_week`). */
 let PARTIDOS_NAV = null;
 
@@ -871,7 +871,7 @@ const NAV = [
   ]],
   ['Tu negocio', [
     // «Más herramientas» (panel/herramientas.js): lo opcional.
-    ['herramientas', 'herramientas', 'Más herramientas', ['cola', 'tele', 'partidos', 'grupos', 'antes-de-cerrar', 'series', 'carta', 'cartel-local', 'menu-del-dia', 'wifi-clientes']],
+    ['herramientas', 'herramientas', 'Más herramientas', ['cola', 'tele', 'partidos', 'grupos', 'antes-de-cerrar', 'series', 'carta', 'cartel-local', 'menu-del-dia', 'wifi-clientes', 'aforo']],
     ['equipo', 'group', 'Equipo'],
     // «Tu plan» (panel/plan.js): estado del plan y, para el propietario, pagar.
     ['plan', 'workspace_premium', 'Tu plan'],
@@ -1468,10 +1468,13 @@ PAGES.resumen = async (v) => {
   }
 };
 
-/** «¿Hay sitio ahora?» en el resumen: tres botones iguales (Tranquilo ·
- * Animado · Lleno), lo marcado y cuándo, y «Quitar». Cualquiera del equipo;
- * solo si el negocio lo ha activado en «Cómo es tu local». Como `CrowdPanel`
- * en la app. */
+/** «¿Hay sitio ahora?» en el resumen: tres botones iguales (Hay sitio ·
+ * Casi lleno · Lleno), lo marcado y cuándo, y «Quitar». Cualquiera del
+ * equipo; solo si el negocio lo ha activado en «Cómo es tu local». Como
+ * `CrowdPanel` en la app. Con el aforo en directo (`capacity_on`, migración
+ * 20261234100000) lo marcado a mano manda 30 minutos y luego vuelve el
+ * contador: «Marcado a mano · vuelve al contador a las 23:40» y «Volver al
+ * contador» (= quitar lo marcado). */
 async function pintaAforo(caja, estado = null) {
   if (!caja) return;
   const KMa = window.KlendarMarcas;
@@ -1481,16 +1484,27 @@ async function pintaAforo(caja, estado = null) {
   }
   if (!KMa || !st || !st.enabled) { caja.innerHTML = ''; return; }
   const M = KMa.t(I18N.lang);
+  const hora = (iso) => new Date(iso).toLocaleTimeString(LOC(), { hour: 'numeric', minute: '2-digit', timeZone: TZ });
+  const contador = st.capacity_on === true;
+  // Con el aforo, lo marcado a mano que manda ahora (30 min).
+  const aMano = contador && st.shown_source === 'manual' && !!st.level;
   // Cerrado, lo marcado en las últimas 2 horas también sale marcado: se
   // verá al abrir (si no, el botón parecía no hacer nada). Como la app.
   const reciente = st.set_at && Date.now() - new Date(st.set_at).getTime() < 2 * 3600 * 1000;
-  const actual = st.live || (!st.open_now && reciente) ? st.level : null;
+  const actual = contador ? (aMano || (!st.open_now && st.manual_until) ? st.level : null)
+    : st.live || (!st.open_now && reciente) ? st.level : null;
   const linea = !st.open_now ? bi('Ahora estás cerrado: no se ve hasta que abras.', "You're closed now: it won't show until you open.")
+    : contador ? (aMano && st.manual_until
+      ? bi(`Marcado a mano · vuelve al contador a las ${hora(st.manual_until)}`, `Set by hand · back to the counter at ${hora(st.manual_until)}`)
+      : bi('Con el aforo en directo, lo que marques manda 30 minutos.', 'With live head count, what you set counts for 30 minutes.'))
     : actual && st.set_at ? bi(`Marcado ${KMa.hace(st.set_at, 'es')}. Se quita solo a las 2 horas.`, `Set ${KMa.hace(st.set_at, 'en')}. Clears itself after 2 hours.`)
       : st.level ? bi('Lo último que marcaste ya no se ve: ha pasado más de 2 horas.', "What you last set no longer shows: it's been over 2 hours.")
         : bi('Sin marcar: en tu ficha no sale nada.', 'Not set: nothing shows on your page.');
+  // Con el aforo, «Quitar» es «Volver al contador» (y solo si manda lo de a mano).
+  const quitar = contador ? (actual ? bi('Volver al contador', 'Back to the counter') : '')
+    : st.level ? bi('Quitar', 'Clear') : '';
   caja.innerHTML = `<div class="card aforo"><div class="aforo-cab"><h2>${esc(M.crowdTitle)}</h2>
-      ${st.level ? `<button type="button" class="linkbtn" data-aforo="">${esc(bi('Quitar', 'Clear'))}</button>` : ''}</div>
+      ${quitar ? `<button type="button" class="linkbtn" data-aforo="">${esc(quitar)}</button>` : ''}</div>
     <div class="aforo-botones" role="group" aria-label="${esc(M.crowdTitle)}">
       ${KMa.CROWD.map((l) => `<button type="button" class="btn${actual === l ? ' on' : ''}" data-aforo="${l}" aria-pressed="${actual === l}">${esc(M.crowd[l])}</button>`).join('')}
     </div>
@@ -1501,7 +1515,7 @@ async function pintaAforo(caja, estado = null) {
       $$('[data-aforo]', caja).forEach((x) => { x.disabled = true; });
       try {
         const nuevo = await rpc('set_business_crowd', { p_business: BIZ.id, p_level: nivel });
-        toast(nivel ? bi(`Marcado: ${M.crowd[nivel]}`, `Set: ${M.crowd[nivel]}`) : bi('Quitado', 'Cleared'));
+        toast(nivel ? bi(`Marcado: ${M.crowd[nivel]}`, `Set: ${M.crowd[nivel]}`) : contador ? bi('Vuelve el contador', 'Back to the counter') : bi('Quitado', 'Cleared'));
         pintaAforo(caja, nuevo);
       } catch (e) {
         toast(friendly(e.message), true);
@@ -5789,6 +5803,7 @@ PAGES.informe = async (v, param) => {
 
     ${conRes(toquesEnlacesHtml(toques), herrPl(toquesTotal, ['1 toque', 'toques'], ['1 tap', 'taps']))}
     <div id="informeMesa"></div>
+    <div id="informeAforo"></div>
 
     ${rrppHtml}
 
@@ -5828,6 +5843,8 @@ PAGES.informe = async (v, param) => {
   });
   // «QR de mesa · 142 escaneos este mes» (panel/mesa.js), si lo tiene.
   if (typeof mesaCifras === 'function') mesaCifras($('#informeMesa', v));
+  // «Aforo · A qué hora se llenó» (panel/aforo.js), si cuenta o ha contado.
+  if (typeof aforoCifras === 'function') aforoCifras($('#informeAforo', v));
   if (!gestiona()) return;
   $('#csvOffers').onclick = () => downloadCsv(`cifras-${BIZ.name}`, r.offers || [], [
     ['title', 'Publicación'], ['kind', 'Tipo'], ['starts_at', 'Fecha'],

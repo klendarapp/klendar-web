@@ -1063,6 +1063,8 @@ const APP_EN = {
   "Una sola vez. Lo puedes quitar en «Lo que has pedido».": "Just once. You can remove it in “What you've asked for”.",
   "Locales que has pedido": "Places you've asked for",
   "Cuando llega a Klendar uno que pediste": "When one you asked for comes to Klendar",
+  "Cuando haya sitio": "When there’s room",
+  "Cuando pides «Avísame cuando haya sitio» en un local lleno. Llega aunque estés en horas de silencio, porque lo has pedido tú.": "When you ask “Tell me when there’s room” at a full place. It arrives even during quiet hours, because you asked for it.",
   // «Pedir un local» y «Avísame cuando llegue» (crecer, app/crecer.js)
   "{business_name} ya está en Klendar": "{business_name} is already on Klendar",
   "Te avisamos el {month}": "We let you know on {month}",

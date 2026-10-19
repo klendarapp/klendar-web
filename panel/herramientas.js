@@ -24,6 +24,8 @@ Object.assign(SVG, {
   herramientas: 'M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z',
   enlace: 'M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z',
   codigo: 'M9.4 16.6 4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0 4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z',
+  // Aforo en directo (how_to_reg).
+  aforo: 'M9 17l3-2.94c-.39-.04-.68-.06-1-.06-2.67 0-8 1.34-8 4v2h9l-3-3zm2-5c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm4.47 8.5L12 17l1.4-1.41 2.07 2.08 5.13-5.17 1.4 1.41-6.53 6.59z',
   candado: 'M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6zm9 14H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z',
 });
 
@@ -142,6 +144,9 @@ async function herrResumen(v, { cajaFilas }) {
   const dm = o.daily_menu || {};
   const horaMenu = dm.live_until ? new Date(dm.live_until).toLocaleTimeString(LOC(), { hour: '2-digit', minute: '2-digit', timeZone: TZ }) : '';
   const filas = [
+    // Aforo en directo: la puerta, con la cifra de ahora (panel/aforo.js).
+    !org && herrSi(o, 'capacity', 'enabled') ? fila('#/aforo', 'aforo', bi('Aforo en directo · ', 'Live head count · ')
+      + `${fmtNum(herrNum(o, 'capacity', 'people'))} / ${fmtNum(herrNum(o, 'capacity', 'max'))}`) : '',
     // Menú del día: a mano, en los sitios de comida (una fila).
     gestiona() && !org && dm.suggested ? fila('#/menu-del-dia', 'restaurant_menu', horaMenu
       ? bi(`Menú del día · hasta las ${horaMenu}`, `Daily menu · until ${horaMenu}`)
@@ -243,9 +248,23 @@ PAGES.herramientas = async (v) => {
     }),
     local ? herrTarjeta({
       icon: 'people', titulo: bi('¿Hay sitio ahora?', 'Room right now?'),
-      frase: bi('Para decir con un toque si hay sitio (tranquilo, animado o lleno). Sale en tu ficha durante 2 horas.', 'To say with one tap whether there’s room (quiet, lively or full). It shows on your page for 2 hours.'),
+      frase: bi('Para decir con un toque cómo está el local: Hay sitio, Casi lleno o Lleno. Sale en tu ficha durante 2 horas.', 'To say with one tap how busy your place is: There’s room, Nearly full or Full. It shows on your page for 2 hours.'),
       estado: onOff(herrSi(o, 'crowd', 'enabled')), on: herrSi(o, 'crowd', 'enabled'),
       botones: edit ? [[herrSi(o, 'crowd', 'enabled') ? configurar : activar, '#/ficha/local']] : [],
+    }) : '',
+    // Aforo en directo (panel/aforo.js): +1 / −1 en la puerta y «¿Hay sitio
+    // ahora?» se pone solo. Lo abre todo el equipo; activarlo, propietario o
+    // encargado. Sin local fijo, no sale.
+    local ? herrTarjeta({
+      icon: 'aforo', titulo: bi('Aforo en directo', 'Live head count'),
+      frase: bi('Cuenta en la puerta con +1 y −1, y «¿Hay sitio ahora?» se pone solo.', 'Count at the door with +1 and −1, and “Room right now?” sets itself.'),
+      estado: herrSi(o, 'capacity', 'enabled')
+        ? (herrNum(o, 'capacity', 'people') > 0 && herrNum(o, 'capacity', 'max') > 0
+          ? bi(`${fmtNum(herrNum(o, 'capacity', 'people'))} / ${fmtNum(herrNum(o, 'capacity', 'max'))} ahora`, `${fmtNum(herrNum(o, 'capacity', 'people'))} / ${fmtNum(herrNum(o, 'capacity', 'max'))} now`)
+          : bi('Activado', 'On'))
+        : sinPreparar,
+      on: herrSi(o, 'capacity', 'enabled'),
+      botones: herrSi(o, 'capacity', 'enabled') ? [[abrir, '#/aforo']] : edit ? [[activar, '#/aforo/ajustes']] : [],
     }) : '',
     ent ? '' : herrTarjeta({
       icon: 'cola', titulo: bi('Cola virtual', 'Virtual queue'),

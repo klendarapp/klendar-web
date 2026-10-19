@@ -59,8 +59,8 @@ const pre = (lang) => (lang === 'en' ? '/en' : '');
  * marcado caduca a las 2 h): /assets/sitio-ahora.js. */
 export const sitioAhoraScripts = (lang) => {
   const sp = supabasePublic();
-  return `<script src="/assets/marcas.js?v=4" defer></script>
-<script src="/assets/sitio-ahora.js?v=1" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}" data-lang="${lang === 'en' ? 'en' : 'es'}"></script>`;
+  return `<script src="/assets/marcas.js?v=5" defer></script>
+<script src="/assets/sitio-ahora.js?v=2" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}" data-lang="${lang === 'en' ? 'en' : 'es'}"></script>`;
 };
 
 /** El menú ⋮ de las fichas (como la app): lo que se usa poco (añadir al
@@ -928,7 +928,8 @@ export async function businessPage(param, lang, search = '') {
       ${where ? `<a class="neg-dir" href="${esc(maps || '#')}" rel="nofollow noopener" target="_blank">${icono('lugar')}<span>${esc(b.address || where)}</span><svg class="ic" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M8.59 16.59 13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg></a>` : ''}
       ${b.rating && b.ratings ? `<p class="neg-nota"><a href="#resenas"><span class="stars-mini" aria-hidden="true">★</span> ${nota(b.rating, lang)} · ${esc(en ? (b.ratings === 1 ? '1 review' : `${b.ratings} reviews`) : (b.ratings === 1 ? '1 reseña' : `${b.ratings} reseñas`))}</a>${precioHtml ? ` <span aria-hidden="true">·</span> ${precioHtml}` : ''}</p>`
     : precioHtml ? `<p class="neg-nota">${precioHtml}</p>` : ''}
-      ${local.crowd_enabled && !organizador ? `<p class="sitio-ahora" data-sitio-ahora="${esc(b.id)}" hidden></p>` : ''}
+      ${local.crowd_enabled && !organizador ? `<p class="sitio-ahora" data-sitio-ahora="${esc(b.id)}" hidden></p>
+      <div data-hay-sitio="${esc(b.id)}" data-solo-publico hidden></div>` : ''}
       <div class="badges">
         ${organizador ? `<span class="badge organiza">${esc(SA.organises)}</span>` : ''}
         ${selloEntidad(local.entity_kind, lang)}

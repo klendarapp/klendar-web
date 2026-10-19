@@ -1,0 +1,45 @@
+/* «Aforo en directo» (panel/aforo.js): la puerta, en una tablet o un móvil
+ * en vertical (modo mostrador), sus ajustes y las barras de «Cifras». Todo en
+ * tinta: el coral solo va en el botón principal. */
+.afd [hidden], .afd-form [hidden], .afd-cifras [hidden] { display: none !important; }
+.afd-puerta { max-width: 640px; margin: 0 auto; padding: 8px 0 0; text-align: center; }
+.afd-cifra { margin: 8px 0 0; font-family: Sora, Manrope, system-ui, sans-serif; line-height: 1; font-variant-numeric: tabular-nums; }
+.afd-cifra b { font-size: clamp(64px, 18vw, 120px); font-weight: 800; letter-spacing: -.02em; }
+.afd-max { font-size: clamp(28px, 7vw, 44px); font-weight: 700; color: var(--ink-2); }
+.afd-nivel { margin: 8px 0 0; min-height: 1.4em; font-size: 20px; font-weight: 700; }
+/* −1 y +1: enormes e iguales (mismo estilo y tamaño), a prueba de dedos. */
+.afd-botones { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 22px 0 0; }
+.afd-btn { min-height: clamp(150px, 30vh, 260px); border-radius: 28px; border: 0; cursor: pointer;
+  background: var(--ink); color: var(--surface); font: inherit; font-family: Sora, Manrope, system-ui, sans-serif;
+  font-size: clamp(48px, 13vw, 84px); font-weight: 800; line-height: 1;
+  touch-action: manipulation; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
+.afd-btn:active { transform: scale(.98); opacity: .9; }
+.afd-btn:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+.afd-red { margin: 12px 0 0; font-weight: 700; }
+.afd-lineas { margin: 18px 0 0; display: grid; gap: 6px; }
+.afd-linea { margin: 0; }
+.afd-ficha { font-weight: 700; }
+.afd-cero { margin: 22px 0 8px; }
+.afd-ajustes-txt { margin-left: 2px; }
+@media (max-width: 520px) { .afd-ajustes-txt { display: none; } }
+
+.afd-form { grid-template-columns: 1fr 1fr; max-width: 560px; }
+.afd-con-unidad { display: flex; align-items: center; gap: 8px; }
+.afd-con-unidad input { flex: 1; min-width: 0; }
+.afd-aviso { margin: 0; }
+
+.afd-cifras-t { margin: 0 0 10px; font-size: 16px; }
+.afd-noches { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; margin: 0 0 12px; scrollbar-width: thin; }
+.afd-noches .btn { flex: none; }
+.afd-noches .btn.on { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.afd-grafica { display: block; width: 100%; max-width: 640px; height: auto; margin: 0 0 10px; }
+.afd-grafica rect { fill: var(--ink); }
+.afd-grafica .afd-tope { stroke: var(--ink-2); stroke-width: 1.5; stroke-dasharray: 5 4; vector-effect: non-scaling-stroke; }
+.afd-grafica text { fill: var(--ink-2); font-size: 11px; }
+.afd-dato { margin: 2px 0 0; }
+/* En el móvil, el título y el icono de ajustes en la misma fila. */
+@media (max-width: 760px) {
+  .afd .page-head { flex-wrap: nowrap; justify-content: space-between; margin-bottom: 4px; }
+  .afd .page-head > h1 { flex-basis: auto; }
+  .afd .page-head > .btn { flex: none; }
+}

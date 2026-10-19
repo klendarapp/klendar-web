@@ -383,8 +383,8 @@ const mapaHtml = (items, lang, S) => {
         var el=document.createElement('a');el.className='chincheta'+(p.k==='f'?' flash':'');el.href=p.u;el.setAttribute('aria-label',p.t);
         var a=document.createElement('a');a.className='pop';a.href=p.u;
         var bt=document.createElement('b');bt.textContent=p.t;var sp=document.createElement('span');sp.textContent=p.b||'';
-        a.append(bt,sp);if(p.n)pops.push({n:p.n,a:a});
-        var pop=new mapboxgl.Popup({offset:18,closeButton:false,focusAfterOpen:false}).setDOMContent(a);
+        a.append(bt,sp);var w=document.createElement('div');w.className='pop-caja';w.append(a);if(p.n)pops.push({n:p.n,a:a,w:w});
+        var pop=new mapboxgl.Popup({offset:18,closeButton:false,focusAfterOpen:false}).setDOMContent(w);
         new mapboxgl.Marker({element:el}).setLngLat([p.lng,p.lat]).setPopup(pop).addTo(m);
         el.addEventListener('click',function(e){e.preventDefault();});
       });
@@ -392,7 +392,9 @@ const mapaHtml = (items, lang, S) => {
       var SA=window.KlendarSitioAhora,KM=window.KlendarMarcas;
       if(SA&&KM&&pops.length)SA.pide(pops.map(function(x){return x.n;})).then(function(d){pops.forEach(function(x){var m=d[x.n];if(!m)return;
         var pr=KM.simbolo(m.price_level),t=SA.texto(m);if(!pr&&!t)return;var l=document.createElement('small');l.className='pop-ahora';
-        l.textContent=[pr,t].filter(Boolean).join(' · ');x.a.append(l);});});
+        l.textContent=[pr,t].filter(Boolean).join(' · ');x.a.append(l);});
+        // «Avísame cuando haya sitio» debajo (sitio-ahora.js decide si sale).
+        if(SA.avisame)pops.forEach(function(x){var m=d[x.n];if(!m||!m.crowd)return;var c=document.createElement('div');c.hidden=true;x.w.append(c);SA.avisame(c,x.n,m);});});
     }catch(e){falla();}
   })();</script>`;
 };
