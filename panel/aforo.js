@@ -48,7 +48,7 @@ const afdUuid = () => (crypto.randomUUID ? crypto.randomUUID()
 /** Por qué no ha ido, dicho para el negocio. */
 function afdError(msg) {
   const m = String(msg || '');
-  if (m.includes('capacity_disabled')) return bi('El aforo en directo está apagado.', 'Live head count is off.');
+  if (m.includes('capacity_disabled')) return bi('El aforo en directo está apagado.', 'Live capacity is off.');
   if (m.includes('invalid_max')) return bi('Pon un aforo máximo entre 1 y 100.000 personas.', 'Enter a maximum capacity between 1 and 100,000 people.');
   if (m.includes('invalid_pct')) return bi('«Casi lleno» va del 10 al 95 % y «Lleno», al menos 5 puntos más, hasta el 100 %.', '“Nearly full” goes from 10 to 95% and “Full” at least 5 points higher, up to 100%.');
   if (m.includes('organizer')) return bi('Sin local fijo no hay aforo que contar.', 'Without a fixed venue there’s no head count.');
@@ -110,8 +110,8 @@ PAGES.aforo = async (v, param) => {
   const puedeAjustar = st.can_edit === true;
   if (!st.enabled || !(Number(st.max) > 0)) {
     // Apagado: la pantalla vacía de siempre, centrada y con salida.
-    v.innerHTML = `<div class="page-head"><h1>${esc(bi('Aforo en directo', 'Live head count'))}</h1></div>
-      <section class="vacio"><h2>${esc(bi('El aforo en directo está apagado', 'Live head count is off'))}</h2>
+    v.innerHTML = `<div class="page-head"><h1>${esc(bi('Aforo en directo', 'Live capacity'))}</h1></div>
+      <section class="vacio"><h2>${esc(bi('El aforo en directo está apagado', 'Live capacity is off'))}</h2>
         <p>${esc(bi('Cuenta en la puerta con +1 y −1, y «¿Hay sitio ahora?» se pone solo.', 'Count at the door with +1 and −1, and “Room right now?” sets itself.'))}</p>
         <div class="vacio-botones">${puedeAjustar
     ? `<a class="btn primary" href="#/aforo/ajustes">${esc(bi('Activar', 'Turn on'))}</a>`
@@ -121,7 +121,7 @@ PAGES.aforo = async (v, param) => {
   }
 
   v.innerHTML = `<div class="afd">
-    <div class="page-head"><h1>${esc(bi('Aforo en directo', 'Live head count'))}</h1><span class="spacer"></span>
+    <div class="page-head"><h1>${esc(bi('Aforo en directo', 'Live capacity'))}</h1><span class="spacer"></span>
       ${puedeAjustar ? `<a class="btn sm ghost" href="#/aforo/ajustes" aria-label="${esc(bi('Ajustes del aforo', 'Head count settings'))}" title="${esc(bi('Ajustes del aforo', 'Head count settings'))}">${icono('ajustesAforo')}<span class="afd-ajustes-txt">${esc(bi('Ajustes del aforo', 'Head count settings'))}</span></a>` : ''}</div>
     <section class="afd-puerta" aria-labelledby="afdCifra">
       <p class="afd-cifra" id="afdCifra" aria-live="polite" aria-atomic="true"><b id="afdN"></b><span class="afd-max"> / ${esc(fmtNum(st.max))}</span></p>
@@ -270,11 +270,11 @@ async function afdAjustes(v) {
   if (!(st.can_edit === true)) { location.replace('#/aforo'); return; }
   const casiTxt = (n) => bi(`Por debajo del ${n} %, «Hay sitio».`, `Below ${n}%, “There’s room”.`);
   v.innerHTML = `
-    <p class="crumbs"><a class="link" href="#/aforo">${esc(bi('Aforo en directo', 'Live head count'))}</a></p>
+    <p class="crumbs"><a class="link" href="#/aforo">${esc(bi('Aforo en directo', 'Live capacity'))}</a></p>
     <div class="page-head"><h1>${esc(bi('Ajustes del aforo', 'Head count settings'))}</h1></div>
     <form class="form afd-form" id="afdForm" novalidate>
       <label class="f full casilla"><input type="checkbox" name="on" ${st.enabled ? 'checked' : ''}>
-        <span><b>${esc(bi('Aforo en directo', 'Live head count'))}</b> <small class="muted">${esc(bi('Cuenta en la puerta con +1 y −1, y «¿Hay sitio ahora?» se pone solo.', 'Count at the door with +1 and −1, and “Room right now?” sets itself.'))}</small></span></label>
+        <span><b>${esc(bi('Aforo en directo', 'Live capacity'))}</b> <small class="muted">${esc(bi('Cuenta en la puerta con +1 y −1, y «¿Hay sitio ahora?» se pone solo.', 'Count at the door with +1 and −1, and “Room right now?” sets itself.'))}</small></span></label>
       <label class="f full"><span>${esc(bi('Aforo máximo', 'Maximum capacity'))}</span>
         <span class="afd-con-unidad"><input name="max" type="number" inputmode="numeric" min="1" max="100000" step="1" value="${esc(st.max ?? '')}"><span class="muted">${esc(bi('personas', 'people'))}</span></span>
         <small class="err-txt" data-err="max" hidden></small></label>

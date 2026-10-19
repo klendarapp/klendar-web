@@ -145,7 +145,7 @@ async function herrResumen(v, { cajaFilas }) {
   const horaMenu = dm.live_until ? new Date(dm.live_until).toLocaleTimeString(LOC(), { hour: '2-digit', minute: '2-digit', timeZone: TZ }) : '';
   const filas = [
     // Aforo en directo: la puerta, con la cifra de ahora (panel/aforo.js).
-    !org && herrSi(o, 'capacity', 'enabled') ? fila('#/aforo', 'aforo', bi('Aforo en directo · ', 'Live head count · ')
+    !org && herrSi(o, 'capacity', 'enabled') ? fila('#/aforo', 'aforo', bi('Aforo en directo · ', 'Live capacity · ')
       + `${fmtNum(herrNum(o, 'capacity', 'people'))} / ${fmtNum(herrNum(o, 'capacity', 'max'))}`) : '',
     // Menú del día: a mano, en los sitios de comida (una fila).
     gestiona() && !org && dm.suggested ? fila('#/menu-del-dia', 'restaurant_menu', horaMenu
@@ -256,7 +256,7 @@ PAGES.herramientas = async (v) => {
     // ahora?» se pone solo. Lo abre todo el equipo; activarlo, propietario o
     // encargado. Sin local fijo, no sale.
     local ? herrTarjeta({
-      icon: 'aforo', titulo: bi('Aforo en directo', 'Live head count'),
+      icon: 'aforo', titulo: bi('Aforo en directo', 'Live capacity'),
       frase: bi('Cuenta en la puerta con +1 y −1, y «¿Hay sitio ahora?» se pone solo.', 'Count at the door with +1 and −1, and “Room right now?” sets itself.'),
       estado: herrSi(o, 'capacity', 'enabled')
         ? (herrNum(o, 'capacity', 'people') > 0 && herrNum(o, 'capacity', 'max') > 0

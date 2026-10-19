@@ -985,16 +985,16 @@
     "q": "How does “Room right now?” work?",
     "a": [
      {
-      "t": "Turn it on in your business page, in “About your place”. Then anyone on your team marks how busy it is from My business with one tap: There’s room, Nearly full or Full. It shows on your page and on the map while you're open and clears itself after 2 hours. With live head count, it sets itself."
+      "t": "Turn it on in your business page, in “About your place”. Then anyone on your team marks how busy it is from My business with one tap: There’s room, Nearly full or Full. It shows on your page and on the map while you're open and clears itself after 2 hours. With live capacity, it sets itself."
      }
     ]
    },
    {
     "id": "aforo-en-directo",
-    "q": "How does live head count work?",
+    "q": "How does live capacity work?",
     "a": [
      {
-      "t": "In My business → “More tools” → “Live head count” (also in the "
+      "t": "In My business → “More tools” → “Live capacity” (also in the "
      },
      {
       "t": "web dashboard",
