@@ -139,7 +139,7 @@ const T = (en) => en
       // La hoja en cuatro bloques (2026-10-07): Lo básico abierto; Para quién,
       // El sitio y Más plegados, con cuántos lleva cada uno.
       basics: 'The basics', forWhom: "Who it's for", forWhomHint: 'With kids, going solo, student discounts…',
-      placeHint: 'Open now, venue price, terrace, Wi-Fi…', moreB: 'More', moreBHint: 'Charity, public listings, discounts only',
+      placeHint: 'Open now, for right now, venue price, terrace…', moreB: 'More', moreBHint: 'Charity, public listings, discounts only',
       withKidsHint: 'Only child-friendly plans', friends: 'Friends going',
       whereTitle: 'Where should we look?', orCity: 'Or pick a city', removeF: (n) => `Remove “${n}”`,
       showN: (n) => (n === 1 ? 'Show 1 result' : `Show ${n} results`), showMany: (n) => `Show more than ${n} results`,
@@ -233,7 +233,7 @@ const T = (en) => en
       what: 'Qué', whatHint: 'Ofertas flash: descuentos que duran unas horas. Eventos: con día y hora.',
       openNowHint: 'El local, según su horario de hoy',
       basics: 'Lo básico', forWhom: 'Para quién', forWhomHint: 'Con niños, ir solo, descuentos para estudiantes…',
-      placeHint: 'Abierto ahora, precio del local, terraza, wifi…', moreB: 'Más', moreBHint: 'Solidario, agenda pública, solo con descuento',
+      placeHint: 'Abierto ahora, para ahora, precio del local, terraza…', moreB: 'Más', moreBHint: 'Solidario, agenda pública, solo con descuento',
       withKidsHint: 'Solo planes aptos para ir con niños', friends: 'Van mis amigos',
       whereTitle: '¿Dónde miramos?', orCity: 'O elige una ciudad', removeF: (n) => `Quitar «${n}»`,
       showN: (n) => (n === 1 ? 'Ver 1 resultado' : `Ver ${n} resultados`), showMany: (n) => `Ver más de ${n} resultados`,
