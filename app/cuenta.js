@@ -307,10 +307,15 @@ const paramsAlerta = (a) => ({
 
 RUTAS.alertas = async () => {
   if (!exigeSesion('alertas')) return;
-  const [lista, cats] = await Promise.all([llamar('my_offer_alerts', {}), categorias()]);
+  const [lista, cats, palabras] = await Promise.all([llamar('my_offer_alerts', {}), categorias(),
+    llamar('my_alert_words', {}).catch(() => null)]);
+  const misPalabras = (palabras?.words || []).map((w) => w.word);
   pinta(`
     <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(t('Avísame si…'))}</h1>
+    <div class="lista"><a class="fila" href="#/ajustes/notificaciones">
+      <span class="fila-t"><b>${esc(t('Por palabras'))}</b><small>${esc(misPalabras.length ? misPalabras.join(' · ') : t('Por palabras: «karaoke», «sushi», «2x1»'))}</small></span>
+      <span aria-hidden="true">›</span></a></div>
     <p class="muted">${esc(t('Te avisamos cuando se publique algo que encaje. Como mucho tres notificaciones al día, y puedes apagar cada aviso por separado.'))}</p>
     <p><a class="pill accent" href="#/alerta/nueva">${ic('add')} ${esc(t('Nuevo aviso'))}</a></p>
     ${(lista || []).length ? `<div class="avisos">${lista.map((a) => `
@@ -862,11 +867,12 @@ RUTAS.perfil = RUTAS.ajustes;
  * línea por fila y cada cambio se guarda solo (como el resto de Ajustes). */
 async function ajustesNotificaciones() {
   if (!exigeSesion('ajustes/notificaciones')) return;
-  const [prefs, cons, cats, negocios] = await Promise.all([
+  const [prefs, cons, cats, negocios, palabras] = await Promise.all([
     llamar('my_notification_preferences', {}),
     llamar('my_consents', {}).catch(() => null),
     categorias(),
     llamar('my_businesses', {}).catch(() => []),
+    llamar('my_alert_words', {}).catch(() => null),
   ]);
   // El resumen del negocio solo le llega a quien lo lleva (dueño o encargado).
   const llevaNegocio = Array.isArray(negocios) && negocios.some((b) => ['owner', 'manager'].includes(b.role));
@@ -928,7 +934,9 @@ async function ajustesNotificaciones() {
             ${[500, 1000, 2000, 5000].map((r) => `<label class="chip-radio"><input type="radio" name="radio" value="${r}"${(prefs.nearby_radius_m || 1000) === r ? ' checked' : ''}><span>${esc(distancia(r))}</span></label>`).join('')}
           </fieldset>
           <div class="fila fila-cats"><span class="fila-t"><b>${esc(t('Categorías'))}</b></span><span id="cats-cerca"></span></div>
-        </div>`)}
+        </div>
+        ${sw('palabras', 'Avísame si…', prefs.notify_word_alerts !== false, 'Por palabras: «karaoke», «sushi», «2x1»')}
+        <div id="palabras-mas" class="fila palabras-caja"${prefs.notify_word_alerts !== false ? '' : ' hidden'}></div>`)}
       ${grupo('Por correo', [
     sw('semanal', 'Correo semanal (jueves)', prefs.weekly_email),
     llevaNegocio ? sw('negocio', 'Resumen de tu negocio (lunes)', prefs.business_email !== false) : '',
@@ -969,6 +977,7 @@ async function ajustesNotificaciones() {
         notify_giveaways: el.sorteos.checked,
         notify_requests: el.pedidos.checked,
         notify_quetal: el.quetal.checked,
+        notify_word_alerts: el.palabras.checked,
         notify_nearby: el.cerca.checked,
         nearby_radius_m: Number(fa.querySelector('input[name=radio]:checked')?.value || 1000),
         nearby_categories: elegidas.length ? elegidas : null,
@@ -998,6 +1007,7 @@ async function ajustesNotificaciones() {
     const el = fa.elements;
     if (ev.target === el.cerca) $('#cerca-mas').hidden = !el.cerca.checked;
     if (ev.target === el.silencio) $('#silencio-mas').hidden = !el.silencio.checked;
+    if (ev.target === el.palabras) $('#palabras-mas').hidden = !el.palabras.checked;
     if (ev.target === el.amigos) {
       const det = $('#det-amigos');
       det.textContent = el.amigos.checked ? '' : t('Apagado, no te pueden invitar');
@@ -1006,6 +1016,11 @@ async function ajustesNotificaciones() {
     guarda();
   });
   fa.addEventListener('submit', (ev) => ev.preventDefault());
+
+  // «Avísame si…» por palabras: lo de dentro no guarda las preferencias.
+  const cajaPalabras = $('#palabras-mas');
+  cajaPalabras.addEventListener('change', (ev) => ev.stopPropagation());
+  editorPalabras(cajaPalabras, palabras);
 
   $('#sin-push')?.addEventListener('click', async (ev) => {
     const boton = ev.currentTarget;
@@ -1022,6 +1037,102 @@ async function ajustesNotificaciones() {
     });
   });
 }
+
+// ── «Avísame si…» por palabras (tanda D, migración 20261232100001) ─────────
+/** Por qué no vale una palabra (lo que devuelve `add_alert_word`). */
+const errorPalabra = (e) => ({
+  too_short: t('Escribe al menos 3 letras.'),
+  too_long: t('Como mucho 40 caracteres.'),
+  too_common: t('Esa palabra es demasiado común: prueba con otra más concreta.'),
+  too_many: t('Como mucho 10 palabras: quita alguna para añadir otra.'),
+})[e] || t('Algo ha fallado. Inténtalo de nuevo.');
+/** Lo mismo que `foldWord` de la app y `alert_word_norm` de la base. */
+const pliegaPalabra = (w) => String(w || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  .replace(/[^a-z0-9]+/g, ' ').trim();
+const palabraLarga = (w) => pliegaPalabra(w).replace(/ /g, '').length >= 3;
+
+/** Añade una palabra y lo dice. Devuelve si ha quedado guardada. */
+async function anadePalabra(palabra) {
+  if (!palabraLarga(palabra)) { toast(errorPalabra('too_short'), true); return false; }
+  try {
+    const r = await llamar('add_alert_word', { p_word: palabra });
+    if (r?.ok === false) { toast(errorPalabra(r.error), true); return false; }
+    const w = r?.word || palabra;
+    toast(r?.already ? (EN ? `You already get alerts for “${w}”` : `Ya te avisamos de «${w}»`)
+      : (EN ? `We’ll let you know if there’s something for “${w}” nearby` : `Te avisaremos si hay algo de «${w}» cerca`));
+    return true;
+  } catch (e) { toast(e.message, true); return false; }
+}
+
+/** Dónde vale «cerca», las palabras con su ✕, «Añadir palabra» y «3 de 10».
+ * Como `AlertWordsEditor` de la app. */
+function editorPalabras(caja, datos) {
+  const pintaPalabras = (d) => {
+    const lista = (d?.words || []).map((w) => w.word);
+    const max = d?.max || 10;
+    const z = d?.area || {};
+    const km = distancia(z.radius_m || 1000);
+    const zona = z.how === 'nearby'
+      ? (EN ? `We’ll let you know when something within ${km} matches (your “Flash offers near you” distance). At most 3 a day.`
+        : `Te avisamos cuando algo a ${km} encaje (la distancia de «Ofertas flash cerca de ti»). Como mucho 3 al día.`)
+      : z.how === 'city'
+        ? (EN ? `We’ll let you know when something in ${z.city} matches (your city). At most 3 a day.`
+          : `Te avisamos cuando algo en ${z.city} encaje (tu ciudad). Como mucho 3 al día.`)
+        : z.how === 'around'
+          ? t('Te avisamos cuando algo a 5 km de donde estés encaje. Como mucho 3 al día.')
+          : t('Para avisarte necesitamos saber por dónde andas: activa «Ofertas flash cerca de ti» o elige tu ciudad en Ajustes → Lo que ves → Tus gustos.');
+    caja.innerHTML = `
+      <p class="muted nota">${esc(zona)}</p>
+      <div class="palabras">
+        ${lista.map((w) => `<span class="palabra">${esc(w)}<button type="button" class="palabra-x" data-quita="${esc(w)}"
+          aria-label="${esc(EN ? `Remove “${w}”` : `Quitar «${w}»`)}">×</button></span>`).join('')}
+      </div>
+      ${lista.length < max ? `<div class="palabras-nueva">
+        <label class="sr" for="palabra-nueva">${esc(t('Añadir palabra'))}</label>
+        <input type="text" id="palabra-nueva" maxlength="40" autocomplete="off" placeholder="${esc(t('Por ejemplo: karaoke, sushi, jazz'))}">
+        <button type="button" class="pill" id="palabra-anade">${esc(t('Añadir palabra'))}</button>
+      </div>` : ''}
+      <p class="muted nota">${esc(lista.length ? (EN ? `${lista.length} of ${max}` : `${lista.length} de ${max}`) : t('Aún no tienes ninguna palabra.'))}</p>`;
+    const recarga = async () => pintaPalabras(await llamar('my_alert_words', {}).catch(() => d));
+    const campo = caja.querySelector('#palabra-nueva');
+    const anade = async () => {
+      const w = campo.value.trim();
+      if (!w) { campo.focus(); return; }
+      if (await anadePalabra(w)) await recarga();
+      caja.querySelector('#palabra-nueva')?.focus();
+    };
+    caja.querySelector('#palabra-anade')?.addEventListener('click', (ev) => ocupado(ev.currentTarget, anade));
+    campo?.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); anade(); } });
+    caja.querySelectorAll('[data-quita]').forEach((b) => b.addEventListener('click', () => ocupado(b, async () => {
+      const w = b.dataset.quita;
+      await llamar('remove_alert_word', { p_word: w });
+      toast(EN ? `No more alerts for “${w}”` : `Ya no te avisamos de «${w}»`);
+      await recarga();
+    })));
+  };
+  pintaPalabras(datos);
+}
+
+/** Desde Explorar: «Avísame si hay algo de «karaoke»» sin sesión en esta
+ * web. Se añade al entrar (con la marca de que se pulsó allí, sin preguntar)
+ * y se va a tus palabras. */
+RUTAS['avisame-palabra'] = async (_partes, params) => {
+  const palabra = String(params.get('palabra') || '').trim().slice(0, 40);
+  const aqui = `avisame-palabra?palabra=${encodeURIComponent(palabra)}`;
+  if (!exigeSesion(aqui)) return;
+  if (palabra) {
+    const sigue = await confirmaEnlace(aqui, {
+      titulo: t('Avísame si…'),
+      que: palabra,
+      texto: t('Te escribimos cuando algo cerca encaje'),
+      boton: t('Añadir palabra'),
+      volver: '#/ajustes/notificaciones',
+    });
+    if (!sigue) return;
+    await anadePalabra(palabra);
+  }
+  location.replace('#/ajustes/notificaciones');
+};
 
 // ── Sugerencias y mejoras ─────────────────────────────────────────────────
 const TIPOS_SUGERENCIA = [

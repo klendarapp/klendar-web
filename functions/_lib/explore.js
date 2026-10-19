@@ -90,6 +90,10 @@ const T = (en) => en
       backTop: 'Back to the top', notifyMe: "Tell me when there's something new",
       // «Pedir un local» (crecer, 2026-10-14): a «Tu cuenta», #/pedir-local.
       recommend: 'Missing a place? Ask for it on Klendar', askFor: (q) => `Can't find “${q}”? Ask for it on Klendar`,
+      // «Avísame si…» por palabras (tanda D): como la app.
+      alertWord: (q) => `Tell me when there’s something for “${q}”`, alertWordOn: (q) => `We’ll let you know about “${q}”`,
+      alertWordHint: 'We’ll write to you when something nearby matches',
+      alertWordOnHint: 'Your keywords are in Your account → Settings → Notifications',
       // Sin Klendar en la zona (`klendar_coverage`): «Avísame cuando llegue».
       notHere: "Klendar isn't here yet", notHereIn: (z) => `Klendar isn't in ${z} yet`,
       notHereBody: "We're opening city by city. If you like, we'll let you know once when we get there.",
@@ -185,6 +189,10 @@ const T = (en) => en
       clearF: 'Quitar filtros', changeF: 'Cambiar filtros', seeAgenda: 'Ver la agenda',
       backTop: 'Volver al principio', notifyMe: 'Avísame cuando haya algo nuevo',
       recommend: '¿Echas en falta algún sitio? Pide que esté en Klendar', askFor: (q) => `¿No encuentras «${q}»? Pide que esté en Klendar`,
+      // «Avísame si…» por palabras (tanda D): como la app.
+      alertWord: (q) => `Avísame si hay algo de «${q}»`, alertWordOn: (q) => `Te avisaremos de «${q}»`,
+      alertWordHint: 'Te escribimos cuando algo cerca encaje',
+      alertWordOnHint: 'Tus palabras, en Tu cuenta → Ajustes → Notificaciones',
       notHere: 'Klendar aún no ha llegado aquí', notHereIn: (z) => `Klendar aún no ha llegado a ${z}`,
       notHereBody: 'Vamos abriendo ciudad a ciudad. Si quieres, te avisamos una sola vez cuando lleguemos.',
       notifyArrive: 'Avísame cuando llegue', pickCity: 'Elegir una ciudad', askVenue: 'Pedir un local',
@@ -234,6 +242,8 @@ const colSub = (c, en) => (en ? c?.subtitle?.en : c?.subtitle?.es) || '';
 
 // Iconos de Material en SVG (las páginas públicas no cargan la fuente).
 const IC = {
+  // «Avísame si…» (Material «notifications_active»).
+  campana: 'M7.58 4.08 6.15 2.65C3.75 4.48 2.17 7.3 2.03 10.5h2a8.445 8.445 0 0 1 3.55-6.42zm12.39 6.42h2c-.15-3.2-1.73-6.02-4.12-7.85l-1.42 1.43a8.495 8.495 0 0 1 3.54 6.42zM18 11c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2v-5zm-6 11c.14 0 .27-.01.4-.04.65-.14 1.18-.58 1.44-1.18.1-.24.15-.5.15-.78h-4c.01 1.1.9 2 2.01 2z',
   tune: 'M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z',
   cerca: 'M21 3 3 10.53v.98l6.84 2.65L12.48 21h.98L21 3z',
   lugar: 'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z',
@@ -1363,6 +1373,17 @@ export async function explorePage(url, lang, modo = 'explorar') {
   const pedirQ = q && !descubre && (negocios ? items.length === 0 && page === 1 : conNegociosArriba && !(sitios?.items || []).length) ? q : '';
   const lineaPedir = pedirQ && !negocios && !vacio
     ? `<p class="fin-sugiere"><a href="${esc(pedirHref(lang, pedirQ))}">${esc(S.askFor(pedirQ))}</a></p>` : '';
+  // «Avísame si hay algo de «karaoke»» (tanda D): al final de una búsqueda
+  // y también sin resultados. Sin JavaScript (o sin sesión en este
+  // navegador) lleva a «Tu cuenta», que la añade al entrar; con sesión,
+  // /assets/palabras.js la añade sin salir de aquí.
+  const palabra = q.trim().slice(0, 40);
+  const lineaAvisame = !descubre && !sinKlendar && palabra.replace(/[^\p{L}\p{N}]/gu, '').length >= 3
+    ? `<div class="avisame-palabra" data-avisame-palabra="${esc(palabra)}" data-si="${esc(S.alertWordOn(palabra))}" data-si-hint="${esc(S.alertWordOnHint)}">
+      <a href="${esc(`/app/${en ? '?lang=en' : ''}#/avisame-palabra?palabra=${encodeURIComponent(palabra)}`)}">
+        ${ic('campana', 22)}<span><b>${esc(S.alertWord(palabra))}</b><small>${esc(S.alertWordHint)}</small></span></a>
+    </div>
+    <script src="/assets/palabras.js?v=1" defer data-lang="${en ? 'en' : 'es'}" data-url="${esc(supabasePublic().url)}" data-key="${esc(supabasePublic().key)}"></script>` : '';
   const final = sinKlendar ? sinKlendarHtml({ S, lang, lat, lng, cobertura, link })
     : alFinal || vacio ? finalHtml({
       S, en, lang, cerca, km, city, filtros: conFiltros, link, page, sugerencias, vacio, alertaHref,
@@ -1468,12 +1489,14 @@ ${GRUPOS_CSS}` : ''}`;
   ${lineaTiempo}
   ${resumenN}
   ${resultados}
+  ${vacio ? '' : lineaAvisame}
   ${paginas > 1 ? `<nav class="pager" aria-label="${esc(S.page)}">
     ${page > 1 ? `<a class="pill" href="${esc(link({ p: page - 1 }))}" rel="prev">${esc(S.prev)}</a>` : ''}
     <span class="muted">${esc(S.page)} ${page}/${paginas}</span>
     ${page < paginas ? `<a class="pill" href="${esc(link({ p: page + 1 }))}" rel="next">${esc(S.next)}</a>` : ''}
   </nav>` : ''}
   ${final}
+  ${vacio ? lineaAvisame : ''}
   ${masFormas}`;
 
   // Una búsqueda concreta no aporta nada al índice de Google; la página

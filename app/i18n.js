@@ -2,6 +2,20 @@
 'use strict';
 
 const APP_EN = {
+  // «Avísame si…» por palabras (tanda D)
+  "Por palabras": "By keyword",
+  "Por palabras: «karaoke», «sushi», «2x1»": "By keyword: “karaoke”, “sushi”, “2x1”",
+  "Escribe al menos 3 letras.": "Type at least 3 letters.",
+  "Como mucho 40 caracteres.": "40 characters at most.",
+  "Esa palabra es demasiado común: prueba con otra más concreta.": "That word is too common: try a more specific one.",
+  "Como mucho 10 palabras: quita alguna para añadir otra.": "10 keywords at most: remove one to add another.",
+  "Algo ha fallado. Inténtalo de nuevo.": "Something went wrong. Try again.",
+  "Te avisamos cuando algo a 5 km de donde estés encaje. Como mucho 3 al día.": "We’ll let you know when something within 5 km of where you are matches. At most 3 a day.",
+  "Para avisarte necesitamos saber por dónde andas: activa «Ofertas flash cerca de ti» o elige tu ciudad en Ajustes → Lo que ves → Tus gustos.": "To let you know we need to know roughly where you are: turn on “Flash offers near you” or choose your city in Settings → What you see → Your interests.",
+  "Añadir palabra": "Add a keyword",
+  "Por ejemplo: karaoke, sushi, jazz": "For example: karaoke, sushi, jazz",
+  "Te escribimos cuando algo cerca encaje": "We’ll write to you when something nearby matches",
+  "Aún no tienes ninguna palabra.": "You don’t have any keywords yet.",
   // «¿Qué tal?»: el interruptor en Ajustes y «Ahora no» en la reseña
   "¿Qué tal? al día siguiente": "How was it? the next day",
   "Tras usar algo en un local, te pedimos tu reseña": "After using something at a venue, we ask for your review",

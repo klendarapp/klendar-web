@@ -5,7 +5,11 @@
  * - #/menu-del-dia: la foto de la pizarra, el precio, una línea opcional y
  *   para qué es (comida, cena o las dos); sale como «Menú de hoy · 12,50 €»
  *   hasta que cierra la cocina (o el local) y al día siguiente desaparece
- *   solo. «Repetir el de ayer», «Añadir la foto de hoy» y «Todos los días».
+ *   solo (sin horario ese día: comida hasta las 16:00, cena hasta las
+ *   23:00). «Repetir el de ayer», «Añadir la foto de hoy» y «Todos los días».
+ *   Si hoy sale cerrado (`closed_today`, migración 20261232100000): «¿Abres
+ *   hoy?» arriba, con «Sí, abro hoy» (horario o «Días cerrados») y «Seguir
+ *   igualmente».
  * - #/wifi-clientes: red y contraseña (opcionales) y los carteles de mesa
  *   (`/cartel/mesa/<código>`, cuatro por folio, numerados si se quiere),
  *   los escaneos del mes y «Cambiar el enlace».
@@ -92,6 +96,16 @@ PAGES['menu-del-dia'] = async (v) => {
     <div class="page-head"><h1>${esc(bi('Menú del día', 'Daily menu'))}</h1></div>
     <p class="muted" style="margin:-6px 0 14px;max-width:640px">${esc(bi('Una foto de la pizarra y el precio: sale como «Menú de hoy» hasta que cierra la cocina y al día siguiente desaparece solo.',
       'A photo of the board and the price: it shows as “Today’s menu” until the kitchen closes and disappears by itself the next day.'))}</p>
+    ${s.closed_today && s.can_publish ? `<div class="card" id="mesaCerrado">
+      <b>${esc(bi('Hoy tu local sale cerrado en Klendar. ¿Abres hoy?', 'Today your place shows as closed on Klendar. Are you open today?'))}</b>
+      <p class="hint" style="margin:4px 0 10px">${esc(s.closed_today === 'closure'
+    ? bi('Hoy está en «Días cerrados»: mientras siga así, no se ve nada de tu local.', 'Today is in “Closed days”: while it stays that way, nothing from your place is shown.')
+    : bi('Tu horario no tiene horas hoy: el menú se publica igual, pero la ficha dice «Cerrado».', 'Your opening hours have nothing for today: the menu is posted anyway, but your page says “Closed”.'))}</p>
+      <div class="acciones-fila" style="display:flex;gap:8px;flex-wrap:wrap">
+        <a class="btn" href="${s.closed_today === 'closure' ? '#/cerrados' : '#/ficha/horario'}">${esc(bi('Sí, abro hoy', 'Yes, I’m open today'))}</a>
+        <button class="btn" type="button" id="mesaSigue">${esc(bi('Seguir igualmente', 'Continue anyway'))}</button>
+      </div>
+    </div>` : ''}
     ${live ? `<div class="card antes">
       <div class="antes-ultima">
         ${live.image ? `<img src="${esc(live.image)}" alt="" loading="lazy">` : `<span class="antes-ic">${icono('restaurant_menu')}</span>`}
@@ -135,6 +149,9 @@ PAGES['menu-del-dia'] = async (v) => {
     </div>`;
 
   const pintaFin = () => { $('#finTxt', v).textContent = finTxt(); };
+  // «Seguir igualmente»: fuera el aviso de «Hoy sale cerrado».
+  const sigue = $('#mesaSigue', v);
+  if (sigue) sigue.onclick = () => { $('#mesaCerrado', v).hidden = true; };
   $$('input[name=comida]', v).forEach((r) => {
     r.onchange = () => { comida = r.value; hasta = null; $('#hasta', v).value = ''; pintaFin(); };
   });
