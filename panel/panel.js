@@ -1496,7 +1496,7 @@ async function pintaAforo(caja, estado = null) {
   const linea = !st.open_now ? bi('Ahora estás cerrado: no se ve hasta que abras.', "You're closed now: it won't show until you open.")
     : contador ? (aMano && st.manual_until
       ? bi(`Marcado a mano · vuelve al contador a las ${hora(st.manual_until)}`, `Set by hand · back to the counter at ${hora(st.manual_until)}`)
-      : bi('Con el aforo en directo, lo que marques manda 30 minutos.', 'With live head count, what you set counts for 30 minutes.'))
+      : bi('Con el aforo en directo, lo que marques manda 30 minutos.', 'With live capacity, what you set by hand wins for 30 minutes.'))
     : actual && st.set_at ? bi(`Marcado ${KMa.hace(st.set_at, 'es')}. Se quita solo a las 2 horas.`, `Set ${KMa.hace(st.set_at, 'en')}. Clears itself after 2 hours.`)
       : st.level ? bi('Lo último que marcaste ya no se ve: ha pasado más de 2 horas.', "What you last set no longer shows: it's been over 2 hours.")
         : bi('Sin marcar: en tu ficha no sale nada.', 'Not set: nothing shows on your page.');

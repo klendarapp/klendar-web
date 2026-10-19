@@ -61,7 +61,7 @@
       priceA11y: 'Price range: ',
       crowd: { quiet: 'There’s room', lively: 'Nearly full', full: 'Full' },
       crowdTitle: 'Room right now?',
-      crowdSettingHint: 'Anyone on your team can tap how busy it is from My business: There’s room, Nearly full or Full. It shows on your page and on the map while you’re open, and clears itself after 2 hours. With live head count, it sets itself.',
+      crowdSettingHint: 'Anyone on your team can tap how busy it is from My business: There’s room, Nearly full or Full. It shows on your page and on the map while you’re open, and clears itself after 2 hours. With live capacity, it sets itself.',
       agoNow: 'just now', agoMin: (n) => `${n} min ago`, agoH: (n) => `${n} h ago`,
       crowdNowA11y: (l, a) => `Right now: ${l}, ${a}`,
       solo: 'Good for going solo',

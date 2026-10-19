@@ -51,7 +51,7 @@ function afdError(msg) {
   if (m.includes('capacity_disabled')) return bi('El aforo en directo está apagado.', 'Live capacity is off.');
   if (m.includes('invalid_max')) return bi('Pon un aforo máximo entre 1 y 100.000 personas.', 'Enter a maximum capacity between 1 and 100,000 people.');
   if (m.includes('invalid_pct')) return bi('«Casi lleno» va del 10 al 95 % y «Lleno», al menos 5 puntos más, hasta el 100 %.', '“Nearly full” goes from 10 to 95% and “Full” at least 5 points higher, up to 100%.');
-  if (m.includes('organizer')) return bi('Sin local fijo no hay aforo que contar.', 'Without a fixed venue there’s no head count.');
+  if (m.includes('organizer')) return bi('Sin local fijo no hay aforo que contar.', 'Without a fixed venue there’s nothing to count.');
   if (m.includes('forbidden')) return friendly('not_authorized');
   return friendly(m);
 }
@@ -97,7 +97,7 @@ function afdLineas(st) {
       ? bi(`Hoy: «${titulo}» a las ${hora} · ${fmtNum(faltan)} con reserva por llegar`, `Today: “${titulo}” at ${hora} · ${fmtNum(faltan)} with a booking still to arrive`)
       : bi(`Hoy: «${titulo}» a las ${hora}`, `Today: “${titulo}” at ${hora}`))}</p>`);
   }
-  if (eventos.length) lineas.push(`<p class="afd-linea muted">${esc(bi('El aforo no cierra las reservas del evento.', 'The head count doesn’t close the event’s bookings.'))}</p>`);
+  if (eventos.length) lineas.push(`<p class="afd-linea muted">${esc(bi('El aforo no cierra las reservas del evento.', 'Capacity doesn’t close the event’s reservations.'))}</p>`);
   return lineas.join('');
 }
 
@@ -122,7 +122,7 @@ PAGES.aforo = async (v, param) => {
 
   v.innerHTML = `<div class="afd">
     <div class="page-head"><h1>${esc(bi('Aforo en directo', 'Live capacity'))}</h1><span class="spacer"></span>
-      ${puedeAjustar ? `<a class="btn sm ghost" href="#/aforo/ajustes" aria-label="${esc(bi('Ajustes del aforo', 'Head count settings'))}" title="${esc(bi('Ajustes del aforo', 'Head count settings'))}">${icono('ajustesAforo')}<span class="afd-ajustes-txt">${esc(bi('Ajustes del aforo', 'Head count settings'))}</span></a>` : ''}</div>
+      ${puedeAjustar ? `<a class="btn sm ghost" href="#/aforo/ajustes" aria-label="${esc(bi('Ajustes del aforo', 'Capacity settings'))}" title="${esc(bi('Ajustes del aforo', 'Capacity settings'))}">${icono('ajustesAforo')}<span class="afd-ajustes-txt">${esc(bi('Ajustes del aforo', 'Capacity settings'))}</span></a>` : ''}</div>
     <section class="afd-puerta" aria-labelledby="afdCifra">
       <p class="afd-cifra" id="afdCifra" aria-live="polite" aria-atomic="true"><b id="afdN"></b><span class="afd-max"> / ${esc(fmtNum(st.max))}</span></p>
       <p class="afd-nivel" id="afdNivel"></p>
@@ -233,7 +233,7 @@ PAGES.aforo = async (v, param) => {
   });
 
   $('#afdCero', v).onclick = async () => {
-    const si = await confirmDlg(bi('¿Poner el aforo a 0?', 'Set the head count to 0?'),
+    const si = await confirmDlg(bi('¿Poner el aforo a 0?', 'Set capacity to 0?'),
       esc(bi('Hazlo al cerrar. Al empezar otro día vuelve a 0 solo.', 'Do it when you close. It goes back to 0 by itself when a new day starts.')),
       { submit: bi('Poner a 0', 'Set to 0') });
     if (!si || !v.isConnected) return;
@@ -244,7 +244,7 @@ PAGES.aforo = async (v, param) => {
       if (nuevo) st = nuevo;
       vuelo = null;
       pinta();
-      toast(bi('Aforo a 0', 'Head count set to 0'));
+      toast(bi('Aforo a 0', 'Capacity set to 0'));
     } catch (e) { toast(afdError(e.clave || e.message), true); }
   };
 
@@ -271,7 +271,7 @@ async function afdAjustes(v) {
   const casiTxt = (n) => bi(`Por debajo del ${n} %, «Hay sitio».`, `Below ${n}%, “There’s room”.`);
   v.innerHTML = `
     <p class="crumbs"><a class="link" href="#/aforo">${esc(bi('Aforo en directo', 'Live capacity'))}</a></p>
-    <div class="page-head"><h1>${esc(bi('Ajustes del aforo', 'Head count settings'))}</h1></div>
+    <div class="page-head"><h1>${esc(bi('Ajustes del aforo', 'Capacity settings'))}</h1></div>
     <form class="form afd-form" id="afdForm" novalidate>
       <label class="f full casilla"><input type="checkbox" name="on" ${st.enabled ? 'checked' : ''}>
         <span><b>${esc(bi('Aforo en directo', 'Live capacity'))}</b> <small class="muted">${esc(bi('Cuenta en la puerta con +1 y −1, y «¿Hay sitio ahora?» se pone solo.', 'Count at the door with +1 and −1, and “Room right now?” sets itself.'))}</small></span></label>
