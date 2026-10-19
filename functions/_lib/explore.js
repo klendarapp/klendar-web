@@ -23,6 +23,7 @@ import { SITIO, esDieta, icSitio, icTiempo, nombreSitio, ordenaSitio, sitioAUrl,
 import { FUENTE_TIEMPO, dondeTiempo, tiempoDeHoy } from './tiempo.js';
 import { rejilla, tarjeta } from './tarjeta.js';
 import KM from '../../assets/marcas.js';
+import KMO from '../../assets/momentos.js';
 import { notFound, sitioAhoraScripts } from './views.js';
 import { PARTIDOS_CSS, icPartido, origenDeZona, partidosBase, partidosEnBusqueda, zonaBaseDeExplorar, zonaDeExplorar } from './partidos.js';
 import { artistasEnBusqueda } from './artistas.js';
@@ -117,6 +118,7 @@ const T = (en) => en
       beforeClosing: 'Before closing', beforeClosingHint: 'What’s left at the end of the day in bakeries, cafés and restaurants, at a discount. You pay at the venue.',
       dailyMenu: 'Daily menu', dailyMenuHint: 'Today’s set menu at places to eat, with its price.',
       eatNow: 'Food served now', eatNowHint: 'Places to eat with the kitchen open, going by their kitchen hours or, if none, the venue’s',
+      moment: 'Time of day', momentHint: '“For right now” picks by the local time: breakfast in the morning, vermouth at midday, drinks at night…',
       placeAttrs: "What it's like", diets: 'Allergens and diets', dietsHint: 'Each business declares this: if you have an allergy, check with the venue.',
       place: 'The place', withKids: 'With kids', kidsIn: 'Plans with kids in', placeN: (n) => `The place (${n})`,
       seeAll: (n) => `See all (${n})`, seeLess: 'See less',
@@ -212,6 +214,7 @@ const T = (en) => en
       beforeClosing: 'Antes de cerrar', beforeClosingHint: 'Lo que sobra del día en panaderías, cafeterías y restaurantes, con descuento. Se paga en el local.',
       dailyMenu: 'Menú del día', dailyMenuHint: 'El menú de hoy de los sitios de comida, con su precio.',
       eatNow: 'Se puede comer ahora', eatNowHint: 'Sitios de comida con la cocina abierta, según su horario de cocina o, si no tienen, el del local',
+      moment: 'Momento del día', momentHint: '«Para ahora» elige según la hora del sitio: desayunar por la mañana, vermut a mediodía, copas por la noche…',
       placeAttrs: 'Cómo es', diets: 'Alérgenos y dietas', dietsHint: 'Lo declara cada negocio: si tienes alergia, confírmalo en el local.',
       place: 'El sitio', withKids: 'Con niños', kidsIn: 'Planes con niños en', placeN: (n) => `El sitio (${n})`,
       seeAll: (n) => `Ver todas (${n})`, seeLess: 'Ver menos',
@@ -677,9 +680,9 @@ function calendarioHtml({ items, lang, S, link, mes, dia, hoy }) {
 /** Las claves de la dirección en cada idioma. */
 const CLAVES = {
   es: { city: 'ciudad', cat: 'categoria', kind: 'tipo', price: 'precio', when: 'cuando', discount: 'descuento', open: 'abierto', sort: 'orden', view: 'vista', month: 'mes', day: 'dia', show: 'ver', place: 'sitio', weather: 'tiempo',
-    age: 'edad', vprice: 'precio-local', card: 'descuento-para', solo: 'solo', charity: 'solidario', entity: 'agenda-publica', closing: 'antes-de-cerrar', buzz: 'ambiente', menu: 'menu-del-dia', eat: 'comer-ahora' },
+    age: 'edad', vprice: 'precio-local', card: 'descuento-para', solo: 'solo', charity: 'solidario', entity: 'agenda-publica', closing: 'antes-de-cerrar', buzz: 'ambiente', menu: 'menu-del-dia', eat: 'comer-ahora', moment: 'momento' },
   en: { city: 'city', cat: 'category', kind: 'type', price: 'price', when: 'when', discount: 'discount', open: 'open', sort: 'sort', view: 'view', month: 'month', day: 'day', show: 'show', place: 'place', weather: 'weather',
-    age: 'age', vprice: 'venue-price', card: 'discount-for', solo: 'solo', charity: 'charity', entity: 'public-listings', closing: 'before-closing', buzz: 'buzz', menu: 'daily-menu', eat: 'food-now' },
+    age: 'age', vprice: 'venue-price', card: 'discount-for', solo: 'solo', charity: 'charity', entity: 'public-listings', closing: 'before-closing', buzz: 'buzz', menu: 'daily-menu', eat: 'food-now', moment: 'moment' },
 };
 /** Marcas (tanda A) en la dirección: edades «4-8», carné en cada idioma. */
 const EDAD_URL = { '0-3': '0_3', '4-8': '4_8', '9-12': '9_12', '13-17': '13_17' };
@@ -767,6 +770,9 @@ function leeEstado(qs) {
     // comer ahora» (`eat_now`, migración 20261230100000), como la app.
     menuDia: de('menu', 2) === '1',
     comerAhora: de('eat', 2) === '1',
+    // Momento del día (`moment_now` o `moment_<x>`, migración
+    // 20261233100001): uno como mucho, como la app.
+    momento: KMO.deUrl(de('moment', 20)),
     // «Esta noche se mueve» (solo en el mapa de Explorar; tanda C).
     ambiente: de('buzz', 2) === '1',
     // Apagado solo si lo dice la dirección (la hoja sin JavaScript manda
@@ -816,6 +822,7 @@ function query(e, lang, { soloCompartido = false } = {}) {
     if (e.antesCierre) p.set(K.closing, '1');
     if (e.menuDia) p.set(K.menu, '1');
     if (e.comerAhora) p.set(K.eat, '1');
+    if (e.momento) p.set(K.moment, KMO.aUrl(e.momento, en));
     if (!soloCompartido && e.vista === 'map' && e.ambiente) p.set(K.buzz, '1');
   }
   if (e.tiempoOff) p.set(K.weather, '0');
@@ -892,6 +899,7 @@ function resumenFiltros(e, S, catNombre) {
   // El sitio.
   if (e.abierto) partes.push(S.openNow);
   if (e.comerAhora) partes.push(S.eatNow);
+  if (e.momento) partes.push(KMO.etiquetaFiltro(e.momento, lang));
   if (e.precioLocal) partes.push(marca(`price_le_${e.precioLocal}`));
   const sitio = sitioSinNinos(e);
   if (sitio.length === 1) partes.push(nombreSitio(sitio[0], lang === 'en'));
@@ -938,9 +946,10 @@ export async function explorePage(url, lang, modo = 'explorar') {
     ...(soloDescuento ? { discount_only: true } : {}),
     ...(abierto ? { open_now: true } : {}),
     // «El sitio» y «Con niños»: todos los marcados a la vez.
-    ...(traits.length || traitsMarcas(e).length || antesCierre || menuDia || comerAhora
+    ...(traits.length || traitsMarcas(e).length || antesCierre || menuDia || comerAhora || e.momento
       ? { traits: [...traits, ...traitsMarcas(e), ...(antesCierre ? ['before_closing'] : []),
-          ...(menuDia ? ['daily_menu'] : []), ...(comerAhora ? ['eat_now'] : [])] } : {}),
+          ...(menuDia ? ['daily_menu'] : []), ...(comerAhora ? ['eat_now'] : []),
+          ...(e.momento ? [KMO.trait(e.momento)] : [])] } : {}),
     sort: ordenBase === 'nearest' && !cerca ? 'soonest' : ordenBase,
     ...(cerca ? { radius_m: km * 1000 } : {}),
     // «Tus gustos»: pesan en el orden, sin esconder nada (como la app).
@@ -950,7 +959,7 @@ export async function explorePage(url, lang, modo = 'explorar') {
   };
   const pKind = esOfertas ? 'flash_offer' : esEventos ? 'future_event' : null;
   const filtrado = Boolean(q || city || cat || kind || page > 1 || price || when || soloDescuento || abierto || sort || cerca || vista || e.amigos
-    || traits.length || traitsMarcas(e).length || antesCierre || menuDia || comerAhora || tiempoOff || gustos.length);
+    || traits.length || traitsMarcas(e).length || antesCierre || menuDia || comerAhora || e.momento || tiempoOff || gustos.length);
 
   const argsExplore = {
     p_city: cerca ? null : city || null, p_category: cat || null, p_kind: pKind, p_q: q || null,
@@ -1039,7 +1048,7 @@ export async function explorePage(url, lang, modo = 'explorar') {
   // Lo que deja fuera publicaciones (`hasNarrowingFilters` en la app): la
   // zona y la distancia se dicen aparte y el orden no quita nada.
   const conFiltros = Boolean(q || cat || kind || price || when || soloDescuento || abierto || e.amigos || traits.length
-    || traitsMarcas(e).length || antesCierre || e.menuDia || e.comerAhora);
+    || traitsMarcas(e).length || antesCierre || e.menuDia || e.comerAhora || e.momento);
   // «Cerca de ti» y nada: ¿es que aquí aún no hay Klendar? (`klendar_coverage`,
   // ningún negocio a 25 km). Entonces, «Avísame cuando llegue» en vez del
   // vacío de siempre. Si no contesta, el vacío de siempre.
@@ -1139,6 +1148,7 @@ export async function explorePage(url, lang, modo = 'explorar') {
     aquiOn ? quitarChip(quitaAqui, ic('aqui', 16), S.hereNow) : '',
     antesCierre ? quitarChip(link({ antesCierre: false }), ic('bolsa', 16), S.beforeClosing) : '',
     e.menuDia ? quitarChip(link({ menuDia: false }), ic('carta', 16), S.dailyMenu) : '',
+    e.momento ? quitarChip(link({ momento: '' }), ic('reloj', 16), KMO.etiquetaFiltro(e.momento, lang)) : '',
     ninosOn ? quitarChip(link({ traits: traits.filter((t) => t !== 'kids'), edades: [] }), icSitio('kids', 16), S.withKids) : '',
   ].join('');
   // «Ordenar por»: un desplegable compacto, como la app (no en el mapa ni en
@@ -1167,7 +1177,7 @@ export async function explorePage(url, lang, modo = 'explorar') {
   // `moreCount`); Filtros (N) es la suma. La distancia va en el «dónde».
   const nBasico = [kind && !negocios, cat, !negocios && price, when && !calendario, !negocios && antesCierre, !negocios && e.menuDia].filter(Boolean).length;
   const nParaQuien = negocios ? 0 : [ninosOn, e.solo, e.carne, e.amigos].filter(Boolean).length;
-  const nSitio = (abierto ? 1 : 0) + (negocios ? 0 : (e.precioLocal ? 1 : 0) + (e.comerAhora ? 1 : 0) + sitioSinNinos(e).length);
+  const nSitio = (abierto ? 1 : 0) + (negocios ? 0 : (e.precioLocal ? 1 : 0) + (e.comerAhora ? 1 : 0) + (e.momento ? 1 : 0) + sitioSinNinos(e).length);
   const nMas = negocios ? 0 : [e.solidario, e.entidad, soloDescuento].filter(Boolean).length;
   const nFiltros = nBasico + nParaQuien + nSitio + nMas;
   const K = CLAVES[en ? 'en' : 'es'];
@@ -1190,7 +1200,7 @@ export async function explorePage(url, lang, modo = 'explorar') {
   // «Restablecer»: lo de la hoja de serie. La distancia y la zona (en el
   // «dónde»), el orden y «Según el tiempo» se quedan como estén.
   const restablecer = link({ kind: negocios ? 'places' : '', cat: '', price: '', when: '', soloDescuento: false, abierto: false, traits: [],
-    edades: [], precioLocal: 0, carne: '', solo: false, solidario: false, entidad: false, antesCierre: false, menuDia: false, comerAhora: false, amigos: false });
+    edades: [], precioLocal: 0, carne: '', solo: false, solidario: false, entidad: false, antesCierre: false, menuDia: false, comerAhora: false, momento: '', amigos: false });
   // Categorías: las 8 más usadas (las que más tienen publicado ahora, como la
   // app) y la elegida, y «Ver todas (31)», que abre el selector con buscador y
   // grupos (/assets/categorias.js). Sin JavaScript, el resto sale debajo,
@@ -1249,7 +1259,11 @@ export async function explorePage(url, lang, modo = 'explorar') {
       </div><p class="hoja-nota hoja-nota-bajo">${esc(S.openNowHint)}</p></fieldset>
       ${negocios ? '' : `<fieldset class="hoja-casillas"><legend class="sr">${esc(S.eatNow)}</legend><div class="ops">
         ${casilla(K.eat, S.eatNow, e.comerAhora)}
-      </div><p class="hoja-nota hoja-nota-bajo">${esc(S.eatNowHint)}</p></fieldset>`}
+      </div><p class="hoja-nota hoja-nota-bajo">${esc(S.eatNowHint)}</p></fieldset>
+      <fieldset><legend>${esc(S.moment)}</legend><div class="ops">
+        ${radio(K.moment, '', M.fAny, !e.momento)}
+        ${['now', ...KMO.MOMENTOS.map((m) => m.id)].map((m) => radio(K.moment, KMO.aUrl(m, en), KMO.etiquetaFiltro(m, lang), e.momento === m)).join('')}
+      </div><p class="hoja-nota hoja-nota-bajo">${esc(S.momentHint)}</p></fieldset>`}
       ${negocios ? '' : `<fieldset><legend>${esc(M.fPriceLevel)}</legend><div class="ops">
         ${radio(K.vprice, '', M.fAny, !e.precioLocal)}
         ${KM.PRECIOS.map((l) => radio(K.vprice, String(l), l === 1 ? '€' : M.fUpTo('€'.repeat(l)), e.precioLocal === l)).join('')}

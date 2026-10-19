@@ -1014,3 +1014,16 @@ details.plegable[open] > summary { margin-bottom: 12px; }
 .cerr-dos .btn { justify-content: center; text-align: center; }
 .cerr-lista { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
 .cerr-aviso { margin-bottom: 4px; }
+
+/* «Qué pedir aquí» y festivos (pedir.js). */
+.ped-cosa { display: grid; grid-template-columns: 1fr; gap: 10px; margin: 0 0 12px; }
+.ped-n { margin: 0; font-weight: 700; color: var(--ink-2); }
+.ped-foto { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.ped-foto img { width: 64px; height: 64px; border-radius: 12px; object-fit: cover; }
+.ped-foto .spacer { flex: 1; }
+.ped-festivo h2 { display: flex; align-items: center; gap: 8px; }
+/* Las tres respuestas, iguales: una debajo de otra en el móvil, en fila en el ordenador. */
+.ped-tres { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.ped-tres .btn { justify-content: center; text-align: center; }
+@media (min-width: 720px) { .ped-tres { grid-template-columns: repeat(3, 1fr); } }
+.ped-otro { margin-top: 12px; }

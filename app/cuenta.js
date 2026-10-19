@@ -76,6 +76,8 @@ function destinoWeb(ruta) {
   }
   // «Estaba cerrado»: al negocio, en el panel.
   if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/estaba-cerrado/i))) return `/panel/#/estaba-cerrado?biz=${m[1]}`;
+  // «¿Abres el 1 de noviembre?»: la pregunta del festivo, en el panel.
+  if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/holiday\/(\d{4}-\d{2}-\d{2})/i))) return `/panel/#/festivo/${m[2]}?biz=${m[1]}`;
   if ((m = r.match(/^\/business\/([0-9a-f-]{36})/i))) return `${pre}/b/${m[1]}`;
   // «Tu oferta termina en 1 h»: al panel, con la pregunta de ampliarla hecha.
   if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\?extend=([0-9a-f-]{36})/i))) {

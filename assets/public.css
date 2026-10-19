@@ -263,6 +263,24 @@ button.pill { font-family: inherit; cursor: pointer; }
   .estado-hoy.cerrado b { color: #FF5C5C; }
 }
 
+/* El festivo de esta semana bajo «Horario»: «Abre el festivo del 1 de
+   noviembre (10:00–14:00)»; sin contestar, en ámbar oscuro (como la app). */
+.festivo { display: flex; align-items: flex-start; gap: 8px; margin: 0 0 10px; font-size: 14px; font-weight: 600; color: var(--ink-2); }
+.festivo .ic { flex: none; margin-top: 1px; }
+.festivo.sin-confirmar { color: #A16207; }
+@media (prefers-color-scheme: dark) { .festivo.sin-confirmar { color: #F5B041; } }
+/* «Qué pedir aquí»: foto (o icono) · nombre y su línea. */
+.que-pedir { list-style: none; padding: 0; margin: 0 0 18px; }
+.que-pedir li { display: flex; gap: 12px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid var(--glass-border); }
+.que-pedir li > span:last-child { flex: 1; min-width: 0; }
+.que-pedir li small { display: block; color: var(--ink-2); font-size: 14px; }
+.que-pedir .dish { flex: none; display: block; width: 64px; height: 64px; border-radius: 12px; }
+.que-pedir .dish img { width: 64px; height: 64px; border-radius: 12px; object-fit: cover; }
+.que-pedir-ic { flex: none; color: var(--ink-2); padding-top: 1px; }
+/* Momentos del día en «El sitio»: «Vermut · Tardeo · Copas». */
+.momentos { display: flex; align-items: flex-start; gap: 8px; margin: 10px 0 0; font-weight: 600; }
+.momentos .ic { flex: none; color: var(--ink-2); margin-top: 1px; }
+
 /* ── La acción principal, siempre a mano en el móvil (/assets/barra.js) ── */
 .barra-accion { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
   background: var(--elevated); border-top: 1px solid var(--glass-border); box-shadow: 0 -10px 30px -20px rgba(0,0,0,.4); }

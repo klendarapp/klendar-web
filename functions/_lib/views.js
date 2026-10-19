@@ -20,6 +20,7 @@ import { SITIO_PLAN, listaSitio, sitioFicha } from './sitio.js';
 import { FUENTE_TIEMPO } from './tiempo.js';
 import KR from '../../assets/rrpp-enlace.js';
 import KM from '../../assets/marcas.js';
+import KMO from '../../assets/momentos.js';
 import KE from '../../assets/enlaces.js';
 import { fuenteHtml, selloEntidad } from './entidades.js';
 import { PARTIDOS_CSS, partidosDelBar } from './partidos.js';
@@ -49,6 +50,9 @@ const PATHS = {
   // ⋮ (more_vert): lo que se usa poco, como en la app.
   mas: 'M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z',
   editar: 'M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z',
+  // «Momentos del día» (schedule) y el festivo (event).
+  reloj: 'M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z',
+  calendario: 'M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z',
   resena: 'M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 14v-2.47l6.88-6.88c.2-.2.51-.2.71 0l1.77 1.77c.2.2.2.51 0 .71L8.47 14H6zm12 0h-7.5l2-2H18v2z',
 };
 const icono = (n, size = 18) => `<svg class="ic" viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true"><path fill="currentColor" d="${PATHS[n]}"/></svg>`;
@@ -679,7 +683,7 @@ export async function businessPage(param, lang, search = '') {
   // «Clientes verificados»: solo las reseñas de quien ha canjeado algo aquí
   // (`?resenas=verificadas`, el mismo filtro que la app).
   const soloVerificadas = new URLSearchParams(search).get('resenas') === 'verificadas';
-  const [offers, sellos, carta, opiniones, novedades, cierres, nVerificadas, local, partidosBar, grupoInfo, sorteos, organizador, enlacesNeg] = await Promise.all([
+  const [offers, sellos, carta, opiniones, novedades, cierres, nVerificadas, local, partidosBar, grupoInfo, sorteos, organizador, enlacesNeg, fichaInfo] = await Promise.all([
     rpcAll('business_offers', { p_id: id }),
     rpcAll('stamp_cards_of', { p_business: id }).catch(() => []), // opcional: sin ella, la ficha sale igual
     rpcAll('business_menu', { p_business: id }),
@@ -700,6 +704,9 @@ export async function businessPage(param, lang, search = '') {
     // «Reservar», «Pedir…» y los archivos de la carta (fotos y PDF; migración
     // 20261210100000). Opcional: sin ella, las fotos de `menu_images`.
     rpc('business_links', { p_id: id }).catch(() => null),
+    // «Qué pedir aquí», momentos del día, días con otro horario y el
+    // festivo de esta semana (migraciones 20261233100000–02). Opcional.
+    rpc('business_ficha_info', { p_business: id }).catch(() => null),
   ]);
   // Bloqueado (sin pagar) o en pausa por cierre (`unavailable`, migración
   // 20261222100000): la ficha lo dice («No disponible ahora mismo» o
@@ -755,6 +762,9 @@ export async function businessPage(param, lang, search = '') {
           : `There are ${n} exclusive publications for their customers with stamps.`),
         birthday: 'Birthday gift for people who have it in their favourites',
         matches: 'Matches',
+        highlights: 'What to order here',
+        holidayOpens: (d, h) => `Open on the ${d} holiday (${h})`, holidayClosed: (d) => `Closed on the ${d} holiday`,
+        holidayUnknown: (d) => `${d} holiday: hours not confirmed`,
       }
     : {
         now: 'Ahora mismo', soon: 'Próximamente',
@@ -795,6 +805,9 @@ export async function businessPage(param, lang, search = '') {
           : `Hay ${n} publicaciones exclusivas para sus clientes con sellos.`),
         birthday: 'Regalo de cumpleaños para quien lo tiene en favoritos',
         matches: 'Partidos',
+        highlights: 'Qué pedir aquí',
+        holidayOpens: (d, h) => `Abre el festivo del ${d} (${h})`, holidayClosed: (d) => `Cerrado el festivo del ${d}`,
+        holidayUnknown: (d) => `Festivo del ${d}: horario sin confirmar`,
       };
 
   const flash = offers.filter((o) => o.kind === 'flash_offer');
@@ -855,6 +868,34 @@ export async function businessPage(param, lang, search = '') {
         // «Del 12 al 13 de octubre» si es el mismo mes.
         : S.closing(c.starts_on.slice(0, 7) === c.ends_on.slice(0, 7) ? String(Number(c.starts_on.slice(8, 10))) : dia(c.starts_on), dia(c.ends_on)));
     return `<p class="cierre${ahora ? ' ahora' : ''}">${icono('cerrado', 18)}<span><b>${esc(txt)}</b>${c.reason ? ` · ${esc(c.reason)}` : ''}</span></p>`;
+  })();
+
+  // «Qué pedir aquí», momentos y el festivo (`business_ficha_info`).
+  const info = fichaInfo && typeof fichaInfo === 'object' ? fichaInfo : {};
+  const cosas = (Array.isArray(info.highlights) ? info.highlights : []).filter((h) => h && h.title);
+  const momentos = (Array.isArray(info.moments) ? info.moments : []).map((m) => KMO.nombre(m, lang)).filter(Boolean);
+  const quePedir = cosas.length && !parado ? `<h2 id="que-pedir">${esc(S.highlights)}</h2>
+      <p data-tr-nota="highlight:" hidden></p>
+      <ul class="que-pedir">${cosas.map((h) => `<li>
+        ${seguro(h.image_url) ? miniatura(seguro(h.image_url), { grupo: `que-pedir-${esc(h.id || '')}`, clase: 'dish', etiqueta: h.title, lang, ancho: 64, alto: 64 }) : `<span class="que-pedir-ic" aria-hidden="true">${icono('carta', 20)}</span>`}
+        <span><b${isUuid(h.id) ? ` data-tr="highlight:${h.id}:title"` : ''}>${esc(h.title)}</b>${h.note ? `<small${isUuid(h.id) ? ` data-tr="highlight:${h.id}:note"` : ''}>${esc(h.note)}</small>` : ''}</span>
+      </li>`).join('')}</ul>` : '';
+  const momentosHtml = momentos.length ? `<p class="momentos">${icono('reloj', 18)}<span>${esc(momentos.join(' · '))}</span></p>` : '';
+  // Días con otro horario: {"2026-11-09": [["10:00","14:00"]]} para
+  // /assets/horario.js.
+  const diasOtro = Object.fromEntries((Array.isArray(info.special_days) ? info.special_days : [])
+    .filter((d) => d && /^\d{4}-\d{2}-\d{2}$/.test(String(d.day)) && Array.isArray(d.hours))
+    .map((d) => [String(d.day), d.hours]));
+  // «Abre el festivo del 1 de noviembre (10:00–14:00)»…
+  const festivo = (() => {
+    const h = info.holiday;
+    if (!h || !/^\d{4}-\d{2}-\d{2}$/.test(String(h.day)) || organizador || parado) return '';
+    const dia = new Intl.DateTimeFormat(en ? 'en-GB' : 'es-ES', { day: 'numeric', month: 'long', timeZone: 'UTC' })
+      .format(new Date(`${h.day}T00:00:00Z`));
+    const tramos = (Array.isArray(h.hours) ? h.hours : []).filter((t) => Array.isArray(t)).map((t) => `${t[0]}–${t[1]}`).join(', ');
+    const txt = h.state === 'unknown' ? S.holidayUnknown(dia)
+      : h.state === 'closed' || !tramos ? S.holidayClosed(dia) : S.holidayOpens(dia, tramos);
+    return `<p class="festivo${h.state === 'unknown' ? ' sin-confirmar' : ''}">${icono('calendario', 18)}<span>${esc(txt)}</span></p>`;
   })();
 
   // Horario: {"1": [["09:00","14:00"], …], …, "7": []} (1 = lunes). Hoy, en
@@ -965,13 +1006,14 @@ export async function businessPage(param, lang, search = '') {
         ${b.contact_email ? `<div><span>${icono('correo')}</span><span><a href="mailto:${esc(b.contact_email)}">${esc(b.contact_email)}</a></span></div>` : ''}
         ${redes.length ? `<div><span>${icono('redes')}</span><span>${redes.join(' · ')}</span></div>` : ''}
       </div>
-      ${horario ? `<h2 class="side-h">${S.hours}</h2><p class="estado-hoy" hidden data-horario="${esc(JSON.stringify(horas))}" data-cierres="${esc(JSON.stringify(cierres.map((c) => ({ starts_on: c.starts_on, ends_on: c.ends_on }))))}" data-tz="${esc(tz)}" data-lang="${en ? 'en' : 'es'}"${cocina ? ` data-cocina="${esc(JSON.stringify(cocina))}"` : ''}></p>${horario}${horarioCocina}
+      ${horario ? `<h2 class="side-h">${S.hours}</h2><p class="estado-hoy" hidden data-horario="${esc(JSON.stringify(horas))}" data-cierres="${esc(JSON.stringify(cierres.map((c) => ({ starts_on: c.starts_on, ends_on: c.ends_on }))))}" data-tz="${esc(tz)}" data-lang="${en ? 'en' : 'es'}"${cocina ? ` data-cocina="${esc(JSON.stringify(cocina))}"` : ''}${Object.keys(diasOtro).length ? ` data-dias="${esc(JSON.stringify(diasOtro))}"` : ''}></p>${festivo}${horario}${horarioCocina}
       <div class="horario-check" hidden data-solo-publico data-cerrado="${esc(b.id)}" data-lang="${en ? 'en' : 'es'}" data-url="${esc(supabasePublic().url)}" data-key="${esc(supabasePublic().key)}"></div>` : ''}
     </aside>
     <div class="d-body">
       ${b.description ? `<h2>${S.about}</h2><p data-tr="business:${esc(b.id)}:description">${esc(b.description).replace(/\n/g, '<br>')}</p>
       <p data-tr-nota="business:" hidden></p>` : ''}
-      ${sitioFicha(sitio, lang) ? `<h2>${S.place}</h2>${sitioFicha(sitio, lang)}` : ''}
+      ${quePedir}
+      ${sitioFicha(sitio, lang) || momentosHtml ? `<h2>${S.place}</h2>${sitioFicha(sitio, lang)}${momentosHtml}` : ''}
       ${flash.length ? `<h2 id="ahora">${S.now}</h2>${rejilla(flash, lang, { tz, sinNegocio: true, galeria: true })}` : ''}
       ${events.length ? `<h2 id="proximamente">${S.soon}</h2>${rejilla(events, lang, { tz, sinNegocio: true, galeria: true })}` : ''}
       ${offers.length || parado ? '' : `<p class="empty">${S.none}</p>`}
@@ -1087,7 +1129,7 @@ export async function businessPage(param, lang, search = '') {
     lang, path, body: body + MENU_JS, title: conCiudad ? `${b.name} · ${b.city}` : b.name, description, image: b.cover || b.logo,
     head: `<meta name="robots" content="${b.adults_only || conVisita || b.closed_indefinitely || parado ? 'noindex' : 'index, follow'}">
 ${ldScript(jsonLd)}${cuentaToques ? `
-<script src="/assets/enlaces.js?v=3" defer data-url="${esc(supabasePublic().url)}" data-key="${esc(supabasePublic().key)}" data-biz="${esc(b.id)}"></script>` : ''}${horario ? '\n<script src="/assets/zona.js?v=2" defer></script>\n<script src="/assets/horario.js?v=2" defer></script>\n<script src="/assets/cerrado.js?v=1" defer></script>' : ''}${conVisita ? `\n${conVisita}` : ''}${local.crowd_enabled ? `\n${sitioAhoraScripts(lang)}` : ''}
+<script src="/assets/enlaces.js?v=3" defer data-url="${esc(supabasePublic().url)}" data-key="${esc(supabasePublic().key)}" data-biz="${esc(b.id)}"></script>` : ''}${horario ? '\n<script src="/assets/zona.js?v=2" defer></script>\n<script src="/assets/horario.js?v=3" defer></script>\n<script src="/assets/cerrado.js?v=1" defer></script>' : ''}${conVisita ? `\n${conVisita}` : ''}${local.crowd_enabled ? `\n${sitioAhoraScripts(lang)}` : ''}
 ${traducir(lang, `business:${b.id}`, carta.length ? `menu:${b.id}` : '')}${partidos ? `
 ${PARTIDOS_CSS}` : ''}${grupoHtml || sorteosHtml ? `
 ${GRUPOS_CSS}` : ''}${organizador ? `

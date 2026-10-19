@@ -621,7 +621,7 @@ let ANTES = null;
 /** ¿El negocio activo es un organizador sin local fijo? (`preparaNegocio`). */
 const esOrganizador = () => BIZ?.no_fixed_venue === true;
 /** Lo que el panel no enseña a un organizador: necesita un local (tanda C). */
-const SIN_LOCAL_FIJO = ['partidos', 'antes-de-cerrar', 'cartel-local', 'cerrados', 'menu-del-dia', 'wifi-clientes', 'aforo'];
+const SIN_LOCAL_FIJO = ['partidos', 'antes-de-cerrar', 'cartel-local', 'cerrados', 'menu-del-dia', 'wifi-clientes', 'aforo', 'festivo'];
 /** Si «Partidos que pones» sale en el menú (`business_broadcast_week`). */
 let PARTIDOS_NAV = null;
 
@@ -979,7 +979,7 @@ function sinDobleEnvio(caja) {
 
 // Lo que no es de un empleado: solo propietario y encargados (como la app).
 // «Regalo de cumpleaños» no está: el personal lo ve, en solo lectura.
-const SOLO_GESTION = ['sellos', 'carta', 'novedades', 'mensajes', 'ficha', 'cerrados', 'equipo', 'cartel-local', 'tele', 'rrpp', 'antes-de-cerrar', 'grupos', 'plan', 'menu-del-dia', 'wifi-clientes'];
+const SOLO_GESTION = ['sellos', 'carta', 'novedades', 'mensajes', 'ficha', 'cerrados', 'equipo', 'cartel-local', 'tele', 'rrpp', 'antes-de-cerrar', 'grupos', 'plan', 'menu-del-dia', 'wifi-clientes', 'festivo'];
 
 // ── Salir con cambios sin guardar ───────────────────────────────────────────
 // Una vista con cambios se apunta aquí: si se va a otra pantalla, se vuelve
@@ -1350,6 +1350,7 @@ PAGES.resumen = async (v) => {
     <div class="page-head"><h1>${esc(BIZ.name)}</h1>${BIZ.entity?.kind ? `<span class="tag badge-entidad">${icono('entidad')} ${esc(entSello(BIZ.entity.kind))}</span>` : ''}<span class="tag st-${esc(BIZ.verification_status)}">${esc(BIZ_LABELS[BIZ.verification_status] || BIZ.verification_status)}</span><span class="spacer"></span>
       <a class="btn sm ghost" href="${APP_URL}/b/${esc(BIZ.id)}" target="_blank" rel="noopener">Ver ficha pública ↗</a></div>
     ${aviso}
+    ${aviso ? '' : '<div id="festivoCaja"></div>'}
     <!-- Crear y validar, en coral los dos e iguales (como «Crear» y
          «Validar códigos» arriba del todo en «Mi negocio» de la app). Un
          empleado no publica: solo «Validar códigos». -->
@@ -1415,6 +1416,8 @@ PAGES.resumen = async (v) => {
     };
   }
   pintaAforo($('#aforoCaja', v));
+  // «¿Abres el 1 de noviembre?» (pedir.js), si no hay otro aviso.
+  if (typeof pedFestivo === 'function') pedFestivo($('#festivoCaja', v));
   // «Cola virtual · N esperando», si está abierta (panel/cola.js).
   if (typeof resumenCola === 'function') resumenCola($('#colaCaja', v));
   const salirEq = $('#salir-equipo', v);

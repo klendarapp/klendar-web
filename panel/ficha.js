@@ -35,6 +35,7 @@ const PARTES_FICHA = [
   ['horario', 'Horario'],
   ['contacto', 'Contacto y redes'],
   ['carta', 'Carta'],
+  ['que-pedir', 'Qué pedir aquí'],
   ['local', 'Cómo es tu local'],
   ['klendar', 'Datos para Klendar'],
   ['mayores', 'Solo para mayores de 18'],
@@ -571,8 +572,8 @@ function fichaCompleta(b, { sitio, carta }) {
 
 // ── «Tu ficha»: el índice y cada apartado ───────────────────────────────────
 async function datosFicha() {
-  const [{ data: b }, cats, privado, carta, enlaces] = await Promise.all([
-    sb.from('businesses').select('id, name, description, category_id, address, city, phone, website, contact_email, social_links, logo_url, cover_image_url, gallery, opening_hours, kitchen_hours, adults_only, amenities, price_level, crowd_enabled, menu_url, menu_images').eq('id', BIZ.id).maybeSingle(),
+  const [{ data: b }, cats, privado, carta, enlaces, info] = await Promise.all([
+    sb.from('businesses').select('id, name, description, category_id, address, city, phone, website, contact_email, social_links, logo_url, cover_image_url, gallery, opening_hours, kitchen_hours, adults_only, amenities, moments, price_level, crowd_enabled, menu_url, menu_images').eq('id', BIZ.id).maybeSingle(),
     CATS.length ? CATS : sb.from('categories').select('*').order('position', { ascending: true }).then(({ data }) => data || []),
     // El NIF no se puede leer de la tabla (no es público): lo da
     // `business_private` a quien gestiona.
@@ -580,6 +581,8 @@ async function datosFicha() {
     rpc('business_menu', { p_business: BIZ.id }).catch(() => null),
     // Los enlaces de «Reservar y pedir» y los archivos de la carta.
     rpc('business_links', { p_id: BIZ.id }).catch(() => null),
+    // «Qué pedir aquí» (pedir.js; migración 20261233100000).
+    rpc('business_ficha_info', { p_business: BIZ.id }).catch(() => null),
   ]);
   if (b) {
     b.links = Array.isArray(enlaces?.links) ? enlaces.links : [];
@@ -587,6 +590,8 @@ async function datosFicha() {
     b.tax_id = privado?.tax_id || '';
     b.tax_known = !!privado;
     b.amenities = Array.isArray(b.amenities) ? b.amenities : [];
+    b.moments = Array.isArray(b.moments) ? b.moments : [];
+    b.highlights = Array.isArray(info?.highlights) ? info.highlights : [];
   }
   return { b, cats, carta };
 }
@@ -598,7 +603,7 @@ PAGES.ficha = async (v, parte) => {
   if (parte && !PARTES_FICHA.some((p) => p[0] === parte) && !['datos', 'entidad'].includes(parte)) { location.hash = '#/ficha'; return; }
   if (parte === 'datos' && !esPropietario()) { location.hash = '#/ficha'; return; }
   // Un organizador sin local fijo no tiene horario ni «Cómo es tu local».
-  if (esOrganizador() && ['horario', 'local'].includes(parte)) { location.hash = '#/ficha'; return; }
+  if (esOrganizador() && ['horario', 'local', 'que-pedir'].includes(parte)) { location.hash = '#/ficha'; return; }
   const { b, cats, carta } = await datosFicha();
   if (!b) {
     v.innerHTML = `<section class="vacio"><h2>${esc(I18N.t('No hemos podido cargar tu ficha.'))}</h2><div class="vacio-botones"><button class="btn primary" type="button" data-reintentar>${esc(I18N.t('Reintentar'))}</button></div></section>`;
@@ -606,6 +611,8 @@ PAGES.ficha = async (v, parte) => {
     return;
   }
   if (!parte) return indiceFicha(v, b, cats, carta);
+  // «Qué pedir aquí»: su propia pantalla (pedir.js).
+  if (parte === 'que-pedir') return pedQuePedir(v, carta);
   // «Cuenta de entidad» (entidades.js).
   if (parte === 'entidad') return entFicha(v, b);
   return parteFicha(v, parte, b, cats);
@@ -624,7 +631,8 @@ function indiceFicha(v, b, cats, carta) {
   const nFotosCarta = b.menu_files ? b.menu_files.filter((f) => f.kind === 'image').length : (b.menu_images || []).length;
   const nPdfCarta = b.menu_files ? b.menu_files.filter((f) => f.kind === 'pdf').length : 0;
   const sitioNombres = [KlendarMarcas.simbolo(Number(b.price_level)),
-    ...SITIO_PANEL.filter(([k]) => b.amenities.includes(k)).map(([, n]) => I18N.t(n))].filter(Boolean);
+    ...SITIO_PANEL.filter(([k]) => b.amenities.includes(k)).map(([, n]) => I18N.t(n)),
+    ...b.moments.map((m) => globalThis.KlendarMomentos?.nombre(m, I18N.lang))].filter(Boolean);
   const resumen = {
     fotos: une([b.cover_image_url && I18N.t('Portada'), b.logo_url && I18N.t('Logo'), (b.gallery || []).length && foto(b.gallery.length)].filter(Boolean), 'Sin fotos todavía'),
     basico: [nombreCat || (b.category_id ? '' : I18N.t('Sin categoría')), desc || I18N.t('sin descripción')].filter(Boolean).join(' · '),
@@ -639,6 +647,7 @@ function indiceFicha(v, b, cats, carta) {
     local: sitioNombres.length ? [...sitioNombres.slice(0, 3), sitioNombres.length > 3 ? `+${sitioNombres.length - 3}` : ''].filter(Boolean).join(', ') : I18N.t('Sin marcar'),
     klendar: !b.tax_known || b.tax_id ? I18N.t('NIF/CIF · no lo ve la gente') : I18N.t('Falta el NIF/CIF'),
     mayores: b.adults_only ? I18N.t('Sí') : I18N.t('No'),
+    'que-pedir': une(b.highlights.map((h) => h.title).filter(Boolean), 'Nada todavía'),
   };
   const sinCategoria = !b.category_id;
   const sinDireccion = esOrganizador() ? !b.city : (!b.address || !b.city);
@@ -655,7 +664,7 @@ function indiceFicha(v, b, cats, carta) {
     ${sinCategoria || sinDireccion ? `<a class="aviso-falta" href="#/ficha/${sinCategoria ? 'basico' : 'donde'}">${ms('cancel')}<span>${esc(I18N.t(sinCategoria ? 'Elige una categoría.' : 'Falta la dirección o la ciudad.'))}</span>${ms('chevron_right')}</a>` : ''}
     <p class="muted" style="margin:0 0 10px">Toca un apartado para cambiarlo. Cada uno se guarda por separado.</p>
     <nav class="card indice" aria-label="${esc(I18N.t('Apartados de la ficha'))}">
-      ${PARTES_FICHA.filter(([k]) => !((esOrganizador() || esEntidad()) && ['horario', 'local'].includes(k))).map(([k, titulo]) => fila(k, titulo, resumen[k], { mal: (k === 'basico' && sinCategoria) || (k === 'donde' && sinDireccion) })).join('')}
+      ${PARTES_FICHA.filter(([k]) => !((esOrganizador() || esEntidad()) && ['horario', 'local', 'que-pedir'].includes(k))).map(([k, titulo]) => fila(k, titulo, resumen[k], { mal: (k === 'basico' && sinCategoria) || (k === 'donde' && sinDireccion) })).join('')}
       ${fila('entidad', 'Cuenta de entidad', BIZ.entity?.kind ? entSello(BIZ.entity.kind)
         : BIZ.entity?.application?.status === 'pending' ? I18N.t('Pendiente de comprobar') : I18N.t('Ayuntamiento, asociación u ONG: pídela'))}
     </nav>
@@ -709,7 +718,7 @@ async function parteFicha(v, parte, b, cats) {
     'Optional. If you don’t set it, the kitchen follows the venue’s hours. Used on your page, in “Food served now” and in the daily menu.'))}</p>
         <div data-cocina ${cocinaOn ? '' : 'hidden'}></div></div>`,
     contacto: () => `${htmlContacto(d)}<div class="full enlaces-ficha" data-enlaces></div>`,
-    local: () => htmlSitio(b.amenities, { precio: b.price_level, aforo: b.crowd_enabled }),
+    local: () => htmlSitio(b.amenities, { precio: b.price_level, aforo: b.crowd_enabled }) + pedMomentosHtml(b.moments),
     klendar: () => htmlKlendar(d),
     mayores: () => htmlMayores(d),
   }[parte];
@@ -730,7 +739,8 @@ async function parteFicha(v, parte, b, cats) {
       // (la cocina va aparte; aquí solo para saber si hay cambios sin guardar)
       contacto: () => ({ phone: String(x.phone || '').trim(), website: String(x.website || '').trim(), contact_email: String(x.contact_email || '').trim(), social_links: socialDe(x) }),
       local: () => ({ amenities: $$('[name=sitio]:checked', v).map((c) => c.value).sort(),
-        price_level: Number(x.price_level) || null, crowd_enabled: !!f().elements.crowd_enabled.checked }),
+        price_level: Number(x.price_level) || null, crowd_enabled: !!f().elements.crowd_enabled.checked,
+        moments: pedMomentosDe(v) }),
       klendar: () => ({ tax_id: String(x.tax_id || '').trim() }),
       mayores: () => ({ adults_only: !!f().elements.adults_only.checked }),
     }[parte]();
@@ -793,6 +803,8 @@ async function parteFicha(v, parte, b, cats) {
         const p = patch();
         await rpc('set_business_amenities', { p_business: BIZ.id, p_amenities: p.amenities });
         await rpc('set_business_place_extras', { p_business: BIZ.id, p_price_level: p.price_level, p_crowd_enabled: p.crowd_enabled });
+        await rpc('set_business_moments', { p_business: BIZ.id, p_moments: p.moments });
+        b.moments = p.moments;
       } else {
         const p = patch();
         await rpc('update_business', { p_id: BIZ.id, p_patch: p });
