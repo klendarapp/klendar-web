@@ -1107,7 +1107,9 @@ export async function explorePage(url, lang, modo = 'explorar') {
       ? ciudadesP.then((ck) => rpc('public_places', {
         ...argsSitios(centroDe(ck)),
         p_limit: POR_PAGINA, p_offset: sitiosMapa ? 0 : (page - 1) * POR_PAGINA,
-      }))
+      // Si la base aún no la tiene (o no contesta), la pantalla vacía con sus
+      // salidas en vez de un error.
+      })).catch(() => ({ items: [], total: 0 }))
       : calendario
         ? todas(argsExplore).then((items) => ({ items, total: items.length }))
         : tiempoP.then((w) => rpc('public_explore', {
