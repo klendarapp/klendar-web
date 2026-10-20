@@ -58,7 +58,12 @@ PAGES.preguntas = async (v) => {
     ['hidden', bi('Ocultas', 'Hidden'), n?.hidden],
   ];
   const vacio = {
-    pending: bi('No tienes preguntas sin contestar.', 'You have no questions to answer.'),
+    // Hasta el 4-11-2026 nadie pregunta (`available`, migración
+    // 20261237100001 de la app): lo dice en vez de «No tienes…».
+    pending: n?.available === false
+      ? bi('Desde el 4 de noviembre, la gente podrá preguntarte en tu ficha. Lo que contestes lo verá todo el mundo.',
+        'From 4 November, people will be able to ask you questions on your page. Everyone will see your answers.')
+      : bi('No tienes preguntas sin contestar.', 'You have no questions to answer.'),
     answered: bi('Aún no has contestado ninguna.', "You haven't answered any yet."),
     hidden: bi('No has ocultado ninguna.', "You haven't hidden any."),
   }[PREG_TAB];

@@ -2,6 +2,12 @@
 'use strict';
 
 const APP_EN = {
+  // «Pregúntale al local»: interruptores de los avisos y «Pronto podrás preguntar…»
+  "Respuestas a tus preguntas": "Replies to your questions",
+  "Cuando un local contesta u oculta lo que le preguntaste": "When a venue answers or hides what you asked it",
+  "Preguntas en tu ficha": "Questions on your page",
+  "Cuando alguien te pregunta, como mucho una vez por hora. Las preguntas siguen en Mi negocio.": "When someone asks you something, at most once an hour. The questions stay in My business.",
+  "Pronto podrás preguntar a este local.": "You’ll soon be able to ask this venue questions.",
   // Ajustes → Notificaciones: «Tu negocio» (la pregunta de los festivos)
   "Tu negocio": "Your business",
   "Preguntas de festivos": "Public holiday questions",

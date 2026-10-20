@@ -810,6 +810,7 @@ KL_DIC('eu', {
   "Descuento": "Deskontua",
   "Descuentos para": "Deskontuak honentzat:",
   "Desde": "Noiztik",
+  "Desde el 4 de noviembre, la gente podrá preguntarte en tu ficha. Lo que contestes lo verá todo el mundo.": "Azaroaren 4tik aurrera, jendeak galderak egin ahal izango dizkizu zure fitxan. Zure erantzunak denek ikusiko dituzte.",
   "Desde el {closed_since}. No se ve nada de tu negocio.": "Noiztik: {closed_since}. Ez da zure negozioaren ezer ikusten.",
   "Desde que la persona lo consigue.": "Pertsonak lortzen duenetik.",
   "Desde que la persona lo genera. Para una oferta de barra, pocos minutos; para una entrada que se guarda hasta el día del evento, «sin caducidad».": "Pertsonak sortzen duenetik. Barrako eskaintza baterako, minutu gutxi; ekitaldiaren egunera arte gordetzen den sarrera baterako, «Iraungitzerik gabe».",

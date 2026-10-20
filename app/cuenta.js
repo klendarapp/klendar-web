@@ -968,6 +968,10 @@ async function ajustesNotificaciones() {
     // «Pedir un local» (crecer): cuando llega a Klendar uno que pediste.
     sw('quetal', '¿Qué tal? al día siguiente', prefs.notify_quetal !== false, 'Tras usar algo en un local, te pedimos tu reseña'),
     sw('pedidos', 'Locales que has pedido', prefs.notify_requests !== false, 'Cuando llega a Klendar uno que pediste'),
+    // «Pregúntale al local» (migración 20261237100002 de la app): cuando un
+    // local contesta u oculta lo que le preguntaste. Apagado, el estado sigue
+    // en la ficha.
+    sw('respuestas', 'Respuestas a tus preguntas', prefs.notify_question_replies !== false, 'Cuando un local contesta u oculta lo que le preguntaste'),
     // «Avísame cuando haya sitio» (aforo en directo): llega aunque sean
     // horas de silencio, porque lo has pedido tú esa noche.
     sw('sitio', 'Cuando haya sitio', prefs.notify_room !== false, 'Cuando pides «Avísame cuando haya sitio» en un local lleno. Llega aunque estés en horas de silencio, porque lo has pedido tú.'),
@@ -982,8 +986,10 @@ async function ajustesNotificaciones() {
         ${sw('palabras', 'Avísame si…', prefs.notify_word_alerts !== false, 'Por palabras: «karaoke», «sushi», «2x1»')}
         <div id="palabras-mas" class="fila palabras-caja"${prefs.notify_word_alerts !== false ? '' : ' hidden'}></div>`)}
       ${llevaNegocio ? grupo('Tu negocio', [
-    // La pregunta de los festivos (migración 20261233100006 de la app):
-    // apagada, la pregunta sigue en «Mi negocio» y en el panel.
+    // Las preguntas de la gente en su ficha (migración 20261237100002) y la
+    // pregunta de los festivos (20261233100006): apagadas, siguen en «Mi
+    // negocio» y en el panel.
+    sw('preguntasFicha', 'Preguntas en tu ficha', prefs.notify_questions_received !== false, 'Cuando alguien te pregunta, como mucho una vez por hora. Las preguntas siguen en Mi negocio.'),
     sw('festivos', 'Preguntas de festivos', prefs.notify_holiday_asks !== false, 'Unos días antes de cada festivo, si abres. La pregunta sigue en Mi negocio.'),
   ].join('')) : ''}
       ${grupo('Por correo', [
@@ -1028,6 +1034,8 @@ async function ajustesNotificaciones() {
         notify_quetal: el.quetal.checked,
         notify_word_alerts: el.palabras.checked,
         notify_room: el.sitio.checked,
+        notify_question_replies: el.respuestas.checked,
+        ...(el.preguntasFicha ? { notify_questions_received: el.preguntasFicha.checked } : {}),
         ...(el.festivos ? { notify_holiday_asks: el.festivos.checked } : {}),
         notify_nearby: el.cerca.checked,
         nearby_radius_m: Number(fa.querySelector('input[name=radio]:checked')?.value || 1000),

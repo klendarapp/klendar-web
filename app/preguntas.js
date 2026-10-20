@@ -25,6 +25,8 @@ const PREG_ERR = {
   daily_limit: 'Por hoy ya está: mañana puedes preguntar más.',
   unavailable: 'Este negocio no recibe preguntas ahora mismo.',
   no_team: 'Este negocio aún no contesta preguntas en Klendar.',
+  // Hasta el 4-11-2026 nadie pregunta (migración 20261237100001 de la app).
+  not_yet: 'Pronto podrás preguntar a este local.',
   team: 'Eres del equipo de este negocio.',
   rate_limited: 'Has hecho demasiadas hoy. Prueba mañana.',
   not_found: 'Esa pregunta ya no está.',

@@ -807,6 +807,7 @@ export async function businessPage(param, lang, search = '') {
         noQuestions: 'No questions yet. Got a question? Ask the venue.', helpful: 'Helpful to me too',
         helpfulN: (n) => (n === 1 ? 'Helpful to 1 person' : `Helpful to ${n} people`), edited: 'edited',
         noAsk: "This business isn't taking questions right now.",
+        askSoon: 'You’ll soon be able to ask this venue questions.',
         seeAll: (n) => `See all (${n})`, back: 'Back to the page', prev: '← Previous', next: 'Next →', page: 'Page',
         allAgenda: (c) => `See everything on in ${c}`,
       }
@@ -856,6 +857,7 @@ export async function businessPage(param, lang, search = '') {
         noQuestions: 'Aún no hay preguntas. ¿Tienes una duda? Pregúntale al local.', helpful: 'A mí también me sirve',
         helpfulN: (n) => (n === 1 ? 'A 1 persona le sirve' : `A ${n} personas les sirve`), edited: 'editada',
         noAsk: 'Este negocio no recibe preguntas ahora mismo.',
+        askSoon: 'Pronto podrás preguntar a este local.',
         seeAll: (n) => `Ver todas (${n})`, back: 'Volver a la ficha', prev: '← Anterior', next: 'Siguiente →', page: 'Página',
         allAgenda: (c) => `Ver toda la agenda de ${c}`,
       };
@@ -1040,7 +1042,11 @@ export async function businessPage(param, lang, search = '') {
   // número.
   const pq = preguntasRes && preguntasRes.ok ? preguntasRes : null;
   const nPreguntas = Number(pq?.total) || 0;
-  const recibe = Boolean(pq) && !['unavailable', 'no_team'].includes(pq.ask_block);
+  // Hasta el 4-11-2026 nadie pregunta (`not_yet`, migración 20261237100001 de
+  // la app): sin nada que enseñar, la sección no sale (en prod no habrá nada);
+  // con contestadas (solo en dev), sin «Preguntar» y con «Pronto podrás…».
+  const pronto = Boolean(pq) && pq.ask_block === 'not_yet';
+  const recibe = Boolean(pq) && !['unavailable', 'no_team', 'not_yet'].includes(pq.ask_block);
   const conPreguntas = Boolean(pq) && (nPreguntas > 0 || recibe);
   const preguntaHtml = (q) => `<article class="pregunta"${isUuid(q.id) ? ` id="pregunta-${q.id}"` : ''}>
           <p class="pregunta-t">${icono('pregunta', 18)}<span><b>${esc(q.question)}</b><small class="muted">${esc(fmtWhen(q.asked_at, lang, tz))}</small></span></p>
@@ -1050,7 +1056,8 @@ export async function businessPage(param, lang, search = '') {
             ${Number(q.helpful) > 0 ? `<span class="muted sirve-n">${esc(S.helpfulN(Number(q.helpful)))}</span>` : ''}
             ${isUuid(q.id) ? `<a class="denuncia" href="${cuenta(lang)}#/denunciar/question/${q.id}" rel="nofollow">${S.reportQuestion}</a> · <a class="denuncia" href="${cuenta(lang)}#/denunciar/question_answer/${q.id}" rel="nofollow">${S.reportAnswer}</a>` : ''}</p>
         </article>`;
-  const preguntarHtml = recibe ? `<p data-preguntar><a class="pill" href="${cuenta(lang)}#/preguntar/${encodeURIComponent(b.id)}">${icono('pregunta', 16)} ${esc(S.ask)}</a></p>` : '';
+  const preguntarHtml = recibe ? `<p data-preguntar><a class="pill" href="${cuenta(lang)}#/preguntar/${encodeURIComponent(b.id)}">${icono('pregunta', 16)} ${esc(S.ask)}</a></p>`
+    : pronto ? `<p class="muted pregunta-pronto">${esc(S.askSoon)}</p>` : '';
   const preguntasScript = pq ? `<script src="/assets/preguntas.js?v=1" defer data-biz="${esc(b.id)}" data-lang="${en ? 'en' : 'es'}" data-url="${esc(supabasePublic().url)}" data-key="${esc(supabasePublic().key)}" data-cuenta="${esc(cuenta(lang))}" data-nombre="${esc(b.name)}"></script>` : '';
   const nResenas = soloVerificadas ? nVerificadas : Number(b.ratings) || 0;
   // «Ver todas (N)» de las novedades o de las reseñas: solo esa lista, por

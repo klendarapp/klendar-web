@@ -810,6 +810,7 @@ KL_DIC('it', {
   "Descuento": "Sconto",
   "Descuentos para": "Sconti per",
   "Desde": "Dalle",
+  "Desde el 4 de noviembre, la gente podrá preguntarte en tu ficha. Lo que contestes lo verá todo el mundo.": "Dal 4 novembre le persone potranno farti domande sulla tua scheda. Le tue risposte le vedranno tutti.",
   "Desde el {closed_since}. No se ve nada de tu negocio.": "Dal {closed_since}. Non si vede niente della tua attività.",
   "Desde que la persona lo consigue.": "Da quando la persona lo ottiene.",
   "Desde que la persona lo genera. Para una oferta de barra, pocos minutos; para una entrada que se guarda hasta el día del evento, «sin caducidad».": "Da quando la persona lo genera. Per un’offerta al bancone, pochi minuti; per un ingresso da tenere fino al giorno dell’evento, «Senza scadenza».",
