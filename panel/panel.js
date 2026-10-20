@@ -902,6 +902,8 @@ const NAV = [
     // «Tu plan» (panel/plan.js): estado del plan y, para el propietario, pagar.
     ['plan', 'workspace_premium', 'Tu plan'],
     ['resenas', 'reviews', 'Reseñas'],
+    // «Pregúntale al local» (panel/preguntas.js).
+    ['preguntas', 'help_outline', 'Preguntas'],
     ['cerrados', 'event_busy', 'Días cerrados'],
     ['ayuda', 'help', 'Ayuda'],
   ]],
@@ -1424,6 +1426,7 @@ PAGES.resumen = async (v) => {
     <div class="herr-grid">
       ${gestiona() ? negocioBtn('#/equipo', 'group', 'Equipo') : ''}
       ${negocioBtn('#/resenas', 'reviews', 'Reseñas')}
+      ${negocioBtn('#/preguntas', 'help_outline', 'Preguntas')}
       ${gestiona() && !esOrganizador() && !entidad ? negocioBtn('#/cerrados', 'event_busy', 'Días cerrados') : ''}
       ${negocioBtn('#/ayuda', 'help', 'Ayuda')}
     </div>

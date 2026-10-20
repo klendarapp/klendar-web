@@ -76,7 +76,7 @@ const LABELS = {
   pending: 'pendiente', verified: 'verificado', rejected: 'rechazado', approved: 'aprobada', active: 'activa', expired: 'caducada',
   cancelled: 'cancelada', archived: 'archivada', sold_out: 'agotada', draft: 'borrador', open: 'abierta', reviewing: 'en revisión', resolved: 'resuelta', dismissed: 'desestimada',
   trial: 'prueba', past_due: 'impagada', validated: 'validado', failed: 'fallido', sent: 'enviado', skipped: 'omitido',
-  flash_offer: 'oferta flash', future_event: 'evento', user: 'usuario', business: 'negocio', offer: 'publicación', review: 'reseña', post: 'novedad', review_media: 'foto o vídeo de reseña', group_request: 'petición de grupo',
+  flash_offer: 'oferta flash', future_event: 'evento', user: 'usuario', business: 'negocio', offer: 'publicación', review: 'reseña', post: 'novedad', review_media: 'foto o vídeo de reseña', group_request: 'petición de grupo', question: 'pregunta de una ficha', question_answer: 'respuesta a una pregunta',
   owner: 'propietario', manager: 'encargado', staff: 'empleado', free: 'Gratis', basic: 'Básico', pro: 'Pro',
   standard: 'Klendar', founder: 'Fundador', inactive: 'inactivo', banned: 'suspendido', other: 'otra cosa',
   new: 'sin leer', planned: 'la haremos', done: 'hecho', declined: 'descartada',
@@ -2436,7 +2436,7 @@ const motivoDen = (r) => I18N.t(MOTIVOS_DENUNCIA[r] || r);
 const ESTADO_DEN = { published: ['publicado', 'ok'], review: ['en revisión', 'warn'], removed: ['retirado', 'bad'], hidden: ['no visible', 'dim'], deleted: ['borrado', 'dim'] };
 const estadoDen = (s) => { const e = ESTADO_DEN[s]; return e ? `<span class="tag ${e[1]}">${esc(I18N.t(e[0]))}</span>` : ''; };
 const RESOLUCION_DEN = { removed: 'contenido retirado', no_action: 'cerrada sin retirar', dismissed: 'desestimada' };
-const TIPO_DEN = { offer: 'Publicación', business: 'Negocio', review: 'Reseña', post: 'Novedad', review_media: 'Foto o vídeo de una reseña', group_request: 'Petición de grupo' };
+const TIPO_DEN = { offer: 'Publicación', business: 'Negocio', review: 'Reseña', post: 'Novedad', review_media: 'Foto o vídeo de una reseña', group_request: 'Petición de grupo', question: 'Pregunta de una ficha', question_answer: 'Respuesta a una pregunta' };
 // Una petición de grupo («Grupos y empresas»): la denuncia un negocio que la
 // ha recibido; no se ve en la web pública (solo quien pide y los negocios).
 const TIPO_GRUPO_DEN = { company_dinner: ['Cena de empresa', 'Company dinner'], afterwork: ['Afterwork', 'Afterwork'], team_activity: ['Actividad de equipo', 'Team activity'], celebration: ['Celebración', 'Celebration'] };
@@ -2455,6 +2455,8 @@ const urlDenunciado = (tipo, id, t) => {
   if (!b) return '';
   // Una foto o un vídeo: la reseña que lo lleva.
   if (tipo === 'review_media') return t.review_id ? `/b/${b}#resena-${t.review_id}` : `/b/${b}`;
+  // «Pregúntale al local»: la pregunta en la lista entera de la ficha.
+  if (tipo === 'question' || tipo === 'question_answer') return `/b/${b}?ver=preguntas#pregunta-${id}`;
   return `/b/${b}#${tipo === 'review' ? 'resena' : 'novedad'}-${id}`;
 };
 /** Su ficha dentro del admin. */
@@ -2467,9 +2469,12 @@ const tituloDen = (tipo, t) => {
   if (tipo === 'post') return t.title ? `«${t.title}»` : (en ? '(photo only)' : '(solo foto)');
   if (tipo === 'review_media') return `${t.media_kind === 'video' ? (en ? 'Video' : 'Vídeo') : (en ? 'Photo' : 'Foto')} ${en ? 'in a review' : 'de una reseña'}${t.title ? ` · «${t.title}»` : ''}`;
   if (tipo === 'group_request') return `${lineaGrupoDen(t)}${t.title ? ` · «${t.title}»` : (en ? ' · (no note)' : ' · (sin nota)')}`;
+  // La respuesta, con la pregunta a la que contesta.
+  if (tipo === 'question_answer') return `${t.title ? `«${t.title}»` : (en ? '(reply taken down)' : '(respuesta retirada)')}${t.question ? ` · ${en ? 'to' : 'a'} «${t.question}»` : ''}`;
+  if (tipo === 'question') return t.title ? `«${t.title}»` : '—';
   return t.title || '—';
 };
-const miniDen = (tipo, t) => (tipo === 'review_media' && !t?.image && t?.media_url ? `<video src="${esc(t.media_url)}#t=0.5" muted playsinline preload="metadata" aria-hidden="true"></video>` : t?.image && /\.(mp4|webm|mov)(\?|$)/i.test(t.image) ? `<video src="${esc(t.image)}#t=0.5" muted playsinline preload="metadata" aria-hidden="true"></video>` : t?.image ? `<img src="${esc(t.image)}" alt="" loading="lazy">` : `<div class="ph">${ms({ offer: 'bolt', business: 'storefront', review: 'chat_bubble', post: 'article', review_media: 'photo_library', group_request: 'groups' }[tipo] || 'flag')}</div>`);
+const miniDen = (tipo, t) => (tipo === 'review_media' && !t?.image && t?.media_url ? `<video src="${esc(t.media_url)}#t=0.5" muted playsinline preload="metadata" aria-hidden="true"></video>` : t?.image && /\.(mp4|webm|mov)(\?|$)/i.test(t.image) ? `<video src="${esc(t.image)}#t=0.5" muted playsinline preload="metadata" aria-hidden="true"></video>` : t?.image ? `<img src="${esc(t.image)}" alt="" loading="lazy">` : `<div class="ph">${ms({ offer: 'bolt', business: 'storefront', review: 'chat_bubble', post: 'article', review_media: 'photo_library', group_request: 'groups', question: 'help', question_answer: 'help' }[tipo] || 'flag')}</div>`);
 /** «de Negocio» o, en una petición de grupo, «para Negocio, Otro». */
 const deQuienDen = (tipo, t) => {
   const en = I18N.lang === 'en';
@@ -2491,6 +2496,8 @@ async function decideDenuncias(tipo, id, decision, abiertas) {
       post: en ? 'The news post is deleted.' : 'La novedad se borra.',
       review_media: en ? 'Only this photo or video is deleted; the review stays.' : 'Solo se borra esa foto o ese vídeo; la reseña se queda.',
       group_request: en ? 'The request is closed for every business it went to and its note is deleted (what was reported stays here).' : 'La petición se cierra para todos los negocios a los que se mandó y se borra su nota (lo denunciado se queda aquí).',
+      question: en ? 'The question is deleted, with its reply (what was reported stays here). The person who asked is told why.' : 'La pregunta se borra, con su respuesta (lo denunciado se queda aquí). A quien preguntó se le dice por qué.',
+      question_answer: en ? "Only the business's reply is deleted: the question goes back to “to answer” and stops being public. The owner and managers are told why." : 'Solo se borra la respuesta del negocio: la pregunta vuelve a «sin contestar» y deja de verse. Al propietario y a los encargados se les dice por qué.',
     }[tipo];
     const r = await modal({
       title: en ? 'Take down and close all' : 'Retirar y cerrar todas',
@@ -2563,7 +2570,7 @@ PAGES.denuncias = async (v, tipoRuta) => {
     <div class="toolbar">
       <input id="q" class="grow" type="search" placeholder="Buscar por título, negocio, ciudad o motivo…" aria-label="Buscar en denuncias" value="${esc(s.q || '')}">
       <select id="status">${[['open', 'Con denuncias abiertas'], ['closed', 'Ya cerradas'], ['all', 'Todo']].map((o) => `<option value="${o[0]}" ${(s.status || 'open') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
-      <select id="type">${[['all', 'Todo tipo'], ['offer', 'Publicaciones'], ['business', 'Negocios'], ['review', 'Reseñas'], ['review_media', 'Fotos y vídeos de reseñas'], ['post', 'Novedades'], ['group_request', 'Peticiones de grupo']].map((o) => `<option value="${o[0]}" ${(s.type || 'all') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
+      <select id="type">${[['all', 'Todo tipo'], ['offer', 'Publicaciones'], ['business', 'Negocios'], ['review', 'Reseñas'], ['review_media', 'Fotos y vídeos de reseñas'], ['post', 'Novedades'], ['group_request', 'Peticiones de grupo'], ['question', 'Preguntas'], ['question_answer', 'Respuestas a preguntas']].map((o) => `<option value="${o[0]}" ${(s.type || 'all') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
     </div>
     <div id="list"><div class="loading">Cargando…</div></div>`;
   const load = async () => {

@@ -1492,4 +1492,10 @@ const I18N = makeI18N({
     // Festivos casi solos (festivos.js, crecer.js).
     "Pon de dónde sale (boletín, número y fecha).": "Say where it comes from (bulletin, number and date).",
     "El código postal, solo con cifras (de 2 a 5).": "The postcode, digits only (2 to 5).",
+    "pregunta de una ficha": "question on a business page",
+    "respuesta a una pregunta": "reply to a question",
+    "Pregunta de una ficha": "Question on a business page",
+    "Respuesta a una pregunta": "Reply to a question",
+    "Preguntas": "Questions",
+    "Respuestas a preguntas": "Replies to questions",
 }, { idiomas: ['es', 'en'] }); // herramienta interna: solo español e inglés

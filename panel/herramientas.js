@@ -140,6 +140,7 @@ async function herrResumen(v, { cajaFilas }) {
   const fila = (href, icon, texto, attrs = '') => `<a class="fila-inicio" href="${href}" ${attrs}>${icono(icon)}<span>${esc(texto)}</span>${ms('chevron_right')}</a>`;
   const pend = herrNum(o, 'groups', 'pending');
   const resenas = herrNum(o, 'reviews', 'unanswered');
+  const preguntas = herrNum(o, 'questions', 'unanswered');
   const bc = o.before_closing || {};
   const dm = o.daily_menu || {};
   const horaMenu = dm.live_until ? new Date(dm.live_until).toLocaleTimeString(LOC(), { hour: '2-digit', minute: '2-digit', timeZone: TZ }) : '';
@@ -157,6 +158,9 @@ async function herrResumen(v, { cajaFilas }) {
     !ent && gestiona() && herrSi(o, 'groups', 'enabled') ? fila('#/grupos', 'grupos', bi(
       `Grupos y empresas · ${pend === 0 ? 'sin peticiones' : pend === 1 ? '1 sin contestar' : `${pend} sin contestar`}`,
       `Groups and companies · ${pend === 0 ? 'no requests' : pend === 1 ? '1 to answer' : `${pend} to answer`}`)) : '',
+    // «Pregúntale al local»: contestan propietario y encargado.
+    gestiona() && preguntas > 0 ? fila('#/preguntas', 'help_outline', bi(`Preguntas · ${preguntas === 1 ? '1 sin contestar' : `${preguntas} sin contestar`}`,
+      `Questions · ${preguntas === 1 ? '1 to answer' : `${preguntas} to answer`}`)) : '',
     resenas > 0 ? fila('#/resenas', 'reviews', bi(`Reseñas · ${resenas === 1 ? '1 sin responder' : `${resenas} sin responder`}`, `Reviews · ${resenas} unanswered`)) : '',
     gestiona() && !org && bc.suggested && (bc.live || bc.reminder_at) ? fila('#/antes-de-cerrar', 'bolsa', bc.live
       ? bi('Antes de cerrar · publicada hoy', 'Before closing · published today')

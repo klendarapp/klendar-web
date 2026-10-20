@@ -53,6 +53,8 @@ const PATHS = {
   // «Momentos del día» (schedule) y el festivo (event).
   reloj: 'M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z',
   calendario: 'M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z',
+  // «Preguntas» (help_outline).
+  pregunta: 'M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z',
   resena: 'M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 14v-2.47l6.88-6.88c.2-.2.51-.2.71 0l1.77 1.77c.2.2.2.51 0 .71L8.47 14H6zm12 0h-7.5l2-2H18v2z',
 };
 const icono = (n, size = 18) => `<svg class="ic" viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true"><path fill="currentColor" d="${PATHS[n]}"/></svg>`;
@@ -664,6 +666,19 @@ const queSellaTarjeta = (c, S, en) => (c.by_visit ? `${queSellaFicha(c, S, en)} 
 const POR_PAGINA_FICHA = 24;
 const POR_PAGINA_LISTA = 24;
 
+/** «Preguntas» de la ficha (`/b/` y `?ver=preguntas`). */
+const PREGUNTAS_CSS = `<style>
+.preguntas{display:grid;gap:12px;margin:8px 0 12px}
+.pregunta{border:1px solid var(--line,rgba(127,127,127,.25));border-radius:18px;padding:14px}
+.pregunta-t{display:flex;gap:8px;align-items:flex-start;margin:0}
+.pregunta-t .ic{flex:none;margin-top:2px;opacity:.7}
+.pregunta-t span{display:grid;gap:2px}
+.pregunta .respuesta{margin-top:10px}
+.pregunta-pie{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin:10px 0 0}
+.pregunta-pie .sirve[aria-pressed="true"]{font-weight:700}
+.pregunta-estado{display:inline-block;margin:4px 0 0}
+</style>`;
+
 export async function businessPage(param, lang, search = '') {
   const en = lang === 'en';
   const raw = String(param || '');
@@ -694,17 +709,17 @@ export async function businessPage(param, lang, search = '') {
   // (`?ver=novedades`, `?ver=resenas`). Antes salían hasta 200 tarjetas de
   // golpe (la agenda pública de Madrid pesaba ~500 KB).
   const qs = new URLSearchParams(search);
-  const ver = ['novedades', 'resenas'].includes(qs.get('ver')) ? qs.get('ver') : '';
+  const ver = ['novedades', 'resenas', 'preguntas'].includes(qs.get('ver')) ? qs.get('ver') : '';
   const pagina = Math.max(1, Math.min(100, parseInt(qs.get('p') || '1', 10) || 1));
   const desde = (pagina - 1) * (ver ? POR_PAGINA_LISTA : POR_PAGINA_FICHA);
-  const [offers, cuentas, sellos, carta, opiniones, novedades, cierres, nVerificadas, local, partidosBar, grupoInfo, sorteos, organizador, enlacesNeg, fichaInfo] = await Promise.all([
+  const [offers, cuentas, sellos, carta, opiniones, novedades, cierres, nVerificadas, local, partidosBar, grupoInfo, sorteos, organizador, enlacesNeg, fichaInfo, preguntasRes, preguntasLista] = await Promise.all([
     ver ? [] : rpcAll('business_offers_page', { p_id: id, p_limit: POR_PAGINA_FICHA, p_offset: desde }),
     ver ? null : rpc('business_offer_counts', { p_id: id }).catch(() => null),
     rpcAll('stamp_cards_of', { p_business: id }).catch(() => []), // opcional: sin ella, la ficha sale igual
     rpcAll('business_menu', { p_business: id }),
-    ver === 'novedades' ? []
+    ver === 'novedades' || ver === 'preguntas' ? []
       : rpcAll('business_reviews', { p_id: id, p_limit: ver ? POR_PAGINA_LISTA : 12, p_offset: ver ? desde : 0, ...(soloVerificadas ? { p_verified_only: true } : {}) }),
-    ver === 'resenas' ? []
+    ver === 'resenas' || ver === 'preguntas' ? []
       : rows('business_posts', `select=id,body,image_url,created_at&business_id=eq.${id}&order=created_at.desc,id.desc&limit=${ver ? POR_PAGINA_LISTA : 6}&offset=${ver ? desde : 0}`),
     rpcAll('business_closures', { p_business: id }),
     rpc('business_verified_review_count', { p_id: id }).then((n) => Number(n) || 0).catch(() => 0),
@@ -724,6 +739,12 @@ export async function businessPage(param, lang, search = '') {
     // «Qué pedir aquí», momentos del día, días con otro horario y el
     // festivo de esta semana (migraciones 20261233100000–02). Opcional.
     rpc('business_ficha_info', { p_business: id }).catch(() => null),
+    // «Pregúntale al local» (migración 20261237100000): las 3 contestadas más
+    // útiles, cuántas hay y si el negocio recibe preguntas. Opcional.
+    rpc('business_questions_summary', { p_business: id }).catch(() => null),
+    ver === 'preguntas'
+      ? rpcAll('business_questions_page', { p_business: id, p_limit: POR_PAGINA_LISTA, p_offset: desde }).catch(() => [])
+      : [],
   ]);
   // Bloqueado (sin pagar) o en pausa por cierre (`unavailable`, migración
   // 20261222100000): la ficha lo dice («No disponible ahora mismo» o
@@ -782,6 +803,10 @@ export async function businessPage(param, lang, search = '') {
         highlights: 'What to order here',
         holidayOpens: (d, h) => `Open on the ${d} holiday (${h})`, holidayClosed: (d) => `Closed on the ${d} holiday`,
         holidayUnknown: (d) => `${d} holiday: hours not confirmed`,
+        questions: 'Questions', ask: 'Ask a question', reportQuestion: 'Report the question', reportAnswer: 'Report the reply',
+        noQuestions: 'No questions yet. Got a question? Ask the venue.', helpful: 'Helpful to me too',
+        helpfulN: (n) => (n === 1 ? 'Helpful to 1 person' : `Helpful to ${n} people`), edited: 'edited',
+        noAsk: "This business isn't taking questions right now.",
         seeAll: (n) => `See all (${n})`, back: 'Back to the page', prev: '← Previous', next: 'Next →', page: 'Page',
         allAgenda: (c) => `See everything on in ${c}`,
       }
@@ -827,6 +852,10 @@ export async function businessPage(param, lang, search = '') {
         highlights: 'Qué pedir aquí',
         holidayOpens: (d, h) => `Abre el festivo del ${d} (${h})`, holidayClosed: (d) => `Cerrado el festivo del ${d}`,
         holidayUnknown: (d) => `Festivo del ${d}: horario sin confirmar`,
+        questions: 'Preguntas', ask: 'Preguntar', reportQuestion: 'Denunciar la pregunta', reportAnswer: 'Denunciar la respuesta',
+        noQuestions: 'Aún no hay preguntas. ¿Tienes una duda? Pregúntale al local.', helpful: 'A mí también me sirve',
+        helpfulN: (n) => (n === 1 ? 'A 1 persona le sirve' : `A ${n} personas les sirve`), edited: 'editada',
+        noAsk: 'Este negocio no recibe preguntas ahora mismo.',
         seeAll: (n) => `Ver todas (${n})`, back: 'Volver a la ficha', prev: '← Anterior', next: 'Siguiente →', page: 'Página',
         allAgenda: (c) => `Ver toda la agenda de ${c}`,
       };
@@ -1006,24 +1035,44 @@ export async function businessPage(param, lang, search = '') {
             <p>${esc(r.reply).replace(/\n/g, '<br>')}</p></div>` : ''}
           <a class="denuncia" href="${cuenta(lang)}#/denunciar/review/${encodeURIComponent(r.id)}" rel="nofollow">${S.report}</a>${isUuid(r.user_id) ? ` · <a class="denuncia" href="${cuenta(lang)}#/bloquear/${r.user_id}" rel="nofollow">${S.block}</a>` : ''}
         </article>`;
+  // «Preguntas»: una contestada (nunca quién preguntó). «A mí también me
+  // sirve» lo enseña /assets/preguntas.js con la sesión; sin JavaScript, el
+  // número.
+  const pq = preguntasRes && preguntasRes.ok ? preguntasRes : null;
+  const nPreguntas = Number(pq?.total) || 0;
+  const recibe = Boolean(pq) && !['unavailable', 'no_team'].includes(pq.ask_block);
+  const conPreguntas = Boolean(pq) && (nPreguntas > 0 || recibe);
+  const preguntaHtml = (q) => `<article class="pregunta"${isUuid(q.id) ? ` id="pregunta-${q.id}"` : ''}>
+          <p class="pregunta-t">${icono('pregunta', 18)}<span><b>${esc(q.question)}</b><small class="muted">${esc(fmtWhen(q.asked_at, lang, tz))}</small></span></p>
+          ${q.answer ? `<div class="respuesta"><header>${icono('negocio', 16)}<b>${esc(S.replyFrom(b.name))}</b>${q.answered_at ? `<small class="muted">${esc(fmtWhen(q.answered_at, lang, tz))}${q.edited ? ` · ${esc(S.edited)}` : ''}</small>` : ''}</header>
+            <p>${esc(q.answer).replace(/\n/g, '<br>')}</p></div>` : ''}
+          <p class="pregunta-pie">${isUuid(q.id) ? `<button type="button" class="pill sirve" data-sirve="${q.id}" data-n="${Number(q.helpful) || 0}" aria-pressed="false" hidden>${esc(S.helpful)}${Number(q.helpful) > 0 ? ` · ${Number(q.helpful)}` : ''}</button>` : ''}
+            ${Number(q.helpful) > 0 ? `<span class="muted sirve-n">${esc(S.helpfulN(Number(q.helpful)))}</span>` : ''}
+            ${isUuid(q.id) ? `<a class="denuncia" href="${cuenta(lang)}#/denunciar/question/${q.id}" rel="nofollow">${S.reportQuestion}</a> · <a class="denuncia" href="${cuenta(lang)}#/denunciar/question_answer/${q.id}" rel="nofollow">${S.reportAnswer}</a>` : ''}</p>
+        </article>`;
+  const preguntarHtml = recibe ? `<p data-preguntar><a class="pill" href="${cuenta(lang)}#/preguntar/${encodeURIComponent(b.id)}">${icono('pregunta', 16)} ${esc(S.ask)}</a></p>` : '';
+  const preguntasScript = pq ? `<script src="/assets/preguntas.js?v=1" defer data-biz="${esc(b.id)}" data-lang="${en ? 'en' : 'es'}" data-url="${esc(supabasePublic().url)}" data-key="${esc(supabasePublic().key)}" data-cuenta="${esc(cuenta(lang))}" data-nombre="${esc(b.name)}"></script>` : '';
   const nResenas = soloVerificadas ? nVerificadas : Number(b.ratings) || 0;
   // «Ver todas (N)» de las novedades o de las reseñas: solo esa lista, por
   // páginas, sin indexar (la ficha es la buena).
   if (ver) {
-    const total = ver === 'novedades' ? (parado ? 0 : Number(b.posts) || 0) : nResenas;
-    const lista = ver === 'novedades' ? (parado ? [] : novedades) : opiniones;
+    const total = ver === 'novedades' ? (parado ? 0 : Number(b.posts) || 0) : ver === 'preguntas' ? nPreguntas : nResenas;
+    const lista = ver === 'novedades' ? (parado ? [] : novedades) : ver === 'preguntas' ? (Array.isArray(preguntasLista) ? preguntasLista : []) : opiniones;
     const pags = Math.max(1, Math.ceil(total / POR_PAGINA_LISTA));
     const filtro = soloVerificadas ? '&resenas=verificadas' : '';
     const enlace = (n) => `${path}?ver=${ver}${filtro}${n > 1 ? `&p=${n}` : ''}`;
-    const titulo = ver === 'novedades' ? S.news : S.reviews;
+    const titulo = ver === 'novedades' ? S.news : ver === 'preguntas' ? S.questions : S.reviews;
     const cuerpo = `
   <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a>${city ? ` · <a href="${city}">${esc(b.city)}</a>` : ''} · <a href="${path}">${esc(b.name)}</a></p>
   <div class="detail negocio sin-media lista-entera">
     <h1>${esc(titulo)} · ${esc(b.name)}</h1>
     ${ver === 'resenas' ? `<p><a class="pill" href="${cuenta(lang)}#/opinar/${encodeURIComponent(b.id)}">${icono('resena', 16)} ${S.write}</a></p>` : ''}
+    ${ver === 'preguntas' ? `<div data-preguntas-mias hidden></div>${preguntarHtml}` : ''}
     ${lista.length
-      ? (ver === 'novedades' ? `<p data-tr-nota="post:" hidden></p><div class="novedades">${lista.map(novedadHtml).join('')}</div>` : `<div class="resenas">${lista.map(resenaHtml).join('')}</div>`)
-      : `<p class="empty">${ver === 'novedades' ? '' : soloVerificadas ? S.noVerified : S.noReviews}</p>`}
+      ? (ver === 'novedades' ? `<p data-tr-nota="post:" hidden></p><div class="novedades">${lista.map(novedadHtml).join('')}</div>`
+        : ver === 'preguntas' ? `<div class="preguntas">${lista.map(preguntaHtml).join('')}</div>`
+          : `<div class="resenas">${lista.map(resenaHtml).join('')}</div>`)
+      : `<p class="empty">${ver === 'novedades' ? '' : ver === 'preguntas' ? esc(S.noQuestions) : soloVerificadas ? S.noVerified : S.noReviews}</p>`}
     ${paginador(pagina, pags, enlace)}
     <p><a class="pill" href="${path}">${esc(S.back)}</a></p>
   </div>`;
@@ -1031,7 +1080,7 @@ export async function businessPage(param, lang, search = '') {
       lang, path, body: cuerpo + MENU_JS, title: `${titulo} · ${b.name}`, description: `${titulo} · ${b.name}`, image: b.cover || b.logo,
       consulta: `?ver=${ver}${filtro}${pagina > 1 ? `&p=${pagina}` : ''}`,
       head: `<meta name="robots" content="noindex, follow">
-${traducir(lang, `business:${b.id}`, '')}`,
+${traducir(lang, `business:${b.id}`, '')}${ver === 'preguntas' ? `\n${PREGUNTAS_CSS}\n${preguntasScript}` : ''}`,
     }));
   }
 
@@ -1067,6 +1116,7 @@ ${traducir(lang, `business:${b.id}`, '')}`,
         ${novedades.length ? `<a class="chip" href="#novedades">${esc(S.news)}</a>` : ''}
         ${hayCarta ? `<a class="chip" href="#carta">${esc(S.menu)}</a>` : ''}
         <a class="chip" href="#resenas">${esc(S.reviews)}</a>
+        ${conPreguntas ? `<a class="chip" href="#preguntas">${esc(S.questions)}${nPreguntas ? ` <span class="muted">${nPreguntas}</span>` : ''}</a>` : ''}
       </nav>
     </div>
     <aside class="side">
@@ -1132,6 +1182,11 @@ ${traducir(lang, `business:${b.id}`, '')}`,
       </nav>` : ''}
       ${opiniones.length ? `<div class="resenas">${opiniones.map(resenaHtml).join('')}</div>
         ${nResenas > opiniones.length ? `<p><a class="pill" href="${path}?ver=resenas${soloVerificadas ? '&amp;resenas=verificadas' : ''}">${esc(S.seeAll(nResenas))}</a></p>` : ''}` : `<p class="empty">${soloVerificadas ? S.noVerified : S.noReviews}</p>`}
+      ${conPreguntas ? `<h2 id="preguntas">${esc(S.questions)}${nPreguntas ? ` <small class="muted">(${nPreguntas})</small>` : ''}</h2>
+      <div data-preguntas-mias hidden></div>
+      ${(pq.top || []).length ? `<div class="preguntas">${pq.top.map(preguntaHtml).join('')}</div>
+        ${nPreguntas > pq.top.length ? `<p><a class="pill" href="${path}?ver=preguntas">${esc(S.seeAll(nPreguntas))}</a></p>` : ''}` : `<p class="empty">${esc(recibe ? S.noQuestions : S.noAsk)}</p>`}
+      ${preguntarHtml}` : ''}
       ${b.city ? `<p class="muted">${esc(S.moreIn(b.city))} <a href="${cityToday}">${esc(S.cityToday)}</a> · <a href="${city}">${esc(S.cityWeek)}</a></p>` : ''}
       ${local.entity_kind === 'public_agenda' ? '' : `<p class="denuncia-pie" data-solo-publico><a href="${cuenta(lang)}#/reclamar/${encodeURIComponent(b.id)}" rel="nofollow">${S.claim}</a></p>`}
     </div>
@@ -1199,7 +1254,9 @@ ${traducir(lang, `business:${b.id}`, '')}`,
     head: `<meta name="robots" content="${b.adults_only || conVisita || b.closed_indefinitely || parado ? 'noindex' : pagina > 1 ? 'noindex, follow' : 'index, follow'}">
 ${ldScript(jsonLd)}${cuentaToques ? `
 <script src="/assets/enlaces.js?v=3" defer data-url="${esc(supabasePublic().url)}" data-key="${esc(supabasePublic().key)}" data-biz="${esc(b.id)}"></script>` : ''}${horario ? '\n<script src="/assets/zona.js?v=2" defer></script>\n<script src="/assets/horario.js?v=3" defer></script>\n<script src="/assets/cerrado.js?v=1" defer></script>' : ''}${conVisita ? `\n${conVisita}` : ''}${local.crowd_enabled ? `\n${sitioAhoraScripts(lang)}` : ''}
-${traducir(lang, `business:${b.id}`, carta.length ? `menu:${b.id}` : '')}${partidos ? `
+${traducir(lang, `business:${b.id}`, carta.length ? `menu:${b.id}` : '')}${conPreguntas ? `
+${PREGUNTAS_CSS}
+${preguntasScript}` : ''}${partidos ? `
 ${PARTIDOS_CSS}` : ''}${grupoHtml || sorteosHtml ? `
 ${GRUPOS_CSS}` : ''}${organizador ? `
 ${ARTISTAS_CSS}` : ''}`,

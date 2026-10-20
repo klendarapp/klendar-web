@@ -74,6 +74,12 @@ function destinoWeb(ruta) {
   if ((m = r.match(/^\/business\/([0-9a-f-]{36})\?review=1(&from=quetal)?/i))) {
     return `#/opinar/${m[1]}${m[2] ? '?desde=quetal' : ''}`;
   }
+  // «Pregúntale al local»: a quien preguntó, sus preguntas a ese negocio
+  // (con `?q=`, esa a la vista); al negocio, la bandeja del panel.
+  if ((m = r.match(/^\/business\/([0-9a-f-]{36})\/questions(?:\?q=([0-9a-f-]{36}))?/i))) {
+    return `#/preguntar/${m[1]}${m[2] ? `?q=${m[2]}` : ''}`;
+  }
+  if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/questions/i))) return `/panel/#/preguntas?biz=${m[1]}`;
   // «Estaba cerrado»: al negocio, en el panel.
   if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/estaba-cerrado/i))) return `/panel/#/estaba-cerrado?biz=${m[1]}`;
   // «¿Abres el 1 de noviembre?»: la pregunta del festivo, en el panel.
@@ -1754,12 +1760,17 @@ const MOTIVOS_DE = {
   review: ['spam', 'inappropriate', 'illegal', 'child_abuse', 'other'],
   post: ['spam', 'inappropriate', 'illegal', 'child_abuse', 'other'],
   review_media: ['spam', 'inappropriate', 'illegal', 'child_abuse', 'other'],
+  // «Pregúntale al local»: una pregunta de una ficha o la respuesta del negocio.
+  question: ['spam', 'inappropriate', 'illegal', 'child_abuse', 'other'],
+  question_answer: ['spam', 'inappropriate', 'misleading', 'illegal', 'child_abuse', 'other'],
 };
 const QUE_SE_DENUNCIA = {
   offer: 'Denunciar una publicación', business: 'Denunciar un negocio',
   review: 'Denunciar una reseña', post: 'Denunciar una novedad',
   // Una sola foto o un solo vídeo de una reseña (el «Denunciar» del visor).
   review_media: 'Denunciar una foto o un vídeo',
+  question: 'Denunciar una pregunta',
+  question_answer: 'Denunciar una respuesta',
 };
 // Lo que contesta `report-public` (y `report_public`), dicho para personas.
 const ERR_DENUNCIA = {
@@ -1791,7 +1802,7 @@ async function contenidoDeUrl(texto) {
     || /(^|\.)klendar\.app$|\.klendar-web\.pages\.dev$|^localhost$|^127\.0\.0\.1$/i.test(u.hostname);
   if (!/^https?:$/.test(u.protocol) || !propio) return null;
   const hash = decodeURIComponent(u.hash || '');
-  let m = hash.match(new RegExp(`^#/?denunciar/(offer|business|review_media|review|post)/(${UUID_DENUNCIA})`, 'i'));
+  let m = hash.match(new RegExp(`^#/?denunciar/(offer|business|review_media|review|post|question_answer|question)/(${UUID_DENUNCIA})`, 'i'));
   if (m) return { tipo: m[1], id: m[2].toLowerCase() };
   const camino = u.pathname.replace(/^\/en(?=\/)/, '');
   m = camino.match(new RegExp(`^/(?:o|cartel|poster|widget)/(${UUID_DENUNCIA})`, 'i'));
