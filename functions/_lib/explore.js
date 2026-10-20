@@ -51,7 +51,7 @@ const T = (en) => en
       results: (n) => `${n} ${n === 1 ? 'result' : 'results'}`,
       places: (n) => `${n} ${n === 1 ? 'place' : 'places'}`,
       prev: '← Previous', next: 'Next →', page: 'Page',
-      lead: 'Search, and see it as a list, on the map or on the calendar. No account needed to browse.',
+      lead: 'Search for plans and places, and see them as a list, on the map or on the calendar. No account needed to browse.',
       discLead: 'Flash offers and events from the businesses around you. No account needed to browse.',
       biz: 'List your business', app: 'Create a free account',
       catTitle: (c, city) => `${c} in ${city}`,
@@ -153,7 +153,7 @@ const T = (en) => en
       results: (n) => `${n} ${n === 1 ? 'resultado' : 'resultados'}`,
       places: (n) => `${n} ${n === 1 ? 'negocio' : 'negocios'}`,
       prev: '← Anterior', next: 'Siguiente →', page: 'Página',
-      lead: 'Busca y míralo en lista, en el mapa o en el calendario. Para mirar no hace falta cuenta.',
+      lead: 'Busca planes y sitios, y míralos en lista, en el mapa o en el calendario. Para mirar no hace falta cuenta.',
       discLead: 'Ofertas flash y planes de los negocios de tu alrededor. Para mirar no hace falta cuenta.',
       biz: 'Publicar mi negocio', app: 'Crear cuenta gratis',
       catTitle: (c, city) => `${c} en ${city}`,
@@ -570,7 +570,7 @@ function sitiosHtml({ items, lang, S, TSi, e, link, mapa, pedirQ, centro }) {
   const quitaSolo = e.q ? `<p class="chip-solo"><a class="chip on chip-quitar" href="${esc(link({ que: '' }))}" aria-label="${esc(TSi.removeOnlyPlaces)}"><span>${esc(TSi.onlyPlaces)}</span>${ic('x', 16)}</a></p>` : '';
   const zoom = e.cerca ? (e.km <= 1 ? 15 : e.km <= 3 ? 14 : 13) : 13;
   const mapaH = mapa ? mapaSitios({
-    lang, zoom,
+    lang, zoom, desde: e.cerca ? [e.lng, e.lat] : null,
     centro: centro && Number.isFinite(Number(centro.lng)) ? [Number(centro.lng), Number(centro.lat)] : null,
     filtros: {
       ...(e.cat ? { p_category: e.cat } : {}), ...(e.abierto ? { p_open_now: true } : {}),
@@ -633,7 +633,7 @@ const sumaMes = (ym, n) => {
 /** La vista Calendario: el mes con los días marcados y, debajo (al lado en
  * el escritorio), lo de ese día. Como la agenda de Explorar en la app. Los
  * días son enlaces: va sin JavaScript y cada día se puede compartir. */
-function calendarioHtml({ items, lang, S, link, mes, dia, hoy }) {
+function calendarioHtml({ items, lang, S, link, mes, dia, hoy, delDiaParte = null, totalDia = null }) {
   const en = lang === 'en';
   const loc = en ? 'en-GB' : 'es-ES';
   // Cada publicación, en el día de su negocio; lo que empezó antes y sigue en
@@ -673,7 +673,10 @@ function calendarioHtml({ items, lang, S, link, mes, dia, hoy }) {
       ? `<span class="${cls}" aria-hidden="true">${d}</span>`
       : `<a class="${cls}" href="${esc(link({ dia: iso, mes }))}#dia" aria-label="${esc(etiqueta)}"${iso === dia ? ' aria-current="date"' : ''}>${d}${puntos}</a>`);
   }
-  const delDia = porDia.get(dia) || [];
+  // Lo del día, por partes (`public_explore` con `day` y `?p=`); sin
+  // respuesta, lo que haya de las del mes.
+  const delDia = delDiaParte || porDia.get(dia) || [];
+  const nDia = Number.isFinite(totalDia) ? totalDia : delDia.length;
   const proximo = delDia.length ? null : [...porDia.keys()].sort().find((k) => k > dia);
   return `<div class="calendario">
     <section class="cal-mes" aria-labelledby="calTitulo">
@@ -691,7 +694,7 @@ function calendarioHtml({ items, lang, S, link, mes, dia, hoy }) {
     <section class="cal-lista" id="dia" aria-labelledby="diaTitulo">
       <div class="cal-lista-cab">
         <h2 id="diaTitulo">${esc(rel(dia) ? `${rel(dia)} · ${largo(dia)}` : largo(dia).charAt(0).toUpperCase() + largo(dia).slice(1))}</h2>
-        <span class="muted">${esc(S.dayPlans(delDia.length))}</span>
+        <span class="muted">${esc(S.dayPlans(nDia))}</span>
       </div>
       ${delDia.length
         ? `<div class="tj-filas">${delDia.map((o) => tarjeta(o, lang, { forma: 'fila' })).join('')}</div>`
@@ -1141,7 +1144,7 @@ export async function explorePage(url, lang, modo = 'explorar') {
   // Las tarjetas de negocio llevan su rango de precio.
   await conPrecios([...(sitios?.items || [])]);
   const total = res?.total || 0;
-  const paginas = mapa || calendario || sitiosMapa ? 1 : Math.max(1, Math.min(50, Math.ceil(total / POR_PAGINA)));
+  let paginas = mapa || calendario || sitiosMapa ? 1 : Math.max(1, Math.min(50, Math.ceil(total / POR_PAGINA)));
 
   // El mes y el día del calendario, dentro de lo que se puede mirar (este mes
   // y los once siguientes).
@@ -1156,6 +1159,16 @@ export async function explorePage(url, lang, modo = 'explorar') {
       dia = conAlgo[0] || `${mes}-01`;
     }
   }
+
+  // El calendario: la lista del día elegido, por partes (24 de cada vez,
+  // `?p=`), en vez de sacarla de las 240 del mes.
+  const diaParte = calendario && dia
+    ? await rpc('public_explore', {
+      ...argsExplore, p_filters: { ...filtros, day: dia, sort: 'soonest' },
+      p_limit: POR_PAGINA, p_offset: (page - 1) * POR_PAGINA,
+    }).catch(() => null)
+    : null;
+  if (diaParte) paginas = Math.max(1, Math.min(50, Math.ceil((Number(diaParte.total) || 0) / POR_PAGINA)));
 
   // Última página de la lista: el final, con «Quizá te interese» de fuera de
   // lo que se está mirando (más lejos que la distancia o en otras ciudades).
@@ -1450,7 +1463,9 @@ export async function explorePage(url, lang, modo = 'explorar') {
 
   const vistas = descubre ? '' : `<nav class="vistas" aria-label="${esc(S.view)}">
       ${(negocios ? [['', S.listView, 'lista', !sitiosMapa], ['map', S.mapView, 'mapa', sitiosMapa]]
-        : [['', S.listView, 'lista', !mapa && !calendario], ['map', S.mapView, 'mapa', mapa], ['calendar', S.calView, 'cal', calendario]])
+        // Calendario delante: Lista y Mapa quedan en el mismo sitio en
+        // Planes y en Sitios (sin saltos al cambiar).
+        : [['calendar', S.calView, 'cal', calendario], ['', S.listView, 'lista', !mapa && !calendario], ['map', S.mapView, 'mapa', mapa]])
         .map(([v, n, i, on]) => `<a class="vista${on ? ' on' : ''}" href="${esc(link({ vista: v }))}" aria-label="${esc(n)}"${on ? ' aria-current="page"' : ''}>${ic(i, 18)}<span>${esc(n)}</span></a>`).join('')}
     </nav>`;
   // Arriba, qué se busca: «Planes | Sitios» (como la app). Al cambiar, la
@@ -1607,7 +1622,10 @@ ${GRUPOS_CSS}` : ''}`;
       centro: cerca ? { lat, lng } : centroDe(klendarCities) || items[0] || null,
     });
   } else if (calendario) {
-    resultados = calendarioHtml({ items, lang, S, link, mes, dia, hoy });
+    resultados = calendarioHtml({
+      items, lang, S, link, mes, dia, hoy,
+      delDiaParte: diaParte ? diaParte.items || [] : null, totalDia: diaParte ? Number(diaParte.total) || 0 : null,
+    });
   } else if (mapa) {
     resultados = `${ambienteHtml(e, lang, link)}${mapaHtml(items, lang, S)}${items.length ? `<h2 class="fin-h">${esc(S.onMap(items.length))}</h2>${rejilla(items, lang, { galeria: true })}` : ''}`;
   } else {
@@ -1626,7 +1644,7 @@ ${GRUPOS_CSS}` : ''}`;
   const body = `
   <div class="exp-cab cab-pagina" id="arriba">
     <div><h1>${esc(S.exp)}</h1>
-    <p class="muted exp-lead">${esc(negocios ? TSi.lead : S.lead)}</p>
+    <p class="muted exp-lead">${esc(S.lead)}</p>
     <p class="exp-atajo"><a href="${esc(`${partidosBase(lang)}/${zonaDeExplorar(e, lang) ? `?${zonaDeExplorar(e, lang)}` : ''}`)}">${icPartido(16)}<span>${esc(KE.t(lang).title)}</span></a>
       <a href="${esc(`${gruposBase(lang)}/${zonaGrupos(e, lang) ? `?${zonaGrupos(e, lang)}` : ''}`)}">${icGrupos(16)}<span>${esc(KG.t(lang).title)}</span></a>
       <a href="${esc(`${sorteosBase(lang)}/${zonaGrupos(e, lang) ? `?${zonaGrupos(e, lang)}` : ''}`)}">${icSorteo(16)}<span>${esc(KS.t(lang).title)}</span></a></p></div>

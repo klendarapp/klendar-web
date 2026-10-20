@@ -54,8 +54,6 @@ export function distancia(m, en) {
   return `${en ? s : s.replace('.', ',')} km`;
 }
 
-/** «12,50 €» / «€12.50». */
-const precio = (c, en) => (Number.isFinite(c) ? (en ? `€${(c / 100).toFixed(2)}` : `${(c / 100).toFixed(2).replace('.', ',')} €`) : '');
 
 const IC = {
   menu: 'M8.1 13.34l2.83-2.83L3.91 3.5c-1.56 1.56-1.56 4.09 0 5.66l4.19 4.18zm6.78-1.81c1.53.71 3.68.21 5.27-1.38 1.91-1.91 2.28-4.65.81-6.12-1.46-1.46-4.2-1.1-6.12.81-1.59 1.59-2.09 3.74-1.38 5.27L3.7 19.87l1.41 1.41L12 14.41l6.88 6.88 1.41-1.41L13.41 13l1.47-1.47z',
@@ -74,38 +72,28 @@ const ic = (n, s = 16) => `<svg class="ic" viewBox="0 0 24 24" width="${s}" heig
  */
 export function filaSitio(p, lang, { conDistancia = true } = {}) {
   const en = lang === 'en';
-  const S = TS(en);
   const cat = (en ? p.names?.en : p.names?.es) || p.names?.es || '';
   const meta = [cat, conDistancia ? distancia(p.distance_m, en) : ''].filter(Boolean).join(' · ');
-  const tz = KZ.zona(p.time_zone);
-  const hora = KS.horaTexto(p.hours, tz, en ? 'en' : 'es');
-  const menu = p.daily_menu;
-  const extra = menu
-    ? `${ic('menu', 14)}<span>${esc([S.dailyMenu, precio(Number(menu.price_cents), en)].filter(Boolean).join(' · '))}</span>`
-    : p.highlight?.title ? `${ic('estrella', 14)}<span>${esc(S.highlight(p.highlight.title))}</span>` : '';
-  const planes = Number(p.plans_today) || 0;
   const precioLocal = KM.simbolo(Number(p.price_level));
   return `<a class="sitio-fila" href="${esc(bizPath(lang, p.slug || p.id))}">
     ${p.photo ? `<img src="${esc(p.photo)}" alt="" width="76" height="76" loading="lazy" decoding="async">` : `<span class="ph" aria-hidden="true">${ic('tienda', 28)}</span>`}
     <span class="sitio-cuerpo">
       <b>${esc(p.name)}</b>
       ${meta || precioLocal ? `<span class="muted">${esc(meta)}${precioLocal ? `${meta ? ' · ' : ''}<span aria-label="${esc(KM.t(lang).priceA11y + KM.significado(Number(p.price_level), lang))}">${precioLocal}</span>` : ''}</span>` : ''}
-      ${hora.texto ? `<span class="sitio-hora${hora.abierto ? ' abierto' : ''}" data-sitio-hora="${esc(JSON.stringify(p.hours))}" data-tz="${esc(tz)}" data-lang="${en ? 'en' : 'es'}">${esc(hora.texto)}</span>` : ''}
-      ${extra ? `<span class="sitio-extra">${extra}</span>` : ''}
-      ${planes ? `<span class="tag-oferta">${esc(S.plansToday(planes))}</span>` : ''}
+      ${KS.detallesHtml(p, en ? 'en' : 'es')}
     </span>
     <span class="ncard-ir" aria-hidden="true">${ic('der', 20)}</span>
   </a>`;
 }
 
 /** El mapa de Sitios: lo pinta /assets/sitios.js con `map_places`. */
-export function mapaSitios({ lang, centro, zoom, filtros }) {
+export function mapaSitios({ lang, centro, zoom, filtros, desde = null }) {
   const en = lang === 'en';
   const S = TS(en);
   const sp = supabasePublic();
   const datos = {
-    url: sp.url, key: sp.key, centro, zoom, filtros,
-    no: S.mapNo, ver: S.seePlace, base: en ? '/en/b/' : '/b/', ...S.plansTodayTpl,
+    url: sp.url, key: sp.key, centro, zoom, filtros, desde,
+    no: S.mapNo, ver: S.seePlace, base: en ? '/en/b/' : '/b/', lang: en ? 'en' : 'es',
   };
   return `<div id="mapa-sitios" class="mapa-explorar" role="region" aria-label="${esc(S.onMap)}" data-sitios="${esc(JSON.stringify(datos))}"></div>`;
 }
@@ -115,13 +103,20 @@ export const SITIOS_SCRIPTS = `<script src="/assets/zona.js?v=2" defer></script>
 <script src="/assets/sitios.js?v=1" defer></script>`;
 
 export const SITIOS_CSS = `<style>
+/* Sin saltos al cambiar entre Planes y Sitios: la barra de desplazamiento
+   siempre reserva su sitio (una página más corta no mueve nada). */
+html { scrollbar-gutter: stable; }
 .que-fila { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 4px 0 10px; }
 .que { display: inline-flex; padding: 4px; gap: 2px; border-radius: 999px; background: var(--soft); border: 1px solid var(--glass-border); }
 .que-fila .vistas { width: auto; }
 @media (max-width: 560px) {
   .que-fila .vista span { display: none; }
-  .pub .que-fila .vista { flex: none; padding: 8px 12px; }
+  .pub .que-fila .vista { flex: none; padding: 8px 10px; }
+  .pub .que a { padding: 8px 14px; }
 }
+/* Lista y Mapa siempre pegados a la derecha (con o sin Calendario delante). */
+.que-fila .vistas { flex: none; margin-left: auto; }
+.que { flex: none; }
 .pub .que a { display: inline-flex; align-items: center; padding: 8px 18px; min-height: 40px; border-radius: 999px; font-weight: 700; color: var(--ink); text-decoration: none; }
 .pub .que a.on { background: var(--ink); color: var(--surface); }
 .sitios-lista { display: grid; gap: 10px; margin: 8px 0 18px; }
@@ -135,6 +130,10 @@ export const SITIOS_CSS = `<style>
 .sitio-cuerpo .muted { font-size: 13px; }
 .sitio-hora { font-size: 13px; font-weight: 600; color: var(--ink-2); }
 .sitio-hora.abierto { color: #13803B; }
+.sitio-festivo { font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.sitio-festivo.sin-confirmar { color: #A15C00; }
+.pop-sitio { display: grid; gap: 3px; max-width: 260px; }
+.pop-sitio .pop-ver { font-weight: 700; margin-top: 4px; }
 .sitio-extra { display: flex; align-items: center; gap: 4px; font-size: 13px; min-width: 0; }
 .sitio-extra span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sitio-extra .ic { flex: none; color: var(--ink-2); }
@@ -143,5 +142,5 @@ export const SITIOS_CSS = `<style>
 .sitios-fin { text-align: center; margin: 18px 0 8px; }
 .sitios-fin h2 { font-size: 17px; margin: 0 0 12px; }
 .chip-solo { display: inline-flex; align-items: center; gap: 6px; margin: 0 0 8px; }
-@media (prefers-color-scheme: dark) { .sitio-hora.abierto { color: #4ADE80; } }
+@media (prefers-color-scheme: dark) { .sitio-hora.abierto { color: #4ADE80; } .sitio-festivo.sin-confirmar { color: #FFB454; } }
 </style>`;

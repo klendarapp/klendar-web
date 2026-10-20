@@ -31,6 +31,13 @@
       opensTomorrow: (t) => `abre mañana a las ${t}`,
       opensOn: (d, t) => `abre el ${d} a las ${t}`,
       loc: 'es-ES',
+      holidayOpens: (d, h) => `Abre el festivo del ${d} (${h})`,
+      holidayClosed: (d) => `Cerrado el festivo del ${d}`,
+      holidayUnknown: (d) => `Festivo del ${d}: horario sin confirmar`,
+      dailyMenu: 'Menú del día',
+      highlight: (x) => `Qué pedir aquí: ${x}`,
+      plansToday: (n) => (n === 1 ? '1 plan hoy' : `${n} planes hoy`),
+      seePlace: 'Ver el sitio',
     },
     en: {
       open: 'Open',
@@ -44,6 +51,13 @@
       opensTomorrow: (t) => `opens tomorrow at ${t}`,
       opensOn: (d, t) => `opens on ${d} at ${t}`,
       loc: 'en-GB',
+      holidayOpens: (d, h) => `Open on the ${d} holiday (${h})`,
+      holidayClosed: (d) => `Closed on the ${d} holiday`,
+      holidayUnknown: (d) => `${d} holiday: hours not confirmed`,
+      dailyMenu: 'Daily menu',
+      highlight: (x) => `What to order here: ${x}`,
+      plansToday: (n) => (n === 1 ? '1 plan today' : `${n} plans today`),
+      seePlace: 'See the place',
     },
   };
 
@@ -94,7 +108,71 @@
     return { texto: `${L.closed} · ${cuando}`, abierto: false };
   }
 
-  const KlendarSitios = { horaTexto };
+  /** «12,50 €» / «€12.50». */
+  const precio = (c, en) => (Number.isFinite(c)
+    ? (en ? `€${(c / 100).toFixed(2)}` : `${(c / 100).toFixed(2).replace('.', ',')} €`) : '');
+
+  /**
+   * Lo que dice un sitio debajo de su nombre, igual en la fila de la lista y
+   * en la tarjeta del mapa (como `PlaceDetails` en la app): el horario de
+   * ahora, el festivo de esta semana (como la ficha), su menú del día o «Qué
+   * pedir aquí» y «2 planes hoy». `p` es una fila de `public_places` o
+   * `place_card`.
+   */
+  function partes(p, lang, ahora) {
+    const en = lang === 'en';
+    const L = T[en ? 'en' : 'es'];
+    const KZ = globalThis.KlendarZona;
+    const tz = KZ ? KZ.zona(p.time_zone) : 'Europe/Madrid';
+    const h = p.holiday;
+    let festivo = null;
+    if (h && /^\d{4}-\d{2}-\d{2}$/.test(String(h.day))) {
+      const dia = new Intl.DateTimeFormat(L.loc, { day: 'numeric', month: 'long', timeZone: 'UTC' })
+        .format(new Date(`${h.day}T00:00:00Z`));
+      const tramos = (Array.isArray(h.hours) ? h.hours : []).filter((t) => Array.isArray(t)).map((t) => `${t[0]}–${t[1]}`).join(', ');
+      festivo = {
+        texto: h.state === 'unknown' ? L.holidayUnknown(dia)
+          : h.state === 'closed' || !tramos ? L.holidayClosed(dia) : L.holidayOpens(dia, tramos),
+        sinConfirmar: h.state === 'unknown',
+      };
+    }
+    const menu = p.daily_menu;
+    const extra = menu
+      ? { tipo: 'menu', texto: [L.dailyMenu, precio(Number(menu.price_cents), en)].filter(Boolean).join(' · ') }
+      : p.highlight && p.highlight.title ? { tipo: 'estrella', texto: L.highlight(p.highlight.title) } : null;
+    const n = Number(p.plans_today) || 0;
+    return {
+      tz,
+      hora: horaTexto(p.hours, tz, en ? 'en' : 'es', ahora),
+      festivo,
+      extra,
+      planes: n ? L.plansToday(n) : '',
+      ver: L.seePlace,
+    };
+  }
+
+  const esc0 = (x) => String(x == null ? '' : x).replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[c]));
+  const ICONOS = {
+    menu: 'M8.1 13.34l2.83-2.83L3.91 3.5c-1.56 1.56-1.56 4.09 0 5.66l4.19 4.18zm6.78-1.81c1.53.71 3.68.21 5.27-1.38 1.91-1.91 2.28-4.65.81-6.12-1.46-1.46-4.2-1.1-6.12.81-1.59 1.59-2.09 3.74-1.38 5.27L3.7 19.87l1.41 1.41L12 14.41l6.88 6.88 1.41-1.41L13.41 13l1.47-1.47z',
+    estrella: 'M22 9.24l-7.19-.62L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.63-7.03L22 9.24zM12 15.4l-3.76 2.27 1-4.28-3.32-2.88 4.38-.38L12 6.1l1.71 4.04 4.38.38-3.32 2.88 1 4.28L12 15.4z',
+  };
+  const icono = (n) => `<svg class="ic" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="${ICONOS[n]}"/></svg>`;
+
+  /** Las líneas de [partes] en HTML: la fila (servidor) y la tarjeta del
+   * mapa (navegador) pintan exactamente esto. */
+  function detallesHtml(p, lang, ahora) {
+    const x = partes(p, lang, ahora);
+    return [
+      x.hora.texto ? `<span class="sitio-hora${x.hora.abierto ? ' abierto' : ''}" data-sitio-hora="${esc0(JSON.stringify(p.hours))}" data-tz="${esc0(x.tz)}" data-lang="${lang === 'en' ? 'en' : 'es'}">${esc0(x.hora.texto)}</span>` : '',
+      x.festivo ? `<span class="sitio-festivo${x.festivo.sinConfirmar ? ' sin-confirmar' : ''}">${esc0(x.festivo.texto)}</span>` : '',
+      x.extra ? `<span class="sitio-extra">${icono(x.extra.tipo)}<span>${esc0(x.extra.texto)}</span></span>` : '',
+      x.planes ? `<span class="tag-oferta">${esc0(x.planes)}</span>` : '',
+    ].filter(Boolean).join('');
+  }
+
+  const KlendarSitios = { horaTexto, partes, detallesHtml };
   globalThis.KlendarSitios = KlendarSitios;
   if (typeof module === 'object' && module && module.exports) module.exports = KlendarSitios;
 
@@ -177,7 +255,7 @@
             type: 'FeatureCollection',
             features: (Array.isArray(filas) ? filas : []).filter((f) => isFinite(f.lat) && isFinite(f.lng)).map((f) => ({
               type: 'Feature',
-              properties: { nombre: f.name || '', slug: f.slug || f.id, planes: Number(f.plans_today) || 0 },
+              properties: { id: f.id, nombre: f.name || '', slug: f.slug || f.id, planes: Number(f.plans_today) || 0 },
               geometry: { type: 'Point', coordinates: [Number(f.lng), Number(f.lat)] },
             })),
           };
@@ -199,19 +277,30 @@
               layout: { 'text-field': ['get', 'nombre'], 'text-size': 12, 'text-offset': [0, 1.3], 'text-anchor': 'top', 'text-optional': true },
               paint: { 'text-color': tinta, 'text-halo-color': oscuro ? '#000000' : '#FFFFFF', 'text-halo-width': 1.5 },
             });
-            const abre = (e) => {
+            // La tarjeta: lo mismo que la fila de la lista (`place_card` y
+            // las mismas líneas, `detallesHtml`); mientras llega, el nombre.
+            const abre = async (e) => {
               const f = e.features && e.features[0];
               if (!f) return;
               const p = f.properties;
-              const n = Number(p.planes) || 0;
-              const planes = n ? (n === 1 ? d.uno : String(d.varios || '').replace('{n}', n)) : '';
               const a = document.createElement('a');
-              a.className = 'pop';
+              a.className = 'pop pop-sitio';
               a.href = `${d.base || '/b/'}${encodeURIComponent(p.slug)}`;
-              a.innerHTML = `<b>${esc(p.nombre)}</b>${planes ? `<span class="tag-oferta">${esc(planes)}</span>` : ''}<span>${esc(d.ver || '')}</span>`;
+              a.innerHTML = `<b>${esc(p.nombre)}</b><span class="pop-ver">${esc(d.ver || '')}</span>`;
               if (pop) pop.remove();
               pop = new mb.Popup({ offset: 12, closeButton: false, focusAfterOpen: false })
                 .setLngLat(f.geometry.coordinates).setDOMContent(a).addTo(m);
+              try {
+                const r = await fetch(`${d.url}/rest/v1/rpc/place_card`, {
+                  method: 'POST',
+                  headers: { apikey: d.key, 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ p_business: p.id, ...(d.desde ? { p_lat: d.desde[1], p_lng: d.desde[0] } : {}) }),
+                });
+                const fila = r.ok ? await r.json() : null;
+                if (fila && a.isConnected) {
+                  a.innerHTML = `<b>${esc(fila.name)}</b>${detallesHtml(fila, d.lang)}<span class="pop-ver">${esc(d.ver || '')}</span>`;
+                }
+              } catch { /* se queda con el nombre */ }
             };
             ['sitios-sin', 'sitios-con'].forEach((id) => {
               m.on('click', id, abre);

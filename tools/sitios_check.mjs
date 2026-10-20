@@ -11,7 +11,13 @@
 //     Sitios; tras volver a Planes, Planes.
 //  5. La lupa: con «nails», «Solo sitios» lleva a `?que=sitios&q=nails`.
 //  6. Los enlaces de antes (`?tipo=negocios`) llevan a Sitios.
-//  7. Sin errores en la consola.
+//  7. Sin saltos: «Planes | Sitios», Lista y Mapa, el buscador, Filtros y el
+//     «dónde» en la misma posición exacta en Planes y en Sitios (en lista y
+//     en mapa), y casi sin desplazamientos al cargar (CLS).
+//  8. La tarjeta del mapa de Sitios dice lo mismo que la fila de la lista
+//     (`place_card` pintada con la misma función, `detallesHtml`).
+//  9. La lista de un día del calendario de Planes, por partes (`?p=`).
+// 10. Sin errores en la consola.
 // Chromium y WebKit, móvil (375) y escritorio. Capturas en OUT.
 //
 //   PORT=8857 node tools/serve_dev.mjs &
@@ -97,6 +103,80 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     // 6. Los enlaces de antes.
     await page.goto(`${BASE}/explorar/?tipo=negocios`);
     ok(await page.locator('.que a.on').innerText() === 'Sitios', `${t} ?tipo=negocios → Sitios`);
+
+    // 7. Sin saltos.
+    const medir = async (url) => {
+      await page.goto(`${BASE}${url}`);
+      await page.evaluate(() => document.fonts.ready);
+      await page.waitForTimeout(600);
+      return page.evaluate(() => {
+        window.scrollTo(0, 0);
+        const r = (sel) => {
+          const e = document.querySelector(sel);
+          if (!e) return null;
+          const b = e.getBoundingClientRect();
+          return [b.x, b.y, b.width, b.height].map((v) => Math.round(v * 2) / 2).join(',');
+        };
+        return {
+          'Planes | Sitios': r('.que'), Planes: r('.que a:first-child'), Sitios: r('.que a:last-child'),
+          Lista: r('.vistas .vista[aria-label="Lista"]'), Mapa: r('.vistas .vista[aria-label="Mapa"]'),
+          // La fila de filtros (lo de dentro cambia: en Planes, el orden
+          // «según el tiempo» va antes del «dónde», como en la app).
+          buscador: r('form.buscador'), Filtros: r('#filtros > summary'), 'fila de filtros': r('#barra'),
+        };
+      });
+    };
+    for (const [a, b, que] of [
+      [`/explorar/?${AQUI}`, `/explorar/?que=sitios&${AQUI}`, 'en lista'],
+      [`/explorar/?vista=mapa&${AQUI}`, `/explorar/?que=sitios&vista=mapa&${AQUI}`, 'en el mapa'],
+    ]) {
+      const pa = await medir(a);
+      const pb = await medir(b);
+      const distintos = Object.keys(pa).filter((k) => !pa[k] || pa[k] !== pb[k]);
+      ok(distintos.length === 0, `${t} Planes ↔ Sitios ${que}: los controles no se mueven ${distintos.map((k) => `${k}: ${pa[k]} → ${pb[k]}`).join('; ')}`);
+    }
+    await page.goto(`${BASE}/explorar/?que=sitios&${AQUI}`);
+    await page.waitForTimeout(1500);
+    const cls = await page.evaluate(() => new Promise((res) => {
+      let v = 0;
+      new PerformanceObserver((l) => { for (const e of l.getEntries()) if (!e.hadRecentInput) v += e.value; })
+        .observe({ type: 'layout-shift', buffered: true });
+      setTimeout(() => res(v), 300);
+    })).catch(() => 0);
+    ok(cls < 0.05, `${t} casi sin desplazamientos al cargar (CLS ${cls.toFixed(3)})`);
+
+    // 8. La tarjeta del mapa = la fila: la primera fila, pedida como la pide
+    // el mapa (`place_card`) y pintada con la misma función.
+    const plano = (h) => h.replace(/\s+</g, '<').replace(/>\s+/g, '>').trim();
+    const { tarjeta, fila } = await page.evaluate(async () => {
+      const a = document.querySelector('.sitio-fila');
+      const slug = decodeURIComponent(a.getAttribute('href').split('/b/')[1]);
+      const cfg = await (await fetch('/config.js')).text();
+      const url = (cfg.match(/url:\s*'([^']+)'/) || [])[1];
+      const key = (cfg.match(/key:\s*'([^']+)'/) || [])[1];
+      const neg = await (await fetch(`${url}/rest/v1/businesses?select=id&slug=eq.${encodeURIComponent(slug)}`,
+        { headers: { apikey: key } })).json();
+      const r = await fetch(`${url}/rest/v1/rpc/place_card`, {
+        method: 'POST', headers: { apikey: key, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_business: neg[0].id, p_lat: 40.417, p_lng: -3.704 }),
+      });
+      const c = a.querySelector('.sitio-cuerpo').cloneNode(true);
+      c.querySelector('b')?.remove();
+      c.querySelector('.muted')?.remove();
+      return { tarjeta: window.KlendarSitios.detallesHtml(await r.json(), 'es'), fila: c.innerHTML };
+    });
+    ok(plano(tarjeta) === plano(fila), `${t} la tarjeta del mapa dice lo mismo que la fila`);
+    // 9. La lista de un día del calendario, por partes.
+    await page.goto(`${BASE}/explorar/?vista=calendario&${AQUI}&km=25`);
+    const pager = await page.locator('.pager').count();
+    const n1 = await page.locator('.cal-lista .tj-filas > *').count();
+    ok(n1 <= 24, `${t} el día, como mucho 24 de cada vez (${n1})`);
+    if (pager) {
+      await page.locator('.pager a[rel="next"]').click();
+      await page.waitForLoadState('domcontentloaded');
+      ok(/[?&]p=2/.test(page.url()) && await page.locator('.cal-lista .tj-filas > *').count() > 0,
+        `${t} la parte siguiente del día (${page.url().replace(BASE, '')})`);
+    }
 
     ok(errores.length === 0, `${t} sin errores en la consola ${errores.join(' | ')}`);
     await ctx.close();
