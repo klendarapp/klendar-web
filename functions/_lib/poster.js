@@ -374,3 +374,47 @@ export async function queuePosterPage(code, lang) {
     que: S.que, invita: S.scan, ayuda: S.help,
   });
 }
+
+// ── El cartel de «Te aviso cuando esté listo» ───────────────────────────────
+// «Cartel para el mostrador»: el mismo folio que el de la cola (solo A4), con
+// «Te aviso cuando esté listo» y un QR a klendar.app/listo/<código>. Cartel
+// propio y no el de la cola: va en otro sitio (el mostrador, no la puerta),
+// dice otra cosa y su código se cambia por separado.
+
+const TL = {
+  es: {
+    lang: 'es', title: 'Cartel para el mostrador', point: 'Apunta con la cámara del móvil', print: 'Imprimir',
+    que: 'Te aviso cuando esté listo',
+    scan: '¿Has pedido? Escanea y te avisamos en el móvil cuando esté listo.',
+    help: 'Para el mostrador. Se imprime igual en blanco y negro.',
+    changed: 'Este cartel ya no funciona',
+    changedBody: 'El local ha cambiado el código del cartel. Imprime el nuevo desde el panel o desde la app.',
+  },
+  en: {
+    lang: 'en', title: 'Poster for the counter', point: 'Point your phone camera here', print: 'Print',
+    que: 'Ready alert',
+    scan: 'Ordered? Scan and we’ll tell you on your phone when it’s ready.',
+    help: 'For the counter. It prints fine in black and white.',
+    changed: 'This poster no longer works',
+    changedBody: 'The venue has changed the poster code. Print the new one from the dashboard or the app.',
+  },
+};
+
+export async function ordersPosterPage(code, lang) {
+  const S = TL[lang === 'en' ? 'en' : 'es'];
+  const valido = /^[A-Za-z0-9_-]{16}$/.test(code || '');
+  const info = valido ? await rpc('orders_info', { p_code: code }) : null;
+  const b = info?.ok === true ? info.business : null;
+  if (!b?.name) {
+    return html(`${CABEZA(S, S.changed)}
+<link rel="stylesheet" href="/assets/site.css?v=20261012">
+</head>
+<body><main class="open"><section class="vacio" style="max-width:460px;margin:60px auto;padding:24px">
+<h1>${esc(S.changed)}</h1><p>${esc(S.changedBody)}</p>
+</section></main></body></html>`, valido ? 410 : 404, 'no-store');
+  }
+  return paginaCartel({
+    S, b, url: `https://klendar.app/listo/${code}`, titulo: `${S.title} · ${b.name}`,
+    que: S.que, invita: S.scan, ayuda: S.help,
+  });
+}

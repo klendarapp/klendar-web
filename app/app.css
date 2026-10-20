@@ -575,6 +575,12 @@ button.codigo.copiar .ms { font-size: 18px; color: var(--ink-2); letter-spacing:
 .cola-tarjeta.llamado { border: 2px solid var(--ink); }
 .cola-toca-linea { font-weight: 800; font-size: 14px; }
 .ocard .ph .ms-svg { width: 30px; height: 30px; }
+/* Te aviso cuando esté listo (app/listo.js): lo mismo que la cola; «Mientras
+   esperas», discreto y debajo. */
+.cola-turno .listo-intro { font-size: 22px; line-height: 1.3; }
+.listo-mientras { margin: 26px 0 0; display: grid; gap: 10px; }
+.listo-h2 { margin: 0; font-size: 15px; font-weight: 700; color: var(--ink-2); }
+.listo-mientras > .pill { justify-self: start; }
 
 /* «¿Cómo se calcula?» de «Lo que has ahorrado» (app/ahorro.js). */
 .ayuda-plegable { margin: 8px 0 14px; }

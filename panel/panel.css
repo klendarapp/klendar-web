@@ -839,6 +839,20 @@ details.bloque .b-cuerpo { display: grid; gap: 14px; padding: 0 16px 16px; }
 .cola-hechos { margin-top: 14px; }
 .cola-hechos .cola-lista { padding: 0; }
 .cola-acciones { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; }
+/* «Pedidos de hoy» (panel/listo.js): el número grande, «Listo» y «Más». */
+.listo-cifras { text-align: center; }
+.listo-cifras .cola-n { color: var(--ink); font-family: var(--display); font-weight: 800; font-size: 24px; letter-spacing: -.02em; margin: 0 0 4px; }
+.listo-cifras p { margin: 0; }
+.listo-fila { display: flex; align-items: center; gap: 10px 12px; padding: 12px 0; }
+.listo-fila + .listo-fila { border-top: 1px solid var(--glass-border); }
+.listo-num { font-family: var(--display); font-weight: 800; font-size: 28px; min-width: 2.4ch; text-align: center; font-variant-numeric: tabular-nums; }
+.listo-t { display: grid; gap: 2px; min-width: 0; flex: 1 1 auto; }
+.listo-t b { overflow-wrap: anywhere; }
+.listo-t .muted, .listo-ya { font-size: 13px; }
+.listo-ya { font-weight: 800; }
+.listo-hecho { margin: 6px 0; color: var(--ink-2); }
+.listo-apagado h2 { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; }
+.listo-apagado .btn.primary { margin-top: 12px; }
 .cola-acciones .btn { white-space: normal; text-align: center; }
 .cola-cartel h2 { margin-top: 0; }
 .filas-inicio { display: grid; gap: 8px; margin: 0 0 14px; }
@@ -995,7 +1009,8 @@ details.plegable[open] > summary { margin-bottom: 12px; }
 .aviso-cobro .btn { margin: 0; }
 
 /* «Dar en el momento» (panel/momento.js) */
-.momento-entrada { margin: 0 0 14px; }
+.momento-entrada { margin: 0 0 14px; display: flex; flex-wrap: wrap; gap: 8px; }
+.momento-entrada #listoEntrada:empty { display: none; }
 .momento-form [data-para] { margin-top: 6px; }
 .momento-recientes { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 4px; }
 .momento-qr { text-align: center; }

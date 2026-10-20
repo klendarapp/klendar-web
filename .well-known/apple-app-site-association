@@ -15,6 +15,7 @@
           { "/": "/m/*", "comment": "Dar en el momento (QR del negocio) y QR de mesa (wifi, ofertas de hoy y carta)" },
           { "/": "/sorteo/*", "comment": "Sorteo (página y bases)" },
           { "/": "/cola/*", "comment": "Cola virtual (cartel para la puerta)" },
+          { "/": "/listo/*", "comment": "Te aviso cuando esté listo (cartel para el mostrador)" },
           { "/": "/a/*", "comment": "Página de un artista" },
           { "/": "/en/o/*", "comment": "Offer or event (EN)" },
           { "/": "/en/b/*", "comment": "Business page (EN)" },
@@ -22,6 +23,7 @@
           { "/": "/en/rp/*", "comment": "Promoter link (EN)" },
           { "/": "/en/giveaway/*", "comment": "Giveaway (EN)" },
           { "/": "/en/queue/*", "comment": "Virtual queue (EN)" },
+          { "/": "/en/ready/*", "comment": "Ready alert (EN)" },
           { "/": "/en/a/*", "comment": "Artist page (EN)" },
           { "/": "/en/m/*", "comment": "Table QR (EN)" }
         ]

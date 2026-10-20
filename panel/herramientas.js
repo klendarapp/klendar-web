@@ -273,6 +273,18 @@ PAGES.herramientas = async (v) => {
         : herrSi(o, 'queue', 'used_30d') ? bi('Cerrada ahora', 'Closed now') : bi('Apagado', 'Off'),
       on: herrSi(o, 'queue', 'open'), botones: [[abrir, '#/cola']],
     }),
+    // Te aviso cuando esté listo (panel/listo.js): el avisador de pedidos
+    // del mostrador. Activarlo, propietario o encargado (dentro de «Pedidos
+    // de hoy»); activado, lo lleva todo el equipo. Una entidad no lo tiene.
+    !ent && (edit || herrSi(o, 'orders', 'enabled')) ? herrTarjeta({
+      icon: 'listo', titulo: bi('Te aviso cuando esté listo', 'Ready alert'),
+      frase: bi('Para cafeterías y comida para llevar: quien pide escanea el QR del mostrador y le avisamos en el móvil cuando está listo.', 'For cafés and takeaways: people scan the counter QR code and we tell them on their phone when it’s ready.'),
+      estado: herrSi(o, 'orders', 'enabled')
+        ? bi(`Activado · ${fmtNum(herrNum(o, 'orders', 'waiting'))} preparando`, `On · ${fmtNum(herrNum(o, 'orders', 'waiting'))} being prepared`)
+        : bi('Apagado', 'Off'),
+      on: herrSi(o, 'orders', 'enabled'),
+      botones: [[herrSi(o, 'orders', 'enabled') ? abrir : activar, '#/pedidos']],
+    }) : '',
     local && herrSi(o, 'broadcasts', 'suggested') ? herrTarjeta({
       icon: 'partido', titulo: bi('Partidos que pones', "Matches you're showing"),
       frase: bi('Para que te encuentre quien busca dónde ver el partido: marca lo que pones.', 'So people looking for where to watch the match find you: mark what you’re showing.'),

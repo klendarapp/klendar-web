@@ -676,7 +676,7 @@ function rutaDeVuelta() {
   const pagina = (/^#\/([a-z0-9-]{1,30})(\/[A-Za-z0-9-]{1,40}){0,2}$/.exec(h || '') || [])[1];
   // rrpp.js, series.js, partidos.js, bonos.js, sorteos.js, grupos.js y
   // cola.js se cargan después: sus pantallas también valen.
-  const conocida = pagina && (Object.hasOwn(PAGES, pagina) || ['rrpp', 'series', 'partidos', 'bonos', 'sorteos', 'grupos', 'cola', 'fidelizar', 'cupon', 'habituales'].includes(pagina));
+  const conocida = pagina && (Object.hasOwn(PAGES, pagina) || ['rrpp', 'series', 'partidos', 'bonos', 'sorteos', 'grupos', 'cola', 'pedidos', 'fidelizar', 'cupon', 'habituales'].includes(pagina));
   let hash = '';
   if (conocida) {
     const dentro = new URLSearchParams(q || '');
@@ -897,7 +897,7 @@ const NAV = [
   ]],
   ['Tu negocio', [
     // «Más herramientas» (panel/herramientas.js): lo opcional.
-    ['herramientas', 'herramientas', 'Más herramientas', ['cola', 'tele', 'partidos', 'grupos', 'antes-de-cerrar', 'series', 'carta', 'cartel-local', 'menu-del-dia', 'wifi-clientes', 'aforo']],
+    ['herramientas', 'herramientas', 'Más herramientas', ['cola', 'tele', 'partidos', 'grupos', 'antes-de-cerrar', 'series', 'carta', 'cartel-local', 'menu-del-dia', 'wifi-clientes', 'aforo', 'pedidos']],
     ['equipo', 'group', 'Equipo'],
     // «Tu plan» (panel/plan.js): estado del plan y, para el propietario, pagar.
     ['plan', 'workspace_premium', 'Tu plan'],
@@ -1396,6 +1396,7 @@ PAGES.resumen = async (v) => {
     ${herrEsencialHtml(s)}
     <div id="aforoCaja"></div>
     <div id="colaCaja"></div>
+    <div id="listoCaja"></div>
     <div id="filasCaja"></div>
     ${!cerradoIndef() && gestiona() && BIZ.verification_status === 'verified' ? `<div class="card pausa"><div>
         <h2 style="margin:0">Cerrado por hoy</h2>
@@ -1449,6 +1450,8 @@ PAGES.resumen = async (v) => {
   if (typeof pedFestivo === 'function') pedFestivo($('#festivoCaja', v));
   // «Cola virtual · N esperando», si está abierta (panel/cola.js).
   if (typeof resumenCola === 'function') resumenCola($('#colaCaja', v));
+  // «Pedidos de hoy · N preparando», si el avisador está activado (panel/listo.js).
+  if (typeof resumenListo === 'function') resumenListo($('#listoCaja', v));
   const salirEq = $('#salir-equipo', v);
   if (salirEq) {
     salirEq.onclick = async () => {
@@ -3945,7 +3948,7 @@ PAGES.validar = async (v) => {
     ? bi('Estás cerrado temporalmente: puedes validar los códigos y bonos que ya tiene la gente, pero no cargar bonos nuevos.', 'You’re temporarily closed: you can validate the codes and passes people already have, but not add new passes.')
     : bi('Tu negocio está bloqueado: puedes validar los códigos y bonos que ya tiene la gente, pero no cargar bonos nuevos.', 'Your business is blocked: you can validate the codes and passes people already have, but not add new passes.'))}</div>` : ''}
     ${helpBox('¿Cómo funciona?', `<p>Escanea el QR con la cámara (la del móvil o la del portátil) o escribe el código que la persona tiene debajo del QR. Cada código vale una vez: al validarlo queda marcado y el aforo baja.</p><p>Si es una reserva para varios, te decimos cuántas personas entran con ese código.</p><p>${bi('Con el <b>QR de cliente</b> de alguien ves sus bonos de tu negocio: puedes cargarle uno o descontar un uso.', 'With someone’s <b>customer QR code</b> you see their passes from your business: you can add one or use one.')}</p><p>${esc(I18N.t('Con «Dar en el momento» das sellos, un uso de un bono o algo del momento sin que el cliente enseñe nada: él escanea tu QR.'))}</p>`)}
-    <p class="momento-entrada"><a class="btn" href="#/momento">${ms('volunteer_activism')}Dar en el momento</a></p>
+    <p class="momento-entrada"><a class="btn" href="#/momento">${ms('volunteer_activism')}Dar en el momento</a><span id="listoEntrada"></span></p>
     <div class="scan-box">
       <button class="btn" id="camara" type="button">${ms('photo_camera')}Escanear con la cámara</button>
       <div class="camara" id="camara-caja" hidden><video id="video" muted playsinline></video><span class="mira" aria-hidden="true"></span></div>
@@ -3958,6 +3961,8 @@ PAGES.validar = async (v) => {
     <div class="card" style="margin-top:18px"><h2>Últimos validados</h2>
       <p class="muted" style="margin:0 0 10px">${esc(I18N.t('Durante 24 horas puedes apuntar o corregir el importe del ticket de cada canje.'))}</p>
       <div id="recent"></div></div>`;
+  // «Pedidos de hoy» (Te aviso cuando esté listo), si está activado.
+  if (typeof listoEntradaValidar === 'function') listoEntradaValidar($('#listoEntrada', v));
 
   // ── Sin conexión: los códigos se guardan y se validan al volver la red ──
   // (como en la app). Se guardan por negocio en este navegador.
@@ -6017,6 +6022,7 @@ PAGES.informe = async (v, param) => {
     ${conRes(toquesEnlacesHtml(toques), herrPl(toquesTotal, ['1 toque', 'toques'], ['1 tap', 'taps']))}
     <div id="informeMesa"></div>
     <div id="informeAforo"></div>
+    <div id="informeListo"></div>
 
     ${rrppHtml}
 
@@ -6042,6 +6048,7 @@ PAGES.informe = async (v, param) => {
   if (typeof mesaCifras === 'function') mesaCifras($('#informeMesa', v));
   // «Aforo · A qué hora se llenó» (panel/aforo.js), si cuenta o ha contado.
   if (typeof aforoCifras === 'function') aforoCifras($('#informeAforo', v));
+  if (typeof listoCifras === 'function') listoCifras($('#informeListo', v));
   if (!gestiona()) return;
   $('#csvOffers').onclick = () => downloadCsv(`cifras-${BIZ.name}`, r.offers || [], [
     ['title', 'Publicación'], ['kind', 'Tipo'], ['starts_at', 'Fecha'],

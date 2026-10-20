@@ -1384,15 +1384,17 @@ RUTAS.planes = async () => {
   if (!exigeSesion('planes')) return;
   // Las mismas dos funciones que la app. Si fallan los canjes, se enseña lo
   // guardado igualmente (la app hace lo mismo).
-  const [guardados, guardadosPasados, canjes, series, turnos] = await Promise.all([
+  const [guardados, guardadosPasados, canjes, series, turnos, pedidosListo] = await Promise.all([
     llamar('my_saved_offers', { p_when: 'upcoming' }),
     pasadosParte(null).catch(() => []),
     llamar('my_redemptions', {}).catch(() => []),
     llamar('my_followed_series', {}).catch(() => []),
     // Tu turno en una cola virtual, arriba (app/cola.js).
     llamar('my_queue_turns', {}).catch(() => []),
+    // El pedido que se prepara (Te aviso cuando esté listo, app/listo.js).
+    llamar('my_orders', {}).catch(() => []),
   ]);
-  const turnoHtml = await colaTarjetasHtml(turnos);
+  const turnoHtml = (await colaTarjetasHtml(turnos)) + listoTarjetasHtml(pedidosListo);
   // «Sigues 2 series», arriba (sin series, nada), como la app.
   const nSeries = (series || []).length;
   const filaSeries = nSeries ? `<div class="lista">${fila({ href: '#/series', icono: 'notifications',
@@ -1664,7 +1666,7 @@ RUTAS.codigos = async (_partes, params) => {
   if (!exigeSesion('codigos')) return;
   // Los regalos de cumpleaños van aparte y arriba; si fallan, los códigos
   // salen igual.
-  const [lista, regalos, premios, bonos, turnos, dados] = await Promise.all([
+  const [lista, regalos, premios, bonos, turnos, dados, pedidosListo] = await Promise.all([
     llamar('my_redemptions', { p_limit: CODIGOS_POR_PARTE }),
     misRegalos().catch(() => []),
     // Los premios de las tarjetas de sellos, también aparte.
@@ -1675,9 +1677,11 @@ RUTAS.codigos = async (_partes, params) => {
     llamar('my_queue_turns', {}).catch(() => []),
     // Lo que te dieron con «Dar en el momento» (app/momento.js), ya canjeado.
     llamar('my_spot_gifts', {}).catch(() => []),
+    // El pedido que se prepara (Te aviso cuando esté listo, app/listo.js).
+    llamar('my_orders', {}).catch(() => []),
   ]);
   const zona = await zonasDe(lista);
-  const turnoHtml = await colaTarjetasHtml(turnos);
+  const turnoHtml = (await colaTarjetasHtml(turnos)) + listoTarjetasHtml(pedidosListo);
   // Los vivos, guardados para enseñarlos sin cobertura (y fuera los demás).
   recuerdaCodigos((lista || []).filter((r) => r.status === 'pending')
     .map((r) => ({ ...r, tz: zona(r) })), true);
