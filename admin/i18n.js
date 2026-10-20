@@ -1489,4 +1489,7 @@ const I18N = makeI18N({
     "Ceuta": "Ceuta",
     "Melilla": "Melilla",
     "No se ha podido guardar": "Couldn't save it",
+    // Festivos casi solos (festivos.js, crecer.js).
+    "Pon de dónde sale (boletín, número y fecha).": "Say where it comes from (bulletin, number and date).",
+    "El código postal, solo con cifras (de 2 a 5).": "The postcode, digits only (2 to 5).",
 }, { idiomas: ['es', 'en'] }); // herramienta interna: solo español e inglés

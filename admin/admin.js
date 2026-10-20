@@ -984,6 +984,13 @@ async function route() {
   if (!ME || !$('#mfa').hidden) return;
   const n = ++RUTA_N;
   const [page, id] = currentRoute();
+  // Con la sesión guardada, la primera pintada puede llegar antes de que
+  // carguen las pantallas de sus propios ficheros (festivos.js, sorteos.js…,
+  // detrás de este): se espera a que estén en vez de pintar «Resumen».
+  if (!PAGES[page] && document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => route(), { once: true });
+    return;
+  }
   // En una pantalla de «Sistema», el grupo se ve abierto.
   if (NAV_GRUPOS.some((g) => g.plegable && g.items.some((n) => n[0] === page))) navSistemaAbierto = true;
   renderNav(page);
@@ -1346,6 +1353,10 @@ PAGES.resumen = async (v) => {
   let calientes = null;
   try { calientes = await rpc('admin_report_groups', { p_status: 'open', p_type: 'all', p_min_open: 3, p_limit: 5, p_offset: 0 }); } catch (e) { if (e?.obsoleta) throw e; }
   const nCal = calientes?.total || 0;
+  // Festivos: desde noviembre (o con propuestas sin revisar), lo que le falta
+  // al año que se vigila (festivos.js; migración 20261238100000).
+  let festivos = null;
+  try { festivos = await rpc('admin_holiday_alert'); } catch (e) { if (e?.obsoleta) throw e; }
   // «Pendiente de ti», por temas y en filas cortas: número, qué es y adónde
   // lleva. Lo que tiene su tarjeta aquí abajo (revisar de nuevo, pausas,
   // cancelaciones) la despliega; lo demás abre su pantalla.
@@ -1378,6 +1389,7 @@ PAGES.resumen = async (v) => {
       [BADGES.sugerencias, 'lightbulb', pl(BADGES.sugerencias, 'sugerencia sin leer', 'sugerencias sin leer', 'unread suggestion', 'unread suggestions'), '#/sugerencias'],
       [k.push_failed_7d, 'notifications', pl(k.push_failed_7d, 'notificación push fallida (7 d)', 'notificaciones push fallidas (7 d)', 'failed push notification (7 d)', 'failed push notifications (7 d)'), '#/avisos?tab=push'],
       [BADGES.errores, 'bug_report', pl(BADGES.errores, 'error nuevo en la web (24 h)', 'errores nuevos en la web (24 h)', 'new website error (24 h)', 'new website errors (24 h)'), '#/errores'],
+      [festivos?.count, 'event_busy', esc(en ? `Public holidays ${festivos?.year}: ${festivos?.summary || ''}` : (festivos?.text || '')), `#/festivos/${festivos?.year}`],
     ]],
   ].map(([t, filas]) => [t, filas.filter((f) => f[0])]).filter(([, filas]) => filas.length);
   // Las cifras de siempre, pero solo las principales a la vista; el resto,

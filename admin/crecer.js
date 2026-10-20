@@ -372,6 +372,13 @@ async function pedidosEnFicha(v, b) {
 
 // ── Dónde crecer ────────────────────────────────────────────────────────────
 /** Un identificador de ciudad a partir de un nombre: «San Sebastián» → «sansebastian». */
+/** La comunidad de la ciudad de Klendar más cercana (para proponerla al dar de alta una). */
+const crRegionCerca = (C, lat, lng) => {
+  const la = Number(lat), lo = Number(lng);
+  const conReg = (C || []).filter((c) => c.region);
+  if (!conReg.length || !Number.isFinite(la) || !Number.isFinite(lo)) return 'MD';
+  return conReg.reduce((a, c) => ((c.lat - la) ** 2 + (c.lng - lo) ** 2 < (a.lat - la) ** 2 + (a.lng - lo) ** 2 ? c : a)).region;
+};
 const crIdCiudad = (s) => String(s || '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/[^a-z]/g, '').slice(0, 32);
 
 PAGES.crecer = async (v) => {
@@ -410,6 +417,7 @@ PAGES.crecer = async (v) => {
     cols: [
       { h: bi('Ciudad', 'City'), r: (c) => `<span class="title">${esc(c.name)}</span><span class="sub"><code>${esc(c.id)}</code></span>` },
       { h: bi('Centro', 'Centre'), r: (c) => `<a class="link" target="_blank" rel="noopener" href="https://www.google.com/maps?q=${Number(c.lat)},${Number(c.lng)}">${Number(c.lat).toFixed(3)}, ${Number(c.lng).toFixed(3)} ↗</a>` },
+      { h: bi('Comunidad', 'Region'), r: (c) => (c.region ? esc(festCcaa(c.region)) : `<span class="tag warn">${esc(bi('sin comunidad', 'no region'))}</span>`) },
       { h: bi('Estado', 'Status'), r: (c) => (c.active ? `<span class="tag ok">${esc(bi('Encendida', 'On'))}</span>` : `<span class="tag dim">${esc(bi('Apagada', 'Off'))}</span>`) },
       { h: '', r: (c, i) => (c.active ? `<button type="button" class="btn sm" data-apaga="${i}">${esc(bi('Apagar…', 'Switch off…'))}</button>` : `<button type="button" class="btn sm" data-enciende="${i}">${esc(bi('Encender…', 'Switch on…'))}</button>`) },
     ],
@@ -427,6 +435,12 @@ PAGES.crecer = async (v) => {
         { name: 'name', label: bi('Nombre', 'Name'), value: pre.name, required: true },
         { name: 'lat', label: bi('Latitud del centro', 'Centre latitude'), type: 'number', step: 'any', value: pre.lat, required: true },
         { name: 'lng', label: bi('Longitud del centro', 'Centre longitude'), type: 'number', step: 'any', value: pre.lng, required: true },
+        // Para los festivos (festivos.js): sin comunidad, sus negocios solo
+        // reciben los nacionales.
+        { name: 'region', label: bi('Comunidad autónoma', 'Region'), type: 'select', value: pre.region || crRegionCerca(C, pre.lat, pre.lng),
+          options: FEST_CCAA.map(([c, n]) => [c, `${n} (${c})`]), help: bi('para los festivos', 'for public holidays') },
+        { name: 'cp', label: bi('Código postal del municipio (primeras cifras)', 'Municipality postcode (first digits)'), value: pre.postal_prefix || '',
+          placeholder: '440', help: bi('opcional: 440 para Teruel capital', 'optional: 440 for Teruel city') },
       ],
       submit: bi('Seguir', 'Continue'),
     });
@@ -439,6 +453,20 @@ PAGES.crecer = async (v) => {
     try {
       const x = await rpc('admin_activate_city', { p_id: crIdCiudad(r.id), p_name: r.name, p_lat: Number(String(r.lat).replace(',', '.')), p_lng: Number(String(r.lng).replace(',', '.')) });
       toast(bi(`Ciudad activada. Avisadas: ${fmtNum(x?.notified || 0)}.`, `City activated. Notified: ${fmtNum(x?.notified || 0)}.`));
+      // Comunidad y código postal, y si le faltan los festivos locales.
+      const f = await rpc('admin_set_city_holiday_info', { p_id: x?.id || crIdCiudad(r.id), p_region: r.region, p_postal_prefix: r.cp || null }).catch(() => null);
+      const faltan = f?.holidays?.missing_years || [];
+      if (!f?.ok) toast(bi('No se ha podido guardar la comunidad: ponla en Festivos.', "Couldn't save the region: set it in Public holidays."), true);
+      else if (faltan.length) {
+        const b = f.holidays.bulletin || {};
+        if (await confirmDlg(bi(`A «${r.name}» le faltan los festivos locales`, `“${r.name}” has no local holidays`), `${esc(bi(
+          `No tiene sus dos fiestas locales de ${faltan.join(' y ')}: hasta que estén, a sus negocios solo se les pregunta por los nacionales y los de su comunidad. Salen en el`,
+          `It doesn't have its two local holidays for ${faltan.join(' and ')}: until they're added, its businesses are only asked about national and regional ones. They're published in the`))} ${b.url ? `<a class="link" target="_blank" rel="noopener" href="${esc(b.url)}">${esc(b.name || '')} ↗</a>` : esc(b.name || '')}.`,
+        { submit: bi('Añadirlos ahora', 'Add them now') })) {
+          location.hash = `#/festivos/${faltan[0]}`;
+          return;
+        }
+      }
       route();
     } catch (e) { toast(crError(e), true); }
   };
@@ -448,7 +476,7 @@ PAGES.crecer = async (v) => {
       const nc = z.nearest_city;
       // Si la más cercana es una ciudad apagada a menos de 30 km, es esa.
       const pre = nc && !nc.active && Number(nc.km) <= 30
-        ? (() => { const c = C.find((x) => x.id === nc.id) || {}; return { id: nc.id, name: nc.name, lat: c.lat ?? z.lat, lng: c.lng ?? z.lng }; })()
+        ? (() => { const c = C.find((x) => x.id === nc.id) || {}; return { id: nc.id, name: nc.name, lat: c.lat ?? z.lat, lng: c.lng ?? z.lng, region: c.region, postal_prefix: c.postal_prefix }; })()
         : { id: crIdCiudad(z.zone), name: z.zone, lat: z.lat, lng: z.lng };
       await activa(pre, z);
     });
@@ -470,7 +498,7 @@ PAGES.crecer = async (v) => {
   $$('[data-enciende]', v).forEach((b) => {
     b.onclick = () => esperando(b, async () => {
       const c = C[Number(b.dataset.enciende)];
-      await activa({ id: c.id, name: c.name, lat: c.lat, lng: c.lng }, null);
+      await activa({ id: c.id, name: c.name, lat: c.lat, lng: c.lng, region: c.region, postal_prefix: c.postal_prefix }, null);
     });
   });
   $$('[data-apaga]', v).forEach((b) => {
