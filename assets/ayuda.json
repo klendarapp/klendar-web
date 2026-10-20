@@ -1,5 +1,5 @@
 {
- "version": "97267e4df342",
+ "version": "3488984377f8",
  "contact": "info@klendar.app",
  "tabs": {
   "es": {
@@ -96,6 +96,15 @@
     "a": [
      {
       "t": "Si un local tiene cola virtual, en la puerta hay un cartel con un QR. Lo escaneas, dices cuántos sois y coges número (con tu cuenta, en la app o en la web). Ves cuántos tienes delante y una espera aproximada, y cuando te toca te avisamos en el móvil: tienes unos minutos para presentarte. Si te vas, «Salir de la cola». La lista se borra al acabar el día."
+     }
+    ]
+   },
+   {
+    "id": "te-aviso-listo",
+    "q": "¿Cómo funciona «Te aviso cuando esté listo»?",
+    "a": [
+     {
+      "t": "Algunas cafeterías y sitios de comida para llevar tienen en el mostrador un cartel con un QR. Lo escaneas después de pedir y pulsas «Avísame cuando esté listo» (con tu cuenta, en la app o en la web). Te damos un número, el que dicen en el mostrador, y te avisamos en el móvil cuando el local marca tu pedido como listo, aunque estés en horas de silencio, porque lo acabas de pedir. Si ya no lo esperas, «Ya no lo espero». Un pedido listo que no recoges se cierra solo a las 2 horas, y todo se borra a las 6:00."
      }
     ]
    },
@@ -483,6 +492,22 @@
     ]
    },
    {
+    "id": "te-aviso-listo-negocio",
+    "q": "¿Cómo aviso a quien pide en el mostrador de que su pedido está listo?",
+    "a": [
+     {
+      "t": "Con «Te aviso cuando esté listo», en Mi negocio → «Más herramientas» (también en el "
+     },
+     {
+      "t": "panel web",
+      "u": "https://klendar.app/panel/"
+     },
+     {
+      "t": "). Lo activa el propietario o un encargado; luego imprime el «Cartel para el mostrador». Quien pide lo escanea y recibe un número; en «Pedidos de hoy» cualquiera de tu equipo toca «Listo» y le avisamos en el móvil. Ves su número y la primera palabra de su nombre, nada más. El aviso es solo para ese pedido. La lista se borra sola a las 6:00 o al pulsar «Terminar por hoy»."
+     }
+    ]
+   },
+   {
     "id": "antes-de-cerrar-negocio",
     "q": "¿Cómo publico lo que me sobra del día?",
     "a": [
@@ -635,6 +660,15 @@
     "a": [
      {
       "t": "If a venue has a virtual queue, there's a poster with a QR code on the door. Scan it, say how many of you there are and get a number (with your account, in the app or on the web). You see how many people are ahead of you and an estimated wait, and when it's your turn we let you know on your phone: you have a few minutes to get there. If you leave, tap “Leave the queue”. The list is deleted at the end of the day."
+     }
+    ]
+   },
+   {
+    "id": "te-aviso-listo",
+    "q": "How does “Ready alert” work?",
+    "a": [
+     {
+      "t": "Some cafés and takeaways have a poster with a QR code on the counter. Scan it after you order and tap “Tell me when it’s ready” (with your account, in the app or on the web). We give you a number, the one they call at the counter, and we let you know on your phone when the venue marks your order as ready, even during your quiet hours, because you’ve just asked for it. If you’re no longer waiting, tap “I’m not waiting any more”. A ready order you don’t pick up closes by itself after 2 hours, and everything is deleted at 6:00."
      }
     ]
    },
@@ -1018,6 +1052,22 @@
      },
      {
       "t": "): print the “Poster for the door” and open the queue each day with the maximum number of people and the minutes each person has to show up. People scan the poster when they arrive and get a number; you just tap “Call the next one” and we let them know on their phone. You add anyone without the app yourself. The list deletes itself at the end of the day (at 6:00) or when you tap “Finish for today”."
+     }
+    ]
+   },
+   {
+    "id": "te-aviso-listo-negocio",
+    "q": "How do I tell people who order at the counter that their order is ready?",
+    "a": [
+     {
+      "t": "With “Ready alert”, in My business → “More tools” (also on the "
+     },
+     {
+      "t": "web dashboard",
+      "u": "https://klendar.app/panel/"
+     },
+     {
+      "t": "). The owner or a manager turns it on; then print the “Poster for the counter”. People who order scan it and get a number; in “Today’s orders” anyone on your team taps “Ready” and we let them know on their phone. You see their number and the first word of their name, nothing else. The notification is only for that order. The list deletes itself at 6:00 or when you tap “Finish for today”."
      }
     ]
    },

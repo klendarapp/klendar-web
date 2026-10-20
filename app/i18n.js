@@ -2,6 +2,10 @@
 'use strict';
 
 const APP_EN = {
+  // Ajustes → Notificaciones: «Tu negocio» (la pregunta de los festivos)
+  "Tu negocio": "Your business",
+  "Preguntas de festivos": "Public holiday questions",
+  "Unos días antes de cada festivo, si abres. La pregunta sigue en Mi negocio.": "A few days before each public holiday, whether you’re open. The question stays in My business.",
   // «Avísame si…» por palabras (tanda D)
   "Por palabras": "By keyword",
   "Por palabras: «karaoke», «sushi», «2x1»": "By keyword: “karaoke”, “sushi”, “2x1”",

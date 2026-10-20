@@ -832,6 +832,7 @@ KL_DIC('de', {
   "Diseño": "Design",
   "Diseño del anuncio": "Design der Anzeige",
   "Diseños de nuestra hoja de flash, por orden de llegada.": "Motive aus unserem Flash-Sheet, nach Reihenfolge der Ankunft.",
+  "Disponible desde el 4 de noviembre": "Verfügbar ab dem 4. November",
   "Distancia entre tu local y el último sitio conocido de quien ha canjeado algo, de {people} persona(s). Es aproximado y nunca se enseña dónde está nadie.": "Entfernung zwischen deinem Lokal und dem letzten bekannten Standort derer, die etwas eingelöst haben, von {people} Person(en). Sie ist ungefähr und zeigt nie, wo jemand ist.",
   "Distrito o barrio (opcional)": "Bezirk oder Viertel (optional)",
   "Documento añadido": "Dokument hinzugefügt",

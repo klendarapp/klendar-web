@@ -832,6 +832,7 @@ KL_DIC('ca', {
   "Diseño": "Disseny",
   "Diseño del anuncio": "Disseny de l'anunci",
   "Diseños de nuestra hoja de flash, por orden de llegada.": "Dissenys del nostre full de flash, per ordre d'arribada.",
+  "Disponible desde el 4 de noviembre": "Disponible a partir del 4 de novembre",
   "Distancia entre tu local y el último sitio conocido de quien ha canjeado algo, de {people} persona(s). Es aproximado y nunca se enseña dónde está nadie.": "Distància entre el teu local i l'últim lloc conegut de qui ha bescanviat alguna cosa, de {people} persona(es). És aproximada i mai no es mostra on és ningú.",
   "Distrito o barrio (opcional)": "Districte o barri (opcional)",
   "Documento añadido": "Document afegit",

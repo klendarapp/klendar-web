@@ -29,6 +29,7 @@ const LISTO_ERR = {
   not_authorized: 'No tienes permiso para esto. Pídeselo a quien lleve el negocio.',
   business_blocked: 'Tu negocio está bloqueado: ahora no se pueden avisar pedidos.',
   business_not_visible: 'Tu negocio aún no sale en Klendar.',
+  not_yet: 'Disponible desde el 4 de noviembre',
   already_done: 'Ese pedido ya no está en la lista.',
   not_found: 'Ese pedido ya no está en la lista.',
   rate_limited: 'Demasiados intentos. Espera un minuto.',
@@ -67,7 +68,10 @@ PAGES.pedidos = async (v) => {
         ${d.can_manage ? `<div class="card listo-apagado">
             <h2>${icono('listo')}<span>${esc(I18N.t('Te aviso cuando esté listo'))}</span></h2>
             <p class="muted">${esc(I18N.t('Quien pide en el mostrador escanea el cartel y le avisamos en el móvil cuando su pedido está listo. Tú solo tocas «Listo».'))}</p>
-            <button class="btn primary" type="button" data-listo="activar">${esc(I18N.t('Activar el avisador'))}</button>
+            ${d.available === false
+    // Hasta el 4-11-2026 no se puede activar (TL1, migración 20261235100001).
+    ? `<p class="listo-pronto"><b>${esc(I18N.t('Disponible desde el 4 de noviembre'))}</b></p>`
+    : `<button class="btn primary" type="button" data-listo="activar">${esc(I18N.t('Activar el avisador'))}</button>`}
           </div>`
     : `<section class="vacio"><h2>${esc(I18N.t('El avisador de pedidos está apagado'))}</h2><p>${esc(I18N.t('Lo activa el propietario o un encargado.'))}</p></section>`}
         ${pie}`;

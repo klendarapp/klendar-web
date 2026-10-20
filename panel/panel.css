@@ -853,6 +853,7 @@ details.bloque .b-cuerpo { display: grid; gap: 14px; padding: 0 16px 16px; }
 .listo-hecho { margin: 6px 0; color: var(--ink-2); }
 .listo-apagado h2 { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; }
 .listo-apagado .btn.primary { margin-top: 12px; }
+.listo-apagado .listo-pronto { margin: 12px 0 0; }
 .cola-acciones .btn { white-space: normal; text-align: center; }
 .cola-cartel h2 { margin-top: 0; }
 .filas-inicio { display: grid; gap: 8px; margin: 0 0 14px; }

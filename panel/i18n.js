@@ -1351,6 +1351,7 @@ const I18N = makeI18N({
     "Te aviso cuando esté listo": "Ready alert",
     "Quien pide en el mostrador escanea el cartel y le avisamos en el móvil cuando su pedido está listo. Tú solo tocas «Listo».": "People who order at the counter scan the poster and we tell them on their phone when their order is ready. You just tap “Ready”.",
     "Activar el avisador": "Turn on ready alerts",
+    "Disponible desde el 4 de noviembre": "Available from 4 November",
     "Cartel para el mostrador": "Poster for the counter",
     "Ponlo en el mostrador. Quien pide lo escanea y le avisamos cuando su pedido esté listo. Vale todos los días.": "Put it on the counter. People who order scan it and we tell them when their order is ready. It works every day.",
     "Has terminado por hoy": "You’ve finished for today",

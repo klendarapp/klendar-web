@@ -832,6 +832,7 @@ KL_DIC('fr', {
   "Diseño": "Design",
   "Diseño del anuncio": "Design de l’annonce",
   "Diseños de nuestra hoja de flash, por orden de llegada.": "Motifs de notre planche flash, par ordre d’arrivée.",
+  "Disponible desde el 4 de noviembre": "Disponible à partir du 4 novembre",
   "Distancia entre tu local y el último sitio conocido de quien ha canjeado algo, de {people} persona(s). Es aproximado y nunca se enseña dónde está nadie.": "Distance entre ton établissement et la dernière position connue des personnes qui ont utilisé une offre, sur {people} personne(s). C’est approximatif et on ne montre jamais où se trouve qui que ce soit.",
   "Distrito o barrio (opcional)": "Arrondissement ou quartier (facultatif)",
   "Documento añadido": "Document ajouté",

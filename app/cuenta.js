@@ -903,7 +903,8 @@ RUTAS.perfil = RUTAS.ajustes;
 
 // ── Ajustes → Notificaciones ─────────────────────────────────────────────
 /** Lo mismo y en el mismo orden que la app (Ajustes → Notificaciones): en el
- * móvil, de tus favoritos, de tus amigos, para ti, por correo y cuándo. Una
+ * móvil, de tus favoritos, de tus amigos, para ti, tu negocio (solo quien lo
+ * lleva), por correo y cuándo. Una
  * línea por fila y cada cambio se guarda solo (como el resto de Ajustes). */
 async function ajustesNotificaciones() {
   if (!exigeSesion('ajustes/notificaciones')) return;
@@ -980,6 +981,11 @@ async function ajustesNotificaciones() {
         </div>
         ${sw('palabras', 'Avísame si…', prefs.notify_word_alerts !== false, 'Por palabras: «karaoke», «sushi», «2x1»')}
         <div id="palabras-mas" class="fila palabras-caja"${prefs.notify_word_alerts !== false ? '' : ' hidden'}></div>`)}
+      ${llevaNegocio ? grupo('Tu negocio', [
+    // La pregunta de los festivos (migración 20261233100006 de la app):
+    // apagada, la pregunta sigue en «Mi negocio» y en el panel.
+    sw('festivos', 'Preguntas de festivos', prefs.notify_holiday_asks !== false, 'Unos días antes de cada festivo, si abres. La pregunta sigue en Mi negocio.'),
+  ].join('')) : ''}
       ${grupo('Por correo', [
     sw('semanal', 'Correo semanal (jueves)', prefs.weekly_email),
     llevaNegocio ? sw('negocio', 'Resumen de tu negocio (lunes)', prefs.business_email !== false) : '',
@@ -1022,6 +1028,7 @@ async function ajustesNotificaciones() {
         notify_quetal: el.quetal.checked,
         notify_word_alerts: el.palabras.checked,
         notify_room: el.sitio.checked,
+        ...(el.festivos ? { notify_holiday_asks: el.festivos.checked } : {}),
         notify_nearby: el.cerca.checked,
         nearby_radius_m: Number(fa.querySelector('input[name=radio]:checked')?.value || 1000),
         nearby_categories: elegidas.length ? elegidas : null,

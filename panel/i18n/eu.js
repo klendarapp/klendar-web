@@ -832,6 +832,7 @@ KL_DIC('eu', {
   "Diseño": "Diseinua",
   "Diseño del anuncio": "Iragarkiaren diseinua",
   "Diseños de nuestra hoja de flash, por orden de llegada.": "Gure flash orriko diseinuak, iristen zareten ordenan.",
+  "Disponible desde el 4 de noviembre": "Azaroaren 4tik aurrera erabilgarri",
   "Distancia entre tu local y el último sitio conocido de quien ha canjeado algo, de {people} persona(s). Es aproximado y nunca se enseña dónde está nadie.": "Zure lokalaren eta zerbait trukatu dutenen azken kokapen ezagunaren arteko distantzia, {people} pertsonarena. Gutxi gorabeherakoa da, eta ez da inoiz erakusten inor non dagoen.",
   "Distrito o barrio (opcional)": "Barrutia edo auzoa (aukerakoa)",
   "Documento añadido": "Dokumentua gehituta",

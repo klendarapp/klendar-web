@@ -283,11 +283,16 @@ PAGES.herramientas = async (v) => {
     !ent && (edit || herrSi(o, 'orders', 'enabled')) ? herrTarjeta({
       icon: 'listo', titulo: bi('Te aviso cuando esté listo', 'Ready alert'),
       frase: bi('Para cafeterías y comida para llevar: quien pide escanea el QR del mostrador y le avisamos en el móvil cuando está listo.', 'For cafés and takeaways: people scan the counter QR code and we tell them on their phone when it’s ready.'),
+      // Hasta el 4-11-2026 no se puede activar (TL1; `orders_available`,
+      // migración 20261235100001 de la app): lo dice y sin botón. Después la
+      // base dice true y la tarjeta es la de siempre.
       estado: herrSi(o, 'orders', 'enabled')
         ? bi(`Activado · ${fmtNum(herrNum(o, 'orders', 'waiting'))} preparando`, `On · ${fmtNum(herrNum(o, 'orders', 'waiting'))} being prepared`)
-        : bi('Apagado', 'Off'),
+        : o?.orders_available === false ? bi('Disponible desde el 4 de noviembre', 'Available from 4 November')
+          : bi('Apagado', 'Off'),
       on: herrSi(o, 'orders', 'enabled'),
-      botones: [[herrSi(o, 'orders', 'enabled') ? abrir : activar, '#/pedidos']],
+      botones: herrSi(o, 'orders', 'enabled') || o?.orders_available !== false
+        ? [[herrSi(o, 'orders', 'enabled') ? abrir : activar, '#/pedidos']] : [],
     }) : '',
     local && herrSi(o, 'broadcasts', 'suggested') ? herrTarjeta({
       icon: 'partido', titulo: bi('Partidos que pones', "Matches you're showing"),
