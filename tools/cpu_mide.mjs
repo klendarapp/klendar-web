@@ -34,6 +34,7 @@ const MESA = process.env.MESA || '7GR66wzlY8hqVjXs';
 const RUTAS = process.env.RUTAS ? process.env.RUTAS.split(',') : [
   '/salud',
   '/descubre/', '/en/discover/', '/explorar/', '/explorar/?ciudad=Madrid', '/explorar/?vista=negocios',
+  '/explorar/?que=sitios', '/explorar/?que=sitios&lat=40.417&lng=-3.704', '/explorar/?que=sitios&vista=mapa&ciudad=Madrid', '/en/explore/?what=places',
   '/agenda/', '/agenda/madrid/', '/agenda/zaragoza/', '/agenda/madrid/stage/', '/hoy/madrid/',
   '/coleccion/con-ninos/madrid/', '/coleccion/finde/', '/coleccion/finde/madrid/',
   `/o/${OFERTA}`, `/en/o/${OFERTA}`, `/b/${NEGOCIO}`, '/b/agenda-publica-de-madrid',

@@ -33,6 +33,7 @@ import KG from '../../assets/textos-grupos.js';
 import KS from '../../assets/textos-sorteos.js';
 import { GRUPOS_CSS, gruposBase, icGrupos } from './grupos.js';
 import { icSorteo, sorteosBase } from './sorteos.js';
+import { SITIOS_CSS, SITIOS_SCRIPTS, TS, filaSitio, mapaSitios } from './sitios.js';
 
 /** Una dirección mal codificada no es un 500: se manda al listado (302). */
 const aListado = (loc) => new Response(null, { status: 302, headers: { Location: loc, 'Cache-Control': 'no-store' } });
@@ -110,7 +111,7 @@ const T = (en) => en
       zoneChange: 'Change area', hereNow: "I'm here", hereNowHint: 'Within walking distance and starting in the next two hours',
       sortBy: 'Sort by', sortNearest: 'Nearest', sortSoonest: 'Soonest', sortNewest: 'Newest',
       type: 'Type', categories: 'Categories', reset: 'Reset', distHint: 'Applies with “Near you”.',
-      bizSection: 'Businesses', offersSection: 'Offers and events', allPlaces: 'See all businesses',
+      bizSection: 'Places', offersSection: 'Offers and events', allPlaces: 'See all places',
       // El feed de Descubre.
       feedKeys: 'Swipe, scroll or use ↑ ↓ to move on.', feedPos: (i, n) => `${i} of ${n}`,
       prevItem: 'Previous', nextItem: 'Next', seeMore: 'See more',
@@ -208,7 +209,7 @@ const T = (en) => en
       zoneChange: 'Cambiar zona', hereNow: 'Estoy aquí', hereNowHint: 'Lo que pillas andando y empieza en las dos próximas horas',
       sortBy: 'Ordenar por', sortNearest: 'Cercanía', sortSoonest: 'Más pronto', sortNewest: 'Novedades',
       type: 'Tipo', categories: 'Categorías', reset: 'Restablecer', distHint: 'Vale con «Cerca de ti».',
-      bizSection: 'Negocios', offersSection: 'Ofertas y eventos', allPlaces: 'Ver todos los negocios',
+      bizSection: 'Sitios', offersSection: 'Ofertas y eventos', allPlaces: 'Ver todos los sitios',
       feedKeys: 'Desliza, usa la rueda o ↑ ↓ para pasar.', feedPos: (i, n) => `${i} de ${n}`,
       prevItem: 'Anterior', nextItem: 'Siguiente', seeMore: 'Ver más',
       beforeClosing: 'Antes de cerrar', beforeClosingHint: 'Lo que sobra del día en panaderías, cafeterías y restaurantes, con descuento. Se paga en el local.',
@@ -553,7 +554,62 @@ const finalHtml = ({ S, en, lang, cerca, km, city, filtros, link, page, alertaHr
   ${quizas}`;
 };
 
-const portada = (items) => items.map((o) => firstPhoto(o.images)).find(Boolean);
+const portada = (items) => items.map((o) => firstPhoto(o.images) || o.photo).find(Boolean);
+
+/** Dónde se mira, para los textos de Sitios: «a 5 km», «en Madrid» o nada. */
+const dondeSitios = (e, S) => (e.cerca ? S.within(e.km) : e.city ? S.inPlace(PRETTY(e.city)) : '');
+
+/** «Quitar filtros» en Sitios: lo del sitio fuera; la zona y Sitios se quedan. */
+const sinFiltrosSitio = (link) => link({ cat: '', abierto: false, traits: [], precioLocal: 0, menuDia: false, comerAhora: false, momento: '', q: '' });
+
+/** Explorar › Sitios: la lista (o el mapa y debajo la primera parte), o la
+ * pantalla vacía centrada con sus salidas. */
+function sitiosHtml({ items, lang, S, TSi, e, link, mapa, pedirQ, centro }) {
+  const en = lang === 'en';
+  const conFiltros = Boolean(e.q || e.cat || e.abierto || sitioSinNinos(e).length || e.precioLocal || e.menuDia || e.comerAhora || e.momento);
+  const quitaSolo = e.q ? `<p class="chip-solo"><a class="chip on chip-quitar" href="${esc(link({ que: '' }))}" aria-label="${esc(TSi.removeOnlyPlaces)}"><span>${esc(TSi.onlyPlaces)}</span>${ic('x', 16)}</a></p>` : '';
+  const zoom = e.cerca ? (e.km <= 1 ? 15 : e.km <= 3 ? 14 : 13) : 13;
+  const mapaH = mapa ? mapaSitios({
+    lang, zoom,
+    centro: centro && Number.isFinite(Number(centro.lng)) ? [Number(centro.lng), Number(centro.lat)] : null,
+    filtros: {
+      ...(e.cat ? { p_category: e.cat } : {}), ...(e.abierto ? { p_open_now: true } : {}),
+      ...(() => {
+        const t = [...sitioSinNinos(e), ...(e.precioLocal ? [`price_le_${e.precioLocal}`] : []), ...(e.menuDia ? ['daily_menu'] : []),
+          ...(e.comerAhora ? ['eat_now'] : []), ...(e.momento ? [KMO.trait(e.momento)] : [])];
+        return t.length ? { p_traits: t } : {};
+      })(),
+    },
+  }) : '';
+  if (!items.length) {
+    const sigKm = e.cerca ? RADIOS_KM.find((k) => k > e.km) : null;
+    const donde = dondeSitios(e, S);
+    return `${quitaSolo}${mapaH}<section class="vacio" aria-labelledby="finTitulo">
+    <span class="vacio-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="${IC.lugar}"/></svg></span>
+    <h2 id="finTitulo">${esc(conFiltros ? TSi.emptyTitleFiltered : TSi.emptyTitle)}</h2>
+    <p>${esc(TSi.emptyBody(donde || (en ? 'here' : 'aquí')))}</p>
+    <div class="vacio-botones">
+      ${sigKm ? `<a class="pill accent" href="${esc(link({ km: sigKm }))}">${esc(S.widen(sigKm))}</a>` : ''}
+      ${conFiltros ? `<a class="pill${sigKm ? '' : ' accent'}" href="${esc(sinFiltrosSitio(link))}">${esc(S.clearF)}</a>` : ''}
+    </div>
+    <p class="vacio-sugiere"><a href="${esc(pedirHref(lang, pedirQ))}">${esc(pedirQ ? S.askFor(pedirQ) : S.recommend)}</a></p>
+  </section>`;
+  }
+  return `${quitaSolo}${mapaH}<div class="sitios-lista">${items.map((p) => filaSitio(p, lang, { conDistancia: e.cerca })).join('')}</div>`;
+}
+
+/** Al final de la lista de Sitios: «Has visto todos los sitios a 5 km» y
+ * «Ampliar a 10 km», si se puede. */
+function sitiosFinal({ items, TSi, S, e, link, page, paginas, mapa }) {
+  if (mapa || !items.length || page < paginas) return '';
+  const sigKm = e.cerca ? RADIOS_KM.find((k) => k > e.km) : null;
+  const donde = dondeSitios(e, S);
+  if (!donde) return '';
+  return `<section class="sitios-fin" aria-labelledby="finSitios">
+    <h2 id="finSitios">${esc(TSi.end(donde))}</h2>
+    ${sigKm ? `<a class="pill" href="${esc(link({ km: sigKm }))}">${esc(S.widen(sigKm))}</a>` : ''}
+  </section>`;
+}
 
 /** Todas las de un filtro (para el calendario): la base da 60 por llamada. */
 async function todas(args, max = 240) {
@@ -680,9 +736,9 @@ function calendarioHtml({ items, lang, S, link, mes, dia, hoy }) {
 /** Las claves de la dirección en cada idioma. */
 const CLAVES = {
   es: { city: 'ciudad', cat: 'categoria', kind: 'tipo', price: 'precio', when: 'cuando', discount: 'descuento', open: 'abierto', sort: 'orden', view: 'vista', month: 'mes', day: 'dia', show: 'ver', place: 'sitio', weather: 'tiempo',
-    age: 'edad', vprice: 'precio-local', card: 'descuento-para', solo: 'solo', charity: 'solidario', entity: 'agenda-publica', closing: 'antes-de-cerrar', buzz: 'ambiente', menu: 'menu-del-dia', eat: 'comer-ahora', moment: 'momento' },
+    age: 'edad', vprice: 'precio-local', card: 'descuento-para', solo: 'solo', charity: 'solidario', entity: 'agenda-publica', closing: 'antes-de-cerrar', buzz: 'ambiente', menu: 'menu-del-dia', eat: 'comer-ahora', moment: 'momento', what: 'que' },
   en: { city: 'city', cat: 'category', kind: 'type', price: 'price', when: 'when', discount: 'discount', open: 'open', sort: 'sort', view: 'view', month: 'month', day: 'day', show: 'show', place: 'place', weather: 'weather',
-    age: 'age', vprice: 'venue-price', card: 'discount-for', solo: 'solo', charity: 'charity', entity: 'public-listings', closing: 'before-closing', buzz: 'buzz', menu: 'daily-menu', eat: 'food-now', moment: 'moment' },
+    age: 'age', vprice: 'venue-price', card: 'discount-for', solo: 'solo', charity: 'charity', entity: 'public-listings', closing: 'before-closing', buzz: 'buzz', menu: 'daily-menu', eat: 'food-now', moment: 'moment', what: 'what' },
 };
 /** Marcas (tanda A) en la dirección: edades «4-8», carné en cada idioma. */
 const EDAD_URL = { '0-3': '0_3', '4-8': '4_8', '9-12': '9_12', '13-17': '13_17' };
@@ -706,7 +762,7 @@ const VALORES_ES = {
   now: 'ahora', today: 'hoy', tomorrow: 'manana', next10: '10dias',
   newest: 'nuevas', soonest: 'pronto', nearest: 'cerca', map: 'mapa', calendar: 'calendario',
 };
-const NORMAL = Object.fromEntries(Object.entries(VALORES_ES).map(([k, v]) => [v, k]));
+const NORMAL = { ...Object.fromEntries(Object.entries(VALORES_ES).map(([k, v]) => [v, k])), sitios: 'places' };
 const norm = (v) => NORMAL[v] || v;
 const enIdioma = (v, en) => (en ? v : VALORES_ES[v] || v);
 /** Orden de la app por defecto: Novedades (`FeedFilters.defaultSort`). */
@@ -721,9 +777,12 @@ const posUrl = (x) => redondeaPos(Number(x)).toFixed(3);
 function leeEstado(qs) {
   const de = (k, max) => (qs.get(CLAVES.es[k]) || qs.get(CLAVES.en[k]) || '').slice(0, max);
   let kind = norm(de('kind', 20));
-  // «Negocios» era un tipo más; los enlaces de antes (`?ver=negocios`) siguen valiendo.
-  if (/^(places|negocios)$/.test(de('show', 20))) kind = 'places';
-  if (!['offers', 'events', 'places'].includes(kind)) kind = '';
+  // Qué se busca: Planes (de serie) o Sitios (`?que=sitios`, `?what=places`).
+  // «Negocios» era un tipo más; los enlaces de antes (`?tipo=negocios`,
+  // `?ver=negocios`) llevan ahora a Sitios.
+  let que = norm(de('what', 20)) === 'places' ? 'places' : '';
+  if (kind === 'places' || /^(places|negocios)$/.test(de('show', 20))) { kind = ''; que = 'places'; }
+  if (!['offers', 'events'].includes(kind)) kind = '';
   const price = norm(de('price', 10));
   const when = norm(de('when', 12));
   const sort = norm(de('sort', 12));
@@ -743,6 +802,7 @@ function leeEstado(qs) {
     .sort((a, b) => Object.values(EDAD_URL).indexOf(a) - Object.values(EDAD_URL).indexOf(b));
   const precioLocal = Number.parseInt(de('vprice', 2), 10);
   return {
+    que,
     q: (qs.get('q') || '').slice(0, 60),
     city: de('city', 60),
     cat: de('cat', 40),
@@ -793,41 +853,47 @@ function query(e, lang, { soloCompartido = false } = {}) {
   const en = lang === 'en';
   const K = CLAVES[en ? 'en' : 'es'];
   const p = new URLSearchParams();
-  const neg = e.kind === 'places';
+  // En Sitios solo va lo que vale para un sitio: la zona y la distancia,
+  // categoría, «Abierto ahora», «Menú del día», «Se puede comer ahora», el
+  // momento, el precio del local y cómo es (como la app).
+  const sit = e.que === 'places';
+  if (!soloCompartido && sit) p.set(K.what, en ? 'places' : 'sitios');
   if (!soloCompartido && e.q) p.set('q', e.q);
   if (e.city && !e.cerca) p.set(K.city, e.city);
   if (e.cat) p.set(K.cat, e.cat);
-  if (e.kind && !(soloCompartido && neg)) p.set(K.kind, enIdioma(e.kind, en));
+  if (e.kind && !sit) p.set(K.kind, enIdioma(e.kind, en));
   if (e.abierto) p.set(K.open, '1');
-  if (!neg) {
+  if (!sit) {
     if (e.price) p.set(K.price, enIdioma(e.price, en));
     if (e.when) p.set(K.when, enIdioma(e.when, en));
     if (e.soloDescuento) p.set(K.discount, '1');
     if (e.sort) p.set(K.sort, enIdioma(e.sort, en));
-    if (!soloCompartido && e.vista) p.set(K.view, enIdioma(e.vista, en));
-    if (!soloCompartido && e.vista === 'calendar' && e.mes) p.set(K.month, e.mes);
-    if (!soloCompartido && e.vista === 'calendar' && e.dia) p.set(K.day, e.dia);
-    if (e.cerca) {
-      p.set('lat', posUrl(e.lat)); p.set('lng', posUrl(e.lng));
-      if (e.km !== RADIO_KM) p.set('km', String(e.km));
-    }
-    if (e.amigos) p.set('amigos', '1');
-    for (const t of e.traits || []) p.append(K.place, sitioAUrl(t, en));
-    if ((e.traits || []).includes('kids')) for (const a of e.edades || []) p.append(K.age, edadAUrl(a));
-    if (e.precioLocal) p.set(K.vprice, String(e.precioLocal));
+  }
+  if (!soloCompartido && e.vista && (!sit || e.vista === 'map')) p.set(K.view, enIdioma(e.vista, en));
+  if (!sit && !soloCompartido && e.vista === 'calendar' && e.mes) p.set(K.month, e.mes);
+  if (!sit && !soloCompartido && e.vista === 'calendar' && e.dia) p.set(K.day, e.dia);
+  if (e.cerca) {
+    p.set('lat', posUrl(e.lat)); p.set('lng', posUrl(e.lng));
+    if (e.km !== RADIO_KM) p.set('km', String(e.km));
+  }
+  if (!sit && e.amigos) p.set('amigos', '1');
+  for (const t of e.traits || []) if (!sit || t !== 'kids') p.append(K.place, sitioAUrl(t, en));
+  if (!sit && (e.traits || []).includes('kids')) for (const a of e.edades || []) p.append(K.age, edadAUrl(a));
+  if (e.precioLocal) p.set(K.vprice, String(e.precioLocal));
+  if (!sit) {
     if (e.carne) p.set(K.card, carneAUrl(e.carne, en));
     if (e.solo) p.set(K.solo, '1');
     if (e.solidario) p.set(K.charity, '1');
     if (e.entidad) p.set(K.entity, '1');
     if (e.antesCierre) p.set(K.closing, '1');
-    if (e.menuDia) p.set(K.menu, '1');
-    if (e.comerAhora) p.set(K.eat, '1');
-    if (e.momento) p.set(K.moment, KMO.aUrl(e.momento, en));
-    if (!soloCompartido && e.vista === 'map' && e.ambiente) p.set(K.buzz, '1');
   }
-  if (e.tiempoOff) p.set(K.weather, '0');
+  if (e.menuDia) p.set(K.menu, '1');
+  if (e.comerAhora) p.set(K.eat, '1');
+  if (e.momento) p.set(K.moment, KMO.aUrl(e.momento, en));
+  if (!sit && !soloCompartido && e.vista === 'map' && e.ambiente) p.set(K.buzz, '1');
+  if (!sit && e.tiempoOff) p.set(K.weather, '0');
   if (!soloCompartido && e.page > 1) p.set('p', String(e.page));
-  if (!soloCompartido && e.gustos?.length) p.set('gustos', e.gustos.join(','));
+  if (!sit && !soloCompartido && e.gustos?.length) p.set('gustos', e.gustos.join(','));
   return p.toString();
 }
 
@@ -843,26 +909,42 @@ function query(e, lang, { soloCompartido = false } = {}) {
  *   «Todas las ciudades») dejan una marca para que su resultado no se pise con
  *   lo guardado (ver /assets/tarjetas.js); tampoco al volver con «Atrás».
  */
-function guardaFiltros(e, lang, base) {
+function guardaFiltros(e, lang, base, explorar = false) {
   const compartido = { es: query(e, 'es', { soloCompartido: true }), en: query(e, 'en', { soloCompartido: true }) };
+  // Explorar recuerda lo último elegido (Planes o Sitios, lista o mapa),
+  // como la app: al volver a /explorar/ sin nada en la dirección, se abre ahí.
+  const vistaDe = (l) => {
+    const K = CLAVES[l];
+    const x = new URLSearchParams();
+    if (e.que === 'places') x.set(K.what, l === 'en' ? 'places' : 'sitios');
+    if (e.vista === 'map') x.set(K.view, enIdioma('map', l === 'en'));
+    return x.toString();
+  };
   // Lo que no viaja entre páginas (la búsqueda, la vista y el día del
   // calendario) se queda en la dirección al recuperar lo guardado.
   const K = CLAVES[lang === 'en' ? 'en' : 'es'];
   const resto = new URLSearchParams();
+  if (e.que === 'places') resto.set(K.what, lang === 'en' ? 'places' : 'sitios');
   if (e.q) resto.set('q', e.q);
   if (e.vista) resto.set(K.view, enIdioma(e.vista, lang === 'en'));
   if (e.vista === 'calendar' && e.mes) resto.set(K.month, e.mes);
   if (e.vista === 'calendar' && e.dia) resto.set(K.day, e.dia);
   if (e.vista === 'map' && e.ambiente) resto.set(K.buzz, '1');
   const vacia = !compartido.es;
-  const datos = JSON.stringify({ A: compartido, L: lang, v: vacia, r: resto.toString(), b: `${base}/`, g: (e.gustos || []).join(',') }).replace(/</g, '\\u003c');
-  return `<script>(function(d){try{var K='klendar.filtros',s=sessionStorage,ls=localStorage;
+  const datos = JSON.stringify({
+    A: compartido, L: lang, v: vacia, r: resto.toString(), b: `${base}/`, g: (e.gustos || []).join(','),
+    ...(explorar ? { ex: 1, x: { es: vistaDe('es'), en: vistaDe('en') } } : {}),
+  }).replace(/</g, '\\u003c');
+  return `<script>(function(d){try{var K='klendar.filtros',X='klendar.explorar',s=sessionStorage,ls=localStorage;
 var sin=s.getItem('klendar.filtros.sin');s.removeItem('klendar.filtros.sin');
 var n=(performance.getEntriesByType&&performance.getEntriesByType('navigation')[0])||{};
 var g=JSON.parse(ls.getItem(K)||'null');
 var gu=JSON.parse(ls.getItem('klendar.gustos')||'null'),gq=gu&&Array.isArray(gu.c)?gu.c.filter(function(x){return /^[a-z0-9-]{1,40}$/.test(x);}).slice(0,5).join(','):'';
 var conG=function(u){var q=new URL(u,location.href);if(gq)q.searchParams.set('gustos',gq);else q.searchParams.delete('gustos');return q.pathname+q.search+q.hash;};
-if(d.v&&!sin&&n.type!=='back_forward'&&g&&Date.now()-g.t<216e5&&g[d.L]){location.replace(conG(d.b+'?'+g[d.L]+(d.r?'&'+d.r:'')+location.hash));return;}
+var libre=!sin&&n.type!=='back_forward',vx=d.ex?JSON.parse(ls.getItem(X)||'null'):null,ex=d.ex&&libre&&!location.search&&vx&&vx[d.L]?vx[d.L]:'';
+if(d.v&&libre&&g&&Date.now()-g.t<216e5&&g[d.L]){location.replace(conG(d.b+'?'+g[d.L]+(d.r?'&'+d.r:'')+(ex?'&'+ex:'')+location.hash));return;}
+if(ex){location.replace(conG(d.b+'?'+ex+location.hash));return;}
+if(d.ex)ls.setItem(X,JSON.stringify(d.x));
 ls.setItem(K,JSON.stringify({t:Date.now(),es:d.A.es,en:d.A.en}));
 if(gq!==d.g)location.replace(conG(location.href));}catch(x){}})(${datos});</script>`;
 }
@@ -879,11 +961,23 @@ function resumenFiltros(e, S, catNombre) {
   const lang = S.place === 'The place' ? 'en' : 'es';
   const marca = (t) => KM.nombreFiltro(t, lang);
   const partes = [];
+  // En Sitios, solo lo que vale para un sitio.
+  if (e.que === 'places') {
+    if (e.menuDia) partes.push(S.dailyMenu);
+    if (e.cat) partes.push(catNombre || e.cat);
+    if (e.abierto) partes.push(S.openNow);
+    if (e.comerAhora) partes.push(S.eatNow);
+    if (e.momento) partes.push(KMO.etiquetaFiltro(e.momento, lang));
+    if (e.precioLocal) partes.push(marca(`price_le_${e.precioLocal}`));
+    const sitio = sitioSinNinos(e);
+    if (sitio.length === 1) partes.push(nombreSitio(sitio[0], lang === 'en'));
+    else if (sitio.length > 1) partes.push(S.placeN(sitio.length));
+    return partes.filter(Boolean).join(' · ');
+  }
   // Lo básico.
   if (e.when) partes.push({ now: S.now, today: S.today, tomorrow: S.tomorrow, next10: S.next10 }[e.when]);
   if (e.kind === 'offers') partes.push(S.offers);
   else if (e.kind === 'events') partes.push(S.events);
-  else if (e.kind === 'places') partes.push(S.placesType);
   if (e.antesCierre) partes.push(S.beforeClosing);
   if (e.menuDia) partes.push(S.dailyMenu);
   if (e.cat) partes.push(catNombre || e.cat);
@@ -922,15 +1016,33 @@ export async function explorePage(url, lang, modo = 'explorar') {
   const descubre = modo === 'descubre';
   const base = descubre ? discoverBase(lang) : exploreBase(lang);
   const e = leeEstado(url.searchParams);
-  if (descubre) { e.q = ''; e.vista = ''; if (e.kind === 'places') e.kind = ''; }
+  if (descubre) { e.q = ''; e.vista = ''; e.que = ''; }
   const { q, city, cat, kind, price, when, soloDescuento, abierto, cerca, lat, lng, km, page, traits, tiempoOff, gustos, antesCierre, menuDia, comerAhora } = e;
-  const negocios = !descubre && kind === 'places';
+  // Explorar › Sitios (`?que=sitios`): los negocios con la ficha completa,
+  // por cercanía, en lista o en el mapa (`public_places`, `map_places`). Los
+  // filtros de los planes no cuentan aquí.
+  const negocios = !descubre && e.que === 'places';
+  const sitiosMapa = negocios && e.vista === 'map';
+  const TSi = TS(en);
   const esOfertas = kind === 'offers';
   const esEventos = kind === 'events';
   const sort = e.sort;
   const mapa = !negocios && e.vista === 'map';
   const calendario = !negocios && e.vista === 'calendar';
-  const vista = negocios ? '' : e.vista;
+  const vista = negocios ? (sitiosMapa ? 'map' : '') : e.vista;
+  // Lo que se le pide a la base por «El sitio» en Sitios.
+  const traitsSitio = [...sitioSinNinos(e), ...(e.precioLocal ? [`price_le_${e.precioLocal}`] : []),
+    ...(menuDia ? ['daily_menu'] : []), ...(comerAhora ? ['eat_now'] : []), ...(e.momento ? [KMO.trait(e.momento)] : [])];
+  const argsSitios = (centro) => ({
+    p_lat: cerca ? lat : centro?.lat ?? null, p_lng: cerca ? lng : centro?.lng ?? null,
+    p_radius_m: cerca ? km * 1000 : null, p_city: cerca ? null : city || null,
+    p_category: cat || null, p_q: q || null, p_open_now: abierto,
+    p_traits: traitsSitio.length ? traitsSitio : null, p_hide_adults: true,
+  });
+  // El centro de la ciudad elegida (para ordenar por cercanía sin tu posición).
+  const plano0 = (x) => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  const centroDe = (ck) => (cerca || !city ? null
+    : (ck || []).find((c) => c.id === plano0(city) || plano0(c.name) === plano0(city)) || null);
   // El calendario: qué mes y qué día (en la hora de Madrid; cada publicación
   // va en el día de su negocio).
   const hoy = KZ.hoy('Europe/Madrid');
@@ -958,7 +1070,7 @@ export async function explorePage(url, lang, modo = 'explorar') {
     // caché); lo filtra /assets/amigos.js en el navegador.
   };
   const pKind = esOfertas ? 'flash_offer' : esEventos ? 'future_event' : null;
-  const filtrado = Boolean(q || city || cat || kind || page > 1 || price || when || soloDescuento || abierto || sort || cerca || vista || e.amigos
+  const filtrado = Boolean(e.que || q || city || cat || kind || page > 1 || price || when || soloDescuento || abierto || sort || cerca || vista || e.amigos
     || traits.length || traitsMarcas(e).length || antesCierre || menuDia || comerAhora || e.momento || tiempoOff || gustos.length);
 
   const argsExplore = {
@@ -968,8 +1080,12 @@ export async function explorePage(url, lang, modo = 'explorar') {
   // «Ver N resultados»: la hoja pregunta cuántas saldrían con lo que lleva
   // marcado (`?contar=1`, /assets/tarjetas.js). Solo el número.
   if (url.searchParams.get('contar') === '1') {
-    const n = negocios || mapa ? null : await rpc('public_explore', { ...argsExplore, p_limit: 1, p_offset: 0 })
-      .then((r) => (typeof r?.total === 'number' ? r.total : null)).catch(() => null);
+    const n = mapa || sitiosMapa ? null
+      : negocios
+        ? await rows('cities', 'select=id,name,lat,lng').then((ck) => rpc('public_places', { ...argsSitios(centroDe(ck)), p_limit: 1, p_offset: 0 }))
+          .then((r) => (typeof r?.total === 'number' ? r.total : null)).catch(() => null)
+        : await rpc('public_explore', { ...argsExplore, p_limit: 1, p_offset: 0 })
+          .then((r) => (typeof r?.total === 'number' ? r.total : null)).catch(() => null);
     return new Response(JSON.stringify({ total: n }), {
       headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'public, max-age=60, s-maxage=120', 'x-robots-tag': 'noindex' },
     });
@@ -988,10 +1104,10 @@ export async function explorePage(url, lang, modo = 'explorar') {
   const ciudadesP = rows('cities', 'select=id,name,lat,lng&order=position.asc').catch(() => []);
   const [res, cities, cats, cols, sitios, tiempo, todasCats, klendarCities, seccionPartidos, seccionArtistas] = await Promise.all([
     negocios
-      ? rpc('public_businesses', {
-        p_city: city || null, p_category: cat || null, p_q: q || null,
-        p_limit: POR_PAGINA, p_offset: (page - 1) * POR_PAGINA, p_open_now: abierto,
-      })
+      ? ciudadesP.then((ck) => rpc('public_places', {
+        ...argsSitios(centroDe(ck)),
+        p_limit: POR_PAGINA, p_offset: sitiosMapa ? 0 : (page - 1) * POR_PAGINA,
+      }))
       : calendario
         ? todas(argsExplore).then((items) => ({ items, total: items.length }))
         : tiempoP.then((w) => rpc('public_explore', {
@@ -1021,9 +1137,9 @@ export async function explorePage(url, lang, modo = 'explorar') {
   const catsHoja = (todasCats || []).length ? todasCats : (cats || []);
   const items = res?.items || [];
   // Las tarjetas de negocio llevan su rango de precio.
-  await conPrecios([...(negocios ? items : []), ...(sitios?.items || [])]);
+  await conPrecios([...(sitios?.items || [])]);
   const total = res?.total || 0;
-  const paginas = mapa || calendario ? 1 : Math.max(1, Math.ceil(total / POR_PAGINA));
+  const paginas = mapa || calendario || sitiosMapa ? 1 : Math.max(1, Math.min(50, Math.ceil(total / POR_PAGINA)));
 
   // El mes y el día del calendario, dentro de lo que se puede mirar (este mes
   // y los once siguientes).
@@ -1044,7 +1160,7 @@ export async function explorePage(url, lang, modo = 'explorar') {
   const lista = !negocios && !mapa && !calendario;
   const alFinal = lista && items.length > 0 && page >= paginas;
   // Sin nada desde el principio: la pantalla vacía, con las mismas salidas.
-  const vacio = !negocios && !calendario && items.length === 0;
+  const vacio = !calendario && items.length === 0;
   // Lo que deja fuera publicaciones (`hasNarrowingFilters` en la app): la
   // zona y la distancia se dicen aparte y el orden no quita nada.
   const conFiltros = Boolean(q || cat || kind || price || when || soloDescuento || abierto || e.amigos || traits.length
@@ -1058,6 +1174,8 @@ export async function explorePage(url, lang, modo = 'explorar') {
   let sugerencias = [];
   if (sinKlendar) {
     // Nada de «Quizá te interese»: sería de otra ciudad.
+  } else if (negocios) {
+    // Sitios tiene su propio final.
   } else if ((alFinal || vacio) && (cerca || city)) {
     const vistos = new Set(items.map((o) => o.id));
     // Son un extra: si no llegan, la página sale igual (sin ellas).
@@ -1124,18 +1242,18 @@ export async function explorePage(url, lang, modo = 'explorar') {
   // 5 km»), con «Estoy aquí» dentro, como la hoja de ubicación de la app. La
   // distancia solo cuenta con «Cerca de ti»: sin ubicación, elegir una la pide.
   const zonaValor = cerca ? S.nearOn : city ? PRETTY(city) : S.allCities;
-  const zonaTxt = cerca && !negocios ? `${zonaValor} · ${km} km` : zonaValor;
+  const zonaTxt = cerca ? `${zonaValor} · ${km} km` : zonaValor;
   const distancias = `<p class="menu-d-t">${esc(S.distance)}</p>
      <div class="menu-km" role="group" aria-label="${esc(S.distance)}">${RADIOS_KM.map((k) => (cerca
       ? `<a class="op-km${km === k ? ' on' : ''}" href="${esc(link({ km: k }))}"${km === k ? ' aria-current="true"' : ''}>${k} km</a>`
       : `<button type="button" class="op-km" data-cerca data-mas="km=${k}" data-err="${esc(S.nearNo)}" hidden>${k} km</button>`)).join('')}</div>
      ${cerca ? '' : `<p class="menu-nota">${esc(S.distHint)}</p>`}`;
   const zonaMenu = desplegable(cerca ? 'cerca' : city ? 'ciudad' : 'lugar', S.whereTitle, zonaTxt, false,
-    `${negocios ? '' : `${botonCerca(S.useLoc, '', cerca ? 'op on' : 'op')}
-     ${aquiOp}
-     <p class="menu-nota">${esc(S.hereNowHint)}</p>
+    `${botonCerca(S.useLoc, '', cerca ? 'op on' : 'op')}
+     ${negocios ? '' : `${aquiOp}
+     <p class="menu-nota">${esc(S.hereNowHint)}</p>`}
      ${distancias}
-     <p class="menu-d-t">${esc(S.orCity)}</p>`}
+     <p class="menu-d-t">${esc(S.orCity)}</p>
      ${opcion(link({ city: '', cerca: false }), S.allCities, !city && !cerca)}
      ${ciudades.map((c) => opcion(link({ city: String(c.city), cerca: false }), PRETTY(c.city), !cerca && city.toLowerCase() === String(c.city).toLowerCase())).join('')}`,
     { cls: ' zona', etiqueta: `${S.zoneChange}: ${zonaTxt}` });
@@ -1144,7 +1262,10 @@ export async function explorePage(url, lang, modo = 'explorar') {
   // mis amigos» lo pone /assets/amigos.js en su hueco.
   const ninosOn = traits.includes('kids');
   const quitarChip = (href, icono, txt) => `<a class="chip on chip-quitar" href="${esc(href)}" aria-label="${esc(S.removeF(txt))}">${icono}<span>${esc(txt)}</span>${ic('x', 16)}</a>`;
-  const activos = negocios ? '' : [
+  const activos = negocios ? [
+    e.menuDia ? quitarChip(link({ menuDia: false }), ic('carta', 16), S.dailyMenu) : '',
+    e.momento ? quitarChip(link({ momento: '' }), ic('reloj', 16), KMO.etiquetaFiltro(e.momento, lang)) : '',
+  ].join('') : [
     aquiOn ? quitarChip(quitaAqui, ic('aqui', 16), S.hereNow) : '',
     antesCierre ? quitarChip(link({ antesCierre: false }), ic('bolsa', 16), S.beforeClosing) : '',
     e.menuDia ? quitarChip(link({ menuDia: false }), ic('carta', 16), S.dailyMenu) : '',
@@ -1175,9 +1296,9 @@ export async function explorePage(url, lang, modo = 'explorar') {
   // bloques como la app. Cuántos lleva cada bloque (lo mismo que cuenta la
   // app: `FeedFilters.basicsCount`, `forWhomCount`, `placeCount` y
   // `moreCount`); Filtros (N) es la suma. La distancia va en el «dónde».
-  const nBasico = [kind && !negocios, cat, !negocios && price, when && !calendario, !negocios && antesCierre, !negocios && e.menuDia].filter(Boolean).length;
+  const nBasico = [kind && !negocios, cat, !negocios && price, !negocios && when && !calendario, !negocios && antesCierre, e.menuDia].filter(Boolean).length;
   const nParaQuien = negocios ? 0 : [ninosOn, e.solo, e.carne, e.amigos].filter(Boolean).length;
-  const nSitio = (abierto ? 1 : 0) + (negocios ? 0 : (e.precioLocal ? 1 : 0) + (e.comerAhora ? 1 : 0) + (e.momento ? 1 : 0) + sitioSinNinos(e).length);
+  const nSitio = (abierto ? 1 : 0) + (e.precioLocal ? 1 : 0) + (e.comerAhora ? 1 : 0) + (e.momento ? 1 : 0) + sitioSinNinos(e).length;
   const nMas = negocios ? 0 : [e.solidario, e.entidad, soloDescuento].filter(Boolean).length;
   const nFiltros = nBasico + nParaQuien + nSitio + nMas;
   const K = CLAVES[en ? 'en' : 'es'];
@@ -1186,20 +1307,20 @@ export async function explorePage(url, lang, modo = 'explorar') {
   const ocultos = [
     ['q', q], [K.city, cerca ? '' : city], [K.sort, negocios ? '' : sort ? enIdioma(sort, en) : ''], [K.view, vista ? enIdioma(vista, en) : ''],
     [K.month, calendario ? mes : ''], [K.day, calendario ? dia : ''],
-    ['lat', cerca && !negocios ? posUrl(lat) : ''], ['lng', cerca && !negocios ? posUrl(lng) : ''],
+    ['lat', cerca ? posUrl(lat) : ''], ['lng', cerca ? posUrl(lng) : ''],
     // La distancia se elige en el «dónde»: la hoja la conserva.
-    ['km', cerca && !negocios && km !== RADIO_KM ? String(km) : ''],
+    ['km', cerca && km !== RADIO_KM ? String(km) : ''],
     // «Van mis amigos»: con sesión, /assets/amigos.js lo cambia por su casilla
     // en «Para quién».
-    ['amigos', e.amigos ? '1' : ''], ...(negocios ? [[K.kind, enIdioma('places', en)]] : []),
+    ['amigos', e.amigos && !negocios ? '1' : ''], ...(negocios ? [[K.what, en ? 'places' : 'sitios']] : []),
     // «Según el tiempo» vive en el menú de orden: la hoja lo conserva.
-    [K.weather, tiempoOff ? '0' : ''],
+    [K.weather, tiempoOff && !negocios ? '0' : ''],
   ].filter(([, v]) => v).map(([k, v]) => `<input type="hidden" name="${k}" value="${esc(v)}"${k === 'amigos' ? ' data-amigos-oculto' : ''}>`).join('');
   const catActual = catsHoja.find((c) => c.slug === cat) || (cats || []).find((c) => c.slug === cat);
   const resumen = resumenFiltros(e, S, catActual ? catName(catActual, en) : '');
   // «Restablecer»: lo de la hoja de serie. La distancia y la zona (en el
   // «dónde»), el orden y «Según el tiempo» se quedan como estén.
-  const restablecer = link({ kind: negocios ? 'places' : '', cat: '', price: '', when: '', soloDescuento: false, abierto: false, traits: [],
+  const restablecer = link({ kind: '', cat: '', price: '', when: '', soloDescuento: false, abierto: false, traits: [],
     edades: [], precioLocal: 0, carne: '', solo: false, solidario: false, entidad: false, antesCierre: false, menuDia: false, comerAhora: false, momento: '', amigos: false });
   // Categorías: las 8 más usadas (las que más tienen publicado ahora, como la
   // app) y la elegida, y «Ver todas (31)», que abre el selector con buscador y
@@ -1228,7 +1349,7 @@ export async function explorePage(url, lang, modo = 'explorar') {
   const M = KM.t(lang);
   // Un bloque plegado: «Para quién · 1», con su ayuda; abierto si lleva algo.
   // El número lo pone al día /assets/tarjetas.js al marcar.
-  const bloque = (id, titulo, ayuda, n, cuerpo) => `<details class="hoja-bloque" data-bloque="${id}"${n ? ' open' : ''}>
+  const bloque = (id, titulo, ayuda, n, cuerpo, abierto = false) => `<details class="hoja-bloque" data-bloque="${id}"${n || abierto ? ' open' : ''}>
       <summary><span class="hoja-bloque-t"><h3 id="bloque-${id}">${esc(titulo)}<span class="hoja-bloque-n" data-bloque-n${n ? '' : ' hidden'}> · ${n}</span></h3><small>${esc(ayuda)}</small></span>${ic('abajo', 20)}</summary>
       <div class="hoja-bloque-c" role="group" aria-labelledby="bloque-${id}">${cuerpo}</div>
     </details>`;
@@ -1257,14 +1378,14 @@ export async function explorePage(url, lang, modo = 'explorar') {
       <fieldset class="hoja-casillas"><legend class="sr">${esc(S.openNow)}</legend><div class="ops">
         ${casilla(K.open, S.openNow, abierto)}
       </div><p class="hoja-nota hoja-nota-bajo">${esc(S.openNowHint)}</p></fieldset>
-      ${negocios ? '' : `<fieldset class="hoja-casillas"><legend class="sr">${esc(S.eatNow)}</legend><div class="ops">
+      ${`<fieldset class="hoja-casillas"><legend class="sr">${esc(S.eatNow)}</legend><div class="ops">
         ${casilla(K.eat, S.eatNow, e.comerAhora)}
       </div><p class="hoja-nota hoja-nota-bajo">${esc(S.eatNowHint)}</p></fieldset>
       <fieldset><legend>${esc(S.moment)}</legend><div class="ops">
         ${radio(K.moment, '', M.fAny, !e.momento)}
         ${['now', ...KMO.MOMENTOS.map((m) => m.id)].map((m) => radio(K.moment, KMO.aUrl(m, en), KMO.etiquetaFiltro(m, lang), e.momento === m)).join('')}
       </div><p class="hoja-nota hoja-nota-bajo">${esc(S.momentHint)}</p></fieldset>`}
-      ${negocios ? '' : `<fieldset><legend>${esc(M.fPriceLevel)}</legend><div class="ops">
+      ${`<fieldset><legend>${esc(M.fPriceLevel)}</legend><div class="ops">
         ${radio(K.vprice, '', M.fAny, !e.precioLocal)}
         ${KM.PRECIOS.map((l) => radio(K.vprice, String(l), l === 1 ? '€' : M.fUpTo('€'.repeat(l)), e.precioLocal === l)).join('')}
       </div><p class="hoja-nota hoja-nota-bajo">${esc(M.fPriceHint)}</p></fieldset>
@@ -1273,7 +1394,7 @@ export async function explorePage(url, lang, modo = 'explorar') {
       </div></fieldset>
       <fieldset class="hoja-sitio hoja-dietas"><legend>${esc(S.diets)}</legend><div class="ops">
         ${SITIO.filter((x) => esDieta(x.id)).map(opSitio).join('')}
-      </div><p class="hoja-nota hoja-nota-bajo">${esc(S.dietsHint)}</p></fieldset>`}`);
+      </div><p class="hoja-nota hoja-nota-bajo">${esc(S.dietsHint)}</p></fieldset>`}`, negocios);
   // Más: Solidario, Agenda pública y Solo con descuento.
   const masBloque = bloque('mas', S.moreB, S.moreBHint, nMas, `
       <fieldset class="hoja-casillas"><legend class="sr">${esc(S.moreB)}</legend><div class="ops">
@@ -1284,7 +1405,8 @@ export async function explorePage(url, lang, modo = 'explorar') {
       <p class="hoja-nota hoja-nota-bajo">${esc(M.entity)}: ${esc(M.entityHint)}</p></fieldset>`);
   // «Ver N resultados»: el número de lo que ya se ve; con JavaScript, se
   // vuelve a contar al cambiar algo (en el mapa y en «Negocios», sin número).
-  const conNumero = !negocios && !mapa;
+  // En Sitios, cuántos sitios saldrían (en su mapa, sin número).
+  const conNumero = !mapa && !sitiosMapa;
   const verTxt = !conNumero ? S.showResults : total > 100 ? S.showMany(100) : S.showN(total);
   const hoja = `<details class="hoja" id="filtros">
     <summary class="chip chip-filtros${nFiltros ? ' on' : ''}" aria-label="${esc(nFiltros ? `${S.filtersN(nFiltros)}: ${resumen.replace(/ · /g, ', ')}` : S.filters)}">${ic('tune', 16)}<span>${esc(S.filters)}</span>${nFiltros ? `<span class="n" aria-hidden="true">${nFiltros}</span>` : ''}</summary>
@@ -1299,7 +1421,8 @@ export async function explorePage(url, lang, modo = 'explorar') {
         ${[['', S.anytime], ['now', S.now], ['today', S.today], ['tomorrow', S.tomorrow], ['next10', S.next10]]
           .map(([v, n]) => radio(K.when, v ? enIdioma(v, en) : '', n, when === v)).join('')}
       </div></fieldset>`}
-      ${negocios ? '' : `<fieldset><legend>${esc(S.what)}</legend><div class="ops">
+      ${negocios ? `<fieldset class="hoja-casillas"><legend class="sr">${esc(S.dailyMenu)}</legend>
+      <div class="ops">${casilla(K.menu, S.dailyMenu, e.menuDia)}</div><p class="hoja-nota hoja-nota-bajo">${esc(S.dailyMenuHint)}</p></fieldset>` : `<fieldset><legend>${esc(S.what)}</legend><div class="ops">
         ${radio(K.kind, '', S.all, !kind)}
         ${radio(K.kind, enIdioma('offers', en), S.offers, esOfertas)}
         ${radio(K.kind, enIdioma('events', en), S.events, esEventos)}
@@ -1324,8 +1447,15 @@ export async function explorePage(url, lang, modo = 'explorar') {
   </details>`;
 
   const vistas = descubre ? '' : `<nav class="vistas" aria-label="${esc(S.view)}">
-      ${[['', S.listView, 'lista', !mapa && !calendario], ['map', S.mapView, 'mapa', mapa], ['calendar', S.calView, 'cal', calendario]]
-        .map(([v, n, i, on]) => `<a class="vista${on ? ' on' : ''}" href="${esc(link({ vista: v, kind: negocios ? '' : kind }))}"${on ? ' aria-current="page"' : ''}>${ic(i, 18)}<span>${esc(n)}</span></a>`).join('')}
+      ${(negocios ? [['', S.listView, 'lista', !sitiosMapa], ['map', S.mapView, 'mapa', sitiosMapa]]
+        : [['', S.listView, 'lista', !mapa && !calendario], ['map', S.mapView, 'mapa', mapa], ['calendar', S.calView, 'cal', calendario]])
+        .map(([v, n, i, on]) => `<a class="vista${on ? ' on' : ''}" href="${esc(link({ vista: v }))}" aria-label="${esc(n)}"${on ? ' aria-current="page"' : ''}>${ic(i, 18)}<span>${esc(n)}</span></a>`).join('')}
+    </nav>`;
+  // Arriba, qué se busca: «Planes | Sitios» (como la app). Al cambiar, la
+  // zona, la distancia y los filtros que valen en los dos se quedan.
+  const que = descubre ? '' : `<nav class="que" aria-label="${esc(TSi.what)}">
+      <a href="${esc(link({ que: '', vista: '' }))}"${negocios ? '' : ' class="on" aria-current="page"'}>${esc(TSi.plans)}</a>
+      <a href="${esc(link({ que: 'places', vista: e.vista === 'map' ? 'map' : '' }))}"${negocios ? ' class="on" aria-current="page"' : ''}>${esc(TSi.places)}</a>
     </nav>`;
 
   // Al tocar el buscador: lo que buscaste (en este navegador) y «Lo más
@@ -1364,7 +1494,7 @@ export async function explorePage(url, lang, modo = 'explorar') {
   <script src="/assets/gustos.js?v=5" defer data-lang="${en ? 'en' : 'es'}"></script>`;
 
   // En Explorar, sin ubicación ni ciudad: «Mira primero lo que tienes más cerca».
-  const invitaCerca = !descubre && !negocios && !cerca && !city
+  const invitaCerca = !descubre && !cerca && !city
     ? `<p class="cerca-aviso" data-cerca-aviso hidden>${ic('cerca', 18)}<span>${esc(S.nearPrompt)}</span>
         <button type="button" class="pill ink" data-cerca data-err="${esc(S.nearNo)}">${esc(S.useLoc)}</button></p>`
     : '';
@@ -1394,7 +1524,7 @@ export async function explorePage(url, lang, modo = 'explorar') {
   // navegador) lleva a «Tu cuenta», que la añade al entrar; con sesión,
   // /assets/palabras.js la añade sin salir de aquí.
   const palabra = q.trim().slice(0, 40);
-  const lineaAvisame = !descubre && !sinKlendar && palabra.replace(/[^\p{L}\p{N}]/gu, '').length >= 3
+  const lineaAvisame = !descubre && !negocios && !sinKlendar && palabra.replace(/[^\p{L}\p{N}]/gu, '').length >= 3
     ? `<div class="avisame-palabra" data-avisame-palabra="${esc(palabra)}" data-si="${esc(S.alertWordOn(palabra))}" data-si-hint="${esc(S.alertWordOnHint)}">
       <a href="${esc(`/app/${en ? '?lang=en' : ''}#/avisame-palabra?palabra=${encodeURIComponent(palabra)}`)}">
         ${ic('campana', 22)}<span><b>${esc(S.alertWord(palabra))}</b><small>${esc(S.alertWordHint)}</small></span></a>
@@ -1421,7 +1551,7 @@ export async function explorePage(url, lang, modo = 'explorar') {
 
   // Cuántas hay y «Quitar filtros»: la página limpia del todo (también la zona).
   // (Sin resultados, «Quitar filtros» va con las demás salidas, abajo.)
-  const resumenN = calendario ? '' : `<div class="resumen"><h2 class="resumen-n">${esc(negocios ? S.places(total) : S.results(total))}</h2>
+  const resumenN = calendario ? '' : `<div class="resumen"><h2 class="resumen-n">${esc(negocios ? TSi.count(total) : S.results(total))}</h2>
     ${hayAlgo && !vacio ? `<a href="${esc(limpia)}" data-limpia-filtros>${esc(S.clear)}</a>` : ''}</div>`;
 
   // Lo que se le dice a Google: la página y su lista (como la agenda).
@@ -1429,9 +1559,10 @@ export async function explorePage(url, lang, modo = 'explorar') {
     lang, path: `${base}/`, name: descubre ? S.disc : S.exp, description: descubre ? S.discLead : S.lead, city: '', items,
     migas: [['Klendar', en ? '/en/' : '/'], [descubre ? S.disc : S.exp, `${base}/`]],
   })) : '';
-  const head = `${guardaFiltros({ ...e, vista }, lang, base)}
+  const head = `${guardaFiltros({ ...e, vista }, lang, base, !descubre)}
 ${filtrado ? '<meta name="robots" content="noindex, follow">' : jsonLd}${descubre ? '' : `
-${PARTIDOS_CSS}`}${mapa ? `
+${PARTIDOS_CSS}
+${SITIOS_CSS}`}${mapa ? `
 ${GRUPOS_CSS}` : ''}`;
 
   // Los avisos de Descubre (docs/GLOSARIO.md, «Avisos de Descubre»): bajo
@@ -1469,19 +1600,19 @@ ${GRUPOS_CSS}` : ''}`;
   // ── Resultados de Explorar ──
   let resultados;
   if (negocios) {
-    resultados = items.length
-      ? `<div class="nlist">${items.map((b) => bizCard(b, lang, S)).join('')}</div>`
-      : `<section class="vacio"><h2>${esc(S.noPlaces)}</h2>
-        ${conFiltros ? `<div class="vacio-botones"><a class="pill accent" href="${esc(link({ q: '', cat: '', abierto: false }))}">${esc(S.clearF)}</a></div>` : ''}
-        <p class="vacio-sugiere"><a href="${esc(pedirHref(lang, pedirQ))}">${esc(pedirQ ? S.askFor(pedirQ) : S.recommend)}</a></p></section>`;
+    resultados = sitiosHtml({
+      items, lang, S, TSi, e, link, page, paginas, mapa: sitiosMapa, pedirQ,
+      centro: cerca ? { lat, lng } : centroDe(klendarCities) || items[0] || null,
+    });
   } else if (calendario) {
     resultados = calendarioHtml({ items, lang, S, link, mes, dia, hoy });
   } else if (mapa) {
     resultados = `${ambienteHtml(e, lang, link)}${mapaHtml(items, lang, S)}${items.length ? `<h2 class="fin-h">${esc(S.onMap(items.length))}</h2>${rejilla(items, lang, { galeria: true })}` : ''}`;
   } else {
     const negArriba = (sitios?.items || []);
-    resultados = `${negArriba.length ? `<section class="seccion-negocios" aria-labelledby="secNeg">
-      <div class="seccion-cab"><h2 id="secNeg">${esc(S.bizSection)}</h2>${(sitios?.total || 0) > negArriba.length ? `<a href="${esc(link({ kind: 'places', vista: '' }))}">${esc(S.allPlaces)}</a>` : ''}</div>
+    resultados = `${q && !descubre ? `<p class="chip-solo"><a class="chip" href="${esc(link({ que: 'places', vista: '' }))}">${esc(TSi.onlyPlaces)}</a></p>` : ''}
+    ${negArriba.length ? `<section class="seccion-negocios" aria-labelledby="secNeg">
+      <div class="seccion-cab"><h2 id="secNeg">${esc(S.bizSection)}</h2>${(sitios?.total || 0) > negArriba.length ? `<a href="${esc(link({ que: 'places', vista: '' }))}">${esc(S.allPlaces)}</a>` : ''}</div>
       <div class="nlist">${negArriba.map((b) => bizCard(b, lang, S)).join('')}</div></section>` : ''}
     ${seccionArtistas}
     ${seccionPartidos}
@@ -1493,12 +1624,12 @@ ${GRUPOS_CSS}` : ''}`;
   const body = `
   <div class="exp-cab cab-pagina" id="arriba">
     <div><h1>${esc(S.exp)}</h1>
-    <p class="muted exp-lead">${esc(S.lead)}</p>
+    <p class="muted exp-lead">${esc(negocios ? TSi.lead : S.lead)}</p>
     <p class="exp-atajo"><a href="${esc(`${partidosBase(lang)}/${zonaDeExplorar(e, lang) ? `?${zonaDeExplorar(e, lang)}` : ''}`)}">${icPartido(16)}<span>${esc(KE.t(lang).title)}</span></a>
       <a href="${esc(`${gruposBase(lang)}/${zonaGrupos(e, lang) ? `?${zonaGrupos(e, lang)}` : ''}`)}">${icGrupos(16)}<span>${esc(KG.t(lang).title)}</span></a>
       <a href="${esc(`${sorteosBase(lang)}/${zonaGrupos(e, lang) ? `?${zonaGrupos(e, lang)}` : ''}`)}">${icSorteo(16)}<span>${esc(KS.t(lang).title)}</span></a></p></div>
-    ${vistas}
   </div>
+  <div class="que-fila">${que}${vistas}</div>
   ${buscador}
   ${barra}
   ${invitaCerca}
@@ -1511,9 +1642,10 @@ ${GRUPOS_CSS}` : ''}`;
     <span class="muted">${esc(S.page)} ${page}/${paginas}</span>
     ${page < paginas ? `<a class="pill" href="${esc(link({ p: page + 1 }))}" rel="next">${esc(S.next)}</a>` : ''}
   </nav>` : ''}
-  ${final}
-  ${vacio ? lineaAvisame : ''}
-  ${masFormas}`;
+  ${negocios ? sitiosFinal({ items, TSi, S, e, link, page, paginas, mapa: sitiosMapa }) : final}
+  ${vacio && !negocios ? lineaAvisame : ''}
+  ${masFormas}${negocios ? `
+${SITIOS_SCRIPTS}` : ''}`;
 
   // Una búsqueda concreta no aporta nada al índice de Google; la página
   // limpia sí.
