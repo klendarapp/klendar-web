@@ -546,7 +546,14 @@ body.con-hoja { overflow: hidden; }
 html:has(body.pagina-feed) { height: 100%; overflow: hidden; overscroll-behavior: none; }
 body.pagina-feed { --cab: 64px; --feed-w: 100vw; --feed-x: 0px; --feed-vp: 100vh; --feed-alto: var(--feed-vp); --feed-arriba: 116px;
   --feed-abajo: calc(78px + env(safe-area-inset-bottom)); --velo-arriba: var(--cab);
-  box-sizing: border-box; height: 100%; overflow-x: hidden; overflow-y: auto; overscroll-behavior-y: contain; }
+  box-sizing: border-box; height: 100%; overflow-x: hidden; overflow-y: auto; overscroll-behavior-y: contain;
+  /* Posicionado: lo `absolute` que cuelga del <body> (el aviso `.sr` de «Ver
+     solo la foto», que tarjetas.js añade al final) queda dentro de su scroll.
+     Sin esto se iba a y≈20 000 del documento, el documento pasaba a tener
+     scroll y el `scrollIntoView` de las flechas lo movía 133 px: la
+     cabecera de Klendar desaparecía y la tarjeta asomaba encima de la fila
+     de filtros (Iván, 2026-10-21). */
+  position: relative; }
 @supports (height: 100svh) { body.pagina-feed { --feed-vp: 100svh; } }
 /* El snap, cuando la página ya está entera (`feed-listo`, de tarjetas.js):
    puesto desde el principio, Safari toma como primera parada «Más formas» o

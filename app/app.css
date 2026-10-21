@@ -629,3 +629,9 @@ button.codigo.copiar .ms { font-size: 18px; color: var(--ink-2); letter-spacing:
 .palabras-nueva input:focus { outline: none; border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink); }
 /* Listas por partes: «Ver más» al pie (docs/RUNBOOK.md §3g). */
 .ver-mas { display: flex; justify-content: center; margin: 14px 0 0; }
+
+/* La cabecera y el pie van envueltos en <div data-only="es|en"> (app.js
+   quita el del otro idioma). Sin caja propia: si no, el bloque de la
+   cabecera `sticky` era ese <div> (solo la cabecera) y se iba con el scroll
+   (2026-10-21). */
+[data-only]:not([hidden]) { display: contents; }
