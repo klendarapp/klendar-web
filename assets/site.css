@@ -62,6 +62,13 @@ section h2 { font-size: clamp(28px, 4vw, 40px); line-height: 1.1; font-weight: 8
    las pestañas bajan a una barra fija abajo (`.tabbar`), como en la app. */
 header.top { position: sticky; top: 0; z-index: 20; backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
   background: var(--glass); border-bottom: 1px solid var(--glass-border); }
+/* Casi opaca: con `--glass` (66 % en claro, 7 % en oscuro) lo que pasaba por
+   debajo (fotos, títulos, el mapa) se leía a través de la cabecera en cuanto
+   el desenfoque no estaba (Safari en ahorro de energía, navegadores sin
+   `backdrop-filter`): «se pisa sobre las imágenes» (Iván, 2026-10-21). */
+@supports (background: color-mix(in srgb, red 50%, transparent)) {
+  header.top { background: color-mix(in srgb, var(--surface) 96%, transparent); }
+}
 header.top .wrap { display: flex; align-items: center; gap: 14px; height: 64px; position: relative; max-width: 1240px; }
 .brand { display: flex; align-items: center; gap: 10px; color: var(--ink); font-family: var(--display); font-weight: 800; font-size: 20px; letter-spacing: -.6px; }
 .brand:hover { text-decoration: none; }

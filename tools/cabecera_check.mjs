@@ -17,7 +17,8 @@
 //     escritorio el panel va con la barra lateral): tras la rueda y el
 //     scroll programático, la cabecera entera en la ventana (top 0) y
 //     `elementFromPoint` en varios puntos de la cabecera cae dentro de ella
-//     (está por encima de fotos, chips y tarjetas).
+//     (está por encima de fotos, chips y tarjetas) y es casi opaca (≥ 95 %:
+//     con `--glass`, 7 % en oscuro, lo de debajo se leía a través de ella).
 //  3. Sin errores en la consola.
 // Chromium y WebKit, móvil (375) y escritorio (1280). Capturas en OUT.
 //
@@ -66,8 +67,20 @@ const falso = async (route) => {
   return json({});
 };
 
-/** La cabecera: arriba, entera y por encima de lo que pasa por debajo. */
-async function cabeceraBien(page, sel, t) {
+/** La opacidad del fondo de un elemento («rgba(…, .92)», «color(srgb … / .92)»). */
+const opacidad = (page, sel) => page.evaluate((s) => {
+  const c = getComputedStyle(document.querySelector(s)).backgroundColor;
+  const m = /\/\s*([\d.]+)\s*\)$/.exec(c) || /rgba\([^,]+,[^,]+,[^,]+,\s*([\d.]+)\)/.exec(c);
+  return m ? Number(m[1]) : (/^rgb\(/.test(c) ? 1 : 0);
+}, sel);
+
+/** La cabecera: arriba, entera y por encima de lo que pasa por debajo (y
+ * casi opaca: lo de debajo no se lee a través de ella). */
+async function cabeceraBien(page, sel, t, { opaca = true } = {}) {
+  if (opaca) {
+    const a = await opacidad(page, sel);
+    ok(a >= 0.95, `${t} la cabecera, casi opaca (${a})`);
+  }
   const r = await page.evaluate((s) => {
     const h = document.querySelector(s);
     if (!h) return null;
@@ -129,7 +142,8 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
       ok(d.y === 0 && d.st === 0, `${t} Descubre (${como}): el documento no se mueve (scrollY ${d.y})`);
       ok(Math.abs(d.ct - d.hb) <= 1, `${t} Descubre (${como}): la fila de filtros justo debajo de la cabecera (${Math.round(d.hb)} / ${Math.round(d.ct)})`);
       if (forma === 'escritorio') ok(d.bajoCab, `${t} Descubre (${como}): sin la tarjeta asomando entre la cabecera y los filtros`);
-      await cabeceraBien(page, 'header.top', `${t} Descubre (${como}):`);
+      // En el móvil va transparente encima de la foto (como la app).
+      await cabeceraBien(page, 'header.top', `${t} Descubre (${como}):`, { opaca: forma === 'escritorio' });
       return d;
     };
     await quieto('al abrir');
