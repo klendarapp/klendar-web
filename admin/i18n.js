@@ -929,6 +929,13 @@ const I18N = makeI18N({
   "Ese mensaje ya no está en revisión.": "That message is no longer under review.",
   // Errores de la web (assets/errores.js → log_web_error)
   'Errores de la web': 'Website errors',
+  'Traducción automática': 'Automatic translation',
+  'Últimos 6 meses': 'Last 6 months',
+  'Mes': 'Month',
+  'Proveedor': 'Provider',
+  'Caracteres': 'Characters',
+  'Peticiones': 'Requests',
+  'Todavía no se ha traducido nada.': 'Nothing has been translated yet.',
   'Error de la web resuelto': 'Website error resolved',
   'Web pública': 'Public website',
   'Tu cuenta': 'Your account',
