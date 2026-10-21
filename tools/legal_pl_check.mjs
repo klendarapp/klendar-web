@@ -220,6 +220,12 @@ async function ficha(nav, nombre, t, vp) {
       ok(h2.includes(pronto) && await p.locator('[data-preguntar]').count() === 0 && await p.locator('.pregunta').count() === 2,
         `${nombre}/${t} «Ver todas» hasta el 4-11: la lista, «Pronto…» y sin «Preguntar»`);
     }
+    // Sin ninguna, `?ver=preguntas` no invita a preguntar (revisión 2026-10-21:
+    // decía «¿Tienes una duda? Pregúntale al local» al lado de «Pronto…»).
+    await p.goto(`${pre}${VACIO}?ver=preguntas`, { waitUntil: 'networkidle' });
+    const vacia = await p.locator('.empty').innerText();
+    ok(vacia === (en ? 'No questions yet.' : 'Aún no hay preguntas.') && await p.locator('[data-preguntar]').count() === 0,
+      `${nombre}/${t}${en ? ' EN' : ''} «Ver todas» sin ninguna, hasta el 4-11: «${vacia}», sin invitar a preguntar`);
     ok(errores.length === 0, `${nombre}/${t} ficha sin errores JS ${errores.join(' | ')}`);
     await ctx.close();
   }

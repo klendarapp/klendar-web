@@ -163,6 +163,8 @@ async function contextoPanel(nav, vp, caso, idioma = 'es') {
     business_stats: c.sub.billing.blocked ? undefined : { redemptions_30d: 0 },
     my_business_offers: c.sub.billing.blocked ? undefined : [],
     business_tools_overview: { ok: true, can_edit: true, team: { members: 1 }, series: { rules_active: 0 } },
+    // El avisador de pedidos, activado (para ver que parado no se ofrece).
+    business_orders: { ok: true, enabled: true, can_manage: true, blocked: !!c.sub.billing.blocked, paused: false, board: { waiting: 2 }, items: [] },
   });
   await ctx.route(`${SUPA}/**`, supabaseFalso(estado));
   const p = await ctx.newPage();
@@ -198,6 +200,13 @@ async function panelBloqueado(nav, nombre, t, vp) {
   await p.goto(`${BASE}/panel/#/ficha`, { waitUntil: 'networkidle' });
   await p.waitForSelector('.aviso-parado');
   ok(/#\/resumen$/.test(p.url()), `${nombre}/${t} bloqueado: #/ficha vuelve al resumen`);
+  // Las herramientas de la tanda D, también al resumen (revisión 2026-10-21).
+  for (const r of ['menu-del-dia', 'wifi-clientes', 'aforo', 'pedidos', 'preguntas', 'festivo/2026-11-01', 'estaba-cerrado', 'ficha/que-pedir', 'cerrados']) {
+    await p.goto(`${BASE}/panel/#/${r}`, { waitUntil: 'networkidle' });
+    await p.waitForTimeout(300);
+    await p.waitForSelector('.aviso-parado');
+    ok(/#\/resumen$/.test(p.url()), `${nombre}/${t} bloqueado: #/${r} vuelve al resumen`);
+  }
   // «Pagar» → «Tu plan».
   await p.click('.aviso-parado a.btn.primary');
   await p.waitForSelector('#plan-pagar');
@@ -211,6 +220,11 @@ async function panelBloqueado(nav, nombre, t, vp) {
   await p.goto(`${BASE}/panel/#/validar`, { waitUntil: 'networkidle' });
   await p.waitForSelector('#code');
   ok(/Tu negocio está bloqueado: puedes validar los códigos y bonos/.test(await texto(p)), `${nombre}/${t} bloqueado: «Validar códigos» se abre y lo explica`);
+  // «Dar en el momento» sí (da lo que ya tenía la gente); «Pedidos de hoy»
+  // no: llevaba al resumen.
+  await p.waitForTimeout(400);
+  ok(await p.locator('#view a[href="#/momento"]').count() === 1, `${nombre}/${t} bloqueado: «Dar en el momento» en Validar`);
+  ok(await p.locator('#view a[href="#/pedidos"]').count() === 0, `${nombre}/${t} bloqueado: sin «Pedidos de hoy» en Validar`);
   ok(errores.length === 0, `${nombre}/${t} bloqueado sin errores JS ${errores.join(' | ')}`);
   await ctx.close();
 }
@@ -433,9 +447,13 @@ function supabaseFichas() {
         const f = FICHAS[args.p_id];
         if (!f) return json(null);
         return json([{ id: args.p_id, ...f, city: 'Madrid', address: 'Calle Mayor 1, 28013 Madrid', lat: 40.4168, lng: -3.7038, is_verified: true,
-          member_since: '2026-01-01T00:00:00Z', time_zone: 'Europe/Madrid', description: 'Un bar de prueba.', closed_indefinitely: false, social: {} }]);
+          member_since: '2026-01-01T00:00:00Z', time_zone: 'Europe/Madrid', description: 'Un bar de prueba.', closed_indefinitely: false, social: {},
+          opening_hours: Object.fromEntries([1, 2, 3, 4, 5, 6, 7].map((d) => [d, [['00:00', '00:00']]])) }]);
       }
       if (url.pathname === '/rest/v1/business_posts') return json([{ id: 'p0000000-0000-4000-8000-00000000b10c', body: 'Hoy, croquetas caseras', created_at: new Date().toISOString() }]);
+      // «El sitio», el aforo y «Reservar» (parado no salen, como la app).
+      if (url.pathname === '/rest/v1/businesses') return json([{ amenities: ['terrace', 'wifi'], price_level: 2, crowd_enabled: true, entity_kind: null, kitchen_hours: null }]);
+      if (url.pathname === '/rest/v1/rpc/business_links') return json({ links: [{ kind: 'book', url: 'https://reservas.example.com/bar' }], menu_files: [] });
       if (url.pathname.startsWith('/rest/v1/rpc/')) return json([]);
       return json([]);
     });
@@ -457,6 +475,15 @@ async function fichas(nav, nombre, t, vp) {
       ok(/Cerrado temporalmente hasta el 3 de noviembre/.test(cuerpo) && !/croquetas/.test(cuerpo) && noindex, `${nombre}/${t} ficha en pausa: «Cerrado temporalmente hasta el 3 de noviembre» y noindex`);
     } else {
       ok(!/No disponible ahora mismo|Cerrado temporalmente/.test(cuerpo) && /croquetas/.test(cuerpo) && !noindex, `${nombre}/${t} ficha abierta: como siempre`);
+    }
+    const extras = { aforo: await p.locator('[data-sitio-ahora], [data-hay-sitio]').count(), reservar: await p.locator('a.enlace-neg').count(), sitio: /El sitio/.test(cuerpo),
+      horario: await p.locator('.estado-hoy, table.horario, [data-cerrado]').count() };
+    if (f.unavailable) {
+      ok(!extras.aforo && !extras.reservar && !extras.sitio && !extras.horario,
+        `${nombre}/${t} ficha ${f.unavailable}: sin «¿Hay sitio ahora?», «Reservar», «El sitio», horario ni «Estaba cerrado» (${JSON.stringify(extras)})`);
+    } else {
+      ok(extras.aforo === 2 && extras.reservar === 1 && extras.sitio && extras.horario === 3,
+        `${nombre}/${t} ficha abierta: con «¿Hay sitio ahora?», «Reservar», «El sitio» y el horario (${JSON.stringify(extras)})`);
     }
     if (f.unavailable) await p.screenshot({ path: `${OUT}/web-ficha-${f.unavailable}-${nombre}-${t}.png`, fullPage: false });
   }

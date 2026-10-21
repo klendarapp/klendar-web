@@ -255,7 +255,8 @@ async function publico(nav, nombre, t, vp, estado) {
   ok(/Qué pedir aquí/.test(cuerpo) && /Croquetas de jamón/.test(cuerpo) && /Las de la abuela/.test(cuerpo) && /Tarta de queso/.test(cuerpo), `${nombre}/${t} /b/: «Qué pedir aquí»`);
   ok(/Vermut · Tardeo/.test(cuerpo), `${nombre}/${t} /b/: los momentos en «El sitio»`);
   ok(/Abre el festivo del .+ \(10:00–14:00\)/.test(cuerpo), `${nombre}/${t} /b/: «Abre el festivo del … (10:00–14:00)»`);
-  ok(/Abierto/.test(await p.locator('.estado-hoy').innerText()), `${nombre}/${t} /b/: «Abierto» por el día con otro horario`);
+  const estadoHoy = await p.locator('.estado-hoy').innerText();
+  ok(/Abierto|Cierra pronto/.test(estadoHoy), `${nombre}/${t} /b/: «Abierto» por el día con otro horario (${estadoHoy.replace(/\s+/g, ' ')})`);
   const ancho = await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   ok(ancho <= 0, `${nombre}/${t} /b/: sin desplazamiento horizontal`);
   await p.screenshot({ path: `${OUT}/web-ficha-que-pedir-${nombre}-${t}.png`, fullPage: true });

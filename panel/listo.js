@@ -226,9 +226,11 @@ async function resumenListo(caja) {
   caja.innerHTML = `<div class="filas-inicio"><a class="fila-inicio" href="#/pedidos">${icono('listo')}<span>${esc(bi(`Pedidos de hoy · ${n} preparando`, `Today’s orders · ${n} being prepared`))}</span>${ms('chevron_right')}</a></div>`;
 }
 
-/** En «Validar códigos», junto a «Dar en el momento»: «Pedidos de hoy». */
+/** En «Validar códigos», junto a «Dar en el momento»: «Pedidos de hoy».
+ * Con el negocio parado (bloqueado o en pausa) no: «Pedidos de hoy» no es de
+ * lo que se puede abrir entonces y el botón llevaba al resumen. */
 async function listoEntradaValidar(caja) {
-  if (!caja) return;
+  if (!caja || (typeof bloqueado === 'function' && bloqueado())) return;
   const negocio = BIZ.id;
   const r = await rpc('business_orders', { p_business: negocio }).catch(() => null);
   if (!caja.isConnected || BIZ?.id !== negocio || !r?.enabled) return;

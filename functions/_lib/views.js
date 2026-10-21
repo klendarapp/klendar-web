@@ -757,6 +757,9 @@ export async function businessPage(param, lang, search = '') {
   const sorteosHtml = sorteosEnFicha(sorteos, lang);
   // «El sitio», el rango de precio («€€») y si dice «¿Hay sitio ahora?».
   const sitio = Array.isArray(local.amenities) ? local.amenities : [];
+  // «¿Hay sitio ahora?» y «Avísame cuando haya sitio»: con local fijo y sin
+  // estar parado (bloqueado o en pausa), como la app (revisión 2026-10-21).
+  const crowdOn = Boolean(local.crowd_enabled) && !organizador && !parado;
   const precio = KM.simbolo(Number(local.price_level));
   const precioHtml = precio ? `<span class="precio-local" aria-label="${esc(KM.t(lang).priceA11y + KM.significado(Number(local.price_level), lang))}">${precio}</span>` : '';
 
@@ -804,7 +807,7 @@ export async function businessPage(param, lang, search = '') {
         holidayOpens: (d, h) => `Open on the ${d} holiday (${h})`, holidayClosed: (d) => `Closed on the ${d} holiday`,
         holidayUnknown: (d) => `${d} holiday: hours not confirmed`,
         questions: 'Questions', ask: 'Ask a question', reportQuestion: 'Report the question', reportAnswer: 'Report the reply',
-        noQuestions: 'No questions yet. Got a question? Ask the venue.', helpful: 'Helpful to me too',
+        noQuestions: 'No questions yet. Got a question? Ask the venue.', noQuestionsYet: 'No questions yet.', helpful: 'Helpful to me too',
         helpfulN: (n) => (n === 1 ? 'Helpful to 1 person' : `Helpful to ${n} people`), edited: 'edited',
         noAsk: "This business isn't taking questions right now.",
         askSoon: 'You’ll soon be able to ask this venue questions.',
@@ -854,7 +857,7 @@ export async function businessPage(param, lang, search = '') {
         holidayOpens: (d, h) => `Abre el festivo del ${d} (${h})`, holidayClosed: (d) => `Cerrado el festivo del ${d}`,
         holidayUnknown: (d) => `Festivo del ${d}: horario sin confirmar`,
         questions: 'Preguntas', ask: 'Preguntar', reportQuestion: 'Denunciar la pregunta', reportAnswer: 'Denunciar la respuesta',
-        noQuestions: 'Aún no hay preguntas. ¿Tienes una duda? Pregúntale al local.', helpful: 'A mí también me sirve',
+        noQuestions: 'Aún no hay preguntas. ¿Tienes una duda? Pregúntale al local.', noQuestionsYet: 'Aún no hay preguntas.', helpful: 'A mí también me sirve',
         helpfulN: (n) => (n === 1 ? 'A 1 persona le sirve' : `A ${n} personas les sirve`), edited: 'editada',
         noAsk: 'Este negocio no recibe preguntas ahora mismo.',
         askSoon: 'Pronto podrás preguntar a este local.',
@@ -963,7 +966,10 @@ export async function businessPage(param, lang, search = '') {
 
   // Horario: {"1": [["09:00","14:00"], …], …, "7": []} (1 = lunes). Hoy, en
   // la hora del negocio, va marcado.
-  const horas = !organizador && b.opening_hours && typeof b.opening_hours === 'object' ? b.opening_hours : null;
+  // Parado (bloqueado o en pausa), sin horario: ni «Abierto · cierra a las…»
+  // ni «Estaba cerrado» al lado de «No disponible» / «Cerrado temporalmente»,
+  // como la app (revisión 2026-10-21).
+  const horas = !organizador && !parado && b.opening_hours && typeof b.opening_hours === 'object' ? b.opening_hours : null;
   const hoy = KZ.diaSemana(tz);
   const horario = horas && Object.keys(horas).length
     ? `<table class="horario">${[1, 2, 3, 4, 5, 6, 7].map((d) => {
@@ -1009,7 +1015,8 @@ export async function businessPage(param, lang, search = '') {
   const enlaceCarta = seguro(b.menu_url);
   const hayCarta = carta.length > 0 || fotosCarta.length > 0 || pdfsCarta.length > 0 || !!enlaceCarta;
   // «Reservar», «Pedir a domicilio»…: botones iguales y neutros (sin coral).
-  const enlacesHtml = KE.botones(enlacesNeg?.links, lang);
+  // Parado (bloqueado o en pausa), sin «Reservar» ni «Pedir…», como la app.
+  const enlacesHtml = parado ? '' : KE.botones(enlacesNeg?.links, lang);
   const cuentaToques = !!(enlacesHtml || pdfsCarta.length || enlaceCarta);
   const galeria = (b.gallery || []).filter((u) => typeof u === 'string' && u);
   const estrellas = (n) => `<span class="stars" aria-label="${n}/5">${'★'.repeat(n)}<span>${'★'.repeat(5 - n)}</span></span>`;
@@ -1079,7 +1086,7 @@ export async function businessPage(param, lang, search = '') {
       ? (ver === 'novedades' ? `<p data-tr-nota="post:" hidden></p><div class="novedades">${lista.map(novedadHtml).join('')}</div>`
         : ver === 'preguntas' ? `<div class="preguntas">${lista.map(preguntaHtml).join('')}</div>`
           : `<div class="resenas">${lista.map(resenaHtml).join('')}</div>`)
-      : `<p class="empty">${ver === 'novedades' ? '' : ver === 'preguntas' ? esc(S.noQuestions) : soloVerificadas ? S.noVerified : S.noReviews}</p>`}
+      : `<p class="empty">${ver === 'novedades' ? '' : ver === 'preguntas' ? esc(recibe ? S.noQuestions : pronto ? S.noQuestionsYet : S.noAsk) : soloVerificadas ? S.noVerified : S.noReviews}</p>`}
     ${paginador(pagina, pags, enlace)}
     <p><a class="pill" href="${path}">${esc(S.back)}</a></p>
   </div>`;
@@ -1105,7 +1112,7 @@ ${traducir(lang, `business:${b.id}`, '')}${ver === 'preguntas' ? `\n${PREGUNTAS_
       ${where ? `<a class="neg-dir" href="${esc(maps || '#')}" rel="nofollow noopener" target="_blank">${icono('lugar')}<span>${esc(b.address || where)}</span><svg class="ic" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M8.59 16.59 13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg></a>` : ''}
       ${b.rating && b.ratings ? `<p class="neg-nota"><a href="#resenas"><span class="stars-mini" aria-hidden="true">★</span> ${nota(b.rating, lang)} · ${esc(en ? (b.ratings === 1 ? '1 review' : `${b.ratings} reviews`) : (b.ratings === 1 ? '1 reseña' : `${b.ratings} reseñas`))}</a>${precioHtml ? ` <span aria-hidden="true">·</span> ${precioHtml}` : ''}</p>`
     : precioHtml ? `<p class="neg-nota">${precioHtml}</p>` : ''}
-      ${local.crowd_enabled && !organizador ? `<p class="sitio-ahora" data-sitio-ahora="${esc(b.id)}" hidden></p>
+      ${crowdOn ? `<p class="sitio-ahora" data-sitio-ahora="${esc(b.id)}" hidden></p>
       <div data-hay-sitio="${esc(b.id)}" data-solo-publico hidden></div>` : ''}
       <div class="badges">
         ${organizador ? `<span class="badge organiza">${esc(SA.organises)}</span>` : ''}
@@ -1150,7 +1157,7 @@ ${traducir(lang, `business:${b.id}`, '')}${ver === 'preguntas' ? `\n${PREGUNTAS_
       ${b.description ? `<h2>${S.about}</h2><p data-tr="business:${esc(b.id)}:description">${esc(b.description).replace(/\n/g, '<br>')}</p>
       <p data-tr-nota="business:" hidden></p>` : ''}
       ${quePedir}
-      ${sitioFicha(sitio, lang) || momentosHtml ? `<h2>${S.place}</h2>${sitioFicha(sitio, lang)}${momentosHtml}` : ''}
+      ${!parado && (sitioFicha(sitio, lang) || momentosHtml) ? `<h2>${S.place}</h2>${sitioFicha(sitio, lang)}${momentosHtml}` : ''}
       ${flash.length ? `<h2 id="ahora">${S.now}</h2>${rejilla(flash, lang, { tz, sinNegocio: true, galeria: true })}` : ''}
       ${events.length ? `<h2 id="proximamente">${S.soon}</h2>${rejilla(events, lang, { tz, sinNegocio: true, galeria: true })}` : ''}
       ${paginador(pagina, paginas, enlacePagina)}
@@ -1260,7 +1267,7 @@ ${traducir(lang, `business:${b.id}`, '')}${ver === 'preguntas' ? `\n${PREGUNTAS_
     consulta: pagina > 1 ? `?p=${pagina}` : '',
     head: `<meta name="robots" content="${b.adults_only || conVisita || b.closed_indefinitely || parado ? 'noindex' : pagina > 1 ? 'noindex, follow' : 'index, follow'}">
 ${ldScript(jsonLd)}${cuentaToques ? `
-<script src="/assets/enlaces.js?v=3" defer data-url="${esc(supabasePublic().url)}" data-key="${esc(supabasePublic().key)}" data-biz="${esc(b.id)}"></script>` : ''}${horario ? '\n<script src="/assets/zona.js?v=2" defer></script>\n<script src="/assets/horario.js?v=3" defer></script>\n<script src="/assets/cerrado.js?v=1" defer></script>' : ''}${conVisita ? `\n${conVisita}` : ''}${local.crowd_enabled ? `\n${sitioAhoraScripts(lang)}` : ''}
+<script src="/assets/enlaces.js?v=3" defer data-url="${esc(supabasePublic().url)}" data-key="${esc(supabasePublic().key)}" data-biz="${esc(b.id)}"></script>` : ''}${horario ? '\n<script src="/assets/zona.js?v=2" defer></script>\n<script src="/assets/horario.js?v=3" defer></script>\n<script src="/assets/cerrado.js?v=1" defer></script>' : ''}${conVisita ? `\n${conVisita}` : ''}${crowdOn ? `\n${sitioAhoraScripts(lang)}` : ''}
 ${traducir(lang, `business:${b.id}`, carta.length ? `menu:${b.id}` : '')}${conPreguntas ? `
 ${PREGUNTAS_CSS}
 ${preguntasScript}` : ''}${partidos ? `
