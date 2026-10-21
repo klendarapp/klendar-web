@@ -265,7 +265,7 @@ export async function offerPage(id, lang, rpRaw = '') {
       }
     : {
         when: 'Cuándo', redeem: 'Se canjea', where: 'Dónde', seats: 'Plazas libres',
-        terms: 'Condiciones', about: 'Qué es', biz: 'El negocio',
+        terms: 'Condiciones', about: 'Descripción', biz: 'El negocio',
         open: 'Abrir en la app', report: 'Denunciar esta publicación', reportShort: 'Denunciar', why: '¿Por qué ves esto?',
         whyText: 'Klendar no usa tus mensajes ni datos de otras webs para decidir qué enseñarte. Lo destacado de pago sale primero y siempre con la etiqueta «Destacado»; después va el orden que eliges en «Ordenar por». Si has elegido tus gustos en «Tu cuenta», lo de esas categorías pesa más en ese orden, sin esconder lo demás.',
         whyWeather: 'Con «Según el tiempo» (encendido de serie, en el menú de orden), si hoy llueve donde miras, lo de hoy bajo techo va antes; si hace bueno, las terrazas y el aire libre. Datos del tiempo:',
@@ -275,7 +275,7 @@ export async function offerPage(id, lang, rpRaw = '') {
         byCode: 'Conseguir el código ya cuenta como que vas.', byReservation: 'Reservar plaza ya cuenta como que vas.',
         later: 'Si aún no lo tienes claro, guárdalo en Planes.',
         note: 'Desde aquí o desde la app, con la misma cuenta. El código es de un solo uso y lo valida el negocio en el momento.',
-        soldOut: 'Agotado', over: 'Terminado', more: 'Todo lo de', hot: 'Con tirón',
+        soldOut: 'Agotado', over: 'Terminada', more: 'Todo lo de', hot: 'Tendencia',
         prior: 'Precio más bajo de los últimos 30 días', canary: 'hora de Canarias',
       };
 

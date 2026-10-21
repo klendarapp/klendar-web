@@ -629,7 +629,7 @@ RUTAS[''] = async () => {
     ${tieneNegocio ? `
       <h2 class="seccion-t">${esc(t('Negocio'))}</h2>
       <div class="lista">
-        ${fila({ href: '/panel/', icono: 'storefront', titulo: t('Mi negocio'), detalle: t('Publicaciones, informe, equipo') })}
+        ${fila({ href: '/panel/', icono: 'storefront', titulo: t('Mi negocio'), detalle: t('Publicaciones, cifras, equipo') })}
         ${fila({ href: '/panel/#/validar', icono: 'qr_code_scanner', titulo: t('Validar códigos'), detalle: t('Escanea los códigos de tus clientes') })}
       </div>` : `
       <a class="invitacion" href="/panel/">

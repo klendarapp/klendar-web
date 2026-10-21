@@ -2064,8 +2064,8 @@ async function pintaBloqueadas() {
   if (!caja.isConnected) return;
   if (!lista.length) { caja.textContent = t('No has bloqueado a nadie. Se hace desde una reseña, tu lista de amigos o una invitación.'); return; }
   caja.innerHTML = `<ul class="bloqueadas">${lista.map((p) => `<li>
-      <span><b>${esc(p.name || t('Usuario'))}</b> <small class="muted">${esc(`${t('Desde el')} ${fecha(p.since, { day: 'numeric', month: 'long', year: 'numeric' })}`)}</small></span>
-      <button type="button" class="linkbtn" data-desbloquear="${esc(p.id)}" data-nombre="${esc(p.name || t('Usuario'))}">${esc(t('Desbloquear'))}</button>
+      <span><b>${esc(p.name || t('Usuario de Klendar'))}</b> <small class="muted">${esc(`${t('Desde el')} ${fecha(p.since, { day: 'numeric', month: 'long', year: 'numeric' })}`)}</small></span>
+      <button type="button" class="linkbtn" data-desbloquear="${esc(p.id)}" data-nombre="${esc(p.name || t('Usuario de Klendar'))}">${esc(t('Desbloquear'))}</button>
     </li>`).join('')}</ul>`;
   I18N.translate(caja);
   $$('[data-desbloquear]', caja).forEach((b) => b.addEventListener('click', async () => {

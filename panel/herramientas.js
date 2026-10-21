@@ -234,7 +234,7 @@ PAGES.herramientas = async (v) => {
       icon: 'restaurant_menu', titulo: bi('Menú del día', 'Daily menu'),
       frase: bi('La foto de la pizarra y el precio: sale hasta que cierra la cocina y desaparece solo.', 'The photo of the board and the price: it shows until the kitchen closes and disappears by itself.'),
       estado: dm.live_until ? bi(`Publicado hasta las ${horaMenu}`, `Live until ${horaMenu}`)
-        : diasMenu > 0 ? herrPl(diasMenu, ['Se publica solo 1 día a la semana', 'días a la semana, se publica solo'], ['Publishes itself 1 day a week', 'days a week, publishes itself']) : '',
+        : diasMenu > 0 ? (diasMenu === 1 ? bi('Se publica solo 1 día a la semana', 'Publishes itself 1 day a week') : bi(`Se publica solo ${fmtNum(diasMenu)} días a la semana`, `Publishes itself ${fmtNum(diasMenu)} days a week`)) : '',
       on: !!dm.live_until || diasMenu > 0, botones: [[abrir, '#/menu-del-dia']],
     }) : '',
     edit && local && bc.suggested ? herrTarjeta({
@@ -316,7 +316,7 @@ PAGES.herramientas = async (v) => {
     edit && local ? herrTarjeta({
       icon: 'wifi', titulo: bi('Wifi para clientes', 'Wi-Fi for customers'),
       frase: bi('Carteles de mesa con un QR: tu wifi, tus ofertas de hoy y la carta. Sin wifi, sirven de QR de mesa.', 'Table cards with a QR code: your Wi-Fi, today’s offers and the menu. Without Wi-Fi, they work as a table QR.'),
-      estado: tq.has ? herrPl(escaneos, ['1 escaneo este mes', 'escaneos este mes'], ['1 scan this month', 'scans this month']) : sinPreparar,
+      estado: tq.has ? escaneos === 0 ? bi('Ningún escaneo este mes', 'No scans this month') : herrPl(escaneos, ['1 escaneo este mes', 'escaneos este mes'], ['1 scan this month', 'scans this month']) : sinPreparar,
       on: !!(tq.wifi || tq.has), botones: [[abrir, '#/wifi-clientes']],
     }) : '',
     edit && local ? herrTarjeta({

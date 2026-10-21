@@ -1379,7 +1379,7 @@ PAGES.resumen = async (v) => {
   const negocioBtn = (href, icon, txt) => `<a class="herr-btn" href="${href}">${icono(icon)}<span>${esc(I18N.t(txt))}</span></a>`;
   v.innerHTML = `
     <div class="page-head"><h1>${esc(BIZ.name)}</h1>${BIZ.entity?.kind ? `<span class="tag badge-entidad">${icono('entidad')} ${esc(entSello(BIZ.entity.kind))}</span>` : ''}<span class="tag st-${esc(BIZ.verification_status)}">${esc(BIZ_LABELS[BIZ.verification_status] || BIZ.verification_status)}</span><span class="spacer"></span>
-      <a class="btn sm ghost" href="${APP_URL}/b/${esc(BIZ.id)}" target="_blank" rel="noopener">Ver ficha pública ↗</a></div>
+      <a class="btn sm ghost" href="${APP_URL}/b/${esc(BIZ.id)}" target="_blank" rel="noopener">Ver cómo se ve ↗</a></div>
     ${aviso}
     ${aviso ? '' : '<div id="festivoCaja"></div>'}
     <!-- Crear y validar, en coral los dos e iguales (como «Crear» y
@@ -2113,7 +2113,7 @@ async function localesDialogo(offerId) {
       label: [b.name, b.address, b.city].filter(Boolean).join(' · ')
         + (b.verification_status !== 'verified' ? bi(' (sin verificar todavía)', ' (not verified yet)') : ''),
     })),
-    submit: 'Copiar',
+    submit: 'Publicar',
   });
   if (!r) return;
   const elegidos = OTROS_LOCALES.map((b) => b.id).filter((id) => r[`b_${id}`]);
@@ -2125,7 +2125,7 @@ async function localesDialogo(offerId) {
 
   const fallos = res.failed || [];
   if (res.copies && !fallos.length) {
-    toast(res.copies === 1 ? 'Copiada en 1 local' : bi(`Copiada en ${res.copies} locales`, `Copied to ${res.copies} venues`));
+    toast(res.copies === 1 ? 'Publicada en 1 local' : bi(`Publicada en ${res.copies} locales`, `Posted at ${res.copies} venues`));
   } else if (res.copies) {
     toast(bi(`Copiada en ${res.copies}; ${fallos.length} no se han podido`, `Copied to ${res.copies}; ${fallos.length} failed`), true);
   } else {
@@ -5017,7 +5017,7 @@ PAGES.carta = async (v) => {
         <p class="muted" style="margin:0 0 8px">Fotos de la carta de papel o un PDF. Hasta 12 archivos, 10 MB cada uno.</p>
         ${htmlArchivosCarta(archivos, canManage)}
         ${canManage ? (archivos.length < KlendarEnlaces.MAX_ARCHIVOS
-          ? `<p style="margin:10px 0 0"><label class="btn sm">${esc(I18N.t('Añadir fotos o PDF'))}<input type="file" id="menu-file" accept="${ACEPTA_CARTA}" multiple hidden></label>
+          ? `<p style="margin:10px 0 0"><label class="btn sm">${esc(I18N.t('Añadir archivos'))}<input type="file" id="menu-file" accept="${ACEPTA_CARTA}" multiple hidden></label>
             <span class="muted small" id="menu-subiendo" role="status"></span></p>`
           : `<p class="muted" style="margin:10px 0 0">${esc(I18N.t('Como mucho 12 archivos.'))}</p>`) : ''}</div>
 
@@ -6036,7 +6036,7 @@ PAGES.informe = async (v, param) => {
       'Ves las cifras del negocio. La lista de canjes, con quién validó cada uno, y la descarga en CSV son solo para el propietario y los encargados.',
       'You can see the business’s figures. The list of redemptions, with who validated each one, and the CSV download are only for the owner and managers.'))}</p></div>` : `
     <div class="card" data-res="${esc(herrPl(Number(r.redemptions_total ?? (r.redemptions || []).length), ['1 canje', 'canjes'], ['1 redemption', 'redemptions']))}"><h2>Canjes validados</h2><div class="actions" style="margin-bottom:10px"><button class="btn sm" id="csvRed">Descargar CSV</button></div>
-      <p class="muted" style="margin:0 0 10px">Cada línea es un código validado en el local, con quién lo validó. Sirve de justificante.</p>
+      <p class="muted" style="margin:0 0 10px">Cada línea es un código validado en el local, con quién lo validó. Sirve de justificante para el gestor.</p>
       <div id="canjesTabla">${tablaCanjes(canjes.slice(0, CANJES_POR_PARTE))}</div>${canjesHayMas ? botonVerMas('canjes') : ''}
     </div>`}
     </div>`;
@@ -6443,7 +6443,7 @@ async function descargaDatos(formato) {
 /** La tarjeta de «Descargar los datos del negocio» (en la ficha, aquí y al
  * eliminar). Dos botones del mismo ancho. */
 const tarjetaDescarga = () => `<div class="card"><h2>Descargar los datos del negocio</h2>
-  <p class="muted" style="margin:0 0 10px">Tu ficha, las publicaciones con sus cifras, el informe por meses, las tarjetas de sellos (sin datos de los clientes), las reseñas y los pagos. En JSON va todo; en CSV, las publicaciones para abrirlas en una hoja de cálculo.</p>
+  <p class="muted" style="margin:0 0 10px">Tu ficha, las publicaciones con sus cifras, las cifras por meses, las tarjetas de sellos (sin datos de los clientes), las reseñas y los pagos. En JSON va todo; en CSV, las publicaciones para abrirlas en una hoja de cálculo.</p>
   <div class="dos-botones"><button class="btn" type="button" data-descarga="json">JSON</button>
     <button class="btn" type="button" data-descarga="csv">CSV</button></div></div>`;
 function activaDescarga(v) {

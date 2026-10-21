@@ -41,7 +41,6 @@ const I18N = makeI18N({
     'se publican solas': 'publish themselves',
     // Menú del día y Wifi para clientes (panel/herramientas.js, panel/mesa.js)
     'Se publica solo 1 día a la semana': 'Publishes itself 1 day a week',
-    'días a la semana, se publica solo': 'days a week, publishes itself',
     '1 escaneo este mes': '1 scan this month',
     'escaneos este mes': 'scans this month',
     '1 publicación': '1 publication',
@@ -90,7 +89,6 @@ const I18N = makeI18N({
     'Canjeable con QR durante unas horas': 'Redeemable with a QR code for a few hours',
     'Con fecha, aforo y reserva de plaza': "With a date, capacity and place reservations",
     'Con la cámara o escribiendo el código': 'With the camera or by typing the code',
-    'Ver ficha pública ↗': "View public page ↗",
     'Tu plan': 'Your plan',
     'sin límite de publicaciones activas': 'no limit on active publications',
     'Para cambiar de plan escribe a': "To change plan, email",
@@ -251,7 +249,7 @@ const I18N = makeI18N({
   'Se crea una copia en cada local que marques, con su dirección y su propio código. Las cifras de cada uno van por separado.':
     "A copy is created at each venue you tick, with its address and its own code. Each one has its own stats.",
   'Copiar': 'Copy',
-  'Copiada en 1 local': 'Copied to 1 venue',
+  "Publicada en 1 local": "Posted at 1 venue",
   'No se ha podido copiar': "Couldn't copy",
   'Ya estaba copiada en ese local': 'It was already copied to that venue',
   'Añade el precio anterior a la publicación antes de copiarla':
@@ -331,8 +329,7 @@ const I18N = makeI18N({
   'más de 5 km': 'over 5 km',
   'Por publicación': 'By publication',
     'No hay publicaciones en este periodo.': 'No publications in this period.',
-    'Cada línea es un código validado en el local, con quién lo validó. Sirve de justificante.':
-      "Each line is a code validated at the venue, with who validated it. It works as a record for your accounts.",
+    "Cada línea es un código validado en el local, con quién lo validó. Sirve de justificante para el gestor.": "Each line is a code validated at the venue, with who validated it. It works as proof for your accountant.",
     'Todavía no se ha validado ningún código en este periodo.':
       'No code has been validated in this period yet.',
     'Validado por': 'Validated by',
@@ -997,7 +994,7 @@ const I18N = makeI18N({
     "Cancelada: no se empezará a cobrar.": "Cancelled: no charges will start.",
     "¿Nos cuentas por qué? (opcional)": "Would you tell us why? (optional)",
     "No se ha podido. Vuelve a probar.": "That didn't work. Try again.",
-    "Tu ficha, las publicaciones con sus cifras, el informe por meses, las tarjetas de sellos (sin datos de los clientes), las reseñas y los pagos. En JSON va todo; en CSV, las publicaciones para abrirlas en una hoja de cálculo.": "Your page, publications with their stats, the monthly report, stamp cards (without customer details), reviews and payments. The JSON has everything; the CSV has the publications, to open in a spreadsheet.",
+    "Tu ficha, las publicaciones con sus cifras, las cifras por meses, las tarjetas de sellos (sin datos de los clientes), las reseñas y los pagos. En JSON va todo; en CSV, las publicaciones para abrirlas en una hoja de cálculo.": "Your page, publications with their stats, the monthly stats, stamp cards (without customer details), reviews and payments. The JSON has everything; the CSV has the publications, to open in a spreadsheet.",
     "Si lo acepta, el negocio pasa a ser suyo: lo gestiona todo, también la suscripción y los datos de facturación. Tendrá 14 días para aceptarlo; hasta entonces, todo sigue igual.": "If they accept, the business becomes theirs: they manage everything, including the subscription and billing details. They have 14 days to accept; until then, nothing changes.",
     "Nadie verá tu ficha ni tus publicaciones en Descubre, el mapa o la búsqueda; quien tenga el enlace verá «Cerrado temporalmente». Lo abres de nuevo cuando quieras. Cerrar no cancela la suscripción.": "Nobody will see your page or publications in Discover, the map or search; anyone with the link will see “Temporarily closed”. Reopen it whenever you like. Closing doesn't cancel the subscription.",
     "El negocio sigue igual hasta el final de lo pagado; después no se renueva. Te mandamos un correo de confirmación.": "Your business carries on as it is until the end of what you've paid for; then it doesn't renew. We'll email you a confirmation.",
@@ -1453,7 +1450,7 @@ const I18N = makeI18N({
     "Todavía no has subido ningún archivo.": "You haven't uploaded any files yet.",
     "Archivos de la carta": "Menu files",
     "Fotos de la carta de papel o un PDF. Hasta 12 archivos, 10 MB cada uno.": "Photos of the paper menu or a PDF. Up to 12 files, 10 MB each.",
-    "Añadir fotos o PDF": "Add photos or PDF",
+    "Añadir archivos": "Add files",
     "Preparando…": "Preparing…",
     "Enlace a la carta": "Link to the menu",
     "Si tu carta ya está en tu web, con pegar la dirección vale.": "If your menu is already on your website, just paste the address.",

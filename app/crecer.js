@@ -164,7 +164,7 @@ RUTAS['pedir-local'] = async (_partes, params, crudo) => {
       </details>
       <p class="muted nota-pedir">${esc(t('Lo juntamos con lo que pidan otras personas. El negocio solo sabrá cuántas lo piden, nunca quién. Si llega a Klendar, te avisamos (se apaga en Ajustes → Notificaciones).'))}</p>
       <p class="err" id="errPedir" role="alert"></p>
-      <button class="pill accent" id="enviarPedir">${esc(t('Pedir que esté en Klendar'))}</button>
+      <button class="pill accent" id="enviarPedir">${esc(t('Pedirlo'))}</button>
     </form>`);
 
   const f = $('#fPedir');

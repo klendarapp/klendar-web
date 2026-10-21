@@ -139,7 +139,7 @@ RUTAS.amigos = async ([idAmigo]) => {
       <h2 id="anadir-t">${esc(t('Añadir un amigo'))}</h2>
       <p class="muted">${esc(t('Quien lo abra con su cuenta podrá hacerse tu amigo. No hay buscador: solo te encuentra quien tiene tu enlace o escanea tu QR.'))}</p>
       <div class="enlace-amigo">
-        <div class="qr" role="img" aria-label="${esc(t('Tu enlace de amigo'))}">${qrSvg()}</div>
+        <div class="qr" role="img" aria-label="${esc(t('Tu QR de amigo'))}">${qrSvg()}</div>
         <p class="enlace-url">${esc(url.replace(/^https?:\/\//, ''))}</p>
         <div class="acciones enlace-acc">
           <button type="button" class="pill" data-compartir>${ic('share')} ${esc(t('Compartir el enlace'))}</button>
