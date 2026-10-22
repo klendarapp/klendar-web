@@ -2471,6 +2471,7 @@ KL_DIC('de', {
   "Revisa el texto: hay palabras que no se permiten.": "Prüf den Text: Einige Wörter sind nicht erlaubt.",
   "Revisa tu conexión a internet e inténtalo de nuevo.": "Prüf deine Internetverbindung und versuch es noch mal.",
   "Revisa {dias}: hay tramos que se pisan o que abren y cierran a la misma hora.": "Prüf {dias}: Manche Zeitfenster überschneiden sich oder öffnen und schließen zur selben Uhrzeit.",
+  "Revisión": "Prüfung",
   "Revisión gratis": "Gratis-Check",
   "Revisión gratis con el cambio de aceite": "Gratis-Check beim Ölwechsel",
   "Rojo": "Rot",

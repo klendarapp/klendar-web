@@ -2471,6 +2471,7 @@ KL_DIC('it', {
   "Revisa el texto: hay palabras que no se permiten.": "Controlla il testo: ci sono parole non consentite.",
   "Revisa tu conexión a internet e inténtalo de nuevo.": "Controlla la connessione a internet e riprova.",
   "Revisa {dias}: hay tramos que se pisan o que abren y cierran a la misma hora.": "Controlla {dias}: ci sono fasce che si sovrappongono o che aprono e chiudono alla stessa ora.",
+  "Revisión": "Revisione",
   "Revisión gratis": "Controllo gratis",
   "Revisión gratis con el cambio de aceite": "Controllo gratis con il cambio dell’olio",
   "Rojo": "Rosso",

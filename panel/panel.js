@@ -1933,14 +1933,16 @@ const ESTADOS_PUB = {
   archivada: [bi('Archivada', 'Archived'), 'st-archived'],
 };
 /** Los filtros de «Tus publicaciones»: [clave, nombre]. */
+// Los mismos siete que la app (migración 20261240400000): cubren los diez
+// estados sin huecos. «Activas» lleva también las agotadas (una agotada de
+// esta noche sigue en curso), «Revisión» las que están en revisión y las
+// rechazadas, y «Terminadas» también las canceladas.
 const FILTROS_PUB = [
   ['todas', bi('Todas', 'All')],
-  ['activa', bi('Activas', 'Active')],
+  ['activas', bi('Activas', 'Active')],
   ['programada', bi('Programadas', 'Scheduled')],
   ['borrador', bi('Borradores', 'Drafts')],
-  ['revision', bi('En revisión', 'In review')],
-  ['rechazada', bi('Rechazadas', 'Rejected')],
-  ['agotada', bi('Agotadas', 'Sold out')],
+  ['revisiones', bi('Revisión', 'Review')],
   ['terminada', bi('Terminadas', 'Ended')],
   ['archivada', bi('Archivadas', 'Archived')],
 ];
@@ -1968,26 +1970,44 @@ function cifrasRapidas(o) {
 }
 /** Las acciones de una publicación (las mismas en las tarjetas y en la lista). */
 function accionesPub(o) {
+  // Las mismas opciones y en el mismo orden que el ⋮ de la app (paridad
+  // 2026-10-22): Editar · Cifras · Asistentes · Pausar/Activar y, en «Más»,
+  // Crear a partir de esta · Repetir mañana / Repetir · Ampliar 1 h · Repetir
+  // cada semana… · Serie… · Publicar en otros locales… · Compartir en
+  // historias · Cartel para imprimir · Borrar.
   const crear = `#/publicaciones/${o.kind === 'flash_offer' ? 'nueva-flash' : 'nuevo-evento'}?from=${esc(o.id)}`;
   const asistentes = o.kind === 'future_event' && o.reservations_enabled ? `<a class="btn sm ghost" href="#/asistentes/${esc(o.id)}">Asistentes</a>` : '';
+  const cifras = `<button type="button" class="btn sm ghost" data-act="stats" data-id="${esc(o.id)}">Cifras</button>`;
   // Archivada: solo sus cifras y, a quien publica, crear otra igual.
   if (o.status === 'archived') {
-    return `<div class="actions"><button type="button" class="btn sm ghost" data-act="stats" data-id="${esc(o.id)}">Cifras</button>${gestiona() ? `<a class="btn sm ghost" href="${crear}">Crear a partir de esta</a>` : ''}</div>`;
+    return `<div class="actions">${cifras}${gestiona() ? `<a class="btn sm ghost" href="${crear}">Crear a partir de esta</a>` : ''}</div>`;
   }
-  if (!gestiona()) return `<div class="actions"><button type="button" class="btn sm ghost" data-act="stats" data-id="${esc(o.id)}">Cifras</button>${asistentes}</div>`;
+  // Un cartel o una historia de algo cancelado no se comparte; una oferta de
+  // RRPP tampoco (su QR no la abre sin el enlace de un RRPP).
+  const difundir = o.status !== 'cancelled' && o.audience !== 'promoters'
+    ? `<a href="${I18N.pub === 'en' ? '/en/story/o/' : '/historia/o/'}${esc(o.id)}" target="_blank" rel="noopener">Compartir en historias</a>
+      <a href="${I18N.pub === 'en' ? '/en/poster/' : '/cartel/'}${esc(o.id)}" target="_blank" rel="noopener">Cartel para imprimir</a>` : '';
+  // El personal ve cifras, asistentes y lo que se comparte.
+  if (!gestiona()) {
+    return `<div class="actions">${cifras}${asistentes}${difundir ? `<details class="mas"><summary class="btn sm ghost">Más</summary><div class="mas-menu">${difundir}</div></details>` : ''}</div>`;
+  }
+  // «Repetir» con una sola regla (como la app): agotada, terminada o
+  // cancelada. Una oferta flash, mañana a la misma hora; un evento, el mismo
+  // día de la semana siguiente a la misma hora.
+  const repetir = estadoPub(o) === 'agotada' || estadoPub(o) === 'terminada' || estadoPub(o) === 'cancelada';
   return `<div class="actions">
     <a class="btn sm" href="#/publicaciones/${esc(o.id)}">Editar</a>
-    <button type="button" class="btn sm ghost" data-act="stats" data-id="${esc(o.id)}">Cifras</button>
+    ${cifras}
     ${asistentes}
     ${estadoVisible(o) === 'active' ? `<button type="button" class="btn sm ghost" data-act="pause" data-id="${esc(o.id)}">Pausar</button>` : o.status === 'draft' ? `<button type="button" class="btn sm ghost" data-act="activate" data-id="${esc(o.id)}">Activar</button>` : ''}
     <details class="mas"><summary class="btn sm ghost">Más</summary><div class="mas-menu">
       <a href="${crear}">Crear a partir de esta</a>
+      ${repetir ? `<a href="${crear}&repeat=1">${o.kind === 'flash_offer' ? 'Repetir mañana' : 'Repetir'}</a>` : ''}
       ${o.kind === 'flash_offer' && o.status === 'active' && new Date(o.redeem_end_at) > new Date() ? `<button type="button" data-act="extend" data-id="${esc(o.id)}">Ampliar 1 h</button>` : ''}
-      ${o.status === 'sold_out' || estadoVisible(o) === 'expired' ? `<a href="${crear}&repeat=1">${o.kind === 'flash_offer' ? 'Repetir mañana' : 'Repetir'}</a>` : ''}
       <button type="button" data-act="repeat" data-id="${esc(o.id)}">Repetir cada semana…</button>
       ${o.status !== 'cancelled' ? `<button type="button" data-act="serie" data-id="${esc(o.id)}">${esc(bi('Serie…', 'Series…'))}</button>` : ''}
-      ${OTROS_LOCALES.length ? `<button type="button" data-act="locales" data-id="${esc(o.id)}">Publicar en otros locales…</button>` : ''}
-      ${o.audience === 'promoters' ? '' : `<a href="${I18N.pub === 'en' ? '/en/poster/' : '/cartel/'}${esc(o.id)}" target="_blank" rel="noopener">Cartel para imprimir</a>`}
+      ${OTROS_LOCALES.length && o.status !== 'cancelled' ? `<button type="button" data-act="locales" data-id="${esc(o.id)}">Publicar en otros locales…</button>` : ''}
+      ${difundir}
       <button type="button" class="bad" data-act="delete" data-id="${esc(o.id)}">Borrar</button>
     </div></details>
   </div>`;
@@ -2226,6 +2246,19 @@ async function offerForm(v, id, kindDefault, desde = null) {
         const nuevo = enDiasNegocio(1, hora.h, hora.min);
         o.redeem_start_at = nuevo.toISOString();
         o.redeem_end_at = new Date(nuevo.getTime() + dura).toISOString();
+      } else if (desde.repeat && src.event_at) {
+        // Un evento: el mismo día de la semana, a la misma hora y con la misma
+        // duración, en la primera semana que aún no ha pasado (desde mañana),
+        // como la app.
+        const ini = new Date(src.event_at);
+        const hora = partesNegocio(ini);
+        const diaSemana = (d) => new Date(d.toLocaleString('en-US', { timeZone: TZ })).getDay();
+        let dias = 1;
+        while (dias < 8 && diaSemana(enDiasNegocio(dias, 12)) !== diaSemana(ini)) dias++;
+        const nuevo = enDiasNegocio(dias, hora.h, hora.min);
+        o.event_at = nuevo.toISOString();
+        o.event_end_at = src.event_end_at ? new Date(nuevo.getTime() + (new Date(src.event_end_at) - ini)).toISOString() : null;
+        o.redeem_start_at = null; o.redeem_end_at = null;
       } else {
         o.redeem_start_at = null; o.redeem_end_at = null; o.event_at = null; o.event_end_at = null;
       }

@@ -2471,6 +2471,7 @@ KL_DIC('eu', {
   "Revisa el texto: hay palabras que no se permiten.": "Berrikusi testua: onartzen ez diren hitzak daude.",
   "Revisa tu conexión a internet e inténtalo de nuevo.": "Egiaztatu interneteko konexioa eta saiatu berriro.",
   "Revisa {dias}: hay tramos que se pisan o que abren y cierran a la misma hora.": "Berrikusi {dias}: tarte batzuk gainjartzen dira, edo ordu berean irekitzen eta ixten dira.",
+  "Revisión": "Berrikuspena",
   "Revisión gratis": "Azterketa doan",
   "Revisión gratis con el cambio de aceite": "Azterketa doan olio-aldaketarekin",
   "Rojo": "Gorria",
