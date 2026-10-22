@@ -86,7 +86,8 @@ PAGES.bonos = async (v, param) => {
   v.innerHTML = `
     <div class="page-head"><h1>Bonos</h1><span class="spacer"></span>
       ${d.can_manage ? `<a class="btn sm ghost" href="#/bonos/vendidos">Bonos vendidos</a>
-      <a class="btn sm primary" href="#/bonos/nuevo"${tipos.length >= 20 ? ' aria-disabled="true"' : ''}>Crear un bono</a>` : ''}</div>
+      ${tipos.length >= 20 ? '<button class="btn sm primary" type="button" disabled>Crear un bono</button>' : '<a class="btn sm primary" href="#/bonos/nuevo">Crear un bono</a>'}` : ''}</div>
+    ${d.can_manage && tipos.length >= 20 ? `<p class="muted">${esc(I18N.t(BONO_ERR.too_many_passes))}</p>` : ''}
     ${helpBox('¿Cómo funciona?', bi(
       `<p>Vende bonos en tu local («10 cafés por 12 €», «5 clases por 40 €»): <b>el cliente te paga a ti, como siempre</b>, y Klendar lleva la cuenta de los usos. Klendar no cobra nada.</p>
       <p>Para cargar un bono o descontar un uso, escanea su <b>QR de cliente</b> (lo tiene en «Tus códigos») desde «Validar códigos». Durante 10 minutos puedes cargar o descontar sin volver a escanear, y deshacer si te equivocas.</p>
@@ -332,7 +333,11 @@ function bonoPintaCliente(caja) {
         ${p.sold_by ? `<p class="muted">${esc(bi(`Vendido por ${p.sold_by} el ${bonoFecha(p.sold_at)}`, `Sold by ${p.sold_by} on ${bonoFecha(p.sold_at)}`))}</p>` : ''}
       </div>`;
   }).join('') : `<p class="muted">${esc(I18N.t('No tiene bonos de este negocio.'))}</p>`}
-    ${(s.types || []).length ? `<button class="btn grande" type="button" id="bono-cargar">${esc(I18N.t('Cargar un bono'))}</button>`
+    ${typeof bloqueado === 'function' && bloqueado()
+    // Parado: se descuentan usos de lo que ya tiene la gente, pero no se
+    // cargan bonos nuevos (la base tampoco deja), como la app.
+    ? `<p class="muted">${esc(I18N.t('Con el negocio bloqueado o en pausa puedes descontar usos de los bonos que ya tiene la gente, pero no cargar bonos nuevos.'))}</p>`
+    : (s.types || []).length ? `<button class="btn grande" type="button" id="bono-cargar">${esc(I18N.t('Cargar un bono'))}</button>`
     : `<p class="muted">${esc(I18N.t('Este negocio aún no vende bonos.'))}</p>${s.can_manage ? `<a class="btn" href="#/bonos/nuevo">${esc(I18N.t('Crear un bono'))}</a>` : ''}`}
     <p class="muted">${esc(I18N.t('El bono se paga en el local, como siempre: Klendar no cobra nada y solo lleva la cuenta de los usos.'))}</p>
   </div>`;

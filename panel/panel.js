@@ -375,6 +375,21 @@ async function mapaPunto(caja, punto, alMover) {
   };
 }
 
+/** Quishing: el lector solo se fía de klendar.app (y de localhost en
+ * desarrollo). Un QR o enlace que lleva a otra web devuelve su dominio
+ * («otra-web.com»); un código, un QR de Klendar o un texto sin dirección,
+ * null. */
+const WEBS_QR = ['klendar.app', 'www.klendar.app',
+  ...(['localhost', '127.0.0.1'].includes(location.hostname) ? ['localhost', '127.0.0.1'] : [])];
+function webAjenaQr(raw) {
+  const t = String(raw || '').trim();
+  if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(t) && !/^www\./i.test(t)) return null;
+  let host = '';
+  try { host = new URL(/^www\./i.test(t) ? `https://${t}` : t).hostname.toLowerCase(); } catch { return t.slice(0, 60); }
+  if (WEBS_QR.includes(host)) return null;
+  return host.replace(/^www\./, '') || t.slice(0, 60);
+}
+
 /** Lector de QR con la cámara del navegador.
  *
  * Chrome y Android traen `BarcodeDetector`; Safari y Firefox no, y para
@@ -1495,8 +1510,9 @@ PAGES.resumen = async (v) => {
   if (pausa) {
     pausa.onclick = async () => {
       // Hasta las 5 de la mañana: mañana abre solo (lo mismo que la app).
-      // Las 5 del negocio, no las del ordenador desde el que se pulsa.
-      const hasta = enDiasNegocio(1, 5);
+      // Las 5 del negocio, no las del ordenador desde el que se pulsa; de
+      // madrugada (antes de las 5), las de hoy: no 27 horas.
+      const hasta = enDiasNegocio(partesNegocio(new Date()).h < 5 ? 0 : 1, 5);
       const cerrar = !pausado();
       if (pausa.disabled) return;
       pausa.disabled = true;
@@ -2425,7 +2441,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
           <p class="hint" id="audAyuda" ${['all', 'promoters'].includes(o.audience || 'all') ? 'hidden' : ''}>Los demás ven que es exclusiva, sin el beneficio.</p>
           ${rrppHtml.quien}
         </fieldset>
-        <label class="opcion bl-fila" id="primeraRow"><input type="checkbox" name="first_visit" ${o.style?.first_visit === true || /[?&]primera=1\b/.test(location.hash) ? 'checked' : ''}><span><b>${esc(bi('Solo para quien viene por primera vez', 'First-time visitors only'))}</b><br><small class="muted">${esc(bi('Solo la podrá sacar quien no haya canjeado nunca nada en tu negocio. Tu equipo no cuenta.', "Only people who have never redeemed anything at your business can get it. Your team doesn't count."))}</small></span></label>
+        <label class="opcion bl-fila" id="primeraRow"${(o.audience || 'all') === 'promoters' ? ' hidden' : ''}><input type="checkbox" name="first_visit" ${o.style?.first_visit === true || /[?&]primera=1\b/.test(location.hash) ? 'checked' : ''}><span><b>${esc(bi('Solo para quien viene por primera vez', 'First-time visitors only'))}</b><br><small class="muted">${esc(bi('Solo la podrá sacar quien no haya canjeado nunca nada en tu negocio. Tu equipo no cuenta.', "Only people who have never redeemed anything at your business can get it. Your team doesn't count."))}</small></span></label>
         <div class="bl-fila">
           <p class="etq">${esc(MK.cardTitle)}</p>
           ${eligeVarios('card_requirements', KMp.CARDS.map((c) => [c, MK.card[c]]), o.card_requirements, MK.cardTitle)}
@@ -2638,7 +2654,11 @@ async function offerForm(v, id, kindDefault, desde = null) {
   // para ver a quién va.
   if (!id && /[?&]exclusiva=1/.test(location.hash) && $('#bMas', v)) $('#bMas', v).open = true;
   $$('[name=audience]', v).forEach((r) => {
-    r.addEventListener('change', () => { $('#audAyuda', v).hidden = ['all', 'promoters'].includes(val('audience') || 'all'); });
+    r.addEventListener('change', () => {
+      $('#audAyuda', v).hidden = ['all', 'promoters'].includes(val('audience') || 'all');
+      // «Primera visita» no vale en una de RRPP (no se guarda): fuera, como la app.
+      $('#primeraRow', v).hidden = val('audience') === 'promoters';
+    });
   });
   rrppFormularioEngancha(v);
   // «Quién actúa» (panel/artistas.js): chips, buscador y «Añadir … como nuevo».
@@ -3752,6 +3772,8 @@ PAGES['antes-de-cerrar'] = async (v) => {
 const ERR_VALIDAR = {
   invalid_code: 'Ese código no existe.',
   not_authorized: 'Este código es de otro negocio.',
+  // Un código tuyo o de alguien del equipo (la base, revisión 2026-10-22).
+  team_code: 'No puedes validar un código tuyo ni de tu equipo.',
   already_validated: 'Ese código ya se usó.',
   code_expired: 'El código ha caducado: pide que generen otro.',
   // Anulada por quien reservó o al cancelar el evento: su plaza ya no es suya.
@@ -4094,6 +4116,15 @@ PAGES.validar = async (v) => {
     try { await validaUno(raw); } finally { validando = false; $('#go').disabled = false; }
   };
   const validaUno = async (raw) => {
+    // Un QR (o un enlace pegado) que lleva a otra web no es un código de
+    // Klendar: se dice adónde lleva y no se hace nada más (quishing).
+    const ajena = webAjenaQr(raw);
+    if (ajena) {
+      $('#result').innerHTML = `<div class="scan-result bad">${ms('gpp_maybe')}${esc(I18N.t(`Este QR lleva a ${ajena}`))}<small>${esc(I18N.t('No es de Klendar: no lo abras ni lo valides.'))}</small></div>`;
+      $('#code').value = '';
+      if (navigator.vibrate) navigator.vibrate([60, 60, 60]);
+      return;
+    }
     // El QR de «Dar en el momento» es para el cliente (panel/momento.js).
     if (momentoEsQr(raw)) {
       $('#result').innerHTML = `<div class="scan-result warn">${ms('volunteer_activism')}${esc(I18N.t('Es el QR de «Dar en el momento»: lo escanea el cliente.'))}</div>`;
@@ -4165,10 +4196,19 @@ PAGES.validar = async (v) => {
   $('#recent').addEventListener('recargar', () => loadRecent());
   // Las listas de los RRPP de esta noche (panel/rrpp.js): validar desde la
   // fila es lo mismo que el escáner.
-  rrppPuerta($('#puertaRrpp'), (res) => {
+  // Desde «Listas de esta noche» (Lo esencial de un empleado,
+  // `#/validar?listas=1`): sin nadie apuntado, lo dice en vez de no enseñar
+  // nada (como la app), y lleva hasta ahí.
+  const conListas = new URLSearchParams(location.hash.split('?')[1] || '').get('listas') === '1';
+  const cajaListas = $('#puertaRrpp');
+  rrppPuerta(cajaListas, (res) => {
     pintaResultado(res, res.ok ? 'ok' : 'bad');
     if (res.ok) { if (navigator.vibrate) navigator.vibrate(120); loadRecent(); }
     $('#result')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }).then(() => {
+    if (!conListas || !cajaListas?.isConnected) return;
+    if (!cajaListas.innerHTML.trim() && typeof RRPP_LISTAS_VACIA === 'function') cajaListas.innerHTML = `<div style="margin-top:18px">${RRPP_LISTAS_VACIA()}</div>`;
+    cajaListas.scrollIntoView({ block: 'start' });
   });
   pintaCola();
   enviaCola();
@@ -5510,7 +5550,8 @@ PAGES.equipo = async (v) => {
     cols: [
       { h: 'Persona', r: (m) => `<b class="title">${esc(m.display_name || m.email || '')}</b><span class="sub">${esc(m.email || '')}</span>` },
       { h: 'Rol', r: (m) => tag(m.role) },
-      { h: '', r: (m) => canManage && m.role !== 'owner' ? `<div class="actions">
+      // A uno mismo no (como la app): para irse, «Salir del equipo».
+      { h: '', r: (m) => canManage && m.role !== 'owner' && m.user_id !== ME?.id ? `<div class="actions">
           <button class="btn sm ghost" data-role="${m.role === 'manager' ? 'staff' : 'manager'}" data-user="${esc(m.user_id)}">${m.role === 'manager' ? 'Hacer empleado' : 'Hacer encargado'}</button>
           <button class="btn sm ghost" data-remove="${esc(m.user_id)}">Quitar</button></div>` : '' },
     ],

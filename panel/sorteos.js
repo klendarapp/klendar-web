@@ -76,7 +76,10 @@ PAGES.sorteos = async (v, param) => {
   const abiertos = lista.filter((g) => g.status === 'active').length;
   v.innerHTML = `
     <div class="page-head"><h1>${esc(KSp.t(sorteoL()).title)}</h1><span class="spacer"></span>
-      ${d.can_manage ? `<a class="btn sm primary" href="#/sorteos/nuevo"${abiertos >= 3 ? ' aria-disabled="true"' : ''}>${esc(bi('Crear un sorteo', 'Create a giveaway'))}</a>` : ''}</div>
+      ${d.can_manage ? (abiertos >= 3
+    ? `<button class="btn sm primary" type="button" disabled>${esc(bi('Crear un sorteo', 'Create a giveaway'))}</button>`
+    : `<a class="btn sm primary" href="#/sorteos/nuevo">${esc(bi('Crear un sorteo', 'Create a giveaway'))}</a>`) : ''}</div>
+    ${d.can_manage && abiertos >= 3 ? `<p class="muted">${esc(bi('Puedes tener 3 sorteos abiertos a la vez.', 'You can have 3 open giveaways at a time.'))}</p>` : ''}
     ${helpBox(bi('¿Cómo funciona?', 'How does it work?'), bi(
       `<p>Sorteas algo tuyo (una manicura, una cena para dos…) entre quien participe en la app o en klendar.app. <b>Participar es gratis y sin compra</b>; lo único que puedes pedir es tener tu negocio en favoritos.</p>
       <p>Al terminar, Klendar sortea solo con un sistema verificable: cualquiera puede comprobar el resultado. Quien gana lo acepta en la app y tú se lo entregas en tu local y lo marcas como entregado.</p>

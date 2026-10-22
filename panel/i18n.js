@@ -1679,4 +1679,9 @@ const I18N = makeI18N({
     "Esta pregunta está oculta.": "This question is hidden.",
     "Esa pregunta ya no está.": "That question is no longer there.",
     "Has hecho demasiadas hoy. Prueba mañana.": "You've done too many today. Try again tomorrow.",
+    // Revisión 2026-10-22: quishing, «team_code» y bonos con el negocio parado.
+    "Este QR lleva a {web}": "This QR code leads to {web}",
+    "No es de Klendar: no lo abras ni lo valides.": "It isn't from Klendar: don't open it or validate it.",
+    "No puedes validar un código tuyo ni de tu equipo.": "You can't validate a code of your own or your team's.",
+    "Con el negocio bloqueado o en pausa puedes descontar usos de los bonos que ya tiene la gente, pero no cargar bonos nuevos.": "While the business is blocked or paused you can use up the passes people already have, but not add new ones.",
 });

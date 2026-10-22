@@ -103,7 +103,7 @@ function herrEsencialHtml(stats) {
     ${herrTile('#/informe', 'bar_chart', bi('Cifras', 'Stats'), herrPl(canjes, ['1 canje · 30 días', 'canjes · 30 días'], ['1 redemption · 30 days', 'redemptions · 30 days']))}
     ${gestiona()
     ? herrTile('#/rrpp', 'rrpp', 'RRPP', '', 'esRrpp')
-    : herrTile('#/validar', 'qr_code_scanner', bi('Listas de esta noche', "Tonight's lists"), bi('Quién viene esta noche', "Who's coming tonight"))}
+    : herrTile('#/validar?listas=1', 'qr_code_scanner', bi('Listas de esta noche', "Tonight's lists"), bi('Quién viene esta noche', "Who's coming tonight"))}
   </nav>`;
 }
 
