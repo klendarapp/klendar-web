@@ -71,8 +71,8 @@ PAGES.series = async (v) => {
       }) : ''}</div>` : '';
   v.innerHTML = `
     <div class="page-head"><h1>${esc(bi('Series y repeticiones', 'Series and repeats'))}</h1></div>
-    <p class="muted">${esc(bi('Una serie agrupa las fechas de lo mismo («Micro abierto de los jueves»). Quien la sigue recibe un aviso con cada fecha nueva. Lo que se repite solo ya es una serie.',
-      'A series groups the dates of the same thing (“Thursday open mic”). Its followers get a notification with each new date. Anything that repeats automatically is already a series.'))}</p>
+    ${helpBox(bi('¿Cómo funciona?', 'How does it work?'), `<p>${esc(bi('Una serie agrupa las fechas de lo mismo («Micro abierto de los jueves»). Quien la sigue recibe un aviso con cada fecha nueva. Lo que se repite solo ya es una serie.',
+      'A series groups the dates of the same thing (“Thursday open mic”). Its followers get a notification with each new date. Anything that repeats automatically is already a series.'))}</p>`)}
     ${repiten}
     <div class="card"><h2>${esc(bi('Series', 'Series'))}</h2>${table({
       cols: [

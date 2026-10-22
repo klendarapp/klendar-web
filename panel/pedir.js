@@ -56,7 +56,7 @@ async function pedQuePedir(v, carta) {
   const pinta = () => {
     v.innerHTML = `<p class="crumbs"><a href="#/ficha">← ${esc(I18N.t('Tu ficha'))}</a></p>
       <div class="page-head"><h1>${esc(I18N.t('Qué pedir aquí'))}</h1></div>
-      <p class="muted" style="margin:0 0 12px">${esc(I18N.t('Las 2 o 3 cosas que no hay que perderse. Salen en tu ficha y la gente las encuentra al buscar («croquetas»), aunque no tengas planes publicados.'))}</p>
+      ${helpBox(I18N.t('¿Cómo funciona?'), `<p>${esc(I18N.t('Las 2 o 3 cosas que no hay que perderse. Salen en tu ficha y la gente las encuentra al buscar («croquetas»), aunque no tengas planes publicados.'))}</p>`)}
       <form id="qp" class="form ped-form" novalidate>
         ${items.map((it, i) => `<div class="card ped-cosa full" data-i="${i}" role="group" aria-labelledby="pedN${i}">
           <p class="ped-n full" id="pedN${i}">${esc(bi(`${i + 1} de 3`, `${i + 1} of 3`))}</p>

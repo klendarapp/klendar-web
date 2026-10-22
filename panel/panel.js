@@ -5821,7 +5821,7 @@ PAGES.mensajes = async (v) => {
 
   v.innerHTML = `
     <div class="page-head"><h1>Avisar a mis clientes</h1></div>
-    <p class="muted" style="max-width:640px">Un mensaje corto que llega como notificación a quien tiene tu negocio en favoritos. Uno por semana.</p>
+    ${helpBox('¿Cómo funciona?', '<p>Un mensaje corto que llega como notificación a quien tiene tu negocio en favoritos. Uno por semana.</p>')}
     <div style="max-width:820px;margin:0 0 18px">${estado}</div>
     <div id="msgHecho" style="max-width:820px" aria-live="polite"></div>
     <form id="f" class="form" novalidate>
@@ -5968,7 +5968,7 @@ PAGES.cumpleanos = async (v) => {
   const ro = edita ? '' : 'disabled';
   v.innerHTML = `
     <div class="page-head"><h1>Regalo de cumpleaños</h1></div>
-    <p class="muted" style="max-width:640px">El día de su cumpleaños, quien tiene tu negocio en favoritos recibe una notificación y un código de regalo que validas como cualquier otro.</p>
+    ${helpBox('¿Cómo funciona?', '<p>El día de su cumpleaños, quien tiene tu negocio en favoritos recibe una notificación y un código de regalo que validas como cualquier otro.</p>')}
     ${edita ? '' : '<div class="help" style="max-width:820px">Solo el propietario o un encargado pueden cambiarlo.</div>'}
     <form id="f" class="form" novalidate>
       <label class="f full" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="activo" ${d.enabled ? 'checked' : ''} ${ro}><span>Dar un regalo de cumpleaños</span></label>

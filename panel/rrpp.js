@@ -158,8 +158,8 @@ PAGES.rrpp = async (v, param) => {
   v.innerHTML = `
     <div class="page-head"><h1>RRPP</h1><span class="spacer"></span>
       <button class="btn sm primary" type="button" id="rrppInvitar">${esc(bi('Invitar a un RRPP', 'Invite a promoter'))}</button></div>
-    <p class="muted">${esc(bi('Tus RRPP traen gente con su enlace o su QR. No pueden cambiar nada de tu negocio: solo ven su lista.',
-      "Your promoters bring people in with their link or QR code. They can't change anything about your business: they only see their own list."))}</p>
+    ${helpBox(bi('¿Cómo funciona?', 'How does it work?'), `<p>${esc(bi('Tus RRPP traen gente con su enlace o su QR. No pueden cambiar nada de tu negocio: solo ven su lista.',
+      "Your promoters bring people in with their link or QR code. They can't change anything about your business: they only see their own list."))}</p>`)}
     <div class="card">${table({
       cols: [
         { h: bi('RRPP', 'Promoter'), r: (p) => (p.status === 'invited'

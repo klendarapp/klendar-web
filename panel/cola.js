@@ -96,7 +96,7 @@ PAGES.cola = async (v) => {
         <div class="page-head"><h1>Cola virtual</h1></div>
         ${d.can_manage ? `
           <form class="card form cola-abrir" id="f-cola" novalidate>
-            <p class="full" style="margin:0">${esc(I18N.t('Quien llega escanea el cartel de la puerta, coge número y le avisamos en el móvil cuando le toca. Tú solo tocas «Avisar al siguiente».'))}</p>
+            <div class="full">${helpBox(I18N.t('¿Cómo funciona?'), `<p>${esc(I18N.t('Quien llega escanea el cartel de la puerta, coge número y le avisamos en el móvil cuando le toca. Tú solo tocas «Avisar al siguiente».'))}</p>`)}</div>
             ${camposAbrir(d.max_people || 40, d.call_minutes || 5)}
             <p class="err full" id="cola-err" role="alert"></p>
             <div class="full"><button class="btn primary" type="submit">${esc(I18N.t('Abrir la cola de hoy'))}</button></div>
