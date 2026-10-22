@@ -1245,4 +1245,9 @@ const APP_EN = {
   "Dentro a las {h}": "In at {h}",
   "Se apuntó a la {h}": "Signed up at {h}",
   "Se apuntó a las {h}": "Signed up at {h}",
+  "Conéctate un momento para enseñar tu entrada: después funciona sin conexión.": "Connect for a moment to show your ticket: after that it works offline.",
+  "Entrada nominativa: el QR cambia cada 30 segundos. Una captura no sirve.": "Named ticket: the QR changes every 30 seconds. A screenshot won’t work.",
+  "Ya lo han recibido todos": "Everyone has already received it",
+  "Tienes que estar en el local para aceptarlo": "You need to be at the venue to accept it",
+  "Acércate y vuelve a escanear el QR.": "Get closer and scan the QR again.",
 };

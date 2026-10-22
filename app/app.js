@@ -1790,6 +1790,14 @@ const sinRedCuenta = (e) => navigator.onLine === false
 /** El ticket del código guardado, sin red: el mismo QR, sin «anular» (que
  * necesita la base). */
 function pintaCodigoGuardado(g) {
+  // Entrada nominativa: su QR cambia cada 30 s y aquí, sin conexión, no se
+  // puede calcular (la app sí): un QR fijo no valdría en la puerta.
+  if (g.named) {
+    pinta(pantallaVacia({ icono: 'wifi_off', titulo: g.offer_title || t('Tus códigos'), h: 'h1',
+      texto: t('Conéctate un momento para enseñar tu entrada: después funciona sin conexión.'),
+      botones: `<a class="pill accent" href="#/codigos">${esc(t('Tus códigos'))}</a>` }));
+    return;
+  }
   const benef = beneficio(g.discount, g.price_cents, g.currency);
   pinta(`
     <p class="crumbs"><a href="#/codigos">${esc(t('Tus códigos'))}</a></p>
@@ -2176,7 +2184,11 @@ RUTAS.codigo = async ([id], params, crudo) => {
           ? `${money(tk.price_cents, tk.currency)} each · ${money(tk.price_cents * tk.seats, tk.currency)} in total`
           : `${money(tk.price_cents, tk.currency)} por persona · ${money(tk.price_cents * tk.seats, tk.currency)} en total`)}</p>` : ''}
       <div class="qr" id="qr" role="img" aria-label="${esc(t('Código QR para que el negocio valide tu canje'))}"></div>
-      <p><button type="button" class="codigo copiar" id="copiar" aria-label="${esc(t('Copiar el código'))}">${esc(codigoLegible(tk.code))} ${ic('content_copy')}</button></p>
+      ${tk.named
+        // Nominativa: sin el código suelto (ni copiarlo): solo vale el QR.
+        ? `<p class="muted">${esc(t('Entrada nominativa: el QR cambia cada 30 segundos. Una captura no sirve.'))}</p>
+      <p class="muted" id="qr-cambia" aria-hidden="true"></p>`
+        : `<p><button type="button" class="codigo copiar" id="copiar" aria-label="${esc(t('Copiar el código'))}">${esc(codigoLegible(tk.code))} ${ic('content_copy')}</button></p>`}
       <p class="muted" id="cuenta" aria-live="polite"></p>
       <div id="caducado" hidden>
         <p><b>${esc(t('El código ha caducado'))}</b></p>
@@ -2215,10 +2227,17 @@ RUTAS.codigo = async ([id], params, crudo) => {
   // Caducado: se pide otro a la base (start_redemption da uno nuevo) sin
   // salir de aquí, como el botón de la app.
   $('#otro-codigo').addEventListener('click', () => navegar());
-  const qr = window.qrcode(0, 'M');
-  qr.addData(url);
-  qr.make();
-  $('#qr').innerHTML = qr.createSvgTag({ cellSize: 6, margin: 2, scalable: true });
+  if (tk.named) {
+    // Entrada nominativa (migración 20261241100001): el QR cambia cada 30 s,
+    // firmado con la clave del QR de cliente (`bonoFirma`, app/bonos.js):
+    // `…/r/<código>.<ventana>.<firma>`. Una captura no sirve.
+    await qrNominativo(tk.code);
+  } else {
+    const qr = window.qrcode(0, 'M');
+    qr.addData(url);
+    qr.make();
+    $('#qr').innerHTML = qr.createSvgTag({ cellSize: 6, margin: 2, scalable: true });
+  }
 
   // En cuanto el negocio lo valida, esta pantalla se entera sola.
   alSalir(vigilaCanje(tk.code, (at) => {
@@ -2251,6 +2270,43 @@ RUTAS.codigo = async ([id], params, crudo) => {
   alSalir(() => clearInterval(reloj));
   pintaCuenta();
 };
+
+/** El QR de una entrada nominativa en `#qr`, que cambia cada 30 s (como el
+ * QR de cliente: la clave y el secreto de `customer_qr_key`, la hora del
+ * servidor y HMAC-SHA256). Se para solo al salir de la pantalla. */
+async function qrNominativo(code) {
+  const caja = $('#qr');
+  if (!window.crypto?.subtle) {
+    caja.outerHTML = `<p><b>${esc(t('Este navegador no puede enseñar el QR. Ábrelo en la app de Klendar o en otro navegador.'))}</b></p>`;
+    return;
+  }
+  const clave = await llamar('customer_qr_key', {});
+  const desfase = Number(clave.now || 0) - Math.floor(Date.now() / 1000);
+  const paso = Number(clave.step || 30);
+  let pintada = -1;
+  let reloj = null;
+  const tick = async () => {
+    const el = $('#qr');
+    if (!el) { clearInterval(reloj); return; }
+    const ahora = Math.floor(Date.now() / 1000) + desfase;
+    const w = Math.floor(ahora / paso);
+    const cambia = $('#qr-cambia');
+    if (cambia) {
+      cambia.textContent = EN ? `Changes in ${paso - (ahora % paso)}s: a screenshot won't work`
+        : `Cambia en ${paso - (ahora % paso)} s: una captura no sirve`;
+    }
+    if (w === pintada) return;
+    pintada = w;
+    const firma = (await bonoFirma(clave.secret, `${code}.${w}`)).slice(0, 12);
+    const qr = window.qrcode(0, 'M');
+    qr.addData(`https://klendar.app/r/${code}.${w}.${firma}`);
+    qr.make();
+    el.innerHTML = qr.createSvgTag({ cellSize: 6, margin: 2, scalable: true });
+  };
+  reloj = setInterval(tick, 1000);
+  alSalir(() => clearInterval(reloj));
+  await tick();
+}
 
 // ── Reservar plaza: primero «¿para cuántos?» si el evento deja varias ─────
 RUTAS.reservar = async ([id], params) => {
