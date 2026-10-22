@@ -1380,8 +1380,82 @@ const PASADOS_POR_PARTE = 20;
 const pasadosParte = (ultimo) => llamar('my_saved_offers', {
   p_when: 'past', p_limit: PASADOS_POR_PARTE, ...(ultimo ? { p_before: ultimo.moment, p_before_id: ultimo.id } : {}),
 });
-RUTAS.planes = async () => {
+/** «Lista · Calendario» arriba de Planes, como la app. */
+const vistasPlanes = (cal) => `<nav class="vistas pl-vistas" aria-label="${esc(t('Tus planes'))}">
+  <a class="vista${cal ? '' : ' on'}" href="#/planes"${cal ? '' : ' aria-current="page"'}><span>${esc(t('Lista'))}</span></a>
+  <a class="vista${cal ? ' on' : ''}" href="#/planes?vista=calendario"${cal ? ' aria-current="page"' : ''}><span>${esc(t('Calendario'))}</span></a></nav>`;
+const dosCifras = (n) => String(n).padStart(2, '0');
+/** El día (AAAA-MM-DD) de una fecha, en la hora de este navegador (como la app). */
+const diaLocal = (d) => `${d.getFullYear()}-${dosCifras(d.getMonth() + 1)}-${dosCifras(d.getDate())}`;
+const mesMas = (ym, n) => { const [y, m] = ym.split('-').map(Number); const d = new Date(y, m - 1 + n, 1); return `${d.getFullYear()}-${dosCifras(d.getMonth() + 1)}`; };
+
+/** Planes en calendario (como la app): puntos en los días con eventos
+ * guardados (coral) y con ofertas o canjes (ámbar); debajo, lo de ese día.
+ * Del mes de hace un año al de dentro de un año. */
+function planesCalendario({ saved, reds, zona, params }) {
+  const hoy = diaLocal(new Date());
+  const hoyMes = hoy.slice(0, 7);
+  const min = mesMas(hoyMes, -12);
+  const max = mesMas(hoyMes, 12);
+  const pedidoDia = /^\d{4}-\d{2}-\d{2}$/.test(params.get('dia') || '') ? params.get('dia') : '';
+  const pedidoMes = /^\d{4}-\d{2}$/.test(params.get('mes') || '') ? params.get('mes') : '';
+  const mes = [pedidoMes || pedidoDia.slice(0, 7) || hoyMes].map((m) => (m < min ? min : m > max ? max : m))[0];
+  const dia = pedidoDia && pedidoDia.startsWith(mes) ? pedidoDia : hoy.startsWith(mes) ? hoy : `${mes}-01`;
+  const porDia = new Map();
+  const pon = (d, tipo, html) => { if (!porDia.has(d)) porDia.set(d, { ev: 0, fl: 0, filas: [] }); const x = porDia.get(d); x[tipo] += 1; if (html) x.filas.push(html); };
+  for (const r of reds.filter((x) => x.status === 'validated')) {
+    pon(diaLocal(new Date(r.validated_at || r.created_at)), 'fl', filaCanje(r, zona(r)));
+  }
+  for (const o of saved) {
+    if (o.kind === 'future_event' && o.event_at) { pon(diaLocal(new Date(o.event_at)), 'ev', tarjeta(o, zona(o))); continue; }
+    if (!o.redeem_start_at || !o.redeem_end_at) continue;
+    const d = new Date(o.redeem_start_at);
+    const fin = diaLocal(new Date(o.redeem_end_at));
+    for (let i = 0; i < 31 && diaLocal(d) <= fin; i++) {
+      pon(diaLocal(d), 'fl', tarjeta(o, zona(o)));
+      d.setDate(d.getDate() + 1);
+    }
+  }
+  const [y, m] = mes.split('-').map(Number);
+  const diasMes = new Date(y, m, 0).getDate();
+  const hueco = (new Date(y, m - 1, 1).getDay() + 6) % 7; // lunes = 0
+  const enlace = (q) => `#/planes?vista=calendario&${new URLSearchParams(q)}`;
+  const largo = (iso) => new Date(`${iso}T12:00:00`).toLocaleDateString(LOC, { weekday: 'long', day: 'numeric', month: 'long' });
+  const mesTitulo = new Date(y, m - 1, 15).toLocaleDateString(LOC, { month: 'long', year: 'numeric' });
+  const semana = [...Array(7)].map((_, i) => new Date(2026, 9, 5 + i).toLocaleDateString(LOC, { weekday: 'short' }).replace('.', ''));
+  const celdas = [];
+  for (let i = 0; i < hueco; i++) celdas.push('<span class="pl-dia" aria-hidden="true"></span>');
+  for (let d = 1; d <= diasMes; d++) {
+    const iso = `${mes}-${dosCifras(d)}`;
+    const x = porDia.get(iso);
+    const puntos = x ? `<span class="pl-puntos" aria-hidden="true">${x.ev ? '<i class="pe"></i>' : ''}${x.fl ? '<i class="pf"></i>' : ''}</span>` : '';
+    const n = x ? x.filas.length : 0;
+    celdas.push(`<a class="pl-dia${iso === hoy ? ' hoy' : ''}${iso === dia ? ' sel' : ''}" href="${esc(enlace({ mes, dia: iso }))}"
+      aria-label="${esc(`${largo(iso)}: ${n}`)}"${iso === dia ? ' aria-current="date"' : ''}>${d}${puntos}</a>`);
+  }
+  const delDia = porDia.get(dia)?.filas || [];
+  const titulo = dia === hoy ? `${t('Hoy')} · ${largo(dia)}` : largo(dia).charAt(0).toUpperCase() + largo(dia).slice(1);
+  return `<div class="pl-cal">
+    <section class="pl-mes">
+      <div class="pl-cab">
+        ${mes > min ? `<a class="pl-nav" href="${esc(enlace({ mes: mesMas(mes, -1) }))}" aria-label="${esc(t('Mes anterior'))}"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg></a>` : '<span class="pl-nav"></span>'}
+        <h2>${esc(mesTitulo.charAt(0).toUpperCase() + mesTitulo.slice(1))}</h2>
+        ${mes < max ? `<a class="pl-nav" href="${esc(enlace({ mes: mesMas(mes, 1) }))}" aria-label="${esc(t('Mes siguiente'))}"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M8.59 16.59 10 18l6-6-6-6-1.41 1.41L13.17 12z"/></svg></a>` : '<span class="pl-nav"></span>'}
+      </div>
+      <div class="pl-rejilla">${semana.map((w) => `<span class="pl-sem" aria-hidden="true">${esc(w)}</span>`).join('')}${celdas.join('')}</div>
+      <p class="pl-leyenda"><span><i class="pe"></i>${esc(t('Eventos'))}</span><span><i class="pf"></i>${esc(t('Ofertas flash'))}</span></p>
+      ${dia !== hoy ? `<p class="pl-hoy"><a class="pill" href="${esc(enlace({ mes: hoyMes, dia: hoy }))}">${esc(t('Hoy'))}</a></p>` : ''}
+    </section>
+    <section class="pl-lista">
+      <h2 class="seccion-t">${esc(titulo)}</h2>
+      ${delDia.length ? `<div class="olist">${delDia.join('')}</div>` : `<p class="muted">${esc(t('Nada guardado para este día.'))}</p>`}
+    </section>
+  </div>`;
+}
+
+RUTAS.planes = async (_partes, params = new URLSearchParams()) => {
   if (!exigeSesion('planes')) return;
+  const enCalendario = params.get('vista') === 'calendario';
   // Las mismas dos funciones que la app. Si fallan los canjes, se enseña lo
   // guardado igualmente (la app hace lo mismo).
   const [guardados, guardadosPasados, canjes, series, turnos, pedidosListo] = await Promise.all([
@@ -1394,7 +1468,12 @@ RUTAS.planes = async () => {
     // El pedido que se prepara (Te aviso cuando esté listo, app/listo.js).
     llamar('my_orders', {}).catch(() => []),
   ]);
-  const turnoHtml = (await colaTarjetasHtml(turnos)) + listoTarjetasHtml(pedidosListo);
+  // Tu turno en una cola y tu pedido, cada uno con su título (como la app),
+  // debajo de «Sigues N series».
+  const colaHtml = await colaTarjetasHtml(turnos);
+  const listoHtml = listoTarjetasHtml(pedidosListo);
+  const turnoHtml = (colaHtml ? `<h2 class="seccion-t">${esc(t('Cola virtual'))}</h2>${colaHtml}` : '')
+    + (listoHtml ? `<h2 class="seccion-t">${esc(t('Tu pedido'))}</h2>${listoHtml}` : '');
   // «Sigues 2 series», arriba (sin series, nada), como la app.
   const nSeries = (series || []).length;
   const filaSeries = nSeries ? `<div class="lista">${fila({ href: '#/series', icono: 'notifications',
@@ -1414,33 +1493,34 @@ RUTAS.planes = async () => {
     ...savedPast.map((o) => ({ cuando: momentoPlan(o), html: tarjeta(o, zona(o)) })),
   ].sort((a, b) => b.cuando - a.cuando);
 
-  const explorar = `<p><a class="pill" href="${PUB_EN ? '/en/explore/' : '/explorar/'}">${esc(t('Buscar planes'))}</a></p>`;
-  if (!enCurso.length && !proximos.length && !pasados.length) {
+  const cabecera = `<p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
+    <div class="pl-titulo"><h1>${esc(t('Tus planes'))}</h1>${vistasPlanes(enCalendario)}</div>`;
+  if (enCalendario) {
+    pinta(`${cabecera}${planesCalendario({ saved: [...saved, ...savedPast], reds, zona, params })}`);
+    return;
+  }
+  // Vacío de verdad: sin un turno ni un pedido a la vista (como la app).
+  if (!enCurso.length && !proximos.length && !pasados.length && !turnoHtml) {
     pinta(`
-      <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
-      <h1>${esc(t('Tus planes'))}</h1>
-      ${turnoHtml}
-      ${filaSeries}
+      ${cabecera}
       ${pantallaVacia({
         icono: 'bookmark',
         titulo: t('Aún no tienes planes'),
         texto: t('Cuando algo te guste, dale a «Guardar» y lo tendrás aquí. Tus canjes también aparecerán.'),
-        botones: `<a class="pill accent" href="${PUB_EN ? '/en/explore/' : '/explorar/'}">${esc(t('Buscar planes'))}</a>`,
+        botones: `<a class="pill accent" href="${PUB_EN ? '/en/discover/' : '/descubre/'}">${esc(t('Descubre'))}</a>`,
       })}`);
     return;
   }
   const bloque = (titulo, filas, clase = '', extra = '') => (filas.length
     ? `<h2 class="seccion-t${extra ? ' con-enlace' : ''}"><span>${esc(titulo)}</span>${extra}</h2><div class="olist${clase}">${filas.join('')}</div>` : '');
   pinta(`
-    <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
-    <h1>${esc(t('Tus planes'))}</h1>
-    ${turnoHtml}
+    ${cabecera}
     ${filaSeries}
+    ${turnoHtml}
     ${bloque(t('Para usar ahora'), enCurso.map((r) => filaCanje(r, zona(r))), '', `<a href="#/codigos">${esc(t('Ver todos'))}</a>`)}
     ${bloque(t('Próximos'), proximos.map((o) => tarjeta(o, zona(o))))}
     ${bloque(t('Pasados'), pasados.map((p) => p.html), ' pasado')}
-    ${savedPast.length >= PASADOS_POR_PARTE ? `<p class="ver-mas"><button type="button" class="pill" data-ver-mas="pasados">${esc(t('Ver más'))}</button></p>` : ''}
-    ${explorar}`);
+    ${savedPast.length >= PASADOS_POR_PARTE ? `<p class="ver-mas"><button type="button" class="pill" data-ver-mas="pasados">${esc(t('Ver más'))}</button></p>` : ''}`);
   // «Ver más»: lo guardado más antiguo, al final de «Pasados».
   const cargados = [...savedPast];
   const mas = $('[data-ver-mas="pasados"]');

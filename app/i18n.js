@@ -2,6 +2,14 @@
 'use strict';
 
 const APP_EN = {
+  // Paridad con la app (2026-10-22)
+  "Lista": "List",
+  "Calendario": "Calendar",
+  "Hoy": "Today",
+  "Mes anterior": "Previous month",
+  "Mes siguiente": "Next month",
+  "Nada guardado para este día.": "Nothing saved for this day.",
+  "Descubre": "Discover",
   // «Pregúntale al local»: interruptores de los avisos y «Pronto podrás preguntar…»
   "Respuestas a tus preguntas": "Replies to your questions",
   "Cuando un local contesta u oculta lo que le preguntaste": "When a venue answers or hides what you asked it",
