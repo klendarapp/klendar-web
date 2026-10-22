@@ -167,7 +167,67 @@ async function favoritos(nav, nombre, t, vp) {
   await v.ctx.close();
 }
 
-const PRUEBAS = { planes, favoritos };
+async function codigos(nav, nombre, t, vp) {
+  const tag = `${nombre}/${t}`;
+  const CARD = 'c1000000-0000-4000-8000-0000000000f1';
+  const OF = 'a1000000-0000-4000-8000-0000000000f1';
+  const base = {
+    my_redemptions: [], my_birthday_gifts: [], my_loyalty_gifts: [], my_passes: [], my_queue_turns: [], my_spot_gifts: [], my_orders: [],
+    my_stamp_rewards: [{ id: 'p1', card_id: CARD, card_name: 'Cafés', business_id: BIZ, business_name: 'Bar Sonda', reward: 'Un café', status: 'pending', code: 'ABCD1234', created_at: new Date().toISOString() }],
+    my_stamp_cards: [{ id: CARD, business_id: BIZ, business_name: 'Bar Sonda', name: 'Cafés', goal: 10, card_goal: 12, reward: 'Un café', stamps: 4, pending_code: 'ABCD1234', is_active: true, applies_to: 'all' }],
+    claim_stamp_reward: { ok: true, code: 'ABCD1234', reward: 'Un café' },
+  };
+  const { ctx, p, estado, errores } = await contexto(nav, vp, CUENTA(base));
+  await p.goto(`${BASE}/app/#/codigos`, { waitUntil: 'networkidle' });
+  await p.waitForSelector('h1');
+  // Sin cámara en el navegador (WebKit de Playwright en Windows), el botón no sale.
+  const conCamara = await p.evaluate(() => !!navigator.mediaDevices?.getUserMedia);
+  ok(await p.locator('a[href="#/escanear"]', { hasText: 'Escanear un QR' }).count() === (conCamara ? 1 : 0), `${tag} códigos: «Escanear un QR» (${conCamara ? 'con' : 'sin'} cámara)`);
+  ok(await p.locator(`a.ocard[href="#/sellos?premio=${CARD}"]`).count() === 1, `${tag} códigos: el premio vivo abre su QR`);
+  await p.locator(`a.ocard[href="#/sellos?premio=${CARD}"]`).click();
+  await p.waitForSelector('.ticket .qr');
+  ok(estado.llamadas.some(([f, b]) => f === 'claim_stamp_reward' && b.p_card === CARD), `${tag} sellos: «Ver el código» sin pulsar otra vez`);
+  await p.screenshot({ path: `${OUT}/cuenta-premio-qr-${nombre}-${t}.png` });
+  await p.goto(`${BASE}/app/#/sellos`, { waitUntil: 'networkidle' });
+  await p.waitForSelector('.huecos');
+  ok(await p.locator('.huecos').getAttribute('aria-label') === '4 de 10 sellos', `${tag} sellos: «4 de 10 sellos» para el lector`);
+  ok(/la tarjeta ha subido a 12/.test(await p.locator('main').innerText()), `${tag} sellos: «la tarjeta ha subido a 12»`);
+  ok(errores.length === 0, `${tag} códigos sin errores ${errores.join(' | ')}`);
+  await ctx.close();
+
+  // Canjeado: «Un sello más en Cafés: llevas 5 de 10».
+  const c = await contexto(nav, vp, CUENTA({
+    ...base,
+    start_redemption: { code: 'abcd1234ef', expires_at: new Date(Date.now() + 1800e3).toISOString(), offer_title: 'Café y bollo', business_name: 'Bar Sonda' },
+    offer_tz: 'Europe/Madrid', offer_marks: null,
+    offer_detail: [{ id: OF, title: 'Café y bollo', business_name: 'Bar Sonda', max_seats: 1 }],
+    my_stamp_cards: [{ id: CARD, business_id: BIZ, business_name: 'Bar Sonda', name: 'Cafés', goal: 10, reward: 'Un café', stamps: 5, is_active: true }],
+  }), {
+    redemptions: [{ status: 'validated', validated_at: new Date().toISOString() }],
+    stamps: [{ card_id: CARD, redemptions: { code: 'abcd1234ef' } }],
+  });
+  await c.p.goto(`${BASE}/app/#/codigo/${OF}`, { waitUntil: 'networkidle' });
+  await c.p.locator('#confirmaEnlace').click().catch(() => {});
+  await c.p.waitForSelector('.canjeado', { timeout: 15000 });
+  await c.p.waitForSelector('.sello-canje', { timeout: 8000 }).catch(() => {});
+  ok(/Un sello más en Cafés: llevas 5 de 10/.test(await c.p.locator('.canjeado').innerText()), `${tag} canjeado: «Un sello más en Cafés: llevas 5 de 10»`);
+  await c.p.screenshot({ path: `${OUT}/cuenta-canjeado-sello-${nombre}-${t}.png` });
+  await c.ctx.close();
+
+  // El escáner: sin permiso para la cámara, lo dice.
+  const e = await contexto(nav, vp, CUENTA({}));
+  await e.p.addInitScript(() => {
+    if (navigator.mediaDevices) navigator.mediaDevices.getUserMedia = () => Promise.reject(Object.assign(new Error('no'), { name: 'NotAllowedError' }));
+  });
+  await e.p.goto(`${BASE}/app/#/escanear`, { waitUntil: 'networkidle' });
+  await e.p.waitForSelector('#escanerError:not([hidden])');
+  const msg = await e.p.locator('#escanerError').innerText();
+  ok(conCamara ? /Sin permiso para la cámara/.test(msg) : /No se ha podido abrir la cámara/.test(msg), `${tag} escanear: sin permiso o sin cámara, lo dice (${msg})`);
+  await e.p.screenshot({ path: `${OUT}/cuenta-escanear-${nombre}-${t}.png` });
+  await e.ctx.close();
+}
+
+const PRUEBAS = { planes, favoritos, codigos };
 for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
   const nav = await tipo.launch();
   for (const [t, vp] of [['movil', { width: 390, height: 844 }], ['escritorio', { width: 1280, height: 900 }]]) {

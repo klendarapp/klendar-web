@@ -1802,7 +1802,7 @@ function pintaCodigoGuardado(g) {
       <div class="qr" id="qr" role="img" aria-label="${esc(t('Código QR para que el negocio valide tu canje'))}"></div>
       <p><button type="button" class="codigo copiar" id="copiar" aria-label="${esc(t('Copiar el código'))}">${esc(codigoLegible(g.code))} ${ic('content_copy')}</button></p>
       <p class="muted">${esc(t('Vale hasta el'))} ${esc(fecha(g.expires_at, undefined, g.tz || undefined))}</p>
-      <p class="muted">${esc(t('Enséñalo en el sitio. Si no pueden escanearlo, que escriban el código de debajo.'))}</p>
+      <p class="muted">${esc(t('Enseña este código en el local para que lo escaneen. Solo vale una vez.'))}</p>
     </div>`);
   $('#copiar')?.addEventListener('click', async () => {
     try { await navigator.clipboard.writeText(g.code); toast(t('Código copiado')); } catch { toast(t('No se ha podido copiar'), true); }
@@ -1843,6 +1843,7 @@ RUTAS.codigos = async (_partes, params) => {
   const conPremios = Array.isArray(premios) && premios.length > 0;
   const conBonos = Array.isArray(bonos) && bonos.length > 0;
   const conDados = Array.isArray(dados) && dados.length > 0;
+  // Con un turno o un pedido a la vista no está vacío (como la app).
   const nada = !(lista || []).length && !conRegalos && !conPremios && !conBonos && !conDados && !turnoHtml;
   // Desde una notificación (`#/codigos?offer=<id>`: cambio de fecha,
   // cancelación…): el código de esa publicación, a la vista y resaltado. El
@@ -1854,7 +1855,8 @@ RUTAS.codigos = async (_partes, params) => {
     || deLaOferta[0] || null;
   pinta(`
     <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
-    <h1>${esc(t('Tus códigos'))}</h1>
+    <div class="pl-titulo"><h1>${esc(t('Tus códigos'))}</h1>
+      ${navigator.mediaDevices?.getUserMedia ? `<a class="pill" href="#/escanear">${ic('qr_code_scanner')} ${esc(t('Escanear un QR'))}</a>` : ''}</div>
     ${turnoHtml}
     ${nada ? '' : `<div class="olist">${bonoFilaQr()}</div>`}
     ${conBonos ? `<h2 class="seccion-t">${esc(t('Bonos'))}</h2>
@@ -1873,16 +1875,14 @@ RUTAS.codigos = async (_partes, params) => {
   ].map(([titulo, parte], i) => (parte.length ? `<h2 class="seccion-t">${esc(titulo)}</h2>
       <div class="olist"${i === 1 ? ' id="codigosPasados"' : ''}>${parte.map((r) => filaCanje(r, zona(r), r === resaltado)).join('')}</div>` : '')).join('')
     + ((lista || []).length >= CODIGOS_POR_PARTE ? `<p class="ver-mas"><button type="button" class="pill" data-ver-mas="codigos">${esc(t('Ver más'))}</button></p>` : '')
-    : conRegalos || conPremios || conBonos || conDados || turnoHtml
-      ? `<p class="empty">${esc(t('Todavía no tienes códigos. Cuando consigas el código de una oferta o reserves plaza en un evento, lo tendrás aquí.'))}</p>`
+    : !nada ? ''
       : pantallaVacia({
         icono: 'qr_code_2',
         titulo: t('Todavía no tienes códigos'),
         texto: t('Cuando consigas el código de una oferta o reserves plaza en un evento, lo tendrás aquí.'),
-        // Sin nada, el QR de cliente sigue a mano: es lo que se enseña para
-        // comprar el primer bono.
-        botones: `<a class="pill accent" href="${PUB_EN ? '/en/explore/' : '/explorar/'}">${esc(t('Buscar planes'))}</a>
-          <a class="pill" href="#/qr-cliente">${esc(t('Tu QR de cliente'))}</a>`,
+        // Sin nada, el QR de cliente es el botón del vacío (como la app): es
+        // lo que se enseña para comprar el primer bono.
+        botones: `<a class="pill accent" href="#/qr-cliente">${esc(t('Tu QR de cliente'))}</a>`,
       })}`);
   $('#codigo-pedido')?.scrollIntoView({ block: 'center' });
   // Los siguientes (más antiguos): se añaden a «Pasados».
@@ -1911,8 +1911,8 @@ RUTAS.codigos = async (_partes, params) => {
   }
 };
 
-/** Un premio de tarjeta de sellos en «Tus códigos»: pendiente lleva a
- * «Tarjetas de sellos», donde está su código; si no, solo se ve. */
+/** Un premio de tarjeta de sellos en «Tus códigos»: pendiente abre su QR
+ * (como la app); usado o caducado, «Tarjetas de sellos». */
 function filaPremio(p) {
   const vivo = p.status === 'pending' && !!p.code;
   const estado = p.status === 'validated'
@@ -1925,7 +1925,7 @@ function filaPremio(p) {
         <span class="muted">${esc(`${p.card_name} · ${p.business_name} · ${cuando}`)}</span>
         <span class="ocard-meta"><span class="tag${vivo ? '' : ' off'}">${esc(estado)}</span></span>
       </span>`;
-  return vivo ? `<a class="ocard" href="#/sellos">${dentro}</a>` : `<div class="ocard">${dentro}</div>`;
+  return `<a class="ocard" href="#/sellos${vivo && p.card_id ? `?premio=${esc(p.card_id)}` : ''}">${dentro}</a>`;
 }
 
 // ── Regalos de cumpleaños, cupones y regalos a los habituales ────────────
@@ -1954,7 +1954,8 @@ const aunNoVale = (g) => !!g.starts_at && new Date(g.starts_at).getTime() > Date
 const ultimoDiaRegalo = (g) => (g?.expires_at
   ? fecha(new Date(new Date(g.expires_at).getTime() - 1000).toISOString(), { day: 'numeric', month: 'long' }, g.time_zone || undefined)
   : '');
-/** Un regalo en «Tus códigos»: vivo abre su QR; usado o caducado, solo se ve. */
+/** Un regalo en «Tus códigos»: vivo abre su QR; usado o caducado, su
+ * pantalla con el estado (como la app). */
 function filaRegalo(g) {
   const vivo = g.status === 'pending' && !!g.code;
   const estado = g.status === 'validated' ? t('Canjeado') : vivo ? t('Código activo') : t('Caducado');
@@ -1964,7 +1965,7 @@ function filaRegalo(g) {
         <span class="muted">${esc(EN ? `From ${g.business_name} · valid until ${ultimoDiaRegalo(g)}` : `De ${g.business_name} · vale hasta el ${ultimoDiaRegalo(g)}`)}</span>
         <span class="ocard-meta"><span class="tag${vivo ? '' : ' off'}">${esc(estado)}</span></span>
       </span>`;
-  return vivo ? `<a class="ocard" href="#/regalo/${esc(g.id)}">${dentro}</a>` : `<div class="ocard">${dentro}</div>`;
+  return `<a class="ocard" href="#/regalo/${esc(g.id)}">${dentro}</a>`;
 }
 
 /** El regalo, para enseñarlo en el sitio: como el premio de la tarjeta de
@@ -1975,7 +1976,7 @@ RUTAS.regalo = async ([id]) => {
   if (!exigeSesion(`regalo/${id}`)) return;
   const lista = await misRegalos();
   const g = (lista || []).find((x) => x.id === id);
-  if (!g) { pinta(pantallaVacia({ icono: 'cake', titulo: t('Ese regalo no está.'), h: 'h1', botones: `<a class="pill accent" href="#/codigos">${esc(t('Tus códigos'))}</a>` })); return; }
+  if (!g) { pinta(pantallaVacia({ icono: 'cake', titulo: t('Ese regalo ya no está.'), h: 'h1', botones: `<a class="pill accent" href="#/codigos">${esc(t('Tus códigos'))}</a>` })); return; }
   const tz = g.time_zone || undefined;
   if (g.status === 'validated') {
     pintaCanjeado({ titulo: g.gift, negocio: g.business_name, at: g.validated_at, tz });
@@ -2008,7 +2009,7 @@ RUTAS.regalo = async ([id]) => {
       <p class="muted">${esc(aunNoVale(g)
     ? (EN ? `Valid from ${fecha(g.starts_at, { day: 'numeric', month: 'long' }, tz)} until ${ultimoDiaRegalo(g)}. Show it at the venue; it can be used once.`
       : `Vale desde el ${fecha(g.starts_at, { day: 'numeric', month: 'long' }, tz)} hasta el ${ultimoDiaRegalo(g)}. Enséñalo en el sitio; vale una vez.`)
-    : (EN ? `Show it at the place until ${ultimoDiaRegalo(g)}. It works once.` : `Enséñalo en el sitio hasta el ${ultimoDiaRegalo(g)}. Vale una vez.`))}</p>
+    : (EN ? `Show it at the venue by ${ultimoDiaRegalo(g)}. It only works once.` : `Enséñalo en el sitio hasta el ${ultimoDiaRegalo(g)}. Vale una vez.`))}</p>
     </div>`);
   $('#copiar')?.addEventListener('click', async () => {
     try { await navigator.clipboard.writeText(g.code); toast(t('Código copiado')); } catch { toast(t('No se ha podido copiar'), true); }
@@ -2059,7 +2060,7 @@ function vigilaCanje(code, alValidar, tabla = 'redemptions') {
 }
 
 /** El negocio ya lo ha validado: la confirmación grande, como en la app. */
-function pintaCanjeado({ titulo, negocio, benef, at, volver = '#/codigos', tz }) {
+function pintaCanjeado({ titulo, negocio, benef, at, volver = '#/codigos', tz, code = '' }) {
   const hora = fecha(at, { hour: '2-digit', minute: '2-digit' }, tz);
   pinta(`
     <div class="ticket canjeado" role="status">
@@ -2070,10 +2071,36 @@ function pintaCanjeado({ titulo, negocio, benef, at, volver = '#/codigos', tz })
       ${benef ? `<p><span class="tag grande">${esc(benef)}</span></p>` : ''}
       <p class="muted">${esc(EN ? `Validated at ${hora}` : `Validado a las ${hora}`)}</p>
       <p class="muted">${esc(t('El negocio ya lo ha registrado. Disfrútalo y, si quieres, deja una reseña luego.'))}</p>
+      <div id="sellosCanje"></div>
       <p><a class="pill accent" href="${esc(volver)}">${esc(t('Listo'))}</a></p>
     </div>`);
   I18N.translate(view);
   if (navigator.vibrate) navigator.vibrate(120);
+  if (code) sellosDelCanje(code);
+}
+
+/** Si el canje ha dejado sello: en qué tarjeta, cuántos llevas y si ya toca
+ * premio (como la app). Tocarlo abre «Tarjetas de sellos». */
+async function sellosDelCanje(code) {
+  try {
+    const { data } = await sb.from('stamps').select('card_id, redemptions!inner(code)').eq('redemptions.code', code);
+    const ids = new Set((data || []).map((r) => r.card_id));
+    if (!ids.size) return;
+    const tarjetas = ((await llamar('my_stamp_cards', {})) || []).filter((c) => ids.has(c.id));
+    const caja = $('#sellosCanje');
+    if (!caja || !tarjetas.length) return;
+    caja.innerHTML = tarjetas.map((c) => {
+      const listo = c.pending_code || c.stamps >= c.goal;
+      const falta = c.goal - c.stamps;
+      const card = c.name || t('Tarjeta de sellos');
+      const count = c.stamps;
+      const goal = c.goal;
+      return `<a class="ocard sello-canje" href="#/sellos">
+        <span class="ph">${ic('local_activity')}</span>
+        <span class="ocard-body"><b>${esc(EN ? `One more stamp on ${card}: ${count} of ${goal}` : `Un sello más en ${card}: llevas ${count} de ${goal}`)}</b>
+          <span class="muted">${esc(listo ? t('¡Te toca premio!') : falta === 1 ? t('Te falta 1 sello') : (EN ? `${falta} stamps to go` : `Te faltan ${falta} sellos`))}</span></span></a>`;
+    }).join('');
+  } catch { /* sin red: el canje, sin la línea del sello */ }
 }
 
 RUTAS.codigo = async ([id], params, crudo) => {
@@ -2090,9 +2117,11 @@ RUTAS.codigo = async ([id], params, crudo) => {
   // Abierto desde fuera, no se saca el código (ni se reservan plazas) sin
   // pulsar: si ya lo tienes, el botón te lo enseña igual.
   if (!(await confirmaEnlace(crudo, {
-    titulo: t(plazas > 1 ? '¿Reservar plazas?' : '¿Sacar tu código?'), que: await queOferta(id, rp),
-    texto: plazas > 1 ? (EN ? `For ${plazas} people. The code is valid for all the places.` : `Para ${plazas} personas. El código vale por todas las plazas.`) : '',
-    boton: t(plazas > 1 ? 'Reservar' : 'Sacar el código'), volver: `${pre}/o/${encodeURIComponent(id)}${conRp}`,
+    // Como la app: el mismo título y botón con una plaza o con varias, y por
+    // qué se pregunta.
+    titulo: t('¿Sacar tu código?'), que: await queOferta(id, rp),
+    texto: `${plazas > 1 ? `${EN ? `For ${plazas} people. The code is valid for all the places.` : `Para ${plazas} personas. El código vale por todas las plazas.`} ` : ''}${t('Has llegado desde un enlace. Sácalo solo si vas a usarlo: si hay plazas, quedan reservadas a tu nombre.')}`,
+    boton: t('Sacar el código'), volver: `${pre}/o/${encodeURIComponent(id)}${conRp}`,
   }))) return;
   // La zona del negocio, para «vale hasta el…» y la hora del canje.
   let tk;
@@ -2153,7 +2182,7 @@ RUTAS.codigo = async ([id], params, crudo) => {
         <p><b>${esc(t('El código ha caducado'))}</b></p>
         <p><button class="pill accent" id="otro-codigo" type="button">${ic('refresh')} ${esc(t('Generar otro código'))}</button></p>
       </div>
-      <p class="muted" id="instrucciones">${esc(t('Enséñalo en el sitio. Si no pueden escanearlo, que escriban el código de debajo.'))}</p>
+      <p class="muted" id="instrucciones">${esc(t('Enseña este código en el local para que lo escaneen. Solo vale una vez.'))}</p>
       ${largo ? `<p><button class="pill" id="anular" type="button">${esc(t('Ya no voy: anular la reserva'))}</button></p>` : ''}
     </div>`);
   // El código de debajo del QR se copia de un toque (como en la app).
@@ -2194,7 +2223,7 @@ RUTAS.codigo = async ([id], params, crudo) => {
   // En cuanto el negocio lo valida, esta pantalla se entera sola.
   alSalir(vigilaCanje(tk.code, (at) => {
     olvidaCodigo(id); // ya está usado: no se enseña sin red
-    pintaCanjeado({ titulo: tk.offer_title, negocio: tk.business_name, benef, at, tz });
+    pintaCanjeado({ titulo: tk.offer_title, negocio: tk.business_name, benef, at, tz, code: tk.code });
   }));
 
   // La cuenta atrás, o hasta cuándo vale si queda más de una hora. Un código
@@ -2368,27 +2397,29 @@ function queSellaBase(c) {
   return t('Cuentan todas las publicaciones');
 }
 
-RUTAS.sellos = async () => {
+RUTAS.sellos = async (_partes, params = new URLSearchParams()) => {
   if (!exigeSesion('sellos')) return;
+  // Desde «Tus códigos» (`?premio=<tarjeta>`): directamente su QR.
+  const premio = params.get('premio') || '';
   const lista = await llamar('my_stamp_cards', {});
   await zonasDe(lista); // la hora del canje, en la del negocio
   pinta(`
     <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(t('Tarjetas de sellos'))}</h1>
-    ${(lista || []).length ? lista.map((c) => `
+    ${(lista || []).length ? lista.map((c) => { const count = c.stamps; const goal = c.goal; const cardGoal = c.card_goal; return `
       <div class="sello">
         <p class="sello-negocio"><a href="${pre}/b/${esc(c.business_id)}">${esc(c.business_name)}</a></p>
         <h2>${esc(c.name || t('Tarjeta de sellos'))}</h2>
         <p class="muted sello-filtro">${esc(queSella(c))}</p>
-        <div class="huecos" aria-label="${esc(`${c.stamps} / ${c.goal}`)}">${Array.from({ length: c.goal }, (_, i) => `<span class="${i < c.stamps ? 'lleno' : ''}"></span>`).join('')}</div>
+        <div class="huecos" role="img" aria-label="${esc(EN ? `${count} of ${goal} stamps` : `${count} de ${goal} sellos`)}">${Array.from({ length: c.goal }, (_, i) => `<span class="${i < c.stamps ? 'lleno' : ''}"></span>`).join('')}</div>
         <p>${esc(t('Premio'))}: <b>${esc(c.reward)}</b></p>
         <p class="muted">${c.pending_code || c.stamps >= c.goal ? esc(t('¡Te toca premio!')) : esc(c.goal - c.stamps === 1 ? t('Te falta 1 sello') : (EN ? `${c.goal - c.stamps} stamps to go` : `Te faltan ${c.goal - c.stamps} sellos`))}</p>
-        ${c.card_goal != null && c.card_goal !== c.goal ? `<p class="muted">${esc(EN
-          ? `Your goal is ${c.goal}; for your next cards it's ${c.card_goal}.`
-          : `Tu meta es ${c.goal}; para las próximas tarjetas, ${c.card_goal}.`)}</p>` : ''}
+        ${c.card_goal != null && c.card_goal > c.goal ? `<p class="muted">${esc(EN
+          ? `Your goal is ${goal}: the card now asks for ${cardGoal}, but yours stays as it was until you get the reward.`
+          : `Tu meta es ${goal}: la tarjeta ha subido a ${cardGoal}, pero a ti te vale la de antes hasta conseguir el premio.`)}</p>` : ''}
         ${!c.is_active ? `<p class="muted">${esc(t('En pausa: ahora mismo no se dan sellos nuevos. Los tuyos siguen aquí.'))}</p>` : ''}
         ${c.pending_code || c.stamps >= c.goal ? `<button class="pill accent" data-premio="${esc(c.id)}" data-reward="${esc(c.reward)}" data-negocio="${esc(c.business_name)}" data-biz="${esc(c.business_id)}">${esc(c.pending_code ? t('Ver el código') : t('Pedir el premio'))}</button>` : ''}
-      </div>`).join('')
+      </div>`; }).join('')
     : pantallaVacia({
       icono: 'local_activity',
       titulo: t('Todavía no tienes ninguna'),
@@ -2415,6 +2446,106 @@ RUTAS.sellos = async () => {
       titulo: r.reward || b.dataset.reward, negocio: b.dataset.negocio, at, volver: '#/sellos', tz: ZONAS.get(b.dataset.biz),
     }), 'stamp_rewards'));
   }); });
+  if (premio) $$('[data-premio]').find((b) => b.dataset.premio === premio)?.click();
+};
+
+// ── «Escanear un QR» (desde «Tus códigos») ───────────────────────────────
+/** Lo que enseña un local, con la cámara del navegador (como la app,
+ * `qr_scan_screen.dart`): el QR de «Dar en el momento» (`/m/`), el cartel del
+ * local (`/v/`), «Te aviso cuando esté listo» (`/listo/`) y la cola virtual
+ * (`/cola/`) abren lo mismo que con la cámara del móvil. Lo demás: «Este QR
+ * no es de un local de Klendar». Chrome y Android traen `BarcodeDetector`;
+ * Safari y Firefox no, y para ellos se carga jsQR (solo entonces). */
+const RUTA_QR = /^(?:\/en)?\/(m|v|listo|ready|cola|queue)\/([A-Za-z0-9_.-]{6,80})\/?$/;
+function destinoQr(texto) {
+  let u;
+  try { u = new URL(String(texto || '').trim()); } catch { return null; }
+  if (!/^(www\.)?klendar\.app$/.test(u.hostname) && u.host !== location.host) return null;
+  return RUTA_QR.test(u.pathname) ? `${u.pathname}${u.search}` : null;
+}
+let JSQR = null;
+function cargaJsQR() {
+  if (!JSQR) {
+    JSQR = new Promise((ok, ko) => {
+      const js = document.createElement('script');
+      // jsQR 1.4.0, servido desde klendar.app (el mismo que usa el panel).
+      js.src = '/assets/vendor/jsqr-1.4.0.js';
+      js.integrity = 'sha384-b5Ya4Bq3qCyz39m2ISh+4DxjAIljdeFwK/BsXLuj9gugaNwAcj/ia15fxNZL9Nlx';
+      js.onload = () => ok(window.jsQR);
+      js.onerror = () => { JSQR = null; ko(new Error('jsqr')); };
+      document.head.append(js);
+    });
+  }
+  return JSQR;
+}
+RUTAS.escanear = async () => {
+  if (!exigeSesion('escanear')) return;
+  pinta(`
+    <p class="crumbs"><a href="#/codigos">${esc(t('Tus códigos'))}</a></p>
+    <h1>${esc(t('Escanear un QR'))}</h1>
+    <p class="muted">${esc(t('Apunta al QR que te enseña el local'))}</p>
+    <div class="escaner"><video id="escanerVideo" muted playsinline></video><span class="escaner-marco" aria-hidden="true"></span></div>
+    <p class="muted" id="escanerError" role="alert" hidden></p>`);
+  const video = $('#escanerVideo');
+  const error = (txt) => { const el = $('#escanerError'); if (el) { el.textContent = txt; el.hidden = false; } };
+  let flujo = null;
+  let vivo = true;
+  alSalir(() => { vivo = false; flujo?.getTracks().forEach((x) => x.stop()); });
+  try {
+    flujo = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+  } catch (e) {
+    error(e && e.name === 'NotAllowedError'
+      ? t('Sin permiso para la cámara. Actívalo en el candado de la barra de direcciones.')
+      : t('No se ha podido abrir la cámara. También puedes usar la cámara del móvil.'));
+    return;
+  }
+  if (!vivo) { flujo.getTracks().forEach((x) => x.stop()); return; }
+  video.srcObject = flujo;
+  await video.play().catch(() => {});
+  let detector = null;
+  if ('BarcodeDetector' in window) {
+    try {
+      const formatos = await window.BarcodeDetector.getSupportedFormats();
+      if (formatos.includes('qr_code')) detector = new window.BarcodeDetector({ formats: ['qr_code'] });
+    } catch { detector = null; }
+  }
+  const jsqr = detector ? null : await cargaJsQR().catch(() => null);
+  if (!detector && !jsqr) { error(t('No se ha podido abrir la cámara. También puedes usar la cámara del móvil.')); return; }
+  const lienzo = document.createElement('canvas');
+  const ctx = lienzo.getContext('2d', { willReadFrequently: true });
+  let ultimo = '';
+  let cuando = 0;
+  const vuelta = async () => {
+    if (!vivo) return;
+    let texto = null;
+    if (video.readyState >= 2) {
+      try {
+        if (detector) texto = (await detector.detect(video))[0]?.rawValue || null;
+        else if (video.videoWidth && video.videoHeight) {
+          lienzo.width = video.videoWidth; lienzo.height = video.videoHeight;
+          ctx.drawImage(video, 0, 0, lienzo.width, lienzo.height);
+          texto = jsqr(ctx.getImageData(0, 0, lienzo.width, lienzo.height).data, lienzo.width, lienzo.height)?.data || null;
+        }
+      } catch { texto = null; }
+    }
+    if (texto) {
+      const destino = destinoQr(texto);
+      if (destino) {
+        vivo = false;
+        flujo.getTracks().forEach((x) => x.stop());
+        if (navigator.vibrate) navigator.vibrate(40);
+        location.assign(destino);
+        return;
+      }
+      // Otro QR: se dice una vez mientras siga delante de la cámara.
+      if (texto !== ultimo || Date.now() - cuando > 6000) {
+        ultimo = texto; cuando = Date.now();
+        toast(t('Este QR no es de un local de Klendar'), true);
+      }
+    }
+    setTimeout(vuelta, 200);
+  };
+  vuelta();
 };
 
 // ── El QR del local ───────────────────────────────────────────────────────

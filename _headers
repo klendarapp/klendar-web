@@ -45,14 +45,15 @@
   Permissions-Policy: geolocation=(), camera=(), microphone=(), screen-wake-lock=(self)
 
 # «Mi Klendar»: la ubicación solo para «Avísame si…» (zona fija), y siempre
-# a petición de la persona.
+# a petición de la persona. La cámara, solo en «Escanear un QR» (Tus códigos),
+# al pulsarlo.
 /app/*
   ! Content-Security-Policy
   X-Robots-Tag: noindex, nofollow
   Cache-Control: public, max-age=0, must-revalidate, no-transform
   Content-Security-Policy: default-src 'self'; script-src 'self' https://api.mapbox.com https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://api.mapbox.com; font-src 'self'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.mapbox.com https://events.mapbox.com; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; base-uri 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'none'
   ! Permissions-Policy
-  Permissions-Policy: geolocation=(self), camera=(), microphone=()
+  Permissions-Policy: geolocation=(self), camera=(self), microphone=()
 
 /widget/*
   ! Content-Security-Policy

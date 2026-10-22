@@ -3,6 +3,20 @@
 
 const APP_EN = {
   // Paridad con la app (2026-10-22)
+  "Has llegado desde un enlace. Sácalo solo si vas a usarlo: si hay plazas, quedan reservadas a tu nombre.": "You've come from a link. Only get it if you're going to use it: any places are reserved in your name.",
+  // Paridad con la app (2026-10-22)
+  "{count} de {goal} sellos": "{count} of {goal} stamps",
+  "Tu meta es {goal}: la tarjeta ha subido a {cardGoal}, pero a ti te vale la de antes hasta conseguir el premio.": "Your goal is {goal}: the card now asks for {cardGoal}, but yours stays as it was until you get the reward.",
+  // Paridad con la app (2026-10-22)
+  "Enseña este código en el local para que lo escaneen. Solo vale una vez.": "Show this code at the venue so they can scan it. It only works once.",
+  "Escanear un QR": "Scan a QR code",
+  "Ese regalo ya no está.": "That gift is no longer here.",
+  "Apunta al QR que te enseña el local": "Point at the QR code the venue is showing you",
+  "Sin permiso para la cámara. Actívalo en el candado de la barra de direcciones.": "No camera permission. Turn it on in the padlock in the address bar.",
+  "No se ha podido abrir la cámara. También puedes usar la cámara del móvil.": "The camera couldn’t be opened. You can also use your phone’s camera.",
+  "Este QR no es de un local de Klendar": "This QR code isn’t from a Klendar venue",
+  "Un sello más en {card}: llevas {count} de {goal}": "One more stamp on {card}: {count} of {goal}",
+  // Paridad con la app (2026-10-22)
   "1 negocio en favoritos": "1 business in favourites",
   "{n} negocios en favoritos": "{n} businesses in favourites",
   "{nombre} quitado de favoritos": "{nombre} removed from favourites",
