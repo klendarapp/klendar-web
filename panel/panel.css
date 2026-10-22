@@ -80,6 +80,12 @@
 .scan-box { display: grid; gap: 12px; max-width: 460px; }
 /* Los botones ocupan el ancho de la caja: el texto, centrado. */
 .scan-box > .btn { justify-content: center; }
+/* «Escanear con la cámara» y «Dar en el momento»: dos iguales, lado a lado. */
+.validar-dos { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.validar-dos > .btn { justify-content: center; text-align: center; min-height: 48px; white-space: normal; }
+/* Sin cámara (el botón se esconde), «Dar en el momento» a lo ancho. */
+.validar-dos:has(> [hidden]) { grid-template-columns: 1fr; }
+#listoEntrada:empty { display: none; }
 .scan-box input { font-size: 18px; letter-spacing: 2px; text-align: center; font-family: ui-monospace, Menlo, Consolas, monospace; }
 .scan-result { border-radius: 18px; padding: 16px 18px; font-weight: 700; }
 .scan-result.ok { background: rgba(46, 204, 113, .18); color: #146c3a; }
@@ -1010,8 +1016,6 @@ details.plegable[open] > summary { margin-bottom: 12px; }
 .aviso-cobro .btn { margin: 0; }
 
 /* «Dar en el momento» (panel/momento.js) */
-.momento-entrada { margin: 0 0 14px; display: flex; flex-wrap: wrap; gap: 8px; }
-.momento-entrada #listoEntrada:empty { display: none; }
 .momento-form [data-para] { margin-top: 6px; }
 .momento-recientes { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 4px; }
 .momento-qr { text-align: center; }

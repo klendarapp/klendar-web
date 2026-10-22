@@ -226,7 +226,8 @@ async function resumenListo(caja) {
   caja.innerHTML = `<div class="filas-inicio"><a class="fila-inicio" href="#/pedidos">${icono('listo')}<span>${esc(bi(`Pedidos de hoy · ${n} preparando`, `Today’s orders · ${n} being prepared`))}</span>${ms('chevron_right')}</a></div>`;
 }
 
-/** En «Validar códigos», junto a «Dar en el momento»: «Pedidos de hoy».
+/** En «Validar códigos», debajo de «Escanear» y «Dar en el momento»: la fila
+ * «Pedidos de hoy».
  * Con el negocio parado (bloqueado o en pausa) no: «Pedidos de hoy» no es de
  * lo que se puede abrir entonces y el botón llevaba al resumen. */
 async function listoEntradaValidar(caja) {
@@ -234,7 +235,8 @@ async function listoEntradaValidar(caja) {
   const negocio = BIZ.id;
   const r = await rpc('business_orders', { p_business: negocio }).catch(() => null);
   if (!caja.isConnected || BIZ?.id !== negocio || !r?.enabled) return;
-  caja.innerHTML = `<a class="btn" href="#/pedidos">${icono('listo')}${esc(bi('Pedidos de hoy', 'Today’s orders'))}</a>`;
+  // Una fila (como en el resumen), no un tercer botón al lado de los dos.
+  caja.innerHTML = `<a class="fila-inicio" href="#/pedidos">${icono('listo')}<span>${esc(bi('Pedidos de hoy', 'Today’s orders'))}</span>${ms('chevron_right')}</a>`;
 }
 
 /** En «Cifras»: pedidos avisados hoy y este mes, y la espera media. */

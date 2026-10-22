@@ -3951,9 +3951,14 @@ PAGES.validar = async (v) => {
     ? bi('Estás cerrado temporalmente: puedes validar los códigos y bonos que ya tiene la gente, pero no cargar bonos nuevos.', 'You’re temporarily closed: you can validate the codes and passes people already have, but not add new passes.')
     : bi('Tu negocio está bloqueado: puedes validar los códigos y bonos que ya tiene la gente, pero no cargar bonos nuevos.', 'Your business is blocked: you can validate the codes and passes people already have, but not add new passes.'))}</div>` : ''}
     ${helpBox('¿Cómo funciona?', `<p>Escanea el QR con la cámara (la del móvil o la del portátil) o escribe el código que la persona tiene debajo del QR. Cada código vale una vez: al validarlo queda marcado y el aforo baja.</p><p>Si es una reserva para varios, te decimos cuántas personas entran con ese código.</p><p>${bi('Con el <b>QR de cliente</b> de alguien ves sus bonos de tu negocio: puedes cargarle uno o descontar un uso.', 'With someone’s <b>customer QR code</b> you see their passes from your business: you can add one or use one.')}</p><p>${esc(I18N.t('Con «Dar en el momento» das sellos, un uso de un bono o algo del momento sin que el cliente enseñe nada: él escanea tu QR.'))}</p>`)}
-    <p class="momento-entrada"><a class="btn" href="#/momento">${ms('volunteer_activism')}Dar en el momento</a><span id="listoEntrada"></span></p>
+    <!-- Escanear y «Dar en el momento»: dos botones iguales, uno al lado del
+         otro (como en la app). «Pedidos de hoy», si lo usa, es una fila. -->
     <div class="scan-box">
-      <button class="btn" id="camara" type="button">${ms('photo_camera')}Escanear con la cámara</button>
+      <div class="validar-dos">
+        <button class="btn" id="camara" type="button">${ms('photo_camera')}Escanear con la cámara</button>
+        <a class="btn" href="#/momento">${ms('volunteer_activism')}Dar en el momento</a>
+      </div>
+      <div id="listoEntrada"></div>
       <div class="camara" id="camara-caja" hidden><video id="video" muted playsinline></video><span class="mira" aria-hidden="true"></span></div>
       <input id="code" placeholder="Código o enlace del QR" autocomplete="off" autofocus>
       <button class="btn primary" id="go">Validar</button>
