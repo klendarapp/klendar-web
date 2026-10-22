@@ -104,7 +104,7 @@ RUTAS.amigos = async ([idAmigo]) => {
           ${avatarDeAmigo(a, 'av-lista')}
           <span class="fila-t"><b>${esc(nombreDeAmigo(a))}</b>
             <small>${esc(a.plans > 0 ? planesDeAmigo(a.plans)
-              : (EN ? `Friends since ${dia(a.since)}` : `Amigos desde ${dia(a.since)}`))}</small></span>
+              : a.since ? (EN ? `Friends since ${dia(a.since)}` : `Amigos desde ${dia(a.since)}`) : '')}</small></span>
           </a>
           ${menuMas([
     { texto: t('Quitar de tus amigos'), attrs: `data-quitar="${esc(a.id)}" data-nombre="${esc(nombreDeAmigo(a))}"` },
@@ -209,18 +209,10 @@ RUTAS.amigos = async ([idAmigo]) => {
     }
   };
   $$('[data-quitar]').forEach((b) => b.addEventListener('click', async () => {
-    const nombre = b.dataset.nombre;
-    if (!(await confirma({
-      titulo: EN ? `Remove ${nombre} from your friends?` : `¿Quitar a ${nombre} de tus amigos?`,
-      texto: t('Ya no verás a qué planes va ni podrá invitarte. No le avisamos.'),
-      aceptar: t('Quitar'),
-      peligro: true,
-    }))) return;
     b.disabled = true;
     try {
-      await llamar('remove_friend', { p_user: b.dataset.quitar });
-      toast(EN ? `${nombre} is no longer one of your friends` : `${nombre} ya no está en tus amigos`);
-      quita(b);
+      if (await quitaAmigo(b.dataset.quitar, b.dataset.nombre)) quita(b);
+      else if (b.isConnected) b.disabled = false;
     } catch (e) {
       toast(e.message, true);
       if (b.isConnected) b.disabled = false;
@@ -229,19 +221,37 @@ RUTAS.amigos = async ([idAmigo]) => {
   // Bloquear: deja de ser tu amigo, no sale en tu «quién va» (ni tú en el
   // suyo), no puede invitarte y no ves sus reseñas. No se le avisa.
   $$('[data-bloquear]').forEach((b) => b.addEventListener('click', async () => {
-    const nombre = b.dataset.nombre;
-    if (!(await confirmaBloqueo(nombre))) return;
     b.disabled = true;
     try {
-      await llamar('block_user', { p_user: b.dataset.bloquear });
-      toast(EN ? `You've blocked ${nombre}` : `Has bloqueado a ${nombre}`);
-      quita(b);
+      if (await bloqueaAmigo(b.dataset.bloquear, b.dataset.nombre)) quita(b);
+      else if (b.isConnected) b.disabled = false;
     } catch (e) {
       toast(e.message, true);
       if (b.isConnected) b.disabled = false;
     }
   }));
 };
+
+/** «¿Quitar a X de tus amigos?» y, si se confirma, quitarle. `true` si se ha
+ * quitado (en la lista y en su ficha, como el ⋮ de la app). */
+async function quitaAmigo(id, nombre) {
+  if (!(await confirma({
+    titulo: EN ? `Remove ${nombre} from your friends?` : `¿Quitar a ${nombre} de tus amigos?`,
+    texto: t('Ya no verás a qué planes va ni podrá invitarte. No le avisamos.'),
+    aceptar: t('Quitar'),
+    peligro: true,
+  }))) return false;
+  await llamar('remove_friend', { p_user: id });
+  toast(EN ? `${nombre} is no longer one of your friends` : `${nombre} ya no está en tus amigos`);
+  return true;
+}
+/** «¿Bloquear a X?» y, si se confirma, bloquearle. `true` si se ha hecho. */
+async function bloqueaAmigo(id, nombre) {
+  if (!(await confirmaBloqueo(nombre))) return false;
+  await bloqueaUsuario(id);
+  toast(EN ? `You've blocked ${nombre}` : `Has bloqueado a ${nombre}`);
+  return true;
+}
 
 // ── La ficha de un amigo ──────────────────────────────────────────────────
 /** «Va a 1 plan» · «Va a 3 planes». */
@@ -256,7 +266,7 @@ const planesJuntos = (n) => (EN ? `You've been to ${n} ${n === 1 ? 'plan' : 'pla
 async function fichaDeAmigo(id) {
   if (!UUID_AMIGOS.test(id || '')) { pinta(pantallaVacia({ icono: 'link', titulo: t('Ese enlace no está completo.'), h: 'h1', botones: botonTuCuenta() })); return; }
   if (!exigeSesion(`amigos/${id}`)) return;
-  const migas = `<p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a> › <a href="#/amigos">${esc(t('Amigos'))}</a></p>`;
+  let migas = `<p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a> › <a href="#/amigos">${esc(t('Amigos'))}</a></p>`;
   let d;
   try { d = await llamar('friend_plans', { p_friend: id }); } catch (e) {
     if (e.clave !== 'not_found') throw e;
@@ -271,6 +281,11 @@ async function fichaDeAmigo(id) {
   const amigo = d.friend || {};
   const nombre = nombreDeAmigo(amigo);
   const planes = d.plans || [];
+  // ⋮ como en la app: «Quitar de tus amigos» y «Bloquear»; hecho, a la lista.
+  migas = `<div class="amigo-barra">${migas}${menuMas([
+    { texto: t('Quitar de tus amigos'), attrs: 'data-ficha-quitar' },
+    { texto: t('Bloquear'), attrs: 'data-ficha-bloquear', peligro: true },
+  ])}</div>`;
   const desde = amigo.since ? fecha(amigo.since, { day: 'numeric', month: 'short', year: 'numeric' }) : '';
   // «Habéis ido juntos a N planes»: solo el número y solo si es más de 0
   // (la base da 0 si alguno lo tiene apagado, sin decir por qué).
@@ -333,6 +348,11 @@ async function fichaDeAmigo(id) {
     };
   });
   enlaza(view);
+  const trasMenu = (fn) => async () => {
+    try { if (await fn(id, nombre)) location.hash = '#/amigos'; } catch (e) { toast(e.message, true); }
+  };
+  $('[data-ficha-quitar]').onclick = trasMenu(quitaAmigo);
+  $('[data-ficha-bloquear]').onclick = trasMenu(bloqueaAmigo);
 }
 
 // ── El enlace de otra persona ─────────────────────────────────────────────
@@ -389,19 +409,19 @@ RUTAS.amigo = async ([code]) => {
       });
       case 'rate_limited': return pintaEnlaceAbierto({
         titulo: t('Demasiados intentos. Espera un rato y vuelve a probar.'),
-        botones: `<a class="pill" href="#/">${esc(t('Tu cuenta'))}</a>`,
+        botones: botonVerAmigos(false),
       });
       // La tienes bloqueada tú (a quien está bloqueado se le dice que el
       // enlace no vale, como si no existiera).
       case 'blocked': return pintaEnlaceAbierto({
         titulo: t('Tienes bloqueada a esta persona'),
         texto: t('Para ser amigos, desbloquéala en Ajustes → Privacidad y datos → Personas bloqueadas.'),
-        botones: `<a class="pill" href="#/ajustes">${esc(t('Ajustes'))}</a>`,
+        botones: `<a class="pill" href="#/ajustes/bloqueadas">${esc(t('Personas bloqueadas'))}</a>`,
       });
       default: return pintaEnlaceAbierto({
         titulo: t('Este enlace ya no vale'),
         texto: t('Puede que lo haya cambiado. Pídele el nuevo.'),
-        botones: `<a class="pill" href="#/">${esc(t('Tu cuenta'))}</a>`,
+        botones: botonVerAmigos(false),
       });
     }
   };
@@ -529,7 +549,7 @@ RUTAS.invitar = async ([id]) => {
         titulo: t('Aún no tienes amigos en Klendar'),
         texto: t('Añádelos con tu enlace de amigo. Mientras, puedes mandar la publicación por cualquier app.'),
         botones: `<a class="pill accent" href="#/amigos/anadir">${ic('group_add')} ${esc(t('Añadir amigos'))}</a>
-          <button type="button" class="pill" id="compartir-ficha">${ic('share')} ${esc(t('Compartir el enlace'))}</button>`,
+          <button type="button" class="pill" id="compartir-ficha">${ic('share')} ${esc(t('Invitar a alguien'))}</button>`,
       })}`);
     $('#compartir-ficha').onclick = compartirFicha;
     return;
@@ -573,7 +593,7 @@ function pintaInvitar({ id, o, migas, social, amigos, compartirFicha, aviso = ''
     </form>
     <p class="acciones">
       <a class="pill" href="#/amigos/anadir">${ic('group_add')} ${esc(t('Añadir amigos'))}</a>
-      <button type="button" class="pill" id="compartir-ficha">${ic('share')} ${esc(t('Compartir el enlace'))}</button>
+      <button type="button" class="pill" id="compartir-ficha">${ic('share')} ${esc(t('Invitar a alguien por otra app'))}</button>
     </p>`);
   $('#compartir-ficha').onclick = compartirFicha;
   const f = $('#f-invitar');
@@ -608,8 +628,8 @@ function pintaInvitar({ id, o, migas, social, amigos, compartirFicha, aviso = ''
         throw e;
       }
       const partes = [];
-      if (r.sent === 1) partes.push(t('Invitación enviada'));
-      else if (r.sent > 1) partes.push(EN ? `${r.sent} invitations sent` : `${r.sent} invitaciones enviadas`);
+      if (r.sent === 1) partes.push(t('Invitación enviada.'));
+      else if (r.sent > 1) partes.push(EN ? `${r.sent} invitations sent.` : `${r.sent} invitaciones enviadas.`);
       const saltadas = (r.skipped || []).filter((s) => s.reason !== 'daily_limit').length;
       if (saltadas === 1) partes.push(t('No se ha podido invitar a 1 amigo: no puede verla o tiene las invitaciones apagadas.'));
       else if (saltadas > 1) {

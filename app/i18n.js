@@ -1186,4 +1186,9 @@ const APP_EN = {
   "Borrar mi pregunta": "Delete my question",
   "Pregúntale a {nombre}": "Ask {nombre}",
   "Respuesta de {nombre}": "Reply from {nombre}",
+  "Invitar a alguien por otra app": "Invite someone through another app",
+  "Invitar a alguien": "Invite someone",
+  "Invitación enviada.": "Invitation sent.",
+  "{sent} invitaciones enviadas.": "{sent} invitations sent.",
+  "Has bloqueado a demasiadas personas. Desbloquea a alguien en Ajustes → Privacidad y datos.": "You've blocked too many people. Unblock someone in Settings → Privacy and data.",
 };

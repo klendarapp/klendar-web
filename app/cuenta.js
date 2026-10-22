@@ -562,7 +562,7 @@ function guardaTraduccionLocal(encendida) {
 RUTAS.ajustes = async ([sub]) => {
   if (sub === 'notificaciones') return ajustesNotificaciones();
   if (sub === 'calendario') return ajustesCalendario();
-  if (!exigeSesion('ajustes')) return;
+  if (!exigeSesion(sub === 'bloqueadas' ? 'ajustes/bloqueadas' : 'ajustes')) return;
   // Traducción automática: la preferencia (en el perfil, como en la app) y si
   // hay proveedor (sin clave en el servidor, «Llega pronto»).
   const traduccion = Promise.all([
@@ -754,6 +754,8 @@ RUTAS.ajustes = async ([sub]) => {
 
   // Privacidad
   pintaBloqueadas();
+  // #/ajustes/bloqueadas (desde el enlace de amigo de alguien bloqueado): a la lista.
+  if (sub === 'bloqueadas') $('#dd-bloqueadas')?.previousElementSibling?.scrollIntoView({ block: 'start' });
   $('#marketing').addEventListener('change', async (ev) => {
     const caja = ev.currentTarget;
     try {
@@ -2022,6 +2024,15 @@ function confirmaBloqueo(nombre) {
   });
 }
 
+/** `block_user` con el error del tope dicho como en la app (`blockTooMany`):
+ * `too_many` no va en ERRORES, que otras pantallas lo usan con otro sentido. */
+async function bloqueaUsuario(id) {
+  try { await llamar('block_user', { p_user: id }); } catch (e) {
+    if (e.clave === 'too_many') throw new Error(t('Has bloqueado a demasiadas personas. Desbloquea a alguien en Ajustes → Privacidad y datos.'));
+    throw e;
+  }
+}
+
 RUTAS.bloquear = async ([id]) => {
   if (!/^[0-9a-f-]{36}$/i.test(id || '')) {
     pinta(pantallaVacia({ icono: 'link', titulo: t('Ese enlace no está completo.'), h: 'h1', botones: botonTuCuenta() }));
@@ -2045,7 +2056,7 @@ RUTAS.bloquear = async ([id]) => {
       </p>
     </div>`);
   $('#bloquear').onclick = (ev) => ocupado(ev.currentTarget, async () => {
-    await llamar('block_user', { p_user: id });
+    await bloqueaUsuario(id);
     hecho({
       titulo: t('Persona bloqueada'),
       texto: t('Ya no verás sus reseñas. Si cambias de idea, desbloquéala en Ajustes → Privacidad y datos.'),
