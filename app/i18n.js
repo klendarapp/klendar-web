@@ -3,6 +3,15 @@
 
 const APP_EN = {
   // Paridad con la app (2026-10-22)
+  "1 negocio en favoritos": "1 business in favourites",
+  "{n} negocios en favoritos": "{n} businesses in favourites",
+  "{nombre} quitado de favoritos": "{nombre} removed from favourites",
+  // Paridad con la app (2026-10-22)
+  "Lo nuevo de tus favoritos": "New from your favourites",
+  "Organiza en distintos sitios": "Organises events in different places",
+  "Descubrir negocios": "Discover businesses",
+  "Deshacer": "Undo",
+  // Paridad con la app (2026-10-22)
   "Lista": "List",
   "Calendario": "Calendar",
   "Hoy": "Today",

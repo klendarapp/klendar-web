@@ -668,3 +668,12 @@ a.pl-dia:hover { background: var(--soft); }
 .pl-leyenda span { display: inline-flex; align-items: center; gap: 6px; }
 .pl-hoy { text-align: center; margin: 8px 0 0; }
 .pl-lista .seccion-t { margin-top: 0; }
+
+/* ── Favoritos: ♥ para quitar (como la app) y «Deshacer» en el aviso ─────── */
+.fav-fila { position: relative; }
+.fav-fila .ocard { padding-right: 56px; }
+.fav-quitar { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; border-radius: 50%;
+  display: grid; place-items: center; border: 0; background: none; color: var(--ink); cursor: pointer; }
+.fav-quitar .ms { font-variation-settings: 'FILL' 1; }
+.fav-quitar:hover { background: var(--soft); }
+.toast-accion { margin-left: 10px; border: 0; background: none; color: inherit; font: inherit; font-weight: 800; text-decoration: underline; cursor: pointer; }

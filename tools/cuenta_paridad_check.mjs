@@ -132,7 +132,42 @@ async function planes(nav, nombre, t, vp) {
 }
 
 const SOLO = process.env.SOLO || '';
-const PRUEBAS = { planes };
+async function favoritos(nav, nombre, t, vp) {
+  const tag = `${nombre}/${t}`;
+  let quitado = false;
+  const { ctx, p, estado, errores } = await contexto(nav, vp, CUENTA({
+    my_favorites: () => ([{ id: BIZ, name: 'Bar Sonda', logo: null, category_id: 'c1', city: 'Madrid', distance_m: 1200, active_flash: 1, upcoming_events: 0 },
+      { id: BIZ2, name: 'Fiestas Luna', logo: null, category_id: 'c1', city: 'Madrid', distance_m: 300, active_flash: 0, upcoming_events: 2 }].filter((b) => !quitado || b.id !== BIZ)),
+    favorites_feed: [oferta('a1000000-0000-4000-8000-0000000000e1', { kind: 'future_event', title: 'Noche de vinilos', event_at: enDias(2).toISOString() })],
+    public_organizers: [BIZ2],
+    toggle_favorite: () => { quitado = !quitado; return !quitado; },
+  }), { categories: [{ id: 'c1', names: { es: 'Bares', en: 'Bars' } }] });
+  await p.addInitScript(() => { try { localStorage.setItem('klendar.filtros', JSON.stringify({ t: Date.now(), es: 'lat=40.416&lng=-3.703&km=5' })); } catch { /* */ } });
+  await p.goto(`${BASE}/app/#/favoritos`, { waitUntil: 'networkidle' });
+  await p.waitForSelector('.fav-lista');
+  const txt = await p.locator('main').innerText();
+  ok(/Lo nuevo de tus favoritos/.test(txt) && /Noche de vinilos/.test(txt), `${tag} favoritos: «Lo nuevo de tus favoritos»`);
+  ok(/2 negocios en favoritos/.test(txt), `${tag} favoritos: «2 negocios en favoritos»`);
+  ok(/Bares · 1,2 km/.test(txt) && /Bares · Organiza en distintos sitios/.test(txt), `${tag} favoritos: categoría · distancia u «Organiza en distintos sitios»`);
+  ok(estado.llamadas.some(([f, b]) => f === 'my_favorites' && b.p_lat === 40.416), `${tag} favoritos: con la última posición de Explorar`);
+  await p.screenshot({ path: `${OUT}/cuenta-favoritos-${nombre}-${t}.png`, fullPage: true });
+  await p.locator(`[data-quitar-fav="${BIZ}"]`).click();
+  const aviso = await p.waitForFunction(() => /quitado de favoritos/.test(document.getElementById('toast')?.textContent || ''), null, { timeout: 8000 }).then(() => true, () => false);
+  const uno = await p.waitForFunction(() => /1 negocio en favoritos/.test(document.querySelector('main')?.textContent || ''), null, { timeout: 8000 }).then(() => true, () => false);
+  ok(aviso && uno, `${tag} favoritos: ♥ quita (${uno}) y avisa «Bar Sonda quitado de favoritos» (${aviso}) ${await p.locator('#toast').textContent()}`);
+  await p.locator('#toast .toast-accion').click();
+  await p.waitForFunction(() => /2 negocios en favoritos/.test(document.querySelector('main')?.textContent || ''));
+  ok(!quitado, `${tag} favoritos: «Deshacer» lo vuelve a añadir`);
+  ok(errores.length === 0, `${tag} favoritos sin errores ${errores.join(' | ')}`);
+  await ctx.close();
+  const v = await contexto(nav, vp, CUENTA({ my_favorites: [], favorites_feed: [], public_organizers: [] }));
+  await v.p.goto(`${BASE}/app/#/favoritos`, { waitUntil: 'networkidle' });
+  await v.p.waitForSelector('.vacio, .empty, a.pill.accent');
+  ok(await v.p.locator('a.pill.accent[href="/descubre/"]', { hasText: 'Descubrir negocios' }).count() === 1, `${tag} favoritos vacío: «Descubrir negocios»`);
+  await v.ctx.close();
+}
+
+const PRUEBAS = { planes, favoritos };
 for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
   const nav = await tipo.launch();
   for (const [t, vp] of [['movil', { width: 390, height: 844 }], ['escritorio', { width: 1280, height: 900 }]]) {

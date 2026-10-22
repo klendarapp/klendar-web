@@ -132,6 +132,17 @@ function toast(msg, malo = false) {
   toast.t = setTimeout(() => { el.hidden = true; }, malo ? 6000 : 3500);
 }
 
+/** Un aviso con «Deshacer» (como el de la app al quitar un favorito). */
+function toastDeshacer(msg, alDeshacer) {
+  const el = $('#toast');
+  el.innerHTML = `<span>${esc(msg)}</span> <button type="button" class="toast-accion">${esc(t('Deshacer'))}</button>`;
+  el.className = 'toast';
+  el.hidden = false;
+  clearTimeout(toast.t);
+  el.querySelector('button').onclick = () => { el.hidden = true; alDeshacer(); };
+  toast.t = setTimeout(() => { el.hidden = true; }, 6000);
+}
+
 /** Lo que devuelve la base, contado para quien usa la app, no para quien la
  * programa. Lo que no se conoce no se enseña crudo. */
 const ERRORES = {
@@ -1602,28 +1613,91 @@ RUTAS.guardar = async ([id], params, crudo) => {
 // «1 oferta activa» / «3 ofertas activas», como en la app.
 const cuantas = (n, es, en) => { const [uno, varios] = EN ? en : es; return n === 1 ? uno : `${n} ${varios}`; };
 
+/** Dónde se miró por última vez en Descubre o Explorar («Cerca de ti»), si
+ * se usó: para la distancia de cada favorito (como la app). Sin eso, nada:
+ * aquí no se pide la ubicación. */
+function ultimaPosicion() {
+  try {
+    const g = JSON.parse(localStorage.getItem('klendar.filtros') || 'null');
+    const q = new URLSearchParams((g && (g.es || g.en)) || '');
+    const lat = Number.parseFloat(q.get('lat'));
+    const lng = Number.parseFloat(q.get('lng'));
+    return Number.isFinite(lat) && Number.isFinite(lng) ? { p_lat: lat, p_lng: lng } : {};
+  } catch { return {}; }
+}
+const distanciaTxt = (m) => (m < 1000 ? `${Math.max(10, Math.round(m / 10) * 10)} m`
+  : `${(m / 1000).toLocaleString(LOC, { maximumFractionDigits: m < 10000 ? 1 : 0 })} km`);
+
+// Favoritos, como la app: «Lo nuevo de tus favoritos» (hasta 5), «N negocios
+// en favoritos» con la categoría y la distancia (u «Organiza en distintos
+// sitios») y ♥ para quitar, con «Deshacer».
 RUTAS.favoritos = async () => {
   if (!exigeSesion('favoritos')) return;
-  const lista = await llamar('my_favorites', {});
-  pinta(`
-    <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
-    <h1>${esc(t('Favoritos'))}</h1>
-    ${(lista || []).length ? `<div class="olist">${lista.map((b) => `
+  const pos = ultimaPosicion();
+  const [lista, nuevo, cats, orgs] = await Promise.all([
+    llamar('my_favorites', pos),
+    llamar('favorites_feed', { ...pos, p_limit: 30 }).catch(() => []),
+    sb.from('categories').select('id, names').then((r) => r.data || [], () => []),
+    llamar('public_organizers', {}).catch(() => []),
+  ]);
+  const organiza = new Set((orgs || []).map((x) => (typeof x === 'string' ? x : x?.id || x?.business_id)).filter(Boolean));
+  const catDe = new Map((cats || []).map((c) => [c.id, (c.names && (c.names[LANG] || c.names[PUB_EN ? 'en' : 'es'] || c.names.es)) || '']));
+  if (!(lista || []).length) {
+    pinta(`
+      <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
+      <h1>${esc(t('Favoritos'))}</h1>
+      ${pantallaVacia({
+        icono: 'favorite',
+        titulo: t('Aún no tienes favoritos'),
+        texto: t('En la ficha de un negocio, dale a «Añadir a favoritos» y te avisaremos cuando publique.'),
+        botones: `<a class="pill accent" href="${PUB_EN ? '/en/discover/' : '/descubre/'}">${esc(t('Descubrir negocios'))}</a>`,
+      })}`);
+    return;
+  }
+  const nuevas = (nuevo || []).slice(0, 5);
+  const n = lista.length;
+  const zona = await zonasDe(nuevas);
+  const filaNegocio = (b) => {
+    const org = organiza.has(b.id);
+    const meta = [catDe.get(b.category_id), org ? t('Organiza en distintos sitios') : '',
+      !org && Number.isFinite(b.distance_m) && b.distance_m != null ? distanciaTxt(b.distance_m) : ''].filter(Boolean).join(' · ');
+    const cuentas = [
+      b.active_flash ? cuantas(b.active_flash, ['1 oferta activa', 'ofertas activas'], ['1 active offer', 'active offers']) : '',
+      b.upcoming_events ? cuantas(b.upcoming_events, ['1 evento próximo', 'eventos próximos'], ['1 upcoming event', 'upcoming events']) : '',
+    ].filter(Boolean).join(' · ');
+    return `<div class="fav-fila" data-fav-fila="${esc(b.id)}">
       <a class="ocard" href="${pre}/b/${esc(b.id)}">
         ${b.logo ? `<img src="${esc(b.logo)}" alt="" loading="lazy">` : '<span class="ph">✦</span>'}
         <span class="ocard-body"><b>${esc(b.name)}</b>
-          <span class="muted">${esc(b.city || '')}</span>
-          <span class="ocard-meta">
-            ${b.active_flash ? `<span class="tag">${esc(cuantas(b.active_flash, ['1 oferta activa', 'ofertas activas'], ['1 active offer', 'active offers']))}</span>` : ''}
-            ${b.upcoming_events ? `<span class="muted">${esc(cuantas(b.upcoming_events, ['1 evento próximo', 'eventos próximos'], ['1 upcoming event', 'upcoming events']))}</span>` : ''}
-            ${!b.active_flash && !b.upcoming_events ? `<span class="muted">${esc(EN ? 'Nothing new right now' : 'Sin novedades ahora mismo')}</span>` : ''}
-          </span></span></a>`).join('')}</div>`
-    : pantallaVacia({
-      icono: 'favorite',
-      titulo: t('Aún no tienes favoritos'),
-      texto: t('En la ficha de un negocio, dale a «Añadir a favoritos» y te avisaremos cuando publique.'),
-      botones: `<a class="pill accent" href="${PUB_EN ? '/en/explore/' : '/explorar/'}">${esc(t('Buscar planes'))}</a>`,
-    })}`);
+          ${meta ? `<span class="muted">${esc(meta)}</span>` : ''}
+          <span class="ocard-meta">${cuentas ? `<span class="tag">${esc(cuentas)}</span>` : `<span class="muted">${esc(EN ? 'Nothing new right now' : 'Sin novedades ahora mismo')}</span>`}</span>
+        </span></a>
+      <button type="button" class="fav-quitar" data-quitar-fav="${esc(b.id)}" data-nombre="${esc(b.name)}" aria-label="${esc(t('Quitar de favoritos'))}" title="${esc(t('Quitar de favoritos'))}">${ic('favorite')}</button>
+    </div>`;
+  };
+  pinta(`
+    <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
+    <h1>${esc(t('Favoritos'))}</h1>
+    ${nuevas.length ? `<h2 class="seccion-t">${esc(t('Lo nuevo de tus favoritos'))}</h2>
+      <div class="olist">${nuevas.map((o) => tarjeta(o, zona(o))).join('')}</div>` : ''}
+    <h2 class="seccion-t">${esc(EN ? (n === 1 ? '1 business in favourites' : `${n} businesses in favourites`)
+      : (n === 1 ? '1 negocio en favoritos' : `${n} negocios en favoritos`))}</h2>
+    <div class="olist fav-lista">${lista.map(filaNegocio).join('')}</div>`);
+  view.querySelectorAll('[data-quitar-fav]').forEach((boton) => {
+    boton.addEventListener('click', async () => {
+      const id = boton.getAttribute('data-quitar-fav');
+      const nombre = boton.getAttribute('data-nombre');
+      boton.disabled = true;
+      try {
+        await llamar('toggle_favorite', { p_business_id: id });
+        toastDeshacer(EN ? `${nombre} removed from favourites` : `${nombre} quitado de favoritos`, async () => {
+          try { await llamar('toggle_favorite', { p_business_id: id }); } catch (e) { toast(e.message || String(e), true); }
+          if (location.hash.startsWith('#/favoritos')) navegar();
+        });
+        navegar();
+      } catch (e) { boton.disabled = false; toast(e.message || String(e), true); }
+    });
+  });
 };
 
 RUTAS.seguir = async ([id], params, crudo) => {
