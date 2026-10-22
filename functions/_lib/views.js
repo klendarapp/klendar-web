@@ -1197,7 +1197,7 @@ ${traducir(lang, `business:${b.id}`, '')}${ver === 'preguntas' ? `\n${PREGUNTAS_
       <div data-hay-sitio="${esc(b.id)}" data-solo-publico hidden></div>` : ''}
       <div class="badges">
         ${selloEntidad(local.entity_kind, lang)}
-        ${organizador ? `<span class="badge organiza">${esc(SA.organises)}</span>` : ''}
+        ${organizador && !local.entity_kind ? `<span class="badge organiza">${esc(SA.organises)}</span>` : ''}
         ${b.is_verified ? `<span class="badge ok">✓ ${S.verified}</span>` : ''}
         ${since ? `<span class="badge">${S.since} ${esc(since)}</span>` : ''}
         ${b.redemptions_total ? `<span class="badge">${esc(S.redeemed(Number(b.redemptions_total)))}</span>` : ''}
