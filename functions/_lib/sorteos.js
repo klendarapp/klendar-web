@@ -43,8 +43,8 @@ const zonaDe = (g) => KZ.zona(g?.business?.time_zone || KZ.porCoordenadas(g?.bus
 /** Lo personal lo pone el navegador (solo con sesión). */
 const sorteoScript = (lang) => {
   const sp = supabasePublic();
-  return `<script src="/assets/textos-sorteos.js?v=3" defer></script>
-<script src="/assets/sorteo.js?v=2" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}" data-lang="${lang === 'en' ? 'en' : 'es'}"></script>`;
+  return `<script src="/assets/textos-sorteos.js?v=4" defer></script>
+<script src="/assets/sorteo.js?v=3" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}" data-lang="${lang === 'en' ? 'en' : 'es'}"></script>`;
 };
 
 // ── La zona (como «Dónde ver el partido» y «Grupos y empresas») ────────────
@@ -238,7 +238,7 @@ export async function sorteoPage(rawId, url, lang) {
       ${drawn ? `<ul class="sorteo-ver-lista">
         <li>${esc(S.entries(Number(g.entries_total) || 0))}</li>
         <li>${esc(KS.anulados(g, lang))}</li>
-        <li>${esc(KS.salidos(g, lang))}</li>
+        ${KS.salidos(g, lang).map((x) => `<li>${esc(x)}</li>`).join('')}
       </ul>
       <p><button type="button" class="pill" id="sorteo-comprobar" hidden>${esc(S.check)}</button></p>
       <p class="sorteo-ver-res" id="sorteo-ver-res" role="status" aria-live="polite"></p>
@@ -261,6 +261,7 @@ export async function sorteoPage(rawId, url, lang) {
         <svg class="ic" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M8.59 16.59 13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg></a>
       ${g.description ? `<p class="sorteo-desc">${esc(g.description).replace(/\n/g, '<br>')}</p>` : ''}
       <ul class="sorteo-datos">${datos.map((d) => `<li>${esc(d)}</li>`).join('')}</ul>
+      ${g.organizer_name ? `<p class="muted sorteo-organiza">${esc(S.organizedBy(g.organizer_name))}</p>` : ''}
     </div>
     <aside class="side">
       <div class="sorteo-accion" id="sorteo-accion" data-id="${esc(g.id)}" data-tz="${esc(tz)}">${accionPublica(g, lang)}</div>

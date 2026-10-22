@@ -28,15 +28,15 @@ const partidoWeb = (id) => `${PUB_EN ? '/en/matches/' : '/partidos/'}${encodeURI
 /** La fila de la portada de «Tu cuenta» (grupo Preferencias). */
 function filaEquipos() {
   return `<a class="fila" href="#/equipos">${icBalon()}
-    <span class="fila-t"><b>${esc(SE().teamsYouFollow)}</b><small>${esc(EN ? "We'll tell you before each match" : 'Te avisamos antes de cada partido')}</small></span>
+    <span class="fila-t"><b>${esc(SE().teamsYouFollow)}</b><small>${esc(EN ? "We'll let you know before their matches" : 'Te avisamos antes de sus partidos')}</small></span>
     ${ic('chevron_right')}</a>`;
 }
 
 const errorEquipo = (e) => (e?.clave === 'too_many'
-  ? (EN ? "You're following 30 teams, the maximum. Unfollow one to follow this one." : 'Sigues a 30 equipos, el máximo. Deja alguno para seguir este.')
+  ? (EN ? 'You can follow up to 30 teams' : 'Puedes seguir 30 equipos como mucho')
   : e?.message || amable(''));
-const textoSigues = (n) => (EN ? `You're following ${n}. We'll let you know before each match.` : `Sigues a ${n}. Te avisamos antes de cada partido.`);
-const textoYaNo = (n) => (EN ? `You're no longer following ${n}.` : `Ya no sigues a ${n}.`);
+const textoSigues = (n) => (EN ? `You're following ${n}: we'll let you know before their matches` : `Sigues a ${n}: te avisamos antes de sus partidos`);
+const textoYaNo = (n) => (EN ? `You're no longer following ${n}` : `Ya no sigues a ${n}`);
 
 /** «Equipos que sigues». */
 RUTAS.equipos = async (_partes, params) => {
@@ -89,7 +89,7 @@ RUTAS.equipos = async (_partes, params) => {
         const proximo = n && UUID_EQ.test(n.id || '')
           ? `<div class="lista">${fila({ href: partidoWeb(n.id), icono: 'explore', titulo: n.title,
             detalle: [KEm.cuandoLargo(n, tz, lang), n.competition].filter(Boolean).join(' · ') })}</div>`
-          : `<p class="muted">${esc(EN ? 'No matches coming up for now' : 'Por ahora no hay partidos')}</p>`;
+          : `<p class="muted">${esc(EN ? 'No matches coming up' : 'Sin partidos a la vista')}</p>`;
         return `<section class="bloque equipo">
           <h2>${esc(x.name)}</h2>
           ${sub ? `<p class="muted">${esc(sub)}</p>` : ''}
@@ -97,13 +97,18 @@ RUTAS.equipos = async (_partes, params) => {
           <p><button type="button" class="pill" data-dejar="${esc(x.id)}" data-nombre="${esc(x.name)}">${esc(S.unfollow)}</button></p>
         </section>`;
       }).join('')}</div>`);
-    $$('[data-dejar]').forEach((b) => b.addEventListener('click', () => ocupado(b, async () => {
-      try {
-        await llamar('unfollow_broadcast_team', { p_team: b.dataset.dejar });
-        toast(textoYaNo(b.dataset.nombre || ''));
-        RUTAS.equipos([], new URLSearchParams());
-      } catch (e) { toast(errorEquipo(e), true); }
-    })));
+    // Dejar de seguir se confirma, como en la app.
+    $$('[data-dejar]').forEach((b) => b.addEventListener('click', async () => {
+      const n = b.dataset.nombre || '';
+      if (!(await confirma({ titulo: S.unfollow, texto: EN ? `Following ${n}` : `Sigues a ${n}`, aceptar: S.unfollow, peligro: true }))) return;
+      ocupado(b, async () => {
+        try {
+          await llamar('unfollow_broadcast_team', { p_team: b.dataset.dejar });
+          toast(textoYaNo(b.dataset.nombre || ''));
+          RUTAS.equipos([], new URLSearchParams());
+        } catch (e) { toast(errorEquipo(e), true); }
+      });
+    }));
   }
   $$('[data-seguir-equipo]').forEach((b) => b.addEventListener('click', () => buscaEquipo(() => RUTAS.equipos([], new URLSearchParams()))));
 };

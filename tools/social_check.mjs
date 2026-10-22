@@ -210,10 +210,23 @@ function supabaseRp() {
     if (url.pathname === '/rest/v1/rpc/promoter_link_open') {
       return json({ ok: true, code: 'abcd1234', business: { id: BIZ, name: 'Sala Sonda', city: 'Madrid' }, promoter: { name: 'Marta' }, offers: [] });
     }
+    if (url.pathname === '/rest/v1/rpc/giveaway_detail') {
+      let args = '';
+      req.on('data', (c) => { args += c; });
+      req.on('end', () => {
+        const id = (JSON.parse(args || '{}').p_id) || '';
+        json(id === SORTEO_HECHO ? { ...SORTEO(), id, status: 'drawn', ends_at: '2026-10-01T20:00:00Z', seed: 'abc', entries_total: 0, picked_numbers: [], void_numbers: [] } : SORTEO());
+      });
+      return undefined;
+    }
     if (url.pathname.startsWith('/rest/v1/businesses')) return json([{ id: BIZ, time_zone: 'Europe/Madrid' }]);
     return json([]);
   });
 }
+const SORTEO_ID = 'd1000000-0000-4000-8000-0000000097c1';
+const SORTEO_HECHO = 'd1000000-0000-4000-8000-0000000097c2';
+const SORTEO = (x = {}) => ({ id: SORTEO_ID, prize: 'Cena para dos', status: 'active', ends_at: '2027-01-01T20:00:00Z', winners: 1, backups: 0, entries: 0,
+  seed_hash: 'ab', business: { id: BIZ, name: 'Bar Sonda', city: 'Madrid' }, organizer_name: 'Bar Sonda SL', ...x });
 async function paginaRp(nav, nombre, t, vp) {
   const ctx = await nav.newContext({ viewport: vp, locale: 'es-ES' });
   const p = await ctx.newPage();
@@ -228,16 +241,83 @@ async function paginaRp(nav, nombre, t, vp) {
   await ctx.close();
 }
 
-export const PRUEBAS = { fichaAmigo, rrppPersona, rrppPanel, paginaRp };
+// 3. Confirmar antes de dejar un sorteo o dejar de seguir.
+async function sorteos(nav, nombre, t, vp) {
+  // Sin sesión: «Entra para participar», quién organiza y nadie aún.
+  let ctx = await nav.newContext({ viewport: vp, locale: 'es-ES' });
+  let p = await ctx.newPage();
+  const errores = [];
+  p.on('pageerror', (e) => errores.push(e.message));
+  await p.goto(`http://localhost:${FICHA_PORT}/sorteo/${SORTEO_ID}`, { waitUntil: 'networkidle' });
+  let v = await p.locator('body').innerText();
+  ok(/Organiza: Bar Sonda SL\. Klendar solo pone la herramienta\./.test(v) && /Aún no participa nadie/.test(v) && /sin suplentes/.test(v),
+    `${nombre}/${t} sorteo: «Organiza: …», «Aún no participa nadie» y «sin suplentes»`);
+  ok((await p.locator('#sorteo-boton').innerText()).trim() === 'Entra para participar', `${nombre}/${t} sorteo sin sesión: «Entra para participar»`);
+  await p.goto(`http://localhost:${FICHA_PORT}/sorteo/${SORTEO_HECHO}`, { waitUntil: 'networkidle' });
+  v = await p.locator('body').innerText();
+  ok(/Nadie participó: no hay ganador\./.test(v) && /Números anulados: ninguno/.test(v) && !/Han salido/.test(v), `${nombre}/${t} sorteo verificable sin participantes`);
+  await ctx.close();
+  // Con sesión (la página apunta a Supabase «de verdad», contestado aquí):
+  // dejarlo pregunta antes.
+  ctx = await nav.newContext({ viewport: vp, locale: 'es-ES' });
+  await ctx.addInitScript(([k, val]) => { try { localStorage.setItem(k, val); } catch { /* */ } }, [`sb-${REF}-auth-token`, sesion()]);
+  await ctx.route(`http://localhost:${FICHA_PORT}/sorteo/**`, async (route) => {
+    const r = await route.fetch();
+    route.fulfill({ response: r, body: (await r.text()).replace(/data-url="[^"]*"/g, `data-url="${SUPA}"`) });
+  });
+  const estado = { llamadas: [], rpc: { giveaway_detail: SORTEO({ me: { entered: true, number: 7, adult: true } }), giveaway_leave: { ok: true } } };
+  await ctx.route(`${SUPA}/**`, supabaseFalso(estado));
+  p = await ctx.newPage();
+  p.on('pageerror', (e) => errores.push(e.message));
+  await p.goto(`http://localhost:${FICHA_PORT}/sorteo/${SORTEO_ID}`, { waitUntil: 'networkidle' });
+  await p.waitForSelector('[data-sorteo=leave]');
+  await p.click('[data-sorteo=leave]');
+  await p.waitForSelector('dialog.sorteo-dialogo[open]');
+  ok(/¿Dejar el sorteo\?/.test(await p.locator('dialog.sorteo-dialogo').innerText()), `${nombre}/${t} dejar el sorteo: pregunta antes`);
+  if (t === 'movil') await p.screenshot({ path: `${OUT}/web-sorteo-dejar-${nombre}-${t}.png` });
+  await p.click('dialog.sorteo-dialogo button[value=no]');
+  await p.waitForTimeout(300);
+  ok(!estado.llamadas.some(([f]) => f === 'giveaway_leave'), `${nombre}/${t} dejar el sorteo: «Cancelar» no lo deja`);
+  await p.click('[data-sorteo=leave]');
+  await p.click('dialog.sorteo-dialogo button[value=si]');
+  await p.waitForTimeout(800);
+  ok(estado.llamadas.some(([f]) => f === 'giveaway_leave'), `${nombre}/${t} dejar el sorteo: confirmado, lo deja`);
+  ok(errores.length === 0, `${nombre}/${t} sorteos sin errores JS ${errores.join(' | ')}`);
+  await ctx.close();
+}
+
+async function dejarDeSeguir(nav, nombre, t, vp) {
+  for (const [ruta, fn, lista] of [
+    ['artistas', 'unfollow_artist', { my_followed_artists: [{ id: 'a1', name: 'DJ Nano', slug: 'dj-nano', next: null }] }],
+    ['equipos', 'unfollow_broadcast_team', { my_followed_teams: [{ id: 't1', name: 'Real Madrid', sport: 'football', next: null }] }],
+  ]) {
+    const { ctx, p, estado, errores } = await contexto(nav, vp, CUENTA({ ...lista, [fn]: { ok: true } }));
+    await p.goto(`${BASE}/app/#/${ruta}`, { waitUntil: 'networkidle' });
+    await p.waitForSelector('[data-dejar]');
+    const v = await p.locator('#view').innerText();
+    ok(/Sin (fechas|partidos) a la vista/.test(v), `${nombre}/${t} ${ruta}: «Sin … a la vista»`);
+    await p.click('[data-dejar]');
+    await p.waitForSelector('dialog.dialogo[open]');
+    ok(/Sigues a (DJ Nano|Real Madrid)/.test(await p.locator('dialog.dialogo[open]').innerText()), `${nombre}/${t} ${ruta}: dejar de seguir pregunta antes`);
+    await p.click('dialog.dialogo[open] button[value=si]');
+    await p.waitForTimeout(800);
+    ok(estado.llamadas.some(([f]) => f === fn), `${nombre}/${t} ${ruta}: confirmado, deja de seguir`);
+    ok(errores.length === 0, `${nombre}/${t} ${ruta} sin errores JS ${errores.join(' | ')}`);
+    await ctx.close();
+  }
+}
+
+export const PRUEBAS = { fichaAmigo, rrppPersona, rrppPanel, paginaRp, sorteos, dejarDeSeguir };
 const SOLO = process.env.SOLO || '';
 let servidorRp = null;
 let falso = null;
-if (!SOLO || SOLO.includes('paginaRp')) {
+if (!SOLO || SOLO.includes('paginaRp') || SOLO.includes('sorteos')) {
   falso = supabaseRp();
   await new Promise((r) => falso.listen(FALSO_PORT, r));
   servidorRp = spawn(process.execPath, [fileURLToPath(new URL('./serve_dev.mjs', import.meta.url))], {
     env: { ...process.env, PORT: String(FICHA_PORT), SUPABASE_URL: `http://localhost:${FALSO_PORT}`, SUPABASE_KEY: 'falsa' }, stdio: 'ignore',
   });
+  process.on('exit', () => { try { servidorRp.kill(); } catch { /* ya cerrado */ } });
   await new Promise((r) => setTimeout(r, 2000));
 }
 for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {

@@ -36,7 +36,7 @@ const avatarArtista = (a) => (KAr.seguro(a.photo_url)
 /** La fila de la portada de «Tu cuenta» (grupo Preferencias). */
 function filaArtistas() {
   return `<a class="fila" href="#/artistas">${icArtista()}
-    <span class="fila-t"><b>${esc(SA().youFollow)}</b><small>${esc(SA().whenNew)}</small></span>
+    <span class="fila-t"><b>${esc(SA().youFollow)}</b><small>${esc(SA().rowHint)}</small></span>
     ${ic('chevron_right')}</a>`;
 }
 
@@ -102,13 +102,17 @@ RUTAS.artistas = async (_partes, params) => {
           <p><button type="button" class="pill" data-dejar="${esc(x.id)}" data-nombre="${esc(x.name)}">${esc(S.unfollow)}</button></p>
         </section>`;
       }).join('')}</div>`);
-    $$('[data-dejar]').forEach((b) => b.addEventListener('click', () => ocupado(b, async () => {
-      try {
-        await llamar('unfollow_artist', { p_artist: b.dataset.dejar });
-        toast(S.off(b.dataset.nombre || ''));
-        RUTAS.artistas([], new URLSearchParams());
-      } catch (e) { toast(errorArtista(e), true); }
-    })));
+    // Dejar de seguir se confirma, como en la app.
+    $$('[data-dejar]').forEach((b) => b.addEventListener('click', async () => {
+      if (!(await confirma({ titulo: S.unfollow, texto: S.unfollowQ(b.dataset.nombre || ''), aceptar: S.unfollow, peligro: true }))) return;
+      ocupado(b, async () => {
+        try {
+          await llamar('unfollow_artist', { p_artist: b.dataset.dejar });
+          toast(S.off(b.dataset.nombre || ''));
+          RUTAS.artistas([], new URLSearchParams());
+        } catch (e) { toast(errorArtista(e), true); }
+      });
+    }));
   }
   $$('[data-seguir-artista]').forEach((b) => b.addEventListener('click', () => buscaArtista(() => RUTAS.artistas([], new URLSearchParams()))));
 };
@@ -120,7 +124,7 @@ function buscaArtista(alCerrar) {
   hojaSeguir({
     titulo: S.followOne,
     etiqueta: S.searchArtist,
-    nada: S.noneFound,
+    nada: S.noneFoundArtist,
     buscar: (q) => llamar('artist_search', { p_q: q, p_limit: 20 }),
     fila: (x) => ({
       foto: avatarArtista(x),

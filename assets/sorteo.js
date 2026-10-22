@@ -109,7 +109,13 @@
       return !!(s && (s.refresh_token || s.access_token));
     } catch (x) { return false; }
   }
-  if (!ref || !sesionGuardada()) return;
+  /** Sin sesión, el botón dice «Entra para participar» (como la app): la
+   * página va en caché y no sabe quién la mira. */
+  function sinSesion() {
+    var b = document.getElementById('sorteo-boton');
+    if (b && !b.hidden && !b.hasAttribute('data-directo')) b.textContent = S.loginToEnter;
+  }
+  if (!ref || !sesionGuardada()) { sinSesion(); return; }
   function carga(src, integrity) {
     return new Promise(function (ok, ko) {
       var s = document.createElement('script');
@@ -125,7 +131,7 @@
       sb = window.klendarSb || (window.klendarSb = window.supabase.createClient(URL_SB, KEY,
         { auth: { flowType: 'pkce', detectSessionInUrl: false } }));
       return sb.auth.getSession().then(function (r) {
-        if (!r.data || !r.data.session) return;
+        if (!r.data || !r.data.session) { sinSesion(); return; }
         if (caja) return recarga();
         return sb.rpc('my_giveaways').then(function (x) {
           if (x.error) return;
@@ -245,19 +251,21 @@
       var b = e.target instanceof Element ? e.target.closest('[data-sorteo]') : null;
       if (!b || !sb) return;
       var que = b.getAttribute('data-sorteo');
-      if (que === 'leave') haz('giveaway_leave');
+      // Dejarlo se confirma, como en la app (`gwLeaveTitle` / `gwLeaveBody`).
+      if (que === 'leave') confirma(S.leaveBody, S.leave, S.leaveQ).then(function (si) { if (si) haz('giveaway_leave'); });
       if (que === 'decline') confirma(S.declineQ).then(function (si) { if (si) haz('giveaway_decline'); });
     });
   }
 
-  /** Un diálogo de confirmar sencillo (como `confirma` de «Tu cuenta»). */
-  function confirma(texto) {
+  /** Un diálogo de confirmar sencillo (como `confirma` de «Tu cuenta»):
+   * `aceptar`, el botón (de serie, «Renunciar»); `titulo`, opcional. */
+  function confirma(texto, aceptar, titulo) {
     return new Promise(function (ok) {
       var d = document.createElement('dialog');
       d.className = 'dialogo sorteo-dialogo';
-      d.innerHTML = '<p>' + esc(texto) + '</p><div class="dialogo-botones">'
+      d.innerHTML = (titulo ? '<h2>' + esc(titulo) + '</h2>' : '') + '<p>' + esc(texto) + '</p><div class="dialogo-botones">'
         + '<button type="button" class="pill" value="no">' + esc(S.cancel) + '</button>'
-        + '<button type="button" class="pill peligro-lleno" value="si">' + esc(S.decline) + '</button></div>';
+        + '<button type="button" class="pill peligro-lleno" value="si">' + esc(aceptar || S.decline) + '</button></div>';
       document.body.appendChild(d);
       var si = false;
       d.querySelectorAll('button').forEach(function (b) { b.onclick = function () { si = b.value === 'si'; d.close(); }; });
