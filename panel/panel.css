@@ -919,15 +919,57 @@ details.bloque .b-cuerpo { display: grid; gap: 14px; padding: 0 16px 16px; }
 /* ── «Mi negocio» ordenado (panel/herramientas.js) ─────────────────────── */
 /* «Crear» y «Validar códigos»: los dos iguales, uno al lado del otro. */
 .quick.quick-2 { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
-/* «Lo esencial»: cuatro iguales, dos por fila en el móvil. */
-.esencial { display: grid; gap: 10px; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 14px 0; }
-@media (max-width: 760px) { .esencial { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-.esencial-tile { display: grid; align-content: end; gap: 2px; min-height: 104px; padding: 14px 14px 12px; border-radius: 18px;
-  background: var(--glass); border: 1px solid var(--glass-border); color: var(--ink); }
+/* En el móvil, «Crear» y «Validar códigos» como en la app: icono y nombre en
+   una fila, sin la frase (así las publicaciones se ven antes). */
+@media (max-width: 640px) {
+  .quick.quick-2 { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); }
+  .quick.quick-2 button { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 10px; min-height: 52px; text-align: center; }
+  .quick.quick-2 button .ic { font-size: 22px; }
+  .quick.quick-2 button small { display: none; }
+}
+/* «Lo esencial»: una fila de cuatro accesos iguales, con su icono y su
+   nombre (como la app, 2026-10-22). La línea de estado («Completa al 80 %»)
+   la lee el lector de pantalla y se ve dentro. */
+.esencial { display: grid; gap: 8px; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 14px 0; }
+.esencial-tile { display: grid; justify-items: center; align-content: center; gap: 6px; min-height: 84px; padding: 10px 6px;
+  border-radius: 18px; text-align: center; background: var(--glass); border: 1px solid var(--glass-border); color: var(--ink); }
 .esencial-tile:hover { text-decoration: none; border-color: var(--ink-2); }
-.esencial-tile > .ms, .esencial-tile > svg { font-size: 24px; margin-bottom: auto; }
-.esencial-tile b { font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.esencial-tile small { color: var(--ink-2); font-weight: 500; min-height: 1.3em; }
+.esencial-tile > .ms, .esencial-tile > svg { font-size: 24px; }
+.esencial-tile b { font-size: 14px; line-height: 1.15; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical; overflow: hidden; }
+.esencial-tile small { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+/* El resumen: en el escritorio, dos columnas (lo de ahora a la izquierda y
+   las publicaciones a la derecha); en el móvil, una debajo de otra. */
+.resumen-cols { display: grid; gap: 0 22px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 1100px) { .resumen-cols { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); align-items: start; } }
+.resumen-izq, .resumen-der { min-width: 0; }
+.resumen-der > .card:first-child { margin-top: 14px; }
+/* «Por contestar: 2 preguntas · 1 reseña»: una fila; cada trozo, un enlace. */
+.por-contestar { display: flex; align-items: center; gap: 12px; margin: 0 0 10px; padding: 4px 16px; border-radius: 16px;
+  background: var(--glass); border: 1px solid var(--glass-border); }
+.por-contestar > .ms { color: var(--ink-2); flex: none; }
+.por-contestar a { display: inline-flex; align-items: center; min-height: 44px; font-weight: 700; color: var(--ink); text-decoration: underline; }
+#pendienteCaja:empty, #aforoCaja:empty { display: none; }
+/* «Ahora»: las filas de las tres cajas, juntas, y «Ver N más». */
+#ahoraCaja { display: grid; gap: 8px; margin: 0 0 14px; }
+#ahoraCaja > div:empty { display: none; }
+#ahoraCaja .filas-inicio { margin: 0; }
+#ahoraCaja .fila-inicio[hidden] { display: none; }
+.ahora-mas { justify-self: start; min-height: 44px; font-weight: 700; }
+/* Las publicaciones del resumen: en el móvil, una línea cada una (como la
+   app); en el escritorio, la tabla. */
+.pub-lineas { display: none; list-style: none; margin: 0; padding: 0; }
+.pub-lineas a { display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 6px 0; color: var(--ink);
+  border-bottom: 1px solid var(--glass-border); }
+.pub-lineas li:last-child a { border-bottom: 0; }
+.pub-lineas a:hover { text-decoration: none; }
+.pub-lineas .title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pub-lineas .tag { flex: none; }
+.pub-lineas .ms { flex: none; color: var(--ink-2); }
+@media (max-width: 640px) {
+  .resumen-pubs .pub-lineas { display: block; }
+  .resumen-pubs .tbl-wrap { display: none; }
+}
 /* «Más herramientas»: una fila grande. */
 .mas-herr { display: flex; align-items: center; gap: 14px; padding: 16px 18px; margin: 4px 0 18px; border-radius: 18px;
   background: var(--glass); border: 1px solid var(--glass-border); color: var(--ink); }

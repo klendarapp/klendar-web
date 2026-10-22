@@ -1395,18 +1395,26 @@ PAGES.resumen = async (v) => {
       ${paso(2, false, 'Publica tu primera oferta', 'Te la dejamos casi hecha: cambia el precio y la hora.', '#/publicaciones/nueva-flash?idea=1')}
       ${paso(3, false, 'Cuéntalo en tus redes', '', '#', 'data-compartir')}
     </div>` : ''}
+    <!-- Ordenado como la app (Iván, 2026-10-22): «Lo esencial», «Por
+         contestar», «¿Hay sitio ahora?» y «Ahora» (3 filas y «Ver N más»); al
+         lado en el escritorio y debajo en el móvil, las publicaciones y
+         «Cerrado por hoy». -->
+    <div class="resumen-cols">
+    <div class="resumen-izq">
     ${herrEsencialHtml(s)}
+    <div id="pendienteCaja"></div>
     <div id="aforoCaja"></div>
-    <div id="colaCaja"></div>
-    <div id="listoCaja"></div>
-    <div id="filasCaja"></div>
-    ${!cerradoIndef() && gestiona() && BIZ.verification_status === 'verified' ? `<div class="card pausa"><div>
-        <h2 style="margin:0">Cerrado por hoy</h2>
-        <p class="muted" style="margin:4px 0 0">${pausado()
-          ? esc(I18N.t('Ahora mismo no se ve nada de tu negocio. Mañana vuelve a verse solo.'))
-          : esc(I18N.t('Si hoy no puedes atender, esconde todo de una vez. Mañana vuelve a verse solo.'))}</p></div>
-        <button class="btn ${pausado() ? 'primary' : ''}" id="pausa">${pausado() ? 'Abrir de nuevo' : 'Cerrar por hoy'}</button></div>` : ''}
-    <div class="card"><h2>Últimas publicaciones</h2>${table({
+    <div id="ahoraCaja">
+      <div id="colaCaja"></div>
+      <div id="listoCaja"></div>
+      <div id="filasCaja"></div>
+    </div>
+    </div>
+    <div class="resumen-der">
+    <div class="card resumen-pubs"><h2>Últimas publicaciones</h2>
+      <ul class="pub-lineas">${offers.map((o) => `<li><a href="#/publicaciones/${esc(o.id)}"><b class="title" translate="no">${esc(o.title)}</b>${etiquetaEstado(o)}${ms('chevron_right')}</a></li>`).join('')
+        || `<li class="muted">${esc(I18N.t('Todavía no has publicado nada.'))}</li>`}</ul>
+      ${table({
       cols: [
         { h: 'Publicación', r: (o) => `<b class="title" translate="no">${esc(o.title)}</b><span class="sub">${esc(I18N.t(LABELS[o.kind]))} · ${fmtDate(o.kind === 'flash_offer' ? o.redeem_start_at : o.event_at)}${etiquetaAudiencia(o)}</span>` },
         { h: 'Estado', r: (o) => etiquetaEstado(o) },
@@ -1418,6 +1426,14 @@ PAGES.resumen = async (v) => {
       empty: 'Todavía no has publicado nada.',
     })}
       <p style="margin:10px 0 0"><a class="link" href="#/publicaciones">${esc(bi(`Ver todas (${fmtNum(nTodas)}) · ${fmtNum(nActivas)} activas`, `See all (${fmtNum(nTodas)}) · ${fmtNum(nActivas)} active`))}</a></p></div>
+    ${!cerradoIndef() && gestiona() && BIZ.verification_status === 'verified' ? `<div class="card pausa"><div>
+        <h2 style="margin:0">Cerrado por hoy</h2>
+        <p class="muted" style="margin:4px 0 0">${pausado()
+          ? esc(I18N.t('Ahora mismo no se ve nada de tu negocio. Mañana vuelve a verse solo.'))
+          : esc(I18N.t('Si hoy no puedes atender, esconde todo de una vez. Mañana vuelve a verse solo.'))}</p></div>
+        <button class="btn ${pausado() ? 'primary' : ''}" id="pausa">${pausado() ? 'Abrir de nuevo' : 'Cerrar por hoy'}</button></div>` : ''}
+    </div>
+    </div>
     <a class="mas-herr" href="#/herramientas">${icono('herramientas')}<span><b>${esc(bi('Más herramientas', 'More tools'))}</b>
       <small>${esc(typeof esEntidad === 'function' && esEntidad()
         ? bi('Series, tele, enlaces, tu web… Activa lo que te sirva.', 'Series, TV, links, your website… Turn on whatever helps.')
@@ -1434,7 +1450,8 @@ PAGES.resumen = async (v) => {
     ${esPropietario() ? '' : `<div class="card"><h2>Salir del equipo</h2>
       <p class="muted" style="margin:0 0 10px">Dejarás de ver este panel y de validar sus códigos. Avisaremos al propietario.</p>
       <button class="btn bad ghost" type="button" id="salir-equipo">Salir del equipo</button></div>`}`;
-  herrResumen(v, { cajaFilas: $('#filasCaja', v) });
+  herrResumen(v, { cajaFilas: $('#filasCaja', v), cajaPendiente: $('#pendienteCaja', v) });
+  herrLimitaAhora($('#ahoraCaja', v));
   const otra = $('#otra-revision', v);
   if (otra) otra.onclick = () => pideOtraRevision(otra);
   const entendido = $('#condiciones-ok', v);
@@ -1520,7 +1537,9 @@ async function pintaAforo(caja, estado = null) {
   if (!st) {
     try { st = await rpc('business_crowd_status', { p_business: BIZ.id }); } catch { st = null; }
   }
-  if (!KMa || !st || !st.enabled) { caja.innerHTML = ''; return; }
+  // Con el aforo en directo no se repite: lo pone solo el contador (y su
+  // fila, «Aforo en directo · 34 / 60», está en «Ahora»). Como la app.
+  if (!KMa || !st || !st.enabled || st.capacity_on === true) { caja.innerHTML = ''; return; }
   const M = KMa.t(I18N.lang);
   const hora = (iso) => new Date(iso).toLocaleTimeString(LOC(), { hour: 'numeric', minute: '2-digit', timeZone: TZ });
   const contador = st.capacity_on === true;

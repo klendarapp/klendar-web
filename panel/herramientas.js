@@ -108,7 +108,7 @@ function herrEsencialHtml(stats) {
 }
 
 /** Rellena las líneas de «Lo esencial» y las filas de acceso rápido. */
-async function herrResumen(v, { cajaFilas }) {
+async function herrResumen(v, { cajaFilas, cajaPendiente }) {
   const negocio = BIZ.id;
   const [o, fiel, ficha] = await Promise.all([
     herrEstado(),
@@ -157,13 +157,6 @@ async function herrResumen(v, { cajaFilas }) {
     // La cola abierta ya sale en su fila (panel/cola.js); si la usa y ahora
     // está cerrada, la fila para abrirla.
     !ent && !herrSi(o, 'queue', 'open') && herrSi(o, 'queue', 'used_30d') ? fila('#/cola', 'cola', bi('Cola virtual · cerrada', 'Virtual queue · closed')) : '',
-    !ent && gestiona() && herrSi(o, 'groups', 'enabled') ? fila('#/grupos', 'grupos', bi(
-      `Grupos y empresas · ${pend === 0 ? 'sin peticiones' : pend === 1 ? '1 sin contestar' : `${pend} sin contestar`}`,
-      `Groups and companies · ${pend === 0 ? 'no requests' : pend === 1 ? '1 to answer' : `${pend} to answer`}`)) : '',
-    // «Pregúntale al local»: contestan propietario y encargado.
-    gestiona() && preguntas > 0 ? fila('#/preguntas', 'help_outline', bi(`Preguntas · ${preguntas === 1 ? '1 sin contestar' : `${preguntas} sin contestar`}`,
-      `Questions · ${preguntas === 1 ? '1 to answer' : `${preguntas} to answer`}`)) : '',
-    resenas > 0 ? fila('#/resenas', 'reviews', bi(`Reseñas · ${resenas === 1 ? '1 sin responder' : `${resenas} sin responder`}`, `Reviews · ${resenas} unanswered`)) : '',
     gestiona() && !org && bc.suggested && (bc.live || bc.reminder_at) ? fila('#/antes-de-cerrar', 'bolsa', bc.live
       ? bi('Antes de cerrar · publicada hoy', 'Before closing · published today')
       : bi(`Antes de cerrar · aviso a las ${bc.reminder_at}`, `Before closing · reminder at ${bc.reminder_at}`)) : '',
@@ -173,6 +166,54 @@ async function herrResumen(v, { cajaFilas }) {
       + herrPl(herrNum(o, 'series', 'rules_active'), ['1 se publica sola', 'se publican solas'], ['1 publishes itself', 'publish themselves'])) : '',
   ].filter(Boolean);
   cajaFilas.innerHTML = filas.length ? `<div class="filas-inicio">${filas.join('')}</div>` : '';
+  // «Por contestar: 2 preguntas · 1 reseña · 2 grupos»: una sola fila y cada
+  // trozo a su sitio (antes, una fila para cada cosa). Como la app.
+  if (cajaPendiente) {
+    const trozos = [
+      // Las preguntas las contestan propietario y encargado.
+      gestiona() && preguntas > 0 ? ['#/preguntas', preguntas === 1 ? bi('1 pregunta', '1 question')
+        : bi('{n} preguntas', '{n} questions').replace('{n}', fmtNum(preguntas))] : null,
+      resenas > 0 ? ['#/resenas', resenas === 1 ? bi('1 reseña', '1 review')
+        : bi('{n} reseñas', '{n} reviews').replace('{n}', fmtNum(resenas))] : null,
+      !ent && gestiona() && herrSi(o, 'groups', 'enabled') && pend > 0 ? ['#/grupos', pend === 1 ? bi('1 grupo', '1 group')
+        : bi('{n} grupos', '{n} groups').replace('{n}', fmtNum(pend))] : null,
+    ].filter(Boolean);
+    const titulo = bi('Por contestar', 'To answer');
+    cajaPendiente.innerHTML = trozos.length ? `<p class="por-contestar">${icono('reviews')}<span><b>${esc(titulo)}:</b> ${trozos
+      .map(([href, txt]) => `<a href="${href}" aria-label="${esc(`${titulo}: ${txt}`)}">${esc(txt)}</a>`).join('<span aria-hidden="true"> · </span>')}</span></p>` : '';
+  }
+}
+
+/** «Ahora» en el resumen: como mucho 3 filas a la vista y «Ver N más» (la
+ * cola, «Pedidos de hoy» y el resto llegan cada una por su lado: se cuenta
+ * cada vez que cambia algo dentro). Como la app. */
+function herrLimitaAhora(caja) {
+  if (!caja) return;
+  const MAX = 3;
+  let todas = false;
+  const aplica = () => {
+    const filas = $$('.fila-inicio', caja);
+    const sobran = filas.length - MAX;
+    filas.forEach((f, i) => { f.hidden = !todas && i >= MAX; });
+    let btn = $('.ahora-mas', caja);
+    if (sobran <= 0) { if (btn) btn.remove(); return; }
+    if (!btn) {
+      btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'linkbtn ahora-mas';
+      btn.onclick = () => { todas = !todas; aplica(); };
+      caja.append(btn);
+    }
+    btn.textContent = todas ? bi('Ver menos', 'See fewer')
+      : sobran === 1 ? bi('Ver 1 más', 'See 1 more') : bi(`Ver {n} más`, 'See {n} more').replace('{n}', fmtNum(sobran));
+  };
+  const obs = new MutationObserver((cambios) => {
+    // Lo que cambia el propio botón no cuenta.
+    if (cambios.every((c) => c.target.classList?.contains('ahora-mas') || [...c.addedNodes].every((n) => n.classList?.contains('ahora-mas')))) return;
+    aplica();
+  });
+  obs.observe(caja, { childList: true, subtree: true });
+  aplica();
 }
 
 // ── «Más herramientas» ──────────────────────────────────────────────────────
