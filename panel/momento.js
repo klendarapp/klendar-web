@@ -16,8 +16,9 @@
  * cierra solo si nadie lo usa en 10 minutos. Por qué se ha cerrado lo dice
  * `spot_give_status.closed_reason` (`full`, `idle`, `expired`, `ended`).
  *
- * Con el negocio parado (bloqueado o en pausa): sellos y usos de bonos, sí
- * (ya estaban prometidos); «algo del momento», no.
+ * Con el negocio parado (bloqueado o en pausa): usos de un bono que la
+ * gente ya tiene, sí (prometidos); sellos nuevos (Fidelizar, bloqueado) y
+ * «algo del momento», no (Iván, 2026-10-22). Como la app y la base.
  *
  * Va después de panel.js y usa lo suyo (`PAGES`, `rpc`, `BIZ`, `esc`, `ms`,
  * `bi`, `toast`, `helpBox`, `friendly`). Comparten ámbito: los nombres de
@@ -29,7 +30,7 @@ const MOMENTO_ERR = {
   card_gone: 'Esa tarjeta de sellos ya no está activa.',
   bad_amount: 'De 1 a 5 sellos.',
   pass_type_not_found: 'Ese bono ya no está.',
-  business_blocked: 'Tu negocio está parado: ahora solo puedes dar lo que ya tenía la gente (sellos y usos de bonos).',
+  business_blocked: 'Tu negocio está parado: ahora solo puedes dar usos de bonos que la gente ya tiene.',
   bad_gift: 'Escribe qué das (de 2 a 60 caracteres).',
   bad_kind: 'Elige qué das.',
   offensive_text: 'Ese texto no se puede usar. Cámbialo.',
@@ -81,16 +82,17 @@ PAGES.momento = async (v) => {
   const cards = o.cards || [];
   const passes = o.passes || [];
   const bloq = o.blocked === true;
-  const primero = cards.length ? 'stamps' : passes.length ? 'pass_use' : bloq ? '' : 'gift';
+  const primero = cards.length && !bloq ? 'stamps' : passes.length ? 'pass_use' : bloq ? '' : 'gift';
   const radio = (k, texto, ok, nota) => `<label class="opcion"><input type="radio" name="kind" value="${k}" ${k === primero ? 'checked' : ''} ${ok ? '' : 'disabled'}><span>${esc(texto)}${nota ? `<br><small class="muted">${esc(nota)}</small>` : ''}</span></label>`;
   v.innerHTML = `
     <div class="page-head"><h1>Dar en el momento</h1></div>
     <p class="muted"><a class="link" href="#/validar">← Validar códigos</a></p>
     <form class="card momento-form" id="momentoForm">
       <fieldset class="f full"><legend>¿Qué das?</legend>
-        ${radio('stamps', 'Sellos', cards.length > 0, cards.length ? '' : 'No tienes tarjetas de sellos activas.')}
+        ${bloq ? `<p class="hint">${esc('Con el negocio parado solo puedes dar usos de bonos que la gente ya tiene: los sellos nuevos y «algo del momento» vuelven cuando se reactive.')}</p>` : ''}
+        ${radio('stamps', 'Sellos', cards.length > 0 && !bloq, cards.length ? '' : 'No tienes tarjetas de sellos activas.')}
         ${radio('pass_use', 'Un uso de un bono', passes.length > 0, passes.length ? '' : 'No tienes bonos.')}
-        ${radio('gift', 'Algo del momento', !bloq, bloq ? 'Con el negocio parado solo puedes dar lo que ya tenía la gente: sellos y usos de bonos.' : '')}
+        ${radio('gift', 'Algo del momento', !bloq, '')}
       </fieldset>
       <div data-para="stamps" hidden>
         <label class="f"><span>¿De qué tarjeta?</span><select name="card">${cards.map((c) => `<option value="${esc(c.id)}">${esc(c.name)} · ${esc(`Premio: ${c.reward}`)}</option>`).join('')}</select></label>

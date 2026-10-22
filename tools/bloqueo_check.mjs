@@ -433,7 +433,17 @@ const FICHAS = {
   'f1000000-0000-4000-8000-00000000b10c': { name: 'Bar Bloqueado', unavailable: 'blocked', reopens_on: null },
   'f2000000-0000-4000-8000-00000000b10c': { name: 'Bar en Pausa', unavailable: 'paused', reopens_on: '2026-11-03' },
   'f3000000-0000-4000-8000-00000000b10c': { name: 'Bar Abierto', unavailable: null, reopens_on: null },
+  // Cerrado hasta nuevo aviso (sin estar parado): solo el aviso (Iván, 2026-10-22).
+  'f4000000-0000-4000-8000-00000000b10c': { name: 'Bar Sin Fecha', unavailable: null, reopens_on: null, closed_indefinitely: true },
 };
+// «Abre…» salta los «Días cerrados»: hoy no abre (su horario) y mañana está
+// cerrado; abre pasado mañana a las 10:00 (antes decía «abre mañana»).
+const MADRID = (n) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(new Date(Date.now() + n * 864e5));
+const DIA_SEM = (n) => ((new Date(`${MADRID(n)}T12:00:00Z`).getUTCDay() + 6) % 7) + 1;
+const DIAS_ES = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
+const CIERRE = 'f5000000-0000-4000-8000-00000000b10c';
+FICHAS[CIERRE] = { name: 'Bar Cierra Mañana', unavailable: null, reopens_on: null,
+  opening_hours: Object.fromEntries([1, 2, 3, 4, 5, 6, 7].map((d) => [d, d === DIA_SEM(0) ? [] : [['10:00', '11:00']]])) };
 function supabaseFichas() {
   return createServer((req, res) => {
     const url = new URL(req.url, 'http://x');
@@ -448,7 +458,10 @@ function supabaseFichas() {
         if (!f) return json(null);
         return json([{ id: args.p_id, ...f, city: 'Madrid', address: 'Calle Mayor 1, 28013 Madrid', lat: 40.4168, lng: -3.7038, is_verified: true,
           member_since: '2026-01-01T00:00:00Z', time_zone: 'Europe/Madrid', description: 'Un bar de prueba.', closed_indefinitely: false, social: {},
-          opening_hours: Object.fromEntries([1, 2, 3, 4, 5, 6, 7].map((d) => [d, [['00:00', '00:00']]])) }]);
+          opening_hours: Object.fromEntries([1, 2, 3, 4, 5, 6, 7].map((d) => [d, [['00:00', '00:00']]])), ...f }]);
+      }
+      if (url.pathname === '/rest/v1/rpc/business_closures') {
+        return json(args.p_business === CIERRE ? [{ id: 'c1', starts_on: MADRID(1), ends_on: MADRID(1), reason: null }] : []);
       }
       if (url.pathname === '/rest/v1/business_posts') return json([{ id: 'p0000000-0000-4000-8000-00000000b10c', body: 'Hoy, croquetas caseras', created_at: new Date().toISOString() }]);
       // «El sitio», el aforo y «Reservar» (parado no salen, como la app).
@@ -473,12 +486,23 @@ async function fichas(nav, nombre, t, vp) {
       ok(/No disponible ahora mismo/.test(cuerpo) && !/croquetas/.test(cuerpo) && noindex, `${nombre}/${t} ficha bloqueada: «No disponible ahora mismo», sin novedades y noindex`);
     } else if (f.unavailable === 'paused') {
       ok(/Cerrado temporalmente hasta el 3 de noviembre/.test(cuerpo) && !/croquetas/.test(cuerpo) && noindex, `${nombre}/${t} ficha en pausa: «Cerrado temporalmente hasta el 3 de noviembre» y noindex`);
+    } else if (f.closed_indefinitely) {
+      ok(/Cerrado hasta nuevo aviso/.test(cuerpo), `${nombre}/${t} ficha cerrada hasta nuevo aviso: lo dice`);
+    } else if (id === CIERRE) {
+      await p.waitForSelector('.estado-hoy:not([hidden])', { timeout: 5000 }).catch(() => {});
+      const estado = await p.locator('.estado-hoy').innerText().catch(() => '');
+      ok(estado.includes(`abre el ${DIAS_ES[DIA_SEM(2) - 1]} a las 10:00`) && !/mañana/.test(estado),
+        `${nombre}/${t} ficha con mañana en «Días cerrados»: «abre el ${DIAS_ES[DIA_SEM(2) - 1]} a las 10:00» (${estado})`);
+      continue;
     } else {
       ok(!/No disponible ahora mismo|Cerrado temporalmente/.test(cuerpo) && /croquetas/.test(cuerpo) && !noindex, `${nombre}/${t} ficha abierta: como siempre`);
     }
     const extras = { aforo: await p.locator('[data-sitio-ahora], [data-hay-sitio]').count(), reservar: await p.locator('a.enlace-neg').count(), sitio: /El sitio/.test(cuerpo),
       horario: await p.locator('.estado-hoy, table.horario, [data-cerrado]').count() };
-    if (f.unavailable) {
+    if (f.closed_indefinitely) {
+      ok(!extras.aforo && !extras.horario,
+        `${nombre}/${t} ficha cerrada hasta nuevo aviso: sin horario, «Abierto», «Estaba cerrado» ni «¿Hay sitio ahora?» (${JSON.stringify(extras)})`);
+    } else if (f.unavailable) {
       ok(!extras.aforo && !extras.reservar && !extras.sitio && !extras.horario,
         `${nombre}/${t} ficha ${f.unavailable}: sin «¿Hay sitio ahora?», «Reservar», «El sitio», horario ni «Estaba cerrado» (${JSON.stringify(extras)})`);
     } else {

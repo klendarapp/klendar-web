@@ -1572,7 +1572,7 @@ const I18N = makeI18N({
     "1 persona": "1 person",
   // «Dar en el momento» (panel/momento.js)
   "De 1 a 5 sellos.": "1 to 5 stamps.",
-  "Tu negocio está parado: ahora solo puedes dar lo que ya tenía la gente (sellos y usos de bonos).": "Your business is on hold: right now you can only give what people already had (stamps and pass uses).",
+  "Tu negocio está parado: ahora solo puedes dar usos de bonos que la gente ya tiene.": "Your business is on hold: right now you can only give uses of passes people already have.",
   "Escribe qué das (de 2 a 60 caracteres).": "Write what you’re giving (2 to 60 characters).",
   "Elige qué das.": "Choose what you’re giving.",
   "Ese texto no se puede usar. Cámbialo.": "That text can’t be used. Change it.",
@@ -1585,7 +1585,7 @@ const I18N = makeI18N({
   "Algo del momento": "Something on the spot",
   "No tienes tarjetas de sellos activas.": "You don’t have any active stamp cards.",
   "No tienes bonos.": "You don’t have any passes.",
-  "Con el negocio parado solo puedes dar lo que ya tenía la gente: sellos y usos de bonos.": "With your business on hold you can only give what people already had: stamps and pass uses.",
+  "Con el negocio parado solo puedes dar usos de bonos que la gente ya tiene: los sellos nuevos y «algo del momento» vuelven cuando se reactive.": "With your business on hold you can only give uses of passes people already have: new stamps and “something on the spot” come back once it’s active again.",
   "¿De qué tarjeta?": "Which card?",
   "{tarjeta} · Premio: {premio}": "{tarjeta} · Reward: {premio}",
   "¿Cuántos?": "How many?",

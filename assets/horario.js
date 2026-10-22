@@ -58,7 +58,11 @@
   const masDias = (iso, n) => new Date(Date.parse(`${iso}T12:00:00Z`) + n * 864e5).toISOString().slice(0, 10);
   /** Los tramos de un horario en una fecha: los de ese día si tiene otro
    * horario; si no, los de su día de la semana. */
-  const tramosEn = (h, iso, d) => (Array.isArray(dias[iso]) ? tramosDe({ x: dias[iso] }, 'x') : tramosDe(h, d));
+  // Un día de «Días cerrados» no abre (manda sobre todo): «abre mañana»
+  // lo salta y dice «abre el jueves a las…» (Iván, 2026-10-22; como la app).
+  const cerradoEn = (iso) => cierres.some((c) => c.starts_on <= iso && iso <= c.ends_on);
+  const tramosEn = (h, iso, d) => (cerradoEn(iso) ? []
+    : Array.isArray(dias[iso]) ? tramosDe({ x: dias[iso] }, 'x') : tramosDe(h, d));
   const hoyIso = () => KZ.hoy(tz);
   const tramos = (d, n = 0) => tramosEn(horas, masDias(hoyIso(), n), d);
 
@@ -88,9 +92,8 @@
     const ahora = p.h * 60 + p.min;
     const hoy = KZ.diaSemana(tz);
     const iso = hoyIso();
-    if (cierres.some((c) => c.starts_on <= iso && iso <= c.ends_on)) {
-      return { abierto: false, texto: '' };
-    }
+    // Hoy cerrado: ni lo de hoy ni lo que venía de anoche; sí cuándo abre.
+    const hoyCerrado = cerradoEn(iso);
     for (const [a, b] of tramos(hoy)) {
       const cruza = b <= a;
       if (cruza ? ahora >= a : ahora >= a && ahora < b) {
@@ -99,7 +102,7 @@
       }
     }
     const ayer = hoy === 1 ? 7 : hoy - 1;
-    for (const [a, b] of tramos(ayer, -1)) {
+    for (const [a, b] of hoyCerrado ? [] : tramos(ayer, -1)) {
       if (b <= a && ahora < b) return { abierto: true, pronto: b - ahora <= 60, texto: T.closesAt(hhmm(b)) };
     }
     for (let n = 0; n < 8; n++) {

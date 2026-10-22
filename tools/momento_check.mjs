@@ -5,7 +5,7 @@
 //     `https://klendar.app/m/<clave>.<ventana>.<firma>` y la firma se
 //     comprueba aquí con HMAC-SHA256 (la misma que mira la base). Al llegar
 //     alguien, en directo: «Lucía lo ha recibido». «Terminar» cierra el QR.
-//  2. Con el negocio parado: «Algo del momento» desactivado.
+//  2. Con el negocio parado: sellos nuevos y «Algo del momento» desactivados.
 //  3. Cliente: ese mismo QR leído con la cámara del móvil (`/m/<…>` de las
 //     Functions) lleva a «Tu cuenta» (#/momento/<…>): «Cafetería Prueba te
 //     da: Postre invitado», «Aceptar» → «¡Hecho!»; y en «Tus códigos», «Te
@@ -197,8 +197,12 @@ async function prueba(nav, nombre, t, vp) {
   const b = await contexto(nav, vp, { bloqueado: true });
   await b.p.goto(`${BASE}/panel/#/momento`, { waitUntil: 'networkidle' });
   await b.p.waitForSelector('#momentoForm');
+  // Iván (2026-10-22): parado, solo usos de bonos que ya tiene la gente;
+  // sellos nuevos (Fidelizar) y «algo del momento», no, y se dice por qué.
   ok(await b.p.locator('input[name=kind][value=gift]').isDisabled()
-    && await b.p.locator('input[name=kind][value=stamps]').isEnabled(), `${nombre}/${t} parado: sellos sí, «algo del momento» no`);
+    && await b.p.locator('input[name=kind][value=stamps]').isDisabled()
+    && /solo puedes dar usos de bonos/.test(await b.p.locator('#momentoForm').innerText()),
+  `${nombre}/${t} parado: ni sellos nuevos ni «algo del momento», y lo dice`);
   await foto('momento-parado', b.p);
   await b.ctx.close();
 }

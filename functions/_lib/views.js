@@ -862,6 +862,10 @@ export async function businessPage(param, lang, search = '') {
   // «Cerrado temporalmente hasta el día X») y no enseña publicaciones,
   // partidos, sorteos, grupos ni novedades. Va con `noindex`. Como la app.
   const parado = b.unavailable === 'blocked' || b.unavailable === 'paused';
+  // Cerrado hasta nuevo aviso (sin estar parado por el cobro): ni el horario
+  // de siempre, ni «Abierto ahora», ni «Estaba cerrado», ni «¿Hay sitio
+  // ahora?»; solo «Cerrado hasta nuevo aviso» (Iván, 2026-10-22).
+  const sinFecha = Boolean(b.closed_indefinitely) && !parado;
   if (parado) { offers.length = 0; novedades.length = 0; sorteos.length = 0; }
   const partidos = parado ? '' : partidosBar;
   const grupoHtml = parado ? '' : grupoEnFicha(grupoInfo, id, lang);
@@ -870,7 +874,7 @@ export async function businessPage(param, lang, search = '') {
   const sitio = Array.isArray(local.amenities) ? local.amenities : [];
   // «¿Hay sitio ahora?» y «Avísame cuando haya sitio»: con local fijo y sin
   // estar parado (bloqueado o en pausa), como la app (revisión 2026-10-21).
-  const crowdOn = Boolean(local.crowd_enabled) && !organizador && !parado;
+  const crowdOn = Boolean(local.crowd_enabled) && !organizador && !parado && !sinFecha;
   const precio = KM.simbolo(Number(local.price_level));
   const precioHtml = precio ? `<span class="precio-local" aria-label="${esc(KM.t(lang).priceA11y + KM.significado(Number(local.price_level), lang))}">${precio}</span>` : '';
 
@@ -903,7 +907,7 @@ export async function businessPage(param, lang, search = '') {
         claim: 'Is this your business?', contact: 'Contact',
         replyFrom: (n) => `Reply from ${n}`,
         closedToday: 'Closed today', closedUntil: (d) => `Closed until ${d}`,
-        closedTemp: 'Temporarily closed', closedTempBody: "This business has closed for a while and isn't posting anything right now.",
+        closedTemp: 'Temporarily closed', closedIndef: 'Closed until further notice', closedTempBody: "This business has closed for a while and isn't posting anything right now.",
         closedTempUntil: (d) => `Temporarily closed until ${d}`,
         unavailable: 'Not available right now', unavailableBody: "This business isn't posting anything right now.",
         keptCodes: 'If you have one of its codes or passes, it is still valid.',
@@ -955,7 +959,7 @@ export async function businessPage(param, lang, search = '') {
         claim: '¿Es tu negocio?', contact: 'Contacto',
         replyFrom: (n) => `Respuesta de ${n}`,
         closedToday: 'Cerrado hoy', closedUntil: (d) => `Cerrado hasta el ${d}`,
-        closedTemp: 'Cerrado temporalmente', closedTempBody: 'Este negocio ha cerrado por un tiempo y ahora no publica nada.',
+        closedTemp: 'Cerrado temporalmente', closedIndef: 'Cerrado hasta nuevo aviso', closedTempBody: 'Este negocio ha cerrado por un tiempo y ahora no publica nada.',
         closedTempUntil: (d) => `Cerrado temporalmente hasta el ${d}`,
         unavailable: 'No disponible ahora mismo', unavailableBody: 'Este negocio ahora no publica nada.',
         keptCodes: 'Si tienes un código o un bono suyo, sigue valiendo.',
@@ -1037,7 +1041,7 @@ export async function businessPage(param, lang, search = '') {
     // Cerrado hasta nuevo aviso (desde «Dar de baja el negocio»): manda sobre
     // los días cerrados.
     if (b.closed_indefinitely) {
-      return `<p class="cierre ahora">${icono('cerrado', 18)}<span><b>${esc(S.closedTemp)}</b> · ${esc(S.closedTempBody)}</span></p>`;
+      return `<p class="cierre ahora">${icono('cerrado', 18)}<span><b>${esc(S.closedIndef)}</b> · ${esc(S.closedTempBody)}</span></p>`;
     }
     const c = cierres[0];
     if (!c) return '';
@@ -1072,7 +1076,7 @@ export async function businessPage(param, lang, search = '') {
   // «Abre el festivo del 1 de noviembre (10:00–14:00)»…
   const festivo = (() => {
     const h = info.holiday;
-    if (!h || !/^\d{4}-\d{2}-\d{2}$/.test(String(h.day)) || organizador || parado) return '';
+    if (!h || !/^\d{4}-\d{2}-\d{2}$/.test(String(h.day)) || organizador || parado || sinFecha) return '';
     const dia = new Intl.DateTimeFormat(en ? 'en-GB' : 'es-ES', { day: 'numeric', month: 'long', timeZone: 'UTC' })
       .format(new Date(`${h.day}T00:00:00Z`));
     const tramos = (Array.isArray(h.hours) ? h.hours : []).filter((t) => Array.isArray(t)).map((t) => `${t[0]}–${t[1]}`).join(', ');
@@ -1086,7 +1090,7 @@ export async function businessPage(param, lang, search = '') {
   // Parado (bloqueado o en pausa), sin horario: ni «Abierto · cierra a las…»
   // ni «Estaba cerrado» al lado de «No disponible» / «Cerrado temporalmente»,
   // como la app (revisión 2026-10-21).
-  const horas = !organizador && !parado && b.opening_hours && typeof b.opening_hours === 'object' ? b.opening_hours : null;
+  const horas = !organizador && !parado && !sinFecha && b.opening_hours && typeof b.opening_hours === 'object' ? b.opening_hours : null;
   const hoy = KZ.diaSemana(tz);
   const horario = horas && Object.keys(horas).length
     ? `<table class="horario">${[1, 2, 3, 4, 5, 6, 7].map((d) => {
@@ -1444,7 +1448,7 @@ ${traducir(lang, `business:${b.id}`, '')}${ver === 'preguntas' ? `\n${PREGUNTAS_
     consulta: pagina > 1 ? `?p=${pagina}` : '',
     head: `<meta name="robots" content="${b.adults_only || conVisita || b.closed_indefinitely || parado ? 'noindex' : pagina > 1 ? 'noindex, follow' : 'index, follow'}">
 ${ldScript(jsonLd)}${cuentaToques ? `
-<script src="/assets/enlaces.js?v=3" defer data-url="${esc(supabasePublic().url)}" data-key="${esc(supabasePublic().key)}" data-biz="${esc(b.id)}"></script>` : ''}${horario ? '\n<script src="/assets/zona.js?v=2" defer></script>\n<script src="/assets/horario.js?v=3" defer></script>\n<script src="/assets/cerrado.js?v=1" defer></script>' : ''}${conVisita ? `\n${conVisita}` : ''}${crowdOn ? `\n${sitioAhoraScripts(lang)}` : ''}
+<script src="/assets/enlaces.js?v=3" defer data-url="${esc(supabasePublic().url)}" data-key="${esc(supabasePublic().key)}" data-biz="${esc(b.id)}"></script>` : ''}${horario ? '\n<script src="/assets/zona.js?v=2" defer></script>\n<script src="/assets/horario.js?v=4" defer></script>\n<script src="/assets/cerrado.js?v=1" defer></script>' : ''}${conVisita ? `\n${conVisita}` : ''}${crowdOn ? `\n${sitioAhoraScripts(lang)}` : ''}
 ${traducir(lang, `business:${b.id}`, carta.length ? `menu:${b.id}` : '')}${conPreguntas ? `
 ${PREGUNTAS_CSS}
 ${preguntasScript}` : ''}${partidos ? `
