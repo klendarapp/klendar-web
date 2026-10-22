@@ -11,7 +11,7 @@
  *   se recuerda mientras navegas (esta pestaña, `sessionStorage`), pero al
  *   entrar en una página nada suena hasta que la tocas: el navegador tampoco
  *   lo dejaría. Con sonido, solo suena uno a la vez.
- * - Cuenta atrás: «Ahora · quedan 1 h 20 min» en las ofertas en marcha (la
+ * - Cuenta atrás: «Quedan 1 h 20 min» en las ofertas en marcha y «Empieza en 3 h» antes (la
  *   página va en caché y una hora escrita en el servidor saldría vieja).
  * - Distancia: si has usado «Cerca de mí» hace poco, cada tarjeta dice a
  *   cuánto está. La posición se queda en este navegador (no se manda a nada).
@@ -274,7 +274,16 @@
       if (!txt || !fin) return;
       if (!el.hasAttribute('data-original')) el.setAttribute('data-original', txt.textContent);
       if (n >= fin) { txt.textContent = EN ? 'Ended' : 'Terminada'; el.classList.remove('ahora'); el.classList.add('fin'); }
-      else if (n >= ini) { txt.textContent = EN ? 'Now · ' + dur(fin - n) + ' left' : 'Ahora · quedan ' + dur(fin - n); el.classList.add('ahora'); }
+      else if (n >= ini) { txt.textContent = EN ? dur(fin - n) + ' left' : 'Quedan ' + dur(fin - n); el.classList.add('ahora'); }
+      // Antes de empezar, «Empieza en 3 h» (como la app).
+      else if (ini) { txt.textContent = EN ? 'Starts in ' + dur(ini - n) : 'Empieza en ' + dur(ini - n); }
+    });
+    // El botón de la tarjeta: «Conseguir el código» mientras se puede.
+    document.querySelectorAll('.tj-cta[data-cta-fin]').forEach(function (b) {
+      var i = Date.parse(b.getAttribute('data-cta-ini')) || 0;
+      var f = Date.parse(b.getAttribute('data-cta-fin'));
+      var t = b.querySelector('span');
+      if (t) t.textContent = n >= i && n < f ? b.getAttribute('data-si') : b.getAttribute('data-no');
     });
     if (relojes.length) reloj = setTimeout(tic, 30000);
   }

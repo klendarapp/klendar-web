@@ -117,7 +117,7 @@
 
   const T = {
     es: {
-      flash: 'Oferta flash', event: 'Evento', verOferta: 'Ver oferta', verEvento: 'Ver evento',
+      flash: 'Oferta flash', event: 'Evento', verOferta: 'Conseguir el código', aunNo: 'Aún no disponible', verEvento: 'Ver evento',
       seats: (n) => (n === 1 ? 'Queda 1 plaza' : `Quedan ${n} plazas`), soldOut: 'Agotado',
       antes: 'Antes de cerrar', bolsas: (n) => (n === 1 ? 'Queda 1 bolsa' : `Quedan ${n} bolsas`),
       primera: 'Primera visita', menu: 'Menú del día',
@@ -134,7 +134,7 @@
       oculta: 'Información oculta', aLaVista: 'Información a la vista',
     },
     en: {
-      flash: 'Flash offer', event: 'Event', verOferta: 'See offer', verEvento: 'See event',
+      flash: 'Flash offer', event: 'Event', verOferta: 'Get the code', aunNo: 'Not available yet', verEvento: 'View event',
       seats: (n) => (n === 1 ? '1 place left' : `${n} places left`), soldOut: 'Sold out',
       antes: 'Before closing', bolsas: (n) => (n === 1 ? '1 bag left' : `${n} bags left`),
       primera: 'First visit', menu: 'Daily menu',
@@ -557,7 +557,7 @@
       plantilla === 'poster' && !flash ? ''
         : `<span class="tj-chip tj-cuando"${cuentaAtras}>${ic(flash ? 'rayo' : 'cal', 15)}<span>${esc(cuandoCorto(o, lang, tz))}</span></span>`,
       agotado ? `<span class="tj-chip">${esc(S.soldOut)}</span>`
-        : o.seats_left != null && Number(o.seats_left) <= 20 ? `<span class="tj-chip">${esc(quedan(Number(o.seats_left)))}</span>` : '',
+        : o.seats_left != null ? `<span class="tj-chip">${esc(quedan(Number(o.seats_left)))}</span>` : '',
       plataforma ? `<span class="tj-chip">${esc(S.entradas(plataforma))}</span>` : '',
       primera,
     ].filter(Boolean).join('');
@@ -600,7 +600,15 @@
       ${opts.desc && o.description ? `<p class="tj-desc">${esc(o.description)}</p>` : ''}
       <p class="tj-datos">${datos}</p>
       <div class="tj-amigos"></div>
-      <span class="tj-cta" aria-hidden="true">${ic(flash ? 'rayo' : 'cal', 18)}${esc(flash ? S.verOferta : S.verEvento)}</span>
+      ${(() => {
+        // Como el botón de la app: «Conseguir el código» mientras se puede y
+        // «Aún no disponible» antes o después (la página va en caché:
+        // /assets/tarjetas.js lo pone al día con la hora del navegador).
+        if (!flash) return `<span class="tj-cta" aria-hidden="true">${ic('cal', 18)}${esc(S.verEvento)}</span>`;
+        const ahora = Date.now();
+        const puede = (!ini || Date.parse(ini) <= ahora) && (!o.redeem_end_at || Date.parse(o.redeem_end_at) > ahora);
+        return `<span class="tj-cta" aria-hidden="true"${o.redeem_end_at ? ` data-cta-ini="${esc(ini || '')}" data-cta-fin="${esc(o.redeem_end_at)}" data-si="${esc(S.verOferta)}" data-no="${esc(S.aunNo)}"` : ''}>${ic('rayo', 18)}<span>${esc(puede ? S.verOferta : S.aunNo)}</span></span>`;
+      })()}
     </div>
   </article>`;
   }

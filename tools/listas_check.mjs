@@ -289,7 +289,7 @@ async function ficha(nav, n, t, vp) {
   p.on('pageerror', (e) => errores.push(e.message));
   await p.goto(`http://localhost:${FICHA_PORT}/b/bar-sonda-madrid`, { waitUntil: 'networkidle' });
   let v = await p.locator('main').innerText();
-  ok(/Página 1\/3/.test(v) && /Ahora mismo\s*10/.test(v) && /Próximamente\s*50/.test(v), `${n}/${t} ficha: chips con los recuentos y «Página 1/3»`);
+  ok(/Página 1\/3/.test(v) && /Ofertas\s*10/.test(v) && /Eventos\s*50/.test(v), `${n}/${t} ficha: chips con los recuentos y «Página 1/3»`);
   ok(await p.locator('.d-body .tj, .d-body [data-o]').count() > 0, `${n}/${t} ficha: con publicaciones`);
   ok(await p.locator('a[href$="?ver=novedades"]').count() === 1 && /Ver todas \(15\)/.test(v), `${n}/${t} ficha: «Ver todas (15)» de las novedades`);
   await p.screenshot({ path: `${OUT}/web-ficha-pagina1-${n}-${t}.png`, fullPage: false });

@@ -46,10 +46,8 @@ const T = (en) => en
   ? {
       exp: 'Explore', disc: 'Discover', agenda: "What's on", search: 'Search', ph: 'A bar, a market, “brunch”…',
       all: 'All', allCities: 'Every city', offers: 'Flash offers', events: 'Events',
-      city: 'City', cat: 'Category', kind: 'Type', clear: 'Clear filters',
-      none: 'Nothing matches those filters. Try removing some.',
+      city: 'City', cat: 'Category', clear: 'Clear filters',
       results: (n) => `${n} ${n === 1 ? 'result' : 'results'}`,
-      places: (n) => `${n} ${n === 1 ? 'place' : 'places'}`,
       prev: '← Previous', next: 'Next →', page: 'Page',
       lead: 'Search for plans and places, and see them as a list, on the map or on the calendar. No account needed to browse.',
       discLead: 'Flash offers and events from the businesses around you. No account needed to browse.',
@@ -61,17 +59,15 @@ const T = (en) => en
       catPlaces: (c, city) => `${c} in ${city} on Klendar`,
       todayIn: 'Things to do today in', weekIn: 'This week in', byCat: 'By category',
       catNone: (c, city) => `No ${c.toLowerCase()} in ${city} have anything on right now.`,
-      colNone: 'Nothing in this selection right now. Check back soon.',
+      colNone: 'Nothing left here', colNoneBody: 'This pick has run out of plans for now. Look at what else is on or check back later.',
       inCity: 'in', everywhere: 'Everywhere',
-      placesType: 'Places',
-      noPlaces: 'No places match that yet.',
       live: (n) => `${n} on right now`,
-      picks: 'Selections', seeProfile: 'See the place', more: 'More ways to explore',
+      picks: 'Picks', more: 'More ways to explore',
       price: 'Price', any: 'Any', free: 'Free', upTo: (n) => `Up to €${n}`,
       when: 'When?', anytime: 'Any time', now: 'Next 2 hours', today: 'Today', tomorrow: 'Tomorrow', next10: 'Next 10 days',
-      discount: 'Discounts only', openNow: 'Open now', sort: 'Sort by', soonest: 'Soonest', newest: 'Newest', nearest: 'Nearest',
-      near: 'Near me', nearOn: 'Near you', nearNo: "We couldn't get your location. Allow it in your browser and try again.",
-      where: 'Where', useLoc: 'Use my location', nearPrompt: 'See what’s closest to you first.',
+      discount: 'Discounts only', openNow: 'Open now', soonest: 'Soonest', newest: 'Newest',
+      nearOn: 'Near you', nearNo: "We couldn't get your location. Allow it in your browser and try again.",
+      where: 'Where', useLoc: 'Use my location', useLocHint: "What's closest to where you are now", nearPrompt: 'See what’s closest to you first.',
       view: 'View', listView: 'List', mapView: 'Map', calView: 'Calendar', distance: 'Distance',
       filters: 'Filters', filtersN: (n) => `Filters, ${n} on`, showResults: 'Show results', close: 'Close',
       mapNo: "The map can't load right now. The list shows the same results.", onMap: (n) => `${n} on the map`,
@@ -91,11 +87,15 @@ const T = (en) => en
       endBodyFiltered: "That's with the filters you have on. Clear them or widen the search to see more.",
       endBodyAll: "There's nothing else for now. Businesses publish every day: check back later or let us tell you.",
       endBodyAllFiltered: "There's nothing else with the filters you have on. Clear them, or let us tell you when something new comes up.",
+      endBodyNear: "Widen the distance to see more, or check what's coming up in the agenda.",
+      endBodyFilteredNear: "That's with the filters you have on. Clear them or widen the distance to see more.",
+      endBodyAllNear: (d) => `There's nothing else ${d}. Businesses publish every day: check back later or let us tell you.`,
+      endBodyAllFilteredNear: (d) => `There's nothing else ${d} with the filters you have on. Clear them, or let us tell you when something new comes up.`,
       widen: (km) => `Widen to ${km} km`, allCitiesBtn: 'See every city',
       clearF: 'Clear filters', changeF: 'Change filters', seeAgenda: "See what's on",
       backTop: 'Back to the top', notifyMe: "Tell me when there's something new",
       // «Pedir un local» (crecer, 2026-10-14): a «Tu cuenta», #/pedir-local.
-      recommend: 'Missing a place? Ask for it on Klendar', askFor: (q) => `Can't find “${q}”? Ask for it on Klendar`,
+      recommend: 'Missing a place? Ask for it on Klendar', recommendShort: 'Missing a place? Ask for it on Klendar', askFor: (q) => `Can't find “${q}”? Ask for it on Klendar`,
       // «Avísame si…» por palabras (tanda D): como la app.
       alertWord: (q) => `Tell me when there’s something for “${q}”`, alertWordOn: (q) => `We’ll let you know about “${q}”`,
       alertWordHint: 'We’ll write to you when something nearby matches',
@@ -103,7 +103,8 @@ const T = (en) => en
       // Sin Klendar en la zona (`klendar_coverage`): «Avísame cuando llegue».
       notHere: "Klendar isn't here yet", notHereIn: (z) => `Klendar isn't in ${z} yet`,
       notHereBody: "We're opening city by city. If you like, we'll let you know once when we get there.",
-      notifyArrive: 'Tell me when it arrives', pickCity: 'Pick a city', askVenue: 'Ask for a place',
+      notHereComing: (c) => `We're getting ${c} ready: there are no places yet. If you like, we'll tell you just once when they arrive.`,
+      notifyArrive: 'Tell me when it arrives', pickCity: 'Choose a city', askVenue: 'Ask for a place',
       maybe: 'You might like',
       // Lista vacía (como Descubre vacío en la app): las mismas salidas.
       emptyTitle: 'Nothing around here yet', emptyTitleFiltered: 'Nothing with those filters',
@@ -111,6 +112,10 @@ const T = (en) => en
       emptyBodyFiltered: (d) => `Nothing ${d} with the filters you have on. Clear them or widen the search to see more.`,
       emptyBodyAll: "Nothing active right now. Businesses publish every day: check back later or let us tell you.",
       emptyBodyAllFiltered: 'Nothing with the filters you have on. Clear them, or let us tell you when something new comes up.',
+      emptyBodyNear: (d) => `Nothing active ${d} right now. Widen the distance, check the agenda or let us tell you when there's something new.`,
+      emptyBodyFilteredNear: (d) => `Nothing ${d} with the filters you have on. Clear them or widen the distance to see more.`,
+      emptyBodyAllNear: (d) => `Nothing active ${d} right now. Businesses publish every day: check back later or let us tell you.`,
+      emptyBodyAllFilteredNear: (d) => `Nothing ${d} with the filters you have on. Clear them, or let us tell you when something new comes up.`,
       // La barra y la hoja de filtros: las de la app (feed_filter_bar.dart, filter_sheet.dart).
       zoneChange: 'Change area', hereNow: "I'm here", hereNowHint: 'Within walking distance and starting in the next two hours',
       sortBy: 'Sort by', sortNearest: 'Nearest', sortSoonest: 'Soonest', sortNewest: 'Newest',
@@ -126,7 +131,7 @@ const T = (en) => en
       moment: 'Time of day', momentHint: '“For right now” picks by the local time: breakfast in the morning, vermouth at midday, drinks at night…',
       placeAttrs: "What it's like", diets: 'Allergens and diets', dietsHint: 'Each business declares this: if you have an allergy, check with the venue.',
       place: 'The place', withKids: 'With kids', kidsIn: 'Plans with kids in', placeN: (n) => `The place (${n})`,
-      seeAll: (n) => `See all (${n})`, seeLess: 'See less',
+      seeAll: (n) => `See all (${n})`, seeLess: 'See fewer',
       byWeather: 'Based on the weather',
       byWeatherHint: "When it rains, indoor plans come first; when it's nice, terraces and outdoor plans. Nothing is hidden.",
       weatherData: 'Weather data:',
@@ -152,10 +157,8 @@ const T = (en) => en
   : {
       exp: 'Explorar', disc: 'Descubre', agenda: 'Agenda local', search: 'Buscar', ph: 'Un bar, un mercadillo, «brunch»…',
       all: 'Todo', allCities: 'Todas las ciudades', offers: 'Ofertas flash', events: 'Eventos',
-      city: 'Ciudad', cat: 'Categoría', kind: 'Tipo', clear: 'Quitar filtros',
-      none: 'No hay nada con esos filtros. Prueba con menos.',
+      city: 'Ciudad', cat: 'Categoría', clear: 'Quitar filtros',
       results: (n) => `${n} ${n === 1 ? 'resultado' : 'resultados'}`,
-      places: (n) => `${n} ${n === 1 ? 'negocio' : 'negocios'}`,
       prev: '← Anterior', next: 'Siguiente →', page: 'Página',
       lead: 'Busca planes y sitios, y míralos en lista, en el mapa o en el calendario. Para mirar no hace falta cuenta.',
       discLead: 'Ofertas flash y planes de los negocios de tu alrededor. Para mirar no hace falta cuenta.',
@@ -167,17 +170,15 @@ const T = (en) => en
       catPlaces: (c, city) => `${c} de ${city} en Klendar`,
       todayIn: 'Qué hacer hoy en', weekIn: 'Esta semana en', byCat: 'Por categoría',
       catNone: (c, city) => `Ahora mismo no hay nada de ${c.toLowerCase()} en ${city}.`,
-      colNone: 'Esta selección está vacía ahora mismo. Vuelve a mirar en un rato.',
+      colNone: 'Aquí no queda nada', colNoneBody: 'Esta selección se ha quedado sin planes por ahora. Mira qué más hay o vuelve más tarde.',
       inCity: 'en', everywhere: 'En todas partes',
-      placesType: 'Negocios',
-      noPlaces: 'Todavía no hay negocios con eso.',
       live: (n) => `${n} ahora mismo`,
-      picks: 'Selecciones', seeProfile: 'Ver el sitio', more: 'Más formas de explorar',
+      picks: 'Selecciones', more: 'Más formas de explorar',
       price: 'Precio', any: 'Cualquiera', free: 'Gratis', upTo: (n) => `Hasta ${n} €`,
       when: '¿Cuándo?', anytime: 'Cuando sea', now: 'Próximas 2 horas', today: 'Hoy', tomorrow: 'Mañana', next10: 'Próximos 10 días',
-      discount: 'Solo con descuento', openNow: 'Abierto ahora', sort: 'Ordenar', soonest: 'Más pronto', newest: 'Novedades', nearest: 'Más cerca',
-      near: 'Cerca de mí', nearOn: 'Cerca de ti', nearNo: 'No hemos podido saber dónde estás. Permítelo en el navegador y vuelve a probar.',
-      where: 'Dónde', useLoc: 'Usar mi ubicación', nearPrompt: 'Mira primero lo que tienes más cerca.',
+      discount: 'Solo con descuento', openNow: 'Abierto ahora', soonest: 'Más pronto', newest: 'Novedades',
+      nearOn: 'Cerca de ti', nearNo: 'No hemos podido saber dónde estás. Permítelo en el navegador y vuelve a probar.',
+      where: 'Dónde', useLoc: 'Usar mi ubicación', useLocHint: 'Lo más cercano a donde estás ahora', nearPrompt: 'Mira primero lo que tienes más cerca.',
       view: 'Ver en', listView: 'Lista', mapView: 'Mapa', calView: 'Calendario', distance: 'Distancia',
       filters: 'Filtros', filtersN: (n) => (n === 1 ? 'Filtros, 1 puesto' : `Filtros, ${n} puestos`), showResults: 'Ver resultados', close: 'Cerrar',
       mapNo: 'El mapa no se puede cargar ahora mismo. En la lista está lo mismo.', onMap: (n) => `${n} en el mapa`,
@@ -196,16 +197,21 @@ const T = (en) => en
       endBodyFiltered: 'Esto es con los filtros que tienes puestos. Quítalos o amplía la búsqueda para ver más.',
       endBodyAll: 'No hay nada más por ahora. Los negocios publican cada día: vuelve luego o deja que te avisemos.',
       endBodyAllFiltered: 'No hay nada más con los filtros que tienes puestos. Quítalos o deja que te avisemos cuando haya algo nuevo.',
+      endBodyNear: 'Amplía la distancia para ver más o mira lo que viene en la agenda.',
+      endBodyFilteredNear: 'Esto es con los filtros que tienes puestos. Quítalos o amplía la distancia para ver más.',
+      endBodyAllNear: (d) => `No hay nada más ${d}. Los negocios publican cada día: vuelve luego o deja que te avisemos.`,
+      endBodyAllFilteredNear: (d) => `No hay nada más ${d} con los filtros que tienes puestos. Quítalos o deja que te avisemos cuando haya algo nuevo.`,
       widen: (km) => `Ampliar a ${km} km`, allCitiesBtn: 'Ver todas las ciudades',
       clearF: 'Quitar filtros', changeF: 'Cambiar filtros', seeAgenda: 'Ver la agenda',
       backTop: 'Volver al principio', notifyMe: 'Avísame cuando haya algo nuevo',
-      recommend: '¿Echas en falta algún sitio? Pide que esté en Klendar', askFor: (q) => `¿No encuentras «${q}»? Pide que esté en Klendar`,
+      recommend: '¿Echas en falta algún sitio? Pide que esté en Klendar', recommendShort: '¿Falta un sitio? Pide que esté en Klendar', askFor: (q) => `¿No encuentras «${q}»? Pide que esté en Klendar`,
       // «Avísame si…» por palabras (tanda D): como la app.
       alertWord: (q) => `Avísame si hay algo de «${q}»`, alertWordOn: (q) => `Te avisaremos de «${q}»`,
       alertWordHint: 'Te escribimos cuando algo cerca encaje',
       alertWordOnHint: 'Tus palabras, en Tu cuenta → Ajustes → Notificaciones',
       notHere: 'Klendar aún no ha llegado aquí', notHereIn: (z) => `Klendar aún no ha llegado a ${z}`,
       notHereBody: 'Vamos abriendo ciudad a ciudad. Si quieres, te avisamos una sola vez cuando lleguemos.',
+      notHereComing: (c) => `Estamos preparando ${c}: aún no hay sitios. Si quieres, te avisamos una sola vez cuando lleguen.`,
       notifyArrive: 'Avísame cuando llegue', pickCity: 'Elegir una ciudad', askVenue: 'Pedir un local',
       maybe: 'Quizá te interese',
       // Lista vacía (como Descubre vacío en la app): las mismas salidas.
@@ -214,6 +220,10 @@ const T = (en) => en
       emptyBodyFiltered: (d) => `No hay nada ${d} con los filtros que tienes puestos. Quítalos o amplía la búsqueda para ver más.`,
       emptyBodyAll: 'No hay nada activo ahora mismo. Los negocios publican cada día: vuelve luego o deja que te avisemos.',
       emptyBodyAllFiltered: 'No hay nada con los filtros que tienes puestos. Quítalos o deja que te avisemos cuando haya algo nuevo.',
+      emptyBodyNear: (d) => `No hay nada activo ${d} ahora mismo. Amplía la distancia, mira la agenda o deja que te avisemos cuando haya algo nuevo.`,
+      emptyBodyFilteredNear: (d) => `No hay nada ${d} con los filtros que tienes puestos. Quítalos o amplía la distancia para ver más.`,
+      emptyBodyAllNear: (d) => `No hay nada activo ${d} ahora mismo. Los negocios publican cada día: vuelve luego o deja que te avisemos.`,
+      emptyBodyAllFilteredNear: (d) => `No hay nada ${d} con los filtros que tienes puestos. Quítalos o deja que te avisemos cuando haya algo nuevo.`,
       zoneChange: 'Cambiar zona', hereNow: 'Estoy aquí', hereNowHint: 'Lo que pillas andando y empieza en las dos próximas horas',
       sortBy: 'Ordenar por', sortNearest: 'Cercanía', sortSoonest: 'Más pronto', sortNewest: 'Novedades',
       type: 'Tipo', categories: 'Categorías', reset: 'Restablecer', distHint: 'Vale con «Cerca de ti».',
@@ -333,7 +343,7 @@ function ambienteHtml(e, lang, link) {
   const T = en
     ? {
         chk: 'Buzzing tonight', empty: 'Not enough going on around here yet to show it.', why: 'Why?',
-        whyText: (n, h) => `We only show areas where at least ${n} different people have been in the last ${h} (redemptions and visits), so nobody can tell who is where. No names or businesses.`,
+        whyText: (n, h) => `We only show areas where at least ${n} different people have been in the last ${h} (redemptions and visits), so nobody can tell who is where. No names or businesses, and never how many people.`,
         wide: 'Zoom in to see where it’s buzzing.',
         legend: (h) => `A bit of buzz · Busy · Buzzing · last ${h}`,
         levels: ['A bit of buzz', 'Busy', 'Buzzing'],
@@ -341,7 +351,7 @@ function ambienteHtml(e, lang, link) {
       }
     : {
         chk: 'Esta noche se mueve', empty: 'Aún no hay bastante movimiento por aquí para enseñarlo.', why: '¿Por qué?',
-        whyText: (n, h) => `Solo enseñamos zonas donde ha habido al menos ${n} personas distintas en las últimas ${h} (canjes y visitas), para que nadie pueda saber quién está dónde. Sin nombres ni negocios.`,
+        whyText: (n, h) => `Solo enseñamos zonas donde ha habido al menos ${n} personas distintas en las últimas ${h} (canjes y visitas), para que nadie pueda saber quién está dónde. Sin nombres ni negocios, y nunca cuántas personas hay.`,
         wide: 'Acerca el mapa para ver dónde se mueve.',
         legend: (h) => `Algo · Bastante · Mucho ambiente · últimas ${h}`,
         levels: ['Algo de ambiente', 'Bastante ambiente', 'Mucho ambiente'],
@@ -441,7 +451,7 @@ const sinKlendarHtml = ({ S, lang, lat, lng, cobertura, link }) => {
   return `${AVISAME_CSS}<section class="vacio avisame" aria-labelledby="finTitulo" data-avisame data-lat="${esc(pos.lat)}" data-lng="${esc(pos.lng)}" data-zona="${esc(zona)}">
     <span class="vacio-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="${IC.lugar}"/></svg></span>
     <h2 id="finTitulo" tabindex="-1" data-avisame-titulo>${esc(zona ? S.notHereIn(zona) : S.notHere)}</h2>
-    <p data-avisame-texto>${esc(S.notHereBody)}</p>
+    <p data-avisame-texto>${esc(zona ? S.notHereComing(zona) : S.notHereBody)}</p>
     <div class="vacio-botones" data-avisame-botones>
       <a class="pill accent" href="${esc(app)}" data-avisame-si>${esc(S.notifyArrive)}</a>
       <a class="pill" href="${esc(`${link({ cerca: false, city: '' })}#barra`)}" data-elige-ciudad>${esc(S.pickCity)}</a>
@@ -456,29 +466,29 @@ const sinKlendarHtml = ({ S, lang, lat, lng, cobertura, link }) => {
 /** Lo que dice /assets/avisame.js (el formulario y lo que pasa después). */
 const avisameTextos = (en) => (en
   ? {
-      email: 'Your email', send: 'Tell me', login: 'Log in', busy: 'One moment…',
-      note: "Only to let you know once. You'll get an email to confirm it and you can remove yourself whenever you like.",
+      email: 'Your email', send: 'Tell me', login: 'Log in with my account', busy: 'One moment…',
+      note: "Only to tell you once. You'll get an email to confirm it and you can unsubscribe whenever you like.",
       privacy: 'Privacy', privacyUrl: '/en/privacy/',
-      badEmail: "That email doesn't look right", tooMany: 'Too many tries in a row. Wait a while and try again.',
+      badEmail: "Check the email: it doesn't look valid.", tooMany: 'Too many attempts. Try again in a while.',
       captcha: "We couldn't check that you're not a robot. Try again.",
       oops: 'Something went wrong. If it happens again, email info@klendar.app.',
       checkTitle: 'Check your email to confirm it',
       checkBody: "We've sent a link to {correo}. Until you confirm it we won't add you (and if you don't within 7 days, we'll delete it).",
-      okTitle: "Done: we'll let you know when Klendar arrives in {zona}",
+      okTitle: "We'll tell you when Klendar reaches {zona}",
       okBody: 'Just once. You can remove it in Your account → What you have asked for.',
       alreadyBody: 'You were already on the list. You can remove it in Your account → What you have asked for.',
       seeMine: 'See what you have asked for', liveTitle: 'Klendar is already here', liveBody: 'Reload the page to see it.', reload: 'Reload',
     }
   : {
-      email: 'Tu correo', send: 'Avísame', login: 'Entrar', busy: 'Un momento…',
-      note: 'Solo para avisarte una vez; te llegará un correo para confirmarlo y podrás borrarte cuando quieras.',
+      email: 'Tu correo', send: 'Avísame', login: 'Entrar con mi cuenta', busy: 'Un momento…',
+      note: 'Solo para avisarte una vez. Te llegará un correo para confirmarlo y podrás borrarte cuando quieras.',
       privacy: 'Privacidad', privacyUrl: '/privacidad/',
-      badEmail: 'Ese correo no parece válido', tooMany: 'Demasiados intentos seguidos. Espera un rato y vuelve a probar.',
+      badEmail: 'Revisa el correo: no parece válido.', tooMany: 'Demasiados intentos. Prueba dentro de un rato.',
       captcha: 'No hemos podido comprobar que no eres un robot. Vuelve a probar.',
       oops: 'Algo no ha ido bien. Si vuelve a pasar, escríbenos a info@klendar.app.',
       checkTitle: 'Mira tu correo para confirmarlo',
       checkBody: 'Te hemos mandado un enlace a {correo}. Hasta que no lo confirmes no te apuntamos (y si no lo haces en 7 días, lo borramos).',
-      okTitle: 'Listo: te avisaremos cuando Klendar llegue a {zona}',
+      okTitle: 'Te avisaremos cuando Klendar llegue a {zona}',
       okBody: 'Una sola vez. Lo puedes quitar en Tu cuenta → Lo que has pedido.',
       alreadyBody: 'Ya estabas en la lista. Lo puedes quitar en Tu cuenta → Lo que has pedido.',
       seeMine: 'Ver lo que has pedido', liveTitle: 'Klendar ya está aquí', liveBody: 'Vuelve a cargar la página para verlo.', reload: 'Volver a cargar',
@@ -502,7 +512,7 @@ const AVISAME_CSS = `<style>
  * Lo mismo que la tarjeta final de Descubre en la app. Con [vacio] (no hay
  * nada desde el principio), las mismas salidas y la misma lógica, pero
  * centradas como una pantalla vacía (`.vacio`), como Descubre vacío. */
-const finalHtml = ({ S, en, lang, cerca, km, city, filtros, link, page, alertaHref, sugerencias, vacio = false, limpiar = '', compacto = false, pedirQ = '', sinSugiere = false }) => {
+const finalHtml = ({ S, en, lang, cerca, km, city, filtros, link, page, alertaHref, sugerencias, vacio = false, limpiar = '', compacto = false, pedirQ = '', sinSugiere = false, agendaHref = '' }) => {
   const sigKm = cerca ? RADIOS_KM.find((k) => k > km) : null;
   // ¿Se puede mirar más lejos? Con «Cerca de mí», a la distancia siguiente;
   // en una ciudad, en todas.
@@ -510,10 +520,17 @@ const finalHtml = ({ S, en, lang, cerca, km, city, filtros, link, page, alertaHr
     : city ? { href: link({ city: '' }), txt: S.allCitiesBtn } : null;
   const donde = cerca ? S.within(km) : city ? S.inPlace(PRETTY(city)) : '';
   const titulo = vacio ? (filtros ? S.emptyTitleFiltered : S.emptyTitle) : ampliar ? S.endTitle(donde) : S.endTitleAll;
-  const cuerpo = vacio
-    ? (ampliar ? (filtros ? S.emptyBodyFiltered(donde) : S.emptyBody(donde)) : (filtros ? S.emptyBodyAllFiltered : S.emptyBodyAll))
-    : ampliar ? (filtros ? S.endBodyFiltered : S.endBody) : (filtros ? S.endBodyAllFiltered : S.endBodyAll);
-  const agenda = `${agendaBase(lang)}/${city ? `${CITY(city)}/` : ''}`;
+  // Con «Cerca de ti», los textos de la app: «Amplía la distancia» y, en la
+  // mayor, «No hay nada más a 25 km». Con una ciudad, «Amplía la búsqueda».
+  const cuerpo = cerca
+    ? (vacio
+      ? (ampliar ? (filtros ? S.emptyBodyFilteredNear(donde) : S.emptyBodyNear(donde)) : (filtros ? S.emptyBodyAllFilteredNear(donde) : S.emptyBodyAllNear(donde)))
+      : ampliar ? (filtros ? S.endBodyFilteredNear : S.endBodyNear) : (filtros ? S.endBodyAllFilteredNear(donde) : S.endBodyAllNear(donde)))
+    : vacio
+      ? (ampliar ? (filtros ? S.emptyBodyFiltered(donde) : S.emptyBody(donde)) : (filtros ? S.emptyBodyAllFiltered : S.emptyBodyAll))
+      : ampliar ? (filtros ? S.endBodyFiltered : S.endBody) : (filtros ? S.endBodyAllFiltered : S.endBodyAll);
+  // «Ver la agenda»: Explorar › Planes › calendario con los mismos filtros (la app).
+  const agenda = agendaHref || `${agendaBase(lang)}/${city ? `${CITY(city)}/` : ''}`;
   // «Quitar filtros» deja la página limpia: sin filtros, sin zona y sin
   // distancia (lo que se espera al pulsarlo; también lo guardado).
   const quitar = limpiar
@@ -595,7 +612,7 @@ function sitiosHtml({ items, lang, S, TSi, e, link, mapa, pedirQ, centro }) {
     return `${quitaSolo}${mapaH}<section class="vacio" aria-labelledby="finTitulo">
     <span class="vacio-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="${IC.lugar}"/></svg></span>
     <h2 id="finTitulo">${esc(conFiltros ? TSi.emptyTitleFiltered : TSi.emptyTitle)}</h2>
-    <p>${esc(TSi.emptyBody(donde || (en ? 'here' : 'aquí')))}</p>
+    <p>${esc(donde ? TSi.emptyBody(donde) : TSi.emptyBodyNoZone)}</p>
     <div class="vacio-botones">
       ${sigKm ? `<a class="pill accent" href="${esc(link({ km: sigKm }))}">${esc(S.widen(sigKm))}</a>` : ''}
       ${conFiltros ? `<a class="pill${sigKm ? '' : ' accent'}" href="${esc(sinFiltrosSitio(link))}">${esc(S.clearF)}</a>` : ''}
@@ -1312,6 +1329,7 @@ export async function explorePage(url, lang, modo = 'explorar') {
      ${cerca ? '' : `<p class="menu-nota">${esc(S.distHint)}</p>`}`;
   const zonaMenu = desplegable(cerca ? 'cerca' : city ? 'ciudad' : 'lugar', S.whereTitle, zonaTxt, false,
     `${botonCerca(S.useLoc, '', cerca ? 'op on' : 'op')}
+     <p class="menu-nota">${esc(S.useLocHint)}</p>
      ${negocios ? '' : `${aquiOp}
      <p class="menu-nota">${esc(S.hereNowHint)}</p>`}
      ${distancias}
@@ -1540,6 +1558,8 @@ export async function explorePage(url, lang, modo = 'explorar') {
     // «Grupos y empresas» y «Sorteos» (tanda C), detrás, como en la app.
     grupos: { t: KG.t(lang).title, s: KG.t(lang).sub, href: `${gruposBase(lang)}/${zonaGrupos(e, lang) ? `?${zonaGrupos(e, lang)}` : ''}` },
     sorteos: { t: KS.t(lang).title, s: KS.t(lang).sub, href: `${sorteosBase(lang)}/${zonaGrupos(e, lang) ? `?${zonaGrupos(e, lang)}` : ''}` },
+    // «Pedir un local», el cuarto, como en el buscador de la app.
+    pedir: { t: S.askVenue, s: S.recommendShort, href: pedirHref(lang) },
   });
   const buscador = descubre ? '' : `<form class="buscador" role="search" method="get" action="${base}/" data-busqueda
     data-ciudad="${esc(ciudadK?.id || '')}" data-ciudad-nombre="${esc(ciudadK?.name || '')}" data-textos="${esc(textosBusqueda)}">
@@ -1563,7 +1583,7 @@ export async function explorePage(url, lang, modo = 'explorar') {
   </div>
   <p id="cercaErr" class="aviso-error" role="alert" hidden></p>
   <script src="/assets/categorias.js?v=5" defer></script>
-  <script src="/assets/gustos.js?v=5" defer data-lang="${en ? 'en' : 'es'}"></script>`;
+  <script src="/assets/gustos.js?v=6" defer data-lang="${en ? 'en' : 'es'}"></script>`;
 
   // En Explorar, sin ubicación ni ciudad: «Mira primero lo que tienes más cerca».
   const invitaCerca = !descubre && !cerca && !city
@@ -1607,6 +1627,7 @@ export async function explorePage(url, lang, modo = 'explorar') {
       S, en, lang, cerca, km, city, filtros: conFiltros, link, page, sugerencias, vacio, alertaHref,
       limpiar: hayAlgo ? limpia : '', compacto: descubre && !vacio,
       pedirQ: vacio ? pedirQ : '', sinSugiere: Boolean(lineaPedir),
+      agendaHref: `${exploreBase(lang)}/?${query({ ...e, que: '', q: '', vista: 'calendar', page: 1, mes: '', dia: '' }, lang)}`,
     }) : '';
 
   // ── Más formas de explorar: las páginas de Google, abajo y en su sitio ──
@@ -1692,15 +1713,17 @@ ${GRUPOS_CSS}` : ''}`;
     resultados = `${ambienteHtml(e, lang, link)}${mapaHtml(items, lang, S)}${items.length ? `<h2 class="fin-h">${esc(S.onMap(items.length))}</h2>${rejilla(items, lang, { galeria: true })}` : ''}`;
   } else {
     const negArriba = (sitios?.items || []);
+    // El orden de la búsqueda de la app: partidos, artistas, Sitios, Ofertas y
+    // eventos y, debajo, «Avísame si…» y «¿No encuentras…?».
     resultados = `${q && !descubre ? `<p class="chip-solo"><a class="chip" href="${esc(link({ que: 'places', vista: '' }))}">${esc(TSi.onlyPlaces)}</a></p>` : ''}
+    ${seccionPartidos}
+    ${seccionArtistas}
     ${negArriba.length ? `<section class="seccion-negocios" aria-labelledby="secNeg">
       <div class="seccion-cab"><h2 id="secNeg">${esc(S.bizSection)}</h2>${(sitios?.total || 0) > negArriba.length ? `<a href="${esc(link({ que: 'places', vista: '' }))}">${esc(S.allPlaces)}</a>` : ''}</div>
       <div class="nlist">${negArriba.map((b) => bizCard(b, lang, S)).join('')}</div></section>` : ''}
-    ${seccionArtistas}
-    ${seccionPartidos}
     ${(negArriba.length || seccionPartidos || seccionArtistas) && items.length ? `<h2 class="seccion-t-pub">${esc(S.offersSection)}</h2>` : ''}
     ${vacio ? '' : rejilla(items, lang, { primera: !negArriba.length && !seccionPartidos && !seccionArtistas, galeria: true })}
-    ${lineaPedir}`;
+    ${vacio ? lineaPedir : ''}`;
   }
 
   const body = `
@@ -1719,6 +1742,7 @@ ${GRUPOS_CSS}` : ''}`;
   ${resumenN}
   ${resultados}
   ${vacio ? '' : lineaAvisame}
+  ${!vacio && !negocios && !mapa && !calendario ? lineaPedir : ''}
   ${paginas > 1 ? `<nav class="pager" aria-label="${esc(S.page)}">
     ${page > 1 ? `<a class="pill" href="${esc(link({ p: page - 1 }))}" rel="prev">${esc(S.prev)}</a>` : ''}
     <span class="muted">${esc(S.page)} ${page}/${paginas}</span>
@@ -1769,7 +1793,6 @@ function feedHtml({ S, en, lang, items, page, paginas, link, barra, final, vacio
     return `<div class="feed-vacio">
     ${cab}
     ${barra}
-    ${resumenN}
     ${final}
     </div>
     ${masFormas}`;
@@ -1918,7 +1941,7 @@ export async function collectionPage(rawSlug, rawCity, lang, search = '') {
   </nav>` : ''}
   <p style="margin-top:22px"><a class="pill accent" href="${exploreBase(lang)}/">${esc(S.exp)}</a> <a class="pill" href="${agendaBase(lang)}/">${esc(S.agenda)}</a></p>`
     // Vacía: la pantalla vacía, centrada, con las mismas salidas.
-    : `<section class="vacio"><h2>${esc(S.colNone)}</h2>
+    : `<section class="vacio"><h2>${esc(S.colNone)}</h2><p>${esc(S.colNoneBody)}</p>
     <div class="vacio-botones"><a class="pill accent" href="${exploreBase(lang)}/">${esc(S.exp)}</a><a class="pill" href="${agendaBase(lang)}/">${esc(S.agenda)}</a></div></section>`}`;
 
   return html(publicPage({
