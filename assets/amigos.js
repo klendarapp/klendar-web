@@ -10,6 +10,12 @@
  *   «Ana te invita a este plan» con «Voy» / «No puedo». Con código o
  *   reserva (`data-codigo`) no hay «Voy»: conseguirlo ya cuenta, y «Voy» en
  *   la invitación lleva a conseguirlo.
+ * - En la ficha de una publicación, tu estado (como la app): con el código
+ *   vivo, el botón principal pasa a «Ver mi código»; en la lista de espera,
+ *   a «Salir de la lista de espera» con su línea debajo; con varios canjes
+ *   por persona, «Te quedan 2 de 3».
+ * - En la ficha de un negocio: «Editar mi reseña» si ya tienes una y, en
+ *   cada tarjeta de sellos, los tuyos («3 de 10 sellos · Te faltan 7»).
  *
  * Sin sesión guardada no carga nada más: ni la configuración ni Supabase
  * (quien no ha entrado no paga por esto).
@@ -30,6 +36,12 @@
   var barra = document.querySelector('[data-amigos-filtro]') || document.getElementById('barra');
   // Ficha de una publicación o de un negocio: si quien mira es de su equipo.
   var equipoEl = document.querySelector('[data-equipo-biz]');
+  // Tu estado en la ficha: el botón principal (código, reserva o lista de
+  // espera), «Hasta N por persona», «Escribir una reseña» y las tarjetas de sellos.
+  var principal = document.querySelector('[data-principal]');
+  var porPersona = document.getElementById('por-persona');
+  var opinar = document.querySelectorAll('[data-opinar]');
+  var tarjetasSellos = document.querySelectorAll('[data-tarjeta]');
   if (!ficha && !tarjetas.length && !botonFav && !botonPlan && !resenas.length && !barra && !equipoEl) return;
   var UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   var cuenta = en ? '/app/?lang=en' : '/app/';
@@ -59,6 +71,19 @@
     sinT: "You don't have any friends on Klendar yet",
     sinB: 'With “Friends going” you see which plans your friends are going to. Add them with your friend link or QR code: only people who have it can find you.',
     verAmigos: 'See your friends', anadir: 'Add friends', quitar: 'Turn off “Friends going”', free: 'Free',
+    myCode: 'See my code', waitLeave: 'Leave the waiting list',
+    waitIn: function (n) { return n > 1 ? 'You\'re on the waiting list (' + n + ' people in total)' : 'You\'re on the waiting list'; },
+    waitCount: function (n) { return n === 1 ? '1 person waiting' : n + ' people waiting'; },
+    waitHint: 'No commitment: we\'ll only notify you if someone lets their code expire.',
+    notified: function (h) { return 'We’ve told you a place is free: you have until ' + h + ' to take it. If it’s gone, you go back on the list.'; },
+    notifiedLast: function (h) { return 'Last notice: a place is free and you have until ' + h + ' to take it.'; },
+    secondChance: 'You’re still on the waiting list. We’ve told you once; you have one more notice left.',
+    exhausted: 'We told you twice and you didn’t take a place, so you’re no longer on the waiting list.',
+    left: function (l, m) { return l + ' of ' + m + ' left for you'; },
+    editReview: 'Edit my review',
+    stamps: function (n, g) { return n + ' of ' + g + ' stamps'; },
+    missing: function (n) { return n === 1 ? '1 stamp to go' : n + ' stamps to go'; },
+    ready: 'Your reward is ready!', claim: 'Claim the reward', showCode: 'Show the code',
   } : {
     someone: 'Usuario de Klendar',
     one: function (a) { return a + ' va'; },
@@ -84,6 +109,19 @@
     sinT: 'Aún no tienes amigos en Klendar',
     sinB: 'Con «Van mis amigos» ves a qué planes van tus amigos. Añádelos con tu enlace de amigo o tu QR: solo te encuentra quien lo tiene.',
     verAmigos: 'Ver tus amigos', anadir: 'Añadir amigos', quitar: 'Quitar «Van mis amigos»', free: 'Gratis',
+    myCode: 'Ver mi código', waitLeave: 'Salir de la lista de espera',
+    waitIn: function (n) { return n > 1 ? 'Estás en la lista de espera, con ' + n + ' personas en total' : 'Estás en la lista de espera'; },
+    waitCount: function (n) { return n === 1 ? '1 persona esperando' : n + ' personas esperando'; },
+    waitHint: 'Sin compromiso: solo te avisamos si alguien deja caducar su código.',
+    notified: function (h) { return 'Te hemos avisado de una plaza libre: tienes hasta las ' + h + ' para cogerla. Si ya no queda, vuelves a la lista.'; },
+    notifiedLast: function (h) { return 'Último aviso: hay una plaza libre y tienes hasta las ' + h + ' para cogerla.'; },
+    secondChance: 'Sigues en la lista de espera. Ya te avisamos una vez; te queda un aviso más.',
+    exhausted: 'Te avisamos dos veces y no llegaste a coger plaza, así que ya no estás en la lista de espera.',
+    left: function (l, m) { return 'Te quedan ' + l + ' de ' + m; },
+    editReview: 'Editar mi reseña',
+    stamps: function (n, g) { return n + ' de ' + g + ' sellos'; },
+    missing: function (n) { return n === 1 ? 'Te falta 1 sello' : 'Te faltan ' + n + ' sellos'; },
+    ready: '¡Te toca premio!', claim: 'Pedir el premio', showCode: 'Ver el código',
   };
 
   // ── ¿Hay sesión? Sin llamar a nada: lo que guarda Supabase en el navegador.
@@ -174,6 +212,9 @@
             if (resenas.length) sinBloqueadas(sb, uid);
             if (barra) filtroAmigos(sb);
             if (equipoEl) comoEquipo(sb);
+            if (ficha && (principal || porPersona)) miPublicacion(sb, uid);
+            if (opinar.length) miResena(sb, uid);
+            if (tarjetasSellos.length) misSellos(sb);
           });
         });
     })
@@ -200,6 +241,96 @@
       });
       document.body.classList.add('es-equipo');
     }, function () { /* sin red: la ficha de siempre */ });
+  }
+
+  // ── Tu estado en la ficha de una publicación ────────────────────────────
+  // La página va en caché: lo tuyo lo dice la base (`offer_detail` con tu
+  // sesión, tu código vivo en `redemptions` y, en la lista de espera,
+  // `my_waitlist_status`), como el botón grande de la app.
+  function miPublicacion(sb, uid) {
+    var id = ficha.getAttribute('data-offer');
+    if (!uid || !UUID.test(id || '')) return;
+    var tipo = principal ? principal.getAttribute('data-principal') : '';
+    var nota = document.getElementById('espera-nota');
+    Promise.all([
+      sb.rpc('offer_detail', { p_id: id }).then(function (r) { var d = r && r.data; return Array.isArray(d) ? d[0] : d; }, function () { return null; }),
+      principal ? sb.from('redemptions').select('id').eq('offer_id', id).eq('user_id', uid).eq('status', 'pending')
+        .gt('expires_at', new Date().toISOString()).limit(1)
+        .then(function (r) { return !!(r && r.data && r.data.length); }, function () { return false; }) : false,
+      tipo === 'espera' ? sb.rpc('my_waitlist_status', { p_offer: id }).then(function (r) { return r && r.data; }, function () { return null; }) : null,
+    ]).then(function (r) {
+      var o = r[0] || {};
+      var mio = r[1];
+      var espera = r[2];
+      if (porPersona && Number(o.my_redemptions) > 0) {
+        var max = Number(porPersona.getAttribute('data-max')) || Number(o.max_per_user) || 1;
+        porPersona.textContent = T.left(Math.max(0, max - Number(o.my_redemptions)), max);
+      }
+      if (!principal) return;
+      if (mio) {
+        // Ya tienes el código (o la plaza): el botón lo enseña.
+        principal.textContent = T.myCode;
+        principal.setAttribute('href', cuenta + '#/codigo/' + id);
+        if (nota) nota.hidden = true;
+        return;
+      }
+      if (tipo !== 'espera') return;
+      var n = Number(o.waitlist_count) || 0;
+      if (espera && espera.state === 'exhausted') {
+        var p = document.createElement('p');
+        p.className = 'note';
+        p.textContent = T.exhausted;
+        principal.replaceWith(p);
+        if (nota) nota.hidden = true;
+        return;
+      }
+      if (o.in_waitlist) {
+        principal.textContent = T.waitLeave;
+        principal.classList.remove('accent');
+        principal.classList.add('on');
+        principal.setAttribute('href', cuenta + '#/espera/' + id + '?quitar=1');
+      }
+      if (!nota) return;
+      var hora = espera && espera.notified_until
+        ? new Date(espera.notified_until).toLocaleTimeString(en ? 'en-GB' : 'es-ES', { hour: '2-digit', minute: '2-digit' }) : '';
+      nota.textContent = espera && espera.state === 'notified' && hora
+        ? (espera.notices >= 2 ? T.notifiedLast(hora) : T.notified(hora))
+        : espera && espera.state === 'waiting' && espera.notices > 0 ? T.secondChance
+          : o.in_waitlist ? T.waitIn(n) : n > 0 ? T.waitCount(n) : T.waitHint;
+    });
+  }
+
+  // ── «Editar mi reseña» si ya tienes una aquí ────────────────────────────
+  function miResena(sb, uid) {
+    var biz = opinar[0].getAttribute('data-opinar');
+    if (!uid || !UUID.test(biz || '')) return;
+    sb.from('reviews').select('id').eq('business_id', biz).eq('user_id', uid).limit(1).then(function (r) {
+      if (!r || r.error || !(r.data || []).length) return;
+      opinar.forEach(function (a) { var x = a.querySelector('span'); if (x) x.textContent = T.editReview; });
+    }, function () { /* sin red: «Escribir una reseña» */ });
+  }
+
+  // ── Tus sellos en cada tarjeta del negocio ──────────────────────────────
+  function misSellos(sb) {
+    var biz = equipoEl && equipoEl.getAttribute('data-equipo-biz');
+    if (!UUID.test(biz || '')) return;
+    sb.rpc('stamp_cards_of', { p_business: biz }).then(function (r) {
+      var lista = (r && r.data) || [];
+      lista.forEach(function (c) {
+        var el = document.querySelector('[data-tarjeta="' + c.id + '"]');
+        if (!el || el.querySelector('.sellos-mios')) return;
+        var n = Number(c.stamps) || 0;
+        var g = Number(c.goal) || 0;
+        var listo = c.pending_code || (g > 0 && n >= g);
+        var linea = document.createElement('span');
+        linea.className = 'sellos-mios';
+        linea.innerHTML = '<b>' + esc(T.stamps(n, g)) + '</b> · ' + (listo
+          ? esc(T.ready) + ' <a href="' + esc(cuenta + '#/sellos') + '">' + esc(c.pending_code ? T.showCode : T.claim) + '</a>'
+          : esc(T.missing(Math.max(0, g - n))));
+        el.appendChild(document.createElement('br'));
+        el.appendChild(linea);
+      });
+    }, function () { /* sin red: la tarjeta tal cual */ });
   }
 
   // ── «Añadir a favoritos» / «Guardar en Planes» ya puestos ──────────────

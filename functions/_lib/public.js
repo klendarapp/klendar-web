@@ -334,7 +334,7 @@ ${privada ? '' : `<meta property="og:url" content="${BASE}${esc(path)}">
 ${preconectar}<link rel="preload" href="/assets/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/assets/site.css?v=20261021">
-<link rel="stylesheet" href="/assets/public.css?v=49">
+<link rel="stylesheet" href="/assets/public.css?v=50">
 <link rel="stylesheet" href="/assets/tarjeta.css?v=11">
 ${cabeza}
 </head>
@@ -342,7 +342,7 @@ ${cabeza}
 ${siteHeader(lang, esc(es + consulta), esc(enPath + consulta), actual)}
 <main class="pub wrap" id="contenido">${body}</main>
 ${siteFooter(lang)}
-${conAmigos ? `<script src="/assets/amigos.js?v=17" defer data-lang="${en ? 'en' : 'es'}"></script>
+${conAmigos ? `<script src="/assets/amigos.js?v=18" defer data-lang="${en ? 'en' : 'es'}"></script>
 ` : ''}${conVisor ? `<script src="/assets/tarjeta.js?v=15" defer></script>
 ` : ''}${conTarjetas ? `<script src="/assets/tarjetas.js?v=15" defer></script>
 ` : ''}${/class="detail[" ]/.test(body) ? `<script src="/assets/barra.js?v=4" defer></script>

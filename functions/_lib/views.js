@@ -55,6 +55,10 @@ const PATHS = {
   calendario: 'M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z',
   // «Preguntas» (help_outline).
   pregunta: 'M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z',
+  // «Compartir» (ios_share), «Cómo llegar» (directions) y «Contactar» (forum), como la app.
+  compartir: 'M16 5l-1.42 1.42-1.59-1.59V16h-1.98V4.83L9.42 6.42 8 5l4-4 4 4zm4 5v11c0 1.1-.9 2-2 2H6c-1.11 0-2-.9-2-2V10c0-1.11.89-2 2-2h3v2H6v11h12V10h-3V8h3c1.1 0 2 .89 2 2z',
+  llegar: 'M21.71 11.29l-9-9a.996.996 0 0 0-1.41 0l-9 9a.996.996 0 0 0 0 1.41l9 9c.39.39 1.02.39 1.41 0l9-9a.996.996 0 0 0 0-1.41zM14 14.5V12h-4v3H8v-4c0-.55.45-1 1-1h5V7.5l3.5 3.5-3.5 3.5z',
+  contactar: 'M21 6h-2v9H6v2c0 .55.45 1 1 1h11l4 4V7c0-.55-.45-1-1-1zm-4 6V3c0-.55-.45-1-1-1H3c-.55 0-1 .45-1 1v14l4-4h10c.55 0 1-.45 1-1z',
   resena: 'M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 14v-2.47l6.88-6.88c.2-.2.51-.2.71 0l1.77 1.77c.2.2.2.51 0 .71L8.47 14H6zm12 0h-7.5l2-2H18v2z',
 };
 const icono = (n, size = 18) => `<svg class="ic" viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true"><path fill="currentColor" d="${PATHS[n]}"/></svg>`;
@@ -82,6 +86,57 @@ document.addEventListener('click',function(e){c(e.target);});
 document.addEventListener('keydown',function(e){if(e.key==='Escape'){var d=document.querySelector('details.mas-menu[open]');c(null);if(d)d.querySelector('summary').focus();}});
 document.querySelectorAll('.mas-lista a').forEach(function(a){a.addEventListener('click',function(){c(null);});});
 function pq(){var d=document.getElementById(location.hash.slice(1));if(d&&d.tagName==='DETAILS'&&d.classList.contains('por-que'))d.open=true;}addEventListener('hashchange',pq);pq();})();</script>`;
+
+/** Redes: el negocio puede guardar el @ o el enlace entero. */
+const redUrl = (red, v) => {
+  const val = String(v || '').trim();
+  if (/^https?:\/\//.test(val)) return val;
+  const h = val.replace(/^@/, '');
+  return { instagram: `https://instagram.com/${h}`, tiktok: `https://tiktok.com/@${h}`,
+    facebook: `https://facebook.com/${h}`, x: `https://x.com/${h}`, twitter: `https://x.com/${h}`,
+    youtube: `https://youtube.com/@${h}` }[red] || `https://${val}`;
+};
+const redNombre = { instagram: 'Instagram', tiktok: 'TikTok', facebook: 'Facebook', x: 'X', twitter: 'X', youtube: 'YouTube' };
+
+/** «Cómo llegar» (la ruta hasta el sitio en Google Maps), como el botón de la app. */
+const comoLlegarHref = (lat, lng) => `https://www.google.com/maps/dir/?api=1&destination=${Number(lat)},${Number(lng)}`;
+
+/** «Cómo llegar · Contactar · Redes sociales» (las hojas de la app): un
+ * `<details>` por cada una, que abre su lista como el menú ⋮. `c`: phone,
+ * email, website, social. */
+export function toquesContacto(c, lang, { lat = null, lng = null } = {}) {
+  const en = lang === 'en';
+  const web = seguro(c.website);
+  const tel = String(c.phone || '').trim();
+  const wa = tel ? tel.replace(/[^0-9+]/g, '').replace(/^\+/, '').replace(/^(\d{9})$/, '34$1') : '';
+  const redes = Object.entries(c.social || {})
+    .filter(([k, v]) => k !== 'web' && typeof v === 'string' && v.trim());
+  const menu = (ico, titulo, items) => `<details class="mas-menu toque"><summary class="pill">${icono(ico, 16)} <span>${esc(titulo)}</span></summary>
+      <div class="mas-lista">${items.join('')}</div></details>`;
+  const fuera = 'rel="nofollow noopener" target="_blank"';
+  const contacto = [
+    tel ? `<a href="tel:${esc(tel)}">${en ? 'Call' : 'Llamar'} · ${esc(tel)}</a>` : '',
+    wa ? `<a href="https://wa.me/${esc(wa)}" ${fuera}>WhatsApp</a>` : '',
+    c.email ? `<a href="mailto:${esc(c.email)}">${en ? 'Email' : 'Correo'} · ${esc(c.email)}</a>` : '',
+    web ? `<a href="${esc(web)}" ${fuera}>${en ? 'Website' : 'Web'} · ${esc(web.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, ''))}</a>` : '',
+  ].filter(Boolean);
+  const partes = [
+    Number.isFinite(Number(lat)) && Number.isFinite(Number(lng)) && lat != null
+      ? `<a class="pill" href="${esc(comoLlegarHref(lat, lng))}" ${fuera}>${icono('llegar', 16)} <span>${en ? 'Directions' : 'Cómo llegar'}</span></a>` : '',
+    contacto.length ? menu('contactar', en ? 'Contact' : 'Contactar', contacto) : '',
+    redes.length ? menu('redes', en ? 'Social media' : 'Redes sociales',
+      redes.map(([k, v]) => `<a href="${esc(redUrl(k, v))}" ${fuera}>${esc(redNombre[k] || k)}</a>`)) : '',
+  ].filter(Boolean);
+  return partes.length ? `<div class="acciones toques">${partes.join('')}</div>` : '';
+}
+
+/** «Compartir»: el menú de compartir del móvil o, sin él, copiar el enlace
+ * (como la hoja de la app: enlace y copiar; las historias van al lado). */
+export const compartirBoton = (lang, url, titulo) => `<button type="button" class="pill" data-compartir="${esc(url)}" data-titulo="${esc(titulo || '')}" data-copiado="${lang === 'en' ? 'Link copied' : 'Enlace copiado'}">${icono('compartir', 16)} <span>${lang === 'en' ? 'Share' : 'Compartir'}</span></button>`;
+export const COMPARTIR_JS = `<script>(function(){document.querySelectorAll('[data-compartir]').forEach(function(b){b.addEventListener('click',function(){var u=b.getAttribute('data-compartir'),t=b.getAttribute('data-titulo')||document.title;
+if(navigator.share){navigator.share({title:t,url:u}).catch(function(){});return;}
+var ok=function(){var s=b.querySelector('span'),antes=s.textContent;s.textContent=b.getAttribute('data-copiado');setTimeout(function(){s.textContent=antes;},2500);};
+if(navigator.clipboard)navigator.clipboard.writeText(u).then(ok,function(){prompt('',u);});else prompt('',u);});});})();</script>`;
 
 /** Un .ics para «Añadir al calendario» (sin servidor: un enlace `data:`). */
 function icsHref(o, lugar, url) {
@@ -220,6 +275,8 @@ export async function offerPage(id, lang, rpRaw = '') {
   const serie = await rpc('offer_series_info', { p_offer: id }).catch(() => null);
 
   const flash = o.kind === 'flash_offer';
+  // «Antes de cerrar» (la bolsa sorpresa): su sello y «Quedan N bolsas».
+  const antesDeCerrar = flash && o.style?.badge === 'before_closing';
   const soldOut = o.status === 'sold_out' || (o.seats_left != null && o.seats_left <= 0);
   // Un evento sin hora de fin sigue abierto hasta el cierre del local (o 6 h
   // si ese día no tiene horario): lo mismo que dura su código, la cuenta de la
@@ -262,6 +319,13 @@ export async function offerPage(id, lang, rpRaw = '') {
         note: 'From here or from the app, with the same account. The code is single-use and the business validates it on the spot.',
         soldOut: 'Sold out', over: 'Ended', more: 'Everything from', hot: 'Trending',
         prior: 'Lowest price in the last 30 days', canary: 'Canary Islands time',
+        boostedBadge: 'Featured', beforeClosing: 'Before closing', was: (p) => `was ${p}`,
+        organised: (n) => `Organised by ${n}`,
+        bags: (n) => (n === 1 ? '1 bag left' : `${n} bags left`),
+        takenBy: (n) => (n === 1 ? '1 person has taken it' : `${n} people have taken it`),
+        perUser: (n) => `Up to ${n} per person`,
+        waitHint: "No commitment: we'll only notify you if someone lets their code expire.",
+        waitCount: (n) => (n === 1 ? '1 person waiting' : `${n} people waiting`),
       }
     : {
         when: 'Cuándo', redeem: 'Se canjea', where: 'Dónde', seats: 'Plazas libres',
@@ -277,6 +341,13 @@ export async function offerPage(id, lang, rpRaw = '') {
         note: 'Desde aquí o desde la app, con la misma cuenta. El código es de un solo uso y lo valida el negocio en el momento.',
         soldOut: 'Agotado', over: 'Terminada', more: 'Todo lo de', hot: 'Tendencia',
         prior: 'Precio más bajo de los últimos 30 días', canary: 'hora de Canarias',
+        boostedBadge: 'Destacado', beforeClosing: 'Antes de cerrar', was: (p) => `antes ${p}`,
+        organised: (n) => `Organiza: ${n}`,
+        bags: (n) => (n === 1 ? 'Queda 1 bolsa' : `Quedan ${n} bolsas`),
+        takenBy: (n) => (n === 1 ? '1 persona ya lo ha cogido' : `${n} personas ya lo han cogido`),
+        perUser: (n) => `Hasta ${n} por persona`,
+        waitHint: 'Sin compromiso: solo te avisamos si alguien deja caducar su código.',
+        waitCount: (n) => (n === 1 ? '1 persona esperando' : `${n} personas esperando`),
       };
 
   // Sin hora, el día entero (de 00:00 a 23:59, como llega la agenda
@@ -293,6 +364,9 @@ export async function offerPage(id, lang, rpRaw = '') {
   const badges = [
     over ? `<span class="badge off">${S.over}</span>` : '',
     !over && soldOut ? `<span class="badge off">${S.soldOut}</span>` : '',
+    // Lo destacado de pago siempre con su etiqueta («¿Por qué ves esto?»).
+    o.is_boosted ? `<span class="badge">${S.boostedBadge}</span>` : '',
+    antesDeCerrar ? `<span class="badge">${S.beforeClosing}</span>` : '',
     o.is_trending ? `<span class="badge">${S.hot}</span>` : '',
     o.adults_only ? '<span class="badge">+18</span>' : '',
     deRrpp ? `<span class="badge">${en ? 'Promoter offer' : 'Oferta de RRPP'}</span>` : '',
@@ -341,14 +415,16 @@ export async function offerPage(id, lang, rpRaw = '') {
       <h1 data-tr="offer:${esc(o.id)}:title">${esc(o.title)}</h1>
       <p data-tr-nota="offer:" hidden></p>
       <a class="ficha-negocio" href="${esc(bHref)}"${Number.isFinite(o.lat) && Number.isFinite(o.lng) ? ` data-lat="${Number(o.lat).toFixed(5)}" data-lng="${Number(o.lng).toFixed(5)}"` : ''}>${logo}
-        <span><b>${esc(o.business_name)}</b><span class="muted">${o.business_rating && o.business_ratings ? `<span class="stars-mini" aria-hidden="true">★</span> ${nota(o.business_rating, lang)} (${o.business_ratings})` : esc(o.business_city || '')}<span class="tj-dist" hidden></span></span></span>
+        <span><b>${esc(o.venue_address ? S.organised(o.business_name) : o.business_name)}</b><span class="muted">${o.business_rating && o.business_ratings ? `<span class="stars-mini" aria-hidden="true">★</span> ${nota(o.business_rating, lang)} (${o.business_ratings})` : esc(o.business_city || '')}<span class="tj-dist" hidden></span></span></span>
         <svg class="ic" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M8.59 16.59 13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg></a>
       ${actua.html}
       <p class="ficha-datos">
         ${precioTxt ? `<span class="precio-pill">${esc(precioTxt)}</span>` : ''}
-        ${prior ? `<s class="muted">${esc(prior)}</s>` : ''}
+        ${prior ? `<s class="muted">${esc(S.was(prior))}</s>` : ''}
         <span class="dato-chip${flash ? ' oferta' : ''}"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="${flash ? 'M7 2v11h3v9l7-12h-4l4-8z' : 'M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 16H5V10h14v10Zm0-12H5V6h14v2Z'}"/></svg>${esc(cuandoCorto(o, lang, tz))}</span>
-        ${o.seats_left != null && !soldOut && !over ? `<span class="dato-chip">${esc(en ? (o.seats_left === 1 ? '1 place left' : `${o.seats_left} places left`) : (o.seats_left === 1 ? 'Queda 1 plaza' : `Quedan ${o.seats_left} plazas`))}</span>` : ''}
+        ${o.seats_left != null && !soldOut && !over ? `<span class="dato-chip">${esc(antesDeCerrar ? S.bags(o.seats_left) : en ? (o.seats_left === 1 ? '1 place left' : `${o.seats_left} places left`) : (o.seats_left === 1 ? 'Queda 1 plaza' : `Quedan ${o.seats_left} plazas`))}</span>` : ''}
+        ${Number(o.redemptions_count) >= 3 ? `<span class="dato-chip">${esc(S.takenBy(Number(o.redemptions_count)))}</span>` : ''}
+        ${flash && Number(o.max_per_user) > 1 ? `<span class="dato-chip" id="por-persona" data-max="${Number(o.max_per_user)}">${esc(S.perUser(Number(o.max_per_user)))}</span>` : ''}
         ${o.style?.first_visit === true ? `<span class="dato-chip">${esc(en ? 'First visit' : 'Primera visita')}</span>` : ''}
       </p>
       ${o.style?.first_visit === true ? `<p class="rule">${esc(en ? `Only for people who have never redeemed anything at ${o.business_name || ''}.` : `Solo para quien no ha canjeado nunca nada en ${o.business_name || ''}.`)}</p>` : ''}
@@ -376,12 +452,22 @@ export async function offerPage(id, lang, rpRaw = '') {
         const conCodigo = flash || !!o.reservations_enabled;
         const entradas = !conCodigo && seguro(o.external_url);
         const voy = (clase) => `<a class="${clase}" id="voy" href="${cuenta(lang)}#/voy/${id}" rel="nofollow">${icono('voy', 16)} <span>${S.going}</span></a>`;
-        const principal = soldOut ? `<a class="pill accent big" href="${cuenta(lang)}#/espera/${id}">${S.wait}</a>`
-          : noEmpezada ? `<span class="pill accent big" aria-disabled="true" style="opacity:.55">${S.notYet}</span>`
+        // Fuera del horario de su lista, la oferta de RRPP no se puede
+        // conseguir: «Esta lista abre…» y el botón apagado, como la app.
+        const listaCerrada = prom && prom.closed && prom.counts;
+        const apagado = (txt) => `<span class="pill accent big" aria-disabled="true" style="opacity:.55">${txt}</span>`;
+        // `data-principal`: si ya tienes el código vivo, /assets/amigos.js lo
+        // cambia por «Ver mi código»; en la lista de espera, por «Salir…».
+        // La lista de espera, solo en lo que tiene código o reserva (un
+        // evento sin código, agotado, sigue con sus entradas o «Voy»).
+        const principal = soldOut && conCodigo ? `<a class="pill accent big" data-principal="espera" href="${cuenta(lang)}#/espera/${id}">${S.wait}</a>
+          <p class="note" id="espera-nota" data-n="${Number(o.waitlist_count) || 0}">${esc(Number(o.waitlist_count) > 0 ? S.waitCount(Number(o.waitlist_count)) : S.waitHint)}</p>`
+          : noEmpezada ? apagado(S.notYet)
+          : listaCerrada && conCodigo ? apagado(flash ? S.code : S.reserve)
           // Si deja coger varias plazas, «¿Para cuántos?» antes (`#/reservar`,
           // que con una sola va directa al código), como la app.
-          : flash ? `<a class="pill accent big" href="${cuenta(lang)}#/${(o.max_seats || 1) > 1 ? 'reservar' : 'codigo'}/${id}${rpQ}">${S.code}</a>`
-            : o.reservations_enabled ? `<a class="pill accent big" href="${cuenta(lang)}#/reservar/${id}${rpQ}">${S.reserve}</a>`
+          : flash ? `<a class="pill accent big" data-principal="codigo" href="${cuenta(lang)}#/${(o.max_seats || 1) > 1 ? 'reservar' : 'codigo'}/${id}${rpQ}">${S.code}</a>`
+            : o.reservations_enabled ? `<a class="pill accent big" data-principal="codigo" href="${cuenta(lang)}#/reservar/${id}${rpQ}">${S.reserve}</a>`
               : entradas ? (() => {
                 // Como la app: «Entradas en DICE» si es una plataforma conocida;
                 // si no, «Conseguir entradas» con el dominio debajo.
@@ -395,7 +481,9 @@ export async function offerPage(id, lang, rpRaw = '') {
         // la mira; si ya vas, lo pinta el navegador (/assets/amigos.js).
         // Una de RRPP solo se abre con el enlace: ni invitar a un amigo, ni
         // guardarla en Planes (luego no se abriría), ni compartirla.
-        return `${rrppHtml}${principal}
+        const cerradaHtml = listaCerrada
+          ? `<p class="note"><b>${esc(KR.abre(prom.opens_at, lang, tz))}</b> ${esc(KR.T[en ? 'en' : 'es'].closedBody)}</p>` : '';
+        return `${rrppHtml}${cerradaHtml}${principal}
           <p class="acciones amigos-acc" id="amigos-ficha" data-offer="${esc(o.id)}"${conCodigo ? ` data-codigo="${flash ? 'codigo' : 'reservar'}"` : ''}>
             ${entradas ? voy('pill') : ''}
             ${deRrpp ? '' : `<a class="pill" href="${cuenta(lang)}#/invitar/${id}" rel="nofollow">${icono('invitar', 16)} ${S.invite}</a>`}</p>
@@ -404,7 +492,7 @@ export async function offerPage(id, lang, rpRaw = '') {
           <p class="acciones"><a class="pill" data-solo-equipo hidden href="/panel/#/publicaciones/${id}?biz=${encodeURIComponent(o.business_id)}">${icono('editar', 16)} ${S.edit}</a>
             ${deRrpp ? '' : `<a class="pill" data-solo-publico data-plan="${id}" href="${cuenta(lang)}#/guardar/${id}"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg> <span>${S.save}</span></a>`}
             ${openInApp(path + rpQ, S.open, 'pill ghost')}</p>
-          ${deRrpp && !prom ? '' : `<p class="acciones">${historiaBoton(lang, 'o', o.id, rpQ)}</p>`}`;
+          ${deRrpp && !prom ? '' : `<p class="acciones">${compartirBoton(lang, `${BASE}${path}${rpQ}`, o.title)}${historiaBoton(lang, 'o', o.id, rpQ)}</p>`}`;
       })()}
       ${serieFicha(serie, o.id, lang)}
       <p class="note">${S.note}</p>
@@ -415,7 +503,8 @@ export async function offerPage(id, lang, rpRaw = '') {
       <p class="acciones"><a class="pill escucha" href="${esc(marcas.listen_url)}" rel="nofollow noopener" target="_blank" aria-label="${esc(`${M.listenOn(escucha.nombre)} (${M.opensOutside})`)}">${KM.icono(escucha, 18)} <span>${esc(M.listenOn(escucha.nombre))}</span></a></p>` : ''}
       ${o.terms ? `<h2>${S.terms}</h2><p class="muted" data-tr="offer:${esc(o.id)}:terms">${esc(o.terms).replace(/\n/g, '<br>')}</p>` : ''}
       ${where ? `<h2>${S.where}</h2>
-      <p class="info-linea">${icono('lugar')}<span>${o.lat ? `<a href="${esc(`https://www.google.com/maps/search/?api=1&query=${o.lat},${o.lng}`)}" rel="nofollow noopener" target="_blank">${esc(where)}</a>` : esc(where)}</span></p>` : ''}
+      <p class="info-linea">${icono('lugar')}<span>${o.lat ? `<a href="${esc(`https://www.google.com/maps/search/?api=1&query=${o.lat},${o.lng}`)}" rel="nofollow noopener" target="_blank">${esc(where)}</a>` : esc(where)}</span></p>
+      ${toquesContacto({ phone: o.business_phone, email: o.business_email, website: o.business_website, social: o.business_social }, lang, { lat: o.lat, lng: o.lng })}` : ''}
       ${fuenteHtml(fuente, lang)}
       <h2>${S.biz}</h2>
       <p>${esc(o.business_name)}${o.business_rating && o.business_ratings ? ` · ★ ${nota(o.business_rating, lang)} (${o.business_ratings})` : ''}</p>
@@ -472,7 +561,7 @@ el.textContent=n<ini?${JSON.stringify(en ? 'Starts in ' : 'Empieza en ')}+dur(in
 
   if (privada) {
     const res = html(publicPage({
-      lang, path, image: cover, body: body + cuentaAtras + vista + MENU_JS,
+      lang, path, image: cover, body: body + cuentaAtras + vista + MENU_JS + COMPARTIR_JS,
       title: `${o.title} · ${o.business_name}`,
       description, privada: true, consulta: rpQ, contador: false,
       head: `${traducir(lang, `offer:${o.id}`)}${actua.html ? `
@@ -484,7 +573,7 @@ ${ARTISTAS_CSS}` : ''}
     return res;
   }
   return html(publicPage({
-    lang, path, image: cover, body: body + cuentaAtras + vista + MENU_JS,
+    lang, path, image: cover, body: body + cuentaAtras + vista + MENU_JS + COMPARTIR_JS,
     title: `${o.title} · ${o.business_name}`,
     description,
     head: `${traducir(lang, `offer:${o.id}`)}${actua.html ? `
@@ -765,13 +854,14 @@ export async function businessPage(param, lang, search = '') {
 
   const S = en
     ? {
-        now: 'On right now', soon: 'Coming up',
+        now: 'Offers', soon: 'Events',
         none: 'Nothing published right now. It changes often — take a look in the app.',
         open: 'Add to favourites', note: "From here or from the app, with the same account. We'll let you know when this business posts something.",
-        verified: 'Verified business', since: 'On Klendar since', redeemed: (n) => (n === 1 ? '1 redemption validated' : `${n} redemptions validated`),
+        verified: 'Verified by Klendar', since: 'On Klendar since', redeemed: (n) => (n === 1 ? '1 redemption so far' : `${n} redemptions so far`),
+        noRatings: 'No ratings yet',
         about: 'About', menu: 'Menu', place: 'The place',
         stamps: 'Stamp card', allergens: 'Allergens',
-        menuNote: 'Allergens as declared by the business. If you have an allergy, ask at the venue.',
+        menuNote: 'Allergens are the ones the business declares. If you have an allergy, ask at the venue.',
         stampsMany: 'Stamp cards',
         stampsBody: (n, r) => `${n} stamps: “${r}”`,
         stampsNote: 'Each redemption that counts earns a stamp (at most one a day per card), and the app keeps count.',
@@ -783,7 +873,7 @@ export async function businessPage(param, lang, search = '') {
         hours: 'Opening hours', kitchen: 'Kitchen', closed: 'Closed', today: 'today',
         days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
         news: 'News', reviews: 'Reviews', write: 'Write a review', noReviews: 'No reviews yet. Been here? Be the first.',
-        user: 'Klendar user', report: 'Report', reportShort: 'Report', editBiz: 'Edit your page', myBiz: 'Go to the dashboard', block: 'Block', reportBiz: 'Report this business', menuPhotos: 'Photos of the menu',
+        user: 'Klendar user', report: 'Report', reportShort: 'Report', editBiz: 'Edit page', myBiz: 'Go to the dashboard', block: 'Block', reportBiz: 'Report this business', menuPhotos: 'Photos of the menu',
         verifiedCustomer: 'Verified customer',
         verifiedWhat: "They've redeemed something at this business with Klendar: an offer, an event, a stamp reward, a birthday gift or something the business gave them with “Give on the spot”. We check it against what the business itself validated or gave at the venue.",
         howReviews: 'How reviews work', allReviews: 'All',
@@ -815,13 +905,14 @@ export async function businessPage(param, lang, search = '') {
         allAgenda: (c) => `See everything on in ${c}`,
       }
     : {
-        now: 'Ahora mismo', soon: 'Próximamente',
+        now: 'Ofertas', soon: 'Eventos',
         none: 'Ahora mismo no hay nada publicado. Suele cambiar: échale un ojo en la app.',
         open: 'Añadir a favoritos', note: 'Desde aquí o desde la app, con la misma cuenta. Te avisamos cuando este negocio publique algo.',
-        verified: 'Negocio verificado', since: 'En Klendar desde', redeemed: (n) => (n === 1 ? '1 canje validado' : `${n} canjes validados`),
+        verified: 'Comprobado por Klendar', since: 'En Klendar desde', redeemed: (n) => (n === 1 ? '1 canje hasta ahora' : `${n} canjes hasta ahora`),
+        noRatings: 'Sin valoraciones todavía',
         about: 'Sobre el negocio', menu: 'Carta', place: 'El sitio',
         stamps: 'Tarjeta de sellos', allergens: 'Alérgenos',
-        menuNote: 'Los alérgenos son los que declara el negocio. Si tienes alergia, pregunta en el sitio.',
+        menuNote: 'Los alérgenos son los que declara el negocio. Si tienes alergia, pregúntalo en el sitio.',
         stampsMany: 'Tarjetas de sellos',
         stampsBody: (n, r) => `${n} sellos: «${r}»`,
         stampsNote: 'Cada canje que cuenta deja un sello, como mucho uno al día por tarjeta, y la app lleva la cuenta.',
@@ -990,16 +1081,6 @@ export async function businessPage(param, lang, search = '') {
       }).join('')}</table>`
     : '';
 
-  // Redes: el negocio puede guardar el @ o el enlace entero.
-  const redUrl = (red, v) => {
-    const val = String(v || '').trim();
-    if (/^https?:\/\//.test(val)) return val;
-    const h = val.replace(/^@/, '');
-    return { instagram: `https://instagram.com/${h}`, tiktok: `https://tiktok.com/@${h}`,
-      facebook: `https://facebook.com/${h}`, x: `https://x.com/${h}`, twitter: `https://x.com/${h}`,
-      youtube: `https://youtube.com/@${h}` }[red] || `https://${val}`;
-  };
-  const redNombre = { instagram: 'Instagram', tiktok: 'TikTok', facebook: 'Facebook', x: 'X', twitter: 'X', youtube: 'YouTube' };
   const redes = Object.entries(b.social || {})
     .filter(([k, v]) => k !== 'web' && typeof v === 'string' && v.trim())
     .map(([k, v]) => `<a href="${esc(redUrl(k, v))}" rel="nofollow noopener" target="_blank">${esc(redNombre[k] || k)}</a>`);
@@ -1080,7 +1161,7 @@ export async function businessPage(param, lang, search = '') {
   <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a>${city ? ` · <a href="${city}">${esc(b.city)}</a>` : ''} · <a href="${path}">${esc(b.name)}</a></p>
   <div class="detail negocio sin-media lista-entera">
     <h1>${esc(titulo)} · ${esc(b.name)}</h1>
-    ${ver === 'resenas' ? `<p><a class="pill" href="${cuenta(lang)}#/opinar/${encodeURIComponent(b.id)}">${icono('resena', 16)} ${S.write}</a></p>` : ''}
+    ${ver === 'resenas' ? `<p><a class="pill" data-opinar="${esc(b.id)}" href="${cuenta(lang)}#/opinar/${encodeURIComponent(b.id)}">${icono('resena', 16)} <span>${S.write}</span></a></p>` : ''}
     ${ver === 'preguntas' ? `<div data-preguntas-mias hidden></div>${preguntarHtml}` : ''}
     ${lista.length
       ? (ver === 'novedades' ? `<p data-tr-nota="post:" hidden></p><div class="novedades">${lista.map(novedadHtml).join('')}</div>`
@@ -1111,15 +1192,15 @@ ${traducir(lang, `business:${b.id}`, '')}${ver === 'preguntas' ? `\n${PREGUNTAS_
       </div>
       ${where ? `<a class="neg-dir" href="${esc(maps || '#')}" rel="nofollow noopener" target="_blank">${icono('lugar')}<span>${esc(b.address || where)}</span><svg class="ic" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M8.59 16.59 13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg></a>` : ''}
       ${b.rating && b.ratings ? `<p class="neg-nota"><a href="#resenas"><span class="stars-mini" aria-hidden="true">★</span> ${nota(b.rating, lang)} · ${esc(en ? (b.ratings === 1 ? '1 review' : `${b.ratings} reviews`) : (b.ratings === 1 ? '1 reseña' : `${b.ratings} reseñas`))}</a>${precioHtml ? ` <span aria-hidden="true">·</span> ${precioHtml}` : ''}</p>`
-    : precioHtml ? `<p class="neg-nota">${precioHtml}</p>` : ''}
+    : `<p class="neg-nota"><span class="muted">★ ${S.noRatings}</span>${precioHtml ? ` <span aria-hidden="true">·</span> ${precioHtml}` : ''}</p>`}
       ${crowdOn ? `<p class="sitio-ahora" data-sitio-ahora="${esc(b.id)}" hidden></p>
       <div data-hay-sitio="${esc(b.id)}" data-solo-publico hidden></div>` : ''}
       <div class="badges">
-        ${organizador ? `<span class="badge organiza">${esc(SA.organises)}</span>` : ''}
         ${selloEntidad(local.entity_kind, lang)}
+        ${organizador ? `<span class="badge organiza">${esc(SA.organises)}</span>` : ''}
         ${b.is_verified ? `<span class="badge ok">✓ ${S.verified}</span>` : ''}
-        ${b.redemptions_total ? `<span class="badge">${esc(S.redeemed(Number(b.redemptions_total)))}</span>` : ''}
         ${since ? `<span class="badge">${S.since} ${esc(since)}</span>` : ''}
+        ${b.redemptions_total ? `<span class="badge">${esc(S.redeemed(Number(b.redemptions_total)))}</span>` : ''}
       </div>
       ${cierre}
       ${sorteosHtml}
@@ -1139,7 +1220,8 @@ ${traducir(lang, `business:${b.id}`, '')}${ver === 'preguntas' ? `\n${PREGUNTAS_
       <a class="pill accent big" data-solo-publico data-fav="${esc(b.id)}" href="${cuenta(lang)}#/seguir/${encodeURIComponent(b.id)}"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.8 4.5c2.2 0 3.6 1.2 5.2 3 1.6-1.8 3-3 5.2-3 3.8 0 5.9 3.9 4.4 7.3C19.5 16.4 12 21 12 21z"/></svg> <span>${S.open}</span></a>
       <p class="note" data-solo-publico style="margin-bottom:16px">${S.note}</p>
       ${enlacesHtml ? `<div class="acciones neg-enlaces">${enlacesHtml}</div>` : ''}
-      <p class="acciones" style="margin:0 0 16px">${historiaBoton(lang, 'b', slug || b.id)}</p>
+      <p class="acciones" style="margin:0 0 16px">${compartirBoton(lang, `${BASE}${path}`, b.name)}${historiaBoton(lang, 'b', slug || b.id)}</p>
+      ${maps && !parado ? toquesContacto({}, lang, { lat: b.lat, lng: b.lng }) : ''}
       ${organizador ? `<h2 class="side-h fechas-h">${esc(SA.upcoming)}</h2>
       ${fechasOrg.length ? listaFechas(fechasOrg, lang, { conNegocio: false }) : `<p class="muted">${esc(SA.noDatesBiz)}</p>`}` : ''}
       <div class="info">
@@ -1167,7 +1249,7 @@ ${traducir(lang, `business:${b.id}`, '')}${ver === 'preguntas' ? `\n${PREGUNTAS_
       ${partidos}
       ${grupoHtml}
       ${sellos.length ? `<h2>${sellos.length > 1 ? S.stampsMany : S.stamps}</h2>
-        ${sellos.map((c) => `<p class="callout"><b>${esc(c.name)}</b> · ${esc(S.stampsBody(c.goal, c.reward))}<br><small>${esc(queSellaTarjeta(c, S, en))}</small></p>`).join('')}
+        ${sellos.map((c) => `<p class="callout"${isUuid(c.id) ? ` data-tarjeta="${c.id}"` : ''}><b>${esc(c.name)}</b> · ${esc(S.stampsBody(c.goal, c.reward))}<br><small>${esc(queSellaTarjeta(c, S, en))}</small></p>`).join('')}
         <p class="muted">${esc(sellos.some((c) => c.by_visit) ? S.stampsNoteVisit : S.stampsNote)}</p>` : ''}
       ${carta.length ? `<h2 id="carta">${S.menu}</h2>
         <p data-tr-nota="menu_" hidden></p>
@@ -1189,7 +1271,7 @@ ${traducir(lang, `business:${b.id}`, '')}${ver === 'preguntas' ? `\n${PREGUNTAS_
         <div class="novedades">${novedades.map(novedadHtml).join('')}</div>
         ${Number(b.posts) > novedades.length ? `<p><a class="pill" href="${path}?ver=novedades">${esc(S.seeAll(Number(b.posts)))}</a></p>` : ''}` : ''}
       <h2 id="resenas">${S.reviews}${b.rating && b.ratings ? ` <small class="muted">★ ${nota(b.rating, lang)} (${b.ratings})</small>` : ''}</h2>
-      <p><a class="pill" href="${cuenta(lang)}#/opinar/${encodeURIComponent(b.id)}">${icono('resena', 16)} ${S.write}</a></p>
+      <p><a class="pill" data-opinar="${esc(b.id)}" href="${cuenta(lang)}#/opinar/${encodeURIComponent(b.id)}">${icono('resena', 16)} <span>${S.write}</span></a></p>
       ${nVerificadas > 0 || soloVerificadas ? `<nav class="filtro-resenas" aria-label="${esc(S.reviews)}">
         <a class="pill${soloVerificadas ? '' : ' on'}" href="${path}#resenas"${soloVerificadas ? '' : ' aria-current="true"'}>${S.allReviews}</a>
         <a class="pill${soloVerificadas ? ' on' : ''}" href="${path}?resenas=verificadas#resenas" rel="nofollow"${soloVerificadas ? ' aria-current="true"' : ''}>${esc(S.verifiedReviews(nVerificadas))}</a>
@@ -1263,7 +1345,7 @@ ${traducir(lang, `business:${b.id}`, '')}${ver === 'preguntas' ? `\n${PREGUNTAS_
 <script src="/assets/visita.js?v=3" defer data-token="${esc(visita)}" data-lang="${en ? 'en' : 'es'}"></script>`
     : '';
   return html(publicPage({
-    lang, path, body: body + MENU_JS, title: conCiudad ? `${b.name} · ${b.city}` : b.name, description, image: b.cover || b.logo,
+    lang, path, body: body + MENU_JS + COMPARTIR_JS, title: conCiudad ? `${b.name} · ${b.city}` : b.name, description, image: b.cover || b.logo,
     consulta: pagina > 1 ? `?p=${pagina}` : '',
     head: `<meta name="robots" content="${b.adults_only || conVisita || b.closed_indefinitely || parado ? 'noindex' : pagina > 1 ? 'noindex, follow' : 'index, follow'}">
 ${ldScript(jsonLd)}${cuentaToques ? `

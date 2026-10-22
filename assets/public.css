@@ -811,6 +811,15 @@ details.hoja-bloque[open] > summary .ic { transform: rotate(180deg); }
 .neg-id.d-top { align-items: flex-end; justify-content: flex-start; }
 .neg-id.d-top > div { flex: 1; }
 .neg-id .mas-menu { align-self: flex-start; }
+/* «Cómo llegar · Contactar · Redes sociales» (las hojas de la app): pastillas
+ * que abren su lista como el menú ⋮. */
+.toques { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start; position: relative; }
+.mas-menu.toque { position: static; }
+.mas-menu.toque > summary { width: auto; height: auto; display: inline-flex; gap: 6px; border-radius: 999px; padding: 9px 16px; }
+/* La lista, bajo la fila entera y desde su borde izquierdo: en el móvil no se sale de la pantalla. */
+.mas-menu.toque .mas-lista { left: 0; right: auto; top: calc(100% + 6px); max-width: 100%; }
+/* Tus sellos en la tarjeta de la ficha del negocio. */
+.sellos-mios { display: inline-block; margin-top: 6px; }
 
 /* La columna de la ficha: Invitar, Guardar en Planes, Compartir en historias…
    cada uno en su fila, todos del mismo ancho (como en la app). Antes, el

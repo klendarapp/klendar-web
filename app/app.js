@@ -2083,7 +2083,12 @@ RUTAS.reservar = async ([id], params) => {
   const pr = o.promoter;
   const lista = pr && pr.in_offer && !pr.self && !pr.team && pr.quota_left != null ? Number(pr.quota_left) : null;
   const tope = Math.max(1, Math.min(o.max_seats || 1, o.seats_left == null ? 10 : o.seats_left, lista > 0 ? lista : 10));
-  if (tope <= 1) {
+  // Con el código ya cogido no se vuelve a preguntar «¿Para cuántos?»: va a
+  // tu código, con las plazas que ya tiene (como la app).
+  const { data: vivo } = await sb.from('redemptions').select('id').eq('offer_id', id).eq('user_id', YO.id)
+    .eq('status', 'pending').gt('expires_at', new Date().toISOString()).limit(1)
+    .then((r) => r, () => ({ data: [] }));
+  if (tope <= 1 || (vivo || []).length) {
     // Venía del botón «Reservar» de la ficha: el código no vuelve a preguntar.
     if (hayIntencion(`reservar/${id}${conRp}`)) marcaIntencion(`codigo/${encodeURIComponent(id)}${conRp}`);
     location.replace(`#/codigo/${encodeURIComponent(id)}${conRp}`);
