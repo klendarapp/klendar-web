@@ -894,45 +894,44 @@ function query(e, lang, { soloCompartido = false } = {}) {
   const en = lang === 'en';
   const K = CLAVES[en ? 'en' : 'es'];
   const p = new URLSearchParams();
-  // En Sitios solo va lo que vale para un sitio: la zona y la distancia,
+  // En Sitios solo filtra lo que vale para un sitio: la zona y la distancia,
   // categoría, «Abierto ahora», «Menú del día», «Se puede comer ahora», el
-  // momento, el precio del local y cómo es (como la app).
+  // momento, el precio del local y cómo es (como la app). Lo de Planes
+  // (¿Cuándo?, Qué, Precio, Para quién, Más, el orden y la vista Calendario)
+  // va en la dirección sin filtrar nada: al volver a Planes sigue ahí y lo
+  // guardado no se pierde (revisión 2026-10-22, F3 y F4).
   const sit = e.que === 'places';
   if (!soloCompartido && sit) p.set(K.what, en ? 'places' : 'sitios');
   if (!soloCompartido && e.q) p.set('q', e.q);
   if (e.city && !e.cerca) p.set(K.city, e.city);
   if (e.cat) p.set(K.cat, e.cat);
-  if (e.kind && !sit) p.set(K.kind, enIdioma(e.kind, en));
+  if (e.kind) p.set(K.kind, enIdioma(e.kind, en));
   if (e.abierto) p.set(K.open, '1');
-  if (!sit) {
-    if (e.price) p.set(K.price, enIdioma(e.price, en));
-    if (e.when) p.set(K.when, enIdioma(e.when, en));
-    if (e.soloDescuento) p.set(K.discount, '1');
-    if (e.sort) p.set(K.sort, enIdioma(e.sort, en));
-  }
-  if (!soloCompartido && e.vista && (!sit || e.vista === 'map')) p.set(K.view, enIdioma(e.vista, en));
+  if (e.price) p.set(K.price, enIdioma(e.price, en));
+  if (e.when) p.set(K.when, enIdioma(e.when, en));
+  if (e.soloDescuento) p.set(K.discount, '1');
+  if (e.sort) p.set(K.sort, enIdioma(e.sort, en));
+  if (!soloCompartido && e.vista) p.set(K.view, enIdioma(e.vista, en));
   if (!sit && !soloCompartido && e.vista === 'calendar' && e.mes) p.set(K.month, e.mes);
   if (!sit && !soloCompartido && e.vista === 'calendar' && e.dia) p.set(K.day, e.dia);
   if (e.cerca) {
     p.set('lat', posUrl(e.lat)); p.set('lng', posUrl(e.lng));
     if (e.km !== RADIO_KM) p.set('km', String(e.km));
   }
-  if (!sit && e.amigos) p.set('amigos', '1');
-  for (const t of e.traits || []) if (!sit || t !== 'kids') p.append(K.place, sitioAUrl(t, en));
-  if (!sit && (e.traits || []).includes('kids')) for (const a of e.edades || []) p.append(K.age, edadAUrl(a));
+  if (e.amigos) p.set('amigos', '1');
+  for (const t of e.traits || []) p.append(K.place, sitioAUrl(t, en));
+  if ((e.traits || []).includes('kids')) for (const a of e.edades || []) p.append(K.age, edadAUrl(a));
   if (e.precioLocal) p.set(K.vprice, String(e.precioLocal));
-  if (!sit) {
-    if (e.carne) p.set(K.card, carneAUrl(e.carne, en));
-    if (e.solo) p.set(K.solo, '1');
-    if (e.solidario) p.set(K.charity, '1');
-    if (e.entidad) p.set(K.entity, '1');
-    if (e.antesCierre) p.set(K.closing, '1');
-  }
+  if (e.carne) p.set(K.card, carneAUrl(e.carne, en));
+  if (e.solo) p.set(K.solo, '1');
+  if (e.solidario) p.set(K.charity, '1');
+  if (e.entidad) p.set(K.entity, '1');
+  if (e.antesCierre) p.set(K.closing, '1');
   if (e.menuDia) p.set(K.menu, '1');
   if (e.comerAhora) p.set(K.eat, '1');
   if (e.momento) p.set(K.moment, KMO.aUrl(e.momento, en));
   if (!sit && !soloCompartido && e.vista === 'map' && e.ambiente) p.set(K.buzz, '1');
-  if (!sit && e.tiempoOff) p.set(K.weather, '0');
+  if (e.tiempoOff) p.set(K.weather, '0');
   if (!soloCompartido && e.page > 1) p.set('p', String(e.page));
   if (!sit && !soloCompartido && e.gustos?.length) p.set('gustos', e.gustos.join(','));
   return p.toString();
@@ -1071,7 +1070,9 @@ export async function explorePage(url, lang, modo = 'explorar') {
   const sort = e.sort;
   const mapa = !negocios && e.vista === 'map';
   const calendario = !negocios && e.vista === 'calendar';
-  const vista = negocios ? (sitiosMapa ? 'map' : '') : e.vista;
+  // En Sitios (sin calendario) se ve en lista, pero el Calendario de Planes
+  // se conserva para volver a él.
+  const vista = negocios ? (sitiosMapa ? 'map' : e.vista === 'calendar' ? 'calendar' : '') : e.vista;
   // Lo que se le pide a la base por «El sitio» en Sitios.
   const traitsSitio = [...sitioSinNinos(e), ...(e.precioLocal ? [`price_le_${e.precioLocal}`] : []),
     ...(menuDia ? ['daily_menu'] : []), ...(comerAhora ? ['eat_now'] : []), ...(e.momento ? [KMO.trait(e.momento)] : [])];
@@ -1365,9 +1366,17 @@ export async function explorePage(url, lang, modo = 'explorar') {
   const K = CLAVES[en ? 'en' : 'es'];
   const radio = (name, value, label, on, cls = '') => `<label class="op-r${cls ? ` ${cls}` : ''}"><input type="radio" name="${name}" value="${esc(value)}"${on ? ' checked' : ''}><span>${esc(label)}</span></label>`;
   const casilla = (name, label, on) => `<label class="op-r"><input type="checkbox" name="${name}" value="1"${on ? ' checked' : ''}><span>${esc(label)}</span></label>`;
+  // Lo de Planes que no sale en la hoja de Sitios: pasa de largo (F3).
+  const SOLO_PLANES = new Set([K.kind, K.price, K.when, K.discount, K.age, K.card, K.solo, K.charity, K.entity, K.closing, 'amigos']);
+  const ninosUrl = sitioAUrl('kids', en);
+  const pasan = negocios ? [...new URLSearchParams(query({ ...e, vista: '' }, lang))]
+    .filter(([k, v]) => SOLO_PLANES.has(k) || (k === K.place && v === ninosUrl)) : [];
   const ocultos = [
-    ['q', q], [K.city, cerca ? '' : city], [K.sort, negocios ? '' : sort ? enIdioma(sort, en) : ''], [K.view, vista ? enIdioma(vista, en) : ''],
+    ['q', q], [K.city, cerca ? '' : city], [K.sort, sort ? enIdioma(sort, en) : ''], [K.view, vista ? enIdioma(vista, en) : ''],
     [K.month, calendario ? mes : ''], [K.day, calendario ? dia : ''],
+    // En el calendario la hoja no lleva «¿Cuándo?»: se conserva (F2).
+    [K.when, calendario && when ? enIdioma(when, en) : ''],
+    ...pasan,
     ['lat', cerca ? posUrl(lat) : ''], ['lng', cerca ? posUrl(lng) : ''],
     // La distancia se elige en el «dónde»: la hoja la conserva.
     ['km', cerca && km !== RADIO_KM ? String(km) : ''],
@@ -1375,7 +1384,7 @@ export async function explorePage(url, lang, modo = 'explorar') {
     // en «Para quién».
     ['amigos', e.amigos && !negocios ? '1' : ''], ...(negocios ? [[K.what, en ? 'places' : 'sitios']] : []),
     // «Según el tiempo» vive en el menú de orden: la hoja lo conserva.
-    [K.weather, tiempoOff && !negocios ? '0' : ''],
+    [K.weather, tiempoOff ? '0' : ''],
   ].filter(([, v]) => v).map(([k, v]) => `<input type="hidden" name="${k}" value="${esc(v)}"${k === 'amigos' ? ' data-amigos-oculto' : ''}>`).join('');
   const catActual = catsHoja.find((c) => c.slug === cat) || (cats || []).find((c) => c.slug === cat);
   const resumen = resumenFiltros(e, S, catActual ? catName(catActual, en) : '');
@@ -1517,8 +1526,8 @@ export async function explorePage(url, lang, modo = 'explorar') {
   // Arriba, qué se busca: «Planes | Sitios» (como la app). Al cambiar, la
   // zona, la distancia y los filtros que valen en los dos se quedan.
   const que = descubre ? '' : `<nav class="que" aria-label="${esc(TSi.what)}">
-      <a href="${esc(link({ que: '', vista: '' }))}"${negocios ? '' : ' class="on" aria-current="page"'}>${esc(TSi.plans)}</a>
-      <a href="${esc(link({ que: 'places', vista: e.vista === 'map' ? 'map' : '' }))}"${negocios ? ' class="on" aria-current="page"' : ''}>${esc(TSi.places)}</a>
+      <a href="${esc(link({ que: '', vista: e.vista === 'calendar' ? 'calendar' : '' }))}"${negocios ? '' : ' class="on" aria-current="page"'}>${esc(TSi.plans)}</a>
+      <a href="${esc(link({ que: 'places', vista: e.vista === 'map' || e.vista === 'calendar' ? e.vista : '' }))}"${negocios ? ' class="on" aria-current="page"' : ''}>${esc(TSi.places)}</a>
     </nav>`;
 
   // Al tocar el buscador: lo que buscaste (en este navegador) y «Lo más

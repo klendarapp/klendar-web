@@ -1843,7 +1843,7 @@ RUTAS.codigos = async (_partes, params) => {
   const conPremios = Array.isArray(premios) && premios.length > 0;
   const conBonos = Array.isArray(bonos) && bonos.length > 0;
   const conDados = Array.isArray(dados) && dados.length > 0;
-  const nada = !(lista || []).length && !conRegalos && !conPremios && !conBonos && !conDados;
+  const nada = !(lista || []).length && !conRegalos && !conPremios && !conBonos && !conDados && !turnoHtml;
   // Desde una notificación (`#/codigos?offer=<id>`: cambio de fecha,
   // cancelación…): el código de esa publicación, a la vista y resaltado. El
   // vivo si hay varios; si no, el más reciente (la lista llega ordenada).
@@ -1873,7 +1873,7 @@ RUTAS.codigos = async (_partes, params) => {
   ].map(([titulo, parte], i) => (parte.length ? `<h2 class="seccion-t">${esc(titulo)}</h2>
       <div class="olist"${i === 1 ? ' id="codigosPasados"' : ''}>${parte.map((r) => filaCanje(r, zona(r), r === resaltado)).join('')}</div>` : '')).join('')
     + ((lista || []).length >= CODIGOS_POR_PARTE ? `<p class="ver-mas"><button type="button" class="pill" data-ver-mas="codigos">${esc(t('Ver más'))}</button></p>` : '')
-    : conRegalos || conPremios || conBonos || conDados
+    : conRegalos || conPremios || conBonos || conDados || turnoHtml
       ? `<p class="empty">${esc(t('Todavía no tienes códigos. Cuando consigas el código de una oferta o reserves plaza en un evento, lo tendrás aquí.'))}</p>`
       : pantallaVacia({
         icono: 'qr_code_2',
@@ -2314,8 +2314,15 @@ RUTAS.espera = async ([id], params, crudo) => {
 // ── El recibo de un canje ─────────────────────────────────────────────────
 RUTAS.recibo = async ([id]) => {
   if (!exigeSesion(`recibo/${id}`)) return;
-  const lista = await llamar('my_redemptions', {});
-  const r = (lista || []).find((x) => x.id === id);
+  // Por partes hasta dar con él: uno de hace más de 50 canjes (cargado con
+  // «Ver más» en «Tus códigos») también se encuentra. Con tope de vueltas.
+  let r = null;
+  for (let desde = 0, vueltas = 0; !r && vueltas < 40; vueltas++) {
+    const parte = (await llamar('my_redemptions', { p_limit: 50, p_offset: desde })) || [];
+    r = parte.find((x) => x.id === id) || null;
+    if (!parte.length) break;
+    desde += parte.length;
+  }
   if (!r) { pinta(pantallaVacia({ icono: 'description', titulo: t('Ese recibo no está.'), h: 'h1', botones: `<a class="pill accent" href="#/codigos">${esc(t('Tus códigos'))}</a>` })); return; }
   const tz = (await zonasDe([r]))(r);
   const lugar = [r.business_address, r.business_city].filter(Boolean).join(' · ');
