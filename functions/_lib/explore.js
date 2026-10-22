@@ -77,7 +77,11 @@ const T = (en) => en
       mapNo: "The map can't load right now. The list shows the same results.", onMap: (n) => `${n} on the map`,
       // Calendario (la agenda de la app).
       prevMonth: 'Previous month', nextMonth: 'Next month', legendEv: 'Events', legendFl: 'Flash offers',
-      dayPlans: (n) => `${n} ${n === 1 ? 'plan' : 'plans'}`, dayNone: 'Nothing on this day.',
+      dayPlans: (n) => (n === 0 ? 'No plans' : `${n} ${n === 1 ? 'plan' : 'plans'}`), dayNone: 'Nothing this day',
+      dayNoneBody: 'Try another day or change the filters.', todayPill: 'Today',
+      outsideWhen: (w) => `This day is outside “${w}”`,
+      outsideWhenBody: "That's what you've picked under “When?” in Filters (the same here and in Discover).",
+      outsideWhenAll: 'Show every day',
       nextWith: (d) => `Next day with plans: ${d}`, todayRel: 'Today', tomorrowRel: 'Tomorrow',
       dayLabel: (d, n) => `${d}: ${n ? `${n} ${n === 1 ? 'plan' : 'plans'}` : 'nothing'}`,
       // Final de la lista (como el final de Descubre en la app).
@@ -178,7 +182,11 @@ const T = (en) => en
       filters: 'Filtros', filtersN: (n) => (n === 1 ? 'Filtros, 1 puesto' : `Filtros, ${n} puestos`), showResults: 'Ver resultados', close: 'Cerrar',
       mapNo: 'El mapa no se puede cargar ahora mismo. En la lista está lo mismo.', onMap: (n) => `${n} en el mapa`,
       prevMonth: 'Mes anterior', nextMonth: 'Mes siguiente', legendEv: 'Eventos', legendFl: 'Ofertas flash',
-      dayPlans: (n) => `${n} ${n === 1 ? 'plan' : 'planes'}`, dayNone: 'Este día no hay nada.',
+      dayPlans: (n) => (n === 0 ? 'Sin planes' : `${n} ${n === 1 ? 'plan' : 'planes'}`), dayNone: 'Nada este día',
+      dayNoneBody: 'Prueba otro día o cambia los filtros.', todayPill: 'Hoy',
+      outsideWhen: (w) => `Este día queda fuera de «${w}»`,
+      outsideWhenBody: 'Es lo que tienes en «¿Cuándo?», en Filtros (aquí y en Descubre son los mismos).',
+      outsideWhenAll: 'Ver todos los días',
       nextWith: (d) => `Siguiente día con planes: ${d}`, todayRel: 'Hoy', tomorrowRel: 'Mañana',
       dayLabel: (d, n) => `${d}: ${n ? `${n} ${n === 1 ? 'plan' : 'planes'}` : 'nada'}`,
       // Final de la lista (como el final de Descubre en la app).
@@ -623,6 +631,20 @@ async function todas(args, max = 240) {
 }
 
 const dos = (n) => String(n).padStart(2, '0');
+/** El calendario llega a este mes y los 12 siguientes (13), como la app. */
+const MESES_CAL = 12;
+/** Los días (AAAA-MM-DD, hora de Madrid) que cuentan con «¿Cuándo?», o null
+ * sin él: el calendario solo marca esos y abre en el primero (como la app,
+ * `whenDays`). */
+function diasDeCuando(when, hoy) {
+  if (!when) return null;
+  if (when === 'today') return [hoy];
+  if (when === 'tomorrow') return [KZ.hoy('Europe/Madrid', 1)];
+  if (when === 'next10') return [...Array(11)].map((_, i) => KZ.hoy('Europe/Madrid', i));
+  // «Próximas 2 horas»: hoy y, si pasa de medianoche, mañana.
+  const fin = KZ.dia(new Date(Date.now() + 2 * 3600e3).toISOString(), 'Europe/Madrid');
+  return fin > hoy ? [hoy, fin] : [hoy];
+}
 /** «2026-10» + n meses. */
 const sumaMes = (ym, n) => {
   const [y, m] = ym.split('-').map(Number);
@@ -633,7 +655,7 @@ const sumaMes = (ym, n) => {
 /** La vista Calendario: el mes con los días marcados y, debajo (al lado en
  * el escritorio), lo de ese día. Como la agenda de Explorar en la app. Los
  * días son enlaces: va sin JavaScript y cada día se puede compartir. */
-function calendarioHtml({ items, lang, S, link, mes, dia, hoy, delDiaParte = null, totalDia = null }) {
+function calendarioHtml({ items, lang, S, link, mes, dia, hoy, delDiaParte = null, totalDia = null, cuando = null, quitarFiltros = '' }) {
   const en = lang === 'en';
   const loc = en ? 'en-GB' : 'es-ES';
   // Cada publicación, en el día de su negocio; lo que empezó antes y sigue en
@@ -656,18 +678,20 @@ function calendarioHtml({ items, lang, S, link, mes, dia, hoy, delDiaParte = nul
   const rel = (iso) => (iso === hoy ? S.todayRel : iso === KZ.hoy('Europe/Madrid', 1) ? S.tomorrowRel : '');
   const hoyMes = hoy.slice(0, 7);
   const anterior = mes > hoyMes ? sumaMes(mes, -1) : null;
-  const siguiente = mes < sumaMes(hoyMes, 11) ? sumaMes(mes, 1) : null;
+  const siguiente = mes < sumaMes(hoyMes, MESES_CAL) ? sumaMes(mes, 1) : null;
 
   const celdas = [];
   for (let i = 0; i < hueco; i++) celdas.push('<span class="cal-dia vacio-dia" aria-hidden="true"></span>');
   for (let d = 1; d <= diasMes; d++) {
     const iso = `${mes}-${dos(d)}`;
-    const lista = porDia.get(iso) || [];
+    // Con «¿Cuándo?», solo llevan punto los días que cuentan.
+    const fuera = Boolean(cuando) && !cuando.dias.includes(iso);
+    const lista = fuera ? [] : porDia.get(iso) || [];
     const pasado = iso < hoy;
     const ev = lista.some((o) => o.kind !== 'flash_offer');
     const fl = lista.some((o) => o.kind === 'flash_offer');
     const puntos = lista.length ? `<span class="cal-puntos" aria-hidden="true">${ev ? '<i class="pe"></i>' : ''}${fl ? '<i class="pf"></i>' : ''}</span>` : '';
-    const cls = `cal-dia${iso === hoy ? ' hoy' : ''}${iso === dia ? ' sel' : ''}${pasado ? ' pasado' : ''}`;
+    const cls = `cal-dia${iso === hoy ? ' hoy' : ''}${iso === dia ? ' sel' : ''}${pasado ? ' pasado' : ''}${fuera && !pasado ? ' fuera' : ''}`;
     const etiqueta = S.dayLabel(largo(iso), lista.length);
     celdas.push(pasado
       ? `<span class="${cls}" aria-hidden="true">${d}</span>`
@@ -675,14 +699,28 @@ function calendarioHtml({ items, lang, S, link, mes, dia, hoy, delDiaParte = nul
   }
   // Lo del día, por partes (`public_explore` con `day` y `?p=`); sin
   // respuesta, lo que haya de las del mes.
-  const delDia = delDiaParte || porDia.get(dia) || [];
-  const nDia = Number.isFinite(totalDia) ? totalDia : delDia.length;
-  const proximo = delDia.length ? null : [...porDia.keys()].sort().find((k) => k > dia);
+  const diaFuera = Boolean(cuando) && !cuando.dias.includes(dia);
+  const delDia = diaFuera ? [] : delDiaParte || porDia.get(dia) || [];
+  const nDia = diaFuera ? 0 : Number.isFinite(totalDia) ? totalDia : delDia.length;
+  const proximo = delDia.length ? null : [...porDia.keys()].sort()
+    .find((k) => k > dia && (!cuando || cuando.dias.includes(k)));
+  // «Hoy», si se mira otro día u otro mes (la píldora de la app).
+  const hoyBoton = dia !== hoy || mes !== hoyMes
+    ? `<a class="pill cal-hoy" href="${esc(link({ mes: hoyMes, dia: hoy }))}#dia">${esc(S.todayPill)}</a>` : '';
+  // Sin nada ese día: por qué y qué hacer (como la app). Fuera de «¿Cuándo?»,
+  // se dice y se ofrece verlo todo; si no, «Nada este día» con «Quitar
+  // filtros» si hay alguno, y el siguiente día con planes.
+  const vacioDia = diaFuera
+    ? `<div class="vacio cal-vacio"><h3>${esc(S.outsideWhen(cuando.etiqueta))}</h3><p>${esc(S.outsideWhenBody)}</p>
+        <div class="vacio-botones"><a class="pill" href="${esc(cuando.quitar)}#dia">${esc(S.outsideWhenAll)}</a></div></div>`
+    : `<div class="vacio cal-vacio"><h3>${esc(S.dayNone)}</h3><p>${esc(S.dayNoneBody)}</p>
+        ${proximo ? `<p><a href="${esc(link({ dia: proximo, mes: proximo.slice(0, 7) }))}#dia">${esc(S.nextWith(rel(proximo) || largo(proximo)))} →</a></p>` : ''}
+        ${quitarFiltros ? `<div class="vacio-botones"><a class="pill" href="${esc(quitarFiltros)}#dia">${esc(S.clearF)}</a></div>` : ''}</div>`;
   return `<div class="calendario">
     <section class="cal-mes" aria-labelledby="calTitulo">
       <div class="cal-cab">
         ${anterior ? `<a class="cal-nav" href="${esc(link({ mes: anterior, dia: '' }))}" aria-label="${esc(S.prevMonth)}">${ic('izq', 22)}</a>` : `<span class="cal-nav" aria-hidden="true"></span>`}
-        <h2 id="calTitulo">${esc(mesTitulo.charAt(0).toUpperCase() + mesTitulo.slice(1))}</h2>
+        <div class="cal-titulo"><h2 id="calTitulo">${esc(mesTitulo.charAt(0).toUpperCase() + mesTitulo.slice(1))}</h2>${hoyBoton}</div>
         ${siguiente ? `<a class="cal-nav" href="${esc(link({ mes: siguiente, dia: '' }))}" aria-label="${esc(S.nextMonth)}">${ic('der', 22)}</a>` : `<span class="cal-nav" aria-hidden="true"></span>`}
       </div>
       <div class="cal-rejilla">
@@ -698,7 +736,7 @@ function calendarioHtml({ items, lang, S, link, mes, dia, hoy, delDiaParte = nul
       </div>
       ${delDia.length
         ? `<div class="tj-filas">${delDia.map((o) => tarjeta(o, lang, { forma: 'fila' })).join('')}</div>`
-        : `<p class="empty">${esc(S.dayNone)}${proximo ? `<br><a href="${esc(link({ dia: proximo, mes: proximo.slice(0, 7) }))}#dia">${esc(S.nextWith(rel(proximo) || largo(proximo)))} →</a>` : ''}</p>`}
+        : vacioDia}
     </section>
   </div>`;
 }
@@ -914,13 +952,14 @@ function query(e, lang, { soloCompartido = false } = {}) {
  */
 function guardaFiltros(e, lang, base, explorar = false) {
   const compartido = { es: query(e, 'es', { soloCompartido: true }), en: query(e, 'en', { soloCompartido: true }) };
-  // Explorar recuerda lo último elegido (Planes o Sitios, lista o mapa),
+  // Explorar recuerda lo último elegido (Planes o Sitios; lista, mapa o calendario),
   // como la app: al volver a /explorar/ sin nada en la dirección, se abre ahí.
   const vistaDe = (l) => {
     const K = CLAVES[l];
     const x = new URLSearchParams();
     if (e.que === 'places') x.set(K.what, l === 'en' ? 'places' : 'sitios');
-    if (e.vista === 'map') x.set(K.view, enIdioma('map', l === 'en'));
+    // Lista, mapa o calendario (en Sitios, solo el mapa).
+    if (e.vista === 'map' || (e.vista === 'calendar' && e.que !== 'places')) x.set(K.view, enIdioma(e.vista, l === 'en'));
     return x.toString();
   };
   // Lo que no viaja entre páginas (la búsqueda, la vista y el día del
@@ -1149,9 +1188,16 @@ export async function explorePage(url, lang, modo = 'explorar') {
   // El mes y el día del calendario, dentro de lo que se puede mirar (este mes
   // y los once siguientes).
   const hoyMes = hoy.slice(0, 7);
-  const mes = /^\d{4}-\d{2}$/.test(mesPedido) && mesPedido >= hoyMes && mesPedido <= sumaMes(hoyMes, 11) ? mesPedido
+  let mes = /^\d{4}-\d{2}$/.test(mesPedido) && mesPedido >= hoyMes && mesPedido <= sumaMes(hoyMes, MESES_CAL) ? mesPedido
     : /^\d{4}-\d{2}-\d{2}$/.test(diaPedido) && diaPedido >= hoy ? diaPedido.slice(0, 7) : hoyMes;
   let dia = /^\d{4}-\d{2}-\d{2}$/.test(diaPedido) && diaPedido.startsWith(mes) && diaPedido >= hoy ? diaPedido : '';
+  // «¿Cuándo?» en el calendario (como la app): marca los días que cuentan y
+  // abre en el primero.
+  const diasCuando = calendario ? diasDeCuando(when, hoy) : null;
+  if (calendario && !dia && diasCuando && !/^\d{4}-\d{2}$/.test(mesPedido)) {
+    dia = diasCuando[0];
+    mes = dia.slice(0, 7);
+  }
   if (calendario && !dia) {
     if (hoy.startsWith(mes)) dia = hoy;
     else {
@@ -1162,7 +1208,7 @@ export async function explorePage(url, lang, modo = 'explorar') {
 
   // El calendario: la lista del día elegido, por partes (24 de cada vez,
   // `?p=`), en vez de sacarla de las 240 del mes.
-  const diaParte = calendario && dia
+  const diaParte = calendario && dia && (!diasCuando || diasCuando.includes(dia))
     ? await rpc('public_explore', {
       ...argsExplore, p_filters: { ...filtros, day: dia, sort: 'soonest' },
       p_limit: POR_PAGINA, p_offset: (page - 1) * POR_PAGINA,
@@ -1311,7 +1357,7 @@ export async function explorePage(url, lang, modo = 'explorar') {
   // bloques como la app. Cuántos lleva cada bloque (lo mismo que cuenta la
   // app: `FeedFilters.basicsCount`, `forWhomCount`, `placeCount` y
   // `moreCount`); Filtros (N) es la suma. La distancia va en el «dónde».
-  const nBasico = [kind && !negocios, cat, !negocios && price, !negocios && when && !calendario, !negocios && antesCierre, e.menuDia].filter(Boolean).length;
+  const nBasico = [kind && !negocios, cat, !negocios && price, !negocios && when, !negocios && antesCierre, e.menuDia].filter(Boolean).length;
   const nParaQuien = negocios ? 0 : [ninosOn, e.solo, e.carne, e.amigos].filter(Boolean).length;
   const nSitio = (abierto ? 1 : 0) + (e.precioLocal ? 1 : 0) + (e.comerAhora ? 1 : 0) + (e.momento ? 1 : 0) + sitioSinNinos(e).length;
   const nMas = negocios ? 0 : [e.solidario, e.entidad, soloDescuento].filter(Boolean).length;
@@ -1432,7 +1478,7 @@ export async function explorePage(url, lang, modo = 'explorar') {
       ${ocultos}
       <div class="hoja-scroll">
       <div class="hoja-basico" role="group" aria-labelledby="bloque-basico"><h3 id="bloque-basico" class="hoja-basico-t">${esc(S.basics)}</h3>
-      ${negocios || calendario ? '' : `<fieldset><legend>${esc(S.when)}</legend><div class="ops">
+      ${negocios ? '' : `<fieldset><legend>${esc(S.when)}</legend><div class="ops">
         ${[['', S.anytime], ['now', S.now], ['today', S.today], ['tomorrow', S.tomorrow], ['next10', S.next10]]
           .map(([v, n]) => radio(K.when, v ? enIdioma(v, en) : '', n, when === v)).join('')}
       </div></fieldset>`}
@@ -1625,6 +1671,13 @@ ${GRUPOS_CSS}` : ''}`;
     resultados = calendarioHtml({
       items, lang, S, link, mes, dia, hoy,
       delDiaParte: diaParte ? diaParte.items || [] : null, totalDia: diaParte ? Number(diaParte.total) || 0 : null,
+      cuando: diasCuando ? { dias: diasCuando, etiqueta: { now: S.now, today: S.today, tomorrow: S.tomorrow, next10: S.next10 }[when], quitar: link({ when: '' }) } : null,
+      // «Quitar filtros» deja el calendario sin lo que quita publicaciones
+      // (la zona y la distancia se quedan, como `clearNarrowing` en la app).
+      quitarFiltros: conFiltros ? link({
+        q: '', cat: '', kind: '', price: '', when: '', soloDescuento: false, abierto: false, amigos: false, traits: [], edades: [],
+        precioLocal: 0, carne: '', solo: false, solidario: false, entidad: false, antesCierre: false, menuDia: false, comerAhora: false, momento: '',
+      }) : '',
     });
   } else if (mapa) {
     resultados = `${ambienteHtml(e, lang, link)}${mapaHtml(items, lang, S)}${items.length ? `<h2 class="fin-h">${esc(S.onMap(items.length))}</h2>${rejilla(items, lang, { galeria: true })}` : ''}`;
