@@ -26,7 +26,7 @@ import { fuenteHtml, selloEntidad } from './entidades.js';
 import { PARTIDOS_CSS, partidosDelBar } from './partidos.js';
 import { GRUPOS_CSS, grupoEnFicha } from './grupos.js';
 import { sorteosEnFicha } from './sorteos.js';
-import { ARTISTAS_CSS, actuaEnOferta, listaFechas, performersLd } from './artistas.js';
+import { ARTISTAS_CSS, actuaEnOferta, performersLd } from './artistas.js';
 import KA from '../../assets/artistas.js';
 
 // Iconos de Material (los mismos que la app), en SVG: las páginas públicas
@@ -317,6 +317,9 @@ export async function offerPage(id, lang, rpRaw = '') {
         byCode: 'Getting the code counts as going.', byReservation: 'Reserving a place counts as going.',
         later: 'Not sure yet? Save it to Plans.',
         note: 'From here or from the app, with the same account. The code is single-use and the business validates it on the spot.',
+        noteNoCode: 'From here or from the app, with the same account.',
+        noteEntity: 'From here or from the app, with the same account. The code is single-use and they validate it on the spot.',
+        org: 'Who organises it',
         soldOut: 'Sold out', over: 'Ended', more: 'Everything from', hot: 'Trending',
         prior: 'Lowest price in the last 30 days', canary: 'Canary Islands time',
         boostedBadge: 'Featured', beforeClosing: 'Before closing', was: (p) => `was ${p}`,
@@ -339,6 +342,9 @@ export async function offerPage(id, lang, rpRaw = '') {
         byCode: 'Conseguir el código ya cuenta como que vas.', byReservation: 'Reservar plaza ya cuenta como que vas.',
         later: 'Si aún no lo tienes claro, guárdalo en Planes.',
         note: 'Desde aquí o desde la app, con la misma cuenta. El código es de un solo uso y lo valida el negocio en el momento.',
+        noteNoCode: 'Desde aquí o desde la app, con la misma cuenta.',
+        noteEntity: 'Desde aquí o desde la app, con la misma cuenta. El código es de un solo uso y lo validan en el momento.',
+        org: 'Quién lo organiza',
         soldOut: 'Agotado', over: 'Terminada', more: 'Todo lo de', hot: 'Tendencia',
         prior: 'Precio más bajo de los últimos 30 días', canary: 'hora de Canarias',
         boostedBadge: 'Destacado', beforeClosing: 'Antes de cerrar', was: (p) => `antes ${p}`,
@@ -354,11 +360,18 @@ export async function offerPage(id, lang, rpRaw = '') {
   // pública): solo los días, como la app.
   const diaEntero = !flash && o.event_at && o.event_end_at
     && /^0?0[:.]00$/.test(fmtTime(o.event_at, lang, tz)) && /^23[:.]59$/.test(fmtTime(o.event_end_at, lang, tz));
+  // Si un rango cruza de año («28 dic – 3 ene»), cada fecha con su año: si
+  // no, parecía que acababa antes de empezar (agenda pública, 2026-10-22).
+  const anoDe = (iso) => (iso ? KZ.fmt(iso, tz, en ? 'en-GB' : 'es-ES', { year: 'numeric' }) : '');
+  const finRango = flash ? o.redeem_end_at : o.event_end_at;
+  const iniRango = flash ? o.redeem_start_at : o.event_at;
+  const cruzaAno = !!(iniRango && finRango && anoDe(iniRango) !== anoDe(finRango));
+  const conAno = (txt, iso) => (cruzaAno ? `${txt} ${anoDe(iso)}` : txt);
   const when = flash
-    ? `${fmtLong(o.redeem_start_at, lang, tz)} – ${fmtEnd(o.redeem_start_at, o.redeem_end_at, lang, tz)}`
+    ? `${conAno(fmtLong(o.redeem_start_at, lang, tz), o.redeem_start_at)} – ${conAno(fmtEnd(o.redeem_start_at, o.redeem_end_at, lang, tz), o.redeem_end_at)}`
     : diaEntero
-      ? fmtDay(o.event_at, lang, tz) + (sameDay(o.event_at, o.event_end_at, tz) ? '' : ` – ${fmtDay(o.event_end_at, lang, tz)}`)
-      : fmtLong(o.event_at, lang, tz) + (o.event_end_at ? ` – ${fmtEnd(o.event_at, o.event_end_at, lang, tz)}` : '');
+      ? conAno(fmtDay(o.event_at, lang, tz), o.event_at) + (sameDay(o.event_at, o.event_end_at, tz) ? '' : ` – ${conAno(fmtDay(o.event_end_at, lang, tz), o.event_end_at)}`)
+      : conAno(fmtLong(o.event_at, lang, tz), o.event_at) + (o.event_end_at ? ` – ${conAno(fmtEnd(o.event_at, o.event_end_at, lang, tz), o.event_end_at)}` : '');
 
   // El beneficio sale en su píldora (coral), junto a cuándo: aquí, el estado.
   const badges = [
@@ -495,7 +508,7 @@ export async function offerPage(id, lang, rpRaw = '') {
           ${deRrpp && !prom ? '' : `<p class="acciones">${compartirBoton(lang, `${BASE}${path}${rpQ}`, o.title)}${historiaBoton(lang, 'o', o.id, rpQ)}</p>`}`;
       })()}
       ${serieFicha(serie, o.id, lang)}
-      <p class="note">${S.note}</p>
+      <p class="note">${!(flash || o.reservations_enabled) ? S.noteNoCode : entidad ? S.noteEntity : S.note}</p>
     </aside>
     <div class="d-body">
       ${o.description ? `<h2>${S.about}</h2><p data-tr="offer:${esc(o.id)}:description">${esc(o.description).replace(/\n/g, '<br>')}</p>` : ''}
@@ -506,7 +519,7 @@ export async function offerPage(id, lang, rpRaw = '') {
       <p class="info-linea">${icono('lugar')}<span>${o.lat ? `<a href="${esc(`https://www.google.com/maps/search/?api=1&query=${o.lat},${o.lng}`)}" rel="nofollow noopener" target="_blank">${esc(where)}</a>` : esc(where)}</span></p>
       ${toquesContacto({ phone: o.business_phone, email: o.business_email, website: o.business_website, social: o.business_social }, lang, { lat: o.lat, lng: o.lng })}` : ''}
       ${fuenteHtml(fuente, lang)}
-      <h2>${S.biz}</h2>
+      <h2>${entidad ? S.org : S.biz}</h2>
       <p>${esc(o.business_name)}${o.business_rating && o.business_ratings ? ` · ★ ${nota(o.business_rating, lang)} (${o.business_ratings})` : ''}</p>
       <p><a href="${esc(bHref)}">${S.more} ${esc(o.business_name)} →</a></p>
       <details class="por-que" id="por-que"><summary>${S.why}</summary>
@@ -798,7 +811,7 @@ export async function businessPage(param, lang, search = '') {
   // (`?ver=novedades`, `?ver=resenas`). Antes salían hasta 200 tarjetas de
   // golpe (la agenda pública de Madrid pesaba ~500 KB).
   const qs = new URLSearchParams(search);
-  const ver = ['novedades', 'resenas', 'preguntas'].includes(qs.get('ver')) ? qs.get('ver') : '';
+  const ver = ['novedades', 'resenas', 'preguntas', 'carta'].includes(qs.get('ver')) ? qs.get('ver') : '';
   const pagina = Math.max(1, Math.min(100, parseInt(qs.get('p') || '1', 10) || 1));
   const desde = (pagina - 1) * (ver ? POR_PAGINA_LISTA : POR_PAGINA_FICHA);
   const [offers, cuentas, sellos, carta, opiniones, novedades, cierres, nVerificadas, local, partidosBar, grupoInfo, sorteos, organizador, enlacesNeg, fichaInfo, preguntasRes, preguntasLista] = await Promise.all([
@@ -806,10 +819,10 @@ export async function businessPage(param, lang, search = '') {
     ver ? null : rpc('business_offer_counts', { p_id: id }).catch(() => null),
     rpcAll('stamp_cards_of', { p_business: id }).catch(() => []), // opcional: sin ella, la ficha sale igual
     rpcAll('business_menu', { p_business: id }),
-    ver === 'novedades' || ver === 'preguntas' ? []
-      : rpcAll('business_reviews', { p_id: id, p_limit: ver ? POR_PAGINA_LISTA : 12, p_offset: ver ? desde : 0, ...(soloVerificadas ? { p_verified_only: true } : {}) }),
-    ver === 'resenas' || ver === 'preguntas' ? []
-      : rows('business_posts', `select=id,body,image_url,created_at&business_id=eq.${id}&order=created_at.desc,id.desc&limit=${ver ? POR_PAGINA_LISTA : 6}&offset=${ver ? desde : 0}`),
+    ver === 'novedades' || ver === 'preguntas' || ver === 'carta' ? []
+      : rpcAll('business_reviews', { p_id: id, p_limit: ver ? POR_PAGINA_LISTA : 3, p_offset: ver ? desde : 0, ...(soloVerificadas ? { p_verified_only: true } : {}) }),
+    ver === 'resenas' || ver === 'preguntas' || ver === 'carta' ? []
+      : rows('business_posts', `select=id,body,image_url,created_at&business_id=eq.${id}&order=created_at.desc,id.desc&limit=${ver ? POR_PAGINA_LISTA : 3}&offset=${ver ? desde : 0}`),
     rpcAll('business_closures', { p_business: id }),
     rpc('business_verified_review_count', { p_id: id }).then((n) => Number(n) || 0).catch(() => 0),
     // «El sitio»: lo que marca el negocio (terraza, apto para niños…).
@@ -878,7 +891,7 @@ export async function businessPage(param, lang, search = '') {
         verifiedWhat: "They've redeemed something at this business with Klendar: an offer, an event, a stamp reward, a birthday gift or something the business gave them with “Give on the spot”. We check it against what the business itself validated or gave at the venue.",
         howReviews: 'How reviews work', allReviews: 'All',
         verifiedReviews: (n) => `Verified customers (${n})`, noVerified: 'No reviews from verified customers yet.',
-        claim: 'Is this your business?',
+        claim: 'Is this your business?', contact: 'Contact',
         replyFrom: (n) => `Reply from ${n}`,
         closedToday: 'Closed today', closedUntil: (d) => `Closed until ${d}`,
         closedTemp: 'Temporarily closed', closedTempBody: "This business has closed for a while and isn't posting anything right now.",
@@ -901,6 +914,7 @@ export async function businessPage(param, lang, search = '') {
         helpfulN: (n) => (n === 1 ? 'Helpful to 1 person' : `Helpful to ${n} people`), edited: 'edited',
         noAsk: "This business isn't taking questions right now.",
         askSoon: 'You’ll soon be able to ask this venue questions.',
+        menuAll: 'See the whole menu',
         seeAll: (n) => `See all (${n})`, back: 'Back to the page', prev: '← Previous', next: 'Next →', page: 'Page',
         allAgenda: (c) => `See everything on in ${c}`,
       }
@@ -929,7 +943,7 @@ export async function businessPage(param, lang, search = '') {
         verifiedWhat: 'Ha canjeado algo en este negocio con Klendar: una oferta, un evento, un premio de sellos, un regalo de cumpleaños o algo que el negocio le dio con «Dar en el momento». Lo comprobamos con lo que el propio negocio ha validado o dado en el local.',
         howReviews: 'Cómo funcionan las reseñas', allReviews: 'Todas',
         verifiedReviews: (n) => `Clientes verificados (${n})`, noVerified: 'Aún no hay reseñas de clientes verificados.',
-        claim: '¿Es tu negocio?',
+        claim: '¿Es tu negocio?', contact: 'Contacto',
         replyFrom: (n) => `Respuesta de ${n}`,
         closedToday: 'Cerrado hoy', closedUntil: (d) => `Cerrado hasta el ${d}`,
         closedTemp: 'Cerrado temporalmente', closedTempBody: 'Este negocio ha cerrado por un tiempo y ahora no publica nada.',
@@ -952,6 +966,7 @@ export async function businessPage(param, lang, search = '') {
         helpfulN: (n) => (n === 1 ? 'A 1 persona le sirve' : `A ${n} personas les sirve`), edited: 'editada',
         noAsk: 'Este negocio no recibe preguntas ahora mismo.',
         askSoon: 'Pronto podrás preguntar a este local.',
+        menuAll: 'Ver toda la carta',
         seeAll: (n) => `Ver todas (${n})`, back: 'Volver a la ficha', prev: '← Anterior', next: 'Siguiente →', page: 'Página',
         allAgenda: (c) => `Ver toda la agenda de ${c}`,
       };
@@ -983,7 +998,9 @@ export async function businessPage(param, lang, search = '') {
   ].join('');
   // Un organizador no tiene dirección (ni mapa, horario, «Abierto ahora»,
   // «¿Hay sitio ahora?», «Cómo llegar» ni distancia): cada evento lleva su
-  // sitio. En su lugar, «Próximas fechas» y «Organiza en distintos sitios».
+  // sitio. Su sello «Organiza en distintos sitios»; sus fechas, en
+  // «Próximamente» justo debajo (la lista «Próximas fechas» se quitó el
+  // 2026-10-22: repetía lo mismo) y en los datos estructurados.
   const where = organizador ? '' : [b.address, b.city].filter(Boolean).join(', ');
   // Todo lo de la ficha, en la hora del negocio (Canarias, una menos).
   const tz = zonaDe(b);
@@ -1148,8 +1165,58 @@ export async function businessPage(param, lang, search = '') {
     : pronto ? `<p class="muted pregunta-pronto">${esc(S.askSoon)}</p>` : '';
   const preguntasScript = pq ? `<script src="/assets/preguntas.js?v=1" defer data-biz="${esc(b.id)}" data-lang="${en ? 'en' : 'es'}" data-url="${esc(supabasePublic().url)}" data-key="${esc(supabasePublic().key)}" data-cuenta="${esc(cuenta(lang))}" data-nombre="${esc(b.name)}"></script>` : '';
   const nResenas = soloVerificadas ? nVerificadas : Number(b.ratings) || 0;
+  // ── La carta: los platos (los [max] primeros, con su sección), las fotos,
+  // los PDF y el enlace a su web. En la ficha, 5 platos y «Ver toda la
+  // carta» (`?ver=carta`, la carta entera), como la app.
+  const nPlatos = carta.reduce((n, sec) => n + (sec.items || []).length, 0);
+  const platosHtml = (max = Infinity) => {
+    let quedan = max;
+    const secciones = [];
+    carta.forEach((sec, si) => {
+      if (quedan <= 0) return;
+      const items = (sec.items || []).slice(0, quedan);
+      quedan -= items.length;
+      if (items.length) secciones.push([sec, si, items]);
+    });
+    return secciones.length ? `<p data-tr-nota="menu_" hidden></p>
+        <div class="menu">${secciones.map(([sec, si, items]) => `<section>
+          <h3${isUuid(sec.id) ? ` data-tr="menu_section:${sec.id}:name"` : ''}>${esc(sec.name)}</h3>
+          <ul>${items.map((it, ii) => `<li>
+            ${seguro(it.image_url) ? miniatura(seguro(it.image_url), { grupo: `plato-${si}-${ii}`, clase: 'dish', etiqueta: it.name, lang, ancho: 56, alto: 56 }) : ''}
+            <span class="plato"><b${isUuid(it.id) ? ` data-tr="menu_item:${it.id}:name"` : ''}>${esc(it.name)}</b>${it.description ? `<small${isUuid(it.id) ? ` data-tr="menu_item:${it.id}:description"` : ''}>${esc(it.description)}</small>` : ''}
+            ${(it.allergens || []).length ? `<small class="alg">${S.allergens}: ${it.allergens.map((a) => esc(nombreAlergeno(a, en))).join(', ')}</small>` : ''}</span>
+            <span class="price">${it.price_cents == null ? '' : esc(money(it.price_cents, 'EUR', lang))}</span>
+          </li>`).join('')}</ul>
+        </section>`).join('')}</div>
+        <p class="note">${esc(S.menuNote)}</p>` : '';
+  };
+  const archivosCartaHtml = `${fotosCarta.length ? `<div class="carta-fotos">${fotosCarta.map((u, i) => miniatura(u, { grupo: 'carta', i, n: fotosCarta.length, clase: 'carta-foto', etiqueta: S.menuPhotos, lang, ancho: 300, alto: 400 })).join('')}</div>` : ''}
+        ${pdfsCarta.length || enlaceCarta ? `<div class="carta-archivos">${pdfsCarta.map((f) => KE.filaCarta(f.url, lang, { pdf: true, nombre: f.name, bytes: f.bytes })).join('')}${enlaceCarta ? KE.filaCarta(enlaceCarta, lang) : ''}</div>` : ''}`;
+  const hayArchivosCarta = fotosCarta.length > 0 || pdfsCarta.length > 0;
+  const cartaFicha = parado ? ''
+    : carta.length || hayArchivosCarta
+      ? `<h2 id="carta">${S.menu}</h2>${platosHtml(5)}
+        ${nPlatos > 5 || hayArchivosCarta || enlaceCarta ? `<p><a class="pill" href="${path}?ver=carta">${icono('carta', 16)} ${esc(S.menuAll)}</a></p>` : ''}`
+      // Solo el enlace a su web: su fila, que lo abre.
+      : enlaceCarta ? `<h2 id="carta">${S.menu}</h2><div class="carta-archivos">${KE.filaCarta(enlaceCarta, lang)}</div>` : '';
   // «Ver todas (N)» de las novedades o de las reseñas: solo esa lista, por
   // páginas, sin indexar (la ficha es la buena).
+  if (ver === 'carta') {
+    const cuerpo = `
+  <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a>${city ? ` · <a href="${city}">${esc(b.city)}</a>` : ''} · <a href="${path}">${esc(b.name)}</a></p>
+  <div class="detail negocio sin-media lista-entera">
+    <h1>${esc(S.menu)} · ${esc(b.name)}</h1>
+    ${parado ? '' : `${platosHtml()}${archivosCartaHtml}`}
+    <p><a class="pill" href="${path}">${esc(S.back)}</a></p>
+  </div>`;
+    return html(publicPage({
+      lang, path, body: cuerpo + MENU_JS, title: `${S.menu} · ${b.name}`, description: `${S.menu} · ${b.name}`, image: b.cover || b.logo,
+      consulta: '?ver=carta',
+      head: `<meta name="robots" content="noindex, follow">
+${traducir(lang, `business:${b.id}`, carta.length ? `menu:${b.id}` : '')}${cuentaToques ? `
+<script src="/assets/enlaces.js?v=3" defer data-url="${esc(supabasePublic().url)}" data-key="${esc(supabasePublic().key)}" data-biz="${esc(b.id)}"></script>` : ''}`,
+    }));
+  }
   if (ver) {
     const total = ver === 'novedades' ? (parado ? 0 : Number(b.posts) || 0) : ver === 'preguntas' ? nPreguntas : nResenas;
     const lista = ver === 'novedades' ? (parado ? [] : novedades) : ver === 'preguntas' ? (Array.isArray(preguntasLista) ? preguntasLista : []) : opiniones;
@@ -1163,6 +1230,10 @@ export async function businessPage(param, lang, search = '') {
     <h1>${esc(titulo)} · ${esc(b.name)}</h1>
     ${ver === 'resenas' ? `<p><a class="pill" data-opinar="${esc(b.id)}" href="${cuenta(lang)}#/opinar/${encodeURIComponent(b.id)}">${icono('resena', 16)} <span>${S.write}</span></a></p>` : ''}
     ${ver === 'preguntas' ? `<div data-preguntas-mias hidden></div>${preguntarHtml}` : ''}
+    ${ver === 'resenas' && (nVerificadas > 0 || soloVerificadas) ? `<nav class="filtro-resenas" aria-label="${esc(S.reviews)}">
+      <a class="pill${soloVerificadas ? '' : ' on'}" href="${path}?ver=resenas"${soloVerificadas ? '' : ' aria-current="true"'}>${S.allReviews}</a>
+      <a class="pill${soloVerificadas ? ' on' : ''}" href="${path}?ver=resenas&amp;resenas=verificadas" rel="nofollow"${soloVerificadas ? ' aria-current="true"' : ''}>${esc(S.verifiedReviews(nVerificadas))}</a>
+    </nav>` : ''}
     ${lista.length
       ? (ver === 'novedades' ? `<p data-tr-nota="post:" hidden></p><div class="novedades">${lista.map(novedadHtml).join('')}</div>`
         : ver === 'preguntas' ? `<div class="preguntas">${lista.map(preguntaHtml).join('')}</div>`
@@ -1179,22 +1250,68 @@ ${traducir(lang, `business:${b.id}`, '')}${ver === 'preguntas' ? `\n${PREGUNTAS_
     }));
   }
 
+  // ── La ficha ordenada (Iván, 2026-10-22; igual en la app) ──────────────
+  // 1. Nombre e insignias. 2. Una sola línea de estado que se despliega
+  // («Abierto · cierra 23:00 · Casi lleno»): dentro, el horario entero, la
+  // cocina, el festivo y «Avísame cuando haya sitio»; lo que hay que avisar
+  // (cerrado, en pausa, festivo sin confirmar, «Horario sin confirmar»), a la
+  // vista. 3. Lo publicado. 4. Qué pedir aquí. 5. El sitio. 6. Carta (y
+  // «Reservar», «Pedir…»). 7. Grupos, partidos y sorteos. 8. Sellos (y lo
+  // exclusivo para favoritos). 9. Novedades. 10. Reseñas. 11. Preguntas: 1 y
+  // «Ver todas (N)». 12. Contacto, redes y «Cómo llegar» (en el escritorio, a
+  // la derecha; en el móvil, al final).
+  const festivoAviso = festivo.includes('sin-confirmar') ? festivo : '';
+  const flecha = '<svg class="ic flecha" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg>';
+  const estadoHtml = horario
+    ? `<details class="estado-neg">
+        <summary><span class="estado-hoy" hidden data-horario="${esc(JSON.stringify(horas))}" data-cierres="${esc(JSON.stringify(cierres.map((c) => ({ starts_on: c.starts_on, ends_on: c.ends_on }))))}" data-tz="${esc(tz)}" data-lang="${en ? 'en' : 'es'}"${cocina ? ` data-cocina="${esc(JSON.stringify(cocina))}"` : ''}${Object.keys(diasOtro).length ? ` data-dias="${esc(JSON.stringify(diasOtro))}"` : ''}></span>${crowdOn ? `<span class="sitio-ahora" data-sitio-ahora="${esc(b.id)}" hidden></span>` : ''}<span class="estado-fb">${S.hours}</span>${flecha}</summary>
+        <div class="estado-dentro">
+          <h3 class="side-h">${S.hours}</h3>${horario}${horarioCocina}
+          ${festivoAviso ? '' : festivo}
+          ${crowdOn ? `<div data-hay-sitio="${esc(b.id)}" data-solo-publico hidden></div>` : ''}
+        </div>
+      </details>
+      ${festivoAviso}${cierre}
+      <div class="horario-check" hidden data-solo-publico data-cerrado="${esc(b.id)}" data-lang="${en ? 'en' : 'es'}" data-url="${esc(supabasePublic().url)}" data-key="${esc(supabasePublic().key)}"></div>`
+    // Sin horario (un organizador, o no lo ha puesto): «¿Hay sitio ahora?» en
+    // su línea y lo que haya que avisar.
+    : `${crowdOn ? `<p class="sitio-ahora" data-sitio-ahora="${esc(b.id)}" hidden></p>
+      <div data-hay-sitio="${esc(b.id)}" data-solo-publico hidden></div>` : ''}${cierre}`;
+  // «El sitio»: cómo es (la descripción), lo que marca el negocio (terraza,
+  // wifi…) y sus momentos. Sin nada de eso, «Sobre el negocio».
+  const marcasSitio = parado ? '' : `${sitioFicha(sitio, lang)}${momentosHtml}`;
+  const descripcion = b.description ? `<p data-tr="business:${esc(b.id)}:description">${esc(b.description).replace(/\n/g, '<br>')}</p>
+      <p data-tr-nota="business:" hidden></p>` : '';
+  const elSitio = marcasSitio || descripcion ? `<h2 id="el-sitio">${marcasSitio ? S.place : S.about}</h2>${descripcion}${marcasSitio}` : '';
+  // «Preguntas»: la más útil y «Ver todas (N)».
+  const preguntasTop = (pq?.top || []).slice(0, 1);
+  const preguntasHtml = conPreguntas ? `<h2 id="preguntas">${esc(S.questions)}${nPreguntas ? ` <small class="muted">(${nPreguntas})</small>` : ''}</h2>
+      <div data-preguntas-mias hidden></div>
+      ${preguntasTop.length ? `<div class="preguntas">${preguntasTop.map(preguntaHtml).join('')}</div>
+        ${nPreguntas > preguntasTop.length ? `<p><a class="pill" href="${path}?ver=preguntas">${esc(S.seeAll(nPreguntas))}</a></p>` : ''}` : `<p class="empty">${esc(recibe ? S.noQuestions : S.noAsk)}</p>`}
+      ${preguntarHtml}` : '';
+  // La tarjeta de sellos que se llama como el negocio no repite el nombre.
+  const planoSello = (t) => String(t || '').normalize('NFD').replace(/[^a-zA-Z0-9]+/g, ' ').toLowerCase().trim();
+  const mismoNombre = (n) => !n || planoSello(n) === planoSello(b.name);
+
   const body = `
   <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a>${city ? ` · <a href="${city}">${esc(b.city)}</a>` : ''}</p>
-  <div class="detail negocio${b.cover || galeria.length ? '' : ' sin-media'}" data-equipo-biz="${esc(b.id)}">
+  <div class="detail negocio ordenada${b.cover || galeria.length ? '' : ' sin-media'}" data-equipo-biz="${esc(b.id)}">
     ${carrusel([b.cover, ...galeria].filter(Boolean), { titulo: b.name, forma: 'negocio', lang })}
     <div class="d-head">
       <div class="neg-id d-top">
         ${b.logo && /^https:\/\//.test(b.logo) ? `<img class="neg-logo" src="${esc(b.logo)}" alt="" width="88" height="88">` : `<span class="neg-logo" aria-hidden="true">${esc((b.name || '·').charAt(0).toUpperCase())}</span>`}
         <div><h1>${esc(b.name)}</h1>
           <p class="muted"${b.lat && !organizador ? ` data-lat="${Number(b.lat).toFixed(5)}" data-lng="${Number(b.lng).toFixed(5)}"` : ''}>${esc(b.city || '')}<span class="tj-dist" hidden></span></p></div>
+        <div class="neg-botones">
+        <a class="fav-ic" data-solo-publico data-fav="${esc(b.id)}" href="${cuenta(lang)}#/seguir/${encodeURIComponent(b.id)}"><svg class="ic cor-vacio" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M16.5 3c-1.74 0-3.41.81-4.5 2.09C10.91 3.81 9.24 3 7.5 3 4.42 3 2 5.42 2 8.5c0 3.78 3.4 6.86 8.55 11.54L12 21.35l1.45-1.32C18.6 15.36 22 12.28 22 8.5 22 5.42 19.58 3 16.5 3zm-4.4 15.55-.1.1-.1-.1C7.14 14.24 4 11.39 4 8.5 4 6.5 5.5 5 7.5 5c1.54 0 3.04.99 3.57 2.36h1.87C13.46 5.99 14.96 5 16.5 5c2 0 3.5 1.5 3.5 3.5 0 2.89-3.14 5.74-7.9 10.05z"/></svg><svg class="ic cor-lleno" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg><span class="sr">${S.open}</span></a>
         ${masMenu([`<a class="mas-peligro" data-solo-publico href="${cuenta(lang)}#/denunciar/business/${encodeURIComponent(b.id)}" rel="nofollow">${S.reportShort}</a>`], lang, { soloPublico: true })}
+        </div>
       </div>
+      <p class="acciones equipo-acc"><a class="pill" data-solo-equipo="gestion" hidden href="/panel/#/ficha?biz=${encodeURIComponent(b.id)}">${icono('editar', 16)} <span>${S.editBiz}</span></a><a class="pill" data-solo-equipo="empleado" hidden href="/panel/?biz=${encodeURIComponent(b.id)}">${icono('negocio', 16)} <span>${S.myBiz}</span></a></p>
       ${where ? `<a class="neg-dir" href="${esc(maps || '#')}" rel="nofollow noopener" target="_blank">${icono('lugar')}<span>${esc(b.address || where)}</span><svg class="ic" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M8.59 16.59 13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg></a>` : ''}
       ${b.rating && b.ratings ? `<p class="neg-nota"><a href="#resenas"><span class="stars-mini" aria-hidden="true">★</span> ${nota(b.rating, lang)} · ${esc(en ? (b.ratings === 1 ? '1 review' : `${b.ratings} reviews`) : (b.ratings === 1 ? '1 reseña' : `${b.ratings} reseñas`))}</a>${precioHtml ? ` <span aria-hidden="true">·</span> ${precioHtml}` : ''}</p>`
     : `<p class="neg-nota"><span class="muted">★ ${S.noRatings}</span>${precioHtml ? ` <span aria-hidden="true">·</span> ${precioHtml}` : ''}</p>`}
-      ${crowdOn ? `<p class="sitio-ahora" data-sitio-ahora="${esc(b.id)}" hidden></p>
-      <div data-hay-sitio="${esc(b.id)}" data-solo-publico hidden></div>` : ''}
       <div class="badges">
         ${selloEntidad(local.entity_kind, lang)}
         ${organizador && !local.entity_kind ? `<span class="badge organiza">${esc(SA.organises)}</span>` : ''}
@@ -1202,8 +1319,7 @@ ${traducir(lang, `business:${b.id}`, '')}${ver === 'preguntas' ? `\n${PREGUNTAS_
         ${since ? `<span class="badge">${S.since} ${esc(since)}</span>` : ''}
         ${b.redemptions_total ? `<span class="badge">${esc(S.redeemed(Number(b.redemptions_total)))}</span>` : ''}
       </div>
-      ${cierre}
-      ${sorteosHtml}
+      ${estadoHtml}
       <nav class="neg-secciones" aria-label="${esc(b.name)}">
         ${nFlash ? `<a class="chip" href="#ahora">${esc(S.now)} <span class="muted">${nFlash}</span></a>` : ''}
         ${nEvents ? `<a class="chip" href="#proximamente">${esc(S.soon)} <span class="muted">${nEvents}</span></a>` : ''}
@@ -1214,16 +1330,38 @@ ${traducir(lang, `business:${b.id}`, '')}${ver === 'preguntas' ? `\n${PREGUNTAS_
         ${conPreguntas ? `<a class="chip" href="#preguntas">${esc(S.questions)}${nPreguntas ? ` <span class="muted">${nPreguntas}</span>` : ''}</a>` : ''}
       </nav>
     </div>
-    <aside class="side">
-      <a class="pill big" data-solo-equipo="gestion" hidden href="/panel/#/ficha?biz=${encodeURIComponent(b.id)}">${icono('editar', 16)} <span>${S.editBiz}</span></a>
-      <a class="pill big" data-solo-equipo="empleado" hidden href="/panel/?biz=${encodeURIComponent(b.id)}">${icono('negocio', 16)} <span>${S.myBiz}</span></a>
-      <a class="pill accent big" data-solo-publico data-fav="${esc(b.id)}" href="${cuenta(lang)}#/seguir/${encodeURIComponent(b.id)}"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.8 4.5c2.2 0 3.6 1.2 5.2 3 1.6-1.8 3-3 5.2-3 3.8 0 5.9 3.9 4.4 7.3C19.5 16.4 12 21 12 21z"/></svg> <span>${S.open}</span></a>
-      <p class="note" data-solo-publico style="margin-bottom:16px">${S.note}</p>
+    <div class="d-body">
+      ${flash.length ? `<h2 id="ahora">${S.now}</h2>${rejilla(flash, lang, { tz, sinNegocio: true, galeria: true })}` : ''}
+      ${events.length ? `<h2 id="proximamente">${S.soon}</h2>${rejilla(events, lang, { tz, sinNegocio: true, galeria: true })}` : ''}
+      ${paginador(pagina, paginas, enlacePagina)}
+      ${local.entity_kind === 'public_agenda' && b.city && nFlash + nEvents > POR_PAGINA_FICHA ? `<p><a class="pill" href="${city}">${esc(S.allAgenda(b.city))}</a></p>` : ''}
+      ${offers.length || nFlash + nEvents || parado ? '' : `<p class="empty">${S.none}</p>`}
+      ${quePedir}
+      ${elSitio}
+      ${cartaFicha}
       ${enlacesHtml ? `<div class="acciones neg-enlaces">${enlacesHtml}</div>` : ''}
-      <p class="acciones" style="margin:0 0 16px">${compartirBoton(lang, `${BASE}${path}`, b.name)}${historiaBoton(lang, 'b', slug || b.id)}</p>
+      ${grupoHtml}
+      ${partidos}
+      ${sorteosHtml}
+      ${sellos.length ? `<h2>${sellos.length > 1 ? S.stampsMany : S.stamps}</h2>
+        ${sellos.map((c) => `<p class="callout"${isUuid(c.id) ? ` data-tarjeta="${c.id}"` : ''}>${mismoNombre(c.name) ? '' : `<b>${esc(c.name)}</b> · `}${esc(S.stampsBody(c.goal, c.reward))}<br><small>${esc(queSellaTarjeta(c, S, en))}</small></p>`).join('')}
+        <p class="muted">${esc(sellos.some((c) => c.by_visit) ? S.stampsNoteVisit : S.stampsNote)}</p>` : ''}
+      ${exclusivas}
+      ${novedades.length ? `<h2 id="novedades">${S.news}</h2>
+        <p data-tr-nota="post:" hidden></p>
+        <div class="novedades">${novedades.map(novedadHtml).join('')}</div>
+        ${Number(b.posts) > novedades.length ? `<p><a class="pill" href="${path}?ver=novedades">${esc(S.seeAll(Number(b.posts)))}</a></p>` : ''}` : ''}
+      <h2 id="resenas">${S.reviews}${b.rating && b.ratings ? ` <small class="muted">★ ${nota(b.rating, lang)} (${b.ratings})</small>` : ''}</h2>
+      <p><a class="pill" data-opinar="${esc(b.id)}" href="${cuenta(lang)}#/opinar/${encodeURIComponent(b.id)}">${icono('resena', 16)} <span>${S.write}</span></a></p>
+      ${opiniones.length ? `<div class="resenas">${opiniones.map(resenaHtml).join('')}</div>
+        ${nResenas > opiniones.length ? `<p><a class="pill" href="${path}?ver=resenas${soloVerificadas ? '&amp;resenas=verificadas' : ''}">${esc(S.seeAll(nResenas))}</a></p>` : ''}` : `<p class="empty">${soloVerificadas ? S.noVerified : S.noReviews}</p>`}
+      ${preguntasHtml}
+      ${b.city ? `<p class="muted">${esc(S.moreIn(b.city))} <a href="${cityToday}">${esc(S.cityToday)}</a> · <a href="${city}">${esc(S.cityWeek)}</a></p>` : ''}
+      ${local.entity_kind === 'public_agenda' ? '' : `<p class="denuncia-pie" data-solo-publico><a href="${cuenta(lang)}#/reclamar/${encodeURIComponent(b.id)}" rel="nofollow">${S.claim}</a></p>`}
+    </div>
+    <aside class="side">
+      <h2 class="side-h contacto-h">${S.contact}</h2>
       ${maps && !parado ? toquesContacto({}, lang, { lat: b.lat, lng: b.lng }) : ''}
-      ${organizador ? `<h2 class="side-h fechas-h">${esc(SA.upcoming)}</h2>
-      ${fechasOrg.length ? listaFechas(fechasOrg, lang, { conNegocio: false }) : `<p class="muted">${esc(SA.noDatesBiz)}</p>`}` : ''}
       <div class="info">
         ${where ? `<div><span>${icono('lugar')}</span><span>${maps ? `<a href="${esc(maps)}" rel="nofollow noopener" target="_blank">${esc(where)}</a>` : esc(where)}</span></div>` : ''}
         ${b.phone ? `<div><span>${icono('telefono')}</span><span><a href="tel:${esc(b.phone)}">${esc(b.phone)}</a></span></div>` : ''}
@@ -1232,60 +1370,8 @@ ${traducir(lang, `business:${b.id}`, '')}${ver === 'preguntas' ? `\n${PREGUNTAS_
         ${b.contact_email ? `<div><span>${icono('correo')}</span><span><a href="mailto:${esc(b.contact_email)}">${esc(b.contact_email)}</a></span></div>` : ''}
         ${redes.length ? `<div><span>${icono('redes')}</span><span>${redes.join(' · ')}</span></div>` : ''}
       </div>
-      ${horario ? `<h2 class="side-h">${S.hours}</h2><p class="estado-hoy" hidden data-horario="${esc(JSON.stringify(horas))}" data-cierres="${esc(JSON.stringify(cierres.map((c) => ({ starts_on: c.starts_on, ends_on: c.ends_on }))))}" data-tz="${esc(tz)}" data-lang="${en ? 'en' : 'es'}"${cocina ? ` data-cocina="${esc(JSON.stringify(cocina))}"` : ''}${Object.keys(diasOtro).length ? ` data-dias="${esc(JSON.stringify(diasOtro))}"` : ''}></p>${festivo}${horario}${horarioCocina}
-      <div class="horario-check" hidden data-solo-publico data-cerrado="${esc(b.id)}" data-lang="${en ? 'en' : 'es'}" data-url="${esc(supabasePublic().url)}" data-key="${esc(supabasePublic().key)}"></div>` : ''}
+      <p class="acciones" style="margin:12px 0 0">${compartirBoton(lang, `${BASE}${path}`, b.name)}${historiaBoton(lang, 'b', slug || b.id)}</p>
     </aside>
-    <div class="d-body">
-      ${b.description ? `<h2>${S.about}</h2><p data-tr="business:${esc(b.id)}:description">${esc(b.description).replace(/\n/g, '<br>')}</p>
-      <p data-tr-nota="business:" hidden></p>` : ''}
-      ${quePedir}
-      ${!parado && (sitioFicha(sitio, lang) || momentosHtml) ? `<h2>${S.place}</h2>${sitioFicha(sitio, lang)}${momentosHtml}` : ''}
-      ${flash.length ? `<h2 id="ahora">${S.now}</h2>${rejilla(flash, lang, { tz, sinNegocio: true, galeria: true })}` : ''}
-      ${events.length ? `<h2 id="proximamente">${S.soon}</h2>${rejilla(events, lang, { tz, sinNegocio: true, galeria: true })}` : ''}
-      ${paginador(pagina, paginas, enlacePagina)}
-      ${local.entity_kind === 'public_agenda' && b.city && nFlash + nEvents > POR_PAGINA_FICHA ? `<p><a class="pill" href="${city}">${esc(S.allAgenda(b.city))}</a></p>` : ''}
-      ${offers.length || nFlash + nEvents || parado ? '' : `<p class="empty">${S.none}</p>`}
-      ${exclusivas}
-      ${partidos}
-      ${grupoHtml}
-      ${sellos.length ? `<h2>${sellos.length > 1 ? S.stampsMany : S.stamps}</h2>
-        ${sellos.map((c) => `<p class="callout"${isUuid(c.id) ? ` data-tarjeta="${c.id}"` : ''}><b>${esc(c.name)}</b> · ${esc(S.stampsBody(c.goal, c.reward))}<br><small>${esc(queSellaTarjeta(c, S, en))}</small></p>`).join('')}
-        <p class="muted">${esc(sellos.some((c) => c.by_visit) ? S.stampsNoteVisit : S.stampsNote)}</p>` : ''}
-      ${carta.length ? `<h2 id="carta">${S.menu}</h2>
-        <p data-tr-nota="menu_" hidden></p>
-        <div class="menu">${carta.map((sec, si) => `<section>
-          <h3${isUuid(sec.id) ? ` data-tr="menu_section:${sec.id}:name"` : ''}>${esc(sec.name)}</h3>
-          <ul>${(sec.items || []).map((it, ii) => `<li>
-            ${seguro(it.image_url) ? miniatura(seguro(it.image_url), { grupo: `plato-${si}-${ii}`, clase: 'dish', etiqueta: it.name, lang, ancho: 56, alto: 56 }) : ''}
-            <span class="plato"><b${isUuid(it.id) ? ` data-tr="menu_item:${it.id}:name"` : ''}>${esc(it.name)}</b>${it.description ? `<small${isUuid(it.id) ? ` data-tr="menu_item:${it.id}:description"` : ''}>${esc(it.description)}</small>` : ''}
-            ${(it.allergens || []).length ? `<small class="alg">${S.allergens}: ${it.allergens.map((a) => esc(nombreAlergeno(a, en))).join(', ')}</small>` : ''}</span>
-            <span class="price">${it.price_cents == null ? '' : esc(money(it.price_cents, 'EUR', lang))}</span>
-          </li>`).join('')}</ul>
-        </section>`).join('')}</div>
-        <p class="note">${esc(S.menuNote)}</p>` : ''}
-      ${fotosCarta.length || pdfsCarta.length || enlaceCarta ? `${carta.length ? '' : `<h2 id="carta">${S.menu}</h2>`}
-        ${fotosCarta.length ? `<div class="carta-fotos">${fotosCarta.map((u, i) => miniatura(u, { grupo: 'carta', i, n: fotosCarta.length, clase: 'carta-foto', etiqueta: S.menuPhotos, lang, ancho: 300, alto: 400 })).join('')}</div>` : ''}
-        ${pdfsCarta.length || enlaceCarta ? `<div class="carta-archivos">${pdfsCarta.map((f) => KE.filaCarta(f.url, lang, { pdf: true, nombre: f.name, bytes: f.bytes })).join('')}${enlaceCarta ? KE.filaCarta(enlaceCarta, lang) : ''}</div>` : ''}` : ''}
-      ${novedades.length ? `<h2 id="novedades">${S.news}</h2>
-        <p data-tr-nota="post:" hidden></p>
-        <div class="novedades">${novedades.map(novedadHtml).join('')}</div>
-        ${Number(b.posts) > novedades.length ? `<p><a class="pill" href="${path}?ver=novedades">${esc(S.seeAll(Number(b.posts)))}</a></p>` : ''}` : ''}
-      <h2 id="resenas">${S.reviews}${b.rating && b.ratings ? ` <small class="muted">★ ${nota(b.rating, lang)} (${b.ratings})</small>` : ''}</h2>
-      <p><a class="pill" data-opinar="${esc(b.id)}" href="${cuenta(lang)}#/opinar/${encodeURIComponent(b.id)}">${icono('resena', 16)} <span>${S.write}</span></a></p>
-      ${nVerificadas > 0 || soloVerificadas ? `<nav class="filtro-resenas" aria-label="${esc(S.reviews)}">
-        <a class="pill${soloVerificadas ? '' : ' on'}" href="${path}#resenas"${soloVerificadas ? '' : ' aria-current="true"'}>${S.allReviews}</a>
-        <a class="pill${soloVerificadas ? ' on' : ''}" href="${path}?resenas=verificadas#resenas" rel="nofollow"${soloVerificadas ? ' aria-current="true"' : ''}>${esc(S.verifiedReviews(nVerificadas))}</a>
-      </nav>` : ''}
-      ${opiniones.length ? `<div class="resenas">${opiniones.map(resenaHtml).join('')}</div>
-        ${nResenas > opiniones.length ? `<p><a class="pill" href="${path}?ver=resenas${soloVerificadas ? '&amp;resenas=verificadas' : ''}">${esc(S.seeAll(nResenas))}</a></p>` : ''}` : `<p class="empty">${soloVerificadas ? S.noVerified : S.noReviews}</p>`}
-      ${conPreguntas ? `<h2 id="preguntas">${esc(S.questions)}${nPreguntas ? ` <small class="muted">(${nPreguntas})</small>` : ''}</h2>
-      <div data-preguntas-mias hidden></div>
-      ${(pq.top || []).length ? `<div class="preguntas">${pq.top.map(preguntaHtml).join('')}</div>
-        ${nPreguntas > pq.top.length ? `<p><a class="pill" href="${path}?ver=preguntas">${esc(S.seeAll(nPreguntas))}</a></p>` : ''}` : `<p class="empty">${esc(recibe ? S.noQuestions : S.noAsk)}</p>`}
-      ${preguntarHtml}` : ''}
-      ${b.city ? `<p class="muted">${esc(S.moreIn(b.city))} <a href="${cityToday}">${esc(S.cityToday)}</a> · <a href="${city}">${esc(S.cityWeek)}</a></p>` : ''}
-      ${local.entity_kind === 'public_agenda' ? '' : `<p class="denuncia-pie" data-solo-publico><a href="${cuenta(lang)}#/reclamar/${encodeURIComponent(b.id)}" rel="nofollow">${S.claim}</a></p>`}
-    </div>
   </div>`;
 
   const bits = [];
@@ -1354,8 +1440,7 @@ ${traducir(lang, `business:${b.id}`, carta.length ? `menu:${b.id}` : '')}${conPr
 ${PREGUNTAS_CSS}
 ${preguntasScript}` : ''}${partidos ? `
 ${PARTIDOS_CSS}` : ''}${grupoHtml || sorteosHtml ? `
-${GRUPOS_CSS}` : ''}${organizador ? `
-${ARTISTAS_CSS}` : ''}`,
+${GRUPOS_CSS}` : ''}`,
   }), 200, conVisita ? 'no-store' : undefined);
 }
 

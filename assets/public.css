@@ -853,3 +853,50 @@ details.hoja-bloque[open] > summary .ic { transform: rotate(180deg); }
 .horario-cerrado { display: grid; gap: 8px; }
 .horario-cerrado-botones { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .horario-cerrado-botones .pill, .horario-cerrado > .pill { justify-content: center; text-align: center; }
+
+/* ── Ficha del negocio ordenada (2026-10-22, igual que la app) ──────────────
+   Lo publicado justo después del nombre y una línea de estado; el contacto,
+   las redes y «Cómo llegar» a la derecha en el escritorio y al final en el
+   móvil. */
+@media (max-width: 860px) {
+  .detail.negocio.ordenada { grid-template-areas: "media" "head" "body" "side"; }
+}
+.negocio.ordenada .side { position: static; }
+/* En el escritorio, la portada más baja: lo publicado se ve al entrar. */
+@media (min-width: 861px) { .negocio.ordenada > .ficha-media--negocio { max-height: 300px; } }
+.negocio.ordenada .contacto-h { margin-top: 0; }
+.negocio.ordenada .d-body > h2:first-child { margin-top: 0; }
+/* El favorito: un corazón neutro junto a ⋮ (coral solo para el botón
+   principal y la oferta). Lleno cuando ya lo tienes. */
+/* El corazón y ⋮: en el móvil, uno encima del otro (el nombre cabe en
+   menos líneas); en el escritorio, en fila. */
+.neg-id.d-top > .neg-botones { flex: none; align-self: flex-start; display: flex; gap: 8px; }
+@media (max-width: 600px) { .neg-id.d-top > .neg-botones { flex-direction: column; } }
+.fav-ic { flex: none; align-self: flex-start; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%;
+  border: 1px solid var(--glass-border); background: var(--glass); color: var(--ink); }
+.fav-ic:hover { text-decoration: none; background: var(--soft); }
+.fav-ic:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.fav-ic .ic { width: 22px; height: 22px; flex: none; }
+.fav-ic .cor-lleno, .fav-ic.on .cor-vacio { display: none; }
+.fav-ic.on .cor-lleno { display: block; }
+.equipo-acc { margin: 0 0 8px; }
+.equipo-acc:not(:has(> :not([hidden]))) { display: none; }
+/* La línea de estado: «Abierto · cierra a las 23:00 · Casi lleno ⌄». */
+.estado-neg { margin: 4px 0 10px; }
+.estado-neg > summary { list-style: none; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; min-height: 44px;
+  cursor: pointer; font-size: 15px; color: var(--ink-2); }
+.estado-neg > summary::-webkit-details-marker { display: none; }
+.estado-neg > summary:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 8px; }
+.estado-neg .estado-hoy { margin: 0; font-size: 15px; }
+.estado-neg summary br, .estado-neg summary .cocina { display: none; }
+.estado-neg .sitio-ahora { display: inline-flex; align-items: center; gap: 5px; margin: 0; padding: 0; border: 0; background: none;
+  color: var(--ink); font-weight: 700; }
+.estado-neg .sitio-ahora[hidden] { display: none; }
+.estado-neg .estado-hoy:not([hidden]) + .sitio-ahora:not([hidden])::before { content: '·'; color: var(--ink-2); font-weight: 400; margin-right: 1px; }
+.estado-neg .estado-hoy:not([hidden]) ~ .estado-fb, .estado-neg .sitio-ahora:not([hidden]) ~ .estado-fb { display: none; }
+.estado-neg .flecha { color: var(--ink-2); transition: transform .15s; }
+.estado-neg[open] .flecha { transform: rotate(180deg); }
+.estado-dentro { padding: 2px 0 6px; }
+.estado-dentro .side-h:first-child { margin-top: 4px; }
+.negocio.ordenada .festivo, .negocio.ordenada .horario-check { margin-top: 0; }
+.negocio.ordenada .cierre { margin: 0 0 10px; }

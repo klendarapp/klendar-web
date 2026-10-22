@@ -133,7 +133,11 @@ PAGES.aforo = async (v, param) => {
       <p class="afd-red" id="afdRed" role="status" hidden>${esc(bi('Sin conexión: lo mandamos en cuanto vuelva.', 'No connection: we’ll send it as soon as it’s back.'))}</p>
       <div class="afd-lineas" id="afdLineas"></div>
       <p class="afd-cero"><button type="button" class="linkbtn" id="afdCero">${esc(bi('Poner a 0', 'Set to 0'))}</button></p>
-    </section></div>`;
+    </section>
+    <div id="afdSitio" style="margin-top:14px"></div></div>`;
+  // «¿Hay sitio ahora?» a mano (manda 30 minutos sobre el contador): aquí y
+  // no en el resumen, donde ya no se repite con el aforo encendido.
+  if (typeof pintaAforo === 'function') pintaAforo($('#afdSitio', v), null, { enPuerta: true });
 
   // Lo que aún no ha confirmado la base: lo que está en camino y lo tocado
   // mientras tanto.

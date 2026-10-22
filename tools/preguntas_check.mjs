@@ -8,7 +8,7 @@
 //  2. Tu cuenta › Denunciar una pregunta y una respuesta (`report_target`).
 //  3. Panel › `#/preguntas`: Sin contestar · Contestadas · Ocultas,
 //     «Contestar» (`answer_business_question`) y «Ocultar» con motivo
-//     (`hide_business_question`); la fila «Preguntas · 2 sin contestar» del
+//     (`hide_business_question`); la fila «Por contestar: 2 preguntas» del
 //     resumen.
 //  4. Ficha pública (Functions de verdad contra un Supabase falso): la
 //     sección con las contestadas, «Ver todas (5)» y «Preguntar»; con sesión,
@@ -204,8 +204,8 @@ async function panelPreguntas(nav, nombre, t, vp) {
   await p.waitForFunction(() => /Oculta: Lleva datos personales/.test(document.querySelector('#view')?.innerText || ''));
   ok(await p.locator('[data-contestar]').count() === 0, `${nombre}/${t} panel Ocultas: el motivo y sin botones`);
   await p.goto(`${BASE}/panel/#/resumen`, { waitUntil: 'networkidle' });
-  await p.waitForFunction(() => /Preguntas · 2 sin contestar/.test(document.body.innerText), null, { timeout: 8000 }).catch(() => {});
-  ok(/Preguntas · 2 sin contestar/.test(await p.locator('body').innerText()), `${nombre}/${t} panel resumen: «Preguntas · 2 sin contestar»`);
+  await p.waitForFunction(() => /Por contestar:\s*2 preguntas/.test(document.body.innerText), null, { timeout: 8000 }).catch(() => {});
+  ok(/Por contestar:\s*2 preguntas/.test(await p.locator('body').innerText()), `${nombre}/${t} panel resumen: «Por contestar: 2 preguntas»`);
   ok(errores.length === 0, `${nombre}/${t} panel sin errores JS ${errores.join(' | ')}`);
   await ctx.close();
 }
@@ -249,14 +249,15 @@ async function ficha(nav, nombre, t, vp) {
   await p.goto(`http://localhost:${FICHA_PORT}/b/${BIZ}`, { waitUntil: 'networkidle' });
   const sec = await p.locator('#preguntas').innerText().catch(() => '');
   const html = await p.content();
-  ok(/Preguntas/.test(sec) && /¿Se puede ir con perro\?/.test(html) && /Respuesta de Bar Sonda/.test(html) && /editada/.test(html),
-    `${nombre}/${t} ficha: «Preguntas» con las contestadas y la respuesta`);
+  // En la ficha, la más útil y «Ver todas (N)» (2026-10-22, como la app).
+  ok(/Preguntas/.test(sec) && /¿Se puede ir con perro\?/.test(html) && /Respuesta de Bar Sonda/.test(html) && !/¿Hay que reservar para cenar\?/.test(sec),
+    `${nombre}/${t} ficha: «Preguntas» con la más útil y su respuesta (solo una)`);
   ok(await p.locator(`a[href$="?ver=preguntas"]`).filter({ hasText: 'Ver todas (5)' }).count() === 1, `${nombre}/${t} ficha: «Ver todas (5)»`);
   ok(await p.locator(`[data-preguntar] a[href*="#/preguntar/${BIZ}"]`).count() === 1, `${nombre}/${t} ficha: «Preguntar» a «Tu cuenta»`);
   ok(await p.locator(`a[href*="#/denunciar/question/${Q(1)}"]`).count() === 1 && await p.locator(`a[href*="#/denunciar/question_answer/${Q(1)}"]`).count() === 1,
     `${nombre}/${t} ficha: denunciar la pregunta y la respuesta`);
   await p.waitForSelector('[data-sirve]:not([hidden])', { timeout: 8000 }).catch(() => null);
-  ok(await p.locator('[data-sirve]:not([hidden])').count() === 3, `${nombre}/${t} ficha sin sesión: «A mí también me sirve» a la vista`);
+  ok(await p.locator('[data-sirve]:not([hidden])').count() === 1, `${nombre}/${t} ficha sin sesión: «A mí también me sirve» a la vista`);
   await p.locator('#preguntas').scrollIntoViewIfNeeded();
   await p.screenshot({ path: `${OUT}/web-ficha-preguntas-${nombre}-${t}.png`, fullPage: true });
   await ctx.close();
@@ -280,13 +281,14 @@ async function ficha(nav, nombre, t, vp) {
   const mias = await p.locator('[data-preguntas-mias]').first().innerText().catch(() => '');
   ok(/Tus preguntas/.test(mias) && /Esperando respuesta/.test(mias) && /¿Abrís el 1 de noviembre\?/.test(mias), `${nombre}/${t} ficha con sesión: «Tus preguntas» esperando`);
   ok(/Ya tienes una pregunta esperando respuesta aquí/.test(await p.locator('[data-preguntar]').first().innerText()), `${nombre}/${t} ficha con sesión: por qué no puede preguntar otra`);
+  // En la ficha, solo la más útil (Q1, ya marcada); las demás, en «Ver todas».
   const b1 = p.locator(`[data-sirve="${Q(1)}"]`);
-  const b3 = p.locator(`[data-sirve="${Q(3)}"]`);
-  ok(await b1.getAttribute('aria-pressed') === 'true' && await b3.isHidden(), `${nombre}/${t} ficha: «me sirve» encendido donde ya lo dijo y no en la suya`);
-  await p.locator(`[data-sirve="${Q(2)}"]`).click();
+  ok(await b1.getAttribute('aria-pressed') === 'true' && await p.locator(`[data-sirve="${Q(2)}"]`).count() === 0,
+    `${nombre}/${t} ficha: «me sirve» encendido en la única que se ve`);
+  await b1.click();
   await p.waitForTimeout(600);
   const l = estado.llamadas.find(([fn]) => fn === 'set_question_helpful');
-  ok(l && l[1].p_id === Q(2) && l[1].p_on === true && /· 3/.test(await p.locator(`[data-sirve="${Q(2)}"]`).innerText()), `${nombre}/${t} ficha: «A mí también me sirve» ${JSON.stringify(l && l[1])}`);
+  ok(l && l[1].p_id === Q(1) && l[1].p_on === false && /· 1/.test(await b1.innerText()), `${nombre}/${t} ficha: quitar «A mí también me sirve» ${JSON.stringify(l && l[1])}`);
   await p.locator('#preguntas').scrollIntoViewIfNeeded();
   await p.screenshot({ path: `${OUT}/web-ficha-preguntas-sesion-${nombre}-${t}.png`, fullPage: true });
   await p.goto(`http://localhost:${FICHA_PORT}/b/${BIZ}?ver=preguntas`, { waitUntil: 'networkidle' });

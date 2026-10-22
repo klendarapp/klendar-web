@@ -280,18 +280,24 @@ async function resumenYCifras(nav, nombre, t, vp) {
   ok(/Para decir con un toque cómo está el local: Hay sitio, Casi lleno o Lleno/.test(txt) && !/tranquilo|animado/i.test(txt), `${nombre}/${t} herramientas: niveles con su nombre nuevo`);
   ok(await p.locator('.fiel-card a[href="#/aforo"]').count() === 1, `${nombre}/${t} herramientas: «Abrir» lleva a la puerta`);
   await p.goto(`${BASE}/panel/#/resumen`);
-  await p.waitForSelector('.card.aforo');
   await p.waitForSelector('.fila-inicio');
+  await p.waitForTimeout(500);
   txt = await vista(p);
   ok(/Aforo en directo · 84 \/ 120/.test(txt), `${nombre}/${t} resumen: fila «Aforo en directo · 84 / 120»`);
-  ok(/Marcado a mano · vuelve al contador a las/.test(txt) && /Volver al contador/.test(txt), `${nombre}/${t} resumen: «Marcado a mano · vuelve al contador…» y «Volver al contador»`);
+  // Con el aforo encendido, «¿Hay sitio ahora?» no se repite en el resumen
+  // (2026-10-22): marcarlo a mano está en la puerta.
+  ok(await p.locator('#aforoCaja .card.aforo').count() === 0, `${nombre}/${t} resumen: sin «¿Hay sitio ahora?» repetido con el aforo encendido`);
+  await p.goto(`${BASE}/panel/#/aforo`);
+  await p.waitForSelector('#afdSitio .card.aforo');
+  txt = await vista(p);
+  ok(/Marcado a mano · vuelve al contador a las/.test(txt) && /Volver al contador/.test(txt), `${nombre}/${t} puerta: «Marcado a mano · vuelve al contador…» y «Volver al contador»`);
   const botones = await p.locator('.aforo-botones .btn').allInnerTexts();
-  ok(JSON.stringify(botones) === JSON.stringify(['Hay sitio', 'Casi lleno', 'Lleno']), `${nombre}/${t} resumen: Hay sitio · Casi lleno · Lleno (${botones})`);
-  await p.locator('.card.aforo').screenshot({ path: `${OUT}/panel-hay-sitio-resumen-${nombre}-${t}.png` });
-  await p.click('.card.aforo .linkbtn');
+  ok(JSON.stringify(botones) === JSON.stringify(['Hay sitio', 'Casi lleno', 'Lleno']), `${nombre}/${t} puerta: Hay sitio · Casi lleno · Lleno (${botones})`);
+  await p.locator('#afdSitio .card.aforo').screenshot({ path: `${OUT}/panel-hay-sitio-puerta-${nombre}-${t}.png` });
+  await p.click('#afdSitio .card.aforo .linkbtn');
   await p.waitForTimeout(400);
   const c = llamadas(estado, 'set_business_crowd')[0]?.[1] || {};
-  ok(c.p_level === null && /Con el aforo en directo, lo que marques manda 30 minutos\./.test(await vista(p)), `${nombre}/${t} resumen: «Volver al contador» quita lo marcado`);
+  ok(c.p_level === null && /Con el aforo en directo, lo que marques manda 30 minutos\./.test(await vista(p)), `${nombre}/${t} puerta: «Volver al contador» quita lo marcado`);
   // Cifras
   await p.goto(`${BASE}/panel/#/informe`);
   await p.waitForSelector('#informeAforo details.plegable');
@@ -373,6 +379,10 @@ async function contextoFicha(nav, vp, { conSesion, rpc = {}, locale = 'es-ES' })
   return { ctx, p, estado, errores };
 }
 
+// «Avísame cuando haya sitio» va dentro de la línea de estado de la ficha
+// (2026-10-22): se despliega antes de buscarlo.
+const abreEstado = (p) => p.locator('details.estado-neg:not([open]) > summary').click({ timeout: 3000 }).catch(() => {});
+
 async function ficha(nav, nombre, t, vp) {
   const FICHA = `http://localhost:${PUB_PORT}/b/${BIZ}`;
   PUB.marca = 'full';
@@ -400,7 +410,7 @@ async function ficha(nav, nombre, t, vp) {
     cancel_room_alert: () => { pedido = false; return { ok: true }; },
   } }));
   await p.goto(FICHA, { waitUntil: 'networkidle' });
-  await p.waitForSelector('[data-hs-pedir]');
+  await abreEstado(p); await p.waitForSelector('[data-hs-pedir]');
   const boton = p.locator('[data-hs-pedir]');
   ok(/Avísame cuando haya sitio/.test(await boton.innerText()) && !(await boton.evaluate((b) => b.classList.contains('accent'))), `${nombre}/${t} ficha: «Avísame cuando haya sitio», sin coral`);
   await p.locator('.d-head').screenshot({ path: `${OUT}/web-ficha-avisame-${nombre}-${t}.png` });
@@ -419,7 +429,7 @@ async function ficha(nav, nombre, t, vp) {
     `${nombre}/${t} ficha: «Te avisaremos cuando haya sitio · Quitar» y la nota (${caja.replace(/\s+/g, ' ')}; ${pide})`);
   await p.locator('.d-head').screenshot({ path: `${OUT}/web-ficha-te-avisaremos-${nombre}-${t}.png` });
   await p.click('[data-hs-quitar]');
-  await p.waitForSelector('[data-hs-pedir]');
+  await abreEstado(p); await p.waitForSelector('[data-hs-pedir]');
   ok(llamadas(estado, 'cancel_room_alert').length === 1, `${nombre}/${t} ficha: «Quitar» → cancel_room_alert y vuelve el botón`);
   ok(errores.length === 0, `${nombre}/${t} ficha con sesión: sin errores de JavaScript (${errores.join(' | ')})`);
   await ctx.close();
@@ -428,7 +438,7 @@ async function ficha(nav, nombre, t, vp) {
   for (const [err, re] of [['too_many', /Ya esperas aviso de 5 sitios\. Quita alguno para pedir otro\./], ['not_full', /Ya hay sitio: no hace falta avisarte\./], ['team', null]]) {
     ({ ctx, p, estado, errores } = await contextoFicha(nav, vp, { conSesion: true, rpc: { my_room_alerts: [], request_room_alert: pgError(err) } }));
     await p.goto(FICHA, { waitUntil: 'networkidle' });
-    await p.waitForSelector('[data-hs-pedir]');
+    await abreEstado(p); await p.waitForSelector('[data-hs-pedir]');
     await p.click('[data-hs-pedir]');
     await p.waitForTimeout(600);
     if (re) ok(re.test(await p.locator('[data-hay-sitio]').innerText()), `${nombre}/${t} ficha: ${err} lo dice`);
@@ -447,7 +457,7 @@ async function ficha(nav, nombre, t, vp) {
   PUB.marca = 'lively';
   ({ ctx, p, estado, errores } = await contextoFicha(nav, vp, { conSesion: true, rpc: { my_room_alerts: [] }, locale: 'en-GB' }));
   await p.goto(`http://localhost:${PUB_PORT}/en/b/${BIZ}`, { waitUntil: 'networkidle' });
-  await p.waitForSelector('[data-hs-pedir]');
+  await abreEstado(p); await p.waitForSelector('[data-hs-pedir]');
   ok(/Nearly full · 5 min ago/.test(await p.locator('.sitio-ahora').innerText()) && /Tell me when there’s room/.test(await p.locator('[data-hs-pedir]').innerText()), `${nombre}/${t} ficha en inglés: «Nearly full» y «Tell me when there’s room»`);
   ok(errores.length === 0, `${nombre}/${t} ficha en inglés: sin errores de JavaScript (${errores.join(' | ')})`);
   await ctx.close();

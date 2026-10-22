@@ -1546,16 +1546,17 @@ PAGES.resumen = async (v) => {
  * 20261234100000) lo marcado a mano manda 30 minutos y luego vuelve el
  * contador: «Marcado a mano · vuelve al contador a las 23:40» y «Volver al
  * contador» (= quitar lo marcado). */
-async function pintaAforo(caja, estado = null) {
+async function pintaAforo(caja, estado = null, { enPuerta = false } = {}) {
   if (!caja) return;
   const KMa = window.KlendarMarcas;
   let st = estado;
   if (!st) {
     try { st = await rpc('business_crowd_status', { p_business: BIZ.id }); } catch { st = null; }
   }
-  // Con el aforo en directo no se repite: lo pone solo el contador (y su
-  // fila, «Aforo en directo · 34 / 60», está en «Ahora»). Como la app.
-  if (!KMa || !st || !st.enabled || st.capacity_on === true) { caja.innerHTML = ''; return; }
+  // Con el aforo en directo no se repite en el resumen: lo pone solo el
+  // contador (y su fila, «Aforo en directo · 34 / 60», está en «Ahora»).
+  // Marcarlo a mano (manda 30 minutos), en la puerta (`enPuerta`). Como la app.
+  if (!KMa || !st || !st.enabled || (st.capacity_on === true) !== enPuerta) { caja.innerHTML = ''; return; }
   const M = KMa.t(I18N.lang);
   const hora = (iso) => new Date(iso).toLocaleTimeString(LOC(), { hour: 'numeric', minute: '2-digit', timeZone: TZ });
   const contador = st.capacity_on === true;
@@ -1589,7 +1590,7 @@ async function pintaAforo(caja, estado = null) {
       try {
         const nuevo = await rpc('set_business_crowd', { p_business: BIZ.id, p_level: nivel });
         toast(nivel ? bi(`Marcado: ${M.crowd[nivel]}`, `Set: ${M.crowd[nivel]}`) : contador ? bi('Vuelve el contador', 'Back to the counter') : bi('Quitado', 'Cleared'));
-        pintaAforo(caja, nuevo);
+        pintaAforo(caja, nuevo, { enPuerta });
       } catch (e) {
         toast(friendly(e.message), true);
         $$('[data-aforo]', caja).forEach((x) => { x.disabled = false; });

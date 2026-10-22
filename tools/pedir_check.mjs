@@ -251,6 +251,8 @@ async function publico(nav, nombre, t, vp, estado) {
   const r = await p.goto(`${PUB}/b/casa-prueba-madrid`, { waitUntil: 'load' });
   ok(r.status() === 200, `${nombre}/${t} /b/: 200${r.status() === 200 ? '' : ` (${r.status()})`}`);
   await p.waitForTimeout(400);
+  // El festivo confirmado va dentro de la línea de estado (2026-10-22).
+  await p.locator('details.estado-neg > summary').click().catch(() => {});
   const cuerpo = await p.locator('body').innerText();
   ok(/Qué pedir aquí/.test(cuerpo) && /Croquetas de jamón/.test(cuerpo) && /Las de la abuela/.test(cuerpo) && /Tarta de queso/.test(cuerpo), `${nombre}/${t} /b/: «Qué pedir aquí»`);
   ok(/Vermut · Tardeo/.test(cuerpo), `${nombre}/${t} /b/: los momentos en «El sitio»`);
@@ -261,6 +263,7 @@ async function publico(nav, nombre, t, vp, estado) {
   ok(ancho <= 0, `${nombre}/${t} /b/: sin desplazamiento horizontal`);
   await p.screenshot({ path: `${OUT}/web-ficha-que-pedir-${nombre}-${t}.png`, fullPage: true });
   const en = await p.goto(`${PUB}/en/b/casa-prueba-madrid`);
+  await p.locator('details.estado-neg > summary').click().catch(() => {});
   const ten = await p.locator('body').innerText();
   ok(en.status() === 200 && /What to order here/.test(ten) && /Vermouth · Afternoon drinks/.test(ten) && /Open on the .+ holiday/.test(ten), `${nombre}/${t} /en/b/: en inglés`);
   // 6. Explorar
