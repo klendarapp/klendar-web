@@ -7,6 +7,12 @@
  * (`SpotReceiveScreen`): una vez por persona y QR, sin notificación (ya se ve
  * aquí), y lo de «algo del momento» queda en «Tus códigos» («Te dieron»).
  *
+ * Personal de verdad (migración 20261241100000): si el navegador YA tiene
+ * permiso de ubicación para Klendar, se manda dónde estás (sin guardarlo en
+ * ningún sitio) y la base solo lo da cerca del local (`too_far`). Sin
+ * permiso no se pide nada: nunca sale el diálogo del navegador. Con tope de
+ * personas, el siguiente ve «Ya lo han recibido todos» (`full`).
+ *
  * Va después de app.js y usa lo suyo (`RUTAS`, `llamar`, `pinta`, `t`, `esc`,
  * `ic`, `fecha`, `pantallaVacia`…). Comparten ámbito: los nombres de aquí
  * empiezan por `momento`.
@@ -29,7 +35,30 @@ const MOMENTO_ERR = {
   too_fast: 'Vas muy rápido. Espera un momento y vuelve a probar.',
   rate_limited: 'Vas muy rápido. Espera un momento y vuelve a probar.',
   account_suspended: 'Tu cuenta está suspendida.',
+  full: 'Ya lo han recibido todos',
+  too_far: 'Tienes que estar en el local para aceptarlo',
 };
+
+/** Dónde estás, solo si ya hay permiso (nunca se pide): `{p_lat, p_lng,
+ * p_accuracy}` o `{}`. Como la app: con lo que el navegador ya sepa (hasta
+ * 1 minuto), sin alta precisión y como mucho unos 4 segundos. No se guarda. */
+async function momentoDonde() {
+  try {
+    if (!navigator.geolocation || !navigator.permissions?.query) return {};
+    const permiso = await navigator.permissions.query({ name: 'geolocation' });
+    if (permiso?.state !== 'granted') return {};
+    const pos = await Promise.race([
+      new Promise((ok, mal) => navigator.geolocation.getCurrentPosition(ok, mal,
+        { timeout: 4000, maximumAge: 60000, enableHighAccuracy: false })),
+      new Promise((_, mal) => { setTimeout(() => mal(new Error('timeout')), 4500); }),
+    ]);
+    const { latitude: lat, longitude: lng, accuracy } = pos?.coords || {};
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return {};
+    return { p_lat: lat, p_lng: lng, p_accuracy: Number.isFinite(accuracy) ? accuracy : null };
+  } catch {
+    return {};
+  }
+}
 
 /** Lo que da el QR: «1 sello en Cafés», «1 uso de tu bono «10 cafés»» o el
  * texto de «algo del momento». */
@@ -64,13 +93,16 @@ RUTAS.momento = async ([token]) => {
       icono: 'qr_code_2',
       titulo: t(MOMENTO_ERR[clave] || 'Algo no ha ido bien. Si vuelve a pasar, escríbenos a info@klendar.app.'),
       h: 'h1',
-      texto: clave === 'qr_expired' ? t('Pide que te lo enseñen otra vez: cambia cada 30 segundos.') : (d?.business?.name || ''),
+      texto: clave === 'qr_expired' ? t('Pide que te lo enseñen otra vez: cambia cada 30 segundos.')
+        : clave === 'too_far' ? t('Acércate y vuelve a escanear el QR.') : (d?.business?.name || ''),
       botones: `<a class="pill accent" href="#/codigos">${esc(t('Tus códigos'))}</a>`,
     }));
   };
+  // La ubicación, solo si ya hay permiso (para «Aceptar», la misma).
+  const donde = await momentoDonde();
   let d;
   try {
-    d = await llamar('spot_give_info', { p_token: token || '' });
+    d = await llamar('spot_give_info', { p_token: token || '', ...donde });
   } catch (e) {
     fuera(e.clave, e.datos);
     return;
@@ -92,7 +124,7 @@ RUTAS.momento = async ([token]) => {
     boton.disabled = true;
     let r;
     try {
-      r = await llamar('spot_give_accept', { p_token: token || '' });
+      r = await llamar('spot_give_accept', { p_token: token || '', ...donde });
     } catch (e) {
       fuera(e.clave, e.datos || d);
       if (navigator.vibrate) navigator.vibrate([60, 60, 60]);

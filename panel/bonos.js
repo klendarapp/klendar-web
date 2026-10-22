@@ -315,7 +315,8 @@ function bonoPintaCliente(caja) {
     : '';
   caja.innerHTML = `<div class="bono-cliente card">
     ${locales}
-    <h2>${esc(nombre)}</h2>
+    <div class="cod-quien bono-quien">${fotoCliente(s.customer?.avatar_url)}
+      <div class="cod-quien-t"><h2>${esc(nombre)}</h2>${vecesAqui(s.customer?.times_here) ? `<small>${esc(vecesAqui(s.customer.times_here))}</small>` : ''}</div></div>
     <p class="muted">${esc(I18N.t('Durante 10 minutos puedes cargar o descontar sin volver a escanear. Cada venta y cada uso se pueden deshacer en ese rato.'))}</p>
     ${(s.passes || []).length ? s.passes.map((p) => {
     const deshazUso = (p.uses || []).find((u) => !u.undone_at && u.undo_until && new Date(u.undo_until) > new Date());

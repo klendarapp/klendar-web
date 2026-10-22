@@ -7,7 +7,9 @@
 
 export const onRequestGet = (ctx) => {
   const code = String(ctx.params.code || '');
-  if (!/^[0-9a-f]{8,64}$/i.test(code)) {
+  // Una entrada nominativa lleva además la ventana y la firma
+  // (`<código>.<ventana>.<firma>`, cambia cada 30 s): pasa entera.
+  if (!/^[0-9a-f]{8,64}$/i.test(code) && !/^[0-9a-f]{24}\.[0-9]{1,12}\.[0-9a-f]{12}$/i.test(code)) {
     return new Response(null, { status: 302, headers: { Location: '/' } });
   }
   // Relativa: se queda en el mismo sitio (klendar.app o el de pruebas).

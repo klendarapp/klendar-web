@@ -2257,6 +2257,11 @@ async function offerForm(v, id, kindDefault, desde = null) {
       .select('for_kids, setting, promoter_scope, promoter_quota, promoter_code_until, promoter_code_hours, solo_friendly, charity, kid_ages, card_requirements, listen_url')
       .eq('id', origenLugar).maybeSingle();
     if (lugarPlan) Object.assign(o, lugarPlan);
+    // «Entradas: Normales o Nominativas» (migración 20261241100001), aparte:
+    // si no llega, el formulario sale igual (con «Normales»).
+    const { data: nominativas } = await sb.from('offers').select('named_tickets').eq('id', origenLugar).maybeSingle()
+      .then((r) => r, () => ({ data: null }));
+    o.named_tickets = nominativas?.named_tickets === true;
   }
   // «Solo con el enlace de un RRPP»: los RRPP del negocio y los elegidos.
   const datosRrpp = await rrppFormularioCarga(origenLugar, o);
@@ -2418,6 +2423,11 @@ async function offerForm(v, id, kindDefault, desde = null) {
           <label class="opcion"><input type="checkbox" name="reservations_enabled" ${o.reservations_enabled ? 'checked' : ''}><span><b>Reserva de plaza (sin pago)</b><br><small class="muted">Reservan desde la app y enseñan el código en la puerta.</small></span></label>
           <label class="f" id="seatsRow"><span>Plazas por persona <small>(con un mismo código)</small></span><select name="max_seats">
             ${[1, 2, 3, 4, 5, 6].map((n) => `<option value="${n}" ${Number(o.max_seats || 1) === n ? 'selected' : ''}>${n === 1 ? esc(I18N.t('1 (solo quien reserva)')) : esc(bi(`${n} personas`, `${n} people`))}</option>`).join('')}</select></label>
+          <div id="nominativasRow" class="bl-fila">
+            <p class="etq">Entradas</p>
+            ${elige('named_tickets', [['no', I18N.t('Normales')], ['si', I18N.t('Nominativas')]], o.named_tickets === true ? 'si' : 'no', I18N.t('Entradas'))}
+            <p class="hint" id="nominativasAyuda"></p>
+          </div>
         </div>
         ${rrppHtml.codigo}
         <div id="ttlRow" class="bl-fila">
@@ -2565,6 +2575,12 @@ async function offerForm(v, id, kindDefault, desde = null) {
     if (flash) $('#entradasAyuda', v).hidden = true; else pintaEntradas();
     $('#reservaRow', v).hidden = flash;
     $('#seatsRow', v).hidden = !conReserva;
+    // Nominativas: solo en un evento con reserva y no de RRPP (la base lo
+    // deja en «Normales» en lo demás).
+    $('#nominativasRow', v).hidden = !conReserva || deRrpp;
+    $('#nominativasAyuda', v).textContent = val('named_tickets') === 'si'
+      ? I18N.t('Solo para quien reserva. Su QR cambia cada 30 segundos (una captura no sirve) y en la puerta ves su nombre, su foto si la tiene y cuántas veces ha venido.')
+      : I18N.t('Se pueden pasar a otra persona.');
     $('#ttlRow', v).hidden = !conCodigo || deRrpp;
     $('#porPersonaRow', v).hidden = !flash;
     // «Antes de cerrar»: solo en una oferta flash para todo el mundo (y de un
@@ -2588,7 +2604,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
     syncKind();
   });
   campo('max_redemptions').addEventListener('input', syncKind);
-  $$('[name=holds_seats], [name=audience]', v).forEach((r) => r.addEventListener('change', syncKind));
+  $$('[name=holds_seats], [name=audience], [name=named_tickets]', v).forEach((r) => r.addEventListener('change', syncKind));
 
   // Un evento sin hora de fin termina al cierre del local (o 6 horas después
   // si ese día no tiene horario): se dice, con la misma cuenta que la base.
@@ -3017,6 +3033,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
         : (flash || reserva) ? [ttl === '' ? bi('el código no caduca', "the code doesn't expire") : bi(`el código vale ${ttlTxt}`, `the code lasts ${ttlTxt}`)] : []),
       ...(flash ? [bi(porPersona === 1 ? '1 por persona' : `hasta ${porPersona} por persona`, porPersona === 1 ? '1 per person' : `up to ${porPersona} per person`)] : []),
       ...(reserva ? [bi(asientos === 1 ? '1 plaza por código' : `hasta ${asientos} plazas por código`, asientos === 1 ? '1 place per code' : `up to ${asientos} places per code`)] : []),
+      ...(reserva && !rrpp && val('named_tickets') === 'si' ? [bi('entradas nominativas', 'named tickets')] : []),
     ].join(' · '));
 
     const aud = val('audience') || 'all';
@@ -3088,6 +3105,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
     pon('code_ttl_minutes', d.code_ttl_minutes ?? '');
     campo('adults_only').checked = !!d.adults_only;
     campo('reservations_enabled').checked = !!d.reservations_enabled;
+    pon('named_tickets', d.named_tickets === true ? 'si' : 'no');
     pon('for_kids', d.for_kids === true ? 'si' : d.for_kids === false ? 'no' : '');
     pon('setting', ['indoor', 'outdoor', 'both'].includes(d.setting) ? d.setting : '');
     campo('solo_friendly').checked = !!d.solo_friendly;
@@ -3174,6 +3192,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
       style: estiloJson(),
       code_ttl_minutes: val('code_ttl_minutes') ? Number(val('code_ttl_minutes')) : null,
       reservations_enabled: kind !== 'flash_offer' && campo('reservations_enabled').checked,
+      named_tickets: kind !== 'flash_offer' && campo('reservations_enabled').checked && val('named_tickets') === 'si',
       images,
       ...(lugar.activo() ? {
         venue_name: String(f.get('venue_name') || '').trim() || null,
@@ -3338,6 +3357,8 @@ async function offerForm(v, id, kindDefault, desde = null) {
       code_ttl_minutes: val('code_ttl_minutes') ? Number(val('code_ttl_minutes')) : null,
       reservations_enabled: reservas,
       max_seats: reservas ? Number(f.get('max_seats') || 1) : 1,
+      // Entradas nominativas: solo con reserva y no de RRPP.
+      named_tickets: reservas && audiencia !== 'promoters' && val('named_tickets') === 'si',
       adults_only: campo('adults_only').checked,
       // null = como el local. Una +18 nunca se marca como apta para niños.
       for_kids: forKids(campo('adults_only').checked, val('for_kids')),
@@ -3792,7 +3813,47 @@ const ERR_VALIDAR = {
   // Fidelizar (20261211100000): primera visita y cupón de la próxima visita.
   first_visit_used: 'Es solo para la primera visita y ya ha canjeado aquí.',
   not_started: 'Es para la próxima visita: todavía no vale.',
+  // Entradas nominativas (20261241100001): solo con el QR que cambia.
+  named_needs_live_qr: 'Entrada nominativa: escanea el QR de su móvil, que cambia cada 30 segundos.',
+  named_qr_old: 'Es un QR de otro momento (una captura). Pide que abra Klendar.',
+  named_qr_invalid: 'Este QR no es de la persona que reservó.',
 };
+
+/** El QR de una entrada nominativa: `<código>.<ventana>.<firma>` (el código
+ * de 24 cifras hex, la ventana de 30 s y la firma con la clave del QR de
+ * cliente de quien reservó; migración 20261241100001). */
+const NOMINATIVA_RE = /^([0-9a-f]{24})\.([0-9]{1,12})\.([0-9a-f]{12})$/;
+/** Lo que se manda a la base de lo leído o tecleado: de un enlace
+ * `…/r/<lo que sea>`, lo de después (con los puntos de una nominativa); y
+ * fuera espacios y guiones (tecleado va en grupos: «0882 7EC7 …»). */
+function codigoLeido(raw) {
+  const t = String(raw || '').trim();
+  const limpio = (t.includes('/r/') ? t.split('/r/').pop().split(/[?#]/)[0] : t).replace(/[\s-]/g, '');
+  return NOMINATIVA_RE.test(limpio.toLowerCase()) ? limpio.toLowerCase() : limpio;
+}
+/** El código sin la ventana ni la firma (para lo que pide el código suelto,
+ * como el importe del ticket). */
+const codigoSuelto = (code) => (NOMINATIVA_RE.exec(String(code || '')) || [])[1] || code;
+/** ¿Es un QR nominativo de otro momento según el reloj de aquí? (más de una
+ * ventana de 30 s de diferencia: una captura). Sin conexión se rechaza ya. */
+const nominativaDeOtroMomento = (code) => {
+  const m = NOMINATIVA_RE.exec(String(code || ''));
+  return !!m && Math.abs(Number(m[2]) - Math.floor(Date.now() / 30000)) > 1;
+};
+
+/** «Primera vez aquí» o «5.ª vez aquí» (`times_here`, contando esta). */
+const ordinalEn = (n) => {
+  const v = n % 100;
+  return `${n}${['th', 'st', 'nd', 'rd'][(v - 20) % 10] || ['th', 'st', 'nd', 'rd'][v] || 'th'}`;
+};
+function vecesAqui(n) {
+  const v = Number(n);
+  if (!Number.isInteger(v) || v < 1) return '';
+  return v === 1 ? bi('Primera vez aquí', 'First time here') : bi(`${v}.ª vez aquí`, `${ordinalEn(v)} time here`);
+}
+/** La foto redonda de la persona, solo si la tiene; si no, `sinFoto`. */
+const fotoCliente = (url, sinFoto = '') => (/^https:\/\//.test(url || '')
+  ? `<img class="cod-av" src="${esc(url)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : sinFoto);
 
 /** Por qué no vale un código («Este código es de otro negocio.»). */
 function textoErrorValidar(res) {
@@ -3863,10 +3924,14 @@ function tarjetaCodigo(r, estado) {
   const foto = r.offer_image ? `<img src="${esc(r.offer_image)}" alt="" loading="lazy">` : `<span class="cod-ic">${ms(icono)}</span>`;
   const [dar, antes] = ajeno ? ['', ''] : partesDelCanje(r);
   const lineas = [];
-  if (r.user_name) {
-    lineas.push(`${ms('person')}<b>${esc(r.user_name)}</b>${r.obtained_at
-      ? ` · ${esc(bi('lo consiguió', 'got it'))}: ${esc(horaCodigo(r.obtained_at))}` : ''}`);
-  }
+  // Quién: la foto si la tiene, el nombre y cuántas veces ha venido; en una
+  // entrada nominativa, además, «Nominativa» (solo vale con su QR).
+  const quien = !ajeno && (r.user_name || r.named) ? `<div class="cod-quien">
+      ${fotoCliente(r.customer_photo, `<span class="cod-av ph">${ms('person')}</span>`)}
+      <span class="cod-quien-t"><b>${esc(r.user_name || I18N.t('Usuario de Klendar'))}</b>${[vecesAqui(r.times_here),
+    r.obtained_at ? `${bi('lo consiguió', 'got it')}: ${horaCodigo(r.obtained_at)}` : ''].filter(Boolean).map((x) => `<small>${esc(x)}</small>`).join('')}</span>
+      ${r.named ? `<span class="tag cod-nominativa">${esc(bi('Nominativa', 'Named'))}</span>` : ''}
+    </div>` : '';
   // De otro de tus locales (validar no pide negocio: el código dice de cuál
   // es). Lo de un local ajeno ya va en el título.
   if (!ajeno && r.business_id && BIZ && r.business_id !== BIZ.id && BIZZES.some((b) => b.id === r.business_id)) {
@@ -3897,6 +3962,7 @@ function tarjetaCodigo(r, estado) {
     <div class="cod-top">${foto}<div class="cod-cab">
       ${tipo || r.business_name ? `<span class="cod-tipo">${esc([tipo, tipoRrpp, r.business_name].filter(Boolean).join(' · '))}</span>` : ''}
       <h2 class="cod-titulo">${esc(titulo)}</h2></div></div>
+    ${quien}
     ${rrpp}
     ${carne}
     ${r.first_visit && !ajeno ? `<p class="cod-linea">${ms('waving_hand')}${esc(bi('Primera visita', 'First visit'))}</p>` : ''}
@@ -4135,9 +4201,19 @@ PAGES.validar = async (v) => {
     // El QR de cliente (bonos): sus bonos, para cargar uno o descontar un
     // uso (panel/bonos.js). Necesita red: no va a la cola.
     if (await bonoCliente($('#result'), raw)) { $('#code').value = ''; return; }
-    // Tecleado se ve en grupos de cuatro («0882 7EC7 …»): fuera espacios y guiones.
-    const code = raw.includes('/r/') ? raw.split('/r/').pop().split(/[?#]/)[0] : raw.replace(/[\s-]/g, '');
+    // Tecleado se ve en grupos de cuatro («0882 7EC7 …»): fuera espacios y
+    // guiones. De una entrada nominativa, el token entero (con la ventana y
+    // la firma: la base mira que sea de ese momento y de esa persona).
+    const code = codigoLeido(raw);
     const aLaCola = () => {
+      // Sin conexión, una captura de una entrada nominativa (su ventana no
+      // es la de ahora) no se guarda: en rojo ya.
+      if (nominativaDeOtroMomento(code)) {
+        $('#result').innerHTML = `<div class="scan-result bad">${ms('cancel')}${esc(I18N.t(ERR_VALIDAR.named_qr_old))}</div>`;
+        $('#code').value = '';
+        if (navigator.vibrate) navigator.vibrate([60, 60, 60]);
+        return;
+      }
       const c = leeCola();
       if (!c.some((x) => x.code === code)) c.push({ code, at: new Date().toISOString() });
       guardaCola(c);
@@ -4177,7 +4253,7 @@ PAGES.validar = async (v) => {
       ${estado === 'ready' ? `<button class="btn primary grande" id="validaYa" type="button">${ms('check')}${esc(I18N.t('Validar'))}</button>` : ''}
       <div id="ticketVal"></div>`;
     // Recién validado el código de una publicación: el importe del ticket.
-    if (estado === 'ok' && (res.kind || 'offer') === 'offer' && res.code_input) cajaTicket($('#ticketVal'), res.code_input);
+    if (estado === 'ok' && (res.kind || 'offer') === 'offer' && res.code_input) cajaTicket($('#ticketVal'), codigoSuelto(res.code_input));
     const b = $('#validaYa');
     if (b) b.onclick = () => { $('#code').value = res.code_input || $('#code').value; validate(); };
     const otro = $('[data-otro-local]', $('#result'));
@@ -4225,7 +4301,7 @@ PAGES.validar = async (v) => {
     history.replaceState(null, '', `${location.pathname}#/validar`);
     bonoCliente($('#result'), cliente);
   }
-  if (desdeQr && /^[0-9a-f]{8,64}$/i.test(desdeQr)) {
+  if (desdeQr && (/^[0-9a-f]{8,64}$/i.test(desdeQr) || NOMINATIVA_RE.test(desdeQr.toLowerCase()))) {
     $('#code').value = desdeQr;
     history.replaceState(null, '', `${location.pathname}#/validar`);
     mira(desdeQr);

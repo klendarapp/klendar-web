@@ -704,7 +704,8 @@ async function rrppPuerta(caja, alValidar) {
     if (!lugar) return;
     lugar.innerHTML = table({
       cols: [
-        { h: bi('Persona', 'Person'), r: (x) => `${rrppAvatar({ name: x.name, avatar: x.avatar })}<b class="title">${esc(x.name || I18N.t('Usuario de Klendar'))}</b><span class="sub">${rrppListaDe(x, true)}</span>` },
+        // Con cuántas veces ha venido (contando esta), como al validar.
+        { h: bi('Persona', 'Person'), r: (x) => `${rrppAvatar({ name: x.name, avatar: x.avatar })}<b class="title">${esc(x.name || I18N.t('Usuario de Klendar'))}</b><span class="sub">${rrppListaDe(x, true)}</span>${vecesAqui(x.times_here) ? `<span class="sub">${esc(vecesAqui(x.times_here))}</span>` : ''}` },
         { h: bi('Publicación', 'Publication'), r: (x) => `${esc(x.offer_title || '')}${x.promoter_offer ? ` <span class="tag rrpp-tag">${esc(bi('Oferta de RRPP', 'Promoter offer'))}</span>` : ''}` },
         { h: bi('Plazas', 'Places'), num: true, r: (x) => fmtNum(x.seats || 1) },
         { h: bi('Estado', 'Status'), r: (x) => rrppEstadoCodigo(x.status, x.validated_at) },

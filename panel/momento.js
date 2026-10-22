@@ -3,13 +3,18 @@
  *
  * Cualquiera del equipo elige qué da (sellos de una tarjeta, un uso de un
  * bono que el cliente ya tiene o «algo del momento», un texto libre) y
- * enseña un QR del negocio que cambia cada 30 segundos y vale 2 minutos
+ * enseña un QR del negocio que cambia cada 30 segundos y vale 1 minuto
  * (`klendar.app/m/<clave>.<ventana>.<firma>`; la firma HMAC-SHA256 se
  * calcula aquí con el secreto que da `spot_give_start`, como el QR de
  * cliente). El cliente lo escanea y lo acepta; aquí se ve en directo quién lo
  * ha recibido (`spot_give_status` cada 3 s). Se deja abierto para varias
  * personas hasta «Terminar» (como mucho 3 horas); irse de la pantalla
  * también lo cierra.
+ *
+ * Personal de verdad (migración 20261241100000): tope opcional de personas
+ * («Para 1 persona» … «Para 20 personas»; al llegar, se cierra solo) y se
+ * cierra solo si nadie lo usa en 10 minutos. Por qué se ha cerrado lo dice
+ * `spot_give_status.closed_reason` (`full`, `idle`, `expired`, `ended`).
  *
  * Con el negocio parado (bloqueado o en pausa): sellos y usos de bonos, sí
  * (ya estaban prometidos); «algo del momento», no.
@@ -33,7 +38,16 @@ const MOMENTO_ERR = {
   rate_limited: 'Vas muy rápido. Espera un momento y vuelve a probar.',
   account_suspended: 'Tu cuenta está suspendida.',
   not_authorized: 'No tienes permiso para esto. Pídeselo a quien lleve el negocio.',
+  bad_max_people: 'Elige para cuántas personas (de 1 a 20) o «Sin tope».',
 };
+/** Por qué se ha cerrado el QR (`closed_reason`), dicho al equipo. */
+const MOMENTO_CERRADO = {
+  full: 'Ya lo han recibido todos',
+  idle: 'Se ha cerrado: 10 minutos sin usarse',
+  expired: 'Se ha cerrado: llevaba 3 horas abierto',
+};
+/** «Para 1 persona», «Para 5 personas». */
+const momentoParaN = (n) => (n === 1 ? 'Para 1 persona' : `Para ${n} personas`);
 const momentoError = (code) => I18N.t(MOMENTO_ERR[code] || friendly(code));
 
 /** HMAC-SHA256(secreto, texto) en hexadecimal. */
@@ -91,6 +105,9 @@ PAGES.momento = async (v) => {
         ${(o.recent_gifts || []).length ? `<p class="hint">Lo último que has dado</p>
           <div class="momento-recientes">${o.recent_gifts.map((g) => `<button type="button" class="pill" data-reciente="${esc(g)}">${esc(g)}</button>`).join('')}</div>` : ''}
       </div>
+      <label class="f"><span>¿Para cuántas personas?</span><select name="max_people">
+        <option value="">Sin tope</option>${Array.from({ length: 20 }, (_, i) => i + 1).map((n) => `<option value="${n}">${esc(momentoParaN(n))}</option>`).join('')}</select></label>
+      <p class="hint">Al llegar a ese número, el QR se cierra solo.</p>
       <p class="hint">El cliente escanea el QR con la app o con la cámara del móvil y lo acepta. Una vez por persona; como mucho 5 al día en tu negocio.</p>
       <button class="btn primary grande" type="submit" ${primero ? '' : 'disabled'}>${ms('qr_code_2')}Enseñar el QR</button>
     </form>`;
@@ -119,6 +136,8 @@ PAGES.momento = async (v) => {
         p_stamps: k === 'stamps' ? Number(form.elements.stamps.value) : null,
         p_pass_type: k === 'pass_use' ? form.elements.pass.value : null,
         p_gift: k === 'gift' ? gift : null,
+        // Vacío = sin tope (null, como la app).
+        p_max_people: form.elements.max_people.value ? Number(form.elements.max_people.value) : null,
       });
       if (s?.ok === false) { toast(momentoError(s.error), true); boton.disabled = false; return; }
       momentoQr(v, s);
@@ -145,6 +164,7 @@ function momentoQr(v, s) {
       <p class="muted" id="momentoCambia" aria-hidden="true"></p>
       <p class="muted" id="momentoAyuda">Escanéalo con la app de Klendar o con la cámara del móvil</p>
       <p class="momento-cuantos" id="momentoCuantos" aria-live="polite"></p>
+      <p class="muted" id="momentoSolo">Si nadie lo usa en 10 minutos, se cierra solo.</p>
       <ul class="momento-lista" id="momentoLista"></ul>
       <button class="btn grande" type="button" id="momentoFin">Terminar</button>
       <p class="muted" id="momentoCierra">${esc(`Se cierra solo a las ${cierra}`)}</p>
@@ -174,10 +194,14 @@ function momentoQr(v, s) {
     qr.make();
     caja.innerHTML = qr.createSvgTag({ cellSize: 6, margin: 2, scalable: true });
   };
+  const tope = Number(s.max_people) || null;
   const pintaEstado = (st) => {
     const n = Number(st.count || 0);
-    $('#momentoCuantos', v).textContent = n === 0 ? 'Nadie lo ha recibido todavía'
-      : n === 1 ? '1 persona lo ha recibido' : `${n} personas lo han recibido`;
+    const max = Number(st.max_people ?? tope) || null;
+    // Con tope, cuántos de cuántos («1 de 2 lo han recibido»).
+    $('#momentoCuantos', v).textContent = max ? `${n} de ${max} lo han recibido`
+      : n === 0 ? 'Nadie lo ha recibido todavía'
+        : n === 1 ? '1 persona lo ha recibido' : `${n} personas lo han recibido`;
     $('#momentoLista', v).innerHTML = (st.receipts || []).slice(0, 12).map((r) => `<li>${ms('check_circle')}<span>${esc(`${r.name || 'Alguien'} lo ha recibido`)}</span><small class="muted">${esc(new Date(r.at).toLocaleTimeString(LOC(), { hour: '2-digit', minute: '2-digit', timeZone: TZ }))}</small></li>`).join('');
     I18N.translate($('#momentoCuantos', v));
     I18N.translate($('#momentoLista', v));
@@ -185,9 +209,12 @@ function momentoQr(v, s) {
     cuantos = n;
     if (st.live === false) {
       cerrar(false);
-      caja.innerHTML = `<p class="momento-fin">${ms('timer_off')}${esc(I18N.t('Este QR ya no vale'))}</p>`;
+      // Por qué: lleno, 10 minutos sin usarse, 3 horas o «Terminar».
+      const porQue = MOMENTO_CERRADO[st.closed_reason] || 'Este QR ya no vale';
+      caja.innerHTML = `<p class="momento-fin">${ms(st.closed_reason === 'full' ? 'check_circle' : 'timer_off')}${esc(I18N.t(porQue))}</p>`;
       $('#momentoCambia', v).textContent = '';
       $('#momentoAyuda', v).hidden = true;
+      $('#momentoSolo', v).hidden = true;
       $('#momentoCierra', v).hidden = true;
       const b = $('#momentoFin', v);
       b.textContent = I18N.t('Dar otra cosa');
@@ -201,7 +228,7 @@ function momentoQr(v, s) {
       if (st?.ok !== false && !fuera()) pintaEstado(st);
     } catch { /* sin red un momento: en 3 s otra vez */ }
   };
-  pintaEstado({ count: 0, receipts: [], live: true });
+  pintaEstado({ count: 0, receipts: [], live: true, max_people: tope });
   $('#momentoFin', v).onclick = async () => {
     cerrar(true);
     toast(cuantos === 0 ? 'Nadie lo ha recibido todavía' : cuantos === 1 ? '1 persona lo ha recibido' : `${cuantos} personas lo han recibido`);

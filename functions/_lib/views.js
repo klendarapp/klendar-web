@@ -261,6 +261,11 @@ export async function offerPage(id, lang, rpRaw = '') {
   // «Quién actúa» («Actúa: DJ Nano ›»), cada uno a su página. Sin la función
   // (o sin red), la ficha sale igual.
   const actuaP = actuaEnOferta(id, lang).catch(() => ({ html: '', lista: [] }));
+  // Entradas nominativas (solo eventos con reserva y no de RRPP): se dice
+  // antes de reservar. Sin la columna (o sin red), la ficha sale igual.
+  const nominativaP = o.kind === 'future_event' && o.reservations_enabled && o.audience !== 'promoters'
+    ? rows('offers', `select=named_tickets&id=eq.${id}`).then((r) => r[0]?.named_tickets === true).catch(() => false)
+    : Promise.resolve(false);
   // La ficha del negocio, por su dirección con nombre, y si es una entidad.
   const datosNeg = await datosDeNegocios([o.business_id]);
   const bHref = bizPath(lang, datosNeg.slugs.get(o.business_id) || o.business_id);
@@ -387,6 +392,7 @@ export async function offerPage(id, lang, rpRaw = '') {
   ].filter(Boolean).join('');
   const fuente = await fuenteP;
   const actua = await actuaP;
+  const nominativa = await nominativaP;
   // Las marcas de la publicación (las mismas que la app).
   const M = KM.t(lang);
   const marcas = (await marcasP) || {};
@@ -496,7 +502,10 @@ export async function offerPage(id, lang, rpRaw = '') {
         // guardarla en Planes (luego no se abriría), ni compartirla.
         const cerradaHtml = listaCerrada
           ? `<p class="note"><b>${esc(KR.abre(prom.opens_at, lang, tz))}</b> ${esc(KR.T[en ? 'en' : 'es'].closedBody)}</p>` : '';
-        return `${rrppHtml}${cerradaHtml}${principal}
+        const nominativaHtml = nominativa ? `<p class="note">${esc(en
+          ? "Named ticket: only for the person who books. It can't be passed on to anyone else."
+          : 'Entrada nominativa: solo para quien reserva. No se puede pasar a otra persona.')}</p>` : '';
+        return `${rrppHtml}${cerradaHtml}${principal}${nominativaHtml}
           <p class="acciones amigos-acc" id="amigos-ficha" data-offer="${esc(o.id)}"${conCodigo ? ` data-codigo="${flash ? 'codigo' : 'reservar'}"` : ''}>
             ${entradas ? voy('pill') : ''}
             ${deRrpp ? '' : `<a class="pill" href="${cuenta(lang)}#/invitar/${id}" rel="nofollow">${icono('invitar', 16)} ${S.invite}</a>`}</p>
