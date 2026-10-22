@@ -717,6 +717,7 @@ KL_DIC('eu', {
   "Este negocio no está activo.": "Negozio hau ez dago aktibo.",
   "Este negocio no recibe preguntas ahora mismo.": "Negozio honek ez du galderarik jasotzen orain.",
   "Este negocio ya tiene varias reclamaciones en revisión. Escríbenos a info@klendar.app.": "Negozio honek hainbat erreklamazio ditu berrikusten. Idatzi iezaguzu info@klendar.app helbidera.",
+  "Este QR lleva a {web}: no es de Klendar": "QR honek {web} helbidera darama: ez da Klendarrena",
   "Este QR no es de un local de Klendar": "QR hau ez da Klendarreko lokal batena",
   "Este sorteo no está": "Zozketa hau ez dago",
   "Este sorteo ya ha terminado.": "Zozketa hau amaitu da.",

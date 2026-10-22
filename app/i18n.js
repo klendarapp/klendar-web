@@ -15,6 +15,7 @@ const APP_EN = {
   "Sin permiso para la cámara. Actívalo en el candado de la barra de direcciones.": "No camera permission. Turn it on in the padlock in the address bar.",
   "No se ha podido abrir la cámara. También puedes usar la cámara del móvil.": "The camera couldn’t be opened. You can also use your phone’s camera.",
   "Este QR no es de un local de Klendar": "This QR code isn’t from a Klendar venue",
+  "Este QR lleva a {web}: no es de Klendar": "This QR code leads to {web}: it isn’t from Klendar",
   "Un sello más en {card}: llevas {count} de {goal}": "One more stamp on {card}: {count} of {goal}",
   // Paridad con la app (2026-10-22)
   "1 negocio en favoritos": "1 business in favourites",

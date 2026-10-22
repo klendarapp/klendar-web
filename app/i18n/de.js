@@ -717,6 +717,7 @@ KL_DIC('de', {
   "Este negocio no está activo.": "Dieses Geschäft ist nicht aktiv.",
   "Este negocio no recibe preguntas ahora mismo.": "Dieses Geschäft nimmt gerade keine Fragen an.",
   "Este negocio ya tiene varias reclamaciones en revisión. Escríbenos a info@klendar.app.": "Für dieses Geschäft sind schon mehrere Anträge in Prüfung. Schreib uns an info@klendar.app.",
+  "Este QR lleva a {web}: no es de Klendar": "Dieser QR-Code führt zu {web}: Er ist nicht von Klendar",
   "Este QR no es de un local de Klendar": "Dieser QR-Code ist nicht von einem Klendar-Lokal",
   "Este sorteo no está": "Dieses Gewinnspiel gibt es nicht",
   "Este sorteo ya ha terminado.": "Dieses Gewinnspiel ist schon beendet.",

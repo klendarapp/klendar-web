@@ -18,7 +18,8 @@
 //   9. Una entidad no abre aforo, wifi, menú del día ni pedidos escribiendo
 //      la dirección: vuelve al resumen.
 //  Tu cuenta
-//  10. `#/recibo/<id>` de un canje de hace más de 50: lo encuentra.
+//  10. `#/recibo/<id>` de un canje de hace más de 50: lo encuentra. Y «Escanear
+//      un QR» de la persona solo abre klendar.app (otra web: «Este QR lleva a …»).
 //  11. Con solo un turno de cola o un pedido, sin la pantalla vacía (Planes
 //      y Tus códigos).
 //  Explorar (contra dev)
@@ -306,6 +307,17 @@ async function cuenta(nav, nombre, t, vp) {
   });
   await p.goto(`${BASE}/app/#/recibo/${objetivo.id}`);
   await p.waitForTimeout(1500);
+  // «Escanear un QR» de la persona: solo abre klendar.app; otra web con la
+  // misma ruta dice adónde lleva (quishing), como la app y el panel.
+  const qr = await p.evaluate(() => ({
+    ajena: webAjenaQr('https://otra-web.com/m/Ab3_dE5-gH7jK9mN'),
+    disfrazada: webAjenaQr('https://klendar.app.evil.io/v/Ab3_dE5-gH7jK9mN'),
+    buena: webAjenaQr('https://klendar.app/m/Ab3_dE5-gH7jK9mN'),
+    destinoAjena: destinoQr('https://otra-web.com/m/Ab3_dE5-gH7jK9mN'),
+    mesa: destinoQr('https://klendar.app/m/Ab3_dE5-gH7jK9mN'),
+  }));
+  ok(qr.ajena === 'otra-web.com' && qr.disfrazada === 'klendar.app.evil.io' && qr.buena === null && qr.destinoAjena === null
+    && qr.mesa === '/m/Ab3_dE5-gH7jK9mN', `${nombre}/${t} escanear: solo klendar.app; otra web, «Este QR lleva a …» (${JSON.stringify(qr)})`);
   let v = await p.locator('#view').innerText().catch(() => '');
   ok(/Recibo/.test(v) && /Café 73/.test(v), `${nombre}/${t} recibo de un canje de hace más de 50: lo encuentra`);
   await p.goto(`${BASE}/app/#/recibo/c0000000-0000-4000-8000-999999999999`);
@@ -335,7 +347,11 @@ async function explorar(nav, nombre, t, vp) {
   const p = await ctx.newPage();
   const errores = [];
   p.on('pageerror', (e) => errores.push(e.message));
-  const datosHoja = () => p.evaluate(() => [...new FormData(document.querySelector('form.hoja-cuerpo')).entries()].map(([k, v]) => `${k}=${v}`));
+  // Con dev lento, la página puede tardar: se espera a la hoja antes de leerla.
+  const datosHoja = async () => {
+    await p.waitForSelector('form.hoja-cuerpo', { state: 'attached', timeout: 15000 });
+    return p.evaluate(() => [...new FormData(document.querySelector('form.hoja-cuerpo')).entries()].map(([k, v]) => `${k}=${v}`));
+  };
   // F2: el calendario conserva «¿Cuándo?» al «Ver resultados».
   await p.goto(`${BASE}/explorar/?cuando=hoy&vista=calendario&${AQUI}`);
   let d = await datosHoja();
@@ -357,8 +373,9 @@ async function explorar(nav, nombre, t, vp) {
     `${nombre}/${t} Sitios → Planes: vuelven ¿Cuándo?, Precio y el Calendario (${u.search})`);
   // F4: Explorar recuerda el Calendario.
   await p.goto(`${BASE}/explorar/`);
-  await p.waitForLoadState('load');
-  await p.waitForTimeout(500);
+  // La vuelta a lo último es un `location.replace` del script de la página:
+  // se espera a que llegue (en WebKit, a veces después del `load`).
+  await p.waitForURL(/[?&]vista=calendario/, { timeout: 8000 }).catch(() => {});
   u = new URL(p.url());
   ok(u.searchParams.get('vista') === 'calendario', `${nombre}/${t} /explorar/ sin nada: abre el Calendario, lo último (${u.search})`);
   // Y vuelve a la lista cuando se elige.

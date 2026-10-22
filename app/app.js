@@ -2519,6 +2519,15 @@ function destinoQr(texto) {
   if (!/^(www\.)?klendar\.app$/.test(u.hostname) && u.host !== location.host) return null;
   return RUTA_QR.test(u.pathname) ? `${u.pathname}${u.search}` : null;
 }
+/** La web de fuera a la que lleva un QR («otra-web.com»), o null si no es
+ * una dirección o es de Klendar: un QR pegado encima del de verdad (como la
+ * app y el panel, «Este QR lleva a …»). */
+function webAjenaQr(texto) {
+  let u;
+  try { u = new URL(String(texto || '').trim()); } catch { return null; }
+  if (!/^https?:$/.test(u.protocol)) return null;
+  return /^(www\.)?klendar\.app$/.test(u.hostname) || u.host === location.host ? null : u.hostname;
+}
 let JSQR = null;
 function cargaJsQR() {
   if (!JSQR) {
@@ -2596,7 +2605,8 @@ RUTAS.escanear = async () => {
       // Otro QR: se dice una vez mientras siga delante de la cámara.
       if (texto !== ultimo || Date.now() - cuando > 6000) {
         ultimo = texto; cuando = Date.now();
-        toast(t('Este QR no es de un local de Klendar'), true);
+        const ajena = webAjenaQr(texto);
+        toast(ajena ? t(`Este QR lleva a ${ajena}: no es de Klendar`) : t('Este QR no es de un local de Klendar'), true);
       }
     }
     setTimeout(vuelta, 200);
