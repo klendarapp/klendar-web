@@ -46,7 +46,8 @@ RUTAS.ahorro = async () => {
       titulo: EN ? "You haven't saved with Klendar yet" : 'Aún no has ahorrado con Klendar',
       texto: EN ? "When you redeem an offer with a previous price, you'll see what you saved here."
         : 'Cuando canjees una oferta con precio de antes, aquí verás lo que te has ahorrado.',
-      botones: `<a class="pill accent" href="${PUB_EN ? '/en/explore/' : '/explorar/'}">${esc(EN ? 'See offers' : 'Ver ofertas')}</a>`,
+      // Como la app: «Ver ofertas» lleva a Descubre.
+      botones: `<a class="pill accent" href="${PUB_EN ? '/en/discover/' : '/descubre/'}">${esc(EN ? 'See offers' : 'Ver ofertas')}</a>`,
     }));
     return;
   }
