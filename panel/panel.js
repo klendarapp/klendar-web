@@ -5584,19 +5584,68 @@ PAGES.novedades = async (v) => {
   }; });
 };
 
+/** El estado del plan en la tarjeta del resumen: la etiqueta y la línea de
+ * la tarjeta de «Mi negocio» en la app (`_PlanCard`), con los mismos textos
+ * y en el mismo orden de comprobación. Lo largo (por qué, qué hacer) va en
+ * «Tu plan» (`planEstado`, panel/plan.js). Sin etiqueta: gratis y activo. */
+function planEstadoCorto(sub, bill) {
+  const hold = bill.hold || null;
+  const dia = (iso) => (iso ? planDia(iso) : '');
+  if (hold === 'paused') {
+    const hasta = dia(bill.paused_until);
+    return ['dim', bi('EN PAUSA', 'PAUSED'), bi(`Cerrado temporalmente hasta el ${hasta}: no se cobra nada y los días que ya tenías pagados se gastan al volver.`,
+      `Temporarily closed until ${hasta}: nothing is charged and the days you’d already paid for are used when you’re back.`)];
+  }
+  if (bill.blocked === true || hold) {
+    const desde = dia(bill.hold_since || bill.block_on);
+    return ['bad', bi('BLOQUEADO', 'BLOCKED'), hold === 'unpaid'
+      ? bi(`Bloqueado desde el ${desde} por un pago pendiente. No se ha borrado nada.`, `Blocked since ${desde} because of an outstanding payment. Nothing has been deleted.`)
+      : bi(`Bloqueado desde el ${desde}: no hay ningún pago en vigor. No se ha borrado nada.`, `Blocked since ${desde}: there's no payment in force. Nothing has been deleted.`)];
+  }
+  if (bill.processing === true) {
+    return ['dim', bi('EN PROCESO', 'PROCESSING'), bi('Pago por domiciliación en proceso: tarda unos días en confirmarse.', 'Direct debit payment in progress: it takes a few days to be confirmed.')];
+  }
+  if (sub.status === 'past_due') {
+    const plazo = dia(bill.grace_until);
+    return ['warn', bi('PAGO PENDIENTE', 'PAYMENT DUE'), bi(`No hemos podido cobrar. Si no se resuelve antes del ${plazo}, pausaremos tus publicaciones (no se borra nada).`,
+      `We couldn't take the payment. If it isn't sorted by ${plazo}, we'll pause your publications (nothing is deleted).`)];
+  }
+  if (sub.status === 'paused') {
+    const hasta = dia(bill.paused_until);
+    return ['dim', bi('EN PAUSA', 'PAUSED'), bi(`En pausa hasta el ${hasta}: no se cobra y tus publicaciones no se ven.`, `Paused until ${hasta}: nothing is charged and your publications are hidden.`)];
+  }
+  if (bill.cancel_at_period_end === true && bill.ends_at) {
+    const fin = dia(bill.ends_at);
+    return ['warn', bi('CANCELADO', 'CANCELLED'), bi(`Cancelado: sigue con todo hasta el ${fin} y después no se renueva.`, `Cancelled: everything stays on until ${fin} and then it won't renew.`)];
+  }
+  if (sub.plan_slug === 'free' && sub.period_end) {
+    const fin = dia(sub.period_end);
+    return ['dim', '', bi(`Gratis de lanzamiento hasta el ${fin}`, `Free launch period until ${fin}`)];
+  }
+  if (sub.status === 'trial' && sub.period_end) {
+    const fin = dia(sub.period_end);
+    return ['st-trial', bi('PRUEBA', 'TRIAL'), bi(`En prueba hasta el ${fin}`, `On trial until ${fin}`)];
+  }
+  if (bill.provider === 'stripe' && bill.next_billing_at) {
+    const fin = dia(bill.next_billing_at);
+    return ['ok', '', bi(`Activo · se renueva el ${fin}`, `Active · renews on ${fin}`)];
+  }
+  return ['ok', '', bi('Activo', 'Active')];
+}
+
 /** «Tu plan» en el resumen: el estado, como la tarjeta de la app, y la
  * entrada a #/plan (panel/plan.js), donde se paga y se gestiona. */
 function planCard(sub) {
   const en = I18N.lang === 'en';
   const name = planNombre(sub.plan_names, sub.plan_slug);
   const bill = sub.billing || {};
-  const [tono, etiqueta, frase] = planEstado(sub, bill, bill.provider === 'stripe');
+  const [tono, etiqueta, frase] = planEstadoCorto(sub, bill);
   const usadas = sub.active_offers ?? 0;
   const uso = sub.max_active_offers == null
     ? (en ? `${usadas} active publication${usadas === 1 ? '' : 's'} · unlimited`
       : `${usadas} ${usadas === 1 ? 'publicación activa' : 'publicaciones activas'} · sin límite`)
     : (en ? `${usadas} of ${sub.max_active_offers} active publications` : `${usadas} de ${sub.max_active_offers} publicaciones activas`);
-  return `<div class="card"><h2>${ms('workspace_premium')} ${esc(en ? `${name} plan` : `Plan ${name}`)} <span class="tag ${esc(tono)}">${esc(etiqueta)}</span></h2>
+  return `<div class="card"><h2>${ms('workspace_premium')} ${esc(en ? `${name} plan` : `Plan ${name}`)} ${etiqueta ? `<span class="tag ${esc(tono)}">${esc(etiqueta)}</span>` : ''}</h2>
     <p class="muted" style="margin:0 0 6px">${esc(frase)}</p>
     <p style="margin:0 0 12px">${esc(uso)}</p>
     <a class="btn sm" href="#/plan">${esc(bi('Ver tu plan', 'See your plan'))}</a></div>`;
