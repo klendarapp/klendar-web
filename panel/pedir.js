@@ -237,56 +237,5 @@ PAGES.festivo = async (v, dia) => {
     <div class="vacio-botones"><a class="btn primary" href="#/cerrados">${esc(I18N.t('Días cerrados'))}</a></div></section>`);
 };
 
-// ── Días cerrados: «Días con otro horario» ──────────────────────────────────
-{
-  const original = PAGES.cerrados;
-  PAGES.cerrados = async (v) => {
-    await original(v);
-    const lista = await rpc('business_special_days', { p_business: BIZ.id }).catch(() => []);
-    const dias = Array.isArray(lista) ? lista : [];
-    const hoy = hoyNegocio();
-    const maxDia = new Date(Date.parse(`${hoy}T00:00:00Z`) + 366 * 864e5).toISOString().slice(0, 10);
-    const largo = (iso) => new Intl.DateTimeFormat(LOC(), { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }).format(new Date(`${iso}T00:00:00Z`));
-    const caja = document.createElement('div');
-    caja.innerHTML = `<div class="card"><h2>${esc(I18N.t('Días con otro horario'))}</h2>
-      <p class="muted" style="margin:0 0 10px">${esc(I18N.t('Un día concreto con otro horario: un festivo, Nochebuena… Ese día manda sobre tu horario de siempre.'))}</p>
-      ${table({
-    cols: [
-      { h: 'Día', r: (d) => `<b class="title">${esc(largo(d.day))}</b>` },
-      { h: 'Horario', r: (d) => esc([pedTramos(d.hours), d.holiday].filter(Boolean).join(' · ')) },
-      ...(gestiona() ? [{ h: '', r: (d, i) => `<span class="actions"><button class="btn sm ghost" data-del-dia="${i}">${ms('delete')}Quitar</button></span>` }] : []),
-    ],
-    rows: dias,
-    empty: 'No tienes días con otro horario por delante.',
-  })}
-      ${gestiona() ? `<form id="fOtro" class="form" style="margin-top:12px">
-        <label class="f"><span>Día</span><input type="date" name="day" required min="${hoy}" max="${maxDia}"></label>
-        <label class="f"><span>Abre</span><input type="time" name="from" required value="10:00"></label>
-        <label class="f"><span>Cierra</span><input type="time" name="to" required value="14:00"></label>
-        <div class="full"><button class="btn primary" type="submit">Abrir con otro horario</button> <span id="msgOtro" class="err"></span></div>
-      </form>` : ''}</div>`;
-    v.appendChild(caja);
-    I18N.translate(caja);
-    sinDobleEnvio(caja);
-    $$('[data-del-dia]', caja).forEach((b) => { b.onclick = async () => {
-      const d = dias[+b.dataset.delDia];
-      if (!(await confirmDlg('¿Quitar este día?', I18N.t('Ese día vuelve a ir con tu horario de siempre.'), { submit: 'Quitar', danger: true }))) return;
-      const r = await rpc('delete_business_day_hours', { p_id: d.id }).catch(() => null);
-      if (!r?.ok) { toast(PED_ERR_DIA[r?.error] || 'No se ha podido guardar', true); return; }
-      toast('Día con otro horario quitado'); route();
-    }; });
-    const f = $('#fOtro', caja);
-    if (!f) return;
-    f.onsubmit = async (e) => {
-      e.preventDefault();
-      const d = Object.fromEntries(new FormData(f));
-      const msg = $('#msgOtro', f);
-      msg.textContent = '';
-      if (!d.day || d.day < hoy || d.day > maxDia) { msg.textContent = I18N.t('Elige días entre hoy y dentro de un año.'); return; }
-      if (!d.from || !d.to || d.from === d.to) { msg.textContent = I18N.t(PED_ERR_DIA.invalid_hours); return; }
-      const r = await rpc('save_business_day_hours', { p_business: BIZ.id, p_day: d.day, p_hours: [[d.from, d.to]] }).catch(() => null);
-      if (!r?.ok) { msg.textContent = I18N.t(PED_ERR_DIA[r?.error] || 'No se ha podido guardar'); return; }
-      toast('Día con otro horario guardado'); route();
-    };
-  };
-}
+// «Días cerrados» con «Días con otro horario» y un solo «Añadir…» va en
+// panel.js (`PAGES.cerrados`, `cierresOtroHorario`), como la app.

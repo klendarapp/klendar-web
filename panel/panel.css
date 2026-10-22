@@ -1011,6 +1011,9 @@ details.bloque .b-cuerpo { display: grid; gap: 14px; padding: 0 16px 16px; }
 .crear-op:hover { text-decoration: none; border-color: var(--ink-2); }
 .crear-op > span:not(.ms) { flex: 1; display: grid; gap: 2px; }
 .crear-op small { color: var(--ink-2); font-weight: 500; }
+button.crear-op { width: 100%; background: none; font: inherit; text-align: start; cursor: pointer; }
+/* «Días cerrados» sin nada por delante (como la app: centrado). */
+.cierres-vacio { text-align: center; padding: 20px 0; margin: 0; }
 /* «Cifras»: lo importante arriba y el detalle en bloques plegables. */
 .kpis.kpis-top { margin: 0 0 14px; }
 details.plegable > summary { list-style: none; cursor: pointer; display: grid; gap: 2px; padding-right: 28px; position: relative; }

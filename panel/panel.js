@@ -6420,32 +6420,43 @@ const ERR_CIERRE = {
   not_authorized: ERRORS.not_authorized,
 };
 PAGES.cerrados = async (v) => {
-  const lista = await rpc('business_closures', { p_business: BIZ.id });
+  // Como la app (paridad 2026-10-22): los cierres por delante, los días con
+  // otro horario (si hay) y un solo «Añadir…» que pregunta qué: «Cerrar unos
+  // días» o «Abrir con otro horario». Cada uno, en su diálogo.
+  const [lista, especiales] = await Promise.all([
+    rpc('business_closures', { p_business: BIZ.id }),
+    rpc('business_special_days', { p_business: BIZ.id }).catch(() => []),
+  ]);
+  const dias = Array.isArray(especiales) ? especiales : [];
   const hoy = hoyNegocio();
   // Como el selector de la app: hasta un año por delante.
   const maxDia = new Date(Date.parse(`${hoy}T00:00:00Z`) + 366 * 864e5).toISOString().slice(0, 10);
   const tramo = (c) => (c.starts_on === c.ends_on
     ? (I18N.lang === 'en' ? `On ${diaLargo(c.starts_on)}` : `El ${diaLargo(c.starts_on)}`)
     : (([a, b]) => (I18N.lang === 'en' ? `From ${a} to ${b}` : `Del ${a} al ${b}`))(rangoDias(c.starts_on, c.ends_on)));
+  const largo = (iso) => new Intl.DateTimeFormat(LOC(), { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }).format(new Date(`${iso}T00:00:00Z`));
+  const vacio = !lista.length && !dias.length;
   v.innerHTML = `
     <div class="page-head"><h1>Días cerrados</h1></div>
     ${helpBox('¿Cómo funciona?', '<p>Vacaciones, festivos, obras. Esos días no se ve nada de tu negocio, como con «Cerrado por hoy», y tu ficha dice hasta cuándo cierras. Al acabar, todo vuelve a verse solo.</p><p>Como mucho tres meses seguidos y doce cierres por delante.</p>')}
-    <div class="card"><h2>Por delante</h2>${table({
+    ${vacio ? `<p class="muted cierres-vacio">${esc(I18N.t('No tienes días cerrados por delante.'))}</p>` : ''}
+    ${lista.length ? `<div class="card"><h2>Por delante</h2>${table({
       cols: [
         { h: 'Días', r: (c) => `<b class="title">${esc(tramo(c))}</b>${c.starts_on <= hoy && hoy <= c.ends_on ? ` ${tag('Ahora', 'st-pending')}` : ''}` },
         { h: 'Motivo', r: (c) => esc(c.reason || '—') },
         ...(gestiona() ? [{ h: '', r: (c, i) => `<span class="actions"><button class="btn sm ghost" data-del="${i}">${ms('delete')}Quitar</button></span>` }] : []),
       ],
       rows: lista,
-      empty: 'No tienes días cerrados por delante.',
-    })}</div>
-    ${gestiona() ? `<div class="card"><h2>Añadir días cerrados</h2>
-      <form id="f" class="form">
-        <label class="f"><span>Primer día</span><input type="date" name="from" required min="${hoy}" max="${maxDia}"></label>
-        <label class="f"><span>Último día</span><input type="date" name="to" required min="${hoy}" max="${maxDia}"></label>
-        <label class="f full"><span>Motivo <small>(opcional)</small></span><input name="reason" maxlength="60" placeholder="Vacaciones"></label>
-        <div class="full"><button class="btn primary" type="submit">Añadir días cerrados</button> <span id="msg" class="err"></span></div>
-      </form></div>` : ''}`;
+    })}</div>` : ''}
+    ${dias.length ? `<div class="card"><h2>${esc(I18N.t('Días con otro horario'))}</h2>${table({
+      cols: [
+        { h: 'Día', r: (d) => `<b class="title">${esc(largo(d.day))}</b>` },
+        { h: 'Horario', r: (d) => esc([pedTramos(d.hours), d.holiday].filter(Boolean).join(' · ')) },
+        ...(gestiona() ? [{ h: '', r: (d, i) => `<span class="actions"><button class="btn sm ghost" data-del-dia="${i}">${ms('delete')}Quitar</button></span>` }] : []),
+      ],
+      rows: dias,
+    })}</div>` : ''}
+    ${gestiona() ? `<p class="actions cierres-anadir"><button class="btn primary" type="button" id="anadirCierre">${esc(I18N.t('Añadir…'))}</button></p>` : ''}`;
 
   $$('[data-del]', v).forEach((b) => { b.onclick = async () => {
     const c = lista[+b.dataset.del];
@@ -6454,30 +6465,84 @@ PAGES.cerrados = async (v) => {
     if (!r?.ok) { toast(ERR_CIERRE[r?.error] || 'No se ha podido guardar', true); return; }
     toast('Días cerrados quitados'); route();
   }; });
-  const f = $('#f', v);
-  if (!f) return;
-  // El último día, por defecto el primero (un festivo suelto).
-  $('[name=from]', f).onchange = (e) => {
-    const to = $('[name=to]', f);
-    to.min = e.target.value || hoy;
-    if (!to.value || to.value < e.target.value) to.value = e.target.value;
-  };
-  f.onsubmit = async (e) => {
-    e.preventDefault();
-    const d = Object.fromEntries(new FormData(f));
-    const reason = String(d.reason || '').trim();
-    const msg = $('#msg', f);
-    msg.textContent = '';
-    if (reason.length === 1) { msg.textContent = I18N.t('Escribe al menos 2 caracteres.'); return; }
-    const dias = (new Date(d.to) - new Date(d.from)) / 864e5;
-    if (dias < 0) { msg.textContent = I18N.t(ERR_CIERRE.invalid_range); return; }
-    if (dias > 92) { msg.textContent = I18N.t(ERR_CIERRE.too_long); return; }
-    if (d.from < hoy || d.to > maxDia) { msg.textContent = I18N.t('Elige días entre hoy y dentro de un año.'); return; }
-    const r = await rpc('save_business_closure', { p_business: BIZ.id, p_starts: d.from, p_ends: d.to, p_reason: reason }).catch(() => null);
-    if (!r?.ok) { msg.textContent = I18N.t(ERR_CIERRE[r?.error] || 'No se ha podido guardar'); return; }
-    toast('Días cerrados guardados'); route();
+  $$('[data-del-dia]', v).forEach((b) => { b.onclick = async () => {
+    const d = dias[+b.dataset.delDia];
+    if (!(await confirmDlg('¿Quitar este día?', I18N.t('Ese día vuelve a ir con tu horario de siempre.'), { submit: 'Quitar', danger: true }))) return;
+    const r = await rpc('delete_business_day_hours', { p_id: d.id }).catch(() => null);
+    if (!r?.ok) { toast(PED_ERR_DIA[r?.error] || 'No se ha podido guardar', true); return; }
+    toast('Día con otro horario quitado'); route();
+  }; });
+  const anadir = $('#anadirCierre', v);
+  if (!anadir) return;
+  anadir.onclick = async () => {
+    const que = await cierresElige();
+    if (que === 'cerrar') await cierresCerrar(hoy, maxDia);
+    if (que === 'otro') await cierresOtroHorario(hoy, maxDia);
   };
 };
+
+/** «Añadir…» de «Días cerrados»: las dos opciones de la hoja de la app. */
+function cierresElige() {
+  return new Promise((resolve) => {
+    const d = $('#modal');
+    const op = (k, icon, titulo, frase) => `<button type="button" class="crear-op" data-elige="${k}">${ms(icon)}
+      <span><b>${esc(I18N.t(titulo))}</b><small>${esc(I18N.t(frase))}</small></span>${ms('chevron_right')}</button>`;
+    d.innerHTML = `<form method="dialog"><h2>${esc(I18N.t('Días cerrados'))}</h2>
+      <div class="crear-ops">
+        ${op('cerrar', 'event_busy', 'Cerrar unos días', 'Vacaciones, obras, un festivo… Esos días no se ve nada de tu negocio.')}
+        ${op('otro', 'event', 'Abrir con otro horario', 'Un día concreto con otro horario: un festivo, Nochebuena…')}
+      </div>
+      <div class="foot"><button type="button" class="btn ghost" data-cancel>${esc(I18N.t('Cancelar'))}</button></div></form>`;
+    const cerrar = (x) => { d.close(); resolve(x); };
+    $('[data-cancel]', d).onclick = () => cerrar(null);
+    d.oncancel = (e) => { e.preventDefault(); cerrar(null); };
+    $$('[data-elige]', d).forEach((b) => { b.onclick = () => cerrar(b.dataset.elige); });
+    d.showModal();
+  });
+}
+
+/** «Cerrar unos días»: del primero al último, con un motivo opcional. */
+async function cierresCerrar(hoy, maxDia) {
+  const r = await modal({
+    title: I18N.t('Cerrar unos días'),
+    submit: 'Añadir días cerrados',
+    fields: [
+      { name: 'from', type: 'date', label: 'Primer día', required: true, min: hoy, max: maxDia },
+      { name: 'to', type: 'date', label: 'Último día', required: true, min: hoy, max: maxDia },
+      { name: 'reason', label: I18N.t('Motivo (opcional)'), maxlength: 60, placeholder: I18N.t('Vacaciones') },
+    ],
+  });
+  if (!r) return;
+  const to = r.to || r.from;
+  const reason = String(r.reason || '').trim();
+  if (reason.length === 1) { toast(I18N.t('Escribe al menos 2 caracteres.'), true); return; }
+  const dias = (new Date(to) - new Date(r.from)) / 864e5;
+  if (dias < 0) { toast(I18N.t(ERR_CIERRE.invalid_range), true); return; }
+  if (dias > 92) { toast(I18N.t(ERR_CIERRE.too_long), true); return; }
+  if (r.from < hoy || to > maxDia) { toast(I18N.t('Elige días entre hoy y dentro de un año.'), true); return; }
+  const res = await rpc('save_business_closure', { p_business: BIZ.id, p_starts: r.from, p_ends: to, p_reason: reason }).catch(() => null);
+  if (!res?.ok) { toast(I18N.t(ERR_CIERRE[res?.error] || 'No se ha podido guardar'), true); return; }
+  toast('Días cerrados guardados'); route();
+}
+
+/** «Abrir con otro horario»: un día y a qué hora abre y cierra. */
+async function cierresOtroHorario(hoy, maxDia) {
+  const r = await modal({
+    title: I18N.t('Abrir con otro horario'),
+    submit: 'Guardar',
+    fields: [
+      { name: 'day', type: 'date', label: 'Día', required: true, min: hoy, max: maxDia },
+      { name: 'from', type: 'time', label: 'Abre', required: true, value: '10:00' },
+      { name: 'to', type: 'time', label: 'Cierra', required: true, value: '14:00' },
+    ],
+  });
+  if (!r) return;
+  if (!r.day || r.day < hoy || r.day > maxDia) { toast(I18N.t('Elige días entre hoy y dentro de un año.'), true); return; }
+  if (!r.from || !r.to || r.from === r.to) { toast(I18N.t(PED_ERR_DIA.invalid_hours), true); return; }
+  const res = await rpc('save_business_day_hours', { p_business: BIZ.id, p_day: r.day, p_hours: [[r.from, r.to]] }).catch(() => null);
+  if (!res?.ok) { toast(I18N.t(PED_ERR_DIA[res?.error] || 'No se ha podido guardar'), true); return; }
+  toast('Día con otro horario guardado'); route();
+}
 
 // ── Ayuda ───────────────────────────────────────────────────────────────────
 PAGES.ayuda = async (v) => {
