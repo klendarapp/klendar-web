@@ -10,7 +10,9 @@
  *   lo que el negocio usa (grupos, reseñas sin responder, antes de cerrar,
  *   partidos de la semana, teles, lo que se publica solo, la cola cerrada).
  * - #/herramientas: «Más herramientas», lo opcional, cada una con su frase,
- *   si está activa y su botón.
+ *   si está activa y su botón. Arriba «Las que usas» y debajo por grupos
+ *   (Iván, 2026-10-22): «Tu carta y tus enlaces», «En el local»,
+ *   «Pantallas y gente» y «Lo que se repite».
  * - «Crear»: elegir qué publicar (oferta flash, evento o novedad).
  *
  * Va después de panel.js y usa lo suyo (`PAGES`, `rpc`, `BIZ`, `gestiona`,
@@ -189,6 +191,10 @@ function herrTarjeta({ icon, titulo, frase, estado, on, detalle, botones = [], e
   </div>`;
 }
 
+/** Una tarjeta de «Más herramientas» con su grupo (`menu`, `local`, `gente`
+ * o `repite`) y si el negocio la usa (sube a «Las que usas»). */
+const herrT = ({ grupo, usa, ...t }) => ({ grupo, usa: !!usa, html: herrTarjeta(t) });
+
 PAGES.herramientas = async (v) => {
   const o = await rpc('business_tools_overview', { p_business: BIZ.id });
   if (!o || o.ok === false) throw new Error(o?.error || 'not_authorized');
@@ -218,39 +224,45 @@ PAGES.herramientas = async (v) => {
   const pend = herrNum(o, 'groups', 'pending');
   const codigo = `<script src="${APP_URL}/widget.js" data-klendar="${BIZ.id}"></script>`;
   const tarjetas = [
-    edit ? herrTarjeta({
+    edit ? herrT({
+      grupo: 'menu', usa: items > 0 || archivos > 0,
       icon: 'restaurant_menu', titulo: bi('Carta', 'Menu'),
       frase: bi('Para enseñar lo que tienes, con precios, fotos y alérgenos. Sale en tu ficha.', 'To show what you offer, with prices, photos and allergens. It shows on your page.'),
       estado: items ? herrPl(items, ['1 plato', 'platos'], ['1 dish', 'dishes']) : archivos ? herrPl(archivos, ['1 archivo', 'archivos'], ['1 file', 'files']) : sinPreparar,
       on: items > 0 || archivos > 0, botones: [[configurar, '#/carta']],
     }) : '',
-    edit ? herrTarjeta({
+    edit ? herrT({
+      grupo: 'menu', usa: enlaces > 0,
       icon: 'enlace', titulo: bi('Reservar y pedir', 'Book and order'),
       frase: bi('Para que reserven o pidan donde ya trabajas (TheFork, Glovo…): botones en tu ficha.', 'So people book or order where you already work (TheFork, Glovo…): buttons on your page.'),
       estado: enlaces ? herrPl(enlaces, ['1 enlace', 'enlaces'], ['1 link', 'links']) : sinPreparar,
       on: enlaces > 0, botones: [[configurar, '#/ficha/contacto']],
     }) : '',
-    edit && local && dm.suggested ? herrTarjeta({
+    edit && local && dm.suggested ? herrT({
+      grupo: 'local', usa: !!dm.live_until || diasMenu > 0,
       icon: 'restaurant_menu', titulo: bi('Menú del día', 'Daily menu'),
       frase: bi('La foto de la pizarra y el precio: sale hasta que cierra la cocina y desaparece solo.', 'The photo of the board and the price: it shows until the kitchen closes and disappears by itself.'),
       estado: dm.live_until ? bi(`Publicado hasta las ${horaMenu}`, `Live until ${horaMenu}`)
         : diasMenu > 0 ? (diasMenu === 1 ? bi('Se publica solo 1 día a la semana', 'Publishes itself 1 day a week') : bi(`Se publica solo ${fmtNum(diasMenu)} días a la semana`, `Publishes itself ${fmtNum(diasMenu)} days a week`)) : '',
       on: !!dm.live_until || diasMenu > 0, botones: [[abrir, '#/menu-del-dia']],
     }) : '',
-    edit && local && bc.suggested ? herrTarjeta({
+    edit && local && bc.suggested ? herrT({
+      grupo: 'local', usa: !!(bc.live || bc.reminder_at),
       icon: 'bolsa', titulo: bi('Antes de cerrar', 'Before closing'),
       frase: bi('Para lo que te sobra del día: una bolsa sorpresa hasta el cierre, en dos toques.', 'For what’s left at the end of the day: a surprise bag until closing, in two taps.'),
       estado: bc.live ? bi('Publicada hoy', 'Published today') : bc.reminder_at ? bi(`Aviso cada día a las ${bc.reminder_at}`, `Daily reminder at ${bc.reminder_at}`) : '',
       on: !!(bc.live || bc.reminder_at), botones: [[abrir, '#/antes-de-cerrar']],
     }) : '',
-    herrTarjeta({
+    herrT({
+      grupo: 'repite', usa: reglas > 0 || series > 0,
       icon: 'repite', titulo: bi('Series y repeticiones', 'Series and repeats'),
       frase: bi('Para lo que se repite: una oferta que se publica sola cada semana o las fechas de una misma serie.', 'For what repeats: an offer that publishes itself every week, or the dates of one series.'),
       estado: reglas === 0 ? bi('Nada se publica solo', 'Nothing publishes itself') : herrPl(reglas, ['1 se publica sola', 'se publican solas'], ['1 publishes itself', 'publish themselves']),
       on: reglas > 0, detalle: series ? herrPl(series, ['1 serie', 'series'], ['1 series', 'series']) : '',
       botones: [[abrir, '#/series']],
     }),
-    local ? herrTarjeta({
+    local ? herrT({
+      grupo: 'local', usa: herrSi(o, 'crowd', 'enabled'),
       icon: 'people', titulo: bi('¿Hay sitio ahora?', 'Room right now?'),
       frase: bi('Para decir con un toque cómo está el local: Hay sitio, Casi lleno o Lleno. Sale en tu ficha durante 2 horas.', 'To say with one tap how busy your place is: There’s room, Nearly full or Full. It shows on your page for 2 hours.'),
       estado: onOff(herrSi(o, 'crowd', 'enabled')), on: herrSi(o, 'crowd', 'enabled'),
@@ -259,7 +271,8 @@ PAGES.herramientas = async (v) => {
     // Aforo en directo (panel/aforo.js): +1 / −1 en la puerta y «¿Hay sitio
     // ahora?» se pone solo. Lo abre todo el equipo; activarlo, propietario o
     // encargado. Sin local fijo, no sale.
-    local ? herrTarjeta({
+    local ? herrT({
+      grupo: 'local', usa: herrSi(o, 'capacity', 'enabled'),
       icon: 'aforo', titulo: bi('Aforo en directo', 'Live capacity'),
       frase: bi('Cuenta en la puerta con +1 y −1, y «¿Hay sitio ahora?» se pone solo.', 'Count at the door with +1 and −1, and “Room right now?” sets itself.'),
       estado: herrSi(o, 'capacity', 'enabled')
@@ -270,7 +283,8 @@ PAGES.herramientas = async (v) => {
       on: herrSi(o, 'capacity', 'enabled'),
       botones: herrSi(o, 'capacity', 'enabled') ? [[abrir, '#/aforo']] : edit ? [[activar, '#/aforo/ajustes']] : [],
     }) : '',
-    ent ? '' : herrTarjeta({
+    ent ? '' : herrT({
+      grupo: 'local', usa: herrSi(o, 'queue', 'open') || herrSi(o, 'queue', 'used_30d'),
       icon: 'cola', titulo: bi('Cola virtual', 'Virtual queue'),
       frase: bi('Para que no hagan cola en la puerta: se apuntan con el QR del cartel y les avisamos cuando les toca.', 'So nobody queues at the door: people join with the poster’s QR and we tell them when it’s their turn.'),
       estado: herrSi(o, 'queue', 'open') ? bi(`Abierta · ${espera} esperando`, `Open · ${espera} waiting`)
@@ -280,7 +294,8 @@ PAGES.herramientas = async (v) => {
     // Te aviso cuando esté listo (panel/listo.js): el avisador de pedidos
     // del mostrador. Activarlo, propietario o encargado (dentro de «Pedidos
     // de hoy»); activado, lo lleva todo el equipo. Una entidad no lo tiene.
-    !ent && (edit || herrSi(o, 'orders', 'enabled')) ? herrTarjeta({
+    !ent && (edit || herrSi(o, 'orders', 'enabled')) ? herrT({
+      grupo: 'local', usa: herrSi(o, 'orders', 'enabled'),
       icon: 'listo', titulo: bi('Te aviso cuando esté listo', 'Ready alert'),
       frase: bi('Para cafeterías y comida para llevar: quien pide escanea el QR del mostrador y le avisamos en el móvil cuando está listo.', 'For cafés and takeaways: people scan the counter QR code and we tell them on their phone when it’s ready.'),
       // Hasta el 4-11-2026 no se puede activar (TL1; `orders_available`,
@@ -294,47 +309,66 @@ PAGES.herramientas = async (v) => {
       botones: herrSi(o, 'orders', 'enabled') || o?.orders_available !== false
         ? [[herrSi(o, 'orders', 'enabled') ? abrir : activar, '#/pedidos']] : [],
     }) : '',
-    local && herrSi(o, 'broadcasts', 'suggested') ? herrTarjeta({
-      icon: 'partido', titulo: bi('Partidos que pones', "Matches you're showing"),
-      frase: bi('Para que te encuentre quien busca dónde ver el partido: marca lo que pones.', 'So people looking for where to watch the match find you: mark what you’re showing.'),
-      estado: partidos === 0 ? bi('Nada marcado esta semana', 'Nothing marked this week') : herrPl(partidos, ['1 partido esta semana', 'partidos esta semana'], ['1 match this week', 'matches this week']),
-      on: partidos > 0, botones: [[abrir, '#/partidos']],
-    }) : '',
-    edit ? herrTarjeta({
+    edit ? herrT({
+      grupo: 'gente', usa: teles > 0,
       icon: 'tele', titulo: bi('Poner en la tele', 'Show on TV'),
       frase: bi('Para la tele de tu local: tus publicaciones van pasando, cada una con un QR para guardarla.', 'For the TV in your venue: your publications take turns, each with a QR to save it.'),
       estado: teles ? herrPl(teles, ['1 tele enlazada', 'teles enlazadas'], ['1 TV linked', 'TVs linked']) : bi('Apagado', 'Off'),
       on: teles > 0, botones: [[configurar, '#/tele']],
     }) : '',
-    edit && !ent ? herrTarjeta({
+    local && herrSi(o, 'broadcasts', 'suggested') ? herrT({
+      grupo: 'gente', usa: partidos > 0,
+      icon: 'partido', titulo: bi('Partidos que pones', "Matches you're showing"),
+      frase: bi('Para que te encuentre quien busca dónde ver el partido: marca lo que pones.', 'So people looking for where to watch the match find you: mark what you’re showing.'),
+      estado: partidos === 0 ? bi('Nada marcado esta semana', 'Nothing marked this week') : herrPl(partidos, ['1 partido esta semana', 'partidos esta semana'], ['1 match this week', 'matches this week']),
+      on: partidos > 0, botones: [[abrir, '#/partidos']],
+    }) : '',
+    edit && !ent ? herrT({
+      grupo: 'gente', usa: herrSi(o, 'groups', 'enabled'),
       icon: 'grupos', titulo: bi('Grupos y empresas', 'Groups and companies'),
       frase: bi('Para recibir peticiones de grupos y empresas (cenas, cumpleaños, comidas de equipo) y mandar tu propuesta.', 'To get requests from groups and companies (dinners, birthdays, team meals) and send your proposal.'),
       estado: onOff(herrSi(o, 'groups', 'enabled')), on: herrSi(o, 'groups', 'enabled'),
       detalle: herrSi(o, 'groups', 'enabled') ? (pend === 0 ? bi('Sin peticiones ahora', 'No requests right now') : herrPl(pend, ['1 petición sin contestar', 'peticiones sin contestar'], ['1 request to answer', 'requests to answer'])) : '',
       botones: [[herrSi(o, 'groups', 'enabled') ? abrir : activar, '#/grupos']],
     }) : '',
-    edit && local ? herrTarjeta({
+    edit && local ? herrT({
+      grupo: 'local', usa: !!(tq.wifi || tq.has),
       icon: 'wifi', titulo: bi('Wifi para clientes', 'Wi-Fi for customers'),
       frase: bi('Carteles de mesa con un QR: tu wifi, tus ofertas de hoy y la carta. Sin wifi, sirven de QR de mesa.', 'Table cards with a QR code: your Wi-Fi, today’s offers and the menu. Without Wi-Fi, they work as a table QR.'),
       estado: tq.has ? escaneos === 0 ? bi('Ningún escaneo este mes', 'No scans this month') : herrPl(escaneos, ['1 escaneo este mes', 'escaneos este mes'], ['1 scan this month', 'scans this month']) : sinPreparar,
       on: !!(tq.wifi || tq.has), botones: [[abrir, '#/wifi-clientes']],
     }) : '',
-    edit && local ? herrTarjeta({
+    edit && local ? herrT({
+      grupo: 'local', usa: false,
       icon: 'qr_code_2', titulo: bi('Cartel del local', 'Venue poster'),
       frase: bi('Para tu puerta o tu mostrador: un QR que abre tu ficha y suma un sello por visita.', 'For your door or counter: a QR that opens your page and adds a stamp per visit.'),
       botones: [[abrir, '#/cartel-local']],
     }) : '',
-    herrTarjeta({
+    herrT({
+      grupo: 'menu', usa: false,
       icon: 'codigo', titulo: bi('Klendar en tu web', 'Klendar on your website'),
       frase: bi('Pega esta línea en tu web y saldrá lo que tienes publicado. Se actualiza sola.', 'Paste this line on your website and what you’ve published will show there. It updates itself.'),
       extra: `<pre id="wcode" class="code" style="margin:10px 0 0">${esc(codigo)}</pre>`,
       botones: [[bi('Copiar', 'Copy'), null, 'id="wcopy"'], [bi('Ver cómo queda', 'See how it looks'), `${APP_URL}/widget/${BIZ.id}`, 'target="_blank" rel="noopener"']],
     }),
   ].filter(Boolean);
+  // Arriba, «Las que usas» (activadas o usadas hace poco); debajo, el resto
+  // por grupos con su título. Un grupo vacío no sale. Como la app.
+  const GRUPOS = [
+    ['menu', bi('Tu carta y tus enlaces', 'Your menu and links')],
+    ['local', bi('En el local', 'At your venue')],
+    ['gente', bi('Pantallas y gente', 'Screens and people')],
+    ['repite', bi('Lo que se repite', 'What repeats')],
+  ];
+  const bloques = [
+    [bi('Las que usas', 'The ones you use'), GRUPOS.flatMap(([g]) => tarjetas.filter((t) => t.usa && t.grupo === g))],
+    ...GRUPOS.map(([g, titulo]) => [titulo, tarjetas.filter((t) => !t.usa && t.grupo === g)]),
+  ].filter(([, ts]) => ts.length);
   v.innerHTML = `
     <div class="page-head"><h1>${esc(bi('Más herramientas', 'More tools'))}</h1></div>
     <p class="muted" style="max-width:640px">${esc(bi('Herramientas opcionales: activa las que te sirvan. Las que uses suben a la pantalla principal de tu negocio.', 'Optional tools: turn on the ones that help. The ones you use move up to your business’s main screen.'))}</p>
-    <div class="fiel-lista" style="display:grid;gap:12px;max-width:820px">${tarjetas.join('')}</div>`;
+    ${bloques.map(([titulo, ts]) => `<h2 class="grupo-titulo">${esc(titulo)}</h2>
+    <div class="fiel-lista" style="display:grid;gap:12px;max-width:820px">${ts.map((t) => t.html).join('')}</div>`).join('')}`;
   const copiar = $('#wcopy', v);
   if (copiar) {
     copiar.onclick = async () => {
