@@ -2,7 +2,7 @@
   "applinks": {
     "details": [
       {
-        "appIDs": ["TEAMID.app.klendar"],
+        "appIDs": ["PJ9F5AMML5.app.klendar"],
         "components": [
           { "/": "/o/*", "comment": "Oferta o evento compartido" },
           { "/": "/b/*", "comment": "Ficha de un negocio" },
@@ -31,6 +31,6 @@
     ]
   },
   "webcredentials": {
-    "apps": ["TEAMID.app.klendar"]
+    "apps": ["PJ9F5AMML5.app.klendar"]
   }
 }

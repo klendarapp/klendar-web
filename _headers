@@ -90,9 +90,9 @@
 
 # Universal Links de iOS (y autorrelleno de contraseñas): Apple lo pide como
 # JSON aunque el archivo no tenga extensión. Sin redirecciones ni caché larga:
-# el CDN de Apple lo vuelve a leer al instalar/actualizar la app. Cambiar
-# TEAMID por el Team ID de Apple Developer (docs/RUNBOOK.md de la app →
-# «iOS con Codemagic»); con el marcador no hace nada.
+# el CDN de Apple lo vuelve a leer al instalar/actualizar la app. Team ID
+# PJ9F5AMML5 (cuenta individual de Iván, 2026-10-22; lo pone
+# tool/apple_ids.py del repo de la app).
 /.well-known/apple-app-site-association
   Content-Type: application/json
   Cache-Control: public, max-age=3600
