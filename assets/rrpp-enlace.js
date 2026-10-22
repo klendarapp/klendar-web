@@ -37,6 +37,8 @@
       list: (n) => `Lista de ${n}`,
       notice: (n, b) => `Te apuntas a la lista de ${n} (${b}). ${n} verá tu nombre y si has entrado.`,
       theirs: 'Ofertas de su lista',
+      theirsNone: 'Ahora mismo no hay ofertas en su lista. Lo que consigas de este local esta noche cuenta igual para su lista.',
+      loginHint: 'Para conseguir el código hace falta entrar en tu cuenta (o crearla).',
       more: (b) => `Más de ${b}`,
       none: 'Ahora mismo no hay nada publicado. Suele cambiar: échale un ojo en la app.',
       promoterOffer: 'Oferta de RRPP',
@@ -55,7 +57,7 @@
       opensOn: (d, h, t) => `Esta lista abre el ${d} ${h === 1 ? 'a la' : 'a las'} ${t}`,
       closedBody: 'Hasta entonces no se puede conseguir la oferta de la lista.',
       see: (b) => `Ver ${b}`,
-      explore: 'Ver qué hay ahora',
+      explore: 'Ir a Descubre',
       loading: 'Cargando…',
       oops: 'No hemos podido abrir el enlace. Vuelve a probar en un momento.',
       retry: 'Reintentar',
@@ -65,6 +67,8 @@
       list: (n) => `${n}'s list`,
       notice: (n, b) => `You're joining ${n}'s list (${b}). ${n} will see your name and whether you got in.`,
       theirs: 'Offers on their list',
+      theirsNone: 'There are no offers on their list right now. Anything you get from this place tonight still counts for their list.',
+      loginHint: "You'll need to log in (or sign up) to get the code.",
       more: (b) => `More from ${b}`,
       none: 'Nothing published right now. It changes often — take a look in the app.',
       promoterOffer: 'Promoter offer',
@@ -83,7 +87,7 @@
       opensOn: (d, h, t) => `This list opens on ${d} at ${t}`,
       closedBody: "Until then, the offers on this list aren't available.",
       see: (b) => `See ${b}`,
-      explore: "See what's on now",
+      explore: 'Go to Discover',
       loading: 'Loading…',
       oops: "We couldn't open the link. Please try again in a moment.",
       retry: 'Try again',
@@ -153,7 +157,9 @@
   </div>
   ${aviso(nombre, negocio, lang)}
   <p class="exclusiva rp-nota" id="rp-nota" hidden></p>
-  ${suyas.length ? `<h2>${esc(s.theirs)}</h2><div class="tjs">${suyas.join('')}</div>` : ''}
+  <p class="muted rp-entrar" id="rp-entrar" hidden>${esc(s.loginHint)}</p>
+  <h2>${esc(s.theirs)}</h2>
+  ${suyas.length ? `<div class="tjs">${suyas.join('')}</div>` : `<p class="muted">${esc(s.theirsNone)}</p>`}
   <h2>${esc(s.more(negocio))}</h2>
   ${resto.length ? `<div class="tjs">${resto.join('')}</div>` : `<p class="muted">${esc(s.none)}</p>`}`;
   }
@@ -185,7 +191,8 @@
     const txt = cerrada ? abre(d && d.opens_at, lang, tz)
       : error === 'link_paused' ? s.paused : error === 'link_expired' ? s.expired
         : error === 'link_inactive' ? s.inactive : s.notFound;
-    const explorar = lang === 'en' ? '/en/explore/' : '/explorar/';
+    // «Ir a Descubre», como la app (`rrppGoDiscover`).
+    const explorar = lang === 'en' ? '/en/discover/' : '/descubre/';
     const quien = cerrada ? [s.list(nombreDe(d && d.promoter, lang)), b && b.name].filter(Boolean).join(' · ') : '';
     return `
   <section class="vacio">
@@ -250,6 +257,7 @@
     if (!KT()) { error(); return; }
     caja.innerHTML = cuerpo(d, normales || [], lang);
     caja.dataset.estado = 'ok';
+    if (!sesionGuardada()) pistaEntrar();
   }
   function error() {
     const s = S(lang);
@@ -265,7 +273,14 @@
     el.hidden = false;
   }
 
+  /** Sin sesión: «Para conseguir el código hace falta entrar…», como la app
+   * (la página va en caché sin sesión: se enseña aquí). */
+  function pistaEntrar() {
+    const el = document.getElementById('rp-entrar');
+    if (el) el.hidden = false;
+  }
   function sinCuenta() {
+    pistaEntrar();
     if (!pendiente) return;
     sinSesion('promoter_link_open', { p_code: code }).then((d) => {
       if (!d || d.ok !== true) { pinta(d); return null; }

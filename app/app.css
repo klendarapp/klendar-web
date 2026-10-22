@@ -291,7 +291,10 @@ button.codigo.copiar .ms { font-size: 18px; color: var(--ink-2); letter-spacing:
 .enlace-amigo .enlace-txt span { overflow-wrap: anywhere; text-align: left; }
 .enlace-acc { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0 0 8px; }
 .enlace-acc .pill { justify-content: center; }
-@media (max-width: 380px) { .enlace-acc { grid-template-columns: 1fr; } }
+.enlace-acc .pill { min-width: 0; }
+/* Dos botones de texto largo («Compartir enlace» · «Copiar enlace») no caben
+   lado a lado en un móvil: uno debajo de otro, del mismo ancho. */
+@media (max-width: 440px) { .enlace-acc { grid-template-columns: 1fr; } }
 .aviso-planes { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; margin: 14px 4px 0; }
 .aviso-planes .ms { font-size: 20px; }
 .bloque h2.con-cuenta { display: flex; justify-content: space-between; gap: 12px; }

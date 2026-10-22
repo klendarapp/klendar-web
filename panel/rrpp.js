@@ -309,26 +309,22 @@ function rrppAbreTxt(iso) {
   const nombre = KZ.fmt(iso, TZ, LOC(), { weekday: 'long', day: 'numeric', month: 'short' });
   return bi(`Esta lista abre el ${nombre} ${a} ${hora}`, `This list opens on ${nombre} at ${hora}`);
 }
-/** Pide el horario. `deSerie`: el texto de la opción de serie. Devuelve
- * `{ schedule }` (null = el de serie) o null si se cancela. */
-async function rrppHorarioModal(actual, deSerie) {
+/** Los campos del horario (el de serie o días y horas propios). */
+function rrppCamposHorario(actual, deSerie) {
   const tramo = actual ? Object.values(actual)[0]?.[0] : null;
-  const f = await modal({
-    title: bi('Cuándo funciona la lista', 'When the list is open'),
-    intro: esc(bi('Fuera de este horario, el enlace dice cuándo abre la lista, no cuenta para el RRPP y su oferta no se puede conseguir.',
-      "Outside these hours the link says when the list opens, it doesn't count for the promoter and the offers on the list aren't available.")),
-    fields: [
-      { name: 'modo', type: 'select', label: bi('Horario', 'Hours'), value: actual ? 'propio' : 'serie',
-        options: [['serie', deSerie], ['propio', bi('Días y horas propios', 'Set days and times')]] },
-      ...[1, 2, 3, 4, 5, 6, 7].map((d) => ({ name: `d${d}`, type: 'checkbox',
-        label: rrppDiaSem(d).charAt(0).toUpperCase() + rrppDiaSem(d).slice(1),
-        value: actual ? !!actual[d] : d >= 5 && d <= 6 })),
-      { name: 'desde', type: 'time', label: bi('Desde', 'From'), value: tramo?.[0] || '22:00' },
-      { name: 'hasta', type: 'time', label: bi('Hasta', 'Until'), value: tramo?.[1] || '03:00' },
-    ],
-    submit: bi('Guardar', 'Save'),
-  });
-  if (!f) return null;
+  return [
+    { name: 'modo', type: 'select', label: bi('Horario', 'Hours'), value: actual ? 'propio' : 'serie',
+      options: [['serie', deSerie], ['propio', bi('Días y horas propios', 'Set days and times')]] },
+    ...[1, 2, 3, 4, 5, 6, 7].map((d) => ({ name: `d${d}`, type: 'checkbox',
+      label: rrppDiaSem(d).charAt(0).toUpperCase() + rrppDiaSem(d).slice(1),
+      value: actual ? !!actual[d] : d >= 5 && d <= 6 })),
+    { name: 'desde', type: 'time', label: bi('Desde', 'From'), value: tramo?.[0] || '22:00' },
+    { name: 'hasta', type: 'time', label: bi('Hasta', 'Until'), value: tramo?.[1] || '03:00' },
+  ];
+}
+/** Lo elegido en esos campos: `{ schedule }` (null = el de serie) o null si
+ * no vale (con su aviso). */
+function rrppLeeHorario(f) {
   if (f.modo !== 'propio') return { schedule: null };
   const dias = [1, 2, 3, 4, 5, 6, 7].filter((d) => f[`d${d}`]);
   if (!dias.length || !/^\d{2}:\d{2}$/.test(f.desde) || !/^\d{2}:\d{2}$/.test(f.hasta)) {
@@ -336,6 +332,38 @@ async function rrppHorarioModal(actual, deSerie) {
     return null;
   }
   return { schedule: Object.fromEntries(dias.map((d) => [String(d), [[f.desde, f.hasta]]])) };
+}
+/** Pide el horario. `deSerie`: el texto de la opción de serie. Devuelve
+ * `{ schedule }` (null = el de serie) o null si se cancela. */
+async function rrppHorarioModal(actual, deSerie) {
+  const f = await modal({
+    title: bi('Cuándo funciona la lista', 'When the list is open'),
+    intro: esc(bi('Fuera de este horario, el enlace dice cuándo abre la lista, no cuenta para el RRPP y su oferta no se puede conseguir.',
+      "Outside these hours the link says when the list opens, it doesn't count for the promoter and the offers on the list aren't available.")),
+    fields: rrppCamposHorario(actual, deSerie),
+    submit: bi('Guardar', 'Save'),
+  });
+  return f ? rrppLeeHorario(f) : null;
+}
+/** «Nuevo enlace» / «Cambiar el enlace», como la hoja de la app: nombre,
+ * caducidad y cuándo funciona (como el RRPP o días y horas propios).
+ * Devuelve { label, expires, schedule } o null si se cancela. */
+async function rrppEnlaceModal(l = null) {
+  const f = await modal({
+    title: l ? bi('Cambiar el enlace', 'Edit the link') : bi('Nuevo enlace', 'New link'),
+    intro: esc(bi('Cada enlace lleva su QR y sus visitas: uno para Instagram, otro para el grupo de WhatsApp…',
+      'Each link has its own QR code and visits: one for Instagram, another for the WhatsApp group…')),
+    fields: [
+      { name: 'label', label: bi('Nombre (opcional)', 'Name (optional)'), maxlength: 40, placeholder: bi('p. ej. Instagram', 'e.g. Instagram'), value: l?.label || '' },
+      { name: 'caduca', type: 'datetime-local', label: bi('Caducidad', 'Expiry'), help: bi('Vacía: sin caducidad.', 'Empty: no expiry.'), value: l?.expires_at ? toLocalInput(l.expires_at) : '' },
+      ...rrppCamposHorario(l?.schedule || null, bi('Como el RRPP', 'Same as the promoter')),
+    ],
+    submit: l ? bi('Guardar', 'Save') : bi('Crear el enlace', 'Create the link'),
+  });
+  if (!f) return null;
+  const h = rrppLeeHorario(f);
+  if (!h) return null;
+  return { label: f.label || null, expires: f.caduca ? fromLocalInput(f.caduca) : null, schedule: h.schedule };
 }
 
 /** «Listas de esta noche» sin nadie apuntado todavía. */
@@ -559,16 +587,30 @@ async function rrppFicha(v, id, noche = null) {
       } catch (e) { toast(rrppError(e), true); }
     };
   }
-  $$('[data-rrpp-horario-enlace]', v).forEach((b) => {
+  $$('[data-rrpp-editar-enlace]', v).forEach((b) => {
     b.onclick = async () => {
       const l = (r.links || []).find((x) => x.id === b.dataset.id);
-      const r2 = await rrppHorarioModal(l?.schedule || null, bi('Como el RRPP', 'Same as the promoter'));
-      if (!r2) return;
+      if (!l) return;
+      const e2 = await rrppEnlaceModal(l);
+      if (!e2) return;
       try {
-        rrppOk(await rpc('set_promoter_link_schedule', { p_link: b.dataset.id, p_schedule: r2.schedule }));
-        toast(bi('Guardado', 'Saved'));
+        rrppOk(await rpc('update_promoter_link', { p_link: l.id, p_label: e2.label || '', p_expires_at: e2.expires, p_clear_expiry: !e2.expires }));
+        if (JSON.stringify(e2.schedule || null) !== JSON.stringify(l.schedule || null)) {
+          rrppOk(await rpc('set_promoter_link_schedule', { p_link: l.id, p_schedule: e2.schedule }));
+        }
+        toast(bi('Enlace cambiado', 'Link updated'));
         repinta();
       } catch (e) { toast(rrppError(e, true), true); }
+    };
+  });
+  $$('[data-rrpp-compartir]', v).forEach((b) => {
+    b.onclick = async () => {
+      const url = b.dataset.rrppCompartir;
+      const texto = bi(`Apúntate a mi lista en ${BIZ.name}: ${url}`, `Join my list at ${BIZ.name}: ${url}`);
+      if (navigator.share) {
+        try { await navigator.share({ text: texto }); return; } catch (e) { if (e && e.name === 'AbortError') return; }
+      }
+      rrppCopia(url);
     };
   });
 
@@ -576,19 +618,11 @@ async function rrppFicha(v, id, noche = null) {
   const nuevoBtn = $('#rrppNuevo', v);
   if (nuevoBtn) {
     nuevoBtn.onclick = async () => {
-      const f = await modal({
-        title: bi('Nuevo enlace', 'New link'),
-        intro: esc(bi('Cada enlace lleva su QR y sus visitas: uno para Instagram, otro para el grupo de WhatsApp…',
-          'Each link has its own QR code and visits: one for Instagram, another for the WhatsApp group…')),
-        fields: [
-          { name: 'label', label: bi('Nombre (opcional)', 'Name (optional)'), maxlength: 40, placeholder: bi('Ej.: Instagram', 'E.g. Instagram') },
-          { name: 'caduca', type: 'datetime-local', label: bi('Caducidad', 'Expiry'), help: bi('Vacía: sin caducidad.', 'Empty: no expiry.') },
-        ],
-        submit: bi('Crear el enlace', 'Create the link'),
-      });
+      const f = await rrppEnlaceModal();
       if (!f) return;
       try {
-        rrppOk(await rpc('create_promoter_link', { p_promoter: id, p_label: f.label || null, p_expires_at: f.caduca ? fromLocalInput(f.caduca) : null }));
+        const nuevo = rrppOk(await rpc('create_promoter_link', { p_promoter: id, p_label: f.label, p_expires_at: f.expires }));
+        if (f.schedule && nuevo?.id) rrppOk(await rpc('set_promoter_link_schedule', { p_link: nuevo.id, p_schedule: f.schedule }));
         toast(bi('Enlace creado', 'Link created'));
         repinta();
       } catch (e) { toast(rrppError(e, true), true); }
@@ -639,9 +673,10 @@ function rrppEnlaceHtml(l) {
       <p class="muted small" style="margin:0">${esc([caduca, l.schedule ? rrppHorarioTxt(l.schedule) : '', visitas].filter(Boolean).join(' · '))}</p>
       ${l.state === 'closed' ? `<p class="muted small" style="margin:2px 0 0">${esc(rrppAbreTxt(l.opens_at))}</p>` : ''}
       <div class="actions" style="margin-top:10px">
-        <button class="btn sm" type="button" data-rrpp-copiar="${esc(url)}">${esc(bi('Copiar enlace', 'Copy link'))}</button>
+        <button class="btn sm" type="button" data-rrpp-compartir="${esc(url)}">${esc(bi('Compartir enlace', 'Share link'))}</button>
+        <button class="btn sm ghost" type="button" data-rrpp-copiar="${esc(url)}">${esc(bi('Copiar enlace', 'Copy link'))}</button>
         <button class="btn sm ghost" type="button" data-rrpp-qr="${esc(l.code)}">${esc(bi('Descargar QR', 'Download QR code'))}</button>
-        <button class="btn sm ghost" type="button" data-rrpp-horario-enlace data-id="${esc(l.id)}">${esc(bi('Horario', 'Hours'))}</button>
+        <button class="btn sm ghost" type="button" data-rrpp-editar-enlace data-id="${esc(l.id)}">${esc(bi('Cambiar el enlace', 'Edit the link'))}</button>
         <button class="btn sm ghost" type="button" data-rrpp-pausa="${l.paused ? '0' : '1'}" data-id="${esc(l.id)}">${esc(l.paused ? bi('Reanudar el enlace', 'Resume the link') : bi('Pausar el enlace', 'Pause the link'))}</button>
         <button class="btn sm bad ghost" type="button" data-rrpp-quita-enlace data-id="${esc(l.id)}">${esc(bi('Quitar el enlace', 'Remove the link'))}</button>
       </div>

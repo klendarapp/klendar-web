@@ -53,6 +53,38 @@ function rrppAbre(iso) {
   return EN ? `This list opens on ${dia} at ${hora}` : `Esta lista abre el ${dia} ${hora.startsWith('1:') ? 'a la' : 'a las'} ${hora}`;
 }
 
+/** «Viernes y sábado, de 22:00 a 3:00» (por tramos iguales; lunes primero),
+ * como `scheduleText` de la app. `s`: {"5": [["22:00", "03:00"]], …}. */
+function rrppHorario(s) {
+  const dia = (d) => new Intl.DateTimeFormat(LOC, { weekday: 'long', timeZone: 'UTC' }).format(new Date(Date.UTC(2024, 0, d)));
+  const corta = (hhmm) => String(hhmm || '').replace(/^0(\d):/, '$1:');
+  const grupos = new Map();
+  for (const d of Object.keys(s || {}).map(Number).filter((x) => x >= 1 && x <= 7).sort()) {
+    for (const r of s[d] || []) grupos.set(`${r[0]}|${r[1]}`, [...(grupos.get(`${r[0]}|${r[1]}`) || []), d]);
+  }
+  let lista;
+  try { lista = new Intl.ListFormat(LOC, { type: 'conjunction' }); } catch { lista = { format: (x) => x.join(', ') }; }
+  return [...grupos.entries()].map(([k, dias]) => {
+    const [a, b] = k.split('|').map(corta);
+    let txt = dias.length === 7 ? t('Todos los días') : lista.format(dias.map(dia));
+    txt = txt.charAt(0).toUpperCase() + txt.slice(1);
+    return EN ? `${txt}, ${a} to ${b}` : `${txt}, de ${a} a ${b}`;
+  }).join(' · ');
+}
+/** Cómo está un enlace, como `linkStateText` de la app: «Fuera de horario»,
+ * «Sin caducidad» o «Caduca el …», su horario propio y sus visitas. */
+function rrppEstadoEnlace(l) {
+  const n = Number(l.opens) || 0;
+  const caduca = l.expires_at ? fecha(l.expires_at, { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+  return [
+    l.state === 'paused' ? t('En pausa') : l.state === 'expired' ? t('Caducado') : l.state === 'inactive' ? t('Ya no funciona')
+      : l.state === 'closed' ? t('Fuera de horario')
+        : caduca ? (EN ? `Expires on ${caduca}` : `Caduca el ${caduca}`) : t('Sin caducidad'),
+    l.schedule ? rrppHorario(l.schedule) : '',
+    EN ? (n === 1 ? '1 visit' : `${n} visits`) : (n === 1 ? '1 visita' : `${n} visitas`),
+  ].filter(Boolean).join(' · ');
+}
+
 /** Los errores nuevos de `start_redemption` con un enlace de RRPP: una
  * pantalla que lo cuenta (no un error suelto). Devuelve true si era uno. */
 async function rrppErrorCodigo(e, id, rp) {
@@ -93,7 +125,8 @@ async function rrppErrorCodigo(e, id, rp) {
 // ── En la portada: «Tus listas de RRPP» (solo si tienes alguna) ──────────────
 function rrppPortadaHtml(roles) {
   if (!Array.isArray(roles) || !roles.length) return '';
-  const esta = (n) => (EN ? `Tonight: ${n} signed up` : `Esta noche: ${n} ${n === 1 ? 'apuntado' : 'apuntados'}`);
+  const esta = (n) => (EN ? (n === 0 ? 'Nobody on your list tonight' : n === 1 ? '1 on your list tonight' : `${n} on your list tonight`)
+    : (n === 0 ? 'Nadie en tu lista esta noche' : n === 1 ? '1 en tu lista esta noche' : `${n} en tu lista esta noche`));
   return `<h2 class="seccion-t">${esc(t('Tus listas de RRPP'))}</h2>
     <div class="lista">${roles.map((r) => fila({
       href: `#/rrpp/${r.promoter_id}`, icono: 'group', titulo: r.business_name || '',
@@ -123,7 +156,7 @@ RUTAS.rrpp = async ([id], params) => {
     d = await llamar('promoter_home', { p_promoter: id, p_night: pedida });
   } catch (e) {
     if (e.clave === 'not_found') {
-      pinta(pantallaVacia({ icono: 'group', titulo: t('Ya no eres RRPP de este negocio.'), h: 'h1', botones: botonTuCuenta() }));
+      pinta(pantallaVacia({ icono: 'group', titulo: t('Ya no eres RRPP de este local'), h: 'h1', botones: botonTuCuenta() }));
       return;
     }
     throw e;
@@ -138,8 +171,12 @@ RUTAS.rrpp = async ([id], params) => {
   const principal = enlaces.find((l) => l.state === 'ok') || enlaces[0] || null;
   const otros = enlaces.filter((l) => l !== principal);
   const url = principal ? rrppEnlace(principal.code) : '';
-  const estadoEnlace = (l) => (l.state === 'paused' ? t('En pausa') : l.state === 'expired' ? t('Caducado')
-    : l.state === 'inactive' ? t('Este enlace ya no funciona.') : '');
+  // Cuándo funciona su lista: su horario o el del local (y, cerrada, cuándo abre).
+  const horario = [
+    t('Cuándo funciona la lista'),
+    d.schedule ? rrppHorario(d.schedule) : t('Cuando el local está abierto'),
+    principal?.state === 'closed' ? rrppAbre(principal.opens_at) : '',
+  ].filter(Boolean);
   const opciones = [...new Set([d.tonight, d.night, ...(d.nights || []).map((x) => x.night)].filter(Boolean))].sort().reverse();
 
   pinta(`
@@ -152,25 +189,26 @@ RUTAS.rrpp = async ([id], params) => {
     <section class="bloque">
       <h2>${esc(t('Tu enlace'))}</h2>
       ${principal ? `<div class="enlace-amigo">
-        <div class="qr" id="rrpp-qr" role="img" aria-label="${esc(t('Tu enlace'))}"></div>
+        <div class="qr" id="rrpp-qr" role="img" aria-label="${esc(t('QR del enlace de RRPP'))}"></div>
         <p><button type="button" class="enlace-txt" id="rrpp-copiar-url">${ic('link')} <span>${esc(url.replace(/^https?:\/\//, ''))}</span></button></p>
-        ${principal.label || estadoEnlace(principal) ? `<p class="muted">${esc([principal.label, estadoEnlace(principal)].filter(Boolean).join(' · '))}</p>` : ''}
+        ${otros.length ? '' : `<p class="muted">${esc([principal.label, rrppEstadoEnlace(principal)].filter(Boolean).join(' · '))}</p>`}
         <div class="acciones enlace-acc">
-          <button type="button" class="pill accent" id="rrpp-compartir">${ic('share')} ${esc(t('Compartir'))}</button>
+          <button type="button" class="pill accent" id="rrpp-compartir">${ic('share')} ${esc(t('Compartir enlace'))}</button>
           <button type="button" class="pill" id="rrpp-copiar">${ic('content_copy')} ${esc(t('Copiar enlace'))}</button>
         </div>
+        <p class="muted rrpp-horario">${horario.map((x) => esc(x)).join('<br>')}</p>
       </div>
-      ${otros.length ? `<div class="lista rrpp-otros">${otros.map((l) => `
+      ${otros.length ? `<div class="lista rrpp-otros">${[principal, ...otros].map((l) => `
         <div class="fila">${ic('link')}
-          <span class="fila-t"><b>${esc(l.label || l.code)}</b><small>${esc([rrppEnlace(l.code).replace(/^https?:\/\//, ''), estadoEnlace(l)].filter(Boolean).join(' · '))}</small></span>
+          <span class="fila-t"><b>${esc(l.label || l.code)}</b><small>${esc([rrppEnlace(l.code).replace(/^https?:\/\//, ''), rrppEstadoEnlace(l)].filter(Boolean).join(' · '))}</small></span>
           <button type="button" class="icono-btn" data-rrpp-copia="${esc(rrppEnlace(l.code))}" aria-label="${esc(t('Copiar enlace'))}" title="${esc(t('Copiar enlace'))}">${ic('content_copy')}</button>
         </div>`).join('')}</div>` : ''}`
-        : `<p class="muted">${esc(EN ? `You don't have any links yet. Ask ${b.name} for one.` : `Aún no tienes enlaces. Pídeselos a ${b.name}.`)}</p>`}
+        : `<p class="muted">${esc(t('Ahora mismo no tienes ningún enlace: pídeselo al negocio.'))}</p>`}
     </section>
 
-    ${(d.offers || []).length ? `<section class="bloque">
+    <section class="bloque">
       <h2>${esc(t('Tus ofertas'))}</h2>
-      <div class="lista">${d.offers.map((o) => {
+      ${(d.offers || []).length ? `<div class="lista">${d.offers.map((o) => {
         const cupo = o.quota == null ? t('Sin límite')
           : (EN ? `${o.used} of ${o.quota} places` : t(`${o.used} de ${o.quota} plazas`));
         const vale = o.code_until ? (EN ? `The code is valid until ${rrppHora(o.code_until)}` : t(`El código vale hasta ${rrppHora(o.code_until)}`))
@@ -181,8 +219,8 @@ RUTAS.rrpp = async ([id], params) => {
           ${ic(o.kind === 'future_event' ? 'local_activity' : 'qr_code_2')}
           <span class="fila-t"><b>${esc(o.title || '')}</b><small>${esc([cuando, cupo, vale].filter(Boolean).join(' · '))}</small></span>
           ${ic('chevron_right')}</a>`;
-      }).join('')}</div>
-    </section>` : ''}
+      }).join('')}</div>` : `<p class="muted">${esc(t('Ahora mismo no tienes ofertas: lo que saquen con tu enlace cuenta igual (fuera de tu oferta).'))}</p>`}
+    </section>
 
     <section class="bloque">
       <h2>${esc(t('Tu lista'))}</h2>
@@ -201,7 +239,11 @@ RUTAS.rrpp = async ([id], params) => {
     const deEsa = (x.nights || []).find((n) => n.night === x.night);
     const apuntados = deEsa ? deEsa.signed : lista.length;
     const dentro = deEsa ? deEsa.entered : lista.filter((r) => r.status === 'validated').length;
-    const estado = (r) => (r.status === 'validated' ? (EN ? `In at ${hora(r.entered_at)}` : `Dentro a las ${hora(r.entered_at)}`)
+    // «a la 1:00» / «a las 2:30», como la app (y `rrppHora`).
+    const corta = (iso) => hora(iso).replace(/^0(\d):/, '$1:');
+    const dentroA = (iso) => { const h = corta(iso); return EN ? `In at ${hora(iso)}` : /^1:/.test(h) ? `Dentro a la ${h}` : `Dentro a las ${h}`; };
+    const seApunto = (iso) => { const h = corta(iso); return EN ? `Signed up at ${hora(iso)}` : /^1:/.test(h) ? `Se apuntó a la ${h}` : `Se apuntó a las ${h}`; };
+    const estado = (r) => (r.status === 'validated' ? dentroA(r.entered_at)
       : r.status === 'expired' ? t('Caducado') : t('Aún no ha entrado'));
     caja.innerHTML = `<p class="muted rrpp-resumen">${esc(EN ? `${apuntados} signed up · ${dentro} got in`
       : `${apuntados} ${apuntados === 1 ? 'apuntado' : 'apuntados'} · ${dentro} dentro`)}</p>
@@ -209,12 +251,12 @@ RUTAS.rrpp = async ([id], params) => {
         <div class="fila rrpp-fila">
           ${avatarDeAmigo({ name: r.name, avatar: r.avatar }, 'av-lista')}
           <span class="fila-t"><b>${esc(rrppNombre(r))}</b>
-            <small>${esc([EN ? `Signed up at ${hora(r.joined_at)}` : t(`Se apuntó a las ${hora(r.joined_at)}`), r.offer_title,
-              EN ? `${r.seats} ${r.seats === 1 ? 'place' : 'places'}` : t(`${r.seats} ${r.seats === 1 ? 'plaza' : 'plazas'}`)].filter(Boolean).join(' · '))}</small>
+            <small>${esc([seApunto(r.joined_at), r.offer_title,
+              r.seats > 1 ? (EN ? `${r.seats} places` : `${r.seats} plazas`) : ''].filter(Boolean).join(' · '))}</small>
             ${r.off_offer ? `<small class="rrpp-fuera">${esc(t('fuera de tu oferta'))}</small>` : ''}</span>
           <span class="tag rrpp-estado${r.status === 'validated' ? ' rrpp-dentro' : ' off'}">${esc(estado(r))}</span>
         </div>`).join('')}</div>`
-        : `<div class="empty"><p>${esc(t('Aún no se ha apuntado nadie.'))}</p></div>`}`;
+        : `<div class="empty"><p>${esc(t('Nadie en esta lista todavía'))}</p></div>`}`;
   };
   pintaLista(d);
   if (d.night === d.tonight) {
@@ -238,7 +280,8 @@ RUTAS.rrpp = async ([id], params) => {
     };
     $('#rrpp-copiar').onclick = () => copia(url);
     $('#rrpp-copiar-url').onclick = () => copia(url);
-    $('#rrpp-compartir').onclick = () => compartirOCopiar(`${b.name || 'Klendar'}: ${url}`, url);
+    const local = b.name || 'Klendar';
+    $('#rrpp-compartir').onclick = () => compartirOCopiar(EN ? `Join my list at ${local}: ${url}` : `Apúntate a mi lista en ${local}: ${url}`, url);
     $$('[data-rrpp-copia]').forEach((x) => { x.onclick = () => copia(x.dataset.rrppCopia); });
   }
 
@@ -246,7 +289,7 @@ RUTAS.rrpp = async ([id], params) => {
     const boton = ev.currentTarget;
     if (!(await confirma({
       titulo: EN ? `Stop being a promoter for ${b.name}?` : `¿Dejar de ser RRPP de ${b.name}?`,
-      texto: t('Tus enlaces dejarán de funcionar. Se lo diremos al negocio.'),
+      texto: EN ? `Your ${b.name} links will stop working and the business will be told.` : `Tus enlaces de ${b.name} dejarán de funcionar y el negocio se enterará.`,
       aceptar: t('Dejar de ser RRPP'),
       peligro: true,
     }))) return;
@@ -298,7 +341,7 @@ function rrppEnganchaInvitaciones(lista, repinta) {
           : `Para ser RRPP de ${negocio} hace falta tener 16 años y la fecha de nacimiento en tu perfil.`,
         adult_required: EN ? `${negocio} is 18+: to be its promoter you need to be 18 and have your date of birth in your profile.`
           : `${negocio} es +18: para ser su RRPP hace falta tener 18 años y la fecha de nacimiento en tu perfil.`,
-        account_suspended: t('Tu cuenta está suspendida. Si crees que es un error, escribe a info@klendar.app.'),
+        account_suspended: t('Tu cuenta está suspendida y no puede publicar ni canjear. Si crees que es un error, escribe a info@klendar.app.'),
       }[e.clave];
       toast(motivo || e.message, true);
     }

@@ -2267,7 +2267,6 @@ RUTAS.invitaciones = async () => {
   pinta(`
     <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(t('Invitaciones'))}</h1>
-    ${(deRrpp || []).length ? `<div class="invitaciones-eq">${rrppInvitacionesHtml(deRrpp)}</div>` : ''}
     ${(traspasos || []).length ? `<div class="invitaciones-eq">${traspasos.map((i) => `
       <div class="lista inv-eq">
         <p class="inv-eq-t"><b>${esc(EN ? `You’re offered ownership of ${i.business_name}` : `Te ofrecen ser propietario de ${i.business_name}`)}</b>
@@ -2280,6 +2279,7 @@ RUTAS.invitaciones = async () => {
           <button class="pill accent" type="button" data-tr-si="${esc(i.id)}">${esc(t('Aceptar'))}</button>
         </p>
       </div>`).join('')}</div>` : ''}
+    ${(deRrpp || []).length ? `<div class="invitaciones-eq">${rrppInvitacionesHtml(deRrpp)}</div>` : ''}
     ${(lista || []).length ? `<div class="invitaciones-eq">${lista.map((i) => `
       <div class="lista inv-eq">
         <p class="inv-eq-t"><b>${esc(EN ? `You’re invited to the ${i.business_name} team` : `Te invitan al equipo de ${i.business_name}`)}</b>
