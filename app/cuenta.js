@@ -571,7 +571,7 @@ RUTAS.ajustes = async ([sub]) => {
       .then(({ data }) => data?.available === true).catch(() => false),
   ]);
   const [perfil, cons, cuenta, metodos, cats, ciudades] = await Promise.all([
-    tabla(sb.from('profiles').select('display_name, avatar_url, locale, birth_date').eq('id', YO.id).maybeSingle()),
+    tabla(sb.from('profiles').select('locale').eq('id', YO.id).maybeSingle()),
     llamar('my_consents', {}),
     // Las formas de entrar, recién preguntadas (la sesión guardada puede ser
     // de antes de añadir una contraseña o de enlazar Google).
@@ -593,14 +593,6 @@ RUTAS.ajustes = async ([sub]) => {
       <span class="estado">${esc(activa ? t('Activa') : t('Sin usar'))}</span></div>`;
   const p = perfil || {};
   const dia = (iso) => fecha(iso, { day: 'numeric', month: 'long', year: 'numeric' });
-  const inicial = (p.display_name || YO.email || '?').trim().charAt(0).toUpperCase();
-  // La fecha de nacimiento, una vez puesta, no se cambia (como en la app):
-  // se ve y se dice cómo pedir que la corrijan. Quien entró con Google o
-  // Apple y no la tiene la pone aquí, una vez.
-  const nacimiento = p.birth_date
-    ? new Intl.DateTimeFormat(LOC, { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
-      .format(new Date(`${p.birth_date}T00:00:00Z`))
-    : null;
 
   pinta(`
     <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
@@ -611,32 +603,19 @@ RUTAS.ajustes = async ([sub]) => {
       ${filaSvg({ href: '#/ajustes/calendario', icono: 'calendario', titulo: t('Tus planes en tu calendario'), detalle: t('Google Calendar, Apple y otros, siempre al día') })}
     </div>
 
-    <section class="bloque">
-      <h2>${esc(t('Tu perfil'))}</h2>
-      <form class="formu" id="f-perfil" novalidate>
-        <div class="avatar-fila">
-          <span class="avatar" id="avatar">${p.avatar_url ? `<img src="${esc(p.avatar_url)}" alt="">` : esc(inicial)}</span>
-          <label class="pill">${esc(t('Cambiar foto'))}<input type="file" name="foto" accept="image/*" hidden></label>
-        </div>
-        <label>${esc(t('Nombre'))} <small>${esc(t('Cómo te ven en las reseñas'))}</small>
-          <input name="nombre" maxlength="40" required value="${esc(p.display_name || '')}"></label>
-        ${nacimiento
-    ? `<label>${esc(t('Fecha de nacimiento'))} <small>${esc(t('Para cambiarla, escríbenos a info@klendar.app.'))}</small>
-          <span class="candado"><input value="${esc(nacimiento)}" readonly aria-readonly="true"><span class="ms" aria-hidden="true">lock</span></span></label>`
-    : `<label>${esc(t('Fecha de nacimiento'))} <small>${esc(t('Solo para mostrarte ofertas adecuadas a tu edad. Revísala bien: una vez guardada, no se puede cambiar.'))}</small>
-          <input name="birth" type="date" ${LIMITES_NACIMIENTO()}></label>`}
-        <label>${esc(t('Idioma'))} <small>${esc(t('De la web, la app y las notificaciones y correos que te enviamos'))}</small>
-          <select name="idioma">
-            <option value=""${!p.locale ? ' selected' : ''}>${esc(t('El del móvil o el navegador'))}</option>
-            ${KL_IDIOMAS.map((l) => `<option value="${l}" lang="${l}"${p.locale === l ? ' selected' : ''}>${KL_NOMBRE_IDIOMA[l]}</option>`).join('')}
-          </select></label>
-        <label class="check"><input type="checkbox" name="traducir"${tradOk && trad?.translate_content ? ' checked' : ''}${tradOk ? '' : ' disabled'}>
-          <span><b>${esc(t('Traducir publicaciones a mi idioma'))}</b><br><small>${esc(tradOk
+    <section class="bloque" id="sec-idioma">
+      <h2>${esc(t('Idioma'))}</h2>
+      <div class="formu">
+      <label><small>${esc(t('De la web, la app y las notificaciones y correos que te enviamos'))}</small>
+        <select id="idioma" aria-label="${esc(t('Idioma'))}">
+          <option value=""${!p.locale ? ' selected' : ''}>${esc(t('El del móvil o el navegador'))}</option>
+          ${KL_IDIOMAS.map((l) => `<option value="${l}" lang="${l}"${p.locale === l ? ' selected' : ''}>${KL_NOMBRE_IDIOMA[l]}</option>`).join('')}
+        </select></label>
+      <label class="check"><input type="checkbox" id="traducir"${tradOk && trad?.translate_content ? ' checked' : ''}${tradOk ? '' : ' disabled'}>
+        <span><b>${esc(t('Traducir publicaciones a mi idioma'))}</b><br><small>${esc(tradOk
     ? t('Lo que escriben los negocios (publicaciones, novedades, su ficha y su carta), traducido automáticamente al idioma de la web. Las reseñas y los nombres no se traducen. Solo se envían esos textos a un servicio de traducción, nunca datos tuyos.')
     : t('Llega pronto: lo que escriben los negocios, traducido automáticamente al idioma de la web.'))}</small></span></label>
-        <p class="err" id="err-perfil" role="alert"></p>
-        <button class="pill accent" id="g-perfil">${esc(t('Guardar'))}</button>
-      </form>
+      </div>
     </section>
 
     <section class="bloque">
@@ -712,44 +691,33 @@ RUTAS.ajustes = async ([sub]) => {
   // Correo: con qué entras, «Cambiar correo» y el aviso si rebota (correo.js).
   correoSeccion($('#correo-cuenta'));
 
-  // Perfil
-  const fp = $('#f-perfil');
-  let foto = null;
-  fp.foto.addEventListener('change', () => {
-    foto = fp.foto.files[0] || null;
-    if (foto) $('#avatar').innerHTML = `<img src="${URL.createObjectURL(foto)}" alt="">`;
-  });
-  fp.addEventListener('submit', (ev) => {
-    ev.preventDefault();
-    const nombre = fp.nombre.value.trim();
-    const nac = fp.birth?.value || '';
-    if (!validaForm(fp, { nombre: VALIDA.requerido, ...(nac ? { birth: VALIDA.nacimiento } : {}) })) return;
-    $('#err-perfil').textContent = '';
-    ocupado($('#g-perfil'), async () => {
-      if (nac) await llamar('set_my_birth_date', { p_birth_date: nac });
-      const avatar = foto ? await subeFoto('avatars', foto, KFotos.TAM.avatar) : undefined;
-      const idioma = fp.idioma.value || null;
-      const cambio = { display_name: nombre, locale: idioma };
-      if (avatar) cambio.avatar_url = avatar;
-      await tabla(sb.from('profiles').update(cambio).eq('id', YO.id));
-      if (!fp.elements.traducir.disabled) {
-        const traducir = fp.elements.traducir.checked;
-        await llamar('set_translate_content', { p_value: traducir });
-        guardaTraduccionLocal(traducir);
-      }
+  // Idioma y «Traducir…»: se guardan al cambiarlos, como en la app (antes,
+  // con «Guardar» del perfil, que además pedía el nombre).
+  $('#idioma').addEventListener('change', async (ev) => {
+    const sel = ev.currentTarget;
+    const idioma = sel.value || null;
+    sel.disabled = true;
+    try {
+      await tabla(sb.from('profiles').update({ locale: idioma }).eq('id', YO.id));
       // El idioma viaja también en la cuenta: los correos lo leen de ahí.
-      const { error: eCuenta } = await sb.auth.updateUser({ data: cambio });
+      const { error: eCuenta } = await sb.auth.updateUser({ data: { locale: idioma } });
       if (eCuenta) throw new Error(errAuth(eCuenta));
-      foto = null;
-      toast(t('Perfil guardado'));
-      if (idioma && idioma !== LANG) {
-        try { localStorage.setItem('klendar_lang', idioma); } catch { /* sin permisos */ }
-        location.reload();
-      } else if (nac) {
-        // Ya puesta: se vuelve a pintar, ahora de solo lectura.
-        RUTAS.ajustes();
-      }
-    });
+      try {
+        if (idioma) localStorage.setItem('klendar_lang', idioma); else localStorage.removeItem('klendar_lang');
+      } catch { /* sin permisos */ }
+      toast(t('Guardado'));
+      const ahora = idioma || klIdiomaElegido();
+      if (ahora !== LANG) location.reload();
+    } catch (e) { toast(e.message, true); } finally { sel.disabled = false; }
+  });
+  $('#traducir').addEventListener('change', async (ev) => {
+    const caja = ev.currentTarget;
+    caja.disabled = true;
+    try {
+      await llamar('set_translate_content', { p_value: caja.checked });
+      guardaTraduccionLocal(caja.checked);
+      toast(t('Guardado'));
+    } catch (e) { caja.checked = !caja.checked; toast(e.message, true); } finally { caja.disabled = false; }
   });
 
   // Privacidad
@@ -761,8 +729,6 @@ RUTAS.ajustes = async ([sub]) => {
     try {
       await llamar('set_marketing_consent', { p_value: caja.checked });
       toast(caja.checked ? t('Te mandaremos novedades de vez en cuando') : t('No te mandaremos más novedades'));
-      // Solo cambia su texto: repintar Ajustes entero borraba lo que se
-      // estuviera editando en el perfil.
       const texto = caja.closest('label')?.querySelector('span');
       if (texto) texto.textContent = caja.checked ? `${t('Sí, desde el')} ${dia(new Date().toISOString())}` : t('No recibes novedades ni promociones por correo');
     } catch (e) { caja.checked = !caja.checked; toast(e.message, true); }
@@ -823,8 +789,6 @@ RUTAS.ajustes = async ([sub]) => {
       texto: t('Borramos tu última posición y desactivamos las notificaciones de «Cerca de ti».'),
       aceptar: t('Dejar de compartir'),
     }))) return;
-    // Solo cambia lo suyo: repintar Ajustes entero borraba lo que se
-    // estuviera escribiendo en el perfil.
     ocupado(boton, async () => {
       await llamar('revoke_location_consent', {});
       toast(t('Ya no guardamos tu posición'));
@@ -901,7 +865,66 @@ RUTAS.ajustes = async ([sub]) => {
     });
   });
 };
-RUTAS.perfil = RUTAS.ajustes;
+// ── Editar perfil ────────────────────────────────────────────────────────
+// Como «Editar perfil» de la app: foto, nombre y fecha de nacimiento, con
+// «Guardar». El idioma y «Traducir…» van en Ajustes y se guardan solos.
+RUTAS.perfil = async () => {
+  if (!exigeSesion('perfil')) return;
+  const p = (await tabla(sb.from('profiles').select('display_name, avatar_url, birth_date').eq('id', YO.id).maybeSingle())) || {};
+  const inicial = (p.display_name || YO.email || '?').trim().charAt(0).toUpperCase();
+  // La fecha de nacimiento, una vez puesta, no se cambia (como en la app):
+  // se ve y se dice cómo pedir que la corrijan. Quien entró con Google o
+  // Apple y no la tiene la pone aquí, una vez.
+  const nacimiento = p.birth_date
+    ? new Intl.DateTimeFormat(LOC, { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
+      .format(new Date(`${p.birth_date}T00:00:00Z`))
+    : null;
+  pinta(`
+    <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
+    <h1>${esc(t('Editar perfil'))}</h1>
+    <form class="formu" id="f-perfil" novalidate>
+      <div class="avatar-fila">
+        <span class="avatar" id="avatar">${p.avatar_url ? `<img src="${esc(p.avatar_url)}" alt="">` : esc(inicial)}</span>
+        <label class="pill">${esc(t('Cambiar foto'))}<input type="file" name="foto" accept="image/*" hidden></label>
+      </div>
+      <label>${esc(t('Nombre'))} <small>${esc(t('Cómo quieres que te vean en las reseñas'))}</small>
+        <input name="nombre" maxlength="40" required value="${esc(p.display_name || '')}"></label>
+      ${nacimiento
+    ? `<label>${esc(t('Fecha de nacimiento'))} <small>${esc(t('Para cambiarla, escríbenos a info@klendar.app.'))}</small>
+        <span class="candado"><input value="${esc(nacimiento)}" readonly aria-readonly="true"><span class="ms" aria-hidden="true">lock</span></span></label>`
+    : `<label>${esc(t('Fecha de nacimiento'))} <small>${esc(t('Para comprobar tu edad y enseñarte lo adecuado a ella (y el regalo de cumpleaños de tus favoritos, si tienen). Revísala bien: una vez guardada, no se puede cambiar.'))}</small>
+        <input name="birth" type="date" ${LIMITES_NACIMIENTO()}></label>`}
+      <p class="err" id="err-perfil" role="alert"></p>
+      <button class="pill accent" id="g-perfil">${esc(t('Guardar'))}</button>
+    </form>`);
+
+  const fp = $('#f-perfil');
+  let foto = null;
+  fp.foto.addEventListener('change', () => {
+    foto = fp.foto.files[0] || null;
+    if (foto) $('#avatar').innerHTML = `<img src="${URL.createObjectURL(foto)}" alt="">`;
+  });
+  fp.addEventListener('submit', (ev) => {
+    ev.preventDefault();
+    const nombre = fp.nombre.value.trim();
+    const nac = fp.birth?.value || '';
+    if (!validaForm(fp, { nombre: VALIDA.requerido, ...(nac ? { birth: VALIDA.nacimiento } : {}) })) return;
+    $('#err-perfil').textContent = '';
+    ocupado($('#g-perfil'), async () => {
+      if (nac) await llamar('set_my_birth_date', { p_birth_date: nac });
+      const avatar = foto ? await subeFoto('avatars', foto, KFotos.TAM.avatar) : undefined;
+      const cambio = { display_name: nombre };
+      if (avatar) cambio.avatar_url = avatar;
+      await tabla(sb.from('profiles').update(cambio).eq('id', YO.id));
+      const { error: eCuenta } = await sb.auth.updateUser({ data: cambio });
+      if (eCuenta) throw new Error(errAuth(eCuenta));
+      foto = null;
+      toast(t('Perfil guardado'));
+      // Ya puesta, la fecha se vuelve a pintar de solo lectura.
+      if (nac) RUTAS.perfil();
+    });
+  });
+};
 
 // ── Ajustes → Notificaciones ─────────────────────────────────────────────
 /** Lo mismo y en el mismo orden que la app (Ajustes → Notificaciones): en el

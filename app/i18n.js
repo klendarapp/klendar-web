@@ -1251,4 +1251,6 @@ const APP_EN = {
   "Ya lo han recibido todos": "Everyone has already received it",
   "Tienes que estar en el local para aceptarlo": "You need to be at the venue to accept it",
   "Acércate y vuelve a escanear el QR.": "Get closer and scan the QR again.",
+  "Cómo quieres que te vean en las reseñas": "How you want to appear in reviews",
+  "Para comprobar tu edad y enseñarte lo adecuado a ella (y el regalo de cumpleaños de tus favoritos, si tienen). Revísala bien: una vez guardada, no se puede cambiar.": "To check your age and show you what suits it (and your favourites’ birthday gift, if they have one). Check it carefully: once saved, it can’t be changed.",
 };

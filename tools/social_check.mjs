@@ -307,7 +307,40 @@ async function dejarDeSeguir(nav, nombre, t, vp) {
   }
 }
 
-export const PRUEBAS = { fichaAmigo, rrppPersona, rrppPanel, paginaRp, sorteos, dejarDeSeguir };
+// 4. Ajustes: Idioma y «Traducir…» se guardan solos; el perfil, aparte.
+async function ajustes(nav, nombre, t, vp) {
+  const { ctx, p, estado, errores } = await contexto(nav, vp, CUENTA({
+    my_translation_settings: { translate_content: false }, set_translate_content: { ok: true },
+    my_auth_methods: { has_password: true }, my_blocks: { blocks: [] },
+  }), { fn: { translate: { available: true } }, perfil: { display_name: 'Ana', avatar_url: null, locale: null, birth_date: '1990-05-01' } });
+  await p.goto(`${BASE}/app/#/ajustes`, { waitUntil: 'networkidle' });
+  await p.waitForSelector('#idioma');
+  const v = await p.locator('#view').innerText();
+  ok(!/Tu perfil/.test(v) && await p.locator('#f-perfil').count() === 0, `${nombre}/${t} Ajustes: sin «Tu perfil» dentro`);
+  await p.screenshot({ path: `${OUT}/web-ajustes-${nombre}-${t}.png`, fullPage: true });
+  await p.selectOption('#idioma', 'es');
+  await p.waitForTimeout(800);
+  ok(estado.llamadas.some(([f, b]) => f === 'profiles' && b.locale === 'es') && estado.llamadas.some(([f, b]) => f === 'auth_update' && b.data?.locale === 'es'),
+    `${nombre}/${t} Ajustes: el idioma se guarda al elegirlo`);
+  await p.check('#traducir');
+  await p.waitForTimeout(600);
+  ok(estado.llamadas.some(([f, b]) => f === 'set_translate_content' && b.p_value === true), `${nombre}/${t} Ajustes: «Traducir…» se guarda al marcarlo`);
+  // Editar perfil, su pantalla.
+  await p.goto(`${BASE}/app/#/perfil`, { waitUntil: 'networkidle' });
+  await p.waitForSelector('#f-perfil');
+  const v2 = await p.locator('#view').innerText();
+  ok(/Editar perfil/.test(v2) && /Cómo quieres que te vean en las reseñas/.test(v2) && await p.locator('#f-perfil select').count() === 0,
+    `${nombre}/${t} «Editar perfil»: foto, nombre y fecha (sin idioma)`);
+  await p.screenshot({ path: `${OUT}/web-perfil-${nombre}-${t}.png`, fullPage: true });
+  await p.fill('#f-perfil input[name=nombre]', 'Ana B.');
+  await p.click('#g-perfil');
+  await p.waitForTimeout(800);
+  ok(estado.llamadas.some(([f, b]) => f === 'profiles' && b.display_name === 'Ana B.'), `${nombre}/${t} «Editar perfil» guarda el nombre`);
+  ok(errores.length === 0, `${nombre}/${t} Ajustes sin errores JS ${errores.join(' | ')}`);
+  await ctx.close();
+}
+
+export const PRUEBAS = { fichaAmigo, rrppPersona, rrppPanel, paginaRp, sorteos, dejarDeSeguir, ajustes };
 const SOLO = process.env.SOLO || '';
 let servidorRp = null;
 let falso = null;
