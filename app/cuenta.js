@@ -456,8 +456,8 @@ RUTAS.alerta = async ([id], params, crudo) => {
         <span class="acciones"><a class="pill" href="#/alerta/${esc(igual.id)}">${esc(t('Ver el aviso'))}</a></span>
       </div>` : ''}
     <form class="formu" id="f" novalidate>
-      <label>${esc(t('Nombre'))} <small>${esc(t('(opcional, p. ej. «sushi cerca de casa»)'))}</small>
-        <input name="label" maxlength="60" value="${esc(a.label || '')}"></label>
+      <label>${esc(t('Nombre'))} <small>${esc(t('(opcional)'))}</small>
+        <input name="label" maxlength="60" value="${esc(a.label || '')}" placeholder="${esc(t('Nombre, p. ej. «sushi cerca»'))}"></label>
       <div class="campo-cat"><p class="etq" aria-hidden="true">${esc(t('¿De qué?'))} <small>${esc(t('Sin elegir ninguna, de todo.'))}</small></p>
         <div id="cats-aviso"></div></div>
       <fieldset class="chips"><legend>${esc(t('¿Ofertas o eventos?'))}</legend>
@@ -467,15 +467,9 @@ RUTAS.alerta = async ([id], params, crudo) => {
       <label>${esc(t('¿A cuánta distancia?'))} <output id="radio-txt">${esc(distancia(a.radius_m))}</output>
         <input type="range" name="radius" min="500" max="${maxRadio}" step="500" value="${esc(a.radius_m)}"></label>
       <label class="check"><input type="checkbox" name="fija"${a.lat != null ? ' checked' : ''}>
-        <span><b>${esc(t('Vigilar una zona fija'))}</b><br><small id="fija-txt"></small></span></label>
-      <div id="zona" ${a.lat != null ? '' : 'hidden'}>
-        <p class="acciones"><button type="button" class="pill" id="aqui">${ic('my_location')}${esc(t('Usar dónde estoy ahora'))}</button></p>
-        <p class="muted" id="zona-txt">${a.lat != null ? esc(`${t('Zona guardada')}: ${a.place_label || `${a.lat.toFixed(4)}, ${a.lng.toFixed(4)}`}`) : ''}</p>
-        <label>${esc(t('Nombre de la zona'))} <small>${esc(t('(opcional, p. ej. «casa» o «el trabajo»)'))}</small>
-          <input name="place" maxlength="60" value="${esc(a.place_label || '')}"></label>
-      </div>
+        <span><b>${esc(t('Vigilar esta zona'))}</b><br><small id="fija-txt"></small></span></label>
       <label class="check"><input type="checkbox" name="descuento"${a.discount_only ? ' checked' : ''}> ${esc(t('Solo con descuento'))}</label>
-      <label>${esc(t('Precio máximo'))} <small>${esc(t('(opcional, en euros)'))}</small>
+      <label>${esc(t('Precio máximo'))} <small>${esc(t('(opcional)'))}</small>
         <input name="precio" inputmode="decimal" value="${a.max_price_cents != null ? esc((a.max_price_cents / 100).toLocaleString(LOC, { minimumFractionDigits: 2 })) : ''}"></label>
       <p class="err" id="err" role="alert"></p>
       <button class="pill accent big" id="guardar">${esc(t('Guardar'))}</button>
@@ -486,32 +480,24 @@ RUTAS.alerta = async ([id], params, crudo) => {
   KlendarCategorias.campo($('#cats-aviso'), {
     cats, elegidas: a.categories || [], multiple: true, lang: LANG, nombre: 'cat', titulo: t('¿De qué?'), vacio: t('Todo'),
   });
-  let lat = a.lat;
-  let lng = a.lng;
+  // «Vigilar esta zona», como la app: un interruptor. Encendido, la zona es
+  // «Aquí» (donde estás al guardar; al editar se queda la que ya tenía).
+  // Apagado, el aviso te sigue; la web no comparte la ubicación de fondo, así
+  // que usa la última que compartiste en la app (GLOSARIO, «Avísame si…»).
   const pintaFija = () => {
-    const fija = f.fija.checked;
-    $('#zona').hidden = !fija;
-    $('#fija-txt').textContent = fija
-      ? t('Se queda mirando esa zona aunque tú estés en otra parte.')
+    $('#fija-txt').textContent = f.fija.checked
+      ? t('Se queda mirando aquí aunque estés de viaje.')
       : t('El aviso te sigue: usa la última ubicación que compartiste en la app.');
   };
   pintaFija();
   f.fija.addEventListener('change', pintaFija);
   f.radius.addEventListener('input', () => { $('#radio-txt').textContent = distancia(Number(f.radius.value)); });
-  $('#aqui').addEventListener('click', (ev) => {
-    const b = ev.currentTarget;
-    if (!navigator.geolocation) { toast(t('Este navegador no deja saber dónde estás.'), true); return; }
-    b.disabled = true;
-    navigator.geolocation.getCurrentPosition((pos) => {
-      lat = pos.coords.latitude;
-      lng = pos.coords.longitude;
-      $('#zona-txt').textContent = `${t('Zona guardada')}: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
-      if (!f.place.value) f.place.value = t('Aquí');
-      b.disabled = false;
-    }, () => {
-      toast(t('No hemos podido saber dónde estás. Revisa el permiso de ubicación del navegador.'), true);
-      b.disabled = false;
-    }, { enableHighAccuracy: true, timeout: 12000 });
+  /** Dónde estás ahora (para «Vigilar esta zona» en un aviso nuevo). */
+  const aqui = () => new Promise((ok, ko) => {
+    if (!navigator.geolocation) { ko(new Error(t('Este navegador no deja saber dónde estás.'))); return; }
+    navigator.geolocation.getCurrentPosition((pos) => ok({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => ko(new Error(t('No hemos podido saber dónde estás. Revisa el permiso de ubicación del navegador.'))),
+      { enableHighAccuracy: true, timeout: 12000 });
   });
 
   f.addEventListener('submit', (ev) => {
@@ -519,11 +505,13 @@ RUTAS.alerta = async ([id], params, crudo) => {
     const err = $('#err');
     err.textContent = '';
     const fija = f.fija.checked;
-    if (fija && lat == null) { err.textContent = t('Para vigilar una zona fija, pulsa «Usar dónde estoy ahora».'); return; }
     const precioTxt = f.precio.value.trim().replace(',', '.');
     const precio = precioTxt ? Number(precioTxt) : null;
     if (precioTxt && (!Number.isFinite(precio) || precio < 0)) { err.textContent = t('El precio máximo tiene que ser un número.'); return; }
     ocupado($('#guardar'), async () => {
+      // Al editar se queda el sitio que ya tenía; si no, «Aquí».
+      let zona = null;
+      if (fija) zona = a.lat != null ? { lat: a.lat, lng: a.lng, place: a.place_label || t('Aquí') } : { ...(await aqui()), place: t('Aquí') };
       await llamar('save_offer_alert', paramsAlerta({
         id: a.id,
         label: f.label.value.trim(),
@@ -532,9 +520,9 @@ RUTAS.alerta = async ([id], params, crudo) => {
         max_price_cents: precio == null ? null : Math.round(precio * 100),
         discount_only: f.descuento.checked,
         radius_m: Number(f.radius.value),
-        lat: fija ? lat : null,
-        lng: fija ? lng : null,
-        place_label: fija ? f.place.value.trim() : null,
+        lat: zona ? zona.lat : null,
+        lng: zona ? zona.lng : null,
+        place_label: zona ? zona.place : null,
         active: a.active !== false,
       }));
       toast(t('Aviso guardado'));

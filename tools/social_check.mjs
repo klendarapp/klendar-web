@@ -368,7 +368,28 @@ async function textos(nav, nombre, t, vp) {
   await ctx.close();
 }
 
-export const PRUEBAS = { fichaAmigo, rrppPersona, rrppPanel, paginaRp, sorteos, dejarDeSeguir, ajustes, textos };
+// 6. «Avísame si…»: el editor como el de la app («Vigilar esta zona» con un
+// interruptor; la zona es «Aquí», donde estás al guardar).
+async function avisame(nav, nombre, t, vp) {
+  const { ctx, p, estado, errores } = await contexto(nav, vp, CUENTA({ my_offer_alerts: [], save_offer_alert: { ok: true, id: 'x' } }));
+  await ctx.grantPermissions(['geolocation']);
+  await ctx.setGeolocation({ latitude: 40.4168, longitude: -3.7038 });
+  await p.goto(`${BASE}/app/#/alerta/nueva`, { waitUntil: 'networkidle' });
+  await p.waitForSelector('#f input[name=fija]');
+  const v = await p.locator('#view').innerText();
+  ok(/Vigilar esta zona/.test(v) && !/Usar dónde estoy ahora/.test(v) && !/Nombre de la zona/.test(v), `${nombre}/${t} «Avísame si…»: «Vigilar esta zona», sin botón ni nombre de zona`);
+  await p.check('#f input[name=fija]');
+  ok(/Se queda mirando aquí aunque estés de viaje\./.test(await p.locator('#fija-txt').innerText()), `${nombre}/${t} «Avísame si…»: el texto de encendido de la app`);
+  await p.screenshot({ path: `${OUT}/web-avisame-${nombre}-${t}.png`, fullPage: true });
+  await p.click('#guardar');
+  await p.waitForTimeout(1000);
+  const g = estado.llamadas.find(([f]) => f === 'save_offer_alert');
+  ok(g && Math.abs(g[1].p_lat - 40.4168) < 0.001 && g[1].p_place_label === 'Aquí', `${nombre}/${t} «Avísame si…»: guarda «Aquí» con donde estás (${JSON.stringify(g && g[1])})`);
+  ok(errores.length === 0, `${nombre}/${t} «Avísame si…» sin errores JS ${errores.join(' | ')}`);
+  await ctx.close();
+}
+
+export const PRUEBAS = { fichaAmigo, rrppPersona, rrppPanel, paginaRp, sorteos, dejarDeSeguir, ajustes, textos, avisame };
 const SOLO = process.env.SOLO || '';
 let servidorRp = null;
 let falso = null;
