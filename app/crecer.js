@@ -26,11 +26,12 @@
 
 /** Los errores de `request_venue` y `join_city_waitlist`, dichos como en la app. */
 const ERR_PEDIDO = {
-  invalid_name: 'Escribe el nombre del sitio, sin correos, enlaces ni teléfonos.',
-  invalid_place: 'Dinos en qué ciudad o zona está (o márcalo en el mapa). La dirección, sin correos, enlaces ni teléfonos.',
-  offensive_text: 'Hay alguna palabra que no está permitida. Revísalo.',
-  too_many_today: 'Hoy ya has pedido 5 sitios, el máximo. Mañana puedes pedir más.',
-  too_many_open: 'Tienes 30 sitios pedidos esperando, el máximo. Retira alguno para pedir otro.',
+  // Los de la app (`venueReqErr*`).
+  invalid_name: 'Revisa el nombre y el sitio: no pongas correos, enlaces ni teléfonos.',
+  invalid_place: 'Revisa el nombre y el sitio: no pongas correos, enlaces ni teléfonos.',
+  offensive_text: 'Revisa el texto: hay palabras que no se pueden usar.',
+  too_many_today: 'Por hoy ya has pedido bastantes sitios. Prueba mañana.',
+  too_many_open: 'Tienes demasiadas peticiones abiertas. Retira alguna en «Lo que has pedido».',
   invalid_point: 'No sabemos dónde es eso. Vuelve a Descubre y prueba otra vez.',
   too_many: 'Demasiados intentos seguidos. Espera un rato y vuelve a probar.',
 };
@@ -145,7 +146,7 @@ RUTAS['pedir-local'] = async (_partes, params, crudo) => {
   pinta(`
     <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a> › <a href="#/pedidos">${esc(t('Lo que has pedido'))}</a></p>
     <h1>${esc(t('Pedir un local'))}</h1>
-    <p class="muted">${esc(t('¿Echas en falta un sitio en Klendar? Dinos cuál y dónde está.'))}</p>
+    <p class="muted">${esc(t('¿Echas en falta un bar, un restaurante o una tienda? Pide que esté en Klendar.'))}</p>
     <form class="formu" id="fPedir" novalidate>
       <label>${esc(t('Nombre del sitio'))}
         <input name="nombre" maxlength="80" autocomplete="off" required value="${esc(nombre0)}" placeholder="${esc(t('Ej.: Bar Casa Paco'))}"></label>
@@ -155,14 +156,14 @@ RUTAS['pedir-local'] = async (_partes, params, crudo) => {
       <label>${esc(t('Dirección aproximada'))} <small>${esc(t('(opcional)'))}</small>
         <input name="direccion" maxlength="120" autocomplete="off" placeholder="${esc(t('Ej.: calle Mayor, junto a la plaza'))}"></label>
       <details class="pedir-mapa" id="pedirMapa">
-        <summary>${esc(t('Marcar el local en el mapa'))} <small>${esc(t('(opcional)'))}</small></summary>
+        <summary>${esc(t('Marcar en el mapa (opcional)'))}</summary>
         <p class="muted">${esc(t('Toca el sitio del local o arrastra la chincheta. Es el punto del local, nunca el tuyo: no usamos tu ubicación.'))}</p>
         <div class="acciones"><button type="button" class="pill" id="buscaMapa">${esc(t('Buscar la dirección en el mapa'))}</button>
           <button type="button" class="pill" id="quitaPunto" hidden>${esc(t('Quitar el punto'))}</button></div>
         <div class="mapa-local" id="mapaLocal" role="region" aria-label="${esc(t('Mapa'))}"></div>
         <p class="muted" id="puntoTxt" aria-live="polite"></p>
       </details>
-      <p class="muted nota-pedir">${esc(t('Lo juntamos con lo que pidan otras personas. El negocio solo sabrá cuántas lo piden, nunca quién. Si llega a Klendar, te avisamos (se apaga en Ajustes → Notificaciones).'))}</p>
+      <p class="muted nota-pedir">${esc(t('Se junta con lo que pidan otras personas. El negocio solo verá cuántas personas lo piden, nunca quién. Si llega, te avisamos (puedes apagarlo en Ajustes).'))}</p>
       <p class="err" id="errPedir" role="alert"></p>
       <button class="pill accent" id="enviarPedir">${esc(t('Pedirlo'))}</button>
     </form>`);
@@ -171,7 +172,7 @@ RUTAS['pedir-local'] = async (_partes, params, crudo) => {
   let punto = null;
   let mapa = null;
   const pintaPunto = () => {
-    $('#puntoTxt').textContent = punto ? t('Punto marcado.') : '';
+    $('#puntoTxt').textContent = punto ? t('Marcado en el mapa') : '';
     $('#quitaPunto').hidden = !punto;
   };
   // El mapa se carga al abrirlo (pesa lo suyo) y se centra en lo escrito.
@@ -200,8 +201,8 @@ RUTAS['pedir-local'] = async (_partes, params, crudo) => {
     const nombre = f.nombre.value.trim();
     const zona = f.zona.value.trim();
     let mal = false;
-    if (nombre.length < 2) { errorCampo(f.nombre, t('Escribe el nombre del sitio.')); mal = true; }
-    if (!zona && !punto) { errorCampo(f.zona, t('Dinos en qué ciudad o zona está (o márcalo en el mapa).')); mal = true; }
+    if (nombre.length < 2) { errorCampo(f.nombre, t('Escribe el nombre del sitio')); mal = true; }
+    if (!zona && !punto) { errorCampo(f.zona, t('Escribe la ciudad o la zona')); mal = true; }
     if (mal) { $('[aria-invalid="true"]', f)?.focus(); return; }
     $('#errPedir').textContent = '';
     ocupado($('#enviarPedir'), async () => {
@@ -231,7 +232,7 @@ function resultadoPedido(r) {
       <div class="ticket">
         <p class="hecho-ic" aria-hidden="true">✓</p>
         <h1>${esc(EN ? `${r.business_name} is already on Klendar` : `${r.business_name} ya está en Klendar`)}</h1>
-        <p class="muted">${esc(t('No hace falta pedirlo: mira su ficha, guárdalo en favoritos y verás lo que publica.'))}</p>
+        <p class="muted">${esc(t('No hace falta pedirlo: mira su ficha y lo que publica.'))}</p>
         <p class="acciones">
           <a class="pill accent" href="${esc(fichaNegocio(r.slug, r.business_id))}">${esc(t('Ver su ficha'))}</a>
           <a class="pill" href="#/pedir-local">${esc(t('Pedir otro'))}</a>
@@ -239,12 +240,16 @@ function resultadoPedido(r) {
       </div>`);
     return;
   }
-  const titulo = r.status === 'already' ? t('Ya lo habías pedido') : t('¡Pedido!');
-  const texto = r.status === 'created'
-    ? (EN ? `You're the first to ask for ${nombre}. If it comes to Klendar, we'll let you know.` : `Eres la primera persona que pide ${nombre}. Si llega a Klendar, te avisamos.`)
+  // Como la app: «Hecho» y «Eres la primera persona…» / «Ya sois N…»; si ya
+  // lo había pedido, «Ya lo habías pedido» con cuántos sois.
+  const titulo = r.status === 'already' ? t('Ya lo habías pedido') : t('Hecho');
+  const texto = r.status === 'already'
+    ? (n <= 1
+      ? t('De momento solo lo pides tú. Si llega a Klendar, te avisamos.')
+      : (EN ? `${n} people are asking for ${nombre}. If it joins Klendar, we'll let you know.` : `Sois ${n} personas pidiendo ${nombre}. Si llega a Klendar, te avisamos.`))
     : n <= 1
-      ? (EN ? `For now, only you are asking for ${nombre}. If it comes to Klendar, we'll let you know.` : `De momento solo lo pides tú. Si ${nombre} llega a Klendar, te avisamos.`)
-      : (EN ? `${n} people are asking for ${nombre}. If it comes to Klendar, we'll let you know.` : `Ya sois ${n} personas pidiendo ${nombre}. Si llega a Klendar, te avisamos.`);
+      ? (EN ? `You're the first person to ask for ${nombre}. If it joins Klendar, we'll let you know.` : `Eres la primera persona que pide ${nombre}. Si llega a Klendar, te avisamos.`)
+      : (EN ? `${n} people are now asking for ${nombre}. If it joins Klendar, we'll let you know.` : `Ya sois ${n} personas pidiendo ${nombre}. Si llega a Klendar, te avisamos.`);
   pinta(`
     <div class="ticket">
       <p class="hecho-ic" aria-hidden="true">✓</p>
@@ -272,14 +277,14 @@ RUTAS.pedidos = async () => {
     pinta(`${cabeza}${pantallaVacia({
       icono: 'storefront',
       titulo: t('Aún no has pedido nada'),
-      texto: t('¿Echas en falta un sitio en Klendar? Pídelo: lo juntamos con lo que pidan otras personas y te avisamos si llega.'),
+      texto: t('Si echas en falta un sitio, pídelo y te avisamos cuando esté en Klendar.'),
       botones: `<a class="pill accent" href="#/pedir-local">${esc(t('Pedir un local'))}</a>`,
     })}`);
     return;
   }
   const personas = (x) => (Number(x.people) <= 1
-    ? t('de momento, solo tú')
-    : (EN ? `${x.people} people are asking for it` : `${x.people} personas lo piden`));
+    ? t('Solo tú')
+    : (EN ? `${x.people} people` : `${x.people} personas`));
   const filaLocal = (x) => {
     const estado = t(ESTADO_PEDIDO[x.status] || 'Esperando');
     const live = x.status === 'live' && x.business_id;
@@ -296,25 +301,25 @@ RUTAS.pedidos = async () => {
   const filaZona = (z) => `<div class="aviso pedido">
       <b>${esc(z.zone)}</b>
       <small class="muted">${esc(z.notified_at
-        ? (EN ? `We let you know on ${fecha(z.notified_at, { day: 'numeric', month: 'long' })}` : `Te avisamos el ${fecha(z.notified_at, { day: 'numeric', month: 'long' })}`)
+        ? t('Ya te avisamos: Klendar ha llegado')
         : (EN ? `Since ${fecha(z.created_at, { day: 'numeric', month: 'long', year: 'numeric' })}` : `Desde el ${fecha(z.created_at, { day: 'numeric', month: 'long', year: 'numeric' })}`))}</small>
       <span class="acciones"><button type="button" class="pill" data-quitar-zona="${esc(z.id)}" data-zona="${esc(z.zone)}">${esc(t('Quitar'))}</button></span>
     </div>`;
   pinta(`${cabeza}
-    <p class="acciones"><a class="pill accent" href="#/pedir-local">${esc(t('Pedir un local'))}</a></p>
-    <h2 class="seccion-t">${esc(t('Locales'))}</h2>
+    <h2 class="seccion-t">${esc(t('Locales que has pedido'))}</h2>
     ${locales.length ? `<div class="avisos">${locales.map(filaLocal).join('')}</div>`
-      : `<p class="empty">${esc(t('Aún no has pedido ningún sitio.'))}</p>`}
+      : `<p class="empty">${esc(t('Aún no has pedido ningún local.'))}</p>`}
+    <p class="acciones"><a class="pill" href="#/pedir-local">${ic('add')} ${esc(t('Pedir un local'))}</a></p>
     <h2 class="seccion-t">${esc(t('Te avisamos cuando llegue Klendar'))}</h2>
     ${zonas.length ? `<div class="avisos">${zonas.map(filaZona).join('')}</div>`
-      : `<p class="empty">${esc(t('Si estás en un sitio donde aún no hay Klendar, en Descubre puedes pedir que te avisemos cuando llegue.'))} <a href="${PUB_EN ? '/en/discover/' : '/descubre/'}">${esc(t('Ir a Descubre'))}</a></p>`}
+      : `<p class="empty">${esc(t('Aún no te has apuntado en ninguna zona.'))}</p>`}
     <p class="muted nota-pedir">${esc(t('Nadie ve quién pide qué: el negocio solo sabrá cuántas personas lo piden. Los avisos se apagan en Ajustes → Notificaciones.'))}</p>`);
 
   $$('[data-retirar]').forEach((b) => b.addEventListener('click', async () => {
     const cerrado = b.dataset.estado === 'closed';
     if (!(await confirma({
       titulo: EN ? `${cerrado ? 'Remove' : 'Withdraw'} “${b.dataset.nombre}”?` : `¿${cerrado ? 'Quitar' : 'Retirar'} «${b.dataset.nombre}»?`,
-      texto: cerrado ? t('Saldrá de tu lista.') : t('Dejará de contar que lo pides y no te avisaremos si llega.'),
+      texto: cerrado ? t('Saldrá de tu lista.') : t('Dejarás de contar entre quienes lo piden y no te avisaremos si llega.'),
       aceptar: t(cerrado ? 'Quitar de la lista' : 'Retirar'),
     }))) return;
     ocupado(b, async () => {
@@ -325,13 +330,13 @@ RUTAS.pedidos = async () => {
   }));
   $$('[data-quitar-zona]').forEach((b) => b.addEventListener('click', async () => {
     if (!(await confirma({
-      titulo: EN ? `Remove “${b.dataset.zona}”?` : `¿Quitar «${b.dataset.zona}»?`,
+      titulo: EN ? `Remove the alert for ${b.dataset.zona}?` : `¿Quitar el aviso de ${b.dataset.zona}?`,
       texto: t('No te avisaremos cuando Klendar llegue allí.'),
       aceptar: t('Quitar'),
     }))) return;
     ocupado(b, async () => {
       await llamar('leave_my_city_waitlist', { p_id: b.dataset.quitarZona });
-      toast(t('Quitado'));
+      toast(t('Hecho: ya no te avisaremos'));
       RUTAS.pedidos();
     });
   }));
