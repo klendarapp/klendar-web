@@ -4029,6 +4029,11 @@ const momentoDetalle = (r) => I18N.t(r.detail === 'stamps'
 const etiquetaSinConexion = (r) => (r.offline ? ` <span class="tag dim">${esc(bi('sin conexión', 'offline'))}</span>` : '');
 /** Quién lo usó: su nombre, «Usuario de Klendar» sin nombre o «Cuenta
  * eliminada» si ya no tiene cuenta (el canje se queda, sin nadie detrás). */
+/** «Entran 3 personas» (con más de una plaza; no en «Dar en el momento»). */
+const entranTxt = (r) => (Number(r.seats) > 1 && r.kind !== 'spot'
+  ? bi(`Entran ${r.seats} personas`, `Admit ${r.seats} people`) : '');
+/** Quién del equipo lo validó. */
+const validadoPorTxt = (quien) => bi(`Validado por ${quien}`, `Validated by ${quien}`);
 const personaValidada = (r) => (r.deleted_account ? I18N.t('Cuenta eliminada') : (r.person || I18N.t('Usuario de Klendar')));
 
 // ── Importe del ticket y «Cuánto te ha traído Klendar» ───────────────────
@@ -4180,8 +4185,9 @@ PAGES.validar = async (v) => {
     caja.innerHTML = table({
       cols: [
         { h: 'Cuándo', r: (r) => fmtDate(r.at) },
-        { h: 'Qué', r: (r) => `<b class="title">${esc(r.title)}</b><span class="sub">${esc(queValidado(r))}${etiquetaSinConexion(r)}</span>` },
-        { h: 'Persona', r: (r) => `${esc(personaValidada(r))}${r.promoter_name ? `<span class="sub">${rrppListaDe(r)}</span>` : ''}` },
+        // Como la app: «Entran 3 personas» y quién del equipo lo validó.
+        { h: 'Qué', r: (r) => `<b class="title">${esc(r.title)}</b><span class="sub">${esc([queValidado(r), entranTxt(r)].filter(Boolean).join(' · '))}${etiquetaSinConexion(r)}</span>` },
+        { h: 'Persona', r: (r) => `${esc(personaValidada(r))}${r.promoter_name ? `<span class="sub">${rrppListaDe(r)}</span>` : ''}${r.by ? `<span class="sub">${esc(validadoPorTxt(r.by))}</span>` : ''}` },
         // El ticket (24 h para apuntarlo o corregirlo) o, si no, lo estimado.
         { h: 'Ticket', r: (r) => {
           const editable = r.ticket_until && new Date(r.ticket_until) > new Date();
@@ -4229,6 +4235,20 @@ PAGES.validar = async (v) => {
     if (momentoEsQr(raw)) {
       $('#result').innerHTML = `<div class="scan-result warn">${ms('volunteer_activism')}${esc(I18N.t('Es el QR de «Dar en el momento»: lo escanea el cliente.'))}</div>`;
       $('#code').value = '';
+      return;
+    }
+    // El enlace de un RRPP (`klendar.app/rp/…`) o el QR del cartel del
+    // local (`klendar.app/v/…`) no son códigos: el aviso de la app.
+    if (/\/rp\/[A-Za-z0-9]+/.test(raw)) {
+      $('#result').innerHTML = `<div class="scan-result warn">${ms('person')}${esc(I18N.t('Es el enlace de un RRPP, no un código: pide al cliente su código.'))}</div>`;
+      $('#code').value = '';
+      if (navigator.vibrate) navigator.vibrate([60, 60, 60]);
+      return;
+    }
+    if (/\/v\/[A-Za-z0-9_-]{16}(?![A-Za-z0-9_-])/.test(raw)) {
+      $('#result').innerHTML = `<div class="scan-result warn">${ms('storefront')}${esc(I18N.t('Es el QR del cartel del local: lo escanea el cliente.'))}</div>`;
+      $('#code').value = '';
+      if (navigator.vibrate) navigator.vibrate([60, 60, 60]);
       return;
     }
     // El QR de cliente (bonos): sus bonos, para cargar uno o descontar un

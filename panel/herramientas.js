@@ -110,10 +110,13 @@ function herrEsencialHtml(stats) {
 /** Rellena las líneas de «Lo esencial» y las filas de acceso rápido. */
 async function herrResumen(v, { cajaFilas, cajaPendiente }) {
   const negocio = BIZ.id;
-  const [o, fiel, ficha] = await Promise.all([
+  const [o, fiel, ficha, demanda] = await Promise.all([
     herrEstado(),
     rpc('business_loyalty', { p_business: negocio }).catch(() => null),
     gestiona() && typeof datosFicha === 'function' ? datosFicha().catch(() => null) : null,
+    // «Pedir un local»: cuántas personas lo pidieron antes de que estuviera
+    // en Klendar (solo el número, nunca quién). Como la app.
+    gestiona() ? rpc('business_venue_demand', { p_business: negocio }).catch(() => null) : null,
   ]);
   if (!v.isConnected || BIZ?.id !== negocio) return;
   const linea = (id, texto) => { const s = $(`#${id} [data-linea]`, v); if (s) s.textContent = texto; };
@@ -164,8 +167,21 @@ async function herrResumen(v, { cajaFilas, cajaPendiente }) {
     gestiona() && herrNum(o, 'tv', 'screens') > 0 ? fila('#/tele', 'tele', bi('Poner en la tele · ', 'Show on TV · ') + herrPl(herrNum(o, 'tv', 'screens'), ['1 tele', 'teles'], ['1 TV', 'TVs'])) : '',
     !ent && herrNum(o, 'series', 'rules_active') > 0 ? fila('#/series', 'repite', bi('Series y repeticiones · ', 'Series and repeats · ')
       + herrPl(herrNum(o, 'series', 'rules_active'), ['1 se publica sola', 'se publican solas'], ['1 publishes itself', 'publish themselves'])) : '',
+    herrDemanda(demanda) > 0 ? fila('#/', 'campaign', herrDemandaTxt(herrDemanda(demanda)), 'data-demanda') : '',
   ].filter(Boolean);
   cajaFilas.innerHTML = filas.length ? `<div class="filas-inicio">${filas.join('')}</div>` : '';
+  const filaDemanda = $('[data-demanda]', cajaFilas);
+  if (filaDemanda) {
+    filaDemanda.onclick = (e) => {
+      e.preventDefault();
+      modal({
+        title: herrDemandaTxt(herrDemanda(demanda)),
+        intro: esc(I18N.t('Antes de que estuvieras en Klendar, esta gente pidió que estuvieras con «Pedir un local». No sabemos (ni te decimos) quiénes son: solo cuántos. Ya les hemos avisado de que estás.')),
+        submit: I18N.t('Cerrar'),
+        cancel: null,
+      });
+    };
+  }
   // «Por contestar: 2 preguntas · 1 reseña · 2 grupos»: una sola fila y cada
   // trozo a su sitio (antes, una fila para cada cosa). Como la app.
   if (cajaPendiente) {
@@ -183,6 +199,12 @@ async function herrResumen(v, { cajaFilas, cajaPendiente }) {
       .map(([href, txt]) => `<a href="${href}" aria-label="${esc(`${titulo}: ${txt}`)}">${esc(txt)}</a>`).join('<span aria-hidden="true"> · </span>')}</span></p>` : '';
   }
 }
+
+/** Cuántas personas pidieron el local (`business_venue_demand`), 0 si nada. */
+const herrDemanda = (d) => Number(d?.people) || 0;
+const herrDemandaTxt = (n) => (n === 1
+  ? bi('1 persona pidió tu local antes de que estuvieras', '1 person asked for your venue before you were here')
+  : bi('{n} personas pidieron tu local antes de que estuvieras', '{n} people asked for your venue before you were here').replace('{n}', fmtNum(n)));
 
 /** «Ahora» en el resumen: como mucho 3 filas a la vista y «Ver N más» (la
  * cola, «Pedidos de hoy» y el resto llegan cada una por su lado: se cuenta

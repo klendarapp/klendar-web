@@ -64,6 +64,14 @@ const momentoQue = (s) => (s.kind === 'stamps'
   ? (s.stamps === 1 ? `1 sello en ${s.label}` : `${s.stamps} sellos en ${s.label}`)
   : s.kind === 'pass_use' ? `1 uso de tu bono «${s.label}»` : s.label);
 
+/** Cuántas personas tienen ese bono con usos (como la app: «2 personas lo tienen»). */
+const momentoTienen = (n) => {
+  const k = Number(n) || 0;
+  return k === 0 ? bi('Nadie lo tiene ahora', 'Nobody has it right now')
+    : k === 1 ? bi('1 persona lo tiene', '1 person has it')
+      : bi(`${k} personas lo tienen`, `${k} people have it`);
+};
+
 /** ¿Es el QR de «Dar en el momento»? (lo escanea el cliente, no el equipo). */
 const momentoEsQr = (raw) => /\/m\/[0-9a-f]{16}\.[0-9]{1,12}\.[0-9a-f]{12}/i.test(String(raw || ''));
 
@@ -99,7 +107,7 @@ PAGES.momento = async (v) => {
         <label class="f"><span>¿Cuántos?</span><select name="stamps">${[1, 2, 3, 4, 5].map((n) => `<option value="${n}">${n === 1 ? '1 sello' : `${n} sellos`}</option>`).join('')}</select></label>
       </div>
       <div data-para="pass_use" hidden>
-        <label class="f"><span>¿De qué bono?</span><select name="pass">${passes.map((p) => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('')}</select></label>
+        <label class="f"><span>¿De qué bono?</span><select name="pass">${passes.map((p) => `<option value="${esc(p.id)}">${esc(p.name)} · ${esc(momentoTienen(p.active))}</option>`).join('')}</select></label>
         <p class="hint">Se descuenta un uso del bono que ya tiene el cliente.</p>
       </div>
       <div data-para="gift" hidden>
