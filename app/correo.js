@@ -228,7 +228,10 @@ async function cuentaVivaLineas() {
     ...(v.codes || []).map((c) => (EN ? `An unused code for ${q(c.title)} (${c.business})` : `Un código sin usar de ${q(c.title)} (${c.business})`)),
     ...(v.rewards || []).map((r) => (r.kind === 'birthday_gift'
       ? (EN ? `A birthday gift: ${r.reward} (${r.business})` : `Un regalo de cumpleaños: ${r.reward} (${r.business})`)
-      : (EN ? `A reward to collect: ${r.reward} (${r.business})` : `Un premio por recoger: ${r.reward} (${r.business})`))),
+      // Cupón de visita o regalo a habituales: como la app (`profileDeleteLiveCoupon`).
+      : r.kind === 'visit_coupon' || r.kind === 'thanks_gift'
+        ? (EN ? `An unused coupon or gift: ${r.reward} (${r.business})` : `Un cupón o regalo sin usar: ${r.reward} (${r.business})`)
+        : (EN ? `A reward to collect: ${r.reward} (${r.business})` : `Un premio por recoger: ${r.reward} (${r.business})`))),
     ...(v.stamps || []).map((s) => (EN ? `${s.count} of ${s.goal} stamps on ${q(s.card)} (${s.business})`
       : `${s.count} de ${s.goal} sellos en ${q(s.card)} (${s.business})`)),
   ];

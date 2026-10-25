@@ -346,6 +346,7 @@ async function textos(nav, nombre, t, vp) {
     queue_info: { business: { id: BIZ, name: 'Bar Sonda', adults_only: true }, queue: { status: 'open', waiting: 0, full: false, wait_minutes: 17, call_minutes: 5 }, me: null, team: false },
     my_venue_requests: [{ id: 'v1', name: 'Bar Paco', place: 'Madrid', status: 'waiting', people: 1, created_at: '2026-10-01T10:00:00Z' }],
     my_city_waitlist: [],
+    my_notification_preferences: {},
     my_group_requests: [{ id: 'g1', status: 'open', kind: 'afterwork', people: 8, date: '2026-11-20', targets: [{ status: 'proposed', business: { name: 'A' } }, { status: 'pending', business: { name: 'B' } }] }],
   }));
   await p.goto(`${BASE}/app/#/cola/ABCDEFGHIJKLMNOP`, { waitUntil: 'networkidle' });
@@ -358,6 +359,11 @@ async function textos(nav, nombre, t, vp) {
   ok(/Locales que has pedido/.test(v) && /Solo tú/.test(v) && /Aún no te has apuntado en ninguna zona\./.test(v)
     && v.indexOf('Bar Paco') < v.indexOf('Pedir un local'), `${nombre}/${t} «Lo que has pedido»: textos y «Pedir un local» debajo`);
   await p.goto(`${BASE}/app/#/grupos/peticiones`, { waitUntil: 'networkidle' }).catch(() => {});
+  await p.goto(`${BASE}/app/#/ajustes/notificaciones`, { waitUntil: 'networkidle' });
+  await p.waitForSelector('input[name=pedidos]');
+  v = await p.locator('#view').innerText();
+  ok(/Lo que has pedido/.test(v) && /Cuando tienen una fecha nueva cerca/.test(v) && /Cuando llega a Klendar un sitio que pediste/.test(v),
+    `${nombre}/${t} Notificaciones: ayuda de artistas, de locales pedidos y «Lo que has pedido»`);
   ok(errores.length === 0, `${nombre}/${t} textos sin errores JS ${errores.join(' | ')}`);
   await ctx.close();
 }

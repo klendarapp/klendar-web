@@ -327,9 +327,10 @@ async function botonGoogle(siguiente, destino = '/app/') {
   if (!hueco) return;
   const ext = await proveedores();
   const botones = [];
+  // Como la app: el teléfono antes que Google y Apple.
+  if (ext.phone) botones.push(`<a class="pill google" href="#/movil${siguiente ? `?siguiente=${encodeURIComponent(siguiente)}` : ''}${destino !== '/app/' ? `${siguiente ? '&' : '?'}destino=${encodeURIComponent(destino)}` : ''}">${esc(t('Entrar con el teléfono'))}</a>`);
   if (ext.google) botones.push(`<button class="pill google" type="button" data-prov="google">${LOGO_GOOGLE} ${esc(t('Continuar con Google'))}</button>`);
   if (ext.apple) botones.push(`<button class="pill google" type="button" data-prov="apple">${LOGO_APPLE} ${esc(t('Continuar con Apple'))}</button>`);
-  if (ext.phone) botones.push(`<a class="pill google" href="#/movil${siguiente ? `?siguiente=${encodeURIComponent(siguiente)}` : ''}${destino !== '/app/' ? `${siguiente ? '&' : '?'}destino=${encodeURIComponent(destino)}` : ''}">${esc(t('Entrar con el teléfono'))}</a>`);
   if (!botones.length) return;
   hueco.innerHTML = `<div class="acciones">${botones.join('')}</div>
     <p class="muted" style="font-size:13px">${esc(t('Si es tu primera vez, se crea tu cuenta y te pediremos tu fecha de nacimiento y que aceptes los términos.'))}</p>`;
@@ -1149,7 +1150,7 @@ RUTAS.registro = async (_p, params) => {
         <small>${esc(t('Mínimo 8 caracteres'))}</small></label>
       <label>${esc(t('Repite la contraseña'))}<input name="password2" type="password" autocomplete="new-password" minlength="8" required></label>
       <label>${esc(t('Fecha de nacimiento'))}<input name="birth" type="date" ${LIMITES_NACIMIENTO()} required>
-        <small>${esc(t('Solo para mostrarte ofertas adecuadas a tu edad.'))}</small></label>
+        <small>${esc(t('Para comprobar tu edad (mínimo 14) y enseñarte lo adecuado a ella. Si un favorito tiene regalo de cumpleaños, te llega ese día.'))}</small></label>
       ${casillaTerminos()}
       <p id="err" class="err" role="alert"></p>
       <button class="pill accent" type="submit">${esc(t('Crear cuenta'))}</button>
@@ -1208,9 +1209,9 @@ RUTAS.registro = async (_p, params) => {
         // El correo lleva enlace y código: el código sirve si lo abres en otro
         // dispositivo (el ordenador aquí, el correo en el móvil).
         pinta(`<h1>${esc(t('Revisa tu correo'))}</h1>
-          <p class="muted">${esc(EN ? `We've sent a link to ${email} to confirm your account.` : `Te hemos enviado un enlace a ${email} para confirmar tu cuenta.`)}</p>
+          <p class="muted">${esc(EN ? `We've sent an email to ${email} with a link and a 6-digit code. Open the link or type the code here.` : `Te hemos enviado un correo a ${email} con un enlace y un código de 6 cifras. Abre el enlace o escribe aquí el código.`)}</p>
           <form id="fc" class="formu" novalidate>
-            <label>${esc(t('O escribe aquí el código de 6 cifras del correo'))}
+            <label>${esc(t('Código de 6 cifras'))}
               <input name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}"></label>
             <p id="errc" class="err" role="alert"></p>
             <button class="pill accent" type="submit">${esc(t('Confirmar'))}</button>
@@ -1284,7 +1285,7 @@ RUTAS['nueva-clave'] = async (_p, params) => {
     <h1>${esc(t('Nueva contraseña'))}</h1>
     <p class="muted">${esc(t('Elige una que no uses en otros sitios.'))}</p>
     <form id="f" class="formu" novalidate>
-      <label>${esc(t('Contraseña'))}<input name="p1" type="password" autocomplete="new-password" minlength="8" required>
+      <label>${esc(t('Nueva contraseña'))}<input name="p1" type="password" autocomplete="new-password" minlength="8" required>
         <small>${esc(t('Mínimo 8 caracteres'))}</small></label>
       <label>${esc(t('Repite la contraseña'))}<input name="p2" type="password" autocomplete="new-password" minlength="8" required></label>
       <p id="err" class="err" role="alert"></p>

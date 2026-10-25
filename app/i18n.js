@@ -1278,4 +1278,13 @@ const APP_EN = {
   "Aún no te has apuntado en ninguna zona.": "You haven't signed up for any area yet.",
   "Sois {n} personas pidiendo {nombre}. Si llega a Klendar, te avisamos.": "{n} people are asking for {nombre}. If it joins Klendar, we'll let you know.",
   "¿Quitar el aviso de {zona}?": "Remove the alert for {zona}?",
+  "Código de 6 cifras": "6-digit code",
+  "Para comprobar tu edad (mínimo 14) y enseñarte lo adecuado a ella. Si un favorito tiene regalo de cumpleaños, te llega ese día.": "To check your age (minimum 14) and show you what suits it. If a favourite has a birthday gift, you get it on the day.",
+  "Te hemos enviado un correo a {email} con un enlace y un código de 6 cifras. Abre el enlace o escribe aquí el código.": "We've sent an email to {email} with a link and a 6-digit code. Open the link or type the code here.",
+  "Un cupón o regalo sin usar: {reward} ({business})": "An unused coupon or gift: {reward} ({business})",
+  "Dejaremos de avisarte de lo que encaje con él. Si solo quieres un descanso, apágalo con el interruptor.": "We’ll stop letting you know about anything that matches it. If you just want a break, turn it off with the switch.",
+  "No ves sus reseñas, no pueden ser tus amigos ni invitarte. No saben que las has bloqueado.": "You don't see their reviews, and they can't be your friends or invite you. They don't know you've blocked them.",
+  "Cuando llega a Klendar un sitio que pediste": "When a place you asked for joins Klendar",
+  "Espera a que terminen de subirse las fotos y los vídeos.": "Wait for the photos and videos to finish uploading.",
+  "El archivo pesa demasiado (fotos hasta 10 MB, vídeos hasta 60 MB).": "The file is too big (photos up to 10 MB, videos up to 60 MB).",
 };

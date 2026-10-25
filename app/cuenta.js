@@ -235,14 +235,14 @@ RUTAS.notificaciones = async () => {
     <h1>${esc(t('Notificaciones'))}</h1>
     ${lista.length ? `<p class="acciones">
       ${nuevos ? `<button class="pill" id="leidos">${esc(t('Marcar todo como leído'))}</button>` : ''}
-      <a class="pill ghost" href="#/ajustes">${esc(t('Qué notificaciones recibo'))}</a>
+      <a class="pill ghost" href="#/ajustes/notificaciones">${esc(t('Qué notificaciones recibo'))}</a>
     </p>` : ''}
     ${lista.length ? `<div class="avisos" id="avisos">${lista.map(filaAviso).join('')}</div>${lista.length >= AVISOS_POR_PARTE ? `<p class="ver-mas"><button type="button" class="pill" data-ver-mas="avisos">${esc(t('Ver más'))}</button></p>` : ''}`
     : pantallaVacia({
       icono: 'notifications',
       titulo: t('Nada por aquí todavía'),
       texto: t('Añade negocios a favoritos y crea un «Avísame si…» para no perderte nada.'),
-      botones: `<a class="pill" href="#/ajustes">${esc(t('Qué notificaciones recibo'))}</a>`,
+      botones: `<a class="pill" href="#/ajustes/notificaciones">${esc(t('Qué notificaciones recibo'))}</a>`,
     })}`);
 
   // Como en la app: las que no habías leído se marcan como leídas al salir
@@ -388,7 +388,7 @@ RUTAS.alertas = async () => {
     const nombre = lista.find((x) => x.id === b.dataset.borra)?.label || t('Aviso');
     if (!(await confirma({
       titulo: EN ? `Delete “${nombre}”?` : `¿Borrar «${nombre}»?`,
-      texto: t('Dejaremos de avisarte de lo que encaje con él. Si solo quieres un descanso, páusalo.'),
+      texto: t('Dejaremos de avisarte de lo que encaje con él. Si solo quieres un descanso, apágalo con el interruptor.'),
       aceptar: t('Borrar'),
       peligro: true,
     }))) return;
@@ -644,20 +644,12 @@ RUTAS.ajustes = async ([sub]) => {
       <h2>${esc(t('Privacidad y datos'))}</h2>
       <p class="muted">${esc(t('Qué has consentido y cuándo. Puedes retirar cada permiso por separado y descargar todo lo que guardamos de ti.'))}</p>
       <dl class="consen">
-        <dt>${esc(t('Términos y privacidad'))}</dt>
-        <dd>${cons?.terms_accepted_at ? esc(`${t('Aceptados el')} ${dia(cons.terms_accepted_at)}${cons.terms_version ? ` (${t('versión')} ${cons.terms_version})` : ''}`) : esc(t('Sin registro'))}
-          <br>${[
-    // Los tres textos que se aceptan, como en la app.
-    [PUB_EN ? 'terms' : 'terminos', 'Términos de uso'],
-    [PUB_EN ? 'privacy' : 'privacidad', 'Política de privacidad'],
-    [PUB_EN ? 'community-guidelines' : 'normas', 'Normas de la comunidad'],
-  ].map(([ruta, txt]) => `<a href="${pre}/${ruta}/" target="_blank" rel="noopener">${esc(t(txt))}</a>`).join(' · ')}${notaLegal()}</dd>
         <dt>${esc(t('Comunicaciones comerciales'))}</dt>
         <dd><label class="check"><input type="checkbox" id="marketing"${cons?.marketing_consent ? ' checked' : ''}>
-          <span>${esc(cons?.marketing_consent ? `${t('Sí, desde el')} ${dia(cons.marketing_consent_at)}` : t('No recibes novedades ni promociones por correo'))}</span></label></dd>
+          <span>${esc(cons?.marketing_consent ? `${t('Desde el')} ${dia(cons.marketing_consent_at)}` : t('No recibes novedades ni promociones por correo'))}</span></label></dd>
         <dt>${esc(t('Estadísticas de uso de la app'))}</dt>
         <dd><label class="check"><input type="checkbox" id="estadisticas"${cons?.analytics_consent ? ' checked' : ''}>
-          <span>${esc(cons?.analytics_consent ? `${t('Sí, desde el')} ${dia(cons.analytics_consent_at)}` : t('No mandamos estadísticas de cómo usas la app'))}</span></label></dd>
+          <span>${esc(cons?.analytics_consent ? `${t('Desde el')} ${dia(cons.analytics_consent_at)}` : t('No mandamos estadísticas de cómo usas la app'))}</span></label></dd>
         <dt>${esc(t('Que mis amigos vean mis planes'))}</dt>
         <dd><label class="check"><input type="checkbox" id="compartir-planes"${cons?.share_plans !== false ? ' checked' : ''}>
           <span>${esc(t(cons?.share_plans !== false
@@ -666,11 +658,20 @@ RUTAS.ajustes = async ([sub]) => {
         <dt>${esc(t('Mostrar los planes a los que he ido con cada amigo'))}</dt>
         <dd><label class="check"><input type="checkbox" id="planes-juntos"${cons?.share_plans !== false && cons?.share_plans_together !== false ? ' checked' : ''}${cons?.share_plans === false ? ' disabled' : ''}>
           <span id="planes-juntos-texto">${esc(textoPlanesJuntos(cons?.share_plans !== false, cons?.share_plans_together !== false))}</span></label></dd>
+        <dt>${esc(t('Personas bloqueadas'))}</dt>
+        <dd class="muted">${esc(t('No ves sus reseñas, no pueden ser tus amigos ni invitarte. No saben que las has bloqueado.'))}</dd>
+        <dd id="dd-bloqueadas">${esc(t('Un momento…'))}</dd>
         <dt>${esc(t('Ubicación'))}</dt>
         <dd id="dd-ubicacion">${cons?.location_consent_at ? `${esc(`${t('Compartida desde el')} ${dia(cons.location_consent_at)}`)}
           <button class="linkbtn" id="sin-ubicacion">${esc(t('Dejar de compartir'))}</button>` : esc(t('No guardamos tu posición'))}</dd>
-        <dt>${esc(t('Personas bloqueadas'))}</dt>
-        <dd id="dd-bloqueadas">${esc(t('Un momento…'))}</dd>
+        <dt>${esc(t('Términos y privacidad'))}</dt>
+        <dd>${cons?.terms_accepted_at ? esc(`${t('Aceptados el')} ${dia(cons.terms_accepted_at)}${cons.terms_version ? ` (${t('versión')} ${cons.terms_version})` : ''}`) : esc(t('Sin registro'))}
+          <br>${[
+    // Los tres textos que se aceptan, como en la app.
+    [PUB_EN ? 'terms' : 'terminos', 'Términos de uso'],
+    [PUB_EN ? 'privacy' : 'privacidad', 'Política de privacidad'],
+    [PUB_EN ? 'community-guidelines' : 'normas', 'Normas de la comunidad'],
+  ].map(([ruta, txt]) => `<a href="${pre}/${ruta}/" target="_blank" rel="noopener">${esc(t(txt))}</a>`).join(' · ')}${notaLegal()}</dd>
       </dl>
       <p><button class="pill" id="descargar">${ic('download')} ${esc(t('Descargar mis datos'))}</button></p>
       <p class="muted">${esc(t('Un archivo JSON con todo lo que Klendar guarda de ti (derecho de acceso y portabilidad).'))}</p>
@@ -730,7 +731,7 @@ RUTAS.ajustes = async ([sub]) => {
       await llamar('set_marketing_consent', { p_value: caja.checked });
       toast(caja.checked ? t('Te mandaremos novedades de vez en cuando') : t('No te mandaremos más novedades'));
       const texto = caja.closest('label')?.querySelector('span');
-      if (texto) texto.textContent = caja.checked ? `${t('Sí, desde el')} ${dia(new Date().toISOString())}` : t('No recibes novedades ni promociones por correo');
+      if (texto) texto.textContent = caja.checked ? `${t('Desde el')} ${dia(new Date().toISOString())}` : t('No recibes novedades ni promociones por correo');
     } catch (e) { caja.checked = !caja.checked; toast(e.message, true); }
   });
   // Lo que manda la app a Firebase (la web no usa estadísticas que necesiten
@@ -742,7 +743,7 @@ RUTAS.ajustes = async ([sub]) => {
       await llamar('set_analytics_consent', { p_value: caja.checked });
       toast(caja.checked ? t('Gracias: nos ayudas a mejorar Klendar') : t('La app ya no mandará estadísticas de uso'));
       const texto = caja.closest('label')?.querySelector('span');
-      if (texto) texto.textContent = caja.checked ? `${t('Sí, desde el')} ${dia(new Date().toISOString())}` : t('No mandamos estadísticas de cómo usas la app');
+      if (texto) texto.textContent = caja.checked ? `${t('Desde el')} ${dia(new Date().toISOString())}` : t('No mandamos estadísticas de cómo usas la app');
     } catch (e) { caja.checked = !caja.checked; toast(e.message, true); }
   });
   // «Que mis amigos vean mis planes»: apagado, no sales en el «quién va» de
@@ -986,13 +987,15 @@ async function ajustesNotificaciones() {
     // «Partidos de tus equipos» (encendido de serie), justo debajo, como la app.
     sw('equipos', KlendarEmisiones.t(LANG).prefTeams, prefs.notify_teams !== false),
     // «Artistas que sigues» (encendido de serie), justo después, como la app.
-    sw('artistas', KlendarArtistas.t(LANG).youFollow, prefs.notify_artists !== false),
+    sw('artistas', KlendarArtistas.t(LANG).youFollow, prefs.notify_artists !== false, KlendarArtistas.t(LANG).whenNew),
     // Grupos y empresas y Sorteos (tanda C), detrás de los partidos, como la app.
     sw('grupos', 'Grupos y empresas', prefs.notify_groups !== false, 'Respuestas a tus peticiones y, si tienes un negocio, peticiones nuevas'),
     sw('sorteos', 'Sorteos', prefs.notify_giveaways !== false, 'Resultados de los sorteos en los que participas. Si ganas, te avisamos siempre.'),
     // «Pedir un local» (crecer): cuando llega a Klendar uno que pediste.
     sw('quetal', '¿Qué tal? al día siguiente', prefs.notify_quetal !== false, 'Tras usar algo en un local, te pedimos tu reseña'),
-    sw('pedidos', 'Locales que has pedido', prefs.notify_requests !== false, 'Cuando llega a Klendar uno que pediste'),
+    sw('pedidos', 'Locales que has pedido', prefs.notify_requests !== false, 'Cuando llega a Klendar un sitio que pediste'),
+    // Como la app: debajo, la fila «Lo que has pedido» (fuera del interruptor).
+    fila({ href: '#/pedidos', icono: 'storefront', titulo: t('Lo que has pedido') }),
     // «Pregúntale al local» (migración 20261237100002 de la app): cuando un
     // local contesta u oculta lo que le preguntaste. Apagado, el estado sigue
     // en la ficha.
@@ -1327,7 +1330,7 @@ const campoNombrePublico = () => `
 Object.assign(ERRORES, {
   too_many_media: 'Como mucho 6 fotos y vídeos.',
   video_too_long: 'El vídeo dura más de 30 segundos.',
-  media_too_big: 'El archivo pesa demasiado (foto 10 MB, vídeo 60 MB).',
+  media_too_big: 'El archivo pesa demasiado (fotos hasta 10 MB, vídeos hasta 60 MB).',
   media_type_mismatch: 'Ese archivo no es una foto o un vídeo que podamos usar.',
   media_not_found: 'No se ha terminado de subir: vuelve a intentarlo.',
   video_duration_required: 'No hemos podido medir el vídeo. Prueba con otro.',
@@ -1565,7 +1568,7 @@ RUTAS.opinar = async ([id], params) => {
     ev.preventDefault();
     const nota = Number(f.nota.value);
     if (!nota) { $('#err').textContent = t('Elige de una a cinco estrellas.'); return; }
-    if (subiendo()) { $('#err').textContent = t('Espera a que terminen de subirse las fotos y vídeos.'); return; }
+    if (subiendo()) { $('#err').textContent = t('Espera a que terminen de subirse las fotos y los vídeos.'); return; }
     $('#err').textContent = '';
     ocupado($('#publicar'), async () => {
       if (f.nombre?.value.trim()) await guardaNombrePublico(f.nombre.value);
@@ -1802,7 +1805,7 @@ const MOTIVOS_DE = {
   review_media: ['spam', 'inappropriate', 'illegal', 'child_abuse', 'other'],
   // «Pregúntale al local»: una pregunta de una ficha o la respuesta del negocio.
   question: ['spam', 'inappropriate', 'illegal', 'child_abuse', 'other'],
-  question_answer: ['spam', 'inappropriate', 'misleading', 'illegal', 'child_abuse', 'other'],
+  question_answer: ['spam', 'inappropriate', 'illegal', 'child_abuse', 'other'],
 };
 const QUE_SE_DENUNCIA = {
   offer: 'Denunciar una publicación', business: 'Denunciar un negocio',
