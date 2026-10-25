@@ -161,7 +161,7 @@ async function grupoPeticiones() {
     <h1>${esc(S.yourRequests)}</h1>`;
   if (!lista.length) {
     pinta(`${cabeza}${grupoVacio({ titulo: S.requestsEmptyTitle, texto: S.requestsEmptyText,
-      botones: `<a class="pill accent" href="${grupoLista()}">${esc(S.title)}</a>` })}`);
+      botones: `<a class="pill accent" href="${grupoLista()}">${esc(S.requestsBrowse)}</a>` })}`);
     return;
   }
   pinta(`${cabeza}
@@ -169,7 +169,9 @@ async function grupoPeticiones() {
       <span class="ph">${grupoIc(24)}</span>
       <span class="ocard-body"><b>${esc(KGr.linea(r, L))}</b>
         <span class="muted">${esc((r.targets || []).map((x) => x.business?.name).filter(Boolean).join(', '))}</span>
-        <span class="ocard-meta"><span class="tag off">${esc(S.status[r.status] || r.status)}</span></span>
+        <span class="ocard-meta"><span class="tag off">${esc(S.status[r.status] || r.status)}</span>${r.status === 'open'
+          // «Abierta · 2 propuestas», como la app (las propuestas y la aceptada).
+          ? `<span class="muted">${esc(S.proposals((r.targets || []).filter((x) => x.status === 'proposed' || x.status === 'accepted').length))}</span>` : ''}</span>
       </span>
       ${ic('chevron_right')}
     </a>`).join('')}</div>
@@ -280,7 +282,7 @@ function grupoAcepta(target, nombre, peticion) {
       try {
         await llamar('accept_group_proposal', { p_target: target, p_share: share, p_phone: share === 'phone' ? phone : null });
         d.close();
-        toast(S.accepted);
+        toast(S.accepted(nombre));
         if (location.hash === `#/grupos/${peticion}`) navegar();
       } catch (e) { err.textContent = grupoError(e); }
     });
