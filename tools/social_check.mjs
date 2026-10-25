@@ -340,7 +340,29 @@ async function ajustes(nav, nombre, t, vp) {
   await ctx.close();
 }
 
-export const PRUEBAS = { fichaAmigo, rrppPersona, rrppPanel, paginaRp, sorteos, dejarDeSeguir, ajustes };
+// 5. Textos de la app en la cola, «Lo que has pedido» y «Tus peticiones».
+async function textos(nav, nombre, t, vp) {
+  const { ctx, p, errores } = await contexto(nav, vp, CUENTA({
+    queue_info: { business: { id: BIZ, name: 'Bar Sonda', adults_only: true }, queue: { status: 'open', waiting: 0, full: false, wait_minutes: 17, call_minutes: 5 }, me: null, team: false },
+    my_venue_requests: [{ id: 'v1', name: 'Bar Paco', place: 'Madrid', status: 'waiting', people: 1, created_at: '2026-10-01T10:00:00Z' }],
+    my_city_waitlist: [],
+    my_group_requests: [{ id: 'g1', status: 'open', kind: 'afterwork', people: 8, date: '2026-11-20', targets: [{ status: 'proposed', business: { name: 'A' } }, { status: 'pending', business: { name: 'B' } }] }],
+  }));
+  await p.goto(`${BASE}/app/#/cola/ABCDEFGHIJKLMNOP`, { waitUntil: 'networkidle' });
+  await p.waitForSelector('.cola-turno');
+  let v = await p.locator('#view').innerText();
+  ok(/Espera aproximada: unos 15 min/.test(v) && /Solo para mayores de 18 años/.test(v), `${nombre}/${t} cola: espera redondeada con la cola vacía y +18`);
+  await p.goto(`${BASE}/app/#/pedidos`, { waitUntil: 'networkidle' });
+  await p.waitForSelector('.avisos');
+  v = await p.locator('#view').innerText();
+  ok(/Locales que has pedido/.test(v) && /Solo tú/.test(v) && /Aún no te has apuntado en ninguna zona\./.test(v)
+    && v.indexOf('Bar Paco') < v.indexOf('Pedir un local'), `${nombre}/${t} «Lo que has pedido»: textos y «Pedir un local» debajo`);
+  await p.goto(`${BASE}/app/#/grupos/peticiones`, { waitUntil: 'networkidle' }).catch(() => {});
+  ok(errores.length === 0, `${nombre}/${t} textos sin errores JS ${errores.join(' | ')}`);
+  await ctx.close();
+}
+
+export const PRUEBAS = { fichaAmigo, rrppPersona, rrppPanel, paginaRp, sorteos, dejarDeSeguir, ajustes, textos };
 const SOLO = process.env.SOLO || '';
 let servidorRp = null;
 let falso = null;
