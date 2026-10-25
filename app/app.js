@@ -2713,10 +2713,13 @@ RUTAS.serie = async ([id]) => {
     }));
     return;
   }
-  // Ya la sigue: el interruptor y «Dejar de seguir».
+  // Ya la sigue: el interruptor y «Dejar de seguir». Con los avisos de series
+  // apagados en Ajustes, se dice (como la app, `seriesNoticesOff`).
+  const prefs = await llamar('my_notification_preferences', {}).catch(() => null);
   pinta(`${cabeza}
     <p><b>${ic('notifications')} ${esc(EN ? "You're following the series" : 'Sigues la serie')}</b></p>
     ${auto(s.auto_plan)}
+    ${prefs?.notify_series === false ? `<p class="muted"><a href="#/ajustes/notificaciones">${esc(t('Tienes apagados los avisos de series: los enciendes en Ajustes → Notificaciones.'))}</a></p>` : ''}
     <p class="acciones">
       <a class="pill accent" href="${esc(ficha)}">${esc(EN ? 'Back to the publication' : 'Volver a la publicación')}</a>
       <button type="button" class="pill" id="dejar-serie">${esc(EN ? 'Unfollow' : 'Dejar de seguir')}</button>
@@ -2766,7 +2769,8 @@ RUTAS.series = async () => {
         titulo: EN ? "You're not following any series yet" : 'Aún no sigues ninguna serie',
         texto: EN ? "On the page of something that repeats (“Thursday open mic”), tap “Follow the series” and we'll let you know about each new date."
           : 'En la ficha de algo que se repite («Micro abierto de los jueves»), toca «Seguir la serie» y te avisamos de cada fecha nueva.',
-        botones: `<a class="pill accent" href="${PUB_EN ? '/en/explore/' : '/explorar/'}">${esc(t('Buscar planes'))}</a>`,
+        // Como la app: a Descubre.
+        botones: `<a class="pill accent" href="${PUB_EN ? '/en/discover/' : '/descubre/'}">${esc(t('Descubre'))}</a>`,
       })}`);
     return;
   }

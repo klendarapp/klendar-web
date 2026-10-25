@@ -1256,4 +1256,5 @@ const APP_EN = {
   "1 persona": "1 person",
   "{party_size} personas": "{party_size} people",
   "Ver qué hay cerca": "See what's nearby",
+  "Tienes apagados los avisos de series: los enciendes en Ajustes → Notificaciones.": "Series notifications are off: turn them on in Settings → Notifications.",
 };

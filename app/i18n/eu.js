@@ -1565,6 +1565,7 @@ KL_DIC('eu', {
   "Tienes 1 persona delante": "Pertsona 1 duzu aurretik",
   "Tienes 30 sitios pedidos esperando, el máximo. Retira alguno para pedir otro.": "30 leku dituzu eskatuta zain, gehienekoa. Kendu batenbat beste bat eskatzeko.",
   "Tienes 5 peticiones abiertas: cierra alguna antes.": "5 eskaera dituzu irekita: itxi baten bat lehenago.",
+  "Tienes apagados los avisos de series: los enciendes en Ajustes → Notificaciones.": "Serieen abisuak itzalita dituzu: Ezarpenak → Jakinarazpenak atalean piztu ditzakezu.",
   "Tienes bloqueada a esta persona": "Pertsona hau blokeatuta duzu",
   "Tienes plaza o código: para dejar de ir, anúlalo en Tus códigos.": "Plaza edo kodea duzu: joateari uzteko, utzi bertan behera Zure kodeak atalean.",
   "Tienes que aceptar los términos y la política de privacidad.": "Baldintzak eta pribatutasun-politika onartu behar dituzu.",

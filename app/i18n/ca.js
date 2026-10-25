@@ -1565,6 +1565,7 @@ KL_DIC('ca', {
   "Tienes 1 persona delante": "Tens 1 persona davant",
   "Tienes 30 sitios pedidos esperando, el máximo. Retira alguno para pedir otro.": "Tens 30 llocs demanats en espera, el màxim. Retira'n algun per demanar-ne un altre.",
   "Tienes 5 peticiones abiertas: cierra alguna antes.": "Tens 5 peticions obertes: tanca'n alguna abans.",
+  "Tienes apagados los avisos de series: los enciendes en Ajustes → Notificaciones.": "Tens apagats els avisos de sèries: els pots activar a Configuració → Notificacions.",
   "Tienes bloqueada a esta persona": "Tens aquesta persona bloquejada",
   "Tienes plaza o código: para dejar de ir, anúlalo en Tus códigos.": "Tens plaça o codi: per deixar d'anar-hi, anul·la'l a Els teus codis.",
   "Tienes que aceptar los términos y la política de privacidad.": "Has d'acceptar els termes i la política de privadesa.",

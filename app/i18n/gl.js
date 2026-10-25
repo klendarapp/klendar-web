@@ -1565,6 +1565,7 @@ KL_DIC('gl', {
   "Tienes 1 persona delante": "Tes 1 persoa diante",
   "Tienes 30 sitios pedidos esperando, el máximo. Retira alguno para pedir otro.": "Tes 30 sitios pedidos agardando, o máximo. Retira algún para pedir outro.",
   "Tienes 5 peticiones abiertas: cierra alguna antes.": "Tes 5 peticións abertas: pecha algunha antes.",
+  "Tienes apagados los avisos de series: los enciendes en Ajustes → Notificaciones.": "Tes apagados os avisos de series: acéndelos en Axustes → Notificacións.",
   "Tienes bloqueada a esta persona": "Tes bloqueada esta persoa",
   "Tienes plaza o código: para dejar de ir, anúlalo en Tus códigos.": "Tes praza ou código: para deixar de ir, anúlao en Os teus códigos.",
   "Tienes que aceptar los términos y la política de privacidad.": "Tes que aceptar os termos e a política de privacidade.",

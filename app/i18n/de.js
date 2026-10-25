@@ -1565,6 +1565,7 @@ KL_DIC('de', {
   "Tienes 1 persona delante": "1 Person ist vor dir",
   "Tienes 30 sitios pedidos esperando, el máximo. Retira alguno para pedir otro.": "Du hast 30 gewünschte Orte, die warten, das Maximum. Zieh einen zurück, um einen anderen zu wünschen.",
   "Tienes 5 peticiones abiertas: cierra alguna antes.": "Du hast 5 offene Anfragen: Schließ zuerst eine.",
+  "Tienes apagados los avisos de series: los enciendes en Ajustes → Notificaciones.": "Mitteilungen zu Reihen sind aus: Du schaltest sie unter Einstellungen → Mitteilungen ein.",
   "Tienes bloqueada a esta persona": "Du hast diese Person blockiert",
   "Tienes plaza o código: para dejar de ir, anúlalo en Tus códigos.": "Du hast einen Platz oder Code: Um nicht mehr dabei zu sein, storniere ihn unter „Deine Codes“.",
   "Tienes que aceptar los términos y la política de privacidad.": "Du musst die Nutzungsbedingungen und die Datenschutzerklärung akzeptieren.",
