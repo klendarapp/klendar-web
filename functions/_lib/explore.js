@@ -415,50 +415,49 @@ function ambienteHtml(e, lang, link) {
   <script src="/assets/ambiente.js?v=2" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}"></script>`;
 }
 
-/** Mapa con una chincheta por publicación. Si Mapbox no carga (sin token,
- * sin red), se dice: debajo está la lista con lo mismo. */
+/** Los textos del mapa de Planes (`assets/mapa.js`), como la app
+ * (`mapSpotPlans`, `offerDirections`, `mapSpotSeePlace`). */
+const MAPA_T = {
+  es: { plan1: '1 plan', planesN: '{n} planes', verMas: 'Ver {n} más', comoLlegar: 'Cómo llegar', verSitio: 'Ver el sitio', cerrar: 'Cerrar', acercar: 'Acercar', hasta: (t) => `Hasta las ${t}` },
+  en: { plan1: '1 plan', planesN: '{n} plans', verMas: 'See {n} more', comoLlegar: 'Directions', verSitio: 'See the place', cerrar: 'Close', acercar: 'Zoom in', hasta: (t) => `Until ${t}` },
+};
+
+/** Cuándo es un plan en la lista de un sitio del mapa: el día y la hora (con
+ * la hora del sitio); una oferta ya empezada, hasta cuándo dura. */
+function cuandoEnMapa(o, lang) {
+  const tz = KZ.de(o);
+  const loc = lang === 'en' ? 'en-GB' : 'es-ES';
+  const empezada = o.kind === 'flash_offer' && o.starts_at && Date.parse(o.starts_at) <= Date.now() && o.redeem_end_at;
+  if (empezada) return MAPA_T[lang === 'en' ? 'en' : 'es'].hasta(KZ.fmt(o.redeem_end_at, tz, loc, { hour: '2-digit', minute: '2-digit' }));
+  // «sáb 21 nov · 16:30», como la app.
+  if (!o.starts_at) return '';
+  const dia = KZ.fmt(o.starts_at, tz, loc, { weekday: 'short', day: 'numeric', month: 'short' }).replace(/,/g, '');
+  return `${dia} · ${KZ.fmt(o.starts_at, tz, loc, { hour: '2-digit', minute: '2-digit' })}`;
+}
+
+/** Mapa de Planes (`assets/mapa.js`): una chincheta por plan; lo del mismo
+ * sitio, un marcador con «N planes» que abre su lista; los sitios cercanos,
+ * una burbuja con el total que se acerca hasta separarlos. Si Mapbox no carga
+ * (sin token, sin red), se dice: debajo está la lista con lo mismo. */
 const mapaHtml = (items, lang, S) => {
+  const en = lang === 'en';
   const puntos = items.filter((o) => Number.isFinite(o.lat) && Number.isFinite(o.lng)).map((o) => ({
     id: o.id, t: o.title, b: o.business_name, lat: o.lat, lng: o.lng, k: o.kind === 'flash_offer' ? 'f' : 'e',
-    u: `${lang === 'en' ? '/en' : ''}/o/${o.id}`,
-    // El local (no un sitio de la publicación): su precio y «¿Hay sitio ahora?».
-    ...(o.venue_address ? {} : { n: o.business_id }),
+    u: `${en ? '/en' : ''}/o/${o.id}`,
+    // Para la lista de un sitio: cuándo (y el orden), el logo y su nombre
+    // (el del sitio si es en otro sitio).
+    at: o.starts_at || '', w: cuandoEnMapa(o, lang), lg: o.business_logo || undefined,
+    sn: o.venue_address ? (o.venue_name || String(o.venue_address).split(',')[0]) : o.business_name,
+    // El local (no un sitio de la publicación): su precio, «¿Hay sitio
+    // ahora?» y «Ver el sitio».
+    ...(o.venue_address ? {} : { n: o.business_id, bu: `${en ? '/en' : ''}/b/${o.business_id}` }),
   }));
-  return `<div id="mapa" class="mapa-explorar" role="region" aria-label="${esc(S.mapView)}" data-no="${esc(S.mapNo)}"></div>
+  const { hasta, ...textos } = MAPA_T[en ? 'en' : 'es'];
+  return `<div id="mapa" class="mapa-explorar" role="region" aria-label="${esc(S.mapView)}" data-no="${esc(S.mapNo)}" data-textos="${esc(JSON.stringify(textos))}"></div>
   <p class="ambiente-leyenda" id="ambiente-leyenda" hidden></p>
   ${sitioAhoraScripts(lang).replace(/ defer/g, '')}
-  <script type="application/json" id="mapaPuntos">${JSON.stringify(puntos).replace(/</g, '\\u003c')}</script>
-  <script>(async function(){
-    var caja=document.getElementById('mapa');var puntos=JSON.parse(document.getElementById('mapaPuntos').textContent||'[]');
-    function falla(){caja.innerHTML='<p class="empty">'+caja.dataset.no+'</p>';caja.classList.add('sin-mapa');document.dispatchEvent(new CustomEvent('klendar-mapa-falla'));}
-    try{
-      var tk=(await (await fetch('/api/mapbox-token')).json()).token;if(!tk)return falla();
-      await new Promise(function(ok,ko){var c=document.createElement('link');c.rel='stylesheet';c.href='https://api.mapbox.com/mapbox-gl-js/v3.15.0/mapbox-gl.css';document.head.append(c);
-        var s=document.createElement('script');s.src='https://api.mapbox.com/mapbox-gl-js/v3.15.0/mapbox-gl.js';s.onload=ok;s.onerror=ko;document.head.append(s);});
-      mapboxgl.accessToken=tk;
-      var oscuro=matchMedia('(prefers-color-scheme: dark)').matches;
-      var m=new mapboxgl.Map({container:caja,style:oscuro?'mapbox://styles/mapbox/dark-v11':'mapbox://styles/mapbox/light-v11',center:puntos.length?[puntos[0].lng,puntos[0].lat]:[-3.7038,40.4168],zoom:12,performanceMetricsCollection:false,collectResourceTiming:false,cooperativeGestures:matchMedia('(pointer: coarse)').matches});
-      m.addControl(new mapboxgl.NavigationControl({showCompass:false}));
-      window.KlendarMapa=m;document.dispatchEvent(new CustomEvent('klendar-mapa'));
-      var bounds=new mapboxgl.LngLatBounds();var pops=[];
-      puntos.forEach(function(p){bounds.extend([p.lng,p.lat]);
-        var el=document.createElement('a');el.className='chincheta'+(p.k==='f'?' flash':'');el.href=p.u;el.setAttribute('aria-label',p.t);
-        var a=document.createElement('a');a.className='pop';a.href=p.u;
-        var bt=document.createElement('b');bt.textContent=p.t;var sp=document.createElement('span');sp.textContent=p.b||'';
-        a.append(bt,sp);var w=document.createElement('div');w.className='pop-caja';w.append(a);if(p.n)pops.push({n:p.n,a:a,w:w});
-        var pop=new mapboxgl.Popup({offset:18,closeButton:false,focusAfterOpen:false}).setDOMContent(w);
-        new mapboxgl.Marker({element:el}).setLngLat([p.lng,p.lat]).setPopup(pop).addTo(m);
-        el.addEventListener('click',function(e){e.preventDefault();});
-      });
-      if(puntos.length>1)m.fitBounds(bounds,{padding:48,maxZoom:15,duration:0});
-      var SA=window.KlendarSitioAhora,KM=window.KlendarMarcas;
-      if(SA&&KM&&pops.length)SA.pide(pops.map(function(x){return x.n;})).then(function(d){pops.forEach(function(x){var m=d[x.n];if(!m)return;
-        var pr=KM.simbolo(m.price_level),t=SA.texto(m);if(!pr&&!t)return;var l=document.createElement('small');l.className='pop-ahora';
-        l.textContent=[pr,t].filter(Boolean).join(' · ');x.a.append(l);});
-        // «Avísame cuando haya sitio» debajo (sitio-ahora.js decide si sale).
-        if(SA.avisame)pops.forEach(function(x){var m=d[x.n];if(!m||!m.crowd)return;var c=document.createElement('div');c.hidden=true;x.w.append(c);SA.avisame(c,x.n,m);});});
-    }catch(e){falla();}
-  })();</script>`;
+  <script type="application/json" id="mapaPuntos">${JSON.stringify(puntos).replace(/</g, '\u003c')}</script>
+  <script src="/assets/mapa.js?v=1"></script>`;
 };
 
 /** Las distancias de «Cerca de mí», las mismas que la hoja de filtros de la

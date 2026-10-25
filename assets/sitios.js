@@ -38,6 +38,9 @@
       highlight: (x) => `Qué pedir aquí: ${x}`,
       plansToday: (n) => (n === 1 ? '1 plan hoy' : `${n} planes hoy`),
       seePlace: 'Ver el sitio',
+      placesHere: (n) => (n === 1 ? '1 sitio aquí' : `${n} sitios aquí`),
+      seeMore: (n) => `Ver ${n} más`,
+      close: 'Cerrar',
     },
     en: {
       open: 'Open',
@@ -58,6 +61,9 @@
       highlight: (x) => `What to order here: ${x}`,
       plansToday: (n) => (n === 1 ? '1 plan today' : `${n} plans today`),
       seePlace: 'See the place',
+      placesHere: (n) => (n === 1 ? '1 place here' : `${n} places here`),
+      seeMore: (n) => `See ${n} more`,
+      close: 'Close',
     },
   };
 
@@ -251,31 +257,73 @@
           });
           if (!r.ok || n !== pedido) return;
           const filas = await r.json();
+          // Lo del mismo punto, un sitio (assets/mapa.js, como la app): con
+          // varios, una burbuja con cuántos sitios que abre su lista.
+          const KA = globalThis.KlendarAgrupa;
+          const validas = (Array.isArray(filas) ? filas : []).filter((f) => isFinite(f.lat) && isFinite(f.lng))
+            .map((f) => ({ ...f, lat: Number(f.lat), lng: Number(f.lng) }));
+          const puntos = KA ? KA.sitios(validas) : validas.map((f) => ({ lat: f.lat, lng: f.lng, items: [f] }));
           const geo = {
             type: 'FeatureCollection',
-            features: (Array.isArray(filas) ? filas : []).filter((f) => isFinite(f.lat) && isFinite(f.lng)).map((f) => ({
-              type: 'Feature',
-              properties: { id: f.id, nombre: f.name || '', slug: f.slug || f.id, planes: Number(f.plans_today) || 0 },
-              geometry: { type: 'Point', coordinates: [Number(f.lng), Number(f.lat)] },
-            })),
+            features: puntos.map((s) => {
+              const f = s.items[0];
+              const planes = s.items.reduce((n, x) => n + (Number(x.plans_today) || 0), 0);
+              return {
+                type: 'Feature',
+                properties: {
+                  id: f.id, nombre: f.name || '', slug: f.slug || f.id, planes, n: s.items.length, con: planes > 0 ? 1 : 0,
+                  lista: s.items.length > 1
+                    ? JSON.stringify(s.items.map((x) => ({ n: x.name || '', s: x.slug || x.id, p: Number(x.plans_today) || 0 })))
+                    : '',
+                },
+                geometry: { type: 'Point', coordinates: [s.lng, s.lat] },
+              };
+            }),
           };
           if (m.getSource('sitios')) m.getSource('sitios').setData(geo);
           else {
-            m.addSource('sitios', { type: 'geojson', data: geo });
+            // Sitios distintos cerca: agrupados hasta el zoom 16 (desde el 17,
+            // cada uno solo), como la app; la cifra, cuántos sitios.
+            m.addSource('sitios', {
+              type: 'geojson', data: geo, cluster: true, clusterMaxZoom: 16, clusterRadius: 36,
+              clusterProperties: { total: ['+', ['get', 'n']], con: ['max', ['get', 'con']] },
+            });
+            const suelto = ['all', ['!', ['has', 'point_count']], ['==', ['get', 'n'], 1]];
+            const burbuja = ['any', ['has', 'point_count'], ['>', ['get', 'n'], 1]];
             // Sin planes: punto pequeño y gris, sin nombre.
             m.addLayer({
-              id: 'sitios-sin', type: 'circle', source: 'sitios', filter: ['==', ['get', 'planes'], 0],
+              id: 'sitios-sin', type: 'circle', source: 'sitios', filter: ['all', suelto, ['==', ['get', 'planes'], 0]],
               paint: { 'circle-radius': 5, 'circle-color': '#8E8E93', 'circle-stroke-color': '#FFFFFF', 'circle-stroke-width': 1.5 },
             });
             // Con planes hoy: punto grande, en coral, con su nombre.
             m.addLayer({
-              id: 'sitios-con', type: 'circle', source: 'sitios', filter: ['>', ['get', 'planes'], 0],
+              id: 'sitios-con', type: 'circle', source: 'sitios', filter: ['all', suelto, ['>', ['get', 'planes'], 0]],
               paint: { 'circle-radius': 9, 'circle-color': coral, 'circle-stroke-color': '#FFFFFF', 'circle-stroke-width': 2.5 },
             });
             m.addLayer({
-              id: 'sitios-nombre', type: 'symbol', source: 'sitios', filter: ['>', ['get', 'planes'], 0],
+              id: 'sitios-nombre', type: 'symbol', source: 'sitios', filter: ['all', suelto, ['>', ['get', 'planes'], 0]],
               layout: { 'text-field': ['get', 'nombre'], 'text-size': 12, 'text-offset': [0, 1.3], 'text-anchor': 'top', 'text-optional': true },
               paint: { 'text-color': tinta, 'text-halo-color': oscuro ? '#000000' : '#FFFFFF', 'text-halo-width': 1.5 },
+            });
+            // Grupos y sitios del mismo punto: burbuja en tinta (en oscuro,
+            // blanca; gris si ninguno tiene planes hoy) con cuántos sitios.
+            const conPlanes = ['>', ['coalesce', ['get', 'con'], 0], 0];
+            m.addLayer({
+              id: 'sitios-grupo', type: 'circle', source: 'sitios', filter: burbuja,
+              paint: {
+                'circle-radius': ['step', ['coalesce', ['get', 'total'], ['get', 'n']], 15, 10, 18, 100, 22],
+                'circle-color': ['case', conPlanes, oscuro ? '#FFFFFF' : '#1C1C1E', '#8E8E93'],
+                'circle-stroke-color': oscuro ? '#171717' : '#FFFFFF',
+                'circle-stroke-width': 2.5,
+              },
+            });
+            m.addLayer({
+              id: 'sitios-grupo-n', type: 'symbol', source: 'sitios', filter: burbuja,
+              layout: {
+                'text-field': ['to-string', ['coalesce', ['get', 'total'], ['get', 'n']]],
+                'text-size': 13, 'text-font': ['DIN Pro Bold', 'Arial Unicode MS Bold'], 'text-allow-overlap': true,
+              },
+              paint: { 'text-color': oscuro ? ['case', conPlanes, '#1C1C1E', '#FFFFFF'] : '#FFFFFF' },
             });
             // La tarjeta: lo mismo que la fila de la lista (`place_card` y
             // las mismas líneas, `detallesHtml`); mientras llega, el nombre.
@@ -302,6 +350,59 @@
                 }
               } catch { /* se queda con el nombre */ }
             };
+            // Varios sitios en el mismo punto: su lista, por partes.
+            const L = T[d.lang === 'en' ? 'en' : 'es'];
+            const lista = (f) => {
+              let items = [];
+              try { items = JSON.parse(f.properties.lista || '[]'); } catch { items = []; }
+              const caja = document.createElement('div');
+              caja.className = 'pop-lugar';
+              caja.innerHTML = `<div class="pl-cab"><div class="pl-tit"><b>${esc(L.placesHere(items.length))}</b></div>`
+                + `<button type="button" class="pl-cerrar" aria-label="${esc(L.close)}">×</button></div><ul class="pl-lista"></ul>`;
+              const ul = caja.querySelector('.pl-lista');
+              let hechos = 0;
+              let mas = null;
+              const parte = () => {
+                items.slice(hechos, hechos + 8).forEach((x) => {
+                  const li = document.createElement('li');
+                  li.innerHTML = `<a href="${esc(`${d.base || '/b/'}${encodeURIComponent(x.s)}`)}"><b>${esc(x.n)}</b>${
+                    x.p ? `<span class="pl-cuando">${esc(L.plansToday(x.p))}</span>` : ''}</a>`;
+                  ul.append(li);
+                });
+                hechos = Math.min(items.length, hechos + 8);
+                if (hechos < items.length) {
+                  if (!mas) {
+                    mas = document.createElement('button');
+                    mas.type = 'button';
+                    mas.className = 'pl-mas';
+                    mas.addEventListener('click', parte);
+                    caja.append(mas);
+                  }
+                  mas.textContent = L.seeMore(items.length - hechos);
+                } else if (mas) mas.remove();
+              };
+              parte();
+              if (pop) pop.remove();
+              globalThis.KlendarAgrupa.abreHoja(m, caja, f.geometry.coordinates);
+            };
+            // Un grupo de sitios distintos: acercar justo hasta separarlo.
+            const acerca = (f) => {
+              const ve = (z) => m.easeTo({
+                center: f.geometry.coordinates, zoom: Math.min(Number(z) || m.getZoom() + 2, 17), duration: 450,
+              });
+              const r = m.getSource('sitios').getClusterExpansionZoom(f.properties.cluster_id, (err, z) => { if (!err) ve(z); });
+              if (r && typeof r.then === 'function') r.then(ve).catch(() => {});
+            };
+            m.on('click', 'sitios-grupo', (e) => {
+              const f = e.features && e.features[0];
+              if (!f) return;
+              if (f.properties.cluster) acerca(f);
+              else lista(f);
+            });
+            ['sitios-grupo'].forEach((id) => {
+              m.on('mouseenter', id, () => { m.getCanvas().style.cursor = 'pointer'; });
+              m.on('mouseleave', id, () => { m.getCanvas().style.cursor = ''; });
+            });
             ['sitios-sin', 'sitios-con'].forEach((id) => {
               m.on('click', id, abre);
               m.on('mouseenter', id, () => { m.getCanvas().style.cursor = 'pointer'; });
