@@ -70,6 +70,8 @@ function supabaseFalso(estado) {
       if (req.method() === 'PATCH') { estado.llamadas.push(['profiles', body]); return json([]); }
       return json(estado.perfil || { display_name: 'Ana', avatar_url: null, locale: null, birth_date: '1990-05-01' });
     }
+    // Los sorteos, encendidos (al lanzar están apagados: app_config.giveaways).
+    if (p.startsWith('/rest/v1/app_config')) return json([{ value: { enabled: true, platforms: ['web'] } }]);
     if (p.startsWith('/rest/v1/')) return json([]);
     return json({});
   };
@@ -219,6 +221,8 @@ function supabaseRp() {
       });
       return undefined;
     }
+    // Los sorteos, encendidos (al lanzar están apagados: app_config.giveaways).
+    if (url.pathname.startsWith('/rest/v1/app_config')) return json([{ value: { enabled: true, platforms: ['web'] } }]);
     if (url.pathname.startsWith('/rest/v1/businesses')) return json([{ id: BIZ, time_zone: 'Europe/Madrid' }]);
     return json([]);
   });

@@ -49,14 +49,6 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://klendar.app/grupos/"/>
   </url>
   <url>
-    <loc>https://klendar.app/sorteos/</loc>
-    <lastmod>2026-10-14</lastmod>
-    <priority>0.5</priority>
-    <xhtml:link rel="alternate" hreflang="es" href="https://klendar.app/sorteos/"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://klendar.app/en/giveaways/"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://klendar.app/sorteos/"/>
-  </url>
-  <url>
     <loc>https://klendar.app/agenda/</loc>
     <lastmod>2026-10-14</lastmod>
     <priority>0.5</priority>
@@ -239,14 +231,6 @@
     <xhtml:link rel="alternate" hreflang="es" href="https://klendar.app/grupos/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://klendar.app/en/groups/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://klendar.app/grupos/"/>
-  </url>
-  <url>
-    <loc>https://klendar.app/en/giveaways/</loc>
-    <lastmod>2026-10-14</lastmod>
-    <priority>0.5</priority>
-    <xhtml:link rel="alternate" hreflang="es" href="https://klendar.app/sorteos/"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://klendar.app/en/giveaways/"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://klendar.app/sorteos/"/>
   </url>
   <url>
     <loc>https://klendar.app/en/whats-on/</loc>

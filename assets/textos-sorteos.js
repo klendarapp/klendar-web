@@ -111,6 +111,12 @@
       back: 'Volver al sorteo',
       enteredOk: (n) => `Participas · tu número es el ${n}`,
       favAdded: (x) => `Hemos añadido ${x} a tus favoritos.`,
+      // Con los sorteos apagados (`app_config.giveaways`).
+      offTitle: 'Los sorteos no están disponibles',
+      offText: 'Por ahora no hay sorteos en Klendar. Mientras, mira lo que hay hoy cerca de ti.',
+      offTextBiz: 'Por ahora los sorteos no están disponibles en Klendar. Lo demás de Fidelizar funciona como siempre.',
+      offGo: 'Ir a Descubre',
+      offGoBiz: 'Volver al resumen',
     },
     en: {
       title: 'Giveaways',
@@ -201,6 +207,11 @@
       back: 'Back to the giveaway',
       enteredOk: (n) => `You're in · your number is ${n}`,
       favAdded: (x) => `We've added ${x} to your favourites.`,
+      offTitle: "Giveaways aren't available",
+      offText: "There are no giveaways on Klendar for now. Meanwhile, see what's on near you today.",
+      offTextBiz: "Giveaways aren't available on Klendar for now. Everything else in Loyalty works as usual.",
+      offGo: 'Go to Discover',
+      offGoBiz: 'Back to the overview',
     },
   };
 
@@ -215,6 +226,7 @@
       adult_required: 'Hace falta tener 18 años y la fecha de nacimiento en tu perfil.',
       rate_limited: 'Demasiados intentos. Espera un momento.',
       too_late: 'Se ha pasado el plazo para aceptarlo.',
+      giveaways_disabled: 'Los sorteos no están disponibles ahora mismo.',
     },
     en: {
       auth_required: 'You need to log in to your account.',
@@ -225,6 +237,7 @@
       adult_required: 'You need to be 18 and have your date of birth in your profile.',
       rate_limited: 'Too many attempts. Wait a moment.',
       too_late: 'The deadline to accept it has passed.',
+      giveaways_disabled: "Giveaways aren't available right now.",
     },
   };
 
@@ -300,7 +313,17 @@
     return sale.length === pub.length && sale.every((x, i) => x === pub[i]);
   }
 
-  const KlendarSorteos = { t, error, cuando, dia, dinero, nf, terminado, salidos, anulados, sha256, sortea, verifica };
+  /** El interruptor (`app_config.giveaways`, migración 20261243100000 de la
+   * app): `{enabled, platforms}`. Al lanzar, apagados en todas partes (norma
+   * 5.3 de Apple). Encendido, salen donde diga `platforms` («web»,
+   * «android», «ios»); sin la lista, en todas. Lo mismo que
+   * `giveawaysOnFor` en la app. */
+  const encendidos = (valor, plataforma = 'web') => {
+    if (!valor || typeof valor !== 'object' || valor.enabled !== true) return false;
+    return Array.isArray(valor.platforms) ? valor.platforms.includes(plataforma) : true;
+  };
+
+  const KlendarSorteos = { t, error, encendidos, cuando, dia, dinero, nf, terminado, salidos, anulados, sha256, sortea, verifica };
   globalThis.KlendarSorteos = KlendarSorteos;
   if (typeof module === 'object' && module && module.exports) module.exports = KlendarSorteos;
 })();

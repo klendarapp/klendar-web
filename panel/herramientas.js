@@ -110,13 +110,15 @@ function herrEsencialHtml(stats) {
 /** Rellena las líneas de «Lo esencial» y las filas de acceso rápido. */
 async function herrResumen(v, { cajaFilas, cajaPendiente }) {
   const negocio = BIZ.id;
-  const [o, fiel, ficha, demanda] = await Promise.all([
+  const [o, fiel, ficha, demanda, conSorteos] = await Promise.all([
     herrEstado(),
     rpc('business_loyalty', { p_business: negocio }).catch(() => null),
     gestiona() && typeof datosFicha === 'function' ? datosFicha().catch(() => null) : null,
     // «Pedir un local»: cuántas personas lo pidieron antes de que estuviera
     // en Klendar (solo el número, nunca quién). Como la app.
     gestiona() ? rpc('business_venue_demand', { p_business: negocio }).catch(() => null) : null,
+    // Los sorteos solo cuentan con el interruptor encendido (panel/sorteos.js).
+    typeof sorteosEnPanel === 'function' ? sorteosEnPanel() : false,
   ]);
   if (!v.isConnected || BIZ?.id !== negocio) return;
   const linea = (id, texto) => { const s = $(`#${id} [data-linea]`, v); if (s) s.textContent = texto; };
@@ -127,7 +129,7 @@ async function herrResumen(v, { cajaFilas, cajaPendiente }) {
   if (o && fiel && fiel.ok !== false) {
     const n = [herrNum(o, 'stamps', 'active') > 0, fiel.coupon?.enabled === true, herrSi(o, 'birthday', 'enabled'),
       herrNum(o, 'first_visit', 'live') > 0, herrNum(o, 'exclusives', 'live') > 0, fiel.thanks?.enabled === true,
-      herrNum(o, 'passes', 'on_sale') > 0, herrNum(o, 'giveaways', 'active') > 0].filter(Boolean).length;
+      herrNum(o, 'passes', 'on_sale') > 0, conSorteos && herrNum(o, 'giveaways', 'active') > 0].filter(Boolean).length;
     linea('esFiel', n === 0 ? bi('Nada activado', 'Nothing on yet') : bi(n === 1 ? '1 activada' : `${n} activadas`, `${n} on`));
   }
   if (o) {

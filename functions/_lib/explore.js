@@ -32,7 +32,7 @@ import KE from '../../assets/emisiones.js';
 import KG from '../../assets/textos-grupos.js';
 import KS from '../../assets/textos-sorteos.js';
 import { GRUPOS_CSS, gruposBase, icGrupos } from './grupos.js';
-import { icSorteo, sorteosBase } from './sorteos.js';
+import { icSorteo, sorteosBase, sorteosEncendidos } from './sorteos.js';
 import { SITIOS_CSS, SITIOS_SCRIPTS, TS, filaSitio, mapaSitios } from './sitios.js';
 
 /** Una dirección mal codificada no es un 500: se manda al listado (302). */
@@ -1073,6 +1073,8 @@ export async function explorePage(url, lang, modo = 'explorar') {
   const S = T(en);
   const descubre = modo === 'descubre';
   const base = descubre ? discoverBase(lang) : exploreBase(lang);
+  // «Sorteos» solo con el interruptor encendido (se pide a la vez que lo demás).
+  const conSorteos = sorteosEncendidos().catch(() => false);
   const e = leeEstado(url.searchParams);
   if (descubre) { e.q = ''; e.vista = ''; e.que = ''; }
   const { q, city, cat, kind, price, when, soloDescuento, abierto, cerca, lat, lng, km, page, traits, tiempoOff, gustos, antesCierre, menuDia, comerAhora } = e;
@@ -1550,6 +1552,7 @@ export async function explorePage(url, lang, modo = 'explorar') {
 
   // Al tocar el buscador: lo que buscaste (en este navegador) y «Lo más
   // buscado en <ciudad>» (/assets/gustos.js).
+  const sorteosOn = await conSorteos;
   const textosBusqueda = JSON.stringify({
     recent: S.searchRecent, clear: S.searchClear, local: S.searchLocal,
     popular: S.searchPopular, popularHint: S.searchPopularHint, remove: S.searchRemove,
@@ -1557,7 +1560,7 @@ export async function explorePage(url, lang, modo = 'explorar') {
     partidos: { t: KE.t(lang).title, s: KE.t(lang).lead, href: `${partidosBase(lang)}/${zonaDeExplorar(e, lang) ? `?${zonaDeExplorar(e, lang)}` : ''}` },
     // «Grupos y empresas» y «Sorteos» (tanda C), detrás, como en la app.
     grupos: { t: KG.t(lang).title, s: KG.t(lang).sub, href: `${gruposBase(lang)}/${zonaGrupos(e, lang) ? `?${zonaGrupos(e, lang)}` : ''}` },
-    sorteos: { t: KS.t(lang).title, s: KS.t(lang).sub, href: `${sorteosBase(lang)}/${zonaGrupos(e, lang) ? `?${zonaGrupos(e, lang)}` : ''}` },
+    ...(sorteosOn ? { sorteos: { t: KS.t(lang).title, s: KS.t(lang).sub, href: `${sorteosBase(lang)}/${zonaGrupos(e, lang) ? `?${zonaGrupos(e, lang)}` : ''}` } } : {}),
     // «Pedir un local», el cuarto, como en el buscador de la app.
     pedir: { t: S.askVenue, s: S.recommendShort, href: pedirHref(lang) },
   });
@@ -1732,7 +1735,7 @@ ${GRUPOS_CSS}` : ''}`;
     <p class="muted exp-lead">${esc(S.lead)}</p>
     <p class="exp-atajo"><a href="${esc(`${partidosBase(lang)}/${zonaDeExplorar(e, lang) ? `?${zonaDeExplorar(e, lang)}` : ''}`)}">${icPartido(16)}<span>${esc(KE.t(lang).title)}</span></a>
       <a href="${esc(`${gruposBase(lang)}/${zonaGrupos(e, lang) ? `?${zonaGrupos(e, lang)}` : ''}`)}">${icGrupos(16)}<span>${esc(KG.t(lang).title)}</span></a>
-      <a href="${esc(`${sorteosBase(lang)}/${zonaGrupos(e, lang) ? `?${zonaGrupos(e, lang)}` : ''}`)}">${icSorteo(16)}<span>${esc(KS.t(lang).title)}</span></a></p></div>
+      ${sorteosOn ? `<a href="${esc(`${sorteosBase(lang)}/${zonaGrupos(e, lang) ? `?${zonaGrupos(e, lang)}` : ''}`)}">${icSorteo(16)}<span>${esc(KS.t(lang).title)}</span></a>` : ''}</p></div>
   </div>
   <div class="que-fila">${que}${vistas}</div>
   ${buscador}

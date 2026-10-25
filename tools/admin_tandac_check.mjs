@@ -60,6 +60,8 @@ function supabaseFalso(estado) {
       return json(null);
     }
     if (p.startsWith('/rest/v1/businesses')) return json([{ id: BIZ, time_zone: 'Europe/Madrid', brand_color: '#1E79D1', logo_url: null, cover_image_url: null, gallery: [] }]);
+    // Los sorteos, encendidos (al lanzar están apagados: app_config.giveaways).
+    if (p.startsWith('/rest/v1/app_config')) return json([{ value: { enabled: true, platforms: ['web'] } }]);
     if (p.startsWith('/rest/v1/')) return json([]);
     return json({});
   };

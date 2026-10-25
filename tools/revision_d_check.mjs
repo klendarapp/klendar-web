@@ -84,6 +84,8 @@ function supabaseFalso(estado) {
       if (r !== undefined) return json(typeof r === 'function' ? r(body) : r);
       return json(null);
     }
+    // Los sorteos, encendidos (al lanzar están apagados: app_config.giveaways).
+    if (p.startsWith('/rest/v1/app_config')) return json([{ value: { enabled: true, platforms: ['web'] } }]);
     if (p.startsWith('/rest/v1/')) return json([]);
     return json({});
   };

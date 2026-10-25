@@ -3841,6 +3841,9 @@ PAGES.configuracion = async (v) => {
   const cfg = await rpc('admin_config');
   const mv = cfg.min_version?.value || {}, mt = cfg.maintenance?.value || {}, sp = cfg.send_push?.value || {};
   const rl = cfg.rules?.value || {};
+  // Sorteos (migración 20261243100000 de la app): apagados al lanzar.
+  const gw = cfg.giveaways?.value || { enabled: false, platforms: ['web', 'android'] };
+  const gwEn = (p) => (Array.isArray(gw.platforms) ? gw.platforms.includes(p) : true);
   const limits = await rpc('admin_rate_limits', { p_limit: 50 });
   // Fotos y vídeos sin usar (`storage_cleanup_count`): lo que se borraría.
   const fotos = await rpc('storage_cleanup_count', { p_examples: 3 }).catch(() => null);
@@ -3859,6 +3862,16 @@ PAGES.configuracion = async (v) => {
         <label class="f" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="block2x1" ${rl.block_2x1_alcohol === true ? 'checked' : ''}><span>Bloquear promociones <b>2x1 en bebidas alcohólicas</b></span></label>
         <p class="muted small" style="margin:0">${I18N.lang === 'en' ? `Off, which is how it is now: the business declares whether its two-for-one includes alcohol and, if it says yes, the publication is marked <b>over-18s only</b>. On, it simply won't let them publish it. Context for deciding: Law 34/1988 and several regional laws ban promotions that encourage drinking more for the same money (“2x1”, “open bar”), even if the venue is adults-only, and the fine falls on the advertising business.` : `Apagado, que es como está ahora: el negocio declara si su 2x1 lleva alcohol y, si dice que sí, la publicación sale marcada <b>solo para mayores de 18</b>. Encendido, directamente no deja publicarla. Contexto para decidir: la Ley 34/1988 y varias leyes autonómicas prohíben las promociones que incentivan beber más por el mismo dinero («2x1», «barra libre»), aunque el local sea solo para mayores, y la sanción recae en el negocio anunciante.`}</p>
         <div><button class="btn sm">Guardar</button> <span class="muted small">${I18N.lang === 'en' ? 'updated' : 'actualizado'} ${fmtDate(cfg.rules?.updated_at)}</span></div></form></div>
+      <div class="card"><h2>${I18N.lang === 'en' ? 'Giveaways' : 'Sorteos'}</h2><form id="gwf" style="display:grid;gap:10px">
+        <label class="f" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="enabled" ${gw.enabled === true ? 'checked' : ''}><span>${I18N.lang === 'en' ? 'Giveaways <b>on</b>' : 'Sorteos <b>encendidos</b>'}</span></label>
+        <fieldset class="f" style="border:0;padding:0;margin:0"><legend class="small">${I18N.lang === 'en' ? 'Where they show when on' : 'Dónde salen cuando están encendidos'}</legend>
+          <label style="margin-right:14px"><input type="checkbox" name="web" ${gwEn('web') ? 'checked' : ''}> ${I18N.lang === 'en' ? 'Website' : 'Web'}</label>
+          <label style="margin-right:14px"><input type="checkbox" name="android" ${gwEn('android') ? 'checked' : ''}> Android</label>
+          <label><input type="checkbox" name="ios" ${gwEn('ios') ? 'checked' : ''}> iOS</label></fieldset>
+        <p class="muted small" style="margin:0">${I18N.lang === 'en'
+          ? `<b>Off since launch.</b> Apple's guideline 5.3 requires giveaways inside an app to be sponsored by the app's owner, and on Klendar businesses run them. Off, they don't show anywhere (apps, website, Your account and the dashboard), businesses can't create them, nobody can enter (not even from an old app version) and the draw job does nothing; open ones stay as they are. You keep seeing them in <b>Giveaways</b> to moderate them. On, they show only where it's ticked: website and Android can go first; iOS only once it's cleared with Apple. Apps pick up the change the next time they're opened; the website within a minute.`
+          : `<b>Apagados desde el lanzamiento.</b> La norma 5.3 de Apple exige que los sorteos dentro de una app los patrocine el dueño de la app, y en Klendar los organizan los negocios. Apagados, no salen en ningún sitio (apps, web, «Tu cuenta» y panel), los negocios no pueden crearlos, nadie puede participar (tampoco desde una versión vieja de la app) y el sorteo automático no hace nada; los abiertos se quedan como estén. Tú los sigues viendo en <b>Sorteos</b> para moderarlos. Encendidos, salen solo donde esté marcado: web y Android pueden ir primero; iOS, solo cuando esté claro con Apple. Las apps lo notan la próxima vez que se abren; la web, en un minuto.`}</p>
+        <div><button class="btn sm">Guardar</button> <span class="muted small">${I18N.lang === 'en' ? 'updated' : 'actualizado'} ${fmtDate(cfg.giveaways?.updated_at)}</span></div></form></div>
       <div class="card"><h2>Fotos y vídeos sin usar</h2>
         <p class="muted small" style="margin:0 0 10px">${I18N.lang === 'en'
           ? `Every night, files that nothing uses any more are deleted: from deleted accounts and businesses, old profile photos, deleted reviews and, if the mode is <b>delete</b>, what a business uploaded and no longer uses and the media of publications that ended more than N months ago. In <b>count only</b> mode the new rules just count: check the list below before switching. Nothing uploaded in the last days is touched (an upload in progress isn't saved anywhere yet).`
@@ -3889,6 +3902,16 @@ PAGES.configuracion = async (v) => {
   alGuardar($('#mtf'), async (c) => { if (c.enabled.checked && !await confirmDlg('Activar mantenimiento', 'Todos los usuarios verán el mensaje y no podrán usar la app hasta que lo desactives.', { danger: true, submit: 'Activar' })) return; await save('maintenance', { enabled: c.enabled.checked, message: c.message.value.trim() || null }); });
   alGuardar($('#spf'), async (c) => { if (!await confirmDlg('Cambiar el envío de push', 'Si la dirección o la clave están mal, dejarán de llegar todas las notificaciones push.', { danger: true, submit: 'Guardar' })) return; await save('send_push', { url: c.url.value.trim(), key: c.key.value.trim() }); });
   alGuardar($('#rlf'), (c) => save('rules', { block_2x1_alcohol: c.block2x1.checked }));
+  alGuardar($('#gwf'), async (c) => {
+    const platforms = ['web', 'android', 'ios'].filter((p) => c[p].checked);
+    const en = I18N.lang === 'en';
+    if (c.enabled.checked && gw.enabled !== true && !await confirmDlg(en ? 'Turn giveaways on' : 'Encender los sorteos',
+      (platforms.includes('ios')
+        ? (en ? 'iOS is ticked: check first that Apple accepts it (guideline 5.3). ' : 'Está marcado iOS: comprueba antes que Apple lo acepta (norma 5.3). ')
+        : '') + (en ? 'Businesses will be able to create giveaways and people to enter them.' : 'Los negocios podrán crear sorteos y la gente participar.'),
+      { danger: platforms.includes('ios'), submit: en ? 'Turn on' : 'Encender' })) return;
+    await save('giveaways', { enabled: c.enabled.checked, platforms });
+  });
   alGuardar($('#frf'), async (c) => {
     if (c.modo.value === 'borrar' && fr.modo !== 'borrar' && !await confirmDlg('Borrar fotos y vídeos sin usar', I18N.lang === 'en' ? 'From tonight, the files in the list will be deleted for good. Check it first.' : 'Desde esta noche se borrarán para siempre los archivos de la lista. Revísala antes.', { danger: true, submit: 'Borrar' })) return;
     try {

@@ -42,6 +42,7 @@ const SORTEO_ERR = () => ({
   reason_required: bi('Escribe el motivo (de 5 a 200 caracteres): se lo diremos a quien participa.', "Write the reason (5 to 200 characters): we'll tell everyone who entered."),
   bad_status: bi('Ese premio ya no se puede marcar como entregado.', "That prize can't be marked as handed over any more."),
   not_authorized: bi('No tienes permiso para esto. Pídeselo a quien lleve el negocio.', "You don't have permission for this. Ask whoever runs the business."),
+  giveaways_disabled: bi('Los sorteos no están disponibles ahora mismo.', "Giveaways aren't available right now."),
 });
 const sorteoError = (code) => SORTEO_ERR()[code] || friendly(code);
 async function sorteoRpc(fn, args) {
@@ -63,7 +64,27 @@ const sorteoCifras = (s) => bi(`${fmtNum(s?.participants)} participantes · ${fm
 const sorteoNif = (v) => String(v || '').replace(/[\s.-]/g, '').toUpperCase();
 const SORTEO_NIF = /^([0-9]{8}[A-Z]|[XYZ][0-9]{7}[A-Z]|[ABCDEFGHJKLMNPQRSUVW][0-9]{7}[0-9A-J])$/;
 
+/** ¿Salen los sorteos? (`app_config.giveaways`, migración 20261243100000 de
+ * la app). Al lanzar, apagados en todas partes por la norma 5.3 de Apple:
+ * «Sorteos» no sale en Fidelizar ni cuenta en el resumen, y `#/sorteos`
+ * dice que no están disponibles. Se pregunta una vez por carga; sin
+ * respuesta, apagados. */
+let SORTEOS_EN_PANEL = null;
+function sorteosEnPanel() {
+  if (!SORTEOS_EN_PANEL) {
+    SORTEOS_EN_PANEL = sb.from('app_config').select('value').eq('key', 'giveaways').limit(1)
+      .then(({ data }) => KSp.encendidos(data?.[0]?.value, 'web'), () => false);
+  }
+  return SORTEOS_EN_PANEL;
+}
+
 PAGES.sorteos = async (v, param) => {
+  if (!(await sorteosEnPanel())) {
+    const S = KSp.t(sorteoL());
+    v.innerHTML = `<section class="vacio"><h2>${esc(S.offTitle)}</h2><p>${esc(S.offTextBiz)}</p>
+      <div class="vacio-botones"><a class="btn primary" href="#/resumen">${esc(S.offGoBiz)}</a></div></section>`;
+    return;
+  }
   const d = await rpc('business_giveaways', { p_business: BIZ.id });
   const lista = d.giveaways || [];
   if (param === 'nuevo') return sorteoForm(v, d, null);

@@ -25,7 +25,7 @@ import KE from '../../assets/enlaces.js';
 import { fuenteHtml, selloEntidad } from './entidades.js';
 import { PARTIDOS_CSS, partidosDelBar } from './partidos.js';
 import { GRUPOS_CSS, grupoEnFicha } from './grupos.js';
-import { sorteosEnFicha } from './sorteos.js';
+import { sorteosEncendidos, sorteosEnFicha } from './sorteos.js';
 import { ARTISTAS_CSS, actuaEnOferta, performersLd } from './artistas.js';
 import KA from '../../assets/artistas.js';
 
@@ -840,7 +840,8 @@ export async function businessPage(param, lang, search = '') {
     partidosDelBar(id, lang, zonaDe(b)).catch(() => ''),
     // «Acepta grupos» y sus sorteos abiertos (tanda C; opcionales).
     rpc('business_group_info', { p_business: id }).catch(() => null),
-    rpcAll('business_public_giveaways', { p_business: id }).catch(() => []),
+    // Con los sorteos apagados (app_config.giveaways), ni se piden.
+    sorteosEncendidos().then((on) => (on ? rpcAll('business_public_giveaways', { p_business: id }) : [])).catch(() => []),
     // Organizador sin local fijo (fiestas, promotoras): su punto es la zona
     // donde organiza, no un sitio al que ir. Sin la función, como siempre.
     rpc('business_is_organizer', { p_business: id }).then((x) => x === true).catch(() => false),

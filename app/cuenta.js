@@ -156,7 +156,10 @@ sb.auth.onAuthStateChange((_ev, s) => { TOKEN_SESION = s?.access_token || null; 
 async function sinLeer() {
   if (!YO) return 0;
   await MARCA_LEIDAS;
-  const { count } = await sb.from('notifications').select('id', { count: 'exact', head: true }).is('read_at', null);
+  let q = sb.from('notifications').select('id', { count: 'exact', head: true }).is('read_at', null);
+  // Con los sorteos apagados, sin sus avisos (app/sorteos.js).
+  if (!(await sorteosEnCuenta())) q = q.neq('kind', 'giveaway');
+  const { count } = await q;
   return count || 0;
 }
 
@@ -216,20 +219,20 @@ function filaAviso(n) {
 // La bandeja llega por partes: las 30 más nuevas y «Ver más» con las
 // anteriores (cursor `created_at`, `id`). Las no leídas las cuenta la base.
 const AVISOS_POR_PARTE = 30;
-const avisosParte = (ultima) => {
+const avisosParte = async (ultima) => {
   let q = sb.from('notifications').select('id, kind, title, body, route, data, read_at, created_at');
+  if (!(await sorteosEnCuenta())) q = q.neq('kind', 'giveaway');
   if (ultima) q = q.or(`created_at.lt.${ultima.created_at},and(created_at.eq.${ultima.created_at},id.lt.${ultima.id})`);
   return tabla(q.order('created_at', { ascending: false }).order('id', { ascending: false }).limit(AVISOS_POR_PARTE));
 };
 RUTAS.notificaciones = async () => {
   if (!exigeSesion('notificaciones')) return;
   await MARCA_LEIDAS; // las que se acaban de dar por vistas ya no salen como nuevas
-  const [lista, sinLeer] = await Promise.all([
+  const [lista, noLeidas] = await Promise.all([
     avisosParte(null),
-    sb.from('notifications').select('id', { count: 'exact', head: true }).is('read_at', null)
-      .then((r) => r.count).catch(() => null),
+    sinLeer().catch(() => null),
   ]);
-  const nuevos = sinLeer ?? lista.filter((n) => !n.read_at).length;
+  const nuevos = noLeidas ?? lista.filter((n) => !n.read_at).length;
   pinta(`
     <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(t('Notificaciones'))}</h1>
@@ -929,6 +932,7 @@ async function ajustesNotificaciones() {
     llamar('my_businesses', {}).catch(() => []),
     llamar('my_alert_words', {}).catch(() => null),
   ]);
+  const sorteosOn = await sorteosEnCuenta();
   // El resumen del negocio solo le llega a quien lo lleva (dueño o encargado).
   const llevaNegocio = Array.isArray(negocios) && negocios.some((b) => ['owner', 'manager'].includes(b.role));
   const hora = (v) => (v ? String(v).slice(0, 5) : '');
@@ -978,7 +982,8 @@ async function ajustesNotificaciones() {
     sw('artistas', KlendarArtistas.t(LANG).youFollow, prefs.notify_artists !== false, KlendarArtistas.t(LANG).whenNew),
     // Grupos y empresas y Sorteos (tanda C), detrás de los partidos, como la app.
     sw('grupos', 'Grupos y empresas', prefs.notify_groups !== false, 'Respuestas a tus peticiones y, si tienes un negocio, peticiones nuevas'),
-    sw('sorteos', 'Sorteos', prefs.notify_giveaways !== false, 'Resultados de los sorteos en los que participas. Si ganas, te avisamos siempre.'),
+    // Solo con los sorteos encendidos (app/sorteos.js).
+    sorteosOn ? sw('sorteos', 'Sorteos', prefs.notify_giveaways !== false, 'Resultados de los sorteos en los que participas. Si ganas, te avisamos siempre.') : '',
     // «Pedir un local» (crecer): cuando llega a Klendar uno que pediste.
     sw('quetal', '¿Qué tal? al día siguiente', prefs.notify_quetal !== false, 'Tras usar algo en un local, te pedimos tu reseña'),
     sw('pedidos', 'Locales que has pedido', prefs.notify_requests !== false, 'Cuando llega a Klendar un sitio que pediste'),
@@ -1045,7 +1050,7 @@ async function ajustesNotificaciones() {
         notify_teams: el.equipos.checked,
         notify_artists: el.artistas.checked,
         notify_groups: el.grupos.checked,
-        notify_giveaways: el.sorteos.checked,
+        ...(el.sorteos ? { notify_giveaways: el.sorteos.checked } : {}),
         notify_requests: el.pedidos.checked,
         notify_quetal: el.quetal.checked,
         notify_word_alerts: el.palabras.checked,

@@ -35,7 +35,7 @@ import { notFound } from './views.js';
 import KR from '../../assets/rrpp-enlace.js';
 import KS from '../../assets/textos-sorteos.js';
 import KZ from '../../assets/zona.js';
-import { sorteoPath } from './sorteos.js';
+import { sorteoPath, sorteosEncendidos } from './sorteos.js';
 
 const T = {
   es: {
@@ -202,7 +202,7 @@ export async function storyPage(kind, ref, lang, rpRaw = '', para = '') {
     // Un sorteo abierto (tanda C): antetítulo «SORTEO», el premio, «Termina
     // el …» y el negocio; el QR, a la página del sorteo (`?ref=stories`: la
     // visita cuenta para el negocio).
-    if (!isUuid(raw)) return notFound(lang, self, 'o');
+    if (!isUuid(raw) || !(await sorteosEncendidos())) return notFound(lang, self, 'o');
     const g = await rpc('giveaway_detail', { p_id: raw });
     if (!g || !g.id || g.status !== 'active' || KS.terminado(g)) return notFound(lang, self, 'o');
     const bz = g.business || {};

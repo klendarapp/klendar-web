@@ -63,9 +63,11 @@ function fielTarjeta({ icono: ic, titulo, frase, estado, on, detalle, boton, hre
 PAGES.fidelizar = async (v) => {
   // El estado de lo demás (sellos, bonos…) llega aparte: si falla, las
   // tarjetas salen igual, sin su línea de estado.
-  const [d, o] = await Promise.all([
+  const [d, o, conSorteos] = await Promise.all([
     fielRpc('business_loyalty', { p_business: BIZ.id }),
     typeof herrEstado === 'function' ? herrEstado() : null,
+    // «Sorteos», solo con el interruptor encendido (panel/sorteos.js).
+    typeof sorteosEnPanel === 'function' ? sorteosEnPanel() : false,
   ]);
   const c = d.coupon || {};
   const t = d.thanks || {};
@@ -171,7 +173,7 @@ PAGES.fidelizar = async (v) => {
     boton: configurar,
     href: '#/bonos',
   })}
-      ${fielTarjeta({
+      ${conSorteos ? fielTarjeta({
     icono: 'sorteo',
     titulo: bi('Sorteos', 'Giveaways'),
     frase: bi('Para darte a conocer: un sorteo gratis en el que participa quien te añade a favoritos.', 'To get known: a free giveaway people enter by adding you to their favourites.'),
@@ -179,7 +181,7 @@ PAGES.fidelizar = async (v) => {
     on: sorteos > 0,
     boton: bi('Abrir', 'Open'),
     href: '#/sorteos',
-  })}
+  }) : ''}
     </div>
     ${edit ? '' : fielLectura()}`;
 };

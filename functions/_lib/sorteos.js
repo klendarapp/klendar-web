@@ -43,9 +43,46 @@ const zonaDe = (g) => KZ.zona(g?.business?.time_zone || KZ.porCoordenadas(g?.bus
 /** Lo personal lo pone el navegador (solo con sesión). */
 const sorteoScript = (lang) => {
   const sp = supabasePublic();
-  return `<script src="/assets/textos-sorteos.js?v=4" defer></script>
+  return `<script src="/assets/textos-sorteos.js?v=5" defer></script>
 <script src="/assets/sorteo.js?v=3" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}" data-lang="${lang === 'en' ? 'en' : 'es'}"></script>`;
 };
+
+// ── El interruptor ────────────────────────────────────────────────────────
+// Al lanzar, los sorteos están apagados en todas partes (norma 5.3 de Apple;
+// `app_config.giveaways`, migración 20261243100000 de la app). Apagados en la
+// web: /sorteos/, /sorteo/<id> y sus bases dicen «Los sorteos no están
+// disponibles» (con salida a Descubre), y no salen en Explorar, en la ficha
+// ni en el sitemap. Se lee como mucho una vez por minuto en cada instancia.
+let INTERRUPTOR = { valor: null, hasta: 0 };
+export async function sorteosEncendidos() {
+  if (Date.now() < INTERRUPTOR.hasta) return KS.encendidos(INTERRUPTOR.valor, 'web');
+  let valor = INTERRUPTOR.valor;
+  try {
+    const r = await rows('app_config', 'select=value&key=eq.giveaways');
+    valor = Array.isArray(r) && r[0] ? r[0].value : null;
+  } catch { /* sin respuesta: lo último que se supo (al principio, apagados) */ }
+  INTERRUPTOR = { valor, hasta: Date.now() + 60_000 };
+  return KS.encendidos(valor, 'web');
+}
+
+/** «Los sorteos no están disponibles», con salida a Descubre. */
+function apagados(lang, path) {
+  const en = lang === 'en';
+  const S = KS.t(lang);
+  return html(publicPage({
+    lang, path, title: S.offTitle, description: S.offText,
+    head: `<meta name="robots" content="noindex">
+${GRUPOS_CSS}`,
+    actual: 'explorar',
+    body: `<p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a></p>
+  <section class="vacio">
+    <span class="vacio-ic" aria-hidden="true">${icSorteo(30)}</span>
+    <h1>${esc(S.offTitle)}</h1>
+    <p>${esc(S.offText)}</p>
+    <div class="vacio-botones"><a class="pill accent" href="${en ? '/en/discover/' : '/descubre/'}">${esc(S.offGo)}</a></div>
+  </section>`,
+  }), 200, 'public, max-age=60');
+}
 
 // ── La zona (como «Dónde ver el partido» y «Grupos y empresas») ────────────
 const CLAVES = { es: { city: 'ciudad', mine: 'mios' }, en: { city: 'city', mine: 'mine' } };
@@ -99,6 +136,7 @@ export async function sorteosPage(url, lang) {
   const en = lang === 'en';
   const S = KS.t(lang);
   const base = sorteosBase(lang);
+  if (!(await sorteosEncendidos())) return apagados(lang, `${base}/`);
   const e = leeEstado(url.searchParams);
   const [ciudades, ciudadesK] = await Promise.all([
     rpcAll('public_cities', {}),
@@ -209,6 +247,7 @@ export async function sorteoPage(rawId, url, lang) {
   const en = lang === 'en';
   const S = KS.t(lang);
   const id = String(rawId || '').toLowerCase();
+  if (!(await sorteosEncendidos())) return apagados(lang, sorteoPath(lang, isUuid(id) ? id : rawId));
   if (!isUuid(id)) return noEsta(lang, sorteoPath(lang, rawId));
   const path = sorteoPath(lang, id);
   const g = await rpc('giveaway_detail', { p_id: id });
@@ -299,6 +338,7 @@ export async function basesPage(rawId, lang) {
   const en = lang === 'en';
   const S = KS.t(lang);
   const id = String(rawId || '').toLowerCase();
+  if (!(await sorteosEncendidos())) return apagados(lang, basesPath(lang, isUuid(id) ? id : rawId));
   if (!isUuid(id)) return noEsta(lang, basesPath(lang, rawId));
   const path = basesPath(lang, id);
   const d = await rpc('giveaway_bases', { p_id: id, p_lang: en ? 'en' : 'es' });
@@ -324,6 +364,7 @@ export async function basesPage(rawId, lang) {
 /** Una tarjeta por sorteo abierto: «Sorteo: <premio> · termina el 14 de
  * octubre». '' si no hay. */
 export function sorteosEnFicha(lista, lang) {
+  // Apagados, `views.js` ya no los pide (y la base da la lista vacía).
   const S = KS.t(lang);
   const abiertos = (lista || []).filter((g) => g && isUuid(g.id) && g.status === 'active' && !KS.terminado(g));
   if (!abiertos.length) return '';
@@ -335,6 +376,7 @@ export function sorteosEnFicha(lista, lang) {
 
 /** Para el sitemap: los sorteos abiertos (todos; los +18 no). */
 export async function sorteosAbiertos() {
+  if (!(await sorteosEncendidos())) return [];
   const l = await rpcAll('giveaways_near', { p_lat: null, p_lng: null, p_radius_m: null, p_city: null, p_limit: 200 });
   return l.filter((g) => isUuid(g.id) && !g.adults_only);
 }
