@@ -99,7 +99,7 @@
     const S = T[en ? 'en' : 'es'];
     if (!info || info.ok !== true || !info.business) {
       return vacio(S, S.bad, S.badBody,
-        `<a class="pill accent" href="${en ? '/en/explore/' : '/explorar/'}">${esc(S.explore)}</a>`);
+        `<a class="pill accent" href="${en ? '/en/discover/' : '/descubre/'}">${esc(S.explore)}</a>`);
     }
     const b = info.business;
     const q = info.queue;
@@ -113,8 +113,9 @@
           ${dir ? `<p class="muted">${esc(dir)}</p>` : ''}</div>
       </header>`;
     const n = Number(q.waiting) || 0;
-    const espera = n === 0 ? ''
-      : `<p class="muted">${esc(q.wait_minutes != null ? S.wait(q.wait_minutes) : S.noPace)}</p>`;
+    // Siempre, también sin nadie, y redondeada como la app (`roundWait`).
+    const redondea = (m) => (m < 15 ? m : Math.floor((m + 2) / 5) * 5);
+    const espera = `<p class="muted">${esc(q.wait_minutes != null ? S.wait(redondea(q.wait_minutes)) : S.noPace)}</p>`;
     if (q.status !== 'open' || q.full) {
       const cerrada = q.status !== 'open';
       return `${cab}

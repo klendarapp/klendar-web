@@ -42,8 +42,11 @@ const colaEsperando = (n) => (EN
 const colaDelante = (n) => (EN
   ? (n === 0 ? "You're next" : n === 1 ? 'There is 1 person ahead of you' : `There are ${n} people ahead of you`)
   : (n === 0 ? 'Eres el siguiente' : n === 1 ? 'Tienes 1 persona delante' : `Tienes ${n} personas delante`));
+/** Los minutos de espera redondeados como la app (`roundWait`): tal cual por
+ * debajo de 15 y, desde ahí, de 5 en 5. */
+const colaRedondea = (m) => (m < 15 ? m : Math.floor((m + 2) / 5) * 5);
 const colaEspera = (m) => (m == null ? t('La espera aproximada sale cuando avancen los primeros')
-  : (EN ? `Estimated wait: about ${m} min` : `Espera aproximada: unos ${m} min`));
+  : (EN ? `Estimated wait: about ${colaRedondea(m)} min` : `Espera aproximada: unos ${colaRedondea(m)} min`));
 const colaAyuda = (x) => (EN ? `We'll let you know on your phone when it's your turn. You'll have ${x} minutes to get there.`
   : `Te avisamos en el móvil cuando te toque. Tendrás ${x} minutos para presentarte.`);
 
@@ -117,7 +120,8 @@ const colaCartelMalo = () => pinta(pantallaVacia({
   icono: 'qr_code_2', h: 'h1',
   titulo: t('Este cartel ya no funciona'),
   texto: t('Puede que el local lo haya cambiado. Pide el nuevo en la puerta.'),
-  botones: botonTuCuenta(),
+  // Como la página pública y la app: a ver qué hay cerca.
+  botones: `<a class="pill accent" href="${PUB_EN ? '/en/discover/' : '/descubre/'}">${esc(t('Ver qué hay cerca'))}</a>`,
 }));
 
 RUTAS.cola = async ([code]) => {
@@ -169,6 +173,7 @@ RUTAS.cola = async ([code]) => {
         <section class="cola-turno${llamado ? ' llamado' : ''}" aria-live="polite">
           ${llamado ? `<p class="cola-toca">${esc(t('¡Te toca!'))}</p>` : `<p class="cola-tu">${esc(t('Tu número'))}</p>`}
           <p class="cola-numero">${esc(colaNumero(me.number))}</p>
+          ${me.party_size ? `<p class="muted">${esc(EN ? (me.party_size === 1 ? '1 person' : `${me.party_size} people`) : (me.party_size === 1 ? '1 persona' : `${me.party_size} personas`))}</p>` : ''}
           ${llamado ? `
             <p class="cola-linea"><b>${esc(EN ? `Get to the door ${colaAntesDe(me.call_deadline, tz)}` : `Preséntate en la puerta ${colaAntesDe(me.call_deadline, tz)}`)}</b></p>
             <p class="cola-cuenta" id="cola-cuenta" aria-live="off">${esc(EN ? `You have ${colaQueda(me.call_deadline)} left` : `Te quedan ${colaQueda(me.call_deadline)}`)}</p>`
@@ -240,12 +245,13 @@ RUTAS.cola = async ([code]) => {
     pinta(`${cabecera(b)}
       <section class="cola-turno">
         <p class="cola-cuantos">${esc(colaEsperando(n))}</p>
-        ${n ? `<p class="muted">${esc(colaEspera(q.wait_minutes))}</p>` : ''}
+        <p class="muted">${esc(colaEspera(q.wait_minutes))}</p>
         ${YO ? `<form class="formu cola-form" id="f-cola" novalidate>
           <label>${esc(t('¿Cuántos sois?'))}<select name="party">${Array.from({ length: 20 }, (_, i) => `<option value="${i + 1}"${i + 1 === party ? ' selected' : ''}>${i + 1}</option>`).join('')}</select></label>
           <button class="pill accent" type="submit">${esc(t('Coger número'))}</button>
         </form>` : `<div class="cola-botones"><a class="pill accent" href="#/entrar?siguiente=${encodeURIComponent(`cola/${codigo}`)}">${esc(t('Entrar para coger número'))}</a></div>`}
         <p class="muted cola-ayuda">${esc(colaAyuda(q.call_minutes || 5))}</p>
+        ${b.adults_only ? `<p class="muted cola-ayuda">${esc(t('Solo para mayores de 18 años.'))}</p>` : ''}
       </section>`);
     const f = $('#f-cola');
     if (!f) return;
@@ -317,7 +323,7 @@ async function colaTarjetasHtml(turnos) {
       : [colaNumero(x.number),
         // Cada trozo por el diccionario: unidos con « · » ya no casan con él.
         x.ahead ? (EN ? `${x.ahead} ahead` : t(`${x.ahead} delante`)) : (EN ? "You're next" : t('Eres el siguiente')),
-        x.wait_minutes != null ? (EN ? `about ${x.wait_minutes} min` : t(`unos ${x.wait_minutes} min`)) : ''].filter(Boolean).join(' · ');
+        x.wait_minutes != null ? (EN ? `about ${colaRedondea(x.wait_minutes)} min` : t(`unos ${colaRedondea(x.wait_minutes)} min`)) : ''].filter(Boolean).join(' · ');
     return `<a class="ocard cola-tarjeta${x.status === 'called' ? ' llamado' : ''}" href="#/cola/${esc(x.code)}">
         ${b.logo_url ? `<img src="${esc(b.logo_url)}" alt="" loading="lazy">` : `<span class="ph">${COLA_SVG}</span>`}
         <span class="ocard-body"><b>${esc(EN ? `Your turn at ${b.name || ''}` : t(`Tu turno en ${b.name || ''}`))}</b>

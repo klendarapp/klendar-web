@@ -1253,4 +1253,7 @@ const APP_EN = {
   "Acércate y vuelve a escanear el QR.": "Get closer and scan the QR again.",
   "Cómo quieres que te vean en las reseñas": "How you want to appear in reviews",
   "Para comprobar tu edad y enseñarte lo adecuado a ella (y el regalo de cumpleaños de tus favoritos, si tienen). Revísala bien: una vez guardada, no se puede cambiar.": "To check your age and show you what suits it (and your favourites’ birthday gift, if they have one). Check it carefully: once saved, it can’t be changed.",
+  "1 persona": "1 person",
+  "{party_size} personas": "{party_size} people",
+  "Ver qué hay cerca": "See what's nearby",
 };

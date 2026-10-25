@@ -54,7 +54,8 @@ const listoCartelMalo = () => pinta(pantallaVacia({
   icono: 'qr_code_2', h: 'h1',
   titulo: t('Este cartel ya no funciona'),
   texto: t('Puede que el local lo haya cambiado. Pregunta en el mostrador.'),
-  botones: botonTuCuenta(),
+  // Como la página pública y la app: a ver qué hay cerca.
+  botones: `<a class="pill accent" href="${PUB_EN ? '/en/discover/' : '/descubre/'}">${esc(t('Ver qué hay cerca'))}</a>`,
 }));
 
 /** «Mientras esperas»: favoritos y lo de hoy del local (como mucho tres:

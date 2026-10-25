@@ -85,7 +85,7 @@
     const S = T[en ? 'en' : 'es'];
     if (!info || info.ok !== true || !info.business) {
       return vacio(S, S.bad, S.badBody,
-        `<a class="pill accent" href="${en ? '/en/explore/' : '/explorar/'}">${esc(S.explore)}</a>`);
+        `<a class="pill accent" href="${en ? '/en/discover/' : '/descubre/'}">${esc(S.explore)}</a>`);
     }
     const b = info.business;
     const verLocal = (cls) => `<a class="pill${cls ? ` ${cls}` : ''}" href="${esc(ficha(lang, b))}">${esc(S.venue)}</a>`;
