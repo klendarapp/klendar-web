@@ -486,6 +486,12 @@ def robots():
         'Disallow: /en/queue/',
         'Disallow: /cal/',  # «Tus planes en tu calendario»: enlaces secretos
         'Disallow: /legal/',
+        '# Explorar y Descubre con filtros: noindex y con canonical a la página sin',
+        '# filtros; las combinaciones son infinitas y cada una se pinta al momento.',
+        'Disallow: /explorar/?',
+        'Disallow: /descubre/?',
+        'Disallow: /en/explore/?',
+        'Disallow: /en/discover/?',
         '',
         f'Sitemap: {BASE}/sitemap.xml',
         f'Sitemap: {BASE}/sitemap-agenda.xml',
