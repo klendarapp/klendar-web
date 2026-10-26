@@ -132,8 +132,13 @@ body.con-hoja .tabbar { display: none; }
 
 /* ── Botones / píldoras ───────────────────────────────────────────────── */
 .pill { display: inline-flex; align-items: center; gap: 8px; padding: 12px 20px; border-radius: 999px; font-weight: 700; font-size: 15px;
-  border: 1px solid var(--glass-border); background: var(--glass); color: var(--ink); backdrop-filter: blur(12px); transition: transform .15s ease; }
-.pill:hover { text-decoration: none; transform: translateY(-1px); }
+  border: 1px solid var(--glass-border); background: var(--glass); color: var(--ink); backdrop-filter: blur(12px);
+  transition: transform var(--mov-rapido) var(--mov-entra); -webkit-tap-highlight-color: transparent; }
+.pill:hover { text-decoration: none; }
+/* El saltito al pasar por encima, solo con ratón (en el móvil se quedaba
+   puesto después de tocar). Al pulsar, baja un poco (como en la app). */
+@media (hover: hover) { .pill:hover { transform: translateY(-1px); } }
+.pill:active:not([aria-disabled="true"]):not(:disabled) { transform: scale(var(--mov-escala)); transition-duration: var(--mov-pulsar); }
 .pill.accent { background: var(--accent); color: var(--on-accent); border-color: transparent; }
 .pill.ink { background: var(--ink); color: var(--surface); border-color: transparent; }
 .pill[aria-disabled="true"] { opacity: .65; cursor: default; }
@@ -251,13 +256,82 @@ mark.tbd { background: rgba(255,184,77,.35); color: inherit; padding: 0 4px; bor
 .open img.logo { width: 72px; height: 72px; border-radius: 22px; margin: 0 auto; }
 .open h1 { font-size: 26px; letter-spacing: -.6px; margin: 16px 0 6px; }
 
+/* ══ Movimiento (2026-10-27) ═════════════════════════════════════════════
+   Las mismas duraciones y curvas que la app (lib/core/theme/motion.dart) y
+   las mismas reglas (docs/GLOSARIO.md, «Aspecto → Movimiento»): corto
+   (100–300 ms), con un porqué, que se pueda interrumpir, que nunca haga
+   esperar y que no tape la publicación. Solo `transform` y `opacity` (nada
+   que obligue a recolocar la página en cada cuadro). Con «Reducir
+   movimiento» (abajo), nada.
+   Piezas: `.mov-entra` (lo de dentro entra escalonado), `.mov-llega` (uno
+   que acaba de llegar), `.mov-late` (un latido al encenderse), `.mov-sale`
+   (los avisos al irse). En «Tu cuenta», `movEntra`, `movOcultaAviso` y
+   `movPliega` (plegar una fila al quitarla) en /app/app.js. */
+:root {
+  --mov-pulsar: 100ms; --mov-rapido: 150ms; --mov-base: 200ms; --mov-lento: 280ms; --mov-escalon: 30ms;
+  --mov-entra: cubic-bezier(.23, 1, .32, 1); --mov-sale: cubic-bezier(.4, 0, 1, 1);
+  --mov-mueve: cubic-bezier(.65, 0, .35, 1); --mov-rebote: cubic-bezier(.34, 1.56, .64, 1);
+  --mov-escala: .97;
+}
+@keyframes mov-sube { from { opacity: 0; transform: translateY(8px); } }
+@keyframes mov-funde { from { opacity: 0; } }
+@keyframes mov-crece { from { opacity: 0; transform: scale(.96); } }
+@keyframes mov-pop { from { transform: scale(.85); } }
+@keyframes mov-late { 35% { transform: scale(1.18); } }
+@keyframes mov-tiembla { 20% { transform: translateX(-4px); } 45% { transform: translateX(4px); } 70% { transform: translateX(-2px); } 90% { transform: translateX(1px); } }
+@keyframes mov-traza { from { stroke-dashoffset: 1; } }
+@keyframes mov-cae { 0% { opacity: 0; transform: translateY(-6px) scale(1.6); } 40% { opacity: 1; } }
+@keyframes mov-aviso { from { opacity: 0; transform: translate(-50%, 12px) scale(.96); } }
+
+/* Lo que entra en pantalla (una vista nueva de «Tu cuenta», una lista que
+   llega): sube 8 px con un fundido, escalonado de 30 en 30 ms (como mucho
+   seis pasos). */
+.mov-entra > * { animation: mov-sube var(--mov-base) var(--mov-entra) both; }
+.mov-entra > :nth-child(2) { animation-delay: calc(var(--mov-escalon) * 1); }
+.mov-entra > :nth-child(3) { animation-delay: calc(var(--mov-escalon) * 2); }
+.mov-entra > :nth-child(4) { animation-delay: calc(var(--mov-escalon) * 3); }
+.mov-entra > :nth-child(5) { animation-delay: calc(var(--mov-escalon) * 4); }
+.mov-entra > :nth-child(6) { animation-delay: calc(var(--mov-escalon) * 5); }
+.mov-entra > :nth-child(n+7) { animation-delay: calc(var(--mov-escalon) * 6); }
+.mov-llega { animation: mov-sube var(--mov-base) var(--mov-entra) both; }
+.mov-late { animation: mov-late var(--mov-lento) var(--mov-rebote); }
+
+/* La pestaña recién elegida: su icono crece un instante. Al pulsar, baja. */
+.tab svg, .pestana svg { transition: transform var(--mov-rapido) var(--mov-entra); }
+.tab:active svg, .pestana:active svg { transform: scale(.9); transition-duration: var(--mov-pulsar); }
+.tab[aria-current="page"] svg { animation: mov-pop var(--mov-lento) var(--mov-rebote); }
+
+/* Avisos de abajo («Guardado», «Copiado», «Deshacer»): entran subiendo y se
+   van con un fundido. */
+.toast:not([hidden]), .am-toast:not([hidden]) { animation: mov-aviso var(--mov-base) var(--mov-entra); }
+.toast.mov-sale, .am-toast.mov-sale { opacity: 0; transform: translate(-50%, 6px);
+  transition: opacity var(--mov-rapido) var(--mov-sale), transform var(--mov-rapido) var(--mov-sale); }
+
+/* Diálogos: crecen del 96 % con un fundido; el velo de detrás, fundido. */
+.dialogo[open], .sorteo-dialogo[open], dialog.modal[open] { animation: mov-crece var(--mov-base) var(--mov-entra); }
+.dialogo[open]::backdrop, .sorteo-dialogo[open]::backdrop, dialog.modal[open]::backdrop { animation: mov-funde var(--mov-base) var(--mov-entra); }
+
+/* El mapa: la hoja del sitio sube desde abajo y la tarjeta de una chincheta
+   crece (como la tarjeta del mapa en la app). */
+.hoja-lugar { animation: mov-sube var(--mov-base) var(--mov-entra); }
+.mapboxgl-popup .pop-caja { animation: mov-crece var(--mov-base) var(--mov-entra); }
+
+/* Las fichas de las listas: bajan un poco al pulsarlas (un 2 %: son grandes). */
+.ocard, .tj:not(.tj--pantalla) { transition: transform var(--mov-rapido) var(--mov-entra); }
+.ocard:active, .tj:not(.tj--pantalla):active { transform: scale(.98); transition-duration: var(--mov-pulsar); }
+
 /* Movimiento reducido: sin animaciones ni desplazamientos suaves (también
    el saltito de los botones al pasar por encima). */
 @media (prefers-reduced-motion: reduce) {
   .float { animation: none; } html { scroll-behavior: auto; }
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important;
     transition-duration: .01ms !important; scroll-behavior: auto !important; }
-  .pill:hover { transform: none; }
+  .pill:hover, .pill:active { transform: none; }
+  /* Lo de Movimiento, sin retrasos: aparece todo a la vez y quieto. */
+  .mov-entra > *, .mov-llega, .mov-late, .tab[aria-current="page"] svg, .toast, .am-toast,
+  .hoja-lugar, .mapboxgl-popup .pop-caja,
+  .dialogo[open], .sorteo-dialogo[open], dialog.modal[open] { animation: none !important; }
+  .ocard:active, .tj:not(.tj--pantalla):active, .tab:active svg, .pestana:active svg { transform: none; }
 }
 
 /* Acceso al panel del negocio: se distingue del resto del menú sin gritar. */

@@ -231,7 +231,7 @@ function resultadoPedido(r) {
   if (r.status === 'exists') {
     pinta(`
       <div class="ticket">
-        <p class="hecho-ic" aria-hidden="true">✓</p>
+        <p class="hecho-ic" aria-hidden="true">${MARCA_HECHO}</p>
         <h1>${esc(EN ? `${r.business_name} is already on Klendar` : `${r.business_name} ya está en Klendar`)}</h1>
         <p class="muted">${esc(t('No hace falta pedirlo: mira su ficha y lo que publica.'))}</p>
         <p class="acciones">
@@ -253,7 +253,7 @@ function resultadoPedido(r) {
       : (EN ? `${n} people are now asking for ${nombre}. If it joins Klendar, we'll let you know.` : `Ya sois ${n} personas pidiendo ${nombre}. Si llega a Klendar, te avisamos.`);
   pinta(`
     <div class="ticket">
-      <p class="hecho-ic" aria-hidden="true">✓</p>
+      <p class="hecho-ic" aria-hidden="true">${MARCA_HECHO}</p>
       <h1>${esc(titulo)}</h1>
       <p class="muted">${esc(texto)}</p>
       <p class="acciones">

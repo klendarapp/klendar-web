@@ -99,9 +99,15 @@
     }
     aviso.textContent = msg;
     aviso.classList.toggle('bad', !!malo);
+    aviso.classList.remove('mov-sale');
     aviso.hidden = false;
     clearTimeout(toast.t);
-    toast.t = setTimeout(function () { aviso.hidden = true; }, malo ? 6000 : 3500);
+    // Se va con un fundido corto (Movimiento, /assets/site.css).
+    toast.t = setTimeout(function () {
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches) { aviso.hidden = true; return; }
+      aviso.classList.add('mov-sale');
+      toast.t = setTimeout(function () { aviso.hidden = true; aviso.classList.remove('mov-sale'); }, 150);
+    }, malo ? 6000 : 3500);
   }
   function carga(src, integrity) {
     return new Promise(function (ok, ko) {

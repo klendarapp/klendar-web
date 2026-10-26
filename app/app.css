@@ -6,6 +6,9 @@
 /* Mientras llega la primera pantalla, el pie espera: pintado debajo del
    «Cargando…», saltaría hacia abajo al llegar la cuenta (CLS 0,72). */
 body:has(#view > .cargando) footer { display: none; }
+/* «Cargando…» sale solo si tarda (más de 300 ms): así no parpadea. */
+#view > .cargando { animation: mov-funde var(--mov-base) var(--mov-entra) 300ms backwards; }
+@media (prefers-reduced-motion: reduce) { #view > .cargando { animation: none; } }
 .formu { display: grid; gap: 16px; margin: 18px 0; }
 .formu label { display: grid; gap: 6px; font-weight: 600; font-size: 15px; }
 .formu label small { font-weight: 400; color: var(--ink-2); }
@@ -62,6 +65,19 @@ body:has(#view > .cargando) footer { display: none; }
 
 .hecho-ic { width: 64px; height: 64px; margin: 24px auto 0; border-radius: 50%; display: grid;
   place-items: center; font-size: 30px; font-weight: 800; background: var(--ink); color: var(--surface); }
+/* Movimiento (como la app): el círculo crece con un pequeño rebote y la
+   marca de «hecho» se dibuja de un trazo. */
+.hecho-ic { animation: mov-pop var(--mov-lento) var(--mov-rebote); }
+.hecho-ic svg path { fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round;
+  stroke-dasharray: 1; animation: mov-traza 240ms var(--mov-entra) 120ms backwards; }
+/* El QR aparece suave (fundido y del 96 % al 100 %). */
+.qr { animation: mov-crece var(--mov-lento) var(--mov-entra); }
+/* Un sello nuevo cae en su hueco; si completa la tarjeta, la fila late. */
+.huecos span.cae { animation: mov-cae var(--mov-lento) var(--mov-rebote) 150ms backwards; }
+.huecos.completa { animation: mov-late var(--mov-lento) var(--mov-rebote) 450ms; transform-origin: left center; }
+@media (prefers-reduced-motion: reduce) {
+  .hecho-ic, .hecho-ic svg path, .qr, .huecos span.cae, .huecos.completa { animation: none; }
+}
 /* Confirmaciones y códigos (centrados): los botones uno debajo de otro y del
    ancho del más largo, como en las pantallas vacías (nada de filas
    desiguales). */
@@ -684,3 +700,5 @@ a.pl-dia:hover { background: var(--soft); }
 .escaner-marco { position: absolute; inset: 50% auto auto 50%; width: 62%; aspect-ratio: 1; transform: translate(-50%, -50%);
   border: 3px solid rgba(255, 255, 255, .75); border-radius: 28px; }
 .sello-canje { margin-top: 16px; text-align: left; }
+.sello-canje .huecos { margin: 8px 0 0; gap: 6px; }
+.sello-canje .huecos span { width: 18px; height: 18px; }

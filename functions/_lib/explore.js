@@ -1769,7 +1769,7 @@ export async function explorePage(url, lang, modo = 'explorar') {
       <a href="${esc(`/app/${en ? '?lang=en' : ''}#/avisame-palabra?palabra=${encodeURIComponent(palabra)}`)}">
         ${ic('campana', 22)}<span><b>${esc(S.alertWord(palabra))}</b><small>${esc(S.alertWordHint)}</small></span></a>
     </div>
-    <script src="/assets/palabras.js?v=1" defer data-lang="${en ? 'en' : 'es'}" data-url="${esc(supabasePublic().url)}" data-key="${esc(supabasePublic().key)}"></script>` : '';
+    <script src="/assets/palabras.js?v=2" defer data-lang="${en ? 'en' : 'es'}" data-url="${esc(supabasePublic().url)}" data-key="${esc(supabasePublic().key)}"></script>` : '';
   const final = sinKlendar ? sinKlendarHtml({ S, lang, lat, lng, cobertura, link })
     : alFinal || vacio ? finalHtml({
       S, en, lang, cerca, km, city, filtros: conFiltros, link, page, sugerencias, vacio, alertaHref,

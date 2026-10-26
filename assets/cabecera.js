@@ -129,6 +129,25 @@
     try { sessionStorage.setItem('klendar.intencion', JSON.stringify({ r: ruta, t: Date.now() })); } catch { /* sin almacenamiento */ }
   }, true);
 
+  // Movimiento (como el corazón de la app): un botón que se enciende en su
+  // sitio («Seguir» → «Siguiendo», aria-pressed) late un instante. Al
+  // apagarse, nada; con «Reducir movimiento», nada. Los filtros, aparte.
+  if (window.MutationObserver && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    new MutationObserver((cambios) => {
+      for (const c of cambios) {
+        const b = c.target;
+        if (!(b instanceof Element) || !b.classList.contains('pill') || c.oldValue === 'true'
+          || b.getAttribute('aria-pressed') !== 'true' || b.closest('.hoja, .donde-modos, .selcat-ops')) continue;
+        b.classList.remove('mov-late');
+        void b.offsetWidth;
+        b.classList.add('mov-late');
+      }
+    }).observe(document.documentElement, { subtree: true, attributes: true, attributeFilter: ['aria-pressed'], attributeOldValue: true });
+    document.addEventListener('animationend', (e) => {
+      if (e.animationName === 'mov-late' && e.target instanceof Element) e.target.classList.remove('mov-late');
+    });
+  }
+
   // El menú del móvil se cierra con Escape y el foco vuelve a su botón.
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;

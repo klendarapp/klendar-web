@@ -39,6 +39,51 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({
 }[c]));
 const view = $('#view');
 
+// ── Movimiento (como la app; las reglas, en /assets/site.css «Movimiento») ──
+// Solo transform y opacidad; con «Reducir movimiento», nada.
+const QUIETO = matchMedia('(prefers-reduced-motion: reduce)');
+/** Lo de dentro de `el` entra escalonado (una pantalla nueva). */
+function movEntra(el) {
+  el.classList.remove('mov-entra');
+  if (QUIETO.matches) return;
+  void el.offsetWidth; // vuelve a empezar la animación
+  el.classList.add('mov-entra');
+  clearTimeout(movEntra.t);
+  // Después se quita: lo que se pinte luego dentro ya no entra animado.
+  movEntra.t = setTimeout(() => el.classList.remove('mov-entra'), 600);
+}
+/** Esconde un aviso con un fundido corto. */
+function movOcultaAviso(el) {
+  clearTimeout(movOcultaAviso.t);
+  if (QUIETO.matches || el.hidden) { el.hidden = true; return; }
+  el.classList.add('mov-sale');
+  movOcultaAviso.t = setTimeout(() => { el.hidden = true; el.classList.remove('mov-sale'); }, 150);
+}
+/** Quita una fila (o una píldora) sin salto: se funde y las de después se
+ * van a su sitio nuevo (con transform, sin recolocar la página en cada
+ * cuadro). */
+function movPliega(el) {
+  return new Promise((listo) => {
+    const debajo = [];
+    for (let n = el.nextElementSibling; n; n = n.nextElementSibling) debajo.push(n);
+    if (QUIETO.matches || !el.animate) { el.remove(); listo(); return; }
+    el.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(.98)' }],
+      { duration: 150, easing: 'cubic-bezier(.4, 0, 1, 1)', fill: 'forwards' }).finished.then(() => {
+      const antes = debajo.map((n) => n.getBoundingClientRect());
+      el.remove();
+      debajo.forEach((n, i) => {
+        const r = n.getBoundingClientRect();
+        const dx = antes[i].left - r.left;
+        const dy = antes[i].top - r.top;
+        if (dx || dy) n.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }], { duration: 200, easing: 'cubic-bezier(.65, 0, .35, 1)' });
+      });
+      listo();
+    }, () => { el.remove(); listo(); });
+  });
+}
+/** La marca de «hecho» (✓) que se dibuja de un trazo. */
+const MARCA_HECHO = '<svg viewBox="0 0 24 24" width="32" height="32" aria-hidden="true"><path pathLength="1" d="M5 12.5l4.6 4.5L19 7.4"/></svg>';
+
 // ── Idioma: solo queda la cabecera y el pie que tocan ─────────────────────
 // Se quitan del documento los del otro idioma (no basta con ocultarlos: el
 // menú del móvil va por un id y habría dos iguales). En un idioma nuevo se
@@ -127,9 +172,11 @@ function toast(msg, malo = false) {
   const el = $('#toast');
   el.textContent = msg;
   el.className = `toast${malo ? ' bad' : ''}`;
+  el.classList.remove('mov-sale');
+  clearTimeout(movOcultaAviso.t);
   el.hidden = false;
   clearTimeout(toast.t);
-  toast.t = setTimeout(() => { el.hidden = true; }, malo ? 6000 : 3500);
+  toast.t = setTimeout(() => movOcultaAviso(el), malo ? 6000 : 3500);
 }
 
 /** Un aviso con «Deshacer» (como el de la app al quitar un favorito). */
@@ -137,10 +184,11 @@ function toastDeshacer(msg, alDeshacer) {
   const el = $('#toast');
   el.innerHTML = `<span>${esc(msg)}</span> <button type="button" class="toast-accion">${esc(t('Deshacer'))}</button>`;
   el.className = 'toast';
+  clearTimeout(movOcultaAviso.t);
   el.hidden = false;
   clearTimeout(toast.t);
-  el.querySelector('button').onclick = () => { el.hidden = true; alDeshacer(); };
-  toast.t = setTimeout(() => { el.hidden = true; }, 6000);
+  el.querySelector('button').onclick = () => { movOcultaAviso(el); alDeshacer(); };
+  toast.t = setTimeout(() => movOcultaAviso(el), 6000);
 }
 
 /** Lo que devuelve la base, contado para quien usa la app, no para quien la
@@ -427,6 +475,10 @@ async function navegar() {
   }
   const nombre = partes[0] || '';
   const pagina = RUTAS[nombre] || RUTAS[''];
+  // Cambiar de vista (Lista ↔ Calendario) también es una pantalla nueva.
+  const ruta = `${partes.join('/')}?${params?.get('vista') || ''}`;
+  movNueva = ruta !== movRuta;
+  movRuta = ruta;
   window.scrollTo(0, 0);
   try {
     await pagina(partes.slice(1), params, crudo);
@@ -458,7 +510,15 @@ document.addEventListener('click', (ev) => {
   navegar();
 });
 
-const pinta = (html) => { view.innerHTML = html; };
+/** Pinta la pantalla. La primera vez que se pinta una ruta nueva, lo de
+ * dentro entra escalonado (como al abrir una pantalla en la app); al
+ * repintar la misma (tras guardar algo), quieta. */
+let movRuta = null;
+let movNueva = false;
+const pinta = (html) => {
+  view.innerHTML = html;
+  if (movNueva) { movNueva = false; movEntra(view); } else view.classList.remove('mov-entra');
+};
 /** Ir a otra ruta. Si ya estás en ella, el navegador no avisa del cambio:
  * se vuelve a pintar a mano (si no, al entrar se quedaba el formulario). */
 const vuelve = (siguiente) => {
@@ -1566,7 +1626,7 @@ RUTAS.planes = async (_partes, params = new URLSearchParams()) => {
 function hecho({ titulo, texto, volver, volverTxt, lista, listaTxt, deshacer }) {
   pinta(`
     <div class="ticket">
-      <p class="hecho-ic" aria-hidden="true">✓</p>
+      <p class="hecho-ic" aria-hidden="true">${MARCA_HECHO}</p>
       <h1>${esc(titulo)}</h1>
       ${texto ? `<p class="muted">${esc(texto)}</p>` : ''}
       <p class="acciones">
@@ -1638,6 +1698,8 @@ const distanciaTxt = (m) => (m < 1000 ? `${Math.max(10, Math.round(m / 10) * 10)
 // Favoritos, como la app: «Lo nuevo de tus favoritos» (hasta 5), «N negocios
 // en favoritos» con la categoría y la distancia (u «Organiza en distintos
 // sitios») y ♥ para quitar, con «Deshacer».
+/** El favorito que acaba de volver con «Deshacer»: entra animado. */
+let favVuelve = null;
 RUTAS.favoritos = async () => {
   if (!exigeSesion('favoritos')) return;
   const pos = ultimaPosicion();
@@ -1664,6 +1726,8 @@ RUTAS.favoritos = async () => {
   const nuevas = (nuevo || []).slice(0, 5);
   const n = lista.length;
   const zona = await zonasDe(nuevas);
+  const llega = favVuelve;
+  favVuelve = null;
   const filaNegocio = (b) => {
     const org = organiza.has(b.id);
     const meta = [catDe.get(b.category_id), org ? t('Organiza en distintos sitios') : '',
@@ -1672,7 +1736,7 @@ RUTAS.favoritos = async () => {
       b.active_flash ? cuantas(b.active_flash, ['1 oferta activa', 'ofertas activas'], ['1 active offer', 'active offers']) : '',
       b.upcoming_events ? cuantas(b.upcoming_events, ['1 evento próximo', 'eventos próximos'], ['1 upcoming event', 'upcoming events']) : '',
     ].filter(Boolean).join(' · ');
-    return `<div class="fav-fila" data-fav-fila="${esc(b.id)}">
+    return `<div class="fav-fila${b.id === llega ? ' mov-llega' : ''}" data-fav-fila="${esc(b.id)}">
       <a class="ocard" href="${pre}/b/${esc(b.id)}">
         ${b.logo ? `<img src="${esc(b.logo)}" alt="" loading="lazy">` : '<span class="ph">✦</span>'}
         <span class="ocard-body"><b>${esc(b.name)}</b>
@@ -1699,8 +1763,13 @@ RUTAS.favoritos = async () => {
         await llamar('toggle_favorite', { p_business_id: id });
         toastDeshacer(EN ? `${nombre} removed from favourites` : `${nombre} quitado de favoritos`, async () => {
           try { await llamar('toggle_favorite', { p_business_id: id }); } catch (e) { toast(e.message || String(e), true); }
+          // Al deshacer, vuelve a su sitio entrando.
+          favVuelve = id;
           if (location.hash.startsWith('#/favoritos')) navegar();
         });
+        // La fila se pliega (las de debajo suben) y luego se repinta todo.
+        const fila = boton.closest('.fav-fila');
+        if (fila) await movPliega(fila);
         navegar();
       } catch (e) { boton.disabled = false; toast(e.message || String(e), true); }
     });
@@ -2079,7 +2148,7 @@ function pintaCanjeado({ titulo, negocio, benef, at, volver = '#/codigos', tz, c
   const hora = fecha(at, { hour: '2-digit', minute: '2-digit' }, tz);
   pinta(`
     <div class="ticket canjeado" role="status">
-      <p class="hecho-ic" aria-hidden="true">✓</p>
+      <p class="hecho-ic" aria-hidden="true">${MARCA_HECHO}</p>
       <h1>${esc(t('¡Canjeado!'))}</h1>
       <p><b>${esc(titulo || '')}</b></p>
       ${negocio ? `<p class="muted">${esc(negocio)}</p>` : ''}
@@ -2113,7 +2182,9 @@ async function sellosDelCanje(code) {
       return `<a class="ocard sello-canje" href="#/sellos">
         <span class="ph">${ic('local_activity')}</span>
         <span class="ocard-body"><b>${esc(EN ? `One more stamp on ${card}: ${count} of ${goal}` : `Un sello más en ${card}: llevas ${count} de ${goal}`)}</b>
-          <span class="muted">${esc(listo ? t('¡Te toca premio!') : falta === 1 ? t('Te falta 1 sello') : (EN ? `${falta} stamps to go` : `Te faltan ${falta} sellos`))}</span></span></a>`;
+          <span class="muted">${esc(listo ? t('¡Te toca premio!') : falta === 1 ? t('Te falta 1 sello') : (EN ? `${falta} stamps to go` : `Te faltan ${falta} sellos`))}</span>
+          ${goal <= 20 ? `<span class="huecos${count >= goal ? ' completa' : ''}" aria-hidden="true">${Array.from({ length: goal }, (_, i) =>
+            `<span class="${i < count ? 'lleno' : ''}${i === count - 1 ? ' cae' : ''}"></span>`).join('')}</span>` : ''}</span></a>`;
     }).join('');
   } catch { /* sin red: el canje, sin la línea del sello */ }
 }

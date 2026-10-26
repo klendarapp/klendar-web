@@ -160,7 +160,7 @@ export async function gruposPage(url, lang) {
     <p class="exp-atajo"><a href="${esc(`${cuentaBase(lang)}#/grupos`)}">${esc(S.yourRequests)}</a></p></div></div>
   ${barra}
   ${cuerpo}
-  <script src="/assets/grupos.js?v=1" defer></script>`;
+  <script src="/assets/grupos.js?v=2" defer></script>`;
 
   const filtrada = Boolean(e.city || e.cerca || e.kind || e.people || e.km !== 10);
   const migas = [['Klendar', en ? '/en/' : '/'], [S.title, `${base}/`]];

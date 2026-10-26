@@ -110,7 +110,13 @@ const toast = (msg, bad = false) => {
   const t = document.createElement('div');
   t.className = 'toast' + (bad ? ' bad' : ''); t.textContent = I18N.t(msg);
   $('#toasts').appendChild(t);
-  setTimeout(() => t.remove(), bad ? 6000 : 3500);
+  // Se va con un fundido corto (sin él con «Reducir movimiento»).
+  const quita = () => {
+    if (!t.animate || matchMedia('(prefers-reduced-motion: reduce)').matches) { t.remove(); return; }
+    t.animate([{ opacity: 1 }, { opacity: 0, transform: 'translateY(6px)' }], { duration: 150, easing: 'cubic-bezier(.4, 0, 1, 1)' })
+      .finished.then(() => t.remove(), () => t.remove());
+  };
+  setTimeout(quita, bad ? 6000 : 3500);
 };
 const ERRORS = {
   invalid_name: 'Pon el nombre del negocio (dos letras como mínimo).',

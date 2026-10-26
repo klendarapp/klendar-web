@@ -849,7 +849,7 @@ RUTAS.ajustes = async ([sub]) => {
     ocupado(boton, async () => {
       await llamar('delete_my_account', {});
       try { await sb.auth.signOut({ scope: 'local' }); } catch { /* la sesión ya no existe */ }
-      pinta(`<div class="ticket"><p class="hecho-ic" aria-hidden="true">✓</p>
+      pinta(`<div class="ticket"><p class="hecho-ic" aria-hidden="true">${MARCA_HECHO}</p>
         <h1>${esc(t('Tu cuenta se ha eliminado'))}</h1>
         <p class="muted">${esc(t('Gracias por haber usado Klendar. Si algún día vuelves, aquí estaremos.'))}</p>
         <p><a class="pill accent" href="${pre}/">${esc(t('Ir al inicio'))}</a></p></div>`);
@@ -1147,6 +1147,7 @@ async function anadePalabra(palabra) {
 /** Dónde vale «cerca», las palabras con su ✕, «Añadir palabra» y «3 de 10».
  * Como `AlertWordsEditor` de la app. */
 function editorPalabras(caja, datos) {
+  let palabraNueva = null;
   const pintaPalabras = (d) => {
     const lista = (d?.words || []).map((w) => w.word);
     const max = d?.max || 10;
@@ -1164,7 +1165,7 @@ function editorPalabras(caja, datos) {
     caja.innerHTML = `
       <p class="muted nota">${esc(zona)}</p>
       <div class="palabras">
-        ${lista.map((w) => `<span class="palabra">${esc(w)}<button type="button" class="palabra-x" data-quita="${esc(w)}"
+        ${lista.map((w) => `<span class="palabra${w === palabraNueva ? ' mov-llega' : ''}">${esc(w)}<button type="button" class="palabra-x" data-quita="${esc(w)}"
           aria-label="${esc(EN ? `Remove “${w}”` : `Quitar «${w}»`)}">×</button></span>`).join('')}
       </div>
       ${lista.length < max ? `<div class="palabras-nueva">
@@ -1178,7 +1179,8 @@ function editorPalabras(caja, datos) {
     const anade = async () => {
       const w = campo.value.trim();
       if (!w) { campo.focus(); return; }
-      if (await anadePalabra(w)) await recarga();
+      // La recién añadida entra animada (como en la app).
+      if (await anadePalabra(w)) { palabraNueva = w; await recarga(); palabraNueva = null; }
       caja.querySelector('#palabra-nueva')?.focus();
     };
     caja.querySelector('#palabra-anade')?.addEventListener('click', (ev) => ocupado(ev.currentTarget, anade));
@@ -1186,11 +1188,16 @@ function editorPalabras(caja, datos) {
     caja.querySelectorAll('[data-quita]').forEach((b) => b.addEventListener('click', () => ocupado(b, async () => {
       const w = b.dataset.quita;
       await llamar('remove_alert_word', { p_word: w });
-      // Con «Deshacer», como la app: la vuelve a añadir.
+      // Con «Deshacer», como la app: la vuelve a añadir (y entra animada).
       toastDeshacer(EN ? `No more alerts for “${w}”` : `Ya no te avisamos de «${w}»`, async () => {
         try { await llamar('add_alert_word', { p_word: w }); } catch (e) { toast(e.message, true); }
+        palabraNueva = w;
         await recarga();
+        palabraNueva = null;
       });
+      // La píldora se va y las de al lado se recolocan suave.
+      const pildora = b.closest('.palabra');
+      if (pildora) await movPliega(pildora);
       await recarga();
     })));
   };
@@ -2229,7 +2236,7 @@ RUTAS['ultimo-paso'] = async (_p, params) => {
         await llamar('delete_my_account', {});
         try { await sb.auth.signOut({ scope: 'local' }); } catch { /* la sesión ya no existe */ }
         CONSENTIMIENTO = { ...SIN_PASOS };
-        pinta(`<div class="ticket"><p class="hecho-ic" aria-hidden="true">✓</p>
+        pinta(`<div class="ticket"><p class="hecho-ic" aria-hidden="true">${MARCA_HECHO}</p>
           <h1>${esc(t('Tu cuenta se ha eliminado'))}</h1>
           <p class="muted">${esc(t('Gracias por haber usado Klendar. Si algún día vuelves, aquí estaremos.'))}</p>
           <p><a class="pill accent" href="${pre}/">${esc(t('Ir al inicio'))}</a></p></div>`);

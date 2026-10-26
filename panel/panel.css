@@ -95,6 +95,13 @@
   .scan-result.bad { color: #FF9B9B; }
 }
 .scan-result small { display: block; font-weight: 500; margin-top: 4px; opacity: .85; }
+/* Movimiento (como la app): el resultado de validar entra creciendo; el
+   icono de «Validado» crece con un pequeño rebote y uno que no vale tiembla
+   un instante. */
+#result > .scan-result { animation: mov-crece var(--mov-base) var(--mov-entra); }
+#result > .scan-result.ok > .ms:first-child { display: inline-block; animation: mov-pop var(--mov-lento) var(--mov-rebote); }
+#result > .scan-result.bad { animation: mov-crece var(--mov-base) var(--mov-entra), mov-tiembla 300ms var(--mov-mueve) 120ms; }
+@media (prefers-reduced-motion: reduce) { #result > .scan-result, #result > .scan-result .ms { animation: none; } }
 
 /* Orden y vídeos en la galería del formulario */
 .photos .ph-video {
