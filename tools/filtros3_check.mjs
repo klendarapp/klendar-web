@@ -74,6 +74,8 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     const nombres = [await casillas.nth(0).evaluate((i) => i.nextElementSibling.textContent), await casillas.nth(1).evaluate((i) => i.nextElementSibling.textContent)];
     await casillas.nth(0).check({ force: true });
     await casillas.nth(1).check({ force: true });
+    // Como una persona: «Ver N resultados» se pone al día antes de pulsarlo.
+    await page.waitForTimeout(900);
     await Promise.all([page.waitForURL(/categoria=.*categoria=/), page.locator('#que-hoja button[type=submit]').click()]);
     const pQue = await page.locator('#que-hoja > summary').innerText();
     ok(nombres.every((n) => pQue.includes(n.trim().slice(0, 6))) || /…/.test(pQue) || pQue.length > 10, `${t} ¿Qué? con dos categorías: «${pQue.trim()}»`);

@@ -552,6 +552,9 @@
     var ver = f.querySelector('[data-ver-n]');
     var espera = null;
     var pedido = 0;
+    // Al mandar la hoja, la cuenta pendiente ya no hace falta (y no se queda
+    // a medias al cambiar de página).
+    f.addEventListener('submit', function () { clearTimeout(espera); pedido++; });
     f.addEventListener('change', function () {
       // «Edad de los niños» solo con «Con niños» marcado (y sin él se
       // desmarca: la base no la usaría).
