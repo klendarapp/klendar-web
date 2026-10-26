@@ -285,7 +285,7 @@
             // Sitios distintos cerca: agrupados hasta el zoom 16 (desde el 17,
             // cada uno solo), como la app; la cifra, cuántos sitios.
             m.addSource('sitios', {
-              type: 'geojson', data: geo, cluster: true, clusterMaxZoom: 16, clusterRadius: 36,
+              type: 'geojson', data: geo, cluster: true, clusterMaxZoom: 16, clusterRadius: 50,
               clusterProperties: { total: ['+', ['get', 'n']], con: ['max', ['get', 'con']] },
             });
             const suelto = ['all', ['!', ['has', 'point_count']], ['==', ['get', 'n'], 1]];

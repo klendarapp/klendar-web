@@ -12,7 +12,7 @@
  *    mismas coordenadas), así que no se agrupa: es un marcador con «N planes»
  *    que, al tocarlo, abre su lista por partes.
  * 2. **Grupos** (`agrupa`): sitios distintos que a este zoom se pisarían en
- *    pantalla (a menos de 36 px). Al tocar uno, el mapa se acerca justo hasta
+ *    pantalla (a menos de 50 px). Al tocar uno, el mapa se acerca justo hasta
  *    separarlos (`zoomQueSepara`). Desde el zoom 17 ya no se agrupa nada.
  *
  * El número dice siempre lo mismo: en Planes, planes; en Sitios, sitios.
@@ -23,7 +23,7 @@
   'use strict';
 
   const METROS_SITIO = 15;
-  const RADIO_PX = 36;
+  const RADIO_PX = 50;
   const ZOOM_MAX_GRUPOS = 17;
 
   /** Metros entre dos puntos (aproximado: sobra para unos metros). */

@@ -9,7 +9,7 @@
 //  4. Al acercar «con los dedos» (zoom), las burbujas se separan; desde el 17
 //     no queda ninguna.
 //  5. En oscuro se lee (captura).
-//  6. Sitios: la fuente agrupa (hasta el 16, radio 36) y hay capa de burbujas.
+//  6. Sitios: la fuente agrupa (hasta el 16, radio 50) y hay capa de burbujas.
 //  7. Sin errores en la consola.
 // Chromium y WebKit, móvil (375) y escritorio. Capturas en OUT.
 //
