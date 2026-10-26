@@ -97,13 +97,13 @@ const sinScroll = (p) => p.evaluate(() => document.documentElement.scrollWidth -
 
 // ── 1. Páginas legales ─────────────────────────────────────────────────────
 const PAGINAS = [
-  ['/terminos/', 'Última actualización: 20 de octubre de 2026', [
+  ['/terminos/', 'Última actualización: 27 de octubre de 2026', [
     /Preguntas a los negocios\. En la ficha de un negocio puedes hacerle preguntas sobre el sitio/,
     /Como mucho 3 al día y una sin contestar por negocio; si eres de su equipo, no puedes preguntarle/,
     /para mostrar tus reseñas, con sus fotos y vídeos, y tus preguntas a los negocios, en la Plataforma/,
     /Preguntas a los negocios \(apartado 4\)/,
   ]],
-  ['/en/terms/', 'Last updated: 20 October 2026', [
+  ['/en/terms/', 'Last updated: 27 October 2026', [
     /Questions to businesses\. On a business's page you can ask it questions about the place/,
     /to display your reviews, with their photos and videos, and your questions to businesses, on the Platform/,
   ]],
@@ -115,13 +115,13 @@ const PAGINAS = [
   ['/en/community-guidelines/', 'Last updated: 20 October 2026', [
     /Questions to businesses\s+Ask what helps you decide whether to go/,
   ]],
-  ['/negocios/', 'Última actualización: 26 de octubre de 2026', [
+  ['/negocios/', 'Última actualización: 27 de octubre de 2026', [
     /Preguntas de la gente\. Cualquier persona con cuenta puede preguntarle en su ficha/,
     /Solo ocultará una pregunta con un motivo real de la lista/,
     /los del 20 de octubre de 2026 \(apartados 2 bis, 3 y 3 undecies\), desde el 4 de noviembre de 2026/,
     /Preguntas de la gente \(apartado 3\).*Se aplica desde el 4 de noviembre de 2026\./,
   ]],
-  ['/en/business-terms/', 'Last updated: 26 October 2026', [
+  ['/en/business-terms/', 'Last updated: 27 October 2026', [
     /Questions from people\. Anyone with an account can ask the Business questions on its page/,
     /Questions from people \(section 3\).*It applies from 4 November 2026\./,
   ]],
