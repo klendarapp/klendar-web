@@ -26,7 +26,7 @@ const ok = (c, m) => { if (!c) { fallos++; console.log('FALLO:', m); } else cons
 
 const PAGINAS = [
   ['/privacidad/', 'Última actualización: 26 de octubre de 2026', [
-    /si tienes un negocio, que hay una pregunta nueva en tu ficha \(como mucho una por hora\); si tienes un negocio, que un código que tu equipo escaneó sin conexión no era válido al comprobarlo \(para que podáis revisar si se dio algo\);/,
+    /si tienes un negocio, que hay una pregunta nueva en tu ficha \(como mucho una por hora\); si tienes un negocio, que un código que tu equipo escaneó sin conexión no era válido al comprobarlo \(para que puedas revisar si se dio algo\);/,
     /26 de octubre de 2026: En las notificaciones, si tienes un negocio, que un código que tu equipo escaneó sin conexión no era válido al comprobarlo\./,
   ], []],
   ['/en/privacy/', 'Last updated: 26 October 2026', [
