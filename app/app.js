@@ -735,11 +735,16 @@ function edadDe(nac) {
 }
 
 /** La casilla de términos, igual en el alta y en «un último paso». */
-const casillaTerminos = () => `<label class="check"><input type="checkbox" name="terms" required>
+// Al crear la cuenta con correo, además, las estadísticas de uso de la app
+// (como la app; sin marcar). Se guardan en la cuenta (`analytics_consent`) y
+// la app las aplica al entrar; en la web no se recoge nada.
+const casillaTerminos = ({ estadisticas = false } = {}) => `<label class="check"><input type="checkbox" name="terms" required>
   <span>${esc(t('He leído y acepto los'))} <a href="${PUB_EN ? '/en/terms/' : '/terminos/'}" target="_blank">${esc(t('Términos de uso'))}</a>
     ${esc(t('y la'))} <a href="${PUB_EN ? '/en/privacy/' : '/privacidad/'}" target="_blank">${esc(t('Política de privacidad'))}</a></span></label>
   <label class="check"><input type="checkbox" name="marketing">
-  <span>${esc(t('Quiero recibir novedades y ofertas destacadas por correo (opcional).'))}</span></label>${notaLegal()}`;
+  <span>${esc(t('Quiero recibir novedades y ofertas destacadas por correo (opcional).'))}</span></label>${estadisticas ? `
+  <label class="check"><input type="checkbox" name="estadisticas">
+  <span>${esc(t('Ayúdanos a mejorar Klendar con estadísticas de uso de la app (opcional; se quita en Ajustes → Privacidad).'))}</span></label>` : ''}${notaLegal()}`;
 
 function errorCampo(el, msg) {
   const label = el.closest('label') || el.parentElement;
@@ -1151,7 +1156,7 @@ RUTAS.registro = async (_p, params) => {
       <label>${esc(t('Repite la contraseña'))}<input name="password2" type="password" autocomplete="new-password" minlength="8" required></label>
       <label>${esc(t('Fecha de nacimiento'))}<input name="birth" type="date" ${LIMITES_NACIMIENTO()} required>
         <small>${esc(t('Para comprobar tu edad (mínimo 14) y enseñarte lo adecuado a ella. Si un favorito tiene regalo de cumpleaños, te llega ese día.'))}</small></label>
-      ${casillaTerminos()}
+      ${casillaTerminos({ estadisticas: true })}
       <p id="err" class="err" role="alert"></p>
       <button class="pill accent" type="submit">${esc(t('Crear cuenta'))}</button>
     </form>
@@ -1199,6 +1204,7 @@ RUTAS.registro = async (_p, params) => {
             terms_accepted: true,
             terms_version: TERMINOS_VERSION,
             marketing_consent: form.marketing.checked,
+            analytics_consent: form.estadisticas.checked,
             user_type: 'user',
             locale: LANG,
           },
@@ -1811,7 +1817,7 @@ function pintaCodigoGuardado(g) {
       <div class="qr" id="qr" role="img" aria-label="${esc(t('Código QR para que el negocio valide tu canje'))}"></div>
       <p><button type="button" class="codigo copiar" id="copiar" aria-label="${esc(t('Copiar el código'))}">${esc(codigoLegible(g.code))} ${ic('content_copy')}</button></p>
       <p class="muted">${esc(t('Vale hasta el'))} ${esc(fecha(g.expires_at, undefined, g.tz || undefined))}</p>
-      <p class="muted">${esc(t('Enseña este código en el local para que lo escaneen. Solo vale una vez.'))}</p>
+      <p class="muted">${esc(t('Enseña este código en el local para que lo escaneen. Si no pueden escanearlo, que escriban el código de debajo. Solo vale una vez.'))}</p>
     </div>`);
   $('#copiar')?.addEventListener('click', async () => {
     try { await navigator.clipboard.writeText(g.code); toast(t('Código copiado')); } catch { toast(t('No se ha podido copiar'), true); }
@@ -2128,9 +2134,9 @@ RUTAS.codigo = async ([id], params, crudo) => {
   if (!(await confirmaEnlace(crudo, {
     // Como la app: el mismo título y botón con una plaza o con varias, y por
     // qué se pregunta.
-    titulo: t('¿Sacar tu código?'), que: await queOferta(id, rp),
-    texto: `${plazas > 1 ? `${EN ? `For ${plazas} people. The code is valid for all the places.` : `Para ${plazas} personas. El código vale por todas las plazas.`} ` : ''}${t('Has llegado desde un enlace. Sácalo solo si vas a usarlo: si hay plazas, quedan reservadas a tu nombre.')}`,
-    boton: t('Sacar el código'), volver: `${pre}/o/${encodeURIComponent(id)}${conRp}`,
+    titulo: t('¿Conseguir tu código?'), que: await queOferta(id, rp),
+    texto: `${plazas > 1 ? `${EN ? `For ${plazas} people. The code is valid for all the places.` : `Para ${plazas} personas. El código vale por todas las plazas.`} ` : ''}${t('Has llegado desde un enlace. Consíguelo solo si vas a usarlo: si hay plazas, quedan reservadas a tu nombre.')}`,
+    boton: t('Conseguir el código'), volver: `${pre}/o/${encodeURIComponent(id)}${conRp}`,
   }))) return;
   // La zona del negocio, para «vale hasta el…» y la hora del canje.
   let tk;
@@ -2195,7 +2201,10 @@ RUTAS.codigo = async ([id], params, crudo) => {
         <p><b>${esc(t('El código ha caducado'))}</b></p>
         <p><button class="pill accent" id="otro-codigo" type="button">${ic('refresh')} ${esc(t('Generar otro código'))}</button></p>
       </div>
-      <p class="muted" id="instrucciones">${esc(t('Enseña este código en el local para que lo escaneen. Solo vale una vez.'))}</p>
+      <p class="muted" id="instrucciones">${esc(tk.named
+        ? t('Enseña este código en el local para que lo escaneen. Solo vale una vez.')
+        // Con el código escrito debajo del QR, qué hacer si no lo pueden escanear (como la app).
+        : t('Enseña este código en el local para que lo escaneen. Si no pueden escanearlo, que escriban el código de debajo. Solo vale una vez.'))}</p>
       ${largo ? `<p><button class="pill" id="anular" type="button">${esc(t('Ya no voy: anular la reserva'))}</button></p>` : ''}
     </div>`);
   // El código de debajo del QR se copia de un toque (como en la app).

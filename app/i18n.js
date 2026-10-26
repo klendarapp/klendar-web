@@ -3,12 +3,13 @@
 
 const APP_EN = {
   // Paridad con la app (2026-10-22)
-  "Has llegado desde un enlace. Sácalo solo si vas a usarlo: si hay plazas, quedan reservadas a tu nombre.": "You've come from a link. Only get it if you're going to use it: any places are reserved in your name.",
+  "Has llegado desde un enlace. Consíguelo solo si vas a usarlo: si hay plazas, quedan reservadas a tu nombre.": "You've come from a link. Only get it if you're going to use it: any places are reserved in your name.",
   // Paridad con la app (2026-10-22)
   "{count} de {goal} sellos": "{count} of {goal} stamps",
   "Tu meta es {goal}: la tarjeta ha subido a {cardGoal}, pero a ti te vale la de antes hasta conseguir el premio.": "Your goal is {goal}: the card now asks for {cardGoal}, but yours stays as it was until you get the reward.",
   // Paridad con la app (2026-10-22)
   "Enseña este código en el local para que lo escaneen. Solo vale una vez.": "Show this code at the venue so they can scan it. It only works once.",
+  "Enseña este código en el local para que lo escaneen. Si no pueden escanearlo, que escriban el código de debajo. Solo vale una vez.": "Show this code at the venue so they can scan it. If they can't scan it, they can type in the code below. It only works once.",
   "Escanear un QR": "Scan a QR code",
   "Ese regalo ya no está.": "That gift is no longer here.",
   "Apunta al QR que te enseña el local": "Point at the QR code the venue is showing you",
@@ -93,9 +94,9 @@ const APP_EN = {
   '¿Quitar de tus planes?': 'Remove from your plans?',
   '¿Añadir a favoritos?': 'Add to favourites?',
   '¿Quitar de favoritos?': 'Remove from favourites?',
-  '¿Sacar tu código?': 'Get your code?',
+  "¿Conseguir tu código?": 'Get your code?',
   '¿Reservar plazas?': 'Book places?',
-  'Sacar el código': 'Get the code',
+  "Conseguir el código": 'Get the code',
   'Reservar': 'Book',
   '¿Apuntarte a la lista de espera?': 'Join the waiting list?',
   '¿Salir de la lista de espera?': 'Leave the waiting list?',
@@ -550,6 +551,7 @@ const APP_EN = {
   "He leído y acepto los": "I have read and accept the",
   "y la": "and the",
   "Quiero recibir novedades y ofertas destacadas por correo (opcional).": "I'd like to receive news and featured offers by email (optional).",
+  "Ayúdanos a mejorar Klendar con estadísticas de uso de la app (opcional; se quita en Ajustes → Privacidad).": "Help us improve Klendar with app usage statistics (optional; turn it off in Settings → Privacy).",
   "Crear cuenta": "Sign up",
   "Tienes que aceptar los términos y la política de privacidad.": "You need to accept the terms and the privacy policy.",
   "Revisa tu correo": "Check your email",

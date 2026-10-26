@@ -227,10 +227,14 @@ async function turnstile(nav, nombre, t, vp) {
     await p.fill('#f [name=password2]', 'Prueba-Turnstile-2026');
     await p.fill('#f [name=birth]', '1990-01-01');
     await p.check('#f [name=terms]');
+    // Estadísticas de uso de la app (como la app): sin marcar; marcada, va en el alta.
+    ok(!(await p.isChecked('#f [name=estadisticas]')), `${nombre}/${t} registro: «Ayúdanos a mejorar Klendar…» sin marcar`);
+    if (pasa) await p.check('#f [name=estadisticas]');
     await p.click('#f button[type=submit]');
     await p.waitForTimeout(pasa ? 6000 : 8000);
     await p.screenshot({ path: `${OUT}/web-turnstile-${pasa ? 'pasa' : 'falla'}-${nombre}-${t}.png`, fullPage: true });
     const token = pedidos.filter((x) => x.url.includes('/signup')).map((x) => x.body?.gotrue_meta_security?.captcha_token).find(Boolean);
+    if (pasa) ok(pedidos.find((x) => x.url.includes('/signup'))?.body?.data?.analytics_consent === true, `${nombre}/${t} registro: manda analytics_consent`);
     if (pasa) ok(token === 'XXXX.DUMMY.TOKEN.XXXX', `${nombre}/${t} Turnstile (siempre pasa): el registro manda el token de prueba ${JSON.stringify(pedidos.map((x) => x.url))}`);
     else ok(pedidos.length === 0 && /robot/i.test(await p.locator('body').innerText()), `${nombre}/${t} Turnstile (siempre falla): no se manda y se dice`);
     await ctx.close();

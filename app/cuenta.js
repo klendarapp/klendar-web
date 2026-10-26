@@ -1186,7 +1186,11 @@ function editorPalabras(caja, datos) {
     caja.querySelectorAll('[data-quita]').forEach((b) => b.addEventListener('click', () => ocupado(b, async () => {
       const w = b.dataset.quita;
       await llamar('remove_alert_word', { p_word: w });
-      toast(EN ? `No more alerts for “${w}”` : `Ya no te avisamos de «${w}»`);
+      // Con «Deshacer», como la app: la vuelve a añadir.
+      toastDeshacer(EN ? `No more alerts for “${w}”` : `Ya no te avisamos de «${w}»`, async () => {
+        try { await llamar('add_alert_word', { p_word: w }); } catch (e) { toast(e.message, true); }
+        await recarga();
+      });
       await recarga();
     })));
   };

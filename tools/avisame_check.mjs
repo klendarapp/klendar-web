@@ -196,6 +196,14 @@ async function cuenta(nav, nombre, t, vp) {
   await p.waitForTimeout(500);
   ok(llamada(estado, 'remove_alert_word')[0]?.p_word === 'sushi' && !/sushi/.test(await p.locator('#palabras-mas').innerText()),
     `${nombre}/${t} ajustes: quitar «sushi»`);
+  // «Deshacer» (como la app): la vuelve a añadir.
+  const antesDeshacer = llamada(estado, 'add_alert_word').length;
+  await p.click('#toast .toast-accion');
+  await p.waitForFunction(() => /sushi/.test(document.querySelector('#palabras-mas')?.innerText || ''), null, { timeout: 5000 }).catch(() => {});
+  ok(llamada(estado, 'add_alert_word').length === antesDeshacer + 1 && llamada(estado, 'add_alert_word').slice(-1)[0]?.p_word === 'sushi'
+    && /sushi/.test(await p.locator('#palabras-mas').innerText()), `${nombre}/${t} ajustes: «Deshacer» vuelve a poner «sushi»`);
+  await p.click('[data-quita="sushi"]');
+  await p.waitForTimeout(500);
   await p.locator('label:has(input[name=palabras])').click();
   await p.waitForTimeout(900);
   const pr = llamada(estado, 'update_notification_preferences').slice(-1)[0]?.p || {};

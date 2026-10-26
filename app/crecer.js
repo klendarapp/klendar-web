@@ -26,12 +26,13 @@
 
 /** Los errores de `request_venue` y `join_city_waitlist`, dichos como en la app. */
 const ERR_PEDIDO = {
-  // Los de la app (`venueReqErr*`).
-  invalid_name: 'Revisa el nombre y el sitio: no pongas correos, enlaces ni teléfonos.',
-  invalid_place: 'Revisa el nombre y el sitio: no pongas correos, enlaces ni teléfonos.',
-  offensive_text: 'Revisa el texto: hay palabras que no se pueden usar.',
-  too_many_today: 'Por hoy ya has pedido bastantes sitios. Prueba mañana.',
-  too_many_open: 'Tienes demasiadas peticiones abiertas. Retira alguna en «Lo que has pedido».',
+  // Los mismos que la app (`venueReqErr*`), con el tope (5 al día y 30
+  // abiertas: `venue_requests_per_day` y `venue_requests_open`).
+  invalid_name: 'Escribe el nombre del sitio, sin correos, enlaces ni teléfonos.',
+  invalid_place: 'Dinos en qué ciudad o zona está (o márcalo en el mapa). La dirección, sin correos, enlaces ni teléfonos.',
+  offensive_text: 'Hay alguna palabra que no está permitida. Revísalo.',
+  too_many_today: 'Hoy ya has pedido 5 sitios, el máximo. Mañana puedes pedir más.',
+  too_many_open: 'Tienes 30 sitios pedidos esperando, el máximo. Retira alguno para pedir otro.',
   invalid_point: 'No sabemos dónde es eso. Vuelve a Descubre y prueba otra vez.',
   too_many: 'Demasiados intentos seguidos. Espera un rato y vuelve a probar.',
 };
