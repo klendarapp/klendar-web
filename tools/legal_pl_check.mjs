@@ -125,7 +125,7 @@ const PAGINAS = [
     /Questions from people\. Anyone with an account can ask the Business questions on its page/,
     /Questions from people \(section 3\).*It applies from 4 November 2026\./,
   ]],
-  ['/privacidad/', 'Última actualización: 26 de octubre de 2026', [
+  ['/privacidad/', 'Última actualización: 27 de octubre de 2026', [
     /Preguntas a los negocios\s+Las preguntas que haces en la ficha de un negocio/,
     /las ocultas, 30 días; las que nadie contesta, 180 días/,
     /cuando haya sitio, respuestas a tus preguntas, preguntas en tu ficha, horas de silencio/,
@@ -133,16 +133,16 @@ const PAGINAS = [
     /las preguntas que recibe en su ficha \(sin quién las hace\), sus respuestas, quién de su equipo contestó/,
     /Cuando preguntas en la ficha de un negocio, el negocio ve la pregunta, nunca quién la ha hecho\./,
   ]],
-  ['/en/privacy/', 'Last updated: 26 October 2026', [
+  ['/en/privacy/', 'Last updated: 27 October 2026', [
     /Questions to businesses\s+The questions you ask on a business's page/,
     /replies to your questions, questions on your page, quiet hours/,
     /When you ask a question on a business's page, the business sees the question, never who asked it\./,
   ]],
-  ['/eliminar-cuenta/', 'Última actualización: 20 de octubre de 2026', [
+  ['/eliminar-cuenta/', 'Última actualización: 27 de octubre de 2026', [
     /Tus preguntas a los negocios \(también las contestadas, con su respuesta\) y tus «A mí también me sirve»/,
     /Lista al día: tus preguntas a los negocios y tus «me sirve»\./,
   ]],
-  ['/en/delete-account/', 'Last updated: 20 October 2026', [/Your questions to businesses \(answered ones included, with their answer\)/]],
+  ['/en/delete-account/', 'Last updated: 27 October 2026', [/Your questions to businesses \(answered ones included, with their answer\)/]],
 ];
 
 async function legales(nav, nombre, t, vp) {
