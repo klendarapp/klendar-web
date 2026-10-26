@@ -9,7 +9,8 @@
 //  4. ¿Qué?: varias categorías (`?categoria=a&categoria=b`) y la píldora con
 //     las dos.
 //  5. El orden: «Recomendado» de serie, con sus pasos; «Lo más nuevo» lo
-//     cambia; en Sitios, «Mejor valorados» en la cabecera de la lista.
+//     cambia; en Sitios, «Mejor valorados» en la cabecera de la lista (desde el
+//     11-11-2026, `rated_sort_available()`; antes, ni sale ni ordena).
 //  6. ¿Dónde?: «Cerca de mí» | «Una ciudad», con «Todas las ciudades».
 //  7. Recordar: lo guardado vuelve; ¿Cuándo? no pasa de las 6:00.
 //  8. En inglés, «This weekend».
@@ -93,10 +94,18 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     await Promise.all([page.waitForURL(/orden=nuevas/), orden.locator('.menu-d a[href*="orden=nuevas"]').click()]);
     ok(/Lo más nuevo/.test(await page.locator('#barra .desplegable.orden summary').innerText()), `${t} «Lo más nuevo» puesto`);
     await ir(`/explorar/?que=sitios&${AQUI}`);
-    ok(await page.locator('#barra .desplegable.orden').count() === 0 && await page.locator('.resumen .desplegable.orden').count() === 1, `${t} Sitios: el orden en la cabecera de la lista`);
-    await page.locator('.resumen .desplegable.orden summary').click();
-    await Promise.all([page.waitForURL(/orden=valorados/), page.locator('.resumen .menu-d a', { hasText: 'Mejor valorados' }).click()]);
-    ok(/Mejor valorados/.test(await page.locator('.resumen .desplegable.orden summary').innerText()) && /valoración/.test(await page.locator('.resumen-orden').innerText()), `${t} Sitios: «Mejor valorados» con su ayuda`);
+    ok(await page.locator('#barra .desplegable.orden').count() === 0, `${t} Sitios: sin orden en la fila`);
+    // «Mejor valorados» solo desde `rated_sort_available()` (11-11-2026, migración
+    // 20261247100000): antes, ni el menú ni el orden aunque venga en la dirección.
+    if (await page.locator('.resumen .desplegable.orden').count() === 0) {
+      ok(/cercanía/.test(await page.locator('.resumen-orden').innerText()), `${t} Sitios, antes de la fecha: sin «Mejor valorados», «Por cercanía…»`);
+      await ir(`/explorar/?que=sitios&orden=valorados&${AQUI}`);
+      ok(/cercanía/.test(await page.locator('.resumen-orden').innerText()) && await page.locator('.resumen .desplegable.orden').count() === 0, `${t} Sitios, antes de la fecha: ?orden=valorados no cuela`);
+    } else {
+      await page.locator('.resumen .desplegable.orden summary').click();
+      await Promise.all([page.waitForURL(/orden=valorados/), page.locator('.resumen .menu-d a', { hasText: 'Mejor valorados' }).click()]);
+      ok(/Mejor valorados/.test(await page.locator('.resumen .desplegable.orden summary').innerText()) && /valoración/.test(await page.locator('.resumen-orden').innerText()), `${t} Sitios: «Mejor valorados» con su ayuda`);
+    }
 
     // 6. ¿Dónde?
     await ir(`/descubre/?${AQUI}`);

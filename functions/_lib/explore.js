@@ -1144,7 +1144,13 @@ export async function explorePage(url, lang, modo = 'explorar') {
   const TSi = TS(en);
   const esOfertas = kind === 'offers';
   const esEventos = kind === 'events';
-  const sort = e.sort;
+  // «Mejor valorados» solo desde su fecha (`rated_sort_available()`, en la
+  // base, migración 20261247100000; lo mismo que la app): antes ni sale ni se
+  // pide (la base, además, lo ignora).
+  const valoradosYa = negocios && e.sort === 'rated'
+    ? (await rpc('rated_sort_available', {}).catch(() => false)) === true
+    : negocios ? rpc('rated_sort_available', {}).then((x) => x === true).catch(() => false) : false;
+  const sort = e.sort === 'rated' && valoradosYa !== true ? '' : e.sort;
   const mapa = !negocios && e.vista === 'map';
   const calendario = !negocios && e.vista === 'calendar';
   // En Sitios (sin calendario) se ve en lista, pero el Calendario de Planes
@@ -1661,7 +1667,7 @@ export async function explorePage(url, lang, modo = 'explorar') {
       : botonCerca(S.sortNearest, `${K.sort}=${enIdioma('nearest', en)}`).replace(ic('cerca', 16), '')}`,
     { cls: ' orden orden-lista', etiqueta: `${S.sortBy}: ${sort === 'nearest' ? S.sortNearest : S.byTime}` }) : '';
   // El orden de Sitios: «Más cerca» (por tramos) o «Mejor valorados».
-  const ordenSitios = negocios && !sitiosMapa ? desplegable('orden', S.sortBy, sort === 'rated' ? S.rated : S.sortNearest, false,
+  const ordenSitios = negocios && !sitiosMapa && (await valoradosYa) === true ? desplegable('orden', S.sortBy, sort === 'rated' ? S.rated : S.sortNearest, false,
     `${opcion(link({ sort: '' }), S.sortNearest, sort !== 'rated', '', S.placesNearHint)}
      ${opcion(link({ sort: 'rated' }), S.rated, sort === 'rated', '', S.placesRatedHint)}`,
     { cls: ' orden orden-lista', etiqueta: `${S.sortBy}: ${sort === 'rated' ? S.rated : S.sortNearest}` }) : '';
@@ -1790,7 +1796,7 @@ export async function explorePage(url, lang, modo = 'explorar') {
   const resumenN = calendario ? '' : `<div class="resumen"><h2 class="resumen-n">${esc(negocios ? TSi.count(total) : S.results(total))}</h2>
     ${ordenSitios && items.length ? ordenSitios : ''}
     ${hayAlgo && !vacio ? `<a href="${esc(limpia)}" data-limpia-filtros>${esc(S.clear)}</a>` : ''}</div>
-    ${ordenSitios && items.length ? `<p class="resumen-orden">${esc(sort === 'rated' ? S.placesRatedHint : S.placesNearHint)}</p>` : ''}`;
+    ${negocios && !sitiosMapa && items.length ? `<p class="resumen-orden">${esc(sort === 'rated' ? S.placesRatedHint : S.placesNearHint)}</p>` : ''}`;
 
   // Lo que se le dice a Google: la página y su lista (como la agenda).
   const jsonLd = !filtrado && items.length && !negocios ? ldScript(listingLd({
