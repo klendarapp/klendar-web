@@ -1,5 +1,5 @@
 {
- "version": "3488984377f8",
+ "version": "95fa10cb3b4e",
  "contact": "info@klendar.app",
  "tabs": {
   "es": {
@@ -158,7 +158,7 @@
     "q": "¿Qué es «Antes de cerrar»?",
     "a": [
      {
-      "t": "Lo que sobra del día en panaderías, cafeterías y restaurantes, con descuento (por ejemplo, una bolsa sorpresa). Consigues el código en Klendar, vas antes de la hora que pone y lo pagas en el local. Para ver solo eso, toca «Antes de cerrar» junto a Filtros."
+      "t": "Lo que sobra del día en panaderías, cafeterías y restaurantes, con descuento (por ejemplo, una bolsa sorpresa). Consigues el código en Klendar, vas antes de la hora que pone y lo pagas en el local. Para ver solo eso, en «¿Qué?» (arriba, en la fila de filtros), «Antes de cerrar», o el atajo «Antes de cerrar» de la búsqueda."
      }
     ]
    },
@@ -167,7 +167,7 @@
     "q": "Me pide carné de estudiante, carné joven o ser mayor de 65",
     "a": [
      {
-      "t": "Algunas ofertas son solo para quien lo enseñe: lo verás en la ficha y al conseguir el código. Enséñalo en el local al canjear; lo comprueba el negocio, no Klendar. Para ver solo esas, en Filtros → Más filtros → «Descuentos para»."
+      "t": "Algunas ofertas son solo para quien lo enseñe: lo verás en la ficha y al conseguir el código. Enséñalo en el local al canjear; lo comprueba el negocio, no Klendar. Para ver solo esas, en Filtros (☰) → Para quién → «Descuentos para»."
      }
     ]
    },
@@ -722,7 +722,7 @@
     "q": "What is “Before closing”?",
     "a": [
      {
-      "t": "What's left over at the end of the day in bakeries, cafés and restaurants, at a discount (a surprise bag, for example). You get the code on Klendar, go before the time shown and pay at the venue. To see only these, tap “Before closing” next to Filters."
+      "t": "What's left over at the end of the day in bakeries, cafés and restaurants, at a discount (a surprise bag, for example). You get the code on Klendar, go before the time shown and pay at the venue. To see only these, go to “What?” (at the top, in the filters row) and turn on “Before closing”, or use the “Before closing” shortcut in search."
      }
     ]
    },
@@ -731,7 +731,7 @@
     "q": "It asks for a student card, a youth card or being over 65",
     "a": [
      {
-      "t": "Some offers are only for people who show it: you'll see it on the page and when you get the code. Show it at the venue when you redeem; the business checks it, not Klendar. To see only those, go to Filters → More filters → “Discounts for”."
+      "t": "Some offers are only for people who show it: you'll see it on the page and when you get the code. Show it at the venue when you redeem; the business checks it, not Klendar. To see only those, go to Filters (☰) → Who it's for → “Discounts for”."
      }
     ]
    },
