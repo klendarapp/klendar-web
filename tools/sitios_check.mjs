@@ -65,12 +65,14 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     await page.screenshot({ path: `${OUT}/web-sitios-${nombre}-${forma}.png`, fullPage: false });
 
     // 2. La hoja de filtros.
+    // Opción A (2026-10-26): ¿Cuándo? (lo del sitio, ahora, y el momento), ¿Qué?
+    // (categorías y menú del día) y ☰ (cómo es el sitio y alérgenos).
     await page.locator('#filtros > summary').click();
-    const hoja = await page.locator('#filtros form').innerText();
+    const hoja = (await page.locator('#cuando form, #que-hoja form, #filtros form').allTextContents()).join(' ');
     ok(/Abierto ahora/.test(hoja) && /Se puede comer ahora/.test(hoja) && /Momento del día/.test(hoja)
       && /Precio del local/.test(hoja) && /Cómo es/.test(hoja) && /Menú del día/.test(hoja) && /Categorías/.test(hoja),
-    `${t} la hoja trae lo del sitio`);
-    ok(!/¿Cuándo\?/.test(hoja) && !/Para quién/.test(hoja), `${t} la hoja no trae lo de los planes`);
+    `${t} las hojas traen lo del sitio`);
+    ok(!/El plan es/.test(hoja) && !/Para quién/.test(hoja) && !/Precio del plan/.test(hoja), `${t} las hojas no traen lo de los planes`);
     await page.screenshot({ path: `${OUT}/web-sitios-filtros-${nombre}-${forma}.png` });
 
     // 3. El mapa.

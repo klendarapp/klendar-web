@@ -329,25 +329,38 @@
       const visibles = fs.querySelector('[data-cat-visibles]');
       if (!boton || !mas || !visibles) return;
       const lang = document.documentElement.lang === 'en' ? 'en' : 'es';
-      const radios = [...fs.querySelectorAll('input[type=radio]')].filter((r) => r.value);
+      // Varias (casillas, ¿Qué? de Explorar y Descubre desde 2026-10-26) o una
+      // (radios, como antes).
+      const campos = [...fs.querySelectorAll('input[type=radio], input[type=checkbox]')].filter((r) => r.value);
+      const varias = campos.some((r) => r.type === 'checkbox');
       const pos = (r, i) => Number(r.closest('[data-pos]')?.getAttribute('data-pos') ?? i);
-      const cats = radios.map((r, i) => ({
+      const cats = campos.map((r, i) => ({
         id: r.value, slug: r.value, position: pos(r, i), category_group: r.closest('[data-grupo]')?.getAttribute('data-grupo') || r.getAttribute('data-grupo'),
         names: { es: r.nextElementSibling?.textContent || r.value, en: r.nextElementSibling?.textContent || r.value },
       })).sort((a, b) => a.position - b.position);
       mas.hidden = true;
       boton.hidden = false;
+      const aLaVista = (campo) => {
+        const etiqueta = campo.closest('label');
+        if (etiqueta && mas.contains(etiqueta)) visibles.insertBefore(etiqueta, boton.parentElement === visibles ? boton : null);
+      };
       boton.addEventListener('click', async () => {
-        const actual = radios.find((r) => r.checked);
+        const elegidas = campos.filter((r) => r.checked).map((r) => r.value);
         const r = await KlendarCategorias.abrir({
-          cats, elegidas: actual ? [actual.value] : [], multiple: false, lang, titulo: boton.getAttribute('data-titulo') || undefined,
+          cats, elegidas, multiple: varias, lang, titulo: boton.getAttribute('data-titulo') || undefined,
         });
         if (r == null) { boton.focus(); return; }
-        const radio = radios.find((x) => x.value === r);
+        if (varias) {
+          const set = new Set(r);
+          campos.forEach((c) => { c.checked = set.has(c.value); if (c.checked) aLaVista(c); });
+          fs.dispatchEvent(new Event('change', { bubbles: true }));
+          boton.focus();
+          return;
+        }
+        const radio = campos.find((x) => x.value === r);
         if (!radio) return;
         radio.checked = true;
-        const etiqueta = radio.closest('label');
-        if (etiqueta && mas.contains(etiqueta)) visibles.insertBefore(etiqueta, boton.parentElement === visibles ? boton : null);
+        aLaVista(radio);
         radio.dispatchEvent(new Event('change', { bubbles: true }));
         radio.focus();
       });

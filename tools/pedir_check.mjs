@@ -271,19 +271,20 @@ async function publico(nav, nombre, t, vp, estado) {
   await p.goto(`${PUB}/explorar/?momento=ahora`);
   let f = estado.llamadas.filter(([fn]) => fn === 'public_explore').map(([, b]) => b)[0] || {};
   ok((f.p_filters?.traits || []).includes('moment_now'), `${nombre}/${t} explorar: «Para ahora» manda moment_now (${JSON.stringify(f.p_filters?.traits)})`);
-  ok(await p.locator('.chip-quitar', { hasText: 'Para ahora' }).count() === 1, `${nombre}/${t} explorar: chip «Para ahora» con ×`);
+  // Opción A (2026-10-26): lo dice ¿Cuándo? en la fila, sin chips sueltos.
+  ok(/Para ahora/.test(await p.locator('#cuando > summary').innerText()), `${nombre}/${t} explorar: «Para ahora» en ¿Cuándo?`);
   ok(await p.locator('input[type=radio][name=momento][value=ahora]').isChecked(), `${nombre}/${t} explorar: «Para ahora» marcado en la hoja`);
   await p.screenshot({ path: `${OUT}/web-explorar-para-ahora-${nombre}-${t}.png` });
   estado.llamadas.length = 0;
   await p.goto(`${PUB}/explorar/?momento=vermut`);
   f = estado.llamadas.filter(([fn]) => fn === 'public_explore').map(([, b]) => b)[0] || {};
   ok((f.p_filters?.traits || []).includes('moment_vermouth'), `${nombre}/${t} explorar: «Vermut» manda moment_vermouth`);
-  const quitar = await p.locator('.chip-quitar', { hasText: 'Vermut' }).getAttribute('href');
-  ok(quitar && !/momento=/.test(quitar), `${nombre}/${t} explorar: la × quita el momento (${quitar})`);
+  const quitar = await p.locator('#cuando a[data-restablecer]').getAttribute('href');
+  ok(/Vermut/.test(await p.locator('#cuando > summary').innerText()) && quitar && !/momento=/.test(quitar), `${nombre}/${t} explorar: «Quitar» de ¿Cuándo? quita el momento (${quitar})`);
   estado.llamadas.length = 0;
   await p.goto(`${PUB}/en/explore/?moment=now`);
   f = estado.llamadas.filter(([fn]) => fn === 'public_explore').map(([, b]) => b)[0] || {};
-  ok((f.p_filters?.traits || []).includes('moment_now') && await p.locator('.chip-quitar', { hasText: 'For right now' }).count() === 1, `${nombre}/${t} /en/explore: «For right now»`);
+  ok((f.p_filters?.traits || []).includes('moment_now') && /For right now/.test(await p.locator('#cuando > summary').innerText()), `${nombre}/${t} /en/explore: «For right now»`);
   ok(errores.length === 0, `${nombre}/${t} público: sin errores de JavaScript (${errores.join(' | ')})`);
   await ctx.close();
 }

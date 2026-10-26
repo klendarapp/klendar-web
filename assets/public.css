@@ -900,3 +900,44 @@ details.hoja-bloque[open] > summary .ic { transform: rotate(180deg); }
 .estado-dentro .side-h:first-child { margin-top: 4px; }
 .negocio.ordenada .festivo, .negocio.ordenada .horario-check { margin-top: 0; }
 .negocio.ordenada .cierre { margin: 0 0 10px; }
+
+/* Las tres preguntas (opción A, 2026-10-26): ☰ · ¿Dónde? · ¿Cuándo? · ¿Qué? ·
+   el orden. ☰ es solo el icono (con su número); cada pregunta dice lo que
+   lleva, cortado si es largo. */
+.barra-filtros .chip-filtros { padding: 7px 11px; justify-content: center; min-width: 44px; }
+.barra-filtros .chip-filtros .ic { margin: 0; }
+.barra-filtros .chip .chip-t { max-width: 150px; }
+@media (max-width: 380px) { .barra-filtros .chip .chip-t { max-width: 118px; } }
+/* Los atajos (¿Cuándo? y debajo del buscador de Explorar). */
+.atajo { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--glass-border);
+  background: var(--glass); font: inherit; font-weight: 600; font-size: 14px; color: var(--ink); cursor: pointer; white-space: nowrap; }
+.atajo:hover { text-decoration: none; border-color: var(--ink-2); }
+.atajo.on { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.atajo:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.atajos-fila { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 16px; }
+.pub .atajos-t { font-size: 13px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); margin-right: 2px; }
+@media (max-width: 640px) {
+  .atajos-fila { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 0 -20px 14px; padding: 2px 20px; }
+  .atajos-fila::-webkit-scrollbar { display: none; }
+  .atajos-fila > * { flex: none; }
+}
+/* ¿Dónde?: «Cerca de mí» | «Una ciudad». */
+.donde-modos { display: flex; gap: 4px; padding: 3px; margin: 4px 6px 8px; border-radius: 999px; background: var(--soft); }
+.donde-modo { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; padding: 6px 12px; border: 0; border-radius: 999px;
+  background: none; font: inherit; font-weight: 700; font-size: 14px; color: var(--ink-2); cursor: pointer; }
+.donde-modo.on { background: var(--ink); color: var(--surface); }
+.donde-modo:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+/* El orden: cada opción con lo que hace; «Recomendado», con sus pasos. */
+.pub .op.op-h { align-items: flex-start; }
+.op-h > span { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.op-h .op-t { font-weight: 700; }
+.op-h small { font-size: 12px; font-weight: 500; opacity: .8; }
+.menu-pasos { margin: 4px 0 0 18px; padding: 0; font-size: 12px; font-weight: 500; line-height: 1.45; opacity: .85; }
+.desplegable.orden .menu-d { min-width: 260px; max-width: 320px; }
+@media (min-width: 641px) { .desplegable.orden-lista .menu-d { left: auto; right: 0; } }
+.desplegable.orden-lista > summary.chip { min-height: 34px; padding: 5px 11px; font-size: 13px; }
+.pub .resumen-orden { margin: -8px 0 14px; font-size: 13px; color: var(--ink-2); }
+.pub .hoja-no-aqui { margin: 14px 2px 4px; }
+.hoja-atajos .ops { margin-bottom: 4px; }
+.resumen .desplegable a, .cal-lista-cab .desplegable a { text-decoration: none; font-size: inherit; }
+.resumen .desplegable, .cal-lista-cab .desplegable { align-self: center; }

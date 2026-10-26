@@ -322,7 +322,8 @@ async function publico(nav, nombre, t, vp, estado) {
   const f = estado.llamadas.filter(([fn]) => fn === 'public_explore').map(([, b]) => b)[0] || {};
   const traits = f.p_filters?.traits || [];
   ok(traits.includes('daily_menu') && traits.includes('eat_now'), `${nombre}/${t} explorar: daily_menu y eat_now a public_explore (${JSON.stringify(traits)})`);
-  ok(await p.locator('.chip-quitar', { hasText: 'Menú del día' }).count() === 1, `${nombre}/${t} explorar: chip «Menú del día» con ×`);
+  // Opción A (2026-10-26): lo dice su pregunta en la fila (¿Qué? y ¿Cuándo?), sin chips sueltos.
+  ok(/Menú del día/.test(await p.locator('#que-hoja > summary').innerText()) && /Se puede comer ahora/.test(await p.locator('#cuando > summary').innerText()), `${nombre}/${t} explorar: «Menú del día» en ¿Qué? y «Se puede comer ahora» en ¿Cuándo?`);
   ok(await p.locator('input[type=checkbox][name="menu-del-dia"]').isChecked() && await p.locator('input[type=checkbox][name="comer-ahora"]').isChecked(), `${nombre}/${t} explorar: las dos casillas marcadas en la hoja`);
   ok(errores.length === 0, `${nombre}/${t} público: sin errores de JavaScript (${errores.join(' | ')})`);
   await ctx.close();

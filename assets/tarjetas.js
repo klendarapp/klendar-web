@@ -496,6 +496,27 @@
   var aviso = document.querySelector('[data-cerca-aviso]');
   if (aviso && navigator.geolocation) aviso.hidden = false;
 
+  // ¿Dónde?: «Cerca de mí» | «Una ciudad» (sin JavaScript se ven las dos
+  // partes, una debajo de otra).
+  document.querySelectorAll('.donde-modos').forEach(function (g) {
+    var menu = g.parentNode;
+    var botones = g.querySelectorAll('[data-donde-modo]');
+    function pon(modo) {
+      Array.prototype.forEach.call(botones, function (b) {
+        var on = b.getAttribute('data-donde-modo') === modo;
+        b.classList.toggle('on', on);
+        b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+      Array.prototype.forEach.call(menu.querySelectorAll('[data-donde-sec]'), function (s) { s.hidden = s.getAttribute('data-donde-sec') !== modo; });
+    }
+    Array.prototype.forEach.call(botones, function (b) {
+      b.hidden = false;
+      b.addEventListener('click', function () { pon(b.getAttribute('data-donde-modo')); });
+    });
+    var actual = g.querySelector('[data-donde-modo].on');
+    pon(actual ? actual.getAttribute('data-donde-modo') : 'cerca');
+  });
+
   // ── Desplegables y hoja de filtros ─────────────────────────────────────
   // «Cambiar filtros» (al final de la lista) abre la hoja.
   document.addEventListener('click', function (e) {

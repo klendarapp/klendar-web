@@ -369,7 +369,7 @@
   }
 
   // ── Explorar y Descubre: «Van mis amigos» ───────────────────────────────
-  // Un chip más en la barra de filtros. Encendido (`?amigos=1`), lo que pintó
+  // Una casilla en Filtros › Para quién. Encendido (`?amigos=1`), lo que pintó
   // el servidor se esconde y aquí se pinta lo que devuelve
   // `friends_plans_feed`: solo publicaciones vivas a las que va algún amigo,
   // con la privacidad de cada uno decidida en la base. Mismos filtros de la
@@ -377,8 +377,6 @@
   // ciudad y búsqueda, aquí); +18 nunca, como el resto de la web pública.
   // En el mapa, el calendario y «Negocios» no sale.
   var GRUPO = '<svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>';
-
-  var X = '<svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>';
 
   function ventana(cuando) {
     var ahora = new Date();
@@ -388,6 +386,18 @@
       case 'hoy': case 'today': return [ahora, dia(1)];
       case 'manana': case 'tomorrow': return [dia(1), dia(2)];
       case '10dias': case 'next10': return [ahora, dia(11)];
+      // «Esta noche»: de las 20:00 (o de ahora) a las 6:00; de madrugada, la
+      // noche de antes. «Este finde»: de viernes a domingo (empezado, desde
+      // ahora). Como `when_window` en la base y la app.
+      case 'esta-noche': case 'tonight': {
+        var n = ahora.getHours() < 6 ? -1 : 0;
+        var ini = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() + n, 20);
+        return [ini > ahora ? ini : ahora, new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() + n + 1, 6)];
+      }
+      case 'finde': case 'weekend': {
+        var dow = (ahora.getDay() + 6) % 7 + 1;
+        return [dow >= 5 ? ahora : dia(5 - dow), dia(8 - dow)];
+      }
       default: return [null, null];
     }
   }
@@ -446,7 +456,9 @@
     // conservaba). Cuenta en su bloque y en Filtros (N), como en la app.
     var hojaHueco = document.querySelector('[data-amigos-hoja]');
     if (hojaHueco) {
-      var oculto = document.querySelector('input[data-amigos-oculto]');
+      // El oculto de esta hoja (las otras hojas lo conservan).
+      var formHoja = hojaHueco.closest('form');
+      var oculto = formHoja ? formHoja.querySelector('input[data-amigos-oculto]') : null;
       if (oculto) oculto.remove();
       var casilla = document.createElement('label');
       casilla.className = 'op-r op-sitio';
@@ -455,20 +467,10 @@
       var bloque = hojaHueco.closest('details.hoja-bloque');
       if (on && bloque) bloque.open = true;
     }
-    // En la barra, solo encendido: un chip con × que lo quita (sin la página:
-    // vuelve a la primera), junto a los otros atajos encendidos.
+    // Encendido, cuenta en ☰ (lo pinta el servidor) y se quita en Filtros ›
+    // Para quién: ya no va como chip suelto en la fila (opción A, 2026-10-26).
     if (!on) return;
-    var otra = new URL(location.href);
-    otra.searchParams.delete('amigos');
-    otra.searchParams.delete('p');
-    var chip = document.createElement('a');
-    chip.className = 'chip on chip-quitar';
-    chip.href = otra.pathname + otra.search;
-    chip.setAttribute('data-amigos-chip', '');
-    chip.setAttribute('aria-label', T.quitar);
-    chip.innerHTML = GRUPO + '<span>' + esc(T.filtro) + '</span>' + X;
-    var hueco = barra.querySelector('[data-amigos-hueco]');
-    if (hueco) barra.insertBefore(chip, hueco); else barra.appendChild(chip);
+    var chip = null;
 
     // Que cambiar otro filtro no lo apague.
     barra.querySelectorAll('a[href]').forEach(function (a) {
@@ -529,7 +531,8 @@
       p_discount_only: de('descuento', 'discount') === '1',
       p_open_now: de('abierto', 'open') === '1',
       p_hide_adults: true,
-      p_sort: /^(nuevas|newest)$/.test(orden) ? 'newest' : /^(cerca|nearest)$/.test(orden) || (cerca && !orden) ? 'nearest' : 'soonest',
+      // «Recomendado» (de serie, sin escribir) es lo más nuevo por debajo.
+      p_sort: /^(cerca|nearest)$/.test(orden) ? 'nearest' : /^(pronto|soonest)$/.test(orden) ? 'soonest' : 'newest',
       p_from: v[0] ? v[0].toISOString() : null,
       p_until: v[1] ? v[1].toISOString() : null,
     };
