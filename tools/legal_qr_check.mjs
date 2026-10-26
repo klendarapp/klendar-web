@@ -49,14 +49,14 @@ const PAGINAS = [
     /Para ayudarte, el QR vale un minuto, se cierra solo tras 10 minutos sin que nadie lo use y puedes elegir para cuántas personas es \(de 1 a 20\): al llegar a ese número, se cierra\.[\s\S]*?Son ayudas: no te eximen de lo de arriba\./,
     /3 duodecies\. Entradas nominativas\s+En un evento con reserva puedes elegir «Entradas: Normales»[\s\S]*?no niegues la entrada por motivos discriminatorios[\s\S]*?Klendar no lo valida con el código suelto\.[\s\S]*?no cobres por cambiar el nombre ni permitas ni fomentes su reventa\./,
     /\(nombre, foto si la tiene y cuántas veces ha canjeado en el Negocio al validar un código o reservar, la lista de asistentes y la de sus RRPP\)/,
-    /y los del 27 de octubre de 2026 \(apartados 3, 3 sexies, 3 septies y 3 duodecies\), desde el 11 de noviembre de 2026: 15 días/,
+    /y los del 27 de octubre de 2026 \(apartados 2 bis, 3, 3 sexies, 3 septies y 3 duodecies\), desde el 11 de noviembre de 2026: 15 días/,
     /27 de octubre de 2026: Dar en el momento \(apartado 3 septies\)[\s\S]*?Entradas nominativas \(apartado 3 duodecies nuevo\)[\s\S]*?Se aplica desde el 11 de noviembre de 2026\./,
   ], [/nombre y foto al conseguir un código o reservar/]],
   ['/en/business-terms/', 'Last updated: 27 October 2026', [
     /To help you, the QR code is valid for one minute, closes by itself after 10 minutes without anyone using it and you can choose how many people it's for \(1 to 20\)[\s\S]*?These are aids: they don't release you from the above\./,
     /3k\. Named tickets\s+For an event with booking you can choose “Tickets: Standard”[\s\S]*?don't refuse entry on discriminatory grounds[\s\S]*?Klendar doesn't validate it with the bare code\.[\s\S]*?don't allow or encourage reselling them\./,
     /\(name, photo if they have one and how many times they've redeemed at the Business when validating a code or booking, the attendee list and its promoters' lists\)/,
-    /and those of 27 October 2026 \(sections 3, 3e, 3f and 3k\) from 11 November 2026: 15 days/,
+    /and those of 27 October 2026 \(sections 2a, 3, 3e, 3f and 3k\) from 11 November 2026: 15 days/,
     /27 October 2026: Give on the spot \(section 3f\)[\s\S]*?Named tickets \(new section 3k\)[\s\S]*?It applies from 11 November 2026\./,
   ], [/name and photo when they get a code or book/]],
   ['/privacidad/', 'Última actualización: 27 de octubre de 2026', [
