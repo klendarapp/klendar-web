@@ -469,8 +469,8 @@ RUTAS.alerta = async ([id], params, crudo) => {
       </fieldset>
       <label>${esc(t('¿A cuánta distancia?'))} <output id="radio-txt">${esc(distancia(a.radius_m))}</output>
         <input type="range" name="radius" min="500" max="${maxRadio}" step="500" value="${esc(a.radius_m)}"></label>
-      <label class="check"><input type="checkbox" name="fija"${a.lat != null ? ' checked' : ''}>
-        <span><b>${esc(t('Vigilar esta zona'))}</b><br><small id="fija-txt"></small></span></label>
+      <label class="check check-interruptor"><span><b>${esc(t('Vigilar esta zona'))}</b><br><small id="fija-txt"></small></span>
+        <input type="checkbox" class="interruptor" role="switch" name="fija"${a.lat != null ? ' checked' : ''}></label>
       <label class="check"><input type="checkbox" name="descuento"${a.discount_only ? ' checked' : ''}> ${esc(t('Solo con descuento'))}</label>
       <label>${esc(t('Precio máximo'))} <small>${esc(t('(opcional)'))}</small>
         <input name="precio" inputmode="decimal" value="${a.max_price_cents != null ? esc((a.max_price_cents / 100).toLocaleString(LOC, { minimumFractionDigits: 2 })) : ''}"></label>

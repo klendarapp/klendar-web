@@ -18,6 +18,11 @@ body:has(#view > .cargando) footer { display: none; }
   background: var(--glass); color: inherit; font: inherit; }
 .formu input:focus { outline: 2px solid var(--ink); outline-offset: 1px; }
 .formu .check { display: flex; gap: 10px; align-items: flex-start; font-weight: 400; }
+/* Una casilla que es un interruptor (como la app): el texto y, a la derecha, el interruptor. */
+.formu .check-interruptor { justify-content: space-between; align-items: center; gap: 16px; }
+.formu .check-interruptor .interruptor { width: 46px; height: 28px; margin: 0; padding: 0; border-radius: 14px;
+  background: var(--soft); border: 1px solid var(--glass-border); }
+.formu .check-interruptor .interruptor:checked { background: var(--ink); border-color: var(--ink); }
 .formu .check input { margin-top: 3px; width: 18px; height: 18px; }
 .err { color: #FF5C5C; min-height: 1em; margin: 0; font-size: 14px; }
 .linkbtn { background: none; border: 0; padding: 0; color: var(--ink); text-decoration: underline; text-underline-offset: 2px; font: inherit;
