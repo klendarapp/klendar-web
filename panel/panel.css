@@ -1116,3 +1116,8 @@ details.plegable[open] > summary { margin-bottom: 12px; }
 .ped-otro { margin-top: 12px; }
 /* Listas por partes: «Ver más» al pie (docs/RUNBOOK.md §3g). */
 .ver-mas { display: flex; justify-content: center; margin: 14px 0 0; }
+
+/* El «no hay nada» dentro de una tarjeta, una lista o una sección va
+   alineado con lo demás, no centrado (docs/GLOSARIO.md de la app, «Aspecto»;
+   centrado, solo `.vacio`, la pantalla vacía). Lo de admin.css lo centraba. */
+.empty { text-align: left; padding: 16px 18px; }
