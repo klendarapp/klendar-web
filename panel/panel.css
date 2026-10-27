@@ -844,6 +844,9 @@ details.bloque .b-cuerpo { display: grid; gap: 14px; padding: 0 16px 16px; }
 .sorteo-obligaciones input { margin-top: 3px; }
 .form.grupo-ajustes, .form.sorteo-form { grid-template-columns: minmax(0, 1fr); max-width: 680px; }
 .seg .btn[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: transparent; }
+/* El periodo de «Cifras» (y el de RRPP): el elegido en tinta, como en la app. */
+.periodo { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+.periodo .btn[aria-current="true"], .periodo .btn[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: transparent; }
 .sorteo-form .opcion, .grupo-ajustes .opcion { align-items: flex-start; }
 .sorteo-form .opcion input, .grupo-ajustes .opcion input { width: 18px; height: 18px; flex: none; margin-top: 3px; }
 /* Cola virtual (panel/cola.js). */

@@ -188,7 +188,7 @@ PAGES.rrpp = async (v, param) => {
 
     <div class="card">
       <div class="rrpp-cab-card"><h2>${esc(bi('Cifras', 'Stats'))}</h2><span class="spacer"></span>
-        ${[7, 30, 90].map((d) => `<button class="btn sm ${d === RRPP_DIAS ? '' : 'ghost'}" type="button" data-rrpp-dias="${d}" aria-pressed="${d === RRPP_DIAS}">${esc(bi(`${d} días`, `${d} days`))}</button>`).join(' ')}
+        <span class="periodo" role="group" aria-label="${esc(bi('Periodo', 'Period'))}">${[7, 30, 90].map((d) => `<button class="btn sm ${d === RRPP_DIAS ? '' : 'ghost'}" type="button" data-rrpp-dias="${d}" aria-pressed="${d === RRPP_DIAS}">${esc(bi(`${d} días`, `${d} days`))}</button>`).join(' ')}</span>
         <button class="btn sm ghost" type="button" id="rrppCsv">${esc(bi('Exportar CSV', 'Export CSV'))}</button></div>
       <div class="kpis">
         <div class="kpi"><b>${fmtNum(tot.signed)}</b><span>${esc(bi('Apuntados', 'Signed up'))}</span></div>

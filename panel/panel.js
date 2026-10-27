@@ -6295,7 +6295,7 @@ PAGES.informe = async (v, param) => {
   }
   v.innerHTML = `
     <div class="page-head"><h1>Cifras</h1><span class="spacer"></span>
-      ${[7, 30, 90, 365].map((d) => `<a class="btn sm ${d === days ? '' : 'ghost'}" href="#/informe/${d}">${d === 365 ? bi('1 año', '1 year') : bi(`${d} días`, `${d} days`)}</a>`).join(' ')}
+      <span class="periodo" role="group" aria-label="${esc(bi('Periodo', 'Period'))}">${[7, 30, 90, 365].map((d) => `<a class="btn sm ${d === days ? '' : 'ghost'}" href="#/informe/${d}"${d === days ? ' aria-current="true"' : ''}>${d === 365 ? bi('1 año', '1 year') : bi(`${d} días`, `${d} days`)}</a>`).join(' ')}</span>
     </div>
     <div class="card trajo"><h2>Cuánto te ha traído Klendar</h2>
       ${grande ? `<p class="trajo-min">${esc(bi('Al menos', 'At least'))}</p><p class="trajo-cifra">${esc(cifraTrajo)}</p>` : ''}
