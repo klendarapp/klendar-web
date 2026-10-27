@@ -118,6 +118,21 @@ const toast = (msg, bad = false) => {
   };
   setTimeout(quita, bad ? 6000 : 3500);
 };
+/** Confirmación breve al terminar un formulario (publicar, una solicitud):
+ * una tarjeta en el centro con la marca de «hecho» que se dibuja, que se va
+ * sola (como `showDone` en la app). No tapa nada que se pueda tocar. */
+const hechoBreve = (msg) => {
+  const d = document.createElement('div');
+  d.className = 'mov-hecho';
+  d.setAttribute('role', 'status');
+  d.innerHTML = `<span class="hecho-ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="30" height="30"><path pathLength="1" d="M5 12.5l4.6 4.5L19 7.4"/></svg></span><b></b>`;
+  d.querySelector('b').textContent = I18N.t(msg);
+  document.body.appendChild(d);
+  setTimeout(() => {
+    if (!d.animate || matchMedia('(prefers-reduced-motion: reduce)').matches) { d.remove(); return; }
+    d.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 150, easing: 'cubic-bezier(.4, 0, 1, 1)' }).finished.then(() => d.remove(), () => d.remove());
+  }, 1300);
+};
 const ERRORS = {
   invalid_name: 'Pon el nombre del negocio (dos letras como mínimo).',
   invalid_location: 'Marca en el mapa dónde está el local.',
@@ -3467,9 +3482,14 @@ async function offerForm(v, id, kindDefault, desde = null) {
         const unida = await rpc('set_business_broadcast_offer', { p_business: BIZ.id, p_broadcast: partido.id, p_offer: offerId }).catch((e3) => ({ ok: false, error: e3.message }));
         if (unida?.ok === false) toast(friendly(unida.error), true);
       }
-      toast(alas ? bi(`Programada: se publica el ${fmtProgramada(alas)}`, `Scheduled: goes live on ${fmtProgramada(alas)}`)
-        : data.status === 'active' ? (enVivo ? I18N.t('Cambios guardados') : I18N.t('Publicada'))
-          : I18N.t('Guardada en borrador'));
+      // Publicada sin más que contar: la confirmación con la marca de
+      // «hecho» (como la app); si no, el aviso de abajo.
+      if (!alas && data.status === 'active' && !enVivo) hechoBreve('Publicada');
+      else {
+        toast(alas ? bi(`Programada: se publica el ${fmtProgramada(alas)}`, `Scheduled: goes live on ${fmtProgramada(alas)}`)
+          : data.status === 'active' ? I18N.t('Cambios guardados')
+            : I18N.t('Guardada en borrador'));
+      }
       // Guardado: ya no hay nada que perder al salir.
       GUARDA = null;
       location.hash = partido?.id ? '#/partidos' : '#/publicaciones';

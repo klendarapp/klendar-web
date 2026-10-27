@@ -170,12 +170,14 @@ export function arteFicha(o) {
  * `forma`: 'oferta' (vertical, 4:5, como las fotos que se suben desde la app)
  * o 'negocio' (apaisada, la portada del local).
  */
-export function carrusel(urls, { titulo = '', forma = 'oferta', lang = 'es' } = {}) {
+export function carrusel(urls, { titulo = '', forma = 'oferta', lang = 'es', id = '' } = {}) {
   const piezas = KT.soloWeb(urls).slice(0, 8);
   if (!piezas.length) return '';
   const [ancho, alto] = forma === 'negocio' ? [1200, 675] : [900, 1125];
+  // `id` (la publicación): su primera foto llega volando desde la tarjeta.
+  const vt = id ? KT.nombreFoto(id) : '';
   return `<div class="ficha-media ficha-media--${forma}">
-    ${KT.galeria(piezas, { modo: 'ficha', lang, titulo, grupo: 'ficha', ancho, alto, primera: true })}
+    ${KT.galeria(piezas, { modo: 'ficha', lang, titulo, grupo: 'ficha', ancho, alto, primera: true, vt })}
   </div>`;
 }
 
@@ -333,7 +335,7 @@ ${privada ? '' : `<meta property="og:url" content="${BASE}${esc(path)}">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 ${preconectar}<link rel="preload" href="/assets/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/site.css?v=20261027b">
+<link rel="stylesheet" href="/assets/site.css?v=20261028">
 <link rel="stylesheet" href="/assets/public.css?v=52">
 <link rel="stylesheet" href="/assets/tarjeta.css?v=12">
 ${cabeza}
@@ -343,8 +345,8 @@ ${siteHeader(lang, esc(es + consulta), esc(enPath + consulta), actual)}
 <main class="pub wrap" id="contenido">${body}</main>
 ${siteFooter(lang)}
 ${conAmigos ? `<script src="/assets/amigos.js?v=20" defer data-lang="${en ? 'en' : 'es'}"></script>
-` : ''}${conVisor ? `<script src="/assets/tarjeta.js?v=16" defer></script>
-` : ''}${conTarjetas ? `<script src="/assets/tarjetas.js?v=18" defer></script>
+` : ''}${conVisor ? `<script src="/assets/tarjeta.js?v=17" defer></script>
+` : ''}${conTarjetas ? `<script src="/assets/tarjetas.js?v=19" defer></script>
 ` : ''}${/class="detail[" ]/.test(body) ? `<script src="/assets/barra.js?v=4" defer></script>
 ` : ''}${/^\/(en\/)?(o|b|coleccion|collection)\//.test(path) || /^\/(sorteo|en\/giveaway)\/[^/]+$/.test(path) ? desdeHistorias() : ''}${contador ? CONTADOR : ''}
 </body></html>`;

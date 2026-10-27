@@ -333,6 +333,36 @@ details.hoja-bloque > summary .ic { transition: transform var(--mov-base) var(--
 .op-r span, .pub .op, summary.chip, .chip { transition: transform var(--mov-rapido) var(--mov-entra); }
 .op-r span:active, .pub .op:active, summary.chip:active, .chip:active { transform: scale(var(--mov-escala)); transition-duration: var(--mov-pulsar); }
 .mov-cambia { animation: mov-funde var(--mov-rapido) var(--mov-entra); }
+/* Confirmación breve al terminar un formulario (el panel: «Publicada»):
+   tarjeta en el centro, la marca que se dibuja; se va sola. */
+.mov-hecho { position: fixed; left: 50%; top: 50%; z-index: 80; transform: translate(-50%, -50%); pointer-events: none;
+  display: grid; justify-items: center; gap: 12px; min-width: 200px; max-width: 280px; padding: 24px 28px 22px; border-radius: 24px;
+  background: var(--elevated); color: var(--ink); box-shadow: var(--shadow); text-align: center; font-weight: 700;
+  animation: mov-hecho-entra var(--mov-base) var(--mov-entra); }
+@keyframes mov-hecho-entra { from { opacity: 0; transform: translate(-50%, -50%) scale(.96); } }
+.mov-hecho .hecho-ic { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; background: var(--ink); color: var(--surface);
+  animation: mov-pop var(--mov-lento) var(--mov-rebote); }
+.mov-hecho .hecho-ic svg path { fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round;
+  stroke-dasharray: 1; animation: mov-traza 240ms var(--mov-entra) 120ms backwards; }
+
+/* Las barras (usos que quedan de un bono, el paso del alta, los tramos de
+   un informe) se rellenan desde la izquierda al aparecer (como la app). */
+@keyframes mov-llena { from { transform: scaleX(0); } }
+.bono-barra > span, .bt > i { transform-origin: left center; animation: mov-llena var(--mov-lento) var(--mov-entra); }
+/* La cuenta atrás: la cifra que cambia gira como un rodillo (tarjetas.js). */
+@keyframes mov-rodillo { from { opacity: 0; transform: translateY(-.6em); } }
+.rod { display: inline-block; animation: mov-rodillo var(--mov-base) var(--mov-entra); }
+
+/* De una página a otra (View Transitions entre páginas: Chrome y Safari
+   recientes; los demás, el corte de siempre): la foto de la tarjeta vuela a
+   la portada de la ficha (`view-transition-name: foto-<id>`, puesto por
+   /assets/tarjeta.js) y el resto se funde en 150 ms. Con «Reducir
+   movimiento», nada. */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition { navigation: auto; }
+}
+::view-transition-group(*) { animation-duration: var(--mov-lento); animation-timing-function: var(--mov-entra); }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: var(--mov-rapido); }
 
 /* Las fichas de las listas: bajan un poco al pulsarlas (un 2 %: son grandes). */
 .ocard, .tj:not(.tj--pantalla) { transition: transform var(--mov-rapido) var(--mov-entra); }
@@ -348,7 +378,8 @@ details.hoja-bloque > summary .ic { transition: transform var(--mov-base) var(--
   /* Lo de Movimiento, sin retrasos: aparece todo a la vez y quieto. */
   .mov-entra > *, .mov-llega, .mov-late, .tab[aria-current="page"] svg, .toast, .am-toast,
   .hoja-lugar, .mapboxgl-popup .pop-caja, details.hoja[open] > .hoja-cuerpo, details.hoja[open] > summary::after,
-  details.desplegable[open] > summary::after, details.desplegable[open] > .menu-d, details.hoja-bloque[open] > .hoja-bloque-c, .mov-cambia,
+  details.desplegable[open] > summary::after, details.desplegable[open] > .menu-d, details.hoja-bloque[open] > .hoja-bloque-c, .mov-cambia, .rod,
+  .bono-barra > span, .bt > i, .mov-hecho, .mov-hecho .hecho-ic, .mov-hecho .hecho-ic svg path,
   .dialogo[open], .sorteo-dialogo[open], dialog.modal[open] { animation: none !important; }
   .ocard:active, .tj:not(.tj--pantalla):active, .tab:active svg, .pestana:active svg,
   .op-r span:active, .pub .op:active, summary.chip:active, .chip:active { transform: none; }

@@ -312,11 +312,19 @@
     return `<span class="tj-arte${compacto ? ' tj-arte--mini' : ''}" style="--arte:${color}" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="${d}"/></svg></span>`;
   }
 
+  /** El nombre de la transición de la foto de una publicación: de la
+   * tarjeta a la portada de su ficha (View Transitions entre páginas, donde
+   * el navegador las tiene; ver «Movimiento» en /assets/site.css). */
+  const nombreFoto = (id) => {
+    const limpio = String(id || '').replace(/[^A-Za-z0-9-]/g, '');
+    return limpio ? ` style="view-transition-name:foto-${limpio}"` : '';
+  };
+
   /** La pieza de foto o vídeo de la tarjeta. El vídeo va en silencio y sin
    * cargar nada hasta que se ve; `/assets/tarjetas.js` lo reproduce mientras
    * está a la vista (no con «reducir movimiento» ni con ahorro de datos). Sin
    * JavaScript se ve la foto de portada. */
-  function mediaTarjeta(o, { primera, ancho, alto, S }) {
+  function mediaTarjeta(o, { primera, ancho, alto, S, vt = '' }) {
     const piezas = soloWeb(o.images);
     const arte = piezas.length ? null : arteDe(o);
     if (arte) return arteHtml(arte, { compacto: ancho < 200 });
@@ -331,7 +339,7 @@
       ${foto ? '' : `<noscript><span class="tj-ph" aria-hidden="true">${ic('play', 34)}</span></noscript>`}
       <span class="tj-video" aria-hidden="true">${ic('play', 14)}<span class="sr">${esc(S.video)}</span></span>`;
     }
-    if (foto) return `<img class="tj-img" src="${esc(foto)}" alt="" width="${ancho}" height="${alto}" ${carga}>`;
+    if (foto) return `<img class="tj-img" src="${esc(foto)}" alt="" width="${ancho}" height="${alto}" ${carga}${vt}>`;
     // Sin foto: la inicial del negocio sobre un fondo neutro (nunca un hueco).
     return `<span class="tj-ph" aria-hidden="true">${esc((o.business_name || o.title || '·').trim().charAt(0).toUpperCase())}</span>`;
   }
@@ -343,10 +351,11 @@
    * (`/assets/tarjetas.js`). Sin JavaScript se deslizan igual. */
   function galeriaTarjeta(o, { primera, ancho, alto, S, href }) {
     const piezas = soloWeb(o.images).slice(0, 8);
+    const vt = nombreFoto(o.id);
     if (piezas.length < 2 && !(piezas[0] && isVideo(piezas[0]))) {
-      return `<a class="tj-pieza" href="${esc(href)}" tabindex="-1" aria-hidden="true">${mediaTarjeta(o, { primera, ancho, alto, S })}</a>`;
+      return `<a class="tj-pieza" href="${esc(href)}" tabindex="-1" aria-hidden="true">${mediaTarjeta(o, { primera, ancho, alto, S, vt })}</a>`;
     }
-    return galeria(piezas, { modo: 'tarjeta', primera, ancho, alto, S, href, portada: o.business_cover });
+    return galeria(piezas, { modo: 'tarjeta', primera, ancho, alto, S, href, portada: o.business_cover, vt });
   }
 
   /** Solo enlaces https (lo que sube la gente o el negocio nunca es otra
@@ -389,7 +398,9 @@
         ${por ? `poster="${esc(por)}"` : ''} data-src="${esc(p.url)}${por ? '' : '#t=0.1'}" width="${ancho}" height="${alto}" ${nombre(p, i)}></video>`;
       }
       const carga = o.primera && i === 0 ? 'fetchpriority="high"' : 'loading="lazy" decoding="async"';
-      return `<img class="tj-img" src="${esc(p.url)}" alt="${modo === 'visor' ? esc(S.pieza(false, i + 1, n)) : ''}" width="${ancho}" height="${alto}" ${carga}>`;
+      // La primera foto, con su nombre de transición (tarjeta → ficha).
+      const vt = i === 0 && modo !== 'visor' ? (o.vt || '') : '';
+      return `<img class="tj-img" src="${esc(p.url)}" alt="${modo === 'visor' ? esc(S.pieza(false, i + 1, n)) : ''}" width="${ancho}" height="${alto}" ${carga}${vt}>`;
     };
     const grupo = esc(o.grupo || 'ficha');
     const pieza = (p, i) => {
@@ -585,7 +596,7 @@
     return `<article class="tj tj--${plantilla}${opts.desc ? ' tj--desc' : ''}${pantalla ? ' tj--pantalla' : ''}" data-o="${esc(o.id)}"${geo}${estilo}>
     <div class="tj-media">
       ${opts.galeria || pantalla ? galeriaTarjeta(o, { primera: opts.primera, ancho, alto, S, href })
-    : mediaTarjeta(o, { primera: opts.primera, ancho, alto, S })}
+    : mediaTarjeta(o, { primera: opts.primera, ancho, alto, S, vt: nombreFoto(o.id) })}
       ${pantalla ? '' : tipo}
       ${botonSolo}
     </div>
@@ -621,7 +632,7 @@
   const KlendarTarjeta = {
     PLANTILLAS, tarjeta, rejilla, distancia, colorSeguro, estiloDe, sobreAcento, plataformaEntradas, sitioDe,
     cuandoCorto, money, fmtDay, fmtTime, sameDay, fmtEnd, benefit, priorPrice, isVideo, esc,
-    galeria, miniatura, miniaturas, visor, soloWeb, piezasDe, duracionTxt, arteDe, arteHtml, esGenerica, AGENDA_ARTE,
+    galeria, miniatura, miniaturas, visor, soloWeb, piezasDe, duracionTxt, arteDe, arteHtml, esGenerica, AGENDA_ARTE, nombreFoto,
     nombrePieza: (video, i, n, lang) => klBi(T, lang).pieza(video, i, n),
   };
   globalThis.KlendarTarjeta = KlendarTarjeta;

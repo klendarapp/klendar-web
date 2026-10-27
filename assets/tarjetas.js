@@ -264,6 +264,20 @@
     if (m >= 60) return Math.floor(m / 60) + ' h' + (m % 60 ? ' ' + (m % 60) + ' min' : '');
     return Math.max(1, m) + ' min';
   }
+  // Las cifras que cambian giran como un rodillo (como la app); la primera
+  // vez y con «Reducir movimiento», el texto tal cual.
+  function rodillo(el, nuevo, primera) {
+    var viejo = el.textContent;
+    if (viejo === nuevo) return;
+    if (primera || quieto.matches || viejo.length !== nuevo.length) { el.textContent = nuevo; return; }
+    var html = '';
+    for (var i = 0; i < nuevo.length; i++) {
+      var c = nuevo.charAt(i);
+      var e = c === '&' ? '&amp;' : c === '<' ? '&lt;' : c;
+      html += /[0-9]/.test(c) && c !== viejo.charAt(i) ? '<span class="rod">' + e + '</span>' : e;
+    }
+    el.innerHTML = html;
+  }
   function tic() {
     clearTimeout(reloj);
     var n = Date.now();
@@ -272,11 +286,12 @@
       var fin = Date.parse(el.getAttribute('data-fin'));
       var txt = el.querySelector('span');
       if (!txt || !fin) return;
-      if (!el.hasAttribute('data-original')) el.setAttribute('data-original', txt.textContent);
+      var primera = !el.hasAttribute('data-original');
+      if (primera) el.setAttribute('data-original', txt.textContent);
       if (n >= fin) { txt.textContent = EN ? 'Ended' : 'Terminada'; el.classList.remove('ahora'); el.classList.add('fin'); }
-      else if (n >= ini) { txt.textContent = EN ? dur(fin - n) + ' left' : 'Quedan ' + dur(fin - n); el.classList.add('ahora'); }
+      else if (n >= ini) { rodillo(txt, EN ? dur(fin - n) + ' left' : 'Quedan ' + dur(fin - n), primera); el.classList.add('ahora'); }
       // Antes de empezar, «Empieza en 3 h» (como la app).
-      else if (ini) { txt.textContent = EN ? 'Starts in ' + dur(ini - n) : 'Empieza en ' + dur(ini - n); }
+      else if (ini) { rodillo(txt, EN ? 'Starts in ' + dur(ini - n) : 'Empieza en ' + dur(ini - n), primera); }
     });
     // El botón de la tarjeta: «Conseguir el código» mientras se puede.
     document.querySelectorAll('.tj-cta[data-cta-fin]').forEach(function (b) {

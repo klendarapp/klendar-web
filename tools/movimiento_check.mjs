@@ -104,6 +104,16 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
         tablas: {},
       };
       await ctx.route(`${SUPA}/**`, supabaseFalso(estado));
+      // Si «Tu cuenta» llega a poner la entrada escalonada (`mov-entra` en
+      // #view; se quita sola a los 600 ms, así que se apunta al ponerla).
+      await ctx.addInitScript(() => {
+        addEventListener('DOMContentLoaded', () => {
+          const v = document.getElementById('view');
+          if (!v) return;
+          new MutationObserver(() => { if (v.classList.contains('mov-entra')) window.__movEntro = true; })
+            .observe(v, { attributes: true, attributeFilter: ['class'] });
+        });
+      });
       const page = await ctx.newPage();
       page.setDefaultTimeout(15000);
       const errores = [];
@@ -125,6 +135,14 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
         ok(raras.length === 0, `${tag} ${ruta}: solo transform y opacidad ${JSON.stringify(raras)}`);
         const largas = an.filter((a) => a.dur > 300 && !/float/.test(a.nombre));
         ok(largas.length === 0, `${tag} ${ruta}: nada pasa de 300 ms ${JSON.stringify(largas)}`);
+        if (ruta === '/descubre/') {
+          // La foto de cada tarjeta lleva su nombre de transición (vuela a la
+          // ficha donde el navegador tiene View Transitions entre páginas).
+          const nombres = await page.evaluate(() => [...document.querySelectorAll('img.tj-img')]
+            .map((i) => i.style.viewTransitionName).filter(Boolean));
+          ok(nombres.length > 0 && nombres.every((n) => /^foto-[0-9a-f-]+$/.test(n)) && new Set(nombres).size === nombres.length,
+            `${tag} Descubre: fotos con nombre de transición único (${nombres.length})`);
+        }
         if (reducido) {
           const vivas = an.filter((a) => a.dur > 1);
           ok(vivas.length === 0, `${tag} ${ruta}: sin animaciones con «Reducir movimiento» ${JSON.stringify(vivas)}`);
@@ -162,7 +180,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
       // 3 y 4. «Tu cuenta» › Favoritos.
       await page.goto(`${BASE}/app/#/favoritos`, { waitUntil: 'networkidle' });
       await page.waitForSelector('.fav-fila');
-      const entra = await page.evaluate(() => document.getElementById('view').classList.contains('mov-entra'));
+      const entra = await page.evaluate(() => Boolean(window.__movEntro));
       ok(reducido ? !entra : entra, `${tag} pantalla nueva ${reducido ? 'quieta' : 'entra escalonada'}`);
       await page.waitForTimeout(450);
       const filas = await page.locator('.fav-fila').count();

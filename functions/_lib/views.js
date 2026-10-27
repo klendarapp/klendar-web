@@ -421,7 +421,7 @@ export async function offerPage(id, lang, rpRaw = '') {
   const body = `
   <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a> · <a href="${esc(bHref)}">${esc(o.business_name)}</a></p>
   <div class="detail ficha${pieces.length || arte ? '' : ' sin-media'}" data-equipo-biz="${esc(o.business_id)}">
-    ${arte || carrusel(pieces, { titulo: o.title, lang })}
+    ${arte || carrusel(pieces, { titulo: o.title, lang, id: o.id })}
     <div class="d-head">
       <div class="d-top"><div class="badges"><span class="badge">${esc(flash && o.style?.badge === 'daily_menu'
         ? `${en ? 'Daily menu' : 'Menú del día'}${{ lunch: en ? ' · Lunch' : ' · Comida', dinner: en ? ' · Dinner' : ' · Cena', both: en ? ' · Lunch and dinner' : ' · Comida y cena' }[o.style?.meal] || ''}`
