@@ -902,6 +902,9 @@ const SVG = {
   // Aviso (info) y carné que hay que enseñar (school).
   info: 'M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z',
   school: 'M12 3 1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3zm6.82 6L12 12.72 5.18 9 12 5.28 18.82 9zM17 15.99l-5 2.73-5-2.73v-3.72L12 15l5-2.73v3.72z',
+  // QR que lleva a otra web en «Validar códigos» (gpp_maybe; no está en la
+  // fuente recortada y salía «G»).
+  gpp_maybe: 'M12 2 4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3zm6 9.09c0 4-2.55 7.7-6 8.83-3.45-1.13-6-4.82-6-8.83v-4.7l6-2.25 6 2.25v4.7zM11 15h2v2h-2zm0-8h2v6h-2z',
 };
 const svg = (n, s = 20) => `<svg class="ms svg" viewBox="0 0 24 24" width="${s}" height="${s}" aria-hidden="true"><path fill="currentColor" d="${SVG[n]}"/></svg>`;
 const icono = (n) => (SVG[n] ? svg(n) : ms(n));
@@ -4253,7 +4256,7 @@ PAGES.validar = async (v) => {
     // Klendar: se dice adónde lleva y no se hace nada más (quishing).
     const ajena = webAjenaQr(raw);
     if (ajena) {
-      $('#result').innerHTML = `<div class="scan-result bad">${ms('gpp_maybe')}${esc(I18N.t(`Este QR lleva a ${ajena}`))}<small>${esc(I18N.t('No es de Klendar: no lo abras ni lo valides.'))}</small></div>`;
+      $('#result').innerHTML = `<div class="scan-result bad">${icono('gpp_maybe')}${esc(I18N.t(`Este QR lleva a ${ajena}`))}<small>${esc(I18N.t('No es de Klendar: no lo abras ni lo valides.'))}</small></div>`;
       $('#code').value = '';
       if (navigator.vibrate) navigator.vibrate([60, 60, 60]);
       return;
