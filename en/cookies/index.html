@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="/assets/errores.js?v=1" async></script>
 <title>Cookie policy · Klendar</title>
-<meta name="description" content="Klendar uses no cookies: what it stores in your browser so things work, how we count visits without identifying you, and which third-party services load.">
+<meta name="description" content="Klendar uses a single cookie, for your answer to “Are you 18 or over?”: what it stores in your browser so things work, how we count visits without identifying you, and which third-party services load.">
 <link rel="canonical" href="https://klendar.app/en/cookies/">
 <link rel="alternate" hreflang="es" href="https://klendar.app/cookies/">
 <link rel="alternate" hreflang="en" href="https://klendar.app/en/cookies/">
 <link rel="alternate" hreflang="x-default" href="https://klendar.app/cookies/">
 <meta property="og:title" content="Cookie policy · Klendar">
-<meta property="og:description" content="Klendar uses no cookies: what it stores in your browser so things work, how we count visits without identifying you, and which third-party services load.">
+<meta property="og:description" content="Klendar uses a single cookie, for your answer to “Are you 18 or over?”: what it stores in your browser so things work, how we count visits without identifying you, and which third-party services load.">
 <meta property="og:image" content="https://klendar.app/assets/og.png">
 <meta property="og:url" content="https://klendar.app/en/cookies/">
 <meta property="og:type" content="website">
@@ -59,13 +59,14 @@
 <script src="/assets/cabecera.js?v=10" defer></script>
 <main class="doc" id="contenido">
 <h1>Cookie policy</h1>
-<div class="meta">Last updated: 16 October 2026 · Version 2026-09-29</div>
+<div class="meta">Last updated: 27 October 2026 · Version 2026-09-29</div>
 <p class="notice">This is a courtesy translation provided for information only. In case of any discrepancy, the <a href="/cookies/">Spanish version</a> prevails.</p>
 
-<p><strong>In short.</strong> klendar.app does not use cookies. It only stores in your browser what is essential for what you ask it to do (your session, your language, your filters, the codes a business validates offline) and it counts visits without cookies and without identifying you. None of this is used for advertising or to follow you across other sites, so we don't ask for your consent (art. 22.2 of the Spanish LSSI-CE). If we ever add anything that needs it, we will ask you first.</p>
+<p><strong>In short.</strong> klendar.app uses <strong>a single cookie</strong>, and only if you answer “Are you 18 or over?”: it stores your answer so we don't ask again. Apart from that, it only stores in your browser what is essential for what you ask it to do (your session, your language, your filters, the codes a business validates offline) and it counts visits without cookies and without identifying you. None of this is used for advertising or to follow you across other sites, so we don't ask for your consent (art. 22.2 of the Spanish LSSI-CE). If we ever add anything that needs it, we will ask you first.</p>
 <h2>What is stored in your browser</h2>
 <table>
 <tr><th>Name</th><th>Where</th><th>Purpose</th><th>How long</th><th>Type</th></tr>
+<tr><td><code>klendar_18</code> (cookie)</td><td>All of klendar.app</td><td>Your answer to “Are you 18 or over?” (“1” yes, “0” no), to show you or not what is for over-18s only without asking again. When you're logged in, your account sets it from your date of birth</td><td>1 year</td><td>Preference you chose</td></tr>
 <tr><td><code>klendar_lang</code></td><td>All of klendar.app (local storage)</td><td>Remember the language you pick: Spanish or English on the public pages and, in “Your account” and the dashboard, also català, galego, euskara, français, Deutsch or italiano</td><td>Until you delete it</td><td>Preference you chose</td></tr>
 <tr><td><code>sb-…-auth-token</code></td><td>“Your account” and business dashboard (local storage)</td><td>Keep you logged in</td><td>Until you log out</td><td>Technical (authentication)</td></tr>
 <tr><td><code>sb-…-auth-token-…code-verifier</code></td><td>“Your account” and business dashboard (local storage)</td><td>A one-time secret that checks that the return from Google or Apple reaches the same browser where you started logging in (PKCE)</td><td>Until you finish logging in or log out</td><td>Technical (security)</td></tr>
@@ -105,10 +106,11 @@
 <h2>How to delete it</h2>
 <p>When you log out, your session, the copy of your codes, your interests and the dashboard data are deleted. You can delete everything else in your browser settings (“Clear browsing data” or “Site data”).</p>
 <h2>The app</h2>
-<p>The <strong>mobile app</strong> does not use cookies. It uses device identifiers for notifications (only if you turn them on) and for crash reports and, only if you agree (when signing up or in Account → Settings → Privacy and data), for app usage statistics. You can withdraw it at any time from the app or from “Your account” on the website. More detail in the <a href="/en/privacy/">Privacy policy</a>.</p>
+<p>The <strong>mobile app</strong> does not use cookies. It uses device identifiers for notifications (only if you turn them on) and for crash reports and, only if you agree (when signing up or in Account → Settings → Privacy and data), for app usage statistics. You can withdraw it at any time from the app or from “Your account” on the website. More detail in the <a href="/en/privacy/">Privacy policy</a>. Your answer to “Are you 18 or over?” is stored on your phone, not in a cookie.</p>
 
 <h2 class="cambios" id="historial">Change history</h2>
 <ul>
+  <li><strong>27 October 2026</strong>: The klendar_18 cookie (the answer to “Are you 18 or over?”), the first on klendar.app.</li>
   <li><strong>16 October 2026</strong>: Visit statistics aren't used on a venue's table QR page (/m/) either.</li>
   <li><strong>14 October 2026</strong>: The key that remembers the button you just pressed is also used in Discover and Explore (for “Ask for a place” and “Tell me when it arrives”).</li>
   <li><strong>14 October 2026</strong>: Two more admin keys: they remember whether you left the “System” menu group and “More” in the summary open.</li>
