@@ -165,6 +165,110 @@
     return cierra;
   }
 
+  /**
+   * El marcador del mapa, el mismo en Planes y en Sitios (GLOSARIO «El
+   * mapa»; en la app, `_buildMarker`): un círculo de 30 px con borde blanco
+   * y sombra suave; dentro, el logo o un icono sobre gris claro. El estado,
+   * en un anillo: coral si tiene planes (`planes`), ámbar con una oferta
+   * flash (`flash`) y sin anillo si hoy no tiene nada (`''`). Con [n] > 1,
+   * la cifra en una insignia en la esquina. Debajo, su nombre (lo enseña
+   * `nombres` si cabe).
+   */
+  function marcaEl({ logo, local, anillo, n, etiqueta, nombre, prio }) {
+    const el = document.createElement('button');
+    el.type = 'button';
+    el.className = `marca${anillo ? ` anillo-${anillo}` : ''}`;
+    el.setAttribute('aria-label', etiqueta);
+    el.dataset.prio = String(prio || 0);
+    el.innerHTML = `${logo
+      ? `<span class="mc-cara"><img src="${esc(logo)}" alt="" loading="lazy" decoding="async"></span>`
+      : `<span class="mc-cara sin-logo">${icono(local ? 'local' : 'lugar', 16)}</span>`}${
+      n > 1 ? `<span class="mc-n" aria-hidden="true">${n > 99 ? '99+' : n}</span>` : ''}`;
+    if (nombre) {
+      const t = document.createElement('span');
+      t.className = 'marca-nombre';
+      t.textContent = corto(nombre);
+      t.hidden = true;
+      el.append(t);
+    }
+    return el;
+  }
+
+  /**
+   * Una capa de marcadores (Planes o Sitios, con el mismo sistema): junta lo
+   * del mismo punto en un sitio y los sitios que se pisan en una burbuja,
+   * vuelve a agrupar al cambiar el zoom y pone los nombres que caben.
+   * [c]: `cara(s)` → { logo, local, nombre } del sitio; `anillo(s)`;
+   * `uno(item)` → el marcador de un sitio con un solo punto (con su
+   * tarjeta); `varios(s)` → al tocar un sitio con varios; `etiqueta(s, n)`;
+   * `burbuja(n)` → lo que lee el lector en una burbuja.
+   * Devuelve `poner(puntos)` para cambiar los puntos (Sitios, al moverse).
+   */
+  function capa(m, c) {
+    const mb = window.mapboxgl;
+    let lista = [];
+    let marcas = [];
+
+    function nombres() {
+      const todos = marcas.map((x) => x.getElement());
+      const etiquetas = todos.map((el) => el.querySelector('.marca-nombre')).filter(Boolean);
+      etiquetas.forEach((n) => { n.hidden = true; });
+      if (m.getZoom() < ZOOM_NOMBRES) return;
+      const caras = todos.map((el) => (el.querySelector('.mc-cara') || el).getBoundingClientRect());
+      const choca = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+      const puestos = [];
+      etiquetas
+        .map((n) => ({ n, prio: Number(n.parentElement.dataset.prio) || 0 }))
+        .sort((a, b) => b.prio - a.prio)
+        .forEach(({ n }) => {
+          n.hidden = false;
+          const r = n.getBoundingClientRect();
+          const propia = (n.parentElement.querySelector('.mc-cara') || n.parentElement).getBoundingClientRect();
+          const otra = (x) => !(x.left === propia.left && x.top === propia.top);
+          if (puestos.some((x) => choca(r, x)) || caras.some((x) => otra(x) && choca(r, x))) n.hidden = true;
+          else puestos.push(r);
+        });
+    }
+
+    function burbuja(g) {
+      const n = g.sitios.reduce((t, s) => t + s.items.length, 0);
+      const el = document.createElement('button');
+      el.type = 'button';
+      el.className = `grupo-marca${g.sitios.some((s) => c.anillo(s)) ? ' anillo-planes' : ''}`;
+      el.textContent = String(n > 999 ? '999+' : n);
+      el.setAttribute('aria-label', c.burbuja(n));
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const z = zoomQueSepara(g, m.getZoom());
+        if (z == null) c.varios(g.sitios[0]);
+        else m.easeTo({ center: [g.lng, g.lat], zoom: z, duration: 450 });
+      });
+      return new mb.Marker({ element: el, anchor: 'center' }).setLngLat([g.lng, g.lat]);
+    }
+
+    function sitio(s) {
+      if (s.items.length === 1) return c.uno(s.items[0], s);
+      const k = c.cara(s);
+      const el = marcaEl({
+        ...k, anillo: c.anillo(s), n: s.items.length, etiqueta: c.etiqueta(s, s.items.length), prio: s.items.length,
+      });
+      el.addEventListener('click', (e) => { e.stopPropagation(); c.varios(s); });
+      return new mb.Marker({ element: el, anchor: 'center' }).setLngLat([s.lng, s.lat]);
+    }
+
+    function pinta() {
+      marcas.forEach((x) => x.remove());
+      marcas = agrupa(lista, m.getZoom()).map((g) => (g.sitios.length > 1 ? burbuja(g) : sitio(g.sitios[0])));
+      marcas.forEach((x) => x.addTo(m));
+      requestAnimationFrame(nombres);
+    }
+    m.on('zoomend', pinta);
+    return {
+      poner(puntos) { lista = sitios(puntos); pinta(); },
+      marcaEl,
+    };
+  }
+
   /** Cara del sitio: el local (si lo hay) o el primero. */
   const principal = (s) => s.items.find((p) => p.n) || s.items[0];
 
@@ -176,29 +280,24 @@
   }
 
   /**
-   * El mapa de Planes con sus puntos (`#mapaPuntos`): un marcador por plan,
-   * los del mismo sitio en uno con «N planes» y los sitios cercanos en una
-   * burbuja con el total. [T]: los textos (`data-textos` de la caja).
+   * El mapa de Planes con sus puntos (`#mapaPuntos`): el marcador de cada
+   * sitio (con su tarjeta si tiene un plan; con «N planes» en su hoja si
+   * tiene varios) y los sitios cercanos en una burbuja con el total.
+   * [T]: los textos (`data-textos` de la caja).
    */
   function planes(m, puntos, T) {
     const mb = window.mapboxgl;
-    const lista = sitios(puntos);
     const SA = window.KlendarSitioAhora;
     const KM = window.KlendarMarcas;
     const locales = [...new Set(puntos.filter((p) => p.n).map((p) => p.n))];
     // Precio del local y «¿Hay sitio ahora?» (una vez para todos).
     const ahora = SA && KM && locales.length ? SA.pide(locales).catch(() => ({})) : Promise.resolve({});
-    let marcas = [];
 
-    function chincheta(p) {
-      const pin = document.createElement('a');
-      pin.className = `chincheta${p.k === 'f' ? ' flash' : ''}`;
-      pin.href = p.u;
-      pin.setAttribute('aria-label', p.t);
-      const el = document.createElement('div');
-      el.className = 'chin';
-      el.dataset.prio = '1';
-      el.append(pin, nombre(p.sn || p.b));
+    /** Un sitio con un solo plan: su marcador y su tarjeta. */
+    function uno(p) {
+      const el = marcaEl({
+        logo: p.lg, local: Boolean(p.n), anillo: p.k === 'f' ? 'flash' : 'planes', n: 1, etiqueta: p.t, nombre: p.sn || p.b, prio: 1,
+      });
       const a = document.createElement('a');
       a.className = 'pop';
       a.href = p.u;
@@ -231,10 +330,8 @@
           }
         });
       }
-      pin.addEventListener('click', (e) => e.preventDefault());
       const pop = new mb.Popup({ offset: 18, closeButton: false, focusAfterOpen: false }).setDOMContent(w);
-      // La punta de la gota, en el sitio.
-      return new mb.Marker({ element: el, anchor: 'bottom', offset: [0, -5] }).setLngLat([p.lng, p.lat]).setPopup(pop);
+      return new mb.Marker({ element: el, anchor: 'center' }).setLngLat([p.lng, p.lat]).setPopup(pop);
     }
 
     /** La hoja de un sitio: cabeza, Cómo llegar (y Ver el sitio si es un
@@ -276,82 +373,14 @@
       abreHoja(m, caja, [s.lng, s.lat]);
     }
 
-    function marcaSitio(s) {
-      const p = principal(s);
-      const n = planesDe(s);
-      const el = document.createElement('button');
-      el.type = 'button';
-      el.className = 'sitio-marca';
-      el.setAttribute('aria-label', `${p.sn || p.b}, ${T.planes(n)}`);
-      el.dataset.prio = String(n);
-      // «3 planes» lo dice su hoja: aquí, la cifra en una insignia.
-      el.innerHTML = `${cara(p, 'sm-cara')}<span class="sm-n" aria-hidden="true">${n > 99 ? '99+' : n}</span>`;
-      el.append(nombre(p.sn || p.b));
-      el.addEventListener('click', (e) => { e.stopPropagation(); abreSitio(s); });
-      return new mb.Marker({ element: el, anchor: 'center' }).setLngLat([s.lng, s.lat]);
-    }
-
-    function burbuja(g) {
-      const n = planesDeGrupo(g);
-      const el = document.createElement('button');
-      el.type = 'button';
-      el.className = 'grupo-marca';
-      el.textContent = String(n);
-      el.setAttribute('aria-label', `${T.planes(n)}. ${T.acercar}`);
-      el.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const z = zoomQueSepara(g, m.getZoom());
-        if (z == null) abreSitio(g.sitios[0]);
-        else m.easeTo({ center: [g.lng, g.lat], zoom: z, duration: 450 });
-      });
-      return new mb.Marker({ element: el, anchor: 'center' }).setLngLat([g.lng, g.lat]);
-    }
-
-    /** El nombre bajo un marcador (oculto hasta que `nombres` decide). */
-    function nombre(t) {
-      const n = document.createElement('span');
-      n.className = 'marca-nombre';
-      n.textContent = corto(t);
-      n.hidden = true;
-      return n;
-    }
-
-    /** Los nombres: desde el zoom 15 y solo los que caben, primero los de los
-     *  sitios con más planes; uno que chocaría con otro nombre o con un
-     *  marcador no sale. */
-    function nombres() {
-      const todos = marcas.map((x) => x.getElement());
-      const etiquetas = todos.map((el) => el.querySelector('.marca-nombre')).filter(Boolean);
-      etiquetas.forEach((n) => { n.hidden = true; });
-      if (m.getZoom() < ZOOM_NOMBRES) return;
-      const cajas = todos.map((el) => (el.querySelector('.chincheta, .sm-cara') || el).getBoundingClientRect());
-      const choca = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
-      const puestos = [];
-      etiquetas
-        .map((n) => ({ n, prio: Number(n.parentElement.dataset.prio) || 0 }))
-        .sort((a, b) => b.prio - a.prio)
-        .forEach(({ n }) => {
-          n.hidden = false;
-          const r = n.getBoundingClientRect();
-          const propia = (n.parentElement.querySelector('.chincheta, .sm-cara') || n.parentElement).getBoundingClientRect();
-          if (puestos.some((x) => choca(r, x)) || cajas.some((c) => c !== propia && !(c.left === propia.left && c.top === propia.top) && choca(r, c))) {
-            n.hidden = true;
-          } else puestos.push(r);
-        });
-    }
-
-    function pinta() {
-      marcas.forEach((x) => x.remove());
-      marcas = agrupa(lista, m.getZoom()).map((g) => {
-        if (g.sitios.length > 1) return burbuja(g);
-        const s = g.sitios[0];
-        return s.items.length > 1 ? marcaSitio(s) : chincheta(s.items[0]);
-      });
-      marcas.forEach((x) => x.addTo(m));
-      requestAnimationFrame(nombres);
-    }
-    pinta();
-    m.on('zoomend', pinta);
+    capa(m, {
+      cara: (s) => { const p = principal(s); return { logo: p.lg, local: Boolean(p.n), nombre: p.sn || p.b }; },
+      anillo: (s) => (s.items.some((x) => x.k === 'f') ? 'flash' : 'planes'),
+      uno,
+      varios: abreSitio,
+      etiqueta: (s, n) => `${principal(s).sn || principal(s).b}, ${T.planes(n)}`,
+      burbuja: (n) => `${T.planes(n)}. ${T.acercar}`,
+    }).poner(puntos);
   }
 
   /** Arranca el mapa de Planes (`#mapa`, con `#mapaPuntos`). */
@@ -415,6 +444,8 @@
   }
 
   KA.planes = planes;
+  KA.capa = capa;
+  KA.marcaEl = marcaEl;
   KA.abreHoja = abreHoja;
   KA.mapaPlanes = mapaPlanes;
   if (document.getElementById('mapaPuntos')) {

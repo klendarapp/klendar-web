@@ -102,8 +102,8 @@ export function mapaSitios({ lang, centro, zoom, filtros, desde = null }) {
 
 /** Los scripts de la página de Sitios (la hora de cada fila y el mapa). */
 export const SITIOS_SCRIPTS = `<script src="/assets/zona.js?v=2" defer></script>
-<script src="/assets/mapa.js?v=2" defer></script>
-<script src="/assets/sitios.js?v=3" defer></script>`;
+<script src="/assets/mapa.js?v=3" defer></script>
+<script src="/assets/sitios.js?v=4" defer></script>`;
 
 export const SITIOS_CSS = `<style>
 /* Sin saltos al cambiar entre Planes y Sitios: la barra de desplazamiento

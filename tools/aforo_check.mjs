@@ -468,10 +468,10 @@ async function mapa(nav, nombre, t, vp) {
   PUB.marca = 'full';
   const { ctx, p, errores } = await contextoFicha(nav, vp, { conSesion: true, rpc: { my_room_alerts: [] } });
   await p.goto(`http://localhost:${PUB_PORT}/explorar/?vista=mapa&ciudad=Madrid`, { waitUntil: 'load' });
-  const hay = await p.waitForSelector('.chincheta', { timeout: 20000 }).then(() => true).catch(() => false);
+  const hay = await p.waitForSelector('#mapa .marca[data-prio="1"]', { timeout: 20000 }).then(() => true).catch(() => false);
   if (!hay) { console.log(`aviso: ${nombre}/${t} mapa: Mapbox no ha cargado aquí; no se prueba la tarjeta`); await ctx.close(); return; }
   await p.waitForTimeout(800);
-  await p.locator('.chincheta').first().click();
+  await p.locator('#mapa .marca[data-prio="1"]').first().click();
   const sale = await p.waitForSelector('.pop-caja [data-hs-pedir]', { timeout: 8000 }).then(() => true).catch(() => false);
   ok(sale && /Lleno · hace 5 min/.test(await p.locator('.pop-caja').innerText()), `${nombre}/${t} mapa: la tarjeta con «Lleno» y «Avísame cuando haya sitio»`);
   await p.locator('.mapboxgl-popup').screenshot({ path: `${OUT}/web-mapa-tarjeta-${nombre}-${t}.png` }).catch(() => {});

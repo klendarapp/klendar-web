@@ -11,7 +11,7 @@
 //  5. En oscuro se lee (captura).
 //  5b. Marcadores pequeños (32 px, la cifra en la esquina) y los nombres
 //     solo desde el zoom 15, en una línea y sin pisarse (2026-10-27).
-//  6. Sitios: la fuente agrupa (hasta el 16, radio 50) y hay capa de burbujas.
+//  6. Sitios: la fuente agrupa con los mismos marcadores que Planes (mismo tamaño y anillo).
 //  7. Sin errores en la consola.
 // Chromium y WebKit, móvil (375) y escritorio. Capturas en OUT.
 //
@@ -41,8 +41,8 @@ const quieto = (page) => page.evaluate(() => new Promise((r) => {
 const cuenta = (page) => page.evaluate(() => {
   const num = (t) => Number(String(t).match(/\d+/)?.[0] || 0);
   const burbujas = [...document.querySelectorAll('.grupo-marca')].map((b) => num(b.textContent));
-  const sitios = [...document.querySelectorAll('.sitio-marca .sm-n')].map((b) => num(b.textContent));
-  const chinchetas = document.querySelectorAll('.chincheta').length;
+  const sitios = [...document.querySelectorAll('#mapa .marca .mc-n')].map((b) => num(b.textContent));
+  const chinchetas = [...document.querySelectorAll('#mapa .marca')].filter((x) => !x.querySelector('.mc-n')).length;
   return { burbujas, sitios, chinchetas, total: burbujas.reduce((a, b) => a + b, 0) + sitios.reduce((a, b) => a + b, 0) + chinchetas };
 });
 
@@ -61,7 +61,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
       await page.goto(`${BASE}/explorar/?vista=mapa&${AQUI}`);
       const puntos = await page.evaluate(() => JSON.parse(document.getElementById('mapaPuntos').textContent));
       const conMapa = await page.waitForFunction(() => window.KlendarMapa && window.KlendarMapa.loaded()
-        && document.querySelector('.grupo-marca, .sitio-marca, .chincheta'), null, { timeout: 30000 }).then(() => true).catch(() => false);
+        && document.querySelector('.grupo-marca, .marca'), null, { timeout: 30000 }).then(() => true).catch(() => false);
       if (!conMapa) {
         // WebKit sin GPU no siempre pinta Mapbox: entonces sale el aviso.
         ok(await page.locator('#mapa.sin-mapa, #mapa .empty').count() > 0 || nombre === 'webkit', `${t} sin mapa, con aviso`);
@@ -84,7 +84,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
       await page.evaluate(() => window.KlendarMapa.jumpTo({ zoom: 13 }));
       await quieto(page);
       ok((await nombres()).length === 0, `${t} de lejos (zoom 13), sin nombres`);
-      const tam = await page.evaluate(() => { const e = document.querySelector('.sitio-marca .sm-cara, .grupo-marca'); const r = e && e.getBoundingClientRect(); return r ? Math.max(r.width, r.height) : 0; });
+      const tam = await page.evaluate(() => { const e = document.querySelector('.marca .mc-cara, .grupo-marca'); const r = e && e.getBoundingClientRect(); return r ? Math.max(r.width, r.height) : 0; });
       ok(tam > 0 && tam <= 34, `${t} marcadores pequeños (${Math.round(tam)} px)`);
       await page.evaluate(() => window.KlendarMapa.jumpTo({ zoom: 16 }));
       await quieto(page);
@@ -124,7 +124,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
       });
       await page.evaluate((s) => window.KlendarMapa.jumpTo({ center: [s.lng, s.lat], zoom: 18 }), KA);
       await quieto(page);
-      const marca = page.locator(`.sitio-marca[aria-label$=", ${KA.n} planes"]`).first();
+      const marca = page.locator(`.marca[aria-label$=", ${KA.n} planes"]`).first();
       ok(await marca.count() === 1, `${t} «${KA.nombre}»: un marcador con «${KA.n} planes»`);
       await page.screenshot({ path: `${OUT}/web-planes-sitio-${nombre}-${forma}-${tema}.png` });
       await marca.click();
@@ -149,7 +149,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
       // 6. Sitios.
       if (tema === 'light') {
         const pide = page.waitForResponse((r) => r.url().includes('/rpc/map_places'), { timeout: 30000 }).catch(() => null);
-        await page.goto(`${BASE}/explorar/?que=sitios&vista=mapa&${AQUI}`);
+        await page.goto(`${BASE}/explorar/?que=sitios&vista=mapa&lat=40.4168&lng=-3.7038`);
         ok(Boolean(await pide), `${t} Sitios pide map_places`);
         const capas = await page.waitForFunction(() => {
           const c = document.getElementById('mapa-sitios');
@@ -157,6 +157,15 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
           return m || document.querySelector('#mapa-sitios .mapboxgl-canvas');
         }, null, { timeout: 20000 }).then(() => true).catch(() => false);
         ok(capas, `${t} Sitios: el mapa sale`);
+        // Los mismos marcadores que Planes: el círculo de 30 px (o la
+        // burbuja), con anillo coral solo los que tienen planes hoy.
+        const mismo = await page.waitForFunction(() => {
+          const e = document.querySelector('#mapa-sitios .marca .mc-cara, #mapa-sitios .grupo-marca');
+          if (!e) return null;
+          const r = e.getBoundingClientRect();
+          return { tam: Math.round(Math.max(r.width, r.height)), coral: document.querySelectorAll('#mapa-sitios .marca.anillo-planes').length, sin: document.querySelectorAll('#mapa-sitios .marca:not(.anillo-planes)').length };
+        }, null, { timeout: 20000 }).then((h) => h.jsonValue()).catch(() => null);
+        ok(mismo && mismo.tam >= 28 && mismo.tam <= 34, `${t} Sitios: los marcadores de Planes (${JSON.stringify(mismo)})`);
         await page.waitForTimeout(1500);
         await page.screenshot({ path: `${OUT}/web-sitios-${nombre}-${forma}.png` });
       }

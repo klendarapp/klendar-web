@@ -457,7 +457,7 @@ const mapaHtml = (items, lang, S) => {
   <p class="ambiente-leyenda" id="ambiente-leyenda" hidden></p>
   ${sitioAhoraScripts(lang).replace(/ defer/g, '')}
   <script type="application/json" id="mapaPuntos">${JSON.stringify(puntos).replace(/</g, '\u003c')}</script>
-  <script src="/assets/mapa.js?v=2"></script>`;
+  <script src="/assets/mapa.js?v=3"></script>`;
 };
 
 /** Las distancias de «Cerca de mí», las mismas que la hoja de filtros de la
