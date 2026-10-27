@@ -49,6 +49,14 @@ const PAGINAS = [
     /and those of 27 October 2026 \(sections 2a, 3, 3e, 3f and 3k\) from 11 November 2026: 15 days/,
     /27 October 2026: How what people see is ordered \(section 2a\)[\s\S]*?It applies from 11 November 2026\./,
   ], [/The Business's rating, its fee or its number of publications don't affect the order/, /with “Soonest” as if they started six hours earlier/]],
+  ['/privacidad/', 'Última actualización: 27 de octubre de 2026', [
+    /sin esconder nada \(solo con el orden «Recomendado», el de serie, en el que cuentan como si fueran dos días más nuevas; con «Más cerca», «Empieza antes» o «Lo más nuevo» no cuentan, y puedes apagarlo en el menú de orden con la casilla «Tener en cuenta tus gustos»\)/,
+    /27 de octubre de 2026: Tus gustos: solo cuentan con el orden «Recomendado»/,
+  ], [/con «Más pronto» como si empezaran seis horas antes/]],
+  ['/en/privacy/', 'Last updated: 27 October 2026', [
+    /without hiding anything \(only with the “Recommended” order, the default one, where they count as if they were two days newer; with “Nearest”, “Starts soonest” or “Newest” they don't count, and you can turn this off in the sort menu with the “Take your interests into account” box\)/,
+    /27 October 2026: Your interests: they only count with the “Recommended” order/,
+  ], [/with “Soonest” as if they started six hours earlier/]],
   ['/preguntas/', '¿Por qué veo unas cosas y no otras?', [
     /Lo destacado de pago sale primero y siempre con la etiqueta «Destacado»\. Después, el orden que elijas en el menú de orden \(al final de la fila de filtros\)\. De serie es «Recomendado»/,
     /También puedes elegir «Más cerca», «Empieza antes» o «Lo más nuevo»\. En la agenda, la lista del día va por hora o por cercanía, y en Sitios, por cercanía o por la mejor valoración\./,

@@ -90,11 +90,11 @@ const PAGINAS = [
     /27 October 2026: When validating, the business sees your photo if you have one/,
   ], []],
   ['/eliminar-cuenta/', 'Última actualización: 27 de octubre de 2026', [
-    /Si entraste con Apple, pedimos a Apple que retire el acceso de Klendar a tu cuenta de Apple \(lo verás desaparecer en Ajustes → tu nombre → Iniciar sesión con Apple\)\.\s+Qué se conserva y por qué/,
+    /Si entraste con Apple, pedimos a Apple que retire el acceso de Klendar a tu cuenta de Apple \(lo verás desaparecer en Ajustes → tu nombre → Inicio de sesión y seguridad → Iniciar sesión con Apple\)\.\s+Qué se conserva y por qué/,
     /27 de octubre de 2026: Lista al día: si entraste con Apple/,
   ], []],
   ['/en/delete-account/', 'Last updated: 27 October 2026', [
-    /If you logged in with Apple, we ask Apple to remove Klendar's access to your Apple account \(you'll see it disappear in Settings → your name → Sign in with Apple\)\.\s+What is kept and why/,
+    /If you logged in with Apple, we ask Apple to remove Klendar's access to your Apple account \(you'll see it disappear in Settings → your name → Sign-In & Security → Sign in with Apple\)\.\s+What is kept and why/,
     /27 October 2026: Up-to-date list: if you logged in with Apple/,
   ], []],
 ];
