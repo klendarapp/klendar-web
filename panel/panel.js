@@ -383,7 +383,7 @@ async function mapaPunto(caja, punto, alMover) {
     // mapa las cuenta igual, para la factura).
     performanceMetricsCollection: false, collectResourceTiming: false });
   mapa.addControl(new gl.NavigationControl({ showCompass: false }));
-  const chincheta = new gl.Marker({ draggable: true, color: '#FF4D6D' }).setLngLat(centro);
+  const chincheta = new gl.Marker({ draggable: true, color: '#0A0A0A' }).setLngLat(centro);
   if (hay) chincheta.addTo(mapa);
   const avisa = () => { const p = chincheta.getLngLat(); alMover({ lat: p.lat, lng: p.lng }); };
   chincheta.on('dragend', avisa);

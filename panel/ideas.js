@@ -562,7 +562,7 @@ window.KLENDAR_IDEAS = {
    },
    {
     "es": "Función con coloquio",
-    "en": "Performance with Q&A",
+    "en": "Performance and post-show talk",
     "discount": "none",
     "hours": 3,
     "kind": "future_event"
