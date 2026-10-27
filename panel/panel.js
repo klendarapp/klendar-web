@@ -1153,6 +1153,14 @@ async function route() {
 }
 let FOCO_AL_TITULO = false;
 window.addEventListener('hashchange', async () => {
+  // Un diálogo abierto (con «Atrás» del navegador, un enlace…) se cierra
+  // como con «Cancelar»: si no, se quedaba encima con lo de la pantalla
+  // anterior.
+  const dlg = $('#modal');
+  if (dlg?.open) {
+    const cancelar = $('[data-cancel]', dlg);
+    if (cancelar) cancelar.click(); else dlg.close();
+  }
   if (!(await puedeSalir())) return;
   FOCO_AL_TITULO = true; route();
 });
@@ -2256,7 +2264,8 @@ const forKids = (adultos, valor) => (valor === 'no' ? false : valor === 'si' && 
 async function offerForm(v, id, kindDefault, desde = null) {
   // Un empleado valida códigos, no publica (como en la app).
   if (!gestiona()) {
-    v.innerHTML = `<div class="card"><p class="muted" style="margin:0">${esc(I18N.t('Solo el propietario y los encargados pueden crear o editar publicaciones.'))}</p></div>`;
+    // Con salida, como al ir a «Nueva oferta flash»: validar códigos.
+    v.innerHTML = '<div class="card"><p style="margin:0">Publicar es cosa de quien lleva el negocio. Tú puedes <a class="link" href="#/validar">validar códigos</a>.</p></div>';
     return;
   }
   let o = { kind: kindDefault || 'flash_offer', max_per_user: 1, code_ttl_minutes: 5, images: [], status: 'active',
@@ -4283,7 +4292,8 @@ PAGES.validar = async (v) => {
   const validate = async () => {
     if (validando) return;
     const raw = $('#code').value.trim();
-    if (!raw) return;
+    // Vacío: el campo se marca y tiembla (antes no pasaba nada).
+    if (!raw) { marcaCampo($('#code')); $('#code').focus(); return; }
     validando = true;
     $('#go').disabled = true;
     try { await validaUno(raw); } finally { validando = false; $('#go').disabled = false; }
