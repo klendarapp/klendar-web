@@ -74,9 +74,22 @@ body:has(#view > .cargando) footer { display: none; }
 .qr { animation: mov-crece var(--mov-lento) var(--mov-entra); }
 /* Un sello nuevo cae en su hueco; si completa la tarjeta, la fila late. */
 .huecos span.cae { animation: mov-cae var(--mov-lento) var(--mov-rebote) 150ms backwards; }
-.huecos.completa { animation: mov-late var(--mov-lento) var(--mov-rebote) 450ms; transform-origin: left center; }
+.huecos.completa { animation: mov-late var(--mov-lento) var(--mov-rebote) 450ms; transform-origin: left center; position: relative; overflow: hidden; }
+/* Tarjeta completa: un destello la recorre una vez (como la app). */
+.huecos.completa::after { content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(105deg, transparent 35%, rgba(255,255,255,.55) 50%, transparent 65%);
+  transform: translateX(-100%); animation: mov-destello 650ms var(--mov-mueve) 800ms both; }
+@keyframes mov-destello { to { transform: translateX(100%); } }
+/* El QR que cambia cada 30 s: un anillo que se vacía; el código nuevo entra
+   con un fundido. */
+.qr { position: relative; }
+.qr > svg:first-child { animation: mov-funde var(--mov-base) var(--mov-entra); }
+.qr-anillo { position: absolute; inset: -9px; width: calc(100% + 18px); height: calc(100% + 18px); overflow: visible; pointer-events: none; }
+.qr-anillo rect { fill: none; stroke: var(--ink); stroke-width: 3; vector-effect: non-scaling-stroke; stroke-dasharray: 1; stroke-dashoffset: 0;
+  transition: stroke-dashoffset 1s linear; }
 @media (prefers-reduced-motion: reduce) {
-  .hecho-ic, .hecho-ic svg path, .qr, .huecos span.cae, .huecos.completa { animation: none; }
+  .hecho-ic, .hecho-ic svg path, .qr, .huecos span.cae, .huecos.completa, .huecos.completa::after, .qr > svg:first-child { animation: none; }
+  .qr-anillo rect { transition: none; }
 }
 /* Confirmaciones y códigos (centrados): los botones uno debajo de otro y del
    ancho del más largo, como en las pantallas vacías (nada de filas

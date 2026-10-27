@@ -828,6 +828,7 @@ function errorCampo(el, msg) {
   s.textContent = msg;
   el.setAttribute('aria-invalid', 'true');
   el.setAttribute('aria-describedby', id);
+  if (navigator.vibrate) navigator.vibrate(20);
 }
 
 /** `reglas`: { nombreDelCampo: (valor, form) => mensaje | null }. */
@@ -973,11 +974,17 @@ async function confirmaIdentidad() {
 /** Un botón que se bloquea mientras trabaja, para no mandar dos veces. */
 async function ocupado(boton, trabajo) {
   if (boton.disabled) return;
-  const antes = boton.textContent;
+  // El texto se funde en una rueda y vuelve al acabar, sin que el botón
+  // cambie de ancho (como la app); el lector oye «ocupado».
   boton.disabled = true;
-  boton.textContent = t('Un momento…');
+  boton.classList.add('mov-ocupado');
+  boton.setAttribute('aria-busy', 'true');
   try { await trabajo(); } catch (e) { toast(e.message || amable(''), true); } finally {
-    if (boton.isConnected) { boton.disabled = false; boton.textContent = antes; }
+    if (boton.isConnected) {
+      boton.disabled = false;
+      boton.classList.remove('mov-ocupado');
+      boton.removeAttribute('aria-busy');
+    }
   }
 }
 
@@ -2186,6 +2193,8 @@ async function sellosDelCanje(code) {
           ${goal <= 20 ? `<span class="huecos${count >= goal ? ' completa' : ''}" aria-hidden="true">${Array.from({ length: goal }, (_, i) =>
             `<span class="${i < count ? 'lleno' : ''}${i === count - 1 ? ' cae' : ''}"></span>`).join('')}</span>` : ''}</span></a>`;
     }).join('');
+    // Tarjeta completa: con el destello, una vibración algo más marcada.
+    if (tarjetas.some((c) => c.stamps >= c.goal) && navigator.vibrate && !QUIETO.matches) setTimeout(() => navigator.vibrate(40), 800);
   } catch { /* sin red: el canje, sin la línea del sello */ }
 }
 
@@ -2352,6 +2361,18 @@ RUTAS.codigo = async ([id], params, crudo) => {
   pintaCuenta();
 };
 
+/** El anillo de un QR que cambia solo cada `paso` segundos (como la app): se
+ * vacía en esos segundos; así se ve que es en vivo, no una captura. */
+function anilloQr(el, queda, paso) {
+  let r = el.querySelector('.qr-anillo rect');
+  if (!r) {
+    el.insertAdjacentHTML('beforeend', '<svg class="qr-anillo" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">'
+      + '<rect x="1" y="1" width="98" height="98" rx="9" pathLength="1"/></svg>');
+    r = el.querySelector('.qr-anillo rect');
+  }
+  r.style.strokeDashoffset = String(1 - Math.max(0, Math.min(1, queda / paso)));
+}
+
 /** El QR de una entrada nominativa en `#qr`, que cambia cada 30 s (como el
  * QR de cliente: la clave y el secreto de `customer_qr_key`, la hora del
  * servidor y HMAC-SHA256). Se para solo al salir de la pantalla. */
@@ -2376,13 +2397,15 @@ async function qrNominativo(code) {
       cambia.textContent = EN ? `Changes in ${paso - (ahora % paso)}s: a screenshot won't work`
         : `Cambia en ${paso - (ahora % paso)} s: una captura no sirve`;
     }
-    if (w === pintada) return;
-    pintada = w;
-    const firma = (await bonoFirma(clave.secret, `${code}.${w}`)).slice(0, 12);
-    const qr = window.qrcode(0, 'M');
-    qr.addData(`https://klendar.app/r/${code}.${w}.${firma}`);
-    qr.make();
-    el.innerHTML = qr.createSvgTag({ cellSize: 6, margin: 2, scalable: true });
+    if (w !== pintada) {
+      pintada = w;
+      const firma = (await bonoFirma(clave.secret, `${code}.${w}`)).slice(0, 12);
+      const qr = window.qrcode(0, 'M');
+      qr.addData(`https://klendar.app/r/${code}.${w}.${firma}`);
+      qr.make();
+      el.innerHTML = qr.createSvgTag({ cellSize: 6, margin: 2, scalable: true });
+    }
+    anilloQr(el, paso - (ahora % paso), paso);
   };
   reloj = setInterval(tick, 1000);
   alSalir(() => clearInterval(reloj));

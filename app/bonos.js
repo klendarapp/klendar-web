@@ -99,13 +99,16 @@ RUTAS['qr-cliente'] = async () => {
     const w = Math.floor(ahora / paso);
     $('#qr-cambia').textContent = EN ? `Changes in ${paso - (ahora % paso)}s: a screenshot won't work`
       : `Cambia en ${paso - (ahora % paso)} s: una captura no sirve`;
-    if (w === ventanaPintada) return;
-    ventanaPintada = w;
-    const firma = (await bonoFirma(clave.secret, `${clave.key}.${w}`)).slice(0, 12);
-    const qr = window.qrcode(0, 'M');
-    qr.addData(`https://klendar.app/c/${clave.key}.${w}.${firma}`);
-    qr.make();
-    caja.innerHTML = qr.createSvgTag({ cellSize: 6, margin: 2, scalable: true });
+    if (w !== ventanaPintada) {
+      ventanaPintada = w;
+      const firma = (await bonoFirma(clave.secret, `${clave.key}.${w}`)).slice(0, 12);
+      const qr = window.qrcode(0, 'M');
+      qr.addData(`https://klendar.app/c/${clave.key}.${w}.${firma}`);
+      qr.make();
+      caja.innerHTML = qr.createSvgTag({ cellSize: 6, margin: 2, scalable: true });
+    }
+    // El anillo se vacía en los 30 s (como la app).
+    anilloQr(caja, paso - (ahora % paso), paso);
   };
   if (BONO_RELOJ) clearInterval(BONO_RELOJ);
   BONO_RELOJ = setInterval(tick, 1000);

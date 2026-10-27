@@ -148,6 +148,44 @@
     });
   }
 
+  // Movimiento: la primera página de la sesión, el símbolo de la cabecera
+  // se dibuja (el anillo se traza y la aguja da un «tic»), como la pantalla
+  // de carga de la app. Una vez por sesión; con «Reducir movimiento», no.
+  const quieto = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  try {
+    if (!quieto && !sessionStorage.getItem('klendar.trazo')) {
+      sessionStorage.setItem('klendar.trazo', '1');
+      const img = document.querySelector('.brand img[src*="symbol"]');
+      if (img) {
+        const s = img.getAttribute('width') || 30;
+        img.insertAdjacentHTML('afterend', `<svg class="mov-simbolo" viewBox="0 0 64 64" width="${s}" height="${s}" aria-hidden="true">`
+          + '<rect width="64" height="64" rx="16" fill="#0A0A0A"/>'
+          + '<path class="mov-anillo" pathLength="1" d="M32 14a18 18 0 1 1 0 36a18 18 0 1 1 0-36" fill="none" stroke="#FF4D6D" stroke-width="6" stroke-linecap="round"/>'
+          + '<g class="mov-aguja"><path d="M32 32V23" stroke="#fff" stroke-width="4" stroke-linecap="round"/></g>'
+          + '<circle cx="32" cy="32" r="4" fill="#fff"/></svg>');
+        img.hidden = true;
+        // Al acabar, la imagen de siempre.
+        setTimeout(() => { img.hidden = false; img.nextElementSibling?.remove(); }, 1200);
+      }
+    }
+  } catch { /* sin almacenamiento: sin trazo */ }
+
+  // Las fotos que se cargan al bajar aparecen con un fundido (no de golpe).
+  // Solo las perezosas: las de arriba (la más grande de la página) se pintan
+  // en cuanto llegan, sin esperar a nada.
+  if (!quieto) {
+    document.documentElement.classList.add('mov-fotos');
+    const lista = (img) => img.classList.add('mov-cargada');
+    document.addEventListener('load', (e) => {
+      if (e.target instanceof HTMLImageElement && e.target.loading === 'lazy') lista(e.target);
+    }, true);
+    document.addEventListener('error', (e) => {
+      if (e.target instanceof HTMLImageElement) lista(e.target);
+    }, true);
+    const yaEstan = () => document.querySelectorAll('img[loading="lazy"]').forEach((i) => { if (i.complete) lista(i); });
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', yaEstan); else yaEstan();
+  }
+
   // El menú del móvil se cierra con Escape y el foco vuelve a su botón.
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;

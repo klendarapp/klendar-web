@@ -153,7 +153,7 @@ export function siteHeader(lang, esPath = '/', enPath = '/en/', actual = '') {
   </div>
 </div></header>
 <nav class="tabbar" aria-label="${T.secciones}">${pestanas('tab')}</nav>
-<script src="/assets/cabecera.js?v=9" defer></script>`;
+<script src="/assets/cabecera.js?v=10" defer></script>`;
 }
 
 /** El pie, con las mismas columnas en todas las páginas. */

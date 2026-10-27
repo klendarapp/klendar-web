@@ -255,6 +255,27 @@
       && abreVisor(pieza.getAttribute('data-visor'), Number(pieza.getAttribute('data-visor-i')) || 0, pieza)) e.preventDefault();
   });
 
+  // ── El buscador: el ejemplo va cambiando («Prueba: «Terraza»»…) ─────────
+  // Con las categorías de la propia página (las de ¿Qué?), cada 3 s y con un
+  // fundido; se para al escribir. Con «Reducir movimiento», el de siempre.
+  (function () {
+    var q = document.querySelector('input[type=search][name=q], input[name=q]');
+    var nombres = Array.prototype.map.call(document.querySelectorAll('input[name=categoria] + span'), function (s) { return s.textContent.trim(); })
+      .filter(Boolean);
+    if (!q || !nombres.length || quieto.matches) return;
+    var base = q.getAttribute('placeholder') || '';
+    var i = 0;
+    setInterval(function () {
+      if (q.value || document.activeElement === q && q.value) return;
+      q.classList.add('mov-ph-sale');
+      setTimeout(function () {
+        q.setAttribute('placeholder', i++ % (nombres.length + 1) === nombres.length ? base
+          : (EN ? 'Try: “' : 'Prueba: «') + nombres[(i - 1) % nombres.length] + (EN ? '”' : '»'));
+        q.classList.remove('mov-ph-sale');
+      }, 150);
+    }, 3000);
+  })();
+
   // ── Cuenta atrás de las ofertas flash ──────────────────────────────────
   var relojes = [];
   var reloj = null;

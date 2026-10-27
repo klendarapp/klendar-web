@@ -3294,6 +3294,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
     p.textContent = texto;
     caja.appendChild(p);
     if (/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) el.setAttribute('aria-invalid', 'true');
+    if (navigator.vibrate) navigator.vibrate(20);
     const suave = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     el.scrollIntoView({ block: 'center', behavior: suave ? 'smooth' : 'auto' });
     el.focus({ preventScroll: true });

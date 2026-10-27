@@ -347,6 +347,47 @@ details.hoja-bloque > summary .ic { transition: transform var(--mov-base) var(--
 .mov-hecho .hecho-ic svg path { fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round;
   stroke-dasharray: 1; animation: mov-traza 240ms var(--mov-entra) 120ms backwards; }
 
+/* Cuarta tanda (2026-10-28) ─────────────────────────────────────────────
+   El símbolo de la cabecera se dibuja la primera vez en la sesión
+   (cabecera.js): el anillo se traza y la aguja da un «tic». */
+.mov-simbolo { display: block; flex: none; border-radius: 9px; }
+.mov-simbolo .mov-anillo { stroke-dasharray: 0.8 1; stroke-dashoffset: 0; animation: mov-traza-anillo 300ms var(--mov-mueve) both; }
+@keyframes mov-traza-anillo { from { stroke-dashoffset: 0.8; } }
+.mov-simbolo .mov-aguja { transform-origin: 32px 32px; animation: mov-tic 200ms var(--mov-rebote) 260ms both; }
+@keyframes mov-tic { from { transform: rotate(-30deg); } }
+/* Un botón ocupado: el texto se funde en una rueda, del mismo ancho. */
+.mov-ocupado { position: relative; color: transparent !important; transition: color var(--mov-rapido) var(--mov-entra); }
+.mov-ocupado > * { visibility: hidden; }
+.mov-ocupado::after { content: ""; position: absolute; left: 50%; top: 50%; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%;
+  border: 2px solid var(--ink); border-right-color: transparent; animation: mov-gira .7s linear infinite; }
+.pill.ink.mov-ocupado::after, .btn.primary.mov-ocupado::after { border-color: var(--surface); border-right-color: transparent; }
+@keyframes mov-gira { to { transform: rotate(1turn); } }
+/* Un campo con error tiembla una vez (y el móvil vibra un poco). */
+[aria-invalid="true"] { animation: mov-tiembla 300ms var(--mov-mueve); }
+/* Las fotos que se cargan al bajar aparecen con un fundido. */
+.mov-fotos img[loading="lazy"] { opacity: 0; transition: opacity var(--mov-base) var(--mov-entra); }
+.mov-fotos img[loading="lazy"].mov-cargada { opacity: 1; }
+/* Lo que está pasando ahora (abierto, el aforo en directo): respira muy
+   despacio. */
+@keyframes mov-respira { 50% { opacity: .45; transform: scale(.88); } }
+.mov-vivo { animation: mov-respira 1.8s ease-in-out infinite; }
+/* «Abierto» en la ficha (horario.js): un punto que respira, como la app. */
+.estado-hoy.abierto b::before { content: ""; display: inline-block; width: 8px; height: 8px; margin: 0 7px 1px 0; border-radius: 50%;
+  background: currentColor; vertical-align: middle; animation: mov-respira 1.8s ease-in-out infinite; }
+/* El ejemplo del buscador cambia con un fundido. */
+input::placeholder { transition: opacity var(--mov-rapido) var(--mov-entra); }
+input.mov-ph-sale::placeholder { opacity: 0; }
+/* La portada de una ficha se queda un poco atrás al bajar (donde el
+   navegador tiene animaciones ligadas al scroll; si no, quieta). */
+@supports (animation-timeline: scroll()) {
+  .ficha-media { overflow: clip; }
+  .ficha-media .tj-galeria { animation: mov-paralaje linear both; animation-timeline: scroll(root); animation-range: 0 600px; }
+  @keyframes mov-paralaje { to { transform: translateY(180px); } }
+}
+/* Pantallas vacías: el icono da un «tic» lento al aparecer. */
+.vacio-ic { animation: mov-tic-lento 520ms var(--mov-rebote); }
+@keyframes mov-tic-lento { from { transform: rotate(-10deg); } }
+
 /* Las barras (usos que quedan de un bono, el paso del alta, los tramos de
    un informe) se rellenan desde la izquierda al aparecer (como la app). */
 @keyframes mov-llena { from { transform: scaleX(0); } }
@@ -382,6 +423,8 @@ details.hoja-bloque > summary .ic { transition: transform var(--mov-base) var(--
   .hoja-lugar, .mapboxgl-popup .pop-caja, details.hoja[open] > .hoja-cuerpo, details.hoja[open] > summary::after,
   details.desplegable[open] > summary::after, details.desplegable[open] > .menu-d, details.hoja-bloque[open] > .hoja-bloque-c, .mov-cambia, .rod,
   .bono-barra > span, .bt > i, .mov-hecho, .mov-hecho .hecho-ic, .mov-hecho .hecho-ic svg path,
+  .mov-simbolo .mov-anillo, .mov-simbolo .mov-aguja, [aria-invalid="true"], .mov-vivo, .vacio-ic,
+  .estado-hoy.abierto b::before, .ficha-media .tj-galeria, .mov-ocupado::after,
   .dialogo[open], .sorteo-dialogo[open], dialog.modal[open] { animation: none !important; }
   .ocard:active, .tj:not(.tj--pantalla):active, .tab:active svg, .pestana:active svg,
   .op-r span:active, .pub .op:active, summary.chip:active, .chip:active { transform: none; }

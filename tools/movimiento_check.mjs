@@ -177,6 +177,24 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
         ok(reducido ? pop === 'none' : pop === 'mov-pop', `${tag} pestaña elegida: ${pop}`);
       }
 
+      // Cuarta tanda: el símbolo de la cabecera se dibuja la primera vez en
+      // la sesión (y solo esa); un campo con error tiembla.
+      await page.evaluate(() => sessionStorage.clear());
+      await page.goto(`${BASE}/como-funciona/`, { waitUntil: 'domcontentloaded' });
+      const trazo1 = await page.evaluate(() => Boolean(document.querySelector('.brand .mov-simbolo')));
+      await page.goto(`${BASE}/precios/`, { waitUntil: 'domcontentloaded' });
+      const trazo2 = await page.evaluate(() => Boolean(document.querySelector('.brand .mov-simbolo')));
+      ok(reducido ? !trazo1 && !trazo2 : trazo1 && !trazo2, `${tag} el trazo del símbolo: ${trazo1 ? 'sí' : 'no'} y luego ${trazo2 ? 'sí' : 'no'}`);
+      const tiembla = await page.evaluate(() => {
+        const i = document.createElement('input');
+        document.body.append(i);
+        i.setAttribute('aria-invalid', 'true');
+        const n = getComputedStyle(i).animationName;
+        i.remove();
+        return n;
+      });
+      ok(reducido ? tiembla === 'none' : tiembla === 'mov-tiembla', `${tag} campo con error: ${tiembla}`);
+
       // 3 y 4. «Tu cuenta» › Favoritos.
       await page.goto(`${BASE}/app/#/favoritos`, { waitUntil: 'networkidle' });
       await page.waitForSelector('.fav-fila');
