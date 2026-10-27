@@ -12,7 +12,8 @@
 //     cambia; en Sitios, «Mejor valorados» en la cabecera de la lista (desde el
 //     11-11-2026, `rated_sort_available()`; antes, ni sale ni ordena).
 //  6. ¿Dónde?: «Cerca de mí» | «Una ciudad», con «Todas las ciudades».
-//  7. Recordar: lo guardado vuelve; ¿Cuándo? no pasa de las 6:00.
+//  7. Recordar: lo guardado vuelve; ¿Cuándo? no pasa de las 6:00 (tampoco
+//     «Abierto ahora» ni «Ahora, a un paseo» entero).
 //  8. En inglés, «This weekend».
 //  9. Sin errores en la consola.
 // Chromium y WebKit, móvil (375) y escritorio. Capturas en OUT.
@@ -118,19 +119,28 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     ok(/Todas las ciudades/.test(await page.locator('[data-donde-sec="ciudad"]').innerText()), `${t} ¿Dónde?: «Una ciudad» con «Todas las ciudades»`);
     await page.screenshot({ path: `${OUT}/filtros3-donde-${nombre}-${forma}.png` });
 
-    // 7. Recordar: lo guardado vuelve; ¿Cuándo? no pasa de las 6:00.
-    await ir(`/explorar/?cuando=esta-noche&tipo=eventos&${AQUI}`);
-    await ir('/descubre/');
-    await page.waitForURL(/tipo=eventos/);
-    ok(/cuando=esta-noche/.test(page.url()), `${t} recordar: vuelve con «Esta noche» el mismo día`);
-    await page.evaluate(() => {
+    // 7. Recordar: lo guardado vuelve; ¿Cuándo? no pasa de las 6:00 (con
+    //    «El sitio, ahora» y «Ahora, a un paseo», que también son de ¿Cuándo?).
+    const ayerA5 = () => page.evaluate(() => {
       const g = JSON.parse(localStorage.getItem('klendar.filtros'));
       const ayer = new Date(); ayer.setDate(ayer.getDate() - 1); ayer.setHours(5, 0, 0, 0);
       g.t = ayer.getTime(); localStorage.setItem('klendar.filtros', JSON.stringify(g));
     });
+    await ir(`/explorar/?cuando=esta-noche&abierto=1&tipo=eventos&${AQUI}`);
     await ir('/descubre/');
     await page.waitForURL(/tipo=eventos/);
-    ok(!/cuando=/.test(page.url()) && !/lat=/.test(page.url()), `${t} recordar: otro día, sin «Esta noche» (y sin tu posición) pero con lo demás`);
+    ok(/cuando=esta-noche/.test(page.url()) && /abierto=1/.test(page.url()), `${t} recordar: vuelve con «Esta noche» y «Abierto ahora» el mismo día`);
+    await ayerA5();
+    await ir('/descubre/');
+    await page.waitForURL(/tipo=eventos/);
+    ok(!/cuando=|abierto=/.test(page.url()) && !/lat=/.test(page.url()), `${t} recordar: otro día, sin «Esta noche» ni «Abierto ahora» (y sin tu posición) pero con lo demás`);
+    await ir(`/explorar/?cuando=ahora&km=1&orden=cerca&tipo=eventos&${AQUI}`);
+    await ir('/descubre/');
+    await page.waitForURL(/tipo=eventos/);
+    await ayerA5();
+    await ir('/descubre/');
+    await page.waitForURL(/tipo=eventos/);
+    ok(!/cuando=|km=1|orden=cerca/.test(page.url()), `${t} recordar: «Ahora, a un paseo» de otro día se quita entero (la distancia y el orden también)`);
 
     // 8. En inglés.
     await ir(`/en/explore/?when=weekend&${AQUI}`);

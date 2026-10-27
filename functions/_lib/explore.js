@@ -1030,7 +1030,9 @@ function query(e, lang, { soloCompartido = false } = {}) {
  *   filtros). Se recuerdan siempre (opción A, 2026-10-26), salvo ¿Cuándo?,
  *   que vale hasta las 6:00 del día siguiente («Esta noche» guardada engaña
  *   al día siguiente), y tu posición («Cerca de mí»), que como siempre se
- *   olvida a las 6 h.
+ *   olvida a las 6 h. De ¿Cuándo? es todo lo suyo, como en la app
+ *   (`whenReset`): el plan, «Abierto ahora», «Se puede comer ahora» y el
+ *   momento; y si era «Ahora, a un paseo», también su 1 km y «Más cerca».
  * - Si no, se guardan los de esta página (en los dos idiomas).
  * - Los enlaces de la propia página (cambiar un filtro, «Quitar filtros»,
  *   «Todas las ciudades») dejan una marca para que su resultado no se pise con
@@ -1071,7 +1073,7 @@ var gu=JSON.parse(ls.getItem('klendar.gustos')||'null'),gq=gu&&Array.isArray(gu.
 var conG=function(u){var q=new URL(u,location.href);if(gq)q.searchParams.set('gustos',gq);else q.searchParams.delete('gustos');return q.pathname+q.search+q.hash;};
 var libre=!sin&&n.type!=='back_forward',vx=d.ex?JSON.parse(ls.getItem(X)||'null'):null,ex=d.ex&&libre&&!location.search&&vx&&vx[d.L]?vx[d.L]:'';
 var seis=new Date();if(seis.getHours()<6)seis.setDate(seis.getDate()-1);seis.setHours(6,0,0,0);
-var viejo=function(s,t){var u=new URLSearchParams(s||'');if(!(t>=seis.getTime())){u.delete('cuando');u.delete('when');}if(!(Date.now()-t<216e5)){u.delete('lat');u.delete('lng');}return u.toString();};
+var viejo=function(s,t){var u=new URLSearchParams(s||'');if(!(t>=seis.getTime())){var w=u.get('cuando')||u.get('when');if((w==='ahora'||w==='now')&&u.get('km')==='1'&&/^(cerca|nearest)$/.test(u.get('orden')||u.get('sort')||'')){u.delete('km');u.delete('orden');u.delete('sort');}['cuando','when','abierto','open','comer-ahora','food-now','momento','moment'].forEach(function(k){u.delete(k);});}if(!(Date.now()-t<216e5)){u.delete('lat');u.delete('lng');}return u.toString();};
 var gq0=g&&g[d.L]?viejo(g[d.L],g.t):'';
 if(d.v&&libre&&gq0){location.replace(conG(d.b+'?'+gq0+(d.r?'&'+d.r:'')+(ex?'&'+ex:'')+location.hash));return;}
 if(ex){location.replace(conG(d.b+'?'+ex+location.hash));return;}
