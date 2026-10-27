@@ -335,9 +335,9 @@ ${privada ? '' : `<meta property="og:url" content="${BASE}${esc(path)}">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 ${preconectar}<link rel="preload" href="/assets/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/site.css?v=20261028c">
+<link rel="stylesheet" href="/assets/site.css?v=20261028d">
 <link rel="stylesheet" href="/assets/public.css?v=56">
-<link rel="stylesheet" href="/assets/tarjeta.css?v=12">
+<link rel="stylesheet" href="/assets/tarjeta.css?v=13">
 ${cabeza}
 </head>
 <body${bodyClass ? ` class="${esc(bodyClass)}"` : ''}>

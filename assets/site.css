@@ -384,9 +384,12 @@ input.mov-ph-sale::placeholder { opacity: 0; }
   .ficha-media .tj-galeria { animation: mov-paralaje linear both; animation-timeline: scroll(root); animation-range: 0 600px; }
   @keyframes mov-paralaje { to { transform: translateY(180px); } }
 }
-/* Pantallas vacías: el icono da un «tic» lento al aparecer. */
-.vacio-ic { animation: mov-tic-lento 520ms var(--mov-rebote); }
-@keyframes mov-tic-lento { from { transform: rotate(-10deg); } }
+/* Cargando una pantalla que aún no tiene nada («Tu cuenta»): el símbolo
+   de Klendar en el centro con la aguja girando a saltos. Es el único
+   indicador de carga con el símbolo y nunca va encima del contenido. */
+.mov-cargando { display: block; width: 36px; height: 36px; margin: 0 auto 12px; border-radius: 9px; }
+.mov-cargando .mov-aguja { transform-origin: 32px 32px; animation: mov-aguja-gira 1.1s steps(8, end) infinite; }
+@keyframes mov-aguja-gira { to { transform: rotate(1turn); } }
 
 /* Las barras (usos que quedan de un bono, el paso del alta, los tramos de
    un informe) se rellenan desde la izquierda al aparecer (como la app). */
@@ -423,7 +426,7 @@ input.mov-ph-sale::placeholder { opacity: 0; }
   .hoja-lugar, .mapboxgl-popup .pop-caja, details.hoja[open] > .hoja-cuerpo, details.hoja[open] > summary::after,
   details.desplegable[open] > summary::after, details.desplegable[open] > .menu-d, details.hoja-bloque[open] > .hoja-bloque-c, .mov-cambia, .rod,
   .bono-barra > span, .bt > i, .mov-hecho, .mov-hecho .hecho-ic, .mov-hecho .hecho-ic svg path,
-  .mov-simbolo .mov-anillo, .mov-simbolo .mov-aguja, [aria-invalid="true"], .mov-vivo, .vacio-ic,
+  .mov-simbolo .mov-anillo, .mov-simbolo .mov-aguja, [aria-invalid="true"], .mov-vivo,
   .estado-hoy.abierto b::before, .ficha-media .tj-galeria, .mov-ocupado::after,
   .dialogo[open], .sorteo-dialogo[open], dialog.modal[open] { animation: none !important; }
   .ocard:active, .tj:not(.tj--pantalla):active, .tab:active svg, .pestana:active svg,

@@ -180,8 +180,12 @@ a.cal-dia:hover { background: var(--soft); text-decoration: none; }
 video.tj-img { background: #0A0A0A; }
 .tj-puntos { position: absolute; z-index: 3; top: 12px; right: 12px; display: flex; gap: 6px; padding: 5px 6px; border-radius: 999px;
   background: rgba(10,10,10,.6); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); pointer-events: none; }
-.tj-puntos i { display: block; width: 6px; height: 6px; border-radius: 3px; background: rgba(255,255,255,.7); transition: width .2s ease; }
-.tj-puntos i.on { width: 18px; background: #fff; }
+.tj-puntos i { display: block; width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,.7); transition: transform .2s ease, background-color .2s ease; }
+/* Puntos de foto, redondos (alargado parecía un logo): el de la que se ve,
+   algo más grande y blanco del todo. Solo en las fotos grandes (Descubre, la
+   ficha): en las tarjetas pequeñas, ninguno. */
+.tj-puntos i.on { background: #fff; transform: scale(1.35); }
+.tj:not(.tj--pantalla) .tj-puntos { display: none; }
 .tj-flecha, .tj-sonido, .tj-play { position: absolute; z-index: 4; display: grid; place-items: center; border: 0; padding: 0; cursor: pointer;
   border-radius: 50%; background: rgba(10,10,10,.6); color: #fff; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
 .tj-flecha { top: 50%; width: 40px; height: 40px; margin-top: -20px; opacity: 0; pointer-events: none; transition: opacity .15s ease; }
@@ -230,7 +234,7 @@ video.tj-img { background: #0A0A0A; }
 .tj--pantalla .tj-puntos { top: calc(var(--feed-arriba, 120px) + 46 * var(--u)); right: auto; left: 50%; transform: translateX(-50%);
   gap: calc(6 * var(--u)); padding: calc(5 * var(--u)) calc(6 * var(--u)); }
 .tj--pantalla .tj-puntos i { width: calc(6 * var(--u)); height: calc(6 * var(--u)); }
-.tj--pantalla .tj-puntos i.on { width: calc(18 * var(--u)); }
+.tj--pantalla .tj-puntos i.on { width: calc(6 * var(--u)); }
 .tj--pantalla .tj-sonido, .tj--pantalla .tj-galeria:not(:has(.tj-puntos)) .tj-sonido { top: calc(var(--feed-arriba, 120px) + 6 * var(--u)); right: calc(14 * var(--u));
   width: calc(36 * var(--u)); height: calc(36 * var(--u)); }
 .tj--pantalla .tj-sonido .ic { width: calc(18 * var(--u)); height: calc(18 * var(--u)); }

@@ -1356,7 +1356,11 @@ ${traducir(lang, `business:${b.id}`, '')}${ver === 'preguntas' ? `\n${PREGUNTAS_
     ${carrusel([b.cover, ...galeria].filter(Boolean), { titulo: b.name, forma: 'negocio', lang })}
     <div class="d-head">
       <div class="neg-id d-top">
-        ${b.logo && /^https:\/\//.test(b.logo) ? `<img class="neg-logo" src="${esc(b.logo)}" alt="" width="88" height="88">` : `<span class="neg-logo" aria-hidden="true">${esc((b.name || '·').charAt(0).toUpperCase())}</span>`}
+        ${b.logo && /^https:\/\//.test(b.logo)
+    // El logo se abre a pantalla completa con la portada y las fotos del
+    // local (el mismo visor; va detrás de ellas).
+    ? `<a class="neg-logo-a" href="${esc(b.logo)}" data-visor="ficha" data-visor-i="${[b.cover, ...galeria].filter(Boolean).length}" aria-label="${esc(en ? 'See the logo' : 'Ver el logo')}"><img class="neg-logo" src="${esc(b.logo)}" alt="" width="88" height="88"></a>`
+    : `<span class="neg-logo" aria-hidden="true">${esc((b.name || '·').charAt(0).toUpperCase())}</span>`}
         <div><h1>${esc(b.name)}</h1>
           <p class="muted"${b.lat && !organizador ? ` data-lat="${Number(b.lat).toFixed(5)}" data-lng="${Number(b.lng).toFixed(5)}"` : ''}>${esc(b.city || '')}<span class="tj-dist" hidden></span></p></div>
         <div class="neg-botones">
