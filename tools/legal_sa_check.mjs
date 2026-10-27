@@ -26,14 +26,14 @@ let fallos = 0;
 const ok = (c, m) => { if (!c) { fallos++; console.log('FALLO:', m); } else console.log('ok:', m); };
 
 const PAGINAS = [
-  ['/negocios/', 'Última actualización: 27 de octubre de 2026', [
+  ['/negocios/', 'Última actualización: 28 de octubre de 2026', [
     /Los sorteos son una función que Klendar puede tener activada o no, y no necesariamente en todas partes \(la web, la app de Android o la de iPhone\)\. Klendar decide si la activa y dónde, y puede desactivarla en cualquier momento sin que eso cambie el precio\. Mientras esté activada, el Negocio puede organizar sorteos en Klendar\. Si se desactiva con algún sorteo abierto, Klendar avisará al Negocio y a quienes participan de cómo se resuelve\. Al crear uno el Negocio es el organizador/,
-    /los del 26 de octubre de 2026 \(apartado 4 bis\), desde el 10 de noviembre de 2026, y los del 27 de octubre de 2026 \(apartado[^)]*3 sexies[^)]*\), desde el 11 de noviembre de 2026: 15 días/,
+    /los del 26 de octubre de 2026 \(apartado 4 bis\), desde el 10 de noviembre de 2026, los del 27 de octubre de 2026 \(apartado[^)]*3 sexies[^)]*\), desde el 11 de noviembre de 2026, y los del 28 de octubre de 2026 \(apartado 4 bis\), desde el 12 de noviembre de 2026: 15 días/,
     /27 de octubre de 2026: Sorteos \(apartado 3 sexies\): son una función que Klendar puede tener activada o no.*Se aplica desde el 11 de noviembre de 2026\./,
   ], [/(^|\. )El Negocio puede organizar sorteos en Klendar\./m]],
-  ['/en/business-terms/', 'Last updated: 27 October 2026', [
+  ['/en/business-terms/', 'Last updated: 28 October 2026', [
     /Giveaways are a feature that Klendar may or may not have switched on, and not necessarily everywhere \(the website, the Android app or the iPhone app\)\. Klendar decides whether to switch it on and where, and can switch it off at any time without that changing the price\. While it is on, the Business can run giveaways on Klendar\. If it is switched off while a giveaway is open, Klendar will tell the Business and the people who entered how it will be settled\. When it creates one the Business is the organiser/,
-    /those of 26 October 2026 \(section 4a\) from 10 November 2026, and those of 27 October 2026 \(sections? [^)]*3e[^)]*\) from 11 November 2026: 15 days/,
+    /those of 26 October 2026 \(section 4a\) from 10 November 2026, those of 27 October 2026 \(sections? [^)]*3e[^)]*\) from 11 November 2026, and those of 28 October 2026 \(section 4a\) from 12 November 2026: 15 days/,
     /27 October 2026: Giveaways \(section 3e\): they are a feature that Klendar may or may not have switched on.*It applies from 11 November 2026\./,
   ], [/(^|\. )The Business can run giveaways on Klendar\./m]],
   ['/terminos/', 'Última actualización: 27 de octubre de 2026', [

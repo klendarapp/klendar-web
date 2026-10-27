@@ -87,13 +87,13 @@ const sinScroll = (p) => p.evaluate(() => document.documentElement.scrollWidth -
 
 // ── 1. Páginas legales ─────────────────────────────────────────────────────
 const PAGINAS = [
-  ['/negocios/', 'Última actualización: 27 de octubre de 2026', [
+  ['/negocios/', 'Última actualización: 28 de octubre de 2026', [
     /3 undecies\. Te aviso cuando esté listo/,
     /Solo marcarás «Listo» cuando el pedido lo esté de verdad/,
     /los del 20 de octubre de 2026 \(apartados 2 bis, 3 y 3 undecies\), desde el 4 de noviembre de 2026/,
     /Te aviso cuando esté listo \(apartado 3 undecies nuevo\).*Se aplica desde el 4 de noviembre de 2026\./,
   ]],
-  ['/en/business-terms/', 'Last updated: 27 October 2026', [
+  ['/en/business-terms/', 'Last updated: 28 October 2026', [
     /3j\. Ready alert/,
     /You will only mark “Ready” when the order really is ready/,
     /those of 20 October 2026 \(sections 2a, 3 and 3j\) from 4 November 2026/,
@@ -109,7 +109,7 @@ const PAGINAS = [
     /3b\. Virtual queue and order alerts/,
     /Some venues tell you when your order is ready/,
   ]],
-  ['/privacidad/', 'Última actualización: 27 de octubre de 2026', [
+  ['/privacidad/', 'Última actualización: 28 de octubre de 2026', [
     /Te aviso cuando esté listo\s+Si pides que un local te avise de tu pedido/,
     /Qué ve el local: tu número, la primera palabra del nombre de tu perfil/,
     /Todo se borra a las 6:00 \(hora del local\)/,
@@ -117,7 +117,7 @@ const PAGINAS = [
     /«Tu pedido está listo»: lo acabas de pedir en el mostrador/,
     /si usa «Te aviso cuando esté listo», el código de su cartel y cuántos pedidos avisó cada día y la espera media \(solo números\)/,
   ]],
-  ['/en/privacy/', 'Last updated: 27 October 2026', [
+  ['/en/privacy/', 'Last updated: 28 October 2026', [
     /Ready alert\s+If you ask a venue to tell you when your order is ready/,
     /“Your order is ready”: you've just asked for it at the counter/,
     /if it uses “Ready alert”, its poster code/,

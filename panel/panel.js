@@ -854,8 +854,12 @@ $('#logout').onclick = async (e) => {
   location.href = '/';
 };
 sb.auth.onAuthStateChange((ev) => {
-  // También si se sale desde otra pestaña o desde «Tu cuenta».
-  if (ev === 'SIGNED_OUT') olvidaColas();
+  // También si se sale desde otra pestaña o desde «Tu cuenta». La cookie de
+  // la edad (`klendar_18`) la pone la cuenta: al salir, fuera (RF22).
+  if (ev === 'SIGNED_OUT') {
+    olvidaColas();
+    try { document.cookie = `klendar_18=; Max-Age=0; Path=/; SameSite=Lax${location.protocol === 'https:' ? '; Secure' : ''}`; } catch { /* sin cookies */ }
+  }
   if (ev === 'SIGNED_OUT' && !saliendo) showLogin();
   // Un enlace de «he olvidado la contraseña» antiguo que traiga aquí: la
   // contraseña nueva se pone en «Tu cuenta» y se vuelve al panel.

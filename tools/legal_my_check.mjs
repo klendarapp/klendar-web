@@ -21,24 +21,24 @@ let fallos = 0;
 const ok = (c, m) => { if (!c) { fallos++; console.log('FALLO:', m); } else console.log('ok:', m); };
 
 const PAGINAS = [
-  ['/cookies/', 'Última actualización: 27 de octubre de 2026', [
+  ['/cookies/', 'Última actualización: 28 de octubre de 2026', [
     /En resumen\. klendar\.app usa una sola cookie, y solo si contestas a «¿Tienes 18 años o más\?»: guarda tu respuesta para no volver a preguntarte\./,
-    /klendar_18 \(cookie\)\s+Todo klendar\.app\s+Tu respuesta a «¿Tienes 18 años o más\?» \(«1» sí, «0» no\)[\s\S]*?según tu fecha de nacimiento\s+1 año\s+Preferencia elegida por ti/,
+    /klendar_18 \(cookie\)\s+Todo klendar\.app\s+Tu respuesta a «¿Tienes 18 años o más\?» \(«1» sí, «0» no\)[\s\S]*?según tu fecha de nacimiento\s+1 año, o hasta que cierres sesión\s+Preferencia elegida por ti/,
     /Tu respuesta a «¿Tienes 18 años o más\?» se guarda en el móvil, no en una cookie\./,
     /27 de octubre de 2026: La cookie klendar_18/,
   ], [/klendar\.app no usa cookies/]],
-  ['/en/cookies/', 'Last updated: 27 October 2026', [
+  ['/en/cookies/', 'Last updated: 28 October 2026', [
     /In short\. klendar\.app uses a single cookie, and only if you answer “Are you 18 or over\?”: it stores your answer so we don't ask again\./,
-    /klendar_18 \(cookie\)\s+All of klendar\.app\s+Your answer to “Are you 18 or over\?” \(“1” yes, “0” no\)[\s\S]*?from your date of birth\s+1 year\s+Preference you chose/,
+    /klendar_18 \(cookie\)\s+All of klendar\.app\s+Your answer to “Are you 18 or over\?” \(“1” yes, “0” no\)[\s\S]*?from your date of birth\s+1 year, or until you log out\s+Preference you chose/,
     /Your answer to “Are you 18 or over\?” is stored on your phone, not in a cookie\./,
     /27 October 2026: The klendar_18 cookie/,
   ], [/klendar\.app does not use cookies/]],
-  ['/privacidad/', 'Última actualización: 27 de octubre de 2026', [
+  ['/privacidad/', 'Última actualización: 28 de octubre de 2026', [
     /sin cuenta, si respondes «Tengo 18 años o más» a la pregunta que te hacemos una vez\. Esa respuesta se guarda solo en tu móvil o en tu navegador;[\s\S]*?aunque en ese dispositivo se respondiera otra cosa\./,
     /Si eres mayor de edad \(sin cuenta\)\s+Tu respuesta a «¿Tienes 18 años o más\?» \(sí o no\)[\s\S]*?\(en la web, un año\); no la guardamos/,
     /27 de octubre de 2026: Contenido \+18 sin cuenta/,
   ], [/solo se muestran a personas que han indicado con su fecha de nacimiento/]],
-  ['/en/privacy/', 'Last updated: 27 October 2026', [
+  ['/en/privacy/', 'Last updated: 28 October 2026', [
     /without an account, if you answer “I'm 18 or over” to the question we ask once\. That answer is stored only on your phone or in your browser;[\s\S]*?even if a different answer was given on that device\./,
     /If you're an adult \(without an account\)\s+Your answer to “Are you 18 or over\?” \(yes or no\)[\s\S]*?\(on the web, one year\); we don't store it/,
     /27 October 2026: 18\+ content without an account/,

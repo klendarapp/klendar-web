@@ -59,17 +59,18 @@
 <script src="/assets/cabecera.js?v=11" defer></script>
 <main class="doc" id="contenido">
 <h1>Cookie policy</h1>
-<div class="meta">Last updated: 27 October 2026 · Version 2026-09-29</div>
+<div class="meta">Last updated: 28 October 2026 · Version 2026-09-29</div>
 <p class="notice">This is a courtesy translation provided for information only. In case of any discrepancy, the <a href="/cookies/">Spanish version</a> prevails.</p>
 
 <p><strong>In short.</strong> klendar.app uses <strong>a single cookie</strong>, and only if you answer “Are you 18 or over?”: it stores your answer so we don't ask again. Apart from that, it only stores in your browser what is essential for what you ask it to do (your session, your language, your filters, the codes a business validates offline) and it counts visits without cookies and without identifying you. None of this is used for advertising or to follow you across other sites, so we don't ask for your consent (art. 22.2 of the Spanish LSSI-CE). If we ever add anything that needs it, we will ask you first.</p>
 <h2>What is stored in your browser</h2>
 <table>
 <tr><th>Name</th><th>Where</th><th>Purpose</th><th>How long</th><th>Type</th></tr>
-<tr><td><code>klendar_18</code> (cookie)</td><td>All of klendar.app</td><td>Your answer to “Are you 18 or over?” (“1” yes, “0” no), to show you or not what is for over-18s only without asking again. When you're logged in, your account sets it from your date of birth</td><td>1 year</td><td>Preference you chose</td></tr>
+<tr><td><code>klendar_18</code> (cookie)</td><td>All of klendar.app</td><td>Your answer to “Are you 18 or over?” (“1” yes, “0” no), to show you or not what is for over-18s only without asking again. When you're logged in, your account sets it from your date of birth</td><td>1 year, or until you log out</td><td>Preference you chose</td></tr>
 <tr><td><code>klendar_lang</code></td><td>All of klendar.app (local storage)</td><td>Remember the language you pick: Spanish or English on the public pages and, in “Your account” and the dashboard, also català, galego, euskara, français, Deutsch or italiano</td><td>Until you delete it</td><td>Preference you chose</td></tr>
+<tr><td><code>klendar.trazo</code></td><td>All of klendar.app (session storage)</td><td>So the logo animation (the symbol drawing itself) only plays on the first page you open, not on every one</td><td>Until you close the tab</td><td>Technical</td></tr>
 <tr><td><code>sb-…-auth-token</code></td><td>“Your account” and business dashboard (local storage)</td><td>Keep you logged in</td><td>Until you log out</td><td>Technical (authentication)</td></tr>
-<tr><td><code>sb-…-auth-token-…code-verifier</code></td><td>“Your account” and business dashboard (local storage)</td><td>A one-time secret that checks that the return from Google or Apple reaches the same browser where you started logging in (PKCE)</td><td>Until you finish logging in or log out</td><td>Technical (security)</td></tr>
+<tr><td><code>sb-…-auth-token-…code-verifier</code></td><td>“Your account” and business dashboard (local storage)</td><td>A one-time secret that checks that the return from Google reaches the same browser where you started logging in (PKCE)</td><td>Until you finish logging in or log out</td><td>Technical (security)</td></tr>
 <tr><td><code>sb-…-admin-auth-token</code></td><td>Admin (local storage)</td><td>Keep the admin session, separate from the “Your account” one</td><td>Until you log out, after 30 minutes of inactivity or after 12 hours</td><td>Technical (authentication)</td></tr>
 <tr><td><code>klendar.admin.actividad</code>, <code>klendar.admin.cierre</code></td><td>Admin (local storage)</td><td>When there was last activity (to log out after 30 minutes without any) and why the session was closed, so we can tell you</td><td>Until the next time you log in</td><td>Technical (security)</td></tr>
 <tr><td><code>klendar.admin.nav.sistema</code>, <code>klendar.admin.resumen.mas</code></td><td>Admin (local storage)</td><td>Remember whether you left the “System” menu group and “More” in the summary open</td><td>Until you change it</td><td>Preference you chose</td></tr>
@@ -77,8 +78,9 @@
 <tr><td><code>klendar.intencion</code></td><td>Publication and business pages, Discover, Explore and “Your account” (session storage)</td><td>Remember the button you just pressed (save, reserve, get the code…) so it's done once you've logged in, and never done if you arrive through an outside link</td><td>Until it's used, 15 minutes at most or until the tab is closed</td><td>Technical (security)</td></tr>
 <tr><td><code>klendar.biz</code></td><td>Business dashboard</td><td>Remember which business you were managing</td><td>Until you log out</td><td>Technical</td></tr>
 <tr><td><code>klendar.cola.…</code></td><td>Business dashboard</td><td>Keep codes validated offline until the connection is back</td><td>Until they are sent or you log out</td><td>Technical</td></tr>
-<tr><td><code>klendar.filtros</code></td><td>Discover and Explore (local storage)</td><td>Remember the filters you set (city, type, categories, price…) so they're there when you open Discover or Explore again</td><td>Used for 6 hours; replaced when you change them and deleted with “Clear filters”</td><td>Preference you chose</td></tr>
+<tr><td><code>klendar.filtros</code></td><td>Discover and Explore (local storage)</td><td>Remember the filters you set (city, type, categories, price…) so they're there when you open Discover or Explore again</td><td>Until you change them or tap “Clear filters”; “When?” is cleared at 6:00 and your position stops being used after 6 hours</td><td>Preference you chose</td></tr>
 <tr><td><code>klendar.filtros.sin</code></td><td>Discover and Explore (session storage)</td><td>Make sure the saved filters don't come back right after “Clear filters”</td><td>Until the next page</td><td>Technical</td></tr>
+<tr><td><code>klendar.explorar</code></td><td>Explore (local storage)</td><td>The last view you chose in Explore (Plans or Places; list, map or calendar), so it opens there next time</td><td>Until you change it</td><td>Preference you chose</td></tr>
 <tr><td><code>klendar.cerca</code></td><td>Discover, Explore and publication pages (local storage)</td><td>Your position (latitude and longitude) when you tap “Near me” or “Use my location”, to sort by distance and show how far away each place is</td><td>6 hours (then deleted)</td><td>Technical (you ask for it, with the browser's location permission)</td></tr>
 <tr><td><code>klendar.sonido</code></td><td>Discover, Explore and publication pages (session storage)</td><td>Remember that you've turned on video sound while you browse</td><td>Until you close the tab</td><td>Preference you chose</td></tr>
 <tr><td><code>klendar.traducir</code></td><td>“Your account” and publication pages (local storage)</td><td>Remember whether you want businesses' text translated when you're not logged in</td><td>Until you change it</td><td>Preference you chose</td></tr>
@@ -92,24 +94,25 @@
 <tr><td><code>klendar.tv.llave</code></td><td>Klendar on the TV (local storage)</td><td>The key that links that TV to a venue, to show its publications without logging in to any account</td><td>Until the business unlinks the TV (then it deletes itself)</td><td>Technical</td></tr>
 <tr><td><code>klendar.tv.ultimo</code></td><td>Klendar on the TV (local storage)</td><td>What it last showed (the venue's public publications), to keep going if the connection drops</td><td>Until the next update (every minute) or until unlinked</td><td>Technical</td></tr>
 <tr><td>two-step verification flag</td><td>Admin (session storage)</td><td>Not asking again in that tab</td><td>Until the tab is closed</td><td>Technical (security)</td></tr>
-<tr><td><code>mapbox.eventData…</code> (if present)</td><td>Maps in Explore and the dashboard (local storage, set by Mapbox)</td><td>A random identifier that changes every 24 hours, used by Mapbox to count map loads (billing)</td><td>24 hours</td><td>Technical, for the map service</td></tr>
+<tr><td><code>mapbox.eventData…</code> (if present)</td><td>Maps in Explore, the dashboard and “Ask for a place” (local storage, set by Mapbox)</td><td>A random identifier that changes every 24 hours, used by Mapbox to count map loads (billing)</td><td>24 hours</td><td>Technical, for the map service</td></tr>
 </table>
 <h2>Visit statistics</h2>
 <p>We use <strong>Cloudflare Web Analytics</strong>, which uses no cookies and stores nothing in your browser: a small script sends Cloudflare, on our behalf, the page viewed, the site you came from, your browser and device type, your country and load times. We only see aggregate figures, without identifying you or tracking you across sites, and Cloudflare does not use them for anything else. It isn't used in “Your account”, the business dashboard or admin, or on email unsubscribe links and friend links. Nor on pages whose address contains your position (“Near me”) or a promoter's link, or on Klendar on the TV (<code>/tv/</code>) or on a venue's table QR page (<code>/m/</code>).</p>
 <h2>Third-party services loaded on some pages</h2>
 <p>They receive your IP address, like any website you visit, and set no cookies:</p>
 <ul>
-  <li><strong>Mapbox</strong>: the maps in Explore and in the business dashboard. When a map loads, Mapbox receives the “map loaded” event it uses for billing.</li>
+  <li><strong>Mapbox</strong>: the maps in Explore, in the business dashboard and in “Ask for a place”, and the library that draws them. When a map loads, Mapbox receives the “map loaded” event it uses for billing.</li>
   <li><strong>Cloudflare Turnstile</strong>: when enabled, the anti-bot check when you log in and when you report without an account.</li>
 </ul>
-<p>Fonts, icons and libraries (including the one that connects “Your account”, the business dashboard and admin to our database) are served from klendar.app, without going through Google Fonts or any other service.</p>
+<p>Fonts, icons and libraries (including the one that connects “Your account”, the business dashboard and admin to our database) are served from klendar.app, without going through Google Fonts or any other service. The only exception is the map library (Mapbox GL JS), which your browser downloads from api.mapbox.com only when you open a map.</p>
 <h2>How to delete it</h2>
-<p>When you log out, your session, the copy of your codes, your interests and the dashboard data are deleted. You can delete everything else in your browser settings (“Clear browsing data” or “Site data”).</p>
+<p>When you log out, your session, the copy of your codes, your interests, the dashboard data and the <code>klendar_18</code> cookie are deleted. You can delete everything else in your browser settings (“Clear browsing data” or “Site data”).</p>
 <h2>The app</h2>
 <p>The <strong>mobile app</strong> does not use cookies. It uses device identifiers for notifications (only if you turn them on) and for crash reports and, only if you agree (when signing up or in Account → Settings → Privacy and data), for app usage statistics. You can withdraw it at any time from the app or from “Your account” on the website. More detail in the <a href="/en/privacy/">Privacy policy</a>. Your answer to “Are you 18 or over?” is stored on your phone, not in a cookie.</p>
 
 <h2 class="cambios" id="historial">Change history</h2>
 <ul>
+  <li><strong>28 October 2026</strong>: Your filters are remembered until you change or clear them (“When?”, until 6:00; your position, 6 hours); two more keys (the last view in Explore and the logo animation); the klendar_18 cookie is deleted when you log out; the map library is downloaded from Mapbox; and the login check is for Google (you can't log in with Apple on the website).</li>
   <li><strong>27 October 2026</strong>: The klendar_18 cookie (the answer to “Are you 18 or over?”), the first on klendar.app.</li>
   <li><strong>16 October 2026</strong>: Visit statistics aren't used on a venue's table QR page (/m/) either.</li>
   <li><strong>14 October 2026</strong>: The key that remembers the button you just pressed is also used in Discover and Explore (for “Ask for a place” and “Tell me when it arrives”).</li>

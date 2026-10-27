@@ -45,21 +45,21 @@ const PAGINAS = [
     /27 October 2026: Named tickets \(new section 3f\)/,
     /27 October 2026: Give on the spot: the QR code is valid for one minute/,
   ], [/The QR code changes every 30 seconds and an old photo won't work;/]],
-  ['/negocios/', 'Última actualización: 27 de octubre de 2026', [
+  ['/negocios/', 'Última actualización: 28 de octubre de 2026', [
     /Para ayudarte, el QR vale un minuto, se cierra solo tras 10 minutos sin que nadie lo use y puedes elegir para cuántas personas es \(de 1 a 20\): al llegar a ese número, se cierra\.[\s\S]*?Son ayudas: no te eximen de lo de arriba\./,
     /3 duodecies\. Entradas nominativas\s+En un evento con reserva puedes elegir «Entradas: Normales»[\s\S]*?no niegues la entrada por motivos discriminatorios[\s\S]*?Klendar no lo valida con el código suelto\.[\s\S]*?no cobres por cambiar el nombre ni permitas ni fomentes su reventa\./,
     /\(nombre, foto si la tiene y cuántas veces ha canjeado en el Negocio al validar un código o reservar, la lista de asistentes y la de sus RRPP\)/,
-    /y los del 27 de octubre de 2026 \(apartados 2 bis, 3, 3 sexies, 3 septies y 3 duodecies\), desde el 11 de noviembre de 2026: 15 días/,
+    /los del 27 de octubre de 2026 \(apartados 2 bis, 3, 3 sexies, 3 septies y 3 duodecies\), desde el 11 de noviembre de 2026, y los del 28 de octubre de 2026 \(apartado 4 bis\), desde el 12 de noviembre de 2026: 15 días/,
     /27 de octubre de 2026: Dar en el momento \(apartado 3 septies\)[\s\S]*?Entradas nominativas \(apartado 3 duodecies nuevo\)[\s\S]*?Se aplica desde el 11 de noviembre de 2026\./,
   ], [/nombre y foto al conseguir un código o reservar/]],
-  ['/en/business-terms/', 'Last updated: 27 October 2026', [
+  ['/en/business-terms/', 'Last updated: 28 October 2026', [
     /To help you, the QR code is valid for one minute, closes by itself after 10 minutes without anyone using it and you can choose how many people it's for \(1 to 20\)[\s\S]*?These are aids: they don't release you from the above\./,
     /3k\. Named tickets\s+For an event with booking you can choose “Tickets: Standard”[\s\S]*?don't refuse entry on discriminatory grounds[\s\S]*?Klendar doesn't validate it with the bare code\.[\s\S]*?don't allow or encourage reselling them\./,
     /\(name, photo if they have one and how many times they've redeemed at the Business when validating a code or booking, the attendee list and its promoters' lists\)/,
-    /and those of 27 October 2026 \(sections 2a, 3, 3e, 3f and 3k\) from 11 November 2026: 15 days/,
+    /those of 27 October 2026 \(sections 2a, 3, 3e, 3f and 3k\) from 11 November 2026, and those of 28 October 2026 \(section 4a\) from 12 November 2026: 15 days/,
     /27 October 2026: Give on the spot \(section 3f\)[\s\S]*?Named tickets \(new section 3k\)[\s\S]*?It applies from 11 November 2026\./,
   ], [/name and photo when they get a code or book/]],
-  ['/privacidad/', 'Última actualización: 27 de octubre de 2026', [
+  ['/privacidad/', 'Última actualización: 28 de octubre de 2026', [
     /Al validar un código tuyo \(también en la puerta de una lista de RRPP\), el negocio ve tu nombre visible, tu foto de perfil solo si la tienes puesta y cuántas veces has canjeado algo en ese negocio, contando esta \(«5\.ª vez aquí»\)/,
     /reservas de plaza \(con cuántas plazas\) y si la entrada es nominativa/,
     /la clave de tu QR de cliente \(con la que tu móvil firma también el QR de tus entradas nominativas\)/,
@@ -74,7 +74,7 @@ const PAGINAS = [
     /27 de octubre de 2026: Inicio de sesión con Apple:/,
     /27 de octubre de 2026: Al validar, el negocio ve tu foto si la tienes/,
   ], []],
-  ['/en/privacy/', 'Last updated: 27 October 2026', [
+  ['/en/privacy/', 'Last updated: 28 October 2026', [
     /When it validates one of your codes \(also at the door for a promoter's list\), the business sees your public name, your profile photo only if you have one and how many times you've redeemed something at that business, including this one \(“5th time here”\)/,
     /place reservations \(with how many places\) and whether the ticket is named/,
     /the key of your customer QR code \(which your phone also uses to sign the QR code of your named tickets\)/,

@@ -208,6 +208,13 @@
           // con las mismas opciones): sin leer nada de la dirección.
           var sb = window.klendarSb || (window.klendarSb = window.supabase.createClient(env.url, env.key,
             { auth: { flowType: 'pkce', detectSessionInUrl: false } }));
+          // Si la sesión se cierra (en otra pestaña, o caduca), la cookie de
+          // la edad que puso la cuenta se va con ella (RF22).
+          sb.auth.onAuthStateChange(function (ev) {
+            if (ev === 'SIGNED_OUT') {
+              document.cookie = 'klendar_18=; Max-Age=0; Path=/; SameSite=Lax' + (location.protocol === 'https:' ? '; Secure' : '');
+            }
+          });
           return sb.auth.getSession().then(function (r) {
             if (!r.data || !r.data.session) return;
             edadDeCuenta(sb);
