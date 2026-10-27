@@ -60,6 +60,11 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     await ir(`/descubre/?${AQUI}`);
     ok(await page.locator('#barra .desplegable.orden').count() === 0, `${t} sin el orden en la fila`);
     ok(await page.locator('#barra .chip-quitar').count() === 0, `${t} sin chips sueltos con ×`);
+    // Los botones dicen lo que vale, nunca la pregunta (Iván, 2026-10-27).
+    ok((await page.locator('#cuando > summary').innerText()).trim() === 'Cuando sea'
+      && await page.locator('#cuando > summary').getAttribute('aria-label') === 'Cuándo: Cuando sea', `${t} ¿Cuándo? dice «Cuando sea»`);
+    ok((await page.locator('#que-hoja > summary').innerText()).trim() === 'Todo'
+      && await page.locator('#que-hoja > summary').getAttribute('aria-label') === 'Qué: Todo', `${t} ¿Qué? dice «Todo»`);
     ok((await page.locator('#filtros > summary').innerText()).trim() === '' && await page.locator('#filtros > summary').getAttribute('aria-label') === 'Filtros', `${t} ☰: solo el icono, «Filtros» al lector`);
 
     // 2. ¿Cuándo?

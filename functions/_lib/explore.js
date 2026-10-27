@@ -1532,8 +1532,10 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
       </div><p class="hoja-nota hoja-nota-bajo">${esc(S.walkNow)}: ${esc(S.walkNowHint)}</p></fieldset>`;
   const hojaCuando = hojaDe({
     id: 'cuando',
-    summary: chipHoja('reloj', partesCuando.join(', ') || S.whenQ, partesCuando.length > 0,
-      partesCuando.length ? `${S.when} ${partesCuando.join(', ')}` : S.when),
+    // El botón dice siempre lo que vale («Cuando sea», «Esta noche»), nunca la
+    // pregunta (Iván, 2026-10-27); el lector, «Cuándo: Cuando sea».
+    summary: chipHoja('reloj', partesCuando.join(', ') || S.anytime, partesCuando.length > 0,
+      `${S.whenQ}: ${partesCuando.join(', ') || S.anytime}`),
     titulo: S.when, resetTxt: S.clearQ,
     reset: link({ when: '', abierto: false, comerAhora: false, momento: '', ...(aquiOn ? { km: RADIO_KM, sort: '' } : {}) }),
     // En el calendario, al cambiar «¿Cuándo?» se abre en el primer día que cuenta.
@@ -1577,8 +1579,9 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
     </fieldset>`).join('')}` : '';
   const hojaQue = hojaDe({
     id: 'que-hoja',
-    summary: chipHoja('tipo', partesQue.join(', ') || S.whatQ, partesQue.length > 0,
-      partesQue.length ? `${S.whatTitle} ${partesQue.join(', ')}` : S.whatTitle),
+    // «Todo» o lo elegido («Bares, Música»); el lector, «Qué: Todo».
+    summary: chipHoja('tipo', partesQue.join(', ') || S.all, partesQue.length > 0,
+      `${S.whatQ}: ${partesQue.join(', ') || S.all}`),
     titulo: S.whatTitle, resetTxt: S.clearQ,
     reset: link({ kind: '', menuDia: false, antesCierre: false, cat: '', cats: [] }),
     ocultos: ocultosMenos(new Set([K.kind, K.menu, K.closing, K.cat])),
@@ -2047,7 +2050,7 @@ function feedHtml({ S, en, lang, items, page, paginas, link, barra, final, vacio
     <button type="button" class="feed-ir" data-feed-ir="1" aria-label="${esc(S.nextItem)}">${ic('abajo', 24)}</button>
   </nav>
   ${masFormas}
-  ${page === 1 ? `<script src="/assets/fijada.js?v=9" defer data-lang="${en ? 'en' : 'es'}"></script>` : ''}`;
+  ${page === 1 ? `<script src="/assets/fijada.js?v=10" defer data-lang="${en ? 'en' : 'es'}"></script>` : ''}`;
 }
 
 // ── Una categoría en una ciudad ────────────────────────────────────────────

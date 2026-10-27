@@ -123,7 +123,9 @@
 .tj-fila:has(.tj-enlace:focus-visible) { border-radius: 22px; }
 .tj-cuerpo { display: grid; gap: 3px; min-width: 0; flex: 1; }
 .tj-fila .tj-datos { gap: 8px; }
-.tj-hora { color: var(--accent-text); font-weight: 800; font-size: 15px; }
+.tj-hora { color: var(--ink); font-weight: 800; font-size: 15px; }
+/* La hora, en coral solo si es oferta (flash o con descuento), como la app. */
+.tj-hora.tj-hora-oferta { color: var(--accent-text); }
 .tj-rayo { color: var(--accent-text); display: inline-flex; }
 .tj-fila .tj-precio { font-size: 13px; padding: 2px 9px; }
 :is(.pub, .tjv) .tj-fila .tj-titulo { font-size: 16px; -webkit-line-clamp: 2; }
@@ -156,8 +158,10 @@ a.cal-dia:hover { background: var(--soft); text-decoration: none; }
 :is(.pub, .tjv) .cal-dia.sel { background: var(--ink); color: var(--surface); box-shadow: none; }
 .cal-puntos { display: flex; gap: 3px; height: 6px; }
 .cal-puntos i, .cal-leyenda i { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
-.pe { background: var(--accent); }
-.pf { background: var(--amber); }
+/* Eventos en tinta y ofertas flash en coral (son oferta); sin más colores
+   (Iván, 2026-10-27). */
+.pe { background: var(--ink); }
+.pf { background: var(--accent); }
 :is(.pub, .tjv) .cal-leyenda { display: flex; justify-content: center; gap: 18px; font-size: 13px; color: var(--ink-2); margin: 10px 0 2px; }
 .cal-leyenda span { display: inline-flex; align-items: center; gap: 6px; }
 .cal-lista { min-width: 0; padding: 0; scroll-margin-top: 80px; }

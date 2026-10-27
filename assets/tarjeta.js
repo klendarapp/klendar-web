@@ -546,7 +546,7 @@
       return `<article class="tj tj-fila" data-o="${esc(o.id)}"${geo}>
     <div class="tj-media">${mediaTarjeta(o, { primera: false, ancho: 72, alto: 72, S })}</div>
     <div class="tj-cuerpo">
-      <p class="tj-datos"><span class="tj-hora">${esc(hora)}</span>${flash ? `<span class="tj-rayo" title="${esc(S.flash)}">${ic('rayo', 14)}<span class="sr">${esc(S.flash)}</span></span>` : ''}${antesCierre ? `<span class="tj-chip">${esc(S.antes)}</span>` : ''}${menuDia ? `<span class="tj-chip">${esc(S.menu)}</span>` : ''}${primera}${precio ? `<span class="tj-precio">${esc(precio)}</span>` : ''}${agotado ? `<span class="tj-chip">${esc(S.soldOut)}</span>` : ''}</p>
+      <p class="tj-datos"><span class="tj-hora${flash || o.discount ? ' tj-hora-oferta' : ''}">${esc(hora)}</span>${flash ? `<span class="tj-rayo" title="${esc(S.flash)}">${ic('rayo', 14)}<span class="sr">${esc(S.flash)}</span></span>` : ''}${antesCierre ? `<span class="tj-chip">${esc(S.antes)}</span>` : ''}${menuDia ? `<span class="tj-chip">${esc(S.menu)}</span>` : ''}${primera}${precio ? `<span class="tj-precio">${esc(precio)}</span>` : ''}${agotado ? `<span class="tj-chip">${esc(S.soldOut)}</span>` : ''}</p>
       <${h} class="tj-titulo"><a class="tj-enlace" href="${esc(href)}">${esc(o.title)}</a></${h}>
       <p class="tj-negocio">${esc(o.business_name || '')}${lugar ? ` · ${esc(lugar)}` : ''}<span class="tj-dist">${dist ? ` · ${esc(dist)}` : ''}</span></p>
       <div class="tj-amigos"></div>
