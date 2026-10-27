@@ -693,8 +693,12 @@ a.pl-dia:hover { background: var(--soft); }
 .pl-dia.sel, a.pl-dia.sel:hover { background: var(--ink); color: var(--surface); box-shadow: none; }
 .pl-puntos { display: flex; gap: 3px; height: 6px; }
 .pl-puntos i, .pl-leyenda i { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
-.pl-cal .pe { background: var(--accent); }
-.pl-cal .pf { background: var(--amber, #E8A33D); }
+/* Como el calendario de Explorar y la app (`MonthCalendar`): eventos en tinta
+   y ofertas flash en coral (son oferta), sin ámbar; en el día elegido (en
+   tinta), el de eventos, del color del fondo. */
+.pl-cal .pe { background: var(--ink); }
+.pl-cal .pf { background: var(--accent); }
+.pl-cal .pl-dia.sel .pe { background: var(--surface); }
 .pl-leyenda { display: flex; justify-content: center; gap: 18px; font-size: 13px; color: var(--ink-2); margin: 10px 0 2px; }
 .pl-leyenda span { display: inline-flex; align-items: center; gap: 6px; }
 .pl-hoy { text-align: center; margin: 8px 0 0; }

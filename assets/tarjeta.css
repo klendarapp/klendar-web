@@ -162,6 +162,9 @@ a.cal-dia:hover { background: var(--soft); text-decoration: none; }
    (Iván, 2026-10-27). */
 .pe { background: var(--ink); }
 .pf { background: var(--accent); }
+/* El día elegido va en tinta: su punto de eventos, del color del fondo (como
+   la app, `MonthCalendar`), o no se veía. */
+:is(.pub, .tjv) .cal-dia.sel .pe { background: var(--surface); }
 :is(.pub, .tjv) .cal-leyenda { display: flex; justify-content: center; gap: 18px; font-size: 13px; color: var(--ink-2); margin: 10px 0 2px; }
 .cal-leyenda span { display: inline-flex; align-items: center; gap: 6px; }
 .cal-lista { min-width: 0; padding: 0; scroll-margin-top: 80px; }

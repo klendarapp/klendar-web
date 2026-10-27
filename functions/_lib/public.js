@@ -337,7 +337,7 @@ ${preconectar}<link rel="preload" href="/assets/fonts/manrope-latin.woff2" as="f
 <link rel="preload" href="/assets/fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/assets/site.css?v=20261028bd">
 <link rel="stylesheet" href="/assets/public.css?v=57">
-<link rel="stylesheet" href="/assets/tarjeta.css?v=14">
+<link rel="stylesheet" href="/assets/tarjeta.css?v=15">
 ${cabeza}
 </head>
 <body${bodyClass ? ` class="${esc(bodyClass)}"` : ''}>
