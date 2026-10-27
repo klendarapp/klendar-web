@@ -1107,9 +1107,13 @@ async function route() {
   // Con la barra de abajo del móvil, que el formulario de publicación esconde.
   document.body.classList.remove('con-barra-pub');
   let [page, param] = currentRoute();
+  const pedida = page;
   if (!gestiona() && SOLO_GESTION.includes(page)) page = 'resumen';
   if (esOrganizador() && SIN_LOCAL_FIJO.includes(page)) page = 'resumen';
   if (typeof esEntidad === 'function' && esEntidad() && SIN_ENTIDAD.includes(page)) page = 'resumen';
+  // Lo que este papel no abre lleva al resumen y la dirección lo dice (antes
+  // se quedaba, por ejemplo, en #/sellos con el resumen pintado).
+  if (page !== pedida) { param = undefined; history.replaceState(null, '', '#/resumen'); HASH_ANTES = '#/resumen'; }
   // Parado (bloqueado o en pausa): lo demás lleva al resumen, que lo explica.
   if (bloqueado() && !RUTAS_BLOQUEO.includes(page)) {
     page = 'resumen';
@@ -2263,7 +2267,11 @@ async function offerForm(v, id, kindDefault, desde = null) {
   // La vista previa usa la portada del local si la publicación no trae fotos.
   await portadaNegocio();
   if (id) {
-    o = (await miPublicacion(id)) || o;
+    // Un enlace viejo o de otro de tus negocios: a la lista, como el cartel
+    // y los asistentes (antes salía «Editar» con el formulario en blanco).
+    const mia = await miPublicacion(id);
+    if (!mia) { location.replace('#/publicaciones'); return; }
+    o = mia;
   } else if (!desde?.from) {
     // Como la app: una oferta flash empieza ya y dura 3 h; un evento, mañana
     // a las 20:00. Se cambia en un momento; un formulario en blanco frena.
