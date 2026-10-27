@@ -1713,7 +1713,14 @@ export async function explorePage(url, lang, modo = 'explorar') {
 
   // La fila (opción A): ☰ · ¿Dónde? · ¿Cuándo? · ¿Qué? · el orden. Con el
   // tiempo reordenando hoy, el orden va justo detrás de ☰, a la vista.
-  const barra = `<div class="barra-filtros" id="barra"${descubre ? ' data-amigos-resultados="#feed"' : ''}>
+  // «Van mis amigos» (/assets/amigos.js) pide con las mismas categorías y lo
+  // mismo de «El sitio», «Para quién», «Más», ¿Qué? y el momento que esta
+  // página (antes los dejaba fuera: con «Música» salía todo lo de tus amigos).
+  const amigosFiltros = e.amigos ? JSON.stringify({
+    traits: filtros.traits || [],
+    cats: (todasCats || []).filter((c) => catsSel.includes(c.slug)).map((c) => c.id),
+  }) : '';
+  const barra = `<div class="barra-filtros" id="barra"${descubre ? ' data-amigos-resultados="#feed"' : ''}${amigosFiltros ? ` data-amigos-params="${esc(amigosFiltros)}"` : ''}>
     ${hojaFiltros}
     <span data-amigos-hueco hidden></span>
     ${tiempoOn ? ordenMenu : ''}

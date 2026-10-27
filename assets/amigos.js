@@ -389,20 +389,23 @@
     var dia = function (mas) { return new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() + mas); };
     switch (cuando) {
       case 'ahora': case 'now': return [ahora, new Date(ahora.getTime() + 2 * 3600e3)];
-      case 'hoy': case 'today': return [ahora, dia(1)];
+      // «Hoy», «Esta noche», «Este finde» y «Próximos 10 días» cuentan lo
+      // que ya ha empezado y sigue (lo acabado no llega: la base solo da lo
+      // vivo). Como `when_window` y `public_explore` en la base y la app
+      // (revisión de filtros, 2026-10-27).
+      case 'hoy': case 'today': return [null, dia(1)];
       case 'manana': case 'tomorrow': return [dia(1), dia(2)];
-      case '10dias': case 'next10': return [ahora, dia(11)];
-      // «Esta noche»: de las 20:00 (o de ahora) a las 6:00; de madrugada, la
-      // noche de antes. «Este finde»: de viernes a domingo (empezado, desde
-      // ahora). Como `when_window` en la base y la app.
+      case '10dias': case 'next10': return [null, dia(11)];
+      // «Esta noche»: de las 20:00 a las 6:00; de madrugada, la noche de
+      // antes. «Este finde»: de viernes a domingo.
       case 'esta-noche': case 'tonight': {
         var n = ahora.getHours() < 6 ? -1 : 0;
-        var ini = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() + n, 20);
-        return [ini > ahora ? ini : ahora, new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() + n + 1, 6)];
+        return [new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() + n, 20),
+          new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() + n + 1, 6)];
       }
       case 'finde': case 'weekend': {
         var dow = (ahora.getDay() + 6) % 7 + 1;
-        return [dow >= 5 ? ahora : dia(5 - dow), dia(8 - dow)];
+        return [dia(5 - dow), dia(8 - dow)];
       }
       default: return [null, null];
     }
@@ -544,8 +547,15 @@
     };
     if (cerca) {
       params.p_lat = lat; params.p_lng = lng;
-      params.p_radius_m = ([1, 3, 5, 10, 25].indexOf(km) >= 0 ? km : 10) * 1000;
+      // Sin `km` en la dirección es la de serie, 5 km (como la página).
+      params.p_radius_m = ([1, 3, 5, 10, 25].indexOf(km) >= 0 ? km : 5) * 1000;
     }
+    // Las categorías y lo de «El sitio», «Para quién», «Más», ¿Qué? y el
+    // momento, tal cual los pide la página (`data-amigos-params`).
+    var mf = {};
+    try { mf = JSON.parse(barra.getAttribute('data-amigos-params') || '{}') || {}; } catch (x) { mf = {}; }
+    if (Array.isArray(mf.traits) && mf.traits.length) params.p_traits = mf.traits;
+    if (Array.isArray(mf.cats) && mf.cats.length) params.p_categories = mf.cats;
     var ciudad = de('ciudad', 'city').toLowerCase();
     var busca = de('q').toLowerCase();
     var sinTildes = function (s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); };
