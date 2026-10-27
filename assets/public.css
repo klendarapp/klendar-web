@@ -512,7 +512,9 @@ body.con-hoja { overflow: hidden; }
 .ficha .badges { margin: 0 0 10px; }
 .pub .ficha-negocio { display: flex; align-items: center; gap: 12px; margin: 4px 0 14px; padding: 8px 0; color: var(--ink); }
 .ficha-negocio:hover { text-decoration: none; }
-.ficha-negocio > span { display: grid; flex: 1; min-width: 0; }
+/* Sin `.fn-ph` (la inicial sin logo, también un span): con `flex: 1` se
+   estiraba en un óvalo. */
+.ficha-negocio > span:not(.fn-ph) { display: grid; flex: 1; min-width: 0; }
 .ficha-negocio b { font-size: 17px; }
 .ficha-negocio .muted { font-size: 14px; }
 .ficha-negocio .tj-dist:not(:empty)::before { content: ' · '; }
