@@ -1,6 +1,8 @@
 #!/bin/sh
 # Antes de subir: sintaxis de todo el JavaScript (un error en functions/ tumba el despliegue entero).
 python tools/check_js.py || { echo "pre-push: hay errores de sintaxis; no se sube."; exit 1; }
+# El único indicador de carga es la aguja de Klendar (y los esqueletos).
+python tools/indicadores_check.py || { echo "pre-push: hay un indicador de carga que no es la aguja de Klendar."; exit 1; }
 python tools/i18n_missing.py panel >/dev/null && python tools/i18n_missing.py admin >/dev/null || { echo "pre-push: faltan traducciones."; exit 1; }
 # «Tu cuenta» y el panel en catalán, gallego, euskera, francés, alemán e italiano: lo que falta en cada diccionario.
 python tools/i18n_missing.py --lang all >/dev/null || { echo "pre-push: faltan textos en los idiomas nuevos (python tools/i18n_missing.py --lang all --todo)."; exit 1; }

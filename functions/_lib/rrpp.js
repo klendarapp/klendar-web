@@ -50,7 +50,7 @@ export async function promoterLinkPage(rawCode, lang) {
   // misma): lo abre el navegador con la suya.
   if (d?.ok === false && d.error === 'rate_limited') {
     return pagina({
-      body: `<div id="rp-lista" data-code="${esc(code)}" data-estado="pendiente"><p class="muted cargando">${esc(S.loading)}</p></div>${script(true)}`,
+      body: `<div id="rp-lista" data-code="${esc(code)}" data-estado="pendiente"><p class="esq" role="status">${esc(S.loading)}</p></div>${script(true)}`,
       title: 'Klendar', description: S.loading,
     });
   }

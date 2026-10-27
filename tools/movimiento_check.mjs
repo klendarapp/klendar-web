@@ -205,7 +205,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
       });
       ok(sim && !sim.cuadrado && sim.aguja === sim.marca, `${tag} símbolo sin cuadrado, aguja ${sim?.aguja} = marca ${sim?.marca}`);
       // «Cargando…» con la aguja: gira suave hacia la derecha (lineal, una
-      // vuelta por segundo); con «Reducir movimiento», quieta.
+      // vuelta por segundo); con «Reducir movimiento», quieta (sin animación).
       const giro = await page.evaluate(() => {
         const d = document.createElement('div');
         d.innerHTML = '<svg class="mov-cargando" viewBox="0 0 64 64"><g class="simbolo-aguja"><path d="M32 32V19"/></g></svg>';
@@ -215,7 +215,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
         d.remove();
         return r;
       });
-      ok(giro.n === 'mov-aguja-gira' && giro.f === 'linear' && (reducido ? giro.i === '1' : giro.i === 'infinite'), `${tag} aguja de carga: ${JSON.stringify(giro)}`);
+      ok(reducido ? giro.n === 'none' : giro.n === 'mov-aguja-gira' && giro.f === 'linear' && giro.i === 'infinite', `${tag} aguja de carga: ${JSON.stringify(giro)}`);
       const tiembla = await page.evaluate(() => {
         const i = document.createElement('input');
         document.body.append(i);

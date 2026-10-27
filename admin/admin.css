@@ -176,7 +176,7 @@ dialog.modal .warn { background: rgba(255,92,92,.14); border-radius: 12px; paddi
 .login { width: min(400px, calc(100% - 32px)); margin: 60px auto; display: grid; gap: 12px; }
 .login .btn { justify-content: center; }
 .login .brand { justify-content: center; margin-bottom: 8px; }
-.loading { padding: 30px; text-align: center; color: var(--ink-2); }
+/* .loading: el esqueleto común de site.css (filas grises con brillo). */
 .sk { height: 14px; border-radius: 6px; background: var(--glass); animation: pulse 1.2s ease-in-out infinite; }
 @keyframes pulse { 50% { opacity: .5 } }
 .mono { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; }

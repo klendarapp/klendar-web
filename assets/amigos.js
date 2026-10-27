@@ -527,7 +527,7 @@
     var caja = document.createElement('section');
     caja.className = 'amigos-resultados';
     caja.setAttribute('aria-live', 'polite');
-    caja.innerHTML = '<p class="muted">' + esc(T.cargando) + '</p>';
+    caja.innerHTML = '<p class="esq tarjetas" role="status">' + esc(T.cargando) + '</p>';
     if (feedDestino) {
       ocultos.push(feedDestino);
       document.querySelectorAll('.feed-nav, .feed-fondo').forEach(function (x) { ocultos.push(x); });

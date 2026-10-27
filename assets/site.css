@@ -356,12 +356,17 @@ details.hoja-bloque > summary .ic { transition: transform var(--mov-base) var(--
 @keyframes mov-traza-anillo { from { stroke-dashoffset: 1; } }
 .mov-traza .simbolo-aguja { transform-origin: 32px 32px; animation: mov-tic 200ms var(--mov-rebote) 260ms both; }
 @keyframes mov-tic { from { transform: rotate(-30deg); } }
-/* Un botón ocupado: el texto se funde en una rueda, del mismo ancho. */
-.mov-ocupado { position: relative; color: transparent !important; transition: color var(--mov-rapido) var(--mov-entra); }
+/* Un botón ocupado: el texto se funde en la aguja de Klendar pequeña (el
+   único indicador de carga, como la app), del color del texto del botón y
+   sin cambiar de ancho. ::before, el anillo; ::after, la aguja que gira. */
+.mov-ocupado { position: relative; color: transparent !important; transition: color var(--mov-rapido) var(--mov-entra); --ocupado: var(--ink); }
 .mov-ocupado > * { visibility: hidden; }
-.mov-ocupado::after { content: ""; position: absolute; left: 50%; top: 50%; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%;
-  border: 2px solid var(--ink); border-right-color: transparent; animation: mov-gira .7s linear infinite; }
-.pill.ink.mov-ocupado::after, .btn.primary.mov-ocupado::after { border-color: var(--surface); border-right-color: transparent; }
+.mov-ocupado::before, .mov-ocupado::after { content: ""; position: absolute; left: 50%; top: 50%; width: 18px; height: 18px; margin: -9px 0 0 -9px;
+  background: var(--ocupado); -webkit-mask: var(--mask) center / contain no-repeat; mask: var(--mask) center / contain no-repeat; }
+.mov-ocupado::before { --mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M32 6.8A25.2 25.2 0 1 1 8.03 24.21' fill='none' stroke='%23000' stroke-width='8.4' stroke-linecap='round'/%3E%3C/svg%3E"); }
+.mov-ocupado::after { --mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M32 32V19.4' stroke='%23000' stroke-width='5.6' stroke-linecap='round'/%3E%3Ccircle cx='32' cy='32' r='5.6'/%3E%3C/svg%3E"); animation: mov-gira 1s linear infinite; }
+.pill.ink.mov-ocupado, .btn.primary.mov-ocupado { --ocupado: var(--surface); }
+.pill.accent.mov-ocupado { --ocupado: var(--on-accent); }
 @keyframes mov-gira { to { transform: rotate(1turn); } }
 /* Un campo con error tiembla una vez (y el móvil vibra un poco). */
 [aria-invalid="true"] { animation: mov-tiembla 300ms var(--mov-mueve); }
@@ -389,9 +394,28 @@ input.mov-ph-sale::placeholder { opacity: 0; }
    de Klendar (sin cuadrado) en el centro con la aguja girando hacia la
    derecha a velocidad constante, como en la app. Es el único
    indicador de carga con el símbolo y nunca va encima del contenido. */
-.mov-cargando { display: block; width: 36px; height: 36px; margin: 0 auto 12px; color: var(--ink); }
+.mov-cargando { display: block; width: 40px; height: 40px; margin: 0 auto 12px; color: var(--ink); }
 .mov-cargando .simbolo-aguja { transform-origin: 32px 32px; animation: mov-aguja-gira 1s linear infinite; }
 @keyframes mov-aguja-gira { to { transform: rotate(1turn); } }
+/* Esqueletos (Iván, 2026-10-28): lo que carga con forma conocida (listas
+   del panel y del admin, tarjetas) enseña esa forma en gris con un brillo
+   suave que pasa; el texto («Cargando…») sigue ahí para el lector, sin
+   verse. `.loading` (panel, admin) y `.esq` (filas) o `.esq.tarjetas`. Con
+   «Reducir movimiento», sin brillo. */
+.loading, .esq { position: relative; overflow: hidden; min-height: 216px; padding: 0 !important; margin: 0; color: transparent !important;
+  text-align: left; user-select: none; background: var(--soft);
+  /* Las formas son la máscara: el gris y el brillo solo se ven en ellas. */
+  --esq-f: linear-gradient(#000 48px, transparent 0), linear-gradient(#000 14px, transparent 0), linear-gradient(#000 11px, transparent 0);
+  -webkit-mask: var(--esq-f); mask: var(--esq-f);
+  -webkit-mask-size: 48px 72px, 55% 72px, 32% 72px; mask-size: 48px 72px, 55% 72px, 32% 72px;
+  -webkit-mask-position: 16px 12px, 80px 18px, 80px 42px; mask-position: 16px 12px, 80px 18px, 80px 42px;
+  -webkit-mask-repeat: repeat-y; mask-repeat: repeat-y; }
+.esq.tarjetas { min-height: 248px; --esq-f: linear-gradient(#000 112px, transparent 0);
+  -webkit-mask-size: calc(100% - 32px) 124px; mask-size: calc(100% - 32px) 124px; -webkit-mask-position: 16px 12px; mask-position: 16px 12px; }
+.loading::after, .esq::after { content: ""; position: absolute; inset: 0; pointer-events: none; transform: translateX(-100%);
+  background: linear-gradient(100deg, transparent 30%, rgba(255,255,255,.55) 50%, transparent 70%); animation: mov-brillo 1.4s ease-in-out infinite; }
+@media (prefers-color-scheme: dark) { .loading::after, .esq::after { background: linear-gradient(100deg, transparent 30%, rgba(255,255,255,.08) 50%, transparent 70%); } }
+@keyframes mov-brillo { to { transform: translateX(100%); } }
 
 /* Las barras (usos que quedan de un bono, el paso del alta, los tramos de
    un informe) se rellenan desde la izquierda al aparecer (como la app). */
@@ -429,7 +453,7 @@ input.mov-ph-sale::placeholder { opacity: 0; }
   details.desplegable[open] > summary::after, details.desplegable[open] > .menu-d, details.hoja-bloque[open] > .hoja-bloque-c, .mov-cambia, .rod,
   .bono-barra > span, .bt > i, .mov-hecho, .mov-hecho .hecho-ic, .mov-hecho .hecho-ic svg path,
   .mov-traza .simbolo-anillo, .mov-traza .simbolo-aguja, [aria-invalid="true"], .mov-vivo,
-  .estado-hoy.abierto b::before, .ficha-media .tj-galeria, .mov-ocupado::after,
+  .estado-hoy.abierto b::before, .ficha-media .tj-galeria, .mov-ocupado::after, .loading::after, .esq::after, .mov-cargando .simbolo-aguja,
   .dialogo[open], .sorteo-dialogo[open], dialog.modal[open] { animation: none !important; }
   .ocard:active, .tj:not(.tj--pantalla):active, .tab:active svg, .pestana:active svg,
   .op-r span:active, .pub .op:active, summary.chip:active, .chip:active { transform: none; }
