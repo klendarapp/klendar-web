@@ -37,6 +37,24 @@ const quieto = (page) => page.evaluate(() => new Promise((r) => {
   else m.once('idle', () => setTimeout(r, 250));
 }));
 
+/** Pares de marcadores o burbujas que se pisan (sus círculos) dentro de [caja]. */
+const solapes = (page, caja) => page.evaluate((sel) => {
+  const c = document.querySelector(sel).getBoundingClientRect();
+  const rs = [...document.querySelectorAll(`${sel} .marca:not(.elegida) .mc-cara, ${sel} .grupo-marca`)]
+    .map((e) => e.getBoundingClientRect())
+    .filter((r) => r.right > c.left && r.left < c.right && r.bottom > c.top && r.top < c.bottom);
+  const out = [];
+  for (let i = 0; i < rs.length; i++) {
+    for (let j = i + 1; j < rs.length; j++) {
+      const a = rs[i];
+      const b = rs[j];
+      // Un píxel de margen (el antialias del borde).
+      if (a.left < b.right - 1 && b.left < a.right - 1 && a.top < b.bottom - 1 && b.top < a.bottom - 1) out.push([Math.round(a.left), Math.round(a.top), Math.round(b.left), Math.round(b.top)]);
+    }
+  }
+  return out;
+}, caja);
+
 /** Lo que dice cada marcador: burbujas, insignias y chinchetas. */
 const cuenta = (page) => page.evaluate(() => {
   const num = (t) => Number(String(t).match(/\d+/)?.[0] || 0);
@@ -71,11 +89,14 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
       }
       await quieto(page);
       // 2. El número son planes.
-      for (const z of [11, 13, 15, 16.5]) {
+      for (const z of [11, 13, 15, 16.5, 17]) {
         await page.evaluate((zz) => window.KlendarMapa.jumpTo({ zoom: zz }), z);
         await quieto(page);
         const c = await cuenta(page);
         ok(c.total === puntos.length, `${t} zoom ${z}: burbujas + sitios + chinchetas = ${c.total} planes de ${puntos.length}`);
+        // 1b. A ningún zoom se pisan dos marcadores o burbujas.
+        const pisan = await solapes(page, '#mapa');
+        ok(pisan.length === 0, `${t} zoom ${z}: ningún marcador encima de otro${pisan.length ? ` (${JSON.stringify(pisan.slice(0, 3))})` : ''}`);
       }
       // 5b. Los nombres: de lejos ninguno; de cerca, en una línea y sin
       // pisarse entre ellos.
@@ -85,7 +106,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
       await quieto(page);
       ok((await nombres()).length === 0, `${t} de lejos (zoom 13), sin nombres`);
       const tam = await page.evaluate(() => { const e = document.querySelector('.marca .mc-cara, .grupo-marca'); const r = e && e.getBoundingClientRect(); return r ? Math.max(r.width, r.height) : 0; });
-      ok(tam > 0 && tam <= 34, `${t} marcadores pequeños (${Math.round(tam)} px)`);
+      ok(tam >= 34 && tam <= 38, `${t} marcadores de 36 px (${Math.round(tam)} px)`);
       await page.evaluate(() => window.KlendarMapa.jumpTo({ zoom: 16 }));
       await quieto(page);
       await page.waitForTimeout(100);
@@ -179,7 +200,9 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
           const r = e.getBoundingClientRect();
           return { tam: Math.round(Math.max(r.width, r.height)), coral: document.querySelectorAll('#mapa-sitios .anillo-oferta').length, planes: document.querySelectorAll('#mapa-sitios .marca.anillo-planes').length, sin: document.querySelectorAll('#mapa-sitios .marca:not(.anillo-planes)').length };
         }, null, { timeout: 20000 }).then((h) => h.jsonValue()).catch(() => null);
-        ok(mismo && mismo.tam >= 28 && mismo.tam <= 34 , `${t} Sitios: los marcadores de Planes (${JSON.stringify(mismo)})`);
+        ok(mismo && mismo.tam >= 34 && mismo.tam <= 38, `${t} Sitios: los marcadores de Planes (${JSON.stringify(mismo)})`);
+        const pisanS = await solapes(page, '#mapa-sitios');
+        ok(pisanS.length === 0, `${t} Sitios: ningún marcador encima de otro`);
         await page.waitForTimeout(1500);
         await page.screenshot({ path: `${OUT}/web-sitios-${nombre}-${forma}.png` });
       }

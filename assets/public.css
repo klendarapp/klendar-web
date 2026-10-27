@@ -412,19 +412,29 @@ body.con-hoja { overflow: hidden; }
    blanco en oscuro: tiene planes; sin anillo: hoy nada);
    la cifra, en una insignia en la esquina; la burbuja de un grupo, el mismo
    círculo en tinta con el total. */
-.marca { position: relative; width: 30px; height: 30px; padding: 0; border: 0; background: none; cursor: pointer; font: inherit; }
-.marca .mc-cara { display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; overflow: hidden;
+.marca { position: relative; width: 36px; height: 36px; padding: 0; border: 0; background: none; cursor: pointer; font: inherit;
+  transition: transform var(--mov-corto, 160ms) ease; }
+.marca .mc-cara { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; overflow: hidden;
   background: #E9E9EC; color: #1C1C1E; border: 2.5px solid #fff; box-shadow: 0 1px 5px rgba(0,0,0,.3); box-sizing: border-box; }
-.marca .mc-cara img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.marca .mc-cara img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; opacity: 0; transition: opacity 200ms ease; }
+.marca .mc-cara img.lista { opacity: 1; }
+.marca .mc-tipo { position: absolute; right: -3px; bottom: -3px; display: flex; align-items: center; justify-content: center; width: 17px; height: 17px;
+  border-radius: 50%; background: #fff; color: #1C1C1E; border: 1.2px solid var(--ink); box-sizing: border-box; }
+.marca .mc-tipo svg { width: 11px; height: 11px; }
+/* El elegido (con su tarjeta abierta): de 36 a 48 px y con el anillo marcado. */
+.marca.elegida { transform: scale(1.333); z-index: 2; }
+.marca.elegida .mc-cara { box-shadow: inset 0 0 0 3.5px var(--ink), 0 2px 8px rgba(0,0,0,.35); }
+.marca.elegida.anillo-oferta .mc-cara { box-shadow: inset 0 0 0 3.5px var(--accent), 0 2px 8px rgba(0,0,0,.35); }
+@media (prefers-reduced-motion: reduce) { .marca, .marca .mc-cara img { transition: none; } }
 .marca.anillo-planes .mc-cara { box-shadow: inset 0 0 0 2.5px var(--ink), 0 1px 5px rgba(0,0,0,.3); }
 .marca.anillo-oferta .mc-cara { box-shadow: inset 0 0 0 2.5px var(--accent), 0 1px 5px rgba(0,0,0,.3); }
 .marca.anillo-planes .mc-cara img, .marca.anillo-oferta .mc-cara img { width: calc(100% - 5px); height: calc(100% - 5px); }
-.marca .mc-n { position: absolute; top: -6px; left: 20px; min-width: 18px; height: 18px; padding: 0 5px; box-sizing: border-box; border-radius: 999px;
+.marca .mc-n { position: absolute; top: -6px; left: 24px; min-width: 18px; height: 18px; padding: 0 5px; box-sizing: border-box; border-radius: 999px;
   background: var(--ink); color: var(--surface); border: 1.5px solid var(--surface); font-size: 11px; font-weight: 800; line-height: 15px; text-align: center; white-space: nowrap; }
 .marca-nombre { position: absolute; top: calc(100% + 3px); left: 50%; transform: translateX(-50%); max-width: 170px; overflow: hidden; text-overflow: ellipsis;
   white-space: nowrap; font-size: 12px; font-weight: 600; color: var(--ink); pointer-events: none;
   text-shadow: 0 0 2px var(--surface), 0 0 3px var(--surface), 0 0 4px var(--surface); }
-.grupo-marca { min-width: 30px; height: 30px; padding: 0 8px; box-sizing: border-box; border-radius: 999px; border: 2.5px solid #fff; background: var(--ink); color: var(--surface);
+.grupo-marca { min-width: 36px; height: 36px; padding: 0 9px; box-sizing: border-box; border-radius: 999px; border: 2.5px solid #fff; background: var(--ink); color: var(--surface);
   font: 800 13px/1 var(--display, inherit); cursor: pointer; box-shadow: 0 1px 5px rgba(0,0,0,.3); }
 .grupo-marca.anillo-oferta { box-shadow: inset 0 0 0 2.5px var(--accent), 0 1px 5px rgba(0,0,0,.3); }
 .marca:focus-visible, .grupo-marca:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }

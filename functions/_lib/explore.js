@@ -452,6 +452,9 @@ const mapaHtml = (items, lang, S) => {
     // El marcador (GLOSARIO «Aspecto › El mapa»): de la agenda pública (su
     // icono) y con descuento de verdad (el anillo coral; «Gratis» no cuenta).
     ...(o.imported ? { im: 1 } : {}),
+    // La foto del marcador: la portada del plan (no las genéricas de la agenda).
+    ...((o.images || []).filter((u) => typeof u === 'string' && /^https:\/\//.test(u) && !/\/business-images\/agenda\//.test(u) && !/\.mp4(\?|$)/i.test(u))[0]
+      ? { ft: (o.images || []).filter((u) => typeof u === 'string' && /^https:\/\//.test(u) && !/\/business-images\/agenda\//.test(u) && !/\.mp4(\?|$)/i.test(u))[0] } : {}),
     ...(o.discount && o.discount.type !== 'free' ? { d: 1 } : {}),
     sn: o.venue_address ? (o.venue_name || String(o.venue_address).split(',')[0]) : o.business_name,
     // El local (no un sitio de la publicación): su precio, «¿Hay sitio
@@ -464,7 +467,7 @@ const mapaHtml = (items, lang, S) => {
   ${sitioAhoraScripts(lang).replace(/ defer/g, '')}
   <script type="application/json" id="mapaPuntos">${JSON.stringify(puntos).replace(/</g, '\u003c')}</script>
   <script src="/assets/iconos-mapa.js?v=1"></script>
-  <script src="/assets/mapa.js?v=5"></script>`;
+  <script src="/assets/mapa.js?v=6"></script>`;
 };
 
 /** Las distancias de «Cerca de mí», las mismas que la hoja de filtros de la

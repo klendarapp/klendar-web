@@ -244,6 +244,8 @@
         cooperativeGestures: matchMedia('(pointer: coarse)').matches,
       });
       m.addControl(new mb.NavigationControl({ showCompass: false }));
+      // Para las pruebas (como `KlendarMapa` en Planes).
+      window.KlendarMapaSitios = m;
       const L = T[d.lang === 'en' ? 'en' : 'es'];
       const KA = globalThis.KlendarAgrupa;
       let pedido = 0;
@@ -253,14 +255,18 @@
 
       // La tarjeta de un sitio: lo mismo que la fila de la lista (`place_card`
       // y las mismas líneas, `detallesHtml`); mientras llega, el nombre.
-      const abre = async (f) => {
+      const abre = async (f, el) => {
         const a = document.createElement('a');
         a.className = 'pop pop-sitio';
         a.href = `${d.base || '/b/'}${encodeURIComponent(f.slug || f.id)}`;
         a.innerHTML = `<b>${esc(f.name)}</b><span class="pop-ver">${esc(d.ver || '')}</span>`;
         if (pop) pop.remove();
-        pop = new mb.Popup({ offset: 18, closeButton: false, focusAfterOpen: false })
+        pop = new mb.Popup({ offset: 22, closeButton: false, focusAfterOpen: false })
           .setLngLat([f.lng, f.lat]).setDOMContent(a).addTo(m);
+        // El elegido: más grande y con el anillo marcado mientras está abierta.
+        document.querySelectorAll('#mapa-sitios .marca.elegida').forEach((x) => x.classList.remove('elegida'));
+        if (el) el.classList.add('elegida');
+        pop.on('close', () => { if (el) el.classList.remove('elegida'); });
         try {
           const r = await fetch(`${d.url}/rest/v1/rpc/place_card`, {
             method: 'POST',
@@ -318,17 +324,17 @@
         cara: (s) => {
           const f = s.items.find(planesDe) || s.items[0];
           return {
-            logo: planesDe(f) ? f.logo : null, icono: KA.iconoMapa('cat', f.category_slug), nombre: planesDe(f) ? f.name : null,
+            foto: f.photo || f.logo, icono: KA.iconoMapa('cat', f.category_slug), nombre: planesDe(f) ? f.name : null,
           };
         },
         anillo: (s) => (s.items.some((x) => x.has_offer) ? 'oferta' : s.items.some(planesDe) ? 'planes' : ''),
         uno: (f) => {
           const el = KA.marcaEl({
-            logo: planesDe(f) ? f.logo : null, icono: KA.iconoMapa('cat', f.category_slug),
+            foto: f.photo || f.logo, icono: KA.iconoMapa('cat', f.category_slug),
             anillo: f.has_offer ? 'oferta' : planesDe(f) ? 'planes' : '', n: 1,
             etiqueta: f.name, nombre: planesDe(f) ? f.name : null, prio: planesDe(f),
           });
-          el.addEventListener('click', (e) => { e.stopPropagation(); abre(f); });
+          el.addEventListener('click', (e) => { e.stopPropagation(); abre(f, el); });
           return new mb.Marker({ element: el, anchor: 'center' }).setLngLat([f.lng, f.lat]);
         },
         varios: lista,

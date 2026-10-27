@@ -89,7 +89,39 @@
       g.lat += (s.lat - g.lat) / n;
       g.lng += (s.lng - g.lng) / n;
     }
+    // Segunda pasada: al moverse, el centro de un grupo puede acabar a menos
+    // del radio de otro (y sus burbujas, una encima de otra). Se juntan hasta
+    // que no queda ningún par a menos del radio: a ningún zoom se pisan.
+    for (let junta = true; junta;) {
+      junta = false;
+      for (let i = 0; i < grupos.length && !junta; i++) {
+        for (let j = i + 1; j < grupos.length && !junta; j++) {
+          if (Math.hypot(centros[i].x - centros[j].x, centros[i].y - centros[j].y) > radio) continue;
+          const a = grupos[i];
+          const b = grupos[j];
+          const na = a.sitios.length;
+          const nb = b.sitios.length;
+          const n = na + nb;
+          centros[i] = { x: (centros[i].x * na + centros[j].x * nb) / n, y: (centros[i].y * na + centros[j].y * nb) / n };
+          a.lat = (a.lat * na + b.lat * nb) / n;
+          a.lng = (a.lng * na + b.lng * nb) / n;
+          a.sitios.push(...b.sitios);
+          grupos.splice(j, 1);
+          centros.splice(j, 1);
+          junta = true;
+        }
+      }
+    }
     return grupos;
+  }
+
+  /** La miniatura de una foto de Storage (~96 px, recortada al cuadrado);
+   *  lo que no es de Storage, tal cual (como `mapThumbUrl` en la app). */
+  function miniatura(url, t = 96) {
+    const de = '/storage/v1/object/public/';
+    if (typeof url !== 'string' || !url.includes(de)) return url;
+    const base = url.replace(de, '/storage/v1/render/image/public/');
+    return `${base}${base.includes('?') ? '&' : '?'}width=${t}&height=${t}&resize=cover`;
   }
 
   /** El zoom al que [g] se separa en dos o más, desde [z] (como mucho 17,
@@ -108,7 +140,7 @@
   const planesDeGrupo = (g) => g.sitios.reduce((n, s) => n + planesDe(s), 0);
 
   const KA = {
-    METROS_SITIO, radioPara, ZOOM_MAX_GRUPOS, ZOOM_NOMBRES, corto, metros, sitios, px, agrupa, zoomQueSepara, planesDe, planesDeGrupo,
+    METROS_SITIO, radioPara, ZOOM_MAX_GRUPOS, ZOOM_NOMBRES, corto, miniatura, metros, sitios, px, agrupa, zoomQueSepara, planesDe, planesDeGrupo,
   };
   globalThis.KlendarAgrupa = KA;
   if (typeof module === 'object' && module && module.exports) module.exports = KA;
@@ -183,16 +215,37 @@
     return d ? `<svg viewBox="0 -960 960 960" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="${d}"/></svg>` : icono('local', 16);
   }
 
-  function marcaEl({ logo, icono: ic, anillo, n, etiqueta, nombre, prio }) {
+  /**
+   * [foto]: la foto del marcador (en Planes, la portada del plan; en Sitios,
+   * la del negocio o su logo), en miniatura; si no llega, la original y, si
+   * tampoco, el icono. [tipo]: en Planes con foto, el icono del tipo de plan
+   * en una mini insignia abajo.
+   */
+  function marcaEl({ foto, icono: ic, tipo, anillo, n, etiqueta, nombre, prio }) {
     const el = document.createElement('button');
     el.type = 'button';
     el.className = `marca${anillo ? ` anillo-${anillo}` : ''}`;
     el.setAttribute('aria-label', etiqueta);
     el.dataset.prio = String(prio || 0);
-    el.innerHTML = `${logo
-      ? `<span class="mc-cara"><img src="${esc(logo)}" alt="" loading="lazy" decoding="async"></span>`
-      : `<span class="mc-cara sin-logo">${ic || iconoMapa('cat', 'shop')}</span>`}${
+    const icono = ic || iconoMapa('cat', 'shop');
+    el.innerHTML = `${foto
+      ? `<span class="mc-cara"><img src="${esc(miniatura(foto))}" alt="" decoding="async" data-original="${esc(foto)}"></span>`
+      : `<span class="mc-cara sin-logo">${icono}</span>`}${
+      foto && tipo ? `<span class="mc-tipo" aria-hidden="true">${tipo}</span>` : ''}${
       n > 1 ? `<span class="mc-n" aria-hidden="true">${n > 99 ? '99+' : n}</span>` : ''}`;
+    const img = el.querySelector('.mc-cara img');
+    if (img) {
+      // Con fundido al llegar; sin miniatura, la original; sin nada, el icono.
+      img.addEventListener('load', () => img.classList.add('lista'), { once: true });
+      img.addEventListener('error', () => {
+        const o = img.dataset.original;
+        if (o && img.src !== o) { img.src = o; return; }
+        const cara = img.parentElement;
+        cara.classList.add('sin-logo');
+        cara.innerHTML = icono;
+        el.querySelector('.mc-tipo')?.remove();
+      });
+    }
     if (nombre) {
       const t = document.createElement('span');
       t.className = 'marca-nombre';
@@ -217,6 +270,11 @@
     const mb = window.mapboxgl;
     let lista = [];
     let marcas = [];
+    // Los marcadores por lo que representan: al volver a agrupar, los que
+    // siguen igual se quedan (su foto no se vuelve a cargar ni parpadea).
+    let porClave = new Map();
+    let zoomPintado = -1;
+    const clave = (g) => `${g.sitios.length > 1 ? 'g' : 's'}:${g.sitios.map((s) => s.items.map((x) => x.id).join(',')).join('|')}`;
 
     function nombres() {
       const todos = marcas.map((x) => x.getElement());
@@ -267,12 +325,32 @@
     }
 
     function pinta() {
-      marcas.forEach((x) => x.remove());
-      marcas = agrupa(lista, m.getZoom()).map((g) => (g.sitios.length > 1 ? burbuja(g) : sitio(g.sitios[0])));
-      marcas.forEach((x) => x.addTo(m));
+      zoomPintado = m.getZoom();
+      const nuevos = new Map();
+      marcas = agrupa(lista, zoomPintado).map((g) => {
+        const k = clave(g);
+        const viejo = porClave.get(k);
+        if (viejo) {
+          porClave.delete(k);
+          nuevos.set(k, viejo);
+          return viejo.setLngLat([g.lng, g.lat]);
+        }
+        const nuevo = g.sitios.length > 1 ? burbuja(g) : sitio(g.sitios[0]);
+        nuevos.set(k, nuevo);
+        return nuevo.addTo(m);
+      });
+      porClave.forEach((x) => x.remove());
+      porClave = nuevos;
       requestAnimationFrame(nombres);
     }
     m.on('zoomend', pinta);
+    // Al pellizcar: en cuanto el zoom cambia lo bastante, se vuelve a agrupar
+    // (sin esperar a soltar).
+    let espera = 0;
+    m.on('zoom', () => {
+      if (Math.abs(m.getZoom() - zoomPintado) < 0.75 || espera) return;
+      espera = setTimeout(() => { espera = 0; pinta(); }, 120);
+    });
     return {
       poner(puntos) { lista = sitios(puntos); pinta(); },
       marcaEl,
@@ -309,10 +387,14 @@
      *  oferta flash o un evento. */
     const tipoDe = (items) => (items.every((x) => x.im) ? 'agenda' : items.some((x) => x.k === 'f') ? 'flash' : 'evento');
 
+    /** La foto de un sitio: la portada del plan más próximo que la tenga. */
+    const fotoDe = (items) => ([...items].filter((x) => x.ft).sort((a, b) => String(a.at || '').localeCompare(String(b.at || '')))[0] || {}).ft;
+
     /** Un sitio con un solo plan: su marcador y su tarjeta. */
     function uno(p) {
       const el = marcaEl({
-        icono: iconoMapa('tipo', tipoDe([p])), anillo: oferta(p) ? 'oferta' : 'planes', n: 1, etiqueta: p.t, nombre: p.sn || p.b, prio: 1,
+        foto: p.ft, icono: iconoMapa('tipo', tipoDe([p])), tipo: iconoMapa('tipo', tipoDe([p])),
+        anillo: oferta(p) ? 'oferta' : 'planes', n: 1, etiqueta: p.t, nombre: p.sn || p.b, prio: 1,
       });
       const a = document.createElement('a');
       a.className = 'pop';
@@ -346,7 +428,11 @@
           }
         });
       }
-      const pop = new mb.Popup({ offset: 18, closeButton: false, focusAfterOpen: false }).setDOMContent(w);
+      const pop = new mb.Popup({ offset: 22, closeButton: false, focusAfterOpen: false }).setDOMContent(w);
+      // El elegido (con su tarjeta abierta): más grande y con el anillo
+      // marcado; al cerrarla, vuelve.
+      pop.on('open', () => el.classList.add('elegida'));
+      pop.on('close', () => el.classList.remove('elegida'));
       return new mb.Marker({ element: el, anchor: 'center' }).setLngLat([p.lng, p.lat]).setPopup(pop);
     }
 
@@ -392,7 +478,11 @@
     capa(m, {
       // En Planes, el icono del tipo de plan (nunca un logo): que se sepa de
       // un vistazo que son planes y no sitios.
-      cara: (s) => { const p = principal(s); return { icono: iconoMapa('tipo', tipoDe(s.items)), nombre: p.sn || p.b }; },
+      cara: (s) => {
+        const p = principal(s);
+        const t = iconoMapa('tipo', tipoDe(s.items));
+        return { foto: fotoDe(s.items), icono: t, tipo: t, nombre: p.sn || p.b };
+      },
       anillo: (s) => (s.items.some(oferta) ? 'oferta' : 'planes'),
       uno,
       varios: abreSitio,
