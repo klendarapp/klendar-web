@@ -12,8 +12,12 @@
  *    mismas coordenadas), así que no se agrupa: es un marcador con «N planes»
  *    que, al tocarlo, abre su lista por partes.
  * 2. **Grupos** (`agrupa`): sitios distintos que a este zoom se pisarían en
- *    pantalla (a menos de 50 px). Al tocar uno, el mapa se acerca justo hasta
+ *    pantalla (a menos de 60 px de lejos, por debajo del zoom 14, y de 48 de
+ *    cerca: `radioPara`). Al tocar uno, el mapa se acerca justo hasta
  *    separarlos (`zoomQueSepara`). Desde el zoom 17 ya no se agrupa nada.
+ * 3. **Nombres**: desde el zoom 15, en una línea (22 caracteres, con «…») y
+ *    solo si no chocan con otro nombre o marcador (manda el sitio con más
+ *    planes), como los símbolos de Mapbox en la app.
  *
  * El número dice siempre lo mismo: en Planes, planes; en Sitios, sitios.
  * Burbujas e insignias en tinta (en oscuro, al revés): el coral es de las
@@ -23,8 +27,17 @@
   'use strict';
 
   const METROS_SITIO = 15;
-  const RADIO_PX = 50;
+  /** Radio de agrupación: de lejos se agrupa antes; de cerca, lo justo para
+   *  que dos marcadores (32 px) no se pisen. */
+  const radioPara = (z) => (z < 14 ? 60 : 48);
   const ZOOM_MAX_GRUPOS = 17;
+  const ZOOM_NOMBRES = 15;
+  const MAX_NOMBRE = 22;
+  /** Un nombre en una línea: recortado con «…» si es largo. */
+  const corto = (t) => {
+    const n = String(t || '').trim();
+    return n.length <= MAX_NOMBRE ? n : `${n.slice(0, MAX_NOMBRE - 1).trimEnd()}…`;
+  };
 
   /** Metros entre dos puntos (aproximado: sobra para unos metros). */
   function metros(lat1, lng1, lat2, lng2) {
@@ -57,7 +70,7 @@
   }
 
   /** Agrupa los sitios que se pisarían a zoom [z]: [{ lat, lng, sitios }]. */
-  function agrupa(lista, z, radio = RADIO_PX, zMax = ZOOM_MAX_GRUPOS) {
+  function agrupa(lista, z, radio = radioPara(z), zMax = ZOOM_MAX_GRUPOS) {
     if (z >= zMax) return lista.map((s) => ({ lat: s.lat, lng: s.lng, sitios: [s] }));
     const grupos = [];
     const centros = [];
@@ -95,7 +108,7 @@
   const planesDeGrupo = (g) => g.sitios.reduce((n, s) => n + planesDe(s), 0);
 
   const KA = {
-    METROS_SITIO, RADIO_PX, ZOOM_MAX_GRUPOS, metros, sitios, px, agrupa, zoomQueSepara, planesDe, planesDeGrupo,
+    METROS_SITIO, radioPara, ZOOM_MAX_GRUPOS, ZOOM_NOMBRES, corto, metros, sitios, px, agrupa, zoomQueSepara, planesDe, planesDeGrupo,
   };
   globalThis.KlendarAgrupa = KA;
   if (typeof module === 'object' && module && module.exports) module.exports = KA;
@@ -178,10 +191,14 @@
     let marcas = [];
 
     function chincheta(p) {
-      const el = document.createElement('a');
-      el.className = `chincheta${p.k === 'f' ? ' flash' : ''}`;
-      el.href = p.u;
-      el.setAttribute('aria-label', p.t);
+      const pin = document.createElement('a');
+      pin.className = `chincheta${p.k === 'f' ? ' flash' : ''}`;
+      pin.href = p.u;
+      pin.setAttribute('aria-label', p.t);
+      const el = document.createElement('div');
+      el.className = 'chin';
+      el.dataset.prio = '1';
+      el.append(pin, nombre(p.sn || p.b));
       const a = document.createElement('a');
       a.className = 'pop';
       a.href = p.u;
@@ -214,9 +231,10 @@
           }
         });
       }
-      el.addEventListener('click', (e) => e.preventDefault());
+      pin.addEventListener('click', (e) => e.preventDefault());
       const pop = new mb.Popup({ offset: 18, closeButton: false, focusAfterOpen: false }).setDOMContent(w);
-      return new mb.Marker({ element: el }).setLngLat([p.lng, p.lat]).setPopup(pop);
+      // La punta de la gota, en el sitio.
+      return new mb.Marker({ element: el, anchor: 'bottom', offset: [0, -5] }).setLngLat([p.lng, p.lat]).setPopup(pop);
     }
 
     /** La hoja de un sitio: cabeza, Cómo llegar (y Ver el sitio si es un
@@ -265,7 +283,10 @@
       el.type = 'button';
       el.className = 'sitio-marca';
       el.setAttribute('aria-label', `${p.sn || p.b}, ${T.planes(n)}`);
-      el.innerHTML = `${cara(p, 'sm-cara')}<span class="sm-n">${esc(T.planes(n))}</span><span class="sm-nombre">${esc(p.sn || p.b)}</span>`;
+      el.dataset.prio = String(n);
+      // «3 planes» lo dice su hoja: aquí, la cifra en una insignia.
+      el.innerHTML = `${cara(p, 'sm-cara')}<span class="sm-n" aria-hidden="true">${n > 99 ? '99+' : n}</span>`;
+      el.append(nombre(p.sn || p.b));
       el.addEventListener('click', (e) => { e.stopPropagation(); abreSitio(s); });
       return new mb.Marker({ element: el, anchor: 'center' }).setLngLat([s.lng, s.lat]);
     }
@@ -286,6 +307,39 @@
       return new mb.Marker({ element: el, anchor: 'center' }).setLngLat([g.lng, g.lat]);
     }
 
+    /** El nombre bajo un marcador (oculto hasta que `nombres` decide). */
+    function nombre(t) {
+      const n = document.createElement('span');
+      n.className = 'marca-nombre';
+      n.textContent = corto(t);
+      n.hidden = true;
+      return n;
+    }
+
+    /** Los nombres: desde el zoom 15 y solo los que caben, primero los de los
+     *  sitios con más planes; uno que chocaría con otro nombre o con un
+     *  marcador no sale. */
+    function nombres() {
+      const todos = marcas.map((x) => x.getElement());
+      const etiquetas = todos.map((el) => el.querySelector('.marca-nombre')).filter(Boolean);
+      etiquetas.forEach((n) => { n.hidden = true; });
+      if (m.getZoom() < ZOOM_NOMBRES) return;
+      const cajas = todos.map((el) => (el.querySelector('.chincheta, .sm-cara') || el).getBoundingClientRect());
+      const choca = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+      const puestos = [];
+      etiquetas
+        .map((n) => ({ n, prio: Number(n.parentElement.dataset.prio) || 0 }))
+        .sort((a, b) => b.prio - a.prio)
+        .forEach(({ n }) => {
+          n.hidden = false;
+          const r = n.getBoundingClientRect();
+          const propia = (n.parentElement.querySelector('.chincheta, .sm-cara') || n.parentElement).getBoundingClientRect();
+          if (puestos.some((x) => choca(r, x)) || cajas.some((c) => c !== propia && !(c.left === propia.left && c.top === propia.top) && choca(r, c))) {
+            n.hidden = true;
+          } else puestos.push(r);
+        });
+    }
+
     function pinta() {
       marcas.forEach((x) => x.remove());
       marcas = agrupa(lista, m.getZoom()).map((g) => {
@@ -294,6 +348,7 @@
         return s.items.length > 1 ? marcaSitio(s) : chincheta(s.items[0]);
       });
       marcas.forEach((x) => x.addTo(m));
+      requestAnimationFrame(nombres);
     }
     pinta();
     m.on('zoomend', pinta);

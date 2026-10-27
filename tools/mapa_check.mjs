@@ -9,6 +9,8 @@
 //  4. Al acercar «con los dedos» (zoom), las burbujas se separan; desde el 17
 //     no queda ninguna.
 //  5. En oscuro se lee (captura).
+//  5b. Marcadores pequeños (32 px, la cifra en la esquina) y los nombres
+//     solo desde el zoom 15, en una línea y sin pisarse (2026-10-27).
 //  6. Sitios: la fuente agrupa (hasta el 16, radio 50) y hay capa de burbujas.
 //  7. Sin errores en la consola.
 // Chromium y WebKit, móvil (375) y escritorio. Capturas en OUT.
@@ -75,6 +77,21 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
         const c = await cuenta(page);
         ok(c.total === puntos.length, `${t} zoom ${z}: burbujas + sitios + chinchetas = ${c.total} planes de ${puntos.length}`);
       }
+      // 5b. Los nombres: de lejos ninguno; de cerca, en una línea y sin
+      // pisarse entre ellos.
+      const nombres = () => page.evaluate(() => [...document.querySelectorAll('.marca-nombre')]
+        .filter((n) => !n.hidden).map((n) => { const r = n.getBoundingClientRect(); return { l: r.left, t: r.top, r: r.right, b: r.bottom, h: r.height }; }));
+      await page.evaluate(() => window.KlendarMapa.jumpTo({ zoom: 13 }));
+      await quieto(page);
+      ok((await nombres()).length === 0, `${t} de lejos (zoom 13), sin nombres`);
+      const tam = await page.evaluate(() => { const e = document.querySelector('.sitio-marca .sm-cara, .grupo-marca'); const r = e && e.getBoundingClientRect(); return r ? Math.max(r.width, r.height) : 0; });
+      ok(tam > 0 && tam <= 34, `${t} marcadores pequeños (${Math.round(tam)} px)`);
+      await page.evaluate(() => window.KlendarMapa.jumpTo({ zoom: 16 }));
+      await quieto(page);
+      await page.waitForTimeout(100);
+      const ns = await nombres();
+      const pisan = ns.some((a, i) => ns.some((b, j) => j > i && a.l < b.r && b.l < a.r && a.t < b.b && b.t < a.b));
+      ok(!pisan && ns.every((n) => n.h < 26), `${t} de cerca (zoom 16): ${ns.length} nombres, en una línea y sin pisarse`);
       // 4. Desde el 17, ni una burbuja (se separan solas al acercar).
       await page.evaluate(() => window.KlendarMapa.jumpTo({ zoom: 17.2 }));
       await quieto(page);
@@ -107,7 +124,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
       });
       await page.evaluate((s) => window.KlendarMapa.jumpTo({ center: [s.lng, s.lat], zoom: 18 }), KA);
       await quieto(page);
-      const marca = page.locator('.sitio-marca', { hasText: `${KA.n} planes` }).first();
+      const marca = page.locator(`.sitio-marca[aria-label$=", ${KA.n} planes"]`).first();
       ok(await marca.count() === 1, `${t} «${KA.nombre}»: un marcador con «${KA.n} planes»`);
       await page.screenshot({ path: `${OUT}/web-planes-sitio-${nombre}-${forma}-${tema}.png` });
       await marca.click();

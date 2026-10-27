@@ -271,7 +271,8 @@
               return {
                 type: 'Feature',
                 properties: {
-                  id: f.id, nombre: f.name || '', slug: f.slug || f.id, planes, n: s.items.length, con: planes > 0 ? 1 : 0,
+                  id: f.id, nombre: f.name || '', corto: KA ? KA.corto(f.name) : (f.name || ''), slug: f.slug || f.id,
+                  planes, n: s.items.length, con: planes > 0 ? 1 : 0,
                   lista: s.items.length > 1
                     ? JSON.stringify(s.items.map((x) => ({ n: x.name || '', s: x.slug || x.id, p: Number(x.plans_today) || 0 })))
                     : '',
@@ -285,15 +286,22 @@
             // Sitios distintos cerca: agrupados hasta el zoom 16 (desde el 17,
             // cada uno solo), como la app; la cifra, cuántos sitios.
             m.addSource('sitios', {
-              type: 'geojson', data: geo, cluster: true, clusterMaxZoom: 16, clusterRadius: 50,
+              type: 'geojson', data: geo, cluster: true, clusterMaxZoom: 16, clusterRadius: 56,
               clusterProperties: { total: ['+', ['get', 'n']], con: ['max', ['get', 'con']] },
             });
             const suelto = ['all', ['!', ['has', 'point_count']], ['==', ['get', 'n'], 1]];
             const burbuja = ['any', ['has', 'point_count'], ['>', ['get', 'n'], 1]];
-            // Sin planes: punto pequeño y gris, sin nombre.
+            // Sin planes: punto de 13 px en tinta suave (en oscuro, gris
+            // claro), con borde blanco y sombra, sin nombre: se ve sin competir
+            // con el coral de los que tienen planes hoy.
+            const quieto = oscuro ? '#AEAEB2' : '#48484A';
+            m.addLayer({
+              id: 'sitios-sin-sombra', type: 'circle', source: 'sitios', filter: ['all', suelto, ['==', ['get', 'planes'], 0]],
+              paint: { 'circle-radius': 8, 'circle-color': '#000000', 'circle-opacity': 0.22, 'circle-blur': 0.7, 'circle-translate': [0, 1] },
+            });
             m.addLayer({
               id: 'sitios-sin', type: 'circle', source: 'sitios', filter: ['all', suelto, ['==', ['get', 'planes'], 0]],
-              paint: { 'circle-radius': 5, 'circle-color': '#8E8E93', 'circle-stroke-color': '#FFFFFF', 'circle-stroke-width': 1.5 },
+              paint: { 'circle-radius': 6.5, 'circle-color': quieto, 'circle-stroke-color': '#FFFFFF', 'circle-stroke-width': 2 },
             });
             // Con planes hoy: punto grande, en coral, con su nombre.
             m.addLayer({
@@ -301,8 +309,12 @@
               paint: { 'circle-radius': 9, 'circle-color': coral, 'circle-stroke-color': '#FFFFFF', 'circle-stroke-width': 2.5 },
             });
             m.addLayer({
-              id: 'sitios-nombre', type: 'symbol', source: 'sitios', filter: ['all', suelto, ['>', ['get', 'planes'], 0]],
-              layout: { 'text-field': ['get', 'nombre'], 'text-size': 12, 'text-offset': [0, 1.3], 'text-anchor': 'top', 'text-optional': true },
+              id: 'sitios-nombre', type: 'symbol', source: 'sitios', filter: ['all', suelto, ['>', ['get', 'planes'], 0]], minzoom: 15,
+              // Una línea, y solo si cabe (primero, los de más planes).
+              layout: {
+                'text-field': ['get', 'corto'], 'text-size': 12, 'text-offset': [0, 1.3], 'text-anchor': 'top', 'text-optional': true,
+                'text-max-width': 40, 'text-padding': 4, 'symbol-sort-key': ['-', 0, ['get', 'planes']],
+              },
               paint: { 'text-color': tinta, 'text-halo-color': oscuro ? '#000000' : '#FFFFFF', 'text-halo-width': 1.5 },
             });
             // Grupos y sitios del mismo punto: burbuja en tinta (en oscuro,
@@ -311,8 +323,8 @@
             m.addLayer({
               id: 'sitios-grupo', type: 'circle', source: 'sitios', filter: burbuja,
               paint: {
-                'circle-radius': ['step', ['coalesce', ['get', 'total'], ['get', 'n']], 15, 10, 18, 100, 22],
-                'circle-color': ['case', conPlanes, oscuro ? '#FFFFFF' : '#1C1C1E', '#8E8E93'],
+                'circle-radius': ['step', ['coalesce', ['get', 'total'], ['get', 'n']], 13, 10, 15, 100, 18],
+                'circle-color': ['case', conPlanes, oscuro ? '#FFFFFF' : '#1C1C1E', quieto],
                 'circle-stroke-color': oscuro ? '#171717' : '#FFFFFF',
                 'circle-stroke-width': 2.5,
               },
@@ -321,9 +333,9 @@
               id: 'sitios-grupo-n', type: 'symbol', source: 'sitios', filter: burbuja,
               layout: {
                 'text-field': ['to-string', ['coalesce', ['get', 'total'], ['get', 'n']]],
-                'text-size': 13, 'text-font': ['DIN Pro Bold', 'Arial Unicode MS Bold'], 'text-allow-overlap': true,
+                'text-size': 12, 'text-font': ['DIN Pro Bold', 'Arial Unicode MS Bold'], 'text-allow-overlap': true,
               },
-              paint: { 'text-color': oscuro ? ['case', conPlanes, '#1C1C1E', '#FFFFFF'] : '#FFFFFF' },
+              paint: { 'text-color': oscuro ? '#1C1C1E' : '#FFFFFF' },
             });
             // La tarjeta: lo mismo que la fila de la lista (`place_card` y
             // las mismas líneas, `detallesHtml`); mientras llega, el nombre.
