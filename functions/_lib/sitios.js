@@ -104,7 +104,7 @@ export function mapaSitios({ lang, centro, zoom, filtros, desde = null }) {
 export const SITIOS_SCRIPTS = `<script src="/assets/zona.js?v=2" defer></script>
 <script src="/assets/iconos-mapa.js?v=1" defer></script>
 <script src="/assets/mapa.js?v=6" defer></script>
-<script src="/assets/sitios.js?v=7" defer></script>`;
+<script src="/assets/sitios.js?v=8" defer></script>`;
 
 export const SITIOS_CSS = `<style>
 /* Sin saltos al cambiar entre Planes y Sitios: la barra de desplazamiento
@@ -141,8 +141,8 @@ html { scrollbar-gutter: stable; }
 .sitio-extra { display: flex; align-items: center; gap: 4px; font-size: 13px; min-width: 0; }
 .sitio-extra span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sitio-extra .ic { flex: none; color: var(--ink-2); }
-.tag-oferta { justify-self: start; padding: 3px 9px; border-radius: 999px; background: var(--accent); color: var(--on-accent); font-weight: 800; font-size: 12px; margin-top: 3px; }
-.pop .tag-oferta { display: inline-block; margin: 4px 0; }
+.tag-planes { justify-self: start; padding: 3px 9px; border-radius: 999px; background: var(--ink); color: var(--surface); font-weight: 800; font-size: 12px; margin-top: 3px; }
+.pop .tag-planes, .pop span.tag-planes { display: inline-block; margin: 4px 0; color: var(--surface); font-size: 12px; }
 .sitios-fin { text-align: center; margin: 18px 0 8px; }
 .sitios-fin h2 { font-size: 17px; margin: 0 0 12px; }
 .chip-solo { display: inline-flex; align-items: center; gap: 6px; margin: 0 0 8px; }

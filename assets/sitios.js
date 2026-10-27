@@ -180,7 +180,8 @@
       x.hora.texto ? `<span class="sitio-hora${x.hora.abierto ? ' abierto' : ''}" data-sitio-hora="${esc0(JSON.stringify(p.hours))}" data-tz="${esc0(x.tz)}" data-lang="${lang === 'en' ? 'en' : 'es'}">${esc0(x.hora.texto)}</span>` : '',
       x.festivo ? `<span class="sitio-festivo${x.festivo.sinConfirmar ? ' sin-confirmar' : ''}">${esc0(x.festivo.texto)}</span>` : '',
       x.extra ? `<span class="sitio-extra">${icono(x.extra.tipo)}<span>${esc0(x.extra.texto)}</span></span>` : '',
-      x.planes ? `<span class="tag-oferta">${esc0(x.planes)}</span>` : '',
+      // En tinta: «2 planes hoy» no es una oferta (el coral, solo para eso).
+      x.planes ? `<span class="tag-planes">${esc0(x.planes)}</span>` : '',
     ].filter(Boolean).join('');
   }
 
@@ -324,13 +325,15 @@
         cara: (s) => {
           const f = s.items.find(planesDe) || s.items[0];
           return {
-            foto: f.photo || f.logo, icono: KA.iconoMapa('cat', f.category_slug), nombre: planesDe(f) ? f.name : null,
+            // La foto de perfil (logo), la que se reconoce y sale en su
+            // tarjeta; sin ella, la portada.
+            foto: f.logo || f.photo, icono: KA.iconoMapa('cat', f.category_slug), nombre: planesDe(f) ? f.name : null,
           };
         },
         anillo: (s) => (s.items.some((x) => x.has_offer) ? 'oferta' : s.items.some(planesDe) ? 'planes' : ''),
         uno: (f) => {
           const el = KA.marcaEl({
-            foto: f.photo || f.logo, icono: KA.iconoMapa('cat', f.category_slug),
+            foto: f.logo || f.photo, icono: KA.iconoMapa('cat', f.category_slug),
             anillo: f.has_offer ? 'oferta' : planesDe(f) ? 'planes' : '', n: 1,
             etiqueta: f.name, nombre: planesDe(f) ? f.name : null, prio: planesDe(f),
           });
