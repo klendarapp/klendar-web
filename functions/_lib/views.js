@@ -8,7 +8,7 @@
 // (guardar, seguir, pedir el código, opinar, denunciar) lleva a «Tu cuenta»
 // (/app/), que hace lo mismo que la app desde el navegador.
 
-import { esc, fmtWhen, html, isUuid, rpc, rpcAll, rows, supabasePublic } from './page.js';
+import { cabeceraEdad, edadDeclarada, esc, fmtWhen, html, isUuid, preguntaEdadEncendida, rpc, rpcAll, rows, supabasePublic } from './page.js';
 import KZ from '../../assets/zona.js';
 import { decodeSeg,
   agendaBase, BASE, benefit, bizPath, breadcrumbLd, cityLinks, citySeg, datosDeNegocios, exploreBase,
@@ -232,7 +232,49 @@ function traducir(lang, ...pedir) {
   return `<script src="/assets/traducir.js?v=1" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}" data-lang="${lang === 'en' ? 'en' : 'es'}" data-pedir="${esc(pedir.filter(Boolean).join(' '))}"></script>`;
 }
 
-export async function offerPage(id, lang, rpRaw = '') {
+/**
+ * La ficha de una publicación. Si es +18 (Iván, 2026-10-27): con «18 o más»
+ * en este navegador (cookie `klendar_18`) o con sesión de mayor, se ve; sin
+ * contestar, «¿Tienes 18 años o más?» en su lugar (`puertaEdad`); con «Soy
+ * menor», la de siempre de «ya no está».
+ */
+export async function offerPage(id, lang, rpRaw = '', request = null) {
+  const edad = edadDeclarada(request);
+  const res = await fichaOferta(id, lang, rpRaw, cabeceraEdad(edad));
+  if (res.status === 404 && !edad && isUuid(id) && (await preguntaEdadEncendida())) {
+    const o18 = await rpc('offer_detail', { p_id: id, p_rp: KR.codigoValido(rpRaw) || null }, cabeceraEdad('1')).catch(() => null);
+    if (o18?.adults_only) return puertaEdad(lang, `${pre(lang)}/o/${id}`);
+  }
+  if (edad) {
+    res.headers.set('vary', 'Cookie');
+    res.headers.set('cache-control', 'private, max-age=0');
+  }
+  return res;
+}
+
+/** «¿Tienes 18 años o más?» en lugar de una ficha +18 (sin indexar). */
+function puertaEdad(lang, path) {
+  const en = lang === 'en';
+  const S = en
+    ? { t: 'Are you 18 or over?', b: 'This plan is for over-18s only. We only ask once, and your answer stays in this browser.', si: 'I’m 18 or over', no: 'I’m under 18' }
+    : { t: '¿Tienes 18 años o más?', b: 'Este plan es solo para mayores de 18. Solo te lo preguntamos esta vez y la respuesta se queda en este navegador.', si: 'Tengo 18 años o más', no: 'Soy menor' };
+  const body = `
+  <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a></p>
+  <section class="vacio" data-edad>
+    <h1>${esc(S.t)}</h1>
+    <p>${esc(S.b)}</p>
+    <div class="vacio-botones"><button type="button" class="pill ink" data-edad-si>${esc(S.si)}</button>
+      <button type="button" class="pill" data-edad-no>${esc(S.no)}</button></div>
+  </section>
+  <script>(function(){var b=document.querySelector('[data-edad]');function f(v){document.cookie='klendar_18='+v+'; Max-Age=31536000; Path=/; SameSite=Lax'+(location.protocol==='https:'?'; Secure':'');if(v==='1')location.reload();else location.href='${exploreBase(lang)}/';}b.querySelector('[data-edad-si]').addEventListener('click',function(){f('1');});b.querySelector('[data-edad-no]').addEventListener('click',function(){f('0');});})();</script>`;
+  const r = html(publicPage({
+    lang, path, body, title: S.t, description: S.b, head: '<meta name="robots" content="noindex">',
+  }), 200, 'no-store');
+  r.headers.set('vary', 'Cookie');
+  return r;
+}
+
+async function fichaOferta(id, lang, rpRaw, H) {
   const path = `${pre(lang)}/o/${id}`;
   const en = lang === 'en';
   if (!isUuid(id)) return notFound(lang, path, 'o');
@@ -240,7 +282,7 @@ export async function offerPage(id, lang, rpRaw = '') {
   // quién es la lista (`promoter`). Una oferta de RRPP sin un enlace que la
   // tenga no existe (el 404 de siempre).
   const rp = KR.codigoValido(rpRaw);
-  const o = await rpc('offer_detail', { p_id: id, p_rp: rp || null });
+  const o = await rpc('offer_detail', { p_id: id, p_rp: rp || null }, H);
   if (!o) return notFound(lang, path, 'o');
   const prom = rp && o.promoter && o.promoter.code ? o.promoter : null;
   // Con el enlace (o siendo de RRPP), la página no es para los buscadores:
@@ -277,7 +319,7 @@ export async function offerPage(id, lang, rpRaw = '') {
   if (o.locked) return lockedOfferPage(o, lang, path, bHref, rpQ);
   // La serie de la que forma parte («Seguir la serie»), si tiene. Sin la
   // función (o sin red), la ficha sale igual.
-  const serie = await rpc('offer_series_info', { p_offer: id }).catch(() => null);
+  const serie = await rpc('offer_series_info', { p_offer: id }, H).catch(() => null);
 
   const flash = o.kind === 'flash_offer';
   // «Antes de cerrar» (la bolsa sorpresa): su sello y «Quedan N bolsas».

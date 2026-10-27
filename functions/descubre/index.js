@@ -7,7 +7,7 @@ import { explorePage } from '../_lib/explore.js';
 
 export const onRequestGet = (ctx) => {
   configure(ctx.env);
-  return guard('es', new URL(ctx.request.url).pathname, () => explorePage(new URL(ctx.request.url), 'es', 'descubre'));
+  return guard('es', new URL(ctx.request.url).pathname, () => explorePage(new URL(ctx.request.url), 'es', 'descubre', ctx.request));
 };
 
 // HEAD igual que GET (el middleware quita el cuerpo): comprobadores de enlaces

@@ -54,12 +54,13 @@ export const isUuid = (s) => UUID.test(s || '');
 /** El servidor no ha contestado (caído, sin red, 500). No es que no exista. */
 export class BackendDown extends Error {}
 
-export async function rpc(fn, args) {
+export async function rpc(fn, args, extra = null) {
   let r;
   try {
     r = await fetch(`${CFG.url}/rest/v1/rpc/${fn}`, {
       method: 'POST',
-      headers: { apikey: CFG.key, 'Content-Type': 'application/json' },
+      // `extra`: p. ej. «18 o más» (`x-klendar-18`, ver `cabeceraEdad`).
+      headers: { apikey: CFG.key, 'Content-Type': 'application/json', ...(extra || {}) },
       body: JSON.stringify(args),
     });
   } catch (e) {
@@ -71,12 +72,12 @@ export async function rpc(fn, args) {
 }
 
 /** Igual que `rpc`, pero para funciones que devuelven una lista. */
-export async function rpcAll(fn, args) {
+export async function rpcAll(fn, args, extra = null) {
   let r;
   try {
     r = await fetch(`${CFG.url}/rest/v1/rpc/${fn}`, {
       method: 'POST',
-      headers: { apikey: CFG.key, 'Content-Type': 'application/json' },
+      headers: { apikey: CFG.key, 'Content-Type': 'application/json', ...(extra || {}) },
       body: JSON.stringify(args),
     });
   } catch (e) {
@@ -190,6 +191,34 @@ ${head}
 </script>
 ${CONTADOR}
 </body></html>`;
+}
+
+/**
+ * Contenido +18 sin cuenta (Iván, 2026-10-27; GLOSARIO «Contenido para
+ * mayores»): lo que se contestó a «¿Tienes 18 años o más?» en este navegador
+ * (cookie `klendar_18`: '1' o '0'; con sesión, la pone la cuenta). null si
+ * no se ha contestado.
+ */
+export function edadDeclarada(request) {
+  const m = /(?:^|;\s*)klendar_18=([01])(?![0-9])/.exec(request?.headers?.get('cookie') || '');
+  return m ? m[1] : null;
+}
+
+/** La cabecera que lee la base (`viewer_sees_adults()`) con «18 o más». */
+export const cabeceraEdad = (edad) => (edad === '1' ? { 'x-klendar-18': '1' } : null);
+
+/** El interruptor de la pregunta (`app_config.adults_gate`); 60 s en memoria.
+ * Sin respuesta de la base, encendido. */
+let PUERTA = { valor: true, hasta: 0 };
+export async function preguntaEdadEncendida() {
+  if (Date.now() < PUERTA.hasta) return PUERTA.valor;
+  let valor = PUERTA.valor;
+  try {
+    const r = await rows('app_config', 'select=value&key=eq.adults_gate');
+    valor = !(Array.isArray(r) && r[0] && r[0].value && r[0].value.enabled === false);
+  } catch { /* lo último que se supo */ }
+  PUERTA = { valor, hasta: Date.now() + 60_000 };
+  return valor;
 }
 
 /** 'es' o 'en' según el navegador (francés, alemán, italiano → inglés;

@@ -9,7 +9,7 @@ export const onRequestGet = (ctx) => {
   configure(ctx.env);
   const url = new URL(ctx.request.url);
   // `?rp=<código>`: abierta desde el enlace de un RRPP (ver _lib/rrpp.js).
-  return guard('en', url.pathname, () => offerPage(ctx.params.id, 'en', url.searchParams.get('rp') || ''));
+  return guard('en', url.pathname, () => offerPage(ctx.params.id, 'en', url.searchParams.get('rp') || '', ctx.request));
 };
 
 // HEAD igual que GET (el middleware quita el cuerpo): comprobadores de enlaces

@@ -210,6 +210,7 @@
             { auth: { flowType: 'pkce', detectSessionInUrl: false } }));
           return sb.auth.getSession().then(function (r) {
             if (!r.data || !r.data.session) return;
+            edadDeCuenta(sb);
             if (ficha) social(sb);
             if (tarjetas.length) enTarjetas(sb);
             var uid = r.data.session.user && r.data.session.user.id;
@@ -225,6 +226,22 @@
         });
     })
     .catch(function () { /* sin red: la página, sin lo de amigos */ });
+
+  // ── Contenido +18 con sesión: manda la cuenta ───────────────────────────
+  // Con cuenta, lo +18 lo decide la fecha de nacimiento (la base,
+  // `viewer_sees_adults()`), no lo que se contestó en este navegador. La
+  // página se pinta en el servidor con la cookie `klendar_18`: aquí se pone
+  // la de la cuenta y, si era otra, se vuelve a pedir la página una vez.
+  function edadDeCuenta(sb) {
+    sb.rpc('viewer_sees_adults').then(function (res) {
+      if (!res || res.error || typeof res.data !== 'boolean') return;
+      var v = res.data ? '1' : '0';
+      var antes = (document.cookie.match(/(?:^|;\s*)klendar_18=([01])/) || [])[1] || null;
+      if (antes === v) return;
+      document.cookie = 'klendar_18=' + v + '; Max-Age=31536000; Path=/; SameSite=Lax' + (location.protocol === 'https:' ? '; Secure' : '');
+      if (document.getElementById('barra')) location.reload();
+    }, function () { /* sin red: lo que hubiera */ });
+  }
 
   // ── El equipo del negocio, en su propia ficha ───────────────────────────
   // Como la app: no guarda, no añade a favoritos ni denuncia lo suyo; lo

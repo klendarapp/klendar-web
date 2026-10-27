@@ -12,7 +12,7 @@
 // - Explorar (/explorar/, /en/explore/): buscar, y verlo en Lista, Mapa o
 //   Calendario (la pestaña 2 de la app: calendario + mapa).
 
-import { esc, html, rows, rpc, rpcAll, supabasePublic } from './page.js';
+import { cabeceraEdad, edadDeclarada, esc, html, preguntaEdadEncendida, rows, rpc, rpcAll, supabasePublic } from './page.js';
 import KZ from '../../assets/zona.js';
 import {
   agendaBase, bizPath, cityLinks, collectionBase, decodeSeg, discoverBase, exploreBase, firstPhoto, historiaBoton, isVideo, kidsBase, ldScript,
@@ -67,7 +67,8 @@ const T = (en) => en
       when: 'When?', anytime: 'Any time', now: 'Next 2 hours', today: 'Today', tomorrow: 'Tomorrow', next10: 'Next 10 days',
       discount: 'Discounts only', openNow: 'Open now', soonest: 'Soonest', newest: 'Newest',
       nearOn: 'Near you', nearNo: "We couldn't get your location. Allow it in your browser and try again.",
-      where: 'Where', useLoc: 'Use my location', useLocHint: "What's closest to where you are now", nearPrompt: 'See what’s closest to you first.',
+      where: 'Where', useLoc: 'Use my location', useLocHint: "What's closest to where you are now", nearPrompt: 'See what’s closest to you first.', nearNeedsWhere: 'To see what’s closest first, tell us where you are.',
+      ageQ: 'Are you 18 or over?', ageYes: 'I’m 18 or over', ageNo: 'I’m under 18', ageHidden: (n) => (n === 1 ? '1 result is for over-18s only.' : `${n} results are for over-18s only.`),
       view: 'View', listView: 'List', mapView: 'Map', calView: 'Calendar', distance: 'Distance',
       filters: 'Filters', filtersN: (n) => `Filters, ${n} on`, showResults: 'Show results', close: 'Close',
       mapNo: "The map can't load right now. The list shows the same results.", onMap: (n) => `${n} on the map`,
@@ -196,7 +197,8 @@ const T = (en) => en
       when: '¿Cuándo?', anytime: 'Cuando sea', now: 'Próximas 2 horas', today: 'Hoy', tomorrow: 'Mañana', next10: 'Próximos 10 días',
       discount: 'Solo con descuento', openNow: 'Abierto ahora', soonest: 'Más pronto', newest: 'Novedades',
       nearOn: 'Cerca de ti', nearNo: 'No hemos podido saber dónde estás. Permítelo en el navegador y vuelve a probar.',
-      where: 'Dónde', useLoc: 'Usar mi ubicación', useLocHint: 'Lo más cercano a donde estás ahora', nearPrompt: 'Mira primero lo que tienes más cerca.',
+      where: 'Dónde', useLoc: 'Usar mi ubicación', useLocHint: 'Lo más cercano a donde estás ahora', nearPrompt: 'Mira primero lo que tienes más cerca.', nearNeedsWhere: 'Para ver lo más cerca primero, dinos dónde estás.',
+      ageQ: '¿Tienes 18 años o más?', ageYes: 'Tengo 18 años o más', ageNo: 'Soy menor', ageHidden: (n) => (n === 1 ? 'Hay 1 resultado solo para mayores de 18.' : `Hay ${n} resultados solo para mayores de 18.`),
       view: 'Ver en', listView: 'Lista', mapView: 'Mapa', calView: 'Calendario', distance: 'Distancia',
       filters: 'Filtros', filtersN: (n) => (n === 1 ? 'Filtros, 1 puesto' : `Filtros, ${n} puestos`), showResults: 'Ver resultados', close: 'Cerrar',
       mapNo: 'El mapa no se puede cargar ahora mismo. En la lista está lo mismo.', onMap: (n) => `${n} en el mapa`,
@@ -469,6 +471,8 @@ const mapaHtml = (items, lang, S) => {
  * app (`FeedFilters.radiusOptionsM`). Sin elegir, 5 km, como la app. */
 const RADIOS_KM = [1, 3, 5, 10, 25];
 const RADIO_KM = 5;
+/** «Una ciudad»: toda ella, 25 km de su centro (como la app, `cityRadiusM`). */
+const RADIO_CIUDAD_M = 25000;
 
 /** «Pedir un local» en «Tu cuenta» (`#/pedir-local`), con el nombre ya
  * escrito si viene de una búsqueda. */
@@ -681,12 +685,12 @@ function sitiosFinal({ items, TSi, S, e, link, page, paginas, mapa }) {
 }
 
 /** Todas las de un filtro (para el calendario): la base da 60 por llamada. */
-async function todas(args, max = 240) {
-  const primera = await rpc('public_explore', { ...args, p_limit: 60, p_offset: 0 });
+async function todas(args, max = 240, H = null) {
+  const primera = await rpc('public_explore', { ...args, p_limit: 60, p_offset: 0 }, H);
   const items = [...(primera?.items || [])];
   const total = Math.min(primera?.total || 0, max);
   const resto = [];
-  for (let off = 60; off < total; off += 60) resto.push(rpc('public_explore', { ...args, p_limit: 60, p_offset: off }));
+  for (let off = 60; off < total; off += 60) resto.push(rpc('public_explore', { ...args, p_limit: 60, p_offset: off }, H));
   for (const r of await Promise.all(resto)) items.push(...(r?.items || []));
   return items;
 }
@@ -1127,9 +1131,21 @@ function resumenFiltros(e, S) {
  * Lista, Mapa o Calendario) o 'descubre' (el feed a pantalla completa, una
  * publicación por pantalla, como la pestaña 1 de la app).
  */
-export async function explorePage(url, lang, modo = 'explorar') {
+/** Las páginas que cambian con la cookie de la edad (`klendar_18`): que
+ * ninguna caché sirva a uno lo que se pintó para otro. */
+function conCookie(res) {
+  res.headers.set('vary', 'Cookie');
+  return res;
+}
+
+export async function explorePage(url, lang, modo = 'explorar', request = null) {
   const en = lang === 'en';
   const S = T(en);
+  // Contenido +18 (Iván, 2026-10-27): lo contestado en este navegador a
+  // «¿Tienes 18 años o más?» (con sesión, lo pone la cuenta: amigos.js). La
+  // base solo enseña +18 con «18 o más» (o con la pregunta apagada).
+  const edad = edadDeclarada(request);
+  const H = cabeceraEdad(edad);
   const descubre = modo === 'descubre';
   const base = descubre ? discoverBase(lang) : exploreBase(lang);
   // «Sorteos» solo con el interruptor encendido (se pide a la vez que lo demás).
@@ -1166,14 +1182,17 @@ export async function explorePage(url, lang, modo = 'explorar') {
   // Lo que se le pide a la base por «El sitio» en Sitios.
   const traitsSitio = [...sitioSinNinos(e), ...(e.precioLocal ? [`price_le_${e.precioLocal}`] : []),
     ...(menuDia ? ['daily_menu'] : []), ...(comerAhora ? ['eat_now'] : []), ...(e.momento ? [KMO.trait(e.momento)] : [])];
+  // Una ciudad es toda ella: 25 km de su centro, como la app (Iván,
+  // 2026-10-27). Si no se sabe su centro, los negocios de esa ciudad.
   const argsSitios = (centro) => ({
     p_lat: cerca ? lat : centro?.lat ?? null, p_lng: cerca ? lng : centro?.lng ?? null,
-    p_radius_m: cerca ? km * 1000 : null, p_city: cerca ? null : city || null,
+    p_radius_m: cerca ? km * 1000 : centro ? RADIO_CIUDAD_M : null, p_city: cerca || centro ? null : city || null,
     // Una categoría por su slug; varias, por sus ids (`public_places` las
     // pide así).
     p_category: catsSel.length === 1 ? cat : null, p_q: q || null, p_open_now: abierto,
     ...(catsSel.length > 1 ? { p_categories: e.catIds || [] } : {}),
-    p_traits: traitsSitio.length ? traitsSitio : null, p_hide_adults: true,
+    // +18: lo decide la base con la cabecera (`viewer_sees_adults()`).
+    p_traits: traitsSitio.length ? traitsSitio : null,
     // «Mejor valorados» (migración 20261246100000); «Más cerca» es lo de siempre.
     ...(sort === 'rated' ? { p_sort: 'rated' } : {}),
   });
@@ -1181,6 +1200,9 @@ export async function explorePage(url, lang, modo = 'explorar') {
   const plano0 = (x) => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
   const centroDe = (ck) => (cerca || !city ? null
     : (ck || []).find((c) => c.id === plano0(city) || plano0(c.name) === plano0(city)) || null);
+  // Las ciudades de Klendar (`cities`), para el centro de la elegida.
+  const ciudadesP = rows('cities', 'select=id,name,lat,lng&order=position.asc').catch(() => []);
+  const centroCiudad = city && !cerca ? centroDe(await ciudadesP) : null;
   // El calendario: qué mes y qué día (en la hora de Madrid; cada publicación
   // va en el día de su negocio).
   const hoy = KZ.hoy('Europe/Madrid');
@@ -1203,8 +1225,10 @@ export async function explorePage(url, lang, modo = 'explorar') {
       ? { traits: [...traits, ...traitsMarcas(e), ...(antesCierre ? ['before_closing'] : []),
           ...(menuDia ? ['daily_menu'] : []), ...(comerAhora ? ['eat_now'] : []),
           ...(e.momento ? [KMO.trait(e.momento)] : [])] } : {}),
-    sort: ordenBase === 'nearest' && !cerca ? 'soonest' : ordenBase,
-    ...(cerca ? { radius_m: km * 1000 } : {}),
+    // «Más cerca» sin saber dónde (ni tu posición ni una ciudad): se pide la
+    // ubicación (`sinDondeCerca`) y mientras, por hora.
+    sort: ordenBase === 'nearest' && !cerca && !centroCiudad ? 'soonest' : ordenBase,
+    ...(cerca ? { radius_m: km * 1000 } : centroCiudad ? { radius_m: RADIO_CIUDAD_M } : {}),
     // Varias categorías (`cats`, migración 20261246100000); una sola va en
     // `p_category`, como siempre.
     ...(catsSel.length > 1 ? { cats: catsSel } : {}),
@@ -1219,22 +1243,22 @@ export async function explorePage(url, lang, modo = 'explorar') {
     || traits.length || traitsMarcas(e).length || antesCierre || menuDia || comerAhora || e.momento || tiempoOff || gustos.length);
 
   const argsExplore = {
-    p_city: cerca ? null : city || null, p_category: catsSel.length === 1 ? cat : null, p_kind: pKind, p_q: q || null,
-    p_filters: filtros, p_lat: cerca ? lat : null, p_lng: cerca ? lng : null,
+    p_city: cerca || centroCiudad ? null : city || null, p_category: catsSel.length === 1 ? cat : null, p_kind: pKind, p_q: q || null,
+    p_filters: filtros, p_lat: cerca ? lat : centroCiudad?.lat ?? null, p_lng: cerca ? lng : centroCiudad?.lng ?? null,
   };
   // «Ver N resultados»: la hoja pregunta cuántas saldrían con lo que lleva
   // marcado (`?contar=1`, /assets/tarjetas.js). Solo el número.
   if (url.searchParams.get('contar') === '1') {
     const n = mapa || sitiosMapa ? null
       : negocios
-        ? await rows('cities', 'select=id,name,lat,lng').then((ck) => rpc('public_places', { ...argsSitios(centroDe(ck)), p_limit: 1, p_offset: 0 }))
+        ? await rpc('public_places', { ...argsSitios(centroCiudad), p_limit: 1, p_offset: 0 }, H)
           .then((r) => (typeof r?.total === 'number' ? r.total : null)).catch(() => null)
         // También en el calendario con ¿Cuándo? (allí la lista va por días,
         // pero el número es el de la app: lo que sale con esos filtros).
-        : await rpc('public_explore', { ...argsExplore, p_filters: { ...filtros, ...(when ? { when } : {}) }, p_limit: 1, p_offset: 0 })
+        : await rpc('public_explore', { ...argsExplore, p_filters: { ...filtros, ...(when ? { when } : {}) }, p_limit: 1, p_offset: 0 }, H)
           .then((r) => (typeof r?.total === 'number' ? r.total : null)).catch(() => null);
     return new Response(JSON.stringify({ total: n }), {
-      headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'public, max-age=60, s-maxage=120', 'x-robots-tag': 'noindex' },
+      headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': edad ? 'private, max-age=0' : 'public, max-age=60, s-maxage=120', vary: 'Cookie', 'x-robots-tag': 'noindex' },
     });
   }
 
@@ -1246,28 +1270,27 @@ export async function explorePage(url, lang, modo = 'explorar') {
   // buen tiempo, la base pone primero lo de hoy que encaja; no quita nada.
   const enLista = !negocios && !mapa && !calendario;
   const tiempoP = !tiempoOff && enLista && recomendado ? tiempoDeHoy(dondeTiempo({ cerca, lat, lng, city })) : Promise.resolve(null);
-  // Las ciudades de Klendar (`cities`): de cuál es una búsqueda y, para «Dónde
-  // ver el partido», el punto desde el que se cuentan los bares.
-  const ciudadesP = rows('cities', 'select=id,name,lat,lng&order=position.asc').catch(() => []);
+  // Las ciudades de Klendar (`ciudadesP`, arriba): de cuál es una búsqueda y,
+  // para «Dónde ver el partido», el punto desde el que se cuentan los bares.
   const [res, cities, cats, cols, sitios, tiempo, todasCats, klendarCities, seccionPartidos, seccionArtistas] = await Promise.all([
     negocios
-      ? ciudadesP.then((ck) => rpc('public_places', {
-        ...argsSitios(centroDe(ck)),
+      ? rpc('public_places', {
+        ...argsSitios(centroCiudad),
         p_limit: POR_PAGINA, p_offset: sitiosMapa ? 0 : (page - 1) * POR_PAGINA,
       // Si la base aún no la tiene (o no contesta), la pantalla vacía con sus
       // salidas en vez de un error.
-      })).catch(() => ({ items: [], total: 0 }))
+      }, H).catch(() => ({ items: [], total: 0 }))
       : calendario
-        ? todas(argsExplore).then((items) => ({ items, total: items.length }))
+        ? todas(argsExplore, 240, H).then((items) => ({ items, total: items.length }))
         : tiempoP.then((w) => rpc('public_explore', {
           ...argsExplore, p_filters: w ? { ...filtros, weather: w } : filtros,
           p_limit: mapa ? 60 : POR_PAGINA, p_offset: mapa ? 0 : (page - 1) * POR_PAGINA,
-        })),
+        }, H)),
     rpcAll('public_cities', {}),
     rpcAll('public_categories', { p_city: cerca ? null : city || null }),
     rpcAll('public_collections', { p_city: cerca ? null : city || null }),
     conNegociosArriba
-      ? rpc('public_businesses', { p_city: cerca ? null : city || null, p_category: cat || null, p_q: q, p_limit: 4, p_offset: 0, p_open_now: abierto }).catch(() => null)
+      ? rpc('public_businesses', { p_city: cerca ? null : city || null, p_category: cat || null, p_q: q, p_limit: 4, p_offset: 0, p_open_now: abierto }, H).catch(() => null)
       : null,
     tiempoP,
     // Todas las categorías, en el orden de la app, con su grupo si la base lo
@@ -1288,6 +1311,15 @@ export async function explorePage(url, lang, modo = 'explorar') {
   // Las tarjetas de negocio llevan su rango de precio.
   await conPrecios([...(sitios?.items || [])]);
   const total = res?.total || 0;
+  // «¿Tienes 18 años o más?» (Iván, 2026-10-27): sin contestar y con la
+  // pregunta encendida, solo donde de verdad hay algo +18 que no se ve (lo
+  // menos molesto: una línea, sin tapar nada, y nada si no hace falta).
+  const ocultos18 = !edad && page === 1 && !mapa && !sitiosMapa && !calendario && (await preguntaEdadEncendida())
+    ? await (negocios
+      ? rpc('public_places', { ...argsSitios(centroCiudad), p_limit: 1, p_offset: 0 }, cabeceraEdad('1'))
+      : rpc('public_explore', { ...argsExplore, p_limit: 1, p_offset: 0 }, cabeceraEdad('1')))
+      .then((r) => Math.max(0, (Number(r?.total) || 0) - total)).catch(() => 0)
+    : 0;
   let paginas = mapa || calendario || sitiosMapa ? 1 : Math.max(1, Math.min(50, Math.ceil(total / POR_PAGINA)));
 
   // El mes y el día del calendario, dentro de lo que se puede mirar (este mes
@@ -1315,10 +1347,10 @@ export async function explorePage(url, lang, modo = 'explorar') {
   // `?p=`), en vez de sacarla de las 240 del mes.
   const diaParte = calendario && dia && (!diasCuando || diasCuando.includes(dia))
     ? await rpc('public_explore', {
-      // «Por hora» (de serie) o «Más cerca», con tu posición.
-      ...argsExplore, p_filters: { ...filtros, day: dia, sort: sort === 'nearest' && cerca ? 'nearest' : 'soonest' },
+      // «Por hora» (de serie) o «Más cerca», con tu posición o la ciudad.
+      ...argsExplore, p_filters: { ...filtros, day: dia, sort: sort === 'nearest' && (cerca || centroCiudad) ? 'nearest' : 'soonest' },
       p_limit: POR_PAGINA, p_offset: (page - 1) * POR_PAGINA,
-    }).catch(() => null)
+    }, H).catch(() => null)
     : null;
   if (diaParte) paginas = Math.max(1, Math.min(50, Math.ceil((Number(diaParte.total) || 0) / POR_PAGINA)));
 
@@ -1650,14 +1682,17 @@ export async function explorePage(url, lang, modo = 'explorar') {
   // mapa, ninguno. Cuando el tiempo reordena hoy, el chip lleva ☂/☀ y va
   // justo detrás de ☰ (sin aviso aparte encima de la publicación).
   const ordenTxt = { recommended: S.sortRec, nearest: S.sortNearest, soonest: S.sortSoonest, newest: S.sortNewest };
-  const ordenActual = ordenBase;
+  // «Más cerca» sin tu posición ni una ciudad: va por hora y lo dice
+  // (`avisoCerca`), con el botón para dar la ubicación.
+  const sinDondeCerca = ordenBase === 'nearest' && !cerca && !centroCiudad;
+  const ordenActual = sinDondeCerca ? 'soonest' : ordenBase;
   const tiempoOn = Boolean(tiempo) && enLista && recomendado;
   const casillaOrden = (href, label, on) => opcion(href, label, on, '<span class="op-check" aria-hidden="true"></span>');
   const gustosHref = `${en ? '/app/?lang=en' : '/app/'}#/gustos`;
   const ordenMenu = negocios || mapa || calendario ? '' : desplegable('', S.sortBy, ordenTxt[ordenActual], false,
     `<a class="op op-h${recomendado ? ' on' : ''}" href="${esc(link({ sort: '' }))}"${recomendado ? ' aria-current="true"' : ''}><span><span class="op-t">${esc(S.sortRec)} <small>· ${esc(S.sortDefault)}</small></span>
        <ol class="menu-pasos">${S.recSteps.map((x) => `<li>${esc(x)}</li>`).join('')}</ol></span></a>
-     ${cerca
+     ${cerca || centroCiudad
       ? opcion(link({ sort: 'nearest' }), S.sortNearest, ordenActual === 'nearest', '', S.sortNearestHint)
       : botonCerca(S.sortNearest, `${K.sort}=${enIdioma('nearest', en)}`).replace(ic('cerca', 16), '')}
      ${opcion(link({ sort: 'soonest' }), S.sortSoonest, ordenActual === 'soonest', '', S.sortSoonestHint)}
@@ -1672,7 +1707,7 @@ export async function explorePage(url, lang, modo = 'explorar') {
   // El orden de la lista de un día del calendario: «Por hora» o «Más cerca».
   const ordenCal = calendario ? desplegable('orden', S.sortBy, sort === 'nearest' ? S.sortNearest : S.byTime, false,
     `${opcion(link({ sort: '' }), S.byTime, sort !== 'nearest')}
-     ${cerca ? opcion(link({ sort: 'nearest' }), S.sortNearest, sort === 'nearest', '', S.sortNearestHint)
+     ${cerca || centroCiudad ? opcion(link({ sort: 'nearest' }), S.sortNearest, sort === 'nearest', '', S.sortNearestHint)
       : botonCerca(S.sortNearest, `${K.sort}=${enIdioma('nearest', en)}`).replace(ic('cerca', 16), '')}`,
     { cls: ' orden orden-lista', etiqueta: `${S.sortBy}: ${sort === 'nearest' ? S.sortNearest : S.byTime}` }) : '';
   // El orden de Sitios: «Más cerca» (por tramos) o «Mejor valorados».
@@ -1753,6 +1788,18 @@ export async function explorePage(url, lang, modo = 'explorar') {
   </nav>` : '';
 
   // En Explorar, sin ubicación ni ciudad: «Mira primero lo que tienes más cerca».
+  const avisoCerca = sinDondeCerca
+    ? `<p class="cerca-aviso" data-cerca-falta>${ic('cerca', 18)}<span>${esc(S.nearNeedsWhere)}</span>
+        <button type="button" class="pill ink" data-cerca data-mas="${esc(`${K.sort}=${enIdioma('nearest', en)}`)}" data-err="${esc(S.nearNo)}">${esc(S.useLoc)}</button></p>`
+    : '';
+  // La pregunta de la edad (ver `ocultos18`): se guarda en una cookie de un
+  // año (`klendar_18`) y, con «18 o más», se vuelve a pedir la página.
+  const avisoEdad = ocultos18
+    ? `<div class="cerca-aviso edad-aviso" data-edad><span>${esc(S.ageHidden(ocultos18))} <strong>${esc(S.ageQ)}</strong></span>
+        <button type="button" class="pill ink" data-edad-si>${esc(S.ageYes)}</button>
+        <button type="button" class="pill" data-edad-no>${esc(S.ageNo)}</button></div>
+  <script>(function(){var b=document.querySelector('[data-edad]');if(!b)return;function f(v){document.cookie='klendar_18='+v+'; Max-Age=31536000; Path=/; SameSite=Lax'+(location.protocol==='https:'?'; Secure':'');if(v==='1')location.reload();else b.remove();}b.querySelector('[data-edad-si]').addEventListener('click',function(){f('1');});b.querySelector('[data-edad-no]').addEventListener('click',function(){f('0');});})();</script>`
+    : '';
   const invitaCerca = !descubre && !cerca && !city
     ? `<p class="cerca-aviso" data-cerca-aviso hidden>${ic('cerca', 18)}<span>${esc(S.nearPrompt)}</span>
         <button type="button" class="pill ink" data-cerca data-err="${esc(S.nearNo)}">${esc(S.useLoc)}</button></p>`
@@ -1841,20 +1888,22 @@ ${GRUPOS_CSS}` : ''}`;
   <script src="/assets/avisos.js?v=2" defer></script>`
     : '';
   if (descubre) {
-    return html(publicPage({
+    return conCookie(html(publicPage({
       lang,
       path: `${base}/`,
       title: S.disc,
       description: S.discLead,
       image: portada(items),
-      body: feedHtml({ S, en, lang, items, page, paginas, link, barra, final, vacio, resumenN, masFormas, avisos }),
+      // En Descubre, la pregunta de la edad al final (nada encima de la
+      // publicación, salvo la fila y un aviso).
+      body: feedHtml({ S, en, lang, items, page, paginas, link, barra, final: `${avisoCerca}${avisoEdad}${final}`, vacio, resumenN, masFormas, avisos }),
       actual: 'descubre',
       bodyClass: vacio ? 'pagina-descubre' : 'pagina-descubre pagina-feed',
       head,
       // Con «Cerca de mí» la dirección lleva tu posición (?lat=&lng=): esa
       // página no pasa por el contador de visitas.
       contador: !cerca,
-    }), 200, 'public, max-age=120, s-maxage=600');
+    }), 200, edad ? 'private, max-age=0' : 'public, max-age=120, s-maxage=600'));
   }
 
   // ── Resultados de Explorar ──
@@ -1907,6 +1956,8 @@ ${GRUPOS_CSS}` : ''}`;
   ${barra}
   ${atajosFila}
   ${invitaCerca}
+  ${avisoCerca}
+  ${avisoEdad}
   ${resumenN}
   ${resultados}
   ${vacio ? '' : lineaAvisame}
@@ -1923,7 +1974,7 @@ ${SITIOS_SCRIPTS}` : ''}`;
 
   // Una búsqueda concreta no aporta nada al índice de Google; la página
   // limpia sí.
-  return html(publicPage({
+  return conCookie(html(publicPage({
     lang,
     path: `${base}/`,
     title: S.exp,
@@ -1934,7 +1985,7 @@ ${SITIOS_SCRIPTS}` : ''}`;
     bodyClass: 'pagina-explorar',
     head,
     contador: !cerca,
-  }), 200, 'public, max-age=120, s-maxage=600');
+  }), 200, edad ? 'private, max-age=0' : 'public, max-age=120, s-maxage=600'));
 }
 
 /**
