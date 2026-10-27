@@ -1032,7 +1032,8 @@ PAGES.alta = async (v, param) => {
       $('.bizpick').hidden = false;
       renderBizPicker();
       if (!CATS.length) CATS = cats;
-      toast('Solicitud enviada. Te avisamos cuando la revisemos.');
+      // Como la app (`showDone`): la marca de «hecho» al terminar el alta.
+      hechoBreve('Solicitud enviada. Te avisamos cuando la revisemos.');
       // Como la app: al panel del negocio nuevo.
       if (location.hash === '#/resumen') route(); else location.hash = '#/resumen';
     } catch (e2) {
