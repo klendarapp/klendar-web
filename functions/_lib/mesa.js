@@ -65,7 +65,7 @@ const CSS = `<style>
 .mesa-wifi .v{display:block;font-family:Sora,sans-serif;font-weight:800;font-size:clamp(22px,6vw,30px);line-height:1.15;word-break:break-all;user-select:all}
 .mesa-wifi .pill{margin-top:14px;width:100%;justify-content:center}
 .mesa-acc{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 22px}
-.mesa-acc .pill{justify-content:center}
+.mesa-acc .pill{justify-content:center;text-align:center}
 .mesa-app{margin:28px 0 8px;font-size:13px;opacity:.75;text-align:center}
 .mesa-app a{color:inherit}
 </style>`;
