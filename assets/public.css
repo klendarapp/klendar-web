@@ -668,6 +668,8 @@ body.pagina-feed[data-cromo="fuera"] .feed-cab { visibility: hidden; }
   body.pagina-feed:not([data-cromo="tema"]):not([data-cromo="fuera"]) header.top { background: transparent; border-bottom-color: transparent;
     backdrop-filter: none; -webkit-backdrop-filter: none; }
   body.pagina-feed:not([data-cromo="tema"]):not([data-cromo="fuera"]) header.top .brand { color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.35); }
+  /* El símbolo (sin cuadrado) encima de la foto: con la misma sombra suave. */
+  body.pagina-feed:not([data-cromo="tema"]):not([data-cromo="fuera"]) header.top .brand .simbolo { filter: drop-shadow(0 1px 2px rgba(0,0,0,.35)); }
   body.pagina-feed:not([data-cromo="tema"]):not([data-cromo="fuera"]) header.top .pill.top-entrar { background: #fff; color: #0A0A0A; }
   body.pagina-feed:not([data-cromo="tema"]):not([data-cromo="fuera"]) header.top .menu-toggle { color: #fff; border-color: rgba(255,255,255,.35); background: rgba(10,10,10,.35); }
   /* La barra de pestañas, de cristal oscuro sobre la foto. */

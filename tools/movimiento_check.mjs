@@ -131,7 +131,10 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
           ok(v.join() === '100ms,150ms,200ms,280ms', `${tag} variables de movimiento ${v.join()}`);
         }
         const an = (await animaciones(page)).filter((a) => a.iter !== Infinity);
-        const raras = an.filter((a) => a.props.some((x) => !PERMITIDAS.has(x)));
+        // Con «Reducir movimiento», todo cambio es una transición de 0,01 ms
+        // (en WebKit, también el color de la hora al marcarla «ahora»):
+        // instantánea, no es movimiento.
+        const raras = an.filter((a) => a.dur > 0.01 && a.props.some((x) => !PERMITIDAS.has(x)));
         ok(raras.length === 0, `${tag} ${ruta}: solo transform y opacidad ${JSON.stringify(raras)}`);
         const largas = an.filter((a) => a.dur > 300 && !/float/.test(a.nombre));
         ok(largas.length === 0, `${tag} ${ruta}: nada pasa de 300 ms ${JSON.stringify(largas)}`);
@@ -181,10 +184,34 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
       // la sesión (y solo esa); un campo con error tiembla.
       await page.evaluate(() => sessionStorage.clear());
       await page.goto(`${BASE}/como-funciona/`, { waitUntil: 'domcontentloaded' });
-      const trazo1 = await page.evaluate(() => Boolean(document.querySelector('.brand .mov-simbolo')));
+      const trazo1 = await page.evaluate(() => Boolean(document.querySelector('.brand .simbolo.mov-traza')));
       await page.goto(`${BASE}/precios/`, { waitUntil: 'domcontentloaded' });
-      const trazo2 = await page.evaluate(() => Boolean(document.querySelector('.brand .mov-simbolo')));
+      const trazo2 = await page.evaluate(() => Boolean(document.querySelector('.brand .simbolo.mov-traza')));
       ok(reducido ? !trazo1 && !trazo2 : trazo1 && !trazo2, `${tag} el trazo del símbolo: ${trazo1 ? 'sí' : 'no'} y luego ${trazo2 ? 'sí' : 'no'}`);
+      // El símbolo, sin el cuadrado (Iván, 2026-10-28): el anillo coral y la
+      // aguja del color del texto de la marca.
+      const sim = await page.evaluate(() => {
+        const s = document.querySelector('header .brand .simbolo');
+        if (!s) return null;
+        return {
+          cuadrado: Boolean(s.querySelector('rect')) || Boolean(document.querySelector('.brand img[src*="symbol"]')),
+          aguja: getComputedStyle(s.querySelector('.simbolo-aguja path')).stroke,
+          marca: getComputedStyle(s.closest('.brand')).color,
+        };
+      });
+      ok(sim && !sim.cuadrado && sim.aguja === sim.marca, `${tag} símbolo sin cuadrado, aguja ${sim?.aguja} = marca ${sim?.marca}`);
+      // «Cargando…» con la aguja: gira suave hacia la derecha (lineal, una
+      // vuelta por segundo); con «Reducir movimiento», quieta.
+      const giro = await page.evaluate(() => {
+        const d = document.createElement('div');
+        d.innerHTML = '<svg class="mov-cargando" viewBox="0 0 64 64"><g class="simbolo-aguja"><path d="M32 32V19"/></g></svg>';
+        document.body.append(d);
+        const cs = getComputedStyle(d.querySelector('g'));
+        const r = { n: cs.animationName, f: cs.animationTimingFunction, i: cs.animationIterationCount };
+        d.remove();
+        return r;
+      });
+      ok(giro.n === 'mov-aguja-gira' && giro.f === 'linear' && (reducido ? giro.i === '1' : giro.i === 'infinite'), `${tag} aguja de carga: ${JSON.stringify(giro)}`);
       const tiembla = await page.evaluate(() => {
         const i = document.createElement('input');
         document.body.append(i);

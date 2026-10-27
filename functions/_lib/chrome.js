@@ -139,7 +139,7 @@ export function siteHeader(lang, esPath = '/', enPath = '/en/', actual = '') {
   const negocios = item(NAV[2], en);
   return `<a class="saltar" href="#contenido">${T.saltar}</a>
 <header class="top"><div class="wrap">
-  <a class="brand" href="/${en ? 'en/' : ''}"><img src="/assets/symbol-96.png" alt="" width="30" height="30"> Klendar</a>
+  <a class="brand" href="/${en ? 'en/' : ''}"><svg class="simbolo" viewBox="0 0 64 64" width="30" height="30" aria-hidden="true"><path class="simbolo-anillo" pathLength="1" d="M32 6.8A25.2 25.2 0 1 1 8.03 24.21" fill="none" stroke="#FF4D6D" stroke-width="8.4" stroke-linecap="round"/><g class="simbolo-aguja"><path d="M32 32V19.4" stroke="currentColor" stroke-width="5.6" stroke-linecap="round"/></g><circle cx="32" cy="32" r="5.6" fill="currentColor"/></svg> Klendar</a>
   <nav class="pestanas" aria-label="${T.secciones}">${pestanas('pestana')}</nav>
   <input type="checkbox" id="menu" aria-label="${T.mas}">
   <nav class="main" aria-label="${T.mas}">${enlaces}
@@ -153,7 +153,7 @@ export function siteHeader(lang, esPath = '/', enPath = '/en/', actual = '') {
   </div>
 </div></header>
 <nav class="tabbar" aria-label="${T.secciones}">${pestanas('tab')}</nav>
-<script src="/assets/cabecera.js?v=10" defer></script>`;
+<script src="/assets/cabecera.js?v=11" defer></script>`;
 }
 
 /** El pie, con las mismas columnas en todas las páginas. */
@@ -164,7 +164,7 @@ export function siteFooter(lang) {
     .map((n) => `<a href="${n.href}">${n.label}</a>`).join('');
   return `<footer><div class="wrap">
   <div class="cols">
-    <div><a class="brand" href="/${en ? 'en/' : ''}"><img src="/assets/symbol-96.png" alt="" width="30" height="30" loading="lazy" decoding="async"> Klendar</a>
+    <div><a class="brand" href="/${en ? 'en/' : ''}"><svg class="simbolo" viewBox="0 0 64 64" width="30" height="30" aria-hidden="true"><path class="simbolo-anillo" pathLength="1" d="M32 6.8A25.2 25.2 0 1 1 8.03 24.21" fill="none" stroke="#FF4D6D" stroke-width="8.4" stroke-linecap="round"/><g class="simbolo-aguja"><path d="M32 32V19.4" stroke="currentColor" stroke-width="5.6" stroke-linecap="round"/></g><circle cx="32" cy="32" r="5.6" fill="currentColor"/></svg> Klendar</a>
       <p style="margin:12px 0 0;max-width:340px">${T.lema}</p></div>
     <div><h2 class="pie-h">${T.producto}</h2>${col(FOOT_PRODUCT)}</div>
     <div><h2 class="pie-h">${T.legal}</h2>${col(FOOT_LEGAL)}</div>

@@ -598,7 +598,7 @@ function mfaError(e) {
 
 function pantallaMfa(html) {
   const box = $('#mfa');
-  box.innerHTML = `<a class="brand" href="/"><img src="/assets/symbol.png" alt="" width="30" height="30"> Klendar <small class="muted">· admin</small></a>
+  box.innerHTML = `<a class="brand" href="/"><svg class="simbolo" viewBox="0 0 64 64" width="30" height="30" aria-hidden="true"><path class="simbolo-anillo" pathLength="1" d="M32 6.8A25.2 25.2 0 1 1 8.03 24.21" fill="none" stroke="#FF4D6D" stroke-width="8.4" stroke-linecap="round"/><g class="simbolo-aguja"><path d="M32 32V19.4" stroke="currentColor" stroke-width="5.6" stroke-linecap="round"/></g><circle cx="32" cy="32" r="5.6" fill="currentColor"/></svg> Klendar <small class="muted">· admin</small></a>
     ${html}
     <button class="btn sm ghost" id="mfaSalir" type="button">Cerrar sesión</button>
     <span class="lang" id="langMfa" aria-label="Idioma / Language"></span>`;

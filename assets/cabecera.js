@@ -155,17 +155,10 @@
   try {
     if (!quieto && !sessionStorage.getItem('klendar.trazo')) {
       sessionStorage.setItem('klendar.trazo', '1');
-      const img = document.querySelector('.brand img[src*="symbol"]');
-      if (img) {
-        const s = img.getAttribute('width') || 30;
-        img.insertAdjacentHTML('afterend', `<svg class="mov-simbolo" viewBox="0 0 64 64" width="${s}" height="${s}" aria-hidden="true">`
-          + '<rect width="64" height="64" rx="16" fill="#0A0A0A"/>'
-          + '<path class="mov-anillo" pathLength="1" d="M32 14a18 18 0 1 1 0 36a18 18 0 1 1 0-36" fill="none" stroke="#FF4D6D" stroke-width="6" stroke-linecap="round"/>'
-          + '<g class="mov-aguja"><path d="M32 32V23" stroke="#fff" stroke-width="4" stroke-linecap="round"/></g>'
-          + '<circle cx="32" cy="32" r="4" fill="#fff"/></svg>');
-        img.hidden = true;
-        // Al acabar, la imagen de siempre.
-        setTimeout(() => { img.hidden = false; img.nextElementSibling?.remove(); }, 1200);
+      const sim = document.querySelector('.brand .simbolo');
+      if (sim) {
+        sim.classList.add('mov-traza');
+        setTimeout(() => sim.classList.remove('mov-traza'), 1200);
       }
     }
   } catch { /* sin almacenamiento: sin trazo */ }

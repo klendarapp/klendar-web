@@ -166,12 +166,12 @@ ${head}
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 <link rel="preload" href="/assets/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/site.css?v=20261028d">
+<link rel="stylesheet" href="/assets/site.css?v=20261028bd">
 <style>.open .card{max-width:460px}.open .hero-img{width:100%;aspect-ratio:16/10;object-fit:cover;border-radius:18px;margin-bottom:14px}.open .meta{color:var(--ink-2);font-size:14px;margin:0 0 12px}</style>
 </head>
 <body>
 <header class="top"><div class="wrap">
-  <a class="brand" href="/"><img src="/assets/symbol-96.png" alt="" width="30" height="30"> Klendar</a>
+  <a class="brand" href="/"><svg class="simbolo" viewBox="0 0 64 64" width="30" height="30" aria-hidden="true"><path class="simbolo-anillo" pathLength="1" d="M32 6.8A25.2 25.2 0 1 1 8.03 24.21" fill="none" stroke="#FF4D6D" stroke-width="8.4" stroke-linecap="round"/><g class="simbolo-aguja"><path d="M32 32V19.4" stroke="currentColor" stroke-width="5.6" stroke-linecap="round"/></g><circle cx="32" cy="32" r="5.6" fill="currentColor"/></svg> Klendar</a>
   <nav class="main"><a href="${en ? '/en/#how-it-works' : '/#como'}">${S.how}</a><a href="${en ? '/en/for-business/' : '/para-negocios/'}">${S.biz}</a><a href="${en ? '/en/support/' : '/soporte/'}">${S.sup}</a></nav>
 </div></header>
 <div class="open"><div class="card">
