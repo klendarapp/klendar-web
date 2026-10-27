@@ -100,7 +100,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
         const coralEn = [...document.querySelectorAll('#mapa .marca .mc-cara, #mapa .grupo-marca')]
           .filter((e) => getComputedStyle(e).boxShadow.includes(hex(accent)));
         const ofertas = coralEn.every((e) => e.closest('.anillo-oferta'));
-        const flash = JSON.parse(document.getElementById('mapaPuntos').textContent).filter((p) => p.k === 'f').length;
+        const flash = JSON.parse(document.getElementById('mapaPuntos').textContent).filter((p) => p.k === 'f' || p.d).length;
         return { coral: coralEn.length, ofertas, flash, ambar: [...document.querySelectorAll('#mapa .anillo-flash')].length };
       });
       ok(colores.ofertas && colores.coral <= colores.flash && colores.ambar === 0, `${t} coral solo en las ofertas (${JSON.stringify(colores)})`);
@@ -170,15 +170,16 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
         }, null, { timeout: 20000 }).then(() => true).catch(() => false);
         ok(capas, `${t} Sitios: el mapa sale`);
         // Los mismos marcadores que Planes: el círculo de 30 px (o la
-        // burbuja), con anillo en tinta los que tienen planes hoy (nunca
-        // coral: en Sitios no hay ofertas).
+        // burbuja), con el icono de su categoría o su logo (en Planes, el del
+        // tipo de plan), anillo coral si tienen oferta hoy y en tinta si
+        // tienen planes.
         const mismo = await page.waitForFunction(() => {
           const e = document.querySelector('#mapa-sitios .marca .mc-cara, #mapa-sitios .grupo-marca');
           if (!e) return null;
           const r = e.getBoundingClientRect();
           return { tam: Math.round(Math.max(r.width, r.height)), coral: document.querySelectorAll('#mapa-sitios .anillo-oferta').length, planes: document.querySelectorAll('#mapa-sitios .marca.anillo-planes').length, sin: document.querySelectorAll('#mapa-sitios .marca:not(.anillo-planes)').length };
         }, null, { timeout: 20000 }).then((h) => h.jsonValue()).catch(() => null);
-        ok(mismo && mismo.tam >= 28 && mismo.tam <= 34 && mismo.coral === 0, `${t} Sitios: los marcadores de Planes, sin coral (${JSON.stringify(mismo)})`);
+        ok(mismo && mismo.tam >= 28 && mismo.tam <= 34 , `${t} Sitios: los marcadores de Planes (${JSON.stringify(mismo)})`);
         await page.waitForTimeout(1500);
         await page.screenshot({ path: `${OUT}/web-sitios-${nombre}-${forma}.png` });
       }

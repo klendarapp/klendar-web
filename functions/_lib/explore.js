@@ -447,6 +447,10 @@ const mapaHtml = (items, lang, S) => {
     // Para la lista de un sitio: cuándo (y el orden), el logo y su nombre
     // (el del sitio si es en otro sitio).
     at: o.starts_at || '', w: cuandoEnMapa(o, lang), lg: o.business_logo || undefined,
+    // El marcador (GLOSARIO «Aspecto › El mapa»): de la agenda pública (su
+    // icono) y con descuento de verdad (el anillo coral; «Gratis» no cuenta).
+    ...(o.imported ? { im: 1 } : {}),
+    ...(o.discount && o.discount.type !== 'free' ? { d: 1 } : {}),
     sn: o.venue_address ? (o.venue_name || String(o.venue_address).split(',')[0]) : o.business_name,
     // El local (no un sitio de la publicación): su precio, «¿Hay sitio
     // ahora?» y «Ver el sitio».
@@ -457,7 +461,8 @@ const mapaHtml = (items, lang, S) => {
   <p class="ambiente-leyenda" id="ambiente-leyenda" hidden></p>
   ${sitioAhoraScripts(lang).replace(/ defer/g, '')}
   <script type="application/json" id="mapaPuntos">${JSON.stringify(puntos).replace(/</g, '\u003c')}</script>
-  <script src="/assets/mapa.js?v=4"></script>`;
+  <script src="/assets/iconos-mapa.js?v=1"></script>
+  <script src="/assets/mapa.js?v=5"></script>`;
 };
 
 /** Las distancias de «Cerca de mí», las mismas que la hoja de filtros de la

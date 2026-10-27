@@ -175,7 +175,15 @@
    * la cifra en una insignia en la esquina. Debajo, su nombre (lo enseña
    * `nombres` si cabe).
    */
-  function marcaEl({ logo, local, anillo, n, etiqueta, nombre, prio }) {
+  /** Un icono de `assets/iconos-mapa.js`: [grupo] `tipo` (evento, flash,
+   *  agenda) o `cat` (el slug de la categoría); sin él, la tienda. */
+  function iconoMapa(grupo, clave) {
+    const I = globalThis.KlendarIconosMapa || {};
+    const d = (I[grupo] || {})[clave] || (I.cat || {}).shop;
+    return d ? `<svg viewBox="0 -960 960 960" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="${d}"/></svg>` : icono('local', 16);
+  }
+
+  function marcaEl({ logo, icono: ic, anillo, n, etiqueta, nombre, prio }) {
     const el = document.createElement('button');
     el.type = 'button';
     el.className = `marca${anillo ? ` anillo-${anillo}` : ''}`;
@@ -183,7 +191,7 @@
     el.dataset.prio = String(prio || 0);
     el.innerHTML = `${logo
       ? `<span class="mc-cara"><img src="${esc(logo)}" alt="" loading="lazy" decoding="async"></span>`
-      : `<span class="mc-cara sin-logo">${icono(local ? 'local' : 'lugar', 16)}</span>`}${
+      : `<span class="mc-cara sin-logo">${ic || iconoMapa('cat', 'shop')}</span>`}${
       n > 1 ? `<span class="mc-n" aria-hidden="true">${n > 99 ? '99+' : n}</span>` : ''}`;
     if (nombre) {
       const t = document.createElement('span');
@@ -295,10 +303,16 @@
     // Precio del local y «¿Hay sitio ahora?» (una vez para todos).
     const ahora = SA && KM && locales.length ? SA.pide(locales).catch(() => ({})) : Promise.resolve({});
 
+    /** Oferta: una oferta flash o algo con descuento (no «Gratis»). */
+    const oferta = (p) => p.k === 'f' || Boolean(p.d);
+    /** El tipo de plan de un sitio: la agenda pública (todo importado), una
+     *  oferta flash o un evento. */
+    const tipoDe = (items) => (items.every((x) => x.im) ? 'agenda' : items.some((x) => x.k === 'f') ? 'flash' : 'evento');
+
     /** Un sitio con un solo plan: su marcador y su tarjeta. */
     function uno(p) {
       const el = marcaEl({
-        logo: p.lg, local: Boolean(p.n), anillo: p.k === 'f' ? 'oferta' : 'planes', n: 1, etiqueta: p.t, nombre: p.sn || p.b, prio: 1,
+        icono: iconoMapa('tipo', tipoDe([p])), anillo: oferta(p) ? 'oferta' : 'planes', n: 1, etiqueta: p.t, nombre: p.sn || p.b, prio: 1,
       });
       const a = document.createElement('a');
       a.className = 'pop';
@@ -376,8 +390,10 @@
     }
 
     capa(m, {
-      cara: (s) => { const p = principal(s); return { logo: p.lg, local: Boolean(p.n), nombre: p.sn || p.b }; },
-      anillo: (s) => (s.items.some((x) => x.k === 'f') ? 'oferta' : 'planes'),
+      // En Planes, el icono del tipo de plan (nunca un logo): que se sepa de
+      // un vistazo que son planes y no sitios.
+      cara: (s) => { const p = principal(s); return { icono: iconoMapa('tipo', tipoDe(s.items)), nombre: p.sn || p.b }; },
+      anillo: (s) => (s.items.some(oferta) ? 'oferta' : 'planes'),
       uno,
       varios: abreSitio,
       etiqueta: (s, n) => `${principal(s).sn || principal(s).b}, ${T.planes(n)}`,
@@ -448,6 +464,7 @@
   KA.planes = planes;
   KA.capa = capa;
   KA.marcaEl = marcaEl;
+  KA.iconoMapa = iconoMapa;
   KA.abreHoja = abreHoja;
   KA.mapaPlanes = mapaPlanes;
   if (document.getElementById('mapaPuntos')) {

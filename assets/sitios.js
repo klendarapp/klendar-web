@@ -12,8 +12,9 @@
  *   ha cerrado no puede seguir diciendo «Abierto»).
  * - El mapa de Sitios (`#mapa-sitios`): todos los sitios del recuadro
  *   (`map_places`, sin sesión), otra vez al moverlo, con los marcadores de
- *   Planes (`KlendarAgrupa.capa`, GLOSARIO «Aspecto › El mapa»): anillo en
- *   tinta si tienen planes hoy (con su nombre de cerca), sin anillo si no. Tocar uno
+ *   Planes (`KlendarAgrupa.capa`, GLOSARIO «Aspecto › El mapa»): el logo o el
+ *   icono de su categoría; anillo coral si tienen una oferta hoy, en tinta si
+ *   tienen planes hoy (con su nombre de cerca), sin anillo si no. Tocar uno
  *   abre su tarjeta con el enlace a la ficha.
  */
 (function () {
@@ -312,14 +313,19 @@
       // no; la cifra, cuántos sitios. Los sin planes, con su icono (no se baja
       // un logo por cada uno) y sin nombre.
       const capa = KA.capa(m, {
+        // En Sitios, el logo del negocio o el icono de su categoría (en
+        // Planes, el del tipo de plan): que se sepa de un vistazo el modo.
         cara: (s) => {
           const f = s.items.find(planesDe) || s.items[0];
-          return { logo: planesDe(f) ? f.logo : null, local: true, nombre: planesDe(f) ? f.name : null };
+          return {
+            logo: planesDe(f) ? f.logo : null, icono: KA.iconoMapa('cat', f.category_slug), nombre: planesDe(f) ? f.name : null,
+          };
         },
-        anillo: (s) => (s.items.some(planesDe) ? 'planes' : ''),
+        anillo: (s) => (s.items.some((x) => x.has_offer) ? 'oferta' : s.items.some(planesDe) ? 'planes' : ''),
         uno: (f) => {
           const el = KA.marcaEl({
-            logo: planesDe(f) ? f.logo : null, local: true, anillo: planesDe(f) ? 'planes' : '', n: 1,
+            logo: planesDe(f) ? f.logo : null, icono: KA.iconoMapa('cat', f.category_slug),
+            anillo: f.has_offer ? 'oferta' : planesDe(f) ? 'planes' : '', n: 1,
             etiqueta: f.name, nombre: planesDe(f) ? f.name : null, prio: planesDe(f),
           });
           el.addEventListener('click', (e) => { e.stopPropagation(); abre(f); });
