@@ -46,7 +46,7 @@ const POR_PAGINA = 24;
 const T = (en) => en
   ? {
       exp: 'Explore', disc: 'Discover', agenda: "What's on", search: 'Search', ph: 'A bar, a market, “brunch”…',
-      all: 'All', allCities: 'Every city', offers: 'Flash offers', events: 'Events',
+      all: 'All', allCities: 'Every city', allCitiesShort: 'All', offers: 'Flash offers', events: 'Events',
       city: 'City', cat: 'Category', clear: 'Clear filters',
       results: (n) => `${n} ${n === 1 ? 'result' : 'results'}`,
       prev: '← Previous', next: 'Next →', page: 'Page',
@@ -181,7 +181,7 @@ const T = (en) => en
     }
   : {
       exp: 'Explorar', disc: 'Descubre', agenda: 'Agenda local', search: 'Buscar', ph: 'Un bar, un mercadillo, «brunch»…',
-      all: 'Todo', allCities: 'Todas las ciudades', offers: 'Ofertas flash', events: 'Eventos',
+      all: 'Todo', allCities: 'Todas las ciudades', allCitiesShort: 'Todas', offers: 'Ofertas flash', events: 'Eventos',
       city: 'Ciudad', cat: 'Categoría', clear: 'Quitar filtros',
       results: (n) => `${n} ${n === 1 ? 'resultado' : 'resultados'}`,
       prev: '← Anterior', next: 'Siguiente →', page: 'Página',
@@ -1481,10 +1481,12 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   const masAqui = `${K.when}=${enIdioma('now', en)}&km=1&${K.sort}=${enIdioma('nearest', en)}`;
 
   // ── ¿Dónde?: «Cerca de mí» (con la distancia dentro) o «Una ciudad» (toda
-  // la ciudad, sin distancia, o «Todas las ciudades»). En el mapa, sin la
-  // distancia en el botón (manda lo que se ve).
+  // la ciudad, sin distancia, o «Todas las ciudades»). El mismo texto en
+  // todas las vistas, también en el mapa (Iván, 2026-10-28: la fila es
+  // idéntica en Descubre y en Explorar; que en el mapa manda lo que se ve lo
+  // dice la hoja).
   const zonaValor = cerca ? S.nearOn : city ? PRETTY(city) : S.allCities;
-  const zonaTxt = cerca && !enMapa ? `${zonaValor} · ${km} km` : zonaValor;
+  const zonaTxt = cerca ? `${zonaValor} · ${km} km` : zonaValor;
   const kmOp = (k) => {
     const txt = k === 1 ? S.walk1 : `${k} km`;
     return cerca
@@ -1522,10 +1524,14 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
      </div>`,
     { etiqueta: `${S.zoneChange}: ${zonaTxt}` })
     // Por debajo de 400 px, con «Cerca de ti», solo «5 km» (el icono ya dice
-    // «cerca»): así caben ¿Dónde?, ¿Cuándo?, ¿Qué? y ☰ en un móvil de 360.
-    .replace(`<span class="chip-t">${esc(zonaTxt)}</span>`, cerca && !enMapa
+    // «cerca») y «Todas» en vez de «Todas las ciudades», como la app: así
+    // caben ¿Dónde?, ¿Cuándo?, ¿Qué? y ☰ en un móvil de 360, y lo que se
+    // acorta es el dónde, no «Todo».
+    .replace(`<span class="chip-t">${esc(zonaTxt)}</span>`, cerca
       ? `<span class="chip-t"><span class="zona-larga">${esc(zonaValor)} · </span>${km} km</span>`
-      : `<span class="chip-t">${esc(zonaTxt)}</span>`);
+      : !city
+        ? `<span class="chip-t"><span class="zona-larga">${esc(zonaTxt)}</span><span class="zona-corta">${esc(S.allCitiesShort)}</span></span>`
+        : `<span class="chip-t">${esc(zonaTxt)}</span>`);
 
   // Los campos ocultos de una hoja: todo lo de la dirección menos lo que esa
   // hoja elige (`propias`) y la página. `pasa(k, v)`: lo que, aun siendo de

@@ -1016,6 +1016,15 @@ details.hoja-bloque[open] > summary .ic { transform: rotate(180deg); }
 .fila-fija .barra-preg .chip > .ic { flex: none; }
 .fila-fija .barra-preg .chip .chip-t { flex: 0 1 auto; min-width: 0; }
 .fila-fija > .hoja { flex: none; margin-left: auto; }
+/* El reparto de la app: si no cabe, lo corto («Todo», «Cuando sea») queda
+   entero y lo que se acorta es el dónde; luego ¿Cuándo? y por último ¿Qué?. */
+.fila-fija .barra-preg > .zona { flex-shrink: 100; min-width: 64px; }
+/* (64 px: «5 km» y «Todas» siempre enteros; un nombre de ciudad largo, con «…».) */
+.fila-fija .barra-preg > :nth-child(2) { flex-shrink: 10; }
+.zona-corta { display: none; }
+/* La misma fila en Descubre y en Explorar: los mismos 16 px a los lados que
+   en la app (Explorar tenía 20 y la fila salía 8 px más estrecha). */
+@media (max-width: 640px) { .barra-filtros.fila-fija { margin-left: -20px; margin-right: -20px; padding-left: 16px; padding-right: 16px; } }
 @media (max-width: 399px) {
   .fila-fija { gap: 6px; }
   .fila-fija .barra-preg { gap: 6px; }
@@ -1023,6 +1032,13 @@ details.hoja-bloque[open] > summary .ic { transform: rotate(180deg); }
   /* Sin la flecha: el sitio es para el texto. */
   .fila-fija .barra-preg .chip > .ic:last-child { display: none; }
   .zona-larga { display: none; }
+  .zona-corta { display: inline; }
+}
+/* Como la app: en un móvil, si con los iconos no caben enteras, las tres
+   preguntas van sin icono (el lector las dice igual) antes que cortar
+   «Cuando sea» o «Todas». */
+@media (max-width: 419px) {
+  .fila-fija .barra-preg .chip > .ic:first-child { display: none; }
 }
 
 /* ☰ › «Ordenar por», arriba de la hoja (Descubre y la lista de Planes). */
