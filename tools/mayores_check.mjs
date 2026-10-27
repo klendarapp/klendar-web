@@ -91,7 +91,8 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     {
       const { ctx, page } = await nuevo();
       await page.goto(`${BASE}/explorar/?ciudad=Madrid&orden=cerca`);
-      ok(!(await page.locator('[data-cerca-falta]').count()) && /Más cerca/.test(await page.locator('#barra').innerText()), `${t} «Más cerca» con una ciudad: desde su centro, sin pedir nada`);
+      // El orden va en ☰ › «Ordenar por» (Iván, 2026-10-27), no en la fila.
+      ok(!(await page.locator('[data-cerca-falta]').count()) && await page.locator('#filtros input[name=orden][value=cerca]').isChecked(), `${t} «Más cerca» con una ciudad: desde su centro, sin pedir nada`);
       await page.goto(`${BASE}/explorar/?orden=cerca`);
       ok(await page.locator('[data-cerca-falta]').isVisible(), `${t} «Más cerca» sin dónde: lo dice y ofrece la ubicación`);
       await page.screenshot({ path: `${OUT}/mayores-cerca-${nombre}-${forma}.png` });

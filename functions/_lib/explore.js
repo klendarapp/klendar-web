@@ -19,7 +19,7 @@ import {
   listingLd, publicPage, todayBase,
 } from './public.js';
 import KC from '../../assets/categorias.js';
-import { SITIO, esDieta, icSitio, icTiempo, nombreSitio, ordenaSitio, sitioAUrl, sitioDeUrl } from './sitio.js';
+import { SITIO, esDieta, icSitio, nombreSitio, ordenaSitio, sitioAUrl, sitioDeUrl } from './sitio.js';
 import { FUENTE_TIEMPO, dondeTiempo, tiempoDeHoy } from './tiempo.js';
 import { rejilla, tarjeta } from './tarjeta.js';
 import KM from '../../assets/marcas.js';
@@ -34,6 +34,7 @@ import KS from '../../assets/textos-sorteos.js';
 import { GRUPOS_CSS, gruposBase, icGrupos } from './grupos.js';
 import { icSorteo, sorteosBase, sorteosEncendidos } from './sorteos.js';
 import { SITIOS_CSS, SITIOS_SCRIPTS, TS, filaSitio, mapaSitios } from './sitios.js';
+import { icCat } from './iconos-cat.js';
 
 /** Una dirección mal codificada no es un 500: se manda al listado (302). */
 const aListado = (loc) => new Response(null, { status: 302, headers: { Location: loc, 'Cache-Control': 'no-store' } });
@@ -161,10 +162,11 @@ const T = (en) => en
       forEating: "Food and today's specials", pricePlan: 'Plan price', pricePlanHint: 'Free, up to €10, €25 or €50',
       placeLike: 'What the place is like', placeLikeHint: 'Terrace, indoors, dogs, wheelchair access, Wi-Fi, venue price…',
       dietsBHint: 'Vegetarian, vegan, gluten-free, coeliac, lactose-free, halal',
-      notHereNote: 'Not here: where, when and what are at the top, in the row; the order, in its menu; your interests, in Settings.',
       nearMe: 'Near me', aCity: 'A city', howFar: 'How far?', walk1: '1 km · a short walk', wholeCity: 'The whole city, no distance.',
       mapNoKm: 'On the map you see what is on the screen.',
       sortRec: 'Recommended', sortDefault: 'default',
+      recLine: 'Paid featured placements first (with their label), then the newest nearby.',
+      weatherLine: "If it rains, indoor plans first; when it's nice, terraces and outdoors.",
       recSteps: ['Paid featured placements, always labelled', "Today's plans, based on the weather", 'Your interests, a little earlier', 'The newest and nearest'],
       sortNearestHint: 'The nearest first', sortSoonestHint: 'What starts or ends first', sortNewestHint: 'The latest publications',
       useTastes: 'Take your interests into account', changeTastes: 'Change', onlyRec: 'Both boxes apply to “Recommended”.',
@@ -283,10 +285,11 @@ const T = (en) => en
       forEating: 'Para comer y lo del día', pricePlan: 'Precio del plan', pricePlanHint: 'Gratis, hasta 10, 25 o 50 €',
       placeLike: 'Cómo es el sitio', placeLikeHint: 'Terraza, bajo techo, perros, accesible, wifi, precio del local…',
       dietsBHint: 'Vegetariano, vegano, sin gluten, celíacos, sin lactosa, halal',
-      notHereNote: 'Lo que no está aquí: el dónde, el cuándo y el qué van arriba, en la fila; el orden, en su menú; tus gustos, en Ajustes.',
       nearMe: 'Cerca de mí', aCity: 'Una ciudad', howFar: '¿Hasta dónde?', walk1: '1 km · a un paseo', wholeCity: 'Toda la ciudad, sin distancia.',
       mapNoKm: 'En el mapa ves lo que hay en la pantalla.',
       sortRec: 'Recomendado', sortDefault: 'de serie',
+      recLine: 'Lo destacado de pago primero (con su etiqueta) y luego lo más nuevo cerca.',
+      weatherLine: 'Si llueve, primero lo de bajo techo; con buen tiempo, terrazas y aire libre.',
       recSteps: ['Lo destacado de pago, siempre con su etiqueta', 'Lo de hoy, según el tiempo', 'Lo de tus gustos, un poco antes', 'Lo más nuevo y cerca'],
       sortNearestHint: 'Lo más cercano primero', sortSoonestHint: 'Lo que empieza o acaba primero', sortNewestHint: 'Lo último que han publicado',
       useTastes: 'Tener en cuenta tus gustos', changeTastes: 'Cambiar', onlyRec: 'Las dos casillas valen con «Recomendado».',
@@ -824,20 +827,22 @@ function calendarioHtml({ items, lang, S, link, mes, dia, hoy, delDiaParte = nul
 // `location_sheet.dart`), los mismos en las dos páginas y con los mismos
 // nombres (docs/GLOSARIO.md, «Los filtros»; opción A de
 // docs/PROPUESTA_FILTROS.md, aprobada el 2026-10-26):
-//   fila:  ☰ (lo demás, con su número) · ¿Dónde? · ¿Cuándo? · ¿Qué? · el orden.
-//          Cada pregunta dice lo que lleva («Esta noche», «Bares, Música»);
-//          sin chips sueltos con ×. Con el tiempo reordenando, el orden va
-//          justo detrás de ☰.
+//   fila:  ¿Dónde? · ¿Cuándo? · ¿Qué? y ☰ fijo a la derecha, la misma y en el
+//          mismo orden en todas las vistas (Iván, 2026-10-27: nada salta de
+//          sitio). Cada pregunta dice lo que lleva («Esta noche», «Bares,
+//          Música») y se encoge con «…» para que en 360 px quepa todo; sin
+//          chips sueltos con × ni el orden en la fila.
 //   ¿Dónde?:  Cerca de mí (¿Hasta dónde? 1 km · a un paseo / 3 / 5 / 10 / 25)
 //          | Una ciudad (toda la ciudad, sin distancia; «Todas las ciudades»).
 //   ¿Cuándo?: Atajos (Ahora, a un paseo · Esta noche · Este finde) · El plan
 //          es… · El sitio, ahora (Abierto ahora · Se puede comer ahora) ·
 //          Momento del día. En Sitios, lo del sitio.
-//   ¿Qué?:  Tipo · Menú del día y Antes de cerrar · Categorías (varias: las 8
-//          más usadas y «Ver todas», con `assets/categorias.js`).
-//   ☰:     Precio del plan · Para quién · Cómo es el sitio (con el precio del
-//          local) · Alérgenos y dietas · Más, plegados y con su número.
-//   orden: Recomendado (de serie: destacado, el tiempo de hoy y tus gustos
+//   ¿Qué?:  Tipo · Menú del día y Antes de cerrar · Categorías (varias, todas
+//          a la vista: una cuadrícula de iconos por los cinco grupos).
+//   ☰:     Ordenar por (en Descubre y la lista de Planes) · Precio del plan ·
+//          Para quién · Cómo es el sitio (con el precio del local) ·
+//          Alérgenos y dietas · Más, plegados y con su número.
+//   orden: dentro de ☰, arriba: Recomendado (de serie: destacado, el tiempo de hoy y tus gustos
 //          encima de lo más nuevo) · Más cerca · Empieza antes · Lo más nuevo,
 //          con las casillas «Según el tiempo» y «Tener en cuenta tus gustos»
 //          (solo con Recomendado). En el calendario, «Por hora» / «Más cerca»
@@ -1474,7 +1479,12 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
        ${opcion(link({ city: '', cerca: false }), S.allCities, !city && !cerca)}
        ${ciudades.map((c) => opcion(link({ city: String(c.city), cerca: false }), PRETTY(c.city), !cerca && city.toLowerCase() === String(c.city).toLowerCase())).join('')}
      </div>`,
-    { cls: ' zona', etiqueta: `${S.zoneChange}: ${zonaTxt}` });
+    { cls: ' zona', etiqueta: `${S.zoneChange}: ${zonaTxt}` })
+    // Por debajo de 400 px, con «Cerca de ti», solo «5 km» (el icono ya dice
+    // «cerca»): así caben ¿Dónde?, ¿Cuándo?, ¿Qué? y ☰ en un móvil de 360.
+    .replace(`<span class="chip-t">${esc(zonaTxt)}</span>`, cerca && !enMapa
+      ? `<span class="chip-t"><span class="zona-larga">${esc(zonaValor)} · </span>${km} km</span>`
+      : `<span class="chip-t">${esc(zonaTxt)}</span>`);
 
   // Los campos ocultos de una hoja: todo lo de la dirección menos lo que esa
   // hoja elige (`propias`) y la página. `pasa(k, v)`: lo que, aun siendo de
@@ -1553,26 +1563,18 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
     e.menuDia ? S.dailyMenu : '', !negocios && antesCierre ? S.beforeClosing : '',
     ...catsSel.map(nombreCat),
   ].filter(Boolean);
-  // Las 8 más usadas (las que más tienen publicado ahora, como la app), las
-  // elegidas y «Ver todas (31)», que abre el selector con buscador y grupos
-  // (/assets/categorias.js, varias). Sin JavaScript, el resto sale debajo.
-  const CATS_VISIBLES = 8;
-  const top = [];
-  for (const c of [...(cats || []).map((x) => porSlug.get(x.slug)).filter(Boolean), ...catsHoja]) {
-    if (top.length >= CATS_VISIBLES) break;
-    if (!top.includes(c)) top.push(c);
-  }
-  for (const slug of catsSel) { const c = porSlug.get(slug); if (c && !top.includes(c)) top.push(c); }
-  const restoCats = catsHoja.filter((c) => !top.includes(c));
-  const casillaCat = (c) => `<label class="op-r" data-grupo="${esc(KC.grupoDe(c))}" data-pos="${Number(c.position) || 0}"><input type="checkbox" name="${K.cat}" value="${esc(c.slug)}"${catsSel.includes(c.slug) ? ' checked' : ''}><span>${esc(catName(c, en))}</span></label>`;
-  const catsHtml = catsHoja.length ? `<fieldset class="hoja-cats" data-selcat-hoja><legend>${esc(S.categories)}</legend>
-      <div class="ops" data-cat-visibles>
-        ${top.map(casillaCat).join('')}
-        ${restoCats.length ? `<button type="button" class="op-mas" data-ver-todas data-titulo="${esc(S.categories)}" hidden>${esc(S.seeAll(catsHoja.length))} ›</button>` : ''}
-      </div>
-      ${restoCats.length ? `<div class="cat-mas" data-cat-mas>${KC.agrupa(restoCats, '').filter((g) => g.cats.length).map((g) => `<p class="cat-grupo">${esc(KC.nombreGrupo(g.id, lang))}</p>
-        <div class="ops">${g.cats.map(casillaCat).join('')}</div>`).join('')}</div>` : ''}
-    </fieldset>` : '';
+  // Las categorías, todas a la vista: una cuadrícula de iconos grandes con su
+  // nombre, por los cinco grupos del selector único (Comer y beber · Noche,
+  // música y cultura · Ocio, deporte y familia · Belleza y salud · Tiendas y
+  // servicios), varias a la vez (Iván, 2026-10-27, como la app). Sin
+  // JavaScript, casillas de un formulario GET, como siempre.
+  const celdaCat = (c) => `<label class="cat-celda"><input type="checkbox" name="${K.cat}" value="${esc(c.slug)}"${catsSel.includes(c.slug) ? ' checked' : ''}>
+        <span class="cat-celda-c">${icCat(c.slug, 28)}<span class="cat-celda-t">${esc(catName(c, en))}</span></span></label>`;
+  const catsHtml = catsHoja.length ? `<h3 class="hoja-cats-t">${esc(S.categories)}</h3>
+    ${KC.agrupa(catsHoja, '').filter((g) => g.cats.length).map((g) => `<fieldset class="hoja-cats-grupo">
+      <legend>${esc(KC.nombreGrupo(g.id, lang))}</legend>
+      <div class="cat-rejilla">${g.cats.map(celdaCat).join('')}</div>
+    </fieldset>`).join('')}` : '';
   const hojaQue = hojaDe({
     id: 'que-hoja',
     summary: chipHoja('tipo', partesQue.join(', ') || S.whatQ, partesQue.length > 0,
@@ -1605,8 +1607,14 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   const nComo = (e.precioLocal ? 1 : 0) + atributos.length;
   const nDietas = dietas.length;
   const nMas = negocios ? 0 : [e.solidario, e.entidad, soloDescuento].filter(Boolean).length;
-  const nFiltros = nPrecio + nParaQuien + nComo + nDietas + nMas;
-  const resumen = resumenFiltros(e, S);
+  // El orden va dentro de ☰, arriba (Iván, 2026-10-27): en Descubre y en la
+  // lista de Planes. En el calendario y en Sitios, en la cabecera de su lista;
+  // en el mapa, ninguno. ☰ lo cuenta si no es el de serie.
+  const conOrden = !negocios && !mapa && !calendario;
+  const nOrden = conOrden && !recomendado ? 1 : 0;
+  const nFiltros = nPrecio + nParaQuien + nComo + nDietas + nMas + nOrden;
+  const ordenNombre = { recommended: S.sortRec, nearest: S.sortNearest, soonest: S.sortSoonest, newest: S.sortNewest };
+  const resumen = [nOrden ? `${S.sortBy}: ${ordenNombre[ordenBase]}` : '', resumenFiltros(e, S)].filter(Boolean).join(' · ');
   // Un bloque plegado: «Para quién · 1», con su ayuda; abierto si lleva algo.
   // El número lo pone al día /assets/tarjetas.js al marcar.
   const bloque = (id, titulo, ayuda, n, cuerpo, abierto = false) => `<details class="hoja-bloque" data-bloque="${id}"${n || abierto ? ' open' : ''}>
@@ -1666,47 +1674,43 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   const ninosUrl = sitioAUrl('kids', en);
   const restablecer = link({ price: negocios ? price : '', soloDescuento: negocios ? soloDescuento : false, traits: negocios && ninosOn ? ['kids'] : [], edades: negocios ? e.edades : [],
     precioLocal: 0, carne: negocios ? e.carne : '', solo: negocios ? e.solo : false, solidario: negocios ? e.solidario : false,
-    entidad: negocios ? e.entidad : false, amigos: negocios ? e.amigos : false });
-  const propiasFiltros = negocios ? new Set([K.vprice, K.place]) : new Set([K.price, K.age, K.card, K.solo, 'amigos', K.vprice, K.place, K.charity, K.entity, K.discount]);
+    entidad: negocios ? e.entidad : false, amigos: negocios ? e.amigos : false, ...(conOrden ? { sort: '' } : {}) });
+  const propiasFiltros = negocios ? new Set([K.vprice, K.place]) : new Set([K.price, K.age, K.card, K.solo, 'amigos', K.vprice, K.place, K.charity, K.entity, K.discount,
+    ...(conOrden ? [K.sort, K.weather, K.notastes] : [])]);
+  // «Ordenar por»: «Recomendado» (de serie) con sus dos casillas debajo
+  // (encendidas de serie; «Restablecer» no las toca) y los tres sencillos.
+  // Va con «Ver N resultados», como lo demás de la hoja. Las casillas van
+  // seguidas de un oculto con el valor de apagado: marcada, manda los dos y
+  // gana la casilla (`tiempoOff`, `sinGustos`).
+  const gustosHref = `${en ? '/app/?lang=en' : '/app/'}#/gustos`;
+  const radioOrden = (v, label, ayuda) => `<label class="op-orden"><input type="radio" name="${K.sort}" value="${esc(v ? enIdioma(v, en) : '')}"${(v || ORDEN_DEFECTO) === ordenBase ? ' checked' : ''}>
+        <span><span class="op-t">${label}</span><small>${esc(ayuda)}</small></span></label>`;
+  const ordenBloque = conOrden ? `<fieldset class="hoja-orden"><legend>${esc(S.sortBy)}</legend>
+      ${radioOrden('', `${esc(S.sortRec)} <small class="op-serie">· ${esc(S.sortDefault)}</small>`, S.recLine)}
+      <div class="orden-casillas">
+        <label class="op-r op-casilla"><input type="checkbox" name="${K.weather}" value="1" data-no-restablecer${tiempoOff ? '' : ' checked'}><span>${esc(S.byWeather)}</span></label>
+        <input type="hidden" name="${K.weather}" value="0">
+        <p class="hoja-nota">${esc(S.weatherLine)} ${esc(S.weatherData)} <a href="${FUENTE_TIEMPO.url}" rel="noopener" target="_blank">${FUENTE_TIEMPO.nombre}</a></p>
+        <label class="op-r op-casilla"><input type="checkbox" name="${K.notastes}" value="0" data-no-restablecer${e.sinGustos ? '' : ' checked'}><span>${esc(S.useTastes)}</span></label>
+        <input type="hidden" name="${K.notastes}" value="1">
+        <p class="hoja-nota"><a href="${esc(gustosHref)}">${esc(S.changeTastes)}</a></p>
+      </div>
+      ${radioOrden('nearest', esc(S.sortNearest), S.sortNearestHint)}
+      ${radioOrden('soonest', esc(S.sortSoonest), S.sortSoonestHint)}
+      ${radioOrden('newest', esc(S.sortNewest), S.sortNewestHint)}
+    </fieldset>` : '';
   const hojaFiltros = hojaDe({
     id: 'filtros',
     summary: `<summary class="chip chip-filtros${nFiltros ? ' on' : ''}" aria-label="${esc(nFiltros ? `${S.filtersN(nFiltros)}: ${resumen.replace(/ · /g, ', ')}` : S.filters)}">${ic('tune', 18)}${nFiltros ? `<span class="n" aria-hidden="true">${nFiltros}</span>` : ''}</summary>`,
     titulo: S.filters, resetTxt: S.reset, reset: restablecer,
     // En Sitios, «Con niños» es de Planes: pasa de largo.
     ocultos: ocultosMenos(propiasFiltros, (k, v) => negocios && k === K.place && v === ninosUrl),
-    cuerpo: `${precioBloque}${paraQuien}${comoBloque}${dietasBloque}${masBloque}
-      <p class="hoja-nota hoja-no-aqui">${esc(S.notHereNote)}</p>`,
+    cuerpo: `${ordenBloque}${precioBloque}${paraQuien}${comoBloque}${dietasBloque}${masBloque}`,
   });
 
-  // ── El orden: «Recomendado» (de serie), explicado paso a paso, y tres
-  // órdenes sencillos; debajo, «Según el tiempo» y «Tener en cuenta tus
-  // gustos», que solo valen con «Recomendado». Solo en Descubre y en la lista
-  // de Planes: el calendario y Sitios lo llevan en la cabecera de su lista; el
-  // mapa, ninguno. Cuando el tiempo reordena hoy, el chip lleva ☂/☀ y va
-  // justo detrás de ☰ (sin aviso aparte encima de la publicación).
-  const ordenTxt = { recommended: S.sortRec, nearest: S.sortNearest, soonest: S.sortSoonest, newest: S.sortNewest };
   // «Más cerca» sin tu posición ni una ciudad: va por hora y lo dice
   // (`avisoCerca`), con el botón para dar la ubicación.
   const sinDondeCerca = ordenBase === 'nearest' && !cerca && !centroCiudad;
-  const ordenActual = sinDondeCerca ? 'soonest' : ordenBase;
-  const tiempoOn = Boolean(tiempo) && enLista && recomendado;
-  const casillaOrden = (href, label, on) => opcion(href, label, on, '<span class="op-check" aria-hidden="true"></span>');
-  const gustosHref = `${en ? '/app/?lang=en' : '/app/'}#/gustos`;
-  const ordenMenu = negocios || mapa || calendario ? '' : desplegable('', S.sortBy, ordenTxt[ordenActual], false,
-    `<a class="op op-h${recomendado ? ' on' : ''}" href="${esc(link({ sort: '' }))}"${recomendado ? ' aria-current="true"' : ''}><span><span class="op-t">${esc(S.sortRec)} <small>· ${esc(S.sortDefault)}</small></span>
-       <ol class="menu-pasos">${S.recSteps.map((x) => `<li>${esc(x)}</li>`).join('')}</ol></span></a>
-     ${cerca || centroCiudad
-      ? opcion(link({ sort: 'nearest' }), S.sortNearest, ordenActual === 'nearest', '', S.sortNearestHint)
-      : botonCerca(S.sortNearest, `${K.sort}=${enIdioma('nearest', en)}`).replace(ic('cerca', 16), '')}
-     ${opcion(link({ sort: 'soonest' }), S.sortSoonest, ordenActual === 'soonest', '', S.sortSoonestHint)}
-     ${opcion(link({ sort: 'newest' }), S.sortNewest, ordenActual === 'newest', '', S.sortNewestHint)}
-     <hr class="menu-sep">
-     ${casillaOrden(link({ tiempoOff: !tiempoOff }), S.byWeather, !tiempoOff)}
-     <p class="menu-nota">${esc(S.byWeatherHint)} ${esc(S.weatherData)} <a href="${FUENTE_TIEMPO.url}" rel="noopener" target="_blank">${FUENTE_TIEMPO.nombre}</a></p>
-     ${casillaOrden(link({ sinGustos: !e.sinGustos }), S.useTastes, !e.sinGustos)}
-     <p class="menu-nota"><a href="${esc(gustosHref)}">${esc(S.changeTastes)}</a> · ${esc(S.onlyRec)}</p>`,
-    { cls: ' orden', etiqueta: `${S.sortBy}: ${ordenTxt[ordenActual]}${tiempoOn ? ` (${(tiempo === 'rain' ? S.sortRain : S.sortSun).toLowerCase()})` : ''}` })
-    .replace('<span class="chip-t">', tiempoOn ? `${icTiempo(tiempo, 16)}<span class="chip-t">` : `${ic('orden', 16)}<span class="chip-t">`);
   // El orden de la lista de un día del calendario: «Por hora» o «Más cerca».
   const ordenCal = calendario ? desplegable('orden', S.sortBy, sort === 'nearest' ? S.sortNearest : S.byTime, false,
     `${opcion(link({ sort: '' }), S.byTime, sort !== 'nearest')}
@@ -1765,14 +1769,14 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
     traits: filtros.traits || [],
     cats: (todasCats || []).filter((c) => catsSel.includes(c.slug)).map((c) => c.id),
   }) : '';
-  const barra = `<div class="barra-filtros" id="barra"${descubre ? ' data-amigos-resultados="#feed"' : ''}${amigosFiltros ? ` data-amigos-params="${esc(amigosFiltros)}"` : ''}>
+  const barra = `<div class="barra-filtros fila-fija" id="barra"${descubre ? ' data-amigos-resultados="#feed"' : ''}${amigosFiltros ? ` data-amigos-params="${esc(amigosFiltros)}"` : ''}>
+    <div class="barra-preg">
+      ${zonaMenu}
+      ${hojaCuando}
+      ${hojaQue}
+      <span data-amigos-hueco hidden></span>
+    </div>
     ${hojaFiltros}
-    <span data-amigos-hueco hidden></span>
-    ${tiempoOn ? ordenMenu : ''}
-    ${zonaMenu}
-    ${hojaCuando}
-    ${hojaQue}
-    ${tiempoOn ? '' : ordenMenu}
   </div>
   <p id="cercaErr" class="aviso-error" role="alert" hidden></p>
   <script src="/assets/categorias.js?v=6" defer></script>

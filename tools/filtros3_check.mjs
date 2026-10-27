@@ -1,15 +1,19 @@
 // Filtros en tres preguntas (opción A de docs/PROPUESTA_FILTROS.md, aprobada
 // por Iván el 2026-10-26) en la web local, contra dev y solo leyendo:
-//  1. La fila: ☰ · ¿Dónde? · ¿Cuándo? · ¿Qué? · el orden, sin chips sueltos
-//     con ×; ☰ es solo el icono y dice en su etiqueta cuántos lleva.
+//  1. La fila (Iván, 2026-10-27): ¿Dónde? · ¿Cuándo? · ¿Qué? y ☰ fijo a la
+//     derecha, la misma en Descubre, Planes (lista, calendario y mapa) y
+//     Sitios (lista y mapa); sin chips sueltos con × ni el orden; ☰ es solo
+//     el icono y dice en su etiqueta cuántos lleva. En 360 px, las tres
+//     preguntas y ☰ dentro de la pantalla.
 //  2. ¿Cuándo?: atajos (Ahora, a un paseo · Esta noche · Este finde), «El plan
 //     es…», «El sitio, ahora» y el momento del día; «Esta noche» lo pone y la
 //     píldora lo dice.
 //  3. «Este finde» en el calendario: solo cuentan de viernes a domingo.
-//  4. ¿Qué?: varias categorías (`?categoria=a&categoria=b`) y la píldora con
-//     las dos.
-//  5. El orden: «Recomendado» de serie, con sus pasos; «Lo más nuevo» lo
-//     cambia; en Sitios, «Mejor valorados» en la cabecera de la lista (desde el
+//  4. ¿Qué?: las categorías en una cuadrícula de iconos por grupos, varias
+//     (`?categoria=a&categoria=b`) y la píldora con las dos.
+//  5. El orden, dentro de ☰ y arriba: «Recomendado» de serie, con sus dos
+//     casillas; «Lo más nuevo» lo cambia y ☰ lo cuenta; «Restablecer» lo
+//     devuelve y no toca las casillas; en Sitios, «Mejor valorados» en la cabecera de la lista (desde el
 //     11-11-2026, `rated_sort_available()`; antes, ni sale ni ordena).
 //  6. ¿Dónde?: «Cerca de mí» | «Una ciudad», con «Todas las ciudades».
 //  7. Recordar: lo guardado vuelve; ¿Cuándo? no pasa de las 6:00 (tampoco
@@ -43,12 +47,18 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     const t = `[${nombre} ${forma}]`;
     const ir = (u) => page.goto(`${BASE}${u}`, { waitUntil: 'domcontentloaded' });
 
-    // 1. La fila.
+    // 1. La fila, la misma en todas las vistas.
+    const laFila = () => page.evaluate(() => [...document.querySelectorAll('#barra details')].filter((d) => !d.parentElement.closest('details'))
+      .map((d) => d.id || (/zona/.test(d.className) ? 'zona' : d.className)));
+    for (const u of [`/descubre/?${AQUI}`, `/explorar/?${AQUI}`, `/explorar/?vista=calendario&${AQUI}`, `/explorar/?vista=mapa&${AQUI}`,
+      `/explorar/?que=sitios&${AQUI}`, `/explorar/?que=sitios&vista=mapa&${AQUI}`]) {
+      await ir(u);
+      const fila = await laFila();
+      const donde = (u.match(/(vista|que)=[a-z]+/g) || []).join(' ');
+      ok(fila.join(',') === 'zona,cuando,que-hoja,filtros', `${t} ${u.split('?')[0]} ${donde}: dónde · cuándo · qué · ☰ (${fila.join(', ')})`);
+    }
     await ir(`/descubre/?${AQUI}`);
-    const fila = await page.evaluate(() => [...document.querySelectorAll('#barra > details')].map((d) => d.id || d.className));
-    ok(fila.length === 5 && fila.includes('filtros') && fila.includes('cuando') && fila.includes('que-hoja')
-      && fila.some((x) => /zona/.test(x)) && fila.some((x) => /orden/.test(x)), `${t} la fila: ☰ · dónde · cuándo · qué · orden (${fila.join(', ')})`);
-    ok(fila[0] === 'filtros', `${t} ☰ va el primero`);
+    ok(await page.locator('#barra .desplegable.orden').count() === 0, `${t} sin el orden en la fila`);
     ok(await page.locator('#barra .chip-quitar').count() === 0, `${t} sin chips sueltos con ×`);
     ok((await page.locator('#filtros > summary').innerText()).trim() === '' && await page.locator('#filtros > summary').getAttribute('aria-label') === 'Filtros', `${t} ☰: solo el icono, «Filtros» al lector`);
 
@@ -74,8 +84,11 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     // La hoja entra animada (Movimiento, 280 ms): como una persona, se toca
     // cuando ya está.
     await page.waitForTimeout(350);
-    const casillas = page.locator('#que-hoja input[type=checkbox][name=categoria]');
-    ok(await casillas.count() >= 2, `${t} ¿Qué?: las categorías son casillas`);
+    const casillas = page.locator('#que-hoja .cat-rejilla input[type=checkbox][name=categoria]');
+    ok(await casillas.count() >= 2, `${t} ¿Qué?: las categorías son casillas en una cuadrícula`);
+    ok(await page.locator('#que-hoja .hoja-cats-grupo').count() >= 4 && await page.locator('#que-hoja .cat-celda svg').count() === await casillas.count()
+      && await page.locator('#que-hoja [data-ver-todas]').count() === 0, `${t} ¿Qué?: por grupos, cada una con su icono y todas a la vista`);
+    await page.screenshot({ path: `${OUT}/filtros3-que-${nombre}-${forma}.png` });
     const nombres = [await casillas.nth(0).evaluate((i) => i.nextElementSibling.textContent), await casillas.nth(1).evaluate((i) => i.nextElementSibling.textContent)];
     await casillas.nth(0).check({ force: true });
     await casillas.nth(1).check({ force: true });
@@ -86,19 +99,39 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     ok(nombres.every((n) => pQue.includes(n.trim().slice(0, 6))) || /…/.test(pQue) || pQue.length > 10, `${t} ¿Qué? con dos categorías: «${pQue.trim()}»`);
     ok(new URL(page.url()).searchParams.getAll('categoria').length === 2, `${t} dos categorías en la dirección`);
 
-    // 5. El orden.
+    // 5. El orden, dentro de ☰ y arriba del todo.
     await ir(`/descubre/?${AQUI}`);
-    const orden = page.locator('#barra .desplegable.orden');
-    await orden.locator('summary').click();
-    const menu = await orden.locator('.menu-d').innerText();
-    ok(/Recomendado/.test(menu) && /de serie/.test(menu) && /Lo destacado de pago/.test(menu) && /Más cerca/.test(menu)
-      && /Empieza antes/.test(menu) && /Lo más nuevo/.test(menu) && /Según el tiempo/.test(menu) && /Tener en cuenta tus gustos/.test(menu), `${t} el menú de orden: Recomendado con sus pasos, tres órdenes y dos casillas`);
-    ok(/Recomendado/.test(await orden.locator('summary').innerText()), `${t} de serie, «Recomendado»`);
+    await page.locator('#filtros > summary').click();
+    await page.waitForTimeout(350);
+    const hoja = page.locator('#filtros form');
+    const primero = await hoja.locator('.hoja-scroll > *').first().evaluate((x) => x.className);
+    ok(/hoja-orden/.test(primero), `${t} ☰: «Ordenar por» arriba del todo (${primero})`);
+    const txtOrden = await hoja.locator('.hoja-orden').innerText();
+    ok(/Recomendado/.test(txtOrden) && /de serie/.test(txtOrden) && /Lo destacado de pago/.test(txtOrden) && /Más cerca/.test(txtOrden)
+      && /Empieza antes/.test(txtOrden) && /Lo más nuevo/.test(txtOrden) && /Según el tiempo/.test(txtOrden) && /Si llueve/.test(txtOrden)
+      && /Tener en cuenta tus gustos/.test(txtOrden), `${t} «Ordenar por»: Recomendado con sus dos casillas y tres órdenes`);
+    ok(await hoja.locator('input[name=orden][value=""]').isChecked(), `${t} de serie, «Recomendado»`);
+    ok(!/Lo que no está aquí/.test(await hoja.innerText()), `${t} ☰ sin «Lo que no está aquí»`);
     await page.screenshot({ path: `${OUT}/filtros3-orden-${nombre}-${forma}.png` });
-    await Promise.all([page.waitForURL(/orden=nuevas/), orden.locator('.menu-d a[href*="orden=nuevas"]').click()]);
-    ok(/Lo más nuevo/.test(await page.locator('#barra .desplegable.orden summary').innerText()), `${t} «Lo más nuevo» puesto`);
+    await hoja.locator('label.op-orden:has(input[value=nuevas])').click();
+    await page.waitForTimeout(900);
+    await Promise.all([page.waitForURL(/orden=nuevas/), hoja.locator('button[type=submit]').click()]);
+    ok(!/tiempo=|sin-gustos=/.test(page.url()), `${t} con las casillas encendidas, la dirección no las lleva (${page.url().split('?')[1]})`);
+    ok((await page.locator('#filtros > summary .n').innerText()) === '1' && /Ordenar por: Lo más nuevo/.test(await page.locator('#filtros > summary').getAttribute('aria-label')), `${t} ☰ cuenta el orden que no es el de serie`);
+    await page.locator('#filtros > summary').click();
+    await page.waitForTimeout(350);
+    await hoja.locator('input[name=tiempo][type=checkbox]').uncheck({ force: true });
+    await hoja.locator('[data-restablecer]').click();
+    ok(await hoja.locator('input[name=orden][value=""]').isChecked() && !(await hoja.locator('input[name=tiempo][type=checkbox]').isChecked())
+      && await hoja.locator('input[name=sin-gustos][type=checkbox]').isChecked(), `${t} «Restablecer» vuelve a Recomendado y no toca las casillas`);
+    await page.waitForTimeout(900);
+    await Promise.all([page.waitForURL(/tiempo=0/), hoja.locator('button[type=submit]').click()]);
+    ok(!/orden=/.test(page.url()) && /tiempo=0/.test(page.url()), `${t} «Según el tiempo» apagado viaja en la dirección`);
+    for (const u of [`/explorar/?que=sitios&${AQUI}`, `/explorar/?vista=calendario&${AQUI}`, `/explorar/?vista=mapa&${AQUI}`]) {
+      await ir(u);
+      ok(await page.locator('#filtros .hoja-orden').count() === 0, `${t} ${u.match(/(vista|que)=[a-z]+/)[0]}: ☰ sin «Ordenar por»`);
+    }
     await ir(`/explorar/?que=sitios&${AQUI}`);
-    ok(await page.locator('#barra .desplegable.orden').count() === 0, `${t} Sitios: sin orden en la fila`);
     // «Mejor valorados» solo desde `rated_sort_available()` (11-11-2026, migración
     // 20261247100000): antes, ni el menú ni el orden aunque venga en la dirección.
     if (await page.locator('.resumen .desplegable.orden').count() === 0) {
@@ -148,6 +181,23 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     await page.screenshot({ path: `${OUT}/filtros3-en-${nombre}-${forma}.png` });
 
     ok(errores.length === 0, `${t} sin errores en la consola (${errores.slice(0, 3).join(' | ')})`);
+    await ctx.close();
+  }
+  // En un móvil de 360: las tres preguntas y ☰ dentro de la pantalla (☰ a la
+  // derecha), sin deslizar; con «Cerca de ti», el «dónde» dice solo «5 km».
+  {
+    const ctx = await nav.newContext({ viewport: { width: 360, height: 740 }, locale: 'es-ES' });
+    const page = await ctx.newPage();
+    for (const u of [`/descubre/?${AQUI}`, `/explorar/?${AQUI}`, `/explorar/?que=sitios&${AQUI}`, `/explorar/?cuando=esta-noche&categoria=bar&categoria=music&${AQUI}`]) {
+      await page.goto(`${BASE}${u}`, { waitUntil: 'domcontentloaded' });
+      const r = await page.evaluate(() => [...document.querySelectorAll('#barra summary.chip')].filter((x) => !x.closest('.hoja-cuerpo, .menu-d'))
+        .map((x) => { const b = x.getBoundingClientRect(); return { l: b.left, r: b.right, w: b.width }; }));
+      const dentro = r.length === 4 && r.every((b) => b.l >= 0 && b.r <= 360 && b.w >= 40);
+      ok(dentro && r[3].l > r[2].r, `[${nombre} 360] ${u.split('?')[0]}${u.includes('cuando') ? ' (con cuándo y qué)' : ''}: la fila cabe y ☰ va a la derecha (${r.map((b) => `${Math.round(b.l)}-${Math.round(b.r)}`).join(' ')})`);
+    }
+    await page.goto(`${BASE}/explorar/?${AQUI}`, { waitUntil: 'domcontentloaded' });
+    ok((await page.locator('#barra .desplegable.zona > summary').innerText()).trim() === '5 km', `[${nombre} 360] «dónde» corto: «5 km»`);
+    await page.screenshot({ path: `${OUT}/filtros3-360-${nombre}.png` });
     await ctx.close();
   }
   await nav.close();

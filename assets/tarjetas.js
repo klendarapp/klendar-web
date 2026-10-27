@@ -573,7 +573,9 @@
     Array.prototype.forEach.call(f.querySelectorAll('input[type=radio]'), function (r) { r.checked = r.value === ''; });
     // «Según el tiempo» no está en la hoja (va en el menú de orden): el
     // oculto que lo conserva no se toca.
-    Array.prototype.forEach.call(f.querySelectorAll('input[type=checkbox]'), function (c) { c.checked = false; });
+    // «Según el tiempo» y «Tener en cuenta tus gustos» (en ☰ › Ordenar por)
+    // son preferencias: se quedan como estén.
+    Array.prototype.forEach.call(f.querySelectorAll('input[type=checkbox]'), function (c) { if (!c.hasAttribute('data-no-restablecer')) c.checked = false; });
     f.dispatchEvent(new Event('change'));
   });
   // La hoja manda solo lo que tiene valor (sin `precio=&orden=` en la URL).
@@ -581,6 +583,12 @@
     f.addEventListener('submit', function () {
       Array.prototype.forEach.call(f.elements, function (el) {
         if (el.name && !el.value && (el.type !== 'radio' || el.checked)) el.disabled = true;
+      });
+      // «Según el tiempo» y «Tener en cuenta tus gustos» encendidos son lo de
+      // serie: ni la casilla ni su oculto de «apagado» van en la dirección.
+      Array.prototype.forEach.call(f.querySelectorAll('input[type=checkbox][data-no-restablecer]'), function (c) {
+        if (!c.checked) return;
+        Array.prototype.forEach.call(f.querySelectorAll('input[name="' + c.name + '"]'), function (x) { x.disabled = true; });
       });
     });
     // Un número que cambia entra con un fundido corto (Movimiento, site.css).

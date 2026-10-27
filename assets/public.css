@@ -1000,3 +1000,55 @@ details.hoja-bloque[open] > summary .ic { transform: rotate(180deg); }
 .hoja-atajos .ops { margin-bottom: 4px; }
 .resumen .desplegable a, .cal-lista-cab .desplegable a { text-decoration: none; font-size: inherit; }
 .resumen .desplegable, .cal-lista-cab .desplegable { align-self: center; }
+
+/* ══ La fila de filtros fija (Iván, 2026-10-27) ══════════════════════════
+   ¿Dónde? · ¿Cuándo? · ¿Qué? y ☰ a la derecha, igual en Descubre y en
+   Explorar y sin nada que salte de sitio. Las tres preguntas se encogen con
+   «…» (no se desliza la fila): en 360 px caben las tres y ☰ siempre. */
+.barra-filtros.fila-fija { flex-wrap: nowrap; overflow: visible; }
+@media (max-width: 640px) { .barra-filtros.fila-fija { overflow: visible; } }
+@media (max-width: 760px) { .pagina-feed .feed-cab .barra-filtros.fila-fija { overflow: visible; } }
+.fila-fija .barra-preg { display: flex; align-items: center; gap: 8px; flex: 1 1 auto; min-width: 0; }
+.fila-fija .barra-preg > .desplegable, .fila-fija .barra-preg > .hoja { flex: 0 1 auto; min-width: 0; }
+.fila-fija .barra-preg summary.chip { display: flex; max-width: 100%; min-width: 0; }
+.fila-fija .barra-preg .chip > .ic { flex: none; }
+.fila-fija .barra-preg .chip .chip-t { flex: 0 1 auto; min-width: 0; }
+.fila-fija > .hoja { flex: none; margin-left: auto; }
+@media (max-width: 399px) {
+  .fila-fija { gap: 6px; }
+  .fila-fija .barra-preg { gap: 6px; }
+  .fila-fija .barra-preg .chip { padding-left: 10px; padding-right: 10px; gap: 5px; }
+  /* Sin la flecha: el sitio es para el texto. */
+  .fila-fija .barra-preg .chip > .ic:last-child { display: none; }
+  .zona-larga { display: none; }
+}
+
+/* ☰ › «Ordenar por», arriba de la hoja (Descubre y la lista de Planes). */
+.hoja-orden { margin-bottom: 20px; }
+.op-orden { display: flex; gap: 12px; align-items: flex-start; padding: 10px 12px; margin: 0 0 8px; border-radius: 14px;
+  border: 1px solid var(--glass-border); background: var(--glass); cursor: pointer; }
+.op-orden input { flex: none; width: 18px; height: 18px; margin: 2px 0 0; accent-color: var(--ink); }
+.op-orden > span { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.op-orden .op-t { font-weight: 700; }
+.op-orden small { font-size: 12px; font-weight: 500; color: var(--ink-2); }
+.op-orden .op-serie { display: inline; font-size: inherit; font-weight: 500; }
+.op-orden:has(input:checked) { border-color: var(--ink); }
+.op-orden:has(input:focus-visible) { outline: 2px solid var(--ink); outline-offset: 2px; }
+.orden-casillas { margin: -2px 0 12px 30px; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+.pub .orden-casillas .hoja-nota { margin: 0 0 6px; }
+.orden-casillas .hoja-nota a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+
+/* ¿Qué? › Categorías: cuadrícula de iconos grandes por grupos, varias. */
+.hoja-cats-grupo legend { font-size: 13px; font-weight: 700; color: var(--ink-2); }
+.cat-rejilla { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+@media (min-width: 520px) { .cat-rejilla { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.cat-celda { position: relative; display: block; cursor: pointer; }
+.cat-celda input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
+.cat-celda-c { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 88px; height: 100%;
+  padding: 10px 6px; border-radius: 16px; border: 1px solid var(--glass-border); background: var(--glass); text-align: center;
+  font-size: 12.5px; font-weight: 600; line-height: 1.2; }
+.cat-celda-t { overflow-wrap: break-word; hyphens: manual; max-width: 100%; }
+.pub .hoja-cats-t { margin: 4px 0 10px; font-size: 14px; font-weight: 800; }
+.cat-celda input:checked + .cat-celda-c { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.cat-celda input:focus-visible + .cat-celda-c { outline: 2px solid var(--ink); outline-offset: 2px; }
+@media (prefers-reduced-motion: no-preference) { .cat-celda-c { transition: background-color .18s ease, color .18s ease, border-color .18s ease; } }
