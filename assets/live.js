@@ -59,6 +59,21 @@
 
   const base = en ? '/en' : '';
 
+  // La agenda pública sin foto lleva el mismo diseño que en Descubre y en la
+  // app (el color de su categoría y su icono: `arteDe`/`arteHtml` de
+  // /assets/tarjeta.js), no un hueco en blanco. Se pide solo si hace falta
+  // (la sección va debajo del titular; la portada no lo carga de entrada).
+  const cargar = (tag, attrs) => new Promise((listo) => {
+    const el = Object.assign(document.createElement(tag), attrs);
+    el.onload = listo; el.onerror = listo;
+    document.head.appendChild(el);
+  });
+  let tarjetaJs = null;
+  const conArte = () => tarjetaJs || (tarjetaJs = Promise.all([
+    cargar('link', { rel: 'stylesheet', href: '/assets/tarjeta.css?v=14' }),
+    globalThis.KlendarTarjeta ? null : cargar('script', { src: '/assets/tarjeta.js?v=18' }),
+  ]).then(() => globalThis.KlendarTarjeta || null));
+
   /** La zona de cada negocio (la agenda no trae coordenadas). */
   const zonas = async (ids) => {
     const unicos = [...new Set(ids.filter((id) => /^[0-9a-f-]{36}$/i.test(id || '')))];
@@ -76,12 +91,17 @@
     const items = await rpc('public_city_agenda', { p_city: ciudad, p_limit: MAX });
     if (!Array.isArray(items) || !items.length) return false;
     const tz = await zonas(items.slice(0, MAX).map((o) => o.business_id));
+    const KT = items.slice(0, MAX).some((o) => !foto(o.images)) ? await conArte() : null;
+    const sinFoto = (o) => {
+      const cat = KT && KT.arteDe(o);
+      return cat ? `<span class="ph" style="position:relative">${KT.arteHtml(cat)}</span>` : '<span class="ph">✦</span>';
+    };
 
     lista.innerHTML = items.slice(0, MAX).map((o) => {
       const img = foto(o.images);
       const tag = etiqueta(o.discount, o.price_cents, o.currency);
       return `<a class="tarjeta" href="${base}/o/${esc(o.id)}">
-        ${img ? `<img src="${esc(img)}" alt="" loading="lazy" decoding="async">` : '<span class="ph">✦</span>'}
+        ${img ? `<img src="${esc(img)}" alt="" loading="lazy" decoding="async">` : sinFoto(o)}
         <span class="tarjeta-cuerpo">
           <b>${esc(o.title)}</b>
           <span class="muted">${esc(o.business_name || '')}</span>
@@ -120,7 +140,9 @@
     const donde = document.getElementById('liveCity');
     if (donde) {
       if (ciudades.length > 1) {
-        donde.innerHTML = `<select id="liveSelect" aria-label="${en ? 'City' : 'Ciudad'}">`
+        // Como una píldora (el selector del sistema medía 20 px de alto y
+        // salía en claro también en oscuro); 44 px para el dedo.
+        donde.innerHTML = `<select id="liveSelect" aria-label="${en ? 'City' : 'Ciudad'}" style="font:700 15px/1.2 var(--display);color:var(--ink);background-color:var(--elevated);border:1px solid var(--glass-border);border-radius:999px;padding:0 12px;min-height:44px;margin-left:6px;vertical-align:middle;cursor:pointer;color-scheme:light dark;letter-spacing:0">`
           + ciudades.map((c) => `<option value="${esc(c.city)}">${esc(c.city)}</option>`).join('')
           + '</select>';
         document.getElementById('liveSelect').onchange = (e) => pintar(e.target.value);
