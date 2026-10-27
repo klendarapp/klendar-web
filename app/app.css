@@ -677,8 +677,9 @@ button.codigo.copiar .ms { font-size: 18px; color: var(--ink-2); letter-spacing:
 .pl-titulo h1 { margin: 0; }
 .pl-vistas .vista { display: inline-flex; align-items: center; padding: 8px 16px; min-height: 40px; border-radius: 999px; color: var(--ink-2); font-weight: 700; text-decoration: none; }
 .pl-vistas .vista.on { background: var(--ink); color: var(--surface); }
-.pl-cal { display: grid; gap: 18px 28px; grid-template-columns: minmax(0, 420px) minmax(0, 1fr); align-items: start; margin-top: 16px; }
-@media (max-width: 900px) { .pl-cal { grid-template-columns: 1fr; } }
+/* Una columna, como la app (el mes y debajo lo del día): en los 600 de
+   «Tu cuenta» no caben dos y lo del día quedaba en una tira de 110 px. */
+.pl-cal { display: grid; gap: 18px; grid-template-columns: minmax(0, 1fr); align-items: start; margin-top: 16px; }
 .pl-mes { background: var(--elevated); border: 1px solid var(--glass-border); border-radius: 28px; padding: 14px 12px 12px; }
 .pl-cab { display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; }
 .pl-cab h2 { margin: 0; text-align: center; font-size: 20px; }
