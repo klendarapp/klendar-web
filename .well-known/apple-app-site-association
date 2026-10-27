@@ -11,6 +11,7 @@
           { "/": "/amigo/*", "comment": "Enlace de amigo" },
           { "/": "/rp/*", "comment": "Enlace de un RRPP" },
           { "/": "/tv/enlazar/*", "comment": "Enlazar una tele del local (Poner en la tele)" },
+          { "/": "/partidos/*", "comment": "Dónde ver el partido: un partido (la notificación de un equipo), como en Android" },
           { "/": "/c/*", "comment": "QR de cliente (bonos)" },
           { "/": "/m/*", "comment": "Dar en el momento (QR del negocio) y QR de mesa (wifi, ofertas de hoy y carta)" },
           { "/": "/sorteo/*", "comment": "Sorteo (página y bases)" },
