@@ -195,9 +195,11 @@ async function panelBloqueado(nav, nombre, t, vp) {
   await foto('bloqueado-resumen');
   // Otra pantalla → al resumen.
   await p.goto(`${BASE}/panel/#/publicaciones`, { waitUntil: 'networkidle' });
+  await p.waitForTimeout(300);
   await p.waitForSelector('.aviso-parado');
   ok(/#\/resumen$/.test(p.url()), `${nombre}/${t} bloqueado: #/publicaciones vuelve al resumen (${p.url()})`);
   await p.goto(`${BASE}/panel/#/ficha`, { waitUntil: 'networkidle' });
+  await p.waitForTimeout(300);
   await p.waitForSelector('.aviso-parado');
   ok(/#\/resumen$/.test(p.url()), `${nombre}/${t} bloqueado: #/ficha vuelve al resumen`);
   // Las herramientas de la tanda D, también al resumen (revisión 2026-10-21).
