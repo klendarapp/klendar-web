@@ -169,8 +169,9 @@
    * El marcador del mapa, el mismo en Planes y en Sitios (GLOSARIO «El
    * mapa»; en la app, `_buildMarker`): un círculo de 30 px con borde blanco
    * y sombra suave; dentro, el logo o un icono sobre gris claro. El estado,
-   * en un anillo: coral si tiene planes (`planes`), ámbar con una oferta
-   * flash (`flash`) y sin anillo si hoy no tiene nada (`''`). Con [n] > 1,
+   * en un anillo con los colores de la identidad: coral solo si tiene una
+   * oferta (`oferta`, una oferta flash), en tinta (en oscuro, blanco) si
+   * tiene planes (`planes`) y sin anillo si hoy no tiene nada (`''`). Con [n] > 1,
    * la cifra en una insignia en la esquina. Debajo, su nombre (lo enseña
    * `nombres` si cabe).
    */
@@ -234,7 +235,8 @@
       const n = g.sitios.reduce((t, s) => t + s.items.length, 0);
       const el = document.createElement('button');
       el.type = 'button';
-      el.className = `grupo-marca${g.sitios.some((s) => c.anillo(s)) ? ' anillo-planes' : ''}`;
+      // En tinta; coral solo si dentro hay alguna oferta.
+      el.className = `grupo-marca${g.sitios.some((s) => c.anillo(s) === 'oferta') ? ' anillo-oferta' : ''}`;
       el.textContent = String(n > 999 ? '999+' : n);
       el.setAttribute('aria-label', c.burbuja(n));
       el.addEventListener('click', (e) => {
@@ -296,7 +298,7 @@
     /** Un sitio con un solo plan: su marcador y su tarjeta. */
     function uno(p) {
       const el = marcaEl({
-        logo: p.lg, local: Boolean(p.n), anillo: p.k === 'f' ? 'flash' : 'planes', n: 1, etiqueta: p.t, nombre: p.sn || p.b, prio: 1,
+        logo: p.lg, local: Boolean(p.n), anillo: p.k === 'f' ? 'oferta' : 'planes', n: 1, etiqueta: p.t, nombre: p.sn || p.b, prio: 1,
       });
       const a = document.createElement('a');
       a.className = 'pop';
@@ -375,7 +377,7 @@
 
     capa(m, {
       cara: (s) => { const p = principal(s); return { logo: p.lg, local: Boolean(p.n), nombre: p.sn || p.b }; },
-      anillo: (s) => (s.items.some((x) => x.k === 'f') ? 'flash' : 'planes'),
+      anillo: (s) => (s.items.some((x) => x.k === 'f') ? 'oferta' : 'planes'),
       uno,
       varios: abreSitio,
       etiqueta: (s, n) => `${principal(s).sn || principal(s).b}, ${T.planes(n)}`,

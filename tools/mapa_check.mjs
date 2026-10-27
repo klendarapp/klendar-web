@@ -92,6 +92,18 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
       const ns = await nombres();
       const pisan = ns.some((a, i) => ns.some((b, j) => j > i && a.l < b.r && b.l < a.r && a.t < b.b && b.t < a.b));
       ok(!pisan && ns.every((n) => n.h < 26), `${t} de cerca (zoom 16): ${ns.length} nombres, en una línea y sin pisarse`);
+      // 5c. Identidad: coral solo en lo de oferta. Un anillo coral por cada
+      // sitio con una oferta flash, como mucho; los demás, en tinta.
+      const colores = await page.evaluate(() => {
+        const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+        const hex = (h) => { const n = parseInt(h.replace('#', '').slice(0, 6), 16); return `rgb(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255})`; };
+        const coralEn = [...document.querySelectorAll('#mapa .marca .mc-cara, #mapa .grupo-marca')]
+          .filter((e) => getComputedStyle(e).boxShadow.includes(hex(accent)));
+        const ofertas = coralEn.every((e) => e.closest('.anillo-oferta'));
+        const flash = JSON.parse(document.getElementById('mapaPuntos').textContent).filter((p) => p.k === 'f').length;
+        return { coral: coralEn.length, ofertas, flash, ambar: [...document.querySelectorAll('#mapa .anillo-flash')].length };
+      });
+      ok(colores.ofertas && colores.coral <= colores.flash && colores.ambar === 0, `${t} coral solo en las ofertas (${JSON.stringify(colores)})`);
       // 4. Desde el 17, ni una burbuja (se separan solas al acercar).
       await page.evaluate(() => window.KlendarMapa.jumpTo({ zoom: 17.2 }));
       await quieto(page);
@@ -158,14 +170,15 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
         }, null, { timeout: 20000 }).then(() => true).catch(() => false);
         ok(capas, `${t} Sitios: el mapa sale`);
         // Los mismos marcadores que Planes: el círculo de 30 px (o la
-        // burbuja), con anillo coral solo los que tienen planes hoy.
+        // burbuja), con anillo en tinta los que tienen planes hoy (nunca
+        // coral: en Sitios no hay ofertas).
         const mismo = await page.waitForFunction(() => {
           const e = document.querySelector('#mapa-sitios .marca .mc-cara, #mapa-sitios .grupo-marca');
           if (!e) return null;
           const r = e.getBoundingClientRect();
-          return { tam: Math.round(Math.max(r.width, r.height)), coral: document.querySelectorAll('#mapa-sitios .marca.anillo-planes').length, sin: document.querySelectorAll('#mapa-sitios .marca:not(.anillo-planes)').length };
+          return { tam: Math.round(Math.max(r.width, r.height)), coral: document.querySelectorAll('#mapa-sitios .anillo-oferta').length, planes: document.querySelectorAll('#mapa-sitios .marca.anillo-planes').length, sin: document.querySelectorAll('#mapa-sitios .marca:not(.anillo-planes)').length };
         }, null, { timeout: 20000 }).then((h) => h.jsonValue()).catch(() => null);
-        ok(mismo && mismo.tam >= 28 && mismo.tam <= 34, `${t} Sitios: los marcadores de Planes (${JSON.stringify(mismo)})`);
+        ok(mismo && mismo.tam >= 28 && mismo.tam <= 34 && mismo.coral === 0, `${t} Sitios: los marcadores de Planes, sin coral (${JSON.stringify(mismo)})`);
         await page.waitForTimeout(1500);
         await page.screenshot({ path: `${OUT}/web-sitios-${nombre}-${forma}.png` });
       }

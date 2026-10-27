@@ -12,8 +12,8 @@
  *   ha cerrado no puede seguir diciendo «Abierto»).
  * - El mapa de Sitios (`#mapa-sitios`): todos los sitios del recuadro
  *   (`map_places`, sin sesión), otra vez al moverlo, con los marcadores de
- *   Planes (`KlendarAgrupa.capa`, GLOSARIO «El mapa»): anillo coral si
- *   tienen planes hoy (con su nombre de cerca), sin anillo si no. Tocar uno
+ *   Planes (`KlendarAgrupa.capa`, GLOSARIO «Aspecto › El mapa»): anillo en
+ *   tinta si tienen planes hoy (con su nombre de cerca), sin anillo si no. Tocar uno
  *   abre su tarjeta con el enlace a la ficha.
  */
 (function () {
@@ -308,7 +308,7 @@
       };
 
       // Los marcadores: el mismo sistema que Planes (assets/mapa.js,
-      // GLOSARIO «El mapa»): anillo coral si tiene planes hoy, sin anillo si
+      // GLOSARIO «Aspecto › El mapa»): anillo en tinta si tiene planes hoy, sin anillo si
       // no; la cifra, cuántos sitios. Los sin planes, con su icono (no se baja
       // un logo por cada uno) y sin nombre.
       const capa = KA.capa(m, {
