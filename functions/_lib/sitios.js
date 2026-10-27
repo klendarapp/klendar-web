@@ -110,7 +110,9 @@ export const SITIOS_CSS = `<style>
 /* Sin saltos al cambiar entre Planes y Sitios: la barra de desplazamiento
    siempre reserva su sitio (una página más corta no mueve nada). */
 html { scrollbar-gutter: stable; }
-.que-fila { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 4px 0 10px; }
+/* Con la letra grande del móvil (o en 320 px) «Lista · Mapa» baja a otra
+   línea, pegado a la derecha, en vez de salirse de la pantalla. */
+.que-fila { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 10px; margin: 4px 0 10px; }
 .que { display: inline-flex; padding: 4px; gap: 2px; border-radius: 999px; background: var(--soft); border: 1px solid var(--glass-border); }
 .que-fila .vistas { width: auto; }
 @media (max-width: 560px) {
