@@ -1035,14 +1035,38 @@ function sinDobleEnvio(caja) {
       if (ocupado) return;
       ocupado = true;
       const botones = [...form.querySelectorAll('button[type=submit], button:not([type])')];
+      // El que se ha pulsado se funde en la rueda (GLOSARIO, «Botón
+      // ocupado»: `.mov-ocupado`, sin cambiar de ancho).
+      const pulsado = e.submitter && botones.includes(e.submitter) ? e.submitter : botones[0];
       botones.forEach((b) => { b.disabled = true; });
+      pulsado?.classList.add('mov-ocupado');
+      pulsado?.setAttribute('aria-busy', 'true');
       try { await original.call(form, e); } finally {
         ocupado = false;
         botones.forEach((b) => { b.disabled = false; });
+        pulsado?.classList.remove('mov-ocupado');
+        pulsado?.removeAttribute('aria-busy');
       }
     };
   }
 }
+
+/** Marca un campo con error: borde y tiembla una vez (GLOSARIO, «Campo con
+ * error»; web `[aria-invalid]`, el temblor lo pone site.css). Si ya estaba
+ * marcado, vuelve a temblar. Se desmarca al escribir en él. */
+function marcaCampo(el) {
+  if (!el) return;
+  el.removeAttribute('aria-invalid');
+  void el.offsetWidth;
+  el.setAttribute('aria-invalid', 'true');
+  el.addEventListener('input', () => el.removeAttribute('aria-invalid'), { once: true });
+}
+// Lo que el propio navegador da por malo al enviar (obligatorio y vacío,
+// fuera de rango…) también se marca y tiembla, en las pantallas y en los
+// diálogos del panel; el aviso del navegador sigue saliendo.
+document.addEventListener('invalid', (e) => {
+  if (e.target instanceof HTMLElement && e.target.closest('#app, #modal')) marcaCampo(e.target);
+}, true);
 
 // Lo que no es de un empleado: solo propietario y encargados (como la app).
 // «Regalo de cumpleaños» no está: el personal lo ve, en solo lectura.
@@ -3520,14 +3544,19 @@ async function offerForm(v, id, kindDefault, desde = null) {
   const fmtProgramada = (iso) => KZ.fmt(iso, TZ, LOC(), { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
   // Un guardado a la vez: los botones de la barra se apagan mientras tanto.
   let ocupado = false;
-  const ocupa = async (trabajo) => {
+  const ocupa = async (trabajo, boton = $('#btnPublicar', v)) => {
     if (ocupado) return;
     ocupado = true;
     const botones = $$('#barraPub button', v);
     botones.forEach((b) => { b.disabled = true; });
+    // El botón que trabaja se funde en la rueda, del mismo ancho.
+    boton?.classList.add('mov-ocupado');
+    boton?.setAttribute('aria-busy', 'true');
     try { await trabajo(); } finally {
       ocupado = false;
       botones.forEach((b) => { b.disabled = false; });
+      boton?.classList.remove('mov-ocupado');
+      boton?.removeAttribute('aria-busy');
     }
   };
   const menu = $('#menuPub', v);
@@ -3554,7 +3583,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
   };
   $('#btnBorrador', v).onclick = (e) => ocupa(() => (programada && !enVivo
     ? guarda({ publicar: true, alas: programada })
-    : guarda({ publicar: false })));
+    : guarda({ publicar: false })), e.currentTarget);
   botonPub.onclick = (e) => {
     if (enVivo) { ocupa(() => guarda({ publicar: true })); return; }
     abreMenuPub(menu.hidden);
@@ -4753,7 +4782,12 @@ async function tarjetaForm(v, id) {
     const fallo = nombre.length < 2 ? 'bad_name' : premio.length < 3 ? 'bad_reward'
       : aplica === 'categories' && !cats.size ? 'no_categories'
       : aplica === 'offers' && !elegidas.length ? 'no_offers' : null;
-    if (fallo) { msg.textContent = errSellos(fallo); return; }
+    if (fallo) {
+      msg.textContent = errSellos(fallo);
+      const campo = fallo === 'bad_name' ? f.elements.name : fallo === 'bad_reward' ? f.elements.reward : null;
+      if (campo) { marcaCampo(campo); campo.focus(); }
+      return;
+    }
     const r = await rpc('save_stamp_card', {
       p_business: BIZ.id,
       p_card: c?.id || null,
