@@ -50,20 +50,24 @@ const PAGINAS = [
     /27 October 2026: How what people see is ordered \(section 2a\)[\s\S]*?It applies from 11 November 2026\./,
   ], [/The Business's rating, its fee or its number of publications don't affect the order/, /with “Soonest” as if they started six hours earlier/]],
   ['/privacidad/', 'Última actualización: 27 de octubre de 2026', [
-    /sin esconder nada \(solo con el orden «Recomendado», el de serie, en el que cuentan como si fueran dos días más nuevas; con «Más cerca», «Empieza antes» o «Lo más nuevo» no cuentan, y puedes apagarlo en el menú de orden con la casilla «Tener en cuenta tus gustos»\)/,
+    /sin esconder nada \(solo con el orden «Recomendado», el de serie, en el que cuentan como si fueran dos días más nuevas; con «Más cerca», «Empieza antes» o «Lo más nuevo» no cuentan, y puedes apagarlo en Filtros \(☰\) → «Ordenar por», con la casilla «Tener en cuenta tus gustos»\)/,
     /27 de octubre de 2026: Tus gustos: solo cuentan con el orden «Recomendado»/,
+    /Se apaga en Filtros \(☰\) → «Ordenar por» → «Según el tiempo»/,
+    /27 de octubre de 2026: Dónde se apagan «Según el tiempo» y «Tener en cuenta tus gustos»/,
   ], [/con «Más pronto» como si empezaran seis horas antes/]],
   ['/en/privacy/', 'Last updated: 27 October 2026', [
-    /without hiding anything \(only with the “Recommended” order, the default one, where they count as if they were two days newer; with “Nearest”, “Starts soonest” or “Newest” they don't count, and you can turn this off in the sort menu with the “Take your interests into account” box\)/,
+    /without hiding anything \(only with the “Recommended” order, the default one, where they count as if they were two days newer; with “Nearest”, “Starts soonest” or “Newest” they don't count, and you can turn this off in Filters \(☰\) → “Sort by”, with the “Take your interests into account” box\)/,
     /27 October 2026: Your interests: they only count with the “Recommended” order/,
-  ], [/with “Soonest” as if they started six hours earlier/]],
+    /Turn it off in Filters \(☰\) → “Sort by” → “Based on the weather”/,
+    /27 October 2026: Where to turn off “Based on the weather”/,
+  ], [/with “Soonest” as if they started six hours earlier/, /Turn it off in the sort menu/]],
   ['/preguntas/', '¿Por qué veo unas cosas y no otras?', [
-    /Lo destacado de pago sale primero y siempre con la etiqueta «Destacado»\. Después, el orden que elijas en el menú de orden \(al final de la fila de filtros\)\. De serie es «Recomendado»/,
+    /Lo destacado de pago sale primero y siempre con la etiqueta «Destacado»\. Después, el orden que elijas en Filtros \(☰\), arriba del todo: «Ordenar por»\. De serie es «Recomendado»/,
     /También puedes elegir «Más cerca», «Empieza antes» o «Lo más nuevo»\. En la agenda, la lista del día va por hora o por cercanía, y en Sitios, por cercanía o por la mejor valoración\./,
     /Lo que se ve lo deciden las preguntas de arriba \(¿Dónde\?, ¿Cuándo\?, ¿Qué\?\) y Filtros\./,
   ], [/Por cercanía, por lo que empieza pronto y por tus favoritos\./]],
   ['/en/faq/', 'Why do I see some things and not others?', [
-    /Paid featured placements come first and always carry the “Featured” label\. After that, the order you choose in the sort menu \(at the end of the filters row\)\. By default it's “Recommended”/,
+    /Paid featured placements come first and always carry the “Featured” label\. After that, the order you choose in Filters \(☰\), at the very top: “Sort by”\. By default it's “Recommended”/,
     /You can also choose “Nearest”, “Starts soonest” or “Newest”\. In the agenda, a day's list goes by time or by distance, and in Places, by distance or by best rating\./,
   ], [/Because of how close they are, what starts soon and your favourites\./]],
 ];

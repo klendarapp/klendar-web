@@ -1,5 +1,5 @@
 {
- "version": "a3ff10d3b508",
+ "version": "c4efbafa338e",
  "contact": "info@klendar.app",
  "tabs": {
   "es": {
@@ -149,7 +149,7 @@
     "q": "¿Por qué veo unas cosas y no otras?",
     "a": [
      {
-      "t": "Lo destacado de pago sale primero y siempre con la etiqueta «Destacado». Después, el orden que elijas en el menú de orden (al final de la fila de filtros). De serie es «Recomendado»: lo más nuevo cerca y, si dejas encendidas sus casillas, con lluvia lo de hoy bajo techo antes y con buen tiempo las terrazas y el aire libre, y lo de tus gustos (Ajustes → Lo que ves) un poco antes, sin esconder nada. También puedes elegir «Más cerca», «Empieza antes» o «Lo más nuevo». En la agenda, la lista del día va por hora o por cercanía, y en Sitios, por cercanía o por la mejor valoración. La agenda pública de tu ayuntamiento sale intercalada: como mucho una de cada cinco. Lo que se ve lo deciden las preguntas de arriba (¿Dónde?, ¿Cuándo?, ¿Qué?) y Filtros. Si cerca no hay nada, la app te sugiere cosas según tus últimas búsquedas y las categorías que más miras, que se guardan en tu móvil. No usamos datos de otras webs. En cada ficha hay un «¿Por qué ves esto?» que lo explica."
+      "t": "Lo destacado de pago sale primero y siempre con la etiqueta «Destacado». Después, el orden que elijas en Filtros (☰), arriba del todo: «Ordenar por». De serie es «Recomendado»: lo más nuevo cerca y, si dejas encendidas sus casillas, con lluvia lo de hoy bajo techo antes y con buen tiempo las terrazas y el aire libre, y lo de tus gustos (Ajustes → Lo que ves) un poco antes, sin esconder nada. También puedes elegir «Más cerca», «Empieza antes» o «Lo más nuevo». En la agenda, la lista del día va por hora o por cercanía, y en Sitios, por cercanía o por la mejor valoración. La agenda pública de tu ayuntamiento sale intercalada: como mucho una de cada cinco. Lo que se ve lo deciden las preguntas de arriba (¿Dónde?, ¿Cuándo?, ¿Qué?) y Filtros. Si cerca no hay nada, la app te sugiere cosas según tus últimas búsquedas y las categorías que más miras, que se guardan en tu móvil. No usamos datos de otras webs. En cada ficha hay un «¿Por qué ves esto?» que lo explica."
      }
     ]
    },
@@ -713,7 +713,7 @@
     "q": "Why do I see some things and not others?",
     "a": [
      {
-      "t": "Paid featured placements come first and always carry the “Featured” label. After that, the order you choose in the sort menu (at the end of the filters row). By default it's “Recommended”: the newest nearby and, if you leave its boxes ticked, today's indoor plans first when it rains and terraces and outdoor plans when it's nice, and what you like (Settings → What you see) a little earlier, without hiding anything. You can also choose “Nearest”, “Starts soonest” or “Newest”. In the agenda, a day's list goes by time or by distance, and in Places, by distance or by best rating. Your council's public listings are interleaved: at most one in five. What you see is decided by the questions at the top (Where?, When?, What?) and Filters. If there's nothing nearby, the app suggests things based on your recent searches and the categories you look at most, which are stored on your phone. We don't use data from other sites. Each publication has a “Why are you seeing this?” that explains it."
+      "t": "Paid featured placements come first and always carry the “Featured” label. After that, the order you choose in Filters (☰), at the very top: “Sort by”. By default it's “Recommended”: the newest nearby and, if you leave its boxes ticked, today's indoor plans first when it rains and terraces and outdoor plans when it's nice, and what you like (Settings → What you see) a little earlier, without hiding anything. You can also choose “Nearest”, “Starts soonest” or “Newest”. In the agenda, a day's list goes by time or by distance, and in Places, by distance or by best rating. Your council's public listings are interleaved: at most one in five. What you see is decided by the questions at the top (Where?, When?, What?) and Filters. If there's nothing nearby, the app suggests things based on your recent searches and the categories you look at most, which are stored on your phone. We don't use data from other sites. Each publication has a “Why are you seeing this?” that explains it."
      }
     ]
    },
