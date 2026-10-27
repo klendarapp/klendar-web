@@ -108,20 +108,22 @@ nav.main a:hover { background: var(--soft); text-decoration: none; }
   nav.main .lang a { padding: 8px 14px; border-radius: 0; }
 }
 
-/* La barra de abajo del móvil: las mismas cuatro pestañas, como la app. */
+/* La barra de abajo del móvil: las mismas cuatro pestañas y el mismo
+   tamaño que la app (compacta, como las de iOS y las apps modernas: 52 de
+   alto más la zona segura, icono de 24 y el nombre a 2 px debajo, sin la
+   píldora detrás del icono elegido). Cada pestaña se toca en 52 de alto. */
 .tabbar { display: none; }
 @media (max-width: 760px) {
   .pestanas { display: none; }
   .tabbar { display: grid; grid-template-columns: repeat(4, 1fr); position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
-    padding: 6px 4px calc(6px + env(safe-area-inset-bottom)); background: color-mix(in srgb, var(--elevated) 92%, transparent);
+    padding: 0 4px env(safe-area-inset-bottom); background: color-mix(in srgb, var(--elevated) 92%, transparent);
     backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border-top: 1px solid var(--glass-border); }
-  .tab { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 2px; min-height: 52px; border-radius: 14px;
-    color: var(--ink-2); font-size: 12px; font-weight: 700; line-height: 1.2; text-align: center; -webkit-tap-highlight-color: transparent; }
+  .tab { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 4px 2px; min-height: 52px;
+    color: var(--ink-2); font-size: 11px; font-weight: 600; line-height: 1.2; letter-spacing: 0; text-align: center; -webkit-tap-highlight-color: transparent; }
   .tab:hover { text-decoration: none; color: var(--ink); }
   .tab svg { width: 24px; height: 24px; }
   .tab[aria-current="page"] { color: var(--ink); font-weight: 800; }
-  .tab[aria-current="page"] svg { background: var(--soft); border-radius: 999px; padding: 2px 14px; width: 54px; height: 28px; box-sizing: border-box; }
-  body:has(> .tabbar) { padding-bottom: calc(66px + env(safe-area-inset-bottom)); }
+  body:has(> .tabbar) { padding-bottom: calc(53px + env(safe-area-inset-bottom)); }
   /* En una ficha, cuando sale la barra con el botón principal, ocupa el
      sitio de las pestañas (como una pantalla de detalle en la app). */
   body.con-barra-accion .tabbar { display: none; }
