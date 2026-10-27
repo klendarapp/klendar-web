@@ -151,7 +151,7 @@ async function cuentaDenunciar(nav, nombre, t, vp) {
   await p.goto(`${BASE}/app/#/denunciar/question_answer/${Q(1)}`, { waitUntil: 'networkidle' });
   await p.waitForSelector('#f');
   ok(/Denunciar una respuesta/.test(await p.locator('#view h1').innerText()), `${nombre}/${t} Denunciar una respuesta`);
-  await p.locator('input[name=motivo][value=misleading]').check({ force: true });
+  await p.locator('input[name=motivo][value=inappropriate]').check({ force: true });
   await p.click('#enviar');
   await p.waitForTimeout(800);
   const l = estado.llamadas.find(([fn]) => fn === 'report_target');
