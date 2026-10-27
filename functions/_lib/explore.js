@@ -1224,7 +1224,9 @@ export async function explorePage(url, lang, modo = 'explorar') {
       : negocios
         ? await rows('cities', 'select=id,name,lat,lng').then((ck) => rpc('public_places', { ...argsSitios(centroDe(ck)), p_limit: 1, p_offset: 0 }))
           .then((r) => (typeof r?.total === 'number' ? r.total : null)).catch(() => null)
-        : await rpc('public_explore', { ...argsExplore, p_limit: 1, p_offset: 0 })
+        // También en el calendario con ¿Cuándo? (allí la lista va por días,
+        // pero el número es el de la app: lo que sale con esos filtros).
+        : await rpc('public_explore', { ...argsExplore, p_filters: { ...filtros, ...(when ? { when } : {}) }, p_limit: 1, p_offset: 0 })
           .then((r) => (typeof r?.total === 'number' ? r.total : null)).catch(() => null);
     return new Response(JSON.stringify({ total: n }), {
       headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'public, max-age=60, s-maxage=120', 'x-robots-tag': 'noindex' },
