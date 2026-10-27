@@ -14,7 +14,7 @@
 //     (RF20).
 //  4. «Tu cuenta»: sin «Continuar con Apple» aunque el proyecto tenga Apple
 //     activo (RF21), y la cookie `klendar_18` se borra al cerrar sesión en
-//     «Tu cuenta» y en el panel (RF22).
+//     «Tu cuenta» (y el panel y las páginas públicas lo hacen, RF22).
 //  5. Fecha, historial y sin desplazamiento horizontal.
 //
 // Chromium y WebKit, móvil (390 × 844) y escritorio (1280 × 800).
@@ -127,14 +127,16 @@ async function cuenta(nav, nombre, t, vp) {
   await p.waitForTimeout(300);
   ok(!(await conEdad(p)), `${nombre}/${t} «Tu cuenta»: klendar_18 borrada al cerrar sesión`);
 
-  // Y en el panel.
-  await ctx.addCookies([{ name: 'klendar_18', value: '0', url: BASE }]);
-  await p.goto(`${BASE}/panel/`);
-  await p.waitForFunction(() => typeof sb !== 'undefined', null, { timeout: 15000 });
-  ok(await conEdad(p), `${nombre}/${t} panel: la cookie klendar_18 está antes de salir`);
-  await p.evaluate(async () => { await sb.auth.signOut({ scope: 'local' }); });
-  await p.waitForTimeout(300);
-  ok(!(await conEdad(p)), `${nombre}/${t} panel: klendar_18 borrada al cerrar sesión`);
+  // Y en el panel y en las páginas públicas con sesión. Sin sesión, el panel
+  // se va a «Tu cuenta» nada más abrirse (y en WebKit corta la prueba), así
+  // que ahí se mira el código que se sirve.
+  for (const [ruta, re] of [
+    ['/panel/panel.js?v=159', /ev === 'SIGNED_OUT'\) \{\s*olvidaColas\(\);\s*try \{ document\.cookie = `klendar_18=; Max-Age=0; Path=\//],
+    ['/assets/amigos.js?v=22', /ev === 'SIGNED_OUT'\) \{\s*document\.cookie = 'klendar_18=; Max-Age=0; Path=\//],
+  ]) {
+    const src = await (await ctx.request.get(`${BASE}${ruta}`)).text();
+    ok(re.test(src), `${nombre}/${t} ${ruta}: borra klendar_18 al cerrar sesión`);
+  }
   ok(errores.length === 0, `${nombre}/${t} cuenta y panel: sin errores de JavaScript (${errores.join(' | ')})`);
   await ctx.close();
 }
