@@ -333,7 +333,7 @@ ${privada ? '' : `<meta property="og:url" content="${BASE}${esc(path)}">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 ${preconectar}<link rel="preload" href="/assets/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/site.css?v=20261027">
+<link rel="stylesheet" href="/assets/site.css?v=20261027b">
 <link rel="stylesheet" href="/assets/public.css?v=52">
 <link rel="stylesheet" href="/assets/tarjeta.css?v=12">
 ${cabeza}
@@ -344,7 +344,7 @@ ${siteHeader(lang, esc(es + consulta), esc(enPath + consulta), actual)}
 ${siteFooter(lang)}
 ${conAmigos ? `<script src="/assets/amigos.js?v=20" defer data-lang="${en ? 'en' : 'es'}"></script>
 ` : ''}${conVisor ? `<script src="/assets/tarjeta.js?v=16" defer></script>
-` : ''}${conTarjetas ? `<script src="/assets/tarjetas.js?v=17" defer></script>
+` : ''}${conTarjetas ? `<script src="/assets/tarjetas.js?v=18" defer></script>
 ` : ''}${/class="detail[" ]/.test(body) ? `<script src="/assets/barra.js?v=4" defer></script>
 ` : ''}${/^\/(en\/)?(o|b|coleccion|collection)\//.test(path) || /^\/(sorteo|en\/giveaway)\/[^/]+$/.test(path) ? desdeHistorias() : ''}${contador ? CONTADOR : ''}
 </body></html>`;

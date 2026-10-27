@@ -316,6 +316,24 @@ mark.tbd { background: rgba(255,184,77,.35); color: inherit; padding: 0 4px; bor
 .hoja-lugar { animation: mov-sube var(--mov-base) var(--mov-entra); }
 .mapboxgl-popup .pop-caja { animation: mov-crece var(--mov-base) var(--mov-entra); }
 
+/* La fila de filtros y sus hojas (☰, ¿Cuándo?, ¿Qué?, ¿Dónde?, el orden):
+   la hoja sube desde abajo en el móvil y crece en el centro en el escritorio;
+   el velo se funde; un bloque abierto despliega lo suyo; las opciones y los
+   chips bajan al pulsar; «Para quién · 2» y «Ver 24 resultados» cambian con
+   un fundido (`.mov-cambia`, /assets/tarjetas.js). */
+@keyframes mov-hoja-sube { from { opacity: 0; transform: translateY(24px); } }
+@keyframes mov-hoja-centro { from { opacity: 0; transform: translate(-50%, -50%) scale(.96); } }
+details.hoja[open] > .hoja-cuerpo { animation: mov-hoja-centro var(--mov-lento) var(--mov-entra); }
+@media (max-width: 640px) { details.hoja[open] > .hoja-cuerpo { animation-name: mov-hoja-sube; } }
+details.hoja[open] > summary::after, details.desplegable[open] > summary::after { animation: mov-funde var(--mov-base) var(--mov-entra); }
+details.desplegable[open] > .menu-d { animation: mov-crece var(--mov-base) var(--mov-entra); transform-origin: top left; }
+@media (max-width: 640px) { details.desplegable[open] > .menu-d { animation-name: mov-hoja-sube; } }
+details.hoja-bloque[open] > .hoja-bloque-c { animation: mov-sube var(--mov-base) var(--mov-entra); }
+details.hoja-bloque > summary .ic { transition: transform var(--mov-base) var(--mov-mueve); }
+.op-r span, .pub .op, summary.chip, .chip { transition: transform var(--mov-rapido) var(--mov-entra); }
+.op-r span:active, .pub .op:active, summary.chip:active, .chip:active { transform: scale(var(--mov-escala)); transition-duration: var(--mov-pulsar); }
+.mov-cambia { animation: mov-funde var(--mov-rapido) var(--mov-entra); }
+
 /* Las fichas de las listas: bajan un poco al pulsarlas (un 2 %: son grandes). */
 .ocard, .tj:not(.tj--pantalla) { transition: transform var(--mov-rapido) var(--mov-entra); }
 .ocard:active, .tj:not(.tj--pantalla):active { transform: scale(.98); transition-duration: var(--mov-pulsar); }
@@ -329,9 +347,11 @@ mark.tbd { background: rgba(255,184,77,.35); color: inherit; padding: 0 4px; bor
   .pill:hover, .pill:active { transform: none; }
   /* Lo de Movimiento, sin retrasos: aparece todo a la vez y quieto. */
   .mov-entra > *, .mov-llega, .mov-late, .tab[aria-current="page"] svg, .toast, .am-toast,
-  .hoja-lugar, .mapboxgl-popup .pop-caja,
+  .hoja-lugar, .mapboxgl-popup .pop-caja, details.hoja[open] > .hoja-cuerpo, details.hoja[open] > summary::after,
+  details.desplegable[open] > summary::after, details.desplegable[open] > .menu-d, details.hoja-bloque[open] > .hoja-bloque-c, .mov-cambia,
   .dialogo[open], .sorteo-dialogo[open], dialog.modal[open] { animation: none !important; }
-  .ocard:active, .tj:not(.tj--pantalla):active, .tab:active svg, .pestana:active svg { transform: none; }
+  .ocard:active, .tj:not(.tj--pantalla):active, .tab:active svg, .pestana:active svg,
+  .op-r span:active, .pub .op:active, summary.chip:active, .chip:active { transform: none; }
 }
 
 /* Acceso al panel del negocio: se distingue del resto del menú sin gritar. */

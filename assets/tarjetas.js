@@ -547,6 +547,12 @@
         if (el.name && !el.value && (el.type !== 'radio' || el.checked)) el.disabled = true;
       });
     });
+    // Un número que cambia entra con un fundido corto (Movimiento, site.css).
+    function relumbra(el) {
+      el.classList.remove('mov-cambia');
+      void el.offsetWidth;
+      el.classList.add('mov-cambia');
+    }
     // «Para quién · 1» en cada bloque y «Ver 24 resultados» al cambiar algo:
     // el número lo da la misma página (`?contar=1`), con lo que lleva marcado.
     var ver = f.querySelector('[data-ver-n]');
@@ -573,8 +579,10 @@
         }).length;
         var el = b.querySelector('[data-bloque-n]');
         if (!el) return;
+        var antes = el.hidden ? '' : el.textContent;
         el.hidden = n === 0;
         el.textContent = ' · ' + n;
+        if (n && antes !== el.textContent) relumbra(el);
       });
       if (!ver) return;
       clearTimeout(espera);
@@ -592,9 +600,11 @@
           .then(function (d) {
             if (este !== pedido) return;
             var n = d && typeof d.total === 'number' ? d.total : null;
+            var antes = ver.textContent;
             ver.textContent = n == null ? ver.getAttribute('data-sin')
               : n > 100 ? ver.getAttribute('data-muchos')
                 : n === 1 ? ver.getAttribute('data-uno') : ver.getAttribute('data-varios').replace('{n}', n);
+            if (antes !== ver.textContent) relumbra(ver);
           })
           .catch(function () { if (este === pedido) ver.textContent = ver.getAttribute('data-sin'); });
       }, 350);

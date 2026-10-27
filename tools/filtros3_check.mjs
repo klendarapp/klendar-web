@@ -70,6 +70,9 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     // 4. Varias categorías.
     await ir(`/explorar/?${AQUI}`);
     await page.locator('#que-hoja > summary').click();
+    // La hoja entra animada (Movimiento, 280 ms): como una persona, se toca
+    // cuando ya está.
+    await page.waitForTimeout(350);
     const casillas = page.locator('#que-hoja input[type=checkbox][name=categoria]');
     ok(await casillas.count() >= 2, `${t} ¿Qué?: las categorías son casillas`);
     const nombres = [await casillas.nth(0).evaluate((i) => i.nextElementSibling.textContent), await casillas.nth(1).evaluate((i) => i.nextElementSibling.textContent)];

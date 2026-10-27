@@ -130,6 +130,29 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
           ok(vivas.length === 0, `${tag} ${ruta}: sin animaciones con «Reducir movimiento» ${JSON.stringify(vivas)}`);
         }
       }
+      // La hoja de ☰ (segunda pasada, filtros en tres preguntas): sube en el
+      // móvil, crece en el escritorio; un bloque abierto despliega lo suyo.
+      await page.goto(`${BASE}/explorar/?lat=40.417&lng=-3.704`, { waitUntil: 'domcontentloaded' });
+      await page.locator('#filtros > summary').click();
+      await page.waitForTimeout(40);
+      const hoja = await page.evaluate(() => getComputedStyle(document.querySelector('#filtros > .hoja-cuerpo')).animationName);
+      const esperada = reducido ? 'none' : forma === 'movil' ? 'mov-hoja-sube' : 'mov-hoja-centro';
+      ok(hoja === esperada, `${tag} la hoja de ☰ se abre con ${hoja}`);
+      const bloque = page.locator('#filtros details.hoja-bloque:not([open]) > summary').first();
+      if (await bloque.count()) {
+        await bloque.click();
+        await page.waitForTimeout(40);
+        const b = await page.evaluate(() => {
+          const c = [...document.querySelectorAll('#filtros details.hoja-bloque[open] > .hoja-bloque-c')].pop();
+          return c ? getComputedStyle(c).animationName : 'sin bloque';
+        });
+        ok(b === (reducido ? 'none' : 'mov-sube'), `${tag} el bloque se despliega con ${b}`);
+      }
+      const anH = (await animaciones(page)).filter((a) => a.iter !== Infinity);
+      ok(anH.every((a) => a.props.every((x) => PERMITIDAS.has(x))), `${tag} hoja: solo transform y opacidad ${JSON.stringify(anH)}`);
+      if (reducido) ok(anH.every((a) => a.dur <= 1), `${tag} hoja: quieta con «Reducir movimiento»`);
+      await page.screenshot({ path: `${OUT}/mov-hoja-${nombre}-${forma}${reducido ? '-reducido' : ''}.png` });
+
       if (forma === 'movil') {
         // La pestaña elegida: su icono crece al llegar (sin reducir).
         const pop = await page.evaluate(() => getComputedStyle(document.querySelector('.tabbar .tab[aria-current="page"] svg') || document.body).animationName);
