@@ -1572,6 +1572,7 @@ KL_DIC('it', {
   "Imprimir en A4": "Stampa in A4",
   "Imprimir tamaño mesa": "Stampa formato tavolo",
   "Imprímelo en blanco y negro si quieres: el código se lee igual.": "Se vuoi, stampalo in bianco e nero: il codice si legge lo stesso.",
+  "Un folio para la puerta, la barra o el escaparate. Quien pase, apunta con la cámara del móvil y le sale tu publicación; si no tiene la app, la ve igual en la web.": "Un foglio per la porta, il bancone o la vetrina. Chi passa lo inquadra con la fotocamera del telefono e vede la tua pubblicazione; se non ha l’app, la vede lo stesso sul web.",
   "Imágenes": "Immagini",
   "Inauguración de la exposición": "Inaugurazione della mostra",
   "Incluye el ajuste del último cambio de plan o de locales.": "Include l’adeguamento dell’ultimo cambio di piano o di locali.",

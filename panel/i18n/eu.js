@@ -1572,6 +1572,7 @@ KL_DIC('eu', {
   "Imprimir en A4": "Inprimatu A4an",
   "Imprimir tamaño mesa": "Inprimatu mahai-tamainan",
   "Imprímelo en blanco y negro si quieres: el código se lee igual.": "Zuri-beltzean inprima dezakezu nahi baduzu: kodea berdin irakurtzen da.",
+  "Un folio para la puerta, la barra o el escaparate. Quien pase, apunta con la cámara del móvil y le sale tu publicación; si no tiene la app, la ve igual en la web.": "Orri bat atearako, barrarako edo erakusleihorako. Pasatzen denak mugikorreko kamerarekin enfokatzen du eta zure argitalpena agertzen zaio; aplikaziorik ez badu, webean ikusiko du berdin.",
   "Imágenes": "Irudiak",
   "Inauguración de la exposición": "Erakusketaren inaugurazioa",
   "Incluye el ajuste del último cambio de plan o de locales.": "Plan edo lokalen azken aldaketaren doikuntza barne.",

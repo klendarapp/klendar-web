@@ -1572,6 +1572,7 @@ KL_DIC('ca', {
   "Imprimir en A4": "Imprimeix en A4",
   "Imprimir tamaño mesa": "Imprimeix en mida taula",
   "Imprímelo en blanco y negro si quieres: el código se lee igual.": "Imprimeix-lo en blanc i negre si vols: el codi es llegeix igual.",
+  "Un folio para la puerta, la barra o el escaparate. Quien pase, apunta con la cámara del móvil y le sale tu publicación; si no tiene la app, la ve igual en la web.": "Un full per a la porta, la barra o l’aparador. Qui passi l’enfoca amb la càmera del mòbil i li surt la teva publicació; si no té l’app, la veu igual al web.",
   "Imágenes": "Imatges",
   "Inauguración de la exposición": "Inauguració de l'exposició",
   "Incluye el ajuste del último cambio de plan o de locales.": "Inclou l'ajust de l'últim canvi de pla o de locals.",

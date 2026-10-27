@@ -652,6 +652,7 @@ const I18N = makeI18N({
     "Este panel solo funciona por HTTPS": "This dashboard only works over HTTPS",
     "La del negocio": "The business's",
     "Imprímelo en blanco y negro si quieres: el código se lee igual.": "Print it in black and white if you like: the code scans just the same.",
+    "Un folio para la puerta, la barra o el escaparate. Quien pase, apunta con la cámara del móvil y le sale tu publicación; si no tiene la app, la ve igual en la web.": "A sheet for the door, the bar or the shop window. Anyone passing by points their phone camera at it and your publication appears; if they don’t have the app, they see it on the web just the same.",
     "No hemos podido cargar tu ficha.": "We couldn't load your business page.",
     "Escribe los tramos como «09:00-14:00, 17:00-21:00». Déjalo vacío el día que cierres.": "Write the times like “09:00-14:00, 17:00-21:00”. Leave it empty on days you're closed.",
     "Todavía no has escrito la carta.": "You haven't written your menu yet.",
