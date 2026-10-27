@@ -5728,7 +5728,7 @@ function planCard(sub) {
     ? (en ? `${usadas} active publication${usadas === 1 ? '' : 's'} · unlimited`
       : `${usadas} ${usadas === 1 ? 'publicación activa' : 'publicaciones activas'} · sin límite`)
     : (en ? `${usadas} of ${sub.max_active_offers} active publications` : `${usadas} de ${sub.max_active_offers} publicaciones activas`);
-  return `<div class="card"><h2>${ms('workspace_premium')} ${esc(en ? `${name} plan` : `Plan ${name}`)} ${etiqueta ? `<span class="tag ${esc(tono)}">${esc(etiqueta)}</span>` : ''}</h2>
+  return `<div class="card"><h2>${ms('workspace_premium')} ${esc(en ? `${name} plan` : `Plan ${name}`)} ${etiqueta ? `<span class="tag plan-tag ${esc(tono)}">${esc(etiqueta)}</span>` : ''}</h2>
     <p class="muted" style="margin:0 0 6px">${esc(frase)}</p>
     <p style="margin:0 0 12px">${esc(uso)}</p>
     <a class="btn sm" href="#/plan">${esc(bi('Ver tu plan', 'See your plan'))}</a></div>`;

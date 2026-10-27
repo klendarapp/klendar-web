@@ -229,7 +229,7 @@ PAGES.plan = async (v) => {
     ${new URLSearchParams(location.hash.split('?')[1] || '').get('pago') === 'ok' && !st
       ? `<div class="help"><b>${esc(bi('Pago hecho.', 'Payment done.'))}</b> ${esc(bi('En unos segundos verás aquí tu plan al día.', 'In a few seconds you’ll see your plan up to date here.'))}</div>` : ''}
     <div class="card plan-card">
-      <h2>${ms('workspace_premium')} ${esc(I18N.lang === 'en' ? `${nombre} plan` : `Plan ${nombre}`)} <span class="tag ${esc(tono)}">${esc(etiqueta)}</span></h2>
+      <h2>${ms('workspace_premium')} ${esc(I18N.lang === 'en' ? `${nombre} plan` : `Plan ${nombre}`)} ${etiqueta ? `<span class="tag plan-tag ${esc(tono)}">${esc(etiqueta)}</span>` : ''}</h2>
       <p class="muted" style="margin:0 0 10px">${esc(frase)}</p>
       ${pronto ? `<p class="plan-aviso" style="margin:0 0 10px"><b>${esc(pronto)}</b></p>` : ''}
       ${datos.length ? `<dl class="plan-datos">${datos.map(([k, x, id]) => `<dt>${esc(k)}</dt><dd${id ? ` id="${id}"` : ''}>${esc(x)}</dd>`).join('')}</dl>

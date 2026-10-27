@@ -1138,3 +1138,6 @@ input[type=file]::file-selector-button { font: inherit; font-weight: 700; color:
 /* En el móvil estrecho, «Empieza» y «Termina» uno debajo de otro: lado a
    lado no cabía la hora (salía «13/10/2026 11…»). */
 @media (max-width: 480px) { .pub-form #cuando .dos { grid-template-columns: minmax(0, 1fr); } }
+/* La insignia del plan (PRUEBA, PAGO PENDIENTE, BLOQUEADO…) es de estado, no
+   de oferta: en tinta, como en la app (`SelectedPill`), no en ámbar ni verde. */
+.tag.plan-tag { background: var(--ink); color: var(--surface); }
