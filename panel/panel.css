@@ -233,7 +233,7 @@
 label.f { font-size: 14px; color: var(--ink); gap: 6px; }
 label.f > span small, label.f small { color: var(--ink-2); font-weight: 500; }
 .form input:not([type=checkbox]):not([type=radio]):not([type=file]), .form select, .form textarea,
-.scan-box input, .toolbar input, .toolbar select, dialog.modal input:not([type=checkbox]), dialog.modal select, dialog.modal textarea {
+.scan-box input, .toolbar input, .toolbar select, dialog.modal input:not([type=checkbox]):not([type=file]), dialog.modal select, dialog.modal textarea {
   width: 100%; box-sizing: border-box; padding: 12px 14px; border-radius: 16px; font-size: 15px;
   border: 1px solid var(--glass-border); background: var(--glass); color: var(--ink); }
 .form input:focus, .form select:focus, .form textarea:focus, .scan-box input:focus,
@@ -1121,3 +1121,20 @@ details.plegable[open] > summary { margin-bottom: 12px; }
    alineado con lo demás, no centrado (docs/GLOSARIO.md de la app, «Aspecto»;
    centrado, solo `.vacio`, la pantalla vacía). Lo de admin.css lo centraba. */
 .empty { text-align: left; padding: 16px 18px; }
+
+/* Formularios (GLOSARIO «Aspecto»: campos a lo ancho de la columna, etiqueta
+   encima y ayuda debajo). «Menú del día» usaba los campos estrechos de
+   «Antes de cerrar» y sin aire entre ellos. */
+.menu-hoy { display: grid; gap: 12px; }
+.menu-hoy .f { max-width: 640px; }
+.menu-hoy .hint { margin: -6px 0 0; }
+/* «Elegir archivo» del navegador, con el aspecto de un botón del panel. */
+input[type=file] { padding: 0; border: 0; background: none; color: var(--ink-2); font-size: 14px; }
+input[type=file]::file-selector-button { font: inherit; font-weight: 700; color: var(--ink); background: var(--elevated);
+  border: 1px solid var(--glass-border); border-radius: 999px; padding: 8px 14px; margin-right: 10px; cursor: pointer; }
+/* «Dar en el momento»: «¿Qué das?» sin el marco gris del navegador. */
+.momento-form fieldset { border: 0; margin: 0; padding: 0; min-width: 0; display: grid; gap: 6px; }
+.momento-form legend { padding: 0; margin-bottom: 4px; font-size: 14px; font-weight: 600; color: var(--ink); }
+/* En el móvil estrecho, «Empieza» y «Termina» uno debajo de otro: lado a
+   lado no cabía la hora (salía «13/10/2026 11…»). */
+@media (max-width: 480px) { .pub-form #cuando .dos { grid-template-columns: minmax(0, 1fr); } }

@@ -119,7 +119,7 @@ PAGES['menu-del-dia'] = async (v) => {
       <button class="btn grande" type="button" id="repetir" ${s.can_publish ? '' : 'disabled'}>${esc(bi(`Repetir el de ayer (${precioAyer})`, `Repeat yesterday’s (${precioAyer})`))}</button>
       <p class="hint" style="text-align:center">${esc(bi('Mismo precio, misma foto y la misma línea, en un toque.', 'Same price, same photo and same line, in one tap.'))}</p>
     </div>` : ''}
-    <div class="card antes">
+    <div class="card antes menu-hoy">
       <label class="f"><span>${esc(bi('Foto de la pizarra (opcional)', 'Photo of the board (optional)'))}</span>
         <input type="file" accept="image/*" capture="environment" id="foto"></label>
       <div id="fotoVista"></div>
