@@ -126,7 +126,7 @@
       // Quién publica, si es una entidad (migración 20261130100000).
       entidad: { council: 'Ayuntamiento', district: 'Junta de distrito', merchants: 'Asociación de comerciantes',
         neighbours: 'Asociación vecinal', ngo: 'ONG', other: 'Entidad', public_agenda: 'Agenda pública' },
-      anterior: 'Foto anterior', siguiente: 'Foto siguiente', sonido: 'Sonido', play: 'Reproducir vídeo',
+      anterior: 'Foto anterior', siguiente: 'Foto siguiente', sonido: 'Activar sonido', silenciar: 'Silenciar', play: 'Reproducir vídeo',
       galeria: 'Fotos y vídeos', ampliar: 'Ver a pantalla completa', cerrar: 'Cerrar', denunciar: 'Denunciar',
       pieza: (video, i, n) => `${video ? 'Vídeo' : 'Foto'}${n > 1 ? ` ${i} de ${n}` : ''}`,
       // «Ver solo la foto» en Descubre (como `feedHideInfo`… en la app).
@@ -142,7 +142,7 @@
       organiza: (n) => `Organised by ${n}`, hoy: 'Today', manana: 'Tomorrow',
       entidad: { council: 'Council', district: 'District council', merchants: "Traders' association",
         neighbours: "Residents' association", ngo: 'NGO', other: 'Organisation', public_agenda: 'Public listings' },
-      anterior: 'Previous photo', siguiente: 'Next photo', sonido: 'Sound', play: 'Play video',
+      anterior: 'Previous photo', siguiente: 'Next photo', sonido: 'Turn sound on', silenciar: 'Mute', play: 'Play video',
       galeria: 'Photos and videos', ampliar: 'View full screen', cerrar: 'Close', denunciar: 'Report',
       pieza: (video, i, n) => `${video ? 'Video' : 'Photo'}${n > 1 ? ` ${i} of ${n}` : ''}`,
       ocultar: 'Hide the details', mostrar: 'Show the details',
@@ -417,7 +417,7 @@
       ${n > 1 && modo !== 'visor' ? `<span class="tj-puntos" aria-hidden="true">${piezas.map((_, i) => `<i${i === 0 ? ' class="on"' : ''}></i>`).join('')}</span>` : ''}
       ${n > 1 ? `<button type="button" class="tj-flecha tj-ant" data-galeria="-1" aria-label="${esc(S.anterior)}" hidden>${ic('izq', 22)}</button>
       <button type="button" class="tj-flecha tj-sig" data-galeria="1" aria-label="${esc(S.siguiente)}" hidden>${ic('flecha', 22)}</button>` : ''}
-      ${hayVideo ? `<button type="button" class="tj-sonido" aria-pressed="false" aria-label="${esc(S.sonido)}" title="${esc(S.sonido)}" hidden>${ic('mudo', 20)}${ic('sonido', 20)}</button>
+      ${hayVideo ? `<button type="button" class="tj-sonido" aria-label="${esc(S.sonido)}" title="${esc(S.sonido)}" data-on="${esc(S.silenciar)}" data-off="${esc(S.sonido)}" hidden>${ic('mudo', 20)}${ic('sonido', 20)}</button>
       <button type="button" class="tj-play" aria-label="${esc(S.play)}" hidden>${ic('play', 30)}</button>` : ''}
       ${modo === 'ficha' ? `<button type="button" class="tj-ampliar" data-visor-abre aria-label="${esc(S.ampliar)}" title="${esc(S.ampliar)}" hidden>${ic('ampliar', 22)}</button>
       ${n > 1 ? `<span class="sr tj-estado" aria-live="polite"></span>` : ''}` : ''}

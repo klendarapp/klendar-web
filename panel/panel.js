@@ -1461,12 +1461,13 @@ PAGES.resumen = async (v) => {
       <a class="btn sm ghost" href="${APP_URL}/b/${esc(BIZ.id)}" target="_blank" rel="noopener">Ver cómo se ve ↗</a></div>
     ${aviso}
     ${aviso ? '' : '<div id="festivoCaja"></div>'}
-    <!-- Crear y validar, en coral los dos e iguales (como «Crear» y
-         «Validar códigos» arriba del todo en «Mi negocio» de la app). Un
-         empleado no publica: solo «Validar códigos». -->
+    <!-- Crear y validar, iguales y uno al lado del otro (como «Mi negocio» en
+         la app), pero un solo coral por pantalla (Iván, 2026-10-28): «Crear»
+         en coral y «Validar códigos» en tinta. Un empleado no publica: solo
+         «Validar códigos», y en coral (es su botón principal). -->
     <div class="quick quick-2">
       ${gestiona() ? `<button class="primary" data-go="crear"><span class="ic ms" aria-hidden="true">create</span>Crear<small>Oferta flash, evento o novedad</small></button>` : ''}
-      <button class="primary" data-go="validar"><span class="ic ms" aria-hidden="true">qr_code_scanner</span>Validar códigos<small>Con la cámara o escribiendo el código</small></button>
+      <button class="${gestiona() ? 'tinta' : 'primary'}" data-go="validar"><span class="ic ms" aria-hidden="true">qr_code_scanner</span>Validar códigos<small>Con la cámara o escribiendo el código</small></button>
     </div>
     ${primeros ? `<div class="card primeros" style="margin-top:14px"><h2>Primeros pasos</h2>
       <p class="muted" style="margin:0 0 8px">Tres cosas y tu negocio está listo para que la gente lo encuentre.</p>

@@ -499,7 +499,7 @@ async function fichaOferta(id, lang, rpRaw, H) {
       ${over ? '' : '<div class="invita" id="invita" hidden></div>'}
       <dl>
         <div><dt>${flash ? S.redeem : S.when}</dt><dd>${esc(when)}${tz === KZ.CANARIAS ? ` <small class="muted">(${S.canary})</small>` : ''}</dd>
-          ${flash && !over && !soldOut && o.redeem_end_at ? `<dd id="cuenta" hidden style="color:var(--accent-text);font-weight:800" data-ini="${esc(o.redeem_start_at || '')}" data-fin="${esc(o.redeem_end_at)}"></dd>` : ''}</div>
+          ${flash && !over && !soldOut && o.redeem_end_at ? `<dd id="cuenta" hidden style="color:var(--accent-text);font-weight:600" data-ini="${esc(o.redeem_start_at || '')}" data-fin="${esc(o.redeem_end_at)}"></dd>` : ''}</div>
         ${where ? `<div><dt>${S.where}</dt><dd>${esc(where)}</dd></div>` : ''}
         ${o.seats_left != null && !soldOut ? `<div><dt>${S.seats}</dt><dd>${o.seats_left}${o.holds_seats === false ? ` · ${en ? 'first come, first served' : 'por orden de llegada'}` : ''}</dd></div>` : ''}
       </dl>
@@ -610,13 +610,15 @@ async function fichaOferta(id, lang, rpRaw, H) {
   // La vista cuenta para el negocio (panel e informe), como en la app. Solo
   // desde un navegador de verdad y una vez por sesión: los robots de Google o
   // de WhatsApp no ejecutan esto.
-  // La cuenta atrás, como en la app («Quedan 1 h 31 min»). Se calcula en el
+  // La cuenta atrás, como en la app («Quedan 1 h 31 min»): siempre en coral y
+  // la urgencia con la negrita (menos de 60 min, menos de 15). Se calcula en el
   // navegador: la página va en caché y una hora escrita aquí saldría vieja.
   const cuentaAtras = `<script>(function(){var el=document.getElementById('cuenta');if(!el)return;
 var ini=Date.parse(el.dataset.ini)||0,fin=Date.parse(el.dataset.fin);
 function dur(ms){var m=Math.floor(ms/60000);if(m>=1440)return Math.floor(m/1440)+' d';if(m>=60)return Math.floor(m/60)+' h'+(m%60?' '+(m%60)+' min':'');return Math.max(1,m)+' min';}
 function tic(){var n=Date.now();if(n>=fin){el.textContent=${JSON.stringify(S.over)};return;}
-el.textContent=n<ini?${JSON.stringify(en ? 'Starts in ' : 'Empieza en ')}+dur(ini-n):${en ? "dur(fin-n)+' left'" : "'Quedan '+dur(fin-n)"};el.hidden=false;setTimeout(tic,30000);}tic();})();</script>`;
+el.textContent=n<ini?${JSON.stringify(en ? 'Starts in ' : 'Empieza en ')}+dur(ini-n):${en ? "dur(fin-n)+' left'" : "'Quedan '+dur(fin-n)"};
+el.style.fontWeight=n<ini?600:fin-n<900e3?800:fin-n<3600e3?700:600;el.hidden=false;setTimeout(tic,30000);}tic();})();</script>`;
   const sp = supabasePublic();
   // Cuenta la visita para las estadísticas del negocio. Sin guardar nada en el
   // navegador (ni cookies ni sessionStorage): la base ya no cuenta dos veces a

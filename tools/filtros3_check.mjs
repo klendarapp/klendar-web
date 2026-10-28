@@ -151,7 +151,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
 
     // 6. ¿Dónde?
     await ir(`/descubre/?${AQUI}`);
-    await page.locator('#barra .desplegable.zona > summary').click();
+    await page.locator('#barra details.zona > summary').click();
     ok(await page.locator('[data-donde-modo="cerca"].on').isVisible() && await page.locator('[data-donde-sec="cerca"]').isVisible() && !(await page.locator('[data-donde-sec="ciudad"]').isVisible()), `${t} ¿Dónde?: «Cerca de mí» de entrada, con la distancia`);
     await page.locator('[data-donde-modo="ciudad"]').click();
     ok(/Todas las ciudades/.test(await page.locator('[data-donde-sec="ciudad"]').innerText()), `${t} ¿Dónde?: «Una ciudad» con «Todas las ciudades»`);
@@ -201,7 +201,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
       ok(dentro && r[3].l > r[2].r, `[${nombre} 360] ${u.split('?')[0]}${u.includes('cuando') ? ' (con cuándo y qué)' : ''}: la fila cabe y ☰ va a la derecha (${r.map((b) => `${Math.round(b.l)}-${Math.round(b.r)}`).join(' ')})`);
     }
     await page.goto(`${BASE}/explorar/?${AQUI}`, { waitUntil: 'domcontentloaded' });
-    ok((await page.locator('#barra .desplegable.zona > summary').innerText()).trim() === '5 km', `[${nombre} 360] «dónde» corto: «5 km»`);
+    ok((await page.locator('#barra details.zona > summary').innerText()).trim() === '5 km', `[${nombre} 360] «dónde» corto: «5 km»`);
     await page.screenshot({ path: `${OUT}/filtros3-360-${nombre}.png` });
     await ctx.close();
   }

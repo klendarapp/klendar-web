@@ -156,15 +156,15 @@ label.pill { cursor: pointer; }
 button.pill:disabled { opacity: .6; cursor: progress; }
 
 .badge-n { display: inline-grid; place-items: center; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px;
-  background: var(--accent); color: var(--on-accent); font-size: 12px; font-weight: 800; vertical-align: 2px; }
+  background: var(--ink); color: var(--surface); font-size: 12px; font-weight: 800; vertical-align: 2px; }
 .avisos { display: grid; gap: 10px; margin: 16px 0; }
 .aviso { display: grid; gap: 4px; padding: 14px 16px; border-radius: 16px; border: 1px solid var(--glass-border);
   background: var(--elevated); color: inherit; }
 a.aviso:hover { text-decoration: none; border-color: var(--ink-2); }
-/* Sin leer, como en la app: título más marcado y un punto coral (el borde sigue neutro). */
+/* Sin leer, como en la app: título más marcado y un punto en tinta (no es oferta). */
 .aviso.nuevo { position: relative; padding-right: 34px; }
 .aviso.nuevo > b { font-weight: 800; }
-.aviso.nuevo::after { content: ''; position: absolute; top: 20px; right: 16px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+.aviso.nuevo::after { content: ''; position: absolute; top: 20px; right: 16px; width: 8px; height: 8px; border-radius: 50%; background: var(--ink); }
 .aviso span { color: var(--ink-2); }
 .aviso.pausada { opacity: .7; }
 /* En la fila de un aviso, botones pequeños a su medida. */
@@ -179,7 +179,7 @@ a.aviso:hover { text-decoration: none; border-color: var(--ink-2); }
 /* Con .formu delante: «.formu label { font-size: 14px }» (más abajo) las dejaba
    diminutas. Las vacías en gris secundario: con el borde del cristal casi no se veían. */
 .formu .estrellas label, .estrellas label { font-size: 36px; line-height: 1; color: var(--ink-2); cursor: pointer; padding: 2px; }
-.estrellas input:checked ~ label, .estrellas label:hover, .estrellas label:hover ~ label { color: #FFB84D; }
+.estrellas input:checked ~ label, .estrellas label:hover, .estrellas label:hover ~ label { color: var(--ink); }
 .estrellas input:focus-visible + label { outline: 2px solid var(--ink); border-radius: 6px; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
@@ -622,6 +622,11 @@ button.codigo.copiar .ms { font-size: 18px; color: var(--ink-2); letter-spacing:
 .cola-tarjeta.llamado { border: 2px solid var(--ink); }
 .cola-toca-linea { font-weight: 800; font-size: 14px; }
 .ocard .ph .ms-svg { width: 30px; height: 30px; }
+/* Sin foto: el icono de tienda, como la app (antes «✦»). */
+.ocard .ph .ms { font-size: 30px; }
+/* Favoritos: las ofertas, en coral; los eventos, en tinta (como la app). */
+.fav-cuentas { font-weight: 600; color: var(--ink); }
+.fav-cuentas .fav-ofertas { color: var(--accent-text); }
 /* Te aviso cuando esté listo (app/listo.js): lo mismo que la cola; «Mientras
    esperas», discreto y debajo. */
 .cola-turno .listo-intro { font-size: 22px; line-height: 1.3; }

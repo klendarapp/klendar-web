@@ -161,8 +161,11 @@
   }
   function pintaSonido() {
     var on = sonidoGuardado();
+    // El altavoz dice lo que hace al pulsarlo (GLOSARIO, como la app):
+    // «Activar sonido» en silencio y «Silenciar» con sonido.
     document.querySelectorAll('.tj-sonido').forEach(function (b) {
-      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      var txt = b.getAttribute(on ? 'data-on' : 'data-off');
+      if (txt) { b.setAttribute('aria-label', txt); b.setAttribute('title', txt); }
       b.classList.toggle('on', on);
     });
   }
@@ -310,7 +313,12 @@
       var primera = !el.hasAttribute('data-original');
       if (primera) el.setAttribute('data-original', txt.textContent);
       if (n >= fin) { txt.textContent = EN ? 'Ended' : 'Terminada'; el.classList.remove('ahora'); el.classList.add('fin'); }
-      else if (n >= ini) { rodillo(txt, EN ? dur(fin - n) + ' left' : 'Quedan ' + dur(fin - n), primera); el.classList.add('ahora'); }
+      else if (n >= ini) {
+        rodillo(txt, EN ? dur(fin - n) + ' left' : 'Quedan ' + dur(fin - n), primera); el.classList.add('ahora');
+        // La urgencia, con la negrita (como la app): menos de 60 min, menos de 15.
+        el.classList.toggle('pronto', fin - n < 3600e3);
+        el.classList.toggle('urgente', fin - n < 900e3);
+      }
       // Antes de empezar, «Empieza en 3 h» (como la app).
       else if (ini) { rodillo(txt, EN ? 'Starts in ' + dur(ini - n) : 'Empieza en ' + dur(ini - n), primera); }
     });
@@ -530,7 +538,9 @@
     });
   });
   var aviso = document.querySelector('[data-cerca-aviso]');
-  if (aviso && navigator.geolocation) aviso.hidden = false;
+  // Con la pregunta de la edad a la vista, espera a que se conteste (un solo
+  // aviso a la vez; lo enseña el script de la edad).
+  if (aviso && navigator.geolocation && !aviso.hasAttribute('data-tras-edad')) aviso.hidden = false;
 
   // ¿Dónde?: «Cerca de mí» | «Una ciudad» (sin JavaScript se ven las dos
   // partes, una debajo de otra).

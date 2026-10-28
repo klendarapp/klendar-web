@@ -135,9 +135,9 @@ html { scrollbar-gutter: stable; }
 .sitio-cuerpo b { font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sitio-cuerpo .muted { font-size: 13px; }
 .sitio-hora { font-size: 13px; font-weight: 600; color: var(--ink-2); }
-.sitio-hora.abierto { color: #13803B; }
+.sitio-hora.abierto { color: var(--ink); }
 .sitio-festivo { font-size: 13px; font-weight: 600; color: var(--ink-2); }
-.sitio-festivo.sin-confirmar { color: #A15C00; }
+.sitio-festivo.sin-confirmar { color: var(--ink); }
 .pop-sitio { display: grid; gap: 3px; max-width: 260px; }
 .pop-sitio .pop-ver { font-weight: 700; margin-top: 4px; }
 .sitio-extra { display: flex; align-items: center; gap: 4px; font-size: 13px; min-width: 0; }
@@ -148,5 +148,4 @@ html { scrollbar-gutter: stable; }
 .sitios-fin { text-align: center; margin: 18px 0 8px; }
 .sitios-fin h2 { font-size: 17px; margin: 0 0 12px; }
 .chip-solo { display: inline-flex; align-items: center; gap: 6px; margin: 0 0 8px; }
-@media (prefers-color-scheme: dark) { .sitio-hora.abierto { color: #4ADE80; } .sitio-festivo.sin-confirmar { color: #FFB454; } }
 </style>`;

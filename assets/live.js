@@ -70,8 +70,8 @@
   });
   let tarjetaJs = null;
   const conArte = () => tarjetaJs || (tarjetaJs = Promise.all([
-    cargar('link', { rel: 'stylesheet', href: '/assets/tarjeta.css?v=14' }),
-    globalThis.KlendarTarjeta ? null : cargar('script', { src: '/assets/tarjeta.js?v=18' }),
+    cargar('link', { rel: 'stylesheet', href: '/assets/tarjeta.css?v=20261028rp' }),
+    globalThis.KlendarTarjeta ? null : cargar('script', { src: '/assets/tarjeta.js?v=20261028rp' }),
   ]).then(() => globalThis.KlendarTarjeta || null));
 
   /** La zona de cada negocio (la agenda no trae coordenadas). */

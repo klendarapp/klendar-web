@@ -39,6 +39,12 @@
 .quick button small { font-weight: 500; color: var(--ink-2); }
 .quick button.primary { background: var(--accent); color: var(--on-accent); border-color: transparent; }
 .quick button.primary small { color: rgba(10, 10, 10, .8); }
+/* El segundo botón fuerte, en tinta («Validar códigos» junto a «Crear»): un
+   solo coral por pantalla. Como `AppTheme.inkFilled` en la app. */
+.quick button.tinta { background: var(--ink); color: var(--surface); border-color: transparent; }
+.quick button.tinta .ic { color: inherit; }
+.quick button.tinta small { color: color-mix(in srgb, var(--surface) 80%, transparent); }
+.btn.tinta { background: var(--ink); color: var(--surface); border-color: transparent; }
 
 /* Formulario de publicación */
 .form-grid { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; }
@@ -309,7 +315,7 @@ table.tbl .actions { align-items: flex-start; }
 .primeros .paso .n { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; flex: none;
   background: var(--soft); font-weight: 800; }
 .primeros .paso.hecho { cursor: default; }
-.primeros .paso.hecho .n { background: #2ECC71; color: #fff; }
+.primeros .paso.hecho .n { background: var(--ink); color: var(--surface); }
 .primeros .paso.hecho b { text-decoration: line-through; color: var(--ink-2); }
 
 /* Plantillas del formulario de publicación */
@@ -372,8 +378,9 @@ details.mas .mas-menu .bad { color: #C62828; }
 .lugar #lugarCampos { margin-top: 8px; }
 .lugar #lugarCampos[hidden] { display: none !important; }
 
-.scan-result.warn { background: rgba(255,184,77,.18); color: #8a5200; }
-@media (prefers-color-scheme: dark) { .scan-result.warn { color: #FFD08A; } }
+/* Sin conexión o por comprobar: ni válido ni no válido, en tinta (el verde y
+   el rojo son solo para el resultado). */
+.scan-result.warn { background: var(--soft); color: var(--ink); box-shadow: inset 0 0 0 1px var(--glass-border); }
 .scan-result .btn { margin-top: 8px; }
 
 /* Tarjetas de sellos */
@@ -630,10 +637,10 @@ a.cal-dia { text-decoration: none; }
   background: var(--ink); color: var(--surface); font-size: 18px; font-weight: 800; }
 .cod-rrpp .ms { font-size: 22px; }
 .cod-rrpp small { display: block; font-size: 14px; font-weight: 600; opacity: .85; }
-/* Con carné: «Pide el carné de estudiante» en el escáner, bien visible (ámbar,
-   como un aviso; el coral es de la oferta). */
+/* Con carné: «Pide el carné de estudiante» en el escáner, bien visible (con
+   borde en tinta, como la app; sin ámbar). */
 .cod-carne { display: flex; align-items: center; gap: 10px; margin-top: 14px !important; padding: 12px 14px; border-radius: 16px;
-  border: 2px solid #E8A33D; background: color-mix(in srgb, #E8A33D 14%, transparent); font-size: 18px; }
+  border: 2px solid var(--ink); background: var(--soft); font-size: 18px; }
 .cod-carne .ms { font-size: 26px; }
 /* «Cómo es tu local»: el título del rango de precio. */
 .f-tit { margin: 0 0 8px; font-size: 14px; font-weight: 600; }
@@ -1014,7 +1021,7 @@ details.bloque .b-cuerpo { display: grid; gap: 14px; padding: 0 16px 16px; }
 .herr-btn:hover { text-decoration: none; border-color: var(--ink-2); }
 /* La línea de estado de cada herramienta y sus botones (dos, iguales). */
 .herr-estado { margin: 10px 0 0; font-weight: 700; display: flex; align-items: center; gap: 6px; }
-.herr-estado .ms { color: #2ECC71; font-size: 18px; }
+.herr-estado .ms { color: var(--ink); font-size: 18px; }
 .herr-off { width: 12px; height: 12px; margin: 0 3px; border-radius: 50%; border: 2px solid var(--ink-2); flex: none; }
 .herr-botones { display: grid; gap: 8px; margin-top: 12px; grid-template-columns: 1fr; }
 .herr-botones.n2 { grid-template-columns: 1fr 1fr; }
@@ -1100,7 +1107,7 @@ details.plegable[open] > summary { margin-bottom: 12px; }
 .momento-lista { list-style: none; padding: 0; margin: 0 auto 16px; max-width: 360px; text-align: left; }
 .momento-lista li { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
 .momento-lista li span:not(.ms) { flex: 1; }
-.momento-lista .ms { color: #1e9e57; }
+.momento-lista .ms { color: var(--ink); }
 
 /* «Estaba cerrado» (panel/cerrado.js). */
 .cerr-dos { display: grid; grid-template-columns: fit-content(100%); gap: 10px; margin-top: 14px; }
@@ -1180,3 +1187,11 @@ input[type=file]::file-selector-button { font: inherit; font-weight: 700; color:
 /* «Tus plantillas»: el menú a su ancho, sin salirse de la pantalla. */
 .tpl-menu .mas-menu { width: max-content; max-width: calc(100vw - 32px); box-sizing: border-box; }
 .tpl-menu .mas-menu button { white-space: normal; }
+/* Estados sin semáforo (Iván, 2026-10-28; GLOSARIO › Aspecto): «Activo», «A la
+   venta», «Abierta», «Enviado», «Rechazada»… en tinta; «En pausa», «En
+   revisión», «Pendiente»… en gris. Lo dice el texto. admin.css los pinta en
+   verde, ámbar y rojo (el admin sigue igual); aquí se pisan. */
+.tag.ok, .tag.bad, .tag.st-verified, .tag.st-resolved, .tag.st-approved, .tag.st-active, .tag.st-validated, .tag.st-sent,
+.tag.st-rejected, .tag.st-failed, .tag.st-banned { background: color-mix(in srgb, var(--ink) 10%, transparent); color: var(--ink); }
+.tag.warn, .tag.st-pending, .tag.st-trial, .tag.st-reviewing, .tag.st-draft, .tag.st-past_due, .tag.st-open, .tag.st-cancelled,
+.tag.st-inactive { background: var(--soft); color: var(--ink-2); box-shadow: inset 0 0 0 1px var(--glass-border); }

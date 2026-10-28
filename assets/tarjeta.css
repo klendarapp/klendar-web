@@ -58,7 +58,11 @@
 .tj-chip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--glass-border);
   background: var(--soft); font-size: 13px; font-weight: 700; min-width: 0; }
 .tj-chip .ic { flex: none; }
-.tj-cuando.ahora { color: var(--accent-text); }
+/* La cuenta atrás de una oferta flash, siempre en coral (es la oferta); la
+   urgencia, con la negrita (menos de 60 min, menos de 15), no con otro color. */
+.tj-cuando.ahora { color: var(--accent-text); font-weight: 600; }
+.tj-cuando.ahora.pronto { font-weight: 700; }
+.tj-cuando.ahora.urgente { font-weight: 800; }
 .tj-cuando.fin { color: var(--ink-2); }
 .tj-amigos:empty { display: none; }
 .tj-amigos .quien-va { margin: 0; font-size: 13px; }
@@ -71,6 +75,8 @@
 .tj--bold .tj-lugar, .tj--bold .tj-negocio .tj-dist, .tj--bold .tj-antes, .tj--bold .tj-desc { color: inherit; opacity: .8; }
 .tj--bold .tj-precio, .tj--bold .tj-cta { background: var(--tj-sobre, var(--on-accent)); color: var(--tj-acento, var(--accent)); }
 .tj--bold .tj-chip { background: color-mix(in srgb, currentColor 14%, transparent); border-color: transparent; }
+/* En «Color» el fondo ya es el color de la oferta: la cuenta atrás, de la letra del panel. */
+.tj--bold .tj-cuando.ahora { color: inherit; }
 /* Plantilla «minimal»: panel opaco, sin cristal. */
 .tj--minimal .tj-panel { background: var(--elevated); backdrop-filter: none; -webkit-backdrop-filter: none; }
 /* Plantilla «poster»: sin panel; el título grande sobre la foto oscurecida. */
@@ -106,6 +112,7 @@
 /* Plantilla «minimal»: sobria; el color solo en el precio. */
 :is(.pub, .tjv) .tj--minimal .tj-titulo { font-weight: 700; }
 .tj--minimal .tj-chip { background: none; border: 0; padding: 0 4px 0 0; color: var(--ink-2); }
+.tj--minimal .tj-cuando.ahora { color: var(--accent-text); }
 /* Con lugar propio: el sitio y, debajo, quién lo organiza. */
 .tj-nombre .ic { vertical-align: -2px; margin-right: 2px; }
 .tj-org { font-size: 12px; color: var(--ink-2); margin-top: -4px !important; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

@@ -1459,7 +1459,7 @@ function tarjeta(o, tz) {
   const tag = beneficio(o.discount, o.price_cents, o.currency);
   const exclusiva = etiquetaExclusiva(o.audience);
   return `<a class="ocard" href="${pre}/o/${esc(o.id)}">
-    ${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : '<span class="ph">✦</span>'}
+    ${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : `<span class="ph">${ic('storefront')}</span>`}
     <span class="ocard-body"><b>${esc(o.title)}</b>
       <span class="muted">${esc(o.business_name || '')}</span>
       <span class="ocard-meta">${tag ? `<span class="tag">${esc(tag)}</span>` : ''}${exclusiva ? `<span class="tag off">${esc(exclusiva)}</span>` : ''}<span class="muted">${esc(cuando)}</span></span>
@@ -1493,8 +1493,8 @@ const diaLocal = (d) => `${d.getFullYear()}-${dosCifras(d.getMonth() + 1)}-${dos
 const mesMas = (ym, n) => { const [y, m] = ym.split('-').map(Number); const d = new Date(y, m - 1 + n, 1); return `${d.getFullYear()}-${dosCifras(d.getMonth() + 1)}`; };
 
 /** Planes en calendario (como la app): puntos en los días con eventos
- * guardados (coral) y con ofertas o canjes (ámbar); debajo, lo de ese día.
- * Del mes de hace un año al de dentro de un año. */
+ * guardados (tinta) y con ofertas, códigos activos o canjes (coral); debajo,
+ * lo de ese día. Del mes de hace un año al de dentro de un año. */
 function planesCalendario({ saved, reds, zona, params }) {
   const hoy = diaLocal(new Date());
   const hoyMes = hoy.slice(0, 7);
@@ -1508,6 +1508,12 @@ function planesCalendario({ saved, reds, zona, params }) {
   const pon = (d, tipo, html) => { if (!porDia.has(d)) porDia.set(d, { ev: 0, fl: 0, filas: [] }); const x = porDia.get(d); x[tipo] += 1; if (html) x.filas.push(html); };
   for (const r of reds.filter((x) => x.status === 'validated')) {
     pon(diaLocal(new Date(r.validated_at || r.created_at)), 'fl', filaCanje(r, zona(r)));
+  }
+  // Un código activo cuenta el día de su oferta: el del evento, o hoy si es
+  // de una oferta flash (se pide mientras dura). Antes ese día no se marcaba.
+  const ya = Date.now();
+  for (const r of reds.filter((x) => x.status === 'pending' && new Date(x.expires_at).getTime() > ya)) {
+    pon(diaLocal(new Date(r.event_at || r.created_at)), 'fl', filaCanje(r, zona(r)));
   }
   for (const o of saved) {
     if (o.kind === 'future_event' && o.event_at) { pon(diaLocal(new Date(o.event_at)), 'ev', tarjeta(o, zona(o))); continue; }
@@ -1757,16 +1763,17 @@ RUTAS.favoritos = async () => {
     const org = organiza.has(b.id);
     const meta = [catDe.get(b.category_id), org ? t('Organiza en distintos sitios') : '',
       !org && Number.isFinite(b.distance_m) && b.distance_m != null ? distanciaTxt(b.distance_m) : ''].filter(Boolean).join(' · ');
+    // Las ofertas, en coral (son oferta); los eventos, en tinta (como la app).
     const cuentas = [
-      b.active_flash ? cuantas(b.active_flash, ['1 oferta activa', 'ofertas activas'], ['1 active offer', 'active offers']) : '',
-      b.upcoming_events ? cuantas(b.upcoming_events, ['1 evento próximo', 'eventos próximos'], ['1 upcoming event', 'upcoming events']) : '',
+      b.active_flash ? `<span class="fav-ofertas">${esc(cuantas(b.active_flash, ['1 oferta activa', 'ofertas activas'], ['1 active offer', 'active offers']))}</span>` : '',
+      b.upcoming_events ? esc(cuantas(b.upcoming_events, ['1 evento próximo', 'eventos próximos'], ['1 upcoming event', 'upcoming events'])) : '',
     ].filter(Boolean).join(' · ');
     return `<div class="fav-fila${b.id === llega ? ' mov-llega' : ''}" data-fav-fila="${esc(b.id)}">
       <a class="ocard" href="${pre}/b/${esc(b.id)}">
-        ${b.logo ? `<img src="${esc(b.logo)}" alt="" loading="lazy">` : '<span class="ph">✦</span>'}
+        ${b.logo ? `<img src="${esc(b.logo)}" alt="" loading="lazy">` : `<span class="ph">${ic('storefront')}</span>`}
         <span class="ocard-body"><b>${esc(b.name)}</b>
           ${meta ? `<span class="muted">${esc(meta)}</span>` : ''}
-          <span class="ocard-meta">${cuentas ? `<span class="tag">${esc(cuentas)}</span>` : `<span class="muted">${esc(EN ? 'Nothing new right now' : 'Sin novedades ahora mismo')}</span>`}</span>
+          <span class="ocard-meta">${cuentas ? `<span class="fav-cuentas">${cuentas}</span>` : `<span class="muted">${esc(EN ? 'Nothing new right now' : 'Sin novedades ahora mismo')}</span>`}</span>
         </span></a>
       <button type="button" class="fav-quitar" data-quitar-fav="${esc(b.id)}" data-nombre="${esc(b.name)}" aria-label="${esc(t('Quitar de favoritos'))}" title="${esc(t('Quitar de favoritos'))}">${ic('favorite')}</button>
     </div>`;
@@ -1831,7 +1838,7 @@ function filaCanje(r, tz, resaltado = false) {
   const destino = vivo ? `#/codigo/${esc(r.offer_id)}` : r.status === 'validated' ? `#/recibo/${esc(r.id)}` : `${pre}/o/${esc(r.offer_id)}`;
   return `
     <a class="ocard${resaltado ? ' resaltado' : ''}" href="${destino}"${resaltado ? ' id="codigo-pedido"' : ''}>
-      ${r.business_logo ? `<img src="${esc(r.business_logo)}" alt="" loading="lazy">` : '<span class="ph">✦</span>'}
+      ${r.business_logo ? `<img src="${esc(r.business_logo)}" alt="" loading="lazy">` : `<span class="ph">${ic('storefront')}</span>`}
       <span class="ocard-body"><b>${esc(r.offer_title)}</b>
         <span class="muted">${esc(r.business_name)} · ${esc(fecha(r.validated_at || (r.status === 'pending' && r.event_at) || r.created_at, undefined, tz))}</span>
         <span class="ocard-meta"><span class="tag${vivo ? '' : ' off'}">${esc(estado)}</span>

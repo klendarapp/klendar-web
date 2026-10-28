@@ -29,11 +29,11 @@ main.pub { padding: 34px 20px 72px; }
 .badges { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; }
 .badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px;
   font-size: 13px; font-weight: 700; background: var(--glass); border: 1px solid var(--glass-border); color: var(--ink); }
-/* El rosa sobre la tarjeta (no transparente sobre el gris del fondo): así el
-   coral del texto llega a 4,5:1 (WCAG 1.4.3). */
-.badge.hot { background: color-mix(in srgb, var(--accent) 14%, var(--elevated)); border-color: transparent; color: var(--accent-text); }
+/* Sin semáforo (GLOSARIO › Aspecto): «Tendencia», «Comprobado por Klendar»…
+   en tinta, como la app. */
+.badge.hot { background: var(--elevated); color: var(--ink); }
 .badge.off { background: rgba(120,120,120,.18); color: var(--ink-2); }
-.badge.ok { background: rgba(60,180,120,.16); color: var(--ink); }
+.badge.ok { color: var(--ink); }
 
 .price { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin: 0 0 6px; }
 .price b { font-family: var(--display); font-size: 32px; font-weight: 800; letter-spacing: -.02em; }
@@ -177,14 +177,14 @@ footer.pub-foot a { color: var(--ink-2); }
 .cierre { display: flex; align-items: center; gap: 10px; margin: 12px 0 0; padding: 10px 14px; border-radius: 16px;
   border: 1px solid var(--glass-border); background: var(--elevated); }
 .cierre .ic { flex: none; color: var(--ink-2); }
-.cierre.ahora .ic { color: #F5B041; }
+.cierre.ahora .ic { color: var(--ink); }
 /* Lo que la ficha del negocio no enseña sin sesión: exclusivas para favoritos
    o clientes (cuántas) y el regalo de cumpleaños. */
 .exclusiva { display: flex; align-items: center; gap: 10px; margin: 12px 0 0; padding: 10px 14px; border-radius: 16px;
   border: 1px solid var(--glass-border); background: var(--elevated); color: var(--ink-2); }
-.exclusiva .ic { flex: none; color: var(--accent-text); }
-.stars { color: #F5B041; letter-spacing: 1px; white-space: nowrap; }
-/* Como la app: llenas en ámbar, vacías en el gris secundario al 60 %. */
+.exclusiva .ic { flex: none; color: var(--ink); }
+.stars { color: var(--ink); letter-spacing: 1px; white-space: nowrap; }
+/* Como la app: llenas en tinta, vacías en el gris secundario al 60 %. */
 .stars span { color: var(--ink-2); opacity: .6; }
 .denuncia, .denuncia-pie a { font-size: 13px; color: var(--ink-2); }
 .resenas .denuncia, .novedades .denuncia { display: inline-block; margin-top: 8px; }
@@ -196,7 +196,7 @@ footer.pub-foot a { color: var(--ink-2); }
 /* Explorar: el mapa */
 .mapa-explorar { height: min(70vh, 560px); border-radius: 22px; overflow: hidden; border: 1px solid var(--glass-border); margin-top: 8px; }
 .chincheta { width: 22px; height: 22px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: block;
-  background: var(--accent); border: 2px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,.35); }
+  background: var(--ink); border: 2px solid var(--surface); box-shadow: 0 2px 6px rgba(0,0,0,.35); }
 .mapa-explorar .mapboxgl-popup-content { background: var(--elevated); color: var(--ink); border-radius: 14px; padding: 10px 12px; font: inherit;
   border: 1px solid var(--glass-border); box-shadow: 0 10px 30px rgba(0,0,0,.35); }
 .mapa-explorar .mapboxgl-popup-tip { display: none; }
@@ -251,24 +251,18 @@ button.chip { font-family: inherit; cursor: pointer; }
 button.pill { font-family: inherit; cursor: pointer; }
 
 /* «Abierto · cierra a las 21:00» encima del horario (lo pinta horario.js).
-   Los colores de la app; en claro, un tono más oscuro para que se lea. */
+   Como la app, sin semáforo: abierto o a punto de cambiar, en tinta; cerrado,
+   en gris. Lo dice el texto (GLOSARIO › Aspecto). */
 .estado-hoy { margin: 0 0 10px; font-size: 14px; color: var(--ink-2); }
 .estado-hoy b { font-weight: 700; }
-.estado-hoy.abierto b { color: #177A42; }
-.estado-hoy.pronto b { color: #A16207; } /* ámbar oscuro: 4,9:1 sobre blanco */
-.estado-hoy.cerrado b { color: #D93636; }
-@media (prefers-color-scheme: dark) {
-  .estado-hoy.abierto b { color: #2ECC71; }
-  .estado-hoy.pronto b { color: #F5B041; }
-  .estado-hoy.cerrado b { color: #FF5C5C; }
-}
+.estado-hoy.abierto b, .estado-hoy.pronto b { color: var(--ink); }
+.estado-hoy.cerrado b { color: var(--ink-2); }
 
 /* El festivo de esta semana bajo «Horario»: «Abre el festivo del 1 de
-   noviembre (10:00–14:00)»; sin contestar, en ámbar oscuro (como la app). */
+   noviembre (10:00–14:00)»; sin contestar, en tinta (como la app). */
 .festivo { display: flex; align-items: flex-start; gap: 8px; margin: 0 0 10px; font-size: 14px; font-weight: 600; color: var(--ink-2); }
 .festivo .ic { flex: none; margin-top: 1px; }
-.festivo.sin-confirmar { color: #A16207; }
-@media (prefers-color-scheme: dark) { .festivo.sin-confirmar { color: #F5B041; } }
+.festivo.sin-confirmar { color: var(--ink); }
 /* «Qué pedir aquí»: foto (o icono) · nombre y su línea. */
 .que-pedir { list-style: none; padding: 0; margin: 0 0 18px; }
 .que-pedir li { display: flex; gap: 12px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid var(--glass-border); }
@@ -398,9 +392,9 @@ body.con-hoja { overflow: hidden; }
 .pub .resumen-n { margin: 0; font-family: inherit; font-size: 14px; font-weight: 700; line-height: 1.4; letter-spacing: 0; color: var(--ink-2); }
 .resumen a { font-weight: 700; text-decoration: underline; text-underline-offset: 3px; font-size: 14px; }
 
-/* El mapa: chinchetas en coral (eventos) y ámbar (ofertas flash), como el
-   calendario. */
-.chincheta.flash { background: var(--amber); }
+/* El mapa: chinchetas en tinta (eventos) y coral (ofertas flash, son oferta),
+   como el calendario. */
+.chincheta.flash { background: var(--accent); }
 .mapa-explorar.sin-mapa { height: auto; border: 0; }
 
 /* El mapa con varios planes en el mismo sitio (assets/mapa.js, como la app):
@@ -521,7 +515,7 @@ body.con-hoja { overflow: hidden; }
 .ficha-negocio img, .fn-ph { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; flex: none; background: var(--soft);
   display: grid; place-items: center; font: 800 18px/1 var(--display); color: var(--ink-2); }
 .ficha-negocio > .ic { color: var(--ink-2); flex: none; }
-.stars-mini { color: #F5B041; }
+.stars-mini { color: var(--ink); }
 .pub .ficha-datos { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 0 8px; }
 .precio-pill { padding: 7px 16px; border-radius: 999px; background: var(--accent); color: var(--on-accent); font: 800 20px/1.2 var(--display); letter-spacing: -.01em; }
 .ficha-datos s { font-size: 16px; }
@@ -840,7 +834,11 @@ details.hoja-bloque[open] > summary .ic { transform: rotate(180deg); }
   background: var(--glass); color: var(--ink); font: inherit; font-weight: 600; font-size: 14px; cursor: pointer; }
 .pub .op-km:hover { text-decoration: none; border-color: var(--ink-2); }
 .pub .op-km.on { background: var(--ink); color: var(--surface); border-color: var(--ink); }
-.desplegable.zona .menu-d { min-width: 280px; }
+/* ¿Dónde?, una hoja como las demás (título, ✕ y velo), más estrecha en el
+   escritorio: son pocas opciones y todas enlaces (sin pie). */
+.hoja.zona .hoja-cuerpo { width: min(440px, calc(100vw - 32px)); }
+.hoja-donde { padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
+.hoja-donde .donde-modos { margin: 4px 0 10px; }
 /* Un atajo encendido: chip con × para quitarlo. */
 .chip-quitar .ic:last-child { margin: 0 -4px 0 -2px; opacity: .8; }
 .menu-sep { margin: 6px 4px; border: 0; border-top: 1px solid var(--glass-border); }

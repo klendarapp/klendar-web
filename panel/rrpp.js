@@ -179,7 +179,7 @@ PAGES.rrpp = async (v, param) => {
 
     <div class="card">
       <div class="rrpp-cab-card"><h2>${esc(bi('Ofertas para tus RRPP', 'Offers for your promoters'))}</h2><span class="spacer"></span>
-        <a class="btn sm primary" href="#/publicaciones/nueva-flash?rrpp=1">${esc(bi('Nueva oferta para RRPP', 'New offer for promoters'))}</a></div>
+        <a class="btn sm" href="#/publicaciones/nueva-flash?rrpp=1">${esc(bi('Nueva oferta para RRPP', 'New offer for promoters'))}</a></div>
       ${rrppOfertasHtml(ofertas?.offers || [], bi('Aún no tienes ofertas para tus RRPP. Solo se ven con el enlace de uno de tus RRPP.',
         "You don't have any offers for your promoters yet. They can only be seen through one of your promoters' links."))}
     </div>
@@ -709,7 +709,7 @@ async function rrppPuerta(caja, alValidar) {
         { h: bi('Publicación', 'Publication'), r: (x) => `${esc(x.offer_title || '')}${x.promoter_offer ? ` <span class="tag rrpp-tag">${esc(bi('Oferta de RRPP', 'Promoter offer'))}</span>` : ''}` },
         { h: bi('Plazas', 'Places'), num: true, r: (x) => fmtNum(x.seats || 1) },
         { h: bi('Estado', 'Status'), r: (x) => rrppEstadoCodigo(x.status, x.validated_at) },
-        { h: '', r: (x) => (x.status === 'pending' ? `<div class="actions"><button class="btn sm primary" type="button" data-rrpp-valida="${esc(x.id)}">${esc(bi('Validar', 'Validate'))}</button></div>` : '') },
+        { h: '', r: (x) => (x.status === 'pending' ? `<div class="actions"><button class="btn sm tinta" type="button" data-rrpp-valida="${esc(x.id)}">${esc(bi('Validar', 'Validate'))}</button></div>` : '') },
       ],
       rows: items,
       empty: bi('Nadie con ese nombre en las listas de esta noche', "Nobody with that name on tonight's lists"),

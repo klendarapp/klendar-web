@@ -108,6 +108,10 @@ const T = (en) => en
       notHereComing: (c) => `We're getting ${c} ready: there are no places yet. If you like, we'll tell you just once when they arrive.`,
       notifyArrive: 'Tell me when it arrives', pickCity: 'Choose a city', askVenue: 'Ask for a place',
       maybe: 'You might like',
+      // Una búsqueda sin nada en Planes: los textos de la app (searchEmpty…)
+      // y, como salida, buscar lo mismo en Sitios.
+      searchEmptyTitle: 'No results', searchEmptyBody: (q) => `Nothing matches “${q}”. Try another word.`,
+      searchInPlaces: 'Search in Places',
       // Lista vacía (como Descubre vacío en la app): las mismas salidas.
       emptyTitle: 'Nothing around here yet', emptyTitleFiltered: 'Nothing with those filters',
       emptyBody: (d) => `Nothing active ${d} right now. Widen the search, check what's on or let us tell you when there's something new.`,
@@ -236,6 +240,10 @@ const T = (en) => en
       notHereComing: (c) => `Estamos preparando ${c}: aún no hay sitios. Si quieres, te avisamos una sola vez cuando lleguen.`,
       notifyArrive: 'Avísame cuando llegue', pickCity: 'Elegir una ciudad', askVenue: 'Pedir un local',
       maybe: 'Quizá te interese',
+      // Una búsqueda sin nada en Planes: los textos de la app (searchEmpty…)
+      // y, como salida, buscar lo mismo en Sitios.
+      searchEmptyTitle: 'Sin resultados', searchEmptyBody: (q) => `No hay nada con «${q}». Prueba con otra palabra.`,
+      searchInPlaces: 'Buscar en Sitios',
       // Lista vacía (como Descubre vacío en la app): las mismas salidas.
       emptyTitle: 'Aún no hay nada por aquí', emptyTitleFiltered: 'No hay nada con esos filtros',
       emptyBody: (d) => `No hay nada activo ${d} ahora mismo. Amplía la búsqueda, mira la agenda o deja que te avisemos cuando haya algo nuevo.`,
@@ -566,7 +574,7 @@ const AVISAME_CSS = `<style>
  * Lo mismo que la tarjeta final de Descubre en la app. Con [vacio] (no hay
  * nada desde el principio), las mismas salidas y la misma lógica, pero
  * centradas como una pantalla vacía (`.vacio`), como Descubre vacío. */
-const finalHtml = ({ S, en, lang, cerca, km, city, filtros, link, page, alertaHref, sugerencias, vacio = false, limpiar = '', compacto = false, pedirQ = '', sinSugiere = false, agendaHref = '' }) => {
+const finalHtml = ({ S, en, lang, cerca, km, city, filtros, link, page, alertaHref, sugerencias, vacio = false, limpiar = '', compacto = false, pedirQ = '', sinSugiere = false, agendaHref = '', busqueda = '', enSitios = '' }) => {
   const sigKm = cerca ? RADIOS_KM.find((k) => k > km) : null;
   // ¿Se puede mirar más lejos? Con «Cerca de mí», a la distancia siguiente;
   // en una ciudad, en todas.
@@ -597,6 +605,23 @@ const finalHtml = ({ S, en, lang, cerca, km, city, filtros, link, page, alertaHr
   // En el feed de Descubre, en filas (caben en la última pantalla).
   const quizas = sugerencias.length ? `<h2 class="fin-h">${esc(S.maybe)}</h2>
   ${compacto ? `<div class="tj-filas">${sugerencias.map((o) => tarjeta(o, lang, { forma: 'fila' })).join('')}</div>` : rejilla(sugerencias, lang)}` : '';
+  if (vacio && busqueda) {
+    // Una búsqueda sin nada (como la app): «Sin resultados… Prueba con otra
+    // palabra.» y buscar lo mismo en Sitios; «Quitar filtros» solo si hay
+    // otros filtros además de la palabra, y «Pide que esté en Klendar» solo si
+    // tampoco hay ningún sitio que se llame así (`pedirQ`).
+    return `<section class="vacio" aria-labelledby="finTitulo">
+    <span class="vacio-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5Zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14Z"/></svg></span>
+    <h2 id="finTitulo">${esc(S.searchEmptyTitle)}</h2>
+    <p>${esc(S.searchEmptyBody(busqueda))}</p>
+    <div class="vacio-botones">
+      ${enSitios ? `<a class="pill accent" href="${esc(enSitios)}">${esc(S.searchInPlaces)}</a>` : ''}
+      ${quitar}
+    </div>
+    ${sugiere}
+  </section>
+  ${quizas}`;
+  }
   if (vacio) {
     // Ampliar (si se puede), quitar filtros (si hay), avisar y la agenda.
     const avisar = `<a class="pill${ampliar ? '' : ' accent'}" href="${esc(alertaHref)}">${esc(S.notifyMe)}</a>`;
@@ -1370,8 +1395,9 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   const vacio = !calendario && items.length === 0;
   // Lo que deja fuera publicaciones (`hasNarrowingFilters` en la app): la
   // zona y la distancia se dicen aparte y el orden no quita nada.
-  const conFiltros = Boolean(q || catsSel.length || kind || price || when || soloDescuento || abierto || e.amigos || traits.length
+  const conFiltrosSinPalabra = Boolean(catsSel.length || kind || price || when || soloDescuento || abierto || e.amigos || traits.length
     || traitsMarcas(e).length || antesCierre || e.menuDia || e.comerAhora || e.momento);
+  const conFiltros = Boolean(q) || conFiltrosSinPalabra;
   // «Cerca de ti» y nada: ¿es que aquí aún no hay Klendar? (`klendar_coverage`,
   // ningún negocio a 25 km). Entonces, «Avísame cuando llegue» en vez del
   // vacío de siempre. Si no contesta, el vacío de siempre.
@@ -1379,6 +1405,9 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
     ? await rpc('klendar_coverage', { p_lat: lat, p_lng: lng }).catch(() => null) : null;
   const sinKlendar = Boolean(cobertura?.status) && cobertura.status !== 'live';
   let sugerencias = [];
+  // «Quizá te interese» respeta el tipo elegido (como la app): con «Ofertas
+  // flash», solo ofertas flash; con «Eventos», solo eventos.
+  const delTipo = (o) => (esOfertas ? o.kind === 'flash_offer' : esEventos ? o.kind === 'future_event' : true);
   if (sinKlendar) {
     // Nada de «Quizá te interese»: sería de otra ciudad.
   } else if (negocios) {
@@ -1388,16 +1417,16 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
     // Son un extra: si no llegan, la página sale igual (sin ellas).
     const fuera = await (cerca
       ? rpcAll('recommended_offers', {
-        p_lat: lat, p_lng: lng, p_min_distance_m: km * 1000, p_limit: 8,
+        p_lat: lat, p_lng: lng, p_min_distance_m: km * 1000, p_limit: kind ? 30 : 8,
         ...(gustos.length ? { p_categories: (todasCats || []).filter((c) => gustos.includes(c.slug)).map((c) => c.id) } : {}),
       })
       : rpc('public_explore', { p_city: null, p_limit: 24, p_filters: {} }).then((r) => (r?.items || [])
         .filter((o) => String(o.city || '').toLowerCase() !== city.toLowerCase()))).catch(() => []);
-    sugerencias = (fuera || []).filter((o) => !vistos.has(o.id)).slice(0, 4);
+    sugerencias = (fuera || []).filter((o) => !vistos.has(o.id) && delTipo(o)).slice(0, 4);
   } else if (vacio && conFiltros) {
     // En todas las ciudades y sin ubicación: lo que hay sin esos filtros.
-    const todo = await rpc('public_explore', { p_city: null, p_limit: 8, p_filters: {} }).catch(() => null);
-    sugerencias = (todo?.items || []).slice(0, 4);
+    const todo = await rpc('public_explore', { p_city: null, p_limit: kind ? 24 : 8, p_filters: {} }).catch(() => null);
+    sugerencias = (todo?.items || []).filter(delTipo).slice(0, 4);
   }
 
   // Los filtros son enlaces: se puede compartir la URL y va sin JavaScript.
@@ -1462,7 +1491,19 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
       ? `<a class="op-km${km === k ? ' on' : ''}" href="${esc(link({ km: k }))}"${km === k ? ' aria-current="true"' : ''}>${esc(txt)}</a>`
       : `<button type="button" class="op-km" data-cerca data-mas="km=${k}" data-err="${esc(S.nearNo)}" hidden>${esc(txt)}</button>`;
   };
-  const zonaMenu = desplegable(cerca ? 'cerca' : city ? 'ciudad' : 'lugar', S.whereTitle, zonaTxt, false,
+  // ¿Dónde?, como las otras hojas (Iván, 2026-10-28): título, ✕ y el velo
+  // detrás (en el escritorio, centrada; en el móvil, desde abajo). Sus
+  // opciones son enlaces: cada una ya lleva a su página, sin «Ver N» abajo.
+  // El botón de la fila es el mismo de siempre (no cambia la fila).
+  const hojaDonde = (icono, titulo, valor, cuerpo, { etiqueta = '' } = {}) => `<details class="hoja zona" id="zona">
+      <summary class="chip"${etiqueta ? ` aria-label="${esc(etiqueta)}"` : ''}>${icono ? ic(icono, 16) : ''}<span class="chip-t">${esc(valor || titulo)}</span>${ic('abajo', 16)}</summary>
+      <div class="hoja-cuerpo" role="dialog" aria-labelledby="zonaTitulo">
+        <div class="hoja-cab"><h2 id="zonaTitulo">${esc(titulo)}</h2>
+          <a class="hoja-x" href="#zona" data-cerrar-hoja aria-label="${esc(S.close)}">${ic('x', 22)}</a></div>
+        <div class="hoja-scroll hoja-donde">${cuerpo}</div>
+      </div>
+    </details>`;
+  const zonaMenu = hojaDonde(cerca ? 'cerca' : city ? 'ciudad' : 'lugar', S.whereTitle, zonaTxt,
     `<div class="donde-modos" role="group" aria-label="${esc(S.whereTitle)}">
        <button type="button" class="donde-modo${cerca ? ' on' : ''}" data-donde-modo="cerca" aria-pressed="${cerca}" hidden>${ic('cerca', 16)}<span>${esc(S.nearMe)}</span></button>
        <button type="button" class="donde-modo${cerca ? '' : ' on'}" data-donde-modo="ciudad" aria-pressed="${!cerca}" hidden>${ic('ciudad', 16)}<span>${esc(S.aCity)}</span></button>
@@ -1479,7 +1520,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
        ${opcion(link({ city: '', cerca: false }), S.allCities, !city && !cerca)}
        ${ciudades.map((c) => opcion(link({ city: String(c.city), cerca: false }), PRETTY(c.city), !cerca && city.toLowerCase() === String(c.city).toLowerCase())).join('')}
      </div>`,
-    { cls: ' zona', etiqueta: `${S.zoneChange}: ${zonaTxt}` })
+    { etiqueta: `${S.zoneChange}: ${zonaTxt}` })
     // Por debajo de 400 px, con «Cerca de ti», solo «5 km» (el icono ya dice
     // «cerca»): así caben ¿Dónde?, ¿Cuándo?, ¿Qué? y ☰ en un móvil de 360.
     .replace(`<span class="chip-t">${esc(zonaTxt)}</span>`, cerca && !enMapa
@@ -1798,8 +1839,12 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   </nav>` : '';
 
   // En Explorar, sin ubicación ni ciudad: «Mira primero lo que tienes más cerca».
+  // Un solo aviso a la vez (Iván, 2026-10-28): con la pregunta de la edad, la
+  // ubicación espera (`data-tras-edad`, oculta) y sale al contestar «Soy
+  // menor»; con «18 o más» la página vuelve a cargarse y ya sale sola.
+  const trasEdad = ocultos18 ? ' data-tras-edad hidden' : '';
   const avisoCerca = sinDondeCerca
-    ? `<p class="cerca-aviso" data-cerca-falta>${ic('cerca', 18)}<span>${esc(S.nearNeedsWhere)}</span>
+    ? `<p class="cerca-aviso" data-cerca-falta${trasEdad}>${ic('cerca', 18)}<span>${esc(S.nearNeedsWhere)}</span>
         <button type="button" class="pill ink" data-cerca data-mas="${esc(`${K.sort}=${enIdioma('nearest', en)}`)}" data-err="${esc(S.nearNo)}">${esc(S.useLoc)}</button></p>`
     : '';
   // La pregunta de la edad (ver `ocultos18`): se guarda en una cookie de un
@@ -1808,10 +1853,10 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
     ? `<div class="cerca-aviso edad-aviso" data-edad><span>${esc(S.ageHidden(ocultos18))} <strong>${esc(S.ageQ)}</strong></span>
         <button type="button" class="pill ink" data-edad-si>${esc(S.ageYes)}</button>
         <button type="button" class="pill" data-edad-no>${esc(S.ageNo)}</button></div>
-  <script>(function(){var b=document.querySelector('[data-edad]');if(!b)return;function f(v){document.cookie='klendar_18='+v+'; Max-Age=31536000; Path=/; SameSite=Lax'+(location.protocol==='https:'?'; Secure':'');if(v==='1')location.reload();else b.remove();}b.querySelector('[data-edad-si]').addEventListener('click',function(){f('1');});b.querySelector('[data-edad-no]').addEventListener('click',function(){f('0');});})();</script>`
+  <script>(function(){var b=document.querySelector('[data-edad]');if(!b)return;function f(v){document.cookie='klendar_18='+v+'; Max-Age=31536000; Path=/; SameSite=Lax'+(location.protocol==='https:'?'; Secure':'');if(v==='1')location.reload();else{b.remove();document.querySelectorAll('[data-tras-edad]').forEach(function(a){if(a.hasAttribute('data-cerca-aviso')&&!navigator.geolocation)return;a.hidden=false;});}}b.querySelector('[data-edad-si]').addEventListener('click',function(){f('1');});b.querySelector('[data-edad-no]').addEventListener('click',function(){f('0');});})();</script>`
     : '';
   const invitaCerca = !descubre && !cerca && !city
-    ? `<p class="cerca-aviso" data-cerca-aviso hidden>${ic('cerca', 18)}<span>${esc(S.nearPrompt)}</span>
+    ? `<p class="cerca-aviso" data-cerca-aviso${ocultos18 ? ' data-tras-edad' : ''} hidden>${ic('cerca', 18)}<span>${esc(S.nearPrompt)}</span>
         <button type="button" class="pill ink" data-cerca data-err="${esc(S.nearNo)}">${esc(S.useLoc)}</button></p>`
     : '';
 
@@ -1846,8 +1891,12 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   const final = sinKlendar ? sinKlendarHtml({ S, lang, lat, lng, cobertura, link })
     : alFinal || vacio ? finalHtml({
       S, en, lang, cerca, km, city, filtros: conFiltros, link, page, sugerencias, vacio, alertaHref,
-      limpiar: hayAlgo ? limpia : '', compacto: descubre && !vacio,
+      // Con una búsqueda sin nada: «Quitar filtros» solo si hay otros filtros
+      // además de la palabra (la palabra se cambia en el buscador).
+      limpiar: (vacio && q && !negocios && !descubre ? conFiltrosSinPalabra : hayAlgo) ? limpia : '', compacto: descubre && !vacio,
       pedirQ: vacio ? pedirQ : '', sinSugiere: Boolean(lineaPedir),
+      busqueda: vacio && !negocios && !descubre ? q : '',
+      enSitios: vacio && q && !negocios && !descubre ? link({ que: 'places', vista: '', page: 1 }) : '',
       agendaHref: `${exploreBase(lang)}/?${query({ ...e, que: '', q: '', vista: 'calendar', page: 1, mes: '', dia: '' }, lang)}`,
     }) : '';
 
