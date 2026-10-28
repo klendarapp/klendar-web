@@ -43,11 +43,11 @@ const PAGINAS = [
     /If you're an adult \(without an account\)\s+Your answer to “Are you 18 or over\?” \(yes or no\)[\s\S]*?\(on the web, one year\); we don't store it/,
     /27 October 2026: 18\+ content without an account/,
   ], [/is only shown to people who have stated through their date of birth/]],
-  ['/terminos/', 'Última actualización: 27 de octubre de 2026', [
+  ['/terminos/', 'Última actualización: 28 de octubre de 2026', [
     /Los contenidos "\+18" solo se muestran a mayores de 18: con cuenta, según tu fecha de nacimiento; sin cuenta, si declaras que tienes 18 años o más\. Si lo declaras sin tenerlos, eres tú quien falta a estos términos\./,
     /27 de octubre de 2026: Contenido \+18 sin cuenta \(apartado 2\)/,
   ], []],
-  ['/en/terms/', 'Last updated: 27 October 2026', [
+  ['/en/terms/', 'Last updated: 28 October 2026', [
     /"18\+" content is only shown to people over 18: with an account, based on your date of birth; without an account, if you state that you are 18 or over\. If you state it without being so, you are the one breaching these terms\./,
     /27 October 2026: 18\+ content without an account \(section 2\)/,
   ], []],

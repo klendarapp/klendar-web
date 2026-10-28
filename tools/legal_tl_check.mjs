@@ -99,13 +99,13 @@ const PAGINAS = [
     /those of 20 October 2026 \(sections 2a, 3 and 3j\) from 4 November 2026/,
     /Ready alert \(new section 3j\).*It applies from 4 November 2026\./,
   ]],
-  ['/terminos/', 'Última actualización: 27 de octubre de 2026', [
+  ['/terminos/', 'Última actualización: 28 de octubre de 2026', [
     /3 ter\. Cola virtual y avisos de pedido/,
     /Algunos locales te avisan cuando tu pedido está listo/,
     /si no lo recoges, se cierra solo a las 2 horas/,
     /Avisos de pedido \(«Te aviso cuando esté listo», apartado 3 ter\)/,
   ]],
-  ['/en/terms/', 'Last updated: 27 October 2026', [
+  ['/en/terms/', 'Last updated: 28 October 2026', [
     /3b\. Virtual queue and order alerts/,
     /Some venues tell you when your order is ready/,
   ]],

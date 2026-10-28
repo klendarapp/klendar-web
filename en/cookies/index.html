@@ -96,6 +96,7 @@
 <tr><td>two-step verification flag</td><td>Admin (session storage)</td><td>Not asking again in that tab</td><td>Until the tab is closed</td><td>Technical (security)</td></tr>
 <tr><td><code>mapbox.eventData…</code> (if present)</td><td>Maps in Explore, the dashboard and “Ask for a place” (local storage, set by Mapbox)</td><td>A random identifier that changes every 24 hours, used by Mapbox to count map loads (billing)</td><td>24 hours</td><td>Technical, for the map service</td></tr>
 </table>
+<p>The approximate area of your connection (if you don't share your location) isn't stored in your browser or anywhere else: it's only used to build the page you request.</p>
 <h2>Visit statistics</h2>
 <p>We use <strong>Cloudflare Web Analytics</strong>, which uses no cookies and stores nothing in your browser: a small script sends Cloudflare, on our behalf, the page viewed, the site you came from, your browser and device type, your country and load times. We only see aggregate figures, without identifying you or tracking you across sites, and Cloudflare does not use them for anything else. It isn't used in “Your account”, the business dashboard or admin, or on email unsubscribe links and friend links. Nor on pages whose address contains your position (“Near me”) or a promoter's link, or on Klendar on the TV (<code>/tv/</code>) or on a venue's table QR page (<code>/m/</code>).</p>
 <h2>Third-party services loaded on some pages</h2>
@@ -112,6 +113,7 @@
 
 <h2 class="cambios" id="historial">Change history</h2>
 <ul>
+  <li><strong>28 October 2026</strong>: Your connection's approximate area, used without your location, isn't stored in your browser.</li>
   <li><strong>28 October 2026</strong>: Your filters are remembered until you change or clear them (“When?”, until 6:00; your position, 6 hours); two more keys (the last view in Explore and the logo animation); the klendar_18 cookie is deleted when you log out; the map library is downloaded from Mapbox; and the login check is for Google (you can't log in with Apple on the website).</li>
   <li><strong>27 October 2026</strong>: The klendar_18 cookie (the answer to “Are you 18 or over?”), the first on klendar.app.</li>
   <li><strong>16 October 2026</strong>: Visit statistics aren't used on a venue's table QR page (/m/) either.</li>

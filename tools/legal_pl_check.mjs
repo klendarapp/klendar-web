@@ -97,13 +97,13 @@ const sinScroll = (p) => p.evaluate(() => document.documentElement.scrollWidth -
 
 // ── 1. Páginas legales ─────────────────────────────────────────────────────
 const PAGINAS = [
-  ['/terminos/', 'Última actualización: 27 de octubre de 2026', [
+  ['/terminos/', 'Última actualización: 28 de octubre de 2026', [
     /Preguntas a los negocios\. En la ficha de un negocio puedes hacerle preguntas sobre el sitio/,
     /Como mucho 3 al día y una sin contestar por negocio; si eres de su equipo, no puedes preguntarle/,
     /para mostrar tus reseñas, con sus fotos y vídeos, y tus preguntas a los negocios, en la Plataforma/,
     /Preguntas a los negocios \(apartado 4\)/,
   ]],
-  ['/en/terms/', 'Last updated: 27 October 2026', [
+  ['/en/terms/', 'Last updated: 28 October 2026', [
     /Questions to businesses\. On a business's page you can ask it questions about the place/,
     /to display your reviews, with their photos and videos, and your questions to businesses, on the Platform/,
   ]],

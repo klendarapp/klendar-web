@@ -65,12 +65,12 @@ const PAGINAS = [
   ], [/(past|last) 30 days/]],
   ['/negocios/', 'Última actualización: 28 de octubre de 2026', [
     /Un cobro por domiciliación que aún se está procesando no bloquea \(hasta 14 días\)\./,
-    /y los del 28 de octubre de 2026 \(apartado 4 bis\), desde el 12 de noviembre de 2026: 15 días/,
+    /y los del 28 de octubre de 2026 \(apartados 2, 4 bis y 7\), desde el 12 de noviembre de 2026: 15 días/,
     /28 de octubre de 2026: Pagos pendientes y bloqueo \(apartado 4 bis\): un cobro por domiciliación que aún se está procesando no bloquea durante 14 días como mucho\. Se aplica desde el 12 de noviembre de 2026\./,
   ], [/se está procesando no bloquea\. /]],
   ['/en/business-terms/', 'Last updated: 28 October 2026', [
     /A direct debit payment still being processed doesn't block \(for up to 14 days\)\./,
-    /and those of 28 October 2026 \(section 4a\) from 12 November 2026: 15 days/,
+    /and those of 28 October 2026 \(sections 2, 4a and 7\) from 12 November 2026: 15 days/,
     /28 October 2026: Outstanding payments and blocking \(section 4a\)[\s\S]*?It applies from 12 November 2026\./,
   ], [/being processed doesn't block\. /]],
 ];

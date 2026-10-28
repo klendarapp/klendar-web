@@ -1,5 +1,5 @@
 {
- "version": "c4efbafa338e",
+ "version": "c2653898b9d9",
  "contact": "info@klendar.app",
  "tabs": {
   "es": {
@@ -132,6 +132,22 @@
     "a": [
      {
       "t": "En la ficha de cualquier fecha de la serie pulsa «Sigues la serie» → «Dejar de seguir», o en Cuenta → «Series que sigues». Para no recibir avisos de ninguna serie: Ajustes → Notificaciones → «Series que sigues»."
+     }
+    ]
+   },
+   {
+    "id": "traduccion-no-correcta",
+    "q": "La traducción no es correcta",
+    "a": [
+     {
+      "t": "Pulsa «Ver original»: lo que vale es lo que escribió el negocio. Si la traducción cambia el sentido de una oferta, escríbenos a "
+     },
+     {
+      "t": "info@klendar.app",
+      "u": "mailto:info@klendar.app"
+     },
+     {
+      "t": "."
      }
     ]
    },
@@ -696,6 +712,22 @@
     "a": [
      {
       "t": "On the page of any date in the series tap “You're following the series” → “Unfollow”, or go to Account → “Series you follow”. To stop notifications for all series: Settings → Notifications → “Series you follow”."
+     }
+    ]
+   },
+   {
+    "id": "traduccion-no-correcta",
+    "q": "The translation is wrong",
+    "a": [
+     {
+      "t": "Tap “See original”: what counts is what the business wrote. If the translation changes the meaning of an offer, email us at "
+     },
+     {
+      "t": "info@klendar.app",
+      "u": "mailto:info@klendar.app"
+     },
+     {
+      "t": "."
      }
     ]
    },
