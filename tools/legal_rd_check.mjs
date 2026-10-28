@@ -25,11 +25,11 @@ let fallos = 0;
 const ok = (c, m) => { if (!c) { fallos++; console.log('FALLO:', m); } else console.log('ok:', m); };
 
 const PAGINAS = [
-  ['/privacidad/', 'Última actualización: 28 de octubre de 2026', [
+  ['/privacidad/', 'Última actualización: 29 de octubre de 2026', [
     /si tienes un negocio, que hay una pregunta nueva en tu ficha \(como mucho una por hora\); si tienes un negocio, que un código que tu equipo escaneó sin conexión no era válido al comprobarlo \(para que puedas revisar si se dio algo\);/,
     /26 de octubre de 2026: En las notificaciones, si tienes un negocio, que un código que tu equipo escaneó sin conexión no era válido al comprobarlo\./,
   ], []],
-  ['/en/privacy/', 'Last updated: 28 October 2026', [
+  ['/en/privacy/', 'Last updated: 29 October 2026', [
     /if you have a business, that there's a new question on your page \(at most one an hour\); if you have a business, that a code your team scanned offline turned out not to be valid when it was checked \(so you can review whether anything was given\);/,
     /26 October 2026: In notifications, if you have a business, that a code your team scanned offline turned out not to be valid when it was checked\./,
   ], []],

@@ -51,13 +51,13 @@ const PAGINAS = [
     /When you log out, your session, the copy of your codes, your interests, the dashboard data and the klendar_18 cookie are deleted\./,
     /28 October 2026: Your filters are remembered until you change or clear them/,
   ], [/Used for 6 hours/, /return from Google or Apple/]],
-  ['/privacidad/', 'Última actualización: 28 de octubre de 2026', [
+  ['/privacidad/', 'Última actualización: 29 de octubre de 2026', [
     /tu ciudad o tu última ubicación conocida de los últimos 7 días; no guardamos ninguna otra/,
     /de tu última ubicación \(de los últimos 7 días\) o tu ciudad/,
     /salvo la librería de los mapas \(Mapbox GL JS\), que descarga de Mapbox \(api\.mapbox\.com\) al abrir un mapa/,
     /28 de octubre de 2026: La ubicación que se usa para «Avísame si…»/,
   ], [/últimos 30 días/]],
-  ['/en/privacy/', 'Last updated: 28 October 2026', [
+  ['/en/privacy/', 'Last updated: 29 October 2026', [
     /your city or your last known location from the past 7 days; we don’t keep any other/,
     /your last location \(from the last 7 days\) or your city/,
     /except the map library \(Mapbox GL JS\), which it downloads from Mapbox \(api\.mapbox\.com\) when you open a map/,

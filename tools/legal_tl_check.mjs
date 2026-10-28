@@ -109,7 +109,7 @@ const PAGINAS = [
     /3b\. Virtual queue and order alerts/,
     /Some venues tell you when your order is ready/,
   ]],
-  ['/privacidad/', 'Última actualización: 28 de octubre de 2026', [
+  ['/privacidad/', 'Última actualización: 29 de octubre de 2026', [
     /Te aviso cuando esté listo\s+Si pides que un local te avise de tu pedido/,
     /Qué ve el local: tu número, la primera palabra del nombre de tu perfil/,
     /Todo se borra a las 6:00 \(hora del local\)/,
@@ -117,7 +117,7 @@ const PAGINAS = [
     /«Tu pedido está listo»: lo acabas de pedir en el mostrador/,
     /si usa «Te aviso cuando esté listo», el código de su cartel y cuántos pedidos avisó cada día y la espera media \(solo números\)/,
   ]],
-  ['/en/privacy/', 'Last updated: 28 October 2026', [
+  ['/en/privacy/', 'Last updated: 29 October 2026', [
     /Ready alert\s+If you ask a venue to tell you when your order is ready/,
     /“Your order is ready”: you've just asked for it at the counter/,
     /if it uses “Ready alert”, its poster code/,

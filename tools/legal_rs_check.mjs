@@ -1,5 +1,6 @@
-// Prueba de lo publicado el 2026-10-28 (RS1, aprobado por Iván ese día; los
-// perfiles de Klendar en Instagram y TikTok), en la web local:
+// Prueba de lo publicado el 2026-10-28 y el 2026-10-29 (RS1 y RS4, aprobados
+// por Iván; los perfiles de Klendar en Instagram, TikTok y LinkedIn), en la
+// web local:
 //
 //  1. Privacidad (ES y EN): el párrafo «Klendar en redes sociales» detrás del
 //     de MET Norway e historias, con la corresponsabilidad y el correo, y su
@@ -23,21 +24,23 @@ const ok = (c, m) => { if (!c) { fallos++; console.log('FALLO:', m); } else cons
 
 const PAGINAS = [
   ['/privacidad/', [
-    /la trata esa red como responsable independiente, con sus propias condiciones\.\s*Klendar en redes sociales\. Tenemos perfiles en Instagram y TikTok\. En la web y en la app solo hay enlaces normales a ellos/,
-    /\(Meta Platforms Ireland Limited para Instagram y TikTok Technology Limited para TikTok\)/,
-    /para las de Instagram somos corresponsables con Meta según su anexo de corresponsabilidad, y lo mismo con TikTok para las suyas\./,
+    /la trata esa red como responsable independiente, con sus propias condiciones\.\s*Klendar en redes sociales\. Tenemos perfiles en Instagram, TikTok y LinkedIn\. En la web y en la app solo hay enlaces normales a ellos/,
+    /\(Meta Platforms Ireland Limited para Instagram, TikTok Technology Limited para TikTok y LinkedIn Ireland Unlimited Company para LinkedIn\)/,
+    /para las de Instagram somos corresponsables con Meta según su anexo de corresponsabilidad, y lo mismo con TikTok y con LinkedIn para las suyas\./,
     /aunque también puedes escribirnos a info@klendar\.app\. Lo que nos cuentes por mensaje privado lo usamos solo para contestarte \(interés legítimo, art\. 6\.1\.f RGPD\) y no lo unimos a tu cuenta de Klendar\./,
     /28 de octubre de 2026: Perfiles de Klendar en Instagram y TikTok/,
+    /29 de octubre de 2026: Perfil de Klendar en LinkedIn: solo un enlace/,
   ]],
   ['/en/privacy/', [
-    /under its own terms\.\s*Klendar on social media\. We have profiles on Instagram and TikTok\. The website and the app only contain ordinary links to them/,
-    /for Instagram's we are joint controllers with Meta under its joint controller addendum, and likewise with TikTok for its own\./,
+    /under its own terms\.\s*Klendar on social media\. We have profiles on Instagram, TikTok and LinkedIn\. The website and the app only contain ordinary links to them/,
+    /for Instagram's we are joint controllers with Meta under its joint controller addendum, and likewise with TikTok and LinkedIn for their own\./,
     /but you can also email us at info@klendar\.app\./,
     /28 October 2026: Klendar's profiles on Instagram and TikTok/,
+    /29 October 2026: Klendar's page on LinkedIn: just a link/,
   ]],
 ];
 
-const DE_REDES = /instagram\.com|cdninstagram|tiktok\.com|tiktokcdn|facebook\.(com|net)|fbcdn/;
+const DE_REDES = /instagram\.com|cdninstagram|tiktok\.com|tiktokcdn|facebook\.(com|net)|fbcdn|linkedin\.com|licdn\.com/;
 
 async function legales(nav, nombre, t, vp) {
   const ctx = await nav.newContext({ viewport: vp });
@@ -54,13 +57,14 @@ ${await p.locator('body').textContent()}`.replace(/ /g, ' ');
     for (const re of esperas) ok(re.test(txt), `${nombre}/${t} ${ruta}: ${re.source.slice(0, 70)}`);
     ok(await p.locator('.pie-redes a[href="https://www.instagram.com/klendar.app/"]').count() === 1, `${nombre}/${t} ${ruta}: enlace a Instagram en el pie`);
     ok(await p.locator('.pie-redes a[href="https://www.tiktok.com/@klendar.app"]').count() === 1, `${nombre}/${t} ${ruta}: enlace a TikTok en el pie`);
+    ok(await p.locator('.pie-redes a[href="https://www.linkedin.com/company/klendar-app/"]').count() === 1, `${nombre}/${t} ${ruta}: enlace a LinkedIn en el pie`);
     ok(await p.evaluate((re) => ![...document.querySelectorAll('script[src], iframe[src], img[src], link[href]')]
       .some((el) => new RegExp(re).test(el.getAttribute('src') || el.getAttribute('href') || '')), DE_REDES.source),
     `${nombre}/${t} ${ruta}: nada incrustado de las redes`);
     ok(await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth <= 0),
       `${nombre}/${t} ${ruta}: sin desplazamiento horizontal`);
   }
-  ok(pedidas.length === 0, `${nombre}/${t}: ninguna petición a Instagram ni a TikTok (${pedidas.join(' | ')})`);
+  ok(pedidas.length === 0, `${nombre}/${t}: ninguna petición a Instagram, TikTok ni LinkedIn (${pedidas.join(' | ')})`);
   ok(errores.length === 0, `${nombre}/${t}: sin errores de JavaScript (${errores.join(' | ')})`);
   await ctx.close();
 }

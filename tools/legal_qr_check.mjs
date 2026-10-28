@@ -59,7 +59,7 @@ const PAGINAS = [
     /those of 27 October 2026 \(sections 2a, 3, 3e, 3f and 3k\) from 11 November 2026, and those of 28 October 2026 \(sections 2, 4a and 7\) from 12 November 2026: 15 days/,
     /27 October 2026: Give on the spot \(section 3f\)[\s\S]*?Named tickets \(new section 3k\)[\s\S]*?It applies from 11 November 2026\./,
   ], [/name and photo when they get a code or book/]],
-  ['/privacidad/', 'Última actualización: 28 de octubre de 2026', [
+  ['/privacidad/', 'Última actualización: 29 de octubre de 2026', [
     /Al validar un código tuyo \(también en la puerta de una lista de RRPP\), el negocio ve tu nombre visible, tu foto de perfil solo si la tienes puesta y cuántas veces has canjeado algo en ese negocio, contando esta \(«5\.ª vez aquí»\)/,
     /reservas de plaza \(con cuántas plazas\) y si la entrada es nominativa/,
     /la clave de tu QR de cliente \(con la que tu móvil firma también el QR de tus entradas nominativas\)/,
@@ -74,7 +74,7 @@ const PAGINAS = [
     /27 de octubre de 2026: Inicio de sesión con Apple:/,
     /27 de octubre de 2026: Al validar, el negocio ve tu foto si la tienes/,
   ], []],
-  ['/en/privacy/', 'Last updated: 28 October 2026', [
+  ['/en/privacy/', 'Last updated: 29 October 2026', [
     /When it validates one of your codes \(also at the door for a promoter's list\), the business sees your public name, your profile photo only if you have one and how many times you've redeemed something at that business, including this one \(“5th time here”\)/,
     /place reservations \(with how many places\) and whether the ticket is named/,
     /the key of your customer QR code \(which your phone also uses to sign the QR code of your named tickets\)/,
