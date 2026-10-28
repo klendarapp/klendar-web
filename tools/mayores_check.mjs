@@ -94,6 +94,12 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
       // El orden va en ☰ › «Ordenar por» (Iván, 2026-10-27), no en la fila.
       ok(!(await page.locator('[data-cerca-falta]').count()) && await page.locator('#filtros input[name=orden][value=cerca]').isChecked(), `${t} «Más cerca» con una ciudad: desde su centro, sin pedir nada`);
       await page.goto(`${BASE}/explorar/?orden=cerca`);
+      // Un solo aviso a la vez (Iván, 2026-10-28): sin contestar la edad, la
+      // ubicación espera y sale al contestar «Soy menor».
+      if (await page.locator('[data-edad]').isVisible()) {
+        ok(!(await page.locator('[data-cerca-falta]').isVisible()), `${t} «Más cerca» sin dónde: espera a la pregunta de la edad`);
+        await page.locator('[data-edad-no]').click();
+      }
       ok(await page.locator('[data-cerca-falta]').isVisible(), `${t} «Más cerca» sin dónde: lo dice y ofrece la ubicación`);
       await page.screenshot({ path: `${OUT}/mayores-cerca-${nombre}-${forma}.png` });
       await ctx.close();
