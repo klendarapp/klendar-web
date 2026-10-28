@@ -400,7 +400,7 @@ input.mov-ph-sale::placeholder { opacity: 0; }
 /* Traducir a petición (assets/traducir.js, Iván 2026-10-28): pequeño, en
    tinta (no coral), bajo el texto; tocado, la aguja pequeña en el sitio del
    icono; traducido, «Ver original» y la atribución de Google debajo. */
-.tr-nota { display: flex; flex-direction: column; align-items: flex-start; margin: 0 0 12px; font-size: 13px; line-height: 1.3; }
+.tr-nota { display: flex; flex-wrap: wrap; align-items: center; margin: 0 0 12px; font-size: 13px; line-height: 1.3; }
 /* Pegado al texto de encima (Iván, 2026-10-28, como el «Ver traducción» de
    Instagram): se ve de una línea y la zona de toque (::before) llega a
    ~48 de alto por encima y por debajo, sobre el margen, sin abrir hueco. */
@@ -410,13 +410,14 @@ input.mov-ph-sale::placeholder { opacity: 0; }
 .tr-boton::before { content: ""; position: absolute; inset: -15px -8px -15px -6px; }
 .tr-boton:disabled { cursor: default; }
 .tr-boton.tr-falla, .tr-mismo { color: var(--ink-2); font-weight: 600; }
+.tr-boton.tr-gris { color: var(--ink-2); padding-right: 4px; }
 .tr-ic { flex: none; }
 /* El margen del texto de encima, casi entero fuera: ~5 px a la vista. */
 h1[data-tr] + p.tr-nota { margin-top: -6px; }
 p[data-tr^="business:"] + .tr-nota { margin-top: -10px; }
 article p[data-tr^="post:"] + .tr-nota { margin-top: -4px; }
 .que-pedir + .tr-nota { margin-top: -14px; }
-.tr-atrib { color: var(--ink-2); font-size: 12px; margin-top: 1px; }
+.tr-atrib { color: var(--ink-2); }
 .tr-aguja .simbolo-aguja { transform-origin: 32px 32px; animation: mov-aguja-gira 1s linear infinite; }
 /* Esqueletos (Iván, 2026-10-28): lo que carga con forma conocida (listas
    del panel y del admin, tarjetas) enseña esa forma en gris con un brillo

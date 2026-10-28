@@ -5,8 +5,8 @@
 //     que la app (`test/language_guess_test.dart`).
 //  2. Publicación en inglés (`/en/o/`) con textos en español: «Translate»
 //     bajo el título y nada pedido hasta tocarlo; al tocarlo, la traducción,
-//     `lang="en-x-mtfrom-es"`, «See original» y «Translated automatically ·
-//     Google Translate»; «See original» y «See translation» sin volver a
+//     `lang="en-x-mtfrom-es"` y una sola línea «See original · Translated by
+//     Google»; «See original» y «See translation» sin volver a
 //     pedir.
 //  3. La misma en español (`/o/`): ni «Traducir» ni una sola petición.
 //  4. Ficha en inglés (`/en/b/`): «Translate» bajo la descripción, cada
@@ -213,7 +213,8 @@ async function oferta(nav, nombre, t, vp) {
   ok(await p.locator('h1').innerText() === '[EN] Cata de vermús de Madrid', `${nombre}/${t} oferta: título traducido`);
   ok(await p.locator('h1').getAttribute('lang') === 'en-x-mtfrom-es', `${nombre}/${t} oferta: marcado como traducción automática`);
   ok(/\[EN\] Cinco vermús/.test(await p.locator(`[data-tr="offer:${OFERTA}:description"]`).innerText()), `${nombre}/${t} oferta: descripción traducida`);
-  ok(await nota.locator('button').innerText() === 'See original' && await nota.locator('.tr-atrib').innerText() === 'Translated automatically · Google Translate',
+  ok(await nota.locator('button').innerText() === 'See original' && await nota.locator('.tr-atrib').innerText() === '· Translated by Google'
+    && (await nota.boundingBox()).height < 30,
     `${nombre}/${t} oferta: «See original» y la atribución`);
   ok(traducciones().length === 1 && traducciones()[0].kind === 'offer' && traducciones()[0].lang === 'en', `${nombre}/${t} oferta: una petición ${JSON.stringify(traducciones())}`);
   await p.screenshot({ path: `${OUT}/web-oferta-traducida-${nombre}-${t}.png` });

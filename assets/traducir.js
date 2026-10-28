@@ -4,8 +4,8 @@
 // El texto sale siempre en su idioma. Debajo de lo que está en otro idioma
 // que el de la página sale un «Traducir» pequeño (icono de traducir, en
 // tinta): al tocarlo se traduce ahí mismo (la aguja pequeña mientras llega)
-// y pasa a «Ver original» con «Traducido automáticamente · Google
-// Translate». Si falla o se ha llegado al tope del mes: «No se ha podido
+// y pasa a una línea pequeña y gris, «Ver original · Traducido por Google»
+// (la atribución de Google, su «translated by Google»). Si falla o se ha llegado al tope del mes: «No se ha podido
 // traducir ahora» (tocándolo, otra vez) y el texto sigue en el original.
 // Con «Traducir siempre automáticamente» («Tu cuenta» → Ajustes; aquí,
 // `localStorage['klendar.traducir']`) sale ya traducido, sin tocar nada.
@@ -35,11 +35,11 @@
   try { siempre = localStorage.getItem('klendar.traducir') === '1'; } catch { /* sin permisos */ }
 
   const T = lang === 'en'
-    ? { tr: 'Translate', orig: 'See original', verTr: 'See translation', auto: 'Translated automatically',
+    ? { tr: 'Translate', orig: 'See original', verTr: 'See translation', por: 'Translated by',
       falla: "Couldn't translate right now", mismo: "It's already in your language", traduciendo: 'Translating…' }
-    : { tr: 'Traducir', orig: 'Ver original', verTr: 'Ver traducción', auto: 'Traducido automáticamente',
+    : { tr: 'Traducir', orig: 'Ver original', verTr: 'Ver traducción', por: 'Traducido por',
       falla: 'No se ha podido traducir ahora', mismo: 'Ya está en tu idioma', traduciendo: 'Traduciendo…' };
-  const PROVEEDOR = { google: 'Google Translate', deepl: 'DeepL' };
+  const PROVEEDOR = { google: 'Google', deepl: 'DeepL' };
 
   // Cada «Traducir»: sus prefijos, sus textos y de qué publicación o ficha.
   const kindDe = (pre) => (pre.startsWith('offer:') ? 'offer' : pre.startsWith('menu_') ? 'menu' : 'business');
@@ -123,9 +123,12 @@
         n.querySelector('button').setAttribute('aria-label', T.traduciendo);
         return;
       case 'hecho':
-        n.innerHTML = `${boton()}${u.viendoOriginal ? '' : '<small class="tr-atrib"></small>'}`;
-        n.querySelector('span').textContent = u.viendoOriginal ? T.verTr : T.orig;
-        if (!u.viendoOriginal) n.querySelector('small').textContent = `${T.auto} · ${PROVEEDOR[proveedor] || PROVEEDOR.google}`;
+        // Una sola línea pequeña y gris: «Ver original · Traducido por
+        // Google» (o «Ver traducción · …»); solo lo primero es el enlace.
+        n.innerHTML = `${boton()}<span class="tr-atrib"></span>`;
+        n.querySelector('button').classList.add('tr-gris');
+        n.querySelector('button span').textContent = u.viendoOriginal ? T.verTr : T.orig;
+        n.querySelector('.tr-atrib').textContent = `· ${T.por} ${PROVEEDOR[proveedor] || PROVEEDOR.google}`;
         return;
       case 'mismo':
         n.innerHTML = `<span class="tr-mismo">${ICONO}<span></span></span>`;

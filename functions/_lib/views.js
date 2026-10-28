@@ -232,7 +232,7 @@ async function cerradoPage(lang, ref, path) {
 function traducir(lang, ...pedir) {
   const sp = supabasePublic();
   return `<script src="/assets/idioma-probable.js?v=1" defer></script>
-<script src="/assets/traducir.js?v=2" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}" data-lang="${lang === 'en' ? 'en' : 'es'}" data-pedir="${esc(pedir.filter(Boolean).join(' '))}"></script>`;
+<script src="/assets/traducir.js?v=3" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}" data-lang="${lang === 'en' ? 'en' : 'es'}" data-pedir="${esc(pedir.filter(Boolean).join(' '))}"></script>`;
 }
 
 /**
