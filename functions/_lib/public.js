@@ -346,7 +346,7 @@ ${siteHeader(lang, esc(es + consulta), esc(enPath + consulta), actual)}
 ${siteFooter(lang)}
 ${conAmigos ? `<script src="/assets/amigos.js?v=22" defer data-lang="${en ? 'en' : 'es'}"></script>
 ` : ''}${conVisor ? `<script src="/assets/tarjeta.js?v=20261028rp" defer></script>
-` : ''}${conTarjetas ? `<script src="/assets/tarjetas.js?v=20261028rp" defer></script>
+` : ''}${conTarjetas ? `<script src="/assets/tarjetas.js?v=20261028va" defer></script>
 ` : ''}${/class="detail[" ]/.test(body) ? `<script src="/assets/barra.js?v=4" defer></script>
 ` : ''}${/^\/(en\/)?(o|b|coleccion|collection)\//.test(path) || /^\/(sorteo|en\/giveaway)\/[^/]+$/.test(path) ? desdeHistorias() : ''}${contador ? CONTADOR : ''}
 </body></html>`;

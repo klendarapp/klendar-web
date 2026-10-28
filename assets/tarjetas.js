@@ -40,6 +40,9 @@
   var EN = document.documentElement.lang === 'en';
   var LOC = EN ? 'en-GB' : 'es-ES';
   var feed = document.getElementById('feed');
+  // Descubre: volver a la primera o, ya en ella, traer la lista otra vez
+  // (lo pone el feed, abajo).
+  var subeORecarga = null;
 
   // ── Movimiento, datos y sonido ─────────────────────────────────────────
   var quieto = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -969,6 +972,93 @@
     }, { root: caja0, rootMargin: '200% 0px' }) : null;
     var observaMas = function (a) { if (cerca) cerca.observe(a); };
     feed.querySelectorAll('[data-feed-mas]').forEach(observaMas);
+
+    // La lista otra vez, sin recargar la página (tocar «Descubre» o el logo
+    // ya en la primera, como «tirar para recargar» en la app): la misma
+    // dirección, con sus filtros, y sus tarjetas en lugar de las de ahora;
+    // la oferta fijada de un RRPP se queda la primera. Mientras llega, la
+    // aguja del logo gira (con «Reducir movimiento», quieta). Si no llega
+    // (sin red), se queda lo que había.
+    var giraAguja = function () {
+      var ag = document.querySelector('header.top .brand .simbolo-aguja');
+      if (!ag || quieto.matches || !ag.animate) return function () {};
+      ag.style.transformOrigin = '32px 32px';
+      var giro = ag.animate([{ transform: 'rotate(0turn)' }, { transform: 'rotate(1turn)' }], { duration: 1000, iterations: Infinity });
+      // Al acabar, termina la vuelta que lleva (frena en las 12).
+      return function () {
+        giro.effect.updateTiming({ iterations: Math.max(1, Math.ceil((giro.currentTime || 0) / 1000)) });
+        giro.finished.then(function () { giro.cancel(); }, function () {});
+      };
+    };
+    var recargando = false;
+    var recargaFeed = function () {
+      if (recargando) return;
+      recargando = true;
+      feed.setAttribute('aria-busy', 'true');
+      var para = giraAguja();
+      fetch(location.href, { credentials: 'same-origin', cache: 'no-cache' }).then(function (r) {
+        if (!r.ok) throw new Error(String(r.status));
+        return r.text();
+      }).then(function (txt) {
+        var nuevo = new DOMParser().parseFromString(txt, 'text/html').getElementById('feed');
+        // Ahora no hay nada (o es otra cosa): la página entera.
+        if (!nuevo) { location.reload(); return; }
+        var fijadas = Array.prototype.slice.call(feed.querySelectorAll(':scope > .tj--fijada'));
+        var yaFijada = function (el) {
+          var o = el.getAttribute('data-o');
+          return Boolean(o) && fijadas.some(function (f) { return f.getAttribute('data-o') === o; });
+        };
+        pantallas().forEach(function (el) { if (ojo) ojo.unobserve(el); });
+        feed.querySelectorAll('[data-feed-mas]').forEach(function (m) { if (cerca) cerca.unobserve(m); });
+        var trozo = document.createDocumentFragment();
+        fijadas.forEach(function (f) { trozo.appendChild(f); });
+        var hijos = [];
+        Array.prototype.forEach.call(nuevo.children, function (el) {
+          if (yaFijada(el)) return;
+          var n = document.importNode(el, true);
+          hijos.push(n);
+          trozo.appendChild(n);
+        });
+        actual = null;
+        feed.textContent = '';
+        feed.appendChild(trozo);
+        feed.setAttribute('data-pagina', nuevo.getAttribute('data-pagina') || '1');
+        hijos.forEach(function (h) { iniciar(h); });
+        feed.querySelectorAll('[data-feed-mas]').forEach(observaMas);
+        (rueda() || window).scrollTo({ top: 0 });
+        marca(pantallas()[0]);
+      }).catch(function () { /* sin red: lo que había */ }).then(function () {
+        recargando = false;
+        feed.removeAttribute('aria-busy');
+        para();
+      });
+    };
+    subeORecarga = function () {
+      var caja = rueda() || document.scrollingElement || document.documentElement;
+      if (caja.scrollTop > 2) caja.scrollTo({ top: 0, behavior: suave() });
+      else recargaFeed();
+    };
+  }
+
+  // ── Tocar otra vez «Descubre» o el logo, ya en Descubre ───────────────
+  // (Iván, 2026-10-28), como en la app, en iOS o en Instagram: si no está en
+  // la primera, vuelve a ella (con «Reducir movimiento», de un salto); si ya
+  // está, trae la lista otra vez. Sin publicaciones, arriba o la página otra
+  // vez. Con Ctrl, Cmd o Mayús (o la rueda), el enlace de siempre.
+  if (document.body.classList.contains('pagina-descubre')) {
+    document.querySelectorAll('header.top a.brand').forEach(function (a) {
+      a.setAttribute('aria-label', EN ? 'Klendar, back to top' : 'Klendar, volver arriba');
+    });
+    document.addEventListener('click', function (e) {
+      if (e.defaultPrevented || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+      var a = e.target instanceof Element ? e.target.closest('a[data-tab="descubre"], header.top a.brand') : null;
+      if (!a) return;
+      e.preventDefault();
+      if (subeORecarga) return subeORecarga();
+      var caja = document.scrollingElement || document.documentElement;
+      if (caja.scrollTop > 2) caja.scrollTo({ top: 0, behavior: suave() });
+      else location.reload();
+    });
   }
 
   iniciar(document);
