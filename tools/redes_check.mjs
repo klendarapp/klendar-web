@@ -2,7 +2,7 @@
 // (Iván, 2026-10-28), contra la web local y solo leyendo:
 //  1. En páginas estáticas (portada, prensa, legales, «Tu cuenta») y dinámicas
 //     (Descubre, Explorar, agenda), ES y EN: el pie lleva «Klendar en redes
-//     sociales» con Instagram y TikTok (@klendar.app), cada uno con su nombre
+//     sociales» con Instagram y TikTok (@klendar.app) y LinkedIn, cada uno con su nombre
 //     accesible, en tinta y como enlace normal (sin target ni scripts de la red).
 //  2. Nada de terceros incrustado: ni iframes ni scripts de instagram.com o
 //     tiktok.com en ninguna de esas páginas.
@@ -16,7 +16,7 @@ import { createRequire } from 'node:module';
 
 const { chromium } = createRequire(import.meta.url)(process.env.PW || 'playwright');
 const BASE = process.env.BASE || 'http://localhost:8793';
-const REDES = ['https://www.instagram.com/klendar.app/', 'https://www.tiktok.com/@klendar.app'];
+const REDES = ['https://www.instagram.com/klendar.app/', 'https://www.tiktok.com/@klendar.app', 'https://www.linkedin.com/company/klendar-app/'];
 
 let fallos = 0;
 const ok = (cond, msg) => {
@@ -37,7 +37,7 @@ try {
   for (const [ruta, lang] of PAGINAS) {
     const terceros = [];
     const escucha = (req) => {
-      if (/instagram\.com|tiktok\.com|cdninstagram|tiktokcdn/.test(req.url())) terceros.push(req.url());
+      if (/instagram\.com|tiktok\.com|cdninstagram|tiktokcdn|linkedin\.com|licdn/.test(req.url())) terceros.push(req.url());
     };
     page.on('request', escucha);
     await page.goto(BASE + ruta, { waitUntil: 'domcontentloaded' });
@@ -65,9 +65,9 @@ try {
     ok(pie, `${ruta}: el pie lleva las redes`);
     if (!pie) continue;
     ok(pie.etiqueta === (lang === 'en' ? 'Klendar on social media' : 'Klendar en redes sociales'), `${ruta}: «${pie.etiqueta}»`);
-    ok(JSON.stringify(pie.enlaces.map((e) => e.href)) === JSON.stringify(REDES), `${ruta}: Instagram y TikTok, @klendar.app`);
+    ok(JSON.stringify(pie.enlaces.map((e) => e.href)) === JSON.stringify(REDES), `${ruta}: Instagram, TikTok y LinkedIn`);
     for (const e of pie.enlaces) {
-      ok(e.nombre.includes(e.texto) && e.nombre.includes('@klendar.app')
+      ok(e.nombre.includes(e.texto) && (e.texto === 'LinkedIn' ? !e.nombre.includes('(') : e.nombre.includes('@klendar.app'))
         && e.nombre.startsWith(lang === 'en' ? 'Klendar on ' : 'Klendar en '), `${ruta}: nombre accesible «${e.nombre}»`);
       ok(!e.target, `${ruta}: ${e.texto} es un enlace normal`);
       ok(e.alto >= 44, `${ruta}: ${e.texto} mide ${e.alto} px de alto`);

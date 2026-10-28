@@ -75,13 +75,18 @@ export const FOOT_LEGAL = [
 export const REDES = [
   { red: 'instagram', nombre: 'Instagram', usuario: '@klendar.app', url: 'https://www.instagram.com/klendar.app/' },
   { red: 'tiktok', nombre: 'TikTok', usuario: '@klendar.app', url: 'https://www.tiktok.com/@klendar.app' },
+  // La página de empresa (comprobada el 2026-10-29): sin @, el nombre accesible
+  // es solo «Klendar en LinkedIn».
+  { red: 'linkedin', nombre: 'LinkedIn', usuario: '', url: 'https://www.linkedin.com/company/klendar-app/' },
 ];
 
 // Los mismos iconos que la app (Material, en contorno: camera_alt para
-// Instagram y music_note para TikTok), en tinta como el resto del pie.
+// Instagram, music_note para TikTok y work para LinkedIn), en tinta como el
+// resto del pie.
 const REDES_ICONO = {
   instagram: 'M14.12 4l1.83 2H20v12H4V6h4.05l1.83-2h4.24M15 2H9L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2zm-3 7c1.65 0 3 1.35 3 3s-1.35 3-3 3-3-1.35-3-3 1.35-3 3-3m0-2c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5z',
   tiktok: 'M12 3l.01 10.55c-.59-.34-1.27-.55-2-.55C7.79 13 6 14.79 6 17s1.79 4 4.01 4S14 19.21 14 17V7h4V3h-6zm-1.99 16c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z',
+  linkedin: 'M14 6V4h-4v2h4zM4 8v11h16V8H4zm16-2c1.11 0 2 .89 2 2v11c0 1.11-.89 2-2 2H4c-1.11 0-2-.89-2-2l.01-11c0-1.11.88-2 1.99-2h4V4c0-1.11.89-2 2-2h4c1.11 0 2 .89 2 2v2h4z',
   enlace: 'M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z',
 };
 
@@ -96,7 +101,7 @@ export const redes = () => REDES;
 export function redesHtml(lang, { estilo = '' } = {}) {
   const en = lang === 'en';
   return REDES.map((r) => {
-    const nombre = `${en ? 'Klendar on' : 'Klendar en'} ${r.nombre} (${r.usuario})`;
+    const nombre = `${en ? 'Klendar on' : 'Klendar en'} ${r.nombre}${r.usuario ? ` (${r.usuario})` : ''}`;
     return `<a class="red" href="${r.url}" rel="me noopener" aria-label="${nombre}" title="${nombre}"${estilo ? ` style="${estilo}"` : ''}><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" style="flex:none"><path fill="currentColor" d="${REDES_ICONO[r.red] || REDES_ICONO.enlace}"/></svg><span>${r.nombre}</span></a>`;
   }).join('');
 }

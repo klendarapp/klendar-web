@@ -883,6 +883,7 @@ KL_DIC('eu', {
   "Ir al inicio": "Joan hasierara",
   "Jóvenes": "Gazteak",
   "Klendar en Instagram (@klendar.app)": "Klendar Instagram-en (@klendar.app)",
+  "Klendar en LinkedIn": "Klendar LinkedIn-en",
   "Klendar en redes sociales": "Klendar sare sozialetan",
   "Klendar en TikTok (@klendar.app)": "Klendar TikTok-en (@klendar.app)",
   "Klendar ha retirado esta petición porque incumplía las Normas de la comunidad. Te hemos mandado un aviso con el motivo.": "Klendarrek eskaera hau kendu du, Komunitatearen arauak urratzen zituelako. Arrazoia duen abisu bat bidali dizugu.",

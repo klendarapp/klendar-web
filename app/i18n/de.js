@@ -883,6 +883,7 @@ KL_DIC('de', {
   "Ir al inicio": "Zur Startseite",
   "Jóvenes": "Jugendliche",
   "Klendar en Instagram (@klendar.app)": "Klendar auf Instagram (@klendar.app)",
+  "Klendar en LinkedIn": "Klendar auf LinkedIn",
   "Klendar en redes sociales": "Klendar in sozialen Netzwerken",
   "Klendar en TikTok (@klendar.app)": "Klendar auf TikTok (@klendar.app)",
   "Klendar ha retirado esta petición porque incumplía las Normas de la comunidad. Te hemos mandado un aviso con el motivo.": "Klendar hat diese Anfrage entfernt, weil sie gegen die Community-Regeln verstoßen hat. Wir haben dir eine Mitteilung mit dem Grund geschickt.",
