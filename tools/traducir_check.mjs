@@ -171,6 +171,21 @@ function supabaseFalso() {
   });
 }
 
+
+// Pegado al texto (Iván, 2026-10-28): el hueco que se ve entre el texto y
+// «Translate» (de la caja de su línea a la del enlace) y la zona de toque
+// (≥ 44 de alto: el toque 10 px por encima o por debajo de lo que se ve
+// también es del enlace).
+const pegado = (p, texto, nota) => p.evaluate(([t, n]) => {
+  const el = document.querySelector(t);
+  const b = document.querySelector(`${n} .tr-boton`);
+  b.scrollIntoView({ block: 'center', behavior: 'instant' });
+  const r = el.getBoundingClientRect();
+  const v = b.querySelector('span').getBoundingClientRect();
+  const x = v.left + 4;
+  const zona = [v.top - 10, v.bottom + 10].map((y) => document.elementFromPoint(x, y)).map((e) => (e?.closest('.tr-boton') === b ? true : `${e?.tagName}.${e?.className}`));
+  return { hueco: Math.round(v.top - r.bottom), zona, m: getComputedStyle(el).marginBottom, mt: getComputedStyle(b.parentElement).marginTop, prev: b.parentElement.previousElementSibling?.tagName };
+}, [texto, nota]);
 const traducciones = () => estado.pedidos.filter((x) => x.op !== 'status');
 const empieza = async (nav, vp, { siempre = false, modo = 'bien' } = {}) => {
   estado.modo = modo;
@@ -190,6 +205,8 @@ async function oferta(nav, nombre, t, vp) {
   await nota.locator('button').waitFor({ timeout: 8000 });
   ok(await nota.locator('button').innerText() === 'Translate', `${nombre}/${t} oferta: «Translate» bajo el título`);
   ok(traducciones().length === 0, `${nombre}/${t} oferta: nada pedido sin tocar`);
+  const g = await pegado(p, 'h1', `[data-tr-nota="offer:${OFERTA}:"]`);
+  ok(g.hueco >= 0 && g.hueco <= 8 && g.zona.every((z) => z === true), `${nombre}/${t} oferta: pegado al título ${JSON.stringify(g)}`);
   await p.screenshot({ path: `${OUT}/web-oferta-traducir-${nombre}-${t}.png` });
   await nota.locator('button').click();
   await p.waitForFunction(() => /\[EN\]/.test(document.querySelector('h1').textContent));
@@ -243,6 +260,11 @@ async function ficha(nav, nombre, t, vp) {
     && await notas('highlight:') === 1 && await notas('menu_') === 1,
     `${nombre}/${t} ficha: «Translate» bajo la descripción, cada novedad, «Qué pedir aquí» y la carta`);
   ok(traducciones().length === 0, `${nombre}/${t} ficha: nada pedido sin tocar`);
+  for (const [texto, nota] of [[`[data-tr="business:${BIZ}:description"]`, `[data-tr-nota="business:${BIZ}:description"]`],
+    [`[data-tr="post:${POST1}:body"]`, `[data-tr-nota="post:${POST1}:"]`], ['.que-pedir', '[data-tr-nota="highlight:"]']]) {
+    const g = await pegado(p, texto, nota);
+    ok(g.hueco >= 0 && g.hueco <= 8 && g.zona.every((z) => z === true), `${nombre}/${t} ficha: pegado ${nota} ${JSON.stringify(g)}`);
+  }
   await p.locator(`[data-tr-nota="post:${POST1}:"] button`).click();
   await p.waitForFunction((id) => /\[EN\]/.test(document.querySelector(`[data-tr="post:${id}:body"]`).textContent), POST1);
   ok(JSON.stringify(traducciones()[0]?.only) === JSON.stringify([`post:${POST1}:`]) && traducciones()[0].kind === 'business',
