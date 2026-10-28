@@ -1,4 +1,4 @@
-// Prueba de lo publicado el 2026-10-28 (TR1–TR4, aprobados por Iván ese día;
+// Prueba de lo publicado el 2026-10-28 (TR1–TR4 y TR6, aprobados por Iván ese día;
 // traducción a petición), en la web local:
 //
 //  1. Privacidad (ES y EN): la fila «Traducción automática» a petición
@@ -29,15 +29,15 @@ const DESCARGO = /THIS SERVICE MAY CONTAIN TRANSLATIONS POWERED BY GOOGLE\. GOOG
 const PAGINAS = [
   ['/privacidad/', [
     /Traducción automática\s+Lo que pides traducir \(al tocar «Traducir» debajo de un texto de un negocio que está en otro idioma\), sin guardar quién lo pidió; y, si la enciendes, la preferencia «Traducir siempre automáticamente»/,
-    /la descripción del negocio, «Qué pedir aquí» y su carta, con «Traducido automáticamente · Google Translate» y «Ver original»\. Nunca se traducen las reseñas, las preguntas ni los nombres\./,
+    /la descripción del negocio, «Qué pedir aquí» y su carta; junto al texto traducido se indica que lo ha traducido Google y siempre puedes ver el original\. Nunca se traducen las reseñas, las preguntas ni los nombres\./,
     /Ejecución del contrato \(lo pides tú; «Traducir siempre automáticamente» empieza apagado\)\s+La preferencia, hasta que la cambies o elimines la cuenta\./,
     /28 de octubre de 2026: La traducción automática es a petición/,
-  ], [/Traducir publicaciones a mi idioma/]],
+  ], [/Traducir publicaciones a mi idioma/, /Traducido automáticamente · Google Translate/]],
   ['/en/privacy/', [
     /Automatic translation\s+What you ask to translate \(by tapping “Translate” under a business's text that is in another language\), without storing who asked/,
-    /“What to order here” and its menu, with “Translated automatically · Google Translate” and “See original”\. Reviews, questions and names are never translated\./,
+    /“What to order here” and its menu; next to the translated text it says that Google translated it, and you can always see the original\. Reviews, questions and names are never translated\./,
     /28 October 2026: Automatic translation is on request/,
-  ], [/Translate publications into my language/]],
+  ], [/Translate publications into my language/, /Translated automatically · Google Translate/]],
   ['/terminos/', [
     /Si pides ver traducidos los textos de los negocios \(con «Traducir» o con «Traducir siempre automáticamente»\), la traducción es automática, la hace Google Translate y puede tener errores/,
     DESCARGO,
