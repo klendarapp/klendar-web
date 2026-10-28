@@ -3,6 +3,7 @@
 // RF18b (Mapbox en encargados) y UA1–UA4 (ubicación aproximada por la
 // conexión en klendar.app), en la web local:
 //
+//  (Al día con TR1–TR4, del mismo día: ver tools/legal_tp_check.mjs.)
 //  1. Privacidad (ES y EN): la fila «Traducción automática» con Google, el
 //     encargado Google Cloud Translation, Mapbox con los nombres de lugares y
 //     la librería, la fila nueva «Ubicación aproximada por la conexión»
@@ -30,7 +31,7 @@ const ok = (c, m) => { if (!c) { fallos++; console.log('FALLO:', m); } else cons
 
 const PAGINAS = [
   ['/privacidad/', 'Última actualización: 28 de octubre de 2026', [
-    /Traducción automática\s+Si has encendido «Traducir publicaciones a mi idioma»[\s\S]*?Lo traduce nuestro servidor con Google Cloud Translation, que solo recibe los textos de los negocios \(sin tus datos ni tu cuenta\)[\s\S]*?las de un negocio que se elimina, en ese momento/,
+    /Traducción automática\s+Lo que pides traducir[\s\S]*?Lo traduce nuestro servidor con Google Cloud Translation, que solo recibe los textos de los negocios \(sin tus datos ni tu cuenta\)[\s\S]*?las de un negocio que se elimina, en ese momento/,
     /Google Cloud Translation \(Google Cloud EMEA Ltd\., Irlanda: traducción automática de los textos que publican los negocios, solo si alguien la ha pedido; no recibe datos de las personas usuarias;/,
     /Mapbox \(Mapbox, Inc\., EE\. UU\.: mapas, rutas a pie y nombres de lugares;[\s\S]*?en la web, tu navegador le pide también la librería que dibuja los mapas; nunca tu nombre ni tu correo;/,
     /En la web, tu navegador la borra a las 6 horas\s+Ubicación aproximada por la conexión \(solo klendar\.app\)\s+La ciudad y un punto aproximado que Cloudflare deduce de la dirección IP[\s\S]*?Interés legítimo \(art\. 6\.1\.f RGPD\)[\s\S]*?No se guarda: se usa en el momento de pedir la página y se descarta/,
@@ -38,7 +39,7 @@ const PAGINAS = [
     /28 de octubre de 2026: Traducción automática: qué se traduce, que lo hace Google Cloud Translation/,
   ], [/cuando el servicio esté disponible/]],
   ['/en/privacy/', 'Last updated: 28 October 2026', [
-    /Automatic translation\s+Whether you've turned on “Translate publications into my language”[\s\S]*?Our server translates them with Google Cloud Translation, which only receives the businesses' text \(not your data or your account\)/,
+    /Automatic translation\s+What you ask to translate[\s\S]*?Our server translates them with Google Cloud Translation, which only receives the businesses' text \(not your data or your account\)/,
     /Google Cloud Translation \(Google Cloud EMEA Ltd\., Ireland: automatic translation of the text businesses publish/,
     /Mapbox \(Mapbox, Inc\., USA: maps, walking directions and place names;[\s\S]*?the library that draws the maps; never your name or email;/,
     /On the website, your browser deletes it after 6 hours\s+Approximate location from your connection \(klendar\.app only\)[\s\S]*?Legitimate interest \(Art\. 6\(1\)\(f\) GDPR\)[\s\S]*?Not stored: used when the page is requested and discarded/,
@@ -53,11 +54,11 @@ const PAGINAS = [
     /The approximate area of your connection \(if you don't share your location\) isn't stored in your browser or anywhere else: it's only used to build the page you request\./,
   ], []],
   ['/terminos/', 'Última actualización: 28 de octubre de 2026', [
-    /Si eliges ver traducidos los textos de los negocios, la traducción es automática y puede tener errores: lo que vale es el texto original del negocio, que siempre puedes ver con «Ver original»\./,
+    /la traducción es automática, la hace Google Translate y puede tener errores: lo que vale es el texto original del negocio, que siempre puedes ver con «Ver original»\./,
     /28 de octubre de 2026: Traducción automática \(apartado 3\)/,
   ], []],
   ['/en/terms/', 'Last updated: 28 October 2026', [
-    /If you choose to see businesses' text translated, the translation is automatic and may contain mistakes: what counts is the business's original text/,
+    /the translation is automatic, it's done by Google Translate and it may contain mistakes: what counts is the business's original text/,
   ], []],
   ['/negocios/', 'Última actualización: 28 de octubre de 2026', [
     /\(enlace e imagen para historias\) y, si lo piden, ver sus textos traducidos automáticamente\./,

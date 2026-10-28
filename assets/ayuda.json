@@ -1,5 +1,5 @@
 {
- "version": "c2653898b9d9",
+ "version": "573e2b00564e",
  "contact": "info@klendar.app",
  "tabs": {
   "es": {
@@ -140,7 +140,14 @@
     "q": "La traducción no es correcta",
     "a": [
      {
-      "t": "Pulsa «Ver original»: lo que vale es lo que escribió el negocio. Si la traducción cambia el sentido de una oferta, escríbenos a "
+      "t": "Pulsa «Ver original»: lo que vale es lo que escribió el negocio. Las traducciones las hace "
+     },
+     {
+      "t": "Google Translate",
+      "u": "https://cloud.google.com/translate"
+     },
+     {
+      "t": ", solo cuando tocas «Traducir» o si tienes encendido «Traducir siempre automáticamente» (Ajustes). Si la traducción cambia el sentido de una oferta, escríbenos a "
      },
      {
       "t": "info@klendar.app",
@@ -720,7 +727,14 @@
     "q": "The translation is wrong",
     "a": [
      {
-      "t": "Tap “See original”: what counts is what the business wrote. If the translation changes the meaning of an offer, email us at "
+      "t": "Tap “See original”: what counts is what the business wrote. Translations are done by "
+     },
+     {
+      "t": "Google Translate",
+      "u": "https://cloud.google.com/translate"
+     },
+     {
+      "t": ", only when you tap “Translate” or if you have “Always translate automatically” on (Settings). If the translation changes the meaning of an offer, email us at "
      },
      {
       "t": "info@klendar.app",

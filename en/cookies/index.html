@@ -83,7 +83,8 @@
 <tr><td><code>klendar.explorar</code></td><td>Explore (local storage)</td><td>The last view you chose in Explore (Plans or Places; list, map or calendar), so it opens there next time</td><td>Until you change it</td><td>Preference you chose</td></tr>
 <tr><td><code>klendar.cerca</code></td><td>Discover, Explore and publication pages (local storage)</td><td>Your position (latitude and longitude) when you tap “Near me” or “Use my location”, to sort by distance and show how far away each place is</td><td>6 hours (then deleted)</td><td>Technical (you ask for it, with the browser's location permission)</td></tr>
 <tr><td><code>klendar.sonido</code></td><td>Discover, Explore and publication pages (session storage)</td><td>Remember that you've turned on video sound while you browse</td><td>Until you close the tab</td><td>Preference you chose</td></tr>
-<tr><td><code>klendar.traducir</code></td><td>“Your account” and publication pages (local storage)</td><td>Remember whether you want businesses' text translated when you're not logged in</td><td>Until you change it</td><td>Preference you chose</td></tr>
+<tr><td><code>klendar.traducir</code></td><td>“Your account” and publication pages (local storage)</td><td>Remember whether you've turned on “Always translate automatically” when you're not logged in</td><td>Until you change it</td><td>Preference you chose</td></tr>
+<tr><td><code>klendar.traducir.ok</code></td><td>Publication and business pages (session storage)</td><td>Whether automatic translation is available right now, so it isn't checked on every page</td><td>10 minutes, or until you close the tab</td><td>Technical</td></tr>
 <tr><td><code>klendar.gustos</code></td><td>Discover, Explore and “Your account” (local storage)</td><td>A copy of your interests and your city, to order Discover and Explore and for the travel notice</td><td>Until you log out or change them</td><td>Preference you chose</td></tr>
 <tr><td><code>klendar.busquedas</code></td><td>Explore (local storage)</td><td>Your last 10 searches, to show them when you tap the search box</td><td>Until you clear them (one or all)</td><td>Preference you chose</td></tr>
 <tr><td><code>klendar.viaje</code></td><td>Discover (local storage)</td><td>The date you closed the travel notice, so it doesn't show again that day (not where you were)</td><td>Until the next day (replaced)</td><td>Preference you chose</td></tr>
@@ -113,6 +114,7 @@
 
 <h2 class="cambios" id="historial">Change history</h2>
 <ul>
+  <li><strong>28 October 2026</strong>: The klendar.traducir key stores “Always translate automatically”; and one more key, klendar.traducir.ok (whether translation is available).</li>
   <li><strong>28 October 2026</strong>: Your connection's approximate area, used without your location, isn't stored in your browser.</li>
   <li><strong>28 October 2026</strong>: Your filters are remembered until you change or clear them (“When?”, until 6:00; your position, 6 hours); two more keys (the last view in Explore and the logo animation); the klendar_18 cookie is deleted when you log out; the map library is downloaded from Mapbox; and the login check is for Google (you can't log in with Apple on the website).</li>
   <li><strong>27 October 2026</strong>: The klendar_18 cookie (the answer to “Are you 18 or over?”), the first on klendar.app.</li>
