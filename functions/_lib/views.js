@@ -221,15 +221,18 @@ async function cerradoPage(lang, ref, path) {
 
 // ── Publicación ────────────────────────────────────────────────────────────
 /**
- * Traducción automática para quien la tiene encendida («Tu cuenta» →
- * Ajustes): `/assets/traducir.js` no hace nada (ni pide nada) si no. Se le
- * dice qué pedir (`offer:<id>`, `business:<id>`, `menu:<id>`); el texto lo
- * saca el servidor. Lo traducible lleva `data-tr` y el aviso «Traducido
- * automáticamente · Ver original», `data-tr-nota`.
+ * Traducción a petición (Iván, 2026-10-28): debajo de lo que está en otro
+ * idioma que el de la página, «Traducir» (`/assets/traducir.js`; con
+ * «Traducir siempre automáticamente», ya traducido). Si nada está en otro
+ * idioma, no pide nada. Se le dice de quién es cada texto (`offer:<id>`,
+ * `business:<id>`, `menu:<id>`); el texto lo saca el servidor. Lo traducible
+ * lleva `data-tr` y cada «Traducir», `data-tr-nota` con sus prefijos (solo
+ * traduce lo suyo).
  */
 function traducir(lang, ...pedir) {
   const sp = supabasePublic();
-  return `<script src="/assets/traducir.js?v=1" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}" data-lang="${lang === 'en' ? 'en' : 'es'}" data-pedir="${esc(pedir.filter(Boolean).join(' '))}"></script>`;
+  return `<script src="/assets/idioma-probable.js?v=1" defer></script>
+<script src="/assets/traducir.js?v=2" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}" data-lang="${lang === 'en' ? 'en' : 'es'}" data-pedir="${esc(pedir.filter(Boolean).join(' '))}"></script>`;
 }
 
 /**
@@ -474,7 +477,7 @@ async function fichaOferta(id, lang, rpRaw, H) {
     `<a class="mas-peligro" data-solo-publico href="${cuenta(lang)}#/denunciar/offer/${encodeURIComponent(o.id)}" rel="nofollow">${S.reportShort}</a>`,
   ], lang)}</div>
       <h1 data-tr="offer:${esc(o.id)}:title">${esc(o.title)}</h1>
-      <p data-tr-nota="offer:" hidden></p>
+      <p data-tr-nota="offer:${esc(o.id)}:" hidden></p>
       <a class="ficha-negocio" href="${esc(bHref)}"${Number.isFinite(o.lat) && Number.isFinite(o.lng) ? ` data-lat="${Number(o.lat).toFixed(5)}" data-lng="${Number(o.lng).toFixed(5)}"` : ''}>${logo}
         <span><b>${esc(o.venue_address ? S.organised(o.business_name) : o.business_name)}</b><span class="muted">${o.business_rating && o.business_ratings ? `<span class="stars-mini" aria-hidden="true">★</span> ${nota(o.business_rating, lang)} (${o.business_ratings})` : esc(o.business_city || '')}<span class="tj-dist" hidden></span></span></span>
         <svg class="ic" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M8.59 16.59 13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg></a>
@@ -1107,11 +1110,11 @@ export async function businessPage(param, lang, search = '') {
   const cosas = (Array.isArray(info.highlights) ? info.highlights : []).filter((h) => h && h.title);
   const momentos = (Array.isArray(info.moments) ? info.moments : []).map((m) => KMO.nombre(m, lang)).filter(Boolean);
   const quePedir = cosas.length && !parado ? `<h2 id="que-pedir">${esc(S.highlights)}</h2>
-      <p data-tr-nota="highlight:" hidden></p>
       <ul class="que-pedir">${cosas.map((h) => `<li>
         ${seguro(h.image_url) ? miniatura(seguro(h.image_url), { grupo: `que-pedir-${esc(h.id || '')}`, clase: 'dish', etiqueta: h.title, lang, ancho: 64, alto: 64 }) : `<span class="que-pedir-ic" aria-hidden="true">${icono('carta', 20)}</span>`}
         <span><b${isUuid(h.id) ? ` data-tr="highlight:${h.id}:title"` : ''}>${esc(h.title)}</b>${h.note ? `<small${isUuid(h.id) ? ` data-tr="highlight:${h.id}:note"` : ''}>${esc(h.note)}</small>` : ''}</span>
-      </li>`).join('')}</ul>` : '';
+      </li>`).join('')}</ul>
+      <p data-tr-nota="highlight:" hidden></p>` : '';
   const momentosHtml = momentos.length ? `<p class="momentos">${icono('reloj', 18)}<span>${esc(momentos.join(' · '))}</span></p>` : '';
   // Días con otro horario: {"2026-11-09": [["10:00","14:00"]]} para
   // /assets/horario.js.
@@ -1185,6 +1188,7 @@ export async function businessPage(param, lang, search = '') {
   const novedadHtml = (p) => `<article${isUuid(p.id) ? ` id="novedad-${p.id}"` : ''}>
           <p class="muted">${esc(fmtWhen(p.created_at, lang, tz))}</p>
           ${p.body ? `<p${isUuid(p.id) ? ` data-tr="post:${p.id}:body"` : ''}>${esc(p.body).replace(/\n/g, '<br>')}</p>` : ''}
+          ${p.body && isUuid(p.id) ? `<p data-tr-nota="post:${p.id}:" hidden></p>` : ''}
           ${p.image_url ? miniatura(p.image_url, { grupo: `novedad-${p.id}`, clase: 'nov-media', etiqueta: S.news, lang, ancho: 900, alto: 600 }) : ''}
           <a class="denuncia" href="${cuenta(lang)}#/denunciar/post/${encodeURIComponent(p.id)}" rel="nofollow">${S.report}</a>
         </article>`;
@@ -1293,7 +1297,7 @@ ${traducir(lang, `business:${b.id}`, carta.length ? `menu:${b.id}` : '')}${cuent
       <a class="pill${soloVerificadas ? ' on' : ''}" href="${path}?ver=resenas&amp;resenas=verificadas" rel="nofollow"${soloVerificadas ? ' aria-current="true"' : ''}>${esc(S.verifiedReviews(nVerificadas))}</a>
     </nav>` : ''}
     ${lista.length
-      ? (ver === 'novedades' ? `<p data-tr-nota="post:" hidden></p><div class="novedades">${lista.map(novedadHtml).join('')}</div>`
+      ? (ver === 'novedades' ? `<div class="novedades">${lista.map(novedadHtml).join('')}</div>`
         : ver === 'preguntas' ? `<div class="preguntas">${lista.map(preguntaHtml).join('')}</div>`
           : `<div class="resenas">${lista.map(resenaHtml).join('')}</div>`)
       : `<p class="empty">${ver === 'novedades' ? '' : ver === 'preguntas' ? esc(recibe ? S.noQuestions : pronto ? S.noQuestionsYet : S.noAsk) : soloVerificadas ? S.noVerified : S.noReviews}</p>`}
@@ -1339,7 +1343,7 @@ ${traducir(lang, `business:${b.id}`, '')}${ver === 'preguntas' ? `\n${PREGUNTAS_
   // wifi…) y sus momentos. Sin nada de eso, «Sobre el negocio».
   const marcasSitio = parado ? '' : `${sitioFicha(sitio, lang)}${momentosHtml}`;
   const descripcion = b.description ? `<p data-tr="business:${esc(b.id)}:description">${esc(b.description).replace(/\n/g, '<br>')}</p>
-      <p data-tr-nota="business:" hidden></p>` : '';
+      <p data-tr-nota="business:${esc(b.id)}:description" hidden></p>` : '';
   const elSitio = marcasSitio || descripcion ? `<h2 id="el-sitio">${marcasSitio ? S.place : S.about}</h2>${descripcion}${marcasSitio}` : '';
   // «Preguntas»: la más útil y «Ver todas (N)».
   const preguntasTop = (pq?.top || []).slice(0, 1);
@@ -1410,7 +1414,6 @@ ${traducir(lang, `business:${b.id}`, '')}${ver === 'preguntas' ? `\n${PREGUNTAS_
         <p class="muted">${esc(sellos.some((c) => c.by_visit) ? S.stampsNoteVisit : S.stampsNote)}</p>` : ''}
       ${exclusivas}
       ${novedades.length ? `<h2 id="novedades">${S.news}</h2>
-        <p data-tr-nota="post:" hidden></p>
         <div class="novedades">${novedades.map(novedadHtml).join('')}</div>
         ${Number(b.posts) > novedades.length ? `<p><a class="pill" href="${path}?ver=novedades">${esc(S.seeAll(Number(b.posts)))}</a></p>` : ''}` : ''}
       <h2 id="resenas">${S.reviews}${b.rating && b.ratings ? ` <small class="muted">★ ${nota(b.rating, lang)} (${b.ratings})</small>` : ''}</h2>

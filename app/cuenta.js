@@ -544,7 +544,7 @@ function textoPlanesJuntos(comparte, encendido) {
     : t('Nadie ve a cuántos planes habéis ido juntos, y tú tampoco lo ves en la ficha de tus amigos');
 }
 
-/** Copia de «Traducir publicaciones a mi idioma» para las fichas públicas
+/** Copia de «Traducir siempre automáticamente» para las fichas públicas
  * (`/assets/traducir.js` la lee sin sesión ni peticiones). */
 function guardaTraduccionLocal(encendida) {
   try { localStorage.setItem('klendar.traducir', encendida ? '1' : '0'); } catch { /* sin permisos */ }
@@ -554,8 +554,9 @@ RUTAS.ajustes = async ([sub]) => {
   if (sub === 'notificaciones') return ajustesNotificaciones();
   if (sub === 'calendario') return ajustesCalendario();
   if (!exigeSesion(sub === 'bloqueadas' ? 'ajustes/bloqueadas' : 'ajustes')) return;
-  // Traducción automática: la preferencia (en el perfil, como en la app) y si
-  // hay proveedor (sin clave en el servidor, «Llega pronto»).
+  // «Traducir siempre automáticamente» (en el perfil, como en la app; apagado,
+  // se traduce solo al tocar «Traducir» en las fichas) y si hay proveedor
+  // (sin clave en el servidor, «Llega pronto»).
   const traduccion = Promise.all([
     llamar('my_translation_settings', {}).catch(() => null),
     sb.functions.invoke('translate', { body: { op: 'status' } })
@@ -603,9 +604,9 @@ RUTAS.ajustes = async ([sub]) => {
           ${KL_IDIOMAS.map((l) => `<option value="${l}" lang="${l}"${p.locale === l ? ' selected' : ''}>${KL_NOMBRE_IDIOMA[l]}</option>`).join('')}
         </select></label>
       <label class="check"><input type="checkbox" id="traducir"${tradOk && trad?.translate_content ? ' checked' : ''}${tradOk ? '' : ' disabled'}>
-        <span><b>${esc(t('Traducir publicaciones a mi idioma'))}</b><br><small>${esc(tradOk
-    ? t('Lo que escriben los negocios (publicaciones, novedades, su ficha y su carta), traducido automáticamente al idioma de la web. Las reseñas y los nombres no se traducen. Solo se envían esos textos a un servicio de traducción, nunca datos tuyos.')
-    : t('Llega pronto: lo que escriben los negocios, traducido automáticamente al idioma de la web.'))}</small></span></label>
+        <span><b>${esc(t('Traducir siempre automáticamente'))}</b><br><small>${esc(tradOk
+    ? t('Lo que escriben los negocios en otro idioma sale ya traducido al de la web. Si no, toca «Traducir» debajo del texto. Las reseñas y los nombres no se traducen; al servicio de traducción solo van esos textos, nunca datos tuyos.')
+    : t('Llega pronto: podrás tocar «Traducir» debajo de lo que escriban los negocios en otro idioma.'))}</small></span></label>
       </div>
     </section>
 

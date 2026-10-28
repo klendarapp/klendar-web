@@ -68,9 +68,9 @@ const APP_EN = {
   // El turno de la cola en Tus códigos (app/cola.js)
   'Eres el siguiente': "You're next",
   // Traducción automática (Ajustes)
-  'Traducir publicaciones a mi idioma': 'Translate publications into my language',
-  'Lo que escriben los negocios (publicaciones, novedades, su ficha y su carta), traducido automáticamente al idioma de la web. Las reseñas y los nombres no se traducen. Solo se envían esos textos a un servicio de traducción, nunca datos tuyos.': "What businesses write (publications, news, their page and their menu), translated automatically into the website's language. Reviews and names aren't translated. Only those texts are sent to a translation service, never your data.",
-  'Llega pronto: lo que escriben los negocios, traducido automáticamente al idioma de la web.': "Coming soon: what businesses write, translated automatically into the website's language.",
+  "Traducir siempre automáticamente": "Always translate automatically",
+  "Lo que escriben los negocios en otro idioma sale ya traducido al de la web. Si no, toca «Traducir» debajo del texto. Las reseñas y los nombres no se traducen; al servicio de traducción solo van esos textos, nunca datos tuyos.": "What businesses write in another language appears already translated into the website's language. Otherwise, tap “Translate” under the text. Reviews and names aren't translated; only those texts go to the translation service, never your data.",
+  "Llega pronto: podrás tocar «Traducir» debajo de lo que escriban los negocios en otro idioma.": "Coming soon: you'll be able to tap “Translate” under what businesses write in another language.",
   // Generales
   'Gratis': 'Free',
   'Volver': 'Back',
