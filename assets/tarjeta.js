@@ -513,6 +513,34 @@
    * @param {boolean} [opts.sinNegocio]  en la ficha del negocio, el nombre sobra
    * @param {string} [opts.href]  a dónde lleva (el panel: editarla); si no, su ficha
    */
+  /** FNV-1a de 32 bits en hexadecimal (la misma que la app, `fnv1a32`). */
+  function fnv(t) {
+    let h = 0x811c9dc5;
+    for (let i = 0; i < t.length; i++) {
+      h ^= t.charCodeAt(i);
+      h = Math.imul(h, 0x01000193) >>> 0;
+    }
+    return h.toString(16).padStart(8, '0');
+  }
+
+  /**
+   * «Lo ya visto, al final»: la huella de lo que, si cambia, hace que una
+   * publicación vista vuelva a ser nueva (como la app, `seenFingerprint`): el
+   * precio y el descuento (una bajada), la fecha y la hora, y el tramo de
+   * plazas (sin límite, agotado, pocas —de 1 a 5— o hay).
+   */
+  function huellaVista(o) {
+    const flash = o.kind === 'flash_offer';
+    const ms = (t) => (t ? String(Date.parse(t)) : '');
+    const d = o.discount || null;
+    const plazas = o.seats_left == null ? (o.status === 'sold_out' ? 'agotado' : '')
+      : Number(o.seats_left) <= 0 ? 'agotado' : Number(o.seats_left) <= 5 ? 'pocas' : 'hay';
+    return fnv([
+      o.price_cents ?? '', d ? d.type ?? '' : '', d ? d.value ?? '' : '', d ? d.compare_at_cents ?? '' : '',
+      ms(flash ? o.redeem_start_at || o.starts_at : o.event_at || o.starts_at), ms(o.redeem_end_at || o.event_end_at), plazas,
+    ].join('|'));
+  }
+
   function tarjeta(o, lang = 'es', opts = {}) {
     const S = klBi(T, lang);
     const tz = opts.tz || KZ().de(o);
@@ -540,6 +568,9 @@
       ? ` data-lat="${Number(o.lat).toFixed(5)}" data-lng="${Number(o.lng).toFixed(5)}"` : '';
     const cuentaAtras = flash && o.redeem_end_at
       ? ` data-ini="${esc(ini || '')}" data-fin="${esc(o.redeem_end_at)}"` : '';
+    // «Lo ya visto, al final» (/assets/vistos.js): su huella, si es de la
+    // agenda pública y si es destacada.
+    const visto = opts.vistos ? ` data-vh="${huellaVista(o)}"${o.imported ? ' data-imp' : ''}${o.destacado ? ' data-dest' : ''}` : '';
 
     if (opts.forma === 'fila') {
       const hora = fmtTime(ini, lang, tz);
@@ -593,7 +624,7 @@
     const botonSolo = solo
       ? `<button type="button" class="tj-solo" aria-label="${esc(S.ocultar)}" title="${esc(S.ocultar)}" data-ocultar="${esc(S.ocultar)}" data-mostrar="${esc(S.mostrar)}" data-oculta="${esc(S.oculta)}" data-vista="${esc(S.aLaVista)}" hidden>${ic('expandir', 20)}${ic('recoger', 20)}</button>`
       : '';
-    return `<article class="tj tj--${plantilla}${opts.desc ? ' tj--desc' : ''}${pantalla ? ' tj--pantalla' : ''}" data-o="${esc(o.id)}"${geo}${estilo}>
+    return `<article class="tj tj--${plantilla}${opts.desc ? ' tj--desc' : ''}${pantalla ? ' tj--pantalla' : ''}" data-o="${esc(o.id)}"${visto}${geo}${estilo}>
     <div class="tj-media">
       ${opts.galeria || pantalla ? galeriaTarjeta(o, { primera: opts.primera, ancho, alto, S, href })
     : mediaTarjeta(o, { primera: opts.primera, ancho, alto, S, vt: nombreFoto(o.id) })}
@@ -625,7 +656,7 @@
   }
 
   /** Una rejilla de tarjetas grandes. La primera de la página se pide ya. */
-  const rejilla = (items, lang, opts = {}) => `<div class="tjs${opts.feed ? ' tjs--feed' : ''}">${items
+  const rejilla = (items, lang, opts = {}) => `<div class="tjs${opts.feed ? ' tjs--feed' : ''}"${opts.vistos ? ' data-vistos' : ''}>${items
     .map((o, i) => tarjeta(o, lang, { ...opts, primera: Boolean(opts.primera) && i === 0, tz: opts.tzDe ? opts.tzDe(o) : opts.tz }))
     .join('')}</div>`;
 
@@ -633,6 +664,7 @@
     PLANTILLAS, tarjeta, rejilla, distancia, colorSeguro, estiloDe, sobreAcento, plataformaEntradas, sitioDe,
     cuandoCorto, money, fmtDay, fmtTime, sameDay, fmtEnd, benefit, priorPrice, isVideo, esc,
     galeria, miniatura, miniaturas, visor, soloWeb, piezasDe, duracionTxt, arteDe, arteHtml, esGenerica, AGENDA_ARTE, nombreFoto,
+    huellaVista, fnv,
     nombrePieza: (video, i, n, lang) => klBi(T, lang).pieza(video, i, n),
   };
   globalThis.KlendarTarjeta = KlendarTarjeta;

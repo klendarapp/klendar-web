@@ -714,7 +714,8 @@
   if (feed) {
     var fondo = document.querySelector('.feed-fondo');
     var actual = null;
-    var pantallas = function () { return Array.prototype.slice.call(feed.querySelectorAll(':scope > .tj, :scope > .feed-fin')); };
+    // También la separación de lo ya visto (`.feed-sep`, /assets/vistos.js).
+    var pantallas = function () { return Array.prototype.slice.call(feed.querySelectorAll(':scope > .tj, :scope > .feed-sep, :scope > .feed-fin')); };
     // Lo que hace scroll: el <body> (public.css); sin `:has()`, el documento.
     var rueda = function () {
       var b = document.body;
@@ -796,7 +797,7 @@
       limite.observe(masFormas);
       limite.observe(feed);
     }
-    var vigila = function (raiz) { if (ojo) raiz.querySelectorAll(':scope > .tj, :scope > .feed-fin').forEach(function (el) { ojo.observe(el); }); };
+    var vigila = function (raiz) { if (ojo) raiz.querySelectorAll(':scope > .tj, :scope > .feed-sep, :scope > .feed-fin').forEach(function (el) { ojo.observe(el); }); };
     vigila(feed);
     // Las que llegan después (la oferta fijada de un RRPP, /assets/fijada.js,
     // va la primera): también se vigilan.
@@ -804,7 +805,7 @@
       new MutationObserver(function (cambios) {
         cambios.forEach(function (c) {
           Array.prototype.forEach.call(c.addedNodes, function (n) {
-            if (n.nodeType === 1 && n.matches('.tj, .feed-fin')) { ojo.observe(n); if (preparaSolo) preparaSolo(n); }
+            if (n.nodeType === 1 && n.matches('.tj, .feed-sep, .feed-fin')) { ojo.observe(n); if (preparaSolo) preparaSolo(n); }
           });
         });
       }).observe(feed, { childList: true });

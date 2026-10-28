@@ -12,7 +12,7 @@
 // - Explorar (/explorar/, /en/explore/): buscar, y verlo en Lista, Mapa o
 //   Calendario (la pestaña 2 de la app: calendario + mapa).
 
-import { cabeceraEdad, edadDeclarada, esc, html, preguntaEdadEncendida, rows, rpc, rpcAll, supabasePublic } from './page.js';
+import { cabeceraEdad, edadDeclarada, esc, html, preguntaEdadEncendida, rows, rpc, rpcAll, supabasePublic, vistosEncendido } from './page.js';
 import KZ from '../../assets/zona.js';
 import {
   agendaBase, bizPath, cityLinks, collectionBase, decodeSeg, discoverBase, exploreBase, firstPhoto, historiaBoton, isVideo, kidsBase, ldScript,
@@ -130,6 +130,8 @@ const T = (en) => en
       // El feed de Descubre.
       feedKeys: 'Swipe, scroll or use ↑ ↓ to move on.', feedPos: (i, n) => `${i} of ${n}`,
       prevItem: 'Previous', nextItem: 'Next', seeMore: 'See more',
+      // «Lo ya visto, al final» (/assets/vistos.js).
+      seenTitle: 'You’ve seen everything new', seenBody: 'You’ve seen these already',
       // «El sitio», «Con niños» y «Según el tiempo».
       beforeClosing: 'Before closing', beforeClosingHint: 'What’s left at the end of the day in bakeries, cafés and restaurants, at a discount. You pay at the venue.',
       dailyMenu: 'Daily menu', dailyMenuHint: 'Today’s set menu at places to eat, with its price.',
@@ -260,6 +262,8 @@ const T = (en) => en
       bizSection: 'Sitios', offersSection: 'Ofertas y eventos', allPlaces: 'Ver todos los sitios',
       feedKeys: 'Desliza, usa la rueda o ↑ ↓ para pasar.', feedPos: (i, n) => `${i} de ${n}`,
       prevItem: 'Anterior', nextItem: 'Siguiente', seeMore: 'Ver más',
+      // «Lo ya visto, al final» (/assets/vistos.js).
+      seenTitle: 'Ya has visto todo lo nuevo', seenBody: 'Esto ya lo viste',
       beforeClosing: 'Antes de cerrar', beforeClosingHint: 'Lo que sobra del día en panaderías, cafeterías y restaurantes, con descuento. Se paga en el local.',
       dailyMenu: 'Menú del día', dailyMenuHint: 'El menú de hoy de los sitios de comida, con su precio.',
       eatNow: 'Se puede comer ahora', eatNowHint: 'Sitios de comida con la cocina abierta, según su horario de cocina o, si no tienen, el del local',
@@ -1244,6 +1248,11 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   const sort = e.sort === 'rated' && valoradosYa !== true ? '' : e.sort;
   const mapa = !negocios && e.vista === 'map';
   const calendario = !negocios && e.vista === 'calendar';
+  // «Lo ya visto, al final» (Iván, 2026-10-28): en Descubre y en la lista de
+  // Explorar (las dos van en el orden elegido, como Descubre en la app), no
+  // en una búsqueda. Lo hace el navegador (/assets/vistos.js) con lo que
+  // guarda él: la base no sabe qué has visto. Con su interruptor.
+  const conVistos = !negocios && !mapa && !calendario && !q && (await vistosEncendido());
   // En Sitios (sin calendario) se ve en lista, pero el Calendario de Planes
   // se conserva para volver a él.
   const vista = negocios ? (sitiosMapa ? 'map' : e.vista === 'calendar' ? 'calendar' : '') : e.vista;
@@ -1968,7 +1977,13 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
     lang, path: `${base}/`, name: descubre ? S.disc : S.exp, description: descubre ? S.discLead : S.lead, city: '', items,
     migas: [['Klendar', en ? '/en/' : '/'], [descubre ? S.disc : S.exp, `${base}/`]],
   })) : '';
-  const head = `${guardaFiltros({ ...e, vista }, lang, base, !descubre)}
+  // «Lo ya visto, al final»: cuenta lo que ves en todas las páginas y, en la
+  // primera, pone lo visto al final (en las demás, el orden de la base).
+  const vistosJs = conVistos && !vacio
+    ? `
+<script src="/assets/vistos.js?v=1" defer data-ordena="${page === 1 ? '1' : ''}" data-t="${esc(JSON.stringify({ title: S.seenTitle, body: S.seenBody, more: S.seeMore }))}"></script>`
+    : '';
+  const head = `${guardaFiltros({ ...e, vista }, lang, base, !descubre)}${vistosJs}
 ${filtrado ? '<meta name="robots" content="noindex, follow">' : jsonLd}${descubre ? '' : `
 ${PARTIDOS_CSS}
 ${SITIOS_CSS}`}${mapa ? `
@@ -1998,7 +2013,7 @@ ${GRUPOS_CSS}` : ''}`;
       image: portada(items),
       // En Descubre, la pregunta de la edad al final (nada encima de la
       // publicación, salvo la fila y un aviso).
-      body: feedHtml({ S, en, lang, items, page, paginas, link, barra, final: `${avisoCerca}${avisoEdad}${final}`, vacio, resumenN, masFormas, avisos }),
+      body: feedHtml({ S, en, lang, items, page, paginas, link, barra, final: `${avisoCerca}${avisoEdad}${final}`, vacio, resumenN, masFormas, avisos, vistos: conVistos }),
       actual: 'descubre',
       bodyClass: vacio ? 'pagina-descubre' : 'pagina-descubre pagina-feed',
       head,
@@ -2041,7 +2056,7 @@ ${GRUPOS_CSS}` : ''}`;
       <div class="seccion-cab"><h2 id="secNeg">${esc(S.bizSection)}</h2>${(sitios?.total || 0) > negArriba.length ? `<a href="${esc(link({ que: 'places', vista: '' }))}">${esc(S.allPlaces)}</a>` : ''}</div>
       <div class="nlist">${negArriba.map((b) => bizCard(b, lang, S)).join('')}</div></section>` : ''}
     ${(negArriba.length || seccionPartidos || seccionArtistas) && items.length ? `<h2 class="seccion-t-pub">${esc(S.offersSection)}</h2>` : ''}
-    ${vacio ? '' : rejilla(items, lang, { primera: !negArriba.length && !seccionPartidos && !seccionArtistas, galeria: true })}
+    ${vacio ? '' : rejilla(items, lang, { primera: !negArriba.length && !seccionPartidos && !seccionArtistas, galeria: true, vistos: conVistos })}
     ${vacio ? lineaPedir : ''}`;
   }
 
@@ -2104,7 +2119,7 @@ ${SITIOS_SCRIPTS}` : ''}`;
  * entró esa persona es la primera tarjeta (la pone /assets/fijada.js; nadie
  * más la ve).
  */
-function feedHtml({ S, en, lang, items, page, paginas, link, barra, final, vacio, resumenN, masFormas, avisos = '' }) {
+function feedHtml({ S, en, lang, items, page, paginas, link, barra, final, vacio, resumenN, masFormas, avisos = '', vistos = false }) {
   const cab = `<div class="feed-lado" id="arriba">
       <h1>${esc(S.disc)}</h1>
       <p class="muted">${esc(S.discLead)}</p>
@@ -2119,7 +2134,7 @@ function feedHtml({ S, en, lang, items, page, paginas, link, barra, final, vacio
     ${masFormas}`;
   }
   const pantallas = items.map((o, i) => tarjeta(o, lang, {
-    forma: 'pantalla', primera: page === 1 && i === 0, desc: true, h: 'h2', galeria: true,
+    forma: 'pantalla', primera: page === 1 && i === 0, desc: true, h: 'h2', galeria: true, vistos,
   })).join('');
   const mas = page < paginas
     ? `<div class="feed-mas"><a class="pill" href="${esc(link({ p: page + 1 }))}" rel="next" data-feed-mas>${esc(S.seeMore)}</a></div>`

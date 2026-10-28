@@ -221,6 +221,29 @@ export async function preguntaEdadEncendida() {
   return valor;
 }
 
+/** «Lo ya visto, al final» (Iván, 2026-10-28; `app_config.seen_last`,
+ * `{"from": "2026-11-…T00:00:00+01:00"}`): encendido desde esa fecha, como
+ * en la app. Sin la fila, sin fecha o sin respuesta de la base, apagado (ni
+ * se reordena ni se guarda nada en el navegador). Apagado mientras no esté
+ * publicado el retoque legal (VI1–VI4). 60 s en memoria. En local,
+ * `VISTOS_FORZADO=1` lo enciende para probarlo (tools/vistos_check.mjs). */
+let VISTOS = { valor: false, hasta: 0 };
+export function vistosEncendidoDe(valor, ahora = Date.now()) {
+  const desde = valor && typeof valor === 'object' ? Date.parse(valor.from || '') : NaN;
+  return Number.isFinite(desde) && ahora >= desde;
+}
+export async function vistosEncendido() {
+  if (typeof process !== 'undefined' && process?.env?.VISTOS_FORZADO === '1') return true;
+  if (Date.now() < VISTOS.hasta) return VISTOS.valor;
+  let valor = VISTOS.valor;
+  try {
+    const r = await rows('app_config', 'select=value&key=eq.seen_last');
+    valor = vistosEncendidoDe(Array.isArray(r) && r[0] ? r[0].value : null);
+  } catch { /* lo último que se supo */ }
+  VISTOS = { valor, hasta: Date.now() + 60_000 };
+  return valor;
+}
+
 /** 'es' o 'en' según el navegador (francés, alemán, italiano → inglés;
  * catalán, gallego, euskera → español: ver _lib/idioma.js). */
 export function pickLang(request) {
