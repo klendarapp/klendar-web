@@ -66,6 +66,41 @@ export const FOOT_LEGAL = [
   { es: 'Fuentes y licencias', en: 'Sources and licences', hrefEs: '/fuentes/', hrefEn: '/en/sources/' },
 ];
 
+// Las redes de Klendar (las de la marca, no las de los negocios) que existen
+// de verdad, comprobadas el 2026-10-28; `tiktok.com/@klendar` es de otra
+// persona. Van en el pie de todas las páginas, en el kit de prensa y en el
+// JSON-LD de la portada (`sameAs`). Para añadir otra: una línea aquí, su
+// icono en REDES_ICONO y la misma en la app (`klendarSocial`,
+// lib/core/config/social_links.dart).
+export const REDES = [
+  { red: 'instagram', nombre: 'Instagram', usuario: '@klendar.app', url: 'https://www.instagram.com/klendar.app/' },
+  { red: 'tiktok', nombre: 'TikTok', usuario: '@klendar.app', url: 'https://www.tiktok.com/@klendar.app' },
+];
+
+// Los mismos iconos que la app (Material, en contorno: camera_alt para
+// Instagram y music_note para TikTok), en tinta como el resto del pie.
+const REDES_ICONO = {
+  instagram: 'M14.12 4l1.83 2H20v12H4V6h4.05l1.83-2h4.24M15 2H9L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2zm-3 7c1.65 0 3 1.35 3 3s-1.35 3-3 3-3-1.35-3-3 1.35-3 3-3m0-2c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5z',
+  tiktok: 'M12 3l.01 10.55c-.59-.34-1.27-.55-2-.55C7.79 13 6 14.79 6 17s1.79 4 4.01 4S14 19.21 14 17V7h4V3h-6zm-1.99 16c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z',
+  enlace: 'M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z',
+};
+
+/** Para Python (`build_site.py`): la lista tal cual. */
+export const redes = () => REDES;
+
+/**
+ * Los enlaces a las redes: icono y nombre, con «Klendar en Instagram
+ * (@klendar.app)» como nombre accesible. Enlaces normales, sin scripts ni
+ * nada incrustado de la red. `cls`/`estilo` para el pie o el kit de prensa.
+ */
+export function redesHtml(lang, { estilo = '' } = {}) {
+  const en = lang === 'en';
+  return REDES.map((r) => {
+    const nombre = `${en ? 'Klendar on' : 'Klendar en'} ${r.nombre} (${r.usuario})`;
+    return `<a class="red" href="${r.url}" rel="me noopener" aria-label="${nombre}" title="${nombre}"${estilo ? ` style="${estilo}"` : ''}><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" style="flex:none"><path fill="currentColor" d="${REDES_ICONO[r.red] || REDES_ICONO.enlace}"/></svg><span>${r.nombre}</span></a>`;
+  }).join('');
+}
+
 const TEXTOS = {
   es: {
     menu: 'Menú',
@@ -80,6 +115,7 @@ const TEXTOS = {
     legal: 'Legal',
     derechos: `© ${new Date().getFullYear()} Klendar. Todos los derechos reservados.`,
     hecho: 'Hecho en España',
+    redes: 'Klendar en redes sociales',
   },
   en: {
     menu: 'Menu',
@@ -94,6 +130,7 @@ const TEXTOS = {
     legal: 'Legal',
     derechos: `© ${new Date().getFullYear()} Klendar. All rights reserved.`,
     hecho: 'Made in Spain',
+    redes: 'Klendar on social media',
   },
 };
 
@@ -165,7 +202,8 @@ export function siteFooter(lang) {
   return `<footer><div class="wrap">
   <div class="cols">
     <div><a class="brand" href="/${en ? 'en/' : ''}"><svg class="simbolo" viewBox="0 0 64 64" width="30" height="30" aria-hidden="true"><path class="simbolo-anillo" pathLength="1" d="M32 6.8A25.2 25.2 0 1 1 8.03 24.21" fill="none" stroke="#FF4D6D" stroke-width="8.4" stroke-linecap="round"/><g class="simbolo-aguja"><path d="M32 32V19.4" stroke="currentColor" stroke-width="5.6" stroke-linecap="round"/></g><circle cx="32" cy="32" r="5.6" fill="currentColor"/></svg> Klendar</a>
-      <p style="margin:12px 0 0;max-width:340px">${T.lema}</p></div>
+      <p style="margin:12px 0 0;max-width:340px">${T.lema}</p>
+      ${REDES.length ? `<nav class="pie-redes" aria-label="${T.redes}" style="display:flex;flex-wrap:wrap;gap:4px 18px;margin-top:14px">${redesHtml(lang, { estilo: 'display:inline-flex;align-items:center;gap:6px;color:var(--ink);min-height:44px' })}</nav>` : ''}</div>
     <div><h2 class="pie-h">${T.producto}</h2>${col(FOOT_PRODUCT)}</div>
     <div><h2 class="pie-h">${T.legal}</h2>${col(FOOT_LEGAL)}</div>
   </div>

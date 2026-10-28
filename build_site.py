@@ -279,6 +279,12 @@ def _chrome(fn, *args):
 
 HEADER_TPL = {lang: _chrome('siteHeader', lang, '{{ES}}', '{{EN}}') for lang in ('es', 'en')}
 FOOTER_HTML = {lang: _chrome('siteFooter', lang) for lang in ('es', 'en')}
+# Las redes de Klendar (las mismas del pie): `sameAs` de la organización y el
+# kit de prensa.
+REDES = _chrome('redes')
+REDES_HTML = {lang: _chrome('redesHtml', lang, {'estilo': 'display:inline-flex;align-items:center;gap:6px;min-height:44px'})
+              for lang in ('es', 'en')}
+SAME_AS = (',"sameAs":[' + ','.join('"%s"' % r['url'] for r in REDES) + ']') if REDES else ''
 
 
 def footer(t, only_footer=True):
@@ -310,7 +316,7 @@ if(s?/^(en|fr|de|it)$/.test(s):/^(en|fr|de|it)\\b/i.test(navigator.language||'')
 def landing(t):
     path = '/' + t['dir']
     jsonld = f'''<script type="application/ld+json">{{"@context":"https://schema.org","@graph":[
-{{"@type":"Organization","name":"Klendar","url":"{BASE}/","logo":"{BASE}/assets/icon-512.png","email":"info@klendar.app"}},
+{{"@type":"Organization","name":"Klendar","url":"{BASE}/","logo":"{BASE}/assets/icon-512.png","email":"info@klendar.app"{SAME_AS}}},
 {{"@type":"WebSite","name":"Klendar","url":"{BASE}/","inLanguage":["es","en"]}},
 {{"@type":"MobileApplication","name":"Klendar","operatingSystem":"Android, iOS","applicationCategory":"LifestyleApplication","offers":{{"@type":"Offer","price":"0","priceCurrency":"EUR"}},"description":"{t['desc']}"}}]}}</script>'''
     steps = ''.join(f'<div class="step"><h3>{h}</h3><p>{p}</p></div>' for h, p in t['steps'])

@@ -8,7 +8,7 @@
 import io
 import os
 
-from build_site import T, doc_page, footer, head
+from build_site import REDES_HTML, T, doc_page, footer, head
 
 # Precios reales de `subscription_plans` (Supabase). Si cambian allí, aquí.
 PLANES = [
@@ -385,6 +385,10 @@ PAGINAS['prensa'] = (
 </ul>
 <p class="note">El nombre se escribe <strong>Klendar</strong>, con K y sin acentos. El color de marca es el coral <code>#FF4D6D</code> sobre fondo tinta <code>#0A0A0A</code>. Se puede usar el logotipo tal cual, sin deformarlo ni cambiarle el color.</p>
 
+<h2>Redes</h2>
+<p>Lo que publicamos y las novedades de Klendar:</p>
+<p class="prensa-redes" style="display:flex;flex-wrap:wrap;gap:4px 18px">''' + REDES_HTML['es'] + '''</p>
+
 <h2>Contacto</h2>
 <p>Prensa y cualquier consulta: <a href="mailto:info@klendar.app">info@klendar.app</a>. Asuntos técnicos: <a href="mailto:dev@klendar.app">dev@klendar.app</a>.</p>
 ''',
@@ -404,6 +408,10 @@ PAGINAS['prensa'] = (
   <li><a href="/assets/kit/klendar-guia-negocios.pdf">Business guide (PDF, Spanish)</a> · <a href="/assets/kit/klendar-cartel.pdf">Poster with QR (PDF)</a></li>
 </ul>
 <p class="note">The name is written <strong>Klendar</strong>, with a K. The brand colour is coral <code>#FF4D6D</code> on ink <code>#0A0A0A</code>. The logo can be used as it is, without stretching it or changing its colour.</p>
+
+<h2>Social media</h2>
+<p>What we post and Klendar's news:</p>
+<p class="prensa-redes" style="display:flex;flex-wrap:wrap;gap:4px 18px">''' + REDES_HTML['en'] + '''</p>
 
 <h2>Contact</h2>
 <p>Press and anything else: <a href="mailto:info@klendar.app">info@klendar.app</a>. Technical matters: <a href="mailto:dev@klendar.app">dev@klendar.app</a>.</p>
