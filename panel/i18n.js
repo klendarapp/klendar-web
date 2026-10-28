@@ -30,6 +30,8 @@ const I18N = makeI18N({
     'Ese vídeo dura más de 45 segundos. Recórtalo y vuelve a subirlo.': 'That video is longer than 45 seconds. Trim it and upload it again.',
     'Menú': 'Menu',
     'Resumen': 'Overview',
+    'Esta sección es del propietario o de un encargado': 'This section is for the owner or a manager',
+    'Ir al resumen': 'Go to the overview',
     // «Mi negocio» ordenado (panel/herramientas.js)
     'Lo esencial': 'The essentials',
     'Tu negocio': 'Your business',

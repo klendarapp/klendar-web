@@ -1112,6 +1112,23 @@ async function route() {
   document.body.classList.remove('con-barra-pub');
   let [page, param] = currentRoute();
   const pedida = page;
+  // Un empleado que llega por un enlace a algo del propietario o de un
+  // encargado (sellos, equipo, ficha…): un aviso corto con salida al resumen,
+  // no el resumen sin más (Iván, 2026-10-28). La dirección se queda.
+  const soloGestion = !gestiona() && SOLO_GESTION.includes(page) && !bloqueado();
+  if (soloGestion) {
+    renderNav(page);
+    VUELTA_MENU = null;
+    abreMenu(false);
+    const v = document.createElement('div');
+    v.innerHTML = `<section class="vacio" aria-labelledby="soloGestionT">
+      <span class="vacio-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg></span>
+      <h1 id="soloGestionT">Esta sección es del propietario o de un encargado</h1>
+      <div class="vacio-botones"><a class="btn primary" href="#/resumen">Ir al resumen</a></div></section>`;
+    $('#view').replaceChildren(v);
+    I18N.translate(v);
+    return;
+  }
   if (!gestiona() && SOLO_GESTION.includes(page)) page = 'resumen';
   if (esOrganizador() && SIN_LOCAL_FIJO.includes(page)) page = 'resumen';
   if (typeof esEntidad === 'function' && esEntidad() && SIN_ENTIDAD.includes(page)) page = 'resumen';

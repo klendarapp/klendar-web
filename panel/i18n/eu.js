@@ -2479,6 +2479,8 @@ KL_DIC('eu', {
   "Respuesta de": "Erantzuna:",
   "Respuesta publicada": "Erantzuna argitaratu da",
   "Resumen": "Laburpena",
+  "Esta sección es del propietario o de un encargado": "Atal hau jabearentzat edo arduradun batentzat da",
+  "Ir al resumen": "Joan laburpenera",
   "Resumen (SHA-256)": "Laburpena (SHA-256)",
   "Retirada": "Erretiratuta",
   "Retirada por Klendar": "Klendarrek kenduta",

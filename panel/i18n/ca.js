@@ -2479,6 +2479,8 @@ KL_DIC('ca', {
   "Respuesta de": "Resposta de",
   "Respuesta publicada": "Resposta publicada",
   "Resumen": "Resum",
+  "Esta sección es del propietario o de un encargado": "Aquesta secció és del propietari o d'un encarregat",
+  "Ir al resumen": "Ves al resum",
   "Resumen (SHA-256)": "Resum (SHA-256)",
   "Retirada": "Retirada",
   "Retirada por Klendar": "Retirada per Klendar",

@@ -2479,6 +2479,8 @@ KL_DIC('de', {
   "Respuesta de": "Antwort von",
   "Respuesta publicada": "Antwort veröffentlicht",
   "Resumen": "Übersicht",
+  "Esta sección es del propietario o de un encargado": "Dieser Bereich ist für Inhaber und Leitung",
+  "Ir al resumen": "Zur Übersicht",
   "Resumen (SHA-256)": "Hash (SHA-256)",
   "Retirada": "Zurückgezogen",
   "Retirada por Klendar": "Von Klendar entfernt",
