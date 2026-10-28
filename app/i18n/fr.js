@@ -1629,6 +1629,8 @@ KL_DIC('fr', {
   "todos los días": "tous les jours",
   "Todos los días": "Tous les jours",
   "Traducir siempre automáticamente": "Toujours traduire automatiquement",
+  "Poner al final lo que ya he visto": "Mettre à la fin ce que j’ai déjà vu",
+  "Al volver a cargar Descubre, lo que ya viste en los últimos 7 días va al final, sin esconder nada. Solo lo recuerda este navegador; si lo apagas, se borra.": "Quand tu recharges Découvrir, ce que tu as vu ces 7 derniers jours passe à la fin, sans rien cacher. Seul ce navigateur s’en souvient ; si tu le désactives, c’est effacé.",
   "Tras usar algo en un local, te pedimos tu reseña": "Après avoir utilisé quelque chose dans un établissement, on te demande ton avis",
   "Traspaso rechazado.": "Transfert refusé.",
   "Tu calendario deja de recibir tus planes": "Ton agenda ne reçoit plus tes plans",

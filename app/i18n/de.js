@@ -1629,6 +1629,8 @@ KL_DIC('de', {
   "todos los días": "jeden Tag",
   "Todos los días": "Jeden Tag",
   "Traducir siempre automáticamente": "Immer automatisch übersetzen",
+  "Poner al final lo que ya he visto": "Schon Gesehenes ans Ende",
+  "Al volver a cargar Descubre, lo que ya viste en los últimos 7 días va al final, sin esconder nada. Solo lo recuerda este navegador; si lo apagas, se borra.": "Wenn du Entdecken neu lädst, kommt, was du in den letzten 7 Tagen gesehen hast, ans Ende – ohne etwas auszublenden. Nur dieser Browser merkt es sich; schaltest du es aus, wird es gelöscht.",
   "Tras usar algo en un local, te pedimos tu reseña": "Nach einem Besuch bitten wir um deine Bewertung",
   "Traspaso rechazado.": "Übertragung abgelehnt.",
   "Tu calendario deja de recibir tus planes": "Dein Kalender bekommt deine Pläne nicht mehr",

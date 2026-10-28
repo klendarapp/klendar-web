@@ -1629,6 +1629,8 @@ KL_DIC('gl', {
   "todos los días": "todos os días",
   "Todos los días": "Todos os días",
   "Traducir siempre automáticamente": "Traducir sempre automaticamente",
+  "Poner al final lo que ya he visto": "Poñer ao final o que xa vin",
+  "Al volver a cargar Descubre, lo que ya viste en los últimos 7 días va al final, sin esconder nada. Solo lo recuerda este navegador; si lo apagas, se borra.": "Ao volver cargar Descubre, o que xa viches nos últimos 7 días vai ao final, sen agochar nada. Só o lembra este navegador; se o apagas, bórrase.",
   "Tras usar algo en un local, te pedimos tu reseña": "Despois de usar algo nun local, pedímosche a túa recensión",
   "Traspaso rechazado.": "Traspaso rexeitado.",
   "Tu calendario deja de recibir tus planes": "O teu calendario deixa de recibir os teus plans",

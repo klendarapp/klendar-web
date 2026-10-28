@@ -550,9 +550,52 @@ function guardaTraduccionLocal(encendida) {
   try { localStorage.setItem('klendar.traducir', encendida ? '1' : '0'); } catch { /* sin permisos */ }
 }
 
+/**
+ * «Poner al final lo que ya he visto» (Iván, 2026-10-29; como la app en
+ * Ajustes › Lo que ves). Es de este navegador, también sin sesión: apagado,
+ * `klendar.vistos` pasa a ser «off» (lo visto se borra y /assets/vistos.js no
+ * reordena ni guarda nada); encendido (de serie), se quita.
+ */
+function vistosQuerido() {
+  try { return localStorage.getItem('klendar.vistos') !== 'off'; } catch { return true; }
+}
+function ponVistos(on) {
+  try {
+    if (on) localStorage.removeItem('klendar.vistos');
+    else localStorage.setItem('klendar.vistos', 'off');
+  } catch { /* sin permisos */ }
+}
+/** ¿Está en marcha «Lo ya visto, al final»? (`app_config.seen_last`, la
+ * fecha desde la que vale; sin ella, no). */
+async function vistosEnMarcha() {
+  try {
+    const { data } = await sb.from('app_config').select('value').eq('key', 'seen_last').maybeSingle();
+    const desde = Date.parse(data?.value?.from || '');
+    return Number.isFinite(desde) && Date.now() >= desde;
+  } catch { return false; }
+}
+const casillaVistos = () => `<label class="check"><input type="checkbox" id="vistos"${vistosQuerido() ? ' checked' : ''}>
+        <span><b>${esc(t('Poner al final lo que ya he visto'))}</b><br><small>${esc(t('Al volver a cargar Descubre, lo que ya viste en los últimos 7 días va al final, sin esconder nada. Solo lo recuerda este navegador; si lo apagas, se borra.'))}</small></span></label>`;
+const atiendeVistos = () => {
+  const c = $('#vistos');
+  if (c) c.addEventListener('change', () => ponVistos(c.checked));
+};
+
+/** Ajustes › Lo que ves sin sesión (el enlace de la separación de Descubre). */
+function ajustesLoQueVes() {
+  pinta(`
+    <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
+    <h1>${esc(t('Lo que ves'))}</h1>
+    <section class="bloque">
+      ${casillaVistos()}
+    </section>`);
+  atiendeVistos();
+}
+
 RUTAS.ajustes = async ([sub]) => {
   if (sub === 'notificaciones') return ajustesNotificaciones();
   if (sub === 'calendario') return ajustesCalendario();
+  if (sub === 'lo-que-ves') return ajustesLoQueVes();
   if (!exigeSesion(sub === 'bloqueadas' ? 'ajustes/bloqueadas' : 'ajustes')) return;
   // «Traducir siempre automáticamente» (en el perfil, como en la app; apagado,
   // se traduce solo al tocar «Traducir» en las fichas) y si hay proveedor
@@ -578,6 +621,7 @@ RUTAS.ajustes = async ([sub]) => {
   ]);
   const vias = new Set((cuenta?.identities || []).map((i) => i.provider));
   const [trad, tradOk] = await traduccion;
+  const conVistos = await vistosEnMarcha();
   if (trad) guardaTraduccionLocal(trad.translate_content === true);
   const tieneClave = metodos?.has_password ?? vias.has('email');
   const metodo = (icono, texto, activa) => `<div class="fila metodo${activa ? '' : ' off'}">
@@ -616,6 +660,7 @@ RUTAS.ajustes = async ([sub]) => {
         ${fila({ href: '#/gustos', icono: 'favorite', titulo: t('Tus gustos'), detalle: resumenGustos(KlendarGustos.lee(), cats, ciudades), id: 'fila-gustos' })}
       </div>
       <p class="muted">${esc(t('Lo de esas categorías sale antes en Descubre, sin esconder lo demás. Tu ciudad sirve para avisarte cuando estés de viaje.'))}</p>
+      ${conVistos ? casillaVistos() : ''}
     </section>
 
     <section class="bloque" id="correo-cuenta"></section>
@@ -703,6 +748,7 @@ RUTAS.ajustes = async ([sub]) => {
       if (ahora !== LANG) location.reload();
     } catch (e) { toast(e.message, true); } finally { sel.disabled = false; }
   });
+  atiendeVistos();
   $('#traducir').addEventListener('change', async (ev) => {
     const caja = ev.currentTarget;
     caja.disabled = true;

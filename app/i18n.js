@@ -69,6 +69,8 @@ const APP_EN = {
   'Eres el siguiente': "You're next",
   // Traducción automática (Ajustes)
   "Traducir siempre automáticamente": "Always translate automatically",
+  "Poner al final lo que ya he visto": "Put what I've already seen at the end",
+  "Al volver a cargar Descubre, lo que ya viste en los últimos 7 días va al final, sin esconder nada. Solo lo recuerda este navegador; si lo apagas, se borra.": "When you reload Discover, what you've seen in the last 7 days goes to the end, without hiding anything. Only this browser remembers it; turning it off deletes it.",
   "Lo que escriben los negocios en otro idioma sale ya traducido al de la web. Si no, toca «Traducir» debajo del texto. Las reseñas y los nombres no se traducen; al servicio de traducción solo van esos textos, nunca datos tuyos.": "What businesses write in another language appears already translated into the website's language. Otherwise, tap “Translate” under the text. Reviews and names aren't translated; only those texts go to the translation service, never your data.",
   "Llega pronto: podrás tocar «Traducir» debajo de lo que escriban los negocios en otro idioma.": "Coming soon: you'll be able to tap “Translate” under what businesses write in another language.",
   // Generales

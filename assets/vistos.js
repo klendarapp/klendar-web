@@ -34,6 +34,10 @@
   var MIRADA = 1500;
   var CADA = 4;
 
+  // «Poner al final lo que ya he visto» apagado (Tu cuenta › Ajustes › Lo
+  // que ves, también sin sesión): ni se reordena ni se guarda nada.
+  try { if (localStorage.getItem(CLAVE) === 'off') return; } catch (e) { /* sin almacenamiento: sigue */ }
+
   var yo = document.currentScript;
   var T = {};
   try { T = JSON.parse((yo && yo.getAttribute('data-t')) || '{}'); } catch (e) { /* sin textos */ }
@@ -154,9 +158,13 @@
     el.setAttribute('aria-label', (T.title || '') + '. ' + (T.body || ''));
     el.innerHTML = '<div class="vs-in"><svg aria-hidden="true" viewBox="0 0 24 24" width="28" height="28"><path fill="currentColor" d="M18 7l-1.41-1.41-6.34 6.34 1.41 1.41L18 7zm4.24-1.41L11.66 16.17 7.48 12l-1.41 1.41L11.66 19l12-12-1.42-1.41zM.41 13.41L6 19l1.41-1.41L1.83 12 .41 13.41z"/></svg>'
       + '<h2 class="vs-t"></h2><p class="vs-b"></p>'
+      + (T.change && T.settings ? '<p class="vs-c"><a></a></p>' : '')
       + '<svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg></div>';
     el.querySelector('.vs-t').textContent = T.title || '';
     el.querySelector('.vs-b').textContent = T.body || '';
+    // Para apagarlo: Ajustes › Lo que ves (también sin sesión).
+    var cambia = el.querySelector('.vs-c a');
+    if (cambia) { cambia.textContent = T.change; cambia.href = T.settings; }
     if (sepOjo) sepOjo.observe(el); else el.classList.add('on');
     return el;
   };
@@ -276,6 +284,7 @@
     + '.vs-t{margin:6px 0 0;font-size:1.1rem;font-weight:700}'
     + '.vs-b{margin:0;color:var(--ink-2)}'
     + '.vs-in svg:last-child{color:var(--ink-2)}'
+    + '.vs-c{margin:4px 0 0;font-size:.9rem}.vs-c a{color:var(--ink-2);text-decoration:underline;text-underline-offset:2px}'
     + '.vistos-mas{display:flex;justify-content:center;margin:8px 0 20px}'
     + '@media (prefers-reduced-motion:no-preference){.feed-sep .vs-in{opacity:0;transform:translateY(8px);'
     + 'transition:opacity var(--mov-base,200ms) var(--mov-entra,ease-out),transform var(--mov-base,200ms) var(--mov-entra,ease-out)}'

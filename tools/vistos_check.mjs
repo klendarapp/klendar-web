@@ -28,9 +28,9 @@ mkdirSync(OUT, { recursive: true });
 let fallos = 0;
 const ok = (c, m) => { if (!c) { fallos++; console.log('FALLA:', m); } else console.log('ok:', m); };
 
-// Las ofertas flash de Madrid (una página: unas 14) y 124 «Visitas y experiencias»
+// «Deporte» en Madrid (una página: unas 8) y 124 «Visitas y experiencias»
 // (seis páginas de 24).
-const UNA = '?ciudad=Madrid&tipo=offers';
+const UNA = '?ciudad=Madrid&categoria=sport';
 const VARIAS = '?ciudad=Madrid&categoria=experiences';
 
 for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
@@ -144,6 +144,28 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     });
     ok(quieto, `${t} con «Reducir movimiento», la separación sin animación`);
     await page.emulateMedia({ reducedMotion: 'no-preference' });
+
+    // 6. «Poner al final lo que ya he visto» (Iván, 2026-10-29): el enlace de
+    // la separación lleva a Tu cuenta › Lo que ves, sin sesión; apagado, ni
+    // se reordena ni se guarda nada y lo guardado se borra.
+    const enlace = await page.$eval('.feed-sep .vs-c a', (a) => ({ txt: a.textContent, href: a.getAttribute('href') }));
+    ok(enlace.txt === 'Cambiar esto' && /\/app\/#\/ajustes\/lo-que-ves$/.test(enlace.href), `${t} la separación enlaza a Ajustes › Lo que ves`);
+    await ir('/app/#/ajustes/lo-que-ves');
+    await page.waitForSelector('#vistos');
+    ok(await page.$eval('#vistos', (c) => c.checked), `${t} sin sesión: «Poner al final lo que ya he visto», encendido de serie`);
+    ok(/Poner al final lo que ya he visto/.test(await page.textContent('main, body')), `${t} el texto del interruptor`);
+    await page.click('#vistos');
+    ok(await page.evaluate(() => localStorage.getItem('klendar.vistos')) === 'off', `${t} apagado: lo visto se borra («off»)`);
+    await ir(`/descubre/${UNA}`);
+    await page.waitForTimeout(2200);
+    ok(!(await page.$('.feed-sep')) && JSON.stringify(await ids('#feed > .tj')) === JSON.stringify(base), `${t} apagado: el orden de la base, sin separación`);
+    ok(await page.evaluate(() => localStorage.getItem('klendar.vistos')) === 'off', `${t} apagado: no se guarda nada aunque mires 2 s`);
+    await ir('/app/#/ajustes/lo-que-ves');
+    await page.waitForSelector('#vistos');
+    ok(!(await page.$eval('#vistos', (c) => c.checked)), `${t} se recuerda apagado`);
+    await page.click('#vistos');
+    ok(await page.evaluate(() => localStorage.getItem('klendar.vistos')) === null, `${t} encendido otra vez`);
+    await page.screenshot({ path: `${OUT}/vistos-ajustes-${nombre}-${forma}.png` });
 
     ok(fuera.length === 0, `${t} lo visto no se manda a ningún sitio`);
     ok(errores.length === 0, `${t} sin errores en la consola${errores.length ? `: ${errores.slice(0, 3).join(' | ')}` : ''}`);

@@ -1629,6 +1629,8 @@ KL_DIC('eu', {
   "todos los días": "egunero",
   "Todos los días": "Egunero",
   "Traducir siempre automáticamente": "Itzuli beti automatikoki",
+  "Poner al final lo que ya he visto": "Ikusi dudana amaieran jarri",
+  "Al volver a cargar Descubre, lo que ya viste en los últimos 7 días va al final, sin esconder nada. Solo lo recuerda este navegador; si lo apagas, se borra.": "Aurkitu berriro kargatzean, azken 7 egunetan ikusi duzuna amaierara doa, ezer ezkutatu gabe. Nabigatzaile honek bakarrik gogoratzen du; itzaltzen baduzu, ezabatu egiten da.",
   "Tras usar algo en un local, te pedimos tu reseña": "Lokal batean zerbait erabili ondoren, zure iritzia eskatzen dizugu",
   "Traspaso rechazado.": "Eskualdaketa baztertu da.",
   "Tu calendario deja de recibir tus planes": "Zure egutegiak ez ditu gehiago zure planak jasoko",

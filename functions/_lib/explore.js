@@ -131,7 +131,7 @@ const T = (en) => en
       feedKeys: 'Swipe, scroll or use ↑ ↓ to move on.', feedPos: (i, n) => `${i} of ${n}`,
       prevItem: 'Previous', nextItem: 'Next', seeMore: 'See more',
       // «Lo ya visto, al final» (/assets/vistos.js).
-      seenTitle: 'You’ve seen everything new', seenBody: 'You’ve seen these already',
+      seenTitle: 'You’ve seen everything new', seenBody: 'You’ve seen these already', seenChange: 'Change this',
       // «El sitio», «Con niños» y «Según el tiempo».
       beforeClosing: 'Before closing', beforeClosingHint: 'What’s left at the end of the day in bakeries, cafés and restaurants, at a discount. You pay at the venue.',
       dailyMenu: 'Daily menu', dailyMenuHint: 'Today’s set menu at places to eat, with its price.',
@@ -263,7 +263,7 @@ const T = (en) => en
       feedKeys: 'Desliza, usa la rueda o ↑ ↓ para pasar.', feedPos: (i, n) => `${i} de ${n}`,
       prevItem: 'Anterior', nextItem: 'Siguiente', seeMore: 'Ver más',
       // «Lo ya visto, al final» (/assets/vistos.js).
-      seenTitle: 'Ya has visto todo lo nuevo', seenBody: 'Esto ya lo viste',
+      seenTitle: 'Ya has visto todo lo nuevo', seenBody: 'Esto ya lo viste', seenChange: 'Cambiar esto',
       beforeClosing: 'Antes de cerrar', beforeClosingHint: 'Lo que sobra del día en panaderías, cafeterías y restaurantes, con descuento. Se paga en el local.',
       dailyMenu: 'Menú del día', dailyMenuHint: 'El menú de hoy de los sitios de comida, con su precio.',
       eatNow: 'Se puede comer ahora', eatNowHint: 'Sitios de comida con la cocina abierta, según su horario de cocina o, si no tienen, el del local',
@@ -1981,7 +1981,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   // primera, pone lo visto al final (en las demás, el orden de la base).
   const vistosJs = conVistos && !vacio
     ? `
-<script src="/assets/vistos.js?v=1" defer data-ordena="${page === 1 ? '1' : ''}" data-t="${esc(JSON.stringify({ title: S.seenTitle, body: S.seenBody, more: S.seeMore }))}"></script>`
+<script src="/assets/vistos.js?v=2" defer data-ordena="${page === 1 ? '1' : ''}" data-t="${esc(JSON.stringify({ title: S.seenTitle, body: S.seenBody, more: S.seeMore, change: S.seenChange, settings: `${en ? '/app/?lang=en' : '/app/'}#/ajustes/lo-que-ves` }))}"></script>`
     : '';
   const head = `${guardaFiltros({ ...e, vista }, lang, base, !descubre)}${vistosJs}
 ${filtrado ? '<meta name="robots" content="noindex, follow">' : jsonLd}${descubre ? '' : `

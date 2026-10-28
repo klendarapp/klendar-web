@@ -1629,6 +1629,8 @@ KL_DIC('ca', {
   "todos los días": "cada dia",
   "Todos los días": "Cada dia",
   "Traducir siempre automáticamente": "Tradueix sempre automàticament",
+  "Poner al final lo que ya he visto": "Posar al final el que ja he vist",
+  "Al volver a cargar Descubre, lo que ya viste en los últimos 7 días va al final, sin esconder nada. Solo lo recuerda este navegador; si lo apagas, se borra.": "En tornar a carregar Descobreix, el que ja has vist els últims 7 dies va al final, sense amagar res. Només ho recorda aquest navegador; si ho apagues, s'esborra.",
   "Tras usar algo en un local, te pedimos tu reseña": "Després de fer servir alguna cosa en un local, et demanem la teva ressenya",
   "Traspaso rechazado.": "Traspàs rebutjat.",
   "Tu calendario deja de recibir tus planes": "El teu calendari deixa de rebre els teus plans",
