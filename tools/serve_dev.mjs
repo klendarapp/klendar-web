@@ -142,6 +142,10 @@ createServer(async (req, res) => {
       // POST (los botones de /baja/ y /avisame/), si la página lo tiene.
       const post = req.method === 'POST' && mod.onRequestPost;
       const request = new Request(`https://klendar.app${path}${url.search}`, { method: post ? 'POST' : 'GET', headers: { 'accept-language': 'es', ...(req.headers.cookie ? { cookie: req.headers.cookie } : {}) } });
+      // `request.cf` de Cloudflare (la zona aproximada de la conexión) no existe
+      // en local: CF_PRUEBA='{"country":"ES","city":"Madrid","latitude":"40.41","longitude":"-3.70"}'
+      // lo simula, para probar «Ubicación aproximada».
+      if (process.env.CF_PRUEBA) Object.defineProperty(request, 'cf', { value: JSON.parse(process.env.CF_PRUEBA) });
       const out = await (post ? mod.onRequestPost : mod.onRequestGet)({ request, params, env: process.env });
       res.writeHead(out.status, Object.fromEntries(out.headers));
       // En local, sin el contador de Cloudflare (su servidor no acepta

@@ -67,7 +67,7 @@ const T = (en) => en
       price: 'Price', any: 'Any', free: 'Free', upTo: (n) => `Up to €${n}`,
       when: 'When?', anytime: 'Any time', now: 'Next 2 hours', today: 'Today', tomorrow: 'Tomorrow', next10: 'Next 10 days',
       discount: 'Discounts only', openNow: 'Open now', soonest: 'Soonest', newest: 'Newest',
-      nearOn: 'Near you', nearNo: "We couldn't get your location. Allow it in your browser and try again.",
+      nearOn: 'Near you', approx: 'Approximate location', nearNo: "We couldn't get your location. Allow it in your browser and try again.",
       where: 'Where', useLoc: 'Use my location', useLocHint: "What's closest to where you are now", nearPrompt: 'See what’s closest to you first.', nearNeedsWhere: 'To see what’s closest first, tell us where you are.',
       ageQ: 'Are you 18 or over?', ageYes: 'I’m 18 or over', ageNo: 'I’m under 18', ageHidden: (n) => (n === 1 ? '1 result is for over-18s only.' : `${n} results are for over-18s only.`),
       view: 'View', listView: 'List', mapView: 'Map', calView: 'Calendar', distance: 'Distance',
@@ -202,7 +202,7 @@ const T = (en) => en
       price: 'Precio', any: 'Cualquiera', free: 'Gratis', upTo: (n) => `Hasta ${n} €`,
       when: '¿Cuándo?', anytime: 'Cuando sea', now: 'Próximas 2 horas', today: 'Hoy', tomorrow: 'Mañana', next10: 'Próximos 10 días',
       discount: 'Solo con descuento', openNow: 'Abierto ahora', soonest: 'Más pronto', newest: 'Novedades',
-      nearOn: 'Cerca de ti', nearNo: 'No hemos podido saber dónde estás. Permítelo en el navegador y vuelve a probar.',
+      nearOn: 'Cerca de ti', approx: 'Ubicación aproximada', nearNo: 'No hemos podido saber dónde estás. Permítelo en el navegador y vuelve a probar.',
       where: 'Dónde', useLoc: 'Usar mi ubicación', useLocHint: 'Lo más cercano a donde estás ahora', nearPrompt: 'Mira primero lo que tienes más cerca.', nearNeedsWhere: 'Para ver lo más cerca primero, dinos dónde estás.',
       ageQ: '¿Tienes 18 años o más?', ageYes: 'Tengo 18 años o más', ageNo: 'Soy menor', ageHidden: (n) => (n === 1 ? 'Hay 1 resultado solo para mayores de 18.' : `Hay ${n} resultados solo para mayores de 18.`),
       view: 'Ver en', listView: 'Lista', mapView: 'Mapa', calView: 'Calendario', distance: 'Distancia',
@@ -959,6 +959,8 @@ function leeEstado(qs) {
     .filter((v) => /^[a-z0-9-]{1,40}$/.test(v)))].slice(0, 12);
   return {
     que,
+    // «Todas las ciudades» elegido a mano: sin la zona aproximada de la conexión.
+    todas: qs.get('todas') === '1',
     q: (qs.get('q') || '').slice(0, 60),
     city: de('city', 60),
     // Varias categorías (`?categoria=a&categoria=b`, también con comas); `cat`
@@ -1039,10 +1041,13 @@ function query(e, lang, { soloCompartido = false } = {}) {
   if (!soloCompartido && e.vista) p.set(K.view, enIdioma(e.vista, en));
   if (!sit && !soloCompartido && e.vista === 'calendar' && e.mes) p.set(K.month, e.mes);
   if (!sit && !soloCompartido && e.vista === 'calendar' && e.dia) p.set(K.day, e.dia);
-  if (e.cerca) {
+  // La zona aproximada de la conexión nunca va en la dirección (UA1): solo
+  // la distancia, si no es la de serie.
+  if (e.cerca && !e.aprox) {
     p.set('lat', posUrl(e.lat)); p.set('lng', posUrl(e.lng));
     if (e.km !== RADIO_KM) p.set('km', String(e.km));
-  }
+  } else if (e.cerca && e.aprox && e.km !== RADIO_KM) p.set('km', String(e.km));
+  if (e.todas && !e.cerca && !e.city) p.set('todas', '1');
   if (e.amigos) p.set('amigos', '1');
   for (const t of e.traits || []) p.append(K.place, sitioAUrl(t, en));
   if ((e.traits || []).includes('kids')) for (const a of e.edades || []) p.append(K.age, edadAUrl(a));
@@ -1171,6 +1176,27 @@ function conCookie(res) {
   return res;
 }
 
+/** Ubicación aproximada por la conexión (Iván, 2026-10-28; privacidad,
+ * «Ubicación aproximada por la conexión», UA1): sin posición ni ciudad en la
+ * dirección, la ciudad y el punto que Cloudflare deduce de la IP
+ * (`request.cf`), redondeado a 0,1° (unos 10 km). Sin pedir permiso, sin
+ * guardarlo (ni en la dirección, ni en el navegador, ni en la base) y la
+ * página que sale con él va en caché privada. Solo en España (donde está
+ * Klendar) y nunca para los robots (Google debe ver la página de siempre).
+ * Sin dato, `null`: «Todas las ciudades». */
+export function zonaDeConexion(request) {
+  const cf = request?.cf;
+  if (!cf) return null;
+  const ua = request.headers?.get?.('user-agent') || '';
+  if (/bot|crawl|spider|slurp|preview|facebookexternalhit|whatsapp|telegram/i.test(ua)) return null;
+  if (String(cf.country || '').toUpperCase() !== 'ES') return null;
+  const lat = Number.parseFloat(cf.latitude);
+  const lng = Number.parseFloat(cf.longitude);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
+  const r = (x) => Math.round(x * 10) / 10;
+  return { lat: r(lat), lng: r(lng) };
+}
+
 export async function explorePage(url, lang, modo = 'explorar', request = null) {
   const en = lang === 'en';
   const S = T(en);
@@ -1185,6 +1211,15 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   const conSorteos = sorteosEncendidos().catch(() => false);
   const e = leeEstado(url.searchParams);
   if (descubre) { e.q = ''; e.vista = ''; e.que = ''; }
+  // Sin posición, ciudad ni «Todas las ciudades» en la dirección, la página
+  // depende de la conexión: con su zona aproximada, «Ubicación aproximada ·
+  // 5 km» (como la app); sin dato, «Todas las ciudades». Esa página no se
+  // guarda en ninguna caché compartida.
+  const deLaConexion = !e.cerca && !e.city && !e.todas;
+  const aprox = deLaConexion ? zonaDeConexion(request) : null;
+  if (aprox) { e.lat = aprox.lat; e.lng = aprox.lng; e.cerca = true; e.aprox = true; }
+  const cachePublica = (publica) => (deLaConexion || edad ? 'private, max-age=0' : publica);
+  const variaCon = (res) => { if (deLaConexion) res.headers.set('vary', 'Cookie, CF-Connecting-IP'); return res; };
   const { q, city, cat, kind, price, when, soloDescuento, abierto, cerca, lat, lng, km, page, traits, tiempoOff, gustos, antesCierre, menuDia, comerAhora } = e;
   // Las categorías elegidas (varias, como la app). En Sitios, varias van por
   // sus ids (`public_places` y `map_places`).
@@ -1291,7 +1326,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
         : await rpc('public_explore', { ...argsExplore, p_filters: { ...filtros, ...(when ? { when } : {}) }, p_limit: 1, p_offset: 0 }, H)
           .then((r) => (typeof r?.total === 'number' ? r.total : null)).catch(() => null);
     return new Response(JSON.stringify({ total: n }), {
-      headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': edad ? 'private, max-age=0' : 'public, max-age=60, s-maxage=120', vary: 'Cookie', 'x-robots-tag': 'noindex' },
+      headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': cachePublica('public, max-age=60, s-maxage=120'), vary: deLaConexion ? 'Cookie, CF-Connecting-IP' : 'Cookie', 'x-robots-tag': 'noindex' },
     });
   }
 
@@ -1485,7 +1520,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   // todas las vistas, también en el mapa (Iván, 2026-10-28: la fila es
   // idéntica en Descubre y en Explorar; que en el mapa manda lo que se ve lo
   // dice la hoja).
-  const zonaValor = cerca ? S.nearOn : city ? PRETTY(city) : S.allCities;
+  const zonaValor = cerca ? (e.aprox ? S.approx : S.nearOn) : city ? PRETTY(city) : S.allCities;
   const zonaTxt = cerca ? `${zonaValor} · ${km} km` : zonaValor;
   const kmOp = (k) => {
     const txt = k === 1 ? S.walk1 : `${k} km`;
@@ -1511,7 +1546,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
        <button type="button" class="donde-modo${cerca ? '' : ' on'}" data-donde-modo="ciudad" aria-pressed="${!cerca}" hidden>${ic('ciudad', 16)}<span>${esc(S.aCity)}</span></button>
      </div>
      <div class="donde-sec" data-donde-sec="cerca">
-       ${cerca ? '' : `${botonCerca(S.useLoc, '', 'op')}<p class="menu-nota">${esc(S.useLocHint)}</p>`}
+       ${cerca && !e.aprox ? '' : `${botonCerca(S.useLoc, '', 'op')}<p class="menu-nota">${esc(S.useLocHint)}</p>`}
        <p class="menu-d-t">${esc(S.howFar)}</p>
        <div class="menu-km" role="group" aria-label="${esc(S.howFar)}">${RADIOS_KM.map(kmOp).join('')}</div>
        ${enMapa ? `<p class="menu-nota">${esc(S.mapNoKm)}</p>` : ''}
@@ -1519,7 +1554,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
      <div class="donde-sec" data-donde-sec="ciudad">
        <p class="menu-d-t">${esc(S.aCity)}</p>
        <p class="menu-nota">${esc(S.wholeCity)}</p>
-       ${opcion(link({ city: '', cerca: false }), S.allCities, !city && !cerca)}
+       ${opcion(link({ city: '', cerca: false, aprox: false, todas: true }), S.allCities, !city && !cerca)}
        ${ciudades.map((c) => opcion(link({ city: String(c.city), cerca: false }), PRETTY(c.city), !cerca && city.toLowerCase() === String(c.city).toLowerCase())).join('')}
      </div>`,
     { etiqueta: `${S.zoneChange}: ${zonaTxt}` })
@@ -1955,7 +1990,7 @@ ${GRUPOS_CSS}` : ''}`;
   <script src="/assets/avisos.js?v=2" defer></script>`
     : '';
   if (descubre) {
-    return conCookie(html(publicPage({
+    return variaCon(conCookie(html(publicPage({
       lang,
       path: `${base}/`,
       title: S.disc,
@@ -1970,7 +2005,7 @@ ${GRUPOS_CSS}` : ''}`;
       // Con «Cerca de mí» la dirección lleva tu posición (?lat=&lng=): esa
       // página no pasa por el contador de visitas.
       contador: !cerca,
-    }), 200, edad ? 'private, max-age=0' : 'public, max-age=120, s-maxage=600'));
+    }), 200, cachePublica('public, max-age=120, s-maxage=600'))));
   }
 
   // ── Resultados de Explorar ──
@@ -2041,7 +2076,7 @@ ${SITIOS_SCRIPTS}` : ''}`;
 
   // Una búsqueda concreta no aporta nada al índice de Google; la página
   // limpia sí.
-  return conCookie(html(publicPage({
+  return variaCon(conCookie(html(publicPage({
     lang,
     path: `${base}/`,
     title: S.exp,
@@ -2052,7 +2087,7 @@ ${SITIOS_SCRIPTS}` : ''}`;
     bodyClass: 'pagina-explorar',
     head,
     contador: !cerca,
-  }), 200, edad ? 'private, max-age=0' : 'public, max-age=120, s-maxage=600'));
+  }), 200, cachePublica('public, max-age=120, s-maxage=600'))));
 }
 
 /**
