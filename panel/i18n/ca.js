@@ -1698,6 +1698,7 @@ KL_DIC('ca', {
   "Lleno desde": "Ple des de",
   "Lleva datos personales": "Conté dades personals",
   "Lleva {d}: te lo pedirán en el local.": "Porta {d}: te'l demanaran al local.",
+  "Lo manda el propietario o un encargado.": "L’envia el propietari o un encarregat.",
   "Lo activa el propietario o un encargado.": "L’activa el propietari o un encarregat.",
   "Lo básico": "El bàsic",
   "Lo cobras tú en el local, como siempre: Klendar no cobra nada. Lo usamos para tus cifras.": "El cobres tu al local, com sempre: Klendar no cobra res. El fem servir per a les teves xifres.",

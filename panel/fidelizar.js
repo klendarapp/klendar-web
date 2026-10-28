@@ -131,7 +131,10 @@ PAGES.fidelizar = async (v) => {
     icono: 'campaign',
     titulo: bi('Avisar a mis clientes', 'Message my customers'),
     frase: bi('Para contar algo a tus favoritos y clientes con una notificación. Uno por semana.', 'To tell your favourites and customers something with a notification. One a week.'),
-    estado: o ? (prox ? bi(`Podrás mandar otro el ${prox}`, `You can send another on ${prox}`) : bi('Puedes mandar uno ahora', 'You can send one now')) : '',
+    // Un empleado no los manda (`send_business_message` es de propietario o
+    // encargado): «Puedes mandar uno ahora» le decía lo contrario.
+    estado: !edit ? bi('Lo manda el propietario o un encargado.', 'The owner or a manager sends it.')
+      : o ? (prox ? bi(`Podrás mandar otro el ${prox}`, `You can send another on ${prox}`) : bi('Puedes mandar uno ahora', 'You can send one now')) : '',
     on: !!prox,
     boton: edit ? bi('Abrir', 'Open') : '',
     href: '#/mensajes',

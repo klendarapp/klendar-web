@@ -1698,6 +1698,7 @@ KL_DIC('eu', {
   "Lleno desde": "Beteta hemendik",
   "Lleva datos personales": "Datu pertsonalak ditu",
   "Lleva {d}: te lo pedirán en el local.": "Eraman {d}: lokalean eskatuko dizute.",
+  "Lo manda el propietario o un encargado.": "Jabeak edo arduradun batek bidaltzen du.",
   "Lo activa el propietario o un encargado.": "Jabeak edo arduradun batek aktibatzen du.",
   "Lo básico": "Oinarrizkoa",
   "Lo cobras tú en el local, como siempre: Klendar no cobra nada. Lo usamos para tus cifras.": "Zuk kobratzen duzu lokalean, beti bezala: Klendarrek ez du ezer kobratzen. Zure zenbakietarako erabiltzen dugu.",

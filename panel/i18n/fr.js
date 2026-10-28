@@ -1698,6 +1698,7 @@ KL_DIC('fr', {
   "Lleno desde": "Complet à partir de",
   "Lleva datos personales": "Elle contient des données personnelles",
   "Lleva {d}: te lo pedirán en el local.": "Apporte {d} : on te le demandera sur place.",
+  "Lo manda el propietario o un encargado.": "C’est le propriétaire ou un responsable qui l’envoie.",
   "Lo activa el propietario o un encargado.": "C’est le propriétaire ou un responsable qui l’active.",
   "Lo básico": "L’essentiel",
   "Lo cobras tú en el local, como siempre: Klendar no cobra nada. Lo usamos para tus cifras.": "Tu l’encaisses toi-même sur place, comme d’habitude : Klendar ne prend rien. On s’en sert pour tes chiffres.",

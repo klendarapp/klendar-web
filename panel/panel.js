@@ -2445,7 +2445,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
         </div></details></div>
     <p class="tipo-linea"><span id="tipoPregunta"></span> <button type="button" class="linkbtn" id="cambiaTipo"></button></p>
     <div class="pub-editor">
-    <form class="card pub-form" id="form" novalidate>
+    <form class="pub-form" id="form" novalidate>
       <input type="hidden" name="kind" value="${kind}">
       ${ideas.length ? `<div class="ideas" id="ideas"><p class="etq">Ideas</p>
         <div class="ideas-fila">${ideas.map((t, i) => `<button type="button" class="btn sm" data-idea="${i}">${esc(en ? t.en : I18N.t(t.es))}</button>`).join('')}</div>
@@ -6562,7 +6562,7 @@ PAGES.cerrados = async (v) => {
       ],
       rows: dias,
     })}</div>` : ''}
-    ${gestiona() ? `<p class="actions cierres-anadir"><button class="btn primary" type="button" id="anadirCierre">${esc(I18N.t('Añadir…'))}</button></p>` : ''}`;
+    ${gestiona() ? `<p class="actions cierres-anadir"><button class="btn primary principal" type="button" id="anadirCierre">${esc(I18N.t('Añadir…'))}</button></p>` : ''}`;
 
   $$('[data-del]', v).forEach((b) => { b.onclick = async () => {
     const c = lista[+b.dataset.del];

@@ -282,7 +282,7 @@ table.tbl .actions { align-items: flex-start; }
   table.tbl td:not([data-label])::before { content: none; }
   /* Botones de la fila: dos por línea, el que sobra centrado (como en la app). */
   table.tbl .actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
-  table.tbl .actions > * { flex: 1 1 calc(50% - 4px); justify-content: center; white-space: nowrap; }
+  table.tbl .actions > * { flex: 1 1 calc(50% - 4px); justify-content: center; white-space: normal; text-align: center; }
   table.tbl .actions > :last-child:nth-child(odd) { flex-grow: 0; }
   /* «Más» es un <details>: su botón ocupa la caja entera, como los demás
      (si no, se quedaba pegado a la izquierda de una caja centrada). */
@@ -294,7 +294,10 @@ table.tbl .actions { align-items: flex-start; }
   .page-head > h1, .page-head > h2 { flex-basis: 100%; }
   .page-head > .spacer { display: none; }
   .page-head { column-gap: 8px; row-gap: 10px; justify-content: center; }
-  .page-head > .btn { flex: 1 1 calc(50% - 4px); justify-content: center; white-space: nowrap; }
+  .page-head > .btn { flex: 1 1 calc(50% - 4px); justify-content: center; white-space: normal; text-align: center; }
+  /* Tres o más: uno debajo de otro, todos a lo ancho (nunca una fila con
+     botones de distinto tamaño; «Publicaciones»). */
+  .page-head:has(> .btn ~ .btn ~ .btn) > .btn { flex-basis: 100%; }
 }
 
 /* Primeros pasos (negocio recién aprobado, sin nada publicado) */
@@ -1100,7 +1103,8 @@ details.plegable[open] > summary { margin-bottom: 12px; }
 .momento-lista .ms { color: #1e9e57; }
 
 /* «Estaba cerrado» (panel/cerrado.js). */
-.cerr-dos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+.cerr-dos { display: grid; grid-template-columns: fit-content(100%); gap: 10px; margin-top: 14px; }
+@media (max-width: 600px) { .cerr-dos { grid-template-columns: minmax(0, 1fr); } }
 .cerr-dos .btn { justify-content: center; text-align: center; }
 .cerr-lista { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
 .cerr-aviso { margin-bottom: 4px; }
@@ -1144,3 +1148,35 @@ input[type=file]::file-selector-button { font: inherit; font-weight: 700; color:
 /* La insignia del plan (PRUEBA, PAGO PENDIENTE, BLOQUEADO…) es de estado, no
    de oferta: en tinta, como en la app (`SelectedPill`), no en ámbar ni verde. */
 .tag.plan-tag { background: var(--ink); color: var(--surface); }
+
+/* ── Formularios y botones como la app (repaso 2026-10-28) ──────────────── */
+/* El formulario de publicar, sin tarjeta alrededor (GLOSARIO, «Aspecto»):
+   los campos sobre el fondo y la barra de «Guardar borrador» / «Publicar»
+   pegada abajo (en el móvil, de lado a lado, como la de la app). */
+.pub-form .barra-pub { margin: 4px 0 0; padding: 12px 16px; border: 1px solid var(--glass-border); border-radius: 18px; }
+@media (max-width: 900px) {
+  .pub-form .barra-pub { margin: 4px -16px 0; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); border-width: 1px 0 0; border-radius: 0; }
+}
+/* Un botón no corta su texto (letra grande, idiomas largos): pasa a dos
+   líneas: los grupos de botones iguales y los botones principales. */
+/* Las columnas, iguales y sin crecer con el texto: si no cabe, dos líneas
+   (y, en una palabra larga como «Veröffentlichen», con guion). */
+.barra-botones, .alta-botones, .dos-botones { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.alta-botones.uno { grid-template-columns: minmax(0, 1fr); }
+.aforo-botones { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.barra-botones .btn, .alta-botones .btn, .dos-botones .btn, .cerr-dos .btn, .vacio-botones .btn, .aforo-botones .btn,
+#view form :is(.full, .foot) > .btn, #view .btn.principal { white-space: normal; text-align: center; line-height: 1.2;
+  hyphens: auto; -webkit-hyphens: auto; overflow-wrap: break-word; min-width: 0; }
+.quick.quick-2 button b { min-width: 0; overflow-wrap: break-word; }
+/* El botón principal de un formulario, a lo ancho en el móvil (como en la
+   app): Sellos › Nueva, Cumpleaños, Cupón, Wifi, Grupos, Días cerrados… */
+@media (max-width: 600px) {
+  #view form .full > .btn.primary:first-child,
+  #view form .foot > .btn.primary:only-child,
+  #view .btn.primary.principal {
+    display: flex; width: 100%; justify-content: center; min-height: 48px; box-sizing: border-box; }
+  #view form .full > .btn.primary:first-child + :is(span, small) { display: block; margin-top: 6px; }
+}
+/* «Tus plantillas»: el menú a su ancho, sin salirse de la pantalla. */
+.tpl-menu .mas-menu { width: max-content; max-width: calc(100vw - 32px); box-sizing: border-box; }
+.tpl-menu .mas-menu button { white-space: normal; }

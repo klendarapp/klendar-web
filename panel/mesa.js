@@ -248,7 +248,7 @@ PAGES['wifi-clientes'] = async (v) => {
       <label class="f"><span>${esc(bi('Contraseña', 'Password'))}</span><input type="text" id="clave" maxlength="128" autocomplete="off" spellcheck="false" value="${esc(d.password || '')}" ${puede ? '' : 'disabled'}></label>
       <p class="hint">${esc(bi('Las dos son opcionales. La verá cualquiera que escanee el cartel: usa una red para clientes, no la de tu negocio.',
     'Both are optional. Anyone who scans the card will see it: use a guest network, not your business one.'))}</p>
-      ${puede ? `<button class="btn primary" type="button" id="guardaWifi">${esc(bi('Guardar', 'Save'))}</button>` : ''}
+      ${puede ? `<button class="btn primary principal" type="button" id="guardaWifi">${esc(bi('Guardar', 'Save'))}</button>` : ''}
     </div>
     <div class="card cartel-local">
       <div id="qr" class="cl-qr" role="img" aria-label="QR ${esc(url)}"></div>

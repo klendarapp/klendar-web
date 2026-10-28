@@ -111,7 +111,9 @@ const PANEL = (x = {}) => ({
   my_entity_application: { entity_kind: null, can_apply: true, why: null, application: null },
   business_tools_overview: { ok: true, can_edit: true, team: { members: 1 }, series: { rules_active: 0 } },
   my_business_offers_page: (a) => pagina(PUBS, a),
-  my_business_offer_counts: { total: 41, todas: 40, activa: 37, terminada: 3, archivada: 1 },
+  // Como la base (migración 20261240400000 de la app): el chip «Activas»
+  // cuenta `activas` (activa + agotada); el resumen, `activa`.
+  my_business_offer_counts: { total: 41, todas: 40, activa: 37, activas: 37, terminada: 3, archivada: 1 },
   my_business_offer: (a) => PUBS.filter((o) => o.id === a.p_id),
   business_stats: { views_30d: 10, redemptions_30d: 2 },
   my_subscription: { status: 'active', plan_slug: 'pro' },

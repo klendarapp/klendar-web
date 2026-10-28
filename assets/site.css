@@ -543,6 +543,7 @@ p:has(> .pill + .pill) { display: flex; flex-wrap: wrap; gap: 10px; align-items:
 
 /* ── Portada ─────────────────────────────────────────────────────────────── */
 .cta-botones { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; }
+@media (max-width: 599px) { .cta-botones .pill { flex: 1 1 100%; justify-content: center; } }
 .hero .ciudades { font-weight: 600; margin: 0; }
 .hero .ciudades a { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; margin-right: 10px; }
 .cabecera-seccion { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
@@ -579,7 +580,8 @@ p:has(> .pill + .pill) { display: flex; flex-wrap: wrap; gap: 10px; align-items:
 .app-caja p { margin: 0; color: var(--ink-2); }
 section.junto { padding-top: 0; }
 @media (max-width: 860px) {
-  .cta-botones .pill { flex: 1 1 100%; justify-content: center; }
+  /* Centrada (tablet): los botones del titular a su ancho; en el móvil, a lo ancho. */
+  .cta-botones { justify-content: center; }
   .tarjetas { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 78%; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 6px; }
   .tarjetas > * { scroll-snap-align: start; }
   .cabecera-seccion .pill { display: none; }

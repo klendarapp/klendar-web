@@ -1698,6 +1698,7 @@ KL_DIC('gl', {
   "Lleno desde": "Cheo desde",
   "Lleva datos personales": "Contén datos persoais",
   "Lleva {d}: te lo pedirán en el local.": "Leva {d}: pedirancho no local.",
+  "Lo manda el propietario o un encargado.": "Mándao o propietario ou un encargado.",
   "Lo activa el propietario o un encargado.": "Actívao o propietario ou un encargado.",
   "Lo básico": "O básico",
   "Lo cobras tú en el local, como siempre: Klendar no cobra nada. Lo usamos para tus cifras.": "Cóbralo ti no local, coma sempre: Klendar non cobra nada. Usámolo para as túas cifras.",

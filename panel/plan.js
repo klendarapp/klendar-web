@@ -303,7 +303,7 @@ PAGES.plan = async (v) => {
         : bi('Súmalo a la suscripción que ya pagas, con los mismos datos de factura: el precio por local baja con la escalera y Stripe ajusta la próxima factura.',
           'Add it to the subscription you already pay for, with the same invoice details: the price per venue drops with the sliding scale and Stripe adjusts the next invoice.'))}</p>
       ${diasPrueba > 0 ? `<p class="muted small" style="margin:0 0 10px">${esc(bi(`Le quedan ${diasPrueba} días de prueba: se suma el ${diaLargoFecha(sumaEl)}, cuando acaben, y hasta entonces no se cobra nada por él.`, `It has ${diasPrueba} trial days left: it joins on ${diaLargoFecha(sumaEl)}, when they end, and nothing is charged for it until then.`))}</p>` : ''}
-      <button class="btn primary" type="button" id="plan-anadir">${ms('storefront')}${esc(bi('Añadir a mi suscripción', 'Add to my subscription'))}</button>
+      <button class="btn primary principal" type="button" id="plan-anadir">${ms('storefront')}${esc(bi('Añadir a mi suscripción', 'Add to my subscription'))}</button>
       ${diasPrueba > 0 ? `<p style="margin:10px 0 0"><button class="btn sm ghost" type="button" id="plan-anadir-ya">${esc(bi('Sumarlo ya, sin esperar…', 'Add it now, without waiting…'))}</button></p>` : ''}</div>`;
   }
   if (duena && !st && ov.ready && !gratisSiempre && !enPausa && !pendiente && (ov.plans || []).length) {

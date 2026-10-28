@@ -3844,6 +3844,9 @@ PAGES.configuracion = async (v) => {
   // Sorteos (migración 20261243100000 de la app): apagados al lanzar.
   const gw = cfg.giveaways?.value || { enabled: false, platforms: ['web', 'android'] };
   const gwEn = (p) => (Array.isArray(gw.platforms) ? gw.platforms.includes(p) : true);
+  // La pregunta de edad sin cuenta (migraciones 20261250100000 y
+  // 20261254100000 de la app): encendida de serie.
+  const ag = cfg.adults_gate?.value || { enabled: true };
   const limits = await rpc('admin_rate_limits', { p_limit: 50 });
   // Fotos y vídeos sin usar (`storage_cleanup_count`): lo que se borraría.
   const fotos = await rpc('storage_cleanup_count', { p_examples: 3 }).catch(() => null);
@@ -3872,6 +3875,12 @@ PAGES.configuracion = async (v) => {
           ? `<b>Off since launch.</b> Apple's guideline 5.3 requires giveaways inside an app to be sponsored by the app's owner, and on Klendar businesses run them. Off, they don't show anywhere (apps, website, Your account and the dashboard), businesses can't create them, nobody can enter (not even from an old app version) and the draw job does nothing; open ones stay as they are. You keep seeing them in <b>Giveaways</b> to moderate them. On, they show only where it's ticked: website and Android can go first; iOS only once it's cleared with Apple. Apps pick up the change the next time they're opened; the website within a minute.`
           : `<b>Apagados desde el lanzamiento.</b> La norma 5.3 de Apple exige que los sorteos dentro de una app los patrocine el dueño de la app, y en Klendar los organizan los negocios. Apagados, no salen en ningún sitio (apps, web, «Tu cuenta» y panel), los negocios no pueden crearlos, nadie puede participar (tampoco desde una versión vieja de la app) y el sorteo automático no hace nada; los abiertos se quedan como estén. Tú los sigues viendo en <b>Sorteos</b> para moderarlos. Encendidos, salen solo donde esté marcado: web y Android pueden ir primero; iOS, solo cuando esté claro con Apple. Las apps lo notan la próxima vez que se abren; la web, en un minuto.`}</p>
         <div><button class="btn sm">Guardar</button> <span class="muted small">${I18N.lang === 'en' ? 'updated' : 'actualizado'} ${fmtDate(cfg.giveaways?.updated_at)}</span></div></form></div>
+      <div class="card"><h2>${I18N.lang === 'en' ? 'Adult content' : 'Contenido para mayores'}</h2><form id="agf" style="display:grid;gap:10px">
+        <label class="f" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="enabled" ${ag.enabled !== false ? 'checked' : ''}><span>${I18N.lang === 'en' ? 'Ask people <b>without an account</b> whether they are 18 or over' : 'Preguntar la edad a quien <b>no tiene cuenta</b>'}</span></label>
+        <p class="muted small" style="margin:0">${I18N.lang === 'en'
+          ? `<b>On by default.</b> Without an account, the app and the website ask once “Are you 18 or over?” before showing 18+ plans and places; with no answer or “I'm under 18”, they don't show. Off, nobody is asked and without an account everything shows. With an account the date of birth always decides (an under-18 account never sees 18+), and getting a code, booking or joining the queue still need an account and age. Pending the lawyer (Q112). Apps pick up the change the next time they're opened; the website within a minute.`
+          : `<b>Encendida de serie.</b> Sin cuenta, la app y la web preguntan una vez «¿Tienes 18 años o más?» antes de enseñar planes y locales +18; sin contestar o con «Soy menor», no salen. Apagada, no se pregunta y sin cuenta se ve todo. Con cuenta manda siempre la fecha de nacimiento (una cuenta de menor nunca ve +18), y conseguir un código, reservar o la cola siguen pidiendo cuenta y edad. Pendiente del abogado (Q112). Las apps lo notan la próxima vez que se abren; la web, en un minuto.`}</p>
+        <div><button class="btn sm">Guardar</button> <span class="muted small">${I18N.lang === 'en' ? 'updated' : 'actualizado'} ${fmtDate(cfg.adults_gate?.updated_at)}</span></div></form></div>
       <div class="card"><h2>Fotos y vídeos sin usar</h2>
         <p class="muted small" style="margin:0 0 10px">${I18N.lang === 'en'
           ? `Every night, files that nothing uses any more are deleted: from deleted accounts and businesses, old profile photos, deleted reviews and, if the mode is <b>delete</b>, what a business uploaded and no longer uses and the media of publications that ended more than N months ago. In <b>count only</b> mode the new rules just count: check the list below before switching. Nothing uploaded in the last days is touched (an upload in progress isn't saved anywhere yet).`
@@ -3911,6 +3920,22 @@ PAGES.configuracion = async (v) => {
         : '') + (en ? 'Businesses will be able to create giveaways and people to enter them.' : 'Los negocios podrán crear sorteos y la gente participar.'),
       { danger: platforms.includes('ios'), submit: en ? 'Turn on' : 'Encender' })) return;
     await save('giveaways', { enabled: c.enabled.checked, platforms });
+  });
+  alGuardar($('#agf'), async (c) => {
+    const en = I18N.lang === 'en';
+    const encender = c.enabled.checked;
+    if (encender === (ag.enabled !== false)) { toast(en ? 'Nothing changed' : 'No has cambiado nada'); return; }
+    const ok = encender
+      ? await confirmDlg(en ? 'Ask for age again' : 'Volver a preguntar la edad',
+        en ? 'Without an account, the app and the website will ask “Are you 18 or over?” again before showing anything 18+.'
+          : 'Sin cuenta, la app y la web volverán a preguntar «¿Tienes 18 años o más?» antes de enseñar nada +18.',
+        { submit: en ? 'Ask' : 'Preguntar' })
+      : await confirmDlg(en ? 'Stop asking for age' : 'Dejar de preguntar la edad',
+        en ? 'Without an account, anyone will see 18+ plans and places without saying they are 18. Nothing changes for people with an account.'
+          : 'Sin cuenta, cualquiera verá los planes y locales +18 sin decir que tiene 18 años. Con cuenta no cambia nada.',
+        { danger: true, submit: en ? 'Stop asking' : 'Dejar de preguntar' });
+    if (!ok) return;
+    await save('adults_gate', { enabled: encender });
   });
   alGuardar($('#frf'), async (c) => {
     if (c.modo.value === 'borrar' && fr.modo !== 'borrar' && !await confirmDlg('Borrar fotos y vídeos sin usar', I18N.lang === 'en' ? 'From tonight, the files in the list will be deleted for good. Check it first.' : 'Desde esta noche se borrarán para siempre los archivos de la lista. Revísala antes.', { danger: true, submit: 'Borrar' })) return;
