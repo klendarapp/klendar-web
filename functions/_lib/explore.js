@@ -1586,7 +1586,9 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
     titulo: S.when, resetTxt: S.clearQ,
     reset: link({ when: '', abierto: false, comerAhora: false, momento: '', ...(aquiOn ? { km: RADIO_KM, sort: '' } : {}) }),
     // En el calendario, al cambiar «¿Cuándo?» se abre en el primer día que cuenta.
-    ocultos: ocultosMenos(new Set([K.when, K.open, K.eat, K.moment, K.month, K.day])),
+    // En Sitios no está «El plan es…»: el «¿Cuándo?» de Planes pasa de largo
+    // (al volver a Planes sigue ahí, como el resto de lo de Planes).
+    ocultos: ocultosMenos(new Set([...(negocios ? [] : [K.when]), K.open, K.eat, K.moment, K.month, K.day])),
     cuerpo: `${atajosCuando}
       ${negocios ? '' : `<fieldset><legend>${esc(S.planIs)}</legend><div class="ops">
         ${[['', S.anytime], ['now', S.now], ['today', S.today], ['tonight', S.tonight], ['tomorrow', S.tomorrow], ['weekend', S.weekend], ['next10', S.next10]]
