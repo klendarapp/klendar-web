@@ -585,7 +585,11 @@ const VUELTA_HASH = {
   extend: /^[0-9a-f-]{36}$/i,
   estado: /^[a-z_]{1,20}$/,
   dia: /^\d{4}-\d{2}-\d{2}$/,
-  idea: /^1$/,
+  idea: /^(1|before_closing)$/,
+  primera: /^1$/,
+  exclusiva: /^1$/,
+  partido: /^[0-9a-f-]{36}$/i,
+  editar: /^1$/,
 };
 function rutaInterna(v) {
   const s = String(v || '');
