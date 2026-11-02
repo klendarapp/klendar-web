@@ -230,12 +230,52 @@ async function crecer(nav, nombre, t, vp) {
   await ctx.close();
 }
 
+/** «Gratis de lanzamiento» por ciudad (migración 20261260100001 de la app). */
+async function gratis(nav, nombre, t, vp) {
+  const { ctx, p, estado, errores } = await contexto(nav, vp, {
+    ...BASE_RPC,
+    admin_city_waitlist: [],
+    admin_klendar_cities: [
+      { id: 'madrid', name: 'Madrid', lat: 40.4168, lng: -3.7038, position: 1, active: true, region: 'MD', postal_prefix: '280', launch_free: false, free_open: 0, free_ending: 0, trials: 4 },
+      { id: 'zaragoza', name: 'Zaragoza', lat: 41.6488, lng: -0.8891, position: 5, active: true, region: 'AR', postal_prefix: '500', launch_free: true, free_open: 7, free_ending: 0, trials: 0 },
+    ],
+    admin_set_city_launch_free: { id: 'madrid', on: true, converted: 4 },
+    admin_end_city_launch_free: { id: 'zaragoza', businesses: 7 },
+  });
+  await p.goto(`${BASE}/admin/#/crecer`, { waitUntil: 'networkidle' });
+  await p.waitForSelector('[data-gratis]');
+  const v = await p.locator('#crCiudades').innerText();
+  ok(/Altas con prueba/.test(v) && /Altas gratis/.test(v) && /7 gratis sin fecha/.test(v) && /4 en prueba/.test(v), `${nombre}/${t} gratis: la columna «Gratis de lanzamiento»`);
+  ok(await p.locator('[data-cobrar]').count() === 1, `${nombre}/${t} gratis: «Empezar a cobrar…» solo donde hay gratis sin fecha`);
+  await p.screenshot({ path: `${OUT}/web-admin-crecer-gratis-${nombre}-${t}.png`, fullPage: true });
+  await p.click('[data-gratis="0"]');
+  await p.waitForSelector('#modal[open] button[type=submit]');
+  ok(/prueba de 30 días/.test(await p.locator('#modal').innerText()), `${nombre}/${t} gratis: el diálogo explica qué cambia`);
+  await p.click('#modal button[type=submit]');
+  await p.waitForTimeout(400);
+  const enc = estado.llamadas.find(([fn]) => fn === 'admin_set_city_launch_free');
+  ok(enc && enc[1].p_city === 'madrid' && enc[1].p_on === true, `${nombre}/${t} gratis: encender manda la ciudad ${JSON.stringify(enc?.[1])}`);
+  await p.waitForSelector('[data-cobrar]');
+  await p.click('[data-cobrar]');
+  await p.waitForSelector('#modal input[name=until]');
+  const fecha = await p.locator('#modal input[name=until]').inputValue();
+  ok(/^\d{4}-\d{2}-\d{2}$/.test(fecha) && Date.parse(fecha) - Date.now() > 29 * 864e5, `${nombre}/${t} gratis: propone una fecha a más de 30 días (${fecha})`);
+  await p.screenshot({ path: `${OUT}/web-admin-crecer-cobrar-${nombre}-${t}.png` });
+  await p.click('#modal button[type=submit]');
+  await p.waitForTimeout(400);
+  const fin = estado.llamadas.find(([fn]) => fn === 'admin_end_city_launch_free');
+  ok(fin && fin[1].p_city === 'zaragoza' && fin[1].p_until === fecha, `${nombre}/${t} gratis: «Empezar a cobrar» manda ciudad y fecha ${JSON.stringify(fin?.[1])}`);
+  ok(errores.length === 0, `${nombre}/${t} gratis sin errores JS ${errores.join(' | ')}`);
+  await ctx.close();
+}
+
 for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
   const nav = await tipo.launch();
   for (const [t, vp] of [['movil', { width: 390, height: 844 }], ['escritorio', { width: 1280, height: 900 }]]) {
     await festivos(nav, nombre, t, vp);
     await resumen(nav, nombre, t, vp);
     await crecer(nav, nombre, t, vp);
+    await gratis(nav, nombre, t, vp);
   }
   await nav.close();
 }
