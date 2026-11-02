@@ -28,9 +28,19 @@ mkdirSync(OUT, { recursive: true });
 let fallos = 0;
 const ok = (c, m) => { if (!c) { fallos++; console.log('FALLA:', m); } else console.log('ok:', m); };
 
-// «Deporte» en Madrid (una página: unas 8) y 124 «Visitas y experiencias»
+// Una lista de una página (UNA, abajo) y las «Visitas y experiencias»
 // (seis páginas de 24).
-const UNA = '?ciudad=Madrid&categoria=sport';
+// Los datos de dev cambian con los días: se coge la primera que hoy tenga
+// entre 6 y 23 publicaciones (una sola página).
+const CANDIDATAS = ['sport', 'beauty', 'experiences', 'family', 'learning', 'books', 'music']
+  .flatMap((c) => [`?ciudad=Madrid&categoria=${c}`, `?ciudad=Madrid&categoria=${c}&cuando=hoy`]);
+let UNA = null;
+for (const q of CANDIDATAS) {
+  const n = ((await (await fetch(`${BASE}/descubre/${q}`)).text()).match(/data-vh=/g) || []).length;
+  if (n >= 6 && n < 24) { UNA = q; break; }
+}
+if (!UNA) { console.log('FALLA: no hay ninguna lista de una sola página en dev'); process.exit(1); }
+console.log('una página:', UNA);
 const VARIAS = '?ciudad=Madrid&categoria=experiences';
 
 for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
@@ -48,7 +58,10 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     const ir = (u) => page.goto(`${BASE}${u}`, { waitUntil: 'load' });
     const ids = (sel) => page.$$eval(sel, (l) => l.map((e) => e.getAttribute('data-o')));
     const guardado = () => page.evaluate(() => JSON.parse(localStorage.getItem('klendar.vistos') || '{}'));
-    const pon = (m) => page.evaluate((x) => localStorage.setItem('klendar.vistos', JSON.stringify(x)), m);
+    // Se borra desde una página sin /assets/vistos.js: si no, la tarjeta que
+    // se estaba viendo podía contar como vista justo después de borrar.
+    const borra = async () => { await ir('/privacidad/'); await page.evaluate(() => localStorage.removeItem('klendar.vistos')); };
+    const pon = async (m) => { await ir('/privacidad/'); await page.evaluate((x) => localStorage.setItem('klendar.vistos', JSON.stringify(x)), m); };
 
     // 1. Sin nada visto: el orden de la base.
     await page.route('**/assets/vistos.js*', (r) => r.fulfill({ body: '', contentType: 'text/javascript' }));
@@ -61,13 +74,13 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     await page.unroute('**/assets/vistos.js*');
     ok(base.length >= 6 && base.length < 24 && baseLista.length === 24, `${t} la base: ${base.length} en Descubre (una sola página) y 24 en la primera página de la lista`);
     await ir(`/descubre/${UNA}`);
-    await page.evaluate(() => localStorage.removeItem('klendar.vistos'));
+    await borra();
     await ir(`/descubre/${UNA}`);
     ok(JSON.stringify(await ids('#feed > .tj')) === JSON.stringify(base), `${t} Descubre sin nada visto: el orden de la base`);
     ok(!(await page.$('.feed-sep')), `${t} sin nada visto, sin separación`);
 
     // 2. 1 s no basta; 1,5 s sí.
-    await page.evaluate(() => localStorage.removeItem('klendar.vistos'));
+    await borra();
     await ir(`/descubre/${UNA}`);
     await page.waitForTimeout(900);
     ok(!(base[0] in (await guardado())), `${t} a la vista menos de 1,5 s: aún no cuenta`);
@@ -100,7 +113,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     ok(!(await page.$('.feed-sep')), `${t} con otra huella o de hace 8 días: nueva (sin separación)`);
 
     // 3b. Varias páginas: Descubre trae las siguientes sola.
-    await page.evaluate(() => localStorage.removeItem('klendar.vistos'));
+    await borra();
     await ir(`/explorar/${VARIAS}`);
     const vhL = await page.$$eval('.tjs[data-vistos] > .tj', (l) => Object.fromEntries(l.map((e) => [e.getAttribute('data-o'), e.getAttribute('data-vh')])));
     const vistasL = baseLista.slice(0, 20);
@@ -165,6 +178,10 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     ok(!(await page.$eval('#vistos', (c) => c.checked)), `${t} se recuerda apagado`);
     await page.click('#vistos');
     ok(await page.evaluate(() => localStorage.getItem('klendar.vistos')) === null, `${t} encendido otra vez`);
+    // La captura, cuando ha acabado la entrada de la página (`mov-sube`: si
+    // no, sale a medio fundido y parece apagada).
+    await page.waitForFunction(() => Array.from(document.querySelectorAll('main *')).every((e) => getComputedStyle(e).animationName === 'none' || getComputedStyle(e).opacity === '1'));
+    await page.waitForTimeout(300);
     await page.screenshot({ path: `${OUT}/vistos-ajustes-${nombre}-${forma}.png` });
 
     ok(fuera.length === 0, `${t} lo visto no se manda a ningún sitio`);
