@@ -30,7 +30,7 @@ let fallos = 0;
 const ok = (c, m) => { if (!c) { fallos++; console.log('FALLO:', m); } else console.log('ok:', m); };
 
 const PAGINAS = [
-  ['/cookies/', 'Última actualización: 28 de octubre de 2026', [
+  ['/cookies/', 'Última actualización: 2 de noviembre de 2026', [
     /klendar\.filtros\s+Descubre y Explorar \(almacenamiento local\)[\s\S]*?Hasta que los cambies o pulses «Quitar filtros»; ¿Cuándo\? se quita a las 6:00 y tu posición deja de usarse a las 6 horas\s+Preferencia elegida por ti/,
     /klendar\.explorar\s+Explorar \(almacenamiento local\)\s+La última vista que elegiste en Explorar \(Planes o Sitios; lista, mapa o calendario\), para abrirlo ahí la próxima vez\s+Hasta que la cambies\s+Preferencia elegida por ti/,
     /klendar\.trazo\s+Todo klendar\.app \(almacenamiento de sesión\)\s+Que la animación del logo \(el símbolo que se dibuja\) salga solo en la primera página que abres, no en cada una\s+Hasta cerrar la pestaña\s+Técnica/,
@@ -41,7 +41,7 @@ const PAGINAS = [
     /Al cerrar sesión se borran la sesión, la copia de tus códigos, tus gustos, lo del panel y la cookie klendar_18\./,
     /28 de octubre de 2026: Tus filtros se recuerdan hasta que los cambies o los quites/,
   ], [/Se usa durante 6 horas/, /vuelta de Google o Apple/]],
-  ['/en/cookies/', 'Last updated: 28 October 2026', [
+  ['/en/cookies/', 'Last updated: 2 November 2026', [
     /klendar\.filtros\s+Discover and Explore \(local storage\)[\s\S]*?Until you change them or tap “Clear filters”; “When\?” is cleared at 6:00 and your position stops being used after 6 hours\s+Preference you chose/,
     /klendar\.explorar\s+Explore \(local storage\)\s+The last view you chose in Explore \(Plans or Places; list, map or calendar\), so it opens there next time\s+Until you change it\s+Preference you chose/,
     /klendar\.trazo\s+All of klendar\.app \(session storage\)\s+So the logo animation \(the symbol drawing itself\) only plays on the first page you open, not on every one\s+Until you close the tab\s+Technical/,
@@ -51,26 +51,26 @@ const PAGINAS = [
     /When you log out, your session, the copy of your codes, your interests, the dashboard data and the klendar_18 cookie are deleted\./,
     /28 October 2026: Your filters are remembered until you change or clear them/,
   ], [/Used for 6 hours/, /return from Google or Apple/]],
-  ['/privacidad/', 'Última actualización: 29 de octubre de 2026', [
+  ['/privacidad/', 'Última actualización: 2 de noviembre de 2026', [
     /tu ciudad o tu última ubicación conocida de los últimos 7 días; no guardamos ninguna otra/,
     /de tu última ubicación \(de los últimos 7 días\) o tu ciudad/,
     /salvo la librería de los mapas \(Mapbox GL JS\), que descarga de Mapbox \(api\.mapbox\.com\) al abrir un mapa/,
     /28 de octubre de 2026: La ubicación que se usa para «Avísame si…»/,
   ], [/últimos 30 días/]],
-  ['/en/privacy/', 'Last updated: 29 October 2026', [
+  ['/en/privacy/', 'Last updated: 2 November 2026', [
     /your city or your last known location from the past 7 days; we don’t keep any other/,
     /your last location \(from the last 7 days\) or your city/,
     /except the map library \(Mapbox GL JS\), which it downloads from Mapbox \(api\.mapbox\.com\) when you open a map/,
     /28 October 2026: The location used for “Tell me when…”/,
   ], [/(past|last) 30 days/]],
-  ['/negocios/', 'Última actualización: 28 de octubre de 2026', [
+  ['/negocios/', 'Última actualización: 2 de noviembre de 2026', [
     /Un cobro por domiciliación que aún se está procesando no bloquea \(hasta 14 días\)\./,
-    /y los del 28 de octubre de 2026 \(apartados 2, 4 bis y 7\), desde el 12 de noviembre de 2026: 15 días/,
+    /los del 28 de octubre de 2026 \(apartados 2, 4 bis y 7\), desde el 12 de noviembre de 2026, y los del 2 de noviembre de 2026 \(apartado 2 bis\), desde el 17 de noviembre de 2026: 15 días/,
     /28 de octubre de 2026: Pagos pendientes y bloqueo \(apartado 4 bis\): un cobro por domiciliación que aún se está procesando no bloquea durante 14 días como mucho\. Se aplica desde el 12 de noviembre de 2026\./,
   ], [/se está procesando no bloquea\. /]],
-  ['/en/business-terms/', 'Last updated: 28 October 2026', [
+  ['/en/business-terms/', 'Last updated: 2 November 2026', [
     /A direct debit payment still being processed doesn't block \(for up to 14 days\)\./,
-    /and those of 28 October 2026 \(sections 2, 4a and 7\) from 12 November 2026: 15 days/,
+    /those of 28 October 2026 \(sections 2, 4a and 7\) from 12 November 2026, and those of 2 November 2026 \(section 2a\) from 17 November 2026: 15 days/,
     /28 October 2026: Outstanding payments and blocking \(section 4a\)[\s\S]*?It applies from 12 November 2026\./,
   ], [/being processed doesn't block\. /]],
 ];

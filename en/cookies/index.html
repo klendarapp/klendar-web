@@ -59,7 +59,7 @@
 <script src="/assets/cabecera.js?v=11" defer></script>
 <main class="doc" id="contenido">
 <h1>Cookie policy</h1>
-<div class="meta">Last updated: 28 October 2026 · Version 2026-09-29</div>
+<div class="meta">Last updated: 2 November 2026 · Version 2026-09-29</div>
 <p class="notice">This is a courtesy translation provided for information only. In case of any discrepancy, the <a href="/cookies/">Spanish version</a> prevails.</p>
 
 <p><strong>In short.</strong> klendar.app uses <strong>a single cookie</strong>, and only if you answer “Are you 18 or over?”: it stores your answer so we don't ask again. Apart from that, it only stores in your browser what is essential for what you ask it to do (your session, your language, your filters, the codes a business validates offline) and it counts visits without cookies and without identifying you. None of this is used for advertising or to follow you across other sites, so we don't ask for your consent (art. 22.2 of the Spanish LSSI-CE). If we ever add anything that needs it, we will ask you first.</p>
@@ -87,6 +87,7 @@
 <tr><td><code>klendar.traducir.ok</code></td><td>Publication and business pages (session storage)</td><td>Whether automatic translation is available right now, so it isn't checked on every page</td><td>10 minutes, or until you close the tab</td><td>Technical</td></tr>
 <tr><td><code>klendar.gustos</code></td><td>Discover, Explore and “Your account” (local storage)</td><td>A copy of your interests and your city, to order Discover and Explore and for the travel notice</td><td>Until you log out or change them</td><td>Preference you chose</td></tr>
 <tr><td><code>klendar.busquedas</code></td><td>Explore (local storage)</td><td>Your last 10 searches, to show them when you tap the search box</td><td>Until you clear them (one or all)</td><td>Preference you chose</td></tr>
+<tr><td><code>klendar.vistos</code></td><td>Discover and Explore (local storage)</td><td>Which publications you've seen (the identifier, when, and a fingerprint of their price, date and places), so you see first what you haven't seen. It's not sent to Klendar. Turn it off in “Your account” → Settings → What you see (“Put what I've already seen at the end”), also without logging in</td><td>7 days from when you saw each one (at most 2,000); if you turn off “Put what I've already seen at the end”, it only stores “off”</td><td>Preference you chose</td></tr>
 <tr><td><code>klendar.viaje</code></td><td>Discover (local storage)</td><td>The date you closed the travel notice, so it doesn't show again that day (not where you were)</td><td>Until the next day (replaced)</td><td>Preference you chose</td></tr>
 <tr><td><code>klendar.ciudades</code></td><td>Discover, Explore and “Your account” (session storage)</td><td>The list of Klendar's cities, so it isn't requested on every page</td><td>Until you close the tab</td><td>Technical</td></tr>
 <tr><td><code>klendar.grupos.elegidos</code></td><td>“Groups and companies” and “Your account” (session storage)</td><td>Remember the places you pick (up to 3) to ask them for a quote while you prepare the request</td><td>Until you close the tab</td><td>Technical</td></tr>
@@ -114,6 +115,7 @@
 
 <h2 class="cambios" id="historial">Change history</h2>
 <ul>
+  <li><strong>2 November 2026</strong>: One more key: klendar.vistos (what you've already seen in Discover and Explore, 7 days; turn it off in Settings › What you see).</li>
   <li><strong>28 October 2026</strong>: The klendar.traducir key stores “Always translate automatically”; and one more key, klendar.traducir.ok (whether translation is available).</li>
   <li><strong>28 October 2026</strong>: Your connection's approximate area, used without your location, isn't stored in your browser.</li>
   <li><strong>28 October 2026</strong>: Your filters are remembered until you change or clear them (“When?”, until 6:00; your position, 6 hours); two more keys (the last view in Explore and the logo animation); the klendar_18 cookie is deleted when you log out; the map library is downloaded from Mapbox; and the login check is for Google (you can't log in with Apple on the website).</li>
