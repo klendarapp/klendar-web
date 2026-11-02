@@ -180,6 +180,10 @@ const T = (en) => en
       placesNearHint: 'By distance and, at the same distance, first the ones with plans today.',
       placesRatedHint: 'By rating; when level, the ones with plans today first.',
       eatSoon: 'Food right now', tonightNear: 'Tonight nearby',
+      shortcutsHint: 'Each shortcut sets its filters; you see them at the top, in the row, and remove them like any other.',
+      browseTypes: 'Or browse by type of place', moreN: (n) => `${n} more`, moreInGroup: (n, g) => `Show ${n} more in ${g}`,
+      picksSub: 'Hand-picked for this week.', notifications: 'Notifications',
+      notificationsN: 'Notifications, {n} unread',
     }
   : {
       exp: 'Explorar', disc: 'Descubre', agenda: 'Agenda local', search: 'Buscar', ph: 'Un bar, un mercadillo, «brunch»…',
@@ -309,6 +313,10 @@ const T = (en) => en
       placesNearHint: 'Por cercanía y, a la misma distancia, primero los que tienen planes hoy.',
       placesRatedHint: 'Por su valoración; a la par, los que tienen planes hoy.',
       eatSoon: 'Para comer ya', tonightNear: 'Esta noche cerca',
+      shortcutsHint: 'Cada atajo pone sus filtros; se ven arriba, en la fila, y se quitan como cualquier otro.',
+      browseTypes: 'O mira por tipo de sitio', moreN: (n) => `${n} más`, moreInGroup: (n, g) => `Ver ${n} más de ${g}`,
+      picksSub: 'Lo que tiene sentido esta semana, elegido a mano.', notifications: 'Notificaciones',
+      notificationsN: 'Notificaciones, {n} sin leer',
     };
 
 /** «El local, según…» → «el local, según…» (detrás de «Abierto ahora:»). */
@@ -339,6 +347,10 @@ const IC = {
   bolsa: 'M18 6h-2c0-2.21-1.79-4-4-4S8 3.79 8 6H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6-2c1.1 0 2 .9 2 2h-4c0-1.1.9-2 2-2zm6 16H6V8h2v2c0 .55.45 1 1 1s1-.45 1-1V8h4v2c0 .55.45 1 1 1s1-.45 1-1V8h2v12z',
   aqui: 'M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0 0 13 3.06V1h-2v2.06A8.994 8.994 0 0 0 3.06 11H1v2h2.06A8.994 8.994 0 0 0 11 20.94V23h2v-2.06A8.994 8.994 0 0 0 20.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z',
   ciudad: 'M15 11V5l-3-3-3 3v2H3v14h18V11h-6zm-8 8H5v-2h2v2zm0-4H5v-2h2v2zm0-4H5V9h2v2zm6 8h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V9h2v2zm0-4h-2V5h2v2zm6 12h-2v-2h2v2zm0-4h-2v-2h2v2z',
+  // La cabecera de Descubre, como la app: notifications_none y
+  // auto_awesome (con contorno), de Material.
+  campanaCab: 'M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z',
+  selecciones: 'M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25zm0 6l-1.25 2.75L15 19l2.75 1.25L19 23l1.25-2.75L23 19l-2.75-1.25zm-7.5-5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5zm-1.51 3.49L9 15.17l-.99-2.18L5.83 12l2.18-.99L9 8.83l.99 2.18 2.18.99-2.18.99z',
   arriba: 'M12 8l-6 6 1.41 1.41L12 10.83l4.59 4.58L18 14z',
   // El orden (Material «swap_vert»).
   orden: 'M16 17.01V10h-2v7.01h-3L15 21l4-3.99h-3zM9 3 5 6.99h3V14h2V6.99h3L9 3z',
@@ -1201,6 +1213,19 @@ export function zonaDeConexion(request) {
   return { lat: r(lat), lng: r(lng) };
 }
 
+// La fila mide si le caben las tres preguntas enteras (como la app,
+// `FilterSummaryRow`): si no, el «dónde» corto («5 km», «Todas») y, si aún
+// no, sin iconos; lo largo se corta con «…» solo después. En línea, justo
+// detrás de la fila, para que se vea ya bien; otra vez al cambiar el ancho y
+// cuando llegan las letras. Antes del primer pintado (`requestAnimationFrame`),
+// no mientras se lee la página: medir a mitad de la lectura tumbaba WebKit
+// al llegar desde el formulario de una hoja.
+const FILA_MIDE = "(function(){var b=document.getElementById('barra');if(!b)return;"
+  + "function corta(){return Array.prototype.some.call(b.querySelectorAll('.barra-preg .chip-t'),function(t){return t.offsetParent&&t.scrollWidth>t.clientWidth+1;});}"
+  + "function mide(){b.classList.remove('fila-corta','fila-sin-iconos');if(!corta())return;b.classList.add('fila-corta');if(!corta())return;b.classList.add('fila-sin-iconos');}"
+  + "(window.requestAnimationFrame||setTimeout)(mide);window.KL_FILA=mide;var t;addEventListener('resize',function(){clearTimeout(t);t=setTimeout(mide,60);});"
+  + "if(document.fonts&&document.fonts.ready)document.fonts.ready.then(mide);})();";
+
 export async function explorePage(url, lang, modo = 'explorar', request = null) {
   const en = lang === 'en';
   const S = T(en);
@@ -1847,14 +1872,41 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
     // «Pedir un local», el cuarto, como en el buscador de la app.
     pedir: { t: S.askVenue, s: S.recommendShort, href: pedirHref(lang) },
   });
-  const buscador = descubre ? '' : `<form class="buscador" role="search" method="get" action="${base}/" data-busqueda
+  // El buscador: el de Explorar y el de la lupa de Descubre (Iván,
+  // 2026-10-29: en la app también se busca desde Descubre). Lleva a los
+  // resultados de Explorar con la misma zona y los mismos filtros.
+  const ocultosDe = (estado) => new URLSearchParams(query(estado, lang)).toString().split('&').filter(Boolean)
+    .map((kv) => { const [k, v] = kv.split('='); return `<input type="hidden" name="${esc(decodeURIComponent(k))}" value="${esc(decodeURIComponent(v.replace(/\+/g, ' ')))}">`; }).join('');
+  const formBuscar = (fijo) => `<form class="buscador" id="${fijo ? 'buscarForm' : 'buscar'}" role="search" method="get" action="${exploreBase(lang)}/" data-busqueda${fijo ? ' data-panel-fijo' : ''}
     data-ciudad="${esc(ciudadK?.id || '')}" data-ciudad-nombre="${esc(ciudadK?.name || '')}" data-textos="${esc(textosBusqueda)}">
     <label class="buscador-campo">${ic('buscar', 20)}<span class="sr">${esc(S.search)}</span>
       <input type="search" name="q" value="${esc(q)}" placeholder="${esc(S.ph)}" enterkeyhint="search"></label>
-    ${new URLSearchParams(query({ ...e, q: '', page: 1, mes: calendario ? mes : '', dia: calendario ? dia : '' }, lang)).toString().split('&').filter(Boolean)
-      .map((kv) => { const [k, v] = kv.split('='); return `<input type="hidden" name="${esc(decodeURIComponent(k))}" value="${esc(decodeURIComponent(v.replace(/\+/g, ' ')))}">`; }).join('')}
+    ${ocultosDe(fijo ? { ...e, q: '', que: '', vista: '', page: 1, mes: '', dia: '' } : { ...e, q: '', page: 1, mes: calendario ? mes : '', dia: calendario ? dia : '' })}
     <button class="pill ink" type="submit">${esc(S.search)}</button>
   </form>`;
+  const buscador = descubre ? '' : formBuscar(false);
+  // Un enlace con lo de esta página y `cambios`, a Descubre o a Explorar.
+  const linkA = (destino, cambios) => {
+    const b = { ...e, vista: '', que: '', q: '', page: 1, mes: '', dia: '', ...cambios };
+    if (b.cerca === false) { b.lat = null; b.lng = null; }
+    const s = query(b, lang);
+    return `${destino}/${s ? `?${s}` : ''}`;
+  };
+  // «O mira por tipo de sitio» (como la lupa de la app): las categorías por
+  // los cinco grupos; los dos primeros abiertos y los demás con «N más».
+  // Tocar una busca por su nombre. /assets/gustos.js la pone en el panel del
+  // buscador, debajo de lo buscado.
+  const gruposBusq = KC.agrupa(catsHoja, '').filter((g) => g.cats.length);
+  const hT = descubre ? 'h3' : 'h2';
+  const hG = descubre ? 'h4' : 'h3';
+  const tiposBusq = gruposBusq.length ? `<div class="busq-tipos" role="group" data-busq-tipos aria-labelledby="busqTipos" hidden>
+      <${hT} id="busqTipos">${esc(S.browseTypes)}</${hT}>
+      ${gruposBusq.map((g, i) => `<div class="busq-grupo"${i >= 2 ? ' data-plegado' : ''}>
+        <${hG}>${esc(KC.nombreGrupo(g.id, lang))}</${hG}>
+        <div class="busq-chips">${g.cats.map((c) => `<a class="busq-cat" href="${esc(linkA(exploreBase(lang), { q: catName(c, en) }))}">${esc(catName(c, en))}</a>`).join('')}${i >= 2
+          ? `<button type="button" class="busq-cat busq-mas" data-mas-grupo aria-label="${esc(S.moreInGroup(g.cats.length, KC.nombreGrupo(g.id, lang)))}" hidden>${esc(S.moreN(g.cats.length))}${ic('abajo', 18)}</button>` : ''}</div>
+      </div>`).join('')}
+    </div>` : '';
 
   // La fila (opción A): ☰ · ¿Dónde? · ¿Cuándo? · ¿Qué? · el orden. Con el
   // tiempo reordenando hoy, el orden va justo detrás de ☰, a la vista.
@@ -1874,21 +1926,59 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
     </div>
     ${hojaFiltros}
   </div>
+  <script>${FILA_MIDE}</script>
   <p id="cercaErr" class="aviso-error" role="alert" hidden></p>
   <script src="/assets/categorias.js?v=6" defer></script>
-  <script src="/assets/gustos.js?v=6" defer data-lang="${en ? 'en' : 'es'}"></script>`;
+  <script src="/assets/gustos.js?v=7" defer data-lang="${en ? 'en' : 'es'}"></script>`;
 
-  // Los atajos (la lupa de la web): debajo del buscador, si no hay búsqueda
-  // ni filtros. Cada uno pone lo que haga falta y se ve arriba, en la fila.
+  // Los atajos de la lupa (Iván, 2026-10-29: como la app): cada uno pone sus
+  // filtros sobre los que haya y lleva a Descubre; «Para comer ya», a
+  // Explorar › Sitios con «Se puede comer ahora». Un atajo de ¿Cuándo? deja
+  // atrás «Ahora, a un paseo». Sin tu posición, «Esta noche cerca» y «Ahora,
+  // a un paseo» la piden y van a Descubre con ella (`data-cerca-a`).
+  const aDescubre = (c) => linkA(discoverBase(lang), c);
+  const sinAqui = aquiOn ? { km: RADIO_KM, sort: '' } : {};
+  const cercaA = (txt, mas, icono) => botonCerca(txt, mas, 'atajo', icono).replace('<button ', `<button data-cerca-a="${esc(aDescubre({}))}" `);
+  const atajosLupa = [
+    cerca ? atajo(aDescubre({ when: 'tonight', ...sinAqui }), S.tonightNear, false, 'reloj') : cercaA(S.tonightNear, `${K.when}=${enIdioma('tonight', en)}`, 'reloj'),
+    atajo(linkA(exploreBase(lang), { que: 'places', comerAhora: true }), S.eatSoon, false, 'carta'),
+    atajo(aDescubre({ when: 'weekend', ...sinAqui }), S.weekend, false, 'cal'),
+    cerca ? atajo(aDescubre({ when: 'now', km: 1, sort: 'nearest' }), S.walkNow, false, 'aqui') : cercaA(S.walkNow, masAqui, 'aqui'),
+    atajo(aDescubre({ traits: traits.includes('kids') ? traits : [...traits, 'kids'] }), S.withKids, false, icSitio('kids', 16)),
+    atajo(aDescubre({ antesCierre: true }), S.beforeClosing, false, 'bolsa'),
+  ].join('\n    ');
+  // En Explorar, debajo del buscador, si no hay búsqueda ni filtros.
   const atajosFila = !descubre && !q && !conFiltros ? `<nav class="atajos-fila" aria-label="${esc(S.shortcuts)}">
     <span class="atajos-t">${esc(S.shortcuts)}</span>
-    ${cerca ? atajo(link({ que: '', when: 'tonight' }), S.tonightNear, false, 'reloj') : botonCerca(S.tonightNear, `${K.when}=${enIdioma('tonight', en)}`, 'atajo', 'reloj')}
-    ${atajo(link({ que: 'places', vista: '', comerAhora: true }), S.eatSoon, false, 'carta')}
-    ${atajo(link({ que: '', when: 'weekend' }), S.weekend, false, 'cal')}
-    ${cerca ? atajo(link({ que: '', when: 'now', km: 1, sort: 'nearest' }), S.walkNow, false, 'aqui') : botonCerca(S.walkNow, masAqui, 'atajo', 'aqui')}
-    ${atajo(link({ que: '', traits: [...traits, 'kids'] }), S.withKids, false, icSitio('kids', 16))}
-    ${atajo(link({ que: '', antesCierre: true }), S.beforeClosing, false, 'bolsa')}
+    ${atajosLupa}
   </nav>` : '';
+
+  // ── La cabecera de Descubre, como la de la app: ✨ Selecciones (si hay),
+  // la lupa y la campana (con sesión; la pinta /assets/cabecera.js). La
+  // lupa y ✨ abren su hoja; sin JavaScript, la lupa lleva al buscador de
+  // Explorar y ✨ a las selecciones de Explorar.
+  const hojaSimple = (id, titulo, cuerpo) => `<details class="hoja hoja-lupa" id="${id}">
+    <summary class="hoja-lupa-sum" tabindex="-1" aria-hidden="true"></summary>
+    <div class="hoja-cuerpo" role="dialog" aria-labelledby="${id}Titulo">
+      <div class="hoja-cab"><h2 id="${id}Titulo">${esc(titulo)}</h2>
+        <a class="hoja-x" href="#${id}" data-cerrar-hoja aria-label="${esc(S.close)}">${ic('x', 22)}</a></div>
+      <div class="hoja-scroll">${cuerpo}</div>
+    </div>
+  </details>`;
+  const hojaBuscar = descubre ? hojaSimple('buscar', S.search, `${formBuscar(true)}
+      <div class="busq-sec" role="group" aria-labelledby="busqAtajos"><h3 id="busqAtajos">${esc(S.shortcuts)}</h3>
+        <div class="ops">${atajosLupa}</div>
+        <p class="hoja-nota hoja-nota-bajo">${esc(S.shortcutsHint)}</p></div>
+      <div data-busq-panel></div>
+      ${tiposBusq}`) : '';
+  const conSelecciones = descubre && (cols || []).length > 0;
+  const hojaSelecciones = conSelecciones ? hojaSimple('selecciones', S.picks, `<p class="hoja-nota">${esc(S.picksSub)}</p>
+      <div class="sel-lista">${cols.map((c) => `<a class="sel-fila" href="${collectionBase(lang)}/${encodeURIComponent(c.slug)}/${city && !cerca ? `${CITY(city)}/` : ''}">
+        <span><b>${esc(colTitle(c, en))}</b>${colSub(c, en) ? `<small>${esc(colSub(c, en))}</small>` : ''}</span>${ic('der', 22)}</a>`).join('')}</div>`) : '';
+  const icCab = (n) => `<svg class="ic" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="${IC[n]}"/></svg>`;
+  const accionesCab = descubre ? `${conSelecciones ? `<a class="top-icono" href="${exploreBase(lang)}/#masFormas" data-abre-hoja="selecciones" aria-haspopup="dialog" aria-label="${esc(S.picks)}" title="${esc(S.picks)}">${icCab('selecciones')}</a>` : ''}
+    <a class="top-icono" href="${exploreBase(lang)}/#buscar" data-abre-hoja="buscar" aria-haspopup="dialog" aria-label="${esc(S.search)}" title="${esc(S.search)}">${icCab('buscar')}</a>
+    <a class="top-icono top-campana" href="${en ? '/app/?lang=en' : '/app/'}#/notificaciones" data-campana${sorteosOn ? '' : ' data-sin-sorteos'} data-n="${esc(S.notificationsN)}" aria-label="${esc(S.notifications)}" title="${esc(S.notifications)}" hidden>${icCab('campanaCab')}<span class="top-n" aria-hidden="true" hidden></span></a>` : '';
 
   // En Explorar, sin ubicación ni ciudad: «Mira primero lo que tienes más cerca».
   // Un solo aviso a la vez (Iván, 2026-10-28): con la pregunta de la edad, la
@@ -1967,7 +2057,9 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   // Cuántas hay y «Quitar filtros»: la página limpia del todo (también la zona).
   // (Sin resultados, «Quitar filtros» va con las demás salidas, abajo.)
   // En Sitios, el orden va aquí, en la cabecera de la lista, con lo que hace.
-  const resumenN = calendario ? '' : `<div class="resumen"><h2 class="resumen-n">${esc(negocios ? TSi.count(total) : S.results(total))}</h2>
+  // Sin nada, la pantalla vacía ya lo dice: sin «0 resultados» encima (Iván,
+  // 2026-10-29).
+  const resumenN = calendario || vacio ? '' : `<div class="resumen"><h2 class="resumen-n">${esc(negocios ? TSi.count(total) : S.results(total))}</h2>
     ${ordenSitios && items.length ? ordenSitios : ''}
     ${hayAlgo && !vacio ? `<a href="${esc(limpia)}" data-limpia-filtros>${esc(S.clear)}</a>` : ''}</div>
     ${negocios && !sitiosMapa && items.length ? `<p class="resumen-orden">${esc(sort === 'rated' ? S.placesRatedHint : S.placesNearHint)}</p>` : ''}`;
@@ -2013,8 +2105,9 @@ ${GRUPOS_CSS}` : ''}`;
       image: portada(items),
       // En Descubre, la pregunta de la edad al final (nada encima de la
       // publicación, salvo la fila y un aviso).
-      body: feedHtml({ S, en, lang, items, page, paginas, link, barra, final: `${avisoCerca}${avisoEdad}${final}`, vacio, resumenN, masFormas, avisos, vistos: conVistos }),
+      body: feedHtml({ S, en, lang, items, page, paginas, link, barra: `${barra}${hojaBuscar}${hojaSelecciones}`, final: `${avisoCerca}${avisoEdad}${final}`, vacio, resumenN, masFormas, avisos, vistos: conVistos }),
       actual: 'descubre',
+      acciones: accionesCab,
       bodyClass: vacio ? 'pagina-descubre' : 'pagina-descubre pagina-feed',
       head,
       // Con «Cerca de mí» la dirección lleva tu posición (?lat=&lng=): esa
@@ -2069,7 +2162,7 @@ ${GRUPOS_CSS}` : ''}`;
       ${sorteosOn ? `<a href="${esc(`${sorteosBase(lang)}/${zonaGrupos(e, lang) ? `?${zonaGrupos(e, lang)}` : ''}`)}">${icSorteo(16)}<span>${esc(KS.t(lang).title)}</span></a>` : ''}</p></div>
   </div>
   <div class="que-fila">${que}${vistas}</div>
-  ${buscador}
+  ${buscador}${tiposBusq}
   ${barra}
   ${atajosFila}
   ${invitaCerca}

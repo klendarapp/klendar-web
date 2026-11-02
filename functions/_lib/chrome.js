@@ -148,7 +148,9 @@ const item = (n, en) => ({ label: en ? n.en : n.es, href: en ? n.hrefEn : n.href
  * Si se piden como plantilla (`{{ES}}` y `{{EN}}`), Python los sustituye al
  * construir las páginas estáticas.
  */
-export function siteHeader(lang, esPath = '/', enPath = '/en/', actual = '') {
+// `acciones`: botones de la página delante de «Para negocios» (Descubre: ✨,
+// la lupa y la campana, como la cabecera de Descubre en la app).
+export function siteHeader(lang, esPath = '/', enPath = '/en/', actual = '', acciones = '') {
   const en = lang === 'en';
   const T = TEXTOS[en ? 'en' : 'es'];
   const enlaces = NAV.map((n) => item(n, en))
@@ -187,7 +189,8 @@ export function siteHeader(lang, esPath = '/', enPath = '/en/', actual = '') {
   <nav class="main" aria-label="${T.mas}">${enlaces}
     <span class="solo-movil">${selector}</span>
   </nav>
-  <div class="top-acciones">
+  <div class="top-acciones">${acciones ? `
+    <span class="top-iconos">${acciones}</span>` : ''}
     <a class="top-negocios" href="${negocios.href}">${negocios.label}</a>
     ${selector}
     <a class="pill top-entrar" href="${cuenta}#/entrar" data-cuenta="${cuenta}" data-cuenta-txt="${T.cuenta}">${T.entrar}</a>
@@ -195,7 +198,7 @@ export function siteHeader(lang, esPath = '/', enPath = '/en/', actual = '') {
   </div>
 </div></header>
 <nav class="tabbar" aria-label="${T.secciones}">${pestanas('tab')}</nav>
-<script src="/assets/cabecera.js?v=11" defer></script>`;
+<script src="/assets/cabecera.js?v=12" defer></script>`;
 }
 
 /** El pie, con las mismas columnas en todas las páginas. */

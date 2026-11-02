@@ -176,6 +176,30 @@
   var form = document.querySelector('form[data-busqueda]');
   var campo = form && form.querySelector('input[name=q]');
   if (!form || !campo) return;
+  // En la hoja «Buscar» de Descubre (`data-panel-fijo`) el panel está siempre
+  // a la vista mientras la hoja está abierta, como la lupa de la app.
+  var fijo = form.hasAttribute('data-panel-fijo');
+  var hojaLupa = fijo ? form.closest('details') : null;
+  var hT = fijo ? 'h3' : 'h2';
+  // «O mira por tipo de sitio»: lo pinta la página; aquí va al final del
+  // panel. Los grupos plegados enseñan «N más».
+  var tipos = document.querySelector('[data-busq-tipos]');
+  if (tipos) {
+    Array.prototype.forEach.call(tipos.querySelectorAll('[data-plegado]'), function (g) {
+      var mas = g.querySelector('[data-mas-grupo]');
+      if (!mas) return;
+      Array.prototype.forEach.call(g.querySelectorAll('a.busq-cat'), function (a) { a.hidden = true; });
+      mas.hidden = false;
+      mas.addEventListener('click', function () {
+        var primera = null;
+        Array.prototype.forEach.call(g.querySelectorAll('a.busq-cat'), function (a) { a.hidden = false; if (!primera) primera = a; });
+        // Escondido, no quitado: un clic en algo que ya no está en la página
+        // cerraba la hoja (/assets/tarjetas.js lo toma por un clic fuera).
+        mas.hidden = true;
+        if (primera) primera.focus();
+      });
+    });
+  }
 
   var T = {};
   try { T = JSON.parse(form.dataset.textos || '{}'); } catch (e) { /* sin textos */ }
@@ -209,14 +233,18 @@
     + '.busq-panel small{display:block;color:var(--ink-2);font-size:13px;margin-top:6px}'
     + '.busq-borrar{border:0;background:none;color:var(--ink);font:inherit;font-weight:600;font-size:14px;min-height:40px;padding:0 4px;cursor:pointer}'
     + '.busq-atajo{display:flex;align-items:center;gap:12px;min-height:48px;color:var(--ink);text-decoration:none}.busq-atajo:hover{text-decoration:none}'
-    + '.busq-atajo svg{flex:none;color:var(--ink-2)}.busq-atajo span{display:grid;gap:2px;min-width:0;flex:1}.busq-atajo b{font-size:15px}.busq-atajo small{margin:0}';
+    + '.busq-atajo svg{flex:none;color:var(--ink-2)}.busq-atajo span{display:grid;gap:2px;min-width:0;flex:1}.busq-atajo b{font-size:15px}.busq-atajo small{margin:0}'
+    + '.busq-panel.fijo{margin:0;padding:0;border:0;border-radius:0;background:none}div.busq-panel.fijo h3{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 8px;font-size:15px}'
+    + 'div.busq-panel>.busq-tipos{margin-top:18px}';
   document.head.appendChild(estilo);
 
   var panel = document.createElement('div');
   panel.className = 'busq-panel';
   panel.id = 'busq-panel';
   panel.hidden = true;
-  form.insertAdjacentElement('afterend', panel);
+  var sitio = fijo && document.querySelector('[data-busq-panel]');
+  if (sitio) { sitio.appendChild(panel); panel.classList.add('fijo'); }
+  else form.insertAdjacentElement('afterend', panel);
   campo.setAttribute('aria-controls', 'busq-panel');
 
   var populares = null;
@@ -265,33 +293,39 @@
       }).join('') + '</section>';
     }
     if (rec.length) {
-      html += '<section><h2><span>' + esc(T.recent) + '</span><button type="button" class="busq-borrar" data-borrar-todo>' + esc(T.clear) + '</button></h2>'
+      html += '<section><' + hT + '><span>' + esc(T.recent) + '</span><button type="button" class="busq-borrar" data-borrar-todo>' + esc(T.clear) + '</button></' + hT + '>'
         + '<div class="busq-chips">' + rec.map(function (t) {
           return '<span class="busq-chip"><button type="button" data-busca="' + esc(t) + '">' + esc(t) + '</button>'
             + '<button type="button" class="busq-x" data-quita="' + esc(t) + '" aria-label="' + esc(rellena(T.remove, { q: t })) + '">×</button></span>';
         }).join('') + '</div><small>' + esc(T.local) + '</small></section>';
     }
     if (pop && pop.length && ciudadPop) {
-      html += '<section><h2><span>' + esc(rellena(T.popular, { city: ciudadPop.name })) + '</span></h2><div class="busq-chips">'
+      html += '<section><' + hT + '><span>' + esc(rellena(T.popular, { city: ciudadPop.name })) + '</span></' + hT + '><div class="busq-chips">'
         + pop.map(function (t) {
           return '<span class="busq-chip"><button type="button" data-busca="' + esc(t) + '">↗ ' + esc(t) + '</button></span>';
         }).join('') + '</div><small>' + esc(T.popularHint) + '</small></section>';
     }
     panel.innerHTML = html;
-    panel.hidden = !html || campo.value.trim() !== '';
+    if (tipos) { panel.appendChild(tipos); tipos.hidden = false; }
+    panel.hidden = !panel.firstChild || campo.value.trim() !== '';
   }
 
+  var abierto = function () {
+    return fijo ? Boolean(hojaLupa && hojaLupa.open) : document.activeElement === campo || panel.contains(document.activeElement);
+  };
   function abre() {
     pinta(null);
-    pidePopulares().then(function (pop) { if (document.activeElement === campo || panel.contains(document.activeElement)) pinta(pop); });
+    pidePopulares().then(function (pop) { if (abierto()) pinta(pop); });
   }
   campo.addEventListener('focus', abre);
   campo.addEventListener('input', function () { if (campo.value.trim()) panel.hidden = true; else abre(); });
-  campo.addEventListener('keydown', function (e) { if (e.key === 'Escape') panel.hidden = true; });
+  if (hojaLupa) hojaLupa.addEventListener('toggle', function () { if (hojaLupa.open) abre(); });
+  // En la hoja, Escape la cierra (/assets/tarjetas.js).
+  if (!fijo) campo.addEventListener('keydown', function (e) { if (e.key === 'Escape') panel.hidden = true; });
   form.addEventListener('submit', function () { anade(campo.value); });
   panel.addEventListener('click', function (e) {
     var b = e.target instanceof Element ? e.target.closest('button') : null;
-    if (!b) return;
+    if (!b || b.hasAttribute('data-mas-grupo')) return;
     if (b.hasAttribute('data-busca')) { busca(b.getAttribute('data-busca')); return; }
     if (b.hasAttribute('data-quita')) {
       var t = b.getAttribute('data-quita');
@@ -302,7 +336,9 @@
     pidePopulares().then(pinta);
     campo.focus();
   });
-  // Al salir del buscador y del panel, se cierra.
+  // Al salir del buscador y del panel, se cierra (en la hoja, no: se ve
+  // mientras está abierta).
+  if (fijo) return;
   document.addEventListener('focusin', function (e) {
     if (e.target !== campo && !panel.contains(e.target)) panel.hidden = true;
   });

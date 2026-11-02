@@ -668,12 +668,16 @@ body.pagina-feed[data-cromo="fuera"] .feed-cab { visibility: hidden; }
   body.pagina-feed:not([data-cromo="tema"]):not([data-cromo="fuera"]) header.top .brand .simbolo { filter: drop-shadow(0 1px 2px rgba(0,0,0,.35)); }
   body.pagina-feed:not([data-cromo="tema"]):not([data-cromo="fuera"]) header.top .pill.top-entrar { background: #fff; color: #0A0A0A; }
   body.pagina-feed:not([data-cromo="tema"]):not([data-cromo="fuera"]) header.top .menu-toggle { color: #fff; border-color: rgba(255,255,255,.35); background: rgba(10,10,10,.35); }
+  /* ✨, la lupa y la campana: en blanco con la sombra del logo; el globo de
+     la campana, blanco con aro y cifra oscuros (como la app sobre una foto). */
+  body.pagina-feed:not([data-cromo="tema"]):not([data-cromo="fuera"]) header.top .top-icono { color: #fff; }
+  body.pagina-feed:not([data-cromo="tema"]):not([data-cromo="fuera"]) header.top .top-icono .ic { filter: drop-shadow(0 1px 2px rgba(0,0,0,.35)); }
+  body.pagina-feed:not([data-cromo="tema"]):not([data-cromo="fuera"]) header.top .top-n { background: #fff; color: #0A0A0A; box-shadow: 0 0 0 2px #0A0A0A; }
   /* La barra de pestañas, de cristal oscuro sobre la foto. */
   body.pagina-feed { padding-bottom: 0 !important; }
   body.pagina-feed:not([data-cromo="tema"]):not([data-cromo="fuera"]) .tabbar { background: rgba(10,10,10,.6); border-top-color: rgba(255,255,255,.12); }
   body.pagina-feed:not([data-cromo="tema"]):not([data-cromo="fuera"]) .tab { color: rgba(255,255,255,.78); }
   body.pagina-feed:not([data-cromo="tema"]):not([data-cromo="fuera"]) .tab[aria-current="page"] { color: #fff; }
-  body.pagina-feed:not([data-cromo="tema"]):not([data-cromo="fuera"]) .tab[aria-current="page"] svg { background: rgba(255,255,255,.18); }
   body.pagina-feed > footer { padding-bottom: calc(86px + env(safe-area-inset-bottom)); }
 }
 
@@ -700,6 +704,10 @@ body.pagina-feed[data-cromo="fuera"] .feed-cab { visibility: hidden; }
   .pagina-feed .feed-cab::before { content: ""; position: absolute; inset: 0; z-index: -1;
     background: color-mix(in srgb, var(--surface) 88%, transparent); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
   .pagina-feed .feed-cab .barra-filtros { margin: 0; flex-wrap: nowrap; max-width: 100%; }
+  /* La fila, del ancho de la tarjeta más sus flechas (20 + 44) y empezando
+     donde la tarjeta: ☰ queda encima de las flechas (Iván, 2026-10-29). El
+     margen de 64 la corre 32 a la derecha dentro del centrado. */
+  .pagina-feed .feed-cab .barra-filtros.fila-fija { width: calc(var(--feed-w) + 64px); max-width: calc(100% - 64px); margin-left: 64px; }
   .pagina-feed .feed-cab .aviso-error { position: absolute; top: calc(100% + 6px); margin: 0; }
   /* A los lados: la foto que se está viendo, difuminada y apagada. */
   .feed-fondo { display: block; position: fixed; inset: var(--cab) 0 0; z-index: -1; overflow: hidden; }
@@ -1034,12 +1042,13 @@ details.hoja-bloque[open] > summary .ic { transform: rotate(180deg); }
   .zona-larga { display: none; }
   .zona-corta { display: inline; }
 }
-/* Como la app: en un móvil, si con los iconos no caben enteras, las tres
-   preguntas van sin icono (el lector las dice igual) antes que cortar
-   «Cuando sea» o «Todas». */
-@media (max-width: 419px) {
-  .fila-fija .barra-preg .chip > .ic:first-child { display: none; }
-}
+/* Como la app (Iván, 2026-10-29): si no caben enteras, primero el «dónde»
+   corto («5 km», «Todas») y, si aún no, las tres preguntas sin icono (el
+   lector las dice igual) antes que cortar «Cuando sea» o «Todo». Lo decide
+   el script de la fila (`fila-corta`, `fila-sin-iconos`), midiendo. */
+.fila-fija.fila-corta .zona-larga { display: none; }
+.fila-fija.fila-corta .zona-corta { display: inline; }
+.fila-fija.fila-sin-iconos .barra-preg .chip > .ic:first-child { display: none; }
 
 /* ☰ › «Ordenar por», arriba de la hoja (Descubre y la lista de Planes). */
 .hoja-orden { margin-bottom: 20px; }
@@ -1070,3 +1079,46 @@ details.hoja-bloque[open] > summary .ic { transform: rotate(180deg); }
 .cat-celda input:checked + .cat-celda-c { background: var(--ink); color: var(--surface); border-color: var(--ink); }
 .cat-celda input:focus-visible + .cat-celda-c { outline: 2px solid var(--ink); outline-offset: 2px; }
 @media (prefers-reduced-motion: no-preference) { .cat-celda-c { transition: background-color .18s ease, color .18s ease, border-color .18s ease; } }
+
+/* ══ La lupa, ✨ y la campana de Descubre (Iván, 2026-10-29) ══════════════
+   Como la cabecera de Descubre en la app. La lupa abre la hoja «Buscar» (el
+   mismo buscador que Explorar, con los atajos, lo buscado, lo más buscado y
+   «O mira por tipo de sitio»); ✨, la de «Selecciones». Son hojas como las
+   de la fila: desde abajo en el móvil, centradas en el escritorio. */
+.top-iconos { display: flex; align-items: center; gap: 0; }
+.top-icono { position: relative; width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; color: var(--ink); }
+.top-icono:hover { text-decoration: none; background: var(--soft); }
+.top-icono:focus-visible { outline: 2px solid currentColor; outline-offset: -2px; }
+.top-icono[hidden] { display: none; }
+.top-n { position: absolute; top: 3px; right: 1px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; display: grid; place-items: center;
+  background: var(--ink); color: var(--surface); box-shadow: 0 0 0 2px var(--surface); font-size: 11px; font-weight: 800; line-height: 1; }
+.top-n[hidden] { display: none; }
+/* Si no cabe todo, el logo se queda en el símbolo (el nombre sigue para el
+   lector). Lo decide /assets/cabecera.js, midiendo. */
+header.top.top-justa .brand { font-size: 0; gap: 0; }
+.hoja-lupa-sum { position: absolute; width: 0; height: 0; padding: 0; border: 0; overflow: visible; list-style: none; }
+.hoja-lupa-sum::-webkit-details-marker { display: none; }
+.hoja-lupa-sum::marker { content: ''; }
+.hoja-lupa .hoja-cuerpo { min-height: min(70vh, 620px); }
+@media (max-width: 640px) { .hoja-lupa .hoja-cuerpo { height: 88vh; } }
+.hoja-lupa .hoja-scroll { padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
+.hoja-lupa .buscador { margin: 4px 0 18px; }
+.pub .hoja-lupa h3, .pub .busq-tipos > h2 { margin: 0 0 8px; font-size: 15px; font-weight: 800; }
+.busq-sec { margin: 0 0 18px; }
+.busq-tipos { margin-top: 18px; }
+.pub .busq-grupo :is(h3, h4) { margin: 14px 0 8px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.busq-tipos .busq-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.busq-cat { display: inline-flex; align-items: center; gap: 2px; min-height: 40px; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--glass-border);
+  background: var(--glass); color: var(--ink); font: inherit; font-size: 14px; font-weight: 500; cursor: pointer; }
+.busq-cat:hover { text-decoration: none; border-color: var(--ink-2); }
+.busq-cat:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.busq-mas { color: var(--ink-2); padding-right: 10px; }
+.busq-mas[hidden], .busq-cat[hidden] { display: none; }
+.sel-lista { display: grid; margin: 4px 0 0; }
+.sel-fila { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 10px 2px; color: var(--ink); border-bottom: 1px solid var(--glass-border); }
+.sel-fila:last-child { border-bottom: 0; }
+.sel-fila:hover { text-decoration: none; }
+.sel-fila > span { display: grid; gap: 2px; flex: 1; min-width: 0; }
+.sel-fila b { font-size: 15px; }
+.sel-fila small { font-size: 13px; color: var(--ink-2); }
+.sel-fila .ic { flex: none; color: var(--ink-2); }

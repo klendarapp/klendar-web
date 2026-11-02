@@ -58,8 +58,104 @@
     }
   }
 
-  window.KL_CABECERA = pinta;
+  window.KL_CABECERA = () => { pinta(); campana(); justa(); };
   pinta();
+
+  // La campana de Descubre (como la app): solo con sesión, con los avisos
+  // sin leer en un globo en tinta («9+» desde 10) y, al llegar uno nuevo
+  // mientras se mira, se balancea y la cifra salta (con «Reducir
+  // movimiento», no). Se pregunta al entrar, cada minuto con la pestaña a la
+  // vista y al volver a ella. Si la sesión ha caducado, la campana sin
+  // cifra: «Tu cuenta» la renueva al entrar.
+  const boton = document.querySelector('[data-campana]');
+  let antes = null;
+  let cuenta = null;
+  function token() {
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const clave = localStorage.key(i);
+        if (!/^sb-[a-z0-9]+-auth-token$/.test(clave)) continue;
+        const s = JSON.parse(localStorage.getItem(clave) || 'null');
+        const t = s?.access_token || s?.currentSession?.access_token;
+        const hasta = s?.expires_at || s?.currentSession?.expires_at;
+        if (t && (!hasta || hasta * 1000 > Date.now() + 5000)) return t;
+      }
+    } catch { /* sin almacenamiento */ }
+    return null;
+  }
+  function conf() {
+    if (window.KLENDAR_ENV) return Promise.resolve(window.KLENDAR_ENV);
+    if (!conf.p) {
+      conf.p = new Promise((ok) => {
+        const s = document.createElement('script');
+        s.src = '/config.js?v=3';
+        s.onload = () => ok(window.KLENDAR_ENV || null);
+        s.onerror = () => ok(null);
+        document.head.appendChild(s);
+      });
+    }
+    return conf.p;
+  }
+  function globo(n) {
+    const g = boton.querySelector('.top-n');
+    const titulo = boton.getAttribute('title') || '';
+    g.hidden = !(n > 0);
+    g.textContent = n > 9 ? '9+' : String(n || '');
+    boton.setAttribute('aria-label', n > 0 ? (boton.dataset.n || '{n}').replace('{n}', n) : titulo);
+    if (antes != null && n > antes && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      boton.classList.remove('mov-suena');
+      void boton.offsetWidth;
+      boton.classList.add('mov-suena');
+    }
+    antes = n;
+  }
+  function pregunta() {
+    const t = token();
+    if (!boton || boton.hidden || !t || document.hidden) return;
+    conf().then((env) => {
+      if (!env) return null;
+      const sinSorteos = boton.hasAttribute('data-sin-sorteos') ? '&kind=neq.giveaway' : '';
+      return fetch(`${env.url}/rest/v1/notifications?select=id&read_at=is.null${sinSorteos}`, {
+        method: 'HEAD',
+        headers: { apikey: env.key, Authorization: `Bearer ${t}`, Prefer: 'count=exact' },
+      });
+    }).then((r) => {
+      if (!r || !r.ok) return;
+      const n = Number(String(r.headers.get('content-range') || '').split('/')[1]);
+      if (Number.isFinite(n)) globo(n);
+    }).catch(() => { /* sin red: como estaba */ });
+  }
+  function campana() {
+    if (!boton) return;
+    const con = Boolean(sesion());
+    boton.hidden = !con;
+    if (!con) { clearInterval(cuenta); cuenta = null; antes = null; return; }
+    pregunta();
+    if (!cuenta) cuenta = setInterval(pregunta, 60000);
+  }
+  if (boton) {
+    boton.addEventListener('animationend', () => boton.classList.remove('mov-suena'));
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) pregunta(); });
+    campana();
+  }
+
+  // Si en la cabecera no cabe todo (Descubre en un móvil estrecho, con ✨, la
+  // lupa y la campana), el logo se queda en el símbolo, como el nombre que
+  // se encoge en la app. El nombre sigue para el lector.
+  const cab = document.querySelector('header.top');
+  const fila = cab && cab.querySelector('.wrap');
+  function justa() {
+    if (!fila || !cab.querySelector('.top-iconos')) return;
+    cab.classList.remove('top-justa');
+    const a = cab.querySelector('.top-acciones');
+    const b = cab.querySelector('.brand');
+    if (!a || !b) return;
+    if (b.getBoundingClientRect().right + 8 > a.getBoundingClientRect().left || fila.scrollWidth > fila.clientWidth + 1) cab.classList.add('top-justa');
+  }
+  justa();
+  let tJusta;
+  addEventListener('resize', () => { clearTimeout(tJusta); tJusta = setTimeout(justa, 60); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(justa);
 
   // La pestaña activa (Descubre, Explorar, Planes, Cuenta), arriba y en la
   // barra de abajo. Las páginas dinámicas ya la traen marcada; aquí se marca

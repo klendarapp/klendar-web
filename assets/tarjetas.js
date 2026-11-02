@@ -529,7 +529,8 @@
       navigator.geolocation.getCurrentPosition(function (p) {
         var lat = p.coords.latitude, lng = p.coords.longitude;
         window.KL_CERCA(lat, lng);
-        var u = new URL(location.href);
+        // `data-cerca-a`: los atajos de la lupa van a Descubre (no a esta página).
+        var u = new URL(b.getAttribute('data-cerca-a') || location.href, location.href);
         u.searchParams.set('lat', posUrl(lat)); u.searchParams.set('lng', posUrl(lng));
         ['p', 'ciudad', 'city'].forEach(function (k) { u.searchParams.delete(k); });
         new URLSearchParams(b.getAttribute('data-mas') || '').forEach(function (v, k) { u.searchParams.set(k, v); });
@@ -567,6 +568,25 @@
   });
 
   // ── Desplegables y hoja de filtros ─────────────────────────────────────
+  // La lupa y ✨ de la cabecera de Descubre abren su hoja («Buscar»,
+  // «Selecciones»); al cerrarla, el foco vuelve al botón. Sin JavaScript
+  // son enlaces a Explorar.
+  var abridor = null;
+  document.addEventListener('click', function (e) {
+    var a = e.target instanceof Element ? e.target.closest('[data-abre-hoja]') : null;
+    if (!a || e.ctrlKey || e.metaKey || e.shiftKey || e.button > 0) return;
+    var hoja = document.getElementById(a.getAttribute('data-abre-hoja'));
+    if (!(hoja instanceof HTMLDetailsElement)) return;
+    e.preventDefault();
+    abridor = a;
+    hoja.open = true;
+  });
+  document.addEventListener('toggle', function (e) {
+    var d = e.target;
+    if (!(d instanceof HTMLDetailsElement) || !d.classList.contains('hoja-lupa')) return;
+    if (abridor) abridor.setAttribute('aria-expanded', String(d.open));
+    if (!d.open && abridor) { var a = abridor; abridor = null; setTimeout(function () { a.focus(); }, 0); }
+  }, true);
   // «Cambiar filtros» (al final de la lista) abre la hoja.
   document.addEventListener('click', function (e) {
     var a = e.target instanceof Element ? e.target.closest('[data-abre-filtros]') : null;
@@ -696,7 +716,7 @@
     // Lo que pasa en un diálogo abierto desde la hoja (el selector de
     // categorías va en un <dialog> fuera de ella) no la cierra: al elegir
     // una categoría se vuelve a la hoja, como en la app.
-    if (!t.closest('details.desplegable, details.hoja, dialog')) cierra(null);
+    if (!t.closest('details.desplegable, details.hoja, dialog, [data-abre-hoja]')) cierra(null);
   });
   document.addEventListener('keydown', function (e) {
     if (e.key !== 'Escape') return;
