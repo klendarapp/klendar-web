@@ -43,8 +43,8 @@ const EN_PUB = ['en', 'fr', 'de', 'it'];
   ok(ir('fr', 'es').endsWith('/privacidad/'), 'legal: ?lang=es manda');
 }
 
-// NAVS=chromium para uno solo (WebKit para Windows se cae al pasar del panel
-// sin sesión a «Tu cuenta»; pasaba ya antes de la cabecera común).
+// NAVS=chromium para uno solo. (WebKit para Windows se caía al pasar del
+// panel sin sesión a «Tu cuenta»: ver «Panel sin sesión» abajo.)
 const NAVS = (process.env.NAVS || 'chromium,webkit').split(',');
 for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]].filter(([n]) => NAVS.includes(n))) {
   const browser = await tipo.launch();
@@ -89,9 +89,31 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]].filter
       }
       await page.screenshot({ path: join(OUT, `registro-${lang}-${nombre}-${disp}.png`), fullPage: true });
 
-      // Panel sin sesión: la entrada.
+      // Panel sin sesión: manda a la pantalla de entrar de «Tu cuenta» con su
+      // idioma y la vuelta al panel. La redirección se mira sin cargarla
+      // (se corta) y luego se abre esa dirección: WebKit para Windows
+      // tumbaba la página (el proceso, sin ningún error de JavaScript) al
+      // cargar /app/#/entrar justo después del `location.replace` del panel.
+      // Pasaba también con el panel ya cargado y sin cabeceras CSP ni
+      // Permissions-Policy, y no con una página mínima que hace lo mismo ni
+      // abriendo /app/ directamente: es del motor, no de la web (Safari de
+      // verdad no lo hace). Revisión del 2-11-2026.
+      let destino = null;
+      await page.route('**/app/**', (r) => {
+        if (r.request().isNavigationRequest() && !destino) { destino = r.request().url(); return r.abort(); }
+        return r.continue();
+      });
       await page.goto(`${BASE}/panel/?lang=${lang}`, { waitUntil: 'domcontentloaded' });
       await page.waitForTimeout(1500);
+      await page.unroute('**/app/**');
+      const dUrl = destino ? new URL(destino) : null;
+      // (La petición no lleva el `#/entrar`: el hash no sale del navegador.)
+      ok(dUrl && dUrl.pathname === '/app/' && dUrl.searchParams.get('destino') === '/panel/'
+        && (dUrl.searchParams.get('lang') || 'es') === lang, `${nombre}/${disp}/${lang}: el panel sin sesión manda a entrar en su idioma (${destino})`);
+      if (destino) {
+        await page.goto(`${destino}#/entrar`, { waitUntil: 'domcontentloaded' });
+        await page.waitForTimeout(1500);
+      }
       const pLang = await page.evaluate(() => document.documentElement.lang);
       ok(pLang === lang, `${nombre}/${disp}/${lang}: panel <html lang=${pLang}>`);
       const pTexto = await page.evaluate(() => document.body.innerText);
