@@ -1184,6 +1184,8 @@ KL_DIC('eu', {
   "Es tu propio QR: no puedes cargarte ni usar un bono a ti mismo.": "Zure QRa da: ezin duzu zeure buruari bonurik kargatu edo erabili.",
   "Es un QR de otro momento (una captura). Pide que abra Klendar.": "Beste une bateko QRa da (pantaila-argazki bat). Eskatu Klendar irekitzeko.",
   "Esa contraseña es muy fácil de adivinar. Usa al menos 8 caracteres y mezcla letras y números.": "Pasahitz hori errazegia da asmatzeko. Erabili gutxienez 8 karaktere, eta nahastu letrak eta zenbakiak.",
+  "Esa contraseña es muy fácil de adivinar. Usa al menos 8 caracteres.": "Pasahitz hori errazegia da asmatzeko. Erabili gutxienez 8 karaktere.",
+  "Esa contraseña ha salido en filtraciones de otras webs; elige otra": "Pasahitz hori beste webgune batzuetako filtrazioetan agertu da; aukeratu beste bat",
   "Esa cuenta está suspendida y no puede entrar en un equipo.": "Kontu hori etenda dago, eta ezin da talde batean sartu.",
   "Esa foto pesa demasiado. Prueba con otra más pequeña.": "Argazki hori handiegia da. Saiatu txikiago batekin.",
   "Esa foto pesa más de 5 MB.": "Argazki horrek 5 MB baino gehiago ditu.",

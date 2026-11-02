@@ -605,6 +605,8 @@ KL_DIC('eu', {
   "Es solo para mayores de 18. Si lo eres, pon tu fecha de nacimiento en Ajustes.": "18 urtetik gorakoentzat bakarrik da. Hala bazara, jarri zure jaiotze-data Ezarpenak atalean.",
   "Es tu propio enlace: no puedes apuntarte a tu lista.": "Zure esteka da: ezin duzu zure zerrendan izena eman.",
   "Esa contraseña es muy fácil de adivinar. Usa al menos 8 caracteres y mezcla letras y números.": "Pasahitz hori errazegia da asmatzeko. Erabili gutxienez 8 karaktere, eta nahastu letrak eta zenbakiak.",
+  "Esa contraseña es muy fácil de adivinar. Usa al menos 8 caracteres.": "Pasahitz hori errazegia da asmatzeko. Erabili gutxienez 8 karaktere.",
+  "Esa contraseña ha salido en filtraciones de otras webs; elige otra": "Pasahitz hori beste webgune batzuetako filtrazioetan agertu da; aukeratu beste bat",
   "Esa dirección no es de una publicación, un negocio, una reseña o una novedad de Klendar.": "Helbide hori ez da Klendarreko argitalpen, negozio, iritzi edo berri batena.",
   "Esa fecha de nacimiento no es válida.": "Jaiotze-data hori ez da baliozkoa.",
   "Esa foto no se puede usar. Súbela desde Klendar.": "Argazki hori ezin da erabili. Igo Klendar-etik.",

@@ -19,7 +19,8 @@
       sinConfirmar: 'Confirma tu correo antes de entrar (mira tu bandeja)',
       yaExiste: 'Ya existe una cuenta con ese correo',
       demasiados: 'Demasiados intentos. Espera un momento.',
-      debil: 'Esa contraseña es muy fácil de adivinar. Usa al menos 8 caracteres y mezcla letras y números.',
+      debil: 'Esa contraseña es muy fácil de adivinar. Usa al menos 8 caracteres.',
+      filtrada: 'Esa contraseña ha salido en filtraciones de otras webs; elige otra',
       igual: 'La nueva contraseña tiene que ser distinta de la anterior.',
       codigo: 'Ese código no vale o ha caducado.',
       noDisponible: 'Este método de acceso no está disponible todavía',
@@ -37,7 +38,8 @@
       sinConfirmar: 'Confirm your email before logging in (check your inbox)',
       yaExiste: "There's already an account with that email",
       demasiados: 'Too many attempts. Give it a moment.',
-      debil: 'That password is too easy to guess. Use at least 8 characters with letters and numbers.',
+      debil: 'That password is too easy to guess. Use at least 8 characters.',
+      filtrada: 'That password has turned up in data leaks from other websites; choose another one',
       igual: 'Your new password has to be different from the old one.',
       codigo: "That code isn't valid or has expired.",
       noDisponible: "This sign-in method isn't available yet",
@@ -64,6 +66,11 @@
     if (es(['user_already_exists', 'email_exists', 'phone_exists'], ['already registered', 'already exists'])) return 'yaExiste';
     if (status === '429' || es(['over_request_rate_limit', 'over_email_send_rate_limit', 'over_sms_send_rate_limit'],
       ['rate limit', 'too many', 'for security purposes'])) return 'demasiados';
+    // Contraseña filtrada (Leaked Password Protection de Supabase, en prod
+    // desde el 2-11-2026): `weak_password` con la razón `pwned`. Lo demás de
+    // `weak_password` (`length`, `characters`): la regla de verdad, mínimo 8.
+    const razones = Array.isArray(error?.reasons) ? error.reasons : [];
+    if (razones.includes('pwned') || (code === 'weak_password' && m.includes('pwned')) || m.includes('known to be weak')) return 'filtrada';
     if (es(['weak_password'], ['password should be'])) return 'debil';
     if (es(['same_password'], ['should be different'])) return 'igual';
     if (es(['otp_expired'], ['token has expired', 'otp has expired'])) return 'codigo';

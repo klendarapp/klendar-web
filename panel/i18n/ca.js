@@ -1184,6 +1184,8 @@ KL_DIC('ca', {
   "Es tu propio QR: no puedes cargarte ni usar un bono a ti mismo.": "És el teu propi QR: no et pots carregar ni fer servir un bo a tu mateix.",
   "Es un QR de otro momento (una captura). Pide que abra Klendar.": "És un QR d’un altre moment (una captura). Demana que obri Klendar.",
   "Esa contraseña es muy fácil de adivinar. Usa al menos 8 caracteres y mezcla letras y números.": "Aquesta contrasenya és massa fàcil d'endevinar. Fes servir com a mínim 8 caràcters i barreja lletres i números.",
+  "Esa contraseña es muy fácil de adivinar. Usa al menos 8 caracteres.": "Aquesta contrasenya és massa fàcil d'endevinar. Fes servir com a mínim 8 caràcters.",
+  "Esa contraseña ha salido en filtraciones de otras webs; elige otra": "Aquesta contrasenya ha sortit en filtracions d'altres webs; tria'n una altra",
   "Esa cuenta está suspendida y no puede entrar en un equipo.": "Aquest compte està suspès i no pot entrar en un equip.",
   "Esa foto pesa demasiado. Prueba con otra más pequeña.": "Aquesta foto pesa massa. Prova amb una de més petita.",
   "Esa foto pesa más de 5 MB.": "Aquesta foto pesa més de 5 MB.",

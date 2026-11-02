@@ -1184,6 +1184,8 @@ KL_DIC('fr', {
   "Es tu propio QR: no puedes cargarte ni usar un bono a ti mismo.": "C’est ton propre QR : tu ne peux pas t’ajouter ni utiliser un carnet toi-même.",
   "Es un QR de otro momento (una captura). Pide que abra Klendar.": "C’est un QR d’un autre moment (une capture). Demande d’ouvrir Klendar.",
   "Esa contraseña es muy fácil de adivinar. Usa al menos 8 caracteres y mezcla letras y números.": "Ce mot de passe est trop facile à deviner. Utilise au moins 8 caractères en mélangeant lettres et chiffres.",
+  "Esa contraseña es muy fácil de adivinar. Usa al menos 8 caracteres.": "Ce mot de passe est trop facile à deviner. Utilise au moins 8 caractères.",
+  "Esa contraseña ha salido en filtraciones de otras webs; elige otra": "Ce mot de passe est apparu dans des fuites de données d'autres sites ; choisis-en un autre",
   "Esa cuenta está suspendida y no puede entrar en un equipo.": "Ce compte est suspendu et ne peut pas rejoindre une équipe.",
   "Esa foto pesa demasiado. Prueba con otra más pequeña.": "Cette photo est trop lourde. Essaie avec une plus petite.",
   "Esa foto pesa más de 5 MB.": "Cette photo fait plus de 5 Mo.",

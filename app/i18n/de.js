@@ -605,6 +605,8 @@ KL_DIC('de', {
   "Es solo para mayores de 18. Si lo eres, pon tu fecha de nacimiento en Ajustes.": "Nur ab 18. Wenn du volljährig bist, trag dein Geburtsdatum in den Einstellungen ein.",
   "Es tu propio enlace: no puedes apuntarte a tu lista.": "Das ist dein eigener Link: Du kannst dich nicht auf deine eigene Liste setzen.",
   "Esa contraseña es muy fácil de adivinar. Usa al menos 8 caracteres y mezcla letras y números.": "Dieses Passwort ist zu leicht zu erraten. Nimm mindestens 8 Zeichen und mische Buchstaben und Zahlen.",
+  "Esa contraseña es muy fácil de adivinar. Usa al menos 8 caracteres.": "Dieses Passwort ist zu leicht zu erraten. Nimm mindestens 8 Zeichen.",
+  "Esa contraseña ha salido en filtraciones de otras webs; elige otra": "Dieses Passwort ist bei Datenlecks anderer Websites aufgetaucht; wähle ein anderes",
   "Esa dirección no es de una publicación, un negocio, una reseña o una novedad de Klendar.": "Diese Adresse gehört zu keinem Beitrag, Geschäft, keiner Bewertung oder Neuigkeit bei Klendar.",
   "Esa fecha de nacimiento no es válida.": "Dieses Geburtsdatum ist ungültig.",
   "Esa foto no se puede usar. Súbela desde Klendar.": "Dieses Foto kann nicht verwendet werden. Lad es über Klendar hoch.",
