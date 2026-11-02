@@ -182,8 +182,7 @@ const T = (en) => en
       eatSoon: 'Food right now', tonightNear: 'Tonight nearby',
       shortcutsHint: 'Each shortcut sets its filters; you see them at the top, in the row, and remove them like any other.',
       browseTypes: 'Or browse by type of place', moreN: (n) => `${n} more`, moreInGroup: (n, g) => `Show ${n} more in ${g}`,
-      picksSub: 'Hand-picked for this week.', notifications: 'Notifications',
-      notificationsN: 'Notifications, {n} unread',
+      picksSub: 'Hand-picked for this week.', picksNone: 'No picks this week yet. Have a look in Discover or Explore.',
     }
   : {
       exp: 'Explorar', disc: 'Descubre', agenda: 'Agenda local', search: 'Buscar', ph: 'Un bar, un mercadillo, «brunch»…',
@@ -315,8 +314,7 @@ const T = (en) => en
       eatSoon: 'Para comer ya', tonightNear: 'Esta noche cerca',
       shortcutsHint: 'Cada atajo pone sus filtros; se ven arriba, en la fila, y se quitan como cualquier otro.',
       browseTypes: 'O mira por tipo de sitio', moreN: (n) => `${n} más`, moreInGroup: (n, g) => `Ver ${n} más de ${g}`,
-      picksSub: 'Lo que tiene sentido esta semana, elegido a mano.', notifications: 'Notificaciones',
-      notificationsN: 'Notificaciones, {n} sin leer',
+      picksSub: 'Lo que tiene sentido esta semana, elegido a mano.', picksNone: 'Esta semana aún no hay selecciones. Mira en Descubre o en Explorar.',
     };
 
 /** «El local, según…» → «el local, según…» (detrás de «Abierto ahora:»). */
@@ -347,10 +345,6 @@ const IC = {
   bolsa: 'M18 6h-2c0-2.21-1.79-4-4-4S8 3.79 8 6H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6-2c1.1 0 2 .9 2 2h-4c0-1.1.9-2 2-2zm6 16H6V8h2v2c0 .55.45 1 1 1s1-.45 1-1V8h4v2c0 .55.45 1 1 1s1-.45 1-1V8h2v12z',
   aqui: 'M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0 0 13 3.06V1h-2v2.06A8.994 8.994 0 0 0 3.06 11H1v2h2.06A8.994 8.994 0 0 0 11 20.94V23h2v-2.06A8.994 8.994 0 0 0 20.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z',
   ciudad: 'M15 11V5l-3-3-3 3v2H3v14h18V11h-6zm-8 8H5v-2h2v2zm0-4H5v-2h2v2zm0-4H5V9h2v2zm6 8h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V9h2v2zm0-4h-2V5h2v2zm6 12h-2v-2h2v2zm0-4h-2v-2h2v2z',
-  // La cabecera de Descubre, como la app: notifications_none y
-  // auto_awesome (con contorno), de Material.
-  campanaCab: 'M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z',
-  selecciones: 'M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25zm0 6l-1.25 2.75L15 19l2.75 1.25L19 23l1.25-2.75L23 19l-2.75-1.25zm-7.5-5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5zm-1.51 3.49L9 15.17l-.99-2.18L5.83 12l2.18-.99L9 8.83l.99 2.18 2.18.99-2.18.99z',
   arriba: 'M12 8l-6 6 1.41 1.41L12 10.83l4.59 4.58L18 14z',
   // El orden (Material «swap_vert»).
   orden: 'M16 17.01V10h-2v7.01h-3L15 21l4-3.99h-3zM9 3 5 6.99h3V14h2V6.99h3L9 3z',
@@ -1929,7 +1923,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   <script>${FILA_MIDE}</script>
   <p id="cercaErr" class="aviso-error" role="alert" hidden></p>
   <script src="/assets/categorias.js?v=6" defer></script>
-  <script src="/assets/gustos.js?v=7" defer data-lang="${en ? 'en' : 'es'}"></script>`;
+  <script src="/assets/gustos.js?v=8" defer data-lang="${en ? 'en' : 'es'}"></script>`;
 
   // Los atajos de la lupa (Iván, 2026-10-29: como la app): cada uno pone sus
   // filtros sobre los que haya y lleva a Descubre; «Para comer ya», a
@@ -1971,14 +1965,13 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
         <p class="hoja-nota hoja-nota-bajo">${esc(S.shortcutsHint)}</p></div>
       <div data-busq-panel></div>
       ${tiposBusq}`) : '';
-  const conSelecciones = descubre && (cols || []).length > 0;
-  const hojaSelecciones = conSelecciones ? hojaSimple('selecciones', S.picks, `<p class="hoja-nota">${esc(S.picksSub)}</p>
+  // «Selecciones» (✨ de la cabecera, en todas las páginas): la hoja vive en
+  // Descubre; desde otra página, ✨ trae aquí y la abre. Sin ninguna, lo
+  // dice (la cabecera es la misma en todas partes y ✨ siempre está).
+  const hojaSelecciones = descubre ? hojaSimple('selecciones', S.picks, (cols || []).length ? `<p class="hoja-nota">${esc(S.picksSub)}</p>
       <div class="sel-lista">${cols.map((c) => `<a class="sel-fila" href="${collectionBase(lang)}/${encodeURIComponent(c.slug)}/${city && !cerca ? `${CITY(city)}/` : ''}">
-        <span><b>${esc(colTitle(c, en))}</b>${colSub(c, en) ? `<small>${esc(colSub(c, en))}</small>` : ''}</span>${ic('der', 22)}</a>`).join('')}</div>`) : '';
-  const icCab = (n) => `<svg class="ic" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="${IC[n]}"/></svg>`;
-  const accionesCab = descubre ? `${conSelecciones ? `<a class="top-icono" href="${exploreBase(lang)}/#masFormas" data-abre-hoja="selecciones" aria-haspopup="dialog" aria-label="${esc(S.picks)}" title="${esc(S.picks)}">${icCab('selecciones')}</a>` : ''}
-    <a class="top-icono" href="${exploreBase(lang)}/#buscar" data-abre-hoja="buscar" aria-haspopup="dialog" aria-label="${esc(S.search)}" title="${esc(S.search)}">${icCab('buscar')}</a>
-    <a class="top-icono top-campana" href="${en ? '/app/?lang=en' : '/app/'}#/notificaciones" data-campana${sorteosOn ? '' : ' data-sin-sorteos'} data-n="${esc(S.notificationsN)}" aria-label="${esc(S.notifications)}" title="${esc(S.notifications)}" hidden>${icCab('campanaCab')}<span class="top-n" aria-hidden="true" hidden></span></a>` : '';
+        <span><b>${esc(colTitle(c, en))}</b>${colSub(c, en) ? `<small>${esc(colSub(c, en))}</small>` : ''}</span>${ic('der', 22)}</a>`).join('')}</div>`
+    : `<p class="hoja-nota">${esc(S.picksNone)}</p>`) : '';
 
   // En Explorar, sin ubicación ni ciudad: «Mira primero lo que tienes más cerca».
   // Un solo aviso a la vez (Iván, 2026-10-28): con la pregunta de la edad, la
@@ -2075,6 +2068,12 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
     ? `
 <script src="/assets/vistos.js?v=2" defer data-ordena="${page === 1 ? '1' : ''}" data-t="${esc(JSON.stringify({ title: S.seenTitle, body: S.seenBody, more: S.seeMore, change: S.seenChange, settings: `${en ? '/app/?lang=en' : '/app/'}#/ajustes/lo-que-ves` }))}"></script>`
     : '';
+  // El selector de idioma lleva a esta misma página con estos filtros, cada
+  // idioma con sus palabras (`?cuando=finde` ↔ `?when=weekend`).
+  const consultasIdioma = Object.fromEntries(['es', 'en'].map((l) => {
+    const s = query({ ...e, vista, page, mes: calendario ? mes : '', dia: calendario ? dia : '' }, l);
+    return [l, s ? `?${s}` : ''];
+  }));
   const head = `${guardaFiltros({ ...e, vista }, lang, base, !descubre)}${vistosJs}
 ${filtrado ? '<meta name="robots" content="noindex, follow">' : jsonLd}${descubre ? '' : `
 ${PARTIDOS_CSS}
@@ -2107,7 +2106,7 @@ ${GRUPOS_CSS}` : ''}`;
       // publicación, salvo la fila y un aviso).
       body: feedHtml({ S, en, lang, items, page, paginas, link, barra: `${barra}${hojaBuscar}${hojaSelecciones}`, final: `${avisoCerca}${avisoEdad}${final}`, vacio, resumenN, masFormas, avisos, vistos: conVistos }),
       actual: 'descubre',
-      acciones: accionesCab,
+      consultas: consultasIdioma,
       bodyClass: vacio ? 'pagina-descubre' : 'pagina-descubre pagina-feed',
       head,
       // Con «Cerca de mí» la dirección lleva tu posición (?lat=&lng=): esa
@@ -2192,6 +2191,7 @@ ${SITIOS_SCRIPTS}` : ''}`;
     image: portada(items),
     body,
     actual: 'explorar',
+    consultas: consultasIdioma,
     bodyClass: 'pagina-explorar',
     head,
     contador: !cerca,

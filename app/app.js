@@ -113,10 +113,14 @@ const MARCA_HECHO = '<svg viewBox="0 0 24 24" width="32" height="32" aria-hidden
     el.hidden = false;
     if (!NUEVO) continue;
     for (const b of $$('[data-cuenta-txt]', el)) b.dataset.cuentaTxt = t('Tu cuenta');
+    for (const b of $$('[data-campana]', el)) b.dataset.n = t('Notificaciones, {n} sin leer');
     I18N.translate(el);
   }
-  // El selector de idioma: aquí, los ocho (las páginas públicas, ES/EN).
-  I18N.pickers($$('.lang'));
+  // El selector de idioma es el de la cabecera, el mismo en todas las
+  // páginas (/assets/cabecera.js): aquí cambia «Tu cuenta» a cualquiera de
+  // los ocho. Con el texto de «Tu cuenta» ya en este idioma, la cabecera se
+  // vuelve a pintar (el botón con tu inicial se lee así).
+  window.KL_CABECERA?.();
 })();
 document.documentElement.lang = LANG;
 document.title = `${t('Tu cuenta')} · Klendar`;
@@ -279,6 +283,22 @@ sb.auth.onAuthStateChange((ev, s) => {
   // «Sigue usándola»: la base lo apunta como mucho una vez por hora (así no
   // le llega «vuelve, tu barrio se mueve» a quien entra a diario).
   if (s && (ev === 'INITIAL_SESSION' || ev === 'SIGNED_IN')) sb.rpc('mark_seen').then(() => {}, () => {});
+  // El idioma de tu cuenta manda (como en la app): si la app o «Ajustes»
+  // lo cambiaron, «Tu cuenta» se pone en ese al entrar. «El del móvil o el
+  // navegador» (sin idioma en la cuenta) no cambia nada.
+  if (s && (ev === 'INITIAL_SESSION' || ev === 'SIGNED_IN')) {
+    sb.from('profiles').select('locale').eq('id', s.user.id).maybeSingle().then(({ data }) => {
+      const l = klIdioma(data?.locale);
+      if (!l) return;
+      let antes = null;
+      try { antes = localStorage.getItem('klendar_lang'); localStorage.setItem('klendar_lang', l); } catch { /* sin almacenamiento */ }
+      if (l !== LANG && antes !== l) {
+        const u = new URL(location.href);
+        u.searchParams.delete('lang');
+        if (u.href === location.href) location.reload(); else location.replace(u.href);
+      }
+    }, () => {});
+  }
   // La cabecera (Entrar ↔ tu inicial), sin esperar a cambiar de página.
   if (ev === 'SIGNED_IN' || ev === 'SIGNED_OUT' || ev === 'USER_UPDATED') setTimeout(() => window.KL_CABECERA?.(), 0);
   // El enlace de «he olvidado la contraseña» abre sesión y trae aquí; Supabase

@@ -125,6 +125,9 @@ def main_ingles(area: str) -> int:
     faltan: dict[str, str] = {}
     for f in fuentes:
         txt = (ROOT / f).read_text(encoding='utf-8')
+        # La cabecera de la web (la misma en todas las páginas, estampada por
+        # build_site.py) ya va en los dos idiomas: no es del panel.
+        txt = re.sub(r'<!--CABECERA-(ES|EN)-->.*?<!--/CABECERA-\1-->', '', txt, flags=re.S)
         for c in candidatos(txt):
             s = limpia(c)
             if s and s not in ya and s not in faltan and s not in IGNORAR:

@@ -275,8 +275,10 @@ export const altPath = (path, lang) =>
 // 'explorar'…); en una ficha, ninguna.
 // `privada`: una página que no es para los buscadores (el enlace de un RRPP,
 // una publicación abierta con él): sin canonical, sin hreflang y sin
-// og:url. `consulta` (`?rp=…`) se queda al cambiar de idioma.
-export function publicPage({ lang, path, title, description, head = '', body, image, contador = true, actual = '', acciones = '', bodyClass = '', privada = false, consulta = '' }) {
+// og:url. `consulta` (`?rp=…`) se queda al cambiar de idioma; `consultas`
+// ({es, en}), cuando cada idioma lo escribe a su manera (los filtros de
+// Descubre y Explorar: `?cuando=finde` ↔ `?when=weekend`).
+export function publicPage({ lang, path, title, description, head = '', body, image, contador = true, actual = '', bodyClass = '', privada = false, consulta = '', consultas = null }) {
   const en = lang === 'en';
   const S = en
     ? { how: 'How it works', biz: 'Businesses', sup: 'Support', agenda: "What's on", exp: 'Explore' }
@@ -335,18 +337,18 @@ ${privada ? '' : `<meta property="og:url" content="${BASE}${esc(path)}">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 ${preconectar}<link rel="preload" href="/assets/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/site.css?v=20261029lu">
-<link rel="stylesheet" href="/assets/public.css?v=20261029lu">
+<link rel="stylesheet" href="/assets/site.css?v=20261102ca">
+<link rel="stylesheet" href="/assets/public.css?v=20261102ca">
 <link rel="stylesheet" href="/assets/tarjeta.css?v=20261028rp">
 ${cabeza}
 </head>
 <body${bodyClass ? ` class="${esc(bodyClass)}"` : ''}>
-${siteHeader(lang, esc(es + consulta), esc(enPath + consulta), actual, acciones)}
+${siteHeader(lang, esc(es + (consultas ? consultas.es : consulta)), esc(enPath + (consultas ? consultas.en : consulta)), actual)}
 <main class="pub wrap" id="contenido">${body}</main>
 ${siteFooter(lang)}
 ${conAmigos ? `<script src="/assets/amigos.js?v=22" defer data-lang="${en ? 'en' : 'es'}"></script>
 ` : ''}${conVisor ? `<script src="/assets/tarjeta.js?v=20261028rp" defer></script>
-` : ''}${conTarjetas ? `<script src="/assets/tarjetas.js?v=20261029lu" defer></script>
+` : ''}${conTarjetas ? `<script src="/assets/tarjetas.js?v=20261102ca" defer></script>
 ` : ''}${/class="detail[" ]/.test(body) ? `<script src="/assets/barra.js?v=4" defer></script>
 ` : ''}${/^\/(en\/)?(o|b|coleccion|collection)\//.test(path) || /^\/(sorteo|en\/giveaway)\/[^/]+$/.test(path) ? desdeHistorias() : ''}${contador ? CONTADOR : ''}
 </body></html>`;

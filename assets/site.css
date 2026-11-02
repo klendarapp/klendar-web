@@ -570,6 +570,44 @@ p:has(> .pill + .pill) { display: flex; flex-wrap: wrap; gap: 10px; align-items:
   nav.main .solo-movil { display: block; }
 }
 
+/* ── La cabecera, la misma en todas las páginas (Iván, 2026-11-02) ─────────
+   ✨ Selecciones, la lupa y la campana (con sesión, con su globo en tinta),
+   como la cabecera de Descubre en la app; el idioma, un solo selector con
+   los ocho (en el móvil, dentro de ☰). */
+.top-iconos { display: flex; align-items: center; gap: 0; }
+.top-icono { position: relative; width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; color: var(--ink); flex: none; }
+.top-icono:hover { text-decoration: none; background: var(--soft); }
+.top-icono:focus-visible { outline: 2px solid currentColor; outline-offset: -2px; }
+.top-icono[hidden] { display: none; }
+.top-n { position: absolute; top: 3px; right: 1px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; display: grid; place-items: center;
+  background: var(--ink); color: var(--surface); box-shadow: 0 0 0 2px var(--surface); font-size: 11px; font-weight: 800; line-height: 1; }
+.top-n[hidden] { display: none; }
+/* Si no cabe todo, el logo se queda en el símbolo (el nombre sigue para el
+   lector). Lo decide /assets/cabecera.js, midiendo. */
+header.top.top-justa .brand { font-size: 0; gap: 0; }
+.idioma { position: relative; flex: none; }
+.idioma-b { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--glass-border);
+  color: var(--ink); font-size: 13px; font-weight: 700; letter-spacing: .02em; cursor: pointer; list-style: none; user-select: none; -webkit-user-select: none; }
+.idioma-b::-webkit-details-marker { display: none; }
+.idioma-b::marker { content: ''; }
+.idioma-b:hover { background: var(--soft); }
+.idioma-b:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.idioma[open] > .idioma-b { background: var(--soft); }
+.idioma[open] > .idioma-b::after { content: ""; position: fixed; inset: 0; z-index: 40; cursor: default; }
+.idioma-menu { position: absolute; right: 0; top: calc(100% + 8px); z-index: 42; width: 260px; padding: 6px; border-radius: 18px; background: var(--elevated, var(--surface));
+  border: 1px solid var(--glass-border); box-shadow: 0 18px 50px -20px rgba(0,0,0,.45); display: grid; gap: 2px; }
+.idioma-menu a, .idioma-lista a { display: flex; align-items: center; justify-content: space-between; min-height: 44px; padding: 0 12px; border-radius: 12px;
+  color: var(--ink); font-weight: 600; font-size: 15px; text-decoration: none; }
+.idioma-menu a:hover, .idioma-lista a:hover { background: var(--soft); text-decoration: none; }
+.idioma-menu a[aria-current="true"], .idioma-lista a[aria-current="true"] { background: var(--ink); color: var(--surface); }
+.idioma-menu a[aria-current="true"]::after, .idioma-lista a[aria-current="true"]::after { content: '✓'; font-weight: 800; }
+.idioma-nota { margin: 6px 12px 6px; font-size: 12px; line-height: 1.4; color: var(--ink-2); }
+.idioma-lista { margin: 10px 14px 4px; }
+.idioma-t { margin: 0 0 6px; font-size: 12px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); }
+.idioma-lista > div { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 6px; }
+.idioma-lista .idioma-nota { margin: 8px 0 0; }
+@media (max-width: 960px) { .top-acciones > .idioma { display: none; } }
+
 /* ── Portada ─────────────────────────────────────────────────────────────── */
 .cta-botones { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; }
 @media (max-width: 599px) { .cta-botones .pill { flex: 1 1 100%; justify-content: center; } }

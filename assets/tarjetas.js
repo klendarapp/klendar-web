@@ -581,6 +581,17 @@
     abridor = a;
     hoja.open = true;
   });
+  // Desde otra página, ✨ y la lupa traen aquí con `#selecciones` o
+  // `#buscar`: se abre esa hoja (y el # se quita, para que al recargar no
+  // vuelva a salir).
+  (function () {
+    var h = location.hash.slice(1);
+    var hoja = /^(buscar|selecciones)$/.test(h) && document.getElementById(h);
+    if (!(hoja instanceof HTMLDetailsElement)) return;
+    try { history.replaceState(history.state, '', location.pathname + location.search); } catch (x) { /* se queda */ }
+    abridor = document.querySelector('header.top [data-abre-hoja="' + h + '"]');
+    setTimeout(function () { hoja.open = true; }, 0);
+  })();
   document.addEventListener('toggle', function (e) {
     var d = e.target;
     if (!(d instanceof HTMLDetailsElement) || !d.classList.contains('hoja-lupa')) return;

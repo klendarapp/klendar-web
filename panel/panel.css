@@ -1195,3 +1195,16 @@ input[type=file]::file-selector-button { font: inherit; font-weight: 700; color:
 .tag.st-rejected, .tag.st-failed, .tag.st-banned { background: color-mix(in srgb, var(--ink) 10%, transparent); color: var(--ink); }
 .tag.warn, .tag.st-pending, .tag.st-trial, .tag.st-reviewing, .tag.st-draft, .tag.st-past_due, .tag.st-open, .tag.st-cancelled,
 .tag.st-inactive { background: var(--soft); color: var(--ink-2); box-shadow: inset 0 0 0 1px var(--glass-border); }
+
+/* La cabecera de toda la web encima del panel (Iván, 2026-11-02: la misma
+   barra en todas las páginas). El menú del panel va debajo: en el escritorio,
+   la columna de la izquierda empieza tras ella; en el móvil, la fila del
+   negocio y «Menú» se pega bajo ella. Abajo, la barra del panel (lo
+   principal del negocio), no la de las pestañas de la web. */
+/* El envoltorio del idioma no es una caja: si no, la cabecera (sticky) se
+   iría con él al bajar (como en «Tu cuenta», app.css). */
+[data-only]:not([hidden]) { display: contents; }
+body[data-cabecera] .layout { min-height: calc(100dvh - 65px); }
+@media (min-width: 901px) { body[data-cabecera] .side { top: 65px; height: calc(100dvh - 65px); } }
+@media (max-width: 900px) { body[data-cabecera] .topbar { top: 65px; } }
+body[data-cabecera] nav.tabbar:not(#tabbar) { display: none; }

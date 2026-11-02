@@ -871,8 +871,36 @@ $('#menuCerrar').onclick = () => abreMenu(false);
 // ── Idioma ──────────────────────────────────────────────────────────────────
 // El panel se escribió en español; la versión inglesa se pinta encima (ver
 // i18n.js). Lo que no esté traducido se queda en español, nunca en blanco.
-I18N.pickers(['#lang', '#langSide']);
+// La cabecera es la de toda la web (la misma en todas las páginas; Iván,
+// 2026-11-02), con el selector de idioma de los ocho (/assets/cabecera.js):
+// se queda la del idioma que toca (en uno nuevo, la española traducida, con
+// sus enlaces públicos a la versión que le toca).
+(() => {
+  const en = I18N.lang === 'en';
+  const nuevo = !en && I18N.lang !== 'es';
+  if (nuevo && I18N.pub === 'en') {
+    const es = $$('[data-only="es"]');
+    const ing = $$('[data-only="en"]');
+    es.forEach((bloque, i) => {
+      const a1 = $$('a[href]', bloque);
+      const a2 = ing[i] ? $$('a[href]', ing[i]) : [];
+      if (a1.length !== a2.length) return;
+      a1.forEach((a, j) => {
+        const h = a.getAttribute('href');
+        if (!/^\/(?!app\/|panel\/|en\/$)/.test(h)) return;
+        a.setAttribute('href', a2[j].getAttribute('href'));
+      });
+    });
+  }
+  for (const el of $$(`[data-only="${en ? 'es' : 'en'}"]`)) el.remove();
+  for (const el of $$(`[data-only="${en ? 'en' : 'es'}"]`)) {
+    el.hidden = false;
+    for (const b of $$('[data-cuenta-txt]', el)) b.dataset.cuentaTxt = I18N.t('Tu cuenta');
+    for (const b of $$('[data-campana]', el)) b.dataset.n = I18N.t('Notificaciones, {n} sin leer');
+  }
+})();
 I18N.translate(document.body);
+window.KL_CABECERA?.();
 document.documentElement.lang = I18N.lang;
 document.title = I18N.lang === 'en' ? 'Klendar · Business dashboard' : `Klendar · ${I18N.t('Panel del negocio')}`;
 

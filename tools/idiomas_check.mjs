@@ -43,7 +43,10 @@ const EN_PUB = ['en', 'fr', 'de', 'it'];
   ok(ir('fr', 'es').endsWith('/privacidad/'), 'legal: ?lang=es manda');
 }
 
-for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
+// NAVS=chromium para uno solo (WebKit para Windows se cae al pasar del panel
+// sin sesión a «Tu cuenta»; pasaba ya antes de la cabecera común).
+const NAVS = (process.env.NAVS || 'chromium,webkit').split(',');
+for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]].filter(([n]) => NAVS.includes(n))) {
   const browser = await tipo.launch();
   for (const [disp, vista] of [['movil', { width: 390, height: 844 }], ['escritorio', { width: 1280, height: 860 }]]) {
     for (const lang of LANGS) {
@@ -60,8 +63,13 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
       ok(htmlLang === lang, `${nombre}/${disp}/${lang}: «Tu cuenta» <html lang=${htmlLang}>`);
       const botones = await page.locator('button, a.pill').allInnerTexts();
       ok(botones.some((b) => b.trim() === ENTRAR[lang]), `${nombre}/${disp}/${lang}: botón «${ENTRAR[lang]}»`);
-      const opciones = await page.locator('select.lang-sel option').count();
-      ok(opciones === 0 || opciones >= 8, `${nombre}/${disp}/${lang}: selector con los 8 idiomas (${opciones})`);
+      // El selector de la cabecera (el mismo en todas las páginas): los 8, y
+      // marcado el de la página.
+      const sel = await page.evaluate(() => {
+        const ls = [...new Set([...document.querySelectorAll('header.top [data-idioma] a[data-lang]')].map((a) => a.dataset.lang))];
+        return { ls, actual: document.querySelector('header.top [data-idioma] a[aria-current="true"]')?.dataset.lang };
+      });
+      ok(sel.ls.length === 8 && sel.actual === lang, `${nombre}/${disp}/${lang}: selector con los 8 idiomas y «${lang}» marcado (${sel.ls.length}, ${sel.actual})`);
       // Lo que se sale del ancho (alemán, sobre todo).
       const ancho = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
       ok(ancho <= 1, `${nombre}/${disp}/${lang}: nada se sale a lo ancho (${ancho}px)`);

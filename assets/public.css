@@ -1080,22 +1080,11 @@ details.hoja-bloque[open] > summary .ic { transform: rotate(180deg); }
 .cat-celda input:focus-visible + .cat-celda-c { outline: 2px solid var(--ink); outline-offset: 2px; }
 @media (prefers-reduced-motion: no-preference) { .cat-celda-c { transition: background-color .18s ease, color .18s ease, border-color .18s ease; } }
 
-/* ══ La lupa, ✨ y la campana de Descubre (Iván, 2026-10-29) ══════════════
-   Como la cabecera de Descubre en la app. La lupa abre la hoja «Buscar» (el
+/* ══ Las hojas «Buscar» y «Selecciones» de Descubre (Iván, 2026-10-29) ════
+   (Los botones están en la cabecera de todas las páginas: site.css.) La lupa abre la hoja «Buscar» (el
    mismo buscador que Explorar, con los atajos, lo buscado, lo más buscado y
    «O mira por tipo de sitio»); ✨, la de «Selecciones». Son hojas como las
    de la fila: desde abajo en el móvil, centradas en el escritorio. */
-.top-iconos { display: flex; align-items: center; gap: 0; }
-.top-icono { position: relative; width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; color: var(--ink); }
-.top-icono:hover { text-decoration: none; background: var(--soft); }
-.top-icono:focus-visible { outline: 2px solid currentColor; outline-offset: -2px; }
-.top-icono[hidden] { display: none; }
-.top-n { position: absolute; top: 3px; right: 1px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; display: grid; place-items: center;
-  background: var(--ink); color: var(--surface); box-shadow: 0 0 0 2px var(--surface); font-size: 11px; font-weight: 800; line-height: 1; }
-.top-n[hidden] { display: none; }
-/* Si no cabe todo, el logo se queda en el símbolo (el nombre sigue para el
-   lector). Lo decide /assets/cabecera.js, midiendo. */
-header.top.top-justa .brand { font-size: 0; gap: 0; }
 .hoja-lupa-sum { position: absolute; width: 0; height: 0; padding: 0; border: 0; overflow: visible; list-style: none; }
 .hoja-lupa-sum::-webkit-details-marker { display: none; }
 .hoja-lupa-sum::marker { content: ''; }

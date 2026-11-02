@@ -197,13 +197,23 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     await rueda(p2, vp);
     await cabeceraBien(p2, 'header.top', `${t} Tu cuenta (rueda):`);
     await p2.screenshot({ path: `${OUT}/cabecera-${nombre}-${forma}-cuenta.png` });
-    if (forma === 'movil') {
+    {
       await p2.goto(`${BASE}/panel/#/resumen`);
-      await p2.waitForSelector('.topbar');
+      await p2.waitForSelector('.topbar', { state: 'attached' });
       await p2.waitForTimeout(1500);
       await relleno('#view');
       await rueda(p2, vp);
-      await cabeceraBien(p2, '.topbar', `${t} panel (rueda):`);
+      // La cabecera de toda la web arriba (la misma en todas las páginas,
+      // 2026-11-02) y la fila del panel (negocio y «Menú») pegada debajo.
+      await cabeceraBien(p2, 'header.top', `${t} panel (rueda):`);
+      // En el escritorio, la columna del panel empieza justo debajo.
+      const sub = await p2.evaluate((m) => {
+        const h = document.querySelector('header.top').getBoundingClientRect();
+        const b = document.querySelector(m ? '.topbar' : '.side').getBoundingClientRect();
+        return { hueco: Math.round(b.top - h.bottom), alto: Math.round(b.height), abajo: Math.round(b.bottom - innerHeight) };
+      }, forma === 'movil');
+      ok(Math.abs(sub.hueco) <= 1 && sub.alto > 30 && (forma === 'movil' || Math.abs(sub.abajo) <= 1),
+        `${t} panel (rueda): ${forma === 'movil' ? 'la fila del panel' : 'la columna del panel'}, justo debajo de la cabecera (${JSON.stringify(sub)})`);
       await p2.screenshot({ path: `${OUT}/cabecera-${nombre}-${forma}-panel.png` });
     }
     await ctx2.close();

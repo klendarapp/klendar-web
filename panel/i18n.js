@@ -20,6 +20,9 @@ const I18N = makeI18N({
     'Panel del negocio': 'Business dashboard',
 
     // ── Barra y navegación ────────────────────────────────────────────────
+    // La cabecera de toda la web encima del panel.
+    'Tu cuenta': 'Your account',
+    'Notificaciones, {n} sin leer': 'Notifications, {n} unread',
     'negocios': 'business',
     '· negocios': '· business',
     'Negocio': 'Business',

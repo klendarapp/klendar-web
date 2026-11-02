@@ -121,6 +121,12 @@ const TEXTOS = {
     derechos: `© ${new Date().getFullYear()} Klendar. Todos los derechos reservados.`,
     hecho: 'Hecho en España',
     redes: 'Klendar en redes sociales',
+    buscar: 'Buscar',
+    selecciones: 'Selecciones',
+    notificaciones: 'Notificaciones',
+    notificacionesN: 'Notificaciones, {n} sin leer',
+    idioma: 'Idioma',
+    notaIdioma: 'Las páginas públicas están en español e inglés; «Tu cuenta» y el panel, en los ocho idiomas.',
   },
   en: {
     menu: 'Menu',
@@ -136,10 +142,36 @@ const TEXTOS = {
     derechos: `© ${new Date().getFullYear()} Klendar. All rights reserved.`,
     hecho: 'Made in Spain',
     redes: 'Klendar on social media',
+    buscar: 'Search',
+    selecciones: 'Picks',
+    notificaciones: 'Notifications',
+    notificacionesN: 'Notifications, {n} unread',
+    idioma: 'Language',
+    notaIdioma: 'Public pages are in English and Spanish; “Your account” and the business panel, in all eight languages.',
   },
 };
 
 const item = (n, en) => ({ label: en ? n.en : n.es, href: en ? n.hrefEn : n.hrefEs, cls: n.cls });
+
+// Los ocho idiomas de Klendar, cada uno con su nombre en su idioma (los de
+// assets/i18n.js). Las páginas públicas solo están en español e inglés:
+// catalán, gallego y euskera llevan a la española; francés, alemán e
+// italiano, a la inglesa (`esOEn`). «Tu cuenta» y el panel, en los ocho.
+export const IDIOMAS = [
+  ['es', 'Español'], ['en', 'English'], ['ca', 'Català'], ['gl', 'Galego'],
+  ['eu', 'Euskara'], ['fr', 'Français'], ['de', 'Deutsch'], ['it', 'Italiano'],
+];
+const ladoPublico = (l) => (/^(en|fr|de|it)$/.test(l) ? 'en' : 'es');
+
+// Iconos de Material (con contorno) de la cabecera: auto_awesome, search,
+// notifications_none y language.
+const ICONO = {
+  selecciones: 'M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25zm0 6l-1.25 2.75L15 19l2.75 1.25L19 23l1.25-2.75L23 19l-2.75-1.25zm-7.5-5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5zm-1.51 3.49L9 15.17l-.99-2.18L5.83 12l2.18-.99L9 8.83l.99 2.18 2.18.99-2.18.99z',
+  buscar: 'M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z',
+  campana: 'M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z',
+  idioma: 'M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm6.93 6h-2.95c-.32-1.25-.78-2.45-1.38-3.56 1.84.63 3.37 1.91 4.33 3.56zM12 4.04c.83 1.2 1.48 2.53 1.91 3.96h-3.82c.43-1.43 1.08-2.76 1.91-3.96zM4.26 14C4.1 13.36 4 12.69 4 12s.1-1.36.26-2h3.38c-.08.66-.14 1.32-.14 2s.06 1.34.14 2H4.26zm.82 2h2.95c.32 1.25.78 2.45 1.38 3.56-1.84-.63-3.37-1.9-4.33-3.56zm2.95-8H5.08c.96-1.66 2.49-2.93 4.33-3.56C8.81 5.55 8.35 6.75 8.03 8zM12 19.96c-.83-1.2-1.48-2.53-1.91-3.96h3.82c-.43 1.43-1.08 2.76-1.91 3.96zM14.34 14H9.66c-.09-.66-.16-1.32-.16-2s.07-1.35.16-2h4.68c.09.65.16 1.32.16 2s-.07 1.34-.16 2zm.25 5.56c.6-1.11 1.06-2.31 1.38-3.56h2.95c-.96 1.65-2.49 2.93-4.33 3.56zM16.36 14c.08-.66.14-1.32.14-2s-.06-1.34-.14-2h3.38c.16.64.26 1.31.26 2s-.1 1.36-.26 2h-3.38z',
+};
+const icono = (n, s = 24) => `<svg class="ic" viewBox="0 0 24 24" width="${s}" height="${s}" aria-hidden="true"><path fill="currentColor" d="${ICONO[n]}"/></svg>`;
 
 /**
  * La barra de arriba.
@@ -148,9 +180,13 @@ const item = (n, en) => ({ label: en ? n.en : n.es, href: en ? n.hrefEn : n.href
  * Si se piden como plantilla (`{{ES}}` y `{{EN}}`), Python los sustituye al
  * construir las páginas estáticas.
  */
-// `acciones`: botones de la página delante de «Para negocios» (Descubre: ✨,
-// la lupa y la campana, como la cabecera de Descubre en la app).
-export function siteHeader(lang, esPath = '/', enPath = '/en/', actual = '', acciones = '') {
+// La misma cabecera en todas las páginas (Iván, 2026-11-02: «la barra no es
+// constante»): el logo · las cuatro pestañas · ✨ Selecciones · la lupa · la
+// campana (con sesión) · «Para negocios» · el idioma · Entrar o tu inicial ·
+// ☰. En el móvil, las pestañas abajo y el idioma dentro de ☰. Lo que hace
+// cada botón según la página lo pone cabecera.js (la lupa abre «Buscar» en
+// Descubre y lleva al buscador desde las demás).
+export function siteHeader(lang, esPath = '/', enPath = '/en/', actual = '') {
   const en = lang === 'en';
   const T = TEXTOS[en ? 'en' : 'es'];
   const enlaces = NAV.map((n) => item(n, en))
@@ -164,10 +200,20 @@ export function siteHeader(lang, esPath = '/', enPath = '/en/', actual = '', acc
     return `<a class="${cls}" data-tab="${n.id}" href="${en ? n.hrefEn : n.hrefEs}"${on ? ' aria-current="page"' : ''}><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="${n.d}"/></svg><span>${en ? n.en : n.es}</span></a>`;
   }).join('');
   const cuenta = en ? '/app/?lang=en' : '/app/';
-  const selector = `<span class="lang" aria-label="Idioma / Language">
-      <a href="${esPath}" class="${en ? '' : 'on'}" data-lang="es" hreflang="es">ES</a>
-      <a href="${enPath}" class="${en ? 'on' : ''}" data-lang="en" hreflang="en">EN</a>
-    </span>`;
+  // El idioma: el mismo selector en todas las páginas (antes, «ES | EN» en
+  // las públicas y un desplegable con los ocho en «Tu cuenta» y el panel).
+  // Cada idioma con su nombre en su idioma; los que no tienen páginas
+  // públicas propias van a la versión que les toca (y cabecera.js lo
+  // recuerda y, con sesión, lo guarda en tu cuenta, como la app).
+  const opciones = IDIOMAS.map(([l, nombre]) => `<a href="${ladoPublico(l) === 'en' ? enPath : esPath}" lang="${l}" hreflang="${ladoPublico(l)}" data-lang="${l}" translate="no"${l === (en ? 'en' : 'es') ? ' aria-current="true"' : ''}>${nombre}</a>`).join('');
+  const nombreAhora = en ? 'English' : 'Español';
+  const selector = `<details class="idioma" data-idioma>
+      <summary class="idioma-b" aria-label="${T.idioma}: ${nombreAhora}" title="${T.idioma}">${icono('idioma', 20)}<span class="idioma-cod" data-idioma-cod>${en ? 'EN' : 'ES'}</span></summary>
+      <div class="idioma-menu" role="group" aria-label="${T.idioma}">${opciones}<p class="idioma-nota">${T.notaIdioma}</p></div>
+    </details>`;
+  const selectorMovil = `<div class="idioma-lista" data-idioma role="group" aria-label="${T.idioma}"><p class="idioma-t">${T.idioma}</p><div>${opciones}</div><p class="idioma-nota">${T.notaIdioma}</p></div>`;
+  const descubre = en ? TABS[0].hrefEn : TABS[0].hrefEs;
+  const explorar = en ? TABS[1].hrefEn : TABS[1].hrefEs;
   // «Entrar» siempre a la vista, también en el móvil (fuera del menú). Si ya
   // hay sesión, cabecera.js lo cambia por tu inicial o tu foto. Es el único
   // acceso: quien lleva un negocio va a su panel desde «Tu cuenta» o desde
@@ -187,10 +233,14 @@ export function siteHeader(lang, esPath = '/', enPath = '/en/', actual = '', acc
   <nav class="pestanas" aria-label="${T.secciones}">${pestanas('pestana')}</nav>
   <input type="checkbox" id="menu" aria-label="${T.mas}">
   <nav class="main" aria-label="${T.mas}">${enlaces}
-    <span class="solo-movil">${selector}</span>
+    <div class="solo-movil">${selectorMovil}</div>
   </nav>
-  <div class="top-acciones">${acciones ? `
-    <span class="top-iconos">${acciones}</span>` : ''}
+  <div class="top-acciones">
+    <span class="top-iconos">
+      <a class="top-icono" href="${descubre}#selecciones" data-abre-hoja="selecciones" aria-label="${T.selecciones}" title="${T.selecciones}">${icono('selecciones')}</a>
+      <a class="top-icono" href="${explorar}#buscar" data-abre-hoja="buscar" aria-label="${T.buscar}" title="${T.buscar}">${icono('buscar')}</a>
+      <a class="top-icono top-campana" href="${cuenta}#/notificaciones" data-campana data-n="${T.notificacionesN}" aria-label="${T.notificaciones}" title="${T.notificaciones}" hidden>${icono('campana')}<span class="top-n" aria-hidden="true" hidden></span></a>
+    </span>
     <a class="top-negocios" href="${negocios.href}">${negocios.label}</a>
     ${selector}
     <a class="pill top-entrar" href="${cuenta}#/entrar" data-cuenta="${cuenta}" data-cuenta-txt="${T.cuenta}">${T.entrar}</a>
@@ -198,7 +248,7 @@ export function siteHeader(lang, esPath = '/', enPath = '/en/', actual = '', acc
   </div>
 </div></header>
 <nav class="tabbar" aria-label="${T.secciones}">${pestanas('tab')}</nav>
-<script src="/assets/cabecera.js?v=12" defer></script>`;
+<script src="/assets/cabecera.js?v=13" defer></script>`;
 }
 
 /** El pie, con las mismas columnas en todas las páginas. */

@@ -58,10 +58,11 @@
     }
   }
 
-  window.KL_CABECERA = () => { pinta(); campana(); justa(); };
+  window.KL_CABECERA = () => { pinta(); campana(); justa(); if (typeof pintaIdioma === 'function') pintaIdioma(); };
   pinta();
 
-  // La campana de Descubre (como la app): solo con sesión, con los avisos
+  // La campana (en la cabecera de todas las páginas, como en Descubre de la
+  // app): solo con sesión, con los avisos
   // sin leer en un globo en tinta («9+» desde 10) y, al llegar uno nuevo
   // mientras se mira, se balancea y la cifra salta (con «Reducir
   // movimiento», no). Se pregunta al entrar, cada minuto con la pestaña a la
@@ -109,12 +110,29 @@
     }
     antes = n;
   }
+  // Con los sorteos apagados, sus avisos no cuentan (como «Tu cuenta»): el
+  // interruptor (`app_config.giveaways`), una vez por sesión de navegador.
+  function sorteos(env) {
+    try {
+      const g = sessionStorage.getItem('klendar.sorteosWeb');
+      if (g === '1' || g === '0') return Promise.resolve(g === '1');
+    } catch { /* se pregunta */ }
+    return fetch(`${env.url}/rest/v1/app_config?select=value&key=eq.giveaways`, { headers: { apikey: env.key } })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((l) => {
+        const v = Array.isArray(l) && l[0] ? l[0].value : null;
+        const on = Boolean(v && v.enabled === true && (!Array.isArray(v.platforms) || v.platforms.includes('web')));
+        try { sessionStorage.setItem('klendar.sorteosWeb', on ? '1' : '0'); } catch { /* nada */ }
+        return on;
+      })
+      .catch(() => false);
+  }
   function pregunta() {
     const t = token();
     if (!boton || boton.hidden || !t || document.hidden) return;
-    conf().then((env) => {
+    conf().then((env) => (env ? sorteos(env).then((on) => [env, on]) : [null])).then(([env, on]) => {
       if (!env) return null;
-      const sinSorteos = boton.hasAttribute('data-sin-sorteos') ? '&kind=neq.giveaway' : '';
+      const sinSorteos = on ? '' : '&kind=neq.giveaway';
       return fetch(`${env.url}/rest/v1/notifications?select=id&read_at=is.null${sinSorteos}`, {
         method: 'HEAD',
         headers: { apikey: env.key, Authorization: `Bearer ${t}`, Prefer: 'count=exact' },
@@ -166,6 +184,14 @@
     if (/^\/(en\/)?(explorar|explore|agenda|whats-on|hoy|today|coleccion|collection)\//.test(p)) return 'explorar';
     // «Planes» también mientras pide entrar para ir a Planes (#/entrar?siguiente=planes).
     if (/^\/app\//.test(p)) return /^#\/(planes|guardar)(\/|\?|$)|[?&]siguiente=planes\b/.test(location.hash) ? 'planes' : 'cuenta';
+    // El panel del negocio es parte de tu cuenta (en la app, «Mi negocio»
+    // está en Cuenta).
+    if (/^\/panel\//.test(p)) return 'cuenta';
+    // Una ficha (/o/, /b/…) se abre encima de la pestaña de la que vienes,
+    // como en la app: se queda marcada esa.
+    if (/^\/(en\/)?(o|b|r|a|c|cola|sorteo|giveaway|partidos|matches|grupos|groups|sorteos|giveaways|con-ninos|with-kids)\//.test(p)) {
+      try { return sessionStorage.getItem('klendar.tab') || ''; } catch { return ''; }
+    }
     return '';
   }
   function marcaPestana() {
@@ -179,6 +205,124 @@
   }
   marcaPestana();
   window.addEventListener('hashchange', marcaPestana);
+  try {
+    const t = document.querySelector('[data-tab][aria-current="page"]')?.dataset.tab;
+    if (t && !/^\/(en\/)?(o|b)\//.test(location.pathname)) sessionStorage.setItem('klendar.tab', t);
+  } catch { /* sin almacenamiento */ }
+
+  // ── El idioma (Iván, 2026-11-02: «el tema de los idiomas va mal») ──────
+  // Un solo selector con los ocho, en el mismo sitio en todas las páginas.
+  // Las páginas públicas existen en español e inglés: catalán, gallego y
+  // euskera ven la española y francés, alemán e italiano, la inglesa; «Tu
+  // cuenta» y el panel, en el que elijas. Lo elegido se recuerda en este
+  // navegador (`klendar_lang`) y, con sesión, en tu cuenta (`profiles.locale`
+  // y los datos de la sesión, como «Ajustes › Idioma» y la app), y al entrar
+  // manda el de tu cuenta. Cada página, entera en un idioma: si lo elegido
+  // es del otro lado, se pasa a su versión (si la tiene).
+  const IDIOMAS = ['es', 'en', 'ca', 'gl', 'eu', 'fr', 'de', 'it'];
+  const lado = (l) => (/^(en|fr|de|it)$/.test(l) ? 'en' : 'es');
+  const deHerramienta = /^\/(app|panel)\//.test(location.pathname);
+  const leeIdioma = () => { try { const l = localStorage.getItem('klendar_lang'); return IDIOMAS.includes(l) ? l : null; } catch { return null; } };
+  const ponIdioma = (l) => { try { localStorage.setItem('klendar_lang', l); } catch { /* sin almacenamiento */ } };
+  // Con sesión, el de la cuenta (lo guarda la app o «Ajustes»). En «Tu
+  // cuenta» y el panel lo pone al día la propia herramienta, que lee la
+  // cuenta de verdad (la sesión guardada puede ir atrasada).
+  const deCuenta = sesion()?.user_metadata?.locale;
+  if (!deHerramienta && IDIOMAS.includes(deCuenta) && deCuenta !== leeIdioma()) ponIdioma(deCuenta);
+  function idiomaDePagina() {
+    if (deHerramienta && typeof klIdiomaElegido === 'function') return klIdiomaElegido();
+    const l = (document.documentElement.lang || 'es').slice(0, 2);
+    const g = leeIdioma();
+    return g && lado(g) === l ? g : l;
+  }
+  function pintaIdioma() {
+    const ahora = idiomaDePagina();
+    document.querySelectorAll('[data-idioma] a[data-lang]').forEach((a) => {
+      if (a.dataset.lang === ahora) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current');
+    });
+    document.querySelectorAll('[data-idioma-cod]').forEach((c) => { c.textContent = ahora.toUpperCase(); });
+    document.querySelectorAll('summary.idioma-b').forEach((b) => {
+      const nombre = document.querySelector(`[data-idioma] a[data-lang="${ahora}"]`)?.textContent || ahora;
+      b.setAttribute('aria-label', `${b.getAttribute('title') || (b.getAttribute('aria-label') || '').split(':')[0]}: ${nombre}`);
+    });
+  }
+  pintaIdioma();
+  // La versión de esta página en el otro idioma, si existe (`hreflang`).
+  function otraVersion(l) {
+    const alt = document.querySelector(`link[rel="alternate"][hreflang="${lado(l)}"]`);
+    if (!alt) return null;
+    let u;
+    try { u = new URL(alt.getAttribute('href'), location.href); } catch { return null; }
+    // El enlace del selector lleva además los filtros traducidos (?cuando=…).
+    const del = document.querySelector(`[data-idioma] a[data-lang="${lado(l)}"]`);
+    try {
+      const v = del && new URL(del.getAttribute('href'), location.href);
+      if (v && v.pathname === u.pathname) return v.pathname + v.search + location.hash;
+    } catch { /* el de hreflang */ }
+    return u.pathname + location.search.replace(/^\?$/, '') + location.hash;
+  }
+  if (!deHerramienta) {
+    const g = leeIdioma();
+    const l = (document.documentElement.lang || 'es').slice(0, 2);
+    if (g && lado(g) !== l) {
+      const v = otraVersion(g);
+      if (v && v !== location.pathname + location.search + location.hash) location.replace(v);
+    }
+  }
+  // Guarda el idioma en tu cuenta (si hay sesión): el perfil y los datos de
+  // la sesión, como «Ajustes › Idioma». Como mucho 2,5 s: si no llega, se
+  // queda en este navegador y la próxima vez lo intenta «Ajustes».
+  function guardaEnCuenta(l) {
+    const t = token();
+    const u = sesion();
+    if (!t || !u?.id) return Promise.resolve();
+    const hecho = conf().then((env) => {
+      if (!env) return null;
+      const h = { apikey: env.key, Authorization: `Bearer ${t}`, 'Content-Type': 'application/json' };
+      return Promise.all([
+        fetch(`${env.url}/rest/v1/profiles?id=eq.${encodeURIComponent(u.id)}`, { method: 'PATCH', headers: { ...h, Prefer: 'return=minimal' }, body: JSON.stringify({ locale: l }) }),
+        fetch(`${env.url}/auth/v1/user`, { method: 'PUT', headers: h, body: JSON.stringify({ data: { locale: l } }) })
+          .then((r) => (r.ok ? r.json() : null))
+          .then((nuevo) => {
+            if (!nuevo?.id) return;
+            // La sesión guardada, con el idioma nuevo (si no, al volver
+            // a una página pública mandaría el de antes).
+            for (let i = 0; i < localStorage.length; i++) {
+              const clave = localStorage.key(i);
+              if (!/^sb-[a-z0-9]+-auth-token$/.test(clave)) continue;
+              const s = JSON.parse(localStorage.getItem(clave) || 'null');
+              if (s?.user?.id === nuevo.id) { s.user = nuevo; localStorage.setItem(clave, JSON.stringify(s)); }
+            }
+          }),
+      ]);
+    }).catch(() => {});
+    return Promise.race([hecho, new Promise((ok) => { setTimeout(ok, 2500); })]);
+  }
+  document.addEventListener('click', (ev) => {
+    const a = ev.target instanceof Element ? ev.target.closest('[data-idioma] a[data-lang]') : null;
+    if (!a || ev.ctrlKey || ev.metaKey || ev.shiftKey || ev.button > 0) return;
+    const l = a.dataset.lang;
+    if (!IDIOMAS.includes(l)) return;
+    ev.preventDefault();
+    ponIdioma(l);
+    a.closest('details')?.removeAttribute('open');
+    guardaEnCuenta(l).then(() => {
+      if (deHerramienta) {
+        // «Tu cuenta» y el panel se vuelven a pintar en el idioma nuevo, en
+        // la misma pantalla (sin el `?lang=` de antes, que ya no manda).
+        const u = new URL(location.href);
+        u.searchParams.delete('lang');
+        if (u.href === location.href) location.reload(); else location.replace(u.href);
+      } else {
+        location.href = a.href;
+      }
+    });
+  });
+  // El selector se cierra con Escape o al tocar fuera (el velo del summary).
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    document.querySelectorAll('details.idioma[open]').forEach((d) => { d.removeAttribute('open'); d.querySelector('summary')?.focus(); });
+  });
 
   // Descubre y Explorar comparten los filtros (zona, distancia, tipo,
   // categoría, precio, cuándo, orden…): las pestañas llevan los últimos que

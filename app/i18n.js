@@ -79,6 +79,8 @@ const APP_EN = {
   'Algo ha fallado': 'Something went wrong',
   'Guardar': 'Save',
   'Tu cuenta': 'Your account',
+  // La campana de la cabecera (la misma en todas las páginas).
+  'Notificaciones, {n} sin leer': 'Notifications, {n} unread',
   'Hola': 'Hi',
   'Explorar': 'Explore',
   'Qué hay ahora cerca': "What's on nearby right now",

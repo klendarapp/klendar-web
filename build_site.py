@@ -233,7 +233,7 @@ def head(t, path, page_title=None, page_desc=None, extra=''):
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 <link rel="preload" href="/assets/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/site.css?v=20261028tl">
+<link rel="stylesheet" href="/assets/site.css?v=20261102ca">
 <link rel="stylesheet" href="/assets/public.css?v=20261028rp">
 {extra}
 </head>
@@ -569,3 +569,16 @@ if __name__ == '__main__':
                           app, flags=_re.S)
         io.open(ruta, 'w', encoding='utf-8', newline=chr(10)).write(app)
         print('ok: app/index.html (cabecera y pie)')
+
+    # El panel del negocio lleva la misma cabecera (Iván, 2026-11-02: la
+    # barra igual en todas las páginas), sin pie: es una herramienta.
+    ruta = os.path.join('panel', 'index.html')
+    if os.path.exists(ruta):
+        panel = io.open(ruta, encoding='utf-8').read()
+        for marca, l, oculta in (('CABECERA-ES', 'es', ''), ('CABECERA-EN', 'en', ' hidden')):
+            html_ = '<div data-only="%s"%s>' % (l, oculta) + HEADER_TPL[l].replace('{{ES}}', '/panel/?lang=es').replace('{{EN}}', '/panel/?lang=en').replace('href="#contenido"', 'href="#view"') + '</div>'
+            panel = _re.sub(r'<!--%s-->.*?<!--/%s-->' % (marca, marca),
+                            lambda _m, h=html_, m=marca: '<!--%s-->%s<!--/%s-->' % (m, h, m),
+                            panel, flags=_re.S)
+        io.open(ruta, 'w', encoding='utf-8', newline=chr(10)).write(panel)
+        print('ok: panel/index.html (cabecera)')
