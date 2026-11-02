@@ -43,3 +43,10 @@
   .afd .page-head > h1 { flex-basis: auto; }
   .afd .page-head > .btn { flex: none; }
 }
+
+/* «¿Has abierto hoy?»: debajo de los botones, en tinta (sin coral). */
+.afd-abre { margin: 14px 0 4px; padding: 12px 14px; border: 1px solid var(--glass-border); border-radius: 18px; text-align: start; }
+.afd-abre h2 { font-size: 1rem; margin: 0 0 2px; }
+.afd-abre p { margin: 0 0 10px; color: var(--ink-2); line-height: 1.35; }
+.afd-abre-botones { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+.afd-abre-botones .btn { min-height: 48px; justify-content: center; }

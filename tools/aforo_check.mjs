@@ -18,6 +18,14 @@
 //     diálogo de `alerts_off`, «Te avisaremos… · Quitar», `too_many`,
 //     `not_full`, `team` (se esconde), con sitio no sale; en inglés.
 //  6. Explorar › mapa: la tarjeta del negocio con el botón (si carga Mapbox).
+//  7. «Enseñar en mi ficha si hay sitio» (migración 20261259100000): en los
+//     ajustes, encendido de serie, su texto cambia al apagarlo y se manda
+//     `p_show`; la puerta lo dice y no ofrece marcar a mano. La ficha, con la
+//     base sin nivel (`crowd` null), no dice nada ni ofrece «Avísame…».
+//  8. «¿Has abierto hoy?»: con `open_ask`, debajo de los botones; el
+//     encargado «Sí, he abierto» (`capacity_open_today`, y se va) o «Ahora
+//     no» (`capacity_open_later`); el empleado solo «Entendido». Nada se
+//     manda sin tocar.
 //
 // Chromium y WebKit, móvil (390 × 844) y escritorio (1280 × 800). Capturas en OUT.
 //
@@ -94,15 +102,16 @@ function supabaseFalso(estado) {
 
 /** El aforo de mentira: lo mismo que `capacity_status` en la base. */
 function aforoFalso(rol = 'owner') {
-  const k = { enabled: true, max: 120, almost_pct: 70, full_pct: 95, people: 84, ops: new Set() };
+  const k = { enabled: true, max: 120, almost_pct: 70, full_pct: 95, people: 84, ops: new Set(), show: true, closed: false, later: false };
   const nivel = (n) => (n * 100 < k.max * k.almost_pct ? 'quiet' : n * 100 < k.max * k.full_pct ? 'lively' : 'full');
   const estado = () => ({
     enabled: k.enabled, can_edit: rol !== 'staff', organizer: false, max: k.max, almost_pct: k.almost_pct, full_pct: k.full_pct,
     people: k.people, day: '2026-10-17', counted_at: masMin(-1), counter_level: k.enabled ? nivel(k.people) : null,
-    crowd_enabled: true, open_now: true, shown_level: k.enabled ? nivel(k.people) : null, shown_at: masMin(-1), shown_source: 'counter',
+    crowd_enabled: true, open_now: !k.closed, shown_level: k.enabled && k.show && !k.closed ? nivel(k.people) : null, shown_at: masMin(-1), shown_source: 'counter',
+    show_public: k.show, open_ask: k.closed && !k.later ? (rol === 'staff' ? 'staff' : 'manager') : null,
     manual_level: null, manual_at: null, manual_until: null,
     tonight: { peak: 118, peak_at: '2026-10-17T22:30:00Z', almost_at: '2026-10-17T21:10:00Z', full_at: '2026-10-17T21:40:00Z' },
-    alerts_waiting: 3,
+    alerts_waiting: k.show ? 3 : 0,
     events_today: [{ id: 'e1', title: 'Jazz', event_at: '2026-10-17T20:00:00Z', seats: 40, waiting: 14, arrived: 20 }],
     now: new Date().toISOString(),
   });
@@ -116,7 +125,9 @@ function aforoFalso(rol = 'owner') {
       return estado();
     },
     capacity_reset: () => { k.people = 0; return estado(); },
-    set_capacity_settings: (b) => { k.enabled = b.p_enabled; if (b.p_max) k.max = b.p_max; k.almost_pct = b.p_almost; k.full_pct = b.p_full; return estado(); },
+    set_capacity_settings: (b) => { k.enabled = b.p_enabled; if (b.p_max) k.max = b.p_max; k.almost_pct = b.p_almost; k.full_pct = b.p_full; if (typeof b.p_show === 'boolean') k.show = b.p_show; return estado(); },
+    capacity_open_today: () => { k.closed = false; return estado(); },
+    capacity_open_later: () => { k.later = true; return estado(); },
     capacity_stats: { enabled: true, max: 120, time_zone: 'Europe/Madrid', nights: [
       { day: '2026-10-17', peak: 118, peak_at: '2026-10-17T22:30:00Z', almost_at: '2026-10-17T21:10:00Z', full_at: '2026-10-17T21:40:00Z', max: 120,
         slots: Array.from({ length: 24 }, (_, i) => ({ at: new Date(Date.UTC(2026, 9, 17, 19, 0) + i * 900e3).toISOString(), peak: Math.round(118 * Math.sin((i + 1) / 25 * Math.PI)) })) },
@@ -353,6 +364,8 @@ function supabasePublico() {
           member_since: '2026-01-01T00:00:00Z', time_zone: 'Europe/Madrid', description: 'Una sala de prueba.', closed_indefinitely: false, social: {}, opening_hours: ABIERTO }]);
       }
       if (fn === 'business_marks') {
+        // 'oculto': «Enseñar en mi ficha si hay sitio» apagado; la base da la fila sin nivel.
+        if (PUB.marca === 'oculto') return json([{ business_id: BIZ, price_level: 2, crowd: null, crowd_at: null }]);
         return json(PUB.marca ? [{ business_id: BIZ, price_level: 2, crowd: PUB.marca, crowd_at: masMin(-5) }] : []);
       }
       if (fn === 'business_hours_status') return json({ ok: true, open_now: true, unconfirmed: false, reported_today: false, can_report: false });
@@ -480,6 +493,93 @@ async function mapa(nav, nombre, t, vp) {
   await ctx.close();
 }
 
+// ── 7. Contar sin enseñarlo ─────────────────────────────────────────────────
+async function sinEnsenar(nav, nombre, t, vp) {
+  const { ctx, p, estado, errores } = await contextoPanel(nav, vp);
+  await p.goto(`${BASE}/panel/#/aforo/ajustes`);
+  await p.waitForSelector('#afdForm input[name=show]');
+  const casilla = p.locator('#afdForm input[name=show]');
+  ok(await casilla.isChecked(), `${nombre}/${t} sin enseñar: «Enseñar en mi ficha si hay sitio» encendido de serie`);
+  ok(/Enseñar en mi ficha si hay sitio/.test(await vista(p)) && /nunca la cifra/.test(await p.locator('#afdShowTxt').innerText()),
+    `${nombre}/${t} sin enseñar: su texto encendido`);
+  await casilla.uncheck();
+  ok(/Solo lo ve tu equipo/.test(await p.locator('#afdShowTxt').innerText()), `${nombre}/${t} sin enseñar: al apagarlo, «Solo lo ve tu equipo…»`);
+  await p.screenshot({ path: `${OUT}/panel-aforo-ajustes-sin-ensenar-${nombre}-${t}.png`, fullPage: true });
+  await p.click('#afdForm button[type=submit]');
+  await p.waitForSelector('.afd-btn');
+  const guardado = llamadas(estado, 'set_capacity_settings').slice(-1)[0]?.[1] || {};
+  ok(guardado.p_show === false, `${nombre}/${t} sin enseñar: se manda p_show = false (${JSON.stringify(guardado)})`);
+  await p.waitForTimeout(400);
+  const txt = await vista(p);
+  ok(/Tu ficha no lo enseña: lo cuentas solo para tu equipo\./.test(txt) && !/En tu ficha:/.test(txt) && !/esperan que haya sitio/.test(txt),
+    `${nombre}/${t} sin enseñar: la puerta lo dice`);
+  ok((await p.locator('#afdSitio').innerHTML()).trim() === '', `${nombre}/${t} sin enseñar: sin «¿Hay sitio ahora?» a mano`);
+  await p.screenshot({ path: `${OUT}/panel-aforo-sin-ensenar-${nombre}-${t}.png`, fullPage: true });
+  ok(errores.length === 0, `${nombre}/${t} sin enseñar: sin errores de JavaScript (${errores.join(' | ')})`);
+  await ctx.close();
+}
+
+async function fichaOculta(nav, nombre, t, vp) {
+  const FICHA = `http://localhost:${PUB_PORT}/b/${BIZ}`;
+  PUB.marca = 'oculto';
+  for (const conSesion of [false, true]) {
+    const { ctx, p, errores } = await contextoFicha(nav, vp, { conSesion, rpc: { my_room_alerts: [] } });
+    await p.goto(FICHA, { waitUntil: 'networkidle' });
+    await abreEstado(p);
+    await p.waitForTimeout(700);
+    const visibles = await p.locator('.sitio-ahora:not([hidden])').count();
+    const cuerpo = await p.locator('main').innerText().catch(() => '');
+    ok(visibles === 0 && await p.locator('[data-hs-pedir]').count() === 0 && !/Casi lleno|Hay sitio ·|Lleno ·/.test(cuerpo),
+      `${nombre}/${t} ficha sin enseñar${conSesion ? ' (con sesión)' : ''}: ni el nivel ni «Avísame cuando haya sitio»`);
+    if (conSesion) await p.locator('.d-head').screenshot({ path: `${OUT}/web-ficha-sin-ensenar-${nombre}-${t}.png` }).catch(() => {});
+    ok(errores.length === 0, `${nombre}/${t} ficha sin enseñar: sin errores de JavaScript (${errores.join(' | ')})`);
+    await ctx.close();
+  }
+  PUB.marca = 'full';
+}
+
+// ── 8. «¿Has abierto hoy?» ──────────────────────────────────────────────────
+async function hasAbierto(nav, nombre, t, vp) {
+  for (const respuesta of ['si', 'no']) {
+    const { ctx, p, estado, errores } = await contextoPanel(nav, vp, { rol: 'manager' });
+    estado.af.k.closed = true;
+    await p.goto(`${BASE}/panel/#/aforo`);
+    await p.waitForSelector('.afd-abre');
+    const caja = await p.locator('.afd-abre').innerText();
+    ok(/¿Has abierto hoy\?/.test(caja) && /En Klendar figuras cerrado\./.test(caja) && /Sí, he abierto/.test(caja) && /Ahora no/.test(caja),
+      `${nombre}/${t} ¿has abierto? (encargado): la pregunta y sus dos respuestas`);
+    const btns = await p.locator('.afd-abre [data-abre]').evaluateAll((bs) => bs.map((b) => [Math.round(b.getBoundingClientRect().width), getComputedStyle(b).backgroundColor]));
+    ok(btns.length === 2 && Math.abs(btns[0][0] - btns[1][0]) <= 1 && btns[0][1] === btns[1][1], `${nombre}/${t} ¿has abierto?: los dos botones iguales (${JSON.stringify(btns)})`);
+    const debajo = await p.evaluate(() => document.querySelector('.afd-abre').getBoundingClientRect().top >= document.querySelector('.afd-botones').getBoundingClientRect().bottom);
+    ok(debajo, `${nombre}/${t} ¿has abierto?: debajo de −1 y +1 (no los mueve)`);
+    ok(llamadas(estado, 'capacity_open_today').length === 0, `${nombre}/${t} ¿has abierto?: nada se marca sin tocar`);
+    if (respuesta === 'si') await p.screenshot({ path: `${OUT}/panel-aforo-has-abierto-${nombre}-${t}.png`, fullPage: true });
+    await p.click(`.afd-abre [data-abre="${respuesta}"]`);
+    await p.waitForTimeout(500);
+    const fn = respuesta === 'si' ? 'capacity_open_today' : 'capacity_open_later';
+    ok(llamadas(estado, fn).length === 1 && await p.locator('.afd-abre').count() === 0, `${nombre}/${t} ¿has abierto?: «${respuesta === 'si' ? 'Sí, he abierto' : 'Ahora no'}» → ${fn} y se va`);
+    if (respuesta === 'si') ok(/En tu ficha: Casi lleno/.test(await vista(p)), `${nombre}/${t} ¿has abierto?: abierto, la ficha vuelve a enseñarlo`);
+    // El sondeo de 4 s no la vuelve a sacar.
+    await p.waitForTimeout(4500);
+    ok(await p.locator('.afd-abre').count() === 0, `${nombre}/${t} ¿has abierto?: no vuelve a salir`);
+    ok(errores.length === 0, `${nombre}/${t} ¿has abierto?: sin errores de JavaScript (${errores.join(' | ')})`);
+    await ctx.close();
+  }
+  const { ctx, p, estado, errores } = await contextoPanel(nav, vp, { rol: 'staff' });
+  estado.af.k.closed = true;
+  await p.goto(`${BASE}/panel/#/aforo`);
+  await p.waitForSelector('.afd-abre');
+  const caja = await p.locator('.afd-abre').innerText();
+  ok(/Díselo a quien lleva el local/.test(caja) && !/Sí, he abierto/.test(caja) && await p.locator('.afd-abre [data-abre]').count() === 1,
+    `${nombre}/${t} ¿has abierto? (empleado): que se lo diga, solo «Entendido»`);
+  await p.screenshot({ path: `${OUT}/panel-aforo-has-abierto-empleado-${nombre}-${t}.png`, fullPage: true });
+  await p.click('.afd-abre [data-abre="no"]');
+  await p.waitForTimeout(400);
+  ok(llamadas(estado, 'capacity_open_later').length === 1 && llamadas(estado, 'capacity_open_today').length === 0, `${nombre}/${t} ¿has abierto? (empleado): «Entendido» → capacity_open_later`);
+  ok(errores.length === 0, `${nombre}/${t} ¿has abierto? (empleado): sin errores de JavaScript (${errores.join(' | ')})`);
+  await ctx.close();
+}
+
 let servidor = null;
 let falso = null;
 if (!SOLO || /ficha|mapa/.test(SOLO)) {
@@ -491,7 +591,7 @@ if (!SOLO || /ficha|mapa/.test(SOLO)) {
   await new Promise((r) => setTimeout(r, 2000));
 }
 
-const PRUEBAS = { puerta, ajustes, resumenYCifras, cuentaAjustes, ficha, mapa };
+const PRUEBAS = { puerta, ajustes, resumenYCifras, cuentaAjustes, ficha, mapa, sinEnsenar, fichaOculta, hasAbierto };
 for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]].filter(([n]) => !process.env.NAV || n === process.env.NAV)) {
   const nav = await tipo.launch();
   for (const [t, vp] of [['movil', { width: 390, height: 844 }], ['escritorio', { width: 1280, height: 800 }]]) {

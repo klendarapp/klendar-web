@@ -7,8 +7,16 @@
  *   que haya sitio, los eventos de hoy y «Poner a 0». Cualquiera del equipo
  *   (también un empleado, varios a la vez: se pone al día cada 4 s mientras
  *   está abierta y la pestaña se ve).
- * - #/aforo/ajustes: activar, aforo máximo y porcentajes. Propietario o
- *   encargado; un empleado va a la puerta.
+ * - #/aforo/ajustes: activar, aforo máximo, porcentajes y «Enseñar en mi
+ *   ficha si hay sitio» (encendido de serie; apagado, el contador es solo del
+ *   equipo y la base no enseña nada fuera). Propietario o encargado; un
+ *   empleado va a la puerta.
+ * - «¿Has abierto hoy?» (migración 20261259100000): si se cuenta con el local
+ *   cerrado en Klendar, la puerta lo pregunta una vez, debajo de los botones
+ *   (`open_ask`): al propietario o encargado, «Sí, he abierto»
+ *   (`capacity_open_today`) y «Ahora no»; al empleado, que se lo diga a ellos
+ *   y «Entendido» (`capacity_open_later`). Nunca se marca abierto sin
+ *   preguntar.
  * - En «Cifras»: «Aforo · A qué hora se llenó» (`aforoCifras`).
  *
  * Cada toque cuenta al momento en pantalla y se manda agrupado (la suma de
@@ -52,6 +60,7 @@ function afdError(msg) {
   if (m.includes('invalid_max')) return bi('Pon un aforo máximo entre 1 y 100.000 personas.', 'Enter a maximum capacity between 1 and 100,000 people.');
   if (m.includes('invalid_pct')) return bi('«Casi lleno» va del 10 al 95 % y «Lleno», al menos 5 puntos más, hasta el 100 %.', '“Nearly full” goes from 10 to 95% and “Full” at least 5 points higher, up to 100%.');
   if (m.includes('organizer')) return bi('Sin local fijo no hay aforo que contar.', 'Without a fixed venue there’s nothing to count.');
+  if (m.includes('cannot_open')) return bi('Ahora no se puede marcar abierto: revisa tu horario o «Días cerrados».', 'It can’t be marked open right now: check your opening hours or “Closed days”.');
   if (m.includes('forbidden')) return friendly('not_authorized');
   return friendly(m);
 }
@@ -63,7 +72,8 @@ function afdLineas(st) {
   // Lo que ve la gente en la ficha.
   let ficha = '';
   let volver = false;
-  if (!st.crowd_enabled) ficha = bi('«¿Hay sitio ahora?» está apagado: tu ficha no lo enseña.', '“Room right now?” is off: your page doesn’t show it.');
+  if (st.show_public === false) ficha = bi('Tu ficha no lo enseña: lo cuentas solo para tu equipo.', 'Your page doesn’t show it: you count only for your team.');
+  else if (!st.crowd_enabled) ficha = bi('«¿Hay sitio ahora?» está apagado: tu ficha no lo enseña.', '“Room right now?” is off: your page doesn’t show it.');
   else if (!st.open_now) ficha = bi('Ahora estás cerrado: tu ficha no lo enseña.', 'You’re closed now: your page doesn’t show it.');
   else if (st.shown_source === 'manual' && st.shown_level) {
     const nivel = afdNivel(st.shown_level);
@@ -131,13 +141,15 @@ PAGES.aforo = async (v, param) => {
         <button type="button" class="afd-btn" data-d="1" aria-label="${esc(bi('Entra una persona (+1)', 'One person comes in (+1)'))}">+1</button>
       </div>
       <p class="afd-red" id="afdRed" role="status" hidden>${esc(bi('Sin conexión: lo mandamos en cuanto vuelva.', 'No connection: we’ll send it as soon as it’s back.'))}</p>
+      <div id="afdAbre"></div>
       <div class="afd-lineas" id="afdLineas"></div>
       <p class="afd-cero"><button type="button" class="linkbtn" id="afdCero">${esc(bi('Poner a 0', 'Set to 0'))}</button></p>
     </section>
     <div id="afdSitio" style="margin-top:14px"></div></div>`;
   // «¿Hay sitio ahora?» a mano (manda 30 minutos sobre el contador): aquí y
   // no en el resumen, donde ya no se repite con el aforo encendido.
-  if (typeof pintaAforo === 'function') pintaAforo($('#afdSitio', v), null, { enPuerta: true });
+  // Sin enseñarlo en la ficha, no hace falta.
+  if (st.show_public !== false && typeof pintaAforo === 'function') pintaAforo($('#afdSitio', v), null, { enPuerta: true });
 
   // Lo que aún no ha confirmado la base: lo que está en camino y lo tocado
   // mientras tanto.
@@ -154,6 +166,7 @@ PAGES.aforo = async (v, param) => {
     $('#afdN', v).textContent = fmtNum(n);
     $('#afdNivel', v).textContent = afdNivel(afdNivelDe(n, st));
     $('#afdLineas', v).innerHTML = afdLineas(st);
+    pintaAbre();
     const volverBtn = $('#afdVolver', v);
     if (volverBtn) {
       volverBtn.onclick = async () => {
@@ -166,6 +179,43 @@ PAGES.aforo = async (v, param) => {
         } catch (e) { toast(afdError(e.clave || e.message), true); volverBtn.disabled = false; }
       };
     }
+  };
+
+  // «¿Has abierto hoy?»: una vez, debajo de los botones (no los mueve).
+  let contestando = false;
+  const pintaAbre = () => {
+    const caja = $('#afdAbre', v);
+    const ask = st.open_ask;
+    const clave = ask || '';
+    if (caja.dataset.ask === clave) return;
+    caja.dataset.ask = clave;
+    if (!ask) { caja.innerHTML = ''; return; }
+    const encargado = ask === 'manager';
+    caja.innerHTML = `<section class="afd-abre" aria-labelledby="afdAbreT">
+      <h2 id="afdAbreT">${esc(bi('¿Has abierto hoy?', 'Are you open today?'))}</h2>
+      <p>${esc(encargado
+    ? bi('En Klendar figuras cerrado. Si has abierto, tu ficha sale abierta hoy hasta tu hora de cierre (o hasta las 6:00).', 'On Klendar you show as closed. If you’re open, your page shows open today until your closing time (or until 6:00).')
+    : bi('En Klendar figuras cerrado. Díselo a quien lleva el local: lo puede marcar abierto desde el aforo.', 'On Klendar you show as closed. Tell whoever runs the place: they can mark it open from live capacity.'))}</p>
+      <div class="afd-abre-botones">${encargado
+    ? `<button type="button" class="btn" data-abre="si">${esc(bi('Sí, he abierto', 'Yes, I’m open'))}</button><button type="button" class="btn" data-abre="no">${esc(bi('Ahora no', 'Not now'))}</button>`
+    : `<button type="button" class="btn" data-abre="no">${esc(bi('Entendido', 'Got it'))}</button>`}</div></section>`;
+    $$('[data-abre]', caja).forEach((b) => {
+      b.onclick = async () => {
+        if (contestando) return;
+        contestando = true;
+        $$('[data-abre]', caja).forEach((x) => { x.disabled = true; });
+        const abre = b.dataset.abre === 'si';
+        try {
+          const nuevo = await rpc(abre ? 'capacity_open_today' : 'capacity_open_later', { p_business: BIZ.id });
+          if (nuevo) st = nuevo;
+          if (abre) toast(bi('Hecho: hoy sales abierto en Klendar.', 'Done: today you show as open on Klendar.'));
+          pinta();
+        } catch (e) {
+          toast(afdError(e.clave || e.message), true);
+          $$('[data-abre]', caja).forEach((x) => { x.disabled = false; });
+        } finally { contestando = false; }
+      };
+    });
   };
 
   const refresca = async (forzar = false) => {
@@ -279,6 +329,8 @@ async function afdAjustes(v) {
     <form class="form afd-form" id="afdForm" novalidate>
       <label class="f full casilla"><input type="checkbox" name="on" ${st.enabled ? 'checked' : ''}>
         <span><b>${esc(bi('Aforo en directo', 'Live capacity'))}</b> <small class="muted">${esc(bi('Cuenta en la puerta con +1 y −1, y «¿Hay sitio ahora?» se pone solo.', 'Count at the door with +1 and −1, and “Room right now?” sets itself.'))}</small></span></label>
+      <label class="f full casilla"><input type="checkbox" name="show" ${st.show_public === false ? '' : 'checked'}>
+        <span><b>${esc(bi('Enseñar en mi ficha si hay sitio', 'Show on my page if there’s room'))}</b> <small class="muted" id="afdShowTxt"></small></span></label>
       <label class="f full"><span>${esc(bi('Aforo máximo', 'Maximum capacity'))}</span>
         <span class="afd-con-unidad"><input name="max" type="number" inputmode="numeric" min="1" max="100000" step="1" value="${esc(st.max ?? '')}"><span class="muted">${esc(bi('personas', 'people'))}</span></span>
         <small class="err-txt" data-err="max" hidden></small></label>
@@ -294,6 +346,14 @@ async function afdAjustes(v) {
   const f = $('#afdForm', v);
   const el = f.elements;
   const err = (k, txt) => { const s = $(`[data-err="${k}"]`, f); s.textContent = txt || ''; s.hidden = !txt; };
+  // Contar sin enseñarlo: lo dice al momento.
+  const showTxt = () => {
+    $('#afdShowTxt', v).textContent = el.show.checked
+      ? bi('Tu ficha, el mapa y la tele dicen «Hay sitio», «Casi lleno» o «Lleno» (nunca la cifra).', 'Your page, the map and the TV say “There’s room”, “Nearly full” or “Full” (never the number).')
+      : bi('Solo lo ve tu equipo: tu ficha no dice si hay sitio y nadie puede pedir «Avísame cuando haya sitio». A quien ya lo hubiera pedido, se lo quitamos y se lo decimos.', 'Only your team sees it: your page doesn’t say if there’s room and nobody can ask “Tell me when there’s room”. If someone already had, we remove it and let them know.');
+  };
+  showTxt();
+  el.show.addEventListener('change', showTxt);
   el.almost.addEventListener('input', () => {
     const n = Number(el.almost.value);
     if (Number.isFinite(n) && n > 0) $('#afdCasiTxt', v).textContent = casiTxt(n);
@@ -314,7 +374,7 @@ async function afdAjustes(v) {
       err('pct', afdError('invalid_pct')); el.almost.focus(); return;
     }
     try {
-      await rpc('set_capacity_settings', { p_business: BIZ.id, p_enabled: on, p_max: max, p_almost: casi, p_full: lleno });
+      await rpc('set_capacity_settings', { p_business: BIZ.id, p_enabled: on, p_max: max, p_almost: casi, p_full: lleno, p_show: el.show.checked });
       toast(bi('Guardado', 'Saved'));
       location.hash = on ? '#/aforo' : '#/herramientas';
     } catch (x) {
