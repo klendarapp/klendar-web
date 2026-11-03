@@ -232,7 +232,7 @@ PAGINAS['precios'] = (
     'No commission per redemption and no lock-in.',
     f'''
 <p class="lead">Un solo plan con todo incluido, sin límites y sin comisiones por canje. Lo que cobras en tu local es tuyo entero.</p>
-<p class="callout"><strong>Gratis de lanzamiento.</strong> Mientras Klendar arranca en una ciudad, podemos dar a sus negocios más tiempo gratis: un mapa vacío no le sirve ni a los negocios ni a la gente. El día en que termina te lo decimos con al menos un mes de antelación, y te lo recordamos 7 días y 1 día antes.</p>
+<p class="callout"><strong>Gratis de lanzamiento.</strong> Mientras Klendar arranca en una provincia, podemos dar a los negocios de esa provincia más tiempo gratis: un mapa vacío no le sirve ni a los negocios ni a la gente. El día en que termina te lo decimos con al menos un mes de antelación, y te lo recordamos 7 días y 1 día antes.</p>
 {tabla_planes('es')}
 <p class="note">Precio por local, IVA no incluido: 19,90 € + 21 % de IVA son 24,08 € al mes.</p>
 
@@ -264,7 +264,7 @@ PAGINAS['precios'] = (
 ''',
     f'''
 <p class="lead">One plan with everything included, no limits and no commission per redemption. What you charge at your venue is yours.</p>
-<p class="callout"><strong>Launch, free.</strong> While Klendar is starting in a city, we may give its businesses more free time: an empty map is no use to businesses or to people. We tell you the day it ends at least a month in advance, and remind you 7 days and 1 day before.</p>
+<p class="callout"><strong>Launch, free.</strong> While Klendar is starting in a province, we may give businesses in that province more free time: an empty map is no use to businesses or to people. We tell you the day it ends at least a month in advance, and remind you 7 days and 1 day before.</p>
 {tabla_planes('en')}
 <p class="note">Price per venue, VAT not included: €19.90 + 21% VAT comes to €24.08 a month.</p>
 

@@ -51,26 +51,26 @@ const PAGINAS = [
     /When you log out, your session, the copy of your codes, your interests, the dashboard data and the klendar_18 cookie are deleted\./,
     /28 October 2026: Your filters are remembered until you change or clear them/,
   ], [/Used for 6 hours/, /return from Google or Apple/]],
-  ['/privacidad/', 'Última actualización: 2 de noviembre de 2026', [
+  ['/privacidad/', 'Última actualización: 3 de noviembre de 2026', [
     /tu ciudad o tu última ubicación conocida de los últimos 7 días; no guardamos ninguna otra/,
     /de tu última ubicación \(de los últimos 7 días\) o tu ciudad/,
     /salvo la librería de los mapas \(Mapbox GL JS\), que descarga de Mapbox \(api\.mapbox\.com\) al abrir un mapa/,
     /28 de octubre de 2026: La ubicación que se usa para «Avísame si…»/,
   ], [/últimos 30 días/]],
-  ['/en/privacy/', 'Last updated: 2 November 2026', [
+  ['/en/privacy/', 'Last updated: 3 November 2026', [
     /your city or your last known location from the past 7 days; we don’t keep any other/,
     /your last location \(from the last 7 days\) or your city/,
     /except the map library \(Mapbox GL JS\), which it downloads from Mapbox \(api\.mapbox\.com\) when you open a map/,
     /28 October 2026: The location used for “Tell me when…”/,
   ], [/(past|last) 30 days/]],
-  ['/negocios/', 'Última actualización: 2 de noviembre de 2026', [
+  ['/negocios/', 'Última actualización: 3 de noviembre de 2026', [
     /Un cobro por domiciliación que aún se está procesando no bloquea \(hasta 14 días\)\./,
-    /los del 28 de octubre de 2026 \(apartados 2, 4 bis y 7\), desde el 12 de noviembre de 2026, y los del 2 de noviembre de 2026 \(apartado 2 bis\), desde el 17 de noviembre de 2026: 15 días/,
+    /los del 28 de octubre de 2026 \(apartados 2, 4 bis y 7\), desde el 12 de noviembre de 2026, los del 2 de noviembre de 2026 \(apartado 2 bis\), desde el 17 de noviembre de 2026, y los del 3 de noviembre de 2026 \(apartados 3 decies y 4\), desde el 18 de noviembre de 2026: 15 días/,
     /28 de octubre de 2026: Pagos pendientes y bloqueo \(apartado 4 bis\): un cobro por domiciliación que aún se está procesando no bloquea durante 14 días como mucho\. Se aplica desde el 12 de noviembre de 2026\./,
   ], [/se está procesando no bloquea\. /]],
-  ['/en/business-terms/', 'Last updated: 2 November 2026', [
+  ['/en/business-terms/', 'Last updated: 3 November 2026', [
     /A direct debit payment still being processed doesn't block \(for up to 14 days\)\./,
-    /those of 28 October 2026 \(sections 2, 4a and 7\) from 12 November 2026, and those of 2 November 2026 \(section 2a\) from 17 November 2026: 15 days/,
+    /those of 28 October 2026 \(sections 2, 4a and 7\) from 12 November 2026, those of 2 November 2026 \(section 2a\) from 17 November 2026, and those of 3 November 2026 \(sections 3i and 4\) from 18 November 2026: 15 days/,
     /28 October 2026: Outstanding payments and blocking \(section 4a\)[\s\S]*?It applies from 12 November 2026\./,
   ], [/being processed doesn't block\. /]],
 ];

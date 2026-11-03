@@ -27,26 +27,26 @@ let fallos = 0;
 const ok = (c, m) => { if (!c) { fallos++; console.log('FALLO:', m); } else console.log('ok:', m); };
 
 const PAGINAS = [
-  ['/negocios/', 'Última actualización: 2 de noviembre de 2026', [
+  ['/negocios/', 'Última actualización: 3 de noviembre de 2026', [
     /\(2\) en Descubre y en la lista de Explorar, lo que la persona aún no ha visto va antes que lo que ya ha visto en ese mismo dispositivo en los últimos 7 días, que sale después, en el mismo orden y tras una separación \(«Ya has visto todo lo nuevo · Esto ya lo viste»\)\./,
     /Una publicación cuenta como vista cuando ha estado al menos 1,5 segundos seguidos en la pantalla[\s\S]*?Lo que ha visto cada persona se guarda solo en su dispositivo y Klendar no lo recibe; no esconde nada ni cambia qué publicaciones se ven; \(3\) el orden que elige la persona en «Ordenar por»\./,
     /\(4\) los eventos que Klendar importa[\s\S]*?\(también dentro de cada uno de los dos bloques del punto 2\)/,
-    /y los del 2 de noviembre de 2026 \(apartado 2 bis\), desde el 17 de noviembre de 2026: 15 días/,
+    /los del 2 de noviembre de 2026 \(apartado 2 bis\), desde el 17 de noviembre de 2026, y los del 3 de noviembre de 2026 \(apartados 3 decies y 4\), desde el 18 de noviembre de 2026: 15 días/,
     /2 de noviembre de 2026: Cómo se ordena lo que se ve \(apartado 2 bis\)[\s\S]*?Se aplica desde el 17 de noviembre de 2026\./,
   ]],
-  ['/en/business-terms/', 'Last updated: 2 November 2026', [
+  ['/en/business-terms/', 'Last updated: 3 November 2026', [
     /\(2\) in Discover and in the Explore list, what the person hasn't seen yet comes before what they have already seen on that same device in the last 7 days/,
     /What each person has seen is stored only on their device and Klendar doesn't receive it; it doesn't hide anything or change which publications are shown; \(3\) the order the person chooses in “Sort by”\./,
     /\(also within each of the two groups in point 2\)/,
-    /and those of 2 November 2026 \(section 2a\) from 17 November 2026: 15 days/,
+    /those of 2 November 2026 \(section 2a\) from 17 November 2026, and those of 3 November 2026 \(sections 3i and 4\) from 18 November 2026: 15 days/,
     /“Food served now”/,
   ]],
-  ['/privacidad/', 'Última actualización: 2 de noviembre de 2026', [
+  ['/privacidad/', 'Última actualización: 3 de noviembre de 2026', [
     /Lo que ya has visto en Descubre\s+Qué publicaciones de Descubre \(y, en la web, de la lista de Explorar\) has tenido en pantalla al menos 1,5 segundos[\s\S]*?Se guarda solo en tu móvil o en tu navegador; no nos llega/,
     /Puedes apagarlo en Ajustes › Lo que ves \(en la web, también sin entrar\): entonces no se guarda nada y se borra lo guardado\s+No lo tratamos nosotros \(está en tu dispositivo\)\s+7 días desde que viste cada publicación/,
     /2 de noviembre de 2026: Lo que ya has visto en Descubre/,
   ]],
-  ['/en/privacy/', 'Last updated: 2 November 2026', [
+  ['/en/privacy/', 'Last updated: 3 November 2026', [
     /What you've already seen in Discover\s+Which publications in Discover[\s\S]*?It's stored only on your phone or in your browser; it never reaches us/,
     /You can turn it off in Settings › What you see \(on the website, also without logging in\): then nothing is stored and what was stored is deleted/,
   ]],
