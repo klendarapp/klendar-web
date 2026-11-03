@@ -506,7 +506,9 @@
   function marcaPropia() { try { sessionStorage.setItem('klendar.filtros.sin', '1'); } catch (e) { /* nada */ } }
   document.addEventListener('click', function (e) {
     var a = e.target instanceof Element ? e.target.closest('a[href]') : null;
-    if (!a) return;
+    // «Volver a cerca de mí» (la visita de «Más planes en …») sí recupera lo
+    // guardado: es la zona de siempre.
+    if (!a || a.hasAttribute('data-visita-volver')) return;
     try {
       var u = new URL(a.getAttribute('href'), location.href);
       if (u.origin === location.origin && u.pathname === location.pathname && u.search !== location.search) marcaPropia();

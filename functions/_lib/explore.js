@@ -149,6 +149,8 @@ const T = (en) => en
       sortRain: 'Indoors first', sortSun: 'Outdoors first',
       // Modo viaje y el buscador (/assets/gustos.js).
       travelLabel: 'Away from {home}', travelTitle: "You're in {city} · Today's best", travelClose: 'Dismiss',
+      // «More plans in Marbella», just for that visit (like the app).
+      visitNear: 'Back to near me', visitAll: 'Back to every city', visitTo: 'Back to {city}', visitLabel: 'Viewing {city} just this once',
       searchRecent: 'What you searched for', searchClear: 'Clear', searchLocal: 'Stored only in this browser.',
       searchPopular: 'Most searched in {city}', searchPopularHint: 'What people searched for most this week. Without knowing who.',
       searchRemove: 'Remove “{q}”',
@@ -283,6 +285,8 @@ const T = (en) => en
       sortRain: 'Bajo techo primero', sortSun: 'Al aire libre primero',
       // Modo viaje y el buscador (/assets/gustos.js).
       travelLabel: 'Lejos de {home}', travelTitle: 'Estás en {city} · Lo mejor de hoy', travelClose: 'Quitar el aviso',
+      // «Más planes en Marbella», solo para esa visita (como la app).
+      visitNear: 'Volver a cerca de mí', visitAll: 'Volver a todas las ciudades', visitTo: 'Volver a {city}', visitLabel: 'Viendo {city} solo esta vez',
       searchRecent: 'Lo que buscaste', searchClear: 'Borrar', searchLocal: 'Se guarda solo en este navegador.',
       searchPopular: 'Lo más buscado en {city}', searchPopularHint: 'Lo que más ha buscado la gente esta semana. Sin saber quién.',
       searchRemove: 'Quitar «{q}»',
@@ -984,6 +988,9 @@ function leeEstado(qs) {
     que,
     // «Todas las ciudades» elegido a mano: sin la zona aproximada de la conexión.
     todas: qs.get('todas') === '1',
+    // «Más planes en Marbella» (la ficha): ese municipio solo para esta
+    // visita, sin guardarlo (`?visita=1`, `?visit=1`; ver `enVisita`).
+    visita: (qs.get('visita') || qs.get('visit')) === '1',
     q: (qs.get('q') || '').slice(0, 60),
     city: de('city', 60),
     // Varias categorías (`?categoria=a&categoria=b`, también con comas); `cat`
@@ -1038,6 +1045,12 @@ function leeEstado(qs) {
  * `cat`, esa. `cat: ''` sin `cats` las quita todas. */
 const catsDe = (e) => (Array.isArray(e.cats) && (e.cats.length ? e.cats[0] === e.cat : !e.cat) ? e.cats : e.cat ? [e.cat] : []);
 
+/** ¿Es la visita de «Más planes en Marbella»? Descubre en ese municipio solo
+ * esta vez (Iván, 2026-11-03, revisión 1.6; la app, `ZoneVisit`): «¿Dónde?»
+ * lo enseña, pero lo guardado sigue siendo la zona de siempre, y elegir otra
+ * zona en «¿Dónde?» la acaba. */
+const enVisita = (e) => Boolean(e.visita && e.city && !e.cerca);
+
 /** La dirección de un estado. `soloCompartido`: solo lo que viaja entre
  * Descubre y Explorar (sin búsqueda, vista, mes, día ni página). */
 function query(e, lang, { soloCompartido = false } = {}) {
@@ -1054,6 +1067,9 @@ function query(e, lang, { soloCompartido = false } = {}) {
   if (!soloCompartido && sit) p.set(K.what, en ? 'places' : 'sitios');
   if (!soloCompartido && e.q) p.set('q', e.q);
   if (e.city && !e.cerca) p.set(K.city, e.city);
+  // La visita de «Más planes en …» sigue al cambiar otro filtro; no se
+  // guarda (`guardaFiltros`).
+  if (!soloCompartido && enVisita(e)) p.set(en ? 'visit' : 'visita', '1');
   for (const c of catsDe(e)) p.append(K.cat, c);
   if (e.kind) p.set(K.kind, enIdioma(e.kind, en));
   if (e.abierto) p.set(K.open, '1');
@@ -1107,6 +1123,10 @@ function query(e, lang, { soloCompartido = false } = {}) {
  * - Los enlaces de la propia página (cambiar un filtro, «Quitar filtros»,
  *   «Todas las ciudades») dejan una marca para que su resultado no se pise con
  *   lo guardado (ver /assets/tarjetas.js); tampoco al volver con «Atrás».
+ * - En la visita de «Más planes en …» (`enVisita`), lo demás se guarda, pero
+ *   la zona guardada sigue siendo la de antes (la posición de «Cerca de mí»
+ *   no se alarga): al volver a Descubre sin nada en la dirección, la de
+ *   siempre.
  */
 function guardaFiltros(e, lang, base, explorar = false) {
   const compartido = { es: query(e, 'es', { soloCompartido: true }), en: query(e, 'en', { soloCompartido: true }) };
@@ -1132,7 +1152,7 @@ function guardaFiltros(e, lang, base, explorar = false) {
   if (e.vista === 'map' && e.ambiente) resto.set(K.buzz, '1');
   const vacia = !compartido.es;
   const datos = JSON.stringify({
-    A: compartido, L: lang, v: vacia, r: resto.toString(), b: `${base}/`, g: (e.gustos || []).join(','),
+    A: compartido, L: lang, v: vacia, r: resto.toString(), b: `${base}/`, g: (e.gustos || []).join(','), vi: enVisita(e) ? 1 : 0,
     ...(explorar ? { ex: 1, x: { es: vistaDe('es'), en: vistaDe('en') } } : {}),
   }).replace(/</g, '\\u003c');
   return `<script>(function(d){try{var K='klendar.filtros',X='klendar.explorar',s=sessionStorage,ls=localStorage;
@@ -1148,7 +1168,9 @@ var gq0=g&&g[d.L]?viejo(g[d.L],g.t):'';
 if(d.v&&libre&&gq0){location.replace(conG(d.b+'?'+gq0+(d.r?'&'+d.r:'')+(ex?'&'+ex:'')+location.hash));return;}
 if(ex){location.replace(conG(d.b+'?'+ex+location.hash));return;}
 if(d.ex)ls.setItem(X,JSON.stringify(d.x));
-ls.setItem(K,JSON.stringify({t:Date.now(),es:d.A.es,en:d.A.en}));
+var A=d.A,t=Date.now();
+if(d.vi){var Z=['ciudad','city','lat','lng','km','todas'],o=g||{},vp=Date.now()-(o.t||0)<216e5,f=function(L){var u=new URLSearchParams(A[L]||''),w=new URLSearchParams(o[L]||'');Z.forEach(function(k){u.delete(k);});Z.forEach(function(k){if(!vp&&(k==='lat'||k==='lng'))return;w.getAll(k).forEach(function(v){u.append(k,v);});});return u.toString();};A={es:f('es'),en:f('en')};if(vp&&o.t&&/(^|&)lat=/.test(o[d.L]||''))t=o.t;}
+ls.setItem(K,JSON.stringify({t:t,es:A.es,en:A.en}));
 if(gq!==d.g)location.replace(conG(location.href));}catch(x){}})(${datos});</script>`;
 }
 
@@ -1532,6 +1554,9 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
     const b = { ...e, vista, page: 1, mes: calendario ? mes : '', dia: calendario ? dia : '', ...cambios };
     if ('p' in cambios) b.page = cambios.p;
     if (b.cerca === false) { b.lat = null; b.lng = null; }
+    // Elegir una zona en «¿Dónde?» (también la misma) acaba la visita: esa
+    // sí se guarda.
+    if ('city' in cambios || 'cerca' in cambios || 'todas' in cambios) b.visita = false;
     const s = query(b, lang);
     return `${base}/${s ? `?${s}` : ''}`;
   };
@@ -2154,9 +2179,18 @@ ${GRUPOS_CSS}` : ''}`;
     ? `<div id="viaje" class="feed-aviso" data-aviso="viaje" hidden data-lat="${esc(posUrl(lat))}" data-lng="${esc(posUrl(lng))}"
         data-hoy="${esc(link({ when: 'today' }))}" data-textos="${esc(JSON.stringify({ label: S.travelLabel, title: S.travelTitle, close: S.travelClose }))}"></div>`
     : '';
-  const avisos = viaje
-    ? `<div class="feed-avisos" id="feed-avisos" hidden>${viaje}</div>
-  <script src="/assets/avisos.js?v=2" defer></script>`
+  // La visita de «Más planes en Marbella» (manda más que el de viaje): «Volver
+  // a cerca de mí ›», o a la zona guardada («Volver a Madrid», «Volver a todas
+  // las ciudades»), que solo sabe el navegador (/assets/avisos.js). Lleva a
+  // Descubre sin nada en la dirección, que recupera lo guardado.
+  const visita = descubre && enVisita(e)
+    ? `<div id="visita" class="feed-aviso" data-aviso="visita" hidden data-lang="${en ? 'en' : 'es'}" data-volver="${esc(`${base}/`)}"
+        data-populares="${esc(JSON.stringify(populares))}" data-iconos="${esc(JSON.stringify({ cerca: ic('cerca', 16), ciudad: ic('ciudad', 16), todas: ic('mundo', 16), x: ic('x', 18) }))}"
+        data-textos="${esc(JSON.stringify({ near: S.visitNear, all: S.visitAll, to: S.visitTo, label: S.visitLabel.replace('{city}', e.cityName || PRETTY(city)), close: S.travelClose }))}"></div>`
+    : '';
+  const avisos = visita || viaje
+    ? `<div class="feed-avisos" id="feed-avisos" hidden>${visita}${viaje}</div>
+  <script src="/assets/avisos.js?v=3" defer></script>`
     : '';
   if (descubre) {
     return variaCon(conCookie(html(publicPage({
@@ -2285,6 +2319,7 @@ function feedHtml({ S, en, lang, items, page, paginas, link, barra, final, vacio
     return `<div class="feed-vacio">
     ${cab}
     ${barra}
+    ${avisos}
     ${final}
     </div>
     ${masFormas}`;

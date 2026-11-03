@@ -1435,10 +1435,11 @@ ${traducir(lang, `business:${b.id}`, '')}${ver === 'preguntas' ? `\n${PREGUNTAS_
         ${nResenas > opiniones.length ? `<p><a class="pill" href="${path}?ver=resenas${soloVerificadas ? '&amp;resenas=verificadas' : ''}">${esc(S.seeAll(nResenas))}</a></p>` : ''}` : `<p class="empty">${soloVerificadas ? S.noVerified : S.noReviews}</p>`}
       ${preguntasHtml}
       ${mun
-    // «Más planes en Marbella»: Descubre en ese municipio, como en la app
-    // (queda elegido en «¿Dónde?»). «Qué hacer hoy» y la agenda siguen en
+    // «Más planes en Marbella»: Descubre en ese municipio solo para esa
+    // visita (`visita=1`: «¿Dónde?» lo enseña sin guardarlo), como en la app
+    // (Iván, 2026-11-03, revisión 1.6). «Qué hacer hoy» y la agenda siguen en
     // el nombre bajo el título y en las migas.
-    ? `<p class="mas-planes" data-municipio="${esc(mun.slug)}"><a class="pill" href="${discoverBase(lang)}/?${en ? 'city' : 'ciudad'}=${encodeURIComponent(mun.slug)}">${icono('explorar', 16)} <span>${esc(S.moreIn(mun.name))}</span></a></p>`
+    ? `<p class="mas-planes" data-municipio="${esc(mun.slug)}"><a class="pill" href="${discoverBase(lang)}/?${en ? 'city' : 'ciudad'}=${encodeURIComponent(mun.slug)}&amp;${en ? 'visit' : 'visita'}=1">${icono('explorar', 16)} <span>${esc(S.moreIn(mun.name))}</span></a></p>`
     : city ? `<p class="muted mas-planes">${esc(S.moreInOld(lugar))} <a href="${cityToday}">${esc(S.cityToday)}</a> · <a href="${city}">${esc(S.cityWeek)}</a></p>` : ''}
       ${local.entity_kind === 'public_agenda' ? '' : `<p class="denuncia-pie" data-solo-publico><a href="${cuenta(lang)}#/reclamar/${encodeURIComponent(b.id)}" rel="nofollow">${S.claim}</a></p>`}
     </div>

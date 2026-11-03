@@ -68,14 +68,15 @@ for (const [ruta, destino] of [
 // nombre bajo el título, las migas y «Más planes en …», en los dos idiomas.
 // Las direcciones son las buenas (200, sin 301).
 for (const [ruta, hoy, semana, frase, descubre] of [
-  ['/b/nails-co-madrid', '/hoy/madrid/', '/agenda/madrid/', 'Más planes en Madrid', '/descubre/?ciudad=madrid'],
-  ['/en/b/nails-co-madrid', '/en/today/madrid/', '/en/whats-on/madrid/', 'More plans in Madrid', '/en/discover/?city=madrid'],
+  ['/b/nails-co-madrid', '/hoy/madrid/', '/agenda/madrid/', 'Más planes en Madrid', '/descubre/?ciudad=madrid&visita=1'],
+  ['/en/b/nails-co-madrid', '/en/today/madrid/', '/en/whats-on/madrid/', 'More plans in Madrid', '/en/discover/?city=madrid&visit=1'],
 ]) {
   const h = await texto(ruta);
   check(`${ruta}: el municipio bajo el título enlaza a ${hoy}`, h.includes(`class="neg-muni" href="${hoy}"`));
-  // Como en la app: Descubre en ese municipio, por el slug.
+  // Como en la app: Descubre en ese municipio, por el slug, solo para esa
+  // visita (tools/mas_planes_visita_check.mjs).
   check(`${ruta}: «${frase}» lleva a ${descubre}`,
-    h.includes(`data-municipio="madrid"><a class="pill" href="${descubre}">`) && h.includes(`<span>${frase}</span></a>`));
+    h.includes(`data-municipio="madrid"><a class="pill" href="${descubre.replace('&', '&amp;')}">`) && h.includes(`<span>${frase}</span></a>`));
   check(`${ruta}: las migas, a ${semana}`, h.includes(`<p class="crumbs"><a href="/${ruta.startsWith('/en/') ? 'en/' : ''}">Klendar</a> · <a href="${semana}">Madrid</a>`));
   for (const destino of [hoy, semana, descubre]) {
     const r = await pide(destino);
