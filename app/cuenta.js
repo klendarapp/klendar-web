@@ -2442,7 +2442,7 @@ async function pintaSinLeer() {
   if (!el) return;
   try {
     const n = await sinLeer();
-    if (n) { el.textContent = n > 99 ? '99+' : String(n); el.hidden = false; }
+    if (n) { el.textContent = n > 9 ? '9+' : String(n); el.hidden = false; }
   } catch { /* sin número, sin más */ }
 }
 
