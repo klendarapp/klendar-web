@@ -1,4 +1,4 @@
-// «Dónde ver el partido»: los nombres y las frases, en un solo sitio.
+// «Dónde verlo»: los nombres y las frases, en un solo sitio.
 //
 // Los mismos en la web pública (Pages Functions: `import KE from
 // '../../assets/emisiones.js'`), en «Tu cuenta», en el panel del negocio y en
@@ -16,20 +16,35 @@
   const klLoc = (lang) => (globalThis.KL_LOCALE ? globalThis.KL_LOCALE(lang) : lang === 'en' ? 'en-GB' : 'es-ES');
 
   /** Deportes, en el orden de la base (`broadcast_sports()`). */
-  const DEPORTES = ['football', 'basketball', 'motor', 'tennis', 'combat', 'american_football', 'other'];
+  const DEPORTES = ['football', 'basketball', 'motor', 'tennis', 'handball', 'combat', 'american_football', 'other'];
   const NOMBRES = {
-    es: { football: 'Fútbol', basketball: 'Baloncesto', motor: 'Motor', tennis: 'Tenis', combat: 'Boxeo y MMA', american_football: 'Fútbol americano', other: 'Otros' },
-    en: { football: 'Football', basketball: 'Basketball', motor: 'Motorsport', tennis: 'Tennis', combat: 'Boxing and MMA', american_football: 'American football', other: 'Other' },
+    es: { football: 'Fútbol', basketball: 'Baloncesto', motor: 'Motor', tennis: 'Tenis', handball: 'Balonmano', combat: 'Boxeo y MMA', american_football: 'Fútbol americano', other: 'Otros' },
+    en: { football: 'Football', basketball: 'Basketball', motor: 'Motorsport', tennis: 'Tennis', handball: 'Handball', combat: 'Boxing and MMA', american_football: 'American football', other: 'Other' },
   };
 
-  /** Condiciones de football-data.org: bajo cada lista o detalle con sus
-   * datos, igual en los dos idiomas y con enlace. */
-  const FUENTE = { url: 'https://www.football-data.org/', texto: 'Football data provided by the Football-Data.org API' };
+  /** Las fuentes que piden que se las cite, bajo cada lista o detalle con
+   * sus datos y con enlace: TheSportsDB (la de los horarios desde el
+   * 2026-11-03; sus condiciones: «must mention us as the source») y
+   * football-data.org (mientras quede algo suyo). */
+  const FUENTES = {
+    thesportsdb: { url: 'https://www.thesportsdb.com/', es: 'Datos deportivos: TheSportsDB', en: 'Sports data: TheSportsDB' },
+    'football-data': { url: 'https://www.football-data.org/', es: 'Football data provided by the Football-Data.org API', en: 'Football data provided by the Football-Data.org API' },
+  };
+  /** La de siempre (TheSportsDB): `{ url, texto }`, como antes. */
+  const FUENTE = { url: FUENTES.thesportsdb.url, texto: FUENTES.thesportsdb.es };
+  /** Las citas que tocan para una lista: `[{ url, texto }]`. */
+  const fuentesDe = (lista, lang) => Object.keys(FUENTES)
+    .filter((k) => (lista || []).some((x) => x && x.source === k))
+    .map((k) => ({ url: FUENTES[k].url, texto: klBi(FUENTES[k], lang) }));
 
   const T = {
     es: {
-      title: 'Dónde ver el partido',
-      lead: 'Bares que ponen el fútbol, la F1 y más',
+      title: 'Dónde verlo',
+      lead: 'Bares que ponen el fútbol, el baloncesto, la F1 y más',
+      nearby: 'Lo ponen cerca',
+      more: 'Más partidos',
+      compAll: 'Todas',
+      competition: 'Competición',
       searchPh: 'Equipo, partido o competición',
       search: 'Buscar',
       all: 'Todo',
@@ -61,7 +76,15 @@
       offer: (x) => `Oferta: ${x}`,
       // Panel del negocio.
       tool: 'Partidos que pones',
-      toolLead: 'Marca lo que pongas y saldrá en tu ficha y en «Dónde ver el partido».',
+      toolLead: 'Marca lo que pongas y saldrá en tu ficha y en «Dónde verlo».',
+      alwaysTitle: 'Pones siempre',
+      alwaysHint: 'Se marcan solos al salir. Para dejar de ponerlos, quítalo.',
+      alwaysTeam: (x) => `Poner siempre los de ${x}`,
+      alwaysComp: (x) => `Poner siempre: ${x}`,
+      alwaysRemove: (x) => `Dejar de poner siempre ${x}`,
+      alwaysDone: 'Hecho: se marcarán solos',
+      auto: 'Lo pones siempre',
+      moreOptions: 'Más opciones',
       emptyWeekText: 'Añade lo que vayas a poner y saldrá en tu ficha.',
       thisWeek: 'Esta semana',
       nextWeek: 'La próxima',
@@ -92,8 +115,12 @@
       readOnly: 'Solo el propietario o un encargado puede cambiarlo.',
     },
     en: {
-      title: 'Where to watch the match',
-      lead: 'Bars showing football, F1 and more',
+      title: 'Where to watch',
+      lead: 'Bars showing football, basketball, F1 and more',
+      nearby: 'Showing nearby',
+      more: 'More matches',
+      compAll: 'All',
+      competition: 'Competition',
       searchPh: 'Team, match or competition',
       search: 'Search',
       all: 'All',
@@ -124,7 +151,15 @@
       unfollow: 'Unfollow',
       offer: (x) => `Offer: ${x}`,
       tool: "Matches you're showing",
-      toolLead: 'Tick what you’re showing and it’ll appear on your page and in “Where to watch the match”.',
+      toolLead: 'Tick what you’re showing and it’ll appear on your page and in “Where to watch”.',
+      alwaysTitle: 'You always show',
+      alwaysHint: "They're marked automatically as they come out. Remove it to stop.",
+      alwaysTeam: (x) => `Always show ${x}'s matches`,
+      alwaysComp: (x) => `Always show: ${x}`,
+      alwaysRemove: (x) => `Stop always showing ${x}`,
+      alwaysDone: "Done: they'll be marked automatically",
+      auto: 'You always show this',
+      moreOptions: 'More options',
       emptyWeekText: "Add what you're showing and it'll appear on your page.",
       thisWeek: 'This week',
       nextWeek: 'Next week',
@@ -162,8 +197,8 @@
   const loc = klLoc;
   const KZ = () => globalThis.KlendarZona;
 
-  /** ¿Hay datos de football-data.org? Entonces va la atribución. */
-  const conAtribucion = (lista) => (lista || []).some((x) => x && x.source === 'football-data');
+  /** ¿Hay datos de una fuente que pide que se la cite? */
+  const conAtribucion = (lista) => (lista || []).some((x) => x && FUENTES[x.source]);
 
   /** «AAAA-MM-DD» del partido en esa zona. */
   const dia = (iso, tz) => KZ().dia(iso, tz);
@@ -203,7 +238,7 @@
   const plano = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
   const KlendarEmisiones = {
-    DEPORTES, FUENTE, t, deporte, conAtribucion, dia, hora, etiquetaDia, diaLargo, diaCorto, cuandoCorto, cuandoLargo, plano,
+    DEPORTES, FUENTE, FUENTES, fuentesDe, t, deporte, conAtribucion, dia, hora, etiquetaDia, diaLargo, diaCorto, cuandoCorto, cuandoLargo, plano,
   };
   globalThis.KlendarEmisiones = KlendarEmisiones;
   if (typeof module === 'object' && module && module.exports) module.exports = KlendarEmisiones;

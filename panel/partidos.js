@@ -1,10 +1,14 @@
 /* «Partidos que pones» (grupo Publicar), como «Mi negocio» → «Partidos que
- * pones» en la app (migración 20261201100000_partidos de la app).
+ * pones» en la app (migraciones 20261201100000_partidos y
+ * 20261260100008_deportes_thesportsdb de la app).
  *
  * La semana (esta o la próxima, en la hora del local) con lo de la lista
- * oficial y lo que ha añadido el bar, agrupado por competición y dentro por
- * fecha. «Lo ponemos» marca o quita uno; «Ponerlos todos» / «Quitar todos»,
- * los de una competición. Marcado, «Oferta para el partido»: crear una nueva
+ * oficial (todos los deportes, de TheSportsDB) y lo que ha añadido el bar,
+ * agrupado por competición (en el orden de las ligas) y dentro por fecha,
+ * con buscador, deportes y competiciones. «Lo ponemos» marca o quita uno;
+ * «Ponerlos todos» / «Quitar todos», los de una competición; «⋯» → «Poner
+ * siempre los de <equipo>» / «Poner siempre: <competición>» (se marcan solos
+ * al llegar; arriba, «Pones siempre», con su ✕ para dejarlo). Nada de canal. Marcado, «Oferta para el partido»: crear una nueva
  * (el formulario de oferta flash ya relleno: `#/publicaciones/nueva-flash?
  * partido=<id>`, que al guardar la une al partido), usar una que ya tienes o
  * quitarla. «Añadir otro» (`#/partidos/nuevo`): lo que no está en la lista.
@@ -20,10 +24,11 @@ const KEp = globalThis.KlendarEmisiones;
 const SP = () => KEp.t(I18N.lang);
 /** Lo que se está mirando: la semana (0 esta, 1 la próxima), la búsqueda y
  * el deporte. Se queda al ir y volver del formulario. */
-const PT = { semana: 0, q: '', deporte: '' };
+const PT = { semana: 0, q: '', deporte: '', comp: '' };
 
-/** «Football data provided by the Football-Data.org API» (con sus datos). */
-const atribucionPanel = () => `<p class="pt-fuente"><a href="${KEp.FUENTE.url}" target="_blank" rel="noopener">${esc(KEp.FUENTE.texto)}</a></p>`;
+/** La cita de las fuentes de lo que se ve («Datos deportivos: TheSportsDB»). */
+const atribucionPanel = (lista) => KEp.fuentesDe(lista, I18N.lang)
+  .map((f) => `<p class="pt-fuente"><a href="${f.url}" target="_blank" rel="noopener">${esc(f.texto)}</a></p>`).join('');
 
 /** Lo que dice la base cuando algo no ha ido bien, con las frases de la app. */
 function errorPartido(code) {
@@ -40,27 +45,57 @@ PAGES.partidos = async (v, param) => {
   if (!r || r.ok === false) throw new Error(friendly(r?.error || 'not_authorized'));
   const puede = !!r.can_edit;
   let items = Array.isArray(r.items) ? r.items : [];
+  const reglas = Array.isArray(r.rules) ? r.rules : [];
 
   v.innerHTML = `
     <div class="page-head"><h1>${esc(S.tool)}</h1><span class="spacer"></span>
       ${puede ? `<a class="btn sm" href="#/partidos/nuevo">${esc(S.addAnother)}</a>` : ''}</div>
     <p class="muted" style="margin:-6px 0 14px">${esc(S.toolLead)}</p>
     ${puede ? '' : `<div class="help pt-solo">${esc(S.readOnly)}</div>`}
+    ${reglas.length ? `<section class="card pt-siempre" aria-labelledby="ptSiempreT">
+      <h2 id="ptSiempreT">${esc(S.alwaysTitle)}</h2>
+      <div class="pt-reglas">${reglas.map((g, i) => `<span class="pt-regla"><span>${esc(g.name)}</span>${puede
+        ? `<button type="button" class="pt-regla-x" data-regla="${i}" aria-label="${esc(S.alwaysRemove(g.name))}" title="${esc(S.alwaysRemove(g.name))}">✕</button>` : ''}</span>`).join('')}</div>
+      <p class="muted" style="margin:6px 0 0">${esc(S.alwaysHint)}</p>
+    </section>` : ''}
     <div class="pt-filtros">
       <div class="elige" role="radiogroup" aria-label="${esc(S.thisWeek)}">
         ${[[0, S.thisWeek], [1, S.nextWeek]].map(([n, txt]) => `<label><input type="radio" name="ptSemana" value="${n}" ${PT.semana === n ? 'checked' : ''}><span>${esc(txt)}</span></label>`).join('')}
       </div>
       <label class="f pt-buscar"><span class="sr">${esc(S.searchBiz)}</span><input type="search" id="ptQ" value="${esc(PT.q)}" placeholder="${esc(S.searchBiz)}" maxlength="60" autocomplete="off"></label>
       <div class="elige" id="ptDeportes" role="radiogroup" aria-label="${esc(S.sport)}"></div>
+      <div class="elige" id="ptComps" role="radiogroup" aria-label="${esc(S.competition)}"></div>
     </div>
     <div id="ptLista"></div>`;
 
+  // «Poner siempre…»: se guarda y se vuelve a pedir la semana (ya marcada).
+  const regla = async (body, boton) => {
+    if (boton) boton.disabled = true;
+    try {
+      const res = await rpc('set_business_broadcast_rule', { p_business: BIZ.id, ...body });
+      if (res && res.ok === false) { toast(friendly(res.error), true); return; }
+      if (body.p_on) toast(S.alwaysDone);
+      PAGES.partidos(v);
+    } catch (e) { toast(e.message, true); } finally { if (boton) boton.disabled = false; }
+  };
   const pinta = () => {
     // Los deportes que hay esta semana (solo si hay más de uno).
     const deportes = KEp.DEPORTES.filter((s) => items.some((b) => b.sport === s));
     if (PT.deporte && !deportes.includes(PT.deporte)) PT.deporte = '';
     $('#ptDeportes', v).innerHTML = deportes.length > 1
       ? [['', S.all], ...deportes.map((s) => [s, KEp.deporte(s, lang)])].map(([s, txt]) => `<label><input type="radio" name="ptDep" value="${esc(s)}" ${PT.deporte === s ? 'checked' : ''}><span>${esc(txt)}</span></label>`).join('')
+      : '';
+    // Las competiciones del deporte elegido (o del único que hay), en el
+    // orden de las ligas.
+    const comps = [];
+    for (const b of items) {
+      if ((PT.deporte ? b.sport !== PT.deporte : deportes.length !== 1) || !b.competition_key || comps.some((c) => c.key === b.competition_key)) continue;
+      comps.push({ key: b.competition_key, name: b.competition || '', sort: b.competition_sort ?? 9999 });
+    }
+    comps.sort((a, b) => a.sort - b.sort || a.name.localeCompare(b.name));
+    if (PT.comp && !comps.some((c) => c.key === PT.comp)) PT.comp = '';
+    $('#ptComps', v).innerHTML = comps.length > 1
+      ? [['', S.compAll], ...comps.map((c) => [c.key, c.name])].map(([k, txt]) => `<label><input type="radio" name="ptComp" value="${esc(k)}" ${PT.comp === k ? 'checked' : ''}><span>${esc(txt)}</span></label>`).join('')
       : '';
     const caja = $('#ptLista', v);
     if (!items.length) {
@@ -73,26 +108,32 @@ PAGES.partidos = async (v, param) => {
     }
     const q = KEp.plano(PT.q.trim());
     const vis = items.filter((b) => (!PT.deporte || b.sport === PT.deporte)
+      && (!PT.comp || b.competition_key === PT.comp)
       && (!q || KEp.plano([b.title, b.competition, b.home, b.away].filter(Boolean).join(' ')).includes(q)));
     if (!vis.length) {
       caja.innerHTML = `<div class="card"><p style="margin:0"><b>${esc(S.notFound(PT.q.trim() || KEp.deporte(PT.deporte, lang)))}</b></p><p class="muted" style="margin:4px 0 0">${esc(S.notFoundText)}</p></div>`;
       return;
     }
-    // Por competición (sin ella, el deporte), en el orden del primer partido.
+    // Por competición (sin ella, el deporte).
     const grupos = [];
     for (const b of vis) {
       const nombre = b.competition || KEp.deporte(b.sport, lang);
       let g = grupos.find((x) => x.nombre === nombre);
-      if (!g) { g = { nombre, items: [] }; grupos.push(g); }
+      if (!g) { g = { nombre, sort: b.competition_sort ?? 9999, items: [] }; grupos.push(g); }
       g.items.push(b);
     }
     // Dentro, por fecha.
     for (const g of grupos) g.items.sort((x, y) => String(x.starts_at).localeCompare(String(y.starts_at)));
-    // Las competiciones, en el orden de la app (lo que más se pone primero:
-    // LaLiga, Champions, Premier…); las demás, por nombre.
-    const ORDEN = ['PD', 'CL', 'PL', 'SA', 'BL1', 'FL1', 'PPL', 'DED', 'ELC', 'BSA', 'WC', 'EC'];
-    const rango = (g) => { const i = ORDEN.indexOf(g.items[0]?.competition_code); return i < 0 ? 100 : i; };
-    grupos.sort((a, b) => rango(a) - rango(b) || a.nombre.localeCompare(b.nombre));
+    // Las competiciones, en el orden de las ligas (lo que más se pone
+    // primero: LaLiga, LaLiga Hypermotion, Copa, Champions…); las demás, por
+    // nombre.
+    grupos.sort((a, b) => a.sort - b.sort || a.nombre.localeCompare(b.nombre));
+    const conRegla = new Set(reglas.map((g) => g.team_id || `c:${g.competition}`));
+    // «Poner siempre…» de una fila: sus equipos y su competición.
+    const siempre = (b) => (b.own ? [] : [
+      ...(b.teams || []).filter((t) => t.id && !conRegla.has(t.id)).map((t) => ({ txt: S.alwaysTeam(t.name), team: t.id })),
+      ...(b.competition_key && !conRegla.has(`c:${b.competition_key}`) ? [{ txt: S.alwaysComp(b.competition || ''), comp: b.competition_key }] : []),
+    ]);
     caja.innerHTML = grupos.map((g, gi) => {
       const on = g.items.filter((b) => b.on).length;
       const todos = on === g.items.length;
@@ -105,14 +146,19 @@ PAGES.partidos = async (v, param) => {
             : oferta
               ? (puede ? `<button type="button" class="pt-oferta" data-oferta="${esc(b.id)}">${esc(S.offer(b.offer.title))}</button>` : `<span class="pt-oferta">${esc(S.offer(b.offer.title))}</span>`)
               : (puede ? `<button type="button" class="linkbtn pt-oferta-nueva" data-oferta="${esc(b.id)}">${esc(S.offerFor)}</button>` : '');
+          const ops = puede ? siempre(b) : [];
           return `<div class="pt-fila${b.on ? ' on' : ''}">
             <div class="pt-info"><span class="pt-cuando">${esc(KEp.cuandoCorto(b, TZ, lang))}</span><b>${esc(b.title)}</b>
+              ${b.on && b.auto ? `<small class="muted">${esc(S.auto)}</small>` : ''}
               ${lineaOferta ? `<div class="pt-linea">${lineaOferta}</div>` : ''}</div>
             <label class="pt-chip"><input type="checkbox" data-pon="${esc(b.id)}" ${b.on ? 'checked' : ''} ${puede ? '' : 'disabled'}><span>${esc(S.weShow)}</span></label>
+            ${ops.length ? `<details class="pt-mas"><summary aria-label="${esc(S.moreOptions)}" title="${esc(S.moreOptions)}">⋯</summary>
+              <div class="pt-mas-menu">${ops.map((o) => `<button type="button" class="linkbtn" ${o.team ? `data-siempre-equipo="${esc(o.team)}"` : `data-siempre-comp="${esc(o.comp)}"`}>${esc(o.txt)}</button>`).join('')}</div>
+            </details>` : ''}
           </div>`;
         }).join('')}
       </section>`;
-    }).join('') + (KEp.conAtribucion(vis) ? atribucionPanel() : '');
+    }).join('') + atribucionPanel(vis);
 
     // «Lo ponemos» de uno, y «Ponerlos todos» / «Quitar todos» de una competición.
     const pon = async (ids, alto, boton) => {
@@ -141,6 +187,8 @@ PAGES.partidos = async (v, param) => {
         if (await pon(ids, alto, b)) pinta();
       };
     });
+    $$('[data-siempre-equipo]', caja).forEach((b) => { b.onclick = () => regla({ p_team: b.dataset.siempreEquipo, p_on: true }, b); });
+    $$('[data-siempre-comp]', caja).forEach((b) => { b.onclick = () => regla({ p_competition: b.dataset.siempreComp, p_on: true }, b); });
     $$('[data-oferta]', caja).forEach((b) => {
       b.onclick = async () => {
         const item = items.find((x) => x.id === b.dataset.oferta);
@@ -155,7 +203,15 @@ PAGES.partidos = async (v, param) => {
   };
 
   $$('input[name=ptSemana]', v).forEach((x) => { x.onchange = () => { PT.semana = Number(x.value); PAGES.partidos(v); }; });
-  $('#ptDeportes', v).addEventListener('change', (e) => { if (e.target.name === 'ptDep') { PT.deporte = e.target.value; pinta(); } });
+  $('#ptDeportes', v).addEventListener('change', (e) => { if (e.target.name === 'ptDep') { PT.deporte = e.target.value; PT.comp = ''; pinta(); } });
+  $('#ptComps', v).addEventListener('change', (e) => { if (e.target.name === 'ptComp') { PT.comp = e.target.value; pinta(); } });
+  // «Pones siempre»: el ✕ deja de poner siempre ese equipo o competición.
+  $$('[data-regla]', v).forEach((b) => {
+    b.onclick = () => {
+      const g = reglas[Number(b.dataset.regla)];
+      if (g) regla({ p_team: g.team_id || null, p_competition: g.competition || null, p_on: false }, b);
+    };
+  });
   let espera = null;
   $('#ptQ', v).addEventListener('input', (e) => { clearTimeout(espera); espera = setTimeout(() => { PT.q = e.target.value; pinta(); }, 200); });
   pinta();
@@ -277,7 +333,7 @@ async function nuevoPartido(v) {
       toast(r.existing ? S.existing : S.added);
       // A la semana en la que cae.
       PT.semana = KZ.dia(cuando, TZ) >= KZ.hoy(TZ, 7) ? 1 : 0;
-      PT.q = ''; PT.deporte = '';
+      PT.q = ''; PT.deporte = ''; PT.comp = '';
       location.hash = '#/partidos';
     } catch (err) { $('#ptErr', f).textContent = err.message; $('#ptErr', f).hidden = false; }
   };

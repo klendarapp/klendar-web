@@ -1,8 +1,10 @@
-// «Dónde ver el partido» en la web pública: la lista (/partidos/,
-// /en/matches/), el detalle de un partido (/partidos/<id>) con los bares que
+// «Dónde verlo» en la web pública: la lista (/partidos/, /en/matches/) con
+// todo lo que viene de todos los deportes (arriba lo que ponen los bares de
+// tu zona, «Lo ponen cerca»; debajo, «Más partidos»), con deportes y
+// competiciones; el detalle de un partido (/partidos/<id>) con los bares que
 // lo ponen, la sección «Pone el partido» de la ficha de un bar y la de la
-// búsqueda de Explorar. Lo mismo que la app (especificación de la tanda B;
-// migración 20261201100000_partidos de la app).
+// búsqueda de Explorar. Lo mismo que la app (migraciones
+// 20261201100000_partidos y 20261260100008_deportes_thesportsdb de la app).
 //
 // Como el resto de páginas públicas: se pinta en el servidor, va sin
 // JavaScript (el buscador y los filtros son enlaces y formularios GET) y la
@@ -29,7 +31,10 @@ const PRETTY = (s) => String(s || '').replace(/(^|[\s-])(\p{Ll})/gu, (m, a, b) =
 const plano = (x) => String(x || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
 
 /** Las claves de la dirección en cada idioma (se leen las de los dos). */
-const CLAVES = { es: { city: 'ciudad', sport: 'deporte' }, en: { city: 'city', sport: 'sport' } };
+const CLAVES = {
+  es: { city: 'ciudad', sport: 'deporte', comp: 'competicion' },
+  en: { city: 'city', sport: 'sport', comp: 'competition' },
+};
 
 // Iconos de Material en SVG (las páginas públicas no cargan la fuente).
 const IC = {
@@ -48,11 +53,13 @@ export const ic = (n, s = 18) => `<svg class="ic" viewBox="0 0 24 24" width="${s
 /** El balón (para el acceso de Explorar). */
 export const icPartido = (s = 18) => ic('balon', s);
 
-/** La atribución de football-data.org (obligatoria con sus datos). */
-export const atribucion = () => `<p class="fuente-datos"><a href="${KE.FUENTE.url}" rel="noopener" target="_blank">${esc(KE.FUENTE.texto)}</a></p>`;
+/** La cita de las fuentes de lo que se ve (TheSportsDB la pide: «must
+ * mention us as the source»), con enlace. */
+export const atribucion = (lista, lang) => KE.fuentesDe(lista, lang)
+  .map((f) => `<p class="fuente-datos"><a href="${f.url}" rel="noopener" target="_blank">${esc(f.texto)}</a></p>`).join('');
 
 /** Los estilos de estas piezas (también en la ficha del bar y en Explorar). */
-export const PARTIDOS_CSS = '<link rel="stylesheet" href="/assets/partidos.css?v=3">';
+export const PARTIDOS_CSS = '<link rel="stylesheet" href="/assets/partidos.css?v=4">';
 
 /** Lo personal (Tus equipos, seguir a un equipo o a un artista desde aquí):
  *  solo hace algo con sesión. */
@@ -79,6 +86,7 @@ function leeEstado(qs) {
   const lng = redondea(Number.parseFloat(qs.get('lng') || ''));
   const cerca = Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
   const sport = de('sport', 20);
+  const comp = de('comp', 70).replace(/[^a-z0-9_:\- ]/gi, '');
   // La distancia de los filtros (la de Explorar, `?km=`), solo con «Cerca de
   // mí»; sin ella, la de siempre (5 km).
   const km = Number.parseInt(qs.get('km') || '', 10);
@@ -86,6 +94,7 @@ function leeEstado(qs) {
     q: (qs.get('q') || '').trim().slice(0, 60),
     city: cerca ? '' : de('city', 60),
     sport: KE.DEPORTES.includes(sport) ? sport : '',
+    comp: KE.DEPORTES.includes(sport) ? comp : '',
     cerca, lat: cerca ? lat : null, lng: cerca ? lng : null,
     km: cerca && RADIOS_KM.includes(km) ? km : RADIO_KM,
   };
@@ -114,6 +123,7 @@ function query(e, lang, { sinQ = false, sinDeporte = false } = {}) {
     if (e.km && e.km !== RADIO_KM) p.set('km', String(e.km));
   } else if (e.city) p.set(K.city, e.city);
   if (!sinDeporte && e.sport) p.set(K.sport, e.sport);
+  if (!sinDeporte && e.sport && e.comp) p.set(K.comp, e.comp);
   return p.toString();
 }
 /** Solo la zona (para los enlaces al detalle y a la lista). */
@@ -187,8 +197,9 @@ function filaPartido(b, { lang, S, tz, href }) {
     </a>`;
 }
 
-/** Agrupado por días (Hoy · Mañana · «sábado 11»), en la hora de la zona. */
-function porDias(lista, { lang, S, tz, hrefDe }) {
+/** Agrupado por días (Hoy · Mañana · «sábado 11»), en la hora de la zona.
+ * `h`: el nivel del título de cada día; `pre`: para que los ids no choquen. */
+function porDias(lista, { lang, S, tz, hrefDe, h = 2, pre = 'dia' }) {
   const grupos = [];
   for (const b of lista) {
     const d = KE.dia(b.starts_at, tz);
@@ -197,10 +208,23 @@ function porDias(lista, { lang, S, tz, hrefDe }) {
     g.items.push(b);
   }
   grupos.sort((a, b) => a.d.localeCompare(b.d));
-  return grupos.map((g, i) => `<section class="partidos-dia" aria-labelledby="dia${i}">
-      <h2 id="dia${i}">${esc(g.etiqueta)}</h2>
+  return grupos.map((g, i) => `<section class="partidos-dia" aria-labelledby="${pre}${i}">
+      <h${h} id="${pre}${i}">${esc(g.etiqueta)}</h${h}>
       <div class="partidos-lista">${g.items.map((b) => filaPartido(b, { lang, S, tz, href: hrefDe(b) })).join('')}</div>
     </section>`).join('');
+}
+
+/** «Lo ponen cerca» (lo que pone algún bar de la zona) y «Más partidos» (lo
+ * demás), cada parte por días; si solo hay una, sin su título. */
+function porSecciones(lista, opts) {
+  const con = lista.filter((b) => Number(b.bars) > 0);
+  const sin = lista.filter((b) => !(Number(b.bars) > 0));
+  if (!con.length || !sin.length) return porDias(lista, opts);
+  const { S } = opts;
+  return `<section class="partidos-seccion" aria-labelledby="secCerca"><h2 id="secCerca">${esc(S.nearby)}</h2>
+      ${porDias(con, { ...opts, h: 3, pre: 'cerca' })}</section>
+    <section class="partidos-seccion" aria-labelledby="secMas"><h2 id="secMas">${esc(S.more)}</h2>
+      ${porDias(sin, { ...opts, h: 3, pre: 'mas' })}</section>`;
 }
 
 // ── La lista ───────────────────────────────────────────────────────────────
@@ -215,13 +239,18 @@ export async function partidosPage(url, lang) {
   ]);
   const origen = origenDe(e, ciudadesK);
   const tz = zonaHora(origen);
-  // Sin deporte: así se saben los deportes que hay (los chips) y se filtra aquí.
   const conTexto = e.q.length >= 2;
-  const todos = await rpcAll('where_to_watch', {
-    p_q: conTexto ? e.q : null, ...zonaRpc(e), p_lang: lang, p_limit: 120,
-  });
-  const deportes = KE.DEPORTES.filter((s) => todos.some((b) => b.sport === s));
-  const lista = e.sport ? todos.filter((b) => b.sport === e.sport) : todos;
+  // Todo lo que viene (primero lo que ponen bares) y las competiciones con
+  // algo (de ahí salen los chips de deportes y de competiciones).
+  const [lista, comps] = await Promise.all([
+    rpcAll('where_to_watch', {
+      p_q: conTexto ? e.q : null, p_sport: e.sport || null, p_competition: e.comp || null,
+      ...zonaRpc(e), p_lang: lang, p_limit: 120, p_all: true,
+    }),
+    rpcAll('broadcast_competitions', { p_sport: null, p_lang: lang }).catch(() => []),
+  ]);
+  const deportes = KE.DEPORTES.filter((s) => comps.some((c) => c.sport === s) || lista.some((b) => b.sport === s));
+  const compsDeporte = e.sport ? comps.filter((c) => c.sport === e.sport) : [];
 
   const link = (cambios) => {
     const b = { ...e, ...cambios };
@@ -244,12 +273,19 @@ export async function partidosPage(url, lang) {
   // La fila de filtros: la zona y los deportes que hay (si hay más de uno).
   const chip = (href, label, on) => `<a class="chip${on ? ' on' : ''}" href="${esc(href)}"${on ? ' aria-current="true"' : ''}>${esc(label)}</a>`;
   const chips = deportes.length > 1 || e.sport
-    ? [chip(link({ sport: '' }), S.all, !e.sport), ...deportes.map((s) => chip(link({ sport: s }), KE.deporte(s, lang), e.sport === s))].join('')
+    ? [chip(link({ sport: '', comp: '' }), S.all, !e.sport), ...deportes.map((s) => chip(link({ sport: s, comp: '' }), KE.deporte(s, lang), e.sport === s))].join('')
+    : '';
+  // Con un deporte elegido, sus competiciones («LaLiga», «Champions…»).
+  const chipsComp = compsDeporte.length > 1
+    ? `<div class="barra-filtros partidos-barra partidos-comps" role="group" aria-label="${esc(S.competition)}">
+        ${[chip(link({ comp: '' }), S.compAll, !e.comp), ...compsDeporte.map((c) => chip(link({ comp: c.key }), c.name, e.comp === c.key))].join('')}
+      </div>`
     : '';
   const barra = `<div class="barra-filtros partidos-barra">
     ${zonaMenu(e, lang, ciudades, link)}
     ${chips}
   </div>
+  ${chipsComp}
   <p id="cercaErr" class="aviso-error" role="alert" hidden></p>`;
 
   // «Tus equipos»: sin sesión (la página va en caché), la línea y el botón;
@@ -261,7 +297,7 @@ export async function partidosPage(url, lang) {
 
   let cuerpo;
   if (lista.length) {
-    cuerpo = `${misEquipos}${porDias(lista, { lang, S, tz, hrefDe })}${KE.conAtribucion(lista) ? atribucion() : ''}`;
+    cuerpo = `${misEquipos}${porSecciones(lista, { lang, S, tz, hrefDe })}${atribucion(lista, lang)}`;
   } else if (conTexto) {
     // Búsqueda sin nada: centrada, con salida.
     cuerpo = `<section class="vacio">
@@ -298,7 +334,7 @@ export async function partidosPage(url, lang) {
 
   // Una búsqueda, una zona o un deporte concretos no aportan nada al índice
   // de Google; la página limpia sí.
-  const filtrada = Boolean(e.q || e.city || e.cerca || e.sport);
+  const filtrada = Boolean(e.q || e.city || e.cerca || e.sport || e.comp);
   const migas = [['Klendar', en ? '/en/' : '/'], [S.title, `${base}/`]];
   return html(publicPage({
     lang,
@@ -400,7 +436,7 @@ export async function partidoPage(rawId, url, lang) {
   ${bares.length
     ? `<div class="bares-partido">${bares.map(barHtml).join('')}</div>`
     : `<div class="partido-sin-bares"><p><b>${esc(S.none)}</b></p><p class="muted">${esc(S.detailEmpty)}</p></div>`}
-  ${d.source === 'football-data' ? atribucion() : ''}`;
+  ${atribucion([d], lang)}`;
 
   const n = bares.length;
   const description = `${KE.cuandoLargo(d, tz, lang)}${d.competition ? ` · ${d.competition}` : ''}. ${n ? S.bars(n) : S.none}.`;
@@ -435,7 +471,7 @@ export async function partidosDelBar(businessId, lang, tz) {
         <a href="${base}/${esc(b.id)}">${ic('balon', 18)}<span><b>${esc(b.title)}</b> · ${esc(KE.cuandoCorto(b, tz, lang))}</span></a>
         ${b.offer && isUuid(b.offer.id) ? `<a class="bar-partido-oferta" href="${en ? '/en' : ''}/o/${esc(b.offer.id)}">${ic('oferta', 16)}<span>${esc(S.offer(b.offer.title))}</span></a>` : ''}
       </li>`).join('')}</ul>
-      ${KE.conAtribucion(lista) ? atribucion() : ''}
+      ${atribucion(lista, lang)}
     </section>`;
 }
 
@@ -459,7 +495,7 @@ export async function partidosEnBusqueda({ q, lang, origen, zona, zonaBase }) {
   return `<section class="seccion-partidos" aria-labelledby="secPartidos">
       <div class="seccion-cab"><h2 id="secPartidos">${esc(S.title)}</h2><a href="${esc(`${base}/?${todos}`)}">${esc(S.seeAll)}</a></div>
       <div class="partidos-lista">${conBares.map((b) => filaPartido(b, { lang, S, tz, href: conQs(`${base}/${b.id}`, zq) })).join('')}</div>
-      ${KE.conAtribucion(conBares) ? atribucion() : ''}
+      ${atribucion(conBares, lang)}
     </section>`;
 }
 

@@ -8,7 +8,9 @@ section.partidos-dia, section.pone-partidos, section.seccion-partidos { padding:
 
 /* La lista, por días. */
 .partidos-dia { margin: 0 0 8px; }
-.partidos-dia h2 { font-size: 18px; line-height: 1.3; font-weight: 800; margin: 20px 0 10px; }
+.partidos-dia h2, .partidos-dia h3 { font-size: 18px; line-height: 1.3; font-weight: 800; margin: 20px 0 10px; }
+.partidos-seccion > h2 { font-size: 21px; line-height: 1.25; font-weight: 800; margin: 26px 0 0; }
+.partidos-comps { margin-top: -4px; }
 .partidos-lista { display: grid; gap: 10px; }
 .partido { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 22px; background: var(--glass);
   border: 1px solid var(--glass-border); color: var(--ink); min-width: 0; }

@@ -1,7 +1,11 @@
-/* Administración → «Emisiones» («Dónde ver el partido»; migración
- * 20261201100000_partidos de la app).
+/* Administración → «Emisiones» («Dónde verlo»; migraciones
+ * 20261201100000_partidos y 20261260100008_deportes_thesportsdb de la app).
  *
- * - Próximas: lo de los próximos 14 días de cualquier fuente (football-data.org,
+ * - Ligas: las ligas de TheSportsDB que se importan (`broadcast_leagues`):
+ *   encenderlas o apagarlas, qué trae cada una (temporada, próximos 14 días,
+ *   bares, «Poner siempre», última importación y su fallo) e «Importar esta
+ *   liga».
+ * - Próximas: lo de los próximos 14 días de cualquier fuente (TheSportsDB,
  *   el admin o los bares), con cuántos bares lo ponen; «Editar» (solo lo del
  *   admin o de un bar: lo importado no se edita, se oculta) y «Ocultar» /
  *   «Enseñar».
@@ -21,7 +25,7 @@ const KEa = globalThis.KlendarEmisiones;
 const enA = () => I18N.lang === 'en';
 const FUENTE_NOMBRE = { 'football-data': 'football-data.org', thesportsdb: 'TheSportsDB', admin: 'Admin', business: 'Bares' };
 const fuenteTxt = (s) => I18N.t(FUENTE_NOMBRE[s] || s || '—');
-const EM = { tab: 'proximas', fuente: '', q: '', ocultas: false, qEquipos: '' };
+const EM = { tab: 'ligas', fuente: '', q: '', ocultas: false, qEquipos: '' };
 
 /** «6 oct 6:30» en la hora de Madrid. */
 const cuandoAdmin = (iso) => KZ.fmt(iso, TZ, LOC(), { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).replace(',', '');
@@ -42,7 +46,7 @@ function lineaImportacion(li) {
 
 /** «Importar ahora» / «Comprobar la fuente»: la Edge Function con la sesión
  * del admin (ella comprueba `is_admin`; 429 si hubo otra hace < 2 min). */
-async function importacion(modo) {
+async function importacion(modo, extra = {}) {
   const { data } = await sb.auth.getSession();
   const token = data?.session?.access_token;
   if (!token) throw new Error(window.KL_AUTH_TEXT('sesion', I18N.lang));
@@ -51,7 +55,7 @@ async function importacion(modo) {
     r = await fetch(`${SUPABASE_URL}/functions/v1/broadcasts-import`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, apikey: SUPABASE_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mode: modo }),
+      body: JSON.stringify({ mode: modo, ...extra }),
     });
   } catch { throw new Error(window.KL_AUTH_TEXT('sinRed', I18N.lang)); }
   let j = null;
@@ -62,6 +66,14 @@ async function importacion(modo) {
   if (r.status === 401 || r.status === 403) throw new Error('No tienes permiso para esto.');
   if (!r.ok || !j?.ok) throw new Error(enA() ? "The import didn't work. Try again in a while." : 'La importación no ha funcionado. Prueba otra vez en un rato.');
   return j;
+}
+
+/** Lo que dice «Comprobar la fuente»: TheSportsDB, la ficha de LaLiga (si
+ * la clave vale, su temporada); football-data.org, sus competiciones. */
+function sondeoTxt(x) {
+  const liga = Object.values(x || {}).find((y) => y && Array.isArray(y.leagues))?.leagues?.[0];
+  if (liga) return `${I18N.t('La clave funciona')} · ${liga.strLeague} · ${I18N.t('temporada')} ${liga.strCurrentSeason || '—'}`;
+  return (x?.competitions || []).map((c) => [c.code, c.name].filter(Boolean).join(' · ')).join(', ') || '—';
 }
 
 /** Los campos de «Añadir un evento» / «Editar». */
@@ -107,9 +119,9 @@ async function editaEvento(b) {
 
 PAGES.emisiones = async (v) => {
   const p = params();
-  if (['proximas', 'bares', 'equipos'].includes(p.tab)) EM.tab = p.tab;
-  if (p.fuente != null) EM.fuente = ['football-data', 'admin', 'business'].includes(p.fuente) ? p.fuente : '';
-  const aUrl = () => ponUrl('emisiones', { tab: EM.tab === 'proximas' ? null : EM.tab, fuente: EM.tab === 'proximas' && EM.fuente ? EM.fuente : null });
+  if (['ligas', 'proximas', 'bares', 'equipos'].includes(p.tab)) EM.tab = p.tab;
+  if (p.fuente != null) EM.fuente = ['thesportsdb', 'football-data', 'admin', 'business'].includes(p.fuente) ? p.fuente : '';
+  const aUrl = () => ponUrl('emisiones', { tab: EM.tab === 'ligas' ? null : EM.tab, fuente: EM.tab === 'proximas' && EM.fuente ? EM.fuente : null });
   aUrl();
   v.innerHTML = `
     <div class="page-head"><h1>Emisiones</h1><span class="spacer"></span>
@@ -117,25 +129,78 @@ PAGES.emisiones = async (v) => {
       <button class="btn sm" type="button" id="emImportar">Importar ahora</button>
       <button class="btn sm" type="button" id="emSondear">Comprobar la fuente</button></div>
     ${helpBox('¿Qué hago aquí?', enA()
-    ? `<p>Everything for “Where to watch the match”. Football comes in automatically from <b>football-data.org</b> every day (and every two hours during the day for kick-off changes). Add here what doesn't come in on its own (Eurovision, the Super Bowl, F1, ACB…): with its teams or participants, people can follow them and get notified. What comes from the provider isn't edited: hide it. In <b>From bars</b>, what bars have added by hand: if several are showing the same thing, move it to the official list or merge it with the official one. In <b>Teams</b>, aliases (“Atleti”, “Barça”) so they can be found by those names too.</p>`
-    : '<p>Todo lo de «Dónde ver el partido». El fútbol llega solo de <b>football-data.org</b> cada día (y cada dos horas de día, por los cambios de hora). Aquí se añade lo que no llega solo (Eurovisión, la Super Bowl, la F1, la ACB…): con sus equipos o participantes, la gente los puede seguir y recibir el aviso. Lo que llega del proveedor no se edita: se oculta. En <b>De los bares</b>, lo que los bares han añadido a mano: si varios ponen lo mismo, pásalo a la lista oficial o fusiónalo con el oficial. En <b>Equipos</b>, los alias («Atleti», «Barça») para que se encuentren también así.</p>')}
+    ? `<p>Everything for “Where to watch”. Every sport comes in automatically from <b>TheSportsDB</b> every day (and every two hours during the day for time changes), league by league: in <b>Leagues</b> you turn them on or off and see what each one brings. TV channels aren't stored: what matters is whether the bar is showing it. Add here what doesn't come in on its own (Eurovision, tennis finals, the Super Bowl…): with its teams or participants, people can follow them and get notified. What comes from the provider isn't edited: hide it. In <b>From bars</b>, what bars have added by hand: if several are showing the same thing, move it to the official list or merge it with the official one. In <b>Teams</b>, aliases (“Atleti”, “Barça”) so they can be found by those names too.</p>`
+    : '<p>Todo lo de «Dónde verlo». Todos los deportes llegan solos de <b>TheSportsDB</b> cada día (y cada dos horas de día, por los cambios de hora), liga a liga: en <b>Ligas</b> se encienden o se apagan y se ve qué trae cada una. El canal de TV no se guarda: lo que importa es si el bar lo pone. Aquí se añade lo que no llega solo (Eurovisión, las finales de tenis, la Super Bowl…): con sus equipos o participantes, la gente los puede seguir y recibir el aviso. Lo que llega del proveedor no se edita: se oculta. En <b>De los bares</b>, lo que los bares han añadido a mano: si varios ponen lo mismo, pásalo a la lista oficial o fusiónalo con el oficial. En <b>Equipos</b>, los alias («Atleti», «Barça») para que se encuentren también así.</p>')}
     <p class="muted small" id="emImport"></p>
-    <div class="tabs">${[['proximas', 'Próximas'], ['bares', 'De los bares'], ['equipos', 'Equipos']].map((t) => `<button type="button" data-t="${t[0]}" class="${EM.tab === t[0] ? 'on' : ''}" aria-pressed="${EM.tab === t[0]}">${t[1]}</button>`).join('')}</div>
+    <div class="tabs">${[['ligas', 'Ligas'], ['proximas', 'Próximas'], ['bares', 'De los bares'], ['equipos', 'Equipos']].map((t) => `<button type="button" data-t="${t[0]}" class="${EM.tab === t[0] ? 'on' : ''}" aria-pressed="${EM.tab === t[0]}">${t[1]}</button>`).join('')}</div>
     <div id="tabview"></div>`;
 
   const load = async () => {
     const tv = $('#tabview', v);
     tv.innerHTML = '<div class="loading">Cargando…</div>';
     I18N.translate(tv);
-    if (EM.tab === 'proximas') await proximas(tv);
+    if (EM.tab === 'ligas') await ligas(tv);
+    else if (EM.tab === 'proximas') await proximas(tv);
     else if (EM.tab === 'bares') await deLosBares(tv);
     else await equipos(tv);
     I18N.translate(tv);
   };
 
+  async function ligas(tv) {
+    const [rows, r] = await Promise.all([
+      rpc('admin_broadcast_leagues'),
+      rpc('admin_broadcasts', { p_days: 1, p_source: 'admin' }).catch(() => null),
+    ]);
+    if (r) $('#emImport', v).textContent = lineaImportacion(r.last_import);
+    const lang = I18N.lang;
+    const lista = rows || [];
+    const nOn = lista.filter((x) => x.enabled).length;
+    tv.innerHTML = `<p class="muted small">${esc(enA() ? `${nOn} of ${lista.length} leagues on. Every import asks TheSportsDB once or twice per league on (100 requests per minute in the plan).` : `${nOn} de ${lista.length} ligas encendidas. Cada importación pide a TheSportsDB una o dos veces por liga encendida (100 peticiones por minuto en el plan).`)}</p>
+      <div id="list"></div>`;
+    $('#list', tv).innerHTML = table({ cols: [
+      { h: 'Liga', r: (x) => `<span class="title">${esc(enA() ? x.name_en : x.name)}<span class="sub">${esc([KEa.deporte(x.sport, lang), x.season, x.note].filter(Boolean).join(' · '))}</span></span>` },
+      { h: 'Encendida', r: (x) => `<label class="f check" style="grid-auto-flow:column;align-items:center"><input type="checkbox" data-liga="${esc(x.id)}" ${x.enabled ? 'checked' : ''} aria-label="${esc(`${I18N.t('Encendida')}: ${x.name}`)}"></label>` },
+      { h: 'Próximos 14 días', num: true, r: (x) => fmtNum(x.upcoming) },
+      { h: 'Bares', num: true, r: (x) => fmtNum(x.bars) },
+      { h: 'Poner siempre', num: true, r: (x) => fmtNum(x.rules) },
+      { h: 'Última importación', r: (x) => (x.last_run_at
+        ? `<span class="nowrap">${esc(cuandoAdmin(x.last_run_at))}</span><span class="sub">${esc(x.last_error
+          ? (x.last_error === 'sin_temporada' ? I18N.t('Sin temporada en curso') : `${I18N.t('Falló')}: ${x.last_error}`)
+          : (enA() ? `${fmtNum(x.last_items)} matches` : `${fmtNum(x.last_items)} partidos`))}</span>`
+        : '—') },
+      { h: '', r: (x) => (x.enabled ? `<button class="btn sm ghost" type="button" data-importa="${esc(x.id)}">Importar esta liga</button>` : '') },
+    ], rows: lista, empty: 'Ninguna liga.' });
+    $$('[data-liga]', tv).forEach((c) => {
+      c.onchange = async () => {
+        const x = lista.find((y) => y.id === c.dataset.liga);
+        if (!c.checked && !await confirmDlg(enA() ? `Turn off “${x.name_en}”` : `Apagar «${x.name}»`,
+          esc(enA() ? "It won't be imported any more. What hasn't started and no bar is showing disappears; what bars are showing stays." : 'Ya no se importará. Lo que no ha empezado y no pone ningún bar desaparece; lo que ponen los bares se queda.'),
+          { submit: enA() ? 'Turn off' : 'Apagar' })) { c.checked = true; return; }
+        c.disabled = true;
+        try {
+          const res = await rpc('admin_set_broadcast_league', { p_id: c.dataset.liga, p_enabled: c.checked });
+          if (res?.ok === false) { toast(ERR_EVENTO[res.error] || 'No se ha podido completar. Prueba otra vez.', true); c.checked = !c.checked; return; }
+          toast(c.checked ? I18N.t('Encendida: llegará con la próxima importación («Importar esta liga» para ya).') : I18N.t('Apagada'));
+          load();
+        } catch (e) { toast(e.message, true); c.checked = !c.checked; } finally { c.disabled = false; }
+      };
+    });
+    $$('[data-importa]', tv).forEach((btn) => {
+      btn.onclick = () => esperando(btn, async () => {
+        try {
+          const j = await importacion('daily', { league: btn.dataset.importa });
+          const x = j.results?.thesportsdb || {};
+          toast(x.error ? x.error : (enA() ? `${fmtNum(x.items)} matches (${fmtNum(x.inserted)} new, ${fmtNum(x.updated)} updated)` : `${fmtNum(x.items)} partidos (${fmtNum(x.inserted)} nuevos, ${fmtNum(x.updated)} actualizados)`), Boolean(x.error));
+          load();
+        } catch (e) { toast(e.message, true); }
+      });
+    });
+    I18N.translate(tv);
+  }
+
   async function proximas(tv) {
     tv.innerHTML = `<div class="toolbar">
-        <select id="emFuente" aria-label="${esc(I18N.t('Fuente'))}">${[['', 'Todas'], ['football-data', 'football-data.org'], ['admin', 'Admin'], ['business', 'Bares']].map((o) => `<option value="${o[0]}" ${EM.fuente === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
+        <select id="emFuente" aria-label="${esc(I18N.t('Fuente'))}">${[['', 'Todas'], ['thesportsdb', 'TheSportsDB'], ['admin', 'Admin'], ['business', 'Bares']].map((o) => `<option value="${o[0]}" ${EM.fuente === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
         <input class="grow" type="search" id="emQ" value="${esc(EM.q)}" placeholder="Buscar: equipo, partido o competición" aria-label="Buscar: equipo, partido o competición">
         <label class="f check" style="grid-auto-flow:column;align-items:center"><input type="checkbox" id="emOcultas" ${EM.ocultas ? 'checked' : ''}><span>Ver ocultas</span></label>
       </div><div id="list"><div class="loading">Cargando…</div></div>`;
@@ -251,11 +316,11 @@ PAGES.emisiones = async (v) => {
   $('#emImportar', v).onclick = (e) => esperando(e.currentTarget, async () => {
     try {
       const j = await importacion('daily');
-      const partes = Object.entries(j.results || {}).map(([fuente, x]) => (x?.error
+      const partes = Object.entries(j.results || {}).filter(([, x]) => x && typeof x === 'object').map(([fuente, x]) => (x?.error
         ? `${fuenteTxt(fuente)}: ${x.error}`
         : (enA() ? `${fuenteTxt(fuente)}: ${fmtNum(x.items)} matches (${fmtNum(x.inserted)} new, ${fmtNum(x.updated)} updated)`
           : `${fuenteTxt(fuente)}: ${fmtNum(x.items)} partidos (${fmtNum(x.inserted)} nuevos, ${fmtNum(x.updated)} actualizados)`)));
-      toast(partes.join(' · ') || 'Hecho', Object.values(j.results || {}).some((x) => x?.error));
+      toast(partes.join(' · ') || 'Hecho', Object.values(j.results || {}).some((x) => x && typeof x === 'object' && x.error));
       load();
     } catch (err) { toast(err.message, true); }
   });
@@ -264,7 +329,7 @@ PAGES.emisiones = async (v) => {
       const j = await importacion('probe');
       const html = Object.entries(j.probe || {}).map(([fuente, x]) => `<p><b>${esc(fuenteTxt(fuente))}</b><br>${x?.error
         ? `<span class="err">${esc(x.error === 'sin_clave' ? I18N.t('Falta la clave del proveedor en las Edge Functions.') : x.error)}</span>`
-        : esc((x?.competitions || []).map((c) => [c.code, c.name].filter(Boolean).join(' · ')).join(', ') || '—')}</p>`).join('');
+        : esc(sondeoTxt(x))}</p>`).join('');
       await modal({ title: 'Comprobar la fuente', intro: html || esc(I18N.t('Ningún proveedor activo.')), submit: 'Cerrar' });
     } catch (err) { toast(err.message, true); }
   });

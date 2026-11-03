@@ -31,3 +31,23 @@ button.pt-oferta:hover { text-decoration: underline; text-underline-offset: 3px;
 .pt-fuente { font-size: 12px; color: var(--ink-2); margin: 14px 0 0; }
 .pt-fuente a { color: var(--ink-2); text-decoration: underline; text-underline-offset: 2px; }
 .pt-nuevo { max-width: 640px; display: grid; gap: 14px; }
+
+/* «Pones siempre» (las reglas) y el «⋯» de cada fila («Poner siempre…»). */
+.pt-siempre { padding: 14px 18px; }
+.pt-siempre h2 { font-size: 16px; margin: 0 0 8px; }
+.pt-reglas { display: flex; flex-wrap: wrap; gap: 8px; }
+.pt-regla { display: inline-flex; align-items: center; gap: 4px; min-height: 36px; padding: 4px 6px 4px 14px; border-radius: 999px;
+  border: 1px solid var(--glass-border); background: var(--surface); font-weight: 600; }
+.pt-regla-x { border: 0; background: transparent; color: var(--ink-2); width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 14px; }
+.pt-regla-x:hover, .pt-regla-x:focus-visible { background: var(--glass-border); color: var(--ink); }
+.pt-mas { position: relative; flex: none; }
+.pt-mas summary { list-style: none; cursor: pointer; width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%;
+  color: var(--ink-2); font-size: 20px; line-height: 1; }
+.pt-mas summary::-webkit-details-marker { display: none; }
+.pt-mas summary:hover, .pt-mas[open] summary, .pt-mas summary:focus-visible { background: var(--glass-border); color: var(--ink); }
+.pt-mas-menu { position: absolute; right: 0; top: 44px; z-index: 5; min-width: 240px; max-width: min(320px, 80vw); padding: 6px;
+  border-radius: 14px; border: 1px solid var(--glass-border); background: var(--surface); box-shadow: 0 8px 24px rgba(0,0,0,.14);
+  display: flex; flex-direction: column; }
+.pt-mas-menu .linkbtn { text-align: left; padding: 10px 12px; border-radius: 10px; text-decoration: none; }
+.pt-mas-menu .linkbtn:hover, .pt-mas-menu .linkbtn:focus-visible { background: var(--glass-border); }
+.pt-info small.muted { display: block; font-size: 12px; margin-top: 2px; }
