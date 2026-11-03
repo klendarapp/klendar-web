@@ -22,7 +22,10 @@ import { fileURLToPath } from 'node:url';
 
 const { chromium, webkit } = createRequire(import.meta.url)(process.env.PW || 'playwright');
 
-const OUT = process.env.OUT || '.';
+// Las capturas, en tools/out/ (git las ignora): en la raíz se publicaban
+// en klendar.app (revisión del 3-11-2026, 5.4).
+const OUT = process.env.OUT || 'tools/out';
+(await import('node:fs')).mkdirSync(OUT, { recursive: true });
 const FICHA_PORT = Number(process.env.FICHA_PORT || 8862);
 const FALSO_PORT = Number(process.env.FALSO_PORT || 8863);
 const REF = 'dpbbtgwxrlqlplbrtjuq';

@@ -2509,7 +2509,7 @@ RUTAS.gustos = async (_p, params) => {
         <div class="campo-cat"><p class="etq">${esc(t('Categorías'))} <small id="g-n" aria-live="polite"></small></p><div id="cats-gustos"></div></div>
         <div class="campo-muni"><p class="etq" id="g-ciudad-t">${esc(t('Tu ciudad'))} <small>${esc(t('Si abres Klendar lejos de ella, te enseñamos lo mejor de donde estés. No guardamos dónde estás.'))}</small></p>
           <p class="muni-actual"><strong id="g-ciudad" aria-live="polite"></strong></p>
-          <div class="muni-busca" data-muni-busca data-muni-nada="${esc(t('No encontramos ese municipio. Prueba con otro nombre.'))}" role="search" aria-labelledby="g-ciudad-t">
+          <div class="muni-busca" data-muni-busca data-muni-nada="${esc(t('No encontramos ese municipio. Prueba con otro nombre.'))}" data-muni-error="${esc(t('No hay conexión. Revisa tu internet y vuelve a probar.'))}" role="search" aria-labelledby="g-ciudad-t">
             <label class="buscador-campo muni-campo"><span class="sr">${esc(t('Busca tu municipio'))}</span>
               <input type="search" placeholder="${esc(t('Busca tu municipio'))}" autocomplete="off" enterkeyhint="search" maxlength="60"></label>
             <div data-muni-res aria-live="polite"></div>
@@ -2557,7 +2557,7 @@ RUTAS.gustos = async (_p, params) => {
     KlendarMunicipios.activa(caja);
     KlendarMunicipios.busca('').then((l) => {
       const pop = $('#g-populares');
-      if (!pop) return;
+      if (!pop || !l) return;
       pop.innerHTML = l.map((m, i) => `<button type="button" class="op" data-pop="${i}">${esc(m.name)}</button>`).join('');
       pop.querySelectorAll('[data-pop]').forEach((b) => b.addEventListener('click', () => elige(l[Number(b.dataset.pop)])));
     });

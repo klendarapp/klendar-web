@@ -16,7 +16,10 @@ import { mkdirSync } from 'node:fs';
 const { chromium, webkit } = createRequire(import.meta.url)(process.env.PW || 'playwright');
 const PORT = Number(process.env.PORT || 8871);
 const BASE = `http://localhost:${PORT}`;
-const OUT = process.env.OUT || '.';
+// Las capturas, en tools/out/ (git las ignora): en la raíz se publicaban
+// en klendar.app (revisión del 3-11-2026, 5.4).
+const OUT = process.env.OUT || 'tools/out';
+(await import('node:fs')).mkdirSync(OUT, { recursive: true });
 mkdirSync(OUT, { recursive: true });
 let fallos = 0;
 const ok = (c, m) => { if (!c) { fallos++; console.log('FALLA:', m); } else console.log('ok:', m); };

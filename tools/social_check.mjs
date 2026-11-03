@@ -25,7 +25,10 @@ import { fileURLToPath } from 'node:url';
 const { chromium, webkit } = createRequire(import.meta.url)(process.env.PW || 'playwright');
 
 const BASE = process.env.BASE || 'http://localhost:8792';
-const OUT = process.env.OUT || '.';
+// Las capturas, en tools/out/ (git las ignora): en la raíz se publicaban
+// en klendar.app (revisión del 3-11-2026, 5.4).
+const OUT = process.env.OUT || 'tools/out';
+(await import('node:fs')).mkdirSync(OUT, { recursive: true });
 const REF = 'dpbbtgwxrlqlplbrtjuq';
 const SUPA = `https://${REF}.supabase.co`;
 const U = '0e7717e0-0000-4000-8000-0000000097c1';

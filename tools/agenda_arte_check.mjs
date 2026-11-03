@@ -13,7 +13,10 @@ const { chromium, webkit } = createRequire(import.meta.url)(process.env.PW || 'p
 
 const BASE = process.env.BASE || 'http://localhost:8791';
 const OFFER = process.env.OFFER;
-const OUT = process.env.OUT || '.';
+// Las capturas, en tools/out/ (git las ignora): en la raíz se publicaban
+// en klendar.app (revisión del 3-11-2026, 5.4).
+const OUT = process.env.OUT || 'tools/out';
+(await import('node:fs')).mkdirSync(OUT, { recursive: true });
 let fallos = 0;
 const ok = (c, m) => { if (!c) { fallos++; console.log('FALLO:', m); } else console.log('ok:', m); };
 const GENERICA = 'img[src*="/business-images/agenda/"], video[poster*="/business-images/agenda/"]';

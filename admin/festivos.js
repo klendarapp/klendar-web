@@ -85,7 +85,9 @@ PAGES.festivos = async (v, param) => {
   const elegido = festMuniElegido();
   const [d, sel] = await Promise.all([
     rpc('admin_holidays', { p_year: anio }),
-    elegido ? rpc('admin_holiday_place', { p_place: elegido, p_year: anio }).catch((e) => { if (e?.obsoleta) throw e; return null; }) : null,
+    // Un fallo de red no es «no está en la lista oficial» (revisión del
+    // 3-11-2026, 5.7): se dice y se puede reintentar.
+    elegido ? rpc('admin_holiday_place', { p_place: elegido, p_year: anio }).catch((e) => { if (e?.obsoleta) throw e; return { ok: false, fallo: true }; }) : null,
   ]);
   const lista = d.holidays || [];
   const ciudades = d.cities || [];
@@ -144,7 +146,11 @@ PAGES.festivos = async (v, param) => {
   const elegidoEs = (c) => lugar && (lugar.city_id === c.id);
   const lugarNombre = lugar ? (lugar.city_id ? lugar.name : festMuniNombre(lugar.name, lugar.province)) : '';
   const lugarObj = lugar ? { id: lugar.key, nombre: lugarNombre, days: selDias, bulletin: sel.bulletin } : null;
-  const panelLugar = !elegido ? '' : !lugar
+  const panelLugar = !elegido ? '' : sel?.fallo
+    ? `<div class="fest-lugar"><p class="err" style="margin:0" role="alert">${esc(en ? "It couldn't be loaded. Try again." : 'No se ha podido cargar. Prueba otra vez.')}</p>
+        <p style="margin:8px 0 0"><button type="button" class="btn sm" data-fest-reintenta>${ms('refresh')}${en ? 'Try again' : 'Reintentar'}</button>
+        <a class="btn sm ghost" href="#/festivos/${anio}">${ms('close')}${en ? 'Close' : 'Cerrar'}</a></p></div>`
+    : !lugar
     ? `<div class="fest-lugar"><p class="err" style="margin:0">${esc(en ? 'That town isn’t in the official list.' : 'Ese municipio no está en la lista oficial.')}</p>
         <p style="margin:8px 0 0"><a class="btn sm ghost" href="#/festivos/${anio}">${ms('close')}${en ? 'Close' : 'Cerrar'}</a></p></div>`
     : `<div class="fest-lugar" id="festLugar">
@@ -305,6 +311,7 @@ PAGES.festivos = async (v, param) => {
 
   // El buscador: cualquier municipio de España, sin tildes ni mayúsculas
   // (`search_municipalities`); cada resultado con su provincia.
+  $('[data-fest-reintenta]', v)?.addEventListener('click', () => PAGES.festivos(v, param));
   const q = $('#festMuniQ', v);
   const res = $('#festMuniRes', v);
   const pop = $('#festPop', v);
@@ -313,6 +320,11 @@ PAGES.festivos = async (v, param) => {
   const pintaRes = (l, texto) => {
     pop.hidden = !!texto;
     if (!texto) { res.innerHTML = ''; return; }
+    // Sin respuesta (sin red): se dice; «Ningún municipio» sería mentira.
+    if (l === null) {
+      res.innerHTML = `<p class="err small" style="margin:6px 2px" role="alert">${esc(en ? "It couldn't be loaded. Try again." : 'No se ha podido cargar. Prueba otra vez.')}</p>`;
+      return;
+    }
     res.innerHTML = l.length
       ? l.map((m) => `<a class="fest-op" role="listitem" href="#/festivos/${anio}?m=${encodeURIComponent(m.slug)}"><span class="title">${esc(m.name)}</span><span class="sub">${esc(m.province || '')}${m.popular ? ` · ${en ? 'Klendar city' : 'Ciudad de Klendar'}` : ''}</span></a>`).join('')
       : `<p class="muted small" style="margin:6px 2px">${esc(en ? 'No town with that name.' : 'Ningún municipio con ese nombre.')}</p>`;
@@ -324,8 +336,8 @@ PAGES.festivos = async (v, param) => {
       const yo = ++pide;
       if (!texto) { pintaRes([], ''); return; }
       let l = [];
-      try { l = await rpc('search_municipalities', { p_q: texto.slice(0, 60), p_limit: 8 }); } catch { l = []; }
-      if (yo === pide) pintaRes(Array.isArray(l) ? l : [], texto);
+      try { l = await rpc('search_municipalities', { p_q: texto.slice(0, 60), p_limit: 8 }); } catch { l = null; }
+      if (yo === pide) pintaRes(l === null ? null : Array.isArray(l) ? l : [], texto);
     }, 250);
   });
   // Intro: el primero.

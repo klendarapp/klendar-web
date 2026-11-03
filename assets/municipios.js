@@ -39,8 +39,11 @@
         method: 'POST',
         headers: { apikey: e.key, 'Content-Type': 'application/json' },
         body: JSON.stringify(body || {}),
-      }).then(function (r) { return r.ok && r.status !== 204 ? r.json() : null; });
-    }).catch(function () { return null; });
+      }).then(function (r) {
+        if (!r.ok) throw new Error(fn + ': ' + r.status);
+        return r.status !== 204 ? r.json() : null;
+      });
+    });
   }
   var esc = function (s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
@@ -48,18 +51,28 @@
     });
   };
 
+  // Lo que contestó la base, por texto (como mucho 40). Un fallo (sin red,
+  // la función aún no está) no se guarda y da `null`, no «no existe»:
+  // antes, «No encontramos ese municipio» hasta recargar (revisión del
+  // 3-11-2026, 5.1).
   var cache = {};
+  var enCache = [];
   function busca(q) {
     var k = String(q || '').trim().slice(0, 60);
     if (!cache[k]) {
       cache[k] = rpc('search_municipalities', { p_q: k, p_limit: 8 })
-        .then(function (l) { return Array.isArray(l) ? l : []; });
+        .then(function (l) { return Array.isArray(l) ? l : []; }, function () {
+          delete cache[k];
+          return null;
+        });
+      enCache.push(k);
+      if (enCache.length > 40) delete cache[enCache.shift()];
     }
     return cache[k];
   }
   function aqui(lat, lng) {
     return rpc('municipality_here', { p_lat: Number(lat), p_lng: Number(lng) })
-      .then(function (m) { return m && m.slug ? m : null; });
+      .then(function (m) { return m && m.slug ? m : null; }, function () { return null; });
   }
 
   function activa(caja) {
@@ -71,6 +84,7 @@
     if (!campo || !res) return;
     var href = caja.dataset.muniHref || '';
     var nada = caja.dataset.muniNada || '';
+    var sinRed = caja.dataset.muniError || '';
     var pide = 0;
     var t = null;
     var pinta = function (lista, q) {
@@ -80,6 +94,10 @@
         return;
       }
       if (sin) sin.hidden = true;
+      if (lista === null) {
+        res.innerHTML = '<p class="menu-nota" role="alert">' + esc(sinRed || nada) + '</p>';
+        return;
+      }
       if (!lista.length) {
         res.innerHTML = '<p class="menu-nota">' + esc(nada) + '</p>';
         return;

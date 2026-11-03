@@ -154,15 +154,15 @@ function planEstado(sub, bill, st, pendiente = null) {
       : conBloqueo
         ? bi(`Prueba con todo hasta el ${fin}, sin tarjeta y sin renovación automática. Para seguir después, paga el plan; si no, tu negocio quedará bloqueado (no se borra nada).`,
           `Everything included until ${fin}, no card and no automatic renewal. To carry on afterwards, pay for the plan; otherwise your business will be blocked (nothing is deleted).`)
-        : bi(`Prueba con todo hasta el ${fin}, sin tarjeta y sin renovación automática. Mientras tu ciudad arranca, sigues gratis.`,
-          `Everything included until ${fin}, no card and no automatic renewal. While your city is launching, it stays free.`)];
+        : bi(`Prueba con todo hasta el ${fin}, sin tarjeta y sin renovación automática. Mientras Klendar arranca en tu provincia, sigues gratis.`,
+          `Everything included until ${fin}, no card and no automatic renewal. While Klendar is launching in your province, it stays free.`)];
   }
   if (sub.plan_slug === 'free') {
     return ['dim', bi('GRATIS', 'FREE'), conBloqueo && fin
       ? bi(`Gratis de lanzamiento hasta el ${fin}. Para seguir después, paga el plan; si no, tu negocio quedará bloqueado (no se borra nada).`,
         `Free launch period until ${fin}. To carry on afterwards, pay for the plan; otherwise your business will be blocked (nothing is deleted).`)
-      : bi('Gratis mientras tu ciudad arranca, sin límite de publicaciones. Te avisaremos con un mes de antelación antes de cobrar.',
-        'Free while your city is launching, with no limit on publications. We’ll give you a month’s notice before charging.')];
+      : bi('Gratis mientras Klendar arranca en tu provincia, sin límite de publicaciones. Te avisaremos con un mes de antelación antes de cobrar.',
+        'Free while Klendar is launching in your province, with no limit on publications. We’ll give you a month’s notice before charging.')];
   }
   return ['ok', bi('ACTIVO', 'ACTIVE'), st ? bi('Al día. Sin permanencia y sin comisión por canje.', 'Up to date. No minimum term and no commission per redemption.')
     : bi('Al día, con pago por transferencia. Sin permanencia y sin comisión por canje.', 'Up to date, paid by bank transfer. No minimum term and no commission per redemption.')];

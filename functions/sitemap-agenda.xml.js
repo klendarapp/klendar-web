@@ -14,32 +14,48 @@ export async function onRequestGet(ctx) {
   configure(ctx.env);
   // Con los datos de prueba de dev, nada que indexar (ver datosDePrueba).
   if (datosDePrueba()) return sitemapVacio();
-  const cities = (await rpcAll('public_cities', {})).filter((c) => c.city);
-  const collections = await rpcAll('public_collections', {});
+  // Todo de una vez (`public_sitemap_places`, migración 20261260100060 de la
+  // app): cada municipio con sus categorías con algo y si hay planes con
+  // niños. Antes era una llamada por municipio y, con el plan gratis de
+  // Cloudflare (50 subpeticiones), fallaba entero a partir de unos 48
+  // (revisión del 3-11-2026, 5.5). Si la base aún no la tiene (prod antes
+  // de su migración), lo de antes, con un tope para no pasarse.
+  const [lugares, collections] = await Promise.all([
+    rpcAll('public_sitemap_places', {}).then((l) => ({ l }), async () => {
+      const cities = (await rpcAll('public_cities', {})).filter((c) => c.city).slice(0, 40);
+      const l = await Promise.all(cities.map(async (c) => ({
+        city: c.city, slug: c.slug, kids: true,
+        cats: (await rpcAll('public_categories', { p_city: c.slug || c.city }).catch(() => [])).map((k) => k.slug),
+      })));
+      return { l };
+    }),
+    rpcAll('public_collections', {}),
+  ]);
+  const cities = lugares.l.filter((c) => c && c.city);
   const today = new Date().toISOString().slice(0, 10);
 
   // Cada ciudad, en español y en inglés, enlazadas entre sí con hreflang:
-  // la semana, el «hoy» y los planes con niños.
+  // la semana, el «hoy» y, si hay algo para ir con niños, esa página (sin
+  // nada sería una página vacía).
   const urls = cities.flatMap((c) => {
     const slug = encodeURIComponent(String(c.slug || c.city).toLowerCase());
     return [
       urlPar(`${BASE}/agenda/${slug}/`, `${BASE}/en/whats-on/${slug}/`, { lastmod: today, freq: 'daily', prio: '0.7' }),
       urlPar(`${BASE}/hoy/${slug}/`, `${BASE}/en/today/${slug}/`, { lastmod: today, freq: 'daily', prio: '0.7' }),
-      urlPar(`${BASE}/con-ninos/${slug}/`, `${BASE}/en/kids/${slug}/`, { lastmod: today, freq: 'daily', prio: '0.6' }),
+      ...(c.kids === false ? [] : [urlPar(`${BASE}/con-ninos/${slug}/`, `${BASE}/en/kids/${slug}/`, { lastmod: today, freq: 'daily', prio: '0.6' })]),
     ];
   });
 
   // Cada categoria que hoy tiene algo en cada ciudad: es lo que la gente
   // busca («peluquerias en Madrid») y se llena sola.
-  const catUrls = (await Promise.all(cities.map(async (c) => {
+  const catUrls = cities.flatMap((c) => {
     const slug = encodeURIComponent(String(c.slug || c.city).toLowerCase());
-    const cats = await rpcAll('public_categories', { p_city: c.slug || c.city });
-    return cats.map((k) => urlPar(
-      `${BASE}/agenda/${slug}/${encodeURIComponent(k.slug)}/`,
-      `${BASE}/en/whats-on/${slug}/${encodeURIComponent(k.slug)}/`,
+    return (Array.isArray(c.cats) ? c.cats : []).filter(Boolean).map((k) => urlPar(
+      `${BASE}/agenda/${slug}/${encodeURIComponent(k)}/`,
+      `${BASE}/en/whats-on/${slug}/${encodeURIComponent(k)}/`,
       { lastmod: today, freq: 'daily', prio: '0.6' },
     ));
-  }))).flat();
+  });
 
   const colUrls = collections.map((k) => urlPar(
     `${BASE}/coleccion/${encodeURIComponent(k.slug)}/`,

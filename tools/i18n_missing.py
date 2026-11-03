@@ -830,6 +830,14 @@ def main_nuevos(areas: list[str], langs: list[str]) -> int:
             ya_huecos = {HUECO.sub('{}', k) for k in ya}
             faltan = {k: v for k, v in todo.items() if k not in ya and HUECO.sub('{}', k) not in ya_huecos}
             total += len(faltan)
+            # Una traducción con un hueco que el español no tiene (o al
+            # revés) se ve tal cual: «Publiée dans {count} établissement»
+            # (revisión del 3-11-2026, 5.2).
+            descuadrados = [k for k, v in ya.items()
+                            if isinstance(v, str) and len(HUECO.findall(k)) != len(HUECO.findall(v))]
+            for k in descuadrados:
+                print(f'{area}/{lang}: huecos que no cuadran: {k!r} -> {ya[k]!r}')
+            total += len(descuadrados)
             for k, (en, _) in faltan.items():
                 if union.get(k) is None:
                     union[k] = en

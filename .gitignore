@@ -4,3 +4,8 @@ node_modules/
 
 # Vista previa de los textos legales con la SL (se genera con build_legal.py --vista-previa)
 /tools/legal_preview/
+
+# Capturas de las comprobaciones (tools/*_check.mjs): nunca en la raíz,
+# que se publica entera en klendar.app.
+/*.png
+/tools/out/
