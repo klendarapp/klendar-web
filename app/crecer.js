@@ -74,12 +74,12 @@ async function tokenMapboxCuenta() {
   } catch { TOKEN_MAPBOX = ''; }
   return TOKEN_MAPBOX;
 }
-/** Una búsqueda en Mapbox (texto o «lng,lat») → { lat, lng, ciudad }. */
+/** Una búsqueda en Mapbox (texto o «lng,lat»), solo en España → { lat, lng, ciudad }. */
 async function geocodifica(consulta, tipos = 'address,poi,place') {
   const token = await tokenMapboxCuenta();
   if (!token || !String(consulta).trim()) return null;
   try {
-    const r = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(consulta)}.json?limit=1&language=${EN ? 'en' : 'es'}&types=${tipos}&access_token=${encodeURIComponent(token)}`);
+    const r = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(consulta)}.json?limit=1&country=es&language=${EN ? 'en' : 'es'}&types=${tipos}&access_token=${encodeURIComponent(token)}`);
     if (!r.ok) return null;
     const f = (await r.json()).features?.[0];
     if (!f) return null;
