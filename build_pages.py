@@ -620,13 +620,16 @@ PAGINAS['fuentes'] = (
 <p>Si un evento está mal, ha cambiado o se ha cancelado, manda la fuente: Klendar lo actualiza al día siguiente. Para pedirnos que quitemos algo o una fuente entera, escríbenos a <a href="mailto:info@klendar.app">info@klendar.app</a>.</p>
 
 <h2>Partidos y eventos televisados</h2>
-<p>Los partidos de fútbol (LaLiga, Champions League, Premier League y otras competiciones) y sus horarios vienen de <a href="https://www.football-data.org/" rel="noopener" target="_blank">football-data.org</a>: «Football data provided by the Football-Data.org API». Los demás eventos (Fórmula 1, MotoGP, baloncesto, Eurovisión…) los añade Klendar a mano, y cada bar puede añadir lo que pone. Los horarios pueden cambiar: confírmalos con el bar.</p>
+<p>Los partidos y eventos de <strong>todos los deportes</strong> (fútbol, baloncesto, Fórmula 1, MotoGP, balonmano, UFC…) y sus horarios vienen de <strong>TheSportsDB</strong> (<a href="https://www.thesportsdb.com/" rel="noopener" target="_blank">thesportsdb.com</a>), con su plan de pago, que permite usarlos citándoles como fuente: «Datos deportivos: TheSportsDB». Lo que no llega solo (las finales de tenis, Eurovisión…) lo añade Klendar a mano, y cada bar puede añadir lo que pone. No usamos sus imágenes ni enseñamos el canal de televisión: lo que importa es si el bar lo pone. Los horarios pueden cambiar: confírmalos con el bar.</p>
 
 <h2>El tiempo</h2>
 <p>«Según el tiempo» usa la previsión de <a href="https://api.met.no/" rel="noopener" target="_blank">MET Norway</a> (Instituto Meteorológico de Noruega), con licencia <a href="https://creativecommons.org/licenses/by/4.0/deed.es" rel="license noopener" target="_blank">CC BY 4.0</a>.</p>
 
 <h2>Festivos</h2>
 <p>La lista de festivos con la que preguntamos a los negocios si abren sale del <a href="https://www.boe.es/" rel="noopener" target="_blank">Boletín Oficial del Estado</a> (resolución anual de la Dirección General de Trabajo con las fiestas laborales) y de los boletines oficiales de las comunidades autónomas y las provincias (y, mientras no se publican, de los acuerdos de los ayuntamientos). Reutilización de información del sector público (Ley 37/2007).</p>
+
+<h2>Municipios</h2>
+<p>Los nombres, los códigos y los contornos de los municipios y las provincias son de las Líneas límite municipales del <strong>Instituto Geográfico Nacional</strong> (© Instituto Geográfico Nacional, IGN/CNIG, <a href="https://centrodedescargas.cnig.es/" rel="noopener" target="_blank">centrodedescargas.cnig.es</a>), con licencia <a href="https://creativecommons.org/licenses/by/4.0/deed.es" rel="license noopener" target="_blank"><strong>CC BY 4.0</strong></a>, simplificados por <a href="https://github.com/martgnz/es-atlas" rel="noopener" target="_blank">es-atlas</a> (Martín González, MIT). El punto de cada pueblo y su población (solo para ordenar la búsqueda) son de <strong><a href="https://www.wikidata.org/" rel="noopener" target="_blank">Wikidata</a></strong>, con licencia <a href="https://creativecommons.org/publicdomain/zero/1.0/deed.es" rel="license noopener" target="_blank"><strong>CC0</strong></a>.</p>
 
 <h2>Iconos</h2>
 <p>Los iconos son <a href="https://fonts.google.com/icons" rel="noopener" target="_blank">Material Icons</a> de Google, con licencia <a href="https://www.apache.org/licenses/LICENSE-2.0" rel="license noopener" target="_blank">Apache 2.0</a>.</p>
@@ -643,13 +646,16 @@ PAGINAS['fuentes'] = (
 <p>If an event is wrong, has changed or has been cancelled, the source rules: Klendar updates it the next day. To ask us to remove something or a whole source, write to <a href="mailto:info@klendar.app">info@klendar.app</a>.</p>
 
 <h2>Matches and televised events</h2>
-<p>Football matches (LaLiga, Champions League, Premier League and other competitions) and their kick-off times come from <a href="https://www.football-data.org/" rel="noopener" target="_blank">football-data.org</a>: “Football data provided by the Football-Data.org API”. Other events (Formula 1, MotoGP, basketball, Eurovision…) are added by Klendar by hand, and each bar can add what it's showing. Times can change: check with the bar.</p>
+<p>Matches and events in <strong>every sport</strong> (football, basketball, Formula 1, MotoGP, handball, UFC…) and their times come from <strong>TheSportsDB</strong> (<a href="https://www.thesportsdb.com/" rel="noopener" target="_blank">thesportsdb.com</a>), under its paid plan, which allows them to be used crediting them as the source: “Sports data: TheSportsDB”. What doesn't come in on its own (tennis finals, Eurovision…) is added by Klendar by hand, and each bar can add what it's showing. We don't use their images or show the TV channel: what matters is whether the bar is showing it. Times can change: check with the bar.</p>
 
 <h2>Weather</h2>
 <p>“Based on the weather” uses the forecast from <a href="https://api.met.no/" rel="noopener" target="_blank">MET Norway</a> (Norwegian Meteorological Institute), under a <a href="https://creativecommons.org/licenses/by/4.0/" rel="license noopener" target="_blank">CC BY 4.0</a> licence.</p>
 
 <h2>Public holidays</h2>
 <p>The list of holidays we use to ask businesses whether they open comes from the Spanish Official State Gazette (<a href="https://www.boe.es/" rel="noopener" target="_blank">BOE</a>, the annual resolution of the Directorate-General for Labour on public holidays) and the official gazettes of the autonomous communities and provinces (and, until they are published, from city council agreements). Re-use of public sector information (Law 37/2007).</p>
+
+<h2>Towns</h2>
+<p>The names, codes and boundaries of Spanish towns and provinces come from the municipal boundary lines of the <strong>Instituto Geográfico Nacional</strong> (© IGN/CNIG, <a href="https://centrodedescargas.cnig.es/" rel="noopener" target="_blank">centrodedescargas.cnig.es</a>), licensed under <a href="https://creativecommons.org/licenses/by/4.0/" rel="license noopener" target="_blank"><strong>CC BY 4.0</strong></a>, simplified by <a href="https://github.com/martgnz/es-atlas" rel="noopener" target="_blank">es-atlas</a> (Martín González, MIT). Each town's point and population (only used to sort search results) come from <strong><a href="https://www.wikidata.org/" rel="noopener" target="_blank">Wikidata</a></strong>, licensed <a href="https://creativecommons.org/publicdomain/zero/1.0/" rel="license noopener" target="_blank"><strong>CC0</strong></a>.</p>
 
 <h2>Icons</h2>
 <p>Icons are Google's <a href="https://fonts.google.com/icons" rel="noopener" target="_blank">Material Icons</a>, under the <a href="https://www.apache.org/licenses/LICENSE-2.0" rel="license noopener" target="_blank">Apache 2.0</a> licence.</p>

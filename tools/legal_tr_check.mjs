@@ -53,23 +53,23 @@ const PAGINAS = [
   ['/en/cookies/', 'Last updated: 2 November 2026', [
     /The approximate area of your connection \(if you don't share your location\) isn't stored in your browser or anywhere else: it's only used to build the page you request\./,
   ], []],
-  ['/terminos/', 'Última actualización: 28 de octubre de 2026', [
+  ['/terminos/', 'Última actualización: 3 de noviembre de 2026', [
     /la traducción es automática, la hace Google Translate y puede tener errores: lo que vale es el texto original del negocio, que siempre puedes ver con «Ver original»\./,
     /28 de octubre de 2026: Traducción automática \(apartado 3\)/,
   ], []],
-  ['/en/terms/', 'Last updated: 28 October 2026', [
+  ['/en/terms/', 'Last updated: 3 November 2026', [
     /the translation is automatic, it's done by Google Translate and it may contain mistakes: what counts is the business's original text/,
   ], []],
   ['/negocios/', 'Última actualización: 3 de noviembre de 2026', [
     /\(enlace e imagen para historias\) y, si lo piden, ver sus textos traducidos automáticamente\./,
     /licencia para mostrarlos en la Plataforma, traducirlos automáticamente para quien lo pida,/,
-    /los del 28 de octubre de 2026 \(apartados 2, 4 bis y 7\), desde el 12 de noviembre de 2026, los del 2 de noviembre de 2026 \(apartado 2 bis\), desde el 17 de noviembre de 2026, y los del 3 de noviembre de 2026 \(apartados 3 decies y 4\), desde el 18 de noviembre de 2026: 15 días/,
+    /los del 28 de octubre de 2026 \(apartados 2, 4 bis y 7\), desde el 12 de noviembre de 2026, los del 2 de noviembre de 2026 \(apartado 2 bis\), desde el 17 de noviembre de 2026, y los del 3 de noviembre de 2026 \(apartados 3, 3 decies y 4\), desde el 18 de noviembre de 2026: 15 días/,
     /28 de octubre de 2026: Traducción automática \(apartados 2 y 7\)[\s\S]*?Se aplica desde el 12 de noviembre de 2026\./,
   ], []],
   ['/en/business-terms/', 'Last updated: 3 November 2026', [
     /\(a link and a stories image\) and, if they ask, see its text translated automatically\./,
     /a licence to display it on the Platform, translate it automatically for those who ask,/,
-    /those of 28 October 2026 \(sections 2, 4a and 7\) from 12 November 2026, those of 2 November 2026 \(section 2a\) from 17 November 2026, and those of 3 November 2026 \(sections 3i and 4\) from 18 November 2026: 15 days/,
+    /those of 28 October 2026 \(sections 2, 4a and 7\) from 12 November 2026, those of 2 November 2026 \(section 2a\) from 17 November 2026, and those of 3 November 2026 \(sections 3, 3i and 4\) from 18 November 2026: 15 days/,
   ], []],
   ['/soporte/', 'Última actualización: 28 de octubre de 2026', [
     /La traducción no es correcta\s+Pulsa «Ver original»: lo que vale es lo que escribió el negocio\./,
