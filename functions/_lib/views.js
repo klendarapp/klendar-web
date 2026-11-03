@@ -871,7 +871,7 @@ export async function businessPage(param, lang, search = '') {
   const ver = ['novedades', 'resenas', 'preguntas', 'carta'].includes(qs.get('ver')) ? qs.get('ver') : '';
   const pagina = Math.max(1, Math.min(100, parseInt(qs.get('p') || '1', 10) || 1));
   const desde = (pagina - 1) * (ver ? POR_PAGINA_LISTA : POR_PAGINA_FICHA);
-  const [offers, cuentas, sellos, carta, opiniones, novedades, cierres, nVerificadas, local, partidosBar, grupoInfo, sorteos, organizador, enlacesNeg, fichaInfo, preguntasRes, preguntasLista] = await Promise.all([
+  const [offers, cuentas, sellos, carta, opiniones, novedades, cierres, nVerificadas, local, partidosBar, grupoInfo, sorteos, organizador, enlacesNeg, fichaInfo, preguntasRes, preguntasLista, muni] = await Promise.all([
     ver ? [] : rpcAll('business_offers_page', { p_id: id, p_limit: POR_PAGINA_FICHA, p_offset: desde }),
     ver ? null : rpc('business_offer_counts', { p_id: id }).catch(() => null),
     rpcAll('stamp_cards_of', { p_business: id }).catch(() => []), // opcional: sin ella, la ficha sale igual
@@ -905,6 +905,9 @@ export async function businessPage(param, lang, search = '') {
     ver === 'preguntas'
       ? rpcAll('business_questions_page', { p_business: id, p_limit: POR_PAGINA_LISTA, p_offset: desde }).catch(() => [])
       : [],
+    // Su municipio (por su punto; migración 20261260100040 de la app), para
+    // enlazar la página del municipio por su slug. Opcional.
+    rpc('business_municipality_info', { p_business: id }).catch(() => null),
   ]);
   // Bloqueado (sin pagar) o en pausa por cierre (`unavailable`, migración
   // 20261222100000): la ficha lo dice («No disponible ahora mismo» o
@@ -961,7 +964,7 @@ export async function businessPage(param, lang, search = '') {
         unavailable: 'Not available right now', unavailableBody: "This business isn't posting anything right now.",
         keptCodes: 'If you have one of its codes or passes, it is still valid.',
         closingDay: (d) => `Closing on ${d}`, closing: (a, b) => `Closing from ${a} to ${b}`,
-        moreIn: (c) => `More in ${c}:`, cityToday: 'things to do today', cityWeek: 'this week',
+        moreIn: (c) => `More plans in ${c}:`, cityToday: 'things to do today', cityWeek: 'this week',
         hiddenFav: (n) => (n === 1 ? "There's 1 exclusive publication for people who have it in their favourites."
           : `There are ${n} exclusive publications for people who have it in their favourites.`),
         hiddenCust: (n) => (n === 1 ? "There's 1 exclusive publication for their customers with stamps."
@@ -1013,7 +1016,7 @@ export async function businessPage(param, lang, search = '') {
         unavailable: 'No disponible ahora mismo', unavailableBody: 'Este negocio ahora no publica nada.',
         keptCodes: 'Si tienes un código o un bono suyo, sigue valiendo.',
         closingDay: (d) => `Cerrará el ${d}`, closing: (a, b) => `Cerrará del ${a} al ${b}`,
-        moreIn: (c) => `Más en ${c}:`, cityToday: 'qué hacer hoy', cityWeek: 'esta semana',
+        moreIn: (c) => `Más planes en ${c}:`, cityToday: 'qué hacer hoy', cityWeek: 'esta semana',
         hiddenFav: (n) => (n === 1 ? 'Hay 1 publicación exclusiva para quien lo tiene en favoritos.'
           : `Hay ${n} publicaciones exclusivas para quien lo tiene en favoritos.`),
         hiddenCust: (n) => (n === 1 ? 'Hay 1 publicación exclusiva para sus clientes con sellos.'
@@ -1182,8 +1185,15 @@ export async function businessPage(param, lang, search = '') {
   const estrellas = (n) => `<span class="stars" aria-label="${n}/5">${'★'.repeat(n)}<span>${'★'.repeat(5 - n)}</span></span>`;
   const since = KZ.fmt(b.member_since, tz, en ? 'en-GB' : 'es-ES', { month: 'long', year: 'numeric' });
   const maps = b.lat && !organizador ? `https://www.google.com/maps/search/?api=1&query=${b.lat},${b.lng}` : null;
-  const city = b.city ? `${agendaBase(lang)}/${citySeg(b.city)}/` : null;
-  const cityToday = b.city ? `${todayBase(lang)}/${citySeg(b.city)}/` : null;
+  // La página de su municipio (/hoy/marbella/, /agenda/torrent-valencia/),
+  // por el slug del municipio de su punto y con su nombre. Sin municipio
+  // (sin la tabla cargada, fuera de España), como antes: el texto que
+  // escribió el negocio, si lo hay.
+  const mun = muni && typeof muni.slug === 'string' && muni.slug && muni.name ? muni : null;
+  const lugar = mun ? mun.name : b.city;
+  const lugarSeg = mun ? encodeURIComponent(mun.slug) : b.city ? citySeg(b.city) : null;
+  const city = lugarSeg ? `${agendaBase(lang)}/${lugarSeg}/` : null;
+  const cityToday = lugarSeg ? `${todayBase(lang)}/${lugarSeg}/` : null;
 
   // Una novedad y una reseña (la ficha y sus listas enteras, `?ver=`).
   const novedadHtml = (p) => `<article${isUuid(p.id) ? ` id="novedad-${p.id}"` : ''}>
@@ -1266,7 +1276,7 @@ export async function businessPage(param, lang, search = '') {
   // páginas, sin indexar (la ficha es la buena).
   if (ver === 'carta') {
     const cuerpo = `
-  <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a>${city ? ` · <a href="${city}">${esc(b.city)}</a>` : ''} · <a href="${path}">${esc(b.name)}</a></p>
+  <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a>${city ? ` · <a href="${city}">${esc(lugar)}</a>` : ''} · <a href="${path}">${esc(b.name)}</a></p>
   <div class="detail negocio sin-media lista-entera">
     <h1>${esc(S.menu)} · ${esc(b.name)}</h1>
     ${parado ? '' : `${platosHtml()}${archivosCartaHtml}`}
@@ -1288,7 +1298,7 @@ ${traducir(lang, `business:${b.id}`, carta.length ? `menu:${b.id}` : '')}${cuent
     const enlace = (n) => `${path}?ver=${ver}${filtro}${n > 1 ? `&p=${n}` : ''}`;
     const titulo = ver === 'novedades' ? S.news : ver === 'preguntas' ? S.questions : S.reviews;
     const cuerpo = `
-  <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a>${city ? ` · <a href="${city}">${esc(b.city)}</a>` : ''} · <a href="${path}">${esc(b.name)}</a></p>
+  <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a>${city ? ` · <a href="${city}">${esc(lugar)}</a>` : ''} · <a href="${path}">${esc(b.name)}</a></p>
   <div class="detail negocio sin-media lista-entera">
     <h1>${esc(titulo)} · ${esc(b.name)}</h1>
     ${ver === 'resenas' ? `<p><a class="pill" data-opinar="${esc(b.id)}" href="${cuenta(lang)}#/opinar/${encodeURIComponent(b.id)}">${icono('resena', 16)} <span>${S.write}</span></a></p>` : ''}
@@ -1358,7 +1368,7 @@ ${traducir(lang, `business:${b.id}`, '')}${ver === 'preguntas' ? `\n${PREGUNTAS_
   const mismoNombre = (n) => !n || planoSello(n) === planoSello(b.name);
 
   const body = `
-  <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a>${city ? ` · <a href="${city}">${esc(b.city)}</a>` : ''}</p>
+  <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a>${city ? ` · <a href="${city}">${esc(lugar)}</a>` : ''}</p>
   <div class="detail negocio ordenada${b.cover || galeria.length ? '' : ' sin-media'}" data-equipo-biz="${esc(b.id)}">
     ${carrusel([b.cover, ...galeria].filter(Boolean), { titulo: b.name, forma: 'negocio', lang })}
     <div class="d-head">
@@ -1369,7 +1379,7 @@ ${traducir(lang, `business:${b.id}`, '')}${ver === 'preguntas' ? `\n${PREGUNTAS_
     ? `<a class="neg-logo-a" href="${esc(b.logo)}" data-visor="ficha" data-visor-i="${[b.cover, ...galeria].filter(Boolean).length}" aria-label="${esc(en ? 'See the logo' : 'Ver el logo')}"><img class="neg-logo" src="${esc(b.logo)}" alt="" width="88" height="88"></a>`
     : `<span class="neg-logo" aria-hidden="true">${esc((b.name || '·').charAt(0).toUpperCase())}</span>`}
         <div><h1>${esc(b.name)}</h1>
-          <p class="muted"${b.lat && !organizador ? ` data-lat="${Number(b.lat).toFixed(5)}" data-lng="${Number(b.lng).toFixed(5)}"` : ''}>${esc(b.city || '')}<span class="tj-dist" hidden></span></p></div>
+          <p class="muted"${b.lat && !organizador ? ` data-lat="${Number(b.lat).toFixed(5)}" data-lng="${Number(b.lng).toFixed(5)}"` : ''}>${mun ? `<a class="neg-muni" href="${cityToday}">${esc(b.city || mun.name)}</a>` : esc(b.city || '')}<span class="tj-dist" hidden></span></p></div>
         <div class="neg-botones">
         <a class="fav-ic" data-solo-publico data-fav="${esc(b.id)}" href="${cuenta(lang)}#/seguir/${encodeURIComponent(b.id)}"><svg class="ic cor-vacio" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M16.5 3c-1.74 0-3.41.81-4.5 2.09C10.91 3.81 9.24 3 7.5 3 4.42 3 2 5.42 2 8.5c0 3.78 3.4 6.86 8.55 11.54L12 21.35l1.45-1.32C18.6 15.36 22 12.28 22 8.5 22 5.42 19.58 3 16.5 3zm-4.4 15.55-.1.1-.1-.1C7.14 14.24 4 11.39 4 8.5 4 6.5 5.5 5 7.5 5c1.54 0 3.04.99 3.57 2.36h1.87C13.46 5.99 14.96 5 16.5 5c2 0 3.5 1.5 3.5 3.5 0 2.89-3.14 5.74-7.9 10.05z"/></svg><svg class="ic cor-lleno" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg><span class="sr">${S.open}</span></a>
         ${masMenu([`<a class="mas-peligro" data-solo-publico href="${cuenta(lang)}#/denunciar/business/${encodeURIComponent(b.id)}" rel="nofollow">${S.reportShort}</a>`], lang, { soloPublico: true })}
@@ -1401,7 +1411,7 @@ ${traducir(lang, `business:${b.id}`, '')}${ver === 'preguntas' ? `\n${PREGUNTAS_
       ${flash.length ? `<h2 id="ahora">${S.now}</h2>${rejilla(flash, lang, { tz, sinNegocio: true, galeria: true })}` : ''}
       ${events.length ? `<h2 id="proximamente">${S.soon}</h2>${rejilla(events, lang, { tz, sinNegocio: true, galeria: true })}` : ''}
       ${paginador(pagina, paginas, enlacePagina)}
-      ${local.entity_kind === 'public_agenda' && b.city && nFlash + nEvents > POR_PAGINA_FICHA ? `<p><a class="pill" href="${city}">${esc(S.allAgenda(b.city))}</a></p>` : ''}
+      ${local.entity_kind === 'public_agenda' && city && nFlash + nEvents > POR_PAGINA_FICHA ? `<p><a class="pill" href="${city}">${esc(S.allAgenda(lugar))}</a></p>` : ''}
       ${offers.length || nFlash + nEvents || parado ? '' : `<p class="empty">${S.none}</p>`}
       ${quePedir}
       ${elSitio}
@@ -1422,7 +1432,7 @@ ${traducir(lang, `business:${b.id}`, '')}${ver === 'preguntas' ? `\n${PREGUNTAS_
       ${opiniones.length ? `<div class="resenas">${opiniones.map(resenaHtml).join('')}</div>
         ${nResenas > opiniones.length ? `<p><a class="pill" href="${path}?ver=resenas${soloVerificadas ? '&amp;resenas=verificadas' : ''}">${esc(S.seeAll(nResenas))}</a></p>` : ''}` : `<p class="empty">${soloVerificadas ? S.noVerified : S.noReviews}</p>`}
       ${preguntasHtml}
-      ${b.city ? `<p class="muted">${esc(S.moreIn(b.city))} <a href="${cityToday}">${esc(S.cityToday)}</a> · <a href="${city}">${esc(S.cityWeek)}</a></p>` : ''}
+      ${city ? `<p class="muted mas-planes"${mun ? ` data-municipio="${esc(mun.slug)}"` : ''}>${esc(S.moreIn(lugar))} <a href="${cityToday}">${esc(S.cityToday)}</a> · <a href="${city}">${esc(S.cityWeek)}</a></p>` : ''}
       ${local.entity_kind === 'public_agenda' ? '' : `<p class="denuncia-pie" data-solo-publico><a href="${cuenta(lang)}#/reclamar/${encodeURIComponent(b.id)}" rel="nofollow">${S.claim}</a></p>`}
     </div>
     <aside class="side">
@@ -1479,7 +1489,7 @@ ${traducir(lang, `business:${b.id}`, '')}${ver === 'preguntas' ? `\n${PREGUNTAS_
     hasMenu: enlaceCarta || (pdfsCarta[0] && pdfsCarta[0].url) || (carta.length ? `${BASE}${path}#carta` : undefined),
   };
   const migas = [['Klendar', en ? '/en/' : '/']];
-  if (city) migas.push([b.city, city]);
+  if (city) migas.push([lugar, city]);
   migas.push([b.name, path]);
   const jsonLd = { '@context': 'https://schema.org', '@graph': [negocioLd, breadcrumbLd(migas)] };
 

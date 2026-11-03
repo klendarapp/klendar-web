@@ -1,6 +1,7 @@
 // «Toda España preparada» en la web (2026-11-03): «Busca tu municipio» en
 // «¿Dónde?», las páginas de municipio con su slug (301 desde las variantes y
-// las direcciones de antes, «¿Cuál de ellos?» con un homónimo) y el sitemap.
+// las direcciones de antes, «¿Cuál de ellos?» con un homónimo), el enlace de la
+// ficha de un negocio a la página de su municipio y el sitemap.
 // Contra un servidor en marcha (con la base de dev, que tiene la tabla):
 //
 //   PORT=8797 node tools/serve_dev.mjs
@@ -54,6 +55,25 @@ for (const [ruta, destino] of [
   const en = await texto('/en/discover/?city=alcaniz');
   check('en inglés: «Find your town» y «Popular»', en.includes('Find your town') && en.includes('>Popular<'));
 }
+// La ficha de un negocio enlaza a la página de su municipio, por su slug
+// (`business_municipality_info`, migración 20261260100040 de la app): el
+// nombre bajo el título, las migas y «Más planes en …», en los dos idiomas.
+// Las direcciones son las buenas (200, sin 301).
+for (const [ruta, hoy, semana, frase] of [
+  ['/b/nails-co-madrid', '/hoy/madrid/', '/agenda/madrid/', 'Más planes en Madrid:'],
+  ['/en/b/nails-co-madrid', '/en/today/madrid/', '/en/whats-on/madrid/', 'More plans in Madrid:'],
+]) {
+  const h = await texto(ruta);
+  check(`${ruta}: el municipio bajo el título enlaza a ${hoy}`, h.includes(`class="neg-muni" href="${hoy}"`));
+  check(`${ruta}: «${frase} …» con hoy y la semana, por el slug`,
+    new RegExp(`data-municipio="madrid">${frase} <a href="${hoy}">[^<]+</a> · <a href="${semana}">`).test(h));
+  check(`${ruta}: las migas, a ${semana}`, h.includes(`<p class="crumbs"><a href="/${ruta.startsWith('/en/') ? 'en/' : ''}">Klendar</a> · <a href="${semana}">Madrid</a>`));
+  for (const destino of [hoy, semana]) {
+    const r = await pide(destino);
+    check(`${destino} es la buena (200, sin redirigir)`, r.status === 200, r.status);
+  }
+}
+
 // El sitemap: con datos de prueba sale vacío, pero no se rompe.
 {
   const r = await pide('/sitemap-agenda.xml');

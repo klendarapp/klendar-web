@@ -530,6 +530,8 @@ body.con-hoja { overflow: hidden; }
 .pub .neg-id h1 { margin: 0 0 2px; }
 .pub .neg-id p { margin: 0; }
 .neg-id .tj-dist:not(:empty)::before { content: ' · '; }
+/* El municipio, enlace a su página (/hoy/<slug>/): en el gris de la línea. */
+.pub .neg-id .neg-muni { color: inherit; }
 .neg-logo { width: 88px; height: 88px; border-radius: 50%; object-fit: cover; flex: none; border: 4px solid var(--surface); background: var(--elevated);
   display: grid; place-items: center; font: 800 32px/1 var(--display); color: var(--ink-2); box-shadow: 0 8px 24px -10px rgba(0,0,0,.4); }
 .pub .neg-dir { display: flex; align-items: center; gap: 10px; padding: 12px 0; margin: 4px 0 0; border-bottom: 1px solid var(--glass-border); color: var(--ink); font-weight: 600; }
