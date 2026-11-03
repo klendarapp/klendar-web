@@ -175,7 +175,7 @@ PAGES.emisiones = async (v) => {
         const x = lista.find((y) => y.id === c.dataset.liga);
         if (!c.checked && !await confirmDlg(enA() ? `Turn off “${x.name_en}”` : `Apagar «${x.name}»`,
           esc(enA() ? "It won't be imported any more. What hasn't started and no bar is showing disappears; what bars are showing stays." : 'Ya no se importará. Lo que no ha empezado y no pone ningún bar desaparece; lo que ponen los bares se queda.'),
-          { submit: enA() ? 'Turn off' : 'Apagar' })) { c.checked = true; return; }
+          { submit: 'Apagar' })) { c.checked = true; return; }
         c.disabled = true;
         try {
           const res = await rpc('admin_set_broadcast_league', { p_id: c.dataset.liga, p_enabled: c.checked });

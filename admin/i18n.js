@@ -1318,6 +1318,7 @@ const I18N = makeI18N({
   "Liga": "League",
   "Encendida": "On",
   "Apagada": "Off",
+  "Apagar": "Turn off",
   "Próximos 14 días": "Next 14 days",
   "Poner siempre": "Always show",
   "Última importación": "Last import",
