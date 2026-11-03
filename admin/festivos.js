@@ -13,6 +13,16 @@
  * locales 16 de 18 ciudades»); debajo, los locales por ciudad con el enlace a
  * su boletín y «Añadir los dos…».
  *
+ * Cualquier municipio de España (migración 20261260100020 de la app): los
+ * locales van por municipio (`holidays.municipality`, código INE). «Cualquier
+ * municipio» lo busca (`search_municipalities`, como «Busca tu municipio» de
+ * la web; sin texto, las Ciudades de Klendar como «Populares») y lo enseña
+ * con su provincia y comunidad (`admin_holiday_place`: homónimos como
+ * «Torrent · Valencia/València»), sus locales del año, «Añadir los dos…» y
+ * «Añadir uno…». Va en la dirección (`#/festivos/2028?m=torrent-valencia`).
+ * «Otros municipios» lista los que no son Ciudad de Klendar y ya tienen
+ * locales ese año (`admin_holidays.municipalities`).
+ *
  * Va después de admin.js y usa lo suyo (`PAGES`, `rpc`, `modal`,
  * `confirmDlg`, `table`, `toast`, `tag`, `esc`…).
  */
@@ -20,7 +30,7 @@
 
 Object.assign(RPC_ERRORS, {
   invalid_region: 'La comunidad va con su código de dos letras (MD, AR, CT…).',
-  invalid_city: 'Esa ciudad no está en Klendar.',
+  invalid_city: 'Ese municipio no está en la lista oficial.',
   invalid_source: 'Pon de dónde sale (boletín, número y fecha).',
   invalid_postal: 'El código postal, solo con cifras (de 2 a 5).',
   duplicate: 'Ya hay un festivo ese día con ese mismo alcance.',
@@ -60,22 +70,41 @@ async function festImportar() {
   return j;
 }
 
+/** El municipio elegido en «Cualquier municipio» (`?m=` de la dirección). */
+const festMuniElegido = () => {
+  try { return new URLSearchParams(location.hash.split('?')[1] || '').get('m') || ''; } catch { return ''; }
+};
+/** «Torrent (Valencia/València)»: un municipio que no es Ciudad de Klendar va
+ * siempre con su provincia (homónimos). */
+const festMuniNombre = (name, province) => (province ? `${name} (${province})` : name || '');
+
 PAGES.festivos = async (v, param) => {
   const en = I18N.lang === 'en';
   const hoy = new Date();
   const anio = /^\d{4}$/.test(param || '') ? Number(param) : hoy.getFullYear();
-  const d = await rpc('admin_holidays', { p_year: anio });
+  const elegido = festMuniElegido();
+  const [d, sel] = await Promise.all([
+    rpc('admin_holidays', { p_year: anio }),
+    elegido ? rpc('admin_holiday_place', { p_place: elegido, p_year: anio }).catch((e) => { if (e?.obsoleta) throw e; return null; }) : null,
+  ]);
   const lista = d.holidays || [];
   const ciudades = d.cities || [];
+  const otros = (d.municipalities || []).map((m) => ({ ...m, id: m.code, nombre: festMuniNombre(m.name, m.province) }));
   const st = d.status || {};
   const vig = d.watch || {};
   const imp = d.import || null;
+  const lugar = sel?.ok ? sel.place : null;
+  const selDias = sel?.ok ? (sel.days || []) : [];
+  const conM = elegido ? `?m=${encodeURIComponent(elegido)}` : '';
   const anios = [...new Set([...(d.years || []), anio, anio + 1, vig.year].filter(Boolean))].sort();
   const dia = (iso) => new Date(`${iso}T12:00:00Z`).toLocaleDateString(LOC(), { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
   const donde = (h) => (h.scope === 'national' ? (en ? 'All of Spain' : 'Toda España')
-    : h.scope === 'region' ? festCcaa(h.region) : (h.city_name || h.city));
+    : h.scope === 'region' ? festCcaa(h.region)
+      : (h.city_name || (h.municipality_name ? festMuniNombre(h.municipality_name, h.province) : h.city || h.municipality)));
   const alcance = { national: en ? 'National' : 'Nacional', region: en ? 'Regional' : 'Autonómico', local: 'Local' };
   const propuestos = lista.filter((h) => h.status === 'proposed');
+  // Por id: los botones de cada fila (en «Todo», en el municipio elegido).
+  const porId = new Map([...lista, ...selDias].map((h) => [h.id, h]));
 
   // La línea de estado («2028: nacionales confirmados · locales 16 de 18 ciudades»).
   const linea = (s) => {
@@ -103,6 +132,42 @@ PAGES.festivos = async (v, param) => {
 
   // Locales por ciudad del año que se ve.
   const porCiudad = (st.cities || []).map((c) => ({ ...c, nombre: c.name }));
+  const enlaceBoletin = (b) => (b?.url ? `<a class="link" target="_blank" rel="noopener" href="${esc(b.url)}">${esc(b.name)} ↗</a>` : '—');
+  const estadoLocales = (c) => (c.ok ? tag(en ? 'complete' : 'completo', 'ok')
+    : c.proposed ? tag(en ? `${c.proposed} to confirm` : `${c.proposed} por confirmar`, 'warn')
+      : tag(en ? `${c.confirmed} of 2` : `${c.confirmed} de 2`, 'bad'));
+  const diasCorto = (c) => (c.days || []).map((x) => `<span class="nowrap">${esc(dia(x.day))} · ${esc(x.name)}${x.status === 'proposed' ? ` ${tag(en ? 'proposed' : 'propuesto', 'warn')}` : ''}</span>`).join('<br>') || '<span class="muted">—</span>';
+  const botonesFila = (h) => `<span class="actions">${h.status === 'proposed' ? `<button class="btn sm ghost" data-confirmar="${esc(h.id)}">${ms('check')}${en ? 'Confirm' : 'Confirmar'}</button>` : ''}<button class="btn sm ghost" data-editar="${esc(h.id)}">${ms('edit')}${en ? 'Edit' : 'Cambiar'}</button><button class="btn sm ghost" data-quitar="${esc(h.id)}">${ms('delete')}${en ? 'Remove' : 'Quitar'}</button></span>`;
+
+  // «Cualquier municipio»: el buscador, las Populares y el elegido.
+  const populares = ciudades.filter((c) => c.active);
+  const elegidoEs = (c) => lugar && (lugar.city_id === c.id);
+  const lugarNombre = lugar ? (lugar.city_id ? lugar.name : festMuniNombre(lugar.name, lugar.province)) : '';
+  const lugarObj = lugar ? { id: lugar.key, nombre: lugarNombre, days: selDias, bulletin: sel.bulletin } : null;
+  const panelLugar = !elegido ? '' : !lugar
+    ? `<div class="fest-lugar"><p class="err" style="margin:0">${esc(en ? 'That town isn’t in the official list.' : 'Ese municipio no está en la lista oficial.')}</p>
+        <p style="margin:8px 0 0"><a class="btn sm ghost" href="#/festivos/${anio}">${ms('close')}${en ? 'Close' : 'Cerrar'}</a></p></div>`
+    : `<div class="fest-lugar" id="festLugar">
+        <div class="fest-lugar-cab"><div><h3>${esc(lugar.name)}</h3>
+          <p class="muted small" style="margin:0">${esc([lugar.province, festCcaa(lugar.region)].filter(Boolean).join(' · '))}${lugar.code ? ` · ${en ? 'INE code' : 'código INE'} ${esc(lugar.code)}` : ''}${lugar.city_id ? ` · ${tag(en ? 'Klendar city' : 'Ciudad de Klendar', lugar.city_active ? 'ok' : 'dim')}` : ''}</p></div>
+          <span class="spacer"></span><a class="btn sm ghost" href="#/festivos/${anio}" aria-label="${en ? 'Close the town' : 'Cerrar el municipio'}">${ms('close')}${en ? 'Close' : 'Cerrar'}</a></div>
+        <p class="muted small">${esc(en
+    ? `Its local holidays in ${anio}. Businesses here also get ${sel.national} national and ${sel.regional} regional ones (${festCcaa(lugar.region)}).`
+    : `Sus locales de ${anio}. A sus negocios les tocan además ${sel.national} ${sel.national === 1 ? 'nacional' : 'nacionales'} y ${sel.regional} de su comunidad (${festCcaa(lugar.region)}).`)}
+          ${esc(en ? 'Where it is published:' : 'Dónde sale:')} ${enlaceBoletin(sel.bulletin)}</p>
+        ${table({
+    cols: [
+      { h: en ? 'Day' : 'Día', r: (h) => `<b class="title">${esc(dia(h.day))}</b>` },
+      { h: en ? 'Name' : 'Nombre', r: (h) => `${esc(h.name)}${h.status === 'proposed' ? ` ${tag(en ? 'proposed' : 'propuesto', 'warn')}` : ''}` },
+      { h: en ? 'Source' : 'Fuente', r: (h) => `<span class="sub">${esc(h.source || '—')}</span>` },
+      { h: '', r: botonesFila },
+    ],
+    rows: selDias,
+    empty: en ? `No local holidays for ${lugarNombre} in ${anio}.` : `${lugarNombre} no tiene locales en ${anio}.`,
+  })}
+        <div class="fest-lugar-botones"><button class="btn primary sm" type="button" id="lugarDos">${ms('edit_calendar')}${en ? 'Add both…' : 'Añadir los dos…'}</button>
+          <button class="btn sm" type="button" id="lugarUno">${ms('add')}${en ? 'Add one…' : 'Añadir uno…'}</button></div>
+      </div>`;
 
   v.innerHTML = `
     <div class="page-head"><h1>${en ? 'Public holidays' : 'Festivos'}</h1><span class="spacer"></span>
@@ -111,25 +176,43 @@ PAGES.festivos = async (v, param) => {
     ${vig.year && vig.year !== anio ? estado(vig, en ? `Next year (${vig.year})` : `El año que se vigila (${vig.year})`) : ''}
     ${estado(st, en ? `This year on screen (${anio})` : `${anio}`)}
     ${helpBox(en ? 'How it works' : '¿Cómo funciona?', en
-    ? `<p>National, regional and local holidays (for the cities in Klendar). Seven days before each one, and again two days before if they haven’t answered, businesses with opening hours are asked “Are you open on …?”, and their page shows the answer. Businesses outside these cities only get national and regional ones; their own local holidays go in “Closed days”.</p>
+    ? `<p>National, regional and local holidays. Seven days before each one, and again two days before if they haven’t answered, businesses with opening hours are asked “Are you open on …?”, and their page shows the answer. Each business gets the local holidays of its town (by its point on the map): those of the Klendar cities are watched every year; for any other town in Spain, look it up in “Any town” and add them there. A business whose town has none loaded only gets national and regional ones; its own local holidays go in “Closed days”.</p>
        <p>Almost automatic: every Monday from October to January the BOE resolution and the local holidays published as open data (Madrid, Catalonia, Andalusia, Aragon, Balearic Islands, Basque Country, Castile and León) are loaded as proposed: confirm them here. The rest of the cities, by hand with “Add both…” and the link to their bulletin. On 1 October dev@klendar.app gets “Time to prepare next year’s holidays”, and from November a weekly email while something is missing. By hand: <code>python tool/festivos_importar.py --anio ${vig.year || anio + 1}</code>.</p>`
-    : `<p>Nacionales, autonómicos y locales (de las ciudades de Klendar). Siete días antes de cada uno, y otra vez dos días antes si no han contestado, se pregunta a los negocios con horario «¿Abres el …?», y su ficha lo dice. Un negocio fuera de estas ciudades solo recibe los nacionales y los de su comunidad; sus fiestas locales las marca él en «Días cerrados».</p>
+    : `<p>Nacionales, autonómicos y locales. Siete días antes de cada uno, y otra vez dos días antes si no han contestado, se pregunta a los negocios con horario «¿Abres el …?», y su ficha lo dice. Cada negocio recibe los locales de su municipio (por su punto en el mapa): los de las ciudades de Klendar se vigilan cada año; los de cualquier otro municipio de España, búscalo en «Cualquier municipio» y añádelos ahí. Un negocio de un municipio sin locales cargados solo recibe los nacionales y los de su comunidad; sus fiestas locales las marca él en «Días cerrados».</p>
        <p>Casi solo: cada lunes de octubre a enero se cargan como propuestos la resolución del BOE y los locales que se publican como datos abiertos (Madrid, Cataluña, Andalucía, Aragón, Illes Balears, Euskadi y Castilla y León): confírmalos aquí. Los de las demás ciudades, a mano con «Añadir los dos…» y el enlace a su boletín. El 1 de octubre llega a dev@klendar.app «Toca preparar los festivos del año siguiente» y, desde noviembre, un correo cada semana mientras falte algo. A mano: <code>python tool/festivos_importar.py --anio ${vig.year || anio + 1}</code>.</p>`)}
-    <div class="toolbar">${anios.map((y) => `<a class="btn sm ${y === anio ? 'primary' : 'ghost'}" href="#/festivos/${y}">${y}</a>`).join(' ')}
+    <div class="toolbar">${anios.map((y) => `<a class="btn sm ${y === anio ? 'primary' : 'ghost'}" href="#/festivos/${y}${conM}">${y}</a>`).join(' ')}
       <span class="muted small">${en ? `${lista.length} rows` : `${lista.length} filas`} · ${esc(ultima)}</span>
       ${propuestos.length ? `<span class="spacer"></span><button class="btn sm" type="button" id="confirmarTodos">${ms('done_all')}${esc(en ? `Confirm the ${propuestos.length} proposed` : `Confirmar los ${propuestos.length} propuestos`)}</button>` : ''}</div>
+    <div class="card fest-muni"><h2>${ms('location_city')} ${esc(en ? 'Any town' : 'Cualquier municipio')}</h2>
+      <p class="muted small" style="margin:0 0 10px">${esc(en ? 'Any town in Spain: its local holidays, “Add both…” and the rest, as with the cities.' : 'Cualquier municipio de España: sus locales, «Añadir los dos…» y lo demás, como en las ciudades.')}</p>
+      <div class="fest-busca"><input id="festMuniQ" type="search" autocomplete="off" placeholder="${en ? 'Find a town (e.g. Torrent, Alcañiz…)' : 'Busca un municipio (Torrent, Alcañiz…)'}" aria-label="${en ? 'Find a town' : 'Busca un municipio'}" aria-controls="festMuniRes">
+        <div id="festMuniRes" class="fest-res" role="list"></div></div>
+      <div class="fest-pop" id="festPop"><span class="muted small">${en ? 'Popular' : 'Populares'}</span>
+        ${populares.map((c) => `<a class="fest-chip${elegidoEs(c) ? ' on' : ''}" href="#/festivos/${anio}?m=${encodeURIComponent(c.id)}">${esc(c.name)}</a>`).join('')}</div>
+      ${panelLugar}
+    </div>
     <div class="card"><h2>${esc(en ? `Local holidays ${anio}` : `Locales de ${anio}`)}</h2>${table({
     cols: [
       { h: en ? 'City' : 'Ciudad', r: (c) => `<span class="title">${esc(c.nombre)}</span><span class="sub">${esc(c.region ? festCcaa(c.region) : (en ? 'no region' : 'sin comunidad'))}</span>` },
-      { h: en ? 'Status' : 'Estado', r: (c) => (c.ok ? tag(en ? 'complete' : 'completo', 'ok')
-        : c.proposed ? tag(en ? `${c.proposed} to confirm` : `${c.proposed} por confirmar`, 'warn')
-          : tag(en ? `${c.confirmed} of 2` : `${c.confirmed} de 2`, 'bad')) },
-      { h: en ? 'Days' : 'Días', r: (c) => (c.days || []).map((x) => `<span class="nowrap">${esc(dia(x.day))} · ${esc(x.name)}${x.status === 'proposed' ? ` ${tag(en ? 'proposed' : 'propuesto', 'warn')}` : ''}</span>`).join('<br>') || '<span class="muted">—</span>' },
-      { h: en ? 'Where it is published' : 'Dónde sale', r: (c) => (c.bulletin ? `<a class="link" target="_blank" rel="noopener" href="${esc(c.bulletin.url)}">${esc(c.bulletin.name)} ↗</a>` : '—') },
+      { h: en ? 'Status' : 'Estado', r: estadoLocales },
+      { h: en ? 'Days' : 'Días', r: diasCorto },
+      { h: en ? 'Where it is published' : 'Dónde sale', r: (c) => enlaceBoletin(c.bulletin) },
       { h: '', r: (c, i) => `<span class="actions"><button class="btn sm" data-ciudad="${i}">${ms('edit_calendar')}${en ? 'Add both…' : 'Añadir los dos…'}</button></span>` },
     ],
     rows: porCiudad,
     empty: en ? 'No active cities.' : 'No hay ciudades activas.',
+  })}</div>
+    <div class="card" id="festOtros"><h2>${esc(en ? `Other towns ${anio}` : `Otros municipios en ${anio}`)}</h2>
+      <p class="muted small" style="margin:0 0 10px">${esc(en ? 'Towns that are not a Klendar city and have local holidays this year. To add one, look it up in “Any town”.' : 'Los que no son ciudad de Klendar y tienen locales este año. Para añadir otro, búscalo en «Cualquier municipio».')}</p>${table({
+    cols: [
+      { h: en ? 'Town' : 'Municipio', r: (m) => `<a class="title link" href="#/festivos/${anio}?m=${encodeURIComponent(m.slug)}">${esc(m.name)}</a><span class="sub">${esc([m.province, festCcaa(m.region)].filter(Boolean).join(' · '))}</span>` },
+      { h: en ? 'Status' : 'Estado', r: estadoLocales },
+      { h: en ? 'Days' : 'Días', r: diasCorto },
+      { h: en ? 'Where it is published' : 'Dónde sale', r: (m) => enlaceBoletin(m.bulletin) },
+      { h: '', r: (m, i) => `<span class="actions"><button class="btn sm" data-muni="${i}">${ms('edit_calendar')}${en ? 'Add both…' : 'Añadir los dos…'}</button></span>` },
+    ],
+    rows: otros,
+    empty: en ? `No other town has local holidays in ${anio}.` : `Ningún otro municipio tiene locales en ${anio}.`,
   })}</div>
     <div class="card"><h2>${esc(en ? `All of ${anio}` : `Todo ${anio}`)}</h2>${table({
     cols: [
@@ -137,25 +220,35 @@ PAGES.festivos = async (v, param) => {
       { h: en ? 'Name' : 'Nombre', r: (h) => `${esc(h.name)}${h.status === 'proposed' ? ` ${tag(en ? 'proposed' : 'propuesto', 'warn')}` : ''}` },
       { h: en ? 'Scope' : 'Alcance', r: (h) => `${tag(alcance[h.scope], h.scope === 'national' ? 'ok' : 'dim')} <span class="sub">${esc(donde(h))}</span>` },
       { h: en ? 'Source' : 'Fuente', r: (h) => `<span class="sub">${esc(h.source || '—')}</span>` },
-      { h: '', r: (h, i) => `<span class="actions">${h.status === 'proposed' ? `<button class="btn sm ghost" data-confirmar="${i}">${ms('check')}${en ? 'Confirm' : 'Confirmar'}</button>` : ''}<button class="btn sm ghost" data-editar="${i}">${ms('edit')}${en ? 'Edit' : 'Cambiar'}</button><button class="btn sm ghost" data-quitar="${i}">${ms('delete')}${en ? 'Remove' : 'Quitar'}</button></span>` },
+      { h: '', r: botonesFila },
     ],
     rows: lista,
     empty: en ? 'No holidays loaded for this year.' : 'No hay festivos cargados para este año.',
   })}</div>`;
 
-  const editar = async (h) => {
+  /** Las opciones de «Ciudad o municipio»: las ciudades de Klendar y, si
+   * hace falta, el municipio elegido o el del festivo que se cambia. */
+  const opcionesLocal = (h) => {
+    const ops = ciudades.map((c) => [c.id, c.name]);
+    const mas = (key, nombre) => { if (key && !ops.some((o) => o[0] === key)) ops.unshift([key, nombre]); };
+    if (lugar) mas(lugar.key, lugarNombre);
+    if (h?.scope === 'local' && !h.city && h.municipality) mas(h.municipality, festMuniNombre(h.municipality_name || h.municipality, h.province));
+    return ops;
+  };
+  const editar = async (h, pre = {}) => {
     const r = await modal({
       title: h ? (en ? 'Edit holiday' : 'Cambiar festivo') : (en ? 'Add a holiday' : 'Añadir un festivo'),
       intro: h?.status === 'proposed' ? esc(en ? 'Saving it confirms it.' : 'Al guardarlo queda confirmado.') : '',
       fields: [
         { name: 'day', label: en ? 'Day' : 'Día', type: 'date', value: h?.day || '', required: true },
         { name: 'name', label: en ? 'Name' : 'Nombre', value: h?.name || '', maxlength: 80, required: true, placeholder: 'Todos los Santos' },
-        { name: 'scope', label: en ? 'Scope' : 'Alcance', type: 'select', value: h?.scope || 'local',
+        { name: 'scope', label: en ? 'Scope' : 'Alcance', type: 'select', value: h?.scope || pre.scope || 'local',
           options: [['national', alcance.national], ['region', alcance.region], ['local', alcance.local]] },
-        { name: 'region', label: en ? 'Region (if regional)' : 'Comunidad (si es autonómico)', type: 'select', value: h?.region || 'MD',
+        { name: 'region', label: en ? 'Region (if regional)' : 'Comunidad (si es autonómico)', type: 'select', value: h?.region || pre.region || 'MD',
           options: FEST_CCAA.map(([c, n]) => [c, `${n} (${c})`]) },
-        { name: 'city', label: en ? 'City (if local)' : 'Ciudad (si es local)', type: 'select', value: h?.city || 'madrid',
-          options: ciudades.map((c) => [c.id, c.name]) },
+        { name: 'city', label: en ? 'City or town (if local)' : 'Ciudad o municipio (si es local)', type: 'select',
+          value: h ? (h.city || h.municipality) : (pre.city || lugar?.key || 'madrid'), options: opcionesLocal(h),
+          help: en ? 'Another town: look it up in “Any town”.' : 'Otro municipio: búscalo en «Cualquier municipio».' },
         { name: 'source', label: en ? 'Source' : 'Fuente', value: h?.source || '', maxlength: 300,
           placeholder: 'BOE-A-2026-21254, 13-10-2026', help: en ? 'Bulletin, number and date (and the link).' : 'Boletín, número y fecha (y el enlace).' },
       ],
@@ -171,13 +264,14 @@ PAGES.festivos = async (v, param) => {
     route();
   };
 
-  /** Los dos locales de una ciudad de una vez, con la fuente. */
+  /** Los dos locales de una ciudad o de un municipio de una vez, con la
+   * fuente (`c.id`: la ciudad o el código del municipio). */
   const deCiudad = async (c) => {
     const ya = (c.days || []);
     const b = c.bulletin || {};
     const r = await modal({
       title: en ? `Local holidays ${anio} · ${c.nombre}` : `Locales de ${anio} · ${c.nombre}`,
-      intro: `${esc(en ? 'The two days the city sets each year. Look them up in' : 'Los dos días que fija la ciudad cada año. Míralos en el')} ${b.url ? `<a class="link" target="_blank" rel="noopener" href="${esc(b.url)}">${esc(b.name || '')} ↗</a>` : esc(b.name || 'boletín')}.`,
+      intro: `${esc(en ? 'The two days the town sets each year. Look them up in' : 'Los dos días que fija el municipio cada año. Míralos en el')} ${b.url ? `<a class="link" target="_blank" rel="noopener" href="${esc(b.url)}">${esc(b.name || '')} ↗</a>` : esc(b.name || 'boletín')}.`,
       fields: [
         { grupo: en ? 'First' : 'El primero', cols: 2, campos: [
           { name: 'd1', label: en ? 'Day' : 'Día', type: 'date', value: ya[0]?.day || '', required: true },
@@ -209,6 +303,38 @@ PAGES.festivos = async (v, param) => {
     route();
   };
 
+  // El buscador: cualquier municipio de España, sin tildes ni mayúsculas
+  // (`search_municipalities`); cada resultado con su provincia.
+  const q = $('#festMuniQ', v);
+  const res = $('#festMuniRes', v);
+  const pop = $('#festPop', v);
+  let pide = 0;
+  let t = null;
+  const pintaRes = (l, texto) => {
+    pop.hidden = !!texto;
+    if (!texto) { res.innerHTML = ''; return; }
+    res.innerHTML = l.length
+      ? l.map((m) => `<a class="fest-op" role="listitem" href="#/festivos/${anio}?m=${encodeURIComponent(m.slug)}"><span class="title">${esc(m.name)}</span><span class="sub">${esc(m.province || '')}${m.popular ? ` · ${en ? 'Klendar city' : 'Ciudad de Klendar'}` : ''}</span></a>`).join('')
+      : `<p class="muted small" style="margin:6px 2px">${esc(en ? 'No town with that name.' : 'Ningún municipio con ese nombre.')}</p>`;
+  };
+  q.addEventListener('input', () => {
+    clearTimeout(t);
+    t = setTimeout(async () => {
+      const texto = q.value.trim();
+      const yo = ++pide;
+      if (!texto) { pintaRes([], ''); return; }
+      let l = [];
+      try { l = await rpc('search_municipalities', { p_q: texto.slice(0, 60), p_limit: 8 }); } catch { l = []; }
+      if (yo === pide) pintaRes(Array.isArray(l) ? l : [], texto);
+    }, 250);
+  });
+  // Intro: el primero.
+  q.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter') return;
+    const primero = $('a.fest-op', res);
+    if (primero) { e.preventDefault(); primero.click(); }
+  });
+
   $('#nuevo', v).onclick = () => editar(null);
   $('#buscar', v).onclick = (e) => esperando(e.currentTarget, async () => {
     try {
@@ -219,14 +345,19 @@ PAGES.festivos = async (v, param) => {
   });
   const todos = $('#confirmarTodos', v);
   if (todos) todos.onclick = (e) => esperando(e.currentTarget, () => confirmar(propuestos.map((h) => h.id)));
-  $$('[data-confirmar]', v).forEach((b) => { b.onclick = () => esperando(b, () => confirmar([lista[+b.dataset.confirmar].id])); });
+  if (lugarObj) {
+    $('#lugarDos', v).onclick = () => deCiudad(lugarObj);
+    $('#lugarUno', v).onclick = () => editar(null, { scope: 'local', city: lugar.key });
+  }
+  $$('[data-confirmar]', v).forEach((b) => { b.onclick = () => esperando(b, () => confirmar([b.dataset.confirmar])); });
   $$('[data-ciudad]', v).forEach((b) => { b.onclick = () => deCiudad(porCiudad[+b.dataset.ciudad]); });
-  $$('[data-editar]', v).forEach((b) => { b.onclick = () => editar(lista[+b.dataset.editar]); });
+  $$('[data-muni]', v).forEach((b) => { b.onclick = () => deCiudad(otros[+b.dataset.muni]); });
+  $$('[data-editar]', v).forEach((b) => { b.onclick = () => editar(porId.get(b.dataset.editar)); });
   $$('[data-quitar]', v).forEach((b) => { b.onclick = async () => {
-    const h = lista[+b.dataset.quitar];
+    const h = porId.get(b.dataset.quitar);
     if (!(await confirmDlg(en ? 'Remove this holiday?' : '¿Quitar este festivo?', esc(`${dia(h.day)} · ${h.name} · ${donde(h)}`), { submit: en ? 'Remove' : 'Quitar', danger: true }))) return;
-    const res = await rpc('admin_delete_holiday', { p_id: h.id }).catch(() => null);
-    if (!res?.ok) { toast(en ? 'Could not remove it' : 'No se ha podido quitar', true); return; }
+    const r = await rpc('admin_delete_holiday', { p_id: h.id }).catch(() => null);
+    if (!r?.ok) { toast(en ? 'Could not remove it' : 'No se ha podido quitar', true); return; }
     toast(en ? 'Removed' : 'Quitado');
     route();
   }; });

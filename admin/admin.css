@@ -432,3 +432,23 @@ table.tbl .art-thumb, .art-celda .art-thumb { border-radius: 50%; margin: 0; fle
 .cr-prov li { flex-wrap: wrap; }
 .cr-prov li > span { flex: 1 1 260px; }
 .cr-prov .cr-acciones { flex-wrap: wrap; }
+
+/* «Festivos» › «Cualquier municipio» (admin/festivos.js): el buscador, las
+   Populares y el municipio elegido con su provincia. */
+.fest-busca { position: relative; max-width: 520px; }
+.fest-busca input { width: 100%; }
+.fest-res { display: grid; gap: 4px; margin-top: 6px; }
+.fest-res:empty { display: none; }
+.fest-op { display: grid; padding: 8px 12px; border: 1px solid var(--glass-border); border-radius: 12px; background: var(--elevated); color: var(--ink); text-decoration: none; }
+.fest-op:hover, .fest-op:focus-visible { border-color: var(--ink); }
+.fest-op .title { font-weight: 700; }
+.fest-op .sub { display: block; color: var(--ink-2); font-size: 13px; margin: 0; max-width: none; text-align: left; }
+.fest-pop { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 10px; }
+.fest-pop[hidden] { display: none; }
+.fest-chip { border: 1px solid var(--glass-border); border-radius: 999px; padding: 4px 10px; font-size: 13px; font-weight: 700; color: var(--ink); text-decoration: none; background: transparent; }
+.fest-chip.on { background: var(--ink); color: var(--surface); border-color: transparent; }
+.fest-lugar { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--glass-border); }
+.fest-lugar-cab { display: flex; gap: 10px; align-items: flex-start; flex-wrap: wrap; margin-bottom: 6px; }
+.fest-lugar-cab h3 { font-size: 18px; margin: 0 0 2px; }
+.fest-lugar-cab .spacer { flex: 1; }
+.fest-lugar-botones { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }

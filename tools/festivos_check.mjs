@@ -102,9 +102,9 @@ function supabaseFalso(estado) {
   };
 }
 
-async function contexto(nav, vp, rpc) {
-  const ctx = await nav.newContext({ viewport: vp, locale: 'es-ES', timezoneId: 'Europe/Madrid' });
-  await ctx.addInitScript(([k, v]) => { try { localStorage.setItem(k, v); localStorage.setItem('klendar_lang', 'es'); } catch { /* */ } }, [`sb-${REF}-admin-auth-token`, sesion()]);
+async function contexto(nav, vp, rpc, lang = 'es') {
+  const ctx = await nav.newContext({ viewport: vp, locale: lang === 'en' ? 'en-GB' : 'es-ES', timezoneId: 'Europe/Madrid' });
+  await ctx.addInitScript(([k, v, l]) => { try { localStorage.setItem(k, v); localStorage.setItem('klendar_lang', l); } catch { /* */ } }, [`sb-${REF}-admin-auth-token`, sesion(), lang]);
   const estado = { llamadas: [], funciones: [], rpc };
   await ctx.route(`${SUPA}/**`, supabaseFalso(estado));
   const p = await ctx.newPage();
@@ -180,6 +180,143 @@ async function festivos(nav, nombre, t, vp) {
   const f = estado.funciones.find(([fn]) => fn === 'holidays');
   ok(f && f[1].accion === 'importar' && /^Bearer /.test(f[2]), `${nombre}/${t} festivos: «Buscar ahora» llama a la función con la sesión`);
   ok(errores.length === 0, `${nombre}/${t} festivos sin errores JS ${errores.join(' | ')}`);
+  await ctx.close();
+}
+
+/** «Cualquier municipio» (migración 20261260100020 de la app): buscar un
+ * municipio (homónimos con su provincia), sus locales, «Añadir los dos…»,
+ * «Añadir uno…», confirmar, cambiar y quitar; «Otros municipios». */
+const T1 = 'f0000000-0000-4000-8000-000000000041';
+const T2 = 'f0000000-0000-4000-8000-000000000042';
+const TORRENT = { code: '46244', slug: 'torrent-valencia', name: 'Torrent', province: 'Valencia/València', region: 'VC', city_id: null, city_name: null, city_active: false, key: '46244' };
+const DIAS_TORRENT = [
+  { id: T1, day: '2028-02-03', name: 'Sant Blai', scope: 'local', region: 'VC', city: null, municipality: '46244', municipality_name: 'Torrent', municipality_slug: 'torrent-valencia', province: 'Valencia/València', source: 'DOGV núm. 1', status: 'proposed', origin: 'admin' },
+  { id: T2, day: '2028-08-25', name: 'Mare de Déu del Rebollet', scope: 'local', region: 'VC', city: null, municipality: '46244', municipality_name: 'Torrent', municipality_slug: 'torrent-valencia', province: 'Valencia/València', source: 'DOGV núm. 1', status: 'confirmed', origin: 'admin' },
+];
+const GIRONA = { code: '17197', slug: 'torrent-girona', name: 'Torrent', province: 'Girona', region: 'CT', confirmed: 1, proposed: 0, ok: false,
+  days: [{ id: 'g1', day: '2028-07-25', name: 'Sant Jaume', status: 'confirmed' }], bulletin: { name: 'DOGC', url: 'https://dogc.gencat.cat/' } };
+
+async function municipio(nav, nombre, t, vp, lang = 'es') {
+  const en = lang === 'en';
+  const { ctx, p, estado, errores } = await contexto(nav, vp, {
+    ...BASE_RPC,
+    admin_holidays: () => ({
+      holidays: [...FILAS_2028, ...DIAS_TORRENT],
+      cities: CIUDADES,
+      municipalities: [GIRONA, { code: '46244', slug: 'torrent-valencia', name: 'Torrent', province: 'Valencia/València', region: 'VC', confirmed: 1, proposed: 1, ok: false,
+        days: DIAS_TORRENT.map(({ id, day, name, status }) => ({ id, day, name, status })), bulletin: { name: 'DOGV', url: 'https://dogv.gva.es/' } }],
+      years: [2027, 2028],
+      status: ESTADO_2028,
+      watch: ESTADO_2028,
+      import: null,
+    }),
+    admin_holiday_place: (b) => (b.p_place === 'torrent-valencia'
+      ? { ok: true, place: TORRENT, bulletin: { name: 'DOGV', url: 'https://dogv.gva.es/' }, days: DIAS_TORRENT, national: 8, regional: 3 }
+      : { ok: false, error: 'invalid_city' }),
+    search_municipalities: (b) => (/^torr/i.test(b.p_q || '') ? [
+      { code: '46244', slug: 'torrent-valencia', name: 'Torrent', province: 'Valencia/València', city_id: null, popular: false },
+      { code: '17197', slug: 'torrent-girona', name: 'Torrent', province: 'Girona', city_id: null, popular: false },
+      { code: '22234', slug: 'torrente-de-cinca', name: 'Torrente de Cinca', province: 'Huesca', city_id: null, popular: false },
+    ] : []),
+    admin_save_city_holidays: { ok: true, saved: 2 },
+    admin_save_holiday: { ok: true, id: 'nuevo' },
+    admin_confirm_holidays: (b) => ({ ok: true, confirmed: (b.p_ids || []).length }),
+    admin_delete_holiday: { ok: true },
+  }, lang);
+  await p.goto(`${BASE}/admin/#/festivos/2028`, { waitUntil: 'networkidle' });
+  await p.waitForSelector('#festMuniQ');
+  const card = async () => (await p.locator('.fest-muni').innerText()).replace(/\s+/g, ' ');
+  let c = await card();
+  ok((en ? /Any town/ : /Cualquier municipio/).test(c) && (en ? /Popular/ : /Populares/).test(c) && /Madrid/.test(c) && /Zaragoza/.test(c),
+    `${nombre}/${t}/${lang} municipio: «Cualquier municipio» con las Populares`);
+  const otros = (await p.locator('#festOtros').innerText()).replace(/\s+/g, ' ');
+  ok(/Torrent Girona · (Cataluña|Catalonia)/.test(otros) && /Torrent Valencia\/València · Comunitat Valenciana/.test(otros) && (en ? /1 of 2/ : /1 de 2/).test(otros),
+    `${nombre}/${t}/${lang} municipio: «Otros municipios» con los dos Torrent y su provincia (${otros.slice(0, 160)})`);
+  const todo = await p.locator('#view').innerText();
+  ok(/Torrent \(Valencia\/València\)/.test(todo), `${nombre}/${t}/${lang} municipio: en «Todo», el local de Torrent con su provincia`);
+
+  // Buscar: homónimos con su provincia y sin las Populares mientras se escribe.
+  await p.fill('#festMuniQ', 'torrent');
+  await p.waitForSelector('#festMuniRes a.fest-op');
+  const res = (await p.locator('#festMuniRes').innerText()).replace(/\s+/g, ' ');
+  ok(/Torrent Valencia\/València/.test(res) && /Torrent Girona/.test(res) && /Torrente de Cinca Huesca/.test(res) && await p.locator('#festPop').isHidden(),
+    `${nombre}/${t}/${lang} municipio: el buscador con los homónimos y su provincia (${res})`);
+  ok(estado.llamadas.some(([fn, a]) => fn === 'search_municipalities' && a.p_q === 'torrent' && a.p_limit === 8), `${nombre}/${t}/${lang} municipio: usa search_municipalities`);
+  await p.screenshot({ path: `${OUT}/web-admin-festivos-buscar-${nombre}-${t}-${lang}.png` });
+  await p.click('#festMuniRes a.fest-op >> nth=0');
+  await p.waitForSelector('#festLugar');
+  ok(/#\/festivos\/2028\?m=torrent-valencia$/.test(p.url()), `${nombre}/${t}/${lang} municipio: el elegido va en la dirección (${p.url()})`);
+  c = await card();
+  ok(/Torrent Valencia\/València · Comunitat Valenciana/.test(c) && /46244/.test(c) && /8 (nacionales|national)/.test(c) && /3 (de su comunidad|regional)/.test(c)
+    && /Sant Blai/.test(c) && /Mare de Déu del Rebollet/.test(c) && await p.locator('#festLugar a[href="https://dogv.gva.es/"]').count() === 1,
+  `${nombre}/${t}/${lang} municipio: el elegido con provincia, comunidad, código, lo que le toca, sus días y el DOGV (${c.slice(0, 260)})`);
+  ok(await p.locator('a.btn[href="#/festivos/2027?m=torrent-valencia"]').count() === 1, `${nombre}/${t}/${lang} municipio: el año de al lado conserva el municipio`);
+  ok(await p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), `${nombre}/${t}/${lang} municipio: sin scroll horizontal`);
+  await p.locator('.fest-muni').screenshot({ path: `${OUT}/web-admin-festivos-municipio-${nombre}-${t}-${lang}.png` });
+
+  // «Añadir los dos…» del elegido: con su código.
+  await p.click('#lugarDos');
+  await p.waitForSelector('#modal input[name=d1]');
+  const dlg = await p.locator('#modal').innerText();
+  ok((en ? /Local holidays 2028 · Torrent \(Valencia\/València\)/ : /Locales de 2028 · Torrent \(Valencia\/València\)/).test(dlg) && /DOGV/.test(dlg),
+    `${nombre}/${t}/${lang} municipio: «Añadir los dos…» con el municipio y su boletín`);
+  ok(await p.locator('#modal input[name=d1]').inputValue() === '2028-02-03', `${nombre}/${t}/${lang} municipio: parte de los días que hay`);
+  await p.fill('#modal input[name=source]', 'DOGV núm. 9999, 20-12-2027');
+  await p.click('#modal button[type=submit]');
+  await p.waitForTimeout(400);
+  const dos = estado.llamadas.find(([fn]) => fn === 'admin_save_city_holidays');
+  ok(dos && dos[1].p_city === '46244' && dos[1].p_days.length === 2 && dos[1].p_days[1].name === 'Mare de Déu del Rebollet',
+    `${nombre}/${t}/${lang} municipio: guarda los dos con el código del municipio ${JSON.stringify(dos?.[1])}`);
+
+  // «Añadir uno…»: local y el municipio ya elegido.
+  await p.waitForSelector('#lugarUno');
+  await p.click('#lugarUno');
+  await p.waitForSelector('#modal select[name=city]');
+  ok(await p.locator('#modal select[name=city]').inputValue() === '46244' && await p.locator('#modal select[name=scope]').inputValue() === 'local',
+    `${nombre}/${t}/${lang} municipio: «Añadir uno…» parte de local y de Torrent`);
+  await p.fill('#modal input[name=day]', '2028-09-08');
+  await p.fill('#modal input[name=name]', 'Fira de Torrent');
+  await p.click('#modal button[type=submit]');
+  await p.waitForTimeout(400);
+  const uno = estado.llamadas.find(([fn]) => fn === 'admin_save_holiday');
+  ok(uno && uno[1].p_city === '46244' && uno[1].p_scope === 'local' && uno[1].p_day === '2028-09-08', `${nombre}/${t}/${lang} municipio: «Añadir uno…» manda el municipio ${JSON.stringify(uno?.[1])}`);
+
+  // Confirmar, cambiar y quitar uno de sus días.
+  await p.waitForSelector(`#festLugar [data-confirmar="${T1}"]`);
+  await p.click(`#festLugar [data-confirmar="${T1}"]`);
+  await p.waitForTimeout(400);
+  const conf = estado.llamadas.find(([fn]) => fn === 'admin_confirm_holidays');
+  ok(conf && JSON.stringify(conf[1].p_ids) === JSON.stringify([T1]), `${nombre}/${t}/${lang} municipio: «Confirmar» con su id`);
+  await p.waitForSelector(`#festLugar [data-editar="${T2}"]`);
+  await p.click(`#festLugar [data-editar="${T2}"]`);
+  await p.waitForSelector('#modal select[name=city]');
+  ok(await p.locator('#modal select[name=city]').inputValue() === '46244', `${nombre}/${t}/${lang} municipio: «Cambiar» se queda en Torrent (no en Madrid)`);
+  await p.click('#modal [data-cancel]');
+  await p.click(`#festLugar [data-quitar="${T2}"]`);
+  await p.waitForSelector('#modal[open] button[type=submit]');
+  ok(/Torrent \(Valencia\/València\)/.test(await p.locator('#modal').innerText()), `${nombre}/${t}/${lang} municipio: «Quitar» dice qué municipio`);
+  await p.click('#modal button[type=submit]');
+  await p.waitForTimeout(400);
+  ok(estado.llamadas.some(([fn, a]) => fn === 'admin_delete_holiday' && a.p_id === T2), `${nombre}/${t}/${lang} municipio: «Quitar» con su id`);
+
+  // «Otros municipios» › «Añadir los dos…» de Torrent (Girona).
+  await p.waitForSelector('[data-muni="0"]');
+  await p.click('[data-muni="0"]');
+  await p.waitForSelector('#modal input[name=d1]');
+  ok(/Torrent \(Girona\)/.test(await p.locator('#modal').innerText()), `${nombre}/${t}/${lang} municipio: «Otros municipios» › «Añadir los dos…» de Torrent (Girona)`);
+  await p.fill('#modal input[name=d2]', '2028-12-26');
+  await p.fill('#modal input[name=n2]', 'Sant Esteve');
+  await p.fill('#modal input[name=source]', 'DOGC núm. 1, 1-1-2028');
+  await p.click('#modal button[type=submit]');
+  await p.waitForTimeout(400);
+  ok(estado.llamadas.some(([fn, a]) => fn === 'admin_save_city_holidays' && a.p_city === '17197' && a.p_days.length === 2),
+    `${nombre}/${t}/${lang} municipio: guarda los de Girona con su código`);
+
+  // Un municipio que no existe.
+  await p.goto(`${BASE}/admin/#/festivos/2028?m=atlantida`, { waitUntil: 'networkidle' });
+  await p.waitForSelector('.fest-lugar');
+  ok((en ? /isn’t in the official list/ : /no está en la lista oficial/).test(await p.locator('.fest-lugar').innerText()), `${nombre}/${t}/${lang} municipio: uno que no existe lo dice`);
+  ok(errores.length === 0, `${nombre}/${t}/${lang} municipio sin errores JS ${errores.join(' | ')}`);
   await ctx.close();
 }
 
@@ -325,6 +462,8 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
   const nav = await tipo.launch();
   for (const [t, vp] of [['movil', { width: 390, height: 844 }], ['escritorio', { width: 1280, height: 900 }]]) {
     await festivos(nav, nombre, t, vp);
+    await municipio(nav, nombre, t, vp);
+    if (t === 'escritorio') await municipio(nav, nombre, t, vp, 'en');
     await resumen(nav, nombre, t, vp);
     await crecer(nav, nombre, t, vp);
     await gratis(nav, nombre, t, vp);

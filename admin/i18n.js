@@ -1492,6 +1492,7 @@ const I18N = makeI18N({
     "Qué pedir aquí": "What to order here",
     "Festivos": "Public holidays",
     "Esa ciudad no está en Klendar.": "That city isn't on Klendar.",
+    "Ese municipio no está en la lista oficial.": "That town isn't in the official list.",
     "Ya hay un festivo ese día con ese mismo alcance.": "There is already a holiday that day with the same scope.",
     "Andalucía": "Andalusia",
     "Aragón": "Aragon",
