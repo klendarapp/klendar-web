@@ -26,7 +26,7 @@ import KM from '../../assets/marcas.js';
 import KMO from '../../assets/momentos.js';
 import { notFound, sitioAhoraScripts } from './views.js';
 import { paginaDeMunicipio } from './municipios.js';
-import { PARTIDOS_CSS, icPartido, origenDeZona, partidosBase, partidosEnBusqueda, zonaBaseDeExplorar, zonaDeExplorar } from './partidos.js';
+import { PARTIDOS_CSS, origenDeZona, partidosBase, partidosEnBusqueda, zonaBaseDeExplorar, zonaDeExplorar } from './partidos.js';
 import { artistasEnBusqueda } from './artistas.js';
 import KA from '../../assets/artistas.js';
 import KE from '../../assets/emisiones.js';
@@ -357,6 +357,8 @@ const IC = {
   comer: 'M15.98 6V14.02H18.98V21.98H21V2.02C18.23 2.02 15.98 4.22 15.98 6ZM11.02 9H9V2.02H6.98V9H5.02V2.02H3V9C3 11.2 4.78 12.98 6.98 12.98V21.98H9V12.98C11.2 12.98 12.98 11.2 12.98 9V2.02H11.02V9Z',
   mundo: 'M12 2.02C6.47 2.02 2.02 6.47 2.02 12C2.02 17.53 6.47 21.98 12 21.98C17.53 21.98 21.98 17.53 21.98 12C21.98 6.47 17.53 2.02 12 2.02ZM11.02 19.92C7.03 19.45 3.98 16.08 3.98 12C3.98 11.39 4.08 10.78 4.22 10.22L9 15V15.98C9 17.11 9.89 18 11.02 18V19.92ZM17.91 17.39C17.62 16.59 16.92 15.98 15.98 15.98H15V12.98C15 12.47 14.53 12 14.02 12H8.02V9.98H9.98C10.55 9.98 11.02 9.56 11.02 9V6.98H12.98C14.11 6.98 15 6.09 15 5.02V4.59C17.95 5.77 20.02 8.67 20.02 12C20.02 14.06 19.22 15.98 17.91 17.39Z',
   aprox: 'M12 3.98C14.77 3.98 17.02 6.23 17.02 9C17.02 10.08 16.59 11.3 15.98 12.61L17.48 14.11C18.38 12.38 18.98 10.55 18.98 9C18.98 5.11 15.89 2.02 12 2.02C10.17 2.02 8.48 2.72 7.27 3.84L8.67 5.3C9.56 4.5 10.73 3.98 12 3.98ZM12 6.52C11.39 6.52 10.88 6.7 10.45 7.08L13.92 10.55C14.3 10.12 14.48 9.61 14.48 9C14.48 7.64 13.36 6.52 12 6.52ZM3.42 2.86 2.02 4.27 5.2 7.45C5.06 7.97 5.02 8.48 5.02 9C5.02 14.25 12 21.98 12 21.98C12 21.98 13.69 20.16 15.38 17.67L18.75 21L20.16 19.59L3.42 2.86ZM12 18.89C9.98 16.31 7.22 12.14 7.03 9.28L13.92 16.22C13.31 17.2 12.61 18.09 12 18.89Z',
+  // «Dónde verlo» (live_tv, como en la app).
+  tele: 'M9 9.98V18L15.98 14.02L9 9.98ZM21 6H13.41L16.69 2.72L15.98 2.02L12 6H11.95L7.97 2.02L7.27 2.72L10.55 6H3C1.92 6 0.98 6.89 0.98 8.02V20.02C0.98 21.09 1.92 21.98 3 21.98H21C22.08 21.98 23.02 21.09 23.02 20.02V8.02C23.02 6.89 22.08 6 21 6ZM21 20.02H3V8.02H21V20.02Z',
   // El orden (Material «swap_vert»).
   orden: 'M16 17.01V10h-2v7.01h-3L15 21l4-3.99h-3zM9 3 5 6.99h3V14h2V6.99h3L9 3z',
 };
@@ -2217,7 +2219,7 @@ ${GRUPOS_CSS}` : ''}`;
   <div class="exp-cab cab-pagina" id="arriba">
     <div><h1>${esc(S.exp)}</h1>
     <p class="muted exp-lead">${esc(S.lead)}</p>
-    <p class="exp-atajo"><a href="${esc(`${partidosBase(lang)}/${zonaDeExplorar(e, lang) ? `?${zonaDeExplorar(e, lang)}` : ''}`)}">${icPartido(16)}<span>${esc(KE.t(lang).title)}</span></a>
+    <p class="exp-atajo"><a href="${esc(`${partidosBase(lang)}/${zonaDeExplorar(e, lang) ? `?${zonaDeExplorar(e, lang)}` : ''}`)}">${ic('tele', 16)}<span>${esc(KE.t(lang).title)}</span></a>
       <a href="${esc(`${gruposBase(lang)}/${zonaGrupos(e, lang) ? `?${zonaGrupos(e, lang)}` : ''}`)}">${icGrupos(16)}<span>${esc(KG.t(lang).title)}</span></a>
       ${sorteosOn ? `<a href="${esc(`${sorteosBase(lang)}/${zonaGrupos(e, lang) ? `?${zonaGrupos(e, lang)}` : ''}`)}">${icSorteo(16)}<span>${esc(KS.t(lang).title)}</span></a>` : ''}</p></div>
   </div>
