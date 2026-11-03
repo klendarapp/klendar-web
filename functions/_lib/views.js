@@ -16,6 +16,7 @@ import { decodeSeg,
   historiaBoton, priorPrice, publicPage, slugDe, todayBase, zonaDe,
 } from './public.js';
 import { cuandoCorto, plataformaEntradas, rejilla } from './tarjeta.js';
+import { paginaDeMunicipio } from './municipios.js';
 import { SITIO_PLAN, listaSitio, sitioFicha } from './sitio.js';
 import { FUENTE_TIEMPO } from './tiempo.js';
 import KR from '../../assets/rrpp-enlace.js';
@@ -1517,16 +1518,21 @@ export async function agendaPage(rawCity, lang) {
   // Mal codificada: «esa ciudad no está» (404), no un 500.
   const dec = decodeSeg(rawCity);
   if (dec == null) return notFound(lang, `${agendaBase(lang)}/`, 'c');
-  const raw = dec.replace(/[/]+$/, '');
+  let raw = dec.replace(/[/]+$/, '');
   const path = `${agendaBase(lang)}/${citySeg(raw)}/`;
   if (!raw || raw.length > 60) return notFound(lang, path, 'c');
+  // El municipio (`_lib/municipios.js`): su slug, un 301 desde otra forma
+  // del nombre o «¿Cuál de ellos?» con un homónimo.
+  const mun = await paginaDeMunicipio(raw, lang, path, (x) => `${agendaBase(lang)}/${encodeURIComponent(x)}/`);
+  if (mun.respuesta) return mun.respuesta;
+  raw = mun.pCity;
 
   const [offers, negocios, cats] = await Promise.all([
     rpcAll('public_city_agenda', { p_city: raw, p_limit: 60 }),
     rpc('public_businesses', { p_city: raw, p_limit: 12 }),
     rpcAll('public_categories', { p_city: raw }),
   ]);
-  const city = PRETTY(offers[0]?.city || negocios?.items?.[0]?.city || raw);
+  const city = mun.nombre || PRETTY(offers[0]?.city || negocios?.items?.[0]?.city || raw);
   // La agenda no trae coordenadas: la zona de cada negocio se lee aparte.
   // Cada tarjeta va en la hora de su negocio; los días, en la de la ciudad
   // (la de la mayoría de sus negocios).
@@ -1639,9 +1645,12 @@ export async function todayPage(rawCity, lang) {
   const en = lang === 'en';
   const dec = decodeSeg(rawCity);
   if (dec == null) return notFound(lang, `${todayBase(lang)}/`, 'c');
-  const raw = dec.replace(/[/]+$/, '');
+  let raw = dec.replace(/[/]+$/, '');
   const path = `${todayBase(lang)}/${citySeg(raw)}/`;
   if (!raw || raw.length > 60) return notFound(lang, path, 'c');
+  const mun = await paginaDeMunicipio(raw, lang, path, (x) => `${todayBase(lang)}/${encodeURIComponent(x)}/`);
+  if (mun.respuesta) return mun.respuesta;
+  raw = mun.pCity;
 
   const [hoyRes, mananaRes, cats, negocios] = await Promise.all([
     rpc('public_explore', { p_city: raw, p_filters: { when: 'today' }, p_limit: 60 }),
@@ -1655,7 +1664,7 @@ export async function todayPage(rawCity, lang) {
   // Una ciudad sin nada de nada (mal escrita, o donde aún no hay negocios).
   if (!hoyItems.length && !mananaItems.length && !lugares.length) return notFound(lang, path, 'c');
 
-  const city = PRETTY(hoyItems[0]?.city || mananaItems[0]?.city || lugares[0]?.city || raw);
+  const city = mun.nombre || PRETTY(hoyItems[0]?.city || mananaItems[0]?.city || lugares[0]?.city || raw);
   const tzCiudad = KZ.comun([...hoyItems, ...mananaItems].map((o) => zonaDe(o)));
   const fecha = KZ.fmt(`${KZ.hoy(tzCiudad)}T12:00:00Z`, 'UTC', en ? 'en-GB' : 'es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
   const ya = Date.now();
@@ -1747,9 +1756,9 @@ export async function citiesPage(lang) {
   <h1>${S.h1}</h1>
   <p class="muted" style="max-width:620px">${S.lead}</p>
   ${cities.length
-    ? `<div class="cities">${cities.map((c) => `<a href="${agendaBase(lang)}/${citySeg(c.city)}/">${esc(c.city)} <span class="muted">${c.n}</span></a>`).join('')}</div>
+    ? `<div class="cities">${cities.map((c) => `<a href="${agendaBase(lang)}/${citySeg(c.slug || c.city)}/">${esc(c.city)} <span class="muted">${c.n}</span></a>`).join('')}</div>
     <h2>${S.today}</h2>
-    <div class="cities">${cities.map((c) => `<a href="${todayBase(lang)}/${citySeg(c.city)}/">${esc(S.todayIn(c.city))}</a>`).join('')}</div>`
+    <div class="cities">${cities.map((c) => `<a href="${todayBase(lang)}/${citySeg(c.slug || c.city)}/">${esc(S.todayIn(c.city))}</a>`).join('')}</div>`
     : `<p class="empty">${S.none}</p>`}
   <p><a class="pill" href="${en ? '/en/for-business/' : '/para-negocios/'}">${S.biz}</a></p>`;
 

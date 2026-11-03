@@ -966,6 +966,12 @@ const APP_EN = {
   "Tu ciudad": "Your city",
   "Si abres Klendar lejos de ella, te enseñamos lo mejor de donde estés. No guardamos dónde estás.": "If you open Klendar far from it, we'll show you the best of where you are. We don't store where you are.",
   "Sin ciudad": "No city",
+  // «Busca tu municipio» (2026-11-03, «Toda España preparada»)
+  "Busca tu municipio": "Find your town",
+  "Populares": "Popular",
+  "No encontramos ese municipio. Prueba con otro nombre.": "We can't find that town. Try another name.",
+  "No hemos podido saber en qué municipio estás: búscalo.": "We couldn't tell which town you're in: search for it.",
+  "No hemos podido saber dónde estás: busca tu municipio.": "We couldn't tell where you are: find your town.",
   "Usar mi ubicación": "Use my location",
   "Borrar mis gustos": "Clear my interests",
   "Puedes cambiarlo cuando quieras en Ajustes → Lo que ves.": "You can change this any time in Settings → What you see.",

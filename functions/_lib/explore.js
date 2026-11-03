@@ -25,6 +25,7 @@ import { rejilla, tarjeta } from './tarjeta.js';
 import KM from '../../assets/marcas.js';
 import KMO from '../../assets/momentos.js';
 import { notFound, sitioAhoraScripts } from './views.js';
+import { paginaDeMunicipio } from './municipios.js';
 import { PARTIDOS_CSS, icPartido, origenDeZona, partidosBase, partidosEnBusqueda, zonaBaseDeExplorar, zonaDeExplorar } from './partidos.js';
 import { artistasEnBusqueda } from './artistas.js';
 import KA from '../../assets/artistas.js';
@@ -168,7 +169,7 @@ const T = (en) => en
       forEating: "Food and today's specials", pricePlan: 'Plan price', pricePlanHint: 'Free, up to €10, €25 or €50',
       placeLike: 'What the place is like', placeLikeHint: 'Terrace, indoors, dogs, wheelchair access, Wi-Fi, venue price…',
       dietsBHint: 'Vegetarian, vegan, gluten-free, coeliac, lactose-free, halal',
-      nearMe: 'Near me', aCity: 'A city', howFar: 'How far?', walk1: '1 km · a short walk', wholeCity: 'The whole city, no distance.',
+      nearMe: 'Near me', aCity: 'A city', howFar: 'How far?', walk1: '1 km · a short walk', wholeCity: 'The whole town and around it, no distance.', muniSearch: 'Find your town', muniPopular: 'Popular', muniNotFound: "We can't find that town. Try another name.",
       mapNoKm: 'On the map you see what is on the screen.',
       sortRec: 'Recommended', sortDefault: 'default',
       recLine: 'Paid featured placements first (with their label), then the newest nearby.',
@@ -300,7 +301,7 @@ const T = (en) => en
       forEating: 'Para comer y lo del día', pricePlan: 'Precio del plan', pricePlanHint: 'Gratis, hasta 10, 25 o 50 €',
       placeLike: 'Cómo es el sitio', placeLikeHint: 'Terraza, bajo techo, perros, accesible, wifi, precio del local…',
       dietsBHint: 'Vegetariano, vegano, sin gluten, celíacos, sin lactosa, halal',
-      nearMe: 'Cerca de mí', aCity: 'Una ciudad', howFar: '¿Hasta dónde?', walk1: '1 km · a un paseo', wholeCity: 'Toda la ciudad, sin distancia.',
+      nearMe: 'Cerca de mí', aCity: 'Una ciudad', howFar: '¿Hasta dónde?', walk1: '1 km · a un paseo', wholeCity: 'Todo el municipio y alrededor, sin distancia.', muniSearch: 'Busca tu municipio', muniPopular: 'Populares', muniNotFound: 'No encontramos ese municipio. Prueba con otro nombre.',
       mapNoKm: 'En el mapa ves lo que hay en la pantalla.',
       sortRec: 'Recomendado', sortDefault: 'de serie',
       recLine: 'Lo destacado de pago primero (con su etiqueta) y luego lo más nuevo cerca.',
@@ -584,13 +585,13 @@ const AVISAME_CSS = `<style>
  * Lo mismo que la tarjeta final de Descubre en la app. Con [vacio] (no hay
  * nada desde el principio), las mismas salidas y la misma lógica, pero
  * centradas como una pantalla vacía (`.vacio`), como Descubre vacío. */
-const finalHtml = ({ S, en, lang, cerca, km, city, filtros, link, page, alertaHref, sugerencias, vacio = false, limpiar = '', compacto = false, pedirQ = '', sinSugiere = false, agendaHref = '', busqueda = '', enSitios = '' }) => {
+const finalHtml = ({ S, en, lang, cerca, km, city, cityName = '', filtros, link, page, alertaHref, sugerencias, vacio = false, limpiar = '', compacto = false, pedirQ = '', sinSugiere = false, agendaHref = '', busqueda = '', enSitios = '' }) => {
   const sigKm = cerca ? RADIOS_KM.find((k) => k > km) : null;
   // ¿Se puede mirar más lejos? Con «Cerca de mí», a la distancia siguiente;
   // en una ciudad, en todas.
   const ampliar = cerca ? (sigKm ? { href: link({ km: sigKm }), txt: S.widen(sigKm) } : null)
     : city ? { href: link({ city: '' }), txt: S.allCitiesBtn } : null;
-  const donde = cerca ? S.within(km) : city ? S.inPlace(PRETTY(city)) : '';
+  const donde = cerca ? S.within(km) : city ? S.inPlace(cityName || PRETTY(city)) : '';
   const titulo = vacio ? (filtros ? S.emptyTitleFiltered : S.emptyTitle) : ampliar ? S.endTitle(donde) : S.endTitleAll;
   // Con «Cerca de ti», los textos de la app: «Amplía la distancia» y, en la
   // mayor, «No hay nada más a 25 km». Con una ciudad, «Amplía la búsqueda».
@@ -671,7 +672,7 @@ const finalHtml = ({ S, en, lang, cerca, km, city, filtros, link, page, alertaHr
 const portada = (items) => items.map((o) => firstPhoto(o.images) || o.photo).find(Boolean);
 
 /** Dónde se mira, para los textos de Sitios: «a 5 km», «en Madrid» o nada. */
-const dondeSitios = (e, S) => (e.cerca ? S.within(e.km) : e.city ? S.inPlace(PRETTY(e.city)) : '');
+const dondeSitios = (e, S) => (e.cerca ? S.within(e.km) : e.city ? S.inPlace(e.cityName || PRETTY(e.city)) : '');
 
 /** «Quitar filtros» en Sitios: lo del sitio fuera; la zona y Sitios se quedan. */
 const sinFiltrosSitio = (link) => link({ cat: '', cats: [], abierto: false, traits: [], precioLocal: 0, menuDia: false, comerAhora: false, momento: '', q: '' });
@@ -1278,11 +1279,12 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   // Lo que se le pide a la base por «El sitio» en Sitios.
   const traitsSitio = [...sitioSinNinos(e), ...(e.precioLocal ? [`price_le_${e.precioLocal}`] : []),
     ...(menuDia ? ['daily_menu'] : []), ...(comerAhora ? ['eat_now'] : []), ...(e.momento ? [KMO.trait(e.momento)] : [])];
-  // Una ciudad es toda ella: 25 km de su centro, como la app (Iván,
-  // 2026-10-27). Si no se sabe su centro, los negocios de esa ciudad.
+  // Un municipio es todo él: su radio desde su punto (25 km en las Ciudades
+  // de Klendar; de 10 a 20 km en el resto), como la app (Iván, 2026-10-27 y
+  // 2026-11-03). Si no se sabe su punto, los negocios de ese municipio.
   const argsSitios = (centro) => ({
     p_lat: cerca ? lat : centro?.lat ?? null, p_lng: cerca ? lng : centro?.lng ?? null,
-    p_radius_m: cerca ? km * 1000 : centro ? RADIO_CIUDAD_M : null, p_city: cerca || centro ? null : city || null,
+    p_radius_m: cerca ? km * 1000 : centro ? centro.radius_m || RADIO_CIUDAD_M : null, p_city: cerca || centro ? null : city || null,
     // Una categoría por su slug; varias, por sus ids (`public_places` las
     // pide así).
     p_category: catsSel.length === 1 ? cat : null, p_q: q || null, p_open_now: abierto,
@@ -1292,13 +1294,25 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
     // «Mejor valorados» (migración 20261246100000); «Más cerca» es lo de siempre.
     ...(sort === 'rated' ? { p_sort: 'rated' } : {}),
   });
-  // El centro de la ciudad elegida (para ordenar por cercanía sin tu posición).
+  // El centro del municipio elegido (para ordenar por cercanía sin tu
+  // posición): «Busca tu municipio» manda su slug (`?ciudad=alcaniz`); un
+  // nombre escrito («Alcañiz», una dirección de antes con «Madrid») también
+  // vale (`resolve_municipality`; un homónimo sin provincia, el más
+  // poblado). Sin la tabla (o si no contesta), las Ciudades de Klendar.
   const plano0 = (x) => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
   const centroDe = (ck) => (cerca || !city ? null
     : (ck || []).find((c) => c.id === plano0(city) || plano0(c.name) === plano0(city)) || null);
   // Las ciudades de Klendar (`cities`), para el centro de la elegida.
   const ciudadesP = rows('cities', 'select=id,name,lat,lng&order=position.asc').catch(() => []);
-  const centroCiudad = city && !cerca ? centroDe(await ciudadesP) : null;
+  const municipioP = city && !cerca
+    ? rpcAll('resolve_municipality', { p_slug: city }).then((l) => l[0]?.municipality || null).catch(() => null)
+    : Promise.resolve(null);
+  // «Busca tu municipio»: las «Populares» (las Ciudades de Klendar activas).
+  const popularesP = rpcAll('search_municipalities', { p_q: '' }).catch(() => []);
+  const municipio = await municipioP;
+  // Su nombre, como se dice («Donostia / San Sebastián»), para lo que se enseña.
+  if (municipio) e.cityName = municipio.name;
+  const centroCiudad = municipio || (city && !cerca ? centroDe(await ciudadesP) : null);
   // El calendario: qué mes y qué día (en la hora de Madrid; cada publicación
   // va en el día de su negocio).
   const hoy = KZ.hoy('Europe/Madrid');
@@ -1324,7 +1338,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
     // «Más cerca» sin saber dónde (ni tu posición ni una ciudad): se pide la
     // ubicación (`sinDondeCerca`) y mientras, por hora.
     sort: ordenBase === 'nearest' && !cerca && !centroCiudad ? 'soonest' : ordenBase,
-    ...(cerca ? { radius_m: km * 1000 } : centroCiudad ? { radius_m: RADIO_CIUDAD_M } : {}),
+    ...(cerca ? { radius_m: km * 1000 } : centroCiudad ? { radius_m: centroCiudad.radius_m || RADIO_CIUDAD_M } : {}),
     // Varias categorías (`cats`, migración 20261246100000); una sola va en
     // `p_category`, como siempre.
     ...(catsSel.length > 1 ? { cats: catsSel } : {}),
@@ -1403,6 +1417,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
     conNegociosArriba ? artistasEnBusqueda({ q, lang }).catch(() => '') : '',
   ]);
   const catsHoja = (todasCats || []).length ? todasCats : (cats || []);
+  const populares0 = await popularesP;
   const items = res?.items || [];
   // Las tarjetas de negocio llevan su rango de precio.
   await conPrecios([...(sitios?.items || [])]);
@@ -1529,6 +1544,31 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
     }
     return city ? lista.find((c) => c.id === plano(city) || plano(c.name) === plano(city)) || null : null;
   })();
+  // «Busca tu municipio» (como la app): cualquier municipio de España; sin
+  // texto, «Todas las ciudades» y las «Populares» (las Ciudades de Klendar).
+  // Sin JavaScript, el formulario manda el nombre y la página lo resuelve;
+  // con él, los resultados al escribir (/assets/municipios.js). Si la tabla
+  // aún no contesta, las ciudades con algo publicado, como antes.
+  const populares = (populares0 || []).length ? populares0.map((m) => ({ slug: m.slug, name: m.name }))
+    : ciudades.map((c) => ({ slug: String(c.slug || c.city), name: PRETTY(c.city) }));
+  const esElegido = (m) => !cerca && Boolean(city) && (plano(m.slug) === plano(city) || plano(m.name) === plano(city)
+    || (municipio && municipio.slug === m.slug));
+  // Lo demás de la dirección (sin el dónde), para el formulario sin JavaScript.
+  const ocultosZona = [...new URLSearchParams(query({ ...e, vista, page: 1, city: '', cerca: false, lat: null, lng: null, aprox: false, todas: false, mes: '', dia: '' }, lang))]
+    .filter(([k]) => k !== 'p')
+    .map(([k, v]) => `<input type="hidden" name="${esc(k)}" value="${esc(v)}">`).join('');
+  const buscaMunicipio = `<form class="muni-busca" method="get" action="${esc(base)}/" role="search" data-muni-busca
+       data-muni-href="${esc(link({ city: '__SLUG__', cerca: false }))}" data-muni-nada="${esc(S.muniNotFound)}">
+       ${ocultosZona}
+       <label class="buscador-campo muni-campo">${ic('buscar', 20)}<span class="sr">${esc(S.muniSearch)}</span>
+         <input type="search" name="${CLAVES[en ? 'en' : 'es'].city}" placeholder="${esc(S.muniSearch)}" autocomplete="off" enterkeyhint="search" maxlength="60"></label>
+       <div data-muni-res aria-live="polite"></div>
+       <div data-muni-sin>
+         ${opcion(link({ city: '', cerca: false, aprox: false, todas: true }), S.allCities, !city && !cerca)}
+         <p class="menu-d-t">${esc(S.muniPopular)}</p>
+         ${populares.map((m) => opcion(link({ city: m.slug, cerca: false }), m.name, esElegido(m))).join('')}
+       </div>
+     </form>`;
   // Pedir la ubicación y volver con ella (más lo de `data-mas`): /assets/tarjetas.js.
   const botonCerca = (txt, mas = '', cls = 'op', icono = 'cerca') => `<button type="button" class="${cls}" data-cerca${mas ? ` data-mas="${esc(mas)}"` : ''} data-err="${esc(S.nearNo)}" hidden>${icono ? ic(icono, 16) : ''}<span>${esc(txt)}</span></button>`;
   const K = CLAVES[en ? 'en' : 'es'];
@@ -1548,7 +1588,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   // todas las vistas, también en el mapa (Iván, 2026-10-28: la fila es
   // idéntica en Descubre y en Explorar; que en el mapa manda lo que se ve lo
   // dice la hoja).
-  const zonaValor = cerca ? (e.aprox ? S.approx : S.nearOn) : city ? PRETTY(city) : S.allCities;
+  const zonaValor = cerca ? (e.aprox ? S.approx : S.nearOn) : city ? e.cityName || PRETTY(city) : S.allCities;
   const zonaTxt = cerca ? `${zonaValor} · ${km} km` : zonaValor;
   const kmOp = (k) => {
     const txt = k === 1 ? S.walk1 : `${k} km`;
@@ -1582,8 +1622,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
      <div class="donde-sec" data-donde-sec="ciudad">
        <p class="menu-d-t">${esc(S.aCity)}</p>
        <p class="menu-nota">${esc(S.wholeCity)}</p>
-       ${opcion(link({ city: '', cerca: false, aprox: false, todas: true }), S.allCities, !city && !cerca)}
-       ${ciudades.map((c) => opcion(link({ city: String(c.city), cerca: false }), PRETTY(c.city), !cerca && city.toLowerCase() === String(c.city).toLowerCase())).join('')}
+       ${buscaMunicipio}
      </div>`,
     { etiqueta: `${S.zoneChange}: ${zonaTxt}` })
     // Por debajo de 400 px, con «Cerca de ti», solo «5 km» (el icono ya dice
@@ -1923,7 +1962,8 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   <script>${FILA_MIDE}</script>
   <p id="cercaErr" class="aviso-error" role="alert" hidden></p>
   <script src="/assets/categorias.js?v=6" defer></script>
-  <script src="/assets/gustos.js?v=8" defer data-lang="${en ? 'en' : 'es'}"></script>`;
+  <script src="/assets/gustos.js?v=9" defer data-lang="${en ? 'en' : 'es'}"></script>
+  <script src="/assets/municipios.js?v=1" defer></script>`;
 
   // Los atajos de la lupa (Iván, 2026-10-29: como la app): cada uno pone sus
   // filtros sobre los que haya y lleva a Descubre; «Para comer ya», a
@@ -2025,7 +2065,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
     <script src="/assets/palabras.js?v=2" defer data-lang="${en ? 'en' : 'es'}" data-url="${esc(supabasePublic().url)}" data-key="${esc(supabasePublic().key)}"></script>` : '';
   const final = sinKlendar ? sinKlendarHtml({ S, lang, lat, lng, cobertura, link })
     : alFinal || vacio ? finalHtml({
-      S, en, lang, cerca, km, city, filtros: conFiltros, link, page, sugerencias, vacio, alertaHref,
+      S, en, lang, cerca, km, city, cityName: e.cityName || '', filtros: conFiltros, link, page, sugerencias, vacio, alertaHref,
       // Con una búsqueda sin nada: «Quitar filtros» solo si hay otros filtros
       // además de la palabra (la palabra se cambia en el buscador).
       limpiar: (vacio && q && !negocios && !descubre ? conFiltrosSinPalabra : hayAlgo) ? limpia : '', compacto: descubre && !vacio,
@@ -2039,9 +2079,9 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   const ciudadSeo = (cerca ? '' : city) || (ciudades.length === 1 ? String(ciudades[0].city) : '');
   const masFormas = negocios ? '' : `<section class="mas-formas" aria-labelledby="masFormas">
     <h2 id="masFormas">${esc(S.more)}</h2>
-    ${ciudades.length ? `<div class="mf-fila"><h3>${esc(S.todayIn)}</h3><p>${ciudades.map((c) => `<a href="${todayBase(lang)}/${CITY(c.city)}/">${esc(PRETTY(c.city))}</a>`).join('')}</p></div>
-    <div class="mf-fila"><h3>${esc(S.weekIn)}</h3><p>${ciudades.map((c) => `<a href="${agendaBase(lang)}/${CITY(c.city)}/">${esc(PRETTY(c.city))}</a>`).join('')}</p></div>
-    <div class="mf-fila"><h3>${esc(S.kidsIn)}</h3><p>${ciudades.map((c) => `<a href="${kidsBase(lang)}/${CITY(c.city)}/">${esc(PRETTY(c.city))}</a>`).join('')}</p></div>` : ''}
+    ${ciudades.length ? `<div class="mf-fila"><h3>${esc(S.todayIn)}</h3><p>${ciudades.map((c) => `<a href="${todayBase(lang)}/${CITY(c.slug || c.city)}/">${esc(c.slug ? c.city : PRETTY(c.city))}</a>`).join('')}</p></div>
+    <div class="mf-fila"><h3>${esc(S.weekIn)}</h3><p>${ciudades.map((c) => `<a href="${agendaBase(lang)}/${CITY(c.slug || c.city)}/">${esc(c.slug ? c.city : PRETTY(c.city))}</a>`).join('')}</p></div>
+    <div class="mf-fila"><h3>${esc(S.kidsIn)}</h3><p>${ciudades.map((c) => `<a href="${kidsBase(lang)}/${CITY(c.slug || c.city)}/">${esc(c.slug ? c.city : PRETTY(c.city))}</a>`).join('')}</p></div>` : ''}
     ${ciudadSeo && (cats || []).length ? `<div class="mf-fila"><h3>${esc(S.byCat)} · ${esc(PRETTY(ciudadSeo))}</h3><p>${(cats || []).map((c) => `<a href="${agendaBase(lang)}/${CITY(ciudadSeo)}/${encodeURIComponent(c.slug)}/">${esc(catName(c, en))}</a>`).join('')}</p></div>` : ''}
     ${cols.length ? `<div class="mf-fila"><h3>${esc(S.picks)}</h3><p>${cols.map((c) => `<a href="${collectionBase(lang)}/${encodeURIComponent(c.slug)}/${city && !cerca ? `${CITY(city)}/` : ''}">${esc(colTitle(c, en))}</a>`).join('')}</p></div>` : ''}
     <p class="mf-cta"><a class="pill" href="${en ? '/app/?lang=en' : '/app/'}#/registro" data-sin-sesion>${esc(S.app)}</a> <a class="pill" href="${en ? '/en/for-business/' : '/para-negocios/'}">${esc(S.biz)}</a></p>
@@ -2265,9 +2305,12 @@ export async function categoryPage(rawCity, rawCat, lang) {
   const decCity = decodeSeg(rawCity);
   const decCat = decodeSeg(rawCat);
   if (decCity == null || decCat == null) return aListado(`${agendaBase(lang)}/`);
-  const rawc = decCity.replace(/[/]+$/, '');
+  let rawc = decCity.replace(/[/]+$/, '');
   const slug = decCat.replace(/[/]+$/, '').toLowerCase();
   const path = `${agendaBase(lang)}/${CITY(rawc)}/${encodeURIComponent(slug)}/`;
+  const mun = await paginaDeMunicipio(rawc, lang, path, (x) => `${agendaBase(lang)}/${encodeURIComponent(x)}/${encodeURIComponent(slug)}/`);
+  if (mun.respuesta) return mun.respuesta;
+  rawc = mun.pCity;
 
   const [res, cats, negocios] = await Promise.all([
     rpc('public_explore', { p_city: rawc, p_category: slug, p_limit: 60 }),
@@ -2287,7 +2330,7 @@ export async function categoryPage(rawCity, rawCat, lang) {
     if (!existe.length && !items.length && !lugares.length) return notFound(lang, path, 'c');
     fila = existe[0]?.names ? existe[0] : null;
   }
-  const city = PRETTY(items[0]?.city || lugares[0]?.city || rawc);
+  const city = mun.nombre || PRETTY(items[0]?.city || lugares[0]?.city || rawc);
   const nombre = cat || fila ? catName(cat || fila, en) : PRETTY(slug);
   const h1 = S.catTitle(nombre, city);
 
@@ -2327,8 +2370,14 @@ export async function collectionPage(rawSlug, rawCity, lang, search = '') {
   const decCity = decodeSeg(rawCity);
   if (decSlug == null || decCity == null) return aListado(`${exploreBase(lang)}/`);
   const slug = decSlug.replace(/\/+$/, '').toLowerCase();
-  const rawc = decCity.replace(/\/+$/, '');
+  let rawc = decCity.replace(/\/+$/, '');
   const path = `${collectionBase(lang)}/${encodeURIComponent(slug)}/${rawc ? `${CITY(rawc)}/` : ''}`;
+  // El municipio (`_lib/municipios.js`): su slug, 301 o «¿Cuál de ellos?».
+  const mun = rawc
+    ? await paginaDeMunicipio(rawc, lang, path, (x) => `${collectionBase(lang)}/${encodeURIComponent(slug)}/${encodeURIComponent(x)}/`)
+    : { pCity: '', nombre: null };
+  if (mun.respuesta) return mun.respuesta;
+  rawc = mun.pCity;
 
   // Por páginas (`?p=`, como Explorar): 24 de cada vez. Antes, 48 y ya.
   const page = Math.max(1, Math.min(50, parseInt(new URLSearchParams(search).get('p') || '1', 10) || 1));
@@ -2349,7 +2398,7 @@ export async function collectionPage(rawSlug, rawCity, lang, search = '') {
     if (!(todas || []).some((c) => c.slug === slug)) return notFound(lang, path, 'c');
   }
   const titulo = col ? colTitle(col, en) : PRETTY(slug.replace(/-/g, ' '));
-  const city = rawc ? PRETTY(items[0]?.city || rawc) : '';
+  const city = rawc ? mun.nombre || PRETTY(items[0]?.city || rawc) : '';
   const h1 = city ? `${titulo} ${S.inCity} ${city}` : titulo;
 
   const body = `
@@ -2359,7 +2408,7 @@ export async function collectionPage(rawSlug, rawCity, lang, search = '') {
   ${col && items.length ? `<p class="acciones">${historiaBoton(lang, 'c', slug)}</p>` : ''}
   ${cities.length > 1 ? `<div class="filters"><div class="frow"><span class="flabel">${esc(S.city)}</span>
     <a class="chip${rawc ? '' : ' on'}" href="${collectionBase(lang)}/${encodeURIComponent(slug)}/">${esc(S.everywhere)}</a>
-    ${cities.filter((c) => c.city).slice(0, 12).map((c) => `<a class="chip${rawc.toLowerCase() === String(c.city).toLowerCase() ? ' on' : ''}" href="${collectionBase(lang)}/${encodeURIComponent(slug)}/${CITY(c.city)}/">${esc(PRETTY(c.city))}</a>`).join('')}
+    ${cities.filter((c) => c.city).slice(0, 12).map((c) => `<a class="chip${rawc.toLowerCase() === String(c.slug || c.city).toLowerCase() ? ' on' : ''}" href="${collectionBase(lang)}/${encodeURIComponent(slug)}/${CITY(c.slug || c.city)}/">${esc(c.slug ? c.city : PRETTY(c.city))}</a>`).join('')}
   </div></div>` : ''}
   ${items.length
     ? `${rejilla(items, lang, { primera: page === 1, h: 'h2' })}
@@ -2397,9 +2446,20 @@ export async function kidsPage(rawCity, lang) {
   const S = T(en);
   const dec = decodeSeg(rawCity);
   if (dec == null) return aListado(`${agendaBase(lang)}/`);
-  const raw = dec.replace(/[/]+$/, '');
+  let raw = dec.replace(/[/]+$/, '');
   const path = `${kidsBase(lang)}/${CITY(raw)}/`;
   if (!raw || raw.length > 60) return notFound(lang, path, 'c');
+  const mun = await paginaDeMunicipio(raw, lang, path, (x) => `${kidsBase(lang)}/${encodeURIComponent(x)}/`);
+  if (mun.respuesta) return mun.respuesta;
+  raw = mun.pCity;
+  // Los negocios del municipio (por su punto), para sus sitios aptos para niños.
+  const deAqui = mun.m
+    ? await rows('business_municipality', `select=business_id&municipality=eq.${encodeURIComponent(mun.m.code)}&limit=1000`)
+      .then((l) => l.map((x) => x.business_id)).catch(() => null)
+    : null;
+  const filtroSitio = deAqui
+    ? `id=in.(${deAqui.slice(0, 300).join(',') || '00000000-0000-0000-0000-000000000000'})`
+    : `city=ilike.${encodeURIComponent(raw.replace(/[*%,()]/g, ''))}`;
 
   const [res, cats, cities, lugares] = await Promise.all([
     rpc('public_explore', { p_city: raw, p_filters: { traits: ['kids'] }, p_limit: 60 }),
@@ -2407,17 +2467,17 @@ export async function kidsPage(rawCity, lang) {
     rpcAll('public_cities', {}),
     // Los sitios de la ciudad que el negocio marca como aptos para niños (o con
     // zona infantil). Son un extra: si no llegan, la página sale igual.
-    rows('businesses', `select=id,slug,name,city&city=ilike.${encodeURIComponent(raw.replace(/[*%,()]/g, ''))}`
+    rows('businesses', `select=id,slug,name,city&${filtroSitio}`
       + '&amenities=ov.%7Bkids,play_area%7D&is_active=eq.true&adults_only=eq.false'
       + '&closed_indefinitely_at=is.null&closed_permanently_at=is.null&order=name.asc&limit=24').catch(() => []),
   ]);
   const items = res?.items || [];
-  const conocida = (cities || []).find((c) => String(c.city || '').toLowerCase() === raw.toLowerCase());
+  const conocida = (cities || []).find((c) => (c.slug && c.slug === raw) || String(c.city || '').toLowerCase() === raw.toLowerCase());
   // Una ciudad sin nada de nada (mal escrita, o donde aún no hay negocios).
   if (!items.length && !lugares.length && !conocida) return notFound(lang, path, 'c');
-  const city = PRETTY(items[0]?.city || lugares[0]?.city || conocida?.city || raw);
+  const city = mun.nombre || PRETTY(items[0]?.city || lugares[0]?.city || conocida?.city || raw);
   const agendaCiudad = `${agendaBase(lang)}/${CITY(raw)}/`;
-  const explorar = `${exploreBase(lang)}/?${en ? 'city' : 'ciudad'}=${encodeURIComponent(city)}&${en ? 'place=kids' : 'sitio=ninos'}`;
+  const explorar = `${exploreBase(lang)}/?${en ? 'city' : 'ciudad'}=${encodeURIComponent(mun.m ? raw : city)}&${en ? 'place=kids' : 'sitio=ninos'}`;
 
   const K = en
     ? {

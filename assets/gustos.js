@@ -5,8 +5,10 @@
  *   cabecera de Descubre y Explorar los pone en la dirección (`?gustos=`)
  *   para que pesen en el orden sin esconder nada (`public_explore`).
  * - Modo viaje (Descubre con «Cerca de mí»): si estás a más de 50 km de tu
- *   ciudad y en otra ciudad de Klendar, «Estás en Valencia · Lo mejor de hoy
- *   ›», en una línea (/assets/avisos.js decide si sale: un aviso a la vez).
+ *   ciudad (cualquier municipio de España, con su punto) y en otro
+ *   municipio («Busca tu municipio», `municipality_here`, como la app),
+ *   «Estás en Valencia · Lo mejor de hoy ›», en una línea
+ *   (/assets/avisos.js decide si sale: un aviso a la vez).
  *   Se compara en el momento: no se guarda la posición. La × lo quita hasta
  *   mañana (`klendar.viaje` guarda solo la fecha).
  * - El buscador de Explorar: al tocarlo, lo que buscaste (como mucho 10, solo
@@ -17,7 +19,8 @@
  *   («Bares que ponen el fútbol, la F1 y más»), como el buscador en reposo
  *   de la app (`textos.partidos`).
  *
- * Las ciudades salen de la base (`cities`, las mismas que la app).
+ * Las Ciudades de Klendar salen de la base (`cities`, las mismas que la app):
+ * «Lo más buscado» y «Tu ciudad» guardada por una versión de antes.
  * `window.KlendarGustos` lo usa también «Tu cuenta» (`app/cuenta.js`).
  */
 (function () {
@@ -115,19 +118,22 @@
   };
 
   var G = {
-    /** Lo guardado en este navegador: { c: [slugs], city, asked, t }. */
+    /** Lo guardado en este navegador: { c: [slugs], city, home: {code,
+     * slug, name, lat, lng}, asked, t }. */
     lee: function () { var g = lee(KG); return g && typeof g === 'object' ? g : {}; },
     guarda: function (g) { pon(KG, g); },
     borra: function () { pon(KG, null); },
     ciudades: ciudades,
     km: km,
     ciudadCerca: ciudadCerca,
-    /** «Modo viaje»: la ciudad en la que estás si es otra de Klendar a más
-     * de 50 km de la tuya; null si no. */
-    viaje: function (casa, lat, lng, lista) {
-      if (!casa || km(casa.lat, casa.lng, lat, lng) <= VIAJE_KM) return null;
-      var aqui = ciudadCerca(lat, lng, lista);
-      return aqui && aqui.id !== casa.id ? aqui : null;
+    /** «Modo viaje»: el municipio en el que estás ([aqui], de
+     * `municipality_here`) si está a más de 50 km del tuyo y es otro; null
+     * si no. */
+    viaje: function (casa, lat, lng, aqui) {
+      if (!casa || !aqui || km(casa.lat, casa.lng, lat, lng) <= VIAJE_KM) return null;
+      var mismo = (casa.code && casa.code === aqui.code) || (casa.slug && casa.slug === aqui.slug)
+        || (casa.id && casa.id === aqui.city_id);
+      return mismo ? null : aqui;
     },
   };
   window.KlendarGustos = G;
@@ -138,11 +144,21 @@
     var g = G.lee();
     var lat = Number(caja.dataset.lat);
     var lng = Number(caja.dataset.lng);
-    if (g.city && Number.isFinite(lat) && Number.isFinite(lng) && lee(KV) !== hoy()) {
+    if ((g.home || g.city) && Number.isFinite(lat) && Number.isFinite(lng) && lee(KV) !== hoy()) {
       ciudades().then(function (lista) {
-        var casa = lista.filter(function (c) { return c.id === g.city; })[0];
-        var aqui = G.viaje(casa, lat, lng, lista);
-        if (!aqui) return;
+        // Tu ciudad: el municipio guardado o, de una versión de antes, su
+        // Ciudad de Klendar.
+        var casa = g.home && Number.isFinite(Number(g.home.lat)) ? g.home
+          : lista.filter(function (c) { return c.id === g.city; })[0];
+        if (!casa || km(casa.lat, casa.lng, lat, lng) <= VIAJE_KM) return null;
+        return rpc('municipality_here', { p_lat: lat, p_lng: lng }).then(function (m) {
+          var aqui = G.viaje(casa, lat, lng, m && m.slug ? m : ciudadCerca(lat, lng, lista));
+          return aqui ? { casa: casa, aqui: aqui } : null;
+        });
+      }).then(function (v) {
+        if (!v) return;
+        var casa = v.casa;
+        var aqui = v.aqui;
         var T = {};
         try { T = JSON.parse(caja.dataset.textos || '{}'); } catch (e) { /* sin textos */ }
         // Una línea: «Estás en Valencia · Lo mejor de hoy ›» y la ×. Sale si

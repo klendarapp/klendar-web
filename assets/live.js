@@ -126,13 +126,14 @@
 
     // La primera es la que más se mueve, no la más cercana: aquí no se pide
     // la ubicación de nadie. Si hay varias, que se pueda cambiar.
-    const inicial = ciudades[0].city;
+    // Por su slug (`public_cities`), con el nombre a la vista.
+    const inicial = ciudades[0].slug || ciudades[0].city;
 
     // «Qué hacer hoy en Madrid · Valencia…» del titular: el «hoy» de cada una
     // (/hoy/madrid/), que enlaza a su vez con la semana y las categorías.
     const enlaces = document.getElementById('liveCiudades');
     if (enlaces) {
-      enlaces.innerHTML = ciudades.filter((c) => c.city).slice(0, 5).map((c) => `<a href="${base}${en ? '/today/' : '/hoy/'}${encodeURIComponent(String(c.city).toLowerCase())}/">${esc(c.city)}</a>`).join('');
+      enlaces.innerHTML = ciudades.filter((c) => c.city).slice(0, 5).map((c) => `<a href="${base}${en ? '/today/' : '/hoy/'}${encodeURIComponent(String(c.slug || c.city).toLowerCase())}/">${esc(c.city)}</a>`).join('');
     }
 
     if (!await pintar(inicial)) return;
@@ -143,11 +144,11 @@
         // Como una píldora (el selector del sistema medía 20 px de alto y
         // salía en claro también en oscuro); 44 px para el dedo.
         donde.innerHTML = `<select id="liveSelect" aria-label="${en ? 'City' : 'Ciudad'}" style="font:700 15px/1.2 var(--display);color:var(--ink);background-color:var(--elevated);border:1px solid var(--glass-border);border-radius:999px;padding:0 12px;min-height:44px;margin-left:6px;vertical-align:middle;cursor:pointer;color-scheme:light dark;letter-spacing:0">`
-          + ciudades.map((c) => `<option value="${esc(c.city)}">${esc(c.city)}</option>`).join('')
+          + ciudades.map((c) => `<option value="${esc(c.slug || c.city)}">${esc(c.city)}</option>`).join('')
           + '</select>';
         document.getElementById('liveSelect').onchange = (e) => pintar(e.target.value);
       } else {
-        donde.textContent = `${en ? 'in' : 'en'} ${inicial}`;
+        donde.textContent = `${en ? 'in' : 'en'} ${ciudades[0].city}`;
       }
     }
     seccion.hidden = false;

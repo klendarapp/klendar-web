@@ -2,7 +2,9 @@ import { configure, datosDePrueba, rpcAll } from './_lib/page.js';
 import { BASE } from './_lib/public.js';
 import { sitemapVacio, urlPar, urlset } from './_lib/sitemap.js';
 
-// Sitemap de las páginas de entrada de cada ciudad: su agenda de la semana,
+// Sitemap de las páginas de entrada de cada municipio (con su slug sin
+// tildes, `public_cities`; las variantes y las direcciones de antes dan 301 a
+// esta, así que solo sale la buena): su agenda de la semana,
 // «qué hacer hoy», «planes con niños», cada categoría con algo publicado y las colecciones. Es
 // dinámico porque las ciudades aparecen solas: en cuanto un negocio publica
 // en un sitio nuevo, esas páginas existen. Las fichas de negocio van en
@@ -19,7 +21,7 @@ export async function onRequestGet(ctx) {
   // Cada ciudad, en español y en inglés, enlazadas entre sí con hreflang:
   // la semana, el «hoy» y los planes con niños.
   const urls = cities.flatMap((c) => {
-    const slug = encodeURIComponent(String(c.city).toLowerCase());
+    const slug = encodeURIComponent(String(c.slug || c.city).toLowerCase());
     return [
       urlPar(`${BASE}/agenda/${slug}/`, `${BASE}/en/whats-on/${slug}/`, { lastmod: today, freq: 'daily', prio: '0.7' }),
       urlPar(`${BASE}/hoy/${slug}/`, `${BASE}/en/today/${slug}/`, { lastmod: today, freq: 'daily', prio: '0.7' }),
@@ -30,8 +32,8 @@ export async function onRequestGet(ctx) {
   // Cada categoria que hoy tiene algo en cada ciudad: es lo que la gente
   // busca («peluquerias en Madrid») y se llena sola.
   const catUrls = (await Promise.all(cities.map(async (c) => {
-    const slug = encodeURIComponent(String(c.city).toLowerCase());
-    const cats = await rpcAll('public_categories', { p_city: c.city });
+    const slug = encodeURIComponent(String(c.slug || c.city).toLowerCase());
+    const cats = await rpcAll('public_categories', { p_city: c.slug || c.city });
     return cats.map((k) => urlPar(
       `${BASE}/agenda/${slug}/${encodeURIComponent(k.slug)}/`,
       `${BASE}/en/whats-on/${slug}/${encodeURIComponent(k.slug)}/`,

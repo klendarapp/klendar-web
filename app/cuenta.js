@@ -2456,9 +2456,13 @@ async function pintaSinLeer() {
 /** Lo de la cuenta → este navegador. */
 function gustosALocal(srv) {
   if (!srv || !window.KlendarGustos) return;
+  // «Tu ciudad»: el municipio con su punto (`home`, para el aviso de viaje)
+  // y el id de su Ciudad de Klendar si lo es (`city`, «Lo más buscado»).
+  const m = srv.home_municipality;
   KlendarGustos.guarda({
-    c: srv.category_slugs || [], city: srv.home_city || null, asked: true,
-    t: Date.parse(srv.updated_at || '') || Date.now(),
+    c: srv.category_slugs || [], city: srv.home_city || null,
+    home: m && Number.isFinite(Number(m.lat)) ? { code: m.code || null, slug: m.slug || null, name: m.name, lat: Number(m.lat), lng: Number(m.lng) } : null,
+    asked: true, t: Date.parse(srv.updated_at || '') || Date.now(),
   });
 }
 
@@ -2474,8 +2478,8 @@ async function gustosDeLaCuenta() {
 
 const resumenGustos = (g, cats, ciudades) => {
   const nombres = (g.c || []).map((s) => cats.find((c) => c.slug === s)).filter(Boolean).map(nombreCat);
-  const ciudad = ciudades.find((c) => c.id === g.city);
-  const partes = [nombres.join(', '), ciudad ? ciudad.name : ''].filter(Boolean);
+  const ciudad = g.home?.name || ciudades.find((c) => c.id === g.city)?.name || '';
+  const partes = [nombres.join(', '), ciudad].filter(Boolean);
   return partes.length ? partes.join(' · ') : t('Elige lo que más te gusta y tu ciudad');
 };
 
@@ -2490,8 +2494,12 @@ RUTAS.gustos = async (_p, params) => {
   if (srv) gustosALocal(srv);
   const g = KlendarGustos.lee();
   let elegidas = (srv?.category_slugs || g.c || []).filter((s) => cats.some((c) => c.slug === s));
-  const tiene = elegidas.length > 0 || Boolean(srv?.home_city || g.city);
-  const ciudadActual = srv ? srv.home_city : g.city;
+  const tiene = elegidas.length > 0 || Boolean(srv?.home_municipality || g.home || g.city);
+  // «Tu ciudad»: cualquier municipio de España («Busca tu municipio», como la
+  // app). Lo de antes (solo el id de una Ciudad de Klendar), con su nombre.
+  const deAntes = ciudades.find((c) => c.id === (srv ? srv.home_city : g.city));
+  let ciudad = (srv ? srv.home_municipality : g.home)
+    || (deAntes ? { code: null, slug: null, name: deAntes.name, cityId: deAntes.id } : null);
   pinta(`
     ${primera ? '' : `<p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a> › <a href="#/ajustes">${esc(t('Ajustes'))}</a></p>`}
     <div class="ticket" style="text-align:left">
@@ -2499,11 +2507,15 @@ RUTAS.gustos = async (_p, params) => {
       <p class="muted">${esc(t('Elige de 3 a 5 y te lo enseñamos antes en Descubre. Lo demás sigue saliendo.'))}</p>
       <form id="fg" class="formu" novalidate>
         <div class="campo-cat"><p class="etq">${esc(t('Categorías'))} <small id="g-n" aria-live="polite"></small></p><div id="cats-gustos"></div></div>
-        <label>${esc(t('Tu ciudad'))} <small>${esc(t('Si abres Klendar lejos de ella, te enseñamos lo mejor de donde estés. No guardamos dónde estás.'))}</small>
-          <select name="ciudad">
-            <option value="">${esc(t('Sin ciudad'))}</option>
-            ${ciudades.map((c) => `<option value="${esc(c.id)}"${c.id === ciudadActual ? ' selected' : ''}>${esc(c.name)}</option>`).join('')}
-          </select></label>
+        <div class="campo-muni"><p class="etq" id="g-ciudad-t">${esc(t('Tu ciudad'))} <small>${esc(t('Si abres Klendar lejos de ella, te enseñamos lo mejor de donde estés. No guardamos dónde estás.'))}</small></p>
+          <p class="muni-actual"><strong id="g-ciudad" aria-live="polite"></strong></p>
+          <div class="muni-busca" data-muni-busca data-muni-nada="${esc(t('No encontramos ese municipio. Prueba con otro nombre.'))}" role="search" aria-labelledby="g-ciudad-t">
+            <label class="buscador-campo muni-campo"><span class="sr">${esc(t('Busca tu municipio'))}</span>
+              <input type="search" placeholder="${esc(t('Busca tu municipio'))}" autocomplete="off" enterkeyhint="search" maxlength="60"></label>
+            <div data-muni-res aria-live="polite"></div>
+            <div data-muni-sin><button type="button" class="op" data-muni-ninguna>${esc(t('Sin ciudad'))}</button>
+              <p class="menu-d-t">${esc(t('Populares'))}</p><div id="g-populares"></div></div>
+          </div></div>
         <p><button type="button" class="linkbtn" id="g-ubic">${esc(t('Usar mi ubicación'))}</button></p>
         <p class="muted" id="g-nota" role="status"></p>
         <p class="err" id="err" role="alert"></p>
@@ -2527,26 +2539,60 @@ RUTAS.gustos = async (_p, params) => {
     max: 5, id: 'slug', alCambiar: (v) => { elegidas = v; cuenta(); },
   });
   cuenta();
-  // «Usar mi ubicación»: la ciudad de Klendar en la que estás, sin guardar
-  // la posición.
+  // «Tu ciudad»: lo elegido, «Sin ciudad» y las «Populares» (las Ciudades
+  // de Klendar), y lo que se busca (/assets/municipios.js).
+  const pintaCiudad = () => { $('#g-ciudad').textContent = ciudad ? ciudad.name : t('Sin ciudad'); };
+  pintaCiudad();
+  const caja = fg.querySelector('[data-muni-busca]');
+  const elige = (m) => {
+    ciudad = m;
+    pintaCiudad();
+    $('#g-nota').textContent = '';
+    const campo = caja.querySelector('input[type=search]');
+    if (campo.value) { campo.value = ''; campo.dispatchEvent(new Event('input')); }
+  };
+  caja.addEventListener('muni-elegido', (ev) => elige(ev.detail));
+  caja.querySelector('[data-muni-ninguna]').addEventListener('click', () => elige(null));
+  if (window.KlendarMunicipios) {
+    KlendarMunicipios.activa(caja);
+    KlendarMunicipios.busca('').then((l) => {
+      const pop = $('#g-populares');
+      if (!pop) return;
+      pop.innerHTML = l.map((m, i) => `<button type="button" class="op" data-pop="${i}">${esc(m.name)}</button>`).join('');
+      pop.querySelectorAll('[data-pop]').forEach((b) => b.addEventListener('click', () => elige(l[Number(b.dataset.pop)])));
+    });
+  }
+  // «Usar mi ubicación»: el municipio en el que estás, sin guardar la
+  // posición (`municipality_here`).
   $('#g-ubic').addEventListener('click', () => {
     const nota = $('#g-nota');
     nota.textContent = '';
-    if (!navigator.geolocation) { nota.textContent = t('No hemos podido saber dónde estás: elígela de la lista.'); return; }
+    if (!navigator.geolocation || !window.KlendarMunicipios) { nota.textContent = t('No hemos podido saber dónde estás: busca tu municipio.'); return; }
     navigator.geolocation.getCurrentPosition((pos) => {
-      const c = KlendarGustos.ciudadCerca(pos.coords.latitude, pos.coords.longitude, ciudades);
-      if (c) fg.ciudad.value = c.id;
-      else nota.textContent = t('No estás cerca de ninguna ciudad de Klendar: elígela de la lista.');
-    }, () => { nota.textContent = t('No hemos podido saber dónde estás: elígela de la lista.'); },
+      KlendarMunicipios.aqui(pos.coords.latitude, pos.coords.longitude).then((m) => {
+        if (m) elige(m);
+        else nota.textContent = t('No hemos podido saber en qué municipio estás: búscalo.');
+      });
+    }, () => { nota.textContent = t('No hemos podido saber dónde estás: busca tu municipio.'); },
     { enableHighAccuracy: false, timeout: 10000, maximumAge: 600000 });
   });
   const listo = (msg) => {
     if (msg) toast(msg);
     vuelve(primera ? (params.get('siguiente') || '') : 'ajustes');
   };
-  const guarda = async (slugs, ciudad) => {
-    const ids = slugs.map((s) => cats.find((c) => c.slug === s)?.id).filter(Boolean);
-    const r = await llamar('save_tastes', { p_categories: ids, p_home_city: ciudad || null });
+  // «Tu ciudad»: el municipio (`p_home_municipality`); lo de antes sin
+  // municipio, el id de su Ciudad de Klendar.
+  const guarda = async (slugs, c) => {
+    const ids = slugs.map((s) => cats.find((x) => x.slug === s)?.id).filter(Boolean);
+    const lugar = c?.code || c?.slug ? { p_home_municipality: c.code || c.slug }
+      : c?.cityId ? { p_home_city: c.cityId } : {};
+    const ciudadK = c?.city_id || c?.cityId;
+    // Sin la migración 20261260100005 en la base (aún no en prod), lo de
+    // antes: la Ciudad de Klendar, si lo es.
+    const r = await llamar('save_tastes', { p_categories: ids, ...lugar }).catch((e) => {
+      if (!lugar.p_home_municipality || !ciudadK) throw e;
+      return llamar('save_tastes', { p_categories: ids, p_home_city: ciudadK });
+    });
     gustosALocal(r);
   };
   fg.addEventListener('submit', (ev) => {
@@ -2554,7 +2600,7 @@ RUTAS.gustos = async (_p, params) => {
     $('#err').textContent = '';
     if (elegidas.length < 3) { $('#err').textContent = t('Elige al menos 3'); return; }
     ocupado($('#g-guardar'), async () => {
-      await guarda(elegidas, fg.ciudad.value);
+      await guarda(elegidas, ciudad);
       listo(t('Guardado'));
     });
   });
