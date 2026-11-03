@@ -21,13 +21,13 @@ let fallos = 0;
 const ok = (c, m) => { if (!c) { fallos++; console.log('FALLO:', m); } else console.log('ok:', m); };
 
 const PAGINAS = [
-  ['/cookies/', 'Última actualización: 2 de noviembre de 2026', [
+  ['/cookies/', 'Última actualización: 3 de noviembre de 2026', [
     /En resumen\. klendar\.app usa una sola cookie, y solo si contestas a «¿Tienes 18 años o más\?»: guarda tu respuesta para no volver a preguntarte\./,
     /klendar_18 \(cookie\)\s+Todo klendar\.app\s+Tu respuesta a «¿Tienes 18 años o más\?» \(«1» sí, «0» no\)[\s\S]*?según tu fecha de nacimiento\s+1 año, o hasta que cierres sesión\s+Preferencia elegida por ti/,
     /Tu respuesta a «¿Tienes 18 años o más\?» se guarda en el móvil, no en una cookie\./,
     /27 de octubre de 2026: La cookie klendar_18/,
   ], [/klendar\.app no usa cookies/]],
-  ['/en/cookies/', 'Last updated: 2 November 2026', [
+  ['/en/cookies/', 'Last updated: 3 November 2026', [
     /In short\. klendar\.app uses a single cookie, and only if you answer “Are you 18 or over\?”: it stores your answer so we don't ask again\./,
     /klendar_18 \(cookie\)\s+All of klendar\.app\s+Your answer to “Are you 18 or over\?” \(“1” yes, “0” no\)[\s\S]*?from your date of birth\s+1 year, or until you log out\s+Preference you chose/,
     /Your answer to “Are you 18 or over\?” is stored on your phone, not in a cookie\./,

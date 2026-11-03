@@ -50,11 +50,11 @@ const PAGINAS = [
     /What you've already seen in Discover\s+Which publications in Discover[\s\S]*?It's stored only on your phone or in your browser; it never reaches us/,
     /You can turn it off in Settings › What you see \(on the website, also without logging in\): then nothing is stored and what was stored is deleted/,
   ]],
-  ['/cookies/', 'Última actualización: 2 de noviembre de 2026', [
+  ['/cookies/', 'Última actualización: 3 de noviembre de 2026', [
     /klendar\.busquedas[\s\S]*?klendar\.vistos\s+Descubre y Explorar \(almacenamiento local\)\s+Qué publicaciones has visto[\s\S]*?No se envía a Klendar\. Se apaga en «Tu cuenta» → Ajustes → Lo que ves \(«Poner al final lo que ya he visto»\), también sin entrar\s+7 días desde que viste cada una \(como mucho 2\.000\); si apagas «Poner al final lo que ya he visto», solo guarda «off»\s+Preferencia elegida por ti/,
     /2 de noviembre de 2026: Una clave más: klendar\.vistos/,
   ]],
-  ['/en/cookies/', 'Last updated: 2 November 2026', [
+  ['/en/cookies/', 'Last updated: 3 November 2026', [
     /klendar\.vistos\s+Discover and Explore \(local storage\)[\s\S]*?It's not sent to Klendar\. Turn it off in “Your account” → Settings → What you see \(“Put what I've already seen at the end”\), also without logging in\s+7 days from when you saw each one \(at most 2,000\); if you turn off “Put what I've already seen at the end”, it only stores “off”\s+Preference you chose/,
   ]],
   ['/preguntas/', '', [/Al volver a cargar Descubre, lo que ya viste en los últimos 7 días pasa al final, detrás de «Ya has visto todo lo nuevo»;[\s\S]*?\(se apaga en Ajustes → Lo que ves\)\./]],

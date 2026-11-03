@@ -61,7 +61,7 @@
 <script src="/assets/cabecera.js?v=13" defer></script>
 <main class="doc" id="contenido">
 <h1>Cookie policy</h1>
-<div class="meta">Last updated: 2 November 2026 · Version 2026-09-29</div>
+<div class="meta">Last updated: 3 November 2026 · Version 2026-09-29</div>
 <p class="notice">This is a courtesy translation provided for information only. In case of any discrepancy, the <a href="/cookies/">Spanish version</a> prevails.</p>
 
 <p><strong>In short.</strong> klendar.app uses <strong>a single cookie</strong>, and only if you answer “Are you 18 or over?”: it stores your answer so we don't ask again. Apart from that, it only stores in your browser what is essential for what you ask it to do (your session, your language, your filters, the codes a business validates offline) and it counts visits without cookies and without identifying you. None of this is used for advertising or to follow you across other sites, so we don't ask for your consent (art. 22.2 of the Spanish LSSI-CE). If we ever add anything that needs it, we will ask you first.</p>
@@ -71,6 +71,8 @@
 <tr><td><code>klendar_18</code> (cookie)</td><td>All of klendar.app</td><td>Your answer to “Are you 18 or over?” (“1” yes, “0” no), to show you or not what is for over-18s only without asking again. When you're logged in, your account sets it from your date of birth</td><td>1 year, or until you log out</td><td>Preference you chose</td></tr>
 <tr><td><code>klendar_lang</code></td><td>All of klendar.app (local storage)</td><td>Remember the language you pick: Spanish or English on the public pages and, in “Your account” and the dashboard, also català, galego, euskara, français, Deutsch or italiano</td><td>Until you delete it</td><td>Preference you chose</td></tr>
 <tr><td><code>klendar.trazo</code></td><td>All of klendar.app (session storage)</td><td>So the logo animation (the symbol drawing itself) only plays on the first page you open, not on every one</td><td>Until you close the tab</td><td>Technical</td></tr>
+<tr><td><code>klendar.sorteosWeb</code></td><td>All of klendar.app (session storage)</td><td>Remember whether giveaways are on, so it isn't asked on every page (when they are off, their notifications don't count in the bell)</td><td>Until you close the tab</td><td>Technical</td></tr>
+<tr><td><code>klendar.tab</code></td><td>All of klendar.app (session storage)</td><td>Keep the bottom bar on the tab you came from when you open a listing, as in the app</td><td>Until you close the tab</td><td>Technical</td></tr>
 <tr><td><code>sb-…-auth-token</code></td><td>“Your account” and business dashboard (local storage)</td><td>Keep you logged in</td><td>Until you log out</td><td>Technical (authentication)</td></tr>
 <tr><td><code>sb-…-auth-token-…code-verifier</code></td><td>“Your account” and business dashboard (local storage)</td><td>A one-time secret that checks that the return from Google reaches the same browser where you started logging in (PKCE)</td><td>Until you finish logging in or log out</td><td>Technical (security)</td></tr>
 <tr><td><code>sb-…-admin-auth-token</code></td><td>Admin (local storage)</td><td>Keep the admin session, separate from the “Your account” one</td><td>Until you log out, after 30 minutes of inactivity or after 12 hours</td><td>Technical (authentication)</td></tr>
@@ -117,6 +119,7 @@
 
 <h2 class="cambios" id="historial">Change history</h2>
 <ul>
+  <li><strong>3 November 2026</strong>: Two more session keys, deleted when you close the tab: klendar.sorteosWeb (whether giveaways are on) and klendar.tab (the bottom bar tab you came from).</li>
   <li><strong>2 November 2026</strong>: One more key: klendar.vistos (what you've already seen in Discover and Explore, 7 days; turn it off in Settings › What you see).</li>
   <li><strong>28 October 2026</strong>: The klendar.traducir key stores “Always translate automatically”; and one more key, klendar.traducir.ok (whether translation is available).</li>
   <li><strong>28 October 2026</strong>: Your connection's approximate area, used without your location, isn't stored in your browser.</li>

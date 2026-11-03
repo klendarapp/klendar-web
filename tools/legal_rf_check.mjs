@@ -30,7 +30,7 @@ let fallos = 0;
 const ok = (c, m) => { if (!c) { fallos++; console.log('FALLO:', m); } else console.log('ok:', m); };
 
 const PAGINAS = [
-  ['/cookies/', 'Última actualización: 2 de noviembre de 2026', [
+  ['/cookies/', 'Última actualización: 3 de noviembre de 2026', [
     /klendar\.filtros\s+Descubre y Explorar \(almacenamiento local\)[\s\S]*?Hasta que los cambies o pulses «Quitar filtros»; ¿Cuándo\? se quita a las 6:00 y tu posición deja de usarse a las 6 horas\s+Preferencia elegida por ti/,
     /klendar\.explorar\s+Explorar \(almacenamiento local\)\s+La última vista que elegiste en Explorar \(Planes o Sitios; lista, mapa o calendario\), para abrirlo ahí la próxima vez\s+Hasta que la cambies\s+Preferencia elegida por ti/,
     /klendar\.trazo\s+Todo klendar\.app \(almacenamiento de sesión\)\s+Que la animación del logo \(el símbolo que se dibuja\) salga solo en la primera página que abres, no en cada una\s+Hasta cerrar la pestaña\s+Técnica/,
@@ -41,7 +41,7 @@ const PAGINAS = [
     /Al cerrar sesión se borran la sesión, la copia de tus códigos, tus gustos, lo del panel y la cookie klendar_18\./,
     /28 de octubre de 2026: Tus filtros se recuerdan hasta que los cambies o los quites/,
   ], [/Se usa durante 6 horas/, /vuelta de Google o Apple/]],
-  ['/en/cookies/', 'Last updated: 2 November 2026', [
+  ['/en/cookies/', 'Last updated: 3 November 2026', [
     /klendar\.filtros\s+Discover and Explore \(local storage\)[\s\S]*?Until you change them or tap “Clear filters”; “When\?” is cleared at 6:00 and your position stops being used after 6 hours\s+Preference you chose/,
     /klendar\.explorar\s+Explore \(local storage\)\s+The last view you chose in Explore \(Plans or Places; list, map or calendar\), so it opens there next time\s+Until you change it\s+Preference you chose/,
     /klendar\.trazo\s+All of klendar\.app \(session storage\)\s+So the logo animation \(the symbol drawing itself\) only plays on the first page you open, not on every one\s+Until you close the tab\s+Technical/,
