@@ -40,7 +40,7 @@
   const T = {
     es: {
       title: 'Dónde verlo',
-      lead: 'Bares que ponen el fútbol, el baloncesto, la F1 y más',
+      lead: 'Bares que ponen el fútbol, la F1 y más',
       nearby: 'Lo ponen cerca',
       more: 'Más partidos',
       compAll: 'Todas',
@@ -62,7 +62,7 @@
       followTeam: 'Seguir',
       noTeams: 'Sigue a tu equipo y te avisamos antes de cada partido con los bares que lo ponen cerca.',
       searchTeam: 'Busca un equipo o deportista',
-      noTeamFound: 'No encontramos ese equipo',
+      noTeamFound: 'No encontramos ese equipo o deportista',
       emptyTitle: 'Aún no hay partidos por aquí',
       emptyText: 'Cuando un bar cercano diga qué partidos pone, saldrán aquí.',
       notFound: (q) => `No encontramos «${q}»`,
@@ -116,7 +116,7 @@
     },
     en: {
       title: 'Where to watch',
-      lead: 'Bars showing football, basketball, F1 and more',
+      lead: 'Bars showing football, F1 and more',
       nearby: 'Showing nearby',
       more: 'More matches',
       compAll: 'All',
@@ -138,7 +138,7 @@
       followTeam: 'Follow',
       noTeams: "Follow your team and we'll tell you before each match which bars nearby are showing it.",
       searchTeam: 'Search for a team or athlete',
-      noTeamFound: "We can't find that team",
+      noTeamFound: "We can't find that team or athlete",
       emptyTitle: 'No matches around here yet',
       emptyText: "When a bar nearby says which matches it's showing, they'll appear here.",
       notFound: (q) => `We couldn't find “${q}”`,

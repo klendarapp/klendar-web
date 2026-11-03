@@ -18,7 +18,10 @@ import { mkdirSync } from 'node:fs';
 
 const { chromium, webkit } = createRequire(import.meta.url)(process.env.PW || 'playwright');
 const BASE = process.env.BASE || 'http://localhost:8857';
-const OUT = process.env.OUT || '.';
+// Las capturas, en tools/out/ (git las ignora): en la raíz se publicaban
+// en klendar.app (revisión del 3-11-2026, 5.4).
+const OUT = process.env.OUT || 'tools/out';
+(await import('node:fs')).mkdirSync(OUT, { recursive: true });
 mkdirSync(OUT, { recursive: true });
 let fallos = 0;
 const ok = (c, m) => { if (!c) { fallos++; console.log('FALLA:', m); } else console.log('ok:', m); };
@@ -116,7 +119,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
       ok(hoja.atajos.every(([n, h]) => (n === 'Para comer ya' ? /^\/explorar\/\?.*que=sitios/.test(h) : /^\/descubre\//.test(h))),
         `${t} los atajos llevan a Descubre (y «Para comer ya», a Sitios)`);
       ok(/Cada atajo pone sus filtros/.test(hoja.nota || ''), `${t} la nota de los atajos, como la app`);
-      ok(hoja.accesos.includes('Dónde ver el partido') && hoja.accesos.includes('Pedir un local'), `${t} los accesos del buscador (${hoja.accesos.join(' · ')})`);
+      ok(hoja.accesos.includes('Dónde verlo') && hoja.accesos.includes('Pedir un local'), `${t} los accesos del buscador (${hoja.accesos.join(' · ')})`);
       ok(hoja.tipos && hoja.tipos.length >= 3 && hoja.tipos[0][1] > 0 && hoja.tipos[1][1] > 0 && hoja.tipos[2][1] === 0 && hoja.tipos[2][2],
         `${t} «O mira por tipo de sitio»: dos grupos abiertos y los demás con «N más» (${JSON.stringify(hoja.tipos)})`);
       if (!movil) ok(hoja.anchoHoja <= 562, `${t} escritorio: la hoja centrada de 560 (${Math.round(hoja.anchoHoja)})`);

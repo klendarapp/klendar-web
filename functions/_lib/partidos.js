@@ -65,7 +65,7 @@ export const PARTIDOS_CSS = '<link rel="stylesheet" href="/assets/partidos.css?v
  *  solo hace algo con sesión. */
 export const seguirScript = (lang) => {
   const sp = supabasePublic();
-  return `<script src="/assets/seguir.js?v=3" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}" data-lang="${lang === 'en' ? 'en' : 'es'}"></script>`;
+  return `<script src="/assets/seguir.js?v=20261103rv" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}" data-lang="${lang === 'en' ? 'en' : 'es'}"></script>`;
 };
 
 /** «350 m», «1,2 km». */

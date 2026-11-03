@@ -33,7 +33,7 @@ function filaEquipos() {
 }
 
 const errorEquipo = (e) => (e?.clave === 'too_many'
-  ? (EN ? 'You can follow up to 30 teams' : 'Puedes seguir 30 equipos como mucho')
+  ? (EN ? 'You can follow up to 30 teams and athletes' : 'Puedes seguir 30 equipos y deportistas como mucho')
   : e?.message || amable(''));
 const textoSigues = (n) => (EN ? `You're following ${n}: we'll let you know before their matches` : `Sigues a ${n}: te avisamos antes de sus partidos`);
 const textoYaNo = (n) => (EN ? `You're no longer following ${n}` : `Ya no sigues a ${n}`);
@@ -74,7 +74,7 @@ RUTAS.equipos = async (_partes, params) => {
     pinta(`${cabeza}
       <section class="vacio">
         <span class="vacio-ic">${icBalon(30)}</span>
-        <h2>${esc(EN ? "You're not following any teams yet" : 'Aún no sigues a ningún equipo')}</h2>
+        <h2>${esc(EN ? "You're not following any team or athlete yet" : 'Aún no sigues a ningún equipo ni deportista')}</h2>
         <p>${esc(S.noTeams)}</p>
         <div class="vacio-botones">${botonSeguir.replace('class="pill"', 'class="pill accent"')}</div>
       </section>`);

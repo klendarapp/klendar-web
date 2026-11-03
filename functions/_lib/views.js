@@ -11,7 +11,7 @@
 import { cabeceraEdad, edadDeclarada, esc, fmtWhen, html, isUuid, preguntaEdadEncendida, rpc, rpcAll, rows, supabasePublic } from './page.js';
 import KZ from '../../assets/zona.js';
 import { decodeSeg,
-  agendaBase, BASE, benefit, bizPath, breadcrumbLd, cityLinks, citySeg, datosDeNegocios, exploreBase,
+  agendaBase, BASE, benefit, bizPath, breadcrumbLd, cityLinks, citySeg, datosDeNegocios, discoverBase, exploreBase,
   arteFicha, carrusel, esGenerica, firstPhoto, fmtDay, fmtEnd, fmtLong, fmtTime, sameDay, isSlug, isVideo, ldScript, listingLd, miniatura, miniaturas, money, openInApp,
   historiaBoton, priorPrice, publicPage, slugDe, todayBase, zonaDe,
 } from './public.js';
@@ -61,6 +61,8 @@ const PATHS = {
   llegar: 'M21.71 11.29l-9-9a.996.996 0 0 0-1.41 0l-9 9a.996.996 0 0 0 0 1.41l9 9c.39.39 1.02.39 1.41 0l9-9a.996.996 0 0 0 0-1.41zM14 14.5V12h-4v3H8v-4c0-.55.45-1 1-1h5V7.5l3.5 3.5-3.5 3.5z',
   contactar: 'M21 6h-2v9H6v2c0 .55.45 1 1 1h11l4 4V7c0-.55-.45-1-1-1zm-4 6V3c0-.55-.45-1-1-1H3c-.55 0-1 .45-1 1v14l4-4h10c.55 0 1-.45 1-1z',
   resena: 'M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 14v-2.47l6.88-6.88c.2-.2.51-.2.71 0l1.77 1.77c.2.2.2.51 0 .71L8.47 14H6zm12 0h-7.5l2-2H18v2z',
+  // «Más planes en Marbella» (explore, con contorno, como la app).
+  explorar: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-5.5-2.5l7.51-3.49L17.5 6.5 9.99 9.99 6.5 17.5zm5.5-6.6c.61 0 1.1.49 1.1 1.1s-.49 1.1-1.1 1.1-1.1-.49-1.1-1.1.49-1.1 1.1-1.1z',
 };
 const icono = (n, size = 18) => `<svg class="ic" viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true"><path fill="currentColor" d="${PATHS[n]}"/></svg>`;
 
@@ -964,7 +966,7 @@ export async function businessPage(param, lang, search = '') {
         unavailable: 'Not available right now', unavailableBody: "This business isn't posting anything right now.",
         keptCodes: 'If you have one of its codes or passes, it is still valid.',
         closingDay: (d) => `Closing on ${d}`, closing: (a, b) => `Closing from ${a} to ${b}`,
-        moreIn: (c) => `More plans in ${c}:`, cityToday: 'things to do today', cityWeek: 'this week',
+        moreIn: (c) => `More plans in ${c}`, moreInOld: (c) => `More plans in ${c}:`, cityToday: 'things to do today', cityWeek: 'this week',
         hiddenFav: (n) => (n === 1 ? "There's 1 exclusive publication for people who have it in their favourites."
           : `There are ${n} exclusive publications for people who have it in their favourites.`),
         hiddenCust: (n) => (n === 1 ? "There's 1 exclusive publication for their customers with stamps."
@@ -1016,7 +1018,7 @@ export async function businessPage(param, lang, search = '') {
         unavailable: 'No disponible ahora mismo', unavailableBody: 'Este negocio ahora no publica nada.',
         keptCodes: 'Si tienes un código o un bono suyo, sigue valiendo.',
         closingDay: (d) => `Cerrará el ${d}`, closing: (a, b) => `Cerrará del ${a} al ${b}`,
-        moreIn: (c) => `Más planes en ${c}:`, cityToday: 'qué hacer hoy', cityWeek: 'esta semana',
+        moreIn: (c) => `Más planes en ${c}`, moreInOld: (c) => `Más planes en ${c}:`, cityToday: 'qué hacer hoy', cityWeek: 'esta semana',
         hiddenFav: (n) => (n === 1 ? 'Hay 1 publicación exclusiva para quien lo tiene en favoritos.'
           : `Hay ${n} publicaciones exclusivas para quien lo tiene en favoritos.`),
         hiddenCust: (n) => (n === 1 ? 'Hay 1 publicación exclusiva para sus clientes con sellos.'
@@ -1432,7 +1434,12 @@ ${traducir(lang, `business:${b.id}`, '')}${ver === 'preguntas' ? `\n${PREGUNTAS_
       ${opiniones.length ? `<div class="resenas">${opiniones.map(resenaHtml).join('')}</div>
         ${nResenas > opiniones.length ? `<p><a class="pill" href="${path}?ver=resenas${soloVerificadas ? '&amp;resenas=verificadas' : ''}">${esc(S.seeAll(nResenas))}</a></p>` : ''}` : `<p class="empty">${soloVerificadas ? S.noVerified : S.noReviews}</p>`}
       ${preguntasHtml}
-      ${city ? `<p class="muted mas-planes"${mun ? ` data-municipio="${esc(mun.slug)}"` : ''}>${esc(S.moreIn(lugar))} <a href="${cityToday}">${esc(S.cityToday)}</a> · <a href="${city}">${esc(S.cityWeek)}</a></p>` : ''}
+      ${mun
+    // «Más planes en Marbella»: Descubre en ese municipio, como en la app
+    // (queda elegido en «¿Dónde?»). «Qué hacer hoy» y la agenda siguen en
+    // el nombre bajo el título y en las migas.
+    ? `<p class="mas-planes" data-municipio="${esc(mun.slug)}"><a class="pill" href="${discoverBase(lang)}/?${en ? 'city' : 'ciudad'}=${encodeURIComponent(mun.slug)}">${icono('explorar', 16)} <span>${esc(S.moreIn(mun.name))}</span></a></p>`
+    : city ? `<p class="muted mas-planes">${esc(S.moreInOld(lugar))} <a href="${cityToday}">${esc(S.cityToday)}</a> · <a href="${city}">${esc(S.cityWeek)}</a></p>` : ''}
       ${local.entity_kind === 'public_agenda' ? '' : `<p class="denuncia-pie" data-solo-publico><a href="${cuenta(lang)}#/reclamar/${encodeURIComponent(b.id)}" rel="nofollow">${S.claim}</a></p>`}
     </div>
     <aside class="side">

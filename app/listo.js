@@ -220,14 +220,33 @@ RUTAS.listo = async ([code]) => {
   function enganchaFav(b) {
     const boton = $('#listo-fav');
     if (!boton) return;
-    boton.onclick = () => ocupado(boton, async () => {
+    // Optimista (como la app): el corazón cambia al momento (al encenderse
+    // late: aria-pressed, /assets/cabecera.js); si la base dice que no,
+    // vuelve atrás y lo dice.
+    const pintaFav = (on) => {
+      boton.classList.toggle('on', on);
+      boton.setAttribute('aria-pressed', String(on));
+      boton.innerHTML = `${ic(on ? 'favorite' : 'favorite_border')}${esc(t(on ? 'Quitar de favoritos' : 'Añadir a favoritos'))}`;
+    };
+    let enCurso = false;
+    boton.onclick = async () => {
+      if (enCurso) return;
+      enCurso = true;
+      const antes = boton.getAttribute('aria-pressed') === 'true';
+      pintaFav(!antes);
       try {
         await llamar('toggle_favorite', { p_business_id: b.id });
-      } catch (e) { toast(e?.message || amable(''), true); return; }
+      } catch (e) {
+        pintaFav(antes);
+        toast(e?.message || amable(''), true);
+        enCurso = false;
+        return;
+      }
+      enCurso = false;
       mientras = await listoMientras(b).catch(() => mientras);
       const caja = $('#listo-mientras');
       if (caja) { caja.innerHTML = mientras; I18N.translate(caja); enganchaFav(b); }
-    });
+    };
   }
 
   /** Vuelve a pedir el pedido; si lo acaban de marcar, suena y vibra. */

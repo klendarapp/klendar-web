@@ -31,9 +31,11 @@
   var T = en ? {
     teams: 'Following', follow: 'Follow',
     oops: 'Something went wrong. If it happens again, email info@klendar.app.',
+    rate: 'Too many attempts. Wait a while and try again.',
   } : {
     teams: 'Sigues', follow: 'Seguir',
     oops: 'Algo no ha ido bien. Si vuelve a pasar, escríbenos a info@klendar.app.',
+    rate: 'Demasiados intentos. Espera un rato y vuelve a probar.',
   };
 
   /** Lo que cambia entre seguir a un equipo y a un artista. */
@@ -42,9 +44,11 @@
       attr: 'data-seguir-equipo', ruta: 'equipos', param: 'p_team',
       si: 'follow_broadcast_team', no: 'unfollow_broadcast_team',
       mios: ['my_followed_teams', { p_lang: en ? 'en' : 'es' }],
-      tope: en ? "You're following 30 teams, the maximum. Unfollow one to follow this one." : 'Sigues a 30 equipos, el máximo. Deja alguno para seguir este.',
-      on: function (n) { return en ? "You're following " + n + ". We'll let you know before each match." : 'Sigues a ' + n + '. Te avisamos antes de cada partido.'; },
-      off: function (n) { return en ? "You're no longer following " + n + '.' : 'Ya no sigues a ' + n + '.'; },
+      // Los textos de la app (watchTooMany, watchFollowedSnack,
+      // watchUnfollowedSnack) y los de «Tu cuenta» (app/partidos.js).
+      tope: en ? 'You can follow up to 30 teams and athletes' : 'Puedes seguir 30 equipos y deportistas como mucho',
+      on: function (n) { return en ? "You're following " + n + ": we'll let you know before their matches" : 'Sigues a ' + n + ': te avisamos antes de sus partidos'; },
+      off: function (n) { return en ? "You're no longer following " + n : 'Ya no sigues a ' + n; },
     },
     {
       attr: 'data-seguir-artista', ruta: 'artistas', param: 'p_artist',
@@ -170,6 +174,9 @@
     b.setAttribute('role', 'button');
     pinta(!!siguiendo[id]);
     var ocupado = false;
+    // Optimista (como la app): cambia al momento (y al encenderse late: lo
+    // pone /assets/cabecera.js con aria-pressed); si la base dice que no,
+    // vuelve atrás y el aviso lo dice.
     b.addEventListener('click', function (e) {
       e.preventDefault();
       if (ocupado) return;
@@ -177,16 +184,18 @@
       var on = b.getAttribute('aria-pressed') === 'true';
       var args = {};
       args[tipo.param] = id;
+      pinta(!on);
+      var falla = function (msg) { pinta(on); toast(msg, true); };
       sb.rpc(on ? tipo.no : tipo.si, args).then(function (res) {
         var d = res.data;
         if (res.error || (d && d.ok === false)) {
-          toast(d && d.error === 'too_many' ? tipo.tope : T.oops, true);
+          var c = d && d.error;
+          falla(c === 'too_many' ? tipo.tope : c === 'rate_limited' ? T.rate : T.oops);
           return;
         }
-        pinta(!on);
         if (!on) sb.rpc('set_broadcast_area', zonaParaAvisos()).then(function () {}, function () {});
         toast(on ? tipo.off(nombre) : tipo.on(nombre));
-      }).catch(function () { toast(T.oops, true); }).then(function () { ocupado = false; });
+      }).catch(function () { falla(T.oops); }).then(function () { ocupado = false; });
     });
   }
   /** La zona de los filtros de Explorar (la que se guarda en este navegador)

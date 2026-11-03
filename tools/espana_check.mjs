@@ -67,16 +67,17 @@ for (const [ruta, destino] of [
 // (`business_municipality_info`, migración 20261260100040 de la app): el
 // nombre bajo el título, las migas y «Más planes en …», en los dos idiomas.
 // Las direcciones son las buenas (200, sin 301).
-for (const [ruta, hoy, semana, frase] of [
-  ['/b/nails-co-madrid', '/hoy/madrid/', '/agenda/madrid/', 'Más planes en Madrid:'],
-  ['/en/b/nails-co-madrid', '/en/today/madrid/', '/en/whats-on/madrid/', 'More plans in Madrid:'],
+for (const [ruta, hoy, semana, frase, descubre] of [
+  ['/b/nails-co-madrid', '/hoy/madrid/', '/agenda/madrid/', 'Más planes en Madrid', '/descubre/?ciudad=madrid'],
+  ['/en/b/nails-co-madrid', '/en/today/madrid/', '/en/whats-on/madrid/', 'More plans in Madrid', '/en/discover/?city=madrid'],
 ]) {
   const h = await texto(ruta);
   check(`${ruta}: el municipio bajo el título enlaza a ${hoy}`, h.includes(`class="neg-muni" href="${hoy}"`));
-  check(`${ruta}: «${frase} …» con hoy y la semana, por el slug`,
-    new RegExp(`data-municipio="madrid">${frase} <a href="${hoy}">[^<]+</a> · <a href="${semana}">`).test(h));
+  // Como en la app: Descubre en ese municipio, por el slug.
+  check(`${ruta}: «${frase}» lleva a ${descubre}`,
+    h.includes(`data-municipio="madrid"><a class="pill" href="${descubre}">`) && h.includes(`<span>${frase}</span></a>`));
   check(`${ruta}: las migas, a ${semana}`, h.includes(`<p class="crumbs"><a href="/${ruta.startsWith('/en/') ? 'en/' : ''}">Klendar</a> · <a href="${semana}">Madrid</a>`));
-  for (const destino of [hoy, semana]) {
+  for (const destino of [hoy, semana, descubre]) {
     const r = await pide(destino);
     check(`${destino} es la buena (200, sin redirigir)`, r.status === 200, r.status);
   }
