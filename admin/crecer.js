@@ -15,8 +15,11 @@
  *   pedidos que pueden ser este» con «Enlazar» (`pedidosEnFicha`).
  * - «Dónde crecer» (#/crecer): el ranking de zonas donde esperan a Klendar
  *   (`admin_city_waitlist`) con «Activar ciudad…» y «Avisar ahora» (los dos
- *   avisan a gente: no tienen vuelta atrás, se confirman), y debajo las
- *   ciudades de Klendar con Encender / Apagar.
+ *   avisan a gente: no tienen vuelta atrás, se confirman), el «Gratis de
+ *   lanzamiento por provincia» (migración 20261260100003 de la app: las
+ *   provincias con el gratis puesto o con negocios, «Sin provincia» y un
+ *   selector para encender cualquier otra) y debajo las ciudades de Klendar
+ *   con Encender / Apagar.
  *
  * Va después de admin.js y artistas.js y usa lo suyo (`PAGES`, `rpc`, `$`,
  * `$$`, `esc`, `ms`, `modal`, `confirmDlg`, `table`, `toast`, `esperando`,
@@ -43,32 +46,37 @@ const CR_ERR = {
   invalid_zone: () => bi('Esa zona no vale.', "That area isn't valid."),
   free_end_too_soon: () => bi('Para adelantar el fin del «Gratis de lanzamiento» hace falta un mes de aviso: la fecha, como pronto dentro de 30 días. Alargarlo se puede siempre.', 'Bringing the end of “Free launch” forward needs a month’s notice: the date must be at least 30 days away. Extending it is always possible.'),
   launch_free_until_past: () => bi('La fecha, como pronto mañana.', 'The date must be tomorrow at the earliest.'),
+  invalid_province: () => bi('Esa provincia no existe.', "That province doesn't exist."),
   stripe_managed: () => bi('Uno de los negocios ya paga con tarjeta: cancélalo antes en Stripe.', 'One of the businesses already pays by card: cancel it in Stripe first.'),
 };
 /** «1 mar 2027» de un día AAAA-MM-DD. */
 const crDiaLargo = (d) => new Date(`${String(d).slice(0, 10)}T12:00:00`).toLocaleDateString(I18N.lang === 'en' ? 'en-GB' : 'es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
-/** La regla del alta en el último mes (`city_launch_free_signup_until` en la
- * base; pendiente de confirmar por Iván): si se cambia allí, cambiar esto. */
+/** La regla del alta en el último mes (`province_launch_free_signup_until`
+ * en la base; pendiente de confirmar por Iván): si se cambia allí, cambiar esto. */
 const crGratisReglaAlta = (en = false) => (en
   ? 'In the last 30 days before the date, new sign-ups already get the 30-day trial (it gives them more time).'
   : 'En los últimos 30 días antes de la fecha, las altas ya entran en la prueba de 30 días (les da más tiempo).');
 const crNegocios = (n) => bi(Number(n) === 1 ? '1 negocio' : `${fmtNum(n || 0)} negocios`, Number(n) === 1 ? '1 business' : `${fmtNum(n || 0)} businesses`);
-/** La celda del gratis de una ciudad: «Gratis hasta el 1 mar 2027 · 12 negocios». */
-function crGratisCelda(c) {
-  const otros = bi(`${fmtNum(c.trials || 0)} en prueba`, `${fmtNum(c.trials || 0)} on trial`);
-  if (c.launch_free && c.launch_free_until) {
-    const dia = crDiaLargo(c.launch_free_until);
-    if (c.launch_free_until < KZ.hoy('Europe/Madrid')) {
-      return `<span class="tag dim">${esc(bi(`Terminó el ${dia}`, `Ended on ${dia}`))}</span><span class="sub">${esc(bi('Las altas nuevas, con la prueba de 30 días', 'New sign-ups get the 30-day trial'))} · ${esc(otros)}</span>`;
-    }
-    return `<span class="tag ok">${esc(bi(`Gratis hasta el ${dia}`, `Free until ${dia}`))}</span><span class="sub">${esc(crNegocios(c.free_launch))} · ${esc(otros)}${c.signups_free ? '' : ` · ${esc(bi('las altas nuevas ya van a la prueba (queda menos de un mes)', 'new sign-ups already get the trial (less than a month left)'))}`}</span>`;
+/** La fila de una provincia: «Málaga · gratis hasta el 31 mar 2027 · 12
+ * negocios · 0 en prueba», y debajo lo que conviene saber. */
+function crGratisProvincia(p) {
+  const cuentas = `${crNegocios(p.businesses)} · ${bi(`${fmtNum(p.trials || 0)} en prueba`, `${fmtNum(p.trials || 0)} on trial`)}`;
+  const notas = [esc(p.region_name || '')];
+  let estado;
+  if (p.launch_free_until && p.launch_free_until < KZ.hoy('Europe/Madrid')) {
+    const dia = crDiaLargo(p.launch_free_until);
+    estado = bi(`terminó el ${dia}`, `ended on ${dia}`);
+    notas.push(esc(bi('las altas nuevas, con la prueba de 30 días', 'new sign-ups get the 30-day trial')));
+  } else if (p.launch_free_until) {
+    const dia = crDiaLargo(p.launch_free_until);
+    estado = bi(`gratis hasta el ${dia}`, `free until ${dia}`);
+    notas.push(esc(bi(`${fmtNum(p.free_launch || 0)} con el gratis hasta esa fecha`, `${fmtNum(p.free_launch || 0)} free until that date`)));
+    if (!p.signups_free) notas.push(esc(bi('las altas nuevas ya van a la prueba (queda menos de un mes)', 'new sign-ups already get the trial (less than a month left)')));
+  } else {
+    estado = bi('altas con prueba', 'sign-ups on trial');
   }
-  if (c.launch_free) {
-    return `<span class="tag ok">${esc(bi('Gratis sin fecha', 'Free, no end date'))}</span><span class="sub">${esc(crNegocios(c.free_open))} · ${esc(otros)} · ${esc(bi('ponle fecha con «Cambiar la fecha…»', 'set one with “Change the date…”'))}</span>`;
-  }
-  return `<span class="tag dim">${esc(bi('Altas con prueba', 'Sign-ups on trial'))}</span><span class="sub">${esc(bi(
-    `${fmtNum(c.free_open || 0)} gratis sin fecha · ${fmtNum(c.free_ending || 0)} con fecha · ${fmtNum(c.trials || 0)} en prueba`,
-    `${fmtNum(c.free_open || 0)} free, no end · ${fmtNum(c.free_ending || 0)} with an end date · ${fmtNum(c.trials || 0)} on trial`))}</span>`;
+  if (Number(p.free_open) > 0) notas.push(esc(bi(`${fmtNum(p.free_open)} gratis sin fecha`, `${fmtNum(p.free_open)} free with no end date`)));
+  return `<span><b>${esc(p.name)}</b> · ${esc(estado)} · ${esc(cuentas)}</span><span class="sub">${notas.filter(Boolean).join(' · ')}</span>`;
 }
 /** Un error de las RPC de crecer, en cristiano. */
 const crError = (e) => {
@@ -410,9 +418,14 @@ const crRegionCerca = (C, lat, lng) => {
 const crIdCiudad = (s) => String(s || '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/[^a-z]/g, '').slice(0, 32);
 
 PAGES.crecer = async (v) => {
-  const [zonas, ciudades] = await Promise.all([rpc('admin_city_waitlist'), rpc('admin_klendar_cities')]);
+  const [zonas, ciudades, gratis] = await Promise.all([rpc('admin_city_waitlist'), rpc('admin_klendar_cities'), rpc('admin_launch_free_provinces')]);
   const Z = zonas || [];
   const C = ciudades || [];
+  const G = gratis || {};
+  const P = G.provinces || [];
+  const SIN = G.unknown || { businesses: 0, trials: 0, list: [] };
+  // Para el selector: las provincias que no están ya en la lista.
+  const OTRAS = (G.all || []).filter((x) => !P.some((p) => p.code === x.code));
   v.innerHTML = `
     <div class="page-head"><h1>${esc(bi('Dónde crecer', 'Where to grow'))}</h1></div>
     ${helpBox(bi('¿Qué es esto?', 'What is this?'), bi(
@@ -424,8 +437,15 @@ PAGES.crecer = async (v) => {
        <p><b>Privacy</b>: nobody's position is stored, only the rounded area (about 10 km) and its name; no emails or people show here, only how many.</p>`))}
     <div class="card"><h2>${esc(bi('Dónde esperan a Klendar', 'Where people are waiting for Klendar'))}</h2>
       <div id="crZonas"></div></div>
+    <div class="card"><h2>${esc(bi('Gratis de lanzamiento por provincia', 'Free launch by province'))}</h2>
+      <p class="muted small" style="margin:0 0 8px">${esc(bi(
+        `Un negocio que se da de alta en una provincia con el gratis puesto entra gratis hasta esa fecha, en vez de la prueba de 30 días. Su provincia sale del código postal de su dirección o, si no lo tiene, de su punto en el mapa. ${crGratisReglaAlta()} Aquí salen las provincias con el gratis puesto o con negocios.`,
+        `A business that signs up in a province with free launch on is free until that date instead of getting the 30-day trial. Its province comes from the postcode in its address or, without one, from its point on the map. ${crGratisReglaAlta(true)} Listed here: provinces with free launch on or with businesses.`))}</p>
+      <div class="toolbar"><select id="crProvOtra" aria-label="${esc(bi('Otra provincia', 'Another province'))}"><option value="">${esc(bi('Otra provincia…', 'Another province…'))}</option>${OTRAS.map((x) => `<option value="${esc(x.code)}">${esc(x.name)}</option>`).join('')}</select>
+        <button type="button" class="btn sm" id="crProvOtraBtn" disabled>${esc(bi('Gratis de lanzamiento…', 'Free launch…'))}</button></div>
+      <div id="crProvincias"></div></div>
     <div class="card"><h2>${esc(bi('Ciudades de Klendar', 'Klendar cities'))}</h2>
-      <p class="muted small" style="margin:0 0 8px">${esc(bi('Las que salen en las listas de ciudades (y desde las que se cuenta la zona de cada uno). Apagar una no borra nada.', 'The ones shown in city lists (and used to place each area). Switching one off deletes nothing.'))}</p>
+      <p class="muted small" style="margin:0 0 8px">${esc(bi('Las que salen en las listas de ciudades (y desde las que se cuenta la zona de cada uno). Apagar una no borra nada. El «Gratis de lanzamiento» va por provincia, arriba.', 'The ones shown in city lists (and used to place each area). Switching one off deletes nothing. “Free launch” goes by province, above.'))}</p>
       <div id="crCiudades"></div></div>`;
   const cerca = (z) => (z.nearest_city ? `${esc(z.nearest_city.name)} <span class="muted small">· ${fmtNum(z.nearest_city.km)} km</span> ${z.nearest_city.active ? `<span class="tag ok">${esc(bi('activa', 'live'))}</span>` : `<span class="tag dim">${esc(bi('apagada', 'off'))}</span>`}` : '—');
   $('#crZonas').innerHTML = table({
@@ -447,17 +467,26 @@ PAGES.crecer = async (v) => {
       { h: bi('Centro', 'Centre'), r: (c) => `<a class="link" target="_blank" rel="noopener" href="https://www.google.com/maps?q=${Number(c.lat)},${Number(c.lng)}">${Number(c.lat).toFixed(3)}, ${Number(c.lng).toFixed(3)} ↗</a>` },
       { h: bi('Comunidad', 'Region'), r: (c) => (c.region ? esc(festCcaa(c.region)) : `<span class="tag warn">${esc(bi('sin comunidad', 'no region'))}</span>`) },
       { h: bi('Estado', 'Status'), r: (c) => (c.active ? `<span class="tag ok">${esc(bi('Encendida', 'On'))}</span>` : `<span class="tag dim">${esc(bi('Apagada', 'Off'))}</span>`) },
-      // «Gratis de lanzamiento» de la ciudad hasta una fecha (migraciones
-      // 20261260100001 y 20261260100002 de la app): «gratis hasta el 1 mar
-      // 2027 · 12 negocios».
-      { h: bi('Gratis de lanzamiento', 'Free launch'), r: crGratisCelda },
-      { h: '', r: (c, i) => `<div class="actions cr-acciones">${c.active ? `<button type="button" class="btn sm" data-apaga="${i}">${esc(bi('Apagar…', 'Switch off…'))}</button>` : `<button type="button" class="btn sm" data-enciende="${i}">${esc(bi('Encender…', 'Switch on…'))}</button>`}${c.launch_free
-        ? `<button type="button" class="btn sm" data-gratis-fecha="${i}">${esc(bi('Cambiar la fecha…', 'Change the date…'))}</button><button type="button" class="btn sm" data-gratis-quita="${i}">${esc(bi('Quitar el gratis…', 'Stop free sign-ups…'))}</button>`
-        : `<button type="button" class="btn sm" data-gratis="${i}">${esc(bi('Gratis de lanzamiento…', 'Free launch…'))}</button>`}</div>` },
+      { h: '', r: (c, i) => `<div class="actions cr-acciones">${c.active ? `<button type="button" class="btn sm" data-apaga="${i}">${esc(bi('Apagar…', 'Switch off…'))}</button>` : `<button type="button" class="btn sm" data-enciende="${i}">${esc(bi('Encender…', 'Switch on…'))}</button>`}</div>` },
     ],
     rows: C,
     empty: bi('No hay ciudades.', 'No cities.'),
   });
+  // «Gratis de lanzamiento» por provincia (migración 20261260100003 de la
+  // app): «Málaga · gratis hasta el 31 mar 2027 · 12 negocios · 0 en prueba».
+  // Al final, «Sin provincia»: los que no se sabe de dónde son (entran en la
+  // prueba); se arreglan en su ficha con «Cambiar plan…».
+  const sinProvincia = Number(SIN.businesses) > 0
+    ? `<div class="cr-sinprov"><p style="margin:12px 0 4px"><b>${esc(bi('Sin provincia', 'No province'))}</b> · ${esc(crNegocios(SIN.businesses))} · ${esc(bi(`${fmtNum(SIN.trials || 0)} en prueba`, `${fmtNum(SIN.trials || 0)} on trial`))}</p>
+       <p class="muted small" style="margin:0 0 6px">${esc(bi('Ni código postal en la dirección ni un punto dentro de España: entran en la prueba de 30 días. Si alguno debería tener el gratis, ábrelo y usa «Cambiar plan…».', 'No postcode in the address and no point inside Spain: they get the 30-day trial. If one should be free, open it and use “Change plan…”.'))}</p>
+       <ul class="cr-lista">${(SIN.list || []).map((b) => `<li><span><a class="link" href="#/negocios/${esc(b.id)}">${esc(b.name)}</a>${b.city ? `<span class="sub">${esc(b.city)}</span>` : ''}</span></li>`).join('')}</ul></div>`
+    : '';
+  const accionesGratis = (p, i) => `<div class="cr-acciones">${p.launch_free_until
+    ? `<button type="button" class="btn sm" data-gratis-fecha="${i}">${esc(bi('Cambiar la fecha…', 'Change the date…'))}</button><button type="button" class="btn sm" data-gratis-quita="${i}">${esc(bi('Quitar el gratis…', 'Stop free sign-ups…'))}</button>`
+    : `<button type="button" class="btn sm" data-gratis="${i}">${esc(bi('Gratis de lanzamiento…', 'Free launch…'))}</button>`}</div>`;
+  $('#crProvincias').innerHTML = (P.length
+    ? `<ul class="cr-lista cr-prov">${P.map((p, i) => `<li><span>${crGratisProvincia(p)}</span>${accionesGratis(p, i)}</li>`).join('')}</ul>`
+    : `<p class="muted">${esc(bi('Ninguna provincia tiene el gratis puesto ni negocios todavía.', 'No province has free launch on or any businesses yet.'))}</p>`) + sinProvincia;
 
   /** Activar (o volver a encender) una ciudad: datos y luego confirmar. */
   const activa = async (pre, zona) => {
@@ -535,19 +564,19 @@ PAGES.crecer = async (v) => {
       await activa({ id: c.id, name: c.name, lat: c.lat, lng: c.lng, region: c.region, postal_prefix: c.postal_prefix }, null);
     });
   });
-  /** Encender o cambiar la fecha del gratis: elegir el último día gratis. */
-  const gratisFecha = async (c) => {
-    const cambia = !!c.launch_free;
+  /** Encender o cambiar la fecha del gratis de una provincia: elegir el último día gratis. */
+  const gratisFecha = async (p) => {
+    const cambia = !!p.launch_free_until;
     const manana = KZ.hoy('Europe/Madrid', 1);
-    const actual = c.launch_free_until && c.launch_free_until >= manana ? c.launch_free_until : '';
-    const n = fmtNum((c.launch_free_until ? c.free_launch : c.free_open) || 0);
+    const actual = p.launch_free_until && p.launch_free_until >= manana ? p.launch_free_until : '';
+    const n = fmtNum(p.free_launch || 0);
     const r = await modal({
-      title: cambia ? bi(`Cambiar la fecha en ${c.name}`, `Change the date in ${c.name}`) : bi(`Gratis de lanzamiento en ${c.name}`, `Free launch in ${c.name}`),
+      title: cambia ? bi(`Cambiar la fecha en ${p.name}`, `Change the date in ${p.name}`) : bi(`Gratis de lanzamiento en ${p.name}`, `Free launch in ${p.name}`),
       intro: esc(cambia
-        ? bi(`Se cambia para los ${n} negocios de ${c.name} que tienen el gratis de la ciudad y para las altas nuevas. Los que están en la prueba aquí y la acaban antes de la fecha pasan también a gratis. Alargar se puede siempre; adelantarla, solo con un mes de aviso (como pronto dentro de 30 días). ${crGratisReglaAlta()}`,
-          `It changes for the ${n} businesses in ${c.name} that have the city’s free period and for new sign-ups. Those on trial here whose trial ends before the date also become free. Extending is always possible; bringing it forward only with a month’s notice (30 days away at the earliest). ${crGratisReglaAlta(true)}`)
-        : bi(`Los negocios que se den de alta en ${c.name} (o a menos de 30 km de su centro) entran gratis hasta ese día, en vez de la prueba de 30 días. Los que ya están en la prueba aquí (${fmtNum(c.trials || 0)}) y la acaban antes pasan también a gratis. Al pasar la fecha, las altas nuevas entran solas en la prueba de 30 días. ${crGratisReglaAlta()}`,
-          `Businesses signing up in ${c.name} (or within 30 km of its centre) are free until that day instead of getting the 30-day trial. Those already on trial here (${fmtNum(c.trials || 0)}) whose trial ends earlier also become free. After the date, new sign-ups get the 30-day trial on their own. ${crGratisReglaAlta(true)}`)),
+        ? bi(`Se cambia para los ${n} negocios de la provincia de ${p.name} que tienen su gratis y para las altas nuevas. Los que están en la prueba aquí y la acaban antes de la fecha pasan también a gratis. Alargar se puede siempre; adelantarla, solo con un mes de aviso (como pronto dentro de 30 días). ${crGratisReglaAlta()}`,
+          `It changes for the ${n} businesses in the province of ${p.name} that have its free period and for new sign-ups. Those on trial here whose trial ends before the date also become free. Extending is always possible; bringing it forward only with a month’s notice (30 days away at the earliest). ${crGratisReglaAlta(true)}`)
+        : bi(`Los negocios que se den de alta en la provincia de ${p.name} (por el código postal de su dirección o, si no lo tiene, por su punto en el mapa) entran gratis hasta ese día, en vez de la prueba de 30 días. Los que ya están en la prueba aquí (${fmtNum(p.trials || 0)}) y la acaban antes pasan también a gratis. Al pasar la fecha, las altas nuevas entran solas en la prueba de 30 días. ${crGratisReglaAlta()}`,
+          `Businesses signing up in the province of ${p.name} (by the postcode in their address or, without one, by their point on the map) are free until that day instead of getting the 30-day trial. Those already on trial here (${fmtNum(p.trials || 0)}) whose trial ends earlier also become free. After the date, new sign-ups get the 30-day trial on their own. ${crGratisReglaAlta(true)}`)),
       warn: esc(bi('Un mes antes del fin, cada negocio recibe una notificación y un correo, y otra vez 7 días y 1 día antes. Después, para seguir, el plan tiene que estar al día.',
         'A month before the end, each business gets a notification and an email, and again 7 days and 1 day before. After that, the plan has to be paid to keep going.')),
       fields: [{ name: 'until', label: bi('Gratis hasta el (incluido)', 'Free until (inclusive)'), type: 'date', value: actual, min: manana, required: true }],
@@ -555,30 +584,36 @@ PAGES.crecer = async (v) => {
     });
     if (!r) return;
     try {
-      const x = await rpc('admin_set_city_launch_free', { p_city: c.id, p_until: r.until });
-      toast(bi(`Hecho: gratis hasta el ${crDiaLargo(r.until)}. Cambiados ahora: ${fmtNum(x?.businesses || 0)}.`,
-        `Done: free until ${crDiaLargo(r.until)}. Changed now: ${fmtNum(x?.businesses || 0)}.`));
+      const x = await rpc('admin_set_province_launch_free', { p_province: p.code, p_until: r.until });
+      toast(bi(`Hecho: ${p.name}, gratis hasta el ${crDiaLargo(r.until)}. Cambiados ahora: ${fmtNum(x?.businesses || 0)}.`,
+        `Done: ${p.name}, free until ${crDiaLargo(r.until)}. Changed now: ${fmtNum(x?.businesses || 0)}.`));
       route();
     } catch (e) { toast(crError(e), true); }
   };
   $$('[data-gratis]', v).forEach((b) => {
-    b.onclick = () => esperando(b, () => gratisFecha(C[Number(b.dataset.gratis)]));
+    b.onclick = () => esperando(b, () => gratisFecha(P[Number(b.dataset.gratis)]));
   });
   $$('[data-gratis-fecha]', v).forEach((b) => {
-    b.onclick = () => esperando(b, () => gratisFecha(C[Number(b.dataset.gratisFecha)]));
+    b.onclick = () => esperando(b, () => gratisFecha(P[Number(b.dataset.gratisFecha)]));
+  });
+  // Cualquier otra provincia, desde el selector.
+  const otra = $('#crProvOtra', v);
+  const otraBtn = $('#crProvOtraBtn', v);
+  otra.onchange = () => { otraBtn.disabled = !otra.value; };
+  otraBtn.onclick = () => esperando(otraBtn, async () => {
+    const x = OTRAS.find((o) => o.code === otra.value);
+    if (x) await gratisFecha({ code: x.code, name: x.name, launch_free_until: null, free_launch: 0, trials: 0 });
   });
   $$('[data-gratis-quita]', v).forEach((b) => {
     b.onclick = () => esperando(b, async () => {
-      const c = C[Number(b.dataset.gratisQuita)];
-      const hasta = c.launch_free_until ? crDiaLargo(c.launch_free_until) : '';
-      if (!await confirmDlg(bi(`¿Quitar el gratis en «${c.name}»?`, `Stop free sign-ups in “${c.name}”?`), esc(hasta
-        ? bi(`Las altas nuevas en ${c.name} vuelven a la prueba de 30 días. Los negocios que ya tienen el gratis lo conservan hasta el ${hasta}.`,
-          `New sign-ups in ${c.name} go back to the 30-day trial. Businesses that already have it keep it until ${hasta}.`)
-        : bi(`Las altas nuevas en ${c.name} vuelven a la prueba de 30 días. Los negocios que ya tienen el gratis lo conservan.`,
-          `New sign-ups in ${c.name} go back to the 30-day trial. Businesses that already have it keep it.`)),
+      const p = P[Number(b.dataset.gratisQuita)];
+      const hasta = crDiaLargo(p.launch_free_until);
+      if (!await confirmDlg(bi(`¿Quitar el gratis en «${p.name}»?`, `Stop free sign-ups in “${p.name}”?`), esc(
+        bi(`Las altas nuevas en la provincia de ${p.name} vuelven a la prueba de 30 días. Los negocios que ya tienen el gratis lo conservan hasta el ${hasta}.`,
+          `New sign-ups in the province of ${p.name} go back to the 30-day trial. Businesses that already have it keep it until ${hasta}.`)),
       { submit: bi('Quitar', 'Stop') })) return;
       try {
-        await rpc('admin_set_city_launch_free', { p_city: c.id, p_until: null });
+        await rpc('admin_set_province_launch_free', { p_province: p.code, p_until: null });
         toast(bi('Quitado para las altas nuevas.', 'Stopped for new sign-ups.'));
         route();
       } catch (e) { toast(crError(e), true); }
