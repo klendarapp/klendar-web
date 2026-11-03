@@ -12,6 +12,9 @@
 //     de ti».
 //  3. «Dónde crecer»: encender una ciudad pide la comunidad, la guarda
 //     (`admin_set_city_holiday_info`) y avisa de que le faltan los locales.
+//  4. «Gratis de lanzamiento» hasta una fecha: «Gratis hasta el 1 mar 2027 ·
+//     12 negocios», encender con fecha (mínimo mañana), «Cambiar la fecha…»
+//     y «Quitar el gratis…» (`admin_set_city_launch_free`).
 //
 // Chromium y WebKit, móvil y escritorio. Capturas en OUT.
 //
@@ -230,41 +233,58 @@ async function crecer(nav, nombre, t, vp) {
   await ctx.close();
 }
 
-/** «Gratis de lanzamiento» por ciudad (migración 20261260100001 de la app). */
+/** «Gratis de lanzamiento» por ciudad hasta una fecha (migraciones
+ * 20261260100001 y 20261260100002 de la app). */
 async function gratis(nav, nombre, t, vp) {
   const { ctx, p, estado, errores } = await contexto(nav, vp, {
     ...BASE_RPC,
     admin_city_waitlist: [],
     admin_klendar_cities: [
-      { id: 'madrid', name: 'Madrid', lat: 40.4168, lng: -3.7038, position: 1, active: true, region: 'MD', postal_prefix: '280', launch_free: false, free_open: 0, free_ending: 0, trials: 4 },
-      { id: 'zaragoza', name: 'Zaragoza', lat: 41.6488, lng: -0.8891, position: 5, active: true, region: 'AR', postal_prefix: '500', launch_free: true, free_open: 7, free_ending: 0, trials: 0 },
+      { id: 'madrid', name: 'Madrid', lat: 40.4168, lng: -3.7038, position: 1, active: true, region: 'MD', postal_prefix: '280', launch_free: false, launch_free_until: null, signups_free: false, free_launch: 0, free_open: 0, free_ending: 0, trials: 4 },
+      { id: 'malaga', name: 'Málaga', lat: 36.7213, lng: -4.4214, position: 6, active: true, region: 'AN', postal_prefix: '290', launch_free: true, launch_free_until: '2027-03-01', signups_free: true, free_launch: 12, free_open: 0, free_ending: 12, trials: 0 },
     ],
-    admin_set_city_launch_free: { id: 'madrid', on: true, converted: 4 },
-    admin_end_city_launch_free: { id: 'zaragoza', businesses: 7 },
+    admin_set_city_launch_free: { id: 'madrid', until: '2027-03-01', converted: 4, moved: 0, businesses: 4 },
   });
   await p.goto(`${BASE}/admin/#/crecer`, { waitUntil: 'networkidle' });
   await p.waitForSelector('[data-gratis]');
   const v = await p.locator('#crCiudades').innerText();
-  ok(/Altas con prueba/.test(v) && /Altas gratis/.test(v) && /7 gratis sin fecha/.test(v) && /4 en prueba/.test(v), `${nombre}/${t} gratis: la columna «Gratis de lanzamiento»`);
-  ok(await p.locator('[data-cobrar]').count() === 1, `${nombre}/${t} gratis: «Empezar a cobrar…» solo donde hay gratis sin fecha`);
+  ok(/Altas con prueba/.test(v) && /4 en prueba/.test(v), `${nombre}/${t} gratis: Madrid, altas con prueba`);
+  ok(/Gratis hasta el 1 mar 2027/.test(v) && /12 negocios/.test(v), `${nombre}/${t} gratis: «Málaga · Gratis hasta el 1 mar 2027 · 12 negocios»`);
+  ok(await p.locator('[data-gratis-fecha]').count() === 1 && await p.locator('[data-gratis-quita]').count() === 1
+    && !/Empezar a cobrar/.test(v), `${nombre}/${t} gratis: «Cambiar la fecha…» y «Quitar el gratis…» donde está encendido`);
   await p.screenshot({ path: `${OUT}/web-admin-crecer-gratis-${nombre}-${t}.png`, fullPage: true });
+  // Encender: pide la fecha (mañana como pronto).
   await p.click('[data-gratis="0"]');
-  await p.waitForSelector('#modal[open] button[type=submit]');
-  ok(/prueba de 30 días/.test(await p.locator('#modal').innerText()), `${nombre}/${t} gratis: el diálogo explica qué cambia`);
-  await p.click('#modal button[type=submit]');
-  await p.waitForTimeout(400);
-  const enc = estado.llamadas.find(([fn]) => fn === 'admin_set_city_launch_free');
-  ok(enc && enc[1].p_city === 'madrid' && enc[1].p_on === true, `${nombre}/${t} gratis: encender manda la ciudad ${JSON.stringify(enc?.[1])}`);
-  await p.waitForSelector('[data-cobrar]');
-  await p.click('[data-cobrar]');
   await p.waitForSelector('#modal input[name=until]');
-  const fecha = await p.locator('#modal input[name=until]').inputValue();
-  ok(/^\d{4}-\d{2}-\d{2}$/.test(fecha) && Date.parse(fecha) - Date.now() > 29 * 864e5, `${nombre}/${t} gratis: propone una fecha a más de 30 días (${fecha})`);
-  await p.screenshot({ path: `${OUT}/web-admin-crecer-cobrar-${nombre}-${t}.png` });
+  const min = await p.locator('#modal input[name=until]').getAttribute('min');
+  const manana = new Date(Date.now() + 864e5).toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' });
+  ok(min === manana && /prueba de 30 días/.test(await p.locator('#modal').innerText()), `${nombre}/${t} gratis: el diálogo explica qué cambia y la fecha mínima es mañana (${min})`);
+  await p.locator('#modal input[name=until]').fill('2027-03-01');
   await p.click('#modal button[type=submit]');
   await p.waitForTimeout(400);
-  const fin = estado.llamadas.find(([fn]) => fn === 'admin_end_city_launch_free');
-  ok(fin && fin[1].p_city === 'zaragoza' && fin[1].p_until === fecha, `${nombre}/${t} gratis: «Empezar a cobrar» manda ciudad y fecha ${JSON.stringify(fin?.[1])}`);
+  const enc = estado.llamadas.find(([fn, a]) => fn === 'admin_set_city_launch_free' && a.p_city === 'madrid');
+  ok(enc && enc[1].p_until === '2027-03-01', `${nombre}/${t} gratis: encender manda ciudad y fecha ${JSON.stringify(enc?.[1])}`);
+  // Cambiar la fecha: parte de la que hay.
+  await p.waitForSelector('[data-gratis-fecha]');
+  await p.click('[data-gratis-fecha]');
+  await p.waitForSelector('#modal input[name=until]');
+  const actual = await p.locator('#modal input[name=until]').inputValue();
+  ok(actual === '2027-03-01', `${nombre}/${t} gratis: «Cambiar la fecha…» parte de la que hay (${actual})`);
+  await p.screenshot({ path: `${OUT}/web-admin-crecer-fecha-${nombre}-${t}.png` });
+  await p.locator('#modal input[name=until]').fill('2027-04-15');
+  await p.click('#modal button[type=submit]');
+  await p.waitForTimeout(400);
+  const cam = estado.llamadas.find(([fn, a]) => fn === 'admin_set_city_launch_free' && a.p_city === 'malaga' && a.p_until);
+  ok(cam && cam[1].p_until === '2027-04-15', `${nombre}/${t} gratis: «Cambiar la fecha» manda la nueva ${JSON.stringify(cam?.[1])}`);
+  // Quitar el gratis: sin fecha.
+  await p.waitForSelector('[data-gratis-quita]');
+  await p.click('[data-gratis-quita]');
+  await p.waitForSelector('#modal[open] button[type=submit]');
+  ok(/1 mar 2027/.test(await p.locator('#modal').innerText()), `${nombre}/${t} gratis: «Quitar» dice hasta cuándo lo conservan`);
+  await p.click('#modal button[type=submit]');
+  await p.waitForTimeout(400);
+  const quita = estado.llamadas.find(([fn, a]) => fn === 'admin_set_city_launch_free' && a.p_city === 'malaga' && a.p_until === null);
+  ok(!!quita, `${nombre}/${t} gratis: «Quitar el gratis» manda la fecha vacía`);
   ok(errores.length === 0, `${nombre}/${t} gratis sin errores JS ${errores.join(' | ')}`);
   await ctx.close();
 }

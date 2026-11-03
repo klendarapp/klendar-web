@@ -202,7 +202,7 @@ function modal({ title, intro, warn, fields = [], submit = 'Guardar', danger = f
       if (f.type === 'select') return `<label class="f${ancho}"><span>${esc(f.label)} ${help}</span><select name="${f.name}" id="${id}">${f.options.map((o) => `<option value="${esc(o[0])}" ${o[0] == f.value ? 'selected' : ''}>${esc(o[1])}</option>`).join('')}</select></label>`;
       if (f.type === 'textarea') return `<label class="f ancho"><span>${esc(f.label)} ${help}</span><textarea name="${f.name}" id="${id}" ${f.required ? 'required' : ''}>${esc(f.value ?? '')}</textarea></label>`;
       if (f.type === 'checkbox') return `<label class="f check${ancho}"><input type="checkbox" name="${f.name}" id="${id}" ${f.value ? 'checked' : ''}><span>${esc(f.label)} ${help}</span></label>`;
-      return `<label class="f${ancho}"><span>${esc(f.label)} ${help}</span><input name="${f.name}" id="${id}" type="${f.type || 'text'}" value="${esc(f.value ?? '')}" ${f.required ? 'required' : ''} ${f.step ? `step="${f.step}"` : ''} ${f.placeholder ? `placeholder="${esc(f.placeholder)}"` : ''}></label>`;
+      return `<label class="f${ancho}"><span>${esc(f.label)} ${help}</span><input name="${f.name}" id="${id}" type="${f.type || 'text'}" value="${esc(f.value ?? '')}" ${f.required ? 'required' : ''} ${f.step ? `step="${f.step}"` : ''} ${f.min ? `min="${esc(f.min)}"` : ''} ${f.placeholder ? `placeholder="${esc(f.placeholder)}"` : ''}></label>`;
     };
     const grupo = (g) => {
       const dentro = `${g.nota ? `<p class="muted small grupo-nota">${esc(g.nota)}</p>` : ''}<div class="grupo-campos${g.cols === 2 ? ' c2' : ''}">${g.campos.map(field).join('')}</div>`;

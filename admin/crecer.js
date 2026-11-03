@@ -41,9 +41,35 @@ const CR_ERR = {
   invalid_city_id: () => bi('El identificador va en minúsculas, sin espacios ni tildes (2 a 32 letras): «teruel», «sansebastian».', 'The id is lowercase letters only, no spaces or accents (2 to 32): “teruel”, “sansebastian”.'),
   invalid_point: () => bi('La latitud o la longitud no valen.', "The latitude or longitude isn't valid."),
   invalid_zone: () => bi('Esa zona no vale.', "That area isn't valid."),
-  free_end_too_soon: () => bi('El «Gratis de lanzamiento» se avisa con un mes: la fecha, como pronto dentro de 30 días.', '“Free launch” needs a month’s notice: the date must be at least 30 days away.'),
+  free_end_too_soon: () => bi('Para adelantar el fin del «Gratis de lanzamiento» hace falta un mes de aviso: la fecha, como pronto dentro de 30 días. Alargarlo se puede siempre.', 'Bringing the end of “Free launch” forward needs a month’s notice: the date must be at least 30 days away. Extending it is always possible.'),
+  launch_free_until_past: () => bi('La fecha, como pronto mañana.', 'The date must be tomorrow at the earliest.'),
   stripe_managed: () => bi('Uno de los negocios ya paga con tarjeta: cancélalo antes en Stripe.', 'One of the businesses already pays by card: cancel it in Stripe first.'),
 };
+/** «1 mar 2027» de un día AAAA-MM-DD. */
+const crDiaLargo = (d) => new Date(`${String(d).slice(0, 10)}T12:00:00`).toLocaleDateString(I18N.lang === 'en' ? 'en-GB' : 'es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
+/** La regla del alta en el último mes (`city_launch_free_signup_until` en la
+ * base; pendiente de confirmar por Iván): si se cambia allí, cambiar esto. */
+const crGratisReglaAlta = (en = false) => (en
+  ? 'In the last 30 days before the date, new sign-ups already get the 30-day trial (it gives them more time).'
+  : 'En los últimos 30 días antes de la fecha, las altas ya entran en la prueba de 30 días (les da más tiempo).');
+const crNegocios = (n) => bi(Number(n) === 1 ? '1 negocio' : `${fmtNum(n || 0)} negocios`, Number(n) === 1 ? '1 business' : `${fmtNum(n || 0)} businesses`);
+/** La celda del gratis de una ciudad: «Gratis hasta el 1 mar 2027 · 12 negocios». */
+function crGratisCelda(c) {
+  const otros = bi(`${fmtNum(c.trials || 0)} en prueba`, `${fmtNum(c.trials || 0)} on trial`);
+  if (c.launch_free && c.launch_free_until) {
+    const dia = crDiaLargo(c.launch_free_until);
+    if (c.launch_free_until < KZ.hoy('Europe/Madrid')) {
+      return `<span class="tag dim">${esc(bi(`Terminó el ${dia}`, `Ended on ${dia}`))}</span><span class="sub">${esc(bi('Las altas nuevas, con la prueba de 30 días', 'New sign-ups get the 30-day trial'))} · ${esc(otros)}</span>`;
+    }
+    return `<span class="tag ok">${esc(bi(`Gratis hasta el ${dia}`, `Free until ${dia}`))}</span><span class="sub">${esc(crNegocios(c.free_launch))} · ${esc(otros)}${c.signups_free ? '' : ` · ${esc(bi('las altas nuevas ya van a la prueba (queda menos de un mes)', 'new sign-ups already get the trial (less than a month left)'))}`}</span>`;
+  }
+  if (c.launch_free) {
+    return `<span class="tag ok">${esc(bi('Gratis sin fecha', 'Free, no end date'))}</span><span class="sub">${esc(crNegocios(c.free_open))} · ${esc(otros)} · ${esc(bi('ponle fecha con «Cambiar la fecha…»', 'set one with “Change the date…”'))}</span>`;
+  }
+  return `<span class="tag dim">${esc(bi('Altas con prueba', 'Sign-ups on trial'))}</span><span class="sub">${esc(bi(
+    `${fmtNum(c.free_open || 0)} gratis sin fecha · ${fmtNum(c.free_ending || 0)} con fecha · ${fmtNum(c.trials || 0)} en prueba`,
+    `${fmtNum(c.free_open || 0)} free, no end · ${fmtNum(c.free_ending || 0)} with an end date · ${fmtNum(c.trials || 0)} on trial`))}</span>`;
+}
 /** Un error de las RPC de crecer, en cristiano. */
 const crError = (e) => {
   const m = String(e?.message || '');
@@ -421,14 +447,13 @@ PAGES.crecer = async (v) => {
       { h: bi('Centro', 'Centre'), r: (c) => `<a class="link" target="_blank" rel="noopener" href="https://www.google.com/maps?q=${Number(c.lat)},${Number(c.lng)}">${Number(c.lat).toFixed(3)}, ${Number(c.lng).toFixed(3)} ↗</a>` },
       { h: bi('Comunidad', 'Region'), r: (c) => (c.region ? esc(festCcaa(c.region)) : `<span class="tag warn">${esc(bi('sin comunidad', 'no region'))}</span>`) },
       { h: bi('Estado', 'Status'), r: (c) => (c.active ? `<span class="tag ok">${esc(bi('Encendida', 'On'))}</span>` : `<span class="tag dim">${esc(bi('Apagada', 'Off'))}</span>`) },
-      // «Gratis de lanzamiento» de la ciudad (migración 20261260100001 de la
-      // app): las altas entran gratis sin fecha en vez de la prueba de 30 días.
-      { h: bi('Gratis de lanzamiento', 'Free launch'), r: (c) => `${c.launch_free
-        ? `<span class="tag ok">${esc(bi('Altas gratis', 'Sign-ups free'))}</span>`
-        : `<span class="tag dim">${esc(bi('Altas con prueba', 'Sign-ups on trial'))}</span>`}<span class="sub">${esc(bi(
-          `${fmtNum(c.free_open || 0)} gratis sin fecha · ${fmtNum(c.free_ending || 0)} con fecha · ${fmtNum(c.trials || 0)} en prueba`,
-          `${fmtNum(c.free_open || 0)} free, no end · ${fmtNum(c.free_ending || 0)} with an end date · ${fmtNum(c.trials || 0)} on trial`))}</span>` },
-      { h: '', r: (c, i) => `<div class="actions cr-acciones">${c.active ? `<button type="button" class="btn sm" data-apaga="${i}">${esc(bi('Apagar…', 'Switch off…'))}</button>` : `<button type="button" class="btn sm" data-enciende="${i}">${esc(bi('Encender…', 'Switch on…'))}</button>`}<button type="button" class="btn sm" data-gratis="${i}">${esc(c.launch_free ? bi('Quitar el gratis…', 'Stop free sign-ups…') : bi('Gratis de lanzamiento…', 'Free launch…'))}</button>${Number(c.free_open) > 0 ? `<button type="button" class="btn sm" data-cobrar="${i}">${esc(bi('Empezar a cobrar…', 'Start charging…'))}</button>` : ''}</div>` },
+      // «Gratis de lanzamiento» de la ciudad hasta una fecha (migraciones
+      // 20261260100001 y 20261260100002 de la app): «gratis hasta el 1 mar
+      // 2027 · 12 negocios».
+      { h: bi('Gratis de lanzamiento', 'Free launch'), r: crGratisCelda },
+      { h: '', r: (c, i) => `<div class="actions cr-acciones">${c.active ? `<button type="button" class="btn sm" data-apaga="${i}">${esc(bi('Apagar…', 'Switch off…'))}</button>` : `<button type="button" class="btn sm" data-enciende="${i}">${esc(bi('Encender…', 'Switch on…'))}</button>`}${c.launch_free
+        ? `<button type="button" class="btn sm" data-gratis-fecha="${i}">${esc(bi('Cambiar la fecha…', 'Change the date…'))}</button><button type="button" class="btn sm" data-gratis-quita="${i}">${esc(bi('Quitar el gratis…', 'Stop free sign-ups…'))}</button>`
+        : `<button type="button" class="btn sm" data-gratis="${i}">${esc(bi('Gratis de lanzamiento…', 'Free launch…'))}</button>`}</div>` },
     ],
     rows: C,
     empty: bi('No hay ciudades.', 'No cities.'),
@@ -510,41 +535,51 @@ PAGES.crecer = async (v) => {
       await activa({ id: c.id, name: c.name, lat: c.lat, lng: c.lng, region: c.region, postal_prefix: c.postal_prefix }, null);
     });
   });
-  $$('[data-gratis]', v).forEach((b) => {
-    b.onclick = () => esperando(b, async () => {
-      const c = C[Number(b.dataset.gratis)];
-      const on = !c.launch_free;
-      if (!await confirmDlg(on ? bi(`¿Gratis de lanzamiento en «${c.name}»?`, `Free launch in “${c.name}”?`) : bi(`¿Quitar el gratis en «${c.name}»?`, `Stop free sign-ups in “${c.name}”?`), esc(on
-        ? bi(`Los negocios que se den de alta en ${c.name} (o a menos de 30 km de su centro) entran en el «Gratis de lanzamiento» sin fecha de fin, en vez de la prueba de 30 días: no se les cobra ni se bloquean. Los que ya están en la prueba aquí (${fmtNum(c.trials || 0)}) pasan también a gratis. Para empezar a cobrar, más adelante: «Empezar a cobrar…», con un mes de aviso.`,
-          `Businesses signing up in ${c.name} (or within 30 km of its centre) get “Free launch” with no end date instead of the 30-day trial: they aren't charged or blocked. Those already on trial here (${fmtNum(c.trials || 0)}) also become free. To start charging later: “Start charging…”, with a month's notice.`)
-        : bi(`Las altas nuevas en ${c.name} vuelven a la prueba de 30 días. Los negocios que ya tienen el gratis lo conservan (para ponerle fin: «Empezar a cobrar…»).`,
-          `New sign-ups in ${c.name} go back to the 30-day trial. Businesses that already have it keep it (to end it: “Start charging…”).`)),
-      { submit: on ? bi('Encender', 'Switch on') : bi('Quitar', 'Stop') })) return;
-      try {
-        const x = await rpc('admin_set_city_launch_free', { p_city: c.id, p_on: on });
-        toast(on ? bi(`Encendido. Pasan a gratis: ${fmtNum(x?.converted || 0)}.`, `Switched on. Now free: ${fmtNum(x?.converted || 0)}.`) : bi('Quitado para las altas nuevas.', 'Stopped for new sign-ups.'));
-        route();
-      } catch (e) { toast(crError(e), true); }
+  /** Encender o cambiar la fecha del gratis: elegir el último día gratis. */
+  const gratisFecha = async (c) => {
+    const cambia = !!c.launch_free;
+    const manana = KZ.hoy('Europe/Madrid', 1);
+    const actual = c.launch_free_until && c.launch_free_until >= manana ? c.launch_free_until : '';
+    const n = fmtNum((c.launch_free_until ? c.free_launch : c.free_open) || 0);
+    const r = await modal({
+      title: cambia ? bi(`Cambiar la fecha en ${c.name}`, `Change the date in ${c.name}`) : bi(`Gratis de lanzamiento en ${c.name}`, `Free launch in ${c.name}`),
+      intro: esc(cambia
+        ? bi(`Se cambia para los ${n} negocios de ${c.name} que tienen el gratis de la ciudad y para las altas nuevas. Los que están en la prueba aquí y la acaban antes de la fecha pasan también a gratis. Alargar se puede siempre; adelantarla, solo con un mes de aviso (como pronto dentro de 30 días). ${crGratisReglaAlta()}`,
+          `It changes for the ${n} businesses in ${c.name} that have the city’s free period and for new sign-ups. Those on trial here whose trial ends before the date also become free. Extending is always possible; bringing it forward only with a month’s notice (30 days away at the earliest). ${crGratisReglaAlta(true)}`)
+        : bi(`Los negocios que se den de alta en ${c.name} (o a menos de 30 km de su centro) entran gratis hasta ese día, en vez de la prueba de 30 días. Los que ya están en la prueba aquí (${fmtNum(c.trials || 0)}) y la acaban antes pasan también a gratis. Al pasar la fecha, las altas nuevas entran solas en la prueba de 30 días. ${crGratisReglaAlta()}`,
+          `Businesses signing up in ${c.name} (or within 30 km of its centre) are free until that day instead of getting the 30-day trial. Those already on trial here (${fmtNum(c.trials || 0)}) whose trial ends earlier also become free. After the date, new sign-ups get the 30-day trial on their own. ${crGratisReglaAlta(true)}`)),
+      warn: esc(bi('Un mes antes del fin, cada negocio recibe una notificación y un correo, y otra vez 7 días y 1 día antes. Después, para seguir, el plan tiene que estar al día.',
+        'A month before the end, each business gets a notification and an email, and again 7 days and 1 day before. After that, the plan has to be paid to keep going.')),
+      fields: [{ name: 'until', label: bi('Gratis hasta el (incluido)', 'Free until (inclusive)'), type: 'date', value: actual, min: manana, required: true }],
+      submit: cambia ? bi('Cambiar la fecha', 'Change the date') : bi('Encender', 'Switch on'),
     });
+    if (!r) return;
+    try {
+      const x = await rpc('admin_set_city_launch_free', { p_city: c.id, p_until: r.until });
+      toast(bi(`Hecho: gratis hasta el ${crDiaLargo(r.until)}. Cambiados ahora: ${fmtNum(x?.businesses || 0)}.`,
+        `Done: free until ${crDiaLargo(r.until)}. Changed now: ${fmtNum(x?.businesses || 0)}.`));
+      route();
+    } catch (e) { toast(crError(e), true); }
+  };
+  $$('[data-gratis]', v).forEach((b) => {
+    b.onclick = () => esperando(b, () => gratisFecha(C[Number(b.dataset.gratis)]));
   });
-  $$('[data-cobrar]', v).forEach((b) => {
+  $$('[data-gratis-fecha]', v).forEach((b) => {
+    b.onclick = () => esperando(b, () => gratisFecha(C[Number(b.dataset.gratisFecha)]));
+  });
+  $$('[data-gratis-quita]', v).forEach((b) => {
     b.onclick = () => esperando(b, async () => {
-      const c = C[Number(b.dataset.cobrar)];
-      const minimo = new Date(Date.now() + 31 * 864e5).toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' });
-      const r = await modal({
-        title: bi(`Empezar a cobrar en ${c.name}`, `Start charging in ${c.name}`),
-        intro: esc(bi(`Pone esta fecha de fin al «Gratis de lanzamiento» de los ${fmtNum(c.free_open || 0)} negocios de ${c.name} que lo tienen sin fecha. Cada uno recibe al momento una notificación, un correo y la línea en «Mi negocio», y otra vez 7 días y 1 día antes. Desde ese día, para seguir, el plan tiene que estar al día. Las altas nuevas vuelven a la prueba de 30 días.`,
-          `Sets this end date on the “Free launch” of the ${fmtNum(c.free_open || 0)} businesses in ${c.name} that have it with no end. Each gets a notification, an email and the line in “My business” right away, and again 7 days and 1 day before. From that day the plan must be up to date to keep going. New sign-ups go back to the 30-day trial.`)),
-        warn: bi('Se avisa a los negocios al momento: no se puede retirar el aviso.', 'Businesses are notified right away: the notice cannot be withdrawn.'),
-        fields: [{ name: 'until', label: bi('Fin del «Gratis de lanzamiento»', 'End of “Free launch”'), type: 'date', value: minimo, required: true,
-          help: bi('Como pronto dentro de 30 días (el mes de aviso).', 'At the earliest in 30 days (a month’s notice).') }],
-        submit: bi('Avisar y poner la fecha', 'Notify and set the date'),
-        danger: true,
-      });
-      if (!r) return;
+      const c = C[Number(b.dataset.gratisQuita)];
+      const hasta = c.launch_free_until ? crDiaLargo(c.launch_free_until) : '';
+      if (!await confirmDlg(bi(`¿Quitar el gratis en «${c.name}»?`, `Stop free sign-ups in “${c.name}”?`), esc(hasta
+        ? bi(`Las altas nuevas en ${c.name} vuelven a la prueba de 30 días. Los negocios que ya tienen el gratis lo conservan hasta el ${hasta}.`,
+          `New sign-ups in ${c.name} go back to the 30-day trial. Businesses that already have it keep it until ${hasta}.`)
+        : bi(`Las altas nuevas en ${c.name} vuelven a la prueba de 30 días. Los negocios que ya tienen el gratis lo conservan.`,
+          `New sign-ups in ${c.name} go back to the 30-day trial. Businesses that already have it keep it.`)),
+      { submit: bi('Quitar', 'Stop') })) return;
       try {
-        const x = await rpc('admin_end_city_launch_free', { p_city: c.id, p_until: r.until });
-        toast(bi(`Hecho: ${fmtNum(x?.businesses || 0)} negocios avisados.`, `Done: ${fmtNum(x?.businesses || 0)} businesses notified.`));
+        await rpc('admin_set_city_launch_free', { p_city: c.id, p_until: null });
+        toast(bi('Quitado para las altas nuevas.', 'Stopped for new sign-ups.'));
         route();
       } catch (e) { toast(crError(e), true); }
     });

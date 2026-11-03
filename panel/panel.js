@@ -1334,9 +1334,18 @@ function avisoBloqueoPronto(bill) {
     ${boton ? `<p style="margin:8px 0 0">${boton}</p>` : ''}</div>`;
 }
 
-/** El «Gratis de lanzamiento» ya tiene fecha de fin (se avisa con un mes): una
- * línea arriba hasta que quedan 7 días y entra el aviso del bloqueo. Como
- * «Mi negocio» en la app. */
+/** Días antes del fin en los que se avisa del fin del gratis (como la base y
+ * `PanelSubscription.freeLaunchNoticeDays` en la app). */
+const GRATIS_AVISO_DIAS = 30;
+/** El «Gratis de lanzamiento» acaba en 30 días o menos (y sigue en marcha). */
+function gratisAcabaPronto(sub) {
+  return sub?.plan_slug === 'free' && !!sub.period_end && ['active', 'trial'].includes(sub.status)
+    && String(sub.period_end).slice(0, 10) <= KZ.hoy(TZ, GRATIS_AVISO_DIAS);
+}
+
+/** El «Gratis de lanzamiento» acaba en un mes o menos: una línea arriba hasta
+ * que quedan 7 días y entra el aviso del bloqueo. Como «Mi negocio» en la
+ * app. */
 function avisoGratisFin(sub) {
   const dia = diaLargoFecha(sub.period_end);
   return `<div class="help aviso-cobro">${esc(bi(`Tu «Gratis de lanzamiento» termina el ${dia}. Después, para seguir hay que pagar el plan; si no, el negocio quedará bloqueado (no se borra nada).`,
@@ -1491,8 +1500,10 @@ PAGES.resumen = async (v) => {
       // Se bloquea en 7 días o menos (prueba, gratis, lo pagado o un impago).
       : gestiona() && sub?.billing?.block_soon && sub.billing.block_on ? avisoBloqueoPronto(sub.billing)
       : gestiona() && sub?.status === 'past_due' ? avisoCobro()
-      // El «Gratis de lanzamiento» con fecha de fin (avisado con un mes).
-      : gestiona() && sub?.plan_slug === 'free' && sub.period_end && ['active', 'trial'].includes(sub.status) ? avisoGratisFin(sub)
+      // El «Gratis de lanzamiento» con fecha de fin: en los últimos 30 días
+      // (cuando llegan el push y el correo; migración 20261260100002 de la
+      // app). Antes, la fecha va en la tarjeta del plan.
+      : gestiona() && gratisAcabaPronto(sub) ? avisoGratisFin(sub)
       : cerradoIndef() ? `<div class="card pausa"><div>
         <h2 style="margin:0">Cerrado hasta nuevo aviso</h2>
         <p class="muted" style="margin:4px 0 0">${esPropietario()
