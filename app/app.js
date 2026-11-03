@@ -493,6 +493,8 @@ function apagaPantalla() {
   for (const fn of lista) { try { fn(); } catch { /* ya estaba apagado */ } }
 }
 
+// El esqueleto que sale si una pantalla nueva tarda (ver navegar).
+let esqueletoT = null;
 async function navegar() {
   apagaPantalla();
   await sesion();
@@ -518,6 +520,19 @@ async function navegar() {
   movNueva = ruta !== movRuta;
   movRuta = ruta;
   window.scrollTo(0, 0);
+  // Otra pantalla que tarda (Favoritos son 4 llamadas, Tus códigos 7): a
+  // los 200 ms, su esqueleto en vez de la pantalla vieja quieta y tocable
+  // (como la app; revisión del 3-11-2026, 3.6). Si la pantalla ya ha pintado
+  // algo, no se toca.
+  clearTimeout(esqueletoT);
+  if (movNueva) {
+    const antes = view.innerHTML;
+    esqueletoT = setTimeout(() => {
+      if (view.innerHTML !== antes) return;
+      view.classList.remove('mov-entra');
+      view.innerHTML = `<div class="esq tarjetas" aria-busy="true" role="status"><span class="sr">${esc(t('Cargando…'))}</span></div>`;
+    }, 200);
+  }
   try {
     await pagina(partes.slice(1), params, crudo);
   } catch (e) {
@@ -537,6 +552,7 @@ async function navegar() {
     });
     $('#reintentar')?.addEventListener('click', () => navegar());
   }
+  clearTimeout(esqueletoT);
   I18N.translate(view);
 }
 addEventListener('hashchange', navegar);
@@ -554,6 +570,7 @@ document.addEventListener('click', (ev) => {
 let movRuta = null;
 let movNueva = false;
 const pinta = (html) => {
+  clearTimeout(esqueletoT);
   view.innerHTML = html;
   if (movNueva) { movNueva = false; movEntra(view); } else view.classList.remove('mov-entra');
 };
@@ -1815,6 +1832,11 @@ RUTAS.favoritos = async () => {
       const id = boton.getAttribute('data-quitar-fav');
       const nombre = boton.getAttribute('data-nombre');
       boton.disabled = true;
+      // Optimista (como la app): la fila se pliega al momento (las de
+      // debajo suben) mientras contesta la base; si falla, vuelve con su
+      // aviso.
+      const fila = boton.closest('.fav-fila');
+      const plegada = fila ? movPliega(fila) : Promise.resolve();
       try {
         await llamar('toggle_favorite', { p_business_id: id });
         toastDeshacer(EN ? `${nombre} removed from favourites` : `${nombre} quitado de favoritos`, async () => {
@@ -1823,11 +1845,13 @@ RUTAS.favoritos = async () => {
           favVuelve = id;
           if (location.hash.startsWith('#/favoritos')) navegar();
         });
-        // La fila se pliega (las de debajo suben) y luego se repinta todo.
-        const fila = boton.closest('.fav-fila');
-        if (fila) await movPliega(fila);
+        await plegada;
         navegar();
-      } catch (e) { boton.disabled = false; toast(e.message || String(e), true); }
+      } catch (e) {
+        await plegada;
+        toast(e.message || String(e), true);
+        navegar();
+      }
     });
   });
 };

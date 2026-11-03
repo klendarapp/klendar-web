@@ -142,6 +142,10 @@ body.con-hoja .tabbar { display: none; }
    puesto después de tocar). Al pulsar, baja un poco (como en la app). */
 @media (hover: hover) { .pill:hover { transform: translateY(-1px); } }
 .pill:active:not([aria-disabled="true"]):not(:disabled) { transform: scale(var(--mov-escala)); transition-duration: var(--mov-pulsar); }
+/* Los botones del admin, del panel (también «Validar» de la pantalla del
+   personal) y de «Tu cuenta» bajan al pulsar, como `Pressable` en la app. */
+.btn, .quick button, button.codigo.copiar { transition: transform var(--mov-rapido) var(--mov-entra), opacity var(--mov-rapido) var(--mov-entra); }
+.btn:active:not(:disabled), .quick button:active:not(:disabled), button.codigo.copiar:active { transform: scale(var(--mov-escala)); transition-duration: var(--mov-pulsar); }
 .pill.accent { background: var(--accent); color: var(--on-accent); border-color: transparent; }
 .pill.ink { background: var(--ink); color: var(--surface); border-color: transparent; }
 .pill[aria-disabled="true"] { opacity: .65; cursor: default; }
@@ -281,7 +285,7 @@ mark.tbd { background: color-mix(in srgb, var(--ink) 14%, transparent); color: i
 @keyframes mov-funde { from { opacity: 0; } }
 @keyframes mov-crece { from { opacity: 0; transform: scale(.96); } }
 @keyframes mov-pop { from { transform: scale(.85); } }
-@keyframes mov-late { 35% { transform: scale(1.18); } }
+@keyframes mov-late { 35% { transform: scale(1.16); } }
 @keyframes mov-tiembla { 20% { transform: translateX(-4px); } 45% { transform: translateX(4px); } 70% { transform: translateX(-2px); } 90% { transform: translateX(1px); } }
 @keyframes mov-traza { from { stroke-dashoffset: 1; } }
 @keyframes mov-cae { 0% { opacity: 0; transform: translateY(-6px) scale(1.6); } 40% { opacity: 1; } }
@@ -327,10 +331,11 @@ mark.tbd { background: color-mix(in srgb, var(--ink) 14%, transparent); color: i
    un fundido (`.mov-cambia`, /assets/tarjetas.js). */
 /* La campana de Descubre al llegar un aviso nuevo: se balancea y la cifra
    salta (como `NudgeOnIncrease` en la app). */
-@keyframes mov-campana { 0%, 100% { transform: rotate(0); } 20% { transform: rotate(14deg); } 40% { transform: rotate(-12deg); } 60% { transform: rotate(8deg); } 80% { transform: rotate(-4deg); } }
-@keyframes mov-salta { 0%, 100% { transform: scale(1); } 40% { transform: scale(1.3); } }
-.top-campana.mov-suena .ic { animation: mov-campana 700ms var(--mov-mueve); transform-origin: 50% 8%; }
-.top-campana.mov-suena .top-n { animation: mov-salta 420ms var(--mov-rebote); }
+/* Como la app: 280 ms, ±12° que se apagan (dos vaivenes) y la cifra al 125 %. */
+@keyframes mov-campana { 0%, 100% { transform: rotate(0); } 12.5% { transform: rotate(10.5deg); } 37.5% { transform: rotate(-7.5deg); } 62.5% { transform: rotate(4.5deg); } 87.5% { transform: rotate(-1.5deg); } }
+@keyframes mov-salta { 0%, 100% { transform: scale(1); } 35% { transform: scale(1.25); } }
+.top-campana.mov-suena .ic { animation: mov-campana var(--mov-lento) var(--mov-mueve); transform-origin: 50% 8%; }
+.top-campana.mov-suena .top-n { animation: mov-salta var(--mov-lento) var(--mov-rebote); }
 @keyframes mov-hoja-sube { from { opacity: 0; transform: translateY(24px); } }
 @keyframes mov-hoja-centro { from { opacity: 0; transform: translate(-50%, -50%) scale(.96); } }
 details.hoja[open] > .hoja-cuerpo { animation: mov-hoja-centro var(--mov-lento) var(--mov-entra); }
@@ -475,6 +480,10 @@ article p[data-tr^="post:"] + .tr-nota { margin-top: -4px; }
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important;
     transition-duration: .01ms !important; scroll-behavior: auto !important; }
   .pill:hover, .pill:active { transform: none; }
+  /* En vez de bajar, se atenúan un instante (como la app con «Reducir
+     movimiento»): se ve que el toque ha llegado. */
+  .pill:active:not([aria-disabled="true"]):not(:disabled), .btn:active:not(:disabled),
+  .quick button:active:not(:disabled), button.codigo.copiar:active { transform: none; opacity: .7; }
   /* Lo de Movimiento, sin retrasos: aparece todo a la vez y quieto. */
   .mov-entra > *, .mov-llega, .mov-late, .tab[aria-current="page"] svg, .toast, .am-toast,
   .hoja-lugar, .mapboxgl-popup .pop-caja, details.hoja[open] > .hoja-cuerpo, details.hoja[open] > summary::after, .top-campana.mov-suena .ic, .top-campana.mov-suena .top-n,
@@ -612,6 +621,10 @@ header.top.top-justa .brand { font-size: 0; gap: 0; }
 .cta-botones { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; }
 @media (max-width: 599px) { .cta-botones .pill { flex: 1 1 100%; justify-content: center; } }
 .hero .ciudades { font-weight: 600; margin: 0; }
+/* «Qué hacer hoy en tu ciudad» pasa a ser hasta 5 enlaces al llegar
+   (/assets/live.js): dos líneas reservadas en el móvil para que no empuje
+   lo de debajo (revisión del 3-11-2026, 3.8). */
+@media (max-width: 599px) { .hero .ciudades { min-height: 3.1em; } }
 .hero .ciudades a { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; margin-right: 10px; }
 .cabecera-seccion { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
 .cabecera-seccion h2 { margin: 0; }
@@ -680,3 +693,7 @@ section.junto { padding-top: 0; }
 .vacio-botones > .pill, .vacio-botones > .btn { justify-content: center; text-align: center; margin: 0; }
 .vacio > .vacio-sugiere { margin: 18px 0 0; font-weight: 700; color: var(--ink); }
 .vacio-sugiere a { text-decoration: underline; text-underline-offset: 3px; }
+
+/* «Más planes en Marbella» al final de la ficha: su botón, separado de las
+   reseñas (como en la app). */
+.mas-planes, .pub p.mas-planes { margin-top: 20px; }

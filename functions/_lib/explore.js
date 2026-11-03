@@ -169,7 +169,7 @@ const T = (en) => en
       forEating: "Food and today's specials", pricePlan: 'Plan price', pricePlanHint: 'Free, up to €10, €25 or €50',
       placeLike: 'What the place is like', placeLikeHint: 'Terrace, indoors, dogs, wheelchair access, Wi-Fi, venue price…',
       dietsBHint: 'Vegetarian, vegan, gluten-free, coeliac, lactose-free, halal',
-      nearMe: 'Near me', aCity: 'A city', howFar: 'How far?', walk1: '1 km · a short walk', wholeCity: 'The whole town and around it, no distance.', muniSearch: 'Find your town', muniPopular: 'Popular', muniNotFound: "We can't find that town. Try another name.",
+      nearMe: 'Near me', aCity: 'A city', howFar: 'How far?', walk1: '1 km · a short walk', wholeCity: 'The whole town and around it, no distance.', muniSearch: 'Find your town', muniOffline: 'No connection. Check your internet and try again.', muniPopular: 'Popular', muniNotFound: "We can't find that town. Try another name.",
       mapNoKm: 'On the map you see what is on the screen.',
       sortRec: 'Recommended', sortDefault: 'default',
       recLine: 'Paid featured placements first (with their label), then the newest nearby.',
@@ -301,7 +301,7 @@ const T = (en) => en
       forEating: 'Para comer y lo del día', pricePlan: 'Precio del plan', pricePlanHint: 'Gratis, hasta 10, 25 o 50 €',
       placeLike: 'Cómo es el sitio', placeLikeHint: 'Terraza, bajo techo, perros, accesible, wifi, precio del local…',
       dietsBHint: 'Vegetariano, vegano, sin gluten, celíacos, sin lactosa, halal',
-      nearMe: 'Cerca de mí', aCity: 'Una ciudad', howFar: '¿Hasta dónde?', walk1: '1 km · a un paseo', wholeCity: 'Todo el municipio y alrededor, sin distancia.', muniSearch: 'Busca tu municipio', muniPopular: 'Populares', muniNotFound: 'No encontramos ese municipio. Prueba con otro nombre.',
+      nearMe: 'Cerca de mí', aCity: 'Una ciudad', howFar: '¿Hasta dónde?', walk1: '1 km · a un paseo', wholeCity: 'Todo el municipio y alrededor, sin distancia.', muniSearch: 'Busca tu municipio', muniOffline: 'No hay conexión. Revisa tu internet y vuelve a probar.', muniPopular: 'Populares', muniNotFound: 'No encontramos ese municipio. Prueba con otro nombre.',
       mapNoKm: 'En el mapa ves lo que hay en la pantalla.',
       sortRec: 'Recomendado', sortDefault: 'de serie',
       recLine: 'Lo destacado de pago primero (con su etiqueta) y luego lo más nuevo cerca.',
@@ -343,10 +343,20 @@ const IC = {
   x: 'M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z',
   // «Antes de cerrar» (shopping_bag).
   carta: 'M8.1 13.34l2.83-2.83L3.91 3.5c-1.56 1.56-1.56 4.09 0 5.66l4.19 4.18zm6.78-1.81c1.53.71 3.68.21 5.27-1.38 1.91-1.91 2.28-4.65.81-6.12-1.46-1.46-4.2-1.1-6.12.81-1.59 1.59-2.09 3.74-1.38 5.27L3.7 19.87l1.41 1.41L12 14.41l6.88 6.88 1.41-1.41L13.41 13l1.47-1.47z',
-  bolsa: 'M18 6h-2c0-2.21-1.79-4-4-4S8 3.79 8 6H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6-2c1.1 0 2 .9 2 2h-4c0-1.1.9-2 2-2zm6 16H6V8h2v2c0 .55.45 1 1 1s1-.45 1-1V8h4v2c0 .55.45 1 1 1s1-.45 1-1V8h2v12z',
+  bolsa: 'M18 6H15.98C15.98 3.8 14.2 2.02 12 2.02C9.8 2.02 8.02 3.8 8.02 6H6C4.92 6 3.98 6.89 3.98 8.02V20.02C3.98 21.09 4.92 21.98 6 21.98H18C19.08 21.98 20.02 21.09 20.02 20.02V8.02C20.02 6.89 19.08 6 18 6ZM12 3.98C13.08 3.98 14.02 4.92 14.02 6H9.98C9.98 4.92 10.92 3.98 12 3.98ZM18 20.02H6V8.02H8.02V9.98C8.02 10.55 8.44 11.02 9 11.02C9.56 11.02 9.98 10.55 9.98 9.98V8.02H14.02V9.98C14.02 10.55 14.44 11.02 15 11.02C15.56 11.02 15.98 10.55 15.98 9.98V8.02H18V20.02Z',
   aqui: 'M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0 0 13 3.06V1h-2v2.06A8.994 8.994 0 0 0 3.06 11H1v2h2.06A8.994 8.994 0 0 0 11 20.94V23h2v-2.06A8.994 8.994 0 0 0 20.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z',
   ciudad: 'M15 11V5l-3-3-3 3v2H3v14h18V11h-6zm-8 8H5v-2h2v2zm0-4H5v-2h2v2zm0-4H5V9h2v2zm6 8h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V9h2v2zm0-4h-2V5h2v2zm6 12h-2v-2h2v2zm0-4h-2v-2h2v2z',
   arriba: 'M12 8l-6 6 1.41 1.41L12 10.83l4.59 4.58L18 14z',
+  // Los iconos de la app, con su trazo (fuente de Material de Flutter,
+  // Apache 2.0; docs/GLOSARIO.md, «Iconos por concepto»): los atajos
+  // (nightlight, weekend, directions_walk, restaurant) y el «¿Dónde?»
+  // (public = Todas las ciudades; location_off = ubicación aproximada).
+  noche: 'M14.02 3.98C14.34 3.98 14.67 4.03 15 4.08C13.08 6.23 12 9.05 12 12C12 14.95 13.08 17.77 15 19.92C14.67 19.97 14.34 20.02 14.02 20.02C9.61 20.02 6 16.41 6 12C6 7.59 9.61 3.98 14.02 3.98ZM14.02 2.02C8.48 2.02 3.98 6.47 3.98 12C3.98 17.53 8.48 21.98 14.02 21.98C15.8 21.98 17.53 21.52 18.98 20.67C16.03 18.94 14.02 15.7 14.02 12C14.02 8.3 16.03 5.06 18.98 3.33C17.53 2.48 15.8 2.02 14.02 2.02Z',
+  finde: 'M21 9V6.98C21 5.34 19.64 3.98 18 3.98H6C4.36 3.98 3 5.34 3 6.98V9C1.36 9 0 10.36 0 12V17.02C0 18.66 1.36 20.02 3 20.02H21C22.64 20.02 24 18.66 24 17.02V12C24 10.36 22.64 9 21 9ZM5.02 6.98C5.02 6.47 5.44 6 6 6H18C18.56 6 18.98 6.47 18.98 6.98V9.8C18.38 10.31 18 11.11 18 12V14.02H6V12C6 11.11 5.62 10.31 5.02 9.8V6.98ZM21.98 17.02C21.98 17.53 21.56 18 21 18H3C2.44 18 2.02 17.53 2.02 17.02V12C2.02 11.44 2.44 11.02 3 11.02C3.56 11.02 3.98 11.44 3.98 12V15.98H20.02V12C20.02 11.44 20.44 11.02 21 11.02C21.56 11.02 21.98 11.44 21.98 12V17.02Z',
+  paseo: 'M13.5 5.48C14.58 5.48 15.52 4.59 15.52 3.52C15.52 2.39 14.58 1.5 13.5 1.5C12.42 1.5 11.48 2.39 11.48 3.52C11.48 4.59 12.42 5.48 13.5 5.48ZM9.8 8.91 6.98 23.02H9.09L10.92 15L12.98 17.02V23.02H15V15.52L12.89 13.5L13.5 10.5C14.81 12 16.78 12.98 18.98 12.98V11.02C17.11 11.02 15.52 9.98 14.72 8.58L13.69 6.98C13.31 6.42 12.7 6 12 6C11.72 6 11.48 6.09 11.2 6.09L6 8.3V12.98H8.02V9.61L9.8 8.91Z',
+  comer: 'M15.98 6V14.02H18.98V21.98H21V2.02C18.23 2.02 15.98 4.22 15.98 6ZM11.02 9H9V2.02H6.98V9H5.02V2.02H3V9C3 11.2 4.78 12.98 6.98 12.98V21.98H9V12.98C11.2 12.98 12.98 11.2 12.98 9V2.02H11.02V9Z',
+  mundo: 'M12 2.02C6.47 2.02 2.02 6.47 2.02 12C2.02 17.53 6.47 21.98 12 21.98C17.53 21.98 21.98 17.53 21.98 12C21.98 6.47 17.53 2.02 12 2.02ZM11.02 19.92C7.03 19.45 3.98 16.08 3.98 12C3.98 11.39 4.08 10.78 4.22 10.22L9 15V15.98C9 17.11 9.89 18 11.02 18V19.92ZM17.91 17.39C17.62 16.59 16.92 15.98 15.98 15.98H15V12.98C15 12.47 14.53 12 14.02 12H8.02V9.98H9.98C10.55 9.98 11.02 9.56 11.02 9V6.98H12.98C14.11 6.98 15 6.09 15 5.02V4.59C17.95 5.77 20.02 8.67 20.02 12C20.02 14.06 19.22 15.98 17.91 17.39Z',
+  aprox: 'M12 3.98C14.77 3.98 17.02 6.23 17.02 9C17.02 10.08 16.59 11.3 15.98 12.61L17.48 14.11C18.38 12.38 18.98 10.55 18.98 9C18.98 5.11 15.89 2.02 12 2.02C10.17 2.02 8.48 2.72 7.27 3.84L8.67 5.3C9.56 4.5 10.73 3.98 12 3.98ZM12 6.52C11.39 6.52 10.88 6.7 10.45 7.08L13.92 10.55C14.3 10.12 14.48 9.61 14.48 9C14.48 7.64 13.36 6.52 12 6.52ZM3.42 2.86 2.02 4.27 5.2 7.45C5.06 7.97 5.02 8.48 5.02 9C5.02 14.25 12 21.98 12 21.98C12 21.98 13.69 20.16 15.38 17.67L18.75 21L20.16 19.59L3.42 2.86ZM12 18.89C9.98 16.31 7.22 12.14 7.03 9.28L13.92 16.22C13.31 17.2 12.61 18.09 12 18.89Z',
   // El orden (Material «swap_vert»).
   orden: 'M16 17.01V10h-2v7.01h-3L15 21l4-3.99h-3zM9 3 5 6.99h3V14h2V6.99h3L9 3z',
 };
@@ -1217,7 +1227,12 @@ export function zonaDeConexion(request) {
 // al llegar desde el formulario de una hoja.
 const FILA_MIDE = "(function(){var b=document.getElementById('barra');if(!b)return;"
   + "function corta(){return Array.prototype.some.call(b.querySelectorAll('.barra-preg .chip-t'),function(t){return t.offsetParent&&t.scrollWidth>t.clientWidth+1;});}"
-  + "function mide(){b.classList.remove('fila-corta','fila-sin-iconos');if(!corta())return;b.classList.add('fila-corta');if(!corta())return;b.classList.add('fila-sin-iconos');}"
+  // El texto corto («Todas», «5 km») va por el ancho de la PANTALLA (menos
+  // de 400 px), como la app, no por el hueco de cada vista: en el
+  // escritorio, Descubre decía «Todas» y Explorar «Todas las ciudades»
+  // (revisión del 3-11-2026, 1.8). Más ancha y aun así sin sitio: primero
+  // sin iconos y, si ni así, el corto.
+  + "function mide(){b.classList.remove('fila-corta','fila-sin-iconos');var e=innerWidth<400;if(e)b.classList.add('fila-corta');if(!corta())return;b.classList.add('fila-sin-iconos');if(e||!corta())return;b.classList.add('fila-corta');}"
   + "(window.requestAnimationFrame||setTimeout)(mide);window.KL_FILA=mide;var t;addEventListener('resize',function(){clearTimeout(t);t=setTimeout(mide,60);});"
   + "if(document.fonts&&document.fonts.ready)document.fonts.ready.then(mide);})();";
 
@@ -1478,8 +1493,11 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   const conFiltros = Boolean(q) || conFiltrosSinPalabra;
   // «Cerca de ti» y nada: ¿es que aquí aún no hay Klendar? (`klendar_coverage`,
   // ningún negocio a 25 km). Entonces, «Avísame cuando llegue» en vez del
-  // vacío de siempre. Si no contesta, el vacío de siempre.
-  const cobertura = vacio && cerca && !negocios
+  // vacío de siempre. Si no contesta, el vacío de siempre. Solo con tu
+  // posición de verdad, como la app (`isRealLocation`): con la aproximada
+  // por la conexión (`e.aprox`) ni se pregunta ni se le pide nada a Mapbox
+  // (revisión del 3-11-2026, 1.4 y 4.3).
+  const cobertura = vacio && cerca && !e.aprox && !negocios
     ? await rpc('klendar_coverage', { p_lat: lat, p_lng: lng }).catch(() => null) : null;
   const sinKlendar = Boolean(cobertura?.status) && cobertura.status !== 'live';
   let sugerencias = [];
@@ -1558,7 +1576,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
     .filter(([k]) => k !== 'p')
     .map(([k, v]) => `<input type="hidden" name="${esc(k)}" value="${esc(v)}">`).join('');
   const buscaMunicipio = `<form class="muni-busca" method="get" action="${esc(base)}/" role="search" data-muni-busca
-       data-muni-href="${esc(link({ city: '__SLUG__', cerca: false }))}" data-muni-nada="${esc(S.muniNotFound)}">
+       data-muni-href="${esc(link({ city: '__SLUG__', cerca: false }))}" data-muni-nada="${esc(S.muniNotFound)}" data-muni-error="${esc(S.muniOffline)}">
        ${ocultosZona}
        <label class="buscador-campo muni-campo">${ic('buscar', 20)}<span class="sr">${esc(S.muniSearch)}</span>
          <input type="search" name="${CLAVES[en ? 'en' : 'es'].city}" placeholder="${esc(S.muniSearch)}" autocomplete="off" enterkeyhint="search" maxlength="60"></label>
@@ -1608,7 +1626,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
         <div class="hoja-scroll hoja-donde">${cuerpo}</div>
       </div>
     </details>`;
-  const zonaMenu = hojaDonde(cerca ? 'cerca' : city ? 'ciudad' : 'lugar', S.whereTitle, zonaTxt,
+  const zonaMenu = hojaDonde(cerca ? (e.aprox ? 'aprox' : 'cerca') : city ? 'ciudad' : 'mundo', S.whereTitle, zonaTxt,
     `<div class="donde-modos" role="group" aria-label="${esc(S.whereTitle)}">
        <button type="button" class="donde-modo${cerca ? ' on' : ''}" data-donde-modo="cerca" aria-pressed="${cerca}" hidden>${ic('cerca', 16)}<span>${esc(S.nearMe)}</span></button>
        <button type="button" class="donde-modo${cerca ? '' : ' on'}" data-donde-modo="ciudad" aria-pressed="${!cerca}" hidden>${ic('ciudad', 16)}<span>${esc(S.aCity)}</span></button>
@@ -1675,9 +1693,9 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   ].filter(Boolean);
   const atajo = (href, txt, on, icono) => `<a class="atajo${on ? ' on' : ''}" href="${esc(href)}"${on ? ' aria-current="true"' : ''}>${icono.startsWith('<') ? icono : ic(icono, 16)}<span>${esc(txt)}</span></a>`;
   const atajosCuando = negocios ? '' : `<fieldset class="hoja-atajos"><legend>${esc(S.shortcuts)}</legend><div class="ops">
-        ${aquiOn ? atajo(quitaAqui, S.walkNow, true, 'aqui') : cerca ? atajo(link({ when: 'now', km: 1, sort: 'nearest' }), S.walkNow, false, 'aqui') : botonCerca(S.walkNow, masAqui, 'atajo', 'aqui')}
-        ${atajo(link({ when: when === 'tonight' ? '' : 'tonight' }), S.tonight, when === 'tonight', 'reloj')}
-        ${atajo(link({ when: when === 'weekend' ? '' : 'weekend' }), S.weekend, when === 'weekend', 'cal')}
+        ${aquiOn ? atajo(quitaAqui, S.walkNow, true, 'paseo') : cerca ? atajo(link({ when: 'now', km: 1, sort: 'nearest' }), S.walkNow, false, 'paseo') : botonCerca(S.walkNow, masAqui, 'atajo', 'paseo')}
+        ${atajo(link({ when: when === 'tonight' ? '' : 'tonight' }), S.tonight, when === 'tonight', 'noche')}
+        ${atajo(link({ when: when === 'weekend' ? '' : 'weekend' }), S.weekend, when === 'weekend', 'finde')}
       </div><p class="hoja-nota hoja-nota-bajo">${esc(S.walkNow)}: ${esc(S.walkNowHint)}</p></fieldset>`;
   const hojaCuando = hojaDe({
     id: 'cuando',
@@ -1962,8 +1980,8 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   <script>${FILA_MIDE}</script>
   <p id="cercaErr" class="aviso-error" role="alert" hidden></p>
   <script src="/assets/categorias.js?v=6" defer></script>
-  <script src="/assets/gustos.js?v=9" defer data-lang="${en ? 'en' : 'es'}"></script>
-  <script src="/assets/municipios.js?v=1" defer></script>`;
+  <script src="/assets/gustos.js?v=20261103rv" defer data-lang="${en ? 'en' : 'es'}"></script>
+  <script src="/assets/municipios.js?v=20261103rv" defer></script>`;
 
   // Los atajos de la lupa (Iván, 2026-10-29: como la app): cada uno pone sus
   // filtros sobre los que haya y lleva a Descubre; «Para comer ya», a
@@ -1974,10 +1992,10 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   const sinAqui = aquiOn ? { km: RADIO_KM, sort: '' } : {};
   const cercaA = (txt, mas, icono) => botonCerca(txt, mas, 'atajo', icono).replace('<button ', `<button data-cerca-a="${esc(aDescubre({}))}" `);
   const atajosLupa = [
-    cerca ? atajo(aDescubre({ when: 'tonight', ...sinAqui }), S.tonightNear, false, 'reloj') : cercaA(S.tonightNear, `${K.when}=${enIdioma('tonight', en)}`, 'reloj'),
-    atajo(linkA(exploreBase(lang), { que: 'places', comerAhora: true }), S.eatSoon, false, 'carta'),
-    atajo(aDescubre({ when: 'weekend', ...sinAqui }), S.weekend, false, 'cal'),
-    cerca ? atajo(aDescubre({ when: 'now', km: 1, sort: 'nearest' }), S.walkNow, false, 'aqui') : cercaA(S.walkNow, masAqui, 'aqui'),
+    cerca ? atajo(aDescubre({ when: 'tonight', ...sinAqui }), S.tonightNear, false, 'noche') : cercaA(S.tonightNear, `${K.when}=${enIdioma('tonight', en)}`, 'noche'),
+    atajo(linkA(exploreBase(lang), { que: 'places', comerAhora: true }), S.eatSoon, false, 'comer'),
+    atajo(aDescubre({ when: 'weekend', ...sinAqui }), S.weekend, false, 'finde'),
+    cerca ? atajo(aDescubre({ when: 'now', km: 1, sort: 'nearest' }), S.walkNow, false, 'paseo') : cercaA(S.walkNow, masAqui, 'paseo'),
     atajo(aDescubre({ traits: traits.includes('kids') ? traits : [...traits, 'kids'] }), S.withKids, false, icSitio('kids', 16)),
     atajo(aDescubre({ antesCierre: true }), S.beforeClosing, false, 'bolsa'),
   ].join('\n    ');
@@ -2127,7 +2145,10 @@ ${GRUPOS_CSS}` : ''}`;
   // «Según el tiempo» no es un aviso: lo dice el chip de orden, que entonces
   // va justo detrás de Filtros. Quién se enseña lo decide /assets/avisos.js. La oferta fijada de un RRPP no es un
   // aviso: es la primera tarjeta (/assets/fijada.js).
-  const viaje = descubre && cerca && !vacio
+  // Con la ubicación aproximada por la conexión (`e.aprox`), no: una IP
+  // móvil suele situarse lejos (en Málaga, «Estás en Madrid»). En la app
+  // el aviso de viaje solo sale con el GPS.
+  const viaje = descubre && cerca && !e.aprox && !vacio
     ? `<div id="viaje" class="feed-aviso" data-aviso="viaje" hidden data-lat="${esc(posUrl(lat))}" data-lng="${esc(posUrl(lng))}"
         data-hoy="${esc(link({ when: 'today' }))}" data-textos="${esc(JSON.stringify({ label: S.travelLabel, title: S.travelTitle, close: S.travelClose }))}"></div>`
     : '';
