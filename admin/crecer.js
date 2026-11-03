@@ -52,7 +52,7 @@ const CR_ERR = {
 /** «1 mar 2027» de un día AAAA-MM-DD. */
 const crDiaLargo = (d) => new Date(`${String(d).slice(0, 10)}T12:00:00`).toLocaleDateString(I18N.lang === 'en' ? 'en-GB' : 'es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
 /** La regla del alta en el último mes (`province_launch_free_signup_until`
- * en la base; pendiente de confirmar por Iván): si se cambia allí, cambiar esto. */
+ * en la base; confirmada por Iván el 2026-11-04): si se cambia allí, cambiar esto. */
 const crGratisReglaAlta = (en = false) => (en
   ? 'In the last 30 days before the date, new sign-ups already get the 30-day trial (it gives them more time).'
   : 'En los últimos 30 días antes de la fecha, las altas ya entran en la prueba de 30 días (les da más tiempo).');
