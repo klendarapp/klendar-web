@@ -148,7 +148,18 @@
       noDatesBiz: 'No dates published right now.',
     },
   };
-  const t = (lang) => klBi(T, lang);
+  // «Seguir» (a un artista) no puede ir por el diccionario: allí «Seguir» es
+  // «Continuar» (los formularios). Va aquí, como en emisiones.js y la app.
+  const SEGUIR = { ca: 'Segueix', gl: 'Seguir', eu: 'Jarraitu', fr: 'Suivre', de: 'Folgen', it: 'Segui' };
+  const tablas = {};
+  const t = (lang) => {
+    const x = klBi(T, lang);
+    if (!SEGUIR[lang] || x === T.es) return x;
+    const c = tablas[lang];
+    if (c && c.de === x) return c.t;
+    tablas[lang] = { de: x, t: { ...x, follow: SEGUIR[lang] } };
+    return tablas[lang].t;
+  };
 
   /** El mensaje de un error de las funciones de artistas (`{ok:false, error}`). */
   function error(clave, lang, nombre = '') {
