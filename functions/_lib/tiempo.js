@@ -24,10 +24,10 @@ const CIUDADES = {
   madrid: [40.4, -3.7], barcelona: [41.4, 2.2], valencia: [39.5, -0.4], sevilla: [37.4, -6.0], zaragoza: [41.6, -0.9],
   malaga: [36.7, -4.4], murcia: [38.0, -1.1], palma: [39.6, 2.7], 'palma de mallorca': [39.6, 2.7],
   'las palmas de gran canaria': [28.1, -15.4], 'las palmas': [28.1, -15.4], bilbao: [43.3, -2.9], alicante: [38.3, -0.5],
-  cordoba: [37.9, -4.8], valladolid: [41.7, -4.7], vigo: [42.2, -8.7], gijon: [43.5, -5.7], "l'hospitalet de llobregat": [41.4, 2.1],
+  cordoba: [37.9, -4.8], valladolid: [41.7, -4.7], vigo: [42.2, -8.7], gijon: [43.5, -5.7], "l'hospitalet de llobregat": [41.4, 2.1], 'l hospitalet de llobregat': [41.4, 2.1],
   'a coruna': [43.4, -8.4], 'la coruna': [43.4, -8.4], 'vitoria-gasteiz': [42.8, -2.7], vitoria: [42.8, -2.7], granada: [37.2, -3.6],
   elche: [38.3, -0.7], oviedo: [43.4, -5.8], 'santa cruz de tenerife': [28.5, -16.3], pamplona: [42.8, -1.6], almeria: [36.8, -2.5],
-  'san sebastian': [43.3, -2.0], donostia: [43.3, -2.0], santander: [43.5, -3.8], burgos: [42.3, -3.7],
+  'san sebastian': [43.3, -2.0], donostia: [43.3, -2.0], 'donostia san sebastian': [43.3, -2.0], santander: [43.5, -3.8], burgos: [42.3, -3.7],
   'castellon de la plana': [40.0, 0.0], castellon: [40.0, 0.0], albacete: [39.0, -1.9], logrono: [42.5, -2.4], badajoz: [38.9, -7.0],
   salamanca: [41.0, -5.7], huelva: [37.3, -6.9], lleida: [41.6, 0.6], tarragona: [41.1, 1.2], leon: [42.6, -5.6], cadiz: [36.5, -6.3],
   jaen: [37.8, -3.8], ourense: [42.3, -7.9], girona: [42.0, 2.8], lugo: [43.0, -7.6], caceres: [39.5, -6.4], guadalajara: [40.6, -3.2],
@@ -48,7 +48,10 @@ export function dondeTiempo({ cerca, lat, lng, city }) {
   if (cerca && Number.isFinite(lat) && Number.isFinite(lng)) {
     return { lat: Math.round(lat * 10) / 10, lng: Math.round(lng * 10) / 10 };
   }
-  const c = CIUDADES[plano(city)];
+  // La ciudad llega como slug del municipio («las-palmas-de-gran-canaria»,
+  // «l-hospitalet-de-llobregat») o como texto: se prueba con y sin guiones.
+  const p = plano(city);
+  const c = CIUDADES[p] || CIUDADES[p.replace(/-/g, ' ')] || CIUDADES[p.replace(/'/g, ' ')];
   return c ? { lat: c[0], lng: c[1] } : null;
 }
 

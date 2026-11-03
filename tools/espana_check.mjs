@@ -25,6 +25,10 @@ for (const [ruta, destino] of [
   ['/agenda/san-sebastian/', '/agenda/donostia-san-sebastian/'], ['/agenda/donostia/', '/agenda/donostia-san-sebastian/'],
   ['/en/whats-on/elche/', '/en/whats-on/elx-elche/'], ['/con-ninos/coruna/', '/con-ninos/a-coruna/'],
   ['/agenda/santa%20cruz%20de%20tenerife/', '/agenda/santa-cruz-de-tenerife/'],
+  // Las cuatro Ciudades de Klendar de 2026-11-03: su id y otros nombres.
+  ['/hoy/laspalmas/', '/hoy/las-palmas-de-gran-canaria/'], ['/hoy/las-palmas/', '/hoy/las-palmas-de-gran-canaria/'],
+  ['/hoy/hospitalet/', '/hoy/l-hospitalet-de-llobregat/'], ['/hoy/gasteiz/', '/hoy/vitoria-gasteiz/'],
+  ['/hoy/vitoria/', '/hoy/vitoria-gasteiz/'], ['/hoy/santa-cruz/', '/hoy/santa-cruz-de-tenerife/'],
 ]) {
   const r = await pide(ruta);
   const loc = new URL(r.headers.get('location') || '/', BASE).pathname;
@@ -49,6 +53,10 @@ for (const [ruta, destino] of [
   check('«Busca tu municipio» con su enlace por slug', h.includes('data-muni-busca') && h.includes('data-muni-href="/descubre/?ciudad=__SLUG__"'));
   check('sin JavaScript, el formulario manda el nombre', /<input type="search" name="ciudad"/.test(h));
   check('las «Populares»: las Ciudades de Klendar por su slug', h.includes('>Populares<') && h.includes('href="/descubre/?ciudad=madrid"'));
+  const nuevas = ['las-palmas-de-gran-canaria', 'l-hospitalet-de-llobregat', 'vitoria-gasteiz', 'santa-cruz-de-tenerife'];
+  check('… con las cuatro de 2026-11-03', nuevas.every((s) => h.includes(`href="/descubre/?ciudad=${s}"`)), nuevas.filter((s) => !h.includes(`href="/descubre/?ciudad=${s}"`)));
+  const pos = (s) => h.indexOf(`href="/descubre/?ciudad=${s}"`);
+  check('… en su orden (Palma, Las Palmas, Bilbao)', pos('palma') < pos('las-palmas-de-gran-canaria') && pos('las-palmas-de-gran-canaria') < pos('bilbao'));
   check('y el script del buscador', h.includes('/assets/municipios.js'));
   const h2 = await texto('/descubre/?ciudad=Alca%C3%B1iz');
   check('un nombre escrito (con tilde) también vale', /chip-t">Alcañiz</.test(h2));
@@ -74,6 +82,20 @@ for (const [ruta, hoy, semana, frase] of [
   }
 }
 
+// Las páginas de las cuatro nuevas: la agenda con su nombre; «Hoy» como
+// la de cualquier ciudad sin planes (Salamanca en dev: 404 hasta que haya).
+{
+  const hoySin = (await pide('/hoy/salamanca/')).status;
+  for (const [slug, nombre] of [['las-palmas-de-gran-canaria', 'Las Palmas de Gran Canaria'],
+    ['l-hospitalet-de-llobregat', "L'Hospitalet de Llobregat"], ['vitoria-gasteiz', 'Vitoria-Gasteiz'],
+    ['santa-cruz-de-tenerife', 'Santa Cruz de Tenerife']]) {
+    const r = await pide(`/agenda/${slug}/`);
+    const h = (await r.text()).replace(/&#39;|&#x27;|&apos;/g, "'");
+    check(`/agenda/${slug}/ (200, «${nombre}»)`, r.status === 200 && h.includes(nombre), r.status);
+    const s = (await pide(`/hoy/${slug}/`)).status;
+    check(`/hoy/${slug}/ como Salamanca (${hoySin})`, s === hoySin, s);
+  }
+}
 // El sitemap: con datos de prueba sale vacío, pero no se rompe.
 {
   const r = await pide('/sitemap-agenda.xml');
