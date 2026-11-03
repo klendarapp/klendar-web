@@ -9,7 +9,7 @@
 // Como el resto de páginas públicas: se pinta en el servidor, va sin
 // JavaScript (el buscador y los filtros son enlaces y formularios GET) y la
 // zona es una ciudad o «Cerca de mí» (`?lat=&lng=`, con 3 decimales). Con
-// JavaScript y una sesión guardada, /assets/seguir.js pinta «Tus equipos»
+// JavaScript y una sesión guardada, /assets/seguir.js pinta «Sigues»
 // y deja seguir a un equipo desde aquí; sin sesión, «Seguir a…» lleva a «Tu
 // cuenta» (`#/equipos?seguir=<id>`).
 //
@@ -61,11 +61,11 @@ export const atribucion = (lista, lang) => KE.fuentesDe(lista, lang)
 /** Los estilos de estas piezas (también en la ficha del bar y en Explorar). */
 export const PARTIDOS_CSS = '<link rel="stylesheet" href="/assets/partidos.css?v=4">';
 
-/** Lo personal (Tus equipos, seguir a un equipo o a un artista desde aquí):
+/** Lo personal (Sigues, seguir a un equipo o a un artista desde aquí):
  *  solo hace algo con sesión. */
 export const seguirScript = (lang) => {
   const sp = supabasePublic();
-  return `<script src="/assets/seguir.js?v=2" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}" data-lang="${lang === 'en' ? 'en' : 'es'}"></script>`;
+  return `<script src="/assets/seguir.js?v=3" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}" data-lang="${lang === 'en' ? 'en' : 'es'}"></script>`;
 };
 
 /** «350 m», «1,2 km». */
@@ -288,7 +288,7 @@ export async function partidosPage(url, lang) {
   ${chipsComp}
   <p id="cercaErr" class="aviso-error" role="alert" hidden></p>`;
 
-  // «Tus equipos»: sin sesión (la página va en caché), la línea y el botón;
+  // «Sigues»: sin sesión (la página va en caché), la línea y el botón;
   // con sesión, /assets/seguir.js pone tus equipos.
   const misEquipos = `<div class="mis-equipos" id="mis-equipos" data-titulo="${esc(S.yourTeams)}" data-base="${esc(`${base}/`)}" data-zona="${esc(zona)}">
       <p>${esc(S.noTeams)}</p>
@@ -310,7 +310,7 @@ export async function partidosPage(url, lang) {
       </div>
     </section>`;
   } else {
-    // Ningún bar cerca pone nada: centrada, con «Seguir a un equipo» (y, con
+    // Ningún bar cerca pone nada: centrada, con «Seguir» (y, con
     // una zona, mirar en todas las ciudades).
     const todas = e.city || e.cerca ? `<a class="pill" href="${esc(link({ city: '', cerca: false, sport: '' }))}">${esc(en ? 'See every city' : 'Ver todas las ciudades')}</a>` : '';
     cuerpo = `<section class="vacio">

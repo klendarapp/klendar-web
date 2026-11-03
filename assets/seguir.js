@@ -3,8 +3,8 @@
  *
  * Las páginas van en caché y no saben quién las mira. Si en este navegador
  * hay una sesión de «Tu cuenta», aquí:
- *  - «Tus equipos» (`#mis-equipos`, en la lista de partidos): los equipos que
- *    sigues, cada uno para buscar sus partidos, y «Seguir a un equipo».
+ *  - «Sigues» (`#mis-equipos`, en la lista de partidos): los equipos y
+ *    deportistas que sigues, cada uno para buscar sus partidos, y «Seguir».
  *  - «Seguir a Real Madrid» (`[data-seguir-equipo]`) y «Seguir» en la página
  *    de un artista (`[data-seguir-artista]`): en activo («Sigues a Real
  *    Madrid», «Siguiendo») si ya lo sigues; tocarlo sigue o deja de seguir
@@ -29,10 +29,10 @@
   var KA = globalThis.KlendarArtistas ? globalThis.KlendarArtistas.t(en ? 'en' : 'es') : null;
 
   var T = en ? {
-    teams: 'Your teams', follow: 'Follow a team',
+    teams: 'Following', follow: 'Follow',
     oops: 'Something went wrong. If it happens again, email info@klendar.app.',
   } : {
-    teams: 'Tus equipos', follow: 'Seguir a un equipo',
+    teams: 'Sigues', follow: 'Seguir',
     oops: 'Algo no ha ido bien. Si vuelve a pasar, escríbenos a info@klendar.app.',
   };
 
@@ -118,7 +118,7 @@
     });
   }
 
-  // Qué tipos hay en la página (los equipos también si está «Tus equipos»).
+  // Qué tipos hay en la página (los equipos también si está «Sigues»).
   var usados = TIPOS.filter(function (x, i) {
     return document.querySelector('[' + x.attr + ']') || (i === 0 && caja);
   });
@@ -144,7 +144,7 @@
     })
     .catch(function () { /* sin red: la página, sin lo personal */ });
 
-  // «Tus equipos»: un chip por equipo (busca sus partidos) y «Seguir a un equipo».
+  // «Sigues»: un chip por equipo (busca sus partidos) y «Seguir».
   function misEquipos(lista) {
     var base = caja.getAttribute('data-base') || '/partidos/';
     var zona = caja.getAttribute('data-zona') || '';

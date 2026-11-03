@@ -131,7 +131,7 @@ function destinoWeb(ruta) {
   // «Te han pausado como RRPP», «Vuelves a ser RRPP»: tu lista de ese local.
   if ((m = r.match(/^\/promoter\/([0-9a-f-]{36})/i))) return `#/rrpp/${m[1]}`;
   // «Real Madrid – Barça, hoy a las 21:00»: la página pública del partido,
-  // con los bares que lo ponen. «Equipos que sigues», a la suya.
+  // con los bares que lo ponen. «Equipos y deportistas que sigues», a la suya.
   if (r.startsWith('/partidos/equipos')) return '#/equipos';
   if ((m = r.match(/^\/partidos\/([0-9a-f-]{36})/i))) return `${PUB_EN ? '/en/matches/' : '/partidos/'}${m[1]}`;
   if (r.startsWith('/partidos')) return PUB_EN ? '/en/matches/' : '/partidos/';
@@ -1023,7 +1023,7 @@ async function ajustesNotificaciones() {
   ].join(''))}
       ${grupo('Para ti', `${[
     sw('series', 'Series que sigues', prefs.notify_series !== false),
-    // «Partidos de tus equipos» (encendido de serie), justo debajo, como la app.
+    // «Equipos y deportistas que sigues» (encendido de serie), justo debajo, como la app.
     sw('equipos', KlendarEmisiones.t(LANG).prefTeams, prefs.notify_teams !== false),
     // «Artistas que sigues» (encendido de serie), justo después, como la app.
     sw('artistas', KlendarArtistas.t(LANG).youFollow, prefs.notify_artists !== false, KlendarArtistas.t(LANG).whenNew),

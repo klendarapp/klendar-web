@@ -58,10 +58,10 @@
       detailEmpty: 'Sigue al equipo y te avisamos antes del partido si algún bar cercano lo pone.',
       follow: (x) => `Seguir a ${x}`,
       following: (x) => `Sigues a ${x}`,
-      yourTeams: 'Tus equipos',
-      followTeam: 'Seguir a un equipo',
+      yourTeams: 'Sigues',
+      followTeam: 'Seguir',
       noTeams: 'Sigue a tu equipo y te avisamos antes de cada partido con los bares que lo ponen cerca.',
-      searchTeam: 'Busca tu equipo',
+      searchTeam: 'Busca un equipo o deportista',
       noTeamFound: 'No encontramos ese equipo',
       emptyTitle: 'Aún no hay partidos por aquí',
       emptyText: 'Cuando un bar cercano diga qué partidos pone, saldrán aquí.',
@@ -70,8 +70,8 @@
       showingOne: 'Pone el partido',
       showingMany: 'Pone estos partidos',
       seeAll: 'Ver todos',
-      prefTeams: 'Partidos de tus equipos',
-      teamsYouFollow: 'Equipos que sigues',
+      prefTeams: 'Equipos y deportistas que sigues',
+      teamsYouFollow: 'Equipos y deportistas que sigues',
       unfollow: 'Dejar de seguir',
       offer: (x) => `Oferta: ${x}`,
       // Panel del negocio.
@@ -134,10 +134,10 @@
       detailEmpty: "Follow the team and we'll let you know before the match if a bar nearby is showing it.",
       follow: (x) => `Follow ${x}`,
       following: (x) => `Following ${x}`,
-      yourTeams: 'Your teams',
-      followTeam: 'Follow a team',
+      yourTeams: 'Following',
+      followTeam: 'Follow',
       noTeams: "Follow your team and we'll tell you before each match which bars nearby are showing it.",
-      searchTeam: 'Search for your team',
+      searchTeam: 'Search for a team or athlete',
       noTeamFound: "We can't find that team",
       emptyTitle: 'No matches around here yet',
       emptyText: "When a bar nearby says which matches it's showing, they'll appear here.",
@@ -146,8 +146,8 @@
       showingOne: 'Showing the match',
       showingMany: 'Showing these matches',
       seeAll: 'See all',
-      prefTeams: "Your teams' matches",
-      teamsYouFollow: 'Teams you follow',
+      prefTeams: 'Teams and athletes you follow',
+      teamsYouFollow: 'Teams and athletes you follow',
       unfollow: 'Unfollow',
       offer: (x) => `Offer: ${x}`,
       tool: "Matches you're showing",
@@ -192,7 +192,18 @@
   };
 
   const en = (lang) => lang === 'en';
-  const t = (lang) => klBi(T, lang);
+  // «Seguir» (el botón de seguir a un equipo o deportista) no puede ir por el
+  // diccionario: allí «Seguir» es «Continuar» (los formularios). Va aquí.
+  const SEGUIR = { ca: 'Segueix', gl: 'Seguir', eu: 'Jarraitu', fr: 'Suivre', de: 'Folgen', it: 'Segui' };
+  const tablas = {};
+  const t = (lang) => {
+    const x = klBi(T, lang);
+    if (!SEGUIR[lang] || x === T.es) return x;
+    const c = tablas[lang];
+    if (c && c.de === x) return c.t;
+    tablas[lang] = { de: x, t: { ...x, followTeam: SEGUIR[lang] } };
+    return tablas[lang].t;
+  };
   const deporte = (s, lang) => klBi(NOMBRES, lang)[s] || klBi(NOMBRES, lang).other;
   const loc = klLoc;
   const KZ = () => globalThis.KlendarZona;

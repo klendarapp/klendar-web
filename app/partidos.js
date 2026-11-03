@@ -1,8 +1,8 @@
-/* «Tu cuenta» → «Equipos que sigues» (#/equipos), como la app
+/* «Tu cuenta» → «Equipos y deportistas que sigues» (#/equipos), como la app
  * (/partidos/equipos; migración 20261201100000_partidos de la app).
  *
  * - La lista con el próximo partido de cada equipo (a su página pública,
- *   /partidos/<id>), «Dejar de seguir» y «Seguir a un equipo», que abre el
+ *   /partidos/<id>), «Dejar de seguir» y «Seguir», que abre el
  *   buscador (`broadcast_team_search`).
  * - `#/equipos?seguir=<id>&nombre=<nombre>`: lo que manda «Seguir a Real
  *   Madrid» desde la web pública sin sesión. Al entrar, se sigue; si el
@@ -38,7 +38,7 @@ const errorEquipo = (e) => (e?.clave === 'too_many'
 const textoSigues = (n) => (EN ? `You're following ${n}: we'll let you know before their matches` : `Sigues a ${n}: te avisamos antes de sus partidos`);
 const textoYaNo = (n) => (EN ? `You're no longer following ${n}` : `Ya no sigues a ${n}`);
 
-/** «Equipos que sigues». */
+/** «Equipos y deportistas que sigues». */
 RUTAS.equipos = async (_partes, params) => {
   const S = SE();
   const seguir = params.get('seguir') || '';
@@ -113,7 +113,7 @@ RUTAS.equipos = async (_partes, params) => {
   $$('[data-seguir-equipo]').forEach((b) => b.addEventListener('click', () => buscaEquipo(() => RUTAS.equipos([], new URLSearchParams()))));
 };
 
-/** «Seguir a un equipo»: buscar (por nombre, siglas o alias) y seguir o
+/** «Seguir» (equipos y deportistas): buscar (por nombre, siglas o alias) y seguir o
  * dejar de seguir desde la lista. Al cerrar, `alCerrar` (si ha cambiado algo). */
 function buscaEquipo(alCerrar) {
   const S = SE();
@@ -133,7 +133,7 @@ function buscaEquipo(alCerrar) {
   });
 }
 
-/** La hoja de «Seguir a un equipo» y «Seguir a un artista» (app/artistas.js):
+/** La hoja de «Seguir» (equipos y deportistas) y «Seguir a un artista» (app/artistas.js):
  * un buscador y, por cada resultado, su nombre, una línea y el botón de seguir
  * (en activo si ya lo sigues), que sigue o deja de seguir sin cerrarla. Al
  * seguir, se guarda la zona para los avisos (`guardaZonaAvisos`). Al cerrar,
