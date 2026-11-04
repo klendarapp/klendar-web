@@ -381,7 +381,7 @@ ACTUALIZADO = {
     # aplica a los 15 días (P2B art. 3.2), el 19-11-2026, sin lanzar el aviso;
     # el interruptor `app_config.entity_calendar` sigue apagado hasta entonces.
     # EN1, «gratis para siempre», solo favorece a la Entidad: se aplica al
-    # publicarse (como SC3; pregunta Q122 al abogado).
+    # publicarse (como SC3; pregunta Q123 al abogado).
     'negocios': {'es': '4 de noviembre de 2026', 'en': '4 November 2026'},
 }
 
