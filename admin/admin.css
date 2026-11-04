@@ -314,6 +314,9 @@ a.link.ver-app { font-size: 14px; margin-left: 4px; white-space: nowrap; }
 .pend > .ms:first-child { color: var(--ink-2); }
 .pend > .ms:last-child { opacity: .5; }
 .pend.urgente { border-color: rgba(211,47,47,.45); }
+/* El total de «Pendiente de ti», en el título y en el botón ☰ del móvil. */
+.badge.pend-total, #menuBtn .badge { background: var(--accent); color: var(--on-accent); font-size: 12px; font-weight: 800; padding: 2px 8px; border-radius: 999px; vertical-align: middle; font-family: var(--body, inherit); letter-spacing: 0; }
+#menuBtn .badge { font-size: 11px; padding: 1px 6px; margin-left: 2px; }
 .pend.urgente b, .pend.urgente > .ms:first-child { color: #b3261e; }
 @media (prefers-color-scheme: dark) { .pend.urgente b, .pend.urgente > .ms:first-child { color: #FF9B9B; } }
 

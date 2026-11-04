@@ -767,7 +767,7 @@ function pantallaCodigo(factor) {
     ${INPUT_CODIGO}
     <button class="btn primary" id="mfaOk" type="button">Verificar</button>
     <p class="muted small" style="margin:0">No te lo volveremos a pedir mientras sigas usando el panel en este navegador. La sesión se cierra tras 30 minutos sin actividad y, como mucho, a las 12 horas.</p>
-    <details class="help"><summary>¿Has perdido el móvil?</summary><p>Pide a otro administrador que quite tu factor en Supabase (Authentication → Users → tu cuenta → quitar el factor MFA). Al volver a entrar podrás configurarlo en el móvil nuevo.</p></details>`);
+    <details class="help"><summary>¿Has perdido el móvil?</summary><p>Quien tenga acceso al proyecto en Supabase (tú mismo si eres el único administrador) quita tu factor en Authentication → Users → tu cuenta → quitar el factor MFA. Al volver a entrar podrás configurarlo en el móvil nuevo. Guarda la clave de texto que sale al configurarlo en tu gestor de contraseñas: sirve para recuperarlo sin Supabase.</p></details>`);
   const enviar = () => esperando($('#mfaOk'), async () => {
     const code = $('#mfaCode').value.trim();
     $('#mfaErr').textContent = '';
@@ -910,6 +910,20 @@ let BAJAS = null;
 // suspensión ya se ha levantado (20261028100000).
 let CAMBIOS = null;
 let PAUSAS = null;
+// Lo que el Resumen pide aparte (`admin_attention`, migración 20261262700000
+// de la app): tareas e importaciones que fallan, impagos, locales pedidos y
+// cómo van los avisos por correo. Lo último que se pidió.
+let ATT = null;
+// El total de «Pendiente de ti»: en el menú (Resumen) y en el botón ☰ del móvil.
+function totalPendiente(k) {
+  const ap = ATT?.pending || {};
+  const tk = ATT?.tasks || {};
+  return (k?.businesses_pending || 0) + (BAJAS?.pending || 0) + (CAMBIOS?.open || 0) + (PAUSAS?.length || 0)
+    + (BADGES.reclamaciones || 0) + (BADGES.entidades || 0) + (BADGES.duplicados || 0)
+    + (k?.reports_open || 0) + (k?.offers_pending || 0) + (BADGES.resenas || 0) + (BADGES.mensajes || 0)
+    + (BADGES.sugerencias || 0) + (ap.subs_past_due || 0) + ((tk.billing || {})['charge.dispute.created'] || 0)
+    + (tk.crons || []).length + (tk.agenda || []).length + (tk.leagues || []).length;
+}
 function renderNav(current) {
   // (al final se traduce; la lista se arma igual en los dos idiomas)
   if (navSistemaAbierto == null) {
@@ -933,6 +947,13 @@ function renderNav(current) {
     };
   }
   I18N.translate($('#nav'));
+  // En el móvil el menú va plegado: el total, en el botón.
+  const mb = $('#menuBtn');
+  if (mb) {
+    let b = mb.querySelector('.badge');
+    if (BADGES.resumen && !b) { b = document.createElement('span'); b.className = 'badge'; mb.append(' ', b); }
+    if (b) { if (BADGES.resumen) b.textContent = BADGES.resumen; else b.remove(); }
+  }
 }
 async function refreshBadges(lanzar = false) {
   try {
@@ -959,7 +980,8 @@ async function refreshBadges(lanzar = false) {
     try { ents = (await rpc('admin_entity_applications', { p_status: 'pending', p_limit: 1, p_offset: 0 })).counts?.pending || 0; } catch { /* sin la función */ }
     let dups = 0;
     try { dups = ((await rpc('admin_duplicate_alerts', { p_limit: 200 })) || []).filter((x) => x.pending).length; } catch { /* sin la función */ }
-    BADGES = { reclamaciones: reclam, entidades: ents, duplicados: dups, negocios: (k.businesses_pending || 0) + (CAMBIOS?.open || 0) + (PAUSAS?.length || 0), publicaciones: k.offers_pending || 0, denuncias: k.reports_open || 0, mensajes: msj, resenas: textos, sugerencias: sug, errores: WEB_ERR?.new_24h || 0 };
+    BADGES = { reclamaciones: reclam, entidades: ents, duplicados: dups, negocios: (k.businesses_pending || 0) + (CAMBIOS?.open || 0) + (PAUSAS?.length || 0), publicaciones: k.offers_pending || 0, denuncias: k.reports_open || 0, mensajes: msj, resenas: textos, sugerencias: sug, errores: (WEB_ERR?.new_24h || 0) + (ATT?.tasks?.crons || []).length };
+    BADGES.resumen = totalPendiente(k);
     Object.keys(BADGES).forEach((x) => { if (!BADGES[x]) delete BADGES[x]; });
     renderNav(currentRoute()[0]);
     return k;
@@ -1345,6 +1367,116 @@ PAGES.cifras = async (v) => {
   $$('[data-csv]', v).forEach((btn) => { btn.onclick = () => CSV[btn.dataset.csv](); });
 };
 
+// ── Avisos urgentes y avisos por correo (migración 20261262700000 de la app) ─
+// Lo urgente que hay ahora (tareas que fallan, importaciones, denuncias
+// graves, disputas de Stripe), con adónde ir; y la tarjeta para elegir
+// cómo llegan los correos de administración (`app_config.admin_alerts`).
+const MOTIVO_GRAVE = { child_abuse: ['abuso sexual infantil', 'child sexual abuse'], illegal: ['contenido ilegal', 'illegal content'] };
+function urgenteTexto(x) {
+  const en = I18N.lang === 'en';
+  const i = en ? 1 : 0;
+  switch (x.kind) {
+    case 'cron': return [en ? `Scheduled task “${x.title}” is failing` : `La tarea programada «${x.title}» falla`, '#/errores', 'schedule'];
+    case 'http': return [en ? `An Edge Function answers ${x.title} to the database` : `Una Edge Function contesta ${x.title} a la base`, '#/errores', 'sync_problem'];
+    case 'agenda': return [en ? `Public listings “${x.title}”: the import isn’t working` : `Agenda pública «${x.title}»: la importación no va bien`, '#/agenda', 'cloud_off'];
+    case 'league': return [en ? `Broadcasts: “${x.title}” isn’t importing` : `Emisiones: «${x.title}» no se importa`, '#/emisiones', 'cloud_off'];
+    case 'broadcasts': return [en ? `Broadcasts: the import (${x.title}) failed` : `Emisiones: la importación (${x.title}) ha fallado`, '#/emisiones', 'cloud_off'];
+    case 'report': {
+      const motivos = String(x.detail || '').split(', ').map((m) => (MOTIVO_GRAVE[m] || [m, m])[i]).join(', ');
+      const tipo = I18N.t(TIPO_DEN[x.target_type] || 'Contenido').toLowerCase();
+      return [en ? `Serious report: ${tipo} for ${motivos}` : `Denuncia grave: ${tipo} por ${motivos}`,
+        x.target_type && x.target_id ? `#/denuncias/${x.target_type}/${x.target_id}` : '#/denuncias', 'report'];
+    }
+    case 'dispute': return [en ? `Stripe: payment dispute or return${x.livemode === false ? ' (test)' : ''}` : `Stripe: disputa o devolución de un cobro${x.livemode === false ? ' (pruebas)' : ''}`, '#/planes', 'gavel'];
+    default: return [x.title, '#/resumen', 'warning'];
+  }
+}
+function tarjetaUrgentes(urg) {
+  if (!urg?.length) return '';
+  const en = I18N.lang === 'en';
+  const correoOn = ATT?.alerts?.config?.email !== false && ATT?.alerts?.config?.urgent !== false;
+  const estado = (x) => (x.alerted_at && !x.due
+    ? (en ? `emailed ${ago(x.alerted_at)}` : `avisado por correo ${ago(x.alerted_at)}`)
+    : correoOn ? (en ? 'goes in the next email' : 'va en el próximo correo') : (en ? 'email alerts are off' : 'los avisos por correo están apagados'));
+  const filas = urg.slice(0, 8).map((x) => {
+    const [t, href, icono] = urgenteTexto(x);
+    const veces = x.count > 1 ? (x.kind === 'report' ? (en ? `${fmtNum(x.count)} reports` : `${fmtNum(x.count)} denuncias`) : (en ? `${fmtNum(x.count)} times` : `${fmtNum(x.count)} veces`)) : '';
+    const detalle = x.detail && x.kind !== 'report' ? `<div class="meta mono small" style="word-break:break-word">${esc(String(x.detail).slice(0, 200))}</div>` : '';
+    return `<a class="item den-mini" href="${esc(href)}"><div class="ph">${ms(icono)}</div><div style="min-width:0">
+        <h3>${esc(t)}</h3>
+        <div class="meta">${[veces, x.at ? ago(x.at) : '', estado(x)].filter(Boolean).map(esc).join(' · ')}</div>${detalle}
+      </div></a>`;
+  }).join('');
+  const mas = urg.length > 8 ? `<p class="muted small" style="margin:6px 0 0">${en ? `…and ${urg.length - 8} more.` : `…y ${urg.length - 8} más.`}</p>` : '';
+  return `<div class="card den-resumen avisos-urgentes"><h2>${ms('warning')} ${en ? 'Needs a look now' : 'Para mirar ya'}</h2>
+    <p class="muted" style="margin:0 0 10px">${en ? 'Something has failed or needs a quick decision. Each one is also emailed, at most once a day while it keeps happening.' : 'Algo ha fallado o necesita una decisión rápida. Cada cosa llega también por correo, como mucho una vez al día mientras siga pasando.'}</p>
+    ${filas}${mas}</div>`;
+}
+function tarjetaAvisosCorreo(al) {
+  const en = I18N.lang === 'en';
+  const lis = [
+    en ? '<b>Notification on the admin account</b> (the bell in the app and in Your account, and a push if that account has the app with notifications on): business or organisation to verify, “Is this your business?” claim, report, publication or text under review, customer message, subscription cancellation, bug reported from the app, possible duplicate, a verified business that changes.' : '<b>Notificación en la cuenta de administración</b> (la campana de la app y de «Tu cuenta», y push si esa cuenta tiene la app con avisos): negocio o entidad por verificar, reclamación «¿Es tu negocio?», denuncia, publicación o texto en revisión, mensaje a clientes, cancelación de suscripción, fallo enviado desde la app, posible duplicado, un negocio verificado que cambia.',
+    en ? '<b>Website errors</b>: their own email (Website errors → Email alert).' : '<b>Errores de la web</b>: su propio correo (Errores de la web → Aviso por correo).',
+    en ? '<b>Public holidays</b>: an email on 1 October and every week while something is missing (<code>app_config.holidays</code>).' : '<b>Festivos</b>: un correo el 1 de octubre y cada semana mientras falte algo (<code>app_config.holidays</code>).',
+    en ? '<b>Website or database down</b> (<code>/salud</code>): UptimeRobot emails dev@klendar.app; a database that is down can’t send anything itself.' : '<b>La web o la base caídas</b> (<code>/salud</code>): UptimeRobot escribe a dev@klendar.app; una base caída no puede avisar de sí misma.',
+    en ? '<b>Stripe and Cloudflare</b> also email their account address (disputes, webhook failures, CPU limit).' : '<b>Stripe y Cloudflare</b> avisan además a la dirección de su cuenta (disputas, fallos del webhook, límite de CPU).',
+  ];
+  const otros = `<ul class="small" style="margin:6px 0 0;padding-left:18px">${lis.map((l) => `<li>${l}</li>`).join('')}</ul>`;
+  const masInfo = `<details style="margin-top:12px"><summary class="small" style="cursor:pointer">${en ? 'What else alerts you, and how' : 'Qué más avisa y por dónde'}</summary>${otros}</details>`;
+  const titulo = `<h2>${ms('mail')} ${en ? 'Email alerts' : 'Avisos por correo'}</h2>`;
+  if (!al) {
+    return `<div class="card" id="avisosCorreo">${titulo}
+      <p class="muted small" style="margin:0">${en ? 'Not in this database yet: the migration 20261262700000 and the <code>admin-alerts</code> function still have to be uploaded (ROADMAP).' : 'Aún no están en esta base: falta subir la migración 20261262700000 y la función <code>admin-alerts</code> (ROADMAP).'}</p>${masInfo}</div>`;
+  }
+  const c = al.config || {};
+  const fallo = al.last_failed && (!al.last_urgent || al.last_failed > al.last_urgent) && (!al.last_daily || al.last_failed > al.last_daily);
+  const horas = Array.from({ length: 24 }, (_, h) => `<option value="${h}" ${Number(c.daily_hour ?? 8) === h ? 'selected' : ''}>${String(h).padStart(2, '0')}:00</option>`).join('');
+  const nunca = en ? 'never' : 'nunca';
+  const intro = en
+    ? `To <b>${esc(c.to || '')}</b>: what’s urgent as soon as it happens (a scheduled task or an import failing, a serious report, a Stripe dispute; at most one email every ${fmtNum(c.every_minutes ?? 30)} min and ${fmtNum(c.per_day ?? 6)} a day, and each thing once a day) and a <b>summary every morning</b> with what’s waiting, what’s new and what failed. If there’s nothing, no email.`
+    : `A <b>${esc(c.to || '')}</b>: lo urgente en cuanto pasa (una tarea o una importación que falla, una denuncia grave, una disputa de Stripe; como mucho un correo cada ${fmtNum(c.every_minutes ?? 30)} min y ${fmtNum(c.per_day ?? 6)} al día, y cada cosa una vez al día) y un <b>resumen cada mañana</b> con lo pendiente, lo nuevo y lo que ha fallado. Si no hay nada, no sale.`;
+  const ultimos = en
+    ? `Last urgent: <b>${al.last_urgent ? ago(al.last_urgent) : nunca}</b> · last summary: <b>${al.last_daily ? ago(al.last_daily) : nunca}</b> · sent in 7 days: <b>${fmtNum(al.sent_7d || 0)}</b>`
+    : `Último urgente: <b>${al.last_urgent ? ago(al.last_urgent) : nunca}</b> · último resumen: <b>${al.last_daily ? ago(al.last_daily) : nunca}</b> · enviados en 7 días: <b>${fmtNum(al.sent_7d || 0)}</b>`;
+  const aviso = fallo ? `<br><span class="tag bad">${en ? 'The last one failed' : 'El último falló'}</span> <span class="muted">${ago(al.last_failed)} · ${en ? 'it is retried every 10 minutes; check RESEND_API_KEY and the admin-alerts function.' : 'se reintenta cada 10 minutos; mira RESEND_API_KEY y la función admin-alerts.'}</span>` : '';
+  return `<div class="card" id="avisosCorreo">${titulo}
+    <p class="muted small" style="margin:0 0 10px">${intro}</p>
+    <p class="small" style="margin:0 0 10px">${ultimos}${aviso}</p>
+    <form id="aacf" style="display:grid;gap:10px">
+      <label class="f" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="email" ${c.email !== false ? 'checked' : ''}><span>${en ? 'Send admin alerts by email' : 'Mandar los avisos de administración por correo'}</span></label>
+      <label class="f"><span>${en ? 'Address' : 'Dirección'}</span><input name="to" type="email" required value="${esc(c.to || '')}" autocomplete="off"></label>
+      <div class="grid3" style="gap:10px">
+        <label class="f" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="urgent" ${c.urgent !== false ? 'checked' : ''}><span>${en ? 'Urgent, as it happens' : 'Lo urgente, en cuanto pasa'}</span></label>
+        <label class="f" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="daily" ${c.daily !== false ? 'checked' : ''}><span>${en ? 'A summary every morning' : 'Un resumen cada mañana'}</span></label>
+        <label class="f"><span>${en ? 'Summary time (Madrid)' : 'Hora del resumen (Madrid)'}</span><select name="hour">${horas}</select></label>
+      </div>
+      <div><button class="btn sm">${en ? 'Save' : 'Guardar'}</button></div>
+    </form>${masInfo}</div>`;
+}
+function activaAvisosCorreo(v, al) {
+  const f = $('#aacf', v);
+  if (!f || !al) return;
+  const en = I18N.lang === 'en';
+  f.onsubmit = (ev) => {
+    ev.preventDefault();
+    const x = f.elements;
+    esperando(f.querySelector('button'), async () => {
+      const c = al.config || {};
+      const valor = {
+        email: x.email.checked, to: x.to.value.trim(), urgent: x.urgent.checked, daily: x.daily.checked,
+        daily_hour: Number(x.hour.value), every_minutes: Number(c.every_minutes ?? 30), per_day: Number(c.per_day ?? 6),
+        repeat_hours: Number(c.repeat_hours ?? 24), daily_when_empty: c.daily_when_empty === true,
+      };
+      if (!/^[^@\s,;]+@[^@\s,;]+\.[A-Za-z]{2,}$/.test(valor.to)) { toast(en ? 'That email address doesn’t look right.' : 'Esa dirección de correo no parece buena.', true); return; }
+      const apagar = c.email !== false && !valor.email;
+      if (apagar && !await confirmDlg(en ? 'Stop admin emails' : 'Dejar de mandar los avisos',
+        en ? 'Nothing urgent or daily will be emailed: you will only see it here and in the admin account notifications.' : 'No llegará por correo ni lo urgente ni el resumen: solo lo verás aquí y en las notificaciones de la cuenta de administración.',
+        { danger: true, submit: en ? 'Stop' : 'Dejar de mandar' })) return;
+      try { await rpc('admin_set_config', { p_key: 'admin_alerts', p_value: valor }); toast(en ? 'Saved' : 'Guardado'); route(); } catch (e) { toast(e.message, true); }
+    });
+  };
+}
+
 PAGES.resumen = async (v) => {
   const k = await refreshBadges(true);
   const kpi = (n, label, cls = '') => `<div class="kpi ${cls}"><b>${typeof n === 'number' ? fmtNum(n) : n}</b><span>${label}</span></div>`;
@@ -1358,12 +1490,24 @@ PAGES.resumen = async (v) => {
   // al año que se vigila (festivos.js; migración 20261238100000).
   let festivos = null;
   try { festivos = await rpc('admin_holiday_alert'); } catch (e) { if (e?.obsoleta) throw e; }
+  // Lo que no se veía aquí: tareas e importaciones que fallan, impagos y
+  // disputas, locales pedidos, avisos urgentes y los avisos por correo
+  // (`admin_attention`, migración 20261262700000 de la app).
+  try { ATT = await rpc('admin_attention'); } catch (e) { if (e?.obsoleta) throw e; ATT = null; }
+  const ap = ATT?.pending || {};
+  const tk = ATT?.tasks || {};
+  const urg = ATT?.urgent || [];
+  const nImport = (tk.agenda || []).length + (tk.leagues || []).length;
+  const nDisputas = (tk.billing || {})['charge.dispute.created'] || 0;
+  const cronUrgente = urg.some((x) => x.kind === 'cron');
+  BADGES.resumen = totalPendiente(k);
+  renderNav('resumen');
   // «Pendiente de ti», por temas y en filas cortas: número, qué es y adónde
   // lleva. Lo que tiene su tarjeta aquí abajo (revisar de nuevo, pausas,
   // cancelaciones) la despliega; lo demás abre su pantalla.
   const pl = (n, es1, esN, en1, enN) => (en ? (n === 1 ? en1 : enN) : (n === 1 ? es1 : esN));
   const fila = ([n, icono, texto, destino, urgente]) => {
-    if (!n) return '';
+    if (!n || !destino) return '';
     const dentro = `${ms(icono)}<b>${fmtNum(n)}</b><span class="txt">${texto}</span>${ms('chevron_right')}`;
     return `<li>${destino.startsWith('#')
       ? `<a class="pend${urgente ? ' urgente' : ''}" href="${destino}">${dentro}</a>`
@@ -1378,10 +1522,13 @@ PAGES.resumen = async (v) => {
       [BADGES.reclamaciones, 'how_to_reg', pl(BADGES.reclamaciones, 'reclamación «¿Es tu negocio?»', 'reclamaciones «¿Es tu negocio?»', '“Is this your business?” claim', '“Is this your business?” claims'), '#/reclamaciones'],
       [BADGES.entidades, 'account_balance', pl(BADGES.entidades, 'entidad por verificar', 'entidades por verificar', 'organisation to verify', 'organisations to verify'), '#/entidades'],
       [BADGES.duplicados, 'content_copy', pl(BADGES.duplicados, 'posible duplicado', 'posibles duplicados', 'possible duplicate', 'possible duplicates'), '#/duplicados'],
+      [ap.subs_past_due, 'money_off', pl(ap.subs_past_due, 'suscripción impagada', 'suscripciones impagadas', 'unpaid subscription', 'unpaid subscriptions'), '#/planes', true],
+      [nDisputas, 'gavel', pl(nDisputas, 'disputa o devolución de un cobro (24 h)', 'disputas o devoluciones de cobros (24 h)', 'payment dispute or return (24 h)', 'payment disputes or returns (24 h)'), '#/planes', true],
       [k.subs_expiring_7d, 'credit_card', pl(k.subs_expiring_7d, 'suscripción vence en 7 días', 'suscripciones vencen en 7 días', 'subscription expiring in 7 days', 'subscriptions expiring in 7 days'), '#/planes'],
     ]],
     [en ? 'Content' : 'Contenido', [
-      [k.reports_open, 'flag', pl(k.reports_open, 'denuncia abierta', 'denuncias abiertas', 'open report', 'open reports'), '#/denuncias', nCal > 0],
+      [k.reports_open, 'flag', pl(k.reports_open, 'denuncia abierta', 'denuncias abiertas', 'open report', 'open reports')
+        + (ap.reports_grave ? (en ? ` (${ap.reports_grave} serious: illegal content or child sexual abuse)` : ` (${ap.reports_grave} ${ap.reports_grave === 1 ? 'grave' : 'graves'}: contenido ilegal o abuso infantil)`) : ''), '#/denuncias', nCal > 0 || ap.reports_grave > 0],
       [k.offers_pending, 'bolt', pl(k.offers_pending, 'publicación por moderar', 'publicaciones por moderar', 'publication to moderate', 'publications to moderate'), '#/publicaciones?moderation=pending'],
       [BADGES.resenas, 'chat_bubble', pl(BADGES.resenas, 'texto en revisión', 'textos en revisión', 'text under review', 'texts under review'), '#/resenas?tab=cola'],
       [BADGES.mensajes, 'campaign', pl(BADGES.mensajes, 'mensaje a clientes por revisar', 'mensajes a clientes por revisar', 'customer message to review', 'customer messages to review'), '#/mensajes'],
@@ -1391,10 +1538,21 @@ PAGES.resumen = async (v) => {
       [k.push_failed_7d, 'notifications', pl(k.push_failed_7d, 'notificación push fallida (7 d)', 'notificaciones push fallidas (7 d)', 'failed push notification (7 d)', 'failed push notifications (7 d)'), '#/avisos?tab=push'],
       [BADGES.errores, 'bug_report', pl(BADGES.errores, 'error nuevo en la web (24 h)', 'errores nuevos en la web (24 h)', 'new website error (24 h)', 'new website errors (24 h)'), '#/errores'],
       [festivos?.count, 'event_busy', esc(en ? `Public holidays ${festivos?.year}: ${festivos?.summary || ''}` : (festivos?.text || '')), `#/festivos/${festivos?.year}`],
+      [(tk.crons || []).length, 'schedule', pl((tk.crons || []).length, 'tarea programada con fallos (24 h)', 'tareas programadas con fallos (24 h)', 'scheduled task with failures (24 h)', 'scheduled tasks with failures (24 h)'), '#/errores', cronUrgente],
+      [nImport, 'cloud_off', pl(nImport, 'importación que no va bien (agenda pública o emisiones)', 'importaciones que no van bien (agenda pública o emisiones)', 'import not working (public listings or broadcasts)', 'imports not working (public listings or broadcasts)'), (tk.agenda || []).length ? '#/agenda' : '#/emisiones', true],
+      [tk.http_24h, 'sync_problem', pl(tk.http_24h, 'llamada a una Edge Function con error (24 h)', 'llamadas a Edge Functions con error (24 h)', 'failed Edge Function call (24 h)', 'failed Edge Function calls (24 h)'), '#/errores'],
+      [tk.calendars_failing, 'event_busy', pl(tk.calendars_failing, 'agenda conectada de una entidad que no se puede leer', 'agendas conectadas de entidades que no se pueden leer', 'connected organisation calendar that can’t be read', 'connected organisation calendars that can’t be read'), '#/agenda'],
+    ]],
+    [en ? 'Growth' : 'Crecer', [
+      [ap.venue_groups_open, 'add_business', pl(ap.venue_groups_open, 'local pedido por la gente sin enlazar', 'locales pedidos por la gente sin enlazar', 'place requested by people, not linked yet', 'places requested by people, not linked yet'), '#/pedidos'],
     ]],
   ].map(([t, filas]) => [t, filas.filter((f) => f[0])]).filter(([, filas]) => filas.length);
   // Las cifras de siempre, pero solo las principales a la vista; el resto,
   // en «Ver más cifras» (se recuerda abierto o cerrado en este navegador).
+  // Sin nada en 30 días (al lanzar), una frase en vez de una gráfica vacía.
+  const grafica = (clave) => (series.some((s) => Number(s[clave]) > 0)
+    ? bars(series, clave, (s) => fmtDay(s.day))
+    : `<p class="muted" style="margin:18px 0">${en ? 'Nothing in the last 30 days yet.' : 'Aún nada en los últimos 30 días.'}</p>`);
   const MAS = 'klendar.admin.resumen.mas';
   let masAbierto = false;
   try { masAbierto = localStorage.getItem(MAS) === '1'; } catch { /* sin almacenamiento */ }
@@ -1409,7 +1567,8 @@ PAGES.resumen = async (v) => {
       </div></a>`).join('')}
       ${nCal > calientes.rows.length ? `<p style="margin:6px 0 0"><a class="link" href="#/denuncias">${en ? `See all ${nCal}` : `Ver los ${nCal}`}</a></p>` : ''}
     </div>` : ''}
-    ${GRUPOS_PEND.length ? `<div class="card"><h2>Pendiente de ti</h2><div class="pend-grupos">
+    ${tarjetaUrgentes(urg)}
+    ${GRUPOS_PEND.length ? `<div class="card"><h2>Pendiente de ti${BADGES.resumen ? ` <span class="badge pend-total" title="${en ? 'Things waiting for a decision' : 'Cosas que esperan una decisión'}">${fmtNum(BADGES.resumen)}</span>` : ''}</h2><div class="pend-grupos">
       ${GRUPOS_PEND.map(([t, filas]) => `<div class="pend-grupo" role="group" aria-label="${esc(t)}"><h3>${esc(t)}</h3><ul class="pend-lista">${filas.map(fila).join('')}</ul></div>`).join('')}
     </div></div>${tarjetaBajas(BAJAS?.items || [], true)}${tarjetaCambios(CAMBIOS?.rows || [], true, true)}${tarjetaPausas(PAUSAS || [], true, true)}` : '<div class="card"><h2>Todo al día</h2><p class="muted" style="margin:0">No hay negocios por verificar, publicaciones por moderar ni denuncias abiertas.</p></div>'}
     <div class="card"><h2>Cifras principales</h2><div class="kpis principales">
@@ -1448,18 +1607,20 @@ PAGES.resumen = async (v) => {
     </div></details></div>
     <div class="card"><div class="page-head" style="margin-bottom:4px"><h2 style="margin:0">Últimos 30 días</h2><span class="spacer"></span>
       <div class="chart-tabs" id="ctabs">${[['redemptions', 'Canjes'], ['views', 'Vistas'], ['offers', 'Publicaciones'], ['users', 'Altas']].map(([k2, l], i) => `<button type="button" class="${i === 0 ? 'on' : ''}" aria-pressed="${i === 0}" data-k="${k2}">${l}</button>`).join('')}</div></div>
-      <div id="chart">${bars(series, 'redemptions', (s) => fmtDay(s.day))}</div>
-      <div class="chart-legend"><span>${fmtDay(series[0]?.day)}</span><span style="margin-left:auto">${fmtDay(series[series.length - 1]?.day)}</span></div>
+      <div id="chart">${grafica('redemptions')}</div>
+      ${series.length ? `<div class="chart-legend"><span>${fmtDay(series[0]?.day)}</span><span style="margin-left:auto">${fmtDay(series[series.length - 1]?.day)}</span></div>` : ''}
     </div>
     <div class="grid2">
       <div class="card"><h2>Top negocios (canjes 30 d)</h2>${(k.top_businesses || []).length ? `<ol style="margin:0;padding-left:18px">${k.top_businesses.map((b) => `<li><a class="link" href="#/negocios/${b.id}">${esc(b.name)}</a> <span class="muted">${esc(b.city || '')} · ${b.redemptions}</span></li>`).join('')}</ol>` : '<p class="muted">Aún sin canjes.</p>'}</div>
       <div class="card"><h2>Top publicaciones (30 d)</h2>${(k.top_offers || []).length ? `<ol style="margin:0;padding-left:18px">${k.top_offers.map((o) => `<li><a class="link" href="#/publicaciones/${o.id}">${esc(o.title)}</a> <span class="muted">${esc(o.business)} · ${en ? `${o.redemptions_count} ${o.redemptions_count === 1 ? 'redemption' : 'redemptions'} · ${o.views_count} ${o.views_count === 1 ? 'view' : 'views'}` : `${o.redemptions_count} ${o.redemptions_count === 1 ? 'canje' : 'canjes'} · ${o.views_count} ${o.views_count === 1 ? 'vista' : 'vistas'}`}</span></li>`).join('')}</ol>` : '<p class="muted">Nada todavía.</p>'}</div>
-    </div>`;
-  $('#ctabs').onclick = (e) => { const b = e.target.closest('button'); if (!b) return; $$('#ctabs button').forEach((x) => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', String(x === b)); }); $('#chart').innerHTML = bars(series, b.dataset.k, (s) => fmtDay(s.day)); };
+    </div>
+    ${tarjetaAvisosCorreo(ATT?.alerts)}`;
+  $('#ctabs').onclick = (e) => { const b = e.target.closest('button'); if (!b) return; $$('#ctabs button').forEach((x) => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', String(x === b)); }); $('#chart').innerHTML = grafica(b.dataset.k); I18N.translate($('#chart')); };
   $('#masCifras').ontoggle = () => { try { localStorage.setItem(MAS, $('#masCifras').open ? '1' : '0'); } catch { /* sin almacenamiento */ } };
   activaBajas(v);
   activaCambios(v);
   activaPausas(v);
+  activaAvisosCorreo(v, ATT?.alerts);
   // Las filas de lo que tiene su tarjeta aquí abajo: la despliegan y llevan a ella.
   $$('[data-ir]', v).forEach((b) => { b.onclick = () => {
     const t = document.getElementById(b.dataset.ir);
@@ -3544,11 +3705,37 @@ PAGES.categorias = async (v) => {
 // Lo importado de datos abiertos: cada fuente con su licencia y su última
 // vuelta, «Importar ahora», ocultar una fuente entera y, abajo, los eventos
 // para ocultar uno.
+// Agendas iCal que conectan las entidades («Conecta tu agenda»): solo para
+// mirar. La dirección entera no se enseña (una agenda privada de Google
+// lleva la clave dentro): el dominio. Tres días sin poder leerla, a la
+// entidad le llega su aviso; a los 14 se deja de intentar.
+function tarjetaAgendasConectadas(cal) {
+  const en = I18N.lang === 'en';
+  const c = cal.counts || {};
+  const estado = (x) => (x.last_status === 'ok' ? `<span class="tag st-active">${en ? 'OK' : 'Bien'}</span>`
+    : x.last_status === 'error' ? `<span class="tag bad">${en ? 'Can’t be read' : 'No se puede leer'}</span>`
+    : `<span class="tag dim">${en ? 'Not read yet' : 'Sin leer aún'}</span>`);
+  const intro = en
+    ? `Organisations paste the iCal address of their calendar and its events come into Klendar once a day. ${cal.enabled ? '<b>On.</b>' : '<b>Off</b> (<code>app_config.entity_calendar.enabled</code>) until the legal texts are approved: nothing can be connected and the job does nothing.'} ${fmtNum(c.all || 0)} connected · ${fmtNum(c.error || 0)} can’t be read.`
+    : `Las entidades pegan la dirección iCal de su calendario y sus eventos entran solos en Klendar una vez al día. ${cal.enabled ? '<b>Encendido.</b>' : '<b>Apagado</b> (<code>app_config.entity_calendar.enabled</code>) hasta que se aprueben los textos legales: no se puede conectar nada y la tarea no hace nada.'} ${fmtNum(c.all || 0)} ${c.all === 1 ? 'conectada' : 'conectadas'} · ${fmtNum(c.error || 0)} sin poder leerse.`;
+  return `<div class="card"><h2>${en ? 'Connected calendars (organisations)' : 'Agendas conectadas (entidades)'}</h2>
+    <p class="muted small" style="margin:0 0 10px">${intro}</p>
+    ${table({ cols: [
+      { h: en ? 'Organisation' : 'Entidad', r: (x) => `<a class="link" data-sin-fila href="#/negocios/${esc(x.business_id)}"><b>${esc(x.business_name || '')}</b></a><span class="sub">${esc(x.name || x.url_host)}${x.name ? ` · ${esc(x.url_host)}` : ''}</span>` },
+      { h: en ? 'Events' : 'Eventos', num: true, r: (x) => fmtNum(x.events_count || 0) },
+      { h: en ? 'Last run' : 'Última vuelta', r: (x) => `${estado(x)} ${x.last_run_at ? fmtDate(x.last_run_at) : ''}${x.last_status === 'error' ? `<span class="sub">${esc(x.last_error_detail || x.last_error || '')}${x.fail_count ? ` · ${en ? `${fmtNum(x.fail_count)} in a row` : `${fmtNum(x.fail_count)} seguidas`}` : ''}</span>` : ''}` },
+      { h: en ? 'Mode' : 'Modo', r: (x) => (x.publish_mode === 'draft' ? (en ? 'as drafts' : 'como borradores') : (en ? 'published' : 'publicadas')) },
+    ], rows: cal.rows || [], empty: en ? 'No organisation has connected a calendar.' : 'Ninguna entidad ha conectado una agenda.' })}</div>`;
+}
 const AGENDA = { source: '', q: '', status: 'all', page: 0 };
 PAGES.agenda = async (v) => {
   const en = I18N.lang === 'en';
   const fuentes = (await rpc('admin_agenda_sources')) || [];
   const lista = await rpc('admin_agenda_items', { p_source: AGENDA.source || null, p_query: AGENDA.q || null, p_status: AGENDA.status, p_limit: 50, p_offset: AGENDA.page * 50 });
+  // «Conecta tu agenda» de las entidades (20261260100400): hasta ahora no se
+  // veía en el admin (migración 20261262700000). Sin la función, sin tarjeta.
+  let cal = null;
+  try { cal = await rpc('admin_entity_calendars', { p_status: 'all', p_limit: 100, p_offset: 0 }); } catch (e) { if (e?.obsoleta) throw e; }
   const cuenta = (c) => {
     if (!c) return '—';
     const x = c.last_error_counts ? c.last_error_counts : c;
@@ -3597,7 +3784,8 @@ PAGES.agenda = async (v) => {
         { h: '', r: (i) => `<button class="btn sm${i.hidden_at ? '' : ' bad ghost'}" data-hide="${esc(i.offer_id)}" data-v="${i.hidden_at ? '0' : '1'}">${i.hidden_at ? (en ? 'Show' : 'Mostrar') : (en ? 'Hide' : 'Ocultar')}</button>` },
       ], rows: lista.items || [], empty: en ? 'Nothing imported with these filters.' : 'Nada importado con estos filtros.' })}
       <p class="actions">${AGENDA.page > 0 ? `<button class="btn sm" data-pag="-1">← ${en ? 'Previous' : 'Anteriores'}</button>` : ''}${(AGENDA.page + 1) * 50 < lista.total ? `<button class="btn sm" data-pag="1">${en ? 'Next' : 'Siguientes'} →</button>` : ''}</p>
-    </div>`;
+    </div>
+    ${cal ? tarjetaAgendasConectadas(cal) : ''}`;
   $('#agf', v).onsubmit = (e) => {
     e.preventDefault();
     const x = Object.fromEntries(new FormData(e.target));
