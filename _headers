@@ -55,6 +55,12 @@
   ! Permissions-Policy
   Permissions-Policy: geolocation=(self), camera=(self), microphone=()
 
+# La comprobación anti-robots de la app (la abre en una vista web): de la
+# caché del móvil al momento y, mientras, se revisa por detrás. Solo es HTML
+# con el widget; Turnstile y sus tokens vienen de Cloudflare, nunca de aquí.
+/captcha/*
+  Cache-Control: public, max-age=3600, stale-while-revalidate=604800
+
 /widget/*
   ! Content-Security-Policy
   ! X-Frame-Options

@@ -474,6 +474,7 @@ async function boot() {
 function showLogin() {
   paraVigilancia();
   $('#login').hidden = false; $('#app').hidden = true; $('#mfa').hidden = true; ME = null;
+  window.KL_CAPTCHA?.pre?.();  // Turnstile, por adelantado: listo al pulsar «Entrar»
   // Si se acaba de cerrar por inactividad o caducidad (aquí o en otra pestaña
   // del admin), se dice por qué.
   const motivo = motivoCierre();

@@ -1952,6 +1952,8 @@ RUTAS.denunciar = async ([tipo, id], params) => {
   const volver = document.referrer && new URL(document.referrer).origin === location.origin
     && !new URL(document.referrer).pathname.startsWith('/app/')
     ? document.referrer : `${pre}/`;
+  // Turnstile, por adelantado: al pulsar, el token suele estar ya listo.
+  window.KL_CAPTCHA?.pre?.();
   const que = conContenido ? await queSeDenuncia(tipo, id) : '';
   const ruta = conContenido ? `denunciar/${tipo}/${id}` : 'denunciar';
   const motivos = (lista) => MOTIVOS.filter(([v]) => lista.includes(v)).map(([v, l]) =>

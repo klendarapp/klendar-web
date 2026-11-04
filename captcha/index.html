@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>Klendar · Comprobación</title>
+<link rel="preconnect" href="https://challenges.cloudflare.com">
 <!--
   La comprobación anti-robots (Cloudflare Turnstile) para la app.
 
@@ -15,6 +16,14 @@
   widget solo vale en los dominios que tiene autorizados.
 
   ?k=<clave pública del sitio>  ?hl=es|en  ?tema=light|dark
+
+  ?pre=1 (la app desde el 5-11-2026): la app la abre por adelantado, oculta,
+  al abrir la pantalla que la va a necesitar, y el token está listo al
+  pulsar. Además de `ok:<token>` y `error:<código>` manda `interactive`
+  (Cloudflare pide marcar la casilla: hay que enseñarla), `expired` (el token
+  caducó; Turnstile pide otro solo) y, con `klOtro()`, la app pide el
+  siguiente token sin recargar (son de un solo uso). Sin `pre`, como antes:
+  las versiones viejas de la app no entienden esos mensajes.
 -->
 <style>
   html, body { margin: 0; height: 100%; background: transparent; }
@@ -27,19 +36,31 @@
 <script>
   (function () {
     var q = new URLSearchParams(location.search);
+    var pre = q.get('pre') === '1';
     var canal = window.KlendarCaptcha;
+    var id = null;
     function manda(m) { if (canal && canal.postMessage) canal.postMessage(m); }
     window.alCargar = function () {
       if (!q.get('k')) { manda('error:sin_clave'); return; }
-      window.turnstile.render('#caja', {
+      var opciones = {
         sitekey: q.get('k'),
         language: q.get('hl') || 'es',
         theme: q.get('tema') === 'dark' ? 'dark' : 'light',
         appearance: 'interaction-only',
         callback: function (token) { manda('ok:' + token); },
         'error-callback': function (code) { manda('error:' + code); return true; },
-        'expired-callback': function () { manda('error:expired'); },
-      });
+        'expired-callback': function () { manda(pre ? 'expired' : 'error:expired'); },
+        'unsupported-callback': function () { manda('error:unsupported'); },
+      };
+      if (pre) {
+        opciones['refresh-expired'] = 'auto';
+        opciones['before-interactive-callback'] = function () { manda('interactive'); };
+      }
+      id = window.turnstile.render('#caja', opciones);
+    };
+    /** El siguiente token, en la misma página (la app, tras gastar uno). */
+    window.klOtro = function () {
+      if (id !== null && window.turnstile) window.turnstile.reset(id);
     };
   })();
 </script>

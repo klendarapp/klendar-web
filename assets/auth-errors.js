@@ -146,48 +146,113 @@
  * siempre se resuelve sola; si Cloudflare duda, aparece abajo un recuadro
  * para marcar. La app hace lo mismo con klendar.app/captcha/.
  *
+ * Por adelantado: el formulario llama a `KL_CAPTCHA.pre()` al pintarse y el
+ * widget se resuelve mientras la persona escribe, así que al pulsar el token
+ * suele estar ya listo. Los tokens son de un solo uso y valen 300 s: al
+ * gastar uno se pide el siguiente y uno viejo no se usa. Si Cloudflare no
+ * contesta en ESPERA_MS, error (el de «no eres un robot»), y volver a pulsar
+ * lo reintenta.
+ *
  * Uso: `options: { captchaToken: await KL_CAPTCHA() }` (undefined sin clave). */
 (function () {
+  const VALE_MS = 270 * 1000;  // margen sobre los 300 s del token
+  const ESPERA_MS = 20 * 1000;  // sin respuesta de Cloudflare (ni recuadro); la app, igual
   let cargando = null;
   function carga() {
     if (window.turnstile) return Promise.resolve();
     if (!cargando) {
       cargando = new Promise((ok, mal) => {
         const s = document.createElement('script');
+        const no = () => { cargando = null; mal(fallo('captcha_unavailable')); };
+        // Si Cloudflare ni contesta, no esperar para siempre (el script puede
+        // llegar luego: la próxima vez ya estará).
+        const t = setTimeout(no, ESPERA_MS);
         s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
         s.async = true;
-        s.onload = () => ok();
-        s.onerror = () => { cargando = null; mal(Object.assign(new Error('captcha'), { code: 'captcha_unavailable' })); };
+        s.onload = () => { clearTimeout(t); ok(); };
+        s.onerror = () => { clearTimeout(t); no(); };
         document.head.appendChild(s);
       });
     }
     return cargando;
   }
+  function fallo(code) { return Object.assign(new Error('captcha'), { code }); }
+  const clave = () => window.KLENDAR_ENV && window.KLENDAR_ENV.turnstile;
 
-  window.KL_CAPTCHA = async function () {
-    const clave = window.KLENDAR_ENV && window.KLENDAR_ENV.turnstile;
-    if (!clave) return undefined;
-    await carga();
-    let caja = document.getElementById('kl-captcha');
-    if (!caja) {
+  // Un solo widget por página, abajo y fijo (no lo borra el cambio de ruta).
+  let caja = null;
+  let id = null;
+  let listo = null;          // { token, en }: resuelto y sin gastar
+  let estado = 'nada';       // 'pidiendo' | 'listo' | 'mirando' (recuadro a la vista) | 'error'
+  let esperan = [];          // quienes han pulsado y esperan un token
+
+  function siguiente() {
+    listo = null;
+    estado = 'pidiendo';
+    try { window.turnstile.reset(id); } catch (e) { /* ya no está */ }
+  }
+  function prepara() {
+    if (!clave()) return Promise.resolve();
+    if (id !== null && caja && caja.isConnected) return Promise.resolve();
+    return carga().then(() => {
+      if (id !== null && caja && caja.isConnected) return;
+      if (id !== null) { try { window.turnstile.remove(id); } catch (e) { /* ya no está */ } }
       caja = document.createElement('div');
       caja.id = 'kl-captcha';
       caja.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:1000';
       document.body.appendChild(caja);
-    }
-    return new Promise((ok, mal) => {
-      let id = null;
-      const quita = () => setTimeout(() => { try { window.turnstile.remove(id); } catch (e) { /* ya no está */ } }, 0);
-      const falla = () => { quita(); mal(Object.assign(new Error('captcha'), { code: 'captcha_failed' })); };
+      estado = 'pidiendo';
+      listo = null;
       id = window.turnstile.render(caja, {
-        sitekey: clave,
+        sitekey: clave(),
         appearance: 'interaction-only',
+        'refresh-expired': 'auto',
         // Turnstile habla francés, alemán e italiano; catalán, gallego y euskera, no: español.
         language: /^(en|fr|de|it)$/.test(document.documentElement.lang) ? document.documentElement.lang : 'es',
-        callback: (token) => { quita(); ok(token); },
-        'error-callback': () => { falla(); return true; },
-        'expired-callback': falla,
+        callback: (token) => {
+          const quien = esperan.shift();
+          if (quien) { quien.ok(token); setTimeout(siguiente, 0); return; }
+          listo = { token, en: Date.now() };
+          estado = 'listo';
+        },
+        'error-callback': () => {
+          listo = null;
+          estado = 'error';
+          const todos = esperan;
+          esperan = [];
+          todos.forEach((q) => q.mal(fallo('captcha_failed')));
+          return true;
+        },
+        'expired-callback': () => { listo = null; estado = 'pidiendo'; },
+        'before-interactive-callback': () => { estado = 'mirando'; },
+        'after-interactive-callback': () => { if (estado === 'mirando') estado = 'pidiendo'; },
       });
     });
+  }
+
+  window.KL_CAPTCHA = async function () {
+    if (!clave()) return undefined;
+    await prepara();
+    if (listo && Date.now() - listo.en < VALE_MS) {
+      const token = listo.token;
+      siguiente();
+      return token;
+    }
+    if (listo || estado === 'error') siguiente();
+    return new Promise((ok, mal) => {
+      const quien = { ok, mal };
+      esperan.push(quien);
+      // Mientras el recuadro está a la vista, la persona tiene el tiempo que necesite.
+      const vigila = () => {
+        if (!esperan.includes(quien)) return;
+        if (estado === 'mirando') { setTimeout(vigila, ESPERA_MS); return; }
+        esperan = esperan.filter((q) => q !== quien);
+        siguiente();
+        mal(fallo('captcha_failed'));
+      };
+      setTimeout(vigila, ESPERA_MS);
+    });
   };
+  /** Al pintar un formulario que la va a pedir: se resuelve mientras se escribe. */
+  window.KL_CAPTCHA.pre = function () { prepara().catch(() => { /* al pulsar se vuelve a probar */ }); };
 })();

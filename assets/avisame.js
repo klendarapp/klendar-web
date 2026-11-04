@@ -129,13 +129,20 @@
   }
   /** El token anti-robots (Turnstile) para lo que va sin cuenta: la clave
    * del sitio vive en /config.js y `KL_CAPTCHA` en /assets/auth-errors.js
-   * (los de «Tu cuenta»); se cargan solo al mandar el correo. Sin clave,
-   * nada (undefined). */
-  function robot() {
-    var listo = window.KL_CAPTCHA ? Promise.resolve()
+   * (los de «Tu cuenta»); se cargan al escribir la primera letra del correo, para
+   * que al pulsar el token ya esté listo (`KL_CAPTCHA.pre`). Sin clave, nada
+   * (undefined). */
+  function conCaptcha() {
+    return window.KL_CAPTCHA ? Promise.resolve()
       : (window.KLENDAR_ENV ? Promise.resolve() : carga('/config.js?v=3'))
-        .then(function () { return carga('/assets/auth-errors.js?v=4'); });
-    return listo.then(function () { return window.KL_CAPTCHA ? window.KL_CAPTCHA() : undefined; });
+        .then(function () { return carga('/assets/auth-errors.js?v=6'); });
+  }
+  function robot() {
+    return conCaptcha().then(function () { return window.KL_CAPTCHA ? window.KL_CAPTCHA() : undefined; });
+  }
+  function preparaRobot() {
+    conCaptcha().then(function () { if (window.KL_CAPTCHA && window.KL_CAPTCHA.pre) window.KL_CAPTCHA.pre(); },
+      function () { /* al mandar se vuelve a probar */ });
   }
   function mensajeError(e) {
     var m = String((e && (e.message || e.error || e.code)) || e || '');
@@ -178,6 +185,7 @@
       try { sessionStorage.setItem('klendar.intencion', JSON.stringify({ r: 'avisame', t: Date.now() })); } catch (x) { /* sin almacenamiento */ }
     });
     campo.addEventListener('input', function () { err.hidden = true; campo.removeAttribute('aria-invalid'); });
+    campo.addEventListener('input', preparaRobot, { once: true });
     f.addEventListener('submit', function (e) {
       e.preventDefault();
       var correo = campo.value.trim().toLowerCase();

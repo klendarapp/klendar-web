@@ -1080,6 +1080,8 @@ RUTAS.entrar = async (_p, params) => {
   const siguiente = params.get('siguiente') || '';
   if (YO) return trasEntrar(siguiente);
   const panel = vieneDelPanel();
+  // Turnstile, por adelantado: al pulsar, el token suele estar ya listo.
+  window.KL_CAPTCHA?.pre?.();
   pinta(`
     <h1>${esc(t(panel ? 'Entra en tu panel' : 'Hola de nuevo'))}</h1>
     <p class="muted">${esc(t(panel
@@ -1119,6 +1121,8 @@ RUTAS.entrar = async (_p, params) => {
 // ── Entrar con un código por correo ───────────────────────────────────────
 RUTAS['codigo-correo'] = async (_p, params) => {
   const siguiente = params.get('siguiente') || '';
+  // Turnstile, por adelantado: al pulsar, el token suele estar ya listo.
+  window.KL_CAPTCHA?.pre?.();
   pinta(`
     <h1>${esc(t('Entrar sin contraseña'))}</h1>
     <p class="muted" id="sub">${esc(t('Te mandamos un código al correo. Sin contraseñas que recordar.'))}</p>
@@ -1196,6 +1200,8 @@ RUTAS.movil = async (_p, params) => {
   // formulario que siempre falla: mejor la pantalla de entrar.
   if (!(await proveedores()).phone) return RUTAS.entrar(_p, params);
   const PREFIJOS = ['+34', '+351', '+33', '+44', '+39', '+49'];
+  // Turnstile, por adelantado: al pulsar, el token suele estar ya listo.
+  window.KL_CAPTCHA?.pre?.();
   pinta(`
     <h1>${esc(t('Entrar con el teléfono'))}</h1>
     <p class="muted" id="sub">${esc(t('Te mandamos un código por SMS. Sin contraseñas.'))}</p>
@@ -1269,6 +1275,8 @@ RUTAS.registro = async (_p, params) => {
   // Desde «Acceso para negocios»: al terminar, al alta del negocio.
   const negocio = params.get('para') === 'negocio';
   const destino = negocio ? `${location.origin}/panel/?alta=1` : `${location.origin}/app/`;
+  // Turnstile, por adelantado: al pulsar, el token suele estar ya listo.
+  window.KL_CAPTCHA?.pre?.();
   pinta(`
     <h1>${esc(t(negocio ? 'Crea tu cuenta de negocio' : 'Crea tu cuenta'))}</h1>
     <p class="muted">${esc(t(negocio
@@ -1374,6 +1382,8 @@ RUTAS.registro = async (_p, params) => {
 
 // ── Recuperar la contraseña ───────────────────────────────────────────────
 RUTAS.recuperar = async () => {
+  // Turnstile, por adelantado: al pulsar, el token suele estar ya listo.
+  window.KL_CAPTCHA?.pre?.();
   pinta(`
     <h1>${esc(t('Recuperar contraseña'))}</h1>
     <p class="muted">${esc(t('Te enviamos un enlace para crear una nueva.'))}</p>
