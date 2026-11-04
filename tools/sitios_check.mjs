@@ -54,10 +54,12 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     // 1. La lista.
     await page.goto(`${BASE}/explorar/?que=sitios&${AQUI}`);
     ok(await page.locator('.que a.on').innerText() === 'Sitios', `${t} «Planes | Sitios» con Sitios puesto`);
-    ok(await page.locator('.vistas .vista').count() === 2, `${t} Lista | Mapa`);
+    // Arriba, como la app: buscar y «Ver en el mapa» (revisión del 3-11, 1.1).
+    const botones = await page.locator('.exp-acciones .exp-boton').evaluateAll((l) => l.map((a) => a.getAttribute('aria-label')));
+    ok(botones.join(' · ') === 'Buscar · Ver en el mapa', `${t} buscar · «Ver en el mapa» (${botones.join(' · ')})`);
     const filas = await page.locator('.sitio-fila').count();
     ok(filas > 0, `${t} filas de sitios (${filas})`);
-    ok(/sitio/.test(await page.locator('.resumen-n').innerText()), `${t} «N sitios»`);
+    ok(!(await page.locator('.resumen-n').count()), `${t} sin «N sitios» (la app no lo tiene)`);
     const hora = await page.locator('.sitio-hora').first().innerText();
     ok(/^(Abierto|Cerrado)/.test(hora), `${t} el horario de ahora («${hora}»)`);
     ok(/\d+(,\d)?\s?(m|km)/.test(await page.locator('.sitio-fila .muted').first().innerText()), `${t} categoría y distancia`);
@@ -124,15 +126,16 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
         };
         return {
           'Planes | Sitios': r('.que'), Planes: r('.que a:first-child'), Sitios: r('.que a:last-child'),
-          Lista: r('.vistas .vista[aria-label="Lista"]'), Mapa: r('.vistas .vista[aria-label="Mapa"]'),
+          Buscar: r('.exp-acciones [data-abre-hoja="buscar"]'), 'botón de vista': r('.exp-acciones .exp-boton:last-child'),
           // La fila de filtros (lo de dentro cambia: en Planes, el orden
           // «según el tiempo» va antes del «dónde», como en la app).
-          buscador: r('form.buscador'), Filtros: r('#filtros > summary'), 'fila de filtros': r('#barra'),
+          Filtros: r('#filtros > summary'), 'fila de filtros': r('#barra'),
         };
       });
     };
     for (const [a, b, que] of [
-      [`/explorar/?${AQUI}`, `/explorar/?que=sitios&${AQUI}`, 'en lista'],
+      [`/explorar/?vista=lista&${AQUI}`, `/explorar/?que=sitios&${AQUI}`, 'en lista'],
+      [`/explorar/?${AQUI}`, `/explorar/?que=sitios&${AQUI}`, 'calendario ↔ lista'],
       [`/explorar/?vista=mapa&${AQUI}`, `/explorar/?que=sitios&vista=mapa&${AQUI}`, 'en el mapa'],
     ]) {
       const pa = await medir(a);

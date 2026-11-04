@@ -110,21 +110,25 @@ export const SITIOS_CSS = `<style>
 /* Sin saltos al cambiar entre Planes y Sitios: la barra de desplazamiento
    siempre reserva su sitio (una página más corta no mueve nada). */
 html { scrollbar-gutter: stable; }
-/* Con la letra grande del móvil (o en 320 px) «Lista · Mapa» baja a otra
-   línea, pegado a la derecha, en vez de salirse de la pantalla. */
-.que-fila { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 10px; margin: 4px 0 10px; }
-.que { display: inline-flex; padding: 4px; gap: 2px; border-radius: 999px; background: var(--soft); border: 1px solid var(--glass-border); }
-.que-fila .vistas { width: auto; }
-@media (max-width: 560px) {
-  .que-fila .vista span { display: none; }
-  .pub .que-fila .vista { flex: none; padding: 8px 10px; }
-  .pub .que a { padding: 8px 14px; }
-}
-/* Lista y Mapa siempre pegados a la derecha (con o sin Calendario delante). */
-.que-fila .vistas { flex: none; margin-left: auto; }
-.que { flex: none; }
+/* La fila de arriba de Explorar, como la de la app (\`ExploreTopRow\`):
+   «Planes | Sitios» a la izquierda y, a la derecha, los botones redondos
+   (la lista de la web, buscar y el de la vista). Con la letra grande o en
+   320 px, «Planes | Sitios» se encoge antes de que nada se salga. */
+.que-fila { display: flex; align-items: center; gap: 8px; margin: 4px 0 10px; }
+.que { display: inline-flex; min-width: 0; padding: 4px; gap: 2px; border-radius: 999px; background: var(--soft); border: 1px solid var(--glass-border); }
+.exp-acciones { display: flex; align-items: center; gap: 8px; flex: none; margin-left: auto; }
+.pub .exp-boton { width: 48px; height: 48px; display: grid; place-items: center; flex: none; border-radius: 50%;
+  background: var(--glass); border: 1px solid var(--glass-border); color: var(--ink); text-decoration: none; }
+.pub .exp-boton:hover { border-color: var(--ink-2); text-decoration: none; }
+.exp-boton:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 .pub .que a { display: inline-flex; align-items: center; padding: 8px 18px; min-height: 40px; border-radius: 999px; font-weight: 700; color: var(--ink); text-decoration: none; }
 .pub .que a.on { background: var(--ink); color: var(--surface); }
+@media (max-width: 560px) {
+  .pub .que a { padding: 8px 14px; }
+  .exp-acciones { gap: 6px; }
+  .pub .exp-boton { width: 44px; height: 44px; }
+}
+@media (max-width: 340px) { .pub .que a { padding: 8px 10px; } }
 .sitios-lista { display: grid; gap: 10px; margin: 8px 0 18px; }
 .pub .sitio-fila { display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 22px; background: var(--elevated);
   border: 1px solid var(--glass-border); color: var(--ink); text-decoration: none; }

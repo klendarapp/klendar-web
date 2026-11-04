@@ -9,8 +9,11 @@
 //
 // - Descubre (/descubre/, /en/discover/): el feed de tarjetas grandes, lo
 //   más cerca primero si has dicho dónde estás (la pestaña 1 de la app).
-// - Explorar (/explorar/, /en/explore/): buscar, y verlo en Lista, Mapa o
-//   Calendario (la pestaña 2 de la app: calendario + mapa).
+// - Explorar (/explorar/, /en/explore/): como la pestaña 2 de la app
+//   (Iván, 2026-11-03): «Planes | Sitios» · buscar (la hoja «Buscar») · el
+//   botón de vista. Planes abre en el calendario (lo mismo para Google, sin
+//   JavaScript y con él) y se ve también en el mapa; la lista de Planes
+//   (`?vista=lista`) es solo de la web, para quien llega desde Google.
 
 import { cabeceraEdad, edadDeclarada, esc, html, preguntaEdadEncendida, rows, rpc, rpcAll, supabasePublic, vistosEncendido } from './page.js';
 import KZ from '../../assets/zona.js';
@@ -32,8 +35,8 @@ import KA from '../../assets/artistas.js';
 import KE from '../../assets/emisiones.js';
 import KG from '../../assets/textos-grupos.js';
 import KS from '../../assets/textos-sorteos.js';
-import { GRUPOS_CSS, gruposBase, icGrupos } from './grupos.js';
-import { icSorteo, sorteosBase, sorteosEncendidos } from './sorteos.js';
+import { GRUPOS_CSS, gruposBase } from './grupos.js';
+import { sorteosBase, sorteosEncendidos } from './sorteos.js';
 import { SITIOS_CSS, SITIOS_SCRIPTS, TS, filaSitio, mapaSitios } from './sitios.js';
 import { icCat } from './iconos-cat.js';
 
@@ -51,7 +54,7 @@ const T = (en) => en
       city: 'City', cat: 'Category', clear: 'Clear filters',
       results: (n) => `${n} ${n === 1 ? 'result' : 'results'}`,
       prev: '← Previous', next: 'Next →', page: 'Page',
-      lead: 'Search for plans and places, and see them as a list, on the map or on the calendar. No account needed to browse.',
+      lead: 'Search for plans and places, and see them on the calendar, on the map or as a list. No account needed to browse.',
       discLead: 'Flash offers and events from the businesses around you. No account needed to browse.',
       biz: 'List your business', app: 'Create a free account',
       catTitle: (c, city) => `${c} in ${city}`,
@@ -72,6 +75,8 @@ const T = (en) => en
       where: 'Where', useLoc: 'Use my location', useLocHint: "What's closest to where you are now", nearPrompt: 'See what’s closest to you first.', nearNeedsWhere: 'To see what’s closest first, tell us where you are.',
       ageQ: 'Are you 18 or over?', ageYes: 'I’m 18 or over', ageNo: 'I’m under 18', ageHidden: (n) => (n === 1 ? '1 result is for over-18s only.' : `${n} results are for over-18s only.`),
       view: 'View', listView: 'List', mapView: 'Map', calView: 'Calendar', distance: 'Distance',
+      // El botón de vista de Explorar (`exploreSeeMap`, `exploreSeeCalendar`, `exploreSeeList` de la app).
+      seeMap: 'See on the map', seeCal: 'See the calendar', seeList: 'See as a list',
       filters: 'Filters', filtersN: (n) => `Filters, ${n} on`, showResults: 'Show results', close: 'Close',
       mapNo: "The map can't load right now. The list shows the same results.", onMap: (n) => `${n} on the map`,
       // Calendario (la agenda de la app).
@@ -193,7 +198,7 @@ const T = (en) => en
       city: 'Ciudad', cat: 'Categoría', clear: 'Quitar filtros',
       results: (n) => `${n} ${n === 1 ? 'resultado' : 'resultados'}`,
       prev: '← Anterior', next: 'Siguiente →', page: 'Página',
-      lead: 'Busca planes y sitios, y míralos en lista, en el mapa o en el calendario. Para mirar no hace falta cuenta.',
+      lead: 'Busca planes y sitios, y míralos en el calendario, en el mapa o en lista. Para mirar no hace falta cuenta.',
       discLead: 'Ofertas flash y planes de los negocios de tu alrededor. Para mirar no hace falta cuenta.',
       biz: 'Publicar mi negocio', app: 'Crear cuenta gratis',
       catTitle: (c, city) => `${c} en ${city}`,
@@ -214,6 +219,7 @@ const T = (en) => en
       where: 'Dónde', useLoc: 'Usar mi ubicación', useLocHint: 'Lo más cercano a donde estás ahora', nearPrompt: 'Mira primero lo que tienes más cerca.', nearNeedsWhere: 'Para ver lo más cerca primero, dinos dónde estás.',
       ageQ: '¿Tienes 18 años o más?', ageYes: 'Tengo 18 años o más', ageNo: 'Soy menor', ageHidden: (n) => (n === 1 ? 'Hay 1 resultado solo para mayores de 18.' : `Hay ${n} resultados solo para mayores de 18.`),
       view: 'Ver en', listView: 'Lista', mapView: 'Mapa', calView: 'Calendario', distance: 'Distancia',
+      seeMap: 'Ver en el mapa', seeCal: 'Ver el calendario', seeList: 'Ver en lista',
       filters: 'Filtros', filtersN: (n) => (n === 1 ? 'Filtros, 1 puesto' : `Filtros, ${n} puestos`), showResults: 'Ver resultados', close: 'Cerrar',
       mapNo: 'El mapa no se puede cargar ahora mismo. En la lista está lo mismo.', onMap: (n) => `${n} en el mapa`,
       prevMonth: 'Mes anterior', nextMonth: 'Mes siguiente', legendEv: 'Eventos', legendFl: 'Ofertas flash',
@@ -915,9 +921,9 @@ function calendarioHtml({ items, lang, S, link, mes, dia, hoy, delDiaParte = nul
 /** Las claves de la dirección en cada idioma. */
 const CLAVES = {
   es: { city: 'ciudad', cat: 'categoria', kind: 'tipo', price: 'precio', when: 'cuando', discount: 'descuento', open: 'abierto', sort: 'orden', view: 'vista', month: 'mes', day: 'dia', show: 'ver', place: 'sitio', weather: 'tiempo',
-    age: 'edad', vprice: 'precio-local', card: 'descuento-para', solo: 'solo', charity: 'solidario', entity: 'agenda-publica', closing: 'antes-de-cerrar', buzz: 'ambiente', menu: 'menu-del-dia', eat: 'comer-ahora', moment: 'momento', what: 'que', notastes: 'sin-gustos' },
+    age: 'edad', vprice: 'precio-local', card: 'descuento-para', solo: 'solo', charity: 'solidario', entity: 'agenda-publica', closing: 'antes-de-cerrar', buzz: 'ambiente', menu: 'menu-del-dia', eat: 'comer-ahora', moment: 'momento', what: 'que', notastes: 'sin-gustos', search: 'buscar' },
   en: { city: 'city', cat: 'category', kind: 'type', price: 'price', when: 'when', discount: 'discount', open: 'open', sort: 'sort', view: 'view', month: 'month', day: 'day', show: 'show', place: 'place', weather: 'weather',
-    age: 'age', vprice: 'venue-price', card: 'discount-for', solo: 'solo', charity: 'charity', entity: 'public-listings', closing: 'before-closing', buzz: 'buzz', menu: 'daily-menu', eat: 'food-now', moment: 'moment', what: 'what', notastes: 'no-tastes' },
+    age: 'age', vprice: 'venue-price', card: 'discount-for', solo: 'solo', charity: 'charity', entity: 'public-listings', closing: 'before-closing', buzz: 'buzz', menu: 'daily-menu', eat: 'food-now', moment: 'moment', what: 'what', notastes: 'no-tastes', search: 'search' },
 };
 /** Marcas (tanda A) en la dirección: edades «4-8», carné en cada idioma. */
 const EDAD_URL = { '0-3': '0_3', '4-8': '4_8', '9-12': '9_12', '13-17': '13_17' };
@@ -939,7 +945,7 @@ const traitsMarcas = (e) => [
 const VALORES_ES = {
   offers: 'ofertas', events: 'eventos', places: 'negocios', free: 'gratis',
   now: 'ahora', today: 'hoy', tomorrow: 'manana', next10: '10dias', tonight: 'esta-noche', weekend: 'finde',
-  newest: 'nuevas', soonest: 'pronto', nearest: 'cerca', rated: 'valorados', map: 'mapa', calendar: 'calendario',
+  newest: 'nuevas', soonest: 'pronto', nearest: 'cerca', rated: 'valorados', map: 'mapa', calendar: 'calendario', list: 'lista',
 };
 const NORMAL = { ...Object.fromEntries(Object.entries(VALORES_ES).map(([k, v]) => [v, k])), sitios: 'places' };
 const norm = (v) => NORMAL[v] || v;
@@ -1006,7 +1012,13 @@ function leeEstado(qs) {
     sort: ['newest', 'soonest', 'nearest', 'rated'].includes(sort) && (sort !== 'rated' || que === 'places') ? sort : '',
     // «Tener en cuenta tus gustos» (en el menú de orden), apagado: `?sin-gustos=1`.
     sinGustos: de('notastes', 2) === '1',
-    vista: ['map', 'calendar'].includes(vista) ? vista : '',
+    // La vista: Planes abre en el calendario, como la app (Iván, 2026-11-03);
+    // la lista (`?vista=lista`, solo en la web) y el mapa se piden. Vacía, la
+    // de serie (`vistaDe`).
+    vista: ['map', 'calendar', 'list'].includes(vista) ? vista : '',
+    // La hoja «Buscar» abierta (`?buscar=1`): adonde lleva la lupa sin
+    // JavaScript.
+    buscar: de('search', 2) === '1',
     cerca, lat: cerca ? lat : null, lng: cerca ? lng : null,
     km: RADIOS_KM.includes(kmPedido) ? kmPedido : RADIO_KM,
     amigos: qs.get('amigos') === '1',
@@ -1050,6 +1062,18 @@ const catsDe = (e) => (Array.isArray(e.cats) && (e.cats.length ? e.cats[0] === e
  * lo enseña, pero lo guardado sigue siendo la zona de siempre, y elegir otra
  * zona en «¿Dónde?» la acaba. */
 const enVisita = (e) => Boolean(e.visita && e.city && !e.cerca);
+/** La vista de serie de Explorar: en Planes, el calendario (como la app);
+ * con una búsqueda, la lista de resultados (como la búsqueda de la app). En
+ * Sitios, la lista. */
+const vistaDefecto = (e) => (e.que === 'places' ? 'list' : e.q ? 'list' : 'calendar');
+/** La vista que va en la dirección: solo si no es la de serie. En Sitios,
+ * `list` también se escribe: es la Lista de Planes, que se guarda para
+ * volver a ella (en Sitios se ve la lista igual). */
+const vistaEnUrl = (e) => {
+  if (!e.vista) return '';
+  if (e.que === 'places') return e.vista === 'map' || e.vista === 'list' ? e.vista : '';
+  return e.vista === vistaDefecto(e) ? '' : e.vista;
+};
 
 /** La dirección de un estado. `soloCompartido`: solo lo que viaja entre
  * Descubre y Explorar (sin búsqueda, vista, mes, día ni página). */
@@ -1077,7 +1101,8 @@ function query(e, lang, { soloCompartido = false } = {}) {
   if (e.when) p.set(K.when, enIdioma(e.when, en));
   if (e.soloDescuento) p.set(K.discount, '1');
   if (e.sort) p.set(K.sort, enIdioma(e.sort, en));
-  if (!soloCompartido && e.vista) p.set(K.view, enIdioma(e.vista, en));
+  const v = vistaEnUrl(e);
+  if (!soloCompartido && v) p.set(K.view, enIdioma(v, en));
   if (!sit && !soloCompartido && e.vista === 'calendar' && e.mes) p.set(K.month, e.mes);
   if (!sit && !soloCompartido && e.vista === 'calendar' && e.dia) p.set(K.day, e.dia);
   // La zona aproximada de la conexión nunca va en la dirección (UA1): solo
@@ -1136,8 +1161,8 @@ function guardaFiltros(e, lang, base, explorar = false) {
     const K = CLAVES[l];
     const x = new URLSearchParams();
     if (e.que === 'places') x.set(K.what, l === 'en' ? 'places' : 'sitios');
-    // Lista, mapa o calendario (en Sitios, solo el mapa).
-    if (e.vista === 'map' || (e.vista === 'calendar' && e.que !== 'places')) x.set(K.view, enIdioma(e.vista, l === 'en'));
+    // Calendario (de serie), lista o mapa (en Sitios, solo el mapa).
+    if (e.vista === 'map' || (e.vista === 'list' && e.que !== 'places')) x.set(K.view, enIdioma(e.vista, l === 'en'));
     return x.toString();
   };
   // Lo que no viaja entre páginas (la búsqueda, la vista y el día del
@@ -1146,14 +1171,15 @@ function guardaFiltros(e, lang, base, explorar = false) {
   const resto = new URLSearchParams();
   if (e.que === 'places') resto.set(K.what, lang === 'en' ? 'places' : 'sitios');
   if (e.q) resto.set('q', e.q);
-  if (e.vista) resto.set(K.view, enIdioma(e.vista, lang === 'en'));
+  if (vistaEnUrl(e)) resto.set(K.view, enIdioma(vistaEnUrl(e), lang === 'en'));
   if (e.vista === 'calendar' && e.mes) resto.set(K.month, e.mes);
   if (e.vista === 'calendar' && e.dia) resto.set(K.day, e.dia);
   if (e.vista === 'map' && e.ambiente) resto.set(K.buzz, '1');
   const vacia = !compartido.es;
   const datos = JSON.stringify({
     A: compartido, L: lang, v: vacia, r: resto.toString(), b: `${base}/`, g: (e.gustos || []).join(','), vi: enVisita(e) ? 1 : 0,
-    ...(explorar ? { ex: 1, x: { es: vistaDe('es'), en: vistaDe('en') } } : {}),
+    // Una búsqueda (que se ve en lista) no cambia la vista que se recuerda.
+    ...(explorar ? { ex: 1, ...(e.q ? {} : { x: { es: vistaDe('es'), en: vistaDe('en') } }) } : {}),
   }).replace(/</g, '\\u003c');
   return `<script>(function(d){try{var K='klendar.filtros',X='klendar.explorar',s=sessionStorage,ls=localStorage;
 var sin=s.getItem('klendar.filtros.sin');s.removeItem('klendar.filtros.sin');
@@ -1167,7 +1193,7 @@ var viejo=function(s,t){var u=new URLSearchParams(s||'');if(!(t>=seis.getTime())
 var gq0=g&&g[d.L]?viejo(g[d.L],g.t):'';
 if(d.v&&libre&&gq0){location.replace(conG(d.b+'?'+gq0+(d.r?'&'+d.r:'')+(ex?'&'+ex:'')+location.hash));return;}
 if(ex){location.replace(conG(d.b+'?'+ex+location.hash));return;}
-if(d.ex)ls.setItem(X,JSON.stringify(d.x));
+if(d.x)ls.setItem(X,JSON.stringify(d.x));
 var A=d.A,t=Date.now();
 if(d.vi){var Z=['ciudad','city','lat','lng','km','todas'],o=g||{},vp=Date.now()-(o.t||0)<216e5,f=function(L){var u=new URLSearchParams(A[L]||''),w=new URLSearchParams(o[L]||'');Z.forEach(function(k){u.delete(k);});Z.forEach(function(k){if(!vp&&(k==='lat'||k==='lng'))return;w.getAll(k).forEach(function(v){u.append(k,v);});});return u.toString();};A={es:f('es'),en:f('en')};if(vp&&o.t&&/(^|&)lat=/.test(o[d.L]||''))t=o.t;}
 ls.setItem(K,JSON.stringify({t:t,es:A.es,en:A.en}));
@@ -1273,7 +1299,9 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   // «Sorteos» solo con el interruptor encendido (se pide a la vez que lo demás).
   const conSorteos = sorteosEncendidos().catch(() => false);
   const e = leeEstado(url.searchParams);
-  if (descubre) { e.q = ''; e.vista = ''; e.que = ''; }
+  if (descubre) { e.q = ''; e.vista = ''; e.que = ''; e.buscar = false; }
+  // Planes abre en el calendario (como la app); con una búsqueda, en la lista.
+  else if (e.que !== 'places' && !e.vista) e.vista = vistaDefecto(e);
   // Sin posición, ciudad ni «Todas las ciudades» en la dirección, la página
   // depende de la conexión: con su zona aproximada, «Ubicación aproximada ·
   // 5 km» (como la app); sin dato, «Todas las ciudades». Esa página no se
@@ -1312,9 +1340,9 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   // en una búsqueda. Lo hace el navegador (/assets/vistos.js) con lo que
   // guarda él: la base no sabe qué has visto. Con su interruptor.
   const conVistos = !negocios && !mapa && !calendario && !q && (await vistosEncendido());
-  // En Sitios (sin calendario) se ve en lista, pero el Calendario de Planes
-  // se conserva para volver a él.
-  const vista = negocios ? (sitiosMapa ? 'map' : e.vista === 'calendar' ? 'calendar' : '') : e.vista;
+  // En Sitios (sin calendario) se ve en lista, pero la Lista de Planes se
+  // conserva para volver a ella.
+  const vista = negocios ? (sitiosMapa ? 'map' : e.vista === 'list' ? 'list' : '') : e.vista;
   // Lo que se le pide a la base por «El sitio» en Sitios.
   const traitsSitio = [...sitioSinNinos(e), ...(e.precioLocal ? [`price_le_${e.precioLocal}`] : []),
     ...(menuDia ? ['daily_menu'] : []), ...(comerAhora ? ['eat_now'] : []), ...(e.momento ? [KMO.trait(e.momento)] : [])];
@@ -1388,7 +1416,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
     // caché); lo filtra /assets/amigos.js en el navegador.
   };
   const pKind = esOfertas ? 'flash_offer' : esEventos ? 'future_event' : null;
-  const filtrado = Boolean(e.que || q || city || cat || kind || page > 1 || price || when || soloDescuento || abierto || sort || cerca || vista || e.amigos || e.sinGustos
+  const filtrado = Boolean(e.que || q || city || cat || kind || page > 1 || price || when || soloDescuento || abierto || sort || cerca || vistaEnUrl({ ...e, vista }) || e.buscar || e.amigos || e.sinGustos
     || traits.length || traitsMarcas(e).length || antesCierre || menuDia || comerAhora || e.momento || tiempoOff || gustos.length);
 
   const argsExplore = {
@@ -1551,7 +1579,10 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
 
   // Los filtros son enlaces: se puede compartir la URL y va sin JavaScript.
   const link = (cambios) => {
-    const b = { ...e, vista, page: 1, mes: calendario ? mes : '', dia: calendario ? dia : '', ...cambios };
+    // El mes y el día solo si se eligieron (el de serie, hoy, no va en la
+    // dirección).
+    const elegido = calendario && Boolean(mesPedido || diaPedido);
+    const b = { ...e, vista, page: 1, mes: elegido ? mes : '', dia: elegido ? dia : '', ...cambios };
     if ('p' in cambios) b.page = cambios.p;
     if (b.cerca === false) { b.lat = null; b.lng = null; }
     // Elegir una zona en «¿Dónde?» (también la misma) acaba la visita: esa
@@ -1561,8 +1592,14 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
     return `${base}/${s ? `?${s}` : ''}`;
   };
   // Todo fuera, también la zona: la página limpia (y lo guardado, limpio).
-  // «Según el tiempo» se queda como estaba: no quita nada, solo ordena.
-  const limpia = `${base}/${tiempoOff ? `?${CLAVES[en ? 'en' : 'es'].weather}=0` : ''}`;
+  // «Según el tiempo» se queda como estaba: no quita nada, solo ordena. Lo
+  // que se mira (Planes o Sitios) y la vista (lista o mapa), también.
+  const limpiaQ = new URLSearchParams();
+  const vistaLimpia = vistaEnUrl({ que: e.que, vista, q: '' });
+  if (negocios) limpiaQ.set(CLAVES[en ? 'en' : 'es'].what, en ? 'places' : 'sitios');
+  if (vistaLimpia) limpiaQ.set(CLAVES[en ? 'en' : 'es'].view, enIdioma(vistaLimpia, en));
+  if (tiempoOff) limpiaQ.set(CLAVES[en ? 'en' : 'es'].weather, '0');
+  const limpia = `${base}/${limpiaQ.toString() ? `?${limpiaQ}` : ''}`;
 
   // ── La barra de filtros: la de la app (opción A, 2026-10-26) ──
   // ☰ (lo demás, con su número) · ¿Dónde? · ¿Cuándo? · ¿Qué? · el orden. Cada
@@ -1922,18 +1959,31 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
      ${opcion(link({ sort: 'rated' }), S.rated, sort === 'rated', '', S.placesRatedHint)}`,
     { cls: ' orden orden-lista', etiqueta: `${S.sortBy}: ${sort === 'rated' ? S.rated : S.sortNearest}` }) : '';
 
-  const vistas = descubre ? '' : `<nav class="vistas" aria-label="${esc(S.view)}">
-      ${(negocios ? [['', S.listView, 'lista', !sitiosMapa], ['map', S.mapView, 'mapa', sitiosMapa]]
-        // Calendario delante: Lista y Mapa quedan en el mismo sitio en
-        // Planes y en Sitios (sin saltos al cambiar).
-        : [['calendar', S.calView, 'cal', calendario], ['', S.listView, 'lista', !mapa && !calendario], ['map', S.mapView, 'mapa', mapa]])
-        .map(([v, n, i, on]) => `<a class="vista${on ? ' on' : ''}" href="${esc(link({ vista: v }))}" aria-label="${esc(n)}"${on ? ' aria-current="page"' : ''}>${ic(i, 18)}<span>${esc(n)}</span></a>`).join('')}
-    </nav>`;
+  // La fila de arriba de Explorar, como la de la app (`ExploreTopRow`):
+  // «Planes | Sitios» · buscar · el botón de vista, iconos redondos con su
+  // nombre para el lector y al pasar el ratón. El botón de la esquina es el
+  // de la app: fuera del mapa, «Ver en el mapa»; en el mapa, «Ver el
+  // calendario» (Planes) o «Ver en lista» (Sitios). La lista de Planes es
+  // solo de la web (para quien llega desde Google): su botón va entre
+  // «Planes | Sitios» y buscar, donde la app pone lo que añade una vista, y
+  // así buscar y el de la esquina no se mueven nunca.
+  const boton = (href, txt, icono, extra = '') => `<a class="exp-boton" href="${esc(href)}" aria-label="${esc(txt)}" title="${esc(txt)}"${extra}>${ic(icono, 22)}</a>`;
+  const vistaBoton = (v, txt, icono) => boton(link({ vista: v }), txt, icono);
+  const esquina = negocios
+    ? (sitiosMapa ? vistaBoton('', S.seeList, 'lista') : vistaBoton('map', S.seeMap, 'mapa'))
+    : (mapa ? vistaBoton('calendar', S.seeCal, 'cal') : vistaBoton('map', S.seeMap, 'mapa'));
+  const listaWeb = negocios ? '' : vista === 'list' ? vistaBoton('calendar', S.seeCal, 'cal') : vistaBoton('list', S.seeList, 'lista');
+  // Buscar abre la hoja «Buscar» (la misma de Descubre); sin JavaScript, esta
+  // misma página con la hoja abierta (`?buscar=1`).
+  const conBuscar = (href) => `${href}${href.includes('?') ? '&' : '?'}${CLAVES[en ? 'en' : 'es'].search}=1`;
+  const lupa = boton(conBuscar(link({})), S.search, 'buscar', ' data-abre-hoja="buscar"');
+  const acciones = descubre ? '' : `<div class="exp-acciones">${listaWeb}${lupa}${esquina}</div>`;
   // Arriba, qué se busca: «Planes | Sitios» (como la app). Al cambiar, la
-  // zona, la distancia y los filtros que valen en los dos se quedan.
+  // zona, la distancia, los filtros que valen en los dos y la vista (mapa o
+  // lista) se quedan.
   const que = descubre ? '' : `<nav class="que" aria-label="${esc(TSi.what)}">
-      <a href="${esc(link({ que: '', vista: e.vista === 'calendar' ? 'calendar' : '' }))}"${negocios ? '' : ' class="on" aria-current="page"'}>${esc(TSi.plans)}</a>
-      <a href="${esc(link({ que: 'places', vista: e.vista === 'map' || e.vista === 'calendar' ? e.vista : '' }))}"${negocios ? ' class="on" aria-current="page"' : ''}>${esc(TSi.places)}</a>
+      <a href="${esc(link({ que: '', vista: e.vista === 'map' || e.vista === 'list' ? e.vista : '' }))}"${negocios ? '' : ' class="on" aria-current="page"'}>${esc(TSi.plans)}</a>
+      <a href="${esc(link({ que: 'places', vista: e.vista === 'map' || e.vista === 'list' ? e.vista : '' }))}"${negocios ? ' class="on" aria-current="page"' : ''}>${esc(TSi.places)}</a>
     </nav>`;
 
   // Al tocar el buscador: lo que buscaste (en este navegador) y «Lo más
@@ -1950,9 +2000,10 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
     // «Pedir un local», el cuarto, como en el buscador de la app.
     pedir: { t: S.askVenue, s: S.recommendShort, href: pedirHref(lang) },
   });
-  // El buscador: el de Explorar y el de la lupa de Descubre (Iván,
-  // 2026-10-29: en la app también se busca desde Descubre). Lleva a los
-  // resultados de Explorar con la misma zona y los mismos filtros.
+  // El buscador de la hoja «Buscar» de la lupa, en Descubre y en Explorar
+  // (Iván, 2026-10-29 y 2026-11-03, como la app). Lleva a los resultados de
+  // Explorar (en lista, como la búsqueda de la app) con la misma zona y los
+  // mismos filtros.
   const ocultosDe = (estado) => new URLSearchParams(query(estado, lang)).toString().split('&').filter(Boolean)
     .map((kv) => { const [k, v] = kv.split('='); return `<input type="hidden" name="${esc(decodeURIComponent(k))}" value="${esc(decodeURIComponent(v.replace(/\+/g, ' ')))}">`; }).join('');
   const formBuscar = (fijo) => `<form class="buscador" id="${fijo ? 'buscarForm' : 'buscar'}" role="search" method="get" action="${exploreBase(lang)}/" data-busqueda${fijo ? ' data-panel-fijo' : ''}
@@ -1962,7 +2013,6 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
     ${ocultosDe(fijo ? { ...e, q: '', que: '', vista: '', page: 1, mes: '', dia: '' } : { ...e, q: '', page: 1, mes: calendario ? mes : '', dia: calendario ? dia : '' })}
     <button class="pill ink" type="submit">${esc(S.search)}</button>
   </form>`;
-  const buscador = descubre ? '' : formBuscar(false);
   // Un enlace con lo de esta página y `cambios`, a Descubre o a Explorar.
   const linkA = (destino, cambios) => {
     const b = { ...e, vista: '', que: '', q: '', page: 1, mes: '', dia: '', ...cambios };
@@ -1975,8 +2025,9 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   // Tocar una busca por su nombre. /assets/gustos.js la pone en el panel del
   // buscador, debajo de lo buscado.
   const gruposBusq = KC.agrupa(catsHoja, '').filter((g) => g.cats.length);
-  const hT = descubre ? 'h3' : 'h2';
-  const hG = descubre ? 'h4' : 'h3';
+  // Va en la hoja «Buscar» (en Descubre y en Explorar).
+  const hT = 'h3';
+  const hG = 'h4';
   const tiposBusq = gruposBusq.length ? `<div class="busq-tipos" role="group" data-busq-tipos aria-labelledby="busqTipos" hidden>
       <${hT} id="busqTipos">${esc(S.browseTypes)}</${hT}>
       ${gruposBusq.map((g, i) => `<div class="busq-grupo"${i >= 2 ? ' data-plegado' : ''}>
@@ -2007,7 +2058,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   <script>${FILA_MIDE}</script>
   <p id="cercaErr" class="aviso-error" role="alert" hidden></p>
   <script src="/assets/categorias.js?v=6" defer></script>
-  <script src="/assets/gustos.js?v=20261103rv" defer data-lang="${en ? 'en' : 'es'}"></script>
+  <script src="/assets/gustos.js?v=20261103exp" defer data-lang="${en ? 'en' : 'es'}"></script>
   <script src="/assets/municipios.js?v=20261103rv" defer></script>`;
 
   // Los atajos de la lupa (Iván, 2026-10-29: como la app): cada uno pone sus
@@ -2026,30 +2077,29 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
     atajo(aDescubre({ traits: traits.includes('kids') ? traits : [...traits, 'kids'] }), S.withKids, false, icSitio('kids', 16)),
     atajo(aDescubre({ antesCierre: true }), S.beforeClosing, false, 'bolsa'),
   ].join('\n    ');
-  // En Explorar, debajo del buscador, si no hay búsqueda ni filtros.
-  const atajosFila = !descubre && !q && !conFiltros ? `<nav class="atajos-fila" aria-label="${esc(S.shortcuts)}">
-    <span class="atajos-t">${esc(S.shortcuts)}</span>
-    ${atajosLupa}
-  </nav>` : '';
-
   // ── La cabecera de Descubre, como la de la app: ✨ Selecciones (si hay),
   // la lupa y la campana (con sesión; la pinta /assets/cabecera.js). La
-  // lupa y ✨ abren su hoja; sin JavaScript, la lupa lleva al buscador de
-  // Explorar y ✨ a las selecciones de Explorar.
-  const hojaSimple = (id, titulo, cuerpo) => `<details class="hoja hoja-lupa" id="${id}">
+  // lupa y ✨ abren su hoja; sin JavaScript, la lupa lleva a Explorar con la
+  // hoja «Buscar» abierta (`?buscar=1`) y ✨ a Descubre (`#selecciones`).
+  const hojaSimple = (id, titulo, cuerpo, { abierta = false, cerrar = `#${id}` } = {}) => `<details class="hoja hoja-lupa" id="${id}"${abierta ? ' open data-abierta' : ''}>
     <summary class="hoja-lupa-sum" tabindex="-1" aria-hidden="true"></summary>
     <div class="hoja-cuerpo" role="dialog" aria-labelledby="${id}Titulo">
       <div class="hoja-cab"><h2 id="${id}Titulo">${esc(titulo)}</h2>
-        <a class="hoja-x" href="#${id}" data-cerrar-hoja aria-label="${esc(S.close)}">${ic('x', 22)}</a></div>
+        <a class="hoja-x" href="${esc(cerrar)}" data-cerrar-hoja aria-label="${esc(S.close)}">${ic('x', 22)}</a></div>
       <div class="hoja-scroll">${cuerpo}</div>
     </div>
   </details>`;
-  const hojaBuscar = descubre ? hojaSimple('buscar', S.search, `${formBuscar(true)}
+  // La hoja «Buscar» de la lupa, la misma en Descubre y en Explorar (Iván,
+  // 2026-11-03: Explorar como la app; lo que antes iba en la página, el
+  // buscador, los atajos, «Dónde verlo» y «Grupos y empresas», está aquí).
+  // Con `?buscar=1` sale ya abierta (la lupa sin JavaScript); su ✕ lleva a
+  // la página sin ella.
+  const hojaBuscar = hojaSimple('buscar', S.search, `${formBuscar(true)}
       <div class="busq-sec" role="group" aria-labelledby="busqAtajos"><h3 id="busqAtajos">${esc(S.shortcuts)}</h3>
         <div class="ops">${atajosLupa}</div>
         <p class="hoja-nota hoja-nota-bajo">${esc(S.shortcutsHint)}</p></div>
       <div data-busq-panel></div>
-      ${tiposBusq}`) : '';
+      ${tiposBusq}`, { abierta: e.buscar, cerrar: e.buscar ? link({}) : '#buscar' });
   // «Selecciones» (✨ de la cabecera, en todas las páginas): la hoja vive en
   // Descubre; desde otra página, ✨ trae aquí y la abre. Sin ninguna, lo
   // dice (la cabecera es la misma en todas partes y ✨ siempre está).
@@ -2137,14 +2187,15 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   // En Sitios, el orden va aquí, en la cabecera de la lista, con lo que hace.
   // Sin nada, la pantalla vacía ya lo dice: sin «0 resultados» encima (Iván,
   // 2026-10-29).
-  const resumenN = calendario || vacio ? '' : `<div class="resumen"><h2 class="resumen-n">${esc(negocios ? TSi.count(total) : S.results(total))}</h2>
-    ${ordenSitios && items.length ? ordenSitios : ''}
-    ${hayAlgo && !vacio ? `<a href="${esc(limpia)}" data-limpia-filtros>${esc(S.clear)}</a>` : ''}</div>
+  // Sin recuento («2699 resultados»): la app no lo tiene en Explorar
+  // (docs/GLOSARIO.md, «Qué se busca en Explorar»; Iván, 2026-11-03).
+  const resumenDentro = `${ordenSitios && items.length ? ordenSitios : ''}${hayAlgo && !vacio ? `<a href="${esc(limpia)}" data-limpia-filtros>${esc(S.clear)}</a>` : ''}`;
+  const resumenN = calendario || vacio ? '' : `${resumenDentro ? `<div class="resumen">${resumenDentro}</div>` : ''}
     ${negocios && !sitiosMapa && items.length ? `<p class="resumen-orden">${esc(sort === 'rated' ? S.placesRatedHint : S.placesNearHint)}</p>` : ''}`;
 
   // Lo que se le dice a Google: la página y su lista (como la agenda).
   const jsonLd = !filtrado && items.length && !negocios ? ldScript(listingLd({
-    lang, path: `${base}/`, name: descubre ? S.disc : S.exp, description: descubre ? S.discLead : S.lead, city: '', items,
+    lang, path: `${base}/`, name: descubre ? S.disc : S.exp, description: descubre ? S.discLead : S.lead, city: '', items: calendario && diaParte?.items?.length ? diaParte.items : items,
     migas: [['Klendar', en ? '/en/' : '/'], [descubre ? S.disc : S.exp, `${base}/`]],
   })) : '';
   // «Lo ya visto, al final»: cuenta lo que ves en todas las páginas y, en la
@@ -2250,17 +2301,10 @@ ${GRUPOS_CSS}` : ''}`;
   }
 
   const body = `
-  <div class="exp-cab cab-pagina" id="arriba">
-    <div><h1>${esc(S.exp)}</h1>
-    <p class="muted exp-lead">${esc(S.lead)}</p>
-    <p class="exp-atajo"><a href="${esc(`${partidosBase(lang)}/${zonaDeExplorar(e, lang) ? `?${zonaDeExplorar(e, lang)}` : ''}`)}">${ic('tele', 16)}<span>${esc(KE.t(lang).title)}</span></a>
-      <a href="${esc(`${gruposBase(lang)}/${zonaGrupos(e, lang) ? `?${zonaGrupos(e, lang)}` : ''}`)}">${icGrupos(16)}<span>${esc(KG.t(lang).title)}</span></a>
-      ${sorteosOn ? `<a href="${esc(`${sorteosBase(lang)}/${zonaGrupos(e, lang) ? `?${zonaGrupos(e, lang)}` : ''}`)}">${icSorteo(16)}<span>${esc(KS.t(lang).title)}</span></a>` : ''}</p></div>
-  </div>
-  <div class="que-fila">${que}${vistas}</div>
-  ${buscador}${tiposBusq}
+  <h1 class="sr" id="arriba">${esc(S.exp)}</h1>
+  <div class="que-fila">${que}${acciones}</div>
   ${barra}
-  ${atajosFila}
+  ${hojaBuscar}
   ${invitaCerca}
   ${avisoCerca}
   ${avisoEdad}

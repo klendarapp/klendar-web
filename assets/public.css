@@ -296,7 +296,7 @@ body.con-barra-accion { padding-bottom: 76px; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 /* Las páginas con rejilla de tarjetas o calendario usan más ancho (4
    columnas en una pantalla grande). */
-main.pub:has(.tjs, .calendario, .exp-cab) { max-width: 1240px; }
+main.pub:has(.tjs, .calendario, .que-fila) { max-width: 1240px; }
 
 /* ── Tarjeta de publicación y calendario: assets/tarjeta.css ───────────── */
 
@@ -985,13 +985,6 @@ details.hoja-bloque[open] > summary .ic { transform: rotate(180deg); }
 .atajo:hover { text-decoration: none; border-color: var(--ink-2); }
 .atajo.on { background: var(--ink); color: var(--surface); border-color: var(--ink); }
 .atajo:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
-.atajos-fila { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 16px; }
-.pub .atajos-t { font-size: 13px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); margin-right: 2px; }
-@media (max-width: 640px) {
-  .atajos-fila { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 0 -20px 14px; padding: 2px 20px; }
-  .atajos-fila::-webkit-scrollbar { display: none; }
-  .atajos-fila > * { flex: none; }
-}
 /* ¿Dónde?: «Cerca de mí» | «Una ciudad». */
 .donde-modos { display: flex; gap: 4px; padding: 3px; margin: 4px 6px 8px; border-radius: 999px; background: var(--soft); }
 .donde-modo { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; padding: 6px 12px; border: 0; border-radius: 999px;

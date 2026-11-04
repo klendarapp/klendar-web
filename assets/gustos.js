@@ -335,28 +335,12 @@
     pidePopulares().then(function (pop) { if (abierto()) pinta(pop); });
   }
   campo.addEventListener('focus', abre);
-  // La lupa de la cabecera, desde otra página o desde esta (`#buscar`): el
-  // buscador a la vista y listo para escribir, con su panel.
-  function aLaLupa() {
-    if (fijo || location.hash !== '#buscar') return;
-    try { history.replaceState(history.state, '', location.pathname + location.search); } catch (e) { /* se queda */ }
-    form.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
-    campo.focus({ preventScroll: true });
-  }
-  aLaLupa();
-  window.addEventListener('hashchange', aLaLupa);
-  // En esta misma página, la lupa no recarga nada (ni pierde los filtros).
-  if (!fijo) {
-    document.addEventListener('click', function (e) {
-      var a = e.target instanceof Element ? e.target.closest('header.top [data-abre-hoja="buscar"]') : null;
-      if (!a || e.ctrlKey || e.metaKey || e.shiftKey || e.button > 0) return;
-      e.preventDefault();
-      form.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
-      campo.focus({ preventScroll: true });
-    });
-  }
+  // La lupa (la de la cabecera y la de Explorar) abre la hoja «Buscar»
+  // (/assets/tarjetas.js); desde otra página, Explorar la trae abierta.
   campo.addEventListener('input', function () { if (campo.value.trim()) panel.hidden = true; else abre(); });
   if (hojaLupa) hojaLupa.addEventListener('toggle', function () { if (hojaLupa.open) abre(); });
+  // Ya abierta al llegar (`?buscar=1`, la lupa desde otra página).
+  if (hojaLupa && hojaLupa.open) abre();
   // En la hoja, Escape la cierra (/assets/tarjetas.js).
   if (!fijo) campo.addEventListener('keydown', function (e) { if (e.key === 'Escape') panel.hidden = true; });
   form.addEventListener('submit', function () { anade(campo.value); });

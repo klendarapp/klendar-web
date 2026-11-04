@@ -26,7 +26,12 @@ const OFERTA18 = process.env.OFERTA18 || '';
 mkdirSync(OUT, { recursive: true });
 let fallos = 0;
 const ok = (c, m) => { if (!c) { fallos++; console.log('FALLA:', m); } else console.log('ok:', m); };
-const totalDe = async (page) => Number(((await page.locator('.resumen-n').first().innerText().catch(() => '')) || '').replace(/\D/g, '')) || 0;
+// Cuántas salen: Explorar ya no pinta el recuento (como la app, 3-11-2026);
+// se pregunta como la hoja de filtros (`?contar=1`), con la misma cookie.
+const totalDe = (page) => page.evaluate(async () => {
+  const u = new URL(location.href); u.searchParams.set('contar', '1');
+  return Number((await (await fetch(u)).json()).total) || 0;
+}).catch(() => 0);
 
 for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
   const nav = await tipo.launch();
@@ -44,7 +49,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     // 1–2. «Tengo 18 años o más».
     {
       const { ctx, page, errores } = await nuevo();
-      await page.goto(`${BASE}/explorar/?ciudad=Madrid`);
+      await page.goto(`${BASE}/explorar/?ciudad=Madrid&vista=lista`);
       const aviso = page.locator('[data-edad]');
       ok(await aviso.isVisible() && /solo para mayores de 18/.test(await aviso.innerText()), `${t} sin contestar: la línea de la edad`);
       const antes = await totalDe(page);
@@ -66,7 +71,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     // 3. «Soy menor».
     {
       const { ctx, page } = await nuevo();
-      await page.goto(`${BASE}/explorar/?ciudad=Madrid`);
+      await page.goto(`${BASE}/explorar/?ciudad=Madrid&vista=lista`);
       const antes = await totalDe(page);
       await page.locator('[data-edad-no]').click();
       ok(!(await page.locator('[data-edad]').count()), `${t} «Soy menor»: la línea se va`);
@@ -90,13 +95,14 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
       await ctx.close();
     }
 
-    // 5. «Más cerca».
+    // 5. «Más cerca» (en la lista: el orden de ☰ es de la lista; el
+    // calendario tiene el suyo, «Por hora» / «Más cerca»).
     {
       const { ctx, page } = await nuevo();
-      await page.goto(`${BASE}/explorar/?ciudad=Madrid&orden=cerca`);
+      await page.goto(`${BASE}/explorar/?ciudad=Madrid&orden=cerca&vista=lista`);
       // El orden va en ☰ › «Ordenar por» (Iván, 2026-10-27), no en la fila.
       ok(!(await page.locator('[data-cerca-falta]').count()) && await page.locator('#filtros input[name=orden][value=cerca]').isChecked(), `${t} «Más cerca» con una ciudad: desde su centro, sin pedir nada`);
-      await page.goto(`${BASE}/explorar/?orden=cerca`);
+      await page.goto(`${BASE}/explorar/?orden=cerca&vista=lista`);
       // Un solo aviso a la vez (Iván, 2026-10-28): sin contestar la edad, la
       // ubicación espera y sale al contestar «Soy menor».
       if (await page.locator('[data-edad]').isVisible()) {

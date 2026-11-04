@@ -594,6 +594,21 @@
     abridor = document.querySelector('header.top [data-abre-hoja="' + h + '"]');
     setTimeout(function () { hoja.open = true; }, 0);
   })();
+  // La lupa sin JavaScript lleva a Explorar con la hoja «Buscar» ya abierta
+  // (`?buscar=1`, `?search=1`): con él, se quita de la dirección (al recargar
+  // no vuelve a salir) y, al cerrarla, el foco va a la lupa de la página.
+  (function () {
+    var hoja = document.querySelector('details.hoja-lupa[data-abierta]');
+    if (!(hoja instanceof HTMLDetailsElement)) return;
+    hoja.removeAttribute('data-abierta');
+    try {
+      var u = new URL(location.href);
+      u.searchParams.delete('buscar'); u.searchParams.delete('search');
+      history.replaceState(history.state, '', u.pathname + u.search + u.hash);
+    } catch (x) { /* se queda */ }
+    abridor = document.querySelector('.exp-acciones [data-abre-hoja="' + hoja.id + '"]')
+      || document.querySelector('header.top [data-abre-hoja="' + hoja.id + '"]');
+  })();
   document.addEventListener('toggle', function (e) {
     var d = e.target;
     if (!(d instanceof HTMLDetailsElement) || !d.classList.contains('hoja-lupa')) return;

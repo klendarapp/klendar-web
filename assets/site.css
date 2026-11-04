@@ -168,11 +168,13 @@ body.con-hoja .tabbar { display: none; }
 .phone::after { content: ""; position: absolute; top: 18px; left: 50%; transform: translateX(-50%); width: 92px; height: 26px; border-radius: 999px; background: #0A0A0A; }
 .phone img { width: 100%; height: 100%; object-fit: cover; border-radius: 34px; }
 .float { position: absolute; padding: 10px 14px; border-radius: 16px; background: var(--elevated); border: 1px solid var(--glass-border);
-  box-shadow: var(--shadow); font-weight: 700; font-size: 14px; display: flex; gap: 8px; align-items: center; animation: float 6s ease-in-out infinite; }
+  box-shadow: var(--shadow); font-weight: 700; font-size: 14px; display: flex; gap: 8px; align-items: center;
+  /* Entran una vez y se quedan quietas (revisión del 3-11-2026, 3.8): lo
+     único que se repite sin fin, fuera de una carga, es el punto «en vivo». */
+  animation: mov-sube var(--mov-lento) var(--mov-entra) 200ms both; }
 .float small { display: block; font-weight: 500; color: var(--ink-2); font-size: 12px; }
 .float.a { left: -6px; top: 22%; }
-.float.b { right: -6px; bottom: 26%; animation-delay: -3s; }
-@keyframes float { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-8px) } }
+.float.b { right: -6px; bottom: 26%; animation-delay: 320ms; }
 @media (max-width: 860px) {
   .hero .wrap { grid-template-columns: 1fr; text-align: center; }
   .hero p.lead, .sub { margin-left: auto; margin-right: auto; }
@@ -476,7 +478,8 @@ article p[data-tr^="post:"] + .tr-nota { margin-top: -4px; }
 /* Movimiento reducido: sin animaciones ni desplazamientos suaves (también
    el saltito de los botones al pasar por encima). */
 @media (prefers-reduced-motion: reduce) {
-  .float { animation: none; } html { scroll-behavior: auto; }
+  /* Las dos de la portada, como mucho un fundido. */
+  .float { animation: mov-funde var(--mov-base) linear 200ms both; } html { scroll-behavior: auto; }
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important;
     transition-duration: .01ms !important; scroll-behavior: auto !important; }
   .pill:hover, .pill:active { transform: none; }
@@ -622,9 +625,10 @@ header.top.top-justa .brand { font-size: 0; gap: 0; }
 @media (max-width: 599px) { .cta-botones .pill { flex: 1 1 100%; justify-content: center; } }
 .hero .ciudades { font-weight: 600; margin: 0; }
 /* «Qué hacer hoy en tu ciudad» pasa a ser hasta 5 enlaces al llegar
-   (/assets/live.js): dos líneas reservadas en el móvil para que no empuje
-   lo de debajo (revisión del 3-11-2026, 3.8). */
-@media (max-width: 599px) { .hero .ciudades { min-height: 3.1em; } }
+   (/assets/live.js): dos líneas reservadas para que no empuje lo de debajo
+   (revisión del 3-11-2026, 3.8). En el escritorio, cinco nombres largos
+   también pasan a dos líneas. */
+.hero .ciudades { min-height: 3.1em; }
 .hero .ciudades a { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; margin-right: 10px; }
 .cabecera-seccion { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
 .cabecera-seccion h2 { margin: 0; }

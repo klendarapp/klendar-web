@@ -139,8 +139,13 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
         // instantánea, no es movimiento.
         const raras = an.filter((a) => a.dur > 0.01 && a.props.some((x) => !PERMITIDAS.has(x)));
         ok(raras.length === 0, `${tag} ${ruta}: solo transform y opacidad ${JSON.stringify(raras)}`);
-        const largas = an.filter((a) => a.dur > 300 && !/float/.test(a.nombre));
+        const largas = an.filter((a) => a.dur > 300);
         ok(largas.length === 0, `${tag} ${ruta}: nada pasa de 300 ms ${JSON.stringify(largas)}`);
+        // Sin fin, solo el punto «en vivo» y lo que carga (la aguja, el
+        // brillo del esqueleto): en la portada, las dos notas del móvil
+        // entran una vez y se quedan quietas (revisión del 3-11-2026, 3.8).
+        const sinFin = (await animaciones(page)).filter((a) => a.iter === Infinity && !/respira|gira|brillo/.test(a.nombre));
+        ok(sinFin.length === 0, `${tag} ${ruta}: nada se repite sin fin ${JSON.stringify(sinFin)}`);
         if (ruta === '/descubre/') {
           // La foto de cada tarjeta lleva su nombre de transición (vuela a la
           // ficha donde el navegador tiene View Transitions entre páginas).

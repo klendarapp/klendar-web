@@ -238,7 +238,7 @@ export function siteHeader(lang, esPath = '/', enPath = '/en/', actual = '') {
   <div class="top-acciones">
     <span class="top-iconos">
       <a class="top-icono" href="${descubre}#selecciones" data-abre-hoja="selecciones" aria-label="${T.selecciones}" title="${T.selecciones}">${icono('selecciones')}</a>
-      <a class="top-icono" href="${explorar}#buscar" data-abre-hoja="buscar" aria-label="${T.buscar}" title="${T.buscar}">${icono('buscar')}</a>
+      <a class="top-icono" href="${explorar}?${en ? 'search' : 'buscar'}=1" data-abre-hoja="buscar" aria-label="${T.buscar}" title="${T.buscar}">${icono('buscar')}</a>
       <a class="top-icono top-campana" href="${cuenta}#/notificaciones" data-campana data-n="${T.notificacionesN}" aria-label="${T.notificaciones}" title="${T.notificaciones}" hidden>${icono('campana')}<span class="top-n" aria-hidden="true" hidden></span></a>
     </span>
     <a class="top-negocios" href="${negocios.href}">${negocios.label}</a>

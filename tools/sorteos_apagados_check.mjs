@@ -273,14 +273,20 @@ async function publico(nav, nombre, t, vp) {
   await p.goto(`${OFFP}/sorteos/`);
   await p.screenshot({ path: `${OUT}/publico-sorteos-apagados-${nombre}-${t}.png`, fullPage: true });
   await p.goto(`${OFFP}/explorar/`, { waitUntil: 'load' });
-  ok(await p.locator('a[href^="/sorteos/"]').count() === 0 && !/"sorteos":/.test(await p.content()), `${nombre}/${t} público apagado: Explorar sin «Sorteos»`);
+  await p.click('.exp-acciones [data-abre-hoja="buscar"]');
+  await p.waitForTimeout(800);
+  ok(await p.locator('a[href^="/sorteos/"]').count() === 0 && !/"sorteos":/.test(await p.content()), `${nombre}/${t} público apagado: Explorar sin «Sorteos» (tampoco en la hoja «Buscar»)`);
   const mapa = await (await p.request.get(`${OFFP}/sitemap-negocios.xml`)).text();
   ok(!/\/sorteo\//.test(mapa), `${nombre}/${t} público apagado: el sitemap de negocios sin sorteos`);
 
   let r = await p.goto(`${ONP}/sorteos/`, { waitUntil: 'load' });
   ok(r.status() === 200 && !/Los sorteos no están disponibles/.test(await p.locator('main').innerText()) && /Sorteos/.test(await p.locator('h1').innerText()), `${nombre}/${t} público encendido: /sorteos/ es la lista`);
   await p.goto(`${ONP}/explorar/`, { waitUntil: 'load' });
-  ok(await p.locator('a[href^="/sorteos/"]').count() >= 1, `${nombre}/${t} público encendido: Explorar con «Sorteos»`);
+  // Desde el 3-11-2026 «Sorteos» va en la hoja «Buscar» de la lupa (como
+  // «Dónde verlo» y «Grupos y empresas»), no bajo un título en la página.
+  await p.click('.exp-acciones [data-abre-hoja="buscar"]');
+  await p.waitForTimeout(800);
+  ok(await p.locator('#buscar a[href^="/sorteos/"]').count() >= 1, `${nombre}/${t} público encendido: Explorar con «Sorteos» (en la hoja «Buscar»)`);
   r = await p.goto(`${ONP}/sorteo/${GID}`, { waitUntil: 'load' });
   ok(r.status() === 404 && /Este sorteo no está/.test(await p.locator('main').innerText()), `${nombre}/${t} público encendido: un sorteo que no está, como siempre (404)`);
   ok(errores.length === 0, `${nombre}/${t} público: sin errores de JavaScript (${errores.join(' | ')})`);

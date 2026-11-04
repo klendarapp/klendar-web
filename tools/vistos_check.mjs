@@ -44,7 +44,8 @@ for (const q of CANDIDATAS) {
 }
 if (!UNA) { console.log('FALLA: no hay ninguna lista de una sola página en dev'); process.exit(1); }
 console.log('una página:', UNA);
-const VARIAS = '?ciudad=Madrid&categoria=experiences';
+// En la lista de Planes (Explorar abre en el calendario desde el 3-11-2026).
+const VARIAS = '?ciudad=Madrid&categoria=experiences&vista=lista';
 
 for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
   const nav = await tipo.launch();
@@ -73,7 +74,8 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     await ir(`/explorar/${VARIAS}`);
     const baseLista = await ids('.tjs[data-vistos] > .tj');
     // Cuántas hay en total («124 resultados»).
-    const TOTAL = Number((await page.$eval('.resumen-n', (e) => e.textContent)).replace(/\D/g, ''));
+    // (sin recuento en la página desde el 3-11-2026: como la hoja, `?contar=1`).
+    const TOTAL = await page.evaluate(async () => { const u = new URL(location.href); u.searchParams.set('contar', '1'); return Number((await (await fetch(u)).json()).total) || 0; });
     await page.unroute('**/assets/vistos.js*');
     ok(base.length >= 6 && base.length < 24 && baseLista.length === 24, `${t} la base: ${base.length} en Descubre (una sola página) y 24 en la primera página de la lista`);
     await ir(`/descubre/${UNA}`);

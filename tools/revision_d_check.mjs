@@ -360,9 +360,13 @@ async function explorar(nav, nombre, t, vp) {
   // F2: el calendario conserva «¿Cuándo?» al «Ver resultados».
   await p.goto(`${BASE}/explorar/?cuando=hoy&vista=calendario&${AQUI}`);
   let d = await datosHoja();
-  ok(d.includes('cuando=hoy') && d.includes('vista=calendario'), `${nombre}/${t} calendario: la hoja conserva «¿Cuándo?» (${d.join('&')})`);
+  // (El calendario es la vista de serie desde el 3-11-2026: no va en la
+  // dirección y la hoja vuelve a él sin escribirlo.)
+  ok(d.includes('cuando=hoy') && !d.some((x) => x.startsWith('vista=')), `${nombre}/${t} calendario: la hoja conserva «¿Cuándo?» y el calendario (${d.join('&')})`);
   // F3: Planes → Sitios → Planes.
-  await p.goto(`${BASE}/explorar/?cuando=hoy&precio=gratis&vista=calendario&${AQUI}`);
+  // Explorar abre en el calendario desde el 3-11-2026 (como la app): lo que
+  // se conserva y se recuerda ahora es la lista (solo de la web).
+  await p.goto(`${BASE}/explorar/?cuando=hoy&precio=gratis&vista=lista&${AQUI}`);
   await p.click('nav.que a:nth-child(2)');
   await p.waitForLoadState('load');
   let u = new URL(p.url());
@@ -370,26 +374,26 @@ async function explorar(nav, nombre, t, vp) {
     `${nombre}/${t} Planes → Sitios: ¿Cuándo? y Precio siguen en la dirección (${u.search})`);
   d = await datosHoja();
   ok(d.includes('cuando=hoy') && d.includes('precio=gratis'), `${nombre}/${t} Sitios: la hoja los conserva al «Ver resultados»`);
-  ok(/sitio/.test(await p.locator('.resumen-n').innerText()), `${nombre}/${t} Sitios: los sitios, sin filtrar por lo de Planes`);
+  ok((await p.locator('.sitio-fila').count()) > 0, `${nombre}/${t} Sitios: los sitios, sin filtrar por lo de Planes`);
   await p.click('nav.que a:nth-child(1)');
   await p.waitForLoadState('load');
   u = new URL(p.url());
-  ok(!u.searchParams.get('que') && u.searchParams.get('cuando') === 'hoy' && u.searchParams.get('precio') === 'gratis' && u.searchParams.get('vista') === 'calendario',
-    `${nombre}/${t} Sitios → Planes: vuelven ¿Cuándo?, Precio y el Calendario (${u.search})`);
-  // F4: Explorar recuerda el Calendario.
+  ok(!u.searchParams.get('que') && u.searchParams.get('cuando') === 'hoy' && u.searchParams.get('precio') === 'gratis' && u.searchParams.get('vista') === 'lista',
+    `${nombre}/${t} Sitios → Planes: vuelven ¿Cuándo?, Precio y la Lista (${u.search})`);
+  // F4: Explorar recuerda la Lista.
   await p.goto(`${BASE}/explorar/`);
   // La vuelta a lo último es un `location.replace` del script de la página:
   // se espera a que llegue (en WebKit, a veces después del `load`).
-  await p.waitForURL(/[?&]vista=calendario/, { timeout: 8000 }).catch(() => {});
+  await p.waitForURL(/[?&]vista=lista/, { timeout: 8000 }).catch(() => {});
   u = new URL(p.url());
-  ok(u.searchParams.get('vista') === 'calendario', `${nombre}/${t} /explorar/ sin nada: abre el Calendario, lo último (${u.search})`);
-  // Y vuelve a la lista cuando se elige.
-  await p.click('nav.vistas a.vista:nth-child(2)');
+  ok(u.searchParams.get('vista') === 'lista', `${nombre}/${t} /explorar/ sin nada: abre la Lista, lo último (${u.search})`);
+  // Y vuelve al calendario (el de serie) cuando se elige.
+  await p.click('.exp-acciones a[aria-label="Ver el calendario"]');
   await p.waitForLoadState('load');
   await p.goto(`${BASE}/explorar/`);
   await p.waitForLoadState('load');
   await p.waitForTimeout(500);
-  ok(!new URL(p.url()).searchParams.get('vista'), `${nombre}/${t} tras elegir Lista, /explorar/ abre la lista`);
+  ok(!new URL(p.url()).searchParams.get('vista') && (await p.locator('.calendario').count()) > 0, `${nombre}/${t} tras elegir el calendario, /explorar/ abre el calendario`);
   ok(errores.length === 0, `${nombre}/${t} explorar sin errores JS ${errores.join(' | ')}`);
   await ctx.close();
 }
