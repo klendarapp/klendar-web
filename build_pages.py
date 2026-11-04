@@ -53,6 +53,7 @@ PAGINAS['para-negocios'] = (
 
 <h2>Lo que cuesta</h2>
 <p>Lo <strong>pruebas gratis</strong>: 30 días con todo al darte de alta, sin tarjeta. Después, un solo plan con todo incluido: 19,90 € + IVA al mes por local (24,08 € con IVA), sin límites, sin permanencia y sin comisión por canje. <a href="/precios/">Ver precios</a>.</p>
+<p class="callout"><strong>En la provincia de Málaga: gratis hasta el 31 de marzo de 2027</strong> (te avisamos 7 días y 1 día antes).</p>
 
 <h2>Echa la cuenta</h2>
 <p>Con tus números, no con los nuestros. Es una estimación para ver si sale a cuenta, no una promesa.</p>
@@ -122,6 +123,7 @@ PAGINAS['para-negocios'] = (
 
 <h2>What it costs</h2>
 <p>You <strong>try it free</strong>: 30 days with everything when you register, no card. After that, one plan with everything included: €19.90 + VAT a month per venue (€24.08 incl. VAT), with no limits, no lock-in and no commission per redemption. <a href="/en/pricing/">See pricing</a>.</p>
+<p class="callout"><strong>In the province of Málaga: free until 31 March 2027</strong> (we remind you 7 days and 1 day before).</p>
 
 <h2>Do the maths</h2>
 <p>With your numbers, not ours. It's an estimate to see whether it adds up, not a promise.</p>
@@ -214,7 +216,7 @@ PAGINAS['para-entidades'] = (
 </ul>
 
 <h2>Gratis para siempre</h2>
-<p>Las entidades no pagan cuota: ni prueba que se acabe, ni plan, ni comisión. Tampoco ven nada de lo que es de pago para los negocios. Klendar se paga con el plan de los negocios.</p>
+<p>Las entidades no pagan cuota: ni prueba que se acabe, ni plan, ni comisión. Hoy no ven nada de pago para los negocios y, si algún día hubiera funciones nuevas de pago, serían opcionales. Klendar se paga con el plan de los negocios.</p>
 
 <h2>Cómo darte de alta</h2>
 <ol>
@@ -259,7 +261,7 @@ PAGINAS['para-entidades'] = (
 </ul>
 
 <h2>Free, for good</h2>
-<p>Organisations don't pay a fee: no trial that runs out, no plan, no commission. Nor do they see anything that's paid for businesses. Klendar is paid for by the business plan.</p>
+<p>Organisations don't pay a fee: no trial that runs out, no plan, no commission. Today they don't see anything that's paid for businesses and, if paid features are ever added, they will be optional. Klendar is paid for by the business plan.</p>
 
 <h2>How to register</h2>
 <ol>
@@ -356,8 +358,10 @@ PAGINAS['precios'] = (
     f'''
 <p class="lead">Un solo plan con todo incluido, sin límites y sin comisiones por canje. Lo que cobras en tu local es tuyo entero.</p>
 <p class="callout"><strong>Gratis de lanzamiento.</strong> Mientras Klendar arranca en una provincia, podemos dar a los negocios de esa provincia más tiempo gratis: un mapa vacío no le sirve ni a los negocios ni a la gente. El día en que termina te lo decimos con al menos un mes de antelación, y te lo recordamos 7 días y 1 día antes.</p>
+<p class="callout"><strong>En la provincia de Málaga: gratis hasta el 31 de marzo de 2027</strong> (te avisamos 7 días y 1 día antes).</p>
 {tabla_planes('es')}
 <p class="note">Precio por local, IVA no incluido: 19,90 € + 21 % de IVA son 24,08 € al mes.</p>
+<p>¿Ayuntamiento, asociación u ONG? <a href="/para-entidades/">Gratis para siempre</a>.</p>
 
 <h2>¿Varios locales?</h2>
 <p>El precio es <strong>por local</strong>, porque cada uno tiene su público, sus códigos y sus números. El primero paga el precio entero y, a partir del segundo, cada local más paga menos:</p>
@@ -388,8 +392,10 @@ PAGINAS['precios'] = (
     f'''
 <p class="lead">One plan with everything included, no limits and no commission per redemption. What you charge at your venue is yours.</p>
 <p class="callout"><strong>Launch, free.</strong> While Klendar is starting in a province, we may give businesses in that province more free time: an empty map is no use to businesses or to people. We tell you the day it ends at least a month in advance, and remind you 7 days and 1 day before.</p>
+<p class="callout"><strong>In the province of Málaga: free until 31 March 2027</strong> (we remind you 7 days and 1 day before).</p>
 {tabla_planes('en')}
 <p class="note">Price per venue, VAT not included: €19.90 + 21% VAT comes to €24.08 a month.</p>
+<p>Council, association or NGO? <a href="/en/for-organisations/">Free, for good</a>.</p>
 
 <h2>Several venues?</h2>
 <p>The price is <strong>per venue</strong>, because each one has its own audience, its own codes and its own numbers. The first venue pays the full price and, from the second one on, each extra venue pays less:</p>

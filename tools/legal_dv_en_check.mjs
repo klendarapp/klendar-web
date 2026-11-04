@@ -46,11 +46,11 @@ const PAGINAS = [
     /a competition\. For the launch free period/,
   ]],
   ['/terminos/', 'Última actualización: 4 de noviembre de 2026', [
-    /Si el negocio valida tu código por error, puede deshacerlo en los 10 minutos siguientes \(una vez por código\): tu código vuelve a valer, salvo que la oferta ya haya terminado, y se quitan el sello o el cupón que te hubiera dado ese canje\./,
+    /Si el negocio valida tu código por error, puede deshacerlo en los 10 minutos siguientes \(una vez por código\): tu código vuelve a valer, salvo que la oferta ya haya terminado, y se quitan el sello o el cupón que te hubiera dado ese canje, si aún no los has usado\./,
     /4 de noviembre de 2026: Ofertas y canjes \(apartado 3\): si el negocio valida tu código por error, puede deshacerlo en los 10 minutos siguientes, una vez por código/,
   ], []],
   ['/en/terms/', 'Last updated: 4 November 2026', [
-    /If the business validates your code by mistake, it can undo it within the next 10 minutes \(once per code\): your code is valid again, unless the offer has already ended, and any stamp or coupon that redemption gave you is removed\./,
+    /If the business validates your code by mistake, it can undo it within the next 10 minutes \(once per code\): your code is valid again, unless the offer has already ended, and any stamp or coupon that redemption gave you is removed, if you haven't used it yet\./,
     /4 November 2026: Deals and redemptions \(section 3\): if the business validates your code by mistake, it can undo it within the next 10 minutes, once per code/,
   ], []],
   ['/negocios/', 'Última actualización: 4 de noviembre de 2026 · Versión 2026-11-04', [

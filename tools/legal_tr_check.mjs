@@ -46,11 +46,11 @@ const PAGINAS = [
     /without storing it, the approximate city and area of your connection when you haven't shared your location/,
     /28 October 2026: Automatic translation: what is translated/,
   ], [/when the service is available/]],
-  ['/cookies/', 'Última actualización: 3 de noviembre de 2026', [
+  ['/cookies/', 'Última actualización: 4 de noviembre de 2026', [
     /La zona aproximada de tu conexión \(si no nos das tu ubicación\) no se guarda en tu navegador ni en ningún sitio: se usa solo para hacer la página que pides\./,
     /28 de octubre de 2026: La zona aproximada de tu conexión/,
   ], []],
-  ['/en/cookies/', 'Last updated: 3 November 2026', [
+  ['/en/cookies/', 'Last updated: 4 November 2026', [
     /The approximate area of your connection \(if you don't share your location\) isn't stored in your browser or anywhere else: it's only used to build the page you request\./,
   ], []],
   ['/terminos/', 'Última actualización: 4 de noviembre de 2026', [

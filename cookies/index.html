@@ -111,7 +111,7 @@
 <ul>
   <li><strong>Mapbox</strong>: los mapas de Explorar, del panel y de «Pedir un local», y la librería que los dibuja. Al cargar un mapa, Mapbox recibe el aviso de «mapa cargado» con el que factura.</li>
 </ul>
-<p><strong>Cloudflare Turnstile</strong>: cuando está activada, la comprobación anti-robots al crear la cuenta, entrar, pedir un código o recuperar la contraseña, y en lo que se manda sin cuenta (denunciar, «Avísame cuando llegue»). Se carga solo al abrir esas pantallas, no en el resto de la web; Cloudflare recibe tu dirección IP y datos técnicos del navegador para distinguir a una persona de un programa, y puede guardar datos técnicos en tu navegador (dentro de su propio marco, en challenges.cloudflare.com) solo para esa comprobación. Es estrictamente necesario para la seguridad del servicio, no se usa para publicidad ni para seguirte entre sitios y no pide tu consentimiento. En la app, la misma comprobación se hace en una pequeña ventana con klendar.app/captcha/.</p>
+<p><strong>Cloudflare Turnstile</strong>: cuando está activada, la comprobación anti-robots al crear la cuenta, entrar, pedir un código o recuperar la contraseña, y en lo que se manda sin cuenta (denunciar, «Avísame cuando llegue»). Se carga solo al abrir esas pantallas, no en el resto de la web; Cloudflare recibe tu dirección IP y datos técnicos del navegador para distinguir a una persona de un programa, y puede guardar datos técnicos en tu navegador (dentro de su propio marco, en challenges.cloudflare.com) solo para esa comprobación. Es estrictamente necesario para la seguridad del servicio, no se usa para publicidad ni para seguirte entre sitios y no pide tu consentimiento. En la app, la misma comprobación se hace en una vista web de klendar.app/captcha/ que se prepara al abrir esas pantallas y solo se ve si hay que marcar la casilla.</p>
 <p>Las fuentes, los iconos y las librerías (también la que conecta «Tu cuenta», el panel y la administración con nuestra base de datos) se sirven desde klendar.app, sin pasar por Google Fonts ni por otros servicios. La única excepción es la librería de los mapas (Mapbox GL JS), que tu navegador descarga de api.mapbox.com solo cuando abres un mapa.</p>
 <h2>Cómo borrarlo</h2>
 <p>Al cerrar sesión se borran la sesión, la copia de tus códigos, tus gustos, lo del panel y la cookie <code>klendar_18</code>. Todo lo demás lo puedes borrar desde la configuración de tu navegador («Borrar datos de navegación» o «Datos de sitios»).</p>
@@ -120,6 +120,7 @@
 
 <h2 class="cambios" id="historial">Historial de cambios</h2>
 <ul>
+  <li><strong>4 de noviembre de 2026</strong>: En la app, la comprobación anti-robots se hace en una vista web de klendar.app/captcha/ que se prepara al abrir esas pantallas y solo se ve si hay que marcar la casilla.</li>
   <li><strong>4 de noviembre de 2026</strong>: Cloudflare Turnstile: cuándo se carga y qué puede guardar en tu navegador para la comprobación anti-robots.</li>
   <li><strong>3 de noviembre de 2026</strong>: Dos claves de sesión más, que se borran al cerrar la pestaña: klendar.sorteosWeb (si los sorteos están encendidos) y klendar.tab (la pestaña de la barra de abajo de la que vienes).</li>
   <li><strong>2 de noviembre de 2026</strong>: Una clave más: klendar.vistos (lo que ya has visto en Descubre y Explorar, 7 días; se apaga en Ajustes › Lo que ves).</li>
