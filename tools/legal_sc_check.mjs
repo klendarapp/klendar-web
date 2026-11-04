@@ -12,7 +12,10 @@
 //     de «un equipo, un deportista o una competición»; aclaración sin versión
 //     nueva (la cabecera sigue en 2026-11-03-b y la tabla de versiones no
 //     cambia) y su línea del 4-11 en el historial.
-//  4. Sin desplazamiento horizontal ni errores de JavaScript.
+//  4. Privacidad (ES y EN), fila «Cuenta de negocio» (aprobado por Iván el
+//     4-11, después de SC): «Poner siempre» un equipo, un deportista o una
+//     competición; su línea del 4-11 en el historial.
+//  5. Sin desplazamiento horizontal ni errores de JavaScript.
 //
 // Chromium y WebKit, móvil (390 × 844) y escritorio (1280 × 800).
 //
@@ -35,7 +38,10 @@ const PAGINAS = [
     /Hasta que cambies de correo \(al cambiarlo, se borra la marca de la dirección anterior\), nos digas que ya funciona o elimines tu cuenta\. Si la dirección no es de ninguna cuenta de Klendar \(por ejemplo, si denuncias sin cuenta, te invitan a un equipo o pides «Avísame cuando Klendar llegue» sin cuenta\), 12 meses desde el último correo que nos devolvió o que se marcó como spam\. El registro de administración, 2 años/,
     /4 de noviembre de 2026: En «Equipos y deportistas que sigues» también se pueden seguir competiciones enteras \(como la Fórmula 1\) y deportistas de cualquier deporte; te avisamos antes de cada partido, carrera o velada\. No cambia qué datos tratamos ni para qué\./,
     /4 de noviembre de 2026: La fila «Correos que no llegan y cambio de correo» dice cuánto guardamos la marca de una dirección que no es de ninguna cuenta \(12 meses desde el último rebote o queja\)/,
+    /y, en «Dónde verlo», quién del equipo puso «Poner siempre» un equipo, un deportista o una competición\. Para el «Gratis de lanzamiento»/,
+    /4 de noviembre de 2026: La fila «Cuenta de negocio» nombra también a los deportistas en «Poner siempre» de «Dónde verlo»: un equipo, un deportista o una competición\. No cambia qué datos tratamos ni para qué\./,
   ], [
+    /puso «Poner siempre» un equipo o una competición\. Para/,
     /Los equipos o participantes que sigues/,
     /un partido de tu equipo con los bares/,
     /quién sigue a qué equipo/,
@@ -49,7 +55,10 @@ const PAGINAS = [
     /Until you change your email \(when you do, the mark on the previous address is deleted\), tell us it works again or delete your account\. If the address isn't linked to any Klendar account \(for example, if you report something without an account, you're invited to a team or you ask ‘Let me know when Klendar arrives’ without an account\), 12 months from the last email that bounced or was marked as spam\. The admin log, 2 years/,
     /4 November 2026: In “Teams and athletes you follow” you can now also follow whole competitions \(such as Formula 1\) and athletes from any sport; we let you know before each match, race or fight night\. What data we process and why doesn't change\./,
     /4 November 2026: The “Emails that bounce and changing your email” row now says how long we keep the mark on an address that isn't linked to any account \(12 months from the last bounce or complaint\)/,
+    /and, in “Where to watch”, which team member set “Always show” for a team, an athlete or a competition\. For the launch free period/,
+    /4 November 2026: The “Business account” row now also names athletes in “Always show” in “Where to watch”: a team, an athlete or a competition\. What data we process and why doesn't change\./,
   ], [
+    /set “Always show” for a team or a competition\. For/,
     /The teams or competitors you follow/,
     /before your team's match/,
     /who follows which team/,

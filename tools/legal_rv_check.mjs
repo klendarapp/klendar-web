@@ -32,14 +32,14 @@ const PAGINAS = [
     /3 November 2026: Two more session keys/,
   ], []],
   ['/privacidad/', 'Última actualización: 4 de noviembre de 2026', [
-    /las que oculta, con el motivo; y, en «Dónde verlo», quién del equipo puso «Poner siempre» un equipo o una competición\. Para el «Gratis de lanzamiento», la provincia del local, que se calcula por su punto en el mapa/,
+    /las que oculta, con el motivo; y, en «Dónde verlo», quién del equipo puso «Poner siempre» un equipo, un deportista o una competición\. Para el «Gratis de lanzamiento», la provincia del local, que se calcula por su punto en el mapa/,
     /habéis ido juntos se apaga en Ajustes → Privacidad y datos; las invitaciones/,
     /3 de noviembre de 2026: La fila «Cuenta de negocio» cuenta también/,
   ], [
     /se apaga en Ajustes → Privacidad;/,
   ]],
   ['/en/privacy/', 'Last updated: 4 November 2026', [
-    /the ones it hides, with the reason; and, in “Where to watch”, which team member set “Always show” for a team or a competition\. For the launch free period, the province of the venue, worked out from its point on the map/,
+    /the ones it hides, with the reason; and, in “Where to watch”, which team member set “Always show” for a team, an athlete or a competition\. For the launch free period, the province of the venue, worked out from its point on the map/,
     /can be turned off in Settings → Privacy and data; invitations/,
     /3 November 2026: The “Business account” row also covers/,
   ], [
