@@ -41,6 +41,7 @@ export const FOOT_PRODUCT = [
   { es: 'Explorar', en: 'Explore', hrefEs: '/explorar/', hrefEn: '/en/explore/' },
   { es: 'Agenda local', en: "What's on", hrefEs: '/agenda/', hrefEn: '/en/whats-on/' },
   { es: 'Para negocios', en: 'For businesses', hrefEs: '/para-negocios/', hrefEn: '/en/for-business/' },
+  { es: 'Para ayuntamientos y asociaciones', en: 'For councils and associations', hrefEs: '/para-entidades/', hrefEn: '/en/for-organisations/' },
   { es: 'Precios', en: 'Pricing', hrefEs: '/precios/', hrefEn: '/en/pricing/' },
   { es: 'Tu cuenta', en: 'Your account', hrefEs: '/app/', hrefEn: '/app/?lang=en' },
   { es: 'Acceso para negocios', en: 'Business login', hrefEs: '/panel/', hrefEn: '/panel/' },

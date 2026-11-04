@@ -272,7 +272,7 @@ async function entAlta(v, param) {
   for (let n = 1; n < paso; n++) if (entPasoIncompleto(n)) { location.hash = `#/alta/entidad/${n}`; return; }
 
   const cuerpo = {
-    1: () => `<div class="help full">Comprobamos que representas a la entidad antes de hacerla pública (normalmente en 24–48 h); hasta entonces no se puede publicar. Hace falta tener 18 años. De momento, las entidades no pagan cuota.</div>
+    1: () => `<div class="help full">Comprobamos que representas a la entidad antes de hacerla pública (normalmente en 24–48 h); hasta entonces no se puede publicar. Hace falta tener 18 años. Las entidades no pagan cuota, nunca.</div>
       ${entHtmlSobre(A)}`,
     2: () => entHtmlZona(A),
     3: () => `${entHtmlPersona(A)}

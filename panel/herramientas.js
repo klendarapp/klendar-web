@@ -267,6 +267,7 @@ PAGES.herramientas = async (v) => {
   // Sin local (organizador o entidad): fuera lo que necesita un local.
   const ent = esEntidad();
   const local = !esOrganizador() && !ent;
+  const calT = ent && typeof calTarjetaHerramienta === 'function' ? await calTarjetaHerramienta() : '';
   const onOff = (x) => (x ? bi('Activado', 'On') : bi('Apagado', 'Off'));
   const sinPreparar = bi('Sin preparar', 'Not set up');
   const configurar = bi('Configurar', 'Set up');
@@ -326,6 +327,8 @@ PAGES.herramientas = async (v) => {
       on: reglas > 0, detalle: series ? herrPl(series, ['1 serie', 'series'], ['1 series', 'series']) : '',
       botones: [[abrir, '#/series']],
     }),
+    // «Conecta tu agenda»: solo entidades (panel/agenda.js).
+    calT,
     local ? herrT({
       grupo: 'local', usa: herrSi(o, 'crowd', 'enabled'),
       icon: 'people', titulo: bi('¿Hay sitio ahora?', 'Room right now?'),

@@ -1562,7 +1562,7 @@ const I18N = makeI18N({
     "Un bar, un restaurante, una tienda, una sala… o fiestas y eventos sin local fijo.": "A bar, restaurant, shop, venue… or parties and events without a fixed venue.",
     "Un ayuntamiento, asociación u ONG": "A council, association or NGO",
     "Ayuntamiento, junta de distrito, asociación de comerciantes o de vecinos, ONG u otra entidad sin ánimo de lucro. Publicáis eventos y campañas; antes comprobamos quiénes sois.": "Council, district council, traders' or residents' association, NGO or another non-profit. You publish events and campaigns; we check who you are first.",
-    "Comprobamos que representas a la entidad antes de hacerla pública (normalmente en 24–48 h); hasta entonces no se puede publicar. Hace falta tener 18 años. De momento, las entidades no pagan cuota.": "We check that you represent the organisation before it goes public (usually within 24–48 h); until then you can't publish. You must be 18 or over. For now, organisations don't pay a fee.",
+    "Comprobamos que representas a la entidad antes de hacerla pública (normalmente en 24–48 h); hasta entonces no se puede publicar. Hace falta tener 18 años. Las entidades no pagan cuota, nunca.": "We check that you represent the organisation before it goes public (usually within 24–48 h); until then you can't publish. You must be 18 or over. Organisations never pay a fee.",
     "Paso {n} de 3": "Step {n} of 3",
     "La entidad": "The organisation",
     "Zona": "Area",

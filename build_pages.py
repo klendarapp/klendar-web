@@ -98,6 +98,7 @@ PAGINAS['para-negocios'] = (
   <a class="pill ghost" href="/panel/">Entrar al panel</a>
   <a class="pill ghost" href="/precios/">Ver precios</a>
 </p>
+<p>¿Eres un ayuntamiento, una junta de distrito, una asociación o una ONG? Para ti Klendar es gratis para siempre: <a href="/para-entidades/">Klendar para ayuntamientos y asociaciones</a>.</p>
 <p class="note">Kit para tu local: <a href="/assets/kit/klendar-guia-negocios.pdf">guía de 1 página (PDF)</a> · <a href="/assets/kit/klendar-cartel.pdf">cartel con QR (PDF)</a>. Lo legal, en las <a href="/negocios/">condiciones para negocios</a>.</p>
 ''',
     '''
@@ -166,7 +167,129 @@ PAGINAS['para-negocios'] = (
   <a class="pill ghost" href="/panel/">Go to the dashboard</a>
   <a class="pill ghost" href="/en/pricing/">See pricing</a>
 </p>
+<p>Are you a council, a district council, an association or an NGO? For you, Klendar is free for good: <a href="/en/for-organisations/">Klendar for councils and associations</a>.</p>
 <p class="note">Kit for your venue (Spanish): <a href="/assets/kit/klendar-guia-negocios.pdf">one-page guide (PDF)</a> · <a href="/assets/kit/klendar-cartel.pdf">poster with QR (PDF)</a>. The legal part is in the <a href="/en/business-terms/">business terms</a>.</p>
+''',
+)
+
+
+# ── Para ayuntamientos y asociaciones ───────────────────────────────────────
+# Las cuentas de entidad (migraciones 20261130100000 y 20261219100000 de la
+# app) y «Conecta tu agenda» (20261260100400). Gratis para siempre: decisión de
+# Iván del 3–4-11-2026. «Conecta tu agenda» está tras el interruptor
+# `app_config.entity_calendar.enabled` hasta que se aprueben sus textos legales
+# (docs/LEGAL_PENDIENTE_2026-10.md, «EN»): mientras, aquí sale como «Muy
+# pronto». El día que se encienda en prod, AGENDA_CONECTADA = True y
+# `python build_pages.py`.
+AGENDA_CONECTADA = False
+
+_PRONTO = {
+    'es': '' if AGENDA_CONECTADA else ' <span style="display:inline-block;vertical-align:middle;margin-left:6px;padding:3px 9px;border-radius:999px;background:var(--soft);color:var(--ink);font-weight:800;font-size:12px">Muy pronto</span>',
+    'en': '' if AGENDA_CONECTADA else ' <span style="display:inline-block;vertical-align:middle;margin-left:6px;padding:3px 9px;border-radius:999px;background:var(--soft);color:var(--ink);font-weight:800;font-size:12px">Coming soon</span>',
+}
+_AGENDA_DONDE = {
+    'es': ('En «Mi negocio › Más herramientas › Conecta tu agenda», en la app o en el <a href="/panel/">panel web</a>.'
+           if AGENDA_CONECTADA else
+           'Estará en «Mi negocio › Más herramientas › Conecta tu agenda», en la app y en el panel web. Mientras tanto, tus eventos se publican a mano en un minuto.'),
+    'en': ('In “My business › More tools › Connect your calendar”, in the app or on the <a href="/panel/">web dashboard</a>.'
+           if AGENDA_CONECTADA else
+           "It will be in “My business › More tools › Connect your calendar”, in the app and on the web dashboard. Until then, you can publish your events by hand in a minute."),
+}
+
+PAGINAS['para-entidades'] = (
+    'for-organisations',
+    'Klendar para ayuntamientos y asociaciones', 'Klendar for councils and associations',
+    'Ayuntamientos, juntas de distrito, asociaciones y ONG publican sus actividades en Klendar y las ve la gente de alrededor. Gratis para siempre.',
+    'Councils, district councils, associations and NGOs publish their activities on Klendar and people nearby see them. Free, for good.',
+    f'''
+<p class="lead">La fiesta del barrio, el mercadillo solidario, la campaña de comercio local o el taller de la biblioteca: Klendar los enseña a quien está cerca y busca qué hacer. Para un ayuntamiento, una junta de distrito, una asociación o una ONG es <strong>gratis para siempre</strong>.</p>
+
+<h2>Qué es Klendar para una entidad</h2>
+<ul>
+  <li><strong>Tus actividades, donde la gente mira.</strong> Lo que publicas sale en Descubre, en Explorar, en el mapa y en la agenda de tu ciudad, y en la ficha de tu entidad. Hay un filtro, «Agenda pública», para ver solo lo de ayuntamientos, asociaciones y ONG.</li>
+  <li><strong>Con tu sello.</strong> Tu ficha y tus publicaciones llevan el sello de tu tipo de entidad (Ayuntamiento, Junta de distrito, Asociación de comerciantes, Asociación vecinal, ONG o Entidad), para que se sepa quién lo organiza.</li>
+  <li><strong>Avisos sin agobiar.</strong> Quien te tiene en favoritos recibe un aviso de lo nuevo que publicas, como mucho uno al día.</li>
+  <li><strong>Lo que se repite, solo.</strong> En «Series y repeticiones», el mercadillo de cada domingo o el taller de los martes se publican solos.</li>
+  <li><strong>Tu equipo y tus cifras.</strong> Puedes dar acceso a otras personas de la entidad y ver cuánta gente ve cada publicación.</li>
+</ul>
+
+<h2>Gratis para siempre</h2>
+<p>Las entidades no pagan cuota: ni prueba que se acabe, ni plan, ni comisión. Tampoco ven nada de lo que es de pago para los negocios. Klendar se paga con el plan de los negocios.</p>
+
+<h2>Cómo darte de alta</h2>
+<ol>
+  <li>En la app o en el <a href="/panel/">panel web</a>, al empezar el alta elige <strong>«Un ayuntamiento, asociación u ONG»</strong>.</li>
+  <li>Cuéntanos qué entidad es: el tipo, su nombre oficial, su CIF, su web oficial y su zona (el punto en el mapa y el municipio).</li>
+  <li>Dinos quién la da de alta (tu nombre y tu cargo) y sube un <strong>documento que lo acredite</strong>: tu nombramiento, un certificado de la secretaría, el acta de la junta o la inscripción en el registro de asociaciones, por ejemplo.</li>
+  <li>Lo comprobamos y te avisamos. Hasta entonces la entidad no publica. El documento solo lo ve el equipo de Klendar y se borra a los 6 meses de decidir.</li>
+</ol>
+<p>¿Ya estás en Klendar como negocio? Pídelo desde tu ficha: «Tu ficha › Cuenta de entidad».</p>
+
+<h2>Qué puedes publicar</h2>
+<p>Lo mismo que un negocio: <strong>eventos</strong> con fecha (con reserva de plaza si la quieres) y <strong>novedades</strong> en tu ficha. Solo actividades abiertas al público o de interés para el barrio o la ciudad: fiestas, mercadillos, campañas de comercio local, actividades culturales, deportivas o solidarias. No vale la propaganda electoral ni de partido, ni la publicidad institucional que destaque logros de gestión en periodo electoral. Todo pasa por las mismas <a href="/normas/">normas de la comunidad</a> que cualquier publicación.</p>
+
+<h2>Conecta tu agenda{_PRONTO['es']}</h2>
+<p>Si tu entidad ya tiene un calendario en su web (Google Calendar, Outlook, la agenda de WordPress…), no hace falta escribir cada evento dos veces: pegas la dirección iCal o ICS del calendario y sus eventos entran solos en Klendar una vez al día.</p>
+<ul>
+  <li><strong>Lo que cambias allí, cambia aquí.</strong> Si un evento se mueve o se borra en tu calendario, se mueve o se borra en Klendar.</li>
+  <li><strong>Lo que tocas en Klendar, se respeta.</strong> Si editas un evento en Klendar, deja de actualizarse desde el calendario; si lo borras, no vuelve.</li>
+  <li><strong>Solo lo que viene.</strong> Los eventos de los próximos 90 días (hasta 300 por agenda). Lo que se repite entra una vez, con su próxima fecha. Los privados y los cancelados no entran.</li>
+  <li><strong>Sin lugar, en tu dirección.</strong> Un evento sin lugar sale en la dirección de la entidad. Uno con un lugar que no sabemos situar en el mapa entra como borrador para que lo sitúes tú.</li>
+  <li><strong>Con las mismas normas.</strong> Lo que entra sigue las mismas normas que lo que publicas a mano.</li>
+</ul>
+<p>{_AGENDA_DONDE['es']}</p>
+
+<h2>Empezar</h2>
+<p class="acciones" style="margin-top:18px">
+  <a class="pill accent" href="/panel/#/alta">Dar de alta una entidad</a>
+  <a class="pill ghost" href="mailto:info@klendar.app?subject=Klendar%20para%20mi%20entidad">Escríbenos</a>
+</p>
+<p class="note">Lo legal, en las <a href="/negocios/">condiciones para negocios</a> (apartado 3 bis, «Cuentas de entidad»). ¿Eres un negocio? Mira <a href="/para-negocios/">Klendar para negocios</a>.</p>
+''',
+    f'''
+<p class="lead">The neighbourhood festival, the charity market, the local shopping campaign or the library workshop: Klendar shows them to people nearby who are looking for something to do. For a council, a district council, an association or an NGO it is <strong>free, for good</strong>.</p>
+
+<h2>What Klendar is for an organisation</h2>
+<ul>
+  <li><strong>Your activities, where people look.</strong> What you publish shows in Discover, Explore, the map and your city's agenda, and on your organisation's page. There's a “Public listings” filter to see only what councils, associations and NGOs publish.</li>
+  <li><strong>With your badge.</strong> Your page and your publications carry the badge for your type of organisation (Council, District council, Traders' association, Residents' association, NGO or Organisation), so people know who's behind it.</li>
+  <li><strong>Notifications without overdoing it.</strong> People who have you in their favourites get a notification about what you publish, one a day at most.</li>
+  <li><strong>Repeats, on their own.</strong> In “Series and repeats”, the Sunday market or the Tuesday workshop publish themselves.</li>
+  <li><strong>Your team and your numbers.</strong> You can give other people at the organisation access and see how many people view each publication.</li>
+</ul>
+
+<h2>Free, for good</h2>
+<p>Organisations don't pay a fee: no trial that runs out, no plan, no commission. Nor do they see anything that's paid for businesses. Klendar is paid for by the business plan.</p>
+
+<h2>How to register</h2>
+<ol>
+  <li>In the app or on the <a href="/panel/">web dashboard</a>, when you start registering choose <strong>“A council, association or NGO”</strong>.</li>
+  <li>Tell us which organisation it is: its type, official name, tax ID (CIF), official website and area (the point on the map and the town).</li>
+  <li>Tell us who is registering it (your name and your role) and upload a <strong>supporting document</strong>: your appointment, a certificate from the secretary, the board minutes or the entry in the register of associations, for example.</li>
+  <li>We check it and let you know. Until then the organisation can't publish. Only the Klendar team sees the document, and it's deleted 6 months after we decide.</li>
+</ol>
+<p>Already on Klendar as a business? Ask for it from your page: “Your page › Organisation account”.</p>
+
+<h2>What you can publish</h2>
+<p>The same as a business: <strong>events</strong> with a date (with place booking if you want it) and <strong>updates</strong> on your page. Only activities open to the public or of interest to the neighbourhood or city: festivities, street markets, local shopping campaigns, cultural, sports or charity activities. No electoral or party propaganda, and no institutional advertising highlighting achievements in office during election periods. Everything follows the same <a href="/en/community-guidelines/">community guidelines</a> as any publication.</p>
+
+<h2>Connect your calendar{_PRONTO['en']}</h2>
+<p>If your organisation already has a calendar on its website (Google Calendar, Outlook, a WordPress events calendar…), there's no need to type every event twice: you paste the calendar's iCal or ICS address and its events come into Klendar on their own once a day.</p>
+<ul>
+  <li><strong>What you change there changes here.</strong> If an event moves or is deleted in your calendar, it moves or is deleted on Klendar.</li>
+  <li><strong>What you touch on Klendar is respected.</strong> If you edit an event on Klendar, it stops updating from the calendar; if you delete it, it doesn't come back.</li>
+  <li><strong>Only what's coming up.</strong> Events in the next 90 days (up to 300 per calendar). Repeating events come in once, with their next date. Private and cancelled ones don't come in.</li>
+  <li><strong>No place, your address.</strong> An event without a place shows at the organisation's address. One with a place we can't put on the map comes in as a draft for you to place.</li>
+  <li><strong>Same rules.</strong> What comes in follows the same rules as what you publish by hand.</li>
+</ul>
+<p>{_AGENDA_DONDE['en']}</p>
+
+<h2>Getting started</h2>
+<p class="acciones" style="margin-top:18px">
+  <a class="pill accent" href="/panel/?lang=en#/alta">Register an organisation</a>
+  <a class="pill ghost" href="mailto:info@klendar.app?subject=Klendar%20for%20my%20organisation">Email us</a>
+</p>
+<p class="note">The legal part is in the <a href="/en/business-terms/">business terms</a> (section 3a, “Organisation accounts”). Are you a business? See <a href="/en/for-business/">Klendar for businesses</a>.</p>
 ''',
 )
 
