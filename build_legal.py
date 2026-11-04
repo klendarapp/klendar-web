@@ -1078,6 +1078,88 @@ def fila_telefono():
         'en': f'<tr><td>Log in with your phone</td><td>Phone number and the code we text you</td><td>Identify you when you log in without a password; the text message is sent by {prov}</td><td>Performance of a contract</td><td>The number, while the account exists; the code expires after an hour</td></tr>\n',
     }
 
+
+# ════════════════════════════════════════════════════════════════════════════
+# ANTI-ROBOTS (CLOUDFLARE TURNSTILE): textos D29–D31, aprobados por Iván el
+# 14-10-2026 con las correcciones de «⚠ revisar» (docs/LEGAL_PENDIENTE_2026-10.md,
+# lote D; docs/abogado/04_PENDIENTE_DE_PUBLICAR.md §2). Se publican el día que
+# se enciende Turnstile (docs/RUNBOOK.md §0d y «Pasar la web a prod»).
+#
+# Mientras TURNSTILE_DESDE sea None salen los textos de hoy. Ese día se pone
+# la fecha (lo hace `python tool/pasar_a_prod.py web` si env/prod.json tiene
+# TURNSTILE_SITE_KEY) y se regenera: cambian la privacidad (Cloudflare en
+# «Encargados» y la fila «Comprobación anti-robots») y las cookies, cada una
+# con esa fecha y su línea en el historial. VERSION no se sube (informativo).
+#
+# SERVIDORES_DESDE es lo mismo para SERVIDORES = 'irlanda' (el día del paso
+# a producción): la fecha de la privacidad y su línea en el historial.
+# ════════════════════════════════════════════════════════════════════════════
+TURNSTILE_DESDE = None                   # p. ej. {'es': '5 de noviembre de 2026', 'en': '5 November 2026'}
+SERVIDORES_DESDE = None                  # ídem, con SERVIDORES = 'irlanda'
+
+
+def textos_turnstile():
+    if not TURNSTILE_DESDE:
+        return {
+            'es': {'cloudflare': 'y, cuando está activada, hace la comprobación anti-robots (Turnstile) al entrar y al denunciar sin cuenta',
+                   'fila': '',
+                   'intro': '<p>Reciben tu dirección IP, como cualquier web que visitas, y no guardan cookies:</p>\n',
+                   'li': '  <li><strong>Cloudflare Turnstile</strong>: cuando está activada, la comprobación anti-robots al entrar y al denunciar sin cuenta.</li>\n',
+                   'p': ''},
+            'en': {'cloudflare': 'and, when enabled, runs the anti-bot check (Turnstile) when you log in and when you report without an account',
+                   'fila': '',
+                   'intro': '<p>They receive your IP address, like any website you visit, and set no cookies:</p>\n',
+                   'li': '  <li><strong>Cloudflare Turnstile</strong>: when enabled, the anti-bot check when you log in and when you report without an account.</li>\n',
+                   'p': ''},
+        }
+    return {
+        'es': {
+            'cloudflare': 'y, cuando está activada, hace la comprobación anti-robots (Turnstile) al crear la cuenta, entrar, pedir un código o recuperar la contraseña, en la web y en la app, y en lo que se manda sin cuenta (denunciar un contenido en la web o «Avísame cuando llegue»)',
+            'fila': '<tr><td>Comprobación anti-robots</td><td>Tu dirección IP y datos técnicos del navegador o del móvil, que trata Cloudflare (Turnstile) para darnos un sí o un no</td><td>Evitar cuentas falsas, envíos automáticos de denuncias o de apuntarse a «Avísame cuando llegue» y el abuso de los códigos por correo o SMS</td><td>Interés legítimo (art. 6.1.f RGPD) en la seguridad del servicio</td><td>No guardamos nada: Cloudflare trata esos datos según su acuerdo de encargado</td></tr>\n',
+            'intro': '<p>Recibe tu dirección IP, como cualquier web que visitas, y no guarda cookies:</p>\n',
+            'li': '',
+            'p': '<p><strong>Cloudflare Turnstile</strong>: cuando está activada, la comprobación anti-robots al crear la cuenta, entrar, pedir un código o recuperar la contraseña, y en lo que se manda sin cuenta (denunciar, «Avísame cuando llegue»). Se carga solo en esos momentos; Cloudflare recibe tu dirección IP y datos técnicos del navegador para distinguir a una persona de un programa, y puede guardar datos técnicos en tu navegador (dentro de su propio marco, en challenges.cloudflare.com) solo para esa comprobación. Es estrictamente necesario para la seguridad del servicio, no se usa para publicidad ni para seguirte entre sitios y no pide tu consentimiento. En la app, la misma comprobación se hace en una pequeña ventana con klendar.app/captcha/.</p>\n',
+        },
+        'en': {
+            'cloudflare': 'and, when enabled, runs the anti-bot check (Turnstile) when you create an account, log in, request a code or reset your password, on the website and in the app, and on what is sent without an account (reporting content on the website, or “Tell me when it arrives”)',
+            'fila': "<tr><td>Anti-bot check</td><td>Your IP address and technical browser or phone data, processed by Cloudflare (Turnstile) to give us a yes or no</td><td>Preventing fake accounts, automated reports or “Tell me when it arrives” sign-ups, and abuse of email or SMS codes</td><td>Legitimate interest (art. 6.1.f GDPR) in the security of the service</td><td>We don't store anything: Cloudflare processes that data under its processor agreement</td></tr>\n",
+            'intro': '<p>It receives your IP address, like any website you visit, and sets no cookies:</p>\n',
+            'li': '',
+            'p': '<p><strong>Cloudflare Turnstile</strong>: when enabled, the anti-bot check when you create an account, log in, request a code or reset your password, and on what is sent without an account (reporting, “Tell me when it arrives”). It only loads at those moments; Cloudflare receives your IP address and technical browser data to tell a person from a program, and may store technical data in your browser (inside its own frame, on challenges.cloudflare.com) only for that check. It is strictly necessary for the security of the service, is not used for advertising or to track you across sites and does not ask for your consent. In the app, the same check runs in a small window with klendar.app/captcha/.</p>\n',
+        },
+    }
+
+
+def _fecha_en(f):
+    """La fecha inglesa de un documento («5 November 2026») como fecha."""
+    return datetime.datetime.strptime(f['en'] if isinstance(f, dict) else f, '%d %B %Y').date()
+
+
+def _apunta(slug, cuando, es, en):
+    """Fecha de «Última actualización» (si es más nueva) y línea del historial
+    en su sitio (de la más nueva a la más vieja)."""
+    if slug not in ACTUALIZADO or _fecha_en(cuando) > _fecha_en(ACTUALIZADO[slug]):
+        ACTUALIZADO[slug] = cuando
+    filas = CAMBIOS.setdefault(slug, [])
+    fila = (cuando['es'], es, cuando['en'], en)
+    if fila in filas:
+        return
+    i = next((n for n, f in enumerate(filas) if _fecha_en(f[2]) < _fecha_en(cuando)), len(filas))
+    filas.insert(i, fila)
+
+
+if SERVIDORES == 'irlanda' and SERVIDORES_DESDE:
+    _apunta('privacidad', SERVIDORES_DESDE,
+            'Los datos pasan a guardarse en servidores de Supabase en Irlanda (Unión Europea).',
+            'Data is now stored on Supabase servers in Ireland (European Union).')
+if TURNSTILE_DESDE:
+    _apunta('privacidad', TURNSTILE_DESDE,
+            'Se enciende la comprobación anti-robots (Cloudflare Turnstile): cuándo se hace (crear la cuenta, entrar, pedir un código, recuperar la contraseña y lo que se manda sin cuenta) y su fila en la tabla.',
+            'The anti-bot check (Cloudflare Turnstile) is switched on: when it runs (creating an account, logging in, requesting a code, resetting your password and what is sent without an account) and its row in the table.')
+    _apunta('cookies', TURNSTILE_DESDE,
+            'Cloudflare Turnstile: cuándo se carga y qué puede guardar en tu navegador para la comprobación anti-robots.',
+            'Cloudflare Turnstile: when it loads and what it may store in your browser for the anti-bot check.')
+
 # Datos de EJEMPLO para la vista previa (--vista-previa). Claramente falsos:
 # el script se niega a publicar nada que los contenga.
 EJEMPLO_SL = dict(TITULAR_DATOS,
@@ -1273,6 +1355,7 @@ def textos(D, resaltar=False):
     E, EP = limpio(D['email']), limpio(D['email_privacidad'])
     SRV = UBICACION_SERVIDORES[SERVIDORES]
     TEL = fila_telefono()
+    TS = textos_turnstile()
     ES, EN = {}, {}
 
     # ── Aviso legal ─────────────────────────────────────────────────────────────
@@ -1377,7 +1460,7 @@ def textos(D, resaltar=False):
 <tr><td>Compartir en historias</td><td>Nada tuyo: la imagen (1080 × 1920, con la foto, el diseño y un QR de la publicación, el negocio o la selección) se hace en tu móvil, o la descarga tu navegador desde klendar.app. Quien abre ese QR o enlace (<code>?ref=stories</code>, o <code>?ref=whatsapp</code> si es la imagen para el estado de WhatsApp) deja una visita contada, igual que quien llega desde el QR de la tele de un local, desde el QR del cartel del local o desde el enlace de un RRPP: qué se abrió y cuándo, con una clave que cambia cada día y que solo sirve para no contar dos veces a la misma persona en 30 minutos (nunca la IP ni la cuenta)</td><td>Que puedas compartir algo en Instagram, en tu estado de WhatsApp u otra red y que el negocio vea cuántas visitas llegan desde ahí, y cuántas de ellas desde WhatsApp (solo el número)</td><td>Interés legítimo (art. 6.1.f) en contar, sin identificar a nadie, si compartir sirve</td><td>La visita contada, 14 meses. Lo que publiques en otra red lo trata esa red (por ejemplo Meta, para Instagram y WhatsApp) con sus propias condiciones</td></tr>
 <tr><td>Toques en los enlaces de la ficha</td><td>Qué enlace de una ficha se ha tocado (tipo, dominio y cuándo); una clave temporal para no contarlo dos veces, hecha con un secreto que cambia cada día y que se borra a los 30 minutos</td><td>Dar al negocio la cifra de cuántas veces se abren sus enlaces y su carta. Al tocar «Reservar», «Pedir a domicilio» u otro enlace de un negocio sales de Klendar: lo que hagas allí lo trata ese servicio con su propia política de privacidad</td><td>Interés legítimo (art. 6.1.f RGPD) en dar cifras al negocio, sin saber quién toca</td><td>14 meses; la clave temporal, 30 minutos. No se guarda ni la cuenta ni la IP</td></tr>
 <tr><td>Escaneos del QR de mesa</td><td>Cuántas veces se escanea el QR de mesa de un local cada día (solo el número); para no contar dos veces la misma conexión en 30 minutos, un resumen cifrado de tu conexión hecho con un secreto que cambia cada día (nunca la IP ni tu cuenta)</td><td>Dar al negocio la cifra de escaneos de sus carteles. La red y la contraseña que ves las pone el negocio</td><td>Interés legítimo (art. 6.1.f RGPD) en dar cifras al negocio, sin saber quién escanea</td><td>La cifra, 14 meses; el resumen, 24 horas. No se guarda ni la cuenta ni la IP</td></tr>
-<tr><td>Seguridad</td><td>Resumen cifrado de tu conexión (cambia cada día, nunca la IP), dispositivos de confianza para entrar con huella o Face ID, códigos para confirmar que eres tú, errores técnicos de la web (sin datos personales)</td><td>Frenar abusos, entrar sin contraseña en tus dispositivos, proteger los cambios de contraseña y la eliminación de la cuenta, detectar fallos</td><td>Interés legítimo (art. 6.1.f)</td><td>Resumen 24 h; dispositivos 90 días sin uso; códigos 1 h; errores 30 días</td></tr>
+{TS['es']['fila']}<tr><td>Seguridad</td><td>Resumen cifrado de tu conexión (cambia cada día, nunca la IP), dispositivos de confianza para entrar con huella o Face ID, códigos para confirmar que eres tú, errores técnicos de la web (sin datos personales)</td><td>Frenar abusos, entrar sin contraseña en tus dispositivos, proteger los cambios de contraseña y la eliminación de la cuenta, detectar fallos</td><td>Interés legítimo (art. 6.1.f)</td><td>Resumen 24 h; dispositivos 90 días sin uso; códigos 1 h; errores 30 días</td></tr>
 <tr><td>Historial de consentimientos</td><td>Qué has aceptado o retirado y cuándo</td><td>Poder demostrarlo (art. 7.1 RGPD)</td><td>Obligación legal (art. 6.1.c)</td><td>Mientras exista la cuenta</td></tr>
 {TEL['es']}<tr><td>Soporte</td><td>Email y contenido de tu mensaje</td><td>Atender tus consultas</td><td>Ejecución del contrato / interés legítimo</td><td>1 año desde el cierre</td></tr>
 </table>
@@ -1391,7 +1474,7 @@ def textos(D, resaltar=False):
   <li><strong>Supabase</strong> (base de datos, autenticación y almacenamiento; {SRV['es']}).</li>
   <li><strong>Google Firebase</strong> (notificaciones push, informes de errores y, solo si lo aceptas, estadísticas de uso de la app; Google Ireland Ltd.; transferencias internacionales amparadas en el Marco de Privacidad de Datos UE-EE. UU. y cláusulas contractuales tipo).</li>
   <li><strong>Mapbox</strong> (Mapbox, Inc., EE. UU.: mapas, rutas a pie y nombres de lugares; recibe las coordenadas del área que consultas para pintar el mapa; si pides la ruta a pie hasta un local, tu posición y la del local; para poner nombre a una zona o encontrar un sitio, el punto redondeado o lo que escribes (el sitio de «Pedir un local» o la dirección de un negocio en el panel); en la web, tu navegador le pide también la librería que dibuja los mapas; nunca tu nombre ni tu correo; transferencia internacional amparada en el Marco de Privacidad de Datos UE-EE. UU., al que Mapbox está adherida, y en cláusulas contractuales tipo).</li>
-  <li><strong>Cloudflare</strong> (Cloudflare, Inc.: alojamiento y red de entrega de klendar.app; procesa la dirección IP de las visitas para servir la web y protegerla, cuenta las visitas de forma agregada con Cloudflare Web Analytics, sin cookies ni identificarte, y, cuando está activada, hace la comprobación anti-robots (Turnstile) al entrar y al denunciar sin cuenta; y, sin guardarla, la ciudad y la zona aproximadas de tu conexión cuando no nos has dado tu ubicación (ver «Ubicación aproximada por la conexión»); transferencias internacionales amparadas en el Marco de Privacidad de Datos UE-EE. UU. y cláusulas contractuales tipo).</li>
+  <li><strong>Cloudflare</strong> (Cloudflare, Inc.: alojamiento y red de entrega de klendar.app; procesa la dirección IP de las visitas para servir la web y protegerla, cuenta las visitas de forma agregada con Cloudflare Web Analytics, sin cookies ni identificarte, {TS['es']['cloudflare']}; y, sin guardarla, la ciudad y la zona aproximadas de tu conexión cuando no nos has dado tu ubicación (ver «Ubicación aproximada por la conexión»); transferencias internacionales amparadas en el Marco de Privacidad de Datos UE-EE. UU. y cláusulas contractuales tipo).</li>
   <li><strong>Google Cloud Translation</strong> (Google Cloud EMEA Ltd., Irlanda: traducción automática de los textos que publican los negocios, solo si alguien la ha pedido; no recibe datos de las personas usuarias; transferencias internacionales amparadas en el Marco de Privacidad de Datos UE-EE. UU. y cláusulas contractuales tipo).</li>
   <li><strong>IONOS</strong> (IONOS SE, Alemania: nuestro buzón de correo; recibe lo que nos escribes).</li>
   <li><strong>Resend</strong> (envío de correos: los de tu cuenta, los avisos, los resúmenes por correo y las respuestas a quien denuncia sin cuenta; recibe tu dirección de correo y el contenido del mensaje; Plus Five Five, Inc., EE. UU.; transferencia internacional amparada en el Marco de Privacidad de Datos UE-EE. UU., al que Resend está adherido, y en las cláusulas contractuales tipo de la Comisión Europea que incluye su contrato de encargo).</li>
@@ -1493,7 +1576,7 @@ def textos(D, resaltar=False):
 <tr><td>Share to stories</td><td>Nothing of yours: the image (1080 × 1920, with the photo, design and a QR code of the publication, business or collection) is made on your phone, or your browser downloads it from klendar.app. Whoever opens that QR code or link (<code>?ref=stories</code>, or <code>?ref=whatsapp</code> for the WhatsApp status image) leaves a counted visit, as does anyone arriving from the QR code on a venue's TV, from the venue poster's QR code or from a promoter's link: what was opened and when, with a key that changes every day and only serves to avoid counting the same person twice within 30 minutes (never the IP address or the account)</td><td>Let you share something on Instagram, in your WhatsApp status or on another network and let the business see how many visits come from there, and how many of those from WhatsApp (only the number)</td><td>Legitimate interest (art. 6(1)(f)) in counting, without identifying anyone, whether sharing works</td><td>The counted visit, 14 months. Whatever you post on another network is handled by that network (for example Meta, for Instagram and WhatsApp) under its own terms</td></tr>
 <tr><td>Taps on a business page's links</td><td>Which link on a business page was tapped (type, domain and time); a temporary key so it isn't counted twice, made with a secret that changes every day and deleted after 30 minutes</td><td>Telling the business how often its links and menu are opened. When you tap “Book”, “Order delivery” or another link on a business page you leave Klendar: whatever you do there is handled by that service under its own privacy policy</td><td>Legitimate interest (art. 6(1)(f) GDPR) in giving the business figures, without knowing who taps</td><td>14 months; the temporary key, 30 minutes. Neither the account nor the IP is stored</td></tr>
 <tr><td>Table QR scans</td><td>How many times a venue's table QR code is scanned each day (just the number); so the same connection isn't counted twice within 30 minutes, an encrypted summary of your connection made with a secret that changes every day (never the IP address or your account)</td><td>Giving the business the number of scans of its cards. The network and password you see are entered by the business</td><td>Legitimate interest (art. 6(1)(f) GDPR) in giving the business figures, without knowing who scans</td><td>The figure, 14 months; the summary, 24 hours. Neither the account nor the IP address is stored</td></tr>
-<tr><td>Security</td><td>Encrypted digest of your connection (changes daily, never the IP address), trusted devices for fingerprint or Face ID login, codes to confirm it's you, technical website errors (no personal data)</td><td>Stop abuse, log in without a password on your devices, protect password changes and account deletion, detect failures</td><td>Legitimate interest (art. 6(1)(f))</td><td>Digest 24 h; devices 90 days unused; codes 1 h; errors 30 days</td></tr>
+{TS['en']['fila']}<tr><td>Security</td><td>Encrypted digest of your connection (changes daily, never the IP address), trusted devices for fingerprint or Face ID login, codes to confirm it's you, technical website errors (no personal data)</td><td>Stop abuse, log in without a password on your devices, protect password changes and account deletion, detect failures</td><td>Legitimate interest (art. 6(1)(f))</td><td>Digest 24 h; devices 90 days unused; codes 1 h; errors 30 days</td></tr>
 <tr><td>Consent history</td><td>What you have accepted or withdrawn and when</td><td>Being able to prove it (art. 7(1) GDPR)</td><td>Legal obligation (art. 6(1)(c))</td><td>While the account exists</td></tr>
 {TEL['en']}<tr><td>Support</td><td>Email and the content of your message</td><td>Answer your enquiries</td><td>Performance of a contract / legitimate interest</td><td>1 year after closure</td></tr>
 </table>
@@ -1507,7 +1590,7 @@ def textos(D, resaltar=False):
   <li><strong>Supabase</strong> (database, authentication and storage; {SRV['en']}).</li>
   <li><strong>Google Firebase</strong> (push notifications, crash reports and, only if you agree, app usage statistics; Google Ireland Ltd.; international transfers covered by the EU-US Data Privacy Framework and standard contractual clauses).</li>
   <li><strong>Mapbox</strong> (Mapbox, Inc., USA: maps, walking directions and place names; it receives the coordinates of the area you look at in order to render the map; if you ask for walking directions to a venue, your position and the venue's; to name an area or find a place, the rounded point or what you type (the place in “Ask for a place” or a business's address in the dashboard); on the website, your browser also requests from it the library that draws the maps; never your name or email; international transfer covered by the EU-US Data Privacy Framework, to which Mapbox has self-certified, and by standard contractual clauses).</li>
-  <li><strong>Cloudflare</strong> (Cloudflare, Inc.: hosting and content delivery for klendar.app; it processes visitors' IP addresses to serve and protect the website, counts visits in aggregate with Cloudflare Web Analytics, without cookies or identifying you, and, when enabled, runs the anti-bot check (Turnstile) when you log in and when you report without an account; and, without storing it, the approximate city and area of your connection when you haven't shared your location (see “Approximate location from your connection”); international transfers covered by the EU-US Data Privacy Framework and standard contractual clauses).</li>
+  <li><strong>Cloudflare</strong> (Cloudflare, Inc.: hosting and content delivery for klendar.app; it processes visitors' IP addresses to serve and protect the website, counts visits in aggregate with Cloudflare Web Analytics, without cookies or identifying you, {TS['en']['cloudflare']}; and, without storing it, the approximate city and area of your connection when you haven't shared your location (see “Approximate location from your connection”); international transfers covered by the EU-US Data Privacy Framework and standard contractual clauses).</li>
   <li><strong>Google Cloud Translation</strong> (Google Cloud EMEA Ltd., Ireland: automatic translation of the text businesses publish, only when someone has asked for it; it receives no data about users; international transfers covered by the EU-US Data Privacy Framework and standard contractual clauses).</li>
   <li><strong>IONOS</strong> (IONOS SE, Germany: our mailbox; it receives what you write to us).</li>
   <li><strong>Resend</strong> (sending emails: your account emails, alerts, email summaries and replies to people who report without an account; it receives your email address and the content of the message; Plus Five Five, Inc., USA; international transfer covered by the EU-US Data Privacy Framework, to which Resend has self-certified, and by the European Commission's standard contractual clauses included in its data processing agreement).</li>
@@ -2129,12 +2212,10 @@ def textos(D, resaltar=False):
 <h2>Estadísticas de visitas</h2>
 <p>Usamos <strong>Cloudflare Web Analytics</strong>, que no usa cookies ni guarda nada en tu navegador: un pequeño script envía a Cloudflare, por encargo nuestro, la página vista, la web de la que vienes, el tipo de navegador y dispositivo, el país y los tiempos de carga. Solo vemos cifras agregadas, sin identificarte ni seguirte entre sitios, y Cloudflare no las usa para nada más. No se usa en «Tu cuenta», en el panel ni en la administración, ni en las direcciones de baja de los correos o los enlaces de amigo. Tampoco en las páginas cuya dirección lleva tu posición («Cerca de mí») o el enlace de un RRPP, ni en Klendar en la tele (<code>/tv/</code>) ni en la página del QR de mesa de un local (<code>/m/</code>).</p>
 <h2>Servicios de terceros que se cargan en algunas páginas</h2>
-<p>Reciben tu dirección IP, como cualquier web que visitas, y no guardan cookies:</p>
-<ul>
+@@TS_ES_INTRO@@<ul>
   <li><strong>Mapbox</strong>: los mapas de Explorar, del panel y de «Pedir un local», y la librería que los dibuja. Al cargar un mapa, Mapbox recibe el aviso de «mapa cargado» con el que factura.</li>
-  <li><strong>Cloudflare Turnstile</strong>: cuando está activada, la comprobación anti-robots al entrar y al denunciar sin cuenta.</li>
-</ul>
-<p>Las fuentes, los iconos y las librerías (también la que conecta «Tu cuenta», el panel y la administración con nuestra base de datos) se sirven desde klendar.app, sin pasar por Google Fonts ni por otros servicios. La única excepción es la librería de los mapas (Mapbox GL JS), que tu navegador descarga de api.mapbox.com solo cuando abres un mapa.</p>
+@@TS_ES_LI@@</ul>
+@@TS_ES_P@@<p>Las fuentes, los iconos y las librerías (también la que conecta «Tu cuenta», el panel y la administración con nuestra base de datos) se sirven desde klendar.app, sin pasar por Google Fonts ni por otros servicios. La única excepción es la librería de los mapas (Mapbox GL JS), que tu navegador descarga de api.mapbox.com solo cuando abres un mapa.</p>
 <h2>Cómo borrarlo</h2>
 <p>Al cerrar sesión se borran la sesión, la copia de tus códigos, tus gustos, lo del panel y la cookie <code>klendar_18</code>. Todo lo demás lo puedes borrar desde la configuración de tu navegador («Borrar datos de navegación» o «Datos de sitios»).</p>
 <h2>La app</h2>
@@ -2184,12 +2265,10 @@ def textos(D, resaltar=False):
 <h2>Visit statistics</h2>
 <p>We use <strong>Cloudflare Web Analytics</strong>, which uses no cookies and stores nothing in your browser: a small script sends Cloudflare, on our behalf, the page viewed, the site you came from, your browser and device type, your country and load times. We only see aggregate figures, without identifying you or tracking you across sites, and Cloudflare does not use them for anything else. It isn't used in “Your account”, the business dashboard or admin, or on email unsubscribe links and friend links. Nor on pages whose address contains your position (“Near me”) or a promoter's link, or on Klendar on the TV (<code>/tv/</code>) or on a venue's table QR page (<code>/m/</code>).</p>
 <h2>Third-party services loaded on some pages</h2>
-<p>They receive your IP address, like any website you visit, and set no cookies:</p>
-<ul>
+@@TS_EN_INTRO@@<ul>
   <li><strong>Mapbox</strong>: the maps in Explore, in the business dashboard and in “Ask for a place”, and the library that draws them. When a map loads, Mapbox receives the “map loaded” event it uses for billing.</li>
-  <li><strong>Cloudflare Turnstile</strong>: when enabled, the anti-bot check when you log in and when you report without an account.</li>
-</ul>
-<p>Fonts, icons and libraries (including the one that connects “Your account”, the business dashboard and admin to our database) are served from klendar.app, without going through Google Fonts or any other service. The only exception is the map library (Mapbox GL JS), which your browser downloads from api.mapbox.com only when you open a map.</p>
+@@TS_EN_LI@@</ul>
+@@TS_EN_P@@<p>Fonts, icons and libraries (including the one that connects “Your account”, the business dashboard and admin to our database) are served from klendar.app, without going through Google Fonts or any other service. The only exception is the map library (Mapbox GL JS), which your browser downloads from api.mapbox.com only when you open a map.</p>
 <h2>How to delete it</h2>
 <p>When you log out, your session, the copy of your codes, your interests, the dashboard data and the <code>klendar_18</code> cookie are deleted. You can delete everything else in your browser settings (“Clear browsing data” or “Site data”).</p>
 <h2>The app</h2>
@@ -2395,6 +2474,13 @@ def textos(D, resaltar=False):
 <h2>Preguntas frecuentes</h2>
 {soporte_html('es', E)}
 ''')
+    # Cookies, «Servicios de terceros» (D30): sus textos no son f-strings.
+    for lang, D_ in (('es', ES), ('en', EN)):
+        cab = D_['cookies'][:-1]
+        cuerpo = D_['cookies'][-1]
+        for k in ('intro', 'li', 'p'):
+            cuerpo = cuerpo.replace(f'@@TS_{lang.upper()}_{k.upper()}@@', TS[lang][k])
+        D_['cookies'] = cab + (cuerpo,)
     return ES, EN
 
 
