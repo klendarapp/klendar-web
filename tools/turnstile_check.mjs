@@ -92,6 +92,8 @@ async function contexto(nav, clave, estado) {
     const r = await route.fetch();
     route.fulfill({ response: r, body: (await r.text()).replace(/turnstile:\s*'[^']*'/, `turnstile: '${clave}'`) });
   });
+  // Lo que pasaría por las Functions locales (que sí hablan con Supabase): fuera.
+  await ctx.route(`${BASE}/api/**`, (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '{}' }));
   ctx.on('request', (req) => { if (req.url().startsWith('https://challenges.cloudflare.com/')) estado.cloudflare++; });
   await ctx.route(`${SUPA}/**`, async (route) => {
     const req = route.request();
