@@ -85,7 +85,7 @@ for (const [nombre, tipo, anchos] of [['chromium', chromium, [390, 1280]], ['web
     ok(!a.buscadorPagina && !a.atajosFila, `${t} sin buscador ni atajos en la página`);
     ok(!a.recuento, `${t} sin recuento`);
     ok(JSON.stringify(a.que) === JSON.stringify([['Planes', true], ['Sitios', false]]), `${t} «Planes | Sitios» (${JSON.stringify(a.que)})`);
-    ok(JSON.stringify(a.botones) === JSON.stringify(['Ver en lista', 'Ver en el mapa'])), `${t} la lista (web) · «Ver en el mapa», sin lupa en la fila (${a.botones.join(' · ')})`);
+    ok(JSON.stringify(a.botones) === JSON.stringify(['Ver en lista', 'Ver en el mapa']), `${t} la lista (web) · «Ver en el mapa», sin lupa en la fila (${a.botones.join(' · ')})`);
     ok(a.calendario, `${t} Planes abre en el calendario`);
     ok(a.ancho <= ancho, `${t} sin desplazamiento lateral (${a.ancho})`);
     ok(a.fila.der <= ancho && a.fila.izq >= 0, `${t} la fila de arriba cabe (${JSON.stringify(a.fila)})`);
@@ -126,7 +126,7 @@ for (const [nombre, tipo, anchos] of [['chromium', chromium, [390, 1280]], ['web
     await page.waitForTimeout(400);
     a = await arriba(page);
     ok(!a.calendario && !a.recuento, `${t} «Ver en lista»: la lista, sin recuento`);
-    ok(JSON.stringify(a.botones) === JSON.stringify(['Ver el calendario', 'Buscar', 'Ver en el mapa']), `${t} en la lista: calendario · buscar · mapa (${a.botones.join(' · ')})`);
+    ok(JSON.stringify(a.botones) === JSON.stringify(['Ver el calendario', 'Ver en el mapa']), `${t} en la lista: calendario · mapa (${a.botones.join(' · ')})`);
     await page.screenshot({ path: `${OUT}/explorar-app-${nombre}-${ancho}-lista.png` });
     // Se recuerda, como la app: al volver a /explorar/ sin nada, la lista.
     await page.goto(`${BASE}/explorar/`, { waitUntil: 'domcontentloaded' });
@@ -142,24 +142,24 @@ for (const [nombre, tipo, anchos] of [['chromium', chromium, [390, 1280]], ['web
     // ── El mapa de Planes ──
     await ve(page, `${BASE}/explorar/?vista=mapa`);
     a = await arriba(page);
-    ok(JSON.stringify(a.botones) === JSON.stringify(['Ver en lista', 'Buscar', 'Ver el calendario']), `${t} en el mapa: la lista · buscar · «Ver el calendario» (${a.botones.join(' · ')})`);
+    ok(JSON.stringify(a.botones) === JSON.stringify(['Ver en lista', 'Ver el calendario']), `${t} en el mapa: la lista · «Ver el calendario» (${a.botones.join(' · ')})`);
 
     // ── Sitios ──
     await ve(page, `${BASE}/explorar/?que=sitios`);
     a = await arriba(page);
-    ok(JSON.stringify(a.botones) === JSON.stringify(['Buscar', 'Ver en el mapa']), `${t} Sitios: buscar · «Ver en el mapa» (${a.botones.join(' · ')})`);
+    ok(JSON.stringify(a.botones) === JSON.stringify(['Ver en el mapa']), `${t} Sitios: «Ver en el mapa» (${a.botones.join(' · ')})`);
     ok(!a.recuento, `${t} Sitios sin «N sitios»`);
     ok(a.ancho <= ancho, `${t} Sitios sin desplazamiento lateral (${a.ancho})`);
     await page.screenshot({ path: `${OUT}/explorar-app-${nombre}-${ancho}-sitios.png` });
     await ve(page, `${BASE}/explorar/?que=sitios&vista=mapa`);
     a = await arriba(page);
-    ok(JSON.stringify(a.botones) === JSON.stringify(['Buscar', 'Ver en lista']), `${t} el mapa de Sitios: buscar · «Ver en lista» (${a.botones.join(' · ')})`);
+    ok(JSON.stringify(a.botones) === JSON.stringify(['Ver en lista']), `${t} el mapa de Sitios: «Ver en lista» (${a.botones.join(' · ')})`);
 
     // ── En inglés, los textos de la app (sin la vista recordada) ──
     await page.evaluate(() => localStorage.clear());
     await ve(page, `${BASE}/en/explore/`);
     a = await arriba(page);
-    ok(JSON.stringify(a.botones) === JSON.stringify(['See as a list', 'Search', 'See on the map']) && a.calendario, `${t} en inglés (${a.botones.join(' · ')})`);
+    ok(JSON.stringify(a.botones) === JSON.stringify(['See as a list', 'See on the map']) && a.calendario, `${t} en inglés (${a.botones.join(' · ')})`);
     ok(JSON.stringify(a.que.map((x) => x[0])) === JSON.stringify(['Plans', 'Places']), `${t} «Plans | Places»`);
 
     ok(errores.length === 0, `${t} sin errores de JavaScript (${errores.join(' | ')})`);
