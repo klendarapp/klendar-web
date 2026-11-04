@@ -10,6 +10,9 @@ const t = [
   [E({ code: 'weak_password', message: 'x', reasons: ['length'] }), 'al menos 8 caracteres.'],
   [E({ code: 'weak_password', message: 'x', reasons: ['characters'] }), 'al menos 8 caracteres.'],
   [E({ message: 'Password is known to be weak and easy to guess' }), 'filtraciones'],
+  [E({ code: 'same_password', message: 'New password should be different from the old password.' }), 'distinta'],
+  [E({ message: 'New password should be different from the old password.' }), 'distinta'],
+  [E({ message: 'Password should be at least 8 characters.' }), 'al menos 8 caracteres.'],
 ];
 let ok = true;
 for (const [e, want] of t) { const r = KL_AUTH_ERROR(e, 'es'); const p = r.includes(want); ok = ok && p; console.log(p ? 'ok' : 'FALLO', r); }

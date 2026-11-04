@@ -71,8 +71,10 @@
     // `weak_password` (`length`, `characters`): la regla de verdad, mínimo 8.
     const razones = Array.isArray(error?.reasons) ? error.reasons : [];
     if (razones.includes('pwned') || (code === 'weak_password' && m.includes('pwned')) || m.includes('known to be weak')) return 'filtrada';
-    if (es(['weak_password'], ['password should be'])) return 'debil';
+    // Antes que «débil»: el texto de `same_password` («New password should be
+    // different…») también contiene «password should be».
     if (es(['same_password'], ['should be different'])) return 'igual';
+    if (es(['weak_password'], ['password should be'])) return 'debil';
     if (es(['otp_expired'], ['token has expired', 'otp has expired'])) return 'codigo';
     if (es(['provider_disabled', 'email_provider_disabled', 'phone_provider_disabled', 'signup_disabled', 'otp_disabled'],
       ['provider is not enabled', 'unsupported provider', 'signups not allowed'])) return 'noDisponible';
