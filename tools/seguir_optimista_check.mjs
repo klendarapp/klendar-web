@@ -55,8 +55,11 @@ for (const [caso, respuesta] of [['falla', { ok: false, error: 'rate_limited' }]
   });
   const p = await ctx.newPage();
   await p.goto(`${BASE}${ruta}`, { waitUntil: 'networkidle' });
-  const b = p.locator('[data-seguir-equipo]', { hasText: /^Seguir a / }).first();
   await p.waitForFunction(() => document.querySelector('[data-seguir-equipo]')?.getAttribute('data-directo') === '1', null, { timeout: 15000 }).catch(() => {});
+  // El botón por su id: al tocarlo ya no dice «Seguir a …» y un localizador por
+  // el texto saltaría al siguiente.
+  const id = await p.locator('[data-seguir-equipo]', { hasText: /^Seguir a / }).first().getAttribute('data-seguir-equipo');
+  const b = p.locator(`[data-seguir-equipo="${id}"]`).first();
   const antes = await b.getAttribute('aria-pressed');
   await b.click();
   await p.waitForTimeout(150);

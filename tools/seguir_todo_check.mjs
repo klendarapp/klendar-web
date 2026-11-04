@@ -73,14 +73,17 @@ async function contexto(nav, vp, clave, rpc, lang = 'es') {
 }
 const sinScroll = (p) => p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1);
 
-const TAM = { movil: { width: 390, height: 844 }, escritorio: { width: 1280, height: 900 } };
+const TODOS = { movil: { width: 390, height: 844 }, escritorio: { width: 1280, height: 900 } };
+// SOLO=movil (o escritorio) para no pasar los dos tamaños (dev con poco disco).
+const TAM = process.env.SOLO ? { [process.env.SOLO]: TODOS[process.env.SOLO] } : TODOS;
 const CONSENT = { terms_accepted_at: '2026-01-01T00:00:00Z', terms_outdated: false, has_display_name: true };
 const ALONSO = { id: 'a0000000-0000-4000-8000-000000000001', kind: 'athlete', sport: 'motor', name: 'Alonso', full_name: 'Fernando Alonso', context: 'Fórmula 1', following: false };
 const F1 = { id: 'a0000000-0000-4000-8000-000000000002', kind: 'competition', sport: 'motor', name: 'Fórmula 1', full_name: 'Fórmula 1', competition: 'f1', context: null, following: false };
 const RM = { id: 'a0000000-0000-4000-8000-000000000003', kind: 'team', sport: 'football', name: 'Real Madrid', full_name: 'Real Madrid CF', context: 'LaLiga', following: true };
 const TOPURIA = { id: 'a0000000-0000-4000-8000-000000000004', kind: 'athlete', sport: 'combat', name: 'Topuria', full_name: 'Ilia Topuria', context: 'UFC', following: false };
 
-for (const [motor, tipo] of [['chromium', pw.chromium], ['webkit', pw.webkit]]) {
+// MOTOR=chromium (o webkit) para pasar solo uno.
+for (const [motor, tipo] of [['chromium', pw.chromium], ['webkit', pw.webkit]].filter(([m]) => !process.env.MOTOR || m === process.env.MOTOR)) {
   const nav = await tipo.launch();
 
   // ── 1. La ficha pública de una carrera (dev) ─────────────────────────────
@@ -99,7 +102,8 @@ for (const [motor, tipo] of [['chromium', pw.chromium], ['webkit', pw.webkit]]) 
     ok(/^Seguir (Fórmula 1|MotoGP)$/.test(comp), `${motor}: primero, la competición sin «a» («${comp}»)`);
     const resumen = await p0.locator('details.seguir-mas > summary').innerText();
     ok(/^Ver \d+ más$/.test(resumen), `${motor}: «${resumen}»`);
-    const fuera = await p0.locator('.seguir-equipos > [data-seguir-equipo]').count();
+    // Solo los de fuera de «Ver N más» (dentro hay otro .seguir-equipos).
+    const fuera = await p0.locator('.seguir-equipos > [data-seguir-equipo]:not(details [data-seguir-equipo])').count();
     ok(fuera === 4, `${motor}: la competición y 3 pilotos a la vista (${fuera})`);
     dentro = await p0.locator('details.seguir-mas [data-seguir-equipo]').first().getAttribute('data-seguir-equipo');
     const msg = await p0.locator('details.seguir-mas [data-seguir-equipo]').first().getAttribute('data-msg-si');

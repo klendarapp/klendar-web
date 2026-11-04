@@ -70,7 +70,9 @@ async function contexto(nav, vp, clave, rpc) {
   return { ctx, p, estado, errores };
 }
 
-const TAM = { movil: { width: 390, height: 844 }, escritorio: { width: 1280, height: 900 } };
+const TODOS = { movil: { width: 390, height: 844 }, escritorio: { width: 1280, height: 900 } };
+// SOLO=movil (o escritorio) para no pasar los dos tamaños (dev con poco disco).
+const TAM = process.env.SOLO ? { [process.env.SOLO]: TODOS[process.env.SOLO] } : TODOS;
 const nav = await chromium.launch();
 
 // ── 1. La página pública (datos de verdad de dev) ─────────────────────────
