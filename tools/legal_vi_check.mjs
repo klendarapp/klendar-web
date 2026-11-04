@@ -41,12 +41,12 @@ const PAGINAS = [
     /those of 2 November 2026 \(section 2a\) from 17 November 2026, and those of 3 November 2026 \(sections 3, 3i and 4\) from 18 November 2026: 15 days/,
     /“Food served now”/,
   ]],
-  ['/privacidad/', 'Última actualización: 3 de noviembre de 2026', [
+  ['/privacidad/', 'Última actualización: 4 de noviembre de 2026', [
     /Lo que ya has visto en Descubre\s+Qué publicaciones de Descubre \(y, en la web, de la lista de Explorar\) has tenido en pantalla al menos 1,5 segundos[\s\S]*?Se guarda solo en tu móvil o en tu navegador; no nos llega/,
     /Puedes apagarlo en Ajustes › Lo que ves \(en la web, también sin entrar\): entonces no se guarda nada y se borra lo guardado\s+No lo tratamos nosotros \(está en tu dispositivo\)\s+7 días desde que viste cada publicación/,
     /2 de noviembre de 2026: Lo que ya has visto en Descubre/,
   ]],
-  ['/en/privacy/', 'Last updated: 3 November 2026', [
+  ['/en/privacy/', 'Last updated: 4 November 2026', [
     /What you've already seen in Discover\s+Which publications in Discover[\s\S]*?It's stored only on your phone or in your browser; it never reaches us/,
     /You can turn it off in Settings › What you see \(on the website, also without logging in\): then nothing is stored and what was stored is deleted/,
   ]],

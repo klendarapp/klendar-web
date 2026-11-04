@@ -26,12 +26,12 @@ let fallos = 0;
 const ok = (c, m) => { if (!c) { fallos++; console.log('FALLO:', m); } else console.log('ok:', m); };
 
 const PAGINAS = [
-  ['/privacidad/', 'Última actualización: 3 de noviembre de 2026', [
+  ['/privacidad/', 'Última actualización: 4 de noviembre de 2026', [
     /y, si quieres, tu ciudad habitual: un municipio de España, con su nombre y su punto \(el del municipio, nunca tu dirección ni tu posición\)\./,
     /con el punto redondeado\. Saber en qué municipio estás cuando eliges «Usar mi ubicación» en «Tu ciudad» o para avisarte de que estás de viaje \(se envía tu posición —en la app, redondeada a unos 100 m—, se mira en qué municipio cae y no se guarda\)/,
     /3 de noviembre de 2026: Tu ciudad puede ser cualquier municipio de España/,
   ], [/una de las ciudades de Klendar/]],
-  ['/en/privacy/', 'Last updated: 3 November 2026', [
+  ['/en/privacy/', 'Last updated: 4 November 2026', [
     /and, if you like, your home town: a town in Spain, with its name and its point \(the town's, never your address or your position\)\./,
     /using the rounded point\. Work out which town you are in when you choose “Use my location” in “Your city” or to let you know you are travelling \(your position is sent —rounded to about 100 m in the app—, matched to a town and not stored\)/,
     /3 November 2026: Your city can be any town in Spain/,
@@ -49,12 +49,12 @@ const PAGINAS = [
     /Each town's point and population \(only used to sort search results\) come from Wikidata, licensed CC0\./,
   ], [/football-data/i]],
   ['/negocios/', 'Última actualización: 4 de noviembre de 2026', [
-    /Si marca que pone un partido o un evento \(«Lo ponemos»\) o pide ponerlos siempre los de un equipo o una competición \(«Poner siempre»\), tener los derechos para emitir cada uno en su local \(por ejemplo, la suscripción para hostelería de la plataforma que lo emite\) y ponerlo de verdad; los que marque «Poner siempre» y no vaya a poner, quitarlos\. Klendar no lo comprueba y puede quitar la marca si recibe quejas\./,
+    /Si marca que pone un partido o un evento \(«Lo ponemos»\) o pide ponerlos siempre los de un equipo, un deportista o una competición \(«Poner siempre»\), tener los derechos para emitir cada uno en su local \(por ejemplo, la suscripción para hostelería de la plataforma que lo emite\) y ponerlo de verdad; los que marque «Poner siempre» y no vaya a poner, quitarlos\. Klendar no lo comprueba y puede quitar la marca si recibe quejas\./,
     /y los del 3 de noviembre de 2026 \(apartados 3, 3 decies y 4\), desde el 18 de noviembre de 2026: 15 días/,
     /3 de noviembre de 2026: «Poner siempre» \(apartado 3\)[\s\S]*?Se aplica desde el 18 de noviembre de 2026\./,
   ], [/tener los derechos para emitirlo en su local/]],
   ['/en/business-terms/', 'Last updated: 4 November 2026', [
-    /If it marks that it's showing a match or an event \(“We're showing it”\) or asks to always show those of a team or a competition \(“Always show”\), hold the rights to show each one at its venue \(for example, the hospitality subscription of the platform that broadcasts it\) and really show it; remove those that “Always show” marks and it isn't going to show\. Klendar doesn't check this and may remove the mark if it receives complaints\./,
+    /If it marks that it's showing a match or an event \(“We're showing it”\) or asks to always show those of a team, an athlete or a competition \(“Always show”\), hold the rights to show each one at its venue \(for example, the hospitality subscription of the platform that broadcasts it\) and really show it; remove those that “Always show” marks and it isn't going to show\. Klendar doesn't check this and may remove the mark if it receives complaints\./,
     /and those of 3 November 2026 \(sections 3, 3i and 4\) from 18 November 2026: 15 days/,
     /3 November 2026: “Always show” \(section 3\)[\s\S]*?It applies from 18 November 2026\./,
   ], [/hold the rights to show it at its venue/]],

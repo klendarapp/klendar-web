@@ -38,13 +38,13 @@ const PAGINAS = [
     /and those of 3 November 2026 \(sections 3, 3i and 4\) from 18 November 2026: 15 days/,
     /3 November 2026: Live capacity \(section 3i\)[\s\S]*?It applies from 18 November 2026\./,
   ], [/starting in a city/]],
-  ['/privacidad/', 'Última actualización: 3 de noviembre de 2026', [
+  ['/privacidad/', 'Última actualización: 4 de noviembre de 2026', [
     /Avísame cuando haya sitio\s+Que pediste[\s\S]*?nunca quiénes\. Si el local deja de enseñar si hay sitio, la quitamos y te lo decimos con un aviso\s+Ejecución/,
     /\(lo apagas con «Cuando haya sitio»\); también el aviso de que hemos quitado tu petición porque el local ha dejado de enseñar si hay sitio\. Y «Tu pedido está listo»/,
     /\(solo números: nunca quién entra\); si alguien del equipo contesta «¿Has abierto hoy\?», quién y qué contestó \(se borra a los 7 días\);/,
     /3 de noviembre de 2026: Aforo en directo: si un local deja de enseñar si hay sitio/,
   ], []],
-  ['/en/privacy/', 'Last updated: 3 November 2026', [
+  ['/en/privacy/', 'Last updated: 4 November 2026', [
     /never who\. If the venue stops showing whether there's room, we remove it and let you know with a notification\s+Performance/,
     /\(turn it off with “When there's room”\); so does the notification that we've removed your request because the venue stopped showing whether there's room\. And “Your order is ready”/,
     /\(numbers only: never who comes in\); if someone on the team answers “Are you open today\?”, who answered and what \(deleted after 7 days\);/,

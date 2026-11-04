@@ -20,8 +20,8 @@ let fallos = 0;
 const ok = (c, m) => { if (!c) { fallos++; console.log('FALLO:', m); } else console.log('ok:', m); };
 
 const PAGINAS = [
-  ['/privacidad/', 'Última actualización: 3 de noviembre de 2026', [
-    /Equipos y deportistas que sigues\s+Los equipos o participantes que sigues/,
+  ['/privacidad/', 'Última actualización: 4 de noviembre de 2026', [
+    /Equipos y deportistas que sigues\s+Los equipos, deportistas y competiciones que sigues/,
     /se apagan en Ajustes → Notificaciones → «Equipos y deportistas que sigues»/,
     /series que sigues, partidos de los equipos y deportistas que sigues, artistas que sigues/,
     /fechas nuevas de las series que sigues, los partidos de los equipos y deportistas que sigues \(con los bares/,
@@ -34,8 +34,8 @@ const PAGINAS = [
     /Equipos que sigues\s+Los equipos o participantes/,
     /la misma zona que la de «Equipos que sigues»/,
   ]],
-  ['/en/privacy/', 'Last updated: 3 November 2026', [
-    /Teams and athletes you follow\s+The teams or competitors you follow/,
+  ['/en/privacy/', 'Last updated: 4 November 2026', [
+    /Teams and athletes you follow\s+The teams, athletes and competitions you follow/,
     /turn them off in Settings → Notifications → “Teams and athletes you follow”/,
     /series you follow, matches of the teams and athletes you follow, artists you follow/,
     /new dates of the series you follow, matches of the teams and athletes you follow \(with the bars/,
