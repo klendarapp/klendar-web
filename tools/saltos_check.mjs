@@ -19,14 +19,15 @@
 //   CF_PRUEBA='{"country":"ES","latitude":"41.65","longitude":"-0.88"}' PORT=8878 node tools/serve_dev.mjs &
 //   PW=<ruta a playwright> BASE=http://localhost:8877 BASE_IP=http://localhost:8878 node tools/saltos_check.mjs
 import { createRequire } from 'node:module';
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, readFileSync } from 'node:fs';
 
 const { chromium, webkit } = createRequire(import.meta.url)(process.env.PW || 'playwright');
 const BASE = process.env.BASE || 'http://localhost:8877';
 const BASE_IP = process.env.BASE_IP || '';
 const OUT = process.env.OUT || 'tools/out';
 mkdirSync(OUT, { recursive: true });
-const REF = 'dpbbtgwxrlqlplbrtjuq';
+// El proyecto al que apunta la web (config.js): la sesión de otro no cuenta.
+const REF = readFileSync(new URL('../config.js', import.meta.url), 'utf8').match(/https:\/\/([a-z0-9]+)\.supabase\.co/)[1];
 const U = '0e7717e0-0000-4000-8000-0000000094a1';
 let fallos = 0;
 const ok = (c, m) => { if (!c) { fallos++; console.log('FALLA:', m); } else console.log('ok:', m); };

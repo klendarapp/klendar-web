@@ -12,18 +12,86 @@
 // No llama a nada: mira si el navegador guarda una sesión de Supabase (la
 // misma que usan «Tu cuenta» y el panel). cabecera.js lo vuelve a usar al
 // entrar o salir y al cambiar el ancho (`window.KL_YO`).
+//
+// Solo vale la sesión del Supabase al que apunta la web (Iván, 2026-11-04: al
+// pasar la web de dev a prod, «Tu cuenta» pedía entrar y la cabecera seguía
+// con su foto, la de la sesión de dev que quedaba en el navegador). El
+// proyecto se sabe por `window.KLENDAR_ENV` (config.js), por la etiqueta de
+// errores.js (las páginas de las Functions lo llevan en el <head>) o, en las
+// estáticas, que cargan config.js después, por lo último que se vio
+// (`klendar.sb`); sin saberlo, como sin sesión (cabecera.js lo pide y vuelve
+// a pintar). Cuando se sabe, las sesiones de otro proyecto se borran y, si el
+// proyecto ha cambiado, lo guardado de la cuenta de antes (`olvida`).
 (function () {
   'use strict';
 
+  var MARCA = 'klendar.sb';
+
+  function refDe(url) {
+    try { return new URL(url).hostname.split('.')[0].toLowerCase(); } catch (e) { return ''; }
+  }
+
+  /** Lo que es de una cuenta o de un proyecto, guardado en este navegador:
+   * los gustos y «Tu ciudad», el negocio del panel, los códigos y colas sin
+   * conexión, las ciudades y el interruptor de los sorteos de esa base. Lo
+   * mismo que se borra al salir (app/app.js, panel/panel.js) y lo que solo
+   * vale para ese Supabase. */
+  function olvida() {
+    try {
+      for (var i = localStorage.length - 1; i >= 0; i--) {
+        var k = localStorage.key(i);
+        if (k && (k.indexOf('klendar.cola.') === 0 || k.indexOf('klendar.codigos.') === 0)) localStorage.removeItem(k);
+      }
+      ['klendar.biz', 'klendar.gustos'].forEach(function (k) { localStorage.removeItem(k); });
+    } catch (e) { /* sin almacenamiento */ }
+    try {
+      ['klendar.sorteosWeb', 'klendar.ciudades', 'klendar.grupos.elegidos'].forEach(function (k) { sessionStorage.removeItem(k); });
+    } catch (e) { /* sin almacenamiento */ }
+  }
+
+  /** El proyecto de verdad (config.js o la etiqueta de errores.js): borra las
+   * sesiones de otros proyectos y, si ha cambiado, lo de la cuenta de antes. */
+  function asegura(ref) {
+    try {
+      var otro = false;
+      for (var i = localStorage.length - 1; i >= 0; i--) {
+        var k = localStorage.key(i);
+        var m = /^sb-([a-z0-9-]+?)-(?:admin-)?auth-token/.exec(k || '');
+        if (m && m[1] !== ref) { localStorage.removeItem(k); otro = true; }
+      }
+      var antes = localStorage.getItem(MARCA);
+      if (antes !== ref) {
+        if (otro || antes) olvida();
+        localStorage.setItem(MARCA, ref);
+      }
+    } catch (e) { /* sin almacenamiento */ }
+  }
+
+  /** `sb-<ref>`: el proyecto al que apunta la web, o '' si aún no se sabe. */
+  function proyecto() {
+    var url = (window.KLENDAR_ENV && window.KLENDAR_ENV.url) || '';
+    if (!url) {
+      var e = document.querySelector('script[src*="/assets/errores.js"][data-url]');
+      url = (e && e.getAttribute('data-url')) || '';
+    }
+    var ref = url ? refDe(url) : '';
+    if (ref) { asegura(ref); return ref; }
+    try { return localStorage.getItem(MARCA) || ''; } catch (x) { return ''; }
+  }
+
+  /** La clave de la sesión de supabase-js en este proyecto. */
+  function clave() {
+    var ref = proyecto();
+    return ref ? 'sb-' + ref + '-auth-token' : null;
+  }
+
   function sesion() {
     try {
-      for (var i = 0; i < localStorage.length; i++) {
-        var clave = localStorage.key(i);
-        if (!/^sb-[a-z0-9]+-auth-token$/.test(clave)) continue;
-        var s = JSON.parse(localStorage.getItem(clave) || 'null');
-        var u = s && (s.user || (s.currentSession && s.currentSession.user));
-        if (u && (!s.expires_at || s.refresh_token)) return u;
-      }
+      var k = clave();
+      if (!k) return null;
+      var s = JSON.parse(localStorage.getItem(k) || 'null');
+      var u = s && (s.user || (s.currentSession && s.currentSession.user));
+      if (u && (!s.expires_at || s.refresh_token)) return u;
     } catch (e) { /* sin almacenamiento: como sin sesión */ }
     return null;
   }
@@ -85,7 +153,7 @@
     });
   }
 
-  window.KL_YO = { sesion: sesion, pinta: pinta, justa: justa };
+  window.KL_YO = { sesion: sesion, clave: clave, proyecto: proyecto, refDe: refDe, pinta: pinta, justa: justa };
   pinta();
   justa();
 })();

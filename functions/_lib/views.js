@@ -73,7 +73,7 @@ const pre = (lang) => (lang === 'en' ? '/en' : '');
 export const sitioAhoraScripts = (lang) => {
   const sp = supabasePublic();
   return `<script src="/assets/marcas.js?v=6" defer></script>
-<script src="/assets/sitio-ahora.js?v=2" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}" data-lang="${lang === 'en' ? 'en' : 'es'}"></script>`;
+<script src="/assets/sitio-ahora.js?v=3" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}" data-lang="${lang === 'en' ? 'en' : 'es'}"></script>`;
 };
 
 /** El menú ⋮ de las fichas (como la app): lo que se usa poco (añadir al
@@ -235,7 +235,7 @@ async function cerradoPage(lang, ref, path) {
 function traducir(lang, ...pedir) {
   const sp = supabasePublic();
   return `<script src="/assets/idioma-probable.js?v=1" defer></script>
-<script src="/assets/traducir.js?v=3" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}" data-lang="${lang === 'en' ? 'en' : 'es'}" data-pedir="${esc(pedir.filter(Boolean).join(' '))}"></script>`;
+<script src="/assets/traducir.js?v=4" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}" data-lang="${lang === 'en' ? 'en' : 'es'}" data-pedir="${esc(pedir.filter(Boolean).join(' '))}"></script>`;
 }
 
 /**

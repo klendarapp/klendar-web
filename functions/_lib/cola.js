@@ -13,7 +13,7 @@ import { esc, html, rpc, supabasePublic } from './page.js';
 import { publicPage } from './public.js';
 import KC from '../../assets/cola.js';
 
-export const COLA_JS_V = 2;
+export const COLA_JS_V = 3;
 
 const HEAD = `<meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
@@ -56,7 +56,7 @@ export async function queuePublicPage(rawCode, lang) {
     description: descripcion,
     image: vale && /^https:\/\//.test(info.business.logo_url || '') ? info.business.logo_url : null,
     // Con sesión, al turno en vivo antes de pintar nada.
-    head: `${HEAD}${code && vale ? `\n${KC.saltoConSesion(lang, code)}` : ''}`,
+    head: `${HEAD}${code && vale ? `\n${KC.saltoConSesion(lang, code, new URL(sp.url).hostname.split('.')[0])}` : ''}`,
     body,
     contador: false,
     privada: true,

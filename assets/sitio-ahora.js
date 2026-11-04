@@ -103,6 +103,8 @@
       for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);
         if (!/^sb-[a-z0-9]+-auth-token$/.test(k || '')) continue;
+        // Solo la de este proyecto (cabecera-yo.js), no la de otro Supabase.
+        if (window.KL_YO && k !== window.KL_YO.clave()) continue;
         const v = JSON.parse(localStorage.getItem(k) || 'null');
         if (v && (v.refresh_token || v.access_token)) return true;
       }

@@ -37,7 +37,8 @@ mkdirSync(OUT, { recursive: true });
 let fallos = 0;
 const ok = (c, m) => { if (!c) { fallos++; console.log('FALLA:', m); } else console.log('ok:', m); };
 
-const REF = 'dpbbtgwxrlqlplbrtjuq';
+// El proyecto al que apunta la web (config.js): la sesión de otro no cuenta.
+const REF = readFileSync(new URL('../config.js', import.meta.url), 'utf8').match(/https:\/\/([a-z0-9]+)\.supabase\.co/)[1];
 const SUPA = `https://${REF}.supabase.co`;
 const U = '0e7717e0-0000-4000-8000-0000000cab02';
 const BIZ = 'b1000000-0000-4000-8000-0000000cab02';

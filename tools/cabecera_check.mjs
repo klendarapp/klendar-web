@@ -25,7 +25,7 @@
 //   PORT=8893 node tools/serve_dev.mjs &
 //   PW=<ruta a playwright> OUT=<carpeta> BASE=http://localhost:8893 node tools/cabecera_check.mjs
 import { createRequire } from 'node:module';
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, readFileSync } from 'node:fs';
 
 const { chromium, webkit } = createRequire(import.meta.url)(process.env.PW || 'playwright');
 const BASE = process.env.BASE || 'http://localhost:8893';
@@ -34,7 +34,8 @@ const BASE = process.env.BASE || 'http://localhost:8893';
 const OUT = process.env.OUT || 'tools/out';
 (await import('node:fs')).mkdirSync(OUT, { recursive: true });
 mkdirSync(OUT, { recursive: true });
-const REF = 'dpbbtgwxrlqlplbrtjuq';
+// El proyecto al que apunta la web (config.js): la sesión de otro no cuenta.
+const REF = readFileSync(new URL('../config.js', import.meta.url), 'utf8').match(/https:\/\/([a-z0-9]+)\.supabase\.co/)[1];
 const SUPA = `https://${REF}.supabase.co`;
 const AQUI = 'lat=40.417&lng=-3.704';
 let fallos = 0;

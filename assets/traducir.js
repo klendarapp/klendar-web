@@ -58,14 +58,11 @@
 
   // Con «Tu cuenta», su sesión (una exclusiva suya también se traduce); sin
   // ella, como cualquiera.
+  // Solo la de este proyecto (`sb-<ref>-auth-token`): la de otro Supabase no vale aquí.
   let token = key;
   try {
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i);
-      if (!/^sb-[a-z0-9]+-auth-token$/.test(k)) continue;
-      const s = JSON.parse(localStorage.getItem(k) || 'null');
-      if (s && s.access_token && (s.expires_at || 0) * 1000 > Date.now()) token = s.access_token;
-    }
+    const s = JSON.parse(localStorage.getItem(`sb-${new URL(url).hostname.split('.')[0]}-auth-token`) || 'null');
+    if (s && s.access_token && (s.expires_at || 0) * 1000 > Date.now()) token = s.access_token;
   } catch { /* sin sesión */ }
 
   const llama = (body) => fetch(`${url}/functions/v1/translate`, {

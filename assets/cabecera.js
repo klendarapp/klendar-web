@@ -2,24 +2,17 @@
 // inicial (o tu foto) y lleva a «Tu cuenta».
 //
 // No llama a nada: mira si el navegador guarda una sesión de Supabase (la
-// misma que usan «Tu cuenta» y el panel). Si la sesión ha caducado, al pulsar
+// misma que usan «Tu cuenta» y el panel; solo la del proyecto al que apunta
+// la web, ver cabecera-yo.js). Si la sesión ha caducado, al pulsar
 // «Tu cuenta» te pedirá entrar, que es lo mismo que haría el botón.
 // «Tu cuenta» la vuelve a pintar al entrar o salir (window.KL_CABECERA).
 (() => {
   'use strict';
 
-  function sesion() {
-    try {
-      for (let i = 0; i < localStorage.length; i++) {
-        const clave = localStorage.key(i);
-        if (!/^sb-[a-z0-9]+-auth-token$/.test(clave)) continue;
-        const s = JSON.parse(localStorage.getItem(clave) || 'null');
-        const u = s?.user || s?.currentSession?.user;
-        if (u && (!s.expires_at || s.refresh_token)) return u;
-      }
-    } catch { /* sin almacenamiento: como sin sesión */ }
-    return null;
-  }
+  // La de este proyecto (`sb-<ref>-auth-token`), la que sabe cabecera-yo.js:
+  // la de otro Supabase (dev, si la web pasa a prod) no cuenta.
+  const clave = () => (window.KL_YO ? window.KL_YO.clave() : null);
+  function sesion() { return window.KL_YO ? window.KL_YO.sesion() : null; }
 
   // «Entrar» o tu inicial, la campana y el logo que se encoge: los pone
   // /assets/cabecera-yo.js antes del primer pintado (sin `defer`, justo
@@ -41,14 +34,11 @@
   let cuenta = null;
   function token() {
     try {
-      for (let i = 0; i < localStorage.length; i++) {
-        const clave = localStorage.key(i);
-        if (!/^sb-[a-z0-9]+-auth-token$/.test(clave)) continue;
-        const s = JSON.parse(localStorage.getItem(clave) || 'null');
-        const t = s?.access_token || s?.currentSession?.access_token;
-        const hasta = s?.expires_at || s?.currentSession?.expires_at;
-        if (t && (!hasta || hasta * 1000 > Date.now() + 5000)) return t;
-      }
+      const k = clave();
+      const s = k && JSON.parse(localStorage.getItem(k) || 'null');
+      const t = s?.access_token || s?.currentSession?.access_token;
+      const hasta = s?.expires_at || s?.currentSession?.expires_at;
+      if (t && (!hasta || hasta * 1000 > Date.now() + 5000)) return t;
     } catch { /* sin almacenamiento */ }
     return null;
   }
@@ -125,6 +115,29 @@
     campana();
   }
 
+  // En las páginas estáticas, cabecera-yo.js pinta con el proyecto de la
+  // última vez (`klendar.sb`), porque config.js llega después. Si hay alguna
+  // sesión guardada, se confirma con config.js: la de otro proyecto se borra
+  // (cabecera-yo.js) y, si con eso cambia quién eres, se vuelve a pintar.
+  // Sin nada guardado, ni se pide.
+  if (window.KL_YO) {
+    const quien = () => sesion()?.id || '';
+    const antes = quien();
+    let alguna = false;
+    try { for (let i = 0; i < localStorage.length && !alguna; i++) alguna = /^sb-/.test(localStorage.key(i) || ''); } catch { /* sin almacenamiento */ }
+    if (window.KLENDAR_ENV || alguna) {
+      conf().then((env) => {
+        if (!env) return;
+        window.KL_YO.proyecto();
+        if (quien() === antes) return;
+        // Con quien eres de verdad: su cabecera y el idioma de su cuenta.
+        window.KL_CABECERA();
+        idiomaDeCuenta();
+        vaAlSuyo();
+      });
+    }
+  }
+
   // Si en la cabecera no cabe todo, el logo se queda en el símbolo
   // (cabecera-yo.js); otra vez al cambiar el ancho y al llegar las letras.
   function justa() { if (window.KL_YO) window.KL_YO.justa(); }
@@ -198,8 +211,11 @@
   // Con sesión, el de la cuenta (lo guarda la app o «Ajustes»). En «Tu
   // cuenta» y el panel lo pone al día la propia herramienta, que lee la
   // cuenta de verdad (la sesión guardada puede ir atrasada).
-  const deCuenta = sesion()?.user_metadata?.locale;
-  if (!deHerramienta && IDIOMAS.includes(deCuenta) && deCuenta !== leeIdioma()) ponIdioma(deCuenta);
+  function idiomaDeCuenta() {
+    const deCuenta = sesion()?.user_metadata?.locale;
+    if (!deHerramienta && IDIOMAS.includes(deCuenta) && deCuenta !== leeIdioma()) ponIdioma(deCuenta);
+  }
+  idiomaDeCuenta();
   function idiomaDePagina() {
     if (deHerramienta && typeof klIdiomaElegido === 'function') return klIdiomaElegido();
     const l = (document.documentElement.lang || 'es').slice(0, 2);
@@ -232,7 +248,8 @@
     } catch { /* el de hreflang */ }
     return u.pathname + location.search.replace(/^\?$/, '') + location.hash;
   }
-  if (!deHerramienta) {
+  function vaAlSuyo() {
+    if (deHerramienta) return;
     const g = leeIdioma();
     const l = (document.documentElement.lang || 'es').slice(0, 2);
     if (g && lado(g) !== l) {
@@ -240,6 +257,7 @@
       if (v && v !== location.pathname + location.search + location.hash) location.replace(v);
     }
   }
+  vaAlSuyo();
   // Guarda el idioma en tu cuenta (si hay sesión): el perfil y los datos de
   // la sesión, como «Ajustes › Idioma». Como mucho 2,5 s: si no llega, se
   // queda en este navegador y la próxima vez lo intenta «Ajustes».
@@ -258,12 +276,9 @@
             if (!nuevo?.id) return;
             // La sesión guardada, con el idioma nuevo (si no, al volver
             // a una página pública mandaría el de antes).
-            for (let i = 0; i < localStorage.length; i++) {
-              const clave = localStorage.key(i);
-              if (!/^sb-[a-z0-9]+-auth-token$/.test(clave)) continue;
-              const s = JSON.parse(localStorage.getItem(clave) || 'null');
-              if (s?.user?.id === nuevo.id) { s.user = nuevo; localStorage.setItem(clave, JSON.stringify(s)); }
-            }
+            const k = clave();
+            const s = k && JSON.parse(localStorage.getItem(k) || 'null');
+            if (s?.user?.id === nuevo.id) { s.user = nuevo; localStorage.setItem(k, JSON.stringify(s)); }
           }),
       ]);
     }).catch(() => {});

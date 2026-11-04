@@ -6,7 +6,7 @@
 // una sesión de «Tu cuenta» guardada, la etiqueta del <head> lleva al pedido
 // en vivo (`/app/#/listo/<código>`).
 
-import { esc, html, rpc } from './page.js';
+import { esc, html, rpc, supabasePublic } from './page.js';
 import { publicPage } from './public.js';
 import KL from '../../assets/listo.js';
 
@@ -41,7 +41,7 @@ export async function ordersPublicPage(rawCode, lang) {
     description: vale ? S.intro : S.badBody,
     image: vale && /^https:\/\//.test(info.business.logo_url || '') ? info.business.logo_url : null,
     // Con sesión, al pedido en vivo antes de pintar nada.
-    head: `${HEAD}${code && vale ? `\n${KL.saltoConSesion(lang, code)}` : ''}`,
+    head: `${HEAD}${code && vale ? `\n${KL.saltoConSesion(lang, code, new URL(supabasePublic().url).hostname.split('.')[0])}` : ''}`,
     body: `<div id="listo-pub" class="cola-pub" data-code="${esc(code)}">${KL.cuerpo(info, lang, code)}</div>`,
     contador: false,
     privada: true,

@@ -117,9 +117,12 @@
   }
 
   /** La etiqueta del <head> que lleva a «Tu cuenta» si hay sesión guardada. */
-  function saltoConSesion(lang, code) {
+  function saltoConSesion(lang, code, ref) {
     const destino = JSON.stringify(`${cuenta(lang)}#/listo/${code}`);
-    return `<script>(function(){try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(!/^sb-[a-z0-9]+-auth-token$/.test(k||''))continue;var s=JSON.parse(localStorage.getItem(k)||'null');if(s&&(s.access_token||s.currentSession)){location.replace(${destino});return;}}}catch(e){}})();</script>`;
+    // Solo la sesión de este proyecto (`ref`, el de la Function): la de otro
+    // Supabase (dev, tras pasar la web a prod) llevaría a «Tu cuenta» sin sesión.
+    const k = JSON.stringify(ref ? `sb-${String(ref).replace(/[^a-z0-9-]/g, '')}-auth-token` : '');
+    return `<script>(function(){try{var s=JSON.parse(localStorage.getItem(${k})||'null');if(s&&(s.access_token||s.currentSession)){location.replace(${destino});}}catch(e){}})();</script>`;
   }
 
   const KlendarListo = { T, esc, codigoValido, cuerpo, titulo, saltoConSesion };
