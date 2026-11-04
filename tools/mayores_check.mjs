@@ -1,7 +1,8 @@
 // Contenido +18 sin cuenta y decisiones de la revisión de filtros (Iván,
 // 2026-10-27), en la web local contra dev y solo leyendo:
 //  1. Sin contestar, una línea «Hay N resultados solo para mayores de 18.
-//     ¿Tienes 18 años o más?» solo donde hay algo +18 (Explorar y Sitios).
+//     ¿Tienes 18 años o más?» solo donde hay algo +18 (Explorar: lista y
+//     calendario, que es lo primero que se ve desde el 3-11; y Sitios).
 //  2. «Tengo 18 años o más»: se guarda (cookie `klendar_18`), la página se
 //     vuelve a pedir, salen los +18 y la pregunta no vuelve.
 //  3. «Soy menor»: desaparece, no vuelve y no sale nada +18.
@@ -65,6 +66,25 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
         ok(!(await page.locator('[data-edad]').count()) && (await page.locator('h1').first().innerText()) !== '¿Tienes 18 años o más?', `${t} «18 o más»: la ficha +18 se ve`);
       }
       ok(errores.length === 0, `${t} sin errores en la consola (${errores.slice(0, 3).join(' | ')})`);
+      await ctx.close();
+    }
+
+    // 1b. El calendario de Explorar (lo primero que se ve): la misma línea,
+    // con el mismo texto y la misma forma que en la lista (Iván, 2026-11-04).
+    {
+      const { ctx, page, errores } = await nuevo();
+      await page.goto(`${BASE}/explorar/?ciudad=Madrid&vista=lista`);
+      const enLista = await page.locator('[data-edad]').evaluate((el) => [el.className, el.querySelector('strong')?.textContent]).catch(() => null);
+      await page.goto(`${BASE}/explorar/?ciudad=Madrid`);
+      const cal = page.locator('[data-edad]');
+      ok(await page.locator('.calendario').count() > 0 && await cal.isVisible() && /solo para mayores de 18/.test(await cal.innerText()), `${t} calendario sin contestar: la línea de la edad`);
+      const enCal = await cal.evaluate((el) => [el.className, el.querySelector('strong')?.textContent]).catch(() => null);
+      ok(JSON.stringify(enCal) === JSON.stringify(enLista), `${t} calendario: la misma forma y el mismo texto que la lista (${JSON.stringify(enCal)})`);
+      await page.screenshot({ path: `${OUT}/mayores-calendario-${nombre}-${forma}.png` });
+      await Promise.all([page.waitForLoadState('load'), page.waitForEvent('framenavigated'), page.locator('[data-edad-si]').click()]);
+      await page.waitForLoadState('load');
+      ok(!(await page.locator('[data-edad]').count()), `${t} calendario con «18 o más»: sin pregunta`);
+      ok(errores.length === 0, `${t} calendario: sin errores en la consola (${errores.slice(0, 3).join(' | ')})`);
       await ctx.close();
     }
 

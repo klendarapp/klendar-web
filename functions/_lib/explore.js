@@ -1492,11 +1492,17 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   // «¿Tienes 18 años o más?» (Iván, 2026-10-27): sin contestar y con la
   // pregunta encendida, solo donde de verdad hay algo +18 que no se ve (lo
   // menos molesto: una línea, sin tapar nada, y nada si no hace falta).
-  const ocultos18 = !edad && page === 1 && !mapa && !sitiosMapa && !calendario && (await preguntaEdadEncendida())
+  // También en el calendario (Iván, 2026-11-04), que es lo primero que se
+  // ve en Explorar: la misma regla con la cuenta entera de lo que mira (el
+  // calendario trae como mucho 240, así que se cuentan los dos lados igual).
+  const cuenta18 = (H18) => rpc('public_explore', { ...argsExplore, p_limit: 1, p_offset: 0 }, H18).then((r) => Number(r?.total) || 0);
+  const ocultos18 = !edad && page === 1 && !mapa && !sitiosMapa && (await preguntaEdadEncendida())
     ? await (negocios
-      ? rpc('public_places', { ...argsSitios(centroCiudad), p_limit: 1, p_offset: 0 }, cabeceraEdad('1'))
-      : rpc('public_explore', { ...argsExplore, p_limit: 1, p_offset: 0 }, cabeceraEdad('1')))
-      .then((r) => Math.max(0, (Number(r?.total) || 0) - total)).catch(() => 0)
+      ? rpc('public_places', { ...argsSitios(centroCiudad), p_limit: 1, p_offset: 0 }, cabeceraEdad('1')).then((r) => (Number(r?.total) || 0) - total)
+      : calendario
+        ? Promise.all([cuenta18(cabeceraEdad('1')), cuenta18(H)]).then(([con, sin]) => con - sin)
+        : cuenta18(cabeceraEdad('1')).then((n) => n - total))
+      .then((n) => Math.max(0, n)).catch(() => 0)
     : 0;
   let paginas = mapa || calendario || sitiosMapa ? 1 : Math.max(1, Math.min(50, Math.ceil(total / POR_PAGINA)));
 
@@ -1613,6 +1619,42 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
     </details>`;
 
   const ciudades = cities.filter((c) => c.city).slice(0, 20);
+  // «Más formas de explorar» (Iván, 2026-11-04: «solo enseña Zaragoza y
+  // Madrid», y él está en Málaga): solo ciudades con algo publicado (nada de
+  // páginas vacías), pero por cercanía a tu zona: tu «¿Dónde?» (posición o
+  // municipio) o, si no, la ubicación aproximada por la conexión; tu ciudad
+  // (si tiene algo) la primera, y como mucho 6. Sin zona (Google), el orden
+  // de siempre y todas. Con la zona de la conexión o sin zona, el navegador
+  // pone antes «Tu ciudad» si la tienes guardada (`data-mf`, más abajo).
+  const kmEntre = (a, b) => {
+    const rad = (d) => (d * Math.PI) / 180;
+    return 6371 * 2 * Math.asin(Math.min(1, Math.sqrt(Math.sin(rad(b.lat - a.lat) / 2) ** 2
+      + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(rad(b.lng - a.lng) / 2) ** 2)));
+  };
+  const numOk = (x) => x != null && x !== '' && Number.isFinite(Number(x));
+  const zonaMf = cerca && numOk(lat) && numOk(lng) ? { lat: Number(lat), lng: Number(lng) }
+    : centroCiudad && numOk(centroCiudad.lat) && numOk(centroCiudad.lng) ? { lat: Number(centroCiudad.lat), lng: Number(centroCiudad.lng) } : null;
+  const planoMf = (x) => String(x || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+  // El punto de cada una: el de su Ciudad de Klendar o, si no lo es, el de su
+  // municipio (solo con zona, y solo para esas: hoy no hay ninguna).
+  const ciudadesConPunto = await Promise.all(ciudades.map(async (c) => {
+    const k = (klendarCities || []).find((x) => x.id === planoMf(c.slug || c.city) || planoMf(x.name) === planoMf(c.city));
+    if (k && numOk(k.lat)) return { ...c, lat: Number(k.lat), lng: Number(k.lng) };
+    if (!zonaMf) return c;
+    const m = await rpcAll('resolve_municipality', { p_slug: String(c.slug || c.city) }).then((l) => l[0]?.municipality || null).catch(() => null);
+    return m && numOk(m.lat) ? { ...c, lat: Number(m.lat), lng: Number(m.lng) } : c;
+  }));
+  const esMia = (c) => !cerca && Boolean(city) && (planoMf(c.slug) === planoMf(city) || planoMf(c.city) === planoMf(city)
+    || (municipio && municipio.slug && planoMf(c.slug) === planoMf(municipio.slug)));
+  const ciudadesMf = zonaMf
+    ? ciudadesConPunto.map((c, i) => ({ c, i, d: esMia(c) ? -1 : numOk(c.lat) ? kmEntre(zonaMf, c) : Infinity }))
+      .sort((a, b) => a.d - b.d || a.i - b.i).map((x) => x.c)
+    : ciudadesConPunto;
+  // Tu zona elegida manda: el servidor ya deja solo 6. Con la de la conexión
+  // (o sin zona), van todas y el navegador las deja en 6 (o en tu ciudad).
+  const mfCliente = !zonaMf || Boolean(e.aprox);
+  const ciudadesMas = mfCliente ? ciudadesMf : ciudadesMf.slice(0, 6);
+  const MF_MAX = 6;
   // La ciudad de Klendar de lo que se mira (para «Lo más buscado»): la que
   // hay donde estás (a menos de 30 km de su centro) o la elegida.
   const plano = (x) => String(x || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
@@ -1652,7 +1694,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
        </div>
      </form>`;
   // Pedir la ubicación y volver con ella (más lo de `data-mas`): /assets/tarjetas.js.
-  const botonCerca = (txt, mas = '', cls = 'op', icono = 'cerca') => `<button type="button" class="${cls}" data-cerca${mas ? ` data-mas="${esc(mas)}"` : ''} data-err="${esc(S.nearNo)}" hidden>${icono ? ic(icono, 16) : ''}<span>${esc(txt)}</span></button>`;
+  const botonCerca = (txt, mas = '', cls = 'op', icono = 'cerca') => `<button type="button" class="${cls}" data-cerca${mas ? ` data-mas="${esc(mas)}"` : ''} data-err="${esc(S.nearNo)}">${icono ? ic(icono, 16) : ''}<span>${esc(txt)}</span></button>`;
   const K = CLAVES[en ? 'en' : 'es'];
   const M = KM.t(lang);
   const radio = (name, value, label, on, cls = '') => `<label class="op-r${cls ? ` ${cls}` : ''}"><input type="radio" name="${name}" value="${esc(value)}"${on ? ' checked' : ''}><span>${esc(label)}</span></label>`;
@@ -1676,7 +1718,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
     const txt = k === 1 ? S.walk1 : `${k} km`;
     return cerca
       ? `<a class="op-km${km === k ? ' on' : ''}" href="${esc(link({ km: k }))}"${km === k ? ' aria-current="true"' : ''}>${esc(txt)}</a>`
-      : `<button type="button" class="op-km" data-cerca data-mas="km=${k}" data-err="${esc(S.nearNo)}" hidden>${esc(txt)}</button>`;
+      : `<button type="button" class="op-km" data-cerca data-mas="km=${k}" data-err="${esc(S.nearNo)}">${esc(txt)}</button>`;
   };
   // ¿Dónde?, como las otras hojas (Iván, 2026-10-28): título, ✕ y el velo
   // detrás (en el escritorio, centrada; en el móvil, desde abajo). Sus
@@ -1973,11 +2015,11 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
     ? (sitiosMapa ? vistaBoton('', S.seeList, 'lista') : vistaBoton('map', S.seeMap, 'mapa'))
     : (mapa ? vistaBoton('calendar', S.seeCal, 'cal') : vistaBoton('map', S.seeMap, 'mapa'));
   const listaWeb = negocios ? '' : vista === 'list' ? vistaBoton('calendar', S.seeCal, 'cal') : vistaBoton('list', S.seeList, 'lista');
-  // Buscar abre la hoja «Buscar» (la misma de Descubre); sin JavaScript, esta
-  // misma página con la hoja abierta (`?buscar=1`).
-  const conBuscar = (href) => `${href}${href.includes('?') ? '&' : '?'}${CLAVES[en ? 'en' : 'es'].search}=1`;
-  const lupa = boton(conBuscar(link({})), S.search, 'buscar', ' data-abre-hoja="buscar"');
-  const acciones = descubre ? '' : `<div class="exp-acciones">${listaWeb}${lupa}${esquina}</div>`;
+  // Buscar: una sola lupa, la de la cabecera (Iván, 2026-11-04: había dos,
+  // esta y la de arriba, y abrían la misma hoja «Buscar»). La de la
+  // cabecera se ve en todos los anchos, también a 320 px, y sin JavaScript
+  // lleva a esta página con la hoja abierta (`?buscar=1`).
+  const acciones = descubre ? '' : `<div class="exp-acciones">${listaWeb}${esquina}</div>`;
   // Arriba, qué se busca: «Planes | Sitios» (como la app). Al cambiar, la
   // zona, la distancia, los filtros que valen en los dos y la vista (mapa o
   // lista) se quedan.
@@ -2126,7 +2168,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   <script>(function(){var b=document.querySelector('[data-edad]');if(!b)return;function f(v){document.cookie='klendar_18='+v+'; Max-Age=31536000; Path=/; SameSite=Lax'+(location.protocol==='https:'?'; Secure':'');if(v==='1')location.reload();else{b.remove();document.querySelectorAll('[data-tras-edad]').forEach(function(a){if(a.hasAttribute('data-cerca-aviso')&&!navigator.geolocation)return;a.hidden=false;});}}b.querySelector('[data-edad-si]').addEventListener('click',function(){f('1');});b.querySelector('[data-edad-no]').addEventListener('click',function(){f('0');});})();</script>`
     : '';
   const invitaCerca = !descubre && !cerca && !city
-    ? `<p class="cerca-aviso" data-cerca-aviso${ocultos18 ? ' data-tras-edad' : ''} hidden>${ic('cerca', 18)}<span>${esc(S.nearPrompt)}</span>
+    ? `<p class="cerca-aviso" data-cerca-aviso${ocultos18 ? ' data-tras-edad hidden' : ''}>${ic('cerca', 18)}<span>${esc(S.nearPrompt)}</span>
         <button type="button" class="pill ink" data-cerca data-err="${esc(S.nearNo)}">${esc(S.useLoc)}</button></p>`
     : '';
 
@@ -2172,15 +2214,23 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
 
   // ── Más formas de explorar: las páginas de Google, abajo y en su sitio ──
   const ciudadSeo = (cerca ? '' : city) || (ciudades.length === 1 ? String(ciudades[0].city) : '');
+  // Con `data-mf`, cada enlace lleva su punto para que el navegador las
+  // ordene por «Tu ciudad»; con la zona de la conexión, de la 7.ª en
+  // adelante ocultas (sin zona, todas: es lo que ve Google).
+  const mfAttr = (c, i) => (mfCliente && numOk(c.lat) ? ` data-lat="${Number(c.lat).toFixed(3)}" data-lng="${Number(c.lng).toFixed(3)}"` : '')
+    + (mfCliente && zonaMf && i >= MF_MAX ? ' hidden' : '');
+  const mfScript = mfCliente && ciudadesMas.length > 1 ? `<script>(function(){try{var g=JSON.parse(localStorage.getItem('klendar.gustos')||'null'),h=g&&g.home;if(!h||!isFinite(+h.lat)||!isFinite(+h.lng))return;
+var r=function(d){return d*Math.PI/180;},km=function(a){var la=+a.getAttribute('data-lat'),ln=+a.getAttribute('data-lng');if(!a.hasAttribute('data-lat'))return 1e9;var x=Math.sin(r(la-h.lat)/2),y=Math.sin(r(ln-h.lng)/2);return 12742*Math.asin(Math.min(1,Math.sqrt(x*x+Math.cos(r(h.lat))*Math.cos(r(la))*y*y)));};
+document.querySelectorAll('[data-mf] p').forEach(function(p){var l=Array.prototype.slice.call(p.children);l.map(function(a,i){return{a:a,i:i,d:km(a)};}).sort(function(a,b){return a.d-b.d||a.i-b.i;}).forEach(function(x,i){x.a.hidden=i>=${MF_MAX};p.appendChild(x.a);});});}catch(x){}})();</script>` : '';
   const masFormas = negocios ? '' : `<section class="mas-formas" aria-labelledby="masFormas">
     <h2 id="masFormas">${esc(S.more)}</h2>
-    ${ciudades.length ? `<div class="mf-fila"><h3>${esc(S.todayIn)}</h3><p>${ciudades.map((c) => `<a href="${todayBase(lang)}/${CITY(c.slug || c.city)}/">${esc(c.slug ? c.city : PRETTY(c.city))}</a>`).join('')}</p></div>
-    <div class="mf-fila"><h3>${esc(S.weekIn)}</h3><p>${ciudades.map((c) => `<a href="${agendaBase(lang)}/${CITY(c.slug || c.city)}/">${esc(c.slug ? c.city : PRETTY(c.city))}</a>`).join('')}</p></div>
-    <div class="mf-fila"><h3>${esc(S.kidsIn)}</h3><p>${ciudades.map((c) => `<a href="${kidsBase(lang)}/${CITY(c.slug || c.city)}/">${esc(c.slug ? c.city : PRETTY(c.city))}</a>`).join('')}</p></div>` : ''}
+    ${ciudadesMas.length ? `<div class="mf-fila"${mfCliente ? ' data-mf' : ''}><h3>${esc(S.todayIn)}</h3><p>${ciudadesMas.map((c, i) => `<a${mfAttr(c, i)} href="${todayBase(lang)}/${CITY(c.slug || c.city)}/">${esc(c.slug ? c.city : PRETTY(c.city))}</a>`).join('')}</p></div>
+    <div class="mf-fila"${mfCliente ? ' data-mf' : ''}><h3>${esc(S.weekIn)}</h3><p>${ciudadesMas.map((c, i) => `<a${mfAttr(c, i)} href="${agendaBase(lang)}/${CITY(c.slug || c.city)}/">${esc(c.slug ? c.city : PRETTY(c.city))}</a>`).join('')}</p></div>
+    <div class="mf-fila"${mfCliente ? ' data-mf' : ''}><h3>${esc(S.kidsIn)}</h3><p>${ciudadesMas.map((c, i) => `<a${mfAttr(c, i)} href="${kidsBase(lang)}/${CITY(c.slug || c.city)}/">${esc(c.slug ? c.city : PRETTY(c.city))}</a>`).join('')}</p></div>` : ''}
     ${ciudadSeo && (cats || []).length ? `<div class="mf-fila"><h3>${esc(S.byCat)} · ${esc(PRETTY(ciudadSeo))}</h3><p>${(cats || []).map((c) => `<a href="${agendaBase(lang)}/${CITY(ciudadSeo)}/${encodeURIComponent(c.slug)}/">${esc(catName(c, en))}</a>`).join('')}</p></div>` : ''}
     ${cols.length ? `<div class="mf-fila"><h3>${esc(S.picks)}</h3><p>${cols.map((c) => `<a href="${collectionBase(lang)}/${encodeURIComponent(c.slug)}/${city && !cerca ? `${CITY(city)}/` : ''}">${esc(colTitle(c, en))}</a>`).join('')}</p></div>` : ''}
     <p class="mf-cta"><a class="pill" href="${en ? '/app/?lang=en' : '/app/'}#/registro" data-sin-sesion>${esc(S.app)}</a> <a class="pill" href="${en ? '/en/for-business/' : '/para-negocios/'}">${esc(S.biz)}</a></p>
-  </section>`;
+  </section>${mfScript}`;
 
   // Cuántas hay y «Quitar filtros»: la página limpia del todo (también la zona).
   // (Sin resultados, «Quitar filtros» va con las demás salidas, abajo.)
@@ -2210,7 +2260,12 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
     const s = query({ ...e, vista, page, mes: calendario ? mes : '', dia: calendario ? dia : '' }, l);
     return [l, s ? `?${s}` : ''];
   }));
+  // «Cerca de mí» y sus atajos piden la ubicación con JavaScript: salen ya
+  // en el HTML (antes, ocultos hasta que /assets/tarjetas.js los enseñaba, y
+  // la fila de atajos y el calendario bajaban 83 px tras cargar) y, sin
+  // JavaScript, no se ven.
   const head = `${guardaFiltros({ ...e, vista }, lang, base, !descubre)}${vistosJs}
+<noscript><style>[data-cerca],[data-cerca-aviso]{display:none!important}</style></noscript>
 ${filtrado ? '<meta name="robots" content="noindex, follow">' : jsonLd}${descubre ? '' : `
 ${PARTIDOS_CSS}
 ${SITIOS_CSS}`}${mapa ? `

@@ -247,8 +247,9 @@ export function siteHeader(lang, esPath = '/', enPath = '/en/', actual = '') {
     <label class="menu-toggle" for="menu" aria-hidden="true" title="${T.mas}"><span></span><span></span><span></span></label>
   </div>
 </div></header>
+<script src="/assets/cabecera-yo.js?v=1"></script>
 <nav class="tabbar" aria-label="${T.secciones}">${pestanas('tab')}</nav>
-<script src="/assets/cabecera.js?v=13" defer></script>`;
+<script src="/assets/cabecera.js?v=14" defer></script>`;
 }
 
 /** El pie, con las mismas columnas en todas las páginas. */

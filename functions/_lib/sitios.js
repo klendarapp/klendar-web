@@ -108,8 +108,7 @@ export const SITIOS_SCRIPTS = `<script src="/assets/zona.js?v=2" defer></script>
 
 export const SITIOS_CSS = `<style>
 /* Sin saltos al cambiar entre Planes y Sitios: la barra de desplazamiento
-   siempre reserva su sitio (una página más corta no mueve nada). */
-html { scrollbar-gutter: stable; }
+   reserva su sitio en toda la web (site.css). */
 /* La fila de arriba de Explorar, como la de la app (\`ExploreTopRow\`):
    «Planes | Sitios» a la izquierda y, a la derecha, los botones redondos
    (la lista de la web, buscar y el de la vista). Con la letra grande o en

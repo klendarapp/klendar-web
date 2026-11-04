@@ -21,42 +21,10 @@
     return null;
   }
 
-  function pinta() {
-    // «Tu cuenta» lleva las cabeceras de los dos idiomas: puede haber dos.
-    const botones = [...document.querySelectorAll('.top-entrar')];
-    const usuario = sesion();
-    // Lo que solo tiene sentido sin cuenta («Crear cuenta gratis»).
-    document.querySelectorAll('[data-sin-sesion]').forEach((el) => { el.hidden = Boolean(usuario); });
-    const meta = usuario?.user_metadata || {};
-    const nombre = meta.display_name || meta.full_name || usuario?.email || '';
-    const inicial = (nombre.trim().charAt(0) || '·').toUpperCase();
-    const foto = meta.avatar_url || meta.picture;
-    for (const boton of botones) {
-      if (!boton.dataset.entrar) boton.dataset.entrar = JSON.stringify([boton.textContent, boton.getAttribute('href')]);
-      if (!usuario) {
-        const [texto, href] = JSON.parse(boton.dataset.entrar);
-        boton.classList.remove('top-yo');
-        boton.textContent = texto;
-        boton.setAttribute('href', href);
-        boton.removeAttribute('aria-label');
-        boton.removeAttribute('title');
-        continue;
-      }
-      boton.classList.add('top-yo');
-      boton.href = boton.dataset.cuenta || '/app/';
-      boton.setAttribute('aria-label', boton.dataset.cuentaTxt || 'Tu cuenta');
-      boton.title = nombre;
-      boton.textContent = '';
-      if (foto && /^https:\/\//.test(foto)) {
-        const img = document.createElement('img');
-        img.src = foto; img.alt = ''; img.referrerPolicy = 'no-referrer';
-        img.onerror = () => { img.remove(); boton.textContent = inicial; };
-        boton.appendChild(img);
-      } else {
-        boton.textContent = inicial;
-      }
-    }
-  }
+  // «Entrar» o tu inicial, la campana y el logo que se encoge: los pone
+  // /assets/cabecera-yo.js antes del primer pintado (sin `defer`, justo
+  // detrás de la cabecera); aquí se vuelven a poner al entrar o salir.
+  function pinta() { if (window.KL_YO) window.KL_YO.pinta(); }
 
   window.KL_CABECERA = () => { pinta(); campana(); justa(); if (typeof pintaIdioma === 'function') pintaIdioma(); };
   pinta();
@@ -157,19 +125,9 @@
     campana();
   }
 
-  // Si en la cabecera no cabe todo (Descubre en un móvil estrecho, con ✨, la
-  // lupa y la campana), el logo se queda en el símbolo, como el nombre que
-  // se encoge en la app. El nombre sigue para el lector.
-  const cab = document.querySelector('header.top');
-  const fila = cab && cab.querySelector('.wrap');
-  function justa() {
-    if (!fila || !cab.querySelector('.top-iconos')) return;
-    cab.classList.remove('top-justa');
-    const a = cab.querySelector('.top-acciones');
-    const b = cab.querySelector('.brand');
-    if (!a || !b) return;
-    if (b.getBoundingClientRect().right + 8 > a.getBoundingClientRect().left || fila.scrollWidth > fila.clientWidth + 1) cab.classList.add('top-justa');
-  }
+  // Si en la cabecera no cabe todo, el logo se queda en el símbolo
+  // (cabecera-yo.js); otra vez al cambiar el ancho y al llegar las letras.
+  function justa() { if (window.KL_YO) window.KL_YO.justa(); }
   justa();
   let tJusta;
   addEventListener('resize', () => { clearTimeout(tJusta); tJusta = setTimeout(justa, 60); });
@@ -205,6 +163,19 @@
   }
   marcaPestana();
   window.addEventListener('hashchange', marcaPestana);
+
+  // Cambiar de pestaña es instantáneo (GLOSARIO, «Movimiento › Pestañas»:
+  // «no se funde», como en iOS y Android). Entre Descubre, Explorar, Planes,
+  // Cuenta y la portada, la View Transition entre páginas se salta (antes
+  // todo se fundía 150 ms); de una tarjeta a su ficha, y al volver, sigue
+  // la foto que vuela. Lo decide la página que se va (`pageswap`).
+  const esRaiz = (u) => /^\/(en\/)?((descubre|discover|explorar|explore)\/)?$|^\/app\/$/.test(u.pathname);
+  addEventListener('pageswap', (ev) => {
+    if (!ev.viewTransition) return;
+    let a;
+    try { a = new URL(ev.activation && ev.activation.entry ? ev.activation.entry.url : ''); } catch { return; }
+    if (a.origin === location.origin && esRaiz(location) && esRaiz(a)) ev.viewTransition.skipTransition();
+  });
   try {
     const t = document.querySelector('[data-tab][aria-current="page"]')?.dataset.tab;
     if (t && !/^\/(en\/)?(o|b)\//.test(location.pathname)) sessionStorage.setItem('klendar.tab', t);

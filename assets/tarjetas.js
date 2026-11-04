@@ -46,6 +46,19 @@
 
   // ── Movimiento, datos y sonido ─────────────────────────────────────────
   var quieto = window.matchMedia('(prefers-reduced-motion: reduce)');
+  // La aguja del logo gira mientras se trae la lista otra vez (con
+  // «Reducir movimiento», quieta).
+  var giraAguja = function () {
+    var ag = document.querySelector('header.top .brand .simbolo-aguja');
+    if (!ag || quieto.matches || !ag.animate) return function () {};
+    ag.style.transformOrigin = '32px 32px';
+    var giro = ag.animate([{ transform: 'rotate(0turn)' }, { transform: 'rotate(1turn)' }], { duration: 1000, iterations: Infinity });
+    // Al acabar, termina la vuelta que lleva (frena en las 12).
+    return function () {
+      giro.effect.updateTiming({ iterations: Math.max(1, Math.ceil((giro.currentTime || 0) / 1000)) });
+      giro.finished.then(function () { giro.cancel(); }, function () {});
+    };
+  };
   function ahorro() {
     var c = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
     return Boolean(c && (c.saveData || /(^|-)2g$/.test(c.effectiveType || '')));
@@ -524,9 +537,11 @@
   // «Cerca de mí», «Estoy aquí» y «Cercanía»: piden la ubicación y vuelven
   // con ella (y con lo de `data-mas`), sin ciudad ni página.
   var errCerca = document.getElementById('cercaErr');
+  // Salen ya en el HTML (sin saltos al cargar); sin ubicación en el
+  // navegador, se quitan.
   document.querySelectorAll('[data-cerca]').forEach(function (b) {
-    if (!navigator.geolocation) return;
-    b.hidden = false;
+    if (!navigator.geolocation) { b.hidden = true; return; }
+    b.hidden = false; // los de otras páginas (Partidos) aún vienen ocultos
     b.addEventListener('click', function () {
       navigator.geolocation.getCurrentPosition(function (p) {
         var lat = p.coords.latitude, lng = p.coords.longitude;
@@ -546,7 +561,7 @@
   var aviso = document.querySelector('[data-cerca-aviso]');
   // Con la pregunta de la edad a la vista, espera a que se conteste (un solo
   // aviso a la vez; lo enseña el script de la edad).
-  if (aviso && navigator.geolocation && !aviso.hasAttribute('data-tras-edad')) aviso.hidden = false;
+  if (aviso && !navigator.geolocation) aviso.hidden = true;
 
   // ¿Dónde?: «Cerca de mí» | «Una ciudad» (sin JavaScript se ven las dos
   // partes, una debajo de otra).
@@ -1028,17 +1043,6 @@
     // la oferta fijada de un RRPP se queda la primera. Mientras llega, la
     // aguja del logo gira (con «Reducir movimiento», quieta). Si no llega
     // (sin red), se queda lo que había.
-    var giraAguja = function () {
-      var ag = document.querySelector('header.top .brand .simbolo-aguja');
-      if (!ag || quieto.matches || !ag.animate) return function () {};
-      ag.style.transformOrigin = '32px 32px';
-      var giro = ag.animate([{ transform: 'rotate(0turn)' }, { transform: 'rotate(1turn)' }], { duration: 1000, iterations: Infinity });
-      // Al acabar, termina la vuelta que lleva (frena en las 12).
-      return function () {
-        giro.effect.updateTiming({ iterations: Math.max(1, Math.ceil((giro.currentTime || 0) / 1000)) });
-        giro.finished.then(function () { giro.cancel(); }, function () {});
-      };
-    };
     var recargando = false;
     var recargaFeed = function () {
       if (recargando) return;
@@ -1105,9 +1109,21 @@
       e.preventDefault();
       if (subeORecarga) return subeORecarga();
       var caja = document.scrollingElement || document.documentElement;
-      if (caja.scrollTop > 2) caja.scrollTo({ top: 0, behavior: suave() });
-      else location.reload();
+      if (caja.scrollTop > 2) { caja.scrollTo({ top: 0, behavior: suave() }); return; }
+      // Ya arriba y sin publicaciones: se vuelve a preguntar sin recargar la
+      // página (antes, `location.reload()`: parecía que el logo te llevaba a
+      // otra página). Solo si ahora hay algo, la página otra vez para
+      // enseñarlo.
+      if (preguntando) return;
+      preguntando = true;
+      var para = giraAguja();
+      fetch(location.href, { credentials: 'same-origin', cache: 'no-cache' }).then(function (r) {
+        return r.ok ? r.text() : '';
+      }).then(function (txt) {
+        if (txt && new DOMParser().parseFromString(txt, 'text/html').getElementById('feed')) location.reload();
+      }).catch(function () { /* sin red: lo que había */ }).then(function () { preguntando = false; para(); });
     });
+    var preguntando = false;
   }
 
   iniciar(document);

@@ -54,9 +54,10 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     // 1. La lista.
     await page.goto(`${BASE}/explorar/?que=sitios&${AQUI}`);
     ok(await page.locator('.que a.on').innerText() === 'Sitios', `${t} «Planes | Sitios» con Sitios puesto`);
-    // Arriba, como la app: buscar y «Ver en el mapa» (revisión del 3-11, 1.1).
+    // Arriba, como la app: «Ver en el mapa» (revisión del 3-11, 1.1); la lupa,
+    // solo la de la cabecera (Iván, 2026-11-04).
     const botones = await page.locator('.exp-acciones .exp-boton').evaluateAll((l) => l.map((a) => a.getAttribute('aria-label')));
-    ok(botones.join(' · ') === 'Buscar · Ver en el mapa', `${t} buscar · «Ver en el mapa» (${botones.join(' · ')})`);
+    ok(botones.join(' · ') === 'Ver en el mapa', `${t} «Ver en el mapa», sin lupa en la fila (${botones.join(' · ')})`);
     const filas = await page.locator('.sitio-fila').count();
     ok(filas > 0, `${t} filas de sitios (${filas})`);
     ok(!(await page.locator('.resumen-n').count()), `${t} sin «N sitios» (la app no lo tiene)`);
@@ -126,7 +127,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
         };
         return {
           'Planes | Sitios': r('.que'), Planes: r('.que a:first-child'), Sitios: r('.que a:last-child'),
-          Buscar: r('.exp-acciones [data-abre-hoja="buscar"]'), 'botón de vista': r('.exp-acciones .exp-boton:last-child'),
+          Buscar: r('header.top [data-abre-hoja="buscar"]'), 'botón de vista': r('.exp-acciones .exp-boton:last-child'),
           // La fila de filtros (lo de dentro cambia: en Planes, el orden
           // «según el tiempo» va antes del «dónde», como en la app).
           Filtros: r('#filtros > summary'), 'fila de filtros': r('#barra'),

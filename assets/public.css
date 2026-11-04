@@ -600,10 +600,13 @@ body.con-hoja { overflow: hidden; }
    un documento quieto es lo mismo). «Más formas de explorar» y el pie van
    dentro, después del final, como antes. Sin `:has()` (navegadores viejos)
    el documento hace scroll como siempre. */
-html:has(body.pagina-feed) { height: 100%; overflow: hidden; overscroll-behavior: none; }
+html:has(body.pagina-feed) { height: 100%; overflow: hidden; overscroll-behavior: none; scrollbar-gutter: auto; }
 body.pagina-feed { --cab: 64px; --feed-w: 100vw; --feed-x: 0px; --feed-vp: 100vh; --feed-alto: var(--feed-vp); --feed-arriba: 116px;
   --feed-abajo: calc(78px + env(safe-area-inset-bottom)); --velo-arriba: var(--cab);
   box-sizing: border-box; height: 100%; overflow-x: hidden; overflow-y: auto; overscroll-behavior-y: contain;
+  /* Su barra, en el sitio de la del documento en las demás páginas (la
+     cabecera mide lo mismo en Descubre que en Explorar). */
+  scrollbar-gutter: stable;
   /* Posicionado: lo `absolute` que cuelga del <body> (el aviso `.sr` de «Ver
      solo la foto», que tarjetas.js añade al final) queda dentro de su scroll.
      Sin esto se iba a y≈20 000 del documento, el documento pasaba a tener

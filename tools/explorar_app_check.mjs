@@ -1,12 +1,13 @@
 // Explorar de la web como el de la app (Iván, 2026-11-03; revisión del
 // 3-11, 1.1, opción a), en la web local contra dev y solo leyendo:
 //
-// - arriba, solo «Planes | Sitios» · la lista (solo web) · buscar · el botón
-//   de vista, como `ExploreTopRow`: sin título a la vista, sin entradilla,
+// - arriba, solo «Planes | Sitios» · la lista (solo web) · el botón de
+//   vista, como `ExploreTopRow` pero sin lupa (en la web hay una sola, la de
+//   la cabecera; Iván, 2026-11-04): sin título a la vista, sin entradilla,
 //   sin «Dónde verlo» ni «Grupos y empresas», sin buscador en la página ni
 //   fila de atajos y sin recuento («2699 resultados»);
-// - la lupa de la fila (y la de la cabecera) abre la hoja «Buscar», la misma
-//   de Descubre;
+// - la lupa de la cabecera abre la hoja «Buscar», la misma de Descubre (y
+//   en la fila no hay otra);
 // - Planes abre en el calendario; la lista sigue ahí (`?vista=lista`) y la
 //   recuerda; una búsqueda sale en lista;
 // - sin JavaScript: la lupa lleva a Explorar con la hoja abierta
@@ -84,14 +85,15 @@ for (const [nombre, tipo, anchos] of [['chromium', chromium, [390, 1280]], ['web
     ok(!a.buscadorPagina && !a.atajosFila, `${t} sin buscador ni atajos en la página`);
     ok(!a.recuento, `${t} sin recuento`);
     ok(JSON.stringify(a.que) === JSON.stringify([['Planes', true], ['Sitios', false]]), `${t} «Planes | Sitios» (${JSON.stringify(a.que)})`);
-    ok(JSON.stringify(a.botones) === JSON.stringify(['Ver en lista', 'Buscar', 'Ver en el mapa']), `${t} la lista (web) · buscar · «Ver en el mapa» (${a.botones.join(' · ')})`);
+    ok(JSON.stringify(a.botones) === JSON.stringify(['Ver en lista', 'Ver en el mapa'])), `${t} la lista (web) · «Ver en el mapa», sin lupa en la fila (${a.botones.join(' · ')})`);
     ok(a.calendario, `${t} Planes abre en el calendario`);
     ok(a.ancho <= ancho, `${t} sin desplazamiento lateral (${a.ancho})`);
     ok(a.fila.der <= ancho && a.fila.izq >= 0, `${t} la fila de arriba cabe (${JSON.stringify(a.fila)})`);
     await page.screenshot({ path: `${OUT}/explorar-app-${nombre}-${ancho}-calendario.png` });
 
-    // ── La lupa de la fila abre «Buscar» (la de Descubre) ──
-    await page.click('.exp-acciones [data-abre-hoja="buscar"]');
+    // ── La lupa de la cabecera (la única) abre «Buscar» (la de Descubre) ──
+    ok(await page.locator('header.top [data-abre-hoja="buscar"]').isVisible(), `${t} la lupa de la cabecera se ve`);
+    await page.click('header.top [data-abre-hoja="buscar"]');
     await page.waitForTimeout(700);
     let hoja = await page.evaluate(() => {
       const h = document.getElementById('buscar');
@@ -105,18 +107,10 @@ for (const [nombre, tipo, anchos] of [['chromium', chromium, [390, 1280]], ['web
     await page.keyboard.press('Escape');
     await page.waitForTimeout(400);
     const foco = await page.evaluate(() => ({ cerrada: !document.getElementById('buscar').open,
-      foco: document.activeElement?.closest('.exp-acciones') ? 'fila' : document.activeElement?.tagName }));
-    ok(foco.cerrada && foco.foco === 'fila', `${t} Escape la cierra y el foco vuelve a la lupa (${foco.foco})`);
-    // …y la de la cabecera, también.
-    if (await page.locator('header.top [data-abre-hoja="buscar"]').isVisible()) {
-      await page.click('header.top [data-abre-hoja="buscar"]');
-      await page.waitForTimeout(600);
-      ok(await page.evaluate(() => document.getElementById('buscar').open && location.pathname === '/explorar/'), `${t} la lupa de la cabecera abre la misma hoja`);
-      await page.keyboard.press('Escape');
-      await page.waitForTimeout(300);
-    }
+      foco: document.activeElement?.closest('header.top') ? 'cabecera' : document.activeElement?.tagName }));
+    ok(foco.cerrada && foco.foco === 'cabecera', `${t} Escape la cierra y el foco vuelve a la lupa (${foco.foco})`);
     // Buscar desde la hoja: los resultados, en lista.
-    await page.click('.exp-acciones [data-abre-hoja="buscar"]');
+    await page.click('header.top [data-abre-hoja="buscar"]');
     await page.waitForTimeout(500);
     await page.fill('#buscar input[name=q]', 'bar');
     await Promise.all([page.waitForURL(/\/explorar\/\?/, { waitUntil: 'commit' }), page.press('#buscar input[name=q]', 'Enter')]);
@@ -195,8 +189,7 @@ for (const [nombre, tipo, anchos] of [['chromium', chromium, [390, 1280]], ['web
     await Promise.all([page.waitForURL(/q=bar/, { waitUntil: 'commit' }), page.press('#buscar input[name=q]', 'Enter')]);
     await page.waitForSelector('.que-fila');
     ok(!(await page.locator('.calendario').count()), '[sin JS] buscar lleva a los resultados en lista');
-    const fila = await page.getAttribute('.exp-acciones [data-abre-hoja="buscar"]', 'href');
-    ok(/^\/explorar\/\?.*buscar=1/.test(fila || '') && /q=bar/.test(fila || ''), `[sin JS] la lupa de la fila, a la misma página con la hoja (${fila})`);
+    ok(!(await page.locator('.exp-acciones [data-abre-hoja="buscar"]').count()), '[sin JS] sin lupa en la fila (la de la cabecera es la única)');
 
     // Lo que ve Google en /explorar/ y /en/explore/.
     for (const [ruta, otra, h1] of [['/explorar/', '/en/explore/', 'Explorar'], ['/en/explore/', '/explorar/', 'Explore']]) {
