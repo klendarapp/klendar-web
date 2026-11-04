@@ -861,9 +861,9 @@ const casillaTerminos = ({ estadisticas = false } = {}) => `<label class="check"
   <span>${esc(t('He leído y acepto los'))} <a href="${PUB_EN ? '/en/terms/' : '/terminos/'}" target="_blank">${esc(t('Términos de uso'))}</a>
     ${esc(t('y la'))} <a href="${PUB_EN ? '/en/privacy/' : '/privacidad/'}" target="_blank">${esc(t('Política de privacidad'))}</a></span></label>
   <label class="check"><input type="checkbox" name="marketing">
-  <span>${esc(t('Quiero recibir novedades y ofertas destacadas por correo (opcional).'))}</span></label>${estadisticas ? `
+  <span>${esc(t('Quiero recibir novedades de Klendar por correo (opcional).'))}</span></label>${estadisticas ? `
   <label class="check"><input type="checkbox" name="estadisticas">
-  <span>${esc(t('Ayúdanos a mejorar Klendar con estadísticas de uso de la app (opcional; se quita en Ajustes → Privacidad).'))}</span></label>` : ''}${notaLegal()}`;
+  <span>${esc(t('Ayúdanos a mejorar Klendar con estadísticas de uso de la app (opcional; se quita en Ajustes → Privacidad y datos).'))}</span></label>` : ''}${notaLegal()}`;
 
 function errorCampo(el, msg) {
   const label = el.closest('label') || el.parentElement;

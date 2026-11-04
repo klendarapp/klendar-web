@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="/assets/errores.js?v=1" async></script>
 <title>Fuentes y licencias · Klendar</title>
-<meta name="description" content="De dónde salen los datos de otros que enseña Klendar (la agenda pública de cada ciudad, los partidos, el tiempo, los festivos) y con qué licencia.">
+<meta name="description" content="De dónde salen los datos de otros que enseña Klendar (la agenda pública de cada ciudad, los partidos, el tiempo, los festivos, los mapas y los municipios) y con qué licencia.">
 <link rel="canonical" href="https://klendar.app/fuentes/">
 <link rel="alternate" hreflang="es" href="https://klendar.app/fuentes/">
 <link rel="alternate" hreflang="en" href="https://klendar.app/en/sources/">
 <link rel="alternate" hreflang="x-default" href="https://klendar.app/fuentes/">
 <meta property="og:title" content="Fuentes y licencias · Klendar">
-<meta property="og:description" content="De dónde salen los datos de otros que enseña Klendar (la agenda pública de cada ciudad, los partidos, el tiempo, los festivos) y con qué licencia.">
+<meta property="og:description" content="De dónde salen los datos de otros que enseña Klendar (la agenda pública de cada ciudad, los partidos, el tiempo, los festivos, los mapas y los municipios) y con qué licencia.">
 <meta property="og:image" content="https://klendar.app/assets/og.png">
 <meta property="og:url" content="https://klendar.app/fuentes/">
 <meta property="og:type" content="website">
@@ -80,7 +80,24 @@
 <p>«Según el tiempo» usa la previsión de <a href="https://api.met.no/" rel="noopener" target="_blank">MET Norway</a> (Instituto Meteorológico de Noruega), con licencia <a href="https://creativecommons.org/licenses/by/4.0/deed.es" rel="license noopener" target="_blank">CC BY 4.0</a>.</p>
 
 <h2>Festivos</h2>
-<p>La lista de festivos con la que preguntamos a los negocios si abren sale del <a href="https://www.boe.es/" rel="noopener" target="_blank">Boletín Oficial del Estado</a> (resolución anual de la Dirección General de Trabajo con las fiestas laborales) y de los boletines oficiales de las comunidades autónomas y las provincias (y, mientras no se publican, de los acuerdos de los ayuntamientos). Reutilización de información del sector público (Ley 37/2007).</p>
+<p>Con la lista de festivos preguntamos a los negocios si abren. La importamos cada lunes de octubre a enero de estas fuentes oficiales y una persona de Klendar la revisa antes de usarla; de cada festivo guardamos de qué fuente sale. Adaptamos los datos al formato de la app (día, nombre y municipio). Ninguno de estos organismos participa en Klendar ni lo patrocina.</p>
+<table>
+<thead><tr><th>Qué</th><th>Quién y qué</th><th>Licencia y cita</th></tr></thead>
+<tbody>
+<tr><td>Nacionales y de cada comunidad</td><td>Agencia Estatal Boletín Oficial del Estado: resolución anual de la Dirección General de Trabajo con las fiestas laborales (<a href="https://www.boe.es/" rel="noopener" target="_blank">www.boe.es</a>, datos abiertos)</td><td><a href="https://www.boe.es/informacion/aviso_legal/index.php" rel="license noopener" target="_blank">Condiciones de reutilización del BOE</a>: «Basado en datos de la Agencia Estatal Boletín Oficial del Estado»</td></tr>
+<tr><td>Locales de Madrid</td><td>Ayuntamiento de Madrid, <a href="https://datos.madrid.es/dataset/300082-0-calendario_laboral" rel="noopener" target="_blank">Calendario laboral</a></td><td><a href="https://creativecommons.org/licenses/by/4.0/deed.es" rel="license noopener" target="_blank">CC BY 4.0</a>: «Fuente: Ayuntamiento de Madrid, datos.madrid.es»</td></tr>
+<tr><td>Locales de Cataluña</td><td>Generalitat de Catalunya, <a href="https://analisi.transparenciacatalunya.cat/d/b4eh-r8up" rel="noopener" target="_blank">Calendari de festes locals a Catalunya</a></td><td><a href="https://web.gencat.cat/ca/generalitat/dades-indicadors/dades-obertes/llicencies" rel="license noopener" target="_blank">Llicència oberta d’ús d’informació – Catalunya</a>: «Generalitat de Catalunya. Departament d’Empresa i Treball»</td></tr>
+<tr><td>Locales de Andalucía</td><td>Junta de Andalucía (Consejería de Empleo), <a href="https://www.juntadeandalucia.es/datosabiertos/portal.html" rel="noopener" target="_blank">Calendario de días festivos</a></td><td><a href="https://creativecommons.org/licenses/by/4.0/deed.es" rel="license noopener" target="_blank">CC BY 4.0</a>: «Fuente: Junta de Andalucía»</td></tr>
+<tr><td>Locales de Aragón</td><td>Gobierno de Aragón, <a href="https://opendata.aragon.es/" rel="noopener" target="_blank">Calendario de festivos en comunidad de Aragón</a> (Aragón Open Data)</td><td><a href="https://creativecommons.org/licenses/by/4.0/deed.es" rel="license noopener" target="_blank">CC BY 4.0</a>: «Fuente: Gobierno de Aragón»</td></tr>
+<tr><td>Locales de Illes Balears</td><td>Govern de les Illes Balears, Calendari laboral general i local (<a href="https://catalegdades.caib.cat/" rel="noopener" target="_blank">catálogo de datos abiertos</a>)</td><td><a href="https://creativecommons.org/licenses/by/4.0/deed.es" rel="license noopener" target="_blank">CC BY</a>: «Fuente: Govern de les Illes Balears»</td></tr>
+<tr><td>Locales de Euskadi</td><td>Gobierno Vasco, Calendario laboral de Euskadi (<a href="https://opendata.euskadi.eus/" rel="noopener" target="_blank">Open Data Euskadi</a>)</td><td><a href="https://opendata.euskadi.eus/general/-/informacion-legal-opendata/" rel="license noopener" target="_blank">Licencia de reconocimiento de Open Data Euskadi</a>: «Fuente: Gobierno Vasco, Open Data Euskadi»</td></tr>
+<tr><td>Locales de Castilla y León</td><td>Junta de Castilla y León, <a href="https://datosabiertos.jcyl.es/web/jcyl/set/es/empleo/fiestas-locales/1284952783683" rel="noopener" target="_blank">Fiestas locales</a></td><td><a href="https://creativecommons.org/licenses/by/4.0/deed.es" rel="license noopener" target="_blank">CC BY 4.0</a>: «Fuente: Junta de Castilla y León»</td></tr>
+</tbody>
+</table>
+<p>Para los demás municipios, los boletines oficiales de las comunidades y las provincias (y, mientras no se publican, los acuerdos de los ayuntamientos). Reutilización de información del sector público (Ley 37/2007).</p>
+
+<h2>Mapas</h2>
+<p>Los mapas, las direcciones y las rutas a pie son de <a href="https://www.mapbox.com/about/maps/" rel="noopener" target="_blank">Mapbox</a>, con datos de <a href="https://www.openstreetmap.org/copyright" rel="noopener" target="_blank">© los colaboradores de OpenStreetMap</a> (licencia <a href="https://opendatacommons.org/licenses/odbl/" rel="license noopener" target="_blank">ODbL</a>). Cada mapa lleva su atribución («© Mapbox © OpenStreetMap»).</p>
 
 <h2>Municipios</h2>
 <p>Los nombres, los códigos y los contornos de los municipios y las provincias son de las Líneas límite municipales del <strong>Instituto Geográfico Nacional</strong> (© Instituto Geográfico Nacional, IGN/CNIG, <a href="https://centrodedescargas.cnig.es/" rel="noopener" target="_blank">centrodedescargas.cnig.es</a>), con licencia <a href="https://creativecommons.org/licenses/by/4.0/deed.es" rel="license noopener" target="_blank"><strong>CC BY 4.0</strong></a>, simplificados por <a href="https://github.com/martgnz/es-atlas" rel="noopener" target="_blank">es-atlas</a> (Martín González, MIT). El punto de cada pueblo y su población (solo para ordenar la búsqueda) son de <strong><a href="https://www.wikidata.org/" rel="noopener" target="_blank">Wikidata</a></strong>, con licencia <a href="https://creativecommons.org/publicdomain/zero/1.0/deed.es" rel="license noopener" target="_blank"><strong>CC0</strong></a>.</p>

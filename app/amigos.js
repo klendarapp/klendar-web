@@ -113,8 +113,8 @@ RUTAS.amigos = async ([idAmigo]) => {
         </div>`).join('')}</div>
       <p class="muted aviso-planes">${ic(comparte ? 'visibility' : 'visibility_off')}
         <span>${esc(t(comparte
-          ? 'Tus amigos ven a qué planes vas. Puedes apagarlo en Ajustes → Privacidad.'
-          : 'No compartes tus planes: tus amigos no ven a qué vas. Se cambia en Ajustes → Privacidad.'))}</span></p>
+          ? 'Tus amigos ven a qué planes vas. Puedes apagarlo en Ajustes → Privacidad y datos.'
+          : 'No compartes tus planes: tus amigos no ven a qué vas. Se cambia en Ajustes → Privacidad y datos.'))}</span></p>
     </div>
     <div id="amigos-vacio"${amigos.length ? ' hidden' : ''}>${amigos.length ? '' : vacio()}</div>`);
 

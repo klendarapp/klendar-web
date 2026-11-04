@@ -683,7 +683,7 @@ RUTAS.ajustes = async ([sub]) => {
       <dl class="consen">
         <dt>${esc(t('Comunicaciones comerciales'))}</dt>
         <dd><label class="check"><input type="checkbox" id="marketing"${cons?.marketing_consent ? ' checked' : ''}>
-          <span>${esc(cons?.marketing_consent ? `${t('Desde el')} ${dia(cons.marketing_consent_at)}` : t('No recibes novedades ni promociones por correo'))}</span></label></dd>
+          <span>${esc(cons?.marketing_consent ? `${t('Desde el')} ${dia(cons.marketing_consent_at)}` : t('No recibes novedades de Klendar por correo'))}</span></label></dd>
         <dt>${esc(t('Estadísticas de uso de la app'))}</dt>
         <dd><label class="check"><input type="checkbox" id="estadisticas"${cons?.analytics_consent ? ' checked' : ''}>
           <span>${esc(cons?.analytics_consent ? `${t('Desde el')} ${dia(cons.analytics_consent_at)}` : t('No mandamos estadísticas de cómo usas la app'))}</span></label></dd>
@@ -769,7 +769,7 @@ RUTAS.ajustes = async ([sub]) => {
       await llamar('set_marketing_consent', { p_value: caja.checked });
       toast(caja.checked ? t('Te mandaremos novedades de vez en cuando') : t('No te mandaremos más novedades'));
       const texto = caja.closest('label')?.querySelector('span');
-      if (texto) texto.textContent = caja.checked ? `${t('Desde el')} ${dia(new Date().toISOString())}` : t('No recibes novedades ni promociones por correo');
+      if (texto) texto.textContent = caja.checked ? `${t('Desde el')} ${dia(new Date().toISOString())}` : t('No recibes novedades de Klendar por correo');
     } catch (e) { caja.checked = !caja.checked; toast(e.message, true); }
   });
   // Lo que manda la app a Firebase (la web no usa estadísticas que necesiten
