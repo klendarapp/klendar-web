@@ -24,14 +24,14 @@ let fallos = 0;
 const ok = (c, m) => { if (!c) { fallos++; console.log('FALLO:', m); } else console.log('ok:', m); };
 
 const PAGINAS = [
-  ['/negocios/', 'Última actualización: 3 de noviembre de 2026', [
+  ['/negocios/', 'Última actualización: 4 de noviembre de 2026', [
     /En tu ficha se ve solo el nivel, nunca la cifra\. Si lo prefieres, puedes contar sin enseñarlo \(«Enseñar en mi ficha si hay sitio», en los ajustes del aforo\): entonces solo lo ve tu equipo, nadie puede pedir que le avisemos y a quien ya lo había pedido se lo quitamos y se lo decimos\./,
     /se guardan 14 meses\. Si tu equipo cuenta gente cuando Klendar muestra tu local cerrado, te preguntamos si has abierto\. Solo si contestas que sí lo marcamos abierto ese día \(quitando ese día de tus días cerrados y poniéndole un horario desde ese momento hasta tu cierre habitual o hasta las 6:00\); lo puedes cambiar cuando quieras y que tu horario sea correcto sigue siendo tu responsabilidad\./,
     /Gratis de lanzamiento\. Mientras Klendar arranca en una provincia, podemos dar a los negocios de esa provincia más tiempo gratis \(«Gratis de lanzamiento»\)\./,
     /y los del 3 de noviembre de 2026 \(apartados 3, 3 decies y 4\), desde el 18 de noviembre de 2026: 15 días/,
     /3 de noviembre de 2026: Aforo en directo \(apartado 3 decies\): puedes contar sin enseñarlo; «¿Has abierto hoy\?» solo marca tu local abierto si dices que sí\. «Gratis de lanzamiento» \(apartado 4\): va por provincia, no por ciudad\. Se aplica desde el 18 de noviembre de 2026\./,
   ], [/arranca en una ciudad/]],
-  ['/en/business-terms/', 'Last updated: 3 November 2026', [
+  ['/en/business-terms/', 'Last updated: 4 November 2026', [
     /Your page only shows the level, never the figure\. If you prefer, you can count without showing it \(“Show on my page if there’s room”, in the capacity settings\): then only your team sees it, nobody can ask us to notify them, and anyone who had already asked has their request removed and is told so\./,
     /are kept for 14 months\. If your team counts people while Klendar shows your venue as closed, we ask you whether you've opened\. Only if you answer yes do we mark it open that day[\s\S]*?keeping your opening hours accurate remains your responsibility\./,
     /Launch, free\. While Klendar is starting in a province, we may give businesses in that province more free time \(“Launch, free”\)\./,

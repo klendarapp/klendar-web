@@ -48,12 +48,12 @@ const PAGINAS = [
     /Towns\s+The names, codes and boundaries of Spanish towns and provinces come from the municipal boundary lines of the Instituto Geográfico Nacional \(© IGN\/CNIG, centrodedescargas\.cnig\.es\), licensed under CC BY 4\.0, simplified by es-atlas \(Martín González, MIT\)\./,
     /Each town's point and population \(only used to sort search results\) come from Wikidata, licensed CC0\./,
   ], [/football-data/i]],
-  ['/negocios/', 'Última actualización: 3 de noviembre de 2026', [
+  ['/negocios/', 'Última actualización: 4 de noviembre de 2026', [
     /Si marca que pone un partido o un evento \(«Lo ponemos»\) o pide ponerlos siempre los de un equipo o una competición \(«Poner siempre»\), tener los derechos para emitir cada uno en su local \(por ejemplo, la suscripción para hostelería de la plataforma que lo emite\) y ponerlo de verdad; los que marque «Poner siempre» y no vaya a poner, quitarlos\. Klendar no lo comprueba y puede quitar la marca si recibe quejas\./,
     /y los del 3 de noviembre de 2026 \(apartados 3, 3 decies y 4\), desde el 18 de noviembre de 2026: 15 días/,
     /3 de noviembre de 2026: «Poner siempre» \(apartado 3\)[\s\S]*?Se aplica desde el 18 de noviembre de 2026\./,
   ], [/tener los derechos para emitirlo en su local/]],
-  ['/en/business-terms/', 'Last updated: 3 November 2026', [
+  ['/en/business-terms/', 'Last updated: 4 November 2026', [
     /If it marks that it's showing a match or an event \(“We're showing it”\) or asks to always show those of a team or a competition \(“Always show”\), hold the rights to show each one at its venue \(for example, the hospitality subscription of the platform that broadcasts it\) and really show it; remove those that “Always show” marks and it isn't going to show\. Klendar doesn't check this and may remove the mark if it receives complaints\./,
     /and those of 3 November 2026 \(sections 3, 3i and 4\) from 18 November 2026: 15 days/,
     /3 November 2026: “Always show” \(section 3\)[\s\S]*?It applies from 18 November 2026\./,

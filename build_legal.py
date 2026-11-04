@@ -6,7 +6,7 @@
 #       con una SL de EJEMPLO (datos falsos) para revisarlas con la gestoría. No se
 #       publica: functions/_middleware.js da 404 a todo /tools/.
 # Qué hacer el día que la SL pase a ser la titular: docs/LEGAL_SL.md (repo de la app).
-import html, io, os, re, sys
+import datetime, html, io, os, re, sys
 from types import SimpleNamespace
 
 from build_site import head, footer, T, ALT
@@ -349,13 +349,101 @@ ACTUALIZADO = {
     # ponen al día. Informativo o a favor de quien acepta: sin re-aceptación
     # (criterio en docs/AUDITORIA_LEGAL.md, «Revisión 2026-10-01», R6).
     'terminos': {'es': '3 de noviembre de 2026', 'en': '3 November 2026'},
-    'negocios': {'es': '3 de noviembre de 2026', 'en': '3 November 2026'},
+    # 2026-11-04 (IC1, aprobado por Iván el 4-11 y publicado ese día,
+    # incoherencias del paquete del abogado): la cabecera dice la versión de
+    # las condiciones (VERSIONES_NEGOCIOS) y un apartado nuevo cuenta desde
+    # cuándo se aplica cada una. Informativo, sin versión nueva ni aviso.
+    'negocios': {'es': '4 de noviembre de 2026', 'en': '4 November 2026'},
 }
 
 
 def fecha(slug, lang):
     """Fecha de «Última actualización» de un documento (slug ES)."""
     return ACTUALIZADO.get(slug, DATE)[lang]
+
+
+# Versiones de las condiciones para negocios (IC1, publicado el 2026-11-04):
+# (versión, publicada, se aplica desde), de la más nueva a la más vieja. Tiene
+# que coincidir con `business_terms_versions` de la base (migración
+# 20261217100000_aviso_condiciones_negocios y docs/sql/condiciones_*_resumen.sql
+# del repo de la app). La cabecera de /negocios/ dice la primera, no VERSION
+# (que es la de los términos y la privacidad). Cada versión nueva de las
+# condiciones: su fila aquí arriba, su línea en CAMBIOS['negocios'] y su fila
+# en la base.
+VERSIONES_NEGOCIOS = [
+    ('2026-11-03-b', '2026-11-03', '2026-11-18'),
+    ('2026-11-03', '2026-11-03', '2026-11-18'),
+    ('2026-11-02', '2026-11-02', '2026-11-17'),
+    ('2026-10-28-b', '2026-10-28', '2026-11-12'),
+    ('2026-10-28', '2026-10-28', '2026-11-12'),
+    ('2026-10-27-c', '2026-10-27', '2026-11-11'),
+    ('2026-10-27-b', '2026-10-27', '2026-11-11'),
+    ('2026-10-27', '2026-10-27', '2026-11-11'),
+    ('2026-10-26', '2026-10-26', '2026-11-10'),
+    ('2026-10-20-c', '2026-10-20', '2026-11-04'),
+    ('2026-10-20-b', '2026-10-20', '2026-11-04'),
+    ('2026-10-20', '2026-10-20', '2026-11-04'),
+    ('2026-10-19', '2026-10-19', '2026-11-03'),
+    ('2026-10-17', '2026-10-17', '2026-11-01'),
+    ('2026-10-16', '2026-10-16', '2026-10-31'),
+    ('2026-10-14', '2026-10-14', '2026-10-29'),
+    ('2026-10-13', '2026-10-13', '2026-10-28'),
+    ('2026-10-07', '2026-10-07', '2026-10-22'),
+    ('2026-10-06', '2026-10-06', '2026-10-21'),
+    ('2026-10-05', '2026-10-05', '2026-10-20'),
+    ('2026-10-02', '2026-10-02', '2026-10-02'),
+    ('2026-10-01', '2026-10-01', '2026-10-01'),
+    ('2026-09-29', '2026-09-29', '2026-09-29'),
+]
+_MESES_EN = ('Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec')
+
+
+def _dia(iso, lang):
+    a, m, d = (int(x) for x in iso.split('-'))
+    return f'{d}-{m}-{a}' if lang == 'es' else f'{d} {_MESES_EN[m - 1]} {a}'
+
+
+def negocios_pendientes(hoy=None):
+    """¿Hay alguna versión de las condiciones que aún no se aplica? La nota de
+    la cabecera solo sale mientras la haya: si se regenera después del último
+    «se aplica desde», desaparece sola."""
+    hoy = (hoy or datetime.date.today()).isoformat()
+    return any(aplica > hoy for _v, _pub, aplica in VERSIONES_NEGOCIOS)
+
+
+def cabecera(slug, lang):
+    """Línea «Última actualización · Versión» de un documento (slug ES)."""
+    if slug != 'negocios':
+        return META[lang].format(date=fecha(slug, lang), v=VERSION)
+    meta = META[lang].format(date=fecha(slug, lang), v=VERSIONES_NEGOCIOS[0][0])
+    if negocios_pendientes():
+        meta += (' · Algunos cambios aún no se aplican: mira «<a href="#versiones">Versiones y desde cuándo se aplican</a>», al final.'
+                 if lang == 'es' else
+                 " · Some changes don't apply yet: see ‘<a href=\"#versiones\">Versions and when they apply</a>’, at the end.")
+    return meta
+
+
+def versiones(slug, lang):
+    """Apartado «Versiones y desde cuándo se aplican» de /negocios/ (IC1)."""
+    if slug != 'negocios':
+        return ''
+    filas = ''.join(f'\n<tr><td>{v}</td><td>{_dia(pub, lang)}</td><td>{_dia(aplica, lang)}</td></tr>'
+                    for v, pub, aplica in VERSIONES_NEGOCIOS)
+    if lang == 'es':
+        return f"""
+<h2 id="versiones">Versiones y desde cuándo se aplican</h2>
+<p>Cada versión de estas condiciones se aplica desde la fecha de la tabla; hasta ese día vale la anterior. Los cambios que te afectan te los avisamos con al menos 15 días de antelación (apartado 10); los que solo te favorecen o vienen de una obligación legal pueden aplicarse antes. Qué cambia en cada versión está en el «Historial de cambios».</p>
+<table>
+<tr><th>Versión</th><th>Publicada</th><th>Se aplica desde</th></tr>{filas}
+</table>
+"""
+    return f"""
+<h2 id="versiones">Versions and when they apply</h2>
+<p>Each version of these terms applies from the date in the table; until that day, the previous one applies. We give you at least 15 days' notice of changes that affect you (section 10); changes that only benefit you or come from a legal obligation may apply sooner. What changes in each version is in the “Change history”.</p>
+<table>
+<tr><th>Version</th><th>Published</th><th>Applies from</th></tr>{filas}
+</table>
+"""
 
 
 # Historial de cambios que sale al pie de cada documento legal, del más
@@ -598,6 +686,10 @@ CAMBIOS = {
          'Automatic moderation of text is explained (section 4). Your rights and obligations don\'t change, so there\'s no need to accept them again.'),
         _INICIO],
     'negocios': [
+        ('4 de noviembre de 2026',
+         'La cabecera dice la versión de estas condiciones (2026-11-03-b) y un apartado nuevo al final, «Versiones y desde cuándo se aplican», dice desde qué día se aplica cada una. Es solo informativo: no cambia nada de lo que se aplica ni cuándo.',
+         '4 November 2026',
+         "The header shows the version of these terms (2026-11-03-b) and a new section at the end, “Versions and when they apply”, shows the day each one applies from. It's for information only: it doesn't change what applies or when."),
         ('3 de noviembre de 2026',
          '«Poner siempre» (apartado 3): si pides poner siempre los partidos de un equipo o de una competición, necesitas los derechos para emitir cada uno en tu local y quitar los que se marquen y no vayas a poner. Se aplica desde el 18 de noviembre de 2026.',
          '3 November 2026',
@@ -2243,11 +2335,12 @@ def render(lang, path, title, desc, body, es_path=None):
     t = T[lang]
     todo = TODO[lang] if (es_path or path).strip('/') in LEGAL_SLUGS and 'class="tbd"' in body else ''
     courtesy = COURTESY.format(es=es_path) if lang == 'en' else ''
-    meta = META[lang].format(date=fecha((es_path or path).strip('/'), lang), v=VERSION)
+    slug = (es_path or path).strip('/')
+    meta = cabecera(slug, lang)
     return (head(t, path, f'{title} · Klendar', desc)
             + '<main class="doc" id="contenido">\n<h1>' + title + '</h1>\n'
             + f'<div class="meta">{meta}</div>\n' + courtesy + todo + '\n'
-            + body + historial((es_path or path).strip('/'), lang) + '\n</main>\n' + footer(t))
+            + body + versiones(slug, lang) + historial(slug, lang) + '\n</main>\n' + footer(t))
 
 
 def parar_si_faltan_datos(D, publicar):
@@ -2315,8 +2408,8 @@ def vista_previa(dest=os.path.join('tools', 'legal_preview')):
             ancla = f'{lang}-{slug}'
             url = f'https://klendar.app/{slug}/' if lang == 'es' else f'https://klendar.app/en/{slug}/'
             indice.append(f'<li><a href="#{ancla}">{title}</a> <span class="nota">({"ES, la que vale" if lang == "es" else "EN, traducción informativa"} · {url})</span></li>')
-            meta = META[lang].format(date=fecha(s, lang), v=VERSION)
-            cuerpo = body.replace('href="/', 'href="https://klendar.app/')
+            meta = cabecera(s, lang).replace('href="#versiones"', f'href="#{ancla}-versiones"')
+            cuerpo = (body + versiones(s, lang).replace('id="versiones"', f'id="{ancla}-versiones"')).replace('href="/', 'href="https://klendar.app/')
             secciones.append(f'<section class="doc" id="{ancla}" lang="{lang}">\n<h1>{title}</h1>\n'
                              f'<div class="meta">{meta} · {url}</div>\n{cuerpo}{historial(s, lang)}\n</section>')
     doc = f'''<!doctype html>

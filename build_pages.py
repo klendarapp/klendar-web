@@ -190,10 +190,10 @@ def tabla_planes(lang):
     # Primero la prueba (no es un plan: es cómo se empieza) y luego el plan.
     prueba = [
         'Todo lo del plan, sin límites', 'Te avisamos 7 días y 1 día antes de que acabe',
-        'Si no eliges cómo pagar, tu negocio se bloquea (no se borra nada)',
+        'Si no eliges cómo pagar, tu negocio puede bloquearse (no se borra nada)',
     ] if es else [
         'Everything in the plan, no limits', 'We remind you 7 days and 1 day before it ends',
-        'If you don\'t choose how to pay, your business is blocked (nothing is deleted)',
+        'If you don\'t choose how to pay, your business may be blocked (nothing is deleted)',
     ]
     filas = [f'''
     <div class="plan">
@@ -250,12 +250,12 @@ PAGINAS['precios'] = (
 <ul>
   <li><strong>Prueba.</strong> Al dar de alta el negocio tienes 30 días con todo, sin tarjeta y sin que se renueve solo.</li>
   <li><strong>Cómo se paga.</strong> Mientras no tengamos pago con tarjeta, por transferencia: escribes a <a href="mailto:info@klendar.app">info@klendar.app</a> y lo dejamos activado. En Canarias, Ceuta y Melilla, sin IVA.</li>
-  <li><strong>Si no pagas</strong>, tu negocio se bloquea hasta que pagues: no se borra nada y puedes seguir validando lo que ya tiene la gente. Te avisamos 7 días y 1 día antes.</li>
+  <li><strong>Si no pagas</strong>, tu negocio <strong>puede bloquearse</strong> hasta que pagues: no se borra nada y puedes seguir validando lo que ya tiene la gente. Si va a pasar, te avisamos 7 días y 1 día antes (apartado 4 bis de las <a href="/negocios/">condiciones</a>).</li>
   <li><strong>Pausa por cierre.</strong> Hasta 6 meses sin pagar; lo que ya tenías pagado se guarda para cuando vuelvas. Mientras, tu negocio está parado.</li>
   <li><strong>Cancela cuando quieras:</strong> sigues hasta el final del periodo pagado y no se renueva. Sin permanencia ni penalización; desde el panel («Dar de baja el negocio») o en el mismo correo.</li>
   <li><strong>Nunca cobramos por canje.</strong> Ni porcentaje ni euros por código: si te funciona bien, pagas lo mismo.</li>
   <li><strong>Qué es un «destacado».</strong> Una publicación que aparece arriba durante un rato; va aparte y se pide por correo. Cuando una está destacada, la app lo dice: no se disfraza de recomendación.</li>
-  <li><strong>El plan no cambia lo que ve la gente</strong> más allá de eso: el orden lo elige cada persona en los filtros.</li>
+  <li><strong>El plan no cambia lo que ve la gente</strong> más allá de eso. De serie, el orden es «Recomendado» (con el tiempo de hoy y los gustos de cada persona) y cada persona puede cambiarlo en los filtros; cómo se ordena todo, también lo ya visto, está en el apartado 2 bis de las <a href="/negocios/">condiciones</a>. Ni la cuota ni el número de publicaciones cuentan en el orden.</li>
 </ul>
 
 <h2>¿Y para quien usa la app?</h2>
@@ -282,12 +282,12 @@ PAGINAS['precios'] = (
 <ul>
   <li><strong>Trial.</strong> When you register your business you get 30 days with everything, no card and no automatic renewal.</li>
   <li><strong>How you pay.</strong> Until we have card payments, by bank transfer: email <a href="mailto:info@klendar.app">info@klendar.app</a> and we'll activate it. In the Canary Islands, Ceuta and Melilla, no VAT.</li>
-  <li><strong>If you don't pay</strong>, your business is blocked until you do: nothing is deleted and you can still validate what people already have. We remind you 7 days and 1 day before.</li>
+  <li><strong>If you don't pay</strong>, your business <strong>may be blocked</strong> until you do: nothing is deleted and you can still validate what people already have. If it's going to happen, we remind you 7 days and 1 day before (section 4a of the <a href="/en/business-terms/">business terms</a>).</li>
   <li><strong>Seasonal pause.</strong> Up to 6 months without paying; what you'd already paid for is kept for when you come back. Meanwhile, your business is stopped.</li>
   <li><strong>Cancel whenever you like:</strong> you keep everything until the end of the period you've paid for and it doesn't renew. No lock-in, no penalty; from the dashboard (“Leave Klendar”) or at the same address.</li>
   <li><strong>We never charge per redemption.</strong> No percentage, no euros per code: if it works well for you, you pay the same.</li>
   <li><strong>What “featured” means.</strong> A publication that shows at the top for a while; it's charged separately and you request it by email. When one is featured, the app says so: it isn't dressed up as a recommendation.</li>
-  <li><strong>Your plan doesn't change what people see</strong> beyond that: the order is chosen by each person in the filters.</li>
+  <li><strong>Your plan doesn't change what people see</strong> beyond that. By default the order is ‘Recommended’ (with today's weather and each person's interests) and anyone can change it in the filters; how everything is ordered, including what someone has already seen, is in section 2a of the <a href="/en/business-terms/">business terms</a>. Neither the fee nor the number of publications affects the order.</li>
 </ul>
 
 <h2>And for people using the app?</h2>
