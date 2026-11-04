@@ -51,6 +51,11 @@ section.partidos-dia, section.pone-partidos, section.seccion-partidos { padding:
 .seguir-equipos { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; max-width: 420px; }
 .seguir-equipos .pill { justify-content: center; text-align: center; padding: 11px 14px; font-size: 14px; min-width: 0; }
 .seguir-equipos .pill[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: transparent; }
+/* «Ver N más»: los deportistas que no caben (en una carrera, toda la parrilla). */
+.seguir-mas { min-width: 0; }
+.seguir-mas > summary { list-style: none; cursor: pointer; justify-content: center; text-align: center; padding: 11px 14px; font-size: 14px; }
+.seguir-mas > summary::-webkit-details-marker { display: none; }
+.seguir-mas[open] > summary { display: none; }
 .partido-h { font-size: 20px; margin: 6px 0 12px; }
 .bares-partido { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr)); }
 .bar-partido { border-radius: 22px; background: var(--glass); border: 1px solid var(--glass-border); overflow: hidden; min-width: 0; }

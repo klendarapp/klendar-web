@@ -51,3 +51,11 @@ button.pt-oferta:hover { text-decoration: underline; text-underline-offset: 3px;
 .pt-mas-menu .linkbtn { text-align: left; padding: 10px 12px; border-radius: 10px; text-decoration: none; }
 .pt-mas-menu .linkbtn:hover, .pt-mas-menu .linkbtn:focus-visible { background: var(--glass-border); }
 .pt-info small.muted { display: block; font-size: 12px; margin-top: 2px; }
+
+/* «Poner siempre…» y su buscador (equipos, deportistas y competiciones). */
+.pt-siempre-mas { font-weight: 700; }
+.pt-elige-res { display: grid; gap: 6px; margin: 10px 0 4px; max-height: min(52vh, 420px); overflow: auto; }
+.pt-elige-fila { display: grid; gap: 2px; text-align: left; padding: 10px 12px; border-radius: 14px;
+  border: 1px solid var(--glass-border); background: var(--elevated); color: inherit; font: inherit; cursor: pointer; min-width: 0; }
+.pt-elige-fila:hover, .pt-elige-fila:focus-visible { background: var(--soft, rgba(0,0,0,.04)); }
+.pt-elige-fila b, .pt-elige-fila small { overflow-wrap: anywhere; }

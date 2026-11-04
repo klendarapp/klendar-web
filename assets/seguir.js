@@ -1,11 +1,12 @@
-/* Seguir a un equipo («Dónde ver el partido») o a un artista desde las
- * páginas públicas: lo personal.
+/* Seguir a un equipo, un deportista o una competición («Dónde verlo») o a un
+ * artista desde las páginas públicas: lo personal.
  *
  * Las páginas van en caché y no saben quién las mira. Si en este navegador
  * hay una sesión de «Tu cuenta», aquí:
  *  - «Sigues» (`#mis-equipos`, en la lista de partidos): los equipos y
  *    deportistas que sigues, cada uno para buscar sus partidos, y «Seguir».
- *  - «Seguir a Real Madrid» (`[data-seguir-equipo]`) y «Seguir» en la página
+ *  - «Seguir a Real Madrid» / «Seguir Fórmula 1» (`[data-seguir-equipo]`,
+ *    con su aviso en `data-msg-si` / `data-msg-no`) y «Seguir» en la página
  *    de un artista (`[data-seguir-artista]`): en activo («Sigues a Real
  *    Madrid», «Siguiendo») si ya lo sigues; tocarlo sigue o deja de seguir
  *    sin salir de la página. Al seguir, se guarda la zona de los filtros para
@@ -16,7 +17,9 @@
  * ver `hayIntencion` en app.js).
  *
  * Los textos de los artistas, de /assets/artistas.js (cargado antes en su
- * página); los de los equipos, aquí.
+ * página); los de los equipos, aquí. En la ficha de un evento, los
+ * deportistas que no caben van en «Ver N más» (`.seguir-mas`): los que ya
+ * sigues salen de ahí.
  */
 (function () {
   'use strict';
@@ -46,7 +49,7 @@
       mios: ['my_followed_teams', { p_lang: en ? 'en' : 'es' }],
       // Los textos de la app (watchTooMany, watchFollowedSnack,
       // watchUnfollowedSnack) y los de «Tu cuenta» (app/partidos.js).
-      tope: en ? 'You can follow up to 30 teams and athletes' : 'Puedes seguir 30 equipos y deportistas como mucho',
+      tope: en ? 'You can follow up to 30 teams, athletes and competitions' : 'Puedes seguir 30 equipos, deportistas y competiciones como mucho',
       on: function (n) { return en ? "You're following " + n + ": we'll let you know before their matches" : 'Sigues a ' + n + ': te avisamos antes de sus partidos'; },
       off: function (n) { return en ? "You're no longer following " + n : 'Ya no sigues a ' + n; },
     },
@@ -141,6 +144,7 @@
             var siguiendo = {};
             lista.forEach(function (x) { if (x && x.id) siguiendo[x.id] = true; });
             if (tipo === TIPOS[0] && caja && lista.length) misEquipos(lista);
+            if (tipo === TIPOS[0]) sacaSeguidos(siguiendo);
             document.querySelectorAll('[' + tipo.attr + ']').forEach(function (b) { enganchaBoton(sb, tipo, b, siguiendo); });
           });
         }));
@@ -159,6 +163,21 @@
         q.set('q', x.name);
         return '<a class="chip" href="' + esc(base + '?' + q.toString()) + '">' + esc(x.name) + '</a>';
       }).join('') + '</div><a class="pill" href="' + cuenta + '">' + esc(T.follow) + '</a>';
+  }
+
+  // «Ver N más»: los deportistas que ya sigues, fuera (delante), como la app.
+  function sacaSeguidos(siguiendo) {
+    document.querySelectorAll('details.seguir-mas').forEach(function (d) {
+      var dentro = d.querySelector('.seguir-equipos');
+      if (!dentro) return;
+      Array.prototype.slice.call(dentro.querySelectorAll('[data-seguir-equipo]')).forEach(function (b) {
+        if (siguiendo[b.getAttribute('data-seguir-equipo')]) d.parentNode.insertBefore(b, d);
+      });
+      var n = dentro.querySelectorAll('[data-seguir-equipo]').length;
+      if (!n) { d.remove(); return; }
+      var s = d.querySelector('summary');
+      if (s) s.textContent = n === 1 ? d.getAttribute('data-ver-uno') : String(d.getAttribute('data-ver-n') || '').replace('{n}', n);
+    });
   }
 
   // «Seguir» ⇄ «Siguiendo», sin salir de la página.
@@ -194,7 +213,8 @@
           return;
         }
         if (!on) sb.rpc('set_broadcast_area', zonaParaAvisos()).then(function () {}, function () {});
-        toast(on ? tipo.off(nombre) : tipo.on(nombre));
+        // El aviso según lo que es («…antes de sus carreras», «Sigues LaLiga…»).
+        toast(on ? (b.getAttribute('data-msg-no') || tipo.off(nombre)) : (b.getAttribute('data-msg-si') || tipo.on(nombre)));
       }).catch(function () { falla(T.oops); }).then(function () { ocupado = false; });
     });
   }

@@ -10,8 +10,9 @@
 // JavaScript (el buscador y los filtros son enlaces y formularios GET) y la
 // zona es una ciudad o «Cerca de mí» (`?lat=&lng=`, con 3 decimales). Con
 // JavaScript y una sesión guardada, /assets/seguir.js pinta «Sigues»
-// y deja seguir a un equipo desde aquí; sin sesión, «Seguir a…» lleva a «Tu
-// cuenta» (`#/equipos?seguir=<id>`).
+// y deja seguir desde aquí a un equipo, un deportista o una competición
+// (migración 20261260100070_seguir_lo_que_sea); sin sesión, «Seguir a…» lleva
+// a «Tu cuenta» (`#/equipos?seguir=<id>`).
 //
 // La web nunca enseña +18: la base no devuelve los bares +18 a quien mira sin
 // sesión (`broadcast_business_ok`).
@@ -24,8 +25,35 @@ import { bizPath, breadcrumbLd, ldScript, publicPage } from './public.js';
 /** Dónde vive cada página en cada idioma. */
 export const partidosBase = (lang) => (lang === 'en' ? '/en/matches' : '/partidos');
 const cuentaBase = (lang) => (lang === 'en' ? '/app/?lang=en' : '/app/');
-/** «Seguir a <equipo>» sin sesión: a «Tu cuenta», que lo hace al entrar. */
-export const seguirHref = (lang, t) => `${cuentaBase(lang)}#/equipos?seguir=${encodeURIComponent(t.id)}&nombre=${encodeURIComponent(t.name || '')}`;
+/** «Seguir a <equipo>» sin sesión: a «Tu cuenta», que lo hace al entrar
+ * (con el tipo y el deporte, para decir «Sigues a Alonso: te avisamos antes
+ * de sus carreras»). */
+export const seguirHref = (lang, t) => `${cuentaBase(lang)}#/equipos?seguir=${encodeURIComponent(t.id)}&nombre=${encodeURIComponent(t.name || '')}`
+  + `${t.kind && t.kind !== 'team' ? `&tipo=${encodeURIComponent(t.kind)}` : ''}${t.sport ? `&deporte=${encodeURIComponent(t.sport)}` : ''}`;
+
+/** Un botón «Seguir a …» / «Seguir Fórmula 1» (neutro; con sesión lo
+ * engancha /assets/seguir.js). */
+const botonSeguir = (t, lang) => `<a class="pill" href="${esc(seguirHref(lang, t))}"
+      data-seguir-equipo="${esc(t.id)}" data-nombre="${esc(t.name)}" data-si="${esc(KE.siguesTxt(t, lang))}" data-no="${esc(KE.seguirTxt(t, lang))}"
+      data-msg-si="${esc(KE.seguidoTxt(t, lang))}" data-msg-no="${esc(KE.yaNoTxt(t, lang))}" aria-pressed="false">${esc(KE.seguirTxt(t, lang))}</a>`;
+
+/** Los botones de seguir de un evento: sus equipos y su competición siempre;
+ * de los deportistas (en una carrera, toda la parrilla), 3 y el resto en «Ver
+ * N más» (con sesión, /assets/seguir.js saca de ahí los que ya sigues). Como
+ * `FollowItemsList` de la app. */
+export function botonesSeguir(lista, lang) {
+  const S = KE.t(lang);
+  const validos = (lista || []).filter((t) => isUuid(t.id) && t.name);
+  if (!validos.length) return '';
+  const fijos = validos.filter((t) => t.kind !== 'athlete');
+  const dep = validos.filter((t) => t.kind === 'athlete');
+  const VISIBLES = 3;
+  const vis = dep.length <= VISIBLES + 1 ? dep : dep.slice(0, VISIBLES);
+  const resto = dep.slice(vis.length);
+  return `<div class="seguir-equipos">${[...fijos, ...vis].map((t) => botonSeguir(t, lang)).join('')}${resto.length
+    ? `<details class="seguir-mas" data-ver-uno="${esc(S.seeMore(1))}" data-ver-n="${esc(S.seeMore('{n}'))}"><summary class="pill">${esc(S.seeMore(resto.length))}</summary>
+      <div class="seguir-equipos">${resto.map((t) => botonSeguir(t, lang)).join('')}</div></details>` : ''}</div>`;
+}
 
 const PRETTY = (s) => String(s || '').replace(/(^|[\s-])(\p{Ll})/gu, (m, a, b) => a + b.toUpperCase());
 const plano = (x) => String(x || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
@@ -59,13 +87,13 @@ export const atribucion = (lista, lang) => KE.fuentesDe(lista, lang)
   .map((f) => `<p class="fuente-datos"><a href="${f.url}" rel="noopener" target="_blank">${esc(f.texto)}</a></p>`).join('');
 
 /** Los estilos de estas piezas (también en la ficha del bar y en Explorar). */
-export const PARTIDOS_CSS = '<link rel="stylesheet" href="/assets/partidos.css?v=4">';
+export const PARTIDOS_CSS = '<link rel="stylesheet" href="/assets/partidos.css?v=5">';
 
 /** Lo personal (Sigues, seguir a un equipo o a un artista desde aquí):
  *  solo hace algo con sesión. */
 export const seguirScript = (lang) => {
   const sp = supabasePublic();
-  return `<script src="/assets/seguir.js?v=20261103rv" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}" data-lang="${lang === 'en' ? 'en' : 'es'}"></script>`;
+  return `<script src="/assets/seguir.js?v=20261104st" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}" data-lang="${lang === 'en' ? 'en' : 'es'}"></script>`;
 };
 
 /** «350 m», «1,2 km». */
@@ -402,10 +430,10 @@ export async function partidoPage(rawId, url, lang) {
   // Lo que no está en juego ni por jugar (terminado, aplazado o cancelado).
   const estado = d.live ? '' : d.status === 'postponed' ? (en ? 'Postponed' : 'Aplazado')
     : d.status === 'cancelled' ? (en ? 'Cancelled' : 'Cancelado') : (en ? 'It has finished' : 'Ya ha terminado');
-  const equipos = (d.teams || []).filter((t) => isUuid(t.id) && t.name);
-  // «Seguir a Real Madrid» / «Seguir a Barça»: neutros, uno debajo de otro y del mismo ancho.
-  const seguir = equipos.length ? `<div class="seguir-equipos">${equipos.map((t) => `<a class="pill" href="${esc(seguirHref(lang, t))}"
-      data-seguir-equipo="${esc(t.id)}" data-nombre="${esc(t.name)}" data-si="${esc(S.following(t.name))}" data-no="${esc(S.follow(t.name))}" aria-pressed="false">${esc(S.follow(t.name))}</a>`).join('')}</div>` : '';
+  // «Seguir a Real Madrid», «Seguir LaLiga», «Seguir a Alonso»: neutros, uno
+  // debajo de otro y del mismo ancho (sin `follow`, la base de antes: sus
+  // equipos).
+  const seguir = botonesSeguir(Array.isArray(d.follow) && d.follow.length ? d.follow : (d.teams || []), lang);
 
   const barHtml = (bz) => {
     const logo = /^https:\/\//.test(bz.logo || '') ? `<img src="${esc(bz.logo)}" alt="" width="56" height="56" loading="lazy" decoding="async">`

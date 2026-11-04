@@ -55,14 +55,35 @@
       offers: (n) => ` · ${n} con oferta`,
       none: 'Aún no lo pone ningún bar cerca',
       barsSection: 'Bares que lo ponen',
-      detailEmpty: 'Sigue al equipo y te avisamos antes del partido si algún bar cercano lo pone.',
+      detailEmpty: 'Síguelo y te avisamos antes de que empiece si algún bar cercano lo pone.',
       follow: (x) => `Seguir a ${x}`,
       following: (x) => `Sigues a ${x}`,
+      // Una competición se sigue sin «a» («Seguir Fórmula 1»).
+      followComp: (x) => `Seguir ${x}`,
+      followingComp: (x) => `Sigues ${x}`,
+      followed: (x) => `Sigues a ${x}: te avisamos antes de sus partidos`,
+      followedRaces: (x) => `Sigues a ${x}: te avisamos antes de sus carreras`,
+      followedFights: (x) => `Sigues a ${x}: te avisamos antes de sus combates`,
+      followedComp: (x) => `Sigues ${x}: te avisamos antes de sus partidos`,
+      followedCompRaces: (x) => `Sigues ${x}: te avisamos antes de cada carrera`,
+      followedCompFights: (x) => `Sigues ${x}: te avisamos antes de cada velada`,
+      unfollowed: (x) => `Ya no sigues a ${x}`,
+      unfollowedComp: (x) => `Ya no sigues ${x}`,
+      tooMany: 'Puedes seguir 30 equipos, deportistas y competiciones como mucho',
+      noFollows: 'Aún no sigues ningún equipo, deportista ni competición',
+      loginFollow: 'Entra para seguir equipos, deportistas y competiciones',
+      seeMore: (n) => (n === 1 ? 'Ver 1 más' : `Ver ${n} más`),
+      kindTeam: 'Equipo',
+      kindComp: 'Competición',
+      kindDriver: 'Piloto',
+      kindFighter: 'Luchador',
+      kindTennis: 'Tenista',
+      kindAthlete: 'Deportista',
       yourTeams: 'Sigues',
       followTeam: 'Seguir',
-      noTeams: 'Sigue a tu equipo y te avisamos antes de cada partido con los bares que lo ponen cerca.',
-      searchTeam: 'Busca un equipo o deportista',
-      noTeamFound: 'No encontramos ese equipo o deportista',
+      noTeams: 'Sigue a un equipo, un deportista o una competición y te avisamos antes de cada partido o carrera con los bares que lo ponen cerca.',
+      searchTeam: 'Busca un equipo, deportista o competición',
+      noTeamFound: 'No encontramos ese equipo, deportista o competición',
       emptyTitle: 'Aún no hay partidos por aquí',
       emptyText: 'Cuando un bar cercano diga qué partidos pone, saldrán aquí.',
       notFound: (q) => `No encontramos «${q}»`,
@@ -81,6 +102,8 @@
       alwaysHint: 'Se marcan solos al salir. Para dejar de ponerlos, quítalo.',
       alwaysTeam: (x) => `Poner siempre los de ${x}`,
       alwaysComp: (x) => `Poner siempre: ${x}`,
+      alwaysAdd: 'Poner siempre…',
+      alwaysPick: '¿Qué pones siempre?',
       alwaysRemove: (x) => `Dejar de poner siempre ${x}`,
       alwaysDone: 'Hecho: se marcarán solos',
       auto: 'Lo pones siempre',
@@ -131,14 +154,34 @@
       offers: (n) => ` · ${n} with an offer`,
       none: 'No bar nearby is showing it yet',
       barsSection: 'Bars showing it',
-      detailEmpty: "Follow the team and we'll let you know before the match if a bar nearby is showing it.",
+      detailEmpty: "Follow it and we'll let you know before it starts if a bar nearby is showing it.",
       follow: (x) => `Follow ${x}`,
       following: (x) => `Following ${x}`,
+      followComp: (x) => `Follow ${x}`,
+      followingComp: (x) => `Following ${x}`,
+      followed: (x) => `You're following ${x}: we'll let you know before their matches`,
+      followedRaces: (x) => `You're following ${x}: we'll let you know before their races`,
+      followedFights: (x) => `You're following ${x}: we'll let you know before their fights`,
+      followedComp: (x) => `You're following ${x}: we'll let you know before its matches`,
+      followedCompRaces: (x) => `You're following ${x}: we'll let you know before each race`,
+      followedCompFights: (x) => `You're following ${x}: we'll let you know before each fight night`,
+      unfollowed: (x) => `You're no longer following ${x}`,
+      unfollowedComp: (x) => `You're no longer following ${x}`,
+      tooMany: 'You can follow up to 30 teams, athletes and competitions',
+      noFollows: "You're not following any team, athlete or competition yet",
+      loginFollow: 'Log in to follow teams, athletes and competitions',
+      seeMore: (n) => (n === 1 ? 'See 1 more' : `See ${n} more`),
+      kindTeam: 'Team',
+      kindComp: 'Competition',
+      kindDriver: 'Driver',
+      kindFighter: 'Fighter',
+      kindTennis: 'Tennis player',
+      kindAthlete: 'Athlete',
       yourTeams: 'Following',
       followTeam: 'Follow',
-      noTeams: "Follow your team and we'll tell you before each match which bars nearby are showing it.",
-      searchTeam: 'Search for a team or athlete',
-      noTeamFound: "We can't find that team or athlete",
+      noTeams: "Follow a team, an athlete or a competition and we'll tell you before each match or race which bars nearby are showing it.",
+      searchTeam: 'Search for a team, athlete or competition',
+      noTeamFound: "We can't find that team, athlete or competition",
       emptyTitle: 'No matches around here yet',
       emptyText: "When a bar nearby says which matches it's showing, they'll appear here.",
       notFound: (q) => `We couldn't find “${q}”`,
@@ -156,6 +199,8 @@
       alwaysHint: "They're marked automatically as they come out. Remove it to stop.",
       alwaysTeam: (x) => `Always show ${x}'s matches`,
       alwaysComp: (x) => `Always show: ${x}`,
+      alwaysAdd: 'Always show…',
+      alwaysPick: 'What do you always show?',
       alwaysRemove: (x) => `Stop always showing ${x}`,
       alwaysDone: "Done: they'll be marked automatically",
       auto: 'You always show this',
@@ -245,11 +290,58 @@
   /** «Hoy · 21:00», «Sábado 11 de octubre · Hora por confirmar». */
   const cuandoLargo = (b, tz, lang) => `${diaLargo(b.starts_at, tz, lang)} · ${b.time_confirmed === false ? t(lang).tbc : hora(b.starts_at, tz, lang)}`;
 
+  // ── Lo que se sigue: un equipo, un deportista o una competición ──────────
+  // (`kind`: team, athlete, competition; `follow_search`, migración
+  // 20261260100070_seguir_lo_que_sea de la app). Lo mismo que la app
+  // (`followKindLabel`, `followItemLabel`, `followTextKind`).
+
+  /** «Equipo», «Piloto», «Luchador», «Tenista», «Deportista», «Competición». */
+  function tipoSeguir(x, lang) {
+    const S = t(lang);
+    if (x && x.kind === 'competition') return S.kindComp;
+    if (x && x.kind === 'athlete') {
+      return { motor: S.kindDriver, combat: S.kindFighter, tennis: S.kindTennis }[x.sport] || S.kindAthlete;
+    }
+    return S.kindTeam;
+  }
+  /** «Piloto · Fórmula 1», «Equipo · LaLiga», «Competición». */
+  function etiquetaSeguir(x, lang) {
+    const tipo = tipoSeguir(x, lang);
+    if (x && x.kind === 'competition') return tipo;
+    const ctx = String((x && x.context) || '').trim() || (x && x.kind === 'athlete' ? '' : deporte(x && x.sport, lang));
+    return [tipo, ctx].filter(Boolean).join(' · ');
+  }
+  /** El nombre en una lista: un deportista, entero («Fernando Alonso»). */
+  const tituloSeguir = (x) => (x && x.kind === 'athlete' && x.full_name ? x.full_name : (x && x.name) || '');
+  /** Debajo del nombre: un equipo, su nombre entero si es otro; y la etiqueta. */
+  const detalleSeguir = (x, lang) => [
+    x && (x.kind || 'team') === 'team' && x.full_name && x.full_name !== x.name ? x.full_name : '',
+    etiquetaSeguir(x, lang),
+  ].filter(Boolean).join(' · ');
+  const esComp = (x) => !!(x && x.kind === 'competition');
+  /** «Seguir a Alonso» / «Seguir Fórmula 1». */
+  const seguirTxt = (x, lang) => (esComp(x) ? t(lang).followComp(x.name) : t(lang).follow(x && x.name));
+  /** «Sigues a Alonso» / «Sigues Fórmula 1». */
+  const siguesTxt = (x, lang) => (esComp(x) ? t(lang).followingComp(x.name) : t(lang).following(x && x.name));
+  /** Al seguir: «Sigues a Alonso: te avisamos antes de sus carreras». */
+  function seguidoTxt(x, lang) {
+    const S = t(lang);
+    const n = (x && x.name) || '';
+    const s = x && x.sport;
+    if (esComp(x)) return s === 'motor' ? S.followedCompRaces(n) : s === 'combat' ? S.followedCompFights(n) : S.followedComp(n);
+    if (x && x.kind === 'athlete' && s === 'motor') return S.followedRaces(n);
+    if (x && x.kind === 'athlete' && s === 'combat') return S.followedFights(n);
+    return S.followed(n);
+  }
+  /** Al dejarlo: «Ya no sigues a Alonso» / «Ya no sigues Fórmula 1». */
+  const yaNoTxt = (x, lang) => (esComp(x) ? t(lang).unfollowedComp(x.name) : t(lang).unfollowed(x && x.name));
+
   /** Sin tildes y en minúsculas: para buscar en el panel. */
   const plano = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
   const KlendarEmisiones = {
     DEPORTES, FUENTE, FUENTES, fuentesDe, t, deporte, conAtribucion, dia, hora, etiquetaDia, diaLargo, diaCorto, cuandoCorto, cuandoLargo, plano,
+    tipoSeguir, etiquetaSeguir, tituloSeguir, detalleSeguir, seguirTxt, siguesTxt, seguidoTxt, yaNoTxt,
   };
   globalThis.KlendarEmisiones = KlendarEmisiones;
   if (typeof module === 'object' && module && module.exports) module.exports = KlendarEmisiones;

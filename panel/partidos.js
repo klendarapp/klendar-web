@@ -7,8 +7,11 @@
  * agrupado por competición (en el orden de las ligas) y dentro por fecha,
  * con buscador, deportes y competiciones. «Lo ponemos» marca o quita uno;
  * «Ponerlos todos» / «Quitar todos», los de una competición; «⋯» → «Poner
- * siempre los de <equipo>» / «Poner siempre: <competición>» (se marcan solos
- * al llegar; arriba, «Pones siempre», con su ✕ para dejarlo). Nada de canal. Marcado, «Oferta para el partido»: crear una nueva
+ * siempre los de <equipo o deportista que nombra>» / «Poner siempre:
+ * <competición>» (se marcan solos al llegar; arriba, «Pones siempre», con su
+ * ✕ para dejarlo, y «Poner siempre…», con el buscador único de equipos,
+ * deportistas y competiciones: migración 20261260100070_seguir_lo_que_sea).
+ * Nada de canal. Marcado, «Oferta para el partido»: crear una nueva
  * (el formulario de oferta flash ya relleno: `#/publicaciones/nueva-flash?
  * partido=<id>`, que al guardar la une al partido), usar una que ya tienes o
  * quitarla. «Añadir otro» (`#/partidos/nuevo`): lo que no está en la lista.
@@ -52,10 +55,11 @@ PAGES.partidos = async (v, param) => {
       ${puede ? `<a class="btn sm" href="#/partidos/nuevo">${esc(S.addAnother)}</a>` : ''}</div>
     <p class="muted" style="margin:-6px 0 14px">${esc(S.toolLead)}</p>
     ${puede ? '' : `<div class="help pt-solo">${esc(S.readOnly)}</div>`}
-    ${reglas.length ? `<section class="card pt-siempre" aria-labelledby="ptSiempreT">
+    ${reglas.length || puede ? `<section class="card pt-siempre" aria-labelledby="ptSiempreT">
       <h2 id="ptSiempreT">${esc(S.alwaysTitle)}</h2>
       <div class="pt-reglas">${reglas.map((g, i) => `<span class="pt-regla"><span>${esc(g.name)}</span>${puede
-        ? `<button type="button" class="pt-regla-x" data-regla="${i}" aria-label="${esc(S.alwaysRemove(g.name))}" title="${esc(S.alwaysRemove(g.name))}">✕</button>` : ''}</span>`).join('')}</div>
+        ? `<button type="button" class="pt-regla-x" data-regla="${i}" aria-label="${esc(S.alwaysRemove(g.name))}" title="${esc(S.alwaysRemove(g.name))}">✕</button>` : ''}</span>`).join('')}${puede
+        ? `<button type="button" class="linkbtn pt-siempre-mas" id="ptSiempreMas">${esc(S.alwaysAdd)}</button>` : ''}</div>
       <p class="muted" style="margin:6px 0 0">${esc(S.alwaysHint)}</p>
     </section>` : ''}
     <div class="pt-filtros">
@@ -129,9 +133,11 @@ PAGES.partidos = async (v, param) => {
     // nombre.
     grupos.sort((a, b) => a.sort - b.sort || a.nombre.localeCompare(b.nombre));
     const conRegla = new Set(reglas.map((g) => g.team_id || `c:${g.competition}`));
-    // «Poner siempre…» de una fila: sus equipos y su competición.
+    // «Poner siempre…» de una fila: sus equipos, los deportistas que nombra
+    // («Topuria») y su competición.
     const siempre = (b) => (b.own ? [] : [
       ...(b.teams || []).filter((t) => t.id && !conRegla.has(t.id)).map((t) => ({ txt: S.alwaysTeam(t.name), team: t.id })),
+      ...(b.athletes || []).filter((t) => t.id && !conRegla.has(t.id)).map((t) => ({ txt: S.alwaysTeam(t.name), team: t.id })),
       ...(b.competition_key && !conRegla.has(`c:${b.competition_key}`) ? [{ txt: S.alwaysComp(b.competition || ''), comp: b.competition_key }] : []),
     ]);
     caja.innerHTML = grupos.map((g, gi) => {
@@ -212,11 +218,64 @@ PAGES.partidos = async (v, param) => {
       if (g) regla({ p_team: g.team_id || null, p_competition: g.competition || null, p_on: false }, b);
     };
   });
+  // «Poner siempre…»: el buscador único; el elegido se pone siempre.
+  const mas = $('#ptSiempreMas', v);
+  if (mas) {
+    mas.onclick = async () => {
+      const x = await eligeSiempre();
+      if (x) regla({ p_team: x.id, p_on: true }, mas);
+    };
+  }
   let espera = null;
   $('#ptQ', v).addEventListener('input', (e) => { clearTimeout(espera); espera = setTimeout(() => { PT.q = e.target.value; pinta(); }, 200); });
   pinta();
   I18N.translate(v);
 };
+
+/** «¿Qué pones siempre?»: buscar un equipo, un deportista o una competición
+ * (`follow_search`, con su etiqueta: «Piloto · Fórmula 1») y elegir uno.
+ * Devuelve el elegido o null. */
+function eligeSiempre() {
+  const S = SP();
+  const lang = I18N.lang;
+  return new Promise((resolve) => {
+    const d = $('#modal');
+    d.innerHTML = `<form method="dialog" class="pt-elige"><h2>${esc(S.alwaysPick)}</h2>
+      <label class="f"><span>${esc(S.searchTeam)}</span><input type="search" name="q" maxlength="40" autocomplete="off" enterkeyhint="search"></label>
+      <div class="pt-elige-res" aria-live="polite"></div>
+      <div class="foot"><button type="button" class="btn ghost" data-cancel>${esc(I18N.t('Cancelar'))}</button></div></form>`;
+    let hecho = false;
+    let lista = [];
+    let pedido = 0;
+    let espera = null;
+    const fin = (x) => { if (hecho) return; hecho = true; if (d.open) d.close(); resolve(x); };
+    const campo = $('input[name=q]', d);
+    const res = $('.pt-elige-res', d);
+    const busca = async () => {
+      const q = campo.value.trim();
+      const n = ++pedido;
+      if (q.length < 2) { res.innerHTML = ''; return; }
+      try {
+        const r = (await rpc('follow_search', { p_q: q, p_lang: lang === 'en' ? 'en' : 'es', p_limit: 20 })) || [];
+        if (n !== pedido) return;
+        lista = r;
+        res.innerHTML = r.length
+          ? r.map((x, i) => `<button type="button" class="pt-elige-fila" data-i="${i}"><b>${esc(KEp.tituloSeguir(x))}</b><small class="muted">${esc(KEp.detalleSeguir(x, lang))}</small></button>`).join('')
+          : `<p class="muted">${esc(S.noTeamFound)}</p>`;
+      } catch (e) { if (n === pedido) res.innerHTML = `<p class="muted">${esc(e.message)}</p>`; }
+    };
+    campo.addEventListener('input', () => { clearTimeout(espera); espera = setTimeout(busca, 300); });
+    $('form', d).addEventListener('submit', (e) => { e.preventDefault(); clearTimeout(espera); busca(); });
+    res.addEventListener('click', (e) => {
+      const b = e.target instanceof Element ? e.target.closest('[data-i]') : null;
+      if (b) fin(lista[Number(b.dataset.i)] || null);
+    });
+    $('[data-cancel]', d).onclick = () => fin(null);
+    d.oncancel = (e) => { e.preventDefault(); fin(null); };
+    d.showModal();
+    campo.focus();
+  });
+}
 
 /** La hoja de «Oferta para el partido»: crear una, usar una que ya tienes o
  * quitarla. Devuelve `{ offer }` si ha cambiado (null = ya no tiene) o null. */

@@ -12,6 +12,11 @@
  * - De los bares: lo que han añadido los bares, agrupado por lo que parece lo
  *   mismo; «Pasar a la lista oficial» y «Fusionar con «…»».
  * - Equipos: los alias de cada equipo («Atleti», «Barça») y cuántos lo siguen.
+ * - Seguir: el catálogo de deportistas (pilotos, luchadores, tenistas…) y
+ *   competiciones que se pueden seguir (migración
+ *   20261260100070_seguir_lo_que_sea): dar de alta, editar (nombre, nombre
+ *   corto, alias, deporte, competiciones, regla, temporada, orden), apagar y
+ *   encender; con cuántos lo siguen y lo que tienen a la vista.
  * Arriba: «Añadir un evento», «Importar ahora» y «Comprobar la fuente» (la
  * Edge Function `broadcasts-import` con la sesión del admin) y la última
  * importación.
@@ -25,7 +30,7 @@ const KEa = globalThis.KlendarEmisiones;
 const enA = () => I18N.lang === 'en';
 const FUENTE_NOMBRE = { 'football-data': 'football-data.org', thesportsdb: 'TheSportsDB', admin: 'Admin', business: 'Bares' };
 const fuenteTxt = (s) => I18N.t(FUENTE_NOMBRE[s] || s || '—');
-const EM = { tab: 'ligas', fuente: '', q: '', ocultas: false, qEquipos: '' };
+const EM = { tab: 'ligas', fuente: '', q: '', ocultas: false, qEquipos: '', qSeguir: '', tipo: 'athlete' };
 
 /** «6 oct 6:30» en la hora de Madrid. */
 const cuandoAdmin = (iso) => KZ.fmt(iso, TZ, LOC(), { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).replace(',', '');
@@ -101,6 +106,60 @@ const ERR_EVENTO = {
   imported: 'Lo que llega de la importación no se edita (la siguiente lo pisaría): ocúltalo y añade uno tuyo.',
   not_found: 'No encontrado.',
 };
+/** Lo que dice la base al guardar algo del catálogo de «Seguir». */
+const ERR_SEGUIR = {
+  kind_invalid: 'Elige si es un deportista o una competición.',
+  sport_invalid: 'Ese deporte no existe.',
+  name_invalid: 'El nombre tiene que tener entre 2 y 80 caracteres (el corto, 40 como mucho).',
+  season_invalid: 'La temporada, como mucho 20 caracteres (p. ej. 2026).',
+  competition_invalid: 'Alguna competición no existe: usa los códigos de «Ligas» (f1, motogp, ufc, atp…).',
+  rule_invalid: 'Esa regla no existe.',
+  duplicate: 'Ya hay uno con ese nombre (o esa liga ya tiene su competición).',
+  not_found: 'No encontrado.',
+};
+const listaTxt = (x) => String(x || '').split(',').map((y) => y.trim()).filter(Boolean);
+
+/** Dar de alta o editar un deportista o una competición del catálogo. Un
+ * equipo solo cambia su nombre corto y sus alias (lo demás lo trae la
+ * importación). */
+async function editaSeguible(x, tipo) {
+  const lang = I18N.lang;
+  const kind = x?.kind || tipo;
+  const esEquipo = kind === 'team';
+  const esComp = kind === 'competition';
+  const campos = [
+    ...(x ? [] : [{ name: 'kind', label: 'Qué es', type: 'select', value: kind, options: [['athlete', 'Deportista'], ['competition', 'Competición']] }]),
+    ...(esEquipo ? [] : [{ name: 'sport', label: 'Deporte', type: 'select', value: x?.sport || 'motor', options: KEa.DEPORTES.map((s2) => [s2, KEa.deporte(s2, lang)]) }]),
+    ...(esEquipo ? [] : [{ name: 'name', label: 'Nombre', value: x?.name || '', required: true, placeholder: 'Fernando Alonso', ancho: true }]),
+    { name: 'short_name', label: 'Nombre corto (opcional)', value: x?.short_name || '', placeholder: 'Alonso', help: 'El que sale en los avisos («Hoy corre Alonso»).' },
+    { name: 'aliases', label: 'Alias, separados por comas', value: (x?.aliases || []).join(', '), help: 'Otros nombres por los que se busca y se reconoce en un título.', ancho: true },
+    ...(esEquipo || esComp ? [] : [
+      { name: 'competitions', label: 'Competiciones (códigos, separados por comas)', value: (x?.competitions || []).join(', '), placeholder: 'f1', help: 'Los de «Ligas»: f1, motogp, ufc, atp, wta…', ancho: true },
+      { name: 'match_rule', label: 'Qué es «su evento»', type: 'select', value: x?.match_rule || (x?.sport === 'motor' || !x ? 'competition' : 'name'),
+        options: [['competition', 'Todas las de su campeonato (pilotos)'], ['name', 'Las que lo nombran (luchadores, tenistas)']] },
+      { name: 'season', label: 'Temporada (opcional)', value: x?.season || '', placeholder: '2026', help: 'Vacía: todas mientras esté en su campeonato. Con un año: solo las de esa temporada.' },
+    ]),
+    ...(esEquipo ? [] : [{ name: 'sort', label: 'Orden (menos, antes)', type: 'number', value: x?.sort ?? 500, step: 1 }]),
+  ];
+  const r = await modal({ title: x ? (esEquipo ? 'Editar el equipo' : 'Editar') : 'Dar de alta', fields: campos, submit: 'Guardar' });
+  if (!r) return false;
+  const k = x ? kind : r.kind;
+  try {
+    const res = await rpc('admin_save_follow_item', {
+      p_id: x?.id || null, p_kind: k, p_sport: esEquipo ? x.sport : r.sport, p_name: esEquipo ? x.name : r.name,
+      p_short_name: r.short_name || null, p_aliases: listaTxt(r.aliases),
+      p_competitions: k === 'athlete' ? listaTxt(r.competitions).map((c) => c.toLowerCase()) : [],
+      p_match_rule: k === 'athlete' ? (r.match_rule || null) : null,
+      p_season: k === 'athlete' ? (r.season || null) : null,
+      p_league_code: k === 'competition' ? (x?.league_code || null) : null,
+      p_sort: r.sort === '' || r.sort == null ? null : Number.parseInt(r.sort, 10),
+    });
+    if (res?.ok === false) { toast(ERR_SEGUIR[res.error] || 'No se ha podido completar. Prueba otra vez.', true); return false; }
+    toast('Guardado');
+    return true;
+  } catch (e) { toast(e.message, true); return false; }
+}
+
 async function editaEvento(b) {
   const r = await modal({ title: b ? 'Editar el evento' : 'Añadir un evento', fields: camposEvento(b), submit: 'Guardar' });
   if (!r) return false;
@@ -119,7 +178,7 @@ async function editaEvento(b) {
 
 PAGES.emisiones = async (v) => {
   const p = params();
-  if (['ligas', 'proximas', 'bares', 'equipos'].includes(p.tab)) EM.tab = p.tab;
+  if (['ligas', 'proximas', 'bares', 'equipos', 'seguir'].includes(p.tab)) EM.tab = p.tab;
   if (p.fuente != null) EM.fuente = ['thesportsdb', 'football-data', 'admin', 'business'].includes(p.fuente) ? p.fuente : '';
   const aUrl = () => ponUrl('emisiones', { tab: EM.tab === 'ligas' ? null : EM.tab, fuente: EM.tab === 'proximas' && EM.fuente ? EM.fuente : null });
   aUrl();
@@ -129,10 +188,10 @@ PAGES.emisiones = async (v) => {
       <button class="btn sm" type="button" id="emImportar">Importar ahora</button>
       <button class="btn sm" type="button" id="emSondear">Comprobar la fuente</button></div>
     ${helpBox('¿Qué hago aquí?', enA()
-    ? `<p>Everything for “Where to watch”. Every sport comes in automatically from <b>TheSportsDB</b> every day (and every two hours during the day for time changes), league by league: in <b>Leagues</b> you turn them on or off and see what each one brings. TV channels aren't stored: what matters is whether the bar is showing it. Add here what doesn't come in on its own (Eurovision, tennis finals, the Super Bowl…): with its teams or participants, people can follow them and get notified. What comes from the provider isn't edited: hide it. In <b>From bars</b>, what bars have added by hand: if several are showing the same thing, move it to the official list or merge it with the official one. In <b>Teams</b>, aliases (“Atleti”, “Barça”) so they can be found by those names too.</p>`
-    : '<p>Todo lo de «Dónde verlo». Todos los deportes llegan solos de <b>TheSportsDB</b> cada día (y cada dos horas de día, por los cambios de hora), liga a liga: en <b>Ligas</b> se encienden o se apagan y se ve qué trae cada una. El canal de TV no se guarda: lo que importa es si el bar lo pone. Aquí se añade lo que no llega solo (Eurovisión, las finales de tenis, la Super Bowl…): con sus equipos o participantes, la gente los puede seguir y recibir el aviso. Lo que llega del proveedor no se edita: se oculta. En <b>De los bares</b>, lo que los bares han añadido a mano: si varios ponen lo mismo, pásalo a la lista oficial o fusiónalo con el oficial. En <b>Equipos</b>, los alias («Atleti», «Barça») para que se encuentren también así.</p>')}
+    ? `<p>Everything for “Where to watch”. Every sport comes in automatically from <b>TheSportsDB</b> every day (and every two hours during the day for time changes), league by league: in <b>Leagues</b> you turn them on or off and see what each one brings. TV channels aren't stored: what matters is whether the bar is showing it. Add here what doesn't come in on its own (Eurovision, tennis finals, the Super Bowl…): with its teams or participants, people can follow them and get notified. What comes from the provider isn't edited: hide it. In <b>From bars</b>, what bars have added by hand: if several are showing the same thing, move it to the official list or merge it with the official one. In <b>Teams</b>, aliases (“Atleti”, “Barça”) so they can be found by those names too. In <b>Follow</b>, the athletes (drivers, fighters, tennis players…) and competitions people can follow: add, edit or turn them off. A driver gets every race of their championship; a fighter or a tennis player, the events that name them (also the ones you add here).</p>`
+    : '<p>Todo lo de «Dónde verlo». Todos los deportes llegan solos de <b>TheSportsDB</b> cada día (y cada dos horas de día, por los cambios de hora), liga a liga: en <b>Ligas</b> se encienden o se apagan y se ve qué trae cada una. El canal de TV no se guarda: lo que importa es si el bar lo pone. Aquí se añade lo que no llega solo (Eurovisión, las finales de tenis, la Super Bowl…): con sus equipos o participantes, la gente los puede seguir y recibir el aviso. Lo que llega del proveedor no se edita: se oculta. En <b>De los bares</b>, lo que los bares han añadido a mano: si varios ponen lo mismo, pásalo a la lista oficial o fusiónalo con el oficial. En <b>Equipos</b>, los alias («Atleti», «Barça») para que se encuentren también así. En <b>Seguir</b>, los deportistas (pilotos, luchadores, tenistas…) y las competiciones que se pueden seguir: dar de alta, editar o apagar. A un piloto le cuentan todas las carreras de su campeonato; a un luchador o un tenista, lo que lo nombra (también lo que añadas aquí).</p>')}
     <p class="muted small" id="emImport"></p>
-    <div class="tabs">${[['ligas', 'Ligas'], ['proximas', 'Próximas'], ['bares', 'De los bares'], ['equipos', 'Equipos']].map((t) => `<button type="button" data-t="${t[0]}" class="${EM.tab === t[0] ? 'on' : ''}" aria-pressed="${EM.tab === t[0]}">${t[1]}</button>`).join('')}</div>
+    <div class="tabs">${[['ligas', 'Ligas'], ['proximas', 'Próximas'], ['bares', 'De los bares'], ['equipos', 'Equipos'], ['seguir', 'Seguir']].map((t) => `<button type="button" data-t="${t[0]}" class="${EM.tab === t[0] ? 'on' : ''}" aria-pressed="${EM.tab === t[0]}">${t[1]}</button>`).join('')}</div>
     <div id="tabview"></div>`;
 
   const load = async () => {
@@ -142,6 +201,7 @@ PAGES.emisiones = async (v) => {
     if (EM.tab === 'ligas') await ligas(tv);
     else if (EM.tab === 'proximas') await proximas(tv);
     else if (EM.tab === 'bares') await deLosBares(tv);
+    else if (EM.tab === 'seguir') await seguibles(tv);
     else await equipos(tv);
     I18N.translate(tv);
   };
@@ -305,6 +365,55 @@ PAGES.emisiones = async (v) => {
     await pinta();
   }
 
+  async function seguibles(tv) {
+    tv.innerHTML = `<div class="toolbar">
+        <select id="sgTipo" aria-label="${esc(I18N.t('Qué es'))}">${[['athlete', 'Deportistas'], ['competition', 'Competiciones'], ['team', 'Equipos']].map((o) => `<option value="${o[0]}" ${EM.tipo === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
+        <input class="grow" type="search" id="sgQ" value="${esc(EM.qSeguir)}" placeholder="Buscar: deportista o competición" aria-label="Buscar: deportista o competición">
+        <button class="btn sm primary" type="button" id="sgNuevo">Dar de alta</button>
+      </div><div id="list"><div class="loading">Cargando…</div></div>`;
+    const pinta = async () => {
+      const rows = (await rpc('admin_follow_items', { p_q: EM.qSeguir.trim() || null, p_kind: EM.tipo })) || [];
+      const lang = I18N.lang;
+      const regla = (x) => (x.kind !== 'athlete' ? '—'
+        : x.match_rule === 'competition' ? I18N.t('Todas las de su campeonato') : I18N.t('Las que lo nombran'));
+      $('#list', tv).innerHTML = table({ cols: [
+        { h: 'Nombre', r: (x) => `<span class="title">${esc(x.name)}${x.hidden ? ` <span class="tag dim">${esc(I18N.t('apagado'))}</span>` : ''}${x.kind === 'competition' && x.league_enabled === false ? ` <span class="tag dim">${esc(I18N.t('liga apagada'))}</span>` : ''}<span class="sub">${esc([
+          KEa.etiquetaSeguir({ ...x, context: '' }, lang), KEa.deporte(x.sport, lang), x.short_name && x.short_name !== x.name ? x.short_name : '',
+          (x.competitions || []).join(', '), x.season ? `${I18N.t('temporada')} ${x.season}` : '', x.league_code || '',
+        ].filter(Boolean).join(' · '))}</span>${(x.aliases || []).length ? `<span class="sub">${esc(`${I18N.t('Alias')}: ${x.aliases.join(', ')}`)}</span>` : ''}</span>` },
+        { h: 'Su evento', r: (x) => esc(regla(x)) },
+        { h: 'Lo siguen', num: true, r: (x) => fmtNum(x.followers) },
+        { h: 'A la vista', num: true, r: (x) => fmtNum(x.upcoming) },
+        { h: 'Poner siempre', num: true, r: (x) => fmtNum(x.rules) },
+        { h: '', r: (x) => `<span class="actions"><button class="btn sm" type="button" data-sg-editar="${esc(x.id)}">Editar</button>
+          ${x.kind === 'team' ? '' : `<button class="btn sm ghost" type="button" data-sg-apagar="${esc(x.id)}" data-apagado="${x.hidden ? '1' : '0'}">${x.hidden ? 'Encender' : 'Apagar'}</button>`}</span>` },
+      ], rows, empty: 'Nada con ese nombre.' });
+      $$('[data-sg-editar]', tv).forEach((btn) => {
+        btn.onclick = () => esperando(btn, async () => { if (await editaSeguible(rows.find((y) => y.id === btn.dataset.sgEditar), EM.tipo)) pinta(); });
+      });
+      $$('[data-sg-apagar]', tv).forEach((btn) => {
+        btn.onclick = () => esperando(btn, async () => {
+          const x = rows.find((y) => y.id === btn.dataset.sgApagar);
+          const apagar = btn.dataset.apagado !== '1';
+          if (apagar && !await confirmDlg(enA() ? `Turn off “${x.name}”` : `Apagar «${x.name}»`,
+            esc(enA() ? "It won't show in the search and won't count for alerts. Whoever already follows it still sees it in their list and can unfollow." : 'No saldrá en el buscador ni contará para los avisos. Quien ya lo sigue lo ve en su lista y puede dejar de seguirlo.'),
+            { submit: 'Apagar' })) return;
+          try {
+            const res = await rpc('admin_hide_follow_item', { p_id: x.id, p_hidden: apagar });
+            if (res?.ok === false) { toast(ERR_SEGUIR[res.error] || 'No se ha podido completar. Prueba otra vez.', true); return; }
+            toast(apagar ? 'Apagado' : 'Encendido');
+            pinta();
+          } catch (e) { toast(e.message, true); }
+        });
+      });
+      I18N.translate($('#list', tv));
+    };
+    $('#sgTipo', tv).onchange = (e) => { EM.tipo = e.target.value; pinta(); };
+    $('#sgQ', tv).oninput = debounce((e) => { EM.qSeguir = e.target.value; pinta(); });
+    $('#sgNuevo', tv).onclick = (e) => esperando(e.currentTarget, async () => { if (await editaSeguible(null, EM.tipo === 'team' ? 'athlete' : EM.tipo)) pinta(); });
+    await pinta();
+  }
+
   $$('.tabs button', v).forEach((b) => {
     b.onclick = () => {
       EM.tab = b.dataset.t; aUrl();
@@ -338,4 +447,4 @@ PAGES.emisiones = async (v) => {
 
 // admin.js arranca (`boot()`) antes de que llegue este archivo: si ya ha
 // pintado otra pantalla estando en «Emisiones», se vuelve a pintar esta.
-if (ME && currentRoute()[0] === 'emisiones' && !$('#view [data-t="equipos"]')) route();
+if (ME && currentRoute()[0] === 'emisiones' && !$('#view [data-t="seguir"]')) route();

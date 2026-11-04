@@ -31,7 +31,8 @@ const enlaces = await p0.locator('a.partido').evaluateAll((l) => l.map((a) => a.
 let ruta = null;
 for (const h of enlaces) {
   await p0.goto(`${BASE}${h}`, { waitUntil: 'networkidle' });
-  if (await p0.locator('[data-seguir-equipo]').count()) { ruta = h; break; }
+  // Uno de un equipo («Seguir a …»; la competición va sin «a»).
+  if (await p0.locator('[data-seguir-equipo]', { hasText: /^Seguir a / }).count()) { ruta = h; break; }
 }
 await p0.close();
 ok(Boolean(ruta), `un partido con «Seguir a …» (${ruta})`);
@@ -54,7 +55,7 @@ for (const [caso, respuesta] of [['falla', { ok: false, error: 'rate_limited' }]
   });
   const p = await ctx.newPage();
   await p.goto(`${BASE}${ruta}`, { waitUntil: 'networkidle' });
-  const b = p.locator('[data-seguir-equipo]').first();
+  const b = p.locator('[data-seguir-equipo]', { hasText: /^Seguir a / }).first();
   await p.waitForFunction(() => document.querySelector('[data-seguir-equipo]')?.getAttribute('data-directo') === '1', null, { timeout: 15000 }).catch(() => {});
   const antes = await b.getAttribute('aria-pressed');
   await b.click();
@@ -71,7 +72,7 @@ for (const [caso, respuesta] of [['falla', { ok: false, error: 'rate_limited' }]
     ok(/Demasiados intentos/.test(aviso), `${caso}: y lo dice («${aviso}»)`);
   } else {
     ok(despues === 'true', `${caso}: se queda en «Sigues a …»`);
-    ok(/^Sigues a .+: te avisamos antes de sus partidos$/.test(aviso), `${caso}: el aviso de la app («${aviso}»)`);
+    ok(/^Sigues a .+: te avisamos antes de sus (partidos|carreras|combates)$/.test(aviso), `${caso}: el aviso de la app («${aviso}»)`);
   }
   await ctx.close();
 }

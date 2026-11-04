@@ -1,11 +1,14 @@
 /* «Tu cuenta» → «Equipos y deportistas que sigues» (#/equipos), como la app
- * (/partidos/equipos; migración 20261201100000_partidos de la app).
+ * (/partidos/equipos; migraciones 20261201100000_partidos y
+ * 20261260100070_seguir_lo_que_sea de la app).
  *
- * - La lista con el próximo partido de cada equipo (a su página pública,
- *   /partidos/<id>), «Dejar de seguir» y «Seguir», que abre el
- *   buscador (`broadcast_team_search`).
- * - `#/equipos?seguir=<id>&nombre=<nombre>`: lo que manda «Seguir a Real
- *   Madrid» desde la web pública sin sesión. Al entrar, se sigue; si el
+ * - La lista (equipos, deportistas y competiciones, con su etiqueta: «Piloto
+ *   · Fórmula 1») con el próximo evento de cada uno (a su página pública,
+ *   /partidos/<id>), «Dejar de seguir» y «Seguir», que abre el buscador
+ *   único (`follow_search`).
+ * - `#/equipos?seguir=<id>&nombre=<nombre>[&tipo=<kind>&deporte=<sport>]`:
+ *   lo que manda «Seguir a Real Madrid» desde la web pública sin sesión. Al
+ *   entrar, se sigue; si el
  *   enlace no viene de un botón de esta web (sin la marca de
  *   /assets/seguir.js), primero se pregunta (`confirmaEnlace`).
  * - La fila de la portada de la cuenta (`filaEquipos`), debajo de «Series que
@@ -32,11 +35,8 @@ function filaEquipos() {
     ${ic('chevron_right')}</a>`;
 }
 
-const errorEquipo = (e) => (e?.clave === 'too_many'
-  ? (EN ? 'You can follow up to 30 teams and athletes' : 'Puedes seguir 30 equipos y deportistas como mucho')
-  : e?.message || amable(''));
-const textoSigues = (n) => (EN ? `You're following ${n}: we'll let you know before their matches` : `Sigues a ${n}: te avisamos antes de sus partidos`);
-const textoYaNo = (n) => (EN ? `You're no longer following ${n}` : `Ya no sigues a ${n}`);
+const errorEquipo = (e) => (e?.clave === 'too_many' ? SE().tooMany : e?.message || amable(''));
+const KINDS = ['team', 'athlete', 'competition'];
 
 /** «Equipos y deportistas que sigues». */
 RUTAS.equipos = async (_partes, params) => {
@@ -50,10 +50,13 @@ RUTAS.equipos = async (_partes, params) => {
   // la dirección (recargar no lo vuelve a hacer).
   if (UUID_EQ.test(seguir)) {
     const quien = nombre || (EN ? 'this team' : 'este equipo');
+    const tipo = KINDS.includes(params.get('tipo')) ? params.get('tipo') : 'team';
+    const dep = KEm.DEPORTES.includes(params.get('deporte')) ? params.get('deporte') : '';
+    const item = { name: quien, kind: tipo, sport: dep };
     const sigue = await confirmaEnlace(`equipos?seguir=${seguir}`, {
-      titulo: S.follow(quien),
+      titulo: KEm.seguirTxt(item, LANG),
       texto: EN ? "We'll let you know before each match which bars nearby are showing it." : 'Te avisamos antes de cada partido con los bares que lo ponen cerca.',
-      boton: S.follow(quien),
+      boton: KEm.seguirTxt(item, LANG),
       volver: '#/equipos',
     });
     if (!sigue) return;
@@ -61,7 +64,7 @@ RUTAS.equipos = async (_partes, params) => {
     try {
       await llamar('follow_broadcast_team', { p_team: seguir });
       guardaZonaAvisos();
-      toast(textoSigues(quien));
+      toast(KEm.seguidoTxt(item, LANG));
     } catch (e) { toast(errorEquipo(e), true); }
   }
 
@@ -74,7 +77,7 @@ RUTAS.equipos = async (_partes, params) => {
     pinta(`${cabeza}
       <section class="vacio">
         <span class="vacio-ic">${icBalon(30)}</span>
-        <h2>${esc(EN ? "You're not following any team or athlete yet" : 'Aún no sigues a ningún equipo ni deportista')}</h2>
+        <h2>${esc(S.noFollows)}</h2>
         <p>${esc(S.noTeams)}</p>
         <div class="vacio-botones">${botonSeguir.replace('class="pill"', 'class="pill accent"')}</div>
       </section>`);
@@ -85,26 +88,26 @@ RUTAS.equipos = async (_partes, params) => {
       <p class="acciones">${botonSeguir}</p>
       <div class="equipos-lista">${lista.map((x) => {
         const n = x.next;
-        const sub = [x.full_name && x.full_name !== x.name ? x.full_name : '', KEm.deporte(x.sport, lang)].filter(Boolean).join(' · ');
+        const sub = KEm.detalleSeguir(x, lang);
         const proximo = n && UUID_EQ.test(n.id || '')
           ? `<div class="lista">${fila({ href: partidoWeb(n.id), icono: 'explore', titulo: n.title,
             detalle: [KEm.cuandoLargo(n, tz, lang), n.competition].filter(Boolean).join(' · ') })}</div>`
           : `<p class="muted">${esc(EN ? 'No matches coming up' : 'Sin partidos a la vista')}</p>`;
         return `<section class="bloque equipo">
-          <h2>${esc(x.name)}</h2>
+          <h2>${esc(KEm.tituloSeguir(x))}</h2>
           ${sub ? `<p class="muted">${esc(sub)}</p>` : ''}
           ${proximo}
-          <p><button type="button" class="pill" data-dejar="${esc(x.id)}" data-nombre="${esc(x.name)}">${esc(S.unfollow)}</button></p>
+          <p><button type="button" class="pill" data-dejar="${esc(x.id)}">${esc(S.unfollow)}</button></p>
         </section>`;
       }).join('')}</div>`);
     // Dejar de seguir se confirma, como en la app.
     $$('[data-dejar]').forEach((b) => b.addEventListener('click', async () => {
-      const n = b.dataset.nombre || '';
-      if (!(await confirma({ titulo: S.unfollow, texto: EN ? `Following ${n}` : `Sigues a ${n}`, aceptar: S.unfollow, peligro: true }))) return;
+      const x = lista.find((y) => y.id === b.dataset.dejar) || { name: '' };
+      if (!(await confirma({ titulo: S.unfollow, texto: KEm.siguesTxt(x, lang), aceptar: S.unfollow, peligro: true }))) return;
       ocupado(b, async () => {
         try {
           await llamar('unfollow_broadcast_team', { p_team: b.dataset.dejar });
-          toast(textoYaNo(b.dataset.nombre || ''));
+          toast(KEm.yaNoTxt(x, lang));
           RUTAS.equipos([], new URLSearchParams());
         } catch (e) { toast(errorEquipo(e), true); }
       });
@@ -113,8 +116,9 @@ RUTAS.equipos = async (_partes, params) => {
   $$('[data-seguir-equipo]').forEach((b) => b.addEventListener('click', () => buscaEquipo(() => RUTAS.equipos([], new URLSearchParams()))));
 };
 
-/** «Seguir» (equipos y deportistas): buscar (por nombre, siglas o alias) y seguir o
- * dejar de seguir desde la lista. Al cerrar, `alCerrar` (si ha cambiado algo). */
+/** «Seguir»: el buscador único (equipos, deportistas y competiciones, por
+ * nombre, siglas o alias) y seguir o dejar de seguir desde la lista. Al
+ * cerrar, `alCerrar` (si ha cambiado algo). */
 function buscaEquipo(alCerrar) {
   const S = SE();
   const lang = LANG;
@@ -122,10 +126,11 @@ function buscaEquipo(alCerrar) {
     titulo: S.followTeam,
     etiqueta: S.searchTeam,
     nada: S.noTeamFound,
-    buscar: (q) => llamar('broadcast_team_search', { p_q: q, p_limit: 20 }),
+    buscar: (q) => llamar('follow_search', { p_q: q, p_lang: lang === 'en' ? 'en' : 'es', p_limit: 20 }),
     fila: (x) => ({
-      detalle: [x.full_name && x.full_name !== x.name ? x.full_name : '', KEm.deporte(x.sport, lang)].filter(Boolean).join(' · '),
-      si: S.following(x.name), no: S.follow(x.name),
+      titulo: KEm.tituloSeguir(x),
+      detalle: KEm.detalleSeguir(x, lang),
+      si: KEm.siguesTxt(x, lang), no: KEm.seguirTxt(x, lang),
     }),
     cambia: (id, on) => llamar(on ? 'unfollow_broadcast_team' : 'follow_broadcast_team', { p_team: id }),
     error: errorEquipo,
@@ -138,7 +143,8 @@ function buscaEquipo(alCerrar) {
  * (en activo si ya lo sigues), que sigue o deja de seguir sin cerrarla. Al
  * seguir, se guarda la zona para los avisos (`guardaZonaAvisos`). Al cerrar,
  * `alCerrar` si ha cambiado algo.
- * `fila(x)` → { detalle, si, no, foto? } (`foto`: HTML a la izquierda). */
+ * `fila(x)` → { detalle, si, no, foto?, titulo? } (`foto`: HTML a la
+ * izquierda; `titulo`: si no, `x.name`). */
 function hojaSeguir({ titulo, etiqueta, nada, buscar, fila, cambia, error, alCerrar, clase = 'hoja-equipos' }) {
   const d = document.createElement('dialog');
   d.className = `dialogo ${clase}`;
@@ -163,7 +169,7 @@ function hojaSeguir({ titulo, etiqueta, nada, buscar, fila, cambia, error, alCer
     res.innerHTML = lista.map((x) => {
       const f = fila(x);
       return `<div class="eq-fila">
-        ${f.foto || ''}<span class="eq-t"><b>${esc(x.name)}</b>${f.detalle ? `<small>${esc(f.detalle)}</small>` : ''}</span>
+        ${f.foto || ''}<span class="eq-t"><b>${esc(f.titulo || x.name)}</b>${f.detalle ? `<small>${esc(f.detalle)}</small>` : ''}</span>
         <button type="button" class="pill${x.following ? ' on' : ''}" data-equipo="${esc(x.id)}" data-si="${esc(f.si)}" data-no="${esc(f.no)}" aria-pressed="${x.following ? 'true' : 'false'}">${esc(x.following ? f.si : f.no)}</button>
       </div>`;
     }).join('');
