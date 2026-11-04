@@ -119,7 +119,7 @@ const TEXTOS = {
       + 'ordenados por cercanía. Marca tus favoritos, recibe avisos y canjea con un QR.',
     producto: 'Producto',
     legal: 'Legal',
-    derechos: `© ${new Date().getFullYear()} Klendar. Todos los derechos reservados.`,
+    derechos: '© {anio} Klendar. Todos los derechos reservados.',
     hecho: 'Hecho en España',
     redes: 'Klendar en redes sociales',
     buscar: 'Buscar',
@@ -140,7 +140,7 @@ const TEXTOS = {
       + 'sorted by distance. Add businesses to your favourites, get alerts and redeem with a QR code.',
     producto: 'Product',
     legal: 'Legal',
-    derechos: `© ${new Date().getFullYear()} Klendar. All rights reserved.`,
+    derechos: '© {anio} Klendar. All rights reserved.',
     hecho: 'Made in Spain',
     redes: 'Klendar on social media',
     buscar: 'Search',
@@ -253,6 +253,19 @@ export function siteHeader(lang, esPath = '/', enPath = '/en/', actual = '') {
 <script src="/assets/cabecera.js?v=15" defer></script>`;
 }
 
+/**
+ * El año del pie, calculado en cada petición: en Cloudflare Workers el reloj
+ * está parado en 1970 fuera de una petición, así que no puede ir en `TEXTOS`
+ * (que se evalúa al cargar el módulo). En hora de Madrid.
+ */
+export function anioActual(ahora = new Date()) {
+  try {
+    return new Intl.DateTimeFormat('en', { timeZone: 'Europe/Madrid', year: 'numeric' }).format(ahora);
+  } catch {
+    return String(ahora.getUTCFullYear());
+  }
+}
+
 /** El pie, con las mismas columnas en todas las páginas. */
 export function siteFooter(lang) {
   const en = lang === 'en';
@@ -268,7 +281,7 @@ export function siteFooter(lang) {
     <div><h2 class="pie-h">${T.legal}</h2>${col(FOOT_LEGAL)}</div>
   </div>
   <div class="bottom">
-    <span>${T.derechos}</span>
+    <span>${T.derechos.replace('{anio}', anioActual())}</span>
     <span><!--email_off--><a href="mailto:info@klendar.app">info@klendar.app</a><!--/email_off--> · ${T.hecho}</span>
   </div>
 </div></footer>`;

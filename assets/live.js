@@ -26,14 +26,20 @@
   // Cada hora, la de su negocio (Canarias va una por detrás): ver
   // `/assets/zona.js`. Si no ha cargado, Madrid.
   const KZ = window.KlendarZona;
-  const cuando = (iso, tz) => {
-    if (KZ) return KZ.fmt(iso, tz, LOC, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  const fecha = (iso, tz, conHora) => {
+    const op = { weekday: 'short', day: 'numeric', month: 'short', ...(conHora ? { hour: '2-digit', minute: '2-digit' } : {}) };
+    if (KZ) return KZ.fmt(iso, tz, LOC, op);
     try {
-      return new Intl.DateTimeFormat(LOC, {
-        timeZone: 'Europe/Madrid', weekday: 'short', day: 'numeric', month: 'short',
-        hour: '2-digit', minute: '2-digit',
-      }).format(new Date(iso));
+      return new Intl.DateTimeFormat(LOC, { timeZone: 'Europe/Madrid', ...op }).format(new Date(iso));
     } catch { return ''; }
+  };
+  const hora = (iso, tz) => fecha(iso, tz, true).slice(-5);
+  // Sin hora, el día entero (de 00:00 a 23:59, como llega la agenda pública):
+  // solo el día, como las fichas y listas de la web (`_lib/views.js`) y la app.
+  const cuando = (o, tz) => {
+    const diaEntero = o.event_end_at && /^0?0[:.]00$/.test(hora(o.starts_at, tz))
+      && /^23[:.]59$/.test(hora(o.event_end_at, tz));
+    return fecha(o.starts_at, tz, !diaEntero);
   };
   const etiqueta = (d, price, cur) => {
     if (d) {
@@ -107,7 +113,7 @@
           <span class="muted">${esc(o.business_name || '')}</span>
           <span class="tarjeta-meta">
             ${tag ? `<span class="tag">${esc(tag)}</span>` : ''}
-            <span>${esc(cuando(o.starts_at, tz.get(o.business_id)))}</span>
+            <span>${esc(cuando(o, tz.get(o.business_id)))}</span>
           </span>
         </span>
       </a>`;

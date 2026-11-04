@@ -1679,8 +1679,12 @@ export async function todayPage(rawCity, lang) {
   const hoyItems = hoyRes?.items || [];
   const mananaItems = mananaRes?.items || [];
   const lugares = negocios?.items || [];
-  // Una ciudad sin nada de nada (mal escrita, o donde aún no hay negocios).
-  if (!hoyItems.length && !mananaItems.length && !lugares.length) return notFound(lang, path, 'c');
+  // Sin nada de nada: si es un municipio (la ciudad de lanzamiento antes de
+  // que publique nadie, o uno de «Toda España» al que enlaza una ficha), la
+  // página vacía como `/agenda/<municipio>/` (sin indexar, con sus salidas);
+  // el 404 solo para lo que no es un municipio (mal escrito).
+  const vacia = !hoyItems.length && !mananaItems.length && !lugares.length;
+  if (vacia && !mun.nombre) return notFound(lang, path, 'c');
 
   const city = mun.nombre || PRETTY(hoyItems[0]?.city || mananaItems[0]?.city || lugares[0]?.city || raw);
   const tzCiudad = KZ.comun([...hoyItems, ...mananaItems].map((o) => zonaDe(o)));
@@ -1701,6 +1705,7 @@ export async function todayPage(rawCity, lang) {
         none: 'Nothing more published for today. Have a look at tomorrow or the rest of the week.',
         places: 'Places in this city', week: `The whole week in ${city}`, agenda: "What's on", today: 'Today',
         explore: 'Explore with filters', biz: 'List your business',
+        empty: `Nothing published in ${city} yet. If you run a business here, you can be the first.`,
       }
     : {
         h1: `Qué hacer hoy en ${city}`,
@@ -1712,6 +1717,7 @@ export async function todayPage(rawCity, lang) {
         none: 'Para hoy ya no hay nada más publicado. Mira lo de mañana o el resto de la semana.',
         places: 'Negocios de esta ciudad', week: `Toda la semana en ${city}`, agenda: 'Agenda', today: 'Hoy',
         explore: 'Explorar con filtros', biz: 'Publicar mi negocio',
+        empty: `Todavía no hay nada publicado en ${city}. Si tienes un negocio aquí, puedes ser el primero.`,
       };
 
   const bloque = (titulo, items) => (items.length
@@ -1726,14 +1732,14 @@ export async function todayPage(rawCity, lang) {
   ${cityLinks(lang, raw, city, cats, 'hoy')}
   ${bloque(S.now, ahora)}
   ${bloque(S.later, luego)}
-  ${hoyItems.length ? '' : `<p class="empty">${esc(S.none)}</p>`}
+  ${hoyItems.length ? '' : `<p class="empty">${esc(vacia ? S.empty : S.none)}</p>`}
   ${bloque(S.tomorrow, mananaItems)}
   ${placesBlock(negocios, lang, S.places)}
   <p><a class="pill accent" href="${agendaBase(lang)}/${citySeg(raw)}/">${esc(S.week)}</a>
      <a class="pill" href="${exploreBase(lang)}/?${en ? 'city' : 'ciudad'}=${encodeURIComponent(city)}&amp;${en ? 'when=today' : 'cuando=hoy'}">${esc(S.explore)}</a>
      <a class="pill" href="${en ? '/en/for-business/' : '/para-negocios/'}">${esc(S.biz)}</a></p>`;
 
-  const description = hoyItems.length ? S.desc(hoyItems.length) : S.descNone;
+  const description = hoyItems.length ? S.desc(hoyItems.length) : vacia ? S.empty : S.descNone;
   const jsonLd = listingLd({
     lang, path, name: S.h1, description, city, items: hoyItems,
     migas: [['Klendar', en ? '/en/' : '/'], [S.agenda, `${agendaBase(lang)}/`], [city, `${agendaBase(lang)}/${citySeg(raw)}/`], [S.today, path]],
@@ -1745,8 +1751,9 @@ export async function todayPage(rawCity, lang) {
     description,
     image: [...hoyItems, ...mananaItems].map((o) => firstPhoto(o.images)).find(Boolean),
     // Un día sin nada no se desindexa: mañana vuelve a haber, y la página
-    // sigue teniendo lo de mañana y los negocios de la ciudad.
-    head: ldScript(jsonLd),
+    // sigue teniendo lo de mañana y los negocios de la ciudad. Un municipio
+    // sin nada de nada, sí (como su agenda).
+    head: vacia ? '<meta name="robots" content="noindex, follow">' : ldScript(jsonLd),
   }), 200, 'public, max-age=300, s-maxage=600');
 }
 

@@ -100,6 +100,8 @@ const T = (en) => en
       endBodyAllNear: (d) => `There's nothing else ${d}. Businesses publish every day: check back later or let us tell you.`,
       endBodyAllFilteredNear: (d) => `There's nothing else ${d} with the filters you have on. Clear them, or let us tell you when something new comes up.`,
       widen: (km) => `Widen to ${km} km`, allCitiesBtn: 'See every city',
+      // Sin distancia que ampliar (una ciudad, o nada en 25 km): el de la app (`feedEndBodyCity`).
+      bodyCity: 'Businesses publish every day: come back later, let us tell you, or look in every city.',
       clearF: 'Clear filters', changeF: 'Change filters', seeAgenda: "See what's on",
       backTop: 'Back to the top', notifyMe: "Tell me when there's something new",
       // «Pedir un local» (crecer, 2026-10-14): a «Tu cuenta», #/pedir-local.
@@ -242,6 +244,8 @@ const T = (en) => en
       endBodyAllNear: (d) => `No hay nada más ${d}. Los negocios publican cada día: vuelve luego o deja que te avisemos.`,
       endBodyAllFilteredNear: (d) => `No hay nada más ${d} con los filtros que tienes puestos. Quítalos o deja que te avisemos cuando haya algo nuevo.`,
       widen: (km) => `Ampliar a ${km} km`, allCitiesBtn: 'Ver todas las ciudades',
+      // Sin distancia que ampliar (una ciudad, o nada en 25 km): el de la app (`feedEndBodyCity`).
+      bodyCity: 'Los negocios publican cada día: vuelve luego, deja que te avisemos o mira en todas las ciudades.',
       clearF: 'Quitar filtros', changeF: 'Cambiar filtros', seeAgenda: 'Ver la agenda',
       backTop: 'Volver al principio', notifyMe: 'Avísame cuando haya algo nuevo',
       recommend: '¿Echas en falta algún sitio? Pide que esté en Klendar', recommendShort: '¿Falta un sitio? Pide que esté en Klendar', askFor: (q) => `¿No encuentras «${q}»? Pide que esté en Klendar`,
@@ -607,20 +611,27 @@ const AVISAME_CSS = `<style>
  * Lo mismo que la tarjeta final de Descubre en la app. Con [vacio] (no hay
  * nada desde el principio), las mismas salidas y la misma lógica, pero
  * centradas como una pantalla vacía (`.vacio`), como Descubre vacío. */
-const finalHtml = ({ S, en, lang, cerca, km, city, cityName = '', filtros, link, page, alertaHref, sugerencias, vacio = false, limpiar = '', compacto = false, pedirQ = '', sinSugiere = false, agendaHref = '', busqueda = '', enSitios = '' }) => {
-  const sigKm = cerca ? RADIOS_KM.find((k) => k > km) : null;
-  // ¿Se puede mirar más lejos? Con «Cerca de mí», a la distancia siguiente;
-  // en una ciudad, en todas.
-  const ampliar = cerca ? (sigKm ? { href: link({ km: sigKm }), txt: S.widen(sigKm) } : null)
-    : city ? { href: link({ city: '' }), txt: S.allCitiesBtn } : null;
+const finalHtml = ({ S, en, lang, cerca, km, city, cityName = '', filtros, link, page, alertaHref, sugerencias, vacio = false, limpiar = '', compacto = false, pedirQ = '', sinSugiere = false, agendaHref = '', busqueda = '', enSitios = '', nadaCerca = false, sinAgenda = false, h = 'h2' }) => {
+  // Con [nadaCerca] (no hay nada ni a 25 km), ampliar no serviría de nada.
+  const sigKm = cerca && !nadaCerca ? RADIOS_KM.find((k) => k > km) : null;
+  // ¿Se puede mirar más lejos? Con «Cerca de mí», a la distancia siguiente
+  // (y si ni a 25 km hay nada, en todas las ciudades, como la app sin
+  // distancia); en una ciudad, en todas.
+  const ampliar = cerca
+    ? (sigKm ? { href: link({ km: sigKm }), txt: S.widen(sigKm) }
+      : nadaCerca ? { href: link({ city: '', cerca: false, aprox: false, todas: true }), txt: S.allCitiesBtn, todas: true } : null)
+    : city ? { href: link({ city: '' }), txt: S.allCitiesBtn, todas: true } : null;
   const donde = cerca ? S.within(km) : city ? S.inPlace(cityName || PRETTY(city)) : '';
   const titulo = vacio ? (filtros ? S.emptyTitleFiltered : S.emptyTitle) : ampliar ? S.endTitle(donde) : S.endTitleAll;
   // Con «Cerca de ti», los textos de la app: «Amplía la distancia» y, en la
   // mayor, «No hay nada más a 25 km». Con una ciudad, «Amplía la búsqueda».
-  const cuerpo = cerca
+  // Sin distancia que ampliar (una ciudad, o nada ni a 25 km) y sin
+  // filtros: el texto de la app, «…o mira en todas las ciudades».
+  const cuerpo = ampliar?.todas && !filtros ? S.bodyCity
+    : cerca
     ? (vacio
-      ? (ampliar ? (filtros ? S.emptyBodyFilteredNear(donde) : S.emptyBodyNear(donde)) : (filtros ? S.emptyBodyAllFilteredNear(donde) : S.emptyBodyAllNear(donde)))
-      : ampliar ? (filtros ? S.endBodyFilteredNear : S.endBodyNear) : (filtros ? S.endBodyAllFilteredNear(donde) : S.endBodyAllNear(donde)))
+      ? (sigKm ? (filtros ? S.emptyBodyFilteredNear(donde) : S.emptyBodyNear(donde)) : (filtros ? S.emptyBodyAllFilteredNear(donde) : S.emptyBodyAllNear(donde)))
+      : sigKm ? (filtros ? S.endBodyFilteredNear : S.endBodyNear) : (filtros ? S.endBodyAllFilteredNear(donde) : S.endBodyAllNear(donde)))
     : vacio
       ? (ampliar ? (filtros ? S.emptyBodyFiltered(donde) : S.emptyBody(donde)) : (filtros ? S.emptyBodyAllFiltered : S.emptyBodyAll))
       : ampliar ? (filtros ? S.endBodyFiltered : S.endBody) : (filtros ? S.endBodyAllFiltered : S.endBodyAll);
@@ -633,7 +644,8 @@ const finalHtml = ({ S, en, lang, cerca, km, city, cityName = '', filtros, link,
     : '';
   // «Pedir un local» (en la distancia mayor, o con una búsqueda sin negocios
   // que encajen: «¿No encuentras «X»? Pide que esté en Klendar»).
-  const sugiere = sinSugiere || (ampliar && !pedirQ) ? ''
+  // Como la app: también cuando ya no hay distancia que ampliar.
+  const sugiere = sinSugiere || (sigKm && !pedirQ) ? ''
     : `<p class="${vacio ? 'vacio-sugiere' : 'fin-sugiere'}"><a href="${esc(pedirHref(lang, pedirQ))}">${esc(pedirQ ? S.askFor(pedirQ) : S.recommend)}</a></p>`;
   // En el feed de Descubre, en filas (caben en la última pantalla).
   const quizas = sugerencias.length ? `<h2 class="fin-h">${esc(S.maybe)}</h2>
@@ -658,15 +670,16 @@ const finalHtml = ({ S, en, lang, cerca, km, city, cityName = '', filtros, link,
   if (vacio) {
     // Ampliar (si se puede), quitar filtros (si hay), avisar y la agenda.
     const avisar = `<a class="pill${ampliar ? '' : ' accent'}" href="${esc(alertaHref)}">${esc(S.notifyMe)}</a>`;
+    // En el calendario de Explorar (el mes entero vacío), sin «Ver la agenda», que es él.
     return `<section class="vacio" aria-labelledby="finTitulo">
     <span class="vacio-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16Zm-5.5-2.5 7.51-3.49L17.5 6.5 9.99 9.99 6.5 17.5Zm5.5-6.6a1.1 1.1 0 1 1 0 2.2 1.1 1.1 0 0 1 0-2.2Z"/></svg></span>
-    <h2 id="finTitulo">${esc(titulo)}</h2>
+    <${h} id="finTitulo">${esc(titulo)}</${h}>
     <p>${esc(cuerpo)}</p>
     <div class="vacio-botones">
       ${ampliar ? `<a class="pill accent" href="${esc(ampliar.href)}">${esc(ampliar.txt)}</a>` : avisar}
       ${quitar}
       ${ampliar ? avisar : ''}
-      <a class="pill" href="${esc(agenda)}">${esc(S.seeAgenda)}</a>
+      ${sinAgenda ? '' : `<a class="pill" href="${esc(agenda)}">${esc(S.seeAgenda)}</a>`}
     </div>
     ${sugiere}
   </section>
@@ -792,7 +805,7 @@ const sumaMes = (ym, n) => {
 /** La vista Calendario: el mes con los días marcados y, debajo (al lado en
  * el escritorio), lo de ese día. Como la agenda de Explorar en la app. Los
  * días son enlaces: va sin JavaScript y cada día se puede compartir. */
-function calendarioHtml({ items, lang, S, link, mes, dia, hoy, delDiaParte = null, totalDia = null, cuando = null, quitarFiltros = '', orden = '' }) {
+function calendarioHtml({ items, lang, S, link, mes, dia, hoy, delDiaParte = null, totalDia = null, cuando = null, quitarFiltros = '', orden = '', mesVacio = '' }) {
   const en = lang === 'en';
   const loc = en ? 'en-GB' : 'es-ES';
   // Cada publicación, en el día de su negocio; lo que empezó antes y sigue en
@@ -847,7 +860,14 @@ function calendarioHtml({ items, lang, S, link, mes, dia, hoy, delDiaParte = nul
   // Sin nada ese día: por qué y qué hacer (como la app). Fuera de «¿Cuándo?»,
   // se dice y se ofrece verlo todo; si no, «Nada este día» con «Quitar
   // filtros» si hay alguno, y el siguiente día con planes.
-  const vacioDia = diaFuera
+  // El mes entero sin nada (de hoy en adelante; si han llegado todas): no
+  // es «este día», es que aquí no hay nada. El vacío de Descubre
+  // (`mesVacio`), como la app, y el siguiente día con planes si lo hay.
+  const mesSinNada = Boolean(mesVacio) && !diaFuera && !delDia.length && items.length < 240
+    && ![...porDia.keys()].some((k) => k.startsWith(`${mes}-`) && k >= hoy && (!cuando || cuando.dias.includes(k)));
+  const vacioDia = mesSinNada
+    ? `${mesVacio}${proximo ? `<p class="cal-proximo"><a href="${esc(link({ dia: proximo, mes: proximo.slice(0, 7) }))}#dia">${esc(S.nextWith(rel(proximo) || largo(proximo)))} →</a></p>` : ''}`
+    : diaFuera
     ? `<div class="vacio cal-vacio"><h3>${esc(S.outsideWhen(cuando.etiqueta))}</h3><p>${esc(S.outsideWhenBody)}</p>
         <div class="vacio-botones"><a class="pill" href="${esc(cuando.quitar)}#dia">${esc(S.outsideWhenAll)}</a></div></div>`
     : `<div class="vacio cal-vacio"><h3>${esc(S.dayNone)}</h3><p>${esc(S.dayNoneBody)}</p>
@@ -1558,6 +1578,15 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   const cobertura = vacio && cerca && !e.aprox && !negocios
     ? await rpc('klendar_coverage', { p_lat: lat, p_lng: lng }).catch(() => null) : null;
   const sinKlendar = Boolean(cobertura?.status) && cobertura.status !== 'live';
+  // «Cerca de ti» (también la aproximada por la conexión) y nada, ni en la
+  // lista ni en el calendario: ¿hay algo a 25 km? Si no, «Ampliar a 10 km»
+  // no sirve de nada: la salida es «Ver todas las ciudades» (P5 de la
+  // revisión del 5-11-2026).
+  const RADIO_MAX = RADIOS_KM[RADIOS_KM.length - 1];
+  const nadaCerca = (vacio || (calendario && items.length === 0)) && cerca && !negocios && !q && !sinKlendar && km < RADIO_MAX
+    ? await rpc('public_explore', { ...argsExplore, p_filters: { ...filtros, radius_m: RADIO_MAX * 1000 }, p_limit: 1, p_offset: 0 }, H)
+      .then((r) => !(r?.items || []).length).catch(() => false)
+    : false;
   let sugerencias = [];
   // «Quizá te interese» respeta el tipo elegido (como la app): con «Ofertas
   // flash», solo ofertas flash; con «Eventos», solo eventos.
@@ -2202,7 +2231,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
     <script src="/assets/palabras.js?v=2" defer data-lang="${en ? 'en' : 'es'}" data-url="${esc(supabasePublic().url)}" data-key="${esc(supabasePublic().key)}"></script>` : '';
   const final = sinKlendar ? sinKlendarHtml({ S, lang, lat, lng, cobertura, link })
     : alFinal || vacio ? finalHtml({
-      S, en, lang, cerca, km, city, cityName: e.cityName || '', filtros: conFiltros, link, page, sugerencias, vacio, alertaHref,
+      S, en, lang, cerca, km, city, cityName: e.cityName || '', filtros: conFiltros, link, page, sugerencias, vacio, alertaHref, nadaCerca,
       // Con una búsqueda sin nada: «Quitar filtros» solo si hay otros filtros
       // además de la palabra (la palabra se cambia en el buscador).
       limpiar: (vacio && q && !negocios && !descubre ? conFiltrosSinPalabra : hayAlgo) ? limpia : '', compacto: descubre && !vacio,
@@ -2326,17 +2355,24 @@ ${GRUPOS_CSS}` : ''}`;
       centro: cerca ? { lat, lng } : centroDe(klendarCities) || items[0] || null,
     });
   } else if (calendario) {
+    // «Quitar filtros» deja el calendario sin lo que quita publicaciones
+    // (la zona y la distancia se quedan, como `clearNarrowing` en la app).
+    const quitarCal = conFiltros ? link({
+      q: '', cat: '', cats: [], kind: '', price: '', when: '', soloDescuento: false, abierto: false, amigos: false, traits: [], edades: [],
+      precioLocal: 0, carne: '', solo: false, solidario: false, entidad: false, antesCierre: false, menuDia: false, comerAhora: false, momento: '',
+    }) : '';
     resultados = calendarioHtml({
       items, lang, S, link, mes, dia, hoy,
       delDiaParte: diaParte ? diaParte.items || [] : null, totalDia: diaParte ? Number(diaParte.total) || 0 : null,
       cuando: diasCuando ? { dias: diasCuando, etiqueta: { now: S.now, today: S.today, tonight: S.tonight, tomorrow: S.tomorrow, weekend: S.weekend, next10: S.next10 }[when], quitar: link({ when: '' }) } : null,
       orden: ordenCal,
-      // «Quitar filtros» deja el calendario sin lo que quita publicaciones
-      // (la zona y la distancia se quedan, como `clearNarrowing` en la app).
-      quitarFiltros: conFiltros ? link({
-        q: '', cat: '', cats: [], kind: '', price: '', when: '', soloDescuento: false, abierto: false, amigos: false, traits: [], edades: [],
-        precioLocal: 0, carne: '', solo: false, solidario: false, entidad: false, antesCierre: false, menuDia: false, comerAhora: false, momento: '',
-      }) : '',
+      quitarFiltros: quitarCal,
+      // El mes entero vacío: el vacío de Descubre (las mismas salidas, sin
+      // «Ver la agenda» ni «Quizá te interese»), como la app.
+      mesVacio: finalHtml({
+        S, en, lang, cerca, km, city, cityName: e.cityName || '', filtros: conFiltros, link, page: 1, sugerencias: [], vacio: true,
+        alertaHref, nadaCerca, limpiar: quitarCal, sinSugiere: Boolean(lineaPedir), sinAgenda: true, h: 'h3',
+      }),
     });
   } else if (mapa) {
     resultados = `${ambienteHtml(e, lang, link)}${mapaHtml(items, lang, S)}${items.length ? `<h2 class="fin-h">${esc(S.onMap(items.length))}</h2>${rejilla(items, lang, { galeria: true })}` : ''}`;
@@ -2630,8 +2666,9 @@ export async function kidsPage(rawCity, lang) {
   ]);
   const items = res?.items || [];
   const conocida = (cities || []).find((c) => (c.slug && c.slug === raw) || String(c.city || '').toLowerCase() === raw.toLowerCase());
-  // Una ciudad sin nada de nada (mal escrita, o donde aún no hay negocios).
-  if (!items.length && !lugares.length && !conocida) return notFound(lang, path, 'c');
+  // Sin nada de nada: un municipio (o una ciudad conocida) tiene su página
+  // vacía, sin indexar y con sus salidas; el 404, solo para lo mal escrito.
+  if (!items.length && !lugares.length && !conocida && !mun.nombre) return notFound(lang, path, 'c');
   const city = mun.nombre || PRETTY(items[0]?.city || lugares[0]?.city || conocida?.city || raw);
   const agendaCiudad = `${agendaBase(lang)}/${CITY(raw)}/`;
   const explorar = `${exploreBase(lang)}/?${en ? 'city' : 'ciudad'}=${encodeURIComponent(mun.m ? raw : city)}&${en ? 'place=kids' : 'sitio=ninos'}`;

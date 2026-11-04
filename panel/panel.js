@@ -4365,6 +4365,8 @@ PAGES.validar = async (v) => {
         { h: 'Persona', r: (r) => `${esc(personaValidada(r))}${r.promoter_name ? `<span class="sub">${rrppListaDe(r)}</span>` : ''}${r.by ? `<span class="sub">${esc(r.undone ? deshechaPorTxt(r.by) : validadoPorTxt(r.by))}</span>` : ''}` },
         // El ticket (24 h para apuntarlo o corregirlo) o, si no, lo estimado.
         { h: 'Ticket', r: (r) => {
+          // Una validación deshecha no cuenta: sin importe (como la app).
+          if (r.undone) return '';
           const editable = r.ticket_until && new Date(r.ticket_until) > new Date();
           const valor = r.ticket_cents != null ? `<b>${esc(fmtMoney(r.ticket_cents, r.currency))}</b>`
             : r.estimate_cents != null ? `<span class="muted">${esc(bi('Estimado', 'Estimated'))}: ${esc(fmtMoney(r.estimate_cents, r.currency))}</span>` : '';
@@ -4500,7 +4502,8 @@ PAGES.validar = async (v) => {
     if (deshaz) {
       deshaz.onclick = async () => {
         deshaz.disabled = true;
-        if (await deshazValidacion(codigoSuelto(res.code_input))) $('#result').innerHTML = '';
+        // Deshecha: el código otra vez sin validar, con «Validar» (como la app).
+        if (await deshazValidacion(codigoSuelto(res.code_input))) await mira(codigoSuelto(res.code_input));
         else deshaz.disabled = false;
         loadRecent();
       };

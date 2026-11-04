@@ -66,9 +66,11 @@ let CAL_VIGIA = null;
 
 PAGES.agenda = async (v) => {
   clearTimeout(CAL_VIGIA);
-  const c = await calEstado();
+  // Sin red (o si la base no contesta), el error de verdad: «No hay
+  // conexión» con «Reintentar» (antes salía «No tienes permiso»).
+  const c = await rpc('my_entity_calendars', { p_business: BIZ.id });
   if (!v.isConnected) return;
-  if (!c || c.ok === false) throw new Error(c?.error || 'not_authorized');
+  if (!c || c.ok === false) throw new Error(c?.error || 'server_error');
   const items = c.items || [];
   const nota = (t) => `<p class="muted" style="text-align:center;margin:18px 0">${esc(t)}</p>`;
   const aviso = !c.enabled ? nota(calErr('calendar_off'))

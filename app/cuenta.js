@@ -245,7 +245,11 @@ RUTAS.notificaciones = async () => {
       icono: 'notifications',
       titulo: t('Nada por aquí todavía'),
       texto: t('Añade negocios a favoritos y crea un «Avísame si…» para no perderte nada.'),
-      botones: `<a class="pill" href="#/ajustes/notificaciones">${esc(t('Qué notificaciones recibo'))}</a>`,
+      // Lo que dice el texto, a un toque (como la app): favoritos (Descubre)
+      // y «Avísame si…» (crear un aviso).
+      botones: `<a class="pill accent" href="${PUB_EN ? '/en/discover/' : '/descubre/'}">${esc(t('Descubrir negocios'))}</a>
+        <a class="pill" href="#/alerta/nueva">${esc(t('Nuevo aviso'))}</a>
+        <a class="pill ghost" href="#/ajustes/notificaciones">${esc(t('Qué notificaciones recibo'))}</a>`,
     })}`);
 
   // Como en la app: las que no habías leído se marcan como leídas al salir

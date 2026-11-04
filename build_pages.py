@@ -243,7 +243,7 @@ PAGINAS['para-entidades'] = (
 
 <h2>Empezar</h2>
 <p class="acciones" style="margin-top:18px">
-  <a class="pill accent" href="/panel/#/alta">Dar de alta una entidad</a>
+  <a class="pill accent" href="/panel/#/alta/entidad/1">Dar de alta una entidad</a>
   <a class="pill ghost" href="mailto:info@klendar.app?subject=Klendar%20para%20mi%20entidad">Escríbenos</a>
 </p>
 <p class="note">Lo legal, en las <a href="/negocios/">condiciones para negocios</a> (apartado 3 bis, «Cuentas de entidad»). ¿Eres un negocio? Mira <a href="/para-negocios/">Klendar para negocios</a>.</p>
@@ -288,7 +288,7 @@ PAGINAS['para-entidades'] = (
 
 <h2>Getting started</h2>
 <p class="acciones" style="margin-top:18px">
-  <a class="pill accent" href="/panel/?lang=en#/alta">Register an organisation</a>
+  <a class="pill accent" href="/panel/?lang=en#/alta/entidad/1">Register an organisation</a>
   <a class="pill ghost" href="mailto:info@klendar.app?subject=Klendar%20for%20my%20organisation">Email us</a>
 </p>
 <p class="note">The legal part is in the <a href="/en/business-terms/">business terms</a> (section 3a, “Organisation accounts”). Are you a business? See <a href="/en/for-business/">Klendar for businesses</a>.</p>
