@@ -22,6 +22,7 @@ import subprocess
 import sys
 
 CERO = '0' * 40
+sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 
 def show(sha, ruta):
