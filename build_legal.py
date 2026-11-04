@@ -33,9 +33,9 @@ TITULAR_DATOS = {
     'razon_social': 'Iván Hijano Pérez',
     'nombre_comercial': 'Klendar',      # sale junto a la razón social (solo 'empresa')
 
-    'nif': '',                          # empresa: NIF de la sociedad (B + 7 cifras + control)
-    'domicilio': '',                    # empresa: domicilio social completo (calle, n.º, CP, municipio, provincia)
-    'municipio': '',                    # municipio de ese domicilio: fuero de las condiciones para negocios
+    'nif': '79288717N',                 # empresa: NIF de la sociedad (B + 7 cifras + control)
+    'domicilio': 'Calle Crianza, 30, 29130 Alhaurín de la Torre (Málaga)',  # empresa: domicilio social completo (calle, n.º, CP, municipio, provincia)
+    'municipio': 'Málaga',              # municipio de ese domicilio: fuero de las condiciones para negocios
 
     'registro': {                       # solo 'empresa' (LSSI-CE art. 10.1.b). Salen de la nota
         'registro': '',                 #   de inscripción de la escritura: «Registro Mercantil de Madrid»
@@ -48,7 +48,7 @@ TITULAR_DATOS = {
 
     'email': 'info@klendar.app',        # contacto general: aviso legal, soporte, bajas, recursos, punto de contacto DSA
     'email_privacidad': 'info@klendar.app',  # derechos RGPD y eliminar la cuenta por correo
-    'telefono': '',                     # opcional: la LSSI pide un medio de contacto directo y efectivo,
+    'telefono': '+34 674 69 89 54',     # opcional: la LSSI pide un medio de contacto directo y efectivo,
                                         # y el correo lo es si se contesta (STJUE C-298/07)
 
     # Delegado de Protección de Datos (DPD). None = no hay, y no se menciona.
@@ -1118,14 +1118,14 @@ def textos_turnstile():
             'fila': '<tr><td>Comprobación anti-robots</td><td>Tu dirección IP y datos técnicos del navegador o del móvil, que trata Cloudflare (Turnstile) para darnos un sí o un no</td><td>Evitar cuentas falsas, envíos automáticos de denuncias o de apuntarse a «Avísame cuando llegue» y el abuso de los códigos por correo o SMS</td><td>Interés legítimo (art. 6.1.f RGPD) en la seguridad del servicio</td><td>No guardamos nada: Cloudflare trata esos datos según su acuerdo de encargado</td></tr>\n',
             'intro': '<p>Recibe tu dirección IP, como cualquier web que visitas, y no guarda cookies:</p>\n',
             'li': '',
-            'p': '<p><strong>Cloudflare Turnstile</strong>: cuando está activada, la comprobación anti-robots al crear la cuenta, entrar, pedir un código o recuperar la contraseña, y en lo que se manda sin cuenta (denunciar, «Avísame cuando llegue»). Se carga solo en esos momentos; Cloudflare recibe tu dirección IP y datos técnicos del navegador para distinguir a una persona de un programa, y puede guardar datos técnicos en tu navegador (dentro de su propio marco, en challenges.cloudflare.com) solo para esa comprobación. Es estrictamente necesario para la seguridad del servicio, no se usa para publicidad ni para seguirte entre sitios y no pide tu consentimiento. En la app, la misma comprobación se hace en una pequeña ventana con klendar.app/captcha/.</p>\n',
+            'p': '<p><strong>Cloudflare Turnstile</strong>: cuando está activada, la comprobación anti-robots al crear la cuenta, entrar, pedir un código o recuperar la contraseña, y en lo que se manda sin cuenta (denunciar, «Avísame cuando llegue»). Se carga solo al abrir esas pantallas, no en el resto de la web; Cloudflare recibe tu dirección IP y datos técnicos del navegador para distinguir a una persona de un programa, y puede guardar datos técnicos en tu navegador (dentro de su propio marco, en challenges.cloudflare.com) solo para esa comprobación. Es estrictamente necesario para la seguridad del servicio, no se usa para publicidad ni para seguirte entre sitios y no pide tu consentimiento. En la app, la misma comprobación se hace en una pequeña ventana con klendar.app/captcha/.</p>\n',
         },
         'en': {
             'cloudflare': 'and, when enabled, runs the anti-bot check (Turnstile) when you create an account, log in, request a code or reset your password, on the website and in the app, and on what is sent without an account (reporting content on the website, or “Tell me when it arrives”)',
             'fila': "<tr><td>Anti-bot check</td><td>Your IP address and technical browser or phone data, processed by Cloudflare (Turnstile) to give us a yes or no</td><td>Preventing fake accounts, automated reports or “Tell me when it arrives” sign-ups, and abuse of email or SMS codes</td><td>Legitimate interest (art. 6.1.f GDPR) in the security of the service</td><td>We don't store anything: Cloudflare processes that data under its processor agreement</td></tr>\n",
             'intro': '<p>It receives your IP address, like any website you visit, and sets no cookies:</p>\n',
             'li': '',
-            'p': '<p><strong>Cloudflare Turnstile</strong>: when enabled, the anti-bot check when you create an account, log in, request a code or reset your password, and on what is sent without an account (reporting, “Tell me when it arrives”). It only loads at those moments; Cloudflare receives your IP address and technical browser data to tell a person from a program, and may store technical data in your browser (inside its own frame, on challenges.cloudflare.com) only for that check. It is strictly necessary for the security of the service, is not used for advertising or to track you across sites and does not ask for your consent. In the app, the same check runs in a small window with klendar.app/captcha/.</p>\n',
+            'p': '<p><strong>Cloudflare Turnstile</strong>: when enabled, the anti-bot check when you create an account, log in, request a code or reset your password, and on what is sent without an account (reporting, “Tell me when it arrives”). It only loads when you open those screens, not on the rest of the website; Cloudflare receives your IP address and technical browser data to tell a person from a program, and may store technical data in your browser (inside its own frame, on challenges.cloudflare.com) only for that check. It is strictly necessary for the security of the service, is not used for advertising or to track you across sites and does not ask for your consent. In the app, the same check runs in a small window with klendar.app/captcha/.</p>\n',
         },
     }
 
