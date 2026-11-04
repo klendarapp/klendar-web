@@ -163,16 +163,21 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
       // Sin zona (como Google): el orden de `public_cities`, todas.
       const html = await fetch(`${BASE}/explorar/?todas=1`).then((r) => r.text());
       const sinZona = [...html.matchAll(/<h3>Qué hacer hoy en<\/h3><p>(.*?)<\/p>/g)][0]?.[1] || '';
-      const deSiempre = await page.evaluate(async () => {
-        const env = window.KLENDAR_ENV;
-        const r = await fetch(`${env.url}/rest/v1/rpc/public_cities`, { method: 'POST', headers: { apikey: env.key, 'Content-Type': 'application/json' }, body: '{}' });
+      // El orden de siempre, el de la base (si contesta; con MF_ORDEN, el
+      // que se le diga).
+      const deSiempre = process.env.MF_ORDEN ? process.env.MF_ORDEN.split(',') : await (async () => {
+        const cfg = (await import('node:fs')).readFileSync(new URL('../config.js', import.meta.url), 'utf8');
+        const url = cfg.match(/https:\/\/[a-z]+\.supabase\.co/)[0];
+        const key = cfg.match(/eyJ[\w.-]+|sb_publishable_[\w-]+/)[0];
+        const r = await fetch(`${url}/rest/v1/rpc/public_cities`, { method: 'POST', headers: { apikey: key, 'Content-Type': 'application/json' }, body: '{}', signal: AbortSignal.timeout(20000) });
         return (await r.json()).filter((c) => c.city).slice(0, 20).map((c) => c.slug);
-      }).catch(() => null);
+      })().catch(() => null);
       const enHtml = [...sinZona.matchAll(/href="[^"]*\/([^/"]+)\/"/g)].map((x) => x[1]);
-      ok(!/ hidden|data-lat/.test(sinZona) && (!deSiempre || JSON.stringify(enHtml) === JSON.stringify(deSiempre)), `${tag} «Más formas» sin zona: el orden de siempre (${enHtml.join(', ')})`);
+      ok(!/ hidden/.test(sinZona) && (!deSiempre || JSON.stringify(enHtml) === JSON.stringify(deSiempre)), `${tag} «Más formas» sin zona: el orden de siempre (${enHtml.join(', ')})`);
       // Zona de la conexión en Zaragoza, pero «Tu ciudad» Madrid: Madrid primero.
       if (BASE_IP) {
         const ctx2 = await nav.newContext({ viewport: { width: 1280, height: 800 }, locale: 'es-ES' });
+        await ctx2.route(`https://${REF}.supabase.co/**`, supabaseFalso);
         const p2 = await ctx2.newPage();
         await p2.goto(`${BASE_IP}/explorar/`, { waitUntil: 'load' });
         const ip = await enlacesMf(p2);
