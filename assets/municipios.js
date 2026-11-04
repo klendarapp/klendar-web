@@ -29,7 +29,7 @@
     });
   }
   function conf() {
-    return (window.KLENDAR_ENV ? Promise.resolve() : carga('/config.js?v=3'))
+    return (window.KLENDAR_ENV ? Promise.resolve() : carga('/config.js?v=4'))
       .then(function () { return window.KLENDAR_ENV || null; });
   }
   function rpc(fn, body) {

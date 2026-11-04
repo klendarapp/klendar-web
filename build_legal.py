@@ -83,7 +83,7 @@ TITULAR_DATOS = {
 # (y VERSION si se quiere volver a pedir la aceptación) y regenerar con
 # `python build_legal.py`. Está en docs/RUNBOOK.md (§0b) y docs/LEGAL_SL.md.
 # ════════════════════════════════════════════════════════════════════════════
-SERVIDORES = 'londres'                  # 'londres' | 'irlanda'
+SERVIDORES = 'irlanda'                  # 'londres' | 'irlanda'
 
 UBICACION_SERVIDORES = {
     'londres': {
@@ -1094,8 +1094,8 @@ def fila_telefono():
 # SERVIDORES_DESDE es lo mismo para SERVIDORES = 'irlanda' (el día del paso
 # a producción): la fecha de la privacidad y su línea en el historial.
 # ════════════════════════════════════════════════════════════════════════════
-TURNSTILE_DESDE = None                   # p. ej. {'es': '5 de noviembre de 2026', 'en': '5 November 2026'}
-SERVIDORES_DESDE = None                  # ídem, con SERVIDORES = 'irlanda'
+TURNSTILE_DESDE = {'es': '4 de noviembre de 2026', 'en': '4 November 2026'}                   # p. ej. {'es': '5 de noviembre de 2026', 'en': '5 November 2026'}
+SERVIDORES_DESDE = {'es': '4 de noviembre de 2026', 'en': '4 November 2026'}                  # ídem, con SERVIDORES = 'irlanda'
 
 
 def textos_turnstile():

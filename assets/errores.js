@@ -109,7 +109,7 @@
     cargandoConfig = true;
     try {
       var s = document.createElement('script');
-      s.src = '/config.js?v=3';
+      s.src = '/config.js?v=4';
       s.async = true;
       s.onload = function () { var c = cola; cola = []; for (var i = 0; i < c.length; i++) mandar(c[i]); };
       s.onerror = function () { cola = []; };

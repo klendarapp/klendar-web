@@ -79,7 +79,7 @@
         var bonito = slug.replace(/-/g, ' ').replace(/(^|\s)(\S)/g, function (m, x, y) { return x + y.toUpperCase(); });
         var conf = window.KLENDAR_ENV ? Promise.resolve() : new Promise(function (ok, ko) {
           var sc = document.createElement('script');
-          sc.src = '/config.js?v=3'; sc.onload = ok; sc.onerror = ko;
+          sc.src = '/config.js?v=4'; sc.onload = ok; sc.onerror = ko;
           document.head.appendChild(sc);
         });
         conf.then(function () {

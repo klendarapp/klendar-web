@@ -196,7 +196,7 @@
   }
 
   // ── Arranque: la configuración y Supabase, solo ahora que hay sesión ────
-  (window.KLENDAR_ENV ? Promise.resolve() : carga('/config.js?v=3'))
+  (window.KLENDAR_ENV ? Promise.resolve() : carga('/config.js?v=4'))
     .then(function () {
       var env = window.KLENDAR_ENV;
       var ref = env && (env.url.match(/^https:\/\/([a-z0-9]+)\./) || [])[1];

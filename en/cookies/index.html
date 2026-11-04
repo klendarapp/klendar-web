@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<script src="/assets/errores.js?v=1" async></script>
+<script src="/assets/errores.js?v=2" async></script>
 <title>Cookie policy · Klendar</title>
 <meta name="description" content="Klendar uses a single cookie, for your answer to “Are you 18 or over?”: what it stores in your browser so things work, how we count visits without identifying you, and which third-party services load.">
 <link rel="canonical" href="https://klendar.app/en/cookies/">
@@ -62,7 +62,7 @@
 <script src="/assets/cabecera.js?v=14" defer></script>
 <main class="doc" id="contenido">
 <h1>Cookie policy</h1>
-<div class="meta">Last updated: 3 November 2026 · Version 2026-09-29</div>
+<div class="meta">Last updated: 4 November 2026 · Version 2026-09-29</div>
 <p class="notice">This is a courtesy translation provided for information only. In case of any discrepancy, the <a href="/cookies/">Spanish version</a> prevails.</p>
 
 <p><strong>In short.</strong> klendar.app uses <strong>a single cookie</strong>, and only if you answer “Are you 18 or over?”: it stores your answer so we don't ask again. Apart from that, it only stores in your browser what is essential for what you ask it to do (your session, your language, your filters, the codes a business validates offline) and it counts visits without cookies and without identifying you. None of this is used for advertising or to follow you across other sites, so we don't ask for your consent (art. 22.2 of the Spanish LSSI-CE). If we ever add anything that needs it, we will ask you first.</p>
@@ -107,11 +107,11 @@
 <h2>Visit statistics</h2>
 <p>We use <strong>Cloudflare Web Analytics</strong>, which uses no cookies and stores nothing in your browser: a small script sends Cloudflare, on our behalf, the page viewed, the site you came from, your browser and device type, your country and load times. We only see aggregate figures, without identifying you or tracking you across sites, and Cloudflare does not use them for anything else. It isn't used in “Your account”, the business dashboard or admin, or on email unsubscribe links and friend links. Nor on pages whose address contains your position (“Near me”) or a promoter's link, or on Klendar on the TV (<code>/tv/</code>) or on a venue's table QR page (<code>/m/</code>).</p>
 <h2>Third-party services loaded on some pages</h2>
-<p>They receive your IP address, like any website you visit, and set no cookies:</p>
+<p>It receives your IP address, like any website you visit, and sets no cookies:</p>
 <ul>
   <li><strong>Mapbox</strong>: the maps in Explore, in the business dashboard and in “Ask for a place”, and the library that draws them. When a map loads, Mapbox receives the “map loaded” event it uses for billing.</li>
-  <li><strong>Cloudflare Turnstile</strong>: when enabled, the anti-bot check when you log in and when you report without an account.</li>
 </ul>
+<p><strong>Cloudflare Turnstile</strong>: when enabled, the anti-bot check when you create an account, log in, request a code or reset your password, and on what is sent without an account (reporting, “Tell me when it arrives”). It only loads when you open those screens, not on the rest of the website; Cloudflare receives your IP address and technical browser data to tell a person from a program, and may store technical data in your browser (inside its own frame, on challenges.cloudflare.com) only for that check. It is strictly necessary for the security of the service, is not used for advertising or to track you across sites and does not ask for your consent. In the app, the same check runs in a small window with klendar.app/captcha/.</p>
 <p>Fonts, icons and libraries (including the one that connects “Your account”, the business dashboard and admin to our database) are served from klendar.app, without going through Google Fonts or any other service. The only exception is the map library (Mapbox GL JS), which your browser downloads from api.mapbox.com only when you open a map.</p>
 <h2>How to delete it</h2>
 <p>When you log out, your session, the copy of your codes, your interests, the dashboard data and the <code>klendar_18</code> cookie are deleted. You can delete everything else in your browser settings (“Clear browsing data” or “Site data”).</p>
@@ -120,6 +120,7 @@
 
 <h2 class="cambios" id="historial">Change history</h2>
 <ul>
+  <li><strong>4 November 2026</strong>: Cloudflare Turnstile: when it loads and what it may store in your browser for the anti-bot check.</li>
   <li><strong>3 November 2026</strong>: Two more session keys, deleted when you close the tab: klendar.sorteosWeb (whether giveaways are on) and klendar.tab (the bottom bar tab you came from).</li>
   <li><strong>2 November 2026</strong>: One more key: klendar.vistos (what you've already seen in Discover and Explore, 7 days; turn it off in Settings › What you see).</li>
   <li><strong>28 October 2026</strong>: The klendar.traducir key stores “Always translate automatically”; and one more key, klendar.traducir.ok (whether translation is available).</li>

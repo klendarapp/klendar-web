@@ -91,7 +91,7 @@
     if (arriba) { document.body.scrollTop = 0; rueda.scrollTop = 0; }
   }
 
-  (window.KLENDAR_ENV ? Promise.resolve() : carga('/config.js?v=3'))
+  (window.KLENDAR_ENV ? Promise.resolve() : carga('/config.js?v=4'))
     .then(function () {
       return window.supabase ? null : carga('/assets/vendor/supabase-js-2.117.2.js',
         'sha384-Rj26LVGvoeRVR6+mwQmFfcR3QOBEwT+ZmuCWpuiqeTzJpCs0ER4ITAWGb4Hiy3Ok');

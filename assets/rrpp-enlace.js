@@ -294,7 +294,7 @@
   if (!sesionGuardada(ref)) { sinCuenta(); return; }
   // Con sesión: el mismo cliente de Supabase que el resto de la web (solo
   // ahora, que hace falta).
-  (env ? Promise.resolve() : carga('/config.js?v=3'))
+  (env ? Promise.resolve() : carga('/config.js?v=4'))
     .then(() => (window.supabase ? null : carga('/assets/vendor/supabase-js-2.117.2.js',
       'sha384-Rj26LVGvoeRVR6+mwQmFfcR3QOBEwT+ZmuCWpuiqeTzJpCs0ER4ITAWGb4Hiy3Ok')))
     .then(() => {

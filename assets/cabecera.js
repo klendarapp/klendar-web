@@ -57,7 +57,7 @@
     if (!conf.p) {
       conf.p = new Promise((ok) => {
         const s = document.createElement('script');
-        s.src = '/config.js?v=3';
+        s.src = '/config.js?v=4';
         s.onload = () => ok(window.KLENDAR_ENV || null);
         s.onerror = () => ok(null);
         document.head.appendChild(s);

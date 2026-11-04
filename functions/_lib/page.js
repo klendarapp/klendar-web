@@ -12,8 +12,8 @@ import { idiomaDeCabecera } from './idioma.js';
 // (SUPABASE_URL / SUPABASE_KEY) y, si no están, se usa dev, que es lo que hay
 // hoy. Igual que `/config.js` para el panel: un solo sitio que cambiar.
 let CFG = {
-  url: 'https://dpbbtgwxrlqlplbrtjuq.supabase.co',
-  key: 'sb_publishable_gNwxFIJGW_o_lGhv3si6IQ_35xHCq30',
+  url: 'https://hcxurneiftwyxuebpndf.supabase.co',
+  key: 'sb_publishable_k8KYqQGIYsoI38kZzaeK3A_vPJ0PdJK',
 };
 
 /** ¿Estamos enseñando los datos de dev (negocios y ofertas de prueba)? Mientras
@@ -43,7 +43,7 @@ export const CONTADOR = `<script defer src="https://static.cloudflareinsights.co
  * (assets/errores.js). Estas páginas no cargan config.js: la dirección y la
  * clave pública de Supabase van en la etiqueta (las mismas que usa la
  * Function, que manda sobre config.js). En el <head>, antes que los demás. */
-export const ERRORES_V = 1;
+export const ERRORES_V = 2;
 // `async`: sin frenar el primer pintado; se pide el primero y corre antes que
 // los `defer` (`document.currentScript` sigue valiendo para leer data-*).
 export const erroresScript = () =>

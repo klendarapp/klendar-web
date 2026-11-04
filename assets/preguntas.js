@@ -149,7 +149,7 @@
     });
   }
 
-  (window.KLENDAR_ENV ? Promise.resolve() : carga('/config.js?v=3'))
+  (window.KLENDAR_ENV ? Promise.resolve() : carga('/config.js?v=4'))
     .then(function () {
       var env = window.KLENDAR_ENV;
       if (!env) return null;

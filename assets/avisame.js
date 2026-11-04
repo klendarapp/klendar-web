@@ -134,7 +134,7 @@
    * (undefined). */
   function conCaptcha() {
     return window.KL_CAPTCHA ? Promise.resolve()
-      : (window.KLENDAR_ENV ? Promise.resolve() : carga('/config.js?v=3'))
+      : (window.KLENDAR_ENV ? Promise.resolve() : carga('/config.js?v=4'))
         .then(function () { return carga('/assets/auth-errors.js?v=6'); });
   }
   function robot() {

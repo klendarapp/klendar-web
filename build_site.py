@@ -249,11 +249,11 @@ def head(t, path, page_title=None, page_desc=None, extra=''):
 # tiene algo que mandar. Mismo `?v=` que `ERRORES_V` en functions/_lib/page.js.
 # `async`: se pide el primero y corre en cuanto llega (antes que los `defer`),
 # sin frenar el primer pintado (Lighthouse lo daba como bloqueante, ~0,4 s).
-ERRORES = '<script src="/assets/errores.js?v=1" async></script>'
+ERRORES = '<script src="/assets/errores.js?v=2" async></script>'
 
 # Solo la portada trae contenido en vivo; los documentos no lo necesitan.
 LIVE_SCRIPTS = (
-    '<script src="/config.js?v=3"></script>'
+    '<script src="/config.js?v=4"></script>'
     '<script src="/assets/zona.js?v=2" defer></script>'
     '<script src="/assets/live.js?v=7" defer></script>'
 )

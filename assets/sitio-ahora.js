@@ -121,7 +121,7 @@
   /** El mismo cliente que amigos.js, visita.js y cerrado.js (uno por página). */
   function cliente() {
     if (!clienteP) {
-      clienteP = (window.KLENDAR_ENV ? Promise.resolve() : carga('/config.js?v=3'))
+      clienteP = (window.KLENDAR_ENV ? Promise.resolve() : carga('/config.js?v=4'))
         .then(() => (window.supabase ? null : carga('/assets/vendor/supabase-js-2.117.2.js',
           'sha384-Rj26LVGvoeRVR6+mwQmFfcR3QOBEwT+ZmuCWpuiqeTzJpCs0ER4ITAWGb4Hiy3Ok')))
         .then(() => {
