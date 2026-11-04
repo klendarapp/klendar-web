@@ -4025,6 +4025,40 @@ function vecesAqui(n) {
 const fotoCliente = (url, sinFoto = '') => (/^https:\/\//.test(url || '')
   ? `<img class="cod-av" src="${esc(url)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : sinFoto);
 
+/** «Deshacer la validación» de un código de oferta hecha por error
+ * (`undo_redemption`, migración 20261260100120): cualquiera del equipo,
+ * durante 10 minutos y una vez por código. Lo mismo que en la app. */
+const ERR_DESHACER = {
+  undo_too_late: 'Ya no se puede deshacer: han pasado más de 10 minutos.',
+  undo_once: 'Este código ya se deshizo una vez: no se puede deshacer otra.',
+  already_undone: 'Ya estaba deshecha.',
+  not_validated: 'Ese código no está validado.',
+  undo_stamp_used: 'El sello de este canje ya está en un premio: no se puede deshacer.',
+  undo_gift_used: 'El cupón que dio este canje ya se ha usado: no se puede deshacer.',
+  not_found: 'No encontramos ese código en tu negocio.',
+  rate_limited: 'Demasiados intentos seguidos. Espera un momento.',
+};
+/** ¿Se puede deshacer todavía? (`undo_until` de la base). */
+const sePuedeDeshacer = (r) => !r.undone && !!r.undo_until && new Date(r.undo_until) > new Date();
+/** Pregunta y deshace. Devuelve true si se ha deshecho. */
+async function deshazValidacion(code) {
+  const ok = await confirmDlg(I18N.t('¿Deshacer la validación?'),
+    I18N.t('El código vuelve a valer y deja de contar en tus cifras (también el sello o el cupón que haya dado). Solo se puede una vez y durante 10 minutos.'),
+    { submit: I18N.t('Deshacer') });
+  if (!ok) return false;
+  try {
+    const r = await rpc('undo_redemption', { p_code: code });
+    if (!r?.ok) { toast(ERR_DESHACER[r?.error] || friendly(r?.error), true); return false; }
+    toast(r.status === 'expired'
+      ? 'Validación deshecha. El código ya ha caducado: no se puede volver a usar.'
+      : 'Validación deshecha: el código vuelve a valer.');
+    return true;
+  } catch (e) {
+    toast(friendly(e.message), true);
+    return false;
+  }
+}
+
 /** Por qué no vale un código («Este código es de otro negocio.»). */
 function textoErrorValidar(res) {
   return I18N.t(ERR_VALIDAR[res.error] || friendly(res.error));
@@ -4171,6 +4205,10 @@ const entranTxt = (r) => (Number(r.seats) > 1 && r.kind !== 'spot'
   ? bi(`Entran ${r.seats} personas`, `Admit ${r.seats} people`) : '');
 /** Quién del equipo lo validó. */
 const validadoPorTxt = (quien) => bi(`Validado por ${quien}`, `Validated by ${quien}`);
+/** Quién deshizo una validación (solo lo ve quien gestiona). */
+const deshechaPorTxt = (quien) => bi(`Deshecha por ${quien}`, `Undone by ${quien}`);
+/** «Validación deshecha», en la fila de lo deshecho. */
+const etiquetaDeshecha = (r) => (r.undone ? ` <span class="tag dim">${esc(I18N.t('Validación deshecha'))}</span>` : '');
 const personaValidada = (r) => (r.deleted_account ? I18N.t('Cuenta eliminada') : (r.person || I18N.t('Usuario de Klendar')));
 
 // ── Importe del ticket y «Cuánto te ha traído Klendar» ───────────────────
@@ -4323,8 +4361,8 @@ PAGES.validar = async (v) => {
       cols: [
         { h: 'Cuándo', r: (r) => fmtDate(r.at) },
         // Como la app: «Entran 3 personas» y quién del equipo lo validó.
-        { h: 'Qué', r: (r) => `<b class="title">${esc(r.title)}</b><span class="sub">${esc([queValidado(r), entranTxt(r)].filter(Boolean).join(' · '))}${etiquetaSinConexion(r)}</span>` },
-        { h: 'Persona', r: (r) => `${esc(personaValidada(r))}${r.promoter_name ? `<span class="sub">${rrppListaDe(r)}</span>` : ''}${r.by ? `<span class="sub">${esc(validadoPorTxt(r.by))}</span>` : ''}` },
+        { h: 'Qué', r: (r) => `<b class="title">${esc(r.title)}</b><span class="sub">${esc([queValidado(r), entranTxt(r)].filter(Boolean).join(' · '))}${etiquetaSinConexion(r)}${etiquetaDeshecha(r)}</span>` },
+        { h: 'Persona', r: (r) => `${esc(personaValidada(r))}${r.promoter_name ? `<span class="sub">${rrppListaDe(r)}</span>` : ''}${r.by ? `<span class="sub">${esc(r.undone ? deshechaPorTxt(r.by) : validadoPorTxt(r.by))}</span>` : ''}` },
         // El ticket (24 h para apuntarlo o corregirlo) o, si no, lo estimado.
         { h: 'Ticket', r: (r) => {
           const editable = r.ticket_until && new Date(r.ticket_until) > new Date();
@@ -4333,12 +4371,22 @@ PAGES.validar = async (v) => {
           const boton = editable ? `<button class="btn sm ghost" type="button" data-ticket="${esc(r.code)}" data-cents="${r.ticket_cents ?? ''}">${esc(I18N.t(r.ticket_cents != null ? 'Cambiar' : 'Añadir ticket'))}</button>` : '';
           return `<span class="ticket-celda">${valor}${valor && boton ? ' ' : ''}${boton}</span>`;
         } },
+        // Validado por error: «Deshacer» durante 10 minutos (como la app).
+        { h: '', r: (r) => (sePuedeDeshacer(r)
+          ? `<button class="btn sm ghost" type="button" data-deshaz="${esc(r.code)}">${esc(I18N.t('Deshacer'))}</button>` : '') },
       ],
       rows: rows || [],
       empty: 'Todavía no has validado ningún código.',
     }) + (recientesMas ? botonVerMas('recientes') : '');
     const verMas = $('[data-ver-mas="recientes"]', caja);
     if (verMas) verMas.onclick = () => { verMas.disabled = true; loadRecent(true); };
+    $$('[data-deshaz]', caja).forEach((b) => {
+      b.onclick = async () => {
+        b.disabled = true;
+        await deshazValidacion(b.dataset.deshaz);
+        loadRecent();
+      };
+    });
     // Apuntar o corregir el ticket ahí mismo.
     $$('[data-ticket]', caja).forEach((b) => {
       b.onclick = () => {
@@ -4442,9 +4490,21 @@ PAGES.validar = async (v) => {
     $('#result').innerHTML = `<div class="scan-result ${estado === 'ready' ? 'warn' : estado}">${cab}</div>
       ${res.offer_title && !ajeno ? tarjetaCodigo(res, estado) : ''}
       ${estado === 'ready' ? `<button class="btn primary grande" id="validaYa" type="button">${ms('check')}${esc(I18N.t('Validar'))}</button>` : ''}
-      <div id="ticketVal"></div>`;
+      <div id="ticketVal"></div>
+      ${estado === 'ok' && (res.kind || 'offer') === 'offer' && res.code_input && sePuedeDeshacer(res)
+    ? `<button class="btn ghost" type="button" id="deshazVal">${esc(I18N.t('Deshacer la validación'))}</button>` : ''}`;
     // Recién validado el código de una publicación: el importe del ticket.
     if (estado === 'ok' && (res.kind || 'offer') === 'offer' && res.code_input) cajaTicket($('#ticketVal'), codigoSuelto(res.code_input));
+    // Validado por error: se deshace aquí mismo (10 minutos, una vez).
+    const deshaz = $('#deshazVal');
+    if (deshaz) {
+      deshaz.onclick = async () => {
+        deshaz.disabled = true;
+        if (await deshazValidacion(codigoSuelto(res.code_input))) $('#result').innerHTML = '';
+        else deshaz.disabled = false;
+        loadRecent();
+      };
+    }
     const b = $('#validaYa');
     if (b) b.onclick = () => { $('#code').value = res.code_input || $('#code').value; validate(); };
     const otro = $('[data-otro-local]', $('#result'));

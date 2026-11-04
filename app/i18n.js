@@ -2,6 +2,7 @@
 'use strict';
 
 const APP_EN = {
+  "El negocio ha deshecho la validación: tu código vuelve a valer.": "The business has undone the validation: your code is valid again.",
   // Paridad con la app (2026-10-22)
   "Has llegado desde un enlace. Consíguelo solo si vas a usarlo: si hay plazas, quedan reservadas a tu nombre.": "You've come from a link. Only get it if you're going to use it: any places are reserved in your name.",
   // Paridad con la app (2026-10-22)

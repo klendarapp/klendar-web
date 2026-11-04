@@ -2223,6 +2223,40 @@ function vigilaCanje(code, alValidar, tabla = 'redemptions') {
   return apaga;
 }
 
+/** Validado por error: si el negocio lo deshace (solo se puede durante 10
+ * minutos), avisa. Realtime y, por si el canal no llega, un vistazo cada 15
+ * s, ese rato. Lo mismo que la app (watchUndo). Devuelve la función que lo
+ * apaga. */
+function vigilaDeshecho(code, alDeshacer) {
+  let hecho = false;
+  let sondeo = null;
+  let fin = null;
+  let canal = null;
+  const apaga = () => {
+    clearInterval(sondeo);
+    clearTimeout(fin);
+    if (canal) sb.removeChannel(canal).catch(() => {});
+  };
+  const avisa = (fila) => {
+    if (hecho || !fila?.status || fila.status === 'validated') return;
+    hecho = true;
+    apaga();
+    alDeshacer();
+  };
+  canal = sb.channel(`redemption-undo:${code}`)
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'redemptions', filter: `code=eq.${code}` },
+      (payload) => avisa(payload.new))
+    .subscribe();
+  sondeo = setInterval(async () => {
+    try {
+      const { data } = await sb.from('redemptions').select('status').eq('code', code).maybeSingle();
+      avisa(data);
+    } catch { /* sin red: se vuelve a mirar en 15 s */ }
+  }, 15000);
+  fin = setTimeout(apaga, 11 * 60 * 1000);
+  return apaga;
+}
+
 /** El negocio ya lo ha validado: la confirmación grande, como en la app. */
 function pintaCanjeado({ titulo, negocio, benef, at, volver = '#/codigos', tz, code = '' }) {
   const hora = fecha(at, { hour: '2-digit', minute: '2-digit' }, tz);
@@ -2406,6 +2440,12 @@ RUTAS.codigo = async ([id], params, crudo) => {
   alSalir(vigilaCanje(tk.code, (at) => {
     olvidaCodigo(id); // ya está usado: no se enseña sin red
     pintaCanjeado({ titulo: tk.offer_title, negocio: tk.business_name, benef, at, tz, code: tk.code });
+    // Validado por error y deshecho por el negocio: el código vuelve.
+    alSalir(vigilaDeshecho(tk.code, () => {
+      toast(t('El negocio ha deshecho la validación: tu código vuelve a valer.'));
+      marcaIntencion(crudo);
+      navegar();
+    }));
   }));
 
   // La cuenta atrás, o hasta cuándo vale si queda más de una hora. Un código
