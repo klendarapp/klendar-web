@@ -50,19 +50,19 @@ const PAGINAS = [
   ], [/football-data/i]],
   ['/negocios/', 'Última actualización: 4 de noviembre de 2026', [
     /Si marca que pone un partido o un evento \(«Lo ponemos»\) o pide ponerlos siempre los de un equipo, un deportista o una competición \(«Poner siempre»\), tener los derechos para emitir cada uno en su local \(por ejemplo, la suscripción para hostelería de la plataforma que lo emite\) y ponerlo de verdad; los que marque «Poner siempre» y no vaya a poner, quitarlos\. Klendar no lo comprueba y puede quitar la marca si recibe quejas\./,
-    /y los del 3 de noviembre de 2026 \(apartados 3, 3 decies y 4\), desde el 18 de noviembre de 2026: 15 días/,
+    /los del 3 de noviembre de 2026 \(apartados 3, 3 decies y 4\), desde el 18 de noviembre de 2026, y los del 4 de noviembre de 2026 \(apartado 3 bis, «Conecta tu agenda»\), desde el 19 de noviembre de 2026: 15 días/,
     /3 de noviembre de 2026: «Poner siempre» \(apartado 3\)[\s\S]*?Se aplica desde el 18 de noviembre de 2026\./,
   ], [/tener los derechos para emitirlo en su local/]],
   ['/en/business-terms/', 'Last updated: 4 November 2026', [
     /If it marks that it's showing a match or an event \(“We're showing it”\) or asks to always show those of a team, an athlete or a competition \(“Always show”\), hold the rights to show each one at its venue \(for example, the hospitality subscription of the platform that broadcasts it\) and really show it; remove those that “Always show” marks and it isn't going to show\. Klendar doesn't check this and may remove the mark if it receives complaints\./,
-    /and those of 3 November 2026 \(sections 3, 3i and 4\) from 18 November 2026: 15 days/,
+    /those of 3 November 2026 \(sections 3, 3i and 4\) from 18 November 2026, and those of 4 November 2026 \(section 3a, “Connect your calendar”\) from 19 November 2026: 15 days/,
     /3 November 2026: “Always show” \(section 3\)[\s\S]*?It applies from 18 November 2026\./,
   ], [/hold the rights to show it at its venue/]],
-  ['/terminos/', 'Última actualización: 3 de noviembre de 2026', [
+  ['/terminos/', 'Última actualización: 4 de noviembre de 2026', [
     /Dónde verlo: los partidos y sus horarios vienen de fuentes externas y de lo que dicen los bares/,
     /3 de noviembre de 2026: «Dónde ver el partido» pasa a llamarse «Dónde verlo»/,
   ], [/Dónde ver el partido: los partidos/]],
-  ['/en/terms/', 'Last updated: 3 November 2026', [
+  ['/en/terms/', 'Last updated: 4 November 2026', [
     /Where to watch: matches and their times come from external sources and from what bars say/,
     /3 November 2026: “Where to watch the match” is now called “Where to watch”/,
   ], [/Where to watch the match: matches/]],
