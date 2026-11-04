@@ -254,6 +254,7 @@ KL_DIC('de', {
   "Como mucho 10 palabras: quita alguna para añadir otra.": "Höchstens 10 Stichwörter: Entferne eins, um ein anderes hinzuzufügen.",
   "Como mucho 3 a la vez.": "Höchstens 3 gleichzeitig.",
   "Como mucho 3 al día": "Höchstens 3 pro Tag",
+  "Ahora no te llegan: no sabemos dónde estás. Abre la app de Klendar de vez en cuando para que lo sepamos (guardamos solo la última posición, 7 días).": "Gerade bekommst du keine: Wir wissen nicht, wo du bist. Öffne ab und zu die Klendar-App, damit wir es wissen (wir speichern nur deinen letzten Standort, 7 Tage lang).",
   "Como mucho 300 caracteres.": "Höchstens 300 Zeichen.",
   "Como mucho 40 caracteres.": "Höchstens 40 Zeichen.",
   "Como mucho 6 fotos y vídeos.": "Höchstens 6 Fotos und Videos.",

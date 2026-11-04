@@ -1046,6 +1046,7 @@ async function ajustesNotificaciones() {
     sw('cerca', 'Ofertas flash cerca de ti', prefs.notify_nearby, 'Como mucho 3 al día'),
   ].join('')}
         <div id="cerca-mas"${prefs.notify_nearby ? '' : ' hidden'}>
+          <p class="muted nota" id="cerca-nota" hidden>${esc(t('Ahora no te llegan: no sabemos dónde estás. Abre la app de Klendar de vez en cuando para que lo sepamos (guardamos solo la última posición, 7 días).'))}</p>
           <fieldset class="fila radios-distancia"><legend class="sr">${esc(t('Distancia'))}</legend>
             ${[500, 1000, 2000, 5000].map((r) => `<label class="chip-radio"><input type="radio" name="radio" value="${r}"${(prefs.nearby_radius_m || 1000) === r ? ' checked' : ''}><span>${esc(distancia(r))}</span></label>`).join('')}
           </fieldset>
@@ -1130,9 +1131,22 @@ async function ajustesNotificaciones() {
     alCambiar: (v) => { elegidas = v; guarda(); },
   });
 
+  // «Ofertas flash cerca de ti»: si no sabemos dónde estás, se dice. La base
+  // guarda la última posición 7 días y solo la manda la app al abrirla (la
+  // web no guarda la tuya: privacidad, «Ubicación»); migración
+  // 20261260100100 de la app.
+  const notaCerca = async () => {
+    const nota = $('#cerca-nota');
+    if (!fa.elements.cerca.checked) { nota.hidden = true; return; }
+    let r = null;
+    try { r = await llamar('my_nearby_location', {}); } catch { /* sin red: no se dice nada */ }
+    nota.hidden = !r || !!r.saved_at;
+  };
+  notaCerca();
+
   fa.addEventListener('change', (ev) => {
     const el = fa.elements;
-    if (ev.target === el.cerca) $('#cerca-mas').hidden = !el.cerca.checked;
+    if (ev.target === el.cerca) { $('#cerca-mas').hidden = !el.cerca.checked; notaCerca(); }
     if (ev.target === el.silencio) $('#silencio-mas').hidden = !el.silencio.checked;
     if (ev.target === el.palabras) $('#palabras-mas').hidden = !el.palabras.checked;
     if (ev.target === el.amigos) {

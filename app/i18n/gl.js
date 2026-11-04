@@ -254,6 +254,7 @@ KL_DIC('gl', {
   "Como mucho 10 palabras: quita alguna para añadir otra.": "Como moito 10 palabras: quita algunha para engadir outra.",
   "Como mucho 3 a la vez.": "Como moito 3 á vez.",
   "Como mucho 3 al día": "Como moito 3 ao día",
+  "Ahora no te llegan: no sabemos dónde estás. Abre la app de Klendar de vez en cuando para que lo sepamos (guardamos solo la última posición, 7 días).": "Agora non che chegan: non sabemos onde estás. Abre a app de Klendar de cando en vez para que o saibamos (só gardamos a última posición, 7 días).",
   "Como mucho 300 caracteres.": "Como moito 300 caracteres.",
   "Como mucho 40 caracteres.": "Como moito 40 caracteres.",
   "Como mucho 6 fotos y vídeos.": "Como moito 6 fotos e vídeos.",

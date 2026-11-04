@@ -254,6 +254,7 @@ KL_DIC('it', {
   "Como mucho 10 palabras: quita alguna para añadir otra.": "Al massimo 10 parole: togline una per aggiungerne un’altra.",
   "Como mucho 3 a la vez.": "Al massimo 3 alla volta.",
   "Como mucho 3 al día": "Al massimo 3 al giorno",
+  "Ahora no te llegan: no sabemos dónde estás. Abre la app de Klendar de vez en cuando para que lo sepamos (guardamos solo la última posición, 7 días).": "Ora non ti arrivano: non sappiamo dove sei. Apri l’app di Klendar ogni tanto perché lo sappiamo (teniamo solo l’ultima posizione, per 7 giorni).",
   "Como mucho 300 caracteres.": "Al massimo 300 caratteri.",
   "Como mucho 40 caracteres.": "Al massimo 40 caratteri.",
   "Como mucho 6 fotos y vídeos.": "Massimo 6 tra foto e video.",

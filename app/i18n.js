@@ -911,6 +911,7 @@ const APP_EN = {
   "Series que sigues": "Series you follow",
   "Ofertas flash cerca de ti": "Flash offers near you",
   "Como mucho 3 al día": "At most 3 a day",
+  "Ahora no te llegan: no sabemos dónde estás. Abre la app de Klendar de vez en cuando para que lo sepamos (guardamos solo la última posición, 7 días).": "You're not getting them right now: we don't know where you are. Open the Klendar app now and then so we know (we only keep your last position, for 7 days).",
   "Distancia": "Distance",
   "Categorías": "Categories",
   "Todas": "All",

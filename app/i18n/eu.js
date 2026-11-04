@@ -254,6 +254,7 @@ KL_DIC('eu', {
   "Como mucho 10 palabras: quita alguna para añadir otra.": "Gehienez 10 hitz: kendu bat beste bat gehitzeko.",
   "Como mucho 3 a la vez.": "Gehienez 3 aldi berean.",
   "Como mucho 3 al día": "Gehienez 3 egunean",
+  "Ahora no te llegan: no sabemos dónde estás. Abre la app de Klendar de vez en cuando para que lo sepamos (guardamos solo la última posición, 7 días).": "Orain ez zaizkizu iristen: ez dakigu non zauden. Ireki Klendar aplikazioa noizean behin, jakin dezagun (azken kokapena bakarrik gordetzen dugu, 7 egunez).",
   "Como mucho 300 caracteres.": "Gehienez 300 karaktere.",
   "Como mucho 40 caracteres.": "Gehienez 40 karaktere.",
   "Como mucho 6 fotos y vídeos.": "Gehienez 6 argazki eta bideo.",
