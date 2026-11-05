@@ -2389,7 +2389,7 @@ async function offerDetail(v, id) {
         ${o.moderation_status !== 'approved' ? '<button class="btn ok" data-a="approve">✓ Aprobar</button>' : ''}
         ${o.moderation_status !== 'rejected' ? '<button class="btn bad" data-a="reject">Retirar…</button>' : ''}
         <button class="btn" data-a="status">Cambiar estado…</button>
-        <button class="btn" data-a="boost">${o.is_boosted ? 'Quitar boost' : 'Destacar (boost)…'}</button>
+        ${o.is_boosted ? '<button class="btn" data-a="boost">Quitar boost</button>' : ''}
         ${appLink('/o/' + o.id)}
       </div>
     </div>
