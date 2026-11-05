@@ -697,6 +697,18 @@ RUTAS.ajustes = async ([sub]) => {
         <dt id="dt-ia-foto" hidden>${esc(t('Leer mis fotos con IA'))}</dt>
         <dd id="dd-ia-foto" hidden><label class="check"><input type="checkbox" id="permiso-ia-foto">
           <span>${esc(t('Para rellenar publicaciones y la carta desde una foto. Las fotos van a Claude (Anthropic, EE. UU.) y no se guardan en Klendar.'))}</span></label></dd>
+        <dt id="dt-ia-sugiere" hidden>${esc(t('Proponer categoría y etiquetas con IA'))}</dt>
+        <dd id="dd-ia-sugiere" hidden><label class="check"><input type="checkbox" id="permiso-ia-sugiere">
+          <span>${esc(t('Al crear una publicación, el título y la descripción van a Claude (Anthropic, EE. UU.) y no se guardan en Klendar.'))}</span></label></dd>
+        <dt id="dt-ia-ideas" hidden>${esc(t('Preparar ideas para mi negocio con IA'))}</dt>
+        <dd id="dd-ia-ideas" hidden><label class="check"><input type="checkbox" id="permiso-ia-ideas">
+          <span>${esc(t('Una vez por semana, datos de tu negocio, sin nombre ni clientes, van a Claude (Anthropic, EE. UU.).'))}</span></label></dd>
+        <dt id="dt-ia-resp" hidden>${esc(t('Proponer respuestas a reseñas con IA'))}</dt>
+        <dd id="dd-ia-resp" hidden><label class="check"><input type="checkbox" id="permiso-ia-resp">
+          <span>${esc(t('El texto de la reseña, sin nombre, va a Claude (Anthropic, EE. UU.) y no se guarda en Klendar.'))}</span></label></dd>
+        <dt id="dt-ia-resena" hidden>${esc(t('Que mis reseñas no pasen por una IA'))}</dt>
+        <dd id="dd-ia-resena" hidden><label class="check"><input type="checkbox" id="opone-ia-resena">
+          <span>${esc(t('El negocio puede pedir a una IA (Claude, de Anthropic, EE. UU.) un borrador para contestarte. Se envía el texto de tu reseña, sin tu nombre. Actívalo si prefieres que no.'))}</span></label></dd>
         <dt>${esc(t('Que mis amigos vean mis planes'))}</dt>
         <dd><label class="check"><input type="checkbox" id="compartir-planes"${cons?.share_plans !== false ? ' checked' : ''}>
           <span>${esc(t(cons?.share_plans !== false
@@ -819,6 +831,25 @@ RUTAS.ajustes = async ([sub]) => {
         await llamar('set_ai_consent', { p_granted: caja.checked, p_use: 'photo_fill' });
       } catch (e) { caja.checked = !caja.checked; toast(e.message, true); }
     });
+  }).catch(() => { /* si falla, no se ve */ });
+  // Las ayudas de IA para negocios: cada permiso, solo si ya ha contestado alguna vez; y quien escribe
+  // reseñas puede oponerse, con el aviso puesto o si ya lo hizo.
+  Promise.all([llamar('ai_help_status', { p_business: null }), llamar('review_ai_notice')]).then(([ia, aviso]) => {
+    if (!ia) return;
+    const interruptor = (sufijo, id, valor, guarda) => {
+      $(`#dt-ia-${sufijo}`).hidden = false;
+      $(`#dd-ia-${sufijo}`).hidden = false;
+      const caja = $(id);
+      caja.checked = valor === true;
+      caja.addEventListener('change', async () => {
+        try { await guarda(caja.checked); } catch (e) { caja.checked = !caja.checked; toast(e.message, true); }
+      });
+    };
+    const permiso = (use) => (v) => llamar('set_ai_consent', { p_granted: v, p_use: use });
+    if (ia.suggest?.asked) interruptor('sugiere', '#permiso-ia-sugiere', ia.suggest.consent, permiso('suggest_category'));
+    if (ia.ideas?.asked) interruptor('ideas', '#permiso-ia-ideas', ia.ideas.consent, permiso('business_ideas'));
+    if (ia.replies?.asked) interruptor('resp', '#permiso-ia-resp', ia.replies.consent, permiso('review_replies'));
+    if (aviso === true || ia.review_optout) interruptor('resena', '#opone-ia-resena', ia.review_optout, (v) => llamar('set_review_ai_optout', { p_out: v }));
   }).catch(() => { /* si falla, no se ve */ });
   // «Que mis amigos vean mis planes»: apagado, no sales en el «quién va» de
   // nadie (ni por «Voy» ni por una plaza o un código). Y sin él tampoco vale
@@ -1559,6 +1590,7 @@ RUTAS.opinar = async ([id], params) => {
       </fieldset>
       ${miNombre === null ? campoNombrePublico() : ''}
       <p class="muted">${esc(t('Tu nombre y tu foto de perfil salen junto a la reseña. Sigue las normas de la comunidad: sin insultos ni datos de nadie.'))}</p>
+      <p class="muted" id="avisoIaResena" hidden>${esc(t('El negocio puede usar una IA para prepararte una respuesta: se envía el texto de tu reseña, sin tu nombre. Puedes evitarlo en Ajustes.'))}</p>
       <p class="err" id="err" role="alert"></p>
       <button class="pill accent" id="publicar">${esc(t('Publicar'))}</button>
       ${params?.get?.('desde') === 'quetal' ? `<p class="ahora-no"><a href="${pre}/b/${esc(id)}">${esc(t('Ahora no'))}</a></p>` : ''}
@@ -1666,6 +1698,7 @@ RUTAS.opinar = async ([id], params) => {
     if (sinLimpiar) toast(t('No hemos podido quitar del vídeo dónde se grabó. Si no quieres que se sepa, súbelo desde la app.'), true);
     if (f.isConnected) vivo(EN ? `${medios.length} of ${LIM_MEDIOS.max}` : `${medios.length} de ${LIM_MEDIOS.max}`);
   };
+  llamar('review_ai_notice').then((x) => { if (x === true && $('#avisoIaResena')) $('#avisoIaResena').hidden = false; }).catch(() => {});
   ['#mElige', '#mFoto', '#mVideo'].forEach((s) => { $(s).addEventListener('change', (e) => alElegir(e.target)); });
   pintaMedios();
 

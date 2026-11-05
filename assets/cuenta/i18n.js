@@ -1338,4 +1338,13 @@ const APP_EN = {
   "Vigilar esta zona": "Watch this area",
   "Se queda mirando aquí aunque estés de viaje.": "It keeps watching here even when you travel.",
   "Nombre, p. ej. «sushi cerca»": "Name, e.g. “sushi nearby”",
+  "Proponer categoría y etiquetas con IA": "Suggest a category and tags with AI",
+  "Al crear una publicación, el título y la descripción van a Claude (Anthropic, EE. UU.) y no se guardan en Klendar.": "When creating a publication, the title and description go to Claude (Anthropic, US) and aren’t kept in Klendar.",
+  "Preparar ideas para mi negocio con IA": "Prepare ideas for my business with AI",
+  "Una vez por semana, datos de tu negocio, sin nombre ni clientes, van a Claude (Anthropic, EE. UU.).": "Once a week, data about your business, without its name or customers, goes to Claude (Anthropic, US).",
+  "Proponer respuestas a reseñas con IA": "Suggest replies to reviews with AI",
+  "El texto de la reseña, sin nombre, va a Claude (Anthropic, EE. UU.) y no se guarda en Klendar.": "The text of the review, without a name, goes to Claude (Anthropic, US) and isn’t kept in Klendar.",
+  "Que mis reseñas no pasen por una IA": "Keep my reviews away from AI",
+  "El negocio puede pedir a una IA (Claude, de Anthropic, EE. UU.) un borrador para contestarte. Se envía el texto de tu reseña, sin tu nombre. Actívalo si prefieres que no.": "A business can ask an AI (Claude, from Anthropic, US) for a draft reply to you. The text of your review is sent, without your name. Turn this on if you’d rather not.",
+  "El negocio puede usar una IA para prepararte una respuesta: se envía el texto de tu reseña, sin tu nombre. Puedes evitarlo en Ajustes.": "The business can use an AI to prepare a reply to you: the text of your review is sent, without your name. You can prevent this in Settings.",
 };

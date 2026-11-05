@@ -1672,6 +1672,7 @@ PAGES.resumen = async (v) => {
       ${sinLocal ? '' : paso('', false, 'Descarga el cartel del local', '', '#/cartel-local')}
       ${paso('', false, 'Cuéntalo en tus redes', '', '#', 'data-compartir')}
     </div>` : ''}
+    <div id="ideasIA" style="margin-top:14px"></div>
     <!-- Ordenado como la app (Iván, 2026-10-22): «Lo esencial», «Por
          contestar», «¿Hay sitio ahora?» y «Ahora» (3 filas y «Ver N más»); al
          lado en el escritorio y debajo en el móvil, las publicaciones y
@@ -1745,6 +1746,7 @@ PAGES.resumen = async (v) => {
   pintaAforo($('#aforoCaja', v));
   // «¿Abres el 1 de noviembre?» (pedir.js), si no hay otro aviso.
   if (typeof pedFestivo === 'function') pedFestivo($('#festivoCaja', v));
+  if (window.KAyudas && BIZ.verification_status !== 'rejected') KAyudas.tarjeta($('#ideasIA', v));
   // «Cola virtual · N esperando», si está abierta (panel/cola.js).
   if (typeof resumenCola === 'function') resumenCola($('#colaCaja', v));
   // «Pedidos de hoy · N preparando», si el avisador está activado (panel/listo.js).
@@ -2654,6 +2656,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
     <div class="pub-editor">
     <form class="pub-form" id="form" novalidate>
       <input type="hidden" name="kind" value="${kind}">
+      <div id="ideaIA"></div>
       <div id="fotoRellena"></div>
       ${sugForm.length ? `<div class="sug-caja"><h3 class="sug-titulo">Tu primera oferta, que se repite sola</h3>
         <p class="hint" style="margin:0">Elige una y ajusta el precio o los días: sale sola cada semana a su hora.</p>
@@ -2663,6 +2666,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
         <p class="hint">Toca una y cámbiala a tu gusto.</p></div>` : ''}
       <label class="f"><span>Título</span><input name="title" value="${esc(o.title || '')}" required maxlength="90" placeholder="${kind === 'future_event' ? 'Concierto de jazz' : 'Café + tostada 2,50 €'}"></label>
       <label class="f"><span>Descripción <small>(opcional)</small></span><textarea name="description" rows="3" maxlength="600" placeholder="${esc(I18N.t('Qué incluye, cómo es…'))}">${esc(o.description || '')}</textarea></label>
+      <div id="aiSugiere"></div>
       <div class="bl-fila"><p class="etq">Fotos y vídeo</p>
         <div class="photos" id="photos"></div>
         <p class="hint">La primera es la portada; muévelas con las flechas. Sin fotos, se usa la del local.</p></div>
@@ -3447,8 +3451,45 @@ async function offerForm(v, id, kindDefault, desde = null) {
   };
   $$('[data-idea]', v).forEach((b) => { b.onclick = () => { aplicarIdea(ideas[+b.dataset.idea]); toast('Idea aplicada: repasa precio y hora'); }; });
   sugActiva(v, sugForm, () => { GUARDA = null; location.hash = '#/publicaciones'; });
+  // Ayudas de IA (panel/ayudas.js): la idea que ha tocado el dueño y la categoría y etiquetas propuestas.
+  const ideaIA = !id && !desde && window.KAyudas ? KAyudas.tomaIdea() : null;
+  if (ideaIA) {
+    pon('title', ideaIA.title);
+    pon('description', ideaIA.description);
+    if (ideaIA.discount) {
+      pon('discount_type', ideaIA.discount.type);
+      pon('discount_value', ideaIA.discount.value);
+    }
+    if (ideaIA.day && ideaIA.start_time) {
+      const ini = `${ideaIA.day}T${ideaIA.start_time}`;
+      if (new Date(fromLocalInput(ini)) > new Date()) {
+        pon('start', ini);
+        if (ideaIA.end_time) {
+          // Si acaba antes de empezar, es al día siguiente.
+          const fin = `${ideaIA.day}T${ideaIA.end_time}`;
+          pon('end', ideaIA.end_time > ideaIA.start_time ? fin : toLocalInput(new Date(new Date(fromLocalInput(fin)).getTime() + 864e5).toISOString()));
+        }
+      }
+    }
+    $('#ideaIA', v).innerHTML = `<div class="foto-caja" role="status"><p class="foto-tit">${esc(I18N.t('Idea propuesta con IA'))}</p>
+      <p class="hint">${esc(I18N.t('Revísala, pon el precio y mira el día: no se publica nada sin ti.'))}</p></div>`;
+  }
+  if (!id && !desde && !/[?&]rrpp=1\b/.test(location.hash) && window.KAyudas) {
+    KAyudas.formulario($('#aiSugiere', v), {
+      campo, pon, val,
+      marcas: MK,
+      tipo: () => kind,
+      categoria: (cid) => pintaCatOferta(cid ? [cid] : []),
+      nombreCategoria: (cid) => { const c = CATS.find((x) => x.id === cid); return c ? (c.names?.[I18N.lang] || c.names?.es || '') : ''; },
+      cards: () => $$('[name=card_requirements]:checked', v).map((x) => x.value),
+      ponCards: (lista) => $$('[name=card_requirements]', v).forEach((x) => { x.checked = lista.includes(x.value); }),
+      // Una plantilla, una idea o una foto no es lo que escribe el dueño.
+      ocupado: () => !!$('.foto-hecho', v) || (ideaIA && val('title') === ideaIA.title && val('description') === ideaIA.description) || ideas.some((t) => val('title') === (en ? t.en : I18N.t(t.es))),
+      refresca: () => { syncNinos(); resumenes(); pintaPrevia(); },
+    });
+  }
   // «Rellenar desde una foto» (panel/foto.js): llena el formulario para revisarlo. Nunca publica.
-  if (!id && !desde && !partido?.id && window.KFotoRellena) {
+  if (!id && !desde && !partido?.id && !ideaIA && window.KFotoRellena) {
     KFotoRellena.oferta($('#fotoRellena', v), {
       campo, pon, val,
       tipo: () => kind,
@@ -6768,6 +6809,8 @@ PAGES.resenas = async (v) => {
   const media = resumen?.avg != null ? Number(resumen.avg) : (lista.length ? lista.reduce((s, r) => s + r.rating, 0) / lista.length : 0);
   const sin = Number(resumen?.unanswered ?? lista.filter((r) => !r.reply).length) || 0;
   const media1 = media.toFixed(1).replace('.', I18N.lang === 'en' ? '.' : ',');
+  // «Proponer respuesta» (panel/ayudas.js), si está encendido: sin esto, como siempre.
+  const iaResp = window.KAyudas && gestiona() ? await KAyudas.respuestasActivas() : null;
   const fila = (r, i) => `<article class="card">
         <header><span class="av">${r.avatar_url ? `<img src="${esc(r.avatar_url)}" alt="">` : esc((r.display_name || 'U').trim().charAt(0).toUpperCase())}</span>
           <span><b>${esc(r.display_name || 'Usuario de Klendar')}</b><small class="muted">${esc(fmtDate(r.created_at))}</small></span>${estrellas(r.rating)}</header>
@@ -6775,7 +6818,7 @@ PAGES.resenas = async (v) => {
         ${r.photo_url ? `<img class="foto" src="${esc(r.photo_url)}" alt="" loading="lazy">` : ''}
         ${r.reply ? `<div class="respuesta"><b>Respuesta de <span>${esc(BIZ.name)}</span></b>${r.reply_at ? `<small class="muted"> · ${esc(fmtDate(r.reply_at))}</small>` : ''}<p>${esc(r.reply).replace(/\n/g, '<br>')}</p></div>` : ''}
         ${r.reply_pending ? `<div class="respuesta"><b>Tu respuesta, en revisión</b> <span class="tag st-pending">En revisión</span><p>${esc(r.reply_pending).replace(/\n/g, '<br>')}</p></div>` : ''}
-        ${gestiona() ? `<div class="pie"><button class="btn sm" data-resp="${i}">${ms(r.reply ? 'edit' : 'reply')}${r.reply ? 'Editar respuesta' : 'Responder'}</button></div>` : ''}
+        ${gestiona() ? `<div class="pie">${iaResp?.available && !r.reply && !r.reply_pending && r.comment ? `<button class="btn sm ghost ia-proponer" data-prop="${i}">${KAyudas.CHISPA}<span>${esc(I18N.t('Proponer respuesta'))}</span></button>` : ''}<button class="btn sm" data-resp="${i}">${ms(r.reply ? 'edit' : 'reply')}${r.reply ? 'Editar respuesta' : 'Responder'}</button></div>` : ''}
       </article>`;
   v.innerHTML = `
     <div class="page-head"><h1>Reseñas</h1><span class="spacer"></span>
@@ -6787,12 +6830,12 @@ PAGES.resenas = async (v) => {
     ${lista.length ? `<div class="resenas-panel" id="resenasLista">${lista.map(fila).join('')}</div>${hayMas ? botonVerMas('resenas') : ''}`
     : '<div class="card"><p class="muted" style="margin:0">Todavía no tienes reseñas. Llegan cuando la gente canjea y vuelve a contarlo.</p></div>'}`;
 
-  const conecta = () => $$('[data-resp]', v).forEach((b) => { b.onclick = async () => {
-    const r = lista[+b.dataset.resp];
+  const responder = async (r, borrador) => {
     const out = await modal({
       title: 'Responder a la reseña',
-      intro: esc(I18N.t('Se ve debajo de la reseña, para todo el mundo. A quien la escribió le llega una notificación.')),
-      fields: [{ name: 'reply', label: 'Tu respuesta', type: 'textarea', value: r.reply || '', maxlength: 500, rows: 6,
+      // Un borrador de la IA dice que lo es, y que no se envía sin él.
+      intro: esc(borrador ? KAyudas.avisoBorrador(borrador) : I18N.t('Se ve debajo de la reseña, para todo el mundo. A quien la escribió le llega una notificación.')),
+      fields: [{ name: 'reply', label: 'Tu respuesta', type: 'textarea', value: borrador?.draft || r.reply || '', maxlength: 500, rows: 6,
         placeholder: 'Gracias por venir. Nos alegra que…' }],
       submit: 'Publicar',
     });
@@ -6810,7 +6853,23 @@ PAGES.resenas = async (v) => {
     toast(res.status === 'review' ? 'Lo revisamos antes de publicarlo porque puede contener lenguaje ofensivo. Normalmente en menos de 24 h.'
       : texto ? 'Respuesta publicada' : 'Respuesta borrada');
     route();
-  }; });
+  };
+  const conecta = () => {
+    $$('[data-resp]', v).forEach((b) => { b.onclick = () => responder(lista[+b.dataset.resp]); });
+    $$('[data-prop]', v).forEach((b) => {
+      b.onclick = async () => {
+        b.disabled = true;
+        b.classList.add('mov-ocupado');
+        b.setAttribute('aria-busy', 'true');
+        const r = lista[+b.dataset.prop];
+        const borrador = await KAyudas.proponer(r.id, iaResp);
+        b.disabled = false;
+        b.classList.remove('mov-ocupado');
+        b.removeAttribute('aria-busy');
+        if (borrador) responder(r, borrador);
+      };
+    });
+  };
   conecta();
   const mas = () => {
     const b = $('[data-ver-mas="resenas"]', v);

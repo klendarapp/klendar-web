@@ -1254,3 +1254,15 @@ body[data-cabecera] nav.tabbar:not(#tabbar) { display: none; }
 .foto-fin { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: flex-end; margin: 14px 0 0; padding: 10px 0; }
 .foto-leyendo { display: grid; justify-items: center; gap: 12px; padding: 32px 16px; text-align: center; }
 .foto-aguja { width: 40px; height: 40px; }
+
+/* Ayudas de IA (panel/ayudas.js) */
+.ia-puesto { display: flex; flex-wrap: wrap; gap: 6px; align-items: flex-start; margin: 2px 0 12px; color: var(--ink-2); font-size: 13px; }
+.ia-puesto svg { flex: none; margin-top: 2px; }
+.ia-puesto span { flex: 1 1 200px; min-width: 0; }
+.ia-cabeza { display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; justify-content: space-between; }
+.ia-cabeza h2 { margin: 0; }
+.ia-idea { display: flex; gap: 6px; align-items: flex-start; margin: 8px 0 0; padding: 8px 0 0; border-top: 1px solid var(--glass-border); }
+.ia-abrir { display: flex; flex: 1 1 auto; gap: 10px; min-width: 0; min-height: 44px; padding: 0; border: 0; background: none; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+.ia-abrir small { display: block; font-size: 13px; }
+.ia-quitar { flex: none; width: 36px; height: 36px; border: 0; border-radius: 50%; background: none; color: var(--ink-2); font-size: 20px; line-height: 1; cursor: pointer; }
+.ia-proponer { display: inline-flex; gap: 6px; align-items: center; }
