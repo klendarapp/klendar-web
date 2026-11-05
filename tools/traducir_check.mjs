@@ -146,7 +146,7 @@ function supabaseFalso() {
         const mios = Object.keys(TEXTOS).filter((k) => (args.kind === 'offer' ? k.startsWith('offer:')
           : args.kind === 'menu' ? k.startsWith('menu_') : !k.startsWith('offer:') && !k.startsWith('menu_'))
           && (!args.only || args.only.some((pre) => k.startsWith(pre))));
-        return json({ available: true, provider: 'google', translations: Object.fromEntries(mios.map((k) => [k, `[EN] ${TEXTOS[k]}`])),
+        return json({ available: true, provider: estado.modo === 'ia' ? 'Claude' : 'google', translations: Object.fromEntries(mios.map((k) => [k, `[EN] ${TEXTOS[k]}`])),
           from: Object.fromEntries(mios.map((k) => [k, 'es'])), same: [], pending: 0, capped: false });
       }
       if (p === '/rest/v1/rpc/offer_detail') return json(args.p_id === OFERTA ? [OFERTA_ROW] : []);
@@ -234,6 +234,14 @@ async function oferta(nav, nombre, t, vp) {
   await p.goto(`http://localhost:${FICHA_PORT}/o/${OFERTA}`, { waitUntil: 'networkidle' });
   await p.waitForTimeout(500);
   ok(await p.locator('.tr-nota').count() === 0 && estado.pedidos.length === 0, `${nombre}/${t} oferta en español: nada, ni una petición`);
+  await c.close();
+
+  // Con la IA, la de serie: la atribución es de Claude, no de Google.
+  ({ c, p, errores } = await empieza(nav, vp, { modo: 'ia' }));
+  await p.goto(`http://localhost:${FICHA_PORT}/en/o/${OFERTA}`, { waitUntil: 'networkidle' });
+  await p.locator(`[data-tr-nota="offer:${OFERTA}:"] button`).click();
+  await p.waitForSelector('.tr-atrib', { timeout: 8000 }).catch(() => null);
+  ok(await p.locator('.tr-atrib').innerText().catch(() => '') === '· Translated by Claude', `${nombre}/${t} con IA: «Translated by Claude»`);
   await c.close();
 
   // Tope del mes.

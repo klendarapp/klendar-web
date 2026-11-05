@@ -4,8 +4,9 @@
 // El texto sale siempre en su idioma. Debajo de lo que está en otro idioma
 // que el de la página sale un «Traducir» pequeño (icono de traducir, en
 // tinta): al tocarlo se traduce ahí mismo (la aguja pequeña mientras llega)
-// y pasa a una línea pequeña y gris, «Ver original · Traducido por Google»
-// (la atribución de Google, su «translated by Google»). Si falla o se ha llegado al tope del mes: «No se ha podido
+// y pasa a una línea pequeña y gris, «Ver original · Traducido por Claude»
+// (con la IA, la de serie) o «… por Google» (la reserva, con la atribución que
+// pide Google, su «translated by Google»): lo dice `provider`. Si falla o se ha llegado al tope del mes: «No se ha podido
 // traducir ahora» (tocándolo, otra vez) y el texto sigue en el original.
 // Con «Traducir siempre automáticamente» («Tu cuenta» → Ajustes; aquí,
 // `localStorage['klendar.traducir']`) sale ya traducido, sin tocar nada.
@@ -39,7 +40,7 @@
       falla: "Couldn't translate right now", mismo: "It's already in your language", traduciendo: 'Translating…' }
     : { tr: 'Traducir', orig: 'Ver original', verTr: 'Ver traducción', por: 'Traducido por',
       falla: 'No se ha podido traducir ahora', mismo: 'Ya está en tu idioma', traduciendo: 'Traduciendo…' };
-  const PROVEEDOR = { google: 'Google', deepl: 'DeepL' };
+  const PROVEEDOR = { google: 'Google', deepl: 'DeepL', claude: 'Claude', Claude: 'Claude' };
 
   // Cada «Traducir»: sus prefijos, sus textos y de qué publicación o ficha.
   const kindDe = (pre) => (pre.startsWith('offer:') ? 'offer' : pre.startsWith('menu_') ? 'menu' : 'business');
@@ -125,7 +126,7 @@
         n.innerHTML = `${boton()}<span class="tr-atrib"></span>`;
         n.querySelector('button').classList.add('tr-gris');
         n.querySelector('button span').textContent = u.viendoOriginal ? T.verTr : T.orig;
-        n.querySelector('.tr-atrib').textContent = `· ${T.por} ${PROVEEDOR[proveedor] || PROVEEDOR.google}`;
+        n.querySelector('.tr-atrib').textContent = `· ${T.por} ${PROVEEDOR[proveedor] || proveedor || PROVEEDOR.claude}`;
         return;
       case 'mismo':
         n.innerHTML = `<span class="tr-mismo">${ICONO}<span></span></span>`;
