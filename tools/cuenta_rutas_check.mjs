@@ -422,7 +422,32 @@ async function pruebaFuera(nav, motor) {
   await ctx.close();
 }
 
-for (const [motor, nav] of [['Chromium', await chromium.launch()], ['WebKit', await webkit.launch()]]) {
+// ── Lo que en local no pasa por Cloudflare: el middleware y HEAD ──────────
+{
+  console.log('\nFunctions');
+  const { onRequest } = await import('../functions/_middleware.js');
+  const pide = async (ruta, metodo = 'GET') => {
+    const a = [];
+    const ctx = {
+      request: new Request(`https://klendar.app${ruta}`, { method: metodo }),
+      env: { ASSETS: { fetch: async (u) => { a.push(new URL(u.url || u).pathname); return new Response('la 404', { status: 404, headers: { 'content-type': 'text/html' } }); } } },
+      next: async () => new Response('la de antes', { status: 200, headers: { 'content-type': 'text/html' } }),
+    };
+    return { r: await onRequest(ctx), a };
+  };
+  for (const ruta of ['/app', '/app/', '/app/favoritos', '/app/?lang=en', '/app/app.js?v=1', '//app/', '/%61pp/']) {
+    const { r, a } = await pide(ruta);
+    ok(r.status === 404 && await r.text() === 'la 404' && a.length === 1, `middleware ${ruta}: la 404, aunque Pages aún guarde lo de antes`);
+  }
+  const h = await pide('/app/', 'HEAD');
+  ok(h.r.status === 404 && (await h.r.text()) === '', 'middleware HEAD /app/: 404 sin cuerpo');
+  for (const ruta of ['/cuenta/', '/apple/', '/app-store/', '/panel/']) ok((await pide(ruta)).r.status === 200, `middleware ${ruta}: sigue su camino`);
+  const f = await import('../functions/cuenta/[[ruta]].js');
+  ok(f.onRequestHead === f.onRequestGet, '/cuenta/…: HEAD igual que GET (sin esto Cloudflare da 404 a los vigilantes)');
+}
+
+const SOLO_FUNCTIONS = process.argv.includes("--functions");
+for (const [motor, nav] of SOLO_FUNCTIONS ? [] : [["Chromium", await chromium.launch()], ["WebKit", await webkit.launch()]]) {
   console.log(`\n${motor} · rutas`);
   try {
     await pruebaFuera(nav, motor);

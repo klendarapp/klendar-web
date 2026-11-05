@@ -70,6 +70,13 @@ async function deLaCache(ctx, url, head) {
   return res;
 }
 
+// «Tu cuenta» dejó esta dirección el 5-11 y no se redirige: la 404 normal de la
+// web. Hace falta decirlo aquí porque Pages sigue sirviendo una semana lo que se
+// borra de un despliegue, si alguien lo pidió antes (comprobado en klendar.app:
+// `Cache-Control: public, s-maxage=604800` y `x-robots-tag: noindex`). Se puede
+// quitar pasada esa semana, cuando la dirección sea un 404 por sí sola.
+const DIRECCION_VIEJA = /^\/app(\/|$)/;
+
 // La ruta tal y como la sirve Cloudflare: decodificada y sin barras dobles
 // (`/%52EADME.md` o `//tools/…` se colaban por delante de INTERNO).
 const rutaReal = (pathname) => {
@@ -88,11 +95,13 @@ export async function onRequest(ctx) {
   }
 
   const head = ctx.request.method === 'HEAD';
-  const res = (head || ctx.request.method === 'GET') && EN_CACHE.test(pathname)
-    ? await deLaCache(ctx, new URL(ctx.request.url), head)
-    : head
-      ? await ctx.next(new Request(ctx.request.url, { method: 'GET', headers: ctx.request.headers }))
-      : await ctx.next();
+  const res = DIRECCION_VIEJA.test(rutaReal(pathname))
+    ? await ctx.env.ASSETS.fetch(new URL('/esta-direccion-no-existe/', ctx.request.url))
+    : (head || ctx.request.method === 'GET') && EN_CACHE.test(pathname)
+      ? await deLaCache(ctx, new URL(ctx.request.url), head)
+      : head
+        ? await ctx.next(new Request(ctx.request.url, { method: 'GET', headers: ctx.request.headers }))
+        : await ctx.next();
 
   const cabeceras = new Headers(res.headers);
   for (const [k, v] of Object.entries(SEGURIDAD)) if (!cabeceras.has(k)) cabeceras.set(k, v);

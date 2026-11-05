@@ -18,3 +18,7 @@ export async function onRequestGet({ request, env, next }) {
   if (url.pathname === '/cuenta/' || /\.(js|mjs|css|map|html|json|txt|xml|png|jpe?g|webp|gif|svg|ico|woff2?)$/i.test(url.pathname)) return next();
   return env.ASSETS.fetch(new Request(new URL('/cuenta/', url), request));
 }
+
+// HEAD igual que GET (el middleware quita el cuerpo): comprobadores de enlaces
+// y vigilantes de caídas preguntan con HEAD, y sin esto Cloudflare da 404.
+export const onRequestHead = onRequestGet;
