@@ -897,7 +897,7 @@ const NAV_GRUPOS = [
   { id: 'crecer', t: 'Crecer', items: [['pedidos', 'add_business', 'Locales pedidos'], ['crecer', 'travel_explore', 'Dónde crecer']] },
   { id: 'contenido', t: 'Contenido', items: [['publicaciones', 'bolt', 'Publicaciones'], ['agenda', 'account_balance', 'Agenda pública'], ['canjes', 'confirmation_number', 'Canjes'], ['colecciones', 'auto_awesome', 'Colecciones'], ['emisiones', 'sports_soccer', 'Emisiones'], ['artistas', 'music_note', 'Artistas'], ['categorias', 'category', 'Categorías'], ['festivos', 'event', 'Festivos']] },
   { id: 'personas', t: 'Personas', items: [['usuarios', 'person', 'Usuarios'], ['inactivas', 'hourglass_empty', 'Cuentas inactivas'], ['avisos', 'notifications', 'Notificaciones y push'], ['sugerencias', 'lightbulb', 'Sugerencias']] },
-  { id: 'moderacion', t: 'Moderación', items: [['denuncias', 'flag', 'Denuncias'], ['sorteos', 'redeem', 'Sorteos'], ['resenas', 'chat_bubble', 'Reseñas y novedades'], ['mensajes', 'campaign', 'Mensajes a clientes']] },
+  { id: 'moderacion', t: 'Moderación', items: [['denuncias', 'flag', 'Denuncias'], ['medios', 'imagesmode', 'Fotos y vídeos'], ['sorteos', 'redeem', 'Sorteos'], ['resenas', 'chat_bubble', 'Reseñas y novedades'], ['mensajes', 'campaign', 'Mensajes a clientes']] },
   { id: 'sistema', t: 'Sistema', plegable: true, items: [['configuracion', 'settings', 'Configuración'], ['errores', 'bug_report', 'Errores de la web'], ['traduccion', 'translate', 'Traducción automática'], ['administradores', 'shield', 'Administradores'], ['actividad', 'history', 'Registro de actividad'], ['ayuda', 'help', 'Ayuda']] },
 ];
 const NAV_SISTEMA = 'klendar.admin.nav.sistema';
@@ -920,7 +920,7 @@ function totalPendiente(k) {
   const tk = ATT?.tasks || {};
   return (k?.businesses_pending || 0) + (BAJAS?.pending || 0) + (CAMBIOS?.open || 0) + (PAUSAS?.length || 0)
     + (BADGES.reclamaciones || 0) + (BADGES.entidades || 0) + (BADGES.duplicados || 0)
-    + (k?.reports_open || 0) + (k?.offers_pending || 0) + (BADGES.resenas || 0) + (BADGES.mensajes || 0)
+    + (k?.reports_open || 0) + (k?.offers_pending || 0) + (BADGES.resenas || 0) + (BADGES.mensajes || 0) + (ap.media_held || 0)
     + (BADGES.sugerencias || 0) + (ap.subs_past_due || 0) + ((tk.billing || {})['charge.dispute.created'] || 0)
     + (tk.crons || []).length + (tk.agenda || []).length + (tk.leagues || []).length;
 }
@@ -980,7 +980,7 @@ async function refreshBadges(lanzar = false) {
     try { ents = (await rpc('admin_entity_applications', { p_status: 'pending', p_limit: 1, p_offset: 0 })).counts?.pending || 0; } catch { /* sin la función */ }
     let dups = 0;
     try { dups = ((await rpc('admin_duplicate_alerts', { p_limit: 200 })) || []).filter((x) => x.pending).length; } catch { /* sin la función */ }
-    BADGES = { reclamaciones: reclam, entidades: ents, duplicados: dups, negocios: (k.businesses_pending || 0) + (CAMBIOS?.open || 0) + (PAUSAS?.length || 0), publicaciones: k.offers_pending || 0, denuncias: k.reports_open || 0, mensajes: msj, resenas: textos, sugerencias: sug, errores: (WEB_ERR?.new_24h || 0) + (ATT?.tasks?.crons || []).length };
+    BADGES = { reclamaciones: reclam, entidades: ents, duplicados: dups, negocios: (k.businesses_pending || 0) + (CAMBIOS?.open || 0) + (PAUSAS?.length || 0), publicaciones: k.offers_pending || 0, denuncias: k.reports_open || 0, mensajes: msj, resenas: textos, medios: ATT?.pending?.media_held || 0, sugerencias: sug, errores: (WEB_ERR?.new_24h || 0) + (ATT?.tasks?.crons || []).length };
     BADGES.resumen = totalPendiente(k);
     Object.keys(BADGES).forEach((x) => { if (!BADGES[x]) delete BADGES[x]; });
     renderNav(currentRoute()[0]);
@@ -1387,6 +1387,17 @@ function urgenteTexto(x) {
       return [en ? `Serious report: ${tipo} for ${motivos}` : `Denuncia grave: ${tipo} por ${motivos}`,
         x.target_type && x.target_id ? `#/denuncias/${x.target_type}/${x.target_id}` : '#/denuncias', 'report'];
     }
+    case 'free_tier': return [x.level === 'over'
+      ? (en ? `Free limit reached: ${x.title}` : `Límite gratis alcanzado: ${x.title}`)
+      : (en ? `${Math.round(x.pct)} % of the free limit: ${x.title}` : `Al ${Math.round(x.pct)} % del límite gratis: ${x.title}`), '#/resumen', 'speed'];
+    case 'media': return [x.title === 'error'
+      ? (en ? 'The photo filter can’t analyse: files held back' : 'El filtro de fotos no puede analizar: archivos retenidos')
+      : (en ? 'Photos or videos held back are waiting for you' : 'Fotos o vídeos retenidos esperan tu decisión'), '#/medios', 'imagesmode'];
+    case 'autohide': {
+      const tipo = I18N.t(TIPO_DEN[x.target_type] || 'Contenido').toLowerCase();
+      return [en ? `Hidden after several reports: ${tipo}` : `Oculto por denuncias: ${tipo}`,
+        x.target_type && x.target_id ? `#/denuncias/${x.target_type}/${x.target_id}` : '#/denuncias', 'visibility_off'];
+    }
     case 'dispute': return [en ? `Stripe: payment dispute or return${x.livemode === false ? ' (test)' : ''}` : `Stripe: disputa o devolución de un cobro${x.livemode === false ? ' (pruebas)' : ''}`, '#/planes', 'gavel'];
     default: return [x.title, '#/resumen', 'warning'];
   }
@@ -1689,6 +1700,7 @@ PAGES.resumen = async (v) => {
     [en ? 'Content' : 'Contenido', [
       [k.reports_open, 'flag', pl(k.reports_open, 'denuncia abierta', 'denuncias abiertas', 'open report', 'open reports')
         + (ap.reports_grave ? (en ? ` (${ap.reports_grave} serious: illegal content or child sexual abuse)` : ` (${ap.reports_grave} ${ap.reports_grave === 1 ? 'grave' : 'graves'}: contenido ilegal o abuso infantil)`) : ''), '#/denuncias', nCal > 0 || ap.reports_grave > 0],
+      [ap.media_held, 'imagesmode', pl(ap.media_held, 'foto o vídeo retenido', 'fotos o vídeos retenidos', 'photo or video held back', 'photos or videos held back'), '#/medios'],
       [k.offers_pending, 'bolt', pl(k.offers_pending, 'publicación por moderar', 'publicaciones por moderar', 'publication to moderate', 'publications to moderate'), '#/publicaciones?moderation=pending'],
       [BADGES.resenas, 'chat_bubble', pl(BADGES.resenas, 'texto en revisión', 'textos en revisión', 'text under review', 'texts under review'), '#/resenas?tab=cola'],
       [BADGES.mensajes, 'campaign', pl(BADGES.mensajes, 'mensaje a clientes por revisar', 'mensajes a clientes por revisar', 'customer message to review', 'customer messages to review'), '#/mensajes'],
@@ -1728,6 +1740,7 @@ PAGES.resumen = async (v) => {
       ${nCal > calientes.rows.length ? `<p style="margin:6px 0 0"><a class="link" href="#/denuncias">${en ? `See all ${nCal}` : `Ver los ${nCal}`}</a></p>` : ''}
     </div>` : ''}
     ${tarjetaUrgentes(urg)}
+    ${typeof tarjetaLimitesGratis === 'function' ? tarjetaLimitesGratis(ATT) : ''}
     ${tarjetaPorVerificar(PV)}
     ${tarjetaPulso(PULSO)}
     ${GRUPOS_PEND.length ? `<div class="card"><h2>Pendiente de ti${BADGES.resumen ? ` <span class="badge pend-total" title="${en ? 'Things waiting for a decision' : 'Cosas que esperan una decisión'}">${fmtNum(BADGES.resumen)}</span>` : ''}</h2><div class="pend-grupos">

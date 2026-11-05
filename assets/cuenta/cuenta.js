@@ -1443,8 +1443,10 @@ async function preparaMedio(archivo) {
     if (!d || !d.duracion) throw new Error(t('Ese vídeo no se puede abrir. Prueba con un MP4.'));
     if (d.duracion > LIM_MEDIOS.videoSeg + 0.5) throw new Error(t(ERRORES.video_too_long));
     const { blob, limpio } = await KMedios.limpia(archivo, tipo);
-    const url = await subeAResenas(`${id}.${tipo === 'video/quicktime' ? 'mov' : 'mp4'}`, blob, tipo);
+    // Antes que el vídeo (el filtro de fotos y vídeos los mira al llegar él).
     const poster = d.portada ? await subeAResenas(`${id}-poster.jpg`, d.portada, 'image/jpeg').catch(() => null) : null;
+    if (window.KFotogramas) await KFotogramas.sube(sb, id, archivo, (nombre, b) => subeAResenas(nombre, b, 'image/jpeg'));
+    const url = await subeAResenas(`${id}.${tipo === 'video/quicktime' ? 'mov' : 'mp4'}`, blob, tipo);
     return {
       url, kind: 'video', poster_url: poster, width: d.ancho, height: d.alto,
       duration_ms: Math.round(d.duracion * 1000), limpio,

@@ -465,3 +465,18 @@ table.tbl .art-thumb, .art-celda .art-thumb { border-radius: 50%; margin: 0; fle
 #qrAlta { width: min(260px, 70vw); background: #fff; padding: 8px; border-radius: 12px; }
 #qrAlta svg { display: block; width: 100%; height: auto; }
 .tbl.pulso td:first-child { width: 100%; }
+
+/* Fotos y vídeos: la cola del filtro y los límites gratis */
+.med-fila { display: grid; grid-template-columns: minmax(0, 320px) minmax(0, 1fr); gap: 16px; align-items: start; }
+.med-grande { display: block; width: 100%; max-height: 320px; object-fit: contain; border-radius: 12px; background: var(--soft); }
+.med-fotogramas { display: flex; gap: 6px; margin-top: 6px; }
+.med-fotogramas img { width: 72px; height: 72px; object-fit: cover; border-radius: 8px; }
+.med-info .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.med-razones { display: grid; gap: 8px; margin: 12px 0; }
+.med-razones .btn { width: 100%; text-align: left; white-space: normal; }
+@media (max-width: 640px) { .med-fila { grid-template-columns: 1fr; } }
+.lim-barra { width: 34%; min-width: 80px; }
+.lim-fondo { display: block; height: 8px; border-radius: 4px; background: var(--soft); overflow: hidden; }
+.lim-lleno { display: block; height: 100%; border-radius: 4px; background: #5c9e6f; }
+.lim-lleno.warn { background: #e0a030; }
+.lim-lleno.bad { background: #c0392b; }

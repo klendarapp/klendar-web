@@ -1220,3 +1220,11 @@ body[data-cabecera] nav.tabbar:not(#tabbar) { display: none; }
 .sug > .ms { flex: none; }
 .sug small { color: var(--ink-2); font-weight: 500; }
 .sug-caja { border: 1px solid var(--glass-border); border-radius: 14px; padding: 10px 12px 4px; margin: 0 0 14px; }
+
+/* «Lo estamos revisando» (assets/retenido.js) */
+.retenido { max-width: 680px; margin: 0 0 14px; padding: 12px 16px; border-radius: 14px; border: 1px solid rgba(127,127,127,.3); }
+.retenido-bloque + .retenido-bloque { margin-top: 12px; }
+.retenido p { margin: 4px 0 8px; font-size: 14px; }
+.retenido-fotos { display: flex; flex-wrap: wrap; gap: 6px; }
+.retenido-fotos img, .retenido-video { width: 64px; height: 64px; object-fit: cover; border-radius: 10px; display: grid; place-items: center; background: rgba(127,127,127,.15); }
+.retenido-video::after { content: ''; border-style: solid; border-width: 9px 0 9px 15px; border-color: transparent transparent transparent rgba(127,127,127,.8); }

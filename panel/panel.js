@@ -3037,7 +3037,12 @@ async function offerForm(v, id, kindDefault, desde = null) {
         // Como en la app: vídeos de menos de 45 segundos.
         if (video && (await duracion(file)) > 45.5) { toast('Ese vídeo dura más de 45 segundos. Recórtalo y vuelve a subirlo.', true); continue; }
         const ext = video ? 'mp4' : (file.name.split('.').pop() || 'jpg').toLowerCase();
-        const path = `${BIZ.id}/${crypto.randomUUID()}.${ext}`;
+        const base = `${BIZ.id}/${crypto.randomUUID()}`;
+        // El filtro de fotos y vídeos mira unos fotogramas: primero ellos, luego el vídeo.
+        if (video && window.KFotogramas) {
+          await KFotogramas.sube(sb, base, file, (ruta, blob) => sb.storage.from(BUCKET).upload(ruta, blob, { contentType: 'image/jpeg' }));
+        }
+        const path = `${base}.${ext}`;
         const { error } = await sb.storage.from(BUCKET).upload(path, file, { contentType: file.type });
         if (error) { toast(friendly(error.message), true); continue; }
         images.push(sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl);
