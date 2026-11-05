@@ -875,7 +875,7 @@ async function boot() {
     // Y sin nombre (entró con un código por correo): «¿Cómo te llamas?».
     if (!c.terms_accepted_at || c.terms_outdated === true
         || (c.has_display_name === false && !c.name_asked_at)) {
-      location.href = `/app/?volver=${encodeURIComponent(rutaDeVuelta())}#/ultimo-paso`;
+      location.href = `/cuenta/ultimo-paso?volver=${encodeURIComponent(rutaDeVuelta())}`;
       return;
     }
   } catch { /* sin red: no se bloquea */ }
@@ -922,7 +922,7 @@ function showLogin() {
   // Desde «Dar de alta un negocio» (klendar.app/alta): a «Crea tu cuenta de
   // negocio» (quien ya la tiene, «¿Ya tienes cuenta? Entra»).
   const alta = new URLSearchParams(location.search).has('alta');
-  location.replace(`/app/?${idioma}destino=${encodeURIComponent(aqui)}#/${alta ? 'registro?para=negocio' : 'entrar'}`);
+  location.replace(`/cuenta/${alta ? 'registro' : 'entrar'}?${idioma}destino=${encodeURIComponent(aqui)}${alta ? '&para=negocio' : ''}`);
 }
 async function noBusiness() {
   $('#nav').innerHTML = '';
@@ -986,7 +986,7 @@ sb.auth.onAuthStateChange((ev) => {
   if (ev === 'SIGNED_OUT' && !saliendo) showLogin();
   // Un enlace de «he olvidado la contraseña» antiguo que traiga aquí: la
   // contraseña nueva se pone en «Tu cuenta» y se vuelve al panel.
-  if (ev === 'PASSWORD_RECOVERY') location.href = '/app/?destino=%2Fpanel%2F#/nueva-clave';
+  if (ev === 'PASSWORD_RECOVERY') location.href = '/cuenta/nueva-clave?destino=%2Fpanel%2F';
 });
 $('#menuBtn').onclick = () => abreMenu(!$('#side').classList.contains('open'));
 $('#menuCerrar').onclick = () => abreMenu(false);

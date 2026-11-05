@@ -2355,7 +2355,7 @@ def textos(D, resaltar=False):
   <li>Cualquiera puede denunciar una pregunta o una respuesta; si incumple estas normas o la ley la retiramos y avisamos a quien la escribió, con el motivo y cómo recurrir.</li>
 </ul>
 <h2>Cómo denunciar</h2>
-<p>Cualquiera puede denunciar, tenga cuenta o no. En cada negocio, publicación, reseña o novedad, y en cada foto o vídeo de una reseña, hay un enlace "Denunciar", y en el pie de la web, "<a href="/app/#/denunciar">Denunciar contenido ilegal</a>". Un negocio también puede denunciar una petición de «Grupos y empresas» que reciba (por ejemplo, si la nota trae publicidad o insultos). Indica qué contenido es, el motivo y por qué crees que es ilegal o incumple estas normas. Sin cuenta te pediremos tu nombre y tu correo (opcionales si se trata de abuso sexual infantil) y que declares que actúas de buena fe. Te confirmaremos que la hemos recibido y te diremos qué hemos decidido y por qué (en la app o por correo). Si no estás de acuerdo, puedes pedirnos que lo revisemos en un plazo de 6 meses. Quien publicó el contenido no sabrá quién lo denunció. Las decisiones las toma una persona, no un sistema automático.</p>
+<p>Cualquiera puede denunciar, tenga cuenta o no. En cada negocio, publicación, reseña o novedad, y en cada foto o vídeo de una reseña, hay un enlace "Denunciar", y en el pie de la web, "<a href="/cuenta/denunciar">Denunciar contenido ilegal</a>". Un negocio también puede denunciar una petición de «Grupos y empresas» que reciba (por ejemplo, si la nota trae publicidad o insultos). Indica qué contenido es, el motivo y por qué crees que es ilegal o incumple estas normas. Sin cuenta te pediremos tu nombre y tu correo (opcionales si se trata de abuso sexual infantil) y que declares que actúas de buena fe. Te confirmaremos que la hemos recibido y te diremos qué hemos decidido y por qué (en la app o por correo). Si no estás de acuerdo, puedes pedirnos que lo revisemos en un plazo de 6 meses. Quien publicó el contenido no sabrá quién lo denunció. Las decisiones las toma una persona, no un sistema automático.</p>
 <h2>Bloquear a alguien</h2>
 <p>Puedes bloquear a una persona desde su reseña, desde tu lista de amigos o desde una invitación suya. Dejas de ver sus reseñas, dejáis de ser amigos y no puede invitarte ni volver a añadirte. No se le avisa. Lo deshaces en Cuenta → Ajustes → Privacidad y datos → «Personas bloqueadas». Bloquear no retira nada para los demás: si el contenido incumple estas normas, denúncialo.</p>
 <h2>Cómo moderamos</h2>
@@ -2416,7 +2416,7 @@ def textos(D, resaltar=False):
   <li>Anyone can report a question or an answer; if it breaks these guidelines or the law, we take it down and tell whoever wrote it, with the reason and how to appeal.</li>
 </ul>
 <h2>How to report</h2>
-<p>Anyone can report, with or without an account. Every business, publication, review and news post, and every photo or video in a review, has a "Report" link, and the website footer has "<a href="/app/?lang=en#/denunciar">Report illegal content</a>". A business can also report a “Groups and companies” request it receives (for example, if the note contains advertising or insults). Tell us which content it is, the reason and why you believe it is illegal or breaks these guidelines. Without an account, we'll ask for your name and email (optional if it concerns child sexual abuse) and for you to declare that you are acting in good faith. We'll confirm we've received your report and tell you what we've decided and why (in the app or by email). If you disagree, you can ask us to review it within 6 months. The person who posted the content won't know who reported it. Decisions are made by a person, not by an automated system.</p>
+<p>Anyone can report, with or without an account. Every business, publication, review and news post, and every photo or video in a review, has a "Report" link, and the website footer has "<a href="/cuenta/denunciar?lang=en">Report illegal content</a>". A business can also report a “Groups and companies” request it receives (for example, if the note contains advertising or insults). Tell us which content it is, the reason and why you believe it is illegal or breaks these guidelines. Without an account, we'll ask for your name and email (optional if it concerns child sexual abuse) and for you to declare that you are acting in good faith. We'll confirm we've received your report and tell you what we've decided and why (in the app or by email). If you disagree, you can ask us to review it within 6 months. The person who posted the content won't know who reported it. Decisions are made by a person, not by an automated system.</p>
 <h2>Blocking someone</h2>
 <p>You can block someone from their review, from your friends list or from an invitation they sent you. You stop seeing their reviews, you are no longer friends and they can't invite you or add you again. They aren't told. You can undo it in Account → Settings → Privacy and data → “Blocked people”. Blocking doesn't remove anything for anyone else: if the content breaks these guidelines, report it.</p>
 <h2>How we moderate</h2>
@@ -2434,7 +2434,7 @@ def textos(D, resaltar=False):
     ES['eliminar-cuenta'] = ('Eliminar tu cuenta', 'Cómo eliminar tu cuenta de Klendar y qué datos se borran.', f'''
 <h2>Desde la app o desde la web (recomendado)</h2>
 <ol>
-  <li>Abre Klendar, o <a href="/app/">«Tu cuenta»</a> en klendar.app, y entra con tu cuenta.</li>
+  <li>Abre Klendar, o <a href="/cuenta/">«Tu cuenta»</a> en klendar.app, y entra con tu cuenta.</li>
   <li>Ve a <strong>Cuenta</strong> → <strong>Ajustes</strong> → <strong>Eliminar mi cuenta</strong> (al final de la pantalla).</li>
   <li>Confirma que eres tú, con tu contraseña actual o con un código que te mandamos al correo, y confirma la eliminación. La cuenta se elimina al momento.</li>
 </ol>
@@ -2468,7 +2468,7 @@ def textos(D, resaltar=False):
     EN['eliminar-cuenta'] = ('delete-account', 'Delete your account', 'How to delete your Klendar account and what data is erased.', f'''
 <h2>From the app or the website (recommended)</h2>
 <ol>
-  <li>Open Klendar, or <a href="/app/?lang=en">“Your account”</a> on klendar.app, and log in.</li>
+  <li>Open Klendar, or <a href="/cuenta/?lang=en">“Your account”</a> on klendar.app, and log in.</li>
   <li>Go to <strong>Account</strong> → <strong>Settings</strong> → <strong>Delete my account</strong> (at the bottom of the screen).</li>
   <li>Confirm it's you, with your current password or with a code we email you, and confirm the deletion. The account is deleted immediately.</li>
 </ol>

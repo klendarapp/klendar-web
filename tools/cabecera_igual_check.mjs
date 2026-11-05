@@ -148,7 +148,7 @@ const PAGINAS = [
   ['/b/cafe-central-lab-madrid', null], ['/agenda/madrid/', 'explorar'], ['/coleccion/finde/', 'explorar'],
   ['/para-negocios/', ''], ['/precios/', ''], ['/preguntas/', ''], ['/prensa/', ''], ['/aviso-legal/', ''], ['/soporte/', ''],
   ['/en/', ''], ['/en/discover/', 'descubre'], ['/en/explore/', 'explorar'], ['/en/faq/', ''],
-  ['/app/', 'cuenta'], ['/panel/#/resumen', 'cuenta'],
+  ['/cuenta/', 'cuenta'], ['/panel/#/resumen', 'cuenta'],
 ];
 
 const NAVS = (process.env.NAVS || 'chromium,webkit').split(',');
@@ -179,7 +179,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]].filter
         ok(f.items.join(' · ') === quiere, `${t} ${ruta}: ${f.items.join(' · ')}`);
         ok(f.alto === 65, `${t} ${ruta}: 65 px de alto (${f.alto})`);
         if (activa !== null) ok(f.activa === activa, `${t} ${ruta}: pestaña activa «${activa || 'ninguna'}» (${f.activa || 'ninguna'})`);
-        if (!conSesion && movil && ['/', '/descubre/', '/app/'].includes(ruta)) await page.screenshot({ path: `${OUT}/igual-${nombre}-${forma}-${ruta.replace(/\W+/g, '_')}.png`, clip: { x: 0, y: 0, width: vp.width, height: 70 } });
+        if (!conSesion && movil && ['/', '/descubre/', '/cuenta/'].includes(ruta)) await page.screenshot({ path: `${OUT}/igual-${nombre}-${forma}-${ruta.replace(/\W+/g, '_')}.png`, clip: { x: 0, y: 0, width: vp.width, height: 70 } });
       }
       // Una ficha se queda con la pestaña de la que vienes (como la app).
       page = await ve(page, `${BASE}/descubre/`);
@@ -209,7 +209,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]].filter
       ok(LADO(l) === 'en' ? enIngles : !enIngles, `${t} pública: el contenido en ${LADO(l)}`);
       ok(JSON.stringify(f.pestanas) === JSON.stringify(ARB[LADO(l)]), `${t} pública: la cabecera en el idioma de la página (${f.pestanas.join(', ')})`);
       ok(f.marcado === l && f.cod === l.toUpperCase(), `${t} pública: el selector marca «${l}» (${f.marcado}, ${f.cod})`);
-      page = await ve(page, `${BASE}/app/`);
+      page = await ve(page, `${BASE}/cuenta/`);
       const a = await firma(page);
       ok(a.lang === l, `${t} «Tu cuenta» en ${l} (${a.lang})`);
       ok(!ARB[l] || JSON.stringify(a.pestanas) === JSON.stringify(ARB[l]), `${t} «Tu cuenta»: las pestañas como en la app (${a.pestanas.join(', ')})`);
@@ -249,14 +249,14 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]].filter
         const meta = await page.evaluate((k) => JSON.parse(localStorage.getItem(k) || '{}')?.user?.user_metadata?.locale, `sb-${REF}-auth-token`);
         ok(meta === 'de', `${t} con sesión, la sesión guardada lo sabe (${meta})`);
       }
-      page = await ve(page, `${BASE}/app/`);
+      page = await ve(page, `${BASE}/cuenta/`);
       ok((await firma(page)).lang === 'de', `${t} y «Tu cuenta» en alemán`);
       // En «Tu cuenta», cambiar a euskera se queda en la misma pantalla.
-      page = await ve(page, `${BASE}/app/#/ajustes`);
-      const antes = new URL(page.url()).hash;
+      page = await ve(page, `${BASE}/cuenta/ajustes`);
+      const antes = new URL(page.url()).pathname;
       await elige('eu');
       const f2 = await firma(page);
-      ok(f2.lang === 'eu' && new URL(page.url()).hash === antes, `${t} en «Tu cuenta», euskera en la misma pantalla (${f2.lang} ${antes} → ${new URL(page.url()).hash})`);
+      ok(f2.lang === 'eu' && new URL(page.url()).pathname === antes, `${t} en «Tu cuenta», euskera en la misma pantalla (${f2.lang} ${antes} → ${new URL(page.url()).pathname})`);
       page = await ve(page, `${BASE}/en/explore/`);
       await page.waitForURL(/\/explorar\//, { timeout: 8000 }).catch(() => {});
       ok(new URL(page.url()).pathname === '/explorar/', `${t} euskera y una página inglesa: a la española (${new URL(page.url()).pathname})`);
@@ -282,7 +282,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]].filter
       let fit = null;
       for (let i = 0; i < 3 && !fit; i++) {
         try {
-          page = await ve(page, `${BASE}/app/`);
+          page = await ve(page, `${BASE}/cuenta/`);
           await page.waitForFunction(() => document.documentElement.lang === 'it', null, { timeout: 8000 }).catch(() => {});
           fit = await firma(page);
         } catch { caida.add(page); }

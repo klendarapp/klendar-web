@@ -10,8 +10,8 @@
 //     zona, las palabras, «Añadir palabra» (`add_alert_word`), quitar
 //     (`remove_alert_word`), una palabra corta no se manda, y el interruptor
 //     (`notify_word_alerts`).
-//  3. Tu cuenta, «Avísame si…» (#/alertas): la fila «Por palabras».
-//  4. Tu cuenta, #/avisame-palabra?palabra=karaoke (desde Explorar, con la
+//  3. Tu cuenta, «Avísame si…» (/cuenta/alertas): la fila «Por palabras».
+//  4. Tu cuenta, /cuenta/avisame-palabra?palabra=karaoke (desde Explorar, con la
 //     marca): la añade sin preguntar y va a Ajustes → Notificaciones.
 //  5. Explorar (las Functions de verdad): buscar «karaoke» enseña «Avísame si
 //     hay algo de «karaoke»» (con resultados y sin ellos); sin sesión lleva a
@@ -178,7 +178,7 @@ async function panel(nav, nombre, t, vp) {
 async function cuenta(nav, nombre, t, vp) {
   const { ctx, p, estado, errores } = await contexto(nav, vp);
   // 2. Ajustes → Notificaciones
-  await p.goto(`${BASE}/app/#/ajustes/notificaciones`);
+  await p.goto(`${BASE}/cuenta/ajustes/notificaciones`);
   await p.waitForSelector('#palabras-mas .palabras', { timeout: 15000 });
   let txt = await p.locator('#palabras-mas').innerText();
   ok(/a 1 km encaje/.test(txt) && /sushi/.test(txt) && /1 de 10/.test(txt), `${nombre}/${t} ajustes: zona, «sushi» y «1 de 10»`);
@@ -212,18 +212,18 @@ async function cuenta(nav, nombre, t, vp) {
   const pr = llamada(estado, 'update_notification_preferences').slice(-1)[0]?.p || {};
   ok(pr.notify_word_alerts === false && await p.locator('#palabras-mas').isHidden(), `${nombre}/${t} ajustes: apagar «Avísame si…» (${JSON.stringify(pr.notify_word_alerts)})`);
 
-  // 3. #/alertas
-  await p.goto(`${BASE}/app/#/alertas`);
-  await p.waitForSelector('a[href="#/ajustes/notificaciones"]', { timeout: 15000 });
-  ok(/Por palabras/.test(await p.locator('#view, main').first().innerText()) && /karaoke/.test(await p.locator('a[href="#/ajustes/notificaciones"]').innerText()),
+  // 3. /cuenta/alertas
+  await p.goto(`${BASE}/cuenta/alertas`);
+  await p.waitForSelector('a[href="/cuenta/ajustes/notificaciones"]', { timeout: 15000 });
+  ok(/Por palabras/.test(await p.locator('#view, main').first().innerText()) && /karaoke/.test(await p.locator('a[href="/cuenta/ajustes/notificaciones"]').innerText()),
     `${nombre}/${t} «Avísame si…»: la fila «Por palabras» con las palabras`);
 
   // 4. Desde Explorar, con la marca
   await p.evaluate(() => sessionStorage.setItem('klendar.intencion', JSON.stringify({ r: 'avisame-palabra?palabra=jazz', t: Date.now() })));
-  await p.goto(`${BASE}/app/#/avisame-palabra?palabra=jazz`);
-  await p.waitForFunction(() => location.hash === '#/ajustes/notificaciones', null, { timeout: 10000 }).catch(() => {});
+  await p.goto(`${BASE}/cuenta/avisame-palabra?palabra=jazz`);
+  await p.waitForFunction(() => location.pathname === '/cuenta/ajustes/notificaciones', null, { timeout: 10000 }).catch(() => {});
   ok(llamada(estado, 'add_alert_word').some((b) => b.p_word === 'jazz') && /ajustes\/notificaciones/.test(p.url()),
-    `${nombre}/${t} #/avisame-palabra: la añade y va a Ajustes → Notificaciones`);
+    `${nombre}/${t} /cuenta/avisame-palabra: la añade y va a Ajustes → Notificaciones`);
   ok(errores.length === 0, `${nombre}/${t} cuenta: sin errores (${errores.join(' | ')})`);
   await ctx.close();
 }
@@ -269,7 +269,7 @@ async function publico(nav, nombre, t, vp, estado) {
   await p.goto(`${PUB}/explorar/?q=karaoke`);
   let caja = p.locator('.avisame-palabra');
   ok(await caja.count() === 1 && /Avísame si hay algo de «karaoke»/.test(await caja.innerText()), `${nombre}/${t} explorar sin resultados: «Avísame si hay algo de «karaoke»»`);
-  ok((await caja.locator('a').getAttribute('href')) === '/app/#/avisame-palabra?palabra=karaoke', `${nombre}/${t} explorar: sin sesión, a Tu cuenta`);
+  ok((await caja.locator('a').getAttribute('href')) === '/cuenta/avisame-palabra?palabra=karaoke', `${nombre}/${t} explorar: sin sesión, a Tu cuenta`);
   const ancho = await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   ok(ancho <= 0, `${nombre}/${t} explorar: sin desplazamiento horizontal`);
   await p.screenshot({ path: `${OUT}/explorar-avisame-vacio-${nombre}-${t}.png`, fullPage: true });
@@ -293,7 +293,7 @@ async function publico(nav, nombre, t, vp, estado) {
   await p.goto(`${PUB}/explorar/?q=karaoke`);
   await p.waitForFunction(() => document.querySelector('.avisame-palabra')?.classList.contains('on'), null, { timeout: 8000 }).catch(() => {});
   ok(/Te avisaremos de «karaoke»/.test(await p.locator('.avisame-palabra').innerText())
-    && /#\/ajustes\/notificaciones$/.test(await p.locator('.avisame-palabra a').getAttribute('href')),
+    && /\/cuenta\/ajustes\/notificaciones$/.test(await p.locator('.avisame-palabra a').getAttribute('href')),
   `${nombre}/${t} explorar: si ya la tienes, lo dice y lleva a tus palabras`);
   ok(errores.length === 0, `${nombre}/${t} explorar: sin errores (${errores.join(' | ')})`);
   await ctx.close();

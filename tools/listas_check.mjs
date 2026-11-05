@@ -227,7 +227,7 @@ async function panelAsistentes(nav, n, t, vp) {
 const CUENTA = (x = {}) => ({ my_consents: { terms_accepted_at: '2026-01-01T00:00:00Z', terms_outdated: false, has_display_name: true }, my_businesses: [], ...x });
 async function cuentaAvisos(nav, n, t, vp) {
   const { ctx, p, estado, errores } = await contexto(nav, vp, CUENTA({ mark_notifications_read: null }));
-  await p.goto(`${BASE}/app/#/notificaciones`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/cuenta/notificaciones`, { waitUntil: 'networkidle' });
   await p.waitForSelector('[data-ver-mas="avisos"]');
   ok(await p.locator('#avisos .aviso').count() === 30, `${n}/${t} notificaciones: las 30 primeras`);
   await p.click('[data-ver-mas="avisos"]');
@@ -244,7 +244,7 @@ async function cuentaCodigos(nav, n, t, vp) {
     my_redemptions: (a) => CODIGOS.slice(a.p_offset || 0, (a.p_offset || 0) + (a.p_limit || 50)),
     my_birthday_gifts: [], my_loyalty_gifts: [], my_stamp_rewards: [], my_passes: [], my_queue_turns: [], my_spot_gifts: [],
   }));
-  await p.goto(`${BASE}/app/#/codigos`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/cuenta/codigos`, { waitUntil: 'networkidle' });
   await p.waitForSelector('[data-ver-mas="codigos"]');
   const antes = await p.locator('#codigosPasados > *').count();
   await p.click('[data-ver-mas="codigos"]');

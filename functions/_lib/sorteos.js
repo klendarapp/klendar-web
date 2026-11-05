@@ -6,7 +6,7 @@
 //
 // Las páginas van en caché y no saben quién mira: se pinta lo de todo el
 // mundo (el botón «Participar», que sin sesión lleva a «Tu cuenta»,
-// `#/sorteo/<id>`). Con una sesión guardada en este navegador,
+// `/cuenta/sorteo/<id>`). Con una sesión guardada en este navegador,
 // /assets/sorteo.js pide el sorteo con ella y pone lo tuyo («Participas · tu
 // número es el 37», «¡Has ganado!»…), participa, lo deja, acepta o renuncia
 // sin salir de la página, y en la lista marca en los que participas y pinta
@@ -17,6 +17,7 @@
 // negocio (`log_ref_visit`, con el id del negocio: ver `desdeHistorias` en
 // public.js).
 
+import { enlaceCuenta } from './cuenta.js';
 import { esc, html, isUuid, rows, rpc, rpcAll, supabasePublic } from './page.js';
 import KS from '../../assets/textos-sorteos.js';
 import KZ from '../../assets/zona.js';
@@ -29,7 +30,7 @@ import { GRUPOS_CSS } from './grupos.js';
 export const sorteosBase = (lang) => (lang === 'en' ? '/en/giveaways' : '/sorteos');
 export const sorteoPath = (lang, id) => `${lang === 'en' ? '/en/giveaway' : '/sorteo'}/${id}`;
 export const basesPath = (lang, id) => `${sorteoPath(lang, id)}/${lang === 'en' ? 'rules' : 'bases'}`;
-const cuentaBase = (lang) => (lang === 'en' ? '/app/?lang=en' : '/app/');
+const cuentaBase = enlaceCuenta;
 
 // Una papeleta (confirmation_number de Material Icons, Apache 2.0).
 const SVG_SORTEO = 'M22 10V6c0-1.11-.9-2-2-2H4c-1.1 0-1.99.89-1.99 2v4c1.1 0 1.99.9 1.99 2s-.89 2-2 2v4c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2v-4c-1.1 0-2-.9-2-2s.9-2 2-2zm-2-1.46c-1.19.69-2 1.99-2 3.46s.81 2.77 2 3.46V18H4v-2.54c1.19-.69 2-1.99 2-3.46 0-1.48-.8-2.77-1.99-3.46L4 6h16v2.54zM11 15h2v2h-2zm0-4h2v2h-2zm0-4h2v2h-2z';
@@ -44,7 +45,7 @@ const zonaDe = (g) => KZ.zona(g?.business?.time_zone || KZ.porCoordenadas(g?.bus
 const sorteoScript = (lang) => {
   const sp = supabasePublic();
   return `<script src="/assets/textos-sorteos.js?v=5" defer></script>
-<script src="/assets/sorteo.js?v=4" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}" data-lang="${lang === 'en' ? 'en' : 'es'}"></script>`;
+<script src="/assets/sorteo.js?v=20261105cuenta" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}" data-lang="${lang === 'en' ? 'en' : 'es'}"></script>`;
 };
 
 // ── El interruptor ────────────────────────────────────────────────────────
@@ -172,7 +173,7 @@ export async function sorteosPage(url, lang) {
         <span class="vacio-ic" aria-hidden="true">${icSorteo(30)}</span>
         <h2>${esc(S.segMine)}</h2>
         <p>${esc(S.loginMine)}</p>
-        <div class="vacio-botones"><a class="pill accent" href="${esc(`${cuentaBase(lang)}#/entrar?siguiente=sorteos`)}">${esc(S.login)}</a>
+        <div class="vacio-botones"><a class="pill accent" href="${esc(`${cuentaBase(lang, 'entrar?siguiente=sorteos')}`)}">${esc(S.login)}</a>
           <a class="pill" href="${esc(link({ mine: false }))}">${esc(S.seeNear)}</a></div>
       </section></div>`;
   } else if (lista.length) {
@@ -239,7 +240,7 @@ export function accionPublica(g, lang) {
   // El botón principal es siempre el mismo elemento (/assets/barra.js lo
   // copia abajo en el móvil): sin él, oculto.
   return `<div class="sorteo-estado" id="sorteo-estado"${estado ? '' : ' hidden'}>${estado}</div>
-    <a class="pill accent big" id="sorteo-boton" data-sorteo-entrar href="${esc(`${cuentaBase(lang)}#/sorteo/${g.id}`)}" rel="nofollow"${estado ? ' hidden' : ''}>${esc(g.requires_favorite ? S.enterFav : S.enter)}</a>
+    <a class="pill accent big" id="sorteo-boton" data-sorteo-entrar href="${esc(`${cuentaBase(lang, `sorteo/${g.id}`)}`)}" rel="nofollow"${estado ? ' hidden' : ''}>${esc(g.requires_favorite ? S.enterFav : S.enter)}</a>
     <div class="sorteo-extra" id="sorteo-extra">${estado ? '' : `<p class="note">${esc(S.free)}</p>`}</div>`;
 }
 
@@ -265,7 +266,7 @@ export async function sorteoPage(rawId, url, lang) {
     g.requires_favorite ? S.requirement(b.name || '') : '',
     g.adults_only ? S.adults : '',
   ].filter(Boolean);
-  const denunciar = `${cuentaBase(lang)}#/denunciar/business/${encodeURIComponent(b.id || '')}?detalle=${encodeURIComponent(S.reportDetail(g.prize))}`;
+  const denunciar = `${cuentaBase(lang, `denunciar/business/${encodeURIComponent(b.id || '')}?detalle=${encodeURIComponent(S.reportDetail(g.prize))}`)}`;
   const drawn = g.status === 'drawn';
   const verificable = `<section class="sorteo-ver" aria-labelledby="verT">
       <h2 id="verT">${esc(S.verTitle)}</h2>

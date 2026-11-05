@@ -8,7 +8,7 @@
 //       Explorar sin el acceso a «Sorteos»; el sitemap de negocios sin
 //       sorteos;
 //     · encendido: /sorteos/ es la lista y Explorar tiene el acceso.
-//  2. «Tu cuenta»: apagado, #/sorteos y #/sorteo/<id> con el mismo vacío; la
+//  2. «Tu cuenta»: apagado, #/sorteos y /cuenta/sorteo/<id> con el mismo vacío; la
 //     bandeja pide sin los avisos de sorteos (`kind=neq.giveaway`) y los
 //     ajustes de notificaciones no tienen «Sorteos»; encendido, sí.
 //  3. Panel: apagado, #/sorteos dice que no están disponibles con «Volver al
@@ -114,19 +114,19 @@ const CUENTA = {
 };
 async function cuenta(nav, nombre, t, vp) {
   let { ctx, p, estado, errores } = await contexto(nav, vp, OFF, CUENTA);
-  await p.goto(`${BASE}/app/#/sorteos`);
+  await p.goto(`${BASE}/cuenta/sorteos`);
   await p.waitForFunction(() => /Los sorteos no están disponibles/.test(document.querySelector('#view')?.innerText || ''));
   let txt = await vista(p);
   ok(/Por ahora no hay sorteos en Klendar/.test(txt) && await p.locator('#view a[href="/descubre/"]').count() === 1, `${nombre}/${t} cuenta apagado: #/sorteos, vacío con «Ir a Descubre»`);
   ok(await sinScroll(p), `${nombre}/${t} cuenta apagado: sin desplazamiento horizontal`);
   await p.screenshot({ path: `${OUT}/cuenta-sorteos-apagados-${nombre}-${t}.png`, fullPage: true });
-  await p.goto(`${BASE}/app/#/sorteo/${GID}`);
+  await p.goto(`${BASE}/cuenta/sorteo/${GID}`);
   await p.waitForFunction(() => /Los sorteos no están disponibles/.test(document.querySelector('#view')?.innerText || ''));
-  ok(!estado.llamadas.some(([f]) => f === 'giveaway_enter' || f === 'giveaway_detail'), `${nombre}/${t} cuenta apagado: #/sorteo/<id> no pide el sorteo ni participa`);
-  await p.goto(`${BASE}/app/#/notificaciones`);
+  ok(!estado.llamadas.some(([f]) => f === 'giveaway_enter' || f === 'giveaway_detail'), `${nombre}/${t} cuenta apagado: /cuenta/sorteo/<id> no pide el sorteo ni participa`);
+  await p.goto(`${BASE}/cuenta/notificaciones`);
   await p.waitForTimeout(1200);
   ok(estado.avisos.length > 0 && estado.avisos.every((q) => /kind=neq\.giveaway/.test(q)), `${nombre}/${t} cuenta apagado: la bandeja sin avisos de sorteos (${estado.avisos.join(' ; ')})`);
-  await p.goto(`${BASE}/app/#/ajustes/notificaciones`);
+  await p.goto(`${BASE}/cuenta/ajustes/notificaciones`);
   await p.waitForFunction(() => /Grupos y empresas/.test(document.querySelector('#view')?.innerText || ''));
   txt = await vista(p);
   ok(!/Resultados de los sorteos/.test(txt), `${nombre}/${t} cuenta apagado: ajustes sin «Sorteos»`);
@@ -134,13 +134,13 @@ async function cuenta(nav, nombre, t, vp) {
   await ctx.close();
 
   ({ ctx, p, estado, errores } = await contexto(nav, vp, ON, CUENTA));
-  await p.goto(`${BASE}/app/#/ajustes/notificaciones`);
+  await p.goto(`${BASE}/cuenta/ajustes/notificaciones`);
   await p.waitForFunction(() => /Grupos y empresas/.test(document.querySelector('#view')?.innerText || ''));
   ok(/Resultados de los sorteos/.test(await vista(p)), `${nombre}/${t} cuenta encendido: ajustes con «Sorteos»`);
-  await p.goto(`${BASE}/app/#/notificaciones`);
+  await p.goto(`${BASE}/cuenta/notificaciones`);
   await p.waitForTimeout(1200);
   ok(estado.avisos.length > 0 && !estado.avisos.some((q) => /neq\.giveaway/.test(q)), `${nombre}/${t} cuenta encendido: la bandeja entera`);
-  await p.goto(`${BASE}/app/#/sorteos`);
+  await p.goto(`${BASE}/cuenta/sorteos`);
   await p.waitForURL(/\/sorteos\/\?mios=1/);
   ok(true, `${nombre}/${t} cuenta encendido: #/sorteos lleva a «En los que participas»`);
   ok(errores.length === 0, `${nombre}/${t} cuenta encendido: sin errores de JavaScript (${errores.join(' | ')})`);

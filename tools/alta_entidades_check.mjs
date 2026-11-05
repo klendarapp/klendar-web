@@ -224,7 +224,7 @@ async function turnstile(nav, nombre, t, vp) {
       return route.fulfill({ status: 200, contentType: 'application/json', body: 'null' });
     });
     const p = await ctx.newPage();
-    await p.goto(`${BASE}/app/#/registro`, { waitUntil: 'networkidle' });
+    await p.goto(`${BASE}/cuenta/registro`, { waitUntil: 'networkidle' });
     await p.fill('#f [name=name]', 'Prueba Turnstile');
     await p.fill('#f [name=email]', 'turnstile.prueba@example.com');
     await p.fill('#f [name=password]', 'Prueba-Turnstile-2026');

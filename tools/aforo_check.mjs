@@ -337,7 +337,7 @@ async function cuentaAjustes(nav, nombre, t, vp) {
   const { ctx, p, estado, errores } = await contextoPanel(nav, vp, { extra: {
     my_notification_preferences: { notify_favorites: true, notify_room: true }, my_businesses: [], update_notification_preferences: null,
   } });
-  await p.goto(`${BASE}/app/#/ajustes/notificaciones`);
+  await p.goto(`${BASE}/cuenta/ajustes/notificaciones`);
   await p.waitForSelector('input[name=sitio]');
   const v = await p.locator('#view').innerText();
   ok(/Cuando haya sitio/.test(v) && /Llega aunque estés en horas de silencio, porque lo has pedido tú\./.test(v) && await p.locator('input[name=sitio]').isChecked(),

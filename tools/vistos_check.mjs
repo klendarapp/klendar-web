@@ -169,8 +169,8 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     // la separación lleva a Tu cuenta › Lo que ves, sin sesión; apagado, ni
     // se reordena ni se guarda nada y lo guardado se borra.
     const enlace = await page.$eval('.feed-sep .vs-c a', (a) => ({ txt: a.textContent, href: a.getAttribute('href') }));
-    ok(enlace.txt === 'Cambiar esto' && /\/app\/#\/ajustes\/lo-que-ves$/.test(enlace.href), `${t} la separación enlaza a Ajustes › Lo que ves`);
-    await ir('/app/#/ajustes/lo-que-ves');
+    ok(enlace.txt === 'Cambiar esto' && /\/cuenta\/ajustes\/lo-que-ves(\?|$)/.test(enlace.href), `${t} la separación enlaza a Ajustes › Lo que ves`);
+    await ir('/cuenta/ajustes/lo-que-ves');
     await page.waitForSelector('#vistos');
     ok(await page.$eval('#vistos', (c) => c.checked), `${t} sin sesión: «Poner al final lo que ya he visto», encendido de serie`);
     ok(/Poner al final lo que ya he visto/.test(await page.textContent('main, body')), `${t} el texto del interruptor`);
@@ -180,7 +180,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     await page.waitForTimeout(2200);
     ok(!(await page.$('.feed-sep')) && JSON.stringify(await ids('#feed > .tj')) === JSON.stringify(base), `${t} apagado: el orden de la base, sin separación`);
     ok(await page.evaluate(() => localStorage.getItem('klendar.vistos')) === 'off', `${t} apagado: no se guarda nada aunque mires 2 s`);
-    await ir('/app/#/ajustes/lo-que-ves');
+    await ir('/cuenta/ajustes/lo-que-ves');
     await page.waitForSelector('#vistos');
     ok(!(await page.$eval('#vistos', (c) => c.checked)), `${t} se recuerda apagado`);
     await page.click('#vistos');

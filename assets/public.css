@@ -556,7 +556,7 @@ body.con-hoja { overflow: hidden; }
 @media (max-width: 760px) { .am-toast { bottom: calc(84px + env(safe-area-inset-bottom)); } }
 
 /* ══ Las cuatro pestañas con el mismo aspecto (2026-10-02) ═══════════════
-   Descubre, Explorar, Planes y Cuenta («Tu cuenta», app/app.css): el mismo
+   Descubre, Explorar, Planes y Cuenta («Tu cuenta», assets/cuenta/app.css): el mismo
    título de pantalla (el de la app: grande, Sora 800), a la misma altura y
    con la misma entradilla. */
 .pub :is(.cab-pagina, .feed-lado) h1 { font-size: clamp(26px, 4vw, 32px); line-height: 1.12; letter-spacing: -.5px; margin: 14px 0 6px; }

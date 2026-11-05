@@ -34,7 +34,7 @@
   /** Lo que es de una cuenta o de un proyecto, guardado en este navegador:
    * los gustos y «Tu ciudad», el negocio del panel, los códigos y colas sin
    * conexión, las ciudades y el interruptor de los sorteos de esa base. Lo
-   * mismo que se borra al salir (app/app.js, panel/panel.js) y lo que solo
+   * mismo que se borra al salir (assets/cuenta/app.js, panel/panel.js) y lo que solo
    * vale para ese Supabase. */
   function olvida() {
     try {
@@ -120,7 +120,7 @@
         return;
       }
       boton.classList.add('top-yo');
-      boton.href = boton.dataset.cuenta || '/app/';
+      boton.href = boton.dataset.cuenta || '/cuenta/';
       boton.setAttribute('aria-label', boton.dataset.cuentaTxt || 'Tu cuenta');
       boton.title = nombre;
       var ya = boton.querySelector('img');

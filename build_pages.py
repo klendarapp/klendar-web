@@ -439,13 +439,13 @@ AYUDA_T = {
                buscar='Buscar en la ayuda', ph='Buscar: código, reserva, calendario…',
                pestanas='Preguntas frecuentes', nada_h='¿No lo encuentras?',
                nada_p='Escríbenos y te respondemos en 2 días laborables como mucho. Si es algo que se pregunta a menudo, lo añadimos aquí.',
-               boton='Escríbenos', sugerencias='/app/#/sugerencias',
+               boton='Escríbenos', sugerencias='/cuenta/sugerencias',
                correo='O por correo a <a href="mailto:info@klendar.app">info@klendar.app</a> · <a href="/soporte/">Soporte</a>'),
     'en': dict(lead='What we get asked most, for people looking for plans and for businesses.',
                buscar='Search help', ph='Search: code, reservation, calendar…',
                pestanas='Frequently asked questions', nada_h="Can't find it?",
                nada_p="Write to us and we'll reply within 2 working days at most. If it's something people often ask, we'll add it here.",
-               boton='Write to us', sugerencias='/app/?lang=en#/sugerencias',
+               boton='Write to us', sugerencias='/cuenta/sugerencias?lang=en',
                correo='Or by email at <a href="mailto:info@klendar.app">info@klendar.app</a> · <a href="/en/support/">Support</a>'),
 }
 

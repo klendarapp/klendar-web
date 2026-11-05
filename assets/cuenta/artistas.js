@@ -1,11 +1,11 @@
-/* «Tu cuenta» → «Artistas que sigues» (#/artistas), como la app (tanda C;
+/* «Tu cuenta» → «Artistas que sigues» (/cuenta/artistas), como la app (tanda C;
  * migración 20261205100000_artistas de la app).
  *
  * - La lista con la próxima fecha de cada artista (a su ficha, /o/<id>), su
  *   página pública (/a/<slug>), «Dejar de seguir» y «Seguir a un artista»,
  *   que abre el buscador (`artist_search`) con la misma hoja que «Seguir a un
- *   equipo» (`hojaSeguir`, app/partidos.js).
- * - `#/artistas?seguir=<id>&nombre=<nombre>`: lo que manda «Seguir» desde la
+ *   equipo» (`hojaSeguir`, assets/cuenta/partidos.js).
+ * - `/cuenta/artistas?seguir=<id>&nombre=<nombre>`: lo que manda «Seguir» desde la
  *   página pública de un artista sin sesión. Al entrar, se sigue; si el
  *   enlace no viene de un botón de esta web (sin la marca de
  *   /assets/seguir.js), primero se pregunta (`confirmaEnlace`).
@@ -35,7 +35,7 @@ const avatarArtista = (a) => (KAr.seguro(a.photo_url)
 
 /** La fila de la portada de «Tu cuenta» (grupo Preferencias). */
 function filaArtistas() {
-  return `<a class="fila" href="#/artistas">${icArtista()}
+  return `<a class="fila" href="/cuenta/artistas">${icArtista()}
     <span class="fila-t"><b>${esc(SA().youFollow)}</b><small>${esc(SA().rowHint)}</small></span>
     ${ic('chevron_right')}</a>`;
 }
@@ -61,10 +61,10 @@ RUTAS.artistas = async (_partes, params) => {
       titulo: `${S.follow} · ${quien}`,
       texto: S.weTell,
       boton: S.follow,
-      volver: '#/artistas',
+      volver: '/cuenta/artistas',
     });
     if (!sigue) return;
-    history.replaceState(null, '', `${location.pathname}${location.search}#/artistas`);
+    ponRuta(`artistas`);
     try {
       await llamar('follow_artist', { p_artist: seguir });
       guardaZonaAvisos();
@@ -73,7 +73,7 @@ RUTAS.artistas = async (_partes, params) => {
   }
 
   const lista = (await llamar('my_followed_artists', {})) || [];
-  const cabeza = `<p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
+  const cabeza = `<p class="crumbs"><a href="/cuenta/">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(S.youFollow)}</h1>`;
   // Neutro con borde (el coral, solo para el botón principal y las ofertas).
   const botonSeguir = `<button type="button" class="pill" data-seguir-artista>${esc(S.followOne)}</button>`;

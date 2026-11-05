@@ -241,7 +241,7 @@ async function interruptor(nav, nombre, t, vp) {
       my_alert_words: { words: [] },
       update_notification_preferences: null,
     });
-    await p.goto(`${BASE}/app/#/ajustes/notificaciones`);
+    await p.goto(`${BASE}/cuenta/ajustes/notificaciones`);
     await p.waitForSelector('input[name=sitio]');
     const v = await p.locator('#view').innerText();
     if (rol === 'owner') {
@@ -275,7 +275,7 @@ async function interruptor(nav, nombre, t, vp) {
     my_businesses: [{ id: BIZ, name: 'Café Norte', role: 'manager', verification_status: 'verified', is_active: true }],
     my_alert_words: { words: [] },
   }, 'en');
-  await p.goto(`${BASE}/app/?lang=en#/ajustes/notificaciones`);
+  await p.goto(`${BASE}/cuenta/ajustes/notificaciones?lang=en`);
   await p.waitForSelector('input[name=festivos]');
   const v = await p.locator('#view').innerText();
   ok(/Your business/.test(v) && /Public holiday questions/.test(v) && !(await p.locator('input[name=festivos]').isChecked()),

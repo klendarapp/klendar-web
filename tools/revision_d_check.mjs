@@ -18,7 +18,7 @@
 //   9. Una entidad no abre aforo, wifi, menú del día ni pedidos escribiendo
 //      la dirección: vuelve al resumen.
 //  Tu cuenta
-//  10. `#/recibo/<id>` de un canje de hace más de 50: lo encuentra. Y «Escanear
+//  10. `/cuenta/recibo/<id>` de un canje de hace más de 50: lo encuentra. Y «Escanear
 //      un QR» de la persona solo abre klendar.app (otra web: «Este QR lleva a …»).
 //  11. Con solo un turno de cola o un pedido, sin la pantalla vacía (Planes
 //      y Tus códigos).
@@ -310,7 +310,7 @@ async function cuenta(nav, nombre, t, vp) {
   let { ctx, p, errores } = await contexto(nav, vp, {
     rpc: { my_redemptions: (b) => { const off = Number(b.p_offset) || 0; const n = Number(b.p_limit) || 50; return Array.from({ length: Math.max(0, Math.min(n, 120 - off)) }, (_, i) => canje(off + i)); } },
   });
-  await p.goto(`${BASE}/app/#/recibo/${objetivo.id}`);
+  await p.goto(`${BASE}/cuenta/recibo/${objetivo.id}`);
   await p.waitForTimeout(1500);
   // «Escanear un QR» de la persona: solo abre klendar.app; otra web con la
   // misma ruta dice adónde lleva (quishing), como la app y el panel.
@@ -325,7 +325,7 @@ async function cuenta(nav, nombre, t, vp) {
     && qr.mesa === '/m/Ab3_dE5-gH7jK9mN', `${nombre}/${t} escanear: solo klendar.app; otra web, «Este QR lleva a …» (${JSON.stringify(qr)})`);
   let v = await p.locator('#view').innerText().catch(() => '');
   ok(/Recibo/.test(v) && /Café 73/.test(v), `${nombre}/${t} recibo de un canje de hace más de 50: lo encuentra`);
-  await p.goto(`${BASE}/app/#/recibo/c0000000-0000-4000-8000-999999999999`);
+  await p.goto(`${BASE}/cuenta/recibo/c0000000-0000-4000-8000-999999999999`);
   await p.waitForTimeout(1500);
   v = await p.locator('#view').innerText().catch(() => '');
   ok(/Ese recibo no está/.test(v), `${nombre}/${t} recibo que no existe: «Ese recibo no está.»`);
@@ -335,7 +335,7 @@ async function cuenta(nav, nombre, t, vp) {
   const pedido = { code: 'ABC123', number: 7, status: 'waiting', business: { name: 'Café Sonda' } };
   ({ ctx, p, errores } = await contexto(nav, vp, { rpc: { my_orders: [pedido], my_queue_turns: [], my_redemptions: [], my_saved_offers: [], my_followed_series: [] } }));
   for (const [ruta, vacio] of [['planes', 'Aún no tienes planes'], ['codigos', 'Todavía no tienes códigos']]) {
-    await p.goto(`${BASE}/app/#/${ruta}`);
+    await p.goto(`${BASE}/cuenta/${ruta}`);
     await p.waitForTimeout(1500);
     v = await p.locator('#view').innerText().catch(() => '');
     ok(/Tu pedido en Café Sonda/.test(v) && await p.locator('.vacio, .pantalla-vacia, .estado-vacio').count() === 0 && !new RegExp(`^${vacio}$`, 'm').test(v),
@@ -428,7 +428,7 @@ async function ficha(nav, nombre, t, vp) {
   const p = await ctx.newPage();
   for (const [id, o] of Object.entries(OFERTAS)) {
     const r = await p.goto(`http://localhost:${FICHA_PORT}/o/${id}`, { waitUntil: 'domcontentloaded' });
-    const espera = await p.locator('a[href*="#/espera/"]').count();
+    const espera = await p.locator('a[href*="/cuenta/espera/"]').count();
     if (o.reservations_enabled) ok(r.status() === 200 && espera === 1, `${nombre}/${t} agotada con reserva: «Apuntarme a la lista de espera»`);
     else ok(r.status() === 200 && espera === 0 && /Entradas en|Conseguir entradas/.test(await p.locator('body').innerText()), `${nombre}/${t} agotada con entradas fuera: sin lista de espera, «Conseguir entradas»`);
   }

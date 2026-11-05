@@ -5,10 +5,11 @@
 // «Próximas fechas» (también la de un organizador sin local fijo en /b/).
 //
 // Como el resto de páginas públicas: se pinta en el servidor y va sin
-// JavaScript. «Seguir» lleva a «Tu cuenta» (`#/artistas?seguir=<id>`); con
+// JavaScript. «Seguir» lleva a «Tu cuenta» (`/cuenta/artistas?seguir=<id>`); con
 // una sesión guardada, /assets/seguir.js lo hace sin salir de la página
 // (lo mismo que «Seguir a un equipo» de «Dónde ver el partido»).
 
+import { enlaceCuenta } from './cuenta.js';
 import { esc, html, rpc, rpcAll, isUuid } from './page.js';
 import KA from '../../assets/artistas.js';
 import { BASE, bizPath, breadcrumbLd, ldScript, publicPage } from './public.js';
@@ -17,9 +18,9 @@ import { seguirScript } from './partidos.js';
 /** Dónde vive la página de un artista (igual en los dos idiomas, con /en). */
 export const artistaPath = (lang, slug) => `${lang === 'en' ? '/en' : ''}/a/${encodeURIComponent(slug || '')}`;
 const ofertaPath = (lang, id) => `${lang === 'en' ? '/en' : ''}/o/${encodeURIComponent(id)}`;
-const cuentaBase = (lang) => (lang === 'en' ? '/app/?lang=en' : '/app/');
+const cuentaBase = enlaceCuenta;
 /** «Seguir» sin sesión: a «Tu cuenta», que lo hace al entrar. */
-const seguirHref = (lang, a) => `${cuentaBase(lang)}#/artistas?seguir=${encodeURIComponent(a.id)}&nombre=${encodeURIComponent(a.name || '')}`;
+const seguirHref = (lang, a) => `${cuentaBase(lang, `artistas?seguir=${encodeURIComponent(a.id)}&nombre=${encodeURIComponent(a.name || '')}`)}`;
 
 /** Los estilos de estas piezas (página del artista, «Actúa», fechas). */
 export const ARTISTAS_CSS = '<link rel="stylesheet" href="/assets/artistas.css?v=1">';

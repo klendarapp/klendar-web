@@ -1,8 +1,8 @@
 /* «Tu cuenta»: planes con amigos.
  *
- * Tu enlace de amigo (con su QR) y tu lista (#/amigos), el enlace de otra
- * persona abierto (#/amigo/<código>), marcar «Voy» (#/voy/<id>) e invitar a
- * amigos a una publicación (#/invitar/<id>). Lo mismo que la app y contra
+ * Tu enlace de amigo (con su QR) y tu lista (/cuenta/amigos), el enlace de otra
+ * persona abierto (/cuenta/amigo/<código>), marcar «Voy» (/cuenta/voy/<id>) e invitar a
+ * amigos a una publicación (/cuenta/invitar/<id>). Lo mismo que la app y contra
  * las mismas funciones de la base. No hay buscador de personas: solo te
  * encuentra quien tiene tu enlace o escanea tu QR.
  *
@@ -66,8 +66,8 @@ async function compartirOCopiar(texto, copia) {
 // ── Amigos: tu lista primero; tu enlace y tu QR, en «＋ Añadir» ──────────
 // Como la app: la lista arriba (quitar y bloquear, en ⋮ en cada fila); el
 // QR, «Compartir el enlace» y «Copiar», en «Añadir un amigo» (también
-// `#/amigos/anadir`, desde «Añadir amigos» de otras pantallas); «Cambiar el
-// enlace», en el ⋮ de arriba. #/amigos/<id>: la ficha de un amigo.
+// `/cuenta/amigos/anadir`, desde «Añadir amigos» de otras pantallas); «Cambiar el
+// enlace», en el ⋮ de arriba. /cuenta/amigos/<id>: la ficha de un amigo.
 RUTAS.amigos = async ([idAmigo]) => {
   if (idAmigo && idAmigo !== 'anadir') { await fichaDeAmigo(idAmigo); return; }
   if (!exigeSesion(idAmigo ? 'amigos/anadir' : 'amigos')) return;
@@ -89,7 +89,7 @@ RUTAS.amigos = async ([idAmigo]) => {
   });
 
   pinta(`
-    <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
+    <p class="crumbs"><a href="/cuenta/">${esc(t('Tu cuenta'))}</a></p>
     <div class="titulo-acc">
       <h1>${esc(t('Amigos'))}</h1>
       <button type="button" class="pill on" data-anadir>${ic('add')} ${esc(t('Añadir'))}</button>
@@ -100,7 +100,7 @@ RUTAS.amigos = async ([idAmigo]) => {
       <h2 class="seccion-t">${esc(t('Tus amigos'))} · <span id="cuantos-amigos">${esc(cuantos(amigos.length))}</span></h2>
       <div class="lista">${amigos.map((a) => `
         <div class="fila amigo-fila" data-id="${esc(a.id)}">
-          <a class="amigo-ir" href="#/amigos/${esc(a.id)}">
+          <a class="amigo-ir" href="/cuenta/amigos/${esc(a.id)}">
           ${avatarDeAmigo(a, 'av-lista')}
           <span class="fila-t"><b>${esc(nombreDeAmigo(a))}</b>
             <small>${esc(a.plans > 0 ? planesDeAmigo(a.plans)
@@ -170,7 +170,7 @@ RUTAS.amigos = async ([idAmigo]) => {
     d.addEventListener('click', (e) => { if (e.target === d) d.close(); });
     d.addEventListener('close', () => {
       d.remove();
-      if (location.hash.startsWith('#/amigos/anadir')) history.replaceState(null, '', '#/amigos');
+      if (rutaActual().crudo.startsWith('amigos/anadir')) ponRuta('amigos');
     });
     alSalir(() => { if (d.open) d.close(); });
     d.showModal();
@@ -266,7 +266,7 @@ const planesJuntos = (n) => (EN ? `You've been to ${n} ${n === 1 ? 'plan' : 'pla
 async function fichaDeAmigo(id) {
   if (!UUID_AMIGOS.test(id || '')) { pinta(pantallaVacia({ icono: 'link', titulo: t('Ese enlace no está completo.'), h: 'h1', botones: botonTuCuenta() })); return; }
   if (!exigeSesion(`amigos/${id}`)) return;
-  let migas = `<p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a> › <a href="#/amigos">${esc(t('Amigos'))}</a></p>`;
+  let migas = `<p class="crumbs"><a href="/cuenta/">${esc(t('Tu cuenta'))}</a> › <a href="/cuenta/amigos">${esc(t('Amigos'))}</a></p>`;
   let d;
   try { d = await llamar('friend_plans', { p_friend: id }); } catch (e) {
     if (e.clave !== 'not_found') throw e;
@@ -274,7 +274,7 @@ async function fichaDeAmigo(id) {
       icono: 'group', h: 'h1',
       titulo: t('Esta persona ya no está en tus amigos'),
       texto: t('No puedes ver sus planes. Si quieres volver a ser su amigo, pídele su enlace de amigo.'),
-      botones: `<a class="pill accent" href="#/amigos">${esc(t('Ver tus amigos'))}</a>`,
+      botones: `<a class="pill accent" href="/cuenta/amigos">${esc(t('Ver tus amigos'))}</a>`,
     })}`);
     return;
   }
@@ -349,7 +349,7 @@ async function fichaDeAmigo(id) {
   });
   enlaza(view);
   const trasMenu = (fn) => async () => {
-    try { if (await fn(id, nombre)) location.hash = '#/amigos'; } catch (e) { toast(e.message, true); }
+    try { if (await fn(id, nombre)) irA('amigos'); } catch (e) { toast(e.message, true); }
   };
   $('[data-ficha-quitar]').onclick = trasMenu(quitaAmigo);
   $('[data-ficha-bloquear]').onclick = trasMenu(bloqueaAmigo);
@@ -367,7 +367,7 @@ function pintaEnlaceAbierto({ quien, titulo, texto, botones }) {
       <p class="acciones">${botones}</p>
     </div>`);
 }
-const botonVerAmigos = (principal = true) => `<a class="pill${principal ? ' accent' : ''}" href="#/amigos">${ic('group')} ${esc(t('Ver tus amigos'))}</a>`;
+const botonVerAmigos = (principal = true) => `<a class="pill${principal ? ' accent' : ''}" href="/cuenta/amigos">${ic('group')} ${esc(t('Ver tus amigos'))}</a>`;
 
 RUTAS.amigo = async ([code]) => {
   const valido = CODIGO_AMIGO.test(code || '');
@@ -416,7 +416,7 @@ RUTAS.amigo = async ([code]) => {
       case 'blocked': return pintaEnlaceAbierto({
         titulo: t('Tienes bloqueada a esta persona'),
         texto: t('Para ser amigos, desbloquéala en Ajustes → Privacidad y datos → Personas bloqueadas.'),
-        botones: `<a class="pill" href="#/ajustes/bloqueadas">${esc(t('Personas bloqueadas'))}</a>`,
+        botones: `<a class="pill" href="/cuenta/ajustes/bloqueadas">${esc(t('Personas bloqueadas'))}</a>`,
       });
       default: return pintaEnlaceAbierto({
         titulo: t('Este enlace ya no vale'),
@@ -433,7 +433,7 @@ RUTAS.amigo = async ([code]) => {
     titulo: EN ? `${nombre} wants to be your friend on Klendar` : `${nombre} quiere ser tu amigo en Klendar`,
     texto: t('Si aceptas, verás a qué planes va y podrás invitarle a los tuyos (y al revés). Puedes quitarle de tus amigos cuando quieras.'),
     botones: `<button type="button" class="pill accent" id="aceptar-amigo">${esc(t('Aceptar'))}</button>
-      <a class="pill" href="#/">${esc(t('Ahora no'))}</a>`,
+      <a class="pill" href="/cuenta/">${esc(t('Ahora no'))}</a>`,
   });
   $('#aceptar-amigo').onclick = (ev) => ocupado(ev.currentTarget, async () => {
     let r;
@@ -446,7 +446,7 @@ RUTAS.amigo = async ([code]) => {
       throw e;
     }
     // Recargar no vuelve a preguntar: la dirección pasa a la lista.
-    history.replaceState(null, '', '#/amigos');
+    ponRuta('amigos');
     const amigo = r.friend || quien;
     const n = nombreDeAmigo(amigo);
     pintaEnlaceAbierto({
@@ -469,7 +469,7 @@ RUTAS.voy = async ([id], params, crudo) => {
   const fila = await llamar('offer_detail', { p_id: id }).catch(() => null);
   const of = Array.isArray(fila) ? fila[0] : fila;
   if (!quitar && of && (of.kind === 'flash_offer' || of.reservations_enabled)) {
-    location.replace(`#/${of.kind === 'flash_offer' ? 'codigo' : 'reservar'}/${encodeURIComponent(id)}`);
+    irA(`${of.kind === 'flash_offer' ? 'codigo' : 'reservar'}/${encodeURIComponent(id)}`, { reemplaza: true });
     return;
   }
   // Desde fuera (sin pulsar «Voy» aquí) se pregunta antes: tus amigos lo ven.
@@ -489,7 +489,7 @@ RUTAS.voy = async ([id], params, crudo) => {
       titulo: t(cons?.share_plans === false ? 'Hecho. Está en tus planes.' : '¡Hecho! Tus amigos verán que vas. También está en tus planes.'),
       texto: r.auto === 'reservation' ? t('Vas: tienes plaza reservada') : r.auto === 'code' ? t('Vas: tienes el código') : '',
       volver: ficha, volverTxt: t('Volver a la publicación'),
-      lista: '#/planes', listaTxt: t('Ver tus planes'),
+      lista: '/cuenta/planes', listaTxt: t('Ver tus planes'),
       deshacer: r.auto ? '' : `voy/${id}?quitar=1`,
     });
     return;
@@ -500,14 +500,14 @@ RUTAS.voy = async ([id], params, crudo) => {
       titulo: t(r.auto === 'reservation' ? 'Vas: tienes plaza reservada' : 'Vas: tienes el código'),
       texto: t('Tienes plaza o código: para dejar de ir, anúlalo en Tus códigos.'),
       volver: ficha, volverTxt: t('Volver a la publicación'),
-      lista: '#/codigos', listaTxt: t('Tus códigos'),
+      lista: '/cuenta/codigos', listaTxt: t('Tus códigos'),
     });
     return;
   }
   hecho({
     titulo: t('Ya no marcas «Voy»'),
     volver: ficha, volverTxt: t('Volver a la publicación'),
-    lista: '#/planes', listaTxt: t('Ver tus planes'),
+    lista: '/cuenta/planes', listaTxt: t('Ver tus planes'),
     deshacer: `voy/${id}`,
   });
 };
@@ -548,7 +548,7 @@ RUTAS.invitar = async ([id]) => {
         icono: 'group',
         titulo: t('Aún no tienes amigos en Klendar'),
         texto: t('Añádelos con tu enlace de amigo. Mientras, puedes mandar la publicación por cualquier app.'),
-        botones: `<a class="pill accent" href="#/amigos/anadir">${ic('group_add')} ${esc(t('Añadir amigos'))}</a>
+        botones: `<a class="pill accent" href="/cuenta/amigos/anadir">${ic('group_add')} ${esc(t('Añadir amigos'))}</a>
           <button type="button" class="pill" id="compartir-ficha">${ic('share')} ${esc(t('Invitar a alguien'))}</button>`,
       })}`);
     $('#compartir-ficha').onclick = compartirFicha;
@@ -592,7 +592,7 @@ function pintaInvitar({ id, o, migas, social, amigos, compartirFicha, aviso = ''
       <button class="pill accent" type="submit" id="mandar-inv" disabled>${esc(t('Invitar a un amigo'))}</button>
     </form>
     <p class="acciones">
-      <a class="pill" href="#/amigos/anadir">${ic('group_add')} ${esc(t('Añadir amigos'))}</a>
+      <a class="pill" href="/cuenta/amigos/anadir">${ic('group_add')} ${esc(t('Añadir amigos'))}</a>
       <button type="button" class="pill" id="compartir-ficha">${ic('share')} ${esc(t('Invitar a alguien por otra app'))}</button>
     </p>`);
   $('#compartir-ficha').onclick = compartirFicha;

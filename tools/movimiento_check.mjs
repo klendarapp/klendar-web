@@ -235,7 +235,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
       ok(reducido ? tiembla === 'none' : tiembla === 'mov-tiembla', `${tag} campo con error: ${tiembla}`);
 
       // 3 y 4. «Tu cuenta» › Favoritos.
-      await page.goto(`${BASE}/app/#/favoritos`, { waitUntil: 'networkidle' });
+      await page.goto(`${BASE}/cuenta/favoritos`, { waitUntil: 'networkidle' });
       await page.waitForSelector('.fav-fila');
       const entra = await page.evaluate(() => Boolean(window.__movEntro));
       ok(reducido ? !entra : entra, `${tag} pantalla nueva ${reducido ? 'quieta' : 'entra escalonada'}`);

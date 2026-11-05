@@ -14,7 +14,7 @@
  *      tocado.»;
  *    · en la lista, «Participas · nº 37» en los tuyos y la pestaña «En los
  *      que participas» (`my_giveaways`).
- * Sin sesión, «Participar» lleva a «Tu cuenta» (`#/sorteo/<id>`), que pide
+ * Sin sesión, «Participar» lleva a «Tu cuenta» (`/cuenta/sorteo/<id>`), que pide
  * entrar, participa y vuelve aquí; se deja la marca de que se ha pulsado en
  * esta web (así no vuelve a preguntar; ver `hayIntencion` en app.js).
  */
@@ -204,7 +204,7 @@
       mas = '<button type="button" class="enlace-discreto" data-sorteo="leave">' + esc(S.leave) + '</button>';
     } else if (!me.adult) {
       est = esc(S.noAge);
-      mas = '<a class="pill" href="' + (en ? '/app/?lang=en' : '/app/') + '#/ajustes">' + esc(S.addBirth) + '</a>';
+      mas = '<a class="pill" href="' + (en ? '/cuenta/ajustes?lang=en' : '/cuenta/ajustes') + '">' + esc(S.addBirth) + '</a>';
     } else {
       btn = { texto: g.requires_favorite && !me.favorite ? S.enterFav : S.enter, hace: 'enter' };
       mas = '<p class="note">' + esc(S.free) + '</p>';

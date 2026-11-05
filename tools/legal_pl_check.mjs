@@ -243,7 +243,7 @@ async function cuentaPreguntar(nav, nombre, t, vp) {
     business_questions_summary: { ok: true, total: 2, top: CONTESTADAS, mine: [], can_ask: false, ask_block: 'not_yet', team: false },
     my_questions: [],
   });
-  await p.goto(`${BASE}/app/#/preguntar/${BIZ}`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/cuenta/preguntar/${BIZ}`, { waitUntil: 'networkidle' });
   await p.waitForFunction(() => /Pregúntale a Bar Sonda/.test(document.querySelector('#view')?.innerText || ''));
   const v = await p.locator('#view').innerText();
   ok(/Pronto podrás preguntar a este local\./.test(v) && await p.locator('#f').count() === 0,
@@ -290,7 +290,7 @@ async function interruptores(nav, nombre, t, vp) {
       my_alert_words: { words: [] },
       update_notification_preferences: null,
     });
-    await p.goto(`${BASE}/app/#/ajustes/notificaciones`);
+    await p.goto(`${BASE}/cuenta/ajustes/notificaciones`);
     await p.waitForSelector('input[name=respuestas]');
     const v = await p.locator('#view').innerText();
     ok(/Respuestas a tus preguntas/.test(v) && /Cuando un local contesta u oculta lo que le preguntaste/.test(v)
@@ -335,7 +335,7 @@ async function interruptores(nav, nombre, t, vp) {
     my_businesses: [{ id: BIZ, name: 'Bar Sonda', role: 'manager', verification_status: 'verified', is_active: true }],
     my_alert_words: { words: [] },
   }, 'en');
-  await p.goto(`${BASE}/app/?lang=en#/ajustes/notificaciones`);
+  await p.goto(`${BASE}/cuenta/ajustes/notificaciones?lang=en`);
   await p.waitForSelector('input[name=preguntasFicha]');
   const v = await p.locator('#view').innerText();
   ok(/Replies to your questions/.test(v) && /Questions on your page/.test(v)

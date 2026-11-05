@@ -12,7 +12,7 @@
  *    sin salir de la página. Al seguir, se guarda la zona de los filtros para
  *    los avisos (`set_broadcast_area`, la misma para equipos y artistas).
  * Sin sesión no carga nada: el botón lleva a «Tu cuenta»
- * (`#/equipos?seguir=<id>` o `#/artistas?seguir=<id>`), que lo hace al
+ * (`/cuenta/equipos?seguir=<id>` o `/cuenta/artistas?seguir=<id>`), que lo hace al
  * entrar, con la marca de que se ha pulsado aquí (así no vuelve a preguntar;
  * ver `hayIntencion` en app.js).
  *
@@ -48,7 +48,7 @@
       si: 'follow_broadcast_team', no: 'unfollow_broadcast_team',
       mios: ['my_followed_teams', { p_lang: en ? 'en' : 'es' }],
       // Los textos de la app (watchTooMany, watchFollowedSnack,
-      // watchUnfollowedSnack) y los de «Tu cuenta» (app/partidos.js).
+      // watchUnfollowedSnack) y los de «Tu cuenta» (assets/cuenta/partidos.js).
       tope: en ? 'You can follow up to 30 teams, athletes and competitions' : 'Puedes seguir 30 equipos, deportistas y competiciones como mucho',
       on: function (n) { return en ? "You're following " + n + ": we'll let you know before their matches" : 'Sigues a ' + n + ': te avisamos antes de sus partidos'; },
       off: function (n) { return en ? "You're no longer following " + n : 'Ya no sigues a ' + n; },
@@ -156,7 +156,7 @@
   function misEquipos(lista) {
     var base = caja.getAttribute('data-base') || '/partidos/';
     var zona = caja.getAttribute('data-zona') || '';
-    var cuenta = en ? '/app/?lang=en#/equipos' : '/app/#/equipos';
+    var cuenta = en ? '/cuenta/equipos?lang=en' : '/cuenta/equipos';
     caja.innerHTML = '<p class="mis-equipos-t">' + esc(T.teams) + '</p><div class="mis-equipos-chips">'
       + lista.map(function (x) {
         var q = new URLSearchParams(zona);

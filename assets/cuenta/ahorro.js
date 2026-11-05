@@ -3,7 +3,7 @@
  *
  * - En «Tu cuenta», debajo de los accesos: «Este mes has ahorrado 23 € con
  *   Klendar» y el total (solo si hay algo ahorrado).
- * - #/ahorro: este mes, el total, «¿Cómo se calcula?» y canje a canje
+ * - /cuenta/ahorro: este mes, el total, «¿Cómo se calcula?» y canje a canje
  *   (`my_savings`: precio de antes − lo pagado, por las plazas; lo que no
  *   tiene precio de antes no suma).
  *
@@ -30,14 +30,14 @@ async function pintaAhorroFila() {
   const detalle = s.month_cents > 0
     ? (EN ? `In total, ${ahorroEuros(s.total_cents)}` : `En total, ${ahorroEuros(s.total_cents)}`)
     : (EN ? 'Tap to see the breakdown' : 'Toca para ver el desglose');
-  caja.innerHTML = fila({ href: '#/ahorro', icono: 'savings', titulo, detalle });
+  caja.innerHTML = fila({ href: '/cuenta/ahorro', icono: 'savings', titulo, detalle });
   caja.hidden = false;
 }
 
 RUTAS.ahorro = async () => {
   if (!exigeSesion('ahorro')) return;
   const s = await llamar('my_savings', {});
-  const migas = `<p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>`;
+  const migas = `<p class="crumbs"><a href="/cuenta/">${esc(t('Tu cuenta'))}</a></p>`;
   const tituloPagina = EN ? "What you've saved" : 'Lo que has ahorrado';
   if (!s?.total_cents) {
     pinta(migas + pantallaVacia({

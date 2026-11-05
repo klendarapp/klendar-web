@@ -9,7 +9,7 @@ import { tableQrPage } from '../_lib/mesa.js';
 //   instalada, el móvil lo abre en la app (App Link / enlace universal). Si
 //   no, llega aquí y lo mandamos a «Tu cuenta» con el QR puesto: si ya ha
 //   entrado, ve lo que le dan y «Aceptar»; si no, tras entrar
-//   (app/momento.js).
+//   (assets/cuenta/momento.js).
 // · 16 caracteres sin puntos: el QR de mesa (wifi, lo de hoy y la carta),
 //   que se pinta aquí mismo (`_lib/mesa.js`). Con la app instalada, la abre.
 
@@ -28,7 +28,7 @@ export const onRequestGet = (ctx) => {
   }
   return new Response(null, {
     status: 302,
-    headers: { Location: `/app/#/momento/${token}`, 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex' },
+    headers: { Location: `/cuenta/momento/${token}`, 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex' },
   });
 };
 

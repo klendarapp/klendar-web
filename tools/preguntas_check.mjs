@@ -1,7 +1,7 @@
 // Prueba de «Pregúntale al local» en la web local, con Supabase contestado
 // aquí (no toca dev ni manda nada):
 //
-//  1. Tu cuenta › `#/preguntar/<negocio>`: preguntar (`ask_business_question`),
+//  1. Tu cuenta › `/cuenta/preguntar/<negocio>`: preguntar (`ask_business_question`),
 //     «Tus preguntas» con su estado (Esperando respuesta · Oculta por el
 //     negocio: motivo · la respuesta) y «Borrar mi pregunta»; los avisos
 //     llevan aquí (`destinoWeb`); con una esperando, por qué no se puede.
@@ -123,11 +123,11 @@ async function cuentaPreguntar(nav, nombre, t, vp) {
     },
     delete_my_question: (b) => { mias = mias.filter((q) => q.id !== b.p_id); return { ok: true }; },
   }));
-  await p.goto(`${BASE}/app/#/`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/cuenta/`, { waitUntil: 'networkidle' });
   const d1 = await p.evaluate((b) => destinoWeb(`/business/${b}/questions?q=9a000000-0000-4000-8000-000000000005`), BIZ);
   const d2 = await p.evaluate((b) => destinoWeb(`/my-business/${b}/questions`), BIZ);
-  ok(d1 === `#/preguntar/${BIZ}?q=9a000000-0000-4000-8000-000000000005` && d2 === `/panel/#/preguntas?biz=${BIZ}`, `${nombre}/${t} los avisos llevan a «Tus preguntas» y a la bandeja del panel (${d1} · ${d2})`);
-  await p.goto(`${BASE}/app/#/preguntar/${BIZ}`, { waitUntil: 'networkidle' });
+  ok(d1 === `/cuenta/preguntar/${BIZ}?q=9a000000-0000-4000-8000-000000000005` && d2 === `/panel/#/preguntas?biz=${BIZ}`, `${nombre}/${t} los avisos llevan a «Tus preguntas» y a la bandeja del panel (${d1} · ${d2})`);
+  await p.goto(`${BASE}/cuenta/preguntar/${BIZ}`, { waitUntil: 'networkidle' });
   await p.waitForSelector('#f textarea');
   ok(/Pregúntale a Bar Sonda/.test(await p.locator('#view h1').innerText()), `${nombre}/${t} «Pregúntale a Bar Sonda»`);
   await p.fill('#f textarea', 'corta');
@@ -154,7 +154,7 @@ async function cuentaPreguntar(nav, nombre, t, vp) {
 
 async function cuentaDenunciar(nav, nombre, t, vp) {
   const { ctx, p, estado, errores } = await contexto(nav, vp, CUENTA({ report_target: null }));
-  await p.goto(`${BASE}/app/#/denunciar/question_answer/${Q(1)}`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/cuenta/denunciar/question_answer/${Q(1)}`, { waitUntil: 'networkidle' });
   await p.waitForSelector('#f');
   ok(/Denunciar una respuesta/.test(await p.locator('#view h1').innerText()), `${nombre}/${t} Denunciar una respuesta`);
   await p.locator('input[name=motivo][value=inappropriate]').check({ force: true });
@@ -162,7 +162,7 @@ async function cuentaDenunciar(nav, nombre, t, vp) {
   await p.waitForTimeout(800);
   const l = estado.llamadas.find(([fn]) => fn === 'report_target');
   ok(l && l[1].p_type === 'question_answer' && l[1].p_id === Q(1), `${nombre}/${t} denuncia enviada (${JSON.stringify(l && l[1])})`);
-  await p.goto(`${BASE}/app/#/denunciar/question/${Q(1)}`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/cuenta/denunciar/question/${Q(1)}`, { waitUntil: 'networkidle' });
   await p.waitForFunction(() => /Denunciar una pregunta/.test(document.querySelector('#view h1')?.textContent || ''));
   ok(true, `${nombre}/${t} Denunciar una pregunta`);
   ok(errores.length === 0, `${nombre}/${t} denunciar sin errores JS ${errores.join(' | ')}`);
@@ -262,8 +262,8 @@ async function ficha(nav, nombre, t, vp) {
   ok(/Preguntas/.test(sec) && /¿Se puede ir con perro\?/.test(html) && /Respuesta de Bar Sonda/.test(html) && !/¿Hay que reservar para cenar\?/.test(sec),
     `${nombre}/${t} ficha: «Preguntas» con la más útil y su respuesta (solo una)`);
   ok(await p.locator(`a[href$="?ver=preguntas"]`).filter({ hasText: 'Ver todas (5)' }).count() === 1, `${nombre}/${t} ficha: «Ver todas (5)»`);
-  ok(await p.locator(`[data-preguntar] a[href*="#/preguntar/${BIZ}"]`).count() === 1, `${nombre}/${t} ficha: «Preguntar» a «Tu cuenta»`);
-  ok(await p.locator(`a[href*="#/denunciar/question/${Q(1)}"]`).count() === 1 && await p.locator(`a[href*="#/denunciar/question_answer/${Q(1)}"]`).count() === 1,
+  ok(await p.locator(`[data-preguntar] a[href*="/cuenta/preguntar/${BIZ}"]`).count() === 1, `${nombre}/${t} ficha: «Preguntar» a «Tu cuenta»`);
+  ok(await p.locator(`a[href*="/cuenta/denunciar/question/${Q(1)}"]`).count() === 1 && await p.locator(`a[href*="/cuenta/denunciar/question_answer/${Q(1)}"]`).count() === 1,
     `${nombre}/${t} ficha: denunciar la pregunta y la respuesta`);
   await p.waitForSelector('[data-sirve]:not([hidden])', { timeout: 8000 }).catch(() => null);
   ok(await p.locator('[data-sirve]:not([hidden])').count() === 1, `${nombre}/${t} ficha sin sesión: «A mí también me sirve» a la vista`);

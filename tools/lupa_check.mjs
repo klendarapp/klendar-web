@@ -189,7 +189,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     const c1 = await page.evaluate(() => { const b = document.querySelector('[data-campana]'); return { oculta: b.hidden, n: b.querySelector('.top-n').textContent, globo: !b.querySelector('.top-n').hidden, label: b.getAttribute('aria-label'), href: b.getAttribute('href') }; });
     ok(!c1.oculta && c1.globo && c1.n === '3', `${t} con sesión, la campana con 3`);
     ok(c1.label === 'Notificaciones, 3 sin leer', `${t} el lector: «${c1.label}»`);
-    ok(/\/app\/#\/notificaciones$/.test(c1.href), `${t} lleva a las notificaciones de «Tu cuenta»`);
+    ok(/\/cuenta\/notificaciones(\?|$)/.test(c1.href), `${t} lleva a las notificaciones de «Tu cuenta»`);
     n = 12;
     await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
     await page.waitForTimeout(250);

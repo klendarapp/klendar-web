@@ -41,7 +41,7 @@
   function area(ruta) {
     if (/^\/admin(\/|$)/.test(ruta)) return 'admin';
     if (/^\/panel(\/|$)/.test(ruta)) return 'panel';
-    if (/^\/app(\/|$)/.test(ruta)) return 'cuenta';
+    if (/^\/cuenta(\/|$)/.test(ruta)) return 'cuenta';
     return 'publica';
   }
 
@@ -161,7 +161,9 @@
       enviados++;
 
       var ver = /[?&]v=([\w.-]{1,20})/.exec(src);
-      var ruta = location.pathname || '/';
+      // En «Tu cuenta» la ruta va en la dirección: solo la pantalla, nunca lo
+      // que venga detrás (/cuenta/cola/<código>, /cuenta/momento/<…>).
+      var ruta = (location.pathname || '/').replace(/^(\/cuenta\/[^/]+)\/.+$/, '$1/*');
       var fuente = src.replace(/[?#].*$/, '');
       if (fuente.indexOf(location.origin) === 0) fuente = fuente.slice(location.origin.length);
 

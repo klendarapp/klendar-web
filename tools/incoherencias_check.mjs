@@ -58,14 +58,14 @@ const PAGINAS = [
 // Lo de «Tu cuenta» se comprueba en el código que se sirve (la casilla solo
 // se ve al crear la cuenta).
 const CODIGO = [
-  ['/app/app.js', [/Quiero recibir novedades de Klendar por correo \(opcional\)\./, /se quita en Ajustes → Privacidad y datos\)\./],
+  ['/assets/cuenta/app.js', [/Quiero recibir novedades de Klendar por correo \(opcional\)\./, /se quita en Ajustes → Privacidad y datos\)\./],
     [/ofertas destacadas/, /se quita en Ajustes → Privacidad\)/]],
-  ['/app/amigos.js', [/Puedes apagarlo en Ajustes → Privacidad y datos\./, /Se cambia en Ajustes → Privacidad y datos\./],
+  ['/assets/cuenta/amigos.js', [/Puedes apagarlo en Ajustes → Privacidad y datos\./, /Se cambia en Ajustes → Privacidad y datos\./],
     [/Ajustes → Privacidad\.'/]],
-  ['/app/cuenta.js', [/No recibes novedades de Klendar por correo/], [/novedades ni promociones/]],
-  ['/app/i18n.js', [/"I'd like to receive Klendar news by email \(optional\)\."/, /Settings → Privacy and data\)\."/],
+  ['/assets/cuenta/cuenta.js', [/No recibes novedades de Klendar por correo/], [/novedades ni promociones/]],
+  ['/assets/cuenta/i18n.js', [/"I'd like to receive Klendar news by email \(optional\)\."/, /Settings → Privacy and data\)\."/],
     [/featured offers/]],
-  ...['ca', 'gl', 'eu', 'fr', 'it', 'de'].map((l) => [`/app/i18n/${l}.js`,
+  ...['ca', 'gl', 'eu', 'fr', 'it', 'de'].map((l) => [`/assets/cuenta/i18n/${l}.js`,
     [/"Quiero recibir novedades de Klendar por correo \(opcional\)\."/, /"No recibes novedades de Klendar por correo"/],
     [/ofertas destacadas/, /novedades ni promociones/, /Ajustes → Privacidad\.":/]]),
 ];

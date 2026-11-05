@@ -15,6 +15,7 @@
 //   JavaScript y con él) y se ve también en el mapa; la lista de Planes
 //   (`?vista=lista`) es solo de la web, para quien llega desde Google.
 
+import { enlaceCuenta } from './cuenta.js';
 import { cabeceraEdad, edadDeclarada, esc, html, preguntaEdadEncendida, rows, rpc, rpcAll, supabasePublic, vistosEncendido } from './page.js';
 import KZ from '../../assets/zona.js';
 import {
@@ -104,7 +105,7 @@ const T = (en) => en
       bodyCity: 'Businesses publish every day: come back later, let us tell you, or look in every city.',
       clearF: 'Clear filters', changeF: 'Change filters', seeAgenda: "See what's on",
       backTop: 'Back to the top', notifyMe: "Tell me when there's something new",
-      // «Pedir un local» (crecer, 2026-10-14): a «Tu cuenta», #/pedir-local.
+      // «Pedir un local» (crecer, 2026-10-14): a «Tu cuenta», /cuenta/pedir-local.
       recommend: 'Missing a place? Ask for it on Klendar', recommendShort: 'Missing a place? Ask for it on Klendar', askFor: (q) => `Can't find “${q}”? Ask for it on Klendar`,
       // «Avísame si…» por palabras (tanda D): como la app.
       alertWord: (q) => `Tell me when there’s something for “${q}”`, alertWordOn: (q) => `We’ll let you know about “${q}”`,
@@ -525,9 +526,9 @@ const RADIO_KM = 5;
 /** «Una ciudad»: toda ella, 25 km de su centro (como la app, `cityRadiusM`). */
 const RADIO_CIUDAD_M = 25000;
 
-/** «Pedir un local» en «Tu cuenta» (`#/pedir-local`), con el nombre ya
+/** «Pedir un local» en «Tu cuenta» (`/cuenta/pedir-local`), con el nombre ya
  * escrito si viene de una búsqueda. */
-const pedirHref = (lang, nombre = '') => `${lang === 'en' ? '/app/?lang=en' : '/app/'}#/pedir-local${nombre ? `?nombre=${encodeURIComponent(String(nombre).slice(0, 80))}` : ''}`;
+const pedirHref = (lang, nombre = '') => `${enlaceCuenta(lang, `pedir-local${nombre ? `?nombre=${encodeURIComponent(String(nombre).slice(0, 80))}` : ''}`)}`;
 
 /** «Klendar aún no ha llegado a {zona}» (crecer, 2026-10-14): con «Cerca de
  * ti», la lista vacía y `klendar_coverage` diciendo que aquí no hay Klendar
@@ -538,14 +539,14 @@ const pedirHref = (lang, nombre = '') => `${lang === 'en' ? '/app/?lang=en' : '/
  * geocodificación inversa de Mapbox (el punto redondeado). Ese script hace
  * también el «Avísame»: con sesión de «Tu cuenta», directo; sin ella, un
  * correo con doble confirmación. Sin JavaScript, el botón lleva a «Tu
- * cuenta» (`#/avisame`), que lo hace al entrar. No se enseña «Quizá te
+ * cuenta» (`/cuenta/avisame`), que lo hace al entrar. No se enseña «Quizá te
  * interese» (sería de otra ciudad) ni el aviso del modo viaje. */
 const sinKlendarHtml = ({ S, lang, lat, lng, cobertura, link }) => {
   const en = lang === 'en';
   const zona = cobertura?.status === 'coming' && cobertura.city_name ? String(cobertura.city_name) : '';
   const sp = supabasePublic();
   const pos = { lat: posUrl(lat), lng: posUrl(lng) };
-  const app = `${en ? '/app/?lang=en' : '/app/'}#/avisame?${new URLSearchParams({ ...pos, ...(zona ? { zona } : {}) })}`;
+  const app = `${enlaceCuenta(en ? 'en' : 'es', `avisame?${new URLSearchParams({ ...pos, ...(zona ? { zona } : {}) })}`)}`;
   const textos = { notHere: S.notHere, notHereIn: S.notHereIn('{zona}'), ...avisameTextos(en) };
   return `${AVISAME_CSS}<section class="vacio avisame" aria-labelledby="finTitulo" data-avisame data-lat="${esc(pos.lat)}" data-lng="${esc(pos.lng)}" data-zona="${esc(zona)}">
     <span class="vacio-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="${IC.lugar}"/></svg></span>
@@ -559,7 +560,7 @@ const sinKlendarHtml = ({ S, lang, lat, lng, cobertura, link }) => {
     <div class="avisame-caja" data-avisame-caja hidden></div>
   </section>
   <script type="application/json" id="avisame-textos">${JSON.stringify(textos).replace(/</g, '\\u003c')}</script>
-  <script src="/assets/avisame.js?v=2" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}" data-lang="${en ? 'en' : 'es'}"></script>`;
+  <script src="/assets/avisame.js?v=20261105cuenta" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}" data-lang="${en ? 'en' : 'es'}"></script>`;
 };
 
 /** Lo que dice /assets/avisame.js (el formulario y lo que pasa después). */
@@ -1989,7 +1990,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   // Va con «Ver N resultados», como lo demás de la hoja. Las casillas van
   // seguidas de un oculto con el valor de apagado: marcada, manda los dos y
   // gana la casilla (`tiempoOff`, `sinGustos`).
-  const gustosHref = `${en ? '/app/?lang=en' : '/app/'}#/gustos`;
+  const gustosHref = `${enlaceCuenta(en ? 'en' : 'es', 'gustos')}`;
   const radioOrden = (v, label, ayuda) => `<label class="op-orden"><input type="radio" name="${K.sort}" value="${esc(v ? enIdioma(v, en) : '')}"${(v || ORDEN_DEFECTO) === ordenBase ? ' checked' : ''}>
         <span><span class="op-t">${label}</span><small>${esc(ayuda)}</small></span></label>`;
   const ordenBloque = conOrden ? `<fieldset class="hoja-orden"><legend>${esc(S.sortBy)}</legend>
@@ -2129,7 +2130,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   <script>${FILA_MIDE}</script>
   <p id="cercaErr" class="aviso-error" role="alert" hidden></p>
   <script src="/assets/categorias.js?v=6" defer></script>
-  <script src="/assets/gustos.js?v=20261103exp" defer data-lang="${en ? 'en' : 'es'}"></script>
+  <script src="/assets/gustos.js?v=20261105cuenta" defer data-lang="${en ? 'en' : 'es'}"></script>
   <script src="/assets/municipios.js?v=20261103rv" defer></script>`;
 
   // Los atajos de la lupa (Iván, 2026-10-29: como la app): cada uno pone sus
@@ -2201,14 +2202,14 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
         <button type="button" class="pill ink" data-cerca data-err="${esc(S.nearNo)}">${esc(S.useLoc)}</button></p>`
     : '';
 
-  const alertaHref = `${en ? '/app/?lang=en' : '/app/'}#/alerta/nueva?${new URLSearchParams({
+  const alertaHref = `${enlaceCuenta(en ? 'en' : 'es', `alerta/nueva?${new URLSearchParams({
     origen: descubre ? 'descubre' : 'explorar',
     ...(esOfertas ? { tipo: 'flash_offer' } : esEventos ? { tipo: 'future_event' } : {}),
     ...(cat ? { cat } : {}),
     ...(price === 'free' ? { precio: '0' } : /^\d{1,3}$/.test(price) ? { precio: String(Number(price) * 100) } : {}),
     ...(soloDescuento ? { descuento: '1' } : {}),
     ...(cerca ? { radio: String(km * 1000), lat: posUrl(lat), lng: posUrl(lng) } : {}),
-  })}`;
+  })}`)}`;
   const hayAlgo = conFiltros || cerca || Boolean(city) || Boolean(sort);
   // «Según el tiempo» ya no lleva línea encima de la lista: lo dice el chip
   // de orden («☂ Recomendado»), adelantado detrás de ☰ (como la app).
@@ -2225,10 +2226,10 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   const palabra = q.trim().slice(0, 40);
   const lineaAvisame = !descubre && !negocios && !sinKlendar && palabra.replace(/[^\p{L}\p{N}]/gu, '').length >= 3
     ? `<div class="avisame-palabra" data-avisame-palabra="${esc(palabra)}" data-si="${esc(S.alertWordOn(palabra))}" data-si-hint="${esc(S.alertWordOnHint)}">
-      <a href="${esc(`/app/${en ? '?lang=en' : ''}#/avisame-palabra?palabra=${encodeURIComponent(palabra)}`)}">
+      <a href="${esc(`${enlaceCuenta(en ? 'en' : 'es', `avisame-palabra?palabra=${encodeURIComponent(palabra)}`)}`)}">
         ${ic('campana', 22)}<span><b>${esc(S.alertWord(palabra))}</b><small>${esc(S.alertWordHint)}</small></span></a>
     </div>
-    <script src="/assets/palabras.js?v=2" defer data-lang="${en ? 'en' : 'es'}" data-url="${esc(supabasePublic().url)}" data-key="${esc(supabasePublic().key)}"></script>` : '';
+    <script src="/assets/palabras.js?v=20261105cuenta" defer data-lang="${en ? 'en' : 'es'}" data-url="${esc(supabasePublic().url)}" data-key="${esc(supabasePublic().key)}"></script>` : '';
   const final = sinKlendar ? sinKlendarHtml({ S, lang, lat, lng, cobertura, link })
     : alFinal || vacio ? finalHtml({
       S, en, lang, cerca, km, city, cityName: e.cityName || '', filtros: conFiltros, link, page, sugerencias, vacio, alertaHref, nadaCerca,
@@ -2258,7 +2259,7 @@ document.querySelectorAll('[data-mf] p').forEach(function(p){var l=Array.prototy
     <div class="mf-fila"${mfCliente ? ' data-mf' : ''}><h3>${esc(S.kidsIn)}</h3><p>${ciudadesMas.map((c, i) => `<a${mfAttr(c, i)} href="${kidsBase(lang)}/${CITY(c.slug || c.city)}/">${esc(c.slug ? c.city : PRETTY(c.city))}</a>`).join('')}</p></div>` : ''}
     ${ciudadSeo && (cats || []).length ? `<div class="mf-fila"><h3>${esc(S.byCat)} · ${esc(PRETTY(ciudadSeo))}</h3><p>${(cats || []).map((c) => `<a href="${agendaBase(lang)}/${CITY(ciudadSeo)}/${encodeURIComponent(c.slug)}/">${esc(catName(c, en))}</a>`).join('')}</p></div>` : ''}
     ${cols.length ? `<div class="mf-fila"><h3>${esc(S.picks)}</h3><p>${cols.map((c) => `<a href="${collectionBase(lang)}/${encodeURIComponent(c.slug)}/${city && !cerca ? `${CITY(city)}/` : ''}">${esc(colTitle(c, en))}</a>`).join('')}</p></div>` : ''}
-    <p class="mf-cta"><a class="pill" href="${en ? '/app/?lang=en' : '/app/'}#/registro" data-sin-sesion>${esc(S.app)}</a> <a class="pill" href="${en ? '/en/for-business/' : '/para-negocios/'}">${esc(S.biz)}</a></p>
+    <p class="mf-cta"><a class="pill" href="${enlaceCuenta(en ? 'en' : 'es', 'registro')}" data-sin-sesion>${esc(S.app)}</a> <a class="pill" href="${en ? '/en/for-business/' : '/para-negocios/'}">${esc(S.biz)}</a></p>
   </section>${mfScript}`;
 
   // Cuántas hay y «Quitar filtros»: la página limpia del todo (también la zona).
@@ -2281,7 +2282,7 @@ document.querySelectorAll('[data-mf] p').forEach(function(p){var l=Array.prototy
   // primera, pone lo visto al final (en las demás, el orden de la base).
   const vistosJs = conVistos && !vacio
     ? `
-<script src="/assets/vistos.js?v=2" defer data-ordena="${page === 1 ? '1' : ''}" data-t="${esc(JSON.stringify({ title: S.seenTitle, body: S.seenBody, more: S.seeMore, change: S.seenChange, settings: `${en ? '/app/?lang=en' : '/app/'}#/ajustes/lo-que-ves` }))}"></script>`
+<script src="/assets/vistos.js?v=2" defer data-ordena="${page === 1 ? '1' : ''}" data-t="${esc(JSON.stringify({ title: S.seenTitle, body: S.seenBody, more: S.seeMore, change: S.seenChange, settings: `${enlaceCuenta(en ? 'en' : 'es', 'ajustes/lo-que-ves')}` }))}"></script>`
     : '';
   // El selector de idioma lleva a esta misma página con estos filtros, cada
   // idioma con sus palabras (`?cuando=finde` ↔ `?when=weekend`).

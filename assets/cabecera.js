@@ -153,8 +153,8 @@
     const p = location.pathname;
     if (/^\/(en\/)?(descubre|discover)\//.test(p)) return 'descubre';
     if (/^\/(en\/)?(explorar|explore|agenda|whats-on|hoy|today|coleccion|collection)\//.test(p)) return 'explorar';
-    // «Planes» también mientras pide entrar para ir a Planes (#/entrar?siguiente=planes).
-    if (/^\/app\//.test(p)) return /^#\/(planes|guardar)(\/|\?|$)|[?&]siguiente=planes\b/.test(location.hash) ? 'planes' : 'cuenta';
+    // «Planes» también mientras pide entrar para ir a Planes (/cuenta/entrar?siguiente=planes).
+    if (/^\/cuenta(\/|$)/.test(p)) return /^\/cuenta\/(planes|guardar)(\/|$)/.test(p) || /[?&]siguiente=planes\b/.test(location.search) ? 'planes' : 'cuenta';
     // El panel del negocio es parte de tu cuenta (en la app, «Mi negocio»
     // está en Cuenta).
     if (/^\/panel\//.test(p)) return 'cuenta';
@@ -168,21 +168,22 @@
   function marcaPestana() {
     const yaMarcada = document.querySelector('[data-tab][aria-current="page"]');
     const id = pestanaActiva();
-    if (yaMarcada && !/^\/app\//.test(location.pathname)) return;
+    if (yaMarcada && !/^\/cuenta(\/|$)/.test(location.pathname)) return;
     document.querySelectorAll('[data-tab]').forEach((a) => {
       if (a.dataset.tab === id) a.setAttribute('aria-current', 'page');
       else a.removeAttribute('aria-current');
     });
   }
   marcaPestana();
-  window.addEventListener('hashchange', marcaPestana);
+  // «Tu cuenta» cambia de pantalla sin recargar y avisa con `kl:ruta` (assets/cuenta/app.js).
+  window.addEventListener('kl:ruta', marcaPestana);
 
   // Cambiar de pestaña es instantáneo (GLOSARIO, «Movimiento › Pestañas»:
   // «no se funde», como en iOS y Android). Entre Descubre, Explorar, Planes,
   // Cuenta y la portada, la View Transition entre páginas se salta (antes
   // todo se fundía 150 ms); de una tarjeta a su ficha, y al volver, sigue
   // la foto que vuela. Lo decide la página que se va (`pageswap`).
-  const esRaiz = (u) => /^\/(en\/)?((descubre|discover|explorar|explore)\/)?$|^\/app\/$/.test(u.pathname);
+  const esRaiz = (u) => /^\/(en\/)?((descubre|discover|explorar|explore)\/)?$|^\/cuenta\/(planes\/?)?$/.test(u.pathname);
   addEventListener('pageswap', (ev) => {
     if (!ev.viewTransition) return;
     let a;
@@ -205,7 +206,7 @@
   // es del otro lado, se pasa a su versión (si la tiene).
   const IDIOMAS = ['es', 'en', 'ca', 'gl', 'eu', 'fr', 'de', 'it'];
   const lado = (l) => (/^(en|fr|de|it)$/.test(l) ? 'en' : 'es');
-  const deHerramienta = /^\/(app|panel)\//.test(location.pathname);
+  const deHerramienta = /^\/(cuenta|panel)\//.test(location.pathname);
   const leeIdioma = () => { try { const l = localStorage.getItem('klendar_lang'); return IDIOMAS.includes(l) ? l : null; } catch { return null; } };
   const ponIdioma = (l) => { try { localStorage.setItem('klendar_lang', l); } catch { /* sin almacenamiento */ } };
   // Con sesión, el de la cuenta (lo guarda la app o «Ajustes»). En «Tu
@@ -343,14 +344,17 @@
   // «Voy», lista de espera, sacar un código) dejan una marca al pulsarlos:
   // así la cuenta la hace sin volver a preguntar. Un enlace que llegue de
   // fuera (un chat, otra web) no la trae y la cuenta pide confirmar antes
-  // (`hayIntencion` en app/app.js).
+  // (`hayIntencion` en assets/cuenta/app.js).
   document.addEventListener('click', (ev) => {
-    const a = ev.target instanceof Element ? ev.target.closest('a[href*="#/"]') : null;
+    const a = ev.target instanceof Element ? ev.target.closest('a[href*="/cuenta/"]') : null;
     if (!a) return;
     let u;
     try { u = new URL(a.href, location.href); } catch { return; }
-    if (u.origin !== location.origin || !/^\/(en\/)?app\/$/.test(u.pathname)) return;
-    const ruta = u.hash.replace(/^#\/?/, '');
+    if (u.origin !== location.origin || !u.pathname.startsWith('/cuenta/')) return;
+    // Lo mismo que `crudo` en assets/cuenta/app.js: la ruta y sus parámetros,
+    // sin el idioma ni la vuelta, que se quedan al cambiar de pantalla.
+    const qs = u.search.slice(1).split('&').filter((p) => p && !/^(lang|destino|volver)(=|$)/.test(p)).join('&');
+    const ruta = u.pathname.slice('/cuenta/'.length).replace(/\/$/, '') + (qs ? `?${qs}` : '');
     if (!/^(guardar|seguir|voy|espera|codigo|reservar)\//.test(ruta)) return;
     try { sessionStorage.setItem('klendar.intencion', JSON.stringify({ r: ruta, t: Date.now() })); } catch { /* sin almacenamiento */ }
   }, true);

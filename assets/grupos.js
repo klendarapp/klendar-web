@@ -1,6 +1,6 @@
 /* «Grupos y empresas» (/grupos/, /en/groups/): elegir hasta 3 negocios y
  * «Pedir presupuesto (2)» en una barra fija abajo, que lleva al formulario
- * de «Tu cuenta» (`#/grupos/pedir?b=<id>,<id>`). Lo elegido se recuerda en
+ * de «Tu cuenta» (`/cuenta/grupos/pedir?b=<id>,<id>`). Lo elegido se recuerda en
  * esta pestaña (`klendar.grupos.elegidos`, también lo usa «Tu cuenta» al
  * quitar uno o con «Añadir otro»), para poder cambiar de zona o de filtro
  * sin perderlo. Un 4.º: «Como mucho 3 a la vez.»
@@ -11,7 +11,7 @@
   if (!form) return;
   var barra = document.getElementById('grupos-pedir');
   var boton = document.getElementById('grupos-pedir-btn');
-  var pedir = form.getAttribute('data-pedir') || '/app/#/grupos/pedir?b=';
+  var pedir = form.getAttribute('data-pedir') || '/cuenta/grupos/pedir?b=';
   var plantilla = form.getAttribute('data-ask') || '{n}';
   var max = form.getAttribute('data-max') || '';
   var CLAVE = 'klendar.grupos.elegidos';

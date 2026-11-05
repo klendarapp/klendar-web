@@ -194,7 +194,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
       d.innerHTML = Array.from({ length: 12 }, () => '<div style="position:relative;height:260px;margin:12px 0;border-radius:20px;background:linear-gradient(#456,#123)"><span style="position:absolute;top:8px;left:8px;z-index:4;background:#fff;padding:4px 8px;border-radius:99px">Chip</span></div>').join('');
       m.append(d);
     }, sel);
-    await p2.goto(`${BASE}/app/`);
+    await p2.goto(`${BASE}/cuenta/`);
     await p2.waitForTimeout(1500);
     await relleno('main');
     await rueda(p2, vp);

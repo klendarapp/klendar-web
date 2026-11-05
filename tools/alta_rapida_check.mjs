@@ -220,7 +220,7 @@ async function admin(nav, n) {
 async function enlace(nav, n) {
   const a = await contexto(nav, { conSesion: false });
   await a.p.goto(`${BASE}/alta/`);
-  await a.p.waitForURL(/\/app\/.*#\/registro\?para=negocio/);
+  await a.p.waitForURL(/\/cuenta\/registro\?.*para=negocio/);
   await a.p.waitForSelector('main form');
   ok(/Crea tu cuenta de negocio/.test(await a.p.locator('main').innerText()), `${n}: /alta sin sesión, «Crea tu cuenta de negocio»`);
   await a.ctx.close();

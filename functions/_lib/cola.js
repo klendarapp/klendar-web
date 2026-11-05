@@ -7,7 +7,7 @@
 // La dirección lleva el código del cartel: ni buscadores (`noindex` en la
 // etiqueta y en la cabecera), ni canonical ni hreflang, ni caché compartida,
 // ni contador de visitas. Con una sesión de «Tu cuenta» guardada, la etiqueta
-// del <head> lleva directamente al turno en vivo (`/app/#/cola/<código>`).
+// del <head> lleva directamente al turno en vivo (`/cuenta/cola/<código>`).
 
 import { esc, html, rpc, supabasePublic } from './page.js';
 import { publicPage } from './public.js';

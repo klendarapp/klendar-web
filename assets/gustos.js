@@ -21,7 +21,7 @@
  *
  * Las Ciudades de Klendar salen de la base (`cities`, las mismas que la app):
  * «Lo más buscado» y «Tu ciudad» guardada por una versión de antes.
- * `window.KlendarGustos` lo usa también «Tu cuenta» (`app/cuenta.js`).
+ * `window.KlendarGustos` lo usa también «Tu cuenta» (`assets/cuenta/cuenta.js`).
  */
 (function () {
   'use strict';
@@ -301,7 +301,7 @@
     var atajos = [[T.partidos, /^\/(en\/matches|partidos)\//, BALON],
       [T.grupos, /^\/(en\/groups|grupos)\//, GRUPOS], [T.sorteos, /^\/(en\/giveaways|sorteos)\//, SORTEO],
       // «Pedir un local» (a «Tu cuenta»), como la app.
-      [T.pedir, /^\/app\/(\?lang=en)?#\/pedir-local/, TIENDA]]
+      [T.pedir, /^\/cuenta\/pedir-local/, TIENDA]]
       .filter(function (x) { return x[0] && x[0].t && x[1].test(String(x[0].href || '')); });
     if (atajos.length) {
       html += '<section>' + atajos.map(function (x) {

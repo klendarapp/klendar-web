@@ -1,7 +1,7 @@
 // Paridad app ↔ web (tanda 2, área «social» y Ajustes), con Supabase contestado
 // aquí (no toca dev ni manda nada):
 //
-//  1. Ficha de un amigo (`#/amigos/<id>`): el ⋮ con «Quitar de tus amigos» y
+//  1. Ficha de un amigo (`/cuenta/amigos/<id>`): el ⋮ con «Quitar de tus amigos» y
 //     «Bloquear», cada uno con su confirmación y, hecho, a la lista. Bloquear
 //     con el tope lleno dice el texto de la app (`blockTooMany`).
 //  2. Tus listas de RRPP (`#/rrpp/<negocio>`): cuándo funciona la lista, el
@@ -10,7 +10,7 @@
 //  3. Dejar un sorteo, dejar de seguir a un artista o a un equipo: piden
 //     confirmación, como la app.
 //  4. Ajustes: Idioma y «Traducir…» se guardan solos (sin «Guardar»); el
-//     perfil (`#/perfil`) es su propia pantalla.
+//     perfil (`/cuenta/perfil`) es su propia pantalla.
 //  5. «Avísame si…»: el editor como el de la app.
 //
 // Chromium y WebKit, móvil y escritorio. Capturas en OUT.
@@ -111,7 +111,7 @@ async function fichaAmigo(nav, nombre, t, vp) {
       remove_friend: { ok: true },
       block_user: accion === 'tope' ? { ok: false, error: 'too_many' } : { ok: true },
     }));
-    await p.goto(`${BASE}/app/#/amigos/${AMIGO}`, { waitUntil: 'networkidle' });
+    await p.goto(`${BASE}/cuenta/amigos/${AMIGO}`, { waitUntil: 'networkidle' });
     await p.waitForSelector('.ficha-amigo h1');
     if (accion === 'quitar') await p.screenshot({ path: `${OUT}/web-ficha-amigo-${nombre}-${t}.png`, fullPage: true });
     await p.click('.amigo-barra details.mas-menu summary');
@@ -125,9 +125,9 @@ async function fichaAmigo(nav, nombre, t, vp) {
     if (accion === 'tope') {
       const toast = await p.locator('.toast, #toast, [role=status]').allInnerTexts();
       ok(toast.join(' ').includes('Has bloqueado a demasiadas personas'), `${nombre}/${t} tope de bloqueos: «Has bloqueado a demasiadas personas…» (${toast.join(' | ')})`);
-      ok(/#\/amigos\//.test(p.url()), `${nombre}/${t} tope: se queda en la ficha`);
+      ok(/\/cuenta\/amigos\//.test(p.url()), `${nombre}/${t} tope: se queda en la ficha`);
     } else {
-      ok(/#\/amigos$/.test(p.url()), `${nombre}/${t} ${accion}: vuelve a la lista (${p.url()})`);
+      ok(/\/cuenta\/amigos$/.test(p.url()), `${nombre}/${t} ${accion}: vuelve a la lista (${p.url()})`);
     }
     ok(errores.length === 0, `${nombre}/${t} ficha de amigo sin errores JS ${errores.join(' | ')}`);
     await ctx.close();
@@ -146,7 +146,7 @@ async function rrppPersona(nav, nombre, t, vp) {
       list: [{ name: 'Ana', joined_at: '2026-10-22T23:14:00Z', offer_title: 'Copa 2x1', seats: 1, status: 'validated', entered_at: '2026-10-22T23:32:00Z' }],
     },
   }));
-  await p.goto(`${BASE}/app/#/rrpp/${PROMO}`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/cuenta/rrpp/${PROMO}`, { waitUntil: 'networkidle' });
   await p.waitForSelector('#rrpp-lista .rrpp-fila');
   const v = await p.locator('#view').innerText();
   ok(/Cuándo funciona la lista/.test(v) && /Viernes y sábado, de 22:00 a 3:00/.test(v), `${nombre}/${t} RRPP: cuándo funciona la lista y cuándo abre`);
@@ -299,7 +299,7 @@ async function dejarDeSeguir(nav, nombre, t, vp) {
     ['equipos', 'unfollow_broadcast_team', { my_followed_teams: [{ id: 't1', name: 'Real Madrid', sport: 'football', next: null }] }],
   ]) {
     const { ctx, p, estado, errores } = await contexto(nav, vp, CUENTA({ ...lista, [fn]: { ok: true } }));
-    await p.goto(`${BASE}/app/#/${ruta}`, { waitUntil: 'networkidle' });
+    await p.goto(`${BASE}/cuenta/${ruta}`, { waitUntil: 'networkidle' });
     await p.waitForSelector('[data-dejar]');
     const v = await p.locator('#view').innerText();
     ok(/Sin (fechas|partidos) a la vista/.test(v), `${nombre}/${t} ${ruta}: «Sin … a la vista»`);
@@ -320,7 +320,7 @@ async function ajustes(nav, nombre, t, vp) {
     my_translation_settings: { translate_content: false }, set_translate_content: { ok: true },
     my_auth_methods: { has_password: true }, my_blocks: { blocks: [] },
   }), { fn: { translate: { available: true } }, perfil: { display_name: 'Ana', avatar_url: null, locale: null, birth_date: '1990-05-01' } });
-  await p.goto(`${BASE}/app/#/ajustes`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/cuenta/ajustes`, { waitUntil: 'networkidle' });
   await p.waitForSelector('#idioma');
   const v = await p.locator('#view').innerText();
   ok(!/Tu perfil/.test(v) && await p.locator('#f-perfil').count() === 0, `${nombre}/${t} Ajustes: sin «Tu perfil» dentro`);
@@ -333,7 +333,7 @@ async function ajustes(nav, nombre, t, vp) {
   await p.waitForTimeout(600);
   ok(estado.llamadas.some(([f, b]) => f === 'set_translate_content' && b.p_value === true), `${nombre}/${t} Ajustes: «Traducir…» se guarda al marcarlo`);
   // Editar perfil, su pantalla.
-  await p.goto(`${BASE}/app/#/perfil`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/cuenta/perfil`, { waitUntil: 'networkidle' });
   await p.waitForSelector('#f-perfil');
   const v2 = await p.locator('#view').innerText();
   ok(/Editar perfil/.test(v2) && /Cómo quieres que te vean en las reseñas/.test(v2) && await p.locator('#f-perfil select').count() === 0,
@@ -356,17 +356,17 @@ async function textos(nav, nombre, t, vp) {
     my_notification_preferences: {},
     my_group_requests: [{ id: 'g1', status: 'open', kind: 'afterwork', people: 8, date: '2026-11-20', targets: [{ status: 'proposed', business: { name: 'A' } }, { status: 'pending', business: { name: 'B' } }] }],
   }));
-  await p.goto(`${BASE}/app/#/cola/ABCDEFGHIJKLMNOP`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/cuenta/cola/ABCDEFGHIJKLMNOP`, { waitUntil: 'networkidle' });
   await p.waitForSelector('.cola-turno');
   let v = await p.locator('#view').innerText();
   ok(/Espera aproximada: unos 15 min/.test(v) && /Solo para mayores de 18 años/.test(v), `${nombre}/${t} cola: espera redondeada con la cola vacía y +18`);
-  await p.goto(`${BASE}/app/#/pedidos`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/cuenta/pedidos`, { waitUntil: 'networkidle' });
   await p.waitForSelector('.avisos');
   v = await p.locator('#view').innerText();
   ok(/Locales que has pedido/.test(v) && /Solo tú/.test(v) && /Aún no te has apuntado en ninguna zona\./.test(v)
     && v.indexOf('Bar Paco') < v.indexOf('Pedir un local'), `${nombre}/${t} «Lo que has pedido»: textos y «Pedir un local» debajo`);
-  await p.goto(`${BASE}/app/#/grupos/peticiones`, { waitUntil: 'networkidle' }).catch(() => {});
-  await p.goto(`${BASE}/app/#/ajustes/notificaciones`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/cuenta/grupos/peticiones`, { waitUntil: 'networkidle' }).catch(() => {});
+  await p.goto(`${BASE}/cuenta/ajustes/notificaciones`, { waitUntil: 'networkidle' });
   await p.waitForSelector('input[name=pedidos]');
   v = await p.locator('#view').innerText();
   ok(/Lo que has pedido/.test(v) && /Cuando tienen una fecha nueva cerca/.test(v) && /Cuando llega a Klendar un sitio que pediste/.test(v),
@@ -381,7 +381,7 @@ async function avisame(nav, nombre, t, vp) {
   const { ctx, p, estado, errores } = await contexto(nav, vp, CUENTA({ my_offer_alerts: [], save_offer_alert: { ok: true, id: 'x' } }));
   await ctx.grantPermissions(['geolocation']);
   await ctx.setGeolocation({ latitude: 40.4168, longitude: -3.7038 });
-  await p.goto(`${BASE}/app/#/alerta/nueva`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/cuenta/alerta/nueva`, { waitUntil: 'networkidle' });
   await p.waitForSelector('#f input[name=fija]');
   const v = await p.locator('#view').innerText();
   ok(/Vigilar esta zona/.test(v) && !/Usar dónde estoy ahora/.test(v) && !/Nombre de la zona/.test(v), `${nombre}/${t} «Avísame si…»: «Vigilar esta zona», sin botón ni nombre de zona`);

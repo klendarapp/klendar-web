@@ -3,11 +3,11 @@
  * <id>): allí, con la sesión de este navegador, /assets/sorteo.js pinta lo
  * tuyo y participa, lo deja, acepta o renuncia. Aquí solo:
  *
- * - `#/sorteo/<id>`: lo que manda «Participar» sin sesión (y una
+ * - `/cuenta/sorteo/<id>`: lo que manda «Participar» sin sesión (y una
  *   notificación de un sorteo). Pide entrar; si aún puedes participar,
  *   participa (con la marca de que se pulsó en la web; si no, primero
  *   pregunta, `confirmaEnlace`) y vuelve a la página del sorteo.
- * - `#/sorteos`: a «En los que participas» de la lista pública.
+ * - `/cuenta/sorteos`: a «En los que participas» de la lista pública.
  *
  * Con los sorteos apagados (`app_config.giveaways`, migración 20261243100000
  * de la app; al lanzar, apagados por la norma 5.3 de Apple) las dos dicen

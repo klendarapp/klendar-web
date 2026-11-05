@@ -144,6 +144,8 @@ createServer(async (req, res) => {
     // Los enlaces del correo de «Avísame cuando Klendar llegue».
     else if ((m = path.match(/^\/avisame\/(confirmar|baja)\/([^/]+)\/?$/))) { mod = await load(`functions/avisame/${m[1]}/[token].js`); params = { token: m[2] }; }
     else if ((m = path.match(/^\/widget\/([^/]+)\/?$/))) { mod = await load('functions/widget/[id].js'); params = { id: m[1] }; }
+    // «Tu cuenta»: la misma página en cualquier /cuenta/… (como en Cloudflare).
+    else if (/^\/cuenta(\/|$)/.test(path)) { mod = await load('functions/cuenta/[[ruta]].js'); }
     else if (path === '/api/mapbox-token') { mod = await load('functions/api/mapbox-token.js'); }
     else if (path === '/sitemap-agenda.xml') { mod = await load('functions/sitemap-agenda.xml.js'); }
     else if (path === '/sitemap-negocios.xml') { mod = await load('functions/sitemap-negocios.xml.js'); }
@@ -157,8 +159,17 @@ createServer(async (req, res) => {
       // en local: CF_PRUEBA='{"country":"ES","city":"Madrid","latitude":"40.41","longitude":"-3.70"}'
       // lo simula, para probar «Ubicación aproximada».
       if (process.env.CF_PRUEBA) Object.defineProperty(request, 'cf', { value: JSON.parse(process.env.CF_PRUEBA) });
-      const out = await (post ? mod.onRequestPost : mod.onRequestGet)({ request, params, env: process.env });
-      res.writeHead(out.status, Object.fromEntries(out.headers));
+      // `env.ASSETS` y `next()` de Pages: lo estático, con su `_headers`.
+      const SIGUE = Symbol('sigue');
+      const ASSETS = { fetch: async (r) => {
+        const ruta = new URL(r.url).pathname;
+        return new Response(await readFile(join(ROOT, ruta.endsWith('/') ? `${ruta}index.html` : ruta)), { headers: { ...cabecerasDe(path), 'content-type': TYPES[ruta.endsWith('/') ? '.html' : extname(ruta)] || 'application/octet-stream' } });
+      } };
+      const out = await (post ? mod.onRequestPost : mod.onRequestGet)({ request, params, env: { ...process.env, ASSETS }, next: async () => SIGUE });
+      if (out !== SIGUE) {
+      const cabeceras = Object.fromEntries(out.headers);
+      if (cabeceras.location) cabeceras.location = cabeceras.location.replace(/^https:\/\/klendar\.app/, '');
+      res.writeHead(out.status, cabeceras);
       // En local, sin el contador de Cloudflare (su servidor no acepta
       // localhost y la consola se llenaba de errores que en producción no hay).
       let html = (await out.text()).replace(/<script defer src="https:\/\/static\.cloudflareinsights\.com[^>]*><\/script>/g, '');
@@ -168,6 +179,7 @@ createServer(async (req, res) => {
       if (process.env.SUPABASE_URL_NAVEGADOR && process.env.SUPABASE_URL) html = html.split(process.env.SUPABASE_URL).join(process.env.SUPABASE_URL_NAVEGADOR);
       res.end(html);
       return;
+      }
     }
 
     const file = path.endsWith('/') ? `${path}index.html` : path;

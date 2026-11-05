@@ -509,7 +509,7 @@ $('#doReset').onclick = () => {
     let captchaToken;
     try { captchaToken = await window.KL_CAPTCHA?.(); } catch (e) { $('#loginErr').textContent = errAuth(e); return; }
     const { error } = await sb.auth.resetPasswordForEmail($('#email').value.trim(),
-      { redirectTo: `${location.origin}/app/?destino=%2Fadmin%2F#/nueva-clave`, captchaToken });
+      { redirectTo: `${location.origin}/cuenta/nueva-clave?destino=%2Fadmin%2F`, captchaToken });
     if (error) { $('#loginErr').textContent = errAuth(error); return; }
     toast(I18N.lang === 'en'
       ? `If ${$('#email').value.trim()} has an account, it'll get an email in a few seconds. Check spam too.`
@@ -532,7 +532,7 @@ sb.auth.onAuthStateChange((ev, s) => {
     }, 0);
   }
   if (ev === 'SIGNED_OUT') showLogin();
-  if (ev === 'PASSWORD_RECOVERY') location.href = '/app/?destino=%2Fadmin%2F#/nueva-clave';
+  if (ev === 'PASSWORD_RECOVERY') location.href = '/cuenta/nueva-clave?destino=%2Fadmin%2F';
 });
 // El menú lateral en el móvil: el botón dice si está abierto y Escape lo cierra.
 function abreMenuLateral(abrir) {

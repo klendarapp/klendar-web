@@ -4,7 +4,7 @@
 // sesión y se envuelve en la página de siempre. Como la de la cola: ni
 // buscadores, ni canonical, ni caché compartida, ni contador de visitas; con
 // una sesión de «Tu cuenta» guardada, la etiqueta del <head> lleva al pedido
-// en vivo (`/app/#/listo/<código>`).
+// en vivo (`/cuenta/listo/<código>`).
 
 import { esc, html, rpc, supabasePublic } from './page.js';
 import { publicPage } from './public.js';

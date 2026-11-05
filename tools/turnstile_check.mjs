@@ -35,7 +35,7 @@ const ok = (c, m) => { if (!c) { fallos++; console.log('FALLO:', m); } else cons
 
 const FORMULARIOS = [
   {
-    nombre: 'entrar', ruta: '/app/#/entrar', api: /\/auth\/v1\/token\?grant_type=password/, err: '#err',
+    nombre: 'entrar', ruta: '/cuenta/entrar', api: /\/auth\/v1\/token\?grant_type=password/, err: '#err',
     rellena: async (p) => {
       await p.fill('#f [name=email]', 'turnstile.prueba@example.com');
       await p.fill('#f [name=password]', 'Prueba-Turnstile-2026');
@@ -43,14 +43,14 @@ const FORMULARIOS = [
     },
   },
   {
-    nombre: 'código por correo', ruta: '/app/#/codigo-correo', api: /\/auth\/v1\/otp/, err: '#err',
+    nombre: 'código por correo', ruta: '/cuenta/codigo-correo', api: /\/auth\/v1\/otp/, err: '#err',
     rellena: async (p) => {
       await p.fill('#f1 [name=email]', 'turnstile.prueba@example.com');
       await p.click('#f1 button[type=submit]');
     },
   },
   {
-    nombre: 'crear la cuenta', ruta: '/app/#/registro', api: /\/auth\/v1\/signup/, err: '#err',
+    nombre: 'crear la cuenta', ruta: '/cuenta/registro', api: /\/auth\/v1\/signup/, err: '#err',
     rellena: async (p) => {
       await p.fill('#f [name=name]', 'Prueba Turnstile');
       await p.fill('#f [name=email]', 'turnstile.prueba@example.com');
@@ -62,7 +62,7 @@ const FORMULARIOS = [
     },
   },
   {
-    nombre: 'recuperar la contraseña', ruta: '/app/#/recuperar', api: /\/auth\/v1\/recover/, err: '#err',
+    nombre: 'recuperar la contraseña', ruta: '/cuenta/recuperar', api: /\/auth\/v1\/recover/, err: '#err',
     rellena: async (p) => {
       await p.fill('#f [name=email]', 'turnstile.prueba@example.com');
       await p.click('#f button[type=submit]');
@@ -200,7 +200,7 @@ try {
   const estado = { pedidos: [], authorize: [], cloudflare: 0 };
   const ctx = await contexto(nav, '1x00000000000000000000AA', estado, { cloudflare: 'caido' });
   const p = await ctx.newPage();
-  await p.goto(`${BASE}/app/#/entrar`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/cuenta/entrar`, { waitUntil: 'networkidle' });
   const boton = p.locator('#google [data-prov=google]');
   await boton.waitFor({ timeout: 8000 }).catch(() => {});
   ok(await boton.count() === 1, 'Google: sale el botón (Supabase lo tiene activo)');

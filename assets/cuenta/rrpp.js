@@ -1,10 +1,10 @@
 /* «Tu cuenta»: RRPP (relaciones públicas).
  *
  * - Entrar por el enlace de un RRPP (klendar.app/rp/<código>) y conseguir el
- *   código desde la ficha (`#/codigo/<id>?rp=<código>`): app.js le pasa el
+ *   código desde la ficha (`/cuenta/codigo/<id>?rp=<código>`): app.js le pasa el
  *   código a `start_redemption` (`p_rp`) y aquí están los errores nuevos.
  * - Ser RRPP: «Tus listas de RRPP» en la portada (solo si tienes alguna) y
- *   la pantalla de cada una (#/rrpp/<id>): tu enlace con su QR, tus ofertas
+ *   la pantalla de cada una (/cuenta/rrpp/<id>): tu enlace con su QR, tus ofertas
  *   con su cupo, tu lista de la noche (se refresca sola cada 30 s mientras
  *   miras «Esta noche») y «Dejar de ser RRPP». Nunca el correo, el teléfono
  *   ni la fecha de nacimiento de nadie (la base no los da).
@@ -117,7 +117,7 @@ async function rrppErrorCodigo(e, id, rp) {
     ? `${d.business_id ? `<a class="pill accent" href="${pre}/b/${esc(d.business_id)}">${esc(EN ? `See ${d.business_name || ''}` : `Ver ${d.business_name || ''}`)}</a>` : ''}
        ${botonTuCuenta().replace('pill accent', d.business_id ? 'pill' : 'pill accent')}`
     : `<a class="pill accent" href="${pre}/o/${esc(id)}${rp ? `?rp=${esc(rp)}` : ''}">${esc(t('Volver a la publicación'))}</a>
-       <a class="pill" href="#/">${esc(t('Tu cuenta'))}</a>`;
+       <a class="pill" href="/cuenta/">${esc(t('Tu cuenta'))}</a>`;
   pinta(pantallaVacia({ icono: 'group', titulo, h: 'h1', botones }));
   return true;
 }
@@ -129,20 +129,20 @@ function rrppPortadaHtml(roles) {
     : (n === 0 ? 'Nadie en tu lista esta noche' : n === 1 ? '1 en tu lista esta noche' : `${n} en tu lista esta noche`));
   return `<h2 class="seccion-t">${esc(t('Tus listas de RRPP'))}</h2>
     <div class="lista">${roles.map((r) => fila({
-      href: `#/rrpp/${r.promoter_id}`, icono: 'group', titulo: r.business_name || '',
+      href: `/cuenta/rrpp/${r.promoter_id}`, icono: 'group', titulo: r.business_name || '',
       detalle: r.status === 'paused' ? t('En pausa') : esta(Number(r.tonight) || 0),
     })).join('')}</div>`;
 }
 
-// ── #/rrpp y #/rrpp/<id>: la pantalla del RRPP ───────────────────────────────
+// ── /cuenta/rrpp y /cuenta/rrpp/<id>: la pantalla del RRPP ───────────────────────────────
 RUTAS.rrpp = async ([id], params) => {
   if (!exigeSesion(`rrpp${id ? `/${id}` : ''}`)) return;
   if (!id) {
     // Sin una concreta: la única que tengas, o la lista.
     const roles = await llamar('my_promoter_roles', {}).catch(() => []);
-    if ((roles || []).length === 1) { location.replace(`#/rrpp/${roles[0].promoter_id}`); return; }
+    if ((roles || []).length === 1) { irA(`rrpp/${roles[0].promoter_id}`, { reemplaza: true }); return; }
     pinta(roles?.length
-      ? `<p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p><h1>${esc(t('Tus listas de RRPP'))}</h1>${rrppPortadaHtml(roles).replace(/^<h2[^>]*>.*?<\/h2>/s, '')}`
+      ? `<p class="crumbs"><a href="/cuenta/">${esc(t('Tu cuenta'))}</a></p><h1>${esc(t('Tus listas de RRPP'))}</h1>${rrppPortadaHtml(roles).replace(/^<h2[^>]*>.*?<\/h2>/s, '')}`
       : pantallaVacia({ icono: 'group', titulo: t('No eres RRPP de ningún negocio.'), h: 'h1', botones: botonTuCuenta() }));
     return;
   }
@@ -180,7 +180,7 @@ RUTAS.rrpp = async ([id], params) => {
   const opciones = [...new Set([d.tonight, d.night, ...(d.nights || []).map((x) => x.night)].filter(Boolean))].sort().reverse();
 
   pinta(`
-    <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
+    <p class="crumbs"><a href="/cuenta/">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(EN ? `Promoter for ${b.name || ''}` : `RRPP de ${b.name || ''}`)}</h1>
     ${d.status === 'paused' ? `<p class="aviso-error">${esc(EN
       ? `${b.name} has paused your links: in the meantime, people who use them won't count for you.`
@@ -267,7 +267,7 @@ RUTAS.rrpp = async ([id], params) => {
     alSalir(() => clearInterval(reloj));
   }
   $('#rrpp-noche').onchange = (ev) => {
-    location.hash = ev.target.value === d.tonight ? `#/rrpp/${id}` : `#/rrpp/${id}?noche=${ev.target.value}`;
+    irA(ev.target.value === d.tonight ? `rrpp/${id}` : `rrpp/${id}?noche=${ev.target.value}`);
   };
 
   if (principal) {
@@ -329,7 +329,7 @@ function rrppEnganchaInvitaciones(lista, repinta) {
       const r = await llamar('respond_promoter_invite', { p_invite: idInv, p_accept: acepta });
       if (acepta) {
         toast(EN ? `You're now a promoter for ${r.business_name || negocio}.` : `Ya eres RRPP de ${r.business_name || negocio}.`);
-        location.hash = `#/rrpp/${r.promoter_id}`;
+        irA(`rrpp/${r.promoter_id}`);
         return;
       }
       toast(t('Invitación rechazada.'));

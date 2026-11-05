@@ -49,7 +49,7 @@
     checking: 'Comprobando que estás en el local…',
     cards: 'Tarjetas de sellos', retry: 'Volver a probar', useLoc: 'Usar mi ubicación', login: 'Entrar', close: 'Cerrar el aviso',
   };
-  var cuenta = en ? '/app/?lang=en' : '/app/';
+  var cuenta = function (ruta) { ruta = ruta || ''; return '/cuenta/' + (en ? ruta.replace(/\?|$/, function (m) { return m ? '?lang=en&' : '?lang=en'; }) : ruta); };
 
   // «1,2 km» / «350 m», como la app.
   function distancia(m) {
@@ -137,7 +137,7 @@
         return { t: c.added ? T.added(c.name, c.stamps, c.goal) : T.already(c.name, c.stamps, c.goal), fuerte: true };
       });
       if (tarjetas.some(function (c) { return c.goal > 0 && c.stamps >= c.goal; })) lineas.push({ t: T.reward });
-      pinta(r.stamp === 'stamped' ? '✓' : 'ⓘ', lineas, { texto: T.cards, href: cuenta + '#/sellos' });
+      pinta(r.stamp === 'stamped' ? '✓' : 'ⓘ', lineas, { texto: T.cards, href: cuenta('sellos') });
     } else if (r.stamp === 'too_far') {
       pinta('ⓘ', [T.far(distancia(r.distance_m || 0))], { texto: T.retry, fn: sellar });
     } else if (r.stamp === 'no_location') {
@@ -158,7 +158,7 @@
     if (!info.ok || !(info.visit_cards || []).length) return null;
     return sb.auth.getSession().then(function (s) {
       if (!s.data || !s.data.session) {
-        pinta('ⓘ', [T.signIn], { texto: T.login, href: cuenta + '#/entrar?siguiente=' + encodeURIComponent('visita/' + token) });
+        pinta('ⓘ', [T.signIn], { texto: T.login, href: cuenta('entrar?siguiente=' + encodeURIComponent('visita/' + token)) });
         return null;
       }
       return sellar();

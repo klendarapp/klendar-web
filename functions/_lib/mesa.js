@@ -17,6 +17,7 @@
 //   cambio de contraseña se ve en menos de un minuto, también contando la
 //   caché del navegador.
 
+import { enlaceCuenta } from './cuenta.js';
 import { esc, html, isUuid, rpc, rpcAll, supabasePublic } from './page.js';
 import KZ from '../../assets/zona.js';
 import { money, publicPage, zonaDe } from './public.js';
@@ -128,7 +129,6 @@ export async function tableQrPage(token, lang) {
     </section>` : `<h1>${esc(b.name)}</h1><p class="muted">${esc(S.noWifi)}</p>`;
 
   const ficha = fichaDe(b.slug || b.id);
-  const cuenta = en ? '/app/?lang=en' : '/app/';
   const cartaHtml = carta.length ? `<h2 id="carta">${esc(S.menu)}</h2>
     <div class="menu">${carta.map((sec) => `<section><h3>${esc(sec.name)}</h3><ul>${(sec.items || []).map((it) => `<li>
       <span class="plato"><b>${esc(it.name)}</b>${it.description ? `<small>${esc(it.description)}</small>` : ''}${(it.allergens || []).length ? `<small class="alg">${esc(S.allergens)}: ${it.allergens.map((a) => esc(alergeno(a, en))).join(', ')}</small>` : ''}</span>
@@ -139,7 +139,7 @@ export async function tableQrPage(token, lang) {
   const body = `
   ${wifiHtml}
   <div class="mesa-acc">
-    <a class="pill" data-solo-publico data-fav="${esc(b.id)}" href="${cuenta}#/seguir/${encodeURIComponent(b.id)}"><span>${esc(S.fav)}</span></a>
+    <a class="pill" data-solo-publico data-fav="${esc(b.id)}" href="${enlaceCuenta(en ? 'en' : 'es', `seguir/${encodeURIComponent(b.id)}`)}"><span>${esc(S.fav)}</span></a>
     <a class="pill" href="${esc(ficha)}"><span>${esc(S.ficha)}</span></a>
   </div>
   <h2>${esc(S.today)}${w ? ` · ${esc(b.name)}` : ''}</h2>

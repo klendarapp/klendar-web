@@ -44,7 +44,7 @@
   var tarjetasSellos = document.querySelectorAll('[data-tarjeta]');
   if (!ficha && !tarjetas.length && !botonFav && !botonPlan && !resenas.length && !barra && !equipoEl) return;
   var UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  var cuenta = en ? '/app/?lang=en' : '/app/';
+  var cuenta = function (ruta) { ruta = ruta || ''; return '/cuenta/' + (en ? ruta.replace(/\?|$/, function (m) { return m ? '?lang=en&' : '?lang=en'; }) : ruta); };
 
   var T = en ? {
     someone: 'Klendar user',
@@ -221,8 +221,8 @@
             if (ficha) social(sb);
             if (tarjetas.length) enTarjetas(sb);
             var uid = r.data.session.user && r.data.session.user.id;
-            if (botonFav) yaLoTienes(sb, uid, botonFav, 'favorites', 'business_id', botonFav.getAttribute('data-fav'), '#/seguir/', T.favOn);
-            if (botonPlan) yaLoTienes(sb, uid, botonPlan, 'saved_offers', 'offer_id', botonPlan.getAttribute('data-plan'), '#/guardar/', T.planOn);
+            if (botonFav) yaLoTienes(sb, uid, botonFav, 'favorites', 'business_id', botonFav.getAttribute('data-fav'), 'seguir/', T.favOn);
+            if (botonPlan) yaLoTienes(sb, uid, botonPlan, 'saved_offers', 'offer_id', botonPlan.getAttribute('data-plan'), 'guardar/', T.planOn);
             if (resenas.length) sinBloqueadas(sb, uid);
             if (barra) filtroAmigos(sb);
             if (equipoEl) comoEquipo(sb);
@@ -300,7 +300,7 @@
       if (mio) {
         // Ya tienes el código (o la plaza): el botón lo enseña.
         principal.textContent = T.myCode;
-        principal.setAttribute('href', cuenta + '#/codigo/' + id);
+        principal.setAttribute('href', cuenta('codigo/' + id));
         if (nota) nota.hidden = true;
         return;
       }
@@ -318,7 +318,7 @@
         principal.textContent = T.waitLeave;
         principal.classList.remove('accent');
         principal.classList.add('on');
-        principal.setAttribute('href', cuenta + '#/espera/' + id + '?quitar=1');
+        principal.setAttribute('href', cuenta('espera/' + id + '?quitar=1'));
       }
       if (!nota) return;
       var hora = espera && espera.notified_until
@@ -355,7 +355,7 @@
         var linea = document.createElement('span');
         linea.className = 'sellos-mios';
         linea.innerHTML = '<b>' + esc(T.stamps(n, g)) + '</b> · ' + (listo
-          ? esc(T.ready) + ' <a href="' + esc(cuenta + '#/sellos') + '">' + esc(c.pending_code ? T.showCode : T.claim) + '</a>'
+          ? esc(T.ready) + ' <a href="' + esc(cuenta('sellos')) + '">' + esc(c.pending_code ? T.showCode : T.claim) + '</a>'
           : esc(T.missing(Math.max(0, g - n))));
         el.appendChild(document.createElement('br'));
         el.appendChild(linea);
@@ -374,7 +374,7 @@
       if (texto) texto.textContent = textoOn;
       boton.classList.remove('accent');
       boton.classList.add('on');
-      boton.setAttribute('href', cuenta + ruta + id + '?quitar=1');
+      boton.setAttribute('href', cuenta(ruta + id + '?quitar=1'));
     }, function () { /* sin red: el botón tal cual */ });
   }
 
@@ -384,7 +384,7 @@
   function sinBloqueadas(sb, uid) {
     resenas.forEach(function (r) {
       if (r.getAttribute('data-autor') !== uid) return;
-      var b = r.querySelector('a[href*="#/bloquear/"]');
+      var b = r.querySelector('a[href*="/cuenta/bloquear/"]');
       if (b) { var sep = b.previousSibling; if (sep && sep.nodeType === 3) sep.textContent = ''; b.remove(); }
     });
     sb.rpc('my_blocks').then(function (res) {
@@ -603,7 +603,7 @@
       var sinAmigos = amigos === 0;
       caja.innerHTML = '<section class="vacio"><h2>' + esc(sinAmigos ? T.sinT : T.vacioT) + '</h2>' +
         '<p>' + esc(sinAmigos ? T.sinB : T.vacioB) + '</p><div class="vacio-botones">' +
-        '<a class="pill accent" href="' + esc(cuenta + (sinAmigos ? '#/amigos/anadir' : '#/amigos')) + '">' + esc(sinAmigos ? T.anadir : T.verAmigos) + '</a>' +
+        '<a class="pill accent" href="' + esc(cuenta(sinAmigos ? 'amigos/anadir' : 'amigos')) + '">' + esc(sinAmigos ? T.anadir : T.verAmigos) + '</a>' +
         '<a class="pill" href="' + esc(otra.pathname + otra.search) + '">' + esc(T.quitar) + '</a></div></section>';
     }).catch(function () {
       // Sin red o algo raro: se vuelve a enseñar lo de siempre.
@@ -667,7 +667,7 @@
         if (voy.classList.contains('big')) voy.classList.toggle('accent', !d.going);
         voy.classList.toggle('on', !!d.going);
         if (texto) texto.textContent = d.going ? T.youGo : T.going;
-        voy.setAttribute('href', cuenta + '#/voy/' + id + (d.going ? '?quitar=1' : ''));
+        voy.setAttribute('href', cuenta('voy/' + id + (d.going ? '?quitar=1' : '')));
         if (d.going) { voy.title = T.remove; voy.setAttribute('aria-label', T.remove); } else {
           voy.removeAttribute('title'); voy.removeAttribute('aria-label');
         }
@@ -700,7 +700,7 @@
       // Bloquear a quien invita (el primero): «Tu cuenta» pregunta antes.
       var de = invs[0].from && UUID.test(invs[0].from.id || '') ? invs[0].from.id : '';
       var bloquear = de
-        ? '<a class="denuncia" rel="nofollow" href="' + esc(cuenta + '#/bloquear/' + de) + '">' + esc(T.block(nombre(invs[0].from))) + '</a>'
+        ? '<a class="denuncia" rel="nofollow" href="' + esc(cuenta('bloquear/' + de)) + '">' + esc(T.block(nombre(invs[0].from))) + '</a>'
         : '';
       caja.innerHTML = '<p class="invita-cab">' + pila(quienes) + '<b>' + esc(titulo) + '</b></p>' +
         '<div class="invita-acc">' + botones + '</div>' + bloquear;
@@ -716,7 +716,7 @@
       // Con código o reserva, «Voy» es conseguirlo: al tenerlo, la base
       // contesta la invitación y avisa a quien invitó.
       if (va && conCodigo) {
-        location.href = cuenta + '#/' + conCodigo + '/' + id;
+        location.href = cuenta(conCodigo + '/' + id);
         return;
       }
       var todos = caja.querySelectorAll('button');

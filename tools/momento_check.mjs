@@ -7,7 +7,7 @@
 //     alguien, en directo: «Lucía lo ha recibido». «Terminar» cierra el QR.
 //  2. Con el negocio parado: sellos nuevos y «Algo del momento» desactivados.
 //  3. Cliente: ese mismo QR leído con la cámara del móvil (`/m/<…>` de las
-//     Functions) lleva a «Tu cuenta» (#/momento/<…>): «Cafetería Prueba te
+//     Functions) lleva a «Tu cuenta» (/cuenta/momento/<…>): «Cafetería Prueba te
 //     da: Postre invitado», «Aceptar» → «¡Hecho!»; y en «Tus códigos», «Te
 //     dieron». Un QR caducado: «Ese QR ya no vale».
 //  4. Sin errores en la consola.
@@ -160,7 +160,7 @@ async function prueba(nav, nombre, t, vp) {
   const cli = await contexto(nav, vp);
   const ruta = token.replace('https://klendar.app', '');
   await cli.p.goto(`${BASE}${ruta}`, { waitUntil: 'networkidle' });
-  ok(/\/app\/#\/momento\//.test(cli.p.url()), `${nombre}/${t} /m/ lleva a «Tu cuenta» (${cli.p.url()})`);
+  ok(/\/cuenta\/momento\//.test(cli.p.url()), `${nombre}/${t} /m/ lleva a «Tu cuenta» (${cli.p.url()})`);
   await cli.p.waitForSelector('#momento-acepta', { timeout: 8000 }).catch(async (e) => {
     console.log('DEPURA', cli.p.url(), (await cli.p.locator('body').innerText()).slice(0, 600), cli.errores, cli.estado.llamadas.map((x) => x[0]).join(','));
     throw e;
@@ -172,13 +172,13 @@ async function prueba(nav, nombre, t, vp) {
   await cli.p.waitForSelector('text=¡Hecho!');
   ok(/Lo tienes en Tus códigos/.test(await cli.p.locator('body').innerText()), `${nombre}/${t} cliente: «¡Hecho!» y dónde queda`);
   await foto('momento-hecho', cli.p);
-  await cli.p.goto(`${BASE}/app/#/codigos`, { waitUntil: 'networkidle' });
+  await cli.p.goto(`${BASE}/cuenta/codigos`, { waitUntil: 'networkidle' });
   await cli.p.waitForSelector('text=Te dieron');
   ok(/Postre invitado/.test(await cli.p.locator('body').innerText()), `${nombre}/${t} «Tus códigos»: «Te dieron» con el regalo`);
   await foto('momento-tus-codigos', cli.p);
   // Una foto vieja del QR (5 ventanas atrás) ya no vale.
   const viejo = ruta.replace(/\.(\d+)\./, (_, w) => `.${Number(w) - 5}.`);
-  await cli.p.goto(`${BASE}/app/#/momento/${viejo.slice(3)}`, { waitUntil: 'networkidle' });
+  await cli.p.goto(`${BASE}/cuenta/momento/${viejo.slice(3)}`, { waitUntil: 'networkidle' });
   await cli.p.waitForSelector('text=Ese QR ya no vale');
   ok(true, `${nombre}/${t} cliente: un QR viejo, «Ese QR ya no vale»`);
   ok(!cli.errores.length, `${nombre}/${t} cliente sin errores (${cli.errores.join(' | ')})`);

@@ -3,7 +3,7 @@
 //
 //  1. Tu cuenta › Ajustes → Notificaciones: «¿Qué tal? al día siguiente».
 //  2. El aviso del día siguiente (`/business/<id>?review=1&from=quetal`)
-//     lleva a `#/opinar/<id>?desde=quetal`: la reseña sin estrellas marcadas
+//     lleva a `/cuenta/opinar/<id>?desde=quetal`: la reseña sin estrellas marcadas
 //     y con «Ahora no»; sin venir del aviso, sin «Ahora no».
 //  3. Panel › `#/estaba-cerrado`: «Horario» y «Era un cierre puntual».
 //  4. Panel › Tu ficha › Horario: el aviso y «Está bien así».
@@ -95,7 +95,7 @@ async function cuentaAjustes(nav, nombre, t, vp) {
     my_notification_preferences: { notify_favorites: true, notify_quetal: true },
     my_businesses: [], update_notification_preferences: null,
   }));
-  await p.goto(`${BASE}/app/#/ajustes/notificaciones`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/cuenta/ajustes/notificaciones`, { waitUntil: 'networkidle' });
   await p.waitForSelector('input[name=quetal]');
   const vA = await p.locator('#view').innerText();
   ok(/¿Qué tal\? al día siguiente/.test(vA) && /te pedimos tu reseña/.test(vA) && await p.locator('input[name=quetal]').isChecked(), `${nombre}/${t} Ajustes: «¿Qué tal? al día siguiente», encendido`);
@@ -112,16 +112,16 @@ async function cuentaResena(nav, nombre, t, vp) {
     business_profile: [{ id: BIZ, name: 'Bar Sonda', city: 'Madrid', time_zone: 'Europe/Madrid' }],
     my_review: null, business_reviews: [],
   }));
-  await p.goto(`${BASE}/app/#/`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/cuenta/`, { waitUntil: 'networkidle' });
   const destino = await p.evaluate((b) => destinoWeb(`/business/${b}?review=1&from=quetal`), BIZ);
-  ok(destino === `#/opinar/${BIZ}?desde=quetal`, `${nombre}/${t} el aviso lleva a la reseña con «Ahora no» (${destino})`);
-  await p.goto(`${BASE}/app/#/opinar/${BIZ}?desde=quetal`, { waitUntil: 'networkidle' });
+  ok(destino === `/cuenta/opinar/${BIZ}?desde=quetal`, `${nombre}/${t} el aviso lleva a la reseña con «Ahora no» (${destino})`);
+  await p.goto(`${BASE}/cuenta/opinar/${BIZ}?desde=quetal`, { waitUntil: 'networkidle' });
   await p.waitForSelector('#n5');
   const marcadas = await p.locator('input[name=nota]:checked').count();
   ok(marcadas === 0, `${nombre}/${t} reseña desde el aviso: sin estrellas marcadas`);
   ok(await p.locator(`.ahora-no a[href$="/b/${BIZ}"]`).count() === 1, `${nombre}/${t} reseña desde el aviso: «Ahora no»`);
   await p.screenshot({ path: `${OUT}/web-resena-que-tal-${nombre}-${t}.png`, fullPage: true });
-  await p.goto(`${BASE}/app/#/opinar/${BIZ}`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/cuenta/opinar/${BIZ}`, { waitUntil: 'networkidle' });
   await p.waitForSelector('#n5');
   // Solo cambia el `#`: se espera a que se vuelva a pintar.
   await p.waitForFunction(() => !document.querySelector('.ahora-no'), null, { timeout: 5000 }).catch(() => {});

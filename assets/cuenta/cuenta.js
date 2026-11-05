@@ -72,12 +72,12 @@ function destinoWeb(ruta) {
   // La reseña. Desde el aviso «¿Qué tal en …?» (`&from=quetal`), con
   // «Ahora no».
   if ((m = r.match(/^\/business\/([0-9a-f-]{36})\?review=1(&from=quetal)?/i))) {
-    return `#/opinar/${m[1]}${m[2] ? '?desde=quetal' : ''}`;
+    return `/cuenta/opinar/${m[1]}${m[2] ? '?desde=quetal' : ''}`;
   }
   // «Pregúntale al local»: a quien preguntó, sus preguntas a ese negocio
   // (con `?q=`, esa a la vista); al negocio, la bandeja del panel.
   if ((m = r.match(/^\/business\/([0-9a-f-]{36})\/questions(?:\?q=([0-9a-f-]{36}))?/i))) {
-    return `#/preguntar/${m[1]}${m[2] ? `?q=${m[2]}` : ''}`;
+    return `/cuenta/preguntar/${m[1]}${m[2] ? `?q=${m[2]}` : ''}`;
   }
   if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/questions/i))) return `/panel/#/preguntas?biz=${m[1]}`;
   // «Estaba cerrado»: al negocio, en el panel.
@@ -106,33 +106,33 @@ function destinoWeb(ruta) {
   if (r.startsWith('/my-business')) return '/panel/';
   // «X te ha enviado una propuesta»: la petición. «¡Has ganado…!»: la página
   // del sorteo, que con tu sesión enseña lo tuyo.
-  if ((m = r.match(/^\/groups\/requests\/([0-9a-f-]{36})/i))) return `#/grupos/${m[1]}`;
-  if (r.startsWith('/groups/requests')) return '#/grupos';
+  if ((m = r.match(/^\/groups\/requests\/([0-9a-f-]{36})/i))) return `/cuenta/grupos/${m[1]}`;
+  if (r.startsWith('/groups/requests')) return '/cuenta/grupos';
   if (r.startsWith('/groups')) return PUB_EN ? '/en/groups/' : '/grupos/';
   if ((m = r.match(/^\/giveaways\/([0-9a-f-]{36})/i))) return `${PUB_EN ? '/en/giveaway/' : '/sorteo/'}${m[1]}`;
   if (r.startsWith('/giveaways')) return PUB_EN ? '/en/giveaways/' : '/sorteos/';
   // Cola virtual: «¡Te toca!», «Se ha pasado tu turno»… → el turno.
-  if ((m = r.match(/^\/cola\/([A-Za-z0-9_-]{16})/))) return `#/cola/${m[1]}`;
+  if ((m = r.match(/^\/cola\/([A-Za-z0-9_-]{16})/))) return `/cuenta/cola/${m[1]}`;
   // Te aviso cuando esté listo: «Tu pedido está listo en…» → el pedido.
-  if ((m = r.match(/^\/listo\/([A-Za-z0-9_-]{16})/))) return `#/listo/${m[1]}`;
+  if ((m = r.match(/^\/listo\/([A-Za-z0-9_-]{16})/))) return `/cuenta/listo/${m[1]}`;
   // «¡Feliz cumpleaños!»: el regalo, con su QR.
-  if ((m = r.match(/^\/gift\/([0-9a-f-]{36})/i))) return `#/regalo/${m[1]}`;
+  if ((m = r.match(/^\/gift\/([0-9a-f-]{36})/i))) return `/cuenta/regalo/${m[1]}`;
   // «… se ha cancelado»: la reserva, que sale como «Anulado».
   // Con `?offer=<id>`, ese código a la vista y resaltado.
-  if ((m = r.match(/^\/my-redemptions\?offer=([0-9a-f-]{36})/i))) return `#/codigos?offer=${m[1]}`;
-  if (r.startsWith('/my-redemptions')) return '#/codigos';
+  if ((m = r.match(/^\/my-redemptions\?offer=([0-9a-f-]{36})/i))) return `/cuenta/codigos?offer=${m[1]}`;
+  if (r.startsWith('/my-redemptions')) return '/cuenta/codigos';
   // Bonos: «Bono cargado», pocos usos, caduca pronto… → ese bono.
-  if ((m = r.match(/^\/passes\/([0-9a-f-]{36})/i))) return `#/bono/${m[1]}`;
-  if (r.startsWith('/profile')) return '#/ajustes';
+  if ((m = r.match(/^\/passes\/([0-9a-f-]{36})/i))) return `/cuenta/bono/${m[1]}`;
+  if (r.startsWith('/profile')) return '/cuenta/ajustes';
   // «Ana está en tus amigos»: tu lista de amigos.
-  if (r.startsWith('/friends')) return '#/amigos';
+  if (r.startsWith('/friends')) return '/cuenta/amigos';
   // «Te invitan a un equipo»: aceptarla o rechazarla.
-  if (r.startsWith('/team-invites')) return '#/invitaciones';
+  if (r.startsWith('/team-invites')) return '/cuenta/invitaciones';
   // «Te han pausado como RRPP», «Vuelves a ser RRPP»: tu lista de ese local.
-  if ((m = r.match(/^\/promoter\/([0-9a-f-]{36})/i))) return `#/rrpp/${m[1]}`;
+  if ((m = r.match(/^\/promoter\/([0-9a-f-]{36})/i))) return `/cuenta/rrpp/${m[1]}`;
   // «Real Madrid – Barça, hoy a las 21:00»: la página pública del partido,
   // con los bares que lo ponen. «Equipos y deportistas que sigues», a la suya.
-  if (r.startsWith('/partidos/equipos')) return '#/equipos';
+  if (r.startsWith('/partidos/equipos')) return '/cuenta/equipos';
   if ((m = r.match(/^\/partidos\/([0-9a-f-]{36})/i))) return `${PUB_EN ? '/en/matches/' : '/partidos/'}${m[1]}`;
   if (r.startsWith('/partidos')) return PUB_EN ? '/en/matches/' : '/partidos/';
   // «DJ Nano actúa cerca» va a la publicación (`/offer/<id>`, arriba). La
@@ -141,7 +141,7 @@ function destinoWeb(ruta) {
   // «Klendar ya está en Teruel» (crecer): a Descubre. «[Local] ya está en
   // Klendar» va a su ficha (`/business/<id>`, arriba).
   if (r === '/') return PUB_EN ? '/en/discover/' : '/descubre/';
-  if (r.startsWith('/artists')) return '#/artistas';
+  if (r.startsWith('/artists')) return '/cuenta/artistas';
   return '';
 }
 
@@ -157,7 +157,7 @@ async function sinLeer() {
   if (!YO) return 0;
   await MARCA_LEIDAS;
   let q = sb.from('notifications').select('id', { count: 'exact', head: true }).is('read_at', null);
-  // Con los sorteos apagados, sin sus avisos (app/sorteos.js).
+  // Con los sorteos apagados, sin sus avisos (assets/cuenta/sorteos.js).
   if (!(await sorteosEnCuenta())) q = q.neq('kind', 'giveaway');
   const { count } = await q;
   return count || 0;
@@ -191,7 +191,7 @@ function marcaLeidas(ids, alIrse = false) {
 function accionAviso(d) {
   const uuid = /^[0-9a-f-]{36}$/i;
   if (d?.action === 'view_code' && uuid.test(d.offer_id || '')) {
-    return { href: `#/codigo/${d.offer_id}`, txt: t('Ver mi código') };
+    return { href: `/cuenta/codigo/${d.offer_id}`, txt: t('Ver mi código') };
   }
   if (d?.action === 'duplicate' && uuid.test(d.offer_id || '') && uuid.test(d.business_id || '')) {
     const nueva = d.offer_kind === 'future_event' ? 'nuevo-evento' : 'nueva-flash';
@@ -208,7 +208,7 @@ function filaAviso(n) {
   const ruta = n.route === '/my-redemptions' && /^[0-9a-f-]{36}$/i.test(n.data?.offer_id || '')
     ? `${n.route}?offer=${n.data.offer_id}` : n.route;
   const destino = accion?.href || destinoWeb(ruta);
-  return `<a class="aviso${n.read_at ? '' : ' nuevo'}" href="${esc(destino || '#/notificaciones')}" data-id="${esc(n.id)}">
+  return `<a class="aviso${n.read_at ? '' : ' nuevo'}" href="${esc(destino || '/cuenta/notificaciones')}" data-id="${esc(n.id)}">
     <b>${esc(n.title)}</b>
     ${n.body ? `<span>${esc(n.body)}</span>` : ''}
     <small class="muted">${esc(fecha(n.created_at))}</small>
@@ -234,11 +234,11 @@ RUTAS.notificaciones = async () => {
   ]);
   const nuevos = noLeidas ?? lista.filter((n) => !n.read_at).length;
   pinta(`
-    <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
+    <p class="crumbs"><a href="/cuenta/">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(t('Notificaciones'))}</h1>
     ${lista.length ? `<p class="acciones">
       ${nuevos ? `<button class="pill" id="leidos">${esc(t('Marcar todo como leído'))}</button>` : ''}
-      <a class="pill ghost" href="#/ajustes/notificaciones">${esc(t('Qué notificaciones recibo'))}</a>
+      <a class="pill ghost" href="/cuenta/ajustes/notificaciones">${esc(t('Qué notificaciones recibo'))}</a>
     </p>` : ''}
     ${lista.length ? `<div class="avisos" id="avisos">${lista.map(filaAviso).join('')}</div>${lista.length >= AVISOS_POR_PARTE ? `<p class="ver-mas"><button type="button" class="pill" data-ver-mas="avisos">${esc(t('Ver más'))}</button></p>` : ''}`
     : pantallaVacia({
@@ -248,8 +248,8 @@ RUTAS.notificaciones = async () => {
       // Lo que dice el texto, a un toque (como la app): favoritos (Descubre)
       // y «Avísame si…» (crear un aviso).
       botones: `<a class="pill accent" href="${PUB_EN ? '/en/discover/' : '/descubre/'}">${esc(t('Descubrir negocios'))}</a>
-        <a class="pill" href="#/alerta/nueva">${esc(t('Nuevo aviso'))}</a>
-        <a class="pill ghost" href="#/ajustes/notificaciones">${esc(t('Qué notificaciones recibo'))}</a>`,
+        <a class="pill" href="/cuenta/alerta/nueva">${esc(t('Nuevo aviso'))}</a>
+        <a class="pill ghost" href="/cuenta/ajustes/notificaciones">${esc(t('Qué notificaciones recibo'))}</a>`,
     })}`);
 
   // Como en la app: las que no habías leído se marcan como leídas al salir
@@ -289,15 +289,15 @@ RUTAS.notificaciones = async () => {
     // «Ver mi código» viene de aquí, no de un enlace de fuera: el código se
     // enseña sin la pantalla de confirmar (`confirmaEnlace`).
     const ir = a.getAttribute('href') || '';
-    if (ir.startsWith('#/codigo/')) marcaIntencion(ir.slice(2));
+    if (ir.startsWith('/cuenta/codigo/')) marcaIntencion(sinBase(ir));
     if (a.classList.contains('nuevo')) {
       ev.preventDefault();
       a.classList.remove('nuevo');
       vistas.delete(a.dataset.id);
       try { await llamar('mark_notifications_read', { p_ids: [a.dataset.id] }); } catch { /* no bloquea */ }
       const href = a.getAttribute('href');
-      if (href === '#/notificaciones') return;
-      if (href.startsWith('#')) location.hash = href; else location.href = href;
+      if (href === '/cuenta/notificaciones') return;
+      if (href.startsWith('/cuenta/')) irA(href); else location.href = href;
     }
   }));
   conecta($$('.aviso'));
@@ -358,16 +358,16 @@ RUTAS.alertas = async () => {
     llamar('my_alert_words', {}).catch(() => null)]);
   const misPalabras = (palabras?.words || []).map((w) => w.word);
   pinta(`
-    <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
+    <p class="crumbs"><a href="/cuenta/">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(t('Avísame si…'))}</h1>
-    <div class="lista"><a class="fila" href="#/ajustes/notificaciones">
+    <div class="lista"><a class="fila" href="/cuenta/ajustes/notificaciones">
       <span class="fila-t"><b>${esc(t('Por palabras'))}</b><small>${esc(misPalabras.length ? misPalabras.join(' · ') : t('Por palabras: «karaoke», «sushi», «2x1»'))}</small></span>
       <span aria-hidden="true">›</span></a></div>
     <p class="muted">${esc(t('Te avisamos cuando se publique algo que encaje. Como mucho tres notificaciones al día, y puedes apagar cada aviso por separado.'))}</p>
-    <p><a class="pill accent" href="#/alerta/nueva">${ic('add')} ${esc(t('Nuevo aviso'))}</a></p>
+    <p><a class="pill accent" href="/cuenta/alerta/nueva">${ic('add')} ${esc(t('Nuevo aviso'))}</a></p>
     ${(lista || []).length ? `<div class="avisos">${lista.map((a) => `
       <div class="aviso alerta alerta-fila${a.active ? '' : ' pausada'}">
-        <a class="alerta-t" href="#/alerta/${esc(a.id)}"><b>${esc(a.label || t('Aviso'))}</b>
+        <a class="alerta-t" href="/cuenta/alerta/${esc(a.id)}"><b>${esc(a.label || t('Aviso'))}</b>
           <span>${esc(resumenAlerta(a, cats))}</span></a>
         <input type="checkbox" class="interruptor" role="switch" data-activo="${esc(a.id)}"${a.active ? ' checked' : ''}
           aria-label="${esc(EN ? `On: ${a.label || 'Alert'}` : `Activo: ${a.label || 'Aviso'}`)}">
@@ -389,7 +389,7 @@ RUTAS.alertas = async () => {
       toast(a.active ? t('Aviso activado') : t('Aviso en pausa'));
     } catch (e) { caja.checked = !caja.checked; toast(e.message, true); } finally { caja.disabled = false; }
   }));
-  $$('[data-edita]').forEach((b) => b.addEventListener('click', () => { location.hash = `#/alerta/${b.dataset.edita}`; }));
+  $$('[data-edita]').forEach((b) => b.addEventListener('click', () => { irA(`alerta/${b.dataset.edita}`); }));
   $$('[data-borra]').forEach((b) => b.addEventListener('click', async () => {
     // Como en la app: con su nombre y la salida de pausarlo.
     const nombre = lista.find((x) => x.id === b.dataset.borra)?.label || t('Aviso');
@@ -408,7 +408,7 @@ RUTAS.alertas = async () => {
 };
 
 /** Un aviso nuevo ya rellenado desde el final de Explorar
- * (`#/alerta/nueva?tipo=&cat=&precio=&descuento=&radio=&lat=&lng=`): los
+ * (`/cuenta/alerta/nueva?tipo=&cat=&precio=&descuento=&radio=&lat=&lng=`): los
  * filtros que se estaban mirando. Solo rellena el formulario; guardar sigue
  * siendo cosa de la persona. */
 function alertaDesdeParams(params, cats) {
@@ -455,12 +455,12 @@ RUTAS.alerta = async ([id], params, crudo) => {
   // Hasta 10 km; uno que venga de más lejos (Explorar llega a 25) cabe.
   const maxRadio = a.radius_m > 10000 ? 25000 : 10000;
   pinta(`
-    <p class="crumbs"><a href="#/alertas">${esc(t('Avísame si…'))}</a></p>
+    <p class="crumbs"><a href="/cuenta/alertas">${esc(t('Avísame si…'))}</a></p>
     <h1>${esc(a.id ? t('Editar aviso') : t('Nuevo aviso'))}</h1>
     ${igual ? `<div class="aviso alerta" role="status">
         <b>${esc(igual.active ? t('Ya tienes un aviso igual') : t('Ya tienes un aviso igual, en pausa'))}</b>
         <span>${esc(resumenAlerta(igual, cats))}</span>
-        <span class="acciones"><a class="pill" href="#/alerta/${esc(igual.id)}">${esc(t('Ver el aviso'))}</a></span>
+        <span class="acciones"><a class="pill" href="/cuenta/alerta/${esc(igual.id)}">${esc(t('Ver el aviso'))}</a></span>
       </div>` : ''}
     <form class="formu" id="f" novalidate>
       <label>${esc(t('Nombre'))} <small>${esc(t('(opcional)'))}</small>
@@ -533,7 +533,7 @@ RUTAS.alerta = async ([id], params, crudo) => {
         active: a.active !== false,
       }));
       toast(t('Aviso guardado'));
-      location.hash = '#/alertas';
+      irA('alertas');
     });
   });
 };
@@ -588,7 +588,7 @@ const atiendeVistos = () => {
 /** Ajustes › Lo que ves sin sesión (el enlace de la separación de Descubre). */
 function ajustesLoQueVes() {
   pinta(`
-    <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
+    <p class="crumbs"><a href="/cuenta/">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(t('Lo que ves'))}</h1>
     <section class="bloque">
       ${casillaVistos()}
@@ -635,12 +635,12 @@ RUTAS.ajustes = async ([sub]) => {
   const dia = (iso) => fecha(iso, { day: 'numeric', month: 'long', year: 'numeric' });
 
   pinta(`
-    <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
+    <p class="crumbs"><a href="/cuenta/">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(t('Ajustes'))}</h1>
 
     <div class="lista">
-      ${fila({ href: '#/ajustes/notificaciones', icono: 'notifications', titulo: t('Notificaciones'), detalle: t('Qué te llega, cuándo y en el móvil') })}
-      ${filaSvg({ href: '#/ajustes/calendario', icono: 'calendario', titulo: t('Tus planes en tu calendario'), detalle: t('Google Calendar, Apple y otros, siempre al día') })}
+      ${fila({ href: '/cuenta/ajustes/notificaciones', icono: 'notifications', titulo: t('Notificaciones'), detalle: t('Qué te llega, cuándo y en el móvil') })}
+      ${filaSvg({ href: '/cuenta/ajustes/calendario', icono: 'calendario', titulo: t('Tus planes en tu calendario'), detalle: t('Google Calendar, Apple y otros, siempre al día') })}
     </div>
 
     <section class="bloque" id="sec-idioma">
@@ -661,7 +661,7 @@ RUTAS.ajustes = async ([sub]) => {
     <section class="bloque">
       <h2>${esc(t('Lo que ves'))}</h2>
       <div class="lista">
-        ${fila({ href: '#/gustos', icono: 'favorite', titulo: t('Tus gustos'), detalle: resumenGustos(KlendarGustos.lee(), cats, ciudades), id: 'fila-gustos' })}
+        ${fila({ href: '/cuenta/gustos', icono: 'favorite', titulo: t('Tus gustos'), detalle: resumenGustos(KlendarGustos.lee(), cats, ciudades), id: 'fila-gustos' })}
       </div>
       <p class="muted">${esc(t('Lo de esas categorías sale antes en Descubre, sin esconder lo demás. Tu ciudad sirve para avisarte cuando estés de viaje.'))}</p>
       ${conVistos ? casillaVistos() : ''}
@@ -678,7 +678,7 @@ RUTAS.ajustes = async ([sub]) => {
         ${vias.has('phone') ? metodo(ic('smartphone'), t('Teléfono'), true) : ''}
       </div>
       <p class="muted">${esc(t('Con el mismo correo entras siempre a la misma cuenta, da igual por dónde. Tener contraseña además de Google evita quedarte fuera si pierdes el acceso a una.'))}</p>
-      <p><a class="pill" href="#/nueva-clave?siguiente=ajustes">${ic('key')} ${esc(t(tieneClave ? 'Cambiar la contraseña' : 'Crear una contraseña'))}</a></p>
+      <p><a class="pill" href="/cuenta/nueva-clave?siguiente=ajustes">${ic('key')} ${esc(t(tieneClave ? 'Cambiar la contraseña' : 'Crear una contraseña'))}</a></p>
     </section>
 
     <section class="bloque">
@@ -765,7 +765,7 @@ RUTAS.ajustes = async ([sub]) => {
 
   // Privacidad
   pintaBloqueadas();
-  // #/ajustes/bloqueadas (desde el enlace de amigo de alguien bloqueado): a la lista.
+  // /cuenta/ajustes/bloqueadas (desde el enlace de amigo de alguien bloqueado): a la lista.
   if (sub === 'bloqueadas') $('#dd-bloqueadas')?.previousElementSibling?.scrollIntoView({ block: 'start' });
   $('#marketing').addEventListener('change', async (ev) => {
     const caja = ev.currentTarget;
@@ -879,7 +879,7 @@ RUTAS.ajustes = async ([sub]) => {
         texto: EN ? `You own ${nombres}. Before deleting your account, take the business off Klendar or hand it over to someone on your team, under “Leave Klendar” in the dashboard.`
           : `Eres propietario de ${nombres}. Antes de eliminar tu cuenta, da de baja el negocio o traspásalo a alguien de tu equipo, en «Dar de baja el negocio» del panel.`,
         aceptar: t('Ir a mi negocio'),
-      })) location.href = `/panel/${propios.length === 1 ? `#/baja?biz=${propios[0].id}` : ''}`;
+      })) location.href = `/panel/${propios.length === 1 ? `/cuenta/baja?biz=${propios[0].id}` : ''}`;
       return;
     }
     // Lo que sigue vivo y se pierde (reservas, códigos, premios, sellos): se
@@ -923,7 +923,7 @@ RUTAS.perfil = async () => {
       .format(new Date(`${p.birth_date}T00:00:00Z`))
     : null;
   pinta(`
-    <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
+    <p class="crumbs"><a href="/cuenta/">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(t('Editar perfil'))}</h1>
     <form class="formu" id="f-perfil" novalidate>
       <div class="avatar-fila">
@@ -1002,7 +1002,7 @@ async function ajustesNotificaciones() {
     : t('Desactivadas: se activan desde la app'));
 
   pinta(`
-    <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a> › <a href="#/ajustes">${esc(t('Ajustes'))}</a></p>
+    <p class="crumbs"><a href="/cuenta/">${esc(t('Tu cuenta'))}</a> › <a href="/cuenta/ajustes">${esc(t('Ajustes'))}</a></p>
     <h1>${esc(t('Notificaciones'))}</h1>
 
     <div class="lista">
@@ -1035,13 +1035,13 @@ async function ajustesNotificaciones() {
     sw('artistas', KlendarArtistas.t(LANG).youFollow, prefs.notify_artists !== false, KlendarArtistas.t(LANG).whenNew),
     // Grupos y empresas y Sorteos (tanda C), detrás de los partidos, como la app.
     sw('grupos', 'Grupos y empresas', prefs.notify_groups !== false, 'Respuestas a tus peticiones y, si tienes un negocio, peticiones nuevas'),
-    // Solo con los sorteos encendidos (app/sorteos.js).
+    // Solo con los sorteos encendidos (assets/cuenta/sorteos.js).
     sorteosOn ? sw('sorteos', 'Sorteos', prefs.notify_giveaways !== false, 'Resultados de los sorteos en los que participas. Si ganas, te avisamos siempre.') : '',
     // «Pedir un local» (crecer): cuando llega a Klendar uno que pediste.
     sw('quetal', '¿Qué tal? al día siguiente', prefs.notify_quetal !== false, 'Tras usar algo en un local, te pedimos tu reseña'),
     sw('pedidos', 'Locales que has pedido', prefs.notify_requests !== false, 'Cuando llega a Klendar un sitio que pediste'),
     // Como la app: debajo, la fila «Lo que has pedido» (fuera del interruptor).
-    fila({ href: '#/pedidos', icono: 'storefront', titulo: t('Lo que has pedido') }),
+    fila({ href: '/cuenta/pedidos', icono: 'storefront', titulo: t('Lo que has pedido') }),
     // «Pregúntale al local» (migración 20261237100002 de la app): cuando un
     // local contesta u oculta lo que le preguntaste. Apagado, el estado sigue
     // en la ficha.
@@ -1284,12 +1284,12 @@ RUTAS['avisame-palabra'] = async (_partes, params) => {
       que: palabra,
       texto: t('Te escribimos cuando algo cerca encaje'),
       boton: t('Añadir palabra'),
-      volver: '#/ajustes/notificaciones',
+      volver: '/cuenta/ajustes/notificaciones',
     });
     if (!sigue) return;
     await anadePalabra(palabra);
   }
-  location.replace('#/ajustes/notificaciones');
+  irA('ajustes/notificaciones', { reemplaza: true });
 };
 
 // ── Sugerencias y mejoras ─────────────────────────────────────────────────
@@ -1312,7 +1312,7 @@ RUTAS.sugerencias = async (_p, params, crudo) => {
     .select('id, kind, message, status, created_at, replied_at')
     .order('created_at', { ascending: false }).limit(20));
   pinta(`
-    <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
+    <p class="crumbs"><a href="/cuenta/">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(t('Sugerencias y mejoras'))}</h1>
     <p class="muted">${esc(t('Klendar la hacemos con lo que nos cuentas. Escribe lo que mejorarías, lo que echas de menos o lo que no funciona: lo leemos todo y te respondemos si hace falta.'))}</p>
     <form class="formu" id="f" novalidate>
@@ -1397,7 +1397,7 @@ const campoNombrePublico = () => `
 // 20261104100000): se suben al elegirlos (`reviews/<tu id>/`), se quitan y se
 // reordenan, y al publicar se manda la lista entera y en orden (`p_media`).
 // Las fotos, reducidas y sin EXIF (assets/fotos.js); los vídeos, sin dónde se
-// grabaron (app/medios.js), con su duración y su fotograma.
+// grabaron (assets/cuenta/medios.js), con su duración y su fotograma.
 Object.assign(ERRORES, {
   too_many_media: 'Como mucho 6 fotos y vídeos.',
   video_too_long: 'El vídeo dura más de 30 segundos.',
@@ -1667,7 +1667,7 @@ RUTAS.opinar = async ([id], params) => {
           ? t('Se publicará cuando la revisemos: puede contener lenguaje ofensivo. Normalmente en menos de 24 h.')
           : t('Ayuda a otros a decidirse y al sitio a mejorar.'),
         volver: `${pre}/b/${encodeURIComponent(id)}#resenas`, volverTxt: t('Volver al sitio'),
-        lista: '#/', listaTxt: t('Tu cuenta'),
+        lista: '/cuenta/', listaTxt: t('Tu cuenta'),
       });
     });
   });
@@ -1845,7 +1845,7 @@ RUTAS.reclamar = async ([id]) => {
         titulo: t('Reclamación enviada'),
         texto: t('La revisamos a mano, normalmente en unos días. Te avisaremos con lo que decidamos.'),
         volver: ficha, volverTxt: t('Volver al sitio'),
-        lista: '#/', listaTxt: t('Tu cuenta'),
+        lista: '/cuenta/', listaTxt: t('Tu cuenta'),
       });
     });
   });
@@ -1916,9 +1916,9 @@ async function contenidoDeUrl(texto) {
     || /(^|\.)klendar\.app$|\.klendar-web\.pages\.dev$|^localhost$|^127\.0\.0\.1$/i.test(u.hostname);
   if (!/^https?:$/.test(u.protocol) || !propio) return null;
   const hash = decodeURIComponent(u.hash || '');
-  let m = hash.match(new RegExp(`^#/?denunciar/(offer|business|review_media|review|post|question_answer|question)/(${UUID_DENUNCIA})`, 'i'));
-  if (m) return { tipo: m[1], id: m[2].toLowerCase() };
   const camino = u.pathname.replace(/^\/en(?=\/)/, '');
+  let m = camino.match(new RegExp(`^/cuenta/denunciar/(offer|business|review_media|review|post|question_answer|question)/(${UUID_DENUNCIA})`, 'i'));
+  if (m) return { tipo: m[1], id: m[2].toLowerCase() };
   m = camino.match(new RegExp(`^/(?:o|cartel|poster|widget)/(${UUID_DENUNCIA})`, 'i'));
   if (m) return { tipo: 'offer', id: m[1].toLowerCase() };
   m = camino.match(/^\/b\/([^/]+)/);
@@ -1956,7 +1956,7 @@ RUTAS.denunciar = async ([tipo, id], params) => {
     return;
   }
   const volver = document.referrer && new URL(document.referrer).origin === location.origin
-    && !new URL(document.referrer).pathname.startsWith('/app/')
+    && !new URL(document.referrer).pathname.startsWith('/cuenta/')
     ? document.referrer : `${pre}/`;
   // Turnstile, por adelantado: al pulsar, el token suele estar ya listo.
   window.KL_CAPTCHA?.pre?.();
@@ -1999,7 +1999,7 @@ RUTAS.denunciar = async ([tipo, id], params) => {
           titulo: t('Denuncia enviada'),
           texto: t('Gracias por avisar. Si hace falta, lo quitamos y hablamos con quien lo publicó.'),
           volver, volverTxt: t('Volver'),
-          lista: '#/', listaTxt: t('Tu cuenta'),
+          lista: '/cuenta/', listaTxt: t('Tu cuenta'),
         });
       });
     });
@@ -2009,7 +2009,7 @@ RUTAS.denunciar = async ([tipo, id], params) => {
   // ── Sin cuenta ──
   pinta(`${cabecera}
     <p class="muted">${esc(t('Cualquiera puede avisarnos de algo que crea ilegal o que incumpla las Normas de la comunidad, tenga cuenta o no. Lo revisa una persona del equipo y te contamos qué hemos decidido.'))}</p>
-    <p class="muted">${esc(t('¿Tienes cuenta?'))} <a href="#/entrar?siguiente=${encodeURIComponent(ruta)}">${esc(t('Entra y denúncialo con ella'))}</a>.</p>
+    <p class="muted">${esc(t('¿Tienes cuenta?'))} <a href="/cuenta/entrar?siguiente=${encodeURIComponent(ruta)}">${esc(t('Entra y denúncialo con ella'))}</a>.</p>
     <form class="formu" id="f" novalidate>${campoUrl}
       <fieldset class="motivos" id="motivos"><legend>${esc(t('Motivo'))}</legend>${motivos(listaMotivos)}</fieldset>
       <label>${esc(t('Explica por qué lo denuncias'))}
@@ -2101,7 +2101,7 @@ RUTAS.denunciar = async ([tipo, id], params) => {
           ? t('Te hemos mandado un correo para confirmarlo (mira también en spam). Te escribiremos con lo que decidamos.')
           : t('La revisaremos lo antes posible. Gracias por avisar.')) + ref,
         volver, volverTxt: t('Volver'),
-        lista: '#/denunciar', listaTxt: t('Denunciar otra cosa'),
+        lista: '/cuenta/denunciar', listaTxt: t('Denunciar otra cosa'),
       });
     });
   });
@@ -2160,7 +2160,7 @@ RUTAS.bloquear = async ([id]) => {
       titulo: t('Persona bloqueada'),
       texto: t('Ya no verás sus reseñas. Si cambias de idea, desbloquéala en Ajustes → Privacidad y datos.'),
       volver, volverTxt: t('Volver'),
-      lista: '#/ajustes', listaTxt: t('Ajustes'),
+      lista: '/cuenta/ajustes', listaTxt: t('Ajustes'),
     });
   });
 };
@@ -2354,7 +2354,7 @@ RUTAS.avisos = (...a) => RUTAS.notificaciones(...a); // enlaces antiguos
 // ── Invitaciones ──────────────────────────────────────────────────────────
 // Un negocio te invita a su equipo (o a ser su propietario, o su RRPP) y
 // decides tú (antes, con cuenta, entrabas sin que se te preguntara). Como
-// «Invitaciones» en la app. Las de RRPP las pinta app/rrpp.js.
+// «Invitaciones» en la app. Las de RRPP las pinta assets/cuenta/rrpp.js.
 RUTAS.invitaciones = async () => {
   if (!exigeSesion('invitaciones')) return;
   const [lista, traspasos, deRrpp] = await Promise.all([
@@ -2365,7 +2365,7 @@ RUTAS.invitaciones = async () => {
   const papel = (r) => (r === 'manager' ? t('encargado') : t('empleado'));
   const dia = (s) => new Date(s).toLocaleDateString(LOC, { day: 'numeric', month: 'long', year: 'numeric' });
   pinta(`
-    <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
+    <p class="crumbs"><a href="/cuenta/">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(t('Invitaciones'))}</h1>
     ${(traspasos || []).length ? `<div class="invitaciones-eq">${traspasos.map((i) => `
       <div class="lista inv-eq">
@@ -2524,7 +2524,7 @@ RUTAS.gustos = async (_p, params) => {
   let ciudad = (srv ? srv.home_municipality : g.home)
     || (deAntes ? { code: null, slug: null, name: deAntes.name, cityId: deAntes.id } : null);
   pinta(`
-    ${primera ? '' : `<p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a> › <a href="#/ajustes">${esc(t('Ajustes'))}</a></p>`}
+    ${primera ? '' : `<p class="crumbs"><a href="/cuenta/">${esc(t('Tu cuenta'))}</a> › <a href="/cuenta/ajustes">${esc(t('Ajustes'))}</a></p>`}
     <div class="ticket" style="text-align:left">
       <h1>${esc(t(primera ? '¿Qué te gusta?' : 'Tus gustos'))}</h1>
       <p class="muted">${esc(t('Elige de 3 a 5 y te lo enseñamos antes en Descubre. Lo demás sigue saliendo.'))}</p>

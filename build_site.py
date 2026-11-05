@@ -49,7 +49,7 @@ T = {
     hero_h1='Ofertas y planes <em>cerca de ti</em>, hoy',
     hero_lead='Ofertas flash con cuenta atrás y eventos de los bares, restaurantes, tiendas y salas de tu barrio, ordenados por cercanía. Gratis y sin anuncios.',
     cta_explore='Ver qué hay cerca', cta_explore_url='/descubre/',
-    cta_register='Crear cuenta gratis', cta_register_url='/app/#/registro',
+    cta_register='Crear cuenta gratis', cta_register_url='/cuenta/registro',
     cities_label='Qué hacer hoy en', cities_fallback='tu ciudad', agenda_url='/agenda/',
     app_note='App para Android e iPhone, muy pronto. Mientras tanto, todo funciona desde aquí.',
     live_all_short='Ver todo',
@@ -120,7 +120,7 @@ T = {
     hero_h1='Deals and things to do <em>near you</em>, today',
     hero_lead='Flash offers with a countdown and events from the bars, restaurants, shops and venues around you, sorted by distance. Free, no ads.',
     cta_explore='See what\'s nearby', cta_explore_url='/en/discover/',
-    cta_register='Create a free account', cta_register_url='/app/?lang=en#/registro',
+    cta_register='Create a free account', cta_register_url='/cuenta/registro?lang=en',
     cities_label='What to do today in', cities_fallback='your city', agenda_url='/en/whats-on/',
     app_note='Android and iPhone app coming soon. Meanwhile, everything works right here.',
     live_all_short='See all',
@@ -251,7 +251,7 @@ def head(t, path, page_title=None, page_desc=None, extra=''):
 # tiene algo que mandar. Mismo `?v=` que `ERRORES_V` en functions/_lib/page.js.
 # `async`: se pide el primero y corre en cuanto llega (antes que los `defer`),
 # sin frenar el primer pintado (Lighthouse lo daba como bloqueante, ~0,4 s).
-ERRORES = '<script src="/assets/errores.js?v=2" async></script>'
+ERRORES = '<script src="/assets/errores.js?v=20261105cuenta" async></script>'
 
 # Solo la portada trae contenido en vivo; los documentos no lo necesitan.
 LIVE_SCRIPTS = (
@@ -553,18 +553,18 @@ if __name__ == '__main__':
     io.open('sitemap.xml', 'w', encoding='utf-8', newline=chr(10)).write(sitemap())
     print('ok: index.html, en/index.html, en/support/index.html, robots.txt, sitemap.xml')
 
-    # «Tu cuenta» (/app/) es una sola página con los dos idiomas: lleva las
+    # «Tu cuenta» (/cuenta/) es una sola página con los dos idiomas: lleva las
     # dos cabeceras y los dos pies, y el propio app.js enseña la que toca.
     # Se estampan aquí para que el menú sea el mismo que en el resto.
     import re as _re
-    ruta = os.path.join('app', 'index.html')
+    ruta = os.path.join('cuenta', 'index.html')
     if os.path.exists(ruta):
         app = io.open(ruta, encoding='utf-8').read()
         trozos = {
             # En «Tu cuenta» el contenido es <main id="view">: «Saltar al
             # contenido» va ahí (en las demás páginas, a #contenido).
-            'CABECERA-ES': '<div data-only="es">' + HEADER_TPL['es'].replace('{{ES}}', '/app/?lang=es').replace('{{EN}}', '/app/?lang=en').replace('href="#contenido"', 'href="#view"') + '</div>',
-            'CABECERA-EN': '<div data-only="en" hidden>' + HEADER_TPL['en'].replace('{{ES}}', '/app/?lang=es').replace('{{EN}}', '/app/?lang=en').replace('href="#contenido"', 'href="#view"') + '</div>',
+            'CABECERA-ES': '<div data-only="es">' + HEADER_TPL['es'].replace('{{ES}}', '/cuenta/?lang=es').replace('{{EN}}', '/cuenta/?lang=en').replace('href="#contenido"', 'href="#view"') + '</div>',
+            'CABECERA-EN': '<div data-only="en" hidden>' + HEADER_TPL['en'].replace('{{ES}}', '/cuenta/?lang=es').replace('{{EN}}', '/cuenta/?lang=en').replace('href="#contenido"', 'href="#view"') + '</div>',
             'PIE-ES': '<div data-only="es">' + FOOTER_HTML['es'] + '</div>',
             'PIE-EN': '<div data-only="en" hidden>' + FOOTER_HTML['en'] + '</div>',
         }
@@ -573,7 +573,7 @@ if __name__ == '__main__':
                           lambda _m, h=html_, m=marca: '<!--%s-->%s<!--/%s-->' % (m, h, m),
                           app, flags=_re.S)
         io.open(ruta, 'w', encoding='utf-8', newline=chr(10)).write(app)
-        print('ok: app/index.html (cabecera y pie)')
+        print('ok: cuenta/index.html (cabecera y pie)')
 
     # El panel del negocio lleva la misma cabecera (Iván, 2026-11-02: la
     # barra igual en todas las páginas), sin pie: es una herramienta.

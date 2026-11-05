@@ -8,7 +8,7 @@
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 
-const raiz = new URL('../app/', import.meta.url);
+const raiz = new URL('../assets/cuenta/', import.meta.url);
 const leer = (f) => readFileSync(new URL(f, raiz), 'utf8');
 
 const ctx = {};

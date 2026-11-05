@@ -1,7 +1,7 @@
 /* «Tu cuenta» → «Pregúntale al local» (migración 20261237100000 de la app).
  * Como la app.
  *
- * - `#/preguntar/<negocio>`: «Pregúntale a <negocio>» (de 8 a 300
+ * - `/cuenta/preguntar/<negocio>`: «Pregúntale a <negocio>» (de 8 a 300
  *   caracteres; sin tu nombre: no se enseña quién pregunta) y «Tus
  *   preguntas» a ese negocio con su estado (Esperando respuesta · Oculta por
  *   el negocio: motivo · la respuesta) y «Borrar mi pregunta». Llega desde
@@ -95,7 +95,7 @@ RUTAS.preguntar = async ([id]) => {
     <p class="acciones"><a class="pill" href="${esc(ficha)}#preguntas">${esc(t('Volver a la ficha'))}</a></p>`);
 
   // Desde el aviso: la pregunta, a la vista.
-  const destino = new URLSearchParams(location.hash.split('?')[1] || '').get('q');
+  const destino = new URLSearchParams(location.search).get('q');
   if (destino) document.getElementById(`pregunta-${destino}`)?.scrollIntoView({ block: 'center' });
 
   const f = $('#f');

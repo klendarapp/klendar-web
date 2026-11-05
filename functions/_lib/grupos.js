@@ -9,6 +9,7 @@
 // Elegir hasta 3 y «Pedir presupuesto» lo hace /assets/grupos.js: lleva a
 // «Tu cuenta» (`#/grupos/pedir?b=<id>,<id>`), que pide entrar.
 
+import { enlaceCuenta } from './cuenta.js';
 import { esc, html, rows, rpcAll } from './page.js';
 import KG from '../../assets/textos-grupos.js';
 import { bizPath, breadcrumbLd, ldScript, publicPage } from './public.js';
@@ -16,9 +17,9 @@ import { recuperaZona, zonaMenu } from './partidos.js';
 
 /** Dónde vive la lista en cada idioma. */
 export const gruposBase = (lang) => (lang === 'en' ? '/en/groups' : '/grupos');
-const cuentaBase = (lang) => (lang === 'en' ? '/app/?lang=en' : '/app/');
+const cuentaBase = enlaceCuenta;
 /** «Pedir presupuesto» a esos negocios: el formulario de «Tu cuenta». */
-export const pedirHref = (lang, ids) => `${cuentaBase(lang)}#/grupos/pedir?b=${ids.map(encodeURIComponent).join(',')}`;
+export const pedirHref = (lang, ids) => `${cuentaBase(lang, `grupos/pedir?b=${ids.map(encodeURIComponent).join(',')}`)}`;
 
 export const GRUPOS_CSS = '<link rel="stylesheet" href="/assets/grupos-sorteos.css?v=2">';
 
@@ -132,11 +133,11 @@ export async function gruposPage(url, lang) {
   const conFiltros = Boolean(e.kind || e.people);
   let cuerpo;
   if (lista.length) {
-    cuerpo = `<form class="grupos-lista" id="grupos-lista" data-pedir="${esc(`${cuentaBase(lang)}#/grupos/pedir?b=`)}"
+    cuerpo = `<form class="grupos-lista" id="grupos-lista" data-pedir="${esc(`${cuentaBase(lang, 'grupos/pedir?b=')}`)}"
         data-max="${esc(S.max3)}" data-ask="${esc(S.ask(9)).replace('9', '{n}')}">
       ${lista.map(tarjeta).join('')}
       <div class="grupos-pedir" id="grupos-pedir" hidden>
-        <a class="pill accent big" id="grupos-pedir-btn" href="${esc(cuentaBase(lang))}#/grupos/pedir">${esc(S.ask(0))}</a>
+        <a class="pill accent big" id="grupos-pedir-btn" href="${cuentaBase(lang, 'grupos/pedir')}">${esc(S.ask(0))}</a>
       </div>
     </form>
     <p class="aviso-error" id="grupos-aviso" role="status" aria-live="polite" hidden></p>`;
@@ -157,10 +158,10 @@ export async function gruposPage(url, lang) {
   <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a> · <a href="${en ? '/en/explore/' : '/explorar/'}">${en ? 'Explore' : 'Explorar'}</a></p>
   <div class="exp-cab cab-pagina"><div><h1>${esc(S.title)}</h1>
     <p class="muted exp-lead">${esc(S.lead)}</p>
-    <p class="exp-atajo"><a href="${esc(`${cuentaBase(lang)}#/grupos`)}">${esc(S.yourRequests)}</a></p></div></div>
+    <p class="exp-atajo"><a href="${esc(`${cuentaBase(lang, 'grupos')}`)}">${esc(S.yourRequests)}</a></p></div></div>
   ${barra}
   ${cuerpo}
-  <script src="/assets/grupos.js?v=2" defer></script>`;
+  <script src="/assets/grupos.js?v=20261105cuenta" defer></script>`;
 
   const filtrada = Boolean(e.city || e.cerca || e.kind || e.people || e.km !== 10);
   const migas = [['Klendar', en ? '/en/' : '/'], [S.title, `${base}/`]];

@@ -5,8 +5,8 @@
 // cerrada o llena, o que el cartel ya no funciona.
 //
 // El turno en vivo (coger número, tu número, cuántos tienes delante, «¡Te
-// toca!» con sonido y vibración) vive en «Tu cuenta» (`#/cola/<código>`,
-// app/cola.js), que necesita la sesión. Por eso:
+// toca!» con sonido y vibración) vive en «Tu cuenta» (`/cuenta/cola/<código>`,
+// assets/cuenta/cola.js), que necesita la sesión. Por eso:
 //
 // - con una sesión de «Tu cuenta» guardada en este navegador, la página
 //   lleva directamente allí (lo hace la etiqueta del <head>, antes de pintar);
@@ -67,9 +67,9 @@
   };
 
   /** «Tu cuenta» en el idioma de la página. */
-  const cuenta = (lang) => (lang === 'en' ? '/app/?lang=en' : '/app/');
+  const cuenta = (lang, ruta = '') => `/cuenta/${lang === 'en' ? ruta.replace(/\?|$/, (m) => (m ? '?lang=en&' : '?lang=en')) : ruta}`;
   /** Entrar y volver a la cola en «Tu cuenta». */
-  const entrar = (lang, code) => `${cuenta(lang)}#/entrar?siguiente=${encodeURIComponent(`cola/${code}`)}`;
+  const entrar = (lang, code) => `${cuenta(lang, `entrar?siguiente=${encodeURIComponent(`cola/${code}`)}`)}`;
   /** La ficha del negocio. */
   const ficha = (lang, b) => `${lang === 'en' ? '/en' : ''}/b/${encodeURIComponent(b?.slug || b?.id || '')}`;
 
@@ -149,7 +149,7 @@
   /** La etiqueta del <head> que lleva a «Tu cuenta» si hay sesión guardada
    * (la misma clave que usa supabase-js: `sb-<proyecto>-auth-token`). */
   function saltoConSesion(lang, code, ref) {
-    const destino = JSON.stringify(`${cuenta(lang)}#/cola/${code}`);
+    const destino = JSON.stringify(`${cuenta(lang, `cola/${code}`)}`);
     // Solo la sesión de este proyecto (`ref`, el de la Function): la de otro
     // Supabase (dev, tras pasar la web a prod) llevaría a «Tu cuenta» sin sesión.
     const k = JSON.stringify(ref ? `sb-${String(ref).replace(/[^a-z0-9-]/g, '')}-auth-token` : '');

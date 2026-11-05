@@ -108,7 +108,7 @@ async function planes(nav, nombre, t, vp) {
     my_queue_turns: [],
     my_orders: [],
   }));
-  await p.goto(`${BASE}/app/#/planes`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/cuenta/planes`, { waitUntil: 'networkidle' });
   await p.waitForSelector('.pl-vistas');
   ok(await p.locator('.pl-vistas .vista').count() === 2 && /Lista/.test(await p.locator('.pl-vistas').innerText()), `${tag} planes: «Lista · Calendario»`);
   ok(!/Buscar planes/.test(await p.locator('main').innerText()), `${tag} planes: sin «Buscar planes» al final (como la app)`);
@@ -130,7 +130,7 @@ async function planes(nav, nombre, t, vp) {
 
   // Vacío: «Descubre» lleva a Descubre.
   const v = await contexto(nav, vp, CUENTA({ my_saved_offers: [], my_redemptions: [], my_followed_series: [], my_queue_turns: [], my_orders: [] }));
-  await v.p.goto(`${BASE}/app/#/planes`, { waitUntil: 'networkidle' });
+  await v.p.goto(`${BASE}/cuenta/planes`, { waitUntil: 'networkidle' });
   await v.p.waitForSelector('.pl-vistas');
   ok(await v.p.locator('a.pill.accent[href="/descubre/"]', { hasText: 'Descubre' }).count() === 1, `${tag} planes vacío: «Descubre»`);
   await v.ctx.close();
@@ -148,7 +148,7 @@ async function favoritos(nav, nombre, t, vp) {
     toggle_favorite: () => { quitado = !quitado; return !quitado; },
   }), { categories: [{ id: 'c1', names: { es: 'Bares', en: 'Bars' } }] });
   await p.addInitScript(() => { try { localStorage.setItem('klendar.filtros', JSON.stringify({ t: Date.now(), es: 'lat=40.416&lng=-3.703&km=5' })); } catch { /* */ } });
-  await p.goto(`${BASE}/app/#/favoritos`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/cuenta/favoritos`, { waitUntil: 'networkidle' });
   await p.waitForSelector('.fav-lista');
   const txt = await p.locator('main').innerText();
   ok(/Lo nuevo de tus favoritos/.test(txt) && /Noche de vinilos/.test(txt), `${tag} favoritos: «Lo nuevo de tus favoritos»`);
@@ -166,7 +166,7 @@ async function favoritos(nav, nombre, t, vp) {
   ok(errores.length === 0, `${tag} favoritos sin errores ${errores.join(' | ')}`);
   await ctx.close();
   const v = await contexto(nav, vp, CUENTA({ my_favorites: [], favorites_feed: [], public_organizers: [] }));
-  await v.p.goto(`${BASE}/app/#/favoritos`, { waitUntil: 'networkidle' });
+  await v.p.goto(`${BASE}/cuenta/favoritos`, { waitUntil: 'networkidle' });
   await v.p.waitForSelector('.vacio, .empty, a.pill.accent');
   ok(await v.p.locator('a.pill.accent[href="/descubre/"]', { hasText: 'Descubrir negocios' }).count() === 1, `${tag} favoritos vacío: «Descubrir negocios»`);
   await v.ctx.close();
@@ -183,17 +183,17 @@ async function codigos(nav, nombre, t, vp) {
     claim_stamp_reward: { ok: true, code: 'ABCD1234', reward: 'Un café' },
   };
   const { ctx, p, estado, errores } = await contexto(nav, vp, CUENTA(base));
-  await p.goto(`${BASE}/app/#/codigos`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/cuenta/codigos`, { waitUntil: 'networkidle' });
   await p.waitForSelector('h1');
   // Sin cámara en el navegador (WebKit de Playwright en Windows), el botón no sale.
   const conCamara = await p.evaluate(() => !!navigator.mediaDevices?.getUserMedia);
-  ok(await p.locator('a[href="#/escanear"]', { hasText: 'Escanear un QR' }).count() === (conCamara ? 1 : 0), `${tag} códigos: «Escanear un QR» (${conCamara ? 'con' : 'sin'} cámara)`);
-  ok(await p.locator(`a.ocard[href="#/sellos?premio=${CARD}"]`).count() === 1, `${tag} códigos: el premio vivo abre su QR`);
-  await p.locator(`a.ocard[href="#/sellos?premio=${CARD}"]`).click();
+  ok(await p.locator('a[href="/cuenta/escanear"]', { hasText: 'Escanear un QR' }).count() === (conCamara ? 1 : 0), `${tag} códigos: «Escanear un QR» (${conCamara ? 'con' : 'sin'} cámara)`);
+  ok(await p.locator(`a.ocard[href="/cuenta/sellos?premio=${CARD}"]`).count() === 1, `${tag} códigos: el premio vivo abre su QR`);
+  await p.locator(`a.ocard[href="/cuenta/sellos?premio=${CARD}"]`).click();
   await p.waitForSelector('.ticket .qr');
   ok(estado.llamadas.some(([f, b]) => f === 'claim_stamp_reward' && b.p_card === CARD), `${tag} sellos: «Ver el código» sin pulsar otra vez`);
   await p.screenshot({ path: `${OUT}/cuenta-premio-qr-${nombre}-${t}.png` });
-  await p.goto(`${BASE}/app/#/sellos`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/cuenta/sellos`, { waitUntil: 'networkidle' });
   await p.waitForSelector('.huecos');
   ok(await p.locator('.huecos').getAttribute('aria-label') === '4 de 10 sellos', `${tag} sellos: «4 de 10 sellos» para el lector`);
   ok(/la tarjeta ha subido a 12/.test(await p.locator('main').innerText()), `${tag} sellos: «la tarjeta ha subido a 12»`);
@@ -211,7 +211,7 @@ async function codigos(nav, nombre, t, vp) {
     redemptions: [{ status: 'validated', validated_at: new Date().toISOString() }],
     stamps: [{ card_id: CARD, redemptions: { code: 'abcd1234ef' } }],
   });
-  await c.p.goto(`${BASE}/app/#/codigo/${OF}`, { waitUntil: 'networkidle' });
+  await c.p.goto(`${BASE}/cuenta/codigo/${OF}`, { waitUntil: 'networkidle' });
   await c.p.locator('#confirmaEnlace').click().catch(() => {});
   await c.p.waitForSelector('.canjeado', { timeout: 15000 });
   await c.p.waitForSelector('.sello-canje', { timeout: 8000 }).catch(() => {});
@@ -224,7 +224,7 @@ async function codigos(nav, nombre, t, vp) {
   await e.p.addInitScript(() => {
     if (navigator.mediaDevices) navigator.mediaDevices.getUserMedia = () => Promise.reject(Object.assign(new Error('no'), { name: 'NotAllowedError' }));
   });
-  await e.p.goto(`${BASE}/app/#/escanear`, { waitUntil: 'networkidle' });
+  await e.p.goto(`${BASE}/cuenta/escanear`, { waitUntil: 'networkidle' });
   await e.p.waitForSelector('#escanerError:not([hidden])');
   const msg = await e.p.locator('#escanerError').innerText();
   ok(conCamara ? /Sin permiso para la cámara/.test(msg) : /No se ha podido abrir la cámara/.test(msg), `${tag} escanear: sin permiso o sin cámara, lo dice (${msg})`);

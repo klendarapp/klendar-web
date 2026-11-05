@@ -10,7 +10,7 @@ los que no están en el diccionario inglés de cada herramienta.
 
 Idiomas nuevos (`--lang ca|gl|eu|fr|de|it|all`, solo «Tu cuenta» y el panel):
 lista los textos en español que se pintan y faltan en su diccionario
-(`app/i18n/<lang>.js`, `panel/i18n/<lang>.js`). Los textos salen de:
+(`assets/cuenta/i18n/<lang>.js`, `panel/i18n/<lang>.js`). Los textos salen de:
   - las claves del diccionario inglés del área (APP_EN, el del panel);
   - el lado español de `EN ? … : …`, `en ? …`, `… === 'en' ? … : …` y
     `bi(español, inglés)`, con los `${x}` convertidos en huecos `{x}` (y un
@@ -18,7 +18,7 @@ lista los textos en español que se pintan y faltan en su diccionario
   - lo que se pasa a `t('…')` / `I18N.t('…')`;
   - las tablas `{ es: {…}, en: {…} }` de los módulos de /assets que se usan
     ahí (tarjeta, emisiones, artistas, categorías…) y las ideas del panel;
-  - la cabecera y el pie de «Tu cuenta» (el bloque español de app/index.html).
+  - la cabecera y el pie de «Tu cuenta» (el bloque español de cuenta/index.html).
 Al lado de cada uno, el inglés si se sabe (para los traductores).
 
 Uso:
@@ -46,7 +46,7 @@ AREAS = {
     # ideas.js ya trae cada idea en los dos idiomas.
     'panel': (['panel/panel.js', 'panel/rrpp.js', 'panel/ficha.js', 'panel/partidos.js', 'panel/bonos.js', 'panel/momento.js', 'panel/grupos.js', 'panel/sorteos.js', 'panel/cola.js', 'panel/artistas.js', 'panel/fidelizar.js', 'panel/herramientas.js', 'panel/entidades.js', 'panel/plan.js', 'panel/cerrado.js', 'panel/aforo.js', 'panel/pedir.js', 'panel/listo.js', 'panel/preguntas.js', 'panel/agenda.js', 'panel/index.html'], 'panel/i18n.js'),
     'admin': (['admin/admin.js', 'admin/emisiones.js', 'admin/artistas.js', 'admin/condiciones.js', 'admin/crecer.js', 'admin/cerrado.js', 'admin/festivos.js', 'admin/traduccion.js', 'admin/index.html'], 'admin/i18n.js'),
-    'cuenta': (['app/app.js', 'app/cuenta.js', 'app/amigos.js', 'app/correo.js', 'app/rrpp.js', 'app/partidos.js', 'app/artistas.js', 'app/bonos.js', 'app/momento.js', 'app/grupos.js', 'app/sorteos.js', 'app/cola.js', 'app/listo.js', 'app/ahorro.js', 'app/crecer.js', 'app/preguntas.js'], 'app/i18n.js'),
+    'cuenta': (['assets/cuenta/app.js', 'assets/cuenta/cuenta.js', 'assets/cuenta/amigos.js', 'assets/cuenta/correo.js', 'assets/cuenta/rrpp.js', 'assets/cuenta/partidos.js', 'assets/cuenta/artistas.js', 'assets/cuenta/bonos.js', 'assets/cuenta/momento.js', 'assets/cuenta/grupos.js', 'assets/cuenta/sorteos.js', 'assets/cuenta/cola.js', 'assets/cuenta/listo.js', 'assets/cuenta/ahorro.js', 'assets/cuenta/crecer.js', 'assets/cuenta/preguntas.js'], 'assets/cuenta/i18n.js'),
 }
 
 # Palabras que delatan una frase en español.
@@ -151,7 +151,7 @@ MODULOS_COMUNES = ['assets/auth-errors.js', 'assets/acceso.js', 'assets/marcas.j
                    'assets/emisiones.js', 'assets/artistas.js', 'assets/textos-grupos.js', 'assets/textos-sorteos.js']
 NUEVAS_AREAS = {
     # área: (fuentes propias, módulos, diccionario inglés, carpeta de los diccionarios nuevos)
-    'cuenta': ('app', MODULOS_COMUNES, 'app/i18n.js', 'app/i18n'),
+    'cuenta': ('assets/cuenta', MODULOS_COMUNES, 'assets/cuenta/i18n.js', 'assets/cuenta/i18n'),
     'panel': ('panel', MODULOS_COMUNES + ['assets/tarjeta.js', 'assets/enlaces.js'], 'panel/i18n.js', 'panel/i18n'),
 }
 
@@ -804,8 +804,10 @@ def textos_area(area: str) -> dict[str, tuple[str | None, str]]:
         # …y lo que va en los dos idiomas a mano.
         for es, en in extrae_js(src):
             mete(es, en, f)
-    for es, en in extrae_html((ROOT / carpeta / 'index.html').read_text(encoding='utf-8')):
-        mete(es, en, f'{carpeta}/index.html')
+    # La página de «Tu cuenta» está en /cuenta/ y sus scripts en /assets/cuenta/.
+    pagina = 'cuenta' if area == 'cuenta' else carpeta
+    for es, en in extrae_html((ROOT / pagina / 'index.html').read_text(encoding='utf-8')):
+        mete(es, en, f'{pagina}/index.html')
     if area == 'panel':
         for es, en in extrae_ideas(ROOT / 'panel/ideas.js'):
             mete(es, en, 'panel/ideas.js')

@@ -282,7 +282,7 @@ mark.tbd { background: color-mix(in srgb, var(--ink) 14%, transparent); color: i
    Piezas: `.mov-entra` (lo de dentro entra escalonado), `.mov-llega` (uno
    que acaba de llegar), `.mov-late` (un latido al encenderse), `.mov-sale`
    (los avisos al irse). En «Tu cuenta», `movEntra`, `movOcultaAviso` y
-   `movPliega` (plegar una fila al quitarla) en /app/app.js. */
+   `movPliega` (plegar una fila al quitarla) en /assets/cuenta/app.js. */
 :root {
   --mov-pulsar: 100ms; --mov-rapido: 150ms; --mov-base: 200ms; --mov-lento: 280ms; --mov-escalon: 30ms;
   --mov-entra: cubic-bezier(.23, 1, .32, 1); --mov-sale: cubic-bezier(.4, 0, 1, 1);

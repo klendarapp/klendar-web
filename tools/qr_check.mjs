@@ -4,7 +4,7 @@
 //     personas» va a `spot_give_start` (`p_max_people: 2`); lleno, «Ya lo han
 //     recibido todos»; 10 minutos sin uso, «Se ha cerrado: 10 minutos sin
 //     usarse»; y «Si nadie lo usa en 10 minutos, se cierra solo».
-//  2. Cliente (`/app/#/momento/…`): sin permiso de ubicación no se manda
+//  2. Cliente (`/cuenta/momento/…`): sin permiso de ubicación no se manda
 //     ninguna posición (ni sale el aviso del navegador); con permiso ya dado,
 //     sí (`p_lat`, `p_lng`, `p_accuracy`) y lejos del local, «Tienes que
 //     estar en el local para aceptarlo». Con tope: «Ya lo han recibido todos».
@@ -213,7 +213,7 @@ async function prueba(nav, nombre, t, vp) {
   // 2. Cliente: sin permiso, nada de ubicación; con permiso, cerca o no.
   {
     const c = await contexto(nav, vp);
-    await c.p.goto(`${BASE}/app/#/momento/${tokenMomento().split('/m/')[1]}`, { waitUntil: 'networkidle' });
+    await c.p.goto(`${BASE}/cuenta/momento/${tokenMomento().split('/m/')[1]}`, { waitUntil: 'networkidle' });
     await c.p.waitForSelector('#momento-acepta', { timeout: 10000 });
     const info = c.estado.llamadas.find(([fn]) => fn === 'spot_give_info');
     ok(info && info[1].p_lat === undefined, `${nombre}/${t} cliente sin permiso: no se manda ninguna posición`);
@@ -227,12 +227,12 @@ async function prueba(nav, nombre, t, vp) {
   {
     const c = await contexto(nav, vp, { ubicacion: true });
     const concedido = await (async () => {
-      await c.p.goto(`${BASE}/app/`, { waitUntil: 'networkidle' });
+      await c.p.goto(`${BASE}/cuenta/`, { waitUntil: 'networkidle' });
       return c.p.evaluate(async () => {
         try { return (await navigator.permissions.query({ name: 'geolocation' })).state === 'granted'; } catch { return false; }
       });
     })();
-    await c.p.goto(`${BASE}/app/#/momento/${tokenMomento().split('/m/')[1]}`, { waitUntil: 'networkidle' });
+    await c.p.goto(`${BASE}/cuenta/momento/${tokenMomento().split('/m/')[1]}`, { waitUntil: 'networkidle' });
     if (concedido) {
       await c.p.waitForSelector('text=Tienes que estar en el local para aceptarlo', { timeout: 10000 });
       const info = c.estado.llamadas.find(([fn]) => fn === 'spot_give_info');
@@ -250,7 +250,7 @@ async function prueba(nav, nombre, t, vp) {
   {
     const c = await contexto(nav, vp);
     c.estado.lleno = true;
-    await c.p.goto(`${BASE}/app/#/momento/${tokenMomento().split('/m/')[1]}`, { waitUntil: 'networkidle' });
+    await c.p.goto(`${BASE}/cuenta/momento/${tokenMomento().split('/m/')[1]}`, { waitUntil: 'networkidle' });
     await c.p.waitForSelector('text=Ya lo han recibido todos', { timeout: 10000 });
     ok(true, `${nombre}/${t} cliente: con el tope lleno, «Ya lo han recibido todos»`);
     await foto('momento-cliente-lleno', c.p);
@@ -309,7 +309,7 @@ async function prueba(nav, nombre, t, vp) {
   // 5. Tu cuenta: la entrada nominativa.
   {
     const c = await contexto(nav, vp);
-    await c.p.goto(`${BASE}/app/#/codigo/${OFFER}`, { waitUntil: 'networkidle' });
+    await c.p.goto(`${BASE}/cuenta/codigo/${OFFER}`, { waitUntil: 'networkidle' });
     const conf = c.p.locator('#confirmaEnlace');
     if (await conf.count()) await conf.click();
     await c.p.waitForSelector('#qr svg', { timeout: 10000 });

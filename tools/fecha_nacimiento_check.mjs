@@ -73,7 +73,7 @@ async function abre(nav, { ruta, lang = 'es', sesion = false, consents = {}, per
   const errores = [];
   p.on('pageerror', (e) => errores.push(e.message));
   p.setDefaultTimeout(15000);
-  await p.goto(`${BASE}/app/${ruta}`, { waitUntil: 'load' });
+  await p.goto(`${BASE}/cuenta/${ruta}`, { waitUntil: 'load' });
   await p.waitForSelector('[name=birth]');
   return { ctx, p, estado, errores };
 }
@@ -98,7 +98,7 @@ const elige = (p, iso) => p.evaluate((v) => {
 
 async function pruebaRegistro(nav, motor) {
   console.log(`\n${motor} · Crea tu cuenta`);
-  const { ctx, p, estado, errores } = await abre(nav, { ruta: '#/registro' });
+  const { ctx, p, estado, errores } = await abre(nav, { ruta: 'registro' });
   const alto = async () => (await p.locator(CAMPO).boundingBox()).height;
   const altoVacio = await alto();
 
@@ -205,7 +205,7 @@ async function pruebaRegistro(nav, motor) {
 async function pruebaIdiomas(nav, motor) {
   console.log(`\n${motor} · idiomas`);
   {
-    const { ctx, p } = await abre(nav, { ruta: '?lang=en#/registro', lang: 'en' });
+    const { ctx, p } = await abre(nav, { ruta: 'registro?lang=en', lang: 'en' });
     ok(await p.getAttribute(CAMPO, 'placeholder') === 'DD/MM/YYYY', 'inglés: DD/MM/YYYY');
     ok(await p.getByRole('button', { name: 'Pick the date' }).count() === 1, 'inglés: «Pick the date»');
     await escribe(p, '03151980');
@@ -215,7 +215,7 @@ async function pruebaIdiomas(nav, motor) {
     await ctx.close();
   }
   {
-    const { ctx, p } = await abre(nav, { ruta: '?lang=de#/registro', lang: 'de' });
+    const { ctx, p } = await abre(nav, { ruta: 'registro?lang=de', lang: 'de' });
     await p.waitForFunction(() => document.querySelector('[name=birth]')?.placeholder === 'TT.MM.JJJJ');
     await escribe(p, '15031980');
     ok(await valor(p) === '15.03.1980', 'alemán: con puntos', await valor(p));
@@ -226,7 +226,7 @@ async function pruebaIdiomas(nav, motor) {
 
 async function pruebaUltimoPaso(nav, motor) {
   console.log(`\n${motor} · Un último paso (Google/Apple)`);
-  const { ctx, p, estado, errores } = await abre(nav, { ruta: '#/', sesion: true, consents: { terms_accepted_at: null, has_birth_date: false } });
+  const { ctx, p, estado, errores } = await abre(nav, { ruta: '', sesion: true, consents: { terms_accepted_at: null, has_birth_date: false } });
   ok(await p.getByRole('heading', { name: 'Un último paso' }).count() === 1, 'sale «Un último paso»');
   await p.check('[name=terms]');
   await p.click('#seguir');
@@ -242,7 +242,7 @@ async function pruebaUltimoPaso(nav, motor) {
 
 async function pruebaPerfil(nav, motor) {
   console.log(`\n${motor} · Editar perfil`);
-  const { ctx, p, estado, errores } = await abre(nav, { ruta: '#/perfil', sesion: true });
+  const { ctx, p, estado, errores } = await abre(nav, { ruta: 'perfil', sesion: true });
   await p.screenshot({ path: `${OUT}/fecha-perfil-${motor}.png`, fullPage: true });
   await p.fill(CAMPO, '1503');
   await p.click('#g-perfil');

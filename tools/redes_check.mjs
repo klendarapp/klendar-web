@@ -29,7 +29,7 @@ const ok = (cond, msg) => {
 const PAGINAS = [
   ['/', 'es'], ['/en/', 'en'], ['/prensa/', 'es'], ['/en/press/', 'en'],
   ['/privacidad/', 'es'], ['/en/terms/', 'en'], ['/precios/', 'es'],
-  ['/app/', 'es'], ['/descubre/', 'es'], ['/en/explore/', 'en'], ['/agenda/', 'es'],
+  ['/cuenta/', 'es'], ['/descubre/', 'es'], ['/en/explore/', 'en'], ['/agenda/', 'es'],
 ];
 
 const browser = await chromium.launch();

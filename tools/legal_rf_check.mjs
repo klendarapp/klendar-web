@@ -116,7 +116,7 @@ async function cuenta(nav, nombre, t, vp) {
   // Ir al panel justo después de salir corta la transición de pantalla de
   // «Tu cuenta» (Chromium lo cuenta como error); no es de la página.
   p.on('pageerror', (e) => { if (!/Transition was aborted/.test(e.message)) errores.push(e.message); });
-  await p.goto(`${BASE}/app/#/entrar`);
+  await p.goto(`${BASE}/cuenta/entrar`);
   await p.locator('#google [data-prov="google"]').waitFor({ timeout: 15000 });
   ok(await p.locator('#google [data-prov="google"]').count() === 1, `${nombre}/${t} entrar: «Continuar con Google» sigue`);
   ok(await p.locator('[data-prov="apple"]').count() === 0, `${nombre}/${t} entrar: sin «Continuar con Apple»`);
@@ -134,7 +134,7 @@ async function cuenta(nav, nombre, t, vp) {
   // que ahí se mira el código que se sirve.
   for (const [ruta, re] of [
     ['/panel/panel.js?v=159', /ev === 'SIGNED_OUT'\) \{\s*olvidaColas\(\);\s*try \{ document\.cookie = `klendar_18=; Max-Age=0; Path=\//],
-    ['/assets/amigos.js?v=22', /ev === 'SIGNED_OUT'\) \{\s*document\.cookie = 'klendar_18=; Max-Age=0; Path=\//],
+    ['/assets/amigos.js?v=20261105cuenta', /ev === 'SIGNED_OUT'\) \{\s*document\.cookie = 'klendar_18=; Max-Age=0; Path=\//],
   ]) {
     const src = await (await ctx.request.get(`${BASE}${ruta}`)).text();
     ok(re.test(src), `${nombre}/${t} ${ruta}: borra klendar_18 al cerrar sesión`);

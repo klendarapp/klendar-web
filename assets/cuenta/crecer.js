@@ -1,22 +1,22 @@
 /* «Tu cuenta» → «Pedir un local» y «Avísame cuando Klendar llegue» (crecer,
  * 2026-10-14; migración 20261218100000_crecer de la app). Como la app.
  *
- * - `#/pedir-local[?nombre=…]`: «Quiero que [local] esté en Klendar». Nombre
+ * - `/cuenta/pedir-local[?nombre=…]`: «Quiero que [local] esté en Klendar». Nombre
  *   del sitio, ciudad o zona (con la zona guardada de Explorar, si la hay),
  *   dirección aproximada (opcional) y, si quieres, el punto del LOCAL en el
  *   mapa (nunca tu ubicación). Se agrupa con lo que pidan otras personas; el
  *   negocio solo sabrá cuántas lo piden, nunca quién (`request_venue`). Si el
  *   sitio ya está en Klendar, se dice y se lleva a su ficha.
- * - `#/pedidos`: «Lo que has pedido» (`my_venue_requests`: Esperando · Ya
+ * - `/cuenta/pedidos`: «Lo que has pedido» (`my_venue_requests`: Esperando · Ya
  *   está en Klendar · No va a estar; retirar con confirmación) y «Te avisamos
  *   cuando llegue Klendar» (`my_city_waitlist`, quitar).
- * - `#/avisame?lat=&lng=&zona=`: lo que hace «Avísame cuando llegue» de
+ * - `/cuenta/avisame?lat=&lng=&zona=`: lo que hace «Avísame cuando llegue» de
  *   Descubre y Explorar sin JavaScript o después de entrar
  *   (`join_city_waitlist` con tu cuenta). Si el enlace no viene de un botón de
  *   esta web, primero se pregunta (`confirmaEnlace`).
  * - La fila de la portada (`filaPedidos`).
  * El interruptor «Locales que has pedido» está en Ajustes → Notificaciones
- * (app/cuenta.js, `notify_requests`).
+ * (assets/cuenta/cuenta.js, `notify_requests`).
  *
  * Va después de app.js y cuenta.js y usa lo suyo (`RUTAS`, `llamar`, `pinta`,
  * `esc`, `t`, `fila`, `ic`, `toast`, `exigeSesion`, `confirmaEnlace`,
@@ -40,7 +40,7 @@ const errorPedido = (e) => (ERR_PEDIDO[e?.clave] ? t(ERR_PEDIDO[e.clave]) : e?.m
 
 /** La fila de la portada de «Tu cuenta» (grupo Preferencias). */
 function filaPedidos() {
-  return fila({ href: '#/pedidos', icono: 'storefront', titulo: t('Pedir un local'), detalle: t('Un sitio que echas en falta y lo que ya has pedido') });
+  return fila({ href: '/cuenta/pedidos', icono: 'storefront', titulo: t('Pedir un local'), detalle: t('Un sitio que echas en falta y lo que ya has pedido') });
 }
 
 /** La ficha pública de un negocio. */
@@ -145,7 +145,7 @@ RUTAS['pedir-local'] = async (_partes, params, crudo) => {
     sb.rpc('public_cities', {}).then((r) => (Array.isArray(r.data) ? r.data : []), () => []),
   ]);
   pinta(`
-    <p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a> › <a href="#/pedidos">${esc(t('Lo que has pedido'))}</a></p>
+    <p class="crumbs"><a href="/cuenta/">${esc(t('Tu cuenta'))}</a> › <a href="/cuenta/pedidos">${esc(t('Lo que has pedido'))}</a></p>
     <h1>${esc(t('Pedir un local'))}</h1>
     <p class="muted">${esc(t('¿Echas en falta un bar, un restaurante o una tienda? Pide que esté en Klendar.'))}</p>
     <form class="formu" id="fPedir" novalidate>
@@ -227,7 +227,7 @@ RUTAS['pedir-local'] = async (_partes, params, crudo) => {
 function resultadoPedido(r) {
   const n = Number(r.people) || 1;
   const nombre = r.name || '';
-  history.replaceState(null, '', '#/pedir-local');
+  ponRuta('pedir-local');
   if (r.status === 'exists') {
     pinta(`
       <div class="ticket">
@@ -236,7 +236,7 @@ function resultadoPedido(r) {
         <p class="muted">${esc(t('No hace falta pedirlo: mira su ficha y lo que publica.'))}</p>
         <p class="acciones">
           <a class="pill accent" href="${esc(fichaNegocio(r.slug, r.business_id))}">${esc(t('Ver su ficha'))}</a>
-          <a class="pill" href="#/pedir-local">${esc(t('Pedir otro'))}</a>
+          <a class="pill" href="/cuenta/pedir-local">${esc(t('Pedir otro'))}</a>
         </p>
       </div>`);
     return;
@@ -257,8 +257,8 @@ function resultadoPedido(r) {
       <h1>${esc(titulo)}</h1>
       <p class="muted">${esc(texto)}</p>
       <p class="acciones">
-        <a class="pill accent" href="#/pedidos">${esc(t('Lo que has pedido'))}</a>
-        <a class="pill" href="#/pedir-local">${esc(t('Pedir otro'))}</a>
+        <a class="pill accent" href="/cuenta/pedidos">${esc(t('Lo que has pedido'))}</a>
+        <a class="pill" href="/cuenta/pedir-local">${esc(t('Pedir otro'))}</a>
       </p>
     </div>`);
 }
@@ -272,14 +272,14 @@ RUTAS.pedidos = async () => {
     llamar('my_venue_requests', {}).then((x) => x || []),
     llamar('my_city_waitlist', {}).then((x) => x || []).catch(() => []),
   ]);
-  const cabeza = `<p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
+  const cabeza = `<p class="crumbs"><a href="/cuenta/">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(t('Lo que has pedido'))}</h1>`;
   if (!locales.length && !zonas.length) {
     pinta(`${cabeza}${pantallaVacia({
       icono: 'storefront',
       titulo: t('Aún no has pedido nada'),
       texto: t('Si echas en falta un sitio, pídelo y te avisamos cuando esté en Klendar.'),
-      botones: `<a class="pill accent" href="#/pedir-local">${esc(t('Pedir un local'))}</a>`,
+      botones: `<a class="pill accent" href="/cuenta/pedir-local">${esc(t('Pedir un local'))}</a>`,
     })}`);
     return;
   }
@@ -310,7 +310,7 @@ RUTAS.pedidos = async () => {
     <h2 class="seccion-t">${esc(t('Locales que has pedido'))}</h2>
     ${locales.length ? `<div class="avisos">${locales.map(filaLocal).join('')}</div>`
       : `<p class="empty">${esc(t('Aún no has pedido ningún local.'))}</p>`}
-    <p class="acciones"><a class="pill" href="#/pedir-local">${ic('add')} ${esc(t('Pedir un local'))}</a></p>
+    <p class="acciones"><a class="pill" href="/cuenta/pedir-local">${ic('add')} ${esc(t('Pedir un local'))}</a></p>
     <h2 class="seccion-t">${esc(t('Te avisamos cuando llegue Klendar'))}</h2>
     ${zonas.length ? `<div class="avisos">${zonas.map(filaZona).join('')}</div>`
       : `<p class="empty">${esc(t('Aún no te has apuntado en ninguna zona.'))}</p>`}
@@ -358,7 +358,7 @@ RUTAS.avisame = async (_partes, params, crudo) => {
     que: zona,
     texto: t('Te avisamos una sola vez, cuando Klendar llegue a esa zona. Lo puedes quitar cuando quieras en «Lo que has pedido».'),
     boton: t('Avísame'),
-    volver: '#/pedidos',
+    volver: '/cuenta/pedidos',
   });
   if (!sigue) return;
   let r;
@@ -370,14 +370,14 @@ RUTAS.avisame = async (_partes, params, crudo) => {
   }
   if (r?.status === 'live') {
     hecho({ titulo: t('Klendar ya está aquí'), texto: t('Ya hay sitios en Klendar cerca. Míralos en Descubre.'),
-      volver: PUB_EN ? '/en/discover/' : '/descubre/', volverTxt: t('Ir a Descubre'), lista: '#/pedidos', listaTxt: t('Lo que has pedido') });
+      volver: PUB_EN ? '/en/discover/' : '/descubre/', volverTxt: t('Ir a Descubre'), lista: '/cuenta/pedidos', listaTxt: t('Lo que has pedido') });
     return;
   }
   const z = r?.zone || zona;
   hecho({
     titulo: EN ? `Done: we'll let you know when Klendar arrives in ${z}` : `Listo: te avisaremos cuando Klendar llegue a ${z}`,
     texto: r?.status === 'already' ? t('Ya estabas en la lista.') : t('Una sola vez. Lo puedes quitar en «Lo que has pedido».'),
-    volver: '#/pedidos', volverTxt: t('Lo que has pedido'),
-    lista: '#/', listaTxt: t('Tu cuenta'),
+    volver: '/cuenta/pedidos', volverTxt: t('Lo que has pedido'),
+    lista: '/cuenta/', listaTxt: t('Tu cuenta'),
   });
 };

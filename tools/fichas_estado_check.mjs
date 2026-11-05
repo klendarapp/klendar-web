@@ -154,7 +154,7 @@ async function publicacion(nav, nombre, t, vp) {
   await p.goto(`http://localhost:${FICHA_PORT}/o/${VIVA}`, { waitUntil: 'networkidle' });
   await p.waitForFunction(() => /Ver mi código/.test(document.querySelector('[data-principal]')?.textContent || ''), null, { timeout: 8000 }).catch(() => {});
   ok(/Ver mi código/.test(await p.locator('[data-principal]').innerText())
-    && /#\/codigo\/a1000000/.test(await p.locator('[data-principal]').getAttribute('href')), `${tag} o/ con sesión: «Ver mi código»`);
+    && /\/cuenta\/codigo\/a1000000/.test(await p.locator('[data-principal]').getAttribute('href')), `${tag} o/ con sesión: «Ver mi código»`);
   ok(/Te quedan 2 de 3/.test(await p.locator('#por-persona').innerText()), `${tag} o/ con sesión: «Te quedan 2 de 3»`);
   await p.screenshot({ path: `${OUT}/web-o-mi-codigo-${nombre}-${t}.png`, fullPage: false });
   ok(errores.length === 0, `${tag} o/ con sesión sin errores ${errores.join(' | ')}`);

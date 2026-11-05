@@ -56,7 +56,7 @@ async function correoAvisoPortada(caja) {
   const st = await correoEstado();
   if (!st?.suppressed_at || !caja.isConnected) return;
   caja.innerHTML = correoAvisoHtml(st);
-  correoAvisoEnlaza(caja, () => { location.hash = '#/ajustes'; });
+  correoAvisoEnlaza(caja, () => { irA('ajustes'); });
 }
 
 /** La sección «Correo» de Ajustes. */

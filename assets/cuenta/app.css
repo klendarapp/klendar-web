@@ -449,7 +449,7 @@ button.codigo.copiar .ms { font-size: 18px; color: var(--ink-2); letter-spacing:
 .medio-botones button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 .medios-add { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 6px; }
 
-/* ── RRPP (app/rrpp.js) ────────────────────────────────────────────────────
+/* ── RRPP (assets/cuenta/rrpp.js) ────────────────────────────────────────────────────
    Neutros: el coral es solo de la oferta y del botón principal. */
 .rrpp-noche-p { margin: 4px 4px 10px; }
 .rrpp-noche { padding: 10px 14px; border-radius: 16px; border: 1px solid var(--glass-border); background: var(--glass); color: var(--ink); font: inherit; font-weight: 700; }
@@ -532,7 +532,7 @@ button.codigo.copiar .ms { font-size: 18px; color: var(--ink-2); letter-spacing:
 
 .aviso.alerta-fila.pausada { opacity: 1; }
 
-/* «Tus planes en tu calendario» (app/calendario.js) y filas con icono SVG
+/* «Tus planes en tu calendario» (assets/cuenta/calendario.js) y filas con icono SVG
    (los que no están en la fuente recortada: calendario y ayuda). */
 .ms-svg { flex: 0 0 auto; width: 24px; height: 24px; }
 .botones-cal { display: grid; gap: 8px; }
@@ -541,7 +541,7 @@ button.codigo.copiar .ms { font-size: 18px; color: var(--ink-2); letter-spacing:
 .fila.peligro-t, .fila.peligro-t .fila-t b, .fila.peligro-t .ms { color: #B3261E; }
 @media (prefers-color-scheme: dark) { .fila.peligro-t, .fila.peligro-t .fila-t b, .fila.peligro-t .ms { color: #FF9B9B; } }
 
-/* «Equipos que sigues» (app/partidos.js): la lista y el buscador «Seguir a un equipo». */
+/* «Equipos que sigues» (assets/cuenta/partidos.js): la lista y el buscador «Seguir a un equipo». */
 .equipos-lista .bloque { padding: 6px 0 0; margin-top: 18px; }
 .equipos-lista .bloque h2 { font-family: var(--display); font-size: 18px; color: var(--ink); margin: 12px 0 2px; }
 .equipos-lista .bloque .muted { margin: 2px 0 10px; }
@@ -560,7 +560,7 @@ button.codigo.copiar .ms { font-size: 18px; color: var(--ink-2); letter-spacing:
 .hoja-equipos p.eq-nada { margin: 8px 0 0; }
 .hoja-equipos p.eq-err { margin: 0 0 8px; color: #B3261E; font-size: 14px; }
 
-/* «Artistas que sigues» (app/artistas.js): la foto (o la inicial) junto al
+/* «Artistas que sigues» (assets/cuenta/artistas.js): la foto (o la inicial) junto al
    nombre, en la lista y en el buscador. */
 .art-av { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; flex: none; background: var(--soft);
   display: inline-grid; place-items: center; font-weight: 800; color: var(--ink-2); }
@@ -569,7 +569,7 @@ button.codigo.copiar .ms { font-size: 18px; color: var(--ink-2); letter-spacing:
 .art-fila h2 a { color: inherit; }
 .eq-fila .art-av { width: 40px; height: 40px; }
 
-/* Bonos pagados en el local (app/bonos.js): «Te quedan 7 de 10» y su barra,
+/* Bonos pagados en el local (assets/cuenta/bonos.js): «Te quedan 7 de 10» y su barra,
    neutra (el texto lo dice todo). */
 .bono-quedan { display: block; font-weight: 800; margin-top: 6px; }
 .bono-quedan.grande { font-size: 22px; margin: 4px 0 8px; }
@@ -581,7 +581,7 @@ button.codigo.copiar .ms { font-size: 18px; color: var(--ink-2); letter-spacing:
 .bono-estado { display: block; font-weight: 700; }
 .bono-quedan { color: var(--ink); }
 
-/* ── Grupos y empresas (app/grupos.js; tanda C) ─────────────────────────── */
+/* ── Grupos y empresas (assets/cuenta/grupos.js; tanda C) ─────────────────────────── */
 .grupo-campo { border: 0; margin: 0; padding: 0; min-width: 0; }
 .grupo-campo legend { font-weight: 600; font-size: 15px; margin: 0 0 8px; padding: 0; }
 .grupo-paras { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
@@ -609,7 +609,7 @@ button.codigo.copiar .ms { font-size: 18px; color: var(--ink-2); letter-spacing:
 .grupo-hoja .formu { margin: 0; gap: 12px; }
 .grupo-hoja .formu h2 { margin: 0; }
 .grupo-hoja .formu .err:empty { display: none; }
-/* Cola virtual (app/cola.js): neutros; el coral, solo en el botón principal. */
+/* Cola virtual (assets/cuenta/cola.js): neutros; el coral, solo en el botón principal. */
 .cola-kicker { margin: 0; font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); }
 .vacio .cola-kicker { margin-bottom: 4px; }
 .cola-h1 { overflow-wrap: anywhere; margin: 2px 0 14px; }
@@ -639,14 +639,14 @@ button.codigo.copiar .ms { font-size: 18px; color: var(--ink-2); letter-spacing:
 /* Favoritos: las ofertas, en coral; los eventos, en tinta (como la app). */
 .fav-cuentas { font-weight: 600; color: var(--ink); }
 .fav-cuentas .fav-ofertas { color: var(--accent-text); }
-/* Te aviso cuando esté listo (app/listo.js): lo mismo que la cola; «Mientras
+/* Te aviso cuando esté listo (assets/cuenta/listo.js): lo mismo que la cola; «Mientras
    esperas», discreto y debajo. */
 .cola-turno .listo-intro { font-size: 22px; line-height: 1.3; }
 .listo-mientras { margin: 26px 0 0; display: grid; gap: 10px; }
 .listo-h2 { margin: 0; font-size: 15px; font-weight: 700; color: var(--ink-2); }
 .listo-mientras > .pill { justify-self: start; }
 
-/* «¿Cómo se calcula?» de «Lo que has ahorrado» (app/ahorro.js). */
+/* «¿Cómo se calcula?» de «Lo que has ahorrado» (assets/cuenta/ahorro.js). */
 .ayuda-plegable { margin: 8px 0 14px; }
 .ayuda-plegable summary { cursor: pointer; font-weight: 700; }
 .ayuda-plegable p { margin: 8px 0 0; color: var(--ink-2); }
@@ -659,7 +659,7 @@ button.codigo.copiar .ms { font-size: 18px; color: var(--ink-2); letter-spacing:
 /* «Los textos legales están en español/inglés», en los idiomas nuevos. */
 .nota-legal { font-size: 13px; margin: 8px 0 0; }
 
-/* «Pedir un local» y «Lo que has pedido» (crecer, app/crecer.js). Neutro:
+/* «Pedir un local» y «Lo que has pedido» (crecer, assets/cuenta/crecer.js). Neutro:
    el coral, solo en el botón principal. */
 .pedir-mapa { border: 1px solid var(--glass-border); border-radius: 16px; padding: 12px 14px; background: var(--elevated); }
 .pedir-mapa summary { cursor: pointer; font-weight: 700; }
@@ -672,7 +672,7 @@ button.codigo.copiar .ms { font-size: 18px; color: var(--ink-2); letter-spacing:
 .aviso.pedido small { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .tag.tag-tinta { background: var(--ink); color: var(--surface); }
 
-/* «Dar en el momento» (app/momento.js): el logo del negocio arriba. */
+/* «Dar en el momento» (assets/cuenta/momento.js): el logo del negocio arriba. */
 .momento-logo { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; display: grid;
   place-items: center; margin: 16px auto 8px; background: var(--elevated); color: var(--ink-2); }
 .momento-logo.ph .ms, .momento-logo.ph span { font-size: 32px; }

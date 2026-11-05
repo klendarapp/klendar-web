@@ -12,15 +12,15 @@
 // Las cuatro pestañas de la app, en el mismo orden y con los mismos iconos
 // (Material: explore, travel_explore, bookmark, person). En el escritorio van
 // arriba; en el móvil, en una barra abajo, como la app. Planes y Cuenta viven
-// en «Tu cuenta» (/app/). `id` es lo que marca la pestaña activa.
+// en «Tu cuenta» (/cuenta/). `id` es lo que marca la pestaña activa.
 export const TABS = [
   { id: 'descubre', es: 'Descubre', en: 'Discover', hrefEs: '/descubre/', hrefEn: '/en/discover/',
     d: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-5.5-2.5 7.51-3.49L17.5 6.5 9.99 9.99 6.5 17.5zm5.5-6.6c.61 0 1.1.49 1.1 1.1s-.49 1.1-1.1 1.1-1.1-.49-1.1-1.1.49-1.1 1.1-1.1z' },
   { id: 'explorar', es: 'Explorar', en: 'Explore', hrefEs: '/explorar/', hrefEn: '/en/explore/',
     d: 'M19.3 16.9c.4-.7.7-1.5.7-2.4 0-2.5-2-4.5-4.5-4.5S11 12 11 14.5s2 4.5 4.5 4.5c.9 0 1.7-.3 2.4-.7l3.2 3.2 1.4-1.4-3.2-3.2zm-3.8.1c-1.4 0-2.5-1.1-2.5-2.5s1.1-2.5 2.5-2.5 2.5 1.1 2.5 2.5-1.1 2.5-2.5 2.5zM12 20v2C6.48 22 2 17.52 2 12S6.48 2 12 2c4.84 0 8.87 3.44 9.8 8h-2.07c-.64-2.46-2.4-4.47-4.73-5.41V5c0 1.1-.9 2-2 2h-2v2c0 .55-.45 1-1 1H8v2h2v3H9l-4.79-4.79C4.08 10.79 4 11.38 4 12c0 4.41 3.59 8 8 8z' },
-  { id: 'planes', es: 'Planes', en: 'Plans', hrefEs: '/app/#/planes', hrefEn: '/app/?lang=en#/planes',
+  { id: 'planes', es: 'Planes', en: 'Plans', hrefEs: '/cuenta/planes', hrefEn: '/cuenta/planes?lang=en',
     d: 'M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15-5-2.18L7 18V5h10v13z' },
-  { id: 'cuenta', es: 'Cuenta', en: 'Account', hrefEs: '/app/', hrefEn: '/app/?lang=en',
+  { id: 'cuenta', es: 'Cuenta', en: 'Account', hrefEs: '/cuenta/', hrefEn: '/cuenta/?lang=en',
     d: 'M12 6c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2m0 9c2.7 0 5.8 1.29 6 2v1H6v-.99c.2-.72 3.3-2.01 6-2.01M12 4C9.79 4 8 5.79 8 8s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm0 9c-2.67 0-8 1.34-8 4v3h16v-3c0-2.66-5.33-4-8-4z' },
 ];
 
@@ -43,7 +43,7 @@ export const FOOT_PRODUCT = [
   { es: 'Para negocios', en: 'For businesses', hrefEs: '/para-negocios/', hrefEn: '/en/for-business/' },
   { es: 'Para ayuntamientos y asociaciones', en: 'For councils and associations', hrefEs: '/para-entidades/', hrefEn: '/en/for-organisations/' },
   { es: 'Precios', en: 'Pricing', hrefEs: '/precios/', hrefEn: '/en/pricing/' },
-  { es: 'Tu cuenta', en: 'Your account', hrefEs: '/app/', hrefEn: '/app/?lang=en' },
+  { es: 'Tu cuenta', en: 'Your account', hrefEs: '/cuenta/', hrefEn: '/cuenta/?lang=en' },
   { es: 'Acceso para negocios', en: 'Business login', hrefEs: '/panel/', hrefEn: '/panel/' },
   { es: 'Preguntas frecuentes', en: 'FAQ', hrefEs: '/preguntas/', hrefEn: '/en/faq/' },
   { es: 'Soporte', en: 'Support', hrefEs: '/soporte/', hrefEn: '/en/support/' },
@@ -60,7 +60,7 @@ export const FOOT_LEGAL = [
   { es: 'Cookies', en: 'Cookies', hrefEs: '/cookies/', hrefEn: '/en/cookies/' },
   { es: 'Normas de la comunidad', en: 'Community guidelines', hrefEs: '/normas/', hrefEn: '/en/community-guidelines/' },
   // DSA art. 16: cualquiera, con cuenta o sin ella (formulario en «Tu cuenta»).
-  { es: 'Denunciar contenido ilegal', en: 'Report illegal content', hrefEs: '/app/#/denunciar', hrefEn: '/app/?lang=en#/denunciar' },
+  { es: 'Denunciar contenido ilegal', en: 'Report illegal content', hrefEs: '/cuenta/denunciar', hrefEn: '/cuenta/denunciar?lang=en' },
   { es: 'Eliminar cuenta', en: 'Delete account', hrefEs: '/eliminar-cuenta/', hrefEn: '/en/delete-account/' },
   { es: 'Accesibilidad', en: 'Accessibility', hrefEs: '/accesibilidad/', hrefEn: '/en/accessibility/' },
   { es: 'Estado del servicio', en: 'Service status', hrefEs: '/estado/', hrefEn: '/en/status/' },
@@ -200,7 +200,8 @@ export function siteHeader(lang, esPath = '/', enPath = '/en/', actual = '') {
     const on = n.id === actual;
     return `<a class="${cls}" data-tab="${n.id}" href="${en ? n.hrefEn : n.hrefEs}"${on ? ' aria-current="page"' : ''}><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="${n.d}"/></svg><span>${en ? n.en : n.es}</span></a>`;
   }).join('');
-  const cuenta = en ? '/app/?lang=en' : '/app/';
+  const cuenta = en ? '/cuenta/?lang=en' : '/cuenta/';
+  const enCuenta = (ruta) => (en ? `/cuenta/${ruta}?lang=en` : `/cuenta/${ruta}`);
   // El idioma: el mismo selector en todas las páginas (antes, «ES | EN» en
   // las públicas y un desplegable con los ocho en «Tu cuenta» y el panel).
   // Cada idioma con su nombre en su idioma; los que no tienen páginas
@@ -240,17 +241,17 @@ export function siteHeader(lang, esPath = '/', enPath = '/en/', actual = '') {
     <span class="top-iconos">
       <a class="top-icono" href="${descubre}#selecciones" data-abre-hoja="selecciones" aria-label="${T.selecciones}" title="${T.selecciones}">${icono('selecciones')}</a>
       <a class="top-icono" href="${explorar}?${en ? 'search' : 'buscar'}=1" data-abre-hoja="buscar" aria-label="${T.buscar}" title="${T.buscar}">${icono('buscar')}</a>
-      <a class="top-icono top-campana" href="${cuenta}#/notificaciones" data-campana data-n="${T.notificacionesN}" aria-label="${T.notificaciones}" title="${T.notificaciones}" hidden>${icono('campana')}<span class="top-n" aria-hidden="true" hidden></span></a>
+      <a class="top-icono top-campana" href="${enCuenta('notificaciones')}" data-campana data-n="${T.notificacionesN}" aria-label="${T.notificaciones}" title="${T.notificaciones}" hidden>${icono('campana')}<span class="top-n" aria-hidden="true" hidden></span></a>
     </span>
     <a class="top-negocios" href="${negocios.href}">${negocios.label}</a>
     ${selector}
-    <a class="pill top-entrar" href="${cuenta}#/entrar" data-cuenta="${cuenta}" data-cuenta-txt="${T.cuenta}">${T.entrar}</a>
+    <a class="pill top-entrar" href="${enCuenta('entrar')}" data-cuenta="${cuenta}" data-cuenta-txt="${T.cuenta}">${T.entrar}</a>
     <label class="menu-toggle" for="menu" aria-hidden="true" title="${T.mas}"><span></span><span></span><span></span></label>
   </div>
 </div></header>
-<script src="/assets/cabecera-yo.js?v=2"></script>
+<script src="/assets/cabecera-yo.js?v=20261105cuenta"></script>
 <nav class="tabbar" aria-label="${T.secciones}">${pestanas('tab')}</nav>
-<script src="/assets/cabecera.js?v=15" defer></script>`;
+<script src="/assets/cabecera.js?v=20261105cuenta" defer></script>`;
 }
 
 /**

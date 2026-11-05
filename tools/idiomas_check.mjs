@@ -64,7 +64,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]].filter
       page.on('console', (m) => { if (m.type() === 'error' && !/favicon|supabase|Failed to load resource|ERR_|net::/i.test(m.text())) errores.push(m.text()); });
 
       // «Tu cuenta» sin sesión: la pantalla de entrar.
-      await page.goto(`${BASE}/app/?lang=${lang}#/entrar`, { waitUntil: 'domcontentloaded' });
+      await page.goto(`${BASE}/cuenta/entrar?lang=${lang}`, { waitUntil: 'domcontentloaded' });
       await page.waitForTimeout(1500);
       const htmlLang = await page.evaluate(() => document.documentElement.lang);
       ok(htmlLang === lang, `${nombre}/${disp}/${lang}: «Tu cuenta» <html lang=${htmlLang}>`);
@@ -88,7 +88,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]].filter
       await page.screenshot({ path: join(OUT, `cuenta-${lang}-${nombre}-${disp}.png`) });
 
       // Crear cuenta: la nota de los textos legales en los idiomas nuevos.
-      await page.goto(`${BASE}/app/?lang=${lang}#/registro`, { waitUntil: 'domcontentloaded' });
+      await page.goto(`${BASE}/cuenta/registro?lang=${lang}`, { waitUntil: 'domcontentloaded' });
       await page.waitForTimeout(1200);
       const texto = await page.evaluate(() => document.body.innerText);
       if (NUEVOS.includes(lang)) {
@@ -100,25 +100,24 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]].filter
       // idioma y la vuelta al panel. La redirección se mira sin cargarla
       // (se corta) y luego se abre esa dirección: WebKit para Windows
       // tumbaba la página (el proceso, sin ningún error de JavaScript) al
-      // cargar /app/#/entrar justo después del `location.replace` del panel.
+      // cargar /cuenta/entrar justo después del `location.replace` del panel.
       // Pasaba también con el panel ya cargado y sin cabeceras CSP ni
       // Permissions-Policy, y no con una página mínima que hace lo mismo ni
-      // abriendo /app/ directamente: es del motor, no de la web (Safari de
+      // abriendo /cuenta/ directamente: es del motor, no de la web (Safari de
       // verdad no lo hace). Revisión del 2-11-2026.
       let destino = null;
-      await page.route('**/app/**', (r) => {
+      await page.route('**/cuenta/**', (r) => {
         if (r.request().isNavigationRequest() && !destino) { destino = r.request().url(); return r.abort(); }
         return r.continue();
       });
       await page.goto(`${BASE}/panel/?lang=${lang}`, { waitUntil: 'domcontentloaded' });
       await page.waitForTimeout(1500);
-      await page.unroute('**/app/**');
+      await page.unroute('**/cuenta/**');
       const dUrl = destino ? new URL(destino) : null;
-      // (La petición no lleva el `#/entrar`: el hash no sale del navegador.)
-      ok(dUrl && dUrl.pathname === '/app/' && dUrl.searchParams.get('destino') === '/panel/'
+      ok(dUrl && dUrl.pathname === '/cuenta/entrar' && dUrl.searchParams.get('destino') === '/panel/'
         && (dUrl.searchParams.get('lang') || 'es') === lang, `${nombre}/${disp}/${lang}: el panel sin sesión manda a entrar en su idioma (${destino})`);
       if (destino) {
-        await page.goto(`${destino}#/entrar`, { waitUntil: 'domcontentloaded' });
+        await page.goto(destino, { waitUntil: 'domcontentloaded' });
         await page.waitForTimeout(1500);
       }
       const pLang = await page.evaluate(() => document.documentElement.lang);

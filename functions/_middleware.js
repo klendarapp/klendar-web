@@ -102,14 +102,14 @@ export async function onRequest(ctx) {
     // La ficha abierta desde el QR del local (`?visita=`) mira si estás en
     // el local para darte el sello: solo entonces puede pedir la ubicación.
     const desdeQr = /^\/(en\/)?b\//.test(pathname) && searchParams.has('visita');
-    const ubicacion = desdeQr || /^\/(explorar|descubre|partidos|grupos|sorteos|en\/explore|en\/discover|en\/matches|en\/groups|en\/giveaways|app|panel)\//.test(pathname) ? '(self)' : '()';
+    const ubicacion = desdeQr || /^\/(explorar|descubre|partidos|grupos|sorteos|en\/explore|en\/discover|en\/matches|en\/groups|en\/giveaways|cuenta|panel)\//.test(pathname) ? '(self)' : '()';
     cabeceras.set('permissions-policy', `geolocation=${ubicacion}, camera=${pathname.startsWith('/panel/') ? '(self)' : '()'}, microphone=()`);
   }
   // 5. Zonas con sesión (Tu cuenta, panel, admin): sin el contador de
   //    Cloudflare. `no-transform` no basta: Pages lo mete igual en el HTML
   //    estático (comprobado en producción, 2026-09-30), la CSP lo tendría que
   //    bloquear y la consola se llenaría de avisos. Se quita aquí.
-  const conSesion = /^\/(app|panel|admin|tv)\//.test(pathname);
+  const conSesion = /^\/(cuenta|panel|admin|tv)\//.test(pathname);
   if (!head && conSesion && typeof HTMLRewriter === 'function' && /text\/html/i.test(cabeceras.get('content-type') || '')) {
     cabeceras.delete('content-length'); // el cuerpo cambia de tamaño
     const limpio = new HTMLRewriter()

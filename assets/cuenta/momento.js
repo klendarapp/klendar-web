@@ -2,7 +2,7 @@
  *
  * El negocio enseña un QR suyo que cambia cada 30 segundos
  * (`klendar.app/m/<clave>.<ventana>.<firma>`). Escaneado con la cámara del
- * móvil sin la app, `functions/m/[token].js` trae aquí (#/momento/<…>):
+ * móvil sin la app, `functions/m/[token].js` trae aquí (/cuenta/momento/<…>):
  * «La Taberna te da: 1 sello en Cafés» y «Aceptar». Como la app
  * (`SpotReceiveScreen`): una vez por persona y QR, sin notificación (ya se ve
  * aquí), y lo de «algo del momento» queda en «Tus códigos» («Te dieron»).
@@ -95,7 +95,7 @@ RUTAS.momento = async ([token]) => {
       h: 'h1',
       texto: clave === 'qr_expired' ? t('Pide que te lo enseñen otra vez: cambia cada 30 segundos.')
         : clave === 'too_far' ? t('Acércate y vuelve a escanear el QR.') : (d?.business?.name || ''),
-      botones: `<a class="pill accent" href="#/codigos">${esc(t('Tus códigos'))}</a>`,
+      botones: `<a class="pill accent" href="/cuenta/codigos">${esc(t('Tus códigos'))}</a>`,
     }));
   };
   // La ubicación, solo si ya hay permiso (para «Aceptar», la misma).
@@ -116,7 +116,7 @@ RUTAS.momento = async ([token]) => {
       ${lleva ? `<p class="muted">${esc(lleva)}</p>` : ''}
       ${d.adults_only ? `<p><b>${esc(t('Solo para mayores de 18'))}</b></p>` : ''}
       <p><button class="pill accent grande" id="momento-acepta" type="button">${esc(t('Aceptar'))}</button></p>
-      <p><a class="link" href="#/codigos">${esc(t('Ahora no'))}</a></p>
+      <p><a class="link" href="/cuenta/codigos">${esc(t('Ahora no'))}</a></p>
       <p class="muted nota">${esc(t('Lo da y lo cumple el negocio.'))}</p>
     </div>`);
   const boton = $('#momento-acepta');
@@ -139,8 +139,8 @@ RUTAS.momento = async ([token]) => {
       r.auto_stamps > 0 ? (r.auto_stamps === 1 ? 'Y 1 sello más en tus tarjetas de aquí.'
         : `Y ${r.auto_stamps} sellos más en tus tarjetas de aquí.`) : '',
     ].filter(Boolean);
-    const [href, texto] = r.kind === 'stamps' ? ['#/sellos', 'Tarjetas de sellos']
-      : r.kind === 'pass_use' && r.pass?.id ? [`#/bono/${r.pass.id}`, 'Bonos'] : ['#/codigos', 'Tus códigos'];
+    const [href, texto] = r.kind === 'stamps' ? ['/cuenta/sellos', 'Tarjetas de sellos']
+      : r.kind === 'pass_use' && r.pass?.id ? [`/cuenta/bono/${r.pass.id}`, 'Bonos'] : ['/cuenta/codigos', 'Tus códigos'];
     pinta(`
       <div class="ticket canjeado momento" role="status">
         <p class="hecho-ic" aria-hidden="true">✓</p>

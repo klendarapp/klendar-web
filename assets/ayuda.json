@@ -1,5 +1,5 @@
 {
- "version": "d671fbf37d54",
+ "version": "b44c4339bdc0",
  "contact": "info@klendar.app",
  "tabs": {
   "es": {
@@ -296,7 +296,7 @@
      },
      {
       "t": "el formulario de denuncias",
-      "u": "https://klendar.app/app/#/denunciar"
+      "u": "https://klendar.app/cuenta/denunciar"
      },
      {
       "t": ". Lo revisamos y, si hay que retirarlo, se retira con un motivo y el negocio puede recurrir."
@@ -319,7 +319,7 @@
      },
      {
       "t": "formulario de denuncias",
-      "u": "https://klendar.app/app/#/denunciar"
+      "u": "https://klendar.app/cuenta/denunciar"
      },
      {
       "t": " (también en el pie de cada página: «Denunciar contenido ilegal»). No hace falta tener cuenta. Te confirmamos que la hemos recibido y te contamos qué hemos decidido y por qué. Si alguien está en peligro ahora mismo, llama al 112."
@@ -883,7 +883,7 @@
      },
      {
       "t": "the report form",
-      "u": "https://klendar.app/app/?lang=en#/denunciar"
+      "u": "https://klendar.app/cuenta/denunciar?lang=en"
      },
      {
       "t": ". We review it and, if it has to come down, it comes down with a reason and the business can appeal."
@@ -906,7 +906,7 @@
      },
      {
       "t": "report form",
-      "u": "https://klendar.app/app/?lang=en#/denunciar"
+      "u": "https://klendar.app/cuenta/denunciar?lang=en"
      },
      {
       "t": " (also in the footer of every page: “Report illegal content”). You don't need an account. We'll confirm we've received it and tell you what we've decided and why. If someone is in danger right now, call 112."

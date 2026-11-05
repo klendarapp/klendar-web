@@ -10,7 +10,7 @@
      documento que lo acredita y la declaración). Sin carta, horario,
      categoría ni nada de venta: `register_entity`.
    - El documento va al Storage privado `business-claims`, como la prueba de
-     «¿Es tu negocio?» (`app/cuenta.js`).
+     «¿Es tu negocio?» (`assets/cuenta/cuenta.js`).
    - Hasta que administración compruebe el documento no publica (la base
      tampoco lo deja: `entity_pending`).
    - «Tu ficha › Cuenta de entidad» (`#/ficha/entidad`): un negocio ya dado

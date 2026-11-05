@@ -4,7 +4,7 @@
 //   · la ficha pública de una carrera (datos de verdad de dev): «Seguir
 //     Fórmula 1» (o MotoGP) y sus pilotos, con «Ver N más»; con sesión
 //     (simulada), los que ya sigues salen de «Ver N más»; ES y EN;
-//   · «Tu cuenta» (#/equipos, simulada): la lista con su etiqueta («Piloto ·
+//   · «Tu cuenta» (/cuenta/equipos, simulada): la lista con su etiqueta («Piloto ·
 //     Fórmula 1», «Equipo · LaLiga», «Competición») y el buscador único;
 //   · el panel («Partidos que pones», simulado): «Poner siempre…» con el
 //     buscador y «⋯» → «Poner siempre los de Topuria»;
@@ -131,7 +131,7 @@ for (const [motor, tipo] of [['chromium', pw.chromium], ['webkit', pw.webkit]].f
       await ctx.close();
     }
 
-    // ── 2. «Tu cuenta» → #/equipos ─────────────────────────────────────────
+    // ── 2. «Tu cuenta» → /cuenta/equipos ─────────────────────────────────────────
     {
       const { ctx, p, estado, errores } = await contexto(nav, vp, `sb-${REF}-auth-token`, {
         my_consents: CONSENT,
@@ -143,7 +143,7 @@ for (const [motor, tipo] of [['chromium', pw.chromium], ['webkit', pw.webkit]].f
         unfollow_broadcast_team: { ok: true },
         set_broadcast_area: { ok: true, stored: true },
       });
-      await p.goto(`${BASE}/app/#/equipos`, { waitUntil: 'networkidle' });
+      await p.goto(`${BASE}/cuenta/equipos`, { waitUntil: 'networkidle' });
       await p.waitForSelector('.equipos-lista');
       const txt = await p.locator('main').innerText();
       ok(/Equipos y deportistas que sigues/.test(txt), `${motor} ${t} cuenta: el título`);

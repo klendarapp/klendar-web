@@ -4,7 +4,7 @@
 `import`/`export`): Node decide cómo leer un `.js` según el `package.json` y,
 con uno roto, puede salir sin error. Por eso cada módulo se copia a un `.mjs`
 temporal y se comprueba así; los scripts clásicos del navegador (`assets/`,
-`app/`, `panel/`, `admin/`, `config.js`…) se comprueban tal cual.
+`panel/`, `admin/`, `config.js`…) se comprueban tal cual.
 
 Un error de sintaxis en `functions/` hace que Cloudflare rechace el despliegue
 entero (la web se queda en la versión anterior sin avisar).

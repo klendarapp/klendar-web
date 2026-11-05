@@ -1,6 +1,6 @@
 /* «Tu cuenta»: la cola virtual (tanda C, migración 20261207100000).
  *
- * - `#/cola/<código>`: el turno en vivo, lo mismo que `/cola/<código>` en la
+ * - `/cuenta/cola/<código>`: el turno en vivo, lo mismo que `/cola/<código>` en la
  *   app. Sin número: cuánta gente espera, la espera aproximada, «¿Cuántos
  *   sois?» y «Coger número» (sin sesión, «Entrar para coger número»). Con
  *   número: «Tu número», cuántos tienes delante, la espera y «Salir de la
@@ -146,7 +146,7 @@ RUTAS.cola = async ([code]) => {
     d.me && [d.me.id, d.me.status, d.me.ahead, d.me.wait_minutes, d.me.call_deadline]]);
 
   const cabecera = (b) => `
-    <p class="crumbs"><a href="#/codigos">${esc(t('Tus códigos'))}</a></p>
+    <p class="crumbs"><a href="/cuenta/codigos">${esc(t('Tus códigos'))}</a></p>
     <p class="cola-kicker">${esc(t('Cola virtual'))}</p>
     <h1 class="cola-h1">${esc(b.name || '')}</h1>`;
 
@@ -214,7 +214,7 @@ RUTAS.cola = async ([code]) => {
         left: ['logout', 'Saliste de la cola', 'Si ha sido sin querer, pregunta en la puerta: pueden apuntarte.'],
         removed: ['block', 'Ya no estás en la cola', 'El local te ha quitado de la cola. Si es un error, pregunta en la puerta.'],
       }[me.status] || ['block', 'Ya no estás en la cola', 'El local te ha quitado de la cola. Si es un error, pregunta en la puerta.'];
-      pinta(`<p class="crumbs"><a href="#/codigos">${esc(t('Tus códigos'))}</a></p>
+      pinta(`<p class="crumbs"><a href="/cuenta/codigos">${esc(t('Tus códigos'))}</a></p>
         ${pantallaVacia({
           icono: fin[0], h: 'h1', titulo: t(fin[1]), texto: t(fin[2]),
           botones: `<a class="pill accent" href="${esc(colaFicha(b))}">${esc(t('Ver el local'))}</a>`,
@@ -249,7 +249,7 @@ RUTAS.cola = async ([code]) => {
         ${YO ? `<form class="formu cola-form" id="f-cola" novalidate>
           <label>${esc(t('¿Cuántos sois?'))}<select name="party">${Array.from({ length: 20 }, (_, i) => `<option value="${i + 1}"${i + 1 === party ? ' selected' : ''}>${i + 1}</option>`).join('')}</select></label>
           <button class="pill accent" type="submit">${esc(t('Coger número'))}</button>
-        </form>` : `<div class="cola-botones"><a class="pill accent" href="#/entrar?siguiente=${encodeURIComponent(`cola/${codigo}`)}">${esc(t('Entrar para coger número'))}</a></div>`}
+        </form>` : `<div class="cola-botones"><a class="pill accent" href="/cuenta/entrar?siguiente=${encodeURIComponent(`cola/${codigo}`)}">${esc(t('Entrar para coger número'))}</a></div>`}
         <p class="muted cola-ayuda">${esc(colaAyuda(q.call_minutes || 5))}</p>
         ${b.adults_only ? `<p class="muted cola-ayuda">${esc(t('Solo para mayores de 18 años.'))}</p>` : ''}
       </section>`);
@@ -324,7 +324,7 @@ async function colaTarjetasHtml(turnos) {
         // Cada trozo por el diccionario: unidos con « · » ya no casan con él.
         x.ahead ? (EN ? `${x.ahead} ahead` : t(`${x.ahead} delante`)) : (EN ? "You're next" : t('Eres el siguiente')),
         x.wait_minutes != null ? (EN ? `about ${colaRedondea(x.wait_minutes)} min` : t(`unos ${colaRedondea(x.wait_minutes)} min`)) : ''].filter(Boolean).join(' · ');
-    return `<a class="ocard cola-tarjeta${x.status === 'called' ? ' llamado' : ''}" href="#/cola/${esc(x.code)}">
+    return `<a class="ocard cola-tarjeta${x.status === 'called' ? ' llamado' : ''}" href="/cuenta/cola/${esc(x.code)}">
         ${b.logo_url ? `<img src="${esc(b.logo_url)}" alt="" loading="lazy">` : `<span class="ph">${COLA_SVG}</span>`}
         <span class="ocard-body"><b>${esc(EN ? `Your turn at ${b.name || ''}` : t(`Tu turno en ${b.name || ''}`))}</b>
           <span class="${x.status === 'called' ? 'cola-toca-linea' : 'muted'}">${esc(linea)}</span>

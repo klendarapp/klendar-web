@@ -1,11 +1,11 @@
 /* «Tu cuenta» → «Grupos y empresas» (tanda C; migración
  * 20261208100000_grupos_y_empresas de la app). Lo mismo que la app:
  *
- * - `#/grupos/pedir?b=<id>,<id>`: «Pedir presupuesto» a 1–3 negocios
+ * - `/cuenta/grupos/pedir?b=<id>,<id>`: «Pedir presupuesto» a 1–3 negocios
  *   (`create_group_request`). Llega de la lista pública (/grupos/) o de la
  *   ficha de un negocio; pide entrar. Las mismas validaciones que la base.
- * - `#/grupos`: «Tus peticiones» (`my_group_requests`).
- * - `#/grupos/<id>`: la petición, con lo que ha contestado cada negocio;
+ * - `/cuenta/grupos`: «Tus peticiones» (`my_group_requests`).
+ * - `/cuenta/grupos/<id>`: la petición, con lo que ha contestado cada negocio;
  *   «Aceptar esta propuesta» (hoja: correo o teléfono, `accept_group_proposal`)
  *   y «Retirar la petición» (`cancel_group_request`).
  *
@@ -101,7 +101,7 @@ async function grupoPedir(params) {
   $$('[data-quita]', f).forEach((b) => b.addEventListener('click', () => {
     const resto = validos.map((n) => n.id).filter((x) => x !== b.dataset.quita);
     grupoGuardaElegidos(resto);
-    history.replaceState(null, '', `${location.pathname}${location.search}#/grupos/pedir?b=${resto.join(',')}`);
+    ponRuta(`grupos/pedir?b=${resto.join(',')}`);
     navegar();
   }));
   f.addEventListener('submit', (ev) => {
@@ -141,8 +141,8 @@ async function grupoPedir(params) {
         grupoGuardaElegidos([]);
         hecho({
           titulo: S.sent, texto: '',
-          volver: `#/grupos/${r.id}`, volverTxt: S.seeRequest,
-          lista: '#/grupos', listaTxt: S.yourRequests,
+          volver: `/cuenta/grupos/${r.id}`, volverTxt: S.seeRequest,
+          lista: '/cuenta/grupos', listaTxt: S.yourRequests,
         });
       } catch (e) {
         err.textContent = grupoError(e);
@@ -157,7 +157,7 @@ async function grupoPeticiones() {
   const S = GS();
   const L = grupoLang();
   const lista = (await llamar('my_group_requests', {})) || [];
-  const cabeza = `<p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a> · <a href="${grupoLista()}">${esc(S.title)}</a></p>
+  const cabeza = `<p class="crumbs"><a href="/cuenta/">${esc(t('Tu cuenta'))}</a> · <a href="${grupoLista()}">${esc(S.title)}</a></p>
     <h1>${esc(S.yourRequests)}</h1>`;
   if (!lista.length) {
     pinta(`${cabeza}${grupoVacio({ titulo: S.requestsEmptyTitle, texto: S.requestsEmptyText,
@@ -165,7 +165,7 @@ async function grupoPeticiones() {
     return;
   }
   pinta(`${cabeza}
-    <div class="olist">${lista.map((r) => `<a class="ocard grupo-pet" href="#/grupos/${esc(r.id)}">
+    <div class="olist">${lista.map((r) => `<a class="ocard grupo-pet" href="/cuenta/grupos/${esc(r.id)}">
       <span class="ph">${grupoIc(24)}</span>
       <span class="ocard-body"><b>${esc(KGr.linea(r, L))}</b>
         <span class="muted">${esc((r.targets || []).map((x) => x.business?.name).filter(Boolean).join(', '))}</span>
@@ -200,7 +200,7 @@ async function grupoDetalle(id) {
   const L = grupoLang();
   const r = await llamar('group_request_detail', { p_request: id });
   if (!r || !r.id) {
-    pinta(grupoVacio({ titulo: S.notFound, h: 'h1', botones: `<a class="pill accent" href="#/grupos">${esc(S.yourRequests)}</a>` }));
+    pinta(grupoVacio({ titulo: S.notFound, h: 'h1', botones: `<a class="pill accent" href="/cuenta/grupos">${esc(S.yourRequests)}</a>` }));
     return;
   }
   const abierta = r.status === 'open';
@@ -222,7 +222,7 @@ async function grupoDetalle(id) {
     </article>`;
   };
   pinta(`
-    <p class="crumbs"><a href="#/grupos">${esc(S.yourRequests)}</a></p>
+    <p class="crumbs"><a href="/cuenta/grupos">${esc(S.yourRequests)}</a></p>
     <h1>${esc(KGr.linea(r, L))}</h1>
     <p class="ocard-meta"><span class="tag off">${esc(S.status[r.status] || r.status)}</span></p>
     ${r.status === 'removed' ? `<p class="muted">${esc(S.removedText)}</p>` : ''}
@@ -283,7 +283,7 @@ function grupoAcepta(target, nombre, peticion) {
         await llamar('accept_group_proposal', { p_target: target, p_share: share, p_phone: share === 'phone' ? phone : null });
         d.close();
         toast(S.accepted(nombre));
-        if (location.hash === `#/grupos/${peticion}`) navegar();
+        if (rutaActual().crudo === `grupos/${peticion}`) navegar();
       } catch (e) { err.textContent = grupoError(e); }
     });
   });

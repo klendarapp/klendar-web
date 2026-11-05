@@ -1,4 +1,4 @@
-/* «Tu cuenta» → «Equipos y deportistas que sigues» (#/equipos), como la app
+/* «Tu cuenta» → «Equipos y deportistas que sigues» (/cuenta/equipos), como la app
  * (/partidos/equipos; migraciones 20261201100000_partidos y
  * 20261260100070_seguir_lo_que_sea de la app).
  *
@@ -6,7 +6,7 @@
  *   · Fórmula 1») con el próximo evento de cada uno (a su página pública,
  *   /partidos/<id>), «Dejar de seguir» y «Seguir», que abre el buscador
  *   único (`follow_search`).
- * - `#/equipos?seguir=<id>&nombre=<nombre>[&tipo=<kind>&deporte=<sport>]`:
+ * - `/cuenta/equipos?seguir=<id>&nombre=<nombre>[&tipo=<kind>&deporte=<sport>]`:
  *   lo que manda «Seguir a Real Madrid» desde la web pública sin sesión. Al
  *   entrar, se sigue; si el
  *   enlace no viene de un botón de esta web (sin la marca de
@@ -30,7 +30,7 @@ const partidoWeb = (id) => `${PUB_EN ? '/en/matches/' : '/partidos/'}${encodeURI
 
 /** La fila de la portada de «Tu cuenta» (grupo Preferencias). */
 function filaEquipos() {
-  return `<a class="fila" href="#/equipos">${icBalon()}
+  return `<a class="fila" href="/cuenta/equipos">${icBalon()}
     <span class="fila-t"><b>${esc(SE().teamsYouFollow)}</b><small>${esc(EN ? "We'll let you know before their matches" : 'Te avisamos antes de sus partidos')}</small></span>
     ${ic('chevron_right')}</a>`;
 }
@@ -57,10 +57,10 @@ RUTAS.equipos = async (_partes, params) => {
       titulo: KEm.seguirTxt(item, LANG),
       texto: EN ? "We'll let you know before each match which bars nearby are showing it." : 'Te avisamos antes de cada partido con los bares que lo ponen cerca.',
       boton: KEm.seguirTxt(item, LANG),
-      volver: '#/equipos',
+      volver: '/cuenta/equipos',
     });
     if (!sigue) return;
-    history.replaceState(null, '', `${location.pathname}${location.search}#/equipos`);
+    ponRuta(`equipos`);
     try {
       await llamar('follow_broadcast_team', { p_team: seguir });
       guardaZonaAvisos();
@@ -69,7 +69,7 @@ RUTAS.equipos = async (_partes, params) => {
   }
 
   const lista = (await llamar('my_followed_teams', { p_lang: LANG })) || [];
-  const cabeza = `<p class="crumbs"><a href="#/">${esc(t('Tu cuenta'))}</a></p>
+  const cabeza = `<p class="crumbs"><a href="/cuenta/">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(S.teamsYouFollow)}</h1>`;
   // Neutro con borde (el coral, solo para el botón principal y las ofertas).
   const botonSeguir = `<button type="button" class="pill" data-seguir-equipo>${esc(S.followTeam)}</button>`;
@@ -138,7 +138,7 @@ function buscaEquipo(alCerrar) {
   });
 }
 
-/** La hoja de «Seguir» (equipos y deportistas) y «Seguir a un artista» (app/artistas.js):
+/** La hoja de «Seguir» (equipos y deportistas) y «Seguir a un artista» (assets/cuenta/artistas.js):
  * un buscador y, por cada resultado, su nombre, una línea y el botón de seguir
  * (en activo si ya lo sigues), que sigue o deja de seguir sin cerrarla. Al
  * seguir, se guarda la zona para los avisos (`guardaZonaAvisos`). Al cerrar,

@@ -1,12 +1,12 @@
 /* «Tu cuenta»: bonos pagados en el local (tanda B, migración 20261202100000).
  *
- * - «Tu QR de cliente» (#/qr-cliente): lo escanea el negocio para cargar un
+ * - «Tu QR de cliente» (/cuenta/qr-cliente): lo escanea el negocio para cargar un
  *   bono o descontar un uso. Cambia cada 30 segundos (una captura vieja no
  *   vale): la clave y el secreto se piden a `customer_qr_key` y la firma se
  *   calcula aquí con HMAC-SHA256, igual que la app y que la base
  *   (`customer_qr_check`). El secreto solo vive en la memoria de la página.
  * - En «Tus códigos», arriba: el QR de cliente y la sección «Bonos».
- * - Cada bono (#/bono/<id>): usos que quedan, caducidad, qué incluye,
+ * - Cada bono (/cuenta/bono/<id>): usos que quedan, caducidad, qué incluye,
  *   condiciones e historial de usos.
  *
  * Va después de app.js y usa lo suyo (`RUTAS`, `llamar`, `pinta`, `t`, `esc`,
@@ -41,7 +41,7 @@ const bonoBarra = (p) => `<span class="bono-barra" aria-hidden="true"><span styl
 
 /** «Tu QR de cliente», arriba en «Tus códigos». */
 function bonoFilaQr() {
-  return `<a class="ocard" href="#/qr-cliente">
+  return `<a class="ocard" href="/cuenta/qr-cliente">
       <span class="ph">${ic('qr_code_2')}</span>
       <span class="ocard-body"><b>${esc(t('Tu QR de cliente'))}</b>
         <span class="muted">${esc(t('Para comprar o usar bonos en el local'))}</span>
@@ -51,7 +51,7 @@ function bonoFilaQr() {
 
 /** Un bono en «Tus códigos». */
 function bonoFila(p) {
-  return `<a class="ocard bono" href="#/bono/${esc(p.id)}">
+  return `<a class="ocard bono" href="/cuenta/bono/${esc(p.id)}">
       ${p.business_logo ? `<img src="${esc(p.business_logo)}" alt="" loading="lazy">` : `<span class="ph">${ic('local_activity')}</span>`}
       <span class="ocard-body"><b>${esc(p.name)}</b>
         <span class="muted">${esc(p.business_name || '')}</span>
@@ -83,7 +83,7 @@ RUTAS['qr-cliente'] = async () => {
   const desfase = Number(clave.now || 0) - Math.floor(Date.now() / 1000);
   const paso = Number(clave.step || 30);
   pinta(`
-    <p class="crumbs"><a href="#/codigos">${esc(t('Tus códigos'))}</a></p>
+    <p class="crumbs"><a href="/cuenta/codigos">${esc(t('Tus códigos'))}</a></p>
     <div class="ticket">
       <h1>${esc(t('Tu QR de cliente'))}</h1>
       <p>${esc(t('Enséñaselo al negocio para cargar un bono o descontar un uso.'))}</p>
@@ -123,20 +123,20 @@ RUTAS.bono = async ([id]) => {
   if (!p) {
     pinta(pantallaVacia({ icono: 'local_activity', titulo: t('Ese bono no está'), h: 'h1',
       texto: t('Puede que el negocio deshiciera la venta. Tus bonos están en «Tus códigos».'),
-      botones: `<a class="pill accent" href="#/codigos">${esc(t('Tus códigos'))}</a>` }));
+      botones: `<a class="pill accent" href="/cuenta/codigos">${esc(t('Tus códigos'))}</a>` }));
     return;
   }
   const usos = p.uses || [];
   const dato = (k, v) => (v ? `<div class="fila fila-dato"><span class="fila-t"><small>${esc(k)}</small><b>${esc(v)}</b></span></div>` : '');
   pinta(`
-    <p class="crumbs"><a href="#/codigos">${esc(t('Tus códigos'))}</a></p>
+    <p class="crumbs"><a href="/cuenta/codigos">${esc(t('Tus códigos'))}</a></p>
     <h1>${esc(p.name)}</h1>
     <p class="muted">${p.business_slug ? `<a href="${PUB_EN ? '/en' : ''}/b/${esc(p.business_slug)}">${esc(p.business_name)}</a>` : esc(p.business_name || '')}</p>
     <div class="bono-caja">
       <p class="bono-quedan grande">${esc(bonoQuedan(p.uses_left, p.uses_total))}</p>
       ${bonoBarra(p)}
       <p>${esc(bonoEstado(p))}</p>
-      ${p.state === 'active' ? `<p><a class="pill accent" href="#/qr-cliente">${ic('qr_code_2')} ${esc(t('Enseñar mi QR'))}</a></p>
+      ${p.state === 'active' ? `<p><a class="pill accent" href="/cuenta/qr-cliente">${ic('qr_code_2')} ${esc(t('Enseñar mi QR'))}</a></p>
         <p class="muted">${esc(t('El negocio lo escanea y descuenta un uso.'))}</p>` : ''}
     </div>
     <div class="lista">

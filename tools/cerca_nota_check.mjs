@@ -65,7 +65,7 @@ async function contexto(nav, vp, { nearby, savedAt, lang = 'es' }) {
   const page = await ctx.newPage();
   const errores = [];
   page.on('pageerror', (e) => errores.push(e.message));
-  await page.goto(`${BASE}${lang === 'es' ? '/app/' : '/app/?lang=en'}#/ajustes/notificaciones`);
+  await page.goto(`${BASE}/cuenta/ajustes/notificaciones${lang === 'es' ? '' : '?lang=en'}`);
   await page.waitForSelector('#f-avisos input[name=cerca]', { timeout: 15000 });
   await page.waitForTimeout(600);
   return { ctx, page, llamadas, errores };

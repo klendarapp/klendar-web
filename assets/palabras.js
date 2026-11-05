@@ -6,7 +6,7 @@
  * Las páginas van en caché y no saben quién las mira: si en este navegador
  * hay una sesión de «Tu cuenta», aquí se mira (`my_alert_words`) y se añade
  * sin salir de la página (`add_alert_word`). Sin sesión (o sin JavaScript)
- * el enlace lleva a «Tu cuenta» (`#/avisame-palabra?palabra=…`), que la
+ * el enlace lleva a «Tu cuenta» (`/cuenta/avisame-palabra?palabra=…`), que la
  * añade al entrar, con la marca de que se ha pulsado aquí (no vuelve a
  * preguntar; `hayIntencion` en app.js).
  */
@@ -20,7 +20,7 @@
   if (!caja) return;
   var palabra = caja.getAttribute('data-avisame-palabra') || '';
   var a = caja.querySelector('a');
-  var cuenta = en ? '/app/?lang=en' : '/app/';
+  var cuenta = function (ruta) { ruta = ruta || ''; return '/cuenta/' + (en ? ruta.replace(/\?|$/, function (m) { return m ? '?lang=en&' : '?lang=en'; }) : ruta); };
 
   var T = en ? {
     added: function (w) { return 'We’ll let you know if there’s something for “' + w + '” nearby'; },
@@ -100,7 +100,7 @@
     var sm = a.querySelector('small');
     if (b) b.textContent = caja.getAttribute('data-si') || '';
     if (sm) sm.textContent = caja.getAttribute('data-si-hint') || '';
-    a.href = cuenta + '#/ajustes/notificaciones';
+    a.href = cuenta('ajustes/notificaciones');
     a.setAttribute('data-directo', '1');
     caja.classList.add('on');
   }

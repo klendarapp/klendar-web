@@ -66,7 +66,7 @@ const APP_EN = {
   // Series que sigues: las fechas que quedan («masFechas», app.js)
   'Por ahora no hay más fechas publicadas': 'No more dates posted yet',
   '1 fecha más publicada': '1 more date posted',
-  // El turno de la cola en Tus códigos (app/cola.js)
+  // El turno de la cola en Tus códigos (assets/cuenta/cola.js)
   'Eres el siguiente': "You're next",
   // Traducción automática (Ajustes)
   "Traducir siempre automáticamente": "Always translate automatically",
@@ -870,7 +870,7 @@ const APP_EN = {
   "No hemos podido quitar del vídeo dónde se grabó. Si no quieres que se sepa, súbelo desde la app.": "We couldn't remove where the video was recorded. If you don't want that to be known, upload it from the app.",
   "Espera a que terminen de subirse las fotos y vídeos.": "Wait for the photos and videos to finish uploading.",
   "Denunciar una foto o un vídeo": "Report a photo or video",
-  // RRPP (2026-10-05, app/rrpp.js; los textos son los de la app)
+  // RRPP (2026-10-05, assets/cuenta/rrpp.js; los textos son los de la app)
   "Invitaciones": "Invitations",
   "Tienes una invitación": "You have an invitation",
   "Esta oferta es solo con el enlace de un RRPP.": "This offer is only available through a promoter's link.",
@@ -1018,7 +1018,7 @@ const APP_EN = {
   "Respuestas a tus peticiones y, si tienes un negocio, peticiones nuevas": "Replies to your requests and, if you have a business, new requests",
   "Sorteos": "Giveaways",
   "Resultados de los sorteos en los que participas. Si ganas, te avisamos siempre.": "Results of the giveaways you've entered. If you win, we'll always let you know.",
-  // Te aviso cuando esté listo (app/listo.js)
+  // Te aviso cuando esté listo (assets/cuenta/listo.js)
   "Este local no avisa de pedidos ahora": "This venue isn’t sending order alerts right now",
   "Ahora no se pueden pedir avisos aquí": "You can’t ask for alerts here right now",
   "Los avisos han terminado por hoy": "Alerts have finished for today",
@@ -1052,7 +1052,7 @@ const APP_EN = {
   "Preparando…": "Being prepared…",
   "Di tu número en el mostrador.": "Give your number at the counter.",
   "Tu pedido en {nombre}": "Your order at {nombre}",
-  // Cola virtual (app/cola.js)
+  // Cola virtual (assets/cuenta/cola.js)
   "Cola virtual": "Virtual queue",
   "La espera aproximada sale cuando avancen los primeros": "The estimated wait appears once the first people have been seen",
   "¡Te toca!": "It's your turn!",
@@ -1092,7 +1092,7 @@ const APP_EN = {
   "Eres del equipo de este local.": "You're on this venue's team.",
   "Solo para mayores de 18 años.": "Over-18s only.",
   "Este cartel ya no funciona.": "This poster no longer works.",
-  // «Pedir un local» y «Avísame cuando llegue» (crecer, app/crecer.js)
+  // «Pedir un local» y «Avísame cuando llegue» (crecer, assets/cuenta/crecer.js)
   "Pedir un local": "Ask for a place",
   "Un sitio que echas en falta y lo que ya has pedido": "A place you miss and what you've already asked for",
   "El mapa no se puede cargar ahora mismo. Con la dirección basta.": "The map can't load right now. The address is enough.",
@@ -1159,7 +1159,7 @@ const APP_EN = {
   "Cuando llega a Klendar uno que pediste": "When one you asked for comes to Klendar",
   "Cuando haya sitio": "When there’s room",
   "Cuando pides «Avísame cuando haya sitio» en un local lleno. Llega aunque estés en horas de silencio, porque lo has pedido tú.": "When you ask “Tell me when there’s room” at a full place. It arrives even during quiet hours, because you asked for it.",
-  // «Pedir un local» y «Avísame cuando llegue» (crecer, app/crecer.js)
+  // «Pedir un local» y «Avísame cuando llegue» (crecer, assets/cuenta/crecer.js)
   "{business_name} ya está en Klendar": "{business_name} is already on Klendar",
   "Te avisamos el {month}": "We let you know on {month}",
   "Desde el {year}": "Since {year}",
@@ -1171,7 +1171,7 @@ const APP_EN = {
   "¿Retirar «{nombre}»?": "Withdraw “{nombre}”?",
   "¿Quitar «{zona}»?": "Remove “{zona}”?",
   "Listo: te avisaremos cuando Klendar llegue a {z}": "Done: we'll let you know when Klendar arrives in {z}",
-  // «Dar en el momento» (app/momento.js)
+  // «Dar en el momento» (assets/cuenta/momento.js)
   "Te dieron": "Given to you",
   "No es un QR de un negocio de Klendar": "It isn’t a Klendar business QR code",
   "El negocio ya ha cerrado este QR": "The business has already closed this QR code",

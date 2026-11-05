@@ -6,7 +6,7 @@
 //
 // El pedido en vivo («Avísame cuando esté listo», tu número, «Preparando…» y
 // «¡Listo! Pasa a recogerlo» con sonido y vibración) vive en «Tu cuenta»
-// (`#/listo/<código>`, app/listo.js), que necesita la sesión: con una sesión
+// (`/cuenta/listo/<código>`, assets/cuenta/listo.js), que necesita la sesión: con una sesión
 // guardada en este navegador la página lleva allí antes de pintar; sin ella,
 // «Entrar para que te avisemos» entra y vuelve.
 //
@@ -59,9 +59,9 @@
   };
 
   /** «Tu cuenta» en el idioma de la página. */
-  const cuenta = (lang) => (lang === 'en' ? '/app/?lang=en' : '/app/');
+  const cuenta = (lang, ruta = '') => `/cuenta/${lang === 'en' ? ruta.replace(/\?|$/, (m) => (m ? '?lang=en&' : '?lang=en')) : ruta}`;
   /** Entrar y volver al pedido en «Tu cuenta». */
-  const entrar = (lang, code) => `${cuenta(lang)}#/entrar?siguiente=${encodeURIComponent(`listo/${code}`)}`;
+  const entrar = (lang, code) => `${cuenta(lang, `entrar?siguiente=${encodeURIComponent(`listo/${code}`)}`)}`;
   const ficha = (lang, b) => `${lang === 'en' ? '/en' : ''}/b/${encodeURIComponent(b?.slug || b?.id || '')}`;
 
   function direccionCorta(address, city) {
@@ -118,7 +118,7 @@
 
   /** La etiqueta del <head> que lleva a «Tu cuenta» si hay sesión guardada. */
   function saltoConSesion(lang, code, ref) {
-    const destino = JSON.stringify(`${cuenta(lang)}#/listo/${code}`);
+    const destino = JSON.stringify(`${cuenta(lang, `listo/${code}`)}`);
     // Solo la sesión de este proyecto (`ref`, el de la Function): la de otro
     // Supabase (dev, tras pasar la web a prod) llevaría a «Tu cuenta» sin sesión.
     const k = JSON.stringify(ref ? `sb-${String(ref).replace(/[^a-z0-9-]/g, '')}-auth-token` : '');

@@ -18,13 +18,13 @@ Web pública de Klendar: landing, páginas legales y páginas de enlace (`/o/<id
 
 ## Idiomas de «Tu cuenta» y del panel
 
-«Tu cuenta» (`/app/`) y el panel (`/panel/`) van en ocho idiomas: español (la
+«Tu cuenta» (`/cuenta/`) y el panel (`/panel/`) van en ocho idiomas: español (la
 fuente), inglés y catalán, gallego, euskera, francés, alemán e italiano. El
 admin y las páginas públicas, solo en español e inglés.
 
 - El motor es `assets/i18n.js`: traduce lo que se ve con un diccionario
-  español → idioma. El inglés va dentro de cada herramienta (`app/i18n.js`,
-  `panel/i18n.js`); los demás, en `app/i18n/<lang>.js` y `panel/i18n/<lang>.js`,
+  español → idioma. El inglés va dentro de cada herramienta (`assets/cuenta/i18n.js`,
+  `panel/i18n.js`); los demás, en `assets/cuenta/i18n/<lang>.js` y `panel/i18n/<lang>.js`,
   que solo se descargan si es el idioma elegido (los escribe el motor con
   `document.write` según `data-dic` de su `<script>`). Las claves admiten huecos
   (`'Quedan {n} plazas'`).
@@ -85,7 +85,7 @@ tiene sentido dentro de la app). Prueba local: `npx wrangler@3 pages dev .`.
 
 - Las cuatro pestañas de la app (`TABS` en `functions/_lib/chrome.js`):
   arriba en el escritorio y en una barra fija abajo en el móvil. Planes y
-  Cuenta viven en «Tu cuenta» (`/app/#/planes`, `/app/`). Lo demás
+  Cuenta viven en «Tu cuenta» (`/cuenta/planes`, `/cuenta/`). Lo demás
   (agenda, cómo funciona, negocios, precios…) va en «Más».
 - Descubre (`/descubre/`, `/en/discover/`) y Explorar (`/explorar/`,
   `/en/explore/`) los pinta `functions/_lib/explore.js`: una barra con

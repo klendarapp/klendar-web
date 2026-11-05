@@ -12,7 +12,7 @@
 //  3. Panel › «Más herramientas» (la tarjeta), el resumen (la fila «Pedidos de
 //     hoy · 3 preparando»), «Validar códigos» (el botón) y «Cifras» (el
 //     plegable).
-//  4. «Tu cuenta» › #/listo/<código>: «Avísame cuando esté listo» →
+//  4. «Tu cuenta» › /cuenta/listo/<código>: «Avísame cuando esté listo» →
 //     `order_join`, «Tu número 24 · Preparando…», «Mientras esperas» con
 //     favoritos y lo de hoy; al marcarlo, «¡Listo! Pasa a recogerlo» (sin
 //     recargar); «Ya no lo espero» con su pregunta; sin sesión, «Entrar para
@@ -281,7 +281,7 @@ async function contextoCuenta(nav, vp, { conSesion = true, locale = 'es-ES', lan
 
 async function cuenta(nav, nombre, t, vp) {
   let { ctx, p, estado, errores } = await contextoCuenta(nav, vp);
-  await p.goto(`${BASE}/app/#/listo/${CODE}`);
+  await p.goto(`${BASE}/cuenta/listo/${CODE}`);
   await p.waitForSelector('#listo-pedir');
   let txt = await vista(p);
   ok(/Café Norte/.test(txt) && /¿Has pedido en el mostrador\? Te avisamos en el móvil cuando esté listo\./.test(txt), `${nombre}/${t} cuenta: el local y la frase`);
@@ -306,11 +306,11 @@ async function cuenta(nav, nombre, t, vp) {
   ok(/Di tu número en el mostrador\./.test(await vista(p)), `${nombre}/${t} cuenta: «¡Listo! Pasa a recogerlo» al momento`);
   await p.screenshot({ path: `${OUT}/cuenta-listo-listo-${nombre}-${t}.png`, fullPage: true });
   // «Tus códigos».
-  await p.goto(`${BASE}/app/#/codigos`);
-  await p.waitForSelector('a[href="#/listo/' + CODE + '"]');
+  await p.goto(`${BASE}/cuenta/codigos`);
+  await p.waitForSelector('a[href="/cuenta/listo/' + CODE + '"]');
   ok(/Tu pedido en Café Norte/.test(await vista(p)), `${nombre}/${t} cuenta: «Tu pedido en Café Norte» en «Tus códigos»`);
   // «Ya no lo espero».
-  await p.goto(`${BASE}/app/#/listo/${CODE}`);
+  await p.goto(`${BASE}/cuenta/listo/${CODE}`);
   await p.waitForSelector('#listo-salir');
   await p.click('#listo-salir');
   await p.waitForSelector('dialog[open]');
@@ -319,20 +319,20 @@ async function cuenta(nav, nombre, t, vp) {
   await p.waitForSelector('#listo-otro');
   ok(llamadas(estado, 'order_leave').length === 1 && /Ya no esperas este pedido/.test(await vista(p)), `${nombre}/${t} cuenta: «Ya no esperas este pedido» con «Avísame de otro pedido»`);
   // El cartel malo.
-  await p.goto(`${BASE}/app/#/listo/XXXXXXXXXXXXXXXX`);
+  await p.goto(`${BASE}/cuenta/listo/XXXXXXXXXXXXXXXX`);
   await p.waitForFunction(() => /Este cartel ya no funciona/.test(document.querySelector('#view')?.innerText || ''));
   ok(true, `${nombre}/${t} cuenta: cartel malo`);
   ok(errores.length === 0, `${nombre}/${t} cuenta: sin errores de JavaScript (${errores.join(' | ')})`);
   await ctx.close();
   // Sin sesión.
   ({ ctx, p, estado, errores } = await contextoCuenta(nav, vp, { conSesion: false }));
-  await p.goto(`${BASE}/app/#/listo/${CODE}`);
+  await p.goto(`${BASE}/cuenta/listo/${CODE}`);
   await p.waitForSelector('#view a[href*="entrar"]');
   ok(/Entrar para que te avisemos/.test(await vista(p)), `${nombre}/${t} cuenta sin sesión: «Entrar para que te avisemos»`);
   await ctx.close();
   // En catalán.
   ({ ctx, p, estado, errores } = await contextoCuenta(nav, vp, { locale: 'ca-ES', lang: 'ca' }));
-  await p.goto(`${BASE}/app/?lang=ca#/listo/${CODE}`);
+  await p.goto(`${BASE}/cuenta/listo/${CODE}?lang=ca`);
   await p.waitForSelector('#listo-pedir');
   await p.waitForTimeout(800);
   ok(/Avisa’m quan estigui a punt/.test(await vista(p)), `${nombre}/${t} cuenta en catalán: «Avisa’m quan estigui a punt»`);
@@ -370,7 +370,7 @@ async function publico(nav, nombre, t, vp) {
   let txt = await p.locator('main').innerText();
   ok(r.status() === 200 && /Café Norte/.test(txt) && /Entrar para que te avisemos/.test(txt) && /Te daremos un número/.test(txt), `${nombre}/${t} público: el local y «Entrar para que te avisemos»`);
   ok((r.headers()['x-robots-tag'] || '').includes('noindex'), `${nombre}/${t} público: noindex`);
-  ok(await p.locator(`a[href*="siguiente=listo%2F${CODE}"]`).count() === 1, `${nombre}/${t} público: entrar vuelve a #/listo/<código>`);
+  ok(await p.locator(`a[href*="siguiente=listo%2F${CODE}"]`).count() === 1, `${nombre}/${t} público: entrar vuelve a /cuenta/listo/<código>`);
   ok(await sinScroll(p), `${nombre}/${t} público: sin desplazamiento horizontal`);
   await p.screenshot({ path: `${OUT}/publico-listo-${nombre}-${t}.png`, fullPage: true });
   PUB.state = 'paused';

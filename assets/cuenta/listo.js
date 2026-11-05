@@ -1,7 +1,7 @@
 /* «Tu cuenta»: «Te aviso cuando esté listo» (tanda D, migración
  * 20261235100000 de la app).
  *
- * - `#/listo/<código>`: «Tu pedido», lo mismo que `/listo/<código>` en la
+ * - `/cuenta/listo/<código>`: «Tu pedido», lo mismo que `/listo/<código>` en la
  *   app. Sin pedido: el local y «Avísame cuando esté listo» (sin sesión,
  *   «Entrar para que te avisemos»). Con pedido: «Tu número», «Preparando…» y
  *   «Ya no lo espero»; al marcarlo, «¡Listo! Pasa a recogerlo», y si la
@@ -98,7 +98,7 @@ RUTAS.listo = async ([code]) => {
   const firmaDe = (d) => JSON.stringify([d.team, d.state, d.me && [d.me.id, d.me.status]]);
 
   const cabecera = (b) => `
-    <p class="crumbs"><a href="#/codigos">${esc(t('Tus códigos'))}</a></p>
+    <p class="crumbs"><a href="/cuenta/codigos">${esc(t('Tus códigos'))}</a></p>
     <p class="cola-kicker">${esc(t('Te aviso cuando esté listo'))}</p>
     <h1 class="cola-h1">${esc(b.name || '')}</h1>`;
 
@@ -186,7 +186,7 @@ RUTAS.listo = async ([code]) => {
         removed: ['block', 'Tu pedido ya no está en la lista', 'El local lo ha quitado. Si es un error, pregunta en el mostrador.'],
         left: ['close', 'Ya no esperas este pedido', 'Si ha sido sin querer, pide otro aviso.'],
       }[me.status] || ['close', 'Ya no esperas este pedido', 'Si ha sido sin querer, pide otro aviso.'];
-      pinta(`<p class="crumbs"><a href="#/codigos">${esc(t('Tus códigos'))}</a></p>
+      pinta(`<p class="crumbs"><a href="/cuenta/codigos">${esc(t('Tus códigos'))}</a></p>
         ${pantallaVacia({
     icono: fin[0], h: 'h1', titulo: t(fin[1]), texto: t(fin[2]),
     botones: disponible ? otro : verLocal(),
@@ -208,7 +208,7 @@ RUTAS.listo = async ([code]) => {
         <p class="cola-cuantos listo-intro">${esc(t('¿Has pedido en el mostrador? Te avisamos en el móvil cuando esté listo.'))}</p>
         <div class="cola-botones">
           ${YO ? `<button type="button" class="pill accent" id="listo-pedir">${esc(t('Avísame cuando esté listo'))}</button>`
-    : `<a class="pill accent" href="#/entrar?siguiente=${encodeURIComponent(`listo/${codigo}`)}">${esc(t('Entrar para que te avisemos'))}</a>`}
+    : `<a class="pill accent" href="/cuenta/entrar?siguiente=${encodeURIComponent(`listo/${codigo}`)}">${esc(t('Entrar para que te avisemos'))}</a>`}
         </div>
         <p class="muted cola-ayuda">${esc(t('Te daremos un número: es el que dicen en el mostrador.'))}</p>
         ${b.adults_only ? `<p class="muted cola-ayuda">${esc(t('Solo para mayores de 18 años.'))}</p>` : ''}
@@ -288,7 +288,7 @@ function listoTarjetasHtml(pedidos) {
     const b = x.business || {};
     const listo = x.status === 'ready';
     const linea = listo ? t('¡Listo! Pasa a recogerlo') : `${listoNumero(x.number)} · ${t('Preparando…')}`;
-    return `<a class="ocard cola-tarjeta${listo ? ' llamado' : ''}" href="#/listo/${esc(x.code)}">
+    return `<a class="ocard cola-tarjeta${listo ? ' llamado' : ''}" href="/cuenta/listo/${esc(x.code)}">
         ${b.logo_url ? `<img src="${esc(b.logo_url)}" alt="" loading="lazy">` : `<span class="ph">${LISTO_SVG}</span>`}
         <span class="ocard-body"><b>${esc(EN ? `Your order at ${b.name || ''}` : t(`Tu pedido en ${b.name || ''}`))}</b>
           <span class="${listo ? 'cola-toca-linea' : 'muted'}">${esc(linea)}</span>

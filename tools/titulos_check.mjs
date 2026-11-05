@@ -101,7 +101,7 @@ for (const [lang, [cuenta, panel, admin]] of Object.entries(IDIOMAS)) {
       set(v) { sessionStorage.setItem(`__titulo ${location.pathname}`, v); d.set.call(document, v); },
     });
   });
-  for (const [ruta, esperado] of [['/app/', cuenta], ['/panel/', panel], ['/admin/', admin]]) {
+  for (const [ruta, esperado] of [['/cuenta/', cuenta], ['/panel/', panel], ['/admin/', admin]]) {
     await p.goto(BASE + ruta, { waitUntil: 'load' });
     await p.waitForTimeout(800);
     const t = await p.evaluate((r) => sessionStorage.getItem(`__titulo ${r}`) || (location.pathname === r ? document.title : ''), ruta);

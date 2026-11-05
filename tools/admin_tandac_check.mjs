@@ -215,7 +215,7 @@ async function cuentaGrupo(nav, nombre, t, vp) {
     group_request_detail: { id: PET, kind: 'company_dinner', event_date: '2026-12-12', people: 10, budget_cents: 3000, note: null, status: 'removed', created_at: masDias(-1), closed_at: masDias(0),
       targets: [{ id: FILA, status: 'withdrawn', business: { id: BIZ, name: 'Bar Sonda', city: 'Madrid' } }] },
   });
-  await p.goto(`${BASE}/app/#/grupos/${PET}`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/cuenta/grupos/${PET}`, { waitUntil: 'networkidle' });
   await p.waitForTimeout(800);
   const v = await p.locator('body').innerText();
   ok(/Retirada por Klendar/.test(v) && /Klendar ha retirado esta petición/.test(v), `${nombre}/${t} Tu cuenta: petición retirada por Klendar`);

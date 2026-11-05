@@ -2,7 +2,7 @@
 
 Los idiomas que no son español ni inglés (ca, gl, eu, fr, de, it) tienen su
 diccionario en un fichero aparte que solo se descarga si es el que toca:
-`app/i18n/<lang>.js` («Tu cuenta») y `panel/i18n/<lang>.js` (panel). Su forma:
+`assets/cuenta/i18n/<lang>.js` («Tu cuenta») y `panel/i18n/<lang>.js` (panel). Su forma:
 
     // comentario
     KL_DIC('ca', {
@@ -40,7 +40,7 @@ ROOT = Path(__file__).resolve().parent.parent
 IDIOMAS = {'ca': 'català', 'gl': 'galego', 'eu': 'euskara', 'fr': 'français', 'de': 'Deutsch', 'it': 'italiano'}
 # área → (carpeta del diccionario, index.html con el data-dic-v, nombre)
 AREAS = {
-    'cuenta': ('app/i18n', 'app/index.html', '«Tu cuenta»'),
+    'cuenta': ('assets/cuenta/i18n', 'cuenta/index.html', '«Tu cuenta»'),
     'panel': ('panel/i18n', 'panel/index.html', 'El panel del negocio'),
 }
 AREAS['app'] = AREAS['cuenta']

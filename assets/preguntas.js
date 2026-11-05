@@ -9,7 +9,7 @@
  *     y al equipo, «N preguntas sin contestar · Contestar» (al panel).
  *   · Sin sesión, «A mí también me sirve» lleva a entrar.
  *
- * Va en `<script data-biz data-lang data-url data-key data-cuenta>`. Sin red,
+ * Va en `<script data-biz data-lang data-url data-key>`. Sin red,
  * la ficha se queda como la pinta la Function. */
 (function () {
   'use strict';
@@ -17,7 +17,7 @@
   if (!yo) return;
   var biz = yo.getAttribute('data-biz');
   var en = yo.getAttribute('data-lang') === 'en';
-  var cuenta = yo.getAttribute('data-cuenta') || '/app/';
+  var cuenta = function (ruta) { ruta = ruta || ''; return '/cuenta/' + (en ? ruta.replace(/\?|$/, function (m) { return m ? '?lang=en&' : '?lang=en'; }) : ruta); };
   var T = en ? {
     tuyas: 'Your questions', esperando: 'Waiting for a reply', oculta: 'Hidden by the business',
     borrar: 'Delete my question', borrarSeguro: 'Delete your question?', sirve: 'Helpful to me too',
@@ -73,7 +73,7 @@
       var n = b.parentNode.querySelector('.sirve-n');
       if (n) n.hidden = true;
       b.addEventListener('click', function () {
-        location.href = cuenta + '#/entrar?siguiente=' + encodeURIComponent('preguntar/' + biz);
+        location.href = cuenta('entrar?siguiente=' + encodeURIComponent('preguntar/' + biz));
       });
     });
   }

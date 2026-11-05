@@ -8,12 +8,12 @@
 //
 // Idiomas: español (la fuente), inglés (diccionario dentro de cada
 // herramienta: `makeI18N(EN)`) y catalán, gallego, euskera, francés, alemán e
-// italiano, cada uno en su propio fichero (`/app/i18n/<lang>.js`,
+// italiano, cada uno en su propio fichero (`/assets/cuenta/i18n/<lang>.js`,
 // `/panel/i18n/<lang>.js`) que solo se descarga si es el que toca. Ese fichero
 // lo escribe aquí abajo `document.write` mientras se lee la página, así que
 // está cargado antes de que arranque nada (y no hace falta nada en línea: la
 // CSP no lo deja). Quien lo pide es la etiqueta de este script:
-//   <script src="/assets/i18n.js?v=…" data-dic="/app/i18n/" data-dic-v="3">
+//   <script src="/assets/i18n.js?v=…" data-dic="/assets/cuenta/i18n/" data-dic-v="3">
 // (`data-dic-v` lo sube tools/i18n_merge.py al meter traducciones).
 //
 // Las claves pueden llevar huecos: `'Quedan {n} plazas': 'Queden {n} places'`

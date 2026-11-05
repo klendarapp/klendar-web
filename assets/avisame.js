@@ -16,7 +16,7 @@
  *    ese correo ya estaba. Va por la Edge Function `city-waitlist-join`,
  *    con la comprobación anti-robots (Turnstile) si el entorno la tiene.
  *  - «Elegir una ciudad»: abre el «dónde» de la barra de filtros.
- * Sin JavaScript, el botón lleva a «Tu cuenta» (`#/avisame`), que lo hace al
+ * Sin JavaScript, el botón lleva a «Tu cuenta» (`/cuenta/avisame`), que lo hace al
  * entrar. Los textos llegan de la página (`#avisame-textos`).
  */
 (function () {
@@ -41,7 +41,7 @@
   var hueco = caja.querySelector('[data-avisame-caja]');
   var si = caja.querySelector('[data-avisame-si]');
   var CORREO = /^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/;
-  var app = en ? '/app/?lang=en' : '/app/';
+  var app = function (ruta) { ruta = ruta || ''; return '/cuenta/' + (en ? ruta.replace(/\?|$/, function (m) { return m ? '?lang=en&' : '?lang=en'; }) : ruta); };
 
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
@@ -55,7 +55,7 @@
     return 'avisame?' + q.toString();
   }
   function ponEnlaces() {
-    if (si) si.setAttribute('href', app + '#/' + rutaCuenta());
+    if (si) si.setAttribute('href', app(rutaCuenta()));
   }
 
   // ── La zona, con Mapbox ──
@@ -160,12 +160,12 @@
     }
     var z = (d && d.zone) || zona || '';
     resultado(T.okTitle.replace('{zona}', z), st === 'already' ? T.alreadyBody : T.okBody,
-      '<a class="pill" href="' + esc(app + '#/pedidos') + '">' + esc(T.seeMine) + '</a>');
+      '<a class="pill" href="' + esc(app('pedidos')) + '">' + esc(T.seeMine) + '</a>');
   }
 
   // ── Sin sesión: el correo ──
   function formulario() {
-    var entrar = app + '#/entrar?siguiente=' + encodeURIComponent(rutaCuenta());
+    var entrar = app('entrar?siguiente=' + encodeURIComponent(rutaCuenta()));
     botones.hidden = true;
     hueco.hidden = false;
     hueco.innerHTML = '<form class="avisame-form" novalidate>'
@@ -180,7 +180,7 @@
     var err = f.querySelector('.avisame-err');
     var boton = f.querySelector('button[type=submit]');
     // Al volver de entrar, «Tu cuenta» lo hace sin preguntar otra vez (ver
-    // `hayIntencion` en app/app.js): se ha pulsado aquí.
+    // `hayIntencion` en assets/cuenta/app.js): se ha pulsado aquí.
     f.querySelector('[data-entrar]').addEventListener('click', function () {
       try { sessionStorage.setItem('klendar.intencion', JSON.stringify({ r: 'avisame', t: Date.now() })); } catch (x) { /* sin almacenamiento */ }
     });

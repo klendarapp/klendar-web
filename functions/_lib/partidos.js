@@ -12,11 +12,12 @@
 // JavaScript y una sesión guardada, /assets/seguir.js pinta «Sigues»
 // y deja seguir desde aquí a un equipo, un deportista o una competición
 // (migración 20261260100070_seguir_lo_que_sea); sin sesión, «Seguir a…» lleva
-// a «Tu cuenta» (`#/equipos?seguir=<id>`).
+// a «Tu cuenta» (`/cuenta/equipos?seguir=<id>`).
 //
 // La web nunca enseña +18: la base no devuelve los bares +18 a quien mira sin
 // sesión (`broadcast_business_ok`).
 
+import { enlaceCuenta } from './cuenta.js';
 import { esc, html, rows, rpc, rpcAll, supabasePublic, isUuid } from './page.js';
 import KZ from '../../assets/zona.js';
 import KE from '../../assets/emisiones.js';
@@ -24,11 +25,11 @@ import { bizPath, breadcrumbLd, ldScript, publicPage } from './public.js';
 
 /** Dónde vive cada página en cada idioma. */
 export const partidosBase = (lang) => (lang === 'en' ? '/en/matches' : '/partidos');
-const cuentaBase = (lang) => (lang === 'en' ? '/app/?lang=en' : '/app/');
+const cuentaBase = enlaceCuenta;
 /** «Seguir a <equipo>» sin sesión: a «Tu cuenta», que lo hace al entrar
  * (con el tipo y el deporte, para decir «Sigues a Alonso: te avisamos antes
  * de sus carreras»). */
-export const seguirHref = (lang, t) => `${cuentaBase(lang)}#/equipos?seguir=${encodeURIComponent(t.id)}&nombre=${encodeURIComponent(t.name || '')}`
+export const seguirHref = (lang, t) => `${cuentaBase(lang, `equipos?seguir=${encodeURIComponent(t.id)}&nombre=${encodeURIComponent(t.name || '')}`)}`
   + `${t.kind && t.kind !== 'team' ? `&tipo=${encodeURIComponent(t.kind)}` : ''}${t.sport ? `&deporte=${encodeURIComponent(t.sport)}` : ''}`;
 
 /** Un botón «Seguir a …» / «Seguir Fórmula 1» (neutro; con sesión lo
@@ -320,7 +321,7 @@ export async function partidosPage(url, lang) {
   // con sesión, /assets/seguir.js pone tus equipos.
   const misEquipos = `<div class="mis-equipos" id="mis-equipos" data-titulo="${esc(S.yourTeams)}" data-base="${esc(`${base}/`)}" data-zona="${esc(zona)}">
       <p>${esc(S.noTeams)}</p>
-      <a class="pill" href="${esc(`${cuentaBase(lang)}#/equipos`)}">${esc(S.followTeam)}</a>
+      <a class="pill" href="${esc(`${cuentaBase(lang, 'equipos')}`)}">${esc(S.followTeam)}</a>
     </div>`;
 
   let cuerpo;
@@ -333,7 +334,7 @@ export async function partidosPage(url, lang) {
       <h2>${esc(S.notFound(e.q))}</h2>
       <p>${esc(S.notFoundText)}</p>
       <div class="vacio-botones">
-        <a class="pill accent" href="${esc(`${cuentaBase(lang)}#/equipos`)}">${esc(S.followTeam)}</a>
+        <a class="pill accent" href="${esc(`${cuentaBase(lang, 'equipos')}`)}">${esc(S.followTeam)}</a>
         <a class="pill" href="${esc(link({ q: '', sport: '' }))}">${esc(S.seeAll)}</a>
       </div>
     </section>`;
@@ -346,7 +347,7 @@ export async function partidosPage(url, lang) {
       <h2>${esc(S.emptyTitle)}</h2>
       <p>${esc(S.emptyText)}</p>
       <div class="vacio-botones">
-        <a class="pill accent" href="${esc(`${cuentaBase(lang)}#/equipos`)}">${esc(S.followTeam)}</a>
+        <a class="pill accent" href="${esc(`${cuentaBase(lang, 'equipos')}`)}">${esc(S.followTeam)}</a>
         ${todas}
       </div>
     </section>`;
