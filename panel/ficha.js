@@ -387,7 +387,7 @@ const htmlKlendar = (d) => `
 
 const htmlMayores = (d) => `
   <label class="f full casilla"><input type="checkbox" name="adults_only" ${d.adults_only ? 'checked' : ''}>
-    <span>Solo para mayores de 18 <small class="muted">Si lo que publicas menciona alcohol, se marca +18 solo y se revisa antes de salir. La publicidad de tabaco, vapeo o apuestas no está permitida. En un negocio +18, todo el equipo tiene que ser mayor de edad.</small></span></label>`;
+    <span>Solo para mayores de 18 <small class="muted">Si lo que publicas menciona alcohol, se marca +18 solo y sale al momento. La publicidad de tabaco, vapeo o apuestas no está permitida. En un negocio +18, todo el equipo tiene que ser mayor de edad.</small></span></label>`;
 
 /** «Cómo es tu local»: El sitio, el rango de precio y «¿Hay sitio ahora?»
  * (`extra` = { precio, aforo }), como el apartado de la app. */

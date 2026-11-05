@@ -2788,7 +2788,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
         </div>
         <label class="opcion bl-fila"><input type="checkbox" name="solo_friendly" ${o.solo_friendly ? 'checked' : ''}><span><b>${esc(MK.solo)}</b><br><small class="muted">${esc(MK.soloHint)}</small></span></label>
         <label class="opcion bl-fila" id="solidarioRow"><input type="checkbox" name="charity" ${o.charity ? 'checked' : ''}><span><b>${esc(MK.charity)}</b><br><small class="muted">${esc(MK.charityHint)}</small></span></label>
-        <label class="opcion bl-fila"><input type="checkbox" name="adults_only" ${o.adults_only ? 'checked' : ''}><span><b>Solo para mayores de 18</b><br><small class="muted">Si menciona alcohol, se marca +18 solo y se revisa antes de salir.</small></span></label>
+        <label class="opcion bl-fila"><input type="checkbox" name="adults_only" ${o.adults_only ? 'checked' : ''}><span><b>Solo para mayores de 18</b><br><small class="muted">Si menciona alcohol, se marca +18 solo y sale al momento.</small></span></label>
         <label class="f bl-fila" id="escuchaRow"><span>${esc(MK.listenField)}</span><input name="listen_url" type="url" inputmode="url" maxlength="300" autocomplete="off" spellcheck="false" placeholder="https://open.spotify.com/…" value="${esc(o.listen_url || '')}">
           <small class="hint" id="escuchaAyuda">${esc(MK.listenHint)}</small></label>
         <label class="f bl-fila"><span>Condiciones <small>(letra pequeña)</small></span><textarea name="terms" rows="2" maxlength="300" placeholder="${esc(I18N.t('Ej. Solo en el local. No acumulable.'))}">${esc(o.terms || '')}</textarea></label>
@@ -2801,7 +2801,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
           [MK.solo, MK.soloHint],
           [MK.charity, MK.charityHint],
           [MK.listenTitle, MK.listenHint],
-          [I18N.t('Solo para mayores de 18'), I18N.t('Si el texto menciona bebidas alcohólicas se marca +18 automáticamente y se revisa antes de publicarse (normalmente en menos de 24 h). La publicidad de tabaco, vapeo o apuestas no está permitida.')],
+          [I18N.t('Solo para mayores de 18'), I18N.t('Si el texto menciona bebidas alcohólicas se marca +18 automáticamente: se publica al momento y solo lo ven mayores de edad. La publicidad de tabaco, vapeo o apuestas no está permitida.')],
         ])}`)}
 
       ${rrppHtml.resumen}
@@ -5967,12 +5967,13 @@ PAGES.novedades = async (v) => {
         ? await sb.from('business_posts').update(fila).eq('id', post.id).select('moderation_status, moderation_flags').single()
         : await sb.from('business_posts').insert({ business_id: BIZ.id, ...fila }).select('moderation_status, moderation_flags').single();
       if (error) throw new Error(error.message);
-      // Lo marcado no se publica hasta revisarlo, con el motivo (como en la app).
+      // Lo marcado no se publica hasta revisarlo, con el motivo (como en la app). El
+      // alcohol solo sale al momento, +18.
       const marcas = guardada?.moderation_flags || [];
-      toast(guardada?.moderation_status !== 'pending' ? 'Hecho'
+      toast(guardada?.moderation_status !== 'pending' ? (marcas.includes('alcohol') ? 'Publicada. Menciona alcohol: solo la verán mayores de edad.' : 'Hecho')
         : !marcas.length || marcas.includes('offensive')
           ? 'Lo revisamos antes de publicarlo porque puede contener lenguaje ofensivo. Normalmente en menos de 24 h.'
-          : 'Lo revisamos antes de publicarlo porque menciona alcohol, tabaco o apuestas. Normalmente en menos de 24 h. Si menciona alcohol, solo lo verán mayores de edad.'); route();
+          : 'Lo revisamos antes de publicarlo porque menciona tabaco o apuestas. Normalmente en menos de 24 h.'); route();
     } catch (e) { toast(friendly(e.message), true); }
   };
 
