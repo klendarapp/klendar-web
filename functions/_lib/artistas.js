@@ -74,7 +74,7 @@ function noEsta(lang, path) {
   const S = KA.t(lang);
   const explorar = en ? '/en/explore/' : '/explorar/';
   return html(publicPage({
-    lang, path, title: S.goneTab, description: S.goneText,
+    lang, path, title: en ? "This artist isn't here" : 'Este artista no está', description: S.goneText,
     head: `<meta name="robots" content="noindex">\n${ARTISTAS_CSS}`,
     body: `<p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a></p>
   <section class="vacio">

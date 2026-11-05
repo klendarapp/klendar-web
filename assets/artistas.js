@@ -76,7 +76,6 @@
       pageTitle: (n) => `${n}: próximas fechas`,
       pageDesc: (n) => `Las próximas fechas de ${n} en Klendar, en cualquier local, y aviso cuando tenga una nueva cerca de ti.`,
       gone: 'Este artista no está en Klendar',
-      goneTab: 'Este artista no está',
       goneText: 'Puede que lo hayan quitado o que el enlace esté mal.',
       // Organizador sin local fijo.
       noVenue: 'No tengo local fijo (organizo eventos en distintos sitios)',
@@ -137,7 +136,6 @@
       pageTitle: (n) => `${n}: upcoming dates`,
       pageDesc: (n) => `${n}'s upcoming dates on Klendar, at any venue, and a heads-up when they have a new one near you.`,
       gone: "This artist isn't on Klendar",
-      goneTab: "This artist isn't here",
       goneText: 'It may have been removed or the link may be wrong.',
       noVenue: "I don't have a fixed venue (I organise events in different places)",
       zoneLabel: 'Area where you organise',
