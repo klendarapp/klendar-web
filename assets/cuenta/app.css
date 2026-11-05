@@ -758,3 +758,4 @@ a.pl-dia:hover { background: var(--soft); }
 .retenido-fotos { display: flex; flex-wrap: wrap; gap: 6px; }
 .retenido-fotos img, .retenido-video { width: 64px; height: 64px; object-fit: cover; border-radius: 10px; display: grid; place-items: center; background: rgba(127,127,127,.15); }
 .retenido-video::after { content: ''; border-style: solid; border-width: 9px 0 9px 15px; border-color: transparent transparent transparent rgba(127,127,127,.8); }
+.retenido-botones { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }

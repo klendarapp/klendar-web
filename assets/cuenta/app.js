@@ -792,6 +792,7 @@ RUTAS[''] = async () => {
 
     ${rrppPortadaHtml(rolesRrpp)}
 
+    <div id="aviso-permiso-ia"></div>
     <div id="aviso-retenido"></div>
     <div id="aviso-correo"></div>
 
@@ -867,7 +868,10 @@ RUTAS[''] = async () => {
   // Su correo nos devuelve los mensajes: que lo revise o lo cambie.
   correoAvisoPortada($('#aviso-correo'));
   // Lo que has subido y el filtro ha retenido («Lo estamos revisando»).
-  if (window.KRetenido) KRetenido.pinta(sb, $('#aviso-retenido'), { t, esc });
+  if (window.KRetenido) {
+    KRetenido.permiso(sb, $('#aviso-permiso-ia'), { t, esc });
+    KRetenido.pinta(sb, $('#aviso-retenido'), { t, esc });
+  }
   $('#salir').onclick = async () => {
     await sb.auth.signOut({ scope: 'local' }); // solo este navegador, como la app
     toast(t('Has cerrado sesión'));

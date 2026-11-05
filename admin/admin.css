@@ -480,3 +480,4 @@ table.tbl .art-thumb, .art-celda .art-thumb { border-radius: 50%; margin: 0; fle
 .lim-lleno { display: block; height: 100%; border-radius: 4px; background: #5c9e6f; }
 .lim-lleno.warn { background: #e0a030; }
 .lim-lleno.bad { background: #c0392b; }
+.med-cita { margin: 8px 0; padding: 8px 12px; border-left: 3px solid var(--soft); white-space: pre-wrap; word-break: break-word; }

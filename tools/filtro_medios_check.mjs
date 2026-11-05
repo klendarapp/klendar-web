@@ -47,6 +47,7 @@ async function abre(nav, { lang = 'es', claveAdmin = false }) {
   const estado = { rpc: [], subidas: [] };
   const cola = { held: [fila(), fila({ id: 'a0000000-0000-4000-8000-000000000002', name: `${B}/dos.mp4`, kind: 'video', hold_reason: 'no_frames', labels: null, used_in: [] }), fila({ id: 'a0000000-0000-4000-8000-000000000003', name: `${B}/tres.jpg`, hold_reason: 'cap', labels: null })],
     rejected: [fila({ id: 'a0000000-0000-4000-8000-000000000004', name: `${B}/cuatro.jpg`, state: 'rejected', hold_reason: null, labels: { adult: 'VERY_LIKELY' } })] };
+  const textos = { held: [{ id: 'b0000000-0000-4000-8000-000000000001', kind: 'review', text: 'Texto dudoso de prueba', state: 'dudoso', grave: false, decided_by: 'ai', provider: 'claude', motive: 'hate', reason: 'Puede ser odio', created_at: '2026-11-05T10:00:00Z', business: 'Bar Prueba', business_id: B, city: 'Málaga', user_email: 'a@example.com' }], rejected: [] };
   await ctx.route(`${BASE}/api/**`, (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '{}' }));
   await ctx.route(`${SUPA}/**`, async (route) => {
     const req = route.request();
@@ -96,6 +97,16 @@ async function abre(nav, { lang = 'es', claveAdmin = false }) {
           { id: '3', name: `${B}/tres.jpg`, kind: 'image', state: 'rejected', in_held: true, created_at: '2026-11-05T10:00:00Z' }]);
       }
       if (fn === 'media_filter_on') return json(true);
+      if (fn === 'admin_content_queue') {
+        return json({ config: { enabled: false }, counts: { held: textos[cuerpo.p_tab === 'rejected' ? 'rejected' : 'held'].length, rejected: 0 }, rows: textos[cuerpo.p_tab === 'rejected' ? 'rejected' : 'held'] });
+      }
+      if (fn === 'admin_content_decide') {
+        textos.held = textos.held.filter((x) => x.id !== cuerpo.p_id);
+        return json({ ok: true, state: 'publicar' });
+      }
+      if (fn === 'admin_media_approve_bulk') { cola.held = cola.held.filter((x) => !['cap', 'error'].includes(x.hold_reason)); return json({ ok: true, approved: 1 }); }
+      if (fn === 'ai_consent_needed') return json(true);
+      if (fn === 'set_ai_consent') return json({ ok: true, granted: cuerpo.p_granted });
       if (fn === 'my_businesses') return json([{ id: B, name: 'Café Sonda', role: 'owner', verification_status: 'verified', is_active: true, time_zone: 'Europe/Madrid', city: 'Málaga' }]);
       if (fn === 'my_business_offer_counts') return json({ total: 1, todas: 1, activa: 1 });
       if (fn === 'business_is_organizer') return json(false);
@@ -127,6 +138,11 @@ const nav = await chromium.launch();
   await page.waitForSelector('.med-fila', { timeout: 15000 }).catch(() => {});
   const texto = await page.locator('main, body').first().innerText();
   ok(await page.locator('.med-fila').count() === 3, 'la cola enseña lo retenido', texto.slice(0, 300));
+  ok(/Texto dudoso de prueba/.test(texto) && /Reseña/.test(texto) && /Odio/.test(texto) && /IA/.test(texto), 'y los textos, con quién decidió y el motivo');
+  ok(/Aprobar en bloque/.test(texto), 'con la cola por la caída o el tope, aprobar en bloque');
+  await page.locator('[data-tok]').first().click();
+  await page.waitForFunction(() => !document.querySelector('[data-tok]'));
+  ok(estado.rpc.some((r) => r.fn === 'admin_content_decide' && r.cuerpo.p_approve === true), 'aprobar un texto: un toque');
   ok(/El filtro está apagado/.test(texto), 'dice que está apagado');
   ok(/En duda/.test(texto) && /Tope del mes/.test(texto) && /Vídeo sin fotogramas/.test(texto), 'cada una con su motivo');
   ok(/Desnudos: Posible/.test(texto) && !/VERY_UNLIKELY/.test(texto), 'las puntuaciones, en llano y solo lo que importa');
@@ -177,13 +193,17 @@ for (const [lang, titulo, cuerpo, fuera] of [
   ['es', 'Lo estamos revisando', 'solo lo ves tú', 'No se ha publicado'],
   ['fr', 'Nous le vérifions', 'toi seul', 'Cela n’a pas été publié'],
 ]) {
-  const { ctx, page, errores } = await abre(nav, { lang });
+  const { ctx, page, estado, errores } = await abre(nav, { lang });
   await page.goto(`${BASE}/cuenta/`);
-  await page.waitForSelector('.retenido', { timeout: 15000 }).catch(() => {});
-  if (!(await page.locator('.retenido').count())) console.log((await page.locator('body').innerText()).slice(0, 500));
-  const t = await page.locator('.retenido').innerText().catch(() => '');
+  await page.waitForSelector('.retenido-fotos', { timeout: 15000 }).catch(() => {});
+  const t = await page.locator('.retenido', { has: page.locator('.retenido-fotos') }).innerText().catch(() => '');
   ok(t.includes(titulo) && t.includes(cuerpo) && t.includes(fuera), `«Tu cuenta» (${lang}): el mensaje, sin culpar`, t);
   ok(await page.locator('.retenido-video').count() === 1, `«Tu cuenta» (${lang}): un vídeo sin miniatura no se rompe`);
+  const permiso = await page.locator('#aviso-permiso-ia').innerText().catch(() => '');
+  ok(/Google Cloud/.test(permiso), `«Tu cuenta» (${lang}): pide permiso, diciendo a quién va`, permiso);
+  await page.locator('[data-ia="si"]').click();
+  await page.waitForFunction(() => !document.querySelector('[data-ia="si"]'));
+  ok(estado.rpc.some((r) => r.fn === 'set_ai_consent' && r.cuerpo.p_granted === true), `«Tu cuenta» (${lang}): aceptar lo guarda`);
   if (lang === 'es') await page.screenshot({ path: `${OUT}/filtro-cuenta.png` });
   ok(!errores.length, `«Tu cuenta» (${lang}): sin errores de JavaScript`, errores.join(' | '));
   await ctx.close();
@@ -193,8 +213,8 @@ for (const [lang, titulo, cuerpo, fuera] of [
   // El Resumen del panel: lo del negocio, arriba y por encima de lo demás.
   const { ctx, page, estado, errores } = await abre(nav, {});
   await page.goto(`${BASE}/panel/#/resumen`);
-  await page.waitForSelector('.retenido', { timeout: 15000 }).catch(() => {});
-  const t = await page.locator('.retenido').innerText().catch(() => '');
+  await page.waitForSelector('.retenido-fotos', { timeout: 15000 }).catch(() => {});
+  const t = await page.locator('.retenido', { has: page.locator('.retenido-fotos') }).innerText().catch(() => '');
   ok(t.includes('Lo estamos revisando') && t.includes('No se ha publicado'), 'panel: el mensaje en el Resumen', t || (await page.locator('body').innerText()).slice(0, 300));
   ok(estado.rpc.some((r) => r.fn === 'my_held_media' && r.cuerpo.p_business === B), 'panel: pide lo de este negocio');
   await page.screenshot({ path: `${OUT}/filtro-panel.png` });
