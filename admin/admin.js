@@ -1412,6 +1412,12 @@ function tarjetaUrgentes(urg) {
     <p class="muted" style="margin:0 0 10px">${en ? 'Something has failed or needs a quick decision. Each one is also emailed, at most once a day while it keeps happening.' : 'Algo ha fallado o necesita una decisión rápida. Cada cosa llega también por correo, como mucho una vez al día mientras siga pasando.'}</p>
     ${filas}${mas}</div>`;
 }
+// Las direcciones de los avisos: una lista desde la migración 20261262800000
+// de la app (hasta 5); la base de antes guarda un texto con una.
+const MAX_DIR_AVISOS = 5;
+const dirsAvisos = (to) => [...new Set((Array.isArray(to) ? to : [to ?? ''])
+  .flatMap((x) => (typeof x === 'string' ? x.split(/[\s,;]+/) : []))
+  .map((x) => x.trim().toLowerCase()).filter(Boolean))];
 function tarjetaAvisosCorreo(al) {
   const en = I18N.lang === 'en';
   const lis = [
@@ -1432,9 +1438,11 @@ function tarjetaAvisosCorreo(al) {
   const fallo = al.last_failed && (!al.last_urgent || al.last_failed > al.last_urgent) && (!al.last_daily || al.last_failed > al.last_daily);
   const horas = Array.from({ length: 24 }, (_, h) => `<option value="${h}" ${Number(c.daily_hour ?? 8) === h ? 'selected' : ''}>${String(h).padStart(2, '0')}:00</option>`).join('');
   const nunca = en ? 'never' : 'nunca';
+  const dirs = dirsAvisos(c.to);
+  const para = dirs.map((d) => `<b>${esc(d)}</b>`).join(', ');
   const intro = en
-    ? `To <b>${esc(c.to || '')}</b>: what’s urgent as soon as it happens (a scheduled task or an import failing, a serious report, a Stripe dispute; at most one email every ${fmtNum(c.every_minutes ?? 30)} min and ${fmtNum(c.per_day ?? 6)} a day, and each thing once a day) and a <b>summary every morning</b> with what’s waiting, what’s new and what failed. If there’s nothing, no email.`
-    : `A <b>${esc(c.to || '')}</b>: lo urgente en cuanto pasa (una tarea o una importación que falla, una denuncia grave, una disputa de Stripe; como mucho un correo cada ${fmtNum(c.every_minutes ?? 30)} min y ${fmtNum(c.per_day ?? 6)} al día, y cada cosa una vez al día) y un <b>resumen cada mañana</b> con lo pendiente, lo nuevo y lo que ha fallado. Si no hay nada, no sale.`;
+    ? `To ${para}: what’s urgent as soon as it happens (a scheduled task or an import failing, a serious report, a Stripe dispute; at most one email every ${fmtNum(c.every_minutes ?? 30)} min and ${fmtNum(c.per_day ?? 6)} a day, and each thing once a day) and a <b>summary every morning</b> with what’s waiting, what’s new and what failed. If there’s nothing, no email.`
+    : `A ${para}: lo urgente en cuanto pasa (una tarea o una importación que falla, una denuncia grave, una disputa de Stripe; como mucho un correo cada ${fmtNum(c.every_minutes ?? 30)} min y ${fmtNum(c.per_day ?? 6)} al día, y cada cosa una vez al día) y un <b>resumen cada mañana</b> con lo pendiente, lo nuevo y lo que ha fallado. Si no hay nada, no sale.`;
   const ultimos = en
     ? `Last urgent: <b>${al.last_urgent ? ago(al.last_urgent) : nunca}</b> · last summary: <b>${al.last_daily ? ago(al.last_daily) : nunca}</b> · sent in 7 days: <b>${fmtNum(al.sent_7d || 0)}</b>`
     : `Último urgente: <b>${al.last_urgent ? ago(al.last_urgent) : nunca}</b> · último resumen: <b>${al.last_daily ? ago(al.last_daily) : nunca}</b> · enviados en 7 días: <b>${fmtNum(al.sent_7d || 0)}</b>`;
@@ -1444,7 +1452,8 @@ function tarjetaAvisosCorreo(al) {
     <p class="small" style="margin:0 0 10px">${ultimos}${aviso}</p>
     <form id="aacf" style="display:grid;gap:10px">
       <label class="f" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="email" ${c.email !== false ? 'checked' : ''}><span>${en ? 'Send admin alerts by email' : 'Mandar los avisos de administración por correo'}</span></label>
-      <label class="f"><span>${en ? 'Address' : 'Dirección'}</span><input name="to" type="email" required value="${esc(c.to || '')}" autocomplete="off"></label>
+      <label class="f"><span>${en ? 'Addresses' : 'Direcciones'}</span><textarea name="to" rows="${Math.min(Math.max(dirs.length, 2), MAX_DIR_AVISOS)}" required autocomplete="off" spellcheck="false" style="resize:vertical">${esc(dirs.join('\n'))}</textarea>
+        <span class="muted small">${en ? `Up to ${MAX_DIR_AVISOS}, separated by commas or one per line. Each one gets its own email; the limits are per alert, not per address.` : `Hasta ${MAX_DIR_AVISOS}, separadas por comas o una por línea. Cada una recibe su correo; los topes son por aviso, no por dirección.`}</span></label>
       <div class="grid3" style="gap:10px">
         <label class="f" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="urgent" ${c.urgent !== false ? 'checked' : ''}><span>${en ? 'Urgent, as it happens' : 'Lo urgente, en cuanto pasa'}</span></label>
         <label class="f" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="daily" ${c.daily !== false ? 'checked' : ''}><span>${en ? 'A summary every morning' : 'Un resumen cada mañana'}</span></label>
@@ -1462,12 +1471,18 @@ function activaAvisosCorreo(v, al) {
     const x = f.elements;
     esperando(f.querySelector('button'), async () => {
       const c = al.config || {};
+      const dirs = dirsAvisos(x.to.value);
+      const mala = dirs.find((d) => !/^[^@\s,;]+@[^@\s,;]+\.[a-z]{2,}$/.test(d));
+      if (mala) { toast(en ? `“${mala}” doesn’t look like an email address.` : `«${mala}» no parece una dirección de correo.`, true); return; }
+      if (!dirs.length) { toast(en ? 'Write at least one email address.' : 'Escribe al menos una dirección de correo.', true); return; }
+      if (dirs.length > MAX_DIR_AVISOS) { toast(en ? `At most ${MAX_DIR_AVISOS} addresses.` : `Como mucho ${MAX_DIR_AVISOS} direcciones.`, true); return; }
       const valor = {
-        email: x.email.checked, to: x.to.value.trim(), urgent: x.urgent.checked, daily: x.daily.checked,
+        // Una sola, como texto: así vale también en una base sin la migración
+        // de varias direcciones (20261262800000).
+        email: x.email.checked, to: dirs.length === 1 ? dirs[0] : dirs, urgent: x.urgent.checked, daily: x.daily.checked,
         daily_hour: Number(x.hour.value), every_minutes: Number(c.every_minutes ?? 30), per_day: Number(c.per_day ?? 6),
         repeat_hours: Number(c.repeat_hours ?? 24), daily_when_empty: c.daily_when_empty === true,
       };
-      if (!/^[^@\s,;]+@[^@\s,;]+\.[A-Za-z]{2,}$/.test(valor.to)) { toast(en ? 'That email address doesn’t look right.' : 'Esa dirección de correo no parece buena.', true); return; }
       const apagar = c.email !== false && !valor.email;
       if (apagar && !await confirmDlg(en ? 'Stop admin emails' : 'Dejar de mandar los avisos',
         en ? 'Nothing urgent or daily will be emailed: you will only see it here and in the admin account notifications.' : 'No llegará por correo ni lo urgente ni el resumen: solo lo verás aquí y en las notificaciones de la cuenta de administración.',
