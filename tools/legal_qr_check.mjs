@@ -35,13 +35,13 @@ let fallos = 0;
 const ok = (c, m) => { if (!c) { fallos++; console.log('FALLO:', m); } else console.log('ok:', m); };
 
 const PAGINAS = [
-  ['/terminos/', 'Última actualización: 4 de noviembre de 2026', [
+  ['/terminos/', 'Última actualización: 5 de noviembre de 2026', [
     /El QR cambia cada 30 segundos y vale un minuto: una foto vieja o reenviada no sirve, y desde que lo escaneas tienes un minuto para aceptarlo\. Si tu móvil o tu navegador ya permiten a Klendar usar tu ubicación, al leerlo y al aceptarlo comprobamos que estás cerca del local \(unos 150 metros\); no te pedimos permiso para ello, no guardamos dónde estás y, si no hay permiso, se acepta igual\. El negocio puede decidir para cuántas personas es: cuando lo han recibido todas, el QR deja de valer\./,
     /3 septies\. Entradas nominativas\s+Al publicar un evento con reserva, el negocio puede elegir que sus entradas sean nominativas;[\s\S]*?no se puede pasar a otra persona, regalar, vender ni revender\.[\s\S]*?Para no ir, anula la reserva y la plaza queda libre para otra persona\./,
     /27 de octubre de 2026: Entradas nominativas \(apartado 3 septies nuevo\)/,
     /27 de octubre de 2026: Dar en el momento: el QR vale un minuto/,
   ], [/El QR cambia cada 30 segundos y una foto vieja no sirve;/]],
-  ['/en/terms/', 'Last updated: 4 November 2026', [
+  ['/en/terms/', 'Last updated: 5 November 2026', [
     /The QR code changes every 30 seconds and is valid for one minute: an old or forwarded photo won't work, and once you scan it you have one minute to accept it\. If your phone or browser already lets Klendar use your location, when you scan it and when you accept it we check that you're near the venue \(about 150 metres\);[\s\S]*?once they've all received it, the QR code stops working\./,
     /3f\. Named tickets\s+When publishing an event with booking, the business can choose for its tickets to be named;[\s\S]*?If you can't go, cancel the booking and the place becomes free for someone else\./,
     /27 October 2026: Named tickets \(new section 3f\)/,
@@ -61,7 +61,7 @@ const PAGINAS = [
     /those of 27 October 2026 \(sections 2a, 3, 3e, 3f and 3k\) from 11 November 2026, those of 28 October 2026 \(sections 2, 4a and 7\) from 12 November 2026, those of 2 November 2026 \(section 2a\) from 17 November 2026, those of 3 November 2026 \(sections 3, 3i and 4\) from 18 November 2026, and those of 4 November 2026 \(section 3a, “Connect your calendar”\) from 19 November 2026: 15 days/,
     /27 October 2026: Give on the spot \(section 3f\)[\s\S]*?Named tickets \(new section 3k\)[\s\S]*?It applies from 11 November 2026\./,
   ], [/name and photo when they get a code or book/]],
-  ['/privacidad/', 'Última actualización: 4 de noviembre de 2026', [
+  ['/privacidad/', 'Última actualización: 5 de noviembre de 2026', [
     /Al validar un código tuyo \(también en la puerta de una lista de RRPP\), el negocio ve tu nombre visible, tu foto de perfil solo si la tienes puesta y cuántas veces has canjeado algo en ese negocio, contando esta \(«5\.ª vez aquí»\)/,
     /reservas de plaza \(con cuántas plazas\) y si la entrada es nominativa/,
     /la clave de tu QR de cliente \(con la que tu móvil firma también el QR de tus entradas nominativas\)/,
@@ -76,7 +76,7 @@ const PAGINAS = [
     /27 de octubre de 2026: Inicio de sesión con Apple:/,
     /27 de octubre de 2026: Al validar, el negocio ve tu foto si la tienes/,
   ], []],
-  ['/en/privacy/', 'Last updated: 4 November 2026', [
+  ['/en/privacy/', 'Last updated: 5 November 2026', [
     /When it validates one of your codes \(also at the door for a promoter's list\), the business sees your public name, your profile photo only if you have one and how many times you've redeemed something at that business, including this one \(“5th time here”\)/,
     /place reservations \(with how many places\) and whether the ticket is named/,
     /the key of your customer QR code \(which your phone also uses to sign the QR code of your named tickets\)/,

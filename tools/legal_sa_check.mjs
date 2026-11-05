@@ -38,11 +38,11 @@ const PAGINAS = [
     /those of 26 October 2026 \(section 4a\) from 10 November 2026, those of 27 October 2026 \(sections? [^)]*3e[^)]*\) from 11 November 2026, those of 28 October 2026 \(sections 2, 4a and 7\) from 12 November 2026, those of 2 November 2026 \(section 2a\) from 17 November 2026, those of 3 November 2026 \(sections 3, 3i and 4\) from 18 November 2026, and those of 4 November 2026 \(section 3a, “Connect your calendar”\) from 19 November 2026: 15 days/,
     /27 October 2026: Giveaways \(section 3e\): they are a feature that Klendar may or may not have switched on.*It applies from 11 November 2026\./,
   ], [/(^|\. )The Business can run giveaways on Klendar\./m]],
-  ['/terminos/', 'Última actualización: 4 de noviembre de 2026', [
+  ['/terminos/', 'Última actualización: 5 de noviembre de 2026', [
     /Cuando Klendar tiene activada esta función \(no siempre ni en todas partes: la web, la app de Android o la de iPhone\), algunos negocios organizan sorteos en Klendar\. Participar es gratis y sin compra/,
     /27 de octubre de 2026: Sorteos de los negocios \(apartado 3 quinquies\): una función que puede estar activada o no/,
   ], [/(^|\. )Algunos negocios organizan sorteos en Klendar\./m]],
-  ['/en/terms/', 'Last updated: 4 November 2026', [
+  ['/en/terms/', 'Last updated: 5 November 2026', [
     /When Klendar has this feature switched on \(not always, and not necessarily everywhere: the website, the Android app or the iPhone app\), some businesses run giveaways on Klendar\. Entering is free with no purchase/,
     /27 October 2026: Giveaways from businesses \(section 3d\): a feature that may or may not be switched on/,
   ], [/(^|\. )Some businesses run giveaways on Klendar\./m]],

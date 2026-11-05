@@ -32,7 +32,7 @@ let fallos = 0;
 const ok = (c, m) => { if (!c) { fallos++; console.log('FALLO:', m); } else console.log('ok:', m); };
 
 const PAGINAS = [
-  ['/privacidad/', 'Última actualización: 4 de noviembre de 2026', [
+  ['/privacidad/', 'Última actualización: 5 de noviembre de 2026', [
     /Traducción automática\s+Lo que pides traducir[\s\S]*?Lo traduce nuestro servidor con Google Cloud Translation, que solo recibe los textos de los negocios \(sin tus datos ni tu cuenta\)[\s\S]*?las de un negocio que se elimina, en ese momento/,
     /Google Cloud Translation \(Google Cloud EMEA Ltd\., Irlanda: traducción automática de los textos que publican los negocios, solo si alguien la ha pedido; no recibe datos de las personas usuarias;/,
     /Mapbox \(Mapbox, Inc\., EE\. UU\.: mapas, rutas a pie y nombres de lugares;[\s\S]*?en la web, tu navegador le pide también la librería que dibuja los mapas; nunca tu nombre ni tu correo;/,
@@ -41,7 +41,7 @@ const PAGINAS = [
     /en lo que se manda sin cuenta \(denunciar un contenido en la web o «Avísame cuando llegue»\); y, sin guardarla, la ciudad y la zona aproximadas de tu conexión cuando no nos has dado tu ubicación/,
     /28 de octubre de 2026: Traducción automática: qué se traduce, que lo hace Google Cloud Translation/,
   ], [/cuando el servicio esté disponible/]],
-  ['/en/privacy/', 'Last updated: 4 November 2026', [
+  ['/en/privacy/', 'Last updated: 5 November 2026', [
     /Automatic translation\s+What you ask to translate[\s\S]*?Our server translates them with Google Cloud Translation, which only receives the businesses' text \(not your data or your account\)/,
     /Google Cloud Translation \(Google Cloud EMEA Ltd\., Ireland: automatic translation of the text businesses publish/,
     /Mapbox \(Mapbox, Inc\., USA: maps, walking directions and place names;[\s\S]*?the library that draws the maps; never your name or email;/,
@@ -56,11 +56,11 @@ const PAGINAS = [
   ['/en/cookies/', 'Last updated: 4 November 2026', [
     /The approximate area of your connection \(if you don't share your location\) isn't stored in your browser or anywhere else: it's only used to build the page you request\./,
   ], []],
-  ['/terminos/', 'Última actualización: 4 de noviembre de 2026', [
+  ['/terminos/', 'Última actualización: 5 de noviembre de 2026', [
     /la traducción es automática, la hace Google Translate y puede tener errores: lo que vale es el texto original del negocio, que siempre puedes ver con «Ver original»\./,
     /28 de octubre de 2026: Traducción automática \(apartado 3\)/,
   ], []],
-  ['/en/terms/', 'Last updated: 4 November 2026', [
+  ['/en/terms/', 'Last updated: 5 November 2026', [
     /the translation is automatic, it's done by Google Translate and it may contain mistakes: what counts is the business's original text/,
   ], []],
   ['/negocios/', 'Última actualización: 4 de noviembre de 2026', [

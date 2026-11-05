@@ -79,19 +79,19 @@ const PAGINAS = [
     /In the app, the same check runs in a web view of klendar\.app\/captcha\/ that is prepared when you open those screens and only shows if you need to tick the box\./,
     /4 November 2026: In the app, the anti-bot check runs in a web view of klendar\.app\/captcha\//,
   ], [/small window/], []],
-  ['/terminos/', 'Última actualización: 4 de noviembre de 2026', [
+  ['/terminos/', 'Última actualización: 5 de noviembre de 2026', [
     /y se quitan el sello o el cupón que te hubiera dado ese canje, si aún no los has usado\./,
     /4 de noviembre de 2026: Ofertas y canjes \(apartado 3\): al deshacer una validación, el sello o el cupón que te hubiera dado ese canje solo se quitan si aún no los has usado\./,
   ], [], []],
-  ['/en/terms/', 'Last updated: 4 November 2026', [
+  ['/en/terms/', 'Last updated: 5 November 2026', [
     /and any stamp or coupon that redemption gave you is removed, if you haven't used it yet\./,
     /4 November 2026: Deals and redemptions \(section 3\): when a validation is undone, any stamp or coupon that redemption gave you is only removed if you haven't used it yet\./,
   ], [], []],
-  ['/privacidad/', 'Última actualización: 4 de noviembre de 2026', [
+  ['/privacidad/', 'Última actualización: 5 de noviembre de 2026', [
     /tarjetas de sellos \(sellos, premios y sus códigos\) y si una validación se deshizo/,
     /4 de noviembre de 2026: La fila «Favoritos, reseñas, canjes y sellos» dice también que guardamos si una validación se deshizo\./,
   ], [], []],
-  ['/en/privacy/', 'Last updated: 4 November 2026', [
+  ['/en/privacy/', 'Last updated: 5 November 2026', [
     /stamp cards \(stamps, rewards and their codes\) and whether a validation was undone/,
     /4 November 2026: The “Favourites, reviews, redemptions and stamps” row now also says we keep whether a validation was undone\./,
   ], [], []],

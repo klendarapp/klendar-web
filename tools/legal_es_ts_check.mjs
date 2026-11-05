@@ -28,12 +28,12 @@ let fallos = 0;
 const ok = (c, m) => { if (!c) { fallos++; console.log('FALLO:', m); } else console.log('ok:', m); };
 
 const PAGINAS = [
-  ['/privacidad/', 'Última actualización: 4 de noviembre de 2026', [
+  ['/privacidad/', 'Última actualización: 5 de noviembre de 2026', [
     /y, si quieres, tu ciudad habitual: un municipio de España, con su nombre y su punto \(el del municipio, nunca tu dirección ni tu posición\)\./,
     /con el punto redondeado\. Saber en qué municipio estás cuando eliges «Usar mi ubicación» en «Tu ciudad» o para avisarte de que estás de viaje \(se envía tu posición —en la app, redondeada a unos 100 m—, se mira en qué municipio cae y no se guarda\)/,
     /3 de noviembre de 2026: Tu ciudad puede ser cualquier municipio de España/,
   ], [/una de las ciudades de Klendar/]],
-  ['/en/privacy/', 'Last updated: 4 November 2026', [
+  ['/en/privacy/', 'Last updated: 5 November 2026', [
     /and, if you like, your home town: a town in Spain, with its name and its point \(the town's, never your address or your position\)\./,
     /using the rounded point\. Work out which town you are in when you choose “Use my location” in “Your city” or to let you know you are travelling \(your position is sent —rounded to about 100 m in the app—, matched to a town and not stored\)/,
     /3 November 2026: Your city can be any town in Spain/,
@@ -60,11 +60,11 @@ const PAGINAS = [
     /those of 3 November 2026 \(sections 3, 3i and 4\) from 18 November 2026, and those of 4 November 2026 \(section 3a, “Connect your calendar”\) from 19 November 2026: 15 days/,
     /3 November 2026: “Always show” \(section 3\)[\s\S]*?It applies from 18 November 2026\./,
   ], [/hold the rights to show it at its venue/]],
-  ['/terminos/', 'Última actualización: 4 de noviembre de 2026', [
+  ['/terminos/', 'Última actualización: 5 de noviembre de 2026', [
     /Dónde verlo: los partidos y sus horarios vienen de fuentes externas y de lo que dicen los bares/,
     /3 de noviembre de 2026: «Dónde ver el partido» pasa a llamarse «Dónde verlo»/,
   ], [/Dónde ver el partido: los partidos/]],
-  ['/en/terms/', 'Last updated: 4 November 2026', [
+  ['/en/terms/', 'Last updated: 5 November 2026', [
     /Where to watch: matches and their times come from external sources and from what bars say/,
     /3 November 2026: “Where to watch the match” is now called “Where to watch”/,
   ], [/Where to watch the match: matches/]],

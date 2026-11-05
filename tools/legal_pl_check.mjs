@@ -100,22 +100,22 @@ const sinScroll = (p) => p.evaluate(() => document.documentElement.scrollWidth -
 
 // ── 1. Páginas legales ─────────────────────────────────────────────────────
 const PAGINAS = [
-  ['/terminos/', 'Última actualización: 4 de noviembre de 2026', [
+  ['/terminos/', 'Última actualización: 5 de noviembre de 2026', [
     /Preguntas a los negocios\. En la ficha de un negocio puedes hacerle preguntas sobre el sitio/,
     /Como mucho 3 al día y una sin contestar por negocio; si eres de su equipo, no puedes preguntarle/,
     /para mostrar tus reseñas, con sus fotos y vídeos, y tus preguntas a los negocios, en la Plataforma/,
     /Preguntas a los negocios \(apartado 4\)/,
   ]],
-  ['/en/terms/', 'Last updated: 4 November 2026', [
+  ['/en/terms/', 'Last updated: 5 November 2026', [
     /Questions to businesses\. On a business's page you can ask it questions about the place/,
     /to display your reviews, with their photos and videos, and your questions to businesses, on the Platform/,
   ]],
-  ['/normas/', 'Última actualización: 20 de octubre de 2026', [
+  ['/normas/', 'Última actualización: 5 de noviembre de 2026', [
     /Preguntas a los negocios\s+Pregunta lo que te ayude a decidir si ir/,
     /«La respuesta ya está en la ficha», «No es sobre el local», «Lleva datos personales», «No es apropiada», «Ya no está al día»/,
     /Preguntas a los negocios: qué preguntar, qué no y cómo contestan y ocultan los negocios\./,
   ]],
-  ['/en/community-guidelines/', 'Last updated: 20 October 2026', [
+  ['/en/community-guidelines/', 'Last updated: 5 November 2026', [
     /Questions to businesses\s+Ask what helps you decide whether to go/,
   ]],
   ['/negocios/', 'Última actualización: 4 de noviembre de 2026', [
@@ -128,7 +128,7 @@ const PAGINAS = [
     /Questions from people\. Anyone with an account can ask the Business questions on its page/,
     /Questions from people \(section 3\).*It applies from 4 November 2026\./,
   ]],
-  ['/privacidad/', 'Última actualización: 4 de noviembre de 2026', [
+  ['/privacidad/', 'Última actualización: 5 de noviembre de 2026', [
     /Preguntas a los negocios\s+Las preguntas que haces en la ficha de un negocio/,
     /las ocultas, 30 días; las que nadie contesta, 180 días/,
     /cuando haya sitio, respuestas a tus preguntas, preguntas en tu ficha, horas de silencio/,
@@ -136,7 +136,7 @@ const PAGINAS = [
     /las preguntas que recibe en su ficha \(sin quién las hace\), sus respuestas, quién de su equipo contestó/,
     /Cuando preguntas en la ficha de un negocio, el negocio ve la pregunta, nunca quién la ha hecho\./,
   ]],
-  ['/en/privacy/', 'Last updated: 4 November 2026', [
+  ['/en/privacy/', 'Last updated: 5 November 2026', [
     /Questions to businesses\s+The questions you ask on a business's page/,
     /replies to your questions, questions on your page, quiet hours/,
     /When you ask a question on a business's page, the business sees the question, never who asked it\./,
