@@ -972,6 +972,10 @@ CAMBIOS = {
         _INICIO],
     'normas': [
         ('5 de noviembre de 2026',
+         'Para negocios y Cómo moderamos: lo que solo menciona alcohol sale al momento, marcado +18 o solo para mayores de edad.',
+         '5 November 2026',
+         'For businesses and How we moderate: anything that only mentions alcohol goes out straight away, marked 18+ or only to adults.'),
+        ('5 de noviembre de 2026',
          'Las medidas posibles: también retirar el nombre y la foto de un perfil.',
          '5 November 2026',
          "Possible measures: also removing a profile's name and photo."),
@@ -2361,7 +2365,7 @@ def textos(D, resaltar=False):
 <ul>
   <li>Publica solo ofertas que vayas a honrar, con condiciones claras (horario, aforo, requisitos).</li>
   <li>Fotos reales de tu local y productos, de las que tengas derechos.</li>
-  <li>Alcohol y ocio nocturno: marca el negocio o la oferta como "+18". No se permite incitar al consumo excesivo ni dirigirse a menores (Ley 34/1988). Las publicaciones que mencionan bebidas alcohólicas se marcan +18 automáticamente y pasan por la moderación automática (más abajo).</li>
+  <li>Alcohol y ocio nocturno: marca el negocio o la oferta como "+18". No se permite incitar al consumo excesivo ni dirigirse a menores (Ley 34/1988). Las publicaciones y novedades que mencionan bebidas alcohólicas se marcan +18 automáticamente y se publican al momento: solo las ven mayores de edad (más abajo).</li>
   <li>No se admite publicidad de tabaco, productos de vapeo ni juegos de azar o apuestas.</li>
   <li>No manipules reseñas ni canjes (cuentas propias, incentivos por valoraciones).</li>
   <li>Para dar de alta un negocio hace falta tener 18 años; para estar en su equipo, 16 (18 si el negocio es "+18").</li>
@@ -2400,7 +2404,7 @@ def textos(D, resaltar=False):
 <h2>Cómo moderamos</h2>
 <ul>
   <li>Revisamos las denuncias en un plazo máximo de <strong>72 horas</strong> (24 horas si es contenido objetable, afecta a menores o es claramente ilegal).</li>
-  <li>Moderación automática: revisamos de forma automática los textos que se publican (publicaciones, novedades, reseñas y sus respuestas, mensajes a clientes, ficha y carta del negocio, regalo de cumpleaños y tarjetas de sellos) en busca de insultos, palabras malsonantes, contenido sexual explícito, odio o discriminación y amenazas, además de alcohol, tabaco y apuestas. Lo que se marca no se publica hasta que lo revisa una persona de Klendar, normalmente en menos de 24 horas; la ficha y la carta del negocio siguen a la vista mientras tanto. Lo mismo vale para «Qué pedir aquí»: lo que puede ser ofensivo se revisa y se retira si no cumple estas normas. No se admite un nombre de perfil con insultos o palabras malsonantes.</li>
+  <li>Moderación automática: revisamos de forma automática los textos que se publican (publicaciones, novedades, reseñas y sus respuestas, mensajes a clientes, ficha y carta del negocio, regalo de cumpleaños y tarjetas de sellos) en busca de insultos, palabras malsonantes, contenido sexual explícito, odio o discriminación y amenazas, además de alcohol, tabaco y apuestas. Lo que se marca no se publica hasta que lo revisa una persona de Klendar, normalmente en menos de 24 horas; la ficha y la carta del negocio siguen a la vista mientras tanto. Hay una excepción: las publicaciones, las novedades y los mensajes a clientes que solo mencionan alcohol no esperan. Salen al momento, sin que los revise antes una persona: las publicaciones y las novedades, marcadas +18 de forma automática; los mensajes, solo a cuentas de mayores de 18 según su fecha de nacimiento. Si esa marca es un error, escríbenos a <a href="mailto:{E}">{E}</a> y la revisamos. Lo mismo vale para «Qué pedir aquí»: lo que puede ser ofensivo se revisa y se retira si no cumple estas normas. No se admite un nombre de perfil con insultos o palabras malsonantes.</li>
   <li>Las medidas posibles son: retirar el contenido, retirar el nombre y la foto de un perfil, avisar, suspender temporalmente o dar de baja la cuenta o el negocio.</li>
   <li>Si retiramos una publicación o un negocio, anulamos las reservas y los códigos sin usar afectados (y, si es un negocio, sus premios de sellos y regalos pendientes) y avisamos a cada persona sin mencionar la denuncia. Si suspendemos la cuenta del propietario de un negocio, el negocio queda en pausa, pero las reservas y los códigos que ya tiene la gente siguen valiendo.</li>
   <li>Quien publicó el contenido recibe una notificación motivada y puede pedirnos que lo revisemos en un plazo de 6 meses escribiendo a <a href="mailto:{E}">{E}</a>.</li>
@@ -2424,7 +2428,7 @@ def textos(D, resaltar=False):
 <ul>
   <li>Only publish deals you will honour, with clear conditions (hours, capacity, requirements).</li>
   <li>Real photos of your venue and products that you hold the rights to.</li>
-  <li>Alcohol and nightlife: mark the business or the deal as "18+". Encouraging excessive drinking or targeting minors is not allowed (Spanish Law 34/1988). Publications that mention alcoholic drinks are marked 18+ automatically and go through automatic moderation (see below).</li>
+  <li>Alcohol and nightlife: mark the business or the deal as "18+". Encouraging excessive drinking or targeting minors is not allowed (Spanish Law 34/1988). Publications and news that mention alcoholic drinks are marked 18+ automatically and go live straight away: only adults see them (see below).</li>
   <li>Advertising of tobacco, vaping products, gambling or betting is not accepted.</li>
   <li>Do not manipulate reviews or redemptions (own accounts, incentives for ratings).</li>
   <li>You must be 18 to register a business, and 16 to be on its team (18 if the business is "18+").</li>
@@ -2463,7 +2467,7 @@ def textos(D, resaltar=False):
 <h2>How we moderate</h2>
 <ul>
   <li>We review reports within <strong>72 hours</strong> at most (24 hours if it's objectionable content, involves minors or is clearly illegal).</li>
-  <li>Automatic moderation: we automatically check the text people publish (publications, news, reviews and replies, customer messages, business page and menu, birthday gift and stamp cards) for insults, swear words, explicit sexual content, hate or discrimination and threats, as well as alcohol, tobacco and gambling. Anything flagged isn't published until someone at Klendar has reviewed it, usually within 24 hours; the business page and menu stay visible in the meantime. The same applies to “What to order here”: anything that may be offensive is reviewed and removed if it breaches these guidelines. Profile names with insults or swear words aren't accepted.</li>
+  <li>Automatic moderation: we automatically check the text people publish (publications, news, reviews and replies, customer messages, business page and menu, birthday gift and stamp cards) for insults, swear words, explicit sexual content, hate or discrimination and threats, as well as alcohol, tobacco and gambling. Anything flagged isn't published until someone at Klendar has reviewed it, usually within 24 hours; the business page and menu stay visible in the meantime. There is one exception: publications, news and customer messages that only mention alcohol don't wait. They go out straight away, without being reviewed by a person first: publications and news automatically marked 18+; messages only to accounts of people over 18 according to their date of birth. If that mark is a mistake, write to us at <a href="mailto:{E}">{E}</a> and we'll review it. The same applies to “What to order here”: anything that may be offensive is reviewed and removed if it breaches these guidelines. Profile names with insults or swear words aren't accepted.</li>
   <li>Possible measures: remove the content, remove a profile's name and photo, issue a warning, temporarily suspend, or close the account or business.</li>
   <li>If we take down a publication or a business, we cancel the unused bookings and codes affected (and, for a business, its pending stamp-card rewards and gifts) and tell each person without mentioning the report. If we suspend the account of a business owner, the business is paused, but the bookings and codes people already have remain valid.</li>
   <li>Whoever posted the content receives a reasoned notification and can ask us to review it within 6 months by writing to <a href="mailto:{E}">{E}</a>.</li>

@@ -3017,7 +3017,7 @@ async function denunciasDe(v, tipo, id) {
 
 // ── Mensajes a clientes ─────────────────────────────────────────────────────
 // Los mensajes de «Avisar a mis clientes» que la moderación automática ha
-// parado (mencionan alcohol, tabaco o apuestas) esperan aquí: se envían tal
+// parado (mencionan tabaco o apuestas) esperan aquí: se envían tal
 // cual o se rechazan con un motivo opcional, que el negocio recibe. El resto
 // ya salió solo; se listan para poder mirar qué se manda.
 const ESTADO_MENSAJE = { review: ['warn', 'En revisión'], sent: ['ok', 'Enviado'], rejected: ['bad', 'No enviado'] };
@@ -3358,8 +3358,8 @@ PAGES.mensajes = async (v) => {
   v.innerHTML = `
     <div class="page-head"><h1>Mensajes a clientes</h1></div>
     ${helpBox('¿Qué hago aquí?', en
-      ? '<p>A business can send one short message a week to people who have it in their favourites (“Message my customers”). If the text mentions <b>alcohol</b>, <b>tobacco</b> or <b>gambling</b>, or has <b>offensive language</b>, it stops here. <b>Send</b> delivers it as it is (with alcohol, only to adults); <b>Reject</b> discards it and the business is told, with the reason if you give one. A rejected message does not use up their week.</p>'
-      : '<p>Un negocio puede mandar un mensaje corto a la semana a quien lo tiene en favoritos («Avisar a mis clientes»). Si el texto menciona <b>alcohol</b>, <b>tabaco</b> o <b>apuestas</b>, o tiene <b>lenguaje ofensivo</b>, se para aquí. <b>Enviar</b> lo manda tal cual (con alcohol, solo a mayores de edad); <b>Rechazar</b> lo descarta y se le dice al negocio, con el motivo si lo pones. Uno rechazado no le gasta la semana.</p>')}
+      ? '<p>A business can send one short message a week to people who have it in their favourites (“Message my customers”). If the text mentions <b>tobacco</b> or <b>gambling</b>, or has <b>offensive language</b>, it stops here, even if it also mentions alcohol. If it only mentions <b>alcohol</b>, it does not stop: it goes straight away, only to adults. <b>Send</b> delivers it as it is (with alcohol, only to adults); <b>Reject</b> discards it and the business is told, with the reason if you give one. A rejected message does not use up their week.</p>'
+      : '<p>Un negocio puede mandar un mensaje corto a la semana a quien lo tiene en favoritos («Avisar a mis clientes»). Si el texto menciona <b>tabaco</b> o <b>apuestas</b>, o tiene <b>lenguaje ofensivo</b>, se para aquí, también si además habla de alcohol. Si solo menciona <b>alcohol</b> no se para: sale al momento, solo a mayores de edad. <b>Enviar</b> lo manda tal cual (con alcohol, solo a mayores de edad); <b>Rechazar</b> lo descarta y se le dice al negocio, con el motivo si lo pones. Uno rechazado no le gasta la semana.</p>')}
     <div class="toolbar">
       <input id="q" class="grow" type="search" placeholder="Buscar en el texto, el negocio o el correo…" aria-label="Buscar en mensajes a clientes" value="${esc(s.q || '')}">
       <select id="status">${[['all', 'Todos'], ['review', 'En revisión'], ['sent', 'Enviados'], ['rejected', 'No enviados']].map((o) => `<option value="${o[0]}" ${(s.status || 'review') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>

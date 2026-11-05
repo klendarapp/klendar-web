@@ -6225,7 +6225,7 @@ PAGES.mensajes = async (v) => {
       </select></label>
       <label class="f full" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="clientes"><span>Enviarlo también a quien tiene sellos en tus tarjetas</span></label>
       <p class="full" style="margin:0"><b id="recuento"></b></p>
-      <p class="hint full">Respetamos las horas de silencio de cada persona y a quien ha apagado estos mensajes.</p>
+      <p class="hint full">Respetamos las horas de silencio de cada persona y a quien ha apagado estos mensajes. Si menciona alcohol, solo les llega a mayores de edad.</p>
       <div class="full"><button class="btn primary" type="submit" ${info.can_send ? '' : 'disabled'}>Vista previa</button></div>
       <p class="err full" id="msgErr" role="alert"></p>
     </form>
@@ -6316,7 +6316,7 @@ PAGES.mensajes = async (v) => {
     const hecho = r.status === 'review'
       ? `<div class="scan-result warn">${esc(I18N.t((r.flags || []).includes('offensive')
         ? 'Lo revisamos antes de enviarlo porque puede contener lenguaje ofensivo. Normalmente en menos de 24 h.'
-        : 'Lo revisamos antes de enviarlo porque menciona alcohol, tabaco o apuestas. Normalmente en menos de 24 h.'))}</div>`
+        : 'Lo revisamos antes de enviarlo porque menciona tabaco o apuestas. Normalmente en menos de 24 h.'))}</div>`
       : `<div class="scan-result ok">${ms('check_circle')}${esc(bi(r.recipients === 1 ? 'Mensaje enviado a 1 persona.' : `Mensaje enviado a ${fmtNum(r.recipients || 0)} personas.`,
         r.recipients === 1 ? 'Message sent to 1 person.' : `Message sent to ${fmtNum(r.recipients || 0)} people.`))}</div>`;
     await route();
