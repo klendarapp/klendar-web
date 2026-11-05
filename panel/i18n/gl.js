@@ -1820,6 +1820,7 @@ KL_DIC('gl', {
   "Lo revisamos antes de enviarlo porque menciona alcohol, tabaco o apuestas. Normalmente en menos de 24 h.": "Revisámola antes de enviala porque menciona alcohol, tabaco ou apostas. Normalmente en menos de 24 h.",
   "Lo revisamos antes de enviarlo porque puede contener lenguaje ofensivo. Normalmente en menos de 24 h.": "Revisámola antes de enviala porque pode conter linguaxe ofensiva. Normalmente en menos de 24 h.",
   "Lo revisamos antes de publicarlo porque puede contener lenguaje ofensivo. Normalmente en menos de 24 h.": "Revisámolo antes de publicalo porque pode conter linguaxe ofensiva. Normalmente en menos de 24 h.",
+  "Lo revisamos antes de publicarlo porque menciona alcohol, tabaco o apuestas. Normalmente en menos de 24 h. Si menciona alcohol, solo lo verán mayores de edad.": "Revisámolo antes de publicalo porque menciona alcohol, tabaco ou apostas. Normalmente en menos de 24 h. Se menciona alcohol, só o verán maiores de idade.",
   "Lo revisamos antes de usarlo porque puede contener lenguaje ofensivo. Normalmente en menos de 24 h.": "Revisámolo antes de usalo porque pode conter linguaxe ofensiva. Normalmente en menos de 24 h.",
   "Lo siguiente: {proximo}": "O seguinte: {proximo}",
   "Lo usamos para comprobar que el negocio es tuyo. No sale en tu ficha ni lo ve nadie fuera de Klendar.": "Usámolo para comprobar que o negocio é teu. Non sae na túa ficha nin o ve ninguén fóra de Klendar.",

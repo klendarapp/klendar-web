@@ -19,7 +19,15 @@ respuesta solo `<a href>` y `<strong>`; los enlaces, relativos a la web
 - `soporte=1|2…`: sale en Soporte, en ese orden;
 - `soporte_q_es/en`: otra pregunta en Soporte (allí son títulos);
 - `ayuda=False`: solo en Soporte (no en el centro de ayuda; p. ej. si allí
-  ya hay otra que dice lo mismo).
+  ya hay otra que dice lo mismo);
+- `app=False`: solo en la web, no en la app (precios, cómo se paga, permanencia);
+- `a_app_es/en`: otra respuesta en la app.
+
+**La app no habla de precios ni lleva a pagar** (Apple 3.1.1 y 3.1.3; Google
+Play, Pagos §4; revisión N-01 del 5-11-2026). `/preguntas/` y `/en/faq/` sí. Al
+generar el JSON de la app, los enlaces a páginas de precios o al panel se quedan
+en texto (`SIN_ENLACE_EN_LA_APP`) y `comprueba_app` falla si se cuela un precio,
+un enlace a pagar o Stripe, también en lo que se añada mañana.
 
 Para cambiar una respuesta: aquí, y luego `python build_pages.py`,
 `python build_legal.py` y `python build_site.py` (y en la app
@@ -40,7 +48,9 @@ PREGUNTAS = [
       '¿Cuánto cuesta usar Klendar?',
       'Para quien busca planes, nada. Para los negocios hay un solo plan, después de 30 días de prueba gratis; los detalles están en <a href="/precios/">precios</a>.',
       'How much does Klendar cost?',
-      'For people looking for plans, nothing. For businesses there is a single plan, after a 30-day free trial; the details are in <a href="/en/pricing/">pricing</a>.'),
+      'For people looking for plans, nothing. For businesses there is a single plan, after a 30-day free trial; the details are in <a href="/en/pricing/">pricing</a>.',
+      a_app_es='Para quien busca planes, nada: Klendar es gratis. Lo que canjees o reserves, si cuesta algo, se paga en el local.',
+      a_app_en='For people looking for plans, nothing: Klendar is free. Whatever you redeem or reserve, if it costs anything, is paid at the venue.'),
     P('cuenta-para-mirar', 'ti',
       '¿Hace falta cuenta para mirar?',
       'No. Puedes ver ofertas y eventos sin crear una cuenta, en la app y en la web. La cuenta hace falta para canjear, guardar planes o recibir avisos.',
@@ -207,7 +217,8 @@ PREGUNTAS = [
       '¿Cuánto me cuesta?',
       'Lo <strong>pruebas gratis</strong>: 30 días con todo al darte de alta, sin tarjeta. Después, un solo plan con todo incluido: 19,90 € + IVA al mes por local (24,08 € con IVA), sin límites, sin permanencia y sin comisión por canje. <a href="/precios/">Ver precios</a>.',
       'How much does it cost me?',
-      'You <strong>try it free</strong>: 30 days with everything when you register, no card. After that, one plan with everything included: €19.90 + VAT a month per venue (€24.08 incl. VAT), with no limits, no lock-in and no commission per redemption. <a href="/en/pricing/">See pricing</a>.'),
+      'You <strong>try it free</strong>: 30 days with everything when you register, no card. After that, one plan with everything included: €19.90 + VAT a month per venue (€24.08 incl. VAT), with no limits, no lock-in and no commission per redemption. <a href="/en/pricing/">See pricing</a>.',
+      app=False),
     P('comision', 'negocios',
       '¿Klendar se lleva una comisión de lo que vendo?',
       'No. Lo que cobras en tu local es tuyo entero; Klendar no toca el dinero.',
@@ -217,12 +228,14 @@ PREGUNTAS = [
       '¿Qué pasa si no pago?',
       'Te avisamos 7 días y 1 día antes de que se acabe tu prueba o lo que tienes pagado. Si llega el día sin pagar, tu negocio se <strong>bloquea</strong>: tus publicaciones no se ven, tu ficha dice «No disponible ahora mismo» y no puedes publicar ni editar. <strong>No se borra nada</strong>: en cuanto pagas en «Tu plan» (klendar.app/panel), todo vuelve solo. Mientras tanto puedes validar en la puerta los códigos y bonos que ya tiene la gente, descargar tus datos o darte de baja. Si un cobro falla (o el banco devuelve un recibo), tienes 7 días para ponerlo al día.',
       'What happens if I don\'t pay?',
-      'We remind you 7 days and 1 day before your trial or what you\'ve paid for ends. If the day comes without payment, your business is <strong>blocked</strong>: your publications are hidden, your page says “Not available right now” and you can\'t publish or edit. <strong>Nothing is deleted</strong>: as soon as you pay in “Your plan” (klendar.app/panel), everything comes back on its own. In the meantime you can validate at the door the codes and passes people already have, download your data or leave Klendar. If a charge fails (or the bank returns a direct debit), you have 7 days to sort it out.'),
+      'We remind you 7 days and 1 day before your trial or what you\'ve paid for ends. If the day comes without payment, your business is <strong>blocked</strong>: your publications are hidden, your page says “Not available right now” and you can\'t publish or edit. <strong>Nothing is deleted</strong>: as soon as you pay in “Your plan” (klendar.app/panel), everything comes back on its own. In the meantime you can validate at the door the codes and passes people already have, download your data or leave Klendar. If a charge fails (or the bank returns a direct debit), you have 7 days to sort it out.',
+      app=False),
     P('pausar-plan', 'negocios',
       '¿Puedo pausar el plan si cierro una temporada?',
       'Sí. En «Tu plan» (app o panel), «Pausar el plan»: eliges el día de vuelta o «sin fecha» (hasta 6 meses). No se cobra nada y los días que ya tenías pagados se guardan: al volver se gastan primero. Mientras dura, tu negocio está parado (como bloqueado): tus publicaciones no se ven, tu ficha dice «Cerrado temporalmente hasta el día X» y solo puedes validar lo que ya tiene la gente, descargar tus datos, darte de baja o «Volver a abrir». Vuelve solo el día elegido (te avisamos 7 días antes) y avisamos a quien te tiene en favoritos. No se puede pausar con un pago pendiente o en proceso.',
       'Can I pause the plan if I close for a while?',
-      'Yes. In “Your plan” (app or dashboard), “Pause the plan”: choose the return date or “no date” (up to 6 months). Nothing is charged and the days you\'d already paid for are kept: they\'re used first when you come back. While it lasts, your business is stopped (as if blocked): your publications are hidden, your page says “Temporarily closed until [date]” and you can only validate what people already have, download your data, leave Klendar or “Reopen”. It comes back on its own on the chosen day (we remind you 7 days before) and we let the people who have you in their favourites know. You can\'t pause with a payment outstanding or being processed.'),
+      'Yes. In “Your plan” (app or dashboard), “Pause the plan”: choose the return date or “no date” (up to 6 months). Nothing is charged and the days you\'d already paid for are kept: they\'re used first when you come back. While it lasts, your business is stopped (as if blocked): your publications are hidden, your page says “Temporarily closed until [date]” and you can only validate what people already have, download your data, leave Klendar or “Reopen”. It comes back on its own on the chosen day (we remind you 7 days before) and we let the people who have you in their favourites know. You can\'t pause with a payment outstanding or being processed.',
+      app=False),
     P('publicar', 'negocios',
       '¿Cómo publico una oferta o un evento?',
       'Desde la app (Mi negocio → Publicaciones) o desde el <a href="/panel/">panel del ordenador</a>: una oferta flash, con cuenta atrás y aforo, o un evento con fecha. Al crear una en blanco tienes «Ideas» de tu gremio para empezar, y puedes guardar las tuyas como plantillas.',
@@ -287,17 +300,21 @@ PREGUNTAS = [
       '¿Puedo salir el primero si pago más?',
       'No vendemos tus datos ni los de tus clientes, no cobramos por canje y no ponemos tu oferta por delante de otra porque pagues más: en la app el orden lo elige la persona (cerca de ti, empieza antes o nuevas). Se pueden destacar publicaciones, y cuando pasa <strong>se dice</strong>.',
       'Can I come first if I pay more?',
-      'We don\'t sell your data or your customers\' data, we don\'t charge per redemption and we don\'t put your offer ahead of another because you pay more: in the app people choose the order (near you, starting soonest or newest). Publications can be featured, and when that happens <strong>it says so</strong>.'),
+      'We don\'t sell your data or your customers\' data, we don\'t charge per redemption and we don\'t put your offer ahead of another because you pay more: in the app people choose the order (near you, starting soonest or newest). Publications can be featured, and when that happens <strong>it says so</strong>.',
+      app=False),
     P('permanencia', 'negocios',
       '¿Hay permanencia?',
       'No. Cancelas cuando quieras: sigues hasta el final del periodo pagado y no se renueva.',
       'Is there a lock-in?',
-      'No. Cancel whenever you like: you keep everything until the end of the period you\'ve paid for and it doesn\'t renew.'),
+      'No. Cancel whenever you like: you keep everything until the end of the period you\'ve paid for and it doesn\'t renew.',
+      app=False),
     P('kit', 'negocios',
       '¿Hay algo para poner en el local?',
       'Sí: una <a href="/assets/kit/klendar-guia-negocios.pdf">guía de 1 página (PDF)</a> y un <a href="/assets/kit/klendar-cartel.pdf">cartel con QR (PDF)</a>. Lo legal, en las <a href="/negocios/">condiciones para negocios</a>.',
       'Do you have anything to put up at the venue?',
-      'Yes: a <a href="/assets/kit/klendar-guia-negocios.pdf">1-page guide (PDF)</a> and a <a href="/assets/kit/klendar-cartel.pdf">poster with a QR code (PDF)</a>. The legal side is in the <a href="/en/business-terms/">business terms</a>.'),
+      'Yes: a <a href="/assets/kit/klendar-guia-negocios.pdf">1-page guide (PDF)</a> and a <a href="/assets/kit/klendar-cartel.pdf">poster with a QR code (PDF)</a>. The legal side is in the <a href="/en/business-terms/">business terms</a>.',
+      a_app_es='Sí: un <a href="/assets/kit/klendar-cartel.pdf">cartel con QR (PDF)</a>. Lo legal, en las <a href="/negocios/">condiciones para negocios</a>.',
+      a_app_en='Yes: a <a href="/assets/kit/klendar-cartel.pdf">poster with a QR code (PDF)</a>. The legal side is in the <a href="/en/business-terms/">business terms</a>.'),
 ]
 
 PESTANAS = {
@@ -326,20 +343,31 @@ def soporte_html(lang, correo=CORREO):
 from html.parser import HTMLParser  # noqa: E402
 import hashlib  # noqa: E402
 import json  # noqa: E402
+import re  # noqa: E402
 
 BASE = 'https://klendar.app'
+
+# La app no enlaza a donde se ve el precio o se paga: el enlace se queda en texto.
+SIN_ENLACE_EN_LA_APP = ('/precios', '/en/pricing', '/panel', '/en/dashboard', '/para-negocios', '/en/for-businesses')
+# Lo que no puede salir en la copia de la app, ni en un idioma ni en otro.
+PROHIBIDO_EN_LA_APP = re.compile(
+    r'€|\bEUR\b|\beuros?\b|\bIVA\b|\bVAT\b|\d+[,.]\d\d\b|stripe|tarjeta de cr|credit card|'
+    r'suscripci|subscription|«tu plan»|“your plan”|klendar\.app/panel|/precios|/pricing|'
+    r'klendar-guia-negocios|si no pago|if i don.t pay',
+    re.I)
 
 
 class _Trozos(HTMLParser):
     """La respuesta en trozos: texto y enlaces (`{"t": …, "u": …}`)."""
 
-    def __init__(self):
+    def __init__(self, app=False):
         super().__init__(convert_charrefs=True)
-        self.out, self.href = [], None
+        self.out, self.href, self.app = [], None, app
 
     def handle_starttag(self, tag, attrs):
         if tag == 'a':
-            self.href = dict(attrs).get('href')
+            href = dict(attrs).get('href')
+            self.href = None if self.app and href.startswith(SIN_ENLACE_EN_LA_APP) else href
         elif tag not in ('strong', 'b', 'em'):
             raise ValueError(f'etiqueta no admitida en una respuesta: <{tag}>')
 
@@ -359,8 +387,8 @@ class _Trozos(HTMLParser):
             self.out.append({'t': data, **({'u': u} if u else {})})
 
 
-def trozos(html):
-    t = _Trozos()
+def trozos(html, app=False):
+    t = _Trozos(app)
     t.feed(html)
     t.close()
     return t.out
@@ -370,14 +398,30 @@ def texto_plano(html):
     return ''.join(x['t'] for x in trozos(html))
 
 
+def comprueba_app(datos):
+    """Falla si la copia de la app habla de precios o lleva a pagar."""
+    malas = []
+    for lang in ('es', 'en'):
+        for para in ('ti', 'negocios'):
+            for e in datos[lang][para]:
+                texto = e['q'] + ' ' + ''.join(x['t'] + ' ' + x.get('u', '') for x in e['a'])
+                m = PROHIBIDO_EN_LA_APP.search(texto)
+                if m:
+                    malas.append(f"{lang}/{e['id']}: «{m.group(0)}»")
+    assert not malas, 'la ayuda de la app habla de precios o lleva a pagar: ' + '; '.join(malas)
+
+
 def json_para_la_app():
     datos = {
         lang: {
-            para: [{'id': p['id'], 'q': p[f'q_{lang}'], 'a': trozos(p[f'a_{lang}'])} for p in de(para)]
+            para: [{'id': p['id'], 'q': p[f'q_{lang}'],
+                    'a': trozos(p.get(f'a_app_{lang}') or p[f'a_{lang}'], app=True)}
+                   for p in de(para) if p.get('app', True)]
             for para in ('ti', 'negocios')
         }
         for lang in ('es', 'en')
     }
+    comprueba_app(datos)
     cuerpo = json.dumps(datos, ensure_ascii=False, sort_keys=True)
     return {
         'version': hashlib.sha1(cuerpo.encode('utf-8')).hexdigest()[:12],

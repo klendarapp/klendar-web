@@ -2170,14 +2170,36 @@ async function pintaBloqueadas() {
   const caja = $('#dd-bloqueadas');
   if (!caja) return;
   let lista = [];
-  try { lista = (await llamar('my_blocks', {})).blocks || []; } catch { caja.textContent = t('No se ha podido cargar.'); return; }
+  // `anonymous`: bloqueadas desde una pregunta en la app (no se sabe quién son).
+  let anonimas = [];
+  try {
+    const r = await llamar('my_blocks', {});
+    lista = r.blocks || [];
+    anonimas = r.anonymous || [];
+  } catch { caja.textContent = t('No se ha podido cargar.'); return; }
   if (!caja.isConnected) return;
-  if (!lista.length) { caja.textContent = t('No has bloqueado a nadie. Se hace desde una reseña, tu lista de amigos o una invitación.'); return; }
+  if (!lista.length && !anonimas.length) { caja.textContent = t('No has bloqueado a nadie. Se hace desde una reseña, tu lista de amigos o una invitación.'); return; }
   caja.innerHTML = `<ul class="bloqueadas">${lista.map((p) => `<li>
       <span><b>${esc(p.name || t('Usuario de Klendar'))}</b> <small class="muted">${esc(`${t('Desde el')} ${fecha(p.since, { day: 'numeric', month: 'long', year: 'numeric' })}`)}</small></span>
       <button type="button" class="linkbtn" data-desbloquear="${esc(p.id)}" data-nombre="${esc(p.name || t('Usuario de Klendar'))}">${esc(t('Desbloquear'))}</button>
+    </li>`).join('')}${anonimas.map((p) => `<li>
+      <span><b>${esc(p.business ? (EN ? `Someone who asked at ${p.business}` : `Alguien que preguntó en ${p.business}`) : t('Alguien que hizo una pregunta'))}</b> <small class="muted">${esc(`${t('Desde el')} ${fecha(p.since, { day: 'numeric', month: 'long', year: 'numeric' })}`)}</small></span>
+      <button type="button" class="linkbtn" data-desbloquear-anonima="${esc(p.id)}">${esc(t('Desbloquear'))}</button>
     </li>`).join('')}</ul>`;
   I18N.translate(caja);
+  $$('[data-desbloquear-anonima]', caja).forEach((b) => b.addEventListener('click', async () => {
+    if (!(await confirma({
+      titulo: t('¿Desbloquear a esta persona?'),
+      texto: t('Volverás a ver sus preguntas. No le avisamos.'),
+      aceptar: t('Desbloquear'),
+    }))) return;
+    b.disabled = true;
+    try {
+      await llamar('unblock_question_author', { p_id: b.dataset.desbloquearAnonima });
+      toast(t('Desbloqueada'));
+      pintaBloqueadas();
+    } catch (e) { toast(e.message, true); if (b.isConnected) b.disabled = false; }
+  }));
   $$('[data-desbloquear]', caja).forEach((b) => b.addEventListener('click', async () => {
     const nombre = b.dataset.nombre;
     if (!(await confirma({

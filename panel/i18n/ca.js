@@ -1820,6 +1820,7 @@ KL_DIC('ca', {
   "Lo revisamos antes de enviarlo porque menciona alcohol, tabaco o apuestas. Normalmente en menos de 24 h.": "El revisem abans d'enviar-lo perquè esmenta alcohol, tabac o apostes. Normalment en menys de 24 h.",
   "Lo revisamos antes de enviarlo porque puede contener lenguaje ofensivo. Normalmente en menos de 24 h.": "El revisem abans d'enviar-lo perquè pot contenir llenguatge ofensiu. Normalment en menys de 24 h.",
   "Lo revisamos antes de publicarlo porque puede contener lenguaje ofensivo. Normalmente en menos de 24 h.": "Ho revisem abans de publicar-ho perquè pot contenir llenguatge ofensiu. Normalment en menys de 24 h.",
+  "Lo revisamos antes de publicarlo porque menciona alcohol, tabaco o apuestas. Normalmente en menos de 24 h. Si menciona alcohol, solo lo verán mayores de edad.": "El revisem abans de publicar-lo perquè esmenta alcohol, tabac o apostes. Normalment en menys de 24 h. Si esmenta alcohol, només el veuran majors d'edat.",
   "Lo revisamos antes de usarlo porque puede contener lenguaje ofensivo. Normalmente en menos de 24 h.": "Ho revisem abans de fer-ho servir perquè pot contenir llenguatge ofensiu. Normalment en menys de 24 h.",
   "Lo siguiente: {proximo}": "El següent: {proximo}",
   "Lo usamos para comprobar que el negocio es tuyo. No sale en tu ficha ni lo ve nadie fuera de Klendar.": "El fem servir per comprovar que el negoci és teu. No surt a la teva fitxa ni el veu ningú de fora de Klendar.",

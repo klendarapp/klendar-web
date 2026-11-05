@@ -1820,6 +1820,7 @@ KL_DIC('eu', {
   "Lo revisamos antes de enviarlo porque menciona alcohol, tabaco o apuestas. Normalmente en menos de 24 h.": "Bidali aurretik berrikusiko dugu, alkohola, tabakoa edo apustuak aipatzen dituelako. Normalean 24 h baino gutxiagoan.",
   "Lo revisamos antes de enviarlo porque puede contener lenguaje ofensivo. Normalmente en menos de 24 h.": "Bidali aurretik berrikusiko dugu, hizkera iraingarria izan dezakeelako. Normalean 24 h baino gutxiagoan.",
   "Lo revisamos antes de publicarlo porque puede contener lenguaje ofensivo. Normalmente en menos de 24 h.": "Argitaratu aurretik berrikusiko dugu, hizkera iraingarria izan dezakeelako. Normalean 24 h baino gutxiagoan.",
+  "Lo revisamos antes de publicarlo porque menciona alcohol, tabaco o apuestas. Normalmente en menos de 24 h. Si menciona alcohol, solo lo verán mayores de edad.": "Argitaratu aurretik berrikusiko dugu, alkohola, tabakoa edo apustuak aipatzen dituelako. Normalean 24 h baino gutxiagoan. Alkohola aipatzen badu, adin nagusikoek bakarrik ikusiko dute.",
   "Lo revisamos antes de usarlo porque puede contener lenguaje ofensivo. Normalmente en menos de 24 h.": "Erabili aurretik berrikusiko dugu, hizkera iraingarria izan dezakeelako. Normalean 24 h baino gutxiagoan.",
   "Lo siguiente: {proximo}": "Hurrengoa: {proximo}",
   "Lo usamos para comprobar que el negocio es tuyo. No sale en tu ficha ni lo ve nadie fuera de Klendar.": "Negozioa zurea dela egiaztatzeko erabiltzen dugu. Ez da zure fitxan agertzen, eta Klendarretik kanpo inork ez du ikusten.",

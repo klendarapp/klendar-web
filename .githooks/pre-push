@@ -10,6 +10,8 @@ python tools/i18n_missing.py panel >/dev/null && python tools/i18n_missing.py ad
 python tools/i18n_missing.py --lang all >/dev/null || { echo "pre-push: faltan textos en los idiomas nuevos (python tools/i18n_missing.py --lang all --todo)."; exit 1; }
 # Las pruebas de tools/ no nombran un Supabase a mano y cargan Playwright con la red de seguridad (tools/_supabase_simulado.mjs).
 python tools/supabase_refs_check.py || { echo "pre-push: una prueba de tools/ apunta a mano a un Supabase; no se sube."; exit 1; }
+# La ayuda de la app no habla de precios ni lleva a pagar (Apple 3.1.1 y 3.1.3; Play, Pagos §4).
+python tools/ayuda_app_check.py || { echo "pre-push: la ayuda de la app habla de precios o no está al día; no se sube."; exit 1; }
 # «Tu cuenta» está en /cuenta/: que no reaparezca /app/ ni un `#/` en ella.
 python tools/sin_app_check.py || { echo "pre-push: sigue la dirección vieja de «Tu cuenta»; no se sube."; exit 1; }
 # Dev ↔ prod solo a propósito (KLENDAR_CAMBIO_ENTORNO=1), config.js y page.js al mismo Supabase y Turnstile con sus textos.

@@ -2711,7 +2711,7 @@ PAGES.resenas = async (v) => {
       const r = await rpc('admin_text_reviews', { p_limit: sC.limit, p_offset: sC.offset });
       const pg = pager(sC, r.total, load);
       $('#list').innerHTML = (r.rows.length ? r.rows.map((x, i) => `<div class="item">${x.image ? `<img src="${esc(x.image)}" alt="">` : `<div class="ph">${ms(ICONO_TEXTO[x.kind] || 'text_fields')}</div>`}<div>
-        <h3>${esc(I18N.t(TIPO_TEXTO[x.kind] || x.kind))} · <a class="link" href="#/negocios/${x.business_id}">${esc(x.business)}</a> ${x.kind === 'review_media' ? `<span class="tag warn">${esc(I18N.t('Moderación de imágenes'))}</span>` : (x.categories || []).map((c) => `<span class="tag warn" title="Detectado automáticamente en el texto">${esc(I18N.t(CAT_OFENSIVA[c] || c))}</span>`).join(' ')}</h3>
+        <h3>${esc(I18N.t(TIPO_TEXTO[x.kind] || x.kind))} · <a class="link" href="#/negocios/${x.business_id}">${esc(x.business)}</a> ${(x.flags || []).filter((f) => f !== 'offensive').map((f) => `<span class="tag warn">${esc(I18N.t(FLAGS[f] || f))}</span>`).join(' ')} ${x.kind === 'review_media' ? `<span class="tag warn">${esc(I18N.t('Moderación de imágenes'))}</span>` : (x.categories || []).map((c) => `<span class="tag warn" title="Detectado automáticamente en el texto">${esc(I18N.t(CAT_OFENSIVA[c] || c))}</span>`).join(' ')}</h3>
         <div class="meta">${x.user_email ? `${esc(x.user_email)} · ` : ''}${fmtDate(x.created_at)}${x.rating ? ` · <span class="stars">${'★'.repeat(x.rating)}${'☆'.repeat(5 - x.rating)}</span>` : ''}</div>
         <p>${esc(x.text || '')}</p>
         ${mediosResena(x.media)}
@@ -2761,7 +2761,7 @@ const motivoDen = (r) => I18N.t(MOTIVOS_DENUNCIA[r] || r);
 const ESTADO_DEN = { published: ['publicado', 'ok'], review: ['en revisión', 'warn'], removed: ['retirado', 'bad'], hidden: ['no visible', 'dim'], deleted: ['borrado', 'dim'] };
 const estadoDen = (s) => { const e = ESTADO_DEN[s]; return e ? `<span class="tag ${e[1]}">${esc(I18N.t(e[0]))}</span>` : ''; };
 const RESOLUCION_DEN = { removed: 'contenido retirado', no_action: 'cerrada sin retirar', dismissed: 'desestimada' };
-const TIPO_DEN = { offer: 'Publicación', business: 'Negocio', review: 'Reseña', post: 'Novedad', review_media: 'Foto o vídeo de una reseña', group_request: 'Petición de grupo', question: 'Pregunta de una ficha', question_answer: 'Respuesta a una pregunta' };
+const TIPO_DEN = { offer: 'Publicación', business: 'Negocio', review: 'Reseña', post: 'Novedad', review_media: 'Foto o vídeo de una reseña', group_request: 'Petición de grupo', question: 'Pregunta de una ficha', question_answer: 'Respuesta a una pregunta', profile: 'Perfil' };
 // Una petición de grupo («Grupos y empresas»): la denuncia un negocio que la
 // ha recibido; no se ve en la web pública (solo quien pide y los negocios).
 const TIPO_GRUPO_DEN = { company_dinner: ['Cena de empresa', 'Company dinner'], afterwork: ['Afterwork', 'Afterwork'], team_activity: ['Actividad de equipo', 'Team activity'], celebration: ['Celebración', 'Celebration'] };
@@ -2775,7 +2775,7 @@ const lineaGrupoDen = (t) => {
 const urlDenunciado = (tipo, id, t) => {
   const b = (t && (t.slug || t.business_id)) || null;
   if (tipo === 'offer') return `/o/${id}`;
-  if (tipo === 'group_request') return '';
+  if (tipo === 'group_request' || tipo === 'profile') return '';
   if (tipo === 'business') return `/b/${(t && t.slug) || id}`;
   if (!b) return '';
   // Una foto o un vídeo: la reseña que lo lleva.
@@ -2785,7 +2785,7 @@ const urlDenunciado = (tipo, id, t) => {
   return `/b/${b}#${tipo === 'review' ? 'resena' : 'novedad'}-${id}`;
 };
 /** Su ficha dentro del admin. */
-const adminDenunciado = (tipo, id, t) => (tipo === 'group_request' ? '' : tipo === 'offer' ? `#/publicaciones/${id}` : tipo === 'business' ? `#/negocios/${id}` : t?.business_id ? `#/negocios/${t.business_id}` : '');
+const adminDenunciado = (tipo, id, t) => (tipo === 'group_request' ? '' : tipo === 'profile' ? `#/usuarios/${id}` : tipo === 'offer' ? `#/publicaciones/${id}` : tipo === 'business' ? `#/negocios/${id}` : t?.business_id ? `#/negocios/${t.business_id}` : '');
 /** El título que se enseña: el de la publicación, el nombre del negocio o el texto de la reseña o la novedad. */
 const tituloDen = (tipo, t) => {
   const en = I18N.lang === 'en';
@@ -2820,6 +2820,7 @@ async function decideDenuncias(tipo, id, decision, abiertas) {
       review: en ? 'The review is deleted.' : 'La reseña se borra.',
       post: en ? 'The news post is deleted.' : 'La novedad se borra.',
       review_media: en ? 'Only this photo or video is deleted; the review stays.' : 'Solo se borra esa foto o ese vídeo; la reseña se queda.',
+      profile: en ? 'The name and photo are deleted (what was reported stays here). The person is told why and can set another one; the account is not suspended.' : 'Se borran el nombre y la foto (lo denunciado se queda aquí). A esa persona se le dice por qué y puede poner otros; la cuenta no se suspende.',
       group_request: en ? 'The request is closed for every business it went to and its note is deleted (what was reported stays here).' : 'La petición se cierra para todos los negocios a los que se mandó y se borra su nota (lo denunciado se queda aquí).',
       question: en ? 'The question is deleted, with its reply (what was reported stays here). The person who asked is told why.' : 'La pregunta se borra, con su respuesta (lo denunciado se queda aquí). A quien preguntó se le dice por qué.',
       question_answer: en ? "Only the business's reply is deleted: the question goes back to “to answer” and stops being public. The owner and managers are told why." : 'Solo se borra la respuesta del negocio: la pregunta vuelve a «sin contestar» y deja de verse. Al propietario y a los encargados se les dice por qué.',
@@ -2895,7 +2896,7 @@ PAGES.denuncias = async (v, tipoRuta) => {
     <div class="toolbar">
       <input id="q" class="grow" type="search" placeholder="Buscar por título, negocio, ciudad o motivo…" aria-label="Buscar en denuncias" value="${esc(s.q || '')}">
       <select id="status">${[['open', 'Con denuncias abiertas'], ['closed', 'Ya cerradas'], ['all', 'Todo']].map((o) => `<option value="${o[0]}" ${(s.status || 'open') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
-      <select id="type">${[['all', 'Todo tipo'], ['offer', 'Publicaciones'], ['business', 'Negocios'], ['review', 'Reseñas'], ['review_media', 'Fotos y vídeos de reseñas'], ['post', 'Novedades'], ['group_request', 'Peticiones de grupo'], ['question', 'Preguntas'], ['question_answer', 'Respuestas a preguntas']].map((o) => `<option value="${o[0]}" ${(s.type || 'all') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
+      <select id="type">${[['all', 'Todo tipo'], ['offer', 'Publicaciones'], ['business', 'Negocios'], ['review', 'Reseñas'], ['review_media', 'Fotos y vídeos de reseñas'], ['post', 'Novedades'], ['group_request', 'Peticiones de grupo'], ['profile', 'Perfiles'], ['question', 'Preguntas'], ['question_answer', 'Respuestas a preguntas']].map((o) => `<option value="${o[0]}" ${(s.type || 'all') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
     </div>
     <div id="list"><div class="loading">Cargando…</div></div>`;
   const load = async () => {

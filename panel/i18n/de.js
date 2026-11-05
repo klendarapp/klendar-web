@@ -1820,6 +1820,7 @@ KL_DIC('de', {
   "Lo revisamos antes de enviarlo porque menciona alcohol, tabaco o apuestas. Normalmente en menos de 24 h.": "Wir prüfen sie vor dem Senden, weil sie Alkohol, Tabak oder Glücksspiel erwähnt. Meist innerhalb von 24 Std.",
   "Lo revisamos antes de enviarlo porque puede contener lenguaje ofensivo. Normalmente en menos de 24 h.": "Wir prüfen sie vor dem Senden, weil sie beleidigende Sprache enthalten könnte. Meist innerhalb von 24 Std.",
   "Lo revisamos antes de publicarlo porque puede contener lenguaje ofensivo. Normalmente en menos de 24 h.": "Wir prüfen es vor der Veröffentlichung, weil es beleidigende Sprache enthalten könnte. Meist innerhalb von 24 Std.",
+  "Lo revisamos antes de publicarlo porque menciona alcohol, tabaco o apuestas. Normalmente en menos de 24 h. Si menciona alcohol, solo lo verán mayores de edad.": "Wir prüfen sie vor der Veröffentlichung, weil sie Alkohol, Tabak oder Glücksspiel erwähnt. Meist innerhalb von 24 Std. Wenn sie Alkohol erwähnt, sehen sie nur Volljährige.",
   "Lo revisamos antes de usarlo porque puede contener lenguaje ofensivo. Normalmente en menos de 24 h.": "Wir prüfen es vor der Verwendung, weil es beleidigende Sprache enthalten könnte. Meist innerhalb von 24 Std.",
   "Lo siguiente: {proximo}": "Als Nächstes: {proximo}",
   "Lo usamos para comprobar que el negocio es tuyo. No sale en tu ficha ni lo ve nadie fuera de Klendar.": "Damit prüfen wir, dass das Geschäft dir gehört. Es steht nicht auf deiner Seite, und außerhalb von Klendar sieht es niemand.",

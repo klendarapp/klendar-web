@@ -909,6 +909,7 @@ const I18N = makeI18N({
     "Lo revisamos antes de enviarlo porque menciona alcohol, tabaco o apuestas. Normalmente en menos de 24 h.": "We'll review it before sending because it mentions alcohol, tobacco or gambling. Usually within 24 h.",
     "Lo revisamos antes de enviarlo porque puede contener lenguaje ofensivo. Normalmente en menos de 24 h.": "We'll review it before sending because it may contain offensive language. Usually within 24 h.",
     "Lo revisamos antes de publicarlo porque puede contener lenguaje ofensivo. Normalmente en menos de 24 h.": "We'll review it before it goes live because it may contain offensive language. Usually within 24 h.",
+    "Lo revisamos antes de publicarlo porque menciona alcohol, tabaco o apuestas. Normalmente en menos de 24 h. Si menciona alcohol, solo lo verán mayores de edad.": "We'll review it before it goes live because it mentions alcohol, tobacco or gambling. Usually within 24 h. If it mentions alcohol, only adults will see it.",
     "Lo revisamos antes de usarlo porque puede contener lenguaje ofensivo. Normalmente en menos de 24 h.": "We'll review it before it's used because it may contain offensive language. Usually within 24 h.",
     "En revisión: la tarjeta empieza cuando la revisemos, porque puede contener lenguaje ofensivo. Normalmente en menos de 24 h.": "In review: the card starts once we've reviewed it, because it may contain offensive language. Usually within 24 h.",
     "Tu respuesta, en revisión": "Your reply, under review",

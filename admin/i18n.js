@@ -1478,6 +1478,8 @@ const I18N = makeI18N({
     // Admin tanda C: sorteos retirados y peticiones de grupo denunciadas.
     'petición de grupo': 'group request',
     'Petición de grupo': 'Group request',
+    'Perfil': 'Profile',
+    'Perfiles': 'Profiles',
     'Peticiones de grupo': 'Group requests',
     'Sorteos': 'Giveaways',
     'Sorteo retirado': 'Giveaway removed',

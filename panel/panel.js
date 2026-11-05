@@ -5959,13 +5959,15 @@ PAGES.novedades = async (v) => {
       }
       const fila = { body: texto || null, image_url: image };
       const { data: guardada, error } = post
-        ? await sb.from('business_posts').update(fila).eq('id', post.id).select('moderation_status').single()
-        : await sb.from('business_posts').insert({ business_id: BIZ.id, ...fila }).select('moderation_status').single();
+        ? await sb.from('business_posts').update(fila).eq('id', post.id).select('moderation_status, moderation_flags').single()
+        : await sb.from('business_posts').insert({ business_id: BIZ.id, ...fila }).select('moderation_status, moderation_flags').single();
       if (error) throw new Error(error.message);
-      // Con lenguaje ofensivo no se publica hasta revisarla (como en la app).
-      toast(guardada?.moderation_status === 'pending'
-        ? 'Lo revisamos antes de publicarlo porque puede contener lenguaje ofensivo. Normalmente en menos de 24 h.'
-        : 'Hecho'); route();
+      // Lo marcado no se publica hasta revisarlo, con el motivo (como en la app).
+      const marcas = guardada?.moderation_flags || [];
+      toast(guardada?.moderation_status !== 'pending' ? 'Hecho'
+        : !marcas.length || marcas.includes('offensive')
+          ? 'Lo revisamos antes de publicarlo porque puede contener lenguaje ofensivo. Normalmente en menos de 24 h.'
+          : 'Lo revisamos antes de publicarlo porque menciona alcohol, tabaco o apuestas. Normalmente en menos de 24 h. Si menciona alcohol, solo lo verán mayores de edad.'); route();
     } catch (e) { toast(friendly(e.message), true); }
   };
 
