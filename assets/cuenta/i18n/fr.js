@@ -1327,6 +1327,8 @@ KL_DIC('fr', {
   "Producto": "Produit",
   "Pronto podrás preguntar a este local.": "Tu pourras bientôt poser des questions à cet établissement.",
   "Propietaria, gerente, encargado…": "Propriétaire, gérant, responsable…",
+  "Asistente de ayuda con IA": "Assistant d'aide avec IA",
+  "Tus preguntas van a Claude (Anthropic, EE. UU.) y no se guardan en Klendar. Sin esto, tienes la Ayuda y el correo.": "Tes questions vont à Claude (Anthropic, États-Unis) et ne sont pas conservées par Klendar. Sans cela, il te reste l'Aide et l'e-mail.",
   "Proponer categoría y etiquetas con IA": "Proposer catégorie et étiquettes avec une IA",
   "Proponer respuestas a reseñas con IA": "Proposer des réponses aux avis avec une IA",
   "Propuesta": "Proposition",

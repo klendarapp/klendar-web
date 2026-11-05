@@ -697,6 +697,9 @@ RUTAS.ajustes = async ([sub]) => {
         <dt id="dt-ia-foto" hidden>${esc(t('Leer mis fotos con IA'))}</dt>
         <dd id="dd-ia-foto" hidden><label class="check"><input type="checkbox" id="permiso-ia-foto">
           <span>${esc(t('Para rellenar publicaciones y la carta desde una foto. Las fotos van a Claude (Anthropic, EE. UU.) y no se guardan en Klendar.'))}</span></label></dd>
+        <dt id="dt-ia-asistente" hidden>${esc(t('Asistente de ayuda con IA'))}</dt>
+        <dd id="dd-ia-asistente" hidden><label class="check"><input type="checkbox" id="permiso-ia-asistente">
+          <span>${esc(t('Tus preguntas van a Claude (Anthropic, EE. UU.) y no se guardan en Klendar. Sin esto, tienes la Ayuda y el correo.'))}</span></label></dd>
         <dt id="dt-ia-sugiere" hidden>${esc(t('Proponer categoría y etiquetas con IA'))}</dt>
         <dd id="dd-ia-sugiere" hidden><label class="check"><input type="checkbox" id="permiso-ia-sugiere">
           <span>${esc(t('Al crear una publicación, el título y la descripción van a Claude (Anthropic, EE. UU.) y no se guardan en Klendar.'))}</span></label></dd>
@@ -829,6 +832,19 @@ RUTAS.ajustes = async ([sub]) => {
     caja.addEventListener('change', async () => {
       try {
         await llamar('set_ai_consent', { p_granted: caja.checked, p_use: 'photo_fill' });
+      } catch (e) { caja.checked = !caja.checked; toast(e.message, true); }
+    });
+  }).catch(() => { /* si falla, no se ve */ });
+  // El asistente de ayuda: el permiso, solo si ya ha contestado alguna vez (assets/asistente.js).
+  llamar('assistant_status').then((st) => {
+    if (!st?.asked) return;
+    $('#dt-ia-asistente').hidden = false;
+    $('#dd-ia-asistente').hidden = false;
+    const caja = $('#permiso-ia-asistente');
+    caja.checked = st.consent === true;
+    caja.addEventListener('change', async () => {
+      try {
+        await llamar('set_ai_consent', { p_granted: caja.checked, p_use: 'help_assistant' });
       } catch (e) { caja.checked = !caja.checked; toast(e.message, true); }
     });
   }).catch(() => { /* si falla, no se ve */ });
@@ -1378,6 +1394,7 @@ RUTAS.sugerencias = async (_p, params, crudo) => {
     <p class="crumbs"><a href="/cuenta/">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(t('Sugerencias y mejoras'))}</h1>
     <p class="muted">${esc(t('Klendar la hacemos con lo que nos cuentas. Escribe lo que mejorarías, lo que echas de menos o lo que no funciona: lo leemos todo y te respondemos si hace falta.'))}</p>
+    <div data-asistente hidden></div>
     <form class="formu" id="f" novalidate>
       <fieldset class="chips"><legend>${esc(t('¿De qué se trata?'))}</legend>
         ${TIPOS_SUGERENCIA.map(([v, l], i) => `<label><input type="radio" name="tipo" value="${v}"${i === 0 ? ' checked' : ''}> ${esc(t(l))}</label>`).join('')}
@@ -1395,6 +1412,8 @@ RUTAS.sugerencias = async (_p, params, crudo) => {
         <small class="muted">${esc(fecha(m.created_at))}${m.replied_at ? ` · ${esc(t('Te hemos respondido: míralo en tus notificaciones'))}` : ''}</small>
       </div>`).join('')}</div>` : ''}`);
 
+  // El asistente de ayuda, si está encendido (assets/asistente.js).
+  window.KL_ASISTENTE?.monta();
   const f = $('#f');
   $$('input[name=tipo]', f).forEach((r) => r.addEventListener('change', () => {
     const tipo = TIPOS_SUGERENCIA.find(([v]) => v === f.tipo.value);

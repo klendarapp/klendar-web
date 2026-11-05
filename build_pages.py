@@ -431,6 +431,7 @@ PAGINAS['precios'] = (
 import ayuda  # noqa: E402
 
 AYUDA_V = 1  # ?v= de assets/ayuda.js y ayuda.css
+ASISTENTE_V = 1  # ?v= de assets/asistente.js y asistente.css (apagado no sale nada; RUNBOOK §4zi de la app)
 
 AYUDA_T = {
     'es': dict(lead='Lo que más nos preguntan, para quien busca planes y para los negocios.',
@@ -463,7 +464,9 @@ def ayuda_html(lang):
         for k in ('ti', 'negocios'))
     return f'''
 <link rel="stylesheet" href="/assets/ayuda.css?v={AYUDA_V}">
+<link rel="stylesheet" href="/assets/asistente.css?v={ASISTENTE_V}">
 <p class="lead">{t['lead']}</p>
+<div data-asistente hidden></div>
 <div class="ayuda" data-ayuda>
 <label class="ayuda-buscar" data-solo-js hidden><span class="ayuda-titulo">{t['buscar']}</span><input type="search" id="ayuda-q" placeholder="{t['ph']}" autocomplete="off" enterkeyhint="search"></label>
 <div class="ayuda-pestanas" role="tablist" aria-label="{t['pestanas']}" data-solo-js hidden>{pestanas}</div>
@@ -476,6 +479,7 @@ def ayuda_html(lang):
 </section>
 </div>
 <script src="/assets/ayuda.js?v={AYUDA_V}" defer></script>
+<script src="/assets/asistente.js?v={ASISTENTE_V}" defer></script>
 '''
 
 

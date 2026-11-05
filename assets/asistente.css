@@ -1,0 +1,35 @@
+/* El asistente de ayuda (assets/asistente.js). Sobrio: neutros, sin coral salvo el botón principal; la aguja como indicador. */
+[data-asistente] { margin: 14px 0; }
+.asis-entrada { display: block; width: 100%; box-sizing: border-box; text-align: left; padding: 14px 16px; min-height: 48px; border-radius: 16px;
+  border: 1px solid var(--glass-border); background: var(--elevated, var(--glass)); color: var(--ink); font: inherit; cursor: pointer; }
+.asis-entrada b { display: block; }
+.asis-entrada span { display: block; color: var(--ink-2); font-size: 14px; margin-top: 2px; }
+.asis-entrada:hover { background: var(--soft, var(--glass)); }
+.asis-entrada:focus-visible, .asis-enlace:focus-visible, .asis-x:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+dialog.asis { width: min(560px, 100vw); max-width: 100vw; max-height: min(84vh, 760px); box-sizing: border-box; padding: 0; border: 1px solid var(--glass-border); border-radius: 20px;
+  background: var(--surface); color: var(--ink); }
+dialog.asis[open] { display: flex; flex-direction: column; }
+dialog.asis::backdrop { background: rgba(0, 0, 0, .45); }
+.asis-cabeza { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 14px 16px 6px 20px; }
+.asis-cabeza h1 { font-size: 18px; margin: 0; }
+.asis-x { appearance: none; border: 0; background: transparent; color: var(--ink); font-size: 26px; line-height: 1; width: 44px; height: 44px; border-radius: 50%; cursor: pointer; }
+.asis-cuerpo { display: flex; flex-direction: column; gap: 10px; min-height: 0; overflow: auto; padding: 4px 20px 18px; }
+.asis-cuerpo h2 { font-size: 20px; margin: 4px 0; }
+.asis-cuerpo p { margin: 0; }
+.asis-botones { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.asis-nota { color: var(--ink-2); font-size: 13px; }
+.asis-log { display: flex; flex-direction: column; gap: 8px; min-height: 120px; max-height: 46vh; overflow: auto; }
+.asis-vacio { color: var(--ink-2); }
+.asis-q { align-self: flex-end; max-width: 85%; padding: 8px 12px; border-radius: 12px; background: var(--soft, var(--glass)); overflow-wrap: anywhere; }
+.asis-a { display: flex; flex-direction: column; gap: 4px; overflow-wrap: anywhere; }
+.asis-enlace { display: inline-block; align-self: flex-start; padding: 6px 0; min-height: 24px; color: var(--ink); font-weight: 600; text-decoration: underline; }
+.asis-salidas { display: flex; flex-direction: column; gap: 2px; align-items: flex-start; }
+.asis-casilla { display: flex; gap: 8px; align-items: center; padding: 6px 0; }
+.asis-espera { display: flex; align-items: center; min-height: 24px; }
+.asis-aguja { display: inline-block; width: 18px; height: 18px; }
+.asis-lector { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.asis-form { display: flex; flex-direction: column; gap: 6px; }
+.asis-form label { font-weight: 600; font-size: 14px; }
+.asis-form textarea { width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--glass-border); background: var(--elevated, var(--surface)); color: var(--ink); font: inherit; font-size: 16px; resize: vertical; }
+.asis-form textarea:focus { outline: 2px solid var(--ink); outline-offset: 1px; }
+.asis-form button { align-self: flex-end; }

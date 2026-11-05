@@ -1327,6 +1327,8 @@ KL_DIC('eu', {
   "Producto": "Produktua",
   "Pronto podrás preguntar a este local.": "Laster egin ahal izango dizkiozu galderak lokal honi.",
   "Propietaria, gerente, encargado…": "Jabea, gerentea, arduraduna…",
+  "Asistente de ayuda con IA": "AA bidezko laguntzailea",
+  "Tus preguntas van a Claude (Anthropic, EE. UU.) y no se guardan en Klendar. Sin esto, tienes la Ayuda y el correo.": "Zure galderak Claude-ra doaz (Anthropic, AEB) eta ez dira Klendarren gordetzen. Hau gabe, Laguntza eta posta dituzu.",
   "Proponer categoría y etiquetas con IA": "Kategoria eta etiketak IArekin proposatu",
   "Proponer respuestas a reseñas con IA": "Iritziei erantzunak IArekin proposatu",
   "Propuesta": "Proposamena",

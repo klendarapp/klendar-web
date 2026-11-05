@@ -1338,6 +1338,8 @@ const APP_EN = {
   "Vigilar esta zona": "Watch this area",
   "Se queda mirando aquí aunque estés de viaje.": "It keeps watching here even when you travel.",
   "Nombre, p. ej. «sushi cerca»": "Name, e.g. “sushi nearby”",
+  "Asistente de ayuda con IA": "AI help assistant",
+  "Tus preguntas van a Claude (Anthropic, EE. UU.) y no se guardan en Klendar. Sin esto, tienes la Ayuda y el correo.": "Your questions go to Claude (Anthropic, USA) and are not kept by Klendar. Without this, you still have Help and email.",
   "Proponer categoría y etiquetas con IA": "Suggest a category and tags with AI",
   "Al crear una publicación, el título y la descripción van a Claude (Anthropic, EE. UU.) y no se guardan en Klendar.": "When creating a publication, the title and description go to Claude (Anthropic, US) and aren’t kept in Klendar.",
   "Preparar ideas para mi negocio con IA": "Prepare ideas for my business with AI",

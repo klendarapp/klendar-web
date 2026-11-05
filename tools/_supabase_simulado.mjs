@@ -137,6 +137,11 @@ export async function protegeContexto(ctx) {
   await ctx.route(ES_SUPABASE, async (route) => {
     const r = route.request();
     if (lecturaPublica(r.method(), r.url(), await r.allHeaders().catch(() => ({})))) return route.continue();
+    // Las páginas de la Ayuda preguntan al cargar si sale el asistente (assets/asistente.js): solo lo simula quien lo prueba,
+    // y para las demás está apagado. No sale nada.
+    if (new URL(r.url()).pathname === '/rest/v1/rpc/assistant_status') {
+      return route.fulfill({ status: 200, contentType: 'application/json', body: '{"available":false}' });
+    }
     bloquea('navegador', r.method(), r.url());
     return route.abort('blockedbyclient');
   });
