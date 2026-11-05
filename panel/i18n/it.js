@@ -2494,6 +2494,7 @@ KL_DIC('it', {
   "Quien te tenga en favoritos recibe una notificación (como mucho una al día por negocio, para no cansar).": "Chi ti ha nei preferiti riceve una notifica (al massimo una al giorno per attività, per non stancare).",
   "Quien tiene código tiene sitio.": "Chi ha il codice ha il posto.",
   "Quien tiene código tiene sitio. Para talleres, cenas o mesas. Si alguien no va y no anula, su plaza se queda sin usar.": "Chi ha il codice ha il posto. Per laboratori, cene o tavoli. Se qualcuno non viene e non annulla, il suo posto resta vuoto.",
+  "Quiero que Claude, la IA de Anthropic (Estados Unidos), lea mi documento para compararlo con los datos y acabar antes. No se guarda lo que lee. Si no lo marcas, lo revisa una persona.": "Voglio che Claude, l’IA di Anthropic (Stati Uniti), legga il mio documento per confrontarlo con i dati e finire prima. Ciò che legge non viene conservato. Se non lo selezioni, lo controlla una persona.",
   "Quitada": "Rimossa",
   "Quitado": "Tolto",
   "Quitado de la cola": "Tolto dalla coda",

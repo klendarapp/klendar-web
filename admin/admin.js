@@ -898,7 +898,7 @@ const NAV_GRUPOS = [
   { id: 'contenido', t: 'Contenido', items: [['publicaciones', 'bolt', 'Publicaciones'], ['agenda', 'account_balance', 'Agenda pública'], ['canjes', 'confirmation_number', 'Canjes'], ['colecciones', 'auto_awesome', 'Colecciones'], ['emisiones', 'sports_soccer', 'Emisiones'], ['artistas', 'music_note', 'Artistas'], ['categorias', 'category', 'Categorías'], ['festivos', 'event', 'Festivos']] },
   { id: 'personas', t: 'Personas', items: [['usuarios', 'person', 'Usuarios'], ['inactivas', 'hourglass_empty', 'Cuentas inactivas'], ['avisos', 'notifications', 'Notificaciones y push'], ['sugerencias', 'lightbulb', 'Sugerencias']] },
   { id: 'moderacion', t: 'Moderación', items: [['denuncias', 'flag', 'Denuncias'], ['medios', 'imagesmode', 'Filtro automático'], ['sorteos', 'redeem', 'Sorteos'], ['resenas', 'chat_bubble', 'Reseñas y novedades'], ['mensajes', 'campaign', 'Mensajes a clientes']] },
-  { id: 'sistema', t: 'Sistema', plegable: true, items: [['configuracion', 'settings', 'Configuración'], ['errores', 'bug_report', 'Errores de la web'], ['traduccion', 'translate', 'Traducción automática'], ['administradores', 'shield', 'Administradores'], ['actividad', 'history', 'Registro de actividad'], ['ayuda', 'help', 'Ayuda']] },
+  { id: 'sistema', t: 'Sistema', plegable: true, items: [['configuracion', 'settings', 'Configuración'], ['errores', 'bug_report', 'Errores de la web'], ['automatico', 'auto_awesome', 'Automático'], ['traduccion', 'translate', 'Traducción automática'], ['administradores', 'shield', 'Administradores'], ['actividad', 'history', 'Registro de actividad'], ['ayuda', 'help', 'Ayuda']] },
 ];
 const NAV_SISTEMA = 'klendar.admin.nav.sistema';
 let navSistemaAbierto = null; // null: lo que diga el almacenamiento
@@ -1610,7 +1610,7 @@ function tarjetaPorVerificar(pv) {
     return `<div class="item vya" data-biz="${esc(b.id)}"><div style="min-width:0;flex:1">
       <h3><a class="link" href="#/negocios/${esc(b.id)}">${esc(b.name)}</a></h3>
       <div class="meta">${esc((en ? b.category_en : b.category) || '')} · ${esc([b.address, b.city].filter(Boolean).join(', '))} · ${esc(cuando)}</div>
-      <div class="meta">${esc(b.owner_email || '')} · ${esc(datos.join(' · '))}</div></div>
+      <div class="meta">${esc(b.owner_email || '')} · ${esc(datos.join(' · '))}</div>${typeof motivosAuto === 'function' ? motivosAuto(b.auto_failed) : ''}</div>
       <button class="btn ok" type="button" data-verificar="${esc(b.id)}">✓ ${en ? 'Verify' : 'Verificar'}</button></div>`;
   };
   // Sin la migración (la web llega antes a producción): solo el QR.
@@ -1673,6 +1673,8 @@ PAGES.resumen = async (v) => {
   const ap = ATT?.pending || {};
   const tk = ATT?.tasks || {};
   const urg = ATT?.urgent || [];
+  // Lo que se ha hecho solo (admin/piloto.js; migración 20261269500000 de la app).
+  const PILOTO = await rpc('admin_piloto_overview', { p_limit: 6 }).catch((e) => { if (e?.obsoleta) throw e; return null; });
   const nImport = (tk.agenda || []).length + (tk.leagues || []).length;
   const nDisputas = (tk.billing || {})['charge.dispute.created'] || 0;
   const cronUrgente = urg.some((x) => x.kind === 'cron');
@@ -1747,6 +1749,7 @@ PAGES.resumen = async (v) => {
     </div>` : ''}
     ${tarjetaUrgentes(urg)}
     ${typeof tarjetaLimitesGratis === 'function' ? tarjetaLimitesGratis(ATT) : ''}
+    ${typeof tarjetaHechoSolo === 'function' ? tarjetaHechoSolo(PILOTO) : ''}
     ${tarjetaPorVerificar(PV)}
     ${tarjetaPulso(PULSO)}
     ${GRUPOS_PEND.length ? `<div class="card"><h2>Pendiente de ti${BADGES.resumen ? ` <span class="badge pend-total" title="${en ? 'Things waiting for a decision' : 'Cosas que esperan una decisión'}">${fmtNum(BADGES.resumen)}</span>` : ''}</h2><div class="pend-grupos">
@@ -1803,6 +1806,7 @@ PAGES.resumen = async (v) => {
   activaPausas(v);
   activaAvisosCorreo(v, ATT?.alerts);
   activaAlta(v, PV);
+  if (typeof activaDeshacer === 'function') activaDeshacer($('#hechoSolo', v) || v);
   // Las filas de lo que tiene su tarjeta aquí abajo: la despliegan y llevan a ella.
   $$('[data-ir]', v).forEach((b) => { b.onclick = () => {
     const t = document.getElementById(b.dataset.ir);
@@ -2935,6 +2939,7 @@ PAGES.denuncias = async (v, tipoRuta) => {
         <h3><a class="link" href="${det}">${esc(tituloDen(g.target_type, g.target))}</a></h3>
         <div class="meta">${tag(g.target_type, 'dim')} ${estadoDen(g.state)} ${g.reviewing ? tag('reviewing') : ''} ${deQuienDen(g.target_type, t)}${t.city ? ` · ${esc(t.city)}` : ''}</div>
         ${cifrasDen(g, abiertas)}
+        ${typeof lineaDenunciaIA === 'function' ? lineaDenunciaIA(g.ai) : ''}
         <div class="den-motivos">${(g.reasons || []).map((m) => `<span class="tag ${m.reason === 'child_abuse' || m.reason === 'illegal' ? 'bad' : 'dim'}">${esc(motivoDen(m.reason))} · ${m.n}</span>`).join(' ')}</div>
         <div class="actions">
           <a class="btn sm" href="${det}">${en ? `See the reports (${g.total_count})` : `Ver las denuncias (${g.total_count})`}</a>
@@ -3125,7 +3130,7 @@ PAGES.duplicados = async (v) => {
     <div id="list"></div>`;
   $('#list', v).innerHTML = lista.length ? lista.map((x) => `<div class="item"><div class="ph">${ms('content_copy')}</div><div>
       <h3><a class="link" href="#/negocios/${esc(x.id)}">${esc(x.name)}</a> ${tag(x.verification_status)} <span class="muted small">${esc(x.city || '')} · ${en ? 'joined' : 'alta'} ${fmtDay(x.created_at)}</span></h3>
-      ${(x.candidates || []).map((c) => `<div class="meta">↔ <a class="link" href="#/negocios/${esc(c.id)}">${esc(c.name)}</a> ${tag(c.verification_status)} · ${esc(motivoDuplicado(c, en))}
+      ${(x.candidates || []).map((c) => `<div class="meta">↔ <a class="link" href="#/negocios/${esc(c.id)}">${esc(c.name)}</a> ${tag(c.verification_status)} · ${esc(motivoDuplicado(c, en))}${c.safe ? ` <span class="tag ok">${en ? 'Safe match: name, address and phone or website' : 'Coinciden con seguridad: nombre, dirección y teléfono o web'}</span>` : ''}
         <button class="btn sm" data-nodup="${esc(x.id)}" data-otra="${esc(c.id)}">${en ? 'Not a duplicate' : 'No es duplicado'}</button></div>`).join('')}
       <div class="actions"><a class="btn sm" href="#/negocios/${esc(x.id)}?ver=duplicados">${en ? 'Open and decide' : 'Abrir y decidir'}</a></div>
     </div></div>`).join('') : `<div class="tbl-wrap"><div class="empty">${en ? 'No possible duplicates right now.' : 'Ahora no hay posibles duplicados.'}</div></div>`;
@@ -3173,6 +3178,7 @@ PAGES.reclamaciones = async (v) => {
           <dt>${en ? 'Current owner' : 'Propietario ahora'}</dt><dd>${x.owner_id ? `<a class="link" href="#/usuarios/${esc(x.owner_id)}">${esc(x.owner_email || x.owner_name || '—')}</a>${x.owner_last_activity ? ` · ${en ? 'last active' : 'última actividad'} ${fmtDay(x.owner_last_activity)}` : ''}` : '—'}</dd>
           ${x.status !== 'pending' ? `<dt>${en ? 'Decision' : 'Decisión'}</dt><dd>${fmtDate(x.resolved_at)}${x.resolved_by_email ? ` · ${esc(x.resolved_by_email)}` : ''}${x.reason ? ` · ${esc(x.reason)}` : ''}${x.status === 'approved' ? ` · ${x.previous_owner_kept ? (en ? 'previous owner kept as manager' : 'quien era dueño sigue de encargado') : (en ? 'previous owner removed from the team' : 'quien era dueño sale del equipo')}` : ''}</dd>` : ''}
         </dl>
+        ${x.proved_at ? `<div class="meta"><span class="tag ok">${en ? 'Code checked' : 'Código comprobado'}</span> ${fmtDay(x.proved_at)}</div>` : ''}${x.status === 'pending' && x.hold_until && new Date(x.hold_until) > new Date() ? `<div class="meta"><span class="tag dim">${en ? 'Waiting for the code' : 'Esperando el código'}</span></div>` : ''}${typeof lineaDocumento === 'function' ? lineaDocumento(x.doc_check) + motivosAuto(x.auto_failed) : ''}
         ${x.status === 'pending' ? `<div class="actions">
           <button class="btn sm ok" data-aprobar="${i}">${en ? 'Approve…' : 'Aprobar…'}</button>
           <button class="btn sm bad" data-rechazar="${i}">${en ? 'Reject…' : 'Rechazar…'}</button>
@@ -3261,6 +3267,7 @@ PAGES.entidades = async (v) => {
           <dt>${en ? 'Document' : 'Documento'}</dt><dd>${x.proof_path ? `<button class="btn sm" data-doc="${i}">${ms('attach_file')} ${en ? 'View the document' : 'Ver el documento'}</button>` : ''}${x.proof_deleted_at ? `<span class="muted small">${en ? 'deleted' : 'borrado'} ${fmtDay(x.proof_deleted_at)}</span>` : ''}${!x.proof_path && !x.proof_deleted_at ? '—' : ''}</dd>
           ${x.status !== 'pending' ? `<dt>${en ? 'Decision' : 'Decisión'}</dt><dd>${fmtDate(x.resolved_at)}${x.resolved_by_email ? ` · ${esc(x.resolved_by_email)}` : ''}${x.reason ? ` · ${esc(x.reason)}` : ''}</dd>` : ''}
         </dl>
+        ${typeof lineaDocumento === 'function' ? lineaDocumento(x.doc_check) + motivosAuto(x.auto_failed) : ''}
         ${x.status === 'pending' ? `<div class="actions">
           <button class="btn sm ok" data-aprobar="${i}">${en ? 'Approve…' : 'Aprobar…'}</button>
           <button class="btn sm bad" data-rechazar="${i}">${en ? 'Reject…' : 'Rechazar…'}</button>

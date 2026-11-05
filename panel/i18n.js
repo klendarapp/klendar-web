@@ -1581,6 +1581,7 @@ const I18N = makeI18N({
     "Quién la da de alta": "Who is registering it",
     "Dar de alta una entidad": "Register an organisation",
     "Marca la declaración para enviarla.": "Tick the declaration to send it.",
+    "Quiero que Claude, la IA de Anthropic (Estados Unidos), lea mi documento para compararlo con los datos y acabar antes. No se guarda lo que lee. Si no lo marcas, lo revisa una persona.": "I want Claude, Anthropic’s AI (United States), to read my document to compare it with the details and finish sooner. What it reads is not kept. If you don’t tick this, a person reviews it.",
     "Cuenta de entidad": "Organisation account",
     "Pendiente de comprobar": "Pending check",
     "Ayuntamiento, asociación u ONG: pídela": "Council, association or NGO: request it",

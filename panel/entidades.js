@@ -155,11 +155,15 @@ const entHtmlPersona = (d) => `
     <label class="btn sm" data-doc-elegir${d.proof_path ? ' hidden' : ''}>${icono('documento')}<span>Añadir PDF o foto</span>
       <input type="file" name="ent_doc" accept="application/pdf,image/*" hidden></label>
   </div>
+  <label class="f full casilla" data-ent-ia style="display:none"><input type="checkbox" name="ent_ia" ${d.ia ? 'checked' : ''}>
+    <span>Quiero que Claude, la IA de Anthropic (Estados Unidos), lea mi documento para compararlo con los datos y acabar antes. No se guarda lo que lee. Si no lo marcas, lo revisa una persona.</span></label>
   <label class="f full casilla"><input type="checkbox" name="ent_declaration" ${d.declaration ? 'checked' : ''}>
     <span>Declaro que los datos son ciertos y que puedo representar a esta entidad.</span></label>`;
 
 /** El botón del documento: sube al elegir, enseña el nombre y deja quitarlo. */
 function entActivaDocumento(caja, d) {
+  // Leer el documento con la IA (migración 20261269500000): apagado, sin casilla.
+  rpc('ai_doc_review_on').then((on) => { const c = $('[data-ent-ia]', caja); if (c) c.style.display = on ? '' : 'none'; }).catch(() => {});
   const input = $('[name=ent_doc]', caja);
   const estado = $('[data-doc-estado]', caja);
   const elegir = $('[data-doc-elegir]', caja);
@@ -205,6 +209,7 @@ function entLee(f, d) {
   pon('kind', 'ent_kind'); pon('official_name', 'official_name'); pon('tax_id', 'ent_tax_id'); pon('website', 'ent_website');
   pon('city', 'city'); pon('area', 'ent_area'); pon('contact_name', 'contact_name'); pon('contact_role', 'contact_role');
   if (f.elements.ent_declaration) d.declaration = f.elements.ent_declaration.checked;
+  if (f.elements.ent_ia) d.ia = f.elements.ent_ia.checked;
   if (f.elements.terms) d.terms = f.elements.terms.checked;
 }
 
@@ -315,6 +320,7 @@ async function entAlta(v, param) {
     const boton = $('#enviar', v);
     boton.disabled = true;
     try {
+      if (A.ia) await rpc('set_ai_consent', { p_granted: true, p_use: 'document_review' });
       const r = await rpc('register_entity', {
         ...entParams(A, A.city.trim()), p_lat: A.punto.lat, p_lng: A.punto.lng, p_city: A.city.trim(),
       });
@@ -403,6 +409,7 @@ async function entFicha(v, b) {
     if (!marcaFaltan([[f.elements.ent_declaration, d.declaration ? null : I18N.t('Marca la declaración para enviarla.')]])) return;
     const boton = $('#enviar', v);
     boton.disabled = true;
+    if (d.ia) await rpc('set_ai_consent', { p_granted: true, p_use: 'document_review' }).catch(() => null);
     const r = await rpc('apply_entity', { p_business: BIZ.id, ...entParams(d) }).catch((x) => ({ ok: false, error: x.message }));
     if (!r?.ok) { $('#err', v).textContent = entError(r?.error); boton.disabled = false; return; }
     d.proof_path = null;

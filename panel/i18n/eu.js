@@ -2494,6 +2494,7 @@ KL_DIC('eu', {
   "Quien te tenga en favoritos recibe una notificación (como mucho una al día por negocio, para no cansar).": "Gogokoetan zaituztenek jakinarazpen bat jasotzen dute (gehienez bat egunean negozio bakoitzeko, ez nekatzeko).",
   "Quien tiene código tiene sitio.": "Kodea duenak badu lekua.",
   "Quien tiene código tiene sitio. Para talleres, cenas o mesas. Si alguien no va y no anula, su plaza se queda sin usar.": "Kodea duenak lekua du. Tailer, afari edo mahaietarako. Norbait joaten ez bada eta bertan behera uzten ez badu, bere plaza erabili gabe geratzen da.",
+  "Quiero que Claude, la IA de Anthropic (Estados Unidos), lea mi documento para compararlo con los datos y acabar antes. No se guarda lo que lee. Si no lo marcas, lo revisa una persona.": "Claudek, Anthropic-en IAk (Estatu Batuak), nire dokumentua irakurtzea nahi dut, datuekin alderatu eta lehenago amaitzeko. Irakurtzen duena ez da gordetzen. Markatzen ez baduzu, pertsona batek berrikusiko du.",
   "Quitada": "Kenduta",
   "Quitado": "Kenduta",
   "Quitado de la cola": "Ilaratik kendu da",

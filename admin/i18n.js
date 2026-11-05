@@ -1033,6 +1033,7 @@ const I18N = makeI18N({
   // Errores de la web (assets/errores.js → log_web_error)
   'Errores de la web': 'Website errors',
   'Traducción automática': 'Automatic translation',
+  'Automático': 'Automatic',
   'Últimos 6 meses': 'Last 6 months',
   'Mes': 'Month',
   'Proveedor': 'Provider',

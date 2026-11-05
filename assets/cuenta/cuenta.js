@@ -1710,6 +1710,11 @@ Object.assign(ERRORES, {
   business_busy: 'Este negocio ya tiene varias reclamaciones en revisión. Escríbenos a info@klendar.app.',
   already_pending: 'Ya tienes una reclamación de este negocio en revisión.',
   already_owner: 'Ya eres el propietario de este negocio.',
+  code_wrong: 'Ese código no es. Compruébalo y vuelve a intentarlo.',
+  code_expired: 'El código ha caducado. Pide otro.',
+  too_many_attempts: 'Demasiados intentos. Pide otro código.',
+  rate_limited: 'Ya has pedido varios códigos. Vuelve a intentarlo mañana.',
+  no_contact: 'La ficha no tiene correo. La revisamos a mano.',
 });
 
 const TEL_RECLAMAR = /^\+?[0-9][0-9 ().-]{5,23}$/;
@@ -1754,6 +1759,8 @@ RUTAS.reclamar = async ([id]) => {
 
   if (!estado.can_claim) {
     const c = estado.claim || {};
+    // Con el código encendido (migración 20261269500000): demostrarlo con el correo de la ficha.
+    const cod = estado.why === 'already_pending' && c.id ? await llamar('my_claim_code', { p_claim: c.id }).catch(() => null) : null;
     let titulo = t('¿Es tu negocio?');
     let texto = t('Algo no ha ido bien. Si vuelve a pasar, escríbenos a info@klendar.app.');
     if (estado.why === 'already_pending') {
@@ -1774,8 +1781,43 @@ RUTAS.reclamar = async ([id]) => {
     }
     pinta(`${cabeza}
       <h2>${esc(titulo)}</h2>${texto ? `<p class="muted">${esc(texto)}</p>` : ''}
+      ${cod?.available ? `<section class="formu" id="codigo"><h2>${esc(t('Demuéstralo con un código'))}</h2>
+        <p class="muted">${esc(t('Te mandamos un código a {correo}, el correo publicado en la ficha. Si lo escribes aquí, se resuelve sin esperar. Es una comprobación automática.').replace('{correo}', cod.masked || ''))}</p>
+        <div id="codigoPide"${cod.sent ? ' hidden' : ''}><button class="pill accent" id="pedirCodigo"${cod.sends_left ? '' : ' disabled'}>${esc(t('Mandar el código'))}</button></div>
+        <form id="codigoForm" novalidate${cod.sent ? '' : ' hidden'}><label>${esc(t('Tu código'))}
+          <input name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]*"></label>
+          <p class="err" id="errCodigo" role="alert"></p>
+          <button class="pill accent" id="comprobarCodigo">${esc(t('Comprobar'))}</button></form>
+        <p><button class="linkbtn" id="sinAcceso">${esc(t('No tengo acceso a ese correo'))}</button></p></section>` : ''}
       ${estado.why === 'already_pending' && c.id ? `<p><button class="pill" id="retirar">${esc(t('Retirar la reclamación'))}</button></p>` : ''}
       <p><a class="pill" href="${ficha}">${esc(t('Volver al sitio'))}</a></p>`);
+    const pc = $('#pedirCodigo');
+    if (pc) {
+      pc.onclick = () => ocupado(pc, async () => {
+        await llamar('request_claim_code', { p_claim: c.id });
+        toast(t('Código enviado'));
+        $('#codigoPide').hidden = true;
+        $('#codigoForm').hidden = false;
+        $('#codigoForm').code.focus();
+      });
+      $('#codigoForm').addEventListener('submit', (ev) => {
+        ev.preventDefault();
+        const e = $('#errCodigo');
+        e.textContent = '';
+        ocupado($('#comprobarCodigo'), async () => {
+          try {
+            const x = await llamar('verify_claim_code', { p_claim: c.id, p_code: $('#codigoForm').code.value });
+            toast(x?.resolved ? t('Ya eres el propietario de este negocio.') : t('Código comprobado. La revisamos a mano y te avisamos.'));
+            navegar();
+          } catch (x) { e.textContent = x.message; }
+        });
+      });
+      $('#sinAcceso').onclick = () => ocupado($('#sinAcceso'), async () => {
+        await llamar('claim_code_no_access', { p_claim: c.id });
+        toast(t('La revisamos a mano y te avisamos.'));
+        navegar();
+      });
+    }
     const r = $('#retirar');
     if (r) {
       r.onclick = () => ocupado(r, async () => {
@@ -1788,6 +1830,7 @@ RUTAS.reclamar = async ([id]) => {
     return;
   }
 
+  const leeDocs = await llamar('ai_doc_review_on').catch(() => false);
   pinta(`${cabeza}
     <p class="muted">${esc(t('¿Lo llevas tú y la ficha la creó otra persona? Pide su propiedad: lo comprobamos a mano y te avisamos.'))}</p>
     <form class="formu" id="f" novalidate>
@@ -1809,6 +1852,7 @@ RUTAS.reclamar = async ([id]) => {
         <label>${esc(t('Cómo podemos comprobarlo'))} <small>${esc(t('(opcional si añades una foto)'))}</small>
           <textarea name="texto" rows="4" maxlength="1000" placeholder="${esc(t('Por ejemplo: «Soy la titular y el teléfono de la ficha es el mío».'))}"></textarea></label>
       </fieldset>
+      ${leeDocs ? `<label class="check"><input type="checkbox" name="ia"> ${esc(t('Quiero que Claude, la IA de Anthropic (Estados Unidos), lea mi documento para compararlo con la ficha y acabar antes. No se guarda lo que lee. Si no lo marcas, lo revisa una persona.'))}</label>` : ''}
       <label class="check"><input type="checkbox" name="decl"> ${esc(t('Declaro que los datos son ciertos y que puedo representar a este negocio.'))}</label>
       <p class="err" id="err" role="alert"></p>
       <button class="pill accent" id="enviar">${esc(t('Enviar la reclamación'))}</button>
@@ -1848,9 +1892,11 @@ RUTAS.reclamar = async ([id]) => {
     err.textContent = '';
     ocupado($('#enviar'), async () => {
       let ruta = null;
+      let hayCodigo = null;
       try {
         ruta = await subePrueba(archivo);
-        await llamar('claim_business', {
+        if (f.ia?.checked) await llamar('set_ai_consent', { p_granted: true, p_use: 'document_review' });
+        hayCodigo = await llamar('claim_business', {
           p_business: id, p_role: rol, p_phone: tel || null, p_email: mail || null,
           p_proof_text: texto || null, p_proof_path: ruta, p_declaration: true,
         });
@@ -1859,6 +1905,7 @@ RUTAS.reclamar = async ([id]) => {
         if (ruta) sb.storage.from('business-claims').remove([ruta]).catch(() => {});
         throw e;
       }
+      if (hayCodigo?.code) { navegar(); return; }
       hecho({
         titulo: t('Reclamación enviada'),
         texto: t('La revisamos a mano, normalmente en unos días. Te avisaremos con lo que decidamos.'),
