@@ -6,16 +6,18 @@
 // van a la versión que toca (fr/de/it → /en/…) y que no hay errores en la
 // consola. Además: `/legal/<doc>` con Accept-Language. Capturas en OUT.
 //
-//   PORT=8791 node tools/serve_dev.mjs &
+//   SUPABASE_BLOQUEADO=1 PORT=8791 node tools/serve_dev.mjs &
 //   OUT=<carpeta> node tools/idiomas_check.mjs
-import { createRequire } from 'node:module';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { playwright, servidorSeguro, supabaseVacio } from './_supabase_simulado.mjs';
 
 // Playwright no es dependencia del repo: el de la caché de npx (PW=ruta) o el instalado.
-const { chromium, webkit } = createRequire(import.meta.url)(process.env.PW || 'playwright');
+const { chromium, webkit } = playwright();
 
 const BASE = process.env.BASE || 'http://localhost:8791';
+// La web local no puede llegar a Supabase (ver _supabase_simulado).
+await servidorSeguro(BASE);
 // Las capturas, en tools/out/ (git las ignora): en la raíz se publicaban
 // en klendar.app (revisión del 3-11-2026, 5.4).
 const OUT = process.env.OUT || 'tools/out';
@@ -54,6 +56,8 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]].filter
   for (const [disp, vista] of [['movil', { width: 390, height: 844 }], ['escritorio', { width: 1280, height: 860 }]]) {
     for (const lang of LANGS) {
       const ctx = await browser.newContext({ viewport: vista, locale: 'es-ES' });
+      // Lo que lee de pasada (formas de entrar, ciudades…): base vacía simulada.
+      await supabaseVacio(ctx);
       const page = await ctx.newPage();
       const errores = [];
       page.on('pageerror', (e) => errores.push(String(e)));

@@ -15,19 +15,19 @@
 //     guardada en el navegador, la de tu ciudad primero.
 // Capturas en OUT.
 //
-//   PORT=8877 node tools/serve_dev.mjs &
-//   CF_PRUEBA='{"country":"ES","latitude":"41.65","longitude":"-0.88"}' PORT=8878 node tools/serve_dev.mjs &
+//   SUPABASE_BLOQUEADO=1 PORT=8877 node tools/serve_dev.mjs &
+//   CF_PRUEBA='{"country":"ES","latitude":"41.65","longitude":"-0.88"}' SUPABASE_BLOQUEADO=1 PORT=8878 node tools/serve_dev.mjs &
 //   PW=<ruta a playwright> BASE=http://localhost:8877 BASE_IP=http://localhost:8878 node tools/saltos_check.mjs
-import { createRequire } from 'node:module';
 import { mkdirSync, readFileSync } from 'node:fs';
+import { playwright, REF, servidorSeguro, supabaseVacio } from './_supabase_simulado.mjs';
 
-const { chromium, webkit } = createRequire(import.meta.url)(process.env.PW || 'playwright');
+const { chromium, webkit } = playwright();
 const BASE = process.env.BASE || 'http://localhost:8877';
 const BASE_IP = process.env.BASE_IP || '';
+// La web local no puede llegar a Supabase (ver _supabase_simulado).
+await servidorSeguro(BASE, BASE_IP);
 const OUT = process.env.OUT || 'tools/out';
 mkdirSync(OUT, { recursive: true });
-// El proyecto al que apunta la web (config.js): la sesión de otro no cuenta.
-const REF = readFileSync(new URL('../config.js', import.meta.url), 'utf8').match(/https:\/\/([a-z0-9]+)\.supabase\.co/)[1];
 const U = '0e7717e0-0000-4000-8000-0000000094a1';
 let fallos = 0;
 const ok = (c, m) => { if (!c) { fallos++; console.log('FALLA:', m); } else console.log('ok:', m); };
@@ -83,6 +83,8 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
   for (const w of [390, 1280]) {
     const tag = `${nombre}/${w}`;
     const ctx = await nav.newContext({ viewport: { width: w, height: w < 500 ? 844 : 800 }, colorScheme: 'dark', locale: 'es-ES', timezoneId: 'Europe/Madrid' });
+    // Lo que lee de pasada (formas de entrar, ciudades…): base vacía simulada.
+    await supabaseVacio(ctx);
     await ctx.addInitScript(([k, v]) => { try { if (!localStorage.getItem(k)) localStorage.setItem(k, v); localStorage.setItem('klendar_lang', 'es'); } catch { /* */ } }, [`sb-${REF}-auth-token`, SESION]);
     await ctx.addInitScript(medir);
     await ctx.route(`https://${REF}.supabase.co/**`, supabaseFalso);
@@ -164,20 +166,16 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
       // Sin zona (como Google): el orden de `public_cities`, todas.
       const html = await fetch(`${BASE}/explorar/?todas=1`).then((r) => r.text());
       const sinZona = [...html.matchAll(/<h3>Qué hacer hoy en<\/h3><p>(.*?)<\/p>/g)][0]?.[1] || '';
-      // El orden de siempre, el de la base (si contesta; con MF_ORDEN, el
-      // que se le diga).
-      const deSiempre = process.env.MF_ORDEN ? process.env.MF_ORDEN.split(',') : await (async () => {
-        const cfg = (await import('node:fs')).readFileSync(new URL('../config.js', import.meta.url), 'utf8');
-        const url = cfg.match(/https:\/\/[a-z]+\.supabase\.co/)[0];
-        const key = cfg.match(/eyJ[\w.-]+|sb_publishable_[\w-]+/)[0];
-        const r = await fetch(`${url}/rest/v1/rpc/public_cities`, { method: 'POST', headers: { apikey: key, 'Content-Type': 'application/json' }, body: '{}', signal: AbortSignal.timeout(20000) });
-        return (await r.json()).filter((c) => c.city).slice(0, 20).map((c) => c.slug);
-      })().catch(() => null);
+      // El orden de siempre: con MF_ORDEN, el que se le diga (antes se pedía
+      // a la base de verdad; ya no: la prueba no habla con Supabase).
+      const deSiempre = process.env.MF_ORDEN ? process.env.MF_ORDEN.split(',') : null;
       const enHtml = [...sinZona.matchAll(/href="[^"]*\/([^/"]+)\/"/g)].map((x) => x[1]);
       ok(!/ hidden/.test(sinZona) && (!deSiempre || JSON.stringify(enHtml) === JSON.stringify(deSiempre)), `${tag} «Más formas» sin zona: el orden de siempre (${enHtml.join(', ')})`);
       // Zona de la conexión en Zaragoza, pero «Tu ciudad» Madrid: Madrid primero.
       if (BASE_IP) {
         const ctx2 = await nav.newContext({ viewport: { width: 1280, height: 800 }, locale: 'es-ES' });
+        // Lo que lee de pasada (formas de entrar, ciudades…): base vacía simulada.
+        await supabaseVacio(ctx2);
         await ctx2.route(`https://${REF}.supabase.co/**`, supabaseFalso);
         const p2 = await ctx2.newPage();
         await p2.goto(`${BASE_IP}/explorar/`, { waitUntil: 'load' });

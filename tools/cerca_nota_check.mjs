@@ -11,15 +11,15 @@
 //
 // Chromium y WebKit, móvil y escritorio.
 //
-//   PORT=8871 node tools/serve_dev.mjs &
+//   SUPABASE_BLOQUEADO=1 PORT=8871 node tools/serve_dev.mjs &
 //   PW=<ruta a playwright> BASE=http://localhost:8871 node tools/cerca_nota_check.mjs
-import { createRequire } from 'node:module';
+import { playwright, REF, SUPA, servidorSeguro } from './_supabase_simulado.mjs';
 
-const { chromium, webkit } = createRequire(import.meta.url)(process.env.PW || 'playwright');
+const { chromium, webkit } = playwright();
 
 const BASE = process.env.BASE || 'http://localhost:8871';
-const REF = 'dpbbtgwxrlqlplbrtjuq';
-const SUPA = `https://${REF}.supabase.co`;
+// La web local no puede llegar a Supabase (ver _supabase_simulado).
+await servidorSeguro(BASE);
 const U = '0e7717e0-0000-4000-8000-00000000ce71';
 let fallos = 0;
 const ok = (c, m) => { if (!c) { fallos++; console.log('FALLO:', m); } else console.log('ok:', m); };

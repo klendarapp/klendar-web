@@ -19,17 +19,15 @@
 // Lee de qué Supabase va config.js (dev o prod), así que vale igual en la
 // rama `web-prod`.
 //
-//   PORT=8797 node tools/serve_dev.mjs &
+//   SUPABASE_BLOQUEADO=1 PORT=8797 node tools/serve_dev.mjs &
 //   BASE=http://localhost:8797 PW=<ruta a playwright> node tools/turnstile_check.mjs
-import { createRequire } from 'node:module';
-import { readFileSync } from 'node:fs';
+import { playwright, SUPA, servidorSeguro } from './_supabase_simulado.mjs';
 
-const { chromium } = createRequire(import.meta.url)(process.env.PW || 'playwright');
+const { chromium } = playwright();
 
 const BASE = process.env.BASE || 'http://localhost:8797';
-const CFG = readFileSync(new URL('../config.js', import.meta.url), 'utf8');
-const SUPA = (CFG.match(/url:\s*'([^']+)'/) || [])[1];
-if (!SUPA) throw new Error('config.js sin url');
+// La web local no puede llegar a Supabase (ver _supabase_simulado).
+await servidorSeguro(BASE);
 const TOKEN = 'XXXX.DUMMY.TOKEN.XXXX';
 const CLAVES = [['sin clave', ''], ['pasa', '1x00000000000000000000AA'], ['falla', '2x00000000000000000000AB']];
 let fallos = 0;

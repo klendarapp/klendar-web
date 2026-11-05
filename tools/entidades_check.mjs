@@ -4,14 +4,16 @@
 // de la cuenta «Agenda pública de Madrid», en Chromium y WebKit, móvil y
 // escritorio. Guarda capturas en OUT.
 //
-//   PORT=8791 node tools/serve_dev.mjs &
+//   SUPABASE_BLOQUEADO=1 PORT=8791 node tools/serve_dev.mjs &
 //   OFFER=<id de un evento importado> OUT=<carpeta> node tools/entidades_check.mjs
-import { createRequire } from 'node:module';
+import { playwright, servidorSeguro } from './_supabase_simulado.mjs';
 
 // Playwright no es dependencia del repo: el de la caché de npx (PW=ruta) o el instalado.
-const { chromium, webkit } = createRequire(import.meta.url)(process.env.PW || 'playwright');
+const { chromium, webkit } = playwright();
 
 const BASE = process.env.BASE || 'http://localhost:8791';
+// La web local no puede llegar a Supabase (ver _supabase_simulado).
+await servidorSeguro(BASE);
 const OFFER = process.env.OFFER;
 // Las capturas, en tools/out/ (git las ignora): en la raíz se publicaban
 // en klendar.app (revisión del 3-11-2026, 5.4).

@@ -16,13 +16,15 @@
 //  6. Sin errores en la consola.
 // Chromium y WebKit, móvil (375) y escritorio. Capturas en OUT.
 //
-//   VISTOS_FORZADO=1 PORT=8879 node tools/serve_dev.mjs &
+//   VISTOS_FORZADO=1 SUPABASE_BLOQUEADO=1 PORT=8879 node tools/serve_dev.mjs &
 //   PW=<ruta a playwright> OUT=<carpeta> BASE=http://localhost:8879 node tools/vistos_check.mjs
-import { createRequire } from 'node:module';
 import { mkdirSync } from 'node:fs';
+import { playwright, servidorSeguro } from './_supabase_simulado.mjs';
 
-const { chromium, webkit } = createRequire(import.meta.url)(process.env.PW || 'playwright');
+const { chromium, webkit } = playwright();
 const BASE = process.env.BASE || 'http://localhost:8879';
+// La web local no puede llegar a Supabase (ver _supabase_simulado).
+await servidorSeguro(BASE);
 // Las capturas, en tools/out/ (git las ignora): en la raíz se publicaban
 // en klendar.app (revisión del 3-11-2026, 5.4).
 const OUT = process.env.OUT || 'tools/out';

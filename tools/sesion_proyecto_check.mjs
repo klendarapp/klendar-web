@@ -16,15 +16,16 @@
 //  3. «Cerrar sesión» en «Tu cuenta»: la cabecera vuelve a «Entrar» y la
 //     sesión, los gustos y el negocio se borran.
 //
-//   PORT=8877 node tools/serve_dev.mjs &
+//   SUPABASE_BLOQUEADO=1 PORT=8877 node tools/serve_dev.mjs &
 //   PW=<ruta a playwright> BASE=http://localhost:8877 node tools/sesion_proyecto_check.mjs
-import { createRequire } from 'node:module';
-import { readFileSync } from 'node:fs';
+import { playwright, REF, OTRO_REF, servidorSeguro } from './_supabase_simulado.mjs';
 
-const { chromium } = createRequire(import.meta.url)(process.env.PW || 'playwright');
+const { chromium } = playwright();
 const BASE = process.env.BASE || 'http://localhost:8877';
-const REF = readFileSync(new URL('../config.js', import.meta.url), 'utf8').match(/https:\/\/([a-z0-9]+)\.supabase\.co/)[1];
-const OTRO = REF === 'dpbbtgwxrlqlplbrtjuq' ? 'hcxurneiftwyxuebpndf' : 'dpbbtgwxrlqlplbrtjuq';
+// La web local no puede llegar a Supabase (ver _supabase_simulado).
+await servidorSeguro(BASE);
+// El otro proyecto de Klendar (dev si la web va a prod, y al revés).
+const OTRO = OTRO_REF;
 const U = '0e7717e0-0000-4000-8000-0000000094a2';
 const FOTO = 'https://example.com/foto-de-ivan.jpg';
 let fallos = 0;

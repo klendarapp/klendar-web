@@ -10,12 +10,14 @@
 //  4. La portada lleva `sameAs` con las dos en el JSON-LD de la organización.
 //  5. En 360 px el pie no hace scroll horizontal y cada enlace mide 44 px de alto.
 //
-//   PORT=8793 node tools/serve_dev.mjs &
+//   SUPABASE_BLOQUEADO=1 PORT=8793 node tools/serve_dev.mjs &
 //   BASE=http://localhost:8793 PW=<ruta a playwright> node tools/redes_check.mjs
-import { createRequire } from 'node:module';
+import { playwright, servidorSeguro, supabaseVacio } from './_supabase_simulado.mjs';
 
-const { chromium } = createRequire(import.meta.url)(process.env.PW || 'playwright');
+const { chromium } = playwright();
 const BASE = process.env.BASE || 'http://localhost:8793';
+// La web local no puede llegar a Supabase (ver _supabase_simulado).
+await servidorSeguro(BASE);
 const REDES = ['https://www.instagram.com/klendar.app/', 'https://www.tiktok.com/@klendar.app', 'https://www.linkedin.com/company/klendar-app/'];
 
 let fallos = 0;
@@ -33,6 +35,8 @@ const PAGINAS = [
 const browser = await chromium.launch();
 try {
   const ctx = await browser.newContext({ viewport: { width: 360, height: 780 } });
+  // Lo que lee de pasada (formas de entrar, ciudades…): base vacía simulada.
+  await supabaseVacio(ctx);
   const page = await ctx.newPage();
   for (const [ruta, lang] of PAGINAS) {
     const terceros = [];

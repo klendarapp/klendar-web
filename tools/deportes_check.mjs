@@ -10,18 +10,18 @@
 //   · el admin (Emisiones → Ligas, simulado): encender y apagar una liga.
 // Guarda capturas en OUT (móvil y escritorio).
 //
-//   PORT=8811 node tools/serve_dev.mjs
+//   SUPABASE_BLOQUEADO=1 PORT=8811 node tools/serve_dev.mjs
 //   BASE=http://localhost:8811 PW=<ruta a playwright> OUT=<carpeta> node tools/deportes_check.mjs
-import { createRequire } from 'node:module';
 import { mkdirSync } from 'node:fs';
 import { supabasePublic } from '../functions/_lib/page.js';
+import { playwright, REF, SUPA, servidorSeguro } from './_supabase_simulado.mjs';
 
-const { chromium } = createRequire(import.meta.url)(process.env.PW || 'playwright');
+const { chromium } = playwright();
 const BASE = process.env.BASE || 'http://localhost:8788';
+// La web local no puede llegar a Supabase (ver _supabase_simulado).
+await servidorSeguro(BASE);
 const OUT = process.env.OUT || 'tools/out';
 mkdirSync(OUT, { recursive: true });
-const REF = 'dpbbtgwxrlqlplbrtjuq';
-const SUPA = `https://${REF}.supabase.co`;
 const U = '0e7717e0-0000-4000-8000-00000000de01';
 const BIZ = 'b1000000-0000-4000-8000-00000000de01';
 let fallos = 0;

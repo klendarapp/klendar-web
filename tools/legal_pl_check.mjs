@@ -21,17 +21,19 @@
 // Chromium y WebKit, móvil (390 × 844) y escritorio (1280 × 800), con un
 // Supabase de mentira (no toca dev ni manda nada). Capturas en OUT.
 //
-//   PORT=8881 node tools/serve_dev.mjs &
+//   SUPABASE_BLOQUEADO=1 PORT=8881 node tools/serve_dev.mjs &
 //   BASE=http://localhost:8881 FICHA_PORT=8882 FALSO_PORT=8883 PW=<ruta a playwright> OUT=<carpeta> node tools/legal_pl_check.mjs
-import { createRequire } from 'node:module';
 import { mkdirSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { playwright, REF, SUPA, servidorSeguro } from './_supabase_simulado.mjs';
 
-const { chromium, webkit } = createRequire(import.meta.url)(process.env.PW || 'playwright');
+const { chromium, webkit } = playwright();
 
 const BASE = process.env.BASE || 'http://localhost:8881';
+// La web local no puede llegar a Supabase (ver _supabase_simulado).
+await servidorSeguro(BASE);
 // Las capturas, en tools/out/ (git las ignora): en la raíz se publicaban
 // en klendar.app (revisión del 3-11-2026, 5.4).
 const OUT = process.env.OUT || 'tools/out';
@@ -40,8 +42,6 @@ mkdirSync(OUT, { recursive: true });
 const SOLO = process.env.SOLO || '';
 const FICHA_PORT = Number(process.env.FICHA_PORT || 8882);
 const FALSO_PORT = Number(process.env.FALSO_PORT || 8883);
-const REF = 'dpbbtgwxrlqlplbrtjuq';
-const SUPA = `https://${REF}.supabase.co`;
 const U = '0e7717e0-0000-4000-8000-0000000071b1';
 const BIZ = 'b1000000-0000-4000-8000-0000000071b1';
 const VACIO = 'b1000000-0000-4000-8000-0000000071b2';

@@ -14,20 +14,20 @@
 //
 // Chromium y WebKit, móvil y escritorio. Capturas en OUT.
 //
-//   PORT=8795 node tools/serve_dev.mjs &
+//   SUPABASE_BLOQUEADO=1 PORT=8795 node tools/serve_dev.mjs &
 //   PW=<ruta a playwright> OUT=<carpeta> node tools/alta_entidades_check.mjs
-import { createRequire } from 'node:module';
+import { playwright, REF, SUPA, servidorSeguro } from './_supabase_simulado.mjs';
 
-const { chromium, webkit } = createRequire(import.meta.url)(process.env.PW || 'playwright');
+const { chromium, webkit } = playwright();
 
 const BASE = process.env.BASE || 'http://localhost:8795';
+// La web local no puede llegar a Supabase (ver _supabase_simulado).
+await servidorSeguro(BASE);
 // Las capturas, en tools/out/ (git las ignora): en la raíz se publicaban
 // en klendar.app (revisión del 3-11-2026, 5.4).
 const OUT = process.env.OUT || 'tools/out';
 (await import('node:fs')).mkdirSync(OUT, { recursive: true });
 const SOLO = process.env.SOLO || '';
-const REF = 'dpbbtgwxrlqlplbrtjuq';
-const SUPA = `https://${REF}.supabase.co`;
 const U = '0e7717e0-0000-4000-8000-00000000e171';
 const BIZ = 'b1000000-0000-4000-8000-0000000000e1';
 let fallos = 0;
@@ -209,9 +209,10 @@ async function admin(nav, nombre, t, vp) {
 async function turnstile(nav, nombre, t, vp) {
   for (const [clave, pasa] of [['1x00000000000000000000AA', true], ['2x00000000000000000000AB', false]]) {
     const ctx = await nav.newContext({ viewport: vp });
+    // La clave de config.js (desde el 4-11, la de producción), por la de prueba.
     await ctx.route(`${BASE}/config.js*`, async (route) => {
       const r = await route.fetch();
-      route.fulfill({ response: r, body: (await r.text()).replace("turnstile: ''", `turnstile: '${clave}'`) });
+      route.fulfill({ response: r, body: (await r.text()).replace(/turnstile:\s*'[^']*'/, `turnstile: '${clave}'`) });
     });
     const pedidos = [];
     await ctx.route(`${SUPA}/**`, async (route) => {

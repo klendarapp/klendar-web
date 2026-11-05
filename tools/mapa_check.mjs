@@ -15,13 +15,15 @@
 //  7. Sin errores en la consola.
 // Chromium y WebKit, móvil (375) y escritorio. Capturas en OUT.
 //
-//   PORT=8863 node tools/serve_dev.mjs &
+//   SUPABASE_BLOQUEADO=1 PORT=8863 node tools/serve_dev.mjs &
 //   PW=<ruta a playwright> OUT=<carpeta> BASE=http://localhost:8863 node tools/mapa_check.mjs
-import { createRequire } from 'node:module';
 import { mkdirSync } from 'node:fs';
+import { playwright, servidorSeguro, supabaseVacio } from './_supabase_simulado.mjs';
 
-const { chromium, webkit } = createRequire(import.meta.url)(process.env.PW || 'playwright');
+const { chromium, webkit } = playwright();
 const BASE = process.env.BASE || 'http://localhost:8863';
+// La web local no puede llegar a Supabase (ver _supabase_simulado).
+await servidorSeguro(BASE);
 // Las capturas, en tools/out/ (git las ignora): en la raíz se publicaban
 // en klendar.app (revisión del 3-11-2026, 5.4).
 const OUT = process.env.OUT || 'tools/out';
@@ -72,6 +74,8 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
   for (const [forma, vp] of [['movil', { width: 375, height: 812 }], ['escritorio', { width: 1280, height: 900 }]]) {
     for (const tema of ['light', 'dark']) {
       const ctx = await nav.newContext({ viewport: vp, locale: 'es-ES', colorScheme: tema });
+      // Lo que lee de pasada (formas de entrar, ciudades…): base vacía simulada.
+      await supabaseVacio(ctx);
       const page = await ctx.newPage();
       const errores = [];
       const deMapbox = (x) => /mapbox|webgl|tile|Failed to load resource|^Error$|Load failed/i.test(x);

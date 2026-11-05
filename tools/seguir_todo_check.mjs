@@ -12,17 +12,17 @@
 //     «Apagar».
 // No escribe nada de verdad.
 //
-//   PORT=8823 node tools/serve_dev.mjs &
+//   SUPABASE_BLOQUEADO=1 PORT=8823 node tools/serve_dev.mjs &
 //   BASE=http://localhost:8823 PW=<ruta a playwright> OUT=<carpeta> node tools/seguir_todo_check.mjs
-import { createRequire } from 'node:module';
 import { mkdirSync } from 'node:fs';
+import { playwright, REF, SUPA, servidorSeguro } from './_supabase_simulado.mjs';
 
-const pw = createRequire(import.meta.url)(process.env.PW || 'playwright');
+const pw = playwright();
 const BASE = process.env.BASE || 'http://localhost:8823';
+// La web local no puede llegar a Supabase (ver _supabase_simulado).
+await servidorSeguro(BASE);
 const OUT = process.env.OUT || 'tools/out';
 mkdirSync(OUT, { recursive: true });
-const REF = 'dpbbtgwxrlqlplbrtjuq';
-const SUPA = `https://${REF}.supabase.co`;
 const U = '0e7717e0-0000-4000-8000-00000000f070';
 const BIZ = 'b1000000-0000-4000-8000-00000000f070';
 let fallos = 0;

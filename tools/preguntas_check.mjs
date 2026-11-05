@@ -17,24 +17,24 @@
 //
 // Chromium y WebKit, móvil y escritorio. Capturas en OUT.
 //
-//   PORT=8851 node tools/serve_dev.mjs &
+//   SUPABASE_BLOQUEADO=1 PORT=8851 node tools/serve_dev.mjs &
 //   BASE=http://localhost:8851 PW=<ruta a playwright> OUT=<carpeta> node tools/preguntas_check.mjs
-import { createRequire } from 'node:module';
 import { createServer } from 'node:http';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { playwright, REF, SUPA, servidorSeguro, alFalso } from './_supabase_simulado.mjs';
 
-const { chromium, webkit } = createRequire(import.meta.url)(process.env.PW || 'playwright');
+const { chromium, webkit } = playwright();
 
 const BASE = process.env.BASE || 'http://localhost:8851';
+// La web local no puede llegar a Supabase (ver _supabase_simulado).
+await servidorSeguro(BASE);
 // Las capturas, en tools/out/ (git las ignora): en la raíz se publicaban
 // en klendar.app (revisión del 3-11-2026, 5.4).
 const OUT = process.env.OUT || 'tools/out';
 (await import('node:fs')).mkdirSync(OUT, { recursive: true });
 const FICHA_PORT = Number(process.env.FICHA_PORT || 8852);
 const FALSO_PORT = Number(process.env.FALSO_PORT || 8853);
-const REF = 'dpbbtgwxrlqlplbrtjuq';
-const SUPA = `https://${REF}.supabase.co`;
 const U = '0e7717e0-0000-4000-8000-0000000097b2';
 const BIZ = 'b1000000-0000-4000-8000-0000000097b2';
 const PARADO = 'b1000000-0000-4000-8000-0000000097b3';
@@ -77,8 +77,11 @@ function supabaseFalso(estado) {
       estado.llamadas.push([fn, body]);
       const r = estado.rpc[fn];
       if (r !== undefined) return json(typeof r === 'function' ? r(body) : r);
+      // En la ficha (Functions con el Supabase falso): lo que no se ha dado aquí, del falso.
+      if (estado.falso) return route.fulfill({ response: await route.fetch({ url: req.url().replace(SUPA, estado.falso) }) });
       return json(null);
     }
+    if (estado.falso) return route.fulfill({ response: await route.fetch({ url: req.url().replace(SUPA, estado.falso) }) });
     if (p.startsWith('/rest/v1/businesses')) return json([{ id: BIZ, name: 'Bar Sonda', city: 'Madrid', time_zone: 'Europe/Madrid', logo_url: null, cover_image_url: null, gallery: [] }]);
     if (p.startsWith('/rest/v1/')) return json([]);
     return json({});
@@ -245,7 +248,10 @@ function supabaseFicha() {
 async function ficha(nav, nombre, t, vp) {
   // Sin sesión: la sección, «Ver todas (5)», «Preguntar» y «A mí también me
   // sirve» que lleva a entrar.
+  // El navegador habla con `${SUPA}` (SUPABASE_URL_NAVEGADOR, como config.js) y
+  // lo contesta el mismo Supabase falso que las Functions.
   let ctx = await nav.newContext({ viewport: vp, locale: 'es-ES' });
+  await alFalso(ctx, `http://localhost:${FALSO_PORT}`);
   let p = await ctx.newPage();
   const errores = [];
   p.on('pageerror', (e) => errores.push(e.message));
@@ -275,7 +281,7 @@ async function ficha(nav, nombre, t, vp) {
     set_question_helpful: (b) => ({ ok: true, helped: b.p_on, helpful: b.p_on ? 3 : 1 }),
     business_hours_status: { ok: false },
     my_businesses: [], my_blocks: [],
-  } };
+  }, falso: `http://localhost:${FALSO_PORT}` };
   await ctx.route(`${SUPA}/**`, supabaseFalso(estado));
   p = await ctx.newPage();
   p.on('pageerror', (e) => errores.push(e.message));
@@ -301,6 +307,7 @@ async function ficha(nav, nombre, t, vp) {
 
   // En pausa: lo contestado se ve, sin «Preguntar».
   ctx = await nav.newContext({ viewport: vp, locale: 'es-ES' });
+  await alFalso(ctx, `http://localhost:${FALSO_PORT}`);
   p = await ctx.newPage();
   await p.goto(`http://localhost:${FICHA_PORT}/b/${PARADO}`, { waitUntil: 'networkidle' });
   const h2 = await p.content();
@@ -315,7 +322,7 @@ if (!SOLO || SOLO.includes('ficha')) {
   falso = supabaseFicha();
   await new Promise((r) => falso.listen(FALSO_PORT, r));
   servidorFicha = spawn(process.execPath, [fileURLToPath(new URL('./serve_dev.mjs', import.meta.url))], {
-    env: { ...process.env, PORT: String(FICHA_PORT), SUPABASE_URL: `http://localhost:${FALSO_PORT}`, SUPABASE_KEY: 'falsa' }, stdio: 'ignore',
+    env: { ...process.env, PORT: String(FICHA_PORT), SUPABASE_URL: `http://localhost:${FALSO_PORT}`, SUPABASE_KEY: 'falsa', SUPABASE_URL_NAVEGADOR: SUPA }, stdio: 'ignore',
   });
   await new Promise((r) => setTimeout(r, 2000));
 }

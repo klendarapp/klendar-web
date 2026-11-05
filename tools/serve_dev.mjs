@@ -7,6 +7,11 @@ import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { extname, join } from 'node:path';
 
+// En las pruebas (SUPABASE_BLOQUEADO, lo pone tools/_supabase_simulado.mjs a
+// los serve_dev que lanza; a mano, SUPABASE_BLOQUEADO=1): lo que las Functions
+// pidan a `*.supabase.co` se corta y no sale (ni a prod ni a dev).
+const SB = process.env.SUPABASE_BLOQUEADO ? await import('./_supabase_simulado.mjs') : null;
+
 const ROOT = new URL('..', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
 const PORT = Number(process.env.PORT || 8788);
 const TYPES = {
@@ -61,6 +66,12 @@ const load = (p) => import(`file://${join(ROOT, p).replace(/\\/g, '/')}`);
 createServer(async (req, res) => {
   const url = new URL(req.url, `http://localhost:${PORT}`);
   const path = url.pathname;
+  // Para las pruebas (servidorSeguro de _supabase_simulado): ¿corta Supabase y dónde lo apunta?
+  if (path === '/__supabase_bloqueado') {
+    res.writeHead(200, { 'content-type': 'application/json' });
+    res.end(JSON.stringify({ bloqueado: Boolean(SB), registro: SB ? SB.REGISTRO : null }));
+    return;
+  }
   try {
     let mod = null; let params = {};
     let m;
@@ -150,7 +161,12 @@ createServer(async (req, res) => {
       res.writeHead(out.status, Object.fromEntries(out.headers));
       // En local, sin el contador de Cloudflare (su servidor no acepta
       // localhost y la consola se llenaba de errores que en producción no hay).
-      res.end((await out.text()).replace(/<script defer src="https:\/\/static\.cloudflareinsights\.com[^>]*><\/script>/g, ''));
+      let html = (await out.text()).replace(/<script defer src="https:\/\/static\.cloudflareinsights\.com[^>]*><\/script>/g, '');
+      // Pruebas: las Functions leen de un Supabase falso (SUPABASE_URL) y el
+      // navegador habla con el de config.js (SUPABASE_URL_NAVEGADOR), que la
+      // prueba simula; como en producción, la página y config.js dicen el mismo.
+      if (process.env.SUPABASE_URL_NAVEGADOR && process.env.SUPABASE_URL) html = html.split(process.env.SUPABASE_URL).join(process.env.SUPABASE_URL_NAVEGADOR);
+      res.end(html);
       return;
     }
 

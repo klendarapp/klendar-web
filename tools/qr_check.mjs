@@ -19,21 +19,21 @@
 //  6. Sin errores en la consola.
 // Chromium y WebKit, móvil (375) y escritorio. Capturas en OUT.
 //
-//   PORT=8814 node tools/serve_dev.mjs &
+//   SUPABASE_BLOQUEADO=1 PORT=8814 node tools/serve_dev.mjs &
 //   PW=<ruta a playwright> OUT=<carpeta> BASE=http://localhost:8814 node tools/qr_check.mjs
-import { createRequire } from 'node:module';
 import { createHmac } from 'node:crypto';
 import { mkdirSync } from 'node:fs';
+import { playwright, REF, SUPA, realtimeMudo, servidorSeguro } from './_supabase_simulado.mjs';
 
-const { chromium, webkit } = createRequire(import.meta.url)(process.env.PW || 'playwright');
+const { chromium, webkit } = playwright();
 const BASE = process.env.BASE || 'http://localhost:8814';
+// La web local no puede llegar a Supabase (ver _supabase_simulado).
+await servidorSeguro(BASE);
 // Las capturas, en tools/out/ (git las ignora): en la raíz se publicaban
 // en klendar.app (revisión del 3-11-2026, 5.4).
 const OUT = process.env.OUT || 'tools/out';
 (await import('node:fs')).mkdirSync(OUT, { recursive: true });
 mkdirSync(OUT, { recursive: true });
-const REF = 'dpbbtgwxrlqlplbrtjuq';
-const SUPA = `https://${REF}.supabase.co`;
 const U = '0e7717e0-0000-4000-8000-00000000b0b0';
 const BIZ = 'b1000000-0000-4000-8000-00000000b0b0';
 const KEY = '0123456789abcdef';
@@ -156,6 +156,8 @@ async function contexto(nav, vp, { ubicacion = false, rol = 'staff' } = {}) {
     my_spot_gifts: [], my_redemptions: [], my_birthday_gifts: [], my_loyalty_gifts: [], my_stamp_rewards: [], my_passes: [], my_queue_turns: [],
   });
   await ctx.route(`${SUPA}/**`, supabaseFalso(estado));
+  // La pantalla se suscribe al tiempo real: mudo (sin conectar a ningún sitio).
+  await realtimeMudo(ctx);
   await ctx.route('https://fotos.example.com/**', (r) => r.fulfill({ status: 200, contentType: 'image/png', body: PNG }));
   const p = await ctx.newPage();
   const errores = [];

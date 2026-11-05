@@ -20,12 +20,12 @@
 // Chromium y WebKit, móvil y escritorio. Capturas en OUT.
 //
 //   BASE=… PW=<ruta a playwright> OUT=<carpeta> node tools/traducir_check.mjs
-import { createRequire } from 'node:module';
 import { createServer } from 'node:http';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
+import { playwright } from './_supabase_simulado.mjs';
 
 // Las capturas, en tools/out/ (git las ignora): en la raíz se publicaban
 // en klendar.app (revisión del 3-11-2026, 5.4).
@@ -296,7 +296,7 @@ async function ficha(nav, nombre, t, vp) {
   await c.close();
 }
 
-const { chromium, webkit } = createRequire(import.meta.url)(process.env.PW || 'playwright');
+const { chromium, webkit } = playwright();
 const falso = supabaseFalso();
 await new Promise((r) => falso.listen(FALSO_PORT, r));
 const servidor = spawn(process.execPath, [fileURLToPath(new URL('./serve_dev.mjs', import.meta.url))], {

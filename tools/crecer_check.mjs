@@ -12,14 +12,16 @@
 //     «Ese enlace ya no vale»;
 //  5. sin errores en la consola. Capturas en OUT.
 //
-//   PORT=8811 node tools/serve_dev.mjs &
+//   SUPABASE_BLOQUEADO=1 PORT=8811 node tools/serve_dev.mjs &
 //   PW=<ruta a playwright> OUT=<carpeta> node tools/crecer_check.mjs
-import { createRequire } from 'node:module';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { playwright, SUPA, servidorSeguro } from './_supabase_simulado.mjs';
 
-const { chromium, webkit } = createRequire(import.meta.url)(process.env.PW || 'playwright');
+const { chromium, webkit } = playwright();
 const BASE = process.env.BASE || 'http://localhost:8811';
+// La web local no puede llegar a Supabase (ver _supabase_simulado).
+await servidorSeguro(BASE);
 // Las capturas, en tools/out/ (git las ignora): en la raíz se publicaban
 // en klendar.app (revisión del 3-11-2026, 5.4).
 const OUT = process.env.OUT || 'tools/out';
@@ -81,7 +83,7 @@ for (const [nombreNav, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
       // Turnstile con la clave de prueba de Cloudflare que siempre pasa.
       await page.route('**/config.js*', (route) => route.fulfill({
         contentType: 'text/javascript',
-        body: "window.KLENDAR_ENV = { name: 'dev', url: 'https://dpbbtgwxrlqlplbrtjuq.supabase.co', key: 'x', turnstile: '1x00000000000000000000AA' };",
+        body: `window.KLENDAR_ENV = { name: 'prueba', url: '${SUPA}', key: 'x', turnstile: '1x00000000000000000000AA' };`,
       }));
       await correo.fill(`prueba.web.${nombreNav}.${disp}@example.com`);
       await page.locator('[data-avisame-caja] button[type=submit]').click();

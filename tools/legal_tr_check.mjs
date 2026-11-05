@@ -19,13 +19,15 @@
 //
 // Chromium y WebKit, móvil (390 × 844) y escritorio (1280 × 800).
 //
-//   PORT=8871 node tools/serve_dev.mjs &
+//   SUPABASE_BLOQUEADO=1 PORT=8871 node tools/serve_dev.mjs &
 //   BASE=http://localhost:8871 PW=<ruta a playwright> node tools/legal_tr_check.mjs
-import { createRequire } from 'node:module';
+import { playwright, servidorSeguro } from './_supabase_simulado.mjs';
 
-const { chromium, webkit } = createRequire(import.meta.url)(process.env.PW || 'playwright');
+const { chromium, webkit } = playwright();
 
 const BASE = process.env.BASE || 'http://localhost:8871';
+// La web local no puede llegar a Supabase (ver _supabase_simulado).
+await servidorSeguro(BASE);
 let fallos = 0;
 const ok = (c, m) => { if (!c) { fallos++; console.log('FALLO:', m); } else console.log('ok:', m); };
 
@@ -35,7 +37,8 @@ const PAGINAS = [
     /Google Cloud Translation \(Google Cloud EMEA Ltd\., Irlanda: traducción automática de los textos que publican los negocios, solo si alguien la ha pedido; no recibe datos de las personas usuarias;/,
     /Mapbox \(Mapbox, Inc\., EE\. UU\.: mapas, rutas a pie y nombres de lugares;[\s\S]*?en la web, tu navegador le pide también la librería que dibuja los mapas; nunca tu nombre ni tu correo;/,
     /En la web, tu navegador la borra a las 6 horas\s+Ubicación aproximada por la conexión \(solo klendar\.app\)\s+La ciudad y un punto aproximado que Cloudflare deduce de la dirección IP[\s\S]*?Interés legítimo \(art\. 6\.1\.f RGPD\)[\s\S]*?No se guarda: se usa en el momento de pedir la página y se descarta/,
-    /al denunciar sin cuenta; y, sin guardarla, la ciudad y la zona aproximadas de tu conexión cuando no nos has dado tu ubicación/,
+    // Desde el 4-11 (Turnstile, D29–D31): «en lo que se manda sin cuenta (…)» en vez de «al denunciar sin cuenta».
+    /en lo que se manda sin cuenta \(denunciar un contenido en la web o «Avísame cuando llegue»\); y, sin guardarla, la ciudad y la zona aproximadas de tu conexión cuando no nos has dado tu ubicación/,
     /28 de octubre de 2026: Traducción automática: qué se traduce, que lo hace Google Cloud Translation/,
   ], [/cuando el servicio esté disponible/]],
   ['/en/privacy/', 'Last updated: 4 November 2026', [

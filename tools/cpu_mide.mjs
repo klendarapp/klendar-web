@@ -3,7 +3,12 @@
 // primero se graban una vez las respuestas de dev (una petición por ruta) y
 // después cada ruta se pinta con ellas, sin red, y se mide el tiempo.
 //
-//   node tools/cpu_mide.mjs graba        → .wrangler/cpu_grabado.json (dev)
+//   node tools/cpu_mide.mjs graba --en-vivo → .wrangler/cpu_grabado.json
+//                                          (pide de verdad al Supabase de
+//                                          page.js, hoy prod: sin --en-vivo
+//                                          no arranca, y con él solo pasan los
+//                                          GET públicos; las rpc van por POST
+//                                          y se cortan: ver _supabase_simulado)
 //   node tools/cpu_mide.mjs              → tabla: «en frío» (la primera visita
 //                                          de una copia nueva de la Function)
 //                                          y «normal» (mediana de las demás)
@@ -18,6 +23,7 @@ import { join, relative } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { performance } from 'node:perf_hooks';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { EN_VIVO } from './_supabase_simulado.mjs';
 
 const REPO = fileURLToPath(new URL('..', import.meta.url));
 const GRAB = join(REPO, '.wrangler', 'cpu_grabado.json');
@@ -86,7 +92,10 @@ async function pinta(ruta) {
   return { status: res.status, kb: (await res.text()).length / 1024 };
 }
 
-if (modo === 'graba') {
+if (modo === 'graba' && !EN_VIVO) {
+  console.log('graba pide a Supabase de verdad (el de functions/_lib/page.js): solo con --en-vivo.');
+  process.exit(2);
+} else if (modo === 'graba') {
   const grab = {};
   const real = globalThis.fetch;
   globalThis.fetch = async (url, init) => {

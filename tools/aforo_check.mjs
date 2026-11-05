@@ -29,18 +29,20 @@
 //
 // Chromium y WebKit, móvil (390 × 844) y escritorio (1280 × 800). Capturas en OUT.
 //
-//   PORT=8796 node tools/serve_dev.mjs &
+//   SUPABASE_BLOQUEADO=1 PORT=8796 node tools/serve_dev.mjs &
 //   BASE=http://localhost:8796 PW=<ruta a playwright> OUT=<carpeta> node tools/aforo_check.mjs
 // (lo público arranca su propio serve_dev en PUB_PORT, 8797, contra un
 // Supabase de mentira en 8798)
-import { createRequire } from 'node:module';
 import { createServer } from 'node:http';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { playwright, REF, SUPA, servidorSeguro } from './_supabase_simulado.mjs';
 
-const { chromium, webkit } = createRequire(import.meta.url)(process.env.PW || 'playwright');
+const { chromium, webkit } = playwright();
 
 const BASE = process.env.BASE || 'http://localhost:8796';
+// La web local no puede llegar a Supabase (ver _supabase_simulado).
+await servidorSeguro(BASE);
 // Las capturas, en tools/out/ (git las ignora): en la raíz se publicaban
 // en klendar.app (revisión del 3-11-2026, 5.4).
 const OUT = process.env.OUT || 'tools/out';
@@ -48,8 +50,6 @@ const OUT = process.env.OUT || 'tools/out';
 const SOLO = process.env.SOLO || '';
 const PUB_PORT = Number(process.env.PUB_PORT || 8797);
 const FALSO_PORT = Number(process.env.FALSO_PORT || 8798);
-const REF = 'dpbbtgwxrlqlplbrtjuq';
-const SUPA = `https://${REF}.supabase.co`;
 const U = '0e7717e0-0000-4000-8000-0000000af0a1';
 const BIZ = 'b1000000-0000-4000-8000-0000000af0a1';
 let fallos = 0;
@@ -91,8 +91,11 @@ function supabaseFalso(estado) {
         if (v && v.__error) return json(v.__error, 400);
         return json(v);
       }
+      // En la ficha (Functions con el Supabase falso): lo que no se ha dado aquí, del falso.
+      if (estado.falso) return route.fulfill({ response: await route.fetch({ url: req.url().replace(SUPA, estado.falso) }) });
       return json(null);
     }
+    if (estado.falso) return route.fulfill({ response: await route.fetch({ url: req.url().replace(SUPA, estado.falso) }) });
     if (p.startsWith('/rest/v1/categories')) return json([{ id: 'c-bar', slug: 'bar', name: 'Bares', category_group: 'drinks', position: 1 }]);
     if (p.startsWith('/rest/v1/businesses')) {
       return json([{ id: BIZ, name: 'Sala Prueba', time_zone: 'Europe/Madrid', category_id: 'c-bar', logo_url: null, cover_image_url: null, gallery: [],
@@ -386,7 +389,9 @@ function supabasePublico() {
 async function contextoFicha(nav, vp, { conSesion, rpc = {}, locale = 'es-ES' }) {
   const ctx = await nav.newContext({ viewport: vp, locale, timezoneId: 'Europe/Madrid' });
   if (conSesion) await ctx.addInitScript(([k, v]) => { try { localStorage.setItem(k, v); } catch { /* */ } }, [`sb-${REF}-auth-token`, sesion()]);
-  const estado = { llamadas: [], rpc: { my_businesses: [], my_blocks: [], ...rpc } };
+  // El navegador habla con `${SUPA}` (como la página y config.js: SUPABASE_URL_NAVEGADOR) y lo
+  // que la prueba no conteste lo da el mismo Supabase falso que las Functions.
+  const estado = { llamadas: [], rpc: { my_businesses: [], my_blocks: [], ...rpc }, falso: `http://localhost:${FALSO_PORT}` };
   await ctx.route(`${SUPA}/**`, supabaseFalso(estado));
   const p = await ctx.newPage();
   const errores = [];
@@ -589,7 +594,7 @@ if (!SOLO || /ficha|mapa/.test(SOLO)) {
   falso = supabasePublico();
   await new Promise((r) => falso.listen(FALSO_PORT, r));
   servidor = spawn(process.execPath, [fileURLToPath(new URL('./serve_dev.mjs', import.meta.url))], {
-    env: { ...process.env, PORT: String(PUB_PORT), SUPABASE_URL: `http://localhost:${FALSO_PORT}`, SUPABASE_KEY: 'falsa' }, stdio: 'ignore',
+    env: { ...process.env, PORT: String(PUB_PORT), SUPABASE_URL: `http://localhost:${FALSO_PORT}`, SUPABASE_KEY: 'falsa', SUPABASE_URL_NAVEGADOR: SUPA }, stdio: 'ignore',
   });
   await new Promise((r) => setTimeout(r, 2000));
 }

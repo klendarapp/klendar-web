@@ -22,21 +22,20 @@
 //  3. Sin errores en la consola.
 // Chromium y WebKit, móvil (375) y escritorio (1280). Capturas en OUT.
 //
-//   PORT=8893 node tools/serve_dev.mjs &
+//   SUPABASE_BLOQUEADO=1 PORT=8893 node tools/serve_dev.mjs &
 //   PW=<ruta a playwright> OUT=<carpeta> BASE=http://localhost:8893 node tools/cabecera_check.mjs
-import { createRequire } from 'node:module';
-import { mkdirSync, readFileSync } from 'node:fs';
+import { mkdirSync } from 'node:fs';
+import { playwright, REF, SUPA, servidorSeguro } from './_supabase_simulado.mjs';
 
-const { chromium, webkit } = createRequire(import.meta.url)(process.env.PW || 'playwright');
+const { chromium, webkit } = playwright();
 const BASE = process.env.BASE || 'http://localhost:8893';
+// La web local no puede llegar a Supabase (ver _supabase_simulado).
+await servidorSeguro(BASE);
 // Las capturas, en tools/out/ (git las ignora): en la raíz se publicaban
 // en klendar.app (revisión del 3-11-2026, 5.4).
 const OUT = process.env.OUT || 'tools/out';
 (await import('node:fs')).mkdirSync(OUT, { recursive: true });
 mkdirSync(OUT, { recursive: true });
-// El proyecto al que apunta la web (config.js): la sesión de otro no cuenta.
-const REF = readFileSync(new URL('../config.js', import.meta.url), 'utf8').match(/https:\/\/([a-z0-9]+)\.supabase\.co/)[1];
-const SUPA = `https://${REF}.supabase.co`;
 const AQUI = 'lat=40.417&lng=-3.704';
 let fallos = 0;
 const ok = (c, m) => { if (!c) { fallos++; console.log('FALLA:', m); } else console.log('ok:', m); };

@@ -7,12 +7,14 @@
 // nombre en todas; y a 360 px, todas solo con el símbolo (lo mismo en
 // todas, que es lo que importa: «la barra no es constante», Iván, 2-11).
 //
-//   PORT=8821 node tools/serve_dev.mjs &
+//   SUPABASE_BLOQUEADO=1 PORT=8821 node tools/serve_dev.mjs &
 //   PW=<ruta a playwright> BASE=http://localhost:8821 node tools/cabecera_390_check.mjs
-import { createRequire } from 'node:module';
+import { playwright, servidorSeguro, supabaseVacio } from './_supabase_simulado.mjs';
 
-const { chromium, webkit } = createRequire(import.meta.url)(process.env.PW || 'playwright');
+const { chromium, webkit } = playwright();
 const BASE = process.env.BASE || 'http://localhost:8821';
+// La web local no puede llegar a Supabase (ver _supabase_simulado).
+await servidorSeguro(BASE);
 const PAGINAS = ['/descubre/', '/explorar/', '/explorar/?que=sitios', '/partidos/', '/hoy/madrid/', '/precios/', '/privacidad/', '/app/'];
 let fallos = 0;
 const check = (msg, ok, extra = '') => {
@@ -27,6 +29,8 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
       viewport: { width: ancho, height: 844 }, isMobile: nombre === 'chromium', hasTouch: true,
       deviceScaleFactor: 3, locale: 'es-ES', timezoneId: 'Europe/Madrid',
     });
+    // Lo que lee de pasada (formas de entrar, ciudades…): base vacía simulada.
+    await supabaseVacio(ctx);
     const p = await ctx.newPage();
     const justas = [];
     for (const ruta of PAGINAS) {

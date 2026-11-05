@@ -22,13 +22,15 @@
 //     públicas el de la sesión y en «Tu cuenta» el del perfil.
 // Chromium y WebKit, móvil (390) y escritorio (1280).
 //
-//   PORT=8857 node tools/serve_dev.mjs &
+//   SUPABASE_BLOQUEADO=1 PORT=8857 node tools/serve_dev.mjs &
 //   PW=<ruta a playwright> OUT=<carpeta> BASE=http://localhost:8857 node tools/cabecera_igual_check.mjs
-import { createRequire } from 'node:module';
 import { mkdirSync, readFileSync, existsSync } from 'node:fs';
+import { playwright, REF, SUPA, servidorSeguro, supabaseVacio } from './_supabase_simulado.mjs';
 
-const { chromium, webkit } = createRequire(import.meta.url)(process.env.PW || 'playwright');
+const { chromium, webkit } = playwright();
 const BASE = process.env.BASE || 'http://localhost:8857';
+// La web local no puede llegar a Supabase (ver _supabase_simulado).
+await servidorSeguro(BASE);
 // Las capturas, en tools/out/ (git las ignora): en la raíz se publicaban
 // en klendar.app (revisión del 3-11-2026, 5.4).
 const OUT = process.env.OUT || 'tools/out';
@@ -37,9 +39,6 @@ mkdirSync(OUT, { recursive: true });
 let fallos = 0;
 const ok = (c, m) => { if (!c) { fallos++; console.log('FALLA:', m); } else console.log('ok:', m); };
 
-// El proyecto al que apunta la web (config.js): la sesión de otro no cuenta.
-const REF = readFileSync(new URL('../config.js', import.meta.url), 'utf8').match(/https:\/\/([a-z0-9]+)\.supabase\.co/)[1];
-const SUPA = `https://${REF}.supabase.co`;
 const U = '0e7717e0-0000-4000-8000-0000000cab02';
 const BIZ = 'b1000000-0000-4000-8000-0000000cab02';
 const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
@@ -160,6 +159,8 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]].filter
     // ── 1. La misma cabecera en todas las páginas ──
     for (const conSesion of [false, true]) {
       const ctx = await nav.newContext({ viewport: vp, locale: 'es-ES', isMobile: movil && nombre === 'chromium', hasTouch: movil });
+      // Lo que lee de pasada (formas de entrar, ciudades…): base vacía simulada.
+      await supabaseVacio(ctx);
       await ctx.addInitScript(([k, v, con]) => { try { if (!sessionStorage.getItem('puesto')) { localStorage.setItem('klendar_lang', 'es'); if (con) localStorage.setItem(k, v); sessionStorage.setItem('puesto', '1'); } } catch { /* */ } }, [`sb-${REF}-auth-token`, sesion(null), conSesion]);
       await ctx.route(`${SUPA}/**`, falso());
       let page = await ctx.newPage();
@@ -193,6 +194,8 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]].filter
     // ── 2. Los 8 idiomas ──
     for (const l of ['es', 'en', 'ca', 'gl', 'eu', 'fr', 'de', 'it']) {
       const ctx = await nav.newContext({ viewport: vp, locale: 'es-ES', isMobile: movil && nombre === 'chromium', hasTouch: movil });
+      // Lo que lee de pasada (formas de entrar, ciudades…): base vacía simulada.
+      await supabaseVacio(ctx);
       await ctx.addInitScript((x) => { try { if (!sessionStorage.getItem('puesto')) { localStorage.setItem('klendar_lang', x); sessionStorage.setItem('puesto', '1'); } } catch { /* */ } }, l);
       let page = await ctx.newPage();
       const t = `[${nombre} ${forma} ${l}]`;
@@ -220,6 +223,8 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]].filter
     for (const conSesion of [false, true]) {
       const apunta = [];
       const ctx = await nav.newContext({ viewport: vp, locale: 'es-ES', isMobile: movil && nombre === 'chromium', hasTouch: movil });
+      // Lo que lee de pasada (formas de entrar, ciudades…): base vacía simulada.
+      await supabaseVacio(ctx);
       await ctx.addInitScript(([k, v, con]) => { try { if (!sessionStorage.getItem('puesto')) { localStorage.setItem('klendar_lang', 'es'); if (con) localStorage.setItem(k, v); sessionStorage.setItem('puesto', '1'); } } catch { /* */ } }, [`sb-${REF}-auth-token`, sesion('es'), conSesion]);
       await ctx.route(`${SUPA}/**`, falso({ perfil: 'es', apunta }));
       let page = await ctx.newPage();
@@ -261,6 +266,8 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]].filter
     // ── 4. Con sesión manda el idioma de la cuenta ──
     {
       const ctx = await nav.newContext({ viewport: vp, locale: 'es-ES', isMobile: movil && nombre === 'chromium', hasTouch: movil });
+      // Lo que lee de pasada (formas de entrar, ciudades…): base vacía simulada.
+      await supabaseVacio(ctx);
       await ctx.addInitScript(([k, v]) => { try { if (!sessionStorage.getItem('puesto')) { localStorage.setItem('klendar_lang', 'es'); localStorage.setItem(k, v); sessionStorage.setItem('puesto', '1'); } } catch { /* */ } }, [`sb-${REF}-auth-token`, sesion('fr')]);
       await ctx.route(`${SUPA}/**`, falso({ perfil: 'it' }));
       let page = await ctx.newPage();

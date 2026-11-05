@@ -4,11 +4,14 @@
 // ficha de un negocio a la página de su municipio y el sitemap.
 // Contra un servidor en marcha (con la base de dev, que tiene la tabla):
 //
-//   PORT=8797 node tools/serve_dev.mjs
+//   SUPABASE_BLOQUEADO=1 PORT=8797 node tools/serve_dev.mjs
 //   BASE=http://localhost:8797 node tools/espana_check.mjs
 import assert from 'node:assert/strict';
+import { servidorSeguro } from './_supabase_simulado.mjs';
 
 const BASE = process.env.BASE || 'http://localhost:8788';
+// La web local no puede llegar a Supabase (ver _supabase_simulado).
+await servidorSeguro(BASE);
 let bien = 0;
 let total = 0;
 const check = (nombre, ok, detalle = '') => {

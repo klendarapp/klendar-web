@@ -15,12 +15,12 @@
 // Chromium y WebKit, móvil y escritorio. Capturas en OUT.
 //
 //   PW=<ruta a playwright> OUT=<carpeta> node tools/fichas_estado_check.mjs
-import { createRequire } from 'node:module';
 import { createServer } from 'node:http';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { playwright, REF, SUPA } from './_supabase_simulado.mjs';
 
-const { chromium, webkit } = createRequire(import.meta.url)(process.env.PW || 'playwright');
+const { chromium, webkit } = playwright();
 
 // Las capturas, en tools/out/ (git las ignora): en la raíz se publicaban
 // en klendar.app (revisión del 3-11-2026, 5.4).
@@ -28,8 +28,6 @@ const OUT = process.env.OUT || 'tools/out';
 (await import('node:fs')).mkdirSync(OUT, { recursive: true });
 const FICHA_PORT = Number(process.env.FICHA_PORT || 8862);
 const FALSO_PORT = Number(process.env.FALSO_PORT || 8863);
-const REF = 'dpbbtgwxrlqlplbrtjuq';
-const SUPA = `https://${REF}.supabase.co`;
 const U = '0e7717e0-0000-4000-8000-0000000097c1';
 const BIZ = 'b1000000-0000-4000-8000-0000000097c1';
 const VIVA = 'a1000000-0000-4000-8000-0000000097c1';
@@ -213,7 +211,7 @@ async function negocio(nav, nombre, t, vp) {
 const falso = supabaseFicha();
 await new Promise((r) => falso.listen(FALSO_PORT, r));
 const servidor = spawn(process.execPath, [fileURLToPath(new URL('./serve_dev.mjs', import.meta.url))], {
-  env: { ...process.env, PORT: String(FICHA_PORT), SUPABASE_URL: `http://localhost:${FALSO_PORT}`, SUPABASE_KEY: 'falsa' }, stdio: 'ignore',
+  env: { ...process.env, PORT: String(FICHA_PORT), SUPABASE_URL: `http://localhost:${FALSO_PORT}`, SUPABASE_KEY: 'falsa', SUPABASE_URL_NAVEGADOR: SUPA }, stdio: 'ignore',
 });
 await new Promise((r) => setTimeout(r, 2000));
 

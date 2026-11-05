@@ -8,12 +8,12 @@
 // pestañas de arriba).
 //
 //   PW=<ruta a playwright> OUT=<carpeta> node tools/volver_arriba_check.mjs
-import { createRequire } from 'node:module';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { mkdirSync } from 'node:fs';
+import { playwright } from './_supabase_simulado.mjs';
 
-const { chromium, webkit } = createRequire(import.meta.url)(process.env.PW || 'playwright');
+const { chromium, webkit } = playwright();
 const PORT = Number(process.env.PORT || 8871);
 const BASE = `http://localhost:${PORT}`;
 // Las capturas, en tools/out/ (git las ignora): en la raíz se publicaban

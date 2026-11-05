@@ -18,15 +18,17 @@
 //
 // Chromium y WebKit, móvil (390 × 844) y escritorio (1280 × 800).
 //
-//   PORT=8871 node tools/serve_dev.mjs &
+//   SUPABASE_BLOQUEADO=1 PORT=8871 node tools/serve_dev.mjs &
 //   BASE=http://localhost:8871 PW=<ruta a playwright> node tools/legal_rev1105_check.mjs
 //
-// Con BASE=https://klendar.app mira lo publicado.
-import { createRequire } from 'node:module';
+// Con BASE=https://klendar.app … --en-vivo mira lo publicado (Supabase, simulado igual).
+import { playwright, SUPA, servidorSeguro } from './_supabase_simulado.mjs';
 
-const { chromium, webkit } = createRequire(import.meta.url)(process.env.PW || 'playwright');
+const { chromium, webkit } = playwright();
 
 const BASE = process.env.BASE || 'http://localhost:8871';
+// La web local no puede llegar a Supabase (ver _supabase_simulado).
+await servidorSeguro(BASE);
 let fallos = 0;
 const ok = (c, m) => { if (!c) { fallos++; console.log('FALLO:', m); } else console.log('ok:', m); };
 
@@ -97,6 +99,8 @@ const PAGINAS = [
 
 async function paginas(nav, nombre, t, vp) {
   const ctx = await nav.newContext({ viewport: vp });
+  // La portada pide las ciudades a Supabase: aquí, ninguna (los textos no dependen de ellas).
+  await ctx.route(`${SUPA}/rest/v1/rpc/public_cities`, (r) => r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
   const p = await ctx.newPage();
   const errores = [];
   p.on('pageerror', (e) => errores.push(`${p.url()}: ${e.message}`));

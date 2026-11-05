@@ -12,13 +12,15 @@
 //     «Más cerca» sin posición ni ciudad: lo dice y ofrece la ubicación.
 //  6. Sin errores en la consola.
 //
-//   PORT=8931 node tools/serve_dev.mjs &
+//   SUPABASE_BLOQUEADO=1 PORT=8931 node tools/serve_dev.mjs &
 //   PW=<ruta a playwright> OUT=<carpeta> BASE=http://localhost:8931 OFERTA18=<id> node tools/mayores_check.mjs
-import { createRequire } from 'node:module';
 import { mkdirSync } from 'node:fs';
+import { playwright, servidorSeguro } from './_supabase_simulado.mjs';
 
-const { chromium, webkit } = createRequire(import.meta.url)(process.env.PW || 'playwright');
+const { chromium, webkit } = playwright();
 const BASE = process.env.BASE || 'http://localhost:8931';
+// La web local no puede llegar a Supabase (ver _supabase_simulado).
+await servidorSeguro(BASE);
 // Las capturas, en tools/out/ (git las ignora): en la raíz se publicaban
 // en klendar.app (revisión del 3-11-2026, 5.4).
 const OUT = process.env.OUT || 'tools/out';
