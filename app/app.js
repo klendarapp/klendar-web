@@ -831,9 +831,13 @@ const VALIDA = {
   clave: (v) => (!v ? t('Obligatorio') : v.length < 8 ? t('Mínimo 8 caracteres') : null),
   // 14 años (LOPDGDD art. 7), como AuthForm.birthDate.
   // Como el selector de la app: de hace 110 años a hoy (y 14 como mínimo).
-  nacimiento: (v) => (!v ? t('Obligatorio')
-    : !/^\d{4}-\d{2}-\d{2}$/.test(v) || edadDe(v) > 110 || v > hoyISO() ? t('Revisa la fecha')
-    : edadDe(v) < 14 ? (EN ? 'You need to be at least 14 to use Klendar' : 'Necesitas tener al menos 14 años para usar Klendar') : null),
+  // `texto` es lo escrito en campoNacimiento (15/03/1980).
+  nacimiento: (texto) => {
+    if (!String(texto).trim()) return t('Obligatorio');
+    const v = isoDeFecha(texto);
+    if (!v || v < `${new Date().getFullYear() - 110}-01-01` || v > hoyISO()) return t('Revisa la fecha');
+    return edadDe(v) < 14 ? (EN ? 'You need to be at least 14 to use Klendar' : 'Necesitas tener al menos 14 años para usar Klendar') : null;
+  },
   terminos: (v) => (v ? null : t('Tienes que aceptar los términos y la política de privacidad.')),
 };
 
@@ -851,6 +855,117 @@ function edadDe(nac) {
   let edad = hoy.getFullYear() - d.getFullYear();
   if (hoy.getMonth() < d.getMonth() || (hoy.getMonth() === d.getMonth() && hoy.getDate() < d.getDate())) edad -= 1;
   return edad;
+}
+
+// ── La fecha de nacimiento, como en la app (BirthDateField) ──────────────
+// Se escribe (15/03/1980, las barras salen solas) o se elige con el calendario
+// del navegador. El día va primero en todos los idiomas y la pista lo dice; en
+// alemán, con puntos. Lo escrito es lo único que manda: se lee con isoDeFecha.
+const SEP_FECHA = () => (LANG === 'de' ? '.' : '/');
+
+/** AAAA-MM-DD de lo escrito, si es una fecha de verdad; si no, ''. */
+function isoDeFecha(texto) {
+  const m = /^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/.exec(String(texto).trim());
+  if (!m) return '';
+  const [dia, mes, ano] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  const d = new Date(Date.UTC(2000, mes - 1, dia));
+  d.setUTCFullYear(ano, mes - 1, dia);
+  if (d.getUTCFullYear() !== ano || d.getUTCMonth() !== mes - 1 || d.getUTCDate() !== dia) return '';
+  return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+}
+
+/** La máscara: la misma que BirthDateInputFormatter en la app. Pegar vale con
+ * casi cualquier forma (15/03/1980, 15-3-1980, 15031980, 1980-03-15). */
+function mascaraFecha({ antes, conSeleccion, texto, cursor, sep }) {
+  const alFinal = cursor === texto.length;
+  const crecio = texto.length > antes.length;
+  const pon = (t2, pos) => ({ texto: t2, cursor: pos ?? t2.length });
+  const une = (d, m, a) => `${d.padStart(2, '0')}${sep}${m.padStart(2, '0')}${sep}${a}`;
+  // Pegado o autorrellenado, entero y con otra forma.
+  if (alFinal && (texto.length - antes.length >= 2 || conSeleccion)) {
+    const s = texto.trim();
+    const df = /^(\d{1,2})[-/. ](\d{1,2})[-/. ](\d{4})$/.exec(s);
+    if (df) return pon(une(df[1], df[2], df[3]));
+    const af = /^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})(?:[T ].*)?$/.exec(s);
+    if (af) return pon(une(af[3], af[2], af[1]));
+  }
+  const pinta = (cifras, final) => {
+    let out = '';
+    for (let i = 0; i < cifras.length; i += 1) {
+      out += cifras[i];
+      if ((i === 1 || i === 3) && (i < cifras.length - 1 || final)) out += sep;
+    }
+    return out;
+  };
+  const cifras = texto.replace(/\D/g, '').slice(0, 8);
+  const cifrasAntes = antes.replace(/\D/g, '');
+  // Una barra escrita a mano al final: «5/» es el día 05.
+  if (alFinal && texto.length === antes.length + 1 && texto.startsWith(antes) && cifras === cifrasAntes) {
+    if (cifrasAntes.length !== 1 && cifrasAntes.length !== 3) return pon(antes);
+    const u = cifrasAntes.length - 1;
+    return pon(pinta(`${cifrasAntes.slice(0, u)}0${cifrasAntes.slice(u)}`, true));
+  }
+  const nuevo = pinta(cifras, crecio && alFinal && (cifras.length === 2 || cifras.length === 4));
+  if (alFinal) return pon(nuevo);
+  // Corrigiendo por en medio: el cursor sigue detrás de la misma cifra.
+  const delante = texto.slice(0, cursor).replace(/\D/g, '').length;
+  let pos = 0;
+  for (let vistas = 0; pos < nuevo.length && vistas < delante; pos += 1) {
+    if (/\d/.test(nuevo[pos])) vistas += 1;
+  }
+  return pon(nuevo, pos);
+}
+
+const SVG_CALENDARIO = '<svg viewBox="0 -960 960 960" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="M200-80q-33 0-56.5-23.5T120-160v-560q0-33 23.5-56.5T200-800h40v-80h80v80h320v-80h80v80h40q33 0 56.5 23.5T840-720v560q0 33-23.5 56.5T760-80H200Zm0-80h560v-400H200v400Zm0-480h560v-80H200v80Zm0 0v-80 80Z"/></svg>';
+
+/** El campo, dentro de su <label>; después de pintarlo, activaNacimiento. */
+const campoNacimiento = ({ obligatorio = true } = {}) => `<span class="campo-fecha">
+    <input name="birth" inputmode="numeric" autocomplete="bday" placeholder="${esc(t('DD/MM/AAAA'))}"${obligatorio ? ' required' : ''}>
+    <button type="button" class="campo-fecha-btn" aria-label="${esc(t('Elige la fecha'))}" title="${esc(t('Elige la fecha'))}">${SVG_CALENDARIO}</button>
+    <input type="date" class="campo-fecha-nativo" ${LIMITES_NACIMIENTO()} tabindex="-1" aria-hidden="true">
+  </span>`;
+
+function activaNacimiento(el) {
+  if (!el) return;
+  const sep = SEP_FECHA();
+  const caja = el.closest('.campo-fecha');
+  const nativo = caja.querySelector('.campo-fecha-nativo');
+  let antes = el.value;
+  let conSeleccion = false;
+  // Sale sin pulsar nada: con role=alert, el lector de pantalla lo dice.
+  const avisa = () => {
+    errorCampo(el, VALIDA.nacimiento(el.value));
+    document.getElementById(`err-${el.name}`)?.setAttribute('role', 'alert');
+  };
+  el.addEventListener('beforeinput', () => { conSeleccion = el.selectionStart !== el.selectionEnd; });
+  el.addEventListener('input', () => {
+    const r = mascaraFecha({ antes, conSeleccion, texto: el.value, cursor: el.selectionStart ?? el.value.length, sep });
+    conSeleccion = false;
+    if (r.texto !== el.value) el.value = r.texto;
+    el.setSelectionRange(r.cursor, r.cursor);
+    antes = r.texto;
+    // Después de que errorCampo quite el aviso anterior (también va con «input»).
+    if (r.texto.replace(/\D/g, '').length === 8) setTimeout(avisa);
+  });
+  // Al salir del campo a medias, se avisa ya (y no al final del formulario).
+  el.addEventListener('blur', () => { if (el.value.trim()) avisa(); });
+  caja.querySelector('.campo-fecha-btn').addEventListener('click', () => {
+    const v = isoDeFecha(el.value);
+    nativo.value = v >= nativo.min && v <= nativo.max ? v : '';
+    try {
+      nativo.showPicker();
+    } catch {
+      nativo.focus();
+      nativo.click();
+    }
+  });
+  nativo.addEventListener('change', () => {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(nativo.value);
+    if (!m) return;
+    el.value = `${m[3]}${sep}${m[2]}${sep}${m[1]}`;
+    antes = el.value;
+    avisa();
+  });
 }
 
 /** La casilla de términos, igual en el alta y en «un último paso». */
@@ -1290,7 +1405,7 @@ RUTAS.registro = async (_p, params) => {
       <label>${esc(t('Contraseña'))}<input name="password" type="password" autocomplete="new-password" minlength="8" required>
         <small>${esc(t('Mínimo 8 caracteres'))}</small></label>
       <label>${esc(t('Repite la contraseña'))}<input name="password2" type="password" autocomplete="new-password" minlength="8" required></label>
-      <label>${esc(t('Fecha de nacimiento'))}<input name="birth" type="date" ${LIMITES_NACIMIENTO()} required>
+      <label>${esc(t('Fecha de nacimiento'))}${campoNacimiento()}
         <small>${esc(t('Para comprobar tu edad (mínimo 14) y enseñarte lo adecuado a ella. Si un favorito tiene regalo de cumpleaños, te llega ese día.'))}</small></label>
       ${casillaTerminos({ estadisticas: true })}
       <p id="err" class="err" role="alert"></p>
@@ -1299,6 +1414,7 @@ RUTAS.registro = async (_p, params) => {
     <div id="google" class="google-hueco"></div>
     <p class="muted">${esc(t('¿Ya tienes cuenta?'))} <a href="${conSiguiente('entrar', siguiente)}">${esc(t('Entra'))}</a></p>`);
   botonGoogle(negocio ? '' : siguiente, negocio ? '/panel/?alta=1' : '/app/');
+  activaNacimiento($('#f').elements.birth);
 
   $('#f').onsubmit = (e) => {
     e.preventDefault();
@@ -1316,7 +1432,7 @@ RUTAS.registro = async (_p, params) => {
     });
     if (!ok) return;
     const email = form.email.value.trim();
-    const nac = form.birth.value;
+    const nac = isoDeFecha(form.birth.value);
     ocupado(form.querySelector('button[type=submit]'), async () => {
       // El nombre se ve en reseñas y amigos: sin insultos ni palabrotas (la
       // base lo dejaría vacío). Sin conexión se da por bueno.

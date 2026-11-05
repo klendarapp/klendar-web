@@ -936,12 +936,13 @@ RUTAS.perfil = async () => {
     ? `<label>${esc(t('Fecha de nacimiento'))} <small>${esc(t('Para cambiarla, escríbenos a info@klendar.app.'))}</small>
         <span class="candado"><input value="${esc(nacimiento)}" readonly aria-readonly="true"><span class="ms" aria-hidden="true">lock</span></span></label>`
     : `<label>${esc(t('Fecha de nacimiento'))} <small>${esc(t('Para comprobar tu edad y enseñarte lo adecuado a ella (y el regalo de cumpleaños de tus favoritos, si tienen). Revísala bien: una vez guardada, no se puede cambiar.'))}</small>
-        <input name="birth" type="date" ${LIMITES_NACIMIENTO()}></label>`}
+        ${campoNacimiento({ obligatorio: false })}</label>`}
       <p class="err" id="err-perfil" role="alert"></p>
       <button class="pill accent" id="g-perfil">${esc(t('Guardar'))}</button>
     </form>`);
 
   const fp = $('#f-perfil');
+  activaNacimiento(fp.elements.birth);
   let foto = null;
   fp.foto.addEventListener('change', () => {
     foto = fp.foto.files[0] || null;
@@ -950,8 +951,9 @@ RUTAS.perfil = async () => {
   fp.addEventListener('submit', (ev) => {
     ev.preventDefault();
     const nombre = fp.nombre.value.trim();
-    const nac = fp.birth?.value || '';
-    if (!validaForm(fp, { nombre: VALIDA.requerido, ...(nac ? { birth: VALIDA.nacimiento } : {}) })) return;
+    const escrita = fp.birth?.value.trim() || '';
+    if (!validaForm(fp, { nombre: VALIDA.requerido, ...(escrita ? { birth: VALIDA.nacimiento } : {}) })) return;
+    const nac = escrita ? isoDeFecha(escrita) : '';
     $('#err-perfil').textContent = '';
     ocupado($('#g-perfil'), async () => {
       if (nac) await llamar('set_my_birth_date', { p_birth_date: nac });
@@ -2320,7 +2322,7 @@ RUTAS['ultimo-paso'] = async (_p, params) => {
         ? 'Para usar Klendar hay que tener 14 años o más y aceptar los términos. Solo te lo preguntamos una vez.'
         : 'Para seguir usando Klendar, acepta los términos y la política de privacidad. Solo te lo preguntamos una vez.'))}</p>
       <form id="f" class="formu" novalidate>
-        ${pideFecha ? `<label>${esc(t('Fecha de nacimiento'))}<input name="birth" type="date" ${LIMITES_NACIMIENTO()} required></label>` : ''}
+        ${pideFecha ? `<label>${esc(t('Fecha de nacimiento'))}${campoNacimiento()}</label>` : ''}
         ${casillaTerminos()}
         <p id="err" class="err" role="alert"></p>
         <button class="pill accent" id="seguir">${esc(t('Continuar'))}</button>
@@ -2328,12 +2330,13 @@ RUTAS['ultimo-paso'] = async (_p, params) => {
       <p><button class="linkbtn" id="salir">${esc(t('Cerrar sesión'))}</button></p>
     </div>`);
   const f = $('#f');
+  activaNacimiento(f.elements.birth);
   f.addEventListener('submit', (ev) => {
     ev.preventDefault();
     const err = $('#err');
     err.textContent = '';
     if (!validaForm(f, { ...(pideFecha ? { birth: VALIDA.nacimiento } : {}), terms: VALIDA.terminos })) return;
-    const nac = pideFecha ? f.birth.value : null;
+    const nac = pideFecha ? isoDeFecha(f.birth.value) : null;
     ocupado($('#seguir'), async () => {
       await llamar('accept_terms', { p_version: CONSENTIMIENTO.vigente || TERMINOS_VERSION, p_birth_date: nac });
       if (f.marketing.checked) await llamar('set_marketing_consent', { p_value: true });

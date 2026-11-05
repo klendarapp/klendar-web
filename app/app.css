@@ -281,6 +281,18 @@ input[type=file] { max-width: 100%; }
 .fila-tel { display: grid; grid-template-columns: 110px 1fr; gap: 10px; }
 .google-hueco .acciones { margin-bottom: 8px; }
 
+/* La fecha de nacimiento: se escribe o se elige con el calendario, como en la
+   app. El selector nativo está debajo del icono, sin verse, para que se abra ahí. */
+.campo-fecha { position: relative; display: block; }
+.formu .campo-fecha > input[name]:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]) { padding-right: 52px; }
+.formu .campo-fecha > input.campo-fecha-nativo:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]) {
+  position: absolute; right: 2px; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; padding: 0; border: 0;
+  opacity: 0; pointer-events: none; }
+.campo-fecha-btn { position: absolute; right: 2px; top: 50%; transform: translateY(-50%); z-index: 1; width: 44px; height: 44px; padding: 0;
+  display: grid; place-items: center; border: 0; border-radius: 14px; background: none; color: var(--ink-2); cursor: pointer; }
+.campo-fecha-btn:hover { color: var(--ink); }
+.campo-fecha-btn:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; color: var(--ink); }
+
 /* Formularios de acceso, como la app: el error debajo de su campo. */
 .formu .err-campo { color: #FF5C5C; font-size: 13px; font-weight: 500; }
 .formu input[aria-invalid=true]:not([type=checkbox]), .formu input[aria-invalid=true]:not([type=checkbox]):focus { border-color: #FF5C5C; box-shadow: 0 0 0 1px #FF5C5C; }
