@@ -1093,27 +1093,23 @@
     };
   }
 
-  // ── Tocar otra vez «Descubre» o el logo, ya en Descubre ───────────────
+  // ── Tocar otra vez la pestaña «Descubre», ya en Descubre ──────────────
   // (Iván, 2026-10-28), como en la app, en iOS o en Instagram: si no está en
   // la primera, vuelve a ella (con «Reducir movimiento», de un salto); si ya
   // está, trae la lista otra vez. Sin publicaciones, arriba o la página otra
-  // vez. Con Ctrl, Cmd o Mayús (o la rueda), el enlace de siempre.
+  // vez. Con Ctrl, Cmd o Mayús (o la rueda), el enlace de siempre. El logo no
+  // entra aquí: en la web lleva siempre a la portada (Iván, 2026-11-05).
   if (document.body.classList.contains('pagina-descubre')) {
-    document.querySelectorAll('header.top a.brand').forEach(function (a) {
-      a.setAttribute('aria-label', EN ? 'Klendar, back to top' : 'Klendar, volver arriba');
-    });
     document.addEventListener('click', function (e) {
       if (e.defaultPrevented || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
-      var a = e.target instanceof Element ? e.target.closest('a[data-tab="descubre"], header.top a.brand') : null;
+      var a = e.target instanceof Element ? e.target.closest('a[data-tab="descubre"]') : null;
       if (!a) return;
       e.preventDefault();
       if (subeORecarga) return subeORecarga();
       var caja = document.scrollingElement || document.documentElement;
       if (caja.scrollTop > 2) { caja.scrollTo({ top: 0, behavior: suave() }); return; }
       // Ya arriba y sin publicaciones: se vuelve a preguntar sin recargar la
-      // página (antes, `location.reload()`: parecía que el logo te llevaba a
-      // otra página). Solo si ahora hay algo, la página otra vez para
-      // enseñarlo.
+      // página. Solo si ahora hay algo, la página otra vez para enseñarlo.
       if (preguntando) return;
       preguntando = true;
       var para = giraAguja();

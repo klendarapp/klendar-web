@@ -170,19 +170,20 @@ export const notFound = (lang, path, kind) => {
   const S = en
     ? {
         o: ['This publication is no longer here', 'It may have ended or been removed by the business. There is probably something else on nearby.'],
-        b: ["This business isn't on Klendar", 'The link may be wrong or the business may no longer be here.'],
+        b: ["This business isn't on Klendar", 'The link may be wrong or the business may no longer be here.', "This business isn't here"],
         c: ["We couldn't find that city", 'Have a look at the list of cities with something on.'],
         a: ['This link no longer works', 'They may have changed it. Ask them for the new one.'],
         exp: "See what's on now", agenda: "What's on",
       }
     : {
         o: ['Esta publicación ya no está', 'Puede que haya terminado o que el negocio la haya quitado. Seguro que hay otra cosa cerca.'],
-        b: ['Este negocio no está en Klendar', 'Puede que el enlace esté mal o que el negocio ya no esté.'],
+        b: ['Este negocio no está en Klendar', 'Puede que el enlace esté mal o que el negocio ya no esté.', 'Este negocio no está'],
         c: ['No encontramos esa ciudad', 'Mira la lista de ciudades con algo publicado.'],
         a: ['Este enlace ya no vale', 'Puede que lo haya cambiado. Pídele el nuevo.'],
         exp: 'Ver qué hay ahora', agenda: 'Agenda local',
       };
-  const [titulo, texto] = S[kind] || S.o;
+  // El tercero, para la pestaña si el título ya dice Klendar.
+  const [titulo, texto, pestana] = S[kind] || S.o;
   const body = `
   <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a></p>
   <section class="vacio">
@@ -192,7 +193,7 @@ export const notFound = (lang, path, kind) => {
       <a class="pill" href="${agendaBase(lang)}/">${esc(S.agenda)}</a></div>
   </section>`;
   return html(publicPage({
-    lang, path, body, title: titulo, description: texto, head: '<meta name="robots" content="noindex">',
+    lang, path, body, title: pestana || titulo, description: texto, head: '<meta name="robots" content="noindex">',
   }), 404, 'no-store');
 };
 
@@ -1807,11 +1808,13 @@ export function friendLinkPage(code, lang) {
   const S = en
     ? {
         title: "You've been invited to be friends on Klendar",
+        tab: "You've been invited to be friends",
         text: 'Someone has sent you their friend link. Log in with your account to see who it is and accept.',
         web: 'Continue on the web', app: 'Open in the app',
       }
     : {
         title: 'Te han invitado a ser amigos en Klendar',
+        tab: 'Te han invitado a ser amigos',
         text: 'Alguien te ha mandado su enlace de amigo. Entra con tu cuenta para ver quién es y aceptar.',
         web: 'Seguir en la web', app: 'Abrir en la app',
       };
@@ -1827,7 +1830,7 @@ export function friendLinkPage(code, lang) {
   </div>`;
   const res = html(publicPage({
     contador: false,
-    lang, path, body, title: S.title, description: S.text,
+    lang, path, body, title: S.tab, description: S.text,
     head: '<meta name="robots" content="noindex, nofollow">\n<meta name="referrer" content="no-referrer">',
   }), 200, 'no-store');
   res.headers.set('x-robots-tag', 'noindex, nofollow');

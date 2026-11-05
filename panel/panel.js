@@ -1025,7 +1025,7 @@ $('#menuCerrar').onclick = () => abreMenu(false);
 I18N.translate(document.body);
 window.KL_CABECERA?.();
 document.documentElement.lang = I18N.lang;
-document.title = I18N.lang === 'en' ? 'Klendar · Business dashboard' : `Klendar · ${I18N.t('Panel del negocio')}`;
+document.title = `${I18N.t('Panel del negocio')} · Klendar`;
 
 // ── Navegación ──────────────────────────────────────────────────────────────
 // Iconos que no están en la fuente recortada del panel (Material Symbols,

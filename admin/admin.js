@@ -880,7 +880,7 @@ async function cambiarFactor(quitar) {
 // ── Idioma ──────────────────────────────────────────────────────────────────
 I18N.pickers(['#lang', '#langLogin', '#langSide']);
 I18N.translate(document.body);
-if (I18N.lang === 'en') document.title = 'Klendar · Administration';
+if (I18N.lang === 'en') document.title = 'Administration · Klendar';
 // Un enlace dentro de una fila que se abre al pulsarla: va a su sitio sin
 // abrir la fila (sin `onclick` en el HTML, que una CSP estricta no deja).
 document.addEventListener('click', (e) => { if (e.target instanceof Element && e.target.closest('[data-sin-fila]')) e.stopPropagation(); }, true);

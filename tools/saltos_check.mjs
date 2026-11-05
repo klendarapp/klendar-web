@@ -6,8 +6,10 @@
 //     en todas, del primer cuadro al último; el desplazamiento de maquetación
 //     (CLS, solo Chromium: WebKit no lo mide) por debajo de 0,01; y el cambio
 //     de pestaña no se funde (sin View Transition, `pagereveal`).
-//  2. En Descubre, el logo no navega: sube arriba o trae la lista otra vez, y
-//     «Atrás» lleva a la página de antes (sin entradas de más).
+//  2. En Descubre, tocar otra vez «Descubre» no navega: sube arriba o trae la
+//     lista otra vez, y «Atrás» lleva a la página de antes (sin entradas de
+//     más). El logo lleva siempre a la portada, también desde Descubre
+//     (Iván, 2026-11-05), y «Atrás» vuelve.
 //  3. «Más formas de explorar»: sin zona, el orden de siempre (el de
 //     `public_cities`); con «¿Dónde?» (municipio o posición), la más cercana
 //     primero y como mucho 6; con la zona de la conexión (BASE_IP, un
@@ -115,7 +117,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
       await page.screenshot({ path: `${OUT}/saltos_${nombre}_${w}_${tab}.png` });
     }
 
-    // 2. El logo en Descubre y «Atrás».
+    // 2. Tocar otra vez «Descubre» y «Atrás».
     await page.goto(`${BASE}/explorar/`, { waitUntil: 'load' });
     await page.locator('a[data-tab="descubre"]:visible').first().click();
     await page.waitForLoadState('load');
@@ -127,22 +129,30 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     page.on('framenavigated', cuenta);
     await page.evaluate(() => { const c = document.querySelector('body.pagina-feed') || document.scrollingElement; c.scrollTo(0, 900); });
     await page.waitForTimeout(400);
-    await page.locator('header.top a.brand').first().click();
+    await page.locator('a[data-tab="descubre"]:visible').first().click();
     await page.waitForTimeout(1200);
     const arriba = await page.evaluate(() => (document.querySelector('body.pagina-feed') || document.scrollingElement).scrollTop);
-    ok(arriba <= 2, `${tag} logo en Descubre: sube arriba (${arriba})`);
-    await page.locator('header.top a.brand').first().click();
+    ok(arriba <= 2, `${tag} «Descubre» en Descubre: sube arriba (${arriba})`);
+    await page.locator('a[data-tab="descubre"]:visible').first().click();
     await page.waitForTimeout(3000);
     page.off('framenavigated', cuenta);
-    ok(navegaciones === 0 && page.url() === enDescubre, `${tag} logo en Descubre: no navega (${navegaciones} navegaciones, ${page.url()})`);
-    ok(await page.evaluate(() => history.length) === largo, `${tag} logo en Descubre: sin entradas de más en el historial`);
+    ok(navegaciones === 0 && page.url() === enDescubre, `${tag} «Descubre» en Descubre: no navega (${navegaciones} navegaciones, ${page.url()})`);
+    ok(await page.evaluate(() => history.length) === largo, `${tag} «Descubre» en Descubre: sin entradas de más en el historial`);
     await page.goBack();
     await page.waitForLoadState('load');
-    ok(/\/explorar\//.test(page.url()), `${tag} «Atrás» tras el logo: a Explorar (${page.url()})`);
+    ok(/\/explorar\//.test(page.url()), `${tag} «Atrás» tras «Descubre»: a Explorar (${page.url()})`);
     await page.goForward();
     await page.waitForLoadState('load');
     ok(/\/descubre\//.test(page.url()), `${tag} «Adelante»: otra vez Descubre`);
-    // Fuera de Descubre, el logo lleva a la portada, y «Atrás» vuelve.
+    // Desde Descubre, el logo lleva a la portada, y «Atrás» vuelve.
+    await page.goto(`${BASE}/descubre/`, { waitUntil: 'load' });
+    await page.locator('header.top a.brand').first().click();
+    await page.waitForLoadState('load');
+    ok(new URL(page.url()).pathname === '/', `${tag} logo en Descubre: a la portada (${page.url()})`);
+    await page.goBack();
+    await page.waitForLoadState('load');
+    ok(/\/descubre\//.test(page.url()), `${tag} «Atrás» desde la portada: a Descubre`);
+    // Fuera de Descubre, igual.
     await page.goto(`${BASE}/explorar/`, { waitUntil: 'load' });
     await page.locator('header.top a.brand').first().click();
     await page.waitForLoadState('load');

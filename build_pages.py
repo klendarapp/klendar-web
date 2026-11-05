@@ -826,6 +826,15 @@ PAGINAS['fuentes'] = (
 )
 
 
+# El título de la pestaña de las que dicen «Klendar» en el h1 (formato de la
+# web, «Página · Klendar», sin repetir la marca; también va en og:title).
+PESTANAS = {
+    'para-negocios': ('Para negocios · Klendar', 'For businesses · Klendar'),
+    'para-entidades': ('Para ayuntamientos y asociaciones · Klendar', 'For councils and associations · Klendar'),
+    'sobre': ('Sobre Klendar', 'About Klendar'),
+}
+
+
 if __name__ == '__main__':
     for es_slug, (en_slug, t_es, t_en, d_es, d_en, b_es, b_en) in PAGINAS.items():
         for lang, slug, title, desc, body in (
@@ -835,7 +844,8 @@ if __name__ == '__main__':
             os.makedirs(slug, exist_ok=True)
             path = '/' + slug + '/'
             io.open(os.path.join(slug, 'index.html'), 'w', encoding='utf-8', newline='\n').write(
-                doc_page(T[lang], path, title, desc, body))
+                doc_page(T[lang], path, title, desc, body,
+                         pestana=PESTANAS.get(es_slug, (None, None))[lang == 'en']))
         print('ok', es_slug, '·', en_slug)
 
     # El centro de ayuda para la app (la descarga y la guarda; lleva una

@@ -60,7 +60,7 @@ MARCAS = {'Klendar', 'Supabase', 'Google', 'Apple', 'Stripe', 'Mapbox', 'Resend'
           'Material', 'Local', 'General', 'Final', 'Hola', 'Enter', 'Escape', 'Tab', 'Backspace'}
 # Lo que no se enseña o ya va en los dos idiomas.
 IGNORAR = {'sin configuración', 'Idioma / Language', 'Español', 'English', 'Invalid login credentials',
-           'User already registered', 'Payload too large', 'Klendar · Panel del negocio', 'Klendar · Administración',
+           'User already registered', 'Payload too large', 'Panel del negocio · Klendar', 'Administración · Klendar',
            # Código, no texto: idiomas y errores de Supabase que se comparan.
            'es', 'en', 'es-ES', 'already registered', 'token has expired'}
 CODIGO = re.compile(r"^[\w.-]+$|[{}=;()\[\]]|=>|\.(js|css|png|svg)\b|^#|^/|https?:|^\$|^[a-z_]+:|--|\\n")

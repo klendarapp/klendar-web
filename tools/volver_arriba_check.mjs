@@ -1,11 +1,10 @@
-// Tocar otra vez «Descubre» o el logo estando en Descubre (Iván, 2026-10-28),
-// como en la app: si no está en la primera publicación, vuelve a ella (con
-// «Reducir movimiento», de un salto) sin pedir nada; si ya está, trae la
-// lista otra vez sin recargar la página (la aguja del logo gira mientras).
-// El logo se lee «Klendar, volver arriba» («Klendar, back to top»). Con Ctrl,
-// el logo sigue siendo un enlace normal. En la web local contra dev, solo
-// leyendo. Chromium y WebKit, móvil (la barra de abajo) y escritorio (las
-// pestañas de arriba).
+// Tocar otra vez «Descubre» estando en Descubre (Iván, 2026-10-28), como en la
+// app: si no está en la primera publicación, vuelve a ella (con «Reducir
+// movimiento», de un salto) sin pedir nada; si ya está, trae la lista otra vez
+// sin recargar la página (la aguja del logo gira mientras). El logo no: lleva
+// siempre a la portada, también desde Descubre (Iván, 2026-11-05), sin
+// «volver arriba» en su etiqueta. Chromium y WebKit, móvil (la barra de abajo)
+// y escritorio (las pestañas de arriba).
 //
 //   PW=<ruta a playwright> OUT=<carpeta> node tools/volver_arriba_check.mjs
 import { spawn } from 'node:child_process';
@@ -68,11 +67,10 @@ try {
       page.on('request', (r) => { if (r.resourceType() === 'fetch' && new URL(r.url()).pathname === '/descubre/') pedidas.push(r.url()); });
       await page.evaluate(() => { window.__mismaPagina = true; });
 
-      ok(await page.getAttribute('header.top a.brand', 'aria-label') === 'Klendar, volver arriba', `${t} el logo se lee «Klendar, volver arriba»`);
+      ok(await page.getAttribute('header.top a.brand', 'aria-label') === null, `${t} el logo no dice «volver arriba»`);
       const tab = page.locator(movil ? '.tabbar a[data-tab="descubre"]' : '.pestanas a[data-tab="descubre"]');
-      const logo = page.locator('header.top a.brand');
 
-      for (const [como, boton] of [['la pestaña', tab], ['el logo', logo]]) {
+      for (const [como, boton] of [['la pestaña', tab]]) {
         await baja(page);
         const antes = await bajado(page);
         ok(antes > 100, `${t} ${como}: bajado a la tercera (${antes})`);
@@ -113,14 +111,10 @@ try {
       }
       if (nombre === 'chromium' && !reducido) await page.screenshot({ path: `${OUT}/volver-arriba-${disp}.png` });
 
-      // Con Ctrl (o Cmd), el logo es el enlace de siempre: no se intercepta
-      // (sin Ctrl, sí). Se mira desde la ventana, después de la página.
-      const intercepta = (ctrlKey) => page.evaluate((ctrl) => new Promise((res) => {
-        window.addEventListener('click', (e) => { res(e.defaultPrevented); e.preventDefault(); }, { once: true });
-        document.querySelector('header.top a.brand').dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, ctrlKey: ctrl, button: 0 }));
-      }), ctrlKey);
-      ok(await intercepta(true) === false, `${t} Ctrl+clic en el logo: el enlace de siempre`);
-      ok(await intercepta(false) === true, `${t} clic en el logo: se queda en Descubre`);
+      // El logo, a la portada: sin interceptar el clic.
+      await page.locator('header.top a.brand').click();
+      await page.waitForURL((u) => u.pathname === '/');
+      ok(new URL(page.url()).pathname === '/', `${t} el logo lleva a la portada`);
       await ctx.close();
     }
 
@@ -129,11 +123,10 @@ try {
     const page = await ctx.newPage();
     await page.goto(`${BASE}/en/discover/?lat=40.417&lng=-3.704`, { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(800);
-    ok(await page.getAttribute('header.top a.brand', 'aria-label') === 'Klendar, back to top', `[${nombre} en] «Klendar, back to top»`);
-    // En otra página, el logo sigue llevando a la portada.
-    await page.goto(`${BASE}/explorar/`, { waitUntil: 'domcontentloaded' });
-    await page.waitForTimeout(500);
-    ok(await page.getAttribute('header.top a.brand', 'aria-label') === null, `[${nombre}] fuera de Descubre, el logo es el de siempre`);
+    ok(await page.getAttribute('header.top a.brand', 'aria-label') === null, `[${nombre} en] el logo no dice «back to top»`);
+    await page.locator('header.top a.brand').click();
+    await page.waitForURL((u) => u.pathname === '/en/');
+    ok(new URL(page.url()).pathname === '/en/', `[${nombre} en] el logo lleva a /en/`);
     await ctx.close();
     await nav.close();
   }

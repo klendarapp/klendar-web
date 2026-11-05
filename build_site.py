@@ -59,6 +59,7 @@ T = {
                 ('Enséñalo y listo', 'El negocio lo escanea. Cada código vale una vez; sin tarjetas ni registros raros.')],
     how_url='/como-funciona/', how_more='Todo lo que hace Klendar →',
     how_title='Cómo funciona Klendar',
+    how_tab='Cómo funciona · Klendar',
     how_desc='Cómo funciona Klendar: ofertas flash con cuenta atrás y eventos de tu barrio, ordenados por cercanía; se guardan en tus planes o se canjean con un QR de un solo uso.',
     band_h2='¿Tienes un bar, una tienda o una sala?',
     band_text='Publica una oferta cuando tengas un hueco y llena tus eventos. Sin comisiones por venta. En la provincia de Málaga, gratis hasta el 31 de marzo de 2027.',
@@ -129,6 +130,7 @@ T = {
                 ('Show it, done', 'The business scans it. Each code works once; no cards, no weird sign-ups.')],
     how_url='/en/how-it-works/', how_more='Everything Klendar does →',
     how_title='How Klendar works',
+    how_tab='How it works · Klendar',
     how_desc='How Klendar works: flash offers with a countdown and events from your neighbourhood, sorted by distance; save them to your plans or redeem with a single-use QR code.',
     band_h2='Got a bar, a shop or a venue?',
     band_text='Post a deal when you have a quiet hour and fill your events. No sales commission. In the province of Málaga, free until 31 March 2027.',
@@ -445,7 +447,7 @@ def como_funciona(t):
 </div></section>
 </main>
 '''
-    return head(t, path, f"{t['how_title']} · Klendar", t['how_desc']) + body + footer(t)
+    return head(t, path, t['how_tab'], t['how_desc']) + body + footer(t)
 
 
 def jsq(s):
@@ -453,8 +455,10 @@ def jsq(s):
     return json.dumps(s, ensure_ascii=False)
 
 
-def doc_page(t, path, title, desc, body):
-    return head(t, path, f'{title} · Klendar', desc) + f'''
+def doc_page(t, path, title, desc, body, pestana=None):
+    # `pestana`: el título de la pestaña si no es «<h1> · Klendar» (cuando el
+    # h1 ya dice Klendar, para no repetirlo).
+    return head(t, path, pestana or f'{title} · Klendar', desc) + f'''
 <main class="doc" id="contenido">
 <h1>{title}</h1>
 {body}
