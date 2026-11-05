@@ -6,8 +6,8 @@
 //  2. Publicación en inglés (`/en/o/`) con textos en español: «Translate»
 //     bajo el título y nada pedido hasta tocarlo; al tocarlo, la traducción,
 //     `lang="en-x-mtfrom-es"` y una sola línea «See original · Translated by
-//     Google»; «See original» y «See translation» sin volver a
-//     pedir.
+//     Google» (la reserva) o «Automatic translation · See original» (la IA);
+//     «See original» y «See translation» sin volver a pedir.
 //  3. La misma en español (`/o/`): ni «Traducir» ni una sola petición.
 //  4. Ficha en inglés (`/en/b/`): «Translate» bajo la descripción, cada
 //     novedad, «Qué pedir aquí» y encima de la carta; una novedad pide solo
@@ -100,6 +100,11 @@ if (process.env.SOLO_IDIOMA) {
   console.log(fallos ? `${fallos} fallo(s)` : 'Todo bien');
   process.exit(fallos ? 1 : 0);
 }
+
+// La etiqueta en español, en el propio script: las fichas de abajo están en español y no piden traducir.
+const FUENTE = readFileSync(new URL('../assets/traducir.js', import.meta.url), 'utf8');
+ok(FUENTE.includes("auto: 'Traducción automática'") && FUENTE.includes("auto: 'Automatic translation'") && !/\bclaude\b:/i.test(FUENTE),
+  'la etiqueta de la IA en español e inglés, sin nombrarla');
 
 // ── El Supabase de mentira (para la Function y para el navegador) ──────────
 const TEXTOS = {
@@ -236,12 +241,25 @@ async function oferta(nav, nombre, t, vp) {
   ok(await p.locator('.tr-nota').count() === 0 && estado.pedidos.length === 0, `${nombre}/${t} oferta en español: nada, ni una petición`);
   await c.close();
 
-  // Con la IA, la de serie: la atribución es de Claude, no de Google.
+  // Con la IA, la de serie: «Automatic translation · See original», la etiqueta delante y sin nombrar a nadie.
   ({ c, p, errores } = await empieza(nav, vp, { modo: 'ia' }));
   await p.goto(`http://localhost:${FICHA_PORT}/en/o/${OFERTA}`, { waitUntil: 'networkidle' });
-  await p.locator(`[data-tr-nota="offer:${OFERTA}:"] button`).click();
+  const ia = p.locator(`[data-tr-nota="offer:${OFERTA}:"]`);
+  await ia.locator('button').click();
   await p.waitForSelector('.tr-atrib', { timeout: 8000 }).catch(() => null);
-  ok(await p.locator('.tr-atrib').innerText().catch(() => '') === '· Translated by Claude', `${nombre}/${t} con IA: «Translated by Claude»`);
+  ok(await ia.locator('.tr-atrib').innerText().catch(() => '') === 'Automatic translation ·' && await ia.locator('button').innerText() === 'See original',
+    `${nombre}/${t} con IA: «Automatic translation · See original»`);
+  const [cajaE, cajaB] = [await ia.locator('.tr-atrib').boundingBox(), await ia.locator('button span').boundingBox()];
+  ok(cajaE.x < cajaB.x && Math.abs((cajaE.y + cajaE.height / 2) - (cajaB.y + cajaB.height / 2)) < 3 && (await ia.boundingBox()).height < 30,
+    `${nombre}/${t} con IA: una sola línea, con la etiqueta delante ${JSON.stringify({ cajaE, cajaB })}`);
+  ok(!/Claude|Translated by/.test(await ia.innerText()), `${nombre}/${t} con IA: no nombra a nadie`);
+  await p.screenshot({ path: `${OUT}/web-oferta-traducida-ia-${nombre}-${t}.png` });
+  await ia.locator('.tr-atrib').click();
+  ok(/\[EN\]/.test(await p.locator('h1').innerText()), `${nombre}/${t} con IA: la etiqueta no es el enlace`);
+  await ia.locator('button').click();
+  ok(await p.locator('h1').innerText() === 'Cata de vermús de Madrid' && await ia.locator('button').innerText() === 'See translation'
+    && await ia.locator('.tr-atrib').innerText() === 'Automatic translation ·', `${nombre}/${t} con IA: «Automatic translation · See translation»`);
+  ok(errores.length === 0, `${nombre}/${t} con IA sin errores JS ${errores.join(' | ')}`);
   await c.close();
 
   // Tope del mes.
@@ -286,6 +304,13 @@ async function ficha(nav, nombre, t, vp) {
   await p.locator(`[data-tr-nota="menu_"] button`).click();
   await p.waitForFunction((id) => /\[EN\]/.test(document.querySelector(`[data-tr="menu_item:${id}:name"]`).textContent), ITEM);
   ok(traducciones()[1]?.kind === 'menu' && !traducciones()[1].only, `${nombre}/${t} ficha: la carta entera de una vez`);
+  // Cada texto se queda con su proveedor: lo de Google lo sigue diciendo aunque lo siguiente sea de la IA.
+  estado.modo = 'ia';
+  await p.locator(`[data-tr-nota="post:${POST2}:"] button`).click();
+  await p.waitForFunction((id) => /\[EN\]/.test(document.querySelector(`[data-tr="post:${id}:body"]`).textContent), POST2);
+  ok(await p.locator(`[data-tr-nota="post:${POST1}:"] .tr-atrib`).innerText() === '· Translated by Google'
+    && await p.locator(`[data-tr-nota="post:${POST2}:"] .tr-atrib`).innerText() === 'Automatic translation ·',
+    `${nombre}/${t} ficha: cada texto dice quién lo tradujo`);
   await p.locator('#novedades').scrollIntoViewIfNeeded().catch(() => null);
   await p.screenshot({ path: `${OUT}/web-ficha-traducir-${nombre}-${t}.png`, fullPage: true });
   ok(errores.length === 0, `${nombre}/${t} ficha sin errores JS ${errores.join(' | ')}`);

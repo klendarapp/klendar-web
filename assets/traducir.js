@@ -4,10 +4,12 @@
 // El texto sale siempre en su idioma. Debajo de lo que está en otro idioma
 // que el de la página sale un «Traducir» pequeño (icono de traducir, en
 // tinta): al tocarlo se traduce ahí mismo (la aguja pequeña mientras llega)
-// y pasa a una línea pequeña y gris, «Ver original · Traducido por Claude»
-// (con la IA, la de serie) o «… por Google» (la reserva, con la atribución que
-// pide Google, su «translated by Google»): lo dice `provider`. Si falla o se ha llegado al tope del mes: «No se ha podido
-// traducir ahora» (tocándolo, otra vez) y el texto sigue en el original.
+// y pasa a una línea pequeña y gris: «Traducción automática · Ver original»
+// (con la IA, la de serie; Iván, 5-11-2026) o «Ver original · Traducido por
+// Google» (la reserva, con la atribución que pide Google, su «translated by
+// Google»). Lo dice `provider`, y cada texto se queda con el suyo. Si falla o
+// se ha llegado al tope del mes: «No se ha podido traducir ahora» (tocándolo,
+// otra vez) y el texto sigue en el original.
 // Con «Traducir siempre automáticamente» («Tu cuenta» → Ajustes; aquí,
 // `localStorage['klendar.traducir']`) sale ya traducido, sin tocar nada.
 //
@@ -36,11 +38,12 @@
   try { siempre = localStorage.getItem('klendar.traducir') === '1'; } catch { /* sin permisos */ }
 
   const T = lang === 'en'
-    ? { tr: 'Translate', orig: 'See original', verTr: 'See translation', por: 'Translated by',
+    ? { tr: 'Translate', orig: 'See original', verTr: 'See translation', por: 'Translated by', auto: 'Automatic translation',
       falla: "Couldn't translate right now", mismo: "It's already in your language", traduciendo: 'Translating…' }
-    : { tr: 'Traducir', orig: 'Ver original', verTr: 'Ver traducción', por: 'Traducido por',
+    : { tr: 'Traducir', orig: 'Ver original', verTr: 'Ver traducción', por: 'Traducido por', auto: 'Traducción automática',
       falla: 'No se ha podido traducir ahora', mismo: 'Ya está en tu idioma', traduciendo: 'Traduciendo…' };
-  const PROVEEDOR = { google: 'Google', deepl: 'DeepL', claude: 'Claude', Claude: 'Claude' };
+  // A quién hay que nombrar (Google lo exige). A la IA, no.
+  const PROVEEDOR = { google: 'Google', deepl: 'DeepL' };
 
   // Cada «Traducir»: sus prefijos, sus textos y de qué publicación o ficha.
   const kindDe = (pre) => (pre.startsWith('offer:') ? 'offer' : pre.startsWith('menu_') ? 'menu' : 'business');
@@ -91,7 +94,6 @@
 
   const textos = {};
   const origenes = {};
-  let proveedor = null;
 
   const pintaTexto = (el) => {
     el.textContent = '';
@@ -121,12 +123,16 @@
         n.querySelector('button').setAttribute('aria-label', T.traduciendo);
         return;
       case 'hecho':
-        // Una sola línea pequeña y gris: «Ver original · Traducido por
-        // Google» (o «Ver traducción · …»); solo lo primero es el enlace.
-        n.innerHTML = `${boton()}<span class="tr-atrib"></span>`;
+        // Una sola línea pequeña y gris: «Traducción automática · Ver
+        // original» o «Ver original · Traducido por Google» (y lo mismo con
+        // «Ver traducción»); solo «Ver…» es el enlace.
+        n.innerHTML = PROVEEDOR[u.proveedor]
+          ? `${boton()}<span class="tr-atrib"></span>`
+          : `<span class="tr-atrib tr-antes">${ICONO}<span></span></span>${boton('')}`;
         n.querySelector('button').classList.add('tr-gris');
         n.querySelector('button span').textContent = u.viendoOriginal ? T.verTr : T.orig;
-        n.querySelector('.tr-atrib').textContent = `· ${T.por} ${PROVEEDOR[proveedor] || proveedor || PROVEEDOR.claude}`;
+        if (PROVEEDOR[u.proveedor]) n.querySelector('.tr-atrib').textContent = `· ${T.por} ${PROVEEDOR[u.proveedor]}`;
+        else n.querySelector('.tr-antes span').textContent = `${T.auto} ·`;
         return;
       case 'mismo':
         n.innerHTML = `<span class="tr-mismo">${ICONO}<span></span></span>`;
@@ -162,7 +168,6 @@
       if (ok) {
         Object.assign(textos, r.translations || {});
         Object.assign(origenes, r.from || {});
-        proveedor = r.provider || proveedor;
       }
       const mismos = new Set(ok && Array.isArray(r.same) ? r.same : []);
       for (const u of grupo) {
@@ -170,6 +175,7 @@
         u.estado = ok && mias.some((k) => typeof (r.translations || {})[k] === 'string') ? 'hecho'
           : ok && mias.some((k) => mismos.has(k)) ? 'mismo' : 'falla';
         u.viendoOriginal = false;
+        if (u.estado === 'hecho') u.proveedor = r.provider;
         pinta(u);
       }
     }));
