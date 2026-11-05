@@ -1274,6 +1274,8 @@ RUTAS.registro = async (_p, params) => {
   const siguiente = params.get('siguiente') || '';
   // Desde «Acceso para negocios»: al terminar, al alta del negocio.
   const negocio = params.get('para') === 'negocio';
+  // klendar.app/alta con la sesión ya abierta: al panel, sin pedir otra cuenta.
+  if (YO && negocio) return trasEntrar(siguiente);
   const destino = negocio ? `${location.origin}/panel/?alta=1` : `${location.origin}/app/`;
   // Turnstile, por adelantado: al pulsar, el token suele estar ya listo.
   window.KL_CAPTCHA?.pre?.();

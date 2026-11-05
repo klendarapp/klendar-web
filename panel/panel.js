@@ -653,7 +653,7 @@ async function sugerenciasDelNegocio() {
 /** Lo que falta de la ficha, como en la app (`_FirstSteps.items`). */
 function fichaFaltan(f) {
   const out = [{ titulo: 'Pon tu logo y una foto', href: '#/ficha/fotos', hecho: !!f.logo_url && !!f.cover_image_url }];
-  if (!esOrganizador()) {
+  if (!esOrganizador() && !esEntidad()) {
     out.push({ titulo: 'Pon tu horario', href: '#/ficha/horario', hecho: !!f.opening_hours && Object.keys(f.opening_hours).length > 0 });
     out.push({ titulo: 'Añade fotos del local', href: '#/ficha/fotos', hecho: (f.gallery || []).length >= 2 });
     out.push({ titulo: 'Sube tu carta', href: '#/carta', hecho: !!f.menu_url || (f.menu_images || []).length > 0 });
@@ -726,7 +726,13 @@ async function sugAbrir(s, alPublicar) {
   try {
     const { data: fila, error } = await sb.from('offers').insert(datos).select('id').single();
     if (error) throw error;
-    await rpc('save_offer_rule', { p_business: BIZ.id, p_offer: fila.id, p_weekdays: dias, p_start_time: r.hora, p_duration_min: min });
+    try {
+      await rpc('save_offer_rule', { p_business: BIZ.id, p_offer: fila.id, p_weekdays: dias, p_start_time: r.hora, p_duration_min: min });
+    } catch (e) {
+      // Sin regla no es lo que ha pedido: se quita y, al reintentar, no sale dos veces.
+      await sb.from('offers').delete().eq('id', fila.id);
+      throw e;
+    }
     hechoBreve('Publicada: se repite sola cada semana');
     alPublicar?.();
   } catch (e) { toast(friendly(e.message), true); }
@@ -1602,15 +1608,18 @@ PAGES.resumen = async (v) => {
   // no frena el alta y se queda aquí hasta 30 días o hasta que esté todo. Lo
   // mismo que en la app (alta rápida, 2026-11-05).
   const sinNada = !offers.length && !(cuentas?.total);
-  const candidato = gestiona() && !esEntidad() && BIZ.verification_status !== 'rejected';
+  // Una entidad, cuando ya se ha comprobado su documento (antes no publica).
+  const candidato = gestiona() && BIZ.verification_status !== 'rejected' && !BIZ.entity?.pending
+    && (!esEntidad() || BIZ.verification_status === 'verified');
   const ficha = candidato
     ? (await sb.from('businesses').select('logo_url, cover_image_url, gallery, opening_hours, menu_url, menu_images, created_at').eq('id', BIZ.id).maybeSingle()).data || {}
     : {};
   const faltan = candidato ? fichaFaltan(ficha) : [];
   const reciente = ficha.created_at && Date.now() - new Date(ficha.created_at).getTime() < 30 * 86400e3;
   const primeros = candidato && (sinNada || (reciente && faltan.some((f) => !f.hecho)));
-  // Sin local fijo, cada publicación pide su sitio: ahí, el formulario.
-  const sugerencias = primeros && sinNada && !esOrganizador() ? await sugerenciasDelNegocio() : [];
+  // Sin local fijo (o entidad), cada publicación pide su sitio: ahí, el formulario.
+  const sinLocal = esOrganizador() || esEntidad();
+  const sugerencias = primeros && sinNada && !sinLocal ? await sugerenciasDelNegocio() : [];
   const paso = (n, hecho, titulo, pista, href, attrs = '') => `<a class="paso${hecho ? ' hecho' : ''}" ${hecho ? '' : `href="${href}" ${attrs}`}>
       <span class="n">${hecho ? ms('check') : n}</span><span><b>${titulo}</b>${pista && !hecho ? `<small>${pista}</small>` : ''}</span>${hecho ? '' : ms('chevron_right')}</a>`;
   // Un solo aviso arriba: lo más grave primero (cerrado por Klendar, un
@@ -1657,10 +1666,10 @@ PAGES.resumen = async (v) => {
       <p style="margin:2px 0 10px"><a class="link" href="#/publicaciones/nueva-flash?idea=1">Prefiero escribir otra</a></p>
       <h3 class="sug-titulo">Completa tu ficha</h3>` : ''}
       <p class="muted" style="margin:0 0 8px">Nada de esto frena tu alta: hazlo ahora o cuando quieras.</p>
-      ${esOrganizador() && sinNada ? paso('', false, 'Publica tu primera oferta', 'Te la dejamos casi hecha: cambia el precio y la hora.', '#/publicaciones/nueva-flash?idea=1') : ''}
+      ${sinLocal && sinNada ? paso('', false, 'Publica tu primera oferta', 'Te la dejamos casi hecha: cambia el precio y la hora.', '#/publicaciones/nueva-flash?idea=1') : ''}
       ${faltan.map((f) => paso('', f.hecho, f.titulo, '', f.href)).join('')}
       ${paso('', false, 'Invita a quien valida en barra', '', '#/equipo')}
-      ${esOrganizador() ? '' : paso('', false, 'Descarga el cartel del local', '', '#/cartel-local')}
+      ${sinLocal ? '' : paso('', false, 'Descarga el cartel del local', '', '#/cartel-local')}
       ${paso('', false, 'Cuéntalo en tus redes', '', '#', 'data-compartir')}
     </div>` : ''}
     <!-- Ordenado como la app (Iván, 2026-10-22): «Lo esencial», «Por
@@ -2590,7 +2599,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
   // de dos toques (alta rápida, 2026-11-05). «Prefiero escribir otra»
   // (`?idea=1`) ya ha elegido el formulario.
   let sugForm = [];
-  if (!id && !desde && !partido?.id && kind === 'flash_offer' && !esOrganizador() && !/[?&](idea|primera|exclusiva|partido)=/.test(location.hash)) {
+  if (!id && !desde && !partido?.id && kind === 'flash_offer' && !esOrganizador() && !esEntidad() && !/[?&](idea|primera|exclusiva|partido)=/.test(location.hash)) {
     const c = await rpc('my_business_offer_counts', { p_business: BIZ.id }).catch(() => null);
     if (c && !Number(c.total)) sugForm = await sugerenciasDelNegocio();
   }
