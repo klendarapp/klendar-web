@@ -83,6 +83,19 @@ export async function datosDeNegocios(ids) {
 
 export const zonasDeNegocios = async (ids) => (await datosDeNegocios(ids)).zonas;
 
+/** Una lista pública leída directamente de `businesses`: sin el negocio de
+ *  revisión de las tiendas (`review_only`, migración 20261263900000). Si la
+ *  base aún no tiene esa columna contesta 400: la lista sale sin el filtro en
+ *  vez de romperse (la web se sube antes que la migración a prod). Si la base
+ *  está caída, el segundo intento lanza el error de siempre. */
+export async function negociosPublicos(consulta) {
+  try {
+    return await rows('businesses', `${consulta}&review_only=eq.false`);
+  } catch {
+    return rows('businesses', consulta);
+  }
+}
+
 /** La dirección con nombre de un negocio (`cafe-central-madrid`), o null. */
 export const slugDe = async (id) => (await datosDeNegocios([id])).slugs.get(id) || null;
 

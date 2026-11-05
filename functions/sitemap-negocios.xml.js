@@ -1,5 +1,5 @@
-import { configure, datosDePrueba, rows } from './_lib/page.js';
-import { BASE, isSlug } from './_lib/public.js';
+import { configure, datosDePrueba } from './_lib/page.js';
+import { BASE, isSlug, negociosPublicos } from './_lib/public.js';
 import { sitemapVacio, urlPar, urlset } from './_lib/sitemap.js';
 import { sorteosAbiertos } from './_lib/sorteos.js';
 
@@ -7,7 +7,8 @@ import { sorteosAbiertos } from './_lib/sorteos.js';
 // los sorteos abiertos (/sorteo/<id> y /en/giveaway/<id>).
 //
 // Solo los negocios que cualquiera puede ver (activos y verificados: lo que
-// deja leer la base sin cuenta) y ninguno +18, cuya ficha va con noindex.
+// deja leer la base sin cuenta) y ninguno +18 ni el de revisión de las tiendas,
+// cuyas fichas van con noindex.
 // Van por su dirección con nombre, que es la URL canónica; la de /b/<id>
 // redirige a ella.
 
@@ -21,7 +22,7 @@ export async function onRequestGet(ctx) {
 
   const negocios = [];
   for (let desde = 0; desde < MAXIMO; desde += POR_PAGINA) {
-    const filas = await rows('businesses', 'select=slug,updated_at'
+    const filas = await negociosPublicos('select=slug,updated_at'
       + '&is_active=eq.true&verification_status=eq.verified&adults_only=eq.false'
       + `&order=created_at.asc,id.asc&offset=${desde}&limit=${POR_PAGINA}`);
     negocios.push(...filas);

@@ -19,7 +19,7 @@ import { cabeceraEdad, edadDeclarada, esc, html, preguntaEdadEncendida, rows, rp
 import KZ from '../../assets/zona.js';
 import {
   agendaBase, bizPath, cityLinks, collectionBase, decodeSeg, discoverBase, exploreBase, firstPhoto, historiaBoton, isVideo, kidsBase, ldScript,
-  listingLd, publicPage, todayBase,
+  listingLd, negociosPublicos, publicPage, todayBase,
 } from './public.js';
 import KC from '../../assets/categorias.js';
 import { SITIO, esDieta, icSitio, nombreSitio, ordenaSitio, sitioAUrl, sitioDeUrl } from './sitio.js';
@@ -2660,7 +2660,7 @@ export async function kidsPage(rawCity, lang) {
     rpcAll('public_cities', {}),
     // Los sitios de la ciudad que el negocio marca como aptos para niños (o con
     // zona infantil). Son un extra: si no llegan, la página sale igual.
-    rows('businesses', `select=id,slug,name,city&${filtroSitio}`
+    negociosPublicos(`select=id,slug,name,city&${filtroSitio}`
       + '&amenities=ov.%7Bkids,play_area%7D&is_active=eq.true&adults_only=eq.false'
       + '&closed_indefinitely_at=is.null&closed_permanently_at=is.null&order=name.asc&limit=24').catch(() => []),
   ]);

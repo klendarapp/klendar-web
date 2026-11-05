@@ -912,6 +912,14 @@ export async function businessPage(param, lang, search = '') {
     // enlazar la página del municipio por su slug. Opcional.
     rpc('business_municipality_info', { p_business: id }).catch(() => null),
   ]);
+  // El negocio de revisión de las tiendas (`review_only`, migración
+  // 20261263900000): su ficha se abre con el enlace, para el revisor, pero no
+  // es para los buscadores: `noindex`, sin datos estructurados ni canonical.
+  const esDeRevision = fichaInfo?.review_only === true;
+  const deRevision = (res) => {
+    if (esDeRevision) res.headers.set('x-robots-tag', 'noindex, nofollow');
+    return res;
+  };
   // Bloqueado (sin pagar) o en pausa por cierre (`unavailable`, migración
   // 20261222100000): la ficha lo dice («No disponible ahora mismo» o
   // «Cerrado temporalmente hasta el día X») y no enseña publicaciones,
@@ -1285,13 +1293,13 @@ export async function businessPage(param, lang, search = '') {
     ${parado ? '' : `${platosHtml()}${archivosCartaHtml}`}
     <p><a class="pill" href="${path}">${esc(S.back)}</a></p>
   </div>`;
-    return html(publicPage({
+    return deRevision(html(publicPage({
       lang, path, body: cuerpo + MENU_JS, title: `${S.menu} · ${b.name}`, description: `${S.menu} · ${b.name}`, image: b.cover || b.logo,
-      consulta: '?ver=carta',
-      head: `<meta name="robots" content="noindex, follow">
+      consulta: '?ver=carta', privada: esDeRevision,
+      head: `<meta name="robots" content="${esDeRevision ? 'noindex, nofollow' : 'noindex, follow'}">
 ${traducir(lang, `business:${b.id}`, carta.length ? `menu:${b.id}` : '')}${cuentaToques ? `
 <script src="/assets/enlaces.js?v=3" defer data-url="${esc(supabasePublic().url)}" data-key="${esc(supabasePublic().key)}" data-biz="${esc(b.id)}"></script>` : ''}`,
-    }));
+    })));
   }
   if (ver) {
     const total = ver === 'novedades' ? (parado ? 0 : Number(b.posts) || 0) : ver === 'preguntas' ? nPreguntas : nResenas;
@@ -1318,12 +1326,12 @@ ${traducir(lang, `business:${b.id}`, carta.length ? `menu:${b.id}` : '')}${cuent
     ${paginador(pagina, pags, enlace)}
     <p><a class="pill" href="${path}">${esc(S.back)}</a></p>
   </div>`;
-    return html(publicPage({
+    return deRevision(html(publicPage({
       lang, path, body: cuerpo + MENU_JS, title: `${titulo} · ${b.name}`, description: `${titulo} · ${b.name}`, image: b.cover || b.logo,
-      consulta: `?ver=${ver}${filtro}${pagina > 1 ? `&p=${pagina}` : ''}`,
-      head: `<meta name="robots" content="noindex, follow">
+      consulta: `?ver=${ver}${filtro}${pagina > 1 ? `&p=${pagina}` : ''}`, privada: esDeRevision,
+      head: `<meta name="robots" content="${esDeRevision ? 'noindex, nofollow' : 'noindex, follow'}">
 ${traducir(lang, `business:${b.id}`, '')}${ver === 'preguntas' ? `\n${PREGUNTAS_CSS}\n${preguntasScript}` : ''}`,
-    }));
+    })));
   }
 
   // ── La ficha ordenada (Iván, 2026-10-22; igual en la app) ──────────────
@@ -1515,18 +1523,18 @@ ${traducir(lang, `business:${b.id}`, '')}${ver === 'preguntas' ? `\n${PREGUNTAS_
 <script src="/config.js?v=4" defer></script>
 <script src="/assets/visita.js?v=3" defer data-token="${esc(visita)}" data-lang="${en ? 'en' : 'es'}"></script>`
     : '';
-  return html(publicPage({
+  return deRevision(html(publicPage({
     lang, path, body: body + MENU_JS + COMPARTIR_JS, title: conCiudad ? `${b.name} · ${b.city}` : b.name, description, image: b.cover || b.logo,
-    consulta: pagina > 1 ? `?p=${pagina}` : '',
-    head: `<meta name="robots" content="${b.adults_only || conVisita || b.closed_indefinitely || parado ? 'noindex' : pagina > 1 ? 'noindex, follow' : 'index, follow'}">
-${ldScript(jsonLd)}${cuentaToques ? `
+    consulta: pagina > 1 ? `?p=${pagina}` : '', privada: esDeRevision,
+    head: `<meta name="robots" content="${esDeRevision ? 'noindex, nofollow' : b.adults_only || conVisita || b.closed_indefinitely || parado ? 'noindex' : pagina > 1 ? 'noindex, follow' : 'index, follow'}">
+${esDeRevision ? '' : ldScript(jsonLd)}${cuentaToques ? `
 <script src="/assets/enlaces.js?v=3" defer data-url="${esc(supabasePublic().url)}" data-key="${esc(supabasePublic().key)}" data-biz="${esc(b.id)}"></script>` : ''}${horario ? '\n<script src="/assets/zona.js?v=2" defer></script>\n<script src="/assets/horario.js?v=4" defer></script>\n<script src="/assets/cerrado.js?v=1" defer></script>' : ''}${conVisita ? `\n${conVisita}` : ''}${crowdOn ? `\n${sitioAhoraScripts(lang)}` : ''}
 ${traducir(lang, `business:${b.id}`, carta.length ? `menu:${b.id}` : '')}${conPreguntas ? `
 ${PREGUNTAS_CSS}
 ${preguntasScript}` : ''}${partidos ? `
 ${PARTIDOS_CSS}` : ''}${grupoHtml || sorteosHtml ? `
 ${GRUPOS_CSS}` : ''}`,
-  }), 200, conVisita ? 'no-store' : undefined);
+  }), 200, conVisita ? 'no-store' : undefined));
 }
 
 // ── Agenda de una ciudad ───────────────────────────────────────────────────
