@@ -691,6 +691,9 @@ RUTAS.ajustes = async ([sub]) => {
         <dt>${esc(t('Estadísticas de uso de la app'))}</dt>
         <dd><label class="check"><input type="checkbox" id="estadisticas"${cons?.analytics_consent ? ' checked' : ''}>
           <span>${esc(cons?.analytics_consent ? `${t('Desde el')} ${dia(cons.analytics_consent_at)}` : t('No mandamos estadísticas de cómo usas la app'))}</span></label></dd>
+        <dt id="dt-ia" hidden>${esc(t('Revisar con IA lo que publico'))}</dt>
+        <dd id="dd-ia" hidden><label class="check"><input type="checkbox" id="permiso-ia">
+          <span>${esc(t('Lo analiza Claude, de Anthropic (Estados Unidos). Sin esto, tus fotos pueden tardar más en publicarse.'))}</span></label></dd>
         <dt>${esc(t('Que mis amigos vean mis planes'))}</dt>
         <dd><label class="check"><input type="checkbox" id="compartir-planes"${cons?.share_plans !== false ? ' checked' : ''}>
           <span>${esc(t(cons?.share_plans !== false
@@ -788,6 +791,19 @@ RUTAS.ajustes = async ([sub]) => {
       if (texto) texto.textContent = caja.checked ? `${t('Desde el')} ${dia(new Date().toISOString())}` : t('No mandamos estadísticas de cómo usas la app');
     } catch (e) { caja.checked = !caja.checked; toast(e.message, true); }
   });
+  // El permiso para el moderador con IA: solo sale con el moderador encendido.
+  llamar('ai_consent_status', {}).then((ia) => {
+    if (!ia?.active) return;
+    $('#dt-ia').hidden = false;
+    $('#dd-ia').hidden = false;
+    const caja = $('#permiso-ia');
+    caja.checked = ia.granted === true;
+    caja.addEventListener('change', async () => {
+      try {
+        await llamar('set_ai_consent', { p_granted: caja.checked });
+      } catch (e) { caja.checked = !caja.checked; toast(e.message, true); }
+    });
+  }).catch(() => { /* si falla, no se ve */ });
   // «Que mis amigos vean mis planes»: apagado, no sales en el «quién va» de
   // nadie (ni por «Voy» ni por una plaza o un código). Y sin él tampoco vale
   // «Mostrar los planes a los que he ido con cada amigo» (sale apagado y

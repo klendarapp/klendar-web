@@ -44,13 +44,10 @@
     try {
       const { data, error } = await sb.rpc('ai_consent_needed');
       if (error || data !== true) return;
-      let visto = false;
-      try { visto = sessionStorage.getItem('klendar.ia.ahora_no') === '1'; } catch { /* sin almacenamiento */ }
-      if (visto) return;
       contenedor.innerHTML = `<section class="retenido" role="group" aria-labelledby="ia-permiso-t">
-        <b id="ia-permiso-t">${esc(t('¿Revisamos lo que publicas con IA?'))}</b>
-        <p>${esc(t('Antes de publicarse, lo que escribes y las fotos que subes (y unos fotogramas de tus vídeos) los analiza un servicio de IA de otra empresa, Google Cloud, para filtrar lo que no permiten las Normas de la comunidad. No se usa para entrenar a la IA.'))}</p>
-        <p>${esc(t('Si prefieres que no, lo revisará una persona del equipo y tus fotos pueden tardar más en publicarse. Puedes cambiarlo cuando quieras.'))} <a href="/privacidad/" target="_blank" rel="noopener">${esc(t('Más información'))}</a></p>
+        <b id="ia-permiso-t">${esc(t('¿Revisamos con IA lo que publicas?'))}</b>
+        <p>${esc(t('Antes de publicarse, lo que escribes y las fotos que subes (y unos fotogramas de tus vídeos) los analiza Claude, la IA de Anthropic, una empresa de Estados Unidos, para filtrar lo que no permiten las Normas de la comunidad. Anthropic no lo usa para entrenar su IA y lo borra en 30 días; lo que sus sistemas marquen como grave puede guardarlo hasta 2 años.'))}</p>
+        <p>${esc(t('Si prefieres que no, se revisará sin esa IA y tus fotos pueden tardar más en publicarse. Puedes cambiarlo cuando quieras en Ajustes.'))} <a href="/privacidad/" target="_blank" rel="noopener">${esc(t('Más información'))}</a></p>
         <div class="retenido-botones"><button type="button" class="pill accent" data-ia="si">${esc(t('Acepto'))}</button>
         <button type="button" class="pill" data-ia="no">${esc(t('Ahora no'))}</button></div>
       </section>`;
@@ -58,8 +55,9 @@
         await sb.rpc('set_ai_consent', { p_granted: true });
         contenedor.innerHTML = '';
       };
-      contenedor.querySelector('[data-ia="no"]').onclick = () => {
-        try { sessionStorage.setItem('klendar.ia.ahora_no', '1'); } catch { /* sin almacenamiento */ }
+      // Una pregunta, una respuesta: «Ahora no» se guarda y no vuelve a salir. Se cambia en Ajustes.
+      contenedor.querySelector('[data-ia="no"]').onclick = async () => {
+        await sb.rpc('set_ai_consent', { p_granted: false });
         contenedor.innerHTML = '';
       };
     } catch { /* si falla, no se ve */ }

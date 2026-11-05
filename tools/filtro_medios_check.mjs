@@ -106,6 +106,7 @@ async function abre(nav, { lang = 'es', claveAdmin = false }) {
       }
       if (fn === 'admin_media_approve_bulk') { cola.held = cola.held.filter((x) => !['cap', 'error'].includes(x.hold_reason)); return json({ ok: true, approved: 1 }); }
       if (fn === 'ai_consent_needed') return json(true);
+      if (fn === 'ai_consent_status') return json({ active: true, granted: true });
       if (fn === 'set_ai_consent') return json({ ok: true, granted: cuerpo.p_granted });
       if (fn === 'my_businesses') return json([{ id: B, name: 'Café Sonda', role: 'owner', verification_status: 'verified', is_active: true, time_zone: 'Europe/Madrid', city: 'Málaga' }]);
       if (fn === 'my_business_offer_counts') return json({ total: 1, todas: 1, activa: 1 });
@@ -200,10 +201,18 @@ for (const [lang, titulo, cuerpo, fuera] of [
   ok(t.includes(titulo) && t.includes(cuerpo) && t.includes(fuera), `«Tu cuenta» (${lang}): el mensaje, sin culpar`, t);
   ok(await page.locator('.retenido-video').count() === 1, `«Tu cuenta» (${lang}): un vídeo sin miniatura no se rompe`);
   const permiso = await page.locator('#aviso-permiso-ia').innerText().catch(() => '');
-  ok(/Google Cloud/.test(permiso), `«Tu cuenta» (${lang}): pide permiso, diciendo a quién va`, permiso);
+  ok(/Anthropic/.test(permiso) && !/Google/.test(permiso), `«Tu cuenta» (${lang}): pide permiso, diciendo a quién va`, permiso);
   await page.locator('[data-ia="si"]').click();
   await page.waitForFunction(() => !document.querySelector('[data-ia="si"]'));
   ok(estado.rpc.some((r) => r.fn === 'set_ai_consent' && r.cuerpo.p_granted === true), `«Tu cuenta» (${lang}): aceptar lo guarda`);
+  await page.goto(`${BASE}/cuenta/ajustes`);
+  await page.waitForSelector('#permiso-ia', { state: 'attached', timeout: 15000 }).catch(() => {});
+  await page.waitForFunction(() => document.querySelector('#dd-ia') && !document.querySelector('#dd-ia').hidden, null, { timeout: 8000 }).catch(() => {});
+  ok(await page.locator('#permiso-ia').isChecked().catch(() => false), `«Tu cuenta» (${lang}): en Ajustes, el interruptor`);
+  const antes = estado.rpc.filter((r) => r.fn === 'set_ai_consent').length;
+  await page.locator('#permiso-ia').uncheck().catch(() => {});
+  await page.waitForTimeout(300);
+  ok(estado.rpc.filter((r) => r.fn === 'set_ai_consent').length === antes + 1 && estado.rpc.at(-1).cuerpo?.p_granted === false, `«Tu cuenta» (${lang}): retirarlo en Ajustes lo guarda`);
   if (lang === 'es') await page.screenshot({ path: `${OUT}/filtro-cuenta.png` });
   ok(!errores.length, `«Tu cuenta» (${lang}): sin errores de JavaScript`, errores.join(' | '));
   await ctx.close();
