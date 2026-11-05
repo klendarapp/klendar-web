@@ -509,6 +509,8 @@ const APP_EN = {
   "Continuar": "Continue",
   "Lo analiza Claude, de Anthropic (Estados Unidos). Sin esto, tus fotos pueden tardar más en publicarse.": "Analysed by Claude, from Anthropic (United States). Without this, your photos may take longer to go live.",
   "Revisar con IA lo que publico": "Check what I publish with AI",
+  "Leer mis fotos con IA": "Read my photos with AI",
+  "Para rellenar publicaciones y la carta desde una foto. Las fotos van a Claude (Anthropic, EE. UU.) y no se guardan en Klendar.": "To fill in publications and the menu from a photo. Photos go to Claude (Anthropic, US) and aren’t kept in Klendar.",
   "\u00bfRevisamos con IA lo que publicas?": "Can we check what you publish with AI?",
   "Antes de publicarse, lo que escribes y las fotos que subes (y unos fotogramas de tus v\u00eddeos) los analiza Claude, la IA de Anthropic, una empresa de Estados Unidos, para filtrar lo que no permiten las Normas de la comunidad. Anthropic no lo usa para entrenar su IA y lo borra en 30 d\u00edas; lo que sus sistemas marquen como grave puede guardarlo hasta 2 a\u00f1os.": "Before it goes live, what you write and the photos you upload (and a few frames from your videos) are analysed by Claude, the AI from Anthropic, a US company, to filter what the Community guidelines don\u2019t allow. Anthropic doesn\u2019t use it to train its AI and deletes it within 30 days; anything its systems flag as serious may be kept for up to 2 years.",
   "Si prefieres que no, se revisar\u00e1 sin esa IA y tus fotos pueden tardar m\u00e1s en publicarse. Puedes cambiarlo cuando quieras en Ajustes.": "If you\u2019d rather not, it will be checked without that AI and your photos may take longer to go live. You can change this any time in Settings.",

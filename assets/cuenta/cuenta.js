@@ -694,6 +694,9 @@ RUTAS.ajustes = async ([sub]) => {
         <dt id="dt-ia" hidden>${esc(t('Revisar con IA lo que publico'))}</dt>
         <dd id="dd-ia" hidden><label class="check"><input type="checkbox" id="permiso-ia">
           <span>${esc(t('Lo analiza Claude, de Anthropic (Estados Unidos). Sin esto, tus fotos pueden tardar más en publicarse.'))}</span></label></dd>
+        <dt id="dt-ia-foto" hidden>${esc(t('Leer mis fotos con IA'))}</dt>
+        <dd id="dd-ia-foto" hidden><label class="check"><input type="checkbox" id="permiso-ia-foto">
+          <span>${esc(t('Para rellenar publicaciones y la carta desde una foto. Las fotos van a Claude (Anthropic, EE. UU.) y no se guardan en Klendar.'))}</span></label></dd>
         <dt>${esc(t('Que mis amigos vean mis planes'))}</dt>
         <dd><label class="check"><input type="checkbox" id="compartir-planes"${cons?.share_plans !== false ? ' checked' : ''}>
           <span>${esc(t(cons?.share_plans !== false
@@ -801,6 +804,19 @@ RUTAS.ajustes = async ([sub]) => {
     caja.addEventListener('change', async () => {
       try {
         await llamar('set_ai_consent', { p_granted: caja.checked });
+      } catch (e) { caja.checked = !caja.checked; toast(e.message, true); }
+    });
+  }).catch(() => { /* si falla, no se ve */ });
+  // El permiso de «Rellenar desde una foto»: solo sale si ya ha contestado alguna vez.
+  llamar('photo_fill_status', { p_business: null }).then((ia) => {
+    if (!ia?.asked) return;
+    $('#dt-ia-foto').hidden = false;
+    $('#dd-ia-foto').hidden = false;
+    const caja = $('#permiso-ia-foto');
+    caja.checked = ia.consent === true;
+    caja.addEventListener('change', async () => {
+      try {
+        await llamar('set_ai_consent', { p_granted: caja.checked, p_use: 'photo_fill' });
       } catch (e) { caja.checked = !caja.checked; toast(e.message, true); }
     });
   }).catch(() => { /* si falla, no se ve */ });

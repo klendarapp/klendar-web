@@ -2654,6 +2654,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
     <div class="pub-editor">
     <form class="pub-form" id="form" novalidate>
       <input type="hidden" name="kind" value="${kind}">
+      <div id="fotoRellena"></div>
       ${sugForm.length ? `<div class="sug-caja"><h3 class="sug-titulo">Tu primera oferta, que se repite sola</h3>
         <p class="hint" style="margin:0">Elige una y ajusta el precio o los días: sale sola cada semana a su hora.</p>
         ${sugLista(sugForm)}</div>` : ''}
@@ -2850,11 +2851,12 @@ async function offerForm(v, id, kindDefault, desde = null) {
   };
 
   // ── Categoría (el selector de toda la web; vacía = la del negocio) ──────
-  KlendarCategorias.campo($('[data-cat-oferta]', v), {
+  const pintaCatOferta = (elegidas) => KlendarCategorias.campo($('[data-cat-oferta]', v), {
     cats: CATS, multiple: false, lang: I18N.lang, nombre: 'category_id', titulo: I18N.t('Categoría'),
-    vacio: I18N.t('La de tu negocio'), elegidas: o.category_id ? [o.category_id] : [],
+    vacio: I18N.t('La de tu negocio'), elegidas,
     alCambiar: () => { resumenes(); },
   });
+  pintaCatOferta(o.category_id ? [o.category_id] : []);
 
   // ── El tipo: en el título, y aquí se corrige ────────────────────────────
   const pintaTipo = () => {
@@ -3445,6 +3447,25 @@ async function offerForm(v, id, kindDefault, desde = null) {
   };
   $$('[data-idea]', v).forEach((b) => { b.onclick = () => { aplicarIdea(ideas[+b.dataset.idea]); toast('Idea aplicada: repasa precio y hora'); }; });
   sugActiva(v, sugForm, () => { GUARDA = null; location.hash = '#/publicaciones'; });
+  // «Rellenar desde una foto» (panel/foto.js): llena el formulario para revisarlo. Nunca publica.
+  if (!id && !desde && !partido?.id && window.KFotoRellena) {
+    KFotoRellena.oferta($('#fotoRellena', v), {
+      campo, pon, val,
+      tipo: () => kind,
+      ponTipo: (k) => { if (k !== kind) $('#cambiaTipo', v).click(); },
+      categoria: (cid) => pintaCatOferta(cid ? [cid] : []),
+      refresca: () => { syncKind(); syncDiscount(); pintaPrevia(); resumenes(); pintaFinAuto(); },
+      hayHueco: () => images.length < TOPE.publicacion,
+      usarImagen: async (file) => {
+        const path = `${BIZ.id}/${crypto.randomUUID()}.jpg`;
+        const { error } = await sb.storage.from(BUCKET).upload(path, file, { contentType: file.type });
+        if (error) { toast(friendly(error.message), true); return false; }
+        images.push(sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl);
+        renderPhotos();
+        return true;
+      },
+    });
+  }
   const cierraMenuTpl = () => { const d = $('.tpl-menu', v); if (d) d.open = false; };
   $('#usarTpl', v).onclick = async () => {
     cierraMenuTpl();
@@ -3742,6 +3763,12 @@ async function offerForm(v, id, kindDefault, desde = null) {
       // «Quién actúa», con la publicación ya guardada. Si falla, ella queda
       // guardada y se dice qué nombre no se ha podido poner.
       await artistas.guarda(offerId, kind === 'future_event', teniaArtistas);
+      // La foto decía que se repite: la repetición, unida a la publicación. Si falla, la publicación está hecha.
+      const reglaFoto = !id && data.status === 'active' && !alas ? window.KFotoRellena?.regla() : null;
+      if (reglaFoto) {
+        await rpc('save_offer_rule', { p_business: BIZ.id, p_offer: offerId, p_weekdays: reglaFoto.weekdays, p_start_time: reglaFoto.start_time, p_duration_min: reglaFoto.minutes })
+          .catch(() => toast(I18N.t('Publicada, pero la repetición no se ha podido crear. Hazlo desde «Repetir cada semana».'), true));
+      }
       // La del partido: unida a él (y el partido, marcado «Lo ponemos»).
       if (partido?.id) {
         const unida = await rpc('set_business_broadcast_offer', { p_business: BIZ.id, p_broadcast: partido.id, p_offer: offerId }).catch((e3) => ({ ok: false, error: e3.message }));
@@ -5564,10 +5591,12 @@ PAGES.carta = async (v) => {
     }
   };
 
+  // «Rellenar desde fotos» (panel/foto.js): lo revisado se añade sin guardar y sin quitar nada.
+  const fotoCarta = canManage && window.KFotoRellena ? await KFotoRellena.estado() : null;
   const pinta = () => {
     v.innerHTML = `
       <div class="page-head"><h1>Carta</h1><span class="spacer"></span>
-        ${canManage ? `<button class="btn sm" id="add-sec">Añadir sección</button>
+        ${canManage ? `${fotoCarta?.available ? `<button class="btn sm" id="foto-carta">${esc(I18N.t('Rellenar desde fotos'))}</button>` : ''}<button class="btn sm" id="add-sec">Añadir sección</button>
         <button class="btn sm primary" id="save" ${sucia && !guardando ? '' : 'disabled'}>${guardando ? 'Guardando…' : 'Guardar la carta'}</button>` : ''}</div>
       ${helpBox('Tú eliges cómo ponerla', bi('<p>Tres maneras, y puedes usar las que quieras a la vez: <b>escribirla</b> aquí, subir <b>fotos o un PDF</b> de tu carta o poner un <b>enlace</b> a tu web. Escrita es lo que mejor se lee en el móvil.</p><p>Escrita, además, se puede buscar y la lee un lector de pantalla; si la escribes, es lo primero que se ve y los archivos y el enlace se quedan debajo. Si no te apetece, con una foto o un PDF vas servido.</p><p>Los <b>alérgenos</b> son los catorce que obliga a declarar el Reglamento 1169/2011. Pon solo los que sepas seguro: aquí equivocarse no es una errata.</p>',
         '<p>Three ways, and you can use as many as you like at once: <b>type it</b> here, upload <b>photos or a PDF</b> of your menu or add a <b>link</b> to your website. Typed is what reads best on a phone.</p><p>Typed, it can also be searched and screen readers can read it; if you type it, it is shown first and the files and the link go below. If you would rather not, a photo or a PDF is enough.</p><p>The <b>allergens</b> are the fourteen that Regulation (EU) 1169/2011 requires you to declare. Only mark the ones you are sure about: a mistake here is not just a typo.</p>'))}
@@ -5616,6 +5645,20 @@ PAGES.carta = async (v) => {
 
     if (!canManage) return;
     $('#save', v).onclick = guardar;
+    const fotoBtn = $('#foto-carta', v);
+    if (fotoBtn) {
+      fotoBtn.onclick = () => KFotoRellena.carta(v, {
+        st: fotoCarta, tc,
+        alTerminar: (leida) => {
+          if (leida?.length) {
+            carta = KFotoRellena.mezcla(carta, leida);
+            sucia = true;
+            toast(I18N.t('Añadido. Guarda la carta para que se vea.'));
+          }
+          pinta();
+        },
+      });
+    }
     $('#menu-url', v).oninput = (e) => {
       enlace = e.target.value;
       if (!sucia) { sucia = true; $('#save', v).disabled = guardando; }

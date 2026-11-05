@@ -1229,3 +1229,28 @@ body[data-cabecera] nav.tabbar:not(#tabbar) { display: none; }
 .retenido-fotos img, .retenido-video { width: 64px; height: 64px; object-fit: cover; border-radius: 10px; display: grid; place-items: center; background: rgba(127,127,127,.15); }
 .retenido-video::after { content: ''; border-style: solid; border-width: 9px 0 9px 15px; border-color: transparent transparent transparent rgba(127,127,127,.8); }
 .retenido-botones { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+
+/* «Rellenar desde una foto» (panel/foto.js) */
+.foto-caja { margin: 0 0 14px; padding: 12px 14px; border-radius: 16px; background: var(--elevated); border: 1px solid var(--glass-border); }
+.foto-cta { position: relative; display: flex; gap: 12px; align-items: center; width: 100%; padding: 0; border: 0; background: none; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+.foto-cta .ms { font-size: 24px; }
+.foto-cta small { display: block; color: var(--ink-2); font-size: 13px; }
+.foto-fuentes { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 0; }
+.foto-fuentes[hidden] { display: none; }
+.foto-tit { margin: 0; font-weight: 700; }
+.foto-duda { display: flex; gap: 6px; align-items: flex-start; margin: 6px 0 0; color: var(--ink); font-size: 13px; font-weight: 600; }
+.foto-duda svg { flex: none; margin-top: 1px; }
+.foto-repite { margin: 8px 0 0; }
+.foto-repite small { display: block; color: var(--ink-2); font-size: 13px; }
+.foto-acciones { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; margin: 8px 0 0; }
+.foto-permiso { grid-template-columns: auto 1fr; align-items: start; }
+.foto-sec { margin: 12px 0 0; }
+.foto-fila { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; }
+.foto-fila > .f { flex: 1 1 200px; min-width: 0; }
+.foto-fila > .foto-precio { flex: 0 1 100px; }
+.foto-plato { margin: 12px 0 0; padding: 10px 0 0; border-top: 1px solid var(--glass-border); }
+.foto-alergenos { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 0; }
+.foto-alergenos .tag { cursor: pointer; border: 0; font: inherit; font-size: 13px; }
+.foto-fin { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: flex-end; margin: 14px 0 0; padding: 10px 0; }
+.foto-leyendo { display: grid; justify-items: center; gap: 12px; padding: 32px 16px; text-align: center; }
+.foto-aguja { width: 40px; height: 40px; }
