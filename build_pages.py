@@ -90,7 +90,7 @@ PAGINAS['para-negocios'] = (
 </script>
 
 <h2>Lo que no hacemos</h2>
-<p>No vendemos tus datos ni los de tus clientes, no cobramos por canje y no ponemos tu oferta por delante de otra porque pagues más: <a href="/preguntas/">en la app el orden de serie es «Recomendado»</a> (el tiempo de hoy, lo más nuevo y los gustos de cada persona) y cada uno puede cambiarlo en los filtros («Más cerca», «Empieza antes» o «Lo más nuevo»); la cuota no cuenta. Se pueden destacar publicaciones, y cuando pasa <strong>se dice</strong>.</p>
+<p>No vendemos tus datos ni los de tus clientes, no cobramos por canje y no ponemos tu oferta por delante de otra porque pagues más: <a href="/preguntas/">en la app el orden de serie es «Recomendado»</a> (el tiempo de hoy, lo más nuevo y los gustos de cada persona) y cada uno puede cambiarlo en los filtros («Más cerca», «Empieza antes» o «Lo más nuevo»); la cuota no cuenta. Hoy no se vende destacar publicaciones; si algún día se puede, <strong>se dirá</strong> en cada una.</p>
 
 <h2>Empezar</h2>
 <p>Estamos empezando, así que si en tu ciudad todavía no hay nadie, escríbenos y lo arrancamos contigo: <a href="mailto:info@klendar.app">info@klendar.app</a>.</p>
@@ -160,7 +160,7 @@ PAGINAS['para-negocios'] = (
 </script>
 
 <h2>What we don't do</h2>
-<p>We don't sell your data or your customers' data, we don't charge per redemption, and we don't put your offer ahead of another because you pay more: <a href="/en/faq/">in the app the default order is “Recommended”</a> (today's weather, what's newest and each person's interests) and anyone can change it in the filters (“Nearest”, “Starts soonest” or “Newest”); your plan doesn't count. Publications can be featured, and when that happens <strong>we say so</strong>.</p>
+<p>We don't sell your data or your customers' data, we don't charge per redemption, and we don't put your offer ahead of another because you pay more: <a href="/en/faq/">in the app the default order is “Recommended”</a> (today's weather, what's newest and each person's interests) and anyone can change it in the filters (“Nearest”, “Starts soonest” or “Newest”); your plan doesn't count. Featuring publications isn't sold today; if it ever is, each one <strong>will say so</strong>.</p>
 
 <h2>Getting started</h2>
 <p>We're just getting started, so if nobody in your city is on Klendar yet, email us and we'll get it going with you: <a href="mailto:info@klendar.app">info@klendar.app</a>.</p>
@@ -381,8 +381,7 @@ PAGINAS['precios'] = (
   <li><strong>Pausa por cierre.</strong> Hasta 6 meses sin pagar; lo que ya tenías pagado se guarda para cuando vuelvas. Mientras, tu negocio está parado.</li>
   <li><strong>Cancela cuando quieras:</strong> sigues hasta el final del periodo pagado y no se renueva. Sin permanencia ni penalización; desde el panel («Dar de baja el negocio») o en el mismo correo.</li>
   <li><strong>Nunca cobramos por canje.</strong> Ni porcentaje ni euros por código: si te funciona bien, pagas lo mismo.</li>
-  <li><strong>Qué es un «destacado».</strong> Una publicación que aparece arriba durante un rato; va aparte y se pide por correo. Cuando una está destacada, la app lo dice: no se disfraza de recomendación.</li>
-  <li><strong>El plan no cambia lo que ve la gente</strong> más allá de eso. De serie, el orden es «Recomendado» (con el tiempo de hoy y los gustos de cada persona) y cada persona puede cambiarlo en los filtros; cómo se ordena todo, también lo ya visto, está en el apartado 2 bis de las <a href="/negocios/">condiciones</a>. Ni la cuota ni el número de publicaciones cuentan en el orden.</li>
+  <li><strong>Hoy nadie puede pagar por salir antes.</strong> De serie, el orden es «Recomendado» (con el tiempo de hoy y los gustos de cada persona) y cada persona puede cambiarlo en los filtros; cómo se ordena todo, también lo ya visto, está en el apartado 2 bis de las <a href="/negocios/">condiciones</a>. Ni la cuota ni el número de publicaciones cuentan en el orden.</li>
 </ul>
 
 <h2>¿Y para quien usa la app?</h2>
@@ -415,8 +414,7 @@ PAGINAS['precios'] = (
   <li><strong>Seasonal pause.</strong> Up to 6 months without paying; what you'd already paid for is kept for when you come back. Meanwhile, your business is stopped.</li>
   <li><strong>Cancel whenever you like:</strong> you keep everything until the end of the period you've paid for and it doesn't renew. No lock-in, no penalty; from the dashboard (“Leave Klendar”) or at the same address.</li>
   <li><strong>We never charge per redemption.</strong> No percentage, no euros per code: if it works well for you, you pay the same.</li>
-  <li><strong>What “featured” means.</strong> A publication that shows at the top for a while; it's charged separately and you request it by email. When one is featured, the app says so: it isn't dressed up as a recommendation.</li>
-  <li><strong>Your plan doesn't change what people see</strong> beyond that. By default the order is ‘Recommended’ (with today's weather and each person's interests) and anyone can change it in the filters; how everything is ordered, including what someone has already seen, is in section 2a of the <a href="/en/business-terms/">business terms</a>. Neither the fee nor the number of publications affects the order.</li>
+  <li><strong>Today nobody can pay to appear earlier.</strong> By default the order is ‘Recommended’ (with today's weather and each person's interests) and anyone can change it in the filters; how everything is ordered, including what someone has already seen, is in section 2a of the <a href="/en/business-terms/">business terms</a>. Neither the fee nor the number of publications affects the order.</li>
 </ul>
 
 <h2>And for people using the app?</h2>
@@ -665,12 +663,12 @@ PAGINAS['sobre'] = (
 <p>Que lo que pasa cerca de ti se entere quien está cerca de ti. Ni un buscador de cupones ni una red social más: una lista de lo que hay <strong>hoy</strong> a tu alrededor, con el tiempo que le queda y las plazas que quedan, y un negocio al otro lado que puede publicarla en un minuto.</p>
 
 <h2>Cómo se gana dinero</h2>
-<p>Con el plan de los negocios (<a href="/precios/">precios</a>), y solo con eso. <strong>No cobramos comisión por canje</strong>, no vendemos datos y no hay publicidad de terceros. Un negocio puede destacar una publicación, y cuando lo hace la app lo dice.</p>
+<p>Con el plan de los negocios (<a href="/precios/">precios</a>), y solo con eso. <strong>No cobramos comisión por canje</strong>, no vendemos datos y no hay publicidad de terceros. Hoy nadie puede pagar por salir antes.</p>
 
 <h2>Lo que no vamos a hacer</h2>
 <ul>
   <li>Inventar urgencia: si quedan diez plazas, pone diez.</li>
-  <li>Colar lo pagado sin decirlo: si un negocio paga por destacar algo, sale primero y con la etiqueta «Destacado». Lo demás lo ordenan tus filtros, tus gustos si los eliges y, si lo dejas encendido, el tiempo que hace hoy.</li>
+  <li>Colar lo pagado sin decirlo: hoy nadie puede pagar por salir antes y, si algún día se puede, se dirá en cada publicación. El orden no depende de pagar: lo marcan tus filtros, tus gustos si los eliges y, si lo dejas encendido, el tiempo que hace hoy.</li>
   <li>Perfilarte con datos de otras webs. Si cerca no hay nada, la app te sugiere cosas según tus últimas búsquedas, que se quedan en tu móvil.</li>
   <li>Pedirte más datos de los que hacen falta para que esto funcione.</li>
 </ul>
@@ -685,12 +683,12 @@ PAGINAS['sobre'] = (
 <p>Make sure what's happening near you reaches the people who are near you. Not a coupon search engine, not another social network: a list of what's on <strong>today</strong> around you, with the time it has left and the places still free, and a business on the other side that can publish it in a minute.</p>
 
 <h2>How it makes money</h2>
-<p>From the business plan (<a href="/en/pricing/">pricing</a>), and only from that. <strong>We take no commission per redemption</strong>, we don't sell data and there's no third-party advertising. A business can feature a publication, and when it does, the app says so.</p>
+<p>From the business plan (<a href="/en/pricing/">pricing</a>), and only from that. <strong>We take no commission per redemption</strong>, we don't sell data and there's no third-party advertising. Today nobody can pay to appear earlier.</p>
 
 <h2>What we won't do</h2>
 <ul>
   <li>Invent urgency: if ten places are left, it says ten.</li>
-  <li>Sneak in paid placements: if a business pays to feature something, it comes first and carries the “Featured” label. The rest is ordered by your filters, your interests if you choose them and, if you leave it on, today's weather.</li>
+  <li>Sneak in paid placements: today nobody can pay to appear earlier and, if that ever changes, each publication will say so. The order doesn't depend on paying: it comes from your filters, your interests if you choose them and, if you leave it on, today's weather.</li>
   <li>Profile you with data from other sites. If there's nothing nearby, the app suggests things based on your recent searches, which stay on your phone.</li>
   <li>Ask you for more data than this needs to work.</li>
 </ul>

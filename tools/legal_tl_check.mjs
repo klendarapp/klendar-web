@@ -90,13 +90,13 @@ const sinScroll = (p) => p.evaluate(() => document.documentElement.scrollWidth -
 
 // ── 1. Páginas legales ─────────────────────────────────────────────────────
 const PAGINAS = [
-  ['/negocios/', 'Última actualización: 4 de noviembre de 2026', [
+  ['/negocios/', 'Última actualización: 5 de noviembre de 2026', [
     /3 undecies\. Te aviso cuando esté listo/,
     /Solo marcarás «Listo» cuando el pedido lo esté de verdad/,
     /los del 20 de octubre de 2026 \(apartados 2 bis, 3 y 3 undecies\), desde el 4 de noviembre de 2026/,
     /Te aviso cuando esté listo \(apartado 3 undecies nuevo\).*Se aplica desde el 4 de noviembre de 2026\./,
   ]],
-  ['/en/business-terms/', 'Last updated: 4 November 2026', [
+  ['/en/business-terms/', 'Last updated: 5 November 2026', [
     /3j\. Ready alert/,
     /You will only mark “Ready” when the order really is ready/,
     /those of 20 October 2026 \(sections 2a, 3 and 3j\) from 4 November 2026/,

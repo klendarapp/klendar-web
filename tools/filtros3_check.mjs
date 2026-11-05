@@ -117,7 +117,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     const primero = await hoja.locator('.hoja-scroll > *').first().evaluate((x) => x.className);
     ok(/hoja-orden/.test(primero), `${t} ☰: «Ordenar por» arriba del todo (${primero})`);
     const txtOrden = await hoja.locator('.hoja-orden').innerText();
-    ok(/Recomendado/.test(txtOrden) && /de serie/.test(txtOrden) && /Lo destacado de pago/.test(txtOrden) && /Más cerca/.test(txtOrden)
+    ok(/Recomendado/.test(txtOrden) && /de serie/.test(txtOrden) && /Lo más nuevo cerca y, si dejas encendidas sus casillas/.test(txtOrden) && !/pago/.test(txtOrden) && /Más cerca/.test(txtOrden)
       && /Empieza antes/.test(txtOrden) && /Lo más nuevo/.test(txtOrden) && /Según el tiempo/.test(txtOrden) && /Si llueve/.test(txtOrden)
       && /Tener en cuenta tus gustos/.test(txtOrden), `${t} «Ordenar por»: Recomendado con sus dos casillas y tres órdenes`);
     ok(await hoja.locator('input[name=orden][value=""]').isChecked(), `${t} de serie, «Recomendado»`);

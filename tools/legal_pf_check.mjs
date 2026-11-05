@@ -31,26 +31,26 @@ let fallos = 0;
 const ok = (c, m) => { if (!c) { fallos++; console.log('FALLO:', m); } else console.log('ok:', m); };
 
 const PAGINAS = [
-  ['/negocios/', 'Última actualización: 4 de noviembre de 2026', [
-    /\(1\) en Descubre y en la lista de Explorar, lo destacado de pago/,
+  ['/negocios/', 'Última actualización: 5 de noviembre de 2026', [
+    /\(1\) hoy no se vende ninguna posición: si algún día se ofrece destacar publicaciones de pago/,
     /\(3\) el orden que elige la persona en «Ordenar por»\. De serie es «Recomendado»: con «Según el tiempo» encendido/,
     /con «Tener en cuenta tus gustos» encendido \(lo está de serie\)[\s\S]*?cuenta como si fuera dos días más nuevo/,
     /la persona puede elegir «Más cerca», «Empieza antes» o «Lo más nuevo», que ordenan solo por eso, sin el tiempo ni los gustos\. La lista de un día de la agenda va «Por hora» \(de serie\) o «Más cerca»;/,
     /En Explorar › Sitios, que enseña negocios y no publicaciones, la persona elige entre «Más cerca» \(de serie[\s\S]*?y «Mejor valorados» \(por la valoración media de sus reseñas/,
     /«Abierto ahora», «Se puede comer ahora» y el momento del día/,
     /La valoración del Negocio solo cuenta en el orden de Sitios cuando la persona elige «Mejor valorados»; la cuota o el número de publicaciones no influyen en el orden\./,
-    /los del 27 de octubre de 2026 \(apartados 2 bis, 3, 3 sexies, 3 septies y 3 duodecies\), desde el 11 de noviembre de 2026, los del 28 de octubre de 2026 \(apartados 2, 4 bis y 7\), desde el 12 de noviembre de 2026, los del 2 de noviembre de 2026 \(apartado 2 bis\), desde el 17 de noviembre de 2026, los del 3 de noviembre de 2026 \(apartados 3, 3 decies y 4\), desde el 18 de noviembre de 2026, y los del 4 de noviembre de 2026 \(apartado 3 bis, «Conecta tu agenda»\), desde el 19 de noviembre de 2026: 15 días/,
+    /los del 27 de octubre de 2026 \(apartados 2 bis, 3, 3 sexies, 3 septies y 3 duodecies\), desde el 11 de noviembre de 2026, los del 28 de octubre de 2026 \(apartados 2, 4 bis y 7\), desde el 12 de noviembre de 2026, los del 2 de noviembre de 2026 \(apartado 2 bis\), desde el 17 de noviembre de 2026, los del 3 de noviembre de 2026 \(apartados 3, 3 decies y 4\), desde el 18 de noviembre de 2026, los del 4 de noviembre de 2026 \(apartado 3 bis, «Conecta tu agenda»\), desde el 19 de noviembre de 2026, y los del 5 de noviembre de 2026 \(apartado 2 bis\), desde el 20 de noviembre de 2026: 15 días/,
     /27 de octubre de 2026: Cómo se ordena lo que se ve \(apartado 2 bis\)[\s\S]*?Se aplica desde el 11 de noviembre de 2026\./,
   ], [/La valoración del Negocio, la cuota o el número de publicaciones no influyen/, /con «Más pronto» como si empezara seis horas antes/]],
-  ['/en/business-terms/', 'Last updated: 4 November 2026', [
-    /\(1\) in Discover and in the Explore list, paid featured placements/,
+  ['/en/business-terms/', 'Last updated: 5 November 2026', [
+    /\(1\) no position is sold today: if paid featured publications are ever offered/,
     /\(3\) the order the person chooses in “Sort by”\. By default it is “Recommended”: with “Based on the weather” on/,
     /with “Take your interests into account” on \(it is by default\)[\s\S]*?count as if they were two days newer/,
     /the person can choose “Nearest”, “Starts soonest” or “Newest”, which order only by that, without the weather or interests\. The list for a day in the agenda is “By time” \(by default\) or “Nearest”;/,
     /In Explore › Places, which shows businesses rather than publications, the person chooses between “Nearest” \(by default[\s\S]*?and “Top rated” \(by the average rating of their reviews/,
     /“Open now”, “Food served now” and the time of day/,
     /The Business's rating only counts in the order of Places when the person chooses “Top rated”; its fee or its number of publications don't affect the order\./,
-    /those of 27 October 2026 \(sections 2a, 3, 3e, 3f and 3k\) from 11 November 2026, those of 28 October 2026 \(sections 2, 4a and 7\) from 12 November 2026, those of 2 November 2026 \(section 2a\) from 17 November 2026, those of 3 November 2026 \(sections 3, 3i and 4\) from 18 November 2026, and those of 4 November 2026 \(section 3a, “Connect your calendar”\) from 19 November 2026: 15 days/,
+    /those of 27 October 2026 \(sections 2a, 3, 3e, 3f and 3k\) from 11 November 2026, those of 28 October 2026 \(sections 2, 4a and 7\) from 12 November 2026, those of 2 November 2026 \(section 2a\) from 17 November 2026, those of 3 November 2026 \(sections 3, 3i and 4\) from 18 November 2026, those of 4 November 2026 \(section 3a, “Connect your calendar”\) from 19 November 2026, and those of 5 November 2026 \(section 2a\) from 20 November 2026: 15 days/,
     /27 October 2026: How what people see is ordered \(section 2a\)[\s\S]*?It applies from 11 November 2026\./,
   ], [/The Business's rating, its fee or its number of publications don't affect the order/, /with “Soonest” as if they started six hours earlier/]],
   ['/privacidad/', 'Última actualización: 5 de noviembre de 2026', [
@@ -66,12 +66,12 @@ const PAGINAS = [
     /27 October 2026: Where to turn off “Based on the weather”/,
   ], [/with “Soonest” as if they started six hours earlier/, /Turn it off in the sort menu/]],
   ['/preguntas/', '¿Por qué veo unas cosas y no otras?', [
-    /Lo destacado de pago sale primero y siempre con la etiqueta «Destacado»\. Después, el orden que elijas en Filtros \(☰\), arriba del todo: «Ordenar por»\. De serie es «Recomendado»/,
+    /Hoy nadie paga por salir antes\. Lo que ves va en el orden que elijas en Filtros \(☰\), arriba del todo: «Ordenar por»\. De serie es «Recomendado»/,
     /También puedes elegir «Más cerca», «Empieza antes» o «Lo más nuevo»\.[\s\S]*?En la agenda, la lista del día va por hora o por cercanía, y en Sitios, por cercanía o por la mejor valoración\./,
     /Lo que se ve lo deciden las preguntas de arriba \(¿Dónde\?, ¿Cuándo\?, ¿Qué\?\) y Filtros\./,
   ], [/Por cercanía, por lo que empieza pronto y por tus favoritos\./]],
   ['/en/faq/', 'Why do I see some things and not others?', [
-    /Paid featured placements come first and always carry the “Featured” label\. After that, the order you choose in Filters \(☰\), at the very top: “Sort by”\. By default it's “Recommended”/,
+    /Today nobody pays to appear earlier\. What you see comes in the order you choose in Filters \(☰\), at the very top: “Sort by”\. By default it's “Recommended”/,
     /You can also choose “Nearest”, “Starts soonest” or “Newest”\.[\s\S]*?In the agenda, a day's list goes by time or by distance, and in Places, by distance or by best rating\./,
   ], [/Because of how close they are, what starts soon and your favourites\./]],
 ];

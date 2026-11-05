@@ -55,27 +55,27 @@ const PAGINAS = [
     /If the business validates your code by mistake, it can undo it within the next 10 minutes \(once per code\): your code is valid again, unless the offer has already ended, and any stamp or coupon that redemption gave you is removed, if you haven't used it yet\./,
     /4 November 2026: Deals and redemptions \(section 3\): if the business validates your code by mistake, it can undo it within the next 10 minutes, once per code/,
   ], []],
-  ['/negocios/', 'Última actualización: 4 de noviembre de 2026 · Versión 2026-11-04', [
+  ['/negocios/', 'Última actualización: 5 de noviembre de 2026 · Versión 2026-11-05', [
     /Las cuentas de entidad no pagan cuota, ni ahora ni más adelante: Klendar no les cobrará por publicar ni por las funciones que hoy tienen\. Si algún día hubiera funciones nuevas de pago, serían opcionales y la Entidad podría seguir usando gratis todo lo demás\./,
     /c\) mantener al día quién gestiona la cuenta y avisarnos si deja de representar a la Entidad\.\s+Conecta tu agenda\. La Entidad puede conectar a su cuenta hasta tres calendarios en formato iCal\/ICS\. Klendar lee cada uno una vez al día \(o cuando la Entidad pulsa «Sincronizar ahora»\)/,
     /La Entidad: a\) solo conecta calendarios suyos o que tiene derecho a publicar; b\) responde de lo que contienen, como de lo que publica a mano/,
     /puede dejar de leer un calendario que falle de forma continuada \(hoy, tras 14 días seguidos\) o desconectar uno que incumpla estas condiciones\. La Entidad lo desconecta cuando quiera y decide si los eventos ya publicados se quedan o se borran\.\s+Cómo lo comprobamos/,
-    /y los del 4 de noviembre de 2026 \(apartado 3 bis, «Conecta tu agenda»\), desde el 19 de noviembre de 2026: 15 días/,
+    /los del 4 de noviembre de 2026 \(apartado 3 bis, «Conecta tu agenda»\), desde el 19 de noviembre de 2026, y los del 5 de noviembre de 2026 \(apartado 2 bis\), desde el 20 de noviembre de 2026: 15 días/,
     /y que las cuentas de entidad no paguen cuota, ni ahora ni más adelante \(apartado 3 bis\), también, porque solo favorece a la Entidad\./,
-    /Versión\s+Publicada\s+Se aplica desde\s+2026-11-04\s+4-11-2026\s+19-11-2026\s+2026-11-03-b\s+3-11-2026\s+18-11-2026/,
+    /Versión\s+Publicada\s+Se aplica desde\s+2026-11-05\s+5-11-2026\s+20-11-2026\s+2026-11-04\s+4-11-2026\s+19-11-2026\s+2026-11-03-b\s+3-11-2026\s+18-11-2026/,
     /4 de noviembre de 2026: «Conecta tu agenda» \(apartado 3 bis\)[\s\S]*?Se aplica desde el 19 de noviembre de 2026\./,
     /4 de noviembre de 2026: Cuentas de entidad \(apartado 3 bis\): no pagan cuota, ni ahora ni más adelante[\s\S]*?se aplica al publicarse, sin los 15 días de aviso\./,
   ], [
     /Mientras Klendar no diga otra cosa, las cuentas de entidad no pagan cuota/,
   ]],
-  ['/en/business-terms/', 'Last updated: 4 November 2026 · Version 2026-11-04', [
+  ['/en/business-terms/', 'Last updated: 5 November 2026 · Version 2026-11-05', [
     /Organisation accounts pay no fee, now or later: Klendar will not charge them for publishing or for the features they have today\. If paid features are ever added, they will be optional and the Organisation may keep using everything else for free\./,
     /c\) keep up to date who manages the account and let us know if they no longer represent the Organisation\.\s+Connect your calendar\. The Organisation may connect up to three calendars in iCal\/ICS format to its account\./,
     /The Organisation: a\) only connects calendars that are its own or that it has the right to publish; b\) is responsible for their content/,
     /may stop reading a calendar that fails continuously \(currently, after 14 days in a row\) or disconnect one that breaches these terms\. The Organisation may disconnect it whenever it likes and decides whether the events already published stay or are deleted\.\s+How we check/,
-    /and those of 4 November 2026 \(section 3a, “Connect your calendar”\) from 19 November 2026: 15 days/,
+    /those of 4 November 2026 \(section 3a, “Connect your calendar”\) from 19 November 2026, and those of 5 November 2026 \(section 2a\) from 20 November 2026: 15 days/,
     /and so does the fact that organisation accounts pay no fee, now or later \(section 3a\), as it only benefits the Organisation\./,
-    /Version\s+Published\s+Applies from\s+2026-11-04\s+4 Nov 2026\s+19 Nov 2026\s+2026-11-03-b\s+3 Nov 2026\s+18 Nov 2026/,
+    /Version\s+Published\s+Applies from\s+2026-11-05\s+5 Nov 2026\s+20 Nov 2026\s+2026-11-04\s+4 Nov 2026\s+19 Nov 2026\s+2026-11-03-b\s+3 Nov 2026\s+18 Nov 2026/,
     /4 November 2026: “Connect your calendar” \(section 3a\)[\s\S]*?It applies from 19 November 2026\./,
     /4 November 2026: Organisation accounts \(section 3a\): they pay no fee, now or later[\s\S]*?so it applies on publication, without the 15 days' notice\./,
   ], [

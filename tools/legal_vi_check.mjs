@@ -29,18 +29,18 @@ let fallos = 0;
 const ok = (c, m) => { if (!c) { fallos++; console.log('FALLO:', m); } else console.log('ok:', m); };
 
 const PAGINAS = [
-  ['/negocios/', 'Última actualización: 4 de noviembre de 2026', [
+  ['/negocios/', 'Última actualización: 5 de noviembre de 2026', [
     /\(2\) en Descubre y en la lista de Explorar, lo que la persona aún no ha visto va antes que lo que ya ha visto en ese mismo dispositivo en los últimos 7 días, que sale después, en el mismo orden y tras una separación \(«Ya has visto todo lo nuevo · Esto ya lo viste»\)\./,
     /Una publicación cuenta como vista cuando ha estado al menos 1,5 segundos seguidos en la pantalla[\s\S]*?Lo que ha visto cada persona se guarda solo en su dispositivo y Klendar no lo recibe; no esconde nada ni cambia qué publicaciones se ven; \(3\) el orden que elige la persona en «Ordenar por»\./,
     /\(4\) los eventos que Klendar importa[\s\S]*?\(también dentro de cada uno de los dos bloques del punto 2\)/,
-    /los del 2 de noviembre de 2026 \(apartado 2 bis\), desde el 17 de noviembre de 2026, los del 3 de noviembre de 2026 \(apartados 3, 3 decies y 4\), desde el 18 de noviembre de 2026, y los del 4 de noviembre de 2026 \(apartado 3 bis, «Conecta tu agenda»\), desde el 19 de noviembre de 2026: 15 días/,
+    /los del 2 de noviembre de 2026 \(apartado 2 bis\), desde el 17 de noviembre de 2026, los del 3 de noviembre de 2026 \(apartados 3, 3 decies y 4\), desde el 18 de noviembre de 2026, los del 4 de noviembre de 2026 \(apartado 3 bis, «Conecta tu agenda»\), desde el 19 de noviembre de 2026, y los del 5 de noviembre de 2026 \(apartado 2 bis\), desde el 20 de noviembre de 2026: 15 días/,
     /2 de noviembre de 2026: Cómo se ordena lo que se ve \(apartado 2 bis\)[\s\S]*?Se aplica desde el 17 de noviembre de 2026\./,
   ]],
-  ['/en/business-terms/', 'Last updated: 4 November 2026', [
+  ['/en/business-terms/', 'Last updated: 5 November 2026', [
     /\(2\) in Discover and in the Explore list, what the person hasn't seen yet comes before what they have already seen on that same device in the last 7 days/,
     /What each person has seen is stored only on their device and Klendar doesn't receive it; it doesn't hide anything or change which publications are shown; \(3\) the order the person chooses in “Sort by”\./,
     /\(also within each of the two groups in point 2\)/,
-    /those of 2 November 2026 \(section 2a\) from 17 November 2026, those of 3 November 2026 \(sections 3, 3i and 4\) from 18 November 2026, and those of 4 November 2026 \(section 3a, “Connect your calendar”\) from 19 November 2026: 15 days/,
+    /those of 2 November 2026 \(section 2a\) from 17 November 2026, those of 3 November 2026 \(sections 3, 3i and 4\) from 18 November 2026, those of 4 November 2026 \(section 3a, “Connect your calendar”\) from 19 November 2026, and those of 5 November 2026 \(section 2a\) from 20 November 2026: 15 days/,
     /“Food served now”/,
   ]],
   ['/privacidad/', 'Última actualización: 5 de noviembre de 2026', [

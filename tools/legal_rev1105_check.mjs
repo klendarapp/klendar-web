@@ -63,11 +63,11 @@ const PAGINAS = [
     /Tax ID: 79288717N/,
     /4 November 2026: The owner's tax ID, address and phone number are filled in\./,
   ], [], []],
-  ['/negocios/', 'Versión 2026-11-04', [
+  ['/negocios/', 'Versión 2026-11-05', [
     /Para negocios, las partes se someten a los juzgados de Málaga\./,
     /4 de noviembre de 2026: Se completa el fuero \(apartado 9\): los juzgados de Málaga\./,
   ], [], []],
-  ['/en/business-terms/', 'Version 2026-11-04', [
+  ['/en/business-terms/', 'Version 2026-11-05', [
     /For businesses, the parties submit to the courts of Málaga\./,
     /4 November 2026: The jurisdiction is filled in \(section 9\): the courts of Málaga\./,
   ], [], []],
