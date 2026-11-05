@@ -455,3 +455,13 @@ table.tbl .art-thumb, .art-celda .art-thumb { border-radius: 50%; margin: 0; fle
 .fest-lugar-cab h3 { font-size: 18px; margin: 0 0 2px; }
 .fest-lugar-cab .spacer { flex: 1; }
 .fest-lugar-botones { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+
+/* Alta rápida (2026-11-05): «Por verificar ahora», el QR y el pulso. */
+.vya { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.vya .btn { flex: none; }
+.qr-alta { margin-top: 10px; }
+.qr-alta summary { cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.qr-caja { margin-top: 10px; }
+#qrAlta { width: min(260px, 70vw); background: #fff; padding: 8px; border-radius: 12px; }
+#qrAlta svg { display: block; width: 100%; height: auto; }
+.tbl.pulso td:first-child { width: 100%; }

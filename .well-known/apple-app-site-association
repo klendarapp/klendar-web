@@ -6,6 +6,8 @@
         "components": [
           { "/": "/o/*", "comment": "Oferta o evento compartido" },
           { "/": "/b/*", "comment": "Ficha de un negocio" },
+          { "/": "/alta", "comment": "Dar de alta un negocio (el QR de la visita)" },
+          { "/": "/alta/", "comment": "Dar de alta un negocio (el QR de la visita)" },
           { "/": "/r/*", "comment": "QR de canje" },
           { "/": "/v/*", "comment": "Cartel del local (QR)" },
           { "/": "/amigo/*", "comment": "Enlace de amigo" },

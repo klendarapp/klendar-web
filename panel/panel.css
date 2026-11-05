@@ -1208,3 +1208,14 @@ body[data-cabecera] .layout { min-height: calc(100dvh - 65px); }
 @media (min-width: 901px) { body[data-cabecera] .side { top: 65px; height: calc(100dvh - 65px); } }
 @media (max-width: 900px) { body[data-cabecera] .topbar { top: 65px; } }
 body[data-cabecera] nav.tabbar:not(#tabbar) { display: none; }
+
+/* Ofertas sugeridas que se repiten solas (alta rápida, 2026-11-05): filas
+   de tinta, sin coral (el coral, solo en «Publicar»). */
+.sug-titulo { font-size: 1rem; margin: 10px 0 2px; }
+.sug-lista { display: grid; gap: 0; margin: 6px 0; }
+.sug { display: flex; align-items: center; gap: 10px; width: 100%; text-align: start; padding: 10px 4px; border: 0;
+  border-top: 1px solid var(--glass-border); background: none; color: inherit; font: inherit; cursor: pointer; }
+.sug:hover { background: var(--glass); }
+.sug > span { flex: 1; display: grid; gap: 2px; min-width: 0; }
+.sug small { color: var(--ink-2); font-weight: 500; }
+.sug-caja { border: 1px solid var(--glass-border); border-radius: 14px; padding: 10px 12px 4px; margin: 0 0 14px; }

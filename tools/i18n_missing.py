@@ -789,9 +789,10 @@ def textos_area(area: str) -> dict[str, tuple[str | None, str]]:
 
     for k, v in ingles.items():
         mete(k, v, dpath)
-    # ideas.js va aparte (extrae_ideas): ya trae cada idea en los dos idiomas.
+    # ideas.js va aparte (extrae_ideas): ya trae cada idea en los dos idiomas;
+    # sugerencias.js trae cada título en los 8 (lo genera la app).
     fuentes = sorted(p.relative_to(ROOT).as_posix() for p in (ROOT / carpeta).glob('*.js')
-                     if p.name not in ('i18n.js', 'ideas.js'))
+                     if p.name not in ('i18n.js', 'ideas.js', 'sugerencias.js'))
     fuentes += modulos
     for f in fuentes:
         src = (ROOT / f).read_text(encoding='utf-8')

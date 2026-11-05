@@ -621,6 +621,117 @@ const bi = (es, en) => (I18N.lang === 'en' ? en : I18N.t(es));
 const biTrozos = (es, en) => (I18N.lang === 'en' ? en : es);
 const helpBox = (title, body) => `<details class="help"><summary>${esc(title)}</summary>${body}</details>`;
 
+// ── Ofertas sugeridas que se repiten solas (alta rápida, 2026-11-05) ──────
+// Las mismas que la app (`panel/sugerencias.js`, generado desde
+// `tool/ofertas_sugeridas.json` de la app): títulos en los 8 idiomas, sus
+// días, su hora y lo que dura. Un toque abre la hoja (título, precio, días,
+// hora, duración) y «Publicar» deja la primera publicada y la regla hecha
+// («Repetir cada semana»). Sin alcohol y sin rebajas sobre un precio.
+const SUG_LOCALE = { es: 'es-ES', en: 'en-GB', de: 'de-DE', fr: 'fr-FR', it: 'it-IT' };
+const sugLang = () => (['es', 'en', 'ca', 'gl', 'eu', 'fr', 'de', 'it'].includes(I18N.lang) ? I18N.lang : 'es');
+const sugPrecio = (n) => new Intl.NumberFormat(SUG_LOCALE[sugLang()] || 'es-ES', { style: 'currency', currency: 'EUR' }).format(n);
+const sugTitulo = (s, precio) => (s.title[sugLang()] || s.title.es).replace('{precio}', sugPrecio(precio ?? s.price ?? 0));
+const sugDia = (d) => new Date(2024, 0, 7 + d).toLocaleDateString(SUG_LOCALE[sugLang()] || 'es-ES', { weekday: 'short' });
+const sugHora = (h, m) => `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+function sugHorario(s, dias = s.days, at = s.at, min = s.min) {
+  const [h, m] = at.split(':').map(Number);
+  const fin = new Date(2024, 0, 1, h, m + min);
+  const lista = [1, 2, 3, 4, 5, 6, 0].filter((d) => dias.includes(d)).map(sugDia).join(', ');
+  return `${lista} · ${s.kind === 'event' ? at : `${at}–${sugHora(fin.getHours(), fin.getMinutes())}`}`;
+}
+/** Las del gremio del negocio activo (las generales si no tiene). */
+async function sugerenciasDelNegocio() {
+  const S = window.KLENDAR_SUGERENCIAS;
+  if (!S) return [];
+  if (BIZ.category_id === undefined) {
+    const { data } = await sb.from('businesses').select('category_id').eq('id', BIZ.id).maybeSingle();
+    BIZ.category_id = data?.category_id ?? null;
+  }
+  const slug = CATS.find((c) => c.id === BIZ.category_id)?.slug;
+  return S.ideas[S.grupos[slug] || 'general'] || S.ideas.general || [];
+}
+/** Lo que falta de la ficha, como en la app (`_FirstSteps.items`). */
+function fichaFaltan(f) {
+  const out = [{ titulo: 'Pon tu logo y una foto', href: '#/ficha/fotos', hecho: !!f.logo_url && !!f.cover_image_url }];
+  if (!esOrganizador()) {
+    out.push({ titulo: 'Pon tu horario', href: '#/ficha/horario', hecho: !!f.opening_hours && Object.keys(f.opening_hours).length > 0 });
+    out.push({ titulo: 'Añade fotos del local', href: '#/ficha/fotos', hecho: (f.gallery || []).length >= 2 });
+    out.push({ titulo: 'Sube tu carta', href: '#/carta', hecho: !!f.menu_url || (f.menu_images || []).length > 0 });
+  }
+  return out;
+}
+const sugLista = (lista) => `<div class="sug-lista">${lista.map((s, i) => `<button type="button" class="sug" data-sug="${i}">
+  <span><b>${esc(sugTitulo(s))}</b><small>${esc(sugHorario(s))}</small></span>${ms('chevron_right')}</button>`).join('')}</div>`;
+function sugActiva(v, lista, alPublicar) {
+  $$('[data-sug]', v).forEach((b) => { b.onclick = () => sugAbrir(lista[+b.dataset.sug], alPublicar); });
+}
+/** La primera vez que toca: hoy si aún queda (desde ahora, con media hora
+ * por delante), si no el siguiente día marcado. Un evento, nunca hoy si ya
+ * empezó. Como `firstSlot` de la app. */
+function sugPrimera(dias, h, m, min, evento) {
+  const ahora = new Date();
+  for (let i = 0; i < 8; i++) {
+    const d = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() + i, h, m);
+    if (!dias.includes(d.getDay())) continue;
+    const fin = new Date(d.getTime() + min * 60e3);
+    if (d > ahora) return { start: d, end: fin };
+    if (!evento && fin - ahora >= 30 * 60e3) return { start: ahora, end: fin };
+  }
+  const d = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() + 7, h, m);
+  return { start: d, end: new Date(d.getTime() + min * 60e3) };
+}
+async function sugAbrir(s, alPublicar) {
+  const lang = sugLang();
+  const evento = s.kind === 'event';
+  const durs = [...new Set([60, 90, 120, 150, 180, 240, s.min])].sort((a, b) => a - b)
+    .map((n) => [String(n), n % 60 ? `${Math.floor(n / 60)} h ${n % 60} min` : `${n / 60} h`]);
+  const pendiente = BIZ.verification_status !== 'verified';
+  const auto = sugTitulo(s);
+  const r = await modal({
+    title: I18N.t('Tu primera oferta, que se repite sola'),
+    intro: esc(I18N.t(evento
+      ? 'Cada fecha nueva sale sola una semana antes, a su hora.'
+      : 'La primera sale en cuanto toque y después, sola cada semana a su hora.'))
+      + (pendiente ? `<br>${esc(I18N.t('Se verá en cuanto verifiquemos tu negocio.'))}` : ''),
+    submit: 'Publicar',
+    fields: [
+      { name: 'titulo', label: 'Título', value: auto, required: true, maxlength: 80 },
+      ...(s.discount === 'price' ? [{ name: 'precio', label: 'Precio', value: String(s.price).replace('.', lang === 'en' ? '.' : ','), required: true }] : []),
+      ...[[1, 'Lunes'], [2, 'Martes'], [3, 'Miércoles'], [4, 'Jueves'], [5, 'Viernes'], [6, 'Sábado'], [0, 'Domingo']]
+        .map(([d, n]) => ({ name: `d${d}`, type: 'checkbox', label: n, value: s.days.includes(d) })),
+      { name: 'hora', type: 'time', label: '¿A qué hora empieza?', required: true, value: s.at },
+      { name: 'duracion', type: 'select', label: '¿Cuánto dura?', value: String(s.min), options: durs },
+    ],
+  });
+  if (!r) return;
+  const precio = s.discount === 'price' ? Number(String(r.precio).replace(',', '.').replace(/[^\d.]/g, '')) : null;
+  if (s.discount === 'price' && !(precio > 0)) { toast('Pon el precio.', true); return; }
+  const dias = [0, 1, 2, 3, 4, 5, 6].filter((d) => r[`d${d}`]);
+  if (!dias.length) { toast('Marca al menos un día.', true); return; }
+  let titulo = r.titulo.trim();
+  if (titulo === auto && precio) titulo = sugTitulo(s, precio);
+  if (titulo.length < 3) { toast('El título necesita al menos 3 caracteres.', true); return; }
+  const [h, m] = r.hora.split(':').map(Number);
+  const min = Number(r.duracion);
+  const t = sugPrimera(dias, h, m, min, evento);
+  const datos = {
+    business_id: BIZ.id, kind: evento ? 'future_event' : 'flash_offer', title: titulo,
+    discount: s.discount === 'free' ? { type: 'free', value: null }
+      : s.discount === 'other' ? { type: 'other', value: (s.label || {})[lang] || (s.label || {}).es || null } : null,
+    price_cents: precio ? Math.round(precio * 100) : null, currency: 'EUR',
+    redeem_start_at: evento ? null : t.start.toISOString(), redeem_end_at: evento ? null : t.end.toISOString(),
+    event_at: evento ? t.start.toISOString() : null, event_end_at: evento ? t.end.toISOString() : null,
+    max_per_user: 1, audience: 'all', status: 'active',
+  };
+  try {
+    const { data: fila, error } = await sb.from('offers').insert(datos).select('id').single();
+    if (error) throw error;
+    await rpc('save_offer_rule', { p_business: BIZ.id, p_offer: fila.id, p_weekdays: dias, p_start_time: r.hora, p_duration_min: min });
+    hechoBreve('Publicada: se repite sola cada semana');
+    alPublicar?.();
+  } catch (e) { toast(friendly(e.message), true); }
+}
+
 // ── Sesión y negocio activo ─────────────────────────────────────────────────
 const insecure = location.protocol === 'http:' && !/^(localhost|127\.0\.0\.1)$/.test(location.hostname);
 if (insecure) {
@@ -775,7 +886,10 @@ async function boot() {
   }
   // Quien llega del registro de negocio trae ?alta=1: se limpia la dirección.
   if (new URLSearchParams(location.search).has('alta')) {
-    history.replaceState(null, '', `${location.pathname}${BIZZES.length ? '' : '#/alta'}`);
+    // Con `#/alta/…` (klendar.app/alta, el QR de la visita) se queda ahí,
+    // también si ya lleva otros locales.
+    const aAlta = location.hash.startsWith('#/alta') ? location.hash : '';
+    history.replaceState(null, '', `${location.pathname}${aAlta || (BIZZES.length ? '' : '#/alta')}`);
   }
   if (!BIZZES.length) return noBusiness();
   const saved = localStorage.getItem('klendar.biz');
@@ -799,7 +913,10 @@ function showLogin() {
   // El idioma del panel sigue en la pantalla de entrar (llegar con
   // `?lang=fr` desde un correo y acabar en español no tiene sentido).
   const idioma = I18N.lang !== 'es' ? `lang=${encodeURIComponent(I18N.lang)}&` : '';
-  location.replace(`/app/?${idioma}destino=${encodeURIComponent(aqui)}#/entrar`);
+  // Desde «Dar de alta un negocio» (klendar.app/alta): a «Crea tu cuenta de
+  // negocio» (quien ya la tiene, «¿Ya tienes cuenta? Entra»).
+  const alta = new URLSearchParams(location.search).has('alta');
+  location.replace(`/app/?${idioma}destino=${encodeURIComponent(aqui)}#/${alta ? 'registro?para=negocio' : 'entrar'}`);
 }
 async function noBusiness() {
   $('#nav').innerHTML = '';
@@ -1479,13 +1596,21 @@ PAGES.resumen = async (v) => {
   const nTodas = cuentas?.todas ?? offers.length;
   const nActivas = cuentas?.activa ?? offers.filter((o) => estadoPub(o) === 'activa').length;
   const s = stats || {};
-  // Primeros pasos: recién aprobado y sin nada publicado. Lo mismo que en la
-  // app; desaparece al publicar.
-  const primeros = gestiona() && BIZ.verification_status === 'verified' && !offers.length && !(cuentas?.total);
-  const ficha = primeros
-    ? (await sb.from('businesses').select('logo_url, cover_image_url, gallery').eq('id', BIZ.id).maybeSingle()).data || {}
+  // Primeros pasos: recién dado de alta (también mientras se verifica: deja
+  // su oferta lista) y sin nada publicado. La primera oferta, que se repite
+  // sola, en dos toques, y «Completa tu ficha» con lo que falta; lo opcional
+  // no frena el alta y se queda aquí hasta 30 días o hasta que esté todo. Lo
+  // mismo que en la app (alta rápida, 2026-11-05).
+  const sinNada = !offers.length && !(cuentas?.total);
+  const candidato = gestiona() && !esEntidad() && BIZ.verification_status !== 'rejected';
+  const ficha = candidato
+    ? (await sb.from('businesses').select('logo_url, cover_image_url, gallery, opening_hours, menu_url, menu_images, created_at').eq('id', BIZ.id).maybeSingle()).data || {}
     : {};
-  const conFotos = !!ficha.logo_url && (!!ficha.cover_image_url || (ficha.gallery || []).length > 0);
+  const faltan = candidato ? fichaFaltan(ficha) : [];
+  const reciente = ficha.created_at && Date.now() - new Date(ficha.created_at).getTime() < 30 * 86400e3;
+  const primeros = candidato && (sinNada || (reciente && faltan.some((f) => !f.hecho)));
+  // Sin local fijo, cada publicación pide su sitio: ahí, el formulario.
+  const sugerencias = primeros && sinNada && !esOrganizador() ? await sugerenciasDelNegocio() : [];
   const paso = (n, hecho, titulo, pista, href, attrs = '') => `<a class="paso${hecho ? ' hecho' : ''}" ${hecho ? '' : `href="${href}" ${attrs}`}>
       <span class="n">${hecho ? ms('check') : n}</span><span><b>${titulo}</b>${pista && !hecho ? `<small>${pista}</small>` : ''}</span>${hecho ? '' : ms('chevron_right')}</a>`;
   // Un solo aviso arriba: lo más grave primero (cerrado por Klendar, un
@@ -1525,11 +1650,18 @@ PAGES.resumen = async (v) => {
       ${gestiona() ? `<button class="primary" data-go="crear"><span class="ic ms" aria-hidden="true">create</span>Crear<small>Oferta flash, evento o novedad</small></button>` : ''}
       <button class="${gestiona() ? 'tinta' : 'primary'}" data-go="validar"><span class="ic ms" aria-hidden="true">qr_code_scanner</span>Validar códigos<small>Con la cámara o escribiendo el código</small></button>
     </div>
-    ${primeros ? `<div class="card primeros" style="margin-top:14px"><h2>Primeros pasos</h2>
-      <p class="muted" style="margin:0 0 8px">Tres cosas y tu negocio está listo para que la gente lo encuentre.</p>
-      ${paso(1, conFotos, 'Pon tu logo y una foto', '', '#/ficha/fotos')}
-      ${paso(2, false, 'Publica tu primera oferta', 'Te la dejamos casi hecha: cambia el precio y la hora.', '#/publicaciones/nueva-flash?idea=1')}
-      ${paso(3, false, 'Cuéntalo en tus redes', '', '#', 'data-compartir')}
+    ${primeros ? `<div class="card primeros" style="margin-top:14px"><h2>${sugerencias.length ? 'Primeros pasos' : 'Completa tu ficha'}</h2>
+      ${sugerencias.length ? `<h3 class="sug-titulo">Tu primera oferta, que se repite sola</h3>
+      <p class="muted" style="margin:0 0 4px">Elige una y ajusta el precio o los días: sale sola cada semana a su hora.</p>
+      ${sugLista(sugerencias)}
+      <p style="margin:2px 0 10px"><a class="link" href="#/publicaciones/nueva-flash?idea=1">Prefiero escribir otra</a></p>
+      <h3 class="sug-titulo">Completa tu ficha</h3>` : ''}
+      <p class="muted" style="margin:0 0 8px">Nada de esto frena tu alta: hazlo ahora o cuando quieras.</p>
+      ${esOrganizador() && sinNada ? paso('', false, 'Publica tu primera oferta', 'Te la dejamos casi hecha: cambia el precio y la hora.', '#/publicaciones/nueva-flash?idea=1') : ''}
+      ${faltan.map((f) => paso('', f.hecho, f.titulo, '', f.href)).join('')}
+      ${paso('', false, 'Invita a quien valida en barra', '', '#/equipo')}
+      ${esOrganizador() ? '' : paso('', false, 'Descarga el cartel del local', '', '#/cartel-local')}
+      ${paso('', false, 'Cuéntalo en tus redes', '', '#', 'data-compartir')}
     </div>` : ''}
     <!-- Ordenado como la app (Iván, 2026-10-22): «Lo esencial», «Por
          contestar», «¿Hay sitio ahora?» y «Ahora» (3 filas y «Ver N más»); al
@@ -1644,6 +1776,7 @@ PAGES.resumen = async (v) => {
       } catch (e) { toast(friendly(e.message), true); pausa.disabled = false; }
     };
   }
+  sugActiva(v, sugerencias, () => route());
   const compartir = $('[data-compartir]', v);
   if (compartir) {
     compartir.onclick = async (e) => {
@@ -2453,6 +2586,14 @@ async function offerForm(v, id, kindDefault, desde = null) {
   }
   // La del partido ya viene rellena: sin ideas encima.
   if (partido?.id) ideas = [];
+  // Sin nada publicado aún: las ofertas que se repiten solas de su gremio,
+  // de dos toques (alta rápida, 2026-11-05). «Prefiero escribir otra»
+  // (`?idea=1`) ya ha elegido el formulario.
+  let sugForm = [];
+  if (!id && !desde && !partido?.id && kind === 'flash_offer' && !esOrganizador() && !/[?&](idea|primera|exclusiva|partido)=/.test(location.hash)) {
+    const c = await rpc('my_business_offer_counts', { p_business: BIZ.id }).catch(() => null);
+    if (c && !Number(c.total)) sugForm = await sugerenciasDelNegocio();
+  }
   let guardadas = tpl || [];
   const en = I18N.lang === 'en';
   document.body.classList.add('con-barra-pub');
@@ -2504,6 +2645,9 @@ async function offerForm(v, id, kindDefault, desde = null) {
     <div class="pub-editor">
     <form class="pub-form" id="form" novalidate>
       <input type="hidden" name="kind" value="${kind}">
+      ${sugForm.length ? `<div class="sug-caja"><h3 class="sug-titulo">Tu primera oferta, que se repite sola</h3>
+        <p class="hint" style="margin:0">Elige una y ajusta el precio o los días: sale sola cada semana a su hora.</p>
+        ${sugLista(sugForm)}</div>` : ''}
       ${ideas.length ? `<div class="ideas" id="ideas"><p class="etq">Ideas</p>
         <div class="ideas-fila">${ideas.map((t, i) => `<button type="button" class="btn sm" data-idea="${i}">${esc(en ? t.en : I18N.t(t.es))}</button>`).join('')}</div>
         <p class="hint">Toca una y cámbiala a tu gusto.</p></div>` : ''}
@@ -3286,6 +3430,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
     renderPhotos(); pintaTipo(); syncKind(); syncDiscount(); pintaEstilo();
   };
   $$('[data-idea]', v).forEach((b) => { b.onclick = () => { aplicarIdea(ideas[+b.dataset.idea]); toast('Idea aplicada: repasa precio y hora'); }; });
+  sugActiva(v, sugForm, () => { GUARDA = null; location.hash = '#/publicaciones'; });
   const cierraMenuTpl = () => { const d = $('.tpl-menu', v); if (d) d.open = false; };
   $('#usarTpl', v).onclick = async () => {
     cierraMenuTpl();

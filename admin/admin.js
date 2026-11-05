@@ -1492,6 +1492,145 @@ function activaAvisosCorreo(v, al) {
   };
 }
 
+// ── Alta rápida (2026-11-05): verificar en el momento, el pulso y el QR ─────
+// Semana 0 en Málaga (docs/SEMANA_0_MALAGA.md de la app): Iván da de alta
+// negocios con el dueño delante. Desde el Resumen, en el móvil:
+//   · «Por verificar ahora»: los que esperan, el más nuevo arriba, con lo
+//     que hace falta para decidir, y «Verificar» + confirmar (dos toques;
+//     `admin_pending_now`, migración 20261263300001). La verificación es la
+//     de siempre (`admin_set_verification`).
+//   · «Pulso de Málaga»: las cifras de `docs/semana0/sql/1_pulso.sql` con el
+//     semáforo de §5.2 (`admin_pulso`, migración 20261263300000).
+//   · El QR de klendar.app/alta para enseñarlo en la visita.
+const ALTA_URL = 'https://klendar.app/alta';
+function semaforo(clave, p) {
+  const n = Number(p[clave]) || 0;
+  const en = I18N.lang === 'en';
+  const hora = Number(String(p.hora_local || '12:00').slice(0, 2));
+  const tramos = {
+    negocios_malaga: [15, 20], vivas_5km: [30, 40], nuevas_24h_5km: [5, 8],
+    eventos_7d_5km: [12, 20], reglas_que_se_repiten: [10, 15], flash_ahora_5km: [1, 2],
+  };
+  let nivel;
+  if (tramos[clave]) {
+    if (clave === 'flash_ahora_5km' && (hora < 10 || hora >= 23)) return { cls: 'dim', txt: en ? 'outside 10–23 h' : 'fuera de 10–23 h' };
+    const [a, b] = tramos[clave];
+    nivel = n < a ? 0 : n < b ? 1 : 2;
+  } else if (clave === 'en_revision') {
+    nivel = n > 3 || (n > 0 && (Number(p.en_revision_horas) || 0) > 24) ? 0 : n > 0 ? 1 : 2;
+  } else if (clave === 'por_verificar') {
+    nivel = n > 0 && (Number(p.por_verificar_horas) || 0) > 24 ? 0 : n > 0 ? 1 : 2;
+  } else if (clave === 'solo_18_5km') {
+    const v = Number(p.vivas_5km) || 0;
+    if (!v) return { cls: 'dim', txt: '—' };
+    const r = n / v;
+    nivel = r > 0.3 ? 0 : r >= 0.2 ? 1 : 2;
+  } else if (clave === 'dias_sin_eventos_14d') {
+    nivel = n > 0 ? 0 : 2;
+  }
+  return [
+    { cls: 'bad', txt: en ? 'Act now' : 'Hay que actuar' },
+    { cls: 'warn', txt: en ? 'Just enough' : 'Justo' },
+    { cls: 'ok', txt: en ? 'Good' : 'Bien' },
+  ][nivel];
+}
+function tarjetaPulso(p) {
+  if (!p) return '';
+  const en = I18N.lang === 'en';
+  const fila = (clave, texto, extra = '') => {
+    const s = semaforo(clave, p);
+    return `<tr><td>${esc(texto)}${extra}</td><td class="num"><b>${fmtNum(p[clave])}</b></td><td>${s ? `<span class="tag ${s.cls}">${esc(s.txt)}</span>` : ''}</td></tr>`;
+  };
+  const dato = (clave, texto) => `<tr><td>${esc(texto)}</td><td class="num">${fmtNum(p[clave])}</td><td></td></tr>`;
+  const horas = (h) => (h == null ? '' : ` <span class="muted small">(${en ? 'oldest' : 'la más antigua'}: ${h} h)</span>`);
+  const pct = Number(p.vivas_5km) ? Math.round((100 * Number(p.solo_18_5km)) / Number(p.vivas_5km)) : 0;
+  return `<div class="card" id="pulso"><h2>${en ? 'Málaga pulse' : 'Pulso de Málaga'} <span class="muted small">${esc(p.hora_local || '')}</span></h2>
+    <p class="muted small" style="margin:0 0 10px">${en
+      ? 'The figures of <code>1_pulso.sql</code> with the traffic light of SEMANA_0 §5.2. Centre: Plaza de la Constitución (5 km); businesses: Málaga city.'
+      : 'Las cifras de <code>1_pulso.sql</code> con el semáforo de SEMANA_0 §5.2. Centro: plaza de la Constitución (5 km); negocios: Málaga capital.'}</p>
+    <div class="tbl-wrap"><table class="tbl pulso"><tbody>
+      ${fila('negocios_malaga', en ? 'Verified places in Málaga' : 'Locales verificados en Málaga')}
+      ${fila('vivas_5km', en ? 'Live publications within 5 km' : 'Publicaciones vivas a 5 km')}
+      ${fila('nuevas_24h_5km', en ? 'New in 24 h within 5 km' : 'Nuevas en 24 h a 5 km')}
+      ${fila('flash_ahora_5km', en ? 'Flash offers running now within 5 km' : 'Ofertas flash en marcha ahora a 5 km')}
+      ${fila('eventos_7d_5km', en ? 'Events in the next 7 days within 5 km' : 'Eventos de los próximos 7 días a 5 km')}
+      ${fila('dias_sin_eventos_14d', en ? 'Days without events in the next 14' : 'Días sin eventos en los próximos 14')}
+      ${fila('reglas_que_se_repiten', en ? 'Repeating offers' : 'Ofertas que se repiten solas')}
+      ${fila('en_revision', en ? 'Under review' : 'En revisión', horas(p.en_revision_horas))}
+      ${fila('por_verificar', en ? 'To verify' : 'Por verificar', horas(p.por_verificar_horas))}
+      ${fila('solo_18_5km', en ? `18+ only within 5 km (${pct}%)` : `Solo +18 a 5 km (${pct} %)`)}
+    </tbody></table></div>
+    <details class="mas-cifras" style="margin-top:8px"><summary>${ms('expand_more')} <span>${en ? 'More figures' : 'Más cifras'}</span></summary><div class="tbl-wrap"><table class="tbl pulso"><tbody>
+      ${dato('flash_ahora_1km', en ? 'Flash offers running within 1 km' : 'Ofertas flash en marcha a 1 km')}
+      ${dato('vivas_25km', en ? 'Live within 25 km' : 'Vivas a 25 km')}
+      ${dato('negocios_resto_provincia', en ? 'Places in the rest of the province' : 'Locales en el resto de la provincia')}
+      ${dato('entidades_provincia', en ? 'Verified organisations (province)' : 'Entidades verificadas (provincia)')}
+      ${dato('locales_con_sellos', en ? 'Places with a stamp card' : 'Locales con tarjeta de sellos')}
+      ${dato('locales_con_bonos', en ? 'Places with passes' : 'Locales con bonos')}
+      ${dato('bares_poner_siempre', en ? 'Bars with “Always show”' : 'Bares con «Poner siempre»')}
+      ${dato('codigos_pedidos_24h', en ? 'Codes requested in 24 h' : 'Códigos pedidos en 24 h')}
+      ${dato('codigos_validados_24h', en ? 'Codes validated in 24 h' : 'Códigos validados en 24 h')}
+      ${dato('favoritos_24h', en ? 'New favourites in 24 h' : 'Favoritos nuevos en 24 h')}
+      ${dato('cuentas_nuevas_24h', en ? 'New accounts in 24 h (all of Spain)' : 'Cuentas nuevas en 24 h (toda España)')}
+    </tbody></table></div></details></div>`;
+}
+function tarjetaPorVerificar(pv) {
+  const en = I18N.lang === 'en';
+  const filas = pv?.rows || [];
+  const qr = `<details class="qr-alta"><summary>${ms('qr_code_2')} <span>${en ? 'Show the sign-up QR' : 'Enseñar el QR para dar de alta'}</span></summary>
+    <div class="qr-caja"><div id="qrAlta" role="img" aria-label="QR ${esc(ALTA_URL)}"></div>
+    <p class="small" style="margin:6px 0 0"><a class="link" href="${esc(ALTA_URL)}" target="_blank" rel="noopener">klendar.app/alta</a> · ${en
+      ? 'With the app, it opens “Register a business”; without it, the web.'
+      : 'Con la app, abre «Dar de alta un negocio»; sin ella, la web.'}</p></div></details>`;
+  const fila = (b) => {
+    const cuando = ago(b.review_requested_at || b.created_at);
+    const datos = [
+      b.has_tax_id ? (en ? 'Tax ID ✓' : 'NIF ✓') : (en ? 'no tax ID' : 'sin NIF'),
+      b.has_logo ? 'logo ✓' : (en ? 'no logo' : 'sin logo'),
+      b.rules ? (en ? `${b.rules} repeating offer(s) ready` : `${b.rules} ${b.rules === 1 ? 'oferta que se repite' : 'ofertas que se repiten'} lista${b.rules === 1 ? '' : 's'}`)
+        : b.offers ? (en ? `${b.offers} publication(s)` : `${b.offers} ${b.offers === 1 ? 'publicación' : 'publicaciones'}`)
+          : (en ? 'nothing published yet' : 'nada publicado aún'),
+    ];
+    return `<div class="item vya" data-biz="${esc(b.id)}"><div style="min-width:0;flex:1">
+      <h3><a class="link" href="#/negocios/${esc(b.id)}">${esc(b.name)}</a></h3>
+      <div class="meta">${esc((en ? b.category_en : b.category) || '')} · ${esc([b.address, b.city].filter(Boolean).join(', '))} · ${esc(cuando)}</div>
+      <div class="meta">${esc(b.owner_email || '')} · ${esc(datos.join(' · '))}</div></div>
+      <button class="btn ok" type="button" data-verificar="${esc(b.id)}">✓ ${en ? 'Verify' : 'Verificar'}</button></div>`;
+  };
+  // Sin la migración (la web llega antes a producción): solo el QR.
+  if (!pv) return `<div class="card" id="porVerificar"><h2>${en ? 'Register a business' : 'Dar de alta un negocio'}</h2>${qr}</div>`;
+  return `<div class="card" id="porVerificar"><h2>${en ? 'To verify now' : 'Por verificar ahora'}${pv?.total ? ` <span class="badge">${fmtNum(pv.total)}</span>` : ''}</h2>
+    ${filas.length ? filas.map(fila).join('') : `<p class="muted" style="margin:0 0 8px">${en ? 'No business waiting. When an owner sends their request it appears here, newest first.' : 'Ningún negocio esperando. Cuando un dueño envía su solicitud, sale aquí, el más nuevo arriba.'}</p>`}
+    ${pv?.total > filas.length ? `<p style="margin:6px 0 0"><a class="link" href="#/negocios?status=pending">${en ? `See all ${pv.total}` : `Ver los ${pv.total}`}</a></p>` : ''}
+    ${qr}</div>`;
+}
+function activaAlta(v, pv) {
+  const caja = $('#qrAlta', v);
+  if (caja && window.qrcode) {
+    const q = window.qrcode(0, 'M');
+    q.addData(ALTA_URL);
+    q.make();
+    caja.innerHTML = q.createSvgTag({ cellSize: 6, margin: 2, scalable: true });
+  }
+  $$('[data-verificar]', v).forEach((btn) => {
+    btn.onclick = async () => {
+      const b = (pv?.rows || []).find((x) => x.id === btn.dataset.verificar);
+      if (!b) return;
+      const en = I18N.lang === 'en';
+      if (!await confirmDlg('Verificar negocio', en
+        ? `“${esc(b.name)}” will become verified and active: its publications (and its repeating offer) will appear in the app and the owner will get a notification.`
+        : `«${esc(b.name)}» pasará a verificado y activo: sus publicaciones (y su oferta que se repite) aparecerán en la app y el propietario recibirá una notificación.`, { submit: 'Verificar' })) return;
+      esperando(btn, async () => {
+        try {
+          await rpc('admin_set_verification', { p_id: b.id, p_status: 'verified' });
+          toast('Negocio verificado');
+          route();
+        } catch (e) { toast(e.message, true); }
+      });
+    };
+  });
+}
+
 PAGES.resumen = async (v) => {
   const k = await refreshBadges(true);
   const kpi = (n, label, cls = '') => `<div class="kpi ${cls}"><b>${typeof n === 'number' ? fmtNum(n) : n}</b><span>${label}</span></div>`;
@@ -1509,6 +1648,12 @@ PAGES.resumen = async (v) => {
   // disputas, locales pedidos, avisos urgentes y los avisos por correo
   // (`admin_attention`, migración 20261262700000 de la app).
   try { ATT = await rpc('admin_attention'); } catch (e) { if (e?.obsoleta) throw e; ATT = null; }
+  // Alta rápida: lo que espera verificación y el pulso de Málaga (migraciones
+  // 20261263300000 y …01 de la app). Si aún no están, el Resumen sale igual.
+  const [PV, PULSO] = await Promise.all([
+    rpc('admin_pending_now', { p_limit: 5 }).catch((e) => { if (e?.obsoleta) throw e; return null; }),
+    rpc('admin_pulso').catch((e) => { if (e?.obsoleta) throw e; return null; }),
+  ]);
   const ap = ATT?.pending || {};
   const tk = ATT?.tasks || {};
   const urg = ATT?.urgent || [];
@@ -1583,6 +1728,8 @@ PAGES.resumen = async (v) => {
       ${nCal > calientes.rows.length ? `<p style="margin:6px 0 0"><a class="link" href="#/denuncias">${en ? `See all ${nCal}` : `Ver los ${nCal}`}</a></p>` : ''}
     </div>` : ''}
     ${tarjetaUrgentes(urg)}
+    ${tarjetaPorVerificar(PV)}
+    ${tarjetaPulso(PULSO)}
     ${GRUPOS_PEND.length ? `<div class="card"><h2>Pendiente de ti${BADGES.resumen ? ` <span class="badge pend-total" title="${en ? 'Things waiting for a decision' : 'Cosas que esperan una decisión'}">${fmtNum(BADGES.resumen)}</span>` : ''}</h2><div class="pend-grupos">
       ${GRUPOS_PEND.map(([t, filas]) => `<div class="pend-grupo" role="group" aria-label="${esc(t)}"><h3>${esc(t)}</h3><ul class="pend-lista">${filas.map(fila).join('')}</ul></div>`).join('')}
     </div></div>${tarjetaBajas(BAJAS?.items || [], true)}${tarjetaCambios(CAMBIOS?.rows || [], true, true)}${tarjetaPausas(PAUSAS || [], true, true)}` : '<div class="card"><h2>Todo al día</h2><p class="muted" style="margin:0">No hay negocios por verificar, publicaciones por moderar ni denuncias abiertas.</p></div>'}
@@ -1636,6 +1783,7 @@ PAGES.resumen = async (v) => {
   activaCambios(v);
   activaPausas(v);
   activaAvisosCorreo(v, ATT?.alerts);
+  activaAlta(v, PV);
   // Las filas de lo que tiene su tarjeta aquí abajo: la despliegan y llevan a ella.
   $$('[data-ir]', v).forEach((b) => { b.onclick = () => {
     const t = document.getElementById(b.dataset.ir);
