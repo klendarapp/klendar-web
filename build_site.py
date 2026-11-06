@@ -324,7 +324,7 @@ def landing(t):
 {{"@type":"MobileApplication","name":"Klendar","operatingSystem":"Android, iOS","applicationCategory":"LifestyleApplication","offers":{{"@type":"Offer","price":"0","priceCurrency":"EUR"}},"description":"{t['desc']}"}}]}}</script>'''
     steps = ''.join(f'<div class="step"><h3>{h}</h3><p>{p}</p></div>' for h, p in t['steps'])
     feats = ''.join(f'<div class="card"><div class="ic">{i}</div><h3>{h}</h3><p>{p}</p></div>' for i, h, p in t['feats'])
-    screens = ''.join(f'<figure><div class="phone"><img src="/assets/screens/{f}.webp?v=20260926" alt="{h}" loading="lazy" width="540" height="1212"></div><figcaption>{h}<small>{s}</small></figcaption></figure>' for f, h, s in t['screens'])
+    screens = ''.join(f'<figure><div class="phone"><img src="/assets/screens/{f}.webp?v=20261106" alt="{h}" loading="lazy" width="540" height="1212"></div><figcaption>{h}<small>{s}</small></figcaption></figure>' for f, h, s in t['screens'])
     points = ''.join(f'<li>{p}</li>' for p in t['biz_points'])
     stats = ''.join(f'<div><b>{b}</b><span>{s}</span></div>' for b, s in t['biz_stats'])
     faqs = ''.join(f'<details><summary>{q}</summary><p>{a}</p></details>' for q, a in t['faqs'])
@@ -348,7 +348,7 @@ def landing(t):
     <p class="note">{t['app_note']}</p>
   </div>
   <div class="hero-visual">
-    <div class="phone"><img src="/assets/screens/feed.webp?v=20261001" alt="Klendar" width="540" height="1212" fetchpriority="high"></div>
+    <div class="phone"><img src="/assets/screens/feed.webp?v=20261106" alt="Klendar" width="540" height="1212" fetchpriority="high"></div>
     <div class="float a">{fa[0]}<small>{fa[1]}</small></div>
     <div class="float b">{fb[0]}<small>{fb[1]}</small></div>
   </div>
@@ -415,7 +415,7 @@ def como_funciona(t):
     path = t['how_url']
     steps = ''.join(f'<div class="step"><h3>{h}</h3><p>{p}</p></div>' for h, p in t['steps'])
     feats = ''.join(f'<div class="card"><div class="ic">{i}</div><h3>{h}</h3><p>{p}</p></div>' for i, h, p in t['feats'])
-    screens = ''.join(f'<figure><div class="phone"><img src="/assets/screens/{f}.webp?v=20260926" alt="{h}" loading="lazy" width="540" height="1212"></div><figcaption>{h}<small>{s_}</small></figcaption></figure>' for f, h, s_ in t['screens'])
+    screens = ''.join(f'<figure><div class="phone"><img src="/assets/screens/{f}.webp?v=20261106" alt="{h}" loading="lazy" width="540" height="1212"></div><figcaption>{h}<small>{s_}</small></figcaption></figure>' for f, h, s_ in t['screens'])
     body = f'''
 <main id="contenido">
 <section class="junto" style="padding-top:48px"><div class="wrap">
