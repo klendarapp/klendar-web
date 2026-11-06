@@ -1104,6 +1104,58 @@ function confirma({ titulo, texto = '', lista = [], pie = '', aceptar, peligro =
   });
 }
 
+/** Antes de cambiar el correo o la contraseña en una cuenta con 2FA (los
+ * administradores, que lo activan en /admin/): el código de 6 cifras para subir
+ * [cliente] a `aal2`, sin el que Supabase responde `insufficient_aal`. `true` si
+ * se puede seguir (sin 2FA ni pregunta) y `false` si se cancela. Si no se puede
+ * saber, se sigue: Supabase comprueba y sale su mensaje. La app no lo pide
+ * (RUNBOOK §2a): lleva aquí. */
+async function cuentaSegundoPaso(cliente) {
+  let factor = null;
+  try { factor = await window.KL_IDENTIDAD?.factorPendiente?.(cliente); } catch { return true; }
+  if (!factor) return true;
+  return new Promise((resolve) => {
+    const d = document.createElement('dialog');
+    d.className = 'dialogo';
+    d.setAttribute('aria-labelledby', 'dos-pasos-t');
+    d.innerHTML = `<h2 id="dos-pasos-t">${esc(t('Verificación en dos pasos'))}</h2>
+      <form class="formu" novalidate>
+        <p class="muted">${esc(t('Escribe el código de 6 cifras de tu app de verificación (Google Authenticator, 1Password, Authy…).'))}</p>
+        <label>${esc(t('Código'))}<input name="codigo" inputmode="numeric" autocomplete="one-time-code" maxlength="6"></label>
+        <p class="err" role="alert"></p>
+        <div class="dialogo-botones">
+          <button type="button" class="pill" value="no">${esc(t('Cancelar'))}</button>
+          <button type="submit" class="pill accent">${esc(t('Seguir'))}</button>
+        </div>
+      </form>`;
+    document.body.appendChild(d);
+    let hecho = false;
+    const form = d.querySelector('form');
+    d.querySelector('button[value=no]').onclick = () => d.close();
+    form.onsubmit = (e) => {
+      e.preventDefault();
+      const err = form.querySelector('.err');
+      err.textContent = '';
+      const codigo = form.elements.codigo.value.replace(/\D/g, '');
+      if (codigo.length !== 6) { err.textContent = t('Escribe el código completo que te hemos enviado.'); return; }
+      ocupado(form.querySelector('button[type=submit]'), async () => {
+        try {
+          await window.KL_IDENTIDAD.subirNivel(cliente, factor, codigo);
+        } catch (x) {
+          err.textContent = errAuth(x);
+          form.elements.codigo.select();
+          return;
+        }
+        hecho = true;
+        d.close();
+      });
+    };
+    d.addEventListener('close', () => { d.remove(); resolve(hecho); });
+    d.showModal();
+    form.elements.codigo.focus();
+  });
+}
+
 /** «Confirma que eres tú» antes de cambiar la contraseña o eliminar la
  * cuenta, como la app (confirmIdentity): la contraseña actual o, si la cuenta
  * no tiene (entró con Google o Apple), un código de 6 cifras al correo. Quien
@@ -1621,12 +1673,15 @@ RUTAS['nueva-clave'] = async (_p, params) => {
     if (!ok) return;
     ocupado(form.querySelector('button[type=submit]'), async () => {
       if (recuperando) {
+        // El enlace da una sesión `aal1`: con 2FA, primero el código.
+        if (!await cuentaSegundoPaso(sb)) return;
         const { error } = await sb.auth.updateUser({ password: form.p1.value });
         if (error) { $('#err').textContent = errAuth(error); return; }
       } else {
         const id = await confirmaIdentidad();
         if (!id) return;
         try {
+          if (!await cuentaSegundoPaso(id.cliente)) return;
           await id.cambiarClave(form.p1.value);
         } catch (x) {
           $('#err').textContent = errAuth(x);

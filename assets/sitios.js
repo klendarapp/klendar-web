@@ -45,6 +45,8 @@
       close: 'Cerrar',
       places: (n) => (n === 1 ? '1 sitio' : `${n} sitios`),
       zoomIn: 'Acercar',
+      mapLoadFailed: 'No hemos podido cargar lo que hay en el mapa.',
+      retry: 'Reintentar',
     },
     en: {
       open: 'Open',
@@ -70,6 +72,8 @@
       close: 'Close',
       places: (n) => (n === 1 ? '1 place' : `${n} places`),
       zoomIn: 'Zoom in',
+      mapLoadFailed: "We couldn't load what's on the map.",
+      retry: 'Retry',
     },
   };
 
@@ -345,8 +349,28 @@
         burbuja: (n) => `${L.places(n)}. ${L.zoomIn}`,
       });
 
+      // Si falla, otra vez sola (como la app); si sigue, un aviso pequeño que
+      // vuelve a probar al tocarlo. Antes se quedaba sin puntos sin decir nada.
+      const ESPERAS = [2000, 5000, 10000];
+      let fallos = 0;
+      let reintento = null;
+      let aviso = null;
+      const quitaAviso = () => { aviso?.remove(); aviso = null; };
+      const ponAviso = () => {
+        if (aviso) return;
+        aviso = document.createElement('button');
+        aviso.type = 'button';
+        aviso.className = 'sitios-sin-puntos';
+        aviso.style.cssText = 'position:absolute;z-index:2;top:12px;left:50%;transform:translateX(-50%);width:max-content;max-width:calc(100% - 24px);padding:8px 14px;border-radius:999px;border:1px solid var(--glass-border);background:var(--elevated);color:var(--ink);font:inherit;font-size:14px;cursor:pointer';
+        aviso.setAttribute('role', 'status');
+        aviso.innerHTML = `${esc(L.mapLoadFailed)} <b>${esc(L.retry)}</b>`;
+        aviso.addEventListener('click', () => { fallos = 0; quitaAviso(); carga(); });
+        if (getComputedStyle(caja).position === 'static') caja.style.position = 'relative';
+        caja.append(aviso);
+      };
       const carga = async () => {
         const n = ++pedido;
+        clearTimeout(reintento);
         const b = m.getBounds();
         try {
           const r = await fetch(`${d.url}/rest/v1/rpc/map_places`, {
@@ -357,11 +381,20 @@
               ...(d.filtros || {}), p_hide_adults: true,
             }),
           });
-          if (!r.ok || n !== pedido) return;
+          if (n !== pedido) return;
+          if (!r.ok) throw new Error(`map_places ${r.status}`);
           const filas = await r.json();
+          if (n !== pedido) return;
           capa.poner((Array.isArray(filas) ? filas : []).filter((f) => isFinite(f.lat) && isFinite(f.lng))
             .map((f) => ({ ...f, lat: Number(f.lat), lng: Number(f.lng) })));
-        } catch { /* el próximo movimiento lo vuelve a pedir */ }
+          fallos = 0;
+          quitaAviso();
+        } catch {
+          if (n !== pedido) return;
+          fallos += 1;
+          if (fallos <= ESPERAS.length) reintento = setTimeout(carga, ESPERAS[fallos - 1]);
+          else ponAviso();
+        }
       };
       m.on('load', carga);
       m.on('moveend', () => { clearTimeout(espera); espera = setTimeout(carga, 300); });

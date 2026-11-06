@@ -88,6 +88,7 @@ async function correoCambiar(caja) {
   const id = await confirmaIdentidad();
   if (!id) return;
   try {
+    if (!await cuentaSegundoPaso(id.cliente)) return;
     const nuevo = await correoPideNuevo(id.email, (n) => id.cambiarCorreo(n));
     if (!nuevo) return;
     if (caja?.isConnected) correoSeccion(caja);

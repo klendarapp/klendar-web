@@ -29,6 +29,7 @@
       sms: 'No hemos podido mandar el SMS. Revisa el número y vuelve a probar.',
       telefono: 'Escribe un número válido',
       sesion: 'Tu sesión ha caducado. Vuelve a entrar para continuar.',
+      dosPasos: 'Tu cuenta tiene verificación en dos pasos. Para cambiar el correo o la contraseña, entra en klendar.app/cuenta desde un navegador: te pedirá el código de 6 cifras de tu app de verificación.',
       sinRed: 'Revisa tu conexión a internet e inténtalo de nuevo.',
       robot: 'No hemos podido comprobar que no eres un robot. Vuelve a probar.',
       generico: 'Algo ha fallado. Inténtalo de nuevo.',
@@ -48,6 +49,7 @@
       sms: "We couldn't send the text. Check the number and try again.",
       telefono: 'Enter a valid number',
       sesion: 'Your session has expired. Log in again to continue.',
+      dosPasos: "Your account uses two-step verification. To change your email or password, log in at klendar.app/cuenta in a browser: it'll ask for the 6-digit code from your authenticator app.",
       sinRed: 'Check your internet connection and try again.',
       robot: "We couldn't check that you're not a robot. Please try again.",
       generico: 'Something went wrong. Please try again.',
@@ -75,7 +77,10 @@
     // different…») también contiene «password should be».
     if (es(['same_password'], ['should be different'])) return 'igual';
     if (es(['weak_password'], ['password should be'])) return 'debil';
-    if (es(['otp_expired'], ['token has expired', 'otp has expired'])) return 'codigo';
+    if (es(['otp_expired', 'mfa_verification_failed', 'mfa_challenge_expired'], ['token has expired', 'otp has expired', 'invalid totp'])) return 'codigo';
+    // Cuenta con 2FA y sesión aal1: Supabase no deja cambiar correo ni
+    // contraseña (401). «Tu cuenta» pide antes el código; esto es por si acaso.
+    if (es(['insufficient_aal'], ['aal2 session'])) return 'dosPasos';
     if (es(['provider_disabled', 'email_provider_disabled', 'phone_provider_disabled', 'signup_disabled', 'otp_disabled'],
       ['provider is not enabled', 'unsupported provider', 'signups not allowed'])) return 'noDisponible';
     if (es(['user_banned'], ['banned'])) return 'suspendida';

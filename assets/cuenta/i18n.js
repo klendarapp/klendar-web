@@ -771,6 +771,8 @@ const APP_EN = {
     "Por seguridad, escribe tu contraseña actual.": "For your security, enter your current password.",
     "Contraseña actual": "Current password",
     "Prefiero un código por correo": "Email me a code instead",
+    "Verificación en dos pasos": "Two-step verification",
+    "Escribe el código de 6 cifras de tu app de verificación (Google Authenticator, 1Password, Authy…).": "Enter the 6-digit code from your authenticator app (Google Authenticator, 1Password, Authy…).",
     "Usar mi contraseña": "Use my password",
     "La contraseña no es correcta.": "That password isn't right.",
     "Por seguridad, vuelve a confirmar que eres tú.": "For your security, confirm it's you again.",

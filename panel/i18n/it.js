@@ -2422,6 +2422,7 @@ KL_DIC('it', {
   "Precios sin IVA.": "Prezzi IVA esclusa.",
   "Prefiero escribir otra": "Preferisco scriverne un’altra",
   "Prefiero un código por correo": "Preferisco un codice via email",
+  "Tu cuenta tiene verificación en dos pasos. Para cambiar el correo o la contraseña, entra en klendar.app/cuenta desde un navegador: te pedirá el código de 6 cifras de tu app de verificación.": "Il tuo account usa la verifica in due passaggi. Per cambiare email o password, accedi a klendar.app/cuenta da un browser: ti chiederà il codice di 6 cifre della tua app di verifica.",
   "Pregunta oculta. Se lo hemos dicho a quien preguntó.": "Domanda nascosta. L’abbiamo detto a chi ha chiesto.",
   "Preguntar por el plan": "Chiedi informazioni sul piano",
   "Preguntas": "Domande",

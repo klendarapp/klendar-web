@@ -2422,6 +2422,7 @@ KL_DIC('eu', {
   "Precios sin IVA.": "Prezioak BEZik gabe.",
   "Prefiero escribir otra": "Nahiago dut beste bat idatzi",
   "Prefiero un código por correo": "Nahiago dut posta bidezko kode bat",
+  "Tu cuenta tiene verificación en dos pasos. Para cambiar el correo o la contraseña, entra en klendar.app/cuenta desde un navegador: te pedirá el código de 6 cifras de tu app de verificación.": "Zure kontuak bi urratseko egiaztapena du. Helbidea edo pasahitza aldatzeko, sartu klendar.app/cuenta helbidean nabigatzaile batetik: zure egiaztapen-aplikazioko 6 digituko kodea eskatuko dizu.",
   "Pregunta oculta. Se lo hemos dicho a quien preguntó.": "Galdera ezkutatu da. Galdetu duenari esan diogu.",
   "Preguntar por el plan": "Galdetu planari buruz",
   "Preguntas": "Galderak",

@@ -21,6 +21,12 @@
  *   await id.cerrar();                         // siempre, al acabar o cancelar
  *
  *   KL_IDENTIDAD.reciente(sb, ['otp'], 600)    // ¿se entró así hace poco?
+ *
+ * Una cuenta con 2FA (los administradores): Supabase no deja cambiar el correo
+ * ni la contraseña sin `aal2`, y la sesión aparte (o la del enlace de «¿Has
+ * olvidado la contraseña?») es `aal1`. `KL_IDENTIDAD.factorPendiente(cliente)`
+ * dice si hace falta el código de 6 cifras y `KL_IDENTIDAD.subirNivel(cliente,
+ * factor, codigo)` sube esa sesión a `aal2` (`id.cliente` es la aparte).
  */
 (function () {
   function datosDe(token) {
@@ -65,6 +71,8 @@
     return {
       email,
       get verificada() { return verificada; },
+      /** La sesión aparte (para `factorPendiente` y `subirNivel`). */
+      get cliente() { return aparte; },
       async conClave(c) {
         falla((await aparte.auth.signInWithPassword({ email, password: c, options: { captchaToken: await robot() } })).error);
         clave = c;
@@ -115,6 +123,25 @@
     return Array.isArray(amr) && amr.some((e) => metodos.includes(e?.method) && ahora - Number(e?.timestamp) < segundos);
   }
 
+  /** El factor con el que hay que subir a `aal2` esta sesión, o null si no
+   * hace falta (sin 2FA, o ya con el código). */
+  async function factorPendiente(cliente) {
+    const { data: l, error } = await cliente.auth.mfa.listFactors();
+    if (error) throw error;
+    const factor = (l?.totp || []).find((f) => f.status === 'verified');
+    if (!factor) return null;
+    const { data: n } = await cliente.auth.mfa.getAuthenticatorAssuranceLevel();
+    return n?.currentLevel === 'aal2' ? null : factor;
+  }
+
+  /** Sube la sesión a `aal2` con el código de la app de verificación. */
+  async function subirNivel(cliente, factor, codigo) {
+    const { error } = await cliente.auth.mfa.challengeAndVerify({ factorId: factor.id, code: String(codigo).trim() });
+    if (error) throw error;
+  }
+
   window.KL_IDENTIDAD = crear;
   window.KL_IDENTIDAD.reciente = reciente;
+  window.KL_IDENTIDAD.factorPendiente = factorPendiente;
+  window.KL_IDENTIDAD.subirNivel = subirNivel;
 })();
