@@ -126,7 +126,7 @@ for (const [nombre, status] of [['apagado', { ...ANON, available: false }], ['si
   ok(texto.includes('Anthropic') && texto.includes('30 días'), 'a quién va');
   ok(texto.includes('no obliga a Klendar'), 'no obliga a Klendar');
   ok(texto.includes('No pongas datos personales'), 'no poner datos personales');
-  ok(texto.includes('112'), 'el 112');
+  ok(texto.includes('112') && texto.includes('024') && texto.includes('016'), 'el 112, el 024 y el 016');
   ok(await p.locator('#asis-q').count() === 0, 'sin aceptar no se puede escribir');
   await p.screenshot({ path: `${OUT}/asistente-aviso.png` });
   await p.click('.asis-botones .pill:not(.accent)');

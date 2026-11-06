@@ -10,6 +10,8 @@
  */
 (function () {
   'use strict';
+  // REVISAR-TRADUCCION: en `introEmergency`, la frase del 024 y el 016 es la de los textos fijos de lo grave (`_shared/asistente.ts`
+  // de la app), traducida sin que la haya mirado nadie que hable cada idioma. Mismo texto en la app (`assistantIntroEmergency`).
   var T = {
  "es": {
   "close": "Cerrar",
@@ -19,7 +21,7 @@
   "introTitle": "Antes de empezar: esto es una IA",
   "introBody": "Este asistente es una inteligencia artificial, no una persona. Es Claude, de Anthropic, una empresa de Estados Unidos. Responde solo con lo publicado en la Ayuda y las Normas de Klendar, y puede equivocarse. Lo que dice no obliga a Klendar: lo que vale es lo publicado y lo que te contestemos por correo.",
   "introPrivacy": "No pongas datos personales. Lo que escribas va a Anthropic para responderte, sin tu nombre ni tu cuenta, y quitamos los correos, teléfonos y DNI que veamos. Anthropic no lo usa para entrenar su IA y lo borra en 30 días; lo que sus sistemas marquen como grave puede guardarlo hasta 2 años. Klendar no guarda la conversación: solo cuenta las preguntas.",
-  "introEmergency": "Si hay una emergencia, llama al 112. El asistente no sirve para eso.",
+  "introEmergency": "Si hay una emergencia, llama al 112. En España también están, gratis, el 024 (conducta suicida) y el 016 (violencia de género). El asistente no sirve para eso.",
   "accept": "Entendido, empezar",
   "notNow": "Ahora no",
   "more": "Más información",
@@ -61,7 +63,7 @@
   "introTitle": "Before you start: this is an AI",
   "introBody": "This assistant is an artificial intelligence, not a person. It is Claude, by Anthropic, a US company. It only answers from what is published in Klendar’s Help and Community Guidelines, and it can get things wrong. What it says does not bind Klendar: what counts is what is published and what we tell you by email.",
   "introPrivacy": "Don’t include personal data. What you write goes to Anthropic so it can answer, without your name or account, and we remove any emails, phone numbers and ID numbers we spot. Anthropic does not use it to train its AI and deletes it within 30 days; anything its systems flag as serious may be kept for up to 2 years. Klendar does not keep the conversation: it only counts the questions.",
-  "introEmergency": "In an emergency, call 112. The assistant is not for that.",
+  "introEmergency": "In an emergency, call 112. In Spain you can also call, free of charge, 024 (suicidal behaviour) and 016 (gender-based violence). The assistant is not for that.",
   "accept": "Got it, start",
   "notNow": "Not now",
   "more": "More information",
@@ -103,7 +105,7 @@
   "introTitle": "Abans de començar: això és una IA",
   "introBody": "Aquest assistent és una intel·ligència artificial, no una persona. És Claude, d'Anthropic, una empresa dels Estats Units. Respon només amb el que hi ha publicat a l'Ajuda i les Normes de Klendar, i es pot equivocar. El que diu no obliga Klendar: el que val és el que hi ha publicat i el que et responguem per correu.",
   "introPrivacy": "No hi posis dades personals. El que escriguis va a Anthropic per respondre't, sense el teu nom ni el teu compte, i traiem els correus, telèfons i DNI que veiem. Anthropic no ho fa servir per entrenar la seva IA i ho esborra en 30 dies; el que els seus sistemes marquin com a greu ho pot guardar fins a 2 anys. Klendar no guarda la conversa: només compta les preguntes.",
-  "introEmergency": "Si hi ha una emergència, truca al 112. L'assistent no serveix per a això.",
+  "introEmergency": "Si hi ha una emergència, truca al 112. A Espanya també tens, gratis, el 024 (conducta suïcida) i el 016 (violència de gènere). L'assistent no serveix per a això.",
   "accept": "D'acord, comença",
   "notNow": "Ara no",
   "more": "Més informació",
@@ -145,7 +147,7 @@
   "introTitle": "Antes de comezar: isto é unha IA",
   "introBody": "Este asistente é unha intelixencia artificial, non unha persoa. É Claude, de Anthropic, unha empresa dos Estados Unidos. Responde só co publicado na Axuda e nas Normas de Klendar, e pode equivocarse. O que di non obriga a Klendar: o que vale é o publicado e o que che contestemos por correo.",
   "introPrivacy": "Non poñas datos persoais. O que escribas vai a Anthropic para responderche, sen o teu nome nin a túa conta, e quitamos os correos, teléfonos e DNI que vexamos. Anthropic non o usa para adestrar a súa IA e bórrao en 30 días; o que os seus sistemas marquen como grave pode gardalo ata 2 anos. Klendar non garda a conversa: só conta as preguntas.",
-  "introEmergency": "Se hai unha emerxencia, chama ao 112. O asistente non serve para iso.",
+  "introEmergency": "Se hai unha emerxencia, chama ao 112. En España tamén tes, de balde, o 024 (conduta suicida) e o 016 (violencia de xénero). O asistente non serve para iso.",
   "accept": "Entendido, comezar",
   "notNow": "Agora non",
   "more": "Máis información",
@@ -187,7 +189,7 @@
   "introTitle": "Hasi aurretik: hau AA bat da",
   "introBody": "Laguntzaile hau adimen artifiziala da, ez pertsona bat. Claude da, Anthropic-ena, Estatu Batuetako enpresa batena. Klendarren Laguntzan eta Arauetan argitaratutakoarekin bakarrik erantzuten du, eta oker dezake. Esaten duenak ez du Klendar behartzen: argitaratutakoak eta posta bidez erantzuten dizugunak balio du.",
   "introPrivacy": "Ez jarri datu pertsonalik. Idazten duzuna Anthropic-era doa erantzun ahal izateko, zure izenik eta konturik gabe, eta ikusten ditugun posta elektronikoak, telefonoak eta NANak kentzen ditugu. Anthropic-ek ez du erabiltzen bere AA entrenatzeko eta 30 egunetan ezabatzen du; bere sistemek larritzat markatzen dutena 2 urtez gorde dezake. Klendarrek ez du elkarrizketa gordetzen: galderak zenbatzen ditu soilik.",
-  "introEmergency": "Larrialdi bat badago, deitu 112ra. Laguntzailea ez da horretarako.",
+  "introEmergency": "Larrialdi bat badago, deitu 112ra. Espainian, doan, 024 (suizidio-jokabidea) eta 016 (genero-indarkeria) ere badituzu. Laguntzailea ez da horretarako.",
   "accept": "Ulertuta, hasi",
   "notNow": "Orain ez",
   "more": "Informazio gehiago",
@@ -229,7 +231,7 @@
   "introTitle": "Avant de commencer : ceci est une IA",
   "introBody": "Cet assistant est une intelligence artificielle, pas une personne. C'est Claude, d'Anthropic, une entreprise américaine. Il répond uniquement à partir de ce qui est publié dans l'Aide et les Règles de Klendar, et il peut se tromper. Ce qu'il dit n'engage pas Klendar : ce qui compte, c'est ce qui est publié et ce que nous te répondons par e-mail.",
   "introPrivacy": "Ne mets pas de données personnelles. Ce que tu écris va à Anthropic pour te répondre, sans ton nom ni ton compte, et nous retirons les e-mails, téléphones et numéros d'identité que nous repérons. Anthropic ne l'utilise pas pour entraîner son IA et le supprime sous 30 jours ; ce que ses systèmes signalent comme grave peut être conservé jusqu'à 2 ans. Klendar ne garde pas la conversation : il compte seulement les questions.",
-  "introEmergency": "En cas d'urgence, appelle le 112. L'assistant n'est pas fait pour ça.",
+  "introEmergency": "En cas d'urgence, appelle le 112. En Espagne, tu peux aussi appeler gratuitement le 024 (conduites suicidaires) et le 016 (violences de genre). L'assistant n'est pas fait pour ça.",
   "accept": "Compris, commencer",
   "notNow": "Pas maintenant",
   "more": "En savoir plus",
@@ -271,7 +273,7 @@
   "introTitle": "Bevor du anfängst: Das ist eine KI",
   "introBody": "Dieser Assistent ist eine künstliche Intelligenz, kein Mensch. Es ist Claude von Anthropic, einem US-Unternehmen. Er antwortet nur mit dem, was in der Hilfe und den Regeln von Klendar veröffentlicht ist, und kann sich irren. Was er sagt, verpflichtet Klendar zu nichts: Es gilt, was veröffentlicht ist und was wir dir per E-Mail antworten.",
   "introPrivacy": "Gib keine personenbezogenen Daten an. Was du schreibst, geht an Anthropic, damit du eine Antwort bekommst, ohne deinen Namen und dein Konto, und wir entfernen E-Mail-Adressen, Telefon- und Ausweisnummern, die wir erkennen. Anthropic nutzt es nicht zum Trainieren seiner KI und löscht es innerhalb von 30 Tagen; was seine Systeme als schwerwiegend markieren, kann bis zu 2 Jahre gespeichert werden. Klendar speichert das Gespräch nicht: Es zählt nur die Fragen.",
-  "introEmergency": "Im Notfall ruf die 112 an. Dafür ist der Assistent nicht gedacht.",
+  "introEmergency": "Im Notfall ruf die 112 an. In Spanien gibt es außerdem kostenlos die 024 (Suizidgefährdung) und die 016 (geschlechtsspezifische Gewalt). Dafür ist der Assistent nicht gedacht.",
   "accept": "Verstanden, loslegen",
   "notNow": "Jetzt nicht",
   "more": "Mehr erfahren",
@@ -313,7 +315,7 @@
   "introTitle": "Prima di iniziare: questa è un'IA",
   "introBody": "Questo assistente è un'intelligenza artificiale, non una persona. È Claude, di Anthropic, un'azienda statunitense. Risponde solo con ciò che è pubblicato nell'Aiuto e nelle Regole di Klendar e può sbagliare. Ciò che dice non vincola Klendar: vale ciò che è pubblicato e ciò che ti rispondiamo via e-mail.",
   "introPrivacy": "Non inserire dati personali. Ciò che scrivi va ad Anthropic per risponderti, senza il tuo nome né il tuo account, e togliamo le e-mail, i telefoni e i documenti d'identità che vediamo. Anthropic non lo usa per addestrare la sua IA e lo cancella entro 30 giorni; ciò che i suoi sistemi segnalano come grave può conservarlo fino a 2 anni. Klendar non conserva la conversazione: conta solo le domande.",
-  "introEmergency": "In caso di emergenza, chiama il 112. L'assistente non serve a questo.",
+  "introEmergency": "In caso di emergenza, chiama il 112. In Spagna ci sono anche, gratis, il 024 (comportamento suicidario) e il 016 (violenza di genere). L'assistente non serve a questo.",
   "accept": "Ho capito, inizia",
   "notNow": "Non ora",
   "more": "Maggiori informazioni",

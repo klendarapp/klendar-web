@@ -431,7 +431,7 @@ PAGINAS['precios'] = (
 import ayuda  # noqa: E402
 
 AYUDA_V = 1  # ?v= de assets/ayuda.js y ayuda.css
-ASISTENTE_V = 1  # ?v= de assets/asistente.js y asistente.css (apagado no sale nada; RUNBOOK §4zi de la app)
+ASISTENTE_V = 2  # ?v= de assets/asistente.js y asistente.css (apagado no sale nada; RUNBOOK §4zi de la app)
 
 AYUDA_T = {
     'es': dict(lead='Lo que más nos preguntan, para quien busca planes y para los negocios.',
