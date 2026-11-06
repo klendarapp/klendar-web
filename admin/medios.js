@@ -44,6 +44,7 @@ const TEXTO_TIPO = {
 const TEXTO_CATEGORIA = {
   alcohol: 'Alcohol', tobacco: 'Tabaco', gambling: 'Apuestas', insults: 'Insultos', insult: 'Insultos', profanity: 'Tacos', hate: 'Odio', threats: 'Amenazas', threat: 'Amenazas',
   sexual: 'Sexual', porn: 'Porno', paid_sex: 'Sexo de pago', drugs: 'Drogas', weapons: 'Armas', violence: 'Violencia', scam: 'Estafa', medicines: 'Medicamentos',
+  misleading: 'Oferta engañosa', spam: 'Publicidad ajena', privacy: 'Datos de otra persona', defamation: 'Acusación',
   illegal: 'Ilegal', child_abuse: 'Abuso sexual infantil', ambiguous: 'Palabra ambigua', offensive: 'Lenguaje ofensivo',
 };
 // Lo que el moderador deja a la vista: no hay forma de ocultarlo sin romper el negocio.
