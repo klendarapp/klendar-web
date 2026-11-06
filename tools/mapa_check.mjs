@@ -1,5 +1,8 @@
-// El mapa de Explorar con varios planes en el mismo sitio (2026-10-25), en la
-// web local contra dev y solo leyendo:
+// El mapa de Explorar con varios planes en el mismo sitio (2026-10-25), con las
+// Functions de verdad contra un Supabase falso y Mapbox de verdad. Desde que las
+// pruebas no pueden llegar a Supabase (03abcf9, 5-11), contra la base vacía no
+// había ningún plan: el mapa cargaba sin marcadores y esto decía «sin mapa, con
+// aviso». Por eso lleva sus propios planes (Iván, 6-11):
 //  1. Planes: lo del mismo punto es UN marcador con su logo (o icono) y
 //     «N planes»; al tocarlo se abre su hoja con Cómo llegar y sus planes por
 //     partes (8 y «Ver N más»), cada uno con su día y hora.
@@ -15,15 +18,20 @@
 //  7. Sin errores en la consola.
 // Chromium y WebKit, móvil (375) y escritorio. Capturas en OUT.
 //
-//   SUPABASE_BLOQUEADO=1 PORT=8863 node tools/serve_dev.mjs &
-//   PW=<ruta a playwright> OUT=<carpeta> BASE=http://localhost:8863 node tools/mapa_check.mjs
+// Arranca su serve_dev (con Supabase cortado) y su Supabase falso. Mapbox pide
+// un token: el de klendar/env/dev.json, como serve_dev, o MAPBOX_TOKEN.
+//
+//   PW=<ruta a playwright> OUT=<carpeta> node tools/mapa_check.mjs
+import { spawn } from 'node:child_process';
 import { mkdirSync } from 'node:fs';
-import { playwright, servidorSeguro, supabaseVacio } from './_supabase_simulado.mjs';
+import { createServer } from 'node:http';
+import { fileURLToPath } from 'node:url';
+import { SUPA, playwright, servidorSeguro, supabaseVacio } from './_supabase_simulado.mjs';
 
 const { chromium, webkit } = playwright();
-const BASE = process.env.BASE || 'http://localhost:8863';
-// La web local no puede llegar a Supabase (ver _supabase_simulado).
-await servidorSeguro(BASE);
+const PUERTO = Number(process.env.MAPA_PORT || 8865);
+const FALSO_PORT = Number(process.env.FALSO_PORT || 8866);
+const BASE = `http://localhost:${PUERTO}`;
 // Las capturas, en tools/out/ (git las ignora): en la raíz se publicaban
 // en klendar.app (revisión del 3-11-2026, 5.4).
 const OUT = process.env.OUT || 'tools/out';
@@ -32,6 +40,59 @@ mkdirSync(OUT, { recursive: true });
 // Usera y Arganzuela (Madrid): la agenda pública tiene muchos planes en los
 // mismos centros culturales.
 const AQUI = 'lat=40.39&lng=-3.70';
+
+// Los planes de la prueba: un centro cultural con 11 (su hoja va por partes) y
+// sitios sueltos a unos 400 m (burbujas a zoom 12, separados a zoom 17), dos
+// con una oferta de verdad (el anillo coral).
+const iso = (dias) => new Date(Date.now() + dias * 864e5).toISOString();
+const plan = (id, extra) => ({
+  id: `a1000000-0000-4000-8000-${String(id).padStart(12, '0')}`,
+  kind: 'future_event', status: 'active', time_zone: 'Europe/Madrid', images: [], ...extra,
+});
+const PLANES = [
+  ...Array.from({ length: 11 }, (_, i) => plan(i + 1, {
+    title: `Taller ${i + 1}`, starts_at: iso(i + 1), imported: true,
+    business_id: 'b1000000-0000-4000-8000-000000000001', business_name: 'Centro Cultural Sonda', lat: 40.39, lng: -3.70,
+  })),
+  ...Array.from({ length: 16 }, (_, i) => {
+    const oferta = i < 2;
+    return plan(i + 20, {
+      title: `Plan ${i + 1}`,
+      business_id: `b1000000-0000-4000-8000-${String(i + 2).padStart(12, '0')}`, business_name: `Sitio ${i + 1}`,
+      lat: 40.375 + (i % 4) * 0.0035 + Math.floor(i / 4) * 0.0005, lng: -3.712 + Math.floor(i / 4) * 0.0045,
+      ...(oferta
+        ? { kind: 'flash_offer', starts_at: iso(-0.1), redeem_end_at: iso(0.2), discount: { type: 'fixed', value: 3 } }
+        : { starts_at: iso(i + 1) }),
+    });
+  }),
+];
+// `map_places` (lo pide el navegador): seis sitios en el centro de Madrid.
+const SITIOS = Array.from({ length: 6 }, (_, i) => ({
+  id: `b2000000-0000-4000-8000-${String(i + 1).padStart(12, '0')}`, name: `Sitio ${i + 1}`,
+  lat: 40.40 + i * 0.006, lng: -3.72 + (i % 3) * 0.012, category_slug: 'bares', has_offer: i === 0, plans_today: i < 2 ? 1 : 0,
+}));
+
+/** El Supabase de las Functions: los planes de arriba y lo demás, vacío. */
+const falso = createServer((req, res) => {
+  let cuerpo = '';
+  req.on('data', (c) => { cuerpo += c; });
+  req.on('end', () => {
+    res.writeHead(200, { 'content-type': 'application/json', 'content-range': '*/0' });
+    const fn = new URL(req.url, 'http://x').pathname.replace('/rest/v1/rpc/', '');
+    if (fn === 'public_explore') {
+      const { p_limit: n = 60, p_offset: d = 0 } = JSON.parse(cuerpo || '{}');
+      res.end(JSON.stringify({ items: PLANES.slice(d, d + n), total: PLANES.length }));
+    } else if (fn === 'public_places') res.end(JSON.stringify({ items: [], total: 0 }));
+    else res.end('[]');
+  });
+});
+await new Promise((r) => falso.listen(FALSO_PORT, r));
+const servidor = spawn(process.execPath, [fileURLToPath(new URL('./serve_dev.mjs', import.meta.url))], {
+  env: { ...process.env, PORT: String(PUERTO), SUPABASE_URL: `http://localhost:${FALSO_PORT}`, SUPABASE_KEY: 'falsa', SUPABASE_URL_NAVEGADOR: SUPA }, stdio: 'ignore',
+});
+await new Promise((r) => setTimeout(r, 2000));
+// Su serve_dev no puede llegar a Supabase (ver _supabase_simulado).
+await servidorSeguro(BASE);
 let fallos = 0;
 const ok = (c, m) => { if (!c) { fallos++; console.log('FALLA:', m); } else console.log('ok:', m); };
 
@@ -76,6 +137,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
       const ctx = await nav.newContext({ viewport: vp, locale: 'es-ES', colorScheme: tema });
       // Lo que lee de pasada (formas de entrar, ciudades…): base vacía simulada.
       await supabaseVacio(ctx);
+      await ctx.route(`${SUPA}/rest/v1/rpc/map_places`, (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify(SITIOS) }));
       const page = await ctx.newPage();
       const errores = [];
       const deMapbox = (x) => /mapbox|webgl|tile|Failed to load resource|^Error$|Load failed/i.test(x);
@@ -85,11 +147,16 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
 
       await page.goto(`${BASE}/explorar/?vista=mapa&${AQUI}`);
       const puntos = await page.evaluate(() => JSON.parse(document.getElementById('mapaPuntos').textContent));
+      // Si no llegan planes, lo de abajo no prueba nada: que se diga eso.
+      ok(puntos.length === PLANES.length, `${t} la página trae los ${PLANES.length} planes (${puntos.length})`);
       const conMapa = await page.waitForFunction(() => window.KlendarMapa && window.KlendarMapa.loaded()
         && document.querySelector('.grupo-marca, .marca'), null, { timeout: 30000 }).then(() => true).catch(() => false);
       if (!conMapa) {
+        // El mapa ha cargado y aun así no hay marcadores: eso no es «sin mapa».
+        const cargado = await page.evaluate(() => Boolean(window.KlendarMapa?.loaded()));
+        ok(!cargado, `${t} el mapa ha cargado y no pinta ningún marcador`);
         // WebKit sin GPU no siempre pinta Mapbox: entonces sale el aviso.
-        ok(await page.locator('#mapa.sin-mapa, #mapa .empty').count() > 0 || nombre === 'webkit', `${t} sin mapa, con aviso`);
+        if (!cargado) ok(await page.locator('#mapa.sin-mapa, #mapa .empty').count() > 0 || nombre === 'webkit', `${t} sin mapa, con aviso`);
         await page.screenshot({ path: `${OUT}/web-planes-sin-mapa-${nombre}-${forma}-${tema}.png` });
         await ctx.close();
         continue;
@@ -219,5 +286,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
   }
   await nav.close();
 }
+servidor.kill();
+falso.close();
 console.log(fallos ? `\n${fallos} FALLOS` : '\nTodo bien');
 process.exit(fallos ? 1 : 0);
