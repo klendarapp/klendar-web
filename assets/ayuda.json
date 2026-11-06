@@ -1,5 +1,5 @@
 {
- "version": "71f6f3352da3",
+ "version": "502271b0121b",
  "contact": "info@klendar.app",
  "tabs": {
   "es": {
@@ -261,6 +261,22 @@
     "a": [
      {
       "t": "Se usa para ordenar por cercanía y, si lo activas, para avisarte de ofertas cerca (con la última ubicación conocida, que se borra a los 7 días; no guardamos un historial). Nunca se comparte con otros usuarios, y los negocios solo ven cifras agregadas de distancia, sin saber de quién son."
+     }
+    ]
+   },
+   {
+    "id": "cambiar-correo",
+    "q": "¿Cómo cambio mi correo?",
+    "a": [
+     {
+      "t": "Desde Cuenta → Ajustes → Cambiar correo, en la app o en «Tu cuenta» de la web. Primero te pedimos que confirmes que eres tú. Luego llegan un código y un botón al correo nuevo y otros al de ahora, y el cambio se hace al confirmar los dos; mientras, verás «Falta confirmar el cambio a…». Si ya no puedes abrir tu correo de ahora, escríbenos a "
+     },
+     {
+      "t": "info@klendar.app",
+      "u": "mailto:info@klendar.app"
+     },
+     {
+      "t": "."
      }
     ]
    },
@@ -747,6 +763,22 @@
     "a": [
      {
       "t": "It's used to sort by distance and, if you turn it on, to alert you about deals nearby (with your last known location, which is deleted after 7 days; we don't keep a history). It's never shared with other users, and businesses only see aggregated distance figures, without knowing whose they are."
+     }
+    ]
+   },
+   {
+    "id": "cambiar-correo",
+    "q": "How do I change my email?",
+    "a": [
+     {
+      "t": "From Account → Settings → Change email, in the app or in “Your account” on the website. First we ask you to confirm it's you. Then a code and a button arrive at the new email and at your current one, and the change is made once you confirm both; until then you'll see that the change is still waiting to be confirmed. If you can no longer open your current email, write to us at "
+     },
+     {
+      "t": "info@klendar.app",
+      "u": "mailto:info@klendar.app"
+     },
+     {
+      "t": "."
      }
     ]
    },
