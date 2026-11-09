@@ -549,7 +549,9 @@
     const href = opts.href || `${/^(en|fr|de|it)$/.test(lang) ? '/en' : ''}/o/${encodeURIComponent(o.id)}`;
     const precio = benefit(o.discount, o.price_cents, o.currency, lang);
     const antes = priorPrice(o.discount, lang);
-    const dist = o.distance_m == null ? '' : distancia(Number(o.distance_m), lang);
+    // `distance_txt`: sin «Cerca de ti» de verdad, desde dónde se mide («En Málaga»,
+    // «A 12 km de Málaga»; functions/_lib/explore.js, `ajustaDistancias`).
+    const dist = o.distance_txt ? o.distance_txt : o.distance_m == null ? '' : distancia(Number(o.distance_m), lang);
     const ini = flash ? (o.redeem_start_at || o.starts_at) : (o.event_at || o.starts_at);
     const sitio = sitioDe(o);
     const lugar = sitio ? S.en(sitio) : '';

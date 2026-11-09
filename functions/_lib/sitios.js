@@ -75,7 +75,7 @@ const ic = (n, s = 16) => `<svg class="ic" viewBox="0 0 24 24" width="${s}" heig
 export function filaSitio(p, lang, { conDistancia = true } = {}) {
   const en = lang === 'en';
   const cat = (en ? p.names?.en : p.names?.es) || p.names?.es || '';
-  const meta = [cat, conDistancia ? distancia(p.distance_m, en) : ''].filter(Boolean).join(' · ');
+  const meta = [cat, p.distance_txt || (conDistancia ? distancia(p.distance_m, en) : '')].filter(Boolean).join(' · ');
   const precioLocal = KM.simbolo(Number(p.price_level));
   return `<a class="sitio-fila" href="${esc(bizPath(lang, p.slug || p.id))}">
     ${p.photo ? `<img src="${esc(p.photo)}" alt="" width="76" height="76" loading="lazy" decoding="async">` : `<span class="ph" aria-hidden="true">${ic('tienda', 28)}</span>`}

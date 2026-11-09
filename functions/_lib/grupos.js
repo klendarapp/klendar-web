@@ -14,6 +14,7 @@ import { esc, html, rows, rpcAll } from './page.js';
 import KG from '../../assets/textos-grupos.js';
 import { bizPath, breadcrumbLd, ldScript, publicPage } from './public.js';
 import { recuperaZona, zonaMenu } from './partidos.js';
+import { ajustaDistancias } from './distancia.js';
 
 /** Dónde vive la lista en cada idioma. */
 export const gruposBase = (lang) => (lang === 'en' ? '/en/groups' : '/grupos');
@@ -78,16 +79,19 @@ export async function gruposPage(url, lang) {
   ]);
   // El punto: tu posición o el centro de la ciudad (10 km alrededor, o 25).
   let origen = null;
+  let ciudadK = null;
   if (e.cerca) origen = { lat: e.lat, lng: e.lng };
   else if (e.city) {
     const c = (ciudadesK || []).find((x) => x.id === plano(e.city) || plano(x.name) === plano(e.city));
-    if (c && Number.isFinite(c.lat) && Number.isFinite(c.lng)) origen = { lat: c.lat, lng: c.lng };
+    if (c && Number.isFinite(c.lat) && Number.isFinite(c.lng)) { origen = { lat: c.lat, lng: c.lng }; ciudadK = c; }
   }
   const lista = await rpcAll('group_venues', {
     p_lat: origen ? origen.lat : null, p_lng: origen ? origen.lng : null, p_radius_m: e.km * 1000,
     p_kind: e.kind || null, p_people: e.people, p_categories: null,
     p_city: !origen && e.city ? e.city : null, p_limit: 60,
   });
+  // Con una ciudad, desde su punto: «En Málaga» o «A 30 km de Málaga», no «12 km» como si fuera desde aquí (I1).
+  ajustaDistancias(lista, { cerca: e.cerca, aprox: false, centro: ciudadK ? {} : null, nombre: ciudadK?.name || '', lang });
   const nombreCat = new Map((cats || []).map((c) => [c.id, (c.names && (c.names[en ? 'en' : 'es'] || c.names.es)) || c.slug || '']));
 
   const link = (cambios) => {
@@ -116,7 +120,7 @@ export async function gruposPage(url, lang) {
   const tarjeta = (b) => {
     const logo = /^https:\/\//.test(b.logo_url || '') ? `<img src="${esc(b.logo_url)}" alt="" width="56" height="56" loading="lazy" decoding="async">`
       : `<span class="ph" aria-hidden="true">${esc((b.name || '·').charAt(0).toUpperCase())}</span>`;
-    const donde = [nombreCat.get(b.category_id), b.city, KG.distancia(b.distance_m, lang)].filter(Boolean).join(' · ');
+    const donde = [nombreCat.get(b.category_id), b.city, b.distance_txt || KG.distancia(b.distance_m, lang)].filter(Boolean).join(' · ');
     const tipos = (b.kinds || []).filter((k) => KG.KINDS.includes(k)).map((k) => KG.plural(k, lang)).join(' · ');
     return `<article class="grupo-neg" data-grupo="${esc(b.id)}">
       <a class="grupo-neg-cab" href="${esc(bizPath(lang, b.slug || b.id))}">

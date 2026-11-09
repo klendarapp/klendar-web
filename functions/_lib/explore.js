@@ -26,6 +26,7 @@ import KC from '../../assets/categorias.js';
 import { SITIO, esDieta, icSitio, nombreSitio, ordenaSitio, sitioAUrl, sitioDeUrl } from './sitio.js';
 import { FUENTE_TIEMPO, dondeTiempo, tiempoDeHoy } from './tiempo.js';
 import { rejilla, tarjeta } from './tarjeta.js';
+import { ajustaDistancias } from './distancia.js';
 import KM from '../../assets/marcas.js';
 import KMO from '../../assets/momentos.js';
 import { notFound, sitioAhoraScripts } from './views.js';
@@ -525,6 +526,7 @@ const RADIOS_KM = [1, 3, 5, 10, 25];
 const RADIO_KM = 5;
 /** «Una ciudad»: toda ella, 25 km de su centro (como la app, `cityRadiusM`). */
 const RADIO_CIUDAD_M = 25000;
+
 
 /** «Pedir un local» en «Tu cuenta» (`/cuenta/pedir-local`), con el nombre ya
  * escrito si viene de una búsqueda. */
@@ -1507,6 +1509,10 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   const catsHoja = (todasCats || []).length ? todasCats : (cats || []);
   const populares0 = await popularesP;
   const items = res?.items || [];
+  // Sin «Cerca de ti» de verdad, ninguna distancia como si fuera desde donde estás (I1).
+  const distSegun = { cerca, aprox: e.aprox, centro: centroCiudad, nombre: e.cityName || (city ? PRETTY(city) : ''), lang };
+  ajustaDistancias(items, distSegun);
+  ajustaDistancias(sitios?.items, distSegun);
   // Las tarjetas de negocio llevan su rango de precio.
   await conPrecios([...(sitios?.items || [])]);
   const total = res?.total || 0;
@@ -1607,6 +1613,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
       : rpc('public_explore', { p_city: null, p_limit: 24, p_filters: {} }).then((r) => (r?.items || [])
         .filter((o) => String(o.city || '').toLowerCase() !== city.toLowerCase()))).catch(() => []);
     sugerencias = (fuera || []).filter((o) => !vistos.has(o.id) && delTipo(o)).slice(0, 4);
+    ajustaDistancias(sugerencias, distSegun);
   } else if (vacio && conFiltros) {
     // En todas las ciudades y sin ubicación: lo que hay sin esos filtros.
     const todo = await rpc('public_explore', { p_city: null, p_limit: kind ? 24 : 8, p_filters: {} }).catch(() => null);
@@ -1829,7 +1836,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   ].filter(Boolean);
   const atajo = (href, txt, on, icono) => `<a class="atajo${on ? ' on' : ''}" href="${esc(href)}"${on ? ' aria-current="true"' : ''}>${icono.startsWith('<') ? icono : ic(icono, 16)}<span>${esc(txt)}</span></a>`;
   const atajosCuando = negocios ? '' : `<fieldset class="hoja-atajos"><legend>${esc(S.shortcuts)}</legend><div class="ops">
-        ${aquiOn ? atajo(quitaAqui, S.walkNow, true, 'paseo') : cerca ? atajo(link({ when: 'now', km: 1, sort: 'nearest' }), S.walkNow, false, 'paseo') : botonCerca(S.walkNow, masAqui, 'atajo', 'paseo')}
+        ${aquiOn ? atajo(quitaAqui, S.walkNow, true, 'paseo') : cerca && !e.aprox ? atajo(link({ when: 'now', km: 1, sort: 'nearest' }), S.walkNow, false, 'paseo') : botonCerca(S.walkNow, masAqui, 'atajo', 'paseo')}
         ${atajo(link({ when: when === 'tonight' ? '' : 'tonight' }), S.tonight, when === 'tonight', 'noche')}
         ${atajo(link({ when: when === 'weekend' ? '' : 'weekend' }), S.weekend, when === 'weekend', 'finde')}
       </div><p class="hoja-nota hoja-nota-bajo">${esc(S.walkNow)}: ${esc(S.walkNowHint)}</p></fieldset>`;
@@ -2145,7 +2152,8 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
     cerca ? atajo(aDescubre({ when: 'tonight', ...sinAqui }), S.tonightNear, false, 'noche') : cercaA(S.tonightNear, `${K.when}=${enIdioma('tonight', en)}`, 'noche'),
     atajo(linkA(exploreBase(lang), { que: 'places', comerAhora: true }), S.eatSoon, false, 'comer'),
     atajo(aDescubre({ when: 'weekend', ...sinAqui }), S.weekend, false, 'finde'),
-    cerca ? atajo(aDescubre({ when: 'now', km: 1, sort: 'nearest' }), S.walkNow, false, 'paseo') : cercaA(S.walkNow, masAqui, 'paseo'),
+    // «A un paseo» (1 km) desde la zona de la conexión (unos 10 km) no dice nada: pide tu posición.
+    cerca && !e.aprox ? atajo(aDescubre({ when: 'now', km: 1, sort: 'nearest' }), S.walkNow, false, 'paseo') : cercaA(S.walkNow, masAqui, 'paseo'),
     atajo(aDescubre({ traits: traits.includes('kids') ? traits : [...traits, 'kids'] }), S.withKids, false, icSitio('kids', 16)),
     atajo(aDescubre({ antesCierre: true }), S.beforeClosing, false, 'bolsa'),
   ].join('\n    ');
