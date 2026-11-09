@@ -1574,6 +1574,13 @@ RUTAS.registro = async (_p, params) => {
         },
       });
       if (error) { err.textContent = errAuth(error); return; }
+      // Con un correo que ya tenía cuenta, Supabase contesta como si nada (un
+      // usuario sin `identities` ni sesión) y no manda ningún correo: se dice
+      // aquí, en vez de esperar uno que no llega (revisión 9-11, D3).
+      if (!data.session && Array.isArray(data.user?.identities) && !data.user.identities.length) {
+        err.innerHTML = `${esc(t('Ya existe una cuenta con ese correo'))} · <a href="${esc(conSiguiente('entrar', siguiente))}">${esc(t('Ir a entrar'))}</a>`;
+        return;
+      }
       if (!data.session) {
         // El correo lleva enlace y código: el código sirve si lo abres en otro
         // dispositivo (el ordenador aquí, el correo en el móvil).
@@ -1584,9 +1591,21 @@ RUTAS.registro = async (_p, params) => {
               <input name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}"></label>
             <p id="errc" class="err" role="alert"></p>
             <button class="pill accent" type="submit">${esc(t('Confirmar'))}</button>
+            <div class="acciones"><button type="button" class="pill" id="otro">${esc(t('Enviar otro código'))}</button></div>
           </form>
           <p class="muted">${esc(t('¿No te llega? Mira en spam o en «Promociones».'))} <a href="/cuenta/entrar">${esc(t('Ir a entrar'))}</a></p>`);
         I18N.translate(view);
+        // «Enviar otro código» (el mismo correo, con enlace y código), con su
+        // cuenta atrás de 60 s, que empieza ya: el primero acaba de salir.
+        reenvio($('#otro'), async () => {
+          $('#errc').textContent = '';
+          const otroRobot = await sinRobots();
+          if (otroRobot.error) { $('#errc').textContent = errAuth(otroRobot.error); return false; }
+          const r = await sb.auth.resend({ type: 'signup', email, options: { emailRedirectTo: destino, captchaToken: otroRobot.token } });
+          if (r.error) { $('#errc').textContent = errAuth(r.error); return false; }
+          toast(t('Te hemos mandado el código'));
+          return true;
+        })();
         $('#fc').onsubmit = (ev) => {
           ev.preventDefault();
           const fc = ev.target;

@@ -52,7 +52,8 @@ async function abre(nav, { ancho = 390, lang = '', sesion = false, consents = {}
       if (que === 'token') return json(tokens(url.searchParams.get('grant_type') === 'password' ? 'password' : 'otp'));
       if (que === 'verify') return json(body.type === 'email_change' && body.token_hash === `${TOKEN_HASH}a` ? { msg: 'Confirmation link accepted' } : tokens(body.type === 'recovery' ? 'recovery' : 'otp'));
       if (que === 'user') return json(USER);
-      if (que === 'signup') return json({ ...USER, identities: [{ id: 'i' }], confirmation_sent_at: '2026-01-01T00:00:00Z' });
+      // `ya@…`: el correo ya tenía cuenta (Supabase contesta sin `identities` y no manda nada).
+      if (que === 'signup') return json({ ...USER, identities: body.email === 'ya@example.com' ? [] : [{ id: 'i' }], confirmation_sent_at: '2026-01-01T00:00:00Z' });
       return json({});
     }
     if (url.pathname.startsWith('/rest/v1/rpc/')) {
@@ -275,6 +276,25 @@ async function pruebaAcceso(nav, motor) {
     await p.waitForSelector('#fc');
     const alta = estado.auth.find((x) => x.que === 'signup');
     ok(alta && /\/cuenta\/$/.test(alta.redirect || ''), `${motor} crear cuenta: redirect_to a /cuenta/`, alta?.redirect);
+    // «Enviar otro código» (revisión 9-11, D3): a la vista y con la cuenta atrás ya en marcha.
+    const otro = p.locator('#fc #otro');
+    ok(await otro.isVisible() && await otro.isDisabled() && /\d+ s/.test(await otro.innerText()), `${motor} crear cuenta: «Enviar otro código» con su cuenta atrás`, await otro.innerText().catch(() => ''));
+    await ctx.close();
+  }
+  // Crear cuenta con un correo que ya la tenía: se dice, y no «Revisa tu correo» (D3).
+  {
+    const { ctx, p } = await abre(nav);
+    await p.goto(`${BASE}/cuenta/registro`);
+    await p.waitForSelector('[name=password]');
+    await p.fill('[name=name]', 'Ana');
+    await p.fill('[name=email]', 'ya@example.com');
+    await p.fill('[name=password]', 'clave-de-prueba');
+    await p.fill('[name=password2]', 'clave-de-prueba');
+    await p.fill('[name=birth]', '01/01/1990');
+    await p.check('[name=terms]');
+    await p.click('#f button[type=submit]');
+    await p.waitForFunction(() => /Ya existe una cuenta/.test(document.getElementById('err')?.textContent || ''));
+    ok(!(await p.locator('#fc').count()) && await p.locator('#err a[href^="/cuenta/entrar"]').count() === 1, `${motor} crear cuenta con un correo que ya la tiene: «Ya existe una cuenta con ese correo» y «Ir a entrar»`);
     await ctx.close();
   }
   // Código por correo.
