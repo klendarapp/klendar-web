@@ -432,9 +432,14 @@ body.con-hoja { overflow: hidden; }
   font: 800 13px/1 var(--display, inherit); cursor: pointer; box-shadow: 0 1px 5px rgba(0,0,0,.3); }
 .grupo-marca.anillo-oferta { box-shadow: inset 0 0 0 2.5px var(--accent), 0 1px 5px rgba(0,0,0,.3); }
 .marca:focus-visible, .grupo-marca:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
-.hoja-lugar { position: absolute; left: 8px; right: 8px; bottom: 8px; z-index: 3; max-height: calc(100% - 64px); overflow-y: auto; overscroll-behavior: contain;
+.hoja-lugar { position: absolute; left: 8px; right: 8px; bottom: 8px; z-index: 3; max-height: calc(100% - 112px); overflow-y: auto; overscroll-behavior: contain;
   background: var(--elevated); color: var(--ink); border: 1px solid var(--glass-border); border-radius: 22px; padding: 12px; box-shadow: 0 10px 30px rgba(0,0,0,.35); }
-@media (min-width: 720px) { .hoja-lugar { left: 12px; right: auto; bottom: 12px; width: 360px; } }
+@media (min-width: 720px) { .hoja-lugar { left: 12px; right: auto; bottom: 12px; width: 360px; max-height: calc(100% - 64px); } }
+/* Mapbox pide que su logo y la atribución se vean: con la hoja abierta suben
+   por encima de ella (en el escritorio la hoja va a la izquierda: solo el logo).
+   En el móvil la hoja deja arriba 112 px: los botones de zoom y, debajo, la «i». */
+.mapa-con-hoja .mapboxgl-ctrl-bottom-left, .mapa-con-hoja .mapboxgl-ctrl-bottom-right { bottom: calc(var(--hoja-alto, 0px) + 8px); }
+@media (min-width: 720px) { .mapa-con-hoja .mapboxgl-ctrl-bottom-left { bottom: calc(var(--hoja-alto, 0px) + 12px); } .mapa-con-hoja .mapboxgl-ctrl-bottom-right { bottom: 0; } }
 .pop-lugar { display: grid; gap: 10px; }
 .pl-cab { display: flex; align-items: center; gap: 10px; }
 .pl-cara { flex: none; display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; overflow: hidden; background: var(--soft); color: var(--ink-2); }

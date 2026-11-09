@@ -172,8 +172,23 @@
     hoja.setAttribute('role', 'dialog');
     hoja.append(nodo);
     caja.append(hoja);
+    // Mapbox pide que su logo y la atribución se vean: suben por encima de
+    // la hoja mientras está abierta (y la siguen si cambia de alto).
+    const sube = () => {
+      if (!hoja.isConnected) { if (mide) mide.disconnect(); return; }
+      caja.style.setProperty('--hoja-alto', hoja.offsetHeight + 'px');
+    };
+    const mide = 'ResizeObserver' in window ? new ResizeObserver(sube) : null;
+    caja.classList.add('mapa-con-hoja');
+    sube();
+    if (mide) mide.observe(hoja);
     const cierra = () => {
       hoja.remove();
+      if (mide) mide.disconnect();
+      if (!caja.querySelector('.hoja-lugar')) {
+        caja.classList.remove('mapa-con-hoja');
+        caja.style.removeProperty('--hoja-alto');
+      }
       m.off('click', cierra);
       document.removeEventListener('keydown', tecla);
     };

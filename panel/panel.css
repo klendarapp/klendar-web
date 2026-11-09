@@ -218,7 +218,8 @@
 /* Mapa del alta y de la ficha. */
 .mapa { height: 340px; border-radius: 14px; overflow: hidden; border: 1px solid var(--glass-border); background: var(--glass); }
 .mapa.sin-mapa { height: auto; padding: 14px; }
-.mapa .mapboxgl-ctrl-logo, .mapa .mapboxgl-ctrl-attrib { opacity: .7; }
+/* El logo de Mapbox, tal cual (no se puede retocar); la atribución, algo más suave. */
+.mapa .mapboxgl-ctrl-attrib { opacity: .85; }
 .bizpick-mas { display: block; margin-top: 6px; font-size: 13px; color: var(--ink-2); }
 
 /* Cámara para validar: el vídeo con una mira en medio. */

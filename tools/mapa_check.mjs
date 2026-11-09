@@ -16,7 +16,9 @@
 //     solo desde el zoom 15, en una línea y sin pisarse (2026-10-27).
 //  6. Sitios: la fuente agrupa con los mismos marcadores que Planes (mismo tamaño y anillo).
 //  7. Sin errores en la consola.
-// Chromium y WebKit, móvil (375) y escritorio. Capturas en OUT.
+//  8. El logo de Mapbox y la atribución, dentro del mapa y a la vista: con
+//     la hoja del sitio abierta suben por encima de ella (Mapbox lo pide).
+// Chromium y WebKit, móvil (375, o ANCHO_MOVIL) y escritorio. Capturas en OUT.
 //
 // Arranca su serve_dev (con Supabase cortado) y su Supabase falso. Mapbox pide
 // un token: el de klendar/env/dev.json, como serve_dev, o MAPBOX_TOKEN.
@@ -121,6 +123,28 @@ const solapes = (page, caja) => page.evaluate((sel) => {
   return out;
 }, caja);
 
+/** El logo de Mapbox y la atribución de [caja]: si están dentro del mapa, se
+ * ven y no los tapa la hoja del sitio. */
+const atribucion = (page, caja) => page.evaluate((sel) => {
+  const c = document.querySelector(sel).getBoundingClientRect();
+  const hoja = document.querySelector(`${sel} .hoja-lugar`);
+  const h = hoja && hoja.getBoundingClientRect();
+  const mira = (q) => {
+    const e = document.querySelector(`${sel} ${q}`);
+    if (!e) return 'no está';
+    const r = e.getBoundingClientRect();
+    const st = getComputedStyle(e);
+    if (st.display === 'none' || st.visibility === 'hidden' || Number(st.opacity) < 1 || !r.width) return 'no se ve';
+    if (r.left < c.left || r.right > c.right || r.top < c.top || r.bottom > c.bottom) return 'fuera del mapa';
+    const pisa = (o) => o && r.left < o.right && o.left < r.right && r.top < o.bottom && o.top < r.bottom;
+    if (pisa(h)) return 'tapado por la hoja';
+    const zoom = document.querySelector(`${sel} .mapboxgl-ctrl-top-right .mapboxgl-ctrl-group`);
+    if (pisa(zoom && zoom.getBoundingClientRect())) return 'encima de los botones de zoom';
+    return 'bien';
+  };
+  return { logo: mira('.mapboxgl-ctrl-logo'), atribucion: mira('.mapboxgl-ctrl-attrib') };
+}, caja);
+
 /** Lo que dice cada marcador: burbujas, insignias y chinchetas. */
 const cuenta = (page) => page.evaluate(() => {
   const num = (t) => Number(String(t).match(/\d+/)?.[0] || 0);
@@ -132,7 +156,7 @@ const cuenta = (page) => page.evaluate(() => {
 
 for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
   const nav = await tipo.launch();
-  for (const [forma, vp] of [['movil', { width: 375, height: 812 }], ['escritorio', { width: 1280, height: 900 }]]) {
+  for (const [forma, vp] of [['movil', { width: Number(process.env.ANCHO_MOVIL || 375), height: 812 }], ['escritorio', { width: 1280, height: 900 }]]) {
     for (const tema of ['light', 'dark']) {
       const ctx = await nav.newContext({ viewport: vp, locale: 'es-ES', colorScheme: tema });
       // Lo que lee de pasada (formas de entrar, ciudades…): base vacía simulada.
@@ -234,6 +258,12 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
       const marca = page.locator(`.marca[aria-label$=", ${KA.n} planes"]`).first();
       ok(await marca.count() === 1, `${t} «${KA.nombre}»: un marcador con «${KA.n} planes»`);
       await page.screenshot({ path: `${OUT}/web-planes-sitio-${nombre}-${forma}-${tema}.png` });
+      const verLogo = async (cuando) => {
+        await page.waitForTimeout(200);
+        const a = await atribucion(page, '#mapa');
+        ok(a.logo === 'bien' && a.atribucion === 'bien', `${t} ${cuando}: logo de Mapbox y atribución a la vista (${JSON.stringify(a)})`);
+      };
+      await verLogo('sin hoja');
       await marca.click();
       const hoja = page.locator('.pop-lugar');
       await hoja.waitFor({ timeout: 5000 }).catch(() => {});
@@ -242,15 +272,20 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
       const filas = await hoja.locator('.pl-lista li').count();
       ok(filas === Math.min(8, KA.n), `${t} la primera parte: ${filas} de ${KA.n}`);
       ok(/\d{2}:\d{2}/.test(await hoja.locator('.pl-cuando').first().innerText()), `${t} cada plan con su día y hora`);
+      await verLogo('con la hoja');
       await page.screenshot({ path: `${OUT}/web-planes-hoja-${nombre}-${forma}-${tema}.png` });
       if (KA.n > 8) {
         ok(new RegExp(`Ver ${KA.n - 8} más`).test(await hoja.locator('.pl-mas').innerText()), `${t} «Ver ${KA.n - 8} más»`);
         while (await hoja.locator('.pl-mas').count()) await hoja.locator('.pl-mas').click();
         ok(await hoja.locator('.pl-lista li').count() === KA.n, `${t} por partes hasta los ${KA.n}`);
+        await verLogo('con la hoja entera');
+        await page.screenshot({ path: `${OUT}/web-planes-hoja-entera-${nombre}-${forma}-${tema}.png` });
       }
+      await page.keyboard.press('Escape');
+      await verLogo('al cerrar la hoja');
       if (forma === 'movil') {
         const ancho = await page.evaluate(() => document.documentElement.scrollWidth);
-        ok(ancho <= 375, `${t} sin desbordar a lo ancho (${ancho})`);
+        ok(ancho <= vp.width, `${t} sin desbordar a lo ancho (${ancho})`);
       }
 
       // 6. Sitios.
