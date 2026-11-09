@@ -22,15 +22,18 @@
 //  9. Sin errores en la consola.
 // Chromium y WebKit, móvil (375) y escritorio. Capturas en OUT.
 //
-//   SUPABASE_BLOQUEADO=1 PORT=8877 node tools/serve_dev.mjs &
-//   PW=<ruta a playwright> OUT=<carpeta> BASE=http://localhost:8877 node tools/filtros3_check.mjs
+// Con sus propios datos (tools/_web_con_datos.mjs): antes leía las
+// categorías y los planes de dev y, desde que las pruebas no llegan a
+// Supabase (5-11), ¿Qué? salía sin categorías.
+//
+//   PW=<ruta a playwright> OUT=<carpeta> node tools/filtros3_check.mjs
 import { mkdirSync } from 'node:fs';
-import { playwright, servidorSeguro } from './_supabase_simulado.mjs';
+import { playwright } from './_supabase_simulado.mjs';
+import { webConDatos } from './_web_con_datos.mjs';
 
 const { chromium, webkit } = playwright();
-const BASE = process.env.BASE || 'http://localhost:8877';
-// La web local no puede llegar a Supabase (ver _supabase_simulado).
-await servidorSeguro(BASE);
+const web = await webConDatos({ puerto: Number(process.env.PORT || 8988) });
+const BASE = web.BASE;
 // Las capturas, en tools/out/ (git las ignora): en la raíz se publicaban
 // en klendar.app (revisión del 3-11-2026, 5.4).
 const OUT = process.env.OUT || 'tools/out';
@@ -212,5 +215,6 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
   }
   await nav.close();
 }
+await web.cierra();
 console.log(fallos ? `${fallos} FALLAN` : 'todo bien');
 process.exit(fallos ? 1 : 0);

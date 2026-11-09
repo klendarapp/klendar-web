@@ -22,15 +22,18 @@
 //  3. Sin errores en la consola.
 // Chromium y WebKit, móvil (375) y escritorio (1280). Capturas en OUT.
 //
-//   SUPABASE_BLOQUEADO=1 PORT=8893 node tools/serve_dev.mjs &
-//   PW=<ruta a playwright> OUT=<carpeta> BASE=http://localhost:8893 node tools/cabecera_check.mjs
+// Con sus propios datos (tools/_web_con_datos.mjs): antes leía Descubre y
+// una ficha de dev y, desde que las pruebas no llegan a Supabase (5-11),
+// Descubre salía sin tarjetas y la prueba se quedaba esperándolas.
+//
+//   PW=<ruta a playwright> OUT=<carpeta> node tools/cabecera_check.mjs
 import { mkdirSync } from 'node:fs';
-import { playwright, REF, SUPA, servidorSeguro } from './_supabase_simulado.mjs';
+import { playwright, REF, SUPA } from './_supabase_simulado.mjs';
+import { NEGOCIOS, webConDatos } from './_web_con_datos.mjs';
 
 const { chromium, webkit } = playwright();
-const BASE = process.env.BASE || 'http://localhost:8893';
-// La web local no puede llegar a Supabase (ver _supabase_simulado).
-await servidorSeguro(BASE);
+const web = await webConDatos({ puerto: Number(process.env.PORT || 8980) });
+const BASE = web.BASE;
 // Las capturas, en tools/out/ (git las ignora): en la raíz se publicaban
 // en klendar.app (revisión del 3-11-2026, 5.4).
 const OUT = process.env.OUT || 'tools/out';
@@ -112,7 +115,8 @@ const PAGINAS = [
   ['explorar-calendario', `/explorar/?vista=calendar&${AQUI}`],
   ['sitios-mapa', `/explorar/?que=sitios&vista=map&${AQUI}`],
   ['agenda', '/agenda/madrid/'],
-  ['ficha', '/b/nails-co-madrid'],
+  // Un sitio de los datos de mentira (antes, uno de dev).
+  ['ficha', `/b/${NEGOCIOS[0].slug}`],
   ['explore-en', `/en/explore/?${AQUI}`],
 ];
 
@@ -223,5 +227,6 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
   }
   await nav.close();
 }
+await web.cierra();
 console.log(fallos ? `\n${fallos} FALLOS` : '\nTodo bien');
 process.exit(fallos ? 1 : 0);

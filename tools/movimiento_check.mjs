@@ -14,15 +14,18 @@
 //  6. Sin errores en la consola.
 // Chromium y WebKit, móvil (375) y escritorio. Capturas en OUT.
 //
-//   SUPABASE_BLOQUEADO=1 PORT=8877 node tools/serve_dev.mjs &
-//   PW=<ruta a playwright> OUT=<carpeta> BASE=http://localhost:8877 node tools/movimiento_check.mjs
+// Con sus propios datos (tools/_web_con_datos.mjs): Descubre y Explorar con
+// tarjetas y fotos (antes leía dev y, desde que las pruebas no llegan a
+// Supabase, el 5-11, salían vacíos y no había nada que mirar).
+//
+//   PW=<ruta a playwright> OUT=<carpeta> node tools/movimiento_check.mjs
 import { mkdirSync } from 'node:fs';
-import { playwright, REF, SUPA, servidorSeguro } from './_supabase_simulado.mjs';
+import { playwright, REF, SUPA } from './_supabase_simulado.mjs';
+import { webConDatos } from './_web_con_datos.mjs';
 
 const { chromium, webkit } = playwright();
-const BASE = process.env.BASE || 'http://localhost:8877';
-// La web local no puede llegar a Supabase (ver _supabase_simulado).
-await servidorSeguro(BASE);
+const web = await webConDatos({ puerto: Number(process.env.PORT || 8984) });
+const BASE = web.BASE;
 // Las capturas, en tools/out/ (git las ignora): en la raíz se publicaban
 // en klendar.app (revisión del 3-11-2026, 5.4).
 const OUT = process.env.OUT || 'tools/out';
@@ -59,11 +62,13 @@ function supabaseFalso(estado) {
       estado.llamadas.push([fn, body]);
       const r = estado.rpc[fn];
       if (r !== undefined) return json(typeof r === 'function' ? r(body) : r);
-      return json(null);
+      // Lo de tu cuenta, vacío (como antes); lo público, de los datos de
+      // mentira de webConDatos (`fallback`: el enrutado de antes).
+      if (/^my_/.test(fn)) return json(null);
+      return route.fallback();
     }
     if (p.startsWith('/rest/v1/businesses')) return json([{ id: BIZ, name: 'Bar Sonda', time_zone: 'Europe/Madrid' }]);
-    if (p.startsWith('/rest/v1/')) return json([]);
-    return json({});
+    return route.fallback();
   };
 }
 
@@ -107,6 +112,10 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
         tablas: {},
       };
       await ctx.route(`${SUPA}/**`, supabaseFalso(estado));
+      // La cookie +18 ya puesta con lo que dice la cuenta (`viewer_sees_adults`
+      // de los datos de mentira: sí). Sin ella, amigos.js la pone y recarga
+      // Descubre una vez, a mitad de la medida (antes, con todo vacío, no).
+      await ctx.addCookies([{ name: 'klendar_18', value: '1', url: BASE }]);
       // Si «Tu cuenta» llega a poner la entrada escalonada (`mov-entra` en
       // #view; se quita sola a los 600 ms, así que se apunta al ponerla).
       await ctx.addInitScript(() => {
@@ -120,7 +129,11 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
       const page = await ctx.newPage();
       page.setDefaultTimeout(15000);
       const errores = [];
-      const deFuera = (x) => /mapbox|webgl|tile|Failed to load resource|^Error$|Load failed|turnstile|challenges/i.test(x);
+      // («Fetch API cannot load … access control checks»: lo que escribe
+      // WebKit cuando corta una petición al salir de la página, como «Load
+      // failed»; la prueba cambia de página a los 60 ms y, ya con datos, la
+      // campana o «Ahora mismo» aún están pidiendo. No es de la web.)
+      const deFuera = (x) => /mapbox|webgl|tile|Failed to load resource|^Error$|Load failed|turnstile|challenges|Fetch API cannot load .* due to access control checks/i.test(x);
       page.on('console', (m) => { if (m.type() === 'error' && !deFuera(m.text())) errores.push(m.text()); });
       page.on('pageerror', (e) => { if (!deFuera(`${e.message} ${e.stack || ''}`)) errores.push(String(e)); });
 
@@ -151,11 +164,11 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
           // ficha donde el navegador tiene View Transitions entre páginas).
           const nombres = await page.evaluate(() => [...document.querySelectorAll('img.tj-img')]
             .map((i) => i.style.viewTransitionName).filter(Boolean));
-          // Si los datos de dev de ahora no traen ninguna foto (solo la agenda
-          // pública, con su diseño sin foto), no hay nada que comprobar.
+          // Los datos de mentira traen fotos (antes, con dev, a veces solo la
+          // agenda pública sin foto y no se comprobaba): sin ninguna, falla.
           const conFoto = await page.evaluate(() => document.querySelectorAll('img.tj-img').length);
-          if (!conFoto) console.log(`aviso: ${tag} Descubre sin fotos en dev: no se comprueba el nombre de transición`);
-          else ok(nombres.length > 0 && nombres.every((n) => /^foto-[0-9a-f-]+$/.test(n)) && new Set(nombres).size === nombres.length,
+          ok(conFoto > 0, `${tag} Descubre: tarjetas con foto (${conFoto})`);
+          if (conFoto) ok(nombres.length > 0 && nombres.every((n) => /^foto-[0-9a-f-]+$/.test(n)) && new Set(nombres).size === nombres.length,
             `${tag} Descubre: fotos con nombre de transición único (${nombres.length})`);
         }
         if (reducido) {
@@ -293,5 +306,6 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
   }
   await nav.close();
 }
+await web.cierra();
 console.log(fallos ? `\n${fallos} FALLOS` : '\nTodo bien.');
 process.exit(fallos ? 1 : 0);

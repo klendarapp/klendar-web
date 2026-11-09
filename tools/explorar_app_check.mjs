@@ -17,15 +17,32 @@
 //   app.
 // Chromium a 390 y 1280 px (y WebKit a 390), sin desplazamiento lateral.
 //
-//   SUPABASE_BLOQUEADO=1 PORT=8857 node tools/serve_dev.mjs &
-//   PW=<ruta a playwright> BASE=http://localhost:8857 node tools/explorar_app_check.mjs
+// Con sus propios datos (tools/_web_con_datos.mjs): antes leía los planes y
+// las ciudades de dev y, desde que las pruebas no llegan a Supabase (5-11),
+// el calendario, el JSON-LD y «Más formas de explorar» salían vacíos.
+//
+//   PW=<ruta a playwright> OUT=<carpeta> node tools/explorar_app_check.mjs
 import { mkdirSync } from 'node:fs';
-import { playwright, servidorSeguro } from './_supabase_simulado.mjs';
+import { playwright } from './_supabase_simulado.mjs';
+import { DATOS, webConDatos } from './_web_con_datos.mjs';
 
 const { chromium, webkit } = playwright();
-const BASE = process.env.BASE || 'http://localhost:8857';
-// La web local no puede llegar a Supabase (ver _supabase_simulado).
-await servidorSeguro(BASE);
+// Más planes en Madrid (uno al día, dos semanas): la lista sin JavaScript
+// tiene que pasar de una página (24 por página).
+const MOLDE = DATOS.PLANES.find((o) => o.kind === 'future_event' && !o.imported && o.status === 'active');
+const MAS = Array.from({ length: 16 }, (_, i) => {
+  const cuando = new Date(Date.now() + (i * 24 + 3) * 3600e3).toISOString();
+  return { ...MOLDE, id: `a9000000-0000-4000-8000-${String(200 + i).padStart(12, '0')}`, title: `Plan de prueba ${i + 1}`, event_at: cuando, starts_at: cuando, event_end_at: null };
+});
+// «Más formas de explorar» sale de `public_cities` con la forma de la base
+// (`{ city, slug, n }`); las de los datos de mentira no traen `city`.
+const PUBLICADAS = DATOS.CIUDADES.map((c, i) => ({ city: c.name, slug: c.id, n: 30 - i }));
+const web = await webConDatos({
+  puerto: Number(process.env.PORT || 8986),
+  datos: { ...DATOS, PLANES: [...DATOS.PLANES, ...MAS] },
+  rpc: { public_cities: () => PUBLICADAS },
+});
+const BASE = web.BASE;
 // Las capturas, en tools/out/ (git las ignora; nunca en la raíz publicada).
 const OUT = process.env.OUT || 'tools/out';
 mkdirSync(OUT, { recursive: true });
@@ -223,5 +240,6 @@ for (const [nombre, tipo, anchos] of [['chromium', chromium, [390, 1280]], ['web
   await nav.close();
 }
 
+await web.cierra();
 console.log(fallos ? `\n${fallos} FALLOS` : '\nTodo bien.');
 process.exit(fallos ? 1 : 0);

@@ -11,15 +11,18 @@
 // La campana se prueba con una sesión de mentira en el navegador y la
 // cuenta de avisos simulada (no entra en ninguna cuenta ni escribe nada).
 //
-//   SUPABASE_BLOQUEADO=1 PORT=8857 node tools/serve_dev.mjs &
-//   PW=<ruta a playwright> OUT=<carpeta> BASE=http://localhost:8857 node tools/lupa_check.mjs
+// Con sus propios datos (tools/_web_con_datos.mjs): antes leía Descubre y
+// las categorías de dev y, desde que las pruebas no llegan a Supabase (5-11),
+// «O mira por tipo de sitio» salía sin grupos.
+//
+//   PW=<ruta a playwright> OUT=<carpeta> node tools/lupa_check.mjs
 import { mkdirSync } from 'node:fs';
-import { playwright, servidorSeguro } from './_supabase_simulado.mjs';
+import { claveSesion, playwright } from './_supabase_simulado.mjs';
+import { webConDatos } from './_web_con_datos.mjs';
 
 const { chromium, webkit } = playwright();
-const BASE = process.env.BASE || 'http://localhost:8857';
-// La web local no puede llegar a Supabase (ver _supabase_simulado).
-await servidorSeguro(BASE);
+const web = await webConDatos({ puerto: Number(process.env.PORT || 8990) });
+const BASE = web.BASE;
 // Las capturas, en tools/out/ (git las ignora): en la raíz se publicaban
 // en klendar.app (revisión del 3-11-2026, 5.4).
 const OUT = process.env.OUT || 'tools/out';
@@ -181,7 +184,9 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     const ctx = await nav.newContext({ viewport: { width: 390, height: 844 }, locale: 'es-ES', reducedMotion: reducido ? 'reduce' : 'no-preference', hasTouch: true });
     let n = 3;
     await ctx.route(/\/rest\/v1\/notifications\?/, (r) => r.fulfill({ status: 200, headers: { 'content-range': `*/${n}`, 'access-control-expose-headers': 'content-range' }, body: '' }));
-    await ctx.addInitScript((s) => { try { localStorage.setItem('sb-prueba-auth-token', s); } catch { /* nada */ } }, SESION);
+    // La sesión, con la clave del proyecto de config.js: desde 31cfc76 (4-11)
+    // la cabecera no cuenta la de otro Supabase (antes valía `sb-prueba-…`).
+    await ctx.addInitScript(([k, s]) => { try { localStorage.setItem(k, s); } catch { /* nada */ } }, [claveSesion(), SESION]);
     const page = await ctx.newPage();
     const t = `[${nombre} campana${reducido ? ' reducido' : ''}]`;
     await ve(page, `${BASE}/descubre/?${POS}`);
@@ -204,5 +209,6 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
   }
   await nav.close();
 }
+await web.cierra();
 console.log(fallos ? `\n${fallos} FALLOS` : '\nTodo bien.');
 process.exit(fallos ? 1 : 0);

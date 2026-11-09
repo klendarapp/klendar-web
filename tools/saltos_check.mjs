@@ -12,22 +12,55 @@
 //     (Iván, 2026-11-05), y «Atrás» vuelve.
 //  3. «Más formas de explorar»: sin zona, el orden de siempre (el de
 //     `public_cities`); con «¿Dónde?» (municipio o posición), la más cercana
-//     primero y como mucho 6; con la zona de la conexión (BASE_IP, un
-//     servidor con CF_PRUEBA) también por cercanía, y con «Tu ciudad»
+//     primero y como mucho 6; con la zona de la conexión (BASE_IP, otro
+//     serve_dev con CF_PRUEBA) también por cercanía, y con «Tu ciudad»
 //     guardada en el navegador, la de tu ciudad primero.
 // Capturas en OUT.
 //
-//   SUPABASE_BLOQUEADO=1 PORT=8877 node tools/serve_dev.mjs &
-//   CF_PRUEBA='{"country":"ES","latitude":"41.65","longitude":"-0.88"}' SUPABASE_BLOQUEADO=1 PORT=8878 node tools/serve_dev.mjs &
-//   PW=<ruta a playwright> BASE=http://localhost:8877 BASE_IP=http://localhost:8878 node tools/saltos_check.mjs
-import { mkdirSync, readFileSync } from 'node:fs';
-import { playwright, REF, servidorSeguro, supabaseVacio } from './_supabase_simulado.mjs';
+// Con sus propios datos (tools/_web_con_datos.mjs) y dos webs: la de siempre
+// y otra con la zona de la conexión en Zaragoza (CF_PRUEBA). Antes leía las
+// ciudades de dev y, desde que las pruebas no llegan a Supabase (5-11),
+// «Más formas de explorar» salía vacío.
+//
+//   PW=<ruta a playwright> OUT=<carpeta> node tools/saltos_check.mjs
+import { mkdirSync } from 'node:fs';
+import { playwright, REF } from './_supabase_simulado.mjs';
+import { DATOS, webConDatos } from './_web_con_datos.mjs';
 
 const { chromium, webkit } = playwright();
-const BASE = process.env.BASE || 'http://localhost:8877';
-const BASE_IP = process.env.BASE_IP || '';
-// La web local no puede llegar a Supabase (ver _supabase_simulado).
-await servidorSeguro(BASE, BASE_IP);
+
+// Las ciudades con algo publicado (`public_cities`, la forma de la base:
+// `{ city, slug, n }`, de más a menos): más de 6, para ver el tope. Barcelona
+// y Getafe, sin nada (como en dev cuando se escribió la prueba).
+const PUBLICADAS = [
+  ['zaragoza', 'Zaragoza', 41.6488, -0.8891], ['madrid', 'Madrid', 40.4168, -3.7038], ['malaga', 'Málaga', 36.7213, -4.4214],
+  ['sevilla', 'Sevilla', 37.3891, -5.9845], ['valencia', 'Valencia', 39.4699, -0.3763], ['bilbao', 'Bilbao', 43.263, -2.935],
+  ['valladolid', 'Valladolid', 41.6523, -4.7245], ['granada', 'Granada', 37.1773, -3.5986],
+];
+const yaEsta = new Set(DATOS.CIUDADES.map((c) => c.id));
+const CIUDADES = [...DATOS.CIUDADES, ...PUBLICADAS.filter(([id]) => !yaEsta.has(id)).map(([id, name, lat, lng], i) => ({
+  id, name, lat, lng, position: 10 + i, active: true, province: name, time_zone: 'Europe/Madrid', radius_m: 25000,
+}))];
+const MUNICIPIOS = [...DATOS.MUNICIPIOS,
+  ...PUBLICADAS.filter(([id]) => !DATOS.MUNICIPIOS.some((m) => m.slug === id)).map(([slug, name, lat, lng], i) => ({
+    code: `990${i}`, slug, name, province: name, lat, lng, population: 500000, city_id: slug, radius_m: 25000, active: true })),
+  { code: '28065', slug: 'getafe', name: 'Getafe', province: 'Madrid', lat: 40.3083, lng: -3.7327, population: 185000, city_id: null, radius_m: 15000, active: false },
+];
+const conDatos = (puerto, entorno = {}) => webConDatos({
+  puerto, entorno, datos: { ...DATOS, CIUDADES, MUNICIPIOS },
+  rpc: {
+    public_cities: () => PUBLICADAS.map(([slug, city], i) => ({ city, slug, n: 40 - i * 4 })),
+    // La forma de la base (`returns table (municipality jsonb, match text)`).
+    resolve_municipality: (a) => MUNICIPIOS.filter((m) => m.slug === String(a.p_slug || '').toLowerCase())
+      .map((m) => ({ municipality: { ...m, popular: Boolean(m.city_id) }, match: 'slug' })),
+  },
+});
+// La de la conexión primero: los contextos hablan con el último falso
+// arrancado, y los dos tienen los mismos datos.
+const webIp = await conDatos(Number(process.env.PORT_IP || 8994), { CF_PRUEBA: '{"country":"ES","latitude":"41.65","longitude":"-0.88"}' });
+const web = await conDatos(Number(process.env.PORT || 8992));
+const BASE = web.BASE;
+const BASE_IP = webIp.BASE;
 const OUT = process.env.OUT || 'tools/out';
 mkdirSync(OUT, { recursive: true });
 const U = '0e7717e0-0000-4000-8000-0000000094a1';
@@ -57,7 +90,10 @@ function medir() {
   const r = (el) => { if (!el) return null; const b = el.getBoundingClientRect(); return [Math.round(b.x), Math.round(b.y), Math.round(b.width), Math.round(b.height)]; };
   const paso = () => {
     const h = document.querySelector('header.top');
-    if (h && h.offsetParent !== null) {
+    // Visible (no `offsetParent`: en Descubre del móvil la cabecera es
+    // `position: fixed`, encima de la foto, desde 4e6c9ad, y entonces es null;
+    // con dev vacío no había tarjetas y no se notaba).
+    if (h && h.getClientRects().length && getComputedStyle(h).visibility !== 'hidden') {
       const f = JSON.stringify({ brand: r(h.querySelector('.brand')), tabs: r(h.querySelector('.pestanas')), hdr: r(h) });
       if (d.frames[d.frames.length - 1] !== f) d.frames.push(f);
     }
@@ -66,13 +102,16 @@ function medir() {
   requestAnimationFrame(paso);
 }
 
+// La sesión de mentira; lo demás (Descubre, Explorar…), a los datos de
+// mentira de webConDatos (`fallback`: el enrutado de antes).
 const supabaseFalso = (route) => {
   const p = new URL(route.request().url()).pathname;
   const j = (x) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(x) });
   if (p.startsWith('/auth/v1/user')) return j(USER);
   if (p.startsWith('/rest/v1/rpc/my_consents')) return j({ terms_accepted_at: '2026-01-01T00:00:00Z', terms_outdated: false, has_display_name: true });
-  if (p.startsWith('/rest/v1/')) return j([]);
-  return j({});
+  if (p.startsWith('/rest/v1/rpc/my_')) return j([]);
+  if (p.startsWith('/auth/v1/') && p !== '/auth/v1/settings') return j({});
+  return route.fallback();
 };
 
 const enlacesMf = (p) => p.evaluate(() => {
@@ -85,8 +124,6 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
   for (const w of [390, 1280]) {
     const tag = `${nombre}/${w}`;
     const ctx = await nav.newContext({ viewport: { width: w, height: w < 500 ? 844 : 800 }, colorScheme: 'dark', locale: 'es-ES', timezoneId: 'Europe/Madrid' });
-    // Lo que lee de pasada (formas de entrar, ciudades…): base vacía simulada.
-    await supabaseVacio(ctx);
     await ctx.addInitScript(([k, v]) => { try { if (!localStorage.getItem(k)) localStorage.setItem(k, v); localStorage.setItem('klendar_lang', 'es'); } catch { /* */ } }, [`sb-${REF}-auth-token`, SESION]);
     await ctx.addInitScript(medir);
     await ctx.route(`https://${REF}.supabase.co/**`, supabaseFalso);
@@ -148,6 +185,10 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     await page.goto(`${BASE}/descubre/`, { waitUntil: 'load' });
     await page.locator('header.top a.brand').first().click();
     await page.waitForLoadState('load');
+    // Como una persona, «Atrás» cuando la portada ya ha pintado «Ahora
+    // mismo»: si no, WebKit corta su petición y lo cuenta como error de la
+    // página («Fetch API cannot load … access control checks»).
+    await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => {});
     ok(new URL(page.url()).pathname === '/', `${tag} logo en Descubre: a la portada (${page.url()})`);
     await page.goBack();
     await page.waitForLoadState('load');
@@ -156,6 +197,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     await page.goto(`${BASE}/explorar/`, { waitUntil: 'load' });
     await page.locator('header.top a.brand').first().click();
     await page.waitForLoadState('load');
+    await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => {});
     ok(new URL(page.url()).pathname === '/', `${tag} logo en Explorar: a la portada`);
     await page.goBack();
     await page.waitForLoadState('load');
@@ -176,21 +218,19 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
       // Sin zona (como Google): el orden de `public_cities`, todas.
       const html = await fetch(`${BASE}/explorar/?todas=1`).then((r) => r.text());
       const sinZona = [...html.matchAll(/<h3>Qué hacer hoy en<\/h3><p>(.*?)<\/p>/g)][0]?.[1] || '';
-      // El orden de siempre: con MF_ORDEN, el que se le diga (antes se pedía
-      // a la base de verdad; ya no: la prueba no habla con Supabase).
-      const deSiempre = process.env.MF_ORDEN ? process.env.MF_ORDEN.split(',') : null;
+      // El orden de siempre: el de `public_cities` de los datos de mentira,
+      // y todas (antes, con MF_ORDEN, porque no se sabía el de dev).
+      const deSiempre = PUBLICADAS.map(([slug]) => slug);
       const enHtml = [...sinZona.matchAll(/href="[^"]*\/([^/"]+)\/"/g)].map((x) => x[1]);
-      ok(!/ hidden/.test(sinZona) && (!deSiempre || JSON.stringify(enHtml) === JSON.stringify(deSiempre)), `${tag} «Más formas» sin zona: el orden de siempre (${enHtml.join(', ')})`);
+      ok(!/ hidden/.test(sinZona) && JSON.stringify(enHtml) === JSON.stringify(deSiempre), `${tag} «Más formas» sin zona: el orden de siempre (${enHtml.join(', ')})`);
       // Zona de la conexión en Zaragoza, pero «Tu ciudad» Madrid: Madrid primero.
-      if (BASE_IP) {
+      {
         const ctx2 = await nav.newContext({ viewport: { width: 1280, height: 800 }, locale: 'es-ES' });
-        // Lo que lee de pasada (formas de entrar, ciudades…): base vacía simulada.
-        await supabaseVacio(ctx2);
         await ctx2.route(`https://${REF}.supabase.co/**`, supabaseFalso);
         const p2 = await ctx2.newPage();
         await p2.goto(`${BASE_IP}/explorar/`, { waitUntil: 'load' });
         const ip = await enlacesMf(p2);
-        ok(ip[0] === 'zaragoza', `${tag} «Más formas» con la zona de la conexión (Zaragoza): Zaragoza primero (${ip.join(', ')})`);
+        ok(ip[0] === 'zaragoza' && ip.length <= 6, `${tag} «Más formas» con la zona de la conexión (Zaragoza): Zaragoza primero (${ip.join(', ')})`);
         await p2.evaluate(() => localStorage.setItem('klendar.gustos', JSON.stringify({ c: [], home: { slug: 'madrid', name: 'Madrid', lat: 40.4168, lng: -3.7038 } })));
         await p2.reload({ waitUntil: 'load' });
         const casa = await enlacesMf(p2);
@@ -203,5 +243,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
   }
   await nav.close();
 }
+await web.cierra();
+await webIp.cierra();
 console.log(fallos ? `\n${fallos} FALLOS` : '\nTODO BIEN');
 process.exit(fallos ? 1 : 0);

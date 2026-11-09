@@ -22,15 +22,20 @@
 //     públicas el de la sesión y en «Tu cuenta» el del perfil.
 // Chromium y WebKit, móvil (390) y escritorio (1280).
 //
-//   SUPABASE_BLOQUEADO=1 PORT=8857 node tools/serve_dev.mjs &
-//   PW=<ruta a playwright> OUT=<carpeta> BASE=http://localhost:8857 node tools/cabecera_igual_check.mjs
+// Con sus propios datos (tools/_web_con_datos.mjs): antes leía una ficha y
+// Descubre de dev y, desde que las pruebas no llegan a Supabase (5-11), la
+// ficha no existía y las páginas salían vacías.
+//
+//   PW=<ruta a playwright> OUT=<carpeta> node tools/cabecera_igual_check.mjs
 import { mkdirSync, readFileSync, existsSync } from 'node:fs';
-import { playwright, REF, SUPA, servidorSeguro, supabaseVacio } from './_supabase_simulado.mjs';
+import { playwright, REF, SUPA } from './_supabase_simulado.mjs';
+import { NEGOCIOS, webConDatos } from './_web_con_datos.mjs';
 
 const { chromium, webkit } = playwright();
-const BASE = process.env.BASE || 'http://localhost:8857';
-// La web local no puede llegar a Supabase (ver _supabase_simulado).
-await servidorSeguro(BASE);
+const web = await webConDatos({ puerto: Number(process.env.PORT || 8982) });
+const BASE = web.BASE;
+// Una ficha /b/ de los datos de mentira (antes, una de dev).
+const FICHA = `/b/${NEGOCIOS[0].slug}`;
 // Las capturas, en tools/out/ (git las ignora): en la raíz se publicaban
 // en klendar.app (revisión del 3-11-2026, 5.4).
 const OUT = process.env.OUT || 'tools/out';
@@ -66,14 +71,15 @@ const falso = ({ perfil = null, apunta = [] } = {}) => async (route) => {
     return json(usuario(perfil));
   }
   if (p.startsWith('/auth/v1/')) return json({});
-  if (p.startsWith('/rest/v1/rpc/')) { const f = p.slice(13); return json(f in RPC ? RPC[f] : null); }
+  // Lo de tu cuenta, de aquí; lo público (Descubre, la ficha…), de los datos
+  // de mentira de webConDatos (`fallback`: el enrutado de antes).
+  if (p.startsWith('/rest/v1/rpc/')) { const f = p.slice(13); return f in RPC ? json(RPC[f]) : /^my_/.test(f) ? json(null) : route.fallback(); }
   if (p === '/rest/v1/profiles') {
     if (req.method() === 'PATCH') { const l = JSON.parse(req.postData() || '{}').locale; apunta.push(['perfil', l]); perfil = l; return route.fulfill({ status: 204, body: '' }); }
     return json(u.searchParams.get('select')?.includes('locale') ? { locale: perfil } : []);
   }
   if (p === '/rest/v1/notifications') return route.fulfill({ status: 200, headers: { 'content-range': '*/2', 'access-control-expose-headers': 'content-range' }, body: '' });
-  if (p.startsWith('/rest/v1/')) return json([]);
-  return json({});
+  return route.fallback();
 };
 
 // Los nombres de las pestañas en la app (lo que dice el GLOSARIO).
@@ -139,160 +145,189 @@ async function ve(page, url, sel = 'header.top') {
     try { if (await page.locator(sel).count()) break; } catch { continue; }
     await page.waitForTimeout(2500);
   }
-  await page.waitForTimeout(1300).catch(() => {});
+  // Que acabe de cargar (los scripts de la cabecera y el idioma) y un poco
+  // más; antes, 1300 ms fijos en cada página: la prueba pasaba de 5 minutos.
+  await page.waitForLoadState('load', { timeout: 8000 }).catch(() => {});
+  await page.waitForTimeout(500).catch(() => {});
   return page;
 }
 
+// Y si se cae en mitad de un bloque (WebKit para Windows, al pasar a la
+// versión en otro idioma: «Page crashed»), el bloque entero otra vez, en un
+// contexto nuevo (como mucho dos veces más); se cuenta en `caidas`. Antes la
+// prueba se paraba ahí con la excepción.
+async function sinCaidas(bloque, fn) {
+  for (let i = 0; ; i++) {
+    try { return await fn(); } catch (e) {
+      if (i < 2 && /crashed|has been closed/i.test(String(e?.message))) { caidas++; console.log(`(WebKit se cayó en [${bloque}]: se repite el bloque)`); continue; }
+      throw e;
+    }
+  }
+}
+
+// WebKit para Windows (el de Playwright) se cae SIEMPRE («Page crashed») al
+// pasar a la versión en otro idioma (`location.replace` de cabecera.js
+// mientras la página carga) con las View Transitions entre páginas
+// (`@view-transition` de site.css): /aviso-legal/ con «en» guardado → se cae.
+// Sin `@view-transition` o con «Reducir movimiento» (que lo quita), no. Así
+// que en WebKit los bloques de idiomas (2, 3 y 4) van con «Reducir
+// movimiento»: se sigue probando el idioma; la caída queda en el informe del
+// 9-11 (sin poder ver si pasa en un Safari de verdad).
+const sinVt = (nombre) => (nombre === 'webkit' ? 'reduce' : 'no-preference');
+
 const PAGINAS = [
   ['/', ''], ['/descubre/', 'descubre'], ['/explorar/', 'explorar'], ['/explorar/?que=sitios', 'explorar'],
-  ['/b/cafe-central-lab-madrid', null], ['/agenda/madrid/', 'explorar'], ['/coleccion/finde/', 'explorar'],
+  [FICHA, null], ['/agenda/madrid/', 'explorar'], ['/coleccion/finde/', 'explorar'],
   ['/para-negocios/', ''], ['/precios/', ''], ['/preguntas/', ''], ['/prensa/', ''], ['/aviso-legal/', ''], ['/soporte/', ''],
   ['/en/', ''], ['/en/discover/', 'descubre'], ['/en/explore/', 'explorar'], ['/en/faq/', ''],
   ['/cuenta/', 'cuenta'], ['/panel/#/resumen', 'cuenta'],
 ];
 
 const NAVS = (process.env.NAVS || 'chromium,webkit').split(',');
-for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]].filter(([n]) => NAVS.includes(n))) {
+// Chromium y WebKit a la vez (cada uno con lo suyo; las líneas llevan su
+// nombre): uno detrás de otro pasaban de 5 minutos.
+await Promise.all([['chromium', chromium], ['webkit', webkit]].filter(([n]) => NAVS.includes(n)).map(async ([nombre, tipo]) => {
   const nav = await tipo.launch();
   for (const [forma, vp] of [['movil', { width: 390, height: 844 }], ['escritorio', { width: 1280, height: 800 }]]) {
     const movil = forma === 'movil';
     // ── 1. La misma cabecera en todas las páginas ──
     for (const conSesion of [false, true]) {
-      const ctx = await nav.newContext({ viewport: vp, locale: 'es-ES', isMobile: movil && nombre === 'chromium', hasTouch: movil });
-      // Lo que lee de pasada (formas de entrar, ciudades…): base vacía simulada.
-      await supabaseVacio(ctx);
-      await ctx.addInitScript(([k, v, con]) => { try { if (!sessionStorage.getItem('puesto')) { localStorage.setItem('klendar_lang', 'es'); if (con) localStorage.setItem(k, v); sessionStorage.setItem('puesto', '1'); } } catch { /* */ } }, [`sb-${REF}-auth-token`, sesion(null), conSesion]);
-      await ctx.route(`${SUPA}/**`, falso());
-      let page = await ctx.newPage();
-      const t = `[${nombre} ${forma} ${conSesion ? 'con sesión' : 'sin sesión'}]`;
-      const quiere = [
-        'logo', ...(movil ? [] : ['pestaña:descubre', 'pestaña:explorar', 'pestaña:planes', 'pestaña:cuenta']),
-        'selecciones', 'lupa', ...(conSesion ? ['campana'] : []), ...(movil ? [] : ['negocios', 'idioma']),
-        conSesion ? 'tu-inicial' : 'entrar', 'menu',
-      ].join(' · ');
-      for (const [ruta, activa] of PAGINAS) {
-        if (ruta.startsWith('/panel/') && !conSesion) continue;
-        if (ruta.startsWith('/en/')) await page.evaluate(() => { try { localStorage.setItem('klendar_lang', 'en'); } catch { /* */ } });
-        else await page.evaluate(() => { try { localStorage.setItem('klendar_lang', 'es'); } catch { /* */ } }).catch(() => {});
-        page = await ve(page, BASE + ruta);
-        const f = await firma(page);
-        ok(f.items.join(' · ') === quiere, `${t} ${ruta}: ${f.items.join(' · ')}`);
-        ok(f.alto === 65, `${t} ${ruta}: 65 px de alto (${f.alto})`);
-        if (activa !== null) ok(f.activa === activa, `${t} ${ruta}: pestaña activa «${activa || 'ninguna'}» (${f.activa || 'ninguna'})`);
-        if (!conSesion && movil && ['/', '/descubre/', '/cuenta/'].includes(ruta)) await page.screenshot({ path: `${OUT}/igual-${nombre}-${forma}-${ruta.replace(/\W+/g, '_')}.png`, clip: { x: 0, y: 0, width: vp.width, height: 70 } });
-      }
-      // Una ficha se queda con la pestaña de la que vienes (como la app).
-      page = await ve(page, `${BASE}/descubre/`);
-      page = await ve(page, `${BASE}/b/cafe-central-lab-madrid`);
-      ok((await firma(page)).activa === 'descubre', `${t} una ficha desde Descubre, con «Descubre» marcada`);
-      page = await ve(page, `${BASE}/explorar/`);
-      page = await ve(page, `${BASE}/b/cafe-central-lab-madrid`);
-      ok((await firma(page)).activa === 'explorar', `${t} una ficha desde Explorar, con «Explorar» marcada`);
-      await ctx.close();
+      await sinCaidas(`${nombre} ${forma} ${conSesion ? 'con sesión' : 'sin sesión'}`, async () => {
+        const ctx = await nav.newContext({ viewport: vp, locale: 'es-ES', isMobile: movil && nombre === 'chromium', hasTouch: movil });
+        await ctx.addInitScript(([k, v, con]) => { try { if (!sessionStorage.getItem('puesto')) { localStorage.setItem('klendar_lang', 'es'); if (con) localStorage.setItem(k, v); sessionStorage.setItem('puesto', '1'); } } catch { /* */ } }, [`sb-${REF}-auth-token`, sesion(null), conSesion]);
+        await ctx.route(`${SUPA}/**`, falso());
+        let page = await ctx.newPage();
+        const t = `[${nombre} ${forma} ${conSesion ? 'con sesión' : 'sin sesión'}]`;
+        const quiere = [
+          'logo', ...(movil ? [] : ['pestaña:descubre', 'pestaña:explorar', 'pestaña:planes', 'pestaña:cuenta']),
+          'selecciones', 'lupa', ...(conSesion ? ['campana'] : []), ...(movil ? [] : ['negocios', 'idioma']),
+          conSesion ? 'tu-inicial' : 'entrar', 'menu',
+        ].join(' · ');
+        for (const [ruta, activa] of PAGINAS) {
+          if (ruta.startsWith('/panel/') && !conSesion) continue;
+          if (ruta.startsWith('/en/')) await page.evaluate(() => { try { localStorage.setItem('klendar_lang', 'en'); } catch { /* */ } });
+          else await page.evaluate(() => { try { localStorage.setItem('klendar_lang', 'es'); } catch { /* */ } }).catch(() => {});
+          page = await ve(page, BASE + ruta);
+          const f = await firma(page);
+          ok(f.items.join(' · ') === quiere, `${t} ${ruta}: ${f.items.join(' · ')}`);
+          ok(f.alto === 65, `${t} ${ruta}: 65 px de alto (${f.alto})`);
+          if (activa !== null) ok(f.activa === activa, `${t} ${ruta}: pestaña activa «${activa || 'ninguna'}» (${f.activa || 'ninguna'})`);
+          if (!conSesion && movil && ['/', '/descubre/', '/cuenta/'].includes(ruta)) await page.screenshot({ path: `${OUT}/igual-${nombre}-${forma}-${ruta.replace(/\W+/g, '_')}.png`, clip: { x: 0, y: 0, width: vp.width, height: 70 } });
+        }
+        // Una ficha se queda con la pestaña de la que vienes (como la app).
+        page = await ve(page, `${BASE}/descubre/`);
+        page = await ve(page, `${BASE}${FICHA}`);
+        ok((await firma(page)).activa === 'descubre', `${t} una ficha desde Descubre, con «Descubre» marcada`);
+        page = await ve(page, `${BASE}/explorar/`);
+        page = await ve(page, `${BASE}${FICHA}`);
+        ok((await firma(page)).activa === 'explorar', `${t} una ficha desde Explorar, con «Explorar» marcada`);
+        await ctx.close();
+      });
     }
 
     // ── 2. Los 8 idiomas ──
     for (const l of ['es', 'en', 'ca', 'gl', 'eu', 'fr', 'de', 'it']) {
-      const ctx = await nav.newContext({ viewport: vp, locale: 'es-ES', isMobile: movil && nombre === 'chromium', hasTouch: movil });
-      // Lo que lee de pasada (formas de entrar, ciudades…): base vacía simulada.
-      await supabaseVacio(ctx);
-      await ctx.addInitScript((x) => { try { if (!sessionStorage.getItem('puesto')) { localStorage.setItem('klendar_lang', x); sessionStorage.setItem('puesto', '1'); } } catch { /* */ } }, l);
-      let page = await ctx.newPage();
-      const t = `[${nombre} ${forma} ${l}]`;
-      page = await ve(page, `${BASE}/aviso-legal/`);
-      await page.waitForURL(LADO(l) === 'en' ? /\/en\/legal-notice\// : /\/aviso-legal\//, { timeout: 8000 }).catch(() => {});
-      await page.waitForTimeout(800);
-      const f = await firma(page);
-      ok(f.lang === LADO(l), `${t} pública: en su versión (${LADO(l)}) — ${new URL(page.url()).pathname}`);
-      const textoMain = await page.evaluate(() => document.querySelector('main')?.innerText.slice(0, 400) || '');
-      const enIngles = /\b(the|and|of|is)\b/i.test(textoMain);
-      ok(LADO(l) === 'en' ? enIngles : !enIngles, `${t} pública: el contenido en ${LADO(l)}`);
-      ok(JSON.stringify(f.pestanas) === JSON.stringify(ARB[LADO(l)]), `${t} pública: la cabecera en el idioma de la página (${f.pestanas.join(', ')})`);
-      ok(f.marcado === l && f.cod === l.toUpperCase(), `${t} pública: el selector marca «${l}» (${f.marcado}, ${f.cod})`);
-      page = await ve(page, `${BASE}/cuenta/`);
-      const a = await firma(page);
-      ok(a.lang === l, `${t} «Tu cuenta» en ${l} (${a.lang})`);
-      ok(!ARB[l] || JSON.stringify(a.pestanas) === JSON.stringify(ARB[l]), `${t} «Tu cuenta»: las pestañas como en la app (${a.pestanas.join(', ')})`);
-      ok(a.marcado === l, `${t} «Tu cuenta»: el selector marca «${l}» (${a.marcado})`);
-      if (movil && ['eu', 'de'].includes(l)) await page.screenshot({ path: `${OUT}/idioma-${nombre}-${forma}-${l}-cuenta.png`, clip: { x: 0, y: 0, width: vp.width, height: 70 } });
-      if (!movil && ['eu', 'de'].includes(l)) await page.screenshot({ path: `${OUT}/idioma-${nombre}-${forma}-${l}-cuenta.png`, clip: { x: 0, y: 0, width: vp.width, height: 70 } });
-      await ctx.close();
+      await sinCaidas(`${nombre} ${forma} ${l}`, async () => {
+        const ctx = await nav.newContext({ viewport: vp, locale: 'es-ES', isMobile: movil && nombre === 'chromium', hasTouch: movil, reducedMotion: sinVt(nombre) });
+        await ctx.addInitScript((x) => { try { if (!sessionStorage.getItem('puesto')) { localStorage.setItem('klendar_lang', x); sessionStorage.setItem('puesto', '1'); } } catch { /* */ } }, l);
+        let page = await ctx.newPage();
+        const t = `[${nombre} ${forma} ${l}]`;
+        page = await ve(page, `${BASE}/aviso-legal/`);
+        await page.waitForURL(LADO(l) === 'en' ? /\/en\/legal-notice\// : /\/aviso-legal\//, { timeout: 8000 }).catch(() => {});
+        await page.waitForTimeout(800);
+        const f = await firma(page);
+        ok(f.lang === LADO(l), `${t} pública: en su versión (${LADO(l)}) — ${new URL(page.url()).pathname}`);
+        const textoMain = await page.evaluate(() => document.querySelector('main')?.innerText.slice(0, 400) || '');
+        const enIngles = /\b(the|and|of|is)\b/i.test(textoMain);
+        ok(LADO(l) === 'en' ? enIngles : !enIngles, `${t} pública: el contenido en ${LADO(l)}`);
+        ok(JSON.stringify(f.pestanas) === JSON.stringify(ARB[LADO(l)]), `${t} pública: la cabecera en el idioma de la página (${f.pestanas.join(', ')})`);
+        ok(f.marcado === l && f.cod === l.toUpperCase(), `${t} pública: el selector marca «${l}» (${f.marcado}, ${f.cod})`);
+        page = await ve(page, `${BASE}/cuenta/`);
+        const a = await firma(page);
+        ok(a.lang === l, `${t} «Tu cuenta» en ${l} (${a.lang})`);
+        ok(!ARB[l] || JSON.stringify(a.pestanas) === JSON.stringify(ARB[l]), `${t} «Tu cuenta»: las pestañas como en la app (${a.pestanas.join(', ')})`);
+        ok(a.marcado === l, `${t} «Tu cuenta»: el selector marca «${l}» (${a.marcado})`);
+        if (movil && ['eu', 'de'].includes(l)) await page.screenshot({ path: `${OUT}/idioma-${nombre}-${forma}-${l}-cuenta.png`, clip: { x: 0, y: 0, width: vp.width, height: 70 } });
+        if (!movil && ['eu', 'de'].includes(l)) await page.screenshot({ path: `${OUT}/idioma-${nombre}-${forma}-${l}-cuenta.png`, clip: { x: 0, y: 0, width: vp.width, height: 70 } });
+        await ctx.close();
+      });
     }
 
     // ── 3. Cambiar de idioma con el selector (sin sesión y con sesión) ──
     for (const conSesion of [false, true]) {
-      const apunta = [];
-      const ctx = await nav.newContext({ viewport: vp, locale: 'es-ES', isMobile: movil && nombre === 'chromium', hasTouch: movil });
-      // Lo que lee de pasada (formas de entrar, ciudades…): base vacía simulada.
-      await supabaseVacio(ctx);
-      await ctx.addInitScript(([k, v, con]) => { try { if (!sessionStorage.getItem('puesto')) { localStorage.setItem('klendar_lang', 'es'); if (con) localStorage.setItem(k, v); sessionStorage.setItem('puesto', '1'); } } catch { /* */ } }, [`sb-${REF}-auth-token`, sesion('es'), conSesion]);
-      await ctx.route(`${SUPA}/**`, falso({ perfil: 'es', apunta }));
-      let page = await ctx.newPage();
-      const t = `[${nombre} ${forma} cambiar ${conSesion ? 'con sesión' : 'sin sesión'}]`;
-      const elige = async (l) => {
-        if (movil) await page.click('#menu'); else await page.click('header.top summary.idioma-b');
-        await page.waitForTimeout(250);
-        await Promise.all([page.waitForNavigation({ waitUntil: 'domcontentloaded' }).catch(() => {}),
-          page.click(`header.top ${movil ? '.idioma-lista' : '.idioma-menu'} a[data-lang="${l}"]`)]);
-        await page.waitForTimeout(1300);
-      };
-      page = await ve(page, `${BASE}/descubre/?cuando=finde`);
-      await elige('de');
-      const u1 = new URL(page.url());
-      ok(u1.pathname === '/en/discover/' && u1.searchParams.get('when') === 'weekend', `${t} Deutsch: a la versión inglesa de la misma página, con sus filtros (${u1.pathname}${u1.search})`);
-      const g1 = await page.evaluate(() => localStorage.getItem('klendar_lang'));
-      ok(g1 === 'de', `${t} Deutsch: se recuerda (${g1})`);
-      const f1 = await firma(page);
-      ok(f1.cod === 'DE', `${t} Deutsch: el selector dice «DE» (${f1.cod})`);
-      if (conSesion) {
-        ok(apunta.some(([q, v]) => q === 'perfil' && v === 'de') && apunta.some(([q, v]) => q === 'auth' && v === 'de'), `${t} con sesión, se guarda en la cuenta (${JSON.stringify(apunta)})`);
-        const meta = await page.evaluate((k) => JSON.parse(localStorage.getItem(k) || '{}')?.user?.user_metadata?.locale, `sb-${REF}-auth-token`);
-        ok(meta === 'de', `${t} con sesión, la sesión guardada lo sabe (${meta})`);
-      }
-      page = await ve(page, `${BASE}/cuenta/`);
-      ok((await firma(page)).lang === 'de', `${t} y «Tu cuenta» en alemán`);
-      // En «Tu cuenta», cambiar a euskera se queda en la misma pantalla.
-      page = await ve(page, `${BASE}/cuenta/ajustes`);
-      const antes = new URL(page.url()).pathname;
-      await elige('eu');
-      const f2 = await firma(page);
-      ok(f2.lang === 'eu' && new URL(page.url()).pathname === antes, `${t} en «Tu cuenta», euskera en la misma pantalla (${f2.lang} ${antes} → ${new URL(page.url()).pathname})`);
-      page = await ve(page, `${BASE}/en/explore/`);
-      await page.waitForURL(/\/explorar\//, { timeout: 8000 }).catch(() => {});
-      ok(new URL(page.url()).pathname === '/explorar/', `${t} euskera y una página inglesa: a la española (${new URL(page.url()).pathname})`);
-      await ctx.close();
+      await sinCaidas(`${nombre} ${forma} cambiar`, async () => {
+        const apunta = [];
+        const ctx = await nav.newContext({ viewport: vp, locale: 'es-ES', isMobile: movil && nombre === 'chromium', hasTouch: movil, reducedMotion: sinVt(nombre) });
+        await ctx.addInitScript(([k, v, con]) => { try { if (!sessionStorage.getItem('puesto')) { localStorage.setItem('klendar_lang', 'es'); if (con) localStorage.setItem(k, v); sessionStorage.setItem('puesto', '1'); } } catch { /* */ } }, [`sb-${REF}-auth-token`, sesion('es'), conSesion]);
+        await ctx.route(`${SUPA}/**`, falso({ perfil: 'es', apunta }));
+        let page = await ctx.newPage();
+        const t = `[${nombre} ${forma} cambiar ${conSesion ? 'con sesión' : 'sin sesión'}]`;
+        const elige = async (l) => {
+          if (movil) await page.click('#menu'); else await page.click('header.top summary.idioma-b');
+          await page.waitForTimeout(250);
+          await Promise.all([page.waitForNavigation({ waitUntil: 'domcontentloaded' }).catch(() => {}),
+            page.click(`header.top ${movil ? '.idioma-lista' : '.idioma-menu'} a[data-lang="${l}"]`)]);
+          await page.waitForTimeout(1300);
+        };
+        page = await ve(page, `${BASE}/descubre/?cuando=finde`);
+        await elige('de');
+        const u1 = new URL(page.url());
+        ok(u1.pathname === '/en/discover/' && u1.searchParams.get('when') === 'weekend', `${t} Deutsch: a la versión inglesa de la misma página, con sus filtros (${u1.pathname}${u1.search})`);
+        const g1 = await page.evaluate(() => localStorage.getItem('klendar_lang'));
+        ok(g1 === 'de', `${t} Deutsch: se recuerda (${g1})`);
+        const f1 = await firma(page);
+        ok(f1.cod === 'DE', `${t} Deutsch: el selector dice «DE» (${f1.cod})`);
+        if (conSesion) {
+          ok(apunta.some(([q, v]) => q === 'perfil' && v === 'de') && apunta.some(([q, v]) => q === 'auth' && v === 'de'), `${t} con sesión, se guarda en la cuenta (${JSON.stringify(apunta)})`);
+          const meta = await page.evaluate((k) => JSON.parse(localStorage.getItem(k) || '{}')?.user?.user_metadata?.locale, `sb-${REF}-auth-token`);
+          ok(meta === 'de', `${t} con sesión, la sesión guardada lo sabe (${meta})`);
+        }
+        page = await ve(page, `${BASE}/cuenta/`);
+        ok((await firma(page)).lang === 'de', `${t} y «Tu cuenta» en alemán`);
+        // En «Tu cuenta», cambiar a euskera se queda en la misma pantalla.
+        page = await ve(page, `${BASE}/cuenta/ajustes`);
+        const antes = new URL(page.url()).pathname;
+        await elige('eu');
+        const f2 = await firma(page);
+        ok(f2.lang === 'eu' && new URL(page.url()).pathname === antes, `${t} en «Tu cuenta», euskera en la misma pantalla (${f2.lang} ${antes} → ${new URL(page.url()).pathname})`);
+        page = await ve(page, `${BASE}/en/explore/`);
+        await page.waitForURL(/\/explorar\//, { timeout: 8000 }).catch(() => {});
+        ok(new URL(page.url()).pathname === '/explorar/', `${t} euskera y una página inglesa: a la española (${new URL(page.url()).pathname})`);
+        await ctx.close();
+      });
     }
 
     // ── 4. Con sesión manda el idioma de la cuenta ──
     {
-      const ctx = await nav.newContext({ viewport: vp, locale: 'es-ES', isMobile: movil && nombre === 'chromium', hasTouch: movil });
-      // Lo que lee de pasada (formas de entrar, ciudades…): base vacía simulada.
-      await supabaseVacio(ctx);
-      await ctx.addInitScript(([k, v]) => { try { if (!sessionStorage.getItem('puesto')) { localStorage.setItem('klendar_lang', 'es'); localStorage.setItem(k, v); sessionStorage.setItem('puesto', '1'); } } catch { /* */ } }, [`sb-${REF}-auth-token`, sesion('fr')]);
-      await ctx.route(`${SUPA}/**`, falso({ perfil: 'it' }));
-      let page = await ctx.newPage();
-      const t = `[${nombre} ${forma} idioma de la cuenta]`;
-      page = await ve(page, `${BASE}/aviso-legal/`);
-      await page.waitForURL(/\/en\/legal-notice\//, { timeout: 8000 }).catch(() => {});
-      ok(new URL(page.url()).pathname === '/en/legal-notice/' && (await firma(page)).cod === 'FR', `${t} la sesión dice francés: la versión inglesa y «FR» (${new URL(page.url()).pathname})`);
-      // «Tu cuenta» se vuelve a cargar en el idioma del perfil. (WebKit para
-      // Windows se cae a veces en una recarga mientras la página aún carga,
-      // como al pasar del panel sin sesión a «Tu cuenta»: entonces, una
-      // pestaña nueva, que ya trae el idioma guardado.)
-      let fit = null;
-      for (let i = 0; i < 3 && !fit; i++) {
-        try {
-          page = await ve(page, `${BASE}/cuenta/`);
-          await page.waitForFunction(() => document.documentElement.lang === 'it', null, { timeout: 8000 }).catch(() => {});
-          fit = await firma(page);
-        } catch { caida.add(page); }
-      }
-      ok(fit && fit.lang === 'it', `${t} «Tu cuenta» con el idioma del perfil (italiano)`);
-      await ctx.close();
+      await sinCaidas(`${nombre} ${forma} idioma de la cuenta`, async () => {
+        const ctx = await nav.newContext({ viewport: vp, locale: 'es-ES', isMobile: movil && nombre === 'chromium', hasTouch: movil, reducedMotion: sinVt(nombre) });
+        await ctx.addInitScript(([k, v]) => { try { if (!sessionStorage.getItem('puesto')) { localStorage.setItem('klendar_lang', 'es'); localStorage.setItem(k, v); sessionStorage.setItem('puesto', '1'); } } catch { /* */ } }, [`sb-${REF}-auth-token`, sesion('fr')]);
+        await ctx.route(`${SUPA}/**`, falso({ perfil: 'it' }));
+        let page = await ctx.newPage();
+        const t = `[${nombre} ${forma} idioma de la cuenta]`;
+        page = await ve(page, `${BASE}/aviso-legal/`);
+        await page.waitForURL(/\/en\/legal-notice\//, { timeout: 8000 }).catch(() => {});
+        ok(new URL(page.url()).pathname === '/en/legal-notice/' && (await firma(page)).cod === 'FR', `${t} la sesión dice francés: la versión inglesa y «FR» (${new URL(page.url()).pathname})`);
+        // «Tu cuenta» se vuelve a cargar en el idioma del perfil. (WebKit para
+        // Windows se cae a veces en una recarga mientras la página aún carga,
+        // como al pasar del panel sin sesión a «Tu cuenta»: entonces, una
+        // pestaña nueva, que ya trae el idioma guardado.)
+        let fit = null;
+        for (let i = 0; i < 3 && !fit; i++) {
+          try {
+            page = await ve(page, `${BASE}/cuenta/`);
+            await page.waitForFunction(() => document.documentElement.lang === 'it', null, { timeout: 8000 }).catch(() => {});
+            fit = await firma(page);
+          } catch { caida.add(page); }
+        }
+        ok(fit && fit.lang === 'it', `${t} «Tu cuenta» con el idioma del perfil (italiano)`);
+        await ctx.close();
+      });
     }
   }
   await nav.close();
-}
+}));
+await web.cierra();
 if (caidas) console.log(`(WebKit se cayó ${caidas} vez/veces al recargar; se repitió en una pestaña nueva)`);
 console.log(fallos ? `\n${fallos} FALLOS` : '\nTodo bien.');
 process.exit(fallos ? 1 : 0);
