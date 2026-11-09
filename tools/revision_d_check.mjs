@@ -1,8 +1,10 @@
 // Revisión de la tanda D (2026-10-22): los fallos de paridad y seguridad que
 // se arreglaron en la web, cada uno con su prueba. El panel y «Tu cuenta»
-// con un Supabase de mentira (no tocan dev ni mandan nada); Explorar, contra
-// dev y solo leyendo; la ficha de una publicación, con las Functions de
-// verdad contra un Supabase de mentira.
+// con un Supabase de mentira (no tocan dev ni mandan nada); Explorar, con
+// los datos de mentira de tools/_web_con_datos.mjs (antes leía de dev y,
+// desde que las pruebas no llegan a Supabase, 5-11, salía sin sitios); la
+// ficha de una publicación, con las Functions de verdad contra un Supabase
+// de mentira.
 //
 //  Panel
 //   1. Quishing: un QR (o enlace pegado) que lleva a otra web no se valida:
@@ -22,7 +24,7 @@
 //      un QR» de la persona solo abre klendar.app (otra web: «Este QR lleva a …»).
 //  11. Con solo un turno de cola o un pedido, sin la pantalla vacía (Planes
 //      y Tus códigos).
-//  Explorar (contra dev)
+//  Explorar (con datos de mentira)
 //  12. Calendario: «Ver resultados» conserva «¿Cuándo?» (F2).
 //  13. Planes → Sitios → Planes conserva ¿Cuándo?, Precio y el Calendario
 //      (F3), y Explorar recuerda el Calendario (F4).
@@ -32,20 +34,22 @@
 //
 // Chromium y WebKit, móvil y escritorio. Capturas en OUT.
 //
-//   SUPABASE_BLOQUEADO=1 PORT=8894 node tools/serve_dev.mjs &
-//   PW=<ruta a playwright> OUT=<carpeta> BASE=http://localhost:8894 node tools/revision_d_check.mjs
-// (la ficha arranca su propio serve_dev en FICHA_PORT, 8905, contra un
+//   PW=<ruta a playwright> OUT=<carpeta> node tools/revision_d_check.mjs
+// (arranca su web con datos en PORT, 8894, y su Supabase falso en el
+// siguiente; la ficha, otro serve_dev en FICHA_PORT, 8905, contra un
 // Supabase de mentira en FALSO_PORT, 8906)
 import { createServer } from 'node:http';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { mkdirSync } from 'node:fs';
-import { playwright, REF, SUPA, servidorSeguro } from './_supabase_simulado.mjs';
+import { playwright, REF, SUPA } from './_supabase_simulado.mjs';
+import { webConDatos } from './_web_con_datos.mjs';
 
 const { chromium, webkit } = playwright();
-const BASE = process.env.BASE || 'http://localhost:8894';
-// La web local no puede llegar a Supabase (ver _supabase_simulado).
-await servidorSeguro(BASE);
+// Cada contexto habla con el Supabase falso de los datos de mentira; el panel
+// y «Tu cuenta» enrutan el suyo después (y manda el suyo).
+const web = await webConDatos({ puerto: Number(process.env.PORT || 8894) });
+const BASE = web.BASE;
 // Las capturas, en tools/out/ (git las ignora): en la raíz se publicaban
 // en klendar.app (revisión del 3-11-2026, 5.4).
 const OUT = process.env.OUT || 'tools/out';
@@ -346,13 +350,13 @@ async function cuenta(nav, nombre, t, vp) {
   await ctx.close();
 }
 
-// ── 12 y 13. Explorar (contra dev, solo leyendo) ────────────────────────────
+// ── 12 y 13. Explorar (con datos de mentira) ────────────────────────────
 async function explorar(nav, nombre, t, vp) {
   const ctx = await nav.newContext({ viewport: vp, locale: 'es-ES' });
   const p = await ctx.newPage();
   const errores = [];
   p.on('pageerror', (e) => errores.push(e.message));
-  // Con dev lento, la página puede tardar: se espera a la hoja antes de leerla.
+  // La página puede tardar: se espera a la hoja antes de leerla.
   const datosHoja = async () => {
     await p.waitForSelector('form.hoja-cuerpo', { state: 'attached', timeout: 15000 });
     return p.evaluate(() => [...new FormData(document.querySelector('form.hoja-cuerpo')).entries()].map(([k, v]) => `${k}=${v}`));
@@ -374,7 +378,12 @@ async function explorar(nav, nombre, t, vp) {
     `${nombre}/${t} Planes → Sitios: ¿Cuándo? y Precio siguen en la dirección (${u.search})`);
   d = await datosHoja();
   ok(d.includes('cuando=hoy') && d.includes('precio=gratis'), `${nombre}/${t} Sitios: la hoja los conserva al «Ver resultados»`);
-  ok((await p.locator('.sitio-fila').count()) > 0, `${nombre}/${t} Sitios: los sitios, sin filtrar por lo de Planes`);
+  // Con los datos de mentira hay sitios siempre: se mira también que a la
+  // base no le llegue nada de Planes (¿Cuándo?, Precio).
+  const deSitios = web.llamadas.filter((l) => l.fn === 'public_places').pop()?.args || null;
+  const dePlanes = Object.keys(deSitios || {}).filter((k) => /filters|kind|price|precio|cuando|when|from|until|free|gratis/i.test(k));
+  ok((await p.locator('.sitio-fila').count()) > 0 && deSitios && !dePlanes.length,
+    `${nombre}/${t} Sitios: los sitios, sin filtrar por lo de Planes (${dePlanes.join(', ') || 'public_places sin filtros de Planes'})`);
   await p.click('nav.que a:nth-child(1)');
   await p.waitForLoadState('load');
   u = new URL(p.url());
@@ -443,7 +452,11 @@ if (!SOLO || SOLO.includes('ficha')) {
   servidorFicha = spawn(process.execPath, [fileURLToPath(new URL('./serve_dev.mjs', import.meta.url))], {
     env: { ...process.env, PORT: String(FICHA_PORT), SUPABASE_URL: `http://localhost:${FALSO_PORT}`, SUPABASE_KEY: 'falsa' }, stdio: 'ignore',
   });
-  await new Promise((r) => setTimeout(r, 2000));
+  // Hasta que conteste (como mucho 15 s).
+  for (let i = 0; i < 150; i += 1) {
+    try { if ((await fetch(`http://localhost:${FICHA_PORT}/__supabase_bloqueado`)).ok) break; } catch { /* aún no */ }
+    await new Promise((r) => setTimeout(r, 100));
+  }
 }
 
 const PRUEBAS = { validar, equipo, cerrarHoy, bonosParado, topes, listas, primeraVisita, entidad, cuenta, explorar, ficha };
@@ -459,5 +472,6 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
 }
 if (servidorFicha) servidorFicha.kill();
 if (falso) falso.close();
+await web.cierra();
 console.log(fallos ? `\n${fallos} FALLOS` : '\nTodo bien');
 process.exit(fallos ? 1 : 0);

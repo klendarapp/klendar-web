@@ -1,9 +1,13 @@
 // Los errores de la contraseña (assets/auth-errors.js), sin navegador:
-//   node tools/auth_errores_check.cjs assets/auth-errors.js
+//   node tools/auth_errores_check.cjs [assets/auth-errors.js]
 // Mismos casos que test/auth_form_message_test.dart de la app (2-11-2026).
+// Sin ruta, el de esta web (junto a tools/): así corre con las demás pruebas,
+// que no le pasan nada.
+const path = require('path');
+const FICHERO = process.argv[2] || path.join(__dirname, '..', 'assets', 'auth-errors.js');
 global.window = global;
 Object.defineProperty(globalThis, 'navigator', { value: { onLine: true }, configurable: true });
-require('vm').runInThisContext(require('fs').readFileSync(process.argv[2], 'utf8'));
+require('vm').runInThisContext(require('fs').readFileSync(FICHERO, 'utf8'));
 const E = (o) => Object.assign(new Error(o.message || 'x'), o);
 const t = [
   [E({ code: 'weak_password', message: 'Password is known to be weak and easy to guess, please choose a different one.', reasons: ['pwned'] }), 'filtraciones'],

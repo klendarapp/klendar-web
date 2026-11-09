@@ -25,10 +25,11 @@
 //
 // Chromium y WebKit, móvil y escritorio. Capturas en OUT.
 //
-//   SUPABASE_BLOQUEADO=1 PORT=8795 node tools/serve_dev.mjs &
 //   PW=<ruta a playwright> OUT=<carpeta> node tools/bloqueo_check.mjs
-// (la ficha arranca su propio serve_dev en FICHA_PORT, 8796, contra un
-// Supabase de mentira en 8797)
+// Sin BASE arranca su serve_dev (con Supabase cortado) en PANEL_PORT, 8795;
+// con BASE usa ese (SUPABASE_BLOQUEADO=1 PORT=… node tools/serve_dev.mjs).
+// La ficha arranca otro en FICHA_PORT, 8796, contra un Supabase de mentira
+// en FALSO_PORT, 8797.
 import { createServer } from 'node:http';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -36,7 +37,22 @@ import { playwright, REF, SUPA, servidorSeguro } from './_supabase_simulado.mjs'
 
 const { chromium, webkit } = playwright();
 
-const BASE = process.env.BASE || 'http://localhost:8795';
+const SERVE_DEV = fileURLToPath(new URL('./serve_dev.mjs', import.meta.url));
+/** Un serve_dev en [puerto] (hereda SUPABASE_BLOQUEADO), cuando ya contesta (como mucho 15 s). */
+async function serveDev(puerto, entorno = {}) {
+  const hijo = spawn(process.execPath, [SERVE_DEV], { env: { ...process.env, PORT: String(puerto), ...entorno }, stdio: 'ignore' });
+  process.on('exit', () => { try { hijo.kill(); } catch { /* ya */ } });
+  for (let i = 0; i < 150; i += 1) {
+    try { if ((await fetch(`http://localhost:${puerto}/__supabase_bloqueado`)).ok) break; } catch { /* aún no */ }
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  return hijo;
+}
+
+// El panel y el admin no leen nada de las Functions: un serve_dev con
+// Supabase cortado basta (el navegador lo contesta supabaseFalso, abajo).
+const servidorPanel = process.env.BASE ? null : await serveDev(Number(process.env.PANEL_PORT || 8795));
+const BASE = process.env.BASE || `http://localhost:${Number(process.env.PANEL_PORT || 8795)}`;
 // La web local no puede llegar a Supabase (ver _supabase_simulado).
 await servidorSeguro(BASE);
 // Las capturas, en tools/out/ (git las ignora): en la raíz se publicaban
@@ -118,7 +134,15 @@ const CASOS = {
     const s = sub({ status: 'trial', period_end: masDias(-20), payment_method: null }, { block_kind: 'start', block_on: masDias(6), block_soon: true, block_from: masDias(6) });
     return { role: 'owner', sub: s, ov: overview(s) };
   },
+  // El aviso del fin del gratis sale en los últimos 30 días (a5110df, 3-11,
+  // como el push y el correo); antes salía en cuanto había fecha de fin.
   gratis: () => {
+    const s = sub({ plan_slug: 'free', plan_names: { es: 'Gratis de lanzamiento', en: 'Launch, free' }, price_cents: 0, period_end: masDias(25), payment_method: null },
+      { block_kind: 'free', block_on: masDias(26), block_from: masDias(6) });
+    return { role: 'owner', sub: s, ov: overview(s) };
+  },
+  // A más de un mes del fin: todavía sin aviso (la fecha va en «Tu plan»).
+  gratisLejos: () => {
     const s = sub({ plan_slug: 'free', plan_names: { es: 'Gratis de lanzamiento', en: 'Launch, free' }, price_cents: 0, period_end: masDias(35), payment_method: null },
       { block_kind: 'free', block_on: masDias(36), block_from: masDias(6) });
     return { role: 'owner', sub: s, ov: overview(s) };
@@ -287,9 +311,19 @@ async function panelPausa(nav, nombre, t, vp) {
 }
 
 async function panelArranque(nav, nombre, t, vp) {
-  for (const caso of ['arranque', 'gratis']) {
+  for (const caso of ['arranque', 'gratis', 'gratisLejos']) {
     const { ctx, p, errores } = await contextoPanel(nav, vp, caso);
     await p.goto(`${BASE}/panel/`, { waitUntil: 'networkidle' });
+    if (caso === 'gratisLejos') {
+      // El resumen ya pintado (los botones de arriba) y sin el aviso.
+      await p.waitForSelector('[data-go=validar]');
+      await p.waitForTimeout(300);
+      ok(await p.locator('.aviso-cobro').count() === 0 && !/Gratis de lanzamiento» termina/.test(await texto(p)),
+        `${nombre}/${t} gratis a más de un mes del fin: sin aviso arriba`);
+      ok(errores.length === 0, `${nombre}/${t} ${caso} sin errores JS ${errores.join(' | ')}`);
+      await ctx.close();
+      continue;
+    }
     await p.waitForSelector('.aviso-cobro');
     const v = await texto(p);
     ok(await p.locator('.aviso-cobro').count() === 1, `${nombre}/${t} ${caso}: un solo aviso arriba`);
@@ -524,10 +558,7 @@ let falso = null;
 if (!SOLO || SOLO.includes('ficha')) {
   falso = supabaseFichas();
   await new Promise((ok2) => falso.listen(FALSO_PORT, ok2));
-  servidorFichas = spawn(process.execPath, [fileURLToPath(new URL('./serve_dev.mjs', import.meta.url))], {
-    env: { ...process.env, PORT: String(FICHA_PORT), SUPABASE_URL: `http://localhost:${FALSO_PORT}`, SUPABASE_KEY: 'falsa' }, stdio: 'ignore',
-  });
-  await new Promise((ok2) => setTimeout(ok2, 1500));
+  servidorFichas = await serveDev(FICHA_PORT, { SUPABASE_URL: `http://localhost:${FALSO_PORT}`, SUPABASE_KEY: 'falsa' });
 }
 
 const PRUEBAS = { idioma: panelIdioma, bloqueado: panelBloqueado, encargado: panelEncargado, pausa: panelPausa, pronto: panelPronto, arranque: panelArranque, pausar: panelPausar, admin, ficha: fichas };
@@ -542,6 +573,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
   await nav.close();
 }
 if (servidorFichas) servidorFichas.kill();
+if (servidorPanel) servidorPanel.kill();
 if (falso) falso.close();
 console.log(fallos ? `${fallos} fallo(s)` : 'Todo bien');
 process.exit(fallos ? 1 : 0);

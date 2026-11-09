@@ -16,8 +16,11 @@
 //
 // Chromium y WebKit, móvil y escritorio. Capturas en OUT.
 //
-//   SUPABASE_BLOQUEADO=1 PORT=8796 node tools/serve_dev.mjs &
-//   BASE=http://localhost:8796 PW=<ruta a playwright> OUT=<carpeta> node tools/listas_check.mjs
+//   PW=<ruta a playwright> OUT=<carpeta> node tools/listas_check.mjs
+// Sin BASE arranca su serve_dev (con Supabase cortado) en PANEL_PORT, 8796;
+// con BASE usa ese (SUPABASE_BLOQUEADO=1 PORT=… node tools/serve_dev.mjs).
+// La ficha arranca otro en FICHA_PORT, 8797, contra un Supabase de mentira
+// en FALSO_PORT, 8798.
 import { createServer } from 'node:http';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -25,7 +28,23 @@ import { playwright, REF, SUPA, servidorSeguro } from './_supabase_simulado.mjs'
 
 const { chromium, webkit } = playwright();
 
-const BASE = process.env.BASE || 'http://localhost:8796';
+const SERVE_DEV = fileURLToPath(new URL('./serve_dev.mjs', import.meta.url));
+/** Un serve_dev en [puerto] (hereda SUPABASE_BLOQUEADO), cuando ya contesta (como mucho 15 s). */
+async function serveDev(puerto, entorno = {}) {
+  const hijo = spawn(process.execPath, [SERVE_DEV], { env: { ...process.env, PORT: String(puerto), ...entorno }, stdio: 'ignore' });
+  process.on('exit', () => { try { hijo.kill(); } catch { /* ya */ } });
+  for (let i = 0; i < 150; i += 1) {
+    try { if ((await fetch(`http://localhost:${puerto}/__supabase_bloqueado`)).ok) break; } catch { /* aún no */ }
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  return hijo;
+}
+
+// El panel y «Tu cuenta» no leen nada de las Functions: un serve_dev con
+// Supabase cortado basta (el navegador lo contesta supabaseFalso, abajo).
+const PANEL_PORT = Number(process.env.PANEL_PORT || 8796);
+const servidorPanel = process.env.BASE ? null : await serveDev(PANEL_PORT);
+const BASE = process.env.BASE || `http://localhost:${PANEL_PORT}`;
 // La web local no puede llegar a Supabase (ver _supabase_simulado).
 await servidorSeguro(BASE);
 // Las capturas, en tools/out/ (git las ignora): en la raíz se publicaban
@@ -288,7 +307,12 @@ function supabaseFicha() {
 }
 
 async function ficha(nav, n, t, vp) {
-  const ctx = await nav.newContext({ viewport: vp, locale: 'es-ES' });
+  // El WebKit de Playwright para Windows se cae («page crashed», siempre) al
+  // pulsar un enlace a otra página con la View Transition de site.css
+  // (`@view-transition`, 2ed2151); con `goto` no, y sin esa regla tampoco
+  // (lo mismo que en crecer_check). Aquí se miran las listas, no el
+  // movimiento: en WebKit, con «Reducir movimiento» (sin la transición).
+  const ctx = await nav.newContext({ viewport: vp, locale: 'es-ES', reducedMotion: n === 'webkit' ? 'reduce' : 'no-preference' });
   const p = await ctx.newPage();
   const errores = [];
   p.on('pageerror', (e) => errores.push(e.message));
@@ -317,10 +341,7 @@ let falso = null;
 if (!SOLO || SOLO.includes('ficha')) {
   falso = supabaseFicha();
   await new Promise((r) => falso.listen(FALSO_PORT, r));
-  servidorFicha = spawn(process.execPath, [fileURLToPath(new URL('./serve_dev.mjs', import.meta.url))], {
-    env: { ...process.env, PORT: String(FICHA_PORT), SUPABASE_URL: `http://localhost:${FALSO_PORT}`, SUPABASE_KEY: 'falsa' }, stdio: 'ignore',
-  });
-  await new Promise((r) => setTimeout(r, 2000));
+  servidorFicha = await serveDev(FICHA_PORT, { SUPABASE_URL: `http://localhost:${FALSO_PORT}`, SUPABASE_KEY: 'falsa' });
 }
 
 const PRUEBAS = { panelResumen, panelPublicaciones, panelCalendario, panelResenas, panelCifras, panelAsistentes, cuentaAvisos, cuentaCodigos, ficha };
@@ -335,6 +356,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
   await nav.close();
 }
 if (servidorFicha) servidorFicha.kill();
+if (servidorPanel) servidorPanel.kill();
 if (falso) falso.close();
 console.log(fallos ? `\n${fallos} fallo(s)` : '\nTodo bien');
 process.exit(fallos ? 1 : 0);

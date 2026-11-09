@@ -19,10 +19,11 @@
 //
 // Chromium y WebKit, móvil y escritorio. Capturas en OUT.
 //
-//   SUPABASE_BLOQUEADO=1 PORT=8796 node tools/serve_dev.mjs &
-//   PW=<ruta a playwright> OUT=<carpeta> BASE=http://localhost:8796 node tools/pedir_check.mjs
-// (lo público arranca su propio serve_dev en PUB_PORT, 8794, contra un
-// Supabase de mentira en 8795)
+//   PW=<ruta a playwright> OUT=<carpeta> node tools/pedir_check.mjs
+// Sin BASE arranca su serve_dev (con Supabase cortado) en PANEL_PORT, 8796;
+// con BASE usa ese (SUPABASE_BLOQUEADO=1 PORT=… node tools/serve_dev.mjs).
+// Lo público arranca otro en PUB_PORT, 8794, contra un Supabase de mentira
+// en FALSO_PORT, 8795.
 import { createServer } from 'node:http';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -30,7 +31,23 @@ import { playwright, REF, SUPA, servidorSeguro } from './_supabase_simulado.mjs'
 
 const { chromium, webkit } = playwright();
 
-const BASE = process.env.BASE || 'http://localhost:8796';
+const SERVE_DEV = fileURLToPath(new URL('./serve_dev.mjs', import.meta.url));
+/** Un serve_dev en [puerto] (hereda SUPABASE_BLOQUEADO), cuando ya contesta (como mucho 15 s). */
+async function serveDev(puerto, entorno = {}) {
+  const hijo = spawn(process.execPath, [SERVE_DEV], { env: { ...process.env, PORT: String(puerto), ...entorno }, stdio: 'ignore' });
+  process.on('exit', () => { try { hijo.kill(); } catch { /* ya */ } });
+  for (let i = 0; i < 150; i += 1) {
+    try { if ((await fetch(`http://localhost:${puerto}/__supabase_bloqueado`)).ok) break; } catch { /* aún no */ }
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  return hijo;
+}
+
+// El panel no lee nada de las Functions: un serve_dev con
+// Supabase cortado basta (el navegador lo contesta supabaseFalso, abajo).
+const PANEL_PORT = Number(process.env.PANEL_PORT || 8796);
+const servidorPanel = process.env.BASE ? null : await serveDev(PANEL_PORT);
+const BASE = process.env.BASE || `http://localhost:${PANEL_PORT}`;
 // La web local no puede llegar a Supabase (ver _supabase_simulado).
 await servidorSeguro(BASE);
 // Las capturas, en tools/out/ (git las ignora): en la raíz se publicaban
@@ -173,16 +190,23 @@ async function panel(nav, nombre, t, vp) {
   await p.waitForTimeout(600);
   const m = llamada(estado, 'set_business_moments').slice(-1)[0] || {};
   ok(JSON.stringify(m.p_moments) === '["vermouth","drinks"]', `${nombre}/${t} local: guarda los momentos (${JSON.stringify(m)})`);
-  // 3. Días cerrados
+  // 3. Días cerrados. Desde 5362544 (22-10, como la app) no hay dos
+  // formularios siempre abiertos (#fOtro): un solo «Añadir…» que pregunta
+  // «Cerrar unos días» o «Abrir con otro horario», cada uno en su diálogo.
   await p.goto(`${BASE}/panel/#/cerrados`);
-  await p.waitForSelector('#fOtro', { timeout: 15000 });
+  await p.waitForSelector('#anadirCierre', { timeout: 15000 });
   txt = await vista(p);
   ok(/Días con otro horario/.test(txt) && /10:00–14:00 · Nuestra Señora de la Almudena/.test(txt), `${nombre}/${t} días cerrados: el día con otro horario`);
-  await p.fill('#fOtro [name=day]', masDias(hoy, 20));
-  await p.fill('#fOtro [name=from]', '11:00');
-  await p.fill('#fOtro [name=to]', '15:00');
+  await p.click('#anadirCierre');
+  await p.waitForSelector('#modal[open] [data-elige=otro]');
+  ok(await p.locator('#modal[open] [data-elige=cerrar]').count() === 1, `${nombre}/${t} días cerrados: «Añadir…» pregunta cerrar u otro horario`);
+  await p.click('#modal[open] [data-elige=otro]');
+  await p.waitForSelector('#modal[open] [name=day]');
+  await p.fill('#modal[open] [name=day]', masDias(hoy, 20));
+  await p.fill('#modal[open] [name=from]', '11:00');
+  await p.fill('#modal[open] [name=to]', '15:00');
   await p.screenshot({ path: `${OUT}/panel-dias-otro-horario-${nombre}-${t}.png`, fullPage: true });
-  await p.click('#fOtro button[type=submit]');
+  await p.click('#modal[open] button[type=submit]');
   await p.waitForTimeout(500);
   const d = llamada(estado, 'save_business_day_hours').slice(-1)[0] || {};
   ok(d.p_day === masDias(hoy, 20) && JSON.stringify(d.p_hours) === '[["11:00","15:00"]]', `${nombre}/${t} días cerrados: guarda el día con otro horario (${JSON.stringify(d)})`);
@@ -298,10 +322,7 @@ const estadoPub = { llamadas: [] };
 if (!SOLO || SOLO.includes('publico')) {
   falso = supabasePublico(estadoPub);
   await new Promise((r) => falso.listen(FALSO_PORT, r));
-  servidor = spawn(process.execPath, [fileURLToPath(new URL('./serve_dev.mjs', import.meta.url))], {
-    env: { ...process.env, PORT: String(PUB_PORT), SUPABASE_URL: `http://localhost:${FALSO_PORT}`, SUPABASE_KEY: 'falsa' }, stdio: 'ignore',
-  });
-  await new Promise((r) => setTimeout(r, 1500));
+  servidor = await serveDev(PUB_PORT, { SUPABASE_URL: `http://localhost:${FALSO_PORT}`, SUPABASE_KEY: 'falsa' });
 }
 
 for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]].filter(([n]) => !process.env.NAV || n === process.env.NAV)) {
@@ -313,6 +334,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]].filter
   await nav.close();
 }
 if (servidor) servidor.kill();
+if (servidorPanel) servidorPanel.kill();
 if (falso) falso.close();
 console.log(fallos ? `${fallos} fallo(s)` : 'Todo bien');
 process.exit(fallos ? 1 : 0);
