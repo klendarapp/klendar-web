@@ -1,6 +1,6 @@
 """Los enlaces a «Tu cuenta», al panel y al admin llevan a una pantalla que existe.
 
-El 5-11 (3b4b95f) «Tu cuenta» pasó de `/app/#/…` a `/cuenta/…` cambiando `#/`
+El 5-11 (3b4b95f) «Tu cuenta» pasó a `/cuenta/…` (rutas limpias) cambiando `#/`
 por `/cuenta/` en sus scripts, y un enlace al panel se quedó en
 `/panel//cuenta/baja?biz=…` (revisión del 9-11, I6). Esto mira, en lo que se
 publica (no en tools/ ni en lo de terceros):
