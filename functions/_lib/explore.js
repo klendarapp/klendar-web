@@ -560,7 +560,7 @@ const sinKlendarHtml = ({ S, lang, lat, lng, cobertura, link }) => {
     <div class="avisame-caja" data-avisame-caja hidden></div>
   </section>
   <script type="application/json" id="avisame-textos">${JSON.stringify(textos).replace(/</g, '\\u003c')}</script>
-  <script src="/assets/avisame.js?v=20261105cuenta" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}" data-lang="${en ? 'en' : 'es'}"></script>`;
+  <script src="/assets/avisame.js?v=20261109captcha" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}" data-lang="${en ? 'en' : 'es'}"></script>`;
 };
 
 /** Lo que dice /assets/avisame.js (el formulario y lo que pasa después). */

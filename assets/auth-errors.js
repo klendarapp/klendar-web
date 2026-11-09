@@ -154,9 +154,11 @@
  * Por adelantado: el formulario llama a `KL_CAPTCHA.pre()` al pintarse y el
  * widget se resuelve mientras la persona escribe, así que al pulsar el token
  * suele estar ya listo. Los tokens son de un solo uso y valen 300 s: al
- * gastar uno se pide el siguiente y uno viejo no se usa. Si Cloudflare no
- * contesta en ESPERA_MS, error (el de «no eres un robot»), y volver a pulsar
- * lo reintenta.
+ * gastar uno se pide el siguiente y uno viejo no se usa; uno sin gastar se
+ * renueva antes de caducar, así que al pulsar siempre hay uno fresco. Si
+ * Cloudflare da error o no contesta en ESPERA_MS, se reintenta solo una vez;
+ * si vuelve a fallar, error (el de «no eres un robot»), y volver a pulsar lo
+ * reintenta. La app hace lo mismo.
  *
  * Uso: `options: { captchaToken: await KL_CAPTCHA() }` (undefined sin clave). */
 (function () {
@@ -190,8 +192,11 @@
   let listo = null;          // { token, en }: resuelto y sin gastar
   let estado = 'nada';       // 'pidiendo' | 'listo' | 'mirando' (recuadro a la vista) | 'error'
   let esperan = [];          // quienes han pulsado y esperan un token
+  let renueva = null;        // temporizador: el token sin gastar, antes de caducar
+  let reintentado = false;   // ya se ha reintentado solo tras un error
 
   function siguiente() {
+    clearTimeout(renueva);
     listo = null;
     estado = 'pidiendo';
     try { window.turnstile.reset(id); } catch (e) { /* ya no está */ }
@@ -215,13 +220,22 @@
         // Turnstile habla francés, alemán e italiano; catalán, gallego y euskera, no: español.
         language: /^(en|fr|de|it)$/.test(document.documentElement.lang) ? document.documentElement.lang : 'es',
         callback: (token) => {
+          reintentado = false;
           const quien = esperan.shift();
           if (quien) { quien.ok(token); setTimeout(siguiente, 0); return; }
           listo = { token, en: Date.now() };
           estado = 'listo';
+          clearTimeout(renueva);
+          renueva = setTimeout(() => { if (listo && listo.token === token) siguiente(); }, VALE_MS);
         },
         'error-callback': () => {
           listo = null;
+          // La primera vez, otra vez desde el principio sin decir nada.
+          if (!reintentado) {
+            reintentado = true;
+            setTimeout(siguiente, 0);
+            return true;
+          }
           estado = 'error';
           const todos = esperan;
           esperan = [];
@@ -243,14 +257,18 @@
       siguiente();
       return token;
     }
+    if (estado === 'error') reintentado = false;
     if (listo || estado === 'error') siguiente();
     return new Promise((ok, mal) => {
       const quien = { ok, mal };
       esperan.push(quien);
-      // Mientras el recuadro está a la vista, la persona tiene el tiempo que necesite.
+      let otraVez = true;
+      // Mientras el recuadro está a la vista, la persona tiene el tiempo que
+      // necesite. Sin respuesta, se reintenta solo una vez antes del error.
       const vigila = () => {
         if (!esperan.includes(quien)) return;
         if (estado === 'mirando') { setTimeout(vigila, ESPERA_MS); return; }
+        if (otraVez) { otraVez = false; siguiente(); setTimeout(vigila, ESPERA_MS); return; }
         esperan = esperan.filter((q) => q !== quien);
         siguiente();
         mal(fallo('captcha_failed'));
