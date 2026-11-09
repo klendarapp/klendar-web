@@ -958,7 +958,7 @@ RUTAS.ajustes = async ([sub]) => {
         texto: EN ? `You own ${nombres}. Before deleting your account, take the business off Klendar or hand it over to someone on your team, under “Leave Klendar” in the dashboard.`
           : `Eres propietario de ${nombres}. Antes de eliminar tu cuenta, da de baja el negocio o traspásalo a alguien de tu equipo, en «Dar de baja el negocio» del panel.`,
         aceptar: t('Ir a mi negocio'),
-      })) location.href = `/panel/${propios.length === 1 ? `/cuenta/baja?biz=${propios[0].id}` : ''}`;
+      })) location.href = propios.length === 1 ? `/panel/#/baja?biz=${propios[0].id}` : '/panel/';
       return;
     }
     // Lo que sigue vivo y se pierde (reservas, códigos, premios, sellos): se

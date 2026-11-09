@@ -29,7 +29,7 @@ function ok(cond, nombre, extra = '') {
   else { fallos += 1; console.log(`  MAL ${nombre} ${extra}`); }
 }
 
-async function abre(nav, { ancho = 390, lang = '', sesion = false, consents = {}, panel = false } = {}) {
+async function abre(nav, { ancho = 390, lang = '', sesion = false, consents = {}, panel = false, negocios = [] } = {}) {
   const ctx = await nav.newContext({ viewport: { width: ancho, height: 844 }, locale: 'es-ES', timezoneId: 'Europe/Madrid' });
   await ctx.addInitScript(([k, v, l]) => {
     try {
@@ -60,6 +60,7 @@ async function abre(nav, { ancho = 390, lang = '', sesion = false, consents = {}
       estado.rpc.push([fn, body]);
       if (fn === 'my_consents') return json({ terms_accepted_at: '2026-01-01T00:00:00Z', terms_outdated: false, has_display_name: true, has_birth_date: true, name_asked_at: null, terms_current: '2026-09-29', ...consents });
       if (fn === 'display_name_allowed') return json(true);
+      if (fn === 'my_businesses') return json(negocios);
       if (fn === 'my_tastes') return json({ c: [], city: null });
       if (fn === 'my_notification_preferences') return json({});
       if (fn === 'my_friend_link') return json({ code: 'abcd1234abcd1234' });
@@ -365,12 +366,41 @@ async function pruebaAcceso(nav, motor) {
     await p.fill('[name=p1]', 'clave-nueva-123');
     await p.fill('[name=p2]', 'clave-nueva-123');
     await p.click('#f button[type=submit]');
-    await p.waitForTimeout(400);
+    // (Antes, 400 ms a ciegas: en WebKit a veces el diálogo aún no estaba.)
+    await p.waitForSelector('dialog[open] [data-modo="codigo"]');
     await p.click('dialog [data-modo="codigo"]');
     await p.click('dialog button[type=submit]');
     await p.waitForFunction(() => document.querySelector('dialog [data-reenvio]'));
     const otp = estado.auth.find((x) => x.que === 'otp');
     ok(otp && /\/cuenta\/\?reauth=1$/.test(otp.redirect || ''), `${motor} «Confirma que eres tú»: redirect_to /cuenta/?reauth=1`, otp?.redirect);
+    await ctx.close();
+  }
+}
+
+// ── Propietario que quiere eliminar su cuenta (revisión 9-11, I6) ─────────
+// «Ir a mi negocio» lleva a «Dar de baja el negocio» del panel (`/panel/#/baja?biz=`),
+// no a `/panel//cuenta/baja` (el 5-11 se cambió `#/` por `/cuenta/` también aquí).
+async function pruebaPropietario(nav, motor) {
+  const BIZ = 'b0000000-0000-4000-8000-0000000000b1';
+  for (const [negocios, esperado, que] of [
+    [[{ id: BIZ, name: 'Bar Uno', role: 'owner' }], `/panel/#/baja?biz=${BIZ}`, 'un negocio'],
+    [[{ id: BIZ, name: 'Bar Uno', role: 'owner' }, { id: `${BIZ.slice(0, -1)}2`, name: 'Bar Dos', role: 'owner' }], '/panel/', 'dos negocios'],
+  ]) {
+    const { ctx, p, estado } = await abre(nav, { sesion: true, negocios });
+    // El panel, una página vacía: así la dirección (con su `#/`) se queda y se puede leer.
+    await p.route('**/panel/**', (r) => (r.request().isNavigationRequest()
+      ? r.fulfill({ status: 200, contentType: 'text/html', body: '<!doctype html><title>panel</title>' })
+      : r.continue()));
+    await p.goto(`${BASE}/cuenta/ajustes`);
+    await pintada(p);
+    await p.click('#borrar');
+    await p.waitForSelector('dialog[open] button[value=si]');
+    ok(/Bar Uno/.test(await p.locator('dialog[open]').innerText()), `${motor} eliminar la cuenta con ${que}: «Primero, tu negocio» y su nombre`);
+    await p.click('dialog[open] button[value=si]');
+    await p.waitForURL(/\/panel\//).catch(() => {});
+    const u = new URL(p.url());
+    ok(`${u.pathname}${u.hash}` === esperado, `${motor} eliminar la cuenta con ${que}: «Ir a mi negocio» a ${esperado}`, p.url());
+    ok(!estado.rpc.some(([fn]) => fn === 'delete_my_account'), `${motor} eliminar la cuenta con ${que}: no se borra nada`);
     await ctx.close();
   }
 }
@@ -451,6 +481,7 @@ for (const [motor, nav] of SOLO_FUNCTIONS ? [] : [["Chromium", await chromium.la
   console.log(`\n${motor} · rutas`);
   try {
     await pruebaFuera(nav, motor);
+    await pruebaPropietario(nav, motor);
     await pruebaDireccion(nav, motor);
     await pruebaHistoria(nav, motor);
     await pruebaAcceso(nav, motor);

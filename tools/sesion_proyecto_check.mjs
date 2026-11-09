@@ -178,7 +178,7 @@ for (const ruta of ['/accesibilidad/', '/cuenta/', '/descubre/']) {
 // 3. «Cerrar sesión».
 {
   const { ctx, page, errores } = await contexto({ [`sb-${REF}-auth-token`]: SESION, 'klendar.sb': REF, ...DE_LA_CUENTA });
-  await page.goto(`${BASE}/cuenta/cuenta`, { waitUntil: 'load' });
+  await page.goto(`${BASE}/cuenta/`, { waitUntil: 'load' });
   const salir = page.locator('#salir');
   await salir.waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
   ok(await salir.isVisible(), '«Tu cuenta» con la sesión de este proyecto: «Cerrar sesión» a la vista');
