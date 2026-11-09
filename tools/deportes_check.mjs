@@ -1,25 +1,118 @@
 // «Dónde verlo» con todos los deportes (TheSportsDB, migraciones
 // 20261260100008–100010 de la app), en la web:
-//   · la página pública, con los datos de verdad de dev: todo lo que viene,
+//   · la página pública, con partidos simulados: todo lo que viene,
 //     deportes (balonmano), competiciones del deporte elegido, el filtro por
 //     competición, la cita «Datos deportivos: TheSportsDB» (ES y EN) y el
 //     detalle de un partido con su cita;
-//   · el panel («Partidos que pones», con la base simulada): «Pones siempre»
+//   · el panel («Partidos que pones», con la base simulada y esos mismos
+//     partidos): «Pones siempre»
 //     con su ✕, competiciones, «⋯» → «Poner siempre los de …» y «Lo pones
 //     siempre»;
 //   · el admin (Emisiones → Ligas, simulado): encender y apagar una liga.
 // Guarda capturas en OUT (móvil y escritorio).
 //
-//   SUPABASE_BLOQUEADO=1 PORT=8811 node tools/serve_dev.mjs
-//   BASE=http://localhost:8811 PW=<ruta a playwright> OUT=<carpeta> node tools/deportes_check.mjs
+//
+// Con sus propios datos (tools/_web_con_datos.mjs): los partidos de abajo,
+// con `where_to_watch`, `broadcast_competitions` y `broadcast_detail` como en
+// la base (migraciones 20261260100008 y 20261260100070 de la app: lo que no
+// pone ningún bar solo sale con `p_all`; el filtro por competición, por su
+// clave). Antes leía los partidos de dev (también el panel, con un fetch a
+// Supabase desde la prueba) y, desde que las pruebas no llegan a Supabase
+// (5-11), fallaba siempre.
+//
+//   PW=<ruta a playwright> OUT=<carpeta> node tools/deportes_check.mjs
 import { mkdirSync } from 'node:fs';
-import { supabasePublic } from '../functions/_lib/page.js';
-import { playwright, REF, SUPA, servidorSeguro } from './_supabase_simulado.mjs';
+import { playwright, REF, SUPA } from './_supabase_simulado.mjs';
+import { DATOS, webConDatos } from './_web_con_datos.mjs';
 
 const { chromium } = playwright();
-const BASE = process.env.BASE || 'http://localhost:8788';
-// La web local no puede llegar a Supabase (ver _supabase_simulado).
-await servidorSeguro(BASE);
+
+// ── Los partidos ──────────────────────────────────────────────────────────
+const uid = (n) => `d0000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
+const COMPES = {
+  laliga: { es: 'LaLiga', en: 'LaLiga', sport: 'football', sort: 10 },
+  champions: { es: 'Champions League', en: 'Champions League', sport: 'football', sort: 20 },
+  premier: { es: 'Premier League', en: 'Premier League', sport: 'football', sort: 30 },
+  copa: { es: 'Copa del Rey', en: 'Copa del Rey', sport: 'football', sort: 40 },
+  acb: { es: 'Liga Endesa', en: 'Liga Endesa', sport: 'basketball', sort: 120 },
+  nba: { es: 'NBA', en: 'NBA', sport: 'basketball', sort: 130 },
+  asobal: { es: 'Liga Asobal', en: 'Liga Asobal', sport: 'handball', sort: 300 },
+};
+const EQUIPOS = new Map();
+const equipo = (name, sport) => {
+  const k = `${sport}:${name}`;
+  if (!EQUIPOS.has(k)) EQUIPOS.set(k, { id: uid(100 + EQUIPOS.size), kind: 'team', sport, name, full_name: name, competition: null, context: null, following: false });
+  return EQUIPOS.get(k);
+};
+// Los bares que lo ponen (los de los datos).
+const BARES = DATOS.NEGOCIOS.filter((b) => b.category_slug === 'bar' || b.category_slug === 'restaurant');
+/** Un partido dentro de [dias] a las [hora] (más o menos, en Madrid). */
+const PARTIDO = (n, liga, home, away, dias, hora, nBares = 0) => {
+  const L = COMPES[liga];
+  const empieza = new Date(Date.now() + dias * 864e5);
+  empieza.setUTCHours(hora - 1, 0, 0, 0);
+  if (empieza.getTime() < Date.now()) empieza.setTime(empieza.getTime() + 864e5);
+  const teams = [equipo(home, L.sport), equipo(away, L.sport)];
+  return {
+    id: uid(n), sport: L.sport, liga, competition_code: liga, competition_sort: L.sort, home, away,
+    starts_at: empieza.toISOString(), ends_at: new Date(empieza.getTime() + 2 * 36e5).toISOString(),
+    time_confirmed: true, status: 'scheduled', source: 'thesportsdb', teams, follow: teams,
+    bares: BARES.slice(0, nBares), offers: nBares ? 1 : 0,
+  };
+};
+const PARTIDOS = [
+  PARTIDO(1, 'laliga', 'Real Madrid', 'Barça', 1, 21, 3),
+  PARTIDO(2, 'laliga', 'Real Betis', 'Sevilla', 2, 18, 1),
+  PARTIDO(3, 'laliga', 'Atlético de Madrid', 'Valencia', 3, 16),
+  PARTIDO(4, 'champions', 'Real Madrid', 'Liverpool', 0, 23, 2),
+  PARTIDO(5, 'champions', 'Arsenal', 'Inter', 1, 21),
+  PARTIDO(6, 'premier', 'Liverpool', 'Arsenal', 2, 17),
+  PARTIDO(7, 'copa', 'Real Betis', 'Athletic Club', 4, 21),
+  PARTIDO(8, 'acb', 'Real Madrid', 'Barça', 1, 20),
+  PARTIDO(9, 'nba', 'Lakers', 'Celtics', 2, 23),
+  PARTIDO(10, 'asobal', 'Barça', 'Granollers', 3, 19),
+];
+/** Como `broadcast_json` (más `bars`, `offers` y `nearest_m`, de `where_to_watch`). */
+const comoJson = (b, lang) => {
+  const L = COMPES[b.liga];
+  return {
+    id: b.id, sport: b.sport, competition: lang === 'en' ? L.en : L.es, competition_code: b.competition_code,
+    competition_sort: b.competition_sort, title: `${b.home} – ${b.away}`, home: b.home, away: b.away,
+    starts_at: b.starts_at, ends_at: b.ends_at, time_confirmed: b.time_confirmed, status: b.status, source: b.source,
+    teams: b.teams, follow: b.follow, bars: b.bares.length, offers: b.offers, nearest_m: b.bares.length ? 350 : null,
+  };
+};
+const plano = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+const whereToWatch = (a) => PARTIDOS
+  .filter((b) => (!a.p_sport || b.sport === a.p_sport) && (!a.p_competition || b.competition_code === a.p_competition)
+    && (!a.p_q || plano(`${b.home} ${b.away} ${COMPES[b.liga].es}`).includes(plano(a.p_q))))
+  // Lo que no pone ningún bar, solo con texto o con `p_all` (como la base).
+  .filter((b) => b.bares.length || a.p_q || a.p_all)
+  .sort((x, y) => (y.bares.length > 0) - (x.bares.length > 0) || x.starts_at.localeCompare(y.starts_at))
+  .slice(0, Number(a.p_limit) || 80)
+  .map((b) => comoJson(b, a.p_lang));
+const web = await webConDatos({
+  puerto: Number(process.env.PORT || 9012),
+  rpc: {
+    where_to_watch: whereToWatch,
+    broadcast_competitions: (a) => Object.entries(COMPES)
+      .filter(([, L]) => !a.p_sport || L.sport === a.p_sport)
+      .map(([k, L]) => ({ key: k, name: a.p_lang === 'en' ? L.en : L.es, sport: L.sport, count: PARTIDOS.filter((b) => b.liga === k).length }))
+      .filter((c) => c.count),
+    broadcast_detail: (a) => {
+      const b = PARTIDOS.find((x) => x.id === a.p_broadcast);
+      if (!b) return null;
+      return {
+        ...comoJson(b, a.p_lang), live: true, radius_m: null,
+        bars: b.bares.map((z, i) => ({
+          business_id: z.id, name: z.name, slug: z.slug, logo: null, address: z.address, city: z.city,
+          category: z.category_slug, distance_m: 300 + i * 400, offer: null,
+        })),
+      };
+    },
+  },
+});
+const BASE = web.BASE;
 const OUT = process.env.OUT || 'tools/out';
 mkdirSync(OUT, { recursive: true });
 const U = '0e7717e0-0000-4000-8000-00000000de01';
@@ -110,13 +203,9 @@ for (const [t, vp] of Object.entries(TAM)) {
   await ctx.close();
 }
 
-// ── 2. El panel (simulado, con partidos de verdad de dev) ─────────────────
-const real = await (await fetch(`${SUPA}/rest/v1/rpc/where_to_watch`, {
-  method: 'POST',
-  headers: { apikey: supabasePublic().key, 'Content-Type': 'application/json' },
-  body: JSON.stringify({ p_all: true, p_sport: 'football', p_days: 7, p_limit: 40, p_lang: 'es' }),
-}).catch(() => null))?.json().catch(() => null);
-const base = Array.isArray(real) && real.length ? real : [];
+// ── 2. El panel (simulado, con los partidos de fútbol de arriba) ──────────
+// (Antes, los de verdad de dev con un fetch a Supabase desde la prueba.)
+const base = whereToWatch({ p_all: true, p_sport: 'football', p_days: 7, p_limit: 40, p_lang: 'es' });
 const conClave = base.map((b, i) => ({
   ...b, on: i % 4 === 0 || b.competition_code === 'champions', auto: b.competition_code === 'champions',
   own: false, competition_key: b.competition_code, offer: i === 0 ? { id: 'o1', title: 'Caña y tapa a 2,50 €', status: 'active' } : null,
@@ -197,5 +286,6 @@ for (const [t, vp] of Object.entries(TAM)) {
 }
 
 await nav.close();
+await web.cierra();
 console.log(fallos ? `\n${fallos} fallo(s)` : '\nTodo bien.');
 process.exit(fallos ? 1 : 0);

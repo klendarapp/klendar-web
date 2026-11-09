@@ -6,15 +6,19 @@
 // «volver arriba» en su etiqueta. Chromium y WebKit, móvil (la barra de abajo)
 // y escritorio (las pestañas de arriba).
 //
+// Con sus propios datos (tools/_web_con_datos.mjs: los planes de Madrid).
+// Antes arrancaba un serve_dev que leía de Supabase y, desde que las pruebas
+// no llegan a Supabase (5-11), Descubre salía sin publicaciones y fallaba
+// siempre.
+//
 //   PW=<ruta a playwright> OUT=<carpeta> node tools/volver_arriba_check.mjs
-import { spawn } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
 import { mkdirSync } from 'node:fs';
 import { playwright } from './_supabase_simulado.mjs';
+import { webConDatos } from './_web_con_datos.mjs';
 
 const { chromium, webkit } = playwright();
-const PORT = Number(process.env.PORT || 8871);
-const BASE = `http://localhost:${PORT}`;
+const web = await webConDatos({ puerto: Number(process.env.PORT || 9014) });
+const BASE = web.BASE;
 // Las capturas, en tools/out/ (git las ignora): en la raíz se publicaban
 // en klendar.app (revisión del 3-11-2026, 5.4).
 const OUT = process.env.OUT || 'tools/out';
@@ -22,13 +26,6 @@ const OUT = process.env.OUT || 'tools/out';
 mkdirSync(OUT, { recursive: true });
 let fallos = 0;
 const ok = (c, m) => { if (!c) { fallos++; console.log('FALLA:', m); } else console.log('ok:', m); };
-
-const servidor = spawn(process.execPath, [fileURLToPath(new URL('./serve_dev.mjs', import.meta.url))], {
-  env: { ...process.env, PORT: String(PORT) }, stdio: 'ignore',
-});
-for (let i = 0; i < 50; i++) {
-  try { await fetch(`${BASE}/robots.txt`); break; } catch { await new Promise((r) => setTimeout(r, 200)); }
-}
 
 /** Lo bajado en lo que se desliza (el <body> en Descubre; si no, el documento). */
 const bajado = (page) => page.evaluate(() => Math.max(document.body.scrollTop, (document.scrollingElement || document.documentElement).scrollTop));
@@ -55,7 +52,7 @@ try {
       });
       const page = await ctx.newPage();
       const t = `[${nombre} ${disp}]`;
-      // Dev a veces da 500: se repite.
+      // Por si el servidor aún no ha calentado (la primera petición): se repite.
       for (let i = 0; i < 4; i++) {
         await page.goto(BASE + ruta, { waitUntil: 'domcontentloaded' });
         if (await page.locator('#feed > .tj').count()) break;
@@ -131,7 +128,7 @@ try {
     await nav.close();
   }
 } finally {
-  servidor.kill();
+  await web.cierra();
 }
 console.log(fallos ? `\n${fallos} FALLOS` : '\nTodo bien');
 process.exit(fallos ? 1 : 0);

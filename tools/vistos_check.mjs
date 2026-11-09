@@ -1,5 +1,4 @@
-// «Lo ya visto, al final» (Iván, 2026-10-28) en la web local, contra dev y
-// solo leyendo. El interruptor (`app_config.seen_last`) está apagado hasta
+// «Lo ya visto, al final» (Iván, 2026-10-28) en la web local, solo leyendo. El interruptor (`app_config.seen_last`) está apagado hasta
 // que se publique lo legal: el servidor local lo enciende con
 // VISTOS_FORZADO=1.
 //  1. Sin nada visto, Descubre y la lista salen en el orden de la base (la
@@ -16,27 +15,64 @@
 //  6. Sin errores en la consola.
 // Chromium y WebKit, móvil (375) y escritorio. Capturas en OUT.
 //
-//   VISTOS_FORZADO=1 SUPABASE_BLOQUEADO=1 PORT=8879 node tools/serve_dev.mjs &
-//   PW=<ruta a playwright> OUT=<carpeta> BASE=http://localhost:8879 node tools/vistos_check.mjs
+// Con sus propios datos (tools/_web_con_datos.mjs) y el interruptor
+// encendido en su serve_dev (`VISTOS_FORZADO=1`): en Madrid, una lista de
+// una sola página (diez planes de deporte) y otra de varias (sesenta
+// «Visitas y experiencias», tres páginas de 24). Antes iba contra dev (y
+// buscaba una categoría que ese día tuviera entre 6 y 23) y, desde que las
+// pruebas no llegan a Supabase (5-11), no había ninguna y fallaba siempre.
+//
+//   PW=<ruta a playwright> OUT=<carpeta> node tools/vistos_check.mjs
 import { mkdirSync } from 'node:fs';
-import { playwright, servidorSeguro } from './_supabase_simulado.mjs';
+import { playwright } from './_supabase_simulado.mjs';
+import { DATOS, webConDatos } from './_web_con_datos.mjs';
 
 const { chromium, webkit } = playwright();
-const BASE = process.env.BASE || 'http://localhost:8879';
-// La web local no puede llegar a Supabase (ver _supabase_simulado).
-await servidorSeguro(BASE);
+
+// «Visitas y experiencias» no está en los datos de serie: se añade, con sus
+// sitios (uno de deporte y uno de visitas, en Madrid) y sus planes.
+const EXPERIENCIAS = {
+  id: 'c0000000-0000-4000-8000-000000000013', slug: 'experiences', names: { es: 'Visitas y experiencias', en: 'Tours and experiences' },
+  name: 'Visitas y experiencias', position: 13, category_group: 'leisure', icon: 'experiences',
+};
+const CATEGORIAS = [...DATOS.CATEGORIAS, EXPERIENCIAS];
+const cat = (slug) => CATEGORIAS.find((c) => c.slug === slug);
+const sitio = (n, name, slug, lat, lng) => ({
+  ...DATOS.NEGOCIOS[0], id: `b9000000-0000-4000-8000-0000000000${n}`, name, slug: `${slug}-madrid`, lat, lng,
+  category_id: cat(slug === 'club-sonda' ? 'sport' : 'experiences').id, category_slug: slug === 'club-sonda' ? 'sport' : 'experiences',
+  names: cat(slug === 'club-sonda' ? 'sport' : 'experiences').names,
+});
+const CLUB = sitio('d1', 'Club Sonda', 'club-sonda', 40.4210, -3.6990);
+const VISITAS = sitio('d2', 'Visitas Sonda', 'visitas-sonda', 40.4140, -3.7080);
+const base = DATOS.PLANES.find((o) => o.kind === 'future_event' && !o.adults_only && !o.imported);
+/** [n] planes de [b], uno cada [cada] horas desde dentro de 2 h. */
+const planes = (b, n, pre, titulo, cada) => Array.from({ length: n }, (_, i) => {
+  const t = new Date(Date.now() + (2 + i * cada) * 36e5).toISOString();
+  return {
+    ...base, id: `a9000000-0000-4000-8000-${pre}${String(i).padStart(12 - pre.length, '0')}`, title: `${titulo} ${i + 1}`,
+    business_id: b.id, business_name: b.name, business_slug: b.slug, lat: b.lat, lng: b.lng,
+    category_id: b.category_id, category_slug: b.category_slug, event_at: t, starts_at: t, event_end_at: null, images: base.images,
+  };
+});
+const web = await webConDatos({
+  puerto: Number(process.env.PORT || 9016),
+  entorno: { VISTOS_FORZADO: '1' },
+  datos: {
+    ...DATOS, CATEGORIAS, NEGOCIOS: [...DATOS.NEGOCIOS, CLUB, VISITAS],
+    PLANES: [...DATOS.PLANES, ...planes(CLUB, 10, 'd1', 'Partido de pádel', 7), ...planes(VISITAS, 60, 'd2', 'Visita guiada', 3)],
+  },
+});
+const BASE = web.BASE;
 // Las capturas, en tools/out/ (git las ignora): en la raíz se publicaban
 // en klendar.app (revisión del 3-11-2026, 5.4).
 const OUT = process.env.OUT || 'tools/out';
-(await import('node:fs')).mkdirSync(OUT, { recursive: true });
 mkdirSync(OUT, { recursive: true });
 let fallos = 0;
 const ok = (c, m) => { if (!c) { fallos++; console.log('FALLA:', m); } else console.log('ok:', m); };
 
 // Una lista de una página (UNA, abajo) y las «Visitas y experiencias»
-// (seis páginas de 24).
-// Los datos de dev cambian con los días: se coge la primera que hoy tenga
-// entre 6 y 23 publicaciones (una sola página).
+// (varias páginas de 24). Se coge la primera que tenga entre 6 y 23
+// publicaciones (una sola página): con estos datos, la de deporte.
 const CANDIDATAS = ['sport', 'beauty', 'experiences', 'family', 'learning', 'books', 'music']
   .flatMap((c) => [`?ciudad=Madrid&categoria=${c}`, `?ciudad=Madrid&categoria=${c}&cuando=hoy`]);
 let UNA = null;
@@ -44,7 +80,7 @@ for (const q of CANDIDATAS) {
   const n = ((await (await fetch(`${BASE}/descubre/${q}`)).text()).match(/data-vh=/g) || []).length;
   if (n >= 6 && n < 24) { UNA = q; break; }
 }
-if (!UNA) { console.log('FALLA: no hay ninguna lista de una sola página en dev'); process.exit(1); }
+if (!UNA) { console.log('FALLA: no hay ninguna lista de una sola página'); process.exit(1); }
 console.log('una página:', UNA);
 // En la lista de Planes (Explorar abre en el calendario desde el 3-11-2026).
 const VARIAS = '?ciudad=Madrid&categoria=experiences&vista=lista';
@@ -197,5 +233,6 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
   }
   await nav.close();
 }
+await web.cierra();
 console.log(fallos ? `\n${fallos} FALLOS` : '\nTodo bien');
 process.exit(fallos ? 1 : 0);

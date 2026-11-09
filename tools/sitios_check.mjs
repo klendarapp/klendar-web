@@ -1,5 +1,5 @@
-// «Sitios en Explorar» (tanda D, 2026-10-20) en la web local, contra dev y
-// solo leyendo (sin sesión, no escribe nada):
+// «Sitios en Explorar» (tanda D, 2026-10-20) en la web local, solo leyendo
+// (sin sesión, no escribe nada):
 //  1. /explorar/?que=sitios: «Planes | Sitios» con Sitios puesto, Lista | Mapa,
 //     las filas (foto, nombre, categoría y distancia, el horario de ahora) y
 //     «N sitios»; sin desbordar a lo ancho en un móvil.
@@ -20,20 +20,58 @@
 // 10. Sin errores en la consola.
 // Chromium y WebKit, móvil (375) y escritorio. Capturas en OUT.
 //
-//   SUPABASE_BLOQUEADO=1 PORT=8857 node tools/serve_dev.mjs &
-//   PW=<ruta a playwright> OUT=<carpeta> BASE=http://localhost:8857 node tools/sitios_check.mjs
-import { mkdirSync } from 'node:fs';
-import { playwright, servidorSeguro } from './_supabase_simulado.mjs';
+// Con sus propios datos (tools/_web_con_datos.mjs): los sitios de Madrid con
+// su horario de ahora (`hours`, como `public_places`: abierto con cocina o
+// cerrado hasta mañana), Nails & Co para la lupa y `place_card` con la misma
+// fila que la lista (como la base: la tarjeta del mapa y la fila son el mismo
+// sitio). Antes iba contra dev y, desde que las pruebas no llegan a Supabase
+// (5-11), Sitios salía vacío y fallaba siempre.
+//
+//   PW=<ruta a playwright> OUT=<carpeta> node tools/sitios_check.mjs
+import { playwright } from './_supabase_simulado.mjs';
+import { DATOS, webConDatos } from './_web_con_datos.mjs';
 
 const { chromium, webkit } = playwright();
-const BASE = process.env.BASE || 'http://localhost:8857';
-// La web local no puede llegar a Supabase (ver _supabase_simulado).
-await servidorSeguro(BASE);
+const en = (h) => new Date(Date.now() + h * 36e5).toISOString();
+// El horario de ahora: casi todos abiertos (con cocina), alguno cerrado.
+const horario = (i) => (i % 3 === 2
+  ? { open: false, opens_at: en(20), closes_at: null, kitchen: null }
+  : { open: true, closes_at: en(5), opens_at: null, kitchen: i % 3 === 0 ? { open: true, until: en(3), opens_at: null } : null });
+const NAILS = {
+  ...DATOS.NEGOCIOS[0], id: 'b9000000-0000-4000-8000-0000000000e5', name: 'Nails & Co', slug: 'nails-co-madrid',
+  category_id: DATOS.CATEGORIAS.find((c) => c.slug === 'beauty').id, category_slug: 'beauty',
+  names: DATOS.CATEGORIAS.find((c) => c.slug === 'beauty').names, lat: 40.4190, lng: -3.7020,
+};
+const NEGOCIOS = [...DATOS.NEGOCIOS, NAILS].map((b, i) => ({ ...b, hours: horario(i), holiday: null }));
+const metros = (a, b, c, d) => {
+  const r = Math.PI / 180;
+  const x = Math.sin(((c - a) * r) / 2);
+  const y = Math.sin(((d - b) * r) / 2);
+  return 12742000 * Math.asin(Math.sqrt(x * x + Math.cos(a * r) * Math.cos(c * r) * y * y));
+};
+// Un día del calendario con más de 24 (para «por partes», punto 9): treinta
+// catas más en el Restaurante Ensayo, dentro de media hora.
+const CATAS = Array.from({ length: 30 }, (_, i) => ({
+  ...DATOS.PLANES.find((o) => o.title === 'Cata de vinos'), id: `a9000000-0000-4000-8000-0000000009${String(i).padStart(2, '0')}`,
+  title: `Cata de prueba ${i + 1}`, event_at: en(0.5), starts_at: en(0.5), event_end_at: en(2),
+}));
+const web = await webConDatos({
+  puerto: Number(process.env.PORT || 9018),
+  datos: { ...DATOS, NEGOCIOS, PLANES: [...DATOS.PLANES, ...CATAS] },
+  rpc: {
+    // La tarjeta del mapa: la misma fila que da `public_places`.
+    place_card: (a) => {
+      const b = NEGOCIOS.find((x) => x.id === a.p_business);
+      if (!b) return null;
+      return { ...b, distance_m: a.p_lat != null ? Math.round(metros(Number(a.p_lat), Number(a.p_lng), b.lat, b.lng)) : null };
+    },
+  },
+});
+const BASE = web.BASE;
 // Las capturas, en tools/out/ (git las ignora): en la raíz se publicaban
 // en klendar.app (revisión del 3-11-2026, 5.4).
 const OUT = process.env.OUT || 'tools/out';
 (await import('node:fs')).mkdirSync(OUT, { recursive: true });
-mkdirSync(OUT, { recursive: true });
 const AQUI = 'lat=40.417&lng=-3.704';
 let fallos = 0;
 const ok = (c, m) => { if (!c) { fallos++; console.log('FALLA:', m); } else console.log('ok:', m); };
@@ -194,5 +232,6 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
   }
   await nav.close();
 }
+await web.cierra();
 console.log(fallos ? `\n${fallos} fallo(s)` : '\ntodo bien');
 process.exit(fallos ? 1 : 0);

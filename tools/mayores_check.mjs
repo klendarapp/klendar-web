@@ -1,5 +1,5 @@
 // Contenido +18 sin cuenta y decisiones de la revisión de filtros (Iván,
-// 2026-10-27), en la web local contra dev y solo leyendo:
+// 2026-10-27), en la web local y solo leyendo:
 //  1. Sin contestar, una línea «Hay N resultados solo para mayores de 18.
 //     ¿Tienes 18 años o más?» solo donde hay algo +18 (Explorar: lista y
 //     calendario, que es lo primero que se ve desde el 3-11; y Sitios).
@@ -12,21 +12,58 @@
 //     «Más cerca» sin posición ni ciudad: lo dice y ofrece la ubicación.
 //  6. Sin errores en la consola.
 //
-//   SUPABASE_BLOQUEADO=1 PORT=8931 node tools/serve_dev.mjs &
-//   PW=<ruta a playwright> OUT=<carpeta> BASE=http://localhost:8931 OFERTA18=<id> node tools/mayores_check.mjs
-import { mkdirSync } from 'node:fs';
-import { playwright, servidorSeguro } from './_supabase_simulado.mjs';
+//
+// Con sus propios datos (tools/_web_con_datos.mjs): en Madrid hay un sitio
+// +18 (Sala Eco) con dos planes +18 (el concierto de esta noche y uno
+// agotado). Como en la base, lo +18 solo sale con la cabecera
+// `x-klendar-18: 1` (`viewer_sees_adults()`), que la web pone con la cookie
+// `klendar_18=1`; el falso de serie no la mira, así que aquí `public_explore`,
+// `public_places` y `offer_detail` la miran. Antes iba contra dev y, desde
+// que las pruebas no llegan a Supabase (5-11), no había nada +18 que
+// esconder y fallaba siempre.
+//
+//   PW=<ruta a playwright> OUT=<carpeta> node tools/mayores_check.mjs
+import { playwright } from './_supabase_simulado.mjs';
+import { DATOS, webConDatos } from './_web_con_datos.mjs';
 
 const { chromium, webkit } = playwright();
-const BASE = process.env.BASE || 'http://localhost:8931';
-// La web local no puede llegar a Supabase (ver _supabase_simulado).
-await servidorSeguro(BASE);
+const metros = (a, b, c, d) => {
+  const r = Math.PI / 180;
+  const x = Math.sin(((c - a) * r) / 2);
+  const y = Math.sin(((d - b) * r) / 2);
+  return 12742000 * Math.asin(Math.sqrt(x * x + Math.cos(a * r) * Math.cos(c * r) * y * y));
+};
+const plano = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+/** ¿La base enseña lo +18? Solo con la cabecera de «18 o más». */
+const ve18 = (req) => req?.headers?.['x-klendar-18'] === '1';
+/** En la zona pedida: un punto y su radio, una ciudad o, sin nada, todo. */
+const enZona = (x, a) => (a.p_lat != null && a.p_lng != null
+  ? metros(Number(a.p_lat), Number(a.p_lng), x.lat, x.lng) <= (Number(a.p_filters?.radius_m || a.p_radius_m) || 25000)
+  : a.p_city ? plano(x.city) === plano(a.p_city) || plano(x.city_id) === plano(a.p_city) : true);
+const pagina = (l, a) => {
+  const d = Number(a.p_offset) || 0;
+  return { items: l.slice(d, d + (Number(a.p_limit) || 24)), total: l.length };
+};
+const web = await webConDatos({
+  puerto: Number(process.env.PORT || 9010),
+  rpc: {
+    public_explore: (a, req) => pagina(DATOS.PLANES.filter((o) => o.status !== 'deleted' && enZona(o, a)
+      && (!a.p_kind || o.kind === a.p_kind) && (ve18(req) || !o.adults_only)), a),
+    public_places: (a, req) => pagina(DATOS.NEGOCIOS.filter((b) => enZona(b, a) && (ve18(req) || !b.adults_only))
+      .map((b) => ({ ...b, distance_m: a.p_lat != null ? Math.round(metros(Number(a.p_lat), Number(a.p_lng), b.lat, b.lng)) : null })), a),
+    offer_detail: (a, req) => {
+      const o = DATOS.PLANES.find((x) => x.id === a.p_id);
+      return o && (ve18(req) || !o.adults_only) ? [{ ...o }] : [];
+    },
+  },
+});
+const BASE = web.BASE;
+// Una publicación +18 (el concierto de esta noche en Sala Eco).
+const OFERTA18 = DATOS.PLANES.find((o) => o.adults_only && o.status === 'active').id;
 // Las capturas, en tools/out/ (git las ignora): en la raíz se publicaban
 // en klendar.app (revisión del 3-11-2026, 5.4).
 const OUT = process.env.OUT || 'tools/out';
 (await import('node:fs')).mkdirSync(OUT, { recursive: true });
-const OFERTA18 = process.env.OFERTA18 || '';
-mkdirSync(OUT, { recursive: true });
 let fallos = 0;
 const ok = (c, m) => { if (!c) { fallos++; console.log('FALLA:', m); } else console.log('ok:', m); };
 // Cuántas salen: Explorar ya no pinta el recuento (como la app, 3-11-2026);
@@ -138,5 +175,6 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
   }
   await nav.close();
 }
+await web.cierra();
 console.log(fallos ? `${fallos} FALLAN` : 'todo bien');
 process.exit(fallos ? 1 : 0);

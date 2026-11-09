@@ -12,16 +12,42 @@
 //     «Ese enlace ya no vale»;
 //  5. sin errores en la consola. Capturas en OUT.
 //
-//   SUPABASE_BLOQUEADO=1 PORT=8811 node tools/serve_dev.mjs &
+// Con sus propios datos (tools/_web_con_datos.mjs) y `klendar_coverage` como
+// en la base (migración 20261218100000 de la app: 'live' con negocios a
+// 25 km, 'coming' con una Ciudad de Klendar a 30 km, si no 'none'). Antes iba
+// contra dev y, desde que las pruebas no llegan a Supabase (5-11), Teruel no
+// salía «sin Klendar» y fallaba siempre.
+//
 //   PW=<ruta a playwright> OUT=<carpeta> node tools/crecer_check.mjs
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { playwright, SUPA, servidorSeguro } from './_supabase_simulado.mjs';
+import { playwright, SUPA } from './_supabase_simulado.mjs';
+import { DATOS, webConDatos } from './_web_con_datos.mjs';
 
 const { chromium, webkit } = playwright();
-const BASE = process.env.BASE || 'http://localhost:8811';
-// La web local no puede llegar a Supabase (ver _supabase_simulado).
-await servidorSeguro(BASE);
+const metros = (a, b, c, d) => {
+  const r = Math.PI / 180;
+  const x = Math.sin(((c - a) * r) / 2);
+  const y = Math.sin(((d - b) * r) / 2);
+  return 12742000 * Math.asin(Math.sqrt(x * x + Math.cos(a * r) * Math.cos(c * r) * y * y));
+};
+const web = await webConDatos({
+  puerto: Number(process.env.PORT || 9006),
+  rpc: {
+    klendar_coverage: (a) => {
+      const lat = Number(a.p_lat);
+      const lng = Number(a.p_lng);
+      const n = DATOS.NEGOCIOS.filter((b) => metros(lat, lng, b.lat, b.lng) <= 25000).length;
+      const c = DATOS.CIUDADES.map((x) => ({ x, d: metros(lat, lng, x.lat, x.lng) })).filter((x) => x.d <= 30000)
+        .sort((p, q) => p.d - q.d)[0]?.x;
+      return { status: n ? 'live' : c ? 'coming' : 'none', businesses_near: n, city_id: c?.id || null, city_name: c?.name || null };
+    },
+    // Un enlace que no es de nadie (como la base con un token desconocido).
+    confirm_city_waitlist: { ok: false },
+    leave_city_waitlist: { ok: false, zone: null },
+  },
+});
+const BASE = web.BASE;
 // Las capturas, en tools/out/ (git las ignora): en la raíz se publicaban
 // en klendar.app (revisión del 3-11-2026, 5.4).
 const OUT = process.env.OUT || 'tools/out';
@@ -102,6 +128,13 @@ for (const [nombreNav, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     ok('Descubre en Madrid: sin el estado «sin Klendar»', await page.locator('[data-avisame]').count() === 0);
 
     // 4. Las páginas del correo, con un enlace falso.
+    // El WebKit de Playwright (webkit-2359, Windows) se cae al mandar un
+    // formulario (POST) con la View Transition entre páginas de site.css
+    // (`@view-transition`, 2ed2151): la página «crashed», siempre, y sin esa
+    // regla no. Aquí se mira la página del correo, no el movimiento: en
+    // WebKit, con «Reducir movimiento» (sin la transición). Ver el informe
+    // del 9-11: hay que mirar si Safari de verdad también se cae.
+    if (nombreNav === 'webkit') await page.emulateMedia({ reducedMotion: 'reduce' });
     for (const que of ['confirmar', 'baja']) {
       await page.goto(`${BASE}/avisame/${que}/enlace-falso-de-prueba-0000000?lang=es`, { waitUntil: 'networkidle' });
       const robots = await page.locator('meta[name=robots]').getAttribute('content');
@@ -109,6 +142,10 @@ for (const [nombreNav, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
       await Promise.all([page.waitForNavigation({ waitUntil: 'networkidle' }), page.locator('form button[type=submit]').click()]);
       const h1 = (await page.locator('h1').first().textContent()) || '';
       ok(`/avisame/${que}: un enlace falso «ya no vale»`, /ya no vale/i.test(h1), h1);
+      // Lo ha preguntado a la base (no basta con que la página diga «ya no vale»).
+      const fn = que === 'confirmar' ? 'confirm_city_waitlist' : 'leave_city_waitlist';
+      ok(`/avisame/${que}: se lo pregunta a la base (${fn})`, web.llamadas.some((l) => l.fn === fn && l.args.p_token === 'enlace-falso-de-prueba-0000000'));
+      web.llamadas.length = 0;
       if (que === 'confirmar') await page.screenshot({ path: join(OUT, `web_avisame_enlace_malo_${pre}.png`) });
     }
 

@@ -14,17 +14,50 @@
 //  5. Al salir y volver (Descubre sin nada en la dirección), la de siempre.
 //  6. Sin desplazamiento horizontal ni errores de JavaScript.
 //
-// Chromium y WebKit, móvil (390 × 844). Contra la base de dev:
+// Chromium y WebKit, móvil (390 × 844). Con sus propios datos
+// (tools/_web_con_datos.mjs): un negocio de Madrid con su municipio
+// (`business_municipality_info`) y los municipios con `resolve_municipality`
+// y `search_municipalities` como en la base (migración 20261260100005 de la
+// app). Antes iba contra dev y, desde que las pruebas no llegan a Supabase
+// (5-11), la ficha salía sin «Más planes en …» y fallaba siempre.
 //
-//   SUPABASE_BLOQUEADO=1 PORT=8877 node tools/serve_dev.mjs &
-//   BASE=http://localhost:8877 PW=<ruta a playwright> node tools/mas_planes_visita_check.mjs
-import { playwright, servidorSeguro } from './_supabase_simulado.mjs';
+//   PW=<ruta a playwright> node tools/mas_planes_visita_check.mjs
+import { playwright } from './_supabase_simulado.mjs';
+import { DATOS, webConDatos } from './_web_con_datos.mjs';
 
 const { chromium, webkit } = playwright();
 
-const BASE = process.env.BASE || 'http://localhost:8877';
-// La web local no puede llegar a Supabase (ver _supabase_simulado).
-await servidorSeguro(BASE);
+// Como `municipality_json`; las Ciudades de Klendar (las «Populares») con su
+// posición, y Alcañiz, que no lo es.
+const MUNI = (code, slug, name, province, lat, lng, pos = null) => ({
+  code, slug, name, province, lat, lng, radius_m: pos ? 25000 : 10000, city_id: pos ? slug : null, popular: Boolean(pos), pos,
+});
+const MUNICIPIOS = [
+  MUNI('28079', 'madrid', 'Madrid', 'Madrid', 40.4168, -3.7038, 1),
+  MUNI('29067', 'malaga', 'Málaga', 'Málaga', 36.7213, -4.4214, 2),
+  MUNI('08019', 'barcelona', 'Barcelona', 'Barcelona', 41.3874, 2.1686, 3),
+  MUNI('44013', 'alcaniz', 'Alcañiz', 'Teruel', 41.0511, -0.1336),
+];
+const json = ({ pos, ...m }) => m;
+const slugify = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+const NAILS = {
+  ...DATOS.NEGOCIOS[0], id: 'b9000000-0000-4000-8000-0000000000e5', name: 'Nails & Co', slug: 'nails-co-madrid',
+  category_id: DATOS.CATEGORIAS.find((c) => c.slug === 'beauty').id, category_slug: 'beauty',
+};
+const web = await webConDatos({
+  puerto: Number(process.env.PORT || 9008),
+  datos: { ...DATOS, NEGOCIOS: [...DATOS.NEGOCIOS, NAILS], MUNICIPIOS },
+  rpc: {
+    resolve_municipality: (a) => {
+      const m = MUNICIPIOS.find((x) => x.slug === slugify(a.p_slug));
+      return m ? [{ municipality: json(m), match: 'slug' }] : [];
+    },
+    search_municipalities: (a) => (a.p_q ? MUNICIPIOS.filter((m) => slugify(m.name).startsWith(slugify(a.p_q)))
+      : MUNICIPIOS.filter((m) => m.pos).sort((x, y) => x.pos - y.pos)).map(json),
+    business_municipality_info: (a) => (a.p_business === NAILS.id ? json(MUNICIPIOS[0]) : null),
+  },
+});
+const BASE = web.BASE;
 let fallos = 0;
 const ok = (c, m) => { if (!c) { fallos++; console.log('FALLO:', m); } else console.log('ok:', m); };
 
@@ -127,5 +160,6 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
   await caso(nav, nombre);
   await nav.close();
 }
+await web.cierra();
 console.log(fallos ? `\n${fallos} fallos` : '\nTodo bien.');
 process.exit(fallos ? 1 : 0);

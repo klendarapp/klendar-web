@@ -2,16 +2,85 @@
 // «¿Dónde?», las páginas de municipio con su slug (301 desde las variantes y
 // las direcciones de antes, «¿Cuál de ellos?» con un homónimo), el enlace de la
 // ficha de un negocio a la página de su municipio y el sitemap.
-// Contra un servidor en marcha (con la base de dev, que tiene la tabla):
 //
-//   SUPABASE_BLOQUEADO=1 PORT=8797 node tools/serve_dev.mjs
-//   BASE=http://localhost:8797 node tools/espana_check.mjs
+// Con sus propios datos (tools/_web_con_datos.mjs): los municipios de abajo,
+// con sus slugs y sus otros nombres, y `resolve_municipality` /
+// `search_municipalities` como en la base (migración 20261260100005 de la
+// app). Antes iba contra la tabla de dev y, desde que las pruebas no llegan
+// a Supabase (5-11), fallaba siempre.
+//
+//   node tools/espana_check.mjs
 import assert from 'node:assert/strict';
-import { servidorSeguro } from './_supabase_simulado.mjs';
+import { DATOS, webConDatos } from './_web_con_datos.mjs';
 
-const BASE = process.env.BASE || 'http://localhost:8788';
-// La web local no puede llegar a Supabase (ver _supabase_simulado).
-await servidorSeguro(BASE);
+// ── Los municipios ────────────────────────────────────────────────────────
+// Como `municipality_json` (más `aliases`, `population` y la posición de su
+// Ciudad de Klendar, que solo usa este falso). Las Ciudades de Klendar, en
+// su orden (`cities.position`): son las «Populares».
+const MUNI = (code, slug, name, province, lat, lng, { ciudad = null, pos = null, aliases = [], population = 10000 } = {}) => ({
+  code, slug, name, province, lat, lng, radius_m: ciudad ? 25000 : 10000, city_id: ciudad, popular: Boolean(ciudad),
+  aliases, population, pos,
+});
+const MUNICIPIOS = [
+  MUNI('28079', 'madrid', 'Madrid', 'Madrid', 40.4168, -3.7038, { ciudad: 'madrid', pos: 1, population: 3300000 }),
+  MUNI('08019', 'barcelona', 'Barcelona', 'Barcelona', 41.3874, 2.1686, { ciudad: 'barcelona', pos: 2, population: 1660000 }),
+  MUNI('29067', 'malaga', 'Málaga', 'Málaga', 36.7213, -4.4214, { ciudad: 'malaga', pos: 3, population: 580000 }),
+  MUNI('15030', 'a-coruna', 'A Coruña', 'A Coruña', 43.3623, -8.4115, { ciudad: 'coruna', pos: 4, aliases: ['coruna', 'la-coruna'], population: 245000 }),
+  MUNI('07040', 'palma', 'Palma', 'Illes Balears', 39.5696, 2.6502, { ciudad: 'palma', pos: 5, aliases: ['palma-de-mallorca'], population: 420000 }),
+  MUNI('35016', 'las-palmas-de-gran-canaria', 'Las Palmas de Gran Canaria', 'Las Palmas', 28.1235, -15.4363,
+    { ciudad: 'laspalmas', pos: 6, aliases: ['laspalmas', 'las-palmas'], population: 380000 }),
+  MUNI('48020', 'bilbao', 'Bilbao', 'Bizkaia', 43.2630, -2.9350, { ciudad: 'bilbao', pos: 7, population: 345000 }),
+  MUNI('08101', 'l-hospitalet-de-llobregat', "L'Hospitalet de Llobregat", 'Barcelona', 41.3596, 2.0997,
+    { ciudad: 'hospitalet', pos: 8, aliases: ['hospitalet'], population: 265000 }),
+  MUNI('01059', 'vitoria-gasteiz', 'Vitoria-Gasteiz', 'Araba/Álava', 42.8467, -2.6716,
+    { ciudad: 'vitoria', pos: 9, aliases: ['vitoria', 'gasteiz'], population: 255000 }),
+  MUNI('38038', 'santa-cruz-de-tenerife', 'Santa Cruz de Tenerife', 'Santa Cruz de Tenerife', 28.4636, -16.2518,
+    { ciudad: 'santacruz', pos: 10, aliases: ['santa-cruz'], population: 210000 }),
+  MUNI('20069', 'donostia-san-sebastian', 'Donostia / San Sebastián', 'Gipuzkoa', 43.3183, -1.9812,
+    { aliases: ['donostia', 'san-sebastian'], population: 188000 }),
+  MUNI('03065', 'elx-elche', 'Elx / Elche', 'Alacant/Alicante', 38.2699, -0.7126, { aliases: ['elche', 'elx'], population: 235000 }),
+  MUNI('46244', 'torrent-valencia', 'Torrent', 'Valencia/València', 39.4371, -0.4655, { aliases: ['torrent'], population: 85000 }),
+  MUNI('17199', 'torrent-girona', 'Torrent', 'Girona', 41.9531, 3.1272, { aliases: ['torrent'], population: 180 }),
+  MUNI('44013', 'alcaniz', 'Alcañiz', 'Teruel', 41.0511, -0.1336, { population: 16000 }),
+  MUNI('37274', 'salamanca', 'Salamanca', 'Salamanca', 40.9701, -5.6635, { population: 144000 }),
+];
+// Lo que devuelve la base: sin lo que solo usa este falso.
+const json = ({ aliases, population, pos, ...m }) => m;
+const plano = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+// `public.slugify`: sin tildes ni mayúsculas, lo demás a guiones.
+const slugify = (s) => plano(s).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+
+// Un negocio de Madrid (su ficha enlaza a la página de su municipio).
+const NAILS = {
+  ...DATOS.NEGOCIOS[0], id: 'b9000000-0000-4000-8000-0000000000e5', name: 'Nails & Co', slug: 'nails-co-madrid',
+  category_id: DATOS.CATEGORIAS.find((c) => c.slug === 'beauty').id, category_slug: 'beauty',
+};
+const web = await webConDatos({
+  puerto: Number(process.env.PORT || 9004),
+  datos: { ...DATOS, NEGOCIOS: [...DATOS.NEGOCIOS, NAILS], MUNICIPIOS },
+  rpc: {
+    // Como en la base: el slug bueno ('slug'), otro de sus nombres ('alias',
+    // 301) o un homónimo sin provincia ('choice', a elegir).
+    resolve_municipality: (a) => {
+      const s = slugify(String(a.p_slug || '').slice(0, 80));
+      if (!s) return [];
+      const m = MUNICIPIOS.find((x) => x.slug === s);
+      if (m) return [{ municipality: json(m), match: 'slug' }];
+      const l = MUNICIPIOS.filter((x) => x.aliases.includes(s)).sort((x, y) => y.population - x.population);
+      return l.map((x) => ({ municipality: json(x), match: l.length === 1 ? 'alias' : 'choice' }));
+    },
+    // Sin texto, las «Populares» (las Ciudades de Klendar, en su orden); con
+    // texto, los que tienen una palabra que empieza así.
+    search_municipalities: (a) => {
+      const q = slugify(a.p_q || '').replace(/-/g, ' ');
+      if (!q) return MUNICIPIOS.filter((m) => m.city_id).sort((x, y) => x.pos - y.pos).map(json);
+      return MUNICIPIOS.filter((m) => ` ${slugify(m.name).replace(/-/g, ' ')}`.includes(` ${q}`))
+        .sort((x, y) => y.population - x.population).slice(0, Number(a.p_limit) || 8).map(json);
+    },
+    business_municipality_info: (a) => (a.p_business === NAILS.id ? json(MUNICIPIOS[0]) : null),
+  },
+});
+const BASE = web.BASE;
 let bien = 0;
 let total = 0;
 const check = (nombre, ok, detalle = '') => {
@@ -88,7 +157,7 @@ for (const [ruta, hoy, semana, frase, descubre] of [
 }
 
 // Las páginas de las cuatro nuevas: la agenda con su nombre; «Hoy» como
-// la de cualquier ciudad sin planes (Salamanca en dev: 404 hasta que haya).
+// la de cualquier municipio sin planes (Salamanca: la página vacía, sin indexar).
 {
   const hoySin = (await pide('/hoy/salamanca/')).status;
   for (const [slug, nombre] of [['las-palmas-de-gran-canaria', 'Las Palmas de Gran Canaria'],
@@ -107,5 +176,6 @@ for (const [ruta, hoy, semana, frase, descubre] of [
   check('sitemap-agenda.xml contesta', r.status === 200, r.status);
 }
 assert.ok(total > 0);
+await web.cierra();
 console.log(`\n${bien}/${total} comprobaciones`);
 process.exit(bien === total ? 0 : 1);

@@ -3,17 +3,43 @@
 // latido (`.mov-late`), sin esperar a la base; si la base dice que no, vuelve
 // atrás y el aviso lo dice («Demasiados intentos…» con `rate_limited`). Y si
 // dice que sí, se queda y avisa con el texto de la app.
-// Contra dev para la página y con la base simulada para lo personal (no se
-// escribe nada de verdad).
+// Con sus propios datos (tools/_web_con_datos.mjs) para la página: dos
+// partidos simulados (`where_to_watch` y `broadcast_detail`, con la forma de
+// las migraciones 20261260100008 y 20261260100070 de la app); y la base
+// simulada para lo personal (no se escribe nada de verdad). Antes cogía un
+// partido de dev y, desde que las pruebas no llegan a Supabase (5-11),
+// /partidos/ salía vacío y fallaba siempre.
 //
-//   SUPABASE_BLOQUEADO=1 PORT=8821 node tools/serve_dev.mjs &
-//   PW=<ruta a playwright> BASE=http://localhost:8821 node tools/seguir_optimista_check.mjs
-import { playwright, REF, SUPA, servidorSeguro } from './_supabase_simulado.mjs';
+//   PW=<ruta a playwright> node tools/seguir_optimista_check.mjs
+import { playwright, REF, SUPA } from './_supabase_simulado.mjs';
+import { webConDatos } from './_web_con_datos.mjs';
 
 const { chromium } = playwright();
-const BASE = process.env.BASE || 'http://localhost:8821';
-// La web local no puede llegar a Supabase (ver _supabase_simulado).
-await servidorSeguro(BASE);
+const uid = (n) => `d0000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
+const EQ = (n, name) => ({ id: uid(100 + n), kind: 'team', sport: 'football', name, full_name: name, competition: null, context: 'LaLiga', following: false });
+const LALIGA = { id: uid(200), kind: 'competition', sport: 'football', name: 'LaLiga', full_name: 'LaLiga', competition: 'laliga', context: null, following: false };
+const PARTIDO = (n, home, away, dias) => {
+  const teams = [EQ(2 * n, home), EQ(2 * n + 1, away)];
+  const empieza = new Date(Date.now() + dias * 864e5).toISOString();
+  return {
+    id: uid(n), sport: 'football', competition: 'LaLiga', competition_code: 'laliga', competition_sort: 10,
+    title: `${home} – ${away}`, home, away, starts_at: empieza, ends_at: empieza, time_confirmed: true, status: 'scheduled',
+    source: 'thesportsdb', teams, follow: [...teams, LALIGA], bars: 0, offers: 0, nearest_m: null,
+  };
+};
+const PARTIDOS = [PARTIDO(1, 'Real Madrid', 'Barça', 1), PARTIDO(2, 'Real Betis', 'Sevilla', 2)];
+const web = await webConDatos({
+  puerto: Number(process.env.PORT || 9002),
+  rpc: {
+    where_to_watch: (a) => (a.p_all || a.p_q ? PARTIDOS : []),
+    broadcast_competitions: () => [{ key: 'laliga', name: 'LaLiga', sport: 'football', count: PARTIDOS.length }],
+    broadcast_detail: (a) => {
+      const b = PARTIDOS.find((x) => x.id === a.p_broadcast);
+      return b ? { ...b, live: true, radius_m: null, bars: [] } : null;
+    },
+  },
+});
+const BASE = web.BASE;
 const U = '0e7717e0-0000-4000-8000-00000000f001';
 let fallos = 0;
 const ok = (c, m) => { if (!c) { fallos++; console.log('FALLO:', m); } else console.log('ok:', m); };
@@ -24,7 +50,7 @@ const USER = { id: U, aud: 'authenticated', role: 'authenticated', email: 'segui
 const sesion = JSON.stringify({ access_token: jwt(), refresh_token: 'r', token_type: 'bearer', expires_in: 3600, expires_at: 4102444800, user: USER });
 
 const nav = await chromium.launch();
-// Un partido de verdad de dev con su «Seguir a …».
+// Un partido con su «Seguir a …».
 const p0 = await nav.newPage();
 await p0.goto(`${BASE}/partidos/`, { waitUntil: 'networkidle' });
 const enlaces = await p0.locator('a.partido').evaluateAll((l) => l.map((a) => a.getAttribute('href')).slice(0, 8));
@@ -80,5 +106,6 @@ for (const [caso, respuesta] of [['falla', { ok: false, error: 'rate_limited' }]
   await ctx.close();
 }
 await nav.close();
+await web.cierra();
 console.log(fallos ? `\n${fallos} FALLOS` : '\nTodo bien');
 process.exit(fallos ? 1 : 0);
