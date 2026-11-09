@@ -23,12 +23,12 @@ let fallos = 0;
 const ok = (c, m) => { if (!c) { fallos++; console.log('FALLO:', m); } else console.log('ok:', m); };
 
 const PAGINAS = [
-  ['/cookies/', 'Última actualización: 4 de noviembre de 2026', [
+  ['/cookies/', 'Última actualización: 9 de noviembre de 2026', [
     /klendar\.sorteosWeb\s+Todo klendar\.app \(almacenamiento de sesión\)\s+Recordar si los sorteos están encendidos/,
     /klendar\.tab\s+Todo klendar\.app \(almacenamiento de sesión\)\s+Que la barra de abajo deje marcada la pestaña de la que vienes/,
     /3 de noviembre de 2026: Dos claves de sesión más/,
   ], []],
-  ['/en/cookies/', 'Last updated: 4 November 2026', [
+  ['/en/cookies/', 'Last updated: 9 November 2026', [
     /klendar\.sorteosWeb\s+All of klendar\.app \(session storage\)\s+Remember whether giveaways are on/,
     /klendar\.tab\s+All of klendar\.app \(session storage\)\s+Keep the bottom bar on the tab you came from/,
     /3 November 2026: Two more session keys/,

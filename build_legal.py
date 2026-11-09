@@ -364,7 +364,11 @@ ACTUALIZADO = {
     # 2026-11-04 (L5 de la revisión del 5-11, aprobado por Iván el 4-11 y
     # publicado ese día): Turnstile en la app, en una vista web que se prepara
     # al abrir la pantalla y solo se ve si hay que marcar la casilla.
-    'cookies': {'es': '4 de noviembre de 2026', 'en': '4 November 2026'},
+    # 2026-11-09 (aprobado por Iván el 9-11 y publicado ese día; app 5b95d243):
+    # la vista web de Turnstile en la app se prepara también justo antes, en la
+    # última pantalla de la bienvenida y en Cuenta sin sesión. Informativo, sin
+    # versión nueva ni aviso.
+    'cookies': {'es': '9 de noviembre de 2026', 'en': '9 November 2026'},
     'eliminar-cuenta': {'es': '27 de octubre de 2026', 'en': '27 October 2026'},
     'soporte': {'es': '28 de octubre de 2026', 'en': '28 October 2026'},
     # 2026-10-01 (segunda tanda, R4 de la revisión legal): los términos
@@ -913,6 +917,10 @@ CAMBIOS = {
          'Service description brought up to date (section 2); honouring stamp rewards and the birthday gift, final price including VAT and the 30-day previous price in reductions (section 3); automatic moderation and 6 months to ask for a review (section 6).'),
         _INICIO],
     'cookies': [
+        ('9 de noviembre de 2026',
+         'En la app, la vista web de la comprobación anti-robots se prepara también justo antes de usarla: en la última pantalla de la bienvenida y en Cuenta si no has entrado.',
+         '9 November 2026',
+         "In the app, the anti-bot check's web view is also prepared just before you use it: on the last welcome screen and in Account if you're not logged in."),
         ('4 de noviembre de 2026',
          'En la app, la comprobación anti-robots se hace en una vista web de klendar.app/captcha/ que se prepara al abrir esas pantallas y solo se ve si hay que marcar la casilla.',
          '4 November 2026',
@@ -1189,14 +1197,14 @@ def textos_turnstile():
             'fila': '<tr><td>Comprobación anti-robots</td><td>Tu dirección IP y datos técnicos del navegador o del móvil, que trata Cloudflare (Turnstile) para darnos un sí o un no</td><td>Evitar cuentas falsas, envíos automáticos de denuncias o de apuntarse a «Avísame cuando llegue» y el abuso de los códigos por correo o SMS</td><td>Interés legítimo (art. 6.1.f RGPD) en la seguridad del servicio</td><td>No guardamos nada: Cloudflare trata esos datos según su acuerdo de encargado</td></tr>\n',
             'intro': '<p>Recibe tu dirección IP, como cualquier web que visitas, y no guarda cookies:</p>\n',
             'li': '',
-            'p': '<p><strong>Cloudflare Turnstile</strong>: cuando está activada, la comprobación anti-robots al crear la cuenta, entrar, pedir un código o recuperar la contraseña, y en lo que se manda sin cuenta (denunciar, «Avísame cuando llegue»). Se carga solo al abrir esas pantallas, no en el resto de la web; Cloudflare recibe tu dirección IP y datos técnicos del navegador para distinguir a una persona de un programa, y puede guardar datos técnicos en tu navegador (dentro de su propio marco, en challenges.cloudflare.com) solo para esa comprobación. Es estrictamente necesario para la seguridad del servicio, no se usa para publicidad ni para seguirte entre sitios y no pide tu consentimiento. En la app, la misma comprobación se hace en una vista web de klendar.app/captcha/ que se prepara al abrir esas pantallas y solo se ve si hay que marcar la casilla.</p>\n',
+            'p': '<p><strong>Cloudflare Turnstile</strong>: cuando está activada, la comprobación anti-robots al crear la cuenta, entrar, pedir un código o recuperar la contraseña, y en lo que se manda sin cuenta (denunciar, «Avísame cuando llegue»). Se carga solo al abrir esas pantallas, no en el resto de la web; Cloudflare recibe tu dirección IP y datos técnicos del navegador para distinguir a una persona de un programa, y puede guardar datos técnicos en tu navegador (dentro de su propio marco, en challenges.cloudflare.com) solo para esa comprobación. Es estrictamente necesario para la seguridad del servicio, no se usa para publicidad ni para seguirte entre sitios y no pide tu consentimiento. En la app, la misma comprobación se hace en una vista web de klendar.app/captcha/ que se prepara al abrir esas pantallas o justo antes, cuando vas a usarlas (en la última pantalla de la bienvenida y en Cuenta si no has entrado), y solo se ve si hay que marcar la casilla.</p>\n',
         },
         'en': {
             'cloudflare': 'and, when enabled, runs the anti-bot check (Turnstile) when you create an account, log in, request a code or reset your password, on the website and in the app, and on what is sent without an account (reporting content on the website, or “Tell me when it arrives”)',
             'fila': "<tr><td>Anti-bot check</td><td>Your IP address and technical browser or phone data, processed by Cloudflare (Turnstile) to give us a yes or no</td><td>Preventing fake accounts, automated reports or “Tell me when it arrives” sign-ups, and abuse of email or SMS codes</td><td>Legitimate interest (art. 6.1.f GDPR) in the security of the service</td><td>We don't store anything: Cloudflare processes that data under its processor agreement</td></tr>\n",
             'intro': '<p>It receives your IP address, like any website you visit, and sets no cookies:</p>\n',
             'li': '',
-            'p': '<p><strong>Cloudflare Turnstile</strong>: when enabled, the anti-bot check when you create an account, log in, request a code or reset your password, and on what is sent without an account (reporting, “Tell me when it arrives”). It only loads when you open those screens, not on the rest of the website; Cloudflare receives your IP address and technical browser data to tell a person from a program, and may store technical data in your browser (inside its own frame, on challenges.cloudflare.com) only for that check. It is strictly necessary for the security of the service, is not used for advertising or to track you across sites and does not ask for your consent. In the app, the same check runs in a web view of klendar.app/captcha/ that is prepared when you open those screens and only shows if you need to tick the box.</p>\n',
+            'p': '<p><strong>Cloudflare Turnstile</strong>: when enabled, the anti-bot check when you create an account, log in, request a code or reset your password, and on what is sent without an account (reporting, “Tell me when it arrives”). It only loads when you open those screens, not on the rest of the website; Cloudflare receives your IP address and technical browser data to tell a person from a program, and may store technical data in your browser (inside its own frame, on challenges.cloudflare.com) only for that check. It is strictly necessary for the security of the service, is not used for advertising or to track you across sites and does not ask for your consent. In the app, the same check runs in a web view of klendar.app/captcha/ that is prepared when you open those screens or just before, when you are about to use them (on the last welcome screen and in Account if you are not logged in), and only shows if you need to tick the box.</p>\n',
         },
     }
 

@@ -12,7 +12,10 @@
 //  4. Aviso legal (ES y EN): fecha del 4-11, «NIF» (no «NIF/CIF») y su línea
 //     en el historial; /negocios/: la línea del fuero (L2).
 //  5. Cookies: Turnstile en la app, en una vista web que se prepara al abrir
-//     la pantalla (L5); términos: «si aún no los has usado» (L6); privacidad:
+//     la pantalla (L5) o, desde el 9-11 (app 5b95d243), justo antes: en la
+//     última pantalla de la bienvenida y en Cuenta sin sesión, con su línea
+//     del 9-11 y la fecha de ese día; términos: «si aún no los has usado»
+//     (L6); privacidad:
 //     «y si una validación se deshizo» (L8). Cada uno con su línea del 4-11.
 //  6. Sin desplazamiento horizontal ni errores de JavaScript.
 //
@@ -71,14 +74,16 @@ const PAGINAS = [
     /For businesses, the parties submit to the courts of Málaga\./,
     /4 November 2026: The jurisdiction is filled in \(section 9\): the courts of Málaga\./,
   ], [], []],
-  ['/cookies/', 'Última actualización: 4 de noviembre de 2026', [
-    /En la app, la misma comprobación se hace en una vista web de klendar\.app\/captcha\/ que se prepara al abrir esas pantallas y solo se ve si hay que marcar la casilla\./,
+  ['/cookies/', 'Última actualización: 9 de noviembre de 2026', [
+    /En la app, la misma comprobación se hace en una vista web de klendar\.app\/captcha\/ que se prepara al abrir esas pantallas o justo antes, cuando vas a usarlas \(en la última pantalla de la bienvenida y en Cuenta si no has entrado\), y solo se ve si hay que marcar la casilla\./,
     /4 de noviembre de 2026: En la app, la comprobación anti-robots se hace en una vista web de klendar\.app\/captcha\//,
-  ], [/pequeña ventana/], []],
-  ['/en/cookies/', 'Last updated: 4 November 2026', [
-    /In the app, the same check runs in a web view of klendar\.app\/captcha\/ that is prepared when you open those screens and only shows if you need to tick the box\./,
+    /9 de noviembre de 2026: En la app, la vista web de la comprobación anti-robots se prepara también justo antes de usarla: en la última pantalla de la bienvenida y en Cuenta si no has entrado\./,
+  ], [/pequeña ventana/, /misma comprobación se hace en una vista web de klendar\.app\/captcha\/ que se prepara al abrir esas pantallas y solo/], []],
+  ['/en/cookies/', 'Last updated: 9 November 2026', [
+    /In the app, the same check runs in a web view of klendar\.app\/captcha\/ that is prepared when you open those screens or just before, when you are about to use them \(on the last welcome screen and in Account if you are not logged in\), and only shows if you need to tick the box\./,
     /4 November 2026: In the app, the anti-bot check runs in a web view of klendar\.app\/captcha\//,
-  ], [/small window/], []],
+    /9 November 2026: In the app, the anti-bot check's web view is also prepared just before you use it: on the last welcome screen and in Account if you're not logged in\./,
+  ], [/small window/, /same check runs in a web view of klendar\.app\/captcha\/ that is prepared when you open those screens and only/], []],
   ['/terminos/', 'Última actualización: 5 de noviembre de 2026', [
     /y se quitan el sello o el cupón que te hubiera dado ese canje, si aún no los has usado\./,
     /4 de noviembre de 2026: Ofertas y canjes \(apartado 3\): al deshacer una validación, el sello o el cupón que te hubiera dado ese canje solo se quitan si aún no los has usado\./,
