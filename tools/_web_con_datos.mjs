@@ -11,9 +11,11 @@
 //  - su serve_dev, con las Functions leyendo de él (SUPABASE_URL) y
 //    diciéndole al navegador `${SUPA}` (como config.js), y Supabase de verdad
 //    cortado (SUPABASE_BLOQUEADO, lo hereda de _supabase_simulado.mjs);
-//  - `conDatos(ctx)`: lo que el navegador pida a `${SUPA}` va también a este
-//    falso (sin sesión: la prueba que la necesite enruta lo suyo DESPUÉS, y
-//    manda).
+//  - el navegador también: cada contexto de Playwright (los de
+//    `playwright()` de _supabase_simulado, creados después de arrancar esto)
+//    manda lo de `${SUPA}` a este falso, sin sesión. La prueba que necesite
+//    otra cosa (una sesión, una escritura) enruta lo suyo en su contexto y
+//    manda, porque va después. `conDatos(ctx)` lo hace a mano.
 //
 // Cada prueba puede cambiar o añadir lo suyo: `rpc: { nombre: (args, req) =>
 // respuesta }` y `tablas: { nombre: [filas] }`. Lo que pide se apunta en
@@ -28,7 +30,7 @@
 import { spawn } from 'node:child_process';
 import { createServer } from 'node:http';
 import { fileURLToPath } from 'node:url';
-import { SUPA, servidorSeguro } from './_supabase_simulado.mjs';
+import { SUPA, playwright, servidorSeguro } from './_supabase_simulado.mjs';
 
 // ── Los datos ─────────────────────────────────────────────────────────────
 const AHORA = Date.now();
@@ -102,7 +104,10 @@ const PLAN = (n, negocio, extra) => {
     ...extra,
   };
 };
-const FOTO = (n) => [{ url: `https://images.example.com/foto-${n}.jpg`, width: 1200, height: 900 }];
+// Las fotos, en el Storage de `${SUPA}` (el navegador lo pide al falso, que da una imagen pequeña).
+const FOTO = (n) => [`${SUPA}/storage/v1/object/public/business-images/b9000000/foto-${n}.webp`];
+/** La imagen genérica que pone la importación de la agenda (`business-images/agenda/<cat>.webp`). */
+const GENERICA = (slug) => [`${SUPA}/storage/v1/object/public/business-images/agenda/${slug}.webp`];
 export const PLANES = [
   // Ofertas flash, ahora.
   PLAN(1, 1, { kind: 'flash_offer', title: 'Cañas 2x1', discount: { type: '2x1' }, starts_at: iso(-1), redeem_start_at: iso(-1), redeem_end_at: iso(3), seats_left: 20, images: FOTO(1) }),
@@ -124,7 +129,7 @@ export const PLANES = [
   ...Array.from({ length: 8 }, (_, i) => PLAN(30 + i, i % 2 ? 6 : 9, {
     kind: 'future_event', title: `Exposición de prueba ${i + 1}`, imported: true, entity_kind: 'council',
     event_at: aLas(i, 10), starts_at: aLas(i, 10), event_end_at: aLas(i, 20), all_day: i % 3 === 0,
-    images: [], source_name: 'Datos abiertos del Ayuntamiento de Madrid', source_url: 'https://datos.madrid.es/',
+    images: GENERICA('culture'), source_name: 'Datos abiertos del Ayuntamiento de Madrid', source_url: 'https://datos.madrid.es/',
   })),
 ];
 
@@ -138,6 +143,8 @@ export const MUNICIPIOS = [
 ];
 
 export const DATOS = { CIUDADES, CATEGORIAS, NEGOCIOS, PLANES, MUNICIPIOS };
+
+const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64');
 
 // ── Las respuestas ────────────────────────────────────────────────────────
 const metros = (a, b, c, d) => {
@@ -285,6 +292,11 @@ export async function webConDatos({ puerto = 8901, puertoFalso = puerto + 1, rpc
           const uno = /vnd\.pgrst\.object/.test(req.headers.accept || '');
           return manda(uno ? filas[0] || null : filas, uno && !filas.length ? 406 : 200, { 'content-range': `0-${Math.max(filas.length - 1, 0)}/${filas.length}` });
         }
+        // Las fotos: una imagen de 1 px (PNG), sea cual sea su nombre.
+        if (p.startsWith('/storage/v1/')) {
+          res.writeHead(200, { 'content-type': 'image/png', 'cache-control': 'max-age=3600', ...cors });
+          return res.end(PNG);
+        }
         if (p === '/auth/v1/settings') return manda({ external: { email: true, google: true }, disable_signup: false });
         if (p.startsWith('/auth/v1/user')) return manda({ code: 401, msg: 'sin sesión' }, 401);
         if (p.startsWith('/functions/v1/')) { llamadas.push({ fn: `function:${p.slice(14)}`, args }); return manda({}); }
@@ -321,5 +333,28 @@ export async function webConDatos({ puerto = 8901, puertoFalso = puerto + 1, rpc
     if (ctx.routeWebSocket) await ctx.routeWebSocket(new RegExp(`^wss://[^/]*\\.supabase\\.co/realtime/`), () => { /* mudo */ });
     return ctx;
   };
+  ACTIVO = conDatos;
+  conNavegadores();
   return { BASE, FALSO, llamadas, conDatos, cierra, datos: D };
+}
+
+// Los contextos nuevos de Playwright hablan con el último falso arrancado.
+let ACTIVO = null;
+function conNavegadores() {
+  let pw = null;
+  try { pw = playwright(); } catch { return; } // sin Playwright (una prueba sin navegador)
+  for (const tipo of [pw.chromium, pw.webkit, pw.firefox].filter(Boolean)) {
+    if (tipo.__conDatos) continue;
+    tipo.__conDatos = true;
+    const lanza = tipo.launch.bind(tipo);
+    tipo.launch = async (...a) => {
+      const nav = await lanza(...a);
+      const nuevo = nav.newContext.bind(nav);
+      // browser.newPage() también pasa por aquí (llama a this.newContext).
+      nav.newContext = async (...b) => { const ctx = await nuevo(...b); return ACTIVO ? ACTIVO(ctx) : ctx; };
+      return nav;
+    };
+    const persistente = tipo.launchPersistentContext.bind(tipo);
+    tipo.launchPersistentContext = async (...a) => { const ctx = await persistente(...a); return ACTIVO ? ACTIVO(ctx) : ctx; };
+  }
 }

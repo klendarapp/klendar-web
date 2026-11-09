@@ -4,17 +4,21 @@
 // «Ver solo la foto». Mira la ficha `/o/`, Explorar con «Agenda pública» y
 // Descubre, en Chromium y WebKit, móvil y escritorio. Guarda capturas en OUT.
 //
-//   SUPABASE_BLOQUEADO=1 PORT=8791 node tools/serve_dev.mjs &
-//   OFFER=<id de un evento importado sin foto> OUT=<carpeta> node tools/agenda_arte_check.mjs
-import { playwright, servidorSeguro } from './_supabase_simulado.mjs';
+// Con sus propios datos (tools/_web_con_datos.mjs: la agenda pública de
+// Madrid con la imagen genérica de «Cultura»); antes leía un evento de dev y,
+// desde que las pruebas no llegan a Supabase (5-11), fallaba siempre.
+//
+//   PW=<ruta a playwright> OUT=<carpeta> node tools/agenda_arte_check.mjs
+import { playwright } from './_supabase_simulado.mjs';
+import { PLANES, webConDatos } from './_web_con_datos.mjs';
 
 // Playwright no es dependencia del repo: el de la caché de npx (PW=ruta) o el instalado.
 const { chromium, webkit } = playwright();
 
-const BASE = process.env.BASE || 'http://localhost:8791';
-// La web local no puede llegar a Supabase (ver _supabase_simulado).
-await servidorSeguro(BASE);
-const OFFER = process.env.OFFER;
+const web = await webConDatos({ puerto: Number(process.env.PORT || 8903) });
+const BASE = web.BASE;
+// Un evento importado sin foto (con la genérica de su categoría).
+const OFFER = PLANES.find((o) => o.imported).id;
 // Las capturas, en tools/out/ (git las ignora): en la raíz se publicaban
 // en klendar.app (revisión del 3-11-2026, 5.4).
 const OUT = process.env.OUT || 'tools/out';
@@ -63,5 +67,6 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
   }
   await nav.close();
 }
+await web.cierra();
 console.log(fallos ? `${fallos} fallo(s)` : 'Todo bien');
 process.exit(fallos ? 1 : 0);
