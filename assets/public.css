@@ -606,7 +606,7 @@ body.con-hoja { overflow: hidden; }
    dentro, después del final, como antes. Sin `:has()` (navegadores viejos)
    el documento hace scroll como siempre. */
 html:has(body.pagina-feed) { height: 100%; overflow: hidden; overscroll-behavior: none; scrollbar-gutter: auto; }
-body.pagina-feed { --cab: 64px; --feed-w: 100vw; --feed-x: 0px; --feed-vp: 100vh; --feed-alto: var(--feed-vp); --feed-arriba: 116px;
+body.pagina-feed { --cab: 64px; --feed-w: calc(100vw - var(--sb, 0px)); --feed-x: 0px; --feed-vp: 100vh; --feed-alto: var(--feed-vp); --feed-arriba: 116px;
   --feed-abajo: calc(78px + env(safe-area-inset-bottom)); --velo-arriba: var(--cab);
   box-sizing: border-box; height: 100%; overflow-x: hidden; overflow-y: auto; overscroll-behavior-y: contain;
   /* Su barra, en el sitio de la del documento en las demás páginas (la
@@ -670,7 +670,7 @@ body.pagina-feed[data-cromo="fuera"] .feed-cab { visibility: hidden; }
   body.pagina-feed:not([data-cromo="tema"]):not([data-cromo="fuera"]) .feed-cab :is(a, button).chip { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
   body.pagina-feed:not([data-cromo="tema"]):not([data-cromo="fuera"]) .feed-cab .chip.on { background: #fff; color: #0A0A0A; border-color: #fff; }
   /* La cabecera de la web, encima de la foto (como la de Descubre en la app). */
-  .pagina-feed header.top { position: fixed; left: 0; right: 0; top: 0; z-index: 26; }
+  .pagina-feed header.top { position: fixed; left: 0; right: var(--sb, 0px); top: 0; z-index: 26; }
   body.pagina-feed:not([data-cromo="tema"]):not([data-cromo="fuera"]) header.top { background: transparent; border-bottom-color: transparent;
     backdrop-filter: none; -webkit-backdrop-filter: none; }
   body.pagina-feed:not([data-cromo="tema"]):not([data-cromo="fuera"]) header.top .brand { color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.35); }
@@ -698,7 +698,7 @@ body.pagina-feed[data-cromo="fuera"] .feed-cab { visibility: hidden; }
 @media (min-width: 761px) {
   body.pagina-feed { --cab: 65px; --barra: 56px; --hueco: 12px; scroll-padding-top: 133px;
     --feed-alto: calc(var(--feed-vp) - var(--cab) - var(--barra) - 2 * var(--hueco)); --feed-w: calc(var(--feed-alto) * 9 / 16);
-    --feed-x: calc(50% - var(--feed-w) / 2); --feed-arriba: 0px; --feed-abajo: 12px; }
+    --feed-x: calc((100% - var(--sb, 0px) - var(--feed-w)) / 2); --feed-arriba: 0px; --feed-abajo: 12px; }
   .pagina-feed header.top { background: var(--surface); }
   .pagina-feed .feed { padding-top: calc(var(--barra) + var(--hueco)); }
   .pagina-feed .feed > .tj, .pagina-feed .feed > .feed-fin, .pagina-feed .feed > .feed-mas { margin-bottom: calc(2 * var(--hueco) + 2px);
@@ -707,7 +707,9 @@ body.pagina-feed[data-cromo="fuera"] .feed-cab { visibility: hidden; }
   .pagina-feed .feed > .feed-fin { padding: 24px 20px; }
   .feed-mas { padding-top: 20px; }
   /* La fila de filtros, centrada y fuera de la foto, con el fondo de la página. */
-  .pagina-feed .feed-cab { left: 0; width: 100%; height: var(--barra); padding: 8px 20px; display: flex; justify-content: center;
+  /* Lo fijo, sin la barra de desplazamiento (`--sb`, /assets/tarjetas.js):
+     centrado donde la tarjeta, que va en el sitio que deja la barra. */
+  .pagina-feed .feed-cab { left: 0; width: calc(100% - var(--sb, 0px)); height: var(--barra); padding: 8px 20px; display: flex; justify-content: center;
     border-bottom: 1px solid var(--glass-border); }
   /* El cristal, en un pseudo: con `backdrop-filter` en la propia barra, la
      hoja de filtros (fija) se quedaba encerrada en ella. */
@@ -726,7 +728,7 @@ body.pagina-feed[data-cromo="fuera"] .feed-cab { visibility: hidden; }
   .feed-fondo::after { content: ""; position: absolute; inset: 0; background: color-mix(in srgb, var(--surface) 45%, transparent); }
   /* Las flechas para pasar, a la derecha de la tarjeta y a su altura. */
   .feed-nav { display: grid; gap: 10px; position: fixed; z-index: 20; top: calc(var(--cab) + var(--barra) + var(--hueco) + var(--feed-alto) / 2);
-    transform: translateY(-50%); left: calc(50% + var(--feed-w) / 2 + 20px); }
+    transform: translateY(-50%); left: calc((100% - var(--sb, 0px) + var(--feed-w)) / 2 + 20px); }
   .feed-ir { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; cursor: pointer; color: var(--ink);
     background: var(--elevated); border: 1px solid var(--glass-border); box-shadow: 0 8px 24px -12px rgba(0,0,0,.4); }
   .feed-ir .ic { width: 22px; height: 22px; }
@@ -735,7 +737,7 @@ body.pagina-feed[data-cromo="fuera"] .feed-cab { visibility: hidden; }
 }
 @media (min-width: 1180px) {
   .pagina-feed .feed-lado { position: fixed; z-index: 20; width: auto; height: auto; overflow: visible; clip: auto; white-space: normal;
-    top: calc(var(--cab) + var(--barra) + 28px); right: calc(50% + var(--feed-w) / 2 + 40px); max-width: 280px; text-align: right; }
+    top: calc(var(--cab) + var(--barra) + 28px); right: calc((100% + var(--sb, 0px) + var(--feed-w)) / 2 + 40px); max-width: 280px; text-align: right; }
   .pagina-feed .feed-lado h1 { margin-top: 0; }
   body.pagina-feed[data-cromo="fuera"] .feed-lado { display: none; }
 }

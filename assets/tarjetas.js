@@ -40,6 +40,32 @@
   var EN = document.documentElement.lang === 'en';
   var LOC = EN ? 'en-GB' : 'es-ES';
   var feed = document.getElementById('feed');
+  // El ancho de la barra de desplazamiento que ocupa sitio (Windows, Linux):
+  // `--sb`, en <html>. Lo fijo (la cabecera del móvil, la fila de filtros y
+  // las flechas de Descubre) se mide en la ventana y lo demás en el sitio que
+  // deja la barra (`scrollbar-gutter: stable`): sin restarla, la tarjeta
+  // quedaba 7,5 px a la izquierda de la fila y, en una ventana estrecha, la
+  // cabecera de Descubre medía 15 px más que en Explorar y ☰ saltaba al
+  // cambiar de pestaña (16ea4bb; revisión del 9-11). En Descubre hace scroll
+  // el <body> (su barra es la suya); en las demás, el documento. Con barras
+  // que flotan (móvil, macOS), 0.
+  function anchoBarra() {
+    var b = document.body;
+    var sb = document.body && b.classList.contains('pagina-feed') ? b.offsetWidth - b.clientWidth
+      // (Con `scrollbar-gutter`, Chromium da a <html> un `clientWidth` con la barra: se mide su caja.)
+      : window.innerWidth - Math.min(document.documentElement.clientWidth, document.documentElement.getBoundingClientRect().width);
+    sb = Math.max(0, Math.min(40, Math.round(sb)));
+    if (document.documentElement.style.getPropertyValue('--sb') === sb + 'px') return;
+    document.documentElement.style.setProperty('--sb', sb + 'px');
+    // La cabecera fija de Descubre ha encogido: ¿le sigue cabiendo el logo
+    // entero? (assets/cabecera-yo.js lo mira al cargar, con la de antes.) En
+    // el fotograma siguiente: con «Reducir movimiento» todo cambia con una
+    // transición de 0,01 ms (site.css) y, medida ya, la cabecera aún es la de antes.
+    var raf = window.requestAnimationFrame || function (f) { return setTimeout(f, 16); };
+    raf(function () { raf(function () { if (window.KL_YO && window.KL_YO.justa) window.KL_YO.justa(); }); });
+  }
+  anchoBarra();
+  window.addEventListener('resize', anchoBarra);
   // Descubre: volver a la primera o, ya en ella, traer la lista otra vez
   // (lo pone el feed, abajo).
   var subeORecarga = null;
