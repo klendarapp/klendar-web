@@ -189,14 +189,25 @@ function respuestas(D) {
     recommended_offers: (a) => filtra(activos(), { ...a, p_filters: { radius_m: 300000 } }).slice(0, Number(a.p_limit) || 8),
     public_places: (a) => pagina(filtra(D.NEGOCIOS, a), a, 24),
     map_places: (a) => filtra(D.NEGOCIOS, a),
-    public_businesses: (a) => filtra(D.NEGOCIOS, a, { conDistancia: false }).slice(0, Number(a.p_limit) || 4),
-    public_cities: () => D.CIUDADES.map((c) => ({ ...c, offers: D.PLANES.filter((o) => o.city === c.name).length })),
+    public_businesses: (a) => pagina(filtra(D.NEGOCIOS, a, { conDistancia: false }), a, 4),
+    // Como la base: `{ city, slug, n }`, las que tienen algo publicado, de más a menos.
+    public_cities: () => D.CIUDADES.map((c) => ({ city: c.name, slug: c.id, n: D.PLANES.filter((o) => o.city === c.name).length }))
+      .filter((c) => c.n > 0).sort((x, y) => y.n - x.n),
     public_categories: (a) => D.CATEGORIAS.map((c) => ({ ...c, count: filtra(activos(), { p_city: a.p_city, p_category: c.slug }).length }))
       .filter((c) => c.count > 0),
     public_collections: () => [],
     offer_detail: (a) => { const o = D.PLANES.find((x) => x.id === a.p_id); return o ? [{ ...o }] : []; },
     offer_marks: () => [], offer_place_traits: () => [], offer_artists_of: () => [], offer_series_info: () => null,
-    offer_source: (a) => { const o = D.PLANES.find((x) => x.id === a.p_offer || x.id === a.p_id); return o?.imported ? { name: o.source_name, url: o.source_url, license: 'CC BY 4.0' } : null; },
+    // La forma de la migración 20261130100001 (la fuente de Madrid).
+    offer_source: (a) => {
+      const o = D.PLANES.find((x) => x.id === a.p_offer || x.id === a.p_id);
+      return o?.imported ? {
+        source_id: 'madrid', publisher: 'Ayuntamiento de Madrid', site: 'datos.madrid.es', dataset_name: 'Agenda de actividades',
+        dataset_url: 'https://datos.madrid.es/', license: 'CC BY 4.0', license_url: 'https://creativecommons.org/licenses/by/4.0/deed.es',
+        attribution_es: 'Fuente: Ayuntamiento de Madrid, datos.madrid.es', attribution_en: 'Source: Madrid City Council, datos.madrid.es',
+        source_url: o.source_url, updated_at: iso(-24), edited: false,
+      } : null;
+    },
     business_profile: (a) => { const b = D.NEGOCIOS.find((x) => x.id === a.p_id); return b ? [{ ...b }] : []; },
     resolve_business_slug: (a) => { const b = D.NEGOCIOS.find((x) => x.slug === a.p_slug || x.id === a.p_slug); return b ? [{ id: b.id, slug: b.slug }] : []; },
     business_offers: (a) => D.PLANES.filter((o) => o.business_id === a.p_business || o.business_id === a.p_id),
@@ -212,13 +223,19 @@ function respuestas(D) {
       const l = q ? D.MUNICIPIOS.filter((m) => plano(m.name).includes(q)) : D.MUNICIPIOS.filter((m) => m.active);
       return l.map((m) => ({ ...m, is_klendar_city: Boolean(m.city_id) }));
     },
+    // Como la base: `[{ municipality, match }]` (`returns table (municipality jsonb, match text)`).
     resolve_municipality: (a) => {
       const s = plano(a.p_slug || a.p_q || a.p_code || '');
-      return D.MUNICIPIOS.filter((m) => plano(m.slug) === s || m.code === a.p_code || plano(m.name) === s).map((m) => ({ ...m, is_klendar_city: Boolean(m.city_id) }));
+      return D.MUNICIPIOS.filter((m) => plano(m.slug) === s || m.code === a.p_code || plano(m.name) === s)
+        .map((m) => ({ municipality: { ...m, is_klendar_city: Boolean(m.city_id) }, match: 'slug' }));
     },
+    // Como la migración 20261218100000: `status` live (hay negocios a 25 km), coming (una ciudad a 30 km) o none.
     klendar_coverage: (a) => {
-      const c = D.CIUDADES.map((x) => ({ x, d: metros(Number(a.p_lat), Number(a.p_lng), x.lat, x.lng) })).sort((p, q) => p.d - q.d)[0];
-      return c && c.d < 60000 ? { covered: true, city: c.x.id, city_name: c.x.name } : { covered: false, nearest_city: c?.x.id || null, nearest_name: c?.x.name || null, distance_m: Math.round(c?.d || 0) };
+      const lat = Number(a.p_lat);
+      const lng = Number(a.p_lng);
+      const n = D.NEGOCIOS.filter((b) => metros(lat, lng, b.lat, b.lng) <= 25000).length;
+      const c = D.CIUDADES.map((x) => ({ x, d: metros(lat, lng, x.lat, x.lng) })).filter((x) => x.d <= 30000).sort((p, q) => p.d - q.d)[0]?.x;
+      return { status: n ? 'live' : c ? 'coming' : 'none', businesses_near: n, city_id: c?.id || null, city_name: c?.name || null };
     },
     public_city_agenda: (a) => D.PLANES.filter((o) => o.imported && (!a.p_city || plano(o.city) === plano(a.p_city))),
     public_organizers: () => D.NEGOCIOS.filter((b) => b.organizer),
