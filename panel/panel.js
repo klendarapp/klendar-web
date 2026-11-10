@@ -2683,8 +2683,8 @@ async function offerForm(v, id, kindDefault, desde = null) {
       <fieldset class="f plano" id="descuento"><legend>Descuento</legend>
         ${elige('discount_type', [['', I18N.t('Sin descuento')], ['percent', '%'], ['fixed', I18N.t('Precio fijo')], ['2x1', '2x1'], ['free', I18N.t('Gratis')], ['other', I18N.t('Otro')]], disc.type || '', I18N.t('Descuento'))}
         <div class="dos" id="descFila">
-          <label class="f" id="valorRow"><span class="sr">Valor del descuento</span><input name="discount_value" value="${esc(disc.value ?? '')}" aria-label="${esc(I18N.t('Valor del descuento'))}"></label>
-          <label class="f" id="antesRow"><span class="sr">Precio anterior</span><input name="prior_price" inputmode="decimal" value="${disc.compare_at_cents != null ? (disc.compare_at_cents / 100).toFixed(2).replace('.', ',') : ''}" placeholder="${esc(I18N.t('Precio anterior (€)'))}" aria-label="${esc(I18N.t('Precio anterior'))}"></label>
+          <label class="f" id="valorRow"><span id="valorTxt">${esc(I18N.t('Descuento'))}</span><input name="discount_value" value="${esc(cifraDescuento(disc))}"></label>
+          <label class="f" id="antesRow"><span>${esc(I18N.t('Precio anterior'))}</span><input name="prior_price" inputmode="decimal" value="${disc.compare_at_cents != null ? (disc.compare_at_cents / 100).toFixed(2).replace('.', ',') : ''}" placeholder="${esc(I18N.t('Precio anterior (€)'))}" aria-label="${esc(I18N.t('Precio anterior'))}"></label>
         </div>
         <p class="hint" id="antesAyuda">El más bajo de los últimos 30 días.</p>
         <div id="alcRow" class="bl-fila">
@@ -2980,6 +2980,12 @@ async function offerForm(v, id, kindDefault, desde = null) {
       free: I18N.t('¿Qué es gratis? ej. tapa, entrada'), other: I18N.t('Escríbelo tú: «2ª unidad −50 %», «Menú 9,90»…'),
     }[t] || '';
     campo('discount_value').placeholder = ph;
+    // Con su nombre a la vista (como la app): rellenos, «2,50» y «4,00» uno
+    // al lado del otro no decían cuál era el precio de la oferta y cuál el de
+    // antes (revisión 10-11).
+    $('#valorTxt', v).textContent = {
+      fixed: I18N.t('Precio fijo'), free: I18N.t('Gratis'), other: I18N.t('Otro'),
+    }[t] || I18N.t('Descuento');
     campo('discount_value').setAttribute('inputmode', ['percent', 'fixed'].includes(t) ? 'decimal' : 'text');
     campo('discount_value').maxLength = t === 'other' ? 24 : 40;
   };
@@ -4466,6 +4472,18 @@ const eurosEnteros = (c, cur = 'EUR') => {
     style: 'currency', currency: cur || 'EUR',
     minimumFractionDigits: conCentimos ? 2 : 0, maximumFractionDigits: conCentimos ? 2 : 0,
   });
+};
+/** La cifra del descuento para el campo, como la app: 20 → «20», 2.5 →
+ * «2,50» (antes, «2.5» con punto al editar); «tapa» o «2ª unidad −50 %», tal
+ * cual. */
+const cifraDescuento = (d) => {
+  const x = d?.value;
+  if (x == null || x === '') return '';
+  if (!['percent', 'fixed'].includes(d.type) || !/^\d+([.,]\d+)?$/.test(String(x))) return String(x);
+  const n = Number(String(x).replace(',', '.'));
+  if (Number.isInteger(n)) return String(n);
+  const s = n.toFixed(2);
+  return I18N.lang === 'en' ? s : s.replace('.', ',');
 };
 /** Guarda (o quita, vacío) el importe del ticket de [code]. Devuelve
  * {ok, ticket_cents} o {ok:false, error}. */
