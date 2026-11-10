@@ -881,7 +881,7 @@ KL_DIC('gl', {
   "Hemos guardado {n} fechas en tus planes; las nuevas también irán.": "Gardamos {n} datas nos teus plans; as novas tamén irán.",
   "Historial": "Historial",
   "Hola": "Ola",
-  "Hola de nuevo": "Ola de novo",
+  "Entra en Klendar": "Entra en Klendar",
   "Hora por confirmar": "Hora por confirmar",
   "Horario, menú, alergias, si hace falta un espacio aparte…": "Horario, menú, alerxias, se fai falta un espazo á parte…",
   "Horas de silencio": "Horas de silencio",

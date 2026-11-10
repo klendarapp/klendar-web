@@ -1309,7 +1309,7 @@ RUTAS.entrar = async (_p, params) => {
   // Turnstile, por adelantado: al pulsar, el token suele estar ya listo.
   window.KL_CAPTCHA?.pre?.();
   pinta(`
-    <h1>${esc(t(panel ? 'Entra en tu panel' : 'Hola de nuevo'))}</h1>
+    <h1>${esc(t(panel ? 'Entra en tu panel' : 'Entra en Klendar'))}</h1>
     <p class="muted">${esc(t(panel
       ? 'Con la misma cuenta que usas en la app. Si tu negocio todavía no está dado de alta, entra y lo das de alta en un momento.'
       : 'Para guardar planes, tener favoritos y conseguir códigos.'))}</p>

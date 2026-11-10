@@ -557,7 +557,7 @@ const APP_EN = {
   "Ese correo no parece válido": "That email doesn't look valid",
   "Mínimo 8 caracteres": "At least 8 characters",
   "Las contraseñas no coinciden": "Passwords don't match",
-  "Hola de nuevo": "Welcome back",
+  "Entra en Klendar": "Log in to Klendar",
   "Para guardar planes, tener favoritos y conseguir códigos.": "Log in to save plans, keep favourites and get codes.",
   "Correo electrónico": "Email",
   "¿Has olvidado la contraseña?": "Forgot your password?",

@@ -881,7 +881,7 @@ KL_DIC('eu', {
   "Hemos guardado {n} fechas en tus planes; las nuevas también irán.": "{n} data gorde ditugu zure planetan; berriak ere hara joango dira.",
   "Historial": "Historia",
   "Hola": "Kaixo",
-  "Hola de nuevo": "Kaixo berriro",
+  "Entra en Klendar": "Hasi saioa Klendarren",
   "Hora por confirmar": "Ordua zehazteko",
   "Horario, menú, alergias, si hace falta un espacio aparte…": "Ordutegia, menua, alergiak, gune bereizi bat behar den…",
   "Horas de silencio": "Isiltasun-orduak",

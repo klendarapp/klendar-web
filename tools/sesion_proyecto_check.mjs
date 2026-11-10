@@ -125,7 +125,7 @@ for (const ruta of ['/cuenta/', '/descubre/']) {
   ok(sinCuenta(e), `otro proyecto ${ruta}: la sesión de otro y lo de esa cuenta, borrados (${e.claves.join(', ')})`);
   ok(e.marca === REF, `otro proyecto ${ruta}: la marca del proyecto (${e.marca})`);
   ok(e.m.cls < 0.01, `otro proyecto ${ruta}: CLS ${e.m.cls.toFixed(4)}${e.m.de.length ? ` (${e.m.de.slice(0, 3).join(' | ')})` : ''}`);
-  if (ruta === '/cuenta/') ok(await page.locator('#contenido, main').getByText(/Hola de nuevo/).first().isVisible().catch(() => false), 'otro proyecto /cuenta/: pide entrar («Hola de nuevo»)');
+  if (ruta === '/cuenta/') ok(await page.locator('#contenido, main').getByText(/Entra en Klendar/).first().isVisible().catch(() => false), 'otro proyecto /cuenta/: pide entrar («Entra en Klendar»)');
   ok(errores.length === 0, `otro proyecto ${ruta}: sin errores${errores.length ? `: ${errores.slice(0, 2).join(' | ')}` : ''}`);
   await ctx.close();
 }

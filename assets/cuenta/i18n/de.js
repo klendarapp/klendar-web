@@ -881,7 +881,7 @@ KL_DIC('de', {
   "Hemos guardado {n} fechas en tus planes; las nuevas también irán.": "Wir haben {n} Termine in deinen Plänen gemerkt; neue kommen auch dazu.",
   "Historial": "Verlauf",
   "Hola": "Hallo",
-  "Hola de nuevo": "Willkommen zurück",
+  "Entra en Klendar": "Bei Klendar anmelden",
   "Hora por confirmar": "Uhrzeit folgt",
   "Horario, menú, alergias, si hace falta un espacio aparte…": "Uhrzeit, Menü, Allergien, ob ihr einen separaten Raum braucht…",
   "Horas de silencio": "Ruhezeiten",
