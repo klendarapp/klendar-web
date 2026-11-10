@@ -2339,6 +2339,13 @@ async function ampliarDialogo(o) {
   const hm = fmtHora;
   const nueva = new Date(new Date(o.redeem_end_at).getTime() + 36e5);
   const en = I18N.lang === 'en';
+  // Ya terminada (el aviso «termina en 1 h» abierto tarde): se dice, sin
+  // preguntar «terminará a las 17:35» con una hora que ya pasó (revisión
+  // 10-11, como la app).
+  if (new Date(o.redeem_end_at).getTime() <= Date.now()) {
+    toast('Esa oferta ya ha terminado. Puedes repetirla mañana.', true);
+    return;
+  }
   if (!await confirmDlg(en ? 'Extend by an hour?' : '¿Ampliar una hora?',
     esc(en ? `“${o.title}” will end at ${hm(nueva)}. Anyone who already has a code can use it until then.`
       : `«${o.title}» terminará a las ${hm(nueva)}. Quien ya tenga su código lo podrá usar hasta entonces.`),
