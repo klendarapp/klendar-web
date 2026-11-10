@@ -1361,6 +1361,7 @@ RUTAS['codigo-correo'] = async (_p, params) => {
     <form id="f2" class="formu" novalidate hidden>
       <label>${esc(t('Código'))}<input name="token" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required></label>
       <p class="muted">${esc(t('En ese correo también hay un botón: si lo abres en este dispositivo, entras directamente.'))}</p>
+      <p class="muted">${esc(t('¿No te llega? Mira en spam o en «Promociones».'))}</p>
       <p id="err2" class="err" role="alert"></p>
       <button class="pill accent" type="submit">${esc(t('Entrar'))}</button>
       <div class="acciones">
