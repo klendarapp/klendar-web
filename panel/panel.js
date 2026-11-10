@@ -3633,6 +3633,14 @@ async function offerForm(v, id, kindDefault, desde = null) {
     p.textContent = texto;
     caja.appendChild(p);
     if (/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) el.setAttribute('aria-invalid', 'true');
+    // En cuanto se corrige (se escribe o se elige otra cosa), el error se va
+    // sin esperar a volver a pulsar Publicar (revisión 10-11, como la app).
+    const quita = () => {
+      p.remove();
+      el.removeAttribute('aria-invalid');
+      if (!$('.err-campo', v)) $('#formErr', v).textContent = '';
+    };
+    for (const ev of ['input', 'change']) caja.addEventListener(ev, quita, { once: true });
     if (navigator.vibrate) navigator.vibrate(20);
     const suave = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     el.scrollIntoView({ block: 'center', behavior: suave ? 'smooth' : 'auto' });
