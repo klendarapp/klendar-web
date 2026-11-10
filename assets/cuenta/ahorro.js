@@ -13,10 +13,17 @@
  */
 'use strict';
 
-/** «23 €»: en euros enteros, como la app (es aproximado). */
-const ahorroEuros = (c) => ((c || 0) / 100).toLocaleString(LOC, {
-  style: 'currency', currency: 'EUR', minimumFractionDigits: 0, maximumFractionDigits: 0,
-});
+/** «23 €»: en euros enteros hacia abajo y, por debajo de 10 €, con sus
+ * céntimos si los tiene («0,40 €»; antes, «Este mes has ahorrado 0 €»). Como
+ * `wholeAmount` de la app (revisión 10-11). */
+const ahorroEuros = (c) => {
+  const v = c || 0;
+  const conCentimos = v > 0 && v < 1000 && v % 100 !== 0;
+  return (conCentimos ? v / 100 : Math.floor(v / 100)).toLocaleString(LOC, {
+    style: 'currency', currency: 'EUR',
+    minimumFractionDigits: conCentimos ? 2 : 0, maximumFractionDigits: conCentimos ? 2 : 0,
+  });
+};
 
 /** La fila de «Tu cuenta» (se rellena sola; si no hay nada, no sale). */
 async function pintaAhorroFila() {

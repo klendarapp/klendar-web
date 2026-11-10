@@ -4455,9 +4455,18 @@ const centimosTicket = (txt) => {
   return c > 0 && c <= 10000000 ? c : null;
 };
 const textoTicket = (c) => (c == null ? '' : (c / 100).toFixed(2).replace('.', I18N.lang === 'en' ? '.' : ','));
-/** Euros enteros para los totales: «1143 €». */
-const eurosEnteros = (c, cur = 'EUR') => Math.round((c || 0) / 100)
-  .toLocaleString(LOC(), { style: 'currency', currency: cur || 'EUR', minimumFractionDigits: 0, maximumFractionDigits: 0 });
+/** Euros para los totales: «1143 €». Hacia abajo, nunca hacia arriba (son
+ * cifras «al menos»: 2,50 € salía «Al menos 3 €») y, por debajo de 10 €, con
+ * sus céntimos si los tiene («2,50 €»). Como `wholeAmount` de la app
+ * (revisión 10-11). */
+const eurosEnteros = (c, cur = 'EUR') => {
+  const v = c || 0;
+  const conCentimos = v > 0 && v < 1000 && v % 100 !== 0;
+  return (conCentimos ? v / 100 : Math.floor(v / 100)).toLocaleString(LOC(), {
+    style: 'currency', currency: cur || 'EUR',
+    minimumFractionDigits: conCentimos ? 2 : 0, maximumFractionDigits: conCentimos ? 2 : 0,
+  });
+};
 /** Guarda (o quita, vacío) el importe del ticket de [code]. Devuelve
  * {ok, ticket_cents} o {ok:false, error}. */
 async function guardaTicket(code, texto) {
