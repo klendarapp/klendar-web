@@ -558,6 +558,12 @@ const APP_EN = {
   "Mínimo 8 caracteres": "At least 8 characters",
   "Las contraseñas no coinciden": "Passwords don't match",
   "Entra en Klendar": "Log in to Klendar",
+  // Sugerencias con capturas (revisión 10-11)
+  "Añadir captura": "Add a screenshot",
+  "Hasta 3 capturas o fotos, sobre todo si algo falla. Solo las ve el equipo de Klendar y se borran si borramos tu mensaje o eliminas tu cuenta.": "Up to 3 screenshots or photos, especially if something's wrong. Only the Klendar team sees them, and they're deleted if we delete your message or you delete your account.",
+  "Quitar captura": "Remove screenshot",
+  "No se ha podido subir una de las capturas. Prueba otra vez, quítala o envía sin ella.": "One of the screenshots couldn't be uploaded. Try again, remove it or send without it.",
+  "Con 1 captura": "With 1 screenshot",
   "Para guardar planes, tener favoritos y conseguir códigos.": "Log in to save plans, keep favourites and get codes.",
   "Correo electrónico": "Email",
   "¿Has olvidado la contraseña?": "Forgot your password?",

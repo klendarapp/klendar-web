@@ -3463,6 +3463,7 @@ PAGES.sugerencias = async (v) => {
         <h3>${tag(f.kind, 'dim')} ${f.replied_at ? '<span class="tag ok">respondida</span>' : ''} ${(f.offensive || []).length ? `<span class="tag warn" title="${esc(I18N.t('Detectado automáticamente en el texto'))}">${esc(I18N.t('lenguaje ofensivo'))}: ${esc(f.offensive.map((c) => I18N.t(CAT_OFENSIVA[c] || c)).join(', '))}</span>` : ''}</h3>
         <div class="meta">${fmtDate(f.created_at)} · ${f.user_id ? `<a class="link" href="#/usuarios/${f.user_id}">${esc(f.user_email || f.user_name || 'usuario')}</a>` : (I18N.lang === 'en' ? 'no account' : 'sin cuenta')}${f.from_same_user > 1 ? ` · ${f.from_same_user} ${I18N.lang === 'en' ? 'messages from them' : 'mensajes suyos'}` : ''} · ${esc(f.app_version || '?')} · ${esc(f.platform || '?')}${f.locale ? ' · ' + esc(f.locale) : ''}</div>
         <p style="white-space:pre-wrap">${esc(f.message)}</p>
+        ${(f.media || []).length ? `<div class="sug-capturas" data-capturas="${f.id}" aria-label="${esc(I18N.t('Capturas'))}"></div>` : ''}
         ${f.admin_note ? `<div class="meta"><b>Nota interna:</b> ${esc(f.admin_note)}</div>` : ''}
         <div class="actions sug-acciones">
           <label class="estado-sel"><span>Estado</span><select data-estado="${f.id}">${ESTADOS_SUG.map(([k, t]) => `<option value="${k}" ${f.status === k ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
@@ -3471,6 +3472,15 @@ PAGES.sugerencias = async (v) => {
         </div>
       </div></div>`).join('') : '<div class="tbl-wrap"><div class="empty">Nada por aquí.</div></div>') + pg.html;
     pg.bind($('#list'));
+    // Las capturas (Storage privado `feedback-media`): enlaces firmados de 10
+    // minutos, que solo puede pedir administración (revisión 10-11).
+    $$('#list [data-capturas]').forEach(async (caja) => {
+      const f = rows.find((x) => x.id === caja.dataset.capturas);
+      const { data, error } = await sb.storage.from('feedback-media').createSignedUrls(f?.media || [], 600);
+      if (error || !data) { caja.textContent = I18N.t('No se han podido cargar las capturas.'); return; }
+      caja.innerHTML = data.filter((d) => d.signedUrl).map((d, i) => `<a href="${esc(d.signedUrl)}" target="_blank" rel="noopener">
+          <img src="${esc(d.signedUrl)}" alt="${esc(I18N.t('Captura'))} ${i + 1}" loading="lazy"></a>`).join('');
+    });
     // El estado se cambia en el desplegable: se guarda al elegir y, si falla,
     // vuelve al de antes.
     $$('#list [data-estado]').forEach((sel) => { let antes = sel.value; sel.onchange = () => esperando(sel, async () => {
@@ -3492,7 +3502,7 @@ PAGES.sugerencias = async (v) => {
       try { await rpc('admin_set_feedback', { p_id: b.dataset.note, p_note: r2.note }); toast('Guardada'); await load(); } catch (e) { toast(e.message, true); }
     }); });
     $$('#list [data-del]').forEach((b) => { b.onclick = () => esperando(b, async () => {
-      if (!await confirmDlg('Borrar mensaje', 'Se borra para siempre. Úsalo solo con spam o duplicados.', { danger: true, submit: 'Borrar' })) return;
+      if (!await confirmDlg('Borrar mensaje', 'Se borra para siempre, con sus capturas si las tiene. Úsalo solo con spam o duplicados.', { danger: true, submit: 'Borrar' })) return;
       try { await rpc('admin_delete_feedback', { p_id: b.dataset.del }); toast('Borrado'); refreshBadges(); await load(); } catch (e) { toast(e.message, true); }
     }); });
   };

@@ -815,6 +815,10 @@ const I18N = makeI18N({
   "Guardada": "Saved",
   "Borrar mensaje": "Delete message",
   "Se borra para siempre. Úsalo solo con spam o duplicados.": "It's deleted forever. Only use it for spam or duplicates.",
+  "Se borra para siempre, con sus capturas si las tiene. Úsalo solo con spam o duplicados.": "It's deleted forever, with its screenshots if it has any. Only use it for spam or duplicates.",
+  "Capturas": "Screenshots",
+  "Captura": "Screenshot",
+  "No se han podido cargar las capturas.": "The screenshots couldn't be loaded.",
   "Borrado": "Deleted",
 
   // ── Planes y pagos ────────────────────────────────────────────────────

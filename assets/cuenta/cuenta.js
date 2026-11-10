@@ -1388,7 +1388,7 @@ RUTAS.sugerencias = async (_p, params, crudo) => {
   if (!exigeSesion(crudo || 'sugerencias')) return;
   const empezado = (params?.get('texto') || '').slice(0, 300);
   const mias = await tabla(sb.from('feedback')
-    .select('id, kind, message, status, created_at, replied_at')
+    .select('id, kind, message, status, created_at, replied_at, media')
     .order('created_at', { ascending: false }).limit(20));
   pinta(`
     <p class="crumbs"><a href="/cuenta/">${esc(t('Tu cuenta'))}</a></p>
@@ -1401,6 +1401,10 @@ RUTAS.sugerencias = async (_p, params, crudo) => {
       </fieldset>
       <label>${esc(t('Tu mensaje'))}
         <textarea name="msg" rows="6" maxlength="2000" placeholder="${esc(t(TIPOS_SUGERENCIA[0][2]))}">${esc(empezado)}</textarea></label>
+      <div class="capturas" id="capturas"></div>
+      <label class="pill capturas-anadir" id="capAnadir">${ic('add')} ${esc(t('Añadir captura'))}
+        <input type="file" id="capInput" accept="image/jpeg,image/png,image/webp" multiple hidden></label>
+      <p class="muted">${esc(t('Hasta 3 capturas o fotos, sobre todo si algo falla. Solo las ve el equipo de Klendar y se borran si borramos tu mensaje o eliminas tu cuenta.'))}</p>
       <p class="muted">${esc(t('Mandamos también que escribes desde la web y tu idioma, para entender mejor los fallos. Nada más.'))}</p>
       <p class="err" id="err" role="alert"></p>
       <button class="pill accent" id="enviar">${esc(t('Enviar'))}</button>
@@ -1409,6 +1413,7 @@ RUTAS.sugerencias = async (_p, params, crudo) => {
       <div class="avisos">${mias.map((m) => `<div class="aviso">
         <b>${esc(t(ESTADO_SUGERENCIA[m.status] || 'Recibida'))}</b>
         <span>${esc(m.message.length > 220 ? `${m.message.slice(0, 220)}…` : m.message)}</span>
+        ${m.media?.length ? `<small class="muted">${esc(m.media.length === 1 ? t('Con 1 captura') : (EN ? `With ${m.media.length} screenshots` : `Con ${m.media.length} capturas`))}</small>` : ''}
         <small class="muted">${esc(fecha(m.created_at))}${m.replied_at ? ` · ${esc(t('Te hemos respondido: míralo en tus notificaciones'))}` : ''}</small>
       </div>`).join('')}</div>` : ''}`);
 
@@ -1419,24 +1424,76 @@ RUTAS.sugerencias = async (_p, params, crudo) => {
     const tipo = TIPOS_SUGERENCIA.find(([v]) => v === f.tipo.value);
     f.msg.placeholder = tipo && tipo[2] ? t(tipo[2]) : '';
   }));
+  // Capturas (revisión 10-11, como la app): hasta 3, se reducen en el
+  // navegador y se suben al enviar al Storage privado `feedback-media`.
+  const capturas = [];
+  const pintaCapturas = () => {
+    $('#capturas').innerHTML = capturas.map((c, i) => `<span class="captura">
+        <img src="${c.url}" alt="">
+        <button type="button" data-quita="${i}" aria-label="${esc(t('Quitar captura'))}" title="${esc(t('Quitar captura'))}"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
+      </span>`).join('');
+    $('#capAnadir').hidden = capturas.length >= 3;
+    $$('[data-quita]', f).forEach((b) => b.addEventListener('click', () => {
+      const quitada = capturas.splice(Number(b.dataset.quita), 1)[0];
+      URL.revokeObjectURL(quitada.url);
+      pintaCapturas();
+    }));
+  };
+  $('#capInput').addEventListener('change', (ev) => {
+    const nuevas = Array.from(ev.target.files).filter((x) => /^image\/(jpeg|png|webp)$/.test(x.type));
+    for (const file of nuevas.slice(0, 3 - capturas.length)) capturas.push({ file, url: URL.createObjectURL(file) });
+    ev.target.value = '';
+    $('#err').textContent = '';
+    pintaCapturas();
+  });
+  pintaCapturas();
   f.addEventListener('submit', (ev) => {
     ev.preventDefault();
     const msg = f.msg.value.trim();
     if (msg.length < 5) { $('#err').textContent = t('Cuéntanos un poco más: al menos 5 caracteres.'); return; }
     $('#err').textContent = '';
     ocupado($('#enviar'), async () => {
+      const media = [];
+      for (const c of capturas) {
+        try {
+          media.push(await subeCaptura(c.file));
+        } catch {
+          $('#err').textContent = t('No se ha podido subir una de las capturas. Prueba otra vez, quítala o envía sin ella.');
+          return;
+        }
+      }
       await llamar('send_feedback', {
+        ...(media.length ? { p_media: media } : {}),
         p_message: msg, p_kind: f.tipo.value, p_platform: 'web',
         p_app_version: 'web', p_locale: LANG, p_route: document.referrer
           // Solo la ruta, y sin el código de un enlace personal (/amigo/…).
           ? new URL(document.referrer).pathname.replace(/(\/(en\/)?(amigo|friend|r|baja|unsubscribe|v|cartel\/local|poster\/venue))\/[\w-]{6,}/g, '$1/*')
           : null,
       });
+      capturas.forEach((c) => URL.revokeObjectURL(c.url));
       toast(t('¡Gracias! Lo hemos recibido. Si necesitamos más detalles, te escribimos.'));
       navegar();
     });
   });
 };
+
+/** Reduce una captura (JPEG, lado largo de 1600 px como mucho, sin los datos
+ * de la foto) y la sube a la carpeta de esta persona. Devuelve la ruta. */
+async function subeCaptura(file) {
+  const img = await createImageBitmap(file);
+  const escala = Math.min(1, 1600 / Math.max(img.width, img.height));
+  const lienzo = document.createElement('canvas');
+  lienzo.width = Math.round(img.width * escala);
+  lienzo.height = Math.round(img.height * escala);
+  lienzo.getContext('2d').drawImage(img, 0, 0, lienzo.width, lienzo.height);
+  if (img.close) img.close();
+  const blob = await new Promise((ok) => lienzo.toBlob(ok, 'image/jpeg', 0.8));
+  if (!blob) throw new Error('captura');
+  const ruta = `${YO.id}/${crypto.randomUUID()}.jpg`;
+  const { error } = await sb.storage.from('feedback-media').upload(ruta, blob, { contentType: 'image/jpeg' });
+  if (error) throw error;
+  return ruta;
+}
 
 // ── Tu nombre público ─────────────────────────────────────────────────────
 // Sin nombre, en las reseñas y para tus amigos sales como «Usuario de

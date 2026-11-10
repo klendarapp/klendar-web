@@ -759,3 +759,15 @@ a.pl-dia:hover { background: var(--soft); }
 .retenido-fotos img, .retenido-video { width: 64px; height: 64px; object-fit: cover; border-radius: 10px; display: grid; place-items: center; background: rgba(127,127,127,.15); }
 .retenido-video::after { content: ''; border-style: solid; border-width: 9px 0 9px 15px; border-color: transparent transparent transparent rgba(127,127,127,.8); }
 .retenido-botones { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+
+/* Sugerencias y mejoras: las capturas elegidas (revisión 10-11). */
+.capturas { display: flex; flex-wrap: wrap; gap: 12px; }
+.capturas:empty { display: none; }
+.captura { position: relative; width: 72px; height: 72px; }
+.captura img { width: 72px; height: 72px; object-fit: cover; border-radius: 12px; display: block; }
+.captura button {
+  position: absolute; top: -10px; right: -10px; width: 32px; height: 32px; border-radius: 50%;
+  border: 0; background: rgba(0, 0, 0, .85); color: #fff; display: grid; place-items: center; cursor: pointer;
+}
+.capturas-anadir { align-self: flex-start; cursor: pointer; }
+.capturas-anadir[hidden] { display: none; }
