@@ -31,7 +31,7 @@ let fallos = 0;
 const ok = (c, m) => { if (!c) { fallos++; console.log('FALLO:', m); } else console.log('ok:', m); };
 
 const PAGINAS = [
-  ['/negocios', 'Última actualización: 5 de noviembre de 2026', [
+  ['/negocios', 'Última actualización: 11 de noviembre de 2026', [
     /\(1\) hoy no se vende ninguna posición: si algún día se ofrece destacar publicaciones de pago/,
     /\(3\) el orden que elige la persona en «Ordenar por»\. De serie es «Recomendado»: con «Según el tiempo» encendido/,
     /con «Tener en cuenta tus gustos» encendido \(lo está de serie\)[\s\S]*?cuenta como si fuera dos días más nuevo/,
@@ -42,7 +42,7 @@ const PAGINAS = [
     /los del 27 de octubre de 2026 \(apartados 2 bis, 3, 3 sexies, 3 septies y 3 duodecies\), desde el 11 de noviembre de 2026, los del 28 de octubre de 2026 \(apartados 2, 4 bis y 7\), desde el 12 de noviembre de 2026, los del 2 de noviembre de 2026 \(apartado 2 bis\), desde el 17 de noviembre de 2026, los del 3 de noviembre de 2026 \(apartados 3, 3 decies y 4\), desde el 18 de noviembre de 2026, los del 4 de noviembre de 2026 \(apartado 3 bis, «Conecta tu agenda»\), desde el 19 de noviembre de 2026, y los del 5 de noviembre de 2026 \(apartado 2 bis\), desde el 20 de noviembre de 2026: 15 días/,
     /27 de octubre de 2026: Cómo se ordena lo que se ve \(apartado 2 bis\)[\s\S]*?Se aplica desde el 11 de noviembre de 2026\./,
   ], [/La valoración del Negocio, la cuota o el número de publicaciones no influyen/, /con «Más pronto» como si empezara seis horas antes/]],
-  ['/en/business-terms', 'Last updated: 5 November 2026', [
+  ['/en/business-terms', 'Last updated: 11 November 2026', [
     /\(1\) no position is sold today: if paid featured publications are ever offered/,
     /\(3\) the order the person chooses in “Sort by”\. By default it is “Recommended”: with “Based on the weather” on/,
     /with “Take your interests into account” on \(it is by default\)[\s\S]*?count as if they were two days newer/,

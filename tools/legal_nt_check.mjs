@@ -82,13 +82,13 @@ const PAGINAS = [
     /and the people you block and, if you block whoever asked a question, that block and which business they asked \(you'll never find out who they are; it's in your data download and is deleted with your account\)/,
     /5 November 2026: The “Friends and plans” row now also says that, if you block whoever asked a question, we keep that block and which business they asked\./,
   ], [], []],
-  ['/negocios', 'Última actualización: 5 de noviembre de 2026 · Versión 2026-11-05', [
+  ['/negocios', 'Última actualización: 11 de noviembre de 2026 · Versión 2026-11-05', [
     /\(1\) hoy no se vende ninguna posición: si algún día se ofrece destacar publicaciones de pago, saldrán primero en Descubre y en la lista de Explorar, siempre con la etiqueta «Destacado», y lo avisaremos antes con el plazo de estas condiciones; en las selecciones/,
     /los del 5 de noviembre de 2026 \(apartado 2 bis\), desde el 20 de noviembre de 2026:/,
     /2026-11-05\s+5-11-2026\s+20-11-2026\s+2026-11-04\s+4-11-2026\s+19-11-2026/,
     /5 de noviembre de 2026: Cómo se ordena lo que se ve \(apartado 2 bis\): hoy no se vende ninguna posición;[^\n]*?Se aplica desde el 20 de noviembre de 2026\./,
   ], [/\(1\) en Descubre y en la lista de Explorar, lo destacado de pago/], []],
-  ['/en/business-terms', 'Last updated: 5 November 2026 · Version 2026-11-05', [
+  ['/en/business-terms', 'Last updated: 11 November 2026 · Version 2026-11-05', [
     /\(1\) no position is sold today: if paid featured publications are ever offered, they will come first in Discover and the Explore list, always labelled “Featured”, and we'll give notice first within the period in these terms; in the collections/,
     /those of 5 November 2026 \(section 2a\) from 20 November 2026:/,
     /2026-11-05\s+5 Nov 2026\s+20 Nov 2026\s+2026-11-04\s+4 Nov 2026\s+19 Nov 2026/,

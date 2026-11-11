@@ -10,7 +10,11 @@
 //     conserva»), CS2. Fecha y primera línea del historial (CS3).
 //  3. «Tu cuenta › Sugerencias y mejoras»: la nota de lo que se manda dice el
 //     idioma, la página de la que se venía y las capturas (ya no «Nada más»).
-//  4. Sin desplazamiento horizontal ni errores de JavaScript.
+//  4. Condiciones para negocios (ES y EN), 2 bis, el orden real de Sitios
+//     (aprobado por Iván el 11-11; migración 20261274500000 de la app): después
+//     de los que tienen planes hoy, los que tienen foto y horario y luego el
+//     resto. Fecha y primera línea del historial; la versión sigue la 2026-11-05.
+//  5. Sin desplazamiento horizontal ni errores de JavaScript.
 //
 // Chromium y WebKit, móvil (390 × 844) y escritorio (1280 × 800). Solo HTML estático.
 //
@@ -50,6 +54,14 @@ const PAGINAS = [
     /Your reviews, with their photos and videos, are deleted together with your account\.\s+The screenshots and photos you added in “Ideas and feedback”\.\s+Your “It was closed” reports/,
     /Resolved reports, 2 years, to comply with the Digital Services Act\.\s+What you wrote to us in “Ideas and feedback”, without your name or your account, for up to 1 year after we close it, so we can keep fixing what you told us about\.\s+Change history/,
     /Change history\s+11 November 2026: List brought up to date: the screenshots you added in “Ideas and feedback” are deleted; what you wrote stays without your name for up to 1 year after we close it\./,
+  ]],
+  ['/negocios', 'Última actualización: 11 de noviembre de 2026 · Versión 2026-11-05', [
+    /«Más cerca» \(de serie: por tramos de distancia y, en cada tramo, primero los que tienen planes hoy, luego los que tienen foto y horario y después el resto\) y «Mejor valorados» \(por la valoración media de sus reseñas y, a la par, primero los que tienen planes hoy, luego los que tienen foto y horario y después los más cercanos\)/,
+    /Historial de cambios\s+11 de noviembre de 2026: Cómo se ordena Sitios \(apartado 2 bis\): en cada tramo de distancia \(y, con «Mejor valorados», a la par\), después de los que tienen planes hoy van los que tienen foto y horario, y luego el resto\. Como aún no hay negocios usando Klendar, se aplica al publicarse, sin los 15 días de aviso\./,
+  ]],
+  ['/en/business-terms', 'Last updated: 11 November 2026 · Version 2026-11-05', [
+    /“Nearest” \(by default: by distance bands and, within each band, those with plans today first, then those with a photo and opening hours, then the rest\) and “Top rated” \(by the average rating of their reviews and, when level, those with plans today first, then those with a photo and opening hours, then the nearest\)/,
+    /Change history\s+11 November 2026: How Places is ordered \(section 2a\): within each distance band \(and, with “Top rated”, when level\), after those with plans today come those with a photo and opening hours, then the rest\. As no businesses are using Klendar yet, it applies on publication, without the 15 days' notice\./,
   ]],
 ];
 

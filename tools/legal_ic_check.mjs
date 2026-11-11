@@ -30,7 +30,7 @@ const ok = (c, m) => { if (!c) { fallos++; console.log('FALLO:', m); } else cons
 const pendientes = new Date().toISOString().slice(0, 10) < '2026-11-20';
 
 const PAGINAS = [
-  ['/negocios', 'Última actualización: 5 de noviembre de 2026 · Versión 2026-11-05', [
+  ['/negocios', 'Última actualización: 11 de noviembre de 2026 · Versión 2026-11-05', [
     ...(pendientes ? [/Versión 2026-11-05 · Algunos cambios aún no se aplican: mira «Versiones y desde cuándo se aplican», al final\./] : []),
     /Versiones y desde cuándo se aplican\s+Cada versión de estas condiciones se aplica desde la fecha de la tabla; hasta ese día vale la anterior\. Los cambios que te afectan te los avisamos con al menos 15 días de antelación \(apartado 10\)/,
     /2026-11-03-b\s+3-11-2026\s+18-11-2026/,
@@ -41,7 +41,7 @@ const PAGINAS = [
   ], [
     /Versión 2026-09-29 ·|Versión 2026-09-29\s*$/m,
   ]],
-  ['/en/business-terms', 'Last updated: 5 November 2026 · Version 2026-11-05', [
+  ['/en/business-terms', 'Last updated: 11 November 2026 · Version 2026-11-05', [
     ...(pendientes ? [/Version 2026-11-05 · Some changes don't apply yet: see ‘Versions and when they apply’, at the end\./] : []),
     /Versions and when they apply\s+Each version of these terms applies from the date in the table; until that day, the previous one applies\./,
     /2026-11-03-b\s+3 Nov 2026\s+18 Nov 2026/,

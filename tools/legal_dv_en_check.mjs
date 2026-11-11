@@ -55,7 +55,7 @@ const PAGINAS = [
     /If the business validates your code by mistake, it can undo it within the next 10 minutes \(once per code\): your code is valid again, unless the offer has already ended, and any stamp or coupon that redemption gave you is removed, if you haven't used it yet\./,
     /4 November 2026: Deals and redemptions \(section 3\): if the business validates your code by mistake, it can undo it within the next 10 minutes, once per code/,
   ], []],
-  ['/negocios', 'Última actualización: 5 de noviembre de 2026 · Versión 2026-11-05', [
+  ['/negocios', 'Última actualización: 11 de noviembre de 2026 · Versión 2026-11-05', [
     /Las cuentas de entidad no pagan cuota, ni ahora ni más adelante: Klendar no les cobrará por publicar ni por las funciones que hoy tienen\. Si algún día hubiera funciones nuevas de pago, serían opcionales y la Entidad podría seguir usando gratis todo lo demás\./,
     /c\) mantener al día quién gestiona la cuenta y avisarnos si deja de representar a la Entidad\.\s+Conecta tu agenda\. La Entidad puede conectar a su cuenta hasta tres calendarios en formato iCal\/ICS\. Klendar lee cada uno una vez al día \(o cuando la Entidad pulsa «Sincronizar ahora»\)/,
     /La Entidad: a\) solo conecta calendarios suyos o que tiene derecho a publicar; b\) responde de lo que contienen, como de lo que publica a mano/,
@@ -68,7 +68,7 @@ const PAGINAS = [
   ], [
     /Mientras Klendar no diga otra cosa, las cuentas de entidad no pagan cuota/,
   ]],
-  ['/en/business-terms', 'Last updated: 5 November 2026 · Version 2026-11-05', [
+  ['/en/business-terms', 'Last updated: 11 November 2026 · Version 2026-11-05', [
     /Organisation accounts pay no fee, now or later: Klendar will not charge them for publishing or for the features they have today\. If paid features are ever added, they will be optional and the Organisation may keep using everything else for free\./,
     /c\) keep up to date who manages the account and let us know if they no longer represent the Organisation\.\s+Connect your calendar\. The Organisation may connect up to three calendars in iCal\/ICS format to its account\./,
     /The Organisation: a\) only connects calendars that are its own or that it has the right to publish; b\) is responsible for their content/,
