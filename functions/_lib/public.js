@@ -398,7 +398,9 @@ export const historiaBoton = (lang, kind, ref, consulta = '') => `<a class="pill
 export function openInApp(path, label = 'Abrir en la app', cls = 'pill accent big') {
   // La app entiende /o/<id>, no /en/o/<id>.
   const deep = path.replace(/^\/en/, '');
-  const intent = `intent://klendar.app${deep}#Intent;scheme=https;package=app.klendar;S.browser_fallback_url=${encodeURIComponent(BASE + '/')};end`;
+  // Sin la app, de vuelta a esta misma página (antes, a la portada: se perdía
+  // el enlace), que entonces dice «Muy pronto…» (assets/cabecera-yo.js).
+  const intent = `intent://klendar.app${deep}#Intent;scheme=https;package=app.klendar;S.browser_fallback_url=${encodeURIComponent(`${BASE}${path}#sin-app`)};end`;
   return `<a class="${cls}" id="open" data-web="${BASE}${esc(deep)}" href="${esc(intent)}">${esc(label)}</a>
 <script>(function(){var a=document.getElementById('open');if(!a)return;if(!/Android/i.test(navigator.userAgent||''))a.remove();})();</script>`;
 }

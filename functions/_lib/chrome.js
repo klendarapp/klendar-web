@@ -41,6 +41,13 @@ export const TABS = [
 // `python tool/asistente_corpus.py` y desplegar `help-assistant`.
 export const PRECIOS = false;
 
+// La app ya está en Google Play y en la App Store para todo el mundo (no solo
+// para los probadores). Apagado: la barra «Abrir en la app» del móvil dice
+// «Muy pronto en Android e iPhone» si la app no está instalada, en vez de
+// mandar a la tienda (assets/cabecera-yo.js; Iván, 11-11). Al publicarla:
+// true y `python build_site.py && python build_pages.py && python build_legal.py`.
+export const APP_PUBLICA = false;
+
 /** Para `build_site.py`, `ayuda.py` y `tools/build_kit.py` (`node -e`). */
 export function precios() {
   return PRECIOS;
@@ -254,7 +261,7 @@ export function siteHeader(lang, esPath = '/', enPath = '/en', actual = '') {
   // `data-precios`: con el interruptor encendido (PRECIOS), para lo que se
   // pinta en el navegador («Tu cuenta», `assets/cuenta/app.js`).
   return `<a class="saltar" href="#contenido">${T.saltar}</a>
-<header class="top"${PRECIOS ? ' data-precios' : ''}><div class="wrap">
+<header class="top"${PRECIOS ? ' data-precios' : ''}${APP_PUBLICA ? ' data-app-publica' : ''}><div class="wrap">
   <a class="brand" href="${en ? '/en' : '/'}"><svg class="simbolo" viewBox="0 0 64 64" width="30" height="30" aria-hidden="true"><path class="simbolo-anillo" pathLength="1" d="M32 6.8A25.2 25.2 0 1 1 8.03 24.21" fill="none" stroke="#FF4D6D" stroke-width="8.4" stroke-linecap="round"/><g class="simbolo-aguja"><path d="M32 32V19.4" stroke="currentColor" stroke-width="5.6" stroke-linecap="round"/></g><circle cx="32" cy="32" r="5.6" fill="currentColor"/></svg> Klendar</a>
   <nav class="pestanas" aria-label="${T.secciones}">${pestanas('pestana')}</nav>
   <input type="checkbox" id="menu" aria-label="${T.mas}">
@@ -273,7 +280,7 @@ export function siteHeader(lang, esPath = '/', enPath = '/en', actual = '') {
     <label class="menu-toggle" for="menu" aria-hidden="true" title="${T.mas}"><span></span><span></span><span></span></label>
   </div>
 </div></header>
-<script src="/assets/cabecera-yo.js?v=20261111vuelta"></script>
+<script src="/assets/cabecera-yo.js?v=20261111app"></script>
 <nav class="tabbar" aria-label="${T.secciones}">${pestanas('tab')}</nav>
 <script src="/assets/cabecera.js?v=20261111sinbarra" defer></script>`;
 }
