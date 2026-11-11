@@ -135,7 +135,7 @@ const nav = await chromium.launch();
 // ── La cola del admin ──────────────────────────────────────────────────────
 {
   const { ctx, page, estado, errores } = await abre(nav, { claveAdmin: true });
-  await page.goto(`${BASE}/admin/#/medios`);
+  await page.goto(`${BASE}/admin#/medios`);
   await page.waitForSelector('.med-fila', { timeout: 15000 }).catch(() => {});
   const texto = await page.locator('main, body').first().innerText();
   ok(await page.locator('.med-fila').count() === 3, 'la cola enseña lo retenido', texto.slice(0, 300));
@@ -175,7 +175,7 @@ const nav = await chromium.launch();
 // ── El Resumen ─────────────────────────────────────────────────────────────
 {
   const { ctx, page, errores } = await abre(nav, { claveAdmin: true });
-  await page.goto(`${BASE}/admin/#/resumen`);
+  await page.goto(`${BASE}/admin#/resumen`);
   await page.waitForSelector('#limitesGratis', { timeout: 15000 }).catch(() => {});
   const texto = await page.locator('body').innerText();
   ok(/Límites gratis/.test(texto), 'el Resumen enseña los límites gratis');
@@ -195,7 +195,7 @@ for (const [lang, titulo, cuerpo, fuera] of [
   ['fr', 'Nous le vérifions', 'toi seul', 'Cela n’a pas été publié'],
 ]) {
   const { ctx, page, estado, errores } = await abre(nav, { lang });
-  await page.goto(`${BASE}/cuenta/`);
+  await page.goto(`${BASE}/cuenta`);
   await page.waitForSelector('.retenido-fotos', { timeout: 15000 }).catch(() => {});
   const t = await page.locator('.retenido', { has: page.locator('.retenido-fotos') }).innerText().catch(() => '');
   ok(t.includes(titulo) && t.includes(cuerpo) && t.includes(fuera), `«Tu cuenta» (${lang}): el mensaje, sin culpar`, t);
@@ -221,7 +221,7 @@ for (const [lang, titulo, cuerpo, fuera] of [
 {
   // El Resumen del panel: lo del negocio, arriba y por encima de lo demás.
   const { ctx, page, estado, errores } = await abre(nav, {});
-  await page.goto(`${BASE}/panel/#/resumen`);
+  await page.goto(`${BASE}/panel#/resumen`);
   await page.waitForSelector('.retenido-fotos', { timeout: 15000 }).catch(() => {});
   const t = await page.locator('.retenido', { has: page.locator('.retenido-fotos') }).innerText().catch(() => '');
   ok(t.includes('Lo estamos revisando') && t.includes('No se ha publicado'), 'panel: el mensaje en el Resumen', t || (await page.locator('body').innerText()).slice(0, 300));
@@ -234,7 +234,7 @@ for (const [lang, titulo, cuerpo, fuera] of [
 {
   // Los fotogramas se piden antes de subir el vídeo y van con el nombre que espera la base.
   const { ctx, page, estado } = await abre(nav, {});
-  await page.goto(`${BASE}/cuenta/`);
+  await page.goto(`${BASE}/cuenta`);
   const r = await page.evaluate(async () => {
     const lienzo = document.createElement('canvas');
     lienzo.width = 64; lienzo.height = 48;

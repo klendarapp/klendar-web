@@ -138,7 +138,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
       page.on('pageerror', (e) => { if (!deFuera(`${e.message} ${e.stack || ''}`)) errores.push(String(e)); });
 
       // 1 y 2. Portada y Descubre.
-      for (const ruta of ['/', '/descubre/']) {
+      for (const ruta of ['/', '/descubre']) {
         await page.goto(`${BASE}${ruta}`, { waitUntil: 'domcontentloaded' });
         await page.waitForTimeout(60);
         if (ruta === '/') {
@@ -159,7 +159,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
         // entran una vez y se quedan quietas (revisión del 3-11-2026, 3.8).
         const sinFin = (await animaciones(page)).filter((a) => a.iter === Infinity && !/respira|gira|brillo/.test(a.nombre));
         ok(sinFin.length === 0, `${tag} ${ruta}: nada se repite sin fin ${JSON.stringify(sinFin)}`);
-        if (ruta === '/descubre/') {
+        if (ruta === '/descubre') {
           // La foto de cada tarjeta lleva su nombre de transición (vuela a la
           // ficha donde el navegador tiene View Transitions entre páginas).
           const nombres = await page.evaluate(() => [...document.querySelectorAll('img.tj-img')]
@@ -178,7 +178,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
       }
       // La hoja de ☰ (segunda pasada, filtros en tres preguntas): sube en el
       // móvil, crece en el escritorio; un bloque abierto despliega lo suyo.
-      await page.goto(`${BASE}/explorar/?lat=40.417&lng=-3.704`, { waitUntil: 'domcontentloaded' });
+      await page.goto(`${BASE}/explorar?lat=40.417&lng=-3.704`, { waitUntil: 'domcontentloaded' });
       await page.locator('#filtros > summary').click();
       await page.waitForTimeout(40);
       const hoja = await page.evaluate(() => getComputedStyle(document.querySelector('#filtros > .hoja-cuerpo')).animationName);
@@ -208,9 +208,9 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
       // Cuarta tanda: el símbolo de la cabecera se dibuja la primera vez en
       // la sesión (y solo esa); un campo con error tiembla.
       await page.evaluate(() => sessionStorage.clear());
-      await page.goto(`${BASE}/como-funciona/`, { waitUntil: 'domcontentloaded' });
+      await page.goto(`${BASE}/como-funciona`, { waitUntil: 'domcontentloaded' });
       const trazo1 = await page.evaluate(() => Boolean(document.querySelector('.brand .simbolo.mov-traza')));
-      await page.goto(`${BASE}/precios/`, { waitUntil: 'domcontentloaded' });
+      await page.goto(`${BASE}/precios`, { waitUntil: 'domcontentloaded' });
       const trazo2 = await page.evaluate(() => Boolean(document.querySelector('.brand .simbolo.mov-traza')));
       ok(reducido ? !trazo1 && !trazo2 : trazo1 && !trazo2, `${tag} el trazo del símbolo: ${trazo1 ? 'sí' : 'no'} y luego ${trazo2 ? 'sí' : 'no'}`);
       // El símbolo, sin el cuadrado (Iván, 2026-10-28): el anillo coral y la

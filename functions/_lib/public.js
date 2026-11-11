@@ -1,4 +1,4 @@
-// Piezas comunes de las páginas públicas (/o/, /b/, /agenda/).
+// Piezas comunes de las páginas públicas (/o/, /b/, /agenda).
 //
 // La idea: que una oferta, un negocio o la agenda de una ciudad se puedan
 // leer enteros en el navegador, sin app y sin cuenta. Canjear sigue siendo
@@ -219,10 +219,10 @@ export function cityLinks(lang, rawCity, city, cats, actual) {
   const nombre = (k) => (en ? k?.names?.en : k?.names?.es) || k?.slug || '';
   const chip = (href, label, on) => `<a class="chip${on ? ' on' : ''}" href="${esc(href)}"${on ? ' aria-current="page"' : ''}>${esc(label)}</a>`;
   return `<nav class="filters" aria-label="${esc(city)}"><div class="frow">
-    ${chip(`${todayBase(lang)}/${c}/`, en ? `Today in ${city}` : `Hoy en ${city}`, actual === 'hoy')}
-    ${chip(`${agendaBase(lang)}/${c}/`, en ? 'This week' : 'Esta semana', actual === 'semana')}
-    ${chip(`${kidsBase(lang)}/${c}/`, en ? 'With kids' : 'Con niños', actual === 'ninos')}
-    ${(cats || []).filter((k) => k?.slug).map((k) => chip(`${agendaBase(lang)}/${c}/${encodeURIComponent(k.slug)}/`, nombre(k), actual === k.slug)).join('')}
+    ${chip(`${todayBase(lang)}/${c}`, en ? `Today in ${city}` : `Hoy en ${city}`, actual === 'hoy')}
+    ${chip(`${agendaBase(lang)}/${c}`, en ? 'This week' : 'Esta semana', actual === 'semana')}
+    ${chip(`${kidsBase(lang)}/${c}`, en ? 'With kids' : 'Con niños', actual === 'ninos')}
+    ${(cats || []).filter((k) => k?.slug).map((k) => chip(`${agendaBase(lang)}/${c}/${encodeURIComponent(k.slug)}`, nombre(k), actual === k.slug)).join('')}
   </div></nav>`;
 }
 
@@ -234,7 +234,7 @@ export const collectionBase = (lang) => (lang === 'en' ? '/en/collection' : '/co
 
 /** La misma página en el otro idioma: /o/x ⇄ /en/o/x, /agenda/x ⇄ /en/whats-on/x,
  * /hoy/x ⇄ /en/today/x, /con-ninos/x ⇄ /en/kids/x, /partidos/x ⇄ /en/matches/x,
- * /grupos/ ⇄ /en/groups/, /sorteos/ ⇄ /en/giveaways/, /sorteo/x ⇄ /en/giveaway/x,
+ * /grupos ⇄ /en/groups, /sorteos ⇄ /en/giveaways, /sorteo/x ⇄ /en/giveaway/x,
  * /sorteo/x/bases ⇄ /en/giveaway/x/rules, /cola/x ⇄ /en/queue/x y /listo/x ⇄
  * /en/ready/x. */
 export const altPath = (path, lang) =>
@@ -256,7 +256,7 @@ export const altPath = (path, lang) =>
         .replace(/^\/en\/queue\//, '/cola/')
         .replace(/^\/en\/ready\//, '/listo/')
         .replace(/^\/en/, '') || '/')
-    : `/en${path
+    : path === '/' ? '/en' : `/en${path
         .replace(/^\/agenda/, '/whats-on')
         .replace(/^\/hoy/, '/today')
         .replace(/^\/con-ninos/, '/kids')
@@ -359,7 +359,7 @@ ${cabeza}
 ${siteHeader(lang, esc(es + (consultas ? consultas.es : consulta)), esc(enPath + (consultas ? consultas.en : consulta)), actual)}
 <main class="pub wrap" id="contenido">${body}</main>
 ${siteFooter(lang)}
-${conAmigos ? `<script src="/assets/amigos.js?v=20261105cuenta" defer data-lang="${en ? 'en' : 'es'}"></script>
+${conAmigos ? `<script src="/assets/amigos.js?v=20261111sinbarra" defer data-lang="${en ? 'en' : 'es'}"></script>
 ` : ''}${conVisor ? `<script src="/assets/tarjeta.js?v=20261028rp" defer></script>
 ` : ''}${conTarjetas ? `<script src="/assets/tarjetas.js?v=20261109sb" defer></script>
 ` : ''}${/class="detail[" ]/.test(body) ? `<script src="/assets/barra.js?v=4" defer></script>
@@ -435,7 +435,7 @@ export function serviceDown(lang, path) {
   <h1>${esc(S.title)}</h1>
   <p class="muted" style="max-width:560px">${esc(S.body)}</p>
   <p><a class="pill accent" href="${esc(path)}">${esc(S.again)}</a>
-     <a class="pill" href="/${en ? 'en/' : ''}">${esc(S.home)}</a></p>`,
+     <a class="pill" href="${en ? '/en' : '/'}">${esc(S.home)}</a></p>`,
   });
 }
 

@@ -43,7 +43,7 @@ window.KFotoRellena = (() => {
     const r = await modal({
       title: t('¿Leemos tu foto con IA?'),
       intro: `${esc(t('Para rellenarlo, la foto que elijas se envía a Claude, la IA de Anthropic, una empresa de Estados Unidos, que lee lo que pone y nos lo devuelve. Klendar no guarda la foto ni lo leído, salvo que la uses como imagen de tu publicación. Anthropic no lo usa para entrenar su IA y lo borra en 30 días; lo que sus sistemas marquen como grave puede guardarlo hasta 2 años. Procura que no salgan personas ni datos personales. Sin esto, escribes a mano como siempre, y puedes cambiarlo en Ajustes.'))}
-        <a class="link" href="/privacidad/" target="_blank" rel="noopener">${esc(t('Más información'))}</a>`,
+        <a class="link" href="/privacidad" target="_blank" rel="noopener">${esc(t('Más información'))}</a>`,
       html: `<label class="f foto-permiso"><input type="checkbox" name="foto_permiso" required><span>${esc(t('Acepto que mis fotos se envíen a Claude (Anthropic, Estados Unidos) para leerlas'))}</span></label>`,
       submit: t('Continuar'),
       cancel: t('Ahora no, lo escribo a mano'),

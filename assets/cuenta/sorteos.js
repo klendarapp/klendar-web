@@ -40,18 +40,18 @@ function sorteosEnCuenta() {
 function sorteosApagadosCuenta() {
   const S = KSo.t(sorteoLang());
   pinta(pantallaVacia({ icono: 'local_activity', titulo: S.offTitle, h: 'h1', texto: S.offText,
-    botones: `<a class="pill accent" href="${PUB_EN ? '/en/discover/' : '/descubre/'}">${esc(S.offGo)}</a>` }));
+    botones: `<a class="pill accent" href="${PUB_EN ? '/en/discover' : '/descubre'}">${esc(S.offGo)}</a>` }));
 }
 
 RUTAS.sorteos = async () => {
   if (!(await sorteosEnCuenta())) { sorteosApagadosCuenta(); return; }
-  location.replace(PUB_EN ? '/en/giveaways/?mine=1' : '/sorteos/?mios=1');
+  location.replace(PUB_EN ? '/en/giveaways?mine=1' : '/sorteos?mios=1');
 };
 
 RUTAS.sorteo = async ([id]) => {
   if (!(await sorteosEnCuenta())) { sorteosApagadosCuenta(); return; }
   const S = KSo.t(sorteoLang());
-  const lista = PUB_EN ? '/en/giveaways/' : '/sorteos/';
+  const lista = PUB_EN ? '/en/giveaways' : '/sorteos';
   if (!SORTEO_UUID.test(id || '')) {
     pinta(pantallaVacia({ icono: 'link', titulo: S.notHere, h: 'h1', texto: S.notHereText,
       botones: `<a class="pill accent" href="${lista}">${esc(S.title)}</a>` }));

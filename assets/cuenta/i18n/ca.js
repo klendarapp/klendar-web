@@ -871,7 +871,7 @@ KL_DIC('ca', {
   "Hay un texto demasiado largo.": "Hi ha un text massa llarg.",
   "Hazte mi amigo en Klendar y vemos a qué planes vamos: {url}": "Fes-te amic meu a Klendar i veurem a quins plans anem: {url}",
   "He leído y acepto los": "He llegit i accepto els",
-  "He leído y acepto los <a href=\"/terminos/\" target=\"_blank\">términos</a> y la <a href=\"/privacidad/\" target=\"_blank\">privacidad</a>.": "He llegit i accepto els <a href=\"/terminos/\" target=\"_blank\">termes</a> i la <a href=\"/privacidad/\" target=\"_blank\">privadesa</a>.",
+  "He leído y acepto los <a href=\"/terminos\" target=\"_blank\">términos</a> y la <a href=\"/privacidad\" target=\"_blank\">privacidad</a>.": "He llegit i accepto els <a href=\"/terminos\" target=\"_blank\">termes</a> i la <a href=\"/privacidad\" target=\"_blank\">privadesa</a>.",
   "He olvidado la contraseña": "He oblidat la contrasenya",
   "Hecho": "Fet",
   "Hecho. Está en tus planes.": "Fet. És als teus plans.",

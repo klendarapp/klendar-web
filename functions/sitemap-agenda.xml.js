@@ -40,9 +40,9 @@ export async function onRequestGet(ctx) {
   const urls = cities.flatMap((c) => {
     const slug = encodeURIComponent(String(c.slug || c.city).toLowerCase());
     return [
-      urlPar(`${BASE}/agenda/${slug}/`, `${BASE}/en/whats-on/${slug}/`, { lastmod: today, freq: 'daily', prio: '0.7' }),
-      urlPar(`${BASE}/hoy/${slug}/`, `${BASE}/en/today/${slug}/`, { lastmod: today, freq: 'daily', prio: '0.7' }),
-      ...(c.kids === false ? [] : [urlPar(`${BASE}/con-ninos/${slug}/`, `${BASE}/en/kids/${slug}/`, { lastmod: today, freq: 'daily', prio: '0.6' })]),
+      urlPar(`${BASE}/agenda/${slug}`, `${BASE}/en/whats-on/${slug}`, { lastmod: today, freq: 'daily', prio: '0.7' }),
+      urlPar(`${BASE}/hoy/${slug}`, `${BASE}/en/today/${slug}`, { lastmod: today, freq: 'daily', prio: '0.7' }),
+      ...(c.kids === false ? [] : [urlPar(`${BASE}/con-ninos/${slug}`, `${BASE}/en/kids/${slug}`, { lastmod: today, freq: 'daily', prio: '0.6' })]),
     ];
   });
 
@@ -51,15 +51,15 @@ export async function onRequestGet(ctx) {
   const catUrls = cities.flatMap((c) => {
     const slug = encodeURIComponent(String(c.slug || c.city).toLowerCase());
     return (Array.isArray(c.cats) ? c.cats : []).filter(Boolean).map((k) => urlPar(
-      `${BASE}/agenda/${slug}/${encodeURIComponent(k)}/`,
-      `${BASE}/en/whats-on/${slug}/${encodeURIComponent(k)}/`,
+      `${BASE}/agenda/${slug}/${encodeURIComponent(k)}`,
+      `${BASE}/en/whats-on/${slug}/${encodeURIComponent(k)}`,
       { lastmod: today, freq: 'daily', prio: '0.6' },
     ));
   });
 
   const colUrls = collections.map((k) => urlPar(
-    `${BASE}/coleccion/${encodeURIComponent(k.slug)}/`,
-    `${BASE}/en/collection/${encodeURIComponent(k.slug)}/`,
+    `${BASE}/coleccion/${encodeURIComponent(k.slug)}`,
+    `${BASE}/en/collection/${encodeURIComponent(k.slug)}`,
     { lastmod: today, freq: 'daily', prio: '0.6' },
   ));
 

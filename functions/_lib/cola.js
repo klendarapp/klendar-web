@@ -13,7 +13,7 @@ import { esc, html, rpc, supabasePublic } from './page.js';
 import { publicPage } from './public.js';
 import KC from '../../assets/cola.js';
 
-export const COLA_JS_V = 3;
+export const COLA_JS_V = 4;
 
 const HEAD = `<meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">

@@ -165,8 +165,8 @@ const APP_EN = {
   'Nombre': 'Name',
   '(8 caracteres o más)': '(8 characters or more)',
   'Fecha de nacimiento': 'Date of birth',
-  'He leído y acepto los <a href="/terminos/" target="_blank">términos</a> y la <a href="/privacidad/" target="_blank">privacidad</a>.':
-    'I have read and accept the <a href="/en/terms/" target="_blank">terms</a> and the <a href="/en/privacy/" target="_blank">privacy policy</a>.',
+  'He leído y acepto los <a href="/terminos" target="_blank">términos</a> y la <a href="/privacidad" target="_blank">privacidad</a>.':
+    'I have read and accept the <a href="/en/terms" target="_blank">terms</a> and the <a href="/en/privacy" target="_blank">privacy policy</a>.',
   'Quiero recibir novedades de Klendar (opcional).': "I'd like to get news from Klendar (optional).",
   'Crear la cuenta': "Sign up",
   '¿Ya tienes cuenta?': 'Already have an account?',

@@ -102,8 +102,8 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     const guardado = () => page.evaluate(() => JSON.parse(localStorage.getItem('klendar.vistos') || '{}'));
     // Se borra desde una página sin /assets/vistos.js: si no, la tarjeta que
     // se estaba viendo podía contar como vista justo después de borrar.
-    const borra = async () => { await ir('/privacidad/'); await page.evaluate(() => localStorage.removeItem('klendar.vistos')); };
-    const pon = async (m) => { await ir('/privacidad/'); await page.evaluate((x) => localStorage.setItem('klendar.vistos', JSON.stringify(x)), m); };
+    const borra = async () => { await ir('/privacidad'); await page.evaluate(() => localStorage.removeItem('klendar.vistos')); };
+    const pon = async (m) => { await ir('/privacidad'); await page.evaluate((x) => localStorage.setItem('klendar.vistos', JSON.stringify(x)), m); };
 
     // 1. Sin nada visto: el orden de la base.
     await page.route('**/assets/vistos.js*', (r) => r.fulfill({ body: '', contentType: 'text/javascript' }));

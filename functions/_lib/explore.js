@@ -7,9 +7,9 @@
 // calle. Con JavaScript, además: «Cerca de mí», el mapa, el vídeo de las
 // tarjetas y cerrar los desplegables al pulsar fuera.
 //
-// - Descubre (/descubre/, /en/discover/): el feed de tarjetas grandes, lo
+// - Descubre (/descubre, /en/discover): el feed de tarjetas grandes, lo
 //   más cerca primero si has dicho dónde estás (la pestaña 1 de la app).
-// - Explorar (/explorar/, /en/explore/): como la pestaña 2 de la app
+// - Explorar (/explorar, /en/explore): como la pestaña 2 de la app
 //   (Iván, 2026-11-03): «Planes | Sitios» · buscar (la hoja «Buscar») · el
 //   botón de vista. Planes abre en el calendario (lo mismo para Google, sin
 //   JavaScript y con él) y se ve también en el mapa; la lista de Planes
@@ -562,7 +562,7 @@ const sinKlendarHtml = ({ S, lang, lat, lng, cobertura, link }) => {
     <div class="avisame-caja" data-avisame-caja hidden></div>
   </section>
   <script type="application/json" id="avisame-textos">${JSON.stringify(textos).replace(/</g, '\\u003c')}</script>
-  <script src="/assets/avisame.js?v=20261109captcha" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}" data-lang="${en ? 'en' : 'es'}"></script>`;
+  <script src="/assets/avisame.js?v=20261111sinbarra" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}" data-lang="${en ? 'en' : 'es'}"></script>`;
 };
 
 /** Lo que dice /assets/avisame.js (el formulario y lo que pasa después). */
@@ -570,7 +570,7 @@ const avisameTextos = (en) => (en
   ? {
       email: 'Your email', send: 'Tell me', login: 'Log in with my account', busy: 'One moment…',
       note: "Only to tell you once. You'll get an email to confirm it and you can unsubscribe whenever you like.",
-      privacy: 'Privacy', privacyUrl: '/en/privacy/',
+      privacy: 'Privacy', privacyUrl: '/en/privacy',
       badEmail: "Check the email: it doesn't look valid.", tooMany: 'Too many attempts. Try again in a while.',
       captcha: "We couldn't check that you're not a robot. Try again.",
       oops: 'Something went wrong. If it happens again, email info@klendar.app.',
@@ -584,7 +584,7 @@ const avisameTextos = (en) => (en
   : {
       email: 'Tu correo', send: 'Avísame', login: 'Entrar con mi cuenta', busy: 'Un momento…',
       note: 'Solo para avisarte una vez. Te llegará un correo para confirmarlo y podrás borrarte cuando quieras.',
-      privacy: 'Privacidad', privacyUrl: '/privacidad/',
+      privacy: 'Privacidad', privacyUrl: '/privacidad',
       badEmail: 'Revisa el correo: no parece válido.', tooMany: 'Demasiados intentos. Prueba dentro de un rato.',
       captcha: 'No hemos podido comprobar que no eres un robot. Vuelve a probar.',
       oops: 'Algo no ha ido bien. Si vuelve a pasar, escríbenos a info@klendar.app.',
@@ -639,7 +639,7 @@ const finalHtml = ({ S, en, lang, cerca, km, city, cityName = '', filtros, link,
       ? (ampliar ? (filtros ? S.emptyBodyFiltered(donde) : S.emptyBody(donde)) : (filtros ? S.emptyBodyAllFiltered : S.emptyBodyAll))
       : ampliar ? (filtros ? S.endBodyFiltered : S.endBody) : (filtros ? S.endBodyAllFiltered : S.endBodyAll);
   // «Ver la agenda»: Explorar › Planes › calendario con los mismos filtros (la app).
-  const agenda = agendaHref || `${agendaBase(lang)}/${city ? `${CITY(city)}/` : ''}`;
+  const agenda = agendaHref || `${agendaBase(lang)}${city ? `/${CITY(city)}` : ''}`;
   // «Quitar filtros» deja la página limpia: sin filtros, sin zona y sin
   // distancia (lo que se espera al pulsarlo; también lo guardado).
   const quitar = limpiar
@@ -1179,7 +1179,7 @@ function query(e, lang, { soloCompartido = false } = {}) {
 function guardaFiltros(e, lang, base, explorar = false) {
   const compartido = { es: query(e, 'es', { soloCompartido: true }), en: query(e, 'en', { soloCompartido: true }) };
   // Explorar recuerda lo último elegido (Planes o Sitios; lista, mapa o calendario),
-  // como la app: al volver a /explorar/ sin nada en la dirección, se abre ahí.
+  // como la app: al volver a /explorar sin nada en la dirección, se abre ahí.
   const vistaDe = (l) => {
     const K = CLAVES[l];
     const x = new URLSearchParams();
@@ -1200,7 +1200,7 @@ function guardaFiltros(e, lang, base, explorar = false) {
   if (e.vista === 'map' && e.ambiente) resto.set(K.buzz, '1');
   const vacia = !compartido.es;
   const datos = JSON.stringify({
-    A: compartido, L: lang, v: vacia, r: resto.toString(), b: `${base}/`, g: (e.gustos || []).join(','), vi: enVisita(e) ? 1 : 0,
+    A: compartido, L: lang, v: vacia, r: resto.toString(), b: `${base}`, g: (e.gustos || []).join(','), vi: enVisita(e) ? 1 : 0,
     // Una búsqueda (que se ve en lista) no cambia la vista que se recuerda.
     ...(explorar ? { ex: 1, ...(e.q ? {} : { x: { es: vistaDe('es'), en: vistaDe('en') } }) } : {}),
   }).replace(/</g, '\\u003c');
@@ -1632,7 +1632,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
     // sí se guarda.
     if ('city' in cambios || 'cerca' in cambios || 'todas' in cambios) b.visita = false;
     const s = query(b, lang);
-    return `${base}/${s ? `?${s}` : ''}`;
+    return `${base}${s ? `?${s}` : ''}`;
   };
   // Todo fuera, también la zona: la página limpia (y lo guardado, limpio).
   // «Según el tiempo» se queda como estaba: no quita nada, solo ordena. Lo
@@ -1642,7 +1642,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   if (negocios) limpiaQ.set(CLAVES[en ? 'en' : 'es'].what, en ? 'places' : 'sitios');
   if (vistaLimpia) limpiaQ.set(CLAVES[en ? 'en' : 'es'].view, enIdioma(vistaLimpia, en));
   if (tiempoOff) limpiaQ.set(CLAVES[en ? 'en' : 'es'].weather, '0');
-  const limpia = `${base}/${limpiaQ.toString() ? `?${limpiaQ}` : ''}`;
+  const limpia = `${base}${limpiaQ.toString() ? `?${limpiaQ}` : ''}`;
 
   // ── La barra de filtros: la de la app (opción A, 2026-10-26) ──
   // ☰ (lo demás, con su número) · ¿Dónde? · ¿Cuándo? · ¿Qué? · el orden. Cada
@@ -1718,7 +1718,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   const ocultosZona = [...new URLSearchParams(query({ ...e, vista, page: 1, city: '', cerca: false, lat: null, lng: null, aprox: false, todas: false, mes: '', dia: '' }, lang))]
     .filter(([k]) => k !== 'p')
     .map(([k, v]) => `<input type="hidden" name="${esc(k)}" value="${esc(v)}">`).join('');
-  const buscaMunicipio = `<form class="muni-busca" method="get" action="${esc(base)}/" role="search" data-muni-busca
+  const buscaMunicipio = `<form class="muni-busca" method="get" action="${esc(base)}" role="search" data-muni-busca
        data-muni-href="${esc(link({ city: '__SLUG__', cerca: false }))}" data-muni-nada="${esc(S.muniNotFound)}" data-muni-error="${esc(S.muniOffline)}">
        ${ocultosZona}
        <label class="buscador-campo muni-campo">${ic('buscar', 20)}<span class="sr">${esc(S.muniSearch)}</span>
@@ -1815,7 +1815,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   // cerrarla (/assets/tarjetas.js; sin JavaScript, un enlace).
   const hojaDe = ({ id, summary, titulo, reset, resetTxt, ocultos, cuerpo }) => `<details class="hoja" id="${id}">
     ${summary}
-    <form class="hoja-cuerpo" method="get" action="${base}/" role="dialog" aria-labelledby="${id}Titulo">
+    <form class="hoja-cuerpo" method="get" action="${base}" role="dialog" aria-labelledby="${id}Titulo">
       <div class="hoja-cab"><h2 id="${id}Titulo">${esc(titulo)}</h2>
         <a class="hoja-reset" href="${esc(reset)}" data-restablecer>${esc(resetTxt)}</a>
         <a class="hoja-x" href="#${id}" data-cerrar-hoja aria-label="${esc(S.close)}">${ic('x', 22)}</a></div>
@@ -2072,10 +2072,10 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
     recent: S.searchRecent, clear: S.searchClear, local: S.searchLocal,
     popular: S.searchPopular, popularHint: S.searchPopularHint, remove: S.searchRemove,
     // «Dónde ver el partido» con su subtítulo, arriba del panel en reposo.
-    partidos: { t: KE.t(lang).title, s: KE.t(lang).lead, href: `${partidosBase(lang)}/${zonaDeExplorar(e, lang) ? `?${zonaDeExplorar(e, lang)}` : ''}` },
+    partidos: { t: KE.t(lang).title, s: KE.t(lang).lead, href: `${partidosBase(lang)}${zonaDeExplorar(e, lang) ? `?${zonaDeExplorar(e, lang)}` : ''}` },
     // «Grupos y empresas» y «Sorteos» (tanda C), detrás, como en la app.
-    grupos: { t: KG.t(lang).title, s: KG.t(lang).sub, href: `${gruposBase(lang)}/${zonaGrupos(e, lang) ? `?${zonaGrupos(e, lang)}` : ''}` },
-    ...(sorteosOn ? { sorteos: { t: KS.t(lang).title, s: KS.t(lang).sub, href: `${sorteosBase(lang)}/${zonaGrupos(e, lang) ? `?${zonaGrupos(e, lang)}` : ''}` } } : {}),
+    grupos: { t: KG.t(lang).title, s: KG.t(lang).sub, href: `${gruposBase(lang)}${zonaGrupos(e, lang) ? `?${zonaGrupos(e, lang)}` : ''}` },
+    ...(sorteosOn ? { sorteos: { t: KS.t(lang).title, s: KS.t(lang).sub, href: `${sorteosBase(lang)}${zonaGrupos(e, lang) ? `?${zonaGrupos(e, lang)}` : ''}` } } : {}),
     // «Pedir un local», el cuarto, como en el buscador de la app.
     pedir: { t: S.askVenue, s: S.recommendShort, href: pedirHref(lang) },
   });
@@ -2085,7 +2085,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   // mismos filtros.
   const ocultosDe = (estado) => new URLSearchParams(query(estado, lang)).toString().split('&').filter(Boolean)
     .map((kv) => { const [k, v] = kv.split('='); return `<input type="hidden" name="${esc(decodeURIComponent(k))}" value="${esc(decodeURIComponent(v.replace(/\+/g, ' ')))}">`; }).join('');
-  const formBuscar = (fijo) => `<form class="buscador" id="${fijo ? 'buscarForm' : 'buscar'}" role="search" method="get" action="${exploreBase(lang)}/" data-busqueda${fijo ? ' data-panel-fijo' : ''}
+  const formBuscar = (fijo) => `<form class="buscador" id="${fijo ? 'buscarForm' : 'buscar'}" role="search" method="get" action="${exploreBase(lang)}" data-busqueda${fijo ? ' data-panel-fijo' : ''}
     data-ciudad="${esc(ciudadK?.id || '')}" data-ciudad-nombre="${esc(ciudadK?.name || '')}" data-textos="${esc(textosBusqueda)}">
     <label class="buscador-campo">${ic('buscar', 20)}<span class="sr">${esc(S.search)}</span>
       <input type="search" name="q" value="${esc(q)}" placeholder="${esc(S.ph)}" enterkeyhint="search"></label>
@@ -2097,7 +2097,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
     const b = { ...e, vista: '', que: '', q: '', page: 1, mes: '', dia: '', ...cambios };
     if (b.cerca === false) { b.lat = null; b.lng = null; }
     const s = query(b, lang);
-    return `${destino}/${s ? `?${s}` : ''}`;
+    return `${destino}${s ? `?${s}` : ''}`;
   };
   // «O mira por tipo de sitio» (como la lupa de la app): las categorías por
   // los cinco grupos; los dos primeros abiertos y los demás con «N más».
@@ -2137,8 +2137,8 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   <script>${FILA_MIDE}</script>
   <p id="cercaErr" class="aviso-error" role="alert" hidden></p>
   <script src="/assets/categorias.js?v=6" defer></script>
-  <script src="/assets/gustos.js?v=20261105cuenta" defer data-lang="${en ? 'en' : 'es'}"></script>
-  <script src="/assets/municipios.js?v=20261103rv" defer></script>`;
+  <script src="/assets/gustos.js?v=20261111sinbarra" defer data-lang="${en ? 'en' : 'es'}"></script>
+  <script src="/assets/municipios.js?v=20261111sinbarra" defer></script>`;
 
   // Los atajos de la lupa (Iván, 2026-10-29: como la app): cada uno pone sus
   // filtros sobre los que haya y lleva a Descubre; «Para comer ya», a
@@ -2184,7 +2184,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   // Descubre; desde otra página, ✨ trae aquí y la abre. Sin ninguna, lo
   // dice (la cabecera es la misma en todas partes y ✨ siempre está).
   const hojaSelecciones = descubre ? hojaSimple('selecciones', S.picks, (cols || []).length ? `<p class="hoja-nota">${esc(S.picksSub)}</p>
-      <div class="sel-lista">${cols.map((c) => `<a class="sel-fila" href="${collectionBase(lang)}/${encodeURIComponent(c.slug)}/${city && !cerca ? `${CITY(city)}/` : ''}">
+      <div class="sel-lista">${cols.map((c) => `<a class="sel-fila" href="${collectionBase(lang)}/${encodeURIComponent(c.slug)}${city && !cerca ? `/${CITY(city)}` : ''}">
         <span><b>${esc(colTitle(c, en))}</b>${colSub(c, en) ? `<small>${esc(colSub(c, en))}</small>` : ''}</span>${ic('der', 22)}</a>`).join('')}</div>`
     : `<p class="hoja-nota">${esc(S.picksNone)}</p>`) : '';
 
@@ -2237,7 +2237,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
       <a href="${esc(`${enlaceCuenta(en ? 'en' : 'es', `avisame-palabra?palabra=${encodeURIComponent(palabra)}`)}`)}">
         ${ic('campana', 22)}<span><b>${esc(S.alertWord(palabra))}</b><small>${esc(S.alertWordHint)}</small></span></a>
     </div>
-    <script src="/assets/palabras.js?v=20261105cuenta" defer data-lang="${en ? 'en' : 'es'}" data-url="${esc(supabasePublic().url)}" data-key="${esc(supabasePublic().key)}"></script>` : '';
+    <script src="/assets/palabras.js?v=20261111sinbarra" defer data-lang="${en ? 'en' : 'es'}" data-url="${esc(supabasePublic().url)}" data-key="${esc(supabasePublic().key)}"></script>` : '';
   const final = sinKlendar ? sinKlendarHtml({ S, lang, lat, lng, cobertura, link })
     : alFinal || vacio ? finalHtml({
       S, en, lang, cerca, km, city, cityName: e.cityName || '', filtros: conFiltros, link, page, sugerencias, vacio, alertaHref, nadaCerca,
@@ -2247,7 +2247,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
       pedirQ: vacio ? pedirQ : '', sinSugiere: Boolean(lineaPedir),
       busqueda: vacio && !negocios && !descubre ? q : '',
       enSitios: vacio && q && !negocios && !descubre ? link({ que: 'places', vista: '', page: 1 }) : '',
-      agendaHref: `${exploreBase(lang)}/?${query({ ...e, que: '', q: '', vista: 'calendar', page: 1, mes: '', dia: '' }, lang)}`,
+      agendaHref: `${exploreBase(lang)}?${query({ ...e, que: '', q: '', vista: 'calendar', page: 1, mes: '', dia: '' }, lang)}`,
     }) : '';
 
   // ── Más formas de explorar: las páginas de Google, abajo y en su sitio ──
@@ -2262,12 +2262,12 @@ var r=function(d){return d*Math.PI/180;},km=function(a){var la=+a.getAttribute('
 document.querySelectorAll('[data-mf] p').forEach(function(p){var l=Array.prototype.slice.call(p.children);l.map(function(a,i){return{a:a,i:i,d:km(a)};}).sort(function(a,b){return a.d-b.d||a.i-b.i;}).forEach(function(x,i){x.a.hidden=i>=${MF_MAX};p.appendChild(x.a);});});}catch(x){}})();</script>` : '';
   const masFormas = negocios ? '' : `<section class="mas-formas" aria-labelledby="masFormas">
     <h2 id="masFormas">${esc(S.more)}</h2>
-    ${ciudadesMas.length ? `<div class="mf-fila"${mfCliente ? ' data-mf' : ''}><h3>${esc(S.todayIn)}</h3><p>${ciudadesMas.map((c, i) => `<a${mfAttr(c, i)} href="${todayBase(lang)}/${CITY(c.slug || c.city)}/">${esc(c.slug ? c.city : PRETTY(c.city))}</a>`).join('')}</p></div>
-    <div class="mf-fila"${mfCliente ? ' data-mf' : ''}><h3>${esc(S.weekIn)}</h3><p>${ciudadesMas.map((c, i) => `<a${mfAttr(c, i)} href="${agendaBase(lang)}/${CITY(c.slug || c.city)}/">${esc(c.slug ? c.city : PRETTY(c.city))}</a>`).join('')}</p></div>
-    <div class="mf-fila"${mfCliente ? ' data-mf' : ''}><h3>${esc(S.kidsIn)}</h3><p>${ciudadesMas.map((c, i) => `<a${mfAttr(c, i)} href="${kidsBase(lang)}/${CITY(c.slug || c.city)}/">${esc(c.slug ? c.city : PRETTY(c.city))}</a>`).join('')}</p></div>` : ''}
-    ${ciudadSeo && (cats || []).length ? `<div class="mf-fila"><h3>${esc(S.byCat)} · ${esc(PRETTY(ciudadSeo))}</h3><p>${(cats || []).map((c) => `<a href="${agendaBase(lang)}/${CITY(ciudadSeo)}/${encodeURIComponent(c.slug)}/">${esc(catName(c, en))}</a>`).join('')}</p></div>` : ''}
-    ${cols.length ? `<div class="mf-fila"><h3>${esc(S.picks)}</h3><p>${cols.map((c) => `<a href="${collectionBase(lang)}/${encodeURIComponent(c.slug)}/${city && !cerca ? `${CITY(city)}/` : ''}">${esc(colTitle(c, en))}</a>`).join('')}</p></div>` : ''}
-    <p class="mf-cta"><a class="pill" href="${enlaceCuenta(en ? 'en' : 'es', 'registro')}" data-sin-sesion>${esc(S.app)}</a> <a class="pill" href="${en ? '/en/for-business/' : '/para-negocios/'}">${esc(S.biz)}</a></p>
+    ${ciudadesMas.length ? `<div class="mf-fila"${mfCliente ? ' data-mf' : ''}><h3>${esc(S.todayIn)}</h3><p>${ciudadesMas.map((c, i) => `<a${mfAttr(c, i)} href="${todayBase(lang)}/${CITY(c.slug || c.city)}">${esc(c.slug ? c.city : PRETTY(c.city))}</a>`).join('')}</p></div>
+    <div class="mf-fila"${mfCliente ? ' data-mf' : ''}><h3>${esc(S.weekIn)}</h3><p>${ciudadesMas.map((c, i) => `<a${mfAttr(c, i)} href="${agendaBase(lang)}/${CITY(c.slug || c.city)}">${esc(c.slug ? c.city : PRETTY(c.city))}</a>`).join('')}</p></div>
+    <div class="mf-fila"${mfCliente ? ' data-mf' : ''}><h3>${esc(S.kidsIn)}</h3><p>${ciudadesMas.map((c, i) => `<a${mfAttr(c, i)} href="${kidsBase(lang)}/${CITY(c.slug || c.city)}">${esc(c.slug ? c.city : PRETTY(c.city))}</a>`).join('')}</p></div>` : ''}
+    ${ciudadSeo && (cats || []).length ? `<div class="mf-fila"><h3>${esc(S.byCat)} · ${esc(PRETTY(ciudadSeo))}</h3><p>${(cats || []).map((c) => `<a href="${agendaBase(lang)}/${CITY(ciudadSeo)}/${encodeURIComponent(c.slug)}">${esc(catName(c, en))}</a>`).join('')}</p></div>` : ''}
+    ${cols.length ? `<div class="mf-fila"><h3>${esc(S.picks)}</h3><p>${cols.map((c) => `<a href="${collectionBase(lang)}/${encodeURIComponent(c.slug)}${city && !cerca ? `/${CITY(city)}` : ''}">${esc(colTitle(c, en))}</a>`).join('')}</p></div>` : ''}
+    <p class="mf-cta"><a class="pill" href="${enlaceCuenta(en ? 'en' : 'es', 'registro')}" data-sin-sesion>${esc(S.app)}</a> <a class="pill" href="${en ? '/en/for-business' : '/para-negocios'}">${esc(S.biz)}</a></p>
   </section>${mfScript}`;
 
   // Cuántas hay y «Quitar filtros»: la página limpia del todo (también la zona).
@@ -2283,8 +2283,8 @@ document.querySelectorAll('[data-mf] p').forEach(function(p){var l=Array.prototy
 
   // Lo que se le dice a Google: la página y su lista (como la agenda).
   const jsonLd = !filtrado && items.length && !negocios ? ldScript(listingLd({
-    lang, path: `${base}/`, name: descubre ? S.disc : S.exp, description: descubre ? S.discLead : S.lead, city: '', items: calendario && diaParte?.items?.length ? diaParte.items : items,
-    migas: [['Klendar', en ? '/en/' : '/'], [descubre ? S.disc : S.exp, `${base}/`]],
+    lang, path: `${base}`, name: descubre ? S.disc : S.exp, description: descubre ? S.discLead : S.lead, city: '', items: calendario && diaParte?.items?.length ? diaParte.items : items,
+    migas: [['Klendar', en ? '/en' : '/'], [descubre ? S.disc : S.exp, `${base}`]],
   })) : '';
   // «Lo ya visto, al final»: cuenta lo que ves en todas las páginas y, en la
   // primera, pone lo visto al final (en las demás, el orden de la base).
@@ -2328,7 +2328,7 @@ ${GRUPOS_CSS}` : ''}`;
   // las ciudades»), que solo sabe el navegador (/assets/avisos.js). Lleva a
   // Descubre sin nada en la dirección, que recupera lo guardado.
   const visita = descubre && enVisita(e)
-    ? `<div id="visita" class="feed-aviso" data-aviso="visita" hidden data-lang="${en ? 'en' : 'es'}" data-volver="${esc(`${base}/`)}"
+    ? `<div id="visita" class="feed-aviso" data-aviso="visita" hidden data-lang="${en ? 'en' : 'es'}" data-volver="${esc(`${base}`)}"
         data-populares="${esc(JSON.stringify(populares))}" data-iconos="${esc(JSON.stringify({ cerca: ic('cerca', 16), ciudad: ic('ciudad', 16), todas: ic('mundo', 16), x: ic('x', 18) }))}"
         data-textos="${esc(JSON.stringify({ near: S.visitNear, all: S.visitAll, to: S.visitTo, label: S.visitLabel.replace('{city}', e.cityName || PRETTY(city)), close: S.travelClose }))}"></div>`
     : '';
@@ -2339,7 +2339,7 @@ ${GRUPOS_CSS}` : ''}`;
   if (descubre) {
     return variaCon(conCookie(html(publicPage({
       lang,
-      path: `${base}/`,
+      path: `${base}`,
       title: S.disc,
       description: S.discLead,
       image: portada(items),
@@ -2426,7 +2426,7 @@ ${SITIOS_SCRIPTS}` : ''}`;
   // limpia sí.
   return variaCon(conCookie(html(publicPage({
     lang,
-    path: `${base}/`,
+    path: `${base}`,
     title: S.exp,
     description: S.lead,
     image: portada(items),
@@ -2506,11 +2506,11 @@ export async function categoryPage(rawCity, rawCat, lang) {
   const S = T(en);
   const decCity = decodeSeg(rawCity);
   const decCat = decodeSeg(rawCat);
-  if (decCity == null || decCat == null) return aListado(`${agendaBase(lang)}/`);
+  if (decCity == null || decCat == null) return aListado(`${agendaBase(lang)}`);
   let rawc = decCity.replace(/[/]+$/, '');
   const slug = decCat.replace(/[/]+$/, '').toLowerCase();
-  const path = `${agendaBase(lang)}/${CITY(rawc)}/${encodeURIComponent(slug)}/`;
-  const mun = await paginaDeMunicipio(rawc, lang, path, (x) => `${agendaBase(lang)}/${encodeURIComponent(x)}/${encodeURIComponent(slug)}/`);
+  const path = `${agendaBase(lang)}/${CITY(rawc)}/${encodeURIComponent(slug)}`;
+  const mun = await paginaDeMunicipio(rawc, lang, path, (x) => `${agendaBase(lang)}/${encodeURIComponent(x)}/${encodeURIComponent(slug)}`);
   if (mun.respuesta) return mun.respuesta;
   rawc = mun.pCity;
 
@@ -2537,14 +2537,14 @@ export async function categoryPage(rawCity, rawCat, lang) {
   const h1 = S.catTitle(nombre, city);
 
   const body = `
-  <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a> · <a href="${agendaBase(lang)}/">${S.agenda}</a> · <a href="${agendaBase(lang)}/${CITY(rawc)}/">${esc(city)}</a></p>
+  <p class="crumbs"><a href="${en ? '/en' : '/'}">Klendar</a> · <a href="${agendaBase(lang)}">${S.agenda}</a> · <a href="${agendaBase(lang)}/${CITY(rawc)}">${esc(city)}</a></p>
   <h1>${esc(h1)}</h1>
   <p class="muted" style="max-width:640px">${esc(S.catLead(nombre, city))}</p>
   ${cityLinks(lang, rawc, city, cats, slug)}
   ${items.length ? rejilla(items, lang, { primera: true, h: 'h2' }) : `<p class="empty">${esc(S.catNone(nombre, city))}</p>`}
   ${lugares.length ? `<h2>${esc(S.catPlaces(nombre, city))}</h2>
     <div class="nlist">${lugares.map((b) => bizCard(b, lang, S)).join('')}</div>` : ''}
-  <p style="margin-top:22px"><a class="pill accent" href="${todayBase(lang)}/${CITY(rawc)}/">${esc(S.todayIn)} ${esc(city)}</a> <a class="pill" href="${agendaBase(lang)}/${CITY(rawc)}/">${esc(S.weekIn)} ${esc(city)}</a> <a class="pill" href="${exploreBase(lang)}/">${esc(S.exp)}</a></p>`;
+  <p style="margin-top:22px"><a class="pill accent" href="${todayBase(lang)}/${CITY(rawc)}">${esc(S.todayIn)} ${esc(city)}</a> <a class="pill" href="${agendaBase(lang)}/${CITY(rawc)}">${esc(S.weekIn)} ${esc(city)}</a> <a class="pill" href="${exploreBase(lang)}">${esc(S.exp)}</a></p>`;
 
   const description = items.length ? S.catDesc(nombre, city, items.length) : S.catNone(nombre, city);
   // Se indexa si hay algo que enseñar: publicaciones o negocios de la
@@ -2552,7 +2552,7 @@ export async function categoryPage(rawCity, rawCat, lang) {
   const indexable = Boolean(cat) && (items.length || lugares.length);
   const jsonLd = listingLd({
     lang, path, name: h1, description, city, items,
-    migas: [['Klendar', en ? '/en/' : '/'], [S.agenda, `${agendaBase(lang)}/`], [city, `${agendaBase(lang)}/${CITY(rawc)}/`], [nombre, path]],
+    migas: [['Klendar', en ? '/en' : '/'], [S.agenda, `${agendaBase(lang)}`], [city, `${agendaBase(lang)}/${CITY(rawc)}`], [nombre, path]],
   });
 
   return html(publicPage({
@@ -2570,13 +2570,13 @@ export async function collectionPage(rawSlug, rawCity, lang, search = '') {
   const S = T(en);
   const decSlug = decodeSeg(rawSlug);
   const decCity = decodeSeg(rawCity);
-  if (decSlug == null || decCity == null) return aListado(`${exploreBase(lang)}/`);
+  if (decSlug == null || decCity == null) return aListado(`${exploreBase(lang)}`);
   const slug = decSlug.replace(/\/+$/, '').toLowerCase();
   let rawc = decCity.replace(/\/+$/, '');
-  const path = `${collectionBase(lang)}/${encodeURIComponent(slug)}/${rawc ? `${CITY(rawc)}/` : ''}`;
+  const path = `${collectionBase(lang)}/${encodeURIComponent(slug)}${rawc ? `/${CITY(rawc)}` : ''}`;
   // El municipio (`_lib/municipios.js`): su slug, 301 o «¿Cuál de ellos?».
   const mun = rawc
-    ? await paginaDeMunicipio(rawc, lang, path, (x) => `${collectionBase(lang)}/${encodeURIComponent(slug)}/${encodeURIComponent(x)}/`)
+    ? await paginaDeMunicipio(rawc, lang, path, (x) => `${collectionBase(lang)}/${encodeURIComponent(slug)}/${encodeURIComponent(x)}`)
     : { pCity: '', nombre: null };
   if (mun.respuesta) return mun.respuesta;
   rawc = mun.pCity;
@@ -2604,13 +2604,13 @@ export async function collectionPage(rawSlug, rawCity, lang, search = '') {
   const h1 = city ? `${titulo} ${S.inCity} ${city}` : titulo;
 
   const body = `
-  <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a> · <a href="${exploreBase(lang)}/">${esc(S.exp)}</a></p>
+  <p class="crumbs"><a href="${en ? '/en' : '/'}">Klendar</a> · <a href="${exploreBase(lang)}">${esc(S.exp)}</a></p>
   <h1>${esc(h1)}</h1>
   ${col && colSub(col, en) ? `<p class="muted" style="max-width:640px">${esc(colSub(col, en))}</p>` : ''}
   ${col && items.length ? `<p class="acciones">${historiaBoton(lang, 'c', slug)}</p>` : ''}
   ${cities.length > 1 ? `<div class="filters"><div class="frow"><span class="flabel">${esc(S.city)}</span>
-    <a class="chip${rawc ? '' : ' on'}" href="${collectionBase(lang)}/${encodeURIComponent(slug)}/">${esc(S.everywhere)}</a>
-    ${cities.filter((c) => c.city).slice(0, 12).map((c) => `<a class="chip${rawc.toLowerCase() === String(c.slug || c.city).toLowerCase() ? ' on' : ''}" href="${collectionBase(lang)}/${encodeURIComponent(slug)}/${CITY(c.slug || c.city)}/">${esc(c.slug ? c.city : PRETTY(c.city))}</a>`).join('')}
+    <a class="chip${rawc ? '' : ' on'}" href="${collectionBase(lang)}/${encodeURIComponent(slug)}">${esc(S.everywhere)}</a>
+    ${cities.filter((c) => c.city).slice(0, 12).map((c) => `<a class="chip${rawc.toLowerCase() === String(c.slug || c.city).toLowerCase() ? ' on' : ''}" href="${collectionBase(lang)}/${encodeURIComponent(slug)}/${CITY(c.slug || c.city)}">${esc(c.slug ? c.city : PRETTY(c.city))}</a>`).join('')}
   </div></div>` : ''}
   ${items.length
     ? `${rejilla(items, lang, { primera: page === 1, h: 'h2' })}
@@ -2619,10 +2619,10 @@ export async function collectionPage(rawSlug, rawCity, lang, search = '') {
     <span class="muted">${esc(S.page)} ${page}/${paginas}</span>
     ${page < paginas ? `<a class="pill" href="${esc(enlace(page + 1))}" rel="next">${esc(S.next)}</a>` : ''}
   </nav>` : ''}
-  <p style="margin-top:22px"><a class="pill accent" href="${exploreBase(lang)}/">${esc(S.exp)}</a> <a class="pill" href="${agendaBase(lang)}/">${esc(S.agenda)}</a></p>`
+  <p style="margin-top:22px"><a class="pill accent" href="${exploreBase(lang)}">${esc(S.exp)}</a> <a class="pill" href="${agendaBase(lang)}">${esc(S.agenda)}</a></p>`
     // Vacía: la pantalla vacía, centrada, con las mismas salidas.
     : `<section class="vacio"><h2>${esc(S.colNone)}</h2><p>${esc(S.colNoneBody)}</p>
-    <div class="vacio-botones"><a class="pill accent" href="${exploreBase(lang)}/">${esc(S.exp)}</a><a class="pill" href="${agendaBase(lang)}/">${esc(S.agenda)}</a></div></section>`}`;
+    <div class="vacio-botones"><a class="pill accent" href="${exploreBase(lang)}">${esc(S.exp)}</a><a class="pill" href="${agendaBase(lang)}">${esc(S.agenda)}</a></div></section>`}`;
 
   return html(publicPage({
     lang, path, body, title: h1,
@@ -2647,11 +2647,11 @@ export async function kidsPage(rawCity, lang) {
   const en = lang === 'en';
   const S = T(en);
   const dec = decodeSeg(rawCity);
-  if (dec == null) return aListado(`${agendaBase(lang)}/`);
+  if (dec == null) return aListado(`${agendaBase(lang)}`);
   let raw = dec.replace(/[/]+$/, '');
-  const path = `${kidsBase(lang)}/${CITY(raw)}/`;
+  const path = `${kidsBase(lang)}/${CITY(raw)}`;
   if (!raw || raw.length > 60) return notFound(lang, path, 'c');
-  const mun = await paginaDeMunicipio(raw, lang, path, (x) => `${kidsBase(lang)}/${encodeURIComponent(x)}/`);
+  const mun = await paginaDeMunicipio(raw, lang, path, (x) => `${kidsBase(lang)}/${encodeURIComponent(x)}`);
   if (mun.respuesta) return mun.respuesta;
   raw = mun.pCity;
   // Los negocios del municipio (por su punto), para sus sitios aptos para niños.
@@ -2679,8 +2679,8 @@ export async function kidsPage(rawCity, lang) {
   // vacía, sin indexar y con sus salidas; el 404, solo para lo mal escrito.
   if (!items.length && !lugares.length && !conocida && !mun.nombre) return notFound(lang, path, 'c');
   const city = mun.nombre || PRETTY(items[0]?.city || lugares[0]?.city || conocida?.city || raw);
-  const agendaCiudad = `${agendaBase(lang)}/${CITY(raw)}/`;
-  const explorar = `${exploreBase(lang)}/?${en ? 'city' : 'ciudad'}=${encodeURIComponent(mun.m ? raw : city)}&${en ? 'place=kids' : 'sitio=ninos'}`;
+  const agendaCiudad = `${agendaBase(lang)}/${CITY(raw)}`;
+  const explorar = `${exploreBase(lang)}?${en ? 'city' : 'ciudad'}=${encodeURIComponent(mun.m ? raw : city)}&${en ? 'place=kids' : 'sitio=ninos'}`;
 
   const K = en
     ? {
@@ -2711,7 +2711,7 @@ export async function kidsPage(rawCity, lang) {
   const sitios = lugares.length ? `<section class="daygroup"><h2>${esc(K.places)}</h2>
     <div class="cities">${lugares.map((b) => `<a href="${esc(bizPath(lang, b.slug || b.id))}">${esc(b.name)}</a>`).join('')}</div></section>` : '';
   const body = `
-  <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a> · <a href="${agendaBase(lang)}/">${esc(S.agenda)}</a> · <a href="${esc(agendaCiudad)}">${esc(city)}</a></p>
+  <p class="crumbs"><a href="${en ? '/en' : '/'}">Klendar</a> · <a href="${agendaBase(lang)}">${esc(S.agenda)}</a> · <a href="${esc(agendaCiudad)}">${esc(city)}</a></p>
   <h1>${esc(K.h1)}</h1>
   <p class="muted" style="max-width:640px">${esc(K.lead)}</p>
   ${cityLinks(lang, raw, city, cats, 'ninos')}
@@ -2722,7 +2722,7 @@ export async function kidsPage(rawCity, lang) {
     <h2 id="ninosVacio">${esc(K.emptyTitle)}</h2>
     <p>${esc(K.emptyBody)}</p>
     <div class="vacio-botones">
-      <a class="pill accent" href="${todayBase(lang)}/${CITY(raw)}/">${esc(K.today)}</a>
+      <a class="pill accent" href="${todayBase(lang)}/${CITY(raw)}">${esc(K.today)}</a>
       <a class="pill" href="${esc(agendaCiudad)}">${esc(S.seeAgenda)}</a>
       <a class="pill" href="${esc(explorar)}">${esc(K.inExplore)}</a>
     </div>
@@ -2731,7 +2731,7 @@ export async function kidsPage(rawCity, lang) {
   ${sitios}
   <p class="muted" style="font-size:13px">${esc(K.note)}</p>
   ${items.length ? `<p><a class="pill accent" href="${esc(explorar)}">${esc(K.inExplore)}</a>
-     <a class="pill" href="${todayBase(lang)}/${CITY(raw)}/">${esc(K.today)}</a>
+     <a class="pill" href="${todayBase(lang)}/${CITY(raw)}">${esc(K.today)}</a>
      <a class="pill" href="${esc(agendaCiudad)}">${esc(S.seeAgenda)}</a></p>` : ''}`;
 
   const description = items.length ? K.desc(items.length) : K.descNone;
@@ -2739,7 +2739,7 @@ export async function kidsPage(rawCity, lang) {
   const indexable = items.length || lugares.length;
   const jsonLd = listingLd({
     lang, path, name: K.h1, description, city, items,
-    migas: [['Klendar', en ? '/en/' : '/'], [S.agenda, `${agendaBase(lang)}/`], [city, agendaCiudad], [S.withKids, path]],
+    migas: [['Klendar', en ? '/en' : '/'], [S.agenda, `${agendaBase(lang)}`], [city, agendaCiudad], [S.withKids, path]],
   });
 
   return html(publicPage({

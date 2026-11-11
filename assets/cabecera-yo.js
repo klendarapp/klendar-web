@@ -120,7 +120,7 @@
         return;
       }
       boton.classList.add('top-yo');
-      boton.href = boton.dataset.cuenta || '/cuenta/';
+      boton.href = boton.dataset.cuenta || '/cuenta';
       boton.setAttribute('aria-label', boton.dataset.cuentaTxt || 'Tu cuenta');
       boton.title = nombre;
       var ya = boton.querySelector('img');

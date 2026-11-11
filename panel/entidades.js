@@ -282,7 +282,7 @@ async function entAlta(v, param) {
     2: () => entHtmlZona(A),
     3: () => `${entHtmlPersona(A)}
       <label class="f full casilla"><input type="checkbox" name="terms" ${A.terms ? 'checked' : ''}>
-        <span>Acepto las <a href="${APP_URL}/negocios/" target="_blank" rel="noopener">condiciones para negocios</a> *</span></label>`,
+        <span>Acepto las <a href="${APP_URL}/negocios" target="_blank" rel="noopener">condiciones para negocios</a> *</span></label>`,
   }[paso];
 
   v.innerHTML = `

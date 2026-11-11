@@ -47,7 +47,7 @@
       contenedor.innerHTML = `<section class="retenido" role="group" aria-labelledby="ia-permiso-t">
         <b id="ia-permiso-t">${esc(t('¿Revisamos con IA lo que publicas?'))}</b>
         <p>${esc(t('Antes de publicarse, lo que escribes y las fotos que subes (y unos fotogramas de tus vídeos) los analiza Claude, la IA de Anthropic, una empresa de Estados Unidos, para filtrar lo que no permiten las Normas de la comunidad. Anthropic no lo usa para entrenar su IA y lo borra en 30 días; lo que sus sistemas marquen como grave puede guardarlo hasta 2 años.'))}</p>
-        <p>${esc(t('Si prefieres que no, se revisará sin esa IA y tus fotos pueden tardar más en publicarse. Puedes cambiarlo cuando quieras en Ajustes.'))} <a href="/privacidad/" target="_blank" rel="noopener">${esc(t('Más información'))}</a></p>
+        <p>${esc(t('Si prefieres que no, se revisará sin esa IA y tus fotos pueden tardar más en publicarse. Puedes cambiarlo cuando quieras en Ajustes.'))} <a href="/privacidad" target="_blank" rel="noopener">${esc(t('Más información'))}</a></p>
         <div class="retenido-botones"><button type="button" class="pill accent" data-ia="si">${esc(t('Acepto'))}</button>
         <button type="button" class="pill" data-ia="no">${esc(t('Ahora no'))}</button></div>
       </section>`;

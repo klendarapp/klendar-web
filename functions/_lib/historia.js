@@ -196,7 +196,7 @@ export async function storyPage(kind, ref, lang, rpRaw = '', para = '') {
       fallback: portada,
       path: `/coleccion/${slug}`,
     };
-    volver = `${collectionBase(lang)}/${encodeURIComponent(slug)}/`;
+    volver = `${collectionBase(lang)}/${encodeURIComponent(slug)}`;
     lead = S.leadC;
   } else if (kind === 's') {
     // Un sorteo abierto (tanda C): antetítulo «SORTEO», el premio, «Termina
@@ -236,7 +236,7 @@ export async function storyPage(kind, ref, lang, rpRaw = '', para = '') {
   const archivo = `klendar-${datos.kind}-${String(datos.id).replace(/[^A-Za-z0-9-]/g, '').slice(0, 40)}.png`;
 
   const body = `
-  <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a> · <a href="${esc(volver)}">${esc(datos.title)}</a></p>
+  <p class="crumbs"><a href="${en ? '/en' : '/'}">Klendar</a> · <a href="${esc(volver)}">${esc(datos.title)}</a></p>
   <h1>${esc(wa ? S.titleWa : S.title)}</h1>
   <nav class="historia-para" aria-label="${esc(S.tabs)}">
     <a href="${esc(self + (rpQ || ''))}"${wa ? '' : ' aria-current="page"'}>${esc(S.tabStories)}</a>

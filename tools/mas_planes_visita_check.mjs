@@ -1,8 +1,8 @@
 // «Más planes en Marbella» solo para esa visita (Iván, 2026-11-03, revisión
 // 1.6; igual que la app, `test/features/business/ficha_municipio_test.dart`):
 //
-//  1. El enlace de la ficha lleva a `/descubre/?ciudad=<slug>&visita=1`
-//     (`/en/discover/?city=<slug>&visit=1`).
+//  1. El enlace de la ficha lleva a `/descubre?ciudad=<slug>&visita=1`
+//     (`/en/discover?city=<slug>&visit=1`).
 //  2. «¿Dónde?» dice ese municipio, pero lo guardado (`klendar.filtros`)
 //     sigue con la zona de siempre: «Todas las ciudades», «Cerca de mí» (con
 //     su posición) o una ciudad.
@@ -82,9 +82,9 @@ async function caso(nav, nombre) {
   p.on('pageerror', (e) => errores.push(e.message));
 
   // A. Lo de siempre, «Todas las ciudades».
-  await p.goto(`${BASE}/descubre/?todas=1`, { waitUntil: 'domcontentloaded' });
+  await p.goto(`${BASE}/descubre?todas=1`, { waitUntil: 'domcontentloaded' });
   ok((await guardado(p)).includes('todas=1'), `${nombre}: guardado «Todas las ciudades»`);
-  await visita(p, '/b/nails-co-madrid', 'Más planes en Madrid', '/descubre/?ciudad=madrid&visita=1');
+  await visita(p, '/b/nails-co-madrid', 'Más planes en Madrid', '/descubre?ciudad=madrid&visita=1');
   ok(new URL(p.url()).searchParams.get('ciudad') === 'madrid', `${nombre}: Descubre en Madrid`);
   ok((await donde(p)).includes('Madrid'), `${nombre}: «¿Dónde?» dice Madrid`);
   const g1 = await guardado(p);
@@ -97,9 +97,9 @@ async function caso(nav, nombre) {
     `${nombre}: sin desplazamiento horizontal`);
   // Otro filtro sigue en la visita; elegir zona, no.
   const hrefs = await p.evaluate(() => [...document.querySelectorAll('a[href]')].map((a) => a.getAttribute('href')));
-  const cuando = hrefs.filter((h) => /[?&]cuando=/.test(h) && h.startsWith('/descubre/'));
+  const cuando = hrefs.filter((h) => /[?&]cuando=/.test(h) && h.startsWith('/descubre'));
   ok(cuando.length > 0 && cuando.every((h) => h.includes('visita=1')), `${nombre}: los enlaces de ¿Cuándo? siguen en la visita (${cuando.length})`);
-  const zonas = hrefs.filter((h) => h.startsWith('/descubre/?ciudad=') && !h.includes('cuando=')).filter((h) => !h.includes('ciudad=madrid&visita'));
+  const zonas = hrefs.filter((h) => h.startsWith('/descubre?ciudad=') && !h.includes('cuando=')).filter((h) => !h.includes('ciudad=madrid&visita'));
   ok(zonas.length > 0 && zonas.every((h) => !h.includes('visita=1')), `${nombre}: elegir una zona acaba la visita (${zonas.length})`);
   // Con otro filtro, lo guardado coge el filtro, no la zona.
   await p.goto(`${BASE}${cuando.find((h) => h.includes('cuando=hoy')) || cuando[0]}`, { waitUntil: 'domcontentloaded' });
@@ -111,14 +111,14 @@ async function caso(nav, nombre) {
   ok(await p.locator('#visita').isHidden(), `${nombre}: la × quita el aviso`);
   ok(new URL(p.url()).searchParams.get('ciudad') === 'madrid', `${nombre}: … y sigue en Madrid`);
   // Al salir y volver: la de siempre.
-  await p.goto(`${BASE}/descubre/`, { waitUntil: 'domcontentloaded' });
+  await p.goto(`${BASE}/descubre`, { waitUntil: 'domcontentloaded' });
   await p.waitForURL((u) => u.search.includes('todas=1'), { timeout: 8000 }).catch(() => {});
   ok(new URL(p.url()).searchParams.get('todas') === '1' && !new URL(p.url()).searchParams.get('ciudad'),
     `${nombre}: al volver a Descubre, «Todas las ciudades» (${new URL(p.url()).search})`);
 
   // B. Lo de siempre, una ciudad (Málaga): «Volver a Málaga» lleva allí.
-  await p.goto(`${BASE}/descubre/?ciudad=malaga`, { waitUntil: 'domcontentloaded' });
-  await visita(p, '/b/nails-co-madrid', 'Más planes en Madrid', '/descubre/?ciudad=madrid&visita=1');
+  await p.goto(`${BASE}/descubre?ciudad=malaga`, { waitUntil: 'domcontentloaded' });
+  await visita(p, '/b/nails-co-madrid', 'Más planes en Madrid', '/descubre?ciudad=madrid&visita=1');
   await aviso(p).waitFor({ timeout: 8000 });
   ok((await aviso(p).innerText()) === 'Volver a Málaga', `${nombre}: aviso «Volver a Málaga»`);
   await Promise.all([p.waitForURL((u) => u.searchParams.get('ciudad') === 'malaga', { timeout: 10000 }).catch(() => {}),
@@ -128,14 +128,14 @@ async function caso(nav, nombre) {
   ok((await donde(p)).includes('Málaga'), `${nombre}: «¿Dónde?» dice Málaga`);
 
   // B2. Un municipio que no es de las Populares: su nombre, de la base.
-  await p.goto(`${BASE}/descubre/?ciudad=alcaniz`, { waitUntil: 'domcontentloaded' });
-  await visita(p, '/b/nails-co-madrid', 'Más planes en Madrid', '/descubre/?ciudad=madrid&visita=1');
+  await p.goto(`${BASE}/descubre?ciudad=alcaniz`, { waitUntil: 'domcontentloaded' });
+  await visita(p, '/b/nails-co-madrid', 'Más planes en Madrid', '/descubre?ciudad=madrid&visita=1');
   await aviso(p).waitFor({ timeout: 8000 });
   ok((await aviso(p).innerText()) === 'Volver a Alcañiz', `${nombre}: aviso «Volver a Alcañiz» (resolve_municipality)`);
 
   // C. Lo de siempre, «Cerca de mí» (con su posición): «Volver a cerca de mí».
-  await p.goto(`${BASE}/descubre/?lat=36.721&lng=-4.421`, { waitUntil: 'domcontentloaded' });
-  await visita(p, '/b/nails-co-madrid', 'Más planes en Madrid', '/descubre/?ciudad=madrid&visita=1');
+  await p.goto(`${BASE}/descubre?lat=36.721&lng=-4.421`, { waitUntil: 'domcontentloaded' });
+  await visita(p, '/b/nails-co-madrid', 'Más planes en Madrid', '/descubre?ciudad=madrid&visita=1');
   await aviso(p).waitFor({ timeout: 8000 });
   ok((await aviso(p).innerText()) === 'Volver a cerca de mí', `${nombre}: aviso «Volver a cerca de mí»`);
   const g3 = await guardado(p);
@@ -145,8 +145,8 @@ async function caso(nav, nombre) {
   ok(new URL(p.url()).searchParams.get('lat') === '36.721', `${nombre}: «Volver a cerca de mí» vuelve a tu posición`);
 
   // D. En inglés.
-  await p.goto(`${BASE}/en/discover/?todas=1`, { waitUntil: 'domcontentloaded' });
-  await visita(p, '/en/b/nails-co-madrid', 'More plans in Madrid', '/en/discover/?city=madrid&visit=1');
+  await p.goto(`${BASE}/en/discover?todas=1`, { waitUntil: 'domcontentloaded' });
+  await visita(p, '/en/b/nails-co-madrid', 'More plans in Madrid', '/en/discover?city=madrid&visit=1');
   await aviso(p).waitFor({ timeout: 8000 });
   ok((await aviso(p).innerText()) === 'Back to every city', `${nombre}: EN «Back to every city»`);
   ok((await guardado(p, 'en')).includes('todas=1'), `${nombre}: EN lo guardado sigue igual`);

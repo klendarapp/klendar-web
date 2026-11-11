@@ -871,7 +871,7 @@ KL_DIC('eu', {
   "Hay un texto demasiado largo.": "Testu bat luzeegia da.",
   "Hazte mi amigo en Klendar y vemos a qué planes vamos: {url}": "Egin zaitez nire laguna Klendarren, eta ikusiko dugu zer planetara goazen: {url}",
   "He leído y acepto los": "Irakurri eta onartu ditut:",
-  "He leído y acepto los <a href=\"/terminos/\" target=\"_blank\">términos</a> y la <a href=\"/privacidad/\" target=\"_blank\">privacidad</a>.": "<a href=\"/terminos/\" target=\"_blank\">Baldintzak</a> eta <a href=\"/privacidad/\" target=\"_blank\">pribatutasuna</a> irakurri ditut eta onartzen ditut.",
+  "He leído y acepto los <a href=\"/terminos\" target=\"_blank\">términos</a> y la <a href=\"/privacidad\" target=\"_blank\">privacidad</a>.": "<a href=\"/terminos\" target=\"_blank\">Baldintzak</a> eta <a href=\"/privacidad\" target=\"_blank\">pribatutasuna</a> irakurri ditut eta onartzen ditut.",
   "He olvidado la contraseña": "Pasahitza ahaztu dut",
   "Hecho": "Eginda",
   "Hecho. Está en tus planes.": "Eginda. Zure planetan dago.",

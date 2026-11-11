@@ -6,7 +6,7 @@
 //
 // Se pueden leer enteras sin app y sin cuenta. Lo que necesita cuenta
 // (guardar, seguir, pedir el código, opinar, denunciar) lleva a «Tu cuenta»
-// (/cuenta/), que hace lo mismo que la app desde el navegador.
+// (/cuenta), que hace lo mismo que la app desde el navegador.
 
 import { enlaceCuenta } from './cuenta.js';
 import { cabeceraEdad, edadDeclarada, esc, fmtWhen, html, isUuid, preguntaEdadEncendida, rpc, rpcAll, rows, supabasePublic } from './page.js';
@@ -186,12 +186,12 @@ export const notFound = (lang, path, kind) => {
   // El tercero, para la pestaña si el título ya dice Klendar.
   const [titulo, texto, pestana] = S[kind] || S.o;
   const body = `
-  <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a></p>
+  <p class="crumbs"><a href="${en ? '/en' : '/'}">Klendar</a></p>
   <section class="vacio">
     <h1>${esc(titulo)}</h1>
     <p>${esc(texto)}</p>
-    <div class="vacio-botones"><a class="pill accent" href="${exploreBase(lang)}/">${esc(S.exp)}</a>
-      <a class="pill" href="${agendaBase(lang)}/">${esc(S.agenda)}</a></div>
+    <div class="vacio-botones"><a class="pill accent" href="${exploreBase(lang)}">${esc(S.exp)}</a>
+      <a class="pill" href="${agendaBase(lang)}">${esc(S.agenda)}</a></div>
   </section>`;
   return html(publicPage({
     lang, path, body, title: pestana || titulo, description: texto, head: '<meta name="robots" content="noindex">',
@@ -212,12 +212,12 @@ async function cerradoPage(lang, ref, path) {
     ? `We've been told that ${c.name} has closed, so it's no longer on Klendar.`
     : `Nos han confirmado que ${c.name} ha cerrado, así que ya no está en Klendar.`;
   const body = `
-  <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a></p>
+  <p class="crumbs"><a href="${en ? '/en' : '/'}">Klendar</a></p>
   <section class="vacio">
     <h1>${esc(titulo)}</h1>
     <p>${esc(texto)}</p>
-    <div class="vacio-botones"><a class="pill accent" href="${exploreBase(lang)}/">${esc(en ? "See what's on now" : 'Ver qué hay ahora')}</a>
-      <a class="pill" href="${agendaBase(lang)}/">${esc(en ? "What's on" : 'Agenda local')}</a></div>
+    <div class="vacio-botones"><a class="pill accent" href="${exploreBase(lang)}">${esc(en ? "See what's on now" : 'Ver qué hay ahora')}</a>
+      <a class="pill" href="${agendaBase(lang)}">${esc(en ? "What's on" : 'Agenda local')}</a></div>
   </section>`;
   return html(publicPage({
     lang, path, body, title: titulo, description: texto, head: '<meta name="robots" content="noindex">',
@@ -267,14 +267,14 @@ function puertaEdad(lang, path) {
     ? { t: 'Are you 18 or over?', b: 'This plan is for over-18s only. We only ask once, and your answer stays in this browser.', si: 'I’m 18 or over', no: 'I’m under 18' }
     : { t: '¿Tienes 18 años o más?', b: 'Este plan es solo para mayores de 18. Solo te lo preguntamos esta vez y la respuesta se queda en este navegador.', si: 'Tengo 18 años o más', no: 'Soy menor' };
   const body = `
-  <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a></p>
+  <p class="crumbs"><a href="${en ? '/en' : '/'}">Klendar</a></p>
   <section class="vacio" data-edad>
     <h1>${esc(S.t)}</h1>
     <p>${esc(S.b)}</p>
     <div class="vacio-botones"><button type="button" class="pill ink" data-edad-si>${esc(S.si)}</button>
       <button type="button" class="pill" data-edad-no>${esc(S.no)}</button></div>
   </section>
-  <script>(function(){var b=document.querySelector('[data-edad]');function f(v){document.cookie='klendar_18='+v+'; Max-Age=31536000; Path=/; SameSite=Lax'+(location.protocol==='https:'?'; Secure':'');if(v==='1')location.reload();else location.href='${exploreBase(lang)}/';}b.querySelector('[data-edad-si]').addEventListener('click',function(){f('1');});b.querySelector('[data-edad-no]').addEventListener('click',function(){f('0');});})();</script>`;
+  <script>(function(){var b=document.querySelector('[data-edad]');function f(v){document.cookie='klendar_18='+v+'; Max-Age=31536000; Path=/; SameSite=Lax'+(location.protocol==='https:'?'; Secure':'');if(v==='1')location.reload();else location.href='${exploreBase(lang)}';}b.querySelector('[data-edad-si]').addEventListener('click',function(){f('1');});b.querySelector('[data-edad-no]').addEventListener('click',function(){f('0');});})();</script>`;
   const r = html(publicPage({
     lang, path, body, title: S.t, description: S.b, head: '<meta name="robots" content="noindex">',
   }), 200, 'no-store');
@@ -469,7 +469,7 @@ async function fichaOferta(id, lang, rpRaw, H) {
     ? `<img src="${esc(o.business_logo)}" alt="" width="44" height="44" loading="lazy" decoding="async">`
     : `<span class="fn-ph" aria-hidden="true">${esc((o.business_name || '·').charAt(0).toUpperCase())}</span>`;
   const body = `
-  <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a> · <a href="${esc(bHref)}">${esc(o.business_name)}</a></p>
+  <p class="crumbs"><a href="${en ? '/en' : '/'}">Klendar</a> · <a href="${esc(bHref)}">${esc(o.business_name)}</a></p>
   <div class="detail ficha${pieces.length || arte ? '' : ' sin-media'}" data-equipo-biz="${esc(o.business_id)}">
     ${arte || carrusel(pieces, { titulo: o.title, lang, id: o.id })}
     <div class="d-head">
@@ -561,7 +561,7 @@ async function fichaOferta(id, lang, rpRaw, H) {
             ${deRrpp ? '' : `<a class="pill" href="${cuenta(lang, `invitar/${id}`)}" rel="nofollow">${icono('invitar', 16)} ${S.invite}</a>`}</p>
           <p class="note" id="voy-auto" hidden></p>
           ${conCodigo ? `<p class="note" id="voy-pista">${flash ? S.byCode : S.byReservation}${deRrpp ? '' : ` ${S.later}`}</p>` : ''}
-          <p class="acciones"><a class="pill" data-solo-equipo hidden href="/panel/#/publicaciones/${id}?biz=${encodeURIComponent(o.business_id)}">${icono('editar', 16)} ${S.edit}</a>
+          <p class="acciones"><a class="pill" data-solo-equipo hidden href="/panel#/publicaciones/${id}?biz=${encodeURIComponent(o.business_id)}">${icono('editar', 16)} ${S.edit}</a>
             ${deRrpp ? '' : `<a class="pill" data-solo-publico data-plan="${id}" href="${cuenta(lang, `guardar/${id}`)}"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg> <span>${S.save}</span></a>`}
             ${openInApp(path + rpQ, S.open, 'pill ghost')}</p>
           ${deRrpp && !prom ? '' : `<p class="acciones">${compartirBoton(lang, `${BASE}${path}${rpQ}`, o.title)}${historiaBoton(lang, 'o', o.id, rpQ)}</p>`}`;
@@ -739,7 +739,7 @@ function lockedOfferPage(o, lang, path, bHref, rpQ = '') {
     ? `<a class="pill accent big" href="${cuenta(lang, `seguir/${encodeURIComponent(o.business_id)}`)}"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.8 4.5c2.2 0 3.6 1.2 5.2 3 1.6-1.8 3-3 5.2-3 3.8 0 5.9 3.9 4.4 7.3C19.5 16.4 12 21 12 21z"/></svg> ${esc(S.btn)}</a>`
     : `<a class="pill accent big" href="${esc(bHref)}">${icono('negocio', 16)} ${esc(S.btn)}</a>`;
   const body = `
-  <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a> · <a href="${esc(bHref)}">${esc(n)}</a></p>
+  <p class="crumbs"><a href="${en ? '/en' : '/'}">Klendar</a> · <a href="${esc(bHref)}">${esc(n)}</a></p>
   <div class="detail ficha${o.business_cover ? '' : ' sin-media'}">
     ${o.business_cover ? carrusel([o.business_cover], { titulo: n, forma: 'negocio', lang }) : ''}
     <div class="d-head">
@@ -1204,8 +1204,8 @@ export async function businessPage(param, lang, search = '') {
   const mun = muni && typeof muni.slug === 'string' && muni.slug && muni.name ? muni : null;
   const lugar = mun ? mun.name : b.city;
   const lugarSeg = mun ? encodeURIComponent(mun.slug) : b.city ? citySeg(b.city) : null;
-  const city = lugarSeg ? `${agendaBase(lang)}/${lugarSeg}/` : null;
-  const cityToday = lugarSeg ? `${todayBase(lang)}/${lugarSeg}/` : null;
+  const city = lugarSeg ? `${agendaBase(lang)}/${lugarSeg}` : null;
+  const cityToday = lugarSeg ? `${todayBase(lang)}/${lugarSeg}` : null;
 
   // Una novedad y una reseña (la ficha y sus listas enteras, `?ver=`).
   const novedadHtml = (p) => `<article${isUuid(p.id) ? ` id="novedad-${p.id}"` : ''}>
@@ -1220,7 +1220,7 @@ export async function businessPage(param, lang, search = '') {
             <span><b>${esc(r.display_name || S.user)}</b><small class="muted">${esc(fmtWhen(r.created_at, lang, tz))}</small></span>
             ${estrellas(Math.max(0, Math.min(5, r.rating | 0)))}</header>
           ${r.verified ? `<details class="verificado"><summary>${icono('voy', 15)}<span>${S.verifiedCustomer}</span></summary>
-            <p>${esc(S.verifiedWhat)} <a href="${en ? '/en/community-guidelines/' : '/normas/'}#resenas">${S.howReviews}</a></p></details>` : ''}
+            <p>${esc(S.verifiedWhat)} <a href="${en ? '/en/community-guidelines' : '/normas'}#resenas">${S.howReviews}</a></p></details>` : ''}
           ${r.comment ? `<p>${esc(r.comment)}</p>` : ''}
           ${resenaMedios(r, lang)}
           ${r.reply ? `<div class="respuesta"><header>${icono('negocio', 16)}<b>${esc(S.replyFrom(b.name))}</b>${r.reply_at ? `<small class="muted">${esc(fmtWhen(r.reply_at, lang, tz))}</small>` : ''}</header>
@@ -1248,7 +1248,7 @@ export async function businessPage(param, lang, search = '') {
         </article>`;
   const preguntarHtml = recibe ? `<p data-preguntar><a class="pill" href="${cuenta(lang, `preguntar/${encodeURIComponent(b.id)}`)}">${icono('pregunta', 16)} ${esc(S.ask)}</a></p>`
     : pronto ? `<p class="muted pregunta-pronto">${esc(S.askSoon)}</p>` : '';
-  const preguntasScript = pq ? `<script src="/assets/preguntas.js?v=20261105cuenta" defer data-biz="${esc(b.id)}" data-lang="${en ? 'en' : 'es'}" data-url="${esc(supabasePublic().url)}" data-key="${esc(supabasePublic().key)}" data-nombre="${esc(b.name)}"></script>` : '';
+  const preguntasScript = pq ? `<script src="/assets/preguntas.js?v=20261111sinbarra" defer data-biz="${esc(b.id)}" data-lang="${en ? 'en' : 'es'}" data-url="${esc(supabasePublic().url)}" data-key="${esc(supabasePublic().key)}" data-nombre="${esc(b.name)}"></script>` : '';
   const nResenas = soloVerificadas ? nVerificadas : Number(b.ratings) || 0;
   // ── La carta: los platos (los [max] primeros, con su sección), las fotos,
   // los PDF y el enlace a su web. En la ficha, 5 platos y «Ver toda la
@@ -1288,7 +1288,7 @@ export async function businessPage(param, lang, search = '') {
   // páginas, sin indexar (la ficha es la buena).
   if (ver === 'carta') {
     const cuerpo = `
-  <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a>${city ? ` · <a href="${city}">${esc(lugar)}</a>` : ''} · <a href="${path}">${esc(b.name)}</a></p>
+  <p class="crumbs"><a href="${en ? '/en' : '/'}">Klendar</a>${city ? ` · <a href="${city}">${esc(lugar)}</a>` : ''} · <a href="${path}">${esc(b.name)}</a></p>
   <div class="detail negocio sin-media lista-entera">
     <h1>${esc(S.menu)} · ${esc(b.name)}</h1>
     ${parado ? '' : `${platosHtml()}${archivosCartaHtml}`}
@@ -1310,7 +1310,7 @@ ${traducir(lang, `business:${b.id}`, carta.length ? `menu:${b.id}` : '')}${cuent
     const enlace = (n) => `${path}?ver=${ver}${filtro}${n > 1 ? `&p=${n}` : ''}`;
     const titulo = ver === 'novedades' ? S.news : ver === 'preguntas' ? S.questions : S.reviews;
     const cuerpo = `
-  <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a>${city ? ` · <a href="${city}">${esc(lugar)}</a>` : ''} · <a href="${path}">${esc(b.name)}</a></p>
+  <p class="crumbs"><a href="${en ? '/en' : '/'}">Klendar</a>${city ? ` · <a href="${city}">${esc(lugar)}</a>` : ''} · <a href="${path}">${esc(b.name)}</a></p>
   <div class="detail negocio sin-media lista-entera">
     <h1>${esc(titulo)} · ${esc(b.name)}</h1>
     ${ver === 'resenas' ? `<p><a class="pill" data-opinar="${esc(b.id)}" href="${cuenta(lang, `opinar/${encodeURIComponent(b.id)}`)}">${icono('resena', 16)} <span>${S.write}</span></a></p>` : ''}
@@ -1380,7 +1380,7 @@ ${traducir(lang, `business:${b.id}`, '')}${ver === 'preguntas' ? `\n${PREGUNTAS_
   const mismoNombre = (n) => !n || planoSello(n) === planoSello(b.name);
 
   const body = `
-  <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a>${city ? ` · <a href="${city}">${esc(lugar)}</a>` : ''}</p>
+  <p class="crumbs"><a href="${en ? '/en' : '/'}">Klendar</a>${city ? ` · <a href="${city}">${esc(lugar)}</a>` : ''}</p>
   <div class="detail negocio ordenada${b.cover || galeria.length ? '' : ' sin-media'}" data-equipo-biz="${esc(b.id)}">
     ${carrusel([b.cover, ...galeria].filter(Boolean), { titulo: b.name, forma: 'negocio', lang })}
     <div class="d-head">
@@ -1397,7 +1397,7 @@ ${traducir(lang, `business:${b.id}`, '')}${ver === 'preguntas' ? `\n${PREGUNTAS_
         ${masMenu([`<a class="mas-peligro" data-solo-publico href="${cuenta(lang, `denunciar/business/${encodeURIComponent(b.id)}`)}" rel="nofollow">${S.reportShort}</a>`], lang, { soloPublico: true })}
         </div>
       </div>
-      <p class="acciones equipo-acc"><a class="pill" data-solo-equipo="gestion" hidden href="/panel/#/ficha?biz=${encodeURIComponent(b.id)}">${icono('editar', 16)} <span>${S.editBiz}</span></a><a class="pill" data-solo-equipo="empleado" hidden href="/panel/?biz=${encodeURIComponent(b.id)}">${icono('negocio', 16)} <span>${S.myBiz}</span></a></p>
+      <p class="acciones equipo-acc"><a class="pill" data-solo-equipo="gestion" hidden href="/panel#/ficha?biz=${encodeURIComponent(b.id)}">${icono('editar', 16)} <span>${S.editBiz}</span></a><a class="pill" data-solo-equipo="empleado" hidden href="/panel?biz=${encodeURIComponent(b.id)}">${icono('negocio', 16)} <span>${S.myBiz}</span></a></p>
       ${where ? `<a class="neg-dir" href="${esc(maps || '#')}" rel="nofollow noopener" target="_blank">${icono('lugar')}<span>${esc(b.address || where)}</span><svg class="ic" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M8.59 16.59 13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg></a>` : ''}
       ${b.rating && b.ratings ? `<p class="neg-nota"><a href="#resenas"><span class="stars-mini" aria-hidden="true">★</span> ${nota(b.rating, lang)} · ${esc(en ? (b.ratings === 1 ? '1 review' : `${b.ratings} reviews`) : (b.ratings === 1 ? '1 reseña' : `${b.ratings} reseñas`))}</a>${precioHtml ? ` <span aria-hidden="true">·</span> ${precioHtml}` : ''}</p>`
     : `<p class="neg-nota"><span class="muted">★ ${S.noRatings}</span>${precioHtml ? ` <span aria-hidden="true">·</span> ${precioHtml}` : ''}</p>`}
@@ -1449,7 +1449,7 @@ ${traducir(lang, `business:${b.id}`, '')}${ver === 'preguntas' ? `\n${PREGUNTAS_
     // visita (`visita=1`: «¿Dónde?» lo enseña sin guardarlo), como en la app
     // (Iván, 2026-11-03, revisión 1.6). «Qué hacer hoy» y la agenda siguen en
     // el nombre bajo el título y en las migas.
-    ? `<p class="mas-planes" data-municipio="${esc(mun.slug)}"><a class="pill" href="${discoverBase(lang)}/?${en ? 'city' : 'ciudad'}=${encodeURIComponent(mun.slug)}&amp;${en ? 'visit' : 'visita'}=1">${icono('explorar', 16)} <span>${esc(S.moreIn(mun.name))}</span></a></p>`
+    ? `<p class="mas-planes" data-municipio="${esc(mun.slug)}"><a class="pill" href="${discoverBase(lang)}?${en ? 'city' : 'ciudad'}=${encodeURIComponent(mun.slug)}&amp;${en ? 'visit' : 'visita'}=1">${icono('explorar', 16)} <span>${esc(S.moreIn(mun.name))}</span></a></p>`
     : city ? `<p class="muted mas-planes">${esc(S.moreInOld(lugar))} <a href="${cityToday}">${esc(S.cityToday)}</a> · <a href="${city}">${esc(S.cityWeek)}</a></p>` : ''}
       ${local.entity_kind === 'public_agenda' ? '' : `<p class="denuncia-pie" data-solo-publico><a href="${cuenta(lang, `reclamar/${encodeURIComponent(b.id)}`)}" rel="nofollow">${S.claim}</a></p>`}
     </div>
@@ -1506,7 +1506,7 @@ ${traducir(lang, `business:${b.id}`, '')}${ver === 'preguntas' ? `\n${PREGUNTAS_
     sameAs: seguro(b.website) ? [b.website] : undefined,
     hasMenu: enlaceCarta || (pdfsCarta[0] && pdfsCarta[0].url) || (carta.length ? `${BASE}${path}#carta` : undefined),
   };
-  const migas = [['Klendar', en ? '/en/' : '/']];
+  const migas = [['Klendar', en ? '/en' : '/']];
   if (city) migas.push([lugar, city]);
   migas.push([b.name, path]);
   const jsonLd = { '@context': 'https://schema.org', '@graph': [negocioLd, breadcrumbLd(migas)] };
@@ -1522,7 +1522,7 @@ ${traducir(lang, `business:${b.id}`, '')}${ver === 'preguntas' ? `\n${PREGUNTAS_
   const conVisita = /^[A-Za-z0-9_-]{16}$/.test(visita)
     ? `<script src="/assets/vendor/supabase-js-2.117.2.js" integrity="sha384-Rj26LVGvoeRVR6+mwQmFfcR3QOBEwT+ZmuCWpuiqeTzJpCs0ER4ITAWGb4Hiy3Ok" crossorigin="anonymous" defer></script>
 <script src="/config.js?v=4" defer></script>
-<script src="/assets/visita.js?v=20261105cuenta" defer data-token="${esc(visita)}" data-lang="${en ? 'en' : 'es'}"></script>`
+<script src="/assets/visita.js?v=20261111sinbarra" defer data-token="${esc(visita)}" data-lang="${en ? 'en' : 'es'}"></script>`
     : '';
   return deRevision(html(publicPage({
     lang, path, body: body + MENU_JS + COMPARTIR_JS, title: conCiudad ? `${b.name} · ${b.city}` : b.name, description, image: b.cover || b.logo,
@@ -1545,13 +1545,13 @@ export async function agendaPage(rawCity, lang) {
   const en = lang === 'en';
   // Mal codificada: «esa ciudad no está» (404), no un 500.
   const dec = decodeSeg(rawCity);
-  if (dec == null) return notFound(lang, `${agendaBase(lang)}/`, 'c');
+  if (dec == null) return notFound(lang, `${agendaBase(lang)}`, 'c');
   let raw = dec.replace(/[/]+$/, '');
-  const path = `${agendaBase(lang)}/${citySeg(raw)}/`;
+  const path = `${agendaBase(lang)}/${citySeg(raw)}`;
   if (!raw || raw.length > 60) return notFound(lang, path, 'c');
   // El municipio (`_lib/municipios.js`): su slug, un 301 desde otra forma
   // del nombre o «¿Cuál de ellos?» con un homónimo.
-  const mun = await paginaDeMunicipio(raw, lang, path, (x) => `${agendaBase(lang)}/${encodeURIComponent(x)}/`);
+  const mun = await paginaDeMunicipio(raw, lang, path, (x) => `${agendaBase(lang)}/${encodeURIComponent(x)}`);
   if (mun.respuesta) return mun.respuesta;
   raw = mun.pCity;
 
@@ -1615,7 +1615,7 @@ export async function agendaPage(rawCity, lang) {
   });
 
   const body = `
-  <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a> · <a href="${agendaBase(lang)}/">${S.agenda}</a></p>
+  <p class="crumbs"><a href="${en ? '/en' : '/'}">Klendar</a> · <a href="${agendaBase(lang)}">${S.agenda}</a></p>
   <h1>${esc(S.h1)}</h1>
   <p class="muted" style="max-width:620px">${esc(S.lead)}</p>
   ${cityLinks(lang, raw, city, cats, 'semana')}
@@ -1630,16 +1630,16 @@ export async function agendaPage(rawCity, lang) {
     : `<p class="empty">${esc(S.none)}</p>`}
   ${placesBlock(negocios, lang, S.places)}
   <p class="muted" style="font-size:13px">${esc(S.note)}</p>
-  <p><a class="pill accent" href="${exploreBase(lang)}/?${en ? 'city' : 'ciudad'}=${encodeURIComponent(city)}">${S.explore}</a>
+  <p><a class="pill accent" href="${exploreBase(lang)}?${en ? 'city' : 'ciudad'}=${encodeURIComponent(city)}">${S.explore}</a>
      <a class="pill" href="${cuenta(lang, 'registro')}" data-sin-sesion>${S.app}</a>
-     <a class="pill" href="${en ? '/en/for-business/' : '/para-negocios/'}">${S.biz}</a></p>
-  <p><a href="${agendaBase(lang)}/">${S.all} →</a></p>`;
+     <a class="pill" href="${en ? '/en/for-business' : '/para-negocios'}">${S.biz}</a></p>
+  <p><a href="${agendaBase(lang)}">${S.all} →</a></p>`;
 
   const description = offers.length ? S.desc(offers.length) : S.none;
   const jsonLd = offers.length
     ? listingLd({
         lang, path, name: S.h1, description, city, items: offers,
-        migas: [['Klendar', en ? '/en/' : '/'], [S.agenda, `${agendaBase(lang)}/`], [city, path]],
+        migas: [['Klendar', en ? '/en' : '/'], [S.agenda, `${agendaBase(lang)}`], [city, path]],
       })
     : null;
 
@@ -1672,11 +1672,11 @@ function placesBlock(negocios, lang, titulo) {
 export async function todayPage(rawCity, lang) {
   const en = lang === 'en';
   const dec = decodeSeg(rawCity);
-  if (dec == null) return notFound(lang, `${todayBase(lang)}/`, 'c');
+  if (dec == null) return notFound(lang, `${todayBase(lang)}`, 'c');
   let raw = dec.replace(/[/]+$/, '');
-  const path = `${todayBase(lang)}/${citySeg(raw)}/`;
+  const path = `${todayBase(lang)}/${citySeg(raw)}`;
   if (!raw || raw.length > 60) return notFound(lang, path, 'c');
-  const mun = await paginaDeMunicipio(raw, lang, path, (x) => `${todayBase(lang)}/${encodeURIComponent(x)}/`);
+  const mun = await paginaDeMunicipio(raw, lang, path, (x) => `${todayBase(lang)}/${encodeURIComponent(x)}`);
   if (mun.respuesta) return mun.respuesta;
   raw = mun.pCity;
 
@@ -1736,7 +1736,7 @@ export async function todayPage(rawCity, lang) {
     : '');
 
   const body = `
-  <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a> · <a href="${agendaBase(lang)}/">${S.agenda}</a> · <a href="${agendaBase(lang)}/${citySeg(raw)}/">${esc(city)}</a></p>
+  <p class="crumbs"><a href="${en ? '/en' : '/'}">Klendar</a> · <a href="${agendaBase(lang)}">${S.agenda}</a> · <a href="${agendaBase(lang)}/${citySeg(raw)}">${esc(city)}</a></p>
   <h1>${esc(S.h1)}</h1>
   <p class="muted" style="max-width:620px">${esc(S.lead(fecha))}</p>
   ${cityLinks(lang, raw, city, cats, 'hoy')}
@@ -1745,14 +1745,14 @@ export async function todayPage(rawCity, lang) {
   ${hoyItems.length ? '' : `<p class="empty">${esc(vacia ? S.empty : S.none)}</p>`}
   ${bloque(S.tomorrow, mananaItems)}
   ${placesBlock(negocios, lang, S.places)}
-  <p><a class="pill accent" href="${agendaBase(lang)}/${citySeg(raw)}/">${esc(S.week)}</a>
-     <a class="pill" href="${exploreBase(lang)}/?${en ? 'city' : 'ciudad'}=${encodeURIComponent(city)}&amp;${en ? 'when=today' : 'cuando=hoy'}">${esc(S.explore)}</a>
-     <a class="pill" href="${en ? '/en/for-business/' : '/para-negocios/'}">${esc(S.biz)}</a></p>`;
+  <p><a class="pill accent" href="${agendaBase(lang)}/${citySeg(raw)}">${esc(S.week)}</a>
+     <a class="pill" href="${exploreBase(lang)}?${en ? 'city' : 'ciudad'}=${encodeURIComponent(city)}&amp;${en ? 'when=today' : 'cuando=hoy'}">${esc(S.explore)}</a>
+     <a class="pill" href="${en ? '/en/for-business' : '/para-negocios'}">${esc(S.biz)}</a></p>`;
 
   const description = hoyItems.length ? S.desc(hoyItems.length) : vacia ? S.empty : S.descNone;
   const jsonLd = listingLd({
     lang, path, name: S.h1, description, city, items: hoyItems,
-    migas: [['Klendar', en ? '/en/' : '/'], [S.agenda, `${agendaBase(lang)}/`], [city, `${agendaBase(lang)}/${citySeg(raw)}/`], [S.today, path]],
+    migas: [['Klendar', en ? '/en' : '/'], [S.agenda, `${agendaBase(lang)}`], [city, `${agendaBase(lang)}/${citySeg(raw)}`], [S.today, path]],
   });
 
   return html(publicPage({
@@ -1787,18 +1787,18 @@ export async function citiesPage(lang) {
       };
 
   const body = `
-  <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a></p>
+  <p class="crumbs"><a href="${en ? '/en' : '/'}">Klendar</a></p>
   <h1>${S.h1}</h1>
   <p class="muted" style="max-width:620px">${S.lead}</p>
   ${cities.length
-    ? `<div class="cities">${cities.map((c) => `<a href="${agendaBase(lang)}/${citySeg(c.slug || c.city)}/">${esc(c.city)} <span class="muted">${c.n}</span></a>`).join('')}</div>
+    ? `<div class="cities">${cities.map((c) => `<a href="${agendaBase(lang)}/${citySeg(c.slug || c.city)}">${esc(c.city)} <span class="muted">${c.n}</span></a>`).join('')}</div>
     <h2>${S.today}</h2>
-    <div class="cities">${cities.map((c) => `<a href="${todayBase(lang)}/${citySeg(c.slug || c.city)}/">${esc(S.todayIn(c.city))}</a>`).join('')}</div>`
+    <div class="cities">${cities.map((c) => `<a href="${todayBase(lang)}/${citySeg(c.slug || c.city)}">${esc(S.todayIn(c.city))}</a>`).join('')}</div>`
     : `<p class="empty">${S.none}</p>`}
-  <p><a class="pill" href="${en ? '/en/for-business/' : '/para-negocios/'}">${S.biz}</a></p>`;
+  <p><a class="pill" href="${en ? '/en/for-business' : '/para-negocios'}">${S.biz}</a></p>`;
 
   return html(publicPage({
-    lang, actual: 'explorar', path: `${agendaBase(lang)}/`, body, title: S.h1, description: S.lead,
+    lang, actual: 'explorar', path: `${agendaBase(lang)}`, body, title: S.h1, description: S.lead,
   }), 200, 'public, max-age=600, s-maxage=1800');
 }
 

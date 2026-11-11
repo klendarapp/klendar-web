@@ -58,14 +58,14 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     // 1. La fila, la misma en todas las vistas.
     const laFila = () => page.evaluate(() => [...document.querySelectorAll('#barra details')].filter((d) => !d.parentElement.closest('details'))
       .map((d) => d.id || (/zona/.test(d.className) ? 'zona' : d.className)));
-    for (const u of [`/descubre/?${AQUI}`, `/explorar/?${AQUI}`, `/explorar/?vista=calendario&${AQUI}`, `/explorar/?vista=mapa&${AQUI}`,
-      `/explorar/?que=sitios&${AQUI}`, `/explorar/?que=sitios&vista=mapa&${AQUI}`]) {
+    for (const u of [`/descubre?${AQUI}`, `/explorar?${AQUI}`, `/explorar?vista=calendario&${AQUI}`, `/explorar?vista=mapa&${AQUI}`,
+      `/explorar?que=sitios&${AQUI}`, `/explorar?que=sitios&vista=mapa&${AQUI}`]) {
       await ir(u);
       const fila = await laFila();
       const donde = (u.match(/(vista|que)=[a-z]+/g) || []).join(' ');
       ok(fila.join(',') === 'zona,cuando,que-hoja,filtros', `${t} ${u.split('?')[0]} ${donde}: dónde · cuándo · qué · ☰ (${fila.join(', ')})`);
     }
-    await ir(`/descubre/?${AQUI}`);
+    await ir(`/descubre?${AQUI}`);
     ok(await page.locator('#barra .desplegable.orden').count() === 0, `${t} sin el orden en la fila`);
     ok(await page.locator('#barra .chip-quitar').count() === 0, `${t} sin chips sueltos con ×`);
     // Los botones dicen lo que vale, nunca la pregunta (Iván, 2026-10-27).
@@ -86,13 +86,13 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     ok(await page.locator('#filtros > summary .n').count() === 0, `${t} ☰ no cuenta lo de ¿Cuándo?`);
 
     // 3. «Este finde» en el calendario.
-    await ir(`/explorar/?vista=calendario&cuando=finde&${AQUI}`);
+    await ir(`/explorar?vista=calendario&cuando=finde&${AQUI}`);
     const dias = await page.evaluate(() => [...document.querySelectorAll('.cal-dia:not(.pasado):not(.vacio-dia)')].map((d) => !d.classList.contains('fuera')));
     const cuentan = dias.filter(Boolean).length;
     ok(cuentan >= 1 && cuentan <= 3, `${t} «Este finde» en el calendario: ${cuentan} días cuentan`);
 
     // 4. Varias categorías.
-    await ir(`/explorar/?${AQUI}`);
+    await ir(`/explorar?${AQUI}`);
     await page.locator('#que-hoja > summary').click();
     // La hoja entra animada (Movimiento, 280 ms): como una persona, se toca
     // cuando ya está.
@@ -113,7 +113,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     ok(new URL(page.url()).searchParams.getAll('categoria').length === 2, `${t} dos categorías en la dirección`);
 
     // 5. El orden, dentro de ☰ y arriba del todo.
-    await ir(`/descubre/?${AQUI}`);
+    await ir(`/descubre?${AQUI}`);
     await page.locator('#filtros > summary').click();
     await page.waitForTimeout(350);
     const hoja = page.locator('#filtros form');
@@ -140,16 +140,16 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     await page.waitForTimeout(900);
     await Promise.all([page.waitForURL(/tiempo=0/), hoja.locator('button[type=submit]').click()]);
     ok(!/orden=/.test(page.url()) && /tiempo=0/.test(page.url()), `${t} «Según el tiempo» apagado viaja en la dirección`);
-    for (const u of [`/explorar/?que=sitios&${AQUI}`, `/explorar/?vista=calendario&${AQUI}`, `/explorar/?vista=mapa&${AQUI}`]) {
+    for (const u of [`/explorar?que=sitios&${AQUI}`, `/explorar?vista=calendario&${AQUI}`, `/explorar?vista=mapa&${AQUI}`]) {
       await ir(u);
       ok(await page.locator('#filtros .hoja-orden').count() === 0, `${t} ${u.match(/(vista|que)=[a-z]+/)[0]}: ☰ sin «Ordenar por»`);
     }
-    await ir(`/explorar/?que=sitios&${AQUI}`);
+    await ir(`/explorar?que=sitios&${AQUI}`);
     // «Mejor valorados» solo desde `rated_sort_available()` (11-11-2026, migración
     // 20261247100000): antes, ni el menú ni el orden aunque venga en la dirección.
     if (await page.locator('.resumen .desplegable.orden').count() === 0) {
       ok(/cercanía/.test(await page.locator('.resumen-orden').innerText()), `${t} Sitios, antes de la fecha: sin «Mejor valorados», «Por cercanía…»`);
-      await ir(`/explorar/?que=sitios&orden=valorados&${AQUI}`);
+      await ir(`/explorar?que=sitios&orden=valorados&${AQUI}`);
       ok(/cercanía/.test(await page.locator('.resumen-orden').innerText()) && await page.locator('.resumen .desplegable.orden').count() === 0, `${t} Sitios, antes de la fecha: ?orden=valorados no cuela`);
     } else {
       await page.locator('.resumen .desplegable.orden summary').click();
@@ -158,7 +158,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     }
 
     // 6. ¿Dónde?
-    await ir(`/descubre/?${AQUI}`);
+    await ir(`/descubre?${AQUI}`);
     await page.locator('#barra details.zona > summary').click();
     ok(await page.locator('[data-donde-modo="cerca"].on').isVisible() && await page.locator('[data-donde-sec="cerca"]').isVisible() && !(await page.locator('[data-donde-sec="ciudad"]').isVisible()), `${t} ¿Dónde?: «Cerca de mí» de entrada, con la distancia`);
     await page.locator('[data-donde-modo="ciudad"]').click();
@@ -172,24 +172,24 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
       const ayer = new Date(); ayer.setDate(ayer.getDate() - 1); ayer.setHours(5, 0, 0, 0);
       g.t = ayer.getTime(); localStorage.setItem('klendar.filtros', JSON.stringify(g));
     });
-    await ir(`/explorar/?cuando=esta-noche&abierto=1&tipo=eventos&${AQUI}`);
-    await ir('/descubre/');
+    await ir(`/explorar?cuando=esta-noche&abierto=1&tipo=eventos&${AQUI}`);
+    await ir('/descubre');
     await page.waitForURL(/tipo=eventos/);
     ok(/cuando=esta-noche/.test(page.url()) && /abierto=1/.test(page.url()), `${t} recordar: vuelve con «Esta noche» y «Abierto ahora» el mismo día`);
     await ayerA5();
-    await ir('/descubre/');
+    await ir('/descubre');
     await page.waitForURL(/tipo=eventos/);
     ok(!/cuando=|abierto=/.test(page.url()) && !/lat=/.test(page.url()), `${t} recordar: otro día, sin «Esta noche» ni «Abierto ahora» (y sin tu posición) pero con lo demás`);
-    await ir(`/explorar/?cuando=ahora&km=1&orden=cerca&tipo=eventos&${AQUI}`);
-    await ir('/descubre/');
+    await ir(`/explorar?cuando=ahora&km=1&orden=cerca&tipo=eventos&${AQUI}`);
+    await ir('/descubre');
     await page.waitForURL(/tipo=eventos/);
     await ayerA5();
-    await ir('/descubre/');
+    await ir('/descubre');
     await page.waitForURL(/tipo=eventos/);
     ok(!/cuando=|km=1|orden=cerca/.test(page.url()), `${t} recordar: «Ahora, a un paseo» de otro día se quita entero (la distancia y el orden también)`);
 
     // 8. En inglés.
-    await ir(`/en/explore/?when=weekend&${AQUI}`);
+    await ir(`/en/explore?when=weekend&${AQUI}`);
     ok(/This weekend/.test(await page.locator('#cuando > summary').innerText()), `${t} /en/explore: «This weekend»`);
     await page.screenshot({ path: `${OUT}/filtros3-en-${nombre}-${forma}.png` });
 
@@ -201,14 +201,14 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
   {
     const ctx = await nav.newContext({ viewport: { width: 360, height: 740 }, locale: 'es-ES' });
     const page = await ctx.newPage();
-    for (const u of [`/descubre/?${AQUI}`, `/explorar/?${AQUI}`, `/explorar/?que=sitios&${AQUI}`, `/explorar/?cuando=esta-noche&categoria=bar&categoria=music&${AQUI}`]) {
+    for (const u of [`/descubre?${AQUI}`, `/explorar?${AQUI}`, `/explorar?que=sitios&${AQUI}`, `/explorar?cuando=esta-noche&categoria=bar&categoria=music&${AQUI}`]) {
       await page.goto(`${BASE}${u}`, { waitUntil: 'domcontentloaded' });
       const r = await page.evaluate(() => [...document.querySelectorAll('#barra summary.chip')].filter((x) => !x.closest('.hoja-cuerpo, .menu-d'))
         .map((x) => { const b = x.getBoundingClientRect(); return { l: b.left, r: b.right, w: b.width }; }));
       const dentro = r.length === 4 && r.every((b) => b.l >= 0 && b.r <= 360 && b.w >= 40);
       ok(dentro && r[3].l > r[2].r, `[${nombre} 360] ${u.split('?')[0]}${u.includes('cuando') ? ' (con cuándo y qué)' : ''}: la fila cabe y ☰ va a la derecha (${r.map((b) => `${Math.round(b.l)}-${Math.round(b.r)}`).join(' ')})`);
     }
-    await page.goto(`${BASE}/explorar/?${AQUI}`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`${BASE}/explorar?${AQUI}`, { waitUntil: 'domcontentloaded' });
     ok((await page.locator('#barra details.zona > summary').innerText()).trim() === '5 km', `[${nombre} 360] «dónde» corto: «5 km»`);
     await page.screenshot({ path: `${OUT}/filtros3-360-${nombre}.png` });
     await ctx.close();

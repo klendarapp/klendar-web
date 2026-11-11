@@ -1,5 +1,5 @@
 // «Sorteos» en la web pública (tanda C; migración 20261208100001_sorteos de
-// la app): la lista (/sorteos/, /en/giveaways/), la página de cada sorteo
+// la app): la lista (/sorteos, /en/giveaways), la página de cada sorteo
 // (/sorteo/<id>, /en/giveaway/<id>), sus bases legales (/sorteo/<id>/bases,
 // /en/giveaway/<id>/rules) y la tarjeta de la ficha del negocio. Lo mismo
 // que la app (especificación de la tanda C).
@@ -51,7 +51,7 @@ const sorteoScript = (lang) => {
 // ── El interruptor ────────────────────────────────────────────────────────
 // Al lanzar, los sorteos están apagados en todas partes (norma 5.3 de Apple;
 // `app_config.giveaways`, migración 20261243100000 de la app). Apagados en la
-// web: /sorteos/, /sorteo/<id> y sus bases dicen «Los sorteos no están
+// web: /sorteos, /sorteo/<id> y sus bases dicen «Los sorteos no están
 // disponibles» (con salida a Descubre), y no salen en Explorar, en la ficha
 // ni en el sitemap. Se lee como mucho una vez por minuto en cada instancia.
 let INTERRUPTOR = { valor: null, hasta: 0 };
@@ -75,12 +75,12 @@ function apagados(lang, path) {
     head: `<meta name="robots" content="noindex">
 ${GRUPOS_CSS}`,
     actual: 'explorar',
-    body: `<p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a></p>
+    body: `<p class="crumbs"><a href="${en ? '/en' : '/'}">Klendar</a></p>
   <section class="vacio">
     <span class="vacio-ic" aria-hidden="true">${icSorteo(30)}</span>
     <h1>${esc(S.offTitle)}</h1>
     <p>${esc(S.offText)}</p>
-    <div class="vacio-botones"><a class="pill accent" href="${en ? '/en/discover/' : '/descubre/'}">${esc(S.offGo)}</a></div>
+    <div class="vacio-botones"><a class="pill accent" href="${en ? '/en/discover' : '/descubre'}">${esc(S.offGo)}</a></div>
   </section>`,
   }), 200, 'public, max-age=60');
 }
@@ -137,7 +137,7 @@ export async function sorteosPage(url, lang) {
   const en = lang === 'en';
   const S = KS.t(lang);
   const base = sorteosBase(lang);
-  if (!(await sorteosEncendidos())) return apagados(lang, `${base}/`);
+  if (!(await sorteosEncendidos())) return apagados(lang, `${base}`);
   const e = leeEstado(url.searchParams);
   const [ciudades, ciudadesK] = await Promise.all([
     rpcAll('public_cities', {}),
@@ -156,7 +156,7 @@ export async function sorteosPage(url, lang) {
   const link = (cambios) => {
     const b = { ...e, ...cambios };
     if (b.cerca === false) { b.lat = null; b.lng = null; }
-    return conQs(`${base}/`, query(b, lang));
+    return conQs(`${base}`, query(b, lang));
   };
   const seg = `<nav class="seg-pub" aria-label="${esc(S.title)}">
       <a href="${esc(link({ mine: false }))}"${e.mine ? '' : ' aria-current="page"'}>${esc(S.segNear)}</a>
@@ -185,22 +185,22 @@ export async function sorteosPage(url, lang) {
       <span class="vacio-ic" aria-hidden="true">${icSorteo(30)}</span>
       <h2>${esc(S.empty)}</h2>
       <p>${esc(S.emptyText)}</p>
-      ${ampliar || todas ? `<div class="vacio-botones">${ampliar}${todas}</div>` : `<div class="vacio-botones"><a class="pill accent" href="${en ? '/en/explore/' : '/explorar/'}">${en ? 'Explore' : 'Explorar'}</a></div>`}
+      ${ampliar || todas ? `<div class="vacio-botones">${ampliar}${todas}</div>` : `<div class="vacio-botones"><a class="pill accent" href="${en ? '/en/explore' : '/explorar'}">${en ? 'Explore' : 'Explorar'}</a></div>`}
     </section>`;
   }
 
   const body = `
-  <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a> · <a href="${en ? '/en/explore/' : '/explorar/'}">${en ? 'Explore' : 'Explorar'}</a></p>
+  <p class="crumbs"><a href="${en ? '/en' : '/'}">Klendar</a> · <a href="${en ? '/en/explore' : '/explorar'}">${en ? 'Explore' : 'Explorar'}</a></p>
   <div class="exp-cab cab-pagina"><div><h1>${esc(S.title)}</h1>
     <p class="muted exp-lead">${esc(S.lead)}</p></div></div>
   ${seg}
   ${barra}
   ${cuerpo}`;
   const filtrada = Boolean(e.city || e.cerca || e.mine || e.km !== 10);
-  const migas = [['Klendar', en ? '/en/' : '/'], [S.title, `${base}/`]];
+  const migas = [['Klendar', en ? '/en' : '/'], [S.title, `${base}`]];
   return html(publicPage({
     lang,
-    path: `${base}/`,
+    path: `${base}`,
     title: S.title,
     description: S.lead,
     body,
@@ -220,12 +220,12 @@ function noEsta(lang, path) {
   return html(publicPage({
     lang, path, title: S.notHere, description: S.notHereText, head: `<meta name="robots" content="noindex">\n${GRUPOS_CSS}`,
     actual: 'explorar',
-    body: `<p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a> · <a href="${sorteosBase(lang)}/">${esc(S.title)}</a></p>
+    body: `<p class="crumbs"><a href="${en ? '/en' : '/'}">Klendar</a> · <a href="${sorteosBase(lang)}">${esc(S.title)}</a></p>
   <section class="vacio">
     <span class="vacio-ic" aria-hidden="true">${icSorteo(30)}</span>
     <h1>${esc(S.notHere)}</h1>
     <p>${esc(S.notHereText)}</p>
-    <div class="vacio-botones"><a class="pill accent" href="${sorteosBase(lang)}/">${esc(S.title)}</a></div>
+    <div class="vacio-botones"><a class="pill accent" href="${sorteosBase(lang)}">${esc(S.title)}</a></div>
   </section>`,
   }), 404, 'no-store');
 }
@@ -289,7 +289,7 @@ export async function sorteoPage(rawId, url, lang) {
     </section>`;
 
   const body = `
-  <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a> · <a href="${sorteosBase(lang)}/">${esc(S.title)}</a></p>
+  <p class="crumbs"><a href="${en ? '/en' : '/'}">Klendar</a> · <a href="${sorteosBase(lang)}">${esc(S.title)}</a></p>
   <div class="detail ficha sorteo${https(b.cover_image_url) ? '' : ' sin-media'}" data-equipo-biz="${esc(b.id || '')}" data-ref-negocio="${esc(b.id || '')}">
     ${https(b.cover_image_url) ? carrusel([b.cover_image_url], { titulo: b.name, forma: 'negocio', lang }) : ''}
     <div class="d-head">
@@ -319,7 +319,7 @@ export async function sorteoPage(rawId, url, lang) {
 
   const description = [S.endsOn(KS.cuando(g.ends_at, lang, tz, true)), S.winners(Number(g.winners) || 1, Number(g.backups) || 0), S.free]
     .join(' · ');
-  const migas = [['Klendar', en ? '/en/' : '/'], [S.title, `${sorteosBase(lang)}/`], [g.prize, path]];
+  const migas = [['Klendar', en ? '/en' : '/'], [S.title, `${sorteosBase(lang)}`], [g.prize, path]];
   return html(publicPage({
     lang,
     path,
@@ -346,7 +346,7 @@ export async function basesPage(rawId, lang) {
   if (!d || !d.id || !Array.isArray(d.sections)) return noEsta(lang, path);
   const fechaAct = d.updated_at ? KS.dia(d.updated_at, lang) : '';
   const body = `
-  <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a> · <a href="${esc(sorteoPath(lang, id))}">${esc(d.prize || S.word)}</a></p>
+  <p class="crumbs"><a href="${en ? '/en' : '/'}">Klendar</a> · <a href="${esc(sorteoPath(lang, id))}">${esc(d.prize || S.word)}</a></p>
   <article class="doc sorteo-bases-doc">
     <h1>${esc(d.title || S.rulesTitle)}</h1>
     ${fechaAct ? `<p class="muted">${esc(S.updated(fechaAct))}</p>` : ''}

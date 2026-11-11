@@ -121,7 +121,7 @@ const colaCartelMalo = () => pinta(pantallaVacia({
   titulo: t('Este cartel ya no funciona'),
   texto: t('Puede que el local lo haya cambiado. Pide el nuevo en la puerta.'),
   // Como la página pública y la app: a ver qué hay cerca.
-  botones: `<a class="pill accent" href="${PUB_EN ? '/en/discover/' : '/descubre/'}">${esc(t('Ver qué hay cerca'))}</a>`,
+  botones: `<a class="pill accent" href="${PUB_EN ? '/en/discover' : '/descubre'}">${esc(t('Ver qué hay cerca'))}</a>`,
 }));
 
 RUTAS.cola = async ([code]) => {
@@ -162,7 +162,7 @@ RUTAS.cola = async ([code]) => {
         icono: 'storefront', h: 'h1',
         titulo: EN ? `You're on the ${b.name} team` : `Eres del equipo de ${b.name}`,
         texto: t('La cola se lleva desde Mi negocio.'),
-        botones: `<a class="pill accent" href="/panel/#/cola?biz=${esc(b.id)}">${esc(t('Ir a la cola'))}</a>`,
+        botones: `<a class="pill accent" href="/panel#/cola?biz=${esc(b.id)}">${esc(t('Ir a la cola'))}</a>`,
       }));
       return;
     }

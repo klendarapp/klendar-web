@@ -192,7 +192,7 @@
       : error === 'link_paused' ? s.paused : error === 'link_expired' ? s.expired
         : error === 'link_inactive' ? s.inactive : s.notFound;
     // «Ir a Descubre», como la app (`rrppGoDiscover`).
-    const explorar = lang === 'en' ? '/en/discover/' : '/descubre/';
+    const explorar = lang === 'en' ? '/en/discover' : '/descubre';
     const quien = cerrada ? [s.list(nombreDe(d && d.promoter, lang)), b && b.name].filter(Boolean).join(' · ') : '';
     return `
   <section class="vacio">

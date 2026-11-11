@@ -89,7 +89,7 @@ RUTAS.amigos = async ([idAmigo]) => {
   });
 
   pinta(`
-    <p class="crumbs"><a href="/cuenta/">${esc(t('Tu cuenta'))}</a></p>
+    <p class="crumbs"><a href="/cuenta">${esc(t('Tu cuenta'))}</a></p>
     <div class="titulo-acc">
       <h1>${esc(t('Amigos'))}</h1>
       <button type="button" class="pill on" data-anadir>${ic('add')} ${esc(t('Añadir'))}</button>
@@ -266,7 +266,7 @@ const planesJuntos = (n) => (EN ? `You've been to ${n} ${n === 1 ? 'plan' : 'pla
 async function fichaDeAmigo(id) {
   if (!UUID_AMIGOS.test(id || '')) { pinta(pantallaVacia({ icono: 'link', titulo: t('Ese enlace no está completo.'), h: 'h1', botones: botonTuCuenta() })); return; }
   if (!exigeSesion(`amigos/${id}`)) return;
-  let migas = `<p class="crumbs"><a href="/cuenta/">${esc(t('Tu cuenta'))}</a> › <a href="/cuenta/amigos">${esc(t('Amigos'))}</a></p>`;
+  let migas = `<p class="crumbs"><a href="/cuenta">${esc(t('Tu cuenta'))}</a> › <a href="/cuenta/amigos">${esc(t('Amigos'))}</a></p>`;
   let d;
   try { d = await llamar('friend_plans', { p_friend: id }); } catch (e) {
     if (e.clave !== 'not_found') throw e;
@@ -433,7 +433,7 @@ RUTAS.amigo = async ([code]) => {
     titulo: EN ? `${nombre} wants to be your friend on Klendar` : `${nombre} quiere ser tu amigo en Klendar`,
     texto: t('Si aceptas, verás a qué planes va y podrás invitarle a los tuyos (y al revés). Puedes quitarle de tus amigos cuando quieras.'),
     botones: `<button type="button" class="pill accent" id="aceptar-amigo">${esc(t('Aceptar'))}</button>
-      <a class="pill" href="/cuenta/">${esc(t('Ahora no'))}</a>`,
+      <a class="pill" href="/cuenta">${esc(t('Ahora no'))}</a>`,
   });
   $('#aceptar-amigo').onclick = (ev) => ocupado(ev.currentTarget, async () => {
     let r;

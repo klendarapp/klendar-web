@@ -69,7 +69,7 @@ const FORMULARIOS = [
     },
   },
   {
-    nombre: 'admin: entrar', ruta: '/admin/', api: /\/auth\/v1\/token\?grant_type=password/, err: '#loginErr',
+    nombre: 'admin: entrar', ruta: '/admin', api: /\/auth\/v1\/token\?grant_type=password/, err: '#loginErr',
     rellena: async (p) => {
       await p.waitForSelector('#login:not([hidden])');
       await p.fill('#email', 'turnstile.prueba@example.com');
@@ -78,7 +78,7 @@ const FORMULARIOS = [
     },
   },
   {
-    nombre: 'admin: recuperar', ruta: '/admin/', api: /\/auth\/v1\/recover/, err: '#loginErr',
+    nombre: 'admin: recuperar', ruta: '/admin', api: /\/auth\/v1\/recover/, err: '#loginErr',
     rellena: async (p) => {
       await p.waitForSelector('#login:not([hidden])');
       await p.fill('#email', 'turnstile.prueba@example.com');

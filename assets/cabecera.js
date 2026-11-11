@@ -151,16 +151,16 @@
   // en las estáticas y en «Tu cuenta», que cambia de pestaña sin recargar.
   function pestanaActiva() {
     const p = location.pathname;
-    if (/^\/(en\/)?(descubre|discover)\//.test(p)) return 'descubre';
-    if (/^\/(en\/)?(explorar|explore|agenda|whats-on|hoy|today|coleccion|collection)\//.test(p)) return 'explorar';
+    if (/^\/(en\/)?(descubre|discover)(\/|$)/.test(p)) return 'descubre';
+    if (/^\/(en\/)?(explorar|explore|agenda|whats-on|hoy|today|coleccion|collection)(\/|$)/.test(p)) return 'explorar';
     // «Planes» también mientras pide entrar para ir a Planes (/cuenta/entrar?siguiente=planes).
     if (/^\/cuenta(\/|$)/.test(p)) return /^\/cuenta\/(planes|guardar)(\/|$)/.test(p) || /[?&]siguiente=planes\b/.test(location.search) ? 'planes' : 'cuenta';
     // El panel del negocio es parte de tu cuenta (en la app, «Mi negocio»
     // está en Cuenta).
-    if (/^\/panel\//.test(p)) return 'cuenta';
+    if (/^\/panel(\/|$)/.test(p)) return 'cuenta';
     // Una ficha (/o/, /b/…) se abre encima de la pestaña de la que vienes,
     // como en la app: se queda marcada esa.
-    if (/^\/(en\/)?(o|b|r|a|c|cola|sorteo|giveaway|partidos|matches|grupos|groups|sorteos|giveaways|con-ninos|with-kids)\//.test(p)) {
+    if (/^\/(en\/)?(o|b|r|a|c|cola|sorteo|giveaway|partidos|matches|grupos|groups|sorteos|giveaways|con-ninos|kids)(\/|$)/.test(p)) {
       try { return sessionStorage.getItem('klendar.tab') || ''; } catch { return ''; }
     }
     return '';
@@ -183,7 +183,7 @@
   // Cuenta y la portada, la View Transition entre páginas se salta (antes
   // todo se fundía 150 ms); de una tarjeta a su ficha, y al volver, sigue
   // la foto que vuela. Lo decide la página que se va (`pageswap`).
-  const esRaiz = (u) => /^\/(en\/)?((descubre|discover|explorar|explore)\/)?$|^\/cuenta\/(planes\/?)?$/.test(u.pathname);
+  const esRaiz = (u) => /^\/((en\/)?(descubre|discover|explorar|explore)|en)?$|^\/cuenta(\/planes)?$/.test(u.pathname);
   addEventListener('pageswap', (ev) => {
     if (!ev.viewTransition) return;
     let a;
@@ -206,7 +206,7 @@
   // es del otro lado, se pasa a su versión (si la tiene).
   const IDIOMAS = ['es', 'en', 'ca', 'gl', 'eu', 'fr', 'de', 'it'];
   const lado = (l) => (/^(en|fr|de|it)$/.test(l) ? 'en' : 'es');
-  const deHerramienta = /^\/(cuenta|panel)\//.test(location.pathname);
+  const deHerramienta = /^\/(cuenta|panel)(\/|$)/.test(location.pathname);
   const leeIdioma = () => { try { const l = localStorage.getItem('klendar_lang'); return IDIOMAS.includes(l) ? l : null; } catch { return null; } };
   const ponIdioma = (l) => { try { localStorage.setItem('klendar_lang', l); } catch { /* sin almacenamiento */ } };
   // Con sesión, el de la cuenta (lo guarda la app o «Ajustes»). En «Tu
@@ -320,7 +320,7 @@
     if (g && Date.now() - g.t < 216e5) {
       document.querySelectorAll('a[data-tab="descubre"], a[data-tab="explorar"]').forEach((a) => {
         const href = (a.getAttribute('href') || '').split('?')[0];
-        const q = g[/^\/en\//.test(href) ? 'en' : 'es'];
+        const q = g[/^\/en(\/|$)/.test(href) ? 'en' : 'es'];
         if (q) a.setAttribute('href', `${href}?${q}`);
       });
     }
@@ -346,7 +346,7 @@
   // fuera (un chat, otra web) no la trae y la cuenta pide confirmar antes
   // (`hayIntencion` en assets/cuenta/app.js).
   document.addEventListener('click', (ev) => {
-    const a = ev.target instanceof Element ? ev.target.closest('a[href*="/cuenta/"]') : null;
+    const a = ev.target instanceof Element ? ev.target.closest('a[href*="/cuenta"]') : null;
     if (!a) return;
     let u;
     try { u = new URL(a.href, location.href); } catch { return; }

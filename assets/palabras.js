@@ -20,7 +20,7 @@
   if (!caja) return;
   var palabra = caja.getAttribute('data-avisame-palabra') || '';
   var a = caja.querySelector('a');
-  var cuenta = function (ruta) { ruta = ruta || ''; return '/cuenta/' + (en ? ruta.replace(/\?|$/, function (m) { return m ? '?lang=en&' : '?lang=en'; }) : ruta); };
+  var cuenta = function (ruta) { ruta = ruta || ''; ruta = String(ruta).replace(/^\/+/, ''); var r = en ? ruta.replace(/\?|$/, function (m) { return m ? '?lang=en&' : '?lang=en'; }) : ruta; return '/cuenta' + (r && r.charAt(0) !== '?' ? '/' : '') + r; };
 
   var T = en ? {
     added: function (w) { return 'We’ll let you know if there’s something for “' + w + '” nearby'; },

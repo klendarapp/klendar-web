@@ -36,7 +36,7 @@ async function abre(fallan) {
   });
   const p = await ctx.newPage();
   p.setDefaultTimeout(30000);
-  await p.goto(`${BASE}/explorar/?que=sitios&vista=mapa&lat=36.72&lng=-4.42`);
+  await p.goto(`${BASE}/explorar?que=sitios&vista=mapa&lat=36.72&lng=-4.42`);
   return { ctx, p, estado };
 }
 const AVISO = '.sitios-sin-puntos';

@@ -62,7 +62,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
       const t = `[${nombre} ${ancho} ${tema}]`;
 
       // ── Descubre: la cabecera ──
-      await ve(page, `${BASE}/descubre/?${POS}`);
+      await ve(page, `${BASE}/descubre?${POS}`);
       const cab = await page.evaluate(() => {
         const lupa = document.querySelector('header.top [data-abre-hoja="buscar"]');
         const camp = document.querySelector('header.top [data-campana]');
@@ -121,7 +121,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
       });
       ok(hoja.abierta && hoja.foco === 'q', `${t} la lupa abre «Buscar» con el campo listo`);
       ok(hoja.atajos.length === 6, `${t} los seis atajos (${hoja.atajos.map((a) => a[0]).join(' · ')})`);
-      ok(hoja.atajos.every(([n, h]) => (n === 'Para comer ya' ? /^\/explorar\/\?.*que=sitios/.test(h) : /^\/descubre\//.test(h))),
+      ok(hoja.atajos.every(([n, h]) => (n === 'Para comer ya' ? /^\/explorar\?.*que=sitios/.test(h) : /^\/descubre([?#]|$)/.test(h))),
         `${t} los atajos llevan a Descubre (y «Para comer ya», a Sitios)`);
       ok(/Cada atajo pone sus filtros/.test(hoja.nota || ''), `${t} la nota de los atajos, como la app`);
       ok(hoja.accesos.includes('Dónde verlo') && hoja.accesos.includes('Pedir un local'), `${t} los accesos del buscador (${hoja.accesos.join(' · ')})`);
@@ -138,7 +138,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
       ok(abierto.n > 0 && abierto.foco && abierto.panel, `${t} «N más» abre su grupo sin cerrar nada`);
       // Una categoría busca por su nombre en Explorar, con la misma zona.
       const cat = await page.evaluate(() => document.querySelector('#buscar a.busq-cat').getAttribute('href'));
-      ok(/^\/explorar\/\?.*q=/.test(cat) && /lat=/.test(cat), `${t} tocar una categoría busca por su nombre (${cat})`);
+      ok(/^\/explorar\?.*q=/.test(cat) && /lat=/.test(cat), `${t} tocar una categoría busca por su nombre (${cat})`);
       // Escape la cierra y el foco vuelve a la lupa.
       await page.keyboard.press('Escape');
       await page.waitForTimeout(250);
@@ -151,7 +151,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
       // (Solo esperamos la dirección: el «load» de una página de resultados
       // con fotos y vídeos no hace falta, y WebKit sin pantalla se cae a veces
       // cargándolos todos a la vez.)
-      await Promise.all([page.waitForURL(/\/explorar\/\?/, { waitUntil: 'commit' }), page.press('#buscar input[name=q]', 'Enter')]);
+      await Promise.all([page.waitForURL(/\/explorar\?/, { waitUntil: 'commit' }), page.press('#buscar input[name=q]', 'Enter')]);
       const u = new URL(page.url());
       ok(u.searchParams.get('q') === 'bar' && u.searchParams.get('lat'), `${t} «Buscar» lleva a Explorar con la palabra y la misma zona (${u.search})`);
       ok(errores.length === 0, `${t} sin errores de JavaScript (${errores.join(' | ')})`);
@@ -161,18 +161,18 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
       // a veces tras Descubre con sus vídeos.)
       await page.close();
       page = await ctx.newPage();
-      await ve(page, `${BASE}/explorar/?${POS}`);
+      await ve(page, `${BASE}/explorar?${POS}`);
       // Explorar como la app (Iván, 2026-11-03): la lupa (la de la cabecera,
       // la única desde el 4-11) abre la misma hoja «Buscar», con los atajos
       // (ya no hay buscador ni atajos en la página).
       await page.click('header.top [data-abre-hoja="buscar"]');
       await page.waitForTimeout(700);
       const ex = await page.evaluate(() => [...document.querySelectorAll('#buscar .busq-sec .atajo')].map((a) => [a.textContent.trim(), a.getAttribute('href') || a.getAttribute('data-cerca-a')]));
-      ok(ex.length === 6 && ex.every(([n, h]) => (n === 'Para comer ya' ? /que=sitios/.test(h) : /^\/descubre\//.test(h))), `${t} Explorar: la lupa abre «Buscar» y sus atajos llevan a Descubre, como la app`);
+      ok(ex.length === 6 && ex.every(([n, h]) => (n === 'Para comer ya' ? /que=sitios/.test(h) : /^\/descubre([?#]|$)/.test(h))), `${t} Explorar: la lupa abre «Buscar» y sus atajos llevan a Descubre, como la app`);
       ok(!(await page.locator('.atajos-fila').count()), `${t} Explorar: sin fila de atajos en la página`);
       const panel = await page.evaluate(() => { const p = document.getElementById('busq-panel'); return p && !p.hidden && Boolean(p.querySelector('[data-busq-tipos]:not([hidden])')); });
       ok(panel, `${t} Explorar: el panel del buscador con «O mira por tipo de sitio»`);
-      await ve(page, `${BASE}/explorar/?${POS}&km=1&cuando=esta-noche&categoria=peluquerias`);
+      await ve(page, `${BASE}/explorar?${POS}&km=1&cuando=esta-noche&categoria=peluquerias`);
       const vacio = await page.evaluate(() => ({ vacio: Boolean(document.querySelector('.vacio')), resumen: document.querySelector('.resumen-n')?.textContent || '' }));
       ok(!vacio.vacio || vacio.resumen === '', `${t} Explorar vacío, sin «0 resultados» encima (${vacio.vacio ? 'vacío' : 'con algo'}: «${vacio.resumen}»)`);
       await ctx.close();
@@ -189,7 +189,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     await ctx.addInitScript(([k, s]) => { try { localStorage.setItem(k, s); } catch { /* nada */ } }, [claveSesion(), SESION]);
     const page = await ctx.newPage();
     const t = `[${nombre} campana${reducido ? ' reducido' : ''}]`;
-    await ve(page, `${BASE}/descubre/?${POS}`);
+    await ve(page, `${BASE}/descubre?${POS}`);
     await page.waitForTimeout(1200);
     const c1 = await page.evaluate(() => { const b = document.querySelector('[data-campana]'); return { oculta: b.hidden, n: b.querySelector('.top-n').textContent, globo: !b.querySelector('.top-n').hidden, label: b.getAttribute('aria-label'), href: b.getAttribute('href') }; });
     ok(!c1.oculta && c1.globo && c1.n === '3', `${t} con sesión, la campana con 3`);

@@ -151,7 +151,7 @@ export function render({ lang, path, kind, title, description, image, ogTitle, o
   // Sin nada que abrir, una salida (no las tiendas, que aún no están); y los
   // botones uno debajo de otro, del mismo ancho (`.vacio-botones`).
   const botones = notFound
-    ? `<a class="pill accent" href="${en ? '/en/explore/' : '/explorar/'}">${S.near}</a>`
+    ? `<a class="pill accent" href="${en ? '/en/explore' : '/explorar'}">${S.near}</a>`
     : `${open}
   <a class="pill" href="#" aria-disabled="true">${S.gp}</a>
   <a class="pill" href="#" aria-disabled="true">${S.as}</a>`;
@@ -171,7 +171,7 @@ ${head}
 <style>.open .card{max-width:460px}.open .hero-img{width:100%;aspect-ratio:16/10;object-fit:cover;border-radius:18px;margin-bottom:14px}.open .meta{color:var(--ink-2);font-size:14px;margin:0 0 12px}</style>
 </head>
 <body>
-${siteHeader(lang, '/', '/en/')}
+${siteHeader(lang, '/', '/en')}
 <div class="open"><div class="card">
   ${hero}
   <h1>${esc(t)}</h1>

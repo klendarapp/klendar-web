@@ -2,7 +2,7 @@
  * 20261208100000_grupos_y_empresas de la app). Lo mismo que la app:
  *
  * - `/cuenta/grupos/pedir?b=<id>,<id>`: «Pedir presupuesto» a 1–3 negocios
- *   (`create_group_request`). Llega de la lista pública (/grupos/) o de la
+ *   (`create_group_request`). Llega de la lista pública (/grupos) o de la
  *   ficha de un negocio; pide entrar. Las mismas validaciones que la base.
  * - `/cuenta/grupos`: «Tus peticiones» (`my_group_requests`).
  * - `/cuenta/grupos/<id>`: la petición, con lo que ha contestado cada negocio;
@@ -21,7 +21,7 @@ const KGr = globalThis.KlendarGrupos;
 const grupoLang = () => LANG;
 const GS = () => KGr.t(grupoLang());
 const GRUPO_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const grupoLista = () => (PUB_EN ? '/en/groups/' : '/grupos/');
+const grupoLista = () => (PUB_EN ? '/en/groups' : '/grupos');
 /** groups (Material Symbols, Apache 2.0): no está en la fuente recortada. */
 const GRUPO_SVG = 'M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z';
 const grupoIc = (s = 30) => `<svg class="ms-svg" viewBox="0 0 24 24" width="${s}" height="${s}" aria-hidden="true"><path fill="currentColor" d="${GRUPO_SVG}"/></svg>`;
@@ -157,7 +157,7 @@ async function grupoPeticiones() {
   const S = GS();
   const L = grupoLang();
   const lista = (await llamar('my_group_requests', {})) || [];
-  const cabeza = `<p class="crumbs"><a href="/cuenta/">${esc(t('Tu cuenta'))}</a> · <a href="${grupoLista()}">${esc(S.title)}</a></p>
+  const cabeza = `<p class="crumbs"><a href="/cuenta">${esc(t('Tu cuenta'))}</a> · <a href="${grupoLista()}">${esc(S.title)}</a></p>
     <h1>${esc(S.yourRequests)}</h1>`;
   if (!lista.length) {
     pinta(`${cabeza}${grupoVacio({ titulo: S.requestsEmptyTitle, texto: S.requestsEmptyText,

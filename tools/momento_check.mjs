@@ -137,7 +137,7 @@ async function prueba(nav, nombre, t, vp) {
   // 1. El negocio abre el QR.
   const { ctx, p, estado, errores } = await contexto(nav, vp);
   const foto = (n, pagina = p) => pagina.screenshot({ path: `${OUT}/web-${n}-${nombre}-${t}.png`, fullPage: true });
-  await p.goto(`${BASE}/panel/#/validar`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel#/validar`, { waitUntil: 'networkidle' });
   await p.waitForSelector('a[href="#/momento"]');
   ok(true, `${nombre}/${t} «Validar códigos» lleva a «Dar en el momento»`);
   await p.click('a[href="#/momento"]');
@@ -198,7 +198,7 @@ async function prueba(nav, nombre, t, vp) {
 
   // 2. Parado: «Algo del momento», no.
   const b = await contexto(nav, vp, { bloqueado: true });
-  await b.p.goto(`${BASE}/panel/#/momento`, { waitUntil: 'networkidle' });
+  await b.p.goto(`${BASE}/panel#/momento`, { waitUntil: 'networkidle' });
   await b.p.waitForSelector('#momentoForm');
   // Iván (2026-10-22): parado, solo usos de bonos que ya tiene la gente;
   // sellos nuevos (Fidelizar) y «algo del momento», no, y se dice por qué.

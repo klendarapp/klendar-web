@@ -53,12 +53,12 @@ const xml = await r.text();
 const lugares = LUGARES;
 check('responde 200', r.status === 200, r.status);
 check('dos llamadas a la base (lugares y selecciones), no una por municipio', llamadas.length === 2, llamadas.join(', '));
-check('las colecciones', COLECCIONES.every((k) => xml.includes(`/coleccion/${k.slug}/<`)));
+check('las colecciones', COLECCIONES.every((k) => xml.includes(`/coleccion/${k.slug}<`)));
 for (const l of lugares) {
   const slug = encodeURIComponent(String(l.slug || l.city).toLowerCase());
-  check(`${l.city}: su agenda y su «hoy»`, xml.includes(`/agenda/${slug}/<`) && xml.includes(`/hoy/${slug}/<`));
-  check(`${l.city}: sus ${l.cats.length} categorías`, l.cats.every((k) => xml.includes(`/agenda/${slug}/${encodeURIComponent(k)}/<`)));
-  check(`${l.city}: «con niños» solo si hay algo (${l.kids})`, xml.includes(`/con-ninos/${slug}/<`) === l.kids);
+  check(`${l.city}: su agenda y su «hoy»`, xml.includes(`/agenda/${slug}<`) && xml.includes(`/hoy/${slug}<`));
+  check(`${l.city}: sus ${l.cats.length} categorías`, l.cats.every((k) => xml.includes(`/agenda/${slug}/${encodeURIComponent(k)}<`)));
+  check(`${l.city}: «con niños» solo si hay algo (${l.kids})`, xml.includes(`/con-ninos/${slug}<`) === l.kids);
 }
 
 // Sin la función (prod antes de la migración): lo de antes, con tope.
@@ -69,7 +69,7 @@ const xml2 = await r2.text();
 check('sin la función: responde 200 igual', r2.status === 200, r2.status);
 check('sin la función: lo de antes (una por municipio, como mucho 40)',
   llamadas.filter((u) => u.endsWith('/rpc/public_categories')).length === Math.min(40, lugares.length));
-check('sin la función: las mismas agendas (las 40 primeras)', lugares.slice(0, 40).every((l) => xml2.includes(`/agenda/${encodeURIComponent(String(l.slug || l.city).toLowerCase())}/<`)));
+check('sin la función: las mismas agendas (las 40 primeras)', lugares.slice(0, 40).every((l) => xml2.includes(`/agenda/${encodeURIComponent(String(l.slug || l.city).toLowerCase())}<`)));
 
 console.log(fallos ? `\n${fallos} fallo(s)` : '\nTodo bien');
 process.exit(fallos ? 1 : 0);

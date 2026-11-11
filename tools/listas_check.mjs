@@ -144,7 +144,7 @@ const PANEL = (x = {}) => ({
 
 async function panelResumen(nav, n, t, vp) {
   const { ctx, p, estado, errores } = await contexto(nav, vp, PANEL());
-  await p.goto(`${BASE}/panel/#/resumen`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel#/resumen`, { waitUntil: 'networkidle' });
   await p.waitForSelector('a.link[href="#/publicaciones"]', { state: 'attached' });
   const v = await p.locator('#view').innerText();
   ok(/Ver todas \(40\) · 37 activas/.test(v), `${n}/${t} resumen: «Ver todas (40) · 37 activas» de la base`);
@@ -156,7 +156,7 @@ async function panelResumen(nav, n, t, vp) {
 
 async function panelPublicaciones(nav, n, t, vp) {
   const { ctx, p, estado, errores } = await contexto(nav, vp, PANEL());
-  await p.goto(`${BASE}/panel/#/publicaciones`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel#/publicaciones`, { waitUntil: 'networkidle' });
   await p.waitForSelector('[data-ver-mas="pubs"]');
   ok(await p.locator('.pub-item').count() === 24, `${n}/${t} publicaciones: las 24 primeras`);
   ok(/Activas\s*37/.test(await p.locator('#filtroArch').innerText()), `${n}/${t} publicaciones: los chips con los recuentos de la base`);
@@ -179,7 +179,7 @@ async function panelCalendario(nav, n, t, vp) {
     my_business_offers_range: () => PUBS.slice(0, 3).map((o) => ({ ...o, redeem_start_at: new Date().toISOString() })),
     my_business_offer_next_day: null,
   }));
-  await p.goto(`${BASE}/panel/#/calendario`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel#/calendario`, { waitUntil: 'networkidle' });
   await p.waitForSelector('.cal-mes');
   const r = llamadas(estado, 'my_business_offers_range')[0];
   ok(r && /^\d{4}-\d{2}-01$/.test(r.p_from), `${n}/${t} calendario: pide el mes (${r && r.p_from}–${r && r.p_to})`);
@@ -196,7 +196,7 @@ async function panelResenas(nav, n, t, vp) {
     business_reviews: (a) => pagina(RESENAS, a),
     business_review_summary: { count: 120, avg: 4.2, unanswered: 35 },
   }));
-  await p.goto(`${BASE}/panel/#/resenas`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel#/resenas`, { waitUntil: 'networkidle' });
   await p.waitForSelector('.resumen-resenas');
   const v = await p.locator('.resumen-resenas').innerText();
   ok(/4,2 de media · 120 reseñas/.test(v) && /35 sin responder/.test(v), `${n}/${t} reseñas: media y «sin responder» de la base (${v.replace(/\s+/g, ' ')})`);
@@ -215,7 +215,7 @@ async function panelCifras(nav, n, t, vp) {
     business_report: { from: hace(30 * 1440), totals: { views: 10, codes: 70, redeemed: 70 }, redemptions_total: 70, redemptions: CANJES.slice(0, 70), offers: [], daily: [], by_hour: [] },
     business_redemptions_page: (a) => pagina(CANJES, a, 'at'),
   }));
-  await p.goto(`${BASE}/panel/#/informe`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel#/informe`, { waitUntil: 'networkidle' });
   await p.waitForSelector('#canjesTabla', { state: 'attached' });
   await p.evaluate(() => document.querySelectorAll('details').forEach((d) => { d.open = true; }));
   ok(await p.locator('#canjesTabla tbody tr').count() === 50, `${n}/${t} Cifras: los 50 primeros canjes`);
@@ -232,7 +232,7 @@ async function panelAsistentes(nav, n, t, vp) {
     offer_attendees: (a) => (a.p_q ? ASIST.filter((x) => x.user_name.toLowerCase().includes(a.p_q.toLowerCase())) : ASIST.slice(a.p_offset, a.p_offset + a.p_limit)),
     offer_attendees_summary: { codes: 60, codes_in: 10, people: 60, people_in: 10 },
   }));
-  await p.goto(`${BASE}/panel/#/asistentes/${PUBS[0].id}`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel#/asistentes/${PUBS[0].id}`, { waitUntil: 'networkidle' });
   await p.waitForSelector('#q');
   ok(/10 de 60 han entrado · 10 de 60 personas/.test(await p.locator('#view').innerText()), `${n}/${t} asistentes: las cuentas de la base`);
   ok(await p.locator('#list tbody tr').count() === 50, `${n}/${t} asistentes: los 50 primeros`);

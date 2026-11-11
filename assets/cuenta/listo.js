@@ -55,7 +55,7 @@ const listoCartelMalo = () => pinta(pantallaVacia({
   titulo: t('Este cartel ya no funciona'),
   texto: t('Puede que el local lo haya cambiado. Pregunta en el mostrador.'),
   // Como la página pública y la app: a ver qué hay cerca.
-  botones: `<a class="pill accent" href="${PUB_EN ? '/en/discover/' : '/descubre/'}">${esc(t('Ver qué hay cerca'))}</a>`,
+  botones: `<a class="pill accent" href="${PUB_EN ? '/en/discover' : '/descubre'}">${esc(t('Ver qué hay cerca'))}</a>`,
 }));
 
 /** «Mientras esperas»: favoritos y lo de hoy del local (como mucho tres:
@@ -126,7 +126,7 @@ RUTAS.listo = async ([code]) => {
         icono: 'storefront', h: 'h1',
         titulo: EN ? `You're on the ${b.name} team` : t(`Eres del equipo de ${b.name}`),
         texto: t('Los pedidos se llevan desde «Pedidos de hoy», en Mi negocio.'),
-        botones: `<a class="pill accent" href="/panel/#/pedidos?biz=${esc(b.id)}">${esc(t('Ir a Pedidos de hoy'))}</a>`,
+        botones: `<a class="pill accent" href="/panel#/pedidos?biz=${esc(b.id)}">${esc(t('Ir a Pedidos de hoy'))}</a>`,
       }));
       return;
     }

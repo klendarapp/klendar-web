@@ -37,8 +37,8 @@ PAGINAS['para-negocios'] = (
 
 <h2>Cómo funciona</h2>
 <ol>
-  <li><strong>Das de alta tu negocio</strong> desde la app o desde el <a href="/panel/">panel web</a> (hace falta la ubicación exacta del local). Lo revisamos y lo verificamos, normalmente en 24-48 horas.</li>
-  <li><strong>Publicas</strong> una oferta flash (con cuenta atrás y aforo) o un evento con fecha. Desde el móvil o desde el <a href="/panel/">panel del ordenador</a>.</li>
+  <li><strong>Das de alta tu negocio</strong> desde la app o desde el <a href="/panel">panel web</a> (hace falta la ubicación exacta del local). Lo revisamos y lo verificamos, normalmente en 24-48 horas.</li>
+  <li><strong>Publicas</strong> una oferta flash (con cuenta atrás y aforo) o un evento con fecha. Desde el móvil o desde el <a href="/panel">panel del ordenador</a>.</li>
   <li><strong>La gente la canjea</strong> enseñándote un código QR de un solo uso. Lo validas con la cámara o escribiendo el código; el aforo baja solo.</li>
 </ol>
 
@@ -52,7 +52,7 @@ PAGINAS['para-negocios'] = (
 </ul>
 
 <h2>Lo que cuesta</h2>
-<p>Lo <strong>pruebas gratis</strong>: 30 días con todo al darte de alta, sin tarjeta. Después, un solo plan con todo incluido: 19,90 € + IVA al mes por local (24,08 € con IVA), sin límites, sin permanencia y sin comisión por canje. <a href="/precios/">Ver precios</a>.</p>
+<p>Lo <strong>pruebas gratis</strong>: 30 días con todo al darte de alta, sin tarjeta. Después, un solo plan con todo incluido: 19,90 € + IVA al mes por local (24,08 € con IVA), sin límites, sin permanencia y sin comisión por canje. <a href="/precios">Ver precios</a>.</p>
 <p class="callout"><strong>En la provincia de Málaga: gratis hasta el 31 de marzo de 2027</strong> (te avisamos 7 días y 1 día antes).</p>
 
 <h2>Echa la cuenta</h2>
@@ -90,25 +90,25 @@ PAGINAS['para-negocios'] = (
 </script>
 
 <h2>Lo que no hacemos</h2>
-<p>No vendemos tus datos ni los de tus clientes, no cobramos por canje y no ponemos tu oferta por delante de otra porque pagues más: <a href="/preguntas/">en la app el orden de serie es «Recomendado»</a> (el tiempo de hoy, lo más nuevo y los gustos de cada persona) y cada uno puede cambiarlo en los filtros («Más cerca», «Empieza antes» o «Lo más nuevo»); la cuota no cuenta. Hoy no se vende destacar publicaciones; si algún día se puede, <strong>se dirá</strong> en cada una.</p>
+<p>No vendemos tus datos ni los de tus clientes, no cobramos por canje y no ponemos tu oferta por delante de otra porque pagues más: <a href="/preguntas">en la app el orden de serie es «Recomendado»</a> (el tiempo de hoy, lo más nuevo y los gustos de cada persona) y cada uno puede cambiarlo en los filtros («Más cerca», «Empieza antes» o «Lo más nuevo»); la cuota no cuenta. Hoy no se vende destacar publicaciones; si algún día se puede, <strong>se dirá</strong> en cada una.</p>
 
 <h2>Empezar</h2>
 <p>Estamos empezando, así que si en tu ciudad todavía no hay nadie, escríbenos y lo arrancamos contigo: <a href="mailto:info@klendar.app">info@klendar.app</a>.</p>
 <p class="acciones" style="margin-top:18px">
   <a class="pill accent" href="mailto:info@klendar.app?subject=Quiero%20dar%20de%20alta%20mi%20negocio">Escríbenos</a>
-  <a class="pill ghost" href="/panel/">Entrar al panel</a>
-  <a class="pill ghost" href="/precios/">Ver precios</a>
+  <a class="pill ghost" href="/panel">Entrar al panel</a>
+  <a class="pill ghost" href="/precios">Ver precios</a>
 </p>
-<p>¿Eres un ayuntamiento, una junta de distrito, una asociación o una ONG? Para ti Klendar es gratis para siempre: <a href="/para-entidades/">Klendar para ayuntamientos y asociaciones</a>.</p>
-<p class="note">Kit para tu local: <a href="/assets/kit/klendar-guia-negocios.pdf">guía de 1 página (PDF)</a> · <a href="/assets/kit/klendar-cartel.pdf">cartel con QR (PDF)</a>. Lo legal, en las <a href="/negocios/">condiciones para negocios</a>.</p>
+<p>¿Eres un ayuntamiento, una junta de distrito, una asociación o una ONG? Para ti Klendar es gratis para siempre: <a href="/para-entidades">Klendar para ayuntamientos y asociaciones</a>.</p>
+<p class="note">Kit para tu local: <a href="/assets/kit/klendar-guia-negocios.pdf">guía de 1 página (PDF)</a> · <a href="/assets/kit/klendar-cartel.pdf">cartel con QR (PDF)</a>. Lo legal, en las <a href="/negocios">condiciones para negocios</a>.</p>
 ''',
     '''
 <p class="lead">You want new people to discover you, a full house for Thursday's tasting, or the customers who came once to come back. That's what Klendar is for: you post a flash offer or an event in a minute and people nearby see it <strong>now</strong>.</p>
 
 <h2>How it works</h2>
 <ol>
-  <li><strong>Register your business</strong> from the app or from the <a href="/panel/">web dashboard</a> (it needs the venue's exact location). We review and verify it, usually within 24–48 hours.</li>
-  <li><strong>Publish</strong> a flash offer (with a countdown and a capacity) or an event with a date. From your phone or from the <a href="/panel/">dashboard on a computer</a>.</li>
+  <li><strong>Register your business</strong> from the app or from the <a href="/panel">web dashboard</a> (it needs the venue's exact location). We review and verify it, usually within 24–48 hours.</li>
+  <li><strong>Publish</strong> a flash offer (with a countdown and a capacity) or an event with a date. From your phone or from the <a href="/panel">dashboard on a computer</a>.</li>
   <li><strong>People redeem it</strong> by showing you a single-use QR code. You validate it with the camera or by typing the code; the capacity updates automatically.</li>
 </ol>
 
@@ -122,7 +122,7 @@ PAGINAS['para-negocios'] = (
 </ul>
 
 <h2>What it costs</h2>
-<p>You <strong>try it free</strong>: 30 days with everything when you register, no card. After that, one plan with everything included: €19.90 + VAT a month per venue (€24.08 incl. VAT), with no limits, no lock-in and no commission per redemption. <a href="/en/pricing/">See pricing</a>.</p>
+<p>You <strong>try it free</strong>: 30 days with everything when you register, no card. After that, one plan with everything included: €19.90 + VAT a month per venue (€24.08 incl. VAT), with no limits, no lock-in and no commission per redemption. <a href="/en/pricing">See pricing</a>.</p>
 <p class="callout"><strong>In the province of Málaga: free until 31 March 2027</strong> (we remind you 7 days and 1 day before).</p>
 
 <h2>Do the maths</h2>
@@ -160,17 +160,17 @@ PAGINAS['para-negocios'] = (
 </script>
 
 <h2>What we don't do</h2>
-<p>We don't sell your data or your customers' data, we don't charge per redemption, and we don't put your offer ahead of another because you pay more: <a href="/en/faq/">in the app the default order is “Recommended”</a> (today's weather, what's newest and each person's interests) and anyone can change it in the filters (“Nearest”, “Starts soonest” or “Newest”); your plan doesn't count. Featuring publications isn't sold today; if it ever is, each one <strong>will say so</strong>.</p>
+<p>We don't sell your data or your customers' data, we don't charge per redemption, and we don't put your offer ahead of another because you pay more: <a href="/en/faq">in the app the default order is “Recommended”</a> (today's weather, what's newest and each person's interests) and anyone can change it in the filters (“Nearest”, “Starts soonest” or “Newest”); your plan doesn't count. Featuring publications isn't sold today; if it ever is, each one <strong>will say so</strong>.</p>
 
 <h2>Getting started</h2>
 <p>We're just getting started, so if nobody in your city is on Klendar yet, email us and we'll get it going with you: <a href="mailto:info@klendar.app">info@klendar.app</a>.</p>
 <p class="acciones" style="margin-top:18px">
   <a class="pill accent" href="mailto:info@klendar.app?subject=I%20want%20to%20register%20my%20business">Email us</a>
-  <a class="pill ghost" href="/panel/">Go to the dashboard</a>
-  <a class="pill ghost" href="/en/pricing/">See pricing</a>
+  <a class="pill ghost" href="/panel">Go to the dashboard</a>
+  <a class="pill ghost" href="/en/pricing">See pricing</a>
 </p>
-<p>Are you a council, a district council, an association or an NGO? For you, Klendar is free for good: <a href="/en/for-organisations/">Klendar for councils and associations</a>.</p>
-<p class="note">Kit for your venue (Spanish): <a href="/assets/kit/klendar-guia-negocios.pdf">one-page guide (PDF)</a> · <a href="/assets/kit/klendar-cartel.pdf">poster with QR (PDF)</a>. The legal part is in the <a href="/en/business-terms/">business terms</a>.</p>
+<p>Are you a council, a district council, an association or an NGO? For you, Klendar is free for good: <a href="/en/for-organisations">Klendar for councils and associations</a>.</p>
+<p class="note">Kit for your venue (Spanish): <a href="/assets/kit/klendar-guia-negocios.pdf">one-page guide (PDF)</a> · <a href="/assets/kit/klendar-cartel.pdf">poster with QR (PDF)</a>. The legal part is in the <a href="/en/business-terms">business terms</a>.</p>
 ''',
 )
 
@@ -190,10 +190,10 @@ _PRONTO = {
     'en': '' if AGENDA_CONECTADA else ' <span style="display:inline-block;vertical-align:middle;margin-left:6px;padding:3px 9px;border-radius:999px;background:var(--soft);color:var(--ink);font-weight:800;font-size:12px">Coming soon</span>',
 }
 _AGENDA_DONDE = {
-    'es': ('En «Mi negocio › Más herramientas › Conecta tu agenda», en la app o en el <a href="/panel/">panel web</a>.'
+    'es': ('En «Mi negocio › Más herramientas › Conecta tu agenda», en la app o en el <a href="/panel">panel web</a>.'
            if AGENDA_CONECTADA else
            'Estará en «Mi negocio › Más herramientas › Conecta tu agenda», en la app y en el panel web. Mientras tanto, tus eventos se publican a mano en un minuto.'),
-    'en': ('In “My business › More tools › Connect your calendar”, in the app or on the <a href="/panel/">web dashboard</a>.'
+    'en': ('In “My business › More tools › Connect your calendar”, in the app or on the <a href="/panel">web dashboard</a>.'
            if AGENDA_CONECTADA else
            "It will be in “My business › More tools › Connect your calendar”, in the app and on the web dashboard. Until then, you can publish your events by hand in a minute."),
 }
@@ -220,7 +220,7 @@ PAGINAS['para-entidades'] = (
 
 <h2>Cómo darte de alta</h2>
 <ol>
-  <li>En la app o en el <a href="/panel/">panel web</a>, al empezar el alta elige <strong>«Un ayuntamiento, asociación u ONG»</strong>.</li>
+  <li>En la app o en el <a href="/panel">panel web</a>, al empezar el alta elige <strong>«Un ayuntamiento, asociación u ONG»</strong>.</li>
   <li>Cuéntanos qué entidad es: el tipo, su nombre oficial, su CIF, su web oficial y su zona (el punto en el mapa y el municipio).</li>
   <li>Dinos quién la da de alta (tu nombre y tu cargo) y sube un <strong>documento que lo acredite</strong>: tu nombramiento, un certificado de la secretaría, el acta de la junta o la inscripción en el registro de asociaciones, por ejemplo.</li>
   <li>Lo comprobamos y te avisamos. Hasta entonces la entidad no publica. El documento solo lo ve el equipo de Klendar y se borra a los 6 meses de decidir.</li>
@@ -228,7 +228,7 @@ PAGINAS['para-entidades'] = (
 <p>¿Ya estás en Klendar como negocio? Pídelo desde tu ficha: «Tu ficha › Cuenta de entidad».</p>
 
 <h2>Qué puedes publicar</h2>
-<p>Lo mismo que un negocio: <strong>eventos</strong> con fecha (con reserva de plaza si la quieres) y <strong>novedades</strong> en tu ficha. Solo actividades abiertas al público o de interés para el barrio o la ciudad: fiestas, mercadillos, campañas de comercio local, actividades culturales, deportivas o solidarias. No vale la propaganda electoral ni de partido, ni la publicidad institucional que destaque logros de gestión en periodo electoral. Todo pasa por las mismas <a href="/normas/">normas de la comunidad</a> que cualquier publicación.</p>
+<p>Lo mismo que un negocio: <strong>eventos</strong> con fecha (con reserva de plaza si la quieres) y <strong>novedades</strong> en tu ficha. Solo actividades abiertas al público o de interés para el barrio o la ciudad: fiestas, mercadillos, campañas de comercio local, actividades culturales, deportivas o solidarias. No vale la propaganda electoral ni de partido, ni la publicidad institucional que destaque logros de gestión en periodo electoral. Todo pasa por las mismas <a href="/normas">normas de la comunidad</a> que cualquier publicación.</p>
 
 <h2>Conecta tu agenda{_PRONTO['es']}</h2>
 <p>Si tu entidad ya tiene un calendario en su web (Google Calendar, Outlook, la agenda de WordPress…), no hace falta escribir cada evento dos veces: pegas la dirección iCal o ICS del calendario y sus eventos entran solos en Klendar una vez al día.</p>
@@ -243,10 +243,10 @@ PAGINAS['para-entidades'] = (
 
 <h2>Empezar</h2>
 <p class="acciones" style="margin-top:18px">
-  <a class="pill accent" href="/panel/#/alta/entidad/1">Dar de alta una entidad</a>
+  <a class="pill accent" href="/panel#/alta/entidad/1">Dar de alta una entidad</a>
   <a class="pill ghost" href="mailto:info@klendar.app?subject=Klendar%20para%20mi%20entidad">Escríbenos</a>
 </p>
-<p class="note">Lo legal, en las <a href="/negocios/">condiciones para negocios</a> (apartado 3 bis, «Cuentas de entidad»). ¿Eres un negocio? Mira <a href="/para-negocios/">Klendar para negocios</a>.</p>
+<p class="note">Lo legal, en las <a href="/negocios">condiciones para negocios</a> (apartado 3 bis, «Cuentas de entidad»). ¿Eres un negocio? Mira <a href="/para-negocios">Klendar para negocios</a>.</p>
 ''',
     f'''
 <p class="lead">The neighbourhood festival, the charity market, the local shopping campaign or the library workshop: Klendar shows them to people nearby who are looking for something to do. For a council, a district council, an association or an NGO it is <strong>free, for good</strong>.</p>
@@ -265,7 +265,7 @@ PAGINAS['para-entidades'] = (
 
 <h2>How to register</h2>
 <ol>
-  <li>In the app or on the <a href="/panel/">web dashboard</a>, when you start registering choose <strong>“A council, association or NGO”</strong>.</li>
+  <li>In the app or on the <a href="/panel">web dashboard</a>, when you start registering choose <strong>“A council, association or NGO”</strong>.</li>
   <li>Tell us which organisation it is: its type, official name, tax ID (CIF), official website and area (the point on the map and the town).</li>
   <li>Tell us who is registering it (your name and your role) and upload a <strong>supporting document</strong>: your appointment, a certificate from the secretary, the board minutes or the entry in the register of associations, for example.</li>
   <li>We check it and let you know. Until then the organisation can't publish. Only the Klendar team sees the document, and it's deleted 6 months after we decide.</li>
@@ -273,7 +273,7 @@ PAGINAS['para-entidades'] = (
 <p>Already on Klendar as a business? Ask for it from your page: “Your page › Organisation account”.</p>
 
 <h2>What you can publish</h2>
-<p>The same as a business: <strong>events</strong> with a date (with place booking if you want it) and <strong>updates</strong> on your page. Only activities open to the public or of interest to the neighbourhood or city: festivities, street markets, local shopping campaigns, cultural, sports or charity activities. No electoral or party propaganda, and no institutional advertising highlighting achievements in office during election periods. Everything follows the same <a href="/en/community-guidelines/">community guidelines</a> as any publication.</p>
+<p>The same as a business: <strong>events</strong> with a date (with place booking if you want it) and <strong>updates</strong> on your page. Only activities open to the public or of interest to the neighbourhood or city: festivities, street markets, local shopping campaigns, cultural, sports or charity activities. No electoral or party propaganda, and no institutional advertising highlighting achievements in office during election periods. Everything follows the same <a href="/en/community-guidelines">community guidelines</a> as any publication.</p>
 
 <h2>Connect your calendar{_PRONTO['en']}</h2>
 <p>If your organisation already has a calendar on its website (Google Calendar, Outlook, a WordPress events calendar…), there's no need to type every event twice: you paste the calendar's iCal or ICS address and its events come into Klendar on their own once a day.</p>
@@ -288,10 +288,10 @@ PAGINAS['para-entidades'] = (
 
 <h2>Getting started</h2>
 <p class="acciones" style="margin-top:18px">
-  <a class="pill accent" href="/panel/?lang=en#/alta/entidad/1">Register an organisation</a>
+  <a class="pill accent" href="/panel?lang=en#/alta/entidad/1">Register an organisation</a>
   <a class="pill ghost" href="mailto:info@klendar.app?subject=Klendar%20for%20my%20organisation">Email us</a>
 </p>
-<p class="note">The legal part is in the <a href="/en/business-terms/">business terms</a> (section 3a, “Organisation accounts”). Are you a business? See <a href="/en/for-business/">Klendar for businesses</a>.</p>
+<p class="note">The legal part is in the <a href="/en/business-terms">business terms</a> (section 3a, “Organisation accounts”). Are you a business? See <a href="/en/for-business">Klendar for businesses</a>.</p>
 ''',
 )
 
@@ -361,7 +361,7 @@ PAGINAS['precios'] = (
 <p class="callout"><strong>En la provincia de Málaga: gratis hasta el 31 de marzo de 2027</strong> (te avisamos 7 días y 1 día antes).</p>
 {tabla_planes('es')}
 <p class="note">Precio por local, IVA no incluido: 19,90 € + 21 % de IVA son 24,08 € al mes.</p>
-<p>¿Ayuntamiento, asociación u ONG? <a href="/para-entidades/">Gratis para siempre</a>.</p>
+<p>¿Ayuntamiento, asociación u ONG? <a href="/para-entidades">Gratis para siempre</a>.</p>
 
 <h2>¿Varios locales?</h2>
 <p>El precio es <strong>por local</strong>, porque cada uno tiene su público, sus códigos y sus números. El primero paga el precio entero y, a partir del segundo, cada local más paga menos:</p>
@@ -377,16 +377,16 @@ PAGINAS['precios'] = (
 <ul>
   <li><strong>Prueba.</strong> Al dar de alta el negocio tienes 30 días con todo, sin tarjeta y sin que se renueve solo.</li>
   <li><strong>Cómo se paga.</strong> Mientras no tengamos pago con tarjeta, por transferencia: escribes a <a href="mailto:info@klendar.app">info@klendar.app</a> y lo dejamos activado. En Canarias, Ceuta y Melilla, sin IVA.</li>
-  <li><strong>Si no pagas</strong>, tu negocio <strong>puede bloquearse</strong> hasta que pagues: no se borra nada y puedes seguir validando lo que ya tiene la gente. Si va a pasar, te avisamos 7 días y 1 día antes (apartado 4 bis de las <a href="/negocios/">condiciones</a>).</li>
+  <li><strong>Si no pagas</strong>, tu negocio <strong>puede bloquearse</strong> hasta que pagues: no se borra nada y puedes seguir validando lo que ya tiene la gente. Si va a pasar, te avisamos 7 días y 1 día antes (apartado 4 bis de las <a href="/negocios">condiciones</a>).</li>
   <li><strong>Pausa por cierre.</strong> Hasta 6 meses sin pagar; lo que ya tenías pagado se guarda para cuando vuelvas. Mientras, tu negocio está parado.</li>
   <li><strong>Cancela cuando quieras:</strong> sigues hasta el final del periodo pagado y no se renueva. Sin permanencia ni penalización; desde el panel («Dar de baja el negocio») o en el mismo correo.</li>
   <li><strong>Nunca cobramos por canje.</strong> Ni porcentaje ni euros por código: si te funciona bien, pagas lo mismo.</li>
-  <li><strong>Hoy nadie puede pagar por salir antes.</strong> De serie, el orden es «Recomendado» (con el tiempo de hoy y los gustos de cada persona) y cada persona puede cambiarlo en los filtros; cómo se ordena todo, también lo ya visto, está en el apartado 2 bis de las <a href="/negocios/">condiciones</a>. Ni la cuota ni el número de publicaciones cuentan en el orden.</li>
+  <li><strong>Hoy nadie puede pagar por salir antes.</strong> De serie, el orden es «Recomendado» (con el tiempo de hoy y los gustos de cada persona) y cada persona puede cambiarlo en los filtros; cómo se ordena todo, también lo ya visto, está en el apartado 2 bis de las <a href="/negocios">condiciones</a>. Ni la cuota ni el número de publicaciones cuentan en el orden.</li>
 </ul>
 
 <h2>¿Y para quien usa la app?</h2>
 <p>Gratis, y sin cuenta para mirar. Solo hace falta crear una cuenta para canjear, guardar planes o recibir avisos.</p>
-<p style="margin-top:18px"><a class="pill accent" href="mailto:info@klendar.app?subject=Plan%20de%20Klendar">Preguntar por el plan</a> <a class="pill ghost" href="/para-negocios/">Cómo funciona</a></p>
+<p style="margin-top:18px"><a class="pill accent" href="mailto:info@klendar.app?subject=Plan%20de%20Klendar">Preguntar por el plan</a> <a class="pill ghost" href="/para-negocios">Cómo funciona</a></p>
 ''',
     f'''
 <p class="lead">One plan with everything included, no limits and no commission per redemption. What you charge at your venue is yours.</p>
@@ -394,7 +394,7 @@ PAGINAS['precios'] = (
 <p class="callout"><strong>In the province of Málaga: free until 31 March 2027</strong> (we remind you 7 days and 1 day before).</p>
 {tabla_planes('en')}
 <p class="note">Price per venue, VAT not included: €19.90 + 21% VAT comes to €24.08 a month.</p>
-<p>Council, association or NGO? <a href="/en/for-organisations/">Free, for good</a>.</p>
+<p>Council, association or NGO? <a href="/en/for-organisations">Free, for good</a>.</p>
 
 <h2>Several venues?</h2>
 <p>The price is <strong>per venue</strong>, because each one has its own audience, its own codes and its own numbers. The first venue pays the full price and, from the second one on, each extra venue pays less:</p>
@@ -410,16 +410,16 @@ PAGINAS['precios'] = (
 <ul>
   <li><strong>Trial.</strong> When you register your business you get 30 days with everything, no card and no automatic renewal.</li>
   <li><strong>How you pay.</strong> Until we have card payments, by bank transfer: email <a href="mailto:info@klendar.app">info@klendar.app</a> and we'll activate it. In the Canary Islands, Ceuta and Melilla, no VAT.</li>
-  <li><strong>If you don't pay</strong>, your business <strong>may be blocked</strong> until you do: nothing is deleted and you can still validate what people already have. If it's going to happen, we remind you 7 days and 1 day before (section 4a of the <a href="/en/business-terms/">business terms</a>).</li>
+  <li><strong>If you don't pay</strong>, your business <strong>may be blocked</strong> until you do: nothing is deleted and you can still validate what people already have. If it's going to happen, we remind you 7 days and 1 day before (section 4a of the <a href="/en/business-terms">business terms</a>).</li>
   <li><strong>Seasonal pause.</strong> Up to 6 months without paying; what you'd already paid for is kept for when you come back. Meanwhile, your business is stopped.</li>
   <li><strong>Cancel whenever you like:</strong> you keep everything until the end of the period you've paid for and it doesn't renew. No lock-in, no penalty; from the dashboard (“Leave Klendar”) or at the same address.</li>
   <li><strong>We never charge per redemption.</strong> No percentage, no euros per code: if it works well for you, you pay the same.</li>
-  <li><strong>Today nobody can pay to appear earlier.</strong> By default the order is ‘Recommended’ (with today's weather and each person's interests) and anyone can change it in the filters; how everything is ordered, including what someone has already seen, is in section 2a of the <a href="/en/business-terms/">business terms</a>. Neither the fee nor the number of publications affects the order.</li>
+  <li><strong>Today nobody can pay to appear earlier.</strong> By default the order is ‘Recommended’ (with today's weather and each person's interests) and anyone can change it in the filters; how everything is ordered, including what someone has already seen, is in section 2a of the <a href="/en/business-terms">business terms</a>. Neither the fee nor the number of publications affects the order.</li>
 </ul>
 
 <h2>And for people using the app?</h2>
 <p>Free, and no account needed to browse. You only sign up to redeem, save plans or get alerts.</p>
-<p style="margin-top:18px"><a class="pill accent" href="mailto:info@klendar.app?subject=Klendar%20plan">Ask about the plan</a> <a class="pill ghost" href="/en/for-business/">How it works</a></p>
+<p style="margin-top:18px"><a class="pill accent" href="mailto:info@klendar.app?subject=Klendar%20plan">Ask about the plan</a> <a class="pill ghost" href="/en/for-business">How it works</a></p>
 ''',
 )
 
@@ -439,13 +439,13 @@ AYUDA_T = {
                pestanas='Preguntas frecuentes', nada_h='¿No lo encuentras?',
                nada_p='Escríbenos y te respondemos en 2 días laborables como mucho. Si es algo que se pregunta a menudo, lo añadimos aquí.',
                boton='Escríbenos', sugerencias='/cuenta/sugerencias',
-               correo='O por correo a <a href="mailto:info@klendar.app">info@klendar.app</a> · <a href="/soporte/">Soporte</a>'),
+               correo='O por correo a <a href="mailto:info@klendar.app">info@klendar.app</a> · <a href="/soporte">Soporte</a>'),
     'en': dict(lead='What we get asked most, for people looking for plans and for businesses.',
                buscar='Search help', ph='Search: code, reservation, calendar…',
                pestanas='Frequently asked questions', nada_h="Can't find it?",
                nada_p="Write to us and we'll reply within 2 working days at most. If it's something people often ask, we'll add it here.",
                boton='Write to us', sugerencias='/cuenta/sugerencias?lang=en',
-               correo='Or by email at <a href="mailto:info@klendar.app">info@klendar.app</a> · <a href="/en/support/">Support</a>'),
+               correo='Or by email at <a href="mailto:info@klendar.app">info@klendar.app</a> · <a href="/en/support">Support</a>'),
 }
 
 
@@ -667,7 +667,7 @@ PAGINAS['sobre'] = (
 <p>Que lo que pasa cerca de ti se entere quien está cerca de ti. Ni un buscador de cupones ni una red social más: una lista de lo que hay <strong>hoy</strong> a tu alrededor, con el tiempo que le queda y las plazas que quedan, y un negocio al otro lado que puede publicarla en un minuto.</p>
 
 <h2>Cómo se gana dinero</h2>
-<p>Con el plan de los negocios (<a href="/precios/">precios</a>), y solo con eso. <strong>No cobramos comisión por canje</strong>, no vendemos datos y no hay publicidad de terceros. Hoy nadie puede pagar por salir antes.</p>
+<p>Con el plan de los negocios (<a href="/precios">precios</a>), y solo con eso. <strong>No cobramos comisión por canje</strong>, no vendemos datos y no hay publicidad de terceros. Hoy nadie puede pagar por salir antes.</p>
 
 <h2>Lo que no vamos a hacer</h2>
 <ul>
@@ -678,7 +678,7 @@ PAGINAS['sobre'] = (
 </ul>
 
 <h2>Quién está detrás</h2>
-<p>Un proyecto pequeño, hecho en España. Los datos del titular están en el <a href="/aviso-legal/">aviso legal</a>. Para cualquier cosa: <a href="mailto:info@klendar.app">info@klendar.app</a>.</p>
+<p>Un proyecto pequeño, hecho en España. Los datos del titular están en el <a href="/aviso-legal">aviso legal</a>. Para cualquier cosa: <a href="mailto:info@klendar.app">info@klendar.app</a>.</p>
 ''',
     '''
 <p class="lead">Klendar started from an everyday scene: a half-empty bar at six in the afternoon and, two streets away, someone staring at their phone with nothing to do.</p>
@@ -687,7 +687,7 @@ PAGINAS['sobre'] = (
 <p>Make sure what's happening near you reaches the people who are near you. Not a coupon search engine, not another social network: a list of what's on <strong>today</strong> around you, with the time it has left and the places still free, and a business on the other side that can publish it in a minute.</p>
 
 <h2>How it makes money</h2>
-<p>From the business plan (<a href="/en/pricing/">pricing</a>), and only from that. <strong>We take no commission per redemption</strong>, we don't sell data and there's no third-party advertising. Today nobody can pay to appear earlier.</p>
+<p>From the business plan (<a href="/en/pricing">pricing</a>), and only from that. <strong>We take no commission per redemption</strong>, we don't sell data and there's no third-party advertising. Today nobody can pay to appear earlier.</p>
 
 <h2>What we won't do</h2>
 <ul>
@@ -698,7 +698,7 @@ PAGINAS['sobre'] = (
 </ul>
 
 <h2>Who's behind it</h2>
-<p>A small project, made in Spain. The owner's details are in the <a href="/en/legal-notice/">legal notice</a>. For anything at all: <a href="mailto:info@klendar.app">info@klendar.app</a>.</p>
+<p>A small project, made in Spain. The owner's details are in the <a href="/en/legal-notice">legal notice</a>. For anything at all: <a href="mailto:info@klendar.app">info@klendar.app</a>.</p>
 ''',
 )
 
@@ -834,7 +834,7 @@ PAGINAS['fuentes'] = (
 # autónomo), ni el precio del plan, ni la cuota, ni el IVA, ni la prueba de
 # 30 días, ni el «gratis hasta…»: «¿Cuánto cuesta? Te lo explicamos en
 # persona», como el kit impreso (docs/kit de la app). «Sin comisión por canje»
-# y «sin permanencia» se quedan. /precios/ sigue existiendo (los enlaces
+# y «sin permanencia» se quedan. /precios sigue existiendo (los enlaces
 # viejos, el kit y las condiciones para negocios la nombran), sin indexar.
 # Cada cambio tiene que encontrar su texto: si alguien lo reescribe arriba,
 # esto falla en vez de dejar un precio a la vista.
@@ -845,7 +845,7 @@ SIN_PRECIOS = {
         [  # español
             ('Pruébalo gratis, sin comisiones por canje y sin permanencia.',
              'Sin comisiones por canje y sin permanencia.'),
-            ('<p>Lo <strong>pruebas gratis</strong>: 30 días con todo al darte de alta, sin tarjeta. Después, un solo plan con todo incluido: 19,90 € + IVA al mes por local (24,08 € con IVA), sin límites, sin permanencia y sin comisión por canje. <a href="/precios/">Ver precios</a>.</p>\n'
+            ('<p>Lo <strong>pruebas gratis</strong>: 30 días con todo al darte de alta, sin tarjeta. Después, un solo plan con todo incluido: 19,90 € + IVA al mes por local (24,08 € con IVA), sin límites, sin permanencia y sin comisión por canje. <a href="/precios">Ver precios</a>.</p>\n'
              '<p class="callout"><strong>En la provincia de Málaga: gratis hasta el 31 de marzo de 2027</strong> (te avisamos 7 días y 1 día antes).</p>',
              f'<p class="callout"><strong>Te lo explicamos en persona, sin compromiso</strong>: escríbenos a <a href="mailto:info@klendar.app?subject={ASUNTO_ES}">info@klendar.app</a> y lo vemos con tu caso. Sin permanencia y sin comisión por canje.</p>'),
             ("    var plan = 19.9;\n"
@@ -856,14 +856,14 @@ SIN_PRECIOS = {
              "    $('c-out').innerHTML = '<b>' + eur(ingresos) + ' al mes</b> de caja con esa oferta, '\n"
              "      + eur(margen) + ' de margen.'\n"),
             ('; la cuota no cuenta.', '; lo que pagues no cuenta.'),
-            ('  <a class="pill ghost" href="/panel/">Entrar al panel</a>\n'
-             '  <a class="pill ghost" href="/precios/">Ver precios</a>',
-             '  <a class="pill ghost" href="/panel/">Entrar al panel</a>'),
+            ('  <a class="pill ghost" href="/panel">Entrar al panel</a>\n'
+             '  <a class="pill ghost" href="/precios">Ver precios</a>',
+             '  <a class="pill ghost" href="/panel">Entrar al panel</a>'),
         ],
         [  # inglés
             ('Try it free, no commission per redemption, no lock-in.',
              'No commission per redemption and no lock-in.'),
-            ('<p>You <strong>try it free</strong>: 30 days with everything when you register, no card. After that, one plan with everything included: €19.90 + VAT a month per venue (€24.08 incl. VAT), with no limits, no lock-in and no commission per redemption. <a href="/en/pricing/">See pricing</a>.</p>\n'
+            ('<p>You <strong>try it free</strong>: 30 days with everything when you register, no card. After that, one plan with everything included: €19.90 + VAT a month per venue (€24.08 incl. VAT), with no limits, no lock-in and no commission per redemption. <a href="/en/pricing">See pricing</a>.</p>\n'
              '<p class="callout"><strong>In the province of Málaga: free until 31 March 2027</strong> (we remind you 7 days and 1 day before).</p>',
              f'<p class="callout"><strong>We\'ll explain it in person, with no obligation</strong>: email us at <a href="mailto:info@klendar.app?subject={ASUNTO_EN}">info@klendar.app</a> and we\'ll look at your case. No lock-in and no commission per redemption.</p>'),
             ("    var plan = 19.9;\n"
@@ -873,15 +873,15 @@ SIN_PRECIOS = {
              "      + '<b>' + paraPagarlo + (paraPagarlo === 1 ? ' redemption' : ' redemptions') + '</b> a month pays for it.'\n",
              "    $('c-out').innerHTML = '<b>' + eur(ingresos) + ' a month</b> through the till from that offer, '\n"
              "      + eur(margen) + ' in margin.'\n"),
-            ('  <a class="pill ghost" href="/panel/">Go to the dashboard</a>\n'
-             '  <a class="pill ghost" href="/en/pricing/">See pricing</a>',
-             '  <a class="pill ghost" href="/panel/">Go to the dashboard</a>'),
+            ('  <a class="pill ghost" href="/panel">Go to the dashboard</a>\n'
+             '  <a class="pill ghost" href="/en/pricing">See pricing</a>',
+             '  <a class="pill ghost" href="/panel">Go to the dashboard</a>'),
         ],
     ),
     'sobre': (
-        [('Con el plan de los negocios (<a href="/precios/">precios</a>), y solo con eso.',
+        [('Con el plan de los negocios (<a href="/precios">precios</a>), y solo con eso.',
           'Con el plan que pagan los negocios, y solo con eso.')],
-        [('From the business plan (<a href="/en/pricing/">pricing</a>), and only from that.',
+        [('From the business plan (<a href="/en/pricing">pricing</a>), and only from that.',
           'From the plan businesses pay for, and only from that.')],
     ),
 }
@@ -917,25 +917,25 @@ if not PRECIOS:
         "We'll explain it in person, with no obligation. No commission per redemption and no lock-in.",
         f'''
 <p class="lead">Te lo explicamos en persona, sin compromiso: escríbenos y lo vemos con tu caso.</p>
-<p style="margin-top:18px"><a class="pill accent" href="mailto:info@klendar.app?subject={ASUNTO_ES}">Escríbenos</a> <a class="pill ghost" href="/para-negocios/">Cómo funciona</a></p>
+<p style="margin-top:18px"><a class="pill accent" href="mailto:info@klendar.app?subject={ASUNTO_ES}">Escríbenos</a> <a class="pill ghost" href="/para-negocios">Cómo funciona</a></p>
 <ul>
   <li><strong>Nunca cobramos por canje.</strong> Ni porcentaje ni euros por código: lo que cobras en tu local es tuyo entero.</li>
   <li><strong>Sin permanencia.</strong> Lo dejas cuando quieras, sin penalización.</li>
   <li><strong>Varios locales con un solo acceso.</strong> Publicar en varios a la vez va incluido.</li>
 </ul>
-<p>Por correo: <a href="mailto:info@klendar.app">info@klendar.app</a>. ¿Ayuntamiento, asociación u ONG? <a href="/para-entidades/">Gratis para siempre</a>.</p>
-<p class="note">Lo legal, en las <a href="/negocios/">condiciones para negocios</a>.</p>
+<p>Por correo: <a href="mailto:info@klendar.app">info@klendar.app</a>. ¿Ayuntamiento, asociación u ONG? <a href="/para-entidades">Gratis para siempre</a>.</p>
+<p class="note">Lo legal, en las <a href="/negocios">condiciones para negocios</a>.</p>
 ''',
         f'''
 <p class="lead">We'll explain it in person, with no obligation: email us and we'll look at your case.</p>
-<p style="margin-top:18px"><a class="pill accent" href="mailto:info@klendar.app?subject={ASUNTO_EN}">Email us</a> <a class="pill ghost" href="/en/for-business/">How it works</a></p>
+<p style="margin-top:18px"><a class="pill accent" href="mailto:info@klendar.app?subject={ASUNTO_EN}">Email us</a> <a class="pill ghost" href="/en/for-business">How it works</a></p>
 <ul>
   <li><strong>We never charge per redemption.</strong> No percentage, no euros per code: what you charge at your venue is yours.</li>
   <li><strong>No lock-in.</strong> Leave whenever you like, with no penalty.</li>
   <li><strong>Several venues, one login.</strong> Publishing to several at once is included.</li>
 </ul>
-<p>By email: <a href="mailto:info@klendar.app">info@klendar.app</a>. Council, association or NGO? <a href="/en/for-organisations/">Free, for good</a>.</p>
-<p class="note">The legal side is in the <a href="/en/business-terms/">business terms</a>.</p>
+<p>By email: <a href="mailto:info@klendar.app">info@klendar.app</a>. Council, association or NGO? <a href="/en/for-organisations">Free, for good</a>.</p>
+<p class="note">The legal side is in the <a href="/en/business-terms">business terms</a>.</p>
 ''',
     )
 
@@ -945,7 +945,7 @@ if not PRECIOS:
 PESTANAS = {
     'para-negocios': ('Para negocios · Klendar', 'For businesses · Klendar'),
     'para-entidades': ('Para ayuntamientos y asociaciones · Klendar', 'For councils and associations · Klendar'),
-    'sobre': ('Sobre Klendar', 'About Klendar'),
+    'sobre': ('Sobre nosotros · Klendar', 'About us · Klendar'),
 }
 
 
@@ -955,11 +955,10 @@ if __name__ == '__main__':
             ('es', es_slug, t_es, d_es, b_es),
             ('en', 'en/' + en_slug, t_en, d_en, b_en),
         ):
-            os.makedirs(slug, exist_ok=True)
-            path = '/' + slug + '/'
-            # /precios/ sin precios: solo «te lo explicamos en persona», sin indexar.
+            path = '/' + slug
+            # /precios sin precios: solo «te lo explicamos en persona», sin indexar.
             noindex = '<meta name="robots" content="noindex">' if es_slug == 'precios' and not PRECIOS else ''
-            io.open(os.path.join(slug, 'index.html'), 'w', encoding='utf-8', newline='\n').write(
+            io.open(slug + '.html', 'w', encoding='utf-8', newline='\n').write(
                 doc_page(T[lang], path, title, desc, body,
                          pestana=PESTANAS.get(es_slug, (None, None))[lang == 'en'], extra=noindex))
         print('ok', es_slug, '·', en_slug)
@@ -972,16 +971,16 @@ if __name__ == '__main__':
     print('ok assets/ayuda.json')
 
     # «Esta página no existe». Cloudflare sirve la 404.html más cercana a la
-    # ruta pedida: /en/404.html para lo que empieza por /en/, y la de la raíz
+    # ruta pedida: /en/404.html para lo que empieza por /en, y la de la raíz
     # para lo demás. Con la cabecera y el pie de siempre, y algo que hacer.
     # Centrada, como toda pantalla de error (`.vacio`, glosario de la app).
     NO_EXISTE = {
         'es': ('/', 'Esta página no existe', 'Puede que el enlace esté mal escrito o que la página se haya movido.',
-               [('/explorar/', 'Ver qué hay cerca'), ('/', 'Ir a la portada')], '',
-               '¿Buscabas algo concreto? Escríbenos desde <a href="/soporte/">soporte</a>.'),
-        'en': ('/en/', 'This page doesn\'t exist', 'The link may be mistyped or the page may have moved.',
-               [('/en/explore/', "See what's nearby"), ('/en/', 'Go to the home page')], 'en',
-               'Looking for something in particular? Get in touch through <a href="/en/support/">support</a>.'),
+               [('/explorar', 'Ver qué hay cerca'), ('/', 'Ir a la portada')], '',
+               '¿Buscabas algo concreto? Escríbenos desde <a href="/soporte">soporte</a>.'),
+        'en': ('/en', 'This page doesn\'t exist', 'The link may be mistyped or the page may have moved.',
+               [('/en/explore', "See what's nearby"), ('/en', 'Go to the home page')], 'en',
+               'Looking for something in particular? Get in touch through <a href="/en/support">support</a>.'),
     }
     for lang, (path, titulo, texto, botones, carpeta, pie) in NO_EXISTE.items():
         pills = ''.join(f'<a class="pill{" accent" if i == 0 else " ghost"}" href="{h}">{l}</a>' for i, (h, l) in enumerate(botones))

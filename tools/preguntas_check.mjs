@@ -123,10 +123,10 @@ async function cuentaPreguntar(nav, nombre, t, vp) {
     },
     delete_my_question: (b) => { mias = mias.filter((q) => q.id !== b.p_id); return { ok: true }; },
   }));
-  await p.goto(`${BASE}/cuenta/`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/cuenta`, { waitUntil: 'networkidle' });
   const d1 = await p.evaluate((b) => destinoWeb(`/business/${b}/questions?q=9a000000-0000-4000-8000-000000000005`), BIZ);
   const d2 = await p.evaluate((b) => destinoWeb(`/my-business/${b}/questions`), BIZ);
-  ok(d1 === `/cuenta/preguntar/${BIZ}?q=9a000000-0000-4000-8000-000000000005` && d2 === `/panel/#/preguntas?biz=${BIZ}`, `${nombre}/${t} los avisos llevan a «Tus preguntas» y a la bandeja del panel (${d1} · ${d2})`);
+  ok(d1 === `/cuenta/preguntar/${BIZ}?q=9a000000-0000-4000-8000-000000000005` && d2 === `/panel#/preguntas?biz=${BIZ}`, `${nombre}/${t} los avisos llevan a «Tus preguntas» y a la bandeja del panel (${d1} · ${d2})`);
   await p.goto(`${BASE}/cuenta/preguntar/${BIZ}`, { waitUntil: 'networkidle' });
   await p.waitForSelector('#f textarea');
   ok(/Pregúntale a Bar Sonda/.test(await p.locator('#view h1').innerText()), `${nombre}/${t} «Pregúntale a Bar Sonda»`);
@@ -186,7 +186,7 @@ async function panelPreguntas(nav, nombre, t, vp) {
     answer_business_question: { ok: true, first: true },
     hide_business_question: { ok: true },
   }));
-  await p.goto(`${BASE}/panel/#/preguntas`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel#/preguntas`, { waitUntil: 'networkidle' });
   await p.waitForSelector('[data-contestar]');
   const v = await p.locator('#view').innerText();
   ok(/Sin contestar · 2/.test(v) && /Contestadas · 3/.test(v) && /Ocultas · 1/.test(v) && /¿Se puede aparcar cerca\?/.test(v) && /Denunciada/.test(v),
@@ -209,7 +209,7 @@ async function panelPreguntas(nav, nombre, t, vp) {
   await p.click('[data-pestana=hidden]');
   await p.waitForFunction(() => /Oculta: Lleva datos personales/.test(document.querySelector('#view')?.innerText || ''));
   ok(await p.locator('[data-contestar]').count() === 0, `${nombre}/${t} panel Ocultas: el motivo y sin botones`);
-  await p.goto(`${BASE}/panel/#/resumen`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel#/resumen`, { waitUntil: 'networkidle' });
   await p.waitForFunction(() => /Por contestar:\s*2 preguntas/.test(document.body.innerText), null, { timeout: 8000 }).catch(() => {});
   ok(/Por contestar:\s*2 preguntas/.test(await p.locator('body').innerText()), `${nombre}/${t} panel resumen: «Por contestar: 2 preguntas»`);
   ok(errores.length === 0, `${nombre}/${t} panel sin errores JS ${errores.join(' | ')}`);

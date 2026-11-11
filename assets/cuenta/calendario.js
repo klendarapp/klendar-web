@@ -45,7 +45,7 @@ async function ajustesCalendario() {
 
   const dibuja = () => {
     pinta(`
-      <p class="crumbs"><a href="/cuenta/">${esc(t('Tu cuenta'))}</a> › <a href="/cuenta/ajustes">${esc(t('Ajustes'))}</a></p>
+      <p class="crumbs"><a href="/cuenta">${esc(t('Tu cuenta'))}</a> › <a href="/cuenta/ajustes">${esc(t('Ajustes'))}</a></p>
       <h1>${esc(t('Tus planes en tu calendario'))}</h1>
       <p>${esc(t('Lo que tienes en Planes, en el calendario de tu móvil y al día: eventos a los que vas, reservas, códigos con hora y las fechas que añaden las series que sigues. Si algo se anula, desaparece; si cambia la hora, se mueve.'))}</p>
       <h2 class="seccion-t">${esc(t('Añádelo a tu calendario'))}</h2>

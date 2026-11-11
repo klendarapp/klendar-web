@@ -36,7 +36,7 @@ export async function promoterLinkPage(rawCode, lang) {
   const sp = supabasePublic();
   // El script del navegador: la sesión (apuntarse) y, si el servidor no ha
   // podido, abrir el enlace desde aquí.
-  const script = (pendiente) => `${pendiente ? '<script src="/assets/zona.js?v=2" defer></script>\n<script src="/assets/tarjeta.js?v=20261028rp" defer></script>\n' : ''}<script src="/assets/rrpp-enlace.js?v=3" defer data-lang="${en ? 'en' : 'es'}" data-url="${esc(sp.url)}" data-key="${esc(sp.key)}"></script>`;
+  const script = (pendiente) => `${pendiente ? '<script src="/assets/zona.js?v=2" defer></script>\n<script src="/assets/tarjeta.js?v=20261028rp" defer></script>\n' : ''}<script src="/assets/rrpp-enlace.js?v=20261111sinbarra" defer data-lang="${en ? 'en' : 'es'}" data-url="${esc(sp.url)}" data-key="${esc(sp.key)}"></script>`;
   const pagina = ({ body, title, description, status = 200, image }) => privada(publicPage({
     // Los avisos llevan punto; en la pestaña, «Este enlace ha caducado · Klendar».
     lang, path, body, title: title.replace(/\.$/, ''), description, image, head: HEAD, contador: false, privada: true,
@@ -75,7 +75,7 @@ export async function promoterLinkPage(rawCode, lang) {
   const tz = datos.zonas.get(b.id);
   const nombre = KR.nombreDe(d.promoter, lang);
   const body = `
-  <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a></p>
+  <p class="crumbs"><a href="${en ? '/en' : '/'}">Klendar</a></p>
   <div id="rp-lista" data-code="${esc(code)}" data-estado="ok">${KR.cuerpo(d, normales, lang, tz)}</div>
   ${script(false)}`;
   const avatar = d.promoter && /^https:\/\//.test(d.promoter.avatar || '') ? d.promoter.avatar : null;

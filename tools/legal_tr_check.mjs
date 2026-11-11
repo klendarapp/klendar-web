@@ -32,7 +32,7 @@ let fallos = 0;
 const ok = (c, m) => { if (!c) { fallos++; console.log('FALLO:', m); } else console.log('ok:', m); };
 
 const PAGINAS = [
-  ['/privacidad/', 'Última actualización: 11 de noviembre de 2026', [
+  ['/privacidad', 'Última actualización: 11 de noviembre de 2026', [
     /Traducción automática\s+Lo que pides traducir[\s\S]*?Lo traduce nuestro servidor con Google Cloud Translation, que solo recibe los textos de los negocios \(sin tus datos ni tu cuenta\)[\s\S]*?las de un negocio que se elimina, en ese momento/,
     /Google Cloud Translation \(Google Cloud EMEA Ltd\., Irlanda: traducción automática de los textos que publican los negocios, solo si alguien la ha pedido; no recibe datos de las personas usuarias;/,
     /Mapbox \(Mapbox, Inc\., EE\. UU\.: mapas, rutas a pie y nombres de lugares;[\s\S]*?en la web, tu navegador le pide también la librería que dibuja los mapas; nunca tu nombre ni tu correo;/,
@@ -41,7 +41,7 @@ const PAGINAS = [
     /en lo que se manda sin cuenta \(denunciar un contenido en la web o «Avísame cuando llegue»\); y, sin guardarla, la ciudad y la zona aproximadas de tu conexión cuando no nos has dado tu ubicación/,
     /28 de octubre de 2026: Traducción automática: qué se traduce, que lo hace Google Cloud Translation/,
   ], [/cuando el servicio esté disponible/]],
-  ['/en/privacy/', 'Last updated: 11 November 2026', [
+  ['/en/privacy', 'Last updated: 11 November 2026', [
     /Automatic translation\s+What you ask to translate[\s\S]*?Our server translates them with Google Cloud Translation, which only receives the businesses' text \(not your data or your account\)/,
     /Google Cloud Translation \(Google Cloud EMEA Ltd\., Ireland: automatic translation of the text businesses publish/,
     /Mapbox \(Mapbox, Inc\., USA: maps, walking directions and place names;[\s\S]*?the library that draws the maps; never your name or email;/,
@@ -49,38 +49,38 @@ const PAGINAS = [
     /without storing it, the approximate city and area of your connection when you haven't shared your location/,
     /28 October 2026: Automatic translation: what is translated/,
   ], [/when the service is available/]],
-  ['/cookies/', 'Última actualización: 9 de noviembre de 2026', [
+  ['/cookies', 'Última actualización: 9 de noviembre de 2026', [
     /La zona aproximada de tu conexión \(si no nos das tu ubicación\) no se guarda en tu navegador ni en ningún sitio: se usa solo para hacer la página que pides\./,
     /28 de octubre de 2026: La zona aproximada de tu conexión/,
   ], []],
-  ['/en/cookies/', 'Last updated: 9 November 2026', [
+  ['/en/cookies', 'Last updated: 9 November 2026', [
     /The approximate area of your connection \(if you don't share your location\) isn't stored in your browser or anywhere else: it's only used to build the page you request\./,
   ], []],
-  ['/terminos/', 'Última actualización: 5 de noviembre de 2026', [
+  ['/terminos', 'Última actualización: 5 de noviembre de 2026', [
     /la traducción es automática, la hace Google Translate y puede tener errores: lo que vale es el texto original del negocio, que siempre puedes ver con «Ver original»\./,
     /28 de octubre de 2026: Traducción automática \(apartado 3\)/,
   ], []],
-  ['/en/terms/', 'Last updated: 5 November 2026', [
+  ['/en/terms', 'Last updated: 5 November 2026', [
     /the translation is automatic, it's done by Google Translate and it may contain mistakes: what counts is the business's original text/,
   ], []],
-  ['/negocios/', 'Última actualización: 5 de noviembre de 2026', [
+  ['/negocios', 'Última actualización: 5 de noviembre de 2026', [
     /\(enlace e imagen para historias\) y, si lo piden, ver sus textos traducidos automáticamente\./,
     /licencia para mostrarlos en la Plataforma, traducirlos automáticamente para quien lo pida,/,
     /los del 28 de octubre de 2026 \(apartados 2, 4 bis y 7\), desde el 12 de noviembre de 2026, los del 2 de noviembre de 2026 \(apartado 2 bis\), desde el 17 de noviembre de 2026, los del 3 de noviembre de 2026 \(apartados 3, 3 decies y 4\), desde el 18 de noviembre de 2026, los del 4 de noviembre de 2026 \(apartado 3 bis, «Conecta tu agenda»\), desde el 19 de noviembre de 2026, y los del 5 de noviembre de 2026 \(apartado 2 bis\), desde el 20 de noviembre de 2026: 15 días/,
     /28 de octubre de 2026: Traducción automática \(apartados 2 y 7\)[\s\S]*?Se aplica desde el 12 de noviembre de 2026\./,
   ], []],
-  ['/en/business-terms/', 'Last updated: 5 November 2026', [
+  ['/en/business-terms', 'Last updated: 5 November 2026', [
     /\(a link and a stories image\) and, if they ask, see its text translated automatically\./,
     /a licence to display it on the Platform, translate it automatically for those who ask,/,
     /those of 28 October 2026 \(sections 2, 4a and 7\) from 12 November 2026, those of 2 November 2026 \(section 2a\) from 17 November 2026, those of 3 November 2026 \(sections 3, 3i and 4\) from 18 November 2026, those of 4 November 2026 \(section 3a, “Connect your calendar”\) from 19 November 2026, and those of 5 November 2026 \(section 2a\) from 20 November 2026: 15 days/,
   ], []],
-  ['/soporte/', 'Última actualización: 28 de octubre de 2026', [
+  ['/soporte', 'Última actualización: 28 de octubre de 2026', [
     /La traducción no es correcta\s+Pulsa «Ver original»: lo que vale es lo que escribió el negocio\./,
     /28 de octubre de 2026: Una pregunta nueva: qué hacer si la traducción automática no es correcta\./,
   ], []],
-  ['/en/support/', '', [/The translation is wrong\s+Tap “See original”: what counts is what the business wrote\./], []],
-  ['/preguntas/', '', [/La traducción no es correcta/], []],
-  ['/en/faq/', '', [/The translation is wrong/], []],
+  ['/en/support', '', [/The translation is wrong\s+Tap “See original”: what counts is what the business wrote\./], []],
+  ['/preguntas', '', [/La traducción no es correcta/], []],
+  ['/en/faq', '', [/The translation is wrong/], []],
 ];
 
 async function legales(nav, nombre, t, vp) {

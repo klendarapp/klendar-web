@@ -4,7 +4,7 @@
 // migraciones 20261260100005 y 20261260100006 de la app):
 //
 // - La dirección buena lleva el slug del municipio, sin tildes y único
-//   (`/hoy/malaga/`, `/hoy/donostia-san-sebastian/`, `/hoy/torrent-valencia/`).
+//   (`/hoy/malaga`, `/hoy/donostia-san-sebastian`, `/hoy/torrent-valencia`).
 // - Otra forma del mismo sitio (con tildes o mayúsculas, «/hoy/málaga/»;
 //   otro de sus nombres, «/hoy/san-sebastian/», «/hoy/elche/»; el id de
 //   antes de una Ciudad de Klendar, «/hoy/coruna/»; el texto que escribía el
@@ -42,7 +42,7 @@ export function eligeMunicipio(lang, path, opciones, hacia) {
   const titulo = en ? 'Which one?' : '¿Cuál de ellos?';
   const texto = en ? 'There are several towns with this name.' : 'Hay varios municipios con este nombre.';
   const body = `
-  <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a></p>
+  <p class="crumbs"><a href="${en ? '/en' : '/'}">Klendar</a></p>
   <section class="vacio">
     <h1>${esc(titulo)}</h1>
     <p>${esc(texto)}</p>

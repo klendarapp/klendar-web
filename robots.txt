@@ -1,6 +1,6 @@
 User-agent: *
 Allow: /
-Disallow: /admin/
+Disallow: /admin
 Disallow: /r/
 Disallow: /c/
 Disallow: /cola/
@@ -9,10 +9,10 @@ Disallow: /cal/
 Disallow: /legal/
 # Explorar y Descubre con filtros: noindex y con canonical a la página sin
 # filtros; las combinaciones son infinitas y cada una se pinta al momento.
-Disallow: /explorar/?
-Disallow: /descubre/?
-Disallow: /en/explore/?
-Disallow: /en/discover/?
+Disallow: /explorar?
+Disallow: /descubre?
+Disallow: /en/explore?
+Disallow: /en/discover?
 
 Sitemap: https://klendar.app/sitemap.xml
 Sitemap: https://klendar.app/sitemap-agenda.xml

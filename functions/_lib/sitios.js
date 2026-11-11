@@ -1,4 +1,4 @@
-// Explorar › Sitios en la web (`/explorar/?que=sitios`, `/en/explore/?what=places`),
+// Explorar › Sitios en la web (`/explorar?que=sitios`, `/en/explore?what=places`),
 // como la app (tanda D, migración 20261236100000): los negocios con local,
 // tengan o no planes, por cercanía; también con la ficha a medias (sin foto o
 // sin horario, después de los completos: migración 20261274500000). Aquí, lo

@@ -73,11 +73,11 @@ const eventoLd = (d, lang, artista) => {
 function noEsta(lang, path) {
   const en = lang === 'en';
   const S = KA.t(lang);
-  const explorar = en ? '/en/explore/' : '/explorar/';
+  const explorar = en ? '/en/explore' : '/explorar';
   return html(publicPage({
     lang, path, title: en ? "This artist isn't here" : 'Este artista no está', description: S.goneText,
     head: `<meta name="robots" content="noindex">\n${ARTISTAS_CSS}`,
-    body: `<p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a></p>
+    body: `<p class="crumbs"><a href="${en ? '/en' : '/'}">Klendar</a></p>
   <section class="vacio">
     <h1>${esc(S.gone)}</h1>
     <p>${esc(S.goneText)}</p>
@@ -106,7 +106,7 @@ export async function artistaPage(rawSlug, url, lang) {
   const bio = String(a.bio || '').trim();
 
   const body = `
-  <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a> · ${esc(S.artists)}</p>
+  <p class="crumbs"><a href="${en ? '/en' : '/'}">Klendar</a> · ${esc(S.artists)}</p>
   <div class="art-cab">
     ${foto(a, 112)}
     <div class="art-cab-t">
@@ -124,7 +124,7 @@ export async function artistaPage(rawSlug, url, lang) {
     : `<div class="art-sin-fechas"><p><b>${esc(S.noDates)}</b></p><p class="muted">${esc(S.weTell)}</p></div>`}`;
 
   const description = (bio || S.pageDesc(a.name)).replace(/\s+/g, ' ').slice(0, 200);
-  const migas = [['Klendar', en ? '/en/' : '/'], [a.name, path]];
+  const migas = [['Klendar', en ? '/en' : '/'], [a.name, path]];
   const jsonLd = {
     '@context': 'https://schema.org',
     '@graph': [

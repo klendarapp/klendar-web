@@ -25,7 +25,7 @@ let fallos = 0;
 const ok = (c, m) => { if (!c) { fallos++; console.log('FALLO:', m); } else console.log('ok:', m); };
 
 const PAGINAS = [
-  ['/privacidad/', [
+  ['/privacidad', [
     /la trata esa red como responsable independiente, con sus propias condiciones\.\s*Klendar en redes sociales\. Tenemos perfiles en Instagram, TikTok y LinkedIn\. En la web y en la app solo hay enlaces normales a ellos/,
     /\(Meta Platforms Ireland Limited para Instagram, TikTok Technology Limited para TikTok y LinkedIn Ireland Unlimited Company para LinkedIn\)/,
     /para las de Instagram somos corresponsables con Meta según su anexo de corresponsabilidad, y lo mismo con TikTok y con LinkedIn para las suyas\./,
@@ -33,7 +33,7 @@ const PAGINAS = [
     /28 de octubre de 2026: Perfiles de Klendar en Instagram y TikTok/,
     /29 de octubre de 2026: Perfil de Klendar en LinkedIn: solo un enlace/,
   ]],
-  ['/en/privacy/', [
+  ['/en/privacy', [
     /under its own terms\.\s*Klendar on social media\. We have profiles on Instagram, TikTok and LinkedIn\. The website and the app only contain ordinary links to them/,
     /for Instagram's we are joint controllers with Meta under its joint controller addendum, and likewise with TikTok and LinkedIn for their own\./,
     /but you can also email us at info@klendar\.app\./,

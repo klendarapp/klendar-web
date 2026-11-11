@@ -123,7 +123,7 @@ async function contexto(nav, { lang = 'es', rpc = {}, leer = () => ({ ok: true, 
 }
 
 const nueva = async (p) => {
-  await p.goto(`${BASE}/panel/#/publicaciones/nueva-flash`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel#/publicaciones/nueva-flash`, { waitUntil: 'networkidle' });
   await p.waitForSelector('[name=title]');
 };
 const abreFuentes = async (p) => {
@@ -141,7 +141,7 @@ const estado2 = { on: false };
   await nueva(p);
   await p.waitForTimeout(300);
   ok(await p.locator('#fotoCta').count() === 0, 'apagado: en el formulario no sale');
-  await p.goto(`${BASE}/panel/#/carta`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel#/carta`, { waitUntil: 'networkidle' });
   await p.waitForSelector('#add-sec');
   ok(await p.locator('#foto-carta').count() === 0, 'apagado: en la carta no sale');
   ok(estado.lecturas.length === 0, 'apagado: no se llama a nadie');
@@ -278,7 +278,7 @@ for (const [why, frase] of [['nothing', /No vemos ningún cartel/], ['cap', /Est
     rpc: { photo_fill_status: estadoFoto() },
     leer: (_b, n) => (n === 2 ? { ok: false, why: 'unreadable' } : { ok: true, kind: 'menu', read: CARTA_LEIDA }),
   });
-  await p.goto(`${BASE}/panel/#/carta`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel#/carta`, { waitUntil: 'networkidle' });
   await p.waitForSelector('#foto-carta');
   await p.click('#foto-carta');
   await p.waitForSelector('.foto-fuentes');
@@ -318,7 +318,7 @@ for (const [why, frase] of [['nothing', /No vemos ningún cartel/], ['cap', /Est
 // Sin nada leído: de vuelta a las fotos, con el mensaje.
 {
   const { ctx, p, errores } = await contexto(nav, { rpc: { photo_fill_status: estadoFoto() }, leer: () => ({ ok: false, why: 'cap' }) });
-  await p.goto(`${BASE}/panel/#/carta`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel#/carta`, { waitUntil: 'networkidle' });
   await p.click('#foto-carta');
   await p.waitForSelector('.foto-fuentes');
   await p.locator('.foto-fuentes input[type=file]').last().setInputFiles(FOTO);
@@ -381,7 +381,7 @@ for (const [why, frase] of [['nothing', /No vemos ningún cartel/], ['cap', /Est
     admin_photo_fill_overview: () => ({ ...resumen, enabled: estado2.on }),
     admin_photo_fill_set: (b) => { estado2.on = b.p_enabled; return { ok: true, enabled: b.p_enabled }; },
   } });
-  await p.goto(`${BASE}/admin/#/automatico`);
+  await p.goto(`${BASE}/admin#/automatico`);
   await p.waitForSelector('#fotoInterruptor');
   const txt = await p.locator('#fotoInterruptor').locator('xpath=ancestor::div[contains(@class,"card")]').innerText();
   ok(/Rellenar desde una foto/.test(txt) && /apagado/.test(txt), 'admin: apagado');

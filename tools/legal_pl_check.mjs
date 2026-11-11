@@ -100,35 +100,35 @@ const sinScroll = (p) => p.evaluate(() => document.documentElement.scrollWidth -
 
 // ── 1. Páginas legales ─────────────────────────────────────────────────────
 const PAGINAS = [
-  ['/terminos/', 'Última actualización: 5 de noviembre de 2026', [
+  ['/terminos', 'Última actualización: 5 de noviembre de 2026', [
     /Preguntas a los negocios\. En la ficha de un negocio puedes hacerle preguntas sobre el sitio/,
     /Como mucho 3 al día y una sin contestar por negocio; si eres de su equipo, no puedes preguntarle/,
     /para mostrar tus reseñas, con sus fotos y vídeos, y tus preguntas a los negocios, en la Plataforma/,
     /Preguntas a los negocios \(apartado 4\)/,
   ]],
-  ['/en/terms/', 'Last updated: 5 November 2026', [
+  ['/en/terms', 'Last updated: 5 November 2026', [
     /Questions to businesses\. On a business's page you can ask it questions about the place/,
     /to display your reviews, with their photos and videos, and your questions to businesses, on the Platform/,
   ]],
-  ['/normas/', 'Última actualización: 5 de noviembre de 2026', [
+  ['/normas', 'Última actualización: 5 de noviembre de 2026', [
     /Preguntas a los negocios\s+Pregunta lo que te ayude a decidir si ir/,
     /«La respuesta ya está en la ficha», «No es sobre el local», «Lleva datos personales», «No es apropiada», «Ya no está al día»/,
     /Preguntas a los negocios: qué preguntar, qué no y cómo contestan y ocultan los negocios\./,
   ]],
-  ['/en/community-guidelines/', 'Last updated: 5 November 2026', [
+  ['/en/community-guidelines', 'Last updated: 5 November 2026', [
     /Questions to businesses\s+Ask what helps you decide whether to go/,
   ]],
-  ['/negocios/', 'Última actualización: 5 de noviembre de 2026', [
+  ['/negocios', 'Última actualización: 5 de noviembre de 2026', [
     /Preguntas de la gente\. Cualquier persona con cuenta puede preguntarle en su ficha/,
     /Solo ocultará una pregunta con un motivo real de la lista/,
     /los del 20 de octubre de 2026 \(apartados 2 bis, 3 y 3 undecies\), desde el 4 de noviembre de 2026/,
     /Preguntas de la gente \(apartado 3\).*Se aplica desde el 4 de noviembre de 2026\./,
   ]],
-  ['/en/business-terms/', 'Last updated: 5 November 2026', [
+  ['/en/business-terms', 'Last updated: 5 November 2026', [
     /Questions from people\. Anyone with an account can ask the Business questions on its page/,
     /Questions from people \(section 3\).*It applies from 4 November 2026\./,
   ]],
-  ['/privacidad/', 'Última actualización: 11 de noviembre de 2026', [
+  ['/privacidad', 'Última actualización: 11 de noviembre de 2026', [
     /Preguntas a los negocios\s+Las preguntas que haces en la ficha de un negocio/,
     /las ocultas, 30 días; las que nadie contesta, 180 días/,
     /cuando haya sitio, respuestas a tus preguntas, preguntas en tu ficha, horas de silencio/,
@@ -136,16 +136,16 @@ const PAGINAS = [
     /las preguntas que recibe en su ficha \(sin quién las hace\), sus respuestas, quién de su equipo contestó/,
     /Cuando preguntas en la ficha de un negocio, el negocio ve la pregunta, nunca quién la ha hecho\./,
   ]],
-  ['/en/privacy/', 'Last updated: 11 November 2026', [
+  ['/en/privacy', 'Last updated: 11 November 2026', [
     /Questions to businesses\s+The questions you ask on a business's page/,
     /replies to your questions, questions on your page, quiet hours/,
     /When you ask a question on a business's page, the business sees the question, never who asked it\./,
   ]],
-  ['/eliminar-cuenta/', 'Última actualización: 11 de noviembre de 2026', [
+  ['/eliminar-cuenta', 'Última actualización: 11 de noviembre de 2026', [
     /Tus preguntas a los negocios \(también las contestadas, con su respuesta\) y tus «A mí también me sirve»/,
     /Lista al día: tus preguntas a los negocios y tus «me sirve»\./,
   ]],
-  ['/en/delete-account/', 'Last updated: 11 November 2026', [/Your questions to businesses \(answered ones included, with their answer\)/]],
+  ['/en/delete-account', 'Last updated: 11 November 2026', [/Your questions to businesses \(answered ones included, with their answer\)/]],
 ];
 
 async function legales(nav, nombre, t, vp) {
@@ -264,7 +264,7 @@ async function panel(nav, nombre, t, vp) {
       business_question_counts: { unanswered: 0, answered: 0, hidden: 0, can_answer: true, available },
       business_questions_inbox: [],
     });
-    await p.goto(`${BASE}/panel/#/preguntas`, { waitUntil: 'networkidle' });
+    await p.goto(`${BASE}/panel#/preguntas`, { waitUntil: 'networkidle' });
     await p.waitForFunction(() => /Sin contestar/.test(document.querySelector('#view')?.innerText || ''));
     const v = await p.locator('#view').innerText();
     if (!available) {

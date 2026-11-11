@@ -113,7 +113,7 @@ async function contexto(nav, { lang = 'es', rpc = {}, ayuda = () => ({ ok: true,
 }
 
 const nueva = async (p) => {
-  await p.goto(`${BASE}/panel/#/publicaciones/nueva-flash`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel#/publicaciones/nueva-flash`, { waitUntil: 'networkidle' });
   await p.waitForSelector('[name=title]');
 };
 const TEXTO = 'Noche de jazz en directo con el trío de la casa';
@@ -132,11 +132,11 @@ const estado3 = { dado: false };
   ok(await p.locator('.ia-oferta, .ia-puesto').count() === 0, 'apagado: en el formulario no sale nada');
   // Con lo escrito, el formulario pregunta antes de salir: de una página en blanco.
   await p.goto('about:blank');
-  await p.goto(`${BASE}/panel/#/resumen`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel#/resumen`, { waitUntil: 'networkidle' });
   await p.waitForTimeout(400);
   ok(await p.locator('.ia-ideas').count() === 0, 'apagado: en el resumen no hay tarjeta');
   await p.goto('about:blank');
-  await p.goto(`${BASE}/panel/#/resenas`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel#/resenas`, { waitUntil: 'networkidle' });
   await p.waitForSelector('[data-resp]');
   ok(await p.locator('[data-prop]').count() === 0, 'apagado: en las reseñas no hay «Proponer respuesta»');
   ok(await p.locator('[data-resp]').count() === 1, 'apagado: «Responder» sigue igual');
@@ -233,7 +233,7 @@ const estado3 = { dado: false };
 // ── Ideas ────────────────────────────────────────────────────────────────
 {
   const { ctx, p, errores, estado } = await contexto(nav);
-  await p.goto(`${BASE}/panel/#/resumen`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel#/resumen`, { waitUntil: 'networkidle' });
   await p.waitForSelector('.ia-ideas');
   const txt = await p.locator('.ia-ideas').innerText();
   ok(/Ideas para esta semana/.test(txt) && txt.includes(IDEA.title) && txt.includes(IDEA.reason), 'la tarjeta: la idea y su motivo');
@@ -254,7 +254,7 @@ const estado3 = { dado: false };
 }
 {
   const { ctx, p, estado } = await contexto(nav, { rpc: { business_ideas_week: SEMANA({ ideas: [{ ...IDEA, reason_kind: 'weather' }] }), dismiss_business_idea: { ok: true } } });
-  await p.goto(`${BASE}/panel/#/resumen`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel#/resumen`, { waitUntil: 'networkidle' });
   await p.waitForSelector('.ia-ideas');
   ok(/MET Norway/.test(await p.locator('.ia-ideas').innerText()), 'el tiempo lleva su fuente');
   await p.click('[data-quita-ia]');
@@ -265,7 +265,7 @@ const estado3 = { dado: false };
 {
   // Sin encender: se ofrece; encender pide el permiso.
   const { ctx, p, estado } = await contexto(nav, { rpc: { business_ideas_week: SEMANA({ enabled: false, consent: false, state: 'none', ideas: [] }), set_ai_consent: { ok: true }, set_business_ideas: { ok: true, enabled: true } } });
-  await p.goto(`${BASE}/panel/#/resumen`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel#/resumen`, { waitUntil: 'networkidle' });
   await p.waitForSelector('#iaEncender');
   await p.click('#iaEncender');
   await p.waitForSelector('#modal[open]');
@@ -282,7 +282,7 @@ const estado3 = { dado: false };
 {
   // Apagarlas por negocio.
   const { ctx, p, estado } = await contexto(nav, { rpc: { set_business_ideas: { ok: true, enabled: false } } });
-  await p.goto(`${BASE}/panel/#/resumen`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel#/resumen`, { waitUntil: 'networkidle' });
   await p.waitForSelector('#iaApagar');
   await p.click('#iaApagar');
   await p.waitForSelector('#modal[open]');
@@ -295,7 +295,7 @@ const estado3 = { dado: false };
 // ── Reseñas ──────────────────────────────────────────────────────────────
 {
   const { ctx, p, errores, estado } = await contexto(nav, { ayuda: () => ({ ok: true, kind: 'reply', reply: { draft: 'Lamentamos la espera. Hablamos cuando quieras.', lang: 'es', delicate: true } }) });
-  await p.goto(`${BASE}/panel/#/resenas`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel#/resenas`, { waitUntil: 'networkidle' });
   await p.waitForSelector('[data-prop]');
   await p.click('[data-prop]');
   await p.waitForSelector('#modal[open]');
@@ -317,7 +317,7 @@ const estado3 = { dado: false };
 {
   for (const [why, msg] of [['author_out', 'hay que contestarla a mano'], ['before_notice', 'hay que contestarla a mano'], ['cap', 'no se pueden proponer más'], ['failed', 'No hemos podido proponer']]) {
     const { ctx, p } = await contexto(nav, { ayuda: () => ({ ok: false, why }) });
-    await p.goto(`${BASE}/panel/#/resenas`, { waitUntil: 'networkidle' });
+    await p.goto(`${BASE}/panel#/resenas`, { waitUntil: 'networkidle' });
     await p.waitForSelector('[data-prop]');
     await p.click('[data-prop]');
     await p.waitForFunction((m) => document.body.innerText.includes(m), msg);
@@ -330,7 +330,7 @@ const estado3 = { dado: false };
 // ── En francés ───────────────────────────────────────────────────────────
 {
   const { ctx, p, errores } = await contexto(nav, { lang: 'fr' });
-  await p.goto(`${BASE}/panel/#/resumen`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel#/resumen`, { waitUntil: 'networkidle' });
   await p.waitForSelector('.ia-ideas');
   await p.waitForTimeout(400);
   ok(/Idées pour cette semaine/.test(await p.locator('.ia-ideas').innerText()), 'en francés');
@@ -379,7 +379,7 @@ const CUENTA = (x = {}) => ({ my_consents: { terms_accepted_at: '2026-01-01T00:0
     admin_ai_help_set: (b) => { on[b.p_use] = b.p_enabled; return { ok: true, enabled: b.p_enabled }; },
     admin_review_notice_set: (b) => { aviso = b.p_on ? '2026-11-05T10:00:00Z' : null; return { ok: true, from: aviso }; },
   } });
-  await p.goto(`${BASE}/admin/#/automatico`);
+  await p.goto(`${BASE}/admin#/automatico`);
   await p.waitForSelector('[data-uso=suggest_category]');
   const caja = p.locator('[data-uso=suggest_category]').locator('xpath=ancestor::div[contains(@class,"card")]');
   const txt = await caja.innerText();

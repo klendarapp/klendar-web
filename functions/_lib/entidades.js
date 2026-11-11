@@ -56,7 +56,7 @@ export function fuenteHtml(src, lang) {
       <div class="fuente-evento">
       <p><b>${esc(atribucion)}</b></p>
       <p class="muted">${esc(lineas)}</p>
-      <p class="muted"><a href="${esc(src.license_url)}" rel="license noopener" target="_blank">${esc(en ? `Licence: ${src.license}` : `Licencia: ${src.license}`)}</a> · <a href="${en ? '/en/sources/' : '/fuentes/'}">${en ? 'All sources and licences' : 'Todas las fuentes y licencias'}</a></p>
+      <p class="muted"><a href="${esc(src.license_url)}" rel="license noopener" target="_blank">${esc(en ? `Licence: ${src.license}` : `Licencia: ${src.license}`)}</a> · <a href="${en ? '/en/sources' : '/fuentes'}">${en ? 'All sources and licences' : 'Todas las fuentes y licencias'}</a></p>
       ${ver}
       </div>`;
 }

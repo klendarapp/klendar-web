@@ -3,8 +3,8 @@
 
 `assets/ayuda.json` es lo que descarga la app, también las versiones ya
 instaladas. Tiene que ser lo que genera `ayuda.py` (sin las preguntas `app=False`
-ni enlaces a precios o al panel) y pasar `comprueba_app`. `/preguntas/` y
-`/en/faq/` sí pueden hablar de precios. Revisión N-01 del 5-11-2026: Apple 3.1.1
+ni enlaces a precios o al panel) y pasar `comprueba_app`. `/preguntas` y
+`/en/faq` sí pueden hablar de precios. Revisión N-01 del 5-11-2026: Apple 3.1.1
 y 3.1.3; Google Play, Pagos §4.
 
     python tools/ayuda_app_check.py

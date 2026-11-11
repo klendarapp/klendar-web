@@ -26,8 +26,8 @@ for (const [n, t] of [['chromium', chromium], ['webkit', webkit]]) {
       const r = (s) => { const e = document.querySelector(s); if (!e) return null; const b = e.getBoundingClientRect(); return [Math.round(b.left * 10) / 10, Math.round(b.right * 10) / 10]; };
       return { sb: getComputedStyle(document.documentElement).getPropertyValue('--sb'), cab: r('header.top'), menu: r('header.top .menu-toggle'), fila: r('.feed-cab .barra-filtros'), tj: r('.feed > .tj'), nav: r('.feed-nav') };
     }); };
-    const d = await mide('/descubre/?ciudad=madrid');
-    const e = await mide('/explorar/?ciudad=madrid&vista=lista');
+    const d = await mide('/descubre?ciudad=madrid');
+    const e = await mide('/explorar?ciudad=madrid&vista=lista');
     const ok = JSON.stringify(d.cab) === JSON.stringify(e.cab) && JSON.stringify(d.menu) === JSON.stringify(e.menu)
       && (w < 761 || (Math.abs(d.fila[0] - d.tj[0]) < 1 && d.nav[0] - d.tj[1] > 19 && d.nav[0] - d.tj[1] < 21));
     // Móvil de verdad: barras que flotan, nada que restar.

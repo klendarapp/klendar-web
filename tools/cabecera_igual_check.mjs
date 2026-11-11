@@ -168,7 +168,7 @@ async function sinCaidas(bloque, fn) {
 // WebKit para Windows (el de Playwright) se cae SIEMPRE («Page crashed») al
 // pasar a la versión en otro idioma (`location.replace` de cabecera.js
 // mientras la página carga) con las View Transitions entre páginas
-// (`@view-transition` de site.css): /aviso-legal/ con «en» guardado → se cae.
+// (`@view-transition` de site.css): /aviso-legal con «en» guardado → se cae.
 // Sin `@view-transition` o con «Reducir movimiento» (que lo quita), no. Así
 // que en WebKit los bloques de idiomas (2, 3 y 4) van con «Reducir
 // movimiento»: se sigue probando el idioma; la caída queda en el informe del
@@ -176,11 +176,11 @@ async function sinCaidas(bloque, fn) {
 const sinVt = (nombre) => (nombre === 'webkit' ? 'reduce' : 'no-preference');
 
 const PAGINAS = [
-  ['/', ''], ['/descubre/', 'descubre'], ['/explorar/', 'explorar'], ['/explorar/?que=sitios', 'explorar'],
+  ['/', ''], ['/descubre', 'descubre'], ['/explorar', 'explorar'], ['/explorar?que=sitios', 'explorar'],
   [FICHA, null], ['/agenda/madrid/', 'explorar'], ['/coleccion/finde/', 'explorar'],
-  ['/para-negocios/', ''], ['/precios/', ''], ['/preguntas/', ''], ['/prensa/', ''], ['/aviso-legal/', ''], ['/soporte/', ''],
-  ['/en/', ''], ['/en/discover/', 'descubre'], ['/en/explore/', 'explorar'], ['/en/faq/', ''],
-  ['/cuenta/', 'cuenta'], ['/panel/#/resumen', 'cuenta'],
+  ['/para-negocios', ''], ['/precios', ''], ['/preguntas', ''], ['/prensa', ''], ['/aviso-legal', ''], ['/soporte', ''],
+  ['/en', ''], ['/en/discover', 'descubre'], ['/en/explore', 'explorar'], ['/en/faq', ''],
+  ['/cuenta', 'cuenta'], ['/panel#/resumen', 'cuenta'],
 ];
 
 const NAVS = (process.env.NAVS || 'chromium,webkit').split(',');
@@ -204,21 +204,21 @@ await Promise.all([['chromium', chromium], ['webkit', webkit]].filter(([n]) => N
           conSesion ? 'tu-inicial' : 'entrar', 'menu',
         ].join(' · ');
         for (const [ruta, activa] of PAGINAS) {
-          if (ruta.startsWith('/panel/') && !conSesion) continue;
-          if (ruta.startsWith('/en/')) await page.evaluate(() => { try { localStorage.setItem('klendar_lang', 'en'); } catch { /* */ } });
+          if (ruta.startsWith('/panel') && !conSesion) continue;
+          if (ruta.startsWith('/en')) await page.evaluate(() => { try { localStorage.setItem('klendar_lang', 'en'); } catch { /* */ } });
           else await page.evaluate(() => { try { localStorage.setItem('klendar_lang', 'es'); } catch { /* */ } }).catch(() => {});
           page = await ve(page, BASE + ruta);
           const f = await firma(page);
           ok(f.items.join(' · ') === quiere, `${t} ${ruta}: ${f.items.join(' · ')}`);
           ok(f.alto === 65, `${t} ${ruta}: 65 px de alto (${f.alto})`);
           if (activa !== null) ok(f.activa === activa, `${t} ${ruta}: pestaña activa «${activa || 'ninguna'}» (${f.activa || 'ninguna'})`);
-          if (!conSesion && movil && ['/', '/descubre/', '/cuenta/'].includes(ruta)) await page.screenshot({ path: `${OUT}/igual-${nombre}-${forma}-${ruta.replace(/\W+/g, '_')}.png`, clip: { x: 0, y: 0, width: vp.width, height: 70 } });
+          if (!conSesion && movil && ['/', '/descubre', '/cuenta'].includes(ruta)) await page.screenshot({ path: `${OUT}/igual-${nombre}-${forma}-${ruta.replace(/\W+/g, '_')}.png`, clip: { x: 0, y: 0, width: vp.width, height: 70 } });
         }
         // Una ficha se queda con la pestaña de la que vienes (como la app).
-        page = await ve(page, `${BASE}/descubre/`);
+        page = await ve(page, `${BASE}/descubre`);
         page = await ve(page, `${BASE}${FICHA}`);
         ok((await firma(page)).activa === 'descubre', `${t} una ficha desde Descubre, con «Descubre» marcada`);
-        page = await ve(page, `${BASE}/explorar/`);
+        page = await ve(page, `${BASE}/explorar`);
         page = await ve(page, `${BASE}${FICHA}`);
         ok((await firma(page)).activa === 'explorar', `${t} una ficha desde Explorar, con «Explorar» marcada`);
         await ctx.close();
@@ -232,7 +232,7 @@ await Promise.all([['chromium', chromium], ['webkit', webkit]].filter(([n]) => N
         await ctx.addInitScript((x) => { try { if (!sessionStorage.getItem('puesto')) { localStorage.setItem('klendar_lang', x); sessionStorage.setItem('puesto', '1'); } } catch { /* */ } }, l);
         let page = await ctx.newPage();
         const t = `[${nombre} ${forma} ${l}]`;
-        page = await ve(page, `${BASE}/aviso-legal/`);
+        page = await ve(page, `${BASE}/aviso-legal`);
         await page.waitForURL(LADO(l) === 'en' ? /\/en\/legal-notice\// : /\/aviso-legal\//, { timeout: 8000 }).catch(() => {});
         await page.waitForTimeout(800);
         const f = await firma(page);
@@ -242,7 +242,7 @@ await Promise.all([['chromium', chromium], ['webkit', webkit]].filter(([n]) => N
         ok(LADO(l) === 'en' ? enIngles : !enIngles, `${t} pública: el contenido en ${LADO(l)}`);
         ok(JSON.stringify(f.pestanas) === JSON.stringify(ARB[LADO(l)]), `${t} pública: la cabecera en el idioma de la página (${f.pestanas.join(', ')})`);
         ok(f.marcado === l && f.cod === l.toUpperCase(), `${t} pública: el selector marca «${l}» (${f.marcado}, ${f.cod})`);
-        page = await ve(page, `${BASE}/cuenta/`);
+        page = await ve(page, `${BASE}/cuenta`);
         const a = await firma(page);
         ok(a.lang === l, `${t} «Tu cuenta» en ${l} (${a.lang})`);
         ok(!ARB[l] || JSON.stringify(a.pestanas) === JSON.stringify(ARB[l]), `${t} «Tu cuenta»: las pestañas como en la app (${a.pestanas.join(', ')})`);
@@ -269,10 +269,10 @@ await Promise.all([['chromium', chromium], ['webkit', webkit]].filter(([n]) => N
             page.click(`header.top ${movil ? '.idioma-lista' : '.idioma-menu'} a[data-lang="${l}"]`)]);
           await page.waitForTimeout(1300);
         };
-        page = await ve(page, `${BASE}/descubre/?cuando=finde`);
+        page = await ve(page, `${BASE}/descubre?cuando=finde`);
         await elige('de');
         const u1 = new URL(page.url());
-        ok(u1.pathname === '/en/discover/' && u1.searchParams.get('when') === 'weekend', `${t} Deutsch: a la versión inglesa de la misma página, con sus filtros (${u1.pathname}${u1.search})`);
+        ok(u1.pathname === '/en/discover' && u1.searchParams.get('when') === 'weekend', `${t} Deutsch: a la versión inglesa de la misma página, con sus filtros (${u1.pathname}${u1.search})`);
         const g1 = await page.evaluate(() => localStorage.getItem('klendar_lang'));
         ok(g1 === 'de', `${t} Deutsch: se recuerda (${g1})`);
         const f1 = await firma(page);
@@ -282,7 +282,7 @@ await Promise.all([['chromium', chromium], ['webkit', webkit]].filter(([n]) => N
           const meta = await page.evaluate((k) => JSON.parse(localStorage.getItem(k) || '{}')?.user?.user_metadata?.locale, `sb-${REF}-auth-token`);
           ok(meta === 'de', `${t} con sesión, la sesión guardada lo sabe (${meta})`);
         }
-        page = await ve(page, `${BASE}/cuenta/`);
+        page = await ve(page, `${BASE}/cuenta`);
         ok((await firma(page)).lang === 'de', `${t} y «Tu cuenta» en alemán`);
         // En «Tu cuenta», cambiar a euskera se queda en la misma pantalla.
         page = await ve(page, `${BASE}/cuenta/ajustes`);
@@ -290,9 +290,9 @@ await Promise.all([['chromium', chromium], ['webkit', webkit]].filter(([n]) => N
         await elige('eu');
         const f2 = await firma(page);
         ok(f2.lang === 'eu' && new URL(page.url()).pathname === antes, `${t} en «Tu cuenta», euskera en la misma pantalla (${f2.lang} ${antes} → ${new URL(page.url()).pathname})`);
-        page = await ve(page, `${BASE}/en/explore/`);
+        page = await ve(page, `${BASE}/en/explore`);
         await page.waitForURL(/\/explorar\//, { timeout: 8000 }).catch(() => {});
-        ok(new URL(page.url()).pathname === '/explorar/', `${t} euskera y una página inglesa: a la española (${new URL(page.url()).pathname})`);
+        ok(new URL(page.url()).pathname === '/explorar', `${t} euskera y una página inglesa: a la española (${new URL(page.url()).pathname})`);
         await ctx.close();
       });
     }
@@ -305,9 +305,9 @@ await Promise.all([['chromium', chromium], ['webkit', webkit]].filter(([n]) => N
         await ctx.route(`${SUPA}/**`, falso({ perfil: 'it' }));
         let page = await ctx.newPage();
         const t = `[${nombre} ${forma} idioma de la cuenta]`;
-        page = await ve(page, `${BASE}/aviso-legal/`);
+        page = await ve(page, `${BASE}/aviso-legal`);
         await page.waitForURL(/\/en\/legal-notice\//, { timeout: 8000 }).catch(() => {});
-        ok(new URL(page.url()).pathname === '/en/legal-notice/' && (await firma(page)).cod === 'FR', `${t} la sesión dice francés: la versión inglesa y «FR» (${new URL(page.url()).pathname})`);
+        ok(new URL(page.url()).pathname === '/en/legal-notice' && (await firma(page)).cod === 'FR', `${t} la sesión dice francés: la versión inglesa y «FR» (${new URL(page.url()).pathname})`);
         // «Tu cuenta» se vuelve a cargar en el idioma del perfil. (WebKit para
         // Windows se cae a veces en una recarga mientras la página aún carga,
         // como al pasar del panel sin sesión a «Tu cuenta»: entonces, una
@@ -315,7 +315,7 @@ await Promise.all([['chromium', chromium], ['webkit', webkit]].filter(([n]) => N
         let fit = null;
         for (let i = 0; i < 3 && !fit; i++) {
           try {
-            page = await ve(page, `${BASE}/cuenta/`);
+            page = await ve(page, `${BASE}/cuenta`);
             await page.waitForFunction(() => document.documentElement.lang === 'it', null, { timeout: 8000 }).catch(() => {});
             fit = await firma(page);
           } catch { caida.add(page); }

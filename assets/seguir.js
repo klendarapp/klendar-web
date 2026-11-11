@@ -154,7 +154,7 @@
 
   // «Sigues»: un chip por equipo (busca sus partidos) y «Seguir».
   function misEquipos(lista) {
-    var base = caja.getAttribute('data-base') || '/partidos/';
+    var base = caja.getAttribute('data-base') || '/partidos';
     var zona = caja.getAttribute('data-zona') || '';
     var cuenta = en ? '/cuenta/equipos?lang=en' : '/cuenta/equipos';
     caja.innerHTML = '<p class="mis-equipos-t">' + esc(T.teams) + '</p><div class="mis-equipos-chips">'
@@ -226,7 +226,7 @@
     var z = { p_radius_m: 5000, p_lat: null, p_lng: null, p_city: null };
     try {
       var g = JSON.parse(localStorage.getItem('klendar.filtros') || 'null');
-      var a = new URLSearchParams((g && (g[/^\/en\//.test(location.pathname) ? 'en' : 'es'])) || '');
+      var a = new URLSearchParams((g && (g[/^\/en(\/|$)/.test(location.pathname) ? 'en' : 'es'])) || '');
       var km = parseInt(a.get('km') || '', 10);
       if ([1, 3, 5, 10, 25].indexOf(km) >= 0) z.p_radius_m = km * 1000;
       var c = a.get('ciudad') || a.get('city');

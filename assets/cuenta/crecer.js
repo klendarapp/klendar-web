@@ -145,7 +145,7 @@ RUTAS['pedir-local'] = async (_partes, params, crudo) => {
     sb.rpc('public_cities', {}).then((r) => (Array.isArray(r.data) ? r.data : []), () => []),
   ]);
   pinta(`
-    <p class="crumbs"><a href="/cuenta/">${esc(t('Tu cuenta'))}</a> › <a href="/cuenta/pedidos">${esc(t('Lo que has pedido'))}</a></p>
+    <p class="crumbs"><a href="/cuenta">${esc(t('Tu cuenta'))}</a> › <a href="/cuenta/pedidos">${esc(t('Lo que has pedido'))}</a></p>
     <h1>${esc(t('Pedir un local'))}</h1>
     <p class="muted">${esc(t('¿Echas en falta un bar, un restaurante o una tienda? Pide que esté en Klendar.'))}</p>
     <form class="formu" id="fPedir" novalidate>
@@ -272,7 +272,7 @@ RUTAS.pedidos = async () => {
     llamar('my_venue_requests', {}).then((x) => x || []),
     llamar('my_city_waitlist', {}).then((x) => x || []).catch(() => []),
   ]);
-  const cabeza = `<p class="crumbs"><a href="/cuenta/">${esc(t('Tu cuenta'))}</a></p>
+  const cabeza = `<p class="crumbs"><a href="/cuenta">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(t('Lo que has pedido'))}</h1>`;
   if (!locales.length && !zonas.length) {
     pinta(`${cabeza}${pantallaVacia({
@@ -370,7 +370,7 @@ RUTAS.avisame = async (_partes, params, crudo) => {
   }
   if (r?.status === 'live') {
     hecho({ titulo: t('Klendar ya está aquí'), texto: t('Ya hay sitios en Klendar cerca. Míralos en Descubre.'),
-      volver: PUB_EN ? '/en/discover/' : '/descubre/', volverTxt: t('Ir a Descubre'), lista: '/cuenta/pedidos', listaTxt: t('Lo que has pedido') });
+      volver: PUB_EN ? '/en/discover' : '/descubre', volverTxt: t('Ir a Descubre'), lista: '/cuenta/pedidos', listaTxt: t('Lo que has pedido') });
     return;
   }
   const z = r?.zone || zona;
@@ -378,6 +378,6 @@ RUTAS.avisame = async (_partes, params, crudo) => {
     titulo: EN ? `Done: we'll let you know when Klendar arrives in ${z}` : `Listo: te avisaremos cuando Klendar llegue a ${z}`,
     texto: r?.status === 'already' ? t('Ya estabas en la lista.') : t('Una sola vez. Lo puedes quitar en «Lo que has pedido».'),
     volver: '/cuenta/pedidos', volverTxt: t('Lo que has pedido'),
-    lista: '/cuenta/', listaTxt: t('Tu cuenta'),
+    lista: '/cuenta', listaTxt: t('Tu cuenta'),
   });
 };

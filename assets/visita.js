@@ -49,7 +49,7 @@
     checking: 'Comprobando que estás en el local…',
     cards: 'Tarjetas de sellos', retry: 'Volver a probar', useLoc: 'Usar mi ubicación', login: 'Entrar', close: 'Cerrar el aviso',
   };
-  var cuenta = function (ruta) { ruta = ruta || ''; return '/cuenta/' + (en ? ruta.replace(/\?|$/, function (m) { return m ? '?lang=en&' : '?lang=en'; }) : ruta); };
+  var cuenta = function (ruta) { ruta = ruta || ''; ruta = String(ruta).replace(/^\/+/, ''); var r = en ? ruta.replace(/\?|$/, function (m) { return m ? '?lang=en&' : '?lang=en'; }) : ruta; return '/cuenta' + (r && r.charAt(0) !== '?' ? '/' : '') + r; };
 
   // «1,2 km» / «350 m», como la app.
   function distancia(m) {

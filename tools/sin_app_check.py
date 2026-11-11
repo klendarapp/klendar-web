@@ -1,6 +1,6 @@
 """Que no reaparezca la dirección vieja de «Tu cuenta» (decisión de Iván, 5-11).
 
-`/app` se quitó del todo: ahora es `klendar.app/cuenta/` y `/app/…` da la 404
+`/app` se quitó del todo: ahora es `klendar.app/cuenta` y `/app/…` da la 404
 normal, así que cualquier enlace que vuelva a nombrarla es un enlace roto. Y que
 no se cuele `#/` en «Tu cuenta»: tiene una sola forma de ruta, la dirección
 (el panel y el admin sí van con `#/`). Barato: `git grep` sobre lo que hay en
@@ -36,13 +36,13 @@ def grep(patron: str, *rutas: str) -> list[str]:
 
 def main() -> int:
     malos = grep(PATRON, '.', *EXCLUIR)
-    if not os.path.isdir(os.path.join(RAIZ, 'cuenta')):
-        malos.append('falta la carpeta cuenta/')
+    if not os.path.isfile(os.path.join(RAIZ, 'cuenta.html')):
+        malos.append('falta cuenta.html')
     if os.path.isfile(os.path.join(RAIZ, 'app', 'index.html')):
         malos.append('ha vuelto app/index.html')
-    malos += [l for l in grep(HASH, 'assets/cuenta/*.js', 'cuenta/index.html') if not re.search(r'^assets/cuenta/i18n', l)]
+    malos += [l for l in grep(HASH, 'assets/cuenta/*.js', 'cuenta.html') if not re.search(r'^assets/cuenta/i18n', l)]
     if malos:
-        print('Sigue la dirección vieja de «Tu cuenta» (ahora /cuenta/, sin #/):')
+        print('Sigue la dirección vieja de «Tu cuenta» (ahora /cuenta, sin #/):')
         for l in malos[:40]:
             print('  ' + l[:160])
         return 1

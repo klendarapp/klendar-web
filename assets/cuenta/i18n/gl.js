@@ -871,7 +871,7 @@ KL_DIC('gl', {
   "Hay un texto demasiado largo.": "Hai un texto demasiado longo.",
   "Hazte mi amigo en Klendar y vemos a qué planes vamos: {url}": "Faite amigo meu en Klendar e vemos a que plans imos: {url}",
   "He leído y acepto los": "Lin e acepto os",
-  "He leído y acepto los <a href=\"/terminos/\" target=\"_blank\">términos</a> y la <a href=\"/privacidad/\" target=\"_blank\">privacidad</a>.": "Lin e acepto os <a href=\"/terminos/\" target=\"_blank\">termos</a> e a <a href=\"/privacidad/\" target=\"_blank\">privacidade</a>.",
+  "He leído y acepto los <a href=\"/terminos\" target=\"_blank\">términos</a> y la <a href=\"/privacidad\" target=\"_blank\">privacidad</a>.": "Lin e acepto os <a href=\"/terminos\" target=\"_blank\">termos</a> e a <a href=\"/privacidad\" target=\"_blank\">privacidade</a>.",
   "He olvidado la contraseña": "Esquecín o contrasinal",
   "Hecho": "Feito",
   "Hecho. Está en tus planes.": "Feito. Está nos teus plans.",

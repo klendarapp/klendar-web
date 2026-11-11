@@ -1,13 +1,13 @@
 // «Sitios en Explorar» (tanda D, 2026-10-20) en la web local, solo leyendo
 // (sin sesión, no escribe nada):
-//  1. /explorar/?que=sitios: «Planes | Sitios» con Sitios puesto, Lista | Mapa,
+//  1. /explorar?que=sitios: «Planes | Sitios» con Sitios puesto, Lista | Mapa,
 //     las filas (foto, nombre, categoría y distancia, el horario de ahora) y
 //     «N sitios»; sin desbordar a lo ancho en un móvil.
 //  2. La hoja de filtros en Sitios: solo lo del sitio (Abierto ahora, Se puede
 //     comer ahora, Momento del día, Precio del local, Cómo es, Menú del día y
 //     Categorías); ni «¿Cuándo?» ni «Para quién».
 //  3. El mapa de Sitios pide `map_places` (y otra vez al moverlo).
-//  4. Explorar recuerda lo último: tras ver Sitios, /explorar/ sin nada abre
+//  4. Explorar recuerda lo último: tras ver Sitios, /explorar sin nada abre
 //     Sitios; tras volver a Planes, Planes.
 //  5. La lupa: con «nails», «Solo sitios» lleva a `?que=sitios&q=nails`.
 //  6. Los enlaces de antes (`?tipo=negocios`) llevan a Sitios.
@@ -99,7 +99,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     const t = `[${nombre} ${forma}]`;
 
     // 1. La lista.
-    await page.goto(`${BASE}/explorar/?que=sitios&${AQUI}`);
+    await page.goto(`${BASE}/explorar?que=sitios&${AQUI}`);
     ok(await page.locator('.que a.on').innerText() === 'Sitios', `${t} «Planes | Sitios» con Sitios puesto`);
     // Arriba, como la app: «Ver en el mapa» (revisión del 3-11, 1.1); la lupa,
     // solo la de la cabecera (Iván, 2026-11-04).
@@ -136,7 +136,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
 
     // 3. El mapa.
     const pide = page.waitForResponse((r) => r.url().includes('/rpc/map_places'), { timeout: 30000 }).catch(() => null);
-    await page.goto(`${BASE}/explorar/?que=sitios&vista=mapa&${AQUI}`);
+    await page.goto(`${BASE}/explorar?que=sitios&vista=mapa&${AQUI}`);
     const r = await pide;
     ok(r && r.ok(), `${t} el mapa pide map_places`);
     await page.waitForTimeout(1500);
@@ -148,25 +148,25 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     await page.screenshot({ path: `${OUT}/web-sitios-mapa-${nombre}-${forma}.png` });
 
     // 4. Recuerda lo último.
-    await page.goto(`${BASE}/explorar/`);
+    await page.goto(`${BASE}/explorar`);
     await page.waitForURL(/que=sitios/, { timeout: 10000 }).catch(() => {});
-    ok(/que=sitios/.test(page.url()), `${t} /explorar/ abre en Sitios tras verlo (${page.url().replace(BASE, '')})`);
+    ok(/que=sitios/.test(page.url()), `${t} /explorar abre en Sitios tras verlo (${page.url().replace(BASE, '')})`);
     await page.locator('.que a', { hasText: 'Planes' }).click();
     await page.waitForLoadState('domcontentloaded');
     ok(!/que=sitios/.test(page.url()), `${t} «Planes» vuelve a los planes`);
-    await page.goto(`${BASE}/explorar/`);
+    await page.goto(`${BASE}/explorar`);
     await page.waitForTimeout(800);
-    ok(!/que=sitios/.test(page.url()), `${t} y /explorar/ se queda en Planes`);
+    ok(!/que=sitios/.test(page.url()), `${t} y /explorar se queda en Planes`);
 
     // 5. La lupa.
-    await page.goto(`${BASE}/explorar/?q=nails`);
+    await page.goto(`${BASE}/explorar?q=nails`);
     await page.locator('.chip-solo a').click();
     await page.waitForURL(/que=sitios/, { timeout: 10000 }).catch(() => {});
     ok(/que=sitios/.test(page.url()) && /q=nails/.test(page.url()), `${t} «Solo sitios» en la búsqueda`);
     ok(await page.locator('.sitio-fila').count() >= 1, `${t} «nails» encuentra Nails & Co`);
 
     // 6. Los enlaces de antes.
-    await page.goto(`${BASE}/explorar/?tipo=negocios`);
+    await page.goto(`${BASE}/explorar?tipo=negocios`);
     ok(await page.locator('.que a.on').innerText() === 'Sitios', `${t} ?tipo=negocios → Sitios`);
 
     // 7. Sin saltos.
@@ -192,16 +192,16 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
       });
     };
     for (const [a, b, que] of [
-      [`/explorar/?vista=lista&${AQUI}`, `/explorar/?que=sitios&${AQUI}`, 'en lista'],
-      [`/explorar/?${AQUI}`, `/explorar/?que=sitios&${AQUI}`, 'calendario ↔ lista'],
-      [`/explorar/?vista=mapa&${AQUI}`, `/explorar/?que=sitios&vista=mapa&${AQUI}`, 'en el mapa'],
+      [`/explorar?vista=lista&${AQUI}`, `/explorar?que=sitios&${AQUI}`, 'en lista'],
+      [`/explorar?${AQUI}`, `/explorar?que=sitios&${AQUI}`, 'calendario ↔ lista'],
+      [`/explorar?vista=mapa&${AQUI}`, `/explorar?que=sitios&vista=mapa&${AQUI}`, 'en el mapa'],
     ]) {
       const pa = await medir(a);
       const pb = await medir(b);
       const distintos = Object.keys(pa).filter((k) => !pa[k] || pa[k] !== pb[k]);
       ok(distintos.length === 0, `${t} Planes ↔ Sitios ${que}: los controles no se mueven ${distintos.map((k) => `${k}: ${pa[k]} → ${pb[k]}`).join('; ')}`);
     }
-    await page.goto(`${BASE}/explorar/?que=sitios&${AQUI}`);
+    await page.goto(`${BASE}/explorar?que=sitios&${AQUI}`);
     await page.waitForTimeout(1500);
     const cls = await page.evaluate(() => new Promise((res) => {
       let v = 0;
@@ -233,7 +233,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     });
     ok(plano(tarjeta) === plano(fila), `${t} la tarjeta del mapa dice lo mismo que la fila`);
     // 9. La lista de un día del calendario, por partes.
-    await page.goto(`${BASE}/explorar/?vista=calendario&${AQUI}&km=25`);
+    await page.goto(`${BASE}/explorar?vista=calendario&${AQUI}&km=25`);
     const pager = await page.locator('.pager').count();
     const n1 = await page.locator('.cal-lista .tj-filas > *').count();
     ok(n1 <= 24, `${t} el día, como mucho 24 de cada vez (${n1})`);

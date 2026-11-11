@@ -32,7 +32,7 @@ let fallos = 0;
 const ok = (c, m) => { if (!c) { fallos++; console.log('FALLO:', m); } else console.log('ok:', m); };
 
 const PAGINAS = [
-  ['/privacidad/', 'Última actualización: 11 de noviembre de 2026', [
+  ['/privacidad', 'Última actualización: 11 de noviembre de 2026', [
     /Equipos y deportistas que sigues\s+Los equipos, deportistas y competiciones que sigues \(«Real Madrid», «Fernando Alonso», «Fórmula 1»\), desde cuándo, de qué partidos o carreras te hemos avisado ya y, mientras sigas alguno, la zona de tus filtros/,
     /Avisarte unas horas antes de un partido, una carrera o una velada de lo que sigues con los bares de tu zona que lo ponen \(como mucho dos avisos al día, uno por evento aunque sigas al equipo o al deportista y a su competición, y nunca si con tus horas de silencio llegaría con el evento empezado\)\./,
     /Los bares no saben quién sigue qué\s/,
@@ -49,7 +49,7 @@ const PAGINAS = [
     /quién sigue a qué equipo/,
     /elimines tu cuenta; el registro de administración, 2 años/,
   ]],
-  ['/en/privacy/', 'Last updated: 11 November 2026', [
+  ['/en/privacy', 'Last updated: 11 November 2026', [
     /Teams and athletes you follow\s+The teams, athletes and competitions you follow \(“Real Madrid”, “Fernando Alonso”, “Formula 1”\), since when, which matches or races we've already told you about and, while you follow any, your filters' area/,
     /Let you know a few hours before a match, race or fight night of what you follow which bars in your area are showing it \(two notifications a day at most, one per event even if you follow both the team or athlete and its competition, and never if your quiet hours would deliver it after it has started\)\./,
     /Bars don't know who follows what\s/,
@@ -66,14 +66,14 @@ const PAGINAS = [
     /who follows which team/,
     /delete your account; the admin log, 2 years/,
   ]],
-  ['/negocios/', 'Última actualización: 5 de noviembre de 2026 · Versión 2026-11-05', [
+  ['/negocios', 'Última actualización: 5 de noviembre de 2026 · Versión 2026-11-05', [
     /o pide ponerlos siempre los de un equipo, un deportista o una competición \(«Poner siempre»\), tener los derechos para emitir cada uno en su local/,
     /4 de noviembre de 2026: «Poner siempre» \(apartado 3\) nombra también a los deportistas: «los de un equipo, un deportista o una competición»\. Es una aclaración que solo te favorece[\s\S]*?se aplica al publicarse, sin los 15 días de aviso\. El resto de «Poner siempre» se aplica desde el 18 de noviembre de 2026, como estaba\./,
     /Versión\s+Publicada\s+Se aplica desde\s+2026-11-05\s+5-11-2026\s+20-11-2026\s+2026-11-04\s+4-11-2026\s+19-11-2026\s+2026-11-03-b\s+3-11-2026\s+18-11-2026/,
   ], [
     /ponerlos siempre los de un equipo o una competición/,
   ]],
-  ['/en/business-terms/', 'Last updated: 5 November 2026 · Version 2026-11-05', [
+  ['/en/business-terms', 'Last updated: 5 November 2026 · Version 2026-11-05', [
     /or asks to always show those of a team, an athlete or a competition \(“Always show”\), hold the rights to show each one at its venue/,
     /4 November 2026: “Always show” \(section 3\) now also names athletes: “those of a team, an athlete or a competition”\. It's a clarification that only benefits you[\s\S]*?so it applies on publication, without the 15 days' notice\. The rest of “Always show” applies from 18 November 2026, as before\./,
     /Version\s+Published\s+Applies from\s+2026-11-05\s+5 Nov 2026\s+20 Nov 2026\s+2026-11-04\s+4 Nov 2026\s+19 Nov 2026\s+2026-11-03-b\s+3 Nov 2026\s+18 Nov 2026/,

@@ -41,7 +41,7 @@
   var hueco = caja.querySelector('[data-avisame-caja]');
   var si = caja.querySelector('[data-avisame-si]');
   var CORREO = /^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/;
-  var app = function (ruta) { ruta = ruta || ''; return '/cuenta/' + (en ? ruta.replace(/\?|$/, function (m) { return m ? '?lang=en&' : '?lang=en'; }) : ruta); };
+  var app = function (ruta) { ruta = ruta || ''; ruta = String(ruta).replace(/^\/+/, ''); var r = en ? ruta.replace(/\?|$/, function (m) { return m ? '?lang=en&' : '?lang=en'; }) : ruta; return '/cuenta' + (r && r.charAt(0) !== '?' ? '/' : '') + r; };
 
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {

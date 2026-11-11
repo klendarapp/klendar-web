@@ -298,8 +298,8 @@
     var html = '';
     // Los accesos del buscador en reposo, como la app: «Dónde ver el
     // partido», «Grupos y empresas» y «Sorteos» (tanda C).
-    var atajos = [[T.partidos, /^\/(en\/matches|partidos)\//, BALON],
-      [T.grupos, /^\/(en\/groups|grupos)\//, GRUPOS], [T.sorteos, /^\/(en\/giveaways|sorteos)\//, SORTEO],
+    var atajos = [[T.partidos, /^\/(en\/matches|partidos)([/?]|$)/, BALON],
+      [T.grupos, /^\/(en\/groups|grupos)([/?]|$)/, GRUPOS], [T.sorteos, /^\/(en\/giveaways|sorteos)([/?]|$)/, SORTEO],
       // «Pedir un local» (a «Tu cuenta»), como la app.
       [T.pedir, /^\/cuenta\/pedir-local/, TIENDA]]
       .filter(function (x) { return x[0] && x[0].t && x[1].test(String(x[0].href || '')); });

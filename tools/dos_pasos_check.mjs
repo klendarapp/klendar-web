@@ -3,7 +3,7 @@
 // de verdad (app: tool/cambio_2fa_smoke.py lo comprueba contra dev): sin `aal2`,
 // cambiar correo o contraseña da 401 `insufficient_aal`.
 //
-//  1. El enlace de recuperar (?destino=/admin/): pide el código, un código malo
+//  1. El enlace de recuperar (?destino=/admin): pide el código, un código malo
 //     no vale, con el bueno guarda (con aal2) y vuelve al admin. Cancelar no
 //     guarda nada.
 //  2. Sin 2FA: ni rastro del código.
@@ -124,7 +124,7 @@ for (const [motor, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     ok(/no vale o ha caducado/.test(await p.textContent(`${DIALOGO} .err`)), `${motor} recuperar: un código malo lo dice`);
     ok(estado.put.length === 0, `${motor} recuperar: un código malo no guarda`);
     await escribeCodigo(p, CODIGO);
-    await p.waitForFunction(() => location.pathname === '/admin/');
+    await p.waitForFunction(() => location.pathname === '/admin');
     const put = estado.put.at(-1);
     ok(put?.aal === 'aal2' && put?.body.password === 'clave-nueva-123', `${motor} recuperar: guarda con aal2 y vuelve al admin`, JSON.stringify(put));
     ok(errores.length === 0, `${motor} recuperar: sin errores`, errores.join(' | '));
@@ -146,7 +146,7 @@ for (const [motor, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     const { ctx, p, estado } = await abre(nav, { con2fa: false });
     await p.goto(`${BASE}/cuenta/nueva-clave?token_hash=${TOKEN_HASH}&type=recovery`);
     await clavesNuevas(p);
-    await p.waitForFunction(() => location.pathname === '/cuenta/');
+    await p.waitForFunction(() => location.pathname === '/cuenta');
     ok(estado.retos === 0 && estado.put.at(-1)?.aal === 'aal1', `${motor} sin 2FA: ni rastro del código`);
     await ctx.close();
   }

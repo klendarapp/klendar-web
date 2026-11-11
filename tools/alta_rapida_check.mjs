@@ -103,7 +103,7 @@ const PANEL = (x = {}, biz = {}) => ({
 
 async function sugerida(nav, n) {
   const { ctx, p, estado, errores } = await contexto(nav, { rpc: PANEL({ save_offer_rule: 'r1' }) });
-  await p.goto(`${BASE}/panel/#/resumen`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel#/resumen`, { waitUntil: 'networkidle' });
   await p.waitForSelector('.primeros [data-sug]');
   const v = await p.locator('.primeros').innerText();
   ok(await p.locator('.primeros [data-sug]').count() === 3, `${n}: tres sugerencias`);
@@ -131,7 +131,7 @@ async function sugerida(nav, n) {
 
 async function reglaFalla(nav, n) {
   const { ctx, p, estado } = await contexto(nav, { rpc: PANEL(), fallan: ['save_offer_rule'] });
-  await p.goto(`${BASE}/panel/#/resumen`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel#/resumen`, { waitUntil: 'networkidle' });
   await p.click('.primeros [data-sug="0"]');
   await p.click('#modal button[type=submit]');
   await p.waitForTimeout(800);
@@ -141,13 +141,13 @@ async function reglaFalla(nav, n) {
 
 async function idiomas(nav, n) {
   const fr = await contexto(nav, { lang: 'fr', rpc: PANEL() });
-  await fr.p.goto(`${BASE}/panel/#/resumen`, { waitUntil: 'networkidle' });
+  await fr.p.goto(`${BASE}/panel#/resumen`, { waitUntil: 'networkidle' });
   await fr.p.waitForSelector('.primeros [data-sug]');
   const v = await fr.p.locator('.primeros').innerText();
   ok(/Café et tartine pour 2,50\s€/.test(v) && /Ta première offre, qui se répète toute seule/.test(v), `${n}: en francés`);
   await fr.ctx.close();
   const bar = await contexto(nav, { categoria: CATS[1].id, rpc: PANEL() });
-  await bar.p.goto(`${BASE}/panel/#/resumen`, { waitUntil: 'networkidle' });
+  await bar.p.goto(`${BASE}/panel#/resumen`, { waitUntil: 'networkidle' });
   await bar.p.waitForSelector('.primeros [data-sug]');
   const b = await bar.p.locator('.sug-lista').innerText();
   ok(/Tapa gratis con tu consumición/.test(b) && !/caña|cerveza|vino|copa|alcohol/i.test(b), `${n}: las de un bar, sin alcohol`);
@@ -163,7 +163,7 @@ async function sinSugerencias(nav, n) {
   ];
   for (const [nombre, rpc, conPasos] of casos) {
     const { ctx, p } = await contexto(nav, { rpc });
-    await p.goto(`${BASE}/panel/#/resumen`, { waitUntil: 'networkidle' });
+    await p.goto(`${BASE}/panel#/resumen`, { waitUntil: 'networkidle' });
     await p.waitForSelector('#view h1');
     ok(await p.locator('[data-sug]').count() === 0, `${n}: ${nombre}, sin sugerencias`);
     const pasos = await p.locator('.primeros').count();
@@ -174,7 +174,7 @@ async function sinSugerencias(nav, n) {
 
 async function formulario(nav, n) {
   const a = await contexto(nav, { rpc: PANEL() });
-  await a.p.goto(`${BASE}/panel/#/publicaciones/nueva-flash`, { waitUntil: 'networkidle' });
+  await a.p.goto(`${BASE}/panel#/publicaciones/nueva-flash`, { waitUntil: 'networkidle' });
   await a.p.waitForSelector('#form');
   ok(await a.p.locator('.sug-caja [data-sug]').count() === 3, `${n}: sin nada publicado, en el formulario`);
   await a.p.evaluate(() => { location.hash = '#/publicaciones/nueva-flash?idea=1'; });
@@ -182,7 +182,7 @@ async function formulario(nav, n) {
   ok(await a.p.locator('.sug-caja').count() === 0, `${n}: «Prefiero escribir otra», sin ellas`);
   await a.ctx.close();
   const b = await contexto(nav, { rpc: PANEL({ my_business_offer_counts: { total: 3, todas: 3, activa: 1 } }) });
-  await b.p.goto(`${BASE}/panel/#/publicaciones/nueva-flash`, { waitUntil: 'networkidle' });
+  await b.p.goto(`${BASE}/panel#/publicaciones/nueva-flash`, { waitUntil: 'networkidle' });
   await b.p.waitForSelector('#form');
   ok(await b.p.locator('.sug-caja').count() === 0, `${n}: con publicaciones, sin ellas`);
   await b.ctx.close();
@@ -194,7 +194,7 @@ const ADMIN = (x = {}) => ({ is_admin: true, admin_mfa_status: { required: false
 async function admin(nav, n) {
   const fila = { id: BIZ, name: 'Café Sonda', category: 'Cafeterías', city: 'Málaga', address: 'Calle Granada 10', created_at: new Date().toISOString(), owner_email: 'duena@example.com', has_tax_id: true, has_logo: false, offers: 1, rules: 1 };
   const { ctx, p, estado, errores } = await contexto(nav, { clave: `sb-${REF}-admin-auth-token`, rpc: ADMIN({ admin_pending_now: { total: 1, rows: [fila] }, admin_pulso: PULSO, admin_set_verification: null }) });
-  await p.goto(`${BASE}/admin/#/resumen`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/admin#/resumen`, { waitUntil: 'networkidle' });
   await p.waitForSelector('#porVerificar [data-verificar]');
   const v = await p.locator('#porVerificar').innerText();
   ok(/Café Sonda/.test(v) && /NIF ✓/.test(v) && /sin logo/.test(v) && /1 oferta que se repite lista/.test(v), `${n}: lo que hace falta para decidir`);
@@ -216,7 +216,7 @@ async function admin(nav, n) {
   await ctx.close();
 
   const s = await contexto(nav, { clave: `sb-${REF}-admin-auth-token`, rpc: ADMIN() });
-  await s.p.goto(`${BASE}/admin/#/resumen`, { waitUntil: 'networkidle' });
+  await s.p.goto(`${BASE}/admin#/resumen`, { waitUntil: 'networkidle' });
   await s.p.waitForSelector('#porVerificar');
   ok(await s.p.locator('#pulso').count() === 0 && await s.p.locator('#porVerificar .qr-alta').count() === 1 && !/Por verificar ahora/.test(await s.p.locator('#porVerificar').innerText()), `${n}: sin las migraciones, solo el QR`);
   await s.ctx.close();
@@ -224,14 +224,14 @@ async function admin(nav, n) {
 
 async function enlace(nav, n) {
   const a = await contexto(nav, { conSesion: false });
-  await a.p.goto(`${BASE}/alta/`);
+  await a.p.goto(`${BASE}/alta`);
   await a.p.waitForURL(/\/cuenta\/registro\?.*para=negocio/);
   await a.p.waitForSelector('main form');
   ok(/Crea tu cuenta de negocio/.test(await a.p.locator('main').innerText()), `${n}: /alta sin sesión, «Crea tu cuenta de negocio»`);
   await a.ctx.close();
   const b = await contexto(nav, { rpc: PANEL({ my_businesses: [] }) });
-  await b.p.goto(`${BASE}/alta/`);
-  await b.p.waitForURL(/\/panel\/#\/alta/);
+  await b.p.goto(`${BASE}/alta`);
+  await b.p.waitForURL(/\/panel#\/alta/);
   await b.p.waitForSelector('#view h1, #view h2');
   ok(true, `${n}: /alta con sesión, al alta`);
   await b.ctx.close();

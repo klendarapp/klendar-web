@@ -1,5 +1,5 @@
 {
- "version": "502271b0121b",
+ "version": "2910059c7ed8",
  "contact": "info@klendar.app",
  "tabs": {
   "es": {
@@ -248,7 +248,7 @@
      },
      {
       "t": "política de privacidad",
-      "u": "https://klendar.app/privacidad/"
+      "u": "https://klendar.app/privacidad"
      },
      {
       "t": ". En resumen: se usan para que la app funcione, no se venden, y puedes descargarlos o borrar tu cuenta desde la app o desde «Tu cuenta» en la web."
@@ -289,7 +289,7 @@
      },
      {
       "t": "cómo hacerlo",
-      "u": "https://klendar.app/eliminar-cuenta/"
+      "u": "https://klendar.app/eliminar-cuenta"
      },
      {
       "t": "."
@@ -321,7 +321,7 @@
      },
      {
       "t": "Normas de la comunidad",
-      "u": "https://klendar.app/normas/"
+      "u": "https://klendar.app/normas"
      },
      {
       "t": ", pulsa «Denunciar» en ese negocio, publicación, reseña o novedad, o usa el "
@@ -353,7 +353,7 @@
      },
      {
       "t": "la agenda",
-      "u": "https://klendar.app/agenda/"
+      "u": "https://klendar.app/agenda"
      },
      {
       "t": " lo verás vacío: escríbenos y lo arrancamos."
@@ -504,7 +504,7 @@
      },
      {
       "t": "condiciones para negocios",
-      "u": "https://klendar.app/negocios/"
+      "u": "https://klendar.app/negocios"
      },
      {
       "t": "."
@@ -750,7 +750,7 @@
      },
      {
       "t": "privacy policy",
-      "u": "https://klendar.app/en/privacy/"
+      "u": "https://klendar.app/en/privacy"
      },
      {
       "t": ". In short: it's used to make the app work, it's never sold, and you can download it or delete your account from the app or from “Your account” on the website."
@@ -791,7 +791,7 @@
      },
      {
       "t": "how to do it",
-      "u": "https://klendar.app/en/delete-account/"
+      "u": "https://klendar.app/en/delete-account"
      },
      {
       "t": "."
@@ -823,7 +823,7 @@
      },
      {
       "t": "Community guidelines",
-      "u": "https://klendar.app/en/community-guidelines/"
+      "u": "https://klendar.app/en/community-guidelines"
      },
      {
       "t": ", tap “Report” on that business, publication, review or news post, or use the "
@@ -855,7 +855,7 @@
      },
      {
       "t": "what's on",
-      "u": "https://klendar.app/en/whats-on/"
+      "u": "https://klendar.app/en/whats-on"
      },
      {
       "t": " will look empty: email us and we'll get it going."
@@ -1006,7 +1006,7 @@
      },
      {
       "t": "business terms",
-      "u": "https://klendar.app/en/business-terms/"
+      "u": "https://klendar.app/en/business-terms"
      },
      {
       "t": "."

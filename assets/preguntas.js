@@ -17,7 +17,7 @@
   if (!yo) return;
   var biz = yo.getAttribute('data-biz');
   var en = yo.getAttribute('data-lang') === 'en';
-  var cuenta = function (ruta) { ruta = ruta || ''; return '/cuenta/' + (en ? ruta.replace(/\?|$/, function (m) { return m ? '?lang=en&' : '?lang=en'; }) : ruta); };
+  var cuenta = function (ruta) { ruta = ruta || ''; ruta = String(ruta).replace(/^\/+/, ''); var r = en ? ruta.replace(/\?|$/, function (m) { return m ? '?lang=en&' : '?lang=en'; }) : ruta; return '/cuenta' + (r && r.charAt(0) !== '?' ? '/' : '') + r; };
   var T = en ? {
     tuyas: 'Your questions', esperando: 'Waiting for a reply', oculta: 'Hidden by the business',
     borrar: 'Delete my question', borrarSeguro: 'Delete your question?', sirve: 'Helpful to me too',
@@ -83,7 +83,7 @@
     var html = '';
     if (s.team) {
       html += '<p class="pregunta-equipo"><span class="muted">' + esc(T.equipo(Number(s.unanswered) || 0)) + '</span> '
-        + '<a class="pill" href="/panel/#/preguntas?biz=' + encodeURIComponent(biz) + '">' + esc(s.can_answer ? T.contestar : T.ver) + '</a></p>';
+        + '<a class="pill" href="/panel#/preguntas?biz=' + encodeURIComponent(biz) + '">' + esc(s.can_answer ? T.contestar : T.ver) + '</a></p>';
     }
     if (mias.length) {
       html += '<h3 class="side-h">' + esc(T.tuyas) + '</h3><div class="preguntas">' + mias.map(function (q) {

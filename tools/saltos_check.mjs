@@ -133,7 +133,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     page.on('pageerror', (e) => errores.push(String(e)));
 
     // 1. Las pestañas.
-    await page.goto(`${BASE}/descubre/`, { waitUntil: 'load' });
+    await page.goto(`${BASE}/descubre`, { waitUntil: 'load' });
     await page.waitForTimeout(1500);
     let cab = null;
     for (const tab of ['explorar', 'planes', 'cuenta', 'descubre', 'explorar']) {
@@ -155,7 +155,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     }
 
     // 2. Tocar otra vez «Descubre» y «Atrás».
-    await page.goto(`${BASE}/explorar/`, { waitUntil: 'load' });
+    await page.goto(`${BASE}/explorar`, { waitUntil: 'load' });
     await page.locator('a[data-tab="descubre"]:visible').first().click();
     await page.waitForLoadState('load');
     await page.waitForTimeout(1500);
@@ -177,12 +177,12 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     ok(await page.evaluate(() => history.length) === largo, `${tag} «Descubre» en Descubre: sin entradas de más en el historial`);
     await page.goBack();
     await page.waitForLoadState('load');
-    ok(/\/explorar\//.test(page.url()), `${tag} «Atrás» tras «Descubre»: a Explorar (${page.url()})`);
+    ok(/\/explorar([/?]|$)/.test(page.url()), `${tag} «Atrás» tras «Descubre»: a Explorar (${page.url()})`);
     await page.goForward();
     await page.waitForLoadState('load');
-    ok(/\/descubre\//.test(page.url()), `${tag} «Adelante»: otra vez Descubre`);
+    ok(/\/descubre([/?]|$)/.test(page.url()), `${tag} «Adelante»: otra vez Descubre`);
     // Desde Descubre, el logo lleva a la portada, y «Atrás» vuelve.
-    await page.goto(`${BASE}/descubre/`, { waitUntil: 'load' });
+    await page.goto(`${BASE}/descubre`, { waitUntil: 'load' });
     await page.locator('header.top a.brand').first().click();
     await page.waitForLoadState('load');
     // Como una persona, «Atrás» cuando la portada ya ha pintado «Ahora
@@ -192,43 +192,43 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     ok(new URL(page.url()).pathname === '/', `${tag} logo en Descubre: a la portada (${page.url()})`);
     await page.goBack();
     await page.waitForLoadState('load');
-    ok(/\/descubre\//.test(page.url()), `${tag} «Atrás» desde la portada: a Descubre`);
+    ok(/\/descubre([/?]|$)/.test(page.url()), `${tag} «Atrás» desde la portada: a Descubre`);
     // Fuera de Descubre, igual.
-    await page.goto(`${BASE}/explorar/`, { waitUntil: 'load' });
+    await page.goto(`${BASE}/explorar`, { waitUntil: 'load' });
     await page.locator('header.top a.brand').first().click();
     await page.waitForLoadState('load');
     await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => {});
     ok(new URL(page.url()).pathname === '/', `${tag} logo en Explorar: a la portada`);
     await page.goBack();
     await page.waitForLoadState('load');
-    ok(/\/explorar\//.test(page.url()), `${tag} «Atrás» desde la portada: a Explorar`);
+    ok(/\/explorar([/?]|$)/.test(page.url()), `${tag} «Atrás» desde la portada: a Explorar`);
 
     // 3. «Más formas de explorar».
     if (w === 1280) {
-      await page.goto(`${BASE}/explorar/?ciudad=zaragoza`, { waitUntil: 'load' });
+      await page.goto(`${BASE}/explorar?ciudad=zaragoza`, { waitUntil: 'load' });
       const z = await enlacesMf(page);
       ok(z[0] === 'zaragoza' && z.length <= 6, `${tag} «Más formas» con Zaragoza: Zaragoza primero (${z.join(', ')})`);
-      await page.goto(`${BASE}/explorar/?ciudad=getafe`, { waitUntil: 'load' });
+      await page.goto(`${BASE}/explorar?ciudad=getafe`, { waitUntil: 'load' });
       const g = await enlacesMf(page);
       ok(g[0] === 'madrid', `${tag} «Más formas» con Getafe (sin nada publicado): la más cercana primero (${g.join(', ')})`);
-      await page.goto(`${BASE}/explorar/?lat=41.39&lng=2.17`, { waitUntil: 'load' });
+      await page.goto(`${BASE}/explorar?lat=41.39&lng=2.17`, { waitUntil: 'load' });
       const b = await enlacesMf(page);
       ok(b[0] === 'zaragoza', `${tag} «Más formas» cerca de Barcelona: Zaragoza primero (${b.join(', ')})`);
       await page.screenshot({ path: `${OUT}/saltos_${nombre}_mas_formas.png`, fullPage: false });
       // Sin zona (como Google): el orden de `public_cities`, todas.
-      const html = await fetch(`${BASE}/explorar/?todas=1`).then((r) => r.text());
+      const html = await fetch(`${BASE}/explorar?todas=1`).then((r) => r.text());
       const sinZona = [...html.matchAll(/<h3>Qué hacer hoy en<\/h3><p>(.*?)<\/p>/g)][0]?.[1] || '';
       // El orden de siempre: el de `public_cities` de los datos de mentira,
       // y todas (antes, con MF_ORDEN, porque no se sabía el de dev).
       const deSiempre = PUBLICADAS.map(([slug]) => slug);
-      const enHtml = [...sinZona.matchAll(/href="[^"]*\/([^/"]+)\/"/g)].map((x) => x[1]);
+      const enHtml = [...sinZona.matchAll(/href="[^"]*\/([^/"]+)"/g)].map((x) => x[1]);
       ok(!/ hidden/.test(sinZona) && JSON.stringify(enHtml) === JSON.stringify(deSiempre), `${tag} «Más formas» sin zona: el orden de siempre (${enHtml.join(', ')})`);
       // Zona de la conexión en Zaragoza, pero «Tu ciudad» Madrid: Madrid primero.
       {
         const ctx2 = await nav.newContext({ viewport: { width: 1280, height: 800 }, locale: 'es-ES' });
         await ctx2.route(`https://${REF}.supabase.co/**`, supabaseFalso);
         const p2 = await ctx2.newPage();
-        await p2.goto(`${BASE_IP}/explorar/`, { waitUntil: 'load' });
+        await p2.goto(`${BASE_IP}/explorar`, { waitUntil: 'load' });
         const ip = await enlacesMf(p2);
         ok(ip[0] === 'zaragoza' && ip.length <= 6, `${tag} «Más formas» con la zona de la conexión (Zaragoza): Zaragoza primero (${ip.join(', ')})`);
         await p2.evaluate(() => localStorage.setItem('klendar.gustos', JSON.stringify({ c: [], home: { slug: 'madrid', name: 'Madrid', lat: 40.4168, lng: -3.7038 } })));

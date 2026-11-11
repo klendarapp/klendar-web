@@ -117,7 +117,7 @@ async function rrppErrorCodigo(e, id, rp) {
     ? `${d.business_id ? `<a class="pill accent" href="${pre}/b/${esc(d.business_id)}">${esc(EN ? `See ${d.business_name || ''}` : `Ver ${d.business_name || ''}`)}</a>` : ''}
        ${botonTuCuenta().replace('pill accent', d.business_id ? 'pill' : 'pill accent')}`
     : `<a class="pill accent" href="${pre}/o/${esc(id)}${rp ? `?rp=${esc(rp)}` : ''}">${esc(t('Volver a la publicación'))}</a>
-       <a class="pill" href="/cuenta/">${esc(t('Tu cuenta'))}</a>`;
+       <a class="pill" href="/cuenta">${esc(t('Tu cuenta'))}</a>`;
   pinta(pantallaVacia({ icono: 'group', titulo, h: 'h1', botones }));
   return true;
 }
@@ -142,7 +142,7 @@ RUTAS.rrpp = async ([id], params) => {
     const roles = await llamar('my_promoter_roles', {}).catch(() => []);
     if ((roles || []).length === 1) { irA(`rrpp/${roles[0].promoter_id}`, { reemplaza: true }); return; }
     pinta(roles?.length
-      ? `<p class="crumbs"><a href="/cuenta/">${esc(t('Tu cuenta'))}</a></p><h1>${esc(t('Tus listas de RRPP'))}</h1>${rrppPortadaHtml(roles).replace(/^<h2[^>]*>.*?<\/h2>/s, '')}`
+      ? `<p class="crumbs"><a href="/cuenta">${esc(t('Tu cuenta'))}</a></p><h1>${esc(t('Tus listas de RRPP'))}</h1>${rrppPortadaHtml(roles).replace(/^<h2[^>]*>.*?<\/h2>/s, '')}`
       : pantallaVacia({ icono: 'group', titulo: t('No eres RRPP de ningún negocio.'), h: 'h1', botones: botonTuCuenta() }));
     return;
   }
@@ -180,7 +180,7 @@ RUTAS.rrpp = async ([id], params) => {
   const opciones = [...new Set([d.tonight, d.night, ...(d.nights || []).map((x) => x.night)].filter(Boolean))].sort().reverse();
 
   pinta(`
-    <p class="crumbs"><a href="/cuenta/">${esc(t('Tu cuenta'))}</a></p>
+    <p class="crumbs"><a href="/cuenta">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(EN ? `Promoter for ${b.name || ''}` : `RRPP de ${b.name || ''}`)}</h1>
     ${d.status === 'paused' ? `<p class="aviso-error">${esc(EN
       ? `${b.name} has paused your links: in the meantime, people who use them won't count for you.`

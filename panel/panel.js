@@ -761,7 +761,7 @@ async function sugAbrir(s, alPublicar) {
 // ── Sesión y negocio activo ─────────────────────────────────────────────────
 const insecure = location.protocol === 'http:' && !/^(localhost|127\.0\.0\.1)$/.test(location.hostname);
 if (insecure) {
-  document.body.innerHTML = '<div class="login"><h2>Conexión no segura</h2><p class="muted">Este panel solo funciona por HTTPS: <a href="https://klendar.app/panel/">https://klendar.app/panel/</a>.</p></div>';
+  document.body.innerHTML = '<div class="login"><h2>Conexión no segura</h2><p class="muted">Este panel solo funciona por HTTPS: <a href="https://klendar.app/panel">https://klendar.app/panel</a>.</p></div>';
   throw new Error('insecure');
 }
 
@@ -862,7 +862,7 @@ function rutaDeVuelta() {
     hash = h + (resto ? `?${resto}` : '');
   }
   const alta = new URLSearchParams(location.search).has('alta') ? '?alta=1' : '';
-  return `/panel/${alta}${hash}`;
+  return `/panel${alta}${hash}`;
 }
 
 /** Los códigos guardados sin conexión son de quien tenía la sesión: al salir
@@ -1006,7 +1006,7 @@ sb.auth.onAuthStateChange((ev) => {
   if (ev === 'SIGNED_OUT' && !saliendo) showLogin();
   // Un enlace de «he olvidado la contraseña» antiguo que traiga aquí: la
   // contraseña nueva se pone en «Tu cuenta» y se vuelve al panel.
-  if (ev === 'PASSWORD_RECOVERY') location.href = '/cuenta/nueva-clave?destino=%2Fpanel%2F';
+  if (ev === 'PASSWORD_RECOVERY') location.href = '/cuenta/nueva-clave?destino=%2Fpanel';
 });
 $('#menuBtn').onclick = () => abreMenu(!$('#side').classList.contains('open'));
 $('#menuCerrar').onclick = () => abreMenu(false);
@@ -1389,7 +1389,7 @@ function avisoCondiciones(t) {
   const en = I18N.pub === 'en';
   const dia = new Date(`${String(t.applies_on).slice(0, 10)}T12:00:00Z`)
     .toLocaleDateString(LOC(), { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
-  const url = `${APP_URL}${en ? '/en/business-terms/' : '/negocios/'}`;
+  const url = `${APP_URL}${en ? '/en/business-terms' : '/negocios'}`;
   const resumen = (en && t.summary_en) || t.summary_es || '';
   const n = t.more || 0;
   const otros = n > 0
@@ -7133,7 +7133,7 @@ PAGES.ayuda = async (v) => {
     </div>
     <div class="card"><h2>Preguntas frecuentes</h2>
       <p class="muted">Lo que más nos preguntan los negocios (y la gente), con buscador. Lo mismo que en la app, en «Mi negocio» → Ayuda.</p>
-      <p style="margin:8px 0 0"><a class="btn sm" href="${I18N.pub === 'en' ? '/en/faq/' : '/preguntas/'}#negocios">${ms('help')}${esc(I18N.t('Ver las preguntas frecuentes'))}</a></p></div>
+      <p style="margin:8px 0 0"><a class="btn sm" href="${I18N.pub === 'en' ? '/en/faq' : '/preguntas'}#negocios">${ms('help')}${esc(I18N.t('Ver las preguntas frecuentes'))}</a></p></div>
     <div class="card"><h2>¿Algo no cuadra?</h2><p class="muted" style="margin:0">Escríbenos a <a class="link" href="mailto:info@klendar.app">info@klendar.app</a> y lo miramos.</p></div>`;
 };
 

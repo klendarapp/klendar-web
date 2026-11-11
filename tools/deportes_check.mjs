@@ -172,20 +172,20 @@ const nav = await chromium.launch();
 for (const [t, vp] of Object.entries(TAM)) {
   const ctx = await nav.newContext({ viewport: vp, locale: 'es-ES', timezoneId: 'Europe/Madrid' });
   const p = await ctx.newPage();
-  await p.goto(`${BASE}/partidos/`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/partidos`, { waitUntil: 'networkidle' });
   let txt = await p.locator('main').innerText();
-  ok(/Dónde verlo/.test(await p.title()) || /Dónde verlo/.test(txt), `${t} /partidos/: se llama «Dónde verlo»`);
-  ok(await p.locator('a.partido').count() > 5, `${t} /partidos/: todo lo que viene (aunque no lo ponga ningún bar)`);
-  ok(/Balonmano/.test(txt) && /Baloncesto/.test(txt), `${t} /partidos/: deportes con balonmano`);
-  ok(/Datos deportivos: TheSportsDB/.test(txt), `${t} /partidos/: la cita de TheSportsDB`);
+  ok(/Dónde verlo/.test(await p.title()) || /Dónde verlo/.test(txt), `${t} /partidos: se llama «Dónde verlo»`);
+  ok(await p.locator('a.partido').count() > 5, `${t} /partidos: todo lo que viene (aunque no lo ponga ningún bar)`);
+  ok(/Balonmano/.test(txt) && /Baloncesto/.test(txt), `${t} /partidos: deportes con balonmano`);
+  ok(/Datos deportivos: TheSportsDB/.test(txt), `${t} /partidos: la cita de TheSportsDB`);
   await p.screenshot({ path: `${OUT}/web-donde-verlo-${t}.png`, fullPage: false });
 
-  await p.goto(`${BASE}/partidos/?deporte=football`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/partidos?deporte=football`, { waitUntil: 'networkidle' });
   txt = await p.locator('main').innerText();
   ok(await p.locator('.partidos-comps a.chip').count() > 3 && /LaLiga/.test(txt) && /Champions League/.test(txt), `${t} fútbol: sus competiciones`);
   await p.screenshot({ path: `${OUT}/web-donde-verlo-futbol-${t}.png`, fullPage: false });
 
-  await p.goto(`${BASE}/partidos/?deporte=football&competicion=champions`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/partidos?deporte=football&competicion=champions`, { waitUntil: 'networkidle' });
   const metas = await p.locator('a.partido small').allInnerTexts();
   ok(metas.length > 0 && metas.every((m) => /Champions League/.test(m)), `${t} Champions: solo la Champions (${metas.length})`);
   ok(await p.locator('.partidos-comps a.chip.on').innerText() === 'Champions League', `${t} Champions: el chip marcado`);
@@ -197,7 +197,7 @@ for (const [t, vp] of Object.entries(TAM)) {
   ok(/Bares que lo ponen/.test(txt) && /Datos deportivos: TheSportsDB/.test(txt), `${t} detalle: bares y la cita`);
   await p.screenshot({ path: `${OUT}/web-partido-${t}.png`, fullPage: false });
 
-  await p.goto(`${BASE}/en/matches/?sport=handball`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/en/matches?sport=handball`, { waitUntil: 'networkidle' });
   txt = await p.locator('main').innerText();
   ok(/Where to watch/.test(txt) && /Sports data: TheSportsDB/.test(txt) && /Handball/.test(txt), `${t} EN: «Where to watch», handball y la cita`);
   await ctx.close();
@@ -224,7 +224,7 @@ for (const [t, vp] of Object.entries(TAM)) {
     },
     set_business_broadcast_rule: { ok: true, changed: 3 },
   });
-  await p.goto(`${BASE}/panel/#/partidos`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel#/partidos`, { waitUntil: 'networkidle' });
   await p.waitForSelector('.pt-siempre');
   let v = await p.locator('#view').innerText();
   ok(/Pones siempre/.test(v) && /Real Betis/.test(v) && /Champions League/.test(v), `${t} panel: «Pones siempre» con sus reglas`);
@@ -271,7 +271,7 @@ for (const [t, vp] of Object.entries(TAM)) {
     admin_broadcasts: { last_import: { source: 'thesportsdb', mode: 'daily', started_at: new Date().toISOString(), finished_at: new Date().toISOString(), items: 462, calls: 42 }, items: [] },
     admin_set_broadcast_league: { ok: true, removed: 0 },
   });
-  await p.goto(`${BASE}/admin/#/emisiones`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/admin#/emisiones`, { waitUntil: 'networkidle' });
   await p.waitForSelector('[data-liga]');
   const v = await p.locator('#view').innerText();
   ok(/Ligas/.test(v) && /LaLiga/.test(v) && /NBA/.test(v) && /Sin temporada en curso/.test(v), `${t} admin: las ligas con lo que traen`);

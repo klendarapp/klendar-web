@@ -8,6 +8,9 @@
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: geolocation=(), camera=(), microphone=()
   Content-Security-Policy: base-uri 'self'; object-src 'none'; frame-ancestors 'none'
+# Zonas con sesión (admin, panel, «Tu cuenta»). Cada zona va dos veces: la
+# página (`/panel`, sin barra desde el 11-11) y lo de dentro (`/panel/*`):
+# `/panel/*` no cubre `/panel`.
 # Zonas con sesión (admin, panel, «Tu cuenta»):
 # - `no-transform`: Cloudflare no les mete su contador de visitas. (Desde
 #   2026-10-01 la web usa PKCE y los enlaces de los correos van con
@@ -20,11 +23,23 @@
 #   /assets/fonts/): ni jsDelivr ni Google Fonts están en la CSP. Fuera de
 #   klendar.app solo quedan Mapbox (mapa del panel y «Avísame si…»),
 #   Turnstile y Supabase.
+/admin
+  ! Content-Security-Policy
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store, no-transform
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://api.mapbox.com https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://api.mapbox.com; font-src 'self'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.mapbox.com https://events.mapbox.com; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; base-uri 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'none'
 /admin/*
   ! Content-Security-Policy
   X-Robots-Tag: noindex, nofollow
   Cache-Control: no-store, no-transform
   Content-Security-Policy: default-src 'self'; script-src 'self' https://api.mapbox.com https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://api.mapbox.com; font-src 'self'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.mapbox.com https://events.mapbox.com; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; base-uri 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'none'
+/panel
+  ! Content-Security-Policy
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store, no-transform
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://api.mapbox.com https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://api.mapbox.com; font-src 'self'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.mapbox.com https://events.mapbox.com; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; base-uri 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'none'
+  ! Permissions-Policy
+  Permissions-Policy: geolocation=(self), camera=(self), microphone=()
 /panel/*
   ! Content-Security-Policy
   X-Robots-Tag: noindex, nofollow
@@ -36,6 +51,13 @@
 # «Klendar en la tele del local»: sin buscadores, sin caché (la página se
 # deja abierta días) y la misma CSP estricta que las zonas con sesión. La
 # tele solo habla con Supabase y pinta fotos y vídeos de su Storage.
+/tv
+  ! Content-Security-Policy
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-cache, no-transform
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://*.supabase.co; base-uri 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'none'
+  ! Permissions-Policy
+  Permissions-Policy: geolocation=(), camera=(), microphone=(), screen-wake-lock=(self)
 /tv/*
   ! Content-Security-Policy
   X-Robots-Tag: noindex, nofollow
@@ -47,6 +69,13 @@
 # «Tu cuenta»: la ubicación solo para «Avísame si…» (zona fija), y siempre
 # a petición de la persona. La cámara, solo en «Escanear un QR» (Tus códigos),
 # al pulsarlo.
+/cuenta
+  ! Content-Security-Policy
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: public, max-age=0, must-revalidate, no-transform
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://api.mapbox.com https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://api.mapbox.com; font-src 'self'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.mapbox.com https://events.mapbox.com; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; base-uri 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'none'
+  ! Permissions-Policy
+  Permissions-Policy: geolocation=(self), camera=(self), microphone=()
 /cuenta/*
   ! Content-Security-Policy
   X-Robots-Tag: noindex, nofollow
@@ -60,6 +89,8 @@
 # con el widget; Turnstile y sus tokens vienen de Cloudflare, nunca de aquí.
 # `no-transform`: sin el contador de visitas de Cloudflare (un script y una
 # petición más que en un móvil lento compiten con el reto).
+/captcha
+  Cache-Control: public, max-age=3600, stale-while-revalidate=604800, no-transform
 /captcha/*
   Cache-Control: public, max-age=3600, stale-while-revalidate=604800, no-transform
 
@@ -70,20 +101,38 @@
   X-Robots-Tag: noindex
 
 # Explorar y Descubre: «Cerca de mí» pide la ubicación (solo al pulsarlo).
+/descubre
+  ! Permissions-Policy
+  Permissions-Policy: geolocation=(self), camera=(), microphone=()
 /descubre/*
+  ! Permissions-Policy
+  Permissions-Policy: geolocation=(self), camera=(), microphone=()
+/en/discover
   ! Permissions-Policy
   Permissions-Policy: geolocation=(self), camera=(), microphone=()
 /en/discover/*
   ! Permissions-Policy
   Permissions-Policy: geolocation=(self), camera=(), microphone=()
+/explorar
+  ! Permissions-Policy
+  Permissions-Policy: geolocation=(self), camera=(), microphone=()
 /explorar/*
+  ! Permissions-Policy
+  Permissions-Policy: geolocation=(self), camera=(), microphone=()
+/en/explore
   ! Permissions-Policy
   Permissions-Policy: geolocation=(self), camera=(), microphone=()
 /en/explore/*
   ! Permissions-Policy
   Permissions-Policy: geolocation=(self), camera=(), microphone=()
 # «Dónde ver el partido»: «Cerca de mí», igual que Explorar.
+/partidos
+  ! Permissions-Policy
+  Permissions-Policy: geolocation=(self), camera=(), microphone=()
 /partidos/*
+  ! Permissions-Policy
+  Permissions-Policy: geolocation=(self), camera=(), microphone=()
+/en/matches
   ! Permissions-Policy
   Permissions-Policy: geolocation=(self), camera=(), microphone=()
 /en/matches/*

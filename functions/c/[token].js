@@ -12,7 +12,7 @@ export const onRequestGet = (ctx) => {
   }
   return new Response(null, {
     status: 302,
-    headers: { Location: `/panel/#/validar?cliente=${token}`, 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex' },
+    headers: { Location: `/panel#/validar?cliente=${token}`, 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex' },
   });
 };
 

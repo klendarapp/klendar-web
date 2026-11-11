@@ -871,7 +871,7 @@ KL_DIC('de', {
   "Hay un texto demasiado largo.": "Ein Text ist zu lang.",
   "Hazte mi amigo en Klendar y vemos a qué planes vamos: {url}": "Werd mein Freund bei Klendar, dann sehen wir, zu welchen Plänen wir gehen: {url}",
   "He leído y acepto los": "Gelesen und akzeptiert:",
-  "He leído y acepto los <a href=\"/terminos/\" target=\"_blank\">términos</a> y la <a href=\"/privacidad/\" target=\"_blank\">privacidad</a>.": "Ich habe die <a href=\"/terminos/\" target=\"_blank\">Nutzungsbedingungen</a> und die <a href=\"/privacidad/\" target=\"_blank\">Datenschutzerklärung</a> gelesen und akzeptiere sie.",
+  "He leído y acepto los <a href=\"/terminos\" target=\"_blank\">términos</a> y la <a href=\"/privacidad\" target=\"_blank\">privacidad</a>.": "Ich habe die <a href=\"/terminos\" target=\"_blank\">Nutzungsbedingungen</a> und die <a href=\"/privacidad\" target=\"_blank\">Datenschutzerklärung</a> gelesen und akzeptiere sie.",
   "He olvidado la contraseña": "Passwort vergessen",
   "Hecho": "Erledigt",
   "Hecho. Está en tus planes.": "Erledigt. Es steht in deinen Plänen.",

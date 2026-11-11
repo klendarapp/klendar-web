@@ -206,7 +206,7 @@ const menu = (p) => p.locator('#nav').textContent();
 async function panelBloqueado(nav, nombre, t, vp) {
   const { ctx, p, errores, estado } = await contextoPanel(nav, vp, 'bloqueado');
   const foto = (n, full = true) => p.screenshot({ path: `${OUT}/web-${n}-${nombre}-${t}.png`, fullPage: full });
-  await p.goto(`${BASE}/panel/`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel`, { waitUntil: 'networkidle' });
   await p.waitForSelector('.aviso-parado');
   const v = await texto(p);
   ok(/Tu negocio está bloqueado/.test(v) && /Ha terminado tu prueba gratis/.test(v) && /No disponible ahora mismo/.test(v), `${nombre}/${t} bloqueado: el aviso y el motivo`);
@@ -221,17 +221,17 @@ async function panelBloqueado(nav, nombre, t, vp) {
   ok(/Validar códigos/.test(m) && /Tu plan/.test(m) && /Dar de baja el negocio/.test(m) && !/Publicaciones|Calendario|Fidelizar|RRPP|Equipo|Tu ficha/.test(m), `${nombre}/${t} bloqueado: el menú solo con lo que se puede (${m.replace(/\s+/g, ' ')})`);
   await foto('bloqueado-resumen');
   // Otra pantalla → al resumen.
-  await p.goto(`${BASE}/panel/#/publicaciones`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel#/publicaciones`, { waitUntil: 'networkidle' });
   await p.waitForTimeout(300);
   await p.waitForSelector('.aviso-parado');
   ok(/#\/resumen$/.test(p.url()), `${nombre}/${t} bloqueado: #/publicaciones vuelve al resumen (${p.url()})`);
-  await p.goto(`${BASE}/panel/#/ficha`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel#/ficha`, { waitUntil: 'networkidle' });
   await p.waitForTimeout(300);
   await p.waitForSelector('.aviso-parado');
   ok(/#\/resumen$/.test(p.url()), `${nombre}/${t} bloqueado: #/ficha vuelve al resumen`);
   // Las herramientas de la tanda D, también al resumen (revisión 2026-10-21).
   for (const r of ['menu-del-dia', 'wifi-clientes', 'aforo', 'pedidos', 'preguntas', 'festivo/2026-11-01', 'estaba-cerrado', 'ficha/que-pedir', 'cerrados']) {
-    await p.goto(`${BASE}/panel/#/${r}`, { waitUntil: 'networkidle' });
+    await p.goto(`${BASE}/panel#/${r}`, { waitUntil: 'networkidle' });
     await p.waitForTimeout(300);
     await p.waitForSelector('.aviso-parado');
     ok(/#\/resumen$/.test(p.url()), `${nombre}/${t} bloqueado: #/${r} vuelve al resumen`);
@@ -246,7 +246,7 @@ async function panelBloqueado(nav, nombre, t, vp) {
   ok(/Al pagar, tu negocio vuelve a funcionar solo/.test(plan), `${nombre}/${t} «Tu plan» bloqueado: al pagar vuelve solo`);
   await foto('bloqueado-tu-plan');
   // Validar sí.
-  await p.goto(`${BASE}/panel/#/validar`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel#/validar`, { waitUntil: 'networkidle' });
   await p.waitForSelector('#code');
   ok(/Tu negocio está bloqueado: puedes validar los códigos y bonos/.test(await texto(p)), `${nombre}/${t} bloqueado: «Validar códigos» se abre y lo explica`);
   // «Dar en el momento» sí (da lo que ya tenía la gente); «Pedidos de hoy»
@@ -263,7 +263,7 @@ async function panelIdioma(nav, nombre, t, vp) {
   if (t !== 'escritorio') return;
   for (const [caso, frase] of [['bloqueado', /Ton commerce est bloqué/], ['pausa', /Fermé temporairement jusqu'au 3 novembre 2026/]]) {
     const { ctx, p, errores } = await contextoPanel(nav, vp, caso, 'fr');
-    await p.goto(`${BASE}/panel/`, { waitUntil: 'networkidle' });
+    await p.goto(`${BASE}/panel`, { waitUntil: 'networkidle' });
     await p.waitForSelector('.aviso-parado');
     await p.waitForTimeout(300);
     const v = await texto(p);
@@ -276,7 +276,7 @@ async function panelIdioma(nav, nombre, t, vp) {
 
 async function panelEncargado(nav, nombre, t, vp) {
   const { ctx, p, errores } = await contextoPanel(nav, vp, 'encargado');
-  await p.goto(`${BASE}/panel/`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel`, { waitUntil: 'networkidle' });
   await p.waitForSelector('.aviso-parado');
   const v = await texto(p);
   ok(/Hay un pago pendiente del plan/.test(v) && /Solo el propietario del negocio puede pagar el plan/.test(v) && await p.locator('.aviso-parado .btn.primary').count() === 0,
@@ -289,13 +289,13 @@ async function panelEncargado(nav, nombre, t, vp) {
 
 async function panelPausa(nav, nombre, t, vp) {
   const { ctx, p, errores, estado } = await contextoPanel(nav, vp, 'pausa');
-  await p.goto(`${BASE}/panel/`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel`, { waitUntil: 'networkidle' });
   await p.waitForSelector('.aviso-parado');
   const v = await texto(p);
   ok(/Cerrado temporalmente hasta el 3 de noviembre de 2026/.test(v) && /días que tenías pagados se guardan/.test(v), `${nombre}/${t} en pausa: el aviso con la fecha`);
   ok(await p.locator('#volver-abrir.btn.primary').count() === 1, `${nombre}/${t} en pausa: «Volver a abrir» coral`);
   await p.screenshot({ path: `${OUT}/web-pausa-resumen-${nombre}-${t}.png`, fullPage: true });
-  await p.goto(`${BASE}/panel/#/plan`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel#/plan`, { waitUntil: 'networkidle' });
   await p.waitForSelector('#plan-reanudar');
   ok(/EN PAUSA/.test(await texto(p)) && /Cerrado temporalmente hasta el 3 de noviembre de 2026/.test(await texto(p)) && await p.locator('#plan-pagar').count() === 0,
     `${nombre}/${t} «Tu plan» en pausa: estado, «Volver a abrir» y sin pagar`);
@@ -313,7 +313,7 @@ async function panelPausa(nav, nombre, t, vp) {
 async function panelArranque(nav, nombre, t, vp) {
   for (const caso of ['arranque', 'gratis', 'gratisLejos']) {
     const { ctx, p, errores } = await contextoPanel(nav, vp, caso);
-    await p.goto(`${BASE}/panel/`, { waitUntil: 'networkidle' });
+    await p.goto(`${BASE}/panel`, { waitUntil: 'networkidle' });
     if (caso === 'gratisLejos') {
       // El resumen ya pintado (los botones de arriba) y sin el aviso.
       await p.waitForSelector('[data-go=validar]');
@@ -343,7 +343,7 @@ async function panelArranque(nav, nombre, t, vp) {
 async function panelPronto(nav, nombre, t, vp) {
   for (const caso of ['pronto', 'devuelto']) {
     const { ctx, p, errores } = await contextoPanel(nav, vp, caso);
-    await p.goto(`${BASE}/panel/`, { waitUntil: 'networkidle' });
+    await p.goto(`${BASE}/panel`, { waitUntil: 'networkidle' });
     await p.waitForSelector('.aviso-cobro');
     const v = await texto(p);
     ok(await p.locator('.aviso-cobro').count() === 1 && /Tu negocio se bloquea el/.test(v), `${nombre}/${t} ${caso}: un solo aviso arriba`);
@@ -351,7 +351,7 @@ async function panelPronto(nav, nombre, t, vp) {
       ok(/Tu prueba gratis está a punto de acabar/.test(v) && (await p.locator('.aviso-cobro a.btn.primary').getAttribute('href')) === '#/plan', `${nombre}/${t} se bloquea pronto: «Pagar» a «Tu plan»`);
       ok(/Publicaciones/.test(await menu(p)), `${nombre}/${t} se bloquea pronto: el menú de siempre`);
       await p.screenshot({ path: `${OUT}/web-pronto-resumen-${nombre}-${t}.png`, fullPage: false });
-      await p.goto(`${BASE}/panel/#/plan`, { waitUntil: 'networkidle' });
+      await p.goto(`${BASE}/panel#/plan`, { waitUntil: 'networkidle' });
       await p.waitForSelector('#plan-pagar');
       const plan = await texto(p);
       ok(/Si no se paga antes, tu negocio se bloquea el/.test(plan) && /19,90\s?€ \+ IVA al mes/.test(await p.locator('#plan-total').innerText()), `${nombre}/${t} «Tu plan» se bloquea pronto: lo dice y con IVA`);
@@ -359,7 +359,7 @@ async function panelPronto(nav, nombre, t, vp) {
       if (t === 'escritorio') await p.screenshot({ path: `${OUT}/web-pronto-tu-plan-${nombre}-${t}.png`, fullPage: true });
     } else {
       ok(/El banco ha devuelto el recibo del plan/.test(v) && /^mailto:info@klendar\.app/.test(await p.locator('.aviso-cobro a.btn.primary').getAttribute('href')), `${nombre}/${t} recibo devuelto: «Escribir a soporte»`);
-      await p.goto(`${BASE}/panel/#/plan`, { waitUntil: 'networkidle' });
+      await p.goto(`${BASE}/panel#/plan`, { waitUntil: 'networkidle' });
       await p.waitForSelector('.plan-card');
       const plan = await texto(p);
       ok(/El banco ha devuelto el recibo\. Escríbenos a info@klendar\.app para ponerlo al día/.test(plan) && !/Pagar la factura pendiente/.test(plan), `${nombre}/${t} «Tu plan» recibo devuelto: escribir, sin factura`);
@@ -372,7 +372,7 @@ async function panelPronto(nav, nombre, t, vp) {
 
 async function panelPausar(nav, nombre, t, vp) {
   const { ctx, p, errores, estado } = await contextoPanel(nav, vp, 'pagado');
-  await p.goto(`${BASE}/panel/#/plan`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel#/plan`, { waitUntil: 'networkidle' });
   await p.waitForSelector('#plan-pausar');
   // Sin fecha.
   await p.click('#plan-pausar');
@@ -388,7 +388,7 @@ async function panelPausar(nav, nombre, t, vp) {
   await p.waitForTimeout(500);
   ok(estado.funciones.some(([f, b]) => f === 'billing' && b.op === 'pause' && b.days === null), `${nombre}/${t} pausar sin fecha: days null`);
   // Hasta un día (dentro de 10).
-  await p.goto(`${BASE}/panel/#/plan`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel#/plan`, { waitUntil: 'networkidle' });
   await p.waitForSelector('#plan-pausar');
   await p.click('#plan-pausar');
   await p.waitForSelector('#modal[open] input[name=dia]');
@@ -429,7 +429,7 @@ async function admin(nav, nombre, t, vp) {
   const p = await ctx.newPage();
   const errores = [];
   p.on('pageerror', (e) => errores.push(e.message));
-  await p.goto(`${BASE}/admin/#/planes?tab=stripe`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/admin#/planes?tab=stripe`, { waitUntil: 'networkidle' });
   await p.waitForSelector('text=Bloqueados y en pausa');
   const v = await p.locator('#view').innerText();
   ok(/Cafetería Prueba Q/.test(v) && /bloqueado/.test(v) && /fin de la prueba/.test(v) && /Fiestas Lunares QA/.test(v) && /en pausa/.test(v), `${nombre}/${t} admin: bloqueados y en pausa con el motivo`);

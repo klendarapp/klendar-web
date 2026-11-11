@@ -184,7 +184,7 @@ const llamadas = (estado, fn) => estado.llamadas.filter(([f]) => f === fn);
 async function puerta(nav, nombre, t, vp) {
   const { ctx, p, estado, errores } = await contextoPanel(nav, vp);
   const af = estado.af;
-  await p.goto(`${BASE}/panel/#/aforo`);
+  await p.goto(`${BASE}/panel#/aforo`);
   await p.waitForSelector('.afd-btn');
   const cifra = async () => (await p.locator('#afdCifra').innerText()).replace(/\s+/g, ' ').trim();
   ok(await cifra() === '84 / 120', `${nombre}/${t} puerta: «84 / 120» (${await cifra()})`);
@@ -247,7 +247,7 @@ async function puerta(nav, nombre, t, vp) {
 
 async function ajustes(nav, nombre, t, vp) {
   let { ctx, p, estado, errores } = await contextoPanel(nav, vp);
-  await p.goto(`${BASE}/panel/#/aforo/ajustes`);
+  await p.goto(`${BASE}/panel#/aforo/ajustes`);
   await p.waitForSelector('#afdForm');
   const txt = await vista(p);
   ok(/Ajustes del aforo/.test(txt) && /Aforo máximo/.test(txt) && /personas/.test(txt) && /Casi lleno desde/.test(txt) && /Lleno desde/.test(txt),
@@ -277,10 +277,10 @@ async function ajustes(nav, nombre, t, vp) {
   await ctx.close();
   // Un empleado: la puerta, sin ajustes.
   ({ ctx, p, estado, errores } = await contextoPanel(nav, vp, { rol: 'staff' }));
-  await p.goto(`${BASE}/panel/#/aforo/ajustes`);
+  await p.goto(`${BASE}/panel#/aforo/ajustes`);
   await p.waitForSelector('.afd-btn');
   ok(/#\/aforo$/.test(p.url()) && await p.locator('a[href="#/aforo/ajustes"]').count() === 0, `${nombre}/${t} empleado: ve la puerta sin ajustes`);
-  await p.goto(`${BASE}/panel/#/herramientas`);
+  await p.goto(`${BASE}/panel#/herramientas`);
   await p.waitForSelector('.fiel-card');
   ok(/Aforo en directo/.test(await vista(p)), `${nombre}/${t} empleado: la herramienta en «Más herramientas»`);
   ok(errores.length === 0, `${nombre}/${t} empleado: sin errores de JavaScript (${errores.join(' | ')})`);
@@ -289,14 +289,14 @@ async function ajustes(nav, nombre, t, vp) {
 
 async function resumenYCifras(nav, nombre, t, vp) {
   const { ctx, p, estado, errores } = await contextoPanel(nav, vp);
-  await p.goto(`${BASE}/panel/#/herramientas`);
+  await p.goto(`${BASE}/panel#/herramientas`);
   await p.waitForSelector('.fiel-card');
   let txt = await vista(p);
   ok(/Aforo en directo/.test(txt) && /Cuenta en la puerta con \+1 y −1, y «¿Hay sitio ahora\?» se pone solo\./.test(txt) && /84 \/ 120 ahora/.test(txt),
     `${nombre}/${t} herramientas: «Aforo en directo · 84 / 120 ahora»`);
   ok(/Para decir con un toque cómo está el local: Hay sitio, Casi lleno o Lleno/.test(txt) && !/tranquilo|animado/i.test(txt), `${nombre}/${t} herramientas: niveles con su nombre nuevo`);
   ok(await p.locator('.fiel-card a[href="#/aforo"]').count() === 1, `${nombre}/${t} herramientas: «Abrir» lleva a la puerta`);
-  await p.goto(`${BASE}/panel/#/resumen`);
+  await p.goto(`${BASE}/panel#/resumen`);
   await p.waitForSelector('.fila-inicio');
   await p.waitForTimeout(500);
   txt = await vista(p);
@@ -304,7 +304,7 @@ async function resumenYCifras(nav, nombre, t, vp) {
   // Con el aforo encendido, «¿Hay sitio ahora?» no se repite en el resumen
   // (2026-10-22): marcarlo a mano está en la puerta.
   ok(await p.locator('#aforoCaja .card.aforo').count() === 0, `${nombre}/${t} resumen: sin «¿Hay sitio ahora?» repetido con el aforo encendido`);
-  await p.goto(`${BASE}/panel/#/aforo`);
+  await p.goto(`${BASE}/panel#/aforo`);
   await p.waitForSelector('#afdSitio .card.aforo');
   txt = await vista(p);
   ok(/Marcado a mano · vuelve al contador a las/.test(txt) && /Volver al contador/.test(txt), `${nombre}/${t} puerta: «Marcado a mano · vuelve al contador…» y «Volver al contador»`);
@@ -316,7 +316,7 @@ async function resumenYCifras(nav, nombre, t, vp) {
   const c = llamadas(estado, 'set_business_crowd')[0]?.[1] || {};
   ok(c.p_level === null && /Con el aforo en directo, lo que marques manda 30 minutos\./.test(await vista(p)), `${nombre}/${t} puerta: «Volver al contador» quita lo marcado`);
   // Cifras
-  await p.goto(`${BASE}/panel/#/informe`);
+  await p.goto(`${BASE}/panel#/informe`);
   await p.waitForSelector('#informeAforo details.plegable');
   const d = p.locator('#informeAforo details');
   ok(/Aforo/.test(await d.locator('summary').innerText()) && /Máximo: 118 a las 0:30/.test(await d.locator('summary').innerText()), `${nombre}/${t} cifras: plegable «Aforo» con su resumen`);
@@ -488,7 +488,7 @@ async function ficha(nav, nombre, t, vp) {
 async function mapa(nav, nombre, t, vp) {
   PUB.marca = 'full';
   const { ctx, p, errores } = await contextoFicha(nav, vp, { conSesion: true, rpc: { my_room_alerts: [] } });
-  await p.goto(`http://localhost:${PUB_PORT}/explorar/?vista=mapa&ciudad=Madrid`, { waitUntil: 'load' });
+  await p.goto(`http://localhost:${PUB_PORT}/explorar?vista=mapa&ciudad=Madrid`, { waitUntil: 'load' });
   const hay = await p.waitForSelector('#mapa .marca[data-prio="1"]', { timeout: 20000 }).then(() => true).catch(() => false);
   if (!hay) { console.log(`aviso: ${nombre}/${t} mapa: Mapbox no ha cargado aquí; no se prueba la tarjeta`); await ctx.close(); return; }
   await p.waitForTimeout(800);
@@ -504,7 +504,7 @@ async function mapa(nav, nombre, t, vp) {
 // ── 7. Contar sin enseñarlo ─────────────────────────────────────────────────
 async function sinEnsenar(nav, nombre, t, vp) {
   const { ctx, p, estado, errores } = await contextoPanel(nav, vp);
-  await p.goto(`${BASE}/panel/#/aforo/ajustes`);
+  await p.goto(`${BASE}/panel#/aforo/ajustes`);
   await p.waitForSelector('#afdForm input[name=show]');
   const casilla = p.locator('#afdForm input[name=show]');
   ok(await casilla.isChecked(), `${nombre}/${t} sin enseñar: «Enseñar en mi ficha si hay sitio» encendido de serie`);
@@ -551,7 +551,7 @@ async function hasAbierto(nav, nombre, t, vp) {
   for (const respuesta of ['si', 'no']) {
     const { ctx, p, estado, errores } = await contextoPanel(nav, vp, { rol: 'manager' });
     estado.af.k.closed = true;
-    await p.goto(`${BASE}/panel/#/aforo`);
+    await p.goto(`${BASE}/panel#/aforo`);
     await p.waitForSelector('.afd-abre');
     const caja = await p.locator('.afd-abre').innerText();
     ok(/¿Has abierto hoy\?/.test(caja) && /En Klendar figuras cerrado\./.test(caja) && /Sí, he abierto/.test(caja) && /Ahora no/.test(caja),
@@ -575,7 +575,7 @@ async function hasAbierto(nav, nombre, t, vp) {
   }
   const { ctx, p, estado, errores } = await contextoPanel(nav, vp, { rol: 'staff' });
   estado.af.k.closed = true;
-  await p.goto(`${BASE}/panel/#/aforo`);
+  await p.goto(`${BASE}/panel#/aforo`);
   await p.waitForSelector('.afd-abre');
   const caja = await p.locator('.afd-abre').innerText();
   ok(/Díselo a quien lleva el local/.test(caja) && !/Sí, he abierto/.test(caja) && await p.locator('.afd-abre [data-abre]').count() === 1,

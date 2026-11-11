@@ -36,7 +36,7 @@ async function baja(page) {
   for (let i = 0; i < 2; i++) { await page.keyboard.press('ArrowDown'); await page.waitForTimeout(700); }
 }
 
-const ruta = '/descubre/?lat=40.417&lng=-3.704';
+const ruta = '/descubre?lat=40.417&lng=-3.704';
 try {
   for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     const nav = await tipo.launch();
@@ -61,7 +61,7 @@ try {
       await page.waitForSelector('#feed > .tj');
       await page.waitForTimeout(800);
       const pedidas = [];
-      page.on('request', (r) => { if (r.resourceType() === 'fetch' && new URL(r.url()).pathname === '/descubre/') pedidas.push(r.url()); });
+      page.on('request', (r) => { if (r.resourceType() === 'fetch' && new URL(r.url()).pathname === '/descubre') pedidas.push(r.url()); });
       await page.evaluate(() => { window.__mismaPagina = true; });
 
       ok(await page.getAttribute('header.top a.brand', 'aria-label') === null, `${t} el logo no dice «volver arriba»`);
@@ -84,7 +84,7 @@ try {
           ok(await bajado(page) === 0, `${t} ${como}: en la primera`);
         }
         ok(pedidas.length === n, `${t} ${como}: el primer toque no pide nada`);
-        ok(new URL(page.url()).pathname === '/descubre/', `${t} ${como}: sigue en Descubre`);
+        ok(new URL(page.url()).pathname === '/descubre', `${t} ${como}: sigue en Descubre`);
 
         // Ya arriba: la lista otra vez, sin recargar la página.
         await boton.click();
@@ -118,12 +118,12 @@ try {
     // En inglés.
     const ctx = await nav.newContext({ viewport: { width: 390, height: 780 }, locale: 'en-GB' });
     const page = await ctx.newPage();
-    await page.goto(`${BASE}/en/discover/?lat=40.417&lng=-3.704`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`${BASE}/en/discover?lat=40.417&lng=-3.704`, { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(800);
     ok(await page.getAttribute('header.top a.brand', 'aria-label') === null, `[${nombre} en] el logo no dice «back to top»`);
     await page.locator('header.top a.brand').click();
-    await page.waitForURL((u) => u.pathname === '/en/');
-    ok(new URL(page.url()).pathname === '/en/', `[${nombre} en] el logo lleva a /en/`);
+    await page.waitForURL((u) => u.pathname === '/en');
+    ok(new URL(page.url()).pathname === '/en', `[${nombre} en] el logo lleva a /en`);
     await ctx.close();
     await nav.close();
   }

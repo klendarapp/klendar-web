@@ -82,7 +82,7 @@
         // `reauth=1`: la función de correo lo escribe como «Confirma que eres
         // tú», sin botón de entrar.
         falla((await aparte.auth.signInWithOtp({ email, options: {
-          shouldCreateUser: false, emailRedirectTo: `${location.origin}/cuenta/?reauth=1`, captchaToken: await robot(),
+          shouldCreateUser: false, emailRedirectTo: `${location.origin}/cuenta?reauth=1`, captchaToken: await robot(),
         } })).error);
       },
       async conCodigo(codigo) {

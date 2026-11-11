@@ -176,7 +176,7 @@ async function rrppPanel(nav, nombre, t, vp) {
     set_promoter_link_schedule: { ok: true },
     update_promoter_link: { ok: true },
   }));
-  await p.goto(`${BASE}/panel/#/rrpp/${PROMO}`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel#/rrpp/${PROMO}`, { waitUntil: 'networkidle' });
   await p.waitForSelector('[data-rrpp-editar-enlace]');
   ok(await p.locator('[data-rrpp-compartir]').count() === 1, `${nombre}/${t} panel RRPP: «Compartir enlace»`);
   await p.screenshot({ path: `${OUT}/web-panel-rrpp-${nombre}-${t}.png`, fullPage: true });

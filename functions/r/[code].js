@@ -15,7 +15,7 @@ export const onRequestGet = (ctx) => {
   // Relativa: se queda en el mismo sitio (klendar.app o el de pruebas).
   return new Response(null, {
     status: 302,
-    headers: { Location: `/panel/#/validar?code=${code}`, 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex' },
+    headers: { Location: `/panel#/validar?code=${code}`, 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex' },
   });
 };
 

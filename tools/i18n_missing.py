@@ -18,7 +18,7 @@ lista los textos en español que se pintan y faltan en su diccionario
   - lo que se pasa a `t('…')` / `I18N.t('…')`;
   - las tablas `{ es: {…}, en: {…} }` de los módulos de /assets que se usan
     ahí (tarjeta, emisiones, artistas, categorías…) y las ideas del panel;
-  - la cabecera y el pie de «Tu cuenta» (el bloque español de cuenta/index.html).
+  - la cabecera y el pie de «Tu cuenta» (el bloque español de cuenta.html).
 Al lado de cada uno, el inglés si se sabe (para los traductores).
 
 Uso:
@@ -44,8 +44,8 @@ ROOT = Path(__file__).resolve().parent.parent
 
 AREAS = {
     # ideas.js ya trae cada idea en los dos idiomas.
-    'panel': (['panel/panel.js', 'panel/rrpp.js', 'panel/ficha.js', 'panel/partidos.js', 'panel/bonos.js', 'panel/momento.js', 'panel/grupos.js', 'panel/sorteos.js', 'panel/cola.js', 'panel/artistas.js', 'panel/fidelizar.js', 'panel/herramientas.js', 'panel/entidades.js', 'panel/plan.js', 'panel/cerrado.js', 'panel/aforo.js', 'panel/pedir.js', 'panel/listo.js', 'panel/preguntas.js', 'panel/agenda.js', 'panel/foto.js', 'panel/ayudas.js', 'panel/index.html'], 'panel/i18n.js'),
-    'admin': (['admin/admin.js', 'admin/emisiones.js', 'admin/artistas.js', 'admin/condiciones.js', 'admin/crecer.js', 'admin/cerrado.js', 'admin/festivos.js', 'admin/traduccion.js', 'admin/index.html'], 'admin/i18n.js'),
+    'panel': (['panel/panel.js', 'panel/rrpp.js', 'panel/ficha.js', 'panel/partidos.js', 'panel/bonos.js', 'panel/momento.js', 'panel/grupos.js', 'panel/sorteos.js', 'panel/cola.js', 'panel/artistas.js', 'panel/fidelizar.js', 'panel/herramientas.js', 'panel/entidades.js', 'panel/plan.js', 'panel/cerrado.js', 'panel/aforo.js', 'panel/pedir.js', 'panel/listo.js', 'panel/preguntas.js', 'panel/agenda.js', 'panel/foto.js', 'panel/ayudas.js', 'panel.html'], 'panel/i18n.js'),
+    'admin': (['admin/admin.js', 'admin/emisiones.js', 'admin/artistas.js', 'admin/condiciones.js', 'admin/crecer.js', 'admin/cerrado.js', 'admin/festivos.js', 'admin/traduccion.js', 'admin.html'], 'admin/i18n.js'),
     'cuenta': (['assets/cuenta/app.js', 'assets/cuenta/cuenta.js', 'assets/cuenta/amigos.js', 'assets/cuenta/correo.js', 'assets/cuenta/rrpp.js', 'assets/cuenta/partidos.js', 'assets/cuenta/artistas.js', 'assets/cuenta/bonos.js', 'assets/cuenta/momento.js', 'assets/cuenta/grupos.js', 'assets/cuenta/sorteos.js', 'assets/cuenta/cola.js', 'assets/cuenta/listo.js', 'assets/cuenta/ahorro.js', 'assets/cuenta/crecer.js', 'assets/cuenta/preguntas.js'], 'assets/cuenta/i18n.js'),
 }
 
@@ -804,10 +804,10 @@ def textos_area(area: str) -> dict[str, tuple[str | None, str]]:
         # …y lo que va en los dos idiomas a mano.
         for es, en in extrae_js(src):
             mete(es, en, f)
-    # La página de «Tu cuenta» está en /cuenta/ y sus scripts en /assets/cuenta/.
+    # La página de «Tu cuenta» está en /cuenta y sus scripts en /assets/cuenta/.
     pagina = 'cuenta' if area == 'cuenta' else carpeta
-    for es, en in extrae_html((ROOT / pagina / 'index.html').read_text(encoding='utf-8')):
-        mete(es, en, f'{pagina}/index.html')
+    for es, en in extrae_html((ROOT / f'{pagina}.html').read_text(encoding='utf-8')):
+        mete(es, en, f'{pagina}.html')
     if area == 'panel':
         for es, en in extrae_ideas(ROOT / 'panel/ideas.js'):
             mete(es, en, 'panel/ideas.js')

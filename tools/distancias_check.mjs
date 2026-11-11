@@ -44,21 +44,21 @@ const web = await webConDatos({ puerto: Number(process.env.PORT || 8921) });
 const pide = async (base, ruta) => (await fetch(`${base}${ruta}`)).text();
 try {
   // 1. Municipio elegido.
-  for (const ruta of ['/descubre/?ciudad=madrid', '/explorar/?ciudad=madrid&vista=lista', '/en/discover/?city=madrid']) {
+  for (const ruta of ['/descubre?ciudad=madrid', '/explorar?ciudad=madrid&vista=lista', '/en/discover?city=madrid']) {
     const d = dists(await pide(web.BASE, ruta));
     ok(d.length > 3 && d.every((t) => /^(En|In) Madrid$|^A .+ de Madrid$|^.+ from Madrid$/.test(t)), `${ruta}: «En Madrid», nunca «1,2 km» a secas`, JSON.stringify(d.slice(0, 6)));
   }
-  const s = filas(await pide(web.BASE, '/explorar/?ciudad=madrid&que=sitios'));
+  const s = filas(await pide(web.BASE, '/explorar?ciudad=madrid&que=sitios'));
   ok(s.length > 3 && s.every((t) => / En Madrid\b/.test(t) && !/\d\s?(m|km)\b/.test(t)), 'Sitios en Madrid: «En Madrid» en cada fila', JSON.stringify(s.slice(0, 2)));
-  const g = await pide(web.BASE, '/grupos/?ciudad=madrid');
+  const g = await pide(web.BASE, '/grupos?ciudad=madrid');
   ok(/En Madrid/.test(g) && !/·\s*\d[\d,]*\s?(m|km)\s*</.test(g), '«Para grupos» en Madrid: «En Madrid», sin «1,2 km»');
 
   // 2. Con tu posición (Cerca de ti).
-  const c = dists(await pide(web.BASE, '/descubre/?cerca=1&lat=40.417&lng=-3.704'));
+  const c = dists(await pide(web.BASE, '/descubre?cerca=1&lat=40.417&lng=-3.704'));
   ok(c.length > 3 && c.every(aSecas), 'Cerca de ti: «350 m», «1,2 km»', JSON.stringify(c.slice(0, 6)));
 
   // 4. Todas las ciudades.
-  const t = dists(await pide(web.BASE, '/descubre/?todas=1'));
+  const t = dists(await pide(web.BASE, '/descubre?todas=1'));
   ok(!t.length, 'Todas las ciudades: sin distancia', JSON.stringify(t.slice(0, 4)));
 } finally {
   await web.cierra();
@@ -67,7 +67,7 @@ try {
 // 3. La zona aproximada de la conexión (`request.cf`, lo simula serve_dev con CF_PRUEBA).
 const aprox = await webConDatos({ puerto: Number(process.env.PORT || 8921) + 2, entorno: { CF_PRUEBA: JSON.stringify({ country: 'ES', latitude: '40.42', longitude: '-3.70' }) } });
 try {
-  const h = await pide(aprox.BASE, '/descubre/');
+  const h = await pide(aprox.BASE, '/descubre');
   ok(/Ubicación aproximada/.test(h), 'zona de la conexión: «Ubicación aproximada»');
   const d = dists(h);
   ok(!d.length, 'zona de la conexión: sin distancia en las tarjetas', JSON.stringify(d.slice(0, 4)));

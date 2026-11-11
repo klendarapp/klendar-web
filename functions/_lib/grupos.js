@@ -1,6 +1,6 @@
 // «Grupos y empresas» en la web pública (tanda C; migración
 // 20261208100000_grupos_y_empresas de la app): la lista de negocios que
-// aceptan grupos (/grupos/, /en/groups/) y la fila «Acepta grupos» de la
+// aceptan grupos (/grupos, /en/groups) y la fila «Acepta grupos» de la
 // ficha del negocio. Lo mismo que la app (especificación de la tanda C).
 //
 // Como «Dónde ver el partido»: se pinta en el servidor, los filtros son
@@ -97,7 +97,7 @@ export async function gruposPage(url, lang) {
   const link = (cambios) => {
     const b = { ...e, ...cambios };
     if (b.cerca === false) { b.lat = null; b.lng = null; }
-    return conQs(`${base}/`, query(b, lang));
+    return conQs(`${base}`, query(b, lang));
   };
   const chip = (href, label, on) => `<a class="chip${on ? ' on' : ''}" href="${esc(href)}"${on ? ' aria-current="true"' : ''}>${esc(label)}</a>`;
   const K = CLAVES[en ? 'en' : 'es'];
@@ -109,7 +109,7 @@ export async function gruposPage(url, lang) {
     ${chip(link({ kind: '' }), S.all, !e.kind)}
     ${KG.KINDS.map((k) => chip(link({ kind: k }), KG.plural(k, lang), e.kind === k)).join('')}
   </div>
-  <form class="grupos-personas" method="get" action="${base}/">
+  <form class="grupos-personas" method="get" action="${base}">
     ${ocultos}
     <label for="personas">${esc(S.howMany)}</label>
     <input id="personas" name="${K.people}" type="number" inputmode="numeric" min="2" max="500" value="${e.people || ''}" placeholder="12">
@@ -159,19 +159,19 @@ export async function gruposPage(url, lang) {
   }
 
   const body = `
-  <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a> · <a href="${en ? '/en/explore/' : '/explorar/'}">${en ? 'Explore' : 'Explorar'}</a></p>
+  <p class="crumbs"><a href="${en ? '/en' : '/'}">Klendar</a> · <a href="${en ? '/en/explore' : '/explorar'}">${en ? 'Explore' : 'Explorar'}</a></p>
   <div class="exp-cab cab-pagina"><div><h1>${esc(S.title)}</h1>
     <p class="muted exp-lead">${esc(S.lead)}</p>
     <p class="exp-atajo"><a href="${esc(`${cuentaBase(lang, 'grupos')}`)}">${esc(S.yourRequests)}</a></p></div></div>
   ${barra}
   ${cuerpo}
-  <script src="/assets/grupos.js?v=20261105cuenta" defer></script>`;
+  <script src="/assets/grupos.js?v=20261111sinbarra" defer></script>`;
 
   const filtrada = Boolean(e.city || e.cerca || e.kind || e.people || e.km !== 10);
-  const migas = [['Klendar', en ? '/en/' : '/'], [S.title, `${base}/`]];
+  const migas = [['Klendar', en ? '/en' : '/'], [S.title, `${base}`]];
   return html(publicPage({
     lang,
-    path: `${base}/`,
+    path: `${base}`,
     title: S.title,
     description: S.lead,
     body,

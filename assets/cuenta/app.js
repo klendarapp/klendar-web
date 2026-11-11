@@ -29,27 +29,27 @@ I18N.translate(document.getElementById('view'));
 const LOC = I18N.locale;
 
 // ── La dirección ──────────────────────────────────────────────────────────
-// «Tu cuenta» es una sola página con direcciones normales: /cuenta/,
+// «Tu cuenta» es una sola página con direcciones normales: /cuenta,
 // /cuenta/favoritos, /cuenta/entrar?siguiente=planes… (una Function sirve la
 // misma página en cualquiera de ellas: functions/cuenta/[[ruta]].js). Una
-// «ruta» es lo que va detrás de /cuenta/, con sus parámetros: `codigo/<id>?rp=x`.
+// «ruta» es lo que va detrás de /cuenta, con sus parámetros: `codigo/<id>?rp=x`.
 // Estos tres no son de la pantalla: siguen en la dirección al cambiar de una a
 // otra (el idioma elegido y a dónde volver después de entrar).
 const FIJOS = ['lang', 'destino', 'volver'];
-const BASE_CUENTA = '/cuenta/';
-/** Quita `/cuenta/` (o `/cuenta`) de delante, si lo trae. */
+const BASE_CUENTA = '/cuenta';
+/** Quita `/cuenta` (o `/cuenta/`, la de antes del 11-11) de delante, si lo trae. */
 const sinBase = (ruta) => String(ruta || '').replace(/^\/cuenta(\/|$)/, '');
 /** La dirección de una ruta: los parámetros fijos de ahora, si la ruta no trae
  * los suyos. Una ruta rara (`..`, `\`, `//`) se queda en la portada: nunca sale
- * de /cuenta/ (`siguiente` puede venir en un enlace de fuera). */
+ * de /cuenta (`siguiente` puede venir en un enlace de fuera). */
 function urlCuenta(ruta) {
   const [camino, qs] = sinBase(ruta).split(/\?(.*)/s);
-  const limpio = /^[\w~%.-]+(\/[\w~%.-]+)*\/?$/.test(camino) && !/(^|\/)(\.|%2e){1,2}(\/|$)/i.test(camino) ? camino : '';
+  const limpio = /^[\w~%.-]+(\/[\w~%.-]+)*\/?$/.test(camino) && !/(^|\/)(\.|%2e){1,2}(\/|$)/i.test(camino) ? camino.replace(/\/+$/, '') : '';
   const q = new URLSearchParams(qs || '');
   const ahora = new URLSearchParams(location.search);
   const fijos = FIJOS.filter((k) => !q.has(k) && ahora.has(k)).map((k) => [k, ahora.get(k)]);
   const todos = new URLSearchParams([...fijos, ...q.entries()]).toString();
-  return `${BASE_CUENTA}${limpio}${todos ? `?${todos}` : ''}`;
+  return `${BASE_CUENTA}${limpio ? `/${limpio}` : ''}${todos ? `?${todos}` : ''}`;
 }
 const urlAhora = () => location.pathname + location.search;
 /** Cambia la dirección sin pintar nada (la pantalla ya está pintada). */
@@ -444,13 +444,13 @@ const APPLE_EN_LA_WEB = false;
 /** Pinta en `#google` las otras formas de entrar que estén activas (Google,
  * Apple, teléfono). `siguiente` es la ruta a la que volver; `destino`, la
  * página de vuelta (el panel, por ejemplo). Las mismas que la app. */
-async function botonGoogle(siguiente, destino = '/cuenta/') {
+async function botonGoogle(siguiente, destino = '/cuenta') {
   const hueco = $('#google');
   if (!hueco) return;
   const ext = await proveedores();
   const botones = [];
   // Como la app: el teléfono antes que Google y Apple.
-  if (ext.phone) botones.push(`<a class="pill google" href="/cuenta/movil${siguiente ? `?siguiente=${encodeURIComponent(siguiente)}` : ''}${destino !== '/cuenta/' ? `${siguiente ? '&' : '?'}destino=${encodeURIComponent(destino)}` : ''}">${esc(t('Entrar con el teléfono'))}</a>`);
+  if (ext.phone) botones.push(`<a class="pill google" href="/cuenta/movil${siguiente ? `?siguiente=${encodeURIComponent(siguiente)}` : ''}${destino !== '/cuenta' ? `${siguiente ? '&' : '?'}destino=${encodeURIComponent(destino)}` : ''}">${esc(t('Entrar con el teléfono'))}</a>`);
   if (ext.google) botones.push(`<button class="pill google" type="button" data-prov="google">${LOGO_GOOGLE} ${esc(t('Continuar con Google'))}</button>`);
   // Apple, solo en la app de iOS por ahora: la web aún no guarda el código
   // que hace falta para retirar el acceso de Klendar al eliminar la cuenta
@@ -590,9 +590,9 @@ async function navegar() {
       h: 'h1',
       botones: yaEsTuyo
         ? `<a class="pill accent" href="/cuenta/codigos">${esc(t('Tus códigos'))}</a>
-           <a class="pill" href="/cuenta/">${esc(t('Volver'))}</a>`
+           <a class="pill" href="/cuenta">${esc(t('Volver'))}</a>`
         : `<button type="button" class="pill accent" id="reintentar">${esc(t('Reintentar'))}</button>
-           <a class="pill" href="/cuenta/">${esc(t('Volver'))}</a>`,
+           <a class="pill" href="/cuenta">${esc(t('Volver'))}</a>`,
     });
     $('#reintentar')?.addEventListener('click', () => navegar());
   }
@@ -637,8 +637,8 @@ const vuelve = (siguiente) => { irA(siguiente || '', { repinta: true }); };
 const destinoTrasEntrar = () => rutaInterna(new URLSearchParams(location.search).get('destino'));
 
 /** Una dirección de vuelta (`?destino=`, `?volver=`) de esta misma web y sin
- * datos: `/panel/` o `/cuenta/`, como mucho `?lang=`/`?alta=` y una ruta (del
- * hash en el panel: `/panel/#/validar`, `/panel/#/publicaciones/<id>`; de la
+ * datos: `/panel` o `/cuenta`, como mucho `?lang=`/`?alta=` y una ruta (del
+ * hash en el panel: `/panel#/validar`, `/panel#/publicaciones/<id>`; de la
  * dirección en «Tu cuenta»: `/cuenta/ajustes`) con los parámetros de
  * `VUELTA_HASH`, cada uno con su forma: el código de un QR escaneado sin
  * sesión, `?biz=`, «Crear a partir de esta», ampliar, el día del
@@ -660,12 +660,15 @@ const VUELTA_HASH = {
 };
 function rutaInterna(v) {
   const s = String(v || '');
-  if (!/^\/(panel|cuenta)\//.test(s)) return '';
+  // `/panel`, `/cuenta/ajustes`… y también las de antes del 11-11, con barra
+  // (`/panel/`, `/cuenta/`: enlaces ya enviados), que vuelven sin ella.
+  if (!/^\/(panel|cuenta)([/?#]|$)/.test(s)) return '';
   let u;
   try { u = new URL(s, location.origin); } catch { return ''; }
-  if (u.origin !== location.origin || !/^\/(panel\/|cuenta\/([a-z0-9-]{1,30}(\/[A-Za-z0-9-]{1,40}){0,2})?)$/.test(u.pathname)) return '';
+  const camino = u.pathname.replace(/\/+$/, '');
+  if (u.origin !== location.origin || !/^\/(panel|cuenta(\/[a-z0-9-]{1,30}(\/[A-Za-z0-9-]{1,40}){0,2})?)$/.test(camino)) return '';
   const q = new URLSearchParams();
-  if (u.pathname.startsWith('/cuenta/')) {
+  if (camino.startsWith('/cuenta')) {
     for (const [k, re] of Object.entries(VUELTA_HASH)) {
       const x = u.searchParams.get(k);
       if (x && re.test(x)) q.set(k, x);
@@ -686,9 +689,9 @@ function rutaInterna(v) {
     }
     hash = h + (fuera.toString() ? `?${fuera}` : '');
   }
-  return `${u.pathname}${q.toString() ? `?${q}` : ''}${hash}`;
+  return `${camino}${q.toString() ? `?${q}` : ''}${hash}`;
 }
-const vieneDelPanel = () => destinoTrasEntrar().startsWith('/panel/');
+const vieneDelPanel = () => /^\/panel([?#]|$)/.test(destinoTrasEntrar());
 const trasEntrar = (siguiente) => {
   const d = destinoTrasEntrar();
   if (d) { location.href = d; return; }
@@ -705,7 +708,7 @@ const ic = (nombre) => `<span class="ms" aria-hidden="true">${nombre}</span>`;
  * `accent`), uno debajo de otro y del ancho del más largo. Los textos llegan
  * ya traducidos. Dentro de una lista o una sección con más cosas, `.empty`. */
 /** El botón de salida de una página que no se puede enseñar. */
-const botonTuCuenta = () => `<a class="pill accent" href="/cuenta/">${esc(t('Tu cuenta'))}</a>`;
+const botonTuCuenta = () => `<a class="pill accent" href="/cuenta">${esc(t('Tu cuenta'))}</a>`;
 
 const pantallaVacia = ({ icono = '', titulo, texto = '', botones = '', h = 'h2' }) => `
   <section class="vacio">
@@ -818,10 +821,10 @@ RUTAS[''] = async () => {
     ${tieneNegocio ? `
       <h2 class="seccion-t">${esc(t('Negocio'))}</h2>
       <div class="lista">
-        ${fila({ href: '/panel/', icono: 'storefront', titulo: t('Mi negocio'), detalle: t('Publicaciones, cifras, equipo') })}
-        ${fila({ href: '/panel/#/validar', icono: 'qr_code_scanner', titulo: t('Validar códigos'), detalle: t('Escanea los códigos de tus clientes') })}
+        ${fila({ href: '/panel', icono: 'storefront', titulo: t('Mi negocio'), detalle: t('Publicaciones, cifras, equipo') })}
+        ${fila({ href: '/panel#/validar', icono: 'qr_code_scanner', titulo: t('Validar códigos'), detalle: t('Escanea los códigos de tus clientes') })}
       </div>` : `
-      <a class="invitacion" href="/panel/">
+      <a class="invitacion" href="/panel">
         <span class="inv-ic">${ic('storefront')}</span>
         <span class="fila-t"><b>${esc(t('¿Quieres registrar tu negocio?'))}</b>
           <small>${esc(PRECIOS_WEB
@@ -842,7 +845,7 @@ RUTAS[''] = async () => {
 
     <h2 class="seccion-t">${esc(t('Ayuda'))}</h2>
     <div class="lista">
-      ${filaSvg({ href: PUB_EN ? '/en/faq/' : '/preguntas/', icono: 'ayuda', titulo: t('Preguntas frecuentes'), detalle: t('Para ti y para negocios, con buscador') })}
+      ${filaSvg({ href: PUB_EN ? '/en/faq' : '/preguntas', icono: 'ayuda', titulo: t('Preguntas frecuentes'), detalle: t('Para ti y para negocios, con buscador') })}
       ${fila({ href: '/cuenta/sugerencias', icono: 'lightbulb', titulo: t('Sugerencias y mejoras'), detalle: t('Cuéntanos qué cambiarías o qué falla') })}
       ${fila({ href: 'mailto:info@klendar.app', icono: 'mail', titulo: t('Contacto y soporte'), detalle: 'info@klendar.app' })}
       <!-- Los tres textos legales, en una sola fila (como la app). -->
@@ -860,9 +863,9 @@ RUTAS[''] = async () => {
     d.innerHTML = `<button type="button" class="cerrar-hoja" aria-label="${esc(t('Cerrar'))}">×</button>
       <h2 id="legal-t">${esc(t('Legal'))}</h2>
       <div class="lista">
-        ${fila({ href: PUB_EN ? '/en/terms/' : '/terminos/', icono: 'description', titulo: t('Términos de uso'), fuera: true })}
-        ${fila({ href: PUB_EN ? '/en/privacy/' : '/privacidad/', icono: 'privacy_tip', titulo: t('Política de privacidad'), fuera: true })}
-        ${fila({ href: PUB_EN ? '/en/community-guidelines/' : '/normas/', icono: 'description', titulo: t('Normas de la comunidad'), fuera: true })}
+        ${fila({ href: PUB_EN ? '/en/terms' : '/terminos', icono: 'description', titulo: t('Términos de uso'), fuera: true })}
+        ${fila({ href: PUB_EN ? '/en/privacy' : '/privacidad', icono: 'privacy_tip', titulo: t('Política de privacidad'), fuera: true })}
+        ${fila({ href: PUB_EN ? '/en/community-guidelines' : '/normas', icono: 'description', titulo: t('Normas de la comunidad'), fuera: true })}
       </div>${notaLegal()}`;
     document.body.appendChild(d);
     d.querySelector('.cerrar-hoja').onclick = () => d.close();
@@ -1038,8 +1041,8 @@ function activaNacimiento(el) {
 // (como la app; sin marcar). Se guardan en la cuenta (`analytics_consent`) y
 // la app las aplica al entrar; en la web no se recoge nada.
 const casillaTerminos = ({ estadisticas = false } = {}) => `<label class="check"><input type="checkbox" name="terms" required>
-  <span>${esc(t('He leído y acepto los'))} <a href="${PUB_EN ? '/en/terms/' : '/terminos/'}" target="_blank">${esc(t('Términos de uso'))}</a>
-    ${esc(t('y la'))} <a href="${PUB_EN ? '/en/privacy/' : '/privacidad/'}" target="_blank">${esc(t('Política de privacidad'))}</a></span></label>
+  <span>${esc(t('He leído y acepto los'))} <a href="${PUB_EN ? '/en/terms' : '/terminos'}" target="_blank">${esc(t('Términos de uso'))}</a>
+    ${esc(t('y la'))} <a href="${PUB_EN ? '/en/privacy' : '/privacidad'}" target="_blank">${esc(t('Política de privacidad'))}</a></span></label>
   <label class="check"><input type="checkbox" name="marketing">
   <span>${esc(t('Quiero recibir novedades de Klendar por correo (opcional).'))}</span></label>${estadisticas ? `
   <label class="check"><input type="checkbox" name="estadisticas">
@@ -1111,7 +1114,7 @@ function confirma({ titulo, texto = '', lista = [], pie = '', aceptar, peligro =
 }
 
 /** Antes de cambiar el correo o la contraseña en una cuenta con 2FA (los
- * administradores, que lo activan en /admin/): el código de 6 cifras para subir
+ * administradores, que lo activan en /admin): el código de 6 cifras para subir
  * [cliente] a `aal2`, sin el que Supabase responde `insufficient_aal`. `true` si
  * se puede seguir (sin 2FA ni pregunta) y `false` si se cancela. Si no se puede
  * saber, se sigue: Supabase comprueba y sale su mensaje. La app no lo pide
@@ -1304,8 +1307,8 @@ function reenvio(boton, enviar) {
 const DATOS_ALTA = () => ({ terms_accepted: true, terms_version: TERMINOS_VERSION, user_type: 'user', locale: LANG });
 const conSiguiente = (ruta, siguiente) => `/cuenta/${ruta}${siguiente ? `?siguiente=${encodeURIComponent(siguiente)}` : ''}`;
 const legalCodigo = () => `<p class="muted pie-form">${esc(t('Si es tu primera vez, se creará tu cuenta al entrar. Al continuar aceptas los términos y la política de privacidad.'))}
-  <a href="${PUB_EN ? '/en/terms/' : '/terminos/'}" target="_blank">${esc(t('Términos de uso'))}</a> ·
-  <a href="${PUB_EN ? '/en/privacy/' : '/privacidad/'}" target="_blank">${esc(t('Política de privacidad'))}</a></p>${notaLegal()}`;
+  <a href="${PUB_EN ? '/en/terms' : '/terminos'}" target="_blank">${esc(t('Términos de uso'))}</a> ·
+  <a href="${PUB_EN ? '/en/privacy' : '/privacidad'}" target="_blank">${esc(t('Política de privacidad'))}</a></p>${notaLegal()}`;
 
 // ── Entrar ────────────────────────────────────────────────────────────────
 RUTAS.entrar = async (_p, params) => {
@@ -1332,7 +1335,7 @@ RUTAS.entrar = async (_p, params) => {
     <div id="google" class="google-hueco"></div>
     <p class="muted">${esc(t('¿No tienes cuenta?'))} <a href="${panel ? '/cuenta/registro?para=negocio' : conSiguiente('registro', siguiente)}">${esc(t('Crear cuenta'))}</a></p>
     ${panel ? '' : `<p class="muted pie-form">${esc(t('¿Llevas un negocio? Es la misma cuenta: entra y ve a tu panel desde «Mi negocio».'))}</p>`}`);
-  botonGoogle(siguiente, destinoTrasEntrar() || '/cuenta/');
+  botonGoogle(siguiente, destinoTrasEntrar() || '/cuenta');
 
   $('#f').onsubmit = (e) => {
     e.preventDefault();
@@ -1381,7 +1384,7 @@ RUTAS['codigo-correo'] = async (_p, params) => {
     if (robot.error) { ($('#f2').hidden ? $('#err') : $('#err2')).textContent = errAuth(robot.error); return false; }
     const { error } = await sb.auth.signInWithOtp({
       email: correo,
-      options: { shouldCreateUser: true, emailRedirectTo: `${location.origin}/cuenta/`, data: DATOS_ALTA(), captchaToken: robot.token },
+      options: { shouldCreateUser: true, emailRedirectTo: `${location.origin}/cuenta`, data: DATOS_ALTA(), captchaToken: robot.token },
     });
     if (error) { ($('#f2').hidden ? $('#err') : $('#err2')).textContent = errAuth(error); return false; }
     return true;
@@ -1509,7 +1512,7 @@ RUTAS.registro = async (_p, params) => {
   const negocio = params.get('para') === 'negocio';
   // klendar.app/alta con la sesión ya abierta: al panel, sin pedir otra cuenta.
   if (YO && negocio) return trasEntrar(siguiente);
-  const destino = negocio ? `${location.origin}/panel/?alta=1` : `${location.origin}/cuenta/`;
+  const destino = negocio ? `${location.origin}/panel?alta=1` : `${location.origin}/cuenta`;
   // Turnstile, por adelantado: al pulsar, el token suele estar ya listo.
   window.KL_CAPTCHA?.pre?.();
   pinta(`
@@ -1531,7 +1534,7 @@ RUTAS.registro = async (_p, params) => {
     </form>
     <div id="google" class="google-hueco"></div>
     <p class="muted">${esc(t('¿Ya tienes cuenta?'))} <a href="${conSiguiente('entrar', siguiente)}">${esc(t('Entra'))}</a></p>`);
-  botonGoogle(negocio ? '' : siguiente, negocio ? '/panel/?alta=1' : '/cuenta/');
+  botonGoogle(negocio ? '' : siguiente, negocio ? '/panel?alta=1' : '/cuenta');
   activaNacimiento($('#f').elements.birth);
 
   $('#f').onsubmit = (e) => {
@@ -1623,13 +1626,13 @@ RUTAS.registro = async (_p, params) => {
             const r = await sb.auth.verifyOtp({ email, token: code, type: 'signup' });
             if (r.error) { $('#errc').textContent = errAuth(r.error); return; }
             toast(t('Cuenta confirmada'));
-            if (negocio) location.href = '/panel/?alta=1'; else vuelve(siguiente);
+            if (negocio) location.href = '/panel?alta=1'; else vuelve(siguiente);
           });
         };
         return;
       }
       toast(t('Cuenta creada'));
-      if (negocio) { location.href = '/panel/?alta=1'; return; }
+      if (negocio) { location.href = '/panel?alta=1'; return; }
       vuelve(siguiente);
     });
   };
@@ -1721,7 +1724,7 @@ RUTAS['nueva-clave'] = async (_p, params) => {
       // Desde el panel de negocios se vuelve al panel; desde el admin, a su
       // pantalla de entrar (tiene su propia sesión: ver admin.js).
       const pedido = new URLSearchParams(location.search).get('destino');
-      const destino = rutaInterna(pedido) || (pedido === '/admin/' ? '/admin/' : '');
+      const destino = rutaInterna(pedido) || (/^\/admin\/?$/.test(pedido || '') ? '/admin' : '');
       if (destino) { location.href = destino; return; }
       vuelve(siguiente);
     });
@@ -1752,7 +1755,7 @@ function pintaExclusiva(aud, negocioId, negocio) {
         ${negocioId ? (fav
           ? `<a class="pill accent" href="/cuenta/seguir/${esc(negocioId)}">${ic('favorite')} ${esc(t('Añadir a favoritos'))}</a>`
           : `<a class="pill accent" href="${pre}/b/${esc(negocioId)}">${ic('storefront')} ${esc(t('Ver el negocio'))}</a>`) : ''}
-        <a class="pill" href="/cuenta/">${esc(t('Volver'))}</a>
+        <a class="pill" href="/cuenta">${esc(t('Volver'))}</a>
       </p>
     </div>`);
 }
@@ -1911,7 +1914,7 @@ RUTAS.planes = async (_partes, params = new URLSearchParams()) => {
     ...savedPast.map((o) => ({ cuando: momentoPlan(o), html: tarjeta(o, zona(o)) })),
   ].sort((a, b) => b.cuando - a.cuando);
 
-  const cabecera = `<p class="crumbs"><a href="/cuenta/">${esc(t('Tu cuenta'))}</a></p>
+  const cabecera = `<p class="crumbs"><a href="/cuenta">${esc(t('Tu cuenta'))}</a></p>
     <div class="pl-titulo"><h1>${esc(t('Tus planes'))}</h1>${vistasPlanes(enCalendario)}</div>`;
   if (enCalendario) {
     pinta(`${cabecera}${planesCalendario({ saved: [...saved, ...savedPast], reds, zona, params })}`);
@@ -1925,7 +1928,7 @@ RUTAS.planes = async (_partes, params = new URLSearchParams()) => {
         icono: 'bookmark',
         titulo: t('Aún no tienes planes'),
         texto: t('Cuando algo te guste, dale a «Guardar» y lo tendrás aquí. Tus canjes también aparecerán.'),
-        botones: `<a class="pill accent" href="${PUB_EN ? '/en/discover/' : '/descubre/'}">${esc(t('Descubre'))}</a>`,
+        botones: `<a class="pill accent" href="${PUB_EN ? '/en/discover' : '/descubre'}">${esc(t('Descubre'))}</a>`,
       })}`);
     return;
   }
@@ -2053,13 +2056,13 @@ RUTAS.favoritos = async () => {
   const catDe = new Map((cats || []).map((c) => [c.id, (c.names && (c.names[LANG] || c.names[PUB_EN ? 'en' : 'es'] || c.names.es)) || '']));
   if (!(lista || []).length) {
     pinta(`
-      <p class="crumbs"><a href="/cuenta/">${esc(t('Tu cuenta'))}</a></p>
+      <p class="crumbs"><a href="/cuenta">${esc(t('Tu cuenta'))}</a></p>
       <h1>${esc(t('Favoritos'))}</h1>
       ${pantallaVacia({
         icono: 'favorite',
         titulo: t('Aún no tienes favoritos'),
         texto: t('En la ficha de un negocio, dale a «Añadir a favoritos» y te avisaremos cuando publique.'),
-        botones: `<a class="pill accent" href="${PUB_EN ? '/en/discover/' : '/descubre/'}">${esc(t('Descubrir negocios'))}</a>`,
+        botones: `<a class="pill accent" href="${PUB_EN ? '/en/discover' : '/descubre'}">${esc(t('Descubrir negocios'))}</a>`,
       })}`);
     return;
   }
@@ -2088,7 +2091,7 @@ RUTAS.favoritos = async () => {
     </div>`;
   };
   pinta(`
-    <p class="crumbs"><a href="/cuenta/">${esc(t('Tu cuenta'))}</a></p>
+    <p class="crumbs"><a href="/cuenta">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(t('Favoritos'))}</h1>
     ${nuevas.length ? `<h2 class="seccion-t">${esc(t('Lo nuevo de tus favoritos'))}</h2>
       <div class="olist">${nuevas.map((o) => tarjeta(o, zona(o))).join('')}</div>` : ''}
@@ -2286,7 +2289,7 @@ RUTAS.codigos = async (_partes, params) => {
   const resaltado = deLaOferta.find((r) => r.status === 'pending' && new Date(r.expires_at).getTime() > Date.now())
     || deLaOferta[0] || null;
   pinta(`
-    <p class="crumbs"><a href="/cuenta/">${esc(t('Tu cuenta'))}</a></p>
+    <p class="crumbs"><a href="/cuenta">${esc(t('Tu cuenta'))}</a></p>
     <div class="pl-titulo"><h1>${esc(t('Tus códigos'))}</h1>
       ${navigator.mediaDevices?.getUserMedia ? `<a class="pill" href="/cuenta/escanear">${ic('qr_code_scanner')} ${esc(t('Escanear un QR'))}</a>` : ''}</div>
     ${turnoHtml}
@@ -2800,7 +2803,7 @@ RUTAS.reservar = async ([id], params) => {
   if (!exigeSesion(`reservar/${id}${conRp}`)) return;
   const fila = await llamar('offer_detail', { p_id: id, p_rp: rp || null });
   const o = Array.isArray(fila) ? fila[0] : fila;
-  if (!o) { pinta(pantallaVacia({ icono: 'explore', titulo: t('Esa publicación ya no existe.'), h: 'h1', botones: `<a class="pill accent" href="${PUB_EN ? '/en/explore/' : '/explorar/'}">${esc(t('Buscar planes'))}</a>` })); return; }
+  if (!o) { pinta(pantallaVacia({ icono: 'explore', titulo: t('Esa publicación ya no existe.'), h: 'h1', botones: `<a class="pill accent" href="${PUB_EN ? '/en/explore' : '/explorar'}">${esc(t('Buscar planes'))}</a>` })); return; }
   if (o.locked) { pintaExclusiva(o.audience, o.business_id, o.business_name); return; }
   // Con el enlace de un RRPP, tampoco más de las que quedan en su lista
   // (como la app: si no, «3 personas» acababa en «no quedan plazas»).
@@ -2855,7 +2858,7 @@ RUTAS.espera = async ([id], params, crudo) => {
       titulo: t('Ya no estás en la lista de espera'),
       texto: t('Te avisamos dos veces y no llegaste a coger plaza, así que ya no estás en la lista de espera.'),
       volver: `${pre}/o/${encodeURIComponent(id)}`, volverTxt: t('Volver a la publicación'),
-      lista: '/cuenta/', listaTxt: t('Tu cuenta'),
+      lista: '/cuenta', listaTxt: t('Tu cuenta'),
     });
     return;
   }
@@ -2876,7 +2879,7 @@ RUTAS.espera = async ([id], params, crudo) => {
     titulo: dentro ? t('Estás en la lista de espera') : t('Ya no estás en la lista de espera'),
     texto: estado,
     volver: `${pre}/o/${encodeURIComponent(id)}`, volverTxt: t('Volver a la publicación'),
-    lista: '/cuenta/', listaTxt: t('Tu cuenta'),
+    lista: '/cuenta', listaTxt: t('Tu cuenta'),
     deshacer: `espera/${id}${dentro ? '?quitar=1' : ''}`,
   });
 };
@@ -2945,7 +2948,7 @@ RUTAS.sellos = async (_partes, params = new URLSearchParams()) => {
   const lista = await llamar('my_stamp_cards', {});
   await zonasDe(lista); // la hora del canje, en la del negocio
   pinta(`
-    <p class="crumbs"><a href="/cuenta/">${esc(t('Tu cuenta'))}</a></p>
+    <p class="crumbs"><a href="/cuenta">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(t('Tarjetas de sellos'))}</h1>
     ${(lista || []).length ? lista.map((c) => { const count = c.stamps; const goal = c.goal; const cardGoal = c.card_goal; return `
       <div class="sello">
@@ -3160,7 +3163,7 @@ RUTAS.serie = async ([id]) => {
   }
   const datos = [s.business_name, repiteSerie(s), masFechas(s.upcoming || 0)].filter(Boolean).join(' · ');
   const cabeza = `
-    <p class="crumbs"><a href="/cuenta/">${esc(t('Tu cuenta'))}</a> · <a href="/cuenta/series">${esc(EN ? 'Series you follow' : 'Series que sigues')}</a></p>
+    <p class="crumbs"><a href="/cuenta">${esc(t('Tu cuenta'))}</a> · <a href="/cuenta/series">${esc(EN ? 'Series you follow' : 'Series que sigues')}</a></p>
     <div class="ticket">
       <p class="muted">${esc(EN ? 'Part of a series' : 'Forma parte de una serie')}</p>
       <h1>${esc(s.name)}</h1>
@@ -3247,7 +3250,7 @@ RUTAS.series = async () => {
   const titulo = EN ? 'Series you follow' : 'Series que sigues';
   if (!lista.length) {
     pinta(`
-      <p class="crumbs"><a href="/cuenta/">${esc(t('Tu cuenta'))}</a></p>
+      <p class="crumbs"><a href="/cuenta">${esc(t('Tu cuenta'))}</a></p>
       <h1>${esc(titulo)}</h1>
       ${pantallaVacia({
         icono: 'notifications',
@@ -3255,13 +3258,13 @@ RUTAS.series = async () => {
         texto: EN ? "On the page of something that repeats (“Thursday open mic”), tap “Follow the series” and we'll let you know about each new date."
           : 'En la ficha de algo que se repite («Micro abierto de los jueves»), toca «Seguir la serie» y te avisamos de cada fecha nueva.',
         // Como la app: a Descubre.
-        botones: `<a class="pill accent" href="${PUB_EN ? '/en/discover/' : '/descubre/'}">${esc(t('Descubre'))}</a>`,
+        botones: `<a class="pill accent" href="${PUB_EN ? '/en/discover' : '/descubre'}">${esc(t('Descubre'))}</a>`,
       })}`);
     return;
   }
   const zona = await zonasDe(lista.map((x) => ({ business_id: x.business_id })));
   pinta(`
-    <p class="crumbs"><a href="/cuenta/">${esc(t('Tu cuenta'))}</a></p>
+    <p class="crumbs"><a href="/cuenta">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(titulo)}</h1>
     <div class="lista series-lista">${lista.map((x, i) => {
       const n = x.next;

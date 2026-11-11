@@ -40,8 +40,8 @@ ROOT = Path(__file__).resolve().parent.parent
 IDIOMAS = {'ca': 'català', 'gl': 'galego', 'eu': 'euskara', 'fr': 'français', 'de': 'Deutsch', 'it': 'italiano'}
 # área → (carpeta del diccionario, index.html con el data-dic-v, nombre)
 AREAS = {
-    'cuenta': ('assets/cuenta/i18n', 'cuenta/index.html', '«Tu cuenta»'),
-    'panel': ('panel/i18n', 'panel/index.html', 'El panel del negocio'),
+    'cuenta': ('assets/cuenta/i18n', 'cuenta.html', '«Tu cuenta»'),
+    'panel': ('panel/i18n', 'panel.html', 'El panel del negocio'),
 }
 AREAS['app'] = AREAS['cuenta']
 

@@ -1,4 +1,4 @@
-# Genera la landing y las páginas de marketing en ES (/) y EN (/en/).
+# Genera la landing y las páginas de marketing en ES (/) y EN (/en).
 # Ejecutar: python build_site.py   (desde la raíz de klendar-web)
 # Las páginas legales las genera build_legal.py (ES prevalece; EN informativa).
 import datetime
@@ -11,25 +11,25 @@ BASE = 'https://klendar.app'
 
 # Ruta ES → ruta EN equivalente (hreflang, selector de idioma).
 ALT = {
-    '/': '/en/',
-    '/soporte/': '/en/support/',
-    '/aviso-legal/': '/en/legal-notice/',
-    '/privacidad/': '/en/privacy/',
-    '/terminos/': '/en/terms/',
-    '/negocios/': '/en/business-terms/',
-    '/cookies/': '/en/cookies/',
-    '/normas/': '/en/community-guidelines/',
-    '/eliminar-cuenta/': '/en/delete-account/',
-    '/para-negocios/': '/en/for-business/',
-    '/para-entidades/': '/en/for-organisations/',
-    '/precios/': '/en/pricing/',
-    '/preguntas/': '/en/faq/',
-    '/prensa/': '/en/press/',
-    '/accesibilidad/': '/en/accessibility/',
-    '/estado/': '/en/status/',
-    '/fuentes/': '/en/sources/',
-    '/sobre/': '/en/about/',
-    '/como-funciona/': '/en/how-it-works/',
+    '/': '/en',
+    '/soporte': '/en/support',
+    '/aviso-legal': '/en/legal-notice',
+    '/privacidad': '/en/privacy',
+    '/terminos': '/en/terms',
+    '/negocios': '/en/business-terms',
+    '/cookies': '/en/cookies',
+    '/normas': '/en/community-guidelines',
+    '/eliminar-cuenta': '/en/delete-account',
+    '/para-negocios': '/en/for-business',
+    '/para-entidades': '/en/for-organisations',
+    '/precios': '/en/pricing',
+    '/preguntas': '/en/faq',
+    '/prensa': '/en/press',
+    '/accesibilidad': '/en/accessibility',
+    '/estado': '/en/status',
+    '/fuentes': '/en/sources',
+    '/sobre': '/en/about',
+    '/como-funciona': '/en/how-it-works',
 }
 ALT_EN = {en: es for es, en in ALT.items()}
 
@@ -38,26 +38,26 @@ def alternates(path):
     """(ruta ES, ruta EN) de cualquier página del sitio."""
     if path in ALT: return path, ALT[path]
     if path in ALT_EN: return ALT_EN[path], path
-    return '/', '/en/'
+    return '/', '/en'
 
 T = {
   'es': dict(
-    lang='es', dir='', other='en', other_url='/en/',
-    title='Klendar — Ofertas y planes cerca de ti, hoy',
+    lang='es', dir='', other='en', other_url='/en',
+    title='Ofertas y planes cerca de ti, hoy · Klendar',
     desc='Ofertas flash con cuenta atrás y eventos de los bares, restaurantes, tiendas y salas de tu barrio, ordenados por cercanía. Gratis y sin anuncios.',
     hero_eyebrow='Ofertas que se acaban. Planes que empiezan.',
     hero_h1='Ofertas y planes <em>cerca de ti</em>, hoy',
     hero_lead='Ofertas flash con cuenta atrás y eventos de los bares, restaurantes, tiendas y salas de tu barrio, ordenados por cercanía. Gratis y sin anuncios.',
-    cta_explore='Ver qué hay cerca', cta_explore_url='/descubre/',
+    cta_explore='Ver qué hay cerca', cta_explore_url='/descubre',
     cta_register='Crear cuenta gratis', cta_register_url='/cuenta/registro',
-    cities_label='Qué hacer hoy en', cities_fallback='tu ciudad', agenda_url='/agenda/',
+    cities_label='Qué hacer hoy en', cities_fallback='tu ciudad', agenda_url='/agenda',
     app_note='App para Android e iPhone, muy pronto. Mientras tanto, todo funciona desde aquí.',
     live_all_short='Ver todo',
     home_how_h2='Mira, elige y enséñalo en la puerta',
     home_steps=[('Mira lo que hay cerca', 'Ofertas que duran unas horas y eventos con fecha, ordenados por distancia.'),
                 ('Guárdalo o pide tu código', 'Los eventos, a tus planes. Las ofertas, un QR antes de que acabe la cuenta atrás.'),
                 ('Enséñalo y listo', 'El negocio lo escanea. Cada código vale una vez; sin tarjetas ni registros raros.')],
-    how_url='/como-funciona/', how_more='Todo lo que hace Klendar →',
+    how_url='/como-funciona', how_more='Todo lo que hace Klendar →',
     how_title='Cómo funciona Klendar',
     how_tab='Cómo funciona · Klendar',
     how_desc='Cómo funciona Klendar: ofertas flash con cuenta atrás y eventos de tu barrio, ordenados por cercanía; se guardan en tus planes o se canjean con un QR de un solo uso.',
@@ -91,11 +91,11 @@ T = {
     biz_sub='Publica una oferta flash cuando tengas un hueco, anuncia tus eventos y valida los canjes con la cámara del móvil. Sin comisiones por venta: una cuota mensual fija.',
     biz_points=['Alta en 2 minutos desde la app; verificamos tu negocio en 24–48 h.', 'Ofertas con cuenta atrás y aforo: tú decides cuántas y hasta cuándo.', 'Estadísticas de vistas, favoritos y canjes por publicación.', 'Equipo: añade encargados y empleados para validar códigos.'],
     biz_cta='Escríbenos', biz_terms='Ver condiciones', biz_note='En la provincia de Málaga, gratis hasta el 31 de marzo de 2027.',
-    biz_page_url='/para-negocios/', pricing_url='/precios/', faq_url='/preguntas/',
+    biz_page_url='/para-negocios', pricing_url='/precios', faq_url='/preguntas',
     live_eyebrow='Ahora mismo', live_h2='Lo que hay estos días',
     live_note='La ciudad con más movimiento ahora mismo. No pedimos tu ubicación: eso es cosa de la app.',
     live_all='Ver la agenda completa', live_city='en',
-    biz_panel='Acceso para negocios', biz_panel_url='/panel/',
+    biz_panel='Acceso para negocios', biz_panel_url='/panel',
     biz_panel_note='¿Ya tienes tu negocio en Klendar? Entra en tu panel para publicar, ver cómo va y validar códigos desde el ordenador.',
     biz_kit='Kit para tu local: <a href="/assets/kit/klendar-guia-negocios.pdf">guía de 1 página (PDF)</a> · <a href="/assets/kit/klendar-cartel.pdf">cartel con QR (PDF)</a>',
     biz_stats=[('0 %', 'comisión por venta'), ('2 min', 'para publicar'), ('24–48 h', 'verificación'), ('QR', 'de un solo uso')],
@@ -107,28 +107,28 @@ T = {
           ('¿En qué ciudades está?', 'Klendar funciona en toda España; empezamos por Málaga. Si en la tuya todavía hay poco, ayúdanos: díselo a tu bar de siempre.')],
     cta_h2='Lo que pasa cerca, en tu bolsillo', cta_sub='Muy pronto en Google Play y App Store.',
     foot_product='Producto', foot_legal='Legal', foot_contact='Contacto',
-    foot_links_product=[('/#como', 'Cómo funciona'), ('/explorar/', 'Explorar'), ('/agenda/', 'Agenda local'), ('/para-negocios/', 'Para negocios'), ('/para-entidades/', 'Para ayuntamientos y asociaciones'), ('/precios/', 'Precios'), ('/panel/', 'Acceso para negocios'), ('/preguntas/', 'Preguntas frecuentes'), ('/soporte/', 'Soporte'), ('/sobre/', 'Sobre Klendar'), ('/prensa/', 'Prensa'), ('/en/', 'English')],
-    foot_links_legal=[('/aviso-legal/', 'Aviso legal'), ('/privacidad/', 'Privacidad'), ('/terminos/', 'Términos de uso'), ('/negocios/', 'Condiciones para negocios'), ('/cookies/', 'Cookies'), ('/normas/', 'Normas de la comunidad'), ('/eliminar-cuenta/', 'Eliminar cuenta'), ('/accesibilidad/', 'Accesibilidad'), ('/estado/', 'Estado del servicio'), ('/fuentes/', 'Fuentes y licencias')],
+    foot_links_product=[('/#como', 'Cómo funciona'), ('/explorar', 'Explorar'), ('/agenda', 'Agenda local'), ('/para-negocios', 'Para negocios'), ('/para-entidades', 'Para ayuntamientos y asociaciones'), ('/precios', 'Precios'), ('/panel', 'Acceso para negocios'), ('/preguntas', 'Preguntas frecuentes'), ('/soporte', 'Soporte'), ('/sobre', 'Sobre Klendar'), ('/prensa', 'Prensa'), ('/en', 'English')],
+    foot_links_legal=[('/aviso-legal', 'Aviso legal'), ('/privacidad', 'Privacidad'), ('/terminos', 'Términos de uso'), ('/negocios', 'Condiciones para negocios'), ('/cookies', 'Cookies'), ('/normas', 'Normas de la comunidad'), ('/eliminar-cuenta', 'Eliminar cuenta'), ('/accesibilidad', 'Accesibilidad'), ('/estado', 'Estado del servicio'), ('/fuentes', 'Fuentes y licencias')],
     foot_rights=f'© {YEAR} Klendar. Todos los derechos reservados.', foot_made='Hecho en España',
-    support_url='/soporte/', biz_terms_url='/negocios/',
+    support_url='/soporte', biz_terms_url='/negocios',
   ),
   'en': dict(
     lang='en', dir='en/', other='es', other_url='/',
-    title='Klendar — Deals and things to do near you, today',
+    title='Deals and things to do near you, today · Klendar',
     desc='Flash offers with a countdown and events from the bars, restaurants, shops and venues around you, sorted by distance. Free, no ads.',
     hero_eyebrow='Deals that run out. Plans that begin.',
     hero_h1='Deals and things to do <em>near you</em>, today',
     hero_lead='Flash offers with a countdown and events from the bars, restaurants, shops and venues around you, sorted by distance. Free, no ads.',
-    cta_explore='See what\'s nearby', cta_explore_url='/en/discover/',
+    cta_explore='See what\'s nearby', cta_explore_url='/en/discover',
     cta_register='Create a free account', cta_register_url='/cuenta/registro?lang=en',
-    cities_label='What to do today in', cities_fallback='your city', agenda_url='/en/whats-on/',
+    cities_label='What to do today in', cities_fallback='your city', agenda_url='/en/whats-on',
     app_note='Android and iPhone app coming soon. Meanwhile, everything works right here.',
     live_all_short='See all',
     home_how_h2='Look, choose and show it at the door',
     home_steps=[('See what\'s nearby', 'Deals that last a few hours and events with a date, sorted by distance.'),
                 ('Save it or get your code', 'Events go to your plans. Deals get a QR code before the countdown ends.'),
                 ('Show it, done', 'The business scans it. Each code works once; no cards, no weird sign-ups.')],
-    how_url='/en/how-it-works/', how_more='Everything Klendar does →',
+    how_url='/en/how-it-works', how_more='Everything Klendar does →',
     how_title='How Klendar works',
     how_tab='How it works · Klendar',
     how_desc='How Klendar works: flash offers with a countdown and events from your neighbourhood, sorted by distance; save them to your plans or redeem with a single-use QR code.',
@@ -162,11 +162,11 @@ T = {
     biz_sub='Post a flash offer when you have a quiet hour, announce your events and validate redemptions with your phone camera. No sales commission: one flat monthly fee.',
     biz_points=['Sign up in 2 minutes from the app; we verify your business in 24–48 h.', 'Deals with a countdown and capacity: you decide how many and until when.', 'Stats for views, favourites and redemptions per publication.', 'Team: add managers and staff to validate codes.'],
     biz_cta='Email us', biz_terms='Business terms', biz_note='In the province of Málaga, free until 31 March 2027.',
-    biz_page_url='/en/for-business/', pricing_url='/en/pricing/', faq_url='/en/faq/',
+    biz_page_url='/en/for-business', pricing_url='/en/pricing', faq_url='/en/faq',
     live_eyebrow='Right now', live_h2='What\'s on this week',
     live_note='The busiest city right now. We don\u2019t ask for your location here: that\u2019s the app\u2019s job.',
     live_all='See the full agenda', live_city='in',
-    biz_panel='Business login', biz_panel_url='/panel/',
+    biz_panel='Business login', biz_panel_url='/panel',
     biz_panel_note='Already on Klendar? Log in to your dashboard to publish, see how it\'s going and validate codes from your computer.',
     biz_kit='Kit for your venue (Spanish): <a href="/assets/kit/klendar-guia-negocios.pdf">one-page guide (PDF)</a> · <a href="/assets/kit/klendar-cartel.pdf">poster with QR (PDF)</a>',
     biz_stats=[('0 %', 'sales commission'), ('2 min', 'to publish'), ('24–48 h', 'verification'), ('QR', 'single-use')],
@@ -178,10 +178,10 @@ T = {
           ('Which cities?', 'Klendar works all over Spain; we\'re starting with Málaga. If yours is still quiet, help us: tell your local bar.')],
     cta_h2='What\'s happening nearby, in your pocket', cta_sub='Coming soon to Google Play and the App Store.',
     foot_product='Product', foot_legal='Legal', foot_contact='Contact',
-    foot_links_product=[('/en/#how-it-works', 'How it works'), ('/en/explore/', 'Explore'), ('/en/whats-on/', "What's on"), ('/en/for-business/', 'For businesses'), ('/en/for-organisations/', 'For councils and associations'), ('/en/pricing/', 'Pricing'), ('/panel/', 'Business login'), ('/en/faq/', 'FAQ'), ('/en/support/', 'Support'), ('/en/about/', 'About'), ('/en/press/', 'Press'), ('/', 'Español')],
-    foot_links_legal=[('/en/legal-notice/', 'Legal notice'), ('/en/privacy/', 'Privacy policy'), ('/en/terms/', 'Terms of use'), ('/en/business-terms/', 'Business terms'), ('/en/cookies/', 'Cookies'), ('/en/community-guidelines/', 'Community guidelines'), ('/en/delete-account/', 'Delete account'), ('/en/accessibility/', 'Accessibility'), ('/en/status/', 'Service status'), ('/en/sources/', 'Sources and licences')],
+    foot_links_product=[('/en#how-it-works', 'How it works'), ('/en/explore', 'Explore'), ('/en/whats-on', "What's on"), ('/en/for-business', 'For businesses'), ('/en/for-organisations', 'For councils and associations'), ('/en/pricing', 'Pricing'), ('/panel', 'Business login'), ('/en/faq', 'FAQ'), ('/en/support', 'Support'), ('/en/about', 'About'), ('/en/press', 'Press'), ('/', 'Español')],
+    foot_links_legal=[('/en/legal-notice', 'Legal notice'), ('/en/privacy', 'Privacy policy'), ('/en/terms', 'Terms of use'), ('/en/business-terms', 'Business terms'), ('/en/cookies', 'Cookies'), ('/en/community-guidelines', 'Community guidelines'), ('/en/delete-account', 'Delete account'), ('/en/accessibility', 'Accessibility'), ('/en/status', 'Service status'), ('/en/sources', 'Sources and licences')],
     foot_rights=f'© {YEAR} Klendar. All rights reserved.', foot_made='Made in Spain',
-    support_url='/en/support/', biz_terms_url='/en/business-terms/',
+    support_url='/en/support', biz_terms_url='/en/business-terms',
   ),
 }
 
@@ -193,7 +193,7 @@ SUPPORT_EN = ('Support', 'Klendar help: how to redeem a deal, list your business
 <h2>Frequently asked questions</h2>
 ''' + soporte_html('en') + '''
 <h2>Legal documents</h2>
-<p><a href="/en/privacy/">Privacy policy</a> · <a href="/en/terms/">Terms of use</a> · <a href="/en/business-terms/">Business terms</a> · <a href="/en/community-guidelines/">Community guidelines</a> · <a href="/en/delete-account/">Delete your account</a>. English versions are courtesy translations; the Spanish originals are the governing text.</p>
+<p><a href="/en/privacy">Privacy policy</a> · <a href="/en/terms">Terms of use</a> · <a href="/en/business-terms">Business terms</a> · <a href="/en/community-guidelines">Community guidelines</a> · <a href="/en/delete-account">Delete your account</a>. English versions are courtesy translations; the Spanish originals are the governing text.</p>
 ''')
 
 
@@ -257,7 +257,7 @@ ERRORES = '<script src="/assets/errores.js?v=20261105cuenta" async></script>'
 LIVE_SCRIPTS = (
     '<script src="/config.js?v=4"></script>'
     '<script src="/assets/zona.js?v=2" defer></script>'
-    '<script src="/assets/live.js?v=8" defer></script>'
+    '<script src="/assets/live.js?v=20261111sinbarra" defer></script>'
 )
 
 
@@ -333,16 +333,16 @@ def footer(t, only_footer=True):
 
 
 LANG_REDIRECT = '''<script>
-// Primera visita a la portada: si el navegador está en inglés, a /en/ (recordamos la elección).
+// Primera visita a la portada: si el navegador está en inglés, a /en (recordamos la elección).
 // Francés, alemán e italiano también van a la inglesa; catalán, gallego y euskera, a la española
 // (la web pública solo está en español e inglés; «Tu cuenta» y el panel, en los ocho idiomas).
 (function(){try{var p=location.pathname;if(p!=='/')return;var s=localStorage.getItem('klendar_lang');
-if(s?/^(en|fr|de|it)$/.test(s):/^(en|fr|de|it)\\b/i.test(navigator.language||'')){location.replace('/en/'+location.hash);}}catch(e){}})();
+if(s?/^(en|fr|de|it)$/.test(s):/^(en|fr|de|it)\\b/i.test(navigator.language||'')){location.replace('/en'+location.hash);}}catch(e){}})();
 </script>'''
 
 
 def landing(t):
-    path = '/' + t['dir']
+    path = '/en' if t['dir'] else '/'
     jsonld = f'''<script type="application/ld+json">{{"@context":"https://schema.org","@graph":[
 {{"@type":"Organization","name":"Klendar","url":"{BASE}/","logo":"{BASE}/assets/icon-512.png","email":"info@klendar.app"{SAME_AS}}},
 {{"@type":"WebSite","name":"Klendar","url":"{BASE}/","inLanguage":["es","en"]}},
@@ -407,7 +407,7 @@ def landing(t):
     </div>
     <div class="botones">
       <a class="pill accent" href="{t['biz_page_url']}">{t['band_more']}</a>
-      <a class="pill" href="/panel/">{t['band_panel']}</a>
+      <a class="pill" href="/panel">{t['band_panel']}</a>
     </div>
   </div>
 </div></section>
@@ -492,25 +492,25 @@ def doc_page(t, path, title, desc, body, pestana=None, extra=''):
 
 
 # ── robots.txt y sitemap.xml ────────────────────────────────────────────────
-# Aquí solo van las páginas estáticas: /admin/ es privado y /r/ es un enlace
+# Aquí solo van las páginas estáticas: /admin es privado y /r/ es un enlace
 # profundo. Las que se generan al vuelo tienen su sitemap dinámico: ciudades,
 # «hoy» y categorías en /sitemap-agenda.xml y las fichas de negocio (/b/) en
 # /sitemap-negocios.xml y las páginas de artista (/a/) en /sitemap-artistas.xml
 # (vacíos mientras la web enseña los datos de dev).
-# «Dónde ver el partido» (/partidos/) es dinámica, pero su dirección es fija:
+# «Dónde ver el partido» (/partidos) es dinámica, pero su dirección es fija:
 # va aquí; cada partido (/partidos/<id>) cambia y pasa, y no se lista. Igual
-# «Grupos y empresas» (/grupos/). «Sorteos» (/sorteos/, /en/giveaways/) está
+# «Grupos y empresas» (/grupos). «Sorteos» (/sorteos, /en/giveaways) está
 # fuera mientras los sorteos están apagados (app_config.giveaways, Apple 5.3):
 # al encenderlos, volver a ponerlo aquí (docs/RUNBOOK.md de la app); los
 # sorteos abiertos van en /sitemap-negocios.xml y sus bases no se indexan.
-SITEMAP_ES = ['/', '/como-funciona/', '/descubre/', '/explorar/', '/partidos/', '/grupos/', '/agenda/', '/para-negocios/', '/para-entidades/', '/precios/', '/preguntas/', '/prensa/', '/sobre/', '/accesibilidad/', '/estado/', '/fuentes/', '/negocios/', '/soporte/', '/privacidad/', '/terminos/', '/aviso-legal/', '/cookies/', '/normas/', '/eliminar-cuenta/']
-SITEMAP_EN = ['/en/', '/en/how-it-works/', '/en/discover/', '/en/explore/', '/en/matches/', '/en/groups/', '/en/whats-on/', '/en/for-business/', '/en/for-organisations/', '/en/pricing/', '/en/faq/', '/en/press/', '/en/about/', '/en/accessibility/', '/en/status/', '/en/sources/', '/en/business-terms/', '/en/support/', '/en/privacy/', '/en/terms/', '/en/legal-notice/', '/en/cookies/', '/en/community-guidelines/', '/en/delete-account/']
+SITEMAP_ES = ['/', '/como-funciona', '/descubre', '/explorar', '/partidos', '/grupos', '/agenda', '/para-negocios', '/para-entidades', '/precios', '/preguntas', '/prensa', '/sobre', '/accesibilidad', '/estado', '/fuentes', '/negocios', '/soporte', '/privacidad', '/terminos', '/aviso-legal', '/cookies', '/normas', '/eliminar-cuenta']
+SITEMAP_EN = ['/en', '/en/how-it-works', '/en/discover', '/en/explore', '/en/matches', '/en/groups', '/en/whats-on', '/en/for-business', '/en/for-organisations', '/en/pricing', '/en/faq', '/en/press', '/en/about', '/en/accessibility', '/en/status', '/en/sources', '/en/business-terms', '/en/support', '/en/privacy', '/en/terms', '/en/legal-notice', '/en/cookies', '/en/community-guidelines', '/en/delete-account']
 ALT_PAIRS = dict(zip(SITEMAP_ES, SITEMAP_EN))
-# Con los precios apagados, /precios/ solo dice «te lo explicamos en persona»
+# Con los precios apagados, /precios solo dice «te lo explicamos en persona»
 # (noindex): fuera del sitemap. ALT_PAIRS sigue con el par para el hreflang.
 if not PRECIOS:
-    SITEMAP_ES = [p for p in SITEMAP_ES if p != '/precios/']
-    SITEMAP_EN = [p for p in SITEMAP_EN if p != '/en/pricing/']
+    SITEMAP_ES = [p for p in SITEMAP_ES if p != '/precios']
+    SITEMAP_EN = [p for p in SITEMAP_EN if p != '/en/pricing']
 
 
 def robots():
@@ -518,7 +518,7 @@ def robots():
     return nl.join([
         'User-agent: *',
         'Allow: /',
-        'Disallow: /admin/',
+        'Disallow: /admin',
         'Disallow: /r/',
         # El QR de cliente de los bonos: un enlace de un solo uso.
         'Disallow: /c/',
@@ -529,10 +529,10 @@ def robots():
         'Disallow: /legal/',
         '# Explorar y Descubre con filtros: noindex y con canonical a la página sin',
         '# filtros; las combinaciones son infinitas y cada una se pinta al momento.',
-        'Disallow: /explorar/?',
-        'Disallow: /descubre/?',
-        'Disallow: /en/explore/?',
-        'Disallow: /en/discover/?',
+        'Disallow: /explorar?',
+        'Disallow: /descubre?',
+        'Disallow: /en/explore?',
+        'Disallow: /en/discover?',
         '',
         f'Sitemap: {BASE}/sitemap.xml',
         f'Sitemap: {BASE}/sitemap-agenda.xml',
@@ -548,7 +548,7 @@ def sitemap():
     urls = []
     for path in SITEMAP_ES + SITEMAP_EN:
         es_path = path if path in ALT_PAIRS else next((k for k, v in ALT_PAIRS.items() if v == path), None)
-        en_path = ALT_PAIRS.get(path) or (path if path.startswith('/en/') else None)
+        en_path = ALT_PAIRS.get(path) or (path if path.startswith('/en') else None)
         alts = ''
         if es_path and en_path:
             alts = nl.join([
@@ -557,7 +557,7 @@ def sitemap():
                 f'    <xhtml:link rel="alternate" hreflang="en" href="{BASE}{en_path}"/>',
                 f'    <xhtml:link rel="alternate" hreflang="x-default" href="{BASE}{es_path}"/>',
             ])
-        prio = '1.0' if path in ('/', '/en/') else ('0.8' if 'negocios' in path or 'business-terms' in path else '0.5')
+        prio = '1.0' if path in ('/', '/en') else ('0.8' if 'negocios' in path or 'business-terms' in path else '0.5')
         urls.append(nl.join([
             '  <url>',
             f'    <loc>{BASE}{path}</loc>',
@@ -571,30 +571,28 @@ def sitemap():
 
 
 if __name__ == '__main__':
-    os.makedirs('en/support', exist_ok=True)
+    os.makedirs('en', exist_ok=True)
     io.open('index.html', 'w', encoding='utf-8', newline='\n').write(landing(T['es']))
-    io.open('en/index.html', 'w', encoding='utf-8', newline='\n').write(landing(T['en']))
-    io.open('en/support/index.html', 'w', encoding='utf-8', newline='\n').write(doc_page(T['en'], '/en/support/', *SUPPORT_EN))
-    os.makedirs('como-funciona', exist_ok=True)
-    os.makedirs('en/how-it-works', exist_ok=True)
-    io.open('como-funciona/index.html', 'w', encoding='utf-8', newline='\n').write(como_funciona(T['es']))
-    io.open('en/how-it-works/index.html', 'w', encoding='utf-8', newline='\n').write(como_funciona(T['en']))
+    io.open('en.html', 'w', encoding='utf-8', newline='\n').write(landing(T['en']))
+    io.open('en/support.html', 'w', encoding='utf-8', newline='\n').write(doc_page(T['en'], '/en/support', *SUPPORT_EN))
+    io.open('como-funciona.html', 'w', encoding='utf-8', newline='\n').write(como_funciona(T['es']))
+    io.open('en/how-it-works.html', 'w', encoding='utf-8', newline='\n').write(como_funciona(T['en']))
     io.open('robots.txt', 'w', encoding='utf-8', newline=chr(10)).write(robots())
     io.open('sitemap.xml', 'w', encoding='utf-8', newline=chr(10)).write(sitemap())
-    print('ok: index.html, en/index.html, en/support/index.html, robots.txt, sitemap.xml')
+    print('ok: index.html, en.html, en/support.html, robots.txt, sitemap.xml')
 
-    # «Tu cuenta» (/cuenta/) es una sola página con los dos idiomas: lleva las
+    # «Tu cuenta» (/cuenta) es una sola página con los dos idiomas: lleva las
     # dos cabeceras y los dos pies, y el propio app.js enseña la que toca.
     # Se estampan aquí para que el menú sea el mismo que en el resto.
     import re as _re
-    ruta = os.path.join('cuenta', 'index.html')
+    ruta = 'cuenta.html'
     if os.path.exists(ruta):
         app = io.open(ruta, encoding='utf-8').read()
         trozos = {
             # En «Tu cuenta» el contenido es <main id="view">: «Saltar al
             # contenido» va ahí (en las demás páginas, a #contenido).
-            'CABECERA-ES': '<div data-only="es">' + HEADER_TPL['es'].replace('{{ES}}', '/cuenta/?lang=es').replace('{{EN}}', '/cuenta/?lang=en').replace('href="#contenido"', 'href="#view"') + '</div>',
-            'CABECERA-EN': '<div data-only="en" hidden>' + HEADER_TPL['en'].replace('{{ES}}', '/cuenta/?lang=es').replace('{{EN}}', '/cuenta/?lang=en').replace('href="#contenido"', 'href="#view"') + '</div>',
+            'CABECERA-ES': '<div data-only="es">' + HEADER_TPL['es'].replace('{{ES}}', '/cuenta?lang=es').replace('{{EN}}', '/cuenta?lang=en').replace('href="#contenido"', 'href="#view"') + '</div>',
+            'CABECERA-EN': '<div data-only="en" hidden>' + HEADER_TPL['en'].replace('{{ES}}', '/cuenta?lang=es').replace('{{EN}}', '/cuenta?lang=en').replace('href="#contenido"', 'href="#view"') + '</div>',
             'PIE-ES': '<div data-only="es">' + FOOTER_HTML['es'] + '</div>',
             'PIE-EN': '<div data-only="en" hidden>' + FOOTER_HTML['en'] + '</div>',
         }
@@ -603,17 +601,17 @@ if __name__ == '__main__':
                           lambda _m, h=html_, m=marca: '<!--%s-->%s<!--/%s-->' % (m, h, m),
                           app, flags=_re.S)
         io.open(ruta, 'w', encoding='utf-8', newline=chr(10)).write(app)
-        print('ok: cuenta/index.html (cabecera y pie)')
+        print('ok: cuenta.html (cabecera y pie)')
 
     # El panel del negocio lleva la misma cabecera (Iván, 2026-11-02: la
     # barra igual en todas las páginas), sin pie: es una herramienta.
-    ruta = os.path.join('panel', 'index.html')
+    ruta = 'panel.html'
     if os.path.exists(ruta):
         panel = io.open(ruta, encoding='utf-8').read()
         for marca, l, oculta in (('CABECERA-ES', 'es', ''), ('CABECERA-EN', 'en', ' hidden')):
-            html_ = '<div data-only="%s"%s>' % (l, oculta) + HEADER_TPL[l].replace('{{ES}}', '/panel/?lang=es').replace('{{EN}}', '/panel/?lang=en').replace('href="#contenido"', 'href="#view"') + '</div>'
+            html_ = '<div data-only="%s"%s>' % (l, oculta) + HEADER_TPL[l].replace('{{ES}}', '/panel?lang=es').replace('{{EN}}', '/panel?lang=en').replace('href="#contenido"', 'href="#view"') + '</div>'
             panel = _re.sub(r'<!--%s-->.*?<!--/%s-->' % (marca, marca),
                             lambda _m, h=html_, m=marca: '<!--%s-->%s<!--/%s-->' % (m, h, m),
                             panel, flags=_re.S)
         io.open(ruta, 'w', encoding='utf-8', newline=chr(10)).write(panel)
-        print('ok: panel/index.html (cabecera)')
+        print('ok: panel.html (cabecera)')

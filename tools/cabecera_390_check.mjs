@@ -15,7 +15,7 @@ const { chromium, webkit } = playwright();
 const BASE = process.env.BASE || 'http://localhost:8821';
 // La web local no puede llegar a Supabase (ver _supabase_simulado).
 await servidorSeguro(BASE);
-const PAGINAS = ['/descubre/', '/explorar/', '/explorar/?que=sitios', '/partidos/', '/hoy/madrid/', '/precios/', '/privacidad/', '/cuenta/'];
+const PAGINAS = ['/descubre', '/explorar', '/explorar?que=sitios', '/partidos', '/hoy/madrid/', '/precios', '/privacidad', '/cuenta'];
 let fallos = 0;
 const check = (msg, ok, extra = '') => {
   console.log(`${ok ? '✔' : '✘'} ${msg}${ok || !extra ? '' : ` (${extra})`}`);

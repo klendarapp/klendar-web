@@ -1,12 +1,50 @@
 https://www.klendar.app/* https://klendar.app/:splat 301
-# «Agenda» en inglés es el orden del día de una reunión; la
-# cartelera es «what's on». Lo de antes estuvo publicado un rato.
-/en/agenda/* /en/whats-on/:splat 301
-# Direcciones «en inglés» de las páginas legales (las pide gente que da por
-# hecho /legal/…; Google las rechazaba por ser un 404).
-/legal/privacy /privacidad/ 301
-/legal/privacy/ /privacidad/ 301
-/legal/terms /terminos/ 301
-/legal/terms/ /terminos/ 301
-/privacy /privacidad/ 301
-/terms /terminos/ 301
+# Direcciones sin barra al final (Iván, 2026-11-11). Las páginas estáticas
+# (`privacidad.html`…) no pasan por las Functions (`_routes.json`) y, sin estas
+# reglas, Cloudflare manda `/privacidad/` a `/privacidad` con un 308: aquí, con
+# un 301 de un solo salto (y su `?…`). Lo demás viejo (`.html`, `/index.html`,
+# `/privacy`, `/terms`, `/en/agenda/…`, las páginas dinámicas con barra) lo manda
+# functions/_middleware.js (`_lib/direccion.js`): las reglas de aquí no se aplican
+# a lo que pasa por las Functions. Una página estática nueva: su línea aquí y su
+# dirección exacta en `_routes.json` (tools/rutas_check.py lo vigila).
+/accesibilidad/ /accesibilidad 301
+/aviso-legal/ /aviso-legal 301
+# La comprobación anti-robots: la app hasta la 0.1.7 abre `/captcha/` en una vista
+# web que solo deja cargar `/captcha/…` (un 301 la mandaría al navegador y no se
+# podría entrar): ahí se sirve la misma página, sin redirigir. La 0.1.8 abre `/captcha`.
+/captcha/ /captcha 200
+/como-funciona/ /como-funciona 301
+/cookies/ /cookies 301
+/eliminar-cuenta/ /eliminar-cuenta 301
+/estado/ /estado 301
+/fuentes/ /fuentes 301
+/negocios/ /negocios 301
+/normas/ /normas 301
+/para-negocios/ /para-negocios 301
+/precios/ /precios 301
+/preguntas/ /preguntas 301
+/prensa/ /prensa 301
+/privacidad/ /privacidad 301
+/sobre/ /sobre 301
+/soporte/ /soporte 301
+/terminos/ /terminos 301
+/en/ /en 301
+/en/about/ /en/about 301
+/en/accessibility/ /en/accessibility 301
+/en/business-terms/ /en/business-terms 301
+/en/community-guidelines/ /en/community-guidelines 301
+/en/cookies/ /en/cookies 301
+/en/delete-account/ /en/delete-account 301
+/en/faq/ /en/faq 301
+/en/for-business/ /en/for-business 301
+/en/how-it-works/ /en/how-it-works 301
+/en/legal-notice/ /en/legal-notice 301
+/en/press/ /en/press 301
+/en/pricing/ /en/pricing 301
+/en/privacy/ /en/privacy 301
+/en/sources/ /en/sources 301
+/en/status/ /en/status 301
+/en/support/ /en/support 301
+/en/terms/ /en/terms 301
+/para-entidades/ /para-entidades 301
+/en/for-organisations/ /en/for-organisations 301

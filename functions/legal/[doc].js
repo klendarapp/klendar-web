@@ -10,14 +10,14 @@
 // páginas de cada idioma, que ya llevan canonical y hreflang.
 
 const DOCS = {
-  privacy: ['/privacidad/', '/en/privacy/'],
-  terms: ['/terminos/', '/en/terms/'],
-  'business-terms': ['/negocios/', '/en/business-terms/'],
-  cookies: ['/cookies/', '/en/cookies/'],
-  guidelines: ['/normas/', '/en/community-guidelines/'],
-  'legal-notice': ['/aviso-legal/', '/en/legal-notice/'],
-  'delete-account': ['/eliminar-cuenta/', '/en/delete-account/'],
-  support: ['/soporte/', '/en/support/'],
+  privacy: ['/privacidad', '/en/privacy'],
+  terms: ['/terminos', '/en/terms'],
+  'business-terms': ['/negocios', '/en/business-terms'],
+  cookies: ['/cookies', '/en/cookies'],
+  guidelines: ['/normas', '/en/community-guidelines'],
+  'legal-notice': ['/aviso-legal', '/en/legal-notice'],
+  'delete-account': ['/eliminar-cuenta', '/en/delete-account'],
+  support: ['/soporte', '/en/support'],
 };
 
 import { esOEn, idiomaDeCabecera } from '../_lib/idioma.js';

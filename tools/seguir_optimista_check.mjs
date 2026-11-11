@@ -8,7 +8,7 @@
 // las migraciones 20261260100008 y 20261260100070 de la app); y la base
 // simulada para lo personal (no se escribe nada de verdad). Antes cogía un
 // partido de dev y, desde que las pruebas no llegan a Supabase (5-11),
-// /partidos/ salía vacío y fallaba siempre.
+// /partidos salía vacío y fallaba siempre.
 //
 //   PW=<ruta a playwright> node tools/seguir_optimista_check.mjs
 import { playwright, REF, SUPA } from './_supabase_simulado.mjs';
@@ -52,7 +52,7 @@ const sesion = JSON.stringify({ access_token: jwt(), refresh_token: 'r', token_t
 const nav = await chromium.launch();
 // Un partido con su «Seguir a …».
 const p0 = await nav.newPage();
-await p0.goto(`${BASE}/partidos/`, { waitUntil: 'networkidle' });
+await p0.goto(`${BASE}/partidos`, { waitUntil: 'networkidle' });
 const enlaces = await p0.locator('a.partido').evaluateAll((l) => l.map((a) => a.getAttribute('href')).slice(0, 8));
 let ruta = null;
 for (const h of enlaces) {

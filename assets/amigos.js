@@ -44,7 +44,7 @@
   var tarjetasSellos = document.querySelectorAll('[data-tarjeta]');
   if (!ficha && !tarjetas.length && !botonFav && !botonPlan && !resenas.length && !barra && !equipoEl) return;
   var UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  var cuenta = function (ruta) { ruta = ruta || ''; return '/cuenta/' + (en ? ruta.replace(/\?|$/, function (m) { return m ? '?lang=en&' : '?lang=en'; }) : ruta); };
+  var cuenta = function (ruta) { ruta = ruta || ''; ruta = String(ruta).replace(/^\/+/, ''); var r = en ? ruta.replace(/\?|$/, function (m) { return m ? '?lang=en&' : '?lang=en'; }) : ruta; return '/cuenta' + (r && r.charAt(0) !== '?' ? '/' : '') + r; };
 
   var T = en ? {
     someone: 'Klendar user',

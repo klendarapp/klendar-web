@@ -6,21 +6,48 @@ Web pública de Klendar: landing, páginas legales y páginas de enlace (`/o/<id
 - `404.html` atiende los enlaces `/o`, `/b`, `/r` (GitHub Pages no tiene rutas dinámicas): intenta abrir la app y ofrece descargarla.
 - `.well-known/assetlinks.json` — App Links de Android. Contiene las huellas del certificado de **debug** y del de **release** (`android/keys/klendar-release.jks` en el repo de la app, fuera de git).
 - `.well-known/apple-app-site-association` — Universal Links de iOS y autorrelleno de contraseñas, con el Team ID `PJ9F5AMML5` (`tool/apple_ids.py` en el repo de la app).
-- Las páginas legales se generan con `python build_legal.py` a partir de los textos en ese archivo (no editar los `index.html` a mano). Quién es el titular (hoy la persona física; la SL cuando exista) se rellena solo en el bloque `TITULAR_DATOS` de arriba del script: con `tipo='empresa'` se niega a generar si falta algún dato. `python build_legal.py --vista-previa` genera en `tools/legal_preview/` cómo quedarán con una SL de ejemplo (no se publica). Guía completa: `docs/LEGAL_SL.md` en el repo de la app.
+- Las páginas legales se generan con `python build_legal.py` a partir de los textos en ese archivo (no editar los `.html` a mano). Quién es el titular (hoy la persona física; la SL cuando exista) se rellena solo en el bloque `TITULAR_DATOS` de arriba del script: con `tipo='empresa'` se niega a generar si falta algún dato. `python build_legal.py --vista-previa` genera en `tools/legal_preview/` cómo quedarán con una SL de ejemplo (no se publica). Guía completa: `docs/LEGAL_SL.md` en el repo de la app.
 
 ## Generar las páginas
 
-- `python build_site.py` → landing ES (`index.html`), EN (`en/index.html`) y soporte EN (`en/support/`). Textos en el dict `T` del script.
+- `python build_site.py` → landing ES (`index.html`), EN (`en.html`) y soporte EN (`en/support.html`). Textos en el dict `T` del script.
 - `python build_legal.py` → páginas legales en ES (idioma que prevalece) y su traducción informativa en `/en/{legal-notice,privacy,terms,business-terms,cookies,community-guidelines,delete-account}/` con aviso de cortesía; el mapa de rutas ES↔EN está en `ALT` (`build_site.py`) y alimenta hreflang y el selector de idioma.
-- Capturas de la app en `assets/screens/*.webp` (540 px de ancho, en español, también en `/en/`; datos inventados): se rehacen desde la app con `python tool/store_screenshots.py web` (`docs/tiendas/CAPTURAS.md`) y, al cambiarlas, se sube su `?v=`.
-- Idioma: `/` es ES; en la primera visita, si el navegador está en inglés, redirige a `/en/` y se recuerda la elección del selector ES/EN (`localStorage.klendar_lang`). `hreflang` en todas las páginas.
+- Capturas de la app en `assets/screens/*.webp` (540 px de ancho, en español, también en `/en`; datos inventados): se rehacen desde la app con `python tool/store_screenshots.py web` (`docs/tiendas/CAPTURAS.md`) y, al cambiarlas, se sube su `?v=`.
+- Idioma: `/` es ES; en la primera visita, si el navegador está en inglés, redirige a `/en` y se recuerda la elección del selector ES/EN (`localStorage.klendar_lang`). `hreflang` en todas las páginas.
   Francés, alemán e italiano van también a la versión inglesa y catalán, gallego y euskera a la española (`esOEn`).
 
-- **Precios del plan y fechas del «Gratis de lanzamiento»: un interruptor**, `PRECIOS` en `functions/_lib/chrome.js` (apagado desde el 2026-11-11, hasta que la gestoría aclare el alta de Iván como autónomo). Apagado: sin precio, cuota, IVA, prueba de 30 días ni «gratis hasta…» en la portada, Para negocios, Preguntas, Sobre, la guía PDF del kit y «Tu cuenta»; «Precios» fuera del menú, del pie y del sitemap; `/precios/` dice «¿Cuánto cuesta? Te lo explicamos en persona» (noindex). Para encenderlo: `true` y `python build_site.py && python build_pages.py && python build_legal.py && python tools/build_kit.py` (en la app, `python tool/asistente_corpus.py` y desplegar `help-assistant`). No toca los textos legales ni «Tu plan» del panel.
+- **Precios del plan y fechas del «Gratis de lanzamiento»: un interruptor**, `PRECIOS` en `functions/_lib/chrome.js` (apagado desde el 2026-11-11, hasta que la gestoría aclare el alta de Iván como autónomo). Apagado: sin precio, cuota, IVA, prueba de 30 días ni «gratis hasta…» en la portada, Para negocios, Preguntas, Sobre, la guía PDF del kit y «Tu cuenta»; «Precios» fuera del menú, del pie y del sitemap; `/precios` dice «¿Cuánto cuesta? Te lo explicamos en persona» (noindex). Para encenderlo: `true` y `python build_site.py && python build_pages.py && python build_legal.py && python tools/build_kit.py` (en la app, `python tool/asistente_corpus.py` y desplegar `help-assistant`). No toca los textos legales ni «Tu plan» del panel.
+
+## Direcciones sin barra al final (desde el 2026-11-11)
+
+Iván: todas las direcciones van **sin barra final** (`/privacidad`, `/en/privacy`,
+`/para-negocios`, `/cuenta/entrar`, `/panel#/validar`); solo la portada es `/`.
+
+- Cada página es un fichero `x.html` (no `x/index.html`): `privacidad.html`,
+  `en/privacy.html`, `panel.html`… Cloudflare Pages sirve `x.html` en `/x`.
+- Lo viejo sigue funcionando con **un solo 301** a la buena (con su `?…`; el
+  `#…` lo conserva el navegador):
+  - páginas estáticas (fuera de las Functions por su dirección exacta en
+    `_routes.json`): una línea `/x/ /x 301` en `_redirects` (sin ella, Pages da
+    un 308);
+  - todo lo demás (`/descubre/`, `/cuenta/`, `/panel/`, `/x.html`,
+    `/x/index.html`, `/privacy`, `/terms`, `/en/agenda/…`, `/hoy/`):
+    `functions/_middleware.js` con `functions/_lib/direccion.js`.
+  - **Excepción**: `/captcha/` se sigue sirviendo tal cual (200, regla `200` de
+    `_redirects`): la app hasta la 0.1.7 abre `/captcha/` en una vista web que no
+    deja salir de `/captcha/…`; un 301 rompería entrar y crear la cuenta.
+- Una página estática nueva: su `x.html`, su dirección exacta en `exclude` de
+  `_routes.json` y su `/x/ /x 301` en `_redirects`.
+- `python tools/rutas_check.py` (pre-push) avisa de cualquier enlace propio con
+  barra final y de lo que falte en `_routes.json`/`_redirects`;
+  `python tools/rutas_check.py --vivo https://klendar.app` recorre la web de
+  verdad (200 sin barra, canonical, hreflang, og:url y 301 de un salto desde lo viejo).
+- Los títulos de la pestaña van todos como «Página · Klendar» (también la
+  portada, «Sobre nosotros» y la tele): `tools/titulos_check.mjs`.
 
 ## Idiomas de «Tu cuenta» y del panel
 
-«Tu cuenta» (`/cuenta/`) y el panel (`/panel/`) van en ocho idiomas: español (la
+«Tu cuenta» (`/cuenta`) y el panel (`/panel`) van en ocho idiomas: español (la
 fuente), inglés y catalán, gallego, euskera, francés, alemán e italiano. El
 admin y las páginas públicas, solo en español e inglés.
 
@@ -45,11 +72,11 @@ cuenta dev@klendar.app), conectado a este repo: cada push a `main` despliega.
 El DNS de klendar.app también está en Cloudflare (nameservers `chase`/`nelly`);
 el dominio y el correo siguen en IONOS. GitHub Pages quedó desactivado (su
 certificado nunca se emitió). `_redirects` manda www → apex; `_headers` añade
-cabeceras de seguridad y `noindex` en `/admin/`.
+cabeceras de seguridad y `noindex` en `/admin`.
 
-## Panel de administración (`/admin/`)
+## Panel de administración (`/admin`)
 
-SPA estática (`admin/index.html` + `admin.css` + `admin.js`, sin build) con
+SPA estática (`admin.html` + `admin/admin.css` + `admin/admin.js`, sin build) con
 supabase-js que llama a las RPC `admin_*` del proyecto (migraciones
 `20260916100000_admin.sql` y `20260922100000_admin_v2.sql` en el repo de la
 app). Solo funciona para cuentas dadas de alta en `public.admin_users`; el primer
@@ -69,7 +96,7 @@ pagos, Avisos y push, Categorías, Configuración, Administradores, Registro de
 actividad y Ayuda. Todo listado se exporta a CSV y toda acción queda en
 `admin_audit_log`. La clave embebida es la *publishable* (pública); la seguridad
 la ponen `is_admin()` y RLS. Al cambiar `admin.js`/`admin.css`, sube el `?v=` en
-`admin/index.html` para saltar la caché.
+`admin.html` para saltar la caché.
 - `python tools/build_kit.py` → kit para negocios en `assets/kit/` (guía de 1 página y cartel A4 con QR; reportlab + qrcode; fuentes Sora y Manrope en `tools/fonts/`, copiadas de la app).
 - `python tools/build_brand.py` → símbolo, favicon, apple-touch-icon, icon-512 y `og.png` a partir del símbolo «Pulso» (misma geometría que `tool/brand/make_brand.py` de la app).
 
@@ -87,10 +114,10 @@ tiene sentido dentro de la app). Prueba local: `npx wrangler@3 pages dev .`.
 
 - Las cuatro pestañas de la app (`TABS` en `functions/_lib/chrome.js`):
   arriba en el escritorio y en una barra fija abajo en el móvil. Planes y
-  Cuenta viven en «Tu cuenta» (`/cuenta/planes`, `/cuenta/`). Lo demás
+  Cuenta viven en «Tu cuenta» (`/cuenta/planes`, `/cuenta`). Lo demás
   (agenda, cómo funciona, negocios, precios…) va en «Más».
-- Descubre (`/descubre/`, `/en/discover/`) y Explorar (`/explorar/`,
-  `/en/explore/`) los pinta `functions/_lib/explore.js`: una barra con
+- Descubre (`/descubre`, `/en/discover`) y Explorar (`/explorar`,
+  `/en/explore`) los pinta `functions/_lib/explore.js`: una barra con
   Filtros (hoja con precio, orden, categoría, distancia…), Dónde, ¿Cuándo? y
   Tipo; en Explorar, además, buscar y Lista · Mapa · Calendario. Todo va en
   la URL y funciona sin JavaScript (`<details>` y formularios GET).
@@ -123,9 +150,9 @@ un idioma:
 No se indexan (robots.txt las excluye): lo indexable son las páginas por idioma,
 que ya llevan canonical y hreflang.
 
-## Klendar en la tele (`/tv/`)
+## Klendar en la tele (`/tv`)
 
-`tv/index.html` + `tv.css` + `tv.js`, sin depender de nada más que `config.js`
+`tv.html` + `tv/tv.css` + `tv/tv.js`, sin depender de nada más que `config.js`
 y el QR (`assets/vendor/qrcode.js`), escrito para navegadores de tele algo
 viejos. La tele pide un código (`tv_pair_start`), lo enseña con un QR a
 `/tv/enlazar/<código>` (`functions/tv/enlazar/[code].js` → panel `#/tele`; la

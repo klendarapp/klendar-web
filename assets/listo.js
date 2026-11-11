@@ -59,7 +59,7 @@
   };
 
   /** «Tu cuenta» en el idioma de la página. */
-  const cuenta = (lang, ruta = '') => `/cuenta/${lang === 'en' ? ruta.replace(/\?|$/, (m) => (m ? '?lang=en&' : '?lang=en')) : ruta}`;
+  const cuenta = (lang, ruta = '') => { const r = lang === 'en' ? ruta.replace(/\?|$/, (m) => (m ? '?lang=en&' : '?lang=en')) : ruta; return `/cuenta${r && r[0] !== '?' ? '/' : ''}${r}`; };
   /** Entrar y volver al pedido en «Tu cuenta». */
   const entrar = (lang, code) => `${cuenta(lang, `entrar?siguiente=${encodeURIComponent(`listo/${code}`)}`)}`;
   const ficha = (lang, b) => `${lang === 'en' ? '/en' : ''}/b/${encodeURIComponent(b?.slug || b?.id || '')}`;
@@ -85,7 +85,7 @@
     const S = T[en ? 'en' : 'es'];
     if (!info || info.ok !== true || !info.business) {
       return vacio(S, S.bad, S.badBody,
-        `<a class="pill accent" href="${en ? '/en/discover/' : '/descubre/'}">${esc(S.explore)}</a>`);
+        `<a class="pill accent" href="${en ? '/en/discover' : '/descubre'}">${esc(S.explore)}</a>`);
     }
     const b = info.business;
     const verLocal = (cls) => `<a class="pill${cls ? ` ${cls}` : ''}" href="${esc(ficha(lang, b))}">${esc(S.venue)}</a>`;

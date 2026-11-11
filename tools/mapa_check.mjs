@@ -169,7 +169,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
       page.on('pageerror', (e) => { if (!deMapbox(`${e.message} ${e.stack || ''}`)) errores.push(String(e)); });
       const t = `[${nombre} ${forma} ${tema}]`;
 
-      await page.goto(`${BASE}/explorar/?vista=mapa&${AQUI}`);
+      await page.goto(`${BASE}/explorar?vista=mapa&${AQUI}`);
       const puntos = await page.evaluate(() => JSON.parse(document.getElementById('mapaPuntos').textContent));
       // Si no llegan planes, lo de abajo no prueba nada: que se diga eso.
       ok(puntos.length === PLANES.length, `${t} la página trae los ${PLANES.length} planes (${puntos.length})`);
@@ -291,7 +291,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
       // 6. Sitios.
       if (tema === 'light') {
         const pide = page.waitForResponse((r) => r.url().includes('/rpc/map_places'), { timeout: 30000 }).catch(() => null);
-        await page.goto(`${BASE}/explorar/?que=sitios&vista=mapa&lat=40.4168&lng=-3.7038`);
+        await page.goto(`${BASE}/explorar?que=sitios&vista=mapa&lat=40.4168&lng=-3.7038`);
         ok(Boolean(await pide), `${t} Sitios pide map_places`);
         const capas = await page.waitForFunction(() => {
           const c = document.getElementById('mapa-sitios');

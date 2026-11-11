@@ -89,7 +89,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     // 1–2. «Tengo 18 años o más».
     {
       const { ctx, page, errores } = await nuevo();
-      await page.goto(`${BASE}/explorar/?ciudad=Madrid&vista=lista`);
+      await page.goto(`${BASE}/explorar?ciudad=Madrid&vista=lista`);
       const aviso = page.locator('[data-edad]');
       ok(await aviso.isVisible() && /solo para mayores de 18/.test(await aviso.innerText()), `${t} sin contestar: la línea de la edad`);
       const antes = await totalDe(page);
@@ -98,7 +98,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
       await page.waitForLoadState('load');
       const despues = await totalDe(page);
       ok(!(await page.locator('[data-edad]').count()) && despues > antes, `${t} «18 o más»: sin pregunta y más resultados (${antes} → ${despues})`);
-      await page.goto(`${BASE}/explorar/?que=sitios&ciudad=Madrid`);
+      await page.goto(`${BASE}/explorar?que=sitios&ciudad=Madrid`);
       ok(!(await page.locator('[data-edad]').count()), `${t} «18 o más»: tampoco en Sitios`);
       if (OFERTA18) {
         await page.goto(`${BASE}/o/${OFERTA18}`);
@@ -112,9 +112,9 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     // con el mismo texto y la misma forma que en la lista (Iván, 2026-11-04).
     {
       const { ctx, page, errores } = await nuevo();
-      await page.goto(`${BASE}/explorar/?ciudad=Madrid&vista=lista`);
+      await page.goto(`${BASE}/explorar?ciudad=Madrid&vista=lista`);
       const enLista = await page.locator('[data-edad]').evaluate((el) => [el.className, el.querySelector('strong')?.textContent]).catch(() => null);
-      await page.goto(`${BASE}/explorar/?ciudad=Madrid`);
+      await page.goto(`${BASE}/explorar?ciudad=Madrid`);
       const cal = page.locator('[data-edad]');
       ok(await page.locator('.calendario').count() > 0 && await cal.isVisible() && /solo para mayores de 18/.test(await cal.innerText()), `${t} calendario sin contestar: la línea de la edad`);
       const enCal = await cal.evaluate((el) => [el.className, el.querySelector('strong')?.textContent]).catch(() => null);
@@ -130,7 +130,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     // 3. «Soy menor».
     {
       const { ctx, page } = await nuevo();
-      await page.goto(`${BASE}/explorar/?ciudad=Madrid&vista=lista`);
+      await page.goto(`${BASE}/explorar?ciudad=Madrid&vista=lista`);
       const antes = await totalDe(page);
       await page.locator('[data-edad-no]').click();
       ok(!(await page.locator('[data-edad]').count()), `${t} «Soy menor»: la línea se va`);
@@ -158,10 +158,10 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     // calendario tiene el suyo, «Por hora» / «Más cerca»).
     {
       const { ctx, page } = await nuevo();
-      await page.goto(`${BASE}/explorar/?ciudad=Madrid&orden=cerca&vista=lista`);
+      await page.goto(`${BASE}/explorar?ciudad=Madrid&orden=cerca&vista=lista`);
       // El orden va en ☰ › «Ordenar por» (Iván, 2026-10-27), no en la fila.
       ok(!(await page.locator('[data-cerca-falta]').count()) && await page.locator('#filtros input[name=orden][value=cerca]').isChecked(), `${t} «Más cerca» con una ciudad: desde su centro, sin pedir nada`);
-      await page.goto(`${BASE}/explorar/?orden=cerca&vista=lista`);
+      await page.goto(`${BASE}/explorar?orden=cerca&vista=lista`);
       // Un solo aviso a la vez (Iván, 2026-10-28): sin contestar la edad, la
       // ubicación espera y sale al contestar «Soy menor».
       if (await page.locator('[data-edad]').isVisible()) {

@@ -1,4 +1,4 @@
-// Centro de ayuda de la web (/preguntas/, /en/faq/): pestañas y buscador.
+// Centro de ayuda de la web (/preguntas, /en/faq): pestañas y buscador.
 // Lo mismo que la app (Cuenta → Ayuda): dos pestañas, «Para ti» y «Para
 // negocios»; el buscador ignora tildes y mayúsculas y busca en preguntas y
 // respuestas; si en la pestaña no hay nada y en la otra sí, lo dice y deja

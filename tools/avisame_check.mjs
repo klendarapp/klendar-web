@@ -143,7 +143,7 @@ const llamada = (estado, fn) => estado.llamadas.filter(([f]) => f === fn).map(([
 async function panel(nav, nombre, t, vp) {
   // 1. Menú del día, hoy cerrado por el horario
   let { ctx, p, errores } = await contexto(nav, vp);
-  await p.goto(`${BASE}/panel/#/menu-del-dia`);
+  await p.goto(`${BASE}/panel#/menu-del-dia`);
   await p.waitForSelector('#publicar', { timeout: 15000 });
   let txt = await p.locator('#view').innerText();
   ok(/Hoy tu local sale cerrado en Klendar\. ¿Abres hoy\?/.test(txt), `${nombre}/${t} menú: «¿Abres hoy?» arriba`);
@@ -159,7 +159,7 @@ async function panel(nav, nombre, t, vp) {
   ({ ctx, p, errores } = await contexto(nav, vp, { daily_menu_setup: {
     suggested: true, can_publish: true, closed_today: 'closure', last: null, live: null, plan: null,
     until: { lunch: { until: masHoras(3), at_close: false } } } }));
-  await p.goto(`${BASE}/panel/#/menu-del-dia`);
+  await p.goto(`${BASE}/panel#/menu-del-dia`);
   await p.waitForSelector('#publicar', { timeout: 15000 });
   txt = await p.locator('#view').innerText();
   ok(/no se ve nada de tu local/.test(txt) && (await p.getAttribute('#mesaCerrado a.btn', 'href')) === '#/cerrados',
@@ -169,7 +169,7 @@ async function panel(nav, nombre, t, vp) {
   // …abierto: nada
   ({ ctx, p, errores } = await contexto(nav, vp, { daily_menu_setup: { suggested: true, can_publish: true, closed_today: null, last: null, live: null, plan: null,
     until: { lunch: { until: masHoras(3), at_close: true } } } }));
-  await p.goto(`${BASE}/panel/#/menu-del-dia`);
+  await p.goto(`${BASE}/panel#/menu-del-dia`);
   await p.waitForSelector('#publicar', { timeout: 15000 });
   ok(await p.locator('#mesaCerrado').count() === 0, `${nombre}/${t} menú: abierto hoy, sin aviso`);
   await ctx.close();
@@ -266,22 +266,22 @@ async function publico(nav, nombre, t, vp, estado) {
   // Sin sesión (y las palabras de mentira de cero en cada vuelta)
   estado.pal = palabrasFalsas();
   estado.conResultados = false;
-  await p.goto(`${PUB}/explorar/?q=karaoke`);
+  await p.goto(`${PUB}/explorar?q=karaoke`);
   let caja = p.locator('.avisame-palabra');
   ok(await caja.count() === 1 && /Avísame si hay algo de «karaoke»/.test(await caja.innerText()), `${nombre}/${t} explorar sin resultados: «Avísame si hay algo de «karaoke»»`);
   ok((await caja.locator('a').getAttribute('href')) === '/cuenta/avisame-palabra?palabra=karaoke', `${nombre}/${t} explorar: sin sesión, a Tu cuenta`);
   const ancho = await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   ok(ancho <= 0, `${nombre}/${t} explorar: sin desplazamiento horizontal`);
   await p.screenshot({ path: `${OUT}/explorar-avisame-vacio-${nombre}-${t}.png`, fullPage: true });
-  await p.goto(`${PUB}/explorar/?q=dj`);
+  await p.goto(`${PUB}/explorar?q=dj`);
   ok(await p.locator('.avisame-palabra').count() === 0, `${nombre}/${t} explorar: con 2 letras no sale`);
-  const en = await p.goto(`${PUB}/en/explore/?q=karaoke`);
+  const en = await p.goto(`${PUB}/en/explore?q=karaoke`);
   ok(en.status() === 200 && /Tell me when there’s something for “karaoke”/.test(await p.locator('.avisame-palabra').innerText()), `${nombre}/${t} explore: en inglés`);
 
   // Con sesión: se añade sin salir
   await ctx.addInitScript((v) => { try { localStorage.setItem('sb-localhost-auth-token', v); } catch { /* */ } }, sesion());
   estado.conResultados = true;
-  await p.goto(`${PUB}/explorar/?q=karaoke`);
+  await p.goto(`${PUB}/explorar?q=karaoke`);
   caja = p.locator('.avisame-palabra');
   ok(await caja.count() === 1, `${nombre}/${t} explorar con resultados: el bloque sale también`);
   await p.waitForFunction(() => document.querySelector('.avisame-palabra a')?.getAttribute('data-directo') === '1', null, { timeout: 8000 }).catch(() => {});
@@ -290,7 +290,7 @@ async function publico(nav, nombre, t, vp, estado) {
   ok(estado.llamadas.some(([f, b]) => f === 'add_alert_word' && b.p_word === 'karaoke'), `${nombre}/${t} explorar: con sesión, add_alert_word sin salir`);
   ok(/Te avisaremos de «karaoke»/.test(await caja.innerText()) && /explorar/.test(p.url()), `${nombre}/${t} explorar: pasa a «Te avisaremos de «karaoke»»`);
   await p.screenshot({ path: `${OUT}/explorar-avisame-hecho-${nombre}-${t}.png`, fullPage: true });
-  await p.goto(`${PUB}/explorar/?q=karaoke`);
+  await p.goto(`${PUB}/explorar?q=karaoke`);
   await p.waitForFunction(() => document.querySelector('.avisame-palabra')?.classList.contains('on'), null, { timeout: 8000 }).catch(() => {});
   ok(/Te avisaremos de «karaoke»/.test(await p.locator('.avisame-palabra').innerText())
     && /\/cuenta\/ajustes\/notificaciones$/.test(await p.locator('.avisame-palabra a').getAttribute('href')),

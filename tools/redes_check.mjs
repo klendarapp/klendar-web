@@ -27,9 +27,9 @@ const ok = (cond, msg) => {
 };
 
 const PAGINAS = [
-  ['/', 'es'], ['/en/', 'en'], ['/prensa/', 'es'], ['/en/press/', 'en'],
-  ['/privacidad/', 'es'], ['/en/terms/', 'en'], ['/precios/', 'es'],
-  ['/cuenta/', 'es'], ['/descubre/', 'es'], ['/en/explore/', 'en'], ['/agenda/', 'es'],
+  ['/', 'es'], ['/en', 'en'], ['/prensa', 'es'], ['/en/press', 'en'],
+  ['/privacidad', 'es'], ['/en/terms', 'en'], ['/precios', 'es'],
+  ['/cuenta', 'es'], ['/descubre', 'es'], ['/en/explore', 'en'], ['/agenda', 'es'],
 ];
 
 const browser = await chromium.launch();
@@ -81,7 +81,7 @@ try {
     ok(!pie.scroll, `${ruta}: sin scroll horizontal en 360 px`);
   }
 
-  for (const [ruta, h] of [['/prensa/', 'Redes'], ['/en/press/', 'Social media']]) {
+  for (const [ruta, h] of [['/prensa', 'Redes'], ['/en/press', 'Social media']]) {
     await page.goto(BASE + ruta, { waitUntil: 'domcontentloaded' });
     const hrefs = await page.evaluate((titulo) => {
       const h2 = [...document.querySelectorAll('main h2')].find((x) => x.textContent.trim() === titulo);

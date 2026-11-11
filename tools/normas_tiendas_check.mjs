@@ -1,7 +1,7 @@
 // Lo de las normas de las tiendas en la web (revisión N-01 y N-10, 5-11-2026):
 //
 //  1. la Ayuda que descarga la app no habla de precios ni enlaza a pagar, y
-//     /preguntas/ sí (la web puede): `assets/ayuda.json` frente a la página;
+//     /preguntas sí (la web puede): `assets/ayuda.json` frente a la página;
 //  2. «Tu cuenta» → Ajustes → «Personas bloqueadas» enseña también a quien se
 //     bloqueó desde una pregunta en la app (sin nombre) y se puede desbloquear;
 //  3. y aguanta un `my_blocks` sin `anonymous` (prod antes de la migración).
@@ -24,9 +24,9 @@ function ok(cond, nombre, extra = '') {
 
 // ── 1. La Ayuda de la app frente a la de la web ─────────────────────────────
 const ayudaApp = await (await fetch(`${BASE}/assets/ayuda.json`)).text();
-const paginaEs = await (await fetch(`${BASE}/preguntas/`)).text();
-const paginaEn = await (await fetch(`${BASE}/en/faq/`)).text();
-for (const [nombre, patron] of [['el precio', /19,90|19\.90|24,08|24\.08|€/], ['/precios/', /\/precios|\/pricing/], ['el panel', /\/panel/], ['Stripe', /stripe/i]]) {
+const paginaEs = await (await fetch(`${BASE}/preguntas`)).text();
+const paginaEn = await (await fetch(`${BASE}/en/faq`)).text();
+for (const [nombre, patron] of [['el precio', /19,90|19\.90|24,08|24\.08|€/], ['/precios', /\/precios|\/pricing/], ['el panel', /\/panel/], ['Stripe', /stripe/i]]) {
   ok(!patron.test(ayudaApp), `la Ayuda de la app no lleva ${nombre}`);
 }
 const datos = JSON.parse(ayudaApp);
@@ -34,8 +34,8 @@ const ids = [...datos.es.ti, ...datos.es.negocios].map((e) => e.id);
 for (const id of ['precio-negocio', 'si-no-pago', 'pausar-plan', 'permanencia', 'orden']) ok(!ids.includes(id), `«${id}» no sale en la app`);
 ok(ids.includes('cuanto-cuesta') && ids.includes('publicar'), 'lo demás sigue');
 ok(datos.es.negocios.find((e) => e.id === 'publicar').a.every((t) => !t.u), 'el panel se queda en texto, sin enlace');
-ok(paginaEs.includes('19,90') && paginaEs.includes('/precios/'), '/preguntas/ sigue hablando de precios');
-ok(paginaEn.includes('19.90') && paginaEn.includes('/en/pricing/'), '/en/faq/ también');
+ok(paginaEs.includes('19,90') && paginaEs.includes('/precios'), '/preguntas sigue hablando de precios');
+ok(paginaEn.includes('19.90') && paginaEn.includes('/en/pricing'), '/en/faq también');
 
 // ── 2 y 3. «Personas bloqueadas» ────────────────────────────────────────────
 const U = '0e7717e0-0000-4000-8000-0000000097d3';

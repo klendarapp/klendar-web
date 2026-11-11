@@ -899,7 +899,7 @@ PAGES.alta = async (v, param) => {
       <div class="full"><h2 class="alta-sub">Datos para Klendar</h2></div>${htmlKlendar(A)}
       ${htmlMayores(A)}
       <label class="f full casilla"><input type="checkbox" name="terms" ${A.terms ? 'checked' : ''}>
-        <span>Acepto las <a href="${APP_URL}/negocios/" target="_blank" rel="noopener">condiciones para negocios</a> *</span></label>`,
+        <span>Acepto las <a href="${APP_URL}/negocios" target="_blank" rel="noopener">condiciones para negocios</a> *</span></label>`,
   }[paso];
 
   // Todo lo que se escribe pasa a ALTA al momento: ir atrás (con el botón o

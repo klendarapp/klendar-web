@@ -12,7 +12,7 @@
 //   node tools/cpu_mide.mjs              → tabla: «en frío» (la primera visita
 //                                          de una copia nueva de la Function)
 //                                          y «normal» (mediana de las demás)
-//   node tools/cpu_mide.mjs una /explorar/   → solo esa ruta (en un proceso
+//   node tools/cpu_mide.mjs una /explorar   → solo esa ruta (en un proceso
 //                                          nuevo; con `node --cpu-prof` se ve
 //                                          qué función gasta)
 //
@@ -36,16 +36,16 @@ const NEGOCIO = process.env.NEGOCIO || 'la-taberna-del-gato-madrid';
 const WIDGET = process.env.WIDGET || 'ea67ec1f-3266-482b-9149-d4ced6f23558';
 // Un QR de mesa de dev (el de Nails & Co, con su wifi de prueba).
 const MESA = process.env.MESA || '7GR66wzlY8hqVjXs';
-// `RUTAS=/m/abc,/explorar/`: solo esas (para no pedir a dev todas).
+// `RUTAS=/m/abc,/explorar`: solo esas (para no pedir a dev todas).
 const RUTAS = process.env.RUTAS ? process.env.RUTAS.split(',') : [
   '/salud',
-  '/descubre/', '/en/discover/', '/explorar/', '/explorar/?ciudad=Madrid', '/explorar/?vista=negocios',
-  '/explorar/?que=sitios', '/explorar/?que=sitios&lat=40.417&lng=-3.704', '/explorar/?que=sitios&vista=mapa&ciudad=Madrid', '/en/explore/?what=places',
-  '/agenda/', '/agenda/madrid/', '/agenda/zaragoza/', '/agenda/madrid/stage/', '/hoy/madrid/',
+  '/descubre', '/en/discover', '/explorar', '/explorar?ciudad=Madrid', '/explorar?vista=negocios',
+  '/explorar?que=sitios', '/explorar?que=sitios&lat=40.417&lng=-3.704', '/explorar?que=sitios&vista=mapa&ciudad=Madrid', '/en/explore?what=places',
+  '/agenda', '/agenda/madrid/', '/agenda/zaragoza/', '/agenda/madrid/stage/', '/hoy/madrid/',
   '/coleccion/con-ninos/madrid/', '/coleccion/finde/', '/coleccion/finde/madrid/',
   `/o/${OFERTA}`, `/en/o/${OFERTA}`, `/b/${NEGOCIO}`, '/b/agenda-publica-de-madrid',
   `/cartel/${OFERTA}`, `/historia/o/${OFERTA}`,
-  '/partidos/', '/grupos/', '/sorteos/', `/widget/${WIDGET}`,
+  '/partidos', '/grupos', '/sorteos', `/widget/${WIDGET}`,
   `/m/${MESA}`, `/cartel/mesa/${MESA}?mesas=12`,
   '/sitemap-agenda.xml', '/sitemap-negocios.xml',
 ];
@@ -69,7 +69,7 @@ function encuentra(path) {
           if (m) { names.push(m[1]); return '([^/]+)'; }
           return s.replace(/[.]/g, '\\.');
         }).join('/');
-        rutas.push({ file: p, names, re: new RegExp(`^/${re}/?$`) });
+        rutas.push({ file: p, names, re: new RegExp(`^/${re}?$`) });
       }
     };
     walk(base);

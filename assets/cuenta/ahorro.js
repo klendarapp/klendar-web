@@ -44,7 +44,7 @@ async function pintaAhorroFila() {
 RUTAS.ahorro = async () => {
   if (!exigeSesion('ahorro')) return;
   const s = await llamar('my_savings', {});
-  const migas = `<p class="crumbs"><a href="/cuenta/">${esc(t('Tu cuenta'))}</a></p>`;
+  const migas = `<p class="crumbs"><a href="/cuenta">${esc(t('Tu cuenta'))}</a></p>`;
   const tituloPagina = EN ? "What you've saved" : 'Lo que has ahorrado';
   if (!s?.total_cents) {
     pinta(migas + pantallaVacia({
@@ -54,7 +54,7 @@ RUTAS.ahorro = async () => {
       texto: EN ? "When you redeem an offer with a previous price, you'll see what you saved here."
         : 'Cuando canjees una oferta con precio de antes, aquí verás lo que te has ahorrado.',
       // Como la app: «Ver ofertas» lleva a Descubre.
-      botones: `<a class="pill accent" href="${PUB_EN ? '/en/discover/' : '/descubre/'}">${esc(EN ? 'See offers' : 'Ver ofertas')}</a>`,
+      botones: `<a class="pill accent" href="${PUB_EN ? '/en/discover' : '/descubre'}">${esc(EN ? 'See offers' : 'Ver ofertas')}</a>`,
     }));
     return;
   }

@@ -72,7 +72,7 @@ export function preguntaAvisame(ctx, que) {
     <p>${esc(S.body)}</p>
     <form class="vacio-botones" method="post" action="${esc(accion)}">
       <button class="pill accent" type="submit">${esc(S.go)}</button>
-      <a class="pill" href="/${en ? 'en/' : ''}">${esc(S.no)}</a>
+      <a class="pill" href="${en ? '/en' : '/'}">${esc(S.no)}</a>
     </form>
   </section>`;
   return pagina(lang, S.title, S.body, body);

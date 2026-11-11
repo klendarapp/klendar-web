@@ -10,7 +10,7 @@
  * resultados y, opcional, `[data-muni-sin]`: lo que se ve sin texto (las
  * «Populares», «Todas las ciudades»), que se esconde mientras se escribe.
  *
- * - Con `data-muni-href` («/descubre/?ciudad=__SLUG__»), cada resultado es
+ * - Con `data-muni-href` («/descubre?ciudad=__SLUG__»), cada resultado es
  *   un enlace.
  * - Sin él, un botón: al tocarlo, el evento `muni-elegido` en el
  *   `[data-muni-busca]` con el municipio en `detail` (`{code, slug, name,

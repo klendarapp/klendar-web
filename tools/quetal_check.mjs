@@ -112,7 +112,7 @@ async function cuentaResena(nav, nombre, t, vp) {
     business_profile: [{ id: BIZ, name: 'Bar Sonda', city: 'Madrid', time_zone: 'Europe/Madrid' }],
     my_review: null, business_reviews: [],
   }));
-  await p.goto(`${BASE}/cuenta/`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/cuenta`, { waitUntil: 'networkidle' });
   const destino = await p.evaluate((b) => destinoWeb(`/business/${b}?review=1&from=quetal`), BIZ);
   ok(destino === `/cuenta/opinar/${BIZ}?desde=quetal`, `${nombre}/${t} el aviso lleva a la reseña con «Ahora no» (${destino})`);
   await p.goto(`${BASE}/cuenta/opinar/${BIZ}?desde=quetal`, { waitUntil: 'networkidle' });
@@ -144,7 +144,7 @@ async function panelCerrado(nav, nombre, t, vp) {
       people: 3, unconfirmed: true, confirmed_at: null, can_manage: true },
     confirm_business_hours: null, business_closures: [],
   }));
-  await p.goto(`${BASE}/panel/#/estaba-cerrado`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel#/estaba-cerrado`, { waitUntil: 'networkidle' });
   await p.waitForSelector('#cerrPuntual');
   const v = await p.locator('#view').innerText();
   ok(/Alguien encontró cerrado tu local el jueves a las 18:00\. ¿Está bien tu horario\?/.test(v) && /Horario sin confirmar/.test(v) && /3 personas desde que revisaste el horario/.test(v),
@@ -164,7 +164,7 @@ async function panelHorario(nav, nombre, t, vp) {
     confirm_business_hours: null,
     business_private: { tax_id: null },
   }));
-  await p.goto(`${BASE}/panel/#/ficha/horario`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel#/ficha/horario`, { waitUntil: 'networkidle' });
   await p.waitForSelector('#cerrBien');
   ok(/Alguien encontró cerrado tu local/.test(await p.locator('#view').innerText()), `${nombre}/${t} panel Horario: el aviso encima del editor`);
   await p.screenshot({ path: `${OUT}/web-panel-horario-aviso-${nombre}-${t}.png`, fullPage: true });

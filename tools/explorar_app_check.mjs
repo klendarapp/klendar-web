@@ -97,7 +97,7 @@ for (const [nombre, tipo, anchos] of [['chromium', chromium, [390, 1280]], ['web
     const t = `[${nombre} ${ancho}]`;
 
     // ── Planes, de serie: el calendario ──
-    await ve(page, `${BASE}/explorar/`);
+    await ve(page, `${BASE}/explorar`);
     let a = await arriba(page);
     ok(a.h1 && a.h1.texto === 'Explorar' && !a.h1.visible, `${t} sin título a la vista (el <h1> «Explorar» solo para el lector y Google)`);
     ok(!a.lead && !a.enlaces, `${t} sin entradilla ni «Dónde verlo» / «Grupos y empresas» en la página`);
@@ -119,7 +119,7 @@ for (const [nombre, tipo, anchos] of [['chromium', chromium, [390, 1280]], ['web
       return { abierta: h?.open, url: location.pathname + location.search, campo: Boolean(h?.querySelector('input[name=q]')),
         atajos: h ? h.querySelectorAll('.busq-sec .atajo').length : 0, accesos: [...(h?.querySelectorAll('.busq-atajo b') || [])].map((b) => b.textContent) };
     });
-    ok(hoja.abierta && hoja.campo && hoja.url === '/explorar/', `${t} la lupa de Explorar abre la hoja «Buscar» sin salir de la página (${hoja.url})`);
+    ok(hoja.abierta && hoja.campo && hoja.url === '/explorar', `${t} la lupa de Explorar abre la hoja «Buscar» sin salir de la página (${hoja.url})`);
     ok(hoja.atajos === 6, `${t} en la hoja, los atajos (${hoja.atajos})`);
     ok(hoja.accesos.includes('Dónde verlo') && hoja.accesos.includes('Grupos y empresas'), `${t} en la hoja, «Dónde verlo» y «Grupos y empresas» (${hoja.accesos.join(' · ')})`);
     await page.screenshot({ path: `${OUT}/explorar-app-${nombre}-${ancho}-buscar.png` });
@@ -132,14 +132,14 @@ for (const [nombre, tipo, anchos] of [['chromium', chromium, [390, 1280]], ['web
     await page.click('header.top [data-abre-hoja="buscar"]');
     await page.waitForTimeout(500);
     await page.fill('#buscar input[name=q]', 'bar');
-    await Promise.all([page.waitForURL(/\/explorar\/\?/, { waitUntil: 'commit' }), page.press('#buscar input[name=q]', 'Enter')]);
+    await Promise.all([page.waitForURL(/\/explorar\?/, { waitUntil: 'commit' }), page.press('#buscar input[name=q]', 'Enter')]);
     await page.waitForSelector('.que-fila', { timeout: 60000 });
     a = await arriba(page);
     ok(/q=bar/.test(page.url()) && !a.calendario, `${t} una búsqueda sale en lista (${page.url().replace(BASE, '')})`);
     ok(a.botones[0] === 'Ver el calendario', `${t} con una búsqueda, el botón de la web lleva al calendario (${a.botones.join(' · ')})`);
 
     // ── La lista (solo web) ──
-    await ve(page, `${BASE}/explorar/`);
+    await ve(page, `${BASE}/explorar`);
     await Promise.all([page.waitForURL(/vista=lista/, { waitUntil: 'commit' }), page.click('.exp-acciones a[aria-label="Ver en lista"]')]);
     await page.waitForSelector('.que-fila');
     await page.waitForTimeout(400);
@@ -147,36 +147,36 @@ for (const [nombre, tipo, anchos] of [['chromium', chromium, [390, 1280]], ['web
     ok(!a.calendario && !a.recuento, `${t} «Ver en lista»: la lista, sin recuento`);
     ok(JSON.stringify(a.botones) === JSON.stringify(['Ver el calendario', 'Ver en el mapa']), `${t} en la lista: calendario · mapa (${a.botones.join(' · ')})`);
     await page.screenshot({ path: `${OUT}/explorar-app-${nombre}-${ancho}-lista.png` });
-    // Se recuerda, como la app: al volver a /explorar/ sin nada, la lista.
-    await page.goto(`${BASE}/explorar/`, { waitUntil: 'domcontentloaded' });
+    // Se recuerda, como la app: al volver a /explorar sin nada, la lista.
+    await page.goto(`${BASE}/explorar`, { waitUntil: 'domcontentloaded' });
     await page.waitForURL(/vista=lista/, { timeout: 8000 }).catch(() => {});
     ok(/vista=lista/.test(page.url()), `${t} recuerda la lista (${page.url().replace(BASE, '')})`);
     await page.waitForSelector('.que-fila');
     await Promise.all([page.waitForURL((u) => !/vista=/.test(u.search), { waitUntil: 'commit' }), page.click('.exp-acciones a[aria-label="Ver el calendario"]')]);
-    await page.goto(`${BASE}/explorar/`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`${BASE}/explorar`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.que-fila');
     await page.waitForTimeout(800);
     ok(!/vista=/.test(page.url()) && (await arriba(page)).calendario, `${t} y vuelve al calendario si se elige (${page.url().replace(BASE, '')})`);
 
     // ── El mapa de Planes ──
-    await ve(page, `${BASE}/explorar/?vista=mapa`);
+    await ve(page, `${BASE}/explorar?vista=mapa`);
     a = await arriba(page);
     ok(JSON.stringify(a.botones) === JSON.stringify(['Ver en lista', 'Ver el calendario']), `${t} en el mapa: la lista · «Ver el calendario» (${a.botones.join(' · ')})`);
 
     // ── Sitios ──
-    await ve(page, `${BASE}/explorar/?que=sitios`);
+    await ve(page, `${BASE}/explorar?que=sitios`);
     a = await arriba(page);
     ok(JSON.stringify(a.botones) === JSON.stringify(['Ver en el mapa']), `${t} Sitios: «Ver en el mapa» (${a.botones.join(' · ')})`);
     ok(!a.recuento, `${t} Sitios sin «N sitios»`);
     ok(a.ancho <= ancho, `${t} Sitios sin desplazamiento lateral (${a.ancho})`);
     await page.screenshot({ path: `${OUT}/explorar-app-${nombre}-${ancho}-sitios.png` });
-    await ve(page, `${BASE}/explorar/?que=sitios&vista=mapa`);
+    await ve(page, `${BASE}/explorar?que=sitios&vista=mapa`);
     a = await arriba(page);
     ok(JSON.stringify(a.botones) === JSON.stringify(['Ver en lista']), `${t} el mapa de Sitios: «Ver en lista» (${a.botones.join(' · ')})`);
 
     // ── En inglés, los textos de la app (sin la vista recordada) ──
     await page.evaluate(() => localStorage.clear());
-    await ve(page, `${BASE}/en/explore/`);
+    await ve(page, `${BASE}/en/explore`);
     a = await arriba(page);
     ok(JSON.stringify(a.botones) === JSON.stringify(['See as a list', 'See on the map']) && a.calendario, `${t} en inglés (${a.botones.join(' · ')})`);
     ok(JSON.stringify(a.que.map((x) => x[0])) === JSON.stringify(['Plans', 'Places']), `${t} «Plans | Places»`);
@@ -189,9 +189,9 @@ for (const [nombre, tipo, anchos] of [['chromium', chromium, [390, 1280]], ['web
   if (nombre === 'chromium') {
     const ctx = await nav.newContext({ viewport: { width: 390, height: 844 }, javaScriptEnabled: false, locale: 'es-ES' });
     const page = await ctx.newPage();
-    await ve(page, `${BASE}/precios/`, 'header.top');
+    await ve(page, `${BASE}/precios`, 'header.top');
     const href = await page.getAttribute('header.top [data-abre-hoja="buscar"]', 'href');
-    ok(href === '/explorar/?buscar=1', `[sin JS] la lupa de la cabecera lleva a Explorar con «Buscar» abierta (${href})`);
+    ok(href === '/explorar?buscar=1', `[sin JS] la lupa de la cabecera lleva a Explorar con «Buscar» abierta (${href})`);
     await ve(page, `${BASE}${href}`);
     const s = await page.evaluate(() => {
       const h = document.getElementById('buscar');
@@ -200,7 +200,7 @@ for (const [nombre, tipo, anchos] of [['chromium', chromium, [390, 1280]], ['web
         robots: document.querySelector('meta[name=robots]')?.content || '' };
     });
     ok(s.abierta && s.campo, '[sin JS] la hoja «Buscar» sale abierta con el buscador');
-    ok(s.x === '/explorar/', `[sin JS] su ✕ lleva a Explorar sin la hoja (${s.x})`);
+    ok(s.x === '/explorar', `[sin JS] su ✕ lleva a Explorar sin la hoja (${s.x})`);
     ok(/noindex/.test(s.robots), '[sin JS] ?buscar=1 no se indexa');
     await page.screenshot({ path: `${OUT}/explorar-app-sinjs-buscar.png` });
     await page.click('#buscar input[name=q]');
@@ -210,8 +210,8 @@ for (const [nombre, tipo, anchos] of [['chromium', chromium, [390, 1280]], ['web
     ok(!(await page.locator('.calendario').count()), '[sin JS] buscar lleva a los resultados en lista');
     ok(!(await page.locator('.exp-acciones [data-abre-hoja="buscar"]').count()), '[sin JS] sin lupa en la fila (la de la cabecera es la única)');
 
-    // Lo que ve Google en /explorar/ y /en/explore/.
-    for (const [ruta, otra, h1] of [['/explorar/', '/en/explore/', 'Explorar'], ['/en/explore/', '/explorar/', 'Explore']]) {
+    // Lo que ve Google en /explorar y /en/explore/.
+    for (const [ruta, otra, h1] of [['/explorar', '/en/explore', 'Explorar'], ['/en/explore', '/explorar', 'Explore']]) {
       await ve(page, `${BASE}${ruta}`);
       const g = await page.evaluate(() => ({
         title: document.title, h1: document.querySelector('h1')?.textContent.trim(),
@@ -232,7 +232,7 @@ for (const [nombre, tipo, anchos] of [['chromium', chromium, [390, 1280]], ['web
       ok(Boolean(g.lista), `${n} la lista, a un enlace (${g.lista})`);
       ok(g.masFormas >= 10, `${n} «Más formas de explorar» (${g.masFormas} enlaces)`);
     }
-    await ve(page, `${BASE}/explorar/?vista=lista`);
+    await ve(page, `${BASE}/explorar?vista=lista`);
     const l = await page.evaluate(() => ({ fichas: document.querySelectorAll('a[href*="/o/"]').length, paginas: Boolean(document.querySelector('.pager a[rel=next]')) }));
     ok(l.fichas >= 10 && l.paginas, `[sin JS] la lista, con fichas y páginas (${l.fichas})`);
     await ctx.close();

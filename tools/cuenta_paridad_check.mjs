@@ -132,7 +132,7 @@ async function planes(nav, nombre, t, vp) {
   const v = await contexto(nav, vp, CUENTA({ my_saved_offers: [], my_redemptions: [], my_followed_series: [], my_queue_turns: [], my_orders: [] }));
   await v.p.goto(`${BASE}/cuenta/planes`, { waitUntil: 'networkidle' });
   await v.p.waitForSelector('.pl-vistas');
-  ok(await v.p.locator('a.pill.accent[href="/descubre/"]', { hasText: 'Descubre' }).count() === 1, `${tag} planes vacío: «Descubre»`);
+  ok(await v.p.locator('a.pill.accent[href="/descubre"]', { hasText: 'Descubre' }).count() === 1, `${tag} planes vacío: «Descubre»`);
   await v.ctx.close();
 }
 
@@ -168,7 +168,7 @@ async function favoritos(nav, nombre, t, vp) {
   const v = await contexto(nav, vp, CUENTA({ my_favorites: [], favorites_feed: [], public_organizers: [] }));
   await v.p.goto(`${BASE}/cuenta/favoritos`, { waitUntil: 'networkidle' });
   await v.p.waitForSelector('.vacio, .empty, a.pill.accent');
-  ok(await v.p.locator('a.pill.accent[href="/descubre/"]', { hasText: 'Descubrir negocios' }).count() === 1, `${tag} favoritos vacío: «Descubrir negocios»`);
+  ok(await v.p.locator('a.pill.accent[href="/descubre"]', { hasText: 'Descubrir negocios' }).count() === 1, `${tag} favoritos vacío: «Descubrir negocios»`);
   await v.ctx.close();
 }
 

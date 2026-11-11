@@ -69,7 +69,7 @@ RUTAS.equipos = async (_partes, params) => {
   }
 
   const lista = (await llamar('my_followed_teams', { p_lang: LANG })) || [];
-  const cabeza = `<p class="crumbs"><a href="/cuenta/">${esc(t('Tu cuenta'))}</a></p>
+  const cabeza = `<p class="crumbs"><a href="/cuenta">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(S.teamsYouFollow)}</h1>`;
   // Neutro con borde (el coral, solo para el botón principal y las ofertas).
   const botonSeguir = `<button type="button" class="pill" data-seguir-equipo>${esc(S.followTeam)}</button>`;

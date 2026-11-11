@@ -29,7 +29,7 @@ let fallos = 0;
 const ok = (c, m) => { if (!c) { fallos++; console.log('FALLO:', m); } else console.log('ok:', m); };
 
 const PAGINAS = [
-  ['/privacidad/', 'Última actualización: 11 de noviembre de 2026', [
+  ['/privacidad', 'Última actualización: 11 de noviembre de 2026', [
     /qué hace cada uno en las herramientas del negocio \(quién validó, deshizo una validación hecha por error, vendió o descontó, apuntó a alguien en la cola o dio algo en el momento\)/,
     /y, en «Dónde verlo», quién del equipo puso «Poner siempre» un equipo, un deportista o una competición; si es una entidad y conecta su agenda, la dirección de cada calendario \(que no enseñamos entera\), quién la conectó, cuándo la leímos, cuántos eventos trajo y el último error, y de cada evento importado su identificador en el calendario y el lugar escrito \(de los calendarios no leemos a las personas invitadas ni los eventos privados\)\. Se borra al desconectarla o al eliminar el negocio\. Para el «Gratis de lanzamiento», la provincia del local/,
     /4 de noviembre de 2026: La fila «Cuenta de negocio» nombra también quién del equipo deshace una validación hecha por error\./,
@@ -38,7 +38,7 @@ const PAGINAS = [
     /\(quién validó, vendió o descontó/,
     /una competición\. Para el «Gratis de lanzamiento»/,
   ]],
-  ['/en/privacy/', 'Last updated: 11 November 2026', [
+  ['/en/privacy', 'Last updated: 11 November 2026', [
     /what each of them does in the business tools \(who validated, undid a validation made by mistake, sold or recorded a use, added someone to the queue or gave something on the spot\)/,
     /and, in “Where to watch”, which team member set “Always show” for a team, an athlete or a competition; if it is an organisation and connects its calendar, the address of each calendar \(which we never show in full\), who connected it, when we read it, how many events it brought and the last error, and for each imported event its identifier in the calendar and the written place \(from calendars we do not read invitees or private events\)\. It is deleted when the calendar is disconnected or the business is deleted\. For the launch free period, the province of the venue/,
     /4 November 2026: The “Business account” row now also mentions who in the team undoes a validation made by mistake\./,
@@ -47,15 +47,15 @@ const PAGINAS = [
     /\(who validated, sold or recorded a use/,
     /a competition\. For the launch free period/,
   ]],
-  ['/terminos/', 'Última actualización: 5 de noviembre de 2026', [
+  ['/terminos', 'Última actualización: 5 de noviembre de 2026', [
     /Si el negocio valida tu código por error, puede deshacerlo en los 10 minutos siguientes \(una vez por código\): tu código vuelve a valer, salvo que la oferta ya haya terminado, y se quitan el sello o el cupón que te hubiera dado ese canje, si aún no los has usado\./,
     /4 de noviembre de 2026: Ofertas y canjes \(apartado 3\): si el negocio valida tu código por error, puede deshacerlo en los 10 minutos siguientes, una vez por código/,
   ], []],
-  ['/en/terms/', 'Last updated: 5 November 2026', [
+  ['/en/terms', 'Last updated: 5 November 2026', [
     /If the business validates your code by mistake, it can undo it within the next 10 minutes \(once per code\): your code is valid again, unless the offer has already ended, and any stamp or coupon that redemption gave you is removed, if you haven't used it yet\./,
     /4 November 2026: Deals and redemptions \(section 3\): if the business validates your code by mistake, it can undo it within the next 10 minutes, once per code/,
   ], []],
-  ['/negocios/', 'Última actualización: 5 de noviembre de 2026 · Versión 2026-11-05', [
+  ['/negocios', 'Última actualización: 5 de noviembre de 2026 · Versión 2026-11-05', [
     /Las cuentas de entidad no pagan cuota, ni ahora ni más adelante: Klendar no les cobrará por publicar ni por las funciones que hoy tienen\. Si algún día hubiera funciones nuevas de pago, serían opcionales y la Entidad podría seguir usando gratis todo lo demás\./,
     /c\) mantener al día quién gestiona la cuenta y avisarnos si deja de representar a la Entidad\.\s+Conecta tu agenda\. La Entidad puede conectar a su cuenta hasta tres calendarios en formato iCal\/ICS\. Klendar lee cada uno una vez al día \(o cuando la Entidad pulsa «Sincronizar ahora»\)/,
     /La Entidad: a\) solo conecta calendarios suyos o que tiene derecho a publicar; b\) responde de lo que contienen, como de lo que publica a mano/,
@@ -68,7 +68,7 @@ const PAGINAS = [
   ], [
     /Mientras Klendar no diga otra cosa, las cuentas de entidad no pagan cuota/,
   ]],
-  ['/en/business-terms/', 'Last updated: 5 November 2026 · Version 2026-11-05', [
+  ['/en/business-terms', 'Last updated: 5 November 2026 · Version 2026-11-05', [
     /Organisation accounts pay no fee, now or later: Klendar will not charge them for publishing or for the features they have today\. If paid features are ever added, they will be optional and the Organisation may keep using everything else for free\./,
     /c\) keep up to date who manages the account and let us know if they no longer represent the Organisation\.\s+Connect your calendar\. The Organisation may connect up to three calendars in iCal\/ICS format to its account\./,
     /The Organisation: a\) only connects calendars that are its own or that it has the right to publish; b\) is responsible for their content/,

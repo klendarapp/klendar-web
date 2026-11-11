@@ -67,7 +67,7 @@
   };
 
   /** «Tu cuenta» en el idioma de la página. */
-  const cuenta = (lang, ruta = '') => `/cuenta/${lang === 'en' ? ruta.replace(/\?|$/, (m) => (m ? '?lang=en&' : '?lang=en')) : ruta}`;
+  const cuenta = (lang, ruta = '') => { const r = lang === 'en' ? ruta.replace(/\?|$/, (m) => (m ? '?lang=en&' : '?lang=en')) : ruta; return `/cuenta${r && r[0] !== '?' ? '/' : ''}${r}`; };
   /** Entrar y volver a la cola en «Tu cuenta». */
   const entrar = (lang, code) => `${cuenta(lang, `entrar?siguiente=${encodeURIComponent(`cola/${code}`)}`)}`;
   /** La ficha del negocio. */
@@ -99,7 +99,7 @@
     const S = T[en ? 'en' : 'es'];
     if (!info || info.ok !== true || !info.business) {
       return vacio(S, S.bad, S.badBody,
-        `<a class="pill accent" href="${en ? '/en/discover/' : '/descubre/'}">${esc(S.explore)}</a>`);
+        `<a class="pill accent" href="${en ? '/en/discover' : '/descubre'}">${esc(S.explore)}</a>`);
     }
     const b = info.business;
     const q = info.queue;

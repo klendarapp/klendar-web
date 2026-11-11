@@ -115,7 +115,7 @@ async function contexto(guardado) {
 const sinCuenta = (e) => !e.claves.some((k) => k.startsWith(`sb-${OTRO}-`) || k in DE_LA_CUENTA || k.startsWith('klendar.codigos.'));
 
 // 1. La sesión de otro proyecto.
-for (const ruta of ['/cuenta/', '/descubre/']) {
+for (const ruta of ['/cuenta', '/descubre']) {
   const { ctx, page, errores } = await contexto({ [`sb-${OTRO}-auth-token`]: SESION, ...DE_LA_CUENTA });
   await page.goto(`${BASE}${ruta}`, { waitUntil: 'load' });
   await page.waitForTimeout(2500);
@@ -125,13 +125,13 @@ for (const ruta of ['/cuenta/', '/descubre/']) {
   ok(sinCuenta(e), `otro proyecto ${ruta}: la sesión de otro y lo de esa cuenta, borrados (${e.claves.join(', ')})`);
   ok(e.marca === REF, `otro proyecto ${ruta}: la marca del proyecto (${e.marca})`);
   ok(e.m.cls < 0.01, `otro proyecto ${ruta}: CLS ${e.m.cls.toFixed(4)}${e.m.de.length ? ` (${e.m.de.slice(0, 3).join(' | ')})` : ''}`);
-  if (ruta === '/cuenta/') ok(await page.locator('#contenido, main').getByText(/Entra en Klendar/).first().isVisible().catch(() => false), 'otro proyecto /cuenta/: pide entrar («Entra en Klendar»)');
+  if (ruta === '/cuenta') ok(await page.locator('#contenido, main').getByText(/Entra en Klendar/).first().isVisible().catch(() => false), 'otro proyecto /cuenta: pide entrar («Entra en Klendar»)');
   ok(errores.length === 0, `otro proyecto ${ruta}: sin errores${errores.length ? `: ${errores.slice(0, 2).join(' | ')}` : ''}`);
   await ctx.close();
 }
 
 // 2. La sesión de este proyecto, con y sin la marca.
-for (const [marca, ruta] of [[true, '/accesibilidad/'], [true, '/descubre/'], [false, '/accesibilidad/']]) {
+for (const [marca, ruta] of [[true, '/accesibilidad'], [true, '/descubre'], [false, '/accesibilidad']]) {
   const guardado = { [`sb-${REF}-auth-token`]: SESION, ...DE_LA_CUENTA };
   if (marca) guardado['klendar.sb'] = REF;
   const { ctx, page, errores } = await contexto(guardado);
@@ -139,7 +139,7 @@ for (const [marca, ruta] of [[true, '/accesibilidad/'], [true, '/descubre/'], [f
   await page.waitForTimeout(2500);
   const e = await estado(page);
   const tag = `este proyecto ${ruta} ${marca ? 'con' : 'sin'} marca`;
-  if (marca || ruta === '/descubre/') {
+  if (marca || ruta === '/descubre') {
     ok(e.m.primero?.yo && e.m.primero.foto === FOTO, `${tag}: la foto desde el primer pintado (${JSON.stringify(e.m.primero)})`);
     ok(e.m.cls < 0.01, `${tag}: CLS ${e.m.cls.toFixed(4)}${e.m.de.length ? ` (${e.m.de.slice(0, 3).join(' | ')})` : ''}`);
   }
@@ -154,7 +154,7 @@ for (const [marca, ruta] of [[true, '/accesibilidad/'], [true, '/descubre/'], [f
 // prod con ivan@klendar.app y la cabecera seguía con la foto de Google de la
 // sesión vieja de dev): la inicial del usuario de ahora, nunca la foto de la
 // otra; y la sesión vieja, borrada.
-for (const ruta of ['/accesibilidad/', '/cuenta/', '/descubre/']) {
+for (const ruta of ['/accesibilidad', '/cuenta', '/descubre']) {
   for (const marca of [false, true]) {
     const AHORA = { ...USER, id: '0e7717e0-0000-4000-8000-0000000094a3', email: 'ivan@klendar.app', user_metadata: { display_name: 'Iván Prod' } };
     const sesionAhora = JSON.stringify({ ...JSON.parse(SESION), user: AHORA });
@@ -178,7 +178,7 @@ for (const ruta of ['/accesibilidad/', '/cuenta/', '/descubre/']) {
 // 3. «Cerrar sesión».
 {
   const { ctx, page, errores } = await contexto({ [`sb-${REF}-auth-token`]: SESION, 'klendar.sb': REF, ...DE_LA_CUENTA });
-  await page.goto(`${BASE}/cuenta/`, { waitUntil: 'load' });
+  await page.goto(`${BASE}/cuenta`, { waitUntil: 'load' });
   const salir = page.locator('#salir');
   await salir.waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
   ok(await salir.isVisible(), '«Tu cuenta» con la sesión de este proyecto: «Cerrar sesión» a la vista');

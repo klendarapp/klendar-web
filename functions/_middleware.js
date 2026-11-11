@@ -15,6 +15,8 @@
 // Lo estático que no necesita nada de esto (assets, legales, landing…) ni
 // pasa por aquí: lo saca `_routes.json` (cada paso por una Function cuenta
 // en el límite de CPU del plan gratis, 10 ms; ver RUNBOOK §3f).
+import { direccionBuena } from './_lib/direccion.js';
+
 const INTERNO = /^\/(tools\/|README\.md$|build_[\w-]*\.py$|[\w-]+\.py$|__pycache__\/|node_modules\/|\.(?!well-known\/))/i;
 
 const SEGURIDAD = {
@@ -35,7 +37,7 @@ const SEGURIDAD = {
 // tardar el navegador en ver un cambio): una publicación agotada o editada
 // no se ve más vieja que antes. Lo privado (`private, no-store`: lo abierto
 // con un enlace de RRPP, etc.) nunca entra.
-const EN_CACHE = /^\/(en\/)?(o|b|a|agenda|whats-on|hoy|today|con-ninos|kids|coleccion|collection|explorar|explore|descubre|discover|partidos|matches|grupos|groups|sorteos|giveaways|sorteo|giveaway|cartel|poster|historia|story|widget|m)\/|^\/sitemap-[a-z]+\.xml$/;
+const EN_CACHE = /^\/(en\/)?(o|b|a|agenda|whats-on|hoy|today|con-ninos|kids|coleccion|collection|explorar|explore|descubre|discover|partidos|matches|grupos|groups|sorteos|giveaways|sorteo|giveaway|cartel|poster|historia|story|widget|m)(\/|$)|^\/sitemap-[a-z]+\.xml$/;
 
 /** Segundos que se puede guardar en el borde (0: no se guarda). */
 function segundosEnCache(res) {
@@ -85,6 +87,8 @@ const rutaReal = (pathname) => {
   return ruta.replace(/\/{2,}/g, '/');
 };
 
+// 0. Direcciones sin barra al final (Iván, 2026-11-11): ver _lib/direccion.js.
+
 export async function onRequest(ctx) {
   const { pathname, searchParams } = new URL(ctx.request.url);
   if (INTERNO.test(pathname) || INTERNO.test(rutaReal(pathname))) {
@@ -92,6 +96,19 @@ export async function onRequest(ctx) {
       status: 404,
       headers: { 'content-type': 'text/plain; charset=utf-8', 'x-robots-tag': 'noindex' },
     });
+  }
+
+  if (ctx.request.method === 'GET' || ctx.request.method === 'HEAD') {
+    const url = new URL(ctx.request.url);
+    const buena = direccionBuena(url.pathname);
+    const apex = url.hostname === 'www.klendar.app';
+    if (buena !== url.pathname || apex) {
+      const destino = (apex ? 'https://klendar.app' : url.origin) + buena + url.search;
+      return new Response(null, {
+        status: 301,
+        headers: { location: destino, 'cache-control': 'public, max-age=86400', ...SEGURIDAD },
+      });
+    }
   }
 
   const head = ctx.request.method === 'HEAD';
@@ -111,14 +128,14 @@ export async function onRequest(ctx) {
     // La ficha abierta desde el QR del local (`?visita=`) mira si estás en
     // el local para darte el sello: solo entonces puede pedir la ubicación.
     const desdeQr = /^\/(en\/)?b\//.test(pathname) && searchParams.has('visita');
-    const ubicacion = desdeQr || /^\/(explorar|descubre|partidos|grupos|sorteos|en\/explore|en\/discover|en\/matches|en\/groups|en\/giveaways|cuenta|panel)\//.test(pathname) ? '(self)' : '()';
-    cabeceras.set('permissions-policy', `geolocation=${ubicacion}, camera=${pathname.startsWith('/panel/') ? '(self)' : '()'}, microphone=()`);
+    const ubicacion = desdeQr || /^\/(explorar|descubre|partidos|grupos|sorteos|en\/explore|en\/discover|en\/matches|en\/groups|en\/giveaways|cuenta|panel)(\/|$)/.test(pathname) ? '(self)' : '()';
+    cabeceras.set('permissions-policy', `geolocation=${ubicacion}, camera=${/^\/panel(\/|$)/.test(pathname) ? '(self)' : '()'}, microphone=()`);
   }
   // 5. Zonas con sesión (Tu cuenta, panel, admin): sin el contador de
   //    Cloudflare. `no-transform` no basta: Pages lo mete igual en el HTML
   //    estático (comprobado en producción, 2026-09-30), la CSP lo tendría que
   //    bloquear y la consola se llenaría de avisos. Se quita aquí.
-  const conSesion = /^\/(cuenta|panel|admin|tv)\//.test(pathname);
+  const conSesion = /^\/(cuenta|panel|admin|tv)(\/|$)/.test(pathname);
   if (!head && conSesion && typeof HTMLRewriter === 'function' && /text\/html/i.test(cabeceras.get('content-type') || '')) {
     cabeceras.delete('content-length'); // el cuerpo cambia de tamaño
     const limpio = new HTMLRewriter()

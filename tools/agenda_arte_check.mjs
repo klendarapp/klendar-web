@@ -43,14 +43,14 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     ok(/gradient/.test(fondo), `${nombre}/${t} ficha: fondo en degradado`);
     await p.screenshot({ path: `${OUT}/web-ficha-arte-${nombre}-${t}.png` });
 
-    await p.goto(`${BASE}/explorar/?ciudad=madrid&agenda-publica=1`, { waitUntil: 'networkidle' });
+    await p.goto(`${BASE}/explorar?ciudad=madrid&agenda-publica=1`, { waitUntil: 'networkidle' });
     const n = await p.locator('.tj .tj-arte').count();
     ok(n > 0, `${nombre}/${t} explorar: ${n} tarjetas con el color de su categoría`);
     ok(await p.locator(`.tj ${GENERICA}`).count() === 0, `${nombre}/${t} explorar: ninguna genérica como foto`);
     await p.screenshot({ path: `${OUT}/web-explorar-arte-${nombre}-${t}.png` });
 
     // Descubre (una por pantalla): la tarjeta con el color, sin «Ver solo la foto».
-    await p.goto(`${BASE}/descubre/?ciudad=madrid&agenda-publica=1`, { waitUntil: 'networkidle' });
+    await p.goto(`${BASE}/descubre?ciudad=madrid&agenda-publica=1`, { waitUntil: 'networkidle' });
     await p.waitForTimeout(800);
     const pantalla = p.locator('.tj--pantalla').filter({ has: p.locator('.tj-arte') });
     const m = await pantalla.count();

@@ -24,12 +24,12 @@ let fallos = 0;
 const ok = (c, m) => { if (!c) { fallos++; console.log('FALLA:', m); } else console.log('ok:', m); };
 
 const VISTAS = [
-  ['descubre', '/descubre/'],
-  ['planes-lista', '/explorar/?vista=lista'],
-  ['planes-calendario', '/explorar/?vista=calendario'],
-  ['planes-mapa', '/explorar/?vista=mapa'],
-  ['sitios-lista', '/explorar/?que=sitios'],
-  ['sitios-mapa', '/explorar/?que=sitios&vista=mapa'],
+  ['descubre', '/descubre'],
+  ['planes-lista', '/explorar?vista=lista'],
+  ['planes-calendario', '/explorar?vista=calendario'],
+  ['planes-mapa', '/explorar?vista=mapa'],
+  ['sitios-lista', '/explorar?que=sitios'],
+  ['sitios-mapa', '/explorar?que=sitios&vista=mapa'],
 ];
 
 /** Lo que se ve de la fila: los textos y la caja de cada botón. */

@@ -145,7 +145,7 @@ const llamada = (estado, fn) => estado.llamadas.filter(([f]) => f === fn).map(([
 async function panel(nav, nombre, t, vp) {
   const { ctx, p, estado, errores } = await contextoPanel(nav, vp);
   // 1. Menú del día
-  await p.goto(`${BASE}/panel/#/menu-del-dia`);
+  await p.goto(`${BASE}/panel#/menu-del-dia`);
   await p.waitForSelector('#publicar', { timeout: 15000 });
   let txt = await vista(p);
   ok(/Repetir el de ayer \(12,50/.test(txt), `${nombre}/${t} menú: «Repetir el de ayer (12,50 €)»`);
@@ -164,13 +164,13 @@ async function panel(nav, nombre, t, vp) {
   const pub = llamada(estado, 'publish_daily_menu')[0] || {};
   ok(pub.p_price_cents === 1390 && pub.p_note === 'Con vino' && pub.p_meal === 'both' && pub.p_reuse_photo === false,
     `${nombre}/${t} menú: publica 13,90 €, «Con vino», comida y cena (${JSON.stringify(pub)})`);
-  await p.goto(`${BASE}/panel/#/menu-del-dia`);
+  await p.goto(`${BASE}/panel#/menu-del-dia`);
   await p.waitForSelector('#repetir');
   await p.click('#repetir');
   await p.waitForTimeout(500);
   const rep = llamada(estado, 'publish_daily_menu').slice(-1)[0] || {};
   ok(rep.p_reuse_photo === true && rep.p_price_cents === 1250, `${nombre}/${t} menú: «Repetir el de ayer» con su foto`);
-  await p.goto(`${BASE}/panel/#/menu-del-dia`);
+  await p.goto(`${BASE}/panel#/menu-del-dia`);
   await p.waitForSelector('#planOn');
   await p.uncheck('input[name=dia][value="5"]');
   await p.waitForTimeout(400);
@@ -178,7 +178,7 @@ async function panel(nav, nombre, t, vp) {
   ok(JSON.stringify(plan.p_weekdays) === '[1,2,3,4]' && plan.p_at === '11:30', `${nombre}/${t} menú: «Todos los días» sin el viernes (${JSON.stringify(plan)})`);
 
   // 2. Wifi para clientes
-  await p.goto(`${BASE}/panel/#/wifi-clientes`);
+  await p.goto(`${BASE}/panel#/wifi-clientes`);
   await p.waitForSelector('#guardaWifi', { timeout: 15000 });
   txt = await vista(p);
   ok(/142 escaneos este mes/.test(txt), `${nombre}/${t} wifi: «142 escaneos este mes»`);
@@ -196,12 +196,12 @@ async function panel(nav, nombre, t, vp) {
   await p.screenshot({ path: `${OUT}/panel-wifi-clientes-${nombre}-${t}.png`, fullPage: true });
 
   // 3. Más herramientas, resumen y «Crear»
-  await p.goto(`${BASE}/panel/#/herramientas`);
+  await p.goto(`${BASE}/panel#/herramientas`);
   await p.waitForSelector('.fiel-card', { timeout: 15000 });
   txt = await vista(p);
   ok(/Menú del día/.test(txt) && /Publicado hasta las/.test(txt), `${nombre}/${t} herramientas: tarjeta del Menú del día`);
   ok(/Wifi para clientes/.test(txt) && /142 escaneos este mes/.test(txt), `${nombre}/${t} herramientas: tarjeta del wifi`);
-  await p.goto(`${BASE}/panel/#/resumen`);
+  await p.goto(`${BASE}/panel#/resumen`);
   await p.waitForSelector('.fila-inicio', { timeout: 15000 }).catch(() => null);
   txt = await vista(p);
   ok(/Menú del día · hasta las/.test(txt), `${nombre}/${t} resumen: fila del Menú del día`);
@@ -214,7 +214,7 @@ async function panel(nav, nombre, t, vp) {
   } else ok(false, `${nombre}/${t} crear: no se encuentra el botón`);
 
   // 4. Tu ficha › Horario
-  await p.goto(`${BASE}/panel/#/ficha/horario`);
+  await p.goto(`${BASE}/panel#/ficha/horario`);
   await p.waitForSelector('#cocinaOn', { timeout: 15000 });
   ok(await p.locator('[data-cocina]').isHidden(), `${nombre}/${t} ficha: sin horario de cocina, plegado`);
   await p.check('#cocinaOn');
@@ -226,7 +226,7 @@ async function panel(nav, nombre, t, vp) {
   ok(k && k.p_hours && typeof k.p_hours === 'object', `${nombre}/${t} ficha: guarda el horario de cocina`);
 
   // 5. Cifras
-  await p.goto(`${BASE}/panel/#/informe`);
+  await p.goto(`${BASE}/panel#/informe`);
   await p.waitForSelector('#informeMesa', { timeout: 15000 }).catch(() => null);
   await p.waitForTimeout(500);
   ok(/142 escaneos este mes/.test(await vista(p)), `${nombre}/${t} cifras: «142 escaneos este mes»`);
@@ -321,7 +321,7 @@ async function publico(nav, nombre, t, vp, estado) {
   await p.screenshot({ path: `${OUT}/web-carteles-mesa-${nombre}-${t}.png`, fullPage: true });
   // 8. Explorar
   estado.llamadas.length = 0;
-  await p.goto(`${PUB}/explorar/?menu-del-dia=1&comer-ahora=1`);
+  await p.goto(`${PUB}/explorar?menu-del-dia=1&comer-ahora=1`);
   const f = estado.llamadas.filter(([fn]) => fn === 'public_explore').map(([, b]) => b)[0] || {};
   const traits = f.p_filters?.traits || [];
   ok(traits.includes('daily_menu') && traits.includes('eat_now'), `${nombre}/${t} explorar: daily_menu y eat_now a public_explore (${JSON.stringify(traits)})`);

@@ -26,7 +26,7 @@ export async function onRequestGet(ctx) {
     <p>${esc(S.body)}</p>
     <form class="vacio-botones" method="post" action="/baja/${encodeURIComponent(token)}${en ? '?lang=en' : ''}">
       <button class="pill accent" type="submit">${esc(S.go)}</button>
-      <a class="pill" href="/${en ? 'en/' : ''}">${esc(S.no)}</a>
+      <a class="pill" href="${en ? '/en' : '/'}">${esc(S.no)}</a>
     </form>
   </section>`;
   return html(publicPage({
@@ -74,7 +74,7 @@ export async function onRequestPost(ctx) {
   <section class="vacio">
     <h1>${esc(S.title)}</h1>
     <p>${esc(S.body)}</p>
-    <div class="vacio-botones"><a class="pill accent" href="/${en ? 'en/' : ''}">${esc(S.home)}</a></div>
+    <div class="vacio-botones"><a class="pill accent" href="${en ? '/en' : '/'}">${esc(S.home)}</a></div>
   </section>`;
 
   return html(publicPage({

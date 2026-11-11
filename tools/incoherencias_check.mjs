@@ -26,7 +26,7 @@ let fallos = 0;
 const ok = (c, m) => { if (!c) { fallos++; console.log('FALLO:', m); } else console.log('ok:', m); };
 
 const PAGINAS = [
-  ['/fuentes/', [
+  ['/fuentes', [
     /Basado en datos de la Agencia Estatal Boletín Oficial del Estado/,
     /Locales de Madrid\s+Ayuntamiento de Madrid, Calendario laboral\s+CC BY 4\.0/,
     /Locales de Cataluña\s+Generalitat de Catalunya, Calendari de festes locals a Catalunya\s+Llicència oberta d’ús d’informació – Catalunya: «Generalitat de Catalunya\. Departament d’Empresa i Treball»/,
@@ -39,7 +39,7 @@ const PAGINAS = [
     /El tiempo\s+«Según el tiempo» usa la previsión de MET Norway/,
     /Instituto Geográfico Nacional/,
   ], [/football-data/i]],
-  ['/en/sources/', [
+  ['/en/sources', [
     /Basado en datos de la Agencia Estatal Boletín Oficial del Estado/,
     /Local, Madrid\s+Madrid City Council, Calendario laboral\s+CC BY 4\.0/,
     /Local, Catalonia\s+Government of Catalonia/,
@@ -47,10 +47,10 @@ const PAGINAS = [
     /Local, Basque Country\s+Basque Government/,
     /Maps\s+Maps, addresses and walking routes come from Mapbox, with data © OpenStreetMap contributors \(ODbL licence\)/,
   ], [/football-data/i]],
-  ['/para-negocios/', [
+  ['/para-negocios', [
     /en la app el orden de serie es «Recomendado» \(el tiempo de hoy, lo más nuevo y los gustos de cada persona\) y cada uno puede cambiarlo en los filtros/,
   ], [/el orden lo elige la persona/]],
-  ['/en/for-business/', [
+  ['/en/for-business', [
     /in the app the default order is “Recommended” \(today's weather, what's newest and each person's interests\)/,
   ], [/the order is chosen by the person/]],
 ];

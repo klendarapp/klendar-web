@@ -1,4 +1,4 @@
-/* «Grupos y empresas» (/grupos/, /en/groups/): elegir hasta 3 negocios y
+/* «Grupos y empresas» (/grupos, /en/groups): elegir hasta 3 negocios y
  * «Pedir presupuesto (2)» en una barra fija abajo, que lleva al formulario
  * de «Tu cuenta» (`/cuenta/grupos/pedir?b=<id>,<id>`). Lo elegido se recuerda en
  * esta pestaña (`klendar.grupos.elegidos`, también lo usa «Tu cuenta» al

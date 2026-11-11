@@ -1,4 +1,4 @@
-/* Klendar — el asistente de ayuda en la web: /preguntas/, /en/faq/ y «Sugerencias y mejoras» de «Tu cuenta». RUNBOOK §4zi (app).
+/* Klendar — el asistente de ayuda en la web: /preguntas, /en/faq y «Sugerencias y mejoras» de «Tu cuenta». RUNBOOK §4zi (app).
  *
  * Lo mismo que la app (lib/features/help/presentation/assistant_screen.dart), con los mismos textos. Apagado, con el tope
  * acabado, sin red o contra una base sin la migración: `assistant_status` no dice `available` y no sale nada; queda la Ayuda
@@ -353,7 +353,7 @@
   var IDIOMAS = ['es', 'en', 'ca', 'gl', 'eu', 'fr', 'de', 'it'];
   var PANTALLAS = {
     ajustes: '/cuenta/ajustes', notificaciones: '/cuenta/ajustes/notificaciones', sugerencias: '/cuenta/sugerencias', tus_planes: '/cuenta/planes',
-    mi_negocio: '/panel/', alta_negocio: '/alta/', eliminar_cuenta: '/eliminar-cuenta/', denunciar: '/cuenta/denunciar',
+    mi_negocio: '/panel', alta_negocio: '/alta', eliminar_cuenta: '/eliminar-cuenta', denunciar: '/cuenta/denunciar',
   };
   var CORREO = 'info@klendar.app';
   var PERMISO = 'klendar.asistente.permiso';
@@ -452,7 +452,7 @@
 
   // Las páginas publicadas están en dos idiomas: igual que `esOrEn` de la app.
   var enIngles = function () { return ['en', 'fr', 'de', 'it'].indexOf(idioma()) >= 0; };
-  function ayudaUrl() { return enIngles() ? '/en/faq/' : '/preguntas/'; }
+  function ayudaUrl() { return enIngles() ? '/en/faq' : '/preguntas'; }
 
   /** El correo, con la conversación solo si la persona ha marcado la casilla. */
   function mailto(adjunta) {
@@ -503,7 +503,7 @@
       el('p', { texto: t('introBody') }),
       el('p', { texto: t('introPrivacy') }),
       el('p', { texto: t('introEmergency') }),
-      el('p', {}, [el('a', { href: enIngles() ? '/en/privacy/' : '/privacidad/', target: '_blank', rel: 'noopener', texto: t('more') })]),
+      el('p', {}, [el('a', { href: enIngles() ? '/en/privacy' : '/privacidad', target: '_blank', rel: 'noopener', texto: t('more') })]),
       el('div', { class: 'asis-botones' }, [entra, el('button', { type: 'button', class: 'pill', texto: t('notNow'), clic: cierra })])
     );
     entra.focus();
@@ -596,7 +596,7 @@
       if (s.url && /^\/[a-z]/.test(s.url)) hijos.push(el('a', { class: 'asis-enlace', href: s.url, target: '_blank', rel: 'noopener', texto: t('source', s.title) }));
     });
     if (r.screen && PANTALLAS[r.screen]) {
-      var dir = r.screen === 'eliminar_cuenta' && enIngles() ? '/en/delete-account/' : PANTALLAS[r.screen];
+      var dir = r.screen === 'eliminar_cuenta' && enIngles() ? '/en/delete-account' : PANTALLAS[r.screen];
       hijos.push(el('a', { class: 'asis-enlace', href: dir, target: '_blank', rel: 'noopener', texto: t('goTo', t('s_' + r.screen)) }));
     }
     log.append(el('div', { class: 'asis-a' }, hijos));

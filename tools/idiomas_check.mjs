@@ -39,13 +39,13 @@ const EN_PUB = ['en', 'fr', 'de', 'it'];
     return mod.onRequestGet({ request: new Request(url, { headers: { 'accept-language': al } }), params: { doc: 'privacy' } })
       .headers.get('location');
   };
-  ok(ir('fr-FR,fr;q=0.9').endsWith('/en/privacy/'), 'legal: francés → inglés');
-  ok(ir('de-DE').endsWith('/en/privacy/'), 'legal: alemán → inglés');
-  ok(ir('ca-ES-valencia,ca;q=0.9').endsWith('/privacidad/'), 'legal: valenciano → español');
-  ok(ir('eu-ES').endsWith('/privacidad/'), 'legal: euskera → español');
-  ok(ir('es-ES').endsWith('/privacidad/'), 'legal: español');
-  ok(ir('en-GB').endsWith('/en/privacy/'), 'legal: inglés');
-  ok(ir('fr', 'es').endsWith('/privacidad/'), 'legal: ?lang=es manda');
+  ok(ir('fr-FR,fr;q=0.9').endsWith('/en/privacy'), 'legal: francés → inglés');
+  ok(ir('de-DE').endsWith('/en/privacy'), 'legal: alemán → inglés');
+  ok(ir('ca-ES-valencia,ca;q=0.9').endsWith('/privacidad'), 'legal: valenciano → español');
+  ok(ir('eu-ES').endsWith('/privacidad'), 'legal: euskera → español');
+  ok(ir('es-ES').endsWith('/privacidad'), 'legal: español');
+  ok(ir('en-GB').endsWith('/en/privacy'), 'legal: inglés');
+  ok(ir('fr', 'es').endsWith('/privacidad'), 'legal: ?lang=es manda');
 }
 
 // NAVS=chromium para uno solo. (WebKit para Windows se caía al pasar del
@@ -103,18 +103,18 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]].filter
       // cargar /cuenta/entrar justo después del `location.replace` del panel.
       // Pasaba también con el panel ya cargado y sin cabeceras CSP ni
       // Permissions-Policy, y no con una página mínima que hace lo mismo ni
-      // abriendo /cuenta/ directamente: es del motor, no de la web (Safari de
+      // abriendo /cuenta directamente: es del motor, no de la web (Safari de
       // verdad no lo hace). Revisión del 2-11-2026.
       let destino = null;
       await page.route('**/cuenta/**', (r) => {
         if (r.request().isNavigationRequest() && !destino) { destino = r.request().url(); return r.abort(); }
         return r.continue();
       });
-      await page.goto(`${BASE}/panel/?lang=${lang}`, { waitUntil: 'domcontentloaded' });
+      await page.goto(`${BASE}/panel?lang=${lang}`, { waitUntil: 'domcontentloaded' });
       await page.waitForTimeout(1500);
       await page.unroute('**/cuenta/**');
       const dUrl = destino ? new URL(destino) : null;
-      ok(dUrl && dUrl.pathname === '/cuenta/entrar' && dUrl.searchParams.get('destino') === '/panel/'
+      ok(dUrl && dUrl.pathname === '/cuenta/entrar' && dUrl.searchParams.get('destino') === '/panel'
         && (dUrl.searchParams.get('lang') || 'es') === lang, `${nombre}/${disp}/${lang}: el panel sin sesión manda a entrar en su idioma (${destino})`);
       if (destino) {
         await page.goto(destino, { waitUntil: 'domcontentloaded' });

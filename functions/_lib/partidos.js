@@ -1,4 +1,4 @@
-// «Dónde verlo» en la web pública: la lista (/partidos/, /en/matches/) con
+// «Dónde verlo» en la web pública: la lista (/partidos, /en/matches) con
 // todo lo que viene de todos los deportes (arriba lo que ponen los bares de
 // tu zona, «Lo ponen cerca»; debajo, «Más partidos»), con deportes y
 // competiciones; el detalle de un partido (/partidos/<id>) con los bares que
@@ -94,7 +94,7 @@ export const PARTIDOS_CSS = '<link rel="stylesheet" href="/assets/partidos.css?v
  *  solo hace algo con sesión. */
 export const seguirScript = (lang) => {
   const sp = supabasePublic();
-  return `<script src="/assets/seguir.js?v=20261104st" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}" data-lang="${lang === 'en' ? 'en' : 'es'}"></script>`;
+  return `<script src="/assets/seguir.js?v=20261111sinbarra" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}" data-lang="${lang === 'en' ? 'en' : 'es'}"></script>`;
 };
 
 /** «350 m», «1,2 km». */
@@ -197,7 +197,7 @@ export const recuperaZona = () => `<script>(function(){try{var q=new URLSearchPa
 if(q.has('lat')||q.has('ciudad')||q.has('city'))return;var s=sessionStorage;var sin=s.getItem('klendar.filtros.sin');s.removeItem('klendar.filtros.sin');if(sin)return;
 var n=(performance.getEntriesByType&&performance.getEntriesByType('navigation')[0])||{};if(n.type==='back_forward')return;
 var g=JSON.parse(localStorage.getItem('klendar.filtros')||'null');if(!g||Date.now()-g.t>216e5)return;
-var a=new URLSearchParams(g[/^\\/en\\//.test(location.pathname)?'en':'es']||'');var z=new URLSearchParams();
+var a=new URLSearchParams(g[/^\\/en(\\/|$)/.test(location.pathname)?'en':'es']||'');var z=new URLSearchParams();
 if(a.get('lat')&&a.get('lng')){z.set('lat',a.get('lat'));z.set('lng',a.get('lng'));if(a.get('km'))z.set('km',a.get('km'));}else{var c=a.get('ciudad')||a.get('city');if(c)z.set(/^\\/en\\//.test(location.pathname)?'city':'ciudad',c);}
 if(!z.toString())return;q.forEach(function(v,k){z.set(k,v);});location.replace(location.pathname+'?'+z.toString()+location.hash);}catch(x){}})();</script>`;
 
@@ -284,7 +284,7 @@ export async function partidosPage(url, lang) {
   const link = (cambios) => {
     const b = { ...e, ...cambios };
     if (b.cerca === false) { b.lat = null; b.lng = null; }
-    return conQs(`${base}/`, query(b, lang));
+    return conQs(`${base}`, query(b, lang));
   };
   const zona = zonaQs(e, lang);
   const hrefDe = (b) => conQs(`${base}/${b.id}`, zona);
@@ -292,7 +292,7 @@ export async function partidosPage(url, lang) {
   const ocultos = [[K.city, e.cerca ? '' : e.city], ['lat', e.cerca ? posUrl(e.lat) : ''], ['lng', e.cerca ? posUrl(e.lng) : '']]
     .filter(([, v]) => v).map(([k, v]) => `<input type="hidden" name="${k}" value="${esc(v)}">`).join('');
 
-  const buscador = `<form class="buscador" role="search" method="get" action="${base}/">
+  const buscador = `<form class="buscador" role="search" method="get" action="${base}">
     <label class="buscador-campo">${ic('buscar', 20)}<span class="sr">${esc(S.search)}</span>
       <input type="search" name="q" value="${esc(e.q)}" placeholder="${esc(S.searchPh)}" enterkeyhint="search" maxlength="60"></label>
     ${ocultos}
@@ -319,7 +319,7 @@ export async function partidosPage(url, lang) {
 
   // «Sigues»: sin sesión (la página va en caché), la línea y el botón;
   // con sesión, /assets/seguir.js pone tus equipos.
-  const misEquipos = `<div class="mis-equipos" id="mis-equipos" data-titulo="${esc(S.yourTeams)}" data-base="${esc(`${base}/`)}" data-zona="${esc(zona)}">
+  const misEquipos = `<div class="mis-equipos" id="mis-equipos" data-titulo="${esc(S.yourTeams)}" data-base="${esc(`${base}`)}" data-zona="${esc(zona)}">
       <p>${esc(S.noTeams)}</p>
       <a class="pill" href="${esc(`${cuentaBase(lang, 'equipos')}`)}">${esc(S.followTeam)}</a>
     </div>`;
@@ -354,7 +354,7 @@ export async function partidosPage(url, lang) {
   }
 
   const body = `
-  <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a> · <a href="${en ? '/en/explore/' : '/explorar/'}">${en ? 'Explore' : 'Explorar'}</a></p>
+  <p class="crumbs"><a href="${en ? '/en' : '/'}">Klendar</a> · <a href="${en ? '/en/explore' : '/explorar'}">${en ? 'Explore' : 'Explorar'}</a></p>
   <div class="exp-cab cab-pagina"><div><h1>${esc(S.title)}</h1>
     <p class="muted exp-lead">${esc(S.lead)}</p></div></div>
   ${buscador}
@@ -364,10 +364,10 @@ export async function partidosPage(url, lang) {
   // Una búsqueda, una zona o un deporte concretos no aportan nada al índice
   // de Google; la página limpia sí.
   const filtrada = Boolean(e.q || e.city || e.cerca || e.sport || e.comp);
-  const migas = [['Klendar', en ? '/en/' : '/'], [S.title, `${base}/`]];
+  const migas = [['Klendar', en ? '/en' : '/'], [S.title, `${base}`]];
   return html(publicPage({
     lang,
-    path: `${base}/`,
+    path: `${base}`,
     title: S.title,
     description: `${S.lead}. ${en ? 'Find a bar nearby showing your match, with its offer.' : 'Encuentra un bar cerca que ponga tu partido, con su oferta.'}`,
     body,
@@ -388,13 +388,13 @@ function noEsta(lang) {
   const titulo = en ? 'This match is no longer here' : 'Este partido ya no está';
   const texto = en ? 'It may have been removed or the link may be wrong.' : 'Puede que lo hayan quitado o que el enlace esté mal.';
   return html(publicPage({
-    lang, path: `${base}/`, title: titulo, description: texto, head: `<meta name="robots" content="noindex">\n${PARTIDOS_CSS}`,
+    lang, path: `${base}`, title: titulo, description: texto, head: `<meta name="robots" content="noindex">\n${PARTIDOS_CSS}`,
     actual: 'explorar',
-    body: `<p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a> · <a href="${base}/">${esc(S.title)}</a></p>
+    body: `<p class="crumbs"><a href="${en ? '/en' : '/'}">Klendar</a> · <a href="${base}">${esc(S.title)}</a></p>
   <section class="vacio">
     <h1>${esc(titulo)}</h1>
     <p>${esc(texto)}</p>
-    <div class="vacio-botones"><a class="pill accent" href="${base}/">${esc(S.title)}</a></div>
+    <div class="vacio-botones"><a class="pill accent" href="${base}">${esc(S.title)}</a></div>
   </section>`,
   }), 404, 'no-store');
 }
@@ -452,7 +452,7 @@ export async function partidoPage(rawId, url, lang) {
   };
 
   const body = `
-  <p class="crumbs"><a href="/${en ? 'en/' : ''}">Klendar</a> · <a href="${esc(conQs(`${base}/`, zona))}">${esc(S.title)}</a></p>
+  <p class="crumbs"><a href="${en ? '/en' : '/'}">Klendar</a> · <a href="${esc(conQs(`${base}`, zona))}">${esc(S.title)}</a></p>
   <div class="partido-cab">
     ${que ? `<p class="eyebrow">${esc(que)}</p>` : ''}
     <h1>${esc(d.title)}</h1>
@@ -469,7 +469,7 @@ export async function partidoPage(rawId, url, lang) {
 
   const n = bares.length;
   const description = `${KE.cuandoLargo(d, tz, lang)}${d.competition ? ` · ${d.competition}` : ''}. ${n ? S.bars(n) : S.none}.`;
-  const migas = [['Klendar', en ? '/en/' : '/'], [S.title, `${base}/`], [d.title, path]];
+  const migas = [['Klendar', en ? '/en' : '/'], [S.title, `${base}`], [d.title, path]];
   return html(publicPage({
     lang,
     path,
@@ -522,7 +522,7 @@ export async function partidosEnBusqueda({ q, lang, origen, zona, zonaBase }) {
   const todos = new URLSearchParams(zq);
   todos.set('q', q);
   return `<section class="seccion-partidos" aria-labelledby="secPartidos">
-      <div class="seccion-cab"><h2 id="secPartidos">${esc(S.title)}</h2><a href="${esc(`${base}/?${todos}`)}">${esc(S.seeAll)}</a></div>
+      <div class="seccion-cab"><h2 id="secPartidos">${esc(S.title)}</h2><a href="${esc(`${base}?${todos}`)}">${esc(S.seeAll)}</a></div>
       <div class="partidos-lista">${conBares.map((b) => filaPartido(b, { lang, S, tz, href: conQs(`${base}/${b.id}`, zq) })).join('')}</div>
       ${atribucion(conBares, lang)}
     </section>`;

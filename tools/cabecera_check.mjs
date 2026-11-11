@@ -109,15 +109,15 @@ async function rueda(page, vp, veces = 4) {
 }
 
 const PAGINAS = [
-  ['explorar-planes', `/explorar/?${AQUI}`],
-  ['explorar-sitios', `/explorar/?que=sitios&${AQUI}`],
-  ['explorar-mapa', `/explorar/?vista=map&${AQUI}`],
-  ['explorar-calendario', `/explorar/?vista=calendar&${AQUI}`],
-  ['sitios-mapa', `/explorar/?que=sitios&vista=map&${AQUI}`],
+  ['explorar-planes', `/explorar?${AQUI}`],
+  ['explorar-sitios', `/explorar?que=sitios&${AQUI}`],
+  ['explorar-mapa', `/explorar?vista=map&${AQUI}`],
+  ['explorar-calendario', `/explorar?vista=calendar&${AQUI}`],
+  ['sitios-mapa', `/explorar?que=sitios&vista=map&${AQUI}`],
   ['agenda', '/agenda/madrid/'],
   // Un sitio de los datos de mentira (antes, uno de dev).
   ['ficha', `/b/${NEGOCIOS[0].slug}`],
-  ['explore-en', `/en/explore/?${AQUI}`],
+  ['explore-en', `/en/explore?${AQUI}`],
 ];
 
 for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
@@ -133,7 +133,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     const t = `[${nombre} ${forma}]`;
 
     // 1. Descubre.
-    await page.goto(`${BASE}/descubre/`);
+    await page.goto(`${BASE}/descubre`);
     await page.waitForSelector('.feed > .tj');
     await page.waitForTimeout(800);
     const quieto = async (como) => {
@@ -198,14 +198,14 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
       d.innerHTML = Array.from({ length: 12 }, () => '<div style="position:relative;height:260px;margin:12px 0;border-radius:20px;background:linear-gradient(#456,#123)"><span style="position:absolute;top:8px;left:8px;z-index:4;background:#fff;padding:4px 8px;border-radius:99px">Chip</span></div>').join('');
       m.append(d);
     }, sel);
-    await p2.goto(`${BASE}/cuenta/`);
+    await p2.goto(`${BASE}/cuenta`);
     await p2.waitForTimeout(1500);
     await relleno('main');
     await rueda(p2, vp);
     await cabeceraBien(p2, 'header.top', `${t} Tu cuenta (rueda):`);
     await p2.screenshot({ path: `${OUT}/cabecera-${nombre}-${forma}-cuenta.png` });
     {
-      await p2.goto(`${BASE}/panel/#/resumen`);
+      await p2.goto(`${BASE}/panel#/resumen`);
       await p2.waitForSelector('.topbar', { state: 'attached' });
       await p2.waitForTimeout(1500);
       await relleno('#view');

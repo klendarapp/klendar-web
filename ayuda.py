@@ -3,18 +3,18 @@
 
 De aquí salen:
 
-- `/preguntas/` y `/en/faq/` (`build_pages.py`), con las pestañas «Para ti»
+- `/preguntas` y `/en/faq` (`build_pages.py`), con las pestañas «Para ti»
   y «Para negocios» y un buscador que ignora las tildes (`assets/ayuda.js`);
 - `assets/ayuda.json` (`build_pages.py`), que la app descarga, guarda en
   caché y lleva una copia dentro por si no hay conexión (en el repo de la
   app: `python tool/sync_help.py`);
-- las preguntas de `/soporte/` (`build_legal.py`) y de `/en/support/`
+- las preguntas de `/soporte` (`build_legal.py`) y de `/en/support`
   (`build_site.py`): las marcadas con `soporte`, con el mismo texto.
 
 Cada pregunta: `id` (estable: la app y los enlaces `#id` lo usan), a quién
 va (`ti` | `negocios`), pregunta y respuesta en español e inglés. En la
 respuesta solo `<a href>` y `<strong>`; los enlaces, relativos a la web
-(`/precios/`) o `mailto:`. Opciones:
+(`/precios`) o `mailto:`. Opciones:
 
 - `soporte=1|2…`: sale en Soporte, en ese orden;
 - `soporte_q_es/en`: otra pregunta en Soporte (allí son títulos);
@@ -26,7 +26,7 @@ respuesta solo `<a href>` y `<strong>`; los enlaces, relativos a la web
   apagados (`PRECIOS`, abajo).
 
 **La app no habla de precios ni lleva a pagar** (Apple 3.1.1 y 3.1.3; Google
-Play, Pagos §4; revisión N-01 del 5-11-2026). `/preguntas/` y `/en/faq/` sí. Al
+Play, Pagos §4; revisión N-01 del 5-11-2026). `/preguntas` y `/en/faq` sí. Al
 generar el JSON de la app, los enlaces a páginas de precios o al panel se quedan
 en texto (`SIN_ENLACE_EN_LA_APP`) y `comprueba_app` falla si se cuela un precio,
 un enlace a pagar o Stripe, también en lo que se añada mañana.
@@ -70,9 +70,9 @@ PREGUNTAS = [
     # ── Para ti ──────────────────────────────────────────────────────────
     P('cuanto-cuesta', 'ti',
       '¿Cuánto cuesta usar Klendar?',
-      'Para quien busca planes, nada. Para los negocios hay un solo plan, después de 30 días de prueba gratis; los detalles están en <a href="/precios/">precios</a>.',
+      'Para quien busca planes, nada. Para los negocios hay un solo plan, después de 30 días de prueba gratis; los detalles están en <a href="/precios">precios</a>.',
       'How much does Klendar cost?',
-      'For people looking for plans, nothing. For businesses there is a single plan, after a 30-day free trial; the details are in <a href="/en/pricing/">pricing</a>.',
+      'For people looking for plans, nothing. For businesses there is a single plan, after a 30-day free trial; the details are in <a href="/en/pricing">pricing</a>.',
       sin_precios_es='Para quien busca planes, nada. Si tienes un negocio, te lo explicamos en persona y sin compromiso: escríbenos a <a href="mailto:info@klendar.app">info@klendar.app</a>.',
       sin_precios_en="For people looking for plans, nothing. If you run a business, we'll explain it in person, with no obligation: email us at <a href=\"mailto:info@klendar.app\">info@klendar.app</a>.",
       a_app_es='Para quien busca planes, nada: Klendar es gratis. Lo que canjees o reserves, si cuesta algo, se paga en el local.',
@@ -191,9 +191,9 @@ PREGUNTAS = [
       soporte=7),
     P('mis-datos', 'ti',
       '¿Qué pasa con mis datos?',
-      'Lo contamos entero en la <a href="/privacidad/">política de privacidad</a>. En resumen: se usan para que la app funcione, no se venden, y puedes descargarlos o borrar tu cuenta desde la app o desde «Tu cuenta» en la web.',
+      'Lo contamos entero en la <a href="/privacidad">política de privacidad</a>. En resumen: se usan para que la app funcione, no se venden, y puedes descargarlos o borrar tu cuenta desde la app o desde «Tu cuenta» en la web.',
       'What happens to my data?',
-      'It\'s all in the <a href="/en/privacy/">privacy policy</a>. In short: it\'s used to make the app work, it\'s never sold, and you can download it or delete your account from the app or from “Your account” on the website.'),
+      'It\'s all in the <a href="/en/privacy">privacy policy</a>. In short: it\'s used to make the app work, it\'s never sold, and you can download it or delete your account from the app or from “Your account” on the website.'),
     P('ubicacion', 'ti',
       '¿Qué hacéis con mi ubicación?',
       'Se usa para ordenar por cercanía y, si lo activas, para avisarte de ofertas cerca (con la última ubicación conocida, que se borra a los 7 días; no guardamos un historial). Nunca se comparte con otros usuarios, y los negocios solo ven cifras agregadas de distancia, sin saber de quién son.',
@@ -206,9 +206,9 @@ PREGUNTAS = [
       'From Account → Settings → Change email, in the app or in “Your account” on the website. First we ask you to confirm it\'s you. Then a code and a button arrive at the new email and at your current one, and the change is made once you confirm both; until then you\'ll see that the change is still waiting to be confirmed. If you can no longer open your current email, write to us at <a href="mailto:info@klendar.app">info@klendar.app</a>.'),
     P('borrar-cuenta', 'ti',
       '¿Cómo borro mi cuenta?',
-      'Desde Cuenta → Ajustes → Eliminar mi cuenta, en la app o en «Tu cuenta» de la web. Se borra todo lo tuyo. También puedes pedirlo por correo: <a href="/eliminar-cuenta/">cómo hacerlo</a>.',
+      'Desde Cuenta → Ajustes → Eliminar mi cuenta, en la app o en «Tu cuenta» de la web. Se borra todo lo tuyo. También puedes pedirlo por correo: <a href="/eliminar-cuenta">cómo hacerlo</a>.',
       'How do I delete my account?',
-      'From Account → Settings → Delete my account, in the app or in “Your account” on the website. Everything of yours is deleted. You can also ask by email: <a href="/en/delete-account/">how to do it</a>.'),
+      'From Account → Settings → Delete my account, in the app or in “Your account” on the website. Everything of yours is deleted. You can also ask by email: <a href="/en/delete-account">how to do it</a>.'),
     P('algo-que-no-deberia', 'ti',
       'Vi algo que no debería estar ahí',
       'En cada ficha, en la app y en la web, hay un botón para denunciar, y no hace falta tener cuenta: también puedes usar <a href="/cuenta/denunciar">el formulario de denuncias</a>. Lo revisamos y, si hay que retirarlo, se retira con un motivo y el negocio puede recurrir.',
@@ -216,9 +216,9 @@ PREGUNTAS = [
       'On every publication, in the app and on the website, there\'s a button to report it, and you don\'t need an account: you can also use <a href="/cuenta/denunciar?lang=en">the report form</a>. We review it and, if it has to come down, it comes down with a reason and the business can appeal.'),
     P('contenido-ilegal', 'ti',
       'Denunciar contenido ilegal',
-      'Si ves algo ilegal o que incumple las <a href="/normas/">Normas de la comunidad</a>, pulsa «Denunciar» en ese negocio, publicación, reseña o novedad, o usa el <a href="/cuenta/denunciar">formulario de denuncias</a> (también en el pie de cada página: «Denunciar contenido ilegal»). No hace falta tener cuenta. Te confirmamos que la hemos recibido y te contamos qué hemos decidido y por qué. Si alguien está en peligro ahora mismo, llama al 112.',
+      'Si ves algo ilegal o que incumple las <a href="/normas">Normas de la comunidad</a>, pulsa «Denunciar» en ese negocio, publicación, reseña o novedad, o usa el <a href="/cuenta/denunciar">formulario de denuncias</a> (también en el pie de cada página: «Denunciar contenido ilegal»). No hace falta tener cuenta. Te confirmamos que la hemos recibido y te contamos qué hemos decidido y por qué. Si alguien está en peligro ahora mismo, llama al 112.',
       'Report illegal content',
-      'If you see something illegal or that breaks the <a href="/en/community-guidelines/">Community guidelines</a>, tap “Report” on that business, publication, review or news post, or use the <a href="/cuenta/denunciar?lang=en">report form</a> (also in the footer of every page: “Report illegal content”). You don\'t need an account. We\'ll confirm we\'ve received it and tell you what we\'ve decided and why. If someone is in danger right now, call 112.',
+      'If you see something illegal or that breaks the <a href="/en/community-guidelines">Community guidelines</a>, tap “Report” on that business, publication, review or news post, or use the <a href="/cuenta/denunciar?lang=en">report form</a> (also in the footer of every page: “Report illegal content”). You don\'t need an account. We\'ll confirm we\'ve received it and tell you what we\'ve decided and why. If someone is in danger right now, call 112.',
       soporte=4),
     P('oferta-no-respetada', 'ti',
       'Un negocio no ha respetado su oferta',
@@ -228,27 +228,27 @@ PREGUNTAS = [
       soporte=3),
     P('ciudades', 'ti',
       '¿En qué ciudades está?',
-      'Estamos empezando. Si en la tuya todavía no hay nada, en <a href="/agenda/">la agenda</a> lo verás vacío: escríbenos y lo arrancamos.',
+      'Estamos empezando. Si en la tuya todavía no hay nada, en <a href="/agenda">la agenda</a> lo verás vacío: escríbenos y lo arrancamos.',
       'Which cities is it in?',
-      'We\'re just getting started. If nothing is happening in yours yet, <a href="/en/whats-on/">what\'s on</a> will look empty: email us and we\'ll get it going.'),
+      'We\'re just getting started. If nothing is happening in yours yet, <a href="/en/whats-on">what\'s on</a> will look empty: email us and we\'ll get it going.'),
 
     # ── Para negocios ────────────────────────────────────────────────────
     P('alta-negocio', 'negocios',
       'Soy un negocio, ¿cómo me doy de alta?',
-      'Desde la app (Cuenta → ¿Quieres registrar tu negocio?) o desde el <a href="/panel/">panel web</a>; hace falta la ubicación exacta del local. Lo revisamos y te verificamos, normalmente en 24-48 horas. Luego puedes publicar desde el móvil o desde el ordenador.',
+      'Desde la app (Cuenta → ¿Quieres registrar tu negocio?) o desde el <a href="/panel">panel web</a>; hace falta la ubicación exacta del local. Lo revisamos y te verificamos, normalmente en 24-48 horas. Luego puedes publicar desde el móvil o desde el ordenador.',
       'I run a business. How do I register?',
-      'From the app (Account → Want to register your business?) or from the <a href="/panel/">web dashboard</a>; it needs the venue’s exact location. We review and verify it, usually within 24–48 hours. After that you can publish from your phone or from a computer.'),
+      'From the app (Account → Want to register your business?) or from the <a href="/panel">web dashboard</a>; it needs the venue’s exact location. We review and verify it, usually within 24–48 hours. After that you can publish from your phone or from a computer.'),
     P('alta-negocio-soporte', 'negocios',
       'Soy un negocio y quiero darme de alta',
-      'En la app: Cuenta → «¿Quieres registrar tu negocio?», o en la web desde el <a href="/panel/">panel</a>. Lo revisamos en 24-48 h. También puedes escribirnos.',
+      'En la app: Cuenta → «¿Quieres registrar tu negocio?», o en la web desde el <a href="/panel">panel</a>. Lo revisamos en 24-48 h. También puedes escribirnos.',
       'I run a business and want to sign up',
-      'In the app: Account → “Want to register your business?”, or on the web from the <a href="/panel/">dashboard</a>. We review it within 24–48 h. You can also email us.',
+      'In the app: Account → “Want to register your business?”, or on the web from the <a href="/panel">dashboard</a>. We review it within 24–48 h. You can also email us.',
       soporte=9, ayuda=False),
     P('precio-negocio', 'negocios',
       '¿Cuánto me cuesta?',
-      'Lo <strong>pruebas gratis</strong>: 30 días con todo al darte de alta, sin tarjeta. Después, un solo plan con todo incluido: 19,90 € + IVA al mes por local (24,08 € con IVA), sin límites, sin permanencia y sin comisión por canje. <a href="/precios/">Ver precios</a>.',
+      'Lo <strong>pruebas gratis</strong>: 30 días con todo al darte de alta, sin tarjeta. Después, un solo plan con todo incluido: 19,90 € + IVA al mes por local (24,08 € con IVA), sin límites, sin permanencia y sin comisión por canje. <a href="/precios">Ver precios</a>.',
       'How much does it cost me?',
-      'You <strong>try it free</strong>: 30 days with everything when you register, no card. After that, one plan with everything included: €19.90 + VAT a month per venue (€24.08 incl. VAT), with no limits, no lock-in and no commission per redemption. <a href="/en/pricing/">See pricing</a>.',
+      'You <strong>try it free</strong>: 30 days with everything when you register, no card. After that, one plan with everything included: €19.90 + VAT a month per venue (€24.08 incl. VAT), with no limits, no lock-in and no commission per redemption. <a href="/en/pricing">See pricing</a>.',
       sin_precios_es='Te lo explicamos en persona y sin compromiso: escríbenos a <a href="mailto:info@klendar.app">info@klendar.app</a> y lo vemos con tu caso. Sin permanencia y <strong>sin comisión por canje</strong>.',
       sin_precios_en="We'll explain it in person, with no obligation: email us at <a href=\"mailto:info@klendar.app\">info@klendar.app</a> and we'll look at your case. No lock-in and <strong>no commission per redemption</strong>.",
       app=False),
@@ -271,9 +271,9 @@ PREGUNTAS = [
       app=False),
     P('publicar', 'negocios',
       '¿Cómo publico una oferta o un evento?',
-      'Desde la app (Mi negocio → Publicaciones) o desde el <a href="/panel/">panel del ordenador</a>: una oferta flash, con cuenta atrás y aforo, o un evento con fecha. Al crear una en blanco tienes «Ideas» de tu gremio para empezar, y puedes guardar las tuyas como plantillas.',
+      'Desde la app (Mi negocio → Publicaciones) o desde el <a href="/panel">panel del ordenador</a>: una oferta flash, con cuenta atrás y aforo, o un evento con fecha. Al crear una en blanco tienes «Ideas» de tu gremio para empezar, y puedes guardar las tuyas como plantillas.',
       'How do I publish a deal or an event?',
-      'From the app (My business → Publications) or from the <a href="/panel/">dashboard on a computer</a>: a flash offer, with a countdown and a capacity, or an event with a date. When you create one from scratch you get “Ideas” from your trade to start with, and you can save your own as templates.'),
+      'From the app (My business → Publications) or from the <a href="/panel">dashboard on a computer</a>: a flash offer, with a countdown and a capacity, or an event with a date. When you create one from scratch you get “Ideas” from your trade to start with, and you can save your own as templates.'),
     P('repetir-cada-semana', 'negocios',
       '¿Puedo repetir una oferta o un evento cada semana?',
       'Sí: «Repetir cada semana» (en «Series y repeticiones»). Las ofertas flash salen solas a su hora y los eventos, cada fecha, una semana antes. Cada repetición es una serie que la gente puede seguir; si la quitas, se termina y se avisa a quien la sigue.',
@@ -306,19 +306,19 @@ PREGUNTAS = [
       "Turn it on in your business page, in “About your place”. Then anyone on your team marks how busy it is from My business with one tap: There’s room, Nearly full or Full. It shows on your page and on the map while you're open and clears itself after 2 hours. With live capacity, it sets itself."),
     P('aforo-en-directo', 'negocios',
       '¿Cómo funciona el aforo en directo?',
-      'En Mi negocio → «Más herramientas» → «Aforo en directo» (también en el <a href="/panel/">panel web</a>): pon tu aforo máximo y, en la puerta, cualquiera de tu equipo cuenta con +1 y −1, desde varios móviles a la vez. «¿Hay sitio ahora?» se pone solo: Hay sitio por debajo del 70 %, Casi lleno hasta el 95 % y Lleno a partir de ahí (los porcentajes los cambias tú). Si marcas algo a mano, manda 30 minutos. Al cerrar, «Poner a 0»; al empezar otro día vuelve a 0 solo. En «Cifras» ves a qué hora se llenó cada noche. Solo números, nunca quién entra. El aforo lo pones tú y tiene que ser real: Klendar no controla el aforo legal de tu local.',
+      'En Mi negocio → «Más herramientas» → «Aforo en directo» (también en el <a href="/panel">panel web</a>): pon tu aforo máximo y, en la puerta, cualquiera de tu equipo cuenta con +1 y −1, desde varios móviles a la vez. «¿Hay sitio ahora?» se pone solo: Hay sitio por debajo del 70 %, Casi lleno hasta el 95 % y Lleno a partir de ahí (los porcentajes los cambias tú). Si marcas algo a mano, manda 30 minutos. Al cerrar, «Poner a 0»; al empezar otro día vuelve a 0 solo. En «Cifras» ves a qué hora se llenó cada noche. Solo números, nunca quién entra. El aforo lo pones tú y tiene que ser real: Klendar no controla el aforo legal de tu local.',
       'How does live capacity work?',
-      "In My business → “More tools” → “Live capacity” (also in the <a href=\"/panel/\">web dashboard</a>): set your maximum capacity and, at the door, anyone on your team counts with +1 and −1, from several phones at once. “Room right now?” sets itself: There’s room below 70%, Nearly full up to 95% and Full from there (you can change the percentages). If you set it by hand, that counts for 30 minutes. When you close, “Set to 0”; it also goes back to 0 by itself when a new day starts. In “Stats” you can see what time it filled up each night. Only numbers, never who comes in. You set the capacity and it has to be real: Klendar doesn't check your venue's legal capacity."),
+      "In My business → “More tools” → “Live capacity” (also in the <a href=\"/panel\">web dashboard</a>): set your maximum capacity and, at the door, anyone on your team counts with +1 and −1, from several phones at once. “Room right now?” sets itself: There’s room below 70%, Nearly full up to 95% and Full from there (you can change the percentages). If you set it by hand, that counts for 30 minutes. When you close, “Set to 0”; it also goes back to 0 by itself when a new day starts. In “Stats” you can see what time it filled up each night. Only numbers, never who comes in. You set the capacity and it has to be real: Klendar doesn't check your venue's legal capacity."),
     P('cola-virtual-negocio', 'negocios',
       '¿Cómo pongo una cola virtual en la puerta?',
-      'En Mi negocio → «Cola virtual» (también en el <a href="/panel/">panel web</a>): imprime el «Cartel para la puerta» y abre la cola cada día con el tope de personas y los minutos que tiene cada uno para presentarse. Quien llega escanea el cartel y coge número; tú solo tocas «Avisar al siguiente» y le avisamos en el móvil. A quien no tenga la app lo apuntas tú. La lista se borra sola al acabar el día (a las 6:00) o al pulsar «Terminar por hoy».',
+      'En Mi negocio → «Cola virtual» (también en el <a href="/panel">panel web</a>): imprime el «Cartel para la puerta» y abre la cola cada día con el tope de personas y los minutos que tiene cada uno para presentarse. Quien llega escanea el cartel y coge número; tú solo tocas «Avisar al siguiente» y le avisamos en el móvil. A quien no tenga la app lo apuntas tú. La lista se borra sola al acabar el día (a las 6:00) o al pulsar «Terminar por hoy».',
       'How do I set up a virtual queue at the door?',
-      'In My business → “Virtual queue” (also on the <a href="/panel/">web dashboard</a>): print the “Poster for the door” and open the queue each day with the maximum number of people and the minutes each person has to show up. People scan the poster when they arrive and get a number; you just tap “Call the next one” and we let them know on their phone. You add anyone without the app yourself. The list deletes itself at the end of the day (at 6:00) or when you tap “Finish for today”.'),
+      'In My business → “Virtual queue” (also on the <a href="/panel">web dashboard</a>): print the “Poster for the door” and open the queue each day with the maximum number of people and the minutes each person has to show up. People scan the poster when they arrive and get a number; you just tap “Call the next one” and we let them know on their phone. You add anyone without the app yourself. The list deletes itself at the end of the day (at 6:00) or when you tap “Finish for today”.'),
     P('te-aviso-listo-negocio', 'negocios',
       '¿Cómo aviso a quien pide en el mostrador de que su pedido está listo?',
-      'Con «Te aviso cuando esté listo», en Mi negocio → «Más herramientas» (también en el <a href="/panel/">panel web</a>). Lo activa el propietario o un encargado; luego imprime el «Cartel para el mostrador». Quien pide lo escanea y recibe un número; en «Pedidos de hoy» cualquiera de tu equipo toca «Listo» y le avisamos en el móvil. Ves su número y la primera palabra de su nombre, nada más. El aviso es solo para ese pedido. La lista se borra sola a las 6:00 o al pulsar «Terminar por hoy».',
+      'Con «Te aviso cuando esté listo», en Mi negocio → «Más herramientas» (también en el <a href="/panel">panel web</a>). Lo activa el propietario o un encargado; luego imprime el «Cartel para el mostrador». Quien pide lo escanea y recibe un número; en «Pedidos de hoy» cualquiera de tu equipo toca «Listo» y le avisamos en el móvil. Ves su número y la primera palabra de su nombre, nada más. El aviso es solo para ese pedido. La lista se borra sola a las 6:00 o al pulsar «Terminar por hoy».',
       'How do I tell people who order at the counter that their order is ready?',
-      'With “Ready alert”, in My business → “More tools” (also on the <a href="/panel/">web dashboard</a>). The owner or a manager turns it on; then print the “Poster for the counter”. People who order scan it and get a number; in “Today’s orders” anyone on your team taps “Ready” and we let them know on their phone. You see their number and the first word of their name, nothing else. The notification is only for that order. The list deletes itself at 6:00 or when you tap “Finish for today”.'),
+      'With “Ready alert”, in My business → “More tools” (also on the <a href="/panel">web dashboard</a>). The owner or a manager turns it on; then print the “Poster for the counter”. People who order scan it and get a number; in “Today’s orders” anyone on your team taps “Ready” and we let them know on their phone. You see their number and the first word of their name, nothing else. The notification is only for that order. The list deletes itself at 6:00 or when you tap “Finish for today”.'),
     P('antes-de-cerrar-negocio', 'negocios',
       '¿Cómo publico lo que me sobra del día?',
       'Con «Antes de cerrar», en Mi negocio (panaderías, cafeterías, restaurantes y parecidos): se publica en dos toques con lo de la última vez, hasta la hora de cierre, y se paga en tu local. Puedes pedir que te lo recordemos cada día.',
@@ -343,11 +343,11 @@ PREGUNTAS = [
       app=False),
     P('kit', 'negocios',
       '¿Hay algo para poner en el local?',
-      'Sí: una <a href="/assets/kit/klendar-guia-negocios.pdf">guía de 1 página (PDF)</a> y un <a href="/assets/kit/klendar-cartel.pdf">cartel con QR (PDF)</a>. Lo legal, en las <a href="/negocios/">condiciones para negocios</a>.',
+      'Sí: una <a href="/assets/kit/klendar-guia-negocios.pdf">guía de 1 página (PDF)</a> y un <a href="/assets/kit/klendar-cartel.pdf">cartel con QR (PDF)</a>. Lo legal, en las <a href="/negocios">condiciones para negocios</a>.',
       'Do you have anything to put up at the venue?',
-      'Yes: a <a href="/assets/kit/klendar-guia-negocios.pdf">1-page guide (PDF)</a> and a <a href="/assets/kit/klendar-cartel.pdf">poster with a QR code (PDF)</a>. The legal side is in the <a href="/en/business-terms/">business terms</a>.',
-      a_app_es='Sí: un <a href="/assets/kit/klendar-cartel.pdf">cartel con QR (PDF)</a>. Lo legal, en las <a href="/negocios/">condiciones para negocios</a>.',
-      a_app_en='Yes: a <a href="/assets/kit/klendar-cartel.pdf">poster with a QR code (PDF)</a>. The legal side is in the <a href="/en/business-terms/">business terms</a>.'),
+      'Yes: a <a href="/assets/kit/klendar-guia-negocios.pdf">1-page guide (PDF)</a> and a <a href="/assets/kit/klendar-cartel.pdf">poster with a QR code (PDF)</a>. The legal side is in the <a href="/en/business-terms">business terms</a>.',
+      a_app_es='Sí: un <a href="/assets/kit/klendar-cartel.pdf">cartel con QR (PDF)</a>. Lo legal, en las <a href="/negocios">condiciones para negocios</a>.',
+      a_app_en='Yes: a <a href="/assets/kit/klendar-cartel.pdf">poster with a QR code (PDF)</a>. The legal side is in the <a href="/en/business-terms">business terms</a>.'),
 ]
 
 PESTANAS = {

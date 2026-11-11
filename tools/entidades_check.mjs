@@ -73,7 +73,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     await p.screenshot({ path: `${OUT}/web-ficha-${nombre}-${t}.png`, fullPage: true });
 
     web.llamadas.length = 0;
-    await p.goto(`${BASE}/explorar/?ciudad=madrid&agenda-publica=1`, { waitUntil: 'networkidle' });
+    await p.goto(`${BASE}/explorar?ciudad=madrid&agenda-publica=1`, { waitUntil: 'networkidle' });
     const n = await p.locator('.tj').count();
     ok(n > 0, `${nombre}/${t} explorar con «Agenda pública»: ${n} tarjetas`);
     // Y se lo ha pedido así a la base (`traits: ['entity']`).
@@ -81,13 +81,13 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
       `${nombre}/${t} explorar con «Agenda pública»: pide solo lo de las entidades`);
     await p.screenshot({ path: `${OUT}/web-explorar-agenda-${nombre}-${t}.png` });
 
-    await p.goto(`${BASE}/fuentes/`, { waitUntil: 'networkidle' });
+    await p.goto(`${BASE}/fuentes`, { waitUntil: 'networkidle' });
     ok((await p.locator('table tbody tr').count()) >= 2, `${nombre}/${t} fuentes: tabla`);
     const ancho = await p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1);
     ok(ancho, `${nombre}/${t} fuentes: sin scroll horizontal`);
     await p.screenshot({ path: `${OUT}/web-fuentes-${nombre}-${t}.png`, fullPage: true });
 
-    await p.goto(`${BASE}/en/sources/`, { waitUntil: 'networkidle' });
+    await p.goto(`${BASE}/en/sources`, { waitUntil: 'networkidle' });
     ok((await p.content()).includes('Sources and licences'), `${nombre}/${t} sources (en)`);
 
     ok(errores.length === 0, `${nombre}/${t} sin errores JS ${errores.join(' | ')}`);

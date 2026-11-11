@@ -103,7 +103,7 @@ const nav = await chromium.launch();
 console.log('Resumen del admin');
 {
   const { ctx, page, estado, errs } = await abre(nav, { claveAdmin: true });
-  await page.goto(`${BASE}/admin/#/resumen`, { waitUntil: 'load' });
+  await page.goto(`${BASE}/admin#/resumen`, { waitUntil: 'load' });
   await page.waitForSelector('#hechoSolo', { timeout: 15000 });
   const t = await page.textContent('#hechoSolo');
   ok(t.includes('Lo que se ha hecho solo'), 'el bloque está');
@@ -118,7 +118,7 @@ console.log('Resumen del admin');
   await page.screenshot({ path: `${OUT}/piloto_resumen.png` });
 
   console.log('Automático');
-  await page.goto(`${BASE}/admin/#/automatico`, { waitUntil: 'load' });
+  await page.goto(`${BASE}/admin#/automatico`, { waitUntil: 'load' });
   await page.waitForSelector('[data-parte]', { timeout: 15000 });
   ok((await page.$$('[data-parte]')).length === 9, '9 interruptores');
   ok((await page.textContent('#view, main, body')).includes('apagado'), 'dice si está apagado');
@@ -130,15 +130,15 @@ console.log('Resumen del admin');
   await page.screenshot({ path: `${OUT}/piloto_automatico.png`, fullPage: true });
 
   console.log('Colas');
-  await page.goto(`${BASE}/admin/#/reclamaciones`, { waitUntil: 'load' });
+  await page.goto(`${BASE}/admin#/reclamaciones`, { waitUntil: 'load' });
   await page.waitForSelector('#list .item', { timeout: 15000 });
   const r = await page.textContent('#list');
   ok(r.includes('Código comprobado') && r.includes('el dueño está activo') && r.includes('no coincide') && r.includes('otro NIF'), 'reclamaciones: código, por qué y documento', r.slice(0, 300));
-  await page.goto(`${BASE}/admin/#/denuncias`, { waitUntil: 'load' });
+  await page.goto(`${BASE}/admin#/denuncias`, { waitUntil: 'load' });
   await page.waitForSelector('#list .item', { timeout: 15000 });
   const d = await page.textContent('#list');
   ok(d.includes('Lectura con IA') && d.includes('No está claro'), 'denuncias: lo que ha leído la IA', d.slice(0, 300));
-  await page.goto(`${BASE}/admin/#/duplicados`, { waitUntil: 'load' });
+  await page.goto(`${BASE}/admin#/duplicados`, { waitUntil: 'load' });
   await page.waitForSelector('#list .item', { timeout: 15000 });
   ok((await page.textContent('#list')).includes('Coinciden con seguridad'), 'duplicados: los seguros, marcados');
   ok(errs.length === 0, 'sin errores de JavaScript', errs.join(' | '));

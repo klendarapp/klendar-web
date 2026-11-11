@@ -44,7 +44,7 @@ window.KAyudas = (() => {
     const u = USOS[cual];
     const r = await modal({
       title: t(u.titulo),
-      intro: `${esc(t(u.cuerpo))} <a class="link" href="/privacidad/" target="_blank" rel="noopener">${esc(t('Más información'))}</a>`,
+      intro: `${esc(t(u.cuerpo))} <a class="link" href="/privacidad" target="_blank" rel="noopener">${esc(t('Más información'))}</a>`,
       html: `<label class="f foto-permiso"><input type="checkbox" name="ia_permiso" required><span>${esc(t(u.casilla))}</span></label>`,
       submit: t('Continuar'),
       cancel: t('Ahora no'),

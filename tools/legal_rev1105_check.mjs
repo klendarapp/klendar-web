@@ -5,12 +5,12 @@
 //     marzo de 2027» en lugar de «Las primeras semanas en cada ciudad,
 //     gratis», y la pregunta de las ciudades: «Klendar funciona en toda
 //     España; empezamos por Málaga» (L1).
-//  2. /para-negocios/ y /precios/ (ES y EN): el bloque de Málaga, con el
+//  2. /para-negocios y /precios (ES y EN): el bloque de Málaga, con el
 //     recordatorio de 7 días y 1 día antes (F2).
-//  3. /precios/: «¿Ayuntamiento, asociación u ONG? Gratis para siempre» con su
-//     enlace; /para-entidades/: «Hoy no ven nada de pago» (L7).
+//  3. /precios: «¿Ayuntamiento, asociación u ONG? Gratis para siempre» con su
+//     enlace; /para-entidades: «Hoy no ven nada de pago» (L7).
 //  4. Aviso legal (ES y EN): fecha del 4-11, «NIF» (no «NIF/CIF») y su línea
-//     en el historial; /negocios/: la línea del fuero (L2).
+//     en el historial; /negocios: la línea del fuero (L2).
 //  5. Cookies: Turnstile en la app, en una vista web que se prepara al abrir
 //     la pantalla (L5) o, desde el 9-11 (app 5b95d243), justo antes: en la
 //     última pantalla de la bienvenida y en Cuenta sin sesión, con su línea
@@ -44,59 +44,59 @@ const PAGINAS = [
     /Sin comisiones por venta\. En la provincia de Málaga, gratis hasta el 31 de marzo de 2027\./,
     /¿En qué ciudades está\?\s*Klendar funciona en toda España; empezamos por Málaga\./,
   ], [/primeras semanas/, /Empezamos ciudad a ciudad/], []],
-  ['/en/', '', [
+  ['/en', '', [
     /No sales commission\. In the province of Málaga, free until 31 March 2027\./,
     /Which cities\?\s*Klendar works all over Spain; we're starting with Málaga\./,
   ], [/first weeks/, /starting city by city/], []],
-  ['/para-negocios/', '', [MALAGA_ES], [], []],
-  ['/en/for-business/', '', [MALAGA_EN], [], []],
-  ['/precios/', '', [MALAGA_ES, /¿Ayuntamiento, asociación u ONG\? Gratis para siempre\./], [], ['main a[href="/para-entidades/"]']],
-  ['/en/pricing/', '', [MALAGA_EN, /Council, association or NGO\? Free, for good\./], [], ['main a[href="/en/for-organisations/"]']],
-  ['/para-entidades/', '', [
+  ['/para-negocios', '', [MALAGA_ES], [], []],
+  ['/en/for-business', '', [MALAGA_EN], [], []],
+  ['/precios', '', [MALAGA_ES, /¿Ayuntamiento, asociación u ONG\? Gratis para siempre\./], [], ['main a[href="/para-entidades"]']],
+  ['/en/pricing', '', [MALAGA_EN, /Council, association or NGO\? Free, for good\./], [], ['main a[href="/en/for-organisations"]']],
+  ['/para-entidades', '', [
     /Hoy no ven nada de pago para los negocios y, si algún día hubiera funciones nuevas de pago, serían opcionales\./,
   ], [/Tampoco ven nada/], []],
-  ['/en/for-organisations/', '', [
+  ['/en/for-organisations', '', [
     /Today they don't see anything that's paid for businesses and, if paid features are ever added, they will be optional\./,
   ], [/Nor do they see anything/], []],
-  ['/aviso-legal/', 'Última actualización: 4 de noviembre de 2026 · Versión 2026-09-29', [
+  ['/aviso-legal', 'Última actualización: 4 de noviembre de 2026 · Versión 2026-09-29', [
     /NIF: 79288717N/,
     /4 de noviembre de 2026: Se completan el NIF, el domicilio y el teléfono del titular\./,
   ], [/NIF\/CIF/], []],
-  ['/en/legal-notice/', 'Last updated: 4 November 2026 · Version 2026-09-29', [
+  ['/en/legal-notice', 'Last updated: 4 November 2026 · Version 2026-09-29', [
     /Tax ID: 79288717N/,
     /4 November 2026: The owner's tax ID, address and phone number are filled in\./,
   ], [], []],
-  ['/negocios/', 'Versión 2026-11-05', [
+  ['/negocios', 'Versión 2026-11-05', [
     /Para negocios, las partes se someten a los juzgados de Málaga\./,
     /4 de noviembre de 2026: Se completa el fuero \(apartado 9\): los juzgados de Málaga\./,
   ], [], []],
-  ['/en/business-terms/', 'Version 2026-11-05', [
+  ['/en/business-terms', 'Version 2026-11-05', [
     /For businesses, the parties submit to the courts of Málaga\./,
     /4 November 2026: The jurisdiction is filled in \(section 9\): the courts of Málaga\./,
   ], [], []],
-  ['/cookies/', 'Última actualización: 9 de noviembre de 2026', [
+  ['/cookies', 'Última actualización: 9 de noviembre de 2026', [
     /En la app, la misma comprobación se hace en una vista web de klendar\.app\/captcha\/ que se prepara al abrir esas pantallas o justo antes, cuando vas a usarlas \(en la última pantalla de la bienvenida y en Cuenta si no has entrado\), y solo se ve si hay que marcar la casilla\./,
     /4 de noviembre de 2026: En la app, la comprobación anti-robots se hace en una vista web de klendar\.app\/captcha\//,
     /9 de noviembre de 2026: En la app, la vista web de la comprobación anti-robots se prepara también justo antes de usarla: en la última pantalla de la bienvenida y en Cuenta si no has entrado\./,
   ], [/pequeña ventana/, /misma comprobación se hace en una vista web de klendar\.app\/captcha\/ que se prepara al abrir esas pantallas y solo/], []],
-  ['/en/cookies/', 'Last updated: 9 November 2026', [
+  ['/en/cookies', 'Last updated: 9 November 2026', [
     /In the app, the same check runs in a web view of klendar\.app\/captcha\/ that is prepared when you open those screens or just before, when you are about to use them \(on the last welcome screen and in Account if you are not logged in\), and only shows if you need to tick the box\./,
     /4 November 2026: In the app, the anti-bot check runs in a web view of klendar\.app\/captcha\//,
     /9 November 2026: In the app, the anti-bot check's web view is also prepared just before you use it: on the last welcome screen and in Account if you're not logged in\./,
   ], [/small window/, /same check runs in a web view of klendar\.app\/captcha\/ that is prepared when you open those screens and only/], []],
-  ['/terminos/', 'Última actualización: 5 de noviembre de 2026', [
+  ['/terminos', 'Última actualización: 5 de noviembre de 2026', [
     /y se quitan el sello o el cupón que te hubiera dado ese canje, si aún no los has usado\./,
     /4 de noviembre de 2026: Ofertas y canjes \(apartado 3\): al deshacer una validación, el sello o el cupón que te hubiera dado ese canje solo se quitan si aún no los has usado\./,
   ], [], []],
-  ['/en/terms/', 'Last updated: 5 November 2026', [
+  ['/en/terms', 'Last updated: 5 November 2026', [
     /and any stamp or coupon that redemption gave you is removed, if you haven't used it yet\./,
     /4 November 2026: Deals and redemptions \(section 3\): when a validation is undone, any stamp or coupon that redemption gave you is only removed if you haven't used it yet\./,
   ], [], []],
-  ['/privacidad/', 'Última actualización: 11 de noviembre de 2026', [
+  ['/privacidad', 'Última actualización: 11 de noviembre de 2026', [
     /tarjetas de sellos \(sellos, premios y sus códigos\) y si una validación se deshizo/,
     /4 de noviembre de 2026: La fila «Favoritos, reseñas, canjes y sellos» dice también que guardamos si una validación se deshizo\./,
   ], [], []],
-  ['/en/privacy/', 'Last updated: 11 November 2026', [
+  ['/en/privacy', 'Last updated: 11 November 2026', [
     /stamp cards \(stamps, rewards and their codes\) and whether a validation was undone/,
     /4 November 2026: The “Favourites, reviews, redemptions and stamps” row now also says we keep whether a validation was undone\./,
   ], [], []],

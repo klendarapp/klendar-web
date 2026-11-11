@@ -79,38 +79,38 @@ function destinoWeb(ruta) {
   if ((m = r.match(/^\/business\/([0-9a-f-]{36})\/questions(?:\?q=([0-9a-f-]{36}))?/i))) {
     return `/cuenta/preguntar/${m[1]}${m[2] ? `?q=${m[2]}` : ''}`;
   }
-  if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/questions/i))) return `/panel/#/preguntas?biz=${m[1]}`;
+  if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/questions/i))) return `/panel#/preguntas?biz=${m[1]}`;
   // «Estaba cerrado»: al negocio, en el panel.
-  if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/estaba-cerrado/i))) return `/panel/#/estaba-cerrado?biz=${m[1]}`;
+  if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/estaba-cerrado/i))) return `/panel#/estaba-cerrado?biz=${m[1]}`;
   // «¿Abres el 1 de noviembre?»: la pregunta del festivo, en el panel.
-  if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/holiday\/(\d{4}-\d{2}-\d{2})/i))) return `/panel/#/festivo/${m[2]}?biz=${m[1]}`;
+  if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/holiday\/(\d{4}-\d{2}-\d{2})/i))) return `/panel#/festivo/${m[2]}?biz=${m[1]}`;
   if ((m = r.match(/^\/business\/([0-9a-f-]{36})/i))) return `${pre}/b/${m[1]}`;
   // «Tu oferta termina en 1 h»: al panel, con la pregunta de ampliarla hecha.
   if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\?extend=([0-9a-f-]{36})/i))) {
-    return `/panel/#/publicaciones?biz=${m[1]}&extend=${m[2]}`;
+    return `/panel#/publicaciones?biz=${m[1]}&extend=${m[2]}`;
   }
   // «Tu mensaje ya se ha enviado» / «…no se ha enviado»: a «Avisar a mis
   // clientes» de ese negocio en el panel.
-  if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/message/i))) return `/panel/#/mensajes?biz=${m[1]}`;
+  if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/message/i))) return `/panel#/mensajes?biz=${m[1]}`;
   // «… ya es RRPP de …», «Un RRPP lo deja»: a «RRPP» de ese negocio.
-  if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/promoters/i))) return `/panel/#/rrpp?biz=${m[1]}`;
+  if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/promoters/i))) return `/panel#/rrpp?biz=${m[1]}`;
   // «¿Te ha sobrado algo hoy?»: a «Antes de cerrar» de ese negocio.
-  if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\?before_closing=1/i))) return `/panel/#/antes-de-cerrar?biz=${m[1]}`;
+  if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\?before_closing=1/i))) return `/panel#/antes-de-cerrar?biz=${m[1]}`;
   // Grupos y Sorteos (tanda C): la bandeja de peticiones y los sorteos del
   // negocio, en el panel.
-  if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/groups/i))) return `/panel/#/grupos?biz=${m[1]}`;
-  if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/giveaways/i))) return `/panel/#/sorteos?biz=${m[1]}`;
+  if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/groups/i))) return `/panel#/grupos?biz=${m[1]}`;
+  if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/giveaways/i))) return `/panel#/sorteos?biz=${m[1]}`;
   // «Tus clientes más fieles del mes» (Fidelizar): agradecer a los habituales.
-  if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/loyalty\/thanks/i))) return `/panel/#/habituales?biz=${m[1]}`;
-  if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/loyalty/i))) return `/panel/#/fidelizar?biz=${m[1]}`;
-  if (r.startsWith('/my-business')) return '/panel/';
+  if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/loyalty\/thanks/i))) return `/panel#/habituales?biz=${m[1]}`;
+  if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/loyalty/i))) return `/panel#/fidelizar?biz=${m[1]}`;
+  if (r.startsWith('/my-business')) return '/panel';
   // «X te ha enviado una propuesta»: la petición. «¡Has ganado…!»: la página
   // del sorteo, que con tu sesión enseña lo tuyo.
   if ((m = r.match(/^\/groups\/requests\/([0-9a-f-]{36})/i))) return `/cuenta/grupos/${m[1]}`;
   if (r.startsWith('/groups/requests')) return '/cuenta/grupos';
-  if (r.startsWith('/groups')) return PUB_EN ? '/en/groups/' : '/grupos/';
+  if (r.startsWith('/groups')) return PUB_EN ? '/en/groups' : '/grupos';
   if ((m = r.match(/^\/giveaways\/([0-9a-f-]{36})/i))) return `${PUB_EN ? '/en/giveaway/' : '/sorteo/'}${m[1]}`;
-  if (r.startsWith('/giveaways')) return PUB_EN ? '/en/giveaways/' : '/sorteos/';
+  if (r.startsWith('/giveaways')) return PUB_EN ? '/en/giveaways' : '/sorteos';
   // Cola virtual: «¡Te toca!», «Se ha pasado tu turno»… → el turno.
   if ((m = r.match(/^\/cola\/([A-Za-z0-9_-]{16})/))) return `/cuenta/cola/${m[1]}`;
   // Te aviso cuando esté listo: «Tu pedido está listo en…» → el pedido.
@@ -134,13 +134,13 @@ function destinoWeb(ruta) {
   // con los bares que lo ponen. «Equipos y deportistas que sigues», a la suya.
   if (r.startsWith('/partidos/equipos')) return '/cuenta/equipos';
   if ((m = r.match(/^\/partidos\/([0-9a-f-]{36})/i))) return `${PUB_EN ? '/en/matches/' : '/partidos/'}${m[1]}`;
-  if (r.startsWith('/partidos')) return PUB_EN ? '/en/matches/' : '/partidos/';
+  if (r.startsWith('/partidos')) return PUB_EN ? '/en/matches' : '/partidos';
   // «DJ Nano actúa cerca» va a la publicación (`/offer/<id>`, arriba). La
   // página de un artista y «Artistas que sigues», por si llegan.
   if ((m = r.match(/^\/artists?\/([a-z0-9-]+)$/i)) && m[1] !== 'following') return `${pre}/a/${m[1].toLowerCase()}`;
   // «Klendar ya está en Teruel» (crecer): a Descubre. «[Local] ya está en
   // Klendar» va a su ficha (`/business/<id>`, arriba).
-  if (r === '/') return PUB_EN ? '/en/discover/' : '/descubre/';
+  if (r === '/') return PUB_EN ? '/en/discover' : '/descubre';
   if (r.startsWith('/artists')) return '/cuenta/artistas';
   return '';
 }
@@ -195,7 +195,7 @@ function accionAviso(d) {
   }
   if (d?.action === 'duplicate' && uuid.test(d.offer_id || '') && uuid.test(d.business_id || '')) {
     const nueva = d.offer_kind === 'future_event' ? 'nuevo-evento' : 'nueva-flash';
-    return { href: `/panel/#/publicaciones/${nueva}?biz=${d.business_id}&from=${d.offer_id}`, txt: t('Crear a partir de esta') };
+    return { href: `/panel#/publicaciones/${nueva}?biz=${d.business_id}&from=${d.offer_id}`, txt: t('Crear a partir de esta') };
   }
   return null;
 }
@@ -234,7 +234,7 @@ RUTAS.notificaciones = async () => {
   ]);
   const nuevos = noLeidas ?? lista.filter((n) => !n.read_at).length;
   pinta(`
-    <p class="crumbs"><a href="/cuenta/">${esc(t('Tu cuenta'))}</a></p>
+    <p class="crumbs"><a href="/cuenta">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(t('Notificaciones'))}</h1>
     ${lista.length ? `<p class="acciones">
       ${nuevos ? `<button class="pill" id="leidos">${esc(t('Marcar todo como leído'))}</button>` : ''}
@@ -247,7 +247,7 @@ RUTAS.notificaciones = async () => {
       texto: t('Añade negocios a favoritos y crea un «Avísame si…» para no perderte nada.'),
       // Lo que dice el texto, a un toque (como la app): favoritos (Descubre)
       // y «Avísame si…» (crear un aviso).
-      botones: `<a class="pill accent" href="${PUB_EN ? '/en/discover/' : '/descubre/'}">${esc(t('Descubrir negocios'))}</a>
+      botones: `<a class="pill accent" href="${PUB_EN ? '/en/discover' : '/descubre'}">${esc(t('Descubrir negocios'))}</a>
         <a class="pill" href="/cuenta/alerta/nueva">${esc(t('Nuevo aviso'))}</a>
         <a class="pill ghost" href="/cuenta/ajustes/notificaciones">${esc(t('Qué notificaciones recibo'))}</a>`,
     })}`);
@@ -297,7 +297,7 @@ RUTAS.notificaciones = async () => {
       try { await llamar('mark_notifications_read', { p_ids: [a.dataset.id] }); } catch { /* no bloquea */ }
       const href = a.getAttribute('href');
       if (href === '/cuenta/notificaciones') return;
-      if (href.startsWith('/cuenta/')) irA(href); else location.href = href;
+      if (/^\/cuenta([/?]|$)/.test(href)) irA(href); else location.href = href;
     }
   }));
   conecta($$('.aviso'));
@@ -358,7 +358,7 @@ RUTAS.alertas = async () => {
     llamar('my_alert_words', {}).catch(() => null)]);
   const misPalabras = (palabras?.words || []).map((w) => w.word);
   pinta(`
-    <p class="crumbs"><a href="/cuenta/">${esc(t('Tu cuenta'))}</a></p>
+    <p class="crumbs"><a href="/cuenta">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(t('Avísame si…'))}</h1>
     <div class="lista"><a class="fila" href="/cuenta/ajustes/notificaciones">
       <span class="fila-t"><b>${esc(t('Por palabras'))}</b><small>${esc(misPalabras.length ? misPalabras.join(' · ') : t('Por palabras: «karaoke», «sushi», «2x1»'))}</small></span>
@@ -588,7 +588,7 @@ const atiendeVistos = () => {
 /** Ajustes › Lo que ves sin sesión (el enlace de la separación de Descubre). */
 function ajustesLoQueVes() {
   pinta(`
-    <p class="crumbs"><a href="/cuenta/">${esc(t('Tu cuenta'))}</a></p>
+    <p class="crumbs"><a href="/cuenta">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(t('Lo que ves'))}</h1>
     <section class="bloque">
       ${casillaVistos()}
@@ -635,7 +635,7 @@ RUTAS.ajustes = async ([sub]) => {
   const dia = (iso) => fecha(iso, { day: 'numeric', month: 'long', year: 'numeric' });
 
   pinta(`
-    <p class="crumbs"><a href="/cuenta/">${esc(t('Tu cuenta'))}</a></p>
+    <p class="crumbs"><a href="/cuenta">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(t('Ajustes'))}</h1>
 
     <div class="lista">
@@ -733,7 +733,7 @@ RUTAS.ajustes = async ([sub]) => {
     [PUB_EN ? 'terms' : 'terminos', 'Términos de uso'],
     [PUB_EN ? 'privacy' : 'privacidad', 'Política de privacidad'],
     [PUB_EN ? 'community-guidelines' : 'normas', 'Normas de la comunidad'],
-  ].map(([ruta, txt]) => `<a href="${pre}/${ruta}/" target="_blank" rel="noopener">${esc(t(txt))}</a>`).join(' · ')}${notaLegal()}</dd>
+  ].map(([ruta, txt]) => `<a href="${pre}/${ruta}" target="_blank" rel="noopener">${esc(t(txt))}</a>`).join(' · ')}${notaLegal()}</dd>
       </dl>
       <p><button class="pill" id="descargar">${ic('download')} ${esc(t('Descargar mis datos'))}</button></p>
       <p class="muted">${esc(t('Un archivo JSON con todo lo que Klendar guarda de ti (derecho de acceso y portabilidad).'))}</p>
@@ -978,7 +978,7 @@ RUTAS.ajustes = async ([sub]) => {
         texto: EN ? `You own ${nombres}. Before deleting your account, take the business off Klendar or hand it over to someone on your team, under “Leave Klendar” in the dashboard.`
           : `Eres propietario de ${nombres}. Antes de eliminar tu cuenta, da de baja el negocio o traspásalo a alguien de tu equipo, en «Dar de baja el negocio» del panel.`,
         aceptar: t('Ir a mi negocio'),
-      })) location.href = propios.length === 1 ? `/panel/#/baja?biz=${propios[0].id}` : '/panel/';
+      })) location.href = propios.length === 1 ? `/panel#/baja?biz=${propios[0].id}` : '/panel';
       return;
     }
     // Lo que sigue vivo y se pierde (reservas, códigos, premios, sellos): se
@@ -1002,7 +1002,7 @@ RUTAS.ajustes = async ([sub]) => {
       pinta(`<div class="ticket"><p class="hecho-ic" aria-hidden="true">${MARCA_HECHO}</p>
         <h1>${esc(t('Tu cuenta se ha eliminado'))}</h1>
         <p class="muted">${esc(t('Gracias por haber usado Klendar. Si algún día vuelves, aquí estaremos.'))}</p>
-        <p><a class="pill accent" href="${pre}/">${esc(t('Ir al inicio'))}</a></p></div>`);
+        <p><a class="pill accent" href="${pre || '/'}">${esc(t('Ir al inicio'))}</a></p></div>`);
       I18N.translate(view);
     });
   });
@@ -1022,7 +1022,7 @@ RUTAS.perfil = async () => {
       .format(new Date(`${p.birth_date}T00:00:00Z`))
     : null;
   pinta(`
-    <p class="crumbs"><a href="/cuenta/">${esc(t('Tu cuenta'))}</a></p>
+    <p class="crumbs"><a href="/cuenta">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(t('Editar perfil'))}</h1>
     <form class="formu" id="f-perfil" novalidate>
       <div class="avatar-fila">
@@ -1101,7 +1101,7 @@ async function ajustesNotificaciones() {
     : t('Desactivadas: se activan desde la app'));
 
   pinta(`
-    <p class="crumbs"><a href="/cuenta/">${esc(t('Tu cuenta'))}</a> › <a href="/cuenta/ajustes">${esc(t('Ajustes'))}</a></p>
+    <p class="crumbs"><a href="/cuenta">${esc(t('Tu cuenta'))}</a> › <a href="/cuenta/ajustes">${esc(t('Ajustes'))}</a></p>
     <h1>${esc(t('Notificaciones'))}</h1>
 
     <div class="lista">
@@ -1411,7 +1411,7 @@ RUTAS.sugerencias = async (_p, params, crudo) => {
     .select('id, kind, message, status, created_at, replied_at, media')
     .order('created_at', { ascending: false }).limit(20));
   pinta(`
-    <p class="crumbs"><a href="/cuenta/">${esc(t('Tu cuenta'))}</a></p>
+    <p class="crumbs"><a href="/cuenta">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(t('Sugerencias y mejoras'))}</h1>
     <p class="muted">${esc(t('Klendar la hacemos con lo que nos cuentas. Escribe lo que mejorarías, lo que echas de menos o lo que no funciona: lo leemos todo y te respondemos si hace falta.'))}</p>
     <div data-asistente hidden></div>
@@ -1830,7 +1830,7 @@ RUTAS.opinar = async ([id], params) => {
           ? t('Se publicará cuando la revisemos: puede contener lenguaje ofensivo. Normalmente en menos de 24 h.')
           : t('Ayuda a otros a decidirse y al sitio a mejorar.'),
         volver: `${pre}/b/${encodeURIComponent(id)}#resenas`, volverTxt: t('Volver al sitio'),
-        lista: '/cuenta/', listaTxt: t('Tu cuenta'),
+        lista: '/cuenta', listaTxt: t('Tu cuenta'),
       });
     });
   });
@@ -2002,7 +2002,7 @@ RUTAS.reclamar = async ([id]) => {
       <p class="err" id="err" role="alert"></p>
       <button class="pill accent" id="enviar">${esc(t('Enviar la reclamación'))}</button>
       <p class="muted">${esc(t('Solo lo ve el equipo de Klendar. La prueba se borra 6 meses después de resolver la reclamación.'))}
-        <a href="${PUB_EN ? '/en/privacy/' : '/privacidad/'}">${esc(t('Política de privacidad'))}</a></p>${notaLegal()}
+        <a href="${PUB_EN ? '/en/privacy' : '/privacidad'}">${esc(t('Política de privacidad'))}</a></p>${notaLegal()}
     </form>`);
 
   const f = $('#f');
@@ -2055,7 +2055,7 @@ RUTAS.reclamar = async ([id]) => {
         titulo: t('Reclamación enviada'),
         texto: t('La revisamos a mano, normalmente en unos días. Te avisaremos con lo que decidamos.'),
         volver: ficha, volverTxt: t('Volver al sitio'),
-        lista: '/cuenta/', listaTxt: t('Tu cuenta'),
+        lista: '/cuenta', listaTxt: t('Tu cuenta'),
       });
     });
   });
@@ -2166,8 +2166,8 @@ RUTAS.denunciar = async ([tipo, id], params) => {
     return;
   }
   const volver = document.referrer && new URL(document.referrer).origin === location.origin
-    && !new URL(document.referrer).pathname.startsWith('/cuenta/')
-    ? document.referrer : `${pre}/`;
+    && !new URL(document.referrer).pathname.match(/^\/cuenta(\/|$)/)
+    ? document.referrer : (pre || '/');
   // Turnstile, por adelantado: al pulsar, el token suele estar ya listo.
   window.KL_CAPTCHA?.pre?.();
   const que = conContenido ? await queSeDenuncia(tipo, id) : '';
@@ -2209,7 +2209,7 @@ RUTAS.denunciar = async ([tipo, id], params) => {
           titulo: t('Denuncia enviada'),
           texto: t('Gracias por avisar. Si hace falta, lo quitamos y hablamos con quien lo publicó.'),
           volver, volverTxt: t('Volver'),
-          lista: '/cuenta/', listaTxt: t('Tu cuenta'),
+          lista: '/cuenta', listaTxt: t('Tu cuenta'),
         });
       });
     });
@@ -2234,7 +2234,7 @@ RUTAS.denunciar = async ([tipo, id], params) => {
       <p class="muted pie-form" id="csam" hidden>${esc(t('En una denuncia por abuso sexual infantil, tu nombre y tu correo son opcionales. Si nos dejas el correo, te contaremos qué hemos hecho.'))}</p>
       <label class="check"><input type="checkbox" name="fe"> ${esc(t('Declaro de buena fe que la información y las afirmaciones de esta denuncia son exactas y completas.'))}</label>
       <p class="muted pie-form">${esc(t('Usamos tu nombre y tu correo solo para tramitar la denuncia y contestarte; no se los damos a quien publicó el contenido.'))}
-        <a href="${PUB_EN ? '/en/privacy/' : '/privacidad/'}" target="_blank">${esc(t('Política de privacidad'))}</a></p>${notaLegal()}
+        <a href="${PUB_EN ? '/en/privacy' : '/privacidad'}" target="_blank">${esc(t('Política de privacidad'))}</a></p>${notaLegal()}
       <p class="err" id="err" role="alert"></p>
       <button class="pill accent" id="enviar">${esc(t('Enviar denuncia'))}</button>
     </form>
@@ -2349,7 +2349,7 @@ RUTAS.bloquear = async ([id]) => {
   }
   if (!exigeSesion(`bloquear/${id}`)) return;
   const volver = document.referrer && new URL(document.referrer).origin === location.origin
-    ? document.referrer : `${pre}/`;
+    ? document.referrer : (pre || '/');
   if (id === YO.id) {
     pinta(pantallaVacia({ icono: 'block', titulo: t('No puedes bloquearte a ti.'), h: 'h1', botones: botonTuCuenta() }));
     return;
@@ -2440,7 +2440,7 @@ RUTAS['ultimo-paso'] = async (_p, params) => {
   const salir = async () => {
     await sb.auth.signOut({ scope: 'local' });
     CONSENTIMIENTO = { ...SIN_PASOS };
-    location.href = `${pre}/`;
+    location.href = (pre || '/');
   };
   // «¿Cómo te llamas?», antes que lo demás (como en la app): la cuenta no
   // tiene nombre (entró con un código por correo, o Apple no lo dio). Al
@@ -2494,7 +2494,7 @@ RUTAS['ultimo-paso'] = async (_p, params) => {
   // Ya los aceptó, pero una versión anterior (y sabemos su fecha, que
   // `accept_terms` necesita): solo aceptar la nueva, salir o eliminar la cuenta.
   if (CONSENTIMIENTO.nueva && CONSENTIMIENTO.fecha) {
-    const doc = (ruta, texto) => `<li><a href="${pre}/${ruta}/" target="_blank" rel="noopener">${esc(t(texto))}</a></li>`;
+    const doc = (ruta, texto) => `<li><a href="${pre}/${ruta}" target="_blank" rel="noopener">${esc(t(texto))}</a></li>`;
     pinta(`
       <div class="ticket" style="text-align:left">
         <h1>${esc(t('Hemos actualizado los términos y la privacidad'))}</h1>
@@ -2502,7 +2502,7 @@ RUTAS['ultimo-paso'] = async (_p, params) => {
         <ul>
           ${doc(PUB_EN ? 'terms' : 'terminos', 'Términos de uso')}
           ${doc(PUB_EN ? 'privacy' : 'privacidad', 'Política de privacidad')}
-          ${volverSeguro.startsWith('/panel/') ? doc(PUB_EN ? 'business-terms' : 'negocios', 'Condiciones para negocios') : ''}
+          ${/^\/panel([/?#]|$)/.test(volverSeguro) ? doc(PUB_EN ? 'business-terms' : 'negocios', 'Condiciones para negocios') : ''}
         </ul>${notaLegal()}
         <p id="err" class="err" role="alert"></p>
         <p><button class="pill accent" id="seguir">${esc(t('Aceptar y seguir'))}</button></p>
@@ -2540,7 +2540,7 @@ RUTAS['ultimo-paso'] = async (_p, params) => {
         pinta(`<div class="ticket"><p class="hecho-ic" aria-hidden="true">${MARCA_HECHO}</p>
           <h1>${esc(t('Tu cuenta se ha eliminado'))}</h1>
           <p class="muted">${esc(t('Gracias por haber usado Klendar. Si algún día vuelves, aquí estaremos.'))}</p>
-          <p><a class="pill accent" href="${pre}/">${esc(t('Ir al inicio'))}</a></p></div>`);
+          <p><a class="pill accent" href="${pre || '/'}">${esc(t('Ir al inicio'))}</a></p></div>`);
         I18N.translate(view);
       });
     });
@@ -2597,7 +2597,7 @@ RUTAS.invitaciones = async () => {
   const papel = (r) => (r === 'manager' ? t('encargado') : t('empleado'));
   const dia = (s) => new Date(s).toLocaleDateString(LOC, { day: 'numeric', month: 'long', year: 'numeric' });
   pinta(`
-    <p class="crumbs"><a href="/cuenta/">${esc(t('Tu cuenta'))}</a></p>
+    <p class="crumbs"><a href="/cuenta">${esc(t('Tu cuenta'))}</a></p>
     <h1>${esc(t('Invitaciones'))}</h1>
     ${(traspasos || []).length ? `<div class="invitaciones-eq">${traspasos.map((i) => `
       <div class="lista inv-eq">
@@ -2652,7 +2652,7 @@ RUTAS.invitaciones = async () => {
       } else if (acepta) {
         toast(EN ? `You’re now part of the ${r.business_name} team.` : `Ya formas parte del equipo de ${r.business_name}.`);
         // Dentro: a su panel, que es lo que viene a hacer.
-        location.href = '/panel/';
+        location.href = '/panel';
         return;
       } else {
         toast(t('Invitación rechazada.'));
@@ -2675,7 +2675,7 @@ RUTAS.invitaciones = async () => {
           : t('Esta invitación ha caducado.'), true);
       } else if (acepta) {
         toast(EN ? `You’re now the owner of ${r.business_name}.` : `Ahora eres propietario de ${r.business_name}.`);
-        location.href = `/panel/#/resumen?biz=${r.business_id}`;
+        location.href = `/panel#/resumen?biz=${r.business_id}`;
         return;
       } else {
         toast(t('Traspaso rechazado.'));
@@ -2756,7 +2756,7 @@ RUTAS.gustos = async (_p, params) => {
   let ciudad = (srv ? srv.home_municipality : g.home)
     || (deAntes ? { code: null, slug: null, name: deAntes.name, cityId: deAntes.id } : null);
   pinta(`
-    ${primera ? '' : `<p class="crumbs"><a href="/cuenta/">${esc(t('Tu cuenta'))}</a> › <a href="/cuenta/ajustes">${esc(t('Ajustes'))}</a></p>`}
+    ${primera ? '' : `<p class="crumbs"><a href="/cuenta">${esc(t('Tu cuenta'))}</a> › <a href="/cuenta/ajustes">${esc(t('Ajustes'))}</a></p>`}
     <div class="ticket" style="text-align:left">
       <h1>${esc(t(primera ? '¿Qué te gusta?' : 'Tus gustos'))}</h1>
       <p class="muted">${esc(t('Elige de 3 a 5 y te lo enseñamos antes en Descubre. Lo demás sigue saliendo.'))}</p>

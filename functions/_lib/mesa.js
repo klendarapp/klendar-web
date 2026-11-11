@@ -93,7 +93,7 @@ export async function tableQrPage(token, lang) {
     return pagina(S.gone, `<section class="vacio"><h1>${esc(S.gone)}</h1><p>${esc(S.goneBody(info.business_name || ''))}</p>
       ${slug ? `<div class="vacio-botones"><a class="pill accent" href="${esc(fichaDe(slug))}">${esc(S.ficha)}</a></div>` : ''}</section>`, 410, 'no-store');
   }
-  const explorar = `${en ? '/en/explore' : '/explorar'}/`;
+  const explorar = `${en ? '/en/explore' : '/explorar'}`;
   const b = info?.ok ? info.business : null;
   if (!b?.id || !isUuid(b.id)) {
     return pagina(S.bad, `<section class="vacio"><h1>${esc(S.bad)}</h1><p>${esc(S.badBody)}</p>
@@ -145,7 +145,7 @@ export async function tableQrPage(token, lang) {
   <h2>${esc(S.today)}${w ? ` · ${esc(b.name)}` : ''}</h2>
   ${deHoy.length ? rejilla(deHoy, lang, { tz, sinNegocio: true }) : `<p class="empty">${esc(S.none)}</p>`}
   ${cartaHtml}
-  <p class="mesa-app"><a href="${en ? '/en/' : '/'}">${esc(S.app)}</a></p>
+  <p class="mesa-app"><a href="${en ? '/en' : '/'}">${esc(S.app)}</a></p>
   <script>(function(){var b=document.querySelector('[data-copiar]');if(b)b.addEventListener('click',function(){var t=b.getAttribute('data-copiar'),h=b.getAttribute('data-hecho'),l=b.textContent;
 function ok(){b.textContent=h;setTimeout(function(){b.textContent=l;},2500);}
 if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(ok,function(){});}else{var r=document.createRange();r.selectNodeContents(document.getElementById('mesa-clave'));var s=getSelection();s.removeAllRanges();s.addRange(r);try{document.execCommand('copy');ok();}catch(e){}}});

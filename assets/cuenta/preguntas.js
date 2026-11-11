@@ -74,7 +74,7 @@ RUTAS.preguntar = async ([id]) => {
 
   let formulario = '';
   if (s.team) {
-    formulario = `<p class="muted">${esc(t('Eres del equipo de este negocio.'))} <a href="/panel/#/preguntas?biz=${esc(id)}">${esc(t('Contestar en el panel'))}</a></p>`;
+    formulario = `<p class="muted">${esc(t('Eres del equipo de este negocio.'))} <a href="/panel#/preguntas?biz=${esc(id)}">${esc(t('Contestar en el panel'))}</a></p>`;
   } else if (s.can_ask) {
     formulario = `<form class="formu" id="f" novalidate>
       <label>${esc(t('Tu pregunta'))}

@@ -31,7 +31,7 @@ const CON = { available: true, signed_in: true, consent: true, asked: true, max_
 const SIN_PERMISO = { ...CON, consent: false, asked: false };
 const RESP = {
   ok: true, state: 'answer', text: 'Pide el código en la oferta y enséñaselo al negocio.', lang: 'es',
-  sources: [{ id: 'canjear', title: '¿Cómo se canjea una oferta?', kind: 'help', url: '/preguntas/#canjear' }], screen: 'ajustes', email: false, redacted: false,
+  sources: [{ id: 'canjear', title: '¿Cómo se canjea una oferta?', kind: 'help', url: '/preguntas#canjear' }], screen: 'ajustes', email: false, redacted: false,
 };
 const NOLOSE = { ok: true, state: 'unknown', text: 'No lo sé: eso no está en lo que tenemos publicado.', lang: 'es', sources: [], screen: null, email: true };
 
@@ -84,7 +84,7 @@ async function contexto(nav, { status, lang = '', sesionada = false, ayuda = () 
   return { ctx, p, estado, errores };
 }
 
-const preguntas = async (p, ruta = '/preguntas/') => {
+const preguntas = async (p, ruta = '/preguntas') => {
   await p.goto(`${BASE}${ruta}`, { waitUntil: 'networkidle' });
 };
 const abre = async (p) => {
@@ -147,7 +147,7 @@ for (const [nombre, status] of [['apagado', { ...ANON, available: false }], ['si
   ok(!Object.keys(estado.ia[0].body).some((k) => /user|email|name|id/.test(k)), 'ni nombre, ni correo, ni ids');
   ok((await p.locator('.asis-a').innerText()).includes('Pide el código'), 'contesta');
   const cita = p.locator('.asis-a a').first();
-  ok((await cita.innerText()).includes('Sacado de: ¿Cómo se canjea una oferta?') && await cita.getAttribute('href') === '/preguntas/#canjear', 'con su cita y su enlace');
+  ok((await cita.innerText()).includes('Sacado de: ¿Cómo se canjea una oferta?') && await cita.getAttribute('href') === '/preguntas#canjear', 'con su cita y su enlace');
   ok(await p.locator('.asis-a a', { hasText: 'Ir a Ajustes' }).getAttribute('href') === '/cuenta/ajustes', 'y la pantalla donde hacerlo');
   ok(await p.locator('.asis-salidas').count() === 0, 'con respuesta no insiste con el correo');
   await p.screenshot({ path: `${OUT}/asistente-respuesta.png` });
@@ -204,7 +204,7 @@ for (const [nombre, status] of [['apagado', { ...ANON, available: false }], ['si
   ok(con.includes('body=') && decodeURIComponent(con).includes('Algo que no está'), 'marcada, va la conversación');
   await caja.uncheck();
   ok(!(await correo.getAttribute('href')).includes('body='), 'desmarcada, ya no');
-  ok(await p.locator('.asis-salidas a', { hasText: 'Ver la Ayuda' }).getAttribute('href') === '/preguntas/', 'y la Ayuda');
+  ok(await p.locator('.asis-salidas a', { hasText: 'Ver la Ayuda' }).getAttribute('href') === '/preguntas', 'y la Ayuda');
   await ctx.close();
 }
 
@@ -277,7 +277,7 @@ for (const [nombre, r, texto] of [
 // ── Inglés y francés; 320 px ────────────────────────────────────────────
 {
   const { ctx, p, estado } = await contexto(nav, { status: ANON, lang: 'fr', width: 320 });
-  await preguntas(p, '/en/faq/');
+  await preguntas(p, '/en/faq');
   await p.waitForSelector('.asis-entrada');
   ok((await p.locator('.asis-entrada').innerText()).includes('Demande à l\'assistant'), 'en francés');
   await abre(p);
@@ -296,9 +296,9 @@ for (const [nombre, r, texto] of [
 }
 {
   const { ctx, p } = await contexto(nav, { status: ANON });
-  await preguntas(p, '/en/faq/');
+  await preguntas(p, '/en/faq');
   await p.waitForSelector('.asis-entrada');
-  ok((await p.locator('.asis-entrada').innerText()).includes('Ask the assistant'), '/en/faq/ en inglés');
+  ok((await p.locator('.asis-entrada').innerText()).includes('Ask the assistant'), '/en/faq en inglés');
   await ctx.close();
 }
 
@@ -354,7 +354,7 @@ for (const [nombre, r, texto] of [
     admin_assistant_overview: () => resumen(),
     admin_assistant_set: (b) => { encendido = b.p_enabled; return { ok: true, enabled: b.p_enabled }; },
   } });
-  await p.goto(`${BASE}/admin/#/automatico`);
+  await p.goto(`${BASE}/admin#/automatico`);
   await p.waitForSelector('[data-asistente-on]');
   const caja = p.locator('[data-asistente-on]').locator('xpath=ancestor::div[contains(@class,"card")]');
   const txt = await caja.innerText();
@@ -364,7 +364,7 @@ for (const [nombre, r, texto] of [
   ok(/Contestadas: 12/.test(txt) && /No lo sabía: 5/.test(txt) && /Intentos de engañarlo: 2/.test(txt), 'admin: los resultados del mes');
   ok(/Lo que no supo responder/.test(txt), 'admin: lo que no supo');
   ok(/Canjes/.test(txt) && /¿Cómo se canjea una oferta\?/.test(txt), 'admin: agrupado, con su tema y el apartado cercano');
-  ok(await caja.locator('a[href="/preguntas/#canjear"]').count() === 1, 'admin: enlaza a ese apartado');
+  ok(await caja.locator('a[href="/preguntas#canjear"]').count() === 1, 'admin: enlaza a ese apartado');
   await p.click('[data-asistente-on]');
   await p.waitForFunction(() => document.querySelector('[data-asistente-on]')?.dataset.asistenteOn === '1');
   ok(estado.llamadas.some(([f, b]) => f === 'admin_assistant_set' && b.p_enabled === true), 'admin: se enciende');

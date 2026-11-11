@@ -6,6 +6,7 @@
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { extname, join } from 'node:path';
+import { direccionBuena } from '../functions/_lib/direccion.js';
 
 // En las pruebas (SUPABASE_BLOQUEADO, lo pone tools/_supabase_simulado.mjs a
 // los serve_dev que lanza; a mano, SUPABASE_BLOQUEADO=1): lo que las Functions
@@ -61,6 +62,9 @@ const cabecerasDe = (ruta) => {
   return h;
 };
 
+// Como Cloudflare Pages: `/privacidad` es `privacidad.html` y `/` es `index.html`.
+const aFichero = (ruta) => (ruta === '/captcha/' ? '/captcha.html' : ruta.endsWith('/') ? `${ruta}index.html` : extname(ruta) ? ruta : `${ruta}.html`);
+
 const load = (p) => import(`file://${join(ROOT, p).replace(/\\/g, '/')}`);
 
 createServer(async (req, res) => {
@@ -70,6 +74,14 @@ createServer(async (req, res) => {
   if (path === '/__supabase_bloqueado') {
     res.writeHead(200, { 'content-type': 'application/json' });
     res.end(JSON.stringify({ bloqueado: Boolean(SB), registro: SB ? SB.REGISTRO : null }));
+    return;
+  }
+  // Como functions/_middleware.js: las direcciones van sin barra al final
+  // (/privacidad, /cuenta/entrar); lo viejo, con un 301 a la buena.
+  const buena = direccionBuena(path);
+  if (buena !== path && (req.method === 'GET' || req.method === 'HEAD')) {
+    res.writeHead(301, { Location: `${buena}${url.search}` });
+    res.end();
     return;
   }
   try {
@@ -163,7 +175,7 @@ createServer(async (req, res) => {
       const SIGUE = Symbol('sigue');
       const ASSETS = { fetch: async (r) => {
         const ruta = new URL(r.url).pathname;
-        return new Response(await readFile(join(ROOT, ruta.endsWith('/') ? `${ruta}index.html` : ruta)), { headers: { ...cabecerasDe(path), 'content-type': TYPES[ruta.endsWith('/') ? '.html' : extname(ruta)] || 'application/octet-stream' } });
+        return new Response(await readFile(join(ROOT, aFichero(ruta))), { headers: { ...cabecerasDe(ruta), 'content-type': TYPES[extname(aFichero(ruta))] || 'application/octet-stream' } });
       } };
       const out = await (post ? mod.onRequestPost : mod.onRequestGet)({ request, params, env: { ...process.env, ASSETS }, next: async () => SIGUE });
       if (out !== SIGUE) {
@@ -182,21 +194,16 @@ createServer(async (req, res) => {
       }
     }
 
-    const file = path.endsWith('/') ? `${path}index.html` : path;
+    const file = aFichero(path);
     const buf = await readFile(join(ROOT, file));
     res.writeHead(200, { ...cabecerasDe(path), 'content-type': TYPES[extname(file)] || 'application/octet-stream' });
     res.end(buf);
   } catch (e) {
-    // Como Cloudflare: /precios → /precios/, y si no existe, la 404.html más
-    // cercana (/en/404.html para /en/…).
-    if (e.code === 'EISDIR') {
-      res.writeHead(308, { Location: `${path}/${url.search}` });
-      res.end();
-      return;
-    }
-    if (e.code === 'ENOENT') {
+    // Como Cloudflare: si no existe, la 404.html más cercana (/en/404.html
+    // para /en/…). Una carpeta sin página (/assets/fonts) también es un 404.
+    if (e.code === 'ENOENT' || e.code === 'EISDIR') {
       try {
-        const nf = await readFile(join(ROOT, path.startsWith('/en/') ? 'en/404.html' : '404.html'));
+        const nf = await readFile(join(ROOT, /^\/en(\/|$)/.test(path) ? 'en/404.html' : '404.html'));
         res.writeHead(404, { 'content-type': TYPES['.html'] });
         res.end(nf);
         return;

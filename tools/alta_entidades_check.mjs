@@ -99,7 +99,7 @@ async function panel(nav, nombre, t, vp) {
   p.on('pageerror', (e) => errores.push(e.message));
   const foto = (n) => p.screenshot({ path: `${OUT}/web-${n}-${nombre}-${t}.png`, fullPage: true });
 
-  await p.goto(`${BASE}/panel/`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel`, { waitUntil: 'networkidle' });
   await p.waitForSelector('text=¿Qué vas a dar de alta?');
   ok(await p.locator('.crear-op').count() === 2, `${nombre}/${t} panel: dos opciones al empezar`);
   await foto('alta-elegir');
@@ -174,7 +174,7 @@ async function admin(nav, nombre, t, vp) {
   const p = await ctx.newPage();
   const errores = [];
   p.on('pageerror', (e) => errores.push(e.message));
-  await p.goto(`${BASE}/admin/#/entidades`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/admin#/entidades`, { waitUntil: 'networkidle' });
   await p.waitForSelector('text=Entidades por verificar');
   await p.waitForSelector('[data-aprobar]');
   const cola = await p.locator('#list').innerText();

@@ -118,7 +118,7 @@ for (const [motor, tipo] of [['chromium', pw.chromium], ['webkit', pw.webkit]].f
 
   // ── 1. La ficha pública de una carrera ─────────────────────────────────
   const p0 = await nav.newPage();
-  await p0.goto(`${BASE}/partidos/?deporte=motor`, { waitUntil: 'networkidle' });
+  await p0.goto(`${BASE}/partidos?deporte=motor`, { waitUntil: 'networkidle' });
   const carreras = await p0.locator('a.partido').evaluateAll((l) => l.map((a) => a.getAttribute('href')).slice(0, 6));
   let ruta = null;
   for (const h of carreras) {
@@ -217,7 +217,7 @@ for (const [motor, tipo] of [['chromium', pw.chromium], ['webkit', pw.webkit]].f
         follow_search: [F1, ALONSO],
         set_business_broadcast_rule: { ok: true, changed: 2 },
       });
-      await p.goto(`${BASE}/panel/#/partidos`, { waitUntil: 'networkidle' });
+      await p.goto(`${BASE}/panel#/partidos`, { waitUntil: 'networkidle' });
       await p.waitForSelector('#ptSiempreMas');
       ok(/Poner siempre…/.test(await p.locator('#ptSiempreMas').innerText()), `${motor} ${t} panel: «Poner siempre…» aunque aún no haya reglas`);
       await p.locator('.pt-mas summary').first().click();
@@ -257,7 +257,7 @@ for (const [motor, tipo] of [['chromium', pw.chromium], ['webkit', pw.webkit]].f
         admin_save_follow_item: { ok: true, id: 'a0000000-0000-4000-8000-000000000009' },
         admin_hide_follow_item: { ok: true },
       });
-      await p.goto(`${BASE}/admin/#/emisiones?tab=seguir`, { waitUntil: 'networkidle' });
+      await p.goto(`${BASE}/admin#/emisiones?tab=seguir`, { waitUntil: 'networkidle' });
       await p.waitForSelector('[data-sg-editar]');
       const v = await p.locator('#view').innerText();
       ok(/Fernando Alonso/.test(v) && /Todas las de su campeonato/.test(v) && /Las que lo nombran/.test(v) && /apagado/.test(v), `${motor} ${t} admin: el catálogo con su regla y lo apagado`);

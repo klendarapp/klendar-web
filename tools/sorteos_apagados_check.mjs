@@ -3,11 +3,11 @@
 //
 //  1. Lo público (las Functions de verdad, contra dos Supabase falsos: uno
 //     apagado y otro encendido en la web):
-//     · apagado: /sorteos/, /en/giveaways/, /sorteo/<id> y sus bases dicen
+//     · apagado: /sorteos, /en/giveaways, /sorteo/<id> y sus bases dicen
 //       «Los sorteos no están disponibles» con «Ir a Descubre» y noindex;
 //       Explorar sin el acceso a «Sorteos»; el sitemap de negocios sin
 //       sorteos;
-//     · encendido: /sorteos/ es la lista y Explorar tiene el acceso.
+//     · encendido: /sorteos es la lista y Explorar tiene el acceso.
 //  2. «Tu cuenta»: apagado, #/sorteos y /cuenta/sorteo/<id> con el mismo vacío; la
 //     bandeja pide sin los avisos de sorteos (`kind=neq.giveaway`) y los
 //     ajustes de notificaciones no tienen «Sorteos»; encendido, sí.
@@ -97,7 +97,7 @@ async function contexto(nav, vp, giveaways, rpc) {
   await ctx.route(`${SUPA}/**`, supabaseFalso(estado));
   // La lista pública de «En los que participas» (adonde lleva #/sorteos
   // encendido): no hace falta pintarla, solo ver que se llega.
-  await ctx.route(/\/sorteos\/\?mios=1/, (r) => r.fulfill({ status: 200, contentType: 'text/html', body: '<p>lista</p>' }));
+  await ctx.route(/\/sorteos\?mios=1/, (r) => r.fulfill({ status: 200, contentType: 'text/html', body: '<p>lista</p>' }));
   const p = await ctx.newPage();
   const errores = [];
   p.on('pageerror', (e) => errores.push(e.message));
@@ -117,7 +117,7 @@ async function cuenta(nav, nombre, t, vp) {
   await p.goto(`${BASE}/cuenta/sorteos`);
   await p.waitForFunction(() => /Los sorteos no están disponibles/.test(document.querySelector('#view')?.innerText || ''));
   let txt = await vista(p);
-  ok(/Por ahora no hay sorteos en Klendar/.test(txt) && await p.locator('#view a[href="/descubre/"]').count() === 1, `${nombre}/${t} cuenta apagado: #/sorteos, vacío con «Ir a Descubre»`);
+  ok(/Por ahora no hay sorteos en Klendar/.test(txt) && await p.locator('#view a[href="/descubre"]').count() === 1, `${nombre}/${t} cuenta apagado: #/sorteos, vacío con «Ir a Descubre»`);
   ok(await sinScroll(p), `${nombre}/${t} cuenta apagado: sin desplazamiento horizontal`);
   await p.screenshot({ path: `${OUT}/cuenta-sorteos-apagados-${nombre}-${t}.png`, fullPage: true });
   await p.goto(`${BASE}/cuenta/sorteo/${GID}`);
@@ -141,7 +141,7 @@ async function cuenta(nav, nombre, t, vp) {
   await p.waitForTimeout(1200);
   ok(estado.avisos.length > 0 && !estado.avisos.some((q) => /neq\.giveaway/.test(q)), `${nombre}/${t} cuenta encendido: la bandeja entera`);
   await p.goto(`${BASE}/cuenta/sorteos`);
-  await p.waitForURL(/\/sorteos\/\?mios=1/);
+  await p.waitForURL(/\/sorteos\?mios=1/);
   ok(true, `${nombre}/${t} cuenta encendido: #/sorteos lleva a «En los que participas»`);
   ok(errores.length === 0, `${nombre}/${t} cuenta encendido: sin errores de JavaScript (${errores.join(' | ')})`);
   await ctx.close();
@@ -167,16 +167,16 @@ const PANEL = {
 };
 async function panel(nav, nombre, t, vp) {
   let { ctx, p, estado, errores } = await contexto(nav, vp, OFF, PANEL);
-  await p.goto(`${BASE}/panel/#/sorteos`);
+  await p.goto(`${BASE}/panel#/sorteos`);
   await p.waitForFunction(() => /Los sorteos no están disponibles/.test(document.querySelector('#view')?.innerText || ''));
   ok(/Lo demás de Fidelizar funciona como siempre/.test(await vista(p)) && await p.locator('#view a[href="#/resumen"]').count() === 1, `${nombre}/${t} panel apagado: #/sorteos con «Volver al resumen»`);
   ok(!estado.llamadas.some(([f]) => f === 'business_giveaways'), `${nombre}/${t} panel apagado: no pide los sorteos`);
   ok(await sinScroll(p), `${nombre}/${t} panel apagado: sin desplazamiento horizontal`);
   await p.screenshot({ path: `${OUT}/panel-sorteos-apagados-${nombre}-${t}.png`, fullPage: true });
-  await p.goto(`${BASE}/panel/#/sorteos/nuevo`);
+  await p.goto(`${BASE}/panel#/sorteos/nuevo`);
   await p.waitForFunction(() => /Los sorteos no están disponibles/.test(document.querySelector('#view')?.innerText || ''));
   ok(await p.locator('#view form').count() === 0, `${nombre}/${t} panel apagado: #/sorteos/nuevo sin formulario`);
-  await p.goto(`${BASE}/panel/#/fidelizar`);
+  await p.goto(`${BASE}/panel#/fidelizar`);
   await p.waitForSelector('.fiel-lista');
   ok(await p.locator('a[href="#/sorteos"]').count() === 0 && !/Sorteos/.test(await vista(p)), `${nombre}/${t} panel apagado: Fidelizar sin «Sorteos»`);
   await p.screenshot({ path: `${OUT}/panel-fidelizar-apagados-${nombre}-${t}.png`, fullPage: true });
@@ -184,10 +184,10 @@ async function panel(nav, nombre, t, vp) {
   await ctx.close();
 
   ({ ctx, p, estado, errores } = await contexto(nav, vp, ON, PANEL));
-  await p.goto(`${BASE}/panel/#/fidelizar`);
+  await p.goto(`${BASE}/panel#/fidelizar`);
   await p.waitForSelector('.fiel-lista a[href="#/sorteos"]');
   ok(/1 sorteo abierto/.test(await vista(p)), `${nombre}/${t} panel encendido: Fidelizar con «Sorteos · 1 sorteo abierto»`);
-  await p.goto(`${BASE}/panel/#/sorteos`);
+  await p.goto(`${BASE}/panel#/sorteos`);
   await p.waitForFunction(() => /Crear un sorteo/.test(document.querySelector('#view')?.innerText || ''));
   ok(estado.llamadas.some(([f]) => f === 'business_giveaways'), `${nombre}/${t} panel encendido: #/sorteos, la lista de siempre`);
   ok(errores.length === 0, `${nombre}/${t} panel encendido: sin errores de JavaScript (${errores.join(' | ')})`);
@@ -211,7 +211,7 @@ async function admin(nav, nombre, t, vp) {
   const errores = [];
   p.on('pageerror', (e) => errores.push(e.message));
   p.setDefaultTimeout(15000);
-  await p.goto(`${BASE}/admin/#/configuracion`);
+  await p.goto(`${BASE}/admin#/configuracion`);
   await p.waitForSelector('#gwf');
   const card = p.locator('.card', { has: p.locator('#gwf') });
   const txt = await card.innerText();
@@ -255,12 +255,12 @@ async function publico(nav, nombre, t, vp) {
   const OFFP = `http://localhost:${PUERTOS.off[0]}`;
   const ONP = `http://localhost:${PUERTOS.on[0]}`;
   for (const [ruta, texto, ir] of [
-    ['/sorteos/', 'Los sorteos no están disponibles', '/descubre/'],
-    ['/sorteos/?mios=1', 'Los sorteos no están disponibles', '/descubre/'],
-    [`/sorteo/${GID}`, 'Los sorteos no están disponibles', '/descubre/'],
-    [`/sorteo/${GID}/bases`, 'Los sorteos no están disponibles', '/descubre/'],
-    ['/en/giveaways/', "Giveaways aren't available", '/en/discover/'],
-    [`/en/giveaway/${GID}`, "Giveaways aren't available", '/en/discover/'],
+    ['/sorteos', 'Los sorteos no están disponibles', '/descubre'],
+    ['/sorteos?mios=1', 'Los sorteos no están disponibles', '/descubre'],
+    [`/sorteo/${GID}`, 'Los sorteos no están disponibles', '/descubre'],
+    [`/sorteo/${GID}/bases`, 'Los sorteos no están disponibles', '/descubre'],
+    ['/en/giveaways', "Giveaways aren't available", '/en/discover'],
+    [`/en/giveaway/${GID}`, "Giveaways aren't available", '/en/discover'],
   ]) {
     const r = await p.goto(`${OFFP}${ruta}`, { waitUntil: 'load' });
     const main = await p.locator('main').innerText();
@@ -270,23 +270,23 @@ async function publico(nav, nombre, t, vp) {
     ok(/name="robots" content="noindex"/.test(html) || (r.headers()['x-robots-tag'] || '').includes('noindex'), `${nombre}/${t} público apagado: ${ruta} con noindex`);
   }
   ok(await sinScroll(p), `${nombre}/${t} público apagado: sin desplazamiento horizontal`);
-  await p.goto(`${OFFP}/sorteos/`);
+  await p.goto(`${OFFP}/sorteos`);
   await p.screenshot({ path: `${OUT}/publico-sorteos-apagados-${nombre}-${t}.png`, fullPage: true });
-  await p.goto(`${OFFP}/explorar/`, { waitUntil: 'load' });
+  await p.goto(`${OFFP}/explorar`, { waitUntil: 'load' });
   await p.click('header.top [data-abre-hoja="buscar"]');
   await p.waitForTimeout(800);
-  ok(await p.locator('a[href^="/sorteos/"]').count() === 0 && !/"sorteos":/.test(await p.content()), `${nombre}/${t} público apagado: Explorar sin «Sorteos» (tampoco en la hoja «Buscar»)`);
+  ok(await p.locator('a[href^="/sorteos"]').count() === 0 && !/"sorteos":/.test(await p.content()), `${nombre}/${t} público apagado: Explorar sin «Sorteos» (tampoco en la hoja «Buscar»)`);
   const mapa = await (await p.request.get(`${OFFP}/sitemap-negocios.xml`)).text();
   ok(!/\/sorteo\//.test(mapa), `${nombre}/${t} público apagado: el sitemap de negocios sin sorteos`);
 
-  let r = await p.goto(`${ONP}/sorteos/`, { waitUntil: 'load' });
-  ok(r.status() === 200 && !/Los sorteos no están disponibles/.test(await p.locator('main').innerText()) && /Sorteos/.test(await p.locator('h1').innerText()), `${nombre}/${t} público encendido: /sorteos/ es la lista`);
-  await p.goto(`${ONP}/explorar/`, { waitUntil: 'load' });
+  let r = await p.goto(`${ONP}/sorteos`, { waitUntil: 'load' });
+  ok(r.status() === 200 && !/Los sorteos no están disponibles/.test(await p.locator('main').innerText()) && /Sorteos/.test(await p.locator('h1').innerText()), `${nombre}/${t} público encendido: /sorteos es la lista`);
+  await p.goto(`${ONP}/explorar`, { waitUntil: 'load' });
   // Desde el 3-11-2026 «Sorteos» va en la hoja «Buscar» de la lupa (como
   // «Dónde verlo» y «Grupos y empresas»), no bajo un título en la página.
   await p.click('header.top [data-abre-hoja="buscar"]');
   await p.waitForTimeout(800);
-  ok(await p.locator('#buscar a[href^="/sorteos/"]').count() >= 1, `${nombre}/${t} público encendido: Explorar con «Sorteos» (en la hoja «Buscar»)`);
+  ok(await p.locator('#buscar a[href^="/sorteos"]').count() >= 1, `${nombre}/${t} público encendido: Explorar con «Sorteos» (en la hoja «Buscar»)`);
   r = await p.goto(`${ONP}/sorteo/${GID}`, { waitUntil: 'load' });
   ok(r.status() === 404 && /Este sorteo no está/.test(await p.locator('main').innerText()), `${nombre}/${t} público encendido: un sorteo que no está, como siempre (404)`);
   ok(errores.length === 0, `${nombre}/${t} público: sin errores de JavaScript (${errores.join(' | ')})`);

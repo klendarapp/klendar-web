@@ -1,4 +1,4 @@
-// «Tu cuenta» en /cuenta/ con direcciones normales (Iván, 5-11): cada ruta en
+// «Tu cuenta» en /cuenta con direcciones normales (Iván, 5-11): cada ruta en
 // carga directa y al recargar, atrás y adelante, entrar, crear la cuenta, el
 // código, recuperar y la contraseña nueva, el cambio de correo (enlaces con
 // `token_hash`), «Confirma que eres tú», `?destino=`, panel y admin que vuelven
@@ -91,7 +91,7 @@ const pintada = (p) => p.waitForFunction(() => {
 /** Lo que no debe quedar en ninguna pantalla: `#/` de «Tu cuenta» ni `/app/`. */
 const enlacesViejos = (p) => p.evaluate(() => [...document.querySelectorAll('a[href]')]
   .map((a) => a.getAttribute('href'))
-  .filter((h) => /^#\/|^\/app(\/|$)|klendar\.app\/app/.test(h) || (/#\//.test(h) && !/^\/panel\/|^\/admin\//.test(h))));
+  .filter((h) => /^#\/|^\/app(\/|$)|klendar\.app\/app/.test(h) || (/#\//.test(h) && !/^\/(panel|admin)[/#?]/.test(h))));
 
 // ── Con sesión: cada ruta, en carga directa y al recargar ─────────────────
 const CON_SESION = [
@@ -115,7 +115,7 @@ async function pruebaRutas(nav, motor) {
       const { ctx, p, errores } = await abre(nav, { ancho, sesion: true });
       let viejos = 0;
       for (const [ruta, re] of CON_SESION) {
-        const url = `/cuenta/${ruta}${q}`;
+        const url = ruta ? `/cuenta/${ruta}${q}` : `/cuenta${q}`;
         const r = await p.goto(`${BASE}${url}`);
         await pintada(p);
         const t1 = await p.locator('#view').innerText();
@@ -132,7 +132,7 @@ async function pruebaRutas(nav, motor) {
       await ctx.close();
       const sin = await abre(nav, { ancho });
       for (const [ruta, re] of SIN_SESION) {
-        const url = `/cuenta/${ruta}${q}`;
+        const url = ruta ? `/cuenta/${ruta}${q}` : `/cuenta${q}`;
         await sin.p.goto(`${BASE}${url}`);
         await pintada(sin.p);
         ok(dir(sin.p) === url && re.test(await sin.p.locator('#view').innerText()), `${et} ${url}: sin sesión`, dir(sin.p));
@@ -149,7 +149,7 @@ async function pruebaRutas(nav, motor) {
 // ── Atrás, adelante y los enlaces de dentro, sin recargar ─────────────────
 async function pruebaHistoria(nav, motor) {
   const { ctx, p, errores } = await abre(nav, { sesion: true });
-  await p.goto(`${BASE}/cuenta/`);
+  await p.goto(`${BASE}/cuenta`);
   await pintada(p);
   await p.evaluate(() => { window.__sinRecargar = 1; });
   await p.click('a[href="/cuenta/favoritos"]');
@@ -157,13 +157,13 @@ async function pruebaHistoria(nav, motor) {
   await pintada(p);
   ok(/Favoritos/.test(await p.locator('#view').innerText()), `${motor} enlace: pinta la pantalla`);
   await p.click('nav.tabbar a[data-tab="cuenta"]:visible');
-  await p.waitForFunction(() => location.pathname === '/cuenta/');
+  await p.waitForFunction(() => location.pathname === '/cuenta');
   await p.goBack();
   await p.waitForFunction(() => location.pathname === '/cuenta/favoritos');
   await p.waitForFunction(() => /Favoritos/.test(document.getElementById('view').innerText));
   ok(true, `${motor} atrás: vuelve y pinta`);
   await p.goForward();
-  await p.waitForFunction(() => location.pathname === '/cuenta/');
+  await p.waitForFunction(() => location.pathname === '/cuenta');
   await pintada(p);
   ok(await p.evaluate(() => window.__sinRecargar === 1), `${motor} atrás y adelante sin recargar la página`);
   // La pestaña de abajo sigue a la dirección.
@@ -187,28 +187,28 @@ async function pruebaHistoria(nav, motor) {
   await ctx.close();
 }
 
-// ── Lo que se conserva y lo que no sale de /cuenta/ ───────────────────────
+// ── Lo que se conserva y lo que no sale de /cuenta ───────────────────────
 async function pruebaDireccion(nav, motor) {
   const { ctx, p } = await abre(nav);
-  await p.goto(`${BASE}/cuenta/entrar?lang=en&destino=%2Fpanel%2F`);
+  await p.goto(`${BASE}/cuenta/entrar?lang=en&destino=%2Fpanel`);
   await pintada(p);
   await p.locator('a[href*="/cuenta/registro"]').first().click();
   await p.waitForFunction(() => location.pathname === '/cuenta/registro');
   const u = new URL(p.url());
-  ok(u.searchParams.get('lang') === 'en' && u.searchParams.get('destino') === '/panel/' && u.searchParams.get('para') === 'negocio', `${motor} ?lang= y ?destino= siguen al cambiar de pantalla`, dir(p));
+  ok(u.searchParams.get('lang') === 'en' && u.searchParams.get('destino') === '/panel' && u.searchParams.get('para') === 'negocio', `${motor} ?lang= y ?destino= siguen al cambiar de pantalla`, dir(p));
   // rutaInterna: solo direcciones propias y sin datos.
   const casos = await p.evaluate(() => ({
-    panel: rutaInterna('/panel/'),
-    panelRuta: rutaInterna('/panel/#/validar?code=abc12345&biz=0e7717e0-0000-4000-8000-0000000097d4&x=1'),
-    panelAlta: rutaInterna('/panel/?alta=1'),
-    cuenta: rutaInterna('/cuenta/'),
+    panel: rutaInterna('/panel'),
+    panelRuta: rutaInterna('/panel#/validar?code=abc12345&biz=0e7717e0-0000-4000-8000-0000000097d4&x=1'),
+    panelAlta: rutaInterna('/panel?alta=1'),
+    cuenta: rutaInterna('/cuenta'),
     cuentaRuta: rutaInterna('/cuenta/ajustes/notificaciones?lang=en&x=1'),
     fuera: rutaInterna('https://evil.example/panel/'),
     dobles: rutaInterna('//evil.example/panel/'),
     subir: rutaInterna('/cuenta/../admin/'),
     subir2: rutaInterna('/cuenta/%2e%2e/admin/'),
     vieja: rutaInterna('/app/'),
-    admin: rutaInterna('/admin/'),
+    admin: rutaInterna('/admin'),
     seguro1: urlCuenta('../panel/'),
     seguro2: urlCuenta('//evil.example/'),
     seguro3: urlCuenta('..%2f..%2fpanel'),
@@ -216,19 +216,19 @@ async function pruebaDireccion(nav, motor) {
     seguro5: urlCuenta('%2e%2e/panel/'),
     normal: urlCuenta('/cuenta/codigo/x.y.z?rp=1'),
   }));
-  ok(casos.panel === '/panel/' && casos.panelAlta === '/panel/?alta=1' && casos.cuenta === '/cuenta/', `${motor} rutaInterna: las propias`, JSON.stringify(casos));
-  ok(casos.panelRuta === '/panel/#/validar?biz=0e7717e0-0000-4000-8000-0000000097d4&code=abc12345', `${motor} rutaInterna: el panel con su ruta y sin lo demás`, casos.panelRuta);
+  ok(casos.panel === '/panel' && casos.panelAlta === '/panel?alta=1' && casos.cuenta === '/cuenta', `${motor} rutaInterna: las propias`, JSON.stringify(casos));
+  ok(casos.panelRuta === '/panel#/validar?biz=0e7717e0-0000-4000-8000-0000000097d4&code=abc12345', `${motor} rutaInterna: el panel con su ruta y sin lo demás`, casos.panelRuta);
   ok(casos.cuentaRuta === '/cuenta/ajustes/notificaciones?lang=en', `${motor} rutaInterna: la cuenta con su ruta`, casos.cuentaRuta);
   ok(![casos.fuera, casos.dobles, casos.subir, casos.subir2, casos.vieja, casos.admin].some(Boolean), `${motor} rutaInterna: nada de fuera ni /app/`, JSON.stringify(casos));
-  ok([casos.seguro1, casos.seguro2, casos.seguro4, casos.seguro5].every((x) => /^\/cuenta\/(\?|$)/.test(x)) && casos.seguro3.startsWith('/cuenta/'), `${motor} urlCuenta: nunca sale de /cuenta/`, JSON.stringify(casos));
+  ok([casos.seguro1, casos.seguro2, casos.seguro4, casos.seguro5].every((x) => /^\/cuenta(\?|$)/.test(x)) && casos.seguro3.startsWith('/cuenta'), `${motor} urlCuenta: nunca sale de /cuenta`, JSON.stringify(casos));
   ok(casos.normal.startsWith('/cuenta/codigo/x.y.z?') && /rp=1/.test(casos.normal), `${motor} urlCuenta: rutas con puntos`, casos.normal);
   await ctx.close();
   // `siguiente` raro en la vuelta de Google: dentro de /cuenta/.
   const c = await abre(nav, { sesion: true });
-  await c.p.goto(`${BASE}/cuenta/?siguiente=..%2F..%2Fpanel%2F`);
+  await c.p.goto(`${BASE}/cuenta?siguiente=..%2F..%2Fpanel%2F`);
   await pintada(c.p);
-  ok(new URL(c.p.url()).pathname === '/cuenta/', `${motor} ?siguiente= con .. no sale de /cuenta/`, dir(c.p));
-  await c.p.goto(`${BASE}/cuenta/?siguiente=guardar%2Fabc%3Frp%3Dxy`);
+  ok(new URL(c.p.url()).pathname === '/cuenta', `${motor} ?siguiente= con .. no sale de /cuenta`, dir(c.p));
+  await c.p.goto(`${BASE}/cuenta?siguiente=guardar%2Fabc%3Frp%3Dxy`);
   await c.p.waitForFunction(() => location.pathname === '/cuenta/guardar/abc');
   ok(new URL(c.p.url()).searchParams.get('rp') === 'xy', `${motor} ?siguiente= con su ruta y parámetros`, dir(c.p));
   await c.ctx.close();
@@ -257,8 +257,8 @@ async function pruebaAcceso(nav, motor) {
     await p.fill('[name=email]', 'rutas@example.com');
     await p.fill('[name=password]', 'clave-de-prueba');
     await p.click('#f button[type=submit]');
-    await p.waitForFunction(() => location.pathname === '/panel/');
-    ok(true, `${motor} entrar con ?destino=/panel/: vuelve al panel`);
+    await p.waitForFunction(() => location.pathname === '/panel');
+    ok(true, `${motor} entrar con ?destino=/panel: vuelve al panel`);
     await ctx.close();
   }
   // Crear cuenta: la vuelta del correo es /cuenta/.
@@ -275,7 +275,7 @@ async function pruebaAcceso(nav, motor) {
     await p.click('#f button[type=submit]');
     await p.waitForSelector('#fc');
     const alta = estado.auth.find((x) => x.que === 'signup');
-    ok(alta && /\/cuenta\/$/.test(alta.redirect || ''), `${motor} crear cuenta: redirect_to a /cuenta/`, alta?.redirect);
+    ok(alta && /\/cuenta$/.test(alta.redirect || ''), `${motor} crear cuenta: redirect_to a /cuenta`, alta?.redirect);
     // «Enviar otro código» (revisión 9-11, D3): a la vista y con la cuenta atrás ya en marcha.
     const otro = p.locator('#fc #otro');
     ok(await otro.isVisible() && await otro.isDisabled() && /\d+ s/.test(await otro.innerText()), `${motor} crear cuenta: «Enviar otro código» con su cuenta atrás`, await otro.innerText().catch(() => ''));
@@ -306,7 +306,7 @@ async function pruebaAcceso(nav, motor) {
     await p.click('#f1 button[type=submit]');
     await p.waitForSelector('#f2:not([hidden])');
     const otp = estado.auth.find((x) => x.que === 'otp');
-    ok(otp && /\/cuenta\/$/.test(otp.redirect || ''), `${motor} código: redirect_to a /cuenta/`, otp?.redirect);
+    ok(otp && /\/cuenta$/.test(otp.redirect || ''), `${motor} código: redirect_to a /cuenta`, otp?.redirect);
     await ctx.close();
   }
   // Recuperar: el correo vuelve a /cuenta/nueva-clave.
@@ -332,13 +332,13 @@ async function pruebaAcceso(nav, motor) {
     await p.fill('[name=p1]', 'clave-nueva-123');
     await p.fill('[name=p2]', 'clave-nueva-123');
     await p.click('#f button[type=submit]');
-    await p.waitForFunction(() => location.pathname === '/cuenta/');
+    await p.waitForFunction(() => location.pathname === '/cuenta');
     ok(estado.auth.some((x) => x.que === 'user' && x.metodo === 'PUT' && x.body.password === 'clave-nueva-123'), `${motor} contraseña nueva: guardada y a «Tu cuenta»`);
     ok(errores.length === 0, `${motor} enlace de recuperar: sin errores`, errores.join(' | '));
     await ctx.close();
   }
   // Recuperar pedido desde el panel y desde el admin: vuelve a su sitio.
-  for (const [q, dest, nombre] of [['%2Fadmin%2F', '/admin/', 'admin'], ['%2Fpanel%2F', '/panel/', 'panel']]) {
+  for (const [q, dest, nombre] of [['%2Fadmin%2F', '/admin', 'admin'], ['%2Fpanel%2F', '/panel', 'panel']]) {
     const { ctx, p } = await abre(nav);
     await p.goto(`${BASE}/cuenta/nueva-clave?destino=${q}&token_hash=${TOKEN_HASH}&type=recovery`);
     await p.waitForSelector('[name=p1]');
@@ -375,7 +375,7 @@ async function pruebaAcceso(nav, motor) {
     ok(dir(b.p) === '/cuenta/ajustes', `${motor} cambio de correo, segundo enlace: en Ajustes y sin token`, dir(b.p));
     await b.ctx.close();
   }
-  // «Confirma que eres tú»: el código sale con la vuelta /cuenta/?reauth=1, y
+  // «Confirma que eres tú»: el código sale con la vuelta /cuenta?reauth=1, y
   // la vuelta del cambio de correo es /cuenta/ajustes.
   {
     const { ctx, p, estado } = await abre(nav, { sesion: true });
@@ -392,19 +392,19 @@ async function pruebaAcceso(nav, motor) {
     await p.click('dialog button[type=submit]');
     await p.waitForFunction(() => document.querySelector('dialog [data-reenvio]'));
     const otp = estado.auth.find((x) => x.que === 'otp');
-    ok(otp && /\/cuenta\/\?reauth=1$/.test(otp.redirect || ''), `${motor} «Confirma que eres tú»: redirect_to /cuenta/?reauth=1`, otp?.redirect);
+    ok(otp && /\/cuenta\?reauth=1$/.test(otp.redirect || ''), `${motor} «Confirma que eres tú»: redirect_to /cuenta?reauth=1`, otp?.redirect);
     await ctx.close();
   }
 }
 
 // ── Propietario que quiere eliminar su cuenta (revisión 9-11, I6) ─────────
-// «Ir a mi negocio» lleva a «Dar de baja el negocio» del panel (`/panel/#/baja?biz=`),
-// no a `/panel//cuenta/baja` (el 5-11 se cambió `#/` por `/cuenta/` también aquí).
+// «Ir a mi negocio» lleva a «Dar de baja el negocio» del panel (`/panel#/baja?biz=`),
+// no a `/panel//cuenta/baja` (el 5-11 se cambió `#/` por `/cuenta` también aquí).
 async function pruebaPropietario(nav, motor) {
   const BIZ = 'b0000000-0000-4000-8000-0000000000b1';
   for (const [negocios, esperado, que] of [
-    [[{ id: BIZ, name: 'Bar Uno', role: 'owner' }], `/panel/#/baja?biz=${BIZ}`, 'un negocio'],
-    [[{ id: BIZ, name: 'Bar Uno', role: 'owner' }, { id: `${BIZ.slice(0, -1)}2`, name: 'Bar Dos', role: 'owner' }], '/panel/', 'dos negocios'],
+    [[{ id: BIZ, name: 'Bar Uno', role: 'owner' }], `/panel#/baja?biz=${BIZ}`, 'un negocio'],
+    [[{ id: BIZ, name: 'Bar Uno', role: 'owner' }, { id: `${BIZ.slice(0, -1)}2`, name: 'Bar Dos', role: 'owner' }], '/panel', 'dos negocios'],
   ]) {
     const { ctx, p, estado } = await abre(nav, { sesion: true, negocios });
     // El panel, una página vacía: así la dirección (con su `#/`) se queda y se puede leer.
@@ -430,14 +430,15 @@ async function pruebaFuera(nav, motor) {
   const { ctx, p, estado } = await abre(nav);
   for (const ruta of ['/app', '/app/', '/app/favoritos', '/app/?lang=en', '/app/app.js', '/app/i18n/ca.js', '/cuenta/app.js']) {
     const r = await p.goto(`${BASE}${ruta}`);
-    ok(r.status() === 404 && new URL(p.url()).pathname === ruta.split('?')[0] && /no existe|doesn.t exist|not found/i.test(await p.locator('body').innerText()), `${motor} ${ruta}: la 404 de la web, sin redirigir`, `${r.status()} ${p.url()}`);
+    // `/app/` (con barra): primero el 301 de todas a `/app` y ahí la 404.
+    ok(r.status() === 404 && new URL(p.url()).pathname === ruta.split('?')[0].replace(/(.)\/$/, '$1') && /no existe|doesn.t exist|not found/i.test(await p.locator('body').innerText()), `${motor} ${ruta}: la 404 de la web, sin redirigir`, `${r.status()} ${p.url()}`);
   }
   const r = await p.goto(`${BASE}/cuenta`);
-  ok(r.status() === 200 && new URL(p.url()).pathname === '/cuenta/', `${motor} /cuenta sin barra: a /cuenta/`, p.url());
+  ok(r.status() === 200 && new URL(p.url()).pathname === '/cuenta', `${motor} /cuenta sin barra: a /cuenta`, p.url());
   ok((await p.request.get(`${BASE}/cuenta/favoritos`)).headers()['x-robots-tag'] === 'noindex, nofollow', `${motor} noindex en cualquier ruta`);
   const pp = (await p.request.get(`${BASE}/cuenta/ajustes`)).headers();
   ok(/camera=\(self\)/.test(pp['permissions-policy'] || '') && /script-src 'self'/.test(pp['content-security-policy'] || ''), `${motor} CSP y Permissions-Policy en cualquier ruta`);
-  // Panel sin sesión: a entrar en /cuenta/ (y «Dar de alta»: a crear la cuenta).
+  // Panel sin sesión: a entrar en /cuenta (y «Dar de alta»: a crear la cuenta).
   // (WebKit de Windows se cae con este `location.replace` en mitad de la carga,
   // ver idiomas_check: se mira adónde va y se abre aparte.)
   const adonde = async (url) => {
@@ -451,18 +452,18 @@ async function pruebaFuera(nav, motor) {
     await p.unroute('**/cuenta/**');
     return destino ? new URL(destino) : new URL(`${BASE}/`);
   };
-  const a1 = await adonde('/panel/');
-  ok(a1.pathname === '/cuenta/entrar' && a1.searchParams.get('destino') === '/panel/', `${motor} panel sin sesión: /cuenta/entrar?destino=`, a1.href);
-  const a2 = await adonde('/panel/?alta=1');
-  ok(a2.pathname === '/cuenta/registro' && a2.searchParams.get('para') === 'negocio' && /^\/panel\/\?alta=1/.test(a2.searchParams.get('destino') || ''), `${motor} panel ?alta=1: /cuenta/registro?para=negocio&destino=`, a2.href);
-  await p.goto(`${BASE}/alta/`);
+  const a1 = await adonde('/panel');
+  ok(a1.pathname === '/cuenta/entrar' && a1.searchParams.get('destino') === '/panel', `${motor} panel sin sesión: /cuenta/entrar?destino=`, a1.href);
+  const a2 = await adonde('/panel?alta=1');
+  ok(a2.pathname === '/cuenta/registro' && a2.searchParams.get('para') === 'negocio' && /^\/panel\?alta=1/.test(a2.searchParams.get('destino') || ''), `${motor} panel ?alta=1: /cuenta/registro?para=negocio&destino=`, a2.href);
+  await p.goto(`${BASE}/alta`);
   await p.waitForFunction(() => location.pathname === '/cuenta/registro');
   ok(new URL(p.url()).searchParams.get('para') === 'negocio', `${motor} klendar.app/alta: a crear la cuenta de negocio`, dir(p));
   // El admin: su formulario de recuperar pide la vuelta a /cuenta/nueva-clave?destino=/admin/.
-  await p.goto(`${BASE}/admin/`);
+  await p.goto(`${BASE}/admin`);
   await p.waitForLoadState('domcontentloaded');
   const adminJs = await (await p.request.get(`${BASE}/admin/admin.js`)).text();
-  ok(/\/cuenta\/nueva-clave\?destino=%2Fadmin%2F/.test(adminJs) && !/\/app\//.test(adminJs), `${motor} admin: la vuelta es /cuenta/nueva-clave?destino=/admin/`);
+  ok(/\/cuenta\/nueva-clave\?destino=%2Fadmin(?!%2F)/.test(adminJs) && !/\/app\//.test(adminJs), `${motor} admin: la vuelta es /cuenta/nueva-clave?destino=/admin`);
   void estado;
   // «Dar en el momento» por el QR, con puntos en la ruta.
   const m = await p.request.get(`${BASE}/m/0123456789abcdef.2949000.0123456789ab`, { maxRedirects: 0 });
@@ -485,13 +486,18 @@ async function pruebaFuera(nav, motor) {
     };
     return { r: await onRequest(ctx), a };
   };
-  for (const ruta of ['/app', '/app/', '/app/favoritos', '/app/?lang=en', '/app/app.js?v=1', '//app/', '/%61pp/']) {
+  // Con barra al final, el 301 a la de sin barra va primero (11-11): de un salto.
+  for (const ruta of ['/app/', '/app/?lang=en', '/%61pp/']) {
+    const { r, a } = await pide(ruta);
+    ok(r.status === 301 && !/\/(\?|$)/.test(new URL(r.headers.get('location')).pathname.slice(1)) && a.length === 0, `middleware ${ruta}: 301 sin la barra`);
+  }
+  for (const ruta of ['/app', '/app/favoritos', '/app?lang=en', '/app/app.js?v=1', '//app', '/%61pp']) {
     const { r, a } = await pide(ruta);
     ok(r.status === 404 && await r.text() === 'la 404' && a.length === 1, `middleware ${ruta}: la 404, aunque Pages aún guarde lo de antes`);
   }
-  const h = await pide('/app/', 'HEAD');
-  ok(h.r.status === 404 && (await h.r.text()) === '', 'middleware HEAD /app/: 404 sin cuerpo');
-  for (const ruta of ['/cuenta/', '/apple/', '/app-store/', '/panel/']) ok((await pide(ruta)).r.status === 200, `middleware ${ruta}: sigue su camino`);
+  const h = await pide('/app', 'HEAD');
+  ok(h.r.status === 404 && (await h.r.text()) === '', 'middleware HEAD /app: 404 sin cuerpo');
+  for (const ruta of ['/cuenta', '/apple', '/app-store', '/panel']) ok((await pide(ruta)).r.status === 200, `middleware ${ruta}: sigue su camino`);
   const f = await import('../functions/cuenta/[[ruta]].js');
   ok(f.onRequestHead === f.onRequestGet, '/cuenta/…: HEAD igual que GET (sin esto Cloudflare da 404 a los vigilantes)');
 }

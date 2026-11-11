@@ -20,7 +20,7 @@
 //     versión 2026-11-05, se aplica el 20-11-2026 (NT6.3), con su historial y el aviso.
 //  7. Preguntas frecuentes (por-que-veo-esto y orden; NT6.2 y NT6.4), también en
 //     assets/ayuda.json, que es lo que descarga la app.
-//  8. Lo que no estaba en NT6: /precios/, /para-negocios/ y /sobre/, y whyText, recLine
+//  8. Lo que no estaba en NT6: /precios, /para-negocios y /sobre, y whyText, recLine
 //     y recSteps en las Functions (estos, en el código: sus páginas piden datos).
 //
 // Chromium y WebKit, móvil (390 × 844) y escritorio (1280 × 800). Solo HTML estático.
@@ -48,7 +48,7 @@ const YA_NO_EN = [/charged separately and you request it by email/, /Publication
 
 // [ruta, cabecera, lo que tiene que decir, lo que ya no, enlaces que tiene que haber]
 const PAGINAS = [
-  ['/normas/', 'Última actualización: 5 de noviembre de 2026 · Versión 2026-09-29', [
+  ['/normas', 'Última actualización: 5 de noviembre de 2026 · Versión 2026-09-29', [
     /Para todo el mundo\s*Tolerancia cero\. En Klendar no se admite ningún contenido objetable ni ninguna conducta abusiva\. Lo retiramos y, según la gravedad, avisamos, suspendemos o damos de baja a quien lo publica\./,
     /Revisamos las denuncias en un plazo máximo de 72 horas \(24 horas si es contenido objetable, afecta a menores o es claramente ilegal\)\./,
     /En la app también puedes denunciar el perfil de una persona \(su nombre o su foto\), desde su reseña o desde tu lista de amigos\./,
@@ -57,7 +57,7 @@ const PAGINAS = [
     /Las medidas posibles son: retirar el contenido, retirar el nombre y la foto de un perfil, avisar, suspender temporalmente o dar de baja la cuenta o el negocio\./,
     /5 de noviembre de 2026: Las medidas posibles: también retirar el nombre y la foto de un perfil\./,
   ], [/24 horas si afectan a menores/, /el nombre o la foto de un perfil/], []],
-  ['/en/community-guidelines/', 'Last updated: 5 November 2026 · Version 2026-09-29', [
+  ['/en/community-guidelines', 'Last updated: 5 November 2026 · Version 2026-09-29', [
     /For everyone\s*Zero tolerance\. Klendar doesn't allow objectionable content or abusive behaviour of any kind\. We remove it and, depending on how serious it is, we warn, suspend or close the account of whoever posted it\./,
     /We review reports within 72 hours at most \(24 hours if it's objectionable content, involves minors or is clearly illegal\)\./,
     /In the app you can also report someone's profile \(their name or photo\), from their review or your friends list\./,
@@ -66,61 +66,61 @@ const PAGINAS = [
     /Possible measures: remove the content, remove a profile's name and photo, issue a warning, temporarily suspend, or close the account or business\./,
     /5 November 2026: Possible measures: also removing a profile's name and photo\./,
   ], [/24 hours if they involve minors/, /profile's name or photo/], []],
-  ['/terminos/', 'Última actualización: 5 de noviembre de 2026 · Versión 2026-09-29', [
+  ['/terminos', 'Última actualización: 5 de noviembre de 2026 · Versión 2026-09-29', [
     /No hay ninguna tolerancia con el contenido objetable ni con las personas que abusan de otras: lo que incumple las Normas de la comunidad se retira y puede acabar en la suspensión o la baja de la cuenta\.\s*6\. Disponibilidad y cambios/,
     /5 de noviembre de 2026: Uso permitido \(apartado 5\): no hay ninguna tolerancia con el contenido objetable ni con las personas que abusan de otras\. Tus derechos y obligaciones no cambian, así que no hace falta volver a aceptarlos\./,
-  ], [], ['main a[href="/normas/"]']],
-  ['/en/terms/', 'Last updated: 5 November 2026 · Version 2026-09-29', [
+  ], [], ['main a[href="/normas"]']],
+  ['/en/terms', 'Last updated: 5 November 2026 · Version 2026-09-29', [
     /There is no tolerance for objectionable content or for people who abuse others: anything that breaks the Community guidelines is removed and can lead to the account being suspended or closed\.\s*6\. Availability and changes/,
     /5 November 2026: Acceptable use \(section 5\): there is no tolerance for objectionable content or for people who abuse others\. Your rights and obligations don't change, so there's no need to accept them again\./,
-  ], [], ['main a[href="/en/community-guidelines/"]']],
-  ['/privacidad/', 'Última actualización: 11 de noviembre de 2026 · Versión 2026-09-29', [
+  ], [], ['main a[href="/en/community-guidelines"]']],
+  ['/privacidad', 'Última actualización: 11 de noviembre de 2026 · Versión 2026-09-29', [
     /y las personas que bloqueas y, si bloqueas a quien hizo una pregunta, ese bloqueo y en qué negocio preguntó \(nunca sabrás quién es; sale en la descarga de tus datos y se borra con tu cuenta\)/,
     /5 de noviembre de 2026: La fila «Amigos y planes» dice también que, si bloqueas a quien hizo una pregunta, guardamos ese bloqueo y en qué negocio preguntó\./,
   ], [], []],
-  ['/en/privacy/', 'Last updated: 11 November 2026 · Version 2026-09-29', [
+  ['/en/privacy', 'Last updated: 11 November 2026 · Version 2026-09-29', [
     /and the people you block and, if you block whoever asked a question, that block and which business they asked \(you'll never find out who they are; it's in your data download and is deleted with your account\)/,
     /5 November 2026: The “Friends and plans” row now also says that, if you block whoever asked a question, we keep that block and which business they asked\./,
   ], [], []],
-  ['/negocios/', 'Última actualización: 5 de noviembre de 2026 · Versión 2026-11-05', [
+  ['/negocios', 'Última actualización: 5 de noviembre de 2026 · Versión 2026-11-05', [
     /\(1\) hoy no se vende ninguna posición: si algún día se ofrece destacar publicaciones de pago, saldrán primero en Descubre y en la lista de Explorar, siempre con la etiqueta «Destacado», y lo avisaremos antes con el plazo de estas condiciones; en las selecciones/,
     /los del 5 de noviembre de 2026 \(apartado 2 bis\), desde el 20 de noviembre de 2026:/,
     /2026-11-05\s+5-11-2026\s+20-11-2026\s+2026-11-04\s+4-11-2026\s+19-11-2026/,
     /5 de noviembre de 2026: Cómo se ordena lo que se ve \(apartado 2 bis\): hoy no se vende ninguna posición;[^\n]*?Se aplica desde el 20 de noviembre de 2026\./,
   ], [/\(1\) en Descubre y en la lista de Explorar, lo destacado de pago/], []],
-  ['/en/business-terms/', 'Last updated: 5 November 2026 · Version 2026-11-05', [
+  ['/en/business-terms', 'Last updated: 5 November 2026 · Version 2026-11-05', [
     /\(1\) no position is sold today: if paid featured publications are ever offered, they will come first in Discover and the Explore list, always labelled “Featured”, and we'll give notice first within the period in these terms; in the collections/,
     /those of 5 November 2026 \(section 2a\) from 20 November 2026:/,
     /2026-11-05\s+5 Nov 2026\s+20 Nov 2026\s+2026-11-04\s+4 Nov 2026\s+19 Nov 2026/,
     /5 November 2026: How what people see is ordered \(section 2a\): no position is sold today;[^\n]*?It applies from 20 November 2026\./,
   ], [/\(1\) in Discover and in the Explore list, paid featured placements/], []],
-  ['/preguntas/', '¿Por qué veo unas cosas y no otras?', [
+  ['/preguntas', '¿Por qué veo unas cosas y no otras?', [
     /Hoy nadie paga por salir antes\. Lo que ves va en el orden que elijas en Filtros \(☰\), arriba del todo: «Ordenar por»\./,
     /no ponemos tu oferta por delante de otra porque pagues más[\s\S]*?Hoy no se vende destacar publicaciones; si algún día se puede, se dirá en cada una\./,
   ], YA_NO_ES, []],
-  ['/en/faq/', 'Why do I see some things and not others?', [
+  ['/en/faq', 'Why do I see some things and not others?', [
     /Today nobody pays to appear earlier\. What you see comes in the order you choose in Filters \(☰\), at the very top: “Sort by”\./,
     /we don't put your offer ahead of another because you pay more[\s\S]*?Featuring publications isn't sold today; if it ever is, each one will say so\./,
   ], YA_NO_EN, []],
-  ['/precios/', 'Nunca cobramos por canje', [
+  ['/precios', 'Nunca cobramos por canje', [
     /Hoy nadie puede pagar por salir antes\. De serie, el orden es «Recomendado»/,
     /Ni la cuota ni el número de publicaciones cuentan en el orden\./,
   ], [...YA_NO_ES, /Qué es un «destacado»/, /más allá de eso/], []],
-  ['/en/pricing/', 'We never charge per redemption', [
+  ['/en/pricing', 'We never charge per redemption', [
     /Today nobody can pay to appear earlier\. By default the order is ‘Recommended’/,
     /Neither the fee nor the number of publications affects the order\./,
   ], [...YA_NO_EN, /What “featured” means/, /beyond that/], []],
-  ['/para-negocios/', 'Lo que no hacemos', [
+  ['/para-negocios', 'Lo que no hacemos', [
     /la cuota no cuenta\. Hoy no se vende destacar publicaciones; si algún día se puede, se dirá en cada una\./,
   ], YA_NO_ES, []],
-  ['/en/for-business/', "What we don't do", [
+  ['/en/for-business', "What we don't do", [
     /your plan doesn't count\. Featuring publications isn't sold today; if it ever is, each one will say so\./,
   ], YA_NO_EN, []],
-  ['/sobre/', 'Lo que no vamos a hacer', [
+  ['/sobre', 'Lo que no vamos a hacer', [
     /no hay publicidad de terceros\. Hoy nadie puede pagar por salir antes\./,
     /Colar lo pagado sin decirlo: hoy nadie puede pagar por salir antes y, si algún día se puede, se dirá en cada publicación\. El orden no depende de pagar: lo marcan tus filtros,/,
   ], YA_NO_ES, []],
-  ['/en/about/', 'Sneak in paid placements', [
+  ['/en/about', 'Sneak in paid placements', [
     /there's no third-party advertising\. Today nobody can pay to appear earlier\./,
     /Sneak in paid placements: today nobody can pay to appear earlier and, if that ever changes, each publication will say so\. The order doesn't depend on paying: it comes from your filters,/,
   ], YA_NO_EN, []],

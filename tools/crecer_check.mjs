@@ -75,13 +75,13 @@ for (const [nombreNav, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     console.log(`\n${pre}`);
 
     // 1. Explorar con una búsqueda sin negocios.
-    await page.goto(`${BASE}/explorar/?q=Casa%20Pruebacrecer`, { waitUntil: 'networkidle' });
+    await page.goto(`${BASE}/explorar?q=Casa%20Pruebacrecer`, { waitUntil: 'networkidle' });
     const pide = page.locator('a[href*="/cuenta/pedir-local?nombre=Casa%20Pruebacrecer"]').first();
     ok('Explorar: «Pide que esté en Klendar» con el nombre', await pide.count() > 0);
     await page.screenshot({ path: join(OUT, `web_explorar_sin_negocio_${pre}.png`), fullPage: false });
 
     // 2. Descubre en Teruel.
-    await page.goto(`${BASE}/descubre/?${TERUEL}`, { waitUntil: 'networkidle' });
+    await page.goto(`${BASE}/descubre?${TERUEL}`, { waitUntil: 'networkidle' });
     const vacio = page.locator('[data-avisame]');
     ok('Descubre en Teruel: estado «sin Klendar»', await vacio.count() === 1);
     const titulo = (await page.locator('[data-avisame-titulo]').textContent().catch(() => '')) || '';
@@ -124,7 +124,7 @@ for (const [nombreNav, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     }
 
     // 3. Madrid: hay Klendar.
-    await page.goto(`${BASE}/descubre/?${MADRID}`, { waitUntil: 'networkidle' });
+    await page.goto(`${BASE}/descubre?${MADRID}`, { waitUntil: 'networkidle' });
     ok('Descubre en Madrid: sin el estado «sin Klendar»', await page.locator('[data-avisame]').count() === 0);
 
     // 4. Las páginas del correo, con un enlace falso.
