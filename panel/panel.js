@@ -5509,12 +5509,19 @@ const ALERGENOS = [
 ];
 const nombreAlergeno = (k) => (ALERGENOS.find((a) => a[0] === k) || [k, k])[1];
 
-/** Lo que va en la carta según el gremio (glosario): comida y bebida →
- * plato; tiendas, discotecas, música, librerías, mercados, panaderías,
- * heladerías, gastronomía y «Otros» → producto; el resto → servicio. Lo mismo
- * que `menuItemKind` en la app. */
-const palabraCarta = (slug) => (['restaurant', 'cafe', 'bar'].includes(slug) ? 'dish'
-  : (!slug || ['shop', 'nightclub', 'music', 'books', 'market', 'bakery', 'icecream', 'gourmet', 'other'].includes(slug)) ? 'product' : 'service');
+/** Lo que va en la carta según el tipo de negocio (glosario): lo dice la
+ * categoría (`features.menu_kind`, migración 20261275100000 de la app, que el
+ * admin puede cambiar). Sin ello (una base sin la migración), lo de antes por
+ * slug: comida y bebida → plato; tiendas, discotecas, música, librerías,
+ * mercados, panaderías, heladerías, gastronomía y «Otros» → producto; el
+ * resto → servicio. Lo mismo que `menuItemKind` en la app. */
+const palabraCarta = (cat) => {
+  const k = cat?.features?.menu_kind;
+  if (['dish', 'product', 'service'].includes(k)) return k;
+  const slug = cat?.slug;
+  return ['restaurant', 'cafe', 'bar'].includes(slug) ? 'dish'
+    : (!slug || ['shop', 'nightclub', 'music', 'books', 'market', 'bakery', 'icecream', 'gourmet', 'other'].includes(slug)) ? 'product' : 'service';
+};
 const TEXTOS_CARTA = {
   dish: { add: 'Añadir plato', edit: 'Editar plato', col: 'Plato', ej: 'Tortilla de patata', sus: ['sus platos', 'its dishes'] },
   service: { add: 'Añadir servicio', edit: 'Editar servicio', col: 'Servicio', ej: '', sus: ['sus servicios', 'its services'] },
@@ -5653,7 +5660,7 @@ PAGES.carta = async (v) => {
     sb.from('businesses').select('menu_url, menu_images, category_id').eq('id', BIZ.id).maybeSingle(),
     rpc('business_links', { p_id: BIZ.id }).catch(() => null),
   ]);
-  const tc = TEXTOS_CARTA[palabraCarta(CATS.find((c) => c.id === ficha.data?.category_id)?.slug)];
+  const tc = TEXTOS_CARTA[palabraCarta(CATS.find((c) => c.id === ficha.data?.category_id))];
   let carta = await rpc('business_menu', { p_business: BIZ.id }).catch(() => []);
   let enlace = ficha.data?.menu_url || '';
   // «Archivos de la carta»: fotos y PDF, en el orden en que se ven

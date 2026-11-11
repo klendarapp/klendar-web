@@ -65,6 +65,11 @@ const herrAntesSugerido = () => gestiona() && !esOrganizador() && !esEntidad()
   && herrSi(herrAhora(), 'before_closing', 'suggested');
 const herrNum = (o, k, f) => Number(o?.[k]?.[f]) || 0;
 const herrSi = (o, k, f) => o?.[k]?.[f] === true;
+/** ¿Se enseña la herramienta [k]? Si su tipo de negocio la lleva (`features`
+ * de `business_tools_overview`, migración 20261275100000 de la app: la suma
+ * de sus categorías) o si ya la usa ([usa]): a nadie se le esconde lo que
+ * tiene puesto. Sin `features` (una base sin la migración), sí, como antes. */
+const herrLleva = (o, k, usa) => !!usa || o?.features?.[k] !== false;
 /** Plural sencillo: herrPl(n, ['1 tele', 'teles'], ['1 TV', 'TVs']). Con
  * varios se traduce la plantilla «{n} teles» (en los idiomas nuevos, el
  * diccionario la tiene así) y luego se pone el número. */
@@ -319,7 +324,7 @@ PAGES.herramientas = async (v) => {
   const pend = herrNum(o, 'groups', 'pending');
   const codigo = `<script src="${APP_URL}/widget.js" data-klendar="${BIZ.id}"></script>`;
   const tarjetas = [
-    edit ? herrT({
+    edit && herrLleva(o, 'menu', items > 0 || archivos > 0) ? herrT({
       grupo: 'menu', usa: items > 0 || archivos > 0,
       icon: 'restaurant_menu', titulo: bi('Carta', 'Menu'),
       frase: bi('Para enseñar lo que tienes, con precios, fotos y alérgenos. Sale en tu ficha.', 'To show what you offer, with prices, photos and allergens. It shows on your page.'),
@@ -358,7 +363,7 @@ PAGES.herramientas = async (v) => {
     }),
     // «Conecta tu agenda»: solo entidades (panel/agenda.js).
     calT,
-    local ? herrT({
+    local && herrLleva(o, 'crowd', herrSi(o, 'crowd', 'enabled')) ? herrT({
       grupo: 'local', usa: herrSi(o, 'crowd', 'enabled'),
       icon: 'people', titulo: bi('¿Hay sitio ahora?', 'Room right now?'),
       frase: bi('Para decir con un toque cómo está el local: Hay sitio, Casi lleno o Lleno. Sale en tu ficha durante 2 horas.', 'To say with one tap how busy your place is: There’s room, Nearly full or Full. It shows on your page for 2 hours.'),
@@ -368,7 +373,7 @@ PAGES.herramientas = async (v) => {
     // Aforo en directo (panel/aforo.js): +1 / −1 en la puerta y «¿Hay sitio
     // ahora?» se pone solo. Lo abre todo el equipo; activarlo, propietario o
     // encargado. Sin local fijo, no sale.
-    local ? herrT({
+    local && herrLleva(o, 'capacity', herrSi(o, 'capacity', 'enabled')) ? herrT({
       grupo: 'local', usa: herrSi(o, 'capacity', 'enabled'),
       icon: 'aforo', titulo: bi('Aforo en directo', 'Live capacity'),
       frase: bi('Cuenta en la puerta con +1 y −1, y «¿Hay sitio ahora?» se pone solo.', 'Count at the door with +1 and −1, and “Room right now?” sets itself.'),
@@ -380,7 +385,7 @@ PAGES.herramientas = async (v) => {
       on: herrSi(o, 'capacity', 'enabled'),
       botones: herrSi(o, 'capacity', 'enabled') ? [[abrir, '#/aforo']] : edit ? [[activar, '#/aforo/ajustes']] : [],
     }) : '',
-    ent ? '' : herrT({
+    ent || !herrLleva(o, 'queue', herrSi(o, 'queue', 'open') || herrSi(o, 'queue', 'used_30d')) ? '' : herrT({
       grupo: 'local', usa: herrSi(o, 'queue', 'open') || herrSi(o, 'queue', 'used_30d'),
       icon: 'cola', titulo: bi('Cola virtual', 'Virtual queue'),
       frase: bi('Para que no hagan cola en la puerta: se apuntan con el QR del cartel y les avisamos cuando les toca.', 'So nobody queues at the door: people join with the poster’s QR and we tell them when it’s their turn.'),
@@ -391,7 +396,7 @@ PAGES.herramientas = async (v) => {
     // Te aviso cuando esté listo (panel/listo.js): el avisador de pedidos
     // del mostrador. Activarlo, propietario o encargado (dentro de «Pedidos
     // de hoy»); activado, lo lleva todo el equipo. Una entidad no lo tiene.
-    !ent && (edit || herrSi(o, 'orders', 'enabled')) ? herrT({
+    !ent && (edit || herrSi(o, 'orders', 'enabled')) && herrLleva(o, 'orders', herrSi(o, 'orders', 'enabled')) ? herrT({
       grupo: 'local', usa: herrSi(o, 'orders', 'enabled'),
       icon: 'listo', titulo: bi('Te aviso cuando esté listo', 'Ready alert'),
       frase: bi('Para cafeterías y comida para llevar: quien pide escanea el QR del mostrador y le avisamos en el móvil cuando está listo.', 'For cafés and takeaways: people scan the counter QR code and we tell them on their phone when it’s ready.'),
@@ -420,7 +425,7 @@ PAGES.herramientas = async (v) => {
       estado: partidos === 0 ? bi('Nada marcado esta semana', 'Nothing marked this week') : herrPl(partidos, ['1 partido esta semana', 'partidos esta semana'], ['1 match this week', 'matches this week']),
       on: partidos > 0, botones: [[abrir, '#/partidos']],
     }) : '',
-    edit && !ent ? herrT({
+    edit && !ent && herrLleva(o, 'groups', herrSi(o, 'groups', 'enabled')) ? herrT({
       grupo: 'gente', usa: herrSi(o, 'groups', 'enabled'),
       icon: 'grupos', titulo: bi('Grupos y empresas', 'Groups and companies'),
       frase: bi('Para recibir peticiones de grupos y empresas (cenas, cumpleaños, comidas de equipo) y mandar tu propuesta.', 'To get requests from groups and companies (dinners, birthdays, team meals) and send your proposal.'),
@@ -428,7 +433,7 @@ PAGES.herramientas = async (v) => {
       detalle: herrSi(o, 'groups', 'enabled') ? (pend === 0 ? bi('Sin peticiones ahora', 'No requests right now') : herrPl(pend, ['1 petición sin contestar', 'peticiones sin contestar'], ['1 request to answer', 'requests to answer'])) : '',
       botones: [[herrSi(o, 'groups', 'enabled') ? abrir : activar, '#/grupos']],
     }) : '',
-    edit && local ? herrT({
+    edit && local && herrLleva(o, 'table_qr', tq.wifi || tq.has) ? herrT({
       grupo: 'local', usa: !!(tq.wifi || tq.has),
       icon: 'wifi', titulo: bi('Wifi para clientes', 'Wi-Fi for customers'),
       frase: bi('Carteles de mesa con un QR: tu wifi, tus ofertas de hoy y la carta. Sin wifi, sirven de QR de mesa.', 'Table cards with a QR code: your Wi-Fi, today’s offers and the menu. Without Wi-Fi, they work as a table QR.'),

@@ -172,7 +172,7 @@ const RPC_ERRORS = {
   paused_by_klendar: 'Klendar pausó este negocio al suspender a su propietario: quita la pausa desde su ficha.',
   invalid_plan: 'Plan no válido.', invalid_status: 'Estado no válido.', no_subscription: 'El negocio no tiene suscripción vigente; asigna primero un plan.',
   user_not_found: 'No existe ningún usuario con ese email.', cannot_remove_self: 'No puedes quitarte a ti mismo.', last_admin: 'Tiene que quedar al menos un administrador.',
-  category_in_use: 'La categoría está en uso (negocios, publicaciones o subcategorías).', slug_required: 'El identificador (slug) es obligatorio.', invalid_category_group: 'Ese grupo de categorías no existe.',
+  category_in_use: 'La categoría está en uso (negocios, publicaciones o subcategorías).', slug_required: 'El identificador (slug) es obligatorio.', invalid_features: 'Alguna herramienta de la categoría no es válida.', invalid_category_group: 'Ese grupo de categorías no existe.',
   title_body_required: 'Título y texto son obligatorios.', unknown_key: 'Clave de configuración desconocida.', invalid_amount: 'Importe no válido.', invalid_period: 'El fin del periodo es anterior al inicio.',
   free_end_too_soon: 'El «Gratis de lanzamiento» se avisa con un mes: pon un fin dentro de 30 días como pronto (alargar uno ya avisado sí se puede).',
   block_from_too_soon: 'El bloqueo tiene que empezar con margen para los avisos de 7 días y 1 día: elige un día más tarde.',
@@ -3869,32 +3869,86 @@ PAGES.avisos = async (v) => {
 };
 
 // ── Categorías ──────────────────────────────────────────────────────────────
+// Los tipos de negocio (migración 20261275100000 de la app; GLOSARIO
+// «Categorías» y «Qué ve cada tipo de negocio»): nombre en los 8 idiomas,
+// grupo, icono, orden, «suele ser bajo techo» y qué herramientas lleva. Las
+// herramientas de serie salen de su grupo; «Como su grupo» las devuelve ahí.
+// Las de partida están en `tool/categorias.json` de la app.
+const CAT_IDIOMAS = [['es', 'Español'], ['en', 'Inglés'], ['ca', 'Catalán'], ['gl', 'Gallego'], ['eu', 'Euskera'], ['fr', 'Francés'], ['de', 'Alemán'], ['it', 'Italiano']];
+const CAT_HERRAMIENTAS = [
+  ['kitchen', 'Sirve comida', 'Horario de cocina y «Se puede comer ahora»'],
+  ['daily_menu', 'Menú del día', 'Publicarlo cada día y salir en el filtro «Menú del día»'],
+  ['before_closing', 'Antes de cerrar', 'Lo que sobra del día, con su sello'],
+  ['broadcasts', 'Partidos en la tele', '«Dónde ver el partido»'],
+  ['capacity', 'Aforo en directo', 'Contar en la puerta con +1 y −1'],
+  ['crowd', '¿Hay sitio ahora?', 'Decir si hay sitio o está lleno'],
+  ['queue', 'Cola virtual', 'Turnos desde el móvil'],
+  ['orders', 'Te aviso cuando esté listo', 'Avisar al cliente de que su pedido está listo'],
+  ['groups', 'Grupos y empresas', 'Peticiones de grupos, cenas de empresa y celebraciones'],
+  ['menu', 'Carta o lista de precios', 'Platos, productos o servicios con su precio'],
+  ['table_qr', 'Wifi y QR de mesa', 'El wifi para clientes con un QR en la mesa o el mostrador'],
+  ['diets', 'Alérgenos y dietas', 'Vegano, sin gluten, halal… en «Cómo es tu local»'],
+  ['kids', 'Apto para niños de serie', 'Sus planes salen en «Con niños» sin marcarlo'],
+];
+const CAT_CARTA = [['dish', 'Platos'], ['product', 'Productos'], ['service', 'Servicios']];
+
 PAGES.categorias = async (v) => {
   const cats = await rpc('admin_categories');
   const byId = Object.fromEntries(cats.map((c) => [c.id, c]));
+  // Sin la migración (prod hasta que se suba), no hay herramientas por tipo.
+  const conHerr = cats.some((c) => c.features_effective);
+  const herrDe = (c) => {
+    const ef = c.features_effective || {};
+    const n = CAT_HERRAMIENTAS.filter(([k]) => ef[k]).length;
+    const carta = CAT_CARTA.find(([k]) => k === ef.menu_kind)?.[1];
+    if (!conHerr) return '—';
+    const cuantas = n === 1 ? I18N.t('1 herramienta') : I18N.t('{n} herramientas').replace('{n}', fmtNum(n));
+    return carta ? `${cuantas} · ${I18N.t('Carta')}: ${I18N.t(carta)}` : cuantas;
+  };
   v.innerHTML = `
     <div class="page-head"><h1>Categorías</h1><span class="spacer"></span><button class="btn primary sm" id="new">Nueva categoría…</button></div>
-    ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p>The categories used to classify businesses and publications (the app's filters). The <b>slug</b> is the internal identifier (don't change it if it's already in use); the icon is a Material Symbols name, as in the app (local_bar, restaurant…). Only an empty category can be deleted.</p>` : '<p>Las categorías con las que se clasifican negocios y publicaciones (filtros de la app). El <b>slug</b> es el identificador interno (no lo cambies si ya está en uso); el icono es el nombre de un icono de Material Symbols, como en la app (local_bar, restaurant…). Solo se puede borrar una categoría vacía.</p>')}
+    ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p>The types of business used to classify businesses and publications (the app's filters). The <b>slug</b> is the internal identifier (don't change it if it's already in use); the icon is a Material Icons name, as in the app (local_bar, restaurant…). Each type says which tools a business of that type sees in “My business” (daily menu, before closing, queue…): by default those of its group; change them in “Edit…”. A tool already in use is still shown. Only an empty category can be deleted.</p>` : '<p>Los tipos de negocio con los que se clasifican negocios y publicaciones (filtros de la app). El <b>slug</b> es el identificador interno (no lo cambies si ya está en uso); el icono es el nombre de un icono de Material Icons, como en la app (local_bar, restaurant…). Cada tipo dice qué herramientas ve un negocio de ese tipo en «Mi negocio» (menú del día, antes de cerrar, cola…): de serie, las de su grupo; se cambian en «Editar…». Una herramienta que ya se usa se sigue viendo. Solo se puede borrar una categoría vacía.</p>')}
     ${table({ cols: [
       { h: 'Categoría', r: (c) => `<span class="ph" style="font-size:20px">${c.icon ? ms(esc(c.icon)) : '·'}</span><span class="title">${esc(c.names?.[I18N.lang] || c.names?.es || c.slug)}<span class="sub">${esc(KlendarCategorias.nombreGrupo(KlendarCategorias.grupoDe(c), I18N.lang))} · ${esc(c.slug)} · EN: ${esc(c.names?.en || '—')}${c.parent_id ? ` · ${I18N.lang === 'en' ? 'under' : 'dentro de'} ${esc(byId[c.parent_id]?.names?.es || '')}` : ''}</span></span>` },
+      { h: 'Herramientas', r: (c) => `<span class="muted small">${esc(herrDe(c))}</span>` },
       { h: 'Orden', num: true, r: (c) => c.position }, { h: 'Negocios', num: true, r: (c) => c.businesses }, { h: 'Publicaciones', num: true, r: (c) => c.offers },
       { h: '', r: (c) => `<span class="actions"><button class="btn sm" data-edit="${c.id}">Editar…</button>${(c.businesses || c.offers) ? '' : `<button class="btn sm bad ghost" data-del="${c.id}">Borrar</button>`}</span>` },
     ], rows: cats, empty: 'Sin categorías.' })}`;
   const edit = async (c) => {
     const nueva = !c || c._nueva;
+    const ef = c?.features_effective || c?.features || {};
     const r = await modal({ title: nueva ? 'Nueva categoría' : 'Editar categoría', fields: [
-      { name: 'slug', label: 'Slug', value: c?.slug, required: true }, { name: 'icon', label: 'Icono (nombre de Material Symbols, como en la app: local_bar, restaurant…)', value: c?.icon },
-      { name: 'es', label: 'Nombre (ES)', value: c?.names?.es, required: true }, { name: 'en', label: 'Nombre (EN)', value: c?.names?.en },
-      // El grupo del selector de categorías (app y web): sin él, una nueva
-      // caía en «Tiendas y servicios».
-      { name: 'category_group', label: 'Grupo (en el selector de categorías)', type: 'select', value: nueva ? '' : KlendarCategorias.grupoDe(c),
-        options: [...(nueva ? [['', '— elige uno']] : []), ...KlendarCategorias.GRUPOS.map((g) => [g.id, I18N.lang === 'en' ? g.en : g.es])] },
-      { name: 'parent_id', label: 'Categoría superior', type: 'select', value: c?.parent_id || '', options: [['', '— (principal)'], ...cats.filter((x) => x.id !== c?.id).map((x) => [x.id, x.names?.[I18N.lang] || x.names?.es || x.slug])] },
-      { name: 'position', label: 'Orden', type: 'number', value: c?.position ?? 99 },
+      { grupo: 'La categoría', cols: 2, campos: [
+        { name: 'slug', label: 'Slug', value: c?.slug, required: true },
+        { name: 'icon', label: 'Icono (nombre de Material Icons, como en la app: local_bar, restaurant…)', value: c?.icon },
+        // El grupo del selector de categorías (app y web): sin él, una nueva
+        // caía en «Servicios».
+        { name: 'category_group', label: 'Grupo (en el selector de categorías)', type: 'select', value: nueva ? '' : KlendarCategorias.grupoDe(c),
+          options: [...(nueva ? [['', '— elige uno']] : []), ...KlendarCategorias.GRUPOS.map((g) => [g.id, I18N.lang === 'en' ? g.en : g.es])] },
+        { name: 'parent_id', label: 'Categoría superior', type: 'select', value: c?.parent_id || '', options: [['', '— (principal)'], ...cats.filter((x) => x.id !== c?.id).map((x) => [x.id, x.names?.[I18N.lang] || x.names?.es || x.slug])] },
+        { name: 'position', label: 'Orden', type: 'number', value: c?.position ?? 99 },
+        { name: 'usually_indoor', label: 'Suele ser bajo techo', type: 'checkbox', value: !!c?.usually_indoor, help: 'Sus planes cuentan como «bajo techo» si el negocio no dice nada (filtro y el tiempo).' },
+      ] },
+      { grupo: 'Nombre en cada idioma', cols: 2, nota: 'El español es obligatorio. Si falta uno, se ve el inglés (francés, alemán, italiano) o el español (catalán, gallego, euskera).',
+        campos: CAT_IDIOMAS.map(([l, nombre]) => ({ name: `n_${l}`, label: `${I18N.t(nombre)} (${l.toUpperCase()})`, value: c?.names?.[l], required: l === 'es' })) },
+      ...(conHerr || nueva ? [{ grupo: 'Qué ve un negocio de este tipo', cols: 2, plegado: !nueva,
+        nota: 'Las herramientas de «Mi negocio» y lo de su ficha. Con «Como su grupo», las de serie de su grupo (y lo que se añada en el futuro).',
+        campos: [
+          { name: 'como_grupo', label: 'Como su grupo', type: 'checkbox', value: !nueva && c?.features && !Object.keys(c.features).length, help: 'Ignora lo de abajo y usa lo de serie de su grupo.' },
+          ...CAT_HERRAMIENTAS.map(([k, nombre, ayuda]) => ({ name: `h_${k}`, label: nombre, type: 'checkbox', value: !!ef[k], help: ayuda })),
+          { name: 'menu_kind', label: 'Qué lleva la carta', type: 'select', value: ef.menu_kind || 'service', options: CAT_CARTA.map(([k, n]) => [k, I18N.t(n)]) },
+        ] }] : []),
     ] });
     if (!r) return;
-    if (!r.category_group) { toast(I18N.t('Elige el grupo de la categoría.'), true); return edit({ ...(c || {}), ...r, names: { es: r.es, en: r.en }, _nueva: nueva }); }
-    try { await rpc('admin_upsert_category', { p: { id: c?._nueva ? undefined : c?.id, slug: r.slug, icon: r.icon || null, names: { es: r.es, en: r.en || r.es }, parent_id: r.parent_id || null, position: +r.position || 99, category_group: r.category_group } }); toast('Categoría guardada'); route(); } catch (e) { toast(e.message, true); }
+    const names = Object.fromEntries(CAT_IDIOMAS.map(([l]) => [l, r[`n_${l}`]]).filter(([, x]) => x));
+    if (!r.category_group) { toast(I18N.t('Elige el grupo de la categoría.'), true); return edit({ ...(c || {}), ...r, names, _nueva: nueva }); }
+    const features = r.como_grupo ? {}
+      : Object.fromEntries([...CAT_HERRAMIENTAS.map(([k]) => [k, !!r[`h_${k}`]]), ['menu_kind', r.menu_kind || 'service']]);
+    const p = { id: c?._nueva ? undefined : c?.id, slug: r.slug, icon: r.icon || null, names, parent_id: r.parent_id || null,
+      position: +r.position || 99, category_group: r.category_group, usually_indoor: !!r.usually_indoor };
+    // Sin la migración la base no conoce `features`: no se manda.
+    if (conHerr) p.features = features;
+    try { await rpc('admin_upsert_category', { p }); toast('Categoría guardada'); route(); } catch (e) { toast(e.message, true); }
   };
   $('#new').onclick = () => edit(null);
   $$('[data-edit]').forEach((b) => { b.onclick = () => esperando(b, () => edit(byId[b.dataset.edit])); });

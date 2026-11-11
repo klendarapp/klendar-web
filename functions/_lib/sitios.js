@@ -103,7 +103,7 @@ export function mapaSitios({ lang, centro, zoom, filtros, desde = null }) {
 
 /** Los scripts de la página de Sitios (la hora de cada fila y el mapa). */
 export const SITIOS_SCRIPTS = `<script src="/assets/zona.js?v=2" defer></script>
-<script src="/assets/iconos-mapa.js?v=1" defer></script>
+<script src="/assets/iconos-mapa.js?v=2" defer></script>
 <script src="/assets/mapa.js?v=7" defer></script>
 <script src="/assets/sitios.js?v=10" defer></script>`;
 

@@ -668,6 +668,691 @@ window.KLENDAR_IDEAS = {
     "hours": 3,
     "kind": "future_event"
    }
+  ],
+  "event_venue": [
+   {
+    "es": "Jornada de puertas abiertas",
+    "en": "Open day",
+    "discount": "free",
+    "descEs": "Ven a conocer el salón, prueba nuestro menú y pregunta por fechas libres.",
+    "descEn": "Come and see the hall, try our menu and ask about available dates.",
+    "hours": 3,
+    "kind": "future_event"
+   },
+   {
+    "es": "Fecha libre este mes: −15 % en tu celebración",
+    "en": "Free date this month: −15% on your celebration",
+    "discount": "percent",
+    "termsEs": "Para celebraciones reservadas esta semana en una fecha libre.",
+    "termsEn": "For celebrations booked this week on a free date.",
+    "value": 15,
+    "hours": 72,
+    "kind": "flash_offer"
+   },
+   {
+    "es": "Prueba de menú gratis para tu boda o comunión",
+    "en": "Free menu tasting for your wedding or communion",
+    "discount": "free",
+    "hours": 72,
+    "kind": "flash_offer",
+    "seats": 4
+   }
+  ],
+  "event_estate": [
+   {
+    "es": "Visita la finca: jornada de puertas abiertas",
+    "en": "Visit the estate: open day",
+    "discount": "free",
+    "hours": 3,
+    "kind": "future_event"
+   },
+   {
+    "es": "Fecha libre esta temporada: −10 %",
+    "en": "Free date this season: −10%",
+    "discount": "percent",
+    "value": 10,
+    "hours": 72,
+    "kind": "flash_offer"
+   }
+  ],
+  "catering": [
+   {
+    "es": "Degustación de nuestro catering",
+    "en": "Tasting of our catering",
+    "discount": "free",
+    "hours": 3,
+    "kind": "future_event",
+    "seats": 10
+   },
+   {
+    "es": "−10 % en tu evento de empresa",
+    "en": "−10% on your company event",
+    "discount": "percent",
+    "value": 10,
+    "hours": 72,
+    "kind": "flash_offer"
+   }
+  ],
+  "event_planner": [
+   {
+    "es": "Animación infantil gratis la primera media hora",
+    "en": "First half hour of kids’ entertainment free",
+    "discount": "other",
+    "hours": 72,
+    "kind": "flash_offer"
+   },
+   {
+    "es": "Fecha libre este fin de semana: −20 %",
+    "en": "Free date this weekend: −20%",
+    "discount": "percent",
+    "value": 20,
+    "hours": 48,
+    "kind": "flash_offer"
+   }
+  ],
+  "photo": [
+   {
+    "es": "Sesión de fotos exprés a 25 €",
+    "en": "Express photo shoot for €25",
+    "discount": "fixed",
+    "value": 25,
+    "hours": 6,
+    "kind": "flash_offer",
+    "seats": 5
+   },
+   {
+    "es": "Fotos de carné: la segunda tanda gratis",
+    "en": "ID photos: second set free",
+    "discount": "other",
+    "hours": 5,
+    "kind": "flash_offer"
+   }
+  ],
+  "cocktail": [
+   {
+    "es": "Hora tranquila: −20 % en la carta",
+    "en": "Quiet hour: −20% on the menu",
+    "discount": "percent",
+    "value": 20,
+    "hours": 2,
+    "kind": "flash_offer"
+   },
+   {
+    "es": "Sesión de DJ",
+    "en": "DJ session",
+    "discount": "none",
+    "hours": 3,
+    "kind": "future_event"
+   }
+  ],
+  "brewery": [
+   {
+    "es": "Tapa gratis con la consumición",
+    "en": "Free tapa with your drink",
+    "discount": "other",
+    "descEs": "Una por persona, mientras dure la oferta.",
+    "descEn": "One per person, while the offer lasts.",
+    "hours": 3,
+    "kind": "flash_offer"
+   },
+   {
+    "es": "−20 % en raciones",
+    "en": "−20% on sharing plates",
+    "discount": "percent",
+    "value": 20,
+    "hours": 3,
+    "kind": "flash_offer"
+   }
+  ],
+  "wine": [
+   {
+    "es": "Cata guiada con quesos",
+    "en": "Guided tasting with cheeses",
+    "discount": "none",
+    "hours": 3,
+    "kind": "future_event",
+    "seats": 12
+   },
+   {
+    "es": "−15 % en tablas para compartir",
+    "en": "−15% on sharing boards",
+    "discount": "percent",
+    "value": 15,
+    "hours": 3,
+    "kind": "flash_offer"
+   }
+  ],
+  "karaoke": [
+   {
+    "es": "Sala privada: la primera hora a mitad de precio",
+    "en": "Private room: first hour half price",
+    "discount": "percent",
+    "value": 50,
+    "hours": 3,
+    "kind": "flash_offer",
+    "seats": 3
+   },
+   {
+    "es": "Concurso de karaoke",
+    "en": "Karaoke contest",
+    "discount": "free",
+    "hours": 3,
+    "kind": "future_event"
+   }
+  ],
+  "cinema": [
+   {
+    "es": "Día del espectador: entrada a 5 €",
+    "en": "Cinema day: tickets for €5",
+    "discount": "fixed",
+    "value": 5,
+    "hours": 10,
+    "kind": "flash_offer"
+   },
+   {
+    "es": "Preestreno",
+    "en": "Preview screening",
+    "discount": "none",
+    "hours": 3,
+    "kind": "future_event"
+   },
+   {
+    "es": "2x1 en la sesión de las 16:00",
+    "en": "2-for-1 at the 4pm showing",
+    "discount": "2x1",
+    "hours": 3,
+    "kind": "flash_offer"
+   }
+  ],
+  "escape_room": [
+   {
+    "es": "Hueco libre esta tarde: −25 %",
+    "en": "Free slot this afternoon: −25%",
+    "discount": "percent",
+    "value": 25,
+    "hours": 4,
+    "kind": "flash_offer",
+    "seats": 2
+   },
+   {
+    "es": "Sala nueva: estreno",
+    "en": "New room: opening",
+    "discount": "none",
+    "hours": 3,
+    "kind": "future_event"
+   }
+  ],
+  "bowling": [
+   {
+    "es": "Segunda partida gratis",
+    "en": "Second game free",
+    "discount": "other",
+    "hours": 3,
+    "kind": "flash_offer"
+   },
+   {
+    "es": "Torneo de bolos",
+    "en": "Bowling tournament",
+    "discount": "none",
+    "hours": 3,
+    "kind": "future_event"
+   }
+  ],
+  "karting": [
+   {
+    "es": "Tanda extra gratis entre semana",
+    "en": "Extra session free on weekdays",
+    "discount": "other",
+    "hours": 5,
+    "kind": "flash_offer"
+   },
+   {
+    "es": "Gran premio entre amigos",
+    "en": "Grand prix with friends",
+    "discount": "none",
+    "hours": 3,
+    "kind": "future_event"
+   }
+  ],
+  "theme_park": [
+   {
+    "es": "Entrada de tarde a mitad de precio",
+    "en": "Afternoon ticket at half price",
+    "discount": "percent",
+    "value": 50,
+    "hours": 4,
+    "kind": "flash_offer"
+   }
+  ],
+  "kids_play": [
+   {
+    "es": "Tarde de juego: −20 % de 17:00 a 19:00",
+    "en": "Play afternoon: −20% from 5pm to 7pm",
+    "discount": "percent",
+    "value": 20,
+    "hours": 2,
+    "kind": "flash_offer"
+   },
+   {
+    "es": "Fiesta de cumpleaños: −10 % reservando esta semana",
+    "en": "Birthday party: −10% booking this week",
+    "discount": "percent",
+    "value": 10,
+    "hours": 72,
+    "kind": "flash_offer"
+   }
+  ],
+  "language_school": [
+   {
+    "es": "Clase de prueba gratis",
+    "en": "Free trial class",
+    "discount": "free",
+    "hours": 3,
+    "kind": "future_event",
+    "seats": 6
+   },
+   {
+    "es": "Intercambio de idiomas",
+    "en": "Language exchange",
+    "discount": "free",
+    "hours": 3,
+    "kind": "future_event"
+   }
+  ],
+  "music_school": [
+   {
+    "es": "Clase de prueba gratis",
+    "en": "Free trial class",
+    "discount": "free",
+    "hours": 3,
+    "kind": "future_event",
+    "seats": 4
+   },
+   {
+    "es": "Audición de alumnos",
+    "en": "Student recital",
+    "discount": "free",
+    "hours": 3,
+    "kind": "future_event"
+   }
+  ],
+  "dance": [
+   {
+    "es": "Clase abierta de salsa",
+    "en": "Open salsa class",
+    "discount": "free",
+    "hours": 3,
+    "kind": "future_event",
+    "seats": 20
+   },
+   {
+    "es": "−30 % en el primer mes",
+    "en": "−30% on your first month",
+    "discount": "percent",
+    "value": 30,
+    "hours": 48,
+    "kind": "flash_offer"
+   }
+  ],
+  "yoga": [
+   {
+    "es": "Clase de prueba gratis",
+    "en": "Free trial class",
+    "discount": "free",
+    "hours": 3,
+    "kind": "future_event",
+    "seats": 6
+   },
+   {
+    "es": "Plaza libre en la clase de hoy: −50 %",
+    "en": "Free spot in today’s class: −50%",
+    "discount": "percent",
+    "value": 50,
+    "hours": 3,
+    "kind": "flash_offer",
+    "seats": 3
+   }
+  ],
+  "padel": [
+   {
+    "es": "Pista libre esta tarde: −30 %",
+    "en": "Court free this afternoon: −30%",
+    "discount": "percent",
+    "value": 30,
+    "hours": 3,
+    "kind": "flash_offer",
+    "seats": 2
+   },
+   {
+    "es": "Americano de pádel",
+    "en": "Padel americano tournament",
+    "discount": "none",
+    "hours": 3,
+    "kind": "future_event",
+    "seats": 16
+   }
+  ],
+  "climbing": [
+   {
+    "es": "Bautismo de escalada",
+    "en": "Climbing taster",
+    "discount": "free",
+    "hours": 3,
+    "kind": "future_event",
+    "seats": 8
+   },
+   {
+    "es": "Entrada de mediodía: −25 %",
+    "en": "Midday entry: −25%",
+    "discount": "percent",
+    "value": 25,
+    "hours": 3,
+    "kind": "flash_offer"
+   }
+  ],
+  "martial_arts": [
+   {
+    "es": "Clase de prueba gratis",
+    "en": "Free trial class",
+    "discount": "free",
+    "hours": 3,
+    "kind": "future_event",
+    "seats": 6
+   }
+  ],
+  "adventure": [
+   {
+    "es": "Últimas plazas para hoy: −20 %",
+    "en": "Last places today: −20%",
+    "discount": "percent",
+    "value": 20,
+    "hours": 4,
+    "kind": "flash_offer",
+    "seats": 4
+   },
+   {
+    "es": "Ruta en kayak al atardecer",
+    "en": "Sunset kayak trip",
+    "discount": "none",
+    "hours": 3,
+    "kind": "future_event",
+    "seats": 10
+   }
+  ],
+  "barber": [
+   {
+    "es": "Corte y barba a 15 € esta tarde",
+    "en": "Cut and beard for €15 this afternoon",
+    "discount": "fixed",
+    "value": 15,
+    "hours": 4,
+    "kind": "flash_offer"
+   },
+   {
+    "es": "Hueco libre: −20 % en corte",
+    "en": "Free slot: −20% on a cut",
+    "discount": "percent",
+    "value": 20,
+    "hours": 3,
+    "kind": "flash_offer",
+    "seats": 2
+   }
+  ],
+  "nails": [
+   {
+    "es": "Manicura semipermanente a 15 €",
+    "en": "Gel manicure for €15",
+    "discount": "fixed",
+    "value": 15,
+    "hours": 5,
+    "kind": "flash_offer"
+   },
+   {
+    "es": "Hueco libre esta tarde: −20 %",
+    "en": "Free slot this afternoon: −20%",
+    "discount": "percent",
+    "value": 20,
+    "hours": 4,
+    "kind": "flash_offer",
+    "seats": 2
+   }
+  ],
+  "florist": [
+   {
+    "es": "Flores del día antes de cerrar",
+    "en": "Today’s flowers before closing",
+    "discount": "percent",
+    "descEs": "Ramos y flores que no queremos tirar, a buen precio.",
+    "descEn": "Bouquets and flowers we’d rather not throw away, at a good price.",
+    "value": 30,
+    "hours": 2,
+    "kind": "flash_offer",
+    "seats": 6,
+    "beforeClosing": true
+   },
+   {
+    "es": "Taller de centros de flores",
+    "en": "Flower arranging workshop",
+    "discount": "none",
+    "hours": 3,
+    "kind": "future_event",
+    "seats": 8
+   }
+  ],
+  "fashion": [
+   {
+    "es": "−20 % en la nueva colección hoy",
+    "en": "−20% on the new collection today",
+    "discount": "percent",
+    "value": 20,
+    "hours": 8,
+    "kind": "flash_offer"
+   },
+   {
+    "es": "Segunda unidad a mitad de precio",
+    "en": "Second item half price",
+    "discount": "other",
+    "hours": 8,
+    "kind": "flash_offer"
+   }
+  ],
+  "gifts": [
+   {
+    "es": "Envoltorio de regalo gratis",
+    "en": "Free gift wrapping",
+    "discount": "other",
+    "hours": 8,
+    "kind": "flash_offer"
+   }
+  ],
+  "stationery": [
+   {
+    "es": "Vuelta al cole: −15 % en material escolar",
+    "en": "Back to school: −15% on school supplies",
+    "discount": "percent",
+    "value": 15,
+    "hours": 8,
+    "kind": "flash_offer"
+   }
+  ],
+  "kiosk": [
+   {
+    "es": "Cromos: un sobre gratis por cada cinco",
+    "en": "Stickers: one free pack for every five",
+    "discount": "other",
+    "hours": 8,
+    "kind": "flash_offer"
+   }
+  ],
+  "toys": [
+   {
+    "es": "Tarde de juegos de mesa",
+    "en": "Board game afternoon",
+    "discount": "free",
+    "hours": 3,
+    "kind": "future_event"
+   },
+   {
+    "es": "−15 % en juegos de mesa",
+    "en": "−15% on board games",
+    "discount": "percent",
+    "value": 15,
+    "hours": 8,
+    "kind": "flash_offer"
+   }
+  ],
+  "grocery": [
+   {
+    "es": "Lo del día antes de cerrar",
+    "en": "Today’s leftovers before closing",
+    "discount": "percent",
+    "descEs": "Fruta, pan o producto fresco que hoy no vamos a vender.",
+    "descEn": "Fruit, bread or fresh produce we won’t sell today.",
+    "value": 40,
+    "hours": 2,
+    "kind": "flash_offer",
+    "seats": 6,
+    "beforeClosing": true
+   },
+   {
+    "es": "−20 % en fruta de temporada",
+    "en": "−20% on seasonal fruit",
+    "discount": "percent",
+    "value": 20,
+    "hours": 6,
+    "kind": "flash_offer"
+   }
+  ],
+  "churros": [
+   {
+    "es": "Chocolate con churros a 3 €",
+    "en": "Hot chocolate and churros for €3",
+    "discount": "fixed",
+    "value": 3,
+    "hours": 4,
+    "kind": "flash_offer"
+   },
+   {
+    "es": "Bolsa sorpresa antes de cerrar",
+    "en": "Surprise bag before closing",
+    "discount": "fixed",
+    "descEs": "Lo que nos ha sobrado hoy, a buen precio. Pásate antes de que cerremos.",
+    "descEn": "What we have left today, at a good price. Drop by before we close.",
+    "value": 3,
+    "hours": 2,
+    "kind": "flash_offer",
+    "seats": 6,
+    "beforeClosing": true
+   }
+  ],
+  "takeaway": [
+   {
+    "es": "2x1 en pizzas para llevar",
+    "en": "2-for-1 on takeaway pizzas",
+    "discount": "2x1",
+    "hours": 3,
+    "kind": "flash_offer"
+   },
+   {
+    "es": "Bolsa sorpresa antes de cerrar",
+    "en": "Surprise bag before closing",
+    "discount": "fixed",
+    "descEs": "Lo que nos ha sobrado hoy, a buen precio. Pásate antes de que cerremos.",
+    "descEn": "What we have left today, at a good price. Drop by before we close.",
+    "value": 4,
+    "hours": 2,
+    "kind": "flash_offer",
+    "seats": 6,
+    "beforeClosing": true
+   }
+  ],
+  "foodtruck": [
+   {
+    "es": "Hoy estamos aquí: −15 %",
+    "en": "We’re here today: −15%",
+    "discount": "percent",
+    "value": 15,
+    "hours": 4,
+    "kind": "flash_offer"
+   }
+  ],
+  "laundry": [
+   {
+    "es": "Segunda lavadora gratis",
+    "en": "Second wash free",
+    "discount": "other",
+    "hours": 6,
+    "kind": "flash_offer"
+   },
+   {
+    "es": "−20 % en tintorería esta semana",
+    "en": "−20% on dry cleaning this week",
+    "discount": "percent",
+    "value": 20,
+    "hours": 72,
+    "kind": "flash_offer"
+   }
+  ],
+  "driving_school": [
+   {
+    "es": "Matrícula gratis esta semana",
+    "en": "Free enrolment this week",
+    "discount": "free",
+    "hours": 72,
+    "kind": "flash_offer"
+   }
+  ],
+  "repairs": [
+   {
+    "es": "−20 % en arreglos de ropa hoy",
+    "en": "−20% on clothing alterations today",
+    "discount": "percent",
+    "value": 20,
+    "hours": 8,
+    "kind": "flash_offer"
+   }
+  ],
+  "hostel": [
+   {
+    "es": "Camas libres esta noche: −20 %",
+    "en": "Beds free tonight: −20%",
+    "discount": "percent",
+    "value": 20,
+    "hours": 6,
+    "kind": "flash_offer",
+    "seats": 4
+   }
+  ],
+  "camping": [
+   {
+    "es": "Parcela libre este finde: −20 %",
+    "en": "Pitch free this weekend: −20%",
+    "discount": "percent",
+    "value": 20,
+    "hours": 48,
+    "kind": "flash_offer",
+    "seats": 3
+   }
+  ],
+  "rural": [
+   {
+    "es": "Noche libre entre semana: −25 %",
+    "en": "Weeknight free: −25%",
+    "discount": "percent",
+    "value": 25,
+    "hours": 48,
+    "kind": "flash_offer"
+   }
+  ],
+  "coworking": [
+   {
+    "es": "Día de prueba gratis",
+    "en": "Free trial day",
+    "discount": "free",
+    "hours": 48,
+    "kind": "flash_offer",
+    "seats": 3
+   }
   ]
  }
 };

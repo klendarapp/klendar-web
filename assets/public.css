@@ -1077,6 +1077,14 @@ details.hoja-bloque[open] > summary .ic { transform: rotate(180deg); }
 .cat-rejilla { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 @media (min-width: 520px) { .cat-rejilla { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 .cat-celda { position: relative; display: block; cursor: pointer; }
+/* «N más» de un grupo (casi cien tipos de negocio): lo demás, plegado. */
+.hoja-cats-mas { margin-top: 8px; }
+.hoja-cats-mas > summary { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; list-style: none;
+  padding: 8px 12px; border-radius: 999px; border: 1px solid var(--glass-border); background: var(--glass);
+  font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.hoja-cats-mas > summary::-webkit-details-marker { display: none; }
+.hoja-cats-mas[open] > summary { display: none; }
+.hoja-cats-mas > summary:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 .cat-celda input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
 .cat-celda-c { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 88px; height: 100%;
   padding: 10px 6px; border-radius: 16px; border: 1px solid var(--glass-border); background: var(--glass); text-align: center;

@@ -516,7 +516,7 @@ const mapaHtml = (items, lang, S) => {
   <p class="ambiente-leyenda" id="ambiente-leyenda" hidden></p>
   ${sitioAhoraScripts(lang).replace(/ defer/g, '')}
   <script type="application/json" id="mapaPuntos">${JSON.stringify(puntos).replace(/</g, '\u003c')}</script>
-  <script src="/assets/iconos-mapa.js?v=1"></script>
+  <script src="/assets/iconos-mapa.js?v=2"></script>
   <script src="/assets/mapa.js?v=7"></script>`;
 };
 
@@ -1884,17 +1884,29 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
     e.menuDia ? S.dailyMenu : '', !negocios && antesCierre ? S.beforeClosing : '',
     ...catsSel.map(nombreCat),
   ].filter(Boolean);
-  // Las categorías, todas a la vista: una cuadrícula de iconos grandes con su
-  // nombre, por los cinco grupos del selector único (Comer y beber · Noche,
-  // música y cultura · Ocio, deporte y familia · Belleza y salud · Tiendas y
-  // servicios), varias a la vez (Iván, 2026-10-27, como la app). Sin
-  // JavaScript, casillas de un formulario GET, como siempre.
+  // Las categorías: una cuadrícula de iconos grandes con su nombre, por los
+  // grupos del selector único (Comer y beber · Noche, música y cultura · Ocio,
+  // familia y clases · Deporte · Belleza y bienestar · Salud · Eventos y
+  // celebraciones · Alojamiento · Tiendas · Servicios), varias a la vez (Iván,
+  // 2026-10-27, como la app). Con casi cien tipos de negocio, cada grupo
+  // enseña las 6 primeras (y las elegidas) y «N más» despliega el resto (un
+  // <details>: sin JavaScript también). Casillas de un formulario GET.
   const celdaCat = (c) => `<label class="cat-celda"><input type="checkbox" name="${K.cat}" value="${esc(c.slug)}"${catsSel.includes(c.slug) ? ' checked' : ''}>
         <span class="cat-celda-c">${icCat(c.slug, 28)}<span class="cat-celda-t">${esc(catName(c, en))}</span></span></label>`;
+  const POR_GRUPO = 6;
+  const rejillaGrupo = (g) => {
+    if (g.cats.length <= POR_GRUPO + 1) return `<div class="cat-rejilla">${g.cats.map(celdaCat).join('')}</div>`;
+    const ver = g.cats.filter((c, i) => i < POR_GRUPO || catsSel.includes(c.slug));
+    const resto = g.cats.filter((c) => !ver.includes(c));
+    const nombre = KC.nombreGrupo(g.id, lang);
+    return `<div class="cat-rejilla">${ver.map(celdaCat).join('')}</div>
+      <details class="hoja-cats-mas"><summary aria-label="${esc(S.moreInGroup(resto.length, nombre))}">${esc(S.moreN(resto.length))}${ic('abajo', 18)}</summary>
+        <div class="cat-rejilla">${resto.map(celdaCat).join('')}</div></details>`;
+  };
   const catsHtml = catsHoja.length ? `<h3 class="hoja-cats-t">${esc(S.categories)}</h3>
     ${KC.agrupa(catsHoja, '').filter((g) => g.cats.length).map((g) => `<fieldset class="hoja-cats-grupo">
       <legend>${esc(KC.nombreGrupo(g.id, lang))}</legend>
-      <div class="cat-rejilla">${g.cats.map(celdaCat).join('')}</div>
+      ${rejillaGrupo(g)}
     </fieldset>`).join('')}` : '';
   const hojaQue = hojaDe({
     id: 'que-hoja',
@@ -2143,7 +2155,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   </div>
   <script>${FILA_MIDE}</script>
   <p id="cercaErr" class="aviso-error" role="alert" hidden></p>
-  <script src="/assets/categorias.js?v=6" defer></script>
+  <script src="/assets/categorias.js?v=7" defer></script>
   <script src="/assets/gustos.js?v=20261111sinbarra" defer data-lang="${en ? 'en' : 'es'}"></script>
   <script src="/assets/municipios.js?v=20261111sinbarra" defer></script>`;
 

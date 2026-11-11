@@ -1,13 +1,16 @@
 // El selector de categorías: uno solo para toda la web, igual que en la app
 // (`lib/features/categories/presentation/category_picker.dart`).
 //
-// Buscador y las 31 categorías en cinco grupos (Comer y beber · Noche,
-// música y cultura · Ocio, deporte y familia · Belleza y salud · Tiendas y
-// servicios), de una (alta y «Tu ficha» del panel; la hoja de filtros de
+// Buscador y las categorías (tipos de negocio) en sus grupos (Comer y beber ·
+// Noche, música y cultura · Ocio, familia y clases · Deporte · Belleza y
+// bienestar · Salud · Eventos y celebraciones · Alojamiento · Tiendas ·
+// Servicios), de una (alta y «Tu ficha» del panel; la hoja de filtros de
 // Explorar y Descubre) o de varias («Avísame si…» y «Cerca de ti» en «Tu
 // cuenta»). El grupo de cada categoría lo guarda la base
-// (`categories.category_group`, migración 20261114100000); si una fila no lo
-// trae, vale el de su slug (el mismo reparto que la migración y la app).
+// (`categories.category_group`); si una fila no lo trae, o trae uno que esta
+// versión no conoce, vale el de su slug. Los grupos, el reparto y las palabras
+// salen de `tool/categorias.json` de la app (`tool/export_categorias.py`), lo
+// mismo que la app y la migración 20261275100000.
 //
 // Sirve igual para las páginas del navegador (script clásico: deja
 // `KlendarCategorias` en `window`) y para las Pages Functions (`import KC from
@@ -19,58 +22,135 @@
   const klBi = (x, lang) => (lang === 'en' ? x.en : globalThis.KL_TABLA ? globalThis.KL_TABLA(x.es, lang) : x.es);
   const klLoc = (lang) => (globalThis.KL_LOCALE ? globalThis.KL_LOCALE(lang) : lang === 'en' ? 'en-GB' : 'es-ES');
 
+  // <generado:categorias> Lo escribe klendar/tool/export_categorias.py a partir de
+  // tool/categorias.json (lo mismo que la app y la base): no se edita a mano.
   const GRUPOS = [
-    { id: 'food', es: 'Comer y beber', en: 'Food and drink' },
-    { id: 'night', es: 'Noche, música y cultura', en: 'Nightlife, music and culture' },
-    { id: 'leisure', es: 'Ocio, deporte y familia', en: 'Leisure, sport and family' },
-    { id: 'care', es: 'Belleza y salud', en: 'Beauty and health' },
-    { id: 'services', es: 'Tiendas y servicios', en: 'Shops and services' },
+    {"id": "food", "es": "Comer y beber", "en": "Food and drink", "ca": "Menjar i beure", "gl": "Comer e beber", "eu": "Jan eta edan", "fr": "Manger et boire", "de": "Essen und Trinken", "it": "Mangiare e bere"},
+    {"id": "night", "es": "Noche, música y cultura", "en": "Nightlife, music and culture", "ca": "Nit, música i cultura", "gl": "Noite, música e cultura", "eu": "Gaua, musika eta kultura", "fr": "Soirées, musique et culture", "de": "Nachtleben, Musik und Kultur", "it": "Notte, musica e cultura"},
+    {"id": "leisure", "es": "Ocio, familia y clases", "en": "Leisure, family and classes", "ca": "Oci, família i classes", "gl": "Lecer, familia e clases", "eu": "Aisia, familia eta klaseak", "fr": "Loisirs, famille et cours", "de": "Freizeit, Familie und Kurse", "it": "Svago, famiglia e corsi"},
+    {"id": "sports", "es": "Deporte", "en": "Sport", "ca": "Esport", "gl": "Deporte", "eu": "Kirola", "fr": "Sport", "de": "Sport", "it": "Sport"},
+    {"id": "care", "es": "Belleza y bienestar", "en": "Beauty and wellbeing", "ca": "Bellesa i benestar", "gl": "Beleza e benestar", "eu": "Edertasuna eta ongizatea", "fr": "Beauté et bien-être", "de": "Schönheit und Wohlbefinden", "it": "Bellezza e benessere"},
+    {"id": "health", "es": "Salud", "en": "Health", "ca": "Salut", "gl": "Saúde", "eu": "Osasuna", "fr": "Santé", "de": "Gesundheit", "it": "Salute"},
+    {"id": "events", "es": "Eventos y celebraciones", "en": "Events and celebrations", "ca": "Esdeveniments i celebracions", "gl": "Eventos e celebracións", "eu": "Ekitaldiak eta ospakizunak", "fr": "Événements et fêtes", "de": "Events und Feiern", "it": "Eventi e feste"},
+    {"id": "stay", "es": "Alojamiento", "en": "Places to stay", "ca": "Allotjament", "gl": "Aloxamento", "eu": "Ostatuak", "fr": "Hébergement", "de": "Unterkünfte", "it": "Alloggi"},
+    {"id": "shops", "es": "Tiendas", "en": "Shops", "ca": "Botigues", "gl": "Tendas", "eu": "Dendak", "fr": "Boutiques", "de": "Läden", "it": "Negozi"},
+    {"id": "services", "es": "Servicios", "en": "Services", "ca": "Serveis", "gl": "Servizos", "eu": "Zerbitzuak", "fr": "Services", "de": "Dienstleistungen", "it": "Servizi"},
   ];
 
-  /** El reparto de las migraciones 20261114100000 y 20261125100000 (si
-   * cambia, cambiar los tres sitios). */
+  /** El grupo de cada categoría por su slug, por si una fila no lo trae. */
   const POR_SLUG = {
-    bar: 'food', restaurant: 'food', cafe: 'food', bakery: 'food', icecream: 'food', gourmet: 'food', market: 'food',
-    nightclub: 'night', music: 'night', stage: 'night', culture: 'night', art: 'night',
-    games: 'leisure', experiences: 'leisure', family: 'leisure', sport: 'leisure', gym: 'leisure', learning: 'leisure', lodging: 'leisure',
-    wellness: 'care', beauty: 'care', hairdresser: 'care', tattoo: 'care', health: 'care',
-    books: 'services', shop: 'services', pets: 'services', workshop: 'services', home: 'services', civic: 'services', other: 'services',
+    bar: 'food', restaurant: 'food', cafe: 'food', brewery: 'food', wine: 'food', bakery: 'food', churros: 'food', icecream: 'food', takeaway: 'food', foodtruck: 'food', gourmet: 'food', grocery: 'food', market: 'food',
+    cocktail: 'night', nightclub: 'night', karaoke: 'night', music: 'night', stage: 'night', cinema: 'night', culture: 'night', art: 'night',
+    games: 'leisure', escape_room: 'leisure', bowling: 'leisure', karting: 'leisure', theme_park: 'leisure', kids_play: 'leisure', family: 'leisure', experiences: 'leisure', learning: 'leisure', language_school: 'leisure', music_school: 'leisure', dance: 'leisure',
+    sport: 'sports', gym: 'sports', yoga: 'sports', padel: 'sports', climbing: 'sports', pool: 'sports', martial_arts: 'sports', adventure: 'sports', golf: 'sports',
+    wellness: 'care', beauty: 'care', hairdresser: 'care', barber: 'care', nails: 'care', tattoo: 'care',
+    pharmacy: 'health', optician: 'health', hearing: 'health', dentist: 'health', physio: 'health', podiatry: 'health', psychology: 'health', nutrition: 'health', aesthetic_clinic: 'health', medical: 'health', health: 'health', vet: 'health',
+    event_venue: 'events', event_estate: 'events', catering: 'events', event_planner: 'events', photo: 'events',
+    lodging: 'stay', hostel: 'stay', apartments: 'stay', rural: 'stay', camping: 'stay',
+    fashion: 'shops', jewelry: 'shops', florist: 'shops', gifts: 'shops', books: 'shops', stationery: 'shops', kiosk: 'shops', toys: 'shops', sports_shop: 'shops', electronics: 'shops', home_decor: 'shops', hardware: 'shops', cosmetics: 'shops', secondhand: 'shops', shop: 'shops',
+    workshop: 'services', driving_school: 'services', home: 'services', repairs: 'services', laundry: 'services', pets: 'services', coworking: 'services', print: 'services', travel: 'services', civic: 'services', other: 'services',
   };
 
   /** Palabras con las que se busca lo que no está en el nombre («uñas»,
-   * «copas»), en los dos idiomas y sin tildes. Las mismas que la app. */
+   * «copas»), en minúsculas y sin tildes. Las mismas que la app. */
   const PALABRAS = {
-    bar: ['tapas', 'cerveza', 'cana', 'vermut', 'pub', 'beer', 'pint'],
-    restaurant: ['comer', 'cena', 'comida', 'menu', 'dinner', 'lunch', 'food'],
-    cafe: ['cafe', 'desayuno', 'brunch', 'merienda', 'coffee', 'breakfast'],
-    bakery: ['pan', 'panaderia', 'pasteleria', 'bolleria', 'tartas', 'croissant', 'dulces', 'obrador', 'horno', 'bakery', 'bread', 'cake', 'pastry'],
-    icecream: ['helado', 'heladeria', 'horchata', 'granizado', 'gelato', 'ice cream', 'frozen yogurt'],
-    gourmet: ['vino', 'cata', 'bodega', 'vinoteca', 'wine', 'tasting', 'delicatessen'],
-    market: ['mercadillo', 'feria', 'rastro', 'flea'],
-    nightclub: ['copas', 'fiesta', 'discoteca', 'club', 'party', 'cocktail'],
-    music: ['concierto', 'jazz', 'dj', 'gig', 'concert'],
-    stage: ['cine', 'teatro', 'monologo', 'comedia', 'film', 'comedy'],
-    culture: ['museo', 'exposicion', 'visita', 'museum', 'exhibition'],
-    art: ['galeria', 'pintura', 'arte', 'gallery'],
-    games: ['escape', 'bolos', 'bolera', 'karts', 'videojuegos', 'bowling'],
-    experiences: ['tour', 'ruta', 'excursion', 'turismo', 'trip'],
-    family: ['ninos', 'infantil', 'familia', 'kids', 'children'],
-    sport: ['futbol', 'padel', 'tenis', 'running', 'deporte', 'football'],
-    gym: ['gimnasio', 'crossfit', 'fitness', 'pesas'],
-    wellness: ['spa', 'masaje', 'yoga', 'pilates', 'massage', 'relax'],
-    beauty: ['unas', 'manicura', 'pedicura', 'estetica', 'nails', 'makeup'],
-    hairdresser: ['peluqueria', 'barberia', 'barber', 'corte', 'haircut'],
-    tattoo: ['tatuaje', 'tatuador', 'tattoo', 'piercing', 'perforacion'],
-    health: ['fisio', 'fisioterapia', 'dentista', 'clinica', 'optica', 'dentist', 'physio'],
-    learning: ['clase', 'curso', 'taller', 'academia', 'idiomas', 'course'],
-    books: ['libros', 'libreria', 'books', 'comic'],
-    shop: ['ropa', 'moda', 'complementos', 'regalos', 'zapatos', 'flores', 'floristeria', 'clothes', 'fashion', 'flowers'],
-    pets: ['perro', 'gato', 'veterinario', 'dog', 'cat', 'vet'],
-    workshop: ['coche', 'moto', 'mecanico', 'taller', 'car', 'garage'],
-    home: ['fontanero', 'electricista', 'limpieza', 'reformas', 'plumber'],
-    lodging: ['hotel', 'hostal', 'apartamento', 'alojamiento', 'stay'],
-    civic: ['ayuntamiento', 'asociacion', 'vecinos', 'council'],
+    bar: ["tapas", "cerveza", "cana", "vermut", "pub", "beer", "pint"],
+    restaurant: ["comer", "cena", "comida", "menu", "pizzeria", "asador", "marisqueria", "dinner", "lunch", "food"],
+    cafe: ["cafe", "desayuno", "brunch", "merienda", "coffee", "breakfast"],
+    brewery: ["cerveza", "cerveceria", "artesana", "craft beer", "brewery", "taproom", "beer"],
+    wine: ["vino", "vinoteca", "bodega", "enoteca", "wine", "winery"],
+    bakery: ["pan", "panaderia", "pasteleria", "bolleria", "tartas", "croissant", "dulces", "obrador", "horno", "confiteria", "bakery", "bread", "cake", "pastry"],
+    churros: ["churros", "porras", "chocolate", "churreria", "chocolateria", "bunuelos"],
+    icecream: ["helado", "heladeria", "horchata", "granizado", "gelato", "ice cream", "frozen yogurt"],
+    takeaway: ["llevar", "domicilio", "pizza", "kebab", "pollos asados", "asador", "comida rapida", "hamburguesa", "takeaway", "delivery", "fast food"],
+    foodtruck: ["food truck", "furgoneta", "camion", "street food", "comida callejera"],
+    gourmet: ["cata", "degustacion", "delicatessen", "gourmet", "tasting"],
+    grocery: ["fruteria", "carniceria", "pescaderia", "charcuteria", "ultramarinos", "supermercado", "alimentacion", "queseria", "grocery", "butcher", "greengrocer"],
+    market: ["mercadillo", "feria", "rastro", "mercado de abastos", "flea"],
+    cocktail: ["copas", "coctel", "cocteleria", "pub", "gin tonic", "cocktail", "drinks"],
+    nightclub: ["copas", "fiesta", "discoteca", "club", "sala de fiestas", "party"],
+    karaoke: ["karaoke", "cantar", "sing"],
+    music: ["concierto", "sala de conciertos", "jazz", "flamenco", "tablao", "dj", "gig", "concert", "venue"],
+    stage: ["teatro", "monologo", "comedia", "danza", "auditorio", "circo", "magia", "theatre", "theater", "comedy", "show"],
+    cinema: ["cine", "pelicula", "estreno", "autocine", "film", "movie"],
+    culture: ["museo", "exposicion", "visita", "centro cultural", "biblioteca", "museum", "exhibition"],
+    art: ["galeria", "pintura", "arte", "gallery"],
+    games: ["videojuegos", "juegos de mesa", "laser tag", "realidad virtual", "billar", "dardos", "games"],
+    escape_room: ["escape", "escape room", "enigmas", "sala de escape"],
+    bowling: ["bolos", "bolera", "billar", "bowling", "pool", "snooker"],
+    karting: ["karts", "karting", "circuito", "go kart"],
+    theme_park: ["atracciones", "parque acuatico", "zoo", "acuario", "feria", "theme park", "water park", "aquarium"],
+    kids_play: ["parque de bolas", "ludoteca", "cumpleanos", "infantil", "chiqui park", "play centre", "soft play"],
+    family: ["ninos", "infantil", "familia", "cuentacuentos", "kids", "children"],
+    experiences: ["tour", "ruta", "excursion", "turismo", "visita guiada", "barco", "trip"],
+    learning: ["clase", "curso", "taller", "academia", "refuerzo", "cocina", "manualidades", "course"],
+    language_school: ["idiomas", "ingles", "frances", "aleman", "language", "english"],
+    music_school: ["musica", "guitarra", "piano", "canto", "conservatorio", "music lessons"],
+    dance: ["baile", "danza", "salsa", "bachata", "flamenco", "sevillanas", "zumba", "dance"],
+    sport: ["futbol", "running", "deporte", "carrera", "polideportivo", "club", "football"],
+    gym: ["gimnasio", "crossfit", "fitness", "pesas", "entrenador personal", "gym"],
+    yoga: ["yoga", "pilates", "meditacion", "barre", "meditation"],
+    padel: ["padel", "tenis", "pista", "pickleball", "squash", "tennis"],
+    climbing: ["escalada", "rocodromo", "boulder", "bloque", "climbing"],
+    pool: ["piscina", "natacion", "nadar", "pool", "swimming"],
+    martial_arts: ["karate", "judo", "taekwondo", "boxeo", "kick boxing", "jiu jitsu", "defensa personal", "boxing"],
+    adventure: ["multiaventura", "kayak", "surf", "buceo", "paddle surf", "barranquismo", "tirolina", "vela", "diving"],
+    golf: ["golf", "pitch and putt", "campo de golf", "minigolf"],
+    wellness: ["spa", "masaje", "balneario", "termas", "relax", "massage"],
+    beauty: ["estetica", "depilacion", "maquillaje", "pestanas", "cejas", "makeup"],
+    hairdresser: ["peluqueria", "corte", "tinte", "mechas", "haircut"],
+    barber: ["barberia", "barbero", "barba", "afeitado", "barber"],
+    nails: ["unas", "manicura", "pedicura", "gel", "semipermanente", "nails"],
+    tattoo: ["tatuaje", "tatuador", "tattoo", "piercing", "perforacion"],
+    pharmacy: ["farmacia", "parafarmacia", "de guardia", "pharmacy", "chemist"],
+    optician: ["optica", "gafas", "lentillas", "graduacion", "optician", "glasses"],
+    hearing: ["audifonos", "audicion", "hearing aids"],
+    dentist: ["dentista", "ortodoncia", "implantes", "blanqueamiento", "dentist"],
+    physio: ["fisio", "fisioterapia", "fisioterapeuta", "osteopatia", "rehabilitacion", "physio"],
+    podiatry: ["podologo", "pies", "plantillas", "podiatrist"],
+    psychology: ["psicologo", "terapia", "logopeda", "psychologist", "therapy"],
+    nutrition: ["nutricionista", "dietista", "dieta", "nutritionist"],
+    aesthetic_clinic: ["clinica estetica", "botox", "laser", "acido hialuronico", "aesthetic"],
+    medical: ["medico", "clinica", "consulta", "analisis", "doctor", "clinic"],
+    health: ["salud", "terapias", "health"],
+    vet: ["veterinario", "clinica veterinaria", "mascota", "perro", "gato", "vet"],
+    event_venue: ["salon", "bodas", "banquetes", "comuniones", "bautizos", "cumpleanos", "eventos", "wedding", "venue"],
+    event_estate: ["finca", "masia", "cortijo", "hacienda", "bodas", "jardin", "estate"],
+    catering: ["catering", "banquete", "comida para eventos", "caterer"],
+    event_planner: ["wedding planner", "animacion", "dj", "hinchables", "decoracion", "magos", "payasos", "planner"],
+    photo: ["fotografo", "fotos", "estudio", "video", "reportaje", "photographer"],
+    lodging: ["hotel", "alojamiento", "dormir", "habitacion", "stay"],
+    hostel: ["hostal", "albergue", "pension", "hostel", "guesthouse"],
+    apartments: ["apartamento", "vivienda turistica", "alquiler vacacional", "apartment"],
+    rural: ["casa rural", "agroturismo", "turismo rural", "cottage"],
+    camping: ["camping", "acampada", "bungalow", "glamping", "caravana", "campsite"],
+    fashion: ["ropa", "moda", "zapatos", "zapateria", "bolsos", "complementos", "boutique", "clothes", "fashion", "shoes"],
+    jewelry: ["joyeria", "relojeria", "anillos", "plata", "oro", "jewellery", "watches"],
+    florist: ["flores", "floristeria", "ramos", "plantas", "flowers"],
+    gifts: ["regalos", "bazar", "souvenirs", "detalles", "todo a 100", "gifts"],
+    books: ["libros", "libreria", "comic", "books"],
+    stationery: ["papeleria", "material escolar", "libros de texto", "stationery"],
+    kiosk: ["quiosco", "kiosco", "prensa", "periodicos", "revistas", "chuches", "loteria", "newsagent"],
+    toys: ["juguetes", "jugueteria", "juegos", "toys"],
+    sports_shop: ["deporte", "bicicletas", "bici", "running", "material deportivo", "sports shop", "bike"],
+    electronics: ["movil", "informatica", "ordenador", "reparacion de moviles", "electronica", "phone", "computer"],
+    home_decor: ["muebles", "decoracion", "menaje", "colchones", "textil hogar", "furniture", "decor"],
+    hardware: ["ferreteria", "bricolaje", "herramientas", "pintura", "llaves", "hardware", "diy"],
+    cosmetics: ["perfume", "perfumeria", "cosmetica", "drogueria", "maquillaje", "perfume shop"],
+    secondhand: ["segunda mano", "vintage", "antiguedades", "compraventa", "solidaria", "thrift"],
+    shop: ["tienda", "comercio", "regalos", "shop", "store"],
+    workshop: ["coche", "moto", "mecanico", "taller", "neumaticos", "itv", "lavado", "car", "garage"],
+    driving_school: ["autoescuela", "carnet", "permiso de conducir", "driving"],
+    home: ["fontanero", "electricista", "limpieza", "reformas", "cerrajero", "jardineria", "mudanzas", "plumber"],
+    repairs: ["arreglos", "costura", "zapatero", "copia de llaves", "reparacion", "electrodomesticos", "repair", "tailor"],
+    laundry: ["lavanderia", "tintoreria", "autoservicio", "planchado", "laundry", "dry cleaning"],
+    pets: ["perro", "gato", "peluqueria canina", "tienda de animales", "guarderia canina", "adiestramiento", "dog", "cat", "grooming"],
+    coworking: ["coworking", "oficina", "sala de reuniones", "puesto", "office", "desk"],
+    print: ["copisteria", "imprenta", "fotocopias", "impresion", "rotulos", "print"],
+    travel: ["viajes", "agencia", "vacaciones", "travel"],
+    civic: ["ayuntamiento", "asociacion", "vecinos", "ong", "council"],
   };
+  // </generado:categorias>
 
   const TEXTOS = {
     es: {
@@ -100,9 +180,11 @@
     if (GRUPOS.some((x) => x.id === g)) return g;
     return POR_SLUG[c && c.slug] || 'services';
   }
+  // Los grupos traen su nombre en los 8 idiomas; en otro, el inglés o el
+  // español como los nombres de las categorías.
   const nombreGrupo = (id, lang) => {
     const g = GRUPOS.find((x) => x.id === id) || GRUPOS[GRUPOS.length - 1];
-    return klBi({ es: { x: g.es }, en: { x: g.en } }, lang).x;
+    return g[lang] || g[/^(en|fr|de|it)$/.test(lang) ? 'en' : 'es'] || g.es;
   };
   // La base trae el nombre en cada idioma ({es, en, ca, gl, eu, fr, de, it});
   // si falta el suyo, el de la versión pública que le toca y, si no, el español.

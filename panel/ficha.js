@@ -389,8 +389,18 @@ const htmlMayores = (d) => `
   <label class="f full casilla"><input type="checkbox" name="adults_only" ${d.adults_only ? 'checked' : ''}>
     <span>Solo para mayores de 18 <small class="muted">Si lo que publicas menciona alcohol, se marca +18 solo y sale al momento. La publicidad de tabaco, vapeo o apuestas no está permitida. En un negocio +18, todo el equipo tiene que ser mayor de edad.</small></span></label>`;
 
+/** ¿«Alérgenos y dietas» en «Cómo es tu local»? Si su tipo de negocio lo
+ * lleva (`features.diets` de sus categorías, migración 20261275100000 de la
+ * app; sin saberlo, sí, como antes) o si ya tiene alguno marcado. Lo mismo
+ * que `dietsFitDraft` en la app. */
+const dietasCaben = (ids, cats, sitio) => {
+  if ((sitio || []).some((k) => DIETAS_PANEL.includes(k))) return true;
+  const mias = (cats || []).filter((c) => (ids || []).includes(c.id));
+  return !mias.length || mias.some((c) => c?.features?.diets !== false);
+};
+
 /** «Cómo es tu local»: El sitio, el rango de precio y «¿Hay sitio ahora?»
- * (`extra` = { precio, aforo }), como el apartado de la app. */
+ * (`extra` = { precio, aforo, dietas }), como el apartado de la app. */
 const htmlSitio = (sitio, extra = {}) => {
   const M = KlendarMarcas.t(I18N.lang);
   const opSitio = ([k, nombre, icono]) => `<label class="sitio-op"><input type="checkbox" name="sitio" value="${k}" ${sitio.includes(k) ? 'checked' : ''}><span>${ms(icono)}${esc(I18N.t(nombre))}</span></label>`;
@@ -400,11 +410,11 @@ const htmlSitio = (sitio, extra = {}) => {
   <div class="sitio-ops full" role="group" aria-label="${esc(I18N.t('Cómo es tu local'))}">
     ${SITIO_PANEL.filter(([k]) => !DIETAS_PANEL.includes(k)).map(opSitio).join('')}
   </div>
-  <div class="full"><h3 class="f-tit" id="dietasTit" style="margin:4px 0 4px">Alérgenos y dietas</h3>
+  ${extra.dietas === false ? '' : `<div class="full"><h3 class="f-tit" id="dietasTit" style="margin:4px 0 4px">Alérgenos y dietas</h3>
     <p class="muted" style="margin:0 0 10px">Márcalo solo si lo ofreces siempre. «Sin gluten» y «Apto para celíacos» son menciones reguladas: las declaras tú, bajo tu responsabilidad.</p>
     <div class="sitio-ops" role="group" aria-labelledby="dietasTit">
       ${SITIO_PANEL.filter(([k]) => DIETAS_PANEL.includes(k)).map(opSitio).join('')}
-    </div></div>
+    </div></div>`}
   <div class="full"><p class="f-tit">${esc(M.priceTitle)}</p>
     <div class="sitio-ops" role="radiogroup" aria-label="${esc(M.priceTitle)}">
       ${[0, 1, 2, 3, 4].map((n) => `<label class="sitio-op"><input type="radio" name="price_level" value="${n || ''}" ${precio === n ? 'checked' : ''}><span${n ? ` aria-label="${esc(`${KlendarMarcas.simbolo(n)}, ${KlendarMarcas.significado(n, I18N.lang)}`)}"` : ''}>${esc(n ? KlendarMarcas.simbolo(n) : M.priceNone)}</span></label>`).join('')}
@@ -718,7 +728,7 @@ async function parteFicha(v, parte, b, cats) {
     'Optional. If you don’t set it, the kitchen follows the venue’s hours. Used on your page, in “Food served now” and in the daily menu.'))}</p>
         <div data-cocina ${cocinaOn ? '' : 'hidden'}></div></div>`,
     contacto: () => `${htmlContacto(d)}<div class="full enlaces-ficha" data-enlaces></div>`,
-    local: () => htmlSitio(b.amenities, { precio: b.price_level, aforo: b.crowd_enabled }) + pedMomentosHtml(b.moments),
+    local: () => htmlSitio(b.amenities, { precio: b.price_level, aforo: b.crowd_enabled, dietas: dietasCaben([b.category_id], cats, b.amenities) }) + pedMomentosHtml(b.moments),
     klendar: () => htmlKlendar(d),
     mayores: () => htmlMayores(d),
   }[parte];
@@ -892,7 +902,7 @@ PAGES.alta = async (v, param) => {
     2: () => `${htmlDonde(A)}
       <div class="conlocal" data-con-local${A.sin_local ? ' hidden' : ''}>
       <div class="full"><h2 class="alta-sub">Horario</h2><p class="muted" style="margin:0 0 10px">Si aún no lo tienes claro, puedes ponerlo luego.</p><div data-horario></div></div>
-      <div class="full"><h2 class="alta-sub">Cómo es tu local</h2></div>${htmlSitio(A.sitio, A)}</div>`,
+      <div class="full"><h2 class="alta-sub">Cómo es tu local</h2></div>${htmlSitio(A.sitio, { ...A, dietas: dietasCaben([A.category_id], cats, A.sitio) })}</div>`,
     3: () => `<div class="full"><h2 class="alta-sub">Fotos</h2><p class="muted" style="margin:0">Opcional: lo puedes completar después desde Tu ficha.</p></div>
       ${htmlFotos(A.fotos)}
       <div class="full"><h2 class="alta-sub">Contacto y redes</h2></div>${htmlContacto(A)}
