@@ -282,7 +282,7 @@ export function siteHeader(lang, esPath = '/', enPath = '/en', actual = '') {
 </div></header>
 <script src="/assets/cabecera-yo.js?v=20261111app"></script>
 <nav class="tabbar" aria-label="${T.secciones}">${pestanas('tab')}</nav>
-<script src="/assets/cabecera.js?v=20261111sinbarra" defer></script>`;
+<script src="/assets/cabecera.js?v=20261111movil" defer></script>`;
 }
 
 /**

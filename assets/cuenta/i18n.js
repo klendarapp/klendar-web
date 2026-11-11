@@ -537,6 +537,8 @@ const APP_EN = {
   "Términos de uso": "Terms of use",
   "Política de privacidad": "Privacy policy",
   "Normas de la comunidad": "Community guidelines",
+  "Aviso legal": "Legal notice",
+  "Fuentes y licencias": "Sources and licences",
   "Repite la contraseña": "Repeat password",
   "Ese correo no parece válido.": "That email doesn't look valid.",
   "Continuar con Apple": "Continue with Apple",

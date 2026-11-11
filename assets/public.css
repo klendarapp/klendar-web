@@ -350,7 +350,7 @@ details.hoja[open] > summary::after { background: rgba(0,0,0,.5); }
 .pub .op.on { background: var(--ink); color: var(--surface); }
 @media (max-width: 640px) {
   /* En el móvil, los desplegables suben desde abajo, como las hojas de la app. */
-  .menu-d { position: fixed; top: auto; left: 0; right: 0; bottom: 0; min-width: 0; max-height: 72vh; border-radius: 26px 26px 0 0;
+  .menu-d { position: fixed; top: auto; left: 0; right: 0; bottom: 0; min-width: 0; max-height: 72vh; max-height: 72dvh; border-radius: 26px 26px 0 0;
     padding: 10px 12px calc(18px + env(safe-area-inset-bottom)); border-bottom: 0; }
   details.desplegable[open] > summary::after { background: rgba(0,0,0,.5); }
 }
@@ -358,10 +358,10 @@ details.hoja[open] > summary::after { background: rgba(0,0,0,.5); }
 /* La hoja de filtros: diálogo centrado (máx. 560) en el escritorio, hoja de
    abajo en el móvil. Un formulario GET: va sin JavaScript. */
 .hoja-cuerpo { position: fixed; z-index: 42; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(560px, calc(100vw - 32px));
-  max-height: min(86vh, 780px); display: flex; flex-direction: column; border-radius: 28px; background: var(--elevated);
+  max-height: min(86vh, 780px); max-height: min(86dvh, 780px); display: flex; flex-direction: column; border-radius: 28px; background: var(--elevated);
   border: 1px solid var(--glass-border); box-shadow: 0 30px 80px -20px rgba(0,0,0,.5); margin: 0; }
 @media (max-width: 640px) {
-  .hoja-cuerpo { left: 0; right: 0; top: auto; bottom: 0; transform: none; width: auto; max-height: 88vh; border-radius: 28px 28px 0 0; border-bottom: 0; }
+  .hoja-cuerpo { left: 0; right: 0; top: auto; bottom: 0; transform: none; width: auto; max-height: 88vh; max-height: 88dvh; border-radius: 28px 28px 0 0; border-bottom: 0; }
 }
 .hoja-cab { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 20px 10px; }
 .pub .hoja-cab h2 { margin: 0; font-size: 22px; }
@@ -664,7 +664,7 @@ body.pagina-feed[data-cromo="fuera"] .feed-cab { visibility: hidden; }
   .pagina-feed .feed-cab .barra-filtros { position: relative; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 0; padding: 2px 16px; }
   .pagina-feed .feed-cab .barra-filtros::-webkit-scrollbar { display: none; }
   /* Los desplegables suben desde abajo, a lo ancho. */
-  .pagina-feed .feed-cab .menu-d { position: fixed; top: auto; bottom: 0; left: 0; right: 0; width: auto; min-width: 0; max-height: 72vh;
+  .pagina-feed .feed-cab .menu-d { position: fixed; top: auto; bottom: 0; left: 0; right: 0; width: auto; min-width: 0; max-height: 72vh; max-height: 72dvh;
     border-radius: 26px 26px 0 0; padding: 10px 12px calc(18px + env(safe-area-inset-bottom)); border-bottom: 0; }
   .pagina-feed .feed-cab details.desplegable[open] > summary::after { background: rgba(0,0,0,.5); }
   /* Con foto detrás: blanco sobre cristal oscuro; la elegida, blanca con letra en tinta. */
@@ -1104,7 +1104,9 @@ details.hoja-bloque[open] > summary .ic { transform: rotate(180deg); }
 .hoja-lupa-sum::-webkit-details-marker { display: none; }
 .hoja-lupa-sum::marker { content: ''; }
 .hoja-lupa .hoja-cuerpo { min-height: min(70vh, 620px); }
-@media (max-width: 640px) { .hoja-lupa .hoja-cuerpo { height: 88vh; } }
+/* `dvh`: con la barra de Safari a la vista, 88vh dejaba la cabecera de la hoja
+   (y su X) por encima de la pantalla. */
+@media (max-width: 640px) { .hoja-lupa .hoja-cuerpo { height: 88vh; height: 88dvh; } }
 .hoja-lupa .hoja-scroll { padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
 .hoja-lupa .buscador { margin: 4px 0 18px; }
 .pub .hoja-lupa h3, .pub .busq-tipos > h2 { margin: 0 0 8px; font-size: 15px; font-weight: 800; }

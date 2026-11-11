@@ -1008,8 +1008,7 @@ sb.auth.onAuthStateChange((ev) => {
   // contraseña nueva se pone en «Tu cuenta» y se vuelve al panel.
   if (ev === 'PASSWORD_RECOVERY') location.href = '/cuenta/nueva-clave?destino=%2Fpanel';
 });
-$('#menuBtn').onclick = () => abreMenu(!$('#side').classList.contains('open'));
-$('#menuCerrar').onclick = () => abreMenu(false);
+$('#menuBtn').onclick = () => MENU.alterna();
 
 // ── Idioma ──────────────────────────────────────────────────────────────────
 // El panel se escribió en español; la versión inglesa se pinta encima (ver
@@ -1115,13 +1114,14 @@ const NAV = [
     // «Más herramientas» (panel/herramientas.js): lo opcional.
     ['herramientas', 'herramientas', 'Más herramientas', ['cola', 'tele', 'partidos', 'grupos', 'antes-de-cerrar', 'series', 'carta', 'cartel-local', 'menu-del-dia', 'wifi-clientes', 'aforo', 'pedidos']],
     ['equipo', 'group', 'Equipo'],
-    // «Tu plan» (panel/plan.js): estado del plan y, para el propietario, pagar.
-    ['plan', 'workspace_premium', 'Tu plan'],
     ['resenas', 'reviews', 'Reseñas'],
     // «Pregúntale al local» (panel/preguntas.js).
     ['preguntas', 'help_outline', 'Preguntas'],
     ['cerrados', 'event_busy', 'Días cerrados'],
     ['ayuda', 'help', 'Ayuda'],
+    // «Tu plan» (panel/plan.js): estado del plan y, para el propietario,
+    // pagar. Al final, como la tarjeta del plan en «Mi negocio» de la app.
+    ['plan', 'workspace_premium', 'Tu plan'],
   ]],
 ];
 /** Las cuatro de todos los días, abajo en el móvil (como las pestañas de la
@@ -1169,30 +1169,19 @@ function renderNav(current) {
   $('#masBtn').onclick = () => abreMenu(true);
 }
 
-// El menú en el móvil: un cajón que se abre con «Más» (o «Menú» arriba), se
-// cierra con Escape, al pulsar fuera o con su botón, y devuelve el foco.
-let VUELTA_MENU = null;
-function abreMenu(abrir) {
-  const side = $('#side');
-  if (abrir) {
-    VUELTA_MENU = document.activeElement;
-    side.classList.add('open');
-    document.body.classList.add('con-menu');
-    $$('#menuBtn, #masBtn').forEach((b) => b.setAttribute('aria-expanded', 'true'));
-    ($('a.nav.on', side) || $('a.nav', side))?.focus();
-  } else if (side.classList.contains('open')) {
-    side.classList.remove('open');
-    document.body.classList.remove('con-menu');
-    $$('#menuBtn, #masBtn').forEach((b) => b.setAttribute('aria-expanded', 'false'));
-    if (VUELTA_MENU?.isConnected) VUELTA_MENU.focus();
-    VUELTA_MENU = null;
-  }
-}
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape') abreMenu(false); });
-document.addEventListener('click', (e) => {
-  const side = $('#side');
-  if (side.classList.contains('open') && !side.contains(e.target) && !e.target.closest('#menuBtn, #masBtn')) abreMenu(false);
+// El menú en el móvil: un cajón (assets/cajon.js) que se abre con «Más» (o
+// «Menú» arriba) y se cierra con su X, tocando fuera, con Escape, al elegir
+// una opción o deslizándolo a la izquierda, y devuelve el foco.
+const MENU = window.KL_CAJON({
+  cajon: $('#side'), velo: $('#sideVelo'), cerrar: $('#menuCerrar'),
+  botones: () => $$('#menuBtn, #masBtn'),
+  detras: () => [$('#side').nextElementSibling.nextElementSibling, $('#tabbar'), ...$$('body > [data-only]')],
 });
+/** Al cambiar de pantalla, el cajón se cierra sin mover el foco (la pantalla nueva se lo queda). */
+function abreMenu(abrir) {
+  if (abrir) MENU.abre();
+  else MENU.cierra(true);
+}
 const currentRoute = () => (location.hash.replace(/^#\/?/, '').split('?')[0] || 'resumen').split('/');
 const PAGES = {};
 // Cada pintada lleva su número: si mientras carga una se pide otra (cambiar
@@ -1291,7 +1280,6 @@ async function route() {
   const soloGestion = !gestiona() && SOLO_GESTION.includes(page) && !bloqueado();
   if (soloGestion) {
     renderNav(page);
-    VUELTA_MENU = null;
     abreMenu(false);
     const v = document.createElement('div');
     v.innerHTML = `<section class="vacio" aria-labelledby="soloGestionT">
@@ -1315,10 +1303,10 @@ async function route() {
     if (location.hash && !/^#\/?(resumen)?(\?|$)/.test(location.hash)) history.replaceState(null, '', '#/resumen');
   }
   renderNav(page);
-  // Al ir a otra pantalla desde el menú del móvil, el cajón se cierra y el
-  // foco pasa a la pantalla nueva (no al botón que lo abrió).
-  VUELTA_MENU = null;
+  // Al ir a otra pantalla, el cajón se cierra; si el foco se ha quedado sin
+  // sitio (el botón «Más» se repinta), pasa a la pantalla nueva.
   abreMenu(false);
+  if (!document.activeElement || document.activeElement === document.body || !document.activeElement.isConnected) $('#view').focus({ preventScroll: true });
   // Cada pintada va en su propia caja: si una vieja termina tarde, escribe
   // en una caja que ya no está en la página y no se ve.
   const v = document.createElement('div');

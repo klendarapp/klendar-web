@@ -6,7 +6,7 @@
 .asis-entrada span { display: block; color: var(--ink-2); font-size: 14px; margin-top: 2px; }
 .asis-entrada:hover { background: var(--soft, var(--glass)); }
 .asis-entrada:focus-visible, .asis-enlace:focus-visible, .asis-x:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
-dialog.asis { width: min(560px, 100vw); max-width: 100vw; max-height: min(84vh, 760px); box-sizing: border-box; padding: 0; border: 1px solid var(--glass-border); border-radius: 20px;
+dialog.asis { width: min(560px, 100vw); max-width: 100vw; max-height: min(84vh, 760px); max-height: min(84dvh, 760px); box-sizing: border-box; padding: 0; border: 1px solid var(--glass-border); border-radius: 20px;
   background: var(--surface); color: var(--ink); }
 dialog.asis[open] { display: flex; flex-direction: column; }
 dialog.asis::backdrop { background: rgba(0, 0, 0, .45); }

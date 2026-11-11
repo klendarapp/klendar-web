@@ -350,8 +350,8 @@ ${privada ? '' : `<meta property="og:url" content="${BASE}${esc(path)}">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 ${preconectar}<link rel="preload" href="/assets/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/site.css?v=20261104sal">
-<link rel="stylesheet" href="/assets/public.css?v=20261111rev3">
+<link rel="stylesheet" href="/assets/site.css?v=20261111movil">
+<link rel="stylesheet" href="/assets/public.css?v=20261111movil">
 <link rel="stylesheet" href="/assets/tarjeta.css?v=20261028rp">
 ${cabeza}
 </head>

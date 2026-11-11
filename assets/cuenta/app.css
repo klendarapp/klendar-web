@@ -28,6 +28,9 @@ body:has(#view > .cargando) footer { display: none; }
 .linkbtn { background: none; border: 0; padding: 0; color: var(--ink); text-decoration: underline; text-underline-offset: 2px; font: inherit;
   font-weight: 700; cursor: pointer; }
 :root[data-theme=dark] .linkbtn, .linkbtn { color: var(--ink); }
+/* Con el dedo, se tocan en 44 px de alto (Usar mi ubicación, Ahora no…)
+   sin mover el texto de alrededor: la zona crece por fuera. */
+@media (pointer: coarse) { .linkbtn { position: relative; } .linkbtn::after { content: ""; position: absolute; inset: -10px -6px; } }
 
 .hub { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin: 18px 0; }
 .hub-i { display: grid; gap: 4px; padding: 18px; border-radius: 18px; border: 1px solid var(--glass-border);

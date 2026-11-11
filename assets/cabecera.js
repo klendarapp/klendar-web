@@ -409,6 +409,20 @@
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', yaEstan); else yaEstan();
   }
 
+  // «Más» (el menú de ☰) se cierra tocando fuera (Iván, 11-11: en el
+  // iPhone solo se cerraba volviendo a tocar ☰) o al elegir una opción
+  // (en «Tu cuenta» y el panel, que no cambian de página, se quedaba abierto).
+  // Fuera, con `pointerdown`: Safari del iPhone no manda `click` al documento
+  // desde lo que no es pulsable (un párrafo, el fondo).
+  const cierraMas = () => document.querySelectorAll('input#menu:checked').forEach((casilla) => { casilla.checked = false; });
+  document.addEventListener('pointerdown', (e) => {
+    const t = e.target instanceof Element ? e.target : null;
+    if (t && !t.closest('input#menu, .menu-toggle, nav.main')) cierraMas();
+  }, { passive: true });
+  document.addEventListener('click', (e) => {
+    const t = e.target instanceof Element ? e.target : null;
+    if (t && t.closest('nav.main a[href]')) cierraMas();
+  });
   // El menú del móvil se cierra con Escape y el foco vuelve a su botón.
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;

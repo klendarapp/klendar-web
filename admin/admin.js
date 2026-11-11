@@ -534,18 +534,19 @@ sb.auth.onAuthStateChange((ev, s) => {
   if (ev === 'SIGNED_OUT') showLogin();
   if (ev === 'PASSWORD_RECOVERY') location.href = '/cuenta/nueva-clave?destino=%2Fadmin';
 });
-// El menú lateral en el móvil: el botón dice si está abierto y Escape lo cierra.
+// El menú lateral en el móvil: un cajón (assets/cajon.js) que se cierra con
+// su X, tocando fuera, con Escape, al elegir una opción o deslizándolo a la
+// izquierda, y devuelve el foco al botón «Menú» (Iván, 11-11: en el iPhone
+// no había forma de cerrarlo).
+const MENU = window.KL_CAJON({
+  cajon: $('#side'), velo: $('#sideVelo'), cerrar: $('#menuCerrar'),
+  botones: () => [$('#menuBtn')], detras: () => [$('#side').nextElementSibling.nextElementSibling],
+});
 function abreMenuLateral(abrir) {
-  const estaba = $('#side').classList.contains('open');
-  $('#side').classList.toggle('open', abrir);
-  $('#menuBtn').setAttribute('aria-expanded', String(abrir));
-  if (abrir) $('#nav a.nav.on, #nav a.nav')?.focus();
-  else if (estaba && $('#side').contains(document.activeElement)) $('#menuBtn').focus();
+  if (abrir) MENU.abre();
+  else MENU.cierra(true);
 }
-$('#menuBtn').setAttribute('aria-controls', 'side');
-$('#menuBtn').setAttribute('aria-expanded', 'false');
-$('#menuBtn').onclick = () => abreMenuLateral(!$('#side').classList.contains('open'));
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && $('#side').classList.contains('open') && !$('dialog[open]')) abreMenuLateral(false); });
+$('#menuBtn').onclick = () => MENU.alterna();
 
 // ── Verificación en dos pasos (TOTP) ────────────────────────────────────────
 // Supabase Auth, un factor TOTP por persona (Google Authenticator, 1Password,

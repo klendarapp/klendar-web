@@ -23,9 +23,40 @@ body.admin-body { background: var(--surface); }
 .side .me b { display: block; word-break: break-all; }
 .side .me a { color: inherit; opacity: .8; }
 .topbar { display: none; }
+/* La cabecera del menú: el logo y, en el móvil, la X para cerrarlo. */
+.side-cab { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.side-cab .brand { margin-bottom: 18px; }
+.side .menu-cerrar { display: none; color: inherit; border-color: rgba(255,255,255,.2); margin: 0 4px 18px 0; }
+.side-velo { display: none; }
 @media (max-width: 900px) {
-  .side { position: fixed; inset: 0 auto 0 0; width: 270px; transform: translateX(-100%); transition: transform .2s ease; z-index: 40; height: 100dvh; }
-  .side.open { transform: none; box-shadow: 0 0 0 100vw rgba(0,0,0,.4); }
+  /* Un cajón: fuera de la pantalla hasta que se abre (assets/cajon.js). */
+  .side { position: fixed; inset: 0 auto 0 0; width: min(300px, 86vw); transform: translateX(-100%); transition: transform .2s ease, visibility 0s linear .2s;
+    visibility: hidden; z-index: 40; height: 100dvh; overscroll-behavior: contain;
+    padding-top: max(18px, env(safe-area-inset-top)); padding-bottom: max(18px, env(safe-area-inset-bottom)); padding-left: max(14px, env(safe-area-inset-left)); }
+  /* `.open` de site.css (la página de «abrir en la app») lo centraba en rejilla
+     y la parte de arriba de la lista no se alcanzaba. */
+  .side.open { transform: none; visibility: visible; transition: transform .2s ease, visibility 0s; box-shadow: 0 0 40px rgba(0,0,0,.35);
+    display: flex; min-height: 0; place-items: normal; text-align: left; padding-right: 14px; }
+  /* El fondo oscurecido: tocarlo cierra el menú. */
+  .side-velo { display: block; position: fixed; inset: 0; z-index: 39; background: rgba(0,0,0,.45); opacity: 0; pointer-events: none;
+    transition: opacity .2s ease; -webkit-tap-highlight-color: transparent; }
+  .side-velo.on { opacity: 1; pointer-events: auto; }
+  body.con-menu { overflow: hidden; }
+  .side .menu-cerrar { display: inline-flex; justify-content: center; min-width: 44px; min-height: 44px; padding: 0; }
+  /* Zonas de 44 px para el dedo. */
+  .side a.nav { min-height: 44px; }
+  .side .group-toggle { min-height: 44px; }
+  .side .me a#logout { display: inline-flex; align-items: center; min-height: 44px; }
+  .topbar #menuBtn, .topbar .lang a, .login .lang a, .me .lang a { min-height: 44px; display: inline-flex; align-items: center; }
+  .topbar .lang a, .login .lang a, .me .lang a { padding: 0 14px; }
+  /* «¿Qué hago aquí?» y las pestañas de las gráficas: la zona del dedo
+     crece sin cambiar cómo se ven. */
+  .help summary { padding: 11px 0; margin: -11px 0; }
+  .chart-tabs button { position: relative; }
+  .chart-tabs button::after { content: ""; position: absolute; inset: -8px -2px; }
+}
+@media (max-width: 900px) and (prefers-reduced-motion: reduce) { .side, .side.open, .side-velo { transition: none; } }
+@media (max-width: 900px) {
   .topbar { display: flex; align-items: center; gap: 12px; padding: 12px 16px; position: sticky; top: 0; z-index: 30; background: var(--glass); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid var(--glass-border); }
   /* Casi opaca, como la cabecera de la web (site.css). */
   @supports (background: color-mix(in srgb, red 50%, transparent)) { .topbar { background: color-mix(in srgb, var(--surface) 96%, transparent); } }
@@ -239,7 +270,7 @@ p:has(> .btn + .btn) { display: flex; flex-wrap: wrap; gap: 8px; align-items: ce
 .mfa-clave { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .mfa-clave code { font-size: 14px; letter-spacing: .04em; word-break: break-all; color: var(--ink); }
 .mfa-pasos { margin: 0; padding-left: 20px; display: grid; gap: 4px; font-size: 14px; }
-input.mfa-code { font-size: 22px; letter-spacing: .3em; text-align: center; font-variant-numeric: tabular-nums; }
+input.mfa-code { font-size: 22px !important; letter-spacing: .3em; text-align: center; font-variant-numeric: tabular-nums; }
 #mfa .help p { margin: 6px 0 0; font-size: 13px; }
 #mfa div.f { display: grid; gap: 5px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
 

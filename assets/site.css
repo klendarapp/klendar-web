@@ -35,7 +35,18 @@
    tenía barra y la cabecera entera se movía 7 px. Con las barras que flotan
    (móvil, macOS) no cambia nada. Descubre hace scroll en el <body>: allí la
    reserva es la suya (public.css). */
-html { color-scheme: light dark; scroll-behavior: smooth; scrollbar-gutter: stable; }
+html { color-scheme: light dark; scroll-behavior: smooth; scrollbar-gutter: stable;
+  /* iOS agranda el texto al girar el móvil si no se le dice que no. */
+  -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+/* Los campos, a 16 px como poco en el móvil y la tableta (Iván, 2026-11-11):
+   con menos, Safari del iPhone amplía la página al tocarlos y la deja
+   ampliada (el correo del admin hacía zoom y la página se salía por la
+   derecha). Nunca con `maximum-scale` ni `user-scalable=no`: la gente tiene
+   que poder ampliar. `:where()` no suma especificidad: un campo que pide más
+   (el código del admin, el de validar…) lo pide con su `!important`. */
+@media (pointer: coarse), (max-width: 900px) {
+  :where(input:not([type=checkbox], [type=radio], [type=range], [type=file], [type=color], [type=submit], [type=button], [type=reset], [type=image]), select, textarea) { font-size: 16px !important; }
+}
 [hidden] { display: none !important; }
 body { margin: 0; font-family: Manrope, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--surface); color: var(--ink);
   line-height: 1.55; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
@@ -97,7 +108,7 @@ nav.main a:hover { background: var(--soft); text-decoration: none; }
 .lang { display: inline-flex; border: 1px solid var(--glass-border); border-radius: 999px; overflow: hidden; font-size: 12px; font-weight: 700; }
 .lang a { padding: 6px 10px; color: var(--ink-2); }
 .lang a.on { background: var(--ink); color: var(--surface); }
-.menu-toggle { display: block; width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--glass-border); background: transparent; cursor: pointer; color: var(--ink); }
+.menu-toggle { display: flex; flex-direction: column; justify-content: center; width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--glass-border); background: transparent; cursor: pointer; color: var(--ink); }
 .menu-toggle span { display: block; width: 18px; height: 2px; background: currentColor; margin: 4px auto; border-radius: 2px; }
 /* La casilla va encima del icono, invisible: es la que recibe el toque, el
    tabulador y el lector de pantalla. El icono enseña el foco. */
@@ -251,6 +262,11 @@ footer .bottom a, .doc :is(p, li, td) a:not(.pill) { text-decoration: underline;
    no dependa solo del color (WCAG 1.4.1; en oscuro el blanco sobre gris no llega a 3:1). */
 p.muted a:not(.pill):not(.btn) { text-decoration: underline; text-underline-offset: 2px; text-decoration-thickness: 1px; }
 @media (max-width: 760px) { footer .cols { grid-template-columns: 1fr; } }
+/* Con el dedo, cada enlace del pie se toca en 44 px de alto (y «Más»). */
+@media (pointer: coarse) {
+  footer .cols a { display: flex; align-items: center; min-height: 44px; padding: 0; }
+  nav.main a { display: flex; align-items: center; min-height: 44px; padding-top: 0; padding-bottom: 0; }
+}
 
 /* ── Documentos legales ──────────────────────────────────────────────── */
 .doc { max-width: 780px; margin: 0 auto; padding: 40px 20px 80px; }

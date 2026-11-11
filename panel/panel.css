@@ -92,7 +92,7 @@
 /* Sin cámara (el botón se esconde), «Dar en el momento» a lo ancho. */
 .validar-dos:has(> [hidden]) { grid-template-columns: 1fr; }
 #listoEntrada:empty { display: none; }
-.scan-box input { font-size: 18px; letter-spacing: 2px; text-align: center; font-family: ui-monospace, Menlo, Consolas, monospace; }
+.scan-box input { font-size: 18px !important; letter-spacing: 2px; text-align: center; font-family: ui-monospace, Menlo, Consolas, monospace; }
 .scan-result { border-radius: 18px; padding: 16px 18px; font-weight: 700; }
 .scan-result.ok { background: rgba(46, 204, 113, .18); color: #146c3a; }
 .scan-result.bad { background: rgba(255, 92, 92, .18); color: #b3261e; }

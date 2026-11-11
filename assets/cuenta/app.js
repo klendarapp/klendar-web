@@ -818,7 +818,7 @@ RUTAS[''] = async () => {
     : (nInv === 1 ? t('Tienes una invitación') : (EN ? `You have ${nInv} invitations` : `Tienes ${nInv} invitaciones`));
   pinta(`
     <h1 class="titulo-pagina">${esc(t('Tu cuenta'))}</h1>
-    <a class="perfil" href="/cuenta/ajustes">
+    <a class="perfil" href="/cuenta/perfil">
       <span class="avatar">${foto ? `<img src="${esc(foto)}" alt="">` : esc((nombre || '?').charAt(0).toUpperCase())}</span>
       <span class="perfil-t"><b>${esc(nombre)}</b><small>${esc(YO.email || '')}</small><em>${esc(t('Editar perfil'))}</em></span>
       ${ic('chevron_right')}
@@ -884,7 +884,7 @@ RUTAS[''] = async () => {
       ${filaSvg({ href: PUB_EN ? '/en/faq' : '/preguntas', icono: 'ayuda', titulo: t('Preguntas frecuentes'), detalle: t('Para ti y para negocios, con buscador') })}
       ${fila({ href: '/cuenta/sugerencias', icono: 'lightbulb', titulo: t('Sugerencias y mejoras'), detalle: t('Cuéntanos qué cambiarías o qué falla') })}
       ${fila({ href: 'mailto:info@klendar.app', icono: 'mail', titulo: t('Contacto y soporte'), detalle: 'info@klendar.app' })}
-      <!-- Los tres textos legales, en una sola fila (como la app). -->
+      <!-- Los textos legales, en una sola fila (como la app: términos, privacidad, normas, aviso legal y fuentes). -->
       <button type="button" class="fila fila-btn" id="legal">${ic('description')}
         <span class="fila-t"><b>${esc(t('Legal'))}</b><small>${esc(t('Términos, privacidad y normas'))}</small></span>${ic('chevron_right')}</button>
     </div>
@@ -902,6 +902,8 @@ RUTAS[''] = async () => {
         ${fila({ href: PUB_EN ? '/en/terms' : '/terminos', icono: 'description', titulo: t('Términos de uso'), fuera: true })}
         ${fila({ href: PUB_EN ? '/en/privacy' : '/privacidad', icono: 'privacy_tip', titulo: t('Política de privacidad'), fuera: true })}
         ${fila({ href: PUB_EN ? '/en/community-guidelines' : '/normas', icono: 'description', titulo: t('Normas de la comunidad'), fuera: true })}
+        ${fila({ href: PUB_EN ? '/en/legal-notice' : '/aviso-legal', icono: 'description', titulo: t('Aviso legal'), fuera: true })}
+        ${fila({ href: PUB_EN ? '/en/sources' : '/fuentes', icono: 'description', titulo: t('Fuentes y licencias'), fuera: true })}
       </div>${notaLegal()}`;
     document.body.appendChild(d);
     d.querySelector('.cerrar-hoja').onclick = () => d.close();

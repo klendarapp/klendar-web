@@ -175,7 +175,8 @@ async function admin(nav, nombre, t, vp) {
   const errores = [];
   p.on('pageerror', (e) => errores.push(e.message));
   await p.goto(`${BASE}/admin#/entidades`, { waitUntil: 'networkidle' });
-  await p.waitForSelector('text=Entidades por verificar');
+  // En el móvil el menú cerrado no se ve (assets/cajon.js): el título, en la pantalla.
+  await p.waitForSelector('#view >> text=Entidades por verificar');
   await p.waitForSelector('[data-aprobar]');
   const cola = await p.locator('#list').innerText();
   ok(/Declaro que los datos son ciertos/.test(cola) && /sin guardar \(solicitud de antes/.test(cola), `${nombre}/${t} la cola enseña la declaración (y cuándo no se guardó)`);
