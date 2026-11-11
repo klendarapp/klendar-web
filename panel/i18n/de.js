@@ -1885,6 +1885,7 @@ KL_DIC('de', {
   "Lo que ha pagado en total. Afina «Cuánto te ha traído Klendar».": "Was insgesamt bezahlt wurde. Macht „Was Klendar dir gebracht hat“ genauer.",
   "Lo que hay en esa dirección no es un calendario iCal. Busca el enlace «iCal», «ICS» o «Exportar».": "Was unter dieser Adresse liegt, ist kein iCal-Kalender. Suche den Link „iCal“, „ICS“ oder „Exportieren“.",
   "Lo que marca cada local: € económico, €⁠€ precio medio, €⁠€⁠€ caro.": "Wie jedes Lokal es angibt: € günstig, €⁠€ mittel, €⁠€⁠€ teuer.",
+  "Lo que marca cada local: € económico, €⁠€ precio medio, €⁠€⁠€ caro o más. Marca uno o varios.": "Wie jedes Lokal es angibt: € günstig, €⁠€ mittel, €⁠€⁠€ teuer oder mehr. Wähle einen oder mehrere.",
   "Lo que más nos preguntan los negocios (y la gente), con buscador. Lo mismo que en la app, en «Mi negocio» → Ayuda.": "Was Geschäfte (und Leute) uns am häufigsten fragen, mit Suche. Dasselbe wie in der App unter „Mein Geschäft“ → Hilfe.",
   "Lo que nos ha sobrado hoy, a buen precio. Pásate antes de que cerremos.": "Was heute übrig ist, zum guten Preis. Komm vorbei, bevor wir schließen.",
   "Lo que publiques sale aquí con la misma tarjeta que verá la gente, con su estado y sus cifras.": "Was du postest, erscheint hier mit derselben Karte, die die Leute sehen, mit Status und Zahlen.",

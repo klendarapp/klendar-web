@@ -1007,6 +1007,7 @@ KL_DIC('eu', {
   "Lo que llegue en ese tramo te lo mandamos al terminar.": "Tarte horretan iristen dena, tartea amaitzean bidaliko dizugu.",
   "Lo que llegue en ese tramo te lo mandamos al terminar. Déjalo vacío para no usarlas.": "Tarte horretan iristen dena amaitzean bidaliko dizugu. Utzi hutsik ez erabiltzeko.",
   "Lo que marca cada local: € económico, €⁠€ precio medio, €⁠€⁠€ caro.": "Lokal bakoitzak markatzen duena: € merkea, €⁠€ erdi mailakoa, €⁠€⁠€ garestia.",
+  "Lo que marca cada local: € económico, €⁠€ precio medio, €⁠€⁠€ caro o más. Marca uno o varios.": "Lokal bakoitzak markatzen duena: € merkea, €⁠€ erdi mailakoa, €⁠€⁠€ garestia edo gehiago. Markatu bat edo gehiago.",
   "Lo que suele gastar una persona en tu local.": "Pertsona batek zure lokalean gastatu ohi duena.",
   "Lo que te cuentan tus favoritos: como mucho uno por semana de cada uno.": "Zure gogokoek kontatzen dizutena: gehienez bat astean bakoitzetik.",
   "Lo que te hemos contado": "Kontatu dizuguna",

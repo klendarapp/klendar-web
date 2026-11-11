@@ -713,13 +713,13 @@ const portada = (items) => items.map((o) => firstPhoto(o.images) || o.photo).fin
 const dondeSitios = (e, S) => (e.cerca ? S.within(e.km) : e.city ? S.inPlace(e.cityName || PRETTY(e.city)) : '');
 
 /** «Quitar filtros» en Sitios: lo del sitio fuera; la zona y Sitios se quedan. */
-const sinFiltrosSitio = (link) => link({ cat: '', cats: [], abierto: false, traits: [], precioLocal: 0, menuDia: false, comerAhora: false, momento: '', q: '' });
+const sinFiltrosSitio = (link) => link({ cat: '', cats: [], abierto: false, traits: [], preciosLocal: [], menuDia: false, comerAhora: false, momento: '', q: '' });
 
 /** Explorar › Sitios: la lista (o el mapa y debajo la primera parte), o la
  * pantalla vacía centrada con sus salidas. */
 function sitiosHtml({ items, lang, S, TSi, e, link, mapa, pedirQ, centro }) {
   const en = lang === 'en';
-  const conFiltros = Boolean(e.q || e.cat || e.abierto || sitioSinNinos(e).length || e.precioLocal || e.menuDia || e.comerAhora || e.momento);
+  const conFiltros = Boolean(e.q || e.cat || e.abierto || sitioSinNinos(e).length || e.preciosLocal?.length || e.menuDia || e.comerAhora || e.momento);
   const quitaSolo = e.q ? `<p class="chip-solo"><a class="chip on chip-quitar" href="${esc(link({ que: '' }))}" aria-label="${esc(TSi.removeOnlyPlaces)}"><span>${esc(TSi.onlyPlaces)}</span>${ic('x', 16)}</a></p>` : '';
   const zoom = e.cerca ? (e.km <= 1 ? 15 : e.km <= 3 ? 14 : 13) : 13;
   const mapaH = mapa ? mapaSitios({
@@ -728,7 +728,7 @@ function sitiosHtml({ items, lang, S, TSi, e, link, mapa, pedirQ, centro }) {
     filtros: {
       ...(e.catIds?.length ? { p_categories: e.catIds } : e.cat ? { p_category: e.cat } : {}), ...(e.abierto ? { p_open_now: true } : {}),
       ...(() => {
-        const t = [...sitioSinNinos(e), ...(e.precioLocal ? [`price_le_${e.precioLocal}`] : []), ...(e.menuDia ? ['daily_menu'] : []),
+        const t = [...sitioSinNinos(e), ...preciosTraits(e), ...(e.menuDia ? ['daily_menu'] : []),
           ...(e.comerAhora ? ['eat_now'] : []), ...(e.momento ? [KMO.trait(e.momento)] : [])];
         return t.length ? { p_traits: t } : {};
       })(),
@@ -944,9 +944,9 @@ function calendarioHtml({ items, lang, S, link, mes, dia, hoy, delDiaParte = nul
 /** Las claves de la dirección en cada idioma. */
 const CLAVES = {
   es: { city: 'ciudad', cat: 'categoria', kind: 'tipo', price: 'precio', when: 'cuando', discount: 'descuento', open: 'abierto', sort: 'orden', view: 'vista', month: 'mes', day: 'dia', show: 'ver', place: 'sitio', weather: 'tiempo',
-    age: 'edad', vprice: 'precio-local', card: 'descuento-para', solo: 'solo', charity: 'solidario', entity: 'agenda-publica', closing: 'antes-de-cerrar', buzz: 'ambiente', menu: 'menu-del-dia', eat: 'comer-ahora', moment: 'momento', what: 'que', notastes: 'sin-gustos', search: 'buscar' },
+    age: 'edad', vprice: 'precio-local', vprices: 'precios-local', card: 'descuento-para', solo: 'solo', charity: 'solidario', entity: 'agenda-publica', closing: 'antes-de-cerrar', buzz: 'ambiente', menu: 'menu-del-dia', eat: 'comer-ahora', moment: 'momento', what: 'que', notastes: 'sin-gustos', search: 'buscar' },
   en: { city: 'city', cat: 'category', kind: 'type', price: 'price', when: 'when', discount: 'discount', open: 'open', sort: 'sort', view: 'view', month: 'month', day: 'day', show: 'show', place: 'place', weather: 'weather',
-    age: 'age', vprice: 'venue-price', card: 'discount-for', solo: 'solo', charity: 'charity', entity: 'public-listings', closing: 'before-closing', buzz: 'buzz', menu: 'daily-menu', eat: 'food-now', moment: 'moment', what: 'what', notastes: 'no-tastes', search: 'search' },
+    age: 'age', vprice: 'venue-price', vprices: 'venue-prices', card: 'discount-for', solo: 'solo', charity: 'charity', entity: 'public-listings', closing: 'before-closing', buzz: 'buzz', menu: 'daily-menu', eat: 'food-now', moment: 'moment', what: 'what', notastes: 'no-tastes', search: 'search' },
 };
 /** Marcas (tanda A) en la dirección: edades «4-8», carné en cada idioma. */
 const EDAD_URL = { '0-3': '0_3', '4-8': '4_8', '9-12': '9_12', '13-17': '13_17' };
@@ -955,9 +955,12 @@ const CARNE_URL = { estudiantes: 'student', jovenes: 'youth', mayores: 'senior',
 const carneAUrl = (c, en) => (en ? { student: 'students', youth: 'young', senior: 'seniors' } : { student: 'estudiantes', youth: 'jovenes', senior: 'mayores' })[c] || '';
 /** Lo que se le pide a la base por las marcas (los mismos `traits` que la
  * app): edades solo con «Con niños». */
+/** «Precio del local»: €, €€ y €€€, uno o varios (con «o»; Iván, 11-11;
+ * migración 20261274600000). */
+const preciosTraits = (e) => (e.preciosLocal || []).map((l) => `price_is_${l}`);
 const traitsMarcas = (e) => [
   ...((e.traits || []).includes('kids') ? (e.edades || []).map((a) => `age_${a}`) : []),
-  ...(e.precioLocal ? [`price_le_${e.precioLocal}`] : []),
+  ...preciosTraits(e),
   ...(e.carne ? [`card_${e.carne}`] : []),
   ...(e.solo ? ['solo'] : []),
   ...(e.solidario ? ['charity'] : []),
@@ -1010,7 +1013,13 @@ function leeEstado(qs) {
   // Marcas: edad (con «Con niños»), precio del local, carné, solo, solidario.
   const edades = [...new Set(todos('age').flatMap((v) => String(v).split(',')).map((v) => EDAD_URL[v.trim()]).filter(Boolean))]
     .sort((a, b) => Object.values(EDAD_URL).indexOf(a) - Object.values(EDAD_URL).indexOf(b));
-  const precioLocal = Number.parseInt(de('vprice', 2), 10);
+  // `precios-local=1&precios-local=3` (o «1,3»); el `precio-local=2` de
+  // antes era «Hasta €€»: € y €€.
+  const hasta = Number.parseInt(de('vprice', 2), 10);
+  const preciosLocal = [...new Set([
+    ...todos('vprices').flatMap((v) => String(v).split(',')).map((v) => Number.parseInt(v, 10)),
+    ...(KM.PRECIOS.includes(hasta) ? KM.PRECIOS.filter((l) => l <= hasta) : []),
+  ])].filter((l) => KM.PRECIOS.includes(l)).sort();
   const cats = [...new Set(todos('cat').flatMap((v) => String(v).split(',')).map((v) => v.trim().slice(0, 40))
     .filter((v) => /^[a-z0-9-]{1,40}$/.test(v)))].slice(0, 12);
   return {
@@ -1047,7 +1056,7 @@ function leeEstado(qs) {
     amigos: qs.get('amigos') === '1',
     traits,
     edades: traits.includes('kids') ? edades : [],
-    precioLocal: KM.PRECIOS.includes(precioLocal) ? precioLocal : 0,
+    preciosLocal,
     carne: CARNE_URL[de('card', 20)] || '',
     solo: de('solo', 2) === '1',
     solidario: de('charity', 2) === '1',
@@ -1138,7 +1147,7 @@ function query(e, lang, { soloCompartido = false } = {}) {
   if (e.amigos) p.set('amigos', '1');
   for (const t of e.traits || []) p.append(K.place, sitioAUrl(t, en));
   if ((e.traits || []).includes('kids')) for (const a of e.edades || []) p.append(K.age, edadAUrl(a));
-  if (e.precioLocal) p.set(K.vprice, String(e.precioLocal));
+  for (const l of e.preciosLocal || []) p.append(K.vprices, String(l));
   if (e.carne) p.set(K.card, carneAUrl(e.carne, en));
   if (e.solo) p.set(K.solo, '1');
   if (e.solidario) p.set(K.charity, '1');
@@ -1247,7 +1256,7 @@ function resumenFiltros(e, S) {
   if (!sitios && e.carne) partes.push(marca(`card_${e.carne}`));
   if (!sitios && e.amigos) partes.push(S.friends);
   // Cómo es el sitio y alérgenos.
-  if (e.precioLocal) partes.push(marca(`price_le_${e.precioLocal}`));
+  if (e.preciosLocal?.length) partes.push(e.preciosLocal.map((l) => '€'.repeat(l)).join(', '));
   const sitio = sitioSinNinos(e);
   if (sitio.length === 1) partes.push(nombreSitio(sitio[0], lang === 'en'));
   else if (sitio.length > 1) partes.push(S.placeN(sitio.length));
@@ -1371,7 +1380,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   // conserva para volver a ella.
   const vista = negocios ? (sitiosMapa ? 'map' : e.vista === 'list' ? 'list' : '') : e.vista;
   // Lo que se le pide a la base por «El sitio» en Sitios.
-  const traitsSitio = [...sitioSinNinos(e), ...(e.precioLocal ? [`price_le_${e.precioLocal}`] : []),
+  const traitsSitio = [...sitioSinNinos(e), ...preciosTraits(e),
     ...(menuDia ? ['daily_menu'] : []), ...(comerAhora ? ['eat_now'] : []), ...(e.momento ? [KMO.trait(e.momento)] : [])];
   // Un municipio es todo él: su radio desde su punto (25 km en las Ciudades
   // de Klendar; de 10 a 20 km en el resto), como la app (Iván, 2026-10-27 y
@@ -1938,7 +1947,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   const dietas = sitioSinNinos(e).filter((t) => esDieta(t));
   const nPrecio = !negocios && price ? 1 : 0;
   const nParaQuien = negocios ? 0 : [ninosOn, e.solo, e.carne, e.amigos].filter(Boolean).length;
-  const nComo = (e.precioLocal ? 1 : 0) + atributos.length;
+  const nComo = (e.preciosLocal?.length ? 1 : 0) + atributos.length;
   const nDietas = dietas.length;
   const nMas = negocios ? 0 : [e.solidario, e.entidad, soloDescuento].filter(Boolean).length;
   // El orden va dentro de ☰, arriba (Iván, 2026-10-27): en Descubre y en la
@@ -1984,8 +1993,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   // «Apto para niños», que es «Con niños»; tienen que cumplirse todos).
   const comoBloque = bloque('sitio', S.placeLike, S.placeLikeHint, nComo, `
       <fieldset><legend>${esc(M.fPriceLevel)}</legend><div class="ops">
-        ${radio(K.vprice, '', M.fAny, !e.precioLocal)}
-        ${KM.PRECIOS.map((l) => radio(K.vprice, String(l), l === 1 ? '€' : M.fUpTo('€'.repeat(l)), e.precioLocal === l)).join('')}
+        ${KM.PRECIOS.map((l) => `<label class="op-r"><input type="checkbox" name="${K.vprices}" value="${l}" data-cuenta-uno${(e.preciosLocal || []).includes(l) ? ' checked' : ''}><span aria-label="${esc(`${KM.simbolo(l)}, ${KM.significado(l, lang)}`)}">${KM.simbolo(l)}</span></label>`).join('')}
       </div><p class="hoja-nota hoja-nota-bajo">${esc(M.fPriceHint)}</p></fieldset>
       <fieldset class="hoja-sitio"><legend>${esc(S.placeAttrs)}</legend><div class="ops">
         ${SITIO.filter((x) => x.id !== 'kids' && !esDieta(x.id)).map(opSitio).join('')}
@@ -2007,7 +2015,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   // de Planes) también se queda.
   const ninosUrl = sitioAUrl('kids', en);
   const restablecer = link({ price: negocios ? price : '', soloDescuento: negocios ? soloDescuento : false, traits: negocios && ninosOn ? ['kids'] : [], edades: negocios ? e.edades : [],
-    precioLocal: 0, carne: negocios ? e.carne : '', solo: negocios ? e.solo : false, solidario: negocios ? e.solidario : false,
+    preciosLocal: [], carne: negocios ? e.carne : '', solo: negocios ? e.solo : false, solidario: negocios ? e.solidario : false,
     entidad: negocios ? e.entidad : false, amigos: negocios ? e.amigos : false, ...(conOrden ? { sort: '' } : {}) });
   const propiasFiltros = negocios ? new Set([K.vprice, K.place]) : new Set([K.price, K.age, K.card, K.solo, 'amigos', K.vprice, K.place, K.charity, K.entity, K.discount,
     ...(conOrden ? [K.sort, K.weather, K.notastes] : [])]);
@@ -2387,7 +2395,7 @@ ${GRUPOS_CSS}` : ''}`;
     // (la zona y la distancia se quedan, como `clearNarrowing` en la app).
     const quitarCal = conFiltros ? link({
       q: '', cat: '', cats: [], kind: '', price: '', when: '', soloDescuento: false, abierto: false, amigos: false, traits: [], edades: [],
-      precioLocal: 0, carne: '', solo: false, solidario: false, entidad: false, antesCierre: false, menuDia: false, comerAhora: false, momento: '',
+      preciosLocal: [], carne: '', solo: false, solidario: false, entidad: false, antesCierre: false, menuDia: false, comerAhora: false, momento: '',
     }) : '';
     resultados = calendarioHtml({
       items, lang, S, link, mes, dia, hoy,

@@ -19,7 +19,7 @@ python tools/rutas_check.py || { echo "pre-push: hay un enlace a una pantalla qu
 # Pruebas rápidas con datos de mentira (tools/_web_con_datos.mjs; unos 8 s): distancias sin ubicación de verdad, municipios,
 # «Seguir» sin esperar a la base y los mensajes de error de entrar. La de «Seguir» abre Chromium: Playwright, el de PW= o
 # el de la caché de npx; sin ninguno, se avisa y se salta.
-for c in tools/distancias_check.mjs tools/espana_check.mjs tools/auth_errores_check.cjs; do
+for c in tools/distancias_check.mjs tools/espana_check.mjs tools/auth_errores_check.cjs tools/precio_local_check.mjs; do
   node "$c" >/dev/null 2>&1 || { echo "pre-push: falla $c (node $c para ver qué); no se sube."; exit 1; }
 done
 [ -n "${PW:-}" ] || PW=$(ls -d "$HOME"/AppData/Local/npm-cache/_npx/*/node_modules/playwright 2>/dev/null | head -1)

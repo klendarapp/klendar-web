@@ -1007,6 +1007,7 @@ KL_DIC('gl', {
   "Lo que llegue en ese tramo te lo mandamos al terminar.": "O que chegue nese tramo mandámoscho ao rematar.",
   "Lo que llegue en ese tramo te lo mandamos al terminar. Déjalo vacío para no usarlas.": "O que chegue nese tramo mandámoscho ao rematar. Déixao baleiro para non usalas.",
   "Lo que marca cada local: € económico, €⁠€ precio medio, €⁠€⁠€ caro.": "O que marca cada local: € económico, €⁠€ prezo medio, €⁠€⁠€ caro.",
+  "Lo que marca cada local: € económico, €⁠€ precio medio, €⁠€⁠€ caro o más. Marca uno o varios.": "O que marca cada local: € económico, €⁠€ prezo medio, €⁠€⁠€ caro ou máis. Marca un ou varios.",
   "Lo que suele gastar una persona en tu local.": "O que adoita gastar unha persoa no teu local.",
   "Lo que te cuentan tus favoritos: como mucho uno por semana de cada uno.": "O que che contan os teus favoritos: como moito un por semana de cada un.",
   "Lo que te hemos contado": "O que che contamos",

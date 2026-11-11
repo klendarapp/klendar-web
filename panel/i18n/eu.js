@@ -1885,6 +1885,7 @@ KL_DIC('eu', {
   "Lo que ha pagado en total. Afina «Cuánto te ha traído Klendar».": "Guztira ordaindu duena. «Klendarrek zenbat ekarri dizun» zehazten du.",
   "Lo que hay en esa dirección no es un calendario iCal. Busca el enlace «iCal», «ICS» o «Exportar».": "Helbide horretan dagoena ez da iCal egutegi bat. Bilatu «iCal», «ICS» edo «Esportatu» esteka.",
   "Lo que marca cada local: € económico, €⁠€ precio medio, €⁠€⁠€ caro.": "Lokal bakoitzak markatzen duena: € merkea, €⁠€ erdi mailakoa, €⁠€⁠€ garestia.",
+  "Lo que marca cada local: € económico, €⁠€ precio medio, €⁠€⁠€ caro o más. Marca uno o varios.": "Lokal bakoitzak markatzen duena: € merkea, €⁠€ erdi mailakoa, €⁠€⁠€ garestia edo gehiago. Markatu bat edo gehiago.",
   "Lo que más nos preguntan los negocios (y la gente), con buscador. Lo mismo que en la app, en «Mi negocio» → Ayuda.": "Negozioek (eta jendeak) gehien galdetzen digutena, bilatzailearekin. Aplikazioan bezala, «Nire negozioa» → Laguntza atalean.",
   "Lo que nos ha sobrado hoy, a buen precio. Pásate antes de que cerremos.": "Gaur soberan geratu zaiguna, prezio onean. Pasa zaitez itxi baino lehen.",
   "Lo que publiques sale aquí con la misma tarjeta que verá la gente, con su estado y sus cifras.": "Argitaratzen duzuna hemen agertzen da, jendeak ikusiko duen txartel berarekin, bere egoera eta zenbakiekin.",
