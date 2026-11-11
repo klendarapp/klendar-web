@@ -21,7 +21,9 @@ respuesta solo `<a href>` y `<strong>`; los enlaces, relativos a la web
 - `ayuda=False`: solo en Soporte (no en el centro de ayuda; p. ej. si allí
   ya hay otra que dice lo mismo);
 - `app=False`: solo en la web, no en la app (precios, cómo se paga, permanencia);
-- `a_app_es/en`: otra respuesta en la app.
+- `a_app_es/en`: otra respuesta en la app;
+- `sin_precios_es/en`: la respuesta en la web mientras los precios están
+  apagados (`PRECIOS`, abajo).
 
 **La app no habla de precios ni lleva a pagar** (Apple 3.1.1 y 3.1.3; Google
 Play, Pagos §4; revisión N-01 del 5-11-2026). `/preguntas/` y `/en/faq/` sí. Al
@@ -38,7 +40,29 @@ lleva fecha y línea en el historial (`build_legal.py`).
 CORREO = 'info@klendar.app'
 
 
+def _precios():
+    """El interruptor de los precios del plan y las fechas del «Gratis de
+    lanzamiento» (`PRECIOS` en `functions/_lib/chrome.js`, el único sitio)."""
+    import os
+    import subprocess
+    out = subprocess.run(
+        ['node', '-e', "import('./functions/_lib/chrome.js').then(m=>process.stdout.write(JSON.stringify(m.precios())))"],
+        cwd=os.path.dirname(os.path.abspath(__file__)), capture_output=True, text=True, encoding='utf-8')
+    if out.returncode != 0 or out.stdout.strip() not in ('true', 'false'):
+        raise SystemExit('No se pudo leer PRECIOS de functions/_lib/chrome.js (¿está node instalado?): '
+                         + (out.stderr or '')[-300:])
+    return out.stdout.strip() == 'true'
+
+
+# Apagado (Iván, 2026-11-11): sin precio, prueba de 30 días ni fechas; las
+# preguntas con `sin_precios_es/en` dicen «te lo explicamos en persona».
+PRECIOS = _precios()
+
+
 def P(id, para, q_es, a_es, q_en, a_en, **op):
+    sin_es, sin_en = op.pop('sin_precios_es', None), op.pop('sin_precios_en', None)
+    if not PRECIOS and sin_es:
+        a_es, a_en = sin_es, sin_en
     return dict(id=id, para=para, q_es=q_es, a_es=a_es, q_en=q_en, a_en=a_en, **op)
 
 
@@ -49,6 +73,8 @@ PREGUNTAS = [
       'Para quien busca planes, nada. Para los negocios hay un solo plan, después de 30 días de prueba gratis; los detalles están en <a href="/precios/">precios</a>.',
       'How much does Klendar cost?',
       'For people looking for plans, nothing. For businesses there is a single plan, after a 30-day free trial; the details are in <a href="/en/pricing/">pricing</a>.',
+      sin_precios_es='Para quien busca planes, nada. Si tienes un negocio, te lo explicamos en persona y sin compromiso: escríbenos a <a href="mailto:info@klendar.app">info@klendar.app</a>.',
+      sin_precios_en="For people looking for plans, nothing. If you run a business, we'll explain it in person, with no obligation: email us at <a href=\"mailto:info@klendar.app\">info@klendar.app</a>.",
       a_app_es='Para quien busca planes, nada: Klendar es gratis. Lo que canjees o reserves, si cuesta algo, se paga en el local.',
       a_app_en='For people looking for plans, nothing: Klendar is free. Whatever you redeem or reserve, if it costs anything, is paid at the venue.'),
     P('cuenta-para-mirar', 'ti',
@@ -223,6 +249,8 @@ PREGUNTAS = [
       'Lo <strong>pruebas gratis</strong>: 30 días con todo al darte de alta, sin tarjeta. Después, un solo plan con todo incluido: 19,90 € + IVA al mes por local (24,08 € con IVA), sin límites, sin permanencia y sin comisión por canje. <a href="/precios/">Ver precios</a>.',
       'How much does it cost me?',
       'You <strong>try it free</strong>: 30 days with everything when you register, no card. After that, one plan with everything included: €19.90 + VAT a month per venue (€24.08 incl. VAT), with no limits, no lock-in and no commission per redemption. <a href="/en/pricing/">See pricing</a>.',
+      sin_precios_es='Te lo explicamos en persona y sin compromiso: escríbenos a <a href="mailto:info@klendar.app">info@klendar.app</a> y lo vemos con tu caso. Sin permanencia y <strong>sin comisión por canje</strong>.',
+      sin_precios_en="We'll explain it in person, with no obligation: email us at <a href=\"mailto:info@klendar.app\">info@klendar.app</a> and we'll look at your case. No lock-in and <strong>no commission per redemption</strong>.",
       app=False),
     P('comision', 'negocios',
       '¿Klendar se lleva una comisión de lo que vendo?',

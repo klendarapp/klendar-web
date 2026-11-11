@@ -8,7 +8,7 @@
 import io
 import os
 
-from build_site import REDES_HTML, T, doc_page, footer, head
+from build_site import PRECIOS, REDES_HTML, T, doc_page, footer, head
 
 # Precios reales de `subscription_plans` (Supabase). Si cambian allí, aquí.
 PLANES = [
@@ -828,6 +828,118 @@ PAGINAS['fuentes'] = (
 )
 
 
+# ── Sin precios ni fechas ───────────────────────────────────────────────────
+# Con el interruptor apagado (`PRECIOS` en functions/_lib/chrome.js; Iván,
+# 2026-11-11: hasta que la gestoría le aclare si tiene que darse de alta como
+# autónomo), ni el precio del plan, ni la cuota, ni el IVA, ni la prueba de
+# 30 días, ni el «gratis hasta…»: «¿Cuánto cuesta? Te lo explicamos en
+# persona», como el kit impreso (docs/kit de la app). «Sin comisión por canje»
+# y «sin permanencia» se quedan. /precios/ sigue existiendo (los enlaces
+# viejos, el kit y las condiciones para negocios la nombran), sin indexar.
+# Cada cambio tiene que encontrar su texto: si alguien lo reescribe arriba,
+# esto falla en vez de dejar un precio a la vista.
+ASUNTO_ES = 'Quiero%20saber%20lo%20que%20cuesta%20Klendar'
+ASUNTO_EN = 'What%20does%20Klendar%20cost'
+SIN_PRECIOS = {
+    'para-negocios': (
+        [  # español
+            ('Pruébalo gratis, sin comisiones por canje y sin permanencia.',
+             'Sin comisiones por canje y sin permanencia.'),
+            ('<p>Lo <strong>pruebas gratis</strong>: 30 días con todo al darte de alta, sin tarjeta. Después, un solo plan con todo incluido: 19,90 € + IVA al mes por local (24,08 € con IVA), sin límites, sin permanencia y sin comisión por canje. <a href="/precios/">Ver precios</a>.</p>\n'
+             '<p class="callout"><strong>En la provincia de Málaga: gratis hasta el 31 de marzo de 2027</strong> (te avisamos 7 días y 1 día antes).</p>',
+             f'<p class="callout"><strong>Te lo explicamos en persona, sin compromiso</strong>: escríbenos a <a href="mailto:info@klendar.app?subject={ASUNTO_ES}">info@klendar.app</a> y lo vemos con tu caso. Sin permanencia y sin comisión por canje.</p>'),
+            ("    var plan = 19.9;\n"
+             "    var paraPagarlo = cobras * m / 100 > 0 ? Math.ceil(plan / (cobras * m / 100)) : 0;\n"
+             "    $('c-out').innerHTML = '<b>' + eur(ingresos) + ' al mes</b> de caja con esa oferta, '\n"
+             "      + eur(margen) + ' de margen. El plan cuesta ' + eur(plan) + ' + IVA: lo pagas con '\n"
+             "      + '<b>' + paraPagarlo + (paraPagarlo === 1 ? ' canje' : ' canjes') + '</b> al mes.'\n",
+             "    $('c-out').innerHTML = '<b>' + eur(ingresos) + ' al mes</b> de caja con esa oferta, '\n"
+             "      + eur(margen) + ' de margen.'\n"),
+            ('; la cuota no cuenta.', '; lo que pagues no cuenta.'),
+            ('  <a class="pill ghost" href="/panel/">Entrar al panel</a>\n'
+             '  <a class="pill ghost" href="/precios/">Ver precios</a>',
+             '  <a class="pill ghost" href="/panel/">Entrar al panel</a>'),
+        ],
+        [  # inglés
+            ('Try it free, no commission per redemption, no lock-in.',
+             'No commission per redemption and no lock-in.'),
+            ('<p>You <strong>try it free</strong>: 30 days with everything when you register, no card. After that, one plan with everything included: €19.90 + VAT a month per venue (€24.08 incl. VAT), with no limits, no lock-in and no commission per redemption. <a href="/en/pricing/">See pricing</a>.</p>\n'
+             '<p class="callout"><strong>In the province of Málaga: free until 31 March 2027</strong> (we remind you 7 days and 1 day before).</p>',
+             f'<p class="callout"><strong>We\'ll explain it in person, with no obligation</strong>: email us at <a href="mailto:info@klendar.app?subject={ASUNTO_EN}">info@klendar.app</a> and we\'ll look at your case. No lock-in and no commission per redemption.</p>'),
+            ("    var plan = 19.9;\n"
+             "    var paraPagarlo = cobras * m / 100 > 0 ? Math.ceil(plan / (cobras * m / 100)) : 0;\n"
+             "    $('c-out').innerHTML = '<b>' + eur(ingresos) + ' a month</b> through the till from that offer, '\n"
+             "      + eur(margen) + ' in margin. The plan costs ' + eur(plan) + ' + VAT: '\n"
+             "      + '<b>' + paraPagarlo + (paraPagarlo === 1 ? ' redemption' : ' redemptions') + '</b> a month pays for it.'\n",
+             "    $('c-out').innerHTML = '<b>' + eur(ingresos) + ' a month</b> through the till from that offer, '\n"
+             "      + eur(margen) + ' in margin.'\n"),
+            ('  <a class="pill ghost" href="/panel/">Go to the dashboard</a>\n'
+             '  <a class="pill ghost" href="/en/pricing/">See pricing</a>',
+             '  <a class="pill ghost" href="/panel/">Go to the dashboard</a>'),
+        ],
+    ),
+    'sobre': (
+        [('Con el plan de los negocios (<a href="/precios/">precios</a>), y solo con eso.',
+          'Con el plan que pagan los negocios, y solo con eso.')],
+        [('From the business plan (<a href="/en/pricing/">pricing</a>), and only from that.',
+          'From the plan businesses pay for, and only from that.')],
+    ),
+}
+
+
+def _sin_precios(texto, cambios, donde, todos=True):
+    """Aplica los cambios que encuentra; con `todos`, falla si falta alguno."""
+    hechos = 0
+    for viejo, nuevo in cambios:
+        n = texto.count(viejo)
+        assert n <= 1, f'sin precios: el texto sale {n} veces en {donde}: {viejo[:60]}…'
+        hechos += n
+        texto = texto.replace(viejo, nuevo)
+    assert hechos or not todos, f'sin precios: no encuentro nada que cambiar en {donde}'
+    return texto
+
+
+if not PRECIOS:
+    for _slug, (_es, _en) in SIN_PRECIOS.items():
+        _p = list(PAGINAS[_slug])
+        # Cada cambio, en la descripción o en el cuerpo (y al menos en uno).
+        for _i, _cambios in ((3, _es), (4, _en)):
+            _desc = _sin_precios(_p[_i], _cambios, _slug, todos=False)
+            _cuerpo = _sin_precios(_p[_i + 2], _cambios, _slug, todos=False)
+            _faltan = [v for v, _ in _cambios if v not in _p[_i] and v not in _p[_i + 2]]
+            assert not _faltan, f'sin precios: no encuentro en {_slug}: {_faltan[0][:60]}…'
+            _p[_i], _p[_i + 2] = _desc, _cuerpo
+        PAGINAS[_slug] = tuple(_p)
+    PAGINAS['precios'] = (
+        'pricing',
+        '¿Cuánto cuesta?', 'What does it cost?',
+        'Te lo explicamos en persona, sin compromiso. Sin comisiones por canje y sin permanencia.',
+        "We'll explain it in person, with no obligation. No commission per redemption and no lock-in.",
+        f'''
+<p class="lead">Te lo explicamos en persona, sin compromiso: escríbenos y lo vemos con tu caso.</p>
+<p style="margin-top:18px"><a class="pill accent" href="mailto:info@klendar.app?subject={ASUNTO_ES}">Escríbenos</a> <a class="pill ghost" href="/para-negocios/">Cómo funciona</a></p>
+<ul>
+  <li><strong>Nunca cobramos por canje.</strong> Ni porcentaje ni euros por código: lo que cobras en tu local es tuyo entero.</li>
+  <li><strong>Sin permanencia.</strong> Lo dejas cuando quieras, sin penalización.</li>
+  <li><strong>Varios locales con un solo acceso.</strong> Publicar en varios a la vez va incluido.</li>
+</ul>
+<p>Por correo: <a href="mailto:info@klendar.app">info@klendar.app</a>. ¿Ayuntamiento, asociación u ONG? <a href="/para-entidades/">Gratis para siempre</a>.</p>
+<p class="note">Lo legal, en las <a href="/negocios/">condiciones para negocios</a>.</p>
+''',
+        f'''
+<p class="lead">We'll explain it in person, with no obligation: email us and we'll look at your case.</p>
+<p style="margin-top:18px"><a class="pill accent" href="mailto:info@klendar.app?subject={ASUNTO_EN}">Email us</a> <a class="pill ghost" href="/en/for-business/">How it works</a></p>
+<ul>
+  <li><strong>We never charge per redemption.</strong> No percentage, no euros per code: what you charge at your venue is yours.</li>
+  <li><strong>No lock-in.</strong> Leave whenever you like, with no penalty.</li>
+  <li><strong>Several venues, one login.</strong> Publishing to several at once is included.</li>
+</ul>
+<p>By email: <a href="mailto:info@klendar.app">info@klendar.app</a>. Council, association or NGO? <a href="/en/for-organisations/">Free, for good</a>.</p>
+<p class="note">The legal side is in the <a href="/en/business-terms/">business terms</a>.</p>
+''',
+    )
+
+
 # El título de la pestaña de las que dicen «Klendar» en el h1 (formato de la
 # web, «Página · Klendar», sin repetir la marca; también va en og:title).
 PESTANAS = {
@@ -845,9 +957,11 @@ if __name__ == '__main__':
         ):
             os.makedirs(slug, exist_ok=True)
             path = '/' + slug + '/'
+            # /precios/ sin precios: solo «te lo explicamos en persona», sin indexar.
+            noindex = '<meta name="robots" content="noindex">' if es_slug == 'precios' and not PRECIOS else ''
             io.open(os.path.join(slug, 'index.html'), 'w', encoding='utf-8', newline='\n').write(
                 doc_page(T[lang], path, title, desc, body,
-                         pestana=PESTANAS.get(es_slug, (None, None))[lang == 'en']))
+                         pestana=PESTANAS.get(es_slug, (None, None))[lang == 'en'], extra=noindex))
         print('ok', es_slug, '·', en_slug)
 
     # El centro de ayuda para la app (la descarga y la guarda; lleva una

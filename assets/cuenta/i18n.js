@@ -528,6 +528,7 @@ const APP_EN = {
   "Escanea los códigos de tus clientes": "Scan your customers' codes",
   "¿Quieres registrar tu negocio?": "Want to register your business?",
   "Publica ofertas y eventos, valida canjes y sigue tus cifras. Prueba gratis de 30 días.": "Post offers and events, validate redemptions and track your numbers. 30-day free trial.",
+  "Publica ofertas y eventos, valida canjes y sigue tus cifras.": "Post offers and events, validate redemptions and track your numbers.",
   "Preferencias": "Preferences",
   "Que te avisemos cuando salga algo que te interesa cerca": "Get a ping when something you care about pops up nearby",
   "Idioma, notificaciones, privacidad y cuenta": "Language, notifications, privacy and account",

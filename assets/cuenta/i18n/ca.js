@@ -1351,6 +1351,7 @@ KL_DIC('ca', {
   "Próximos": "Propers",
   "Publica ofertas y eventos desde el panel": "Publica ofertes i esdeveniments des del tauler",
   "Publica ofertas y eventos, valida canjes y sigue tus cifras. Prueba gratis de 30 días.": "Publica ofertes i esdeveniments, valida bescanvis i segueix les teves xifres. Prova gratuïta de 30 dies.",
+  "Publica ofertas y eventos, valida canjes y sigue tus cifras.": "Publica ofertes i esdeveniments, valida bescanvis i segueix les teves xifres.",
   "Publicaciones, cifras, equipo": "Publicacions, xifres, equip",
   "Publican algo nuevo": "Publiquen alguna cosa nova",
   "Publicar": "Publica",

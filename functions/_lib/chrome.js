@@ -24,13 +24,35 @@ export const TABS = [
     d: 'M12 6c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2m0 9c2.7 0 5.8 1.29 6 2v1H6v-.99c.2-.72 3.3-2.01 6-2.01M12 4C9.79 4 8 5.79 8 8s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm0 9c-2.67 0-8 1.34-8 4v3h16v-3c0-2.66-5.33-4-8-4z' },
 ];
 
+// Los precios del plan de los negocios y las fechas del «Gratis de
+// lanzamiento» (Iván, 2026-11-11: ocultos hasta que la gestoría le aclare si
+// tiene que darse de alta como autónomo). EL INTERRUPTOR DE TODA LA WEB.
+// Apagado (false): ni precio, ni cuota, ni IVA, ni prueba de 30 días, ni
+// «gratis hasta…» en la portada, Para negocios, Preguntas, Sobre, la guía en
+// PDF ni «Tu cuenta»; «Precios» sale del menú, del pie y del sitemap, y
+// /precios/ dice «¿Cuánto cuesta? Te lo explicamos en persona» (noindex).
+// «Sin comisión por canje» y «sin permanencia» se quedan: son ciertos y no
+// son precio. Lo leen las páginas al vuelo (este fichero), `build_site.py`,
+// `build_pages.py`, `ayuda.py` (y con ella el asistente de la app,
+// `tool/asistente_corpus.py`) y `tools/build_kit.py`. Los textos legales
+// (`build_legal.py`) y el panel de un negocio («Tu plan») no dependen de esto.
+// Para encenderlo: true, `python build_site.py && python build_pages.py &&
+// python build_legal.py && python tools/build_kit.py`, y en la app
+// `python tool/asistente_corpus.py` y desplegar `help-assistant`.
+export const PRECIOS = false;
+
+/** Para `build_site.py`, `ayuda.py` y `tools/build_kit.py` (`node -e`). */
+export function precios() {
+  return PRECIOS;
+}
+
 // Lo demás va en el menú «Más» (y en el pie): lo de informarse y lo de los
 // negocios, que en la app no es una pestaña.
 export const NAV = [
   { es: 'Agenda local', en: "What's on", hrefEs: '/agenda/', hrefEn: '/en/whats-on/' },
   { es: 'Cómo funciona', en: 'How it works', hrefEs: '/como-funciona/', hrefEn: '/en/how-it-works/' },
   { es: 'Para negocios', en: 'For businesses', hrefEs: '/para-negocios/', hrefEn: '/en/for-business/' },
-  { es: 'Precios', en: 'Pricing', hrefEs: '/precios/', hrefEn: '/en/pricing/' },
+  ...(PRECIOS ? [{ es: 'Precios', en: 'Pricing', hrefEs: '/precios/', hrefEn: '/en/pricing/' }] : []),
   { es: 'Preguntas', en: 'FAQ', hrefEs: '/preguntas/', hrefEn: '/en/faq/' },
   { es: 'Soporte', en: 'Support', hrefEs: '/soporte/', hrefEn: '/en/support/' },
 ];
@@ -42,7 +64,7 @@ export const FOOT_PRODUCT = [
   { es: 'Agenda local', en: "What's on", hrefEs: '/agenda/', hrefEn: '/en/whats-on/' },
   { es: 'Para negocios', en: 'For businesses', hrefEs: '/para-negocios/', hrefEn: '/en/for-business/' },
   { es: 'Para ayuntamientos y asociaciones', en: 'For councils and associations', hrefEs: '/para-entidades/', hrefEn: '/en/for-organisations/' },
-  { es: 'Precios', en: 'Pricing', hrefEs: '/precios/', hrefEn: '/en/pricing/' },
+  ...(PRECIOS ? [{ es: 'Precios', en: 'Pricing', hrefEs: '/precios/', hrefEn: '/en/pricing/' }] : []),
   { es: 'Tu cuenta', en: 'Your account', hrefEs: '/cuenta/', hrefEn: '/cuenta/?lang=en' },
   { es: 'Acceso para negocios', en: 'Business login', hrefEs: '/panel/', hrefEn: '/panel/' },
   { es: 'Preguntas frecuentes', en: 'FAQ', hrefEs: '/preguntas/', hrefEn: '/en/faq/' },
@@ -229,8 +251,10 @@ export function siteHeader(lang, esPath = '/', enPath = '/en/', actual = '') {
   // «Para negocios» a la vista en el escritorio (es la otra mitad de la web);
   // lo demás, en «Más».
   const negocios = item(NAV[2], en);
+  // `data-precios`: con el interruptor encendido (PRECIOS), para lo que se
+  // pinta en el navegador («Tu cuenta», `assets/cuenta/app.js`).
   return `<a class="saltar" href="#contenido">${T.saltar}</a>
-<header class="top"><div class="wrap">
+<header class="top"${PRECIOS ? ' data-precios' : ''}><div class="wrap">
   <a class="brand" href="/${en ? 'en/' : ''}"><svg class="simbolo" viewBox="0 0 64 64" width="30" height="30" aria-hidden="true"><path class="simbolo-anillo" pathLength="1" d="M32 6.8A25.2 25.2 0 1 1 8.03 24.21" fill="none" stroke="#FF4D6D" stroke-width="8.4" stroke-linecap="round"/><g class="simbolo-aguja"><path d="M32 32V19.4" stroke="currentColor" stroke-width="5.6" stroke-linecap="round"/></g><circle cx="32" cy="32" r="5.6" fill="currentColor"/></svg> Klendar</a>
   <nav class="pestanas" aria-label="${T.secciones}">${pestanas('pestana')}</nav>
   <input type="checkbox" id="menu" aria-label="${T.mas}">

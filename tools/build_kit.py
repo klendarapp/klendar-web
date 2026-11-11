@@ -14,6 +14,21 @@ from reportlab.platypus import Paragraph
 from reportlab.lib.styles import ParagraphStyle
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def _precios():
+    """El interruptor de los precios del plan (`PRECIOS` en functions/_lib/chrome.js)."""
+    import subprocess
+    out = subprocess.run(
+        ['node', '-e', "import('./functions/_lib/chrome.js').then(m=>process.stdout.write(JSON.stringify(m.precios())))"],
+        cwd=ROOT, capture_output=True, text=True, encoding='utf-8')
+    if out.returncode != 0 or out.stdout.strip() not in ('true', 'false'):
+        raise SystemExit('No se pudo leer PRECIOS de functions/_lib/chrome.js: ' + (out.stderr or '')[-300:])
+    return out.stdout.strip() == 'true'
+
+
+# Apagado (Iván, 2026-11-11): la guía no da precio ni prueba; «te lo explicamos en persona».
+PRECIOS = _precios()
 FONTS = os.path.join(ROOT, 'tools', 'fonts')
 OUT = os.path.join(ROOT, 'assets', 'kit')
 os.makedirs(OUT, exist_ok=True)
@@ -105,10 +120,14 @@ def guide():
     x2 = M + colw + 6 * mm
     c.setFillColor(CARD); c.roundRect(x2, y - 60 * mm, colw, 66 * mm, 4 * mm, fill=1, stroke=0)
     c.setFillColor(INK); c.setFont('Onest-Bold', 12.5); c.drawString(x2 + 6 * mm, y - 2 * mm, 'Lo que cuesta')
-    para(c, '<b><font color="#FF4D6D">Prueba gratis de 30 días</font></b> con todo incluido al darte de alta, sin tarjeta. '
-            'Después, un solo plan con todo: <b>19,90 € + IVA al mes</b> por local (24,08 € con IVA), sin límites y <b>sin comisiones</b> por canje. '
-            'Te avisamos 7 días y 1 día antes de que acabe la prueba. Cancelas cuando quieras: sigues hasta el final de lo pagado y no se renueva.<br/><br/>'
-            'Condiciones completas en <b>klendar.app/negocios</b>.',
+    cuesta = ('<b><font color="#FF4D6D">Prueba gratis de 30 días</font></b> con todo incluido al darte de alta, sin tarjeta. '
+              'Después, un solo plan con todo: <b>19,90 € + IVA al mes</b> por local (24,08 € con IVA), sin límites y <b>sin comisiones</b> por canje. '
+              'Te avisamos 7 días y 1 día antes de que acabe la prueba. Cancelas cuando quieras: sigues hasta el final de lo pagado y no se renueva.<br/><br/>'
+              ) if PRECIOS else (
+              '<b><font color="#FF4D6D">Te lo explicamos en persona</font></b>, sin compromiso: escríbenos a <b>info@klendar.app</b> '
+              'y lo vemos con tu caso.<br/><br/><b>Sin comisiones</b> por canje: lo que cobras en tu local es tuyo entero. '
+              '<b>Sin permanencia</b>: lo dejas cuando quieras.<br/><br/>')
+    para(c, cuesta + 'Condiciones completas en <b>klendar.app/negocios</b>.',
          x2 + 6 * mm, y - 7 * mm, colw - 12 * mm, size=9.8, leading=13.5)
 
     # Pie

@@ -1351,6 +1351,7 @@ KL_DIC('de', {
   "Próximos": "Demnächst",
   "Publica ofertas y eventos desde el panel": "Poste Angebote und Events über das Dashboard",
   "Publica ofertas y eventos, valida canjes y sigue tus cifras. Prueba gratis de 30 días.": "Poste Angebote und Events, prüfe Einlösungen und behalte deine Zahlen im Blick. 30 Tage gratis testen.",
+  "Publica ofertas y eventos, valida canjes y sigue tus cifras.": "Poste Angebote und Events, prüfe Einlösungen und behalte deine Zahlen im Blick.",
   "Publicaciones, cifras, equipo": "Beiträge, Zahlen, Team",
   "Publican algo nuevo": "Neue Beiträge",
   "Publicar": "Veröffentlichen",

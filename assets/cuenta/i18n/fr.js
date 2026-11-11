@@ -1351,6 +1351,7 @@ KL_DIC('fr', {
   "Próximos": "À venir",
   "Publica ofertas y eventos desde el panel": "Publie des offres et des événements depuis le tableau de bord",
   "Publica ofertas y eventos, valida canjes y sigue tus cifras. Prueba gratis de 30 días.": "Publie des offres et des événements, valide les utilisations et suis tes chiffres. Essai gratuit de 30 jours.",
+  "Publica ofertas y eventos, valida canjes y sigue tus cifras.": "Publie des offres et des événements, valide les utilisations et suis tes chiffres.",
   "Publicaciones, cifras, equipo": "Publications, chiffres, équipe",
   "Publican algo nuevo": "Ils publient du nouveau",
   "Publicar": "Publier",

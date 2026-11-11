@@ -16,6 +16,8 @@ Web pública de Klendar: landing, páginas legales y páginas de enlace (`/o/<id
 - Idioma: `/` es ES; en la primera visita, si el navegador está en inglés, redirige a `/en/` y se recuerda la elección del selector ES/EN (`localStorage.klendar_lang`). `hreflang` en todas las páginas.
   Francés, alemán e italiano van también a la versión inglesa y catalán, gallego y euskera a la española (`esOEn`).
 
+- **Precios del plan y fechas del «Gratis de lanzamiento»: un interruptor**, `PRECIOS` en `functions/_lib/chrome.js` (apagado desde el 2026-11-11, hasta que la gestoría aclare el alta de Iván como autónomo). Apagado: sin precio, cuota, IVA, prueba de 30 días ni «gratis hasta…» en la portada, Para negocios, Preguntas, Sobre, la guía PDF del kit y «Tu cuenta»; «Precios» fuera del menú, del pie y del sitemap; `/precios/` dice «¿Cuánto cuesta? Te lo explicamos en persona» (noindex). Para encenderlo: `true` y `python build_site.py && python build_pages.py && python build_legal.py && python tools/build_kit.py` (en la app, `python tool/asistente_corpus.py` y desplegar `help-assistant`). No toca los textos legales ni «Tu plan» del panel.
+
 ## Idiomas de «Tu cuenta» y del panel
 
 «Tu cuenta» (`/cuenta/`) y el panel (`/panel/`) van en ocho idiomas: español (la

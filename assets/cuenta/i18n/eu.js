@@ -1351,6 +1351,7 @@ KL_DIC('eu', {
   "Próximos": "Hurrengoak",
   "Publica ofertas y eventos desde el panel": "Argitaratu eskaintzak eta ekitaldiak paneletik",
   "Publica ofertas y eventos, valida canjes y sigue tus cifras. Prueba gratis de 30 días.": "Argitaratu eskaintzak eta ekitaldiak, balidatu trukeak eta jarraitu zure zenbakiei. 30 eguneko doako proba.",
+  "Publica ofertas y eventos, valida canjes y sigue tus cifras.": "Argitaratu eskaintzak eta ekitaldiak, balidatu trukeak eta jarraitu zure zenbakiei.",
   "Publicaciones, cifras, equipo": "Argitalpenak, zenbakiak, taldea",
   "Publican algo nuevo": "Zerbait berria argitaratzen dute",
   "Publicar": "Argitaratu",

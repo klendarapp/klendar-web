@@ -1351,6 +1351,7 @@ KL_DIC('it', {
   "Próximos": "In arrivo",
   "Publica ofertas y eventos desde el panel": "Pubblica offerte ed eventi dal pannello",
   "Publica ofertas y eventos, valida canjes y sigue tus cifras. Prueba gratis de 30 días.": "Pubblica offerte ed eventi, convalida i riscatti e segui i tuoi numeri. Prova gratis di 30 giorni.",
+  "Publica ofertas y eventos, valida canjes y sigue tus cifras.": "Pubblica offerte ed eventi, convalida i riscatti e segui i tuoi numeri.",
   "Publicaciones, cifras, equipo": "Pubblicazioni, numeri, team",
   "Publican algo nuevo": "Pubblicano qualcosa di nuovo",
   "Publicar": "Pubblica",

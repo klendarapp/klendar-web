@@ -1351,6 +1351,7 @@ KL_DIC('gl', {
   "Próximos": "Próximos",
   "Publica ofertas y eventos desde el panel": "Publica ofertas e eventos desde o panel",
   "Publica ofertas y eventos, valida canjes y sigue tus cifras. Prueba gratis de 30 días.": "Publica ofertas e eventos, valida canxes e segue as túas cifras. Proba de balde durante 30 días.",
+  "Publica ofertas y eventos, valida canjes y sigue tus cifras.": "Publica ofertas e eventos, valida canxes e segue as túas cifras.",
   "Publicaciones, cifras, equipo": "Publicacións, cifras, equipo",
   "Publican algo nuevo": "Publican algo novo",
   "Publicar": "Publicar",

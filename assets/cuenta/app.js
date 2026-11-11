@@ -201,6 +201,10 @@ function beneficio(d, precio, moneda) {
   return precio != null ? money(precio, moneda) : '';
 }
 const pre = PUB_EN ? '/en' : '';
+// Los precios del plan y la prueba de 30 días: con el interruptor de la web
+// (`PRECIOS` en functions/_lib/chrome.js), que deja `data-precios` en la
+// cabecera de esta página al generarla (build_site.py).
+const PRECIOS_WEB = Boolean(document.querySelector('header.top[data-precios]'));
 /** Los textos legales solo están en español (el que vale) y en inglés: en
  * los demás idiomas, debajo de cada enlace a ellos, una línea lo dice. */
 const notaLegal = () => (NUEVO
@@ -820,7 +824,9 @@ RUTAS[''] = async () => {
       <a class="invitacion" href="/panel/">
         <span class="inv-ic">${ic('storefront')}</span>
         <span class="fila-t"><b>${esc(t('¿Quieres registrar tu negocio?'))}</b>
-          <small>${esc(t('Publica ofertas y eventos, valida canjes y sigue tus cifras. Prueba gratis de 30 días.'))}</small></span>
+          <small>${esc(PRECIOS_WEB
+            ? t('Publica ofertas y eventos, valida canjes y sigue tus cifras. Prueba gratis de 30 días.')
+            : t('Publica ofertas y eventos, valida canjes y sigue tus cifras.'))}</small></span>
         ${ic('chevron_right')}
       </a>`}
 

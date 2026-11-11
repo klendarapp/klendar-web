@@ -280,6 +280,31 @@ def _chrome(fn, *args):
     return _json.loads(out.stdout)
 
 
+# Los precios del plan y las fechas del «Gratis de lanzamiento»: el
+# interruptor de `functions/_lib/chrome.js` (`PRECIOS`). Apagados (Iván,
+# 2026-11-11), la portada no da precio, cuota ni fecha.
+PRECIOS = _chrome('precios')
+SIN_PRECIOS = {
+    'es': dict(
+        band_text='Publica una oferta cuando tengas un hueco y llena tus eventos. Sin comisiones por venta y sin permanencia.',
+        biz_sub='Publica una oferta flash cuando tengas un hueco, anuncia tus eventos y valida los canjes con la cámara del móvil. Sin comisiones por venta y sin permanencia.',
+        biz_note='¿Cuánto cuesta? Te lo explicamos en persona, sin compromiso.',
+    ),
+    'en': dict(
+        band_text='Post a deal when you have a quiet hour and fill your events. No sales commission and no lock-in.',
+        biz_sub='Post a flash offer when you have a quiet hour, announce your events and validate redemptions with your phone camera. No sales commission and no lock-in.',
+        biz_note="What does it cost? We'll explain it in person, with no obligation.",
+    ),
+}
+SIN_PRECIOS_FAQ = {
+    'es': ('¿Klendar es gratis?', 'Sí, para las personas usuarias es gratis y sin anuncios. Si tienes un negocio, te explicamos en persona lo que cuesta, sin compromiso.'),
+    'en': ('Is Klendar free?', "Yes, for users it's free and ad-free. If you run a business, we'll explain what it costs in person, with no obligation."),
+}
+if not PRECIOS:
+    for _l in ('es', 'en'):
+        T[_l].update(SIN_PRECIOS[_l])
+        T[_l]['faqs'] = [SIN_PRECIOS_FAQ[_l] if q == SIN_PRECIOS_FAQ[_l][0] else (q, a) for q, a in T[_l]['faqs']]
+
 HEADER_TPL = {lang: _chrome('siteHeader', lang, '{{ES}}', '{{EN}}') for lang in ('es', 'en')}
 FOOTER_HTML = {lang: _chrome('siteFooter', lang) for lang in ('es', 'en')}
 # Las redes de Klendar (las mismas del pie): `sameAs` de la organización y el
@@ -455,10 +480,10 @@ def jsq(s):
     return json.dumps(s, ensure_ascii=False)
 
 
-def doc_page(t, path, title, desc, body, pestana=None):
+def doc_page(t, path, title, desc, body, pestana=None, extra=''):
     # `pestana`: el título de la pestaña si no es «<h1> · Klendar» (cuando el
-    # h1 ya dice Klendar, para no repetirlo).
-    return head(t, path, pestana or f'{title} · Klendar', desc) + f'''
+    # h1 ya dice Klendar, para no repetirlo). `extra`: más cosas en el <head>.
+    return head(t, path, pestana or f'{title} · Klendar', desc, extra=extra) + f'''
 <main class="doc" id="contenido">
 <h1>{title}</h1>
 {body}
@@ -481,6 +506,11 @@ def doc_page(t, path, title, desc, body, pestana=None):
 SITEMAP_ES = ['/', '/como-funciona/', '/descubre/', '/explorar/', '/partidos/', '/grupos/', '/agenda/', '/para-negocios/', '/para-entidades/', '/precios/', '/preguntas/', '/prensa/', '/sobre/', '/accesibilidad/', '/estado/', '/fuentes/', '/negocios/', '/soporte/', '/privacidad/', '/terminos/', '/aviso-legal/', '/cookies/', '/normas/', '/eliminar-cuenta/']
 SITEMAP_EN = ['/en/', '/en/how-it-works/', '/en/discover/', '/en/explore/', '/en/matches/', '/en/groups/', '/en/whats-on/', '/en/for-business/', '/en/for-organisations/', '/en/pricing/', '/en/faq/', '/en/press/', '/en/about/', '/en/accessibility/', '/en/status/', '/en/sources/', '/en/business-terms/', '/en/support/', '/en/privacy/', '/en/terms/', '/en/legal-notice/', '/en/cookies/', '/en/community-guidelines/', '/en/delete-account/']
 ALT_PAIRS = dict(zip(SITEMAP_ES, SITEMAP_EN))
+# Con los precios apagados, /precios/ solo dice «te lo explicamos en persona»
+# (noindex): fuera del sitemap. ALT_PAIRS sigue con el par para el hreflang.
+if not PRECIOS:
+    SITEMAP_ES = [p for p in SITEMAP_ES if p != '/precios/']
+    SITEMAP_EN = [p for p in SITEMAP_EN if p != '/en/pricing/']
 
 
 def robots():
