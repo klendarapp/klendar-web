@@ -1,6 +1,6 @@
 import { configure, datosDePrueba } from './_lib/page.js';
 import { BASE, isSlug, negociosPublicos } from './_lib/public.js';
-import { sitemapVacio, urlPar, urlset } from './_lib/sitemap.js';
+import { RESPALDO, sitemapVacio, urlPar, urlset } from './_lib/sitemap.js';
 import { sorteosAbiertos } from './_lib/sorteos.js';
 
 // Sitemap de las fichas de negocio (/b/<dirección> y /en/b/<dirección>) y de
@@ -18,7 +18,7 @@ const MAXIMO = 20000; // muy por debajo de las 50 000 URL de un sitemap (van dos
 export async function onRequestGet(ctx) {
   configure(ctx.env);
   // Con los datos de prueba de dev, nada que indexar (ver datosDePrueba).
-  if (datosDePrueba()) return sitemapVacio();
+  if (datosDePrueba()) return sitemapVacio(RESPALDO.negocios);
 
   const negocios = [];
   for (let desde = 0; desde < MAXIMO; desde += POR_PAGINA) {
@@ -44,7 +44,7 @@ export async function onRequestGet(ctx) {
     }
   } catch { /* sin sorteos: las fichas igual */ }
 
-  return urlset(urls, 'public, max-age=3600, s-maxage=21600');
+  return urlset(urls, 'public, max-age=3600, s-maxage=21600', RESPALDO.negocios);
 }
 
 // HEAD igual que GET (el middleware quita el cuerpo): comprobadores de enlaces
