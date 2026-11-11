@@ -226,7 +226,9 @@ a.aviso:hover { text-decoration: none; border-color: var(--ink-2); }
   padding: 12px 14px; border-radius: 20px; }
 .rapido .ms { color: var(--ink); }
 .rapido b { font-size: 15px; line-height: 1.2; }
-.rapido .badge-n { position: absolute; top: 8px; left: 30px; }
+/* El globo, pequeño y en la esquina del icono (como la app): antes, grande y
+   pisando la «N» de «Notificaciones» (revisión 11-11). */
+.rapido .badge-n { position: absolute; top: 4px; left: 28px; min-width: 18px; height: 18px; padding: 0 5px; font-size: 11px; box-shadow: 0 0 0 2px var(--surface); }
 .rapido:focus-visible, .fila:focus-visible, .perfil:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 
 .seccion-t { font-family: inherit; font-size: 14px; font-weight: 700; color: var(--ink-2);
