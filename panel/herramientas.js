@@ -35,15 +35,34 @@ Object.assign(SVG, {
  * de comida). */
 let herrUltimo = null;
 
+/** Lo último que se supo de las herramientas de un negocio, guardado en el
+ * navegador: el resumen pinta «Ahora» (Menú del día, antes de cerrar, cola…)
+ * y «Crear» lo usa mientras llega lo de ahora, así que no aparecen tarde
+ * empujando lo de debajo (Iván, 11-11; como la app). */
+const HERR_GUARDADO = 'klendar.herr.';
+function herrGuardado(biz) {
+  try {
+    const o = JSON.parse(localStorage.getItem(HERR_GUARDADO + biz) || 'null');
+    return o && o.biz === biz ? o : null;
+  } catch { return null; }
+}
+
 /** El estado de las herramientas del negocio de ahora (null si falla). */
 async function herrEstado() {
   const r = await rpc('business_tools_overview', { p_business: BIZ.id }).catch(() => null);
   herrUltimo = r && r.ok !== false ? { ...r, biz: BIZ.id } : null;
+  if (herrUltimo) {
+    try { localStorage.setItem(HERR_GUARDADO + BIZ.id, JSON.stringify(herrUltimo)); } catch { /* sin almacenamiento */ }
+  }
   return herrUltimo;
 }
 /** «Menú del día» sugerido (sitio de comida o ya ha publicado uno). */
-const herrMenuSugerido = () => herrUltimo?.biz === BIZ?.id && gestiona() && !esOrganizador() && !esEntidad()
-  && herrSi(herrUltimo, 'daily_menu', 'suggested');
+const herrAhora = () => (herrUltimo?.biz === BIZ?.id ? herrUltimo : herrGuardado(BIZ?.id));
+const herrMenuSugerido = () => gestiona() && !esOrganizador() && !esEntidad()
+  && herrSi(herrAhora(), 'daily_menu', 'suggested');
+/** «Antes de cerrar» sugerido (panaderías, cafeterías, restaurantes…). */
+const herrAntesSugerido = () => gestiona() && !esOrganizador() && !esEntidad()
+  && herrSi(herrAhora(), 'before_closing', 'suggested');
 const herrNum = (o, k, f) => Number(o?.[k]?.[f]) || 0;
 const herrSi = (o, k, f) => o?.[k]?.[f] === true;
 /** Plural sencillo: herrPl(n, ['1 tele', 'teles'], ['1 TV', 'TVs']). Con
@@ -64,6 +83,7 @@ function herrCrear() {
       ${op('#/publicaciones/nueva-flash', 'bolt', bi('Oferta flash', 'Flash offer'), bi('Canjeable con QR durante unas horas', 'Redeemable with a QR for a few hours'))}
       ${op('#/publicaciones/nuevo-evento', 'event', bi('Evento', 'Event'), bi('Con fecha, aforo y reserva de plaza', 'With a date, a limit and place booking'))}
       ${herrMenuSugerido() ? op('#/menu-del-dia', 'restaurant_menu', bi('Menú del día', 'Daily menu'), bi('Foto de la pizarra y precio: hasta el cierre, en un toque.', 'Photo of the board and price: until closing, in one tap.')) : ''}
+      ${herrAntesSugerido() ? op('#/antes-de-cerrar', 'bolsa', bi('Antes de cerrar', 'Before closing'), bi('Lo que te ha sobrado hoy, con lo de la última vez ya puesto. Se paga en el local.', "What's left over today, with last time's details filled in. Paid at the venue.")) : ''}
       ${op('#/novedades', 'campaign', bi('Novedad', 'Update'), bi('Una nota corta en tu ficha: «hoy hay pulpo»', 'A short note on your page: “octopus today”'))}
     </div>
     <div class="foot"><button type="button" class="btn ghost" data-cancel>${esc(bi('Cancelar', 'Cancel'))}</button></div></form>`;
@@ -110,6 +130,9 @@ function herrEsencialHtml(stats) {
 /** Rellena las líneas de «Lo esencial» y las filas de acceso rápido. */
 async function herrResumen(v, { cajaFilas, cajaPendiente }) {
   const negocio = BIZ.id;
+  // Lo de la última vez, ya (si lo hay); al llegar lo de ahora, se repinta.
+  const guardado = herrGuardado(negocio);
+  if (guardado) herrFilas(guardado, null, { cajaFilas, cajaPendiente });
   const [o, fiel, ficha, demanda, conSorteos] = await Promise.all([
     herrEstado(),
     rpc('business_loyalty', { p_business: negocio }).catch(() => null),
@@ -140,6 +163,12 @@ async function herrResumen(v, { cajaFilas, cajaPendiente }) {
     const r = herrNum(o, 'promoters', 'active');
     linea('esRrpp', r === 0 ? bi('Invita al primero', 'Invite your first') : herrPl(r, ['1 RRPP activo', 'RRPP activos'], ['1 active promoter', 'active promoters']));
   }
+  if (!o || !cajaFilas) return;
+  herrFilas(o, demanda, { cajaFilas, cajaPendiente });
+}
+
+/** «Ahora» (las filas de acceso rápido) y «Por contestar» del resumen. */
+function herrFilas(o, demanda, { cajaFilas, cajaPendiente }) {
   if (!o || !cajaFilas) return;
   // Sin local (organizador o entidad): sin antes de cerrar ni partidos.
   const ent = esEntidad();
