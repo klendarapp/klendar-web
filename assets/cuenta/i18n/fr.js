@@ -1007,6 +1007,7 @@ KL_DIC('fr', {
   "Lo que llegue en ese tramo te lo mandamos al terminar.": "Ce qui arrive pendant ce créneau t’est envoyé à la fin.",
   "Lo que llegue en ese tramo te lo mandamos al terminar. Déjalo vacío para no usarlas.": "Ce qui arrive pendant cette plage, on te l’envoie à la fin. Laisse vide pour ne pas les utiliser.",
   "Lo que marca cada local: € económico, €⁠€ precio medio, €⁠€⁠€ caro.": "Ce qu’indique chaque établissement : € bon marché, €⁠€ prix moyen, €⁠€⁠€ cher.",
+  "Lo que marca cada local: € económico, €⁠€ precio medio, €⁠€⁠€ caro o más. Marca uno o varios.": "Ce qu’indique chaque établissement : € bon marché, €⁠€ prix moyen, €⁠€⁠€ cher ou plus. Choisissez-en un ou plusieurs.",
   "Lo que suele gastar una persona en tu local.": "Ce que dépense en général une personne dans ton établissement.",
   "Lo que te cuentan tus favoritos: como mucho uno por semana de cada uno.": "Ce que tes favoris ont à te dire : une fois par semaine maximum pour chacun.",
   "Lo que te hemos contado": "Ce qu’on t’a envoyé",

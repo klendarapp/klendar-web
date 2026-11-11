@@ -1007,6 +1007,7 @@ KL_DIC('ca', {
   "Lo que llegue en ese tramo te lo mandamos al terminar.": "El que arribi en aquesta franja te l'enviarem quan s'acabi.",
   "Lo que llegue en ese tramo te lo mandamos al terminar. Déjalo vacío para no usarlas.": "El que arribi en aquesta franja te l'enviem quan acabi. Deixa-ho buit per no fer-les servir.",
   "Lo que marca cada local: € económico, €⁠€ precio medio, €⁠€⁠€ caro.": "El que marca cada local: € econòmic, €⁠€ preu mitjà, €⁠€⁠€ car.",
+  "Lo que marca cada local: € económico, €⁠€ precio medio, €⁠€⁠€ caro o más. Marca uno o varios.": "El que marca cada local: € econòmic, €⁠€ preu mitjà, €⁠€⁠€ car o més. Marca'n un o diversos.",
   "Lo que suele gastar una persona en tu local.": "El que sol gastar una persona al teu local.",
   "Lo que te cuentan tus favoritos: como mucho uno por semana de cada uno.": "El que t'expliquen els teus preferits: com a màxim un per setmana de cadascun.",
   "Lo que te hemos contado": "El que t'hem explicat",

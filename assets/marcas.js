@@ -7,7 +7,8 @@
 // identificadores que solo sirven para filtrar: solo · charity ·
 // entity («Agenda pública», migración 20261130100000) ·
 // age_0_3 / age_4_8 / age_9_12 / age_13_17 · card_student / card_youth /
-// card_senior · price_le_1 / price_le_2 / price_le_3 («hasta €€»).
+// card_senior · price_is_1 / price_is_2 / price_is_3 (€, €€ y €€€, varios
+// con «o»; el price_le_N de antes, «hasta €€», sigue valiendo en la base).
 //
 // Sirve igual para el navegador (script clásico: deja `KlendarMarcas` en
 // `window`) y para las Pages Functions (`import KM from
@@ -50,7 +51,7 @@
       listenOn: (s) => `Escúchalo en ${s}`, listenWillSay: (l) => `En la ficha: «${l}»`,
       opensOutside: 'Se abre fuera de Klendar',
       fPriceLevel: 'Precio del local', fUpTo: (s) => `Hasta ${s}`,
-      fPriceHint: 'Lo que marca cada local: € económico, €⁠€ precio medio, €⁠€⁠€ caro.',
+      fPriceHint: 'Lo que marca cada local: € económico, €⁠€ precio medio, €⁠€⁠€ caro o más. Marca uno o varios.',
       fCards: 'Descuentos para', fCardsAny: 'Todos', fAny: 'Cualquiera',
       fKidAges: 'Edad de los niños', fKidAgesHint: 'Planes para todas las edades que marques.',
     },
@@ -84,7 +85,7 @@
       listenOn: (s) => `Listen on ${s}`, listenWillSay: (l) => `On your page: “${l}”`,
       opensOutside: 'Opens outside Klendar',
       fPriceLevel: 'Venue price', fUpTo: (s) => `Up to ${s}`,
-      fPriceHint: 'As each venue sets it: € inexpensive, €⁠€ moderate, €⁠€⁠€ expensive.',
+      fPriceHint: 'As each venue sets it: € inexpensive, €⁠€ moderate, €⁠€⁠€ expensive or more. Pick one or more.',
       fCards: 'Discounts for', fCardsAny: 'Everyone', fAny: 'Any',
       fKidAges: 'Children’s age', fKidAgesHint: 'Plans that suit every age you tick.',
     },
@@ -163,16 +164,18 @@
 
   // ── Filtros ───────────────────────────────────────────────────────────────
   const PRECIOS = [1, 2, 3];
-  const precioDe = (traits) => PRECIOS.find((l) => (traits || []).includes(`price_le_${l}`)) || 0;
+  const precioDe = (traits) => PRECIOS.filter((l) => (traits || []).includes(`price_is_${l}`));
   const carneDe = (traits) => CARDS.find((c) => (traits || []).includes(`card_${c}`)) || '';
-  const esMarca = (x) => x === 'solo' || x === 'charity' || x === 'entity' || /^(price_le_[1-3]|card_(student|youth|senior)|age_(0_3|4_8|9_12|13_17))$/.test(x);
+  const esMarca = (x) => x === 'solo' || x === 'charity' || x === 'entity' || /^(price_(le|is)_[1-3]|card_(student|youth|senior)|age_(0_3|4_8|9_12|13_17))$/.test(x);
   /** El nombre corto de un filtro de marca (para el resumen). */
   function nombreFiltro(x, lang) {
     const s = t(lang);
     if (x === 'solo') return s.solo;
     if (x === 'charity') return s.charity;
     if (x === 'entity') return s.entity;
-    let m = /^price_le_([1-3])$/.exec(x);
+    let m = /^price_is_([1-3])$/.exec(x);
+    if (m) return '€'.repeat(+m[1]);
+    m = /^price_le_([1-3])$/.exec(x);
     if (m) return m[1] === '1' ? '€' : s.fUpTo('€'.repeat(+m[1]));
     m = /^card_(\w+)$/.exec(x);
     if (m) return s.cardFor[m[1]] || '';

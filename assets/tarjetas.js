@@ -720,7 +720,14 @@
       // Cada bloque plegado: casillas marcadas y opciones elegidas que no
       // son «Cualquiera» (la edad va con «Con niños», no cuenta aparte).
       Array.prototype.forEach.call(f.querySelectorAll('details.hoja-bloque'), function (b) {
+        // Los precios del local cuentan uno aunque se marquen varios (como
+        // la app): `data-cuenta-uno`, uno por nombre.
+        var uno = {};
         var n = Array.prototype.filter.call(b.querySelectorAll('input:checked'), function (i) {
+          if (i.hasAttribute('data-cuenta-uno')) {
+            if (uno[i.name]) return false;
+            uno[i.name] = true;
+          }
           return !i.hasAttribute('data-no-cuenta') && (i.type === 'checkbox' || i.value !== '');
         }).length;
         var el = b.querySelector('[data-bloque-n]');
