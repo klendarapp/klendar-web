@@ -11,6 +11,7 @@
 //   SUPABASE_BLOQUEADO=1 PORT=8873 node tools/serve_dev.mjs &
 //   BASE=http://localhost:8873 PW=<ruta a playwright> node tools/normas_tiendas_check.mjs
 import { playwright, REF, SUPA, realtimeMudo, servidorSeguro } from './_supabase_simulado.mjs';
+import { PRECIOS } from './_precios.mjs';
 
 const { chromium } = playwright();
 const BASE = process.env.BASE || 'http://localhost:8873';
@@ -34,8 +35,15 @@ const ids = [...datos.es.ti, ...datos.es.negocios].map((e) => e.id);
 for (const id of ['precio-negocio', 'si-no-pago', 'pausar-plan', 'permanencia', 'orden']) ok(!ids.includes(id), `«${id}» no sale en la app`);
 ok(ids.includes('cuanto-cuesta') && ids.includes('publicar'), 'lo demás sigue');
 ok(datos.es.negocios.find((e) => e.id === 'publicar').a.every((t) => !t.u), 'el panel se queda en texto, sin enlace');
-ok(paginaEs.includes('19,90') && paginaEs.includes('/precios'), '/preguntas sigue hablando de precios');
-ok(paginaEn.includes('19.90') && paginaEn.includes('/en/pricing'), '/en/faq también');
+// La web sí puede hablar de precios, si están a la vista (PRECIOS en
+// functions/_lib/chrome.js); apagados (11-11), «te lo explicamos en persona».
+if (PRECIOS) {
+  ok(paginaEs.includes('19,90') && paginaEs.includes('/precios'), '/preguntas sigue hablando de precios');
+  ok(paginaEn.includes('19.90') && paginaEn.includes('/en/pricing'), '/en/faq también');
+} else {
+  ok(/te lo explicamos en persona/i.test(paginaEs) && !/19,90|24,08/.test(paginaEs), '/preguntas: «te lo explicamos en persona», sin precio');
+  ok(/explain it in person/i.test(paginaEn) && !/19\.90|24\.08/.test(paginaEn), '/en/faq también');
+}
 
 // ── 2 y 3. «Personas bloqueadas» ────────────────────────────────────────────
 const U = '0e7717e0-0000-4000-8000-0000000097d3';

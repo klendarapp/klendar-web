@@ -31,6 +31,7 @@
 // Con BASE=https://klendar.app … --en-vivo mira lo publicado (Supabase, simulado igual).
 import { readFileSync } from 'node:fs';
 import { playwright, servidorSeguro } from './_supabase_simulado.mjs';
+import { NUNCA_PRECIO, PRECIOS_APAGADO, segunPrecios } from './_precios.mjs';
 
 const { chromium, webkit } = playwright();
 
@@ -102,16 +103,25 @@ const PAGINAS = [
     /Today nobody pays to appear earlier\. What you see comes in the order you choose in Filters \(☰\), at the very top: “Sort by”\./,
     /we don't put your offer ahead of another because you pay more[\s\S]*?Featuring publications isn't sold today; if it ever is, each one will say so\./,
   ], YA_NO_EN, []],
-  ['/precios', 'Nunca cobramos por canje', [
-    /Hoy nadie puede pagar por salir antes\. De serie, el orden es «Recomendado»/,
-    /Ni la cuota ni el número de publicaciones cuentan en el orden\./,
-  ], [...YA_NO_ES, /Qué es un «destacado»/, /más allá de eso/], []],
-  ['/en/pricing', 'We never charge per redemption', [
-    /Today nobody can pay to appear earlier\. By default the order is ‘Recommended’/,
-    /Neither the fee nor the number of publications affects the order\./,
-  ], [...YA_NO_EN, /What “featured” means/, /beyond that/], []],
+  // Con los precios apagados (PRECIOS, 11-11), /precios no habla del orden:
+  // «Te lo explicamos en persona» y nada de lo que ya no se dice.
+  ...segunPrecios([
+    ['/precios', 'Nunca cobramos por canje', [
+      /Hoy nadie puede pagar por salir antes\. De serie, el orden es «Recomendado»/,
+      /Ni la cuota ni el número de publicaciones cuentan en el orden\./,
+    ], [...YA_NO_ES, /Qué es un «destacado»/, /más allá de eso/], []],
+    ['/en/pricing', 'We never charge per redemption', [
+      /Today nobody can pay to appear earlier\. By default the order is ‘Recommended’/,
+      /Neither the fee nor the number of publications affects the order\./,
+    ], [...YA_NO_EN, /What “featured” means/, /beyond that/], []],
+  ], [
+    ['/precios', 'Te lo explicamos en persona', PRECIOS_APAGADO.es, [...YA_NO_ES, ...NUNCA_PRECIO, /Qué es un «destacado»/], []],
+    ['/en/pricing', "We'll explain it in person", PRECIOS_APAGADO.en, [...YA_NO_EN, ...NUNCA_PRECIO, /What “featured” means/], []],
+  ]),
   ['/para-negocios', 'Lo que no hacemos', [
-    /la cuota no cuenta\. Hoy no se vende destacar publicaciones; si algún día se puede, se dirá en cada una\./,
+    // «la cuota» solo con los precios a la vista; si no, «lo que pagues».
+    segunPrecios(/la cuota no cuenta\. Hoy no se vende destacar publicaciones; si algún día se puede, se dirá en cada una\./,
+      /lo que pagues no cuenta\. Hoy no se vende destacar publicaciones; si algún día se puede, se dirá en cada una\./),
   ], YA_NO_ES, []],
   ['/en/for-business', "What we don't do", [
     /your plan doesn't count\. Featuring publications isn't sold today; if it ever is, each one will say so\./,

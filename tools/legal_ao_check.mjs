@@ -16,6 +16,7 @@
 //   SUPABASE_BLOQUEADO=1 PORT=8871 node tools/serve_dev.mjs &
 //   BASE=http://localhost:8871 PW=<ruta a playwright> node tools/legal_ao_check.mjs
 import { playwright, servidorSeguro } from './_supabase_simulado.mjs';
+import { NUNCA_PRECIO, PRECIOS_APAGADO, segunPrecios } from './_precios.mjs';
 
 const { chromium, webkit } = playwright();
 
@@ -51,8 +52,15 @@ const PAGINAS = [
     /\(turn it off with “When there's room”\); so does the notification that we've removed your request because the venue stopped showing whether there's room\. And “Your order is ready”/,
     /\(numbers only: never who comes in\); if someone on the team answers “Are you open today\?”, who answered and what \(deleted after 7 days\);/,
   ], []],
-  ['/precios', '', [/Gratis de lanzamiento\. Mientras Klendar arranca en una provincia, podemos dar a los negocios de esa provincia más tiempo gratis:/], [/arranca en una ciudad/]],
-  ['/en/pricing', '', [/Launch, free\. While Klendar is starting in a province, we may give businesses in that province more free time:/], [/starting in a city/]],
+  // Con los precios apagados (PRECIOS, 11-11), /precios no lo cuenta (las
+  // condiciones, arriba, sí).
+  ...segunPrecios([
+    ['/precios', '', [/Gratis de lanzamiento\. Mientras Klendar arranca en una provincia, podemos dar a los negocios de esa provincia más tiempo gratis:/], [/arranca en una ciudad/]],
+    ['/en/pricing', '', [/Launch, free\. While Klendar is starting in a province, we may give businesses in that province more free time:/], [/starting in a city/]],
+  ], [
+    ['/precios', '', PRECIOS_APAGADO.es, [...NUNCA_PRECIO, /arranca en una ciudad/]],
+    ['/en/pricing', '', PRECIOS_APAGADO.en, [...NUNCA_PRECIO, /starting in a city/]],
+  ]),
 ];
 
 async function legales(nav, nombre, t, vp) {

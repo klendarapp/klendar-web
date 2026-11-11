@@ -9,6 +9,8 @@
 //  2. Precios (ES y EN): «puede bloquearse» (IC2) y el orden de serie es
 //     «Recomendado» (IC3); ya no dicen «se bloquea» ni «el orden lo elige
 //     cada persona en los filtros».
+//     Con los precios apagados (`PRECIOS`, 11-11), /precios dice «Te lo
+//     explicamos en persona» y nada de precios ni de bloqueos.
 //  3. Sin desplazamiento horizontal ni errores de JavaScript.
 //
 // Chromium y WebKit, móvil (390 × 844) y escritorio (1280 × 800).
@@ -16,6 +18,7 @@
 //   SUPABASE_BLOQUEADO=1 PORT=8871 node tools/serve_dev.mjs &
 //   BASE=http://localhost:8871 PW=<ruta a playwright> node tools/legal_ic_check.mjs
 import { playwright, servidorSeguro } from './_supabase_simulado.mjs';
+import { NUNCA_PRECIO, PRECIOS_APAGADO, segunPrecios } from './_precios.mjs';
 
 const { chromium, webkit } = playwright();
 
@@ -51,22 +54,30 @@ const PAGINAS = [
     /Version 2026-09-29/,
   ]],
   ['/terminos', 'Versión 2026-09-29', [], [/Versiones y desde cuándo se aplican/]],
-  ['/precios', '', [
-    /Si no eliges cómo pagar, tu negocio puede bloquearse \(no se borra nada\)/,
-    /Si no pagas, tu negocio puede bloquearse hasta que pagues: no se borra nada y puedes seguir validando lo que ya tiene la gente\. Si va a pasar, te avisamos 7 días y 1 día antes \(apartado 4 bis de las condiciones\)\./,
-    /Hoy nadie puede pagar por salir antes\. De serie, el orden es «Recomendado» \(con el tiempo de hoy y los gustos de cada persona\) y cada persona puede cambiarlo en los filtros; cómo se ordena todo, también lo ya visto, está en el apartado 2 bis de las condiciones\. Ni la cuota ni el número de publicaciones cuentan en el orden\./,
+  // Con los precios a la vista (PRECIOS), lo de IC2 e IC3; apagados, /precios
+  // es «¿Cuánto cuesta? Te lo explicamos en persona» y no enseña nada de eso
+  // (lo del bloqueo sigue en las condiciones, arriba).
+  ...segunPrecios([
+    ['/precios', '', [
+      /Si no eliges cómo pagar, tu negocio puede bloquearse \(no se borra nada\)/,
+      /Si no pagas, tu negocio puede bloquearse hasta que pagues: no se borra nada y puedes seguir validando lo que ya tiene la gente\. Si va a pasar, te avisamos 7 días y 1 día antes \(apartado 4 bis de las condiciones\)\./,
+      /Hoy nadie puede pagar por salir antes\. De serie, el orden es «Recomendado» \(con el tiempo de hoy y los gustos de cada persona\) y cada persona puede cambiarlo en los filtros; cómo se ordena todo, también lo ya visto, está en el apartado 2 bis de las condiciones\. Ni la cuota ni el número de publicaciones cuentan en el orden\./,
+    ], [
+      /tu negocio se bloquea/,
+      /el orden lo elige cada persona en los filtros/,
+    ]],
+    ['/en/pricing', '', [
+      /If you don't choose how to pay, your business may be blocked \(nothing is deleted\)/,
+      /If you don't pay, your business may be blocked until you do: nothing is deleted and you can still validate what people already have\. If it's going to happen, we remind you 7 days and 1 day before \(section 4a of the business terms\)\./,
+      /Today nobody can pay to appear earlier\. By default the order is ‘Recommended’ \(with today's weather and each person's interests\) and anyone can change it in the filters; how everything is ordered, including what someone has already seen, is in section 2a of the business terms\. Neither the fee nor the number of publications affects the order\./,
+    ], [
+      /your business is blocked/,
+      /the order is chosen by each person in the filters/,
+    ]],
   ], [
-    /tu negocio se bloquea/,
-    /el orden lo elige cada persona en los filtros/,
-  ]],
-  ['/en/pricing', '', [
-    /If you don't choose how to pay, your business may be blocked \(nothing is deleted\)/,
-    /If you don't pay, your business may be blocked until you do: nothing is deleted and you can still validate what people already have\. If it's going to happen, we remind you 7 days and 1 day before \(section 4a of the business terms\)\./,
-    /Today nobody can pay to appear earlier\. By default the order is ‘Recommended’ \(with today's weather and each person's interests\) and anyone can change it in the filters; how everything is ordered, including what someone has already seen, is in section 2a of the business terms\. Neither the fee nor the number of publications affects the order\./,
-  ], [
-    /your business is blocked/,
-    /the order is chosen by each person in the filters/,
-  ]],
+    ['/precios', '', PRECIOS_APAGADO.es, [...NUNCA_PRECIO, /tu negocio se bloquea/]],
+    ['/en/pricing', '', PRECIOS_APAGADO.en, [...NUNCA_PRECIO, /your business is blocked/]],
+  ]),
 ];
 
 async function legales(nav, nombre, t, vp) {

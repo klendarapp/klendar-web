@@ -26,6 +26,7 @@
 //
 // Con BASE=https://klendar.app … --en-vivo mira lo publicado (Supabase, simulado igual).
 import { playwright, SUPA, servidorSeguro } from './_supabase_simulado.mjs';
+import { NUNCA_PRECIO, PRECIOS_APAGADO, segunPrecios } from './_precios.mjs';
 
 const { chromium, webkit } = playwright();
 
@@ -41,17 +42,25 @@ const MALAGA_EN = /In the province of Málaga: free until 31 March 2027 \(we rem
 // [ruta, fecha, lo que tiene que decir, lo que ya no, enlaces que tiene que haber]
 const PAGINAS = [
   ['/', '', [
-    /Sin comisiones por venta\. En la provincia de Málaga, gratis hasta el 31 de marzo de 2027\./,
+    // Con los precios apagados (PRECIOS, 11-11), sin «gratis hasta…».
+    segunPrecios(/Sin comisiones por venta\. En la provincia de Málaga, gratis hasta el 31 de marzo de 2027\./,
+      /Sin comisiones por venta y sin permanencia\./),
     /¿En qué ciudades está\?\s*Klendar funciona en toda España; empezamos por Málaga\./,
   ], [/primeras semanas/, /Empezamos ciudad a ciudad/], []],
   ['/en', '', [
-    /No sales commission\. In the province of Málaga, free until 31 March 2027\./,
+    segunPrecios(/No sales commission\. In the province of Málaga, free until 31 March 2027\./,
+      /No sales commission and no lock-in\./),
     /Which cities\?\s*Klendar works all over Spain; we're starting with Málaga\./,
   ], [/first weeks/, /starting city by city/], []],
-  ['/para-negocios', '', [MALAGA_ES], [], []],
-  ['/en/for-business', '', [MALAGA_EN], [], []],
-  ['/precios', '', [MALAGA_ES, /¿Ayuntamiento, asociación u ONG\? Gratis para siempre\./], [], ['main a[href="/para-entidades"]']],
-  ['/en/pricing', '', [MALAGA_EN, /Council, association or NGO\? Free, for good\./], [], ['main a[href="/en/for-organisations"]']],
+  ['/para-negocios', '', segunPrecios([MALAGA_ES], []), segunPrecios([], NUNCA_PRECIO), []],
+  ['/en/for-business', '', segunPrecios([MALAGA_EN], []), segunPrecios([], NUNCA_PRECIO), []],
+  ...segunPrecios([
+    ['/precios', '', [MALAGA_ES, /¿Ayuntamiento, asociación u ONG\? Gratis para siempre\./], [], ['main a[href="/para-entidades"]']],
+    ['/en/pricing', '', [MALAGA_EN, /Council, association or NGO\? Free, for good\./], [], ['main a[href="/en/for-organisations"]']],
+  ], [
+    ['/precios', '', PRECIOS_APAGADO.es, NUNCA_PRECIO, []],
+    ['/en/pricing', '', PRECIOS_APAGADO.en, NUNCA_PRECIO, []],
+  ]),
   ['/para-entidades', '', [
     /Hoy no ven nada de pago para los negocios y, si algún día hubiera funciones nuevas de pago, serían opcionales\./,
   ], [/Tampoco ven nada/], []],
@@ -75,15 +84,15 @@ const PAGINAS = [
     /4 November 2026: The jurisdiction is filled in \(section 9\): the courts of Málaga\./,
   ], [], []],
   ['/cookies', 'Última actualización: 9 de noviembre de 2026', [
-    /En la app, la misma comprobación se hace en una vista web de klendar\.app\/captcha\/ que se prepara al abrir esas pantallas o justo antes, cuando vas a usarlas \(en la última pantalla de la bienvenida y en Cuenta si no has entrado\), y solo se ve si hay que marcar la casilla\./,
-    /4 de noviembre de 2026: En la app, la comprobación anti-robots se hace en una vista web de klendar\.app\/captcha\//,
+    /En la app, la misma comprobación se hace en una vista web de klendar\.app\/captcha que se prepara al abrir esas pantallas o justo antes, cuando vas a usarlas \(en la última pantalla de la bienvenida y en Cuenta si no has entrado\), y solo se ve si hay que marcar la casilla\./,
+    /4 de noviembre de 2026: En la app, la comprobación anti-robots se hace en una vista web de klendar\.app\/captcha/,
     /9 de noviembre de 2026: En la app, la vista web de la comprobación anti-robots se prepara también justo antes de usarla: en la última pantalla de la bienvenida y en Cuenta si no has entrado\./,
-  ], [/pequeña ventana/, /misma comprobación se hace en una vista web de klendar\.app\/captcha\/ que se prepara al abrir esas pantallas y solo/], []],
+  ], [/pequeña ventana/, /misma comprobación se hace en una vista web de klendar\.app\/captcha que se prepara al abrir esas pantallas y solo/], []],
   ['/en/cookies', 'Last updated: 9 November 2026', [
-    /In the app, the same check runs in a web view of klendar\.app\/captcha\/ that is prepared when you open those screens or just before, when you are about to use them \(on the last welcome screen and in Account if you are not logged in\), and only shows if you need to tick the box\./,
-    /4 November 2026: In the app, the anti-bot check runs in a web view of klendar\.app\/captcha\//,
+    /In the app, the same check runs in a web view of klendar\.app\/captcha that is prepared when you open those screens or just before, when you are about to use them \(on the last welcome screen and in Account if you are not logged in\), and only shows if you need to tick the box\./,
+    /4 November 2026: In the app, the anti-bot check runs in a web view of klendar\.app\/captcha/,
     /9 November 2026: In the app, the anti-bot check's web view is also prepared just before you use it: on the last welcome screen and in Account if you're not logged in\./,
-  ], [/small window/, /same check runs in a web view of klendar\.app\/captcha\/ that is prepared when you open those screens and only/], []],
+  ], [/small window/, /same check runs in a web view of klendar\.app\/captcha that is prepared when you open those screens and only/], []],
   ['/terminos', 'Última actualización: 5 de noviembre de 2026', [
     /y se quitan el sello o el cupón que te hubiera dado ese canje, si aún no los has usado\./,
     /4 de noviembre de 2026: Ofertas y canjes \(apartado 3\): al deshacer una validación, el sello o el cupón que te hubiera dado ese canje solo se quitan si aún no los has usado\./,
