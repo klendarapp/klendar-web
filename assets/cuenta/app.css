@@ -238,6 +238,10 @@ a.aviso:hover { text-decoration: none; border-color: var(--ink-2); }
 .fila + .fila { border-top: 1px solid var(--glass-border); }
 .fila:hover { background: var(--glass); }
 .fila-t { display: grid; flex: 1; min-width: 0; }
+/* «Notificaciones» con el globo de no leídas en la esquina del icono, como la
+   app (las filas de arriba de «Tu cuenta», 11-11). */
+.fila-ic-globo { position: relative; display: inline-flex; flex: none; }
+.fila-ic-globo .badge-n { position: absolute; top: -7px; left: 13px; min-width: 18px; height: 18px; padding: 0 5px; font-size: 11px; box-shadow: 0 0 0 2px var(--surface); }
 .fila-t b { font-size: 15px; font-weight: 700; }
 .fila-t small { color: var(--ink-2); font-size: 13px; line-height: 1.35; }
 /* «Formas de entrar»: filas de datos, no enlaces. Sin color de estado:
@@ -333,7 +337,7 @@ button.codigo.copiar .ms { font-size: 18px; color: var(--ink-2); letter-spacing:
 
 /* ── Planes con amigos ─────────────────────────────────────────────────── */
 /* «Amigos», una fila a lo ancho debajo de los accesos rápidos. */
-.lista-amigos { margin-top: 10px; }
+.lista-arriba { margin-top: 14px; }
 /* Tu enlace de amigo: el QR, el enlace (se toca y se copia) y los botones. */
 .enlace-amigo { background: var(--glass); border: 1px solid var(--glass-border); border-radius: 22px; padding: 18px 16px;
   text-align: center; margin-top: 8px; }

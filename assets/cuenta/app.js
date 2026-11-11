@@ -837,20 +837,22 @@ RUTAS[''] = async () => {
     <div id="aviso-retenido"></div>
     <div id="aviso-correo"></div>
 
-    <!-- Los mismos cuatro accesos y en el mismo orden que la app («Tus
-         planes» y «Explorar» ya están en la barra de pestañas). -->
-    <div class="rapidos">
-      <a class="rapido" href="/cuenta/codigos">${ic('qr_code_2')}<b>${esc(t('Tus códigos'))}</b></a>
-      <a class="rapido" href="/cuenta/favoritos">${ic('favorite')}<b>${esc(t('Favoritos'))}</b></a>
-      <a class="rapido" href="/cuenta/sellos">${ic('local_activity')}<b>${esc(t('Tarjetas de sellos'))}</b></a>
-      <a class="rapido" href="/cuenta/notificaciones">${ic('notifications')}<b>${esc(t('Notificaciones'))}</b><span class="badge-n" id="sin-leer" hidden></span></a>
+    <!-- Lo que más se usa, en filas como «Negocio» y «Preferencias» y en el
+         mismo orden que la app (Iván, 11-11: la misma estructura en toda la
+         pantalla; antes, baldosas de dos en dos con el texto en otro sitio). -->
+    <div class="lista lista-arriba">
+      ${fila({ href: '/cuenta/codigos', icono: 'qr_code_2', titulo: t('Tus códigos') })}
+      ${fila({ href: '/cuenta/favoritos', icono: 'favorite', titulo: t('Favoritos') })}
+      ${fila({ href: '/cuenta/sellos', icono: 'local_activity', titulo: t('Tarjetas de sellos') })}
+      <a class="fila" href="/cuenta/notificaciones">
+        <span class="fila-ic-globo">${ic('notifications')}<span class="badge-n" id="sin-leer" hidden></span></span>
+        <span class="fila-t"><b>${esc(t('Notificaciones'))}</b></span>
+        ${ic('chevron_right')}
+      </a>
+      ${fila({ href: '/cuenta/amigos', icono: 'group', titulo: t('Amigos'), detalle: t('Tu lista, tu enlace y tu QR') })}
     </div>
 
     <div class="lista" id="ahorro-fila" hidden></div>
-
-    <div class="lista lista-amigos">
-      ${fila({ href: '/cuenta/amigos', icono: 'group', titulo: t('Amigos'), detalle: t('Tu lista, tu enlace y tu QR') })}
-    </div>
 
     ${tieneNegocio ? `
       <h2 class="seccion-t">${esc(t('Negocio'))}</h2>
