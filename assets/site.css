@@ -36,8 +36,10 @@
    (móvil, macOS) no cambia nada. Descubre hace scroll en el <body>: allí la
    reserva es la suya (public.css). */
 html { color-scheme: light dark; scroll-behavior: smooth; scrollbar-gutter: stable;
-  /* iOS agranda el texto al girar el móvil si no se le dice que no. */
-  -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+  /* iOS agranda el texto al girar el móvil si no se le dice que no (solo con
+     prefijo: `text-size-adjust` a secas dejaba a Chromium sin poder pintar
+     capturas del admin en las pruebas). */
+  -webkit-text-size-adjust: 100%; }
 /* Los campos, a 16 px como poco en el móvil y la tableta (Iván, 2026-11-11):
    con menos, Safari del iPhone amplía la página al tocarlos y la deja
    ampliada (el correo del admin hacía zoom y la página se salía por la
