@@ -892,7 +892,7 @@ function calendarioHtml({ items, lang, S, link, mes, dia, hoy, delDiaParte = nul
     <section class="cal-lista" id="dia" aria-labelledby="diaTitulo">
       <div class="cal-lista-cab">
         <h2 id="diaTitulo">${esc(rel(dia) ? `${rel(dia)} · ${largo(dia)}` : largo(dia).charAt(0).toUpperCase() + largo(dia).slice(1))}</h2>
-        <span class="muted">${esc(S.dayPlans(nDia))}</span>
+        ${nDia ? `<span class="muted">${esc(S.dayPlans(nDia))}</span>` : ''}
         ${nDia > 1 ? orden : ''}
       </div>
       ${delDia.length
