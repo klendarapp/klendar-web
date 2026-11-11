@@ -260,6 +260,11 @@ a.aviso:hover { text-decoration: none; border-color: var(--ink-2); }
 .formu input:focus, .formu select:focus, .formu textarea:focus { outline: none; border-color: var(--ink);
   box-shadow: 0 0 0 1px var(--ink); }
 .formu label { font-size: 14px; }
+/* El buscador de municipio (Tus gustos › Tu ciudad) va dentro de un
+   formulario: sin esto su campo llevaba también el borde y el fondo de los
+   campos y se veía un recuadro dentro de la píldora (revisión 11-11). */
+.formu .buscador-campo input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]),
+.formu .buscador-campo input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]):focus { padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; height: 46px; }
 /* Lo que se ve y no se cambia (la fecha de nacimiento ya puesta): el campo de
    siempre, no el gris de desactivado, con un candado a la derecha (como la app). */
 .formu input[readonly]:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]) { cursor: default; }
