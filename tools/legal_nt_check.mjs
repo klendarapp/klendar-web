@@ -74,11 +74,11 @@ const PAGINAS = [
     /There is no tolerance for objectionable content or for people who abuse others: anything that breaks the Community guidelines is removed and can lead to the account being suspended or closed\.\s*6\. Availability and changes/,
     /5 November 2026: Acceptable use \(section 5\): there is no tolerance for objectionable content or for people who abuse others\. Your rights and obligations don't change, so there's no need to accept them again\./,
   ], [], ['main a[href="/en/community-guidelines/"]']],
-  ['/privacidad/', 'Última actualización: 5 de noviembre de 2026 · Versión 2026-09-29', [
+  ['/privacidad/', 'Última actualización: 11 de noviembre de 2026 · Versión 2026-09-29', [
     /y las personas que bloqueas y, si bloqueas a quien hizo una pregunta, ese bloqueo y en qué negocio preguntó \(nunca sabrás quién es; sale en la descarga de tus datos y se borra con tu cuenta\)/,
     /5 de noviembre de 2026: La fila «Amigos y planes» dice también que, si bloqueas a quien hizo una pregunta, guardamos ese bloqueo y en qué negocio preguntó\./,
   ], [], []],
-  ['/en/privacy/', 'Last updated: 5 November 2026 · Version 2026-09-29', [
+  ['/en/privacy/', 'Last updated: 11 November 2026 · Version 2026-09-29', [
     /and the people you block and, if you block whoever asked a question, that block and which business they asked \(you'll never find out who they are; it's in your data download and is deleted with your account\)/,
     /5 November 2026: The “Friends and plans” row now also says that, if you block whoever asked a question, we keep that block and which business they asked\./,
   ], [], []],

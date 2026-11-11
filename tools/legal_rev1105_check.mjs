@@ -92,11 +92,11 @@ const PAGINAS = [
     /and any stamp or coupon that redemption gave you is removed, if you haven't used it yet\./,
     /4 November 2026: Deals and redemptions \(section 3\): when a validation is undone, any stamp or coupon that redemption gave you is only removed if you haven't used it yet\./,
   ], [], []],
-  ['/privacidad/', 'Última actualización: 5 de noviembre de 2026', [
+  ['/privacidad/', 'Última actualización: 11 de noviembre de 2026', [
     /tarjetas de sellos \(sellos, premios y sus códigos\) y si una validación se deshizo/,
     /4 de noviembre de 2026: La fila «Favoritos, reseñas, canjes y sellos» dice también que guardamos si una validación se deshizo\./,
   ], [], []],
-  ['/en/privacy/', 'Last updated: 5 November 2026', [
+  ['/en/privacy/', 'Last updated: 11 November 2026', [
     /stamp cards \(stamps, rewards and their codes\) and whether a validation was undone/,
     /4 November 2026: The “Favourites, reviews, redemptions and stamps” row now also says we keep whether a validation was undone\./,
   ], [], []],

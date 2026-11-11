@@ -1029,7 +1029,7 @@ KL_DIC('gl', {
   "Los textos legales están en inglés.": "Os textos legais están en inglés.",
   "Luchador": "Loitador",
   "Manda tu enlace o enseña tu QR a quien quieras. Cuando lo acepte, sabrás a qué planes va y podrás invitarle a los tuyos.": "Manda a túa ligazón ou amosa o teu QR a quen queiras. Cando o acepte, saberás a que plans vai e poderás convidalo aos teus.",
-  "Mandamos también que escribes desde la web y tu idioma, para entender mejor los fallos. Nada más.": "Mandamos tamén que escribes desde a web e o teu idioma, para entender mellor os fallos. Nada máis.",
+  "Mandamos también que escribes desde la web, tu idioma y la página de la que venías, para entender mejor los fallos. Y las capturas, solo si las añades.": "Mandamos tamén que escribes desde a web, o teu idioma e a páxina da que viñas, para entender mellor os fallos. E as capturas, só se as engades.",
   "Mandar el código": "Mandar o código",
   "Mandarme el código": "Mandarme o código",
   "Mandarme el enlace": "Mandarme a ligazón",

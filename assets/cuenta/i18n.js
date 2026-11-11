@@ -407,7 +407,7 @@ const APP_EN = {
   "Klendar la hacemos con lo que nos cuentas. Escribe lo que mejorarías, lo que echas de menos o lo que no funciona: lo leemos todo y te respondemos si hace falta.": "Klendar is built on what you tell us. Tell us what you'd improve, what's missing or what doesn't work. We read everything and reply when needed.",
   "¿De qué se trata?": "What is it about?",
   "Tu mensaje": "Your message",
-  "Mandamos también que escribes desde la web y tu idioma, para entender mejor los fallos. Nada más.": "We also include that you're writing from the website, and your language, to help us understand problems. Nothing else.",
+  "Mandamos también que escribes desde la web, tu idioma y la página de la que venías, para entender mejor los fallos. Y las capturas, solo si las añades.": "We also include that you're writing from the website, your language and the page you came from, to help us understand problems. And screenshots, only if you add them.",
   "Lo que has enviado": "What you've sent",
   "Te hemos respondido: míralo en tus notificaciones": "We've replied: check your notifications",
   "Cuéntanos un poco más: al menos 5 caracteres.": "Tell us a bit more: at least 5 characters.",

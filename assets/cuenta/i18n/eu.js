@@ -1029,7 +1029,7 @@ KL_DIC('eu', {
   "Los textos legales están en inglés.": "Lege-testuak ingelesez daude.",
   "Luchador": "Borrokalaria",
   "Manda tu enlace o enseña tu QR a quien quieras. Cuando lo acepte, sabrás a qué planes va y podrás invitarle a los tuyos.": "Bidali zure esteka edo erakutsi zure QRa nahi duzunari. Onartzen duenean, jakingo duzu zer planetara doan, eta zureetara gonbida dezakezu.",
-  "Mandamos también que escribes desde la web y tu idioma, para entender mejor los fallos. Nada más.": "Webetik idazten duzula eta zure hizkuntza ere bidaltzen ditugu, akatsak hobeto ulertzeko. Beste ezer ez.",
+  "Mandamos también que escribes desde la web, tu idioma y la página de la que venías, para entender mejor los fallos. Y las capturas, solo si las añades.": "Webetik idazten duzula, zure hizkuntza eta zein orritatik zatozen ere bidaltzen ditugu, akatsak hobeto ulertzeko. Eta pantaila-argazkiak, gehitzen badituzu bakarrik.",
   "Mandar el código": "Bidali kodea",
   "Mandarme el código": "Bidali kodea",
   "Mandarme el enlace": "Bidali esteka",

@@ -53,13 +53,13 @@ const PAGINAS = [
     /those of 27 October 2026 \(sections 2a, 3, 3e, 3f and 3k\) from 11 November 2026, those of 28 October 2026 \(sections 2, 4a and 7\) from 12 November 2026, those of 2 November 2026 \(section 2a\) from 17 November 2026, those of 3 November 2026 \(sections 3, 3i and 4\) from 18 November 2026, those of 4 November 2026 \(section 3a, “Connect your calendar”\) from 19 November 2026, and those of 5 November 2026 \(section 2a\) from 20 November 2026: 15 days/,
     /27 October 2026: How what people see is ordered \(section 2a\)[\s\S]*?It applies from 11 November 2026\./,
   ], [/The Business's rating, its fee or its number of publications don't affect the order/, /with “Soonest” as if they started six hours earlier/]],
-  ['/privacidad/', 'Última actualización: 5 de noviembre de 2026', [
+  ['/privacidad/', 'Última actualización: 11 de noviembre de 2026', [
     /sin esconder nada \(solo con el orden «Recomendado», el de serie, en el que cuentan como si fueran dos días más nuevas; con «Más cerca», «Empieza antes» o «Lo más nuevo» no cuentan, y puedes apagarlo en Filtros \(☰\) → «Ordenar por», con la casilla «Tener en cuenta tus gustos»\)/,
     /27 de octubre de 2026: Tus gustos: solo cuentan con el orden «Recomendado»/,
     /Se apaga en Filtros \(☰\) → «Ordenar por» → «Según el tiempo»/,
     /27 de octubre de 2026: Dónde se apagan «Según el tiempo» y «Tener en cuenta tus gustos»/,
   ], [/con «Más pronto» como si empezaran seis horas antes/]],
-  ['/en/privacy/', 'Last updated: 5 November 2026', [
+  ['/en/privacy/', 'Last updated: 11 November 2026', [
     /without hiding anything \(only with the “Recommended” order, the default one, where they count as if they were two days newer; with “Nearest”, “Starts soonest” or “Newest” they don't count, and you can turn this off in Filters \(☰\) → “Sort by”, with the “Take your interests into account” box\)/,
     /27 October 2026: Your interests: they only count with the “Recommended” order/,
     /Turn it off in Filters \(☰\) → “Sort by” → “Based on the weather”/,

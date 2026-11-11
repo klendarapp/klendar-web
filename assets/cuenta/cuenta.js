@@ -921,7 +921,8 @@ RUTAS.ajustes = async ([sub]) => {
   });
   $('#descargar').addEventListener('click', (ev) => ocupado(ev.currentTarget, async () => {
     const datos = await llamar('export_my_data', {});
-    const blob = new Blob([JSON.stringify(datos, null, 2)], { type: 'application/json' });
+    await enlacesDeCapturas(datos);
+    const blob =new Blob([JSON.stringify(datos, null, 2)], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     // El día de Madrid (en UTC, entre las 0 y las 2 aún sería ayer).
@@ -931,6 +932,25 @@ RUTAS.ajustes = async ([sub]) => {
     a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 5000);
   }));
+
+  // Las capturas de «Sugerencias y mejoras» están en un Storage privado:
+  // export_my_data da sus rutas (`media`) y aquí se piden enlaces firmados de
+  // 24 horas (`media_links`, en el mismo orden; la RLS deja leer lo propio),
+  // como en la app. Si no se pueden pedir, el archivo sale igual.
+  async function enlacesDeCapturas(datos) {
+    const rutas = (datos?.feedback || []).flatMap((f) => (Array.isArray(f.media) ? f.media : []));
+    if (!rutas.length) return;
+    try {
+      const { data, error } = await sb.storage.from('feedback-media').createSignedUrls(rutas, 86400);
+      if (error || !data) return;
+      const enlaces = new Map(data.filter((d) => d.signedUrl && !d.error).map((d) => [d.path, d.signedUrl]));
+      if (!enlaces.size) return;
+      for (const f of datos.feedback) {
+        if (Array.isArray(f.media) && f.media.length) f.media_links = f.media.map((r) => enlaces.get(r)).filter(Boolean);
+      }
+      datos.feedback_media_links_expire_at = new Date(Date.now() + 86400e3).toISOString();
+    } catch { /* sin red: los datos salen igual, con las rutas */ }
+  }
 
   // Sesión y cuenta
   $('#salir-todo').addEventListener('click', async (ev) => {
@@ -1405,7 +1425,7 @@ RUTAS.sugerencias = async (_p, params, crudo) => {
       <label class="pill capturas-anadir" id="capAnadir">${ic('add')} ${esc(t('Añadir captura'))}
         <input type="file" id="capInput" accept="image/jpeg,image/png,image/webp" multiple hidden></label>
       <p class="muted">${esc(t('Hasta 3 capturas o fotos, sobre todo si algo falla. Solo las ve el equipo de Klendar y se borran si borramos tu mensaje o eliminas tu cuenta.'))}</p>
-      <p class="muted">${esc(t('Mandamos también que escribes desde la web y tu idioma, para entender mejor los fallos. Nada más.'))}</p>
+      <p class="muted">${esc(t('Mandamos también que escribes desde la web, tu idioma y la página de la que venías, para entender mejor los fallos. Y las capturas, solo si las añades.'))}</p>
       <p class="err" id="err" role="alert"></p>
       <button class="pill accent" id="enviar">${esc(t('Enviar'))}</button>
     </form>

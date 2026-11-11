@@ -358,7 +358,11 @@ ACTUALIZADO = {
     # 2026-11-05 (NT5, aprobado por Iván el 5-11 y publicado ese día): en
     # «Amigos y planes», el bloqueo desde una pregunta. Informativo, sin
     # re-aceptación.
-    'privacidad': {'es': '5 de noviembre de 2026', 'en': '5 November 2026'},
+    # 2026-11-11 (CS1 y CS3, aprobados por Iván el 11-11 y publicados ese día,
+    # «Privacidad - capturas en sugerencias.pdf»): fila nueva «Sugerencias y
+    # mejoras», con las capturas que se pueden adjuntar desde la revisión del
+    # 10-11. Informativo, sin versión nueva ni aviso.
+    'privacidad': {'es': '11 de noviembre de 2026', 'en': '11 November 2026'},
     # 2026-10-14 (C52, aprobado por Iván el 14-10): dos claves de la
     # administración que faltaban en la tabla. Informativo.
     # 2026-11-04 (L5 de la revisión del 5-11, aprobado por Iván el 4-11 y
@@ -369,7 +373,12 @@ ACTUALIZADO = {
     # última pantalla de la bienvenida y en Cuenta sin sesión. Informativo, sin
     # versión nueva ni aviso.
     'cookies': {'es': '9 de noviembre de 2026', 'en': '9 November 2026'},
-    'eliminar-cuenta': {'es': '27 de octubre de 2026', 'en': '27 October 2026'},
+    # 2026-11-11 (CS2 y CS3, aprobados por Iván el 11-11 y publicados ese día,
+    # «Privacidad - capturas en sugerencias.pdf»): se borran las capturas de
+    # «Sugerencias y mejoras» y lo escrito se queda sin autor hasta 1 año
+    # después de cerrarlo (ya pasaba desde septiembre). Informativo, sin
+    # versión nueva ni aviso.
+    'eliminar-cuenta': {'es': '11 de noviembre de 2026', 'en': '11 November 2026'},
     'soporte': {'es': '28 de octubre de 2026', 'en': '28 October 2026'},
     # 2026-10-01 (segunda tanda, R4 de la revisión legal): los términos
     # explican la moderación automática y las condiciones para negocios se
@@ -519,6 +528,10 @@ CAMBIOS = {
          "The owner's tax ID, address and phone number are filled in."),
         _INICIO],
     'privacidad': [
+        ('11 de noviembre de 2026',
+         'Fila nueva «Sugerencias y mejoras»: lo que nos mandas, las capturas que puedes añadir (qué datos les quitamos, quién las ve y cuándo se borran) y cuánto tiempo lo guardamos.',
+         '11 November 2026',
+         'New “Ideas and feedback” row: what you send us, the screenshots you can add (what data we remove from them, who sees them and when they are deleted) and how long we keep it.'),
         ('5 de noviembre de 2026',
          'La fila «Amigos y planes» dice también que, si bloqueas a quien hizo una pregunta, guardamos ese bloqueo y en qué negocio preguntó.',
          '5 November 2026',
@@ -1065,6 +1078,10 @@ CAMBIOS = {
          '5 October 2026', 'Two new questions: what a promoter sees about you and how to unfollow a series.'),
     ],
     'eliminar-cuenta': [
+        ('11 de noviembre de 2026',
+         'Lista al día: se borran las capturas que añadiste en «Sugerencias y mejoras»; lo que escribiste se queda sin tu nombre hasta 1 año después de cerrarlo.',
+         '11 November 2026',
+         'List brought up to date: the screenshots you added in “Ideas and feedback” are deleted; what you wrote stays without your name for up to 1 year after we close it.'),
         ('27 de octubre de 2026',
          'Si entraste con Apple: dónde ver en el iPhone que se ha retirado el acceso (Ajustes → tu nombre → Inicio de sesión y seguridad → Iniciar sesión con Apple).',
          '27 October 2026',
@@ -1541,6 +1558,7 @@ def textos(D, resaltar=False):
 <tr><td>Escaneos del QR de mesa</td><td>Cuántas veces se escanea el QR de mesa de un local cada día (solo el número); para no contar dos veces la misma conexión en 30 minutos, un resumen cifrado de tu conexión hecho con un secreto que cambia cada día (nunca la IP ni tu cuenta)</td><td>Dar al negocio la cifra de escaneos de sus carteles. La red y la contraseña que ves las pone el negocio</td><td>Interés legítimo (art. 6.1.f RGPD) en dar cifras al negocio, sin saber quién escanea</td><td>La cifra, 14 meses; el resumen, 24 horas. No se guarda ni la cuenta ni la IP</td></tr>
 {TS['es']['fila']}<tr><td>Seguridad</td><td>Resumen cifrado de tu conexión (cambia cada día, nunca la IP), dispositivos de confianza para entrar con huella o Face ID, códigos para confirmar que eres tú, errores técnicos de la web (sin datos personales)</td><td>Frenar abusos, entrar sin contraseña en tus dispositivos, proteger los cambios de contraseña y la eliminación de la cuenta, detectar fallos</td><td>Interés legítimo (art. 6.1.f)</td><td>Resumen 24 h; dispositivos 90 días sin uso; códigos 1 h; errores 30 días</td></tr>
 <tr><td>Historial de consentimientos</td><td>Qué has aceptado o retirado y cuándo</td><td>Poder demostrarlo (art. 7.1 RGPD)</td><td>Obligación legal (art. 6.1.c)</td><td>Mientras exista la cuenta</td></tr>
+<tr><td>Sugerencias y mejoras</td><td>Tu cuenta; lo que nos escribes y de qué se trata («Sugerencia», «Algo falla», «Soy un negocio» u «Otra cosa»); la versión de la app, si la usas en Android, iPhone o la web, y el idioma (en la web, también la página de la que venías); y, si las añades, hasta 3 capturas o fotos de tu galería</td><td>Entender y arreglar los fallos que nos cuentas, atender tus sugerencias y contestarte (la respuesta te llega como aviso en la app). Antes de subir una captura la reducimos (1.600 px como mucho) y le quitamos los datos que lleva dentro, como la ubicación o el modelo del móvil. Las capturas se guardan en un almacenamiento privado y solo las ve el equipo de Klendar: ni otras personas usuarias ni los negocios. No se analizan de forma automática. Si en una captura salen datos de otras personas que no hacen falta, mejor tápalos</td><td>Ejecución del contrato (atender lo que nos mandas) e interés legítimo (art. 6.1.f RGPD) en arreglar fallos y mejorar Klendar. Las capturas son opcionales</td><td>El mensaje, hasta 1 año después de cerrarlo; si eliminas tu cuenta, se queda sin tu nombre ni tu cuenta. Las capturas, hasta que se borra el mensaje o eliminas tu cuenta, lo que pase antes; las que eliges pero no llegas a enviar, en 1 o 2 días</td></tr>
 {TEL['es']}<tr><td>Soporte</td><td>Email y contenido de tu mensaje</td><td>Atender tus consultas</td><td>Ejecución del contrato / interés legítimo</td><td>1 año desde el cierre</td></tr>
 </table>
 <p>Para crear la cuenta son obligatorios el correo (o tu cuenta de Google o Apple), tu nombre (el que verán los negocios y tus amigos; puede ser un apodo), la fecha de nacimiento y aceptar los términos; sin ellos no se puede usar la cuenta. Todo lo demás es opcional.</p>
@@ -1657,6 +1675,7 @@ def textos(D, resaltar=False):
 <tr><td>Table QR scans</td><td>How many times a venue's table QR code is scanned each day (just the number); so the same connection isn't counted twice within 30 minutes, an encrypted summary of your connection made with a secret that changes every day (never the IP address or your account)</td><td>Giving the business the number of scans of its cards. The network and password you see are entered by the business</td><td>Legitimate interest (art. 6(1)(f) GDPR) in giving the business figures, without knowing who scans</td><td>The figure, 14 months; the summary, 24 hours. Neither the account nor the IP address is stored</td></tr>
 {TS['en']['fila']}<tr><td>Security</td><td>Encrypted digest of your connection (changes daily, never the IP address), trusted devices for fingerprint or Face ID login, codes to confirm it's you, technical website errors (no personal data)</td><td>Stop abuse, log in without a password on your devices, protect password changes and account deletion, detect failures</td><td>Legitimate interest (art. 6(1)(f))</td><td>Digest 24 h; devices 90 days unused; codes 1 h; errors 30 days</td></tr>
 <tr><td>Consent history</td><td>What you have accepted or withdrawn and when</td><td>Being able to prove it (art. 7(1) GDPR)</td><td>Legal obligation (art. 6(1)(c))</td><td>While the account exists</td></tr>
+<tr><td>Ideas and feedback</td><td>Your account; what you write to us and what it's about (“Suggestion”, “Something's broken”, “I run a business” or “Something else”); the app version, whether you use Android, iPhone or the website, and the language (on the website, also the page you came from); and, if you add them, up to 3 screenshots or photos from your gallery</td><td>Understand and fix the problems you tell us about, look into your suggestions and reply to you (the reply reaches you as a notification in the app). Before uploading a screenshot we make it smaller (1,600 px at most) and remove the data stored inside it, such as the location or the phone model. Screenshots are kept in private storage and only the Klendar team sees them: not other users or businesses. They are not analysed automatically. If a screenshot shows other people's details that aren't needed, it's best to cover them</td><td>Performance of a contract (dealing with what you send us) and legitimate interest (art. 6.1.f GDPR) in fixing problems and improving Klendar. Screenshots are optional</td><td>The message, up to 1 year after we close it; if you delete your account, it stays without your name or your account. Screenshots, until the message is deleted or you delete your account, whichever comes first; those you pick but don't send, within 1 or 2 days</td></tr>
 {TEL['en']}<tr><td>Support</td><td>Email and the content of your message</td><td>Answer your enquiries</td><td>Performance of a contract / legitimate interest</td><td>1 year after closure</td></tr>
 </table>
 <p>To create an account you must give your email (or use your Google or Apple account), your name (the one businesses and your friends will see; it can be a nickname), your date of birth and accept the terms; without them the account can't be used. Everything else is optional.</p>
@@ -2503,6 +2522,7 @@ def textos(D, resaltar=False):
   <li>Si eres RRPP de algún local, dejas de serlo: se borran tus enlaces y tus QR. El local conserva sus canjes, pero ya no aparecen a tu nombre.</li>
   <li>Tu enlace de amigo, tus amigos, tus «Voy», las invitaciones que has mandado y recibido y las personas que has bloqueado.</li>
   <li>Tus reseñas, con sus fotos y vídeos, se eliminan junto con tu cuenta.</li>
+  <li>Las capturas y fotos que añadiste en «Sugerencias y mejoras».</li>
   <li>Tus avisos de «Estaba cerrado» y los avisos de reseña que te mandamos.</li>
   <li>Tus avisos de «Avísame cuando haya sitio».</li>
   <li>Tus preguntas a los negocios (también las contestadas, con su respuesta) y tus «A mí también me sirve». Si contestabas preguntas por un negocio, las respuestas se quedan en su ficha: son del negocio.</li>
@@ -2515,6 +2535,7 @@ def textos(D, resaltar=False):
   <li>Estadísticas <strong>anónimas</strong> de los negocios (número de canjes o vistas), que ya no se vinculan a ti.</li>
   <li>Si eres propietario/a de un negocio con cuota facturada, los datos de facturación se conservan el plazo legal (fiscal 4 años, mercantil 6 años).</li>
   <li>Denuncias resueltas, 2 años, para cumplir el Reglamento de Servicios Digitales.</li>
+  <li>Lo que nos escribiste en «Sugerencias y mejoras», sin tu nombre ni tu cuenta, hasta 1 año después de cerrarlo, para seguir arreglando lo que nos contaste.</li>
 </ul>
 ''')
 
@@ -2537,6 +2558,7 @@ def textos(D, resaltar=False):
   <li>If you're a promoter for any venue, you stop being one: your links and QR codes are deleted. The venue keeps its redemptions, but they no longer appear under your name.</li>
   <li>Your friend link, your friends, your “I'm going” marks, the invitations you have sent and received and the people you have blocked.</li>
   <li>Your reviews, with their photos and videos, are deleted together with your account.</li>
+  <li>The screenshots and photos you added in “Ideas and feedback”.</li>
   <li>Your “It was closed” reports and the review reminders we sent you.</li>
   <li>Your “Tell me when there's room” requests.</li>
   <li>Your questions to businesses (answered ones included, with their answer) and your “Helpful to me too” marks. If you answered questions for a business, the answers stay on its page: they belong to the business.</li>
@@ -2549,6 +2571,7 @@ def textos(D, resaltar=False):
   <li><strong>Anonymous</strong> business statistics (number of redemptions or views), no longer linked to you.</li>
   <li>If you own a business with invoiced fees, invoicing data is kept for the statutory period (tax 4 years, commercial 6 years).</li>
   <li>Resolved reports, 2 years, to comply with the Digital Services Act.</li>
+  <li>What you wrote to us in “Ideas and feedback”, without your name or your account, for up to 1 year after we close it, so we can keep fixing what you told us about.</li>
 </ul>
 ''')
 

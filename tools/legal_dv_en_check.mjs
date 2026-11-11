@@ -29,7 +29,7 @@ let fallos = 0;
 const ok = (c, m) => { if (!c) { fallos++; console.log('FALLO:', m); } else console.log('ok:', m); };
 
 const PAGINAS = [
-  ['/privacidad/', 'Última actualización: 5 de noviembre de 2026', [
+  ['/privacidad/', 'Última actualización: 11 de noviembre de 2026', [
     /qué hace cada uno en las herramientas del negocio \(quién validó, deshizo una validación hecha por error, vendió o descontó, apuntó a alguien en la cola o dio algo en el momento\)/,
     /y, en «Dónde verlo», quién del equipo puso «Poner siempre» un equipo, un deportista o una competición; si es una entidad y conecta su agenda, la dirección de cada calendario \(que no enseñamos entera\), quién la conectó, cuándo la leímos, cuántos eventos trajo y el último error, y de cada evento importado su identificador en el calendario y el lugar escrito \(de los calendarios no leemos a las personas invitadas ni los eventos privados\)\. Se borra al desconectarla o al eliminar el negocio\. Para el «Gratis de lanzamiento», la provincia del local/,
     /4 de noviembre de 2026: La fila «Cuenta de negocio» nombra también quién del equipo deshace una validación hecha por error\./,
@@ -38,7 +38,7 @@ const PAGINAS = [
     /\(quién validó, vendió o descontó/,
     /una competición\. Para el «Gratis de lanzamiento»/,
   ]],
-  ['/en/privacy/', 'Last updated: 5 November 2026', [
+  ['/en/privacy/', 'Last updated: 11 November 2026', [
     /what each of them does in the business tools \(who validated, undid a validation made by mistake, sold or recorded a use, added someone to the queue or gave something on the spot\)/,
     /and, in “Where to watch”, which team member set “Always show” for a team, an athlete or a competition; if it is an organisation and connects its calendar, the address of each calendar \(which we never show in full\), who connected it, when we read it, how many events it brought and the last error, and for each imported event its identifier in the calendar and the written place \(from calendars we do not read invitees or private events\)\. It is deleted when the calendar is disconnected or the business is deleted\. For the launch free period, the province of the venue/,
     /4 November 2026: The “Business account” row now also mentions who in the team undoes a validation made by mistake\./,

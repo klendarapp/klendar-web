@@ -1029,7 +1029,7 @@ KL_DIC('it', {
   "Los textos legales están en inglés.": "I testi legali sono in inglese.",
   "Luchador": "Lottatore",
   "Manda tu enlace o enseña tu QR a quien quieras. Cuando lo acepte, sabrás a qué planes va y podrás invitarle a los tuyos.": "Manda il tuo link o mostra il tuo QR a chi vuoi. Quando accetta, saprai a quali piani va e potrai invitarlo ai tuoi.",
-  "Mandamos también que escribes desde la web y tu idioma, para entender mejor los fallos. Nada más.": "Inviamo anche che scrivi dal sito e la tua lingua, per capire meglio gli errori. Nient’altro.",
+  "Mandamos también que escribes desde la web, tu idioma y la página de la que venías, para entender mejor los fallos. Y las capturas, solo si las añades.": "Inviamo anche che scrivi dal sito, la tua lingua e la pagina da cui arrivavi, per capire meglio gli errori. E gli screenshot, solo se li aggiungi.",
   "Mandar el código": "Invia il codice",
   "Mandarme el código": "Mandami il codice",
   "Mandarme el enlace": "Mandami il link",
