@@ -13,6 +13,11 @@
 //  5. Admin › Resumen: «Por verificar ahora» (verificar en dos toques), el QR de
 //     klendar.app/alta y el pulso con su semáforo. Sin las migraciones: solo el QR.
 //  6. /alta sin sesión: «Crea tu cuenta de negocio». Con sesión: el alta.
+//  7. La ficha a medias (migración 20261274500000 de la app): ya verificado,
+//     con publicaciones y de hace más de 30 días, el aviso «Completa tu ficha:
+//     añade el horario y una foto para salir antes en Sitios» con el botón a
+//     lo que falta (también en francés); con la ficha completa, a un empleado
+//     o con «Primeros pasos» a la vista, nada.
 //
 //   SUPABASE_BLOQUEADO=1 PORT=8871 node tools/serve_dev.mjs &
 //   BASE=http://localhost:8871 PW=<ruta a playwright> OUT=<carpeta> node tools/alta_rapida_check.mjs
@@ -66,19 +71,19 @@ function supabaseFalso(e) {
       return json([]);
     }
     if (p.startsWith('/rest/v1/businesses')) {
-      return json([{ id: BIZ, time_zone: 'Europe/Madrid', category_id: e.categoria, logo_url: null, cover_image_url: null, gallery: [], opening_hours: null, menu_url: null, menu_images: [], created_at: new Date().toISOString() }]);
+      return json([{ id: BIZ, time_zone: 'Europe/Madrid', category_id: e.categoria, logo_url: null, cover_image_url: null, gallery: [], opening_hours: null, menu_url: null, menu_images: [], created_at: new Date().toISOString(), ...e.ficha }]);
     }
     if (p.startsWith('/rest/v1/')) return json([]);
     return json({});
   };
 }
 
-async function contexto(nav, { clave = `sb-${REF}-auth-token`, conSesion = true, lang = 'es', rpc = {}, categoria = CATS[0].id, fallan = [] }) {
+async function contexto(nav, { clave = `sb-${REF}-auth-token`, conSesion = true, lang = 'es', rpc = {}, categoria = CATS[0].id, fallan = [], ficha = {} }) {
   const ctx = await nav.newContext({ viewport: { width: 390, height: 844 }, locale: 'es-ES', timezoneId: 'Europe/Madrid' });
   await ctx.addInitScript(([k, v, l]) => {
     try { if (v) localStorage.setItem(k, v); localStorage.setItem('klendar_lang', l); } catch { /* */ }
   }, [clave, conSesion ? sesion() : '', lang]);
-  const estado = { llamadas: [], insertadas: [], borradas: [], rpc, categoria, fallan };
+  const estado = { llamadas: [], insertadas: [], borradas: [], rpc, categoria, fallan, ficha };
   await ctx.route(`${SUPA}/**`, supabaseFalso(estado));
   const p = await ctx.newPage();
   const errores = [];
@@ -232,6 +237,42 @@ async function enlace(nav, n) {
   await b.ctx.close();
 }
 
+async function fichaSitios(nav, n) {
+  const hace60 = new Date(Date.now() - 60 * 86400e3).toISOString();
+  const HORARIO = { 1: [['09:00', '14:00']] };
+  const FOTO = 'https://example.com/portada.jpg';
+  const verificado = (x = {}, biz = {}) => PANEL({ my_business_offer_counts: { total: 3, todas: 3, activa: 1 }, ...x }, { verification_status: 'verified', ...biz });
+  const casos = [
+    ['sin horario ni foto', {}, {}, 'es', /Completa tu ficha: añade el horario y una foto para salir antes en Sitios\./, '#/ficha'],
+    ['sin foto', { opening_hours: HORARIO }, {}, 'es', /Completa tu ficha: añade una foto para salir antes en Sitios\./, '#/ficha/fotos'],
+    ['sin horario (con una foto del local)', { gallery: [FOTO] }, {}, 'es', /Completa tu ficha: añade el horario para salir antes en Sitios\./, '#/ficha/horario'],
+    ['en francés', {}, {}, 'fr', /Complète ta fiche : ajoute tes horaires et une photo pour apparaître plus haut dans Lieux\./, '#/ficha'],
+    ['completa', { opening_hours: HORARIO, cover_image_url: FOTO }, {}, 'es', null],
+    ['empleado', {}, { role: 'staff' }, 'es', null],
+  ];
+  for (const [nombre, ficha, biz, lang, texto, href] of casos) {
+    const { ctx, p, errores } = await contexto(nav, { lang, rpc: verificado({}, biz), ficha: { created_at: hace60, ...ficha } });
+    await p.goto(`${BASE}/panel/#/resumen`, { waitUntil: 'networkidle' });
+    await p.waitForSelector('#view h1');
+    await p.waitForTimeout(400);
+    const aviso = p.locator('.aviso-ficha-sitios');
+    if (texto) {
+      ok(await aviso.count() === 1 && texto.test(await aviso.innerText()), `${n}: ${nombre}, el aviso`);
+      ok(await aviso.locator('a.btn').getAttribute('href') === href, `${n}: ${nombre}, el botón a ${href}`);
+      ok(await p.locator('.primeros').count() === 0, `${n}: ${nombre}, sin «Primeros pasos»`);
+      if (nombre === 'sin horario ni foto') await p.screenshot({ path: `${OUT}/ficha-sitios-${n}.png`, fullPage: false });
+    } else ok(await aviso.count() === 0, `${n}: ${nombre}, sin aviso`);
+    ok(errores.length === 0, `${n}: ${nombre}, sin errores JS ${errores.join(' | ')}`);
+    await ctx.close();
+  }
+  // Recién dado de alta y sin nada publicado: «Primeros pasos» ya lo dice.
+  const { ctx, p } = await contexto(nav, { rpc: PANEL({}, { verification_status: 'verified' }) });
+  await p.goto(`${BASE}/panel/#/resumen`, { waitUntil: 'networkidle' });
+  await p.waitForSelector('.primeros');
+  ok(await p.locator('.aviso-ficha-sitios').count() === 0, `${n}: con «Primeros pasos», sin el aviso`);
+  await ctx.close();
+}
+
 for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
   const nav = await tipo.launch();
   try {
@@ -242,6 +283,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     await formulario(nav, nombre);
     await admin(nav, nombre);
     await enlace(nav, nombre);
+    await fichaSitios(nav, nombre);
   } catch (e) {
     fallos++;
     console.log(`FALLO (${nombre}):`, e.message);

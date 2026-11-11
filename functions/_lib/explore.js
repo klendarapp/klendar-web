@@ -189,8 +189,8 @@ const T = (en) => en
       sortNearestHint: 'The nearest first', sortSoonestHint: 'What starts or ends first', sortNewestHint: 'The latest publications',
       useTastes: 'Take your interests into account', changeTastes: 'Change', onlyRec: 'Both boxes apply to “Recommended”.',
       byTime: 'By time', rated: 'Top rated',
-      placesNearHint: 'By distance and, at the same distance, first the ones with plans today.',
-      placesRatedHint: 'By rating; when level, the ones with plans today first.',
+      placesNearHint: 'By distance and, at the same distance, first the ones with plans today, then those with a photo and opening hours.',
+      placesRatedHint: 'By rating; when level, the ones with plans today first, then those with a photo and opening hours.',
       eatSoon: 'Food right now', tonightNear: 'Tonight nearby',
       shortcutsHint: 'Each shortcut sets its filters; you see them at the top, in the row, and remove them like any other.',
       browseTypes: 'Or browse by type of place', moreN: (n) => `${n} more`, moreInGroup: (n, g) => `Show ${n} more in ${g}`,
@@ -326,8 +326,8 @@ const T = (en) => en
       sortNearestHint: 'Lo más cercano primero', sortSoonestHint: 'Lo que empieza o acaba primero', sortNewestHint: 'Lo último que han publicado',
       useTastes: 'Tener en cuenta tus gustos', changeTastes: 'Cambiar', onlyRec: 'Las dos casillas valen con «Recomendado».',
       byTime: 'Por hora', rated: 'Mejor valorados',
-      placesNearHint: 'Por cercanía y, a la misma distancia, primero los que tienen planes hoy.',
-      placesRatedHint: 'Por su valoración; a la par, los que tienen planes hoy.',
+      placesNearHint: 'Por cercanía y, a la misma distancia, primero los que tienen planes hoy y luego los que tienen foto y horario.',
+      placesRatedHint: 'Por su valoración; a la par, los que tienen planes hoy y luego los que tienen foto y horario.',
       eatSoon: 'Para comer ya', tonightNear: 'Esta noche cerca',
       shortcutsHint: 'Cada atajo pone sus filtros; se ven arriba, en la fila, y se quitan como cualquier otro.',
       browseTypes: 'O mira por tipo de sitio', moreN: (n) => `${n} más`, moreInGroup: (n, g) => `Ver ${n} más de ${g}`,
@@ -517,7 +517,7 @@ const mapaHtml = (items, lang, S) => {
   ${sitioAhoraScripts(lang).replace(/ defer/g, '')}
   <script type="application/json" id="mapaPuntos">${JSON.stringify(puntos).replace(/</g, '\u003c')}</script>
   <script src="/assets/iconos-mapa.js?v=1"></script>
-  <script src="/assets/mapa.js?v=6"></script>`;
+  <script src="/assets/mapa.js?v=7"></script>`;
 };
 
 /** Las distancias de «Cerca de mí», las mismas que la hoja de filtros de la
@@ -1341,7 +1341,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   if (e.que === 'places' && catsSel.length > 1) {
     e.catIds = await rows('categories', 'select=id,slug').then((r) => r.filter((c) => catsSel.includes(c.slug)).map((c) => c.id)).catch(() => []);
   }
-  // Explorar › Sitios (`?que=sitios`): los negocios con la ficha completa,
+  // Explorar › Sitios (`?que=sitios`): los negocios con local (también con la ficha a medias, después),
   // por cercanía, en lista o en el mapa (`public_places`, `map_places`). Los
   // filtros de los planes no cuentan aquí.
   const negocios = !descubre && e.que === 'places';

@@ -6,14 +6,18 @@
  * - `horaTexto(h, tz, lang, ahora)`: la línea del horario de una fila,
  *   «Abierto hasta las 23:00 · Cocina: hasta las 22:30» o «Cerrado · abre
  *   mañana a las 12:00», con la hora del local. Igual que la app
- *   (`placeHoursLine`). `h` es lo que da `public_places` (`hours`).
+ *   (`placeHoursLine`). `h` es lo que da `public_places` (`hours`); sin
+ *   horario (`hours` null, ficha a medias: migración 20261274500000 de la
+ *   app), la fila dice «Horario no indicado».
+ * - `iniciales(nombre)`: lo que sale sin foto ni logo («Fruta Nova» → «FN»),
+ *   en la fila, la tarjeta y el marcador (como `placeInitials` en la app).
  * - En el navegador, al cargar: la página sale de la caché unos minutos, así
  *   que cada línea se vuelve a escribir con la hora de ahora (un sitio que ya
  *   ha cerrado no puede seguir diciendo «Abierto»).
  * - El mapa de Sitios (`#mapa-sitios`): todos los sitios del recuadro
  *   (`map_places`, sin sesión), otra vez al moverlo, con los marcadores de
- *   Planes (`KlendarAgrupa.capa`, GLOSARIO «Aspecto › El mapa»): el logo o el
- *   icono de su categoría; anillo coral si tienen una oferta hoy, en tinta si
+ *   Planes (`KlendarAgrupa.capa`, GLOSARIO «Aspecto › El mapa»): el logo, la
+ *   portada o, sin ninguna, sus iniciales; anillo coral si tienen una oferta hoy, en tinta si
  *   tienen planes hoy (con su nombre de cerca), sin anillo si no. Tocar uno
  *   abre su tarjeta con el enlace a la ficha.
  */
@@ -29,6 +33,7 @@
       kitchenClosed: 'Cocina cerrada',
       kitchenOpensAt: (t) => `Cocina cerrada · abre a las ${t}`,
       closed: 'Cerrado',
+      noHours: 'Horario no indicado',
       opensAt: (t) => `abre a las ${t}`,
       opensTomorrow: (t) => `abre mañana a las ${t}`,
       opensOn: (d, t) => `abre el ${d} a las ${t}`,
@@ -56,6 +61,7 @@
       kitchenClosed: 'Kitchen closed',
       kitchenOpensAt: (t) => `Kitchen closed · opens at ${t}`,
       closed: 'Closed',
+      noHours: 'Opening hours not listed',
       opensAt: (t) => `opens at ${t}`,
       opensTomorrow: (t) => `opens tomorrow at ${t}`,
       opensOn: (d, t) => `opens on ${d} at ${t}`,
@@ -124,6 +130,18 @@
     return { texto: `${L.closed} · ${cuando}`, abierto: false };
   }
 
+  /** Las iniciales de un sitio sin foto ni logo («Fruta Nova» → «FN», «Bar
+   * de Pepe» → «BP»): como mucho dos, sin las palabras pequeñas en minúscula
+   * («de», «la», «y») si queda otra. Igual que `placeInitials` en la app. */
+  function iniciales(nombre) {
+    const palabras = String(nombre || '').trim().split(/[\s\-–—/·&+.,:;'’()]+/).filter(Boolean);
+    const pequena = (w) => [...w].length <= 3 && w === w.toLowerCase() && w.toUpperCase() !== w;
+    const grandes = palabras.filter((w) => !pequena(w));
+    const usar = grandes.length ? grandes : palabras;
+    const letras = usar.slice(0, 2).map((w) => [...w][0].toUpperCase());
+    return letras.length ? letras.join('') : '·';
+  }
+
   /** «12,50 €» / «€12.50». */
   const precio = (c, en) => (Number.isFinite(c)
     ? (en ? `€${(c / 100).toFixed(2)}` : `${(c / 100).toFixed(2).replace('.', ',')} €`) : '');
@@ -159,7 +177,8 @@
     const n = Number(p.plans_today) || 0;
     return {
       tz,
-      hora: horaTexto(p.hours, tz, en ? 'en' : 'es', ahora),
+      // Sin horario (ficha a medias): «Horario no indicado», en gris.
+      hora: p.hours ? horaTexto(p.hours, tz, en ? 'en' : 'es', ahora) : { texto: L.noHours, abierto: false, sinHorario: true },
       festivo,
       extra,
       planes: n ? L.plansToday(n) : '',
@@ -181,7 +200,8 @@
   function detallesHtml(p, lang, ahora) {
     const x = partes(p, lang, ahora);
     return [
-      x.hora.texto ? `<span class="sitio-hora${x.hora.abierto ? ' abierto' : ''}" data-sitio-hora="${esc0(JSON.stringify(p.hours))}" data-tz="${esc0(x.tz)}" data-lang="${lang === 'en' ? 'en' : 'es'}">${esc0(x.hora.texto)}</span>` : '',
+      x.hora.sinHorario ? `<span class="sitio-hora sin-horario">${esc0(x.hora.texto)}</span>`
+        : x.hora.texto ? `<span class="sitio-hora${x.hora.abierto ? ' abierto' : ''}" data-sitio-hora="${esc0(JSON.stringify(p.hours))}" data-tz="${esc0(x.tz)}" data-lang="${lang === 'en' ? 'en' : 'es'}">${esc0(x.hora.texto)}</span>` : '',
       x.festivo ? `<span class="sitio-festivo${x.festivo.sinConfirmar ? ' sin-confirmar' : ''}">${esc0(x.festivo.texto)}</span>` : '',
       x.extra ? `<span class="sitio-extra">${icono(x.extra.tipo)}<span>${esc0(x.extra.texto)}</span></span>` : '',
       // En tinta: «2 planes hoy» no es una oferta (el coral, solo para eso).
@@ -189,7 +209,7 @@
     ].filter(Boolean).join('');
   }
 
-  const KlendarSitios = { horaTexto, partes, detallesHtml };
+  const KlendarSitios = { horaTexto, partes, detallesHtml, iniciales };
   globalThis.KlendarSitios = KlendarSitios;
   if (typeof module === 'object' && module && module.exports) module.exports = KlendarSitios;
 
@@ -321,8 +341,8 @@
 
       // Los marcadores: el mismo sistema que Planes (assets/mapa.js,
       // GLOSARIO «Aspecto › El mapa»): anillo en tinta si tiene planes hoy, sin anillo si
-      // no; la cifra, cuántos sitios. Los sin planes, con su icono (no se baja
-      // un logo por cada uno) y sin nombre.
+      // no; la cifra, cuántos sitios. Sin logo ni portada (ficha a medias),
+      // sus iniciales sobre el gris; los sin planes, sin nombre.
       const capa = KA.capa(m, {
         // En Sitios, el logo del negocio o el icono de su categoría (en
         // Planes, el del tipo de plan): que se sepa de un vistazo el modo.
@@ -332,12 +352,14 @@
             // La foto de perfil (logo), la que se reconoce y sale en su
             // tarjeta; sin ella, la portada.
             foto: f.logo || f.photo, icono: KA.iconoMapa('cat', f.category_slug), nombre: planesDe(f) ? f.name : null,
+            iniciales: f.logo || f.photo ? null : iniciales(f.name),
           };
         },
         anillo: (s) => (s.items.some((x) => x.has_offer) ? 'oferta' : s.items.some(planesDe) ? 'planes' : ''),
         uno: (f) => {
           const el = KA.marcaEl({
             foto: f.logo || f.photo, icono: KA.iconoMapa('cat', f.category_slug),
+            iniciales: f.logo || f.photo ? null : iniciales(f.name),
             anillo: f.has_offer ? 'oferta' : planesDe(f) ? 'planes' : '', n: 1,
             etiqueta: f.name, nombre: planesDe(f) ? f.name : null, prio: planesDe(f),
           });

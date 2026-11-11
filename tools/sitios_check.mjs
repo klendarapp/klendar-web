@@ -18,6 +18,9 @@
 //     (`place_card` pintada con la misma función, `detallesHtml`).
 //  9. La lista de un día del calendario de Planes, por partes (`?p=`).
 // 10. Sin errores en la consola.
+// 11. La ficha a medias (migración 20261274500000 de la app): sin foto ni
+//     logo, las iniciales (en la fila y en el marcador); sin horario,
+//     «Horario no indicado».
 // Chromium y WebKit, móvil (375) y escritorio. Capturas en OUT.
 //
 // Con sus propios datos (tools/_web_con_datos.mjs): los sitios de Madrid con
@@ -42,7 +45,11 @@ const NAILS = {
   category_id: DATOS.CATEGORIAS.find((c) => c.slug === 'beauty').id, category_slug: 'beauty',
   names: DATOS.CATEGORIAS.find((c) => c.slug === 'beauty').names, lat: 40.4190, lng: -3.7020,
 };
-const NEGOCIOS = [...DATOS.NEGOCIOS, NAILS].map((b, i) => ({ ...b, hours: horario(i), holiday: null }));
+// La Panadería, sin horario (ficha a medias: `hours` null). Ninguno tiene
+// foto ni logo: todos con sus iniciales.
+const NEGOCIOS = [...DATOS.NEGOCIOS, NAILS].map((b, i) => ({
+  ...b, hours: b.name === 'Panadería Muestra' ? null : horario(i), holiday: null,
+}));
 const metros = (a, b, c, d) => {
   const r = Math.PI / 180;
   const x = Math.sin(((c - a) * r) / 2);
@@ -104,6 +111,12 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     const hora = await page.locator('.sitio-hora').first().innerText();
     ok(/^(Abierto|Cerrado)/.test(hora), `${t} el horario de ahora («${hora}»)`);
     ok(/\d+(,\d)?\s?(m|km)/.test(await page.locator('.sitio-fila .muted').first().innerText()), `${t} categoría y distancia`);
+    // 11. Ficha a medias.
+    const bar = page.locator('.sitio-fila', { hasText: 'Bar Sonda' });
+    ok(await bar.locator('.ph.iniciales').innerText() === 'BS', `${t} sin foto ni logo, sus iniciales («BS»)`);
+    const pan = page.locator('.sitio-fila', { hasText: 'Panadería Muestra' });
+    const sinHora = await pan.locator('.sitio-hora').innerText().catch(() => '');
+    ok(sinHora === 'Horario no indicado', `${t} sin horario, «Horario no indicado» («${sinHora}»)`);
     if (forma === 'movil') {
       const ancho = await page.evaluate(() => document.documentElement.scrollWidth);
       ok(ancho <= 375, `${t} sin desbordar a lo ancho (${ancho})`);
@@ -127,6 +140,10 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     const r = await pide;
     ok(r && r.ok(), `${t} el mapa pide map_places`);
     await page.waitForTimeout(1500);
+    // Los marcadores sin logo ni portada, con sus iniciales (si el mapa pinta).
+    const marcas = await page.locator('#mapa-sitios .marca').count();
+    const conIniciales = await page.locator('#mapa-sitios .mc-iniciales').count();
+    ok(!marcas || conIniciales > 0, `${t} marcadores con iniciales (${conIniciales} de ${marcas})`);
     await page.locator('#mapa-sitios').scrollIntoViewIfNeeded();
     await page.screenshot({ path: `${OUT}/web-sitios-mapa-${nombre}-${forma}.png` });
 

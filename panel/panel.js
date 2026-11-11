@@ -660,6 +660,26 @@ function fichaFaltan(f) {
   }
   return out;
 }
+/** Lo que le falta a la ficha para salir antes en Sitios: 'ambos', 'horario'
+ * o 'foto' (portada o una del local; el logo no cuenta), o null. Ya sale en
+ * Sitios: los de ficha completa, antes (migración 20261274500000 de la app).
+ * Como `_PlacesProfileNotice` en la app. */
+function fichaSitiosFalta(f) {
+  const h = f.opening_hours;
+  const horario = !!h && typeof h === 'object' && !Array.isArray(h) && Object.keys(h).length > 0;
+  const foto = !!String(f.cover_image_url || '').trim() || (f.gallery || []).some((g) => String(g || '').trim());
+  return horario && foto ? null : !horario && !foto ? 'ambos' : !horario ? 'horario' : 'foto';
+}
+/** El aviso discreto (en tinta, sin coral) con el botón a lo que falta. */
+function avisoFichaSitios(falta) {
+  const [texto, href] = falta === 'ambos'
+    ? ['Completa tu ficha: añade el horario y una foto para salir antes en Sitios.', '#/ficha']
+    : falta === 'horario'
+      ? ['Completa tu ficha: añade el horario para salir antes en Sitios.', '#/ficha/horario']
+      : ['Completa tu ficha: añade una foto para salir antes en Sitios.', '#/ficha/fotos'];
+  return `<div class="help aviso-ficha-sitios">${esc(I18N.t(texto))}
+    <p style="margin:8px 0 0"><a class="btn sm" href="${href}">${ms('storefront')}${esc(I18N.t('Completar la ficha'))}</a></p></div>`;
+}
 const sugLista = (lista) => `<div class="sug-lista">${lista.map((s, i) => `<button type="button" class="sug" data-sug="${i}">
   <span><b>${esc(sugTitulo(s))}</b><small>${esc(sugHorario(s))}</small></span>${ms('chevron_right')}</button>`).join('')}</div>`;
 function sugActiva(v, lista, alPublicar) {
@@ -1644,6 +1664,11 @@ PAGES.resumen = async (v) => {
           ? esc(I18N.t('Ahora mismo no se ve nada de tu negocio. Lo abres de nuevo cuando quieras.'))
           : esc(I18N.t('Solo el propietario puede abrirlo de nuevo.'))}</p></div>
         ${esPropietario() ? '<a class="btn primary" href="#/baja">Abrir de nuevo</a>' : ''}</div>` : '';
+  // Lo último del «un solo aviso arriba»: a la ficha le falta el horario o
+  // una foto. Sale si no hay otro aviso ni pregunta de festivo (la pinta
+  // pedFestivo después) ni «Primeros pasos» (allí ya lo dice).
+  const fichaSitios = !aviso && candidato && !primeros && !sinLocal && BIZ.verification_status === 'verified'
+    ? fichaSitiosFalta(ficha) : null;
   // Lo de «Tu negocio» (el resto está en el menú): botones iguales.
   const negocioBtn = (href, icon, txt) => `<a class="herr-btn" href="${href}">${icono(icon)}<span>${esc(I18N.t(txt))}</span></a>`;
   v.innerHTML = `
@@ -1651,6 +1676,7 @@ PAGES.resumen = async (v) => {
       <a class="btn sm ghost" href="${APP_URL}/b/${esc(BIZ.id)}" target="_blank" rel="noopener">Ver cómo se ve ↗</a></div>
     ${aviso}
     ${aviso ? '' : '<div id="festivoCaja"></div>'}
+    ${fichaSitios ? '<div id="fichaSitiosCaja"></div>' : ''}
     <!-- Crear y validar, iguales y uno al lado del otro (como «Mi negocio» en
          la app), pero un solo coral por pantalla (Iván, 2026-10-28): «Crear»
          en coral y «Validar códigos» en tinta. Un empleado no publica: solo
@@ -1745,7 +1771,17 @@ PAGES.resumen = async (v) => {
   }
   pintaAforo($('#aforoCaja', v));
   // «¿Abres el 1 de noviembre?» (pedir.js), si no hay otro aviso.
-  if (typeof pedFestivo === 'function') pedFestivo($('#festivoCaja', v));
+  {
+    // La pregunta del festivo y, si no la hay, el aviso de la ficha a medias
+    // (nunca dos avisos apilados).
+    const festivo = $('#festivoCaja', v);
+    const pinta = () => {
+      const caja = $('#fichaSitiosCaja', v);
+      if (caja && fichaSitios && !festivo?.childElementCount) caja.innerHTML = avisoFichaSitios(fichaSitios);
+    };
+    if (typeof pedFestivo === 'function') Promise.resolve(pedFestivo(festivo)).then(pinta, pinta);
+    else pinta();
+  }
   if (window.KAyudas && BIZ.verification_status !== 'rejected') KAyudas.tarjeta($('#ideasIA', v));
   // «Cola virtual · N esperando», si está abierta (panel/cola.js).
   if (typeof resumenCola === 'function') resumenCola($('#colaCaja', v));

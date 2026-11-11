@@ -236,7 +236,9 @@
    * tampoco, el icono. [tipo]: en Planes con foto, el icono del tipo de plan
    * en una mini insignia abajo.
    */
-  function marcaEl({ foto, icono: ic, tipo, anillo, n, etiqueta, nombre, prio }) {
+  /** [iniciales]: un sitio sin logo ni portada (Sitios, ficha a medias): sus
+   * iniciales sobre el gris, en lugar del icono. */
+  function marcaEl({ foto, icono: ic, tipo, anillo, n, etiqueta, nombre, prio, iniciales }) {
     const el = document.createElement('button');
     el.type = 'button';
     el.className = `marca${anillo ? ` anillo-${anillo}` : ''}`;
@@ -245,7 +247,8 @@
     const icono = ic || iconoMapa('cat', 'shop');
     el.innerHTML = `${foto
       ? `<span class="mc-cara"><img src="${esc(miniatura(foto))}" alt="" decoding="async" data-original="${esc(foto)}"></span>`
-      : `<span class="mc-cara sin-logo">${icono}</span>`}${
+      : iniciales ? `<span class="mc-cara sin-logo mc-iniciales" aria-hidden="true">${esc(iniciales)}</span>`
+        : `<span class="mc-cara sin-logo">${icono}</span>`}${
       foto && tipo ? `<span class="mc-tipo" aria-hidden="true">${tipo}</span>` : ''}${
       n > 1 ? `<span class="mc-n" aria-hidden="true">${n > 99 ? '99+' : n}</span>` : ''}`;
     const img = el.querySelector('.mc-cara img');
