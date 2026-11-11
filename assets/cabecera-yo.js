@@ -153,7 +153,28 @@
     });
   }
 
-  window.KL_YO = { sesion: sesion, clave: clave, proyecto: proyecto, refDe: refDe, pinta: pinta, justa: justa };
+  // Volver al enlace después de entrar (Iván, 11-11: entró desde un enlace de
+  // amigo, inició sesión en la web y no le salió nada). En una página de
+  // enlace (amigo, oferta, sorteo, cola, RRPP…), «Entrar» de la cabecera
+  // apunta adónde volver; «Tu cuenta» lo usa al entrar, sea con contraseña,
+  // código, el botón del correo (otra pestaña), Google o el móvil, o al crear
+  // la cuenta (assets/cuenta/app.js, `tomaVuelta`). Caduca a los 20 min.
+  var DE_CUENTA = { amigo: 'amigo', friend: 'amigo', cola: 'cola', queue: 'cola', sorteo: 'sorteo', giveaway: 'sorteo', listo: 'listo', ready: 'listo' };
+  function vueltaDe(path) {
+    var m = /^\/(?:en\/)?(amigo|friend|cola|queue|sorteo|giveaway|listo|ready)\/([A-Za-z0-9_-]{1,64})$/.exec(path);
+    if (m) return 'cuenta:' + DE_CUENTA[m[1]] + '/' + m[2];
+    if (/^\/(?:en\/)?(o|rp|r|v|m|c|coleccion|collection)\/[A-Za-z0-9_-]{1,80}$/.test(path)) return 'web:' + path;
+    return '';
+  }
+  document.addEventListener('click', function (ev) {
+    var a = ev.target && ev.target.closest && ev.target.closest('.top-entrar');
+    if (!a || sesion()) return;
+    var v = vueltaDe(location.pathname.replace(/\/+$/, ''));
+    if (!v) return;
+    try { localStorage.setItem('klendar.vuelta', JSON.stringify({ r: v, t: Date.now() })); } catch (e) { /* sin almacenamiento */ }
+  }, true);
+
+  window.KL_YO = { sesion: sesion, clave: clave, proyecto: proyecto, refDe: refDe, pinta: pinta, justa: justa, vueltaDe: vueltaDe };
   pinta();
   justa();
 })();

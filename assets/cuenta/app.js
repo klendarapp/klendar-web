@@ -365,8 +365,32 @@ sb.auth.onAuthStateChange((ev, s) => {
 
 function exigeSesion(ruta) {
   if (YO) return true;
+  // Por si se entra por un camino que no lleva `?siguiente=` (el botón del
+  // correo abre otra pestaña en /cuenta, el alta…): ver `tomaVuelta`.
+  guardaVuelta(`cuenta:${ruta}`);
   irA(`entrar?siguiente=${encodeURIComponent(ruta)}`);
   return false;
+}
+
+// ── Volver al enlace después de entrar ─────────────────────────────────────
+// Iván (11-11) entró desde un enlace de amigo, inició sesión en la web y no le
+// salió nada. Adónde volver se guarda al pedir entrar (`exigeSesion`, y
+// «Entrar» de la cabecera en una página de enlace: assets/cabecera-yo.js) y
+// se usa al entrar, sea cual sea el camino. 20 minutos como mucho y una vez.
+const VUELTA = 'klendar.vuelta';
+const RUTA_VUELTA = /^[a-z0-9-]{1,30}(\/[A-Za-z0-9_-]{1,64}){0,2}(\?[A-Za-z0-9_=&%.-]{0,200})?$/;
+const WEB_VUELTA = /^\/(?:en\/)?(o|rp|r|v|m|c|coleccion|collection)\/[A-Za-z0-9_-]{1,80}$/;
+function guardaVuelta(v) {
+  try { localStorage.setItem(VUELTA, JSON.stringify({ r: v, t: Date.now() })); } catch { /* sin almacenamiento */ }
+}
+/** 'cuenta:<ruta>', 'web:<dirección>' o ''. La borra al leerla. */
+function tomaVuelta() {
+  let v = null;
+  try { v = JSON.parse(localStorage.getItem(VUELTA) || 'null'); localStorage.removeItem(VUELTA); } catch { return ''; }
+  if (!v || typeof v.r !== 'string' || !(Date.now() - Number(v.t) < 20 * 60e3)) return '';
+  if (v.r.startsWith('cuenta:') && RUTA_VUELTA.test(v.r.slice(7)) && !/^(entrar|registro|codigo-correo|movil|ultimo-paso)([/?]|$)/.test(v.r.slice(7))) return v.r;
+  if (v.r.startsWith('web:') && WEB_VUELTA.test(v.r.slice(4))) return v.r;
+  return '';
 }
 
 // ── Acciones que llegan por enlace ────────────────────────────────────────
@@ -550,8 +574,15 @@ async function navegar() {
   // Vuelta de Google (o de un enlace de correo): «?siguiente=» dice adónde.
   const q = new URLSearchParams(location.search);
   if (YO && q.has('siguiente') && !rutaActual().partes.length) {
+    tomaVuelta();
     ponRuta(q.get('siguiente') || '');
     urlPintada = urlAhora();
+  } else if (YO && !rutaActual().partes.length && !destinoTrasEntrar()) {
+    // Recién entrado por el botón del correo, el alta o el móvil, que traen
+    // a /cuenta a secas: al enlace del que se venía.
+    const v = tomaVuelta();
+    if (v.startsWith('web:')) { location.replace(v.slice(4)); return; }
+    if (v.startsWith('cuenta:')) { ponRuta(v.slice(7)); urlPintada = urlAhora(); }
   }
   let { partes, params, crudo } = rutaActual();
   if (partes[0] !== 'ultimo-paso' && await faltaConsentimiento()) {
@@ -694,8 +725,11 @@ function rutaInterna(v) {
 const vieneDelPanel = () => /^\/panel([?#]|$)/.test(destinoTrasEntrar());
 const trasEntrar = (siguiente) => {
   const d = destinoTrasEntrar();
+  const v = tomaVuelta();
   if (d) { location.href = d; return; }
-  vuelve(siguiente);
+  // Sin `?siguiente=` (se entró desde la cabecera), adónde se iba.
+  if (!siguiente && v.startsWith('web:')) { location.href = v.slice(4); return; }
+  vuelve(siguiente || (v.startsWith('cuenta:') ? v.slice(7) : ''));
 };
 
 // ── Inicio ────────────────────────────────────────────────────────────────
