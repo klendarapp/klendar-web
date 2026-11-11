@@ -80,7 +80,9 @@ RUTAS.amigos = async ([idAmigo]) => {
   const tope = lista?.limit || 500;
   const comparte = cons?.share_plans !== false;
   const dia = (iso) => fecha(iso, { day: 'numeric', month: 'short', year: 'numeric' });
-  const cuantos = (n) => (EN ? `${n} of ${tope}` : `${n} de ${tope}`);
+  // El tope («450 de 500») solo cerca de él; antes, la cifra sola (Iván,
+  // 11-11: «1 de 500» sobraba). Como la app.
+  const cuantos = (n) => (n < tope - 50 ? String(n) : EN ? `${n} of ${tope}` : `${n} de ${tope}`);
   const vacio = () => pantallaVacia({
     icono: 'group',
     titulo: t('Aún no tienes amigos en Klendar'),
