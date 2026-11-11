@@ -2207,6 +2207,10 @@ async function businessAction(a, b, d) {
         { grupo: 'Lo básico', cols: 2, campos: [
           { name: 'name', label: 'Nombre', value: b.name, required: true },
           { name: 'category_id', label: 'Categoría', type: 'select', value: b.category_id || '', options: [['', '—'], ...cats.map((c) => [c.id, (c.names?.[I18N.lang] || c.names?.es || c.slug)])] },
+          // Hasta dos más (migración 20261275100010 de la app). Sin la
+          // columna (una base vieja), no salen.
+          ...(Array.isArray(b.extra_category_ids) ? [1, 2].map((n) => ({ name: `extra_${n}`, label: `${I18N.t('Otra categoría')} ${n}`, type: 'select',
+            value: b.extra_category_ids[n - 1] || '', options: [['', '—'], ...cats.map((c) => [c.id, (c.names?.[I18N.lang] || c.names?.es || c.slug)])] })) : []),
           { name: 'description', label: 'Descripción', type: 'textarea', value: b.description },
         ] },
         { grupo: 'Dónde está', cols: 2, campos: [
@@ -2227,6 +2231,8 @@ async function businessAction(a, b, d) {
       if (!r) return;
       const patch = { ...r };
       if (!patch.lat || !patch.lng) { delete patch.lat; delete patch.lng; }
+      delete patch.extra_1; delete patch.extra_2;
+      if (Array.isArray(b.extra_category_ids)) patch.extra_category_ids = [r.extra_1, r.extra_2].filter((x) => x && x !== r.category_id);
       await rpc('admin_update_business', { p_id: b.id, p_patch: patch }); toast('Ficha actualizada');
     }
     if (a === 'sitio') {
@@ -3911,8 +3917,9 @@ PAGES.categorias = async (v) => {
     ${table({ cols: [
       { h: 'Categoría', r: (c) => `<span class="ph" style="font-size:20px">${c.icon ? ms(esc(c.icon)) : '·'}</span><span class="title">${esc(c.names?.[I18N.lang] || c.names?.es || c.slug)}<span class="sub">${esc(KlendarCategorias.nombreGrupo(KlendarCategorias.grupoDe(c), I18N.lang))} · ${esc(c.slug)} · EN: ${esc(c.names?.en || '—')}${c.parent_id ? ` · ${I18N.lang === 'en' ? 'under' : 'dentro de'} ${esc(byId[c.parent_id]?.names?.es || '')}` : ''}</span></span>` },
       { h: 'Herramientas', r: (c) => `<span class="muted small">${esc(herrDe(c))}</span>` },
-      { h: 'Orden', num: true, r: (c) => c.position }, { h: 'Negocios', num: true, r: (c) => c.businesses }, { h: 'Publicaciones', num: true, r: (c) => c.offers },
-      { h: '', r: (c) => `<span class="actions"><button class="btn sm" data-edit="${c.id}">Editar…</button>${(c.businesses || c.offers) ? '' : `<button class="btn sm bad ghost" data-del="${c.id}">Borrar</button>`}</span>` },
+      { h: 'Orden', num: true, r: (c) => c.position }, { h: 'Negocios', num: true, r: (c) => c.businesses },
+      ...(cats.some((c) => c.businesses_extra != null) ? [{ h: 'Negocios (otras)', num: true, r: (c) => c.businesses_extra }] : []), { h: 'Publicaciones', num: true, r: (c) => c.offers },
+      { h: '', r: (c) => `<span class="actions"><button class="btn sm" data-edit="${c.id}">Editar…</button>${(c.businesses || c.businesses_extra || c.offers) ? '' : `<button class="btn sm bad ghost" data-del="${c.id}">Borrar</button>`}</span>` },
     ], rows: cats, empty: 'Sin categorías.' })}`;
   const edit = async (c) => {
     const nueva = !c || c._nueva;

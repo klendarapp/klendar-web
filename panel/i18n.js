@@ -1840,4 +1840,7 @@ const I18N = makeI18N({
   "No hemos podido proponer una respuesta. Prueba otra vez o contéstala a mano.": "We couldn’t suggest a reply. Try again or answer it by hand.",
   "Sin conexión no se puede proponer. Contéstala a mano.": "It can’t be suggested offline. Answer it by hand.",
   "Propuesto con IA: {resumen}. Se cambia en «Más opciones».": "Suggested with AI: {resumen}. You can change it in “More options”.",
+  // Las otras categorías de un negocio (migración 20261275100010 de la app).
+  "Otras categorías": "Other categories",
+  "Hasta 2 más si tu negocio es varias cosas (un bar que también es restaurante). Ves las herramientas de todas y te encuentran por cualquiera; en el mapa y en las tarjetas sale la principal.": "Up to 2 more if your business is several things (a bar that is also a restaurant). You get the tools of all of them and people find you by any; maps and cards show the main one.",
 });

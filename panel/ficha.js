@@ -236,6 +236,8 @@ const pareceCorreo = (v) => !v || /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v);
 const htmlBasico = (d) => `
   <label class="f full"><span>Nombre del negocio *</span><input name="name" maxlength="80" required placeholder="Ej. La Taberna del Gato" value="${esc(d.name || '')}"></label>
   <label class="f full"><span>Categoría *</span><span data-campo-cat></span></label>
+  ${Array.isArray(d.extra_category_ids) ? `<div class="f full"><span>Otras categorías <small>(opcional)</small></span><span data-campo-cat-extra></span>
+    <small class="muted">Hasta 2 más si tu negocio es varias cosas (un bar que también es restaurante). Ves las herramientas de todas y te encuentran por cualquiera; en el mapa y en las tarjetas sale la principal.</small></div>` : ''}
   <label class="f full"><span>De qué va <small>(¿qué ofrece tu negocio? ¿qué lo hace especial?)</small></span><textarea name="description" maxlength="500" rows="4">${esc(d.description || '')}</textarea></label>`;
 
 /** Dirección, ciudad y el punto en el mapa. Con «No tengo local fijo»
@@ -581,6 +583,27 @@ function fichaCompleta(b, { sitio, carta }) {
 }
 
 // ── «Tu ficha»: el índice y cada apartado ───────────────────────────────────
+/** Las otras categorías del negocio [id] (hasta 2), o null si la base aún no
+ * tiene la columna: entonces ni se enseñan ni se mandan. */
+let extrasLeidas = null;
+async function extrasDeCategoria(id) {
+  try {
+    const { data, error } = await sb.from('businesses').select('extra_category_ids').eq('id', id).maybeSingle();
+    return !error && Array.isArray(data?.extra_category_ids) ? data.extra_category_ids : null;
+  } catch { return null; }
+}
+/** Cuántas más, además de la principal (la base no deja más). */
+const MAX_OTRAS_CATEGORIAS = 2;
+/** El selector de las otras categorías en [cont], sin la principal. */
+function campoOtrasCategorias(cont, d, cats, alCambiar) {
+  if (!cont) return;
+  KlendarCategorias.campo(cont, {
+    cats: cats.filter((c) => c.id !== d.category_id), elegidas: d.extra_category_ids || [], multiple: true, max: MAX_OTRAS_CATEGORIAS,
+    lang: I18N.lang, nombre: 'extra_category_ids', titulo: I18N.t('Otras categorías'), vacio: I18N.t('Ninguna'), vacioEsTodas: false,
+    alCambiar: (ids) => { d.extra_category_ids = ids.filter((x) => x !== d.category_id); if (alCambiar) alCambiar(); },
+  });
+}
+
 async function datosFicha() {
   const [{ data: b }, cats, privado, carta, enlaces, info] = await Promise.all([
     sb.from('businesses').select('id, name, description, category_id, address, city, phone, website, contact_email, social_links, logo_url, cover_image_url, gallery, opening_hours, kitchen_hours, adults_only, amenities, moments, price_level, crowd_enabled, menu_url, menu_images').eq('id', BIZ.id).maybeSingle(),
@@ -593,7 +616,10 @@ async function datosFicha() {
     rpc('business_links', { p_id: BIZ.id }).catch(() => null),
     // «Qué pedir aquí» (pedir.js; migración 20261233100000).
     rpc('business_ficha_info', { p_business: BIZ.id }).catch(() => null),
-  ]);
+    // Las otras categorías (migración 20261275100010 de la app): sin la
+    // columna, null y no se enseñan.
+    extrasDeCategoria(BIZ.id),
+  ]).then((r) => { extrasLeidas = r[6]; return r; });
   if (b) {
     b.links = Array.isArray(enlaces?.links) ? enlaces.links : [];
     b.menu_files = Array.isArray(enlaces?.menu_files) ? enlaces.menu_files : null;
@@ -602,6 +628,7 @@ async function datosFicha() {
     b.amenities = Array.isArray(b.amenities) ? b.amenities : [];
     b.moments = Array.isArray(b.moments) ? b.moments : [];
     b.highlights = Array.isArray(info?.highlights) ? info.highlights : [];
+    b.extra_category_ids = extrasLeidas;
   }
   return { b, cats, carta };
 }
@@ -728,7 +755,7 @@ async function parteFicha(v, parte, b, cats) {
     'Optional. If you don’t set it, the kitchen follows the venue’s hours. Used on your page, in “Food served now” and in the daily menu.'))}</p>
         <div data-cocina ${cocinaOn ? '' : 'hidden'}></div></div>`,
     contacto: () => `${htmlContacto(d)}<div class="full enlaces-ficha" data-enlaces></div>`,
-    local: () => htmlSitio(b.amenities, { precio: b.price_level, aforo: b.crowd_enabled, dietas: dietasCaben([b.category_id], cats, b.amenities) }) + pedMomentosHtml(b.moments),
+    local: () => htmlSitio(b.amenities, { precio: b.price_level, aforo: b.crowd_enabled, dietas: dietasCaben([b.category_id, ...(b.extra_category_ids || [])], cats, b.amenities) }) + pedMomentosHtml(b.moments),
     klendar: () => htmlKlendar(d),
     mayores: () => htmlMayores(d),
   }[parte];
@@ -740,7 +767,8 @@ async function parteFicha(v, parte, b, cats) {
     const x = valores();
     return {
       fotos: () => ({ logo_url: est.logo, cover_image_url: est.portada, gallery: est.galeria }),
-      basico: () => ({ name: String(x.name || '').trim(), category_id: x.category_id || null, description: String(x.description || '').trim() }),
+      basico: () => ({ name: String(x.name || '').trim(), category_id: x.category_id || null, description: String(x.description || '').trim(),
+        ...(Array.isArray(d.extra_category_ids) ? { extra_category_ids: d.extra_category_ids.filter((c) => c !== (x.category_id || d.category_id)) } : {}) }),
       // Sin local fijo, sin dirección (la base la vacía): la ciudad y la zona.
       donde: () => (f().elements.no_fixed_venue?.checked
         ? { city: String(x.city || '').trim(), ...(d.punto ? { lat: d.punto.lat, lng: d.punto.lng } : {}), no_fixed_venue: true }
@@ -764,8 +792,17 @@ async function parteFicha(v, parte, b, cats) {
     if (parte === 'basico') {
       KlendarCategorias.campo($('[data-campo-cat]', v), {
         cats, elegidas: [d.category_id], multiple: false, lang: I18N.lang, nombre: 'category_id', titulo: I18N.t('Categoría'),
-        alCambiar: (ids) => { d.category_id = ids[0]; KL_CAMPO($('.selcat-campo', v), null); },
+        alCambiar: (ids) => {
+          d.category_id = ids[0];
+          KL_CAMPO($('.selcat-campo', v), null);
+          // La principal no puede ser también una de las otras.
+          if (Array.isArray(d.extra_category_ids)) {
+            d.extra_category_ids = d.extra_category_ids.filter((c) => c !== d.category_id);
+            campoOtrasCategorias($('[data-campo-cat-extra]', v), d, cats);
+          }
+        },
       });
+      campoOtrasCategorias($('[data-campo-cat-extra]', v), d, cats);
     }
     if (parte === 'donde') {
       activaDonde($('[data-punto-caja]', v), f(), d);
@@ -892,6 +929,9 @@ PAGES.alta = async (v, param) => {
   for (let n = 1; n < paso; n++) if (pasoAltaIncompleto(n)) { location.hash = `#/alta/${n}`; return; }
   const otro = BIZZES.length > 0;
   const A = ALTA;
+  // Las otras categorías, si la base ya las tiene (sus categorías traen
+  // `features`, de la misma tanda de migraciones de la app).
+  if (A.extra_category_ids === undefined && cats.some((c) => c.features && Object.keys(c.features).length)) A.extra_category_ids = [];
 
   const cuerpo = {
     1: () => `${otro ? '' : `<div class="help full"><b>Bienvenido/a.</b> Cuéntanos sobre tu negocio: lo revisamos antes de hacerlo público (normalmente en 24-48 h). Mientras, ya puedes preparar publicaciones.
@@ -949,8 +989,16 @@ PAGES.alta = async (v, param) => {
     if (paso === 1) {
       KlendarCategorias.campo($('[data-campo-cat]', v), {
         cats, elegidas: [A.category_id], multiple: false, lang: I18N.lang, nombre: 'category_id', titulo: I18N.t('Categoría'),
-        alCambiar: (ids) => { A.category_id = ids[0]; KL_CAMPO($('.selcat-campo', v), null); },
+        alCambiar: (ids) => {
+          A.category_id = ids[0];
+          KL_CAMPO($('.selcat-campo', v), null);
+          if (Array.isArray(A.extra_category_ids)) {
+            A.extra_category_ids = A.extra_category_ids.filter((c) => c !== A.category_id);
+            campoOtrasCategorias($('[data-campo-cat-extra]', v), A, cats);
+          }
+        },
       });
+      campoOtrasCategorias($('[data-campo-cat-extra]', v), A, cats);
     }
     if (paso === 2) {
       activaDonde($('[data-punto-caja]', v), f, A);
@@ -1018,6 +1066,11 @@ PAGES.alta = async (v, param) => {
         p_social_links: social,
         ...(A.horas && !A.sin_local ? { p_opening_hours: A.horas } : {}),
       });
+      // Las otras categorías van aparte (`register_business` no las recibe);
+      // si falla, se ponen en «Tu ficha» › «Lo básico».
+      if (A.extra_category_ids?.length) {
+        await rpc('update_business', { p_id: id, p_patch: { extra_category_ids: A.extra_category_ids } }).catch(() => null);
+      }
       // «No tengo local fijo»: justo después del alta (como la app). Si
       // falla, el negocio ya existe: se dice y se marca en «Tu ficha».
       if (A.sin_local) {

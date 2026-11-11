@@ -657,6 +657,8 @@ const I18N = makeI18N({
   "Sin cambios registrados.": "No changes recorded.",
 
   // ── Categorías y qué ve cada tipo de negocio (20261275100000) ────────
+  "Otra categoría": "Other category",
+  "Negocios (otras)": "Businesses (other)",
   "Alguna herramienta de la categoría no es válida.": "One of the category's tools isn't valid.",
   "Inglés": "English",
   "Catalán": "Catalan",

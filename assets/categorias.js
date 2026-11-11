@@ -386,7 +386,7 @@
       }
       boton.addEventListener('click', async () => {
         const r = await KlendarCategorias.abrir({
-          cats: o.cats, elegidas: valor, multiple: o.multiple, lang: o.lang, titulo: o.titulo, vacioEsTodas: Boolean(o.vacio),
+          cats: o.cats, elegidas: valor, multiple: o.multiple, lang: o.lang, titulo: o.titulo, vacioEsTodas: o.vacioEsTodas ?? Boolean(o.vacio),
           max: o.max, id: o.id || 'id',
         });
         if (r == null) { boton.focus(); return; }
