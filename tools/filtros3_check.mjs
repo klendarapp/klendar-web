@@ -109,7 +109,10 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     await page.waitForTimeout(900);
     await Promise.all([page.waitForURL(/categoria=.*categoria=/), page.locator('#que-hoja button[type=submit]').click()]);
     const pQue = await page.locator('#que-hoja > summary').innerText();
-    ok(nombres.every((n) => pQue.includes(n.trim().slice(0, 6))) || /…/.test(pQue) || pQue.length > 10, `${t} ¿Qué? con dos categorías: «${pQue.trim()}»`);
+    // Entero si cabe; si no, corto: «Bares +1» (Iván, 11-11). El lector, siempre entero.
+    const etiquetaQue = await page.locator('#que-hoja > summary').getAttribute('aria-label');
+    ok((nombres.every((n) => pQue.includes(n.trim().slice(0, 6))) || (pQue.trim().startsWith(nombres[0].trim().slice(0, 5)) && pQue.trim().endsWith(' +1')))
+      && nombres.every((n) => etiquetaQue.includes(n.trim())), `${t} ¿Qué? con dos categorías: «${pQue.trim()}» («${etiquetaQue}»)`);
     ok(new URL(page.url()).searchParams.getAll('categoria').length === 2, `${t} dos categorías en la dirección`);
 
     // 5. El orden, dentro de ☰ y arriba del todo.

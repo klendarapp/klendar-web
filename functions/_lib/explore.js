@@ -71,7 +71,7 @@ const T = (en) => en
       live: (n) => `${n} on right now`,
       picks: 'Picks', more: 'More ways to explore',
       price: 'Price', any: 'Any', free: 'Free', upTo: (n) => `Up to €${n}`,
-      when: 'When?', anytime: 'Any time', now: 'Next 2 hours', today: 'Today', tomorrow: 'Tomorrow', next10: 'Next 10 days',
+      when: 'When?', anytime: 'Any time', now: 'Next 2 hours', today: 'Today', tomorrow: 'Tomorrow', next10: 'Next 10 days', nowShort: '2 hours', next10Short: '10 days',
       discount: 'Discounts only', openNow: 'Open now', soonest: 'Soonest', newest: 'Newest',
       nearOn: 'Near you', approx: 'Approximate location', nearNo: "We couldn't get your location. Allow it in your browser and try again.",
       where: 'Where', useLoc: 'Use my location', useLocHint: "What's closest to where you are now", nearPrompt: 'See what’s closest to you first.', nearNeedsWhere: 'To see what’s closest first, tell us where you are.',
@@ -217,7 +217,7 @@ const T = (en) => en
       live: (n) => `${n} ahora mismo`,
       picks: 'Selecciones', more: 'Más formas de explorar',
       price: 'Precio', any: 'Cualquiera', free: 'Gratis', upTo: (n) => `Hasta ${n} €`,
-      when: '¿Cuándo?', anytime: 'Cuando sea', now: 'Próximas 2 horas', today: 'Hoy', tomorrow: 'Mañana', next10: 'Próximos 10 días',
+      when: '¿Cuándo?', anytime: 'Cuando sea', now: 'Próximas 2 horas', today: 'Hoy', tomorrow: 'Mañana', next10: 'Próximos 10 días', nowShort: '2 horas', next10Short: '10 días',
       discount: 'Solo con descuento', openNow: 'Abierto ahora', soonest: 'Más pronto', newest: 'Novedades',
       nearOn: 'Cerca de ti', approx: 'Ubicación aproximada', nearNo: 'No hemos podido saber dónde estás. Permítelo en el navegador y vuelve a probar.',
       where: 'Dónde', useLoc: 'Usar mi ubicación', useLocHint: 'Lo más cercano a donde estás ahora', nearPrompt: 'Mira primero lo que tienes más cerca.', nearNeedsWhere: 'Para ver lo más cerca primero, dinos dónde estás.',
@@ -1305,7 +1305,11 @@ const FILA_MIDE = "(function(){var b=document.getElementById('barra');if(!b)retu
   // escritorio, Descubre decía «Todas» y Explorar «Todas las ciudades»
   // (revisión del 3-11-2026, 1.8). Más ancha y aun así sin sitio: primero
   // sin iconos y, si ni así, el corto.
-  + "function mide(){b.classList.remove('fila-corta','fila-sin-iconos');var e=innerWidth<400;if(e)b.classList.add('fila-corta');if(!corta())return;b.classList.add('fila-sin-iconos');if(e||!corta())return;b.classList.add('fila-corta');}"
+  // Y si aun así no cabe, lo elegido en corto («2 horas», «Bares +2»; Iván,
+  // 11-11, como la app) en vez de «Próximas…» o «Bares, Re…».
+  + "function largos(){Array.prototype.forEach.call(b.querySelectorAll('.chip-t[data-corto]'),function(t){t.textContent=t.getAttribute('data-largo');});}"
+  + "function cortos(){Array.prototype.forEach.call(b.querySelectorAll('.chip-t[data-corto]'),function(t){if(t.scrollWidth>t.clientWidth+1)t.textContent=t.getAttribute('data-corto');});}"
+  + "function mide(){largos();b.classList.remove('fila-corta','fila-sin-iconos');var e=innerWidth<400;if(e)b.classList.add('fila-corta');if(!corta())return;b.classList.add('fila-sin-iconos');if(!e&&corta())b.classList.add('fila-corta');if(corta())cortos();}"
   + "(window.requestAnimationFrame||setTimeout)(mide);window.KL_FILA=mide;var t;addEventListener('resize',function(){clearTimeout(t);t=setTimeout(mide,60);});"
   + "if(document.fonts&&document.fonts.ready)document.fonts.ready.then(mide);})();";
 
@@ -1824,7 +1828,9 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
       ${pie}
     </form>
   </details>`;
-  const chipHoja = (icono, txt, on, etiqueta, cls = '') => `<summary class="chip${cls}${on ? ' on' : ''}" aria-label="${esc(etiqueta)}">${ic(icono, 16)}<span class="chip-t">${esc(txt)}</span>${ic('abajo', 16)}</summary>`;
+  const chipHoja = (icono, txt, on, etiqueta, cls = '', corto = '') => `<summary class="chip${cls}${on ? ' on' : ''}" aria-label="${esc(etiqueta)}">${ic(icono, 16)}<span class="chip-t"${corto && corto !== txt ? ` data-largo="${esc(txt)}" data-corto="${esc(corto)}"` : ''}>${esc(txt)}</span>${ic('abajo', 16)}</summary>`;
+  /** El primero y cuántos más: «Bares +2». */
+  const primeroMas = (l) => (l.length <= 1 ? l.join('') : `${l[0]} +${l.length - 1}`);
 
   // ── ¿Cuándo?: atajos, «El plan es…», «El sitio, ahora» y el momento del
   // día (todos los «ahora» juntos). En Sitios, solo lo del sitio.
@@ -1845,7 +1851,8 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
     // El botón dice siempre lo que vale («Cuando sea», «Esta noche»), nunca la
     // pregunta (Iván, 2026-10-27); el lector, «Cuándo: Cuando sea».
     summary: chipHoja('reloj', partesCuando.join(', ') || S.anytime, partesCuando.length > 0,
-      `${S.whenQ}: ${partesCuando.join(', ') || S.anytime}`),
+      `${S.whenQ}: ${partesCuando.join(', ') || S.anytime}`, '',
+      primeroMas(partesCuando.map((x) => (x === S.now ? S.nowShort : x === S.next10 ? S.next10Short : x)))),
     titulo: S.when, resetTxt: S.clearQ,
     reset: link({ when: '', abierto: false, comerAhora: false, momento: '', ...(aquiOn ? { km: RADIO_KM, sort: '' } : {}) }),
     // En el calendario, al cambiar «¿Cuándo?» se abre en el primer día que cuenta.
@@ -1893,7 +1900,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
     id: 'que-hoja',
     // «Todo» o lo elegido («Bares, Música»); el lector, «Qué: Todo».
     summary: chipHoja('tipo', partesQue.join(', ') || S.all, partesQue.length > 0,
-      `${S.whatQ}: ${partesQue.join(', ') || S.all}`),
+      `${S.whatQ}: ${partesQue.join(', ') || S.all}`, '', primeroMas(partesQue)),
     titulo: S.whatTitle, resetTxt: S.clearQ,
     reset: link({ kind: '', menuDia: false, antesCierre: false, cat: '', cats: [] }),
     ocultos: ocultosMenos(new Set([K.kind, K.menu, K.closing, K.cat])),
