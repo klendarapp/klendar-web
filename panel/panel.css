@@ -745,7 +745,7 @@ label.f.casilla small { display: block; font-weight: 500; margin-top: 2px; }
 .elige input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
 .elige span { display: inline-flex; align-items: center; min-height: 40px; padding: 8px 14px; border-radius: 999px; box-sizing: border-box;
   border: 1px solid var(--glass-border); background: var(--glass); color: var(--ink); font-weight: 600; font-size: 14px; cursor: pointer; }
-.elige input:checked + span { background: var(--ink); color: var(--surface); border-color: var(--ink); font-weight: 700; }
+.elige input:checked + span { background: var(--ink); color: var(--surface); border-color: var(--ink); } /* sin negrita: no cambia de ancho (Iván, 11-11) */
 .elige input:focus-visible + span { outline: 2px solid var(--ink); outline-offset: 2px; }
 /* Bloques plegables: cerrados dicen lo que llevan dentro. */
 details.bloque { border: 1px solid var(--glass-border); border-radius: 18px; margin: 0; }

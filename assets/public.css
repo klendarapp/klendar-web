@@ -377,7 +377,9 @@ details.hoja[open] > summary::after { background: rgba(0,0,0,.5); }
 .op-r span { display: inline-flex; align-items: center; min-height: 40px; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--glass-border);
   background: var(--glass); font-weight: 600; font-size: 14px; cursor: pointer; }
 .op-r input:checked + span { background: var(--ink); color: var(--surface); border-color: var(--ink); }
-.op-r input[type=checkbox]:checked + span::before { content: '✓'; margin-right: 6px; font-weight: 800; }
+/* Sin ✓ delante al marcar (como las píldoras de la app): ensanchaba la casilla
+   y empujaba a las de detrás a la fila siguiente (Iván, 11-11). La marcada ya
+   va en tinta. */
 .op-r input:focus-visible + span { outline: 2px solid var(--ink); outline-offset: 2px; }
 .hoja-pie { display: flex; gap: 10px; padding: 14px 20px calc(16px + env(safe-area-inset-bottom)); border-top: 1px solid var(--glass-border); }
 .hoja-pie .pill { flex: 1; justify-content: center; text-align: center; }
