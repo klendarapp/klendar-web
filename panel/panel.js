@@ -1074,6 +1074,8 @@ const SVG = {
   rrpp: 'M9 13c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0-6c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm0 8c-2.67 0-8 1.34-8 4v3h16v-3c0-2.66-5.33-4-8-4zm6 5H3v-.99C3.2 18.29 6.3 17 9 17s5.8 1.29 6 2v1zM15.08 7.05c.84 1.18.84 2.71 0 3.89l1.68 1.69c2.02-2.02 2.02-5.07 0-7.27l-1.68 1.69zM20.07 2l-1.63 1.63c2.77 3.02 2.77 7.56 0 10.74L20.07 16c3.9-3.89 3.91-9.95 0-14z',
   // «Cola virtual» (format_list_numbered).
   cola: 'M2 17h2v.5H3v1h1v.5H2v1h3v-4H2v1zm1-9h1V4H2v1h1v3zm-1 3h1.8L2 13.1v.9h3v-1H3.2L5 10.9V10H2v1zm5-6v2h14V5H7zm0 14h14v-2H7v2zm0-6h14v-2H7v2z',
+  // «Crear» (add, el «+» de la app; no está en la fuente recortada).
+  mas: 'M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z',
   // Aviso (info) y carné que hay que enseñar (school).
   info: 'M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z',
   school: 'M12 3 1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3zm6.82 6L12 12.72 5.18 9 12 5.28 18.82 9zM17 15.99l-5 2.73-5-2.73v-3.72L12 15l5-2.73v3.72z',
@@ -1652,12 +1654,13 @@ PAGES.resumen = async (v) => {
     : BIZ.verification_status !== 'verified' && BIZ.entity?.pending ? entAvisoPendiente()
     : BIZ.verification_status !== 'verified' ? avisoVerificacion()
       // Se bloquea en 7 días o menos (prueba, gratis, lo pagado o un impago).
-      : gestiona() && sub?.billing?.block_soon && sub.billing.block_on ? avisoBloqueoPronto(sub.billing)
-      : gestiona() && sub?.status === 'past_due' ? avisoCobro()
+      // Una entidad no paga: ningún aviso de cobro ni de bloqueo (Iván, 11-11).
+      : gestiona() && !entidad && sub?.billing?.block_soon && sub.billing.block_on ? avisoBloqueoPronto(sub.billing)
+      : gestiona() && !entidad && sub?.status === 'past_due' ? avisoCobro()
       // El «Gratis de lanzamiento» con fecha de fin: en los últimos 30 días
       // (cuando llegan el push y el correo; migración 20261260100002 de la
       // app). Antes, la fecha va en la tarjeta del plan.
-      : gestiona() && gratisAcabaPronto(sub) ? avisoGratisFin(sub)
+      : gestiona() && !entidad && gratisAcabaPronto(sub) ? avisoGratisFin(sub)
       : cerradoIndef() ? `<div class="card pausa"><div>
         <h2 style="margin:0">Cerrado hasta nuevo aviso</h2>
         <p class="muted" style="margin:4px 0 0">${esPropietario()
@@ -1682,7 +1685,7 @@ PAGES.resumen = async (v) => {
          en coral y «Validar códigos» en tinta. Un empleado no publica: solo
          «Validar códigos», y en coral (es su botón principal). -->
     <div class="quick quick-2">
-      ${gestiona() ? `<button class="primary" data-go="crear"><span class="ic ms" aria-hidden="true">create</span>Crear<small>Oferta flash, evento o novedad</small></button>` : ''}
+      ${gestiona() ? `<button class="primary" data-go="crear">${svg('mas', 24).replace('class="ms svg"', 'class="ic ms svg"')}Crear<small>Oferta flash, evento o novedad</small></button>` : ''}
       <button class="${gestiona() ? 'tinta' : 'primary'}" data-go="validar"><span class="ic ms" aria-hidden="true">qr_code_scanner</span>Validar códigos<small>Con la cámara o escribiendo el código</small></button>
     </div>
     ${primeros ? `<div class="card primeros" style="margin-top:14px"><h2>${sugerencias.length ? 'Primeros pasos' : 'Completa tu ficha'}</h2>
