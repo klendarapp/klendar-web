@@ -17,6 +17,8 @@
 //  3. Nada se sale por la derecha a 360, 390 y 430 px (lo ancho se desplaza
 //     dentro de su caja).
 //  4. «Más» (☰) de la cabecera de toda la web se cierra tocando fuera.
+//  5. Como la app: pestaña elegida rellena, «Tu cuenta» sin sesión y el
+//     orden y los iconos del menú del panel.
 //
 // Chromium (como un móvil) y WebKit.
 //
@@ -240,8 +242,49 @@ async function pruebaMas(nav, nombre) {
   await ctx.close();
 }
 
+/** Como la app (Iván, 2026-11-12): la pestaña elegida con su icono relleno,
+ * «Tu cuenta» sin sesión («Aún no has entrado», Ajustes con el idioma y
+ * Ayuda) y el panel con el orden y los iconos de «Mi negocio». */
+async function pruebaComoLaApp(nav, nombre) {
+  let { ctx, p } = await contexto(nav, nombre);
+  await p.goto(`${BASE}/descubre`, { waitUntil: 'networkidle' });
+  const relleno = await p.evaluate(() => {
+    const a = [...document.querySelectorAll('.tabbar a[data-tab]')].filter((x) => x.getClientRects().length);
+    const vis = (el) => el && getComputedStyle(el).display !== 'none';
+    return a.map((x) => `${x.dataset.tab}:${x.hasAttribute('aria-current') ? 'elegida' : 'no'}:${vis(x.querySelector('.ic-on')) ? 'llena' : 'contorno'}`).join(' ');
+  });
+  ok(/descubre:elegida:llena/.test(relleno) && /planes:no:contorno/.test(relleno) && /cuenta:no:contorno/.test(relleno), `${nombre}: la pestaña elegida, rellena; las demás, en contorno (${relleno})`);
+  await p.goto(`${BASE}/cuenta`, { waitUntil: 'networkidle' });
+  await p.waitForSelector('.invitado');
+  const v = await p.locator('#view').innerText();
+  ok(/Aún no has entrado/.test(v) && /Entrar o crear cuenta/.test(v) && /Ajustes/.test(v) && /Preguntas frecuentes/.test(v) && !/Sugerencias y mejoras/.test(v), `${nombre}: «Tu cuenta» sin sesión, como la app`);
+  await p.click('#legal');
+  const legal = await p.locator('dialog[open]').innerText();
+  ok(['Términos de uso', 'Política de privacidad', 'Normas de la comunidad', 'Aviso legal', 'Fuentes y licencias'].every((x) => legal.includes(x)), `${nombre}: «Legal» con los cinco textos`);
+  await p.keyboard.press('Escape');
+  await p.locator('#view a[href="/cuenta/idioma"]').click();
+  await p.waitForSelector('#view a[data-lang="en"]');
+  await p.locator('#view a[data-lang="en"]').click();
+  await p.waitForFunction(() => /Settings/.test(document.querySelector('#view')?.innerText || ''));
+  ok(/\/cuenta\/idioma/.test(p.url()), `${nombre}: sin sesión, Ajustes cambia el idioma y se queda en Ajustes`);
+  await ctx.close();
+  ({ ctx, p } = await contexto(nav, nombre, { conSesion: true }));
+  await p.goto(`${BASE}/panel#/resumen`, { waitUntil: 'networkidle' });
+  await p.waitForSelector('#nav a.nav', { state: 'attached' });
+  const orden = await p.evaluate(() => ({
+    menu: [...document.querySelectorAll('#nav a.nav')].map((a) => a.getAttribute('href').slice(2)).join(' '),
+    barra: [...document.querySelectorAll('#tabbar a')].map((a) => a.getAttribute('href').slice(2)).join(' '),
+    iconos: ['informe', 'rrpp', 'preguntas', 'ayuda'].map((k) => document.querySelector(`#nav a[href="#/${k}"] .ms`)?.textContent).join(' '),
+  }));
+  ok(/^resumen calendario validar publicaciones ficha fidelizar informe rrpp herramientas equipo resenas preguntas cerrados ayuda plan$/.test(orden.menu.replace(/ ?agenda/, '')), `${nombre}: el menú del panel en el orden de la app (${orden.menu})`);
+  ok(orden.barra === 'resumen calendario validar publicaciones', `${nombre}: la barra de abajo, en el mismo orden (${orden.barra})`);
+  ok(orden.iconos === 'insights badge contact_support help_outline', `${nombre}: los iconos de Cifras, RRPP, Preguntas y Preguntas frecuentes (${orden.iconos})`);
+  await ctx.close();
+}
+
 for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
   const nav = await tipo.launch();
+  await pruebaComoLaApp(nav, nombre);
   await pruebaMas(nav, nombre);
   await pruebaMenu(nav, nombre, 'admin');
   await pruebaMenu(nav, nombre, 'panel');

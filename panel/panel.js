@@ -1088,8 +1088,10 @@ const icono = (n) => (SVG[n] ? svg(n) : ms(n));
 // El menú, ordenado como «Mi negocio» en la app (Iván, 2026-10-10: nada se
 // quita, todo ordenado): arriba lo de todos los días (Resumen, Calendario,
 // Validar códigos y Publicaciones, con las novedades dentro); «Lo esencial»
-// (Tu ficha, Fidelizar, Cifras y RRPP) y «Tu negocio» (Más herramientas,
-// Equipo, Reseñas, Días cerrados y Ayuda). Lo de Fidelizar (sellos, bonos,
+// (Tu ficha, Fidelizar, Cifras y RRPP), «Más herramientas» en su propia fila,
+// «Tu negocio» (Equipo, Reseñas, Preguntas, Días cerrados y Preguntas
+// frecuentes) y al final «Tu plan» (Iván, 2026-11-12: como la app, también
+// los iconos). Lo de Fidelizar (sellos, bonos,
 // cumpleaños, avisar a los clientes, sorteos, cupón y habituales) y lo de
 // «Más herramientas» (cola, tele, partidos, grupos, antes de cerrar, series,
 // carta y cartel del local) se abre desde su pantalla y marca su entrada.
@@ -1107,26 +1109,33 @@ const NAV = [
     // Fidelizar (panel/fidelizar.js): lo ve todo el equipo; cambiarlo,
     // propietario y encargado.
     ['fidelizar', 'favorite', 'Fidelizar', ['cupon', 'habituales', 'sellos', 'bonos', 'cumpleanos', 'mensajes', 'sorteos']],
-    ['informe', 'bar_chart', 'Cifras'],
-    ['rrpp', 'rrpp', 'RRPP'],
+    ['informe', 'insights', 'Cifras'],
+    ['rrpp', 'badge', 'RRPP'],
+  ]],
+  // «Más herramientas» (panel/herramientas.js): lo opcional, en una fila
+  // aparte entre «Lo esencial» y «Tu negocio», como en la app.
+  [null, [
+    ['herramientas', 'herramientas', 'Más herramientas', ['cola', 'tele', 'partidos', 'grupos', 'antes-de-cerrar', 'series', 'carta', 'cartel-local', 'menu-del-dia', 'wifi-clientes', 'aforo', 'pedidos']],
   ]],
   ['Tu negocio', [
-    // «Más herramientas» (panel/herramientas.js): lo opcional.
-    ['herramientas', 'herramientas', 'Más herramientas', ['cola', 'tele', 'partidos', 'grupos', 'antes-de-cerrar', 'series', 'carta', 'cartel-local', 'menu-del-dia', 'wifi-clientes', 'aforo', 'pedidos']],
     ['equipo', 'group', 'Equipo'],
     ['resenas', 'reviews', 'Reseñas'],
     // «Pregúntale al local» (panel/preguntas.js).
-    ['preguntas', 'help_outline', 'Preguntas'],
+    ['preguntas', 'contact_support', 'Preguntas'],
     ['cerrados', 'event_busy', 'Días cerrados'],
-    ['ayuda', 'help', 'Ayuda'],
-    // «Tu plan» (panel/plan.js): estado del plan y, para el propietario,
-    // pagar. Al final, como la tarjeta del plan en «Mi negocio» de la app.
+    // Las preguntas frecuentes de los negocios (como la app: «Preguntas
+    // frecuentes», dentro de «Tu negocio»; no hay grupo «Ayuda»).
+    ['ayuda', 'help_outline', 'Preguntas frecuentes'],
+  ]],
+  // «Tu plan» (panel/plan.js): estado del plan y, para el propietario,
+  // pagar. Al final, aparte, como la tarjeta del plan en «Mi negocio».
+  [null, [
     ['plan', 'workspace_premium', 'Tu plan'],
   ]],
 ];
-/** Las cuatro de todos los días, abajo en el móvil (como las pestañas de la
- * app); «Más» abre el menú entero. */
-const BARRA = ['resumen', 'publicaciones', 'calendario', 'validar'];
+/** Las cuatro de todos los días, abajo en el móvil, en el mismo orden que
+ * arriba del menú (y que «Mi negocio» de la app); «Más» abre el menú entero. */
+const BARRA = ['resumen', 'calendario', 'validar', 'publicaciones'];
 /** Con el negocio parado (bloqueado o en pausa), el menú solo lleva lo que se
  * puede hacer: el aviso (en el resumen), validar, «Tu plan» y darse de baja. */
 const NAV_BLOQUEO = [
@@ -7113,7 +7122,7 @@ async function cierresOtroHorario(hoy, maxDia) {
 // ── Ayuda ───────────────────────────────────────────────────────────────────
 PAGES.ayuda = async (v) => {
   v.innerHTML = `
-    <div class="page-head"><h1>Ayuda</h1></div>
+    <div class="page-head"><h1>Preguntas frecuentes</h1></div>
     <div class="card"><h2>Qué puedes hacer aquí</h2>
       <p>Este panel hace lo mismo que la app, desde el ordenador o desde el navegador del móvil: dar de alta el negocio, publicar ofertas y eventos, ver cómo van, validar códigos en la puerta y llevar el equipo.</p>
       <p class="muted">Para validar, escanea el QR con la cámara (la del móvil o la del portátil) o escribe el código que la persona tiene debajo del QR.</p></div>

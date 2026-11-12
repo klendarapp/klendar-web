@@ -216,6 +216,13 @@ a.aviso:hover { text-decoration: none; border-color: var(--ink-2); }
 .perfil:hover, .rapido:hover, .invitacion:hover, .fila:hover { text-decoration: none; }
 .perfil { display: flex; align-items: center; gap: 14px; padding: 16px; border-radius: 22px; }
 .perfil .avatar { width: 60px; height: 60px; font-size: 24px; }
+/* Sin sesión (como `_GuestProfile` de la app): «Aún no has entrado». */
+.invitado { display: grid; justify-items: center; text-align: center; gap: 6px; padding: 24px 20px 20px; border-radius: 24px;
+  background: var(--glass); border: 1px solid var(--glass-border); }
+.invitado-ic .ms { font-size: 48px; color: var(--ink-2); }
+.invitado h2 { margin: 6px 0 0; font-size: 22px; }
+.invitado p { margin: 0 0 12px; color: var(--ink-2); max-width: 420px; }
+.invitado .pill { justify-content: center; }
 .perfil-t { display: grid; flex: 1; min-width: 0; }
 .perfil-t b { font-family: var(--display); font-size: 20px; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .perfil-t small { color: var(--ink-2); font-size: 14px; overflow: hidden; text-overflow: ellipsis; }

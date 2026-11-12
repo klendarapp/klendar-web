@@ -100,6 +100,9 @@ header.top .wrap { display: flex; align-items: center; gap: 14px; height: 64px; 
 .pestana:hover { color: var(--ink); background: var(--soft); text-decoration: none; }
 /* La activa, en tinta (selección = tinta; el coral es solo para la oferta). */
 .pestana[aria-current="page"] { color: var(--ink); background: var(--soft); }
+/* La pestaña elegida, con su icono relleno (como la app); las demás, en contorno. */
+[data-tab] .ic-on, [data-tab][aria-current="page"] .ic-off { display: none; }
+[data-tab][aria-current="page"] .ic-on { display: inline; }
 /* «Más»: un desplegable con lo de informarse, en todas las anchuras. */
 nav.main { display: none; position: absolute; right: 20px; top: 60px; z-index: 25; flex-direction: column; align-items: stretch; gap: 2px;
   min-width: 240px; padding: 8px; border-radius: 20px; background: var(--elevated); border: 1px solid var(--glass-border);

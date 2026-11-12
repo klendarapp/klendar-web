@@ -780,11 +780,90 @@ const fila = ({ href, icono, titulo, detalle, fuera = false, id = '' }) => `
     ${ic(fuera ? 'open_in_new' : 'chevron_right')}
   </a>`;
 
+/** «Ayuda», como `_HelpSection` de la app: preguntas frecuentes, sugerencias
+ * (con cuenta), contacto y «Legal» en una fila. */
+const seccionAyuda = (conSugerencias) => `
+    <h2 class="seccion-t">${esc(t('Ayuda'))}</h2>
+    <div class="lista">
+      ${filaSvg({ href: PUB_EN ? '/en/faq' : '/preguntas', icono: 'ayuda', titulo: t('Preguntas frecuentes'), detalle: t('Para ti y para negocios, con buscador') })}
+      ${conSugerencias ? fila({ href: '/cuenta/sugerencias', icono: 'lightbulb', titulo: t('Sugerencias y mejoras'), detalle: t('Cuéntanos qué cambiarías o qué falla') }) : ''}
+      ${fila({ href: 'mailto:info@klendar.app', icono: 'mail', titulo: t('Contacto y soporte'), detalle: 'info@klendar.app' })}
+      <!-- Los textos legales, en una sola fila (como la app: términos, privacidad, normas, aviso legal y fuentes). -->
+      <button type="button" class="fila fila-btn" id="legal">${ic('gavel')}
+        <span class="fila-t"><b>${esc(t('Legal'))}</b><small>${esc(t('Términos, privacidad y normas'))}</small></span>${ic('chevron_right')}</button>
+    </div>
+`;
+/** La hoja «Legal» (`showLegalSheet` de la app): los cinco textos, con sus iconos. */
+function abreLegal() {
+  const d = document.createElement('dialog');
+  d.className = 'dialogo hoja-legal';
+  d.setAttribute('aria-labelledby', 'legal-t');
+  d.innerHTML = `<button type="button" class="cerrar-hoja" aria-label="${esc(t('Cerrar'))}">×</button>
+    <h2 id="legal-t">${esc(t('Legal'))}</h2>
+    <div class="lista">
+      ${fila({ href: PUB_EN ? '/en/terms' : '/terminos', icono: 'description', titulo: t('Términos de uso'), fuera: true })}
+      ${fila({ href: PUB_EN ? '/en/privacy' : '/privacidad', icono: 'privacy_tip', titulo: t('Política de privacidad'), fuera: true })}
+      ${fila({ href: PUB_EN ? '/en/community-guidelines' : '/normas', icono: 'rule', titulo: t('Normas de la comunidad'), fuera: true })}
+      ${fila({ href: PUB_EN ? '/en/legal-notice' : '/aviso-legal', icono: 'info', titulo: t('Aviso legal'), fuera: true })}
+      ${fila({ href: PUB_EN ? '/en/sources' : '/fuentes', icono: 'copyright', titulo: t('Fuentes y licencias'), fuera: true })}
+    </div>${notaLegal()}`;
+  document.body.appendChild(d);
+  d.querySelector('.cerrar-hoja').onclick = () => d.close();
+  d.querySelectorAll('a').forEach((a) => { a.addEventListener('click', () => d.close()); });
+  d.addEventListener('click', (e) => { if (e.target === d) d.close(); });
+  d.addEventListener('close', () => d.remove());
+  d.showModal();
+}
+
+/** Sin sesión, como `_GuestProfile` de la app: «Aún no has entrado» con
+ * «Entrar o crear cuenta» y, debajo, lo que no necesita cuenta (Ajustes, con
+ * el idioma, y Ayuda, con los textos legales, que se leen antes de crearla). */
+function cuentaSinSesion() {
+  pinta(`
+    <h1 class="titulo-pagina">${esc(t('Tu cuenta'))}</h1>
+    <section class="invitado">
+      <span class="invitado-ic">${ic('person')}</span>
+      <h2>${esc(t('Aún no has entrado'))}</h2>
+      <p>${esc(t('Con cuenta puedes canjear ofertas, guardar planes, tener favoritos y recibir notificaciones.'))}</p>
+      <a class="pill accent ancho" href="${esc(urlCuenta('entrar'))}">${esc(t('Entrar o crear cuenta'))}</a>
+    </section>
+
+    <h2 class="seccion-t">${esc(t('Preferencias'))}</h2>
+    <div class="lista">
+      ${fila({ href: '/cuenta/idioma', icono: 'tune', titulo: t('Ajustes'), detalle: t('Idioma') })}
+    </div>
+
+    ${seccionAyuda(false)}`);
+  $('#legal').onclick = abreLegal;
+}
+
+/** Ajustes sin sesión (`/cuenta/idioma`; `/cuenta/ajustes` sigue pidiendo
+ * entrar, que es adonde llevan los enlaces de los correos): solo el idioma,
+ * como la app. Con sesión, a Ajustes. Los enlaces son los del
+ * selector de la cabecera (`[data-idioma] a[data-lang]`, assets/cabecera.js):
+ * lo recuerda este navegador y se vuelve a pintar en el idioma elegido. */
+RUTAS.idioma = async () => {
+  if (YO) { irA('ajustes', { reemplaza: true }); return; }
+  ajustesSinSesion();
+};
+function ajustesSinSesion() {
+  const ahora = (typeof klIdiomaElegido === 'function' && klIdiomaElegido()) || I18N.lang;
+  pinta(`
+    <p class="crumbs"><a href="/cuenta">${esc(t('Tu cuenta'))}</a></p>
+    <h1>${esc(t('Ajustes'))}</h1>
+    <h2 class="seccion-t">${esc(t('Idioma'))}</h2>
+    <div class="lista" data-idioma role="group" aria-label="${esc(t('Idioma'))}">
+      ${KL_IDIOMAS.map((l) => `<a class="fila" href="/cuenta/idioma?lang=${l}" lang="${l}" data-lang="${l}" translate="no"${l === ahora ? ' aria-current="true"' : ''}>
+        <span class="fila-t"><b>${KL_NOMBRE_IDIOMA[l]}</b></span>${l === ahora ? `<span class="estado">${esc(t('Elegido'))}</span>` : ''}</a>`).join('')}
+    </div>
+    <p class="nota-cal">${esc(t('Para lo demás (notificaciones, privacidad, tu cuenta…), entra en Klendar.'))}</p>`);
+}
+
 // La misma disposición que la pestaña Cuenta de la app: quién eres arriba,
 // lo que más se usa a un toque y lo demás agrupado. Lo irreversible (eliminar
 // la cuenta) vive en Ajustes.
 RUTAS[''] = async () => {
-  if (!YO) return RUTAS.entrar([], new URLSearchParams());
+  if (!YO) return cuentaSinSesion();
   const foto = YO.user_metadata?.avatar_url;
   const [negocios, invitaciones, delPerfil, rolesRrpp, preguntarGustos] = await Promise.all([
     llamar('my_businesses', {}).catch(() => []),
@@ -872,46 +951,19 @@ RUTAS[''] = async () => {
     <h2 class="seccion-t">${esc(t('Preferencias'))}</h2>
     <div class="lista">
       ${fila({ href: '/cuenta/alertas', icono: 'add_alert', titulo: t('Avísame si…'), detalle: t('Que te avisemos cuando salga algo que te interesa cerca') })}
-      ${fila({ href: '/cuenta/series', icono: 'notifications', titulo: EN ? 'Series you follow' : 'Series que sigues', detalle: EN ? "We'll tell you about each new date" : 'Te avisamos de cada fecha nueva' })}
+      ${fila({ href: '/cuenta/series', icono: 'event_repeat', titulo: EN ? 'Series you follow' : 'Series que sigues', detalle: EN ? "We'll tell you about each new date" : 'Te avisamos de cada fecha nueva' })}
       ${typeof filaEquipos === 'function' ? filaEquipos() : ''}
       ${typeof filaArtistas === 'function' ? filaArtistas() : ''}
       ${typeof filaPedidos === 'function' ? filaPedidos() : ''}
       ${fila({ href: '/cuenta/ajustes', icono: 'tune', titulo: t('Ajustes'), detalle: t('Idioma, notificaciones, privacidad y cuenta') })}
     </div>
 
-    <h2 class="seccion-t">${esc(t('Ayuda'))}</h2>
-    <div class="lista">
-      ${filaSvg({ href: PUB_EN ? '/en/faq' : '/preguntas', icono: 'ayuda', titulo: t('Preguntas frecuentes'), detalle: t('Para ti y para negocios, con buscador') })}
-      ${fila({ href: '/cuenta/sugerencias', icono: 'lightbulb', titulo: t('Sugerencias y mejoras'), detalle: t('Cuéntanos qué cambiarías o qué falla') })}
-      ${fila({ href: 'mailto:info@klendar.app', icono: 'mail', titulo: t('Contacto y soporte'), detalle: 'info@klendar.app' })}
-      <!-- Los textos legales, en una sola fila (como la app: términos, privacidad, normas, aviso legal y fuentes). -->
-      <button type="button" class="fila fila-btn" id="legal">${ic('description')}
-        <span class="fila-t"><b>${esc(t('Legal'))}</b><small>${esc(t('Términos, privacidad y normas'))}</small></span>${ic('chevron_right')}</button>
-    </div>
+    ${seccionAyuda(true)}
 
     <button class="pill ancho" id="salir">${ic('logout')} ${esc(t('Cerrar sesión'))}</button>`);
   pintaSinLeer();
   if (typeof pintaAhorroFila === 'function') pintaAhorroFila();
-  $('#legal').onclick = () => {
-    const d = document.createElement('dialog');
-    d.className = 'dialogo hoja-legal';
-    d.setAttribute('aria-labelledby', 'legal-t');
-    d.innerHTML = `<button type="button" class="cerrar-hoja" aria-label="${esc(t('Cerrar'))}">×</button>
-      <h2 id="legal-t">${esc(t('Legal'))}</h2>
-      <div class="lista">
-        ${fila({ href: PUB_EN ? '/en/terms' : '/terminos', icono: 'description', titulo: t('Términos de uso'), fuera: true })}
-        ${fila({ href: PUB_EN ? '/en/privacy' : '/privacidad', icono: 'privacy_tip', titulo: t('Política de privacidad'), fuera: true })}
-        ${fila({ href: PUB_EN ? '/en/community-guidelines' : '/normas', icono: 'description', titulo: t('Normas de la comunidad'), fuera: true })}
-        ${fila({ href: PUB_EN ? '/en/legal-notice' : '/aviso-legal', icono: 'description', titulo: t('Aviso legal'), fuera: true })}
-        ${fila({ href: PUB_EN ? '/en/sources' : '/fuentes', icono: 'description', titulo: t('Fuentes y licencias'), fuera: true })}
-      </div>${notaLegal()}`;
-    document.body.appendChild(d);
-    d.querySelector('.cerrar-hoja').onclick = () => d.close();
-    d.querySelectorAll('a').forEach((a) => { a.addEventListener('click', () => d.close()); });
-    d.addEventListener('click', (e) => { if (e.target === d) d.close(); });
-    d.addEventListener('close', () => d.remove());
-    d.showModal();
-  };
+  $('#legal').onclick = abreLegal;
   // Su correo nos devuelve los mensajes: que lo revise o lo cambie.
   correoAvisoPortada($('#aviso-correo'));
   // Lo que has subido y el filtro ha retenido («Lo estamos revisando»).
@@ -1935,7 +1987,7 @@ RUTAS.planes = async (_partes, params = new URLSearchParams()) => {
     + (listoHtml ? `<h2 class="seccion-t">${esc(t('Tu pedido'))}</h2>${listoHtml}` : '');
   // «Sigues 2 series», arriba (sin series, nada), como la app.
   const nSeries = (series || []).length;
-  const filaSeries = nSeries ? `<div class="lista">${fila({ href: '/cuenta/series', icono: 'notifications',
+  const filaSeries = nSeries ? `<div class="lista">${fila({ href: '/cuenta/series', icono: 'event_repeat',
     titulo: EN ? (nSeries === 1 ? 'You follow 1 series' : `You follow ${nSeries} series`) : (nSeries === 1 ? 'Sigues 1 serie' : `Sigues ${nSeries} series`) })}</div>` : '';
   const saved = guardados || [];
   const savedPast = guardadosPasados || [];
