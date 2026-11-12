@@ -109,7 +109,7 @@ console.log('Resumen del admin');
   ok(t.includes('Lo que se ha hecho solo'), 'el bloque está');
   ok(t.includes('negocio verificado') && t.includes('contenido oculto tras una denuncia'), 'el recuento', t);
   ok((await page.$$('#hechoSolo [data-deshacer]')).length === 2, 'deshacer en lo que se puede, no en lo que no');
-  ok((await page.textContent('#porVerificar')).includes('Por qué te llega'), '«Por verificar ahora» dice por qué');
+  ok((await page.textContent('#bandeja')).includes('Por qué te llega'), 'la bandeja dice por qué le llega un negocio');
   await page.selectOption('#hechoSolo [data-motivo]', 'data');
   await page.click('#hechoSolo [data-deshacer]');
   await page.waitForFunction(() => document.body.textContent.includes('deshecho'), null, { timeout: 8000 });

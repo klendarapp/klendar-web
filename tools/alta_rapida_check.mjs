@@ -195,9 +195,10 @@ async function admin(nav, n) {
   const fila = { id: BIZ, name: 'Café Sonda', category: 'Cafeterías', city: 'Málaga', address: 'Calle Granada 10', created_at: new Date().toISOString(), owner_email: 'duena@example.com', has_tax_id: true, has_logo: false, offers: 1, rules: 1 };
   const { ctx, p, estado, errores } = await contexto(nav, { clave: `sb-${REF}-admin-auth-token`, rpc: ADMIN({ admin_pending_now: { total: 1, rows: [fila] }, admin_pulso: PULSO, admin_set_verification: null }) });
   await p.goto(`${BASE}/admin#/resumen`, { waitUntil: 'networkidle' });
-  await p.waitForSelector('#porVerificar [data-verificar]');
-  const v = await p.locator('#porVerificar').innerText();
-  ok(/Café Sonda/.test(v) && /NIF ✓/.test(v) && /sin logo/.test(v) && /1 oferta que se repite lista/.test(v), `${n}: lo que hace falta para decidir`);
+  // Lo que espera verificación sale en la bandeja «Pendiente de ti» (admin/bandeja.js); aquí, el QR.
+  await p.waitForSelector('#bandeja .bj[data-tipo="negocio"]');
+  const v = await p.locator('#bandeja .bj[data-tipo="negocio"]').innerText();
+  ok(/Café Sonda/.test(v) && /NIF ✓/.test(v) && /sin logo/.test(v) && /1 oferta que se repite/.test(v), `${n}: lo que hace falta para decidir`);
   await p.click('.qr-alta summary');
   ok(await p.locator('#qrAlta svg').isVisible(), `${n}: el QR se ve`);
   await p.screenshot({ path: `${OUT}/alta-admin-${n}.png`, fullPage: true });
@@ -206,7 +207,7 @@ async function admin(nav, n) {
   ok(/Nuevas en 24 h a 5 km\s+3\s+Hay que actuar/.test(pul) && /Publicaciones vivas a 5 km\s+42\s+Bien/.test(pul), `${n}: rojo y verde según §5.2`);
   ok(/En revisión[^\n]*30 h[^\n]*\s+1\s+Hay que actuar/.test(pul), `${n}: revisión de más de 24 h, en rojo`);
   ok(/Días sin eventos en los próximos 14\s+2\s+Hay que actuar/.test(pul), `${n}: días sin eventos, en rojo`);
-  await p.click('[data-verificar]');
+  await p.click('#bandeja .bj[data-tipo="negocio"] [data-acc="0"]');
   await p.waitForSelector('#modal button[type=submit]');
   await p.click('#modal button[type=submit]');
   await p.waitForTimeout(600);

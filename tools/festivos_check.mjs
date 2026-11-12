@@ -329,9 +329,10 @@ async function resumen(nav, nombre, t, vp) {
     admin_holiday_alert: { year: 2028, count: 2, text: 'Festivos: faltan los locales de 2028 en Zaragoza y Valladolid', summary: '2028: nacionales confirmados · locales 16 de 18 ciudades' },
   });
   await p.goto(`${BASE}/admin#/resumen`, { waitUntil: 'networkidle' });
-  await p.waitForSelector('.pend-lista');
-  const fila = p.locator('a.pend[href="#/festivos/2028"]');
-  ok(await fila.count() === 1 && /faltan los locales de 2028 en Zaragoza y Valladolid/.test(await fila.innerText()), `${nombre}/${t} resumen: la línea de festivos en «Pendiente de ti»`);
+  await p.waitForSelector('#bandeja');
+  const fila = p.locator('#bandeja .bj[data-k="festivo:aviso"]');
+  ok(await fila.count() === 1 && /faltan los locales de 2028 en Zaragoza y Valladolid/.test(await fila.innerText())
+    && await fila.locator('a[href="#/festivos/2028"]').count() === 1, `${nombre}/${t} resumen: los festivos en «Pendiente de ti»`);
   await p.screenshot({ path: `${OUT}/web-admin-resumen-festivos-${nombre}-${t}.png` });
   ok(errores.length === 0, `${nombre}/${t} resumen sin errores JS ${errores.join(' | ')}`);
   await ctx.close();

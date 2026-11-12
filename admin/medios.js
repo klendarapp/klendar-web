@@ -158,6 +158,24 @@ const filaMedio = async (x, i, tab) => {
   </div>`;
 };
 
+/** Aprobar o rechazar (con su motivo) un texto retenido por el moderador. true si se hizo.
+ * Lo usan «Filtro automático» y la bandeja del Resumen. */
+async function decideContenido(x, aprobar, motivo) {
+  const res = await rpc('admin_content_decide', { p_id: x.id, p_approve: aprobar, p_reason: motivo ?? null });
+  if (!res?.ok) { toast(res?.error || 'Error', true); return false; }
+  toast(I18N.t(aprobar ? 'Aprobado: vuelve a verse en un minuto' : 'Rechazado: quien lo subió recibe el motivo'));
+  refreshBadges();
+  return true;
+}
+/** Lo mismo con una foto o un vídeo retenido. */
+async function decideMedio(x, aprobar, motivo) {
+  const res = await rpc('admin_media_decide', { p_id: x.id, p_approve: aprobar, p_reason: motivo ?? null });
+  if (!res?.ok) { toast(res?.error || 'Error', true); return false; }
+  toast(I18N.t(aprobar ? 'Aprobado: vuelve a verse en un minuto' : 'Rechazado: quien lo subió recibe el motivo'));
+  refreshBadges();
+  return true;
+}
+
 PAGES.medios = async (v) => {
   const p = params();
   let tab = p.tab === 'rejected' ? 'rejected' : 'held';
@@ -212,13 +230,7 @@ PAGES.medios = async (v) => {
         await load();
       });
     }
-    const decideTxt = async (x, aprobar, motivo) => {
-      const res = await rpc('admin_content_decide', { p_id: x.id, p_approve: aprobar, p_reason: motivo ?? null });
-      if (!res?.ok) { toast(res?.error || 'Error', true); return; }
-      toast(I18N.t(aprobar ? 'Aprobado: vuelve a verse en un minuto' : 'Rechazado: quien lo subió recibe el motivo'));
-      refreshBadges();
-      await load();
-    };
+    const decideTxt = async (x, aprobar, motivo) => { if (await decideContenido(x, aprobar, motivo)) await load(); };
     $$('#list [data-tok]').forEach((b) => { b.onclick = () => esperando(b, () => decideTxt(textos[+b.dataset.tok], true)); });
     $$('#list [data-tno]').forEach((b) => {
       b.onclick = async () => {
@@ -226,13 +238,7 @@ PAGES.medios = async (v) => {
         if (motivo) await esperando(b, () => decideTxt(textos[+b.dataset.tno], false, motivo));
       };
     });
-    const decide = async (x, aprobar, motivo) => {
-      const res = await rpc('admin_media_decide', { p_id: x.id, p_approve: aprobar, p_reason: motivo ?? null });
-      if (!res?.ok) { toast(res?.error || 'Error', true); return; }
-      toast(I18N.t(aprobar ? 'Aprobado: vuelve a verse en un minuto' : 'Rechazado: quien lo subió recibe el motivo'));
-      refreshBadges();
-      await load();
-    };
+    const decide = async (x, aprobar, motivo) => { if (await decideMedio(x, aprobar, motivo)) await load(); };
     $$('#list [data-ok]').forEach((b) => { b.onclick = () => esperando(b, () => decide(rows[+b.dataset.ok], true)); });
     $$('#list [data-no]').forEach((b) => {
       b.onclick = async () => {

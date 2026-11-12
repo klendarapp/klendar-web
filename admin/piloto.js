@@ -39,6 +39,7 @@ const MOTIVO_AUTO = {
   rejected_before: ['ya se le rechazó', 'already rejected once'],
   withdrawn_before: ['ya se le retiró', 'already withdrawn once'],
   no_proof: ['sin dominio oficial ni documento leído', 'no official domain or read document'],
+  document_only: ['solo el documento: míralo tú (no cuenta para aprobar en bloque)', 'only the document: check it yourself (not for approving in bulk)'],
   document_pending: ['leyendo el documento', 'reading the document'],
   document_no_coincide: ['el documento no coincide', 'the document does not match'],
   document_dudoso: ['documento dudoso', 'doubtful document'],
@@ -73,6 +74,7 @@ const POR_QUE_DENUNCIA = {
   norm: ['sin una norma con la que motivarlo', 'no rule to justify it'], type_not_hideable: ['eso no se oculta solo', 'that is not hidden automatically'],
   ai_unavailable: ['IA no disponible o en el tope', 'AI unavailable or at its cap'], no_consent: ['sin permiso de quien lo publicó', 'no permission from whoever published it'],
   already_removed: ['ya estaba retirado', 'already removed'], grave: ['grave: oculto y a ti', 'serious: hidden and sent to you'],
+  opinion: ['solo opina: decides tú', 'opinion only: you decide'],
   child_abuse_no_ai: ['abuso sexual infantil: sin pasar por la IA', 'child sexual abuse: not sent to the AI'], child_abuse_low_weight: ['abuso sexual infantil, voz sin peso', 'child sexual abuse, low-weight voice'],
 };
 
@@ -156,13 +158,22 @@ function activaDeshacer(v) {
   });
 }
 
+// Los modos (migración 20261279000000 de la app): lo seguro de serie. El automático solo por SQL.
+const MODOS_PILOTO = {
+  verify_business: ['suggest', 'Listos para aprobar', 'Ready to approve'],
+  verify_entity: ['suggest', 'Listos para aprobar', 'Ready to approve'],
+  report_review: ['opine', 'Solo opina', 'Opinion only'],
+};
+/** ¿Esta parte, tal como está, solo ayuda (no decide nada sola)? */
+const modoSeguro = (parte, cfg) => (MODOS_PILOTO[parte] ? cfg?.[parte]?.mode !== 'auto' : ['document_review', 'duplicates', 'venue_weekly'].includes(parte));
+
 const PARTES = [
-  ['verify_business', 'Verificar negocios', 'Verify businesses', 'NIF con letra válida, correo o móvil confirmado, ficha mínima, sin duplicado, nombre limpio, sin marca conocida. Lo demás, a ti.', 'Valid tax ID, confirmed email or phone, minimum page, no duplicate, clean name, no known brand. The rest goes to you.'],
-  ['verify_entity', 'Verificar entidades', 'Verify organisations', 'Correo confirmado de un dominio oficial de la lista, o documento que coincide. CIF con letra válida y de su clase.', 'Confirmed email on a listed official domain, or a matching document. Valid tax ID of the right kind.'],
+  ['verify_business', 'Verificar negocios', 'Verify businesses', '«Listos para aprobar»: comprueba NIF con letra válida, correo o móvil confirmado, ficha mínima, sin duplicado, nombre limpio y sin marca conocida, y te deja la lista en el Resumen. Nunca verifica solo: apruebas tú, uno a uno o en bloque.', '“Ready to approve”: checks a valid tax ID, confirmed email or phone, minimum page, no duplicate, clean name and no known brand, and leaves you the list in the Overview. It never verifies on its own: you approve, one by one or in bulk.'],
+  ['verify_entity', 'Verificar entidades', 'Verify organisations', '«Listos para aprobar»: correo confirmado y web de un dominio oficial de la lista, CIF con letra válida y de su clase. Un documento que coincide solo te ayuda. Nunca aprueba sola: apruebas tú.', '“Ready to approve”: confirmed email and website on a listed official domain, valid tax ID of the right kind. A matching document only helps you. It never approves on its own: you do.'],
   ['claim_code', '«¿Es tu negocio?» con código', '“Is this your business?” with a code', 'Código al correo publicado en la ficha. Se resuelve solo si el dueño no está activo, no paga, no hay equipo y el correo no es reciente. Con teléfono no: falta proveedor de SMS.', 'Code to the email published on the page. Settled automatically if the owner is inactive and not paying, with no team and no recent email change. Not by phone: no SMS provider.'],
   ['claim_document', '«¿Es tu negocio?» con documento', '“Is this your business?” with a document', 'El documento coincide y se cumple lo demás. Es lo más arriesgado: un documento se puede falsificar.', 'The document matches and the rest holds. The riskiest one: a document can be forged.'],
-  ['document_review', 'Leer documentos con IA', 'Read documents with AI', 'Claude Haiku lee nombre, NIF y dirección; compara el código, no el modelo; no se guarda lo leído. Solo con el permiso de quien lo sube.', 'Claude Haiku reads name, tax ID and address; the code compares, not the model; what it reads is not kept. Only with the uploader’s permission.'],
-  ['report_review', 'Revisar denuncias con IA', 'Review reports with AI', 'Cierra lo claro y oculta lo claro (reversible, con aviso). Lo dudoso y lo grave, a ti. Los recursos, siempre una persona.', 'Closes what is clear and hides what is clear (reversible, with a notice). Doubtful and serious, to you. Appeals, always a person.'],
+  ['document_review', 'Leer documentos con IA', 'Read documents with AI', 'Solo como ayuda: Claude Haiku lee nombre, NIF y dirección de los documentos de reclamaciones y entidades; compara el código, no el modelo; no se guarda lo leído. Te dice en la tarjeta si coincide; no verifica ni traspasa nada. Solo con el permiso de quien lo sube.', 'Only as help: Claude Haiku reads name, tax ID and address from claim and organisation documents; the code compares, not the model; what it reads is not kept. It tells you on the card if it matches; it never verifies or hands over anything. Only with the uploader’s permission.'],
+  ['report_review', 'Revisar denuncias con IA', 'Review reports with AI', '«Solo opina»: la IA lee la denuncia y te deja su opinión (nada, ocultar, dudoso o grave), el motivo y su confianza. No cierra ni oculta nada: decides tú. Solo lo de quien ha dado permiso; lo de abuso sexual infantil no sale nunca.', '“Opinion only”: the AI reads the report and leaves you its opinion (nothing, hide, doubtful or serious), the reason and its confidence. It never closes or hides anything: you decide. Only content from people who agreed; child sexual abuse is never sent.'],
   ['report_reliability', 'Peso de quien denuncia', 'Weight of reporters', 'Quien denuncia en falso de forma repetida deja de contar para ocultar solo, con aviso previo. Se le sigue leyendo.', 'Whoever repeatedly reports falsely stops counting towards automatic hiding, after a warning. Still read.'],
   ['duplicates', 'Duplicados seguros', 'Safe duplicates', 'Marca los que coinciden en nombre, dirección y teléfono o web. Unir borra una ficha y no se puede deshacer: lo decides tú, con un toque.', 'Marks those matching on name, address and phone or website. Merging deletes a page and cannot be undone: you decide, in one tap.'],
   ['venue_weekly', 'Ranking semanal de locales pedidos', 'Weekly ranking of requested places', 'Agrupa «Pedir un local» y manda el ranking los lunes al correo de administración.', 'Groups “Request a place” and emails the ranking on Mondays.'],
@@ -183,8 +194,12 @@ PAGES.automatico = async (v) => {
       ${PARTES.map(([k, es, e, de, den]) => {
     const on = !!cfg[k]?.enabled;
     const gasto = ia[k] ? `<div class="meta">${en ? 'This month' : 'Este mes'}: ${esc(euros(ia[k].spent_eur))} / ${esc(euros(ia[k].cap_eur))}</div>` : '';
-    return `<div class="item" style="grid-template-columns:1fr auto"><div style="min-width:0"><h3>${esc(en ? e : es)} <span class="tag ${on ? 'ok' : 'dim'}">${on ? (en ? 'on' : 'encendido') : (en ? 'off' : 'apagado')}</span></h3>
-        <div class="meta">${esc(en ? den : de)}</div>${gasto}</div>
+    const modo = MODOS_PILOTO[k];
+    const auto = modo && cfg[k]?.mode === 'auto';
+    const etiquetaModo = modo ? `<span class="tag ${auto ? 'bad' : 'dim'}">${esc(auto ? (en ? 'automatic' : 'automático') : (en ? modo[2] : modo[1]))}</span>` : '';
+    const vuelve = auto ? `<button class="btn sm" type="button" data-modo="${k}" data-valor="${modo[0]}">${en ? `Back to “${modo[2]}”` : `Volver a «${modo[1]}»`}</button>` : '';
+    return `<div class="item" style="grid-template-columns:1fr auto"><div style="min-width:0"><h3>${esc(en ? e : es)} <span class="tag ${on ? 'ok' : 'dim'}">${on ? (en ? 'on' : 'encendido') : (en ? 'off' : 'apagado')}</span> ${etiquetaModo}</h3>
+        <div class="meta">${esc(en ? den : de)}</div>${gasto}${vuelve ? `<div class="actions">${vuelve}</div>` : ''}</div>
         <div><button class="btn sm${on ? '' : ' ok'}" type="button" data-parte="${k}" data-on="${on ? '1' : ''}">${on ? (en ? 'Switch off' : 'Apagar') : (en ? 'Switch on' : 'Encender')}</button></div></div>`;
   }).join('')}
     </div>
@@ -200,11 +215,20 @@ PAGES.automatico = async (v) => {
     b.onclick = () => esperando(b, async () => {
       const on = !b.dataset.on;
       const p = PARTES.find((x) => x[0] === b.dataset.parte);
-      if (on && !await confirmDlg(en ? `Switch on: ${p[2]}` : `Encender: ${p[1]}`, esc(en
-        ? 'From now on Klendar decides this alone. Are the PA texts published and the lawyer’s questions answered?'
-        : 'A partir de ahora Klendar lo decide solo. ¿Están publicados los textos PA y contestadas las preguntas al abogado?'), { submit: en ? 'Switch on' : 'Encender' })) return;
+      const ayuda = modoSeguro(b.dataset.parte, cfg);
+      if (on && !await confirmDlg(en ? `Switch on: ${p[2]}` : `Encender: ${p[1]}`, esc(ayuda
+        ? (en ? 'It checks and helps you: nothing is decided without you. Are the AI texts published (RUNBOOK §4zm)?' : 'Comprueba y te ayuda: nada se decide sin ti. ¿Están publicados los textos de IA (RUNBOOK §4zm)?')
+        : (en ? 'From now on Klendar decides this alone. Are the PA texts published and the lawyer’s questions answered?' : 'A partir de ahora Klendar lo decide solo. ¿Están publicados los textos PA y contestadas las preguntas al abogado?')), { submit: en ? 'Switch on' : 'Encender' })) return;
       await rpc('admin_piloto_set', { p_part: b.dataset.parte, p_enabled: on });
       toast(on ? (en ? 'On' : 'Encendido') : (en ? 'Off' : 'Apagado'));
+      route();
+    });
+  });
+  // El modo automático no se ofrece aquí (se queda en el código para más adelante): solo volver a lo seguro.
+  $$('[data-modo]', v).forEach((b) => {
+    b.onclick = () => esperando(b, async () => {
+      await rpc('admin_piloto_mode', { p_part: b.dataset.modo, p_mode: b.dataset.valor });
+      toast(en ? 'Done' : 'Hecho');
       route();
     });
   });

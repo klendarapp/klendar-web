@@ -78,6 +78,49 @@ const festMuniElegido = () => {
  * siempre con su provincia (homónimos). */
 const festMuniNombre = (name, province) => (province ? `${name} (${province})` : name || '');
 
+/** «Añadir los dos…»: los dos locales de una ciudad o de un municipio de una vez, con la fuente
+ * (`c.id`: la ciudad o el código del municipio; `c.nombre`, `c.days`, `c.bulletin`). true si se
+ * guardó. Lo usan «Festivos» y la bandeja del Resumen (admin/bandeja.js). */
+async function festLocalesDialogo(c, anio) {
+  const en = I18N.lang === 'en';
+  const ya = (c.days || []);
+  const b = c.bulletin || {};
+  const r = await modal({
+    title: en ? `Local holidays ${anio} · ${c.nombre}` : `Locales de ${anio} · ${c.nombre}`,
+    intro: `${esc(en ? 'The two days the town sets each year. Look them up in' : 'Los dos días que fija el municipio cada año. Míralos en el')} ${b.url ? `<a class="link" target="_blank" rel="noopener" href="${esc(b.url)}">${esc(b.name || '')} ↗</a>` : esc(b.name || 'boletín')}.`,
+    fields: [
+      { grupo: en ? 'First' : 'El primero', cols: 2, campos: [
+        { name: 'd1', label: en ? 'Day' : 'Día', type: 'date', value: ya[0]?.day || '', required: true },
+        { name: 'n1', label: en ? 'Name' : 'Nombre', value: ya[0]?.name || '', required: true, placeholder: 'San Valero' },
+      ] },
+      { grupo: en ? 'Second' : 'El segundo', cols: 2, campos: [
+        { name: 'd2', label: en ? 'Day' : 'Día', type: 'date', value: ya[1]?.day || '' },
+        { name: 'n2', label: en ? 'Name' : 'Nombre', value: ya[1]?.name || '', placeholder: 'Cincomarzada' },
+      ] },
+      { name: 'source', label: en ? 'Source' : 'Fuente', value: `${b.name || ''} núm. …, ${en ? 'date' : 'fecha'} … — `, required: true, ancho: true,
+        help: en ? 'Bulletin, number and date (and the link).' : 'Boletín, número y fecha (y el enlace).' },
+    ],
+    submit: en ? 'Save both' : 'Guardar los dos',
+  });
+  if (!r) return false;
+  const dias = [[r.d1, r.n1], [r.d2, r.n2]].filter(([x, n]) => x && n).map(([x, n]) => ({ day: x, name: n }));
+  if (dias.some((x) => !x.day.startsWith(String(anio)))) { toast(en ? `The days must be in ${anio}.` : `Los días tienen que ser de ${anio}.`, true); return false; }
+  const res = await rpc('admin_save_city_holidays', { p_city: c.id, p_days: dias, p_source: r.source })
+    .catch((e) => ({ ok: false, error: e.message }));
+  if (!res?.ok) { toast(I18N.t(RPC_ERRORS[res?.error] || 'No se ha podido guardar'), true); return false; }
+  toast(en ? 'Saved' : 'Guardado');
+  return true;
+}
+
+/** Confirmar festivos propuestos. true si se hizo. */
+async function festConfirmar(ids) {
+  const en = I18N.lang === 'en';
+  const res = await rpc('admin_confirm_holidays', { p_ids: ids }).catch(() => null);
+  if (!res?.ok) { toast(en ? 'Could not confirm them' : 'No se han podido confirmar', true); return false; }
+  toast(en ? `Confirmed: ${res.confirmed}` : `Confirmados: ${res.confirmed}`);
+  return true;
+}
+
 PAGES.festivos = async (v, param) => {
   const en = I18N.lang === 'en';
   const hoy = new Date();
@@ -272,42 +315,8 @@ PAGES.festivos = async (v, param) => {
 
   /** Los dos locales de una ciudad o de un municipio de una vez, con la
    * fuente (`c.id`: la ciudad o el código del municipio). */
-  const deCiudad = async (c) => {
-    const ya = (c.days || []);
-    const b = c.bulletin || {};
-    const r = await modal({
-      title: en ? `Local holidays ${anio} · ${c.nombre}` : `Locales de ${anio} · ${c.nombre}`,
-      intro: `${esc(en ? 'The two days the town sets each year. Look them up in' : 'Los dos días que fija el municipio cada año. Míralos en el')} ${b.url ? `<a class="link" target="_blank" rel="noopener" href="${esc(b.url)}">${esc(b.name || '')} ↗</a>` : esc(b.name || 'boletín')}.`,
-      fields: [
-        { grupo: en ? 'First' : 'El primero', cols: 2, campos: [
-          { name: 'd1', label: en ? 'Day' : 'Día', type: 'date', value: ya[0]?.day || '', required: true },
-          { name: 'n1', label: en ? 'Name' : 'Nombre', value: ya[0]?.name || '', required: true, placeholder: 'San Valero' },
-        ] },
-        { grupo: en ? 'Second' : 'El segundo', cols: 2, campos: [
-          { name: 'd2', label: en ? 'Day' : 'Día', type: 'date', value: ya[1]?.day || '' },
-          { name: 'n2', label: en ? 'Name' : 'Nombre', value: ya[1]?.name || '', placeholder: 'Cincomarzada' },
-        ] },
-        { name: 'source', label: en ? 'Source' : 'Fuente', value: `${b.name || ''} núm. …, ${en ? 'date' : 'fecha'} … — `, required: true, ancho: true,
-          help: en ? 'Bulletin, number and date (and the link).' : 'Boletín, número y fecha (y el enlace).' },
-      ],
-      submit: en ? 'Save both' : 'Guardar los dos',
-    });
-    if (!r) return;
-    const dias = [[r.d1, r.n1], [r.d2, r.n2]].filter(([x, n]) => x && n).map(([x, n]) => ({ day: x, name: n }));
-    if (dias.some((x) => !x.day.startsWith(String(anio)))) { toast(en ? `The days must be in ${anio}.` : `Los días tienen que ser de ${anio}.`, true); return; }
-    const res = await rpc('admin_save_city_holidays', { p_city: c.id, p_days: dias, p_source: r.source })
-      .catch((e) => ({ ok: false, error: e.message }));
-    if (!res?.ok) { toast(I18N.t(RPC_ERRORS[res?.error] || 'No se ha podido guardar'), true); return; }
-    toast(en ? 'Saved' : 'Guardado');
-    route();
-  };
-
-  const confirmar = async (ids) => {
-    const res = await rpc('admin_confirm_holidays', { p_ids: ids }).catch(() => null);
-    if (!res?.ok) { toast(en ? 'Could not confirm them' : 'No se han podido confirmar', true); return; }
-    toast(en ? `Confirmed: ${res.confirmed}` : `Confirmados: ${res.confirmed}`);
-    route();
-  };
+  const deCiudad = async (c) => { if (await festLocalesDialogo(c, anio)) route(); };
+  const confirmar = async (ids) => { if (await festConfirmar(ids)) route(); };
 
   // El buscador: cualquier municipio de España, sin tildes ni mayúsculas
   // (`search_municipalities`); cada resultado con su provincia.

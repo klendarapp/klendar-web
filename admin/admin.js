@@ -1653,82 +1653,28 @@ PAGES.resumen = async (v) => {
   const kpi = (n, label, cls = '') => `<div class="kpi ${cls}"><b>${typeof n === 'number' ? fmtNum(n) : n}</b><span>${label}</span></div>`;
   const series = k.series || [];
   const en = I18N.lang === 'en';
-  // Lo que acumula 3 o más denuncias abiertas, lo primero (Denuncias).
-  let calientes = null;
-  try { calientes = await rpc('admin_report_groups', { p_status: 'open', p_type: 'all', p_min_open: 3, p_limit: 5, p_offset: 0 }); } catch (e) { if (e?.obsoleta) throw e; }
-  const nCal = calientes?.total || 0;
   // Festivos: desde noviembre (o con propuestas sin revisar), lo que le falta
   // al año que se vigila (festivos.js; migración 20261238100000).
-  let festivos = null;
-  try { festivos = await rpc('admin_holiday_alert'); } catch (e) { if (e?.obsoleta) throw e; }
   // Lo que no se veía aquí: tareas e importaciones que fallan, impagos y
   // disputas, locales pedidos, avisos urgentes y los avisos por correo
-  // (`admin_attention`, migración 20261262700000 de la app).
-  try { ATT = await rpc('admin_attention'); } catch (e) { if (e?.obsoleta) throw e; ATT = null; }
-  // Alta rápida: lo que espera verificación y el pulso de Málaga (migraciones
-  // 20261263300000 y …01 de la app). Si aún no están, el Resumen sale igual.
-  const [PV, PULSO] = await Promise.all([
-    rpc('admin_pending_now', { p_limit: 5 }).catch((e) => { if (e?.obsoleta) throw e; return null; }),
-    rpc('admin_pulso').catch((e) => { if (e?.obsoleta) throw e; return null; }),
+  // (`admin_attention`, migración 20261262700000 de la app). El pulso de
+  // Málaga (20261263300001). Lo que se ha hecho solo (admin/piloto.js;
+  // 20261269500000). Y la bandeja «Pendiente de ti» (admin/bandeja.js;
+  // 20261279000000): todo lo pendiente, cada caso en su tarjeta.
+  const nada = (e) => { if (e?.obsoleta) throw e; return null; };
+  const [festivos, att, PULSO, PILOTO, BJ] = await Promise.all([
+    rpc('admin_holiday_alert').catch(nada),
+    rpc('admin_attention').catch(nada),
+    rpc('admin_pulso').catch(nada),
+    rpc('admin_piloto_overview', { p_limit: 6 }).catch(nada),
+    typeof cargaBandeja === 'function' ? cargaBandeja() : null,
   ]);
-  const ap = ATT?.pending || {};
-  const tk = ATT?.tasks || {};
+  ATT = att;
   const urg = ATT?.urgent || [];
-  // Lo que se ha hecho solo (admin/piloto.js; migración 20261269500000 de la app).
-  const PILOTO = await rpc('admin_piloto_overview', { p_limit: 6 }).catch((e) => { if (e?.obsoleta) throw e; return null; });
-  // La agenda pública ya no existe (12-11-2026): solo las ligas.
-  const nImport = (tk.leagues || []).length;
-  const nDisputas = (tk.billing || {})['charge.dispute.created'] || 0;
-  const cronUrgente = urg.some((x) => x.kind === 'cron');
   BADGES.resumen = totalPendiente(k);
   renderNav('resumen');
-  // «Pendiente de ti», por temas y en filas cortas: número, qué es y adónde
-  // lleva. Lo que tiene su tarjeta aquí abajo (revisar de nuevo, pausas,
-  // cancelaciones) la despliega; lo demás abre su pantalla.
-  const pl = (n, es1, esN, en1, enN) => (en ? (n === 1 ? en1 : enN) : (n === 1 ? es1 : esN));
-  const fila = ([n, icono, texto, destino, urgente]) => {
-    if (!n || !destino) return '';
-    const dentro = `${ms(icono)}<b>${fmtNum(n)}</b><span class="txt">${texto}</span>${ms('chevron_right')}`;
-    return `<li>${destino.startsWith('#')
-      ? `<a class="pend${urgente ? ' urgente' : ''}" href="${destino}">${dentro}</a>`
-      : `<button class="pend${urgente ? ' urgente' : ''}" type="button" data-ir="${destino}">${dentro}</button>`}</li>`;
-  };
-  const GRUPOS_PEND = [
-    [en ? 'Businesses' : 'Negocios', [
-      [k.businesses_pending, 'storefront', pl(k.businesses_pending, 'por verificar', 'por verificar', 'to verify', 'to verify'), '#/negocios?status=pending'],
-      [BAJAS?.pending, 'credit_card_off', pl(BAJAS?.pending, 'cancelación de suscripción por gestionar', 'cancelaciones de suscripción por gestionar', 'subscription cancellation to handle', 'subscription cancellations to handle'), 'bajas', true],
-      [CAMBIOS?.open, 'published_with_changes', pl(CAMBIOS?.open, 'para revisar de nuevo', 'para revisar de nuevo', 'to review again', 'to review again'), 'revisar'],
-      [PAUSAS?.length, 'pause_circle', pl(PAUSAS?.length, 'en pausa por una suspensión ya levantada', 'en pausa por una suspensión ya levantada', 'paused by a suspension that has been lifted', 'paused by a suspension that has been lifted'), 'pausas'],
-      [BADGES.reclamaciones, 'how_to_reg', pl(BADGES.reclamaciones, 'reclamación «¿Es tu negocio?»', 'reclamaciones «¿Es tu negocio?»', '“Is this your business?” claim', '“Is this your business?” claims'), '#/reclamaciones'],
-      [BADGES.entidades, 'account_balance', pl(BADGES.entidades, 'entidad por verificar', 'entidades por verificar', 'organisation to verify', 'organisations to verify'), '#/entidades'],
-      [BADGES.duplicados, 'content_copy', pl(BADGES.duplicados, 'posible duplicado', 'posibles duplicados', 'possible duplicate', 'possible duplicates'), '#/duplicados'],
-      [ap.subs_past_due, 'money_off', pl(ap.subs_past_due, 'suscripción impagada', 'suscripciones impagadas', 'unpaid subscription', 'unpaid subscriptions'), '#/planes', true],
-      [nDisputas, 'gavel', pl(nDisputas, 'disputa o devolución de un cobro (24 h)', 'disputas o devoluciones de cobros (24 h)', 'payment dispute or return (24 h)', 'payment disputes or returns (24 h)'), '#/planes', true],
-      [k.subs_expiring_7d, 'credit_card', pl(k.subs_expiring_7d, 'suscripción vence en 7 días', 'suscripciones vencen en 7 días', 'subscription expiring in 7 days', 'subscriptions expiring in 7 days'), '#/planes'],
-    ]],
-    [en ? 'Content' : 'Contenido', [
-      [k.reports_open, 'flag', pl(k.reports_open, 'denuncia abierta', 'denuncias abiertas', 'open report', 'open reports')
-        + (ap.reports_grave ? (en ? ` (${ap.reports_grave} serious: illegal content or child sexual abuse)` : ` (${ap.reports_grave} ${ap.reports_grave === 1 ? 'grave' : 'graves'}: contenido ilegal o abuso infantil)`) : ''), '#/denuncias', nCal > 0 || ap.reports_grave > 0],
-      [ap.media_held, 'imagesmode', pl(ap.media_held, 'foto o vídeo retenido', 'fotos o vídeos retenidos', 'photo or video held back', 'photos or videos held back'), '#/medios'],
-      [ap.content_held, 'imagesmode', pl(ap.content_held, 'texto retenido por el moderador', 'textos retenidos por el moderador', 'text held back by the moderator', 'texts held back by the moderator'), '#/medios'],
-      [k.offers_pending, 'bolt', pl(k.offers_pending, 'publicación por moderar', 'publicaciones por moderar', 'publication to moderate', 'publications to moderate'), '#/publicaciones?moderation=pending'],
-      [BADGES.resenas, 'chat_bubble', pl(BADGES.resenas, 'texto en revisión', 'textos en revisión', 'text under review', 'texts under review'), '#/resenas?tab=cola'],
-      [BADGES.mensajes, 'campaign', pl(BADGES.mensajes, 'mensaje a clientes por revisar', 'mensajes a clientes por revisar', 'customer message to review', 'customer messages to review'), '#/mensajes'],
-    ]],
-    [en ? 'People and system' : 'Personas y sistema', [
-      [BADGES.sugerencias, 'lightbulb', pl(BADGES.sugerencias, 'sugerencia sin leer', 'sugerencias sin leer', 'unread suggestion', 'unread suggestions'), '#/sugerencias'],
-      [k.push_failed_7d, 'notifications', pl(k.push_failed_7d, 'notificación push fallida (7 d)', 'notificaciones push fallidas (7 d)', 'failed push notification (7 d)', 'failed push notifications (7 d)'), '#/avisos?tab=push'],
-      [BADGES.errores, 'bug_report', pl(BADGES.errores, 'error nuevo en la web (24 h)', 'errores nuevos en la web (24 h)', 'new website error (24 h)', 'new website errors (24 h)'), '#/errores'],
-      [festivos?.count, 'event_busy', esc(en ? `Public holidays ${festivos?.year}: ${festivos?.summary || ''}` : (festivos?.text || '')), `#/festivos/${festivos?.year}`],
-      [(tk.crons || []).length, 'schedule', pl((tk.crons || []).length, 'tarea programada con fallos (24 h)', 'tareas programadas con fallos (24 h)', 'scheduled task with failures (24 h)', 'scheduled tasks with failures (24 h)'), '#/errores', cronUrgente],
-      [nImport, 'cloud_off', pl(nImport, 'importación de emisiones que no va bien', 'importaciones de emisiones que no van bien', 'broadcast import not working', 'broadcast imports not working'), '#/emisiones', true],
-      [tk.http_24h, 'sync_problem', pl(tk.http_24h, 'llamada a una Edge Function con error (24 h)', 'llamadas a Edge Functions con error (24 h)', 'failed Edge Function call (24 h)', 'failed Edge Function calls (24 h)'), '#/errores'],
-      [tk.calendars_failing, 'event_busy', pl(tk.calendars_failing, 'agenda conectada de una entidad que no se puede leer', 'agendas conectadas de entidades que no se pueden leer', 'connected organisation calendar that can’t be read', 'connected organisation calendars that can’t be read'), '#/agenda'],
-    ]],
-    [en ? 'Growth' : 'Crecer', [
-      [ap.venue_groups_open, 'add_business', pl(ap.venue_groups_open, 'local pedido por la gente sin enlazar', 'locales pedidos por la gente sin enlazar', 'place requested by people, not linked yet', 'places requested by people, not linked yet'), '#/pedidos'],
-    ]],
-  ].map(([t, filas]) => [t, filas.filter((f) => f[0])]).filter(([, filas]) => filas.length);
+  const ctxBandeja = { att: ATT, festivos, cambios: CAMBIOS?.rows || [], pausas: PAUSAS || [], bajas: BAJAS?.items || [], webErr: WEB_ERR, mas: [] };
+  const BANDEJA = BJ ? tarjetasBandeja(BJ, k, ctxBandeja) : [];
   // Las cifras de siempre, pero solo las principales a la vista; el resto,
   // en «Ver más cifras» (se recuerda abierto o cerrado en este navegador).
   // Sin nada en 30 días (al lanzar), una frase en vez de una gráfica vacía.
@@ -1740,23 +1686,12 @@ PAGES.resumen = async (v) => {
   try { masAbierto = localStorage.getItem(MAS) === '1'; } catch { /* sin almacenamiento */ }
   v.innerHTML = `
     <div class="page-head"><h1>Resumen</h1><span class="spacer"></span><span class="muted">${new Date().toLocaleString(LOC(), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: TZ })}</span></div>
-    ${nCal ? `<div class="card den-resumen"><h2>${ms('report')} ${en ? 'Content with 3 or more open reports' : 'Contenido con 3 o más denuncias abiertas'}</h2>
-      <p class="muted" style="margin:0 0 10px">${en ? 'Several people have reported the same thing: check it first.' : 'Varias personas han denunciado lo mismo: revísalo lo primero.'}</p>
-      ${calientes.rows.map((g) => `<a class="item den-caliente den-mini" href="#/denuncias/${esc(g.target_type)}/${esc(g.target_id)}">${miniDen(g.target_type, g.target)}<div style="min-width:0">
-        <h3>${esc(tituloDen(g.target_type, g.target))}</h3>
-        <div class="meta">${tag(g.target_type, 'dim')} ${estadoDen(g.state)} · <b>${g.open_count}</b> ${en ? 'open reports' : 'denuncias abiertas'} · ${g.people} ${en ? (g.people === 1 ? 'person' : 'people') : (g.people === 1 ? 'persona' : 'personas')}${g.target?.business && g.target_type !== 'business' ? ` · ${esc(g.target.business)}` : ''} · ${en ? 'latest' : 'última'} ${ago(g.last_at)}</div>
-        <div class="den-motivos">${(g.reasons || []).map((m) => `<span class="tag ${m.reason === 'child_abuse' || m.reason === 'illegal' ? 'bad' : 'dim'}">${esc(motivoDen(m.reason))} · ${m.n}</span>`).join(' ')}</div>
-      </div></a>`).join('')}
-      ${nCal > calientes.rows.length ? `<p style="margin:6px 0 0"><a class="link" href="#/denuncias">${en ? `See all ${nCal}` : `Ver los ${nCal}`}</a></p>` : ''}
-    </div>` : ''}
     ${tarjetaUrgentes(urg)}
+    ${BJ ? tarjetaBandeja(BANDEJA, ctxBandeja) : ''}
     ${typeof tarjetaLimitesGratis === 'function' ? tarjetaLimitesGratis(ATT) : ''}
     ${typeof tarjetaHechoSolo === 'function' ? tarjetaHechoSolo(PILOTO) : ''}
-    ${tarjetaPorVerificar(PV)}
+    ${tarjetaPorVerificar(null)}
     ${tarjetaPulso(PULSO)}
-    ${GRUPOS_PEND.length ? `<div class="card"><h2>Pendiente de ti${BADGES.resumen ? ` <span class="badge pend-total" title="${en ? 'Things waiting for a decision' : 'Cosas que esperan una decisión'}">${fmtNum(BADGES.resumen)}</span>` : ''}</h2><div class="pend-grupos">
-      ${GRUPOS_PEND.map(([t, filas]) => `<div class="pend-grupo" role="group" aria-label="${esc(t)}"><h3>${esc(t)}</h3><ul class="pend-lista">${filas.map(fila).join('')}</ul></div>`).join('')}
-    </div></div>${tarjetaBajas(BAJAS?.items || [], true)}${tarjetaCambios(CAMBIOS?.rows || [], true, true)}${tarjetaPausas(PAUSAS || [], true, true)}` : '<div class="card"><h2>Todo al día</h2><p class="muted" style="margin:0">No hay negocios por verificar, publicaciones por moderar ni denuncias abiertas.</p></div>'}
     <div class="card"><h2>Cifras principales</h2><div class="kpis principales">
       ${kpi(k.users_total, 'usuarios en total')} ${kpi(k.wau, 'activos (7 d)')} ${kpi(k.businesses_verified, 'negocios verificados')}
       ${kpi(k.offers_active, 'publicaciones activas ahora')} ${kpi(k.redemptions_7d, 'canjes (7 d)')} ${kpi(fmtMoney(k.revenue_month_cents), 'cobrado este mes', 'accent')}
@@ -1803,20 +1738,10 @@ PAGES.resumen = async (v) => {
     ${tarjetaAvisosCorreo(ATT?.alerts)}`;
   $('#ctabs').onclick = (e) => { const b = e.target.closest('button'); if (!b) return; $$('#ctabs button').forEach((x) => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', String(x === b)); }); $('#chart').innerHTML = grafica(b.dataset.k); I18N.translate($('#chart')); };
   $('#masCifras').ontoggle = () => { try { localStorage.setItem(MAS, $('#masCifras').open ? '1' : '0'); } catch { /* sin almacenamiento */ } };
-  activaBajas(v);
-  activaCambios(v);
-  activaPausas(v);
   activaAvisosCorreo(v, ATT?.alerts);
-  activaAlta(v, PV);
+  activaAlta(v, null);
   if (typeof activaDeshacer === 'function') activaDeshacer($('#hechoSolo', v) || v);
-  // Las filas de lo que tiene su tarjeta aquí abajo: la despliegan y llevan a ella.
-  $$('[data-ir]', v).forEach((b) => { b.onclick = () => {
-    const t = document.getElementById(b.dataset.ir);
-    if (!t) return;
-    if (t.tagName === 'DETAILS') t.open = true;
-    t.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    t.querySelector('summary')?.focus({ preventScroll: true });
-  }; });
+  if (BJ) activaBandeja(v, BANDEJA);
 };
 
 // ── Negocios ────────────────────────────────────────────────────────────────
@@ -2074,12 +1999,14 @@ function tarjetaBajas(items, plegada = false) {
     <p class="muted" style="margin:0 0 8px">${en ? 'Until there is automatic billing: stop renewing it on its date, tell the owner if needed and mark it as handled.' : 'Hasta que haya cobro automático: no renovarla en su fecha, avisar al dueño si hace falta y marcarla como gestionada.'}</p>
     ${tablaBajas(items)}`, plegada, items.filter((c) => !c.handled_at && !c.undone_at).length);
 }
+/** «Marcar gestionada…» una cancelación. true si se hizo. */
+async function gestionarBaja(id) {
+  const r = await modal({ title: I18N.lang === 'en' ? 'Mark as handled' : 'Marcar como gestionada', fields: [{ name: 'note', label: I18N.lang === 'en' ? 'Note (optional, stays in the log)' : 'Nota (opcional, queda en el registro)', type: 'textarea' }], submit: I18N.lang === 'en' ? 'Mark' : 'Marcar' });
+  if (!r) return false;
+  try { await rpc('admin_handle_cancellation', { p_id: id, p_note: r.note || null }); toast(I18N.lang === 'en' ? 'Marked as handled' : 'Marcada como gestionada'); refreshBadges(); return true; } catch (e) { toast(e.message, true); return false; }
+}
 function activaBajas(caja) {
-  $$('[data-gestion]', caja).forEach((btn) => { btn.onclick = () => esperando(btn, async () => {
-    const r = await modal({ title: I18N.lang === 'en' ? 'Mark as handled' : 'Marcar como gestionada', fields: [{ name: 'note', label: I18N.lang === 'en' ? 'Note (optional, stays in the log)' : 'Nota (opcional, queda en el registro)', type: 'textarea' }], submit: I18N.lang === 'en' ? 'Mark' : 'Marcar' });
-    if (!r) return;
-    try { await rpc('admin_handle_cancellation', { p_id: btn.dataset.gestion, p_note: r.note || null }); toast(I18N.lang === 'en' ? 'Marked as handled' : 'Marcada como gestionada'); refreshBadges(); route(); } catch (e) { toast(e.message, true); }
-  }); });
+  $$('[data-gestion]', caja).forEach((btn) => { btn.onclick = () => esperando(btn, async () => { if (await gestionarBaja(btn.dataset.gestion)) route(); }); });
 }
 
 // ── «Revisar de nuevo» ─────────────────────────────────────────────────────
@@ -2112,13 +2039,15 @@ function tarjetaCambios(rows, conNegocio = true, plegada = false) {
       : 'Negocios verificados que han cambiado de nombre, de ciudad o de sitio (más de 1 km). Siguen a la vista y verificados: comprueba que sigue siendo el mismo negocio (web, Google Maps, teléfono) y márcalo como revisado. Si no lo es, desactívalo o recházalo desde su ficha.'}</p>
     ${rows.map(cambio).join('')}`, plegada, rows.filter((c) => !c.reviewed_at).length);
 }
+/** «Revisado…» un cambio de ficha. true si se hizo. */
+async function marcarRevisado(id) {
+  const en = I18N.lang === 'en';
+  const r = await modal({ title: en ? 'Mark as reviewed' : 'Marcar como revisado', fields: [{ name: 'note', label: en ? 'Note (optional, stays in the log)' : 'Nota (opcional, queda en el registro)', type: 'textarea' }], submit: en ? 'Reviewed' : 'Revisado' });
+  if (!r) return false;
+  try { await rpc('admin_review_business_change', { p_id: id, p_note: r.note || null }); toast(en ? 'Marked as reviewed' : 'Marcado como revisado'); refreshBadges(); return true; } catch (e) { toast(e.message, true); return false; }
+}
 function activaCambios(caja) {
-  $$('[data-revisado]', caja).forEach((btn) => { btn.onclick = () => esperando(btn, async () => {
-    const en = I18N.lang === 'en';
-    const r = await modal({ title: en ? 'Mark as reviewed' : 'Marcar como revisado', fields: [{ name: 'note', label: en ? 'Note (optional, stays in the log)' : 'Nota (opcional, queda en el registro)', type: 'textarea' }], submit: en ? 'Reviewed' : 'Revisado' });
-    if (!r) return;
-    try { await rpc('admin_review_business_change', { p_id: btn.dataset.revisado, p_note: r.note || null }); toast(en ? 'Marked as reviewed' : 'Marcado como revisado'); refreshBadges(); route(); } catch (e) { toast(e.message, true); }
-  }); });
+  $$('[data-revisado]', caja).forEach((btn) => { btn.onclick = () => esperando(btn, async () => { if (await marcarRevisado(btn.dataset.revisado)) route(); }); });
 }
 
 // ── En pausa por una suspensión ────────────────────────────────────────────
@@ -2141,16 +2070,37 @@ function tarjetaPausas(rows, conTitulo = true, plegada = false) {
       : 'Los pausamos al suspender a su propietario y la suspensión ya se ha levantado. Reábrelos, o déjalos cerrados para que los abra el propietario cuando quiera. Su equipo recibe una notificación en los dos casos.'}</p>` : ''}
     ${rows.map(fila).join('')}`, plegada, rows.length);
 }
+/** Reabrir un negocio en pausa por una suspensión ya levantada, o que lo decida el propietario. true si se hizo. */
+async function soltarPausa(id, reabrir) {
+  const en = I18N.lang === 'en';
+  if (!await confirmDlg(reabrir ? (en ? 'Reopen business' : 'Reabrir negocio') : (en ? 'Let the owner decide' : 'Que lo decida el propietario'), reabrir
+    ? (en ? 'It will show on Klendar again and its team will be told.' : 'Volverá a verse en Klendar y avisamos a su equipo.')
+    : (en ? 'It stays “closed until further notice”, but the owner can reopen it from their dashboard whenever they like. We let them know.' : 'Sigue «cerrado hasta nuevo aviso», pero el propietario puede abrirlo desde su panel cuando quiera. Se lo decimos.'),
+  { submit: reabrir ? (en ? 'Reopen' : 'Reabrir') : (en ? 'Confirm' : 'Confirmar') })) return false;
+  try { await rpc('admin_release_suspension_pause', { p_business: id, p_reopen: reabrir }); toast(reabrir ? (en ? 'Business reopened' : 'Negocio reabierto') : (en ? 'Done: the owner decides' : 'Hecho: lo decide el propietario')); refreshBadges(); return true; } catch (e) { toast(e.message, true); return false; }
+}
 function activaPausas(caja) {
-  $$('[data-pausa]', caja).forEach((btn) => { btn.onclick = () => esperando(btn, async () => {
-    const en = I18N.lang === 'en';
-    const reabrir = btn.dataset.reabrir === '1';
-    if (!await confirmDlg(reabrir ? (en ? 'Reopen business' : 'Reabrir negocio') : (en ? 'Let the owner decide' : 'Que lo decida el propietario'), reabrir
-      ? (en ? 'It will show on Klendar again and its team will be told.' : 'Volverá a verse en Klendar y avisamos a su equipo.')
-      : (en ? 'It stays “closed until further notice”, but the owner can reopen it from their dashboard whenever they like. We let them know.' : 'Sigue «cerrado hasta nuevo aviso», pero el propietario puede abrirlo desde su panel cuando quiera. Se lo decimos.'),
-    { submit: reabrir ? (en ? 'Reopen' : 'Reabrir') : (en ? 'Confirm' : 'Confirmar') })) return;
-    try { await rpc('admin_release_suspension_pause', { p_business: btn.dataset.pausa, p_reopen: reabrir }); toast(reabrir ? (en ? 'Business reopened' : 'Negocio reabierto') : (en ? 'Done: the owner decides' : 'Hecho: lo decide el propietario')); refreshBadges(); route(); } catch (e) { toast(e.message, true); }
-  }); });
+  $$('[data-pausa]', caja).forEach((btn) => { btn.onclick = () => esperando(btn, async () => { if (await soltarPausa(btn.dataset.pausa, btn.dataset.reabrir === '1')) route(); }); });
+}
+
+/** Verificar un negocio (`b`: id y nombre), con su confirmación. true si se hizo. Lo usan la
+ * ficha y la bandeja del Resumen (admin/bandeja.js). */
+async function verificarNegocio(b) {
+  if (!await confirmDlg('Verificar negocio', I18N.lang === 'en' ? `“${esc(b.name)}” will become verified and active: its publications will appear in the app and the owner will get a notification.` : `«${esc(b.name)}» pasará a verificado y activo: sus publicaciones aparecerán en la app y el propietario recibirá una notificación.`, { submit: 'Verificar' })) return false;
+  await rpc('admin_set_verification', { p_id: b.id, p_status: 'verified' }); toast('Negocio verificado');
+  refreshBadges();
+  return true;
+}
+/** Rechazar un negocio con su motivo (lo recibe el propietario). true si se hizo. */
+async function rechazarNegocio(b) {
+  const r = await modal({ title: 'Rechazar negocio', intro: 'El propietario recibirá el motivo como notificación en la app. Sé concreto: «no encontramos el local en la dirección indicada», «faltan datos fiscales»…', fields: [
+    { name: 'reason', label: 'Motivo', type: 'textarea', required: true },
+    { name: 'reason_en', label: 'En inglés (opcional)', type: 'textarea', help: 'Lo recibe quien tiene la app en inglés. Si lo dejas vacío, le llega el español.' },
+  ], submit: 'Rechazar', danger: true });
+  if (!r) return false;
+  await rpc('admin_set_verification', { p_id: b.id, p_status: 'rejected', p_reason: r.reason, p_reason_en: r.reason_en || null }); toast('Negocio rechazado');
+  refreshBadges();
+  return true;
 }
 
 async function businessAction(a, b, d) {
@@ -2185,18 +2135,8 @@ async function businessAction(a, b, d) {
       await rpc('admin_set_entity', { p_business: b.id, p_kind: r.kind || null });
       toast(r.kind ? (I18N.lang === 'en' ? 'Marked as an organisation' : 'Marcada como entidad') : (I18N.lang === 'en' ? 'No longer an organisation' : 'Ya no es una entidad'));
     }
-    if (a === 'verify') {
-      if (!await confirmDlg('Verificar negocio', I18N.lang === 'en' ? `“${esc(b.name)}” will become verified and active: its publications will appear in the app and the owner will get a notification.` : `«${esc(b.name)}» pasará a verificado y activo: sus publicaciones aparecerán en la app y el propietario recibirá una notificación.`, { submit: 'Verificar' })) return;
-      await rpc('admin_set_verification', { p_id: b.id, p_status: 'verified' }); toast('Negocio verificado');
-    }
-    if (a === 'reject') {
-      const r = await modal({ title: 'Rechazar negocio', intro: 'El propietario recibirá el motivo como notificación en la app. Sé concreto: «no encontramos el local en la dirección indicada», «faltan datos fiscales»…', fields: [
-        { name: 'reason', label: 'Motivo', type: 'textarea', required: true },
-        { name: 'reason_en', label: 'En inglés (opcional)', type: 'textarea', help: 'Lo recibe quien tiene la app en inglés. Si lo dejas vacío, le llega el español.' },
-      ], submit: 'Rechazar', danger: true });
-      if (!r) return;
-      await rpc('admin_set_verification', { p_id: b.id, p_status: 'rejected', p_reason: r.reason, p_reason_en: r.reason_en || null }); toast('Negocio rechazado');
-    }
+    if (a === 'verify' && !await verificarNegocio(b)) return;
+    if (a === 'reject' && !await rechazarNegocio(b)) return;
     if (a === 'active') {
       if (b.is_active && !await confirmDlg('Desactivar negocio', I18N.lang === 'en'
         ? 'The business and its publications will stop showing in the app until you activate it again. Unused bookings and codes, stamp-card rewards and pending birthday gifts are cancelled, and we let each person know with a generic reason (reports are never mentioned).'
@@ -3072,7 +3012,7 @@ async function noEsDuplicado(a, b) {
 
 /** «Fusionar»: una ficha desaparece dentro de la otra. Solo sola si la que
  * sobra está vacía; si no, el procedimiento manual (RUNBOOK §4b). */
-async function fusionar(actual, otra) {
+async function fusionar(actual, otra, { ir = true } = {}) {
   const en = I18N.lang === 'en';
   const r = await modal({
     title: en ? 'Merge the two pages' : 'Fusionar las dos fichas',
@@ -3099,7 +3039,8 @@ async function fusionar(actual, otra) {
     throw e;
   }
   toast(en ? 'Merged' : 'Fusionadas');
-  go(`#/negocios/${keep}`);
+  if (ir) go(`#/negocios/${keep}`);
+  else refreshBadges();
   return true;
 }
 
@@ -3195,45 +3136,53 @@ PAGES.reclamaciones = async (v) => {
     }).join('') : `<div class="tbl-wrap"><div class="empty">${en ? 'No claims with that filter.' : 'Ninguna reclamación con ese filtro.'}</div></div>`) + pg.html;
     pg.bind($('#list'));
     $$('#list [data-prueba]').forEach((b) => { b.onclick = () => esperando(b, () => verPrueba(items[b.dataset.prueba].proof_path)); });
-    $$('#list [data-aprobar]').forEach((b) => { b.onclick = () => esperando(b, async () => {
-      const x = items[b.dataset.aprobar];
-      const r2 = await modal({
-        title: en ? 'Approve the claim' : 'Aprobar la reclamación',
-        intro: esc(en
-          ? `${x.user_email} becomes the owner of “${x.business_name}”. The current owner (${x.owner_email || '—'}) is told by notification and email, and the other open claims for this business are rejected.`
-          : `${x.user_email} pasa a ser propietario de «${x.business_name}». A quien lo es ahora (${x.owner_email || '—'}) se le avisa por notificación y correo, y las demás reclamaciones abiertas de este negocio quedan rechazadas.`),
-        fields: [
-          { name: 'keep', label: en ? 'Leave the current owner on the team as a manager' : 'Dejar a quien es dueño ahora en el equipo como encargado', type: 'checkbox', value: false },
-          { name: 'note', label: en ? 'How you checked it (for the record)' : 'Cómo lo has comprobado (para el registro)', type: 'textarea' },
-        ],
-        submit: en ? 'Approve' : 'Aprobar',
-      });
-      if (!r2 || !await confirmaIdentidad()) return;
-      await rpc('admin_resolve_business_claim', { p_id: x.id, p_approve: true, p_reason: r2.note || null, p_reason_en: null, p_keep_previous: !!r2.keep });
-      toast(en ? 'Claim approved: ownership handed over' : 'Reclamación aprobada: propiedad traspasada');
-      refreshBadges(); load();
-    }); });
-    $$('#list [data-rechazar]').forEach((b) => { b.onclick = () => esperando(b, async () => {
-      const x = items[b.dataset.rechazar];
-      const r2 = await modal({
-        title: en ? 'Reject the claim' : 'Rechazar la reclamación',
-        intro: esc(en ? 'They will see the reason and can try again in 30 days with more evidence.' : 'Verá el motivo y podrá volver a intentarlo dentro de 30 días con más pruebas.'),
-        fields: [
-          { name: 'reason', label: en ? 'Reason (Spanish)' : 'Motivo (español)', type: 'textarea', required: true },
-          { name: 'reason_en', label: en ? 'Reason in English (optional)' : 'Motivo en inglés (opcional)', type: 'textarea' },
-        ],
-        submit: en ? 'Reject' : 'Rechazar', danger: true,
-      });
-      if (!r2) return;
-      await rpc('admin_resolve_business_claim', { p_id: x.id, p_approve: false, p_reason: r2.reason, p_reason_en: r2.reason_en || null, p_keep_previous: false });
-      toast(en ? 'Claim rejected' : 'Reclamación rechazada');
-      refreshBadges(); load();
-    }); });
+    $$('#list [data-aprobar]').forEach((b) => { b.onclick = () => esperando(b, async () => { if (await aprobarReclamacion(items[b.dataset.aprobar])) load(); }); });
+    $$('#list [data-rechazar]').forEach((b) => { b.onclick = () => esperando(b, async () => { if (await rechazarReclamacion(items[b.dataset.rechazar])) load(); }); });
   };
   $('#status', v).onchange = () => { s.status = $('#status', v).value; s.offset = 0; aUrl(); load(); };
   $('#q', v).oninput = debounce(() => { s.q = $('#q', v).value.trim(); s.offset = 0; load(); });
   await load();
 };
+
+/** Aprobar una reclamación (`x`: una fila de `admin_business_claims`), con «Confirma que eres tú».
+ * true si se hizo. Lo usan «Reclamaciones» y la bandeja. */
+async function aprobarReclamacion(x) {
+  const en = I18N.lang === 'en';
+  const r2 = await modal({
+    title: en ? 'Approve the claim' : 'Aprobar la reclamación',
+    intro: esc(en
+      ? `${x.user_email} becomes the owner of “${x.business_name}”. The current owner (${x.owner_email || '—'}) is told by notification and email, and the other open claims for this business are rejected.`
+      : `${x.user_email} pasa a ser propietario de «${x.business_name}». A quien lo es ahora (${x.owner_email || '—'}) se le avisa por notificación y correo, y las demás reclamaciones abiertas de este negocio quedan rechazadas.`),
+    fields: [
+      { name: 'keep', label: en ? 'Leave the current owner on the team as a manager' : 'Dejar a quien es dueño ahora en el equipo como encargado', type: 'checkbox', value: false },
+      { name: 'note', label: en ? 'How you checked it (for the record)' : 'Cómo lo has comprobado (para el registro)', type: 'textarea' },
+    ],
+    submit: en ? 'Approve' : 'Aprobar',
+  });
+  if (!r2 || !await confirmaIdentidad()) return false;
+  await rpc('admin_resolve_business_claim', { p_id: x.id, p_approve: true, p_reason: r2.note || null, p_reason_en: null, p_keep_previous: !!r2.keep });
+  toast(en ? 'Claim approved: ownership handed over' : 'Reclamación aprobada: propiedad traspasada');
+  refreshBadges();
+  return true;
+}
+/** Rechazar una reclamación con su motivo. true si se hizo. */
+async function rechazarReclamacion(x) {
+  const en = I18N.lang === 'en';
+  const r2 = await modal({
+    title: en ? 'Reject the claim' : 'Rechazar la reclamación',
+    intro: esc(en ? 'They will see the reason and can try again in 30 days with more evidence.' : 'Verá el motivo y podrá volver a intentarlo dentro de 30 días con más pruebas.'),
+    fields: [
+      { name: 'reason', label: en ? 'Reason (Spanish)' : 'Motivo (español)', type: 'textarea', required: true },
+      { name: 'reason_en', label: en ? 'Reason in English (optional)' : 'Motivo en inglés (opcional)', type: 'textarea' },
+    ],
+    submit: en ? 'Reject' : 'Rechazar', danger: true,
+  });
+  if (!r2) return false;
+  await rpc('admin_resolve_business_claim', { p_id: x.id, p_approve: false, p_reason: r2.reason, p_reason_en: r2.reason_en || null, p_keep_previous: false });
+  toast(en ? 'Claim rejected' : 'Reclamación rechazada');
+  refreshBadges();
+  return true;
+}
 
 // ── Entidades por verificar (20261219100000) ───────────────────────────────
 // Ayuntamientos, juntas, asociaciones y ONG: las que se dan de alta como
@@ -3253,7 +3202,6 @@ PAGES.entidades = async (v) => {
     <div class="toolbar"><input id="q" class="grow" type="search" placeholder="${en ? 'Search by name, CIF, city, person or email…' : 'Buscar por nombre, CIF, ciudad, persona o correo…'}" aria-label="${en ? 'Search organisations' : 'Buscar en entidades'}" value="${esc(s.q || '')}"><select id="status">${[['pending', en ? 'Pending' : 'Pendientes'], ['approved', en ? 'Approved' : 'Aprobadas'], ['rejected', en ? 'Rejected' : 'Rechazadas'], ['withdrawn', en ? 'Withdrawn' : 'Retiradas'], ['all', en ? 'All' : 'Todas']].map((o) => `<option value="${o[0]}" ${s.status === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select></div>
     <div id="list"><div class="loading">${en ? 'Loading…' : 'Cargando…'}</div></div>`;
   const ESTADO = { pending: ['warn', en ? 'pending' : 'pendiente'], approved: ['ok', en ? 'approved' : 'aprobada'], rejected: ['bad', en ? 'rejected' : 'rechazada'], withdrawn: ['dim', en ? 'withdrawn' : 'retirada'] };
-  const TIPOS = ['council', 'district', 'merchants', 'neighbours', 'ngo', 'other'];
   const load = async () => {
     const q = (s.q || '').trim();
     const r = await rpc('admin_entity_applications', { p_status: s.status, p_limit: q ? BUSCA_MAX : s.limit, p_offset: q ? 0 : s.offset });
@@ -3284,47 +3232,56 @@ PAGES.entidades = async (v) => {
     }).join('') : `<div class="tbl-wrap"><div class="empty">${en ? 'No organisations with that filter.' : 'Ninguna entidad con ese filtro.'}</div></div>`) + pg.html;
     pg.bind($('#list'));
     $$('#list [data-doc]').forEach((b) => { b.onclick = () => esperando(b, () => verPrueba(items[b.dataset.doc].proof_path)); });
-    $$('#list [data-aprobar]').forEach((b) => { b.onclick = () => esperando(b, async () => {
-      const x = items[b.dataset.aprobar];
-      const r2 = await modal({
-        title: en ? 'Approve the organisation' : 'Aprobar la entidad',
-        intro: esc(en
-          ? `“${x.official_name}” gets the organisation badge${x.origin === 'signup' ? ', its page is verified (it can publish)' : ''} and moves to the free plan with no end date. Only approve after checking the document as in RUNBOOK §4e.`
-          : `«${x.official_name}» lleva el sello de entidad${x.origin === 'signup' ? ', su ficha queda verificada (ya puede publicar)' : ''} y pasa al plan gratis sin fin. Aprueba solo después de comprobar el documento como dice el RUNBOOK §4e.`),
-        fields: [
-          { name: 'kind', label: en ? 'Type' : 'Tipo', type: 'select', value: x.kind, options: TIPOS.map((k) => [k, nombreEntidad(k)]) },
-          { name: 'note', label: en ? 'How you checked it (for the record)' : 'Cómo lo has comprobado (para el registro)', type: 'textarea', required: true },
-        ],
-        submit: en ? 'Approve' : 'Aprobar',
-      });
-      if (!r2) return;
-      await rpc('admin_resolve_entity_application', { p_id: x.id, p_approve: true, p_reason: r2.note, p_reason_en: null, p_kind: r2.kind });
-      toast(en ? 'Organisation approved' : 'Entidad aprobada');
-      refreshBadges(); load();
-    }); });
-    $$('#list [data-rechazar]').forEach((b) => { b.onclick = () => esperando(b, async () => {
-      const x = items[b.dataset.rechazar];
-      const r2 = await modal({
-        title: en ? 'Reject the organisation' : 'Rechazar la entidad',
-        intro: esc(en
-          ? (x.origin === 'signup' ? 'They will see the reason; the page stays rejected and they can ask again with another document.' : 'They will see the reason; the business stays as it was and can ask again from its page.')
-          : (x.origin === 'signup' ? 'Verá el motivo; la ficha queda rechazada y puede volver a pedirlo con otro documento.' : 'Verá el motivo; el negocio sigue como estaba y puede volver a pedirlo desde su ficha.')),
-        fields: [
-          { name: 'reason', label: en ? 'Reason (Spanish)' : 'Motivo (español)', type: 'textarea', required: true },
-          { name: 'reason_en', label: en ? 'Reason in English (optional)' : 'Motivo en inglés (opcional)', type: 'textarea' },
-        ],
-        submit: en ? 'Reject' : 'Rechazar', danger: true,
-      });
-      if (!r2) return;
-      await rpc('admin_resolve_entity_application', { p_id: x.id, p_approve: false, p_reason: r2.reason, p_reason_en: r2.reason_en || null, p_kind: null });
-      toast(en ? 'Organisation rejected' : 'Entidad rechazada');
-      refreshBadges(); load();
-    }); });
+    $$('#list [data-aprobar]').forEach((b) => { b.onclick = () => esperando(b, async () => { if (await aprobarEntidad(items[b.dataset.aprobar])) load(); }); });
+    $$('#list [data-rechazar]').forEach((b) => { b.onclick = () => esperando(b, async () => { if (await rechazarEntidad(items[b.dataset.rechazar])) load(); }); });
   };
   $('#status', v).onchange = () => { s.status = $('#status', v).value; s.offset = 0; aUrl(); load(); };
   $('#q', v).oninput = debounce(() => { s.q = $('#q', v).value.trim(); s.offset = 0; load(); });
   await load();
 };
+
+const TIPOS_ENTIDAD = ['council', 'district', 'merchants', 'neighbours', 'ngo', 'other'];
+/** Aprobar una entidad (`x`: una fila de `admin_entity_applications`), con el tipo y cómo se ha
+ * comprobado. true si se hizo. Lo usan «Entidades por verificar» y la bandeja. */
+async function aprobarEntidad(x) {
+  const en = I18N.lang === 'en';
+  const r2 = await modal({
+    title: en ? 'Approve the organisation' : 'Aprobar la entidad',
+    intro: esc(en
+      ? `“${x.official_name}” gets the organisation badge${x.origin === 'signup' ? ', its page is verified (it can publish)' : ''} and moves to the free plan with no end date. Only approve after checking the document as in RUNBOOK §4e.`
+      : `«${x.official_name}» lleva el sello de entidad${x.origin === 'signup' ? ', su ficha queda verificada (ya puede publicar)' : ''} y pasa al plan gratis sin fin. Aprueba solo después de comprobar el documento como dice el RUNBOOK §4e.`),
+    fields: [
+      { name: 'kind', label: en ? 'Type' : 'Tipo', type: 'select', value: x.kind, options: TIPOS_ENTIDAD.map((k) => [k, nombreEntidad(k)]) },
+      { name: 'note', label: en ? 'How you checked it (for the record)' : 'Cómo lo has comprobado (para el registro)', type: 'textarea', required: true },
+    ],
+    submit: en ? 'Approve' : 'Aprobar',
+  });
+  if (!r2) return false;
+  await rpc('admin_resolve_entity_application', { p_id: x.id, p_approve: true, p_reason: r2.note, p_reason_en: null, p_kind: r2.kind });
+  toast(en ? 'Organisation approved' : 'Entidad aprobada');
+  refreshBadges();
+  return true;
+}
+/** Rechazar una entidad con su motivo. true si se hizo. */
+async function rechazarEntidad(x) {
+  const en = I18N.lang === 'en';
+  const r2 = await modal({
+    title: en ? 'Reject the organisation' : 'Rechazar la entidad',
+    intro: esc(en
+      ? (x.origin === 'signup' ? 'They will see the reason; the page stays rejected and they can ask again with another document.' : 'They will see the reason; the business stays as it was and can ask again from its page.')
+      : (x.origin === 'signup' ? 'Verá el motivo; la ficha queda rechazada y puede volver a pedirlo con otro documento.' : 'Verá el motivo; el negocio sigue como estaba y puede volver a pedirlo desde su ficha.')),
+    fields: [
+      { name: 'reason', label: en ? 'Reason (Spanish)' : 'Motivo (español)', type: 'textarea', required: true },
+      { name: 'reason_en', label: en ? 'Reason in English (optional)' : 'Motivo en inglés (opcional)', type: 'textarea' },
+    ],
+    submit: en ? 'Reject' : 'Rechazar', danger: true,
+  });
+  if (!r2) return false;
+  await rpc('admin_resolve_entity_application', { p_id: x.id, p_approve: false, p_reason: r2.reason, p_reason_en: r2.reason_en || null, p_kind: null });
+  toast(en ? 'Organisation rejected' : 'Entidad rechazada');
+  refreshBadges();
+  return true;
+}
 
 PAGES.inactivas = async (v) => {
   const en = I18N.lang === 'en';
@@ -3411,30 +3368,37 @@ PAGES.mensajes = async (v) => {
     }).join('') : '<div class="tbl-wrap"><div class="empty">Ningún mensaje con ese filtro.</div></div>') + pg.html;
     pg.bind($('#list'));
     $$('#list [data-msg]').forEach((b) => { b.onclick = () => esperando(b, async () => {
-      const aprobar = b.dataset.ok === '1';
-      let motivo = null;
-      if (aprobar) {
-        if (!await confirmDlg('Enviar el mensaje', esc(I18N.t('Llega ahora como notificación a quien tiene el negocio en favoritos (y a sus clientes, si lo pidió). No se puede deshacer.')), { submit: 'Enviar' })) return;
-      } else {
-        const m = await modal({ title: 'Rechazar el mensaje', intro: esc(I18N.t('No se envía y se le dice al negocio. Puede escribir otro cuando quiera.')), fields: [{ name: 'reason', label: 'Motivo que verá el negocio (opcional)', type: 'textarea' }], submit: 'Rechazar', danger: true });
-        if (!m) return;
-        motivo = m.reason || null;
-      }
-      try {
-        const res = await rpc('admin_review_business_message', { p_id: b.dataset.msg, p_approve: aprobar, p_reason: motivo });
-        if (res?.ok === false) { toast(res.error === 'not_in_review' ? 'Ese mensaje ya no está en revisión.' : 'No encontrado.', true); await load(); return; }
-        toast(aprobar
-          ? (res.recipients === 1 ? (en ? 'Sent to 1 person' : 'Enviado a 1 persona') : (en ? `Sent to ${fmtNum(res.recipients || 0)} people` : `Enviado a ${fmtNum(res.recipients || 0)} personas`))
-          : 'Mensaje rechazado');
-        refreshBadges();
-        await load();
-      } catch (e) { toast(e.message, true); }
+      if (await decideMensaje(b.dataset.msg, b.dataset.ok === '1') !== null) await load();
     }); });
   };
   $('#status').onchange = () => { s.status = $('#status').value; s.offset = 0; aUrl(); load(); };
   $('#q').oninput = debounce(() => { s.q = $('#q').value.trim(); s.offset = 0; load(); });
   await load();
 };
+
+/** Enviar o rechazar un mensaje a clientes en revisión, con su confirmación. true si se hizo,
+ * false si ya no estaba en revisión (hay que recargar) y null si se canceló o falló. Lo usan
+ * «Mensajes a clientes» y la bandeja. */
+async function decideMensaje(id, aprobar) {
+  const en = I18N.lang === 'en';
+  let motivo = null;
+  if (aprobar) {
+    if (!await confirmDlg('Enviar el mensaje', esc(I18N.t('Llega ahora como notificación a quien tiene el negocio en favoritos (y a sus clientes, si lo pidió). No se puede deshacer.')), { submit: 'Enviar' })) return null;
+  } else {
+    const m = await modal({ title: 'Rechazar el mensaje', intro: esc(I18N.t('No se envía y se le dice al negocio. Puede escribir otro cuando quiera.')), fields: [{ name: 'reason', label: 'Motivo que verá el negocio (opcional)', type: 'textarea' }], submit: 'Rechazar', danger: true });
+    if (!m) return null;
+    motivo = m.reason || null;
+  }
+  try {
+    const res = await rpc('admin_review_business_message', { p_id: id, p_approve: aprobar, p_reason: motivo });
+    if (res?.ok === false) { toast(res.error === 'not_in_review' ? 'Ese mensaje ya no está en revisión.' : 'No encontrado.', true); return false; }
+    toast(aprobar
+      ? (res.recipients === 1 ? (en ? 'Sent to 1 person' : 'Enviado a 1 persona') : (en ? `Sent to ${fmtNum(res.recipients || 0)} people` : `Enviado a ${fmtNum(res.recipients || 0)} personas`))
+      : 'Mensaje rechazado');
+    refreshBadges();
+    return true;
+  } catch (e) { toast(e.message, true); return null; }
+}
 
 // ── Sugerencias y fallos ────────────────────────────────────────────────────
 const ESTADOS_SUG = [['new', 'Sin leer'], ['reviewing', 'La estamos viendo'], ['planned', 'La haremos'], ['done', 'Hecho'], ['declined', 'De momento no']];

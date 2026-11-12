@@ -526,3 +526,54 @@ table.tbl .art-thumb, .art-celda .art-thumb { border-radius: 50%; margin: 0; fle
 /* Sugerencias: las capturas (revisión 10-11). */
 .sug-capturas { display: flex; flex-wrap: wrap; gap: 10px; margin: 8px 0; }
 .sug-capturas img { width: 120px; height: 120px; object-fit: cover; border-radius: 10px; display: block; border: 1px solid var(--line, #ddd); }
+
+/* La bandeja del Resumen, «Pendiente de ti» (admin/bandeja.js): una tarjeta por caso, con la
+   línea de la máquina y los botones. Sobria: coral solo en «Aprobar todos los que cuadran». */
+.bandeja-cab { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; justify-content: space-between; margin-bottom: 4px; }
+.bandeja-cab h2 { margin: 0; }
+.bandeja-filtros { margin: 0 0 12px; }
+.bandeja-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.bandeja-sel { display: none; }
+.bandeja-sel select { width: 100%; }
+.bandeja-filtros .chip { border: 1px solid var(--glass-border); border-radius: 999px; padding: 6px 12px; min-height: 36px; font: inherit; font-size: 13px; font-weight: 700; color: var(--ink); background: transparent; cursor: pointer; }
+.bandeja-filtros .chip.on { background: var(--ink); color: var(--surface); border-color: transparent; }
+.bandeja-filtros .chip-n { font-variant-numeric: tabular-nums; opacity: .7; margin-left: 2px; }
+.bandeja-lista { display: grid; gap: 10px; }
+.bj { background: var(--elevated); border: 1px solid var(--glass-border); border-radius: 16px; padding: 12px 14px; min-width: 0; }
+.bj.urgente { border-color: rgba(211,47,47,.45); }
+.bj-cab { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-size: 12px; color: var(--ink-2); margin-bottom: 6px; }
+.bj-cab .ms { font-size: 18px; }
+.bj-tipo { font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.bj-cuando { margin-left: auto; }
+.bj-cuerpo { display: flex; gap: 12px; align-items: flex-start; min-width: 0; }
+.bj-texto { min-width: 0; flex: 1; }
+.bj h3 { font-size: 16px; margin: 0 0 4px; overflow-wrap: anywhere; }
+.bj .meta { overflow-wrap: anywhere; }
+.bj-mini { flex: 0 0 56px; width: 56px; height: 56px; border-radius: 12px; overflow: hidden; background: var(--soft); display: grid; place-items: center; }
+.bj-mini img, .bj-mini video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.bj-mini .ph { width: 100%; height: 100%; display: grid; place-items: center; }
+.bj-cita { margin: 8px 0 0; padding: 6px 10px; border-left: 3px solid var(--soft); white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; }
+.bj-maquina { margin: 8px 0 0; padding: 7px 10px; border-radius: 10px; font-size: 14px; background: var(--soft); color: var(--ink); overflow-wrap: anywhere; }
+.bj-maquina.ok { background: rgba(46,204,113,.14); color: #146c3a; }
+.bj-maquina.warn { background: rgba(255,184,77,.18); color: #7a4800; }
+.bj-maquina.bad { background: rgba(255,92,92,.16); color: #b3261e; }
+.bj-maquina.dim { background: transparent; color: var(--ink-2); padding-left: 0; }
+@media (prefers-color-scheme: dark) {
+  .bj.urgente { border-color: rgba(255,155,155,.45); }
+  .bj-maquina.ok { color: #8AE8B0; }
+  .bj-maquina.warn { color: #FFD08A; }
+  .bj-maquina.bad { color: #FF9B9B; }
+}
+.bj-acc { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; }
+.bj-acc .btn.sm { min-height: 36px; }
+.bj-abrir { margin-left: auto; font-size: 13px; }
+.bandeja-vacia { margin: 6px 0 0; display: flex; align-items: center; gap: 8px; }
+.bandeja-confirma { margin: 0 0 4px; padding-left: 18px; max-height: 40vh; overflow-y: auto; }
+@media (max-width: 560px) {
+  .bj { padding: 12px; }
+  .bj-acc .btn.sm { flex: 1 1 auto; justify-content: center; }
+  .bj-abrir { margin-left: 0; flex-basis: 100%; }
+  #bandejaListos { width: 100%; justify-content: center; white-space: normal; }
+  .bandeja-chips { display: none; }
+  .bandeja-sel { display: block; }
+}

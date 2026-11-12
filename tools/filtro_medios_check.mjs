@@ -181,7 +181,7 @@ const nav = await chromium.launch();
   ok(/Límites gratis/.test(texto), 'el Resumen enseña los límites gratis');
   ok(/82 \/ 100/.test(texto) && /82 %/.test(texto), '…con sus cifras');
   ok(/170 MB \/ 8\.0 GB/.test(texto), '…en MB y GB', texto.match(/[0-9.]+ [MG]B[^\n]*/)?.[0]);
-  ok(/3\s*fotos o vídeos retenidos/.test(texto.replace(/\n/g, ' ')), 'y «Pendiente de ti» los cuenta', texto.slice(0, 400));
+  ok(/(Foto|Vídeo) retenid[ao]/.test(texto) && /Retenido por el filtro/.test(texto), 'y «Pendiente de ti» los enseña, cada uno en su tarjeta', texto.slice(0, 400));
   ok(/Al 82 % del límite gratis/.test(texto), '«Para mirar ya»: el límite');
   ok(/Oculto por denuncias/.test(texto), '«Para mirar ya»: lo oculto por denuncias');
   await page.locator('#limitesGratis').screenshot({ path: `${OUT}/filtro-limites.png` }).catch(() => {});
