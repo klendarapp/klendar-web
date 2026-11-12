@@ -170,6 +170,12 @@ a.aviso:hover { text-decoration: none; border-color: var(--ink-2); }
 .aviso.nuevo::after { content: ''; position: absolute; top: 20px; right: 16px; width: 8px; height: 8px; border-radius: 50%; background: var(--ink); }
 .aviso span { color: var(--ink-2); }
 .aviso.pausada { opacity: .7; }
+/* La papelera de cada notificación, abajo a la derecha: en tinta, sin rojo. */
+.aviso-caja { position: relative; }
+.aviso-caja > .aviso { padding-bottom: 18px; padding-right: 52px; }
+.aviso-borrar { position: absolute; right: 8px; bottom: 8px; width: 40px; height: 40px; display: grid; place-items: center;
+  border: 0; border-radius: 999px; background: transparent; color: var(--ink-2); cursor: pointer; }
+.aviso-borrar:hover, .aviso-borrar:focus-visible { background: var(--soft); color: var(--ink); }
 /* En la fila de un aviso, botones pequeños a su medida. */
 .aviso .acciones { justify-content: flex-start; margin-top: 8px; }
 .aviso .acciones > * { flex: 0 0 auto; }

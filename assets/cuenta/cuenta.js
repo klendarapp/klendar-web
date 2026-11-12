@@ -200,7 +200,12 @@ function accionAviso(d) {
   return null;
 }
 
-/** Una notificación de la bandeja. */
+/** La papelera de cada notificación (SVG: la fuente de iconos de «Tu cuenta»
+ * no la lleva). */
+const PAPELERA = '<svg viewBox="0 -960 960 960" width="20" height="20" aria-hidden="true" fill="currentColor"><path d="M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z"/></svg>';
+
+/** Una notificación de la bandeja, con su papelera al lado (fuera del
+ * enlace: un botón dentro de un enlace no vale). */
 function filaAviso(n) {
   // Con acción, toda la notificación lleva a ella y el botón lo dice.
   const accion = accionAviso(n.data);
@@ -208,12 +213,12 @@ function filaAviso(n) {
   const ruta = n.route === '/my-redemptions' && /^[0-9a-f-]{36}$/i.test(n.data?.offer_id || '')
     ? `${n.route}?offer=${n.data.offer_id}` : n.route;
   const destino = accion?.href || destinoWeb(ruta);
-  return `<a class="aviso${n.read_at ? '' : ' nuevo'}" href="${esc(destino || '/cuenta/notificaciones')}" data-id="${esc(n.id)}">
+  return `<div class="aviso-caja"><a class="aviso${n.read_at ? '' : ' nuevo'}" href="${esc(destino || '/cuenta/notificaciones')}" data-id="${esc(n.id)}">
     <b>${esc(n.title)}</b>
     ${n.body ? `<span>${esc(n.body)}</span>` : ''}
     <small class="muted">${esc(fecha(n.created_at))}</small>
     ${accion ? `<span class="acciones"><span class="pill">${esc(accion.txt)}</span></span>` : ''}
-  </a>`;
+  </a><button type="button" class="aviso-borrar" data-borrar="${esc(n.id)}" aria-label="${esc(t('Borrar notificación'))}" title="${esc(t('Borrar notificación'))}">${PAPELERA}</button></div>`;
 }
 
 // La bandeja llega por partes: las 30 más nuevas y «Ver más» con las
@@ -239,6 +244,7 @@ RUTAS.notificaciones = async () => {
     ${lista.length ? `<p class="acciones">
       ${nuevos ? `<button class="pill" id="leidos">${esc(t('Marcar todo como leído'))}</button>` : ''}
       <a class="pill ghost" href="/cuenta/ajustes/notificaciones">${esc(t('Qué notificaciones recibo'))}</a>
+      <button type="button" class="pill ghost" id="borrar-todas">${esc(t('Borrar todas'))}</button>
     </p>` : ''}
     ${lista.length ? `<div class="avisos" id="avisos">${lista.map(filaAviso).join('')}</div>${lista.length >= AVISOS_POR_PARTE ? `<p class="ver-mas"><button type="button" class="pill" data-ver-mas="avisos">${esc(t('Ver más'))}</button></p>` : ''}`
     : pantallaVacia({
@@ -303,6 +309,53 @@ RUTAS.notificaciones = async () => {
   conecta($$('.aviso'));
   // «Ver más»: las anteriores, debajo.
   const cargadas = [...lista];
+
+  // Borrar una (la papelera) o todas, con «Deshacer», como en la app. En la
+  // base quedan ocultas y «Deshacer» las devuelve (migración 20261280100300
+  // de la app). Si la base aún no tiene la función, sale el error de siempre.
+  const recuenta = () => { try { window.KL_CABECERA?.(); } catch { /* la campana, a su ritmo */ } };
+  const deshacer = (at, msg) => toastDeshacer(msg, async () => {
+    try { await llamar('restore_my_notifications', { p_at: at }); } catch (e) { toast(e.message || String(e), true); return; }
+    recuenta();
+    if (location.pathname.startsWith('/cuenta/notificaciones')) navegar();
+  });
+  const borrables = (cajas) => cajas.forEach((caja) => {
+    const b = caja.querySelector('[data-borrar]');
+    if (!b) return;
+    b.onclick = () => ocupado(b, async () => {
+      const id = b.dataset.borrar;
+      let r;
+      try { r = await llamar('delete_my_notifications', { p_ids: [id] }); } catch (e) { toast(e.message || String(e), true); return; }
+      vistas.delete(id);
+      const i = cargadas.findIndex((n) => n.id === id);
+      if (i >= 0) cargadas.splice(i, 1);
+      caja.remove();
+      if (!$('.aviso-caja')) navegar(); // sin ninguna: la pantalla vacía
+      else if (!$('.aviso.nuevo')) $('#leidos')?.remove();
+      recuenta();
+      if (r?.at) deshacer(r.at, t('Notificación borrada'));
+    });
+  });
+  borrables($$('.aviso-caja'));
+  $('#borrar-todas')?.addEventListener('click', async (ev) => {
+    const boton = ev.currentTarget;
+    const ok = await confirma({
+      titulo: t('¿Borrar todas las notificaciones?'),
+      texto: t('También en la app. Puedes deshacerlo justo después.'),
+      aceptar: t('Borrar todas'),
+      peligro: true,
+    });
+    if (!ok || !cargadas.length) return;
+    await ocupado(boton, async () => {
+      let r;
+      // Hasta la más nueva que se ve (la hora de la base): no se lleva una que acabe de llegar.
+      try { r = await llamar('delete_my_notifications', { p_before: cargadas[0].created_at }); } catch (e) { toast(e.message || String(e), true); return; }
+      vistas.clear();
+      recuenta();
+      navegar();
+      if (r?.at) deshacer(r.at, t('Notificaciones borradas'));
+    });
+  });
   const mas = $('[data-ver-mas="avisos"]');
   if (mas) {
     mas.onclick = async () => {
@@ -313,8 +366,10 @@ RUTAS.notificaciones = async () => {
         const caja = $('#avisos');
         const antes = caja.children.length;
         caja.insertAdjacentHTML('beforeend', parte.map(filaAviso).join(''));
-        const nuevasFilas = [...caja.children].slice(antes);
+        const nuevasCajas = [...caja.children].slice(antes);
+        const nuevasFilas = nuevasCajas.map((c) => c.querySelector('.aviso'));
         conecta(nuevasFilas);
+        borrables(nuevasCajas);
         vigila(nuevasFilas.filter((a) => a.classList.contains('nuevo')));
         nuevasFilas[0]?.focus();
         if (parte.length < AVISOS_POR_PARTE) mas.closest('.ver-mas').remove();
