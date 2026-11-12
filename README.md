@@ -96,8 +96,11 @@ suspender, premium, borrar cuenta), Reseñas y posts, Denuncias (DSA), Planes y
 pagos, Avisos y push, Categorías, Configuración, Administradores, Registro de
 actividad y Ayuda. Todo listado se exporta a CSV y toda acción queda en
 `admin_audit_log`. La clave embebida es la *publishable* (pública); la seguridad
-la ponen `is_admin()` y RLS. Al cambiar `admin.js`/`admin.css`, sube el `?v=` en
-`admin.html` para saltar la caché.
+la ponen `is_admin()` y RLS. Los JS y el CSS de `admin/` se guardan un año en el navegador (`_headers`) y no
+pasan por las Functions (`_routes.json`): su `?v=` en `admin.html` (y lo propio
+que carga esa página) es la huella del fichero y la pone sola
+`tools/versiones_admin.py` en el pre-commit (`.githooks/pre-commit`; el pre-push
+lo comprueba). No hace falta subirlo a mano.
 - `python tools/build_kit.py` → kit para negocios en `assets/kit/` (guía de 1 página y cartel A4 con QR; reportlab + qrcode; fuentes Sora y Manrope en `tools/fonts/`, copiadas de la app).
 - `python tools/build_brand.py` → símbolo, favicon, apple-touch-icon, icon-512 y `og.png` a partir del símbolo «Pulso» (misma geometría que `tool/brand/make_brand.py` de la app).
 

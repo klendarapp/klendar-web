@@ -56,6 +56,24 @@
     "/en/support",
     "/en/terms",
     "/para-entidades",
-    "/en/for-organisations"
+    "/en/for-organisations",
+    "/admin/admin.css",
+    "/admin/admin.js",
+    "/admin/artistas.js",
+    "/admin/asistente.js",
+    "/admin/ayudas.js",
+    "/admin/bandeja.js",
+    "/admin/carta.js",
+    "/admin/cerrado.js",
+    "/admin/condiciones.js",
+    "/admin/crecer.js",
+    "/admin/emisiones.js",
+    "/admin/festivos.js",
+    "/admin/foto.js",
+    "/admin/i18n.js",
+    "/admin/medios.js",
+    "/admin/piloto.js",
+    "/admin/sorteos.js",
+    "/admin/traduccion.js"
   ]
 }

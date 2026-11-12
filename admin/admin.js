@@ -958,29 +958,29 @@ function renderNav(current) {
 }
 async function refreshBadges(lanzar = false) {
   try {
-    const k = await rpc('admin_kpis');
-    let sug = 0;
-    try { sug = (await rpc('admin_feedback', { p_status: 'new', p_limit: 1 })).counts?.new || 0; } catch { /* sin permisos */ }
-    // Mensajes a clientes parados por la moderación automática.
-    let msj = 0;
-    try { msj = (await rpc('admin_business_messages', { p_status: 'review', p_limit: 1, p_offset: 0 })).pending || 0; } catch { /* sin la función */ }
-    // Textos parados por lenguaje ofensivo (novedades, reseñas, respuestas, ficha y carta).
-    let textos = 0;
-    try { textos = (await rpc('admin_text_reviews', { p_limit: 1, p_offset: 0 })).total || 0; } catch { /* sin la función */ }
-    // Errores de la web: los nuevos de las últimas 24 h (y lo demás para el Resumen).
-    try { WEB_ERR = (await rpc('admin_web_errors', { p_status: 'open', p_limit: 1, p_offset: 0 })).counts || null; } catch { WEB_ERR = null; }
-    // Negocios que han pedido cancelar la suscripción (hasta Stripe, a mano).
-    try { BAJAS = await rpc('admin_subscription_cancellations', { p_status: 'pending', p_business: null, p_limit: 20, p_offset: 0 }); } catch { BAJAS = null; }
-    try { CAMBIOS = await rpc('admin_business_changes', { p_status: 'open', p_business: null, p_limit: 20, p_offset: 0 }); } catch { CAMBIOS = null; }
-    try { PAUSAS = (await rpc('admin_suspension_pauses', { p_user: null })).filter((x) => !x.owner_banned_at); } catch { PAUSAS = null; }
-    // «¿Es tu negocio?» pendientes y posibles duplicados (20261029100001).
-    let reclam = 0;
-    try { reclam = (await rpc('admin_business_claims', { p_status: 'pending', p_limit: 1, p_offset: 0 })).counts?.pending || 0; } catch { /* sin la función */ }
-    // Ayuntamientos, asociaciones y ONG por verificar (20261219100000).
-    let ents = 0;
-    try { ents = (await rpc('admin_entity_applications', { p_status: 'pending', p_limit: 1, p_offset: 0 })).counts?.pending || 0; } catch { /* sin la función */ }
-    let dups = 0;
-    try { dups = ((await rpc('admin_duplicate_alerts', { p_limit: 200 })) || []).filter((x) => x.pending).length; } catch { /* sin la función */ }
+    // Todo a la vez (antes, una tras otra: 11 idas y vueltas antes de pintar).
+    // Cada una, si falla, deja lo de siempre; solo admin_kpis es imprescindible.
+    const o = (p, si = (x) => x, no = null) => p.then(si).catch(() => no);
+    const [k, sug, msj, textos, webErr, bajas, cambios, pausas, reclam, ents, dups] = await Promise.all([
+      rpc('admin_kpis'),
+      o(rpc('admin_feedback', { p_status: 'new', p_limit: 1 }), (r) => r.counts?.new || 0, 0),
+      // Mensajes a clientes parados por la moderación automática.
+      o(rpc('admin_business_messages', { p_status: 'review', p_limit: 1, p_offset: 0 }), (r) => r.pending || 0, 0),
+      // Textos parados por lenguaje ofensivo (novedades, reseñas, respuestas, ficha y carta).
+      o(rpc('admin_text_reviews', { p_limit: 1, p_offset: 0 }), (r) => r.total || 0, 0),
+      // Errores de la web: los nuevos de las últimas 24 h (y lo demás para el Resumen).
+      o(rpc('admin_web_errors', { p_status: 'open', p_limit: 1, p_offset: 0 }), (r) => r.counts || null),
+      // Negocios que han pedido cancelar la suscripción (hasta Stripe, a mano).
+      o(rpc('admin_subscription_cancellations', { p_status: 'pending', p_business: null, p_limit: 20, p_offset: 0 })),
+      o(rpc('admin_business_changes', { p_status: 'open', p_business: null, p_limit: 20, p_offset: 0 })),
+      o(rpc('admin_suspension_pauses', { p_user: null }), (r) => r.filter((x) => !x.owner_banned_at)),
+      // «¿Es tu negocio?» pendientes y posibles duplicados (20261029100001).
+      o(rpc('admin_business_claims', { p_status: 'pending', p_limit: 1, p_offset: 0 }), (r) => r.counts?.pending || 0, 0),
+      // Ayuntamientos, asociaciones y ONG por verificar (20261219100000).
+      o(rpc('admin_entity_applications', { p_status: 'pending', p_limit: 1, p_offset: 0 }), (r) => r.counts?.pending || 0, 0),
+      o(rpc('admin_duplicate_alerts', { p_limit: 200 }), (r) => (r || []).filter((x) => x.pending).length, 0),
+    ]);
+    WEB_ERR = webErr; BAJAS = bajas; CAMBIOS = cambios; PAUSAS = pausas;
     BADGES = { reclamaciones: reclam, entidades: ents, duplicados: dups, negocios: (k.businesses_pending || 0) + (CAMBIOS?.open || 0) + (PAUSAS?.length || 0), publicaciones: k.offers_pending || 0, denuncias: k.reports_open || 0, mensajes: msj, resenas: textos, medios: (ATT?.pending?.media_held || 0) + (ATT?.pending?.content_held || 0), sugerencias: sug, errores: (WEB_ERR?.new_24h || 0) + (ATT?.tasks?.crons || []).length };
     BADGES.resumen = totalPendiente(k);
     Object.keys(BADGES).forEach((x) => { if (!BADGES[x]) delete BADGES[x]; });
@@ -1649,9 +1649,7 @@ function activaAlta(v, pv) {
 }
 
 PAGES.resumen = async (v) => {
-  const k = await refreshBadges(true);
   const kpi = (n, label, cls = '') => `<div class="kpi ${cls}"><b>${typeof n === 'number' ? fmtNum(n) : n}</b><span>${label}</span></div>`;
-  const series = k.series || [];
   const en = I18N.lang === 'en';
   // Festivos: desde noviembre (o con propuestas sin revisar), lo que le falta
   // al año que se vigila (festivos.js; migración 20261238100000).
@@ -1662,13 +1660,23 @@ PAGES.resumen = async (v) => {
   // 20261269500000). Y la bandeja «Pendiente de ti» (admin/bandeja.js;
   // 20261279000000): todo lo pendiente, cada caso en su tarjeta.
   const nada = (e) => { if (e?.obsoleta) throw e; return null; };
-  const [festivos, att, PULSO, PILOTO, BJ] = await Promise.all([
+  // Lo de abajo se pide a la vez que los números del menú, no después. Lo de
+  // otros ficheros (cargaBandeja, en bandeja.js) puede no haber llegado aún:
+  // se espera a que estén todos, como antes, pero con los números ya en marcha.
+  const numeros = refreshBadges(true);
+  numeros.catch(() => {}); // el error se trata abajo, al esperarlo
+  if (document.readyState === 'loading') await new Promise((r) => document.addEventListener('DOMContentLoaded', r, { once: true }));
+  const resto = Promise.all([
     rpc('admin_holiday_alert').catch(nada),
     rpc('admin_attention').catch(nada),
     rpc('admin_pulso').catch(nada),
     rpc('admin_piloto_overview', { p_limit: 6 }).catch(nada),
     typeof cargaBandeja === 'function' ? cargaBandeja() : null,
   ]);
+  resto.catch(() => {}); // si fallan los números, el error es ese (sin un segundo aviso)
+  const k = await numeros;
+  const [festivos, att, PULSO, PILOTO, BJ] = await resto;
+  const series = k.series || [];
   ATT = att;
   const urg = ATT?.urgent || [];
   BADGES.resumen = totalPendiente(k);

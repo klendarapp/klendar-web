@@ -33,6 +33,65 @@
   X-Robots-Tag: noindex, nofollow
   Cache-Control: no-store, no-transform
   Content-Security-Policy: default-src 'self'; script-src 'self' https://api.mapbox.com https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://api.mapbox.com; font-src 'self'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.mapbox.com https://events.mapbox.com; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; base-uri 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'none'
+# Los JS y el CSS del admin: un año en el navegador. Su `?v=` es la huella del
+# fichero y la pone sola tools/versiones_admin.py (pre-commit; el pre-push lo
+# comprueba): al cambiar uno, el admin pide el nuevo en la siguiente visita.
+# (La página, `/admin`, sigue sin caché: es la que dice qué versión toca.)
+# Un fichero nuevo de admin/ no está aquí: sin caché (lento, nunca viejo).
+/admin/admin.css
+  ! Cache-Control
+  Cache-Control: public, max-age=31536000, immutable
+/admin/admin.js
+  ! Cache-Control
+  Cache-Control: public, max-age=31536000, immutable
+/admin/artistas.js
+  ! Cache-Control
+  Cache-Control: public, max-age=31536000, immutable
+/admin/asistente.js
+  ! Cache-Control
+  Cache-Control: public, max-age=31536000, immutable
+/admin/ayudas.js
+  ! Cache-Control
+  Cache-Control: public, max-age=31536000, immutable
+/admin/bandeja.js
+  ! Cache-Control
+  Cache-Control: public, max-age=31536000, immutable
+/admin/carta.js
+  ! Cache-Control
+  Cache-Control: public, max-age=31536000, immutable
+/admin/cerrado.js
+  ! Cache-Control
+  Cache-Control: public, max-age=31536000, immutable
+/admin/condiciones.js
+  ! Cache-Control
+  Cache-Control: public, max-age=31536000, immutable
+/admin/crecer.js
+  ! Cache-Control
+  Cache-Control: public, max-age=31536000, immutable
+/admin/emisiones.js
+  ! Cache-Control
+  Cache-Control: public, max-age=31536000, immutable
+/admin/festivos.js
+  ! Cache-Control
+  Cache-Control: public, max-age=31536000, immutable
+/admin/foto.js
+  ! Cache-Control
+  Cache-Control: public, max-age=31536000, immutable
+/admin/i18n.js
+  ! Cache-Control
+  Cache-Control: public, max-age=31536000, immutable
+/admin/medios.js
+  ! Cache-Control
+  Cache-Control: public, max-age=31536000, immutable
+/admin/piloto.js
+  ! Cache-Control
+  Cache-Control: public, max-age=31536000, immutable
+/admin/sorteos.js
+  ! Cache-Control
+  Cache-Control: public, max-age=31536000, immutable
+/admin/traduccion.js
+  ! Cache-Control
+  Cache-Control: public, max-age=31536000, immutable
 /panel
   ! Content-Security-Policy
   X-Robots-Tag: noindex, nofollow
