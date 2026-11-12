@@ -3537,10 +3537,14 @@ async function offerForm(v, id, kindDefault, desde = null) {
       refresca: () => { syncNinos(); resumenes(); pintaPrevia(); },
     });
   }
-  // «Rellenar desde una foto» (panel/foto.js): llena el formulario para revisarlo. Nunca publica.
+  // «Rellenar desde…» una foto (panel/foto.js), un enlace o un texto (panel/enlace.js): llena el formulario para
+  // revisarlo. Nunca publica. Con el enlace y el texto apagados, solo la foto, como siempre.
   if (!id && !desde && !partido?.id && !ideaIA && window.KFotoRellena) {
-    KFotoRellena.oferta($('#fotoRellena', v), {
+    (window.KEnlaceRellena || KFotoRellena).oferta($('#fotoRellena', v), {
       campo, pon, val,
+      // El sitio (enlace o texto): se pone sin punto en el mapa y se abre «Más opciones» para verlo.
+      sitio: () => ({ on: campo('venue_on').checked, name: String(val('venue_name') || '').trim(), address: String(val('venue_address') || '').trim() }),
+      ponSitio: (x) => { lugar.pon(x); if (x && !organizador && $('#bMas', v)) $('#bMas', v).open = true; },
       tipo: () => kind,
       ponTipo: (k) => { if (k !== kind) $('#cambiaTipo', v).click(); },
       categoria: (cid) => pintaCatOferta(cid ? [cid] : []),
@@ -3882,7 +3886,8 @@ async function offerForm(v, id, kindDefault, desde = null) {
       }
       // Guardado: ya no hay nada que perder al salir.
       GUARDA = null;
-      location.hash = partido?.id ? '#/partidos' : '#/publicaciones';
+      // Varios eventos de un enlace o un texto (panel/enlace.js): el siguiente, ya relleno.
+      location.hash = partido?.id ? '#/partidos' : (window.KEnlaceRellena?.siguiente() || '#/publicaciones');
     } catch (err) {
       // El aforo no baja de lo ya reservado o usado: la base dice cuánto es.
       const msg = String(err.message || '');

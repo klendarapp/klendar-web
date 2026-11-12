@@ -1,4 +1,6 @@
 /* «Rellenar desde una foto» en el panel, igual que en la app (GLOSARIO; RUNBOOK §4zg de la app).
+ * `rellena` (llenar el formulario, marcar lo dudoso, el aviso con «Deshacer») lo usa también «Rellenar desde un
+ * enlace o un texto» (panel/enlace.js, §4zl).
  *
  * El dueño hace una foto a su cartel, pizarra o carta y se rellena el formulario o una lista para revisar.
  * Nunca publica ni guarda sola. La foto se reduce aquí, se manda a la Edge Function `photo-fill` y se olvida;
@@ -108,7 +110,7 @@ window.KFotoRellena = (() => {
    * La tarjeta del formulario. `api` trae lo del formulario (panel.js): campo, pon, val, tipo, ponTipo, categoria,
    * refresca, usarImagen, hayHueco.
    */
-  const oferta = async (caja, api) => {
+  const oferta = async (caja, api, opciones = {}) => {
     reglaActual = null;
     if (!caja) return;
     const st = await estado();
@@ -137,7 +139,7 @@ window.KFotoRellena = (() => {
         const file = await reducir(original, TAM_OFERTA);
         const r = await leer('offer', file);
         if (!caja.isConnected) return;
-        aplica(r, file);
+        rellena(caja, api, r, { foto: file, alDeshacer: opciones.alDeshacer || (() => pintaTarjeta()) });
       } catch (e) {
         if (!caja.isConnected) return;
         // Lo escrito no se ha tocado.
@@ -148,94 +150,121 @@ window.KFotoRellena = (() => {
       }
     };
 
-    const aplica = (r, file) => {
-      const { campo, pon, val } = api;
-      const NOMBRES = ['title', 'description', 'price', 'discount_type', 'discount_value', 'prior_price', 'start', 'end'];
-      const antes = Object.fromEntries(NOMBRES.map((n) => [n, val(n)]));
-      const tipoAntes = api.tipo();
-      const catAntes = campo('category_id')?.value || null;
-      const tituloVacio = !String(val('title')).trim();
-
-      if (tituloVacio) {
-        api.ponTipo(r.kind);
-        pon('title', r.title);
-      }
-      if (!String(val('description')).trim()) pon('description', r.description);
-      if (!String(val('price')).trim() && r.price_cents != null) pon('price', dinero(r.price_cents));
-      if (!val('discount_type') && r.discount) {
-        pon('discount_type', r.discount.type);
-        pon('discount_value', r.discount.value);
-        if (r.prior_price_cents != null) pon('prior_price', dinero(r.prior_price_cents));
-      }
-      if (r.start) {
-        pon('start', r.start);
-        if (r.end) pon('end', r.end);
-        else if (api.tipo() === 'flash_offer') pon('end', toLocalInput(new Date(new Date(fromLocalInput(r.start)).getTime() + 3 * 36e5).toISOString()));
-        else pon('end', '');
-      }
-      if (!catAntes && r.category_id) api.categoria(r.category_id);
-      reglaActual = r.repeat || null;
-
-      // Lo dudoso, debajo de su campo.
-      const marcas = [];
-      const marca = (el, texto) => {
-        if (!el) return;
-        const p = document.createElement('p');
-        p.className = 'foto-duda';
-        p.innerHTML = `${OJO}<span>${esc(texto)}</span>`;
-        el.after(p);
-        marcas.push(p);
-      };
-      const d = new Set(r.doubts || []);
-      if (d.has('title')) marca(campo('title')?.closest('label'), DUDA());
-      if (d.has('description')) marca(campo('description')?.closest('label'), DUDA());
-      if (d.has('when')) marca($('#cuando'), t('Mira cuándo es: en la foto no estaba claro o no lo pone.'));
-      if (d.has('discount')) marca($('#descuento'), DUDA());
-      if (d.has('prior_price')) {
-        const rebaja = ['percent', 'fixed'].includes(val('discount_type'));
-        marca($('#descuento'), rebaja && !String(val('prior_price')).trim()
-          ? t('En la foto no sale el precio anterior. Si es una rebaja, la ley pide que lo pongas tú.')
-          : t('El precio anterior de la foto no cuadraba y no lo hemos puesto: míralo.'));
-      }
-      if (d.has('price')) marca(campo('price')?.closest('label'), DUDA());
-      api.refresca();
-
-      let foto = file;
-      const pintaAviso = () => {
-        caja.innerHTML = `<div class="foto-caja foto-hecho" role="status">
-          <p class="foto-tit">${esc(t('Rellenado desde tu foto'))}</p>
-          <p class="hint">${esc(t(d.size ? 'Revísalo antes de publicar y mira bien lo marcado: no se publica nada sin ti.' : 'Revísalo antes de publicar: no se publica nada sin ti.'))}</p>
-          ${r.injection ? `<p class="foto-duda">${OJO}<span>${esc(t('La foto llevaba instrucciones para una IA. No les hemos hecho caso: míralo todo bien.'))}</span></p>` : ''}
-          ${r.category_name ? `<p class="hint">${esc(I18N.t(`Categoría propuesta: ${r.category_name}. Se cambia en «Más opciones».`))}</p>` : ''}
-          ${r.repeat ? `<label class="opcion foto-repite"><input type="checkbox" id="fotoRepite" ${reglaActual ? 'checked' : ''}><span>${esc(t('Se repite cada semana'))}<small>${esc(horario(r.repeat))}</small></span></label>` : ''}
-          <p class="foto-acciones"><button type="button" class="linkbtn" id="fotoDeshacer">${esc(t('Deshacer'))}</button>
-            ${foto === null ? `<span class="hint">${esc(t('Foto añadida a la publicación'))}</span>` : (api.hayHueco() ? `<button type="button" class="linkbtn" id="fotoImagen">${esc(t('Usar la foto como imagen'))}</button>` : '')}</p></div>`;
-        const repite = $('#fotoRepite', caja);
-        if (repite) repite.onchange = () => { reglaActual = repite.checked ? r.repeat : null; };
-        $('#fotoDeshacer', caja).onclick = () => {
-          NOMBRES.forEach((n) => pon(n, antes[n]));
-          api.ponTipo(tipoAntes);
-          NOMBRES.forEach((n) => pon(n, antes[n]));
-          api.categoria(catAntes);
-          marcas.forEach((m) => m.remove());
-          reglaActual = null;
-          api.refresca();
-          pintaTarjeta();
-        };
-        const imagen = $('#fotoImagen', caja);
-        if (imagen) {
-          imagen.onclick = async () => {
-            imagen.classList.add('mov-ocupado');
-            imagen.disabled = true;
-            if (await api.usarImagen(foto)) foto = null;
-            pintaAviso();
-          };
-        }
-      };
-      pintaAviso();
-    };
-
     pintaTarjeta();
+    // Desde «Rellenar desde…» › «Una foto»: con el permiso y las dos maneras a la vista.
+    if (opciones.abrir) $('#fotoCta', caja)?.click();
+  };
+
+  /**
+   * Llena el formulario con lo leído (de una foto, un enlace o un texto) y pinta el aviso: qué mirar, «Deshacer», usar
+   * la imagen y, con varios eventos, «Evento 2 de 5» y «Saltar este». Lo escrito no se pisa y no se publica nada.
+   * `o`: { origen: 'foto' | 'enlace' | 'texto', foto (File), traeImagen (async → File), paso, alSaltar, alDeshacer }.
+   */
+  const rellena = (caja, api, r, o = {}) => {
+    const origen = o.origen || 'foto';
+    const { campo, pon, val } = api;
+    const NOMBRES = ['title', 'description', 'price', 'discount_type', 'discount_value', 'prior_price', 'start', 'end'];
+    const antes = Object.fromEntries(NOMBRES.map((n) => [n, val(n)]));
+    const tipoAntes = api.tipo();
+    const catAntes = campo('category_id')?.value || null;
+    const tituloVacio = !String(val('title')).trim();
+
+    if (tituloVacio) {
+      api.ponTipo(r.kind);
+      pon('title', r.title);
+    }
+    if (!String(val('description')).trim()) pon('description', r.description);
+    if (!String(val('price')).trim() && r.price_cents != null) pon('price', dinero(r.price_cents));
+    if (!val('discount_type') && r.discount) {
+      pon('discount_type', r.discount.type);
+      pon('discount_value', r.discount.value);
+      if (r.prior_price_cents != null) pon('prior_price', dinero(r.prior_price_cents));
+    }
+    if (r.start) {
+      pon('start', r.start);
+      if (r.end) pon('end', r.end);
+      else if (api.tipo() === 'flash_offer') pon('end', toLocalInput(new Date(new Date(fromLocalInput(r.start)).getTime() + 3 * 36e5).toISOString()));
+      else pon('end', '');
+    }
+    if (!catAntes && r.category_id) api.categoria(r.category_id);
+    reglaActual = r.repeat || null;
+    // Enlace o texto: el sitio, si lo dice y aún no hay uno. Sin punto en el mapa: lo pone el dueño.
+    const sitioAntes = api.sitio ? api.sitio() : null;
+    const conSitio = !!(r.venue_name || r.venue_address) && sitioAntes && !sitioAntes.name && !sitioAntes.address;
+    if (conSitio) api.ponSitio({ name: r.venue_name || '', address: r.venue_address || '' });
+
+    // Lo dudoso, debajo de su campo.
+    const marcas = [];
+    const marca = (el, texto) => {
+      if (!el) return;
+      const p = document.createElement('p');
+      p.className = 'foto-duda';
+      p.innerHTML = `${OJO}<span>${esc(texto)}</span>`;
+      el.after(p);
+      marcas.push(p);
+    };
+    const d = new Set(r.doubts || []);
+    if (d.has('title')) marca(campo('title')?.closest('label'), DUDA());
+    if (d.has('description')) marca(campo('description')?.closest('label'), DUDA());
+    if (d.has('when')) marca($('#cuando'), t(origen === 'foto' ? 'Mira cuándo es: en la foto no estaba claro o no lo pone.' : 'Mira cuándo es: no estaba claro o no lo pone.'));
+    if (d.has('discount')) marca($('#descuento'), DUDA());
+    if (d.has('prior_price')) {
+      const rebaja = ['percent', 'fixed'].includes(val('discount_type'));
+      marca($('#descuento'), rebaja && !String(val('prior_price')).trim()
+        ? t('En la foto no sale el precio anterior. Si es una rebaja, la ley pide que lo pongas tú.')
+        : t('El precio anterior de la foto no cuadraba y no lo hemos puesto: míralo.'));
+    }
+    if (d.has('price')) marca(campo('price')?.closest('label'), DUDA());
+    if (d.has('place') && conSitio) marca($('#lugarSet'), t('Mira dónde es y márcalo en el mapa: lo hemos copiado tal cual.'));
+    api.refresca();
+
+    // La foto (en memoria) o, del enlace, la imagen de la página (se trae solo si se pide).
+    let foto = o.foto || (o.traeImagen && r.image_url ? 'pagina' : undefined);
+    let traida = false;
+    const TITULO = { foto: 'Rellenado desde tu foto', enlace: 'Rellenado desde el enlace', texto: 'Rellenado desde tu texto' };
+    const pintaAviso = () => {
+      caja.innerHTML = `<div class="foto-caja foto-hecho" role="status">
+        ${o.paso ? `<p class="hint">${esc(o.paso)}</p>` : ''}
+        <p class="foto-tit">${esc(t(TITULO[origen] || TITULO.foto))}</p>
+        <p class="hint">${esc(t(d.size ? 'Revísalo antes de publicar y mira bien lo marcado: no se publica nada sin ti.' : 'Revísalo antes de publicar: no se publica nada sin ti.'))}</p>
+        ${r.injection ? `<p class="foto-duda">${OJO}<span>${esc(t(origen === 'foto' ? 'La foto llevaba instrucciones para una IA. No les hemos hecho caso: míralo todo bien.' : 'Lo leído llevaba instrucciones para una IA. No les hemos hecho caso: míralo todo bien.'))}</span></p>` : ''}
+        ${r.category_name ? `<p class="hint">${esc(I18N.t(`Categoría propuesta: ${r.category_name}. Se cambia en «Más opciones».`))}</p>` : ''}
+        ${r.repeat ? `<label class="opcion foto-repite"><input type="checkbox" id="fotoRepite" ${reglaActual ? 'checked' : ''}><span>${esc(t('Se repite cada semana'))}<small>${esc(horario(r.repeat))}</small></span></label>` : ''}
+        <p class="foto-acciones"><button type="button" class="linkbtn" id="fotoDeshacer">${esc(t('Deshacer'))}</button>
+          ${o.alSaltar ? `<button type="button" class="linkbtn" id="fotoSaltar">${esc(t('Saltar este'))}</button>` : ''}
+          ${traida ? `<span class="hint">${esc(t(origen === 'foto' ? 'Foto añadida a la publicación' : 'Imagen de la página añadida'))}</span>`
+            : (foto && api.hayHueco() ? `<button type="button" class="linkbtn" id="fotoImagen">${esc(t(origen === 'foto' ? 'Usar la foto como imagen' : 'Usar la imagen de la página'))}</button>` : '')}</p></div>`;
+      const repite = $('#fotoRepite', caja);
+      if (repite) repite.onchange = () => { reglaActual = repite.checked ? r.repeat : null; };
+      $('#fotoDeshacer', caja).onclick = () => {
+        NOMBRES.forEach((n) => pon(n, antes[n]));
+        api.ponTipo(tipoAntes);
+        NOMBRES.forEach((n) => pon(n, antes[n]));
+        api.categoria(catAntes);
+        if (conSitio) api.ponSitio(sitioAntes.on ? { name: sitioAntes.name, address: sitioAntes.address } : null);
+        marcas.forEach((m) => m.remove());
+        reglaActual = null;
+        api.refresca();
+        o.alDeshacer?.();
+      };
+      const saltar = $('#fotoSaltar', caja);
+      if (saltar) saltar.onclick = () => o.alSaltar();
+      const imagen = $('#fotoImagen', caja);
+      if (imagen) {
+        imagen.onclick = async () => {
+          imagen.classList.add('mov-ocupado');
+          imagen.disabled = true;
+          try {
+            const f = foto === 'pagina' ? await o.traeImagen(r) : foto;
+            if (f && await api.usarImagen(f)) { foto = null; traida = true; }
+          } catch (e) {
+            toast(t(e?.mensaje || 'No hemos podido traer la imagen. Súbela tú desde «Fotos».'), true);
+          }
+          pintaAviso();
+        };
+      }
+    };
+    pintaAviso();
   };
 
   // ── La carta ────────────────────────────────────────────────────────────
@@ -438,5 +467,5 @@ window.KFotoRellena = (() => {
     pintaFotos();
   };
 
-  return { estado, oferta, regla, carta, mezcla };
+  return { estado, oferta, regla, carta, mezcla, rellena, reducir, permiso };
 })();

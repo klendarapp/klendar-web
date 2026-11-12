@@ -44,8 +44,8 @@ ROOT = Path(__file__).resolve().parent.parent
 
 AREAS = {
     # ideas.js ya trae cada idea en los dos idiomas.
-    'panel': (['panel/panel.js', 'panel/rrpp.js', 'panel/ficha.js', 'panel/partidos.js', 'panel/bonos.js', 'panel/momento.js', 'panel/grupos.js', 'panel/sorteos.js', 'panel/cola.js', 'panel/artistas.js', 'panel/fidelizar.js', 'panel/herramientas.js', 'panel/entidades.js', 'panel/plan.js', 'panel/cerrado.js', 'panel/aforo.js', 'panel/pedir.js', 'panel/listo.js', 'panel/preguntas.js', 'panel/agenda.js', 'panel/foto.js', 'panel/ayudas.js', 'panel.html'], 'panel/i18n.js'),
-    'admin': (['admin/admin.js', 'admin/emisiones.js', 'admin/artistas.js', 'admin/condiciones.js', 'admin/crecer.js', 'admin/cerrado.js', 'admin/festivos.js', 'admin/traduccion.js', 'admin.html'], 'admin/i18n.js'),
+    'panel': (['panel/panel.js', 'panel/rrpp.js', 'panel/ficha.js', 'panel/partidos.js', 'panel/bonos.js', 'panel/momento.js', 'panel/grupos.js', 'panel/sorteos.js', 'panel/cola.js', 'panel/artistas.js', 'panel/fidelizar.js', 'panel/herramientas.js', 'panel/entidades.js', 'panel/plan.js', 'panel/cerrado.js', 'panel/aforo.js', 'panel/pedir.js', 'panel/listo.js', 'panel/preguntas.js', 'panel/agenda.js', 'panel/foto.js', 'panel/enlace.js', 'panel/ayudas.js', 'panel.html'], 'panel/i18n.js'),
+    'admin': (['admin/admin.js', 'admin/emisiones.js', 'admin/artistas.js', 'admin/condiciones.js', 'admin/crecer.js', 'admin/cerrado.js', 'admin/festivos.js', 'admin/traduccion.js', 'admin/foto.js', 'admin.html'], 'admin/i18n.js'),
     'cuenta': (['assets/cuenta/app.js', 'assets/cuenta/cuenta.js', 'assets/cuenta/amigos.js', 'assets/cuenta/correo.js', 'assets/cuenta/rrpp.js', 'assets/cuenta/partidos.js', 'assets/cuenta/artistas.js', 'assets/cuenta/bonos.js', 'assets/cuenta/momento.js', 'assets/cuenta/grupos.js', 'assets/cuenta/sorteos.js', 'assets/cuenta/cola.js', 'assets/cuenta/listo.js', 'assets/cuenta/ahorro.js', 'assets/cuenta/crecer.js', 'assets/cuenta/preguntas.js'], 'assets/cuenta/i18n.js'),
 }
 

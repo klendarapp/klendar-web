@@ -697,6 +697,9 @@ RUTAS.ajustes = async ([sub]) => {
         <dt id="dt-ia-foto" hidden>${esc(t('Leer mis fotos con IA'))}</dt>
         <dd id="dd-ia-foto" hidden><label class="check"><input type="checkbox" id="permiso-ia-foto">
           <span>${esc(t('Para rellenar publicaciones y la carta desde una foto. Las fotos van a Claude (Anthropic, EE. UU.) y no se guardan en Klendar.'))}</span></label></dd>
+        <dt id="dt-ia-enlace" hidden>${esc(t('Leer mis enlaces y textos con IA'))}</dt>
+        <dd id="dd-ia-enlace" hidden><label class="check"><input type="checkbox" id="permiso-ia-enlace">
+          <span>${esc(t('Para rellenar publicaciones desde un enlace o un texto pegado. Van a Claude (Anthropic, EE. UU.) y no se guardan en Klendar.'))}</span></label></dd>
         <dt id="dt-ia-asistente" hidden>${esc(t('Asistente de ayuda con IA'))}</dt>
         <dd id="dd-ia-asistente" hidden><label class="check"><input type="checkbox" id="permiso-ia-asistente">
           <span>${esc(t('Tus preguntas van a Claude (Anthropic, EE. UU.) y no se guardan en Klendar. Sin esto, tienes la Ayuda y el correo.'))}</span></label></dd>
@@ -832,6 +835,19 @@ RUTAS.ajustes = async ([sub]) => {
     caja.addEventListener('change', async () => {
       try {
         await llamar('set_ai_consent', { p_granted: caja.checked, p_use: 'photo_fill' });
+      } catch (e) { caja.checked = !caja.checked; toast(e.message, true); }
+    });
+  }).catch(() => { /* si falla, no se ve */ });
+  // El permiso de «Rellenar desde un enlace o un texto»: igual, solo si ya ha contestado alguna vez.
+  llamar('link_fill_status', { p_business: null }).then((ia) => {
+    if (!ia?.asked) return;
+    $('#dt-ia-enlace').hidden = false;
+    $('#dd-ia-enlace').hidden = false;
+    const caja = $('#permiso-ia-enlace');
+    caja.checked = ia.consent === true;
+    caja.addEventListener('change', async () => {
+      try {
+        await llamar('set_ai_consent', { p_granted: caja.checked, p_use: 'link_fill' });
       } catch (e) { caja.checked = !caja.checked; toast(e.message, true); }
     });
   }).catch(() => { /* si falla, no se ve */ });

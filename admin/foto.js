@@ -1,5 +1,5 @@
 /* Administración → Sistema → «Automático»: el interruptor y el coste de «Rellenar desde una foto» (migración
- * 20261270700000 de la app; RUNBOOK §4zg). Lo estimado es una cuenta sin medir: lo mide `tool/foto_prueba_real.mjs`.
+ * 20261270700000 de la app; RUNBOOK §4zg) y de «Rellenar desde un enlace o un texto» (20261278400000, §4zl). Lo estimado es una cuenta sin medir: lo mide `tool/foto_prueba_real.mjs`.
  *
  * Va después de piloto.js y usa lo suyo (`PAGES`, `rpc`, `esc`, `I18N`…).
  */
@@ -34,6 +34,31 @@
       pinta(await rpc('admin_photo_fill_overview'));
     } catch {
       hueco.remove();
+    }
+
+    // «Rellenar desde un enlace o un texto» (migración 20261278400000; RUNBOOK §4zl): su interruptor y su coste.
+    const hueco2 = document.createElement('div');
+    hueco2.className = 'card';
+    hueco2.style.marginTop = '12px';
+    (hueco.isConnected ? hueco : (cabeza || v.lastElementChild)).after(hueco2);
+    const pinta2 = (d) => {
+      hueco2.innerHTML = `<h2>${en ? 'Fill in from a link or text' : 'Rellenar desde un enlace o un texto'} <span class="tag ${d.enabled ? 'ok' : 'dim'}">${d.enabled ? (en ? 'on' : 'encendido') : (en ? 'off' : 'apagado')}</span></h2>
+        <div class="item" style="grid-template-columns:1fr auto"><div style="min-width:0">
+          <div class="meta">${en ? 'The business pastes a link (our server reads the page: https only, nothing internal, robots.txt) or some text, and the form or a list of events fills itself; they check and publish. Sent to Claude (Anthropic). Approve the privacy texts first.' : 'El negocio pega un enlace (lee la página nuestro servidor: solo https, nada interno, robots.txt) o un texto, y se rellena el formulario o una lista de eventos; él lo revisa y lo publica. Va a Claude (Anthropic). Antes, aprobar los textos de privacidad.'}</div>
+          <div class="meta">${en ? 'This month' : 'Este mes'}: ${esc(euros(d.spent_eur, 3))} / ${esc(euros(d.cap_eur))} · ${esc(String(d.calls))} ${en ? 'readings' : 'lecturas'}${d.avg_eur != null ? ` · ${en ? 'average' : 'media'} ${esc(euros(d.avg_eur, 4))}` : ''}</div>
+          <div class="meta">${en ? 'Estimated, not measured' : 'Estimado, sin medir'}: ${en ? 'one event' : 'un evento'} ≈ ${esc(euros(d.estimate_one_eur, 4))} · ${en ? 'a whole agenda' : 'una agenda entera'} ≈ ${esc(euros(d.estimate_agenda_eur, 4))}</div>
+          <div class="meta">${en ? 'Per business and day' : 'Por negocio y día'}: ${esc(String(d.day_cap))} ${en ? 'readings' : 'lecturas'} · ${en ? 'up to' : 'hasta'} ${esc(String(d.max_events))} ${en ? 'events each' : 'eventos cada una'}${d.only_users ? ` · ${en ? 'only for' : 'solo para'} ${esc(String(d.only_users))} ${en ? 'accounts' : 'cuentas'}` : ''}</div>
+        </div><div><button class="btn sm${d.enabled ? '' : ' ok'}" type="button" id="enlaceInterruptor">${d.enabled ? (en ? 'Switch off' : 'Apagar') : (en ? 'Switch on' : 'Encender')}</button></div></div>`;
+      const b = hueco2.querySelector('#enlaceInterruptor');
+      b.onclick = () => esperando(b, async () => {
+        await rpc('admin_link_fill_set', { p_enabled: !d.enabled });
+        pinta2(await rpc('admin_link_fill_overview'));
+      });
+    };
+    try {
+      pinta2(await rpc('admin_link_fill_overview'));
+    } catch {
+      hueco2.remove();
     }
   };
 }

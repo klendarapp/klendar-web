@@ -510,6 +510,8 @@ const APP_EN = {
   "Lo analiza Claude, de Anthropic (Estados Unidos). Sin esto, tus fotos pueden tardar más en publicarse.": "Analysed by Claude, from Anthropic (United States). Without this, your photos may take longer to go live.",
   "Revisar con IA lo que publico": "Check what I publish with AI",
   "Leer mis fotos con IA": "Read my photos with AI",
+  "Leer mis enlaces y textos con IA": "Read my links and texts with AI",
+  "Para rellenar publicaciones desde un enlace o un texto pegado. Van a Claude (Anthropic, EE. UU.) y no se guardan en Klendar.": "To fill in publications from a link or pasted text. They go to Claude (Anthropic, US) and aren’t kept by Klendar.",
   "Para rellenar publicaciones y la carta desde una foto. Las fotos van a Claude (Anthropic, EE. UU.) y no se guardan en Klendar.": "To fill in publications and the menu from a photo. Photos go to Claude (Anthropic, US) and aren’t kept in Klendar.",
   "\u00bfRevisamos con IA lo que publicas?": "Can we check what you publish with AI?",
   "Antes de publicarse, lo que escribes y las fotos que subes (y unos fotogramas de tus v\u00eddeos) los analiza Claude, la IA de Anthropic, una empresa de Estados Unidos, para filtrar lo que no permiten las Normas de la comunidad. Anthropic no lo usa para entrenar su IA y lo borra en 30 d\u00edas; lo que sus sistemas marquen como grave puede guardarlo hasta 2 a\u00f1os.": "Before it goes live, what you write and the photos you upload (and a few frames from your videos) are analysed by Claude, the AI from Anthropic, a US company, to filter what the Community guidelines don\u2019t allow. Anthropic doesn\u2019t use it to train its AI and deletes it within 30 days; anything its systems flag as serious may be kept for up to 2 years.",
