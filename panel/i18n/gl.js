@@ -2998,7 +2998,7 @@ KL_DIC('gl', {
   "Solo la ve quien entra por el enlace o el QR de un RRPP.": "Só a ve quen entra pola ligazón ou o QR dun RRPP.",
   "Solo la ven ellos. Si a otra persona le llega el enlace, la ficha dice que es exclusiva y cómo conseguirla, sin enseñar el beneficio.": "Só a ven eles. Se a outra persoa lle chega a ligazón, a ficha di que é exclusiva e como conseguila, sen amosar o beneficio.",
   "Solo la verán mayores de 18. Comprueba que tu comunidad lo permite.": "Só a verán os maiores de 18. Comproba que a túa comunidade o permite.",
-  "Solo lo que publican ayuntamientos, juntas de distrito, asociaciones y ONG, y la agenda municipal.": "Só o que publican concellos, xuntas de distrito, asociacións e ONG, e a axenda municipal.",
+  "Solo lo que publican ayuntamientos, juntas de distrito, asociaciones y ONG.": "Só o que publican concellos, xuntas de distrito, asociacións e ONG.",
   "Solo lo ve tu equipo: tu ficha no dice si hay sitio y nadie puede pedir «Avísame cuando haya sitio». A quien ya lo hubiera pedido, se lo quitamos y se lo decimos.": "Só o ve o teu equipo: a túa ficha non di se hai sitio e ninguén pode pedir «Avísame cando haxa sitio». A quen xa o pedira, quitámosllo e dicímosllo.",
   "Solo lo verá {x}. A los demás les diremos que has elegido otra.": "Só o verá {x}. Aos demais dirémoslles que escolliches outra.",
   "Solo mayores de 18": "Só maiores de 18",

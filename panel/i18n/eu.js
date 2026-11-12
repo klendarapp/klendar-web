@@ -2998,7 +2998,7 @@ KL_DIC('eu', {
   "Solo la ve quien entra por el enlace o el QR de un RRPP.": "RRPP baten esteka edo QRaren bidez sartzen denak bakarrik ikusten du.",
   "Solo la ven ellos. Si a otra persona le llega el enlace, la ficha dice que es exclusiva y cómo conseguirla, sin enseñar el beneficio.": "Haiek bakarrik ikusten dute. Beste norbaiti esteka iristen bazaio, fitxak esklusiboa dela eta nola lortu esaten du, onura erakutsi gabe.",
   "Solo la verán mayores de 18. Comprueba que tu comunidad lo permite.": "18 urtetik gorakoek bakarrik ikusiko dute. Egiaztatu zure erkidegoak baimentzen duela.",
-  "Solo lo que publican ayuntamientos, juntas de distrito, asociaciones y ONG, y la agenda municipal.": "Udalek, barrutiko batzordeek, elkarteek eta GKEek argitaratzen dutena eta udal-agenda soilik.",
+  "Solo lo que publican ayuntamientos, juntas de distrito, asociaciones y ONG.": "Udalek, barrutiko batzordeek, elkarteek eta GKEek argitaratzen dutena soilik.",
   "Solo lo ve tu equipo: tu ficha no dice si hay sitio y nadie puede pedir «Avísame cuando haya sitio». A quien ya lo hubiera pedido, se lo quitamos y se lo decimos.": "Zure taldeak bakarrik ikusten du: zure fitxak ez du esaten lekurik dagoen, eta inork ezin du «Abisatu lekua dagoenean» eskatu. Lehendik eskatua zuenari kendu egingo diogu eta jakinaraziko diogu.",
   "Solo lo verá {x}. A los demás les diremos que has elegido otra.": "Hark bakarrik ikusiko du: {x}. Besteei beste bat aukeratu duzula esango diegu.",
   "Solo mayores de 18": "18 urtetik gorakoentzat soilik",

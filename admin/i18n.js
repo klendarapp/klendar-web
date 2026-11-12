@@ -1508,6 +1508,8 @@ const I18N = makeI18N({
   "Council": "Council",
   "District council": "District council",
   "Public listings": "Public listings",
+  "importación de emisiones que no va bien": "broadcast import not working",
+  "importaciones de emisiones que no van bien": "broadcast imports not working",
   // «Artistas» (admin/artistas.js, tanda C).
   'Artistas': 'Artists',
   'Artista': 'Artist',

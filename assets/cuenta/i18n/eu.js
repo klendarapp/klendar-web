@@ -1589,7 +1589,7 @@ KL_DIC('eu', {
   "Solo cuentan: {lista}": "Hauek bakarrik kontatzen dira: {lista}",
   "Solo el propietario o un encargado puede cambiarlo.": "Jabeak edo arduradun batek bakarrik alda dezake.",
   "Solo enlaces de Spotify, YouTube, SoundCloud, Apple Music o Bandcamp.": "Spotify, YouTube, SoundCloud, Apple Music edo Bandcampeko estekak soilik.",
-  "Solo lo que publican ayuntamientos, juntas de distrito, asociaciones y ONG, y la agenda municipal.": "Udalek, barrutiko batzordeek, elkarteek eta GKEek argitaratzen dutena eta udal-agenda soilik.",
+  "Solo lo que publican ayuntamientos, juntas de distrito, asociaciones y ONG.": "Udalek, barrutiko batzordeek, elkarteek eta GKEek argitaratzen dutena soilik.",
   "Solo lo que puedes ver tú. Lo que ya ha pasado no se guarda aquí.": "Zuk ikus dezakezuna soilik. Jada gertatu dena ez da hemen gordetzen.",
   "Solo lo ve el equipo de Klendar para comprobarlo. La prueba se borra 6 meses después de resolver la reclamación.": "Klendarren taldeak bakarrik ikusten du, egiaztatzeko. Froga ezabatu egiten da erreklamazioa ebatzi eta 6 hilabetera.",
   "Solo lo ve el equipo de Klendar. La prueba se borra 6 meses después de resolver la reclamación.": "Klendarren taldeak bakarrik ikusten du. Froga ezabatu egiten da erreklamazioa ebatzi eta 6 hilabetera.",

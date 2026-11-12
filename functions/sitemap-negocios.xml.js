@@ -8,7 +8,10 @@ import { sorteosAbiertos } from './_lib/sorteos.js';
 //
 // Solo los negocios que cualquiera puede ver (activos y verificados: lo que
 // deja leer la base sin cuenta) y ninguno +18 ni el de revisión de las tiendas,
-// cuyas fichas van con noindex.
+// cuyas fichas van con noindex. Tampoco las cuentas de sistema «Agenda pública
+// de…» (`entity_kind = 'public_agenda'`), que se quitaron el 12-11-2026
+// (migración 20261276100000 de la app): hasta que esa migración llegue a prod,
+// aquí ya no salen.
 // Van por su dirección con nombre, que es la URL canónica; la de /b/<id>
 // redirige a ella.
 
@@ -24,6 +27,7 @@ export async function onRequestGet(ctx) {
   for (let desde = 0; desde < MAXIMO; desde += POR_PAGINA) {
     const filas = await negociosPublicos('select=slug,updated_at'
       + '&is_active=eq.true&verification_status=eq.verified&adults_only=eq.false'
+      + '&or=(entity_kind.is.null,entity_kind.neq.public_agenda)'
       + `&order=created_at.asc,id.asc&offset=${desde}&limit=${POR_PAGINA}`);
     negocios.push(...filas);
     if (filas.length < POR_PAGINA) break;

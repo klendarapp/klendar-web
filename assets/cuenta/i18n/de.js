@@ -1589,7 +1589,7 @@ KL_DIC('de', {
   "Solo cuentan: {lista}": "Es zählen nur: {lista}",
   "Solo el propietario o un encargado puede cambiarlo.": "Nur der Inhaber oder ein Manager kann das ändern.",
   "Solo enlaces de Spotify, YouTube, SoundCloud, Apple Music o Bandcamp.": "Nur Links von Spotify, YouTube, SoundCloud, Apple Music oder Bandcamp.",
-  "Solo lo que publican ayuntamientos, juntas de distrito, asociaciones y ONG, y la agenda municipal.": "Nur was Stadtverwaltungen, Bezirksverwaltungen, Vereine und NGOs veröffentlichen, und der Veranstaltungskalender der Stadt.",
+  "Solo lo que publican ayuntamientos, juntas de distrito, asociaciones y ONG.": "Nur was Stadtverwaltungen, Bezirksverwaltungen, Vereine und NGOs veröffentlichen.",
   "Solo lo que puedes ver tú. Lo que ya ha pasado no se guarda aquí.": "Nur was du sehen darfst. Vergangenes wird hier nicht gespeichert.",
   "Solo lo ve el equipo de Klendar para comprobarlo. La prueba se borra 6 meses después de resolver la reclamación.": "Nur das Klendar-Team sieht das, um es zu prüfen. Der Nachweis wird 6 Monate nach Abschluss des Antrags gelöscht.",
   "Solo lo ve el equipo de Klendar. La prueba se borra 6 meses después de resolver la reclamación.": "Nur das Klendar-Team sieht das. Der Nachweis wird 6 Monate nach Abschluss des Antrags gelöscht.",

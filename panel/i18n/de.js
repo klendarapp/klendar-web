@@ -2998,7 +2998,7 @@ KL_DIC('de', {
   "Solo la ve quien entra por el enlace o el QR de un RRPP.": "Nur wer über den Link oder QR-Code eines Promoters kommt, sieht es.",
   "Solo la ven ellos. Si a otra persona le llega el enlace, la ficha dice que es exclusiva y cómo conseguirla, sin enseñar el beneficio.": "Nur sie sehen es. Bekommt jemand anderes den Link, steht auf der Seite, dass es exklusiv ist und wie man es bekommt – ohne den Vorteil zu zeigen.",
   "Solo la verán mayores de 18. Comprueba que tu comunidad lo permite.": "Nur Personen ab 18 sehen es. Prüf, ob deine Region das erlaubt.",
-  "Solo lo que publican ayuntamientos, juntas de distrito, asociaciones y ONG, y la agenda municipal.": "Nur was Stadtverwaltungen, Bezirksverwaltungen, Vereine und NGOs veröffentlichen, und der Veranstaltungskalender der Stadt.",
+  "Solo lo que publican ayuntamientos, juntas de distrito, asociaciones y ONG.": "Nur was Stadtverwaltungen, Bezirksverwaltungen, Vereine und NGOs veröffentlichen.",
   "Solo lo ve tu equipo: tu ficha no dice si hay sitio y nadie puede pedir «Avísame cuando haya sitio». A quien ya lo hubiera pedido, se lo quitamos y se lo decimos.": "Nur dein Team sieht es: Deine Seite sagt nicht, ob Platz ist, und niemand kann „Sag mir, wenn Platz frei ist“ anfordern. Wer es schon angefordert hatte, dem nehmen wir es weg und sagen es ihm.",
   "Solo lo verá {x}. A los demás les diremos que has elegido otra.": "Nur {x} sieht das. Den anderen sagen wir, dass du dich für ein anderes entschieden hast.",
   "Solo mayores de 18": "Nur ab 18",

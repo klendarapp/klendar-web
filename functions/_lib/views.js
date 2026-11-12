@@ -73,7 +73,7 @@ const pre = (lang) => (lang === 'en' ? '/en' : '');
  * marcado caduca a las 2 h): /assets/sitio-ahora.js. */
 export const sitioAhoraScripts = (lang) => {
   const sp = supabasePublic();
-  return `<script src="/assets/marcas.js?v=6" defer></script>
+  return `<script src="/assets/marcas.js?v=7" defer></script>
 <script src="/assets/sitio-ahora.js?v=3" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}" data-lang="${lang === 'en' ? 'en' : 'es'}"></script>`;
 };
 
@@ -307,6 +307,10 @@ async function fichaOferta(id, lang, rpRaw, H) {
   // sale igual).
   const marcasP = rpc('offer_marks', { p_offer: id }).catch(() => null);
   // Evento importado de datos abiertos: su fuente y licencia (atribución).
+  // La agenda pública se quitó el 12-11-2026 (migración 20261276100000 de la
+  // app): desde entonces `offer_source` da siempre null y no sale nada. Se
+  // deja para que, hasta que esa migración llegue a prod, lo importado siga
+  // con su atribución (CC BY).
   const fuenteP = rpc('offer_source', { p_offer: id }).catch(() => null);
   // «Quién actúa» («Actúa: DJ Nano ›»), cada uno a su página. Sin la función
   // (o sin red), la ficha sale igual.

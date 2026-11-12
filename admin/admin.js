@@ -896,7 +896,7 @@ const NAV_GRUPOS = [
   { id: 'negocios', t: 'Negocios y pagos', items: [['negocios', 'storefront', 'Negocios'], ['reclamaciones', 'how_to_reg', 'Reclamaciones'], ['entidades', 'account_balance', 'Entidades por verificar'], ['duplicados', 'content_copy', 'Posibles duplicados'], ['planes', 'credit_card', 'Planes y pagos'], ['condiciones', 'gavel', 'Condiciones para negocios']] },
   // «Crecer» (crecer, admin/crecer.js): locales pedidos y dónde crecer.
   { id: 'crecer', t: 'Crecer', items: [['pedidos', 'add_business', 'Locales pedidos'], ['crecer', 'travel_explore', 'Dónde crecer']] },
-  { id: 'contenido', t: 'Contenido', items: [['publicaciones', 'bolt', 'Publicaciones'], ['agenda', 'account_balance', 'Agenda pública'], ['canjes', 'confirmation_number', 'Canjes'], ['colecciones', 'auto_awesome', 'Colecciones'], ['emisiones', 'sports_soccer', 'Emisiones'], ['artistas', 'music_note', 'Artistas'], ['categorias', 'category', 'Categorías'], ['festivos', 'event', 'Festivos']] },
+  { id: 'contenido', t: 'Contenido', items: [['publicaciones', 'bolt', 'Publicaciones'], ['canjes', 'confirmation_number', 'Canjes'], ['colecciones', 'auto_awesome', 'Colecciones'], ['emisiones', 'sports_soccer', 'Emisiones'], ['artistas', 'music_note', 'Artistas'], ['categorias', 'category', 'Categorías'], ['festivos', 'event', 'Festivos']] },
   { id: 'personas', t: 'Personas', items: [['usuarios', 'person', 'Usuarios'], ['inactivas', 'hourglass_empty', 'Cuentas inactivas'], ['avisos', 'notifications', 'Notificaciones y push'], ['sugerencias', 'lightbulb', 'Sugerencias']] },
   { id: 'moderacion', t: 'Moderación', items: [['denuncias', 'flag', 'Denuncias'], ['medios', 'imagesmode', 'Filtro automático'], ['sorteos', 'redeem', 'Sorteos'], ['resenas', 'chat_bubble', 'Reseñas y novedades'], ['mensajes', 'campaign', 'Mensajes a clientes']] },
   { id: 'sistema', t: 'Sistema', plegable: true, items: [['configuracion', 'settings', 'Configuración'], ['errores', 'bug_report', 'Errores de la web'], ['automatico', 'auto_awesome', 'Automático'], ['traduccion', 'translate', 'Traducción automática'], ['administradores', 'shield', 'Administradores'], ['actividad', 'history', 'Registro de actividad'], ['ayuda', 'help', 'Ayuda']] },
@@ -1676,7 +1676,8 @@ PAGES.resumen = async (v) => {
   const urg = ATT?.urgent || [];
   // Lo que se ha hecho solo (admin/piloto.js; migración 20261269500000 de la app).
   const PILOTO = await rpc('admin_piloto_overview', { p_limit: 6 }).catch((e) => { if (e?.obsoleta) throw e; return null; });
-  const nImport = (tk.agenda || []).length + (tk.leagues || []).length;
+  // La agenda pública ya no existe (12-11-2026): solo las ligas.
+  const nImport = (tk.leagues || []).length;
   const nDisputas = (tk.billing || {})['charge.dispute.created'] || 0;
   const cronUrgente = urg.some((x) => x.kind === 'cron');
   BADGES.resumen = totalPendiente(k);
@@ -1720,7 +1721,7 @@ PAGES.resumen = async (v) => {
       [BADGES.errores, 'bug_report', pl(BADGES.errores, 'error nuevo en la web (24 h)', 'errores nuevos en la web (24 h)', 'new website error (24 h)', 'new website errors (24 h)'), '#/errores'],
       [festivos?.count, 'event_busy', esc(en ? `Public holidays ${festivos?.year}: ${festivos?.summary || ''}` : (festivos?.text || '')), `#/festivos/${festivos?.year}`],
       [(tk.crons || []).length, 'schedule', pl((tk.crons || []).length, 'tarea programada con fallos (24 h)', 'tareas programadas con fallos (24 h)', 'scheduled task with failures (24 h)', 'scheduled tasks with failures (24 h)'), '#/errores', cronUrgente],
-      [nImport, 'cloud_off', pl(nImport, 'importación que no va bien (agenda pública o emisiones)', 'importaciones que no van bien (agenda pública o emisiones)', 'import not working (public listings or broadcasts)', 'imports not working (public listings or broadcasts)'), (tk.agenda || []).length ? '#/agenda' : '#/emisiones', true],
+      [nImport, 'cloud_off', pl(nImport, 'importación de emisiones que no va bien', 'importaciones de emisiones que no van bien', 'broadcast import not working', 'broadcast imports not working'), '#/emisiones', true],
       [tk.http_24h, 'sync_problem', pl(tk.http_24h, 'llamada a una Edge Function con error (24 h)', 'llamadas a Edge Functions con error (24 h)', 'failed Edge Function call (24 h)', 'failed Edge Function calls (24 h)'), '#/errores'],
       [tk.calendars_failing, 'event_busy', pl(tk.calendars_failing, 'agenda conectada de una entidad que no se puede leer', 'agendas conectadas de entidades que no se pueden leer', 'connected organisation calendar that can’t be read', 'connected organisation calendars that can’t be read'), '#/agenda'],
     ]],
@@ -3964,6 +3965,10 @@ PAGES.categorias = async (v) => {
 };
 
 // ── Agenda pública (migración 20261130100001) ───────────────────────────────
+// QUITADA el 12-11-2026 con «Conecta tu agenda» (migración 20261276100000 de
+// la app: sin fuentes, sin lo importado y sin agendas conectadas). Fuera del
+// menú y sin pantalla (`AGENDA_PUBLICA`); el código se queda, dormido.
+const AGENDA_PUBLICA = false;
 // Lo importado de datos abiertos: cada fuente con su licencia y su última
 // vuelta, «Importar ahora», ocultar una fuente entera y, abajo, los eventos
 // para ocultar uno.
@@ -3990,7 +3995,7 @@ function tarjetaAgendasConectadas(cal) {
     ], rows: cal.rows || [], empty: en ? 'No organisation has connected a calendar.' : 'Ninguna entidad ha conectado una agenda.' })}</div>`;
 }
 const AGENDA = { source: '', q: '', status: 'all', page: 0 };
-PAGES.agenda = async (v) => {
+if (AGENDA_PUBLICA) PAGES.agenda = async (v) => {
   const en = I18N.lang === 'en';
   const fuentes = (await rpc('admin_agenda_sources')) || [];
   const lista = await rpc('admin_agenda_items', { p_source: AGENDA.source || null, p_query: AGENDA.q || null, p_status: AGENDA.status, p_limit: 50, p_offset: AGENDA.page * 50 });

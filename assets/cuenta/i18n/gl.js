@@ -1589,7 +1589,7 @@ KL_DIC('gl', {
   "Solo cuentan: {lista}": "Só contan: {lista}",
   "Solo el propietario o un encargado puede cambiarlo.": "Só o propietario ou un encargado pode cambialo.",
   "Solo enlaces de Spotify, YouTube, SoundCloud, Apple Music o Bandcamp.": "Só ligazóns de Spotify, YouTube, SoundCloud, Apple Music ou Bandcamp.",
-  "Solo lo que publican ayuntamientos, juntas de distrito, asociaciones y ONG, y la agenda municipal.": "Só o que publican concellos, xuntas de distrito, asociacións e ONG, e a axenda municipal.",
+  "Solo lo que publican ayuntamientos, juntas de distrito, asociaciones y ONG.": "Só o que publican concellos, xuntas de distrito, asociacións e ONG.",
   "Solo lo que puedes ver tú. Lo que ya ha pasado no se guarda aquí.": "Só o que podes ver ti. O que xa pasou non se garda aquí.",
   "Solo lo ve el equipo de Klendar para comprobarlo. La prueba se borra 6 meses después de resolver la reclamación.": "Só o ve o equipo de Klendar para comprobalo. A proba bórrase 6 meses despois de resolver a reclamación.",
   "Solo lo ve el equipo de Klendar. La prueba se borra 6 meses después de resolver la reclamación.": "Só a ve o equipo de Klendar. A proba bórrase 6 meses despois de resolver a reclamación.",

@@ -361,7 +361,8 @@ PAGES.herramientas = async (v) => {
       on: reglas > 0, detalle: series ? herrPl(series, ['1 serie', 'series'], ['1 series', 'series']) : '',
       botones: [[abrir, '#/series']],
     }),
-    // «Conecta tu agenda»: solo entidades (panel/agenda.js).
+    // «Conecta tu agenda»: solo entidades (panel/agenda.js). Quitada el
+    // 12-11-2026: panel.html ya no carga agenda.js, así que no sale.
     calT,
     local && herrLleva(o, 'crowd', herrSi(o, 'crowd', 'enabled')) ? herrT({
       grupo: 'local', usa: herrSi(o, 'crowd', 'enabled'),

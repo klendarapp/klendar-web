@@ -177,25 +177,41 @@ PAGINAS['para-negocios'] = (
 
 # ── Para ayuntamientos y asociaciones ───────────────────────────────────────
 # Las cuentas de entidad (migraciones 20261130100000 y 20261219100000 de la
-# app) y «Conecta tu agenda» (20261260100400). Gratis para siempre: decisión de
-# Iván del 3–4-11-2026. «Conecta tu agenda» está tras el interruptor
-# `app_config.entity_calendar.enabled` hasta que se aprueben sus textos legales
-# (docs/LEGAL_PENDIENTE_2026-10.md, «EN»): mientras, aquí sale como «Muy
-# pronto». El día que se encienda en prod, AGENDA_CONECTADA = True y
+# app). Gratis para siempre: decisión de Iván del 3–4-11-2026.
+#
+# «Conecta tu agenda» (20261260100400) se quitó el 12-11-2026 (Iván: todo
+# evento lo publica la entidad, a mano o con «Rellenar desde una foto»;
+# migración 20261276100000): la sección no sale. Se queda aquí, dormida, por
+# si vuelve: AGENDA_CONECTADA = True, encender `app_config.entity_calendar`,
+# devolver la tarjeta del panel (panel/herramientas.js) y la de la app, y
 # `python build_pages.py`.
 AGENDA_CONECTADA = False
 
-_PRONTO = {
-    'es': '' if AGENDA_CONECTADA else ' <span style="display:inline-block;vertical-align:middle;margin-left:6px;padding:3px 9px;border-radius:999px;background:var(--soft);color:var(--ink);font-weight:800;font-size:12px">Muy pronto</span>',
-    'en': '' if AGENDA_CONECTADA else ' <span style="display:inline-block;vertical-align:middle;margin-left:6px;padding:3px 9px;border-radius:999px;background:var(--soft);color:var(--ink);font-weight:800;font-size:12px">Coming soon</span>',
-}
-_AGENDA_DONDE = {
-    'es': ('En «Mi negocio › Más herramientas › Conecta tu agenda», en la app o en el <a href="/panel">panel web</a>.'
-           if AGENDA_CONECTADA else
-           'Estará en «Mi negocio › Más herramientas › Conecta tu agenda», en la app y en el panel web. Mientras tanto, tus eventos se publican a mano en un minuto.'),
-    'en': ('In “My business › More tools › Connect your calendar”, in the app or on the <a href="/panel">web dashboard</a>.'
-           if AGENDA_CONECTADA else
-           "It will be in “My business › More tools › Connect your calendar”, in the app and on the web dashboard. Until then, you can publish your events by hand in a minute."),
+_AGENDA_HTML = {
+    'es': """<h2>Conecta tu agenda</h2>
+<p>Si tu entidad ya tiene un calendario en su web (Google Calendar, Outlook, la agenda de WordPress…), no hace falta escribir cada evento dos veces: pegas la dirección iCal o ICS del calendario y sus eventos entran solos en Klendar una vez al día.</p>
+<ul>
+  <li><strong>Lo que cambias allí, cambia aquí.</strong> Si un evento se mueve o se borra en tu calendario, se mueve o se borra en Klendar.</li>
+  <li><strong>Lo que tocas en Klendar, se respeta.</strong> Si editas un evento en Klendar, deja de actualizarse desde el calendario; si lo borras, no vuelve.</li>
+  <li><strong>Solo lo que viene.</strong> Los eventos de los próximos 90 días (hasta 300 por agenda). Lo que se repite entra una vez, con su próxima fecha. Los privados y los cancelados no entran.</li>
+  <li><strong>Sin lugar, en tu dirección.</strong> Un evento sin lugar sale en la dirección de la entidad. Uno con un lugar que no sabemos situar en el mapa entra como borrador para que lo sitúes tú.</li>
+  <li><strong>Con las mismas normas.</strong> Lo que entra sigue las mismas normas que lo que publicas a mano.</li>
+</ul>
+<p>En «Mi negocio › Más herramientas › Conecta tu agenda», en la app o en el <a href="/panel">panel web</a>.</p>
+
+""",
+    'en': """<h2>Connect your calendar</h2>
+<p>If your organisation already has a calendar on its website (Google Calendar, Outlook, a WordPress events calendar…), there's no need to type every event twice: you paste the calendar's iCal or ICS address and its events come into Klendar on their own once a day.</p>
+<ul>
+  <li><strong>What you change there changes here.</strong> If an event moves or is deleted in your calendar, it moves or is deleted on Klendar.</li>
+  <li><strong>What you touch on Klendar is respected.</strong> If you edit an event on Klendar, it stops updating from the calendar; if you delete it, it doesn't come back.</li>
+  <li><strong>Only what's coming up.</strong> Events in the next 90 days (up to 300 per calendar). Repeating events come in once, with their next date. Private and cancelled ones don't come in.</li>
+  <li><strong>No place, your address.</strong> An event without a place shows at the organisation's address. One with a place we can't put on the map comes in as a draft for you to place.</li>
+  <li><strong>Same rules.</strong> What comes in follows the same rules as what you publish by hand.</li>
+</ul>
+<p>In “My business › More tools › Connect your calendar”, in the app or on the <a href="/panel">web dashboard</a>.</p>
+
+""",
 }
 
 PAGINAS['para-entidades'] = (
@@ -230,18 +246,7 @@ PAGINAS['para-entidades'] = (
 <h2>Qué puedes publicar</h2>
 <p>Lo mismo que un negocio: <strong>eventos</strong> con fecha (con reserva de plaza si la quieres) y <strong>novedades</strong> en tu ficha. Solo actividades abiertas al público o de interés para el barrio o la ciudad: fiestas, mercadillos, campañas de comercio local, actividades culturales, deportivas o solidarias. No vale la propaganda electoral ni de partido, ni la publicidad institucional que destaque logros de gestión en periodo electoral. Todo pasa por las mismas <a href="/normas">normas de la comunidad</a> que cualquier publicación.</p>
 
-<h2>Conecta tu agenda{_PRONTO['es']}</h2>
-<p>Si tu entidad ya tiene un calendario en su web (Google Calendar, Outlook, la agenda de WordPress…), no hace falta escribir cada evento dos veces: pegas la dirección iCal o ICS del calendario y sus eventos entran solos en Klendar una vez al día.</p>
-<ul>
-  <li><strong>Lo que cambias allí, cambia aquí.</strong> Si un evento se mueve o se borra en tu calendario, se mueve o se borra en Klendar.</li>
-  <li><strong>Lo que tocas en Klendar, se respeta.</strong> Si editas un evento en Klendar, deja de actualizarse desde el calendario; si lo borras, no vuelve.</li>
-  <li><strong>Solo lo que viene.</strong> Los eventos de los próximos 90 días (hasta 300 por agenda). Lo que se repite entra una vez, con su próxima fecha. Los privados y los cancelados no entran.</li>
-  <li><strong>Sin lugar, en tu dirección.</strong> Un evento sin lugar sale en la dirección de la entidad. Uno con un lugar que no sabemos situar en el mapa entra como borrador para que lo sitúes tú.</li>
-  <li><strong>Con las mismas normas.</strong> Lo que entra sigue las mismas normas que lo que publicas a mano.</li>
-</ul>
-<p>{_AGENDA_DONDE['es']}</p>
-
-<h2>Empezar</h2>
+{_AGENDA_HTML['es'] if AGENDA_CONECTADA else ''}<h2>Empezar</h2>
 <p class="acciones" style="margin-top:18px">
   <a class="pill accent" href="/panel#/alta/entidad/1">Dar de alta una entidad</a>
   <a class="pill ghost" href="mailto:info@klendar.app?subject=Klendar%20para%20mi%20entidad">Escríbenos</a>
@@ -275,18 +280,7 @@ PAGINAS['para-entidades'] = (
 <h2>What you can publish</h2>
 <p>The same as a business: <strong>events</strong> with a date (with place booking if you want it) and <strong>updates</strong> on your page. Only activities open to the public or of interest to the neighbourhood or city: festivities, street markets, local shopping campaigns, cultural, sports or charity activities. No electoral or party propaganda, and no institutional advertising highlighting achievements in office during election periods. Everything follows the same <a href="/en/community-guidelines">community guidelines</a> as any publication.</p>
 
-<h2>Connect your calendar{_PRONTO['en']}</h2>
-<p>If your organisation already has a calendar on its website (Google Calendar, Outlook, a WordPress events calendar…), there's no need to type every event twice: you paste the calendar's iCal or ICS address and its events come into Klendar on their own once a day.</p>
-<ul>
-  <li><strong>What you change there changes here.</strong> If an event moves or is deleted in your calendar, it moves or is deleted on Klendar.</li>
-  <li><strong>What you touch on Klendar is respected.</strong> If you edit an event on Klendar, it stops updating from the calendar; if you delete it, it doesn't come back.</li>
-  <li><strong>Only what's coming up.</strong> Events in the next 90 days (up to 300 per calendar). Repeating events come in once, with their next date. Private and cancelled ones don't come in.</li>
-  <li><strong>No place, your address.</strong> An event without a place shows at the organisation's address. One with a place we can't put on the map comes in as a draft for you to place.</li>
-  <li><strong>Same rules.</strong> What comes in follows the same rules as what you publish by hand.</li>
-</ul>
-<p>{_AGENDA_DONDE['en']}</p>
-
-<h2>Getting started</h2>
+{_AGENDA_HTML['en'] if AGENDA_CONECTADA else ''}<h2>Getting started</h2>
 <p class="acciones" style="margin-top:18px">
   <a class="pill accent" href="/panel?lang=en#/alta/entidad/1">Register an organisation</a>
   <a class="pill ghost" href="mailto:info@klendar.app?subject=Klendar%20for%20my%20organisation">Email us</a>
@@ -704,51 +698,17 @@ PAGINAS['sobre'] = (
 
 
 # ── Fuentes y licencias ─────────────────────────────────────────────────────
-# Los datos de otros que enseña Klendar y lo que pide cada licencia. La agenda
-# pública importada de datos abiertos (tabla `public_agenda_sources` y Edge
-# Function `agenda-import` del repo de la app): la misma atribución sale en la
-# ficha de cada evento importado. Al añadir una fuente, añadirla aquí.
-FUENTES_AGENDA = [
-    # (ciudad, quién, conjunto, url del conjunto, licencia ES, licencia EN, url de la licencia, cita ES, cita EN)
-    ('Madrid', 'Ayuntamiento de Madrid',
-     'Actividades culturales y de ocio municipal en los próximos 100 días',
-     'https://datos.madrid.es/dataset/206974-0-agenda-eventos-culturales-100',
-     'CC BY 4.0', 'CC BY 4.0', 'https://creativecommons.org/licenses/by/4.0/deed.es',
-     'Fuente: Ayuntamiento de Madrid, datos.madrid.es', 'Source: Madrid City Council, datos.madrid.es'),
-    ('Zaragoza', 'Ayuntamiento de Zaragoza', 'Agenda de Zaragoza',
-     'https://www.zaragoza.es/sede/portal/datos-abiertos/servicio/catalogo/282',
-     'Condiciones generales de reutilización del Ayuntamiento de Zaragoza',
-     'Zaragoza City Council general reuse conditions',
-     'https://www.zaragoza.es/sede/portal/aviso-legal#condiciones',
-     'Origen de los datos: Ayuntamiento de Zaragoza', 'Data source: Zaragoza City Council'),
-]
-
-
-def _filas_fuentes(en):
-    out = []
-    for ciudad, quien, conjunto, url, lic_es, lic_en, lic_url, cita_es, cita_en in FUENTES_AGENDA:
-        out.append(
-            f'<tr><td>{ciudad}</td><td>{quien}<br><a href="{url}" rel="noopener" target="_blank">{conjunto}</a></td>'
-            f'<td><a href="{lic_url}" rel="license noopener" target="_blank">{lic_en if en else lic_es}</a></td>'
-            f'<td>«{cita_en if en else cita_es}»</td></tr>')
-    return ''.join(out)
-
-
+# Los datos de otros que enseña Klendar y lo que pide cada licencia. Al añadir
+# una fuente, añadirla aquí. La agenda pública importada de datos abiertos
+# (Madrid y Zaragoza) se quitó el 12-11-2026 (migración 20261276100000 de la
+# app): su tabla de fuentes está en el historial de git de este fichero.
 PAGINAS['fuentes'] = (
     'sources',
     'Fuentes y licencias', 'Sources and licences',
-    'De dónde salen los datos de otros que enseña Klendar (la agenda pública de cada ciudad, los partidos, el tiempo, los festivos, los mapas y los municipios) y con qué licencia.',
-    "Where the third-party data on Klendar comes from (each city's public listings, matches, the weather, public holidays, maps and towns) and under which licence.",
+    'De dónde salen los datos de otros que enseña Klendar (los partidos, el tiempo, los festivos, los mapas y los municipios) y con qué licencia.',
+    "Where the third-party data on Klendar comes from (matches, the weather, public holidays, maps and towns) and under which licence.",
     f'''
-<p class="lead">Casi todo lo que ves en Klendar lo publican los negocios y las entidades. Además, en algunas ciudades enseñamos la agenda municipal, que los ayuntamientos publican como datos abiertos; usamos los horarios de los partidos de un servicio externo y la previsión del tiempo de un servicio público, y la lista de festivos sale de los boletines oficiales. Aquí está de dónde sale cada cosa y con qué licencia.</p>
-
-<h2>Agenda pública de cada ciudad</h2>
-<p>Cada día importamos la agenda cultural y de ocio de estas fuentes y la publicamos en la cuenta «Agenda pública de &lt;ciudad&gt;» (o en la del ayuntamiento, si está en Klendar). Klendar no organiza esos eventos: adaptamos las fechas al formato de la app, elegimos una categoría, recortamos los textos largos y, como las fuentes no traen fotos con licencia clara, usamos una imagen genérica de la categoría. En la ficha de cada evento sale su fuente, su licencia, la fecha de actualización y el enlace al original. Que un ayuntamiento publique sus datos abiertos no quiere decir que participe en Klendar ni que lo patrocine.</p>
-<table>
-<thead><tr><th>Ciudad</th><th>Quién y qué</th><th>Licencia</th><th>Cómo se cita</th></tr></thead>
-<tbody>{_filas_fuentes(False)}</tbody>
-</table>
-<p>Si un evento está mal, ha cambiado o se ha cancelado, manda la fuente: Klendar lo actualiza al día siguiente. Para pedirnos que quitemos algo o una fuente entera, escríbenos a <a href="mailto:info@klendar.app">info@klendar.app</a>.</p>
+<p class="lead">Casi todo lo que ves en Klendar lo publican los negocios y las entidades. Además, usamos los horarios de los partidos de un servicio externo y la previsión del tiempo de un servicio público, y la lista de festivos sale de los boletines oficiales. Aquí está de dónde sale cada cosa y con qué licencia.</p>
 
 <h2>Partidos y eventos televisados</h2>
 <p>Los partidos y eventos de <strong>todos los deportes</strong> (fútbol, baloncesto, Fórmula 1, MotoGP, balonmano, UFC…) y sus horarios vienen de <strong>TheSportsDB</strong> (<a href="https://www.thesportsdb.com/" rel="noopener" target="_blank">thesportsdb.com</a>), con su plan de pago, que permite usarlos citándoles como fuente: «Datos deportivos: TheSportsDB». Lo que no llega solo (las finales de tenis, Eurovisión…) lo añade Klendar a mano, y cada bar puede añadir lo que pone. No usamos sus imágenes ni enseñamos el canal de televisión: lo que importa es si el bar lo pone. Los horarios pueden cambiar: confírmalos con el bar.</p>
@@ -783,15 +743,7 @@ PAGINAS['fuentes'] = (
 <p>Los iconos son <a href="https://fonts.google.com/icons" rel="noopener" target="_blank">Material Icons</a> de Google, con licencia <a href="https://www.apache.org/licenses/LICENSE-2.0" rel="license noopener" target="_blank">Apache 2.0</a>.</p>
 ''',
     f'''
-<p class="lead">Almost everything on Klendar is published by businesses and organisations. In some cities we also show the council's listings, which councils publish as open data; we use match times from an external service and the weather forecast from a public service, and the list of public holidays comes from the official gazettes. Here's where each thing comes from and under which licence.</p>
-
-<h2>Each city's public listings</h2>
-<p>Every day we import the cultural and leisure listings from these sources and publish them on the “Public listings” account of each city (or on the council's own, if it's on Klendar). Klendar doesn't organise those events: we adapt the dates to the app's format, choose a category, shorten long texts and, as the sources don't come with photos under a clear licence, we use a generic image for the category. Each event's page shows its source, licence, update date and a link to the original. A council publishing open data doesn't mean it takes part in or sponsors Klendar.</p>
-<table>
-<thead><tr><th>City</th><th>Who and what</th><th>Licence</th><th>How it's credited</th></tr></thead>
-<tbody>{_filas_fuentes(True)}</tbody>
-</table>
-<p>If an event is wrong, has changed or has been cancelled, the source rules: Klendar updates it the next day. To ask us to remove something or a whole source, write to <a href="mailto:info@klendar.app">info@klendar.app</a>.</p>
+<p class="lead">Almost everything on Klendar is published by businesses and organisations. We also use match times from an external service and the weather forecast from a public service, and the list of public holidays comes from the official gazettes. Here's where each thing comes from and under which licence.</p>
 
 <h2>Matches and televised events</h2>
 <p>Matches and events in <strong>every sport</strong> (football, basketball, Formula 1, MotoGP, handball, UFC…) and their times come from <strong>TheSportsDB</strong> (<a href="https://www.thesportsdb.com/" rel="noopener" target="_blank">thesportsdb.com</a>), under its paid plan, which allows them to be used crediting them as the source: “Sports data: TheSportsDB”. What doesn't come in on its own (tennis finals, Eurovision…) is added by Klendar by hand, and each bar can add what it's showing. We don't use their images or show the TV channel: what matters is whether the bar is showing it. Times can change: check with the bar.</p>
