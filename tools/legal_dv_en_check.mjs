@@ -1,5 +1,6 @@
 // Prueba de lo publicado el 2026-11-04 (DV1–DV2 y EN1–EN3, aprobados por Iván
-// ese día), en la web local:
+// ese día), en la web local. EN2 («Conecta tu agenda») y EN3 se quitaron el
+// 12-11 (QA, tools/legal_qa_check.mjs): aquí se comprueba que ya no salen.
 //
 //  1. Privacidad (ES y EN), fila «Cuenta de negocio»: «deshizo una validación
 //     hecha por error» entre lo que hace cada uno en las herramientas del
@@ -29,57 +30,55 @@ let fallos = 0;
 const ok = (c, m) => { if (!c) { fallos++; console.log('FALLO:', m); } else console.log('ok:', m); };
 
 const PAGINAS = [
-  ['/privacidad', 'Última actualización: 11 de noviembre de 2026', [
+  ['/privacidad', 'Última actualización: 12 de noviembre de 2026', [
     /qué hace cada uno en las herramientas del negocio \(quién validó, deshizo una validación hecha por error, vendió o descontó, apuntó a alguien en la cola o dio algo en el momento\)/,
-    /y, en «Dónde verlo», quién del equipo puso «Poner siempre» un equipo, un deportista o una competición; si es una entidad y conecta su agenda, la dirección de cada calendario \(que no enseñamos entera\), quién la conectó, cuándo la leímos, cuántos eventos trajo y el último error, y de cada evento importado su identificador en el calendario y el lugar escrito \(de los calendarios no leemos a las personas invitadas ni los eventos privados\)\. Se borra al desconectarla o al eliminar el negocio\. Para el «Gratis de lanzamiento», la provincia del local/,
+    /y, en «Dónde verlo», quién del equipo puso «Poner siempre» un equipo, un deportista o una competición\. Para el «Gratis de lanzamiento», la provincia del local/,
     /4 de noviembre de 2026: La fila «Cuenta de negocio» nombra también quién del equipo deshace una validación hecha por error\./,
     /4 de noviembre de 2026: La fila «Cuenta de negocio» cuenta lo que guardamos cuando una entidad conecta su agenda\./,
   ], [
     /\(quién validó, vendió o descontó/,
-    /una competición\. Para el «Gratis de lanzamiento»/,
+    /si es una entidad y conecta su agenda/,
   ]],
-  ['/en/privacy', 'Last updated: 11 November 2026', [
+  ['/en/privacy', 'Last updated: 12 November 2026', [
     /what each of them does in the business tools \(who validated, undid a validation made by mistake, sold or recorded a use, added someone to the queue or gave something on the spot\)/,
-    /and, in “Where to watch”, which team member set “Always show” for a team, an athlete or a competition; if it is an organisation and connects its calendar, the address of each calendar \(which we never show in full\), who connected it, when we read it, how many events it brought and the last error, and for each imported event its identifier in the calendar and the written place \(from calendars we do not read invitees or private events\)\. It is deleted when the calendar is disconnected or the business is deleted\. For the launch free period, the province of the venue/,
+    /and, in “Where to watch”, which team member set “Always show” for a team, an athlete or a competition\. For the launch free period, the province of the venue/,
     /4 November 2026: The “Business account” row now also mentions who in the team undoes a validation made by mistake\./,
     /4 November 2026: The “Business account” row now explains what we keep when an organisation connects its calendar\./,
   ], [
     /\(who validated, sold or recorded a use/,
-    /a competition\. For the launch free period/,
+    /if it is an organisation and connects its calendar/,
   ]],
-  ['/terminos', 'Última actualización: 5 de noviembre de 2026', [
+  ['/terminos', 'Última actualización: 12 de noviembre de 2026', [
     /Si el negocio valida tu código por error, puede deshacerlo en los 10 minutos siguientes \(una vez por código\): tu código vuelve a valer, salvo que la oferta ya haya terminado, y se quitan el sello o el cupón que te hubiera dado ese canje, si aún no los has usado\./,
     /4 de noviembre de 2026: Ofertas y canjes \(apartado 3\): si el negocio valida tu código por error, puede deshacerlo en los 10 minutos siguientes, una vez por código/,
   ], []],
-  ['/en/terms', 'Last updated: 5 November 2026', [
+  ['/en/terms', 'Last updated: 12 November 2026', [
     /If the business validates your code by mistake, it can undo it within the next 10 minutes \(once per code\): your code is valid again, unless the offer has already ended, and any stamp or coupon that redemption gave you is removed, if you haven't used it yet\./,
     /4 November 2026: Deals and redemptions \(section 3\): if the business validates your code by mistake, it can undo it within the next 10 minutes, once per code/,
   ], []],
-  ['/negocios', 'Última actualización: 11 de noviembre de 2026 · Versión 2026-11-05', [
+  ['/negocios', 'Última actualización: 12 de noviembre de 2026 · Versión 2026-11-05', [
     /Las cuentas de entidad no pagan cuota, ni ahora ni más adelante: Klendar no les cobrará por publicar ni por las funciones que hoy tienen\. Si algún día hubiera funciones nuevas de pago, serían opcionales y la Entidad podría seguir usando gratis todo lo demás\./,
-    /c\) mantener al día quién gestiona la cuenta y avisarnos si deja de representar a la Entidad\.\s+Conecta tu agenda\. La Entidad puede conectar a su cuenta hasta tres calendarios en formato iCal\/ICS\. Klendar lee cada uno una vez al día \(o cuando la Entidad pulsa «Sincronizar ahora»\)/,
-    /La Entidad: a\) solo conecta calendarios suyos o que tiene derecho a publicar; b\) responde de lo que contienen, como de lo que publica a mano/,
-    /puede dejar de leer un calendario que falle de forma continuada \(hoy, tras 14 días seguidos\) o desconectar uno que incumpla estas condiciones\. La Entidad lo desconecta cuando quiera y decide si los eventos ya publicados se quedan o se borran\.\s+Cómo lo comprobamos/,
-    /los del 4 de noviembre de 2026 \(apartado 3 bis, «Conecta tu agenda»\), desde el 19 de noviembre de 2026, y los del 5 de noviembre de 2026 \(apartado 2 bis\), desde el 20 de noviembre de 2026: 15 días/,
+    /y los del 5 de noviembre de 2026 \(apartado 2 bis\), desde el 20 de noviembre de 2026: 15 días/,
     /y que las cuentas de entidad no paguen cuota, ni ahora ni más adelante \(apartado 3 bis\), también, porque solo favorece a la Entidad\./,
-    /Versión\s+Publicada\s+Se aplica desde\s+2026-11-05\s+5-11-2026\s+20-11-2026\s+2026-11-04\s+4-11-2026\s+19-11-2026\s+2026-11-03-b\s+3-11-2026\s+18-11-2026/,
-    /4 de noviembre de 2026: «Conecta tu agenda» \(apartado 3 bis\)[\s\S]*?Se aplica desde el 19 de noviembre de 2026\./,
+    /Versión\s+Publicada\s+Se aplica desde\s+2026-11-05\s+5-11-2026\s+20-11-2026\s+2026-11-04\s+4-11-2026\s+19-11-2026 \(sin «Conecta tu agenda», que se retiró el 12-11-2026\)\s+2026-11-03-b\s+3-11-2026\s+18-11-2026/,
     /4 de noviembre de 2026: Cuentas de entidad \(apartado 3 bis\): no pagan cuota, ni ahora ni más adelante[\s\S]*?se aplica al publicarse, sin los 15 días de aviso\./,
   ], [
     /Mientras Klendar no diga otra cosa, las cuentas de entidad no pagan cuota/,
+    /Conecta tu agenda\. La Entidad puede conectar/,
+    /4 de noviembre de 2026: «Conecta tu agenda» \(apartado 3 bis\)/,
+    /desde el 19 de noviembre de 2026, y los del 5/,
   ]],
-  ['/en/business-terms', 'Last updated: 11 November 2026 · Version 2026-11-05', [
+  ['/en/business-terms', 'Last updated: 12 November 2026 · Version 2026-11-05', [
     /Organisation accounts pay no fee, now or later: Klendar will not charge them for publishing or for the features they have today\. If paid features are ever added, they will be optional and the Organisation may keep using everything else for free\./,
-    /c\) keep up to date who manages the account and let us know if they no longer represent the Organisation\.\s+Connect your calendar\. The Organisation may connect up to three calendars in iCal\/ICS format to its account\./,
-    /The Organisation: a\) only connects calendars that are its own or that it has the right to publish; b\) is responsible for their content/,
-    /may stop reading a calendar that fails continuously \(currently, after 14 days in a row\) or disconnect one that breaches these terms\. The Organisation may disconnect it whenever it likes and decides whether the events already published stay or are deleted\.\s+How we check/,
-    /those of 4 November 2026 \(section 3a, “Connect your calendar”\) from 19 November 2026, and those of 5 November 2026 \(section 2a\) from 20 November 2026: 15 days/,
+    /and those of 5 November 2026 \(section 2a\) from 20 November 2026: 15 days/,
     /and so does the fact that organisation accounts pay no fee, now or later \(section 3a\), as it only benefits the Organisation\./,
-    /Version\s+Published\s+Applies from\s+2026-11-05\s+5 Nov 2026\s+20 Nov 2026\s+2026-11-04\s+4 Nov 2026\s+19 Nov 2026\s+2026-11-03-b\s+3 Nov 2026\s+18 Nov 2026/,
-    /4 November 2026: “Connect your calendar” \(section 3a\)[\s\S]*?It applies from 19 November 2026\./,
+    /Version\s+Published\s+Applies from\s+2026-11-05\s+5 Nov 2026\s+20 Nov 2026\s+2026-11-04\s+4 Nov 2026\s+19 Nov 2026 \(without “Connect your calendar”, withdrawn on 12 Nov 2026\)\s+2026-11-03-b\s+3 Nov 2026\s+18 Nov 2026/,
     /4 November 2026: Organisation accounts \(section 3a\): they pay no fee, now or later[\s\S]*?so it applies on publication, without the 15 days' notice\./,
   ], [
     /Until Klendar says otherwise, organisation accounts pay no fee/,
+    /Connect your calendar\. The Organisation may connect/,
+    /4 November 2026: “Connect your calendar” \(section 3a\)/,
+    /from 19 November 2026, and those of 5/,
   ]],
 ];
 

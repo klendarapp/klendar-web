@@ -67,29 +67,29 @@ const PAGINAS = [
     /Possible measures: remove the content, remove a profile's name and photo, issue a warning, temporarily suspend, or close the account or business\./,
     /5 November 2026: Possible measures: also removing a profile's name and photo\./,
   ], [/24 hours if they involve minors/, /profile's name or photo/], []],
-  ['/terminos', 'Última actualización: 5 de noviembre de 2026 · Versión 2026-09-29', [
+  ['/terminos', 'Última actualización: 12 de noviembre de 2026 · Versión 2026-09-29', [
     /No hay ninguna tolerancia con el contenido objetable ni con las personas que abusan de otras: lo que incumple las Normas de la comunidad se retira y puede acabar en la suspensión o la baja de la cuenta\.\s*6\. Disponibilidad y cambios/,
     /5 de noviembre de 2026: Uso permitido \(apartado 5\): no hay ninguna tolerancia con el contenido objetable ni con las personas que abusan de otras\. Tus derechos y obligaciones no cambian, así que no hace falta volver a aceptarlos\./,
   ], [], ['main a[href="/normas"]']],
-  ['/en/terms', 'Last updated: 5 November 2026 · Version 2026-09-29', [
+  ['/en/terms', 'Last updated: 12 November 2026 · Version 2026-09-29', [
     /There is no tolerance for objectionable content or for people who abuse others: anything that breaks the Community guidelines is removed and can lead to the account being suspended or closed\.\s*6\. Availability and changes/,
     /5 November 2026: Acceptable use \(section 5\): there is no tolerance for objectionable content or for people who abuse others\. Your rights and obligations don't change, so there's no need to accept them again\./,
   ], [], ['main a[href="/en/community-guidelines"]']],
-  ['/privacidad', 'Última actualización: 11 de noviembre de 2026 · Versión 2026-09-29', [
+  ['/privacidad', 'Última actualización: 12 de noviembre de 2026 · Versión 2026-09-29', [
     /y las personas que bloqueas y, si bloqueas a quien hizo una pregunta, ese bloqueo y en qué negocio preguntó \(nunca sabrás quién es; sale en la descarga de tus datos y se borra con tu cuenta\)/,
     /5 de noviembre de 2026: La fila «Amigos y planes» dice también que, si bloqueas a quien hizo una pregunta, guardamos ese bloqueo y en qué negocio preguntó\./,
   ], [], []],
-  ['/en/privacy', 'Last updated: 11 November 2026 · Version 2026-09-29', [
+  ['/en/privacy', 'Last updated: 12 November 2026 · Version 2026-09-29', [
     /and the people you block and, if you block whoever asked a question, that block and which business they asked \(you'll never find out who they are; it's in your data download and is deleted with your account\)/,
     /5 November 2026: The “Friends and plans” row now also says that, if you block whoever asked a question, we keep that block and which business they asked\./,
   ], [], []],
-  ['/negocios', 'Última actualización: 11 de noviembre de 2026 · Versión 2026-11-05', [
+  ['/negocios', 'Última actualización: 12 de noviembre de 2026 · Versión 2026-11-05', [
     /\(1\) hoy no se vende ninguna posición: si algún día se ofrece destacar publicaciones de pago, saldrán primero en Descubre y en la lista de Explorar, siempre con la etiqueta «Destacado», y lo avisaremos antes con el plazo de estas condiciones; en las selecciones/,
     /los del 5 de noviembre de 2026 \(apartado 2 bis\), desde el 20 de noviembre de 2026:/,
     /2026-11-05\s+5-11-2026\s+20-11-2026\s+2026-11-04\s+4-11-2026\s+19-11-2026/,
     /5 de noviembre de 2026: Cómo se ordena lo que se ve \(apartado 2 bis\): hoy no se vende ninguna posición;[^\n]*?Se aplica desde el 20 de noviembre de 2026\./,
   ], [/\(1\) en Descubre y en la lista de Explorar, lo destacado de pago/], []],
-  ['/en/business-terms', 'Last updated: 11 November 2026 · Version 2026-11-05', [
+  ['/en/business-terms', 'Last updated: 12 November 2026 · Version 2026-11-05', [
     /\(1\) no position is sold today: if paid featured publications are ever offered, they will come first in Discover and the Explore list, always labelled “Featured”, and we'll give notice first within the period in these terms; in the collections/,
     /those of 5 November 2026 \(section 2a\) from 20 November 2026:/,
     /2026-11-05\s+5 Nov 2026\s+20 Nov 2026\s+2026-11-04\s+4 Nov 2026\s+19 Nov 2026/,

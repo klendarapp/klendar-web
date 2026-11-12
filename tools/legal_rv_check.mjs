@@ -33,15 +33,15 @@ const PAGINAS = [
     /klendar\.tab\s+All of klendar\.app \(session storage\)\s+Keep the bottom bar on the tab you came from/,
     /3 November 2026: Two more session keys/,
   ], []],
-  ['/privacidad', 'Última actualización: 11 de noviembre de 2026', [
-    /las que oculta, con el motivo; y, en «Dónde verlo», quién del equipo puso «Poner siempre» un equipo, un deportista o una competición; si es una entidad y conecta su agenda, [\s\S]*?Se borra al desconectarla o al eliminar el negocio\. Para el «Gratis de lanzamiento», la provincia del local, que se calcula por su punto en el mapa/,
+  ['/privacidad', 'Última actualización: 12 de noviembre de 2026', [
+    /las que oculta, con el motivo; y, en «Dónde verlo», quién del equipo puso «Poner siempre» un equipo, un deportista o una competición\. Para el «Gratis de lanzamiento», la provincia del local, que se calcula por su punto en el mapa/,
     /habéis ido juntos se apaga en Ajustes → Privacidad y datos; las invitaciones/,
     /3 de noviembre de 2026: La fila «Cuenta de negocio» cuenta también/,
   ], [
     /se apaga en Ajustes → Privacidad;/,
   ]],
-  ['/en/privacy', 'Last updated: 11 November 2026', [
-    /the ones it hides, with the reason; and, in “Where to watch”, which team member set “Always show” for a team, an athlete or a competition; if it is an organisation and connects its calendar, [\s\S]*?It is deleted when the calendar is disconnected or the business is deleted\. For the launch free period, the province of the venue, worked out from its point on the map/,
+  ['/en/privacy', 'Last updated: 12 November 2026', [
+    /the ones it hides, with the reason; and, in “Where to watch”, which team member set “Always show” for a team, an athlete or a competition\. For the launch free period, the province of the venue, worked out from its point on the map/,
     /can be turned off in Settings → Privacy and data; invitations/,
     /3 November 2026: The “Business account” row also covers/,
   ], [
