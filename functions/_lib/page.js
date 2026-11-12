@@ -43,7 +43,7 @@ export const CONTADOR = `<script defer src="https://static.cloudflareinsights.co
  * (assets/errores.js). Estas páginas no cargan config.js: la dirección y la
  * clave pública de Supabase van en la etiqueta (las mismas que usa la
  * Function, que manda sobre config.js). En el <head>, antes que los demás. */
-export const ERRORES_V = 2;
+export const ERRORES_V = '20261112cadena';
 // `async`: sin frenar el primer pintado; se pide el primero y corre antes que
 // los `defer` (`document.currentScript` sigue valiendo para leer data-*).
 export const erroresScript = () =>

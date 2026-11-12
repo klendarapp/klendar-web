@@ -11,17 +11,43 @@
  *   correos, tokens y números largos quitados aquí y otra vez en la base.
  * - Como mucho 5 por carga y cada uno una sola vez. Si el envío falla, se
  *   calla: nunca rompe nada ni se llama a sí mismo en bucle.
+ * - Un script o una hoja de estilo nuestros que no llegan se apuntan como
+ *   error propio («No se pudo cargar /assets/i18n.js»). Lo que salta después
+ *   en esa misma carga por su culpa («makeI18N is not defined», y detrás
+ *   «RUTAS/ERRORES/PAGES… is not defined»: los `const` de un script que se
+ *   paró quedan muertos para los demás) es un error EN CADENA y no se apunta.
+ *   Lo mismo detrás del primer error que para un script mientras se lee la
+ *   página: en el admin sale un solo error, el que lo empezó.
+ * - Los rastreadores (Googlebot, bingbot… por el user-agent) y los
+ *   navegadores automáticos (`navigator.webdriver`) no apuntan nada: cargan
+ *   a medias a propósito y llenaban la lista de «X is not defined».
+ *   (Para probarlo con un navegador automático: localStorage
+ *   `klendar_errores_pruebas` = '1'.)
  * - La dirección y la clave salen de `window.KLENDAR_ENV` (config.js); en
  *   las páginas que pintan las Functions van en `data-url`/`data-key` de la
  *   propia etiqueta; y en las estáticas, que no cargan config.js, se carga
  *   /config.js solo si hay algo que mandar.
  *
  * Va en el <head>, antes que los demás scripts, para ver también sus errores.
+ * En «Tu cuenta», el panel y el admin, sin `async`: tiene que estar escuchando
+ * antes de que falle el primero de sus 40 scripts (si llega tarde, solo ve
+ * los «X is not defined» de detrás y no el que no cargó).
  */
 (function () {
   'use strict';
   if (window.__klendarErrores) return;
   window.__klendarErrores = true;
+
+  // Rastreadores y navegadores automáticos: no se apunta nada. (Cubot es una
+  // marca de móviles: «CUBOT P30» no es un robot.)
+  function esRobot() {
+    try { if (localStorage.getItem('klendar_errores_pruebas') === '1') return false; } catch (e) { /* sin almacenamiento */ }
+    if (navigator.webdriver === true) return true;
+    var ua = String(navigator.userAgent || '').replace(/cubot/gi, '');
+    if (!ua) return true;
+    return /\b[\w-]*(bot|crawler|spider|scraper)\b|google(other|-[\w-]+)|[\w-]+-google\b|google (favicon|page ?speed|web preview)|lighthouse|headless|phantomjs|puppeteer|playwright|selenium|slurp|bingpreview|yandex|baidu|bytespider|petalsearch|facebookexternalhit|meta-external|embedly|ptst\/|gtmetrix|pingdom|uptime|statuscake|site24x7|chatgpt|oai-search|perplexity|ccbot|python-|curl\/|wget|go-http-client|node-fetch|axios/i.test(ua);
+  }
+  if (esRobot()) return;
 
   var MAX = 5;
   var yo = document.currentScript;
@@ -29,6 +55,11 @@
   var enviados = 0;
   var cola = [];
   var cargandoConfig = false;
+  // Lo primero que rompió esta carga (un script que no llegó o el primer
+  // error que paró un script mientras se leía la página). Lo de detrás que
+  // tenga pinta de venir de ahí es «en cadena» y no se apunta.
+  var roto = null;
+  var saliendo = false;
 
   function config() {
     var e = window.KLENDAR_ENV;
@@ -49,6 +80,7 @@
   function navegador() {
     var ua = navigator.userAgent || '';
     var reglas = [
+      ['Instagram', /Instagram (\d+)/], ['Facebook', /FB(?:AV|_IAB)\/(\d+)?/], ['TikTok', /(?:musical_ly|BytedanceWebview|TikTok)[_ \/](\d+)?/i],
       ['Edge', /Edg(?:e|A|iOS)?\/(\d+)/], ['Opera', /OPR\/(\d+)/],
       ['Samsung', /SamsungBrowser\/(\d+)/], ['Firefox', /(?:Firefox|FxiOS)\/(\d+)/],
       ['Chrome', /(?:Chrome|CriOS)\/(\d+)/], ['Safari', /Version\/(\d+)[\d.]*(?: Mobile\/\S+)? Safari/],
@@ -61,6 +93,9 @@
     var so = /Android/.test(ua) ? 'Android' : /iPhone|iPad|iPod/.test(ua) ? 'iOS'
       : /Windows/.test(ua) ? 'Windows' : /CrOS/.test(ua) ? 'ChromeOS'
       : /Mac OS X|Macintosh/.test(ua) ? 'macOS' : /Linux/.test(ua) ? 'Linux' : '';
+    // El navegador de dentro de una app (WebView de Android): se comporta
+    // distinto que Chrome y conviene saberlo.
+    if (so === 'Android' && /; wv\)/.test(ua)) so = 'Android WebView';
     return nombre + (ver ? ' ' + ver.slice(0, 4) : '') + (so ? ' · ' + so : '');
   }
 
@@ -111,6 +146,7 @@
       var s = document.createElement('script');
       s.src = '/config.js?v=4';
       s.async = true;
+      s.setAttribute('data-kl-errores', '');
       s.onload = function () { var c = cola; cola = []; for (var i = 0; i < c.length; i++) mandar(c[i]); };
       s.onerror = function () { cola = []; };
       (document.head || document.documentElement).appendChild(s);
@@ -139,9 +175,15 @@
     return m ? { src: m[1], line: +m[2], col: +m[3] } : null;
   }
 
-  function apunta(tipo, mensaje, src, linea, col, pila) {
+  // Lo que deja un script que no llegó o que se paró: una variable que no
+  // existe o algo que no es lo que se esperaba (Chrome, Firefox y Safari).
+  function pareceCadena(msg) {
+    return /is not defined|is not a function|is not a constructor|before initialization|can't access lexical declaration|Can't find variable|Cannot read propert|Cannot set propert|is undefined|is null|undefined is not an object|null is not an object/i.test(msg);
+  }
+
+  function apunta(tipo, mensaje, src, linea, col, pila, deCarga) {
     try {
-      if (enviados >= MAX) return;
+      if (enviados >= MAX || saliendo) return;
       var msg = String(mensaje == null ? '' : mensaje).replace(/\s+/g, ' ').trim()
         .replace(/^Uncaught (\(in promise\) )?/, '');
       if (!msg) return;
@@ -153,6 +195,10 @@
       src = src ? String(src) : '';
       if (/\/assets\/errores\.js/.test(src)) return; // lo nuestro no se apunta a sí mismo
       if (ruido(msg, src, pila)) return;
+      if (roto && pareceCadena(msg)) return; // en cadena: ya está apuntado lo que lo empezó
+      // El primer error que para un script mientras se lee la página deja
+      // muertas sus variables para todos los de detrás.
+      if (!roto && !deCarga && tipo === 'error' && document.readyState === 'loading') roto = msg;
 
       // Mismo sitio y mismo mensaje: una vez por carga.
       var clave = msg + '|' + src + '|' + (linea || '');
@@ -183,11 +229,35 @@
     } catch (e) { /* nunca romper la página por apuntar un error */ }
   }
 
+  // Un script o una hoja de estilo nuestros que no han llegado (404, 5xx, red
+  // cortada, bloqueado). Su `error` no sube a window: se oye en la captura.
+  function noCargo(el) {
+    try {
+      var tag = el.tagName;
+      var url = tag === 'SCRIPT' ? el.src
+        : tag === 'LINK' && /(^|\s)stylesheet(\s|$)/i.test(el.rel || '') ? el.href : '';
+      if (!url || el.hasAttribute('data-kl-errores')) return;
+      var u = new URL(url, location.href);
+      if (u.origin !== location.origin) return; // Mapbox, Turnstile…: no es nuestro
+      if (/\/assets\/errores\.js$/.test(u.pathname)) return;
+      if (navigator.onLine === false || saliendo) return;
+      if (tag === 'SCRIPT' && !roto) roto = 'carga';
+      apunta('error', 'No se pudo cargar ' + u.pathname, u.pathname + u.search, 0, 0, '', true);
+    } catch (e) { /* nada */ }
+  }
+
   window.addEventListener('error', function (ev) {
-    // Los fallos al cargar una imagen o un script llegan aquí sin mensaje.
-    if (!ev || !ev.message) return;
+    if (!ev) return;
+    var el = ev.target;
+    if (el && el !== window && el.nodeType === 1) { noCargo(el); return; }
+    if (!ev.message) return;
     apunta('error', ev.message, ev.filename, ev.lineno, ev.colno, ev.error && ev.error.stack);
-  });
+  }, true);
+
+  // Al irse de la página a mitad de carga se cortan los scripts que faltan:
+  // eso no es un error.
+  window.addEventListener('pagehide', function () { saliendo = true; });
+  window.addEventListener('pageshow', function (ev) { if (ev && ev.persisted) saliendo = false; });
 
   window.addEventListener('unhandledrejection', function (ev) {
     // Se mira un momento después: si la página lo ha atendido
