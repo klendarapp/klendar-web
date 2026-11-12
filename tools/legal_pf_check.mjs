@@ -21,6 +21,7 @@
 //   SUPABASE_BLOQUEADO=1 PORT=8871 node tools/serve_dev.mjs &
 //   BASE=http://localhost:8871 PW=<ruta a playwright> node tools/legal_pf_check.mjs
 import { playwright, servidorSeguro } from './_supabase_simulado.mjs';
+import { fechaLegal } from './_fecha_ia.mjs';
 
 const { chromium, webkit } = playwright();
 
@@ -31,7 +32,7 @@ let fallos = 0;
 const ok = (c, m) => { if (!c) { fallos++; console.log('FALLO:', m); } else console.log('ok:', m); };
 
 const PAGINAS = [
-  ['/negocios', 'Última actualización: 12 de noviembre de 2026', [
+  ['/negocios', fechaLegal('/negocios', 'Última actualización: 12 de noviembre de 2026'), [
     /\(1\) hoy no se vende ninguna posición: si algún día se ofrece destacar publicaciones de pago/,
     /\(3\) el orden que elige la persona en «Ordenar por»\. De serie es «Recomendado»: con «Según el tiempo» encendido/,
     /con «Tener en cuenta tus gustos» encendido \(lo está de serie\)[\s\S]*?cuenta como si fuera dos días más nuevo/,
@@ -42,7 +43,7 @@ const PAGINAS = [
     /los del 27 de octubre de 2026 \(apartados 2 bis, 3, 3 sexies, 3 septies y 3 duodecies\), desde el 11 de noviembre de 2026, los del 28 de octubre de 2026 \(apartados 2, 4 bis y 7\), desde el 12 de noviembre de 2026, los del 2 de noviembre de 2026 \(apartado 2 bis\), desde el 17 de noviembre de 2026, los del 3 de noviembre de 2026 \(apartados 3, 3 decies y 4\), desde el 18 de noviembre de 2026, y los del 5 de noviembre de 2026 \(apartado 2 bis\), desde el 20 de noviembre de 2026: 15 días/,
     /27 de octubre de 2026: Cómo se ordena lo que se ve \(apartado 2 bis\)[\s\S]*?Se aplica desde el 11 de noviembre de 2026\./,
   ], [/La valoración del Negocio, la cuota o el número de publicaciones no influyen/, /con «Más pronto» como si empezara seis horas antes/]],
-  ['/en/business-terms', 'Last updated: 12 November 2026', [
+  ['/en/business-terms', fechaLegal('/en/business-terms', 'Last updated: 12 November 2026'), [
     /\(1\) no position is sold today: if paid featured publications are ever offered/,
     /\(3\) the order the person chooses in “Sort by”\. By default it is “Recommended”: with “Based on the weather” on/,
     /with “Take your interests into account” on \(it is by default\)[\s\S]*?count as if they were two days newer/,
@@ -53,13 +54,13 @@ const PAGINAS = [
     /those of 27 October 2026 \(sections 2a, 3, 3e, 3f and 3k\) from 11 November 2026, those of 28 October 2026 \(sections 2, 4a and 7\) from 12 November 2026, those of 2 November 2026 \(section 2a\) from 17 November 2026, those of 3 November 2026 \(sections 3, 3i and 4\) from 18 November 2026, and those of 5 November 2026 \(section 2a\) from 20 November 2026: 15 days/,
     /27 October 2026: How what people see is ordered \(section 2a\)[\s\S]*?It applies from 11 November 2026\./,
   ], [/The Business's rating, its fee or its number of publications don't affect the order/, /with “Soonest” as if they started six hours earlier/]],
-  ['/privacidad', 'Última actualización: 12 de noviembre de 2026', [
+  ['/privacidad', fechaLegal('/privacidad', 'Última actualización: 12 de noviembre de 2026'), [
     /sin esconder nada \(solo con el orden «Recomendado», el de serie, en el que cuentan como si fueran dos días más nuevas; con «Más cerca», «Empieza antes» o «Lo más nuevo» no cuentan, y puedes apagarlo en Filtros \(☰\) → «Ordenar por», con la casilla «Tener en cuenta tus gustos»\)/,
     /27 de octubre de 2026: Tus gustos: solo cuentan con el orden «Recomendado»/,
     /Se apaga en Filtros \(☰\) → «Ordenar por» → «Según el tiempo»/,
     /27 de octubre de 2026: Dónde se apagan «Según el tiempo» y «Tener en cuenta tus gustos»/,
   ], [/con «Más pronto» como si empezaran seis horas antes/]],
-  ['/en/privacy', 'Last updated: 12 November 2026', [
+  ['/en/privacy', fechaLegal('/en/privacy', 'Last updated: 12 November 2026'), [
     /without hiding anything \(only with the “Recommended” order, the default one, where they count as if they were two days newer; with “Nearest”, “Starts soonest” or “Newest” they don't count, and you can turn this off in Filters \(☰\) → “Sort by”, with the “Take your interests into account” box\)/,
     /27 October 2026: Your interests: they only count with the “Recommended” order/,
     /Turn it off in Filters \(☰\) → “Sort by” → “Based on the weather”/,

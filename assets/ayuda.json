@@ -1,5 +1,5 @@
 {
- "version": "c7c51160dc20",
+ "version": "75d5cc8d3236",
  "contact": "info@klendar.app",
  "tabs": {
   "es": {
@@ -133,7 +133,7 @@
     "q": "La traducción no es correcta",
     "a": [
      {
-      "t": "Pulsa «Ver original»: lo que vale es lo que escribió el negocio. Las traducciones las hace "
+      "t": "Pulsa «Ver original»: lo que vale es lo que escribió el negocio. Las traducciones las hace Claude, la IA de Anthropic, o, si no está disponible, "
      },
      {
       "t": "Google Translate",
@@ -148,6 +148,45 @@
      },
      {
       "t": "."
+     }
+    ]
+   },
+   {
+    "id": "ia",
+    "q": "¿Klendar usa inteligencia artificial?",
+    "a": [
+     {
+      "t": "Sí, en algunas cosas, y siempre con Claude, la IA de Anthropic: para revisar lo que publicas, si nos das permiso; para traducir los textos de los negocios cuando lo pides, y en el asistente de ayuda. Nunca publica nada por ti y no se le envía tu nombre ni tu cuenta. Los permisos se quitan en Ajustes → Privacidad y datos. Qué se envía y qué se guarda está en la "
+     },
+     {
+      "t": "Política de privacidad",
+      "u": "https://klendar.app/privacidad#ia"
+     },
+     {
+      "t": "."
+     }
+    ]
+   },
+   {
+    "id": "asistente",
+    "q": "¿Qué es el asistente de ayuda?",
+    "a": [
+     {
+      "t": "Una IA que responde a tus dudas sobre Klendar con lo que tenemos publicado en estas preguntas y en las "
+     },
+     {
+      "t": "Normas",
+      "u": "https://klendar.app/normas"
+     },
+     {
+      "t": ". Puede equivocarse y lo que dice no nos obliga: si no te sirve, escríbenos a "
+     },
+     {
+      "t": "info@klendar.app",
+      "u": "mailto:info@klendar.app"
+     },
+     {
+      "t": ". No pongas datos personales. No guardamos la conversación."
      }
     ]
    },
@@ -510,6 +549,24 @@
       "t": "."
      }
     ]
+   },
+   {
+    "id": "rellenar-desde",
+    "q": "¿Puedo rellenar una publicación desde una foto, un enlace o un texto?",
+    "a": [
+     {
+      "t": "Sí. Al crear una publicación, pulsa «Rellenar desde…» y elige una foto de tu cartel, el enlace de la página de tu evento o un texto que tengas (un WhatsApp, por ejemplo); en «Carta», haz fotos a tu carta. Se rellena el formulario y, si hay varios eventos, sale una lista para revisarlos uno a uno. Lo lee una IA (Claude, de Anthropic, EE. UU.): revísalo, porque puede equivocarse, y mira bien lo marcado y los alérgenos. Si un enlace no se puede leer (Instagram o Facebook, muchas veces), usa una captura. No se publica nada sin ti y no se guarda lo que mandas, salvo que uses la foto o la imagen de la página como imagen. Si prefieres que no, escribe a mano: los permisos se quitan en Ajustes."
+     }
+    ]
+   },
+   {
+    "id": "ayudas-ia",
+    "q": "¿Qué ayudas de IA hay para mi negocio?",
+    "a": [
+     {
+      "t": "Categoría y etiquetas propuestas. Al crear una publicación, una IA (Claude, de Anthropic, EE. UU.) lee el título y la descripción y te deja puestas la categoría y las marcas. Las cambias si quieres, y lo que ya hayas tocado no se cambia. Ideas para esta semana. Si las enciendes, cada semana te proponemos de 1 a 3 ideas según tus partidos, el tiempo, los festivos y lo que te ha funcionado. Tocas una y se abre el formulario relleno: revísala y pon el precio. No van el nombre de tu negocio ni nada de tus clientes. Las apagas en la misma tarjeta. Proponer respuesta. En «Reseñas», un borrador educado y corto en el idioma de la reseña, que cambias antes de enviarlo. Solo se envía el texto de la reseña, sin el nombre de quien la escribió. Alguna hay que contestarla a mano. El permiso de cada una se quita en Ajustes."
+     }
+    ]
    }
   ]
  },
@@ -635,7 +692,7 @@
     "q": "The translation is wrong",
     "a": [
      {
-      "t": "Tap “See original”: what counts is what the business wrote. Translations are done by "
+      "t": "Tap “See original”: what counts is what the business wrote. Translations are done by Claude, the AI from Anthropic, or, if it isn't available, "
      },
      {
       "t": "Google Translate",
@@ -650,6 +707,45 @@
      },
      {
       "t": "."
+     }
+    ]
+   },
+   {
+    "id": "ia",
+    "q": "Does Klendar use artificial intelligence?",
+    "a": [
+     {
+      "t": "Yes, for some things, and always with Claude, the AI from Anthropic: to check what you publish, if you give us permission; to translate businesses' text when you ask, and in the help assistant. It never publishes anything for you and your name and account aren't sent to it. You can withdraw permissions in Settings → Privacy and data. What is sent and what is kept is in the "
+     },
+     {
+      "t": "Privacy policy",
+      "u": "https://klendar.app/en/privacy#ia"
+     },
+     {
+      "t": "."
+     }
+    ]
+   },
+   {
+    "id": "asistente",
+    "q": "What is the help assistant?",
+    "a": [
+     {
+      "t": "An AI that answers your questions about Klendar from what we've published in these questions and the "
+     },
+     {
+      "t": "Community Guidelines",
+      "u": "https://klendar.app/en/community-guidelines"
+     },
+     {
+      "t": ". It can get things wrong and what it says doesn't bind us: if it doesn't help, write to "
+     },
+     {
+      "t": "info@klendar.app",
+      "u": "mailto:info@klendar.app"
+     },
+     {
+      "t": ". Don't include personal data. We don't keep the conversation."
      }
     ]
    },
@@ -1010,6 +1106,24 @@
      },
      {
       "t": "."
+     }
+    ]
+   },
+   {
+    "id": "rellenar-desde",
+    "q": "Can I fill in a publication from a photo, a link or some text?",
+    "a": [
+     {
+      "t": "Yes. When creating a publication, tap “Fill in from…” and choose a photo of your poster, the link to your event's page or some text you have (a WhatsApp message, say); in “Menu”, take photos of your menu. The form fills itself and, if there are several events, a list appears so you can check them one by one. An AI reads it (Claude, from Anthropic, US): check it, because it can make mistakes, and look closely at what's marked and at allergens. If a link can't be read (often Instagram or Facebook), use a screenshot. Nothing goes live without you and what you send isn't kept, unless you use the photo or the page's image as the image. If you'd rather not, type it in: you can withdraw permissions in Settings."
+     }
+    ]
+   },
+   {
+    "id": "ayudas-ia",
+    "q": "What AI help is there for my business?",
+    "a": [
+     {
+      "t": "Suggested category and tags. When creating a publication, an AI (Claude, from Anthropic, US) reads the title and description and fills in the category and marks. Change them if you like, and anything you've already touched isn't changed. Ideas for this week. If you turn them on, every week we suggest 1 to 3 ideas based on your matches, the weather, public holidays and what has worked for you. Tap one and the form opens filled in: check it and set the price. Your business name and anything about your customers aren't included. Turn them off on the same card. Suggest a reply. In “Reviews”, a short, polite draft in the language of the review, which you change before sending. Only the text of the review is sent, without the name of the person who wrote it. Some have to be answered by hand. You can withdraw each permission in Settings."
      }
     ]
    }

@@ -11,6 +11,7 @@ from types import SimpleNamespace
 
 from build_site import head, footer, T, ALT
 from ayuda import soporte_html
+import legal_ia
 
 # ════════════════════════════════════════════════════════════════════════════
 # DATOS DEL TITULAR — el único sitio que se toca cuando cambia quién está
@@ -1296,6 +1297,18 @@ if TURNSTILE_DESDE:
     _apunta('cookies', TURNSTILE_DESDE,
             'Cloudflare Turnstile: cuándo se carga y qué puede guardar en tu navegador para la comprobación anti-robots.',
             'Cloudflare Turnstile: when it loads and what it may store in your browser for the anti-bot check.')
+
+# ════════════════════════════════════════════════════════════════════════════
+# FUNCIONES CON IA (Claude, de Anthropic): todos sus textos están en
+# legal_ia.py, con la fecha del día que se publiquen (IA_DESDE). Sin fecha,
+# salen los textos de hoy. Con ella: su línea en el historial de cada página,
+# «Última actualización» y una versión nueva de las condiciones para negocios
+# que se aplica 15 días después (P2B art. 3.2). VERSION no se sube
+# (informativo para las personas usuarias).
+# ════════════════════════════════════════════════════════════════════════════
+for _slug, _cuando, _es, _en in legal_ia.cambios():
+    _apunta(_slug, _cuando, _es, _en)
+VERSIONES_NEGOCIOS[:0] = [v for v in legal_ia.versiones_negocios() if v[0] not in {x[0] for x in VERSIONES_NEGOCIOS}]
 
 # Datos de EJEMPLO para la vista previa (--vista-previa). Claramente falsos:
 # el script se niega a publicar nada que los contenga.
@@ -2626,6 +2639,8 @@ def textos(D, resaltar=False):
         for k in ('intro', 'li', 'p'):
             cuerpo = cuerpo.replace(f'@@TS_{lang.upper()}_{k.upper()}@@', TS[lang][k])
         D_['cookies'] = cab + (cuerpo,)
+    # Las funciones con IA (legal_ia.py), si tienen fecha.
+    legal_ia.aplicar(ES, EN, E)
     return ES, EN
 
 
@@ -2670,6 +2685,7 @@ def paginas(ES, EN):
 
 def generar():
     parar_si_faltan_datos(TITULAR_DATOS, publicar=True)
+    legal_ia.aviso_fecha()
     ES, EN = textos(TITULAR_DATOS)
     # Todo se genera antes de escribir nada: o salen todas o ninguna.
     for ruta, contenido in paginas(ES, EN):

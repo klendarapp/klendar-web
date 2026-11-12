@@ -24,6 +24,7 @@
 // Con BASE=https://klendar.app … mira lo publicado (Supabase, simulado igual).
 import { readFileSync } from 'node:fs';
 import { playwright, servidorSeguro } from './_supabase_simulado.mjs';
+import { fechaLegal } from './_fecha_ia.mjs';
 
 const { chromium, webkit } = playwright();
 
@@ -35,33 +36,33 @@ const ok = (c, m) => { if (!c) { fallos++; console.log('FALLO:', m); } else cons
 
 // [ruta, cabecera, lo que tiene que decir, lo que tiene que ir antes que lo otro]
 const PAGINAS = [
-  ['/privacidad', 'Última actualización: 12 de noviembre de 2026 · Versión 2026-09-29', [
+  ['/privacidad', fechaLegal('/privacidad', 'Última actualización: 12 de noviembre de 2026 · Versión 2026-09-29'), [
     /Sugerencias y mejoras\s+Tu cuenta; lo que nos escribes y de qué se trata \(«Sugerencia», «Algo falla», «Soy un negocio» u «Otra cosa»\); la versión de la app, si la usas en Android, iPhone o la web, y el idioma \(en la web, también la página de la que venías\); y, si las añades, hasta 3 capturas o fotos de tu galería/,
     /No se analizan de forma automática\. Si en una captura salen datos de otras personas que no hacen falta, mejor tápalos\s+Ejecución del contrato \(atender lo que nos mandas\) e interés legítimo \(art\. 6\.1\.f RGPD\) en arreglar fallos y mejorar Klendar\. Las capturas son opcionales\s+El mensaje, hasta 1 año después de cerrarlo; si eliminas tu cuenta, se queda sin tu nombre ni tu cuenta\. Las capturas, hasta que se borra el mensaje o eliminas tu cuenta, lo que pase antes; las que eliges pero no llegas a enviar, en 1 o 2 días\s+[\s\S]*?Soporte\s+Email y contenido de tu mensaje/,
-    /Historial de cambios\s+12 de noviembre de 2026: La fila «Cuenta de negocio» ya no habla[^\n]*\s+11 de noviembre de 2026: Fila nueva «Sugerencias y mejoras»: lo que nos mandas, las capturas que puedes añadir \(qué datos les quitamos, quién las ve y cuándo se borran\) y cuánto tiempo lo guardamos\./,
+    /Historial de cambios\s+(?:.+\n\s*){0,2}?12 de noviembre de 2026: La fila «Cuenta de negocio» ya no habla[^\n]*\s+11 de noviembre de 2026: Fila nueva «Sugerencias y mejoras»: lo que nos mandas, las capturas que puedes añadir \(qué datos les quitamos, quién las ve y cuándo se borran\) y cuánto tiempo lo guardamos\./,
   ]],
-  ['/en/privacy', 'Last updated: 12 November 2026 · Version 2026-09-29', [
+  ['/en/privacy', fechaLegal('/en/privacy', 'Last updated: 12 November 2026 · Version 2026-09-29'), [
     /Ideas and feedback\s+Your account; what you write to us and what it's about \(“Suggestion”, “Something's broken”, “I run a business” or “Something else”\); the app version, whether you use Android, iPhone or the website, and the language \(on the website, also the page you came from\); and, if you add them, up to 3 screenshots or photos from your gallery/,
     /They are not analysed automatically\. If a screenshot shows other people's details that aren't needed, it's best to cover them\s+Performance of a contract \(dealing with what you send us\) and legitimate interest \(art\. 6\.1\.f GDPR\) in fixing problems and improving Klendar\. Screenshots are optional\s+The message, up to 1 year after we close it; if you delete your account, it stays without your name or your account\. Screenshots, until the message is deleted or you delete your account, whichever comes first; those you pick but don't send, within 1 or 2 days\s+[\s\S]*?Support\s+Email and the content of your message/,
-    /Change history\s+12 November 2026: The “Business account” row no longer mentions[^\n]*\s+11 November 2026: New “Ideas and feedback” row: what you send us, the screenshots you can add \(what data we remove from them, who sees them and when they are deleted\) and how long we keep it\./,
+    /Change history\s+(?:.+\n\s*){0,2}?12 November 2026: The “Business account” row no longer mentions[^\n]*\s+11 November 2026: New “Ideas and feedback” row: what you send us, the screenshots you can add \(what data we remove from them, who sees them and when they are deleted\) and how long we keep it\./,
   ]],
   ['/eliminar-cuenta', 'Última actualización: 11 de noviembre de 2026 · Versión 2026-09-29', [
     /Tus reseñas, con sus fotos y vídeos, se eliminan junto con tu cuenta\.\s+Las capturas y fotos que añadiste en «Sugerencias y mejoras»\.\s+Tus avisos de «Estaba cerrado»/,
     /Denuncias resueltas, 2 años, para cumplir el Reglamento de Servicios Digitales\.\s+Lo que nos escribiste en «Sugerencias y mejoras», sin tu nombre ni tu cuenta, hasta 1 año después de cerrarlo, para seguir arreglando lo que nos contaste\.\s+Historial de cambios/,
-    /Historial de cambios\s+11 de noviembre de 2026: Lista al día: se borran las capturas que añadiste en «Sugerencias y mejoras»; lo que escribiste se queda sin tu nombre hasta 1 año después de cerrarlo\./,
+    /Historial de cambios\s+(?:.+\n\s*){0,2}?11 de noviembre de 2026: Lista al día: se borran las capturas que añadiste en «Sugerencias y mejoras»; lo que escribiste se queda sin tu nombre hasta 1 año después de cerrarlo\./,
   ]],
   ['/en/delete-account', 'Last updated: 11 November 2026 · Version 2026-09-29', [
     /Your reviews, with their photos and videos, are deleted together with your account\.\s+The screenshots and photos you added in “Ideas and feedback”\.\s+Your “It was closed” reports/,
     /Resolved reports, 2 years, to comply with the Digital Services Act\.\s+What you wrote to us in “Ideas and feedback”, without your name or your account, for up to 1 year after we close it, so we can keep fixing what you told us about\.\s+Change history/,
-    /Change history\s+11 November 2026: List brought up to date: the screenshots you added in “Ideas and feedback” are deleted; what you wrote stays without your name for up to 1 year after we close it\./,
+    /Change history\s+(?:.+\n\s*){0,2}?11 November 2026: List brought up to date: the screenshots you added in “Ideas and feedback” are deleted; what you wrote stays without your name for up to 1 year after we close it\./,
   ]],
-  ['/negocios', 'Última actualización: 12 de noviembre de 2026 · Versión 2026-11-05', [
+  ['/negocios', fechaLegal('/negocios', 'Última actualización: 12 de noviembre de 2026 · Versión 2026-11-05'), [
     /«Más cerca» \(de serie: por tramos de distancia y, en cada tramo, primero los que tienen planes hoy, luego los que tienen foto y horario y después el resto\) y «Mejor valorados» \(por la valoración media de sus reseñas y, a la par, primero los que tienen planes hoy, luego los que tienen foto y horario y después los más cercanos\)/,
-    /Historial de cambios\s+12 de noviembre de 2026: Se retira «Conecta tu agenda»[^\n]*\s+11 de noviembre de 2026: Cómo se ordena Sitios \(apartado 2 bis\): en cada tramo de distancia \(y, con «Mejor valorados», a la par\), después de los que tienen planes hoy van los que tienen foto y horario, y luego el resto\. Como aún no hay negocios usando Klendar, se aplica al publicarse, sin los 15 días de aviso\./,
+    /Historial de cambios\s+(?:.+\n\s*){0,2}?12 de noviembre de 2026: Se retira «Conecta tu agenda»[^\n]*\s+11 de noviembre de 2026: Cómo se ordena Sitios \(apartado 2 bis\): en cada tramo de distancia \(y, con «Mejor valorados», a la par\), después de los que tienen planes hoy van los que tienen foto y horario, y luego el resto\. Como aún no hay negocios usando Klendar, se aplica al publicarse, sin los 15 días de aviso\./,
   ]],
-  ['/en/business-terms', 'Last updated: 12 November 2026 · Version 2026-11-05', [
+  ['/en/business-terms', fechaLegal('/en/business-terms', 'Last updated: 12 November 2026 · Version 2026-11-05'), [
     /“Nearest” \(by default: by distance bands and, within each band, those with plans today first, then those with a photo and opening hours, then the rest\) and “Top rated” \(by the average rating of their reviews and, when level, those with plans today first, then those with a photo and opening hours, then the nearest\)/,
-    /Change history\s+12 November 2026: “Connect your calendar” \(section 3a\)[^\n]*\s+11 November 2026: How Places is ordered \(section 2a\): within each distance band \(and, with “Top rated”, when level\), after those with plans today come those with a photo and opening hours, then the rest\. As no businesses are using Klendar yet, it applies on publication, without the 15 days' notice\./,
+    /Change history\s+(?:.+\n\s*){0,2}?12 November 2026: “Connect your calendar” \(section 3a\)[^\n]*\s+11 November 2026: How Places is ordered \(section 2a\): within each distance band \(and, with “Top rated”, when level\), after those with plans today come those with a photo and opening hours, then the rest\. As no businesses are using Klendar yet, it applies on publication, without the 15 days' notice\./,
   ]],
 ];
 

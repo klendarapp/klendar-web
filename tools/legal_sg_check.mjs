@@ -12,6 +12,7 @@
 //   SUPABASE_BLOQUEADO=1 PORT=8871 node tools/serve_dev.mjs &
 //   BASE=http://localhost:8871 PW=<ruta a playwright> node tools/legal_sg_check.mjs
 import { playwright, servidorSeguro } from './_supabase_simulado.mjs';
+import { fechaLegal } from './_fecha_ia.mjs';
 
 const { chromium, webkit } = playwright();
 
@@ -22,7 +23,7 @@ let fallos = 0;
 const ok = (c, m) => { if (!c) { fallos++; console.log('FALLO:', m); } else console.log('ok:', m); };
 
 const PAGINAS = [
-  ['/privacidad', 'Última actualización: 12 de noviembre de 2026', [
+  ['/privacidad', fechaLegal('/privacidad', 'Última actualización: 12 de noviembre de 2026'), [
     /Equipos y deportistas que sigues\s+Los equipos, deportistas y competiciones que sigues/,
     /se apagan en Ajustes → Notificaciones → «Equipos y deportistas que sigues»/,
     /series que sigues, partidos de los equipos y deportistas que sigues, artistas que sigues/,
@@ -36,7 +37,7 @@ const PAGINAS = [
     /Equipos que sigues\s+Los equipos o participantes/,
     /la misma zona que la de «Equipos que sigues»/,
   ]],
-  ['/en/privacy', 'Last updated: 12 November 2026', [
+  ['/en/privacy', fechaLegal('/en/privacy', 'Last updated: 12 November 2026'), [
     /Teams and athletes you follow\s+The teams, athletes and competitions you follow/,
     /turn them off in Settings → Notifications → “Teams and athletes you follow”/,
     /series you follow, matches of the teams and athletes you follow, artists you follow/,

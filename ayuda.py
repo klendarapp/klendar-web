@@ -350,6 +350,14 @@ PREGUNTAS = [
       a_app_en='Yes: a <a href="/assets/kit/klendar-cartel.pdf">poster with a QR code (PDF)</a>. The legal side is in the <a href="/en/business-terms">business terms</a>.'),
 ]
 
+# Lo de las funciones con IA (legal_ia.py), si tienen fecha: la pregunta de la
+# traducción al día y las nuevas (la IA, el asistente, rellenar desde… y las ayudas).
+import os as _os, sys as _sys  # noqa: E402
+if _os.path.dirname(_os.path.abspath(__file__)) not in _sys.path:  # la carga tool/asistente_corpus.py desde la app
+    _sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+import legal_ia  # noqa: E402
+PREGUNTAS = legal_ia.ayuda(PREGUNTAS, P)
+
 PESTANAS = {
     'es': {'ti': 'Para ti', 'negocios': 'Para negocios'},
     'en': {'ti': 'For you', 'negocios': 'For businesses'},

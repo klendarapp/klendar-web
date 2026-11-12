@@ -17,6 +17,7 @@
 //   SUPABASE_BLOQUEADO=1 PORT=8871 node tools/serve_dev.mjs &
 //   BASE=http://localhost:8871 PW=<ruta a playwright> node tools/legal_tp_check.mjs
 import { playwright, servidorSeguro } from './_supabase_simulado.mjs';
+import { soloSinIA } from './_fecha_ia.mjs';
 
 const { chromium, webkit } = playwright();
 
@@ -31,30 +32,30 @@ const DESCARGO = /THIS SERVICE MAY CONTAIN TRANSLATIONS POWERED BY GOOGLE\. GOOG
 const PAGINAS = [
   ['/privacidad', [
     /Traducción automática\s+Lo que pides traducir \(al tocar «Traducir» debajo de un texto de un negocio que está en otro idioma\), sin guardar quién lo pidió; y, si la enciendes, la preferencia «Traducir siempre automáticamente»/,
-    /la descripción del negocio, «Qué pedir aquí» y su carta; junto al texto traducido se indica que lo ha traducido Google y siempre puedes ver el original\. Nunca se traducen las reseñas, las preguntas ni los nombres\./,
-    /Ejecución del contrato \(lo pides tú; «Traducir siempre automáticamente» empieza apagado\)\s+La preferencia, hasta que la cambies o elimines la cuenta\./,
+    soloSinIA(/la descripción del negocio, «Qué pedir aquí» y su carta; junto al texto traducido se indica que lo ha traducido Google y siempre puedes ver el original\. Nunca se traducen las reseñas, las preguntas ni los nombres\./),
+    soloSinIA(/Ejecución del contrato \(lo pides tú; «Traducir siempre automáticamente» empieza apagado\)\s+La preferencia, hasta que la cambies o elimines la cuenta\./),
     /28 de octubre de 2026: La traducción automática es a petición/,
   ], [/Traducir publicaciones a mi idioma/, /Traducido automáticamente · Google Translate/]],
   ['/en/privacy', [
     /Automatic translation\s+What you ask to translate \(by tapping “Translate” under a business's text that is in another language\), without storing who asked/,
-    /“What to order here” and its menu; next to the translated text it says that Google translated it, and you can always see the original\. Reviews, questions and names are never translated\./,
+    soloSinIA(/“What to order here” and its menu; next to the translated text it says that Google translated it, and you can always see the original\. Reviews, questions and names are never translated\./),
     /28 October 2026: Automatic translation is on request/,
   ], [/Translate publications into my language/, /Translated automatically · Google Translate/]],
   ['/terminos', [
-    /Si pides ver traducidos los textos de los negocios \(con «Traducir» o con «Traducir siempre automáticamente»\), la traducción es automática, la hace Google Translate y puede tener errores/,
+    soloSinIA(/Si pides ver traducidos los textos de los negocios \(con «Traducir» o con «Traducir siempre automáticamente»\), la traducción es automática, la hace Google Translate y puede tener errores/),
     DESCARGO,
     /\(En español: este servicio puede contener traducciones hechas por Google;[\s\S]*?y no infracción\.\) Esto no limita los derechos que te da la ley frente a Klendar\./,
     /28 de octubre de 2026: Traducción automática \(apartado 3\): la hace Google Translate, a petición/,
   ], []],
   ['/en/terms', [
-    /If you ask to see businesses' text translated \(with “Translate” or with “Always translate automatically”\), the translation is automatic, it's done by Google Translate/,
+    soloSinIA(/If you ask to see businesses' text translated \(with “Translate” or with “Always translate automatically”\), the translation is automatic, it's done by Google Translate/),
     DESCARGO,
     /This doesn't limit your statutory rights against Klendar\./,
   ], []],
-  ['/soporte', [/Las traducciones las hace Google Translate, solo cuando tocas «Traducir» o si tienes encendido «Traducir siempre automáticamente» \(Ajustes\)\./], []],
-  ['/en/support', [/Translations are done by Google Translate, only when you tap “Translate” or if you have “Always translate automatically” on \(Settings\)\./], []],
-  ['/preguntas', [/Las traducciones las hace Google Translate/], []],
-  ['/en/faq', [/Translations are done by Google Translate/], []],
+  ['/soporte', [soloSinIA(/Las traducciones las hace Google Translate, solo cuando tocas «Traducir» o si tienes encendido «Traducir siempre automáticamente» \(Ajustes\)\./)], []],
+  ['/en/support', [soloSinIA(/Translations are done by Google Translate, only when you tap “Translate” or if you have “Always translate automatically” on \(Settings\)\./)], []],
+  ['/preguntas', [soloSinIA(/Las traducciones las hace Google Translate/)], []],
+  ['/en/faq', [soloSinIA(/Translations are done by Google Translate/)], []],
   ['/cookies', [
     /klendar\.traducir\s+«Tu cuenta» y las fichas \(almacenamiento local\)\s+Recordar si has encendido «Traducir siempre automáticamente» cuando no has entrado/,
     /klendar\.traducir\.ok\s+Las fichas \(almacenamiento de sesión\)\s+Si la traducción automática está disponible ahora/,
